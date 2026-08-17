@@ -4,14 +4,16 @@ import { describe, expect, it } from "vitest";
 import { UNIFORM_CELLS } from "@/lib/render/uniformCells";
 import { tilingToSvg } from "@/lib/render/tilingSvg";
 import type { ReferenceTiling } from "@/lib/services/referenceAtlas";
+import { decodeAtlas } from "@/lib/services/atlasCodec";
+import { hydrateRenderCells } from "@/lib/services/renderCellDerive";
 
 // lib/render/uniformCells.ts is a copy of atlas data, kept in source so the error screens can draw
 // real specimens with no server to ask (see scripts/extract-uniform-cells.mjs). A copy can rot, so
 // this pins it to its source: rebake the atlas without rerunning the script and this fails.
 
-const atlas: ReferenceTiling[] = JSON.parse(
-	readFileSync(path.join(process.cwd(), "public/reference-atlas.json"), "utf8"),
-);
+const atlas = hydrateRenderCells(decodeAtlas<ReferenceTiling>(
+	JSON.parse(readFileSync(path.join(process.cwd(), "public/reference-atlas.json"), "utf8")),
+));
 
 const eleven = atlas
 	.filter((t) => t.source === "galebach" && t.k === 1 && !t.family.includes("*"))

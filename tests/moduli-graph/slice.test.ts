@@ -3,9 +3,11 @@ import { readFileSync } from 'node:fs';
 import { CyclotomicRing } from '@/classes/Cyclotomic';
 import { loadCatalogueKeys } from '../../scripts/moduli-graph/catalogueKeys';
 import { assembleGraph, type FamilyRecord } from '../../scripts/moduli-graph/graphAssembler';
+import { decodeAtlas } from "@/lib/services/atlasCodec";
 
-const atlas = JSON.parse(readFileSync('public/reference-atlas-isotoxal.json', 'utf8'));
-const records = (Array.isArray(atlas) ? atlas : atlas.records) as FamilyRecord[];
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- these tests cast per-site below
+const atlas = decodeAtlas<any>(JSON.parse(readFileSync('public/reference-atlas-isotoxal.json', 'utf8')));
+const records = atlas as FamilyRecord[];
 const pick = (id: string) => records.find((r) => (r as { id: string }).id === id)!;
 const families = records.filter(
   (r) => (r as { k?: number }).k === 1 && (r as { source?: string }).source === 'isotoxal' && r.paramCell?.params?.length === 1,

@@ -3,10 +3,10 @@ import fs from "node:fs";
 import { truchetPattern } from "@/lib/render/truchetTiling";
 import { figureEscapes, figureSelfIntersects, tileFigure, wiringCrosses } from "@/lib/freedraw/arcs";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
+import { decodeAtlas } from "@/lib/services/atlasCodec";
 
 const recs = (() => {
-	const j = JSON.parse(fs.readFileSync("public/reference-atlas-scaled.json", "utf8"));
-	return Array.isArray(j) ? j : (Object.values(j)[0] as any[]);
+	return decodeAtlas<any>(JSON.parse(fs.readFileSync("public/reference-atlas-scaled.json", "utf8")));
 })();
 
 describe("the scaled shelf, read as Truchet", () => {

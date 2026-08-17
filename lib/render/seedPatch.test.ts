@@ -7,6 +7,8 @@ import type { OrbitData } from "@/lib/services/orbitsFromExactSource";
 import { CyclotomicRing, setActiveRing } from "@/classes/Cyclotomic";
 import { orbitsFromExactSource } from "@/lib/services/orbitsFromExactSource";
 import type { ExactCellSource } from "@/lib/services/cellCodecService";
+import { decodeAtlas } from "@/lib/services/atlasCodec";
+import { hydrateRenderCells } from "@/lib/services/renderCellDerive";
 
 /** The square tiling: one unit square per cell, so every vertex sits on an integer point. */
 const SQUARE_CELL: TranslationalCellData = {
@@ -81,9 +83,9 @@ describe("seedFromCell", () => {
 });
 
 describe("seedFromCell on a real k=4 atlas tiling", () => {
-	const atlas = JSON.parse(
-		readFileSync(path.join(process.cwd(), "public", "reference-atlas.json"), "utf8"),
-	) as { id: string; renderCell: TranslationalCellData; exactSource?: ExactCellSource }[];
+	const atlas = hydrateRenderCells(decodeAtlas<{ id: string; renderCell: TranslationalCellData; exactSource?: ExactCellSource }>(
+		JSON.parse(readFileSync(path.join(process.cwd(), "public", "reference-atlas.json"), "utf8")),
+	));
 	const t4001 = atlas.find((t) => t.id === "t4001")!;
 
 	setActiveRing(CyclotomicRing.create(24));

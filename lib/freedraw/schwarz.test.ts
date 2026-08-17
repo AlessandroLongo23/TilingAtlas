@@ -12,6 +12,7 @@ import {
 	type SphSchwarzShard,
 } from "./schwarz";
 import { sphSchwarzScene } from "@/lib/render/sphSchwarz";
+import { decodeAtlas, decodeShard } from "@/lib/services/atlasCodec";
 
 // The Schwarz shelf's decode checks. What is worth asserting here is not the develop (that is
 // tools/ctrnact-oracle/develop_schwarz.py's own business, and it fails loudly) but the properties the
@@ -20,11 +21,11 @@ import { sphSchwarzScene } from "@/lib/render/sphSchwarz";
 
 const sphShard = (b: SchwarzBoard, k: number): SphSchwarzShard | null => {
 	const f = `public/schwarz-sph/s${b.id}-k${k}.json`;
-	return existsSync(f) ? (JSON.parse(readFileSync(f, "utf8")) as SphSchwarzShard) : null;
+	return existsSync(f) ? decodeShard(JSON.parse(readFileSync(f, "utf8")) as SphSchwarzShard) : null;
 };
 const hypShard = (b: SchwarzBoard, k: number): HypSchwarzPattern[] | null => {
 	const f = `public/schwarz-hyp/h${b.id}-k${k}.json`;
-	return existsSync(f) ? (JSON.parse(readFileSync(f, "utf8")) as HypSchwarzPattern[]) : null;
+	return existsSync(f) ? decodeAtlas<HypSchwarzPattern>(JSON.parse(readFileSync(f, "utf8"))) : null;
 };
 
 /** Triangles in the whole (p,q,r) sphere = the order of the reflection group, 4 / (1/p+1/q+1/r−1). */

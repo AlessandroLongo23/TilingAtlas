@@ -6,15 +6,16 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { SPHERICAL_SOLIDS, polyhedronForId } from "@/lib/render/sphericalSolids";
+import { decodeAtlas } from "@/lib/services/atlasCodec";
 
 interface AtlasEntry {
 	id: string;
 	spherical?: { solid: string };
 }
 
-const atlas = JSON.parse(
-	readFileSync(resolve(process.cwd(), "public/reference-atlas-spherical.json"), "utf8"),
-) as AtlasEntry[];
+const atlas = decodeAtlas<AtlasEntry>(
+	JSON.parse(readFileSync(resolve(process.cwd(), "public/reference-atlas-spherical.json"), "utf8")),
+);
 
 describe("spherical catalogue ↔ solid registry wiring", () => {
 	it("every spherical catalogue entry resolves to a real Polyhedron", () => {

@@ -6,9 +6,11 @@ import { loadCatalogueKeys } from '../../scripts/moduli-graph/catalogueKeys';
 import { CyclotomicRing } from '@/classes/Cyclotomic';
 import { homology, type CellComplex } from '../../scripts/moduli-graph/chainComplex';
 import type { ParametricCellData } from '@/lib/utils/paramCell';
+import { decodeAtlas } from "@/lib/services/atlasCodec";
 
-const atlas = JSON.parse(readFileSync('public/reference-atlas-isotoxal.json', 'utf8'));
-const recs = (Array.isArray(atlas) ? atlas : atlas.records) as {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- these tests cast per-site below
+const atlas = decodeAtlas<any>(JSON.parse(readFileSync('public/reference-atlas-isotoxal.json', 'utf8')));
+const recs = atlas as {
   id: string; k?: number; source?: string; family?: string; paramCell?: ParametricCellData;
 }[];
 const twoParam = (fam: string) =>

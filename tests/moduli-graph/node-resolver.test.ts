@@ -4,9 +4,11 @@ import { CyclotomicRing } from '@/classes/Cyclotomic';
 import { loadCatalogueKeys } from '../../scripts/moduli-graph/catalogueKeys';
 import { extractNodes } from '../../scripts/moduli-graph/nodeExtractor';
 import { resolveNode } from '../../scripts/moduli-graph/nodeResolver';
+import { decodeAtlas } from "@/lib/services/atlasCodec";
 
-const atlas = JSON.parse(readFileSync('public/reference-atlas-isotoxal.json', 'utf8'));
-const fam = (Array.isArray(atlas) ? atlas : atlas.records).find((r: any) => r.id === 'ctrnact-isotoxal-family-k1-06');
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- these tests cast per-site below
+const atlas = decodeAtlas<any>(JSON.parse(readFileSync('public/reference-atlas-isotoxal.json', 'utf8')));
+const fam = atlas.find((r: any) => r.id === 'ctrnact-isotoxal-family-k1-06');
 
 describe('resolveNode on 3.3.4α', () => {
   it('resolves both endpoints to 3^6 and the interior to 3.3.3.4.4, all achiral', () => {

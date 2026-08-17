@@ -15,11 +15,13 @@ import {
 } from "./edge-board";
 import { developPentEdges, type PentEdgeRecord } from "./edgeDevelop";
 import { useConfiguration } from "@/stores/configuration";
+import { decodeAtlas } from "@/lib/services/atlasCodec";
 
 const K2 = "public/pentagon-edges/pe1-k2.json";
 const K4 = "public/pentagon-edges/pe1-k4.json";
 const anyShard = existsSync(K2);
-const read = (p: string): PentEdgeRecord[] => JSON.parse(readFileSync(p, "utf8"));
+const read = (p: string): PentEdgeRecord[] =>
+	decodeAtlas<PentEdgeRecord>(JSON.parse(readFileSync(p, "utf8")));
 
 const solved = (p: Partial<PentEdgeParams> = {}) => {
 	const r = solveEdgeBoard({ ...PENT_EDGE_DEFAULTS, ...p });

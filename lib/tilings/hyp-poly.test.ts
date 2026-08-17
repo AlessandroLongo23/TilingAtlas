@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { decodeAtlas } from "@/lib/services/atlasCodec";
 import {
 	hypPolyBoardKs,
 	hypPolyBoardLabel,
@@ -21,7 +22,7 @@ import {
 
 const shardOf = (b: HypPolyBoard, k: number): HypPolyPattern[] | null => {
 	const f = `public${hypPolyShardUrl(b.id, k)}`;
-	return existsSync(f) ? (JSON.parse(readFileSync(f, "utf8")) as HypPolyPattern[]) : null;
+	return existsSync(f) ? decodeAtlas<HypPolyPattern>(JSON.parse(readFileSync(f, "utf8"))) : null;
 };
 
 const anyShard = existsSync("public/hyperbolic-poly/hp7-k1.json");

@@ -2,9 +2,11 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { extractTwoCell } from '../../scripts/moduli-graph/twoCellExtractor';
+import { decodeAtlas } from "@/lib/services/atlasCodec";
 
-const atlas = JSON.parse(readFileSync('public/reference-atlas-isotoxal.json', 'utf8'));
-const recs = (Array.isArray(atlas) ? atlas : atlas.records) as { id: string; k: number; source: string; paramCell: any }[];
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- these tests cast per-site below
+const atlas = decodeAtlas<any>(JSON.parse(readFileSync('public/reference-atlas-isotoxal.json', 'utf8')));
+const recs = atlas as { id: string; k: number; source: string; paramCell: any }[];
 const twoParam = recs.filter((r) => r.k === 2 && r.source === 'isotoxal' && r.paramCell?.params?.length === 2);
 const first4a = twoParam.find((r) => (r as any).family === '4α')!;
 

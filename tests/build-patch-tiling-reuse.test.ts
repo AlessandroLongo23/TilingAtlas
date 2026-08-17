@@ -5,6 +5,7 @@ import { buildTilingFromCell } from "@/lib/render/buildPatchTiling";
 import { GenericPolygon } from "@/classes/polygons/GenericPolygon";
 import { evaluateParamCell, type ParametricCellData } from "@/lib/utils/paramCell";
 import type { TranslationalCellData } from "@/classes/algorithm/types";
+import { decodeAtlas } from "@/lib/services/atlasCodec";
 
 /**
  * `buildTilingFromCell` can rebuild INTO a previous grid instead of allocating a new one — the optimisation
@@ -15,7 +16,7 @@ import type { TranslationalCellData } from "@/classes/algorithm/types";
  */
 const shelfPath = path.join(process.cwd(), "public", "reference-atlas-mixed.json");
 const shelf: { id: string; paramCell?: ParametricCellData }[] = fs.existsSync(shelfPath)
-	? JSON.parse(fs.readFileSync(shelfPath, "utf8"))
+	? decodeAtlas<{ id: string; paramCell?: ParametricCellData }>(JSON.parse(fs.readFileSync(shelfPath, "utf8")))
 	: [];
 
 const family = shelf.find((r) => r.id === "ctrnact-mixed-family-k2-01" && r.paramCell)

@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { decodeAtlas } from "@/lib/services/atlasCodec";
 import {
 	canonicalConfig,
 	levelConfigsOf,
@@ -13,7 +14,7 @@ import {
 // visible, and once as a census over every shipped curved-geometry shard, which is what catches a
 // change of meaning in the data the classifier reads.
 
-const read = (p: string) => JSON.parse(readFileSync(p, "utf8"));
+const read = (p: string) => decodeAtlas<any>(JSON.parse(readFileSync(p, "utf8")));
 const HYP = "public/reference-atlas-hyperbolic.json";
 const SPH = "public/reference-atlas-spherical.json";
 const anyShard = existsSync(HYP) && existsSync(SPH);

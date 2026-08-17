@@ -14,12 +14,13 @@ import {
 import { IH_EDGE_BOARDS as IH_EDGE_BOARDS_SHELF } from "./edge-shelf";
 import { walkIhEdges, type IhEdgeRecord } from "./edgeDevelop";
 import { buildIhEdgePatch, certCellFaces, checkSlotsAreOpposite } from "./edgePatch";
+import { decodeAtlas } from "@/lib/services/atlasCodec";
 
 const shardIh = (ih: number, k: number) =>
 	`public/isohedral-edges/ie${String(ih).padStart(2, "0")}-k${k}.json`;
 const anyShard = existsSync(shardIh(1, 2));
 const readIh = (ih: number, k: number): IhEdgeRecord[] =>
-	JSON.parse(readFileSync(shardIh(ih, k), "utf8"));
+	decodeAtlas(JSON.parse(readFileSync(shardIh(ih, k), "utf8")));
 const read = (k: number): IhEdgeRecord[] => readIh(1, k);
 /** A board's own shipped k slices, ascending. ⚑ Never hard-code 2, 4, 6 across boards: IH07 starts at
  *  k=4 (its bare tiling has four vertex orbits) and IH08 at k=1 (it has one, and odd k throughout). */

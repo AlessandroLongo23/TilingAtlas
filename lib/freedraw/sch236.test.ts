@@ -3,10 +3,11 @@ import { describe, expect, it } from "vitest";
 import { analyseFaces, componentLifts, summarise } from "./faces";
 import type { FreedrawPattern } from "./pattern";
 import { classifyRegular } from "./regular";
+import { decodeAtlas } from "@/lib/services/atlasCodec";
 
 const load = (file: string): FreedrawPattern[] | null =>
 	existsSync(`public/freedraw/${file}`)
-		? (JSON.parse(readFileSync(`public/freedraw/${file}`, "utf8")) as FreedrawPattern[])
+		? decodeAtlas<FreedrawPattern>(JSON.parse(readFileSync(`public/freedraw/${file}`, "utf8")))
 		: null;
 
 const k3 = load("sch236-solutions-k3.json");

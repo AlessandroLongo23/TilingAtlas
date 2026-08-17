@@ -11,6 +11,7 @@ import {
 } from "./hyp-half";
 // A half-tile record IS a HypPolyPattern — same quotient, same client renderer, no new type.
 import type { HypPolyPattern } from "./hyp-poly";
+import { decodeAtlas } from "@/lib/services/atlasCodec";
 
 // The halved-{p,q} shelf. Six boards, 23,372 tilings, and until this file existed nothing checked any of
 // it — which is how two of them shipped calling a quadrilateral a triangle.
@@ -22,7 +23,7 @@ import type { HypPolyPattern } from "./hyp-poly";
 
 const shardOf = (b: HypHalfBoard, k: number): HypPolyPattern[] | null => {
 	const f = `public${hypHalfShardUrl(b.id, k)}`;
-	return existsSync(f) ? (JSON.parse(readFileSync(f, "utf8")) as HypPolyPattern[]) : null;
+	return existsSync(f) ? decodeAtlas<HypPolyPattern>(JSON.parse(readFileSync(f, "utf8"))) : null;
 };
 
 const anyShard = existsSync("public/hyperbolic-half/hyphalf-45-half-k2.json");

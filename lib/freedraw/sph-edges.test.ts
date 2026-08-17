@@ -10,6 +10,7 @@ import {
 	type SphEdgesShard,
 } from "./sph-edges";
 import { sphSchwarzScene } from "@/lib/render/sphSchwarz";
+import { decodeAtlas, decodeShard } from "@/lib/services/atlasCodec";
 
 // The uniform-polyhedron edge shelf's decode checks. As with the Schwarz shelf, the develop itself is
 // develop_sph_edges.py's business (it fails loudly); what is asserted here is what the SHIPPED data must
@@ -18,7 +19,7 @@ import { sphSchwarzScene } from "@/lib/render/sphSchwarz";
 
 const shardOf = (b: SphEdgesBoard, k: number): SphEdgesShard | null => {
 	const f = `public${sphEdgesShardUrl(b.id, k)}`;
-	return existsSync(f) ? (JSON.parse(readFileSync(f, "utf8")) as SphEdgesShard) : null;
+	return existsSync(f) ? decodeShard(JSON.parse(readFileSync(f, "utf8")) as SphEdgesShard) : null;
 };
 
 const anyShard = existsSync("public/spherical-edges/x443-k1.json");

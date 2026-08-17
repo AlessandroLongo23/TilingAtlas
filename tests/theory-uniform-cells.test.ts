@@ -3,6 +3,8 @@ import path from "node:path";
 import { describe, it, expect } from "vitest";
 import { buildCellMesh } from "@/lib/render/buildCellMesh";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
+import { decodeAtlas } from "@/lib/services/atlasCodec";
+import { hydrateRenderCells } from "@/lib/services/renderCellDerive";
 
 // /theory embeds the 11 uniform tilings' render cells straight from the reference atlas (see
 // app/(app)/theory/page.tsx). Guard the contract: all 11 ids present, every cell mesh-buildable,
@@ -13,9 +15,9 @@ const UNIFORM_IDS = [
 	"t1007", "t1008", "t1009", "t1010", "t1011",
 ];
 
-const atlas = JSON.parse(
-	readFileSync(path.join(process.cwd(), "public", "reference-atlas.json"), "utf8"),
-) as { id: string; k: number; renderCell: TranslationalCellData }[];
+const atlas = hydrateRenderCells(decodeAtlas<{ id: string; k: number; renderCell: TranslationalCellData }>(
+	JSON.parse(readFileSync(path.join(process.cwd(), "public", "reference-atlas.json"), "utf8")),
+));
 
 describe("theory page uniform-tiling cells", () => {
 	it("finds all 11 uniform tilings (k=1) in the reference atlas", () => {

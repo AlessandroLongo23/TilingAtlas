@@ -1,9 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { extractNodes } from '../../scripts/moduli-graph/nodeExtractor';
+import { decodeAtlas } from "@/lib/services/atlasCodec";
 
-const atlas = JSON.parse(readFileSync('public/reference-atlas-isotoxal.json', 'utf8'));
-const fam = (Array.isArray(atlas) ? atlas : atlas.records).find((r: any) => r.id === 'ctrnact-isotoxal-family-k1-06');
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- these tests cast per-site below
+const atlas = decodeAtlas<any>(JSON.parse(readFileSync('public/reference-atlas-isotoxal.json', 'utf8')));
+const fam = atlas.find((r: any) => r.id === 'ctrnact-isotoxal-family-k1-06');
 
 describe('extractNodes on 3.3.4α', () => {
   it('finds two endpoints and one interior node near α=90°', () => {
@@ -22,7 +24,7 @@ describe('extractNodes does not fire on non-flexing regular tiles', () => {
   // A min-over-tiles regularity test would see the always-square tiles and report spurious
   // interior nodes (e.g. α≈51 where the rhombi are 51°). The whole-tiling (worst-tile)
   // measure must fire only where every tile is regular — near α=90.
-  const f = (Array.isArray(atlas) ? atlas : atlas.records).find(
+  const f = atlas.find(
     (r: any) => r.id === 'ctrnact-isotoxal-family-k1-03',
   );
 
@@ -39,7 +41,7 @@ describe('extractNodes emits collapsed endpoints as degenerate (⊥) limits', ()
   // genuine degenerate limit, so both endpoints must still be emitted (empty, non-regular) — the
   // resolver routes an empty tiling to ⊥. Dropping them silently deletes the ⊥—4⁴—⊥ relation (the
   // α=90° square between two collapses), which is exactly the bug this guards.
-  const f = (Array.isArray(atlas) ? atlas : atlas.records).find(
+  const f = atlas.find(
     (r: any) => r.id === 'ctrnact-isotoxal-family-k1-09',
   );
 

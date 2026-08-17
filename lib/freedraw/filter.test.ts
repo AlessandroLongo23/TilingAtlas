@@ -12,6 +12,7 @@ import {
 } from "./filter";
 import type { FreedrawPattern } from "./pattern";
 import { classifyRegular, type RegularInfo } from "./regular";
+import { decodeAtlas } from "@/lib/services/atlasCodec";
 
 /** A summary standing in for a pattern, so the predicate can be tested without building a tiling. */
 const stats = (over: Partial<FaceSummary> = {}): FaceSummary => ({
@@ -194,7 +195,7 @@ const CATALOGUE = "public/freedraw";
 
 const load = (file: string): FreedrawPattern[] | null =>
 	existsSync(`${CATALOGUE}/${file}`)
-		? (JSON.parse(readFileSync(`${CATALOGUE}/${file}`, "utf8")) as FreedrawPattern[])
+		? decodeAtlas<FreedrawPattern>(JSON.parse(readFileSync(`${CATALOGUE}/${file}`, "utf8")))
 		: null;
 
 const count = (patterns: FreedrawPattern[], f: Partial<FreedrawFilter>) => {

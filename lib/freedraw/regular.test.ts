@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { analyseFaces } from "./faces";
 import type { FreedrawPattern } from "./pattern";
 import { classifyRegular } from "./regular";
+import { decodeAtlas } from "@/lib/services/atlasCodec";
 
 const sq = (
 	a: number, b: number, d: number, h: number[], v: number[],
@@ -56,7 +57,7 @@ describe("classifyRegular — mechanics", () => {
 const CATALOGUE = "public/freedraw";
 const load = (file: string): FreedrawPattern[] | null =>
 	existsSync(`${CATALOGUE}/${file}`)
-		? (JSON.parse(readFileSync(`${CATALOGUE}/${file}`, "utf8")) as FreedrawPattern[])
+		? decodeAtlas<FreedrawPattern>(JSON.parse(readFileSync(`${CATALOGUE}/${file}`, "utf8")))
 		: null;
 
 const allRegular = (ps: FreedrawPattern[]) => ps.filter((p) => info(p).allRegular);
