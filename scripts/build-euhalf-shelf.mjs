@@ -16,6 +16,11 @@
 // all still here (verified by exact congruence, board by board) and are heavily outnumbered by the new
 // ones. See experiments/results/euhalf-nonedge-to-edge-2026-08-17.log.
 //
+// AND THE SPLIT RUN IS THE ONLY SOURCE, since 2026-08-18. Divided edges are dear enough that the split
+// palette reaches a lower k than the plain one, and topping the difference up from the plain runs left
+// two boards claiming k they had only partly enumerated. Those slices are gone; see the long comment at
+// the read below for what it cost.
+//
 // Input is tools/ctrnact-oracle/develop_tri45.py output: each entry carries its exact period lattice
 // and its developed faces, so this certifies, dedupes and writes.
 //
@@ -45,7 +50,6 @@ const EAGER_MAX = 4;
 const BOARDS = [
 	{
 		id: 'hexv', label: '{6} halved by its long diagonal', cells: 'run-eu-half-hex-v-split-k6/eu-half-hex-v-split-cells.json',
-		cellsEdgeToEdge: 'run-eu-half-hex-v-k13/eu-half-hex-v-cells.json',
 		D: 6, hue: 205, tile: '60-120-120-60 trapezoid',
 		angles: [60, 120, 120, 60], sides: [1, 1, 1, 2],
 		note: 'Half a regular hexagon, cut by the long diagonal from a vertex to the opposite vertex. Two of '
@@ -55,7 +59,6 @@ const BOARDS = [
 	},
 	{
 		id: 'pent', label: '{5} halved by its mirror', cells: 'run-eu-half-pent-split-k9/eu-half-pent-split-cells.json',
-		cellsEdgeToEdge: 'run-eu-half-pent-k14/eu-half-pent-cells.json',
 		D: 20, hue: 28, tile: '54-108-108-90 quadrilateral',
 		angles: [54, 108, 108, 90], sides: [1, 2, 2, COT18],
 		note: 'Half a regular pentagon, cut by its mirror from a vertex to the midpoint of the opposite edge. '
@@ -68,7 +71,6 @@ const BOARDS = [
 	},
 	{
 		id: 'hexm', label: '{6} halved between opposite edges', cells: 'run-eu-half-hex-m-split-k9/eu-half-hex-m-split-cells.json',
-		cellsEdgeToEdge: 'run-eu-half-hex-m-k6/eu-half-hex-m-cells.json',
 		D: 12, hue: 140, tile: '90-120-120-120-90 pentagon',
 		angles: [90, 120, 120, 120, 90], sides: [1, 2, 2, 1, 2 * Math.sqrt(3)],
 		note: 'The hexagon’s other cut, joining the midpoints of two opposite edges, which makes a '
@@ -94,7 +96,6 @@ const BOARDS = [
 	},
 	{
 		id: 'sqmid', label: '{4} halved between opposite edges', cells: 'run-eu-half-sq-mid-split-k6/eu-half-sq-mid-split-cells.json',
-		cellsEdgeToEdge: 'run-eu-half-sq-mid-k6/eu-half-sq-mid-cells.json',
 		D: 4, hue: 320, tile: '1×2 rectangle (the domino)',
 		angles: [90, 90, 90, 90], sides: [1, 2, 1, 2],
 		note: 'The square’s midpoint cut is the DOMINO. Edge-to-edge it has exactly ONE tiling, provably: '
@@ -250,24 +251,21 @@ const eager = [];
 const lazy = new Map();
 
 for (const B of BOARDS) {
-	// TWO SOURCES, AND THE SPLIT ONE ONLY REACHES SO FAR. The `-split` palette finds everything the
-	// unsplit one finds and much more, but it pays for it: one geometric tiling appears under many
-	// combinatorial labellings once flat corners are in play (35,193 solver solutions for 856 tilings on
-	// hexv), so the reachable k is lower. The unsplit runs go far deeper and are still correct as far as
-	// they go — they are simply the edge-to-edge SUBSET. So take the split records up to their ceiling
-	// and the unsplit records above it, and say so per board rather than silently shipping a shallower
-	// shelf than the one it replaces.
-	const split = JSON.parse(readFileSync(path.join(ORACLE, B.cells), 'utf8'));
-	const splitMax = Math.max(...split.map((e) => e.k));
-	const deeper = B.cellsEdgeToEdge
-		? JSON.parse(readFileSync(path.join(ORACLE, B.cellsEdgeToEdge), 'utf8')).filter((e) => e.k > splitMax)
-		: [];
-	const allEntries = [...split, ...deeper];
-	const entries = allEntries.filter((e) => isPrimitive(e.faces, e.T1, e.T2, residue));
-	const supercells = allEntries.length - entries.length;
-	if (supercells) console.log(`  ${B.id}: dropped ${supercells} supercell description(s) of ${allEntries.length}`);
-	B.splitMax = splitMax;
-	B.deeperMax = deeper.length ? Math.max(...deeper.map((e) => e.k)) : splitMax;
+	// ONE SOURCE, AND THE SHELF STOPS WHERE IT STOPS. The `-split` palette finds everything the unsplit
+	// one finds and much more, but it pays for it: one geometric tiling appears under many combinatorial
+	// labellings once flat corners are in play (35,193 solver solutions for 856 tilings on hexv), so the
+	// reachable k is lower — hexv to 6 where the unsplit run reached 13, pent to 9 where it reached 14.
+	// For one day this builder topped up the difference from the deeper edge-to-edge runs, which made the
+	// upper k of two boards a SUBSET wearing a complete shelf's clothes. AL, 2026-08-17: "if they are too
+	// heavy to run, I prefer not to have them rather than having them present only partial enumeration."
+	// So the top-up is gone and every k on every board here is a complete enumeration of that k. What it
+	// cost: 26,876 hexv records at k=7..13 and 486 pent records at k=10..14. The deeper unsplit runs are
+	// still on disk under tools/ctrnact-oracle/run-eu-half-*-k1*/ if they are ever wanted back.
+	const entries0 = JSON.parse(readFileSync(path.join(ORACLE, B.cells), 'utf8'));
+	const entries = entries0.filter((e) => isPrimitive(e.faces, e.T1, e.T2, residue));
+	const supercells = entries0.length - entries.length;
+	if (supercells) console.log(`  ${B.id}: dropped ${supercells} supercell description(s) of ${entries0.length}`);
+	B.splitMax = Math.max(...entries.map((e) => e.k));
 	grandRaw += entries.length;
 	const want = { sides: [...B.sides].sort((a, b) => a - b), angs: [...B.angles].sort((a, b) => a - b) };
 
@@ -454,15 +452,9 @@ for (const B of BOARDS) {
 						: '. ')
 					+ `${B.note} `
 					+ 'Certified here: every face is exactly the tile, the faces cover the period cell with no gap '
-					+ 'and no overlap, and every vertex sees a full turn.'
-					// A k above the divided-edge ceiling is the EDGE-TO-EDGE enumeration only, and the record has
-					// to say so. Without it the shelf reads as complete at every k it lists, which is exactly the
-					// claim it cannot support there (AL, 2026-08-17).
-					+ (k > B.splitMax
-						? ` Note that k = ${k} on this board counts EDGE-TO-EDGE tilings only: the divided-edge `
-							+ `search reached k = ${B.splitMax} and no further, so this slice is a subset and not a `
-							+ 'complete enumeration.'
-						: ''),
+					+ 'and no overlap, and every vertex sees a full turn. Every k this board lists is a COMPLETE '
+					+ 'enumeration with divided edges allowed; where the search could not reach, the shelf is '
+					+ 'silent instead of partial.',
 			};
 		});
 		if (k <= EAGER_MAX) eager.push(...ref);

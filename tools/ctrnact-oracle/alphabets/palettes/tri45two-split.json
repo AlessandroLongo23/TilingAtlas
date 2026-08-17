@@ -1,0 +1,46 @@
+{
+  "name": "tri45two-split",
+  "D": 24,
+  "tileGeometry": "euclidean",
+  "closure": "euclidean",
+  "comment": "THE 45-45-90 TRIANGLE AT TWO SCALES, remodelled so the search can place its tiles NON-EDGE-TO-EDGE. Same construction as tri45all-split and the same Marek Ctrnact case (2026-08-16): of the three edge types S=1, H=sqrt2, D=2, only D decomposes, as S + S, so only the big triangle T2 can have an edge met by two neighbours. Its hypotenuse gains a FLAT 180-degree corner at the midpoint, [6,3,3] with edges (H,D,H) becoming [6,3,12,3] with edges (H,S,S,H) -- a 4-gon whose angles sum to 24 = (4-2)*24/2, so it is the same triangle and the extra corner is a modelling device, dropped again before anything ships. H=sqrt2 decomposes into nothing (S+S=2 is D, not H), so the small triangle T1 is unchanged. Supersedes tri45two. Needs the min_len fix of 2026-08-17 in gen_alphabet.py (a >= D//2), without which the flat-flat mid-edge vertex is rejected and two triangles cannot abut along their full hypotenuses.",
+  "edgeLengths": {
+    "S": "1",
+    "H": "sqrt2",
+    "D": "2"
+  },
+  "tiles": [
+    {
+      "kind": "composite",
+      "name": "T1",
+      "famchar": "t",
+      "angles": [
+        6,
+        3,
+        3
+      ],
+      "edges": [
+        "S",
+        "H",
+        "S"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "T2",
+      "famchar": "u",
+      "angles": [
+        6,
+        3,
+        12,
+        3
+      ],
+      "edges": [
+        "H",
+        "S",
+        "S",
+        "H"
+      ]
+    }
+  ]
+}

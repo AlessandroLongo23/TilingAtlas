@@ -63,6 +63,9 @@ import {
 	loadPentagonEdgesShard,
 	loadIsohedralEdgesAtlas,
 	loadIsohedralEdgesShard,
+	loadColorsDecorAtlas,
+	loadFreedrawDecorAtlas,
+	loadHyperbolicBaseAtlas,
 	loadHyperbolicPolyAtlas,
 	loadHyperbolicPolyShard,
 	loadHyperbolicHalfShard,
@@ -318,8 +321,9 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			{ re: /^ctrnact-(?:mixed-family|cross-star-scaled)-k(\d+)-/, load: loadMixedAtlasShard, ks: MIXED_SHARD_KS },
 			// "d-ctrnact-07_3t-…" / "s-ctrnact-01_3e-…" — the two-digit field after the palette tag is k.
 			{ re: /^[ds]-ctrnact-0*(\d+)_/, load: loadScaledAtlasShard, ks: SCALED_SHARD_KS },
-			// "euhhexv-k12-00001" — the Euclidean half-polygons. Same reason as the two above: their tail
-			// is ten slices and 110 MB, so it stays off KNOWN_HIGHER_TIERS and resolves one shard per link.
+			// "euhtri-k5-00001" — the Euclidean half-polygons. Same reason as the two above: their tail is
+			// five slices, k=5 alone 9,357 tilings, so it stays off KNOWN_HIGHER_TIERS and resolves one
+			// shard per link.
 			{ re: /^euh[a-z]+-k(\d+)-/, load: loadEuHalfAtlasShard, ks: EUHALF_SHARD_KS },
 		];
 		const hit = RESOLVERS.map((r) => ({ r, m: requestedKey.match(r.re) })).find((x) => x.m);
@@ -416,6 +420,16 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// Tilings / Edge patterns / Colorings — see decorationOf. Default "tilings", which is where the initial
 	// Euclidean selection lands.
 	const [decoration, setDecoration] = useState<Decoration>("tilings");
+	// The two decoration catalogues are deferred (see loadColorsDecorAtlas). Until one arrives its count
+	// is 0, and a 0 disables the chip — which would deadlock, because clicking the chip is what fetches
+	// it. This marks them PENDING so they stay clickable and read "…" instead of a wrong zero.
+	const [decorLoaded, setDecorLoaded] = useState<{ edges: boolean; colorings: boolean }>({
+		edges: false,
+		colorings: false,
+	});
+	// Same story one axis up: the base hyperbolic shelf is deferred, so its geometry chip reads 0 and
+	// `disabled={empty}` would grey out the only control that fetches it.
+	const [hypLoaded, setHypLoaded] = useState(false);
 	// Per-geometry tiling counts (labels the segments; a zero disables its segment until the lazy shard
 	// merges in). Derived once per atlas change, not per geometry switch.
 	const geometryCounts = useMemo(() => {
@@ -583,7 +597,11 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			|| SPH_HALF_BOARDS.some((b) => requestedKey?.startsWith(`sh${b.id}-`));
 		// "hh<board>-" is the half-tile boards; without this a /library click on one lands on the default
 		// tiling, exactly as the spherical halves did before their line above.
+		// "hyp-" is the BASE hyperbolic shelf, deferred 2026-08-17 (see loadHyperbolicBaseAtlas). Its ids
+		// are "hyp-6-6-7", which does NOT match the "hp" test below — without this line every deep link
+		// to a base hyperbolic tiling would silently land on t1001, the same failure the star shelf hit.
 		const wantHyp = geometry === "hyperbolic" || !!requestedKey?.startsWith("hp")
+			|| !!requestedKey?.startsWith("hyp-")
 			|| HYP_HALF_BOARDS.some((b) => requestedKey?.startsWith(`hh${b.id}-`));
 		// The pentagon edge shelf is EUCLIDEAN — a plane tiling — so it rides this effect's default
 		// geometry rather than one of the curved ones.
@@ -599,11 +617,41 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				return add.length ? [...base, ...add] : base;
 			});
 		};
+		// These two take ~20 s to fetch and parse (78.5 MB of colourings alone), which is long enough for
+		// `requestedKey` to change under them when /play rewrites its own URL — and the shared `merge`
+		// drops its payload when that re-runs the effect and flips `alive`. The rows would then never
+		// arrive, because the loaders are cached and the second call resolves instantly with nothing left
+		// to trigger a merge. So these merge UNCONDITIONALLY: they are append-only and dedup by key.
+		const mergeAlways = (data: ReferenceTiling[]) => {
+			if (data.length === 0) return;
+			setRefList((prev) => {
+				const base = prev ?? [];
+				const have = new Set(base.map((t) => t.canonicalKey));
+				const add = data.map(referenceToCatalogue).filter((t) => !have.has(t.canonicalKey));
+				return add.length ? [...base, ...add] : base;
+			});
+		};
 		if (wantSph) {
 			loadSphericalEdgesAtlas().then(merge).catch(() => {});
 			loadSphericalPolyAtlas().then(merge).catch(() => {});
 		}
-		if (wantHyp) loadHyperbolicPolyAtlas().then(merge).catch(() => {});
+		if (wantHyp) {
+			loadHyperbolicBaseAtlas().then((d) => { mergeAlways(d); setHypLoaded(true); }).catch(() => {});
+			loadHyperbolicPolyAtlas().then(merge).catch(() => {});
+		}
+		// The DECORATION catalogues are the bulk of what /play used to parse at open: ~70 MB of colourings
+		// and ~25 MB of edge patterns, for chips the viewer had not clicked. Gated on the chip, plus the
+		// id prefixes so a deep link into either still resolves instead of falling back to t1001.
+		if (decoration === "edges" || requestedKey?.startsWith("fd")) {
+			loadFreedrawDecorAtlas()
+				.then((d) => { mergeAlways(d); setDecorLoaded((s) => (s.edges ? s : { ...s, edges: true })); })
+				.catch(() => {});
+		}
+		if (decoration === "colorings" || requestedKey?.startsWith("col")) {
+			loadColorsDecorAtlas()
+				.then((d) => { mergeAlways(d); setDecorLoaded((s) => (s.colorings ? s : { ...s, colorings: true })); })
+				.catch(() => {});
+		}
 		if (wantEuc) loadPentagonEdgesAtlas().then(merge).catch(() => {});
 		if (wantEuc) loadIsohedralEdgesAtlas().then(merge).catch(() => {});
 		const pe = requestedKey?.match(/^pe(.+?)-(\d+)-/);
@@ -632,7 +680,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		return () => {
 			alive = false;
 		};
-	}, [geometry, requestedKey]);
+	}, [geometry, decoration, requestedKey]);
 
 	// Colored tilings in H² and on S² — the same lazy pattern. The per-base/solid eager slices load once the
 	// matching geometry is entered (or a deep-link "hc…"/"sc…" key arrives); dense shards load per-k below.
@@ -1230,7 +1278,9 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					geometryCounts={geometryCounts}
 					onGeometryChange={onGeometryChange}
 					decoration={decoration}
+					geometryPending={{ hyperbolic: !hypLoaded }}
 					decorationCounts={decorationCounts}
+					decorationPending={{ edges: !decorLoaded.edges, colorings: !decorLoaded.colorings }}
 					onDecorationChange={onDecorationChange}
 				/>
 			</div>

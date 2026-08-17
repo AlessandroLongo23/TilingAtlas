@@ -1,0 +1,212 @@
+{
+  "name": "planigon-lite",
+  "D": 24,
+  "tileGeometry": "euclidean",
+  "closure": "euclidean",
+  "comment": "THE CONTROL FOR planigon-split-lite. The same eleven planigons -- every one that does not touch a dodecagon -- with their edges left WHOLE, so the difference between this run and the split one is exactly what non-edge-to-edge arrangements add, with no change of tile set to confound it. The shipped planigon shelf uses all fifteen tiles and cannot be compared against the split run directly. Generated inline on 2026-08-18; see experiments/results/planigon-nonedge-to-edge-2026-08-18.log.",
+  "edgeLengths": {
+    "L1": "6sqrt3",
+    "L2": "6+6sqrt2",
+    "L3": "6+3sqrt2",
+    "L5": "3+3sqrt3",
+    "L9": "6",
+    "L10": "4sqrt3",
+    "L11": "3+sqrt3",
+    "L12": "2sqrt3"
+  },
+  "tiles": [
+    {
+      "kind": "composite",
+      "name": "P6.6.6",
+      "famchar": "a",
+      "angles": [
+        4,
+        4,
+        4
+      ],
+      "edges": [
+        "L1",
+        "L1",
+        "L1"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P8.8.4",
+      "famchar": "b",
+      "angles": [
+        3,
+        3,
+        6
+      ],
+      "edges": [
+        "L2",
+        "L3",
+        "L3"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P4.4.4.4",
+      "famchar": "c",
+      "angles": [
+        6,
+        6,
+        6,
+        6
+      ],
+      "edges": [
+        "L9",
+        "L9",
+        "L9",
+        "L9"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P6.3.6.3",
+      "famchar": "d",
+      "angles": [
+        4,
+        8,
+        4,
+        8
+      ],
+      "edges": [
+        "L10",
+        "L10",
+        "L10",
+        "L10"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P6.4.3.4",
+      "famchar": "e",
+      "angles": [
+        4,
+        6,
+        8,
+        6
+      ],
+      "edges": [
+        "L5",
+        "L11",
+        "L11",
+        "L5"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P6.4.4.3",
+      "famchar": "f",
+      "angles": [
+        4,
+        6,
+        6,
+        8
+      ],
+      "edges": [
+        "L5",
+        "L9",
+        "L11",
+        "L10"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P6.6.3.3",
+      "famchar": "g",
+      "angles": [
+        4,
+        4,
+        8,
+        8
+      ],
+      "edges": [
+        "L1",
+        "L10",
+        "L12",
+        "L10"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P4.3.4.3.3",
+      "famchar": "h",
+      "angles": [
+        6,
+        8,
+        6,
+        8,
+        8
+      ],
+      "edges": [
+        "L11",
+        "L11",
+        "L11",
+        "L12",
+        "L11"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P4.4.3.3.3",
+      "famchar": "i",
+      "angles": [
+        6,
+        6,
+        8,
+        8,
+        8
+      ],
+      "edges": [
+        "L9",
+        "L11",
+        "L12",
+        "L12",
+        "L11"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P6.3.3.3.3",
+      "famchar": "j",
+      "angles": [
+        4,
+        8,
+        8,
+        8,
+        8
+      ],
+      "edges": [
+        "L10",
+        "L12",
+        "L12",
+        "L12",
+        "L10"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P3.3.3.3.3.3",
+      "famchar": "k",
+      "angles": [
+        8,
+        8,
+        8,
+        8,
+        8,
+        8
+      ],
+      "edges": [
+        "L12",
+        "L12",
+        "L12",
+        "L12",
+        "L12",
+        "L12"
+      ]
+    }
+  ]
+}

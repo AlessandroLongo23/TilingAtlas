@@ -67,6 +67,47 @@ export interface UpdateEntry {
 /** Newest first. tests/updates.test.ts asserts that ordering, and every id below. */
 export const UPDATES: UpdateEntry[] = [
 	{
+		version: "1.28.0",
+		date: "2026-08-18",
+		title: "Tilings that are not edge-to-edge",
+		commit: "37c2b81",
+		changes: [
+			{
+				kind: "feature",
+				text: "**A tile's edge can now be met by two neighbours instead of one**, the T-junction case Marek Čtrnáct pointed out, and it was missing from every shelf whose tiles have an edge as long as two others.",
+				href: "/library",
+				tilings: ["tri45x-k2-072", "euhtri-k1-0005", "euhsqmid-k1-0002"],
+			},
+			{
+				kind: "content",
+				text: "**The 45-45-90 shelf goes from 5,313 tilings to 16,964**, and every one it carried before is still on it.",
+				href: "/library",
+				tilings: ["tri45a-k2-155", "tri45x-k3-413"],
+			},
+			{
+				kind: "content",
+				text: "**The domino tiles the plane 496 ways**, where matching every edge whole allows exactly one: running bond, herringbone and basketweave all need a long side met by two tiles.",
+				tilings: ["euhsqmid-k1-0002", "euhhexv-k2-0006"],
+			},
+			{
+				kind: "fix",
+				text: "**A fifth of the 45-45-90 shelf was being discarded before it shipped.** That shelf recognised two tilings as the same by comparing a small patch of each, and at 16 tiles per cell a patch that size cannot tell them apart; the comparison is now exact.",
+			},
+			{
+				kind: "fix",
+				text: "**Squares on that shelf were filed as triangles**, so picking the square in the polygon filter never found them.",
+			},
+			{
+				kind: "changed",
+				text: "**27,362 half-polygon tilings have been withdrawn.** They were real, but they came from a search that could not divide an edge, so the slices holding them counted a subset while reading as a complete enumeration.",
+				items: [
+					"the halved hexagon now stops at k = 6 and the halved pentagon at k = 9: each board lists only the k it can enumerate with divided edges allowed",
+					"nothing else changed shelf: the halved triangle, the second hexagon cut and the domino were already inside their own ceiling",
+				],
+			},
+		],
+	},
+	{
 		version: "1.27.1",
 		date: "2026-08-15",
 		title: "The mixed shelf reaches k = 4",

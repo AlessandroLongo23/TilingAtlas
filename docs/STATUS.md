@@ -6,6 +6,55 @@
 > entry of each ledger. **Never write history here.** — last updated 2026-08-17, CC
 > (acting as TA too, AL authorization 2026-07-10).
 
+## A shelf ships only the k it can enumerate (2026-08-18) — the standing rule now
+
+AL: **"if they are too heavy to run, I prefer not to have them rather than having them present only
+partial enumeration."** A shelf whose upper k comes from a shallower search than its lower k is a
+data-integrity bug, and labelling those records does not fix it. Applied: `build-euhalf-shelf.mjs` lost
+its `cellsEdgeToEdge` top-up, so one source per board and `enumeratedTo` is the single ceiling — the
+invariant is structural, not documented. **27,362 tilings withdrawn** (hexv k=7…13, pent k=10…14),
+shelf 40,234 → 12,872. The withdrawn runs are on disk under `tools/ctrnact-oracle/run-eu-half-*/`.
+
+**tri45 is 5,313 → 16,964 tilings.** Two of its three palettes have a divisible edge (D = 2 = S + S), so
+they shipped edge-to-edge counts only; `tri45sq` does not and did not. Split palettes, everything re-run
+on current code, k≤4. Containment exact by congruence: 0 lost of 7,604 on tri45all, every one at the
+same k. ⚑ Found doing it: that shelf's dedup compared radius-3.2 patches and had been merging distinct
+tilings since it shipped — 13,458 that way against 16,964 exact, about a fifth of the shelf. It now uses
+the exact oracle `build-euhalf-shelf.mjs` already had. ⚑ Also: every cell polygon said `n: 3`, so both
+squares on the shelf were filed as triangles.
+
+**Planigons: measured, not shipped.** Seven of the twelve planigon edge lengths are sums of others, in
+33 ways, so the shipped shelf (18/67/233/749) counts a subset. But the engine matches half-edge type to
+half-edge type, so only cutting EVERY edge into atoms (L2, L3, L9, L11, L12) makes every arrangement
+reachable, and that is **1,853 tile variants against the palette's 15**, P12.12.3 alone being 1,620.
+Bounded run on the eleven non-dodecagon planigons: k=1 6 → 36, k=2 27 → 195, containment exact, alphabet
+1,821 → 86,993 entries. Shipping eleven of fifteen tiles would be the same bug this section removed.
+**Next:** a cheaper representation of a divided edge than one variant per ordered composition.
+
+## The atlas container format: the corpus is half its old size (2026-08-17)
+
+Every shelf file, whatever its geometry, tile class or k, is now written and read through ONE format:
+`scripts/atlas/encode.mjs` writes, `lib/services/atlasCodec.ts` reads, and all 10 builders plus every
+reader in the app, the tests and the scripts go through them. **937 tracked public JSON files,
+2,027 MB → 961 MB (53%)**, no record lost, /library render pixel-identical.
+
+Four opt-in tables, each omitted when it would not pay: `dict` (repeated strings), `refs` (repeated
+objects/arrays, including one level down a dotted path), `elems` (repeated array elements), `geom`
+(polygon shapes + anchors). Two on-disk shapes: a record array, and a `{…, patterns: […]}` wrapper.
+A legacy bare array still decodes, so migration stayed per-file.
+
+`renderCell` is no longer shipped where `exactSource` reproduces it — 201 MB, derived on first draw by a
+lazy accessor so none of its 72 read sites changed. The strip is gated per record on a GEOMETRIC test,
+because reconstruction reorders polygons (3,410 of 6,193 come back written differently, all of them the
+same geometry up to rotation/reversal).
+
+**Defused:** `reference-atlas-scaled-k7.json` was staged at 95.5 MiB against GitHub's 100 MiB blob block.
+It is 10 MB now, and the largest file in the repo is 34.5 MiB.
+
+**Next, scoped but not started:** the eager /library load is still 148 MB raw / 9.2 MB gzip (was 212 /
+12.2). The remainder is `patch.edges` and `darts`, genuinely unique per record, and only an index/payload
+split fixes it — ship a browse index (~5.6 bytes/record gzipped) and fetch geometry per visible tile.
+
 ## Star polyhedra: 54 solids on a new spherical shelf (2026-08-17)
 
 The Atlas had no self-intersecting {n/d} face anywhere on the sphere. It has one now, and with it the
@@ -66,15 +115,20 @@ pinned by its angles (2n-3 degrees of freedom against n) — those boards declar
 certificate is the check. {6,4} and {4,6} share a cut length exactly: cosh R = cot(π/p)cot(π/q) is
 symmetric, so dual pairs share a circumradius.
 
-**Euclidean: the family is FINITE, six boards, and 27,728 tilings are ON THE SHELF.**
+**Euclidean: the family is FINITE, six boards, and 12,872 tilings are ON THE SHELF.**
 Two filters bound it: the angles give a + 2b = 4 + 8/(n−2), so (n−2) must divide 8, and edge-slot parity
 (every edge type's slot count at a vertex is even) kills two survivors. Live for exactly n=3 mirror,
-n=4 both cuts, n=5 mirror, n=6 both; empty for every n ≥ 7. Two were already shipped under other names
-(planigon `P12.6.4` = 30-60-90, the tri45 shelf = 45-45-90). New: `eu-half-hex-v` 27,159 to k=13,
-`eu-half-pent` 567 to k=14, `eu-half-hex-m` 1, `eu-half-sq-mid` 1 (provably the only one). The
-half-pentagon tiles the plane at k=1 although the regular pentagon cannot. Shelved under Euclidean →
-Different edge lengths as four folders, one per TILE SHAPE; k≤4 eager, k=5…14 lazy and fetched only
-by their own k chip (110 MB of JSON, ~7 gzipped).
+n=4 both cuts, n=5 mirror, n=6 both; empty for every n ≥ 7. One is shipped under another name (the tri45
+shelf = 45-45-90); the 30-60-90 joined as its own board `tri` on 2026-08-17. The half-pentagon tiles the
+plane at k=1 although the regular pentagon cannot. Shelved under Euclidean → Different edge lengths as
+five folders, one per TILE SHAPE; k≤4 eager, k=5…9 lazy and fetched only by their own k chip.
+
+NOT EDGE-TO-EDGE since 2026-08-17, which is the number above (Marek Čtrnáct): an edge whose length is a
+sum of other palette lengths can be met by two neighbours, modelled as a flat 180° corner at the division
+point. Every board admits one. Divided edges cost search depth, so the shelf now stops where the DIVIDED
+run stopped — hexv at k=6, pent at k=9 — and the deeper plain runs (k=13, k=14) are no longer topped up:
+27,362 edge-to-edge-only records were withdrawn on 2026-08-18 because a subset in a shelf that reads as
+complete is a data-integrity bug. `enumeratedTo` per board is the single honest ceiling.
 
 Shelves: Spherical/Hyperbolic → Tilings → Board → "Halved Platonic faces" / "Halved {p,q} faces". No new
 renderer in either geometry — the records reuse `SphPolyPattern` and `HypPolyPattern`.

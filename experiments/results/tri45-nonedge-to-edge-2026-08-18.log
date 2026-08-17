@@ -1,0 +1,184 @@
+# tri45: the same divided-edge treatment the half-polygon shelf got, applied to the 45-45-90 family
+# Started 2026-08-18. AL: "Ship them."
+#
+# WHY THIS SHELF NEEDS IT. The tri45 shelf carries three palettes and they do not all have the problem:
+#
+#   tri45sq   S=1, H=sqrt2                 no length is a sum of the others (1+1 = 2, which is not a
+#                                          declared length; sqrt2 is not a sum) => edge-to-edge is the
+#                                          WHOLE story here, and k<=4 stays exactly as it shipped.
+#   tri45two  S=1, H=sqrt2, D=2            D = S + S. The big triangle's hypotenuse can be met by two
+#   tri45all  S=1, H=sqrt2, D=2            small triangles' legs. Both of these shipped k<=4 counting
+#                                          EDGE-TO-EDGE tilings only.
+#
+# So two of the three palettes are in the same position the half-polygon boards were in on 2026-08-16,
+# and the fix is the same: give the divisible edge a flat 180-degree corner at its midpoint and let the
+# ordinary search find both kinds. Measured on 2026-08-17 at k<=3: tri45all goes 1,309 -> 2,301 solver
+# solutions, and all 1,309 are still there (exact congruence, board by board).
+#
+# WHAT THIS COSTS, and it is the same trade AL just ruled on for the half-polygons: divided edges make
+# one geometric tiling wear many combinatorial labellings, so the split run reaches a lower k. Anything
+# the split palette cannot reach does NOT get topped up from the plain run.
+
+[00:40:40] === tri45two-split k<=4 : solve+prune+develop ===
+[00:40:40] PHASE 0  alphabet (palette=tri45two-split)
+[gen] EDGE TYPES (S=1, H=2): 24 incompatible adjacent pairs of 49 forbidden at the vertex
+[gen] palette=tri45two-split D=24 tiles=2 classes=7 configs=198
+[cert] A6: 315 entries, pairwise non-isomorphic PASS
+[gen] wrote /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/tables/tri45two-split/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (315 entries)
+[00:40:41] PHASE 1  solve (runtime alphabet, MAXNUM=4, EU_NOFILTER=1)
+[00:41:37]   raw blocks: 14740  (54s)
+[00:41:37] PHASE 2  prune
+  k=1 : 7
+  k=2 : 92
+  k=3 : 705
+  k=4 : 4243
+total kept: 5047
+store: peak 1.7129 MB total, 1.7129 MB resident
+[00:41:38]   (1s)
+[00:41:38] PHASE 3  develop (exact ℤ[ζ₂₄], one step per dart, length from the edge type)
+developed: {1: 7, 2: 92, 3: 705, 4: 4243} total 5047 failures 0
+[00:41:44]   (6s)
+[00:41:44] DONE  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-tri45two-split-k4/tri45two-split-cells.json
+[00:41:44] === tri45two-split k4 DONE ===
+
+[00:42:07] === tri45all-split k<=4 ===
+[00:42:07] PHASE 0  alphabet (palette=tri45all-split)
+[gen] EDGE TYPES (S=1, H=2): 40 incompatible adjacent pairs of 81 forbidden at the vertex
+[gen] palette=tri45all-split D=24 tiles=4 classes=9 configs=491
+[cert] A6: 717 entries, pairwise non-isomorphic PASS
+[gen] wrote /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/tables/tri45all-split/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (717 entries)
+[00:42:08] PHASE 1  solve (runtime alphabet, MAXNUM=4, EU_NOFILTER=1)
+[00:47:12]   raw blocks: 46780  (303s)
+[00:47:12] PHASE 2  prune
+  k=1 : 17
+  k=2 : 227
+  k=3 : 2057
+  k=4 : 14664
+total kept: 16965
+store: peak 5.5188 MB total, 5.5188 MB resident
+[00:47:14]   (2s)
+[00:47:14] PHASE 3  develop (exact ℤ[ζ₂₄], one step per dart, length from the edge type)
+developed: {1: 17, 2: 227, 3: 2057, 4: 14664} total 16965 failures 0
+[00:47:38]   (24s)
+[00:47:38] DONE  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-tri45all-split-k4/tri45all-split-cells.json
+[00:47:38] === tri45all-split k4 DONE ===
+
+# The 2026-08-13 rebuild is NOT a usable baseline: it predates the gen_alphabet fixes, its own
+# header says 79 of tri45all's 267 vertex types were unusable, and two plain runs of tri45all
+# disagree (27 vs 16 at k=1). Re-running BOTH plain palettes on today's code so plain and split
+# differ in exactly one thing.
+[00:58:35] === tri45two (plain, current code) k<=4 ===
+[00:58:35] PHASE 0  alphabet (palette=tri45two)
+[gen] EDGE TYPES (S=1, H=2, D=3): 22 incompatible adjacent pairs of 36 forbidden at the vertex
+[gen] palette=tri45two D=24 tiles=2 classes=6 configs=33
+[cert] A6: 96 entries, pairwise non-isomorphic PASS
+[gen] wrote /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/tables/tri45two/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (96 entries)
+[00:58:35] PHASE 1  solve (runtime alphabet, MAXNUM=4, EU_NOFILTER=1)
+[00:58:39]   raw blocks: 4209  (1s)
+[00:58:39] PHASE 2  prune
+  k=1 : 6
+  k=2 : 50
+  k=3 : 263
+  k=4 : 1154
+total kept: 1473
+store: peak 0.448208 MB total, 0.448208 MB resident
+[00:58:40]   (1s)
+[00:58:40] PHASE 3  develop (exact ℤ[ζ₂₄], one step per dart, length from the edge type)
+developed: {1: 6, 2: 50, 3: 263, 4: 1154} total 1473 failures 0
+[00:58:42]   (2s)
+[00:58:42] DONE  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-tri45two-k4/tri45two-cells.json
+[00:58:42] === tri45two k4 DONE ===
+
+[00:58:42] === tri45all (plain, current code) k<=4 ===
+[00:58:42] PHASE 0  alphabet (palette=tri45all)
+[gen] EDGE TYPES (S=1, H=2, D=3): 38 incompatible adjacent pairs of 64 forbidden at the vertex
+[gen] palette=tri45all D=24 tiles=4 classes=8 configs=102
+[cert] A6: 234 entries, pairwise non-isomorphic PASS
+[gen] wrote /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/tables/tri45all/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (234 entries)
+[00:58:42] PHASE 1  solve (runtime alphabet, MAXNUM=4, EU_NOFILTER=1)
+[00:58:49]   raw blocks: 19950  (6s)
+[00:58:49] PHASE 2  prune
+  k=1 : 16
+  k=2 : 161
+  k=3 : 1132
+  k=4 : 6295
+total kept: 7604
+store: peak 2.20832 MB total, 2.20832 MB resident
+[00:58:50]   (1s)
+[00:58:50] PHASE 3  develop (exact ℤ[ζ₂₄], one step per dart, length from the edge type)
+developed: {1: 16, 2: 161, 3: 1132, 4: 6295} total 7604 failures 0
+[00:58:58]   (8s)
+[00:58:58] DONE  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-tri45all-k4/tri45all-cells.json
+[00:58:58] === tri45all k4 DONE ===
+
+# tri45sq needs no split (S=1 and H=sqrt2, neither a sum of the other), but it was ALSO built on
+# the stale 2026-08-13 tables, so it gets re-run on current code too.
+[00:59:15] === tri45sq (plain, current code) k<=4 ===
+[00:59:15] PHASE 0  alphabet (palette=tri45sq)
+[gen] EDGE TYPES (S=1, H=2): 12 incompatible adjacent pairs of 25 forbidden at the vertex
+[gen] palette=tri45sq D=24 tiles=3 classes=5 configs=33
+[cert] A6: 96 entries, pairwise non-isomorphic PASS
+[gen] wrote /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/tables/tri45sq/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (96 entries)
+[00:59:15] PHASE 1  solve (runtime alphabet, MAXNUM=4, EU_NOFILTER=1)
+[00:59:17]   raw blocks: 5827  (1s)
+[00:59:17] PHASE 2  prune
+  k=1 : 9
+  k=2 : 68
+  k=3 : 412
+  k=4 : 1896
+total kept: 2385
+store: peak 0.597162 MB total, 0.597162 MB resident
+[00:59:17]   (0s)
+[00:59:17] PHASE 3  develop (exact ℤ[ζ₂₄], one step per dart, length from the edge type)
+developed: {1: 9, 2: 68, 3: 412, 4: 1896} total 2385 failures 0
+[00:59:21]   (4s)
+[00:59:21] DONE  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-tri45sq-k4/tri45sq-cells.json
+[00:59:21] === tri45sq k4 DONE ===
+
+# ================================================================================================
+# RESULT
+# ================================================================================================
+#
+# Three palettes, all re-run on today's code so plain and split differ in exactly one thing, k<=4:
+#
+#     tri45sq          9 /  68 /  412 /  1896  =  2,385     (no split possible, no split needed)
+#     tri45two         6 /  50 /  263 /  1154  =  1,473
+#     tri45two-split   7 /  92 /  705 /  4243  =  5,047      3.4x
+#     tri45all        16 / 161 / 1132 /  6295  =  7,604
+#     tri45all-split  17 / 227 / 2057 / 14664  = 16,965      2.2x
+#
+# CONTAINMENT, by exact congruence and not by the builder's window fingerprint: every plain tiling has
+# a congruent copy in its split run, AT THE SAME k. 0 lost of 1,473 on tri45two, 0 of 7,604 on
+# tri45all. The oracle self-checks first (rotate, reflect and shift each sampled entry off its own
+# lattice; it must come back congruent to itself), so a predicate that always said "different" could
+# not have produced this.
+#
+# THE SHELF: 5,313 -> 16,964 tilings, k = 16 / 227 / 2057 / 14664. All 5,313 previously shipped
+# tilings are still on it, at the same k, checked the same way on the SHIPPED bytes.
+#
+# ------------------------------------------------------------------------------------------------
+# TWO BUGS THIS TURNED UP, both older than the split work and both in what shipped
+# ------------------------------------------------------------------------------------------------
+#
+# 1. THE SHELF'S DEDUP WAS MERGING DISTINCT TILINGS. build-tri45-shelf.mjs deduped by a WINDOW
+#    FINGERPRINT: clip the tiling to a radius-3.2 patch, re-anchor on each face near the origin, take
+#    the lexicographically smallest string over the 16 maps k*45deg x mirror. Two DIFFERENT tilings
+#    that agree on a radius-3.2 patch collapse into one, and at k=4 with 16 tiles per cell a 3.2 patch
+#    is nowhere near enough to tell them apart. Caught because the rebuild left 453 of the 5,313
+#    previously shipped tilings with no congruent copy on the new shelf while the per-palette
+#    containment against the same sources was exact -- the gap was entirely the fingerprint, merging
+#    differently before and after. Replaced with the exact oracle build-euhalf-shelf.mjs already uses:
+#    unimodular lattice map, then face-by-face shape match, bucketed by a congruence-invariant
+#    signature. Same input, 13,458 distinct by fingerprint against 16,964 by exact congruence -- the
+#    old dedup was losing 3,506 tilings, about a fifth of the shelf.
+#
+# 2. EVERY SQUARE ON THE SHELF WAS FILED AS A TRIANGLE. The reference records hardcoded `n: 3` on
+#    every cell polygon, and `n` is what drives the polygon-species facet. tri45sq and tri45all both
+#    carry the unit square and the sqrt2 square. Now `n: f.length`.
+#
+# Also retired here: the 2026-08-13 tables. They predate the gen_alphabet fixes, their own rebuild
+# script says 79 of tri45all's 267 vertex types had a sigma-mixed dart orbit and were unusable, and
+# two plain runs of tri45all disagree (27 vs 16 at k=1). Everything above is on today's code.
+#
+# WHAT THIS SHELF STILL CANNOT SAY. k stops at 4 because that is where the runs stopped, not because
+# the family does. No slice is topped up from a shallower-but-deeper-reaching source (AL, 2026-08-18).

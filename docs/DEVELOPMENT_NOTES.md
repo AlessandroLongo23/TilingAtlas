@@ -13250,3 +13250,161 @@ Verified on screen: the hyperbolic Tilings segment now opens as 3.4.n.4 boards (
 (2,233), six valence rows (7 / 164 / 2,484 / 6,534 / 8,576 / 10,688) and Halved {p,q} faces (360); "8 at
 a vertex" → "3 · 4" → "3.4⁷; 3.4⁷ 876" drills correctly, and "3 at a vertex" → "{7,3}" → "k = 1 1" shows
 a small board skipping the configuration level as designed.
+
+## The atlas container format: one shape for every shelf (2026-08-17, later still)
+
+AL asked how to keep the corpus scalable as Marek's solvers keep arriving, and whether the data should
+move to Supabase. The answer turned out to be neither hosting nor a rewrite: the files were storing an
+enormous amount of the same bytes over and over, and nothing in the repo agreed on how a shelf file was
+written. **937 tracked public JSON files, 2,027 MB → 961 MB (53%)**, with no shelf losing a record and
+the /library render pixel-identical.
+
+**What was actually wrong.** Four separate things, each measured before it was fixed:
+
+1. `reference-atlas-scaled-k7.json` stored ONE identical 996-character `note` string 29,500 times —
+   29.4 MB of a single constant in a 100.1 MB file, against GitHub's 104.9 MB blob limit. It was staged,
+   uncommitted, and four megabytes from being unpushable.
+2. `renderCell` is a float projection of `exactSource`, and both shipped. It was 79% of
+   reference-atlas-k9.json (70.7 of 89.1 MB) against 12 MB of the thing it is projected from.
+3. A cell polygon is stored at absolute coordinates, so the same hexagon in two places is stored twice.
+   scaled-k7's 667,412 polygon instances are 585 distinct SHAPES once translated to their own first
+   vertex, over 6,569 distinct anchors.
+4. The decoration shelves repeat objects, not strings, and my first pass (strings only) did nothing for
+   them. spherical-colors is 81% four file-wide constants; isohedral-edges 25% two of them;
+   vertex-configs' `polys` is 182,321 elements over 541 distinct ones.
+
+**The format** (`scripts/atlas/encode.mjs` writes, `lib/services/atlasCodec.ts` reads) is four opt-in
+tables — `dict` for strings, `refs` for whole objects/arrays, `elems` for repeated array ELEMENTS, `geom`
+for polygon shapes+anchors — plus two on-disk shapes, a record array and a `{…, patterns: […]}` wrapper.
+Each path takes whichever of refs/elems measures smaller: `rneig` is one array file-wide (refs wins),
+`patch.verts` is 115,470 elements over 351 distinct (elems wins). Getting that backwards makes files
+bigger, so it is measured, not guessed.
+
+**The invariant that makes it safe:** a field is hoisted only when its values are ALL strings, or ALL
+non-null objects/arrays. An integer in a hoisted slot therefore cannot be a value, and the container
+names the hoisted fields, so the decoder never guesses. Numeric fields are never hoisted.
+
+**⚑ The derived cell is NOT byte-identical to the shipped one, and that nearly sank it.**
+`reconstructOracleCell` picks its own polygon order and starting vertex, so 3,410 of 6,193 base records
+come back written differently. Every one is the same polygon multiset with each polygon a cyclic rotation
+(70,225) or reversal (112,170) of the shipped ring — zero arbitrary permutations, which is what makes
+them safe to draw. Reversal flips winding, and a simple polygon fills identically either way under the
+nonzero rule the canvas uses. Verified empirically: `/library?class=regular&k=4` is a byte-identical PNG
+across the change. So the strip gate is GEOMETRIC, not textual (`reproducesRenderCell`), and it ran per
+record: 36,239 of 36,356 stripped, zero mismatches, the rest kept for a stated reason — 44 with no
+`exactSource`, 73 out-of-ring 9-fold/5-fold stars whose ζ₁₈/ζ₂₀ geometry has no ζ₂₄ reconstruction.
+
+**⚑ Laziness is what made this adoptable.** `renderCell` is read at 72 sites across 39 files. Not one
+changed. The derivation is synchronous, so `hydrateRenderCells` installs an accessor that derives on
+first read and collapses to a plain value; the `geom` layer does the same. Deriving the base atlas
+eagerly would be ~6,200 × 1.7 ms, ten seconds of stall; lazily it is a few ms per thumbnail as they
+scroll into view, which they already do.
+
+**⚑ Sharing is per-layer, and the difference is load-bearing.** `refs`/`elems` rows are handed out
+SHARED — audited: nothing writes those fields in place, and `hyperbolicDevelopClient` holds `rneig`/`glue`
+`private readonly`. `geom` is the opposite: every polygon gets FRESH vertex arrays, because renderers do
+transform those. A test pins each side.
+
+**⚑ The real cost was reader whack-a-mole, and the lesson is to wire before migrating.** Packing a file
+breaks every consumer that parses it raw, and they are everywhere: 27 `res.json()` sites in
+referenceAtlas.ts, four standalone page components, ~20 tests, a dozen scripts. I migrated first and
+found them one failing test at a time; the second half of the work went reader-audit first and cost a
+fraction as much. `lib/tilings/hyp-tilings.test.ts` had even adapted by reaching into `.records`, which
+silently leaves dict indices unresolved.
+
+**⚑ Two bugs the round-trip gates caught, both real.** The shape table first kept only `n`/`star` and
+silently dropped the spherical shelf's `hue`. And the `.mjs` shard decoder learned `elems` later than the
+TS one, so a packed shard came back with a stray `elems` key on its wrapper. Both were caught by
+machinery that refuses to write a file that does not come back equal — the migration verifies structurally
+with a 1e-9 tolerance (`sameRecords`), since `geom` quantises and is the one lossy layer.
+
+**What is NOT fixed.** The eager /library load is still 148 MB raw / 9.2 MB gzip, down from 212 / 12.2.
+The remainder is `patch.edges` and `darts`, genuinely unique per record. Only an index/payload split
+fixes that: ship a browse index (~5.6 bytes/record gzipped) and fetch geometry per visible tile. That is
+the next structural step and it was scoped, not started.
+
+## 2026-08-18 — the shelves stop claiming k they cannot enumerate, and tri45 learns the T-junction
+
+Four things, and the first is a directive, not a discovery. AL, on finding that the half-polygon shelf's
+upper k came from a *different* search than its lower k: **"Remove all the k-ranges that we are not sure
+about being complete, because if they are too heavy to run, I prefer not to have them rather than having
+them present only partial enumeration."** That sentence is the standard now.
+
+**What it cost: 27,362 tilings, withdrawn.** The divided-edge palettes are dear — one geometric tiling
+wears many combinatorial labellings once flat corners exist — so they reach a lower k than the plain
+ones: hexv to 6 against 13, pent to 9 against 14. For one day `build-euhalf-shelf.mjs` topped the
+difference up from the plain runs and labelled the topped-up records "EDGE-TO-EDGE only". A label is not
+a fix. The `cellsEdgeToEdge` mechanism is gone, so the invariant is now structural rather than
+documented: one source per board, and `enumeratedTo` is the single ceiling. The shelf went
+27,728 → 40,234 → **12,872**, and only the last number means what it says. The withdrawn runs are still
+on disk under `tools/ctrnact-oracle/run-eu-half-hex-v-k13/` and `run-eu-half-pent-k14/`.
+
+⚑ **The pentagon is the one board where this probably cost nothing.** No side of its quadrilateral is a
+sum of the others (1, 2, 2, cot 18°), so it admits no T-junction at all, and its divided-edge search
+found exactly the edge-to-edge set at every k it reached. Its k=10…14 were almost certainly complete as
+they stood. Almost is not a certificate, so they went with the rest.
+
+**tri45 gets the same treatment, and gains.** Of its three palettes only `tri45sq` is safe from
+T-junctions (lengths 1 and √2, neither a sum of the other); `tri45two` and `tri45all` both carry D = 2 =
+S + S, so the big triangle's hypotenuse can be met by two small triangles' legs, and both shipped
+edge-to-edge counts only. Split palettes for each, everything re-run on today's code, k≤4:
+
+| palette | plain | split |
+|---|---|---|
+| tri45sq | 9 / 68 / 412 / 1896 | (no split possible) |
+| tri45two | 6 / 50 / 263 / 1154 | 7 / 92 / 705 / 4243 |
+| tri45all | 16 / 161 / 1132 / 6295 | 17 / 227 / 2057 / 14664 |
+
+Containment checked by exact congruence, palette by palette: **0 lost of 1,473 and 0 of 7,604, every one
+at the same k.** The shelf is 5,313 → **16,964**, and all 5,313 old tilings are still on it, verified the
+same way on the shipped bytes.
+
+⚑ **The shelf's dedup was silently losing about a fifth of it, and had been all along.**
+`build-tri45-shelf.mjs` recognised two tilings as the same by clipping each to a radius-3.2 patch and
+comparing canonical strings. That merges DIFFERENT tilings that agree locally, and at k=4 with 16 tiles
+per cell a 3.2 patch cannot separate them. It surfaced only because the rebuild left 453 previously
+shipped tilings with no congruent copy on the new shelf while the per-palette containment against the
+same sources was exact — the discrepancy was entirely the fingerprint, merging differently before and
+after. Replaced with the exact oracle `build-euhalf-shelf.mjs` already used (unimodular lattice map,
+then face-by-face shape match, bucketed by a congruence-invariant signature, self-checked before use).
+Same input: 13,458 distinct by fingerprint, **16,964 by exact congruence**. The lesson generalises — a
+local heuristic used as an equality test fails silently and in the direction that looks like success.
+
+⚑ Also fixed there: every cell polygon was written `n: 3`, and `n` drives the polygon-species facet, so
+both squares on that shelf were filed as triangles and the square filter never found them.
+
+⚑ **The 2026-08-13 tri45 tables are retired.** They predate the `gen_alphabet` fixes, their own rebuild
+script records that 79 of tri45all's 267 vertex types had a sigma-mixed dart orbit and were unusable,
+and two plain runs of the same palette disagreed (27 vs 16 at k=1). Today's run assigns a lower k to 65
+of them, which is a correction and not a loss.
+
+**Planigons: measured, understood, and deliberately not shipped.** A planigon edge is a sum of two
+apothems, so the fifteen tiles carry twelve lengths, and **seven of the twelve are sums of others, in 33
+ways** — L1 = L10+L12 = 3×L12, L8 = L5+L11 = L9+L10 = …, L7 in fifteen ways. So the shipped planigon
+shelf (18/67/233/749 to k=4) counts a subset, and not a small one.
+
+⚑ **One flat corner per decomposition does not model it; only full atomisation does.** The engine matches
+half-edge TYPE against half-edge type. Model L1 as [L10|L12] and an L10 neighbour fits while an L12 one
+cannot; model it as [L12|L12|L12] and the reverse. The only subdivision under which every arrangement is
+reachable cuts every edge into ATOMS — the five lengths that are not sums, L2, L3, L9, L11, L12 — because
+then every gluing is atom against atom. **The bill is 1,853 tile variants where the palette has 15**, and
+P12.12.3 alone is 1,620 of them: the dodecagon's apothem is the long one, so the P12.* tiles carry the
+long edges and the long edges have the most ways to be cut.
+
+Bounded run instead — `planigon-split-lite`, the eleven planigons that never touch a dodecagon, 15
+variants — against `planigon-lite`, the same eleven with edges whole, so the two runs differ in exactly
+one thing. **k=1: 6 → 36. k=2: 27 → 195**, containment exact (0 of 33 lost). Roughly a sixfold gain, on
+the cheap two-thirds of the palette. The cost shows in the alphabet: 1,821 entries → **86,993**, a 48×
+blowup on 11 of 15 tiles.
+
+Not shipped, and that is the point of the day's directive: a planigon shelf missing four of its fifteen
+tiles is exactly the partial enumeration wearing a complete shelf's clothes that we just spent the
+morning removing. What would make it shippable is a cheaper representation of a divided edge than one
+tile variant per ordered composition.
+
+⚑ **My own containment checker gave two false alarms before it gave an answer**, and both are worth
+remembering because they look identical to a real regression. It ran the congruence group at 8 rotations
+when these palettes develop in ℤ[ζ₂₄] and need 24, which reported two planigon tilings "lost" that were
+simply sitting at 30°. And it bucketed candidates on a signature rounded to 1e-6, which puts two
+independently developed copies of one tiling in different buckets, reporting 16 tri45two tilings "lost"
+that were there. A containment check that finds losses should be doubted before the data is.

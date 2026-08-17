@@ -13,7 +13,7 @@ import {
 
 // The Euclidean half-polygon shelf. scripts/build-euhalf-shelf.mjs refuses to write anything whose faces
 // are the wrong shape, leave a gap, overlap, or fold a vertex past 360°, so this does not re-litigate the
-// geometry on all 27,728 records. It guards what that script cannot: that the shipped METADATA says true
+// geometry on all 12,872 records. It guards what that script cannot: that the shipped METADATA says true
 // things, that the classification behind "there are exactly four boards" is written down and checked, and
 // that every row lands in the right folder.
 
@@ -120,10 +120,11 @@ describe("board manifest", () => {
 
 	it("offers each lazy slice at its own k and nowhere else", () => {
 		const lazy = EU_HALF_BOARDS.flatMap((b) => b.lazyKs.map((k) => `${b.id}@${k}`)).sort();
-		// 27: the divided-edge rebuild took hexm to k=9 and sqmid to k=6, where each used to hold one
-		// tiling, and the half-triangle board arrived with a k=5 of its own. It has no k=6 on purpose —
-		// the divided-edge search stops at 5 there, and a board does not ship a k it cannot enumerate.
-		expect(lazy.length).toBe(27);
+		// 15, and it was 27 for one day. A board ships exactly the k its DIVIDED-edge search reached, so
+		// hexv stops at 6 and pent at 9 even though the plain runs went to 13 and 14; the twelve slices in
+		// between counted the edge-to-edge subset and were withdrawn (AL, 2026-08-18). What is left:
+		// hexv 5-6, pent 5-9, hexm 5-9, tri 5, sqmid 5-6.
+		expect(lazy.length).toBe(15);
 		for (const b of EU_HALF_BOARDS) {
 			for (let k = 1; k <= b.enumeratedTo; k++) {
 				expect(euHalfLazyShardsForK(k).some((x) => x.id === b.id), `${b.id} k=${k}`)
@@ -186,7 +187,7 @@ describe.skipIf(!anyShard)("shipped rows", () => {
 	});
 
 	it("ships faces that are the tile, in a cell they exactly fill", () => {
-		// The builder checks this on all 27,728; here it runs on the SHIPPED eager bytes, which is a
+		// The builder checks this on all 12,872; here it runs on the SHIPPED eager bytes, which is a
 		// different artefact from the developer's scratch file and the one a visitor actually gets.
 		for (const r of eager()) {
 			const b = EU_HALF_BOARDS.find((x) => x.id === r.euHalfBoard)!;

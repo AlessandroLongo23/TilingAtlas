@@ -12,11 +12,19 @@
 // other. Both filters say so if read closely: the angle filter needs a vertex's corners to sum to 360,
 // and the edge-slot filter says out loud that "each edge is shared by exactly TWO corners". Let one
 // tile's edge be met by TWO neighbours and neither holds. Every board here has a side of length 2 and a
-// side of length 1, so every board admits such a division, and the boards were re-run with it allowed:
-// the counts below at k ≤ `dividedTo` include those tilings, and the shelf grew from 27,728 to 40,234.
+// side of length 1, so every board admits such a division, and every board was re-run with it allowed.
 // The half-decagon is the one board where no edge decomposes, so its exclusion survives untouched; the
 // half-octagon's does not survive as an argument, and was re-run to confirm the board is empty anyway.
 // See experiments/results/euhalf-nonedge-to-edge-2026-08-17.log.
+//
+// ⚑ AND THE SHELF IS SHORTER FOR IT (AL, 2026-08-18). Divided edges cost depth — one geometric tiling
+// wears many combinatorial labellings once flat corners exist — so the divided run reaches a lower k
+// than the plain one, hexv to 6 against 13 and pent to 9 against 14. For one day the difference was
+// topped up from the plain runs, which put 27,362 edge-to-edge-only tilings into a shelf that read as
+// complete at every k it listed. Both slices are withdrawn: "if they are too heavy to run, I prefer not
+// to have them rather than having them present only partial enumeration." So the shelf went 27,728 →
+// 40,234 → 12,872, and the last number is the first one that means what it says. The withdrawn runs
+// are still on disk under tools/ctrnact-oracle/run-eu-half-hex-v-k13/ and run-eu-half-pent-k14/.
 //
 // THE FAMILY IS FINITE, and unusually for this atlas the bound is a proof rather than a budget. An
 // n-gon has a vertex-to-vertex long diagonal and a midpoint-to-midpoint cut when n is even, and one
@@ -67,20 +75,16 @@ export interface EuHalfBoard {
 	/** Tilings per k. */
 	counts: Record<number, number>;
 	/**
-	 * The highest k the search ran to. Above it nothing is claimed — these two boards were still
-	 * growing when the runs stopped, so their top k is a budget and not an enumeration result.
+	 * The highest k the search ran to, WITH DIVIDED EDGES ALLOWED. Every k at or below it is a complete
+	 * enumeration; above it nothing is claimed, because the run stopped there and not because the board
+	 * is empty. This used to be two numbers, `enumeratedTo` reaching further than a `dividedTo` below
+	 * it, the gap between them filled from the plain edge-to-edge runs — which meant hexv's k=7..13 and
+	 * pent's k=10..14 were subsets sitting in a shelf that read as complete. AL, 2026-08-18: those k are
+	 * gone, so one number now says everything, and it says it about the whole shelf.
 	 */
 	enumeratedTo: number;
 	/** k values the search covered and found nothing at. Facts about the board, not gaps. */
 	emptyKs: number[];
-	/**
-	 * The highest k searched for NON-EDGE-TO-EDGE tilings, where a tile's edge may be met by two
-	 * neighbours instead of one. At or below it the board is complete; above it only the edge-to-edge
-	 * subset is counted, because the divided-edge palette costs enough depth that it cannot reach as
-	 * far. On `hexv` that is visible in the counts as a fall from 423 at k=6 to 226 at k=7: the two
-	 * sides of that step are counting different things, and neither number is wrong.
-	 */
-	dividedTo: number;
 }
 
 export const EU_HALF_BOARDS: EuHalfBoard[] = [
@@ -95,11 +99,12 @@ export const EU_HALF_BOARDS: EuHalfBoard[] = [
 		// Two of these glue along the long side to make a hexagon and hexagons tile, so this board cannot
 		// come back empty — which is why it was run first, as a check on the wiring rather than a result.
 		eagerKs: [1, 2, 3, 4],
-		lazyKs: [5, 6, 7, 8, 9, 10, 11, 12, 13],
-		counts: { 1: 2, 2: 10, 3: 35, 4: 68, 5: 145, 6: 423, 7: 226, 8: 752, 9: 1006, 10: 2273, 11: 2556, 12: 11645, 13: 8418 },
-		enumeratedTo: 13,
+		// STOPS AT 6, and the plain edge-to-edge run reached 13. Those seven further slices shipped for one
+		// day and were withdrawn: they counted 26,876 tilings, all real, but only the edge-to-edge ones.
+		lazyKs: [5, 6],
+		counts: { 1: 2, 2: 10, 3: 35, 4: 68, 5: 145, 6: 423 },
+		enumeratedTo: 6,
 		emptyKs: [],
-		dividedTo: 6,
 	},
 	{
 		id: "pent",
@@ -114,11 +119,14 @@ export const EU_HALF_BOARDS: EuHalfBoard[] = [
 		sides: [1, 2, 2, 3.077683537175254],
 		D: 20,
 		eagerKs: [1, 2, 3, 4],
-		lazyKs: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
-		counts: { 1: 2, 2: 1, 3: 2, 4: 3, 5: 6, 6: 7, 7: 14, 8: 18, 9: 28, 10: 39, 11: 62, 12: 82, 13: 126, 14: 177 },
-		enumeratedTo: 14,
+		// The one board where the divided-edge search found EXACTLY the edge-to-edge set at every k it
+		// reached: no side of this quadrilateral is a sum of the others (1, 2, 2, cot 18°), so nothing here
+		// can be met by two neighbours in the first place. That makes the withdrawn k=10..14 almost certainly
+		// complete as they stood — almost, which is not a certificate, so they went with the rest.
+		lazyKs: [5, 6, 7, 8, 9],
+		counts: { 1: 2, 2: 1, 3: 2, 4: 3, 5: 6, 6: 7, 7: 14, 8: 18, 9: 28 },
+		enumeratedTo: 9,
 		emptyKs: [],
-		dividedTo: 9,
 	},
 	{
 		id: "hexm",
@@ -133,7 +141,6 @@ export const EU_HALF_BOARDS: EuHalfBoard[] = [
 		counts: { 2: 1, 4: 4, 5: 5, 6: 8, 7: 19, 8: 20, 9: 36 },
 		enumeratedTo: 9,
 		emptyKs: [1, 3],
-		dividedTo: 9,
 	},
 	{
 		id: "tri",
@@ -151,7 +158,6 @@ export const EU_HALF_BOARDS: EuHalfBoard[] = [
 		counts: { 1: 5, 2: 64, 3: 391, 4: 1989, 5: 9070 },
 		enumeratedTo: 5,
 		emptyKs: [],
-		dividedTo: 5,
 	},
 	{
 		id: "sqmid",
@@ -173,7 +179,6 @@ export const EU_HALF_BOARDS: EuHalfBoard[] = [
 		counts: { 1: 2, 2: 6, 3: 21, 4: 55, 5: 131, 6: 281 },
 		enumeratedTo: 6,
 		emptyKs: [],
-		dividedTo: 6,
 	},
 ];
 

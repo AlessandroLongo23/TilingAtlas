@@ -2590,3 +2590,20 @@ valence-only suggestion measured at a worst row of 5,581, so the configuration l
 the biggest cell to 876. ⚑ It surfaces a fact the shelf never stated: a hyperbolic config does not
 determine its tiling (12,168 uniform tilings over 2,591 configs, `4.6⁷` alone admitting 147), and the 27
 regular {p,q} tilings now read as `{7,3}` instead of `7`. Detail: NOTES 2026-08-17 (later).
+
+## 2026-08-17 (fourth) — one container format for every shelf file — CC
+
+937 tracked public JSON files, **2,027 MB → 961 MB (53%)**, no record lost, /library pixel-identical.
+Four opt-in tables (`dict`, `refs`, `elems`, `geom`) over two on-disk shapes, written by
+`scripts/atlas/encode.mjs` and read by `lib/services/atlasCodec.ts`; every builder and reader goes
+through them. ⚑ `renderCell` is derived from `exactSource` on first draw now, not shipped (201 MB),
+gated per record on a GEOMETRIC test because reconstruction reorders polygons. ⚑ Defused
+`reference-atlas-scaled-k7.json` at 95.5 MiB against GitHub's 100 MiB block. Detail: NOTES 2026-08-17.
+
+## 2026-08-18 — no shelf claims a k it cannot enumerate; tri45 learns the T-junction — CC
+
+**27,362 half-polygon tilings withdrawn** (hexv k=7-13, pent k=10-14): edge-to-edge only, topped up from
+a deeper plain run, inside a shelf that read as complete. The top-up mechanism is gone, so the invariant
+is structural; shelf 40,234 → 12,872. **tri45 re-run on split palettes: 5,313 → 16,964**, containment
+exact by congruence. ⚑ Its dedup compared radius-3.2 patches and had merged distinct tilings since it
+shipped: 13,458 that way against 16,964 exact. Planigons measured, NOT shipped. Detail: NOTES 2026-08-18.

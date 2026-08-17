@@ -1,53 +1,43 @@
 #!/bin/bash
-# Rebuild the tri45 shelf on the corrected edge-type frames (gen_alphabet.fold, 2026-08-13).
+# Rebuild the tri45 shelf. Three palettes, and since 2026-08-18 two of them are the `-split` variants.
 #
-# What changed under it: fold() used to decide, per HALF-EDGE, whether to read a vertex word forwards
-# or mirrored, so one word could be typed both ways and the solver enforced a scrambled gluing rule.
-# It now decides once per word. Measured on tri45all at k<=3: 34/298/2044 developed with 227 develop
-# failures before, 34/354/2734 with ZERO failures after — more tilings, and no rejects left over.
+# WHY SPLIT. Marek Ctrnact, 2026-08-16: a tiling need not be edge-to-edge, and this family has a length
+# that decomposes -- D = 2 is S + S -- so the big triangle's hypotenuse can be met by two neighbours
+# instead of one. That case was unreachable while the search glued whole edge to whole edge. The split
+# palettes give the divisible edge a flat 180-degree corner at its midpoint and the same search finds
+# both kinds; the corner comes off again in the builder, so the catalogue says triangle and the renderer
+# draws one. tri45sq needs NO split: its lengths are 1 and sqrt2 and neither is a sum of the other.
 #
-# Still incomplete, and knowingly so: 79 of tri45all's 267 vertex types have a sigma-mixed dart orbit
-# and cannot be used at all (gen_alphabet prints the count). Tilings all of whose vertices are of
-# those types are missing from this shelf. See experiments/results/marek-freedraw-edge-types-2026-08-13.md.
+# Measured 2026-08-18, k<=4, all three on the same code:
+#   tri45sq        9 /  68 /  412 /  1896   (no split possible)
+#   tri45two       6 /  50 /  263 /  1154  ->  split  7 /  92 /  705 /  4243
+#   tri45all      16 / 161 / 1132 /  6295  ->  split 17 / 227 / 2057 / 14664
+# Containment verified by exact congruence, palette by palette: every plain tiling has a congruent copy
+# in its split run, at the same k, 0 lost of 1,473 and 0 of 7,604.
+#
+# The 2026-08-13 tables are NOT a usable baseline and were retired here: they predate the gen_alphabet
+# fixes, 79 of tri45all's 267 vertex types had a sigma-mixed dart orbit and were unusable, and two plain
+# runs of the same palette disagreed (27 vs 16 at k=1).
 set -e
 HERE="$(cd "$(dirname "$0")" && pwd)"
 K="${1:-4}"
-WORK="$HERE/run-tri45-rebuild"
-LOG="$HERE/../../experiments/results/tri45-rebuild-2026-08-13.log"
+LOG="$HERE/../../experiments/results/tri45-rebuild-$(date +%Y-%m-%d).log"
 ts(){ date '+%H:%M:%S'; }
 log(){ echo "[$(ts)] $*" | tee -a "$LOG"; }
 
 : > "$LOG"
-log "tri45 shelf rebuild, k<=$K, on corrected edge frames"
-rm -f "$HERE/eu_solver_rt"
-make -C "$HERE" eu_solver_rt MAXNUM="$K" >/dev/null
-log "built eu_solver_rt MAXNUM=$K"
-
-rm -rf "$WORK"; mkdir -p "$WORK"
-for P in tri45sq tri45two tri45all; do
+log "tri45 shelf rebuild, k<=$K"
+for P in tri45sq tri45two-split tri45all-split; do
   log "--- $P ---"
-  python3 "$HERE/alphabets/gen_alphabet.py" --palette "$HERE/alphabets/palettes/$P.json" \
-      --out "$HERE/tables/$P" 2>&1 | grep -E "INCOMPLETE|entries\)" | tee -a "$LOG"
-  touch "$HERE/tables/$P/.generated"
-  make -C "$HERE" PALETTE="$P" MAXNUM="$K" >/dev/null 2>&1
-  mkdir -p "$WORK/$P/out"
-  t0=$(date +%s)
-  ( cd "$WORK/$P" && EU_NOFILTER=1 EU_TABLES="$HERE/tables/$P/tables.bin" "$HERE/eu_solver_rt" >/dev/null 2>solver-err.log )
-  log "  solve $(( $(date +%s)-t0 ))s  raw $(grep -rh 'Number of vertex types:' "$WORK/$P/out"/eusolver_*.txt | wc -l | tr -d ' ')"
-  EU_OUT="$WORK/$P/out" EU_KMIN=1 EU_KMAX="$K" "$HERE/eu_pruner.$P" 2>&1 | grep -E "k=|total" | tee -a "$LOG"
-  t1=$(date +%s)
-  python3 "$HERE/develop_tri45.py" --palette "$HERE/alphabets/palettes/$P.json" \
-      --tables "$HERE/tables/$P/tables.py" --pruned "$WORK/$P/out/pruned" \
-      --kmin 1 --kmax "$K" --out "$WORK/$P-cells.json" 2>&1 | tee -a "$LOG"
-  log "  develop $(( $(date +%s)-t1 ))s"
+  "$HERE/run-sts.sh" "$P" "$K" 2>&1 | tee -a "$LOG"
 done
 
 log "--- shelf ---"
 # build-tri45-shelf.mjs writes to `process.cwd()/public`, so it MUST run from the repo root. Running
 # it from here silently created tools/ctrnact-oracle/public/ and left the shipped shelf untouched.
 cd "$HERE/../.."
-node "$HERE/../../scripts/build-tri45-shelf.mjs" \
-  "tri45=45.45.90 + 4 + 4√2=$WORK/tri45sq-cells.json" \
-  "tri45x=45.45.90 at two scales=$WORK/tri45two-cells.json" \
-  "tri45a=two triangles + two squares=$WORK/tri45all-cells.json" 2>&1 | tee -a "$LOG"
+node scripts/build-tri45-shelf.mjs \
+  "tri45=45.45.90 + 4 + 4√2=$HERE/run-tri45sq-k$K/tri45sq-cells.json" \
+  "tri45x=45.45.90 at two scales=$HERE/run-tri45two-split-k$K/tri45two-split-cells.json" \
+  "tri45a=two triangles + two squares=$HERE/run-tri45all-split-k$K/tri45all-split-cells.json" 2>&1 | tee -a "$LOG"
 log "DONE"

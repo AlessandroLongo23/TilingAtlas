@@ -13,17 +13,17 @@
     },
     {
       "k": 2,
-      "count": 160,
+      "count": 227,
       "file": "/tri45/t45-k2.json"
     },
     {
       "k": 3,
-      "count": 941,
+      "count": 2057,
       "file": "/tri45/t45-k3.json"
     },
     {
       "k": 4,
-      "count": 4196,
+      "count": 14664,
       "file": "/tri45/t45-k4.json"
     }
   ]
