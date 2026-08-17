@@ -55,33 +55,47 @@ export function AperiodicClient() {
 			    geometry-then-decoration rows. The row IS the grouping; the group's name is not repeated on
 			    each of its cells (three cells all reading "Substitution" is noise), it rides on the
 			    metadata cell above, which names the active view's group. Adding a group costs one row. */}
-			{groupedViews().map(({ group, views }) => (
-				<div
-					key={group}
-					className="grid gap-px"
-					style={{ gridTemplateColumns: `repeat(${Math.max(views.length, 1)}, minmax(0, 1fr))` }}
-				>
-					{views.map(({ id, label }) => {
-						const on = view === id;
-						return (
-							<button
-								key={id}
-								type="button"
-								aria-pressed={on}
-								onClick={() => setView(id)}
-								title={group}
-								className={cn(
-									"ta-tab ta-wall-cell flex cursor-pointer items-center justify-center px-1 py-2.5 transition-colors",
-									"focus:outline-none focus-visible:relative focus-visible:z-10 focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-fg",
-									on ? "text-fg" : "text-fg-muted hover:text-fg-secondary",
-								)}
-							>
-								<span className="text-xs font-medium leading-tight text-center text-balance">{label}</span>
-							</button>
-						);
-					})}
-				</div>
-			))}
+			{groupedViews().map(({ group, views }) => {
+				// Wrap at three per row instead of one column per view: the Substitution group grows every
+				// time an encyclopedia rule is added, and five cells across a w-80 sidebar leave ~60px each,
+				// which breaks "Sub Rosa" onto two lines.
+				//
+				// The last row is padded with blank cells instead of being left short. This panel is a wall:
+				// the container paints the line colour and the cells are what make it opaque, so an empty grid
+				// area reads as a grey box, not as space.
+				const cols = Math.min(Math.max(views.length, 1), 3);
+				const blanks = (cols - (views.length % cols)) % cols;
+				return (
+					<div
+						key={group}
+						className="grid gap-px"
+						style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+					>
+						{views.map(({ id, label }) => {
+							const on = view === id;
+							return (
+								<button
+									key={id}
+									type="button"
+									aria-pressed={on}
+									onClick={() => setView(id)}
+									title={group}
+									className={cn(
+										"ta-tab ta-wall-cell flex cursor-pointer items-center justify-center px-1 py-2.5 transition-colors",
+										"focus:outline-none focus-visible:relative focus-visible:z-10 focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-fg",
+										on ? "text-fg" : "text-fg-muted hover:text-fg-secondary",
+									)}
+								>
+									<span className="text-xs font-medium leading-tight text-center text-balance">{label}</span>
+								</button>
+							);
+						})}
+						{Array.from({ length: blanks }, (_, i) => (
+							<div key={`blank-${i}`} className="ta-wall-cell bg-surface-chrome" aria-hidden />
+						))}
+					</div>
+				);
+			})}
 		</>
 	);
 
@@ -92,6 +106,16 @@ export function AperiodicClient() {
 			return <PatchView id="penrose" header={header} />;
 		case "hat":
 			return <PatchView id="hat" header={header} />;
+		case "chair":
+			return <PatchView id="chair" header={header} />;
+		case "sphinx":
+			return <PatchView id="sphinx" header={header} />;
+		case "half-hex":
+			return <PatchView id="half-hex" header={header} />;
+		case "pinwheel":
+			return <PatchView id="pinwheel" header={header} />;
+		case "half-hex-3":
+			return <PatchView id="half-hex-3" header={header} />;
 		default:
 			return <SubRosaView header={header} />;
 	}

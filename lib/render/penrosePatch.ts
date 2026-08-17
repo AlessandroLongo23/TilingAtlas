@@ -74,6 +74,48 @@ const THICK_HUE = 205;
 const THIN_HUE = 35;
 
 /**
+ * The deflation rule as a figure: each Robinson triangle, subdivided once.
+ *
+ * Same `subdivide` the patch runs, applied to one reference triangle of each kind, so the sidebar
+ * figure and the canvas cannot disagree. Drawn as triangles rather than rhombi on purpose — the rule
+ * acts on the halves, and a rhombus is only reassembled at the end.
+ *
+ * Note the direction: this is a DEFLATION, so the children are φ⁻¹ times the parent and sit inside it,
+ * where an inflation rule's children fill a parent scaled up. The picture reads the same either way.
+ */
+export function penroseRuleFigure(): { caption: string; pieces: RawPolygon[] }[] {
+	// `a` is the APEX and b, c are the base ends, with |ab| = |ac|: that is the convention `wheel` sets
+	// up and `subdivide` reads, and getting it wrong does not fail loudly — the formula still returns
+	// three triangles, they are just slivers that do not fill the parent. Both references below are
+	// therefore built as an isosceles triangle with its apex at the origin. It opens DOWNWARD so the
+	// panel, which flips y as SVG does, shows the apex on top.
+	const iso = (thin: boolean): Tri => {
+		const apex = thin ? Math.PI / 5 : (3 * Math.PI) / 5; // 36° and 108°
+		return {
+			thin,
+			a: { x: 0, y: 0 },
+			b: { x: Math.cos(Math.PI / 2 + apex / 2), y: -Math.sin(Math.PI / 2 + apex / 2) },
+			c: { x: Math.cos(Math.PI / 2 - apex / 2), y: -Math.sin(Math.PI / 2 - apex / 2) },
+		};
+	};
+	const refs: { thin: boolean; tri: Tri }[] = [
+		{ thin: true, tri: iso(true) },
+		{ thin: false, tri: iso(false) },
+	];
+	return refs.map(({ thin, tri }) => {
+		const kids = subdivide([tri]);
+		return {
+			caption: `${thin ? "36°–72°–72°" : "108°–36°–36°"} → ${kids.length} triangles`,
+			pieces: kids.map((k) => ({
+				n: 3,
+				hue: k.thin ? THIN_HUE : THICK_HUE,
+				vertices: [k.a, k.b, k.c].map((p) => ({ x: p.x, y: p.y })),
+			})),
+		};
+	});
+}
+
+/**
  * `depth` subdivisions of the starting wheel, returned as rhombi with unit edge. The patch covers a
  * disc of radius roughly φ^depth edges about the origin, so depth 5 gives about 11 rhombi from the
  * centre out, which is enough to fill a square card with interior.

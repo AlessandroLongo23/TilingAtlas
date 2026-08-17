@@ -2,7 +2,16 @@
 // encyclopedia — is an entry here plus a component; the client renders whatever this lists, and the
 // sidebar groups by `group` in the order the groups first appear.
 
-export type AperiodicViewId = "subrosa" | "penrose" | "hat" | "multigrid";
+export type AperiodicViewId =
+	| "subrosa"
+	| "penrose"
+	| "hat"
+	| "chair"
+	| "sphinx"
+	| "half-hex"
+	| "pinwheel"
+	| "half-hex-3"
+	| "multigrid";
 
 /** How the tiling is built — the taxonomy the sidebar groups by. */
 export type ConstructionGroup = "Substitution" | "Projection";
@@ -32,6 +41,39 @@ export const APERIODIC_VIEWS: AperiodicViewDef[] = [
 		id: "hat",
 		label: "The hat",
 		blurb: "the aperiodic monotile",
+		group: "Substitution",
+	},
+	// From the Tilings Encyclopedia. Both are rep-tiles: one prototile that tiles a copy of itself
+	// scaled by 2. Unlike the three above they carry no bespoke engine — the rule is data and the
+	// inflation is generic (lib/substitution/), so the next encyclopedia entry costs a literal.
+	{
+		id: "chair",
+		label: "Chair",
+		blurb: "L-tromino, rep-4",
+		group: "Substitution",
+	},
+	{
+		id: "sphinx",
+		label: "Sphinx",
+		blurb: "hexiamond, rep-4",
+		group: "Substitution",
+	},
+	{
+		id: "half-hex",
+		label: "Half-hex",
+		blurb: "half hexagon, rep-4",
+		group: "Substitution",
+	},
+	{
+		id: "pinwheel",
+		label: "Pinwheel",
+		blurb: "√5, infinite rotations",
+		group: "Substitution",
+	},
+	{
+		id: "half-hex-3",
+		label: "Half-hex ×3",
+		blurb: "random, 2 rules",
 		group: "Substitution",
 	},
 	{

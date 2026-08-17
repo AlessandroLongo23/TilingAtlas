@@ -125,6 +125,21 @@ export interface AperiodicView {
 	 * right-click-home and the wheel's limits stay correct.
 	 */
 	rehome: () => void;
+	/**
+	 * Re-read home() and touch NOTHING on the camera — pan, zoom and angle all survive exactly.
+	 *
+	 * The third case, and the one a substitution level slider needs. `refit` and `rehome` both assume
+	 * the subject changed SIZE under the reader: a parameter slider deforms the tile, so holding the
+	 * tile's on-screen area still is right. A substitution level does not deform anything. The tiles
+	 * keep their world size and the PATCH grows around them, so carrying the camera by the change in
+	 * home zoom shrinks tiles that never changed, and every extra level makes the tiling smaller until
+	 * it is texture.
+	 *
+	 * Leaving the camera alone instead means a level is what it actually is: more tiling, at the size
+	 * you were already reading it. Home zoom and centre still update, so right-click-home and the
+	 * wheel's limits stay correct against the new patch.
+	 */
+	remeasure: () => void;
 	/** Ease back to home (what right-click does). */
 	resetView: () => void;
 	/** Ask for one more frame — theme flips, a toggled option, anything not driven by the controls. */
@@ -259,6 +274,12 @@ export function useAperiodicView({
 		// measurable yet still has to redraw with whatever it has.
 		dirtyRef.current = true;
 	}, [measureHome, carryZoom]);
+
+	const remeasure = useCallback(() => {
+		// Deliberately no carryZoom: see the doc on AperiodicView.remeasure.
+		measureHome();
+		dirtyRef.current = true;
+	}, [measureHome]);
 
 	// The slider's setter. Wraps like the wheel path so 355 + a detent and "355" from the slider land on
 	// the same target, and publishes the value straight away instead of waiting for the next frame.
@@ -403,5 +424,5 @@ export function useAperiodicView({
 		onContextMenu: (e: React.MouseEvent) => e.preventDefault(), // right-click resets, not a menu
 	};
 
-	return { handlers, refit, rehome, resetView, requestDraw, frameRef, rotationDeg, setRotation };
+	return { handlers, refit, rehome, remeasure, resetView, requestDraw, frameRef, rotationDeg, setRotation };
 }

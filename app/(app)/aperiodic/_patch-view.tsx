@@ -30,7 +30,23 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { HAT_LEVEL, hatPatch } from "@/lib/render/hatPatch";
-import { penrosePatch } from "@/lib/render/penrosePatch";
+import { penrosePatch, penroseRuleFigure } from "@/lib/render/penrosePatch";
+import {
+	chairPatch,
+	halfHexPatch,
+	pinwheelPatch,
+	sphinxHandedness,
+	sphinxPatch,
+	halfHex3Patch,
+	substitutionRuleFigure,
+	HALF_HEX_3_LEVEL,
+	HALF_HEX_3_MAX_LEVEL,
+	PINWHEEL_LEVEL,
+	PINWHEEL_MAX_LEVEL,
+	SUBSTITUTION_LEVEL,
+	SUBSTITUTION_MAX_LEVEL,
+	type Sample,
+} from "@/lib/render/substitutionPatch";
 import {
 	applyViewTransform,
 	useAperiodicView,
@@ -40,7 +56,7 @@ import {
 import { SubRosaGL } from "@/lib/render/subrosaGL";
 import { drawPolygons, polygonFillHue, type RawPolygon } from "@/lib/utils/renderTiling";
 import { Slider } from "@/components/ui/slider";
-import { AperiodicSidebar, Section } from "./_controls";
+import { AperiodicSidebar, Section, Segmented } from "./_controls";
 import { Details, strokePxAt, STROKE_CSS, STROKE_RGBA, STROKE_WIDTH, ViewFooter } from "./_view-chrome";
 
 interface PatchDef {
@@ -56,9 +72,23 @@ interface PatchDef {
 	 * would open Penrose at twice the hat's tile size.
 	 */
 	level: { label: string; min: number; max: number; def: number };
-	build: (level: number) => RawPolygon[];
+	build: (level: number, sample: Sample) => RawPolygon[];
+	/**
+	 * Dissection picker, for the one rule that has more than one. Absent everywhere else, because a
+	 * rep-tile whose dissection is unique has nothing to pick between.
+	 */
+	modes?: { v: string; label: string; sub?: string }[];
 	/** The Details list. Facts about THIS patch at THIS level — no prose; the sidebar is not a page. */
 	facts: (level: number, count: number) => [string, string][];
+	/**
+	 * The substitution rule as a figure: one panel per prototile, holding the pieces one step produces.
+	 *
+	 * Sub Rosa has had this since it shipped and it is the "see how it works" cue that makes a patch
+	 * legible — without it the sidebar states an inflation factor and a child count and leaves the
+	 * reader to infer the dissection from a thousand tiles. Every entry here derives its panels from
+	 * the SAME builder that draws the canvas, so the figure cannot drift from the tiling beside it.
+	 */
+	rule?: () => { caption: string; pieces: RawPolygon[] }[];
 }
 
 // Level caps. On the GPU the per-frame cost is gone — the patch is uploaded once and a drag is a
@@ -102,7 +132,10 @@ export function characteristicTileSize(polys: RawPolygon[]): number {
 	return Math.sqrt(total / polys.length);
 }
 
-const PATCHES: Record<"penrose" | "hat", PatchDef> = {
+const PATCHES: Record<
+	"penrose" | "hat" | "chair" | "sphinx" | "half-hex" | "pinwheel" | "half-hex-3",
+	PatchDef
+> = {
 	penrose: {
 		title: "Penrose",
 		level: { label: "Deflation depth", min: 1, max: PENROSE_MAX_DEPTH, def: 6 },
@@ -114,6 +147,7 @@ const PATCHES: Record<"penrose" | "hat", PatchDef> = {
 			["Depth", String(level)],
 			["Rhombi", count.toLocaleString()],
 		],
+		rule: penroseRuleFigure,
 	},
 	hat: {
 		title: "The hat",
@@ -127,6 +161,106 @@ const PATCHES: Record<"penrose" | "hat", PatchDef> = {
 			["Hats", count.toLocaleString()],
 			["Reflected", "≈ 1 in 7"],
 		],
+		// The hat substitutes METATILES, not hats, so there is no single-tile dissection to draw. The
+		// honest figure is one step of the thing that does substitute: the H metatile (four hats) and the
+		// H supertile it becomes.
+		rule: () => [
+			{ caption: "H metatile → 4 hats", pieces: hatPatch(1) },
+			{ caption: "H supertile → 25 hats", pieces: hatPatch(2) },
+		],
+	},
+	// The Tilings Encyclopedia entries. Chair, sphinx and half-hex are rep-tiles: one prototile, factor
+	// 2, four children, and in each case the dissection is UNIQUE — which is what makes it safe to
+	// present as THE rule rather than as A rule. The pinwheel is the odd one out on both counts, factor
+	// √5 with a turning expansion and two admissible dissections. None of the four was read off the
+	// encyclopedia's raster; see the provenance note in lib/substitution/rules.ts.
+	chair: {
+		title: "Chair",
+		level: { label: "Substitution level", min: 1, max: SUBSTITUTION_MAX_LEVEL, def: SUBSTITUTION_LEVEL },
+		build: chairPatch,
+		facts: (level, count) => [
+			["Construction", "rep-tile substitution"],
+			["Prototiles", "1 (L-tromino)"],
+			["Inflation", "2"],
+			["Children", "4, dissection unique"],
+			["Level", String(level)],
+			["Chairs", count.toLocaleString()],
+			["Order", "limitperiodic"],
+		],
+		rule: () => substitutionRuleFigure("chair"),
+	},
+	sphinx: {
+		title: "Sphinx",
+		level: { label: "Substitution level", min: 1, max: SUBSTITUTION_MAX_LEVEL, def: SUBSTITUTION_LEVEL },
+		build: sphinxPatch,
+		facts: (level, count) => [
+			["Construction", "rep-tile substitution"],
+			["Prototiles", "1 hexiamond (chiral)"],
+			["Inflation", "2"],
+			["Children", "4, dissection unique"],
+			["Level", String(level)],
+			["Sphinxes", count.toLocaleString()],
+			["Left-handed", sphinxHandedness(level).left.toLocaleString()],
+		],
+		rule: () => substitutionRuleFigure("sphinx"),
+	},
+	"half-hex": {
+		title: "Half-hex",
+		level: { label: "Substitution level", min: 1, max: SUBSTITUTION_MAX_LEVEL, def: SUBSTITUTION_LEVEL },
+		build: halfHexPatch,
+		facts: (level, count) => [
+			["Construction", "rep-tile substitution"],
+			["Prototiles", "1 (half hexagon)"],
+			["Inflation", "2"],
+			["Children", "4, dissection unique"],
+			["Level", String(level)],
+			["Trapezoids", count.toLocaleString()],
+			["Order", "limitperiodic"],
+		],
+		rule: () => substitutionRuleFigure("half-hex"),
+	},
+	// The one rule here whose expansion turns as well as scales, which is why the sidebar names φ and
+	// not just the factor. Its own level bounds: 5 tiles per level, not 4.
+	pinwheel: {
+		title: "Pinwheel",
+		level: { label: "Substitution level", min: 1, max: PINWHEEL_MAX_LEVEL, def: PINWHEEL_LEVEL },
+		build: pinwheelPatch,
+		facts: (level, count) => [
+			["Construction", "substitution, φ = ×(2 + i)"],
+			["Prototiles", "1 triangle (1, 2, √5)"],
+			["Inflation", "√5 = 2.236068"],
+			["Children", "5"],
+			["Level", String(level)],
+			["Triangles", count.toLocaleString()],
+			["Orientations", "dense in the circle"],
+			["Discovered", "Conway; Radin 1994"],
+		],
+		rule: () => substitutionRuleFigure("pinwheel"),
+	},
+	// The shelf's one RANDOM rule. Not the encyclopedia's Half-hex (that is the factor-2 entry above,
+	// whose dissection is unique and so cannot be randomised); this is the same prototile at factor 3,
+	// where it has 49 dissections, two of which are shipped. They are compatible — nine trapezoids
+	// either way — so mixing them per tile leaves the inflation factor and the tile frequencies alone
+	// and randomises only the arrangement.
+	"half-hex-3": {
+		title: "Half-hex ×3",
+		level: { label: "Substitution level", min: 1, max: HALF_HEX_3_MAX_LEVEL, def: HALF_HEX_3_LEVEL },
+		build: (level, sample) => halfHex3Patch(level, sample),
+		modes: [
+			{ v: "0", label: "Rule A", sub: "one dissection" },
+			{ v: "1", label: "Rule B", sub: "the other" },
+			{ v: "mix", label: "Random", sub: "per tile" },
+		],
+		facts: (level, count) => [
+			["Construction", "random substitution"],
+			["Prototiles", "1 (half hexagon)"],
+			["Inflation", "3"],
+			["Children", "9, in 49 dissections"],
+			["Shipped rules", "2, compatible"],
+			["Level", String(level)],
+			["Trapezoids", count.toLocaleString()],
+		],
+		rule: () => substitutionRuleFigure("half-hex-3"),
 	},
 };
 
@@ -134,6 +268,10 @@ const PATCHES: Record<"penrose" | "hat", PatchDef> = {
 export const PATCH_DEFAULT_LEVELS = {
 	penrose: PATCHES.penrose.level.def,
 	hat: PATCHES.hat.level.def,
+	chair: PATCHES.chair.level.def,
+	sphinx: PATCHES.sphinx.level.def,
+	"half-hex": PATCHES["half-hex"].level.def,
+	pinwheel: PATCHES.pinwheel.level.def,
 } as const;
 
 /**
@@ -145,19 +283,77 @@ const hueOf = (p: RawPolygon) => p.hue ?? polygonFillHue(p.vertices);
 
 /** Patches are deterministic and rebuilt on every level change, so keep each one that was asked for. */
 const cache = new Map<string, RawPolygon[]>();
-function patchAt(id: keyof typeof PATCHES, level: number): RawPolygon[] {
-	const key = `${id}:${level}`;
+function patchAt(id: keyof typeof PATCHES, level: number, sample: Sample): RawPolygon[] {
+	const key = `${id}:${level}:${sample.pick}:${"seed" in sample ? sample.seed : ""}`;
 	let polys = cache.get(key);
 	if (!polys) {
-		polys = PATCHES[id].build(level);
+		polys = PATCHES[id].build(level, sample);
 		cache.set(key, polys);
 	}
 	return polys;
 }
 
+/**
+ * One panel of a rule figure: the pieces one substitution step produces, fitted to a small SVG.
+ *
+ * Fills use the same HSL the GPU path is handed (saturation 1, lightness 80 — HSB(h, 40, 100)), so a
+ * piece here is exactly the colour it will be on the canvas. y is flipped because SVG counts down and
+ * every tiling in the atlas counts up.
+ */
+function RulePanel({ caption, pieces }: { caption: string; pieces: RawPolygon[] }) {
+	const W = 232, H = 96, pad = 6;
+	let minx = Infinity, miny = Infinity, maxx = -Infinity, maxy = -Infinity;
+	for (const p of pieces)
+		for (const v of p.vertices) {
+			if (v.x < minx) minx = v.x;
+			if (v.x > maxx) maxx = v.x;
+			if (v.y < miny) miny = v.y;
+			if (v.y > maxy) maxy = v.y;
+		}
+	if (!Number.isFinite(minx)) return null;
+	const bw = maxx - minx || 1, bh = maxy - miny || 1;
+	const s = Math.min((W - 2 * pad) / bw, (H - 2 * pad) / bh);
+	// Centre the drawing in the box, so panels of different aspect ratios sit on one axis.
+	const ox = (W - s * bw) / 2, oy = (H - s * bh) / 2;
+	return (
+		<div>
+			<div className="text-[11px] text-fg-muted mb-1">{caption}</div>
+			<svg width={W} height={H} className="w-full rounded-control border border-line-subtle bg-surface-overlay">
+				{pieces.map((p, i) => (
+					<polygon
+						key={i}
+						points={p.vertices
+							.map((v) => `${ox + s * (v.x - minx)},${H - oy - s * (v.y - miny)}`)
+							.join(" ")}
+						fill={`hsl(${hueOf(p)} ${PATCH_SAT * 100}% ${PATCH_LIGHT}%)`}
+						stroke="rgba(0,0,0,0.55)"
+						strokeWidth={0.6}
+					/>
+				))}
+			</svg>
+		</div>
+	);
+}
+
+/**
+ * What a level change does to the camera.
+ *
+ * "Fit" re-frames onto the whole patch, which is the right default: it is the only framing where the
+ * slider's effect — a bigger and bigger supertile — is visible at all. "Keep" leaves pan and zoom
+ * exactly where the reader put them, so tiles hold their on-screen size and the extra levels arrive
+ * as more tiling running off the edges. That is the mode for studying one region while the level
+ * moves under it; see AperiodicView.remeasure for why neither refit nor rehome does this.
+ */
+type LevelFraming = "fit" | "keep";
+
 export function PatchView({ id, header }: { id: keyof typeof PATCHES; header: React.ReactNode }) {
 	const def = PATCHES[id];
 	const [level, setLevel] = useState(def.level.def);
+	const [framing, setFraming] = useState<LevelFraming>("fit");
+	// Which dissection a random rule uses, and the seed behind a mixed sample. Inert for every other
+	// view, whose `modes` is absent and whose build ignores the sample entirely.
+	const [pick, setPick] = useState<string>("mix");
+	const [seed, setSeed] = useState(1);
 	const [strokeWidth, setStrokeWidth] = useState<number>(STROKE_WIDTH.def);
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const glRef = useRef<SubRosaGL | null>(null);
@@ -165,7 +361,13 @@ export function PatchView({ id, header }: { id: keyof typeof PATCHES; header: Re
 	const uploadedRef = useRef<RawPolygon[] | null>(null);
 
 	const effLevel = Math.min(Math.max(level, def.level.min), def.level.max);
-	const polys = useMemo(() => patchAt(id, effLevel), [id, effLevel]);
+	const sample: Sample = useMemo(
+		() => (pick === "mix" ? { pick: "mix", seed } : { pick: Number(pick) }),
+		[pick, seed],
+	);
+	const polys = useMemo(() => patchAt(id, effLevel, sample), [id, effLevel, sample]);
+	// Level-independent: the rule is the rule at every level, so it is built once per construction.
+	const ruleFigure = useMemo(() => def.rule?.(), [def]);
 
 	// One rule at every level: fit the whole patch. Every position on the slider then behaves the same
 	// way, and moving it means "more tiling", never "and now the framing changes too".
@@ -229,7 +431,7 @@ export function PatchView({ id, header }: { id: keyof typeof PATCHES; header: Re
 	);
 
 	const view = useAperiodicView({ canvasRef, home, draw });
-	const { refit, requestDraw } = view;
+	const { refit, remeasure, requestDraw } = view;
 
 	// Create the renderer once: a canvas holds one context type for its life, so this decides the path.
 	// Declared BEFORE the upload effect so the renderer exists when the first upload runs (effects fire
@@ -256,14 +458,22 @@ export function PatchView({ id, header }: { id: keyof typeof PATCHES; header: Re
 		};
 	}, []);
 
-	// Triangulate and upload on every level change, then reframe.
+	// Triangulate and upload on every level change, then reframe according to `framing`.
+	//
+	// A NEW SUBJECT always snaps home, whatever the toggle says: switching construction while "keep" is
+	// on would otherwise leave the reader pointed at wherever the last tiling happened to be, which for
+	// the pinwheel and the chair is not even the same quadrant. Only a level change is the toggle's.
+	const subjectRef = useRef<string | null>(null);
 	useEffect(() => {
 		if (modeRef.current === "gl" && glRef.current && uploadedRef.current !== polys) {
 			glRef.current.uploadPolygons(polys, hueOf);
 			uploadedRef.current = polys;
 		}
-		refit();
-	}, [polys, refit]);
+		const newSubject = subjectRef.current !== id;
+		subjectRef.current = id;
+		if (newSubject || framing === "fit") refit();
+		else remeasure();
+	}, [polys, id, framing, refit, remeasure]);
 	useEffect(() => {
 		requestDraw();
 	}, [strokeWidth, requestDraw]);
@@ -285,12 +495,42 @@ export function PatchView({ id, header }: { id: keyof typeof PATCHES; header: Re
 						<span>{polys.length.toLocaleString()} tiles</span>
 						{effLevel === def.level.max && <span>budget limit</span>}
 					</div>
+					<Segmented
+						options={[
+							{ v: "fit", label: "Fit patch", sub: "reframe on level" },
+							{ v: "keep", label: "Keep view", sub: "hold pan and zoom" },
+						]}
+						value={framing}
+						onChange={(v) => setFraming(v as LevelFraming)}
+					/>
 				</Section>
+
+				{def.modes && (
+					<Section label="Dissection">
+						<Segmented options={def.modes} value={pick} onChange={setPick} cols={3} />
+						{pick === "mix" && (
+							<button
+								type="button"
+								onClick={() => setSeed((n) => n + 1)}
+								className="ta-tab ta-wall-cell w-full cursor-pointer px-2 py-2 text-xs text-fg-muted transition-colors hover:text-fg focus:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-fg"
+							>
+								New sample · seed {seed}
+							</button>
+						)}
+					</Section>
+				)}
 
 				<ViewFooter view={view} strokeWidth={strokeWidth} onStrokeWidth={setStrokeWidth} />
 
 				<Section label="Details">
 					<Details rows={def.facts(effLevel, polys.length)} />
+					{ruleFigure && (
+						<div className="flex flex-col gap-3">
+							{ruleFigure.map((panel) => (
+								<RulePanel key={panel.caption} caption={panel.caption} pieces={panel.pieces} />
+							))}
+						</div>
+					)}
 				</Section>
 			</AperiodicSidebar>
 
