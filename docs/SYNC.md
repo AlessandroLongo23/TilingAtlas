@@ -2473,13 +2473,13 @@ per-gluing flip bit was built and REVERTED: no new tilings, 26x cost, 41 of fdsq
 ⚑ I retracted an overlap claim of my own (checker bug) and `tiling_canon.py` is unvalidated — see NOTES.
 Detail: NOTES 2026-08-13 (fourth).
 
-## 2026-08-14 — a second infinite family, {3,n}, onto the hyperbolic-poly shelf — CC
+## 2026-08-17 (second) — a second infinite family, {3,n}, onto the hyperbolic-poly shelf — CC
 
 Marek's `ai2_<n>` corpora: tilings by triangles and n-gons at the {3,n} edge length, where α(n,ℓ) =
 2·α(3,ℓ) is an identity and a vertex closes iff a + 2b = n. **33,795 of 33,795 developed, 0 failures, 30
 MB, boards n = 7…15**, every per-k count reproducing his census. Shares the ai1 shelf: ids gain a `t`
 prefix, the sub-axis splits `hpo-`/`hpt-`. ⚑ `emit_board_tables.py`, generalized, found ai1 **n = 17**
-has five census-counted k the drop never carried. Detail: NOTES 2026-08-14.
+has five census-counted k the drop never carried. Detail: NOTES 2026-08-17 (ai2).
 
 ## 2026-08-14 (second) — Penrose's kite and dart, on a ring the developer picks up from the palette — CC
 
@@ -2581,3 +2581,12 @@ the existing `star` kind is the isotoxal dented 2n-gon, not self-intersecting {n
 solids needed only the new tile kind + winding in the developer, 2 needed a density closure, and a
 third category (retrograde faces) is a developer change invisible to the search. ⚑ D=840 opens the
 7-fold family; ⚑ `maxValence: 6`, not geometry, hid both heptagrammic pyramids. Detail: NOTES 2026-08-17.
+
+## 2026-08-17 (third) — the base hyperbolic shelf gets a board axis — CC
+
+It was the one large shelf with no sub-axis: two rows, k=1 (12,168) and k=2 (16,285). Now four levels,
+**valence → alphabet → configuration → tilings**, 227 generated boards under six valence headings. AL's
+valence-only suggestion measured at a worst row of 5,581, so the configuration level was added — it takes
+the biggest cell to 876. ⚑ It surfaces a fact the shelf never stated: a hyperbolic config does not
+determine its tiling (12,168 uniform tilings over 2,591 configs, `4.6⁷` alone admitting 147), and the 27
+regular {p,q} tilings now read as `{7,3}` instead of `7`. Detail: NOTES 2026-08-17 (later).

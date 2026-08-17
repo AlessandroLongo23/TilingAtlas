@@ -3,7 +3,7 @@
 import { Fragment, memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useExpandableGroups } from "@/lib/hooks/useExpandableGroups";
-import { tileClassOf, TILE_CLASS_ORDER, TILE_CLASS_LABEL, SUB_ORDER, subOf, familyOfSub, type TileClass } from "@/lib/services/referenceAtlas";
+import { compactVertexConfig, tileClassOf, TILE_CLASS_ORDER, TILE_CLASS_LABEL, SUB_ORDER, subOf, familyOfSub, type TileClass } from "@/lib/services/referenceAtlas";
 import { cn } from "@/lib/utils/cn";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import { COLOR_SUB, FAMILY_LABEL, SUB_LABEL, shortSubLabel } from "@/lib/services/shelfLabels";
@@ -25,6 +25,14 @@ interface CatalogueListPanelProps {
 // path reads as an indented tree pinned to the top of the scrollport.
 const ROW_H = 36;
 const NESTED_TOP = ROW_H + 1;
+
+// A board on the base hyperbolic shelf ("hyt-…") earns the configuration level only when the level
+// DIVIDES something — the same test the family row already applies one level up. Under 60 tilings the
+// board lists them directly, because 167 of the 227 boards are that small and most of their
+// configurations hold one or two tilings: a level of one-item rows is a click, not a structure. Above it,
+// 60 boards split into 6…147 configuration rows (median 25) and the biggest cell drops 5,581 → 876.
+const CONFIG_LEVEL_MIN = 60;
+const splitsByConfig = (sub: string, count: number) => sub.startsWith("hyt-") && count > CONFIG_LEVEL_MIN;
 
 // Class order + labels come from the shared registry (referenceAtlas TILE_CLASS_ORDER / TILE_CLASS_LABEL),
 // the same source /library uses — so a new class appears here automatically. A class section only appears
@@ -156,6 +164,11 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({ items, sele
 	const selectedKId = selectedTile
 		? `k:${tileClassOf(selectedTile)}:${subOf(selectedTile)}:${selectedTile.k}`
 		: null;
+	// The configuration row, where a board splits by one (see configSections). It stands INSTEAD of the k
+	// row, so both ids go into the reveal below and whichever the tree rendered is the one that opens.
+	const selectedConfigId = selectedTile
+		? `cfg:${tileClassOf(selectedTile)}:${subOf(selectedTile)}:${selectedTile.family}`
+		: null;
 
 	// Open the path to the current tiling on every selection change; the bucket's TileGrid handles the
 	// scroll and the pulse itself (with the tiles virtualised, the target row may not be mounted yet, so
@@ -174,11 +187,20 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({ items, sele
 		// Every level on the path, family included; a closed family row would hide the sub the reveal
 		// just opened.
 		openGroups(
-			[selectedClassId, selectedFamilyId, selectedGridId, selectedSubId, selectedKId].filter(
+			[selectedClassId, selectedFamilyId, selectedGridId, selectedSubId, selectedKId, selectedConfigId].filter(
 				(x): x is string => !!x,
 			),
 		);
-	}, [selectedKey, selectedClassId, selectedFamilyId, selectedGridId, selectedSubId, selectedKId, openGroups]);
+	}, [
+		selectedKey,
+		selectedClassId,
+		selectedFamilyId,
+		selectedGridId,
+		selectedSubId,
+		selectedKId,
+		selectedConfigId,
+		openGroups,
+	]);
 
 	// When the geometry filter leaves a single tile class (hyperbolic is always one; spherical is one until
 	// its freedraw shelf loads, then it splits into Spherical + Freedraw), drop the redundant class level and
@@ -214,6 +236,58 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({ items, sele
 					{open ? (
 						<TileGrid
 							items={kk.list}
+							selectedKey={selectedKey}
+							onSelect={onSelect}
+							revealKey={selectedKey}
+							width={width}
+						/>
+					) : null}
+				</div>
+			);
+		});
+
+	// ── The base hyperbolic shelf's fourth level: one row per VERTEX CONFIGURATION ────────────────────
+	//
+	// It REPLACES the k row instead of sitting above it. A configuration fixes its own k (k is the number
+	// of orbits listed in it), so a "k = 2" row underneath would hold exactly the row above it and cost a
+	// click to say nothing.
+	//
+	// Why this level exists at all: in H² a vertex configuration does NOT determine the tiling. 12,168
+	// uniform tilings realise only 2,591 configurations — `4.6⁷` alone admits 147 — so the configuration
+	// is a real family with real members, and it is the only cut that brings this shelf to human scale.
+	// Its board rows still hold up to 5,581 tilings; under them no configuration holds more than 876, and
+	// only 6 of 2,336 hold more than 300.
+	//
+	// BIGGEST FIRST, unlike every other level here, which sorts by its own axis (SUB_ORDER, k ascending).
+	// There is no meaningful order on configurations, and the whole point of the level is to surface the
+	// crowded ones; the tie-break on the string keeps it stable.
+	const configGroups = (ks: { k: number; list: CatalogueTiling[] }[]) => {
+		const m = new Map<string, CatalogueTiling[]>();
+		for (const kk of ks)
+			for (const t of kk.list) {
+				const list = m.get(t.family);
+				if (list) list.push(t);
+				else m.set(t.family, [t]);
+			}
+		return [...m.entries()].sort((a, b) => b[1].length - a[1].length || (a[0] < b[0] ? -1 : 1));
+	};
+
+	const configSections = (cls: TileClass, sub: string, ks: { k: number; list: CatalogueTiling[] }[], depth: 0 | 1 | 2 | 3) =>
+		configGroups(ks).map(([family, list]) => {
+			const id = `cfg:${cls}:${sub}:${family}`;
+			const open = expanded[id];
+			return (
+				<div key={id} className="flex flex-col gap-px">
+					<TreeRow
+						label={compactVertexConfig(family)}
+						count={list.length}
+						open={open}
+						depth={depth}
+						onToggle={() => toggle(id)}
+					/>
+					{open ? (
+						<TileGrid
+							items={list}
 							selectedKey={selectedKey}
 							onSelect={onSelect}
 							revealKey={selectedKey}
@@ -302,7 +376,11 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({ items, sele
 						depth={baseDepth}
 						onToggle={() => toggle(id)}
 					/>
-					{expanded[id] ? kSections(g.cls, s.sub, s.ks, (baseDepth + 1) as 1 | 2 | 3) : null}
+					{expanded[id]
+						? splitsByConfig(s.sub, s.count)
+							? configSections(g.cls, s.sub, s.ks, (baseDepth + 1) as 1 | 2 | 3)
+							: kSections(g.cls, s.sub, s.ks, (baseDepth + 1) as 1 | 2 | 3)
+						: null}
 				</div>
 			);
 		});

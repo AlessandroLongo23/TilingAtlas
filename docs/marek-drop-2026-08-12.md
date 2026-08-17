@@ -244,7 +244,7 @@ Ordered by cost per unit of catalogue, cheapest first. Every step ends with `pnp
 
 ### D. New decoders, the large work
 
-9. ~~`develop_ai2.py`~~ **DONE 2026-08-14** for the hyperbolic half: n = 7…15, `--budget 15000` as a
+9. ~~`develop_ai2.py`~~ **DONE 2026-08-17** for the hyperbolic half: n = 7…15, `--budget 15000` as a
    contiguous k prefix, **33,795 of 33,795 developed, 0 failures, 30 MB**, every per-k count matching
    the census where one exists. The identity α(n,ℓ) = 2·α(3,ℓ) and the closure rule a + 2b = n are
    asserted per board in `board_of` and re-checked in TS on every shipped record. Shares the ai1 shelf
