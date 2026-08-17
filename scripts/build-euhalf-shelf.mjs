@@ -78,8 +78,11 @@ const BOARDS = [
 			+ 'edge-to-edge tiling at k=2 is joined by a hundred more once they are.',
 	},
 	{
-		id: 'tri', label: '{3} halved by its mirror', cells: 'run-eu-half-tri-mirror-split-k4/eu-half-tri-mirror-split-cells.json',
-		cellsEdgeToEdge: 'run-eu-half-tri-mirror-k6/eu-half-tri-mirror-cells.json',
+		id: 'tri', label: '{3} halved by its mirror', cells: 'run-eu-half-tri-mirror-split-k5/eu-half-tri-mirror-split-cells.json',
+		// NO cellsEdgeToEdge, deliberately. The other boards top up with the deeper edge-to-edge run, which
+		// leaves their upper k counting a SUBSET; AL, 2026-08-17: "otherwise we can't say that they are
+		// complete". So this board stops where the divided-edge search stops. k=6 is not reachable: the k=5
+		// solve alone took 21 minutes and k=6 was still growing past 18,386 raw solutions after 15.
 		D: 12, hue: 265, tile: '30-60-90 triangle',
 		angles: [30, 60, 90], sides: [2, 1, Math.sqrt(3)],
 		note: 'Half a regular triangle, cut by its mirror from a vertex to the midpoint of the opposite edge. '
@@ -451,7 +454,15 @@ for (const B of BOARDS) {
 						: '. ')
 					+ `${B.note} `
 					+ 'Certified here: every face is exactly the tile, the faces cover the period cell with no gap '
-					+ 'and no overlap, and every vertex sees a full turn.',
+					+ 'and no overlap, and every vertex sees a full turn.'
+					// A k above the divided-edge ceiling is the EDGE-TO-EDGE enumeration only, and the record has
+					// to say so. Without it the shelf reads as complete at every k it lists, which is exactly the
+					// claim it cannot support there (AL, 2026-08-17).
+					+ (k > B.splitMax
+						? ` Note that k = ${k} on this board counts EDGE-TO-EDGE tilings only: the divided-edge `
+							+ `search reached k = ${B.splitMax} and no further, so this slice is a subset and not a `
+							+ 'complete enumeration.'
+						: ''),
 			};
 		});
 		if (k <= EAGER_MAX) eager.push(...ref);

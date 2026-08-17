@@ -262,3 +262,32 @@ THREE THINGS THE NEW BOARD BROKE, all in the guard test, all real.
   reference-atlas-euhalf.json over. The test read it with a bare JSON.parse and got an object:
   "rows.filter is not a function". decodeAtlas now, same as every other reader. Worth noting the
   failure mode is silent for anything that iterates instead of calling an array method.
+
+--- k=5 RERUN, and what a board is allowed to claim ----------------------------------------------
+AL, 2026-08-17: "Remove those k=5 and k=6 or rerun them if feasible with the divided hypotenuse,
+because otherwise we can't say that they are complete." Correct, and it is the same data-integrity
+rule the project already applies to non-contiguous k: a counts table that is complete at k<=4 and an
+edge-to-edge SUBSET at k=5,6 presents a partial corpus as a catalogue.
+
+  k=5 RERAN and finished: 9,092 raw, 9,070 after the supercell filter. 21 minutes of solve.
+  k=6 NOT feasible and dropped: the earlier attempt was still growing past 18,386 raw after 15
+    minutes, and k=5 at 26,135 raw took 21, so k=6 is hours away on this machine.
+
+  tri now { 1:5  2:64  3:391  4:1989  5:9070 } = 11,519, with enumeratedTo == dividedTo == 5, so
+  every k it lists is complete. It takes no `cellsEdgeToEdge` top-up at all, unlike the other boards.
+  Shelf 35,487 -> 40,234.
+
+  COMPLETE AT EVERY K THEY LIST: tri (5), hexm (9), sqmid (6).
+  NOT: hexv lists k=7..13 and pent k=10..14, which are the edge-to-edge runs and therefore subsets.
+
+WHAT WAS DONE ABOUT hexv AND pent, short of deleting 27,362 shipped tilings. Every record above its
+board's `dividedTo` now says so in its own note: "k = 7 on this board counts EDGE-TO-EDGE tilings
+only: the divided-edge search reached k = 6 and no further, so this slice is a subset and not a
+complete enumeration." Verified per shard: at k=7, 226 hexv records carry it and pent's 14 and hexm's
+19 do not, both still being within their own ceiling; at k=5 nothing carries it.
+  That is a label, not a fix. The honest options for those two boards are to run the divided-edge
+  search deeper (hexv k=7 will cost far more than tri k=5 did) or to truncate them to k<=6 and k<=9,
+  which removes 26,876 and 486 tilings that have been shipped since 2026-08-14. AL's call, not mine.
+
+  pent is a special case worth noting: its divided-edge search found EXACTLY the edge-to-edge set at
+  every k it reached, k<=9, so there is reason to expect k=10..14 are complete too. Reason, not proof.

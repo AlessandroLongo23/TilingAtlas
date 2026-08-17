@@ -120,9 +120,10 @@ describe("board manifest", () => {
 
 	it("offers each lazy slice at its own k and nowhere else", () => {
 		const lazy = EU_HALF_BOARDS.flatMap((b) => b.lazyKs.map((k) => `${b.id}@${k}`)).sort();
-		// 28: the divided-edge rebuild took hexm to k=9 and sqmid to k=6, where each used to hold one
-		// tiling, and the half-triangle board arrived with k=5 and k=6 of its own.
-		expect(lazy.length).toBe(28);
+		// 27: the divided-edge rebuild took hexm to k=9 and sqmid to k=6, where each used to hold one
+		// tiling, and the half-triangle board arrived with a k=5 of its own. It has no k=6 on purpose —
+		// the divided-edge search stops at 5 there, and a board does not ship a k it cannot enumerate.
+		expect(lazy.length).toBe(27);
 		for (const b of EU_HALF_BOARDS) {
 			for (let k = 1; k <= b.enumeratedTo; k++) {
 				expect(euHalfLazyShardsForK(k).some((x) => x.id === b.id), `${b.id} k=${k}`)

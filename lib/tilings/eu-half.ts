@@ -13,7 +13,7 @@
 // and the edge-slot filter says out loud that "each edge is shared by exactly TWO corners". Let one
 // tile's edge be met by TWO neighbours and neither holds. Every board here has a side of length 2 and a
 // side of length 1, so every board admits such a division, and the boards were re-run with it allowed:
-// the counts below at k ≤ `dividedTo` include those tilings, and the shelf grew from 27,728 to 35,487.
+// the counts below at k ≤ `dividedTo` include those tilings, and the shelf grew from 27,728 to 40,234.
 // The half-decagon is the one board where no edge decomposes, so its exclusion survives untouched; the
 // half-octagon's does not survive as an argument, and was re-run to confirm the board is empty anyway.
 // See experiments/results/euhalf-nonedge-to-edge-2026-08-17.log.
@@ -147,11 +147,11 @@ export const EU_HALF_BOARDS: EuHalfBoard[] = [
 		sides: [2, 1, 1.7320508075688772],
 		D: 12,
 		eagerKs: [1, 2, 3, 4],
-		lazyKs: [5, 6],
-		counts: { 1: 5, 2: 64, 3: 391, 4: 1989, 5: 1043, 6: 3280 },
-		enumeratedTo: 6,
+		lazyKs: [5],
+		counts: { 1: 5, 2: 64, 3: 391, 4: 1989, 5: 9070 },
+		enumeratedTo: 5,
 		emptyKs: [],
-		dividedTo: 4,
+		dividedTo: 5,
 	},
 	{
 		id: "sqmid",
