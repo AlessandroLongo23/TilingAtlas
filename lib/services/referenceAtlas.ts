@@ -90,6 +90,14 @@ import {
 	type SphPolyPattern,
 } from "@/lib/tilings/sph-poly";
 import {
+	sphStarFamilyLabel,
+	sphStarShardUrl,
+	sphStarSub,
+	sphStarSubLabel,
+	SPH_STAR_INDEX,
+	type SphStarPattern,
+} from "@/lib/tilings/sph-star";
+import {
 	sphHalfFamilyLabel,
 	SPH_HALF_BOARDS,
 	sphHalfShardUrl,
@@ -274,6 +282,7 @@ export interface ReferenceTiling {
 	// lib/render/sphPoly.ts, which groups the faces by POLYGON SIZE — the same fill rule the hyperbolic
 	// half uses on the disk. `renderCell` is a throwaway.
 	sphPoly?: SphPolyPattern;
+	sphStar?: SphStarPattern;
 	// EDGE systems on a PARAMETRIC pentagon (tools/ctrnact-oracle/develop_pent_edges.py →
 	// public/pentagon-edges/pe<type>-k<k>.json). EDGES class, EUCLIDEAN geometry. Unlike every other
 	// shelf this record carries NO geometry: the tile is a Kershner type 1 pentagon with five free
@@ -513,6 +522,7 @@ export const SUB_ORDER = [
 	...HYP_HALF_BOARDS.map((b) => hypHalfSubOfBoard(b)),
 	// Their spherical siblings, n = 3, 4, 5. "spp-" namespaced.
 	...SPH_POLY_BOARDS.map((b) => sphPolySubOfBoard(b)),
+	...[...new Set(SPH_STAR_INDEX.map((e) => e.density))].sort((a, b) => a - b).map((d) => sphStarSub({ density: d })),
 	// The HALF-TILE spherical boards — a Platonic face cut in two — on the same axis, since the axis is
 	// "which spherical tiling board" and these are boards. Named ids, so they cannot collide with the
 	// 3.4.n.4 family's digits.
@@ -554,6 +564,9 @@ export type SubFamily =
 	| "hyp-poly"
 	| "hyp-poly-t"
 	| "sph-poly"
+	// The star polyhedra: one sub per DENSITY, "sst-" namespaced. Its own family — these are not
+	// members of the 3.4.n.4 solids and they are the only spherical shelf with no k axis.
+	| "sph-star"
 	// A Platonic / {p,q} face cut in two — its own family, because these boards are NOT members of the
 	// 3.4.n.4 ones and reusing their prefix filed them under that heading on screen.
 	| "sph-half"
@@ -578,6 +591,7 @@ export function familyOfSub(sub: string): SubFamily | null {
 	// One shelf, two one-parameter families: 3.4.n.4 under "hpo-", {3,n} under "hpt-".
 	if (sub.startsWith("hpt-")) return "hyp-poly-t";
 	if (sub.startsWith("spp-")) return "sph-poly";
+	if (sub.startsWith("sst-")) return "sph-star";
 	if (sub === "sch236" || sub === "sch244") return "schwarz-eu";
 	if (/^(square|triangle|hex|ts)$/.test(sub)) return "grid";
 	if (/^(square|triangle|hex|ts)-\d+$/.test(sub)) return "grid-colors";
@@ -599,6 +613,7 @@ export function subOf(t: {
 	sphEdges?: SphEdgesPattern;
 	hypPoly?: HypPolyPattern;
 	sphPoly?: SphPolyPattern;
+	sphStar?: SphStarPattern;
 	pentEdges?: PentEdgeRecord;
 	ihEdges?: IhEdgeRecord;
 }): string {
@@ -612,6 +627,7 @@ export function subOf(t: {
 	if (t.sphEdges) return sphEdgesSub(t.sphEdges);
 	if (t.hypPoly) return isHypHalf(t.hypPoly) ? hypHalfSub(t.hypPoly) : hypPolySub(t.hypPoly);
 	if (t.sphPoly) return isSphHalf(t.sphPoly) ? sphHalfSub(t.sphPoly) : sphPolySub(t.sphPoly);
+	if (t.sphStar) return sphStarSub(t.sphStar as { density: number });
 	if (t.sphericalFreedraw) return t.sphericalFreedraw.solid;
 	if (t.hypEdges) return hypEdgesSub(t.hypEdges);
 	if (t.hypColors) return hypColorsSub(t.hypColors);
@@ -662,11 +678,12 @@ export function geometryOf(t: {
 	sphEdges?: unknown;
 	hypPoly?: unknown;
 	sphPoly?: unknown;
+	sphStar?: unknown;
 }): Geometry {
 	// The Schwarz shelf is the one payload that spans two geometries, so it names its own instead of
 	// being inferred from which field is set.
 	if (t.schwarz) return t.schwarz.geometry;
-	if (t.spherical || t.sphericalFreedraw || t.sphColors || t.sphEdges || t.sphPoly) return "spherical";
+	if (t.spherical || t.sphericalFreedraw || t.sphColors || t.sphEdges || t.sphPoly || t.sphStar) return "spherical";
 	if (t.developed || t.hypEdges || t.hypColors || t.hypPoly) return "hyperbolic";
 	return "euclidean";
 }
@@ -1325,6 +1342,7 @@ export function referenceToCatalogue(r: ReferenceTiling): CatalogueTiling {
 		sphEdges: r.sphEdges,
 		hypPoly: r.hypPoly,
 		sphPoly: r.sphPoly,
+		sphStar: r.sphStar,
 		pentEdges: r.pentEdges,
 		ihEdges: r.ihEdges,
 	};
@@ -2116,6 +2134,30 @@ export async function loadIsohedralEdgesShard(board: string, k: number): Promise
 // ── The 3.4.n.4 family on the sphere (n = 3, 4, 5) ───────────────────────────────────────────────
 // The whole family is 20 tilings / 55 kB, so there is no eager/lazy split: entering the Spherical
 // geometry pulls all of it.
+// The sub-axis is DENSITY, the number of times the solid wraps its circumsphere, because that is the
+// quantity that orders this space and the one an ordinary tiling does not have. k is still the ordinary
+// vertex-orbit count and is taken from the record: it is 1 for the uniform polyhedra, which are
+// vertex-transitive by definition, and 2 for the pentagrammic pyramid, which is not uniform.
+function sphStarToReference(p: SphStarPattern): ReferenceTiling {
+	return {
+		id: p.id,
+		source: "spherical",
+		k: p.k,
+		family: `${sphStarSubLabel(p.density)} · ${sphStarFamilyLabel(p)}`,
+		renderCell: FREEDRAW_EMPTY_CELL,
+		sphStar: p,
+		geometry: "spherical",
+		discoverer: "Marek Čtrnáct",
+		// The enumeration is the Čtrnáct engine's, extended here with a {n/d} tile kind and a density
+		// closure; the geometry is measured, not looked up — each record's flood-fill closes, every edge
+		// measures the one forced arc, every face is planar and equilateral, the isometry group acts with a
+		// SINGLE vertex orbit, and Sigma face area is 4*pi times a whole number. Where that signature was
+		// checked by hand against the published catalogue the solid carries its name; where it was not it
+		// ships unnamed. Either way the enumeration is not independently proved complete here.
+		certification: "candidate",
+	};
+}
+
 function sphPolyToReference(p: SphPolyPattern): ReferenceTiling {
 	return {
 		id: p.id,
@@ -2175,6 +2217,15 @@ export async function loadSphericalPolyAtlas(): Promise<ReferenceTiling[]> {
 						.catch(() => [] as SphPolyPattern[])
 						.then((recs) => recs.map(sphHalfToReference)),
 				),
+			),
+		).concat(
+			// One fetch per solid: this shelf has no shared board to index into (every record IS a different
+			// polyhedron) and the whole thing is ~310 kB across 46 files, so there is nothing to defer.
+			SPH_STAR_INDEX.map((e) =>
+				fetch(sphStarShardUrl(e.id))
+					.then((res) => (res.ok ? (res.json() as Promise<SphStarPattern>) : null))
+					.catch(() => null)
+					.then((rec) => (rec ? [sphStarToReference(rec)] : [])),
 			),
 		),
 	)

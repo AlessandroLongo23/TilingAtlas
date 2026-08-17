@@ -139,6 +139,7 @@ export interface LevelSource {
 	/** The AI1 shelves: the configurations live on the payload, since `family` is a display label. */
 	hypPoly?: { config: string };
 	sphPoly?: { config: string };
+	sphStar?: { config: string };
 	/** The shelves the ladder does NOT describe, listed so they are excluded by name. Their tiles are
 	 *  merged polyforms, coloured copies, drawn-edge polyominoes or self-intersecting stars — none of
 	 *  which the five levels are defined for. */
@@ -164,6 +165,7 @@ export function levelConfigsOf(t: LevelSource): string[] | null {
 	}
 	if (t.hypPoly) return t.hypPoly.config.split(ORBIT_SPLIT);
 	if (t.sphPoly) return t.sphPoly.config.split(ORBIT_SPLIT);
+	if (t.sphStar) return t.sphStar.config.split(ORBIT_SPLIT);
 	if (t.developed || t.spherical) return t.family.split(ORBIT_SPLIT);
 	return null;
 }

@@ -10,7 +10,7 @@ PALETTE  ?= regular
 TB       := tables/$(PALETTE)
 SFX      := $(if $(filter regular,$(PALETTE)),,.$(PALETTE))
 
-.PHONY: all clean check-regular
+.PHONY: all clean check-regular check-star
 all: eu_solver$(SFX) eu_pruner$(SFX) eu_classify eu_develop$(SFX)
 
 # Regenerate tables when the palette spec or the generator changes. The generator
@@ -95,3 +95,41 @@ check-regular:
 
 clean:
 	rm -f eu_solver eu_solver.* eu_solver_rt eu_pruner eu_pruner.* eu_classify eu_develop eu_develop.* .maxnum-* .maxnumrt-*
+
+# The STAR gate. `check-regular` proves an engine edit did not disturb the Euclidean catalogue; this
+# proves the same for the spherical STAR machinery — the starpoly tile kind, the density closure, the
+# winding in the developer, the per-face orientation search and the area certificate that replaced
+# chi = 2. Two independent claims, because they can break separately:
+#
+#   1. DERIVED. Re-run solve -> prune -> develop on the small star-ico-d palette (3 tiles, ~1s) and
+#      diff the INVARIANT digest (word, density, V/E/F, face census, rho to 9dp) against the golden.
+#      Hashing the cells JSON itself would be useless: it is floats, and a bisection reorder rewrites
+#      every byte without changing a single fact.
+#   2. DERIVED AT k=2. The same palette at MAXNUM=2, which is the only guard on the per-orbit density
+#      loop — at k=1 every density tuple has length one and that code cannot be exercised. ~13s.
+#   3. SHIPPED. Check the 47 files under public/spherical-star/ against their recorded hashes, so an
+#      accidental edit to the shelf is caught even when the engine is untouched.
+#
+# The wide palette is deliberately NOT in this gate: it is ~20 minutes end to end, and the small one
+# already exercises every code path the wide one does.
+check-star:
+	@$(MAKE) MAXNUM=1 PALETTE=star-ico-d >/dev/null
+	@rm -rf check-star-run && mkdir -p check-star-run/out
+	@cd check-star-run && ../eu_solver.star-ico-d >/dev/null 2>&1
+	@EU_OUT=check-star-run/out EU_KMIN=1 EU_KMAX=1 ./eu_pruner.star-ico-d >/dev/null
+	@EU_PALETTE=star-ico-d EU_MAXDENS=3 python3 develop_spherical.py --kmin 1 --kmax 1 \
+		--pruned check-star-run/out/pruned --out check-star-run/cells.json --report /dev/null >/dev/null 2>&1
+	@python3 star_digest.py check-star-run/cells.json > check-star-run/digest.txt
+	@diff -u golden/star-ico-d-k1.txt check-star-run/digest.txt \
+		&& echo "check-star: derived k=1 catalogue matches golden"
+	@$(MAKE) MAXNUM=2 PALETTE=star-ico-d >/dev/null
+	@rm -rf check-star-run2 && mkdir -p check-star-run2/out
+	@cd check-star-run2 && ../eu_solver.star-ico-d >/dev/null 2>&1
+	@EU_OUT=check-star-run2/out EU_KMIN=1 EU_KMAX=2 ./eu_pruner.star-ico-d >/dev/null
+	@EU_PALETTE=star-ico-d EU_MAXDENS=3 python3 develop_spherical.py --kmin 2 --kmax 2 \
+		--pruned check-star-run2/out/pruned --out check-star-run2/cells.json --report /dev/null >/dev/null 2>&1
+	@python3 star_digest.py check-star-run2/cells.json > check-star-run2/digest.txt
+	@diff -u golden/star-ico-d-k2.txt check-star-run2/digest.txt \
+		&& echo "check-star: derived k=2 catalogue matches golden"
+	@cd ../../public/spherical-star && shasum -a 256 -c ../../tools/ctrnact-oracle/golden/star-shelf.sha256 --quiet \
+		&& echo "check-star: shipped shelf matches golden (54 files)"

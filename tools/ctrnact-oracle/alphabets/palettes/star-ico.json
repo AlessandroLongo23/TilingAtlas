@@ -1,0 +1,12 @@
+{
+  "name": "star-ico",
+  "D": 120,
+  "closure": "positive-defect",
+  "maxValence": 6,
+  "comment": "ICOSAHEDRAL STAR palette: the tiles the four Kepler-Poinsot solids are built from, {3}, {5} and the pentagram {5/2}, at D=120 (3-degree units). Planar interior angles 60, 108 and 36 all land on the grid. Closure is the UNCHANGED positive-defect rule, so this palette measures how much of the star space the existing spherical mode already reaches once the tile alphabet carries a self-intersecting face: a vertex is admitted when its PLANAR angles sum to strictly less than a full turn. Three of the four Kepler-Poinsot vertices satisfy that (5/2^5 = 180, 5/2^3 = 108, 3^5 = 300); the great dodecahedron's 5^5 = 540 does not, and needs the density closure mode instead. Solve+prune here, develop by develop_spherical.py.",
+  "tiles": [
+    { "kind": "regular",  "n": 3, "name": "3", "famchar": "3" },
+    { "kind": "regular",  "n": 5, "name": "5", "famchar": "5" },
+    { "kind": "starpoly", "n": 5, "d": 2, "name": "5_2", "famchar": "p" }
+  ]
+}

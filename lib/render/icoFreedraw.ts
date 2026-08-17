@@ -106,6 +106,9 @@ export interface IcoFreedraw {
 }
 
 export interface IcoOptions {
+	/** Skip the unit-sphere normalisation of the incoming vertices. Only the star-polyhedron adapter
+	 *  sets it: its face-crossing points are interior by construction and must keep their radius. */
+	keepRadius?: boolean;
 	mode?: IcoMode; // "polyhedron" flat facets + chord edges, "sphere" curved patches + arc edges
 	radius?: number; // sphere radius (default 1)
 	hueOffset?: number;
@@ -208,7 +211,12 @@ export function buildIcoFreedraw(pattern: IcoPattern, rawVertices: V3[], opts: I
 	// Same edge-tube builder and radius as a normal spherical solid (buildFlatSolid → edgeRadius(1) = 0.006),
 	// so a freedraw drawn edge and a normal tiling edge read the same weight at stroke width 1.
 	const thickness = opts.edgeThickness ?? 0.006;
-	const V = rawVertices.map(nrm);
+	// Every board so far hands in vertices that ARE on the sphere and normalising is a no-op that also
+	// repairs decode drift. A star polyhedron is the exception: lib/render/sphStar.ts appends the points
+	// where a {n/d} face crosses itself, and those are strictly INSIDE the sphere. Normalising them
+	// pushes each one out to radius 1, which inflates every star face into a spherical cap and paints the
+	// whole solid as a smooth ball. `keepRadius` is that opt-out and nothing else uses it.
+	const V = opts.keepRadius ? rawVertices : rawVertices.map(nrm);
 
 	const group = new THREE.Group();
 	const disposers: (() => void)[] = [];

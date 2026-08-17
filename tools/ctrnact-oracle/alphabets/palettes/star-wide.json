@@ -1,0 +1,19 @@
+{
+  "name": "star-wide",
+  "D": 120,
+  "closure": "density",
+  "maxDensity": 3,
+  "maxValence": 6,
+  "comment": "Every PROGRADE face a uniform polyhedron uses, at D=120: {3,4,5,6,8,10} and the star faces {5/2}, {8/3}, {10/3}. Planar interior angles 60, 90, 108, 120, 135, 144, 36, 45, 72 all land on the 3-degree grid. What is NOT here is the RETROGRADE family {5/3}, {5/4}, {10/7}, {3/2}, whose interior angle (n-2d)*pi/n is negative: a retrograde face subtracts from the vertex angle sum, and enum_configs recurses on a monotonically increasing total, so negative corner units break the prune, not just the palette. That is the third category and it is a search change, not an alphabet row.",
+  "tiles": [
+    { "kind": "regular",  "n": 3,  "name": "3",  "famchar": "3" },
+    { "kind": "regular",  "n": 4,  "name": "4",  "famchar": "4" },
+    { "kind": "regular",  "n": 5,  "name": "5",  "famchar": "5" },
+    { "kind": "regular",  "n": 6,  "name": "6",  "famchar": "6" },
+    { "kind": "regular",  "n": 8,  "name": "8",  "famchar": "8" },
+    { "kind": "regular",  "n": 10, "name": "10", "famchar": "a" },
+    { "kind": "starpoly", "n": 5,  "d": 2, "name": "5_2",  "famchar": "p" },
+    { "kind": "starpoly", "n": 8,  "d": 3, "name": "8_3",  "famchar": "q" },
+    { "kind": "starpoly", "n": 10, "d": 3, "name": "10_3", "famchar": "r" }
+  ]
+}

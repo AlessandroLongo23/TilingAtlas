@@ -29,6 +29,7 @@ interface SphereFreedrawThumbnailProps {
 	solidId: string;
 	/** "polyhedron" flat facets + chord edges, or "sphere" curved patches + arc edges. */
 	mode: IcoMode;
+	keepRadius?: boolean;
 	/** Draw the solid's full edge grid faintly under the pattern. */
 	showGrid: boolean;
 	/** Render resolution in device px (square). The <img> scales to fill its slot. */
@@ -62,6 +63,7 @@ function renderToDataUrl(
 	solidId: string,
 	size: number,
 	mode: IcoMode,
+	keepRadius: boolean | undefined,
 	showGrid: boolean,
 	vertices?: [number, number, number][],
 	allEdges?: [number, number][],
@@ -90,6 +92,7 @@ function renderToDataUrl(
 	const content = buildIcoFreedraw(pattern, verts, {
 		dark,
 		mode,
+		keepRadius,
 		showGrid,
 		allEdges: showGrid ? (allEdges ?? (solid ? solidEdges(solid) : undefined)) : undefined,
 	});
@@ -108,6 +111,7 @@ export function SphereFreedrawThumbnail({
 	pattern,
 	solidId,
 	mode,
+	keepRadius,
 	showGrid,
 	size = 256,
 	vertices,
@@ -116,7 +120,7 @@ export function SphereFreedrawThumbnail({
 	const holderRef = useRef<HTMLDivElement | null>(null);
 	const [url, setUrl] = useState<string | null>(null);
 	const [failed, setFailed] = useState(false);
-	const specKey = `${solidId}-${pattern.id}-${mode}-${showGrid ? "g" : ""}`;
+	const specKey = `${solidId}-${pattern.id}-${mode}-${keepRadius ? "r" : ""}-${showGrid ? "g" : ""}`;
 
 	useEffect(() => {
 		const el = holderRef.current;
@@ -130,7 +134,7 @@ export function SphereFreedrawThumbnail({
 			// instead of firing alongside every other card's render in one task.
 			cancelJob = enqueueThumbnailRender(() => {
 				try {
-					const dataUrl = renderToDataUrl(pattern, solidId, size, mode, showGrid, vertices, allEdges);
+					const dataUrl = renderToDataUrl(pattern, solidId, size, mode, keepRadius, showGrid, vertices, allEdges);
 					if (dataUrl) setUrl(dataUrl);
 					else setFailed(true);
 				} catch (e) {

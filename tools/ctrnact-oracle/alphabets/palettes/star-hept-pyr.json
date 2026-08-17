@@ -1,0 +1,30 @@
+{
+  "name": "star-hept-pyr",
+  "D": 840,
+  "closure": "density",
+  "maxDensity": 3,
+  "maxValence": 7,
+  "comment": "The PYRAMID probe on the 7-fold family. Same D=840 grid, but only {3}, {7/2}, {7/3}: a pyramid needs nothing else, and the full five-tile palette at maxValence 7 did not finish its k=2 solve in ten minutes. maxValence 7 is the point of this palette and NOT a speed dial \u2014 a pyramid over a 7-gon has seven triangles at its apex, so at the 6 every other palette here uses the apex is not in the alphabet at all and the solid cannot be found however long the search runs.",
+  "tiles": [
+    {
+      "kind": "regular",
+      "n": 3,
+      "name": "3",
+      "famchar": "3"
+    },
+    {
+      "kind": "starpoly",
+      "n": 7,
+      "d": 2,
+      "name": "7_2",
+      "famchar": "u"
+    },
+    {
+      "kind": "starpoly",
+      "n": 7,
+      "d": 3,
+      "name": "7_3",
+      "famchar": "v"
+    }
+  ]
+}

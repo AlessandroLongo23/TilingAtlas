@@ -20,6 +20,8 @@ import { buildIcoFreedraw, type IcoPattern, type IcoFreedraw, type IcoMode } fro
 interface Props {
 	pattern: IcoPattern;
 	mode: IcoMode;
+	/** Skip unit-sphere normalisation. Star polyhedra need it; nothing else does. */
+	keepRadius?: boolean;
 	showGrid: boolean;
 	/** Which Platonic solid this pattern lives on ("icosahedron", "cube", …). Ignored when `vertices`
 	 *  is given — a spherical SCHWARZ board has no canonical solid to name. */
@@ -32,7 +34,7 @@ interface Props {
 
 const CAMERA_DISTANCE = 3.2;
 
-export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, allEdges }: Props) {
+export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, allEdges, keepRadius }: Props) {
 	const solid = useMemo(() => (vertices ? null : polyhedronForId(solidId)), [solidId, vertices]);
 	const verts = vertices ?? (solid?.vertices as [number, number, number][] | undefined);
 	const solidEdgeList = useMemo<[number, number][]>(
@@ -154,6 +156,7 @@ export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, 
 		const content = buildIcoFreedraw(pattern, verts, {
 			dark,
 			mode,
+			keepRadius,
 			showGrid,
 			allEdges: solidEdgeList,
 		});

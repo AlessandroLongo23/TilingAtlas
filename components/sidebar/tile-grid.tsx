@@ -12,6 +12,7 @@ import { HollowThumbnail } from "@/components/hollow/hollow-thumbnail";
 import { SphereFreedrawThumbnail } from "@/components/freedraw/sphere-freedraw-thumbnail";
 import { SphSchwarzThumbnail } from "@/components/freedraw/sph-schwarz-thumbnail";
 import { SphPolyThumbnail } from "@/components/freedraw/sph-poly-thumbnail";
+import { SphStarThumbnail } from "@/components/freedraw/sph-star-thumbnail";
 import { hypSchwarzMeta } from "@/lib/freedraw/schwarz";
 import { hypPolyMeta } from "@/lib/tilings/hyp-poly";
 import { PentagonEdgesThumbnail } from "@/components/pentagon-edges-thumbnail";
@@ -228,6 +229,8 @@ function Tile({
 					<HollowThumbnail patch={t.hollow.patch} />
 				) : t.sphPoly ? (
 					<SphPolyThumbnail pattern={t.sphPoly} />
+				) : t.sphStar ? (
+					<SphStarThumbnail pattern={t.sphStar} />
 				) : t.pentEdges ? (
 					<PentagonEdgesThumbnail pattern={t.pentEdges} />
 				) : t.ihEdges ? (

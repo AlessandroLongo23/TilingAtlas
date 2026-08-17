@@ -126,3 +126,23 @@ function stubFor(id: ShelfId): unknown {
 	if (id === "hypPoly") return { stats: { sizes: [3, 4, 7] } };
 	return { id: "x" };
 }
+
+// Family ids are the React keys of the sidebar's family rows (`f:<class>:<family|_spine>`), so two subs
+// of one class that resolve to different-but-colliding ids duplicate a key and make two rows toggle each
+// other. That happened for real when the star-polyhedron subs shipped with no family: every unfamilied
+// sub became its own run and each rendered as `_spine`. Two invariants keep it from recurring.
+describe("sub families", () => {
+	it("gives every shipped sub-axis prefix a family or leaves it deliberately on the spine", () => {
+		for (const sub of SUB_ORDER) {
+			const fam = familyOfSub(sub);
+			// A namespaced prefix (three letters + "-") is a shelf and must be filed under one.
+			if (/^[a-z]{3}-/.test(sub)) expect(fam, `${sub} has no family`).not.toBeNull();
+		}
+	});
+
+	it("files every star-polyhedron sub under one family", () => {
+		const subs = SUB_ORDER.filter((s) => s.startsWith("sst-"));
+		expect(subs.length).toBeGreaterThan(0);
+		expect(new Set(subs.map(familyOfSub))).toEqual(new Set(["sph-star"]));
+	});
+});

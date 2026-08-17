@@ -36,6 +36,7 @@ Usage:
 import argparse
 import itertools
 import json
+import math
 import os
 import re
 import sys
@@ -231,6 +232,18 @@ class Tile:
             self.alphaU = spec["alphaU"]      # point angle in 2pi/D units
             self.L = 2 * self.n
             self.p = 2
+        elif self.kind == "starpoly":         # SELF-INTERSECTING regular star {n/d}
+            # Not the "star" kind above. That one is an ISOTOXAL star realized as a simple 2n-gon with
+            # alternating point and dent corners (L=2n, p=2), which is what the Euclidean star palettes
+            # tile with. A star POLYHEDRON's face is the {n/d} of Schlafli, drawn with n edges that cross
+            # each other: n boundary edges, one corner class, and the boundary winds d times about the
+            # centre. Interior angle (n-2d)*pi/n, the same formula as (n-2)*pi/n with d folded in.
+            self.n = spec["n"]
+            self.d = spec["d"]                # winding: {5/2} is the pentagram
+            assert self.n > 2 * self.d >= 2, f"starpoly {self.name}: need n > 2d >= 2"
+            assert math.gcd(self.n, self.d) == 1, f"starpoly {self.name}: n and d must be coprime"
+            self.L = self.n
+            self.p = 1
         elif self.kind == "doubled":          # side-2 regular N-gon as a degenerate 2N-gon
             self.n = spec["n"]                # underlying regular polygon side count N
             self.L = 2 * self.n               # boundary word length: 2N unit edges
@@ -397,6 +410,19 @@ def load_palette(path):
             cd = CornerClass(len(classes), tile, 1, dU, f"{tile.n}*d{dU}")
             cd.is_point = False
             classes.append(cd)
+        elif tile.kind == "starpoly":  # one class: the {n/d} corner, angle (n-2d)*pi/n
+            units = (tile.n - 2 * tile.d) * (D // 2) // tile.n
+            assert units * tile.n == (tile.n - 2 * tile.d) * (D // 2), \
+                f"starpoly {tile.name} off the 2pi/{D} grid"
+            assert units > 0, f"starpoly {tile.name} has non-positive interior angle"
+            cc = CornerClass(len(classes), tile, 0, units, tile.name)
+            # is_point is FALSE deliberately. The point-adjacency lemma in enum_configs proves that two
+            # ISOTOXAL star points cannot be cyclically adjacent, because the dents they force at the far
+            # vertex would overlap. A {n/d} face has no dents and overlap is the whole point of a star
+            # polyhedron: the small stellated dodecahedron has five adjacent pentagram corners at every
+            # vertex. Marking these corners as points would delete the entire target space.
+            cc.is_point = False
+            classes.append(cc)
         elif tile.kind == "doubled":  # two classes: real corner (D/2 - D/N) + flat 180° corner (D/2)
             thetaU = D // 2 - D // tile.n
             assert (D // 2 - D / tile.n) == thetaU, f"doubled {tile.name} off the 2pi/{D} grid"
@@ -517,7 +543,7 @@ def forbidden_adjacent_pairs(classes, D):
     return bad
 
 
-def enum_configs(D, classes, min_len, max_len, closure="euclidean", forbidden=None):
+def enum_configs(D, classes, min_len, max_len, closure="euclidean", forbidden=None, maxdens=1):
     """All cyclic words of corner classes with unit sum == D, up to rotation+reflection.
 
     `forbidden` is an optional set of ordered corner-class pairs that may not be cyclically adjacent
@@ -551,6 +577,15 @@ def enum_configs(D, classes, min_len, max_len, closure="euclidean", forbidden=No
     cids = sorted(unit, key=lambda k: (-unit[k], k))
     spherical = (closure == "positive-defect")
     hyperbolic = (closure == "negative-defect")
+    # "density" (star palettes): the spherical rule with the full turn replaced by maxdens full turns.
+    # A star polyhedron's vertex figure winds d_v times, so its PLANAR angles have to fall short of
+    # 2*pi*d_v, not of 2*pi. The great dodecahedron is the case that forces this: five pentagons at a
+    # vertex sum to 540 degrees, which positive-defect prunes as "past a full turn" and which is a real
+    # solid at d_v = 2. Exact multiples of a full turn stay excluded — those are FLAT vertices (3^6,
+    # 4^4), Euclidean and not polyhedral. Which d_v a surviving word actually takes is not decided
+    # here; develop_spherical.py solves for rho at each density in turn and keeps every realization.
+    dens_mode = (closure == "density")
+    cap = D * maxdens if dens_mode else D
     # The wrap pair (last, first) is only genuinely adjacent when the word CLOSES a full turn, so the
     # cyclic half of the pair prune is euclidean-only even if a caller hands us a table in a defect mode.
     bad = forbidden if forbidden else frozenset()
@@ -567,7 +602,12 @@ def enum_configs(D, classes, min_len, max_len, closure="euclidean", forbidden=No
     # This gates the geometry-agnostic solver only; realizability at one shared edge length and
     # combinatorial closure are decided downstream (necessary, not sufficient — docs/hyperbolic-port-notes).
     def rec(word, total):
-        if spherical:
+        if dens_mode:
+            if len(word) >= min_len and 0 < total < cap and total % D != 0:
+                if not (pt[word[-1]] and pt[word[0]]):
+                    out.append(list(word))
+                # fall through: like the defect modes, a longer word is a different valid vertex
+        elif spherical:
             if len(word) >= min_len and 0 < total < D:
                 if not (pt[word[-1]] and pt[word[0]]):  # cyclic point-adjacency
                     out.append(list(word))
@@ -584,7 +624,7 @@ def enum_configs(D, classes, min_len, max_len, closure="euclidean", forbidden=No
                 return
         if len(word) >= max_len:
             return
-        if not hyperbolic and total >= D:  # euclidean/spherical prune at or past a full turn
+        if not hyperbolic and total >= cap:  # euclidean/spherical/density prune at or past the cap
             return
         for cid in cids:
             if word and pt[word[-1]] and pt[cid]:   # point-adjacency lemma
@@ -595,7 +635,7 @@ def enum_configs(D, classes, min_len, max_len, closure="euclidean", forbidden=No
             nxt = total + unit[cid]
             # euclidean reaches a full turn (nxt <= D); spherical stays strictly under it (nxt < D) so a
             # flat vertex is never developed; hyperbolic overshoots freely (bounded only by max_len).
-            ok = (nxt < D) if spherical else (True if hyperbolic else (nxt <= D))
+            ok = (nxt < cap) if (spherical or dens_mode) else (True if hyperbolic else (nxt <= D))
             if ok:
                 rec(word, nxt)
             word.pop()
@@ -1280,6 +1320,11 @@ std::vector<vertexdef> mainlist = _stab_mainlist();
         f.write("CLASS_DISP = %r\n" % disp)
         f.write("CLASS_UNITS = %r\n" % [c.units for c in classes])
         f.write("CLASS_L = %r\n" % [c.tile.L for c in classes])
+        # Winding of the class's tile: 1 for everything except a starpoly {n/d}. The solver never reads
+        # it (the search is combinatorial and a {5/2} is just "a 5-edge tile with 36-degree corners"); the
+        # spherical developer does, because sin(rho/2) = sin(r)*sin(pi*d/n) and the interior angle is
+        # measured between the edges to vertices +-d, not +-1.
+        f.write("CLASS_WIND = %r\n" % [getattr(c.tile, "d", 1) for c in classes])
         f.write("CLASS_P = %r\n" % [c.tile.p for c in classes])
         f.write("CLASS_NEXT = %r\n" % [next_class(c, classes) for c in classes])
         f.write("CLASS_PREV = %r\n" % [prev_class(c, classes) for c in classes])
@@ -1460,7 +1505,8 @@ def main():
         types = ", ".join(f"{lab}={i}" for lab, i in sorted(_EDGE_IDS.items(), key=lambda kv: kv[1]))
         print(f"[gen] EDGE TYPES ({types}): {len(edge_bad)} incompatible adjacent pairs of "
               f"{len(classes) ** 2} forbidden at the vertex")
-    configs = enum_configs(D, classes, min_len, spec.get("maxValence", 24), closure, forbidden)
+    configs = enum_configs(D, classes, min_len, spec.get("maxValence", 24), closure, forbidden,
+                           spec.get("maxDensity", 1))
     if prune_overlap:
         from export_vertex_configs import build_config  # deferred: reuse the exact placement + overlap test
         before = len(configs)

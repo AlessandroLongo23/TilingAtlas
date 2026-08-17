@@ -83,6 +83,9 @@ export interface CatalogueTiling {
 	// lib/render/sphPoly.ts, filling each face by its polygon size. `renderCell` is a throwaway; `k` is
 	// the MEASURED vertex-orbit count of the solid, not the certificate's.
 	sphPoly?: import("@/lib/tilings/sph-poly").SphPolyPattern;
+	// One SPHERICAL STAR polyhedron: a tiling of S2 by self-intersecting {n/d} faces that covers the
+	// sphere `density` times. Renders through lib/render/sphStar.ts, filling each face by its {n/d} type.
+	sphStar?: import("@/lib/tilings/sph-star").SphStarPattern;
 	// Parametric-pentagon edge system: carries NO geometry, so /play solves the board at its slider
 	// point and re-develops (lib/pentagon/edgeDevelop.ts). `renderCell` is a throwaway.
 	pentEdges?: import("@/lib/pentagon/edgeDevelop").PentEdgeRecord;

@@ -20,6 +20,7 @@ import { HollowCanvas } from "@/components/hollow/hollow-canvas";
 import { IcoFreedrawCanvas } from "@/components/freedraw/ico-freedraw-canvas";
 import { SphSchwarzCanvas } from "@/components/freedraw/sph-schwarz-canvas";
 import { SphPolyCanvas } from "@/components/freedraw/sph-poly-canvas";
+import { SphStarCanvas } from "@/components/freedraw/sph-star-canvas";
 import { Sidebar } from "@/components/sidebar";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useConfiguration, type ConfigurationState } from "@/stores/configuration";
@@ -575,7 +576,10 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		// fetched and the key never resolved. Matched against the board list rather than a bare "sh"
 		// prefix, so a future board is covered and no unrelated id is swallowed. (Same failure the mixed
 		// and scaled shelves hit on 2026-08-13; this is the third time a new shelf has needed a line here.)
+		// "ss-" is the star polyhedra, which ride loadSphericalPolyAtlas with the halves. Fourth time —
+		// verified by deep-linking ss-12-30-12-d3-r20344 and watching it land on t1001.
 		const wantSph = geometry === "spherical" || !!requestedKey?.startsWith("xe") || !!requestedKey?.startsWith("sp")
+			|| !!requestedKey?.startsWith("ss-")
 			|| SPH_HALF_BOARDS.some((b) => requestedKey?.startsWith(`sh${b.id}-`));
 		// "hh<board>-" is the half-tile boards; without this a /library click on one lands on the default
 		// tiling, exactly as the spherical halves did before their line above.
@@ -1306,6 +1310,13 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					// A 3.4.n.4 tiling on the sphere: its own solid, faces filled by polygon size, every edge a
 					// boundary. Same three.js canvas as every other spherical Čtrnáct shelf.
 					<SphPolyCanvas pattern={selected.sphPoly} mode={sphericalFreedrawMode} showGrid={sphericalFreedrawGrid} />
+				) : selected?.sphStar ? (
+					// A STAR polyhedron. Same three.js canvas again, but the mode is forced to "polyhedron"
+					// instead of following `sphericalFreedrawMode`: its faces overlap on the circumsphere by
+					// construction — that is what density means — so the curved-patch mode paints every record
+					// as one smooth ball. The flat facets are the figure, and the adapter decomposes each
+					// self-intersecting {n/d} face before it can be filled (lib/render/sphStar.ts).
+					<SphStarCanvas pattern={selected.sphStar} showGrid={sphericalFreedrawGrid} />
 				) : selected?.hypPoly ? (
 					// 3.4.n.4 tiling by regular polygons: not a decoration, so every edge is a real boundary and
 					// each face is filled by its POLYGON SIZE. That is the colored-tiling render exactly, so it

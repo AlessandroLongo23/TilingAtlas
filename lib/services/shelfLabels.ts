@@ -56,6 +56,7 @@ export const FAMILY_LABEL: Record<string, string> = {
 	"hyp-poly": "3.4.n.4 boards",
 	"hyp-poly-t": "{3,n} boards",
 	"sph-poly": "3.4.n.4 solids",
+	"sph-star": "Star polyhedra",
 	// A regular face cut in two. Their own heading, because they are not members of the 3.4.n.4 families
 	// and were filed under that heading while they shared its prefix.
 	"sph-half": "Halved Platonic faces",
@@ -136,6 +137,21 @@ const NAMED: Record<string, string> = {
 	"spp-3": "3.4.3.4 solids",
 	"spp-4": "3.4.4.4 solids",
 	"spp-5": "3.4.5.4 solids",
+	// Star polyhedra, one sub per DENSITY — the number of times the solid wraps its circumsphere. This
+	// shelf has no k axis (uniform means vertex-transitive, so every record is k = 1), and density is
+	// the quantity that orders it instead.
+	"sst-d1": "Density 1",
+	"sst-d2": "Density 2",
+	"sst-d3": "Density 3",
+	"sst-d4": "Density 4",
+	"sst-d5": "Density 5",
+	"sst-d6": "Density 6",
+	"sst-d7": "Density 7",
+	"sst-d9": "Density 9",
+	"sst-d10": "Density 10",
+	"sst-d13": "Density 13",
+	"sst-d37": "Density 37",
+	"sst-d38": "Density 38",
 	// The two hyperbolic-poly families are NOT here either: their boards carry a label, so "3.4.7.4
 	// tilings" and "{3,7} tilings" are derived below off HYP_POLY_BOARDS.
 	// Hyperbolic edge systems: one sub per base tiling.

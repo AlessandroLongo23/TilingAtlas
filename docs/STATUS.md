@@ -3,8 +3,26 @@
 > **What this file is.** The 30-second "where are we" snapshot. **Mutable, disposable,
 > clobber-tolerant** — if two agents overwrite it, nothing is lost, because the *canonical*
 > history lives in the append-only **ledgers** below. Regenerate it from the latest signed
-> entry of each ledger. **Never write history here.** — last updated 2026-08-09, CC
+> entry of each ledger. **Never write history here.** — last updated 2026-08-17, CC
 > (acting as TA too, AL authorization 2026-07-10).
+
+## Star polyhedra: 54 solids on a new spherical shelf (2026-08-17)
+
+The Atlas had no self-intersecting {n/d} face anywhere on the sphere. It has one now, and with it the
+four Kepler–Poinsot solids, ~27 more uniform star polyhedra, the star prisms and antiprisms, and the
+7-fold family that needed a D=840 angular grid to be expressible at all. Shelf: Spherical →
+Star polyhedra, foldered by density 1…38. 40 of the 54 carry hand-verified names.
+
+**This shelf has a real oracle**, unlike every Marek corpus: k=1 uniform polyhedra are complete by
+CLM 1954 / Sopov 1970 / Skilling 1975. Checked against it, zero false positives.
+
+**k=2 is barely explored and that is a cost problem, not a correctness one.** Yield on the small
+palette is 1 in 3,636 blocks, because `solve_rho_common` requires every orbit to close at the same
+edge arc. Two k=2 records so far: the pentagrammic pyramid and both heptagrammic ones. The wide
+palette at k=2 is ~40 hours of develop for an expected yield in the low tens; not run.
+
+**Open:** the hemipolyhedra (faces are hemispheres at ρ=90°, where density stops being defined), and
+the `{3,4,8,8/3}` k=2 probe for the octagrammic pyramid. Gate: `make check-star`, three claims.
 
 ## Marek's 2026-08-12 drop: the easy half is on the shelves
 

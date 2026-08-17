@@ -35,6 +35,7 @@ export type ShelfId =
 	| "sphEdges"
 	| "hypPoly"
 	| "sphPoly"
+	| "sphStar"
 	| "pentEdges"
 	| "ihEdges";
 
@@ -95,6 +96,7 @@ export const SHELF_ORDER: ShelfId[] = [
 	"ihEdges",
 	"sphEdges",
 	"sphPoly",
+	"sphStar",
 	"hypPoly",
 	"spherical",
 	"sphericalFreedraw",
@@ -149,6 +151,13 @@ export const SHELVES: Record<ShelfId, ShelfDef> = {
 	sphericalFreedraw: { field: "sphericalFreedraw", surface: "sphereEdges", kNoun: EDGE_ORBITS },
 	sphEdges: { field: "sphEdges", surface: "sphereEdges", kNoun: EDGE_ORBITS },
 	sphPoly: { field: "sphPoly", surface: "sphereEdges", kNoun: null },
+	// Star polyhedra draw on the same three.js canvas as every other spherical shelf; what is different
+	// is inside the adapter, where a self-intersecting {n/d} face is decomposed before it can be filled
+	// (lib/render/sphStar.ts). k is the ordinary vertex-orbit count, so kNoun stays null — it reads 1 for
+	// the uniform polyhedra, which are vertex-transitive by definition, and 2 for the pentagrammic
+	// pyramid, which is regular-faced and NOT uniform. DENSITY is the extra number that orders this
+	// shelf, and it has its own sub-axis.
+	sphStar: { field: "sphStar", surface: "sphereEdges", kNoun: null },
 	sphColors: { field: "sphColors", surface: "sphereColors", kNoun: COLORED },
 
 	// --- The one shelf that spans two geometries ---

@@ -72,15 +72,26 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({ items, sele
 			// referenceAtlas' familyOfSub guarantees and its test enforces), so this pass is a scan and
 			// never a re-sort. A family of one still gets a run: whether it earns a ROW is decided at
 			// render time, once we know how many the class has.
+			//
+			// Grouped by KEY, not by adjacency. The old scan started a fresh run for every unfamilied
+			// sub (`family !== null` in the merge test), so a class with two of them produced two runs
+			// that both render as `f:<cls>:_spine` — duplicate React keys, and rows that toggle each
+			// other. Keying the bucket makes the spine exactly one run, which is what every comment here
+			// already assumes, and it survives a SUB_ORDER edit that splits a family instead of failing
+			// the next time someone adds a shelf.
+			const byFamily = new Map<string, { family: string | null; subs: typeof subs; count: number }>();
 			const families: { family: string | null; subs: typeof subs; count: number }[] = [];
 			for (const s of subs) {
 				const family = familyOfSub(s.sub);
-				const last = families[families.length - 1];
-				if (last && last.family === family && family !== null) {
-					last.subs.push(s);
-					last.count += s.count;
+				const key = family ?? "|spine";
+				const run = byFamily.get(key);
+				if (run) {
+					run.subs.push(s);
+					run.count += s.count;
 				} else {
-					families.push({ family, subs: [s], count: s.count });
+					const fresh = { family, subs: [s], count: s.count };
+					byFamily.set(key, fresh);
+					families.push(fresh);
 				}
 			}
 			return { cls, subs, families, count: subs.reduce((s2, g) => s2 + g.count, 0) };

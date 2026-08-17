@@ -14,6 +14,7 @@ import { FreedrawThumbnail } from "@/components/freedraw/freedraw-thumbnail";
 import { HollowThumbnail } from "@/components/hollow/hollow-thumbnail";
 import { SphSchwarzThumbnail } from "@/components/freedraw/sph-schwarz-thumbnail";
 import { SphPolyThumbnail } from "@/components/freedraw/sph-poly-thumbnail";
+import { SphStarThumbnail } from "@/components/freedraw/sph-star-thumbnail";
 import { hypSchwarzMeta } from "@/lib/freedraw/schwarz";
 import { hypPolyMeta } from "@/lib/tilings/hyp-poly";
 import { PentagonEdgesThumbnail } from "@/components/pentagon-edges-thumbnail";
@@ -171,6 +172,8 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 					)
 				) : tiling.sphPoly ? (
 					<SphPolyThumbnail pattern={tiling.sphPoly} />
+				) : tiling.sphStar ? (
+					<SphStarThumbnail pattern={tiling.sphStar} />
 				) : tiling.pentEdges ? (
 					<PentagonEdgesThumbnail pattern={tiling.pentEdges} />
 				) : tiling.ihEdges ? (
@@ -374,7 +377,7 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 							{tiling.id}
 						</p>
 					</>
-				) : tiling.schwarz || tiling.hypEdges || tiling.sphericalFreedraw || tiling.sphEdges || tiling.hypPoly || tiling.sphPoly ? (
+				) : tiling.schwarz || tiling.hypEdges || tiling.sphericalFreedraw || tiling.sphEdges || tiling.hypPoly || tiling.sphPoly || tiling.sphStar ? (
 					// The CURVED edge shelves. Same object as planar freedraw, but off the plane there is no grid
 					// of points to count: Marek's spherical and hyperbolic solvers count VERTEX orbits of the
 					// decorated tiling, so the k line has to say that and not "grid points". The family line

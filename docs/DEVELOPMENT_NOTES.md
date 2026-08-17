@@ -13041,3 +13041,151 @@ had always 404'd — unreachable while nothing offered a Euclidean chip above 10
 the constant that already lists which shards exist.
 
 k=13 and k=14 remain budgets, not results: both large boards were still growing.
+
+## 2026-08-17 — spherical star polyhedra: teaching the engine a self-intersecting face
+
+AL pointed out that the Atlas had no star polyhedra at all and asked for a classification, a first
+target, and a measurement of how much of the engine would have to move. His guess was the four
+Kepler–Poinsot solids. The right first target turned out to be all four at once, because they split
+cleanly across the change categories and the split is the answer to the question he actually asked.
+
+Live experiment log with the per-stage numbers: `experiments/results/star-spherical-k1-2026-08-17.md`.
+
+**The tile was the gap, not the search.** I claimed early on that the alphabet already carried star
+polygons and that was wrong. The existing `star` kind is the isotoxal dented 2n-gon, `L = 2n`, `p = 2`,
+a concave tile whose corners alternate (docs/TILE_TAXONOMY.md §2.1). The star polyhedra need the modern
+{n/d}: n vertices, n edges that cross, and the crossings are explicitly not vertices. Same distinction
+the Euclidean `hollow` shelf already carries, on a closed surface instead of the plane.
+
+Five changes, in the order the solids forced them:
+
+1. A `starpoly` kind in `gen_alphabet.py`. `L = n`, `p = 1`, one corner class, interior angle
+   (n−2d)π/n. The load-bearing line is `cc.is_point = False`: the point-adjacency lemma is proved for
+   dented stars and is false for {n/d}, where five adjacent pentagram corners is the small stellated
+   dodecahedron. Leaving it on deletes the target space.
+2. `CLASS_WIND` emitted beside `CLASS_L`, so the developer can tell a pentagon from a pentagram. The
+   solver never needs to know; a word is a word.
+3. Winding in the spherical developer. `sin(ρ/2) = sin(r)·sin(πd/n)`, the corner spanned by the edges
+   to ±d, area `n·α − (n−2d)·π`, and a density target on `solve_rho` so the angle sum closes at 2π·D
+   instead of 2π.
+4. The certificate. χ=2 is false for two of the four Kepler–Poinsot (the small stellated dodecahedron
+   and the great dodecahedron both have χ=−6), so it cannot be the gate. Replaced by Cayley's relation
+   in geometric form, Σ face area = 4π·D for integer D ≥ 1, plus a map-consistency test.
+5. `closure: "density"` in `enum_configs`, accepting `0 < total < D·maxdens` and excluding exact
+   multiples of a full turn, which are flat Euclidean vertices.
+
+**Only two of the 31 star solids needed change 5.** That is the headline and it is close to AL's
+prediction: the great dodecahedron (5×108 = 540°) and the great ditrigonal icosidodecahedron U47
+(504°). The other 29 have planar angle sums under a full turn, from 108° to 336°, so they were always
+inside the existing spherical closure and were being missed for one reason only, that the alphabet had
+no self-intersecting face.
+
+**A third category appeared that is neither palette nor closure.** The wide run rejected 3.8.4.8, the
+small cubicuboctahedron U13, a perfectly ordinary uniform polyhedron. The word enumerates; the develop
+says no spherical vertex figure at every density. Through n equally spaced points at edge arc ρ there
+are two regular spherical n-gons, one at circumradius asin(s) and its complement at π − asin(s), and
+their interior angles sum to 2π. The developer only ever built the small one. Scanning per-face
+orientation closes U13 at ρ = 41.882°, which is exactly the rhombicuboctahedron's edge arc in the
+baseline, and the rhombicuboctahedron is U13's convex hull. This is the standard retrograde notation,
+{8/5} for {8/3}, and it is invisible to the combinatorial search: the word is identical either way.
+Implemented as a per-face-type orientation subset tried alongside the density, it lifted the small
+palette from 13 star solids to 18.
+
+⚑ **A retrograde face subtracts covering.** Taking the complement's positive area instead overstates
+the density by exactly one per retrograde face. U46 read as density 28 before the fix and 4 after; U60
+as 33 and then 9. Caught only because both numbers were absurd against the literature.
+
+⚑ **Two duplicate mechanisms that pull opposite ways.** The same word can be two solids (3⁵ is the
+icosahedron at ρ=63.43° and the great icosahedron at ρ=116.57°) and two words can be one solid (5⁶
+develops to the same dodecahedron as 5³). The dedup signature is therefore geometric, V/E/F, face
+types, density and ρ, with the word deliberately excluded. A coarser key fuses the great dodecahedron
+and the small stellated dodecahedron, which agree on V=12, E=30, F=12 and density 3 and differ only in
+whether the vertices sit 63.43° or 116.57° apart.
+
+**Independent audit.** The developer inherits whatever k the solver asserted, which is combinatorial,
+so I measured the isometry group on the developed geometry instead. That is the J27/J37 lesson from
+this repo, and it is what rejects a figure whose area happens to land on a multiple of 4π without being
+uniform. All records pass with the expected group orders: 24 tetrahedral, 48 octahedral, 120
+icosahedral, 60 for the chiral snubs, 20 and 28 for the antiprisms.
+
+**Verified against the published catalogue**, which this shelf uniquely has: k=1 uniform polyhedra are
+complete by Coxeter–Longuet-Higgins–Miller 1954, Sopov 1970 and Skilling 1975. Matched on V, E, F and
+face composition: the four Kepler–Poinsot, U13, U14, U16, U19, U30, U31, U32, U36, U37, U38, U40, U42,
+U43, U45, U46, U47, U54, U55, U57, U58, U60, U66, U68, one of U69/U74, and the star prisms and
+antiprisms. Zero false positives on the small palette.
+
+### The 7-fold family, and why D matters
+
+AL asked why the k=2 run found the pentagrammic pyramid and not the heptagrammic one. Two separate
+reasons, and I had to fix both.
+
+The first is the angular grid. Every interior angle must be an integer multiple of 2π/D, and 7 does not
+divide the 120 that every other spherical palette uses, so a heptagram's 540/7 = 77.142857° lands
+nowhere. At **D = 840** the unit is 3/7 of a degree and the family is integral: {3} = 140, {4} = 210,
+{7} = 300, {7/2} = 180, {7/3} = 60. A larger D costs nothing measurable; the search branches over
+corner classes, not over D, and the alphabet built in half a second. `star-hept.json` deliberately
+carries no 5-fold tile, because no finite rotation group contains both a 5-fold and a 7-fold axis, so
+mixing them can only produce words that never close.
+
+k=1 gave the whole uniform 7-fold set, all seven at once, and re-derived the great icosahedron and the
+uniform great rhombicuboctahedron from {3} and {4} alone, which is a real check that the machinery is
+palette-independent.
+
+⚑ **The second reason was `maxValence: 6`, copied from the other palettes without checking it against
+the target.** A pyramid over a 7-gon has seven triangles at its apex, so at valence 6 the apex is not in
+the alphabet and the solid cannot be found however long the search runs. Exactly the "completeness knobs
+are not speed dials" rule, and I tripped it. Raising it to 7 made the five-tile solve exceed ten
+minutes, so the pyramids were confirmed on a targeted three-tile palette ({3}, {7/2}, {7/3}, 616
+entries, 14 s solve, 38,026 k=2 blocks) at ρ = 100.487° and 118.291°, both matching the values
+predicted analytically from the closure equations before the run.
+
+### k=2 cost, measured
+
+| | k=1 | k=2 |
+|---|---|---|
+| raw solver blocks | 30 | 9,326 |
+| pruned blocks | 50 | 3,636 |
+| distinct realized | 25 | 1 |
+
+The filter doing the killing is `solve_rho_common`: at k>1 every orbit must close at the same edge arc,
+and two different vertex words generically do not. That is geometry, not a tuning knob, and it is why
+the yield is 1 in 3,636. Hoisting the ρ test to the config-pair level buys about 3×, not the orders of
+magnitude I expected, because 3,636 blocks carry 1,083 distinct pairs and `solve_rho` is already
+memoized. The dominant term is the block count, a property of the search. Extrapolated to the wide
+palette that is roughly 40 hours of develop for an expected yield in the low tens, so it was not run.
+
+### On the shelf
+
+54 records under Spherical → Star polyhedra, foldered by density (1 through 38), 40 with hand-verified
+names. `lib/render/sphStar.ts` does the piece that has no analogue elsewhere in the app: a
+self-intersecting face cannot be filled as a polygon, so it decomposes {n/d} into a core n-gon plus
+d−1 bands of triangles, with the crossing-point radii derived from the ring geometry rather than
+guessed. Guard: `lib/render/sphStar.test.ts`, 5 checks including the pentagram's exact area
+5·(cos72°/cos36°)·sin36° = 1.1225699, which caught my own hand arithmetic being wrong in the third
+decimal.
+
+⚑ `icoFreedraw.ts` normalized every vertex to the unit sphere, which pushed the interior crossing
+points out to radius 1 and rendered each solid as a blob. Added `keepRadius`.
+
+⚑ **A React duplicate-key crash AL hit immediately**, `f:spherical:_spine`, had two causes: my `sst-*`
+subs had no `familyOfSub` mapping, and a latent bug in `catalogue-list-panel.tsx` where every
+null-family sub started its own run under the same key. The grouping is now a keyed Map instead of an
+adjacency scan, which fixes the latent one for every shelf.
+
+⚑ **The deep link fell through to t1001 and I only found it by screenshotting.** `wantSph` in
+`_play-client.tsx` gates the spherical atlas fetch on an id-prefix list that did not include `ss-`, so
+arriving at `/play?tiling=ss-…` from the default Euclidean geometry never fetched the shelf and the
+fallback is silent. The comment directly above that line says this is the third time a new shelf has
+needed a line there; mine is the fourth. Worth a general fix the next time it is touched: the prefix
+list should be derived from the shelf registry, not hand-maintained.
+
+Gate: `make check-star`, three claims. Re-derive the small palette end to end at k=1 and at k=2 and
+diff an invariant digest (word, density, V/E/F, face census, ρ to 9 dp) against the goldens, then hash
+the 54 shipped shards. Hashing the cells JSON as the primary gate would be useless: it is floats, and a
+bisection reorder rewrites every byte without changing a fact. `make check-regular` stays
+byte-identical, so nothing here disturbed the regular catalog.
+
+**Still out of reach: the hemipolyhedra.** The tetrahemihexahedron closes at ρ = 90°, where its square
+faces are exactly hemispheres (interior angle π, circumradius π/2). That is the boundary of the
+developer's parameterisation and the point where density stops being defined, a separate edge case from
+retrograde orientation and not addressed here.

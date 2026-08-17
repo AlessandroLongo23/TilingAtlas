@@ -23,7 +23,7 @@ residual}], plus a report. Validation artifact only — the atlas render layer i
 Usage:  python3 develop_spherical.py --pruned <dir> --out <cells.json> --report <report.txt>
         python3 develop_spherical.py --selftest
 """
-import os, sys, glob, json, argparse, math
+import os, sys, glob, json, argparse, math, time, itertools
 import numpy as np
 
 TOL = 1e-6
@@ -54,16 +54,28 @@ def install_palette(palette):
     pr.lneiglistin = [list(x) for x in tm.LNEIG]
     pr.rneiglistin = [list(x) for x in tm.RNEIG]
     pr.mirrolistin = [list(x) for x in tm.MIRRO]
-    pr.lvertlistin = [[int(tm.CLASS_DISP[c]) for c in row] for row in tm.CLS]
+    # lvert carries the FACE TYPE at each dart, as (n, d): n boundary edges winding d times about the
+    # centre. d is 1 for every convex tile, so the regular palettes are unchanged; a starpoly {5/2} is
+    # (5, 2) and needs both numbers, because n alone cannot tell a pentagon from a pentagram and a
+    # palette may carry both. pruner.decode() only copies and compares lvert entries, so a tuple is as
+    # good as an int there.
+    _wind = getattr(tm, "CLASS_WIND", [1] * len(tm.CLASS_DISP))
+    pr.lvertlistin = [[(int(tm.CLASS_L[c]), int(_wind[c])) for c in row] for row in tm.CLS]
     return tm
 
-install_palette("spherical")
+install_palette(os.environ.get("EU_PALETTE", "spherical"))
 
 # ----------------------------------------------------------------------------- spherical geometry
-def regular_spherical_polygon(p, rho):
-    """p unit vectors of a regular spherical p-gon with edge arc-length rho, centred on ẑ.
-    Circumradius r from sin(rho/2) = sin(r)·sin(pi/p). Returns None if rho too large for p."""
-    s = math.sin(rho / 2.0) / math.sin(math.pi / p)
+def _nd(face):
+    """Face type as (n, d). Accepts a bare int (convex n-gon, d=1) or an (n, d) pair."""
+    return (face, 1) if isinstance(face, int) else (int(face[0]), int(face[1]))
+
+def regular_spherical_polygon(p, rho, d=1):
+    """p unit vectors of a regular spherical {p/d} with edge arc-length rho, centred on ẑ.
+    Circumradius r from sin(rho/2) = sin(r)·sin(pi*d/p): an edge of {p/d} spans d steps of 2*pi/p in
+    longitude, so the chord subtends pi*d/p at the centre, not pi/p. d=1 is the convex case and
+    reproduces the original formula exactly. Returns None if rho is too large for (p, d)."""
+    s = math.sin(rho / 2.0) / math.sin(math.pi * d / p)
     if s > 1.0:
         return None
     r = math.asin(s)
@@ -71,12 +83,13 @@ def regular_spherical_polygon(p, rho):
                       math.sin(r) * math.sin(2 * math.pi * k / p),
                       math.cos(r)] for k in range(p)])
 
-def interior_angle(p, rho):
-    """Interior angle (radians) of a regular spherical p-gon with edge arc-length rho."""
-    v = regular_spherical_polygon(p, rho)
+def interior_angle(p, rho, d=1):
+    """Interior angle (radians) of a regular spherical {p/d} with edge arc-length rho. The corner at
+    v0 is spanned by the edges to v[d] and v[p-d], which for d=1 is the original neighbour pair."""
+    v = regular_spherical_polygon(p, rho, d)
     if v is None:
         return math.pi  # degenerate upper bound
-    v0, v1, vm = v[0], v[1], v[p - 1]
+    v0, v1, vm = v[0], v[d % p], v[(p - d) % p]
     def tangent(a, b):
         t = b - np.dot(b, a) * a
         return t / np.linalg.norm(t)
@@ -86,17 +99,45 @@ def interior_angle(p, rho):
 
 _RHO_CACHE = {}
 
-def solve_rho(config):
-    """Edge arc-length rho solving Σ_i interior_angle(p_i, rho) = 2π (positive-defect closure).
-    Monotone increasing in rho; root exists iff Σ flat angles < 2π (the spherical condition).
-    Depends only on the angle multiset, so memoize by sorted config — the same few dozen configs
-    recur across thousands of blocks, and the 200-step bisection is the develop hot path at high k."""
-    key = tuple(sorted(config))
+def face_angle(n, rho, d, retro=False):
+    """Interior angle actually used by a face of type (n, d) at edge arc rho.
+
+    Through n equally spaced points at edge arc rho there are TWO regular spherical polygons, not one:
+    the small one at circumradius r = asin(s) and the complementary one at pi - r, and their interior
+    angles sum to 2*pi. Which one a uniform polyhedron uses is a property of the SOLID, not of the tile:
+    the small cubicuboctahedron 3.8.4.8 has all edges equal and is a real uniform polyhedron, and it
+    closes only when its octagons and its square are taken complementary. That is the same fact the
+    standard notation writes as a retrograde face, {8/5} for {8/3}, and it is invisible to the
+    combinatorial search — the word is identical either way."""
+    a = interior_angle(n, rho, d)
+    return (2 * math.pi - a) if retro else a
+
+def face_area(n, alpha, d):
+    """Spherical area of a face of type (n, d) whose interior angle is alpha: n*alpha - (n-2d)*pi.
+    Holds for the complementary orientation too (the small and big triangles at rho=116.57° come out
+    252° and 468°, which sum to the whole sphere)."""
+    return n * alpha - (n - 2 * d) * math.pi
+
+def solve_rho(config, dens=1, retro=frozenset()):
+    """Edge arc-length rho solving Σ_i interior_angle(p_i, d_i, rho) = 2π·dens.
+
+    dens is the VERTEX DENSITY: how many times the vertex figure winds about the vertex. dens=1 is the
+    original positive-defect closure and is the only value a convex solid can take. A star polyhedron
+    may need more: the great dodecahedron puts five spherical pentagons of 144° at each vertex, which
+    is 720° = 2·2π, and the great icosahedron does the same with five triangles. Those two share the
+    words (5,5,5,5,5) and (3,3,3,3,3) with the dodecahedron-free icosahedron respectively, so the SAME
+    combinatorial vertex closes at two different rho, one per density, and both are real solids. This
+    is why develop_block tries every density instead of stopping at the first hit.
+
+    Monotone increasing in rho, so bisection is safe. Memoized by (sorted config, dens)."""
+    key = (tuple(sorted(_nd(p) for p in config)), dens, tuple(sorted(retro)))
     if key in _RHO_CACHE:
         return _RHO_CACHE[key]
     def f(rho):
-        return sum(interior_angle(p, rho) for p in config) - 2 * math.pi
-    lo, hi = 1e-7, 2 * math.pi / max(config) - 1e-7
+        return sum(face_angle(n, rho, d, (n, d) in retro)
+                   for (n, d) in map(_nd, config)) - 2 * math.pi * dens
+    # rho is capped where the circumradius reaches pi/2: sin(rho/2) = sin(pi*d/n), i.e. rho = 2*pi*d/n.
+    lo, hi = 1e-7, min(2 * math.pi * d / n for (n, d) in map(_nd, config)) - 1e-7
     if f(lo) >= 0 or f(hi) <= 0:
         _RHO_CACHE[key] = None
         return None
@@ -109,12 +150,13 @@ def solve_rho(config):
     _RHO_CACHE[key] = 0.5 * (lo + hi)
     return _RHO_CACHE[key]
 
-def solve_rho_common(configs, tol=1e-6):
+def solve_rho_common(configs, dens=1, retro=frozenset(), tol=1e-6):
     """Common edge arc-length rho closing EVERY vertex config (each Σ angle = 2π at the same rho).
     For k=1 that is just solve_rho. For k>1 all orbits share edges, so a single rho must close
     all of them — two different configs close at different rho (generic), so this returns None
     unless the configs coincide there. Returns rho or None (no equal-edge realization)."""
-    rhos = [solve_rho(c) for c in configs]
+    dl = dens if isinstance(dens, (list, tuple)) else [dens] * len(configs)
+    rhos = [solve_rho(c, dv, retro) for c, dv in zip(configs, dl)]
     if any(r is None for r in rhos):
         return None
     if max(rhos) - min(rhos) > tol:
@@ -148,7 +190,7 @@ def _key_inst(h, R):
     return (h, round(pos[0] / TOL), round(pos[1] / TOL), round(pos[2] / TOL),
             round(hx[0] / TOL), round(hx[1] / TOL), round(hx[2] / TOL))
 
-def develop_sphere(rneig, glue, lvert, rho, sign=1, guard=1500):
+def develop_sphere(rneig, glue, lvert, rho, sign=1, guard=1500, retro=frozenset()):
     # guard bounds the flood-fill. A convex regular-faced polyhedron in this palette has at most 2E dart-
     # instances: 360 for the k=1 truncated icosidodecahedron (V120), and ≤240 for every k≥3 solid (the
     # rhombicosidodecahedron family, V≤60). 1500 is ~6× headroom over the largest realizable case while
@@ -162,8 +204,12 @@ def develop_sphere(rneig, glue, lvert, rho, sign=1, guard=1500):
     def alpha(hdart):
         p = lvert[rneig[hdart]]
         if p not in ang:
-            ang[p] = sign * interior_angle(p, rho)
+            n, d = _nd(p)
+            ang[p] = sign * face_angle(n, rho, d, (n, d) in retro)
         return ang[p]
+
+    def ftype(hdart):
+        return _nd(lvert[rneig[hdart]])
 
     # instance dedup + vertex dedup
     inst_id = {}          # key_inst -> compact instance index
@@ -217,12 +263,13 @@ def develop_sphere(rneig, glue, lvert, rho, sign=1, guard=1500):
         if vA != vB:
             E.add((min(vA, vB), max(vA, vB)))
     # faces: orbits of F(h,R) = (glue[rneig[h]], R·Rz(alpha)·M)
-    F = []
+    F, Ftype = [], []
     seen_face = set()
     for start in range(len(inst_data)):
         if start in seen_face:
             continue
         ring = []
+        Ftype.append(ftype(inst_data[start][0]))
         idx = start
         for _ in range(guard):
             seen_face.add(idx)
@@ -239,14 +286,47 @@ def develop_sphere(rneig, glue, lvert, rho, sign=1, guard=1500):
         else:
             raise DevelopError("face did not close")
         F.append(ring)
-    return V, E, F
+    return V, E, F, Ftype, len(inst_data)
 
 # ----------------------------------------------------------------------------- verification
-def check_realized(V, E, F, tol=1e-4):
-    """(ok, residual). Euler χ=2, all edges equal length, all faces regular (equal edges + coplanar)."""
+def check_realized(V, E, F, Ftype=None, rho=None, ninst=None, retro=frozenset(), tol=1e-4):
+    """(ok, residual). All edges equal, all faces regular (equal edges + coplanar), and the map covers
+    the sphere a WHOLE number of times.
+
+    Euler χ=2 was the old certificate and is wrong for stars. It is a theorem for a density-1 tiling and
+    simply false for two of the four Kepler-Poinsot solids: the small stellated dodecahedron and the
+    great dodecahedron both close at 12-30+12 = -6, genus 4, and land on the sphere as degree-3 branched
+    covers. What survives as a certificate is the AREA: Σ_f area(f) = 4π·D for a positive integer D,
+    where a {n/d} face of interior angle α has area n·α - (n-2d)·π. That is Cayley's density-weighted
+    Euler relation in its geometric form, and χ is reported beside it instead of gating it."""
     res = {}
     euler = len(V) - len(E) + len(F)
     res["euler"] = euler
+    # MAP CONSISTENCY. Dropping the χ=2 gate above removed the only thing that was catching a
+    # flood-fill whose vertices collapsed onto each other, and one block then "realized" with 12
+    # vertices, 30 edges and 104 faces, which no map has. Every dart instance is one (face, corner),
+    # so the dart count has to equal 2|E| and the sum of the face degrees at once, and a {n/d} face
+    # has to trace exactly n darts. None of these is implied by the area test.
+    res["darts"] = ninst
+    if ninst is not None:
+        deg_sum = sum(len(r) for r in F)
+        res["mapOK"] = (2 * len(E) == ninst and deg_sum == ninst
+                        and (Ftype is None or all(len(r) == _nd(t)[0] for r, t in zip(F, Ftype))))
+        if not res["mapOK"]:
+            return False, res
+    density = None
+    if Ftype is not None and rho is not None:
+        total = 0.0
+        for (n, d) in Ftype:
+            # SIGNED area. A retrograde face is the small polygon traversed BACKWARDS, so it removes
+            # covering instead of adding it; using the complementary polygon's positive area instead
+            # overstates the density by exactly one per retrograde face (it differs by a whole 4*pi).
+            # Measured on the snub icosidodecadodecahedron: +28 the wrong way, 4 the right way.
+            a = face_area(n, interior_angle(n, rho, d), d)
+            total += -a if (n, d) in retro else a
+        density = abs(total) / (4 * math.pi)
+        res["density"] = density
+        res["densityErr"] = abs(density - round(density))
     Vn = [np.asarray(v) for v in V]
     elens = [np.linalg.norm(Vn[a] - Vn[b]) for (a, b) in E]
     if not elens:
@@ -269,8 +349,12 @@ def check_realized(V, E, F, tol=1e-4):
             worst_face_cv = max(worst_face_cv, max(abs(e - fm) for e in fe) / fm)
     res["planarity"] = worst_plane
     res["faceEdgeCV"] = worst_face_cv
-    ok = (euler == 2 and res["edgeCV"] < tol and worst_plane < tol and worst_face_cv < tol)
-    return ok, res
+    geom_ok = (res["edgeCV"] < tol and worst_plane < tol and worst_face_cv < tol)
+    if density is None:
+        cover_ok = (euler == 2)                       # legacy path: no face types handed in
+    else:
+        cover_ok = (res["densityErr"] < 1e-6 and round(density) >= 1)
+    return (geom_ok and cover_ok), res
 
 # ----------------------------------------------------------------------------- block IO (as develop.py)
 def read_blocks(path):
@@ -292,9 +376,14 @@ def tes_id(tes):
     return "ctrnact-%s-%s-%s" % (nn_fam, filesig.replace(" ", "_"), n)
 
 def parse_configs(vertypeline):
-    """All per-orbit vertex configs on the header line (one per vertex type, k configs for k-uniform)."""
+    """All per-orbit vertex configs on the header line (one per vertex type, k configs for k-uniform).
+    A face token is "n" (convex) or "n_d" (the starpoly {n/d}); both come back as an (n, d) pair."""
     import re
-    return [[int(x) for x in g.split(",")] for g in re.findall(r"\(([0-9,]+)\)", vertypeline)]
+    def tok(s):
+        n, _, d = s.partition("_")
+        return (int(n), int(d) if d else 1)
+    return [[tok(x) for x in g.split(",")]
+            for g in re.findall(r"\(([0-9_]+(?:,[0-9_]+)*)\)", vertypeline)]
 
 def decode_block(b):
     """Reuse pruner.decode() -> copies of the quotient arrays + the per-orbit vertex configs."""
@@ -305,34 +394,72 @@ def decode_block(b):
         "id": tes_id([l for l in b if l.startswith("TES file:")][0].split(":", 1)[1].strip()),
     }
 
+MAXDENS = int(os.environ.get("EU_MAXDENS", "1"))
+
+def _face_str(nd):
+    n, d = _nd(nd)
+    return str(n) if d == 1 else "%d/%d" % (n, d)
+
 def develop_block(b):
+    """Develop one pruned block at every vertex density 1..MAXDENS and return EVERY realization.
+
+    A block is a combinatorial object; the density is not in it. At MAXDENS=1 this is the original
+    behaviour (one attempt, one answer) and the convex palettes are untouched. Above 1 the same block
+    can realize more than once, and both answers are genuine distinct solids: (3,3,3,3,3) closes at
+    rho=63.43° with density 1 as the icosahedron and at rho=116.57° with density 2 as the great
+    icosahedron. Returning only the first would silently lose half the star catalogue."""
     dec = decode_block(b)
     configs = dec["configs"]
-    cfg_str = " + ".join(".".join(map(str, c)) for c in configs)
-    rho = solve_rho_common(configs)
-    if rho is None:
-        # distinguish "no spherical figure at all" from "no common edge length across orbits"
-        reason = ("no spherical vertex figure" if any(solve_rho(c) is None for c in configs)
-                  else "no common edge length (orbit configs close at different rho)")
-        return None, {"id": dec["id"], "config": cfg_str, "reason": reason}
-    last = "unknown"
-    for sign in (1, -1):
-        try:
-            V, E, F = develop_sphere(dec["rneig"], dec["glue"], dec["lvert"], rho, sign=sign)
-        except DevelopError as e:
-            last = str(e)
-            continue
-        ok, res = check_realized(V, E, F)
-        if ok:
-            rec = {
-                "id": dec["id"], "vertexConfig": cfg_str, "k": len(configs),
-                "vertices": [[float(x) for x in v] for v in V],
-                "faces": [list(map(int, ring)) for ring in F],
-                "realized": True, "residual": res,
-            }
-            return rec, None
-        last = "not regular: %r" % res
-    return None, {"id": dec["id"], "config": cfg_str, "reason": last}
+    cfg_str = " + ".join(".".join(_face_str(p) for p in c) for c in configs)
+    recs, reasons = [], []
+    # The face types present, so the per-face orientation choice can be enumerated. See face_angle:
+    # each type independently takes the small spherical polygon or its complement, and the choice is
+    # invisible to the combinatorial search. Subsets are tried smallest first so the all-prograde
+    # reading wins ties, and the cheap rho bisection filters almost all of them before any flood-fill.
+    types = sorted({_nd(p) for c in configs for p in c})
+    subsets = [frozenset(t for t, b in zip(types, bits) if b)
+               for bits in itertools.product([0, 1], repeat=len(types))]
+    subsets.sort(key=len)
+    # PER-ORBIT densities, not one shared value. At k = 1 this is the old loop exactly — the tuples are
+    # (1,), (2,), (3,) in that order — and above k = 1 it is a correctness fix rather than a refinement:
+    # two vertex orbits of one k-uniform star tiling need not wind the same number of times about their
+    # vertices, and a single `dens` for both can only ever find the tilings where they happen to agree.
+    # Ordered by total winding so the tamest reading wins ties.
+    densities = sorted(itertools.product(range(1, MAXDENS + 1), repeat=len(configs)), key=lambda t: (sum(t), t))
+    for dens in densities:
+        for retro in subsets:
+            rho = solve_rho_common(configs, dens, retro)
+            if rho is None:
+                continue
+            for sign in (1, -1):
+                try:
+                    V, E, F, Ftype, ninst = develop_sphere(dec["rneig"], dec["glue"], dec["lvert"],
+                                                           rho, sign=sign, retro=retro)
+                except DevelopError as e:
+                    reasons.append("d=%s retro=%s sign=%+d: %s" % (dens, sorted(retro), sign, e))
+                    continue
+                ok, res = check_realized(V, E, F, Ftype, rho, ninst, retro)
+                if ok:
+                    tag = ""
+                    if any(d != 1 for d in dens):
+                        tag += "-d" + "_".join(str(d) for d in dens)
+                    if retro:
+                        tag += "-r" + "".join("%d_%d" % t for t in sorted(retro))
+                    recs.append({
+                        "id": dec["id"] + tag,
+                        "vertexConfig": cfg_str, "k": len(configs),
+                        "vertexDensity": dens[0] if len(dens) == 1 else list(dens), "rho": rho,
+                        "retrograde": ["%d/%d" % t if t[1] > 1 else str(t[0]) for t in sorted(retro)],
+                        "density": int(round(res.get("density", 1))),
+                        "vertices": [[float(x) for x in v] for v in V],
+                        "faces": [list(map(int, ring)) for ring in F],
+                        "faceTypes": [[int(n), int(d)] for (n, d) in Ftype],
+                        "realized": True, "residual": res,
+                    })
+                    break
+    if recs:
+        return recs, None
+    return [], {"id": dec["id"], "config": cfg_str, "reason": "; ".join(reasons[:4]) or "unknown"}
 
 # ----------------------------------------------------------------------------- driver
 def gather_blocks(pruned, kmin, kmax):
@@ -351,12 +478,20 @@ def gather_blocks(pruned, kmin, kmax):
 def run(pruned, out_path, report_path, kmin=1, kmax=1):
     blocks = gather_blocks(pruned, kmin, kmax)
     records, failed = [], []
-    for b in blocks:
-        rec, err = develop_block(b)
-        if rec:
-            records.append(rec)
+    t0 = time.time()
+    for i, b in enumerate(blocks):
+        recs, err = develop_block(b)
+        if recs:
+            records.extend(recs)
         else:
             failed.append(err)
+        # Progress to stderr. A star palette hands this loop tens of thousands of blocks instead of the
+        # couple of dozen the convex one does, and a silent hour is indistinguishable from a hang.
+        if (i + 1) % 500 == 0 or i + 1 == len(blocks):
+            el = time.time() - t0
+            eta = el / (i + 1) * (len(blocks) - i - 1)
+            print("  develop %d/%d  realized=%d  %.0fs elapsed, ETA %.0fs"
+                  % (i + 1, len(blocks), len(records), el, eta), file=sys.stderr, flush=True)
     # geometric-duplicate audit: group realized records by invariant signature
     sig = {}
     for r in records:
@@ -366,10 +501,38 @@ def run(pruned, out_path, report_path, kmin=1, kmax=1):
             for i in range(len(ring)):
                 a, c = ring[i], ring[(i + 1) % len(ring)]
                 Eset.add((min(a, c), max(a, c)))
-        fmulti = tuple(sorted(len(ring) for ring in r["faces"]))
-        key = ("".join(sorted(r["vertexConfig"])), V, len(Eset), F, fmulti)
+        fmulti = tuple(sorted(map(tuple, r.get("faceTypes") or [[len(ring), 1] for ring in r["faces"]])))
+        # The signature is GEOMETRIC and the vertex word is deliberately not in it. Two things pull in
+        # opposite directions here and both are real:
+        #   · the same word can be two different solids — (3,3,3,3,3) is the icosahedron at rho=63.43°
+        #     and the great icosahedron at rho=116.57°, identical 12/30/20 — so density and rho must be
+        #     IN the key, and they are;
+        #   · different words can be one solid — a vertex traversed twice, (5,5,5,5,5,5) against
+        #     (5,5,5), develops to the very same dodecahedron. Those are the iso-fold collisions the
+        #     alphabet certifier already warns about, and keeping the word in the key would ship each
+        #     of them twice.
+        key = (V, len(Eset), F, fmulti, r.get("density", 1), round(r.get("rho", 0.0), 9))
         sig.setdefault(key, []).append(r["id"])
     dups = {k: v for k, v in sig.items() if len(v) > 1}
+    # COLLAPSE the geometric duplicates instead of only reporting them. A doubled vertex word develops
+    # to the identical solid, and shipping both would inflate a catalogue whose k=1 count is supposed
+    # to be checkable against a published one. The survivor is the shortest word (the primitive
+    # traversal); ties go to the lexicographically first id so the choice is deterministic.
+    if os.environ.get("EU_DEDUP", "1") == "1":
+        best = {}
+        for r in records:
+            V = len(r["vertices"]); F = len(r["faces"])
+            Eset = set()
+            for ring in r["faces"]:
+                for i in range(len(ring)):
+                    a, c = ring[i], ring[(i + 1) % len(ring)]
+                    Eset.add((min(a, c), max(a, c)))
+            fmulti = tuple(sorted(map(tuple, r.get("faceTypes") or [[len(x), 1] for x in r["faces"]])))
+            k = (V, len(Eset), F, fmulti, r.get("density", 1), round(r.get("rho", 0.0), 9))
+            rank = (len(r["vertexConfig"].split(".")), r["id"])
+            if k not in best or rank < best[k][0]:
+                best[k] = (rank, r)
+        records = [v[1] for v in best.values()]
     records.sort(key=lambda r: (len(r["vertices"]), r["id"]))
     if out_path:
         json.dump(records, open(out_path, "w"))

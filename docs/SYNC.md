@@ -2572,3 +2572,12 @@ vertex angle sum on the shipped bytes and dedupes by exact congruence: 27,728 pa
 eager (0.1 MB), k=5…14 ten lazy slices fetched only by their own k chip. ⚑ The angle certificate first
 cried 660° and the bug was my vertex key (`-0` splitting one vertex into two); the tri45 residue is
 correct. Guard `lib/tilings/eu-half.test.ts`, 11 checks. Detail: NOTES 2026-08-14 (eighth).
+
+## 2026-08-17 — spherical star polyhedra, the shelf the Atlas had no tile for — CC
+
+**54 solids** under Spherical → Star polyhedra, density 1…38, 40 named, checked against the published
+k=1 catalogue (CLM 1954 / Sopov 1970 / Skilling 1975): zero false positives. ⚑ The gap was the TILE —
+the existing `star` kind is the isotoxal dented 2n-gon, not self-intersecting {n/d}. ⚑ 29 of 31 star
+solids needed only the new tile kind + winding in the developer, 2 needed a density closure, and a
+third category (retrograde faces) is a developer change invisible to the search. ⚑ D=840 opens the
+7-fold family; ⚑ `maxValence: 6`, not geometry, hid both heptagrammic pyramids. Detail: NOTES 2026-08-17.

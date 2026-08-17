@@ -1,0 +1,13 @@
+{
+  "name": "star-ico-d",
+  "D": 120,
+  "closure": "density",
+  "maxDensity": 2,
+  "maxValence": 6,
+  "comment": "star-ico with the DENSITY closure: a vertex word is admitted when its planar angles sum to strictly less than maxDensity full turns and are not an exact multiple of one (a flat vertex is Euclidean, not polyhedral). This is the one change star-ico could not make on its own — the great dodecahedron {5,5/2} puts five 108-degree pentagons at a vertex, 540 degrees, which positive-defect prunes as past a full turn. Which density a surviving word takes is decided in develop_spherical.py, which solves for rho at each d_v and keeps every realization.",
+  "tiles": [
+    { "kind": "regular",  "n": 3, "name": "3", "famchar": "3" },
+    { "kind": "regular",  "n": 5, "name": "5", "famchar": "5" },
+    { "kind": "starpoly", "n": 5, "d": 2, "name": "5_2", "famchar": "p" }
+  ]
+}

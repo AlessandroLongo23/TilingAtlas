@@ -213,7 +213,9 @@ export function boardFamiliesFor(
 		tilings: {
 			euclidean: [],
 			hyperbolic: ["hyp-poly", "hyp-poly-t", "hyp-half"],
-			spherical: ["sph-poly", "sph-half"],
+			// "sph-star" belongs here and not under edges: a star polyhedron is a TILING of the sphere, every
+			// edge a real face boundary, and its boards are the DENSITY rows rather than a base solid.
+			spherical: ["sph-poly", "sph-half", "sph-star"],
 		},
 		edges: {
 			euclidean: ["grid", "schwarz-eu", "pent", "ih"],
