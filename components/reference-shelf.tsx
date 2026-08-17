@@ -1912,12 +1912,12 @@ export function ReferenceShelf() {
 								Every tile set here carries edges of more than one length, which is what this class is. The
 								planigons are the duals of the Euclidean vertex configurations — fifteen tiles, twelve edge
 								lengths. Penrose&apos;s kite and dart have two, 1 and φ, and are enumerated without the
-								matching rules, so these are the periodic tilings the two shapes admit. The last four are
-								halves of a regular polygon, cut vertex-to-vertex or between opposite edge midpoints: the
-								half pentagon tiles the plane although the regular pentagon cannot, and the domino has
-								exactly one edge-to-edge tiling. Only six such halves can tile at all, and two of those are
-								already here — the half triangle is one of the planigons, the half square is the 45-45-90
-								board.
+								matching rules, so these are the periodic tilings the two shapes admit. The last five are
+								halves of a regular polygon, cut vertex-to-vertex, between opposite edge midpoints, or along
+								the mirror an odd polygon has: the half pentagon tiles the plane although the regular
+								pentagon cannot, and the domino has exactly one tiling if every edge must be matched whole.
+								Only six such halves can tile at all, and the sixth is the half square, which is the
+								45-45-90 board.
 							</GroupNote>
 						</FilterGroup>
 					) : null}

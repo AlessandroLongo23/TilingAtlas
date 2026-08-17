@@ -235,3 +235,30 @@ the planigon palette. Shelving it means either a fifth euhalf board (and rewriti
 split planigon palette, which needs a variant per decomposition: 24 of them across 12 edge lengths.
 Either is a real change and neither is a rebuild of what already ships. Numbers above stand on their
 own and are reproducible from the two palettes.
+
+--- SHELVED: the 30-60-90 becomes the fifth euhalf board ------------------------------------------
+AL, 2026-08-17: "Add it to the atlas." Taken as the fifth euhalf board rather than a split planigon
+palette — the planigon route needs a variant per decomposition (24 across 12 edge lengths) and would
+rebuild a shelf that is not the subject. Id `tri`, following the `pent` precedent: an odd polygon has
+one cut, so the board is named for the polygon and not the cut.
+
+  tri  { 1:5  2:64  3:391  4:1989 | 5:1043  6:3280 }   6,772 tilings, dividedTo=4, enumeratedTo=6
+  shelf 28,715 -> 35,487 over five boards
+  certificates: shape 6.8e-10, area 4.3e-10, worst vertex 360.00 degrees, 23 supercells dropped
+
+THREE THINGS THE NEW BOARD BROKE, all in the guard test, all real.
+
+  THE CUT IS NOT ALWAYS THE LONGEST SIDE. The test asserted `max(sides) === cut length`, which holds
+  on every other board and fails here: the equilateral triangle's altitude is sqrt3 = 1.732 while the
+  hypotenuse it leaves is the original edge, 2. Now it asserts the cut is PRESENT among the sides and
+  checks the others against that index. The old form was true of four boards by coincidence.
+
+  THE FAMILY LIST. "Exactly one live board is elsewhere (n=4 vertex, the tri45 shelf)" replaces "two
+  of them are on the planigon and tri45 shelves", in the test, in lib/tilings/eu-half.ts and in the
+  /library class note, which claimed the half triangle was one of the planigons. It is its own board.
+
+  THE EAGER FILE CROSSED THE PACKING THRESHOLD. `stringifyAtlas` emits the container format
+  ({atlas,dict,records}) once a file is big enough, and adding 2,449 k<=4 records tipped
+  reference-atlas-euhalf.json over. The test read it with a bare JSON.parse and got an object:
+  "rows.filter is not a function". decodeAtlas now, same as every other reader. Worth noting the
+  failure mode is silent for anything that iterates instead of calling an array method.

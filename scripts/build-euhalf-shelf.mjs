@@ -78,6 +78,18 @@ const BOARDS = [
 			+ 'edge-to-edge tiling at k=2 is joined by a hundred more once they are.',
 	},
 	{
+		id: 'tri', label: '{3} halved by its mirror', cells: 'run-eu-half-tri-mirror-split-k4/eu-half-tri-mirror-split-cells.json',
+		cellsEdgeToEdge: 'run-eu-half-tri-mirror-k6/eu-half-tri-mirror-cells.json',
+		D: 12, hue: 265, tile: '30-60-90 triangle',
+		angles: [30, 60, 90], sides: [2, 1, Math.sqrt(3)],
+		note: 'Half a regular triangle, cut by its mirror from a vertex to the midpoint of the opposite edge. '
+			+ 'Three is odd, so like the pentagon this is the only cut it has. Its hypotenuse is exactly TWO '
+			+ 'SHORT LEGS, the most divisible edge in the family, so it gains more from a divided edge than any '
+			+ 'other board here and gains even at k=1. It reached the atlas late because it was the one member '
+			+ 'with another home: the same triangle is P12.6.4 in the planigon palette, one tile among fifteen, '
+			+ 'where it has never been catalogued as a board in its own right.',
+	},
+	{
 		id: 'sqmid', label: '{4} halved between opposite edges', cells: 'run-eu-half-sq-mid-split-k6/eu-half-sq-mid-split-cells.json',
 		cellsEdgeToEdge: 'run-eu-half-sq-mid-k6/eu-half-sq-mid-cells.json',
 		D: 4, hue: 320, tile: '1×2 rectangle (the domino)',

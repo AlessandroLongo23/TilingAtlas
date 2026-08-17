@@ -17,6 +17,13 @@ import { SPH_EDGES_BOARDS, sphEdgesSubOfBoard } from "@/lib/freedraw/sph-edges";
 import { IH_EDGE_BOARDS, ihEdgeSubOfBoard } from "@/lib/isohedral/edge-shelf";
 import { PENT_EDGE_BOARDS, pentEdgeSubOfBoard } from "@/lib/pentagon/edge-shelf";
 import { HYP_POLY_BOARDS, hypPolySubOfBoard } from "@/lib/tilings/hyp-poly";
+import {
+	HYP_TILING_BOARDS,
+	HYP_TILING_VALENCES,
+	hypTilingBoardLabel,
+	hypTilingSubOfBoard,
+	hypTilingValenceLabel,
+} from "@/lib/tilings/hyp-tilings";
 
 /** "pseudo-rhombicuboctahedron (J37)" → "Pseudo-rhombicuboctahedron". The parenthetical is the Johnson
  *  number, which the card already carries and a 14-character sidebar chip cannot. */
@@ -55,6 +62,9 @@ export const FAMILY_LABEL: Record<string, string> = {
 	"hyp-colors": "Base tilings",
 	"hyp-poly": "3.4.n.4 boards",
 	"hyp-poly-t": "{3,n} boards",
+	// The base hyperbolic shelf, one heading per valence. Derived, so a corpus that reaches valence 9
+	// arrives named instead of rendering "hyt-v9" at a visitor.
+	...Object.fromEntries(HYP_TILING_VALENCES.map((v) => [`hyt-v${v}`, hypTilingValenceLabel(v)])),
 	"sph-poly": "3.4.n.4 solids",
 	"sph-star": "Star polyhedra",
 	// A regular face cut in two. Their own heading, because they are not members of the 3.4.n.4 families
@@ -199,6 +209,7 @@ export const SUB_LABEL: Record<string, string> = {
 	"el-penrose": "Penrose kite and dart",
 	// The Euclidean half-polygons. Named by the polygon and the cut, because the cut is what decides
 	// the board — a hexagon halved two ways gives two entirely different catalogues.
+	"el-euh-tri": "Half equilateral triangle",
 	"el-euh-hexv": "Half hexagon (long diagonal)",
 	"el-euh-pent": "Half pentagon",
 	"el-euh-hexm": "Half hexagon (edge midpoints)",
@@ -217,6 +228,14 @@ export const SUB_LABEL: Record<string, string> = {
 	// Both hyperbolic-poly families at once — the board's own label decides which words appear, so the
 	// {3,n} boards arrived named on the day they landed and a third family would too.
 	...Object.fromEntries(HYP_POLY_BOARDS.map((b) => [hypPolySubOfBoard(b), `${b.label} tilings`])),
+	// The base hyperbolic boards. Under their valence heading the alphabet is the whole name; standing
+	// alone (in /library's board wall, where the heading may be scrolled away) it carries the valence too.
+	...Object.fromEntries(
+		HYP_TILING_BOARDS.map((b) => [
+			hypTilingSubOfBoard(b),
+			`${hypTilingBoardLabel(b)}, ${hypTilingValenceLabel(b.valence)}`,
+		]),
+	),
 	...NAMED,
 };
 
@@ -241,6 +260,9 @@ export const SUB_SHORT_LABEL: Record<string, string> = {
 	...Object.fromEntries(SPH_EDGES_BOARDS.map((b) => [sphEdgesSubOfBoard(b), solidName(b.solid)])),
 	...Object.fromEntries(HYP_EDGES_BASES.map((b) => [`hyp-${b.id}`, b.label])),
 	...Object.fromEntries(HYP_POLY_BOARDS.map((b) => [hypPolySubOfBoard(b), b.label])),
+	...Object.fromEntries(
+		HYP_TILING_BOARDS.map((b) => [hypTilingSubOfBoard(b), hypTilingBoardLabel(b)]),
+	),
 	// Everything hand-named drops the family word in front and the shelf word behind, which is exactly the
 	// redundancy the heading already covers: "Schwarz (2,3,6) grid" → "(2,3,6)", "3.4.7.4 tilings" → "3.4.7.4".
 	...Object.fromEntries(

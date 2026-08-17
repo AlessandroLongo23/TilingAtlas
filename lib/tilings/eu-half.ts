@@ -13,7 +13,7 @@
 // and the edge-slot filter says out loud that "each edge is shared by exactly TWO corners". Let one
 // tile's edge be met by TWO neighbours and neither holds. Every board here has a side of length 2 and a
 // side of length 1, so every board admits such a division, and the boards were re-run with it allowed:
-// the counts below at k ≤ `dividedTo` include those tilings, and the shelf grew from 27,728 to 28,715.
+// the counts below at k ≤ `dividedTo` include those tilings, and the shelf grew from 27,728 to 35,487.
 // The half-decagon is the one board where no edge decomposes, so its exclusion survives untouched; the
 // half-octagon's does not survive as an argument, and was re-run to confirm the board is empty anyway.
 // See experiments/results/euhalf-nonedge-to-edge-2026-08-17.log.
@@ -35,10 +35,12 @@
 //   half-OCTAGON dies too: only its 90° corners touch the cut, so four right angles is the sole
 //   surviving vertex, and then nothing can host the four 135° corners every tile carries.
 //
-// Two of the six were already shipped under names that do not say "half": the 30-60-90 half-triangle is
-// `P12.6.4` in the planigon palette, and the 45-45-90 half-square is the whole tri45 shelf. The four
-// here are the rest of the family, and there is no more of it — every board from n = 7 up is empty, and
-// always the same way (the α corners become unplaceable and only the right angle survives).
+// FIVE of the six are here. The 45-45-90 half-square is the whole tri45 shelf and stays there. The
+// 30-60-90 half-triangle was the sixth, and for a while it was nowhere: the same triangle is `P12.6.4`
+// in the planigon palette, one tile among fifteen, so it had never been catalogued as a BOARD. It is
+// `tri` below as of 2026-08-17, which is also the board that gains most from a divided edge. There is
+// no more of the family — every board from n = 7 up is empty, and always the same way (the α corners
+// become unplaceable and only the right angle survives).
 //
 // A record is a plain `renderCell` reference tiling, the same shape the tri45, planigon and Penrose
 // shelves ship, so no renderer was needed.
@@ -132,6 +134,24 @@ export const EU_HALF_BOARDS: EuHalfBoard[] = [
 		enumeratedTo: 9,
 		emptyKs: [1, 3],
 		dividedTo: 9,
+	},
+	{
+		id: "tri",
+		label: "{3} halved by its mirror",
+		tile: "30-60-90 triangle",
+		// Three is odd, so like the pentagon this is the only cut it has.
+		cut: "the equilateral triangle, cut from a vertex to the midpoint of the opposite edge",
+		angles: [30, 60, 90],
+		// The hypotenuse is exactly TWO SHORT LEGS, the most divisible edge in the family: this board gains
+		// more from a divided edge than any other, and is the only one that gains at k=1 (4 becomes 5).
+		sides: [2, 1, 1.7320508075688772],
+		D: 12,
+		eagerKs: [1, 2, 3, 4],
+		lazyKs: [5, 6],
+		counts: { 1: 5, 2: 64, 3: 391, 4: 1989, 5: 1043, 6: 3280 },
+		enumeratedTo: 6,
+		emptyKs: [],
+		dividedTo: 4,
 	},
 	{
 		id: "sqmid",

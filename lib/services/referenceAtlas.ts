@@ -10,6 +10,7 @@ import MERGED_ALIASES_MIXED from "@/lib/services/mergedFamilyAliases.json";
 import MERGED_ALIASES_ISOTOXAL from "@/lib/services/mergedFamilyAliases.isotoxal.json";
 import COUPLED_ALIASES_MIXED from "@/lib/services/coupledFamilyAliases.json";
 import ABSORBED_ALIASES from "@/lib/services/absorbedFamilyAliases.json";
+import { decodeAtlas, readAtlas } from "@/lib/services/atlasCodec";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import type { ExactCellSource } from "@/lib/services/cellCodecService";
 import type { LatticeShape, WallpaperGroup } from "@/lib/classes/symmetry/types";
@@ -124,6 +125,12 @@ import {
 	hypHalfSubOfBoard,
 	isHypHalf,
 } from "@/lib/tilings/hyp-half";
+import {
+	HYP_TILING_BOARDS,
+	hypTilingFamilyOfSub,
+	hypTilingSub,
+	hypTilingSubOfBoard,
+} from "@/lib/tilings/hyp-tilings";
 import { tilingLevel, type TilingLevel } from "@/lib/tilings/tiling-level";
 import type { PentEdgeRecord } from "@/lib/pentagon/edgeDevelop";
 import {
@@ -408,7 +415,7 @@ export type TileClass = "regular" | "star" | "hollow" | "convex" | "isotoxal" | 
 /** One value per TILE SHAPE, not per source: the four halved-polygon boards share the source
  *  "euhalf" but are four different tiles, and a visitor picking a shape wants that shape. */
 export type EdgeBoard = "tri45" | "planigon" | "penrose"
-	| "euh-hexv" | "euh-pent" | "euh-hexm" | "euh-sqmid";
+	| "euh-hexv" | "euh-pent" | "euh-hexm" | "euh-sqmid" | "euh-tri";
 export type IslamicSystem = "regular" | "fourfold-a" | "fourfold-b" | "fivefold" | "sevenfold" | "nonsystematic" | "dual-level";
 // The ONE source-driven tile classifier, shared by /library and /play. Source wins when present;
 // source-less rows (the Supabase certified catalogue) fall back to family-string tokens — which
@@ -518,6 +525,10 @@ export const SUB_ORDER = [
 	// The hyperbolic tilings by regular polygons: one sub per board. "hpo-" is the 3.4.n.4 family,
 	// "hpt-" the {3,n} one.
 	...HYP_POLY_BOARDS.map((b) => hypPolySubOfBoard(b)),
+	// The BASE hyperbolic shelf, which had no sub-axis at all until 2026-08-14 and rendered as two rows
+	// of 12,168 and 16,285. One sub per (valence, alphabet) board, valence-major so the six families are
+	// contiguous. "hyt-" namespaced against the edge ("hyp-"), colour ("hyc-") and poly ("hpo-") shelves.
+	...HYP_TILING_BOARDS.map((b) => hypTilingSubOfBoard(b)),
 	// The HALF-TILE hyperbolic boards — a {p,q} face cut in two — on the same axis, "hph-" namespaced.
 	...HYP_HALF_BOARDS.map((b) => hypHalfSubOfBoard(b)),
 	// Their spherical siblings, n = 3, 4, 5. "spp-" namespaced.
@@ -563,6 +574,9 @@ export type SubFamily =
 	| "sph-edges"
 	| "hyp-poly"
 	| "hyp-poly-t"
+	// The base hyperbolic shelf, one family per VALENCE — "hyt-v3" … "hyt-v8". A template member and not
+	// six literals: the valences are whatever the corpus holds, and HYP_TILING_VALENCES is the list.
+	| `hyt-v${number}`
 	| "sph-poly"
 	// The star polyhedra: one sub per DENSITY, "sst-" namespaced. Its own family — these are not
 	// members of the 3.4.n.4 solids and they are the only spherical shelf with no k axis.
@@ -592,6 +606,10 @@ export function familyOfSub(sub: string): SubFamily | null {
 	if (sub.startsWith("hpt-")) return "hyp-poly-t";
 	if (sub.startsWith("spp-")) return "sph-poly";
 	if (sub.startsWith("sst-")) return "sph-star";
+	// The base hyperbolic shelf: one family per valence, "hyt-v8". A regex and not a table, because the
+	// six families are the six valences the corpus contains and hypTilingFamilyOfSub is the one place
+	// that parses the id.
+	if (sub.startsWith("hyt-")) return hypTilingFamilyOfSub(sub) as SubFamily | null;
 	if (sub === "sch236" || sub === "sch244") return "schwarz-eu";
 	if (/^(square|triangle|hex|ts)$/.test(sub)) return "grid";
 	if (/^(square|triangle|hex|ts)-\d+$/.test(sub)) return "grid-colors";
@@ -601,6 +619,8 @@ export function familyOfSub(sub: string): SubFamily | null {
 
 export function subOf(t: {
 	source?: ReferenceTiling["source"];
+	/** The base hyperbolic shelf has no board object to key on — its axis comes off the configuration. */
+	family?: string;
 	/** The four Euclidean half-polygon boards share one source, so the board comes off the row. */
 	euHalfBoard?: string;
 	sphericalFreedraw?: { solid: string };
@@ -636,6 +656,11 @@ export function subOf(t: {
 	// The colors class splits on grid AND palette size — an n-coloring of the square grid is a
 	// different catalogue from a 2-coloring, not a deeper k of the same one.
 	if (t.colors) return `${colorsPatternGridOf(t.colors)}-${colorCountOf(t.colors)}`;
+	// LAST, and gated on the source: what is left of "hyperbolic" here is the base shelf — every branch
+	// above has already claimed the edge, colour, poly and half records. The gate matters because the
+	// axis is read off the CONFIGURATION, and a Euclidean record's family is a configuration too
+	// ("3.3.3.3.3.3"), so an ungated call would file the plane's uniform tilings onto a hyperbolic board.
+	if (t.source === "hyperbolic" && t.family) return hypTilingSub(t.family);
 	return "";
 }
 
@@ -1484,7 +1509,7 @@ export async function loadHyperbolicEdgesAtlas(): Promise<ReferenceTiling[]> {
 		HYP_EDGES_BASES.flatMap((b) =>
 			b.eagerKs.map((k) =>
 				fetch(`/hyperbolic-edges/e${b.id}-k${k}.json`)
-					.then((res) => (res.ok ? (res.json() as Promise<HypEdgesPattern[]>) : []))
+					.then((res) => (res.ok ? readAtlas<HypEdgesPattern>(res) : []))
 					.catch(() => [] as HypEdgesPattern[])
 					.then((pats) => pats.map(hypEdgesToReference)),
 			),
@@ -1515,7 +1540,7 @@ export async function loadHyperbolicEdgesShard(base: string, k: number): Promise
 	const existing = heShardInflight.get(key);
 	if (existing) return existing;
 	const p = fetch(`/hyperbolic-edges/e${base}-k${k}.json`)
-		.then((res) => (res.ok ? (res.json() as Promise<HypEdgesPattern[]>) : []))
+		.then((res) => (res.ok ? readAtlas<HypEdgesPattern>(res) : []))
 		.catch(() => [] as HypEdgesPattern[])
 		.then((pats) => {
 			const data = pats.map(hypEdgesToReference);
@@ -1578,7 +1603,7 @@ export async function loadHyperbolicColorsAtlas(): Promise<ReferenceTiling[]> {
 		HYP_COLORS_BASES.flatMap((b) =>
 			b.eagerKs.map((k) =>
 				fetch(`/hyperbolic-colors/c${b.id}-k${k}.json`)
-					.then((res) => (res.ok ? (res.json() as Promise<HypColorsPattern[]>) : []))
+					.then((res) => (res.ok ? readAtlas<HypColorsPattern>(res) : []))
 					.catch(() => [] as HypColorsPattern[])
 					.then((pats) => pats.map(hypColorsToReference)),
 			),
@@ -1607,7 +1632,7 @@ export async function loadHyperbolicColorsShard(base: string, k: number): Promis
 	const existing = hcShardInflight.get(key);
 	if (existing) return existing;
 	const p = fetch(`/hyperbolic-colors/c${base}-k${k}.json`)
-		.then((res) => (res.ok ? (res.json() as Promise<HypColorsPattern[]>) : []))
+		.then((res) => (res.ok ? readAtlas<HypColorsPattern>(res) : []))
 		.catch(() => [] as HypColorsPattern[])
 		.then((pats) => {
 			const data = pats.map(hypColorsToReference);
@@ -1635,7 +1660,7 @@ export async function loadSphericalColorsAtlas(): Promise<ReferenceTiling[]> {
 		SPH_COLORS_SOLIDS.flatMap((s) =>
 			s.eagerKs.map((k) =>
 				fetch(`/spherical-colors/${s.id}-k${k}.json`)
-					.then((res) => (res.ok ? (res.json() as Promise<SphColorsPattern[]>) : []))
+					.then((res) => (res.ok ? readAtlas<SphColorsPattern>(res) : []))
 					.catch(() => [] as SphColorsPattern[])
 					.then((pats) => pats.map(sphColorsToReference)),
 			),
@@ -1664,7 +1689,7 @@ export async function loadSphericalColorsShard(solid: string, k: number): Promis
 	const existing = scShardInflight.get(key);
 	if (existing) return existing;
 	const p = fetch(`/spherical-colors/${solid}-k${k}.json`)
-		.then((res) => (res.ok ? (res.json() as Promise<SphColorsPattern[]>) : []))
+		.then((res) => (res.ok ? readAtlas<SphColorsPattern>(res) : []))
 		.catch(() => [] as SphColorsPattern[])
 		.then((pats) => {
 			const data = pats.map(sphColorsToReference);
@@ -1695,7 +1720,7 @@ export async function loadSphericalFreedrawAtlas(): Promise<ReferenceTiling[]> {
 		ICO_SOLIDS.flatMap((s) =>
 			icoSolidKs(s).map((k) =>
 				fetch(`/freedraw-ico/${s.id}-k${k}.json`)
-					.then((res) => (res.ok ? (res.json() as Promise<IcoPattern[]>) : []))
+					.then((res) => (res.ok ? readAtlas<IcoPattern>(res) : []))
 					.catch(() => [] as IcoPattern[])
 					.then((pats) => pats.map((p) => sphericalFreedrawToReference(s.id, k, p))),
 			),
@@ -1748,7 +1773,7 @@ async function fetchSchwarzShard(b: SchwarzBoard, k: number): Promise<ReferenceT
 			const shard = (await res.json()) as SphSchwarzShard;
 			return hydrateSphShard(shard).map((p) => schwarzToReference(p as SphSchwarzPattern));
 		}
-		const recs = (await res.json()) as HypSchwarzPattern[];
+		const recs = decodeAtlas<HypSchwarzPattern>(await res.json());
 		return recs.map(schwarzToReference);
 	} catch {
 		return [];
@@ -1919,7 +1944,7 @@ async function fetchHypPolyShard(n: string, k: number): Promise<ReferenceTiling[
 	try {
 		const res = await fetch(hypPolyShardUrl(n, k));
 		if (!res.ok) return [];
-		const recs = (await res.json()) as HypPolyPattern[];
+		const recs = decodeAtlas<HypPolyPattern>(await res.json());
 		return recs.map(hypPolyToReference);
 	} catch {
 		return [];
@@ -1952,7 +1977,7 @@ async function fetchHypHalfShard(id: string, k: number): Promise<ReferenceTiling
 	try {
 		const res = await fetch(hypHalfShardUrl(id, k));
 		if (!res.ok) return [];
-		const recs = (await res.json()) as HypPolyPattern[];
+		const recs = decodeAtlas<HypPolyPattern>(await res.json());
 		return recs.map(hypHalfToReference);
 	} catch {
 		return [];
@@ -2045,7 +2070,7 @@ export async function loadPentagonEdgesAtlas(): Promise<ReferenceTiling[]> {
 		PENT_EDGE_BOARDS.flatMap((b) =>
 			b.eagerKs.map((k) =>
 				fetch(pentEdgeShardUrl(b.id, k))
-					.then((res) => (res.ok ? (res.json() as Promise<PentEdgeRecord[]>) : []))
+					.then((res) => (res.ok ? readAtlas<PentEdgeRecord>(res) : []))
 					.catch(() => [] as PentEdgeRecord[])
 					.then((recs) => recs.map(pentEdgesToReference)),
 			),
@@ -2068,7 +2093,7 @@ export async function loadPentagonEdgesAtlas(): Promise<ReferenceTiling[]> {
 export async function loadPentagonEdgesShard(board: string, k: number): Promise<ReferenceTiling[]> {
 	const res = await fetch(pentEdgeShardUrl(board, k));
 	if (!res.ok) return [];
-	const recs = (await res.json()) as PentEdgeRecord[];
+	const recs = decodeAtlas<PentEdgeRecord>(await res.json());
 	return recs.map(pentEdgesToReference);
 }
 
@@ -2104,7 +2129,7 @@ export async function loadIsohedralEdgesAtlas(): Promise<ReferenceTiling[]> {
 		IH_EDGE_BOARDS.flatMap((b) =>
 			b.eagerKs.map((k) =>
 				fetch(ihEdgeShardUrl(b.id, k))
-					.then((res) => (res.ok ? (res.json() as Promise<IhEdgeRecord[]>) : []))
+					.then((res) => (res.ok ? readAtlas<IhEdgeRecord>(res) : []))
 					.catch(() => [] as IhEdgeRecord[])
 					.then((recs) => recs.map(ihEdgesToReference)),
 			),
@@ -2127,7 +2152,7 @@ export async function loadIsohedralEdgesAtlas(): Promise<ReferenceTiling[]> {
 export async function loadIsohedralEdgesShard(board: string, k: number): Promise<ReferenceTiling[]> {
 	const res = await fetch(ihEdgeShardUrl(board, k));
 	if (!res.ok) return [];
-	const recs = (await res.json()) as IhEdgeRecord[];
+	const recs = decodeAtlas<IhEdgeRecord>(await res.json());
 	return recs.map(ihEdgesToReference);
 }
 
@@ -2205,7 +2230,7 @@ export async function loadSphericalPolyAtlas(): Promise<ReferenceTiling[]> {
 		SPH_POLY_BOARDS.flatMap((b) =>
 			b.ks.map((k) =>
 				fetch(sphPolyShardUrl(b.n, k))
-					.then((res) => (res.ok ? (res.json() as Promise<SphPolyPattern[]>) : []))
+					.then((res) => (res.ok ? readAtlas<SphPolyPattern>(res) : []))
 					.catch(() => [] as SphPolyPattern[])
 					.then((recs) => recs.map(sphPolyToReference)),
 			),
@@ -2213,7 +2238,7 @@ export async function loadSphericalPolyAtlas(): Promise<ReferenceTiling[]> {
 			SPH_HALF_BOARDS.flatMap((b) =>
 				b.ks.map((k) =>
 					fetch(sphHalfShardUrl(b.id, k))
-						.then((res) => (res.ok ? (res.json() as Promise<SphPolyPattern[]>) : []))
+						.then((res) => (res.ok ? readAtlas<SphPolyPattern>(res) : []))
 						.catch(() => [] as SphPolyPattern[])
 						.then((recs) => recs.map(sphHalfToReference)),
 				),
@@ -2254,12 +2279,12 @@ export async function loadReferenceAtlas(): Promise<ReferenceTiling[]> {
 	// reference-atlas-{composable,isotoxal}.json degrades to an empty merge, never breaks the library.
 	const bestEffort = (url: string) =>
 		fetch(url)
-			.then((res) => (res.ok ? (res.json() as Promise<ReferenceTiling[]>) : []))
+			.then((res) => (res.ok ? readAtlas<ReferenceTiling>(res) : []))
 			.catch(() => [] as ReferenceTiling[]);
 	inflight = Promise.all([
 		fetch("/reference-atlas.json").then((res) => {
 			if (!res.ok) throw new Error(`reference-atlas.json: HTTP ${res.status}`);
-			return res.json() as Promise<ReferenceTiling[]>;
+			return readAtlas<ReferenceTiling>(res);
 		}),
 		bestEffort("/reference-atlas-composable.json"),
 		bestEffort("/reference-atlas-isotoxal.json"),
@@ -2282,7 +2307,7 @@ export async function loadReferenceAtlas(): Promise<ReferenceTiling[]> {
 		Promise.all(
 			FREEDRAW_EAGER_FILES.map((url) =>
 				fetch(url)
-					.then((res) => (res.ok ? (res.json() as Promise<FreedrawPattern[]>) : []))
+					.then((res) => (res.ok ? readAtlas<FreedrawPattern>(res) : []))
 					.catch(() => [] as FreedrawPattern[]),
 			),
 		).then((lists) => lists.flat().map(freedrawToReference)),
@@ -2291,12 +2316,12 @@ export async function loadReferenceAtlas(): Promise<ReferenceTiling[]> {
 		Promise.all(
 			COLORS_CATALOGUES.flatMap((c) => c.ks.map((k) => `${c.prefix}${k}.json`)).map((url) =>
 				fetch(url)
-					.then((res) => (res.ok ? (res.json() as Promise<ColorPattern[]>) : []))
+					.then((res) => (res.ok ? readAtlas<ColorPattern>(res) : []))
 					.catch(() => [] as ColorPattern[]),
 			),
 		).then((lists) => lists.flat().map(colorsToReference)),
 		fetch("/hyperbolic-developed.json")
-			.then((res) => (res.ok ? (res.json() as Promise<Array<{ id: string; edge?: number }>>) : []))
+			.then((res) => (res.ok ? readAtlas<{ id: string; edge?: number }>(res) : []))
 			.catch(() => [] as Array<{ id: string; edge?: number }>),
 	])
 		// One name per Promise.all entry, IN ORDER, and the list below must spread every one of them.
@@ -2347,7 +2372,7 @@ export async function loadReferenceAtlasShard(k: number): Promise<ReferenceTilin
 	const p = fetch(`/reference-atlas-k${k}.json`)
 		.then((res) => {
 			if (!res.ok) throw new Error(`reference-atlas-k${k}.json: HTTP ${res.status}`);
-			return res.json() as Promise<ReferenceTiling[]>;
+			return readAtlas<ReferenceTiling>(res);
 		})
 		.then((data) => {
 			shardCache.set(k, data);
@@ -2389,7 +2414,7 @@ export async function loadShelfShard(shelf: string, k: number): Promise<Referenc
 		.then((res) => {
 			if (res.status === 404) return [] as ReferenceTiling[]; // shard not built for this k — empty merge
 			if (!res.ok) throw new Error(`reference-atlas-${key}.json: HTTP ${res.status}`);
-			return res.json() as Promise<ReferenceTiling[]>;
+			return readAtlas<ReferenceTiling>(res);
 		})
 		.then((data) => {
 			shelfShardCache.set(key, data);
@@ -2437,7 +2462,7 @@ function loadDecorationShard<T>(
 		.then((res) => {
 			if (res.status === 404) return [] as T[]; // slice not shipped at this k — empty merge
 			if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
-			return res.json() as Promise<T[]>;
+			return readAtlas<T>(res);
 		})
 		.then((data) => {
 			const out = data.map(adapt);

@@ -39,6 +39,7 @@ import {
 	type SubFamily,
 	type TileClass,
 } from "./referenceAtlas";
+import { HYP_TILING_VALENCES } from "@/lib/tilings/hyp-tilings";
 import { COLOR_SUB, FAMILY_LABEL, SUB_LABEL, shortSubLabel } from "./shelfLabels";
 
 /** An option as the filter walls want it. */
@@ -81,7 +82,7 @@ export const SHAPE_CLASS_LABEL = Object.fromEntries(
 /** The palettes inside the "Multiple edge lengths" class. Planigons first: it is the larger tile set
  *  and the one whose name explains the class. */
 export const EDGE_BOARD_ORDER: EdgeBoard[] = ["planigon", "tri45", "penrose",
-	"euh-hexv", "euh-pent", "euh-hexm", "euh-sqmid"];
+	"euh-hexv", "euh-pent", "euh-hexm", "euh-sqmid", "euh-tri"];
 /** ONE ROW PER TILE SHAPE. The four halved-polygon boards share a source but are four different
  *  tiles, and a visitor choosing here is choosing a shape — a single "Halved regular polygons"
  *  chip would hide a trapezoid, a quadrilateral, a pentagon and a domino behind one word. Two more
@@ -91,6 +92,7 @@ export const EDGE_BOARD_LABEL: Record<EdgeBoard, string> = {
 	planigon: "Planigons",
 	tri45: "45-45-90 triangles and squares",
 	penrose: "Penrose kite and dart",
+	"euh-tri": "Half equilateral triangle",
 	"euh-hexv": "Half hexagon (long diagonal)",
 	"euh-pent": "Half pentagon",
 	"euh-hexm": "Half hexagon (edge midpoints)",
@@ -212,7 +214,14 @@ export function boardFamiliesFor(
 		// Two hyperbolic tiling families, both one corpus per board: 3.4.n.4 and {3,n}.
 		tilings: {
 			euclidean: [],
-			hyperbolic: ["hyp-poly", "hyp-poly-t", "hyp-half"],
+			// The BASE corpus's boards are one per valence — HYP_TILING_VALENCES and not six literals, so a
+			// corpus that reaches valence 9 lands in the wall without an edit here.
+			hyperbolic: [
+				"hyp-poly",
+				"hyp-poly-t",
+				"hyp-half",
+				...HYP_TILING_VALENCES.map((v): SubFamily => `hyt-v${v}`),
+			],
 			// "sph-star" belongs here and not under edges: a star polyhedron is a TILING of the sphere, every
 			// edge a real face boundary, and its boards are the DENSITY rows rather than a base solid.
 			spherical: ["sph-poly", "sph-half", "sph-star"],

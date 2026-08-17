@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { EDGE_BOARD_LABEL, EDGE_BOARD_ORDER } from "@/lib/services/facets";
 import { edgeBoardOf, subOf, tileClassOf, type ReferenceTiling } from "@/lib/services/referenceAtlas";
+import { decodeAtlas } from "@/lib/services/atlasCodec";
 import {
 	EU_HALF_BOARDS,
 	euHalfKGaps,
@@ -18,12 +19,13 @@ import {
 
 const atlas = "public/reference-atlas-euhalf.json";
 const anyShard = existsSync(atlas);
-const eager = (): ReferenceTiling[] => JSON.parse(readFileSync(atlas, "utf8"));
+const eager = (): ReferenceTiling[] => decodeAtlas<ReferenceTiling>(JSON.parse(readFileSync(atlas, "utf8")));
 const shipped = (b: EuHalfBoard) => [...b.eagerKs, ...b.lazyKs].sort((x, y) => x - y);
 
 /** Which regular polygon each board halves, and how. Written out here so the test knows the geometry
  *  independently of the board table it is checking. */
 const CUT: Record<string, { n: number; kind: "vertex" | "midpoint" | "mirror" }> = {
+	tri: { n: 3, kind: "mirror" },
 	hexv: { n: 6, kind: "vertex" },
 	pent: { n: 5, kind: "mirror" },
 	hexm: { n: 6, kind: "midpoint" },
@@ -83,11 +85,15 @@ describe("board manifest", () => {
 			const cut = kind === "vertex" ? 1 / Math.sin(Math.PI / n)          // the long diagonal, 2R
 				: kind === "midpoint" ? 1 / Math.tan(Math.PI / n)              // the width across
 					: 1 / Math.tan(Math.PI / (2 * n)) / 2;                     // R + apothem, the height
-			const longest = Math.max(...b.sides);
-			expect(longest, `${b.id} cut`).toBeCloseTo(unit * cut, 8);
+			// The cut is a side, but NOT always the longest one: on the equilateral triangle the altitude
+			// is sqrt3 while the hypotenuse it leaves is the original edge, 2. Every other board's cut does
+			// happen to be its longest side, which is why this read as "longest === cut" until n=3 arrived.
+			const cutIdx = b.sides.findIndex((x) => Math.abs(x - unit * cut) < 1e-8);
+			expect(cutIdx, `${b.id}: no side is the cut (${unit * cut})`).toBeGreaterThanOrEqual(0);
 			// Every other side is the polygon's edge or, on a midpoint cut, half of it.
-			for (const s of b.sides) {
-				if (Math.abs(s - longest) < 1e-8) continue;
+			for (let si = 0; si < b.sides.length; si++) {
+				const s = b.sides[si];
+				if (si === cutIdx) continue;
 				const ok = Math.abs(s - unit) < 1e-8 || (kind !== "vertex" && Math.abs(s - unit / 2) < 1e-8);
 				expect(ok, `${b.id}: side ${s} is neither the edge nor half of it`).toBe(true);
 			}
@@ -106,17 +112,17 @@ describe("board manifest", () => {
 		const a10 = 4 + 8 / (10 - 2);
 		expect(a10).toBe(5);
 		expect(a10 % 2, "n=10: a + 2b is odd, so `a` is odd for every solution").toBe(1);
-		// What survives, and it is what ships: the two n=6 cuts, the n=5 mirror, the n=4 midpoint. The
-		// other two live boards (n=3 mirror, n=4 vertex) are on the planigon and tri45 shelves already.
+		// What survives, and it is what ships: the two n=6 cuts, the n=5 mirror, the n=4 midpoint and the
+		// n=3 mirror. Exactly ONE live board is elsewhere, n=4 vertex, which is the tri45 shelf.
 		expect(EU_HALF_BOARDS.map((b) => `${CUT[b.id].n}${CUT[b.id].kind[0]}`).sort())
-			.toEqual(["4m", "5m", "6m", "6v"]);
+			.toEqual(["3m", "4m", "5m", "6m", "6v"]);
 	});
 
 	it("offers each lazy slice at its own k and nowhere else", () => {
 		const lazy = EU_HALF_BOARDS.flatMap((b) => b.lazyKs.map((k) => `${b.id}@${k}`)).sort();
-		// 26 since the divided-edge rebuild: hexm reaches k=9 where it used to hold a single k=2 tiling,
-		// and sqmid reaches k=6 where it used to hold one at k=1.
-		expect(lazy.length).toBe(26);
+		// 28: the divided-edge rebuild took hexm to k=9 and sqmid to k=6, where each used to hold one
+		// tiling, and the half-triangle board arrived with k=5 and k=6 of its own.
+		expect(lazy.length).toBe(28);
 		for (const b of EU_HALF_BOARDS) {
 			for (let k = 1; k <= b.enumeratedTo; k++) {
 				expect(euHalfLazyShardsForK(k).some((x) => x.id === b.id), `${b.id} k=${k}`)
@@ -169,7 +175,7 @@ describe.skipIf(!anyShard)("shipped rows", () => {
 		for (const k of [...new Set(EU_HALF_BOARDS.flatMap((b) => b.lazyKs))].sort((a, b) => a - b)) {
 			const f = `public/reference-atlas-euhalf-k${k}.json`;
 			expect(existsSync(f), f).toBe(true);
-			const rows: ReferenceTiling[] = JSON.parse(readFileSync(f, "utf8"));
+			const rows: ReferenceTiling[] = decodeAtlas<ReferenceTiling>(JSON.parse(readFileSync(f, "utf8")));
 			for (const b of EU_HALF_BOARDS) {
 				const want = b.lazyKs.includes(k) ? b.counts[k] : 0;
 				expect(rows.filter((r) => r.euHalfBoard === b.id).length, `${b.id} k=${k}`).toBe(want);

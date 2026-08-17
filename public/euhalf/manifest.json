@@ -94,6 +94,27 @@
       "9": 36
     }
   },
+  "tri": {
+    "label": "{3} halved by its mirror",
+    "tile": "30-60-90 triangle",
+    "D": 12,
+    "ks": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "counts": {
+      "1": 5,
+      "2": 64,
+      "3": 391,
+      "4": 1989,
+      "5": 1043,
+      "6": 3280
+    }
+  },
   "sqmid": {
     "label": "{4} halved between opposite edges",
     "tile": "1×2 rectangle (the domino)",
