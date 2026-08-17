@@ -240,8 +240,16 @@ class Tile:
             # centre. Interior angle (n-2d)*pi/n, the same formula as (n-2)*pi/n with d folded in.
             self.n = spec["n"]
             self.d = spec["d"]                # winding: {5/2} is the pentagram
-            assert self.n > 2 * self.d >= 2, f"starpoly {self.name}: need n > 2d >= 2"
+            # d > n/2 is the RETROGRADE traversal of {n/(n-d)}: the same point set walked the other way,
+            # so its corner takes the REFLEX angle and it contributes negative winding. Coxeter writes
+            # {8/5} for {8/3} reversed. On the sphere this was a develop-time orientation flag, invisible
+            # to the search; in the plane the angle itself differs (315 deg vs 45 deg), so prograde and
+            # retrograde are DIFFERENT corner classes and the search has to carry both. n = 2d is the
+            # degenerate flat case and stays out.
+            assert self.n > self.d >= 1 and self.n != 2 * self.d, \
+                f"starpoly {self.name}: need n > d >= 1 and n != 2d"
             assert math.gcd(self.n, self.d) == 1, f"starpoly {self.name}: n and d must be coprime"
+            self.retro = 2 * self.d > self.n
             self.L = self.n
             self.p = 1
         elif self.kind == "doubled":          # side-2 regular N-gon as a degenerate 2N-gon
@@ -411,10 +419,16 @@ def load_palette(path):
             cd.is_point = False
             classes.append(cd)
         elif tile.kind == "starpoly":  # one class: the {n/d} corner, angle (n-2d)*pi/n
-            units = (tile.n - 2 * tile.d) * (D // 2) // tile.n
-            assert units * tile.n == (tile.n - 2 * tile.d) * (D // 2), \
+            signed = (tile.n - 2 * tile.d) * (D // 2) // tile.n
+            assert signed * tile.n == (tile.n - 2 * tile.d) * (D // 2), \
                 f"starpoly {tile.name} off the 2pi/{D} grid"
-            assert units > 0, f"starpoly {tile.name} has non-positive interior angle"
+            # Reflex lift. Prograde corners are already in (0, D/2) and unchanged; a retrograde corner's
+            # signed angle is negative and lifts to signed + D, which is the reflex angle its backwards
+            # traversal actually turns through. This is the convention Grunbaum-Miller-Shephard's 19
+            # published hollow configurations pin: with it every one closes at a multiple of a full turn,
+            # and with signed or unsigned angles instead only 8 and 6 of the 19 do (tools/hollow/conv.py).
+            units = signed % D
+            assert units > 0, f"starpoly {tile.name} has zero interior angle"
             cc = CornerClass(len(classes), tile, 0, units, tile.name)
             # is_point is FALSE deliberately. The point-adjacency lemma in enum_configs proves that two
             # ISOTOXAL star points cannot be cyclically adjacent, because the dents they force at the far
@@ -585,7 +599,13 @@ def enum_configs(D, classes, min_len, max_len, closure="euclidean", forbidden=No
     # 4^4), Euclidean and not polyhedral. Which d_v a surviving word actually takes is not decided
     # here; develop_spherical.py solves for rho at each density in turn and keeps every realization.
     dens_mode = (closure == "density")
-    cap = D * maxdens if dens_mode else D
+    # "density-flat" (Euclidean hollow palettes): the plane's version of the same idea. A flat vertex
+    # whose faces overlap closes at a WHOLE NUMBER of full turns, sum == D*delta, not at one. The
+    # ordinary "euclidean" mode is exactly delta = 1, so this strictly extends it and delta = 1 words
+    # come out identical. Unlike the curved modes there is no defect to solve away afterwards: the
+    # Euclidean angles are rigid, so closure here is an equality and the arithmetic is the whole test.
+    flat_mode = (closure == "density-flat")
+    cap = D * maxdens if (dens_mode or flat_mode) else D
     # The wrap pair (last, first) is only genuinely adjacent when the word CLOSES a full turn, so the
     # cyclic half of the pair prune is euclidean-only even if a caller hands us a table in a defect mode.
     bad = forbidden if forbidden else frozenset()
@@ -602,7 +622,14 @@ def enum_configs(D, classes, min_len, max_len, closure="euclidean", forbidden=No
     # This gates the geometry-agnostic solver only; realizability at one shared edge length and
     # combinatorial closure are decided downstream (necessary, not sufficient — docs/hyperbolic-port-notes).
     def rec(word, total):
-        if dens_mode:
+        if flat_mode:
+            if len(word) >= min_len and total > 0 and total % D == 0:
+                if not (pt[word[-1]] and pt[word[0]]):
+                    out.append(list(word))
+                # fall through, unlike plain "euclidean": a word that closes at one full turn can be
+                # EXTENDED to a different, still-valid word closing at two. 4.8/5.8/5 (delta=2) is not
+                # reachable any other way.
+        elif dens_mode:
             if len(word) >= min_len and 0 < total < cap and total % D != 0:
                 if not (pt[word[-1]] and pt[word[0]]):
                     out.append(list(word))
@@ -635,7 +662,8 @@ def enum_configs(D, classes, min_len, max_len, closure="euclidean", forbidden=No
             nxt = total + unit[cid]
             # euclidean reaches a full turn (nxt <= D); spherical stays strictly under it (nxt < D) so a
             # flat vertex is never developed; hyperbolic overshoots freely (bounded only by max_len).
-            ok = (nxt < cap) if (spherical or dens_mode) else (True if hyperbolic else (nxt <= D))
+            ok = (nxt <= cap) if flat_mode else \
+                 (nxt < cap) if (spherical or dens_mode) else (True if hyperbolic else (nxt <= D))
             if ok:
                 rec(word, nxt)
             word.pop()
@@ -1461,10 +1489,20 @@ def main():
     # junction where two side-2 (doubled) tiles abut edge-to-edge, and — for a palette carrying a REFLEX
     # composite tile (a corner > D/2, e.g. the girih bowtie's 216° notch) — the valence-2 vertex where that
     # notch is filled by a single convex corner (bowtie 216° + decagon 144° = 360°). Without this, such
-    # tilings are silently dropped. Gated on reflex composites specifically, so pure-regular and the existing
-    # all-convex composite palettes keep min_len=3 and stay byte-identical (make check-regular unaffected).
-    has_reflex_composite = any(t.kind == "composite" and any(a > D // 2 for a in t.angles) for t in tiles)
-    min_len = 2 if (any(t.kind in ("star", "doubled", "scaled", "polyomino") for t in tiles) or has_reflex_composite) else 3
+    # tilings are silently dropped. Gated on flat-or-reflex composites specifically, so pure-regular and the
+    # existing all-convex composite palettes keep min_len=3 and stay byte-identical (check-regular unaffected).
+    #
+    # `>=` and not `>`: a composite carrying an angle EXACTLY D/2 is a tile with a FLAT 180° corner, which
+    # is a `doubled` tile said longhand and needs the same (flat,flat) mid-edge junction. The strict `>`
+    # cost a whole class of tilings when the non-edge-to-edge half-polygon palettes arrived (2026-08-17):
+    # with min_len=3 the mid-edge point where two tiles abut along a full edge is not a legal vertex at
+    # all, so every edge-to-edge tiling was dropped and the survivors had every mid-edge point counted as
+    # a real vertex, inflating k by one tier. eu-half-hex-v-split reported k=1: 0 where the unsplit board
+    # has 2. No pre-2026-08-17 palette has a composite with a flat corner, so no pinned table moves.
+    has_flat_or_reflex_composite = any(
+        t.kind == "composite" and any(a >= D // 2 for a in t.angles) for t in tiles
+    )
+    min_len = 2 if (any(t.kind in ("star", "doubled", "scaled", "polyomino") for t in tiles) or has_flat_or_reflex_composite) else 3
     # Optional geometric pre-filter (EU_PRUNE_OVERLAP=1): drop vertex configs whose PLACED tiles physically
     # overlap. The solver is combinatorial (no geometry), so an overlapping figure would otherwise seed
     # geometrically-impossible tilings; an overlapping figure appears in zero real tilings, so dropping it is

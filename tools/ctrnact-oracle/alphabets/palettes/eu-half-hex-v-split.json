@@ -1,0 +1,28 @@
+{
+  "name": "eu-half-hex-v-split",
+  "D": 6,
+  "tileGeometry": "euclidean",
+  "closure": "euclidean",
+  "comment": "HALF A REGULAR 6-GON cut by its long diagonal, THE SAME TRAPEZOID as eu-half-hex-v, remodelled so the search can also place it NON-EDGE-TO-EDGE. Marek Ctrnact, 2026-08-16: the half-polygon boards miss every arrangement where one tile's long side is met by two tiles' short sides, because the solver glues whole edge to whole edge and such a join divides an edge in two. The trapezoid's long side is exactly 2 and its other three sides are exactly 1, so the division is forced to the midpoint and one extra corner expresses it: a FLAT 180-degree corner there turns the 4-gon [1,2,2,1] with sides 1,1,1,2 into the 5-gon [1,2,2,1,3] with five unit sides. Angles in D-units of 60 degrees sum to 9 = (5-2)*6/2 for a 5-gon, so the tile is still FLAT and still the same trapezoid: the extra vertex is a modelling device, not a new shape. This palette SUPERSEDES the unsplit one rather than complementing it — two tiles meeting along their full long sides put their flat corners at the same point, where 180+180 closes a legal vertex, so every edge-to-edge tiling is still reachable and the T-vertex ones are reachable too. k stays honest because the pruner groups by the Myers counting convention, which does not count a flat-flat mid-edge vertex (eu_develop.cpp: the same reason the doubled and scaled palettes report the k a reader expects).",
+  "tiles": [
+    {
+      "kind": "composite",
+      "name": "HxVs",
+      "famchar": "h",
+      "angles": [
+        1,
+        2,
+        2,
+        1,
+        3
+      ],
+      "edgeLens": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "1"
+      ]
+    }
+  ]
+}

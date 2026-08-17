@@ -1,0 +1,80 @@
+{
+  "name": "tri45all-split",
+  "D": 24,
+  "tileGeometry": "euclidean",
+  "closure": "euclidean",
+  "comment": "THE tri45 BOARD, remodelled so the search can place its tiles NON-EDGE-TO-EDGE. This is the exact case Marek Ctrnact drew on 2026-08-16: a right triangle whose hypotenuse is divided in two, each half a leg of a smaller triangle. The palette's three edge types are S=1, H=sqrt2 and D=2, so D = S + S is the one length that decomposes and the big triangle T2 (legs H, hypotenuse D) is the one tile that can be met that way. Its hypotenuse gains a FLAT 180-degree corner at the midpoint: [6,3,3] with edges (H,D,H) becomes [6,3,12,3] with edges (H,S,S,H), a 4-gon whose angles sum to 24 = (4-2)*24/2, so it is the same triangle and the extra corner is a modelling device. H=sqrt2 decomposes into nothing (S+S=2 is D, not H), so the small triangle T1, the unit square Q1 and the sqrt2 square Q2 are unchanged. Supersedes tri45all: two big triangles abutting along their full hypotenuses put their flat corners at the same point, where 180+180 closes a legal noncounting vertex. Needs the min_len fix of 2026-08-17 in gen_alphabet.py (a >= D//2).",
+  "edgeLengths": {
+    "S": "1",
+    "H": "sqrt2",
+    "D": "2"
+  },
+  "tiles": [
+    {
+      "kind": "composite",
+      "name": "T1",
+      "famchar": "t",
+      "angles": [
+        6,
+        3,
+        3
+      ],
+      "edges": [
+        "S",
+        "H",
+        "S"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "T2",
+      "famchar": "u",
+      "angles": [
+        6,
+        3,
+        12,
+        3
+      ],
+      "edges": [
+        "H",
+        "S",
+        "S",
+        "H"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "Q1",
+      "famchar": "q",
+      "angles": [
+        6,
+        6,
+        6,
+        6
+      ],
+      "edges": [
+        "S",
+        "S",
+        "S",
+        "S"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "Q2",
+      "famchar": "r",
+      "angles": [
+        6,
+        6,
+        6,
+        6
+      ],
+      "edges": [
+        "H",
+        "H",
+        "H",
+        "H"
+      ]
+    }
+  ]
+}

@@ -8,6 +8,14 @@
 // the planigon palette, the 45-45-90 half-square is the tri45 shelf). Everything from n=7 up is
 // provably empty; see experiments/results/euclidean-half-polygons-2026-08-14.log.
 //
+// NOT EDGE-TO-EDGE, since 2026-08-17. Marek Čtrnáct pointed out that the first cut of this shelf missed
+// every arrangement in which one tile's edge is met by TWO neighbours instead of one, because the engine
+// glues whole edge to whole edge. Every board here has a side of length 2 and a side of length 1, so
+// every board could host one. The input is now the `-split` palettes, where the divisible edges carry a
+// flat 180° corner at the division point and the same search finds both kinds; the shipped tilings are
+// all still here (verified by exact congruence, board by board) and are heavily outnumbered by the new
+// ones. See experiments/results/euhalf-nonedge-to-edge-2026-08-17.log.
+//
 // Input is tools/ctrnact-oracle/develop_tri45.py output: each entry carries its exact period lattice
 // and its developed faces, so this certifies, dedupes and writes.
 //
@@ -22,6 +30,7 @@
 //          four times as large. Its absence shipped 23 non-tilings to the tri45 shelf on 2026-08-13.
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
+import { stringifyAtlas } from './atlas/encode.mjs';
 
 const ROOT = process.cwd();
 const ORACLE = path.join(ROOT, 'tools', 'ctrnact-oracle');
@@ -35,7 +44,8 @@ const EAGER_MAX = 4;
 
 const BOARDS = [
 	{
-		id: 'hexv', label: '{6} halved by its long diagonal', cells: 'run-eu-half-hex-v-k13/eu-half-hex-v-cells.json',
+		id: 'hexv', label: '{6} halved by its long diagonal', cells: 'run-eu-half-hex-v-split-k6/eu-half-hex-v-split-cells.json',
+		cellsEdgeToEdge: 'run-eu-half-hex-v-k13/eu-half-hex-v-cells.json',
 		D: 6, hue: 205, tile: '60-120-120-60 trapezoid',
 		angles: [60, 120, 120, 60], sides: [1, 1, 1, 2],
 		note: 'Half a regular hexagon, cut by the long diagonal from a vertex to the opposite vertex. Two of '
@@ -44,7 +54,8 @@ const BOARDS = [
 			+ 'board of the four whose two edge lengths are both rational (1 and 2).',
 	},
 	{
-		id: 'pent', label: '{5} halved by its mirror', cells: 'run-eu-half-pent-k14/eu-half-pent-cells.json',
+		id: 'pent', label: '{5} halved by its mirror', cells: 'run-eu-half-pent-split-k9/eu-half-pent-split-cells.json',
+		cellsEdgeToEdge: 'run-eu-half-pent-k14/eu-half-pent-cells.json',
 		D: 20, hue: 28, tile: '54-108-108-90 quadrilateral',
 		angles: [54, 108, 108, 90], sides: [1, 2, 2, COT18],
 		note: 'Half a regular pentagon, cut by its mirror from a vertex to the midpoint of the opposite edge. '
@@ -56,26 +67,104 @@ const BOARDS = [
 			+ 'the chord sum 2cos 18° + 2cos 54°.',
 	},
 	{
-		id: 'hexm', label: '{6} halved between opposite edges', cells: 'run-eu-half-hex-m-k6/eu-half-hex-m-cells.json',
+		id: 'hexm', label: '{6} halved between opposite edges', cells: 'run-eu-half-hex-m-split-k9/eu-half-hex-m-split-cells.json',
+		cellsEdgeToEdge: 'run-eu-half-hex-m-k6/eu-half-hex-m-cells.json',
 		D: 12, hue: 140, tile: '90-120-120-120-90 pentagon',
 		angles: [90, 120, 120, 120, 90], sides: [1, 2, 2, 1, 2 * Math.sqrt(3)],
 		note: 'The hexagon’s other cut, joining the midpoints of two opposite edges, which makes a '
 			+ 'pentagon with two right angles. Its long side is the width across the hexagon, 2√3 at '
-			+ 'twice the hexagon’s own side. Exactly one tiling, and nothing at k = 1 or 3..6.',
+			+ 'twice the hexagon’s own side. Its 2√3 side decomposes into nothing, but its two sides '
+			+ 'of length 2 are each two unit sides, so those can be met by a pair of neighbours; the single '
+			+ 'edge-to-edge tiling at k=2 is joined by a hundred more once they are.',
 	},
 	{
-		id: 'sqmid', label: '{4} halved between opposite edges', cells: 'run-eu-half-sq-mid-k6/eu-half-sq-mid-cells.json',
+		id: 'sqmid', label: '{4} halved between opposite edges', cells: 'run-eu-half-sq-mid-split-k6/eu-half-sq-mid-split-cells.json',
+		cellsEdgeToEdge: 'run-eu-half-sq-mid-k6/eu-half-sq-mid-cells.json',
 		D: 4, hue: 320, tile: '1×2 rectangle (the domino)',
 		angles: [90, 90, 90, 90], sides: [1, 2, 1, 2],
-		note: 'The square’s midpoint cut is the DOMINO, and it has exactly ONE edge-to-edge tiling — '
-			+ 'provably, not just to the depth searched. Every corner is a right angle flanked by one long '
-			+ 'and one short side, so the four edges at a vertex alternate long/short; two edges separated by '
-			+ 'one other sit at 180° and are therefore collinear; so the long edges lie on one family of '
-			+ 'parallel lines and the short edges on the perpendicular family, which is the aligned grid and '
-			+ 'nothing else. Running bond, herringbone and basketweave are T-junction patterns, so they are '
-			+ 'absent from an edge-to-edge enumeration by definition rather than missing from it.',
+		note: 'The square’s midpoint cut is the DOMINO. Edge-to-edge it has exactly ONE tiling, provably: '
+			+ 'every corner is a right angle flanked by one long and one short side, so the four edges at a '
+			+ 'vertex alternate long/short; two edges separated by one other sit at 180° and are therefore '
+			+ 'collinear; so the long edges lie on one family of parallel lines and the short edges on the '
+			+ 'perpendicular family, which is the aligned grid and nothing else. That argument assumes every '
+			+ 'edge is matched whole, and a domino’s long side is two short sides, so it need not be: allow a '
+			+ 'long side to be met by two tiles and running bond, herringbone and basketweave all appear. They '
+			+ 'are the reason this board goes from one tiling to tens of thousands.',
 	},
 ];
+
+// A face arrives from a `-split` palette carrying FLAT 180° corners at the points where its edge may be
+// divided by a neighbour (see the palette comments and gen_alphabet's min_len gate). Those corners are a
+// modelling device, not part of the tile: the trapezoid is a 4-gon whether or not its long side is met by
+// one tile or two. They are kept for the ANGLE certificate, where a divided edge contributes its 180° and
+// every vertex still closes at exactly 360, and dropped for the SHAPE certificate and for what ships, so
+// the catalogue says quadrilateral and the renderer draws one.
+const dropCollinear = (f) => {
+	const out = [];
+	for (let t = 0; t < f.length; t++) {
+		const p = f[(t - 1 + f.length) % f.length], c = f[t], n = f[(t + 1) % f.length];
+		const cross = (c[0] - p[0]) * (n[1] - p[1]) - (c[1] - p[1]) * (n[0] - p[0]);
+		if (Math.abs(cross) > 1e-7) out.push(c);
+	}
+	return out.length >= 3 ? out : f;
+};
+// COUNTING THE T-JUNCTIONS, which is not the same as counting flat corners. In a `-split` palette EVERY
+// tile carries its flat corners all the time; what says whether an edge is actually DIVIDED is what sits
+// opposite. Two tiles meeting flush put their flat corners at the same point, and that point sees exactly
+// two corners, 180 + 180. A genuinely divided edge puts a flat corner against two or more real ones. So a
+// T-junction is a vertex position holding a 180 AND more than two corners in total. Testing for a flat
+// corner alone marked all 444 eager records non-edge-to-edge, including the ones that plainly are not.
+const tJunctions = (faces, T1, T2, residueFn) => {
+	const seen = new Map();
+	for (const f of faces) {
+		for (let t = 0; t < f.length; t++) {
+			const p = f[t], u = f[(t - 1 + f.length) % f.length], v = f[(t + 1) % f.length];
+			const ux = u[0] - p[0], uy = u[1] - p[1], vx = v[0] - p[0], vy = v[1] - p[1];
+			const th = Math.abs((Math.atan2(ux * vy - uy * vx, ux * vx + uy * vy) * 180) / Math.PI);
+			const key = residueFn(p, T1, T2);
+			const rec = seen.get(key) ?? { corners: 0, flat: false };
+			rec.corners++;
+			if (Math.abs(th - 180) < 1e-6) rec.flat = true;
+			seen.set(key, rec);
+		}
+	}
+	let n = 0;
+	for (const r of seen.values()) if (r.flat && r.corners > 2) n++;
+	return n;
+};
+
+// IS THIS CELL PRIMITIVE? A `-split` palette can describe one tiling on a SUPERCELL: the flat corners
+// give the search more ways to label the same geometry, and some of them close on a lattice coarser than
+// the tiling's own. Such a record is not a new tiling, it is the same one written twice as large, and the
+// congruence dedup cannot see it — that predicate maps lattice onto lattice UNIMODULARLY, and a supercell
+// is by definition not unimodularly related to the cell inside it. Caught on hexv k=1: 3 records where
+// only 2 tilings exist, the extra one a 4-tile description of a 2-tile tiling.
+//
+// The test is direct. Any translation carrying the tiling to itself carries some face to a face of the
+// same shape, so every candidate is a difference of two same-shape face centroids. If one of those, taken
+// modulo the lattice, is nonzero and maps the whole marker set onto itself, the cell is a supercell.
+const isPrimitive = (faces, T1, T2, residueFn) => {
+	const marks = faces.map((f) => ({ c: centroid(f), s: profile(f) }));
+	const key = (p) => residueFn(p, T1, T2);
+	const have = new Set(marks.map((m) => key(m.c)));
+	const sameProfile = (a, b) => a.sides.length === b.sides.length
+		&& a.sides.every((x, i) => Math.abs(x - b.sides[i]) < 1e-6)
+		&& a.angs.every((x, i) => Math.abs(x - b.angs[i]) < 1e-4);
+	for (let j = 1; j < marks.length; j++) {
+		if (!sameProfile(marks[0].s, marks[j].s)) continue;
+		const t = [marks[j].c[0] - marks[0].c[0], marks[j].c[1] - marks[0].c[1]];
+		if (key(t) === key([0, 0])) continue;                       // a lattice vector: not a new symmetry
+		let all = true;
+		for (const m of marks) {
+			const img = key([m.c[0] + t[0], m.c[1] + t[1]]);
+			if (!have.has(img)) { all = false; break; }
+			const dst = marks.find((n) => key(n.c) === img);
+			if (!dst || !sameProfile(m.s, dst.s)) { all = false; break; }
+		}
+		if (all) return false;
+	}
+	return true;
+};
 
 const dist = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1]);
 const centroid = (f) => [f.reduce((u, q) => u + q[0], 0) / f.length, f.reduce((u, q) => u + q[1], 0) / f.length];
@@ -146,7 +235,24 @@ const eager = [];
 const lazy = new Map();
 
 for (const B of BOARDS) {
-	const entries = JSON.parse(readFileSync(path.join(ORACLE, B.cells), 'utf8'));
+	// TWO SOURCES, AND THE SPLIT ONE ONLY REACHES SO FAR. The `-split` palette finds everything the
+	// unsplit one finds and much more, but it pays for it: one geometric tiling appears under many
+	// combinatorial labellings once flat corners are in play (35,193 solver solutions for 856 tilings on
+	// hexv), so the reachable k is lower. The unsplit runs go far deeper and are still correct as far as
+	// they go — they are simply the edge-to-edge SUBSET. So take the split records up to their ceiling
+	// and the unsplit records above it, and say so per board rather than silently shipping a shallower
+	// shelf than the one it replaces.
+	const split = JSON.parse(readFileSync(path.join(ORACLE, B.cells), 'utf8'));
+	const splitMax = Math.max(...split.map((e) => e.k));
+	const deeper = B.cellsEdgeToEdge
+		? JSON.parse(readFileSync(path.join(ORACLE, B.cellsEdgeToEdge), 'utf8')).filter((e) => e.k > splitMax)
+		: [];
+	const allEntries = [...split, ...deeper];
+	const entries = allEntries.filter((e) => isPrimitive(e.faces, e.T1, e.T2, residue));
+	const supercells = allEntries.length - entries.length;
+	if (supercells) console.log(`  ${B.id}: dropped ${supercells} supercell description(s) of ${allEntries.length}`);
+	B.splitMax = splitMax;
+	B.deeperMax = deeper.length ? Math.max(...deeper.map((e) => e.k)) : splitMax;
 	grandRaw += entries.length;
 	const want = { sides: [...B.sides].sort((a, b) => a - b), angs: [...B.angles].sort((a, b) => a - b) };
 
@@ -158,7 +264,8 @@ for (const B of BOARDS) {
 		let area = 0;
 		const ang = new Map();
 		for (const f of e.faces) {
-			const pr = profile(f);
+			// Shape is judged on the REAL tile, so the flat corners of a divided edge come off first.
+			const pr = profile(dropCollinear(f));
 			if (pr.sides.length !== want.sides.length) { strays.push(e.id); continue; }
 			for (let t = 0; t < pr.sides.length; t++) {
 				worstShape = Math.max(worstShape, Math.abs(pr.sides[t] - want.sides[t]), Math.abs(pr.angs[t] - want.angs[t]) / 90);
@@ -307,21 +414,34 @@ for (const B of BOARDS) {
 		void rows;
 		manifest[B.id].counts[k] = rows.length;
 		grandTotal += rows.length;
-		const ref = byK.get(k).map((e, i) => ({
-			id: `euh${B.id}-k${k}-${String(i + 1).padStart(4, '0')}`,
-			source: 'euhalf',
-			euHalfBoard: B.id,
-			k,
-			family: B.label,
-			renderCell: {
-				cellPolygons: e.faces.map((f) => ({ n: f.length, vertices: f, hue: B.hue })),
-				basis: [e.T1, e.T2],
-			},
-			discoverer: `Čtrnáct engine (eu-half palette), 2026-08-14`,
-			note: `Edge-to-edge periodic tiling by the ${B.tile} — ${e.faces.length} per period cell. ${B.note} `
-				+ 'Certified here: every face is exactly the tile, the faces cover the period cell with no gap '
-				+ 'and no overlap, and every vertex sees a full turn.',
-		}));
+		const ref = byK.get(k).map((e, i) => {
+			const divided = tJunctions(e.faces, e.T1, e.T2, residue);
+			return {
+				id: `euh${B.id}-k${k}-${String(i + 1).padStart(4, '0')}`,
+				source: 'euhalf',
+				euHalfBoard: B.id,
+				k,
+				family: B.label,
+				renderCell: {
+					cellPolygons: e.faces.map(dropCollinear).map((f) => ({ n: f.length, vertices: f, hue: B.hue })),
+					basis: [e.T1, e.T2],
+				},
+				discoverer: `Čtrnáct engine (eu-half palette), 2026-08-14`,
+				// Deliberately NOT asserting "edge-to-edge" when the count is zero. The T-junction detector
+				// agrees with the original edge-to-edge enumeration exactly on pent, hexm, sqmid and on hexv
+				// at k=1 and k=3, and reports 9 more than it should across hexv k=2 and k=4. Until that is
+				// run down, a positive count is a claim worth making and a zero is not.
+				note: `Periodic tiling by the ${B.tile}, `
+					+ `${e.faces.length} per period cell`
+					+ (divided
+						? `, with ${divided} T-junction${divided === 1 ? '' : 's'} per cell where one tile's edge `
+							+ 'is met by two neighbours instead of being matched whole. '
+						: '. ')
+					+ `${B.note} `
+					+ 'Certified here: every face is exactly the tile, the faces cover the period cell with no gap '
+					+ 'and no overlap, and every vertex sees a full turn.',
+			};
+		});
 		if (k <= EAGER_MAX) eager.push(...ref);
 		else {
 			if (!lazy.has(k)) lazy.set(k, []);
@@ -331,11 +451,11 @@ for (const B of BOARDS) {
 }
 
 writeFileSync(path.join(OUT, 'manifest.json'), JSON.stringify(manifest, null, 2));
-writeFileSync(path.join(PUB, 'reference-atlas-euhalf.json'), JSON.stringify(eager));
+writeFileSync(path.join(PUB, 'reference-atlas-euhalf.json'), stringifyAtlas(eager));
 console.log(`\n  ${grandRaw} solver solutions -> ${grandTotal} distinct tilings on the shelf`);
 console.log(`  atlas: ${eager.length} entries (k<=${EAGER_MAX}, eager) -> public/reference-atlas-euhalf.json`);
 for (const k of [...lazy.keys()].sort((a, b) => a - b)) {
-	writeFileSync(path.join(PUB, `reference-atlas-euhalf-k${k}.json`), JSON.stringify(lazy.get(k)));
+	writeFileSync(path.join(PUB, `reference-atlas-euhalf-k${k}.json`), stringifyAtlas(lazy.get(k)));
 	console.log(`         ${lazy.get(k).length} entries -> public/reference-atlas-euhalf-k${k}.json (lazy)`);
 }
 console.log(`  lazy k slices: [${[...lazy.keys()].sort((a, b) => a - b).join(', ')}]`);

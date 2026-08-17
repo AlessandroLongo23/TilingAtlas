@@ -1,0 +1,30 @@
+{
+  "name": "eu-half-sq-mid-split",
+  "D": 4,
+  "tileGeometry": "euclidean",
+  "closure": "euclidean",
+  "comment": "NON-EDGE-TO-EDGE remodelling of eu-half-sq-mid. Marek Ctrnact, 2026-08-16: the half-polygon boards miss every arrangement where one tile's edge is met by two tiles, because the solver glues whole edge to whole edge. Any edge whose length is a SUM of the palette's other lengths can be divided, and here that is every side of length 2 = 1+1, the division forced to the midpoint. A FLAT 180-degree corner there expresses it: both long sides of the 1x2 domino gain a flat corner at their midpoint, so every side is a unit edge. The tile is unchanged as a SHAPE, the extra corners are a modelling device. This palette SUPERSEDES the unsplit one: two tiles abutting along a full edge put their flat corners at the same point, where 180+180 closes a legal noncounting vertex, so every edge-to-edge tiling stays reachable. Needs the min_len fix of 2026-08-17 in gen_alphabet.py (a >= D//2), without which the flat-flat junction is not enumerated and every edge-to-edge tiling is silently dropped.",
+  "tiles": [
+    {
+      "kind": "composite",
+      "name": "Doms",
+      "famchar": "d",
+      "angles": [
+        1,
+        1,
+        2,
+        1,
+        1,
+        2
+      ],
+      "edgeLens": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        "1"
+      ]
+    }
+  ]
+}

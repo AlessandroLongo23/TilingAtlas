@@ -7,6 +7,17 @@
 // the plane there is no curvature to hide in the faces, so the tile is simply a flat polygon and the
 // vertex rule is the ordinary one: the angles at a vertex sum to 360.
 //
+// ⚑ EDGE-TO-EDGE IS NOT THE WHOLE STORY (Marek Čtrnáct, 2026-08-16). Everything the next two paragraphs
+// prove is a statement about EDGE-TO-EDGE tilings, where every edge is matched whole against exactly one
+// other. Both filters say so if read closely: the angle filter needs a vertex's corners to sum to 360,
+// and the edge-slot filter says out loud that "each edge is shared by exactly TWO corners". Let one
+// tile's edge be met by TWO neighbours and neither holds. Every board here has a side of length 2 and a
+// side of length 1, so every board admits such a division, and the boards were re-run with it allowed:
+// the counts below at k ≤ `dividedTo` include those tilings, and the shelf grew from 27,728 to 28,715.
+// The half-decagon is the one board where no edge decomposes, so its exclusion survives untouched; the
+// half-octagon's does not survive as an argument, and was re-run to confirm the board is empty anyway.
+// See experiments/results/euhalf-nonedge-to-edge-2026-08-17.log.
+//
 // THE FAMILY IS FINITE, and unusually for this atlas the bound is a proof rather than a budget. An
 // n-gon has a vertex-to-vertex long diagonal and a midpoint-to-midpoint cut when n is even, and one
 // vertex-to-opposite-midpoint mirror when n is odd — infinitely many candidate boards, of which six can
@@ -60,6 +71,14 @@ export interface EuHalfBoard {
 	enumeratedTo: number;
 	/** k values the search covered and found nothing at. Facts about the board, not gaps. */
 	emptyKs: number[];
+	/**
+	 * The highest k searched for NON-EDGE-TO-EDGE tilings, where a tile's edge may be met by two
+	 * neighbours instead of one. At or below it the board is complete; above it only the edge-to-edge
+	 * subset is counted, because the divided-edge palette costs enough depth that it cannot reach as
+	 * far. On `hexv` that is visible in the counts as a fall from 423 at k=6 to 226 at k=7: the two
+	 * sides of that step are counting different things, and neither number is wrong.
+	 */
+	dividedTo: number;
 }
 
 export const EU_HALF_BOARDS: EuHalfBoard[] = [
@@ -75,9 +94,10 @@ export const EU_HALF_BOARDS: EuHalfBoard[] = [
 		// come back empty — which is why it was run first, as a check on the wiring rather than a result.
 		eagerKs: [1, 2, 3, 4],
 		lazyKs: [5, 6, 7, 8, 9, 10, 11, 12, 13],
-		counts: { 1: 2, 2: 4, 3: 15, 4: 34, 5: 62, 6: 166, 7: 226, 8: 752, 9: 1006, 10: 2273, 11: 2556, 12: 11645, 13: 8418 },
+		counts: { 1: 2, 2: 10, 3: 35, 4: 68, 5: 145, 6: 423, 7: 226, 8: 752, 9: 1006, 10: 2273, 11: 2556, 12: 11645, 13: 8418 },
 		enumeratedTo: 13,
 		emptyKs: [],
+		dividedTo: 6,
 	},
 	{
 		id: "pent",
@@ -96,6 +116,7 @@ export const EU_HALF_BOARDS: EuHalfBoard[] = [
 		counts: { 1: 2, 2: 1, 3: 2, 4: 3, 5: 6, 6: 7, 7: 14, 8: 18, 9: 28, 10: 39, 11: 62, 12: 82, 13: 126, 14: 177 },
 		enumeratedTo: 14,
 		emptyKs: [],
+		dividedTo: 9,
 	},
 	{
 		id: "hexm",
@@ -105,11 +126,12 @@ export const EU_HALF_BOARDS: EuHalfBoard[] = [
 		angles: [90, 120, 120, 120, 90],
 		sides: [1, 2, 2, 1, 3.4641016151377544], // 2√3, the width across the hexagon
 		D: 12,
-		eagerKs: [2],
-		lazyKs: [],
-		counts: { 2: 1 },
-		enumeratedTo: 6,
-		emptyKs: [1, 3, 4, 5, 6],
+		eagerKs: [2, 4],
+		lazyKs: [5, 6, 7, 8, 9],
+		counts: { 2: 1, 4: 4, 5: 5, 6: 8, 7: 19, 8: 20, 9: 36 },
+		enumeratedTo: 9,
+		emptyKs: [1, 3],
+		dividedTo: 9,
 	},
 	{
 		id: "sqmid",
@@ -119,18 +141,19 @@ export const EU_HALF_BOARDS: EuHalfBoard[] = [
 		angles: [90, 90, 90, 90],
 		sides: [1, 2, 1, 2],
 		D: 4,
-		eagerKs: [1],
-		lazyKs: [],
-		// ONE tiling, and provably the only one — not merely the only one below the k the search reached.
-		// Every corner is a right angle flanked by one long and one short side, so the four edges at a
-		// vertex alternate long/short; two edges separated by one other sit at 180° and are therefore
-		// collinear; so the long edges lie on one family of parallel lines and the short edges on the
-		// perpendicular family, which is the aligned grid and nothing else. Running bond, herringbone and
-		// basketweave are T-junction patterns — absent from an edge-to-edge enumeration by definition,
-		// not missing from it.
-		counts: { 1: 1 },
+		eagerKs: [1, 2, 3, 4],
+		lazyKs: [5, 6],
+		// ONE tiling EDGE-TO-EDGE, and provably the only one: every corner is a right angle flanked by one
+		// long and one short side, so the four edges at a vertex alternate long/short; two edges separated
+		// by one other sit at 180° and are therefore collinear; so the long edges lie on one family of
+		// parallel lines and the short edges on the perpendicular family, which is the aligned grid and
+		// nothing else. That proof assumes every edge is matched WHOLE, and a domino's long side is two
+		// short sides. Allow it to be met by two tiles and running bond, herringbone and basketweave all
+		// arrive: 1 tiling becomes 496, the largest relative gain on the shelf.
+		counts: { 1: 2, 2: 6, 3: 21, 4: 55, 5: 131, 6: 281 },
 		enumeratedTo: 6,
-		emptyKs: [2, 3, 4, 5, 6],
+		emptyKs: [],
+		dividedTo: 6,
 	},
 ];
 
@@ -156,7 +179,12 @@ export function euHalfKGaps(b: EuHalfBoard): number[] {
 	const ks = [...b.eagerKs, ...b.lazyKs].sort((x, y) => x - y);
 	if (ks.length < 2) return [];
 	const have = new Set(ks);
+	// A k the search covered and found nothing at is a MEASURED ABSENCE, not a hole in the corpus, and
+	// `emptyKs` is where the board records it. hexm reaches k=9 with k=1 and k=3 genuinely empty; before
+	// the divided-edge run it shipped a single k and this loop never ran, which is why the distinction
+	// only had to be made now.
+	const empty = new Set(b.emptyKs);
 	const out: number[] = [];
-	for (let k = ks[0] + 1; k < ks[ks.length - 1]; k++) if (!have.has(k)) out.push(k);
+	for (let k = ks[0] + 1; k < ks[ks.length - 1]; k++) if (!have.has(k) && !empty.has(k)) out.push(k);
 	return out;
 }

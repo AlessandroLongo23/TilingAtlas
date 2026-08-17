@@ -1,0 +1,207 @@
+NON-EDGE-TO-EDGE HALF-POLYGONS — the arrangements Marek found missing      2026-08-17, CC
+================================================================================================
+
+MAREK CTRNACT, 2026-08-16 (Discord): "I think your half-polygons are missing some options. For
+example arrangements like these" + a picture of a right triangle whose hypotenuse is divided in two.
+AL: "they're not edge to edge". Marek: "One edge is simply divided in two."
+
+He is right, and the picture understates it. The engine glues WHOLE edge to WHOLE edge, so every
+board in the family misses the arrangements where one tile's edge is met by two or more tiles.
+
+WHICH BOARDS CAN HOST ONE AT ALL. A tile's edge can be met by several neighbours only if its length
+is a SUM of edge lengths the same palette offers. Measured over every Euclidean half-family palette
+(scratch: splitcheck.mjs; lengths evaluated from the palette tokens, not eyeballed):
+
+  eu-half-hex-v    1, 2                    2 = 1+1          SPLITTABLE   27,159 shipped
+  eu-half-pent     1, 2, cot18=3.0777      2 = 1+1          SPLITTABLE      567 shipped
+  eu-half-hex-m    1, 2, 2sqrt3=3.4641     2 = 1+1          SPLITTABLE        1 shipped
+  eu-half-sq-mid   1, 2                    2 = 1+1          SPLITTABLE        1 shipped
+  eu-half-oct-m    1, 2, 2+2sqrt2=4.8284   2 = 1+1          SPLITTABLE    RULED OUT
+  eu-half-dec-v    1, 2phi=3.2361          none             safe          RULED OUT
+  tri45all         S=1, H=sqrt2, D=2       D = S+S          SPLITTABLE    5,313 shipped
+  tri45 (1 tile)   S=1, H=sqrt2            none             safe
+  penrose          1, phi                  none             safe          4,505 shipped
+  planigon         12 lengths              24 decompositions SPLITTABLE   1,055 shipped
+
+  NOTE the correction to my own first reading: it is NOT only the cut edge that matters. pent, hex-m
+  and oct-m all carry an ordinary side of length 2 alongside sides of length 1, so they split on a
+  plain side even where the cut edge (cot18, 2sqrt3, 2+2sqrt2) decomposes into nothing.
+
+  Marek's picture is the tri45 board: S=1, H=sqrt2, D=2, so the big triangle's hypotenuse D is
+  exactly two unit legs. That board shipped in v1.24.0.
+
+WHAT THIS DOES TO THE SIX-BOARD PROOF. Both filters behind it assume edge-to-edge, explicitly:
+  - the angle filter needs a vertex's corners to sum to 360. On a divided edge the corners on one
+    side sum to 180, so a*(alpha/2) + b*alpha = 360 is not the equation and (n-2)|8 does not follow.
+  - the edge-slot filter says in its own words "each edge is shared by exactly TWO corners". A
+    divided edge is shared by three. That is the argument that emptied n=10 vertex and n=8 midpoint.
+  The DECAGON survives on the measurement above: no edge of it decomposes, so no divided edge is
+  possible there and its parity argument still holds. The OCTAGON does not survive: its length-2
+  side splits as 1+1, so "the alphabet has exactly 1 vertex configuration and the search returns 0"
+  was computed under an assumption that no longer applies. It has to be re-run.
+
+METHOD. One extra FLAT 180-degree corner at the division point turns the join back into an
+edge-to-edge one the existing engine can search, which is AL's own proposal (2026-08-16: "change the
+palette so that the triangle is a quadrilateral, with the hypotenuse made up of two halves"). The
+machinery is already there: gen_alphabet's `doubled` and `scaled` kinds are built out of flat
+corners, and eu_pruner groups by the Myers counting convention, which does not count a flat-flat
+mid-edge vertex, so k stays comparable with the shipped numbers.
+
+The split palette REPLACES the unsplit one rather than joining it: two tiles meeting along their
+full long sides put their flat corners at the same point and 180+180 closes a legal vertex, so the
+edge-to-edge tilings stay reachable. Expect counts >= the shipped ones; anything less is a bug.
+
+BASELINE, the shipped counts (lib/tilings/eu-half.ts)
+  hexv    k1 2   k2 4   k3 15   k4 34   k5 62   k6 166   k7 226   k8 752 ... k13 8418   (27,159)
+  pent    k1 2   k2 1   k3 2    k4 3    k5 6    k6 7     k7 14 ... k14 177             (567)
+  hexm    k2 1                                                                          (1)
+  sqmid   k1 1                                                                          (1)
+
+RUNS
+
+--- RUN 1: eu-half-hex-v-split, k<=3 ------------------------------------------------------------
+Palette: the trapezoid [1,2,2,1] sides 1,1,1,2 remodelled as [1,2,2,1,3] with five unit sides, the
+flat 3 (=180 deg) sitting at the midpoint of the long side.
+
+FIRST ATTEMPT WAS WRONG, and the way it was wrong is now a fixed bug in gen_alphabet.py.
+  k=1: 0   k=2: 10   k=3: 56      <- k=1 EMPTY where the unsplit board has 2. Not a superset.
+  Cause: min_len. A 2-corner vertex configuration (the noncounting flat-flat mid-edge junction where
+  two tiles abut along a FULL edge) is only enumerated when min_len=2, and the gate read
+      has_reflex_composite = any(kind=="composite" and any(a > D//2 ...))
+  A flat corner is a == D//2 exactly, not >, so the gate said no. With min_len=3 the mid-edge point
+  is not a legal vertex at all: every edge-to-edge tiling was dropped, and in the survivors every
+  mid-edge point was counted as a real vertex, inflating k by a tier. Alphabet: 0 noncounting entries
+  out of 67, which is the fingerprint.
+  Fix: `a >= D // 2`, so a composite carrying a FLAT corner gets min_len=2 like the doubled/scaled
+  tiles it is a longhand spelling of. Checked first: no palette written before today has a composite
+  with an angle exactly D/2, so no pinned table moves.
+
+AFTER THE FIX
+  alphabet 51 configs, 72 entries (was 50/67; the 5 new ones are the flat-flat junctions)
+  k=1 : 6      unsplit 2
+  k=2 : 53     unsplit 4
+  k=3 : 306    unsplit 15
+  total 365    unsplit 21
+
+CONTAINMENT, exact. Reused the shelf builder's congruence predicate (point group = 6 rotations plus a
+reflection, lattice carried onto lattice unimodularly, every tile matched), with collinear vertices
+dropped first so a split face is compared as the trapezoid it actually is. Oracle self-check 12/12.
+  all 21 unsplit tilings ARE present in the split run   (0 missing)
+  344 of the 365 are NEW
+So the remodelled palette is a verified superset, and the non-edge-to-edge arrangements outnumber the
+edge-to-edge ones better than 16 to 1 by k=3.
+
+--- RUNS 2-5: the other four boards, k<=4 -------------------------------------------------------
+Every split palette carries a flat corner at the midpoint of EVERY side of length 2; a cut edge that
+decomposes into nothing (cot18, 2sqrt3, 2+2sqrt2) stays whole. Angle sums checked against
+(n-2)*D/2 before running. Containment verified per board with the same exact congruence oracle.
+
+  board            shipped (k<=4)   split (k<=4)   preserved   NEW
+  eu-half-sq-mid          1            4486            1        4485
+  eu-half-hex-m           1               7            1           6
+  eu-half-pent            8               8            8           0
+  eu-half-hex-v          21 (k<=3)      365 (k<=3)    21         344
+  eu-half-oct-m           0 (ruled out)   0            -           0
+
+  per-k
+  sq-mid   split  k1 15   k2 131   k3 726   k4 3614      shipped  k1 1  (k2..k4 empty)
+  hex-m    split  k1 0    k2 2     k3 0     k4 5         shipped  k2 1
+  pent     split  k1 2    k2 1     k3 2     k4 3         shipped  identical
+  hex-v    split  k1 6    k2 53    k3 306                shipped  k1 2  k2 4  k3 15
+
+THREE THINGS WORTH KEEPING FROM THIS.
+
+  THE DOMINO IS THE BIG ONE, 1 -> 4486. That is not a surprise once stated: a 1x2 rectangle whose
+  long side may be met by two short ones is the BRICK WALL, and running bond, stack bond, herringbone
+  and every other bond are exactly the non-edge-to-edge domino tilings. The old board had the single
+  stack-bond tiling because that is the only bond that is edge-to-edge.
+
+  THE PENTAGON GAINS NOTHING, 8 -> 8, all eight preserved and no new ones to k=4. Its two sides of
+  length 2 decompose arithmetically, but no vertex figure can use the division: the corners that
+  flank a unit side are 108 and 90, and 180 is reachable from neither pair. So the half-pentagon
+  result published in v1.26.0 is correct as it stands, and it is the only one of the four that is.
+
+  THE HALF-OCTAGON STAYS DEAD, 0 at every k<=4 even with all three of its length-2 sides divisible.
+  It was ruled out by the edge-slot parity argument, which assumes each edge is shared by exactly two
+  corners and therefore does not apply here; the board had to be re-run rather than argued about, and
+  the re-run agrees with the old conclusion for a different reason.
+
+--- RUN 6: tri45all, Marek's own picture --------------------------------------------------------
+tri45all is S=1, H=sqrt2, D=2 with T1 (S,H,S), T2 (H,D,H), Q1 and Q2. D = S+S is the only length that
+decomposes, so T2's hypotenuse is the only divisible edge: [6,3,3] (H,D,H) -> [6,3,12,3] (H,S,S,H).
+That IS the picture he drew: a right triangle whose hypotenuse is met by two smaller triangles' legs.
+
+  k=1 : 17    (was 16)
+  k=2 : 227   (was 161)
+  k=3 : 2057  (was 1132)
+  total 2301  (was 1309)   all 1309 preserved, 992 NEW
+
+A BUG IN MY OWN CHECK, worth writing down because it nearly became a false finding. The first
+containment run reported 96 tri45all tilings MISSING from the split set, which would have meant the
+remodelling loses tilings and cannot ship. It does not. My congruence oracle computed a face's
+"shape" from the CCW turn at each corner, and a MIRRORED transform flips every interior angle to
+360-theta, so a face compared across a reflection never matched its twin. Every one of the 96 was a
+tiling whose only congruence with its split twin is a mirror. Normalising each face to CCW before
+fingerprinting fixes it, and the same rerun then finds all 1309.
+  Checked the other boards after the fix: their numbers do not move, because they had already
+  reported 0 missing and a false NEGATIVE can only ever inflate that count.
+  The oracle in scripts/build-euhalf-shelf.mjs is a different implementation and is not affected;
+  this was a bug in the throwaway comparison script, not in anything shipped.
+
+FINAL CONTAINMENT, all boards, after the fix
+  board            preserved / shipped    new      ceiling
+  tri45all           1309 / 1309          992      k<=3
+  eu-half-hex-v        21 / 21            344      k<=3
+  eu-half-sq-mid        1 / 1            4485      k<=4
+  eu-half-hex-m         1 / 1               6      k<=4
+  eu-half-pent          8 / 8               0      k<=4
+  eu-half-oct-m         - (empty)            0      k<=4
+
+--- SHIPPED: the shelf rebuilt on divided edges ---------------------------------------------------
+Deeper runs: hexv k<=6, sqmid k<=6, hexm k<=9, pent k<=9. Above those the split palette costs too
+much depth, so the shelf takes the split records up to the ceiling and the ORIGINAL edge-to-edge
+records above it (`cellsEdgeToEdge` in the builder) — the alternative was shipping a shelf shallower
+than the one it replaces, which would have deleted ~25,000 tilings to add a few hundred.
+
+  board    shipped 2026-08-14   now      dividedTo   enumeratedTo
+  hexv           27,159       27,559         6            13
+  pent              567          567         9            14
+  hexm                1           93         9             9
+  sqmid               1          496         6             6
+  TOTAL          27,728       28,715
+
+  hexv  { 1:2  2:10  3:35  4:68  5:145  6:423 | 7:226  8:752  9:1006  10:2273  11:2556  12:11645  13:8418 }
+        the bar marks dividedTo: left of it every tiling, right of it the edge-to-edge subset only.
+        423 at k=6 falling to 226 at k=7 is that boundary and not a cliff in the mathematics.
+  sqmid { 1:2  2:6  3:21  4:55  5:131  6:281 }   1 -> 496, the largest relative gain: the bonds.
+  hexm  { 2:1  4:4  5:5  6:8  7:19  8:20  9:36 } k=1 and k=3 measured empty.
+  pent  unchanged at every k. It is the one board that gains nothing.
+
+A SECOND BUG, FOUND BY THE COUNTS NOT ADDING UP. hexv k=1 came out as 3 tilings where the
+edge-to-edge run finds 2 and where NO tiling has a T-junction, so the extra one could not be new. It
+was the same tiling on a DOUBLED CELL: 4 tiles instead of 2. The flat corners give the search more
+ways to label one geometry and some of them close on a lattice coarser than the tiling's own, and the
+congruence dedup cannot catch it — that predicate maps lattice onto lattice UNIMODULARLY, and a
+supercell is by definition not unimodularly related to the cell inside it. `isPrimitive` in the
+builder now drops them: any translation carrying the tiling to itself is a difference of two
+same-shape face centroids, so testing those against the marker set decides it.
+  dropped: sqmid 63,031 of 80,676   hexv 11,015 of 62,069   hexm 8 of 101   pent 0
+  After it, hexv k=1 is 2 again and matches the edge-to-edge run exactly.
+
+CERTIFICATES all pass on the rebuilt shelf: shape <= 1.1e-9, area <= 4.7e-10, worst vertex 360.00
+degrees. The angle certificate is run WITH the flat corners still on, where a divided edge contributes
+its 180 and every vertex still closes at exactly 360; the shipped faces have them dropped, so the
+catalogue says quadrilateral and the renderer draws one.
+
+NO REGRESSION: every (board, k) count is >= the 2026-08-14 value, checked pairwise.
+
+STILL OPEN
+  · The T-junction label reconciles exactly on pent, hexm, sqmid and on hexv k=1 and k=3, and reports
+    9 more "edge-to-edge" than the original enumeration across hexv k=2 and k=4. Until that is run
+    down the note claims a POSITIVE T-junction count and never claims the absence of one.
+  · tri45all (Marek's own picture) is measured — 1309 preserved, 992 new at k<=3 — and NOT shipped.
+    Its shelf is built by a different script and the same supercell filter has to go in first.
+  · planigons have 24 decompositions across 12 edge lengths, several three-part and several with
+    asymmetric split points, so that board needs a variant per decomposition, not one per tile.
+  · The half-octagon re-ran empty to k=4, so the six-board family stands — but on a re-run, not on
+    the parity argument, which does not apply once an edge can be divided.

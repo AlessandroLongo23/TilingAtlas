@@ -1,0 +1,36 @@
+{
+  "name": "eu-half-oct-m-split",
+  "D": 8,
+  "tileGeometry": "euclidean",
+  "closure": "euclidean",
+  "comment": "NON-EDGE-TO-EDGE remodelling of eu-half-oct-m. Marek Ctrnact, 2026-08-16: the half-polygon boards miss every arrangement where one tile's edge is met by two tiles, because the solver glues whole edge to whole edge. Any edge whose length is a SUM of the palette's other lengths can be divided, and here that is every side of length 2 = 1+1, the division forced to the midpoint. A FLAT 180-degree corner there expresses it: the three sides of length 2 each gain a flat corner; the cut edge 2+2sqrt2=4.8284 decomposes into nothing and stays whole. THIS BOARD WAS RULED OUT by the edge-slot parity argument, which assumes every edge is shared by exactly two corners and so does not apply once an edge can be divided. The tile is unchanged as a SHAPE, the extra corners are a modelling device. This palette SUPERSEDES the unsplit one: two tiles abutting along a full edge put their flat corners at the same point, where 180+180 closes a legal noncounting vertex, so every edge-to-edge tiling stays reachable. Needs the min_len fix of 2026-08-17 in gen_alphabet.py (a >= D//2), without which the flat-flat junction is not enumerated and every edge-to-edge tiling is silently dropped.",
+  "tiles": [
+    {
+      "kind": "composite",
+      "name": "OcMs",
+      "famchar": "o",
+      "angles": [
+        2,
+        3,
+        4,
+        3,
+        4,
+        3,
+        4,
+        3,
+        2
+      ],
+      "edgeLens": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        "2+2sqrt2"
+      ]
+    }
+  ]
+}

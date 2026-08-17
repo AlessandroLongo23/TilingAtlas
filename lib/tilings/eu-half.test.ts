@@ -114,7 +114,9 @@ describe("board manifest", () => {
 
 	it("offers each lazy slice at its own k and nowhere else", () => {
 		const lazy = EU_HALF_BOARDS.flatMap((b) => b.lazyKs.map((k) => `${b.id}@${k}`)).sort();
-		expect(lazy.length).toBe(19);
+		// 26 since the divided-edge rebuild: hexm reaches k=9 where it used to hold a single k=2 tiling,
+		// and sqmid reaches k=6 where it used to hold one at k=1.
+		expect(lazy.length).toBe(26);
 		for (const b of EU_HALF_BOARDS) {
 			for (let k = 1; k <= b.enumeratedTo; k++) {
 				expect(euHalfLazyShardsForK(k).some((x) => x.id === b.id), `${b.id} k=${k}`)
