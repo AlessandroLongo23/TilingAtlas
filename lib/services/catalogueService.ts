@@ -28,6 +28,11 @@ export interface CatalogueTiling {
 	// One-parameter family entries (Reference shelf only): the proven parametric cell that drives
 	// the /play alpha slider (lib/utils/paramCell.ts). Certified catalogue tilings never carry this.
 	paramCell?: ParametricCellData;
+	/** Which halved-polygon board this row belongs to. Carried through referenceToCatalogue because
+	 *  /play derives its sub-family from it (subOf); without it every half-polygon row computed the
+	 *  sub "el-euh-" — absent from SUB_ORDER — and vanished from the /play tree while /library, which
+	 *  reads the ReferenceTiling directly, still showed them. That was the library/play desync. */
+	euHalfBoard?: string;
 	// Hyperbolic shelf only: the {p,q} Schläfli symbol (regular entries; kept as the card label).
 	schlafli?: [number, number];
 	// Hyperbolic shelf only: the forced edge length ℓ of the developed patch, and the provenance string

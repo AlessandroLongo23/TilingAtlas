@@ -19,11 +19,13 @@ interface SidebarProps {
 	/** The active (geometry, decoration) cell's tilings (catalogue list + nav count). */
 	geometryList: CatalogueTiling[];
 	geometryCounts: Record<Geometry, number>;
+	geometryPending?: Partial<Record<Geometry, boolean>>;
 	onGeometryChange: (g: Geometry) => void;
 	/** Active decoration — the split below geometry (Tilings / Edge patterns / Colorings); scopes browsing too. */
 	decoration: Decoration;
 	/** Counts WITHIN the active geometry, so an unloaded shard reads as a disabled segment. */
 	decorationCounts: Record<Decoration, number>;
+	decorationPending?: Partial<Record<Decoration, boolean>>;
 	onDecorationChange: (d: Decoration) => void;
 }
 
@@ -41,9 +43,11 @@ export const Sidebar = memo(function Sidebar({
 	geometry,
 	geometryList,
 	geometryCounts,
+	geometryPending,
 	onGeometryChange,
 	decoration,
 	decorationCounts,
+	decorationPending,
 	onDecorationChange,
 }: SidebarProps) {
 	return (
@@ -57,9 +61,11 @@ export const Sidebar = memo(function Sidebar({
 				geometry={geometry}
 				geometryList={geometryList}
 				geometryCounts={geometryCounts}
+				geometryPending={geometryPending}
 				onGeometryChange={onGeometryChange}
 				decoration={decoration}
 				decorationCounts={decorationCounts}
+				decorationPending={decorationPending}
 				onDecorationChange={onDecorationChange}
 			/>
 		</PageSidebar>

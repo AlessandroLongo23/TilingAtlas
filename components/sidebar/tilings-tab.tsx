@@ -23,9 +23,12 @@ interface TilingsTabProps {
 	/** The active (geometry, decoration) cell — feeds the catalogue list and the nav count. */
 	geometryList: CatalogueTiling[];
 	geometryCounts: Record<Geometry, number>;
+	geometryPending?: Partial<Record<Geometry, boolean>>;
 	onGeometryChange: (g: Geometry) => void;
 	decoration: Decoration;
 	decorationCounts: Record<Decoration, number>;
+	/** Deferred decoration catalogues — see CatalogueTab.decorationPending. */
+	decorationPending?: Partial<Record<Decoration, boolean>>;
 	onDecorationChange: (d: Decoration) => void;
 }
 
@@ -43,9 +46,11 @@ export function TilingsTab({
 	geometry,
 	geometryList,
 	geometryCounts,
+	geometryPending,
 	onGeometryChange,
 	decoration,
 	decorationCounts,
+	decorationPending,
 	onDecorationChange,
 }: TilingsTabProps) {
 	const [tab, setTab] = useState(TABS[0]);
@@ -84,9 +89,11 @@ export function TilingsTab({
 								onSelect={onSelect}
 								geometry={geometry}
 								geometryCounts={geometryCounts}
+								geometryPending={geometryPending}
 								onGeometryChange={onGeometryChange}
 								decoration={decoration}
 								decorationCounts={decorationCounts}
+								decorationPending={decorationPending}
 								onDecorationChange={onDecorationChange}
 							/>
 						) : (

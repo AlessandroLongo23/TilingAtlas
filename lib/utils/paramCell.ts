@@ -22,6 +22,11 @@ export interface ParametricCellData {
 		deltaRangeDeg: [number, number]; // exporter's 0.4°-padded range — superseded here by ALPHA_EPS_DEG, unused
 		alphaRangeDegOpen: [number, number]; // mathematical (open) validity interval — the slider domain
 		defaultAlphaDeg: number;
+		// LENGTH families (see `lengths` below): this slider is an EDGE LENGTH, not a corner angle, so
+		// the three fields above are read in length units and the panel must not print a degree sign.
+		// The names are kept rather than parallel length-named ones so that the slider store, the
+		// clamping and the region pad go on working untouched.
+		kind?: "length";
 		tile?: string; // the isotoxal tile this parameter flexes (e.g. "cx6-90.150")
 		// INTRINSIC families only: the dart whose corner angle this slider IS. The parameter is not an
 		// abstract direction in a null space, it is a corner of a tile, which is why the panel can name
@@ -60,6 +65,49 @@ export interface ParametricCellData {
 	// still hold the anchor as constant terms, so a consumer that has never heard of this field renders
 	// a real tiling (the entry's default) rather than nothing.
 	intrinsic?: IntrinsicCellData;
+	// LENGTH families: the parameters are EDGE LENGTHS, not corner angles.
+	//
+	// Nothing in the combinatorial search ever knew an edge's length — `enum_configs` closes a vertex on
+	// an ANGLE sum, and the gluing only ever asserts "this edge type meets that edge type", i.e. that two
+	// lengths are EQUAL, never what they are. A length is first named in the developer
+	// (develop_tri45.surd_offsets: 'S' is the unit edge, 'H' the sqrt2). Leaving it symbolic instead
+	// costs the search nothing and makes the tiling a family.
+	//
+	// The payoff is that this is the EASY half of what `cellPolygons` above already does. A vertex is
+	// Σ_j ℓ_j·d_j with the directions d_j fixed by the angles, so it is LINEAR in the parameters, where an
+	// angle parameter enters as e^{i·δ} and needs a Laurent polynomial. One term [j, re, im] here means
+	// ℓ_j·(re + i·im), and evaluation is a dot product.
+	//
+	// When present it OWNS the evaluation, the same contract `intrinsic` has; `cellPolygons` and `basis`
+	// still hold the default-length cell as constant terms, so a consumer that has never heard of this
+	// field renders a real tiling rather than nothing.
+	lengths?: LengthFamilyData;
+}
+
+/** One term of a length-linear coordinate: `ℓ_[j]·(re + i·im)`. A vertex is the sum of its terms.
+ *  `j < 0` is the CONSTANT term, i.e. ℓ = 1. The first families were pure cones through the origin and
+ *  needed no constant, but a sliding-strip stack does: a strip's floor sits at a fixed height set by the
+ *  strips below it, and only its horizontal shift is a parameter. */
+export type LenTerm = [j: number, re: number, im: number];
+
+export interface LengthFamilyData {
+	cellPolygons: { n: number; star?: boolean; vertices: LenTerm[][] }[];
+	basis: [LenTerm[], LenTerm[]];
+	/** Colour tiles by their size (default). Set false when every tile in the family is the same size —
+	 *  a sliding-strip stack has unit squares and unit triangles, so a size ramp paints them identically
+	 *  and hides the very distinction worth seeing. Those fall back to the by-side-count ramp. */
+	sizeHue?: boolean;
+}
+
+/** Sum a length-linear coordinate at the given edge lengths. */
+export function evalLenTerms(terms: LenTerm[], L: number[]): [number, number] {
+	let x = 0, y = 0;
+	for (const [j, re, im] of terms) {
+		const l = j < 0 ? 1 : (L[j] ?? 0);
+		x += l * re;
+		y += l * im;
+	}
+	return [x, y];
 }
 
 /** One half of a merged family: the source family's symbolic cell plus where it sits on the merged slider.
@@ -272,8 +320,47 @@ export function segmentAt(pc: ParametricCellData, u: number): ParamSegment | nul
 	return u < segs[0].range[0] ? segs[0] : segs[segs.length - 1];
 }
 
+/** Hue (degrees) for a tile of a given size: its longest edge mapped monotonically across the
+ *  family's slider range. Equal size ⇒ equal hue, by construction. Runs blue (small) to orange
+ *  (large), the two ends of the wheel that stay distinguishable at low saturation. */
+export function sizeHue(v: [number, number][], lo: number, hi: number): number {
+	let longest = 0;
+	for (let i = 0; i < v.length; i++) {
+		const a = v[i], b = v[(i + 1) % v.length];
+		longest = Math.max(longest, Math.hypot(b[0] - a[0], b[1] - a[1]));
+	}
+	const t = hi > lo ? Math.min(1, Math.max(0, (longest - lo) / (hi - lo))) : 0;
+	return 210 - 190 * t;
+}
+
 /** Evaluate the family at a slider position (one number for 1-param, an array for N-param); parseBaseCell-ready. */
 export function evaluateParamCell(pc: ParametricCellData, alphaDeg: number | number[]): TranslationalCellData {
+	// A LENGTH family is linear in its parameters, so there is no polynomial to evaluate and no
+	// degenerate endpoint to nudge away from — clamping to the open range is the whole of the guard.
+	// Taken first: it owns the evaluation outright.
+	if (pc.lengths) {
+		const raw = Array.isArray(alphaDeg) ? alphaDeg : [alphaDeg];
+		const L = pc.params.map((p, j) => {
+			const [lo, hi] = p.alphaRangeDegOpen;
+			return Math.min(hi, Math.max(lo, raw[j] ?? p.defaultAlphaDeg));
+		});
+		// SIZE-BASED HUE. The by-side-count ramp cannot tell these tiles apart — both squares of the
+		// two-square tiling are n = 4, so they come out the same colour whatever the sliders say. Hue is
+		// therefore taken from the tile's own SIZE, using the explicit `hue` override the cell format
+		// already carries for polyominoes. It is a pure function of the size, so two tiles of equal size
+		// are equal in colour (drag the sliders together and the tiling goes monochrome, which is the
+		// honest reading), and it moves continuously as the slider does.
+		const lo = Math.min(...pc.params.map((p) => p.alphaRangeDegOpen[0]));
+		const hi = Math.max(...pc.params.map((p) => p.alphaRangeDegOpen[1]));
+		const useSizeHue = pc.lengths.sizeHue !== false;
+		const polys = pc.lengths.cellPolygons.map((poly) => {
+			const v = poly.vertices.map((t) => evalLenTerms(t, L));
+			return useSizeHue
+				? { n: poly.n, star: poly.star, v, hue: sizeHue(v, lo, hi) }
+				: { n: poly.n, star: poly.star, v };
+		});
+		return { cellPolygons: polys, basis: pc.lengths.basis.map((t) => evalLenTerms(t, L)) };
+	}
 	// An INTRINSIC family solves for its geometry instead of evaluating a polynomial, so it takes the
 	// whole evaluation. The clamp is the per-axis one: its region is a set of intervals, and the joint
 	// question is settled inside, on the cell about to be drawn.

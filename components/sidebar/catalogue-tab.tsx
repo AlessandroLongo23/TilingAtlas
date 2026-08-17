@@ -20,10 +20,15 @@ interface CatalogueTabProps {
 	geometry: Geometry;
 	/** Tiling count per geometry — labels the segments and disables the empty ones (unloaded shards). */
 	geometryCounts: Record<Geometry, number>;
+	/** Geometries whose catalogue is deferred — same reason as decorationPending. */
+	geometryPending?: Partial<Record<Geometry, boolean>>;
 	onGeometryChange: (g: Geometry) => void;
 	decoration: Decoration;
 	/** Count per decoration WITHIN the active geometry — same labelling/disabling rule as geometry. */
 	decorationCounts: Record<Decoration, number>;
+	/** Decorations whose catalogue is deferred and not fetched yet. Their count reads 0 but they are
+	 *  NOT empty — disabling them would deadlock, since the click is what triggers the fetch. */
+	decorationPending?: Partial<Record<Decoration, boolean>>;
 	onDecorationChange: (d: Decoration) => void;
 }
 
@@ -37,9 +42,11 @@ export function CatalogueTab({
 	onSelect,
 	geometry,
 	geometryCounts,
+	geometryPending,
 	onGeometryChange,
 	decoration,
 	decorationCounts,
+	decorationPending,
 	onDecorationChange,
 }: CatalogueTabProps) {
 	// Both rows are the same control at different altitudes, so they share one renderer — a second
@@ -50,11 +57,13 @@ export function CatalogueTab({
 		value: T,
 		counts: Record<T, number>,
 		onChange: (v: T) => void,
+		pending?: Partial<Record<T, boolean>>,
 	) => (
 		<div className="grid grid-cols-3 gap-px flex-shrink-0">
 			{order.map((v) => {
 				const active = value === v;
-				const empty = counts[v] === 0;
+				const isPending = !!pending?.[v];
+				const empty = counts[v] === 0 && !isPending;
 				return (
 					<button
 						key={v}
@@ -71,7 +80,7 @@ export function CatalogueTab({
 					>
 						<span className="text-xs font-medium leading-tight text-center text-balance">{label[v]}</span>
 						<span className={cn("text-[10px] leading-tight tabular-nums", active ? "text-fg-secondary" : "text-fg-muted")}>
-							{counts[v]}
+							{isPending ? "…" : counts[v]}
 						</span>
 					</button>
 				);
@@ -83,11 +92,11 @@ export function CatalogueTab({
 			{/* Three segments, edge to edge — and the SAME grammar as the Catalogue/Options tabs above
 			    (ta-tab: idle cells filled with the line colour, the active one with the panel colour).
 			    Geometry is a second row of tabs, so it shouldn't speak a second language. */}
-			{segments(GEOMETRY_ORDER, GEOMETRY_LABEL, geometry, geometryCounts, onGeometryChange)}
+			{segments(GEOMETRY_ORDER, GEOMETRY_LABEL, geometry, geometryCounts, onGeometryChange, geometryPending)}
 			{/* Decoration: the same control one level down, scoped to the active geometry. Its counts are
 			    per-geometry, so entering Hyperbolic before its edge/colour shards land shows those segments
 			    disabled and fills them in as the fetches resolve. */}
-			{segments(DECORATION_ORDER, DECORATION_LABEL, decoration, decorationCounts, onDecorationChange)}
+			{segments(DECORATION_ORDER, DECORATION_LABEL, decoration, decorationCounts, onDecorationChange, decorationPending)}
 			{/* Opaque: the wall's line colour lives on an ancestor, so a transparent scroll region
 			    would show it wherever the list runs out. `isolate` pins the sticky headers' z-index
 			    contest (catalogue-list-panel.tsx) inside this scroller, so raising them above the tile
