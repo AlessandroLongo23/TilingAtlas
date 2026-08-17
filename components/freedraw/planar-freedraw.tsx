@@ -44,6 +44,7 @@ import { useGridArrowNav } from "@/lib/hooks/useGridArrowNav";
 import { useKeyShortcuts } from "@/lib/hooks/useKeyShortcuts";
 import { serializePlayState } from "@/lib/services/playUrlState";
 import { cn } from "@/lib/utils/cn";
+import { readAtlas } from "@/lib/services/atlasCodec";
 
 const GRID_OPTIONS: { value: FreedrawGrid; label: string }[] = [
 	{ value: "square", label: "Square" },
@@ -181,7 +182,7 @@ const loadFile = (url: string): Promise<void> =>
 	catalogueCache.has(url)
 		? Promise.resolve()
 		: fetch(url)
-				.then((r) => (r.ok ? (r.json() as Promise<FreedrawPattern[]>) : []))
+				.then((r) => (r.ok ? readAtlas<FreedrawPattern>(r) : []))
 				.catch(() => [] as FreedrawPattern[])
 				.then((d) => {
 					catalogueCache.set(url, d);

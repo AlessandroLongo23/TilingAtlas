@@ -5,6 +5,8 @@ import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import type { ExactCellSource } from "@/lib/services/cellCodecService";
 import { parseSlides, referencedTilingIds } from "@/lib/defense/slides";
 import { DefenseClient } from "./_defense-client";
+import { decodeAtlas } from "@/lib/services/atlasCodec";
+import { hydrateRenderCells } from "@/lib/services/renderCellDerive";
 
 export const dynamic = "force-static";
 
@@ -48,11 +50,11 @@ async function loadCells(
 	]) {
 		try {
 			const raw = await readFile(path.join(process.cwd(), "public", file), "utf8");
-			const atlas = JSON.parse(raw) as {
+			const atlas = hydrateRenderCells(decodeAtlas<{
 				id: string;
 				renderCell: TranslationalCellData;
 				exactSource?: ExactCellSource;
-			}[];
+			}>(JSON.parse(raw)));
 			for (const t of atlas) {
 				if (!wanted.has(t.id)) continue;
 				cells[t.id] = t.renderCell;

@@ -22,6 +22,7 @@ import { useGridArrowNav } from "@/lib/hooks/useGridArrowNav";
 import { useKeyShortcuts } from "@/lib/hooks/useKeyShortcuts";
 import { serializePlayState } from "@/lib/services/playUrlState";
 import { cn } from "@/lib/utils/cn";
+import { readAtlas } from "@/lib/services/atlasCodec";
 
 // The colored-tiling workbench: the /freedraw layout (filter wall over a paginated thumbnail grid
 // with a detail aside). One catalogue per grid × palette size, so the wall is grid + colors + k plus
@@ -65,7 +66,7 @@ const loadFile = (url: string): Promise<void> =>
 	catalogueCache.has(url)
 		? Promise.resolve()
 		: fetch(url)
-				.then((r) => (r.ok ? (r.json() as Promise<ColorPattern[]>) : []))
+				.then((r) => (r.ok ? readAtlas<ColorPattern>(r) : []))
 				.catch(() => [] as ColorPattern[])
 				.then((d) => {
 					catalogueCache.set(url, d);

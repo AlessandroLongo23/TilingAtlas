@@ -8,6 +8,8 @@ import { previewIdsIn } from "@/lib/updates/unseen";
 import type { ReferenceTiling } from "@/lib/services/referenceAtlas";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import { UpdatesClient } from "./_updates-client";
+import { decodeAtlas } from "@/lib/services/atlasCodec";
+import { hydrateRenderCells } from "@/lib/services/renderCellDerive";
 
 export const dynamic = "force-static";
 
@@ -53,7 +55,7 @@ async function loadCells(ids: string[]): Promise<Record<string, TranslationalCel
 	}
 	for (const name of ATLAS_FILES) {
 		try {
-			const all: ReferenceTiling[] = JSON.parse(await readFile(path.join(dir, name), "utf8"));
+			const all: ReferenceTiling[] = hydrateRenderCells(decodeAtlas<ReferenceTiling>(JSON.parse(await readFile(path.join(dir, name), "utf8"))));
 			for (const t of all) {
 				if (wanted.has(t.id) && t.renderCell && !out[t.id]) out[t.id] = t.renderCell;
 			}
@@ -75,7 +77,7 @@ async function loadCells(ids: string[]): Promise<Record<string, TranslationalCel
 		for (const { f } of shards) {
 			if (!left.size) break;
 			try {
-				const all: ReferenceTiling[] = JSON.parse(await readFile(path.join(dir, f), "utf8"));
+				const all: ReferenceTiling[] = hydrateRenderCells(decodeAtlas<ReferenceTiling>(JSON.parse(await readFile(path.join(dir, f), "utf8"))));
 				for (const t of all) {
 					if (left.has(t.id) && t.renderCell) {
 						out[t.id] = t.renderCell;

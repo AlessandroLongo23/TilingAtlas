@@ -4,6 +4,8 @@ import { extractTableOfContents, structureTableOfContents } from "@/lib/utils/ta
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import type { ExactCellSource } from "@/lib/services/cellCodecService";
 import { TheoryClient } from "../_theory-client";
+import { decodeAtlas } from "@/lib/services/atlasCodec";
+import { hydrateRenderCells } from "@/lib/services/renderCellDerive";
 
 export const dynamic = "force-static";
 
@@ -36,11 +38,11 @@ async function loadUniformCells(): Promise<{
 	const sources: Record<string, ExactCellSource> = {};
 	try {
 		const filePath = path.join(process.cwd(), "public", "reference-atlas.json");
-		const atlas = JSON.parse(await readFile(filePath, "utf8")) as {
+		const atlas = hydrateRenderCells(decodeAtlas<{
 			id: string;
 			renderCell: TranslationalCellData;
 			exactSource?: ExactCellSource;
-		}[];
+		}>(JSON.parse(await readFile(filePath, "utf8"))));
 		for (const t of atlas) {
 			if (!(UNIFORM_IDS as readonly string[]).includes(t.id)) continue;
 			cells[t.id] = t.renderCell;

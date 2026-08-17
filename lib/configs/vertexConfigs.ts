@@ -1,3 +1,4 @@
+import { decodeShard } from "@/lib/services/atlasCodec";
 // The vertex-configuration ALPHABET of a palette: each entry is one locally-valid vertex figure (a cyclic
 // word of corners whose interior angles sum to 360°, from gen_alphabet's enum_configs — the SAME set the
 // solver consumes). Emitted by tools/ctrnact-oracle/alphabets/export_vertex_configs.py into
@@ -55,7 +56,8 @@ export async function loadPaletteConfigs(name: string): Promise<PaletteConfigs> 
 	const p = fetch(`/vertex-configs/${name}.json`)
 		.then((res) => {
 			if (!res.ok) throw new Error(`vertex-configs/${name}.json: HTTP ${res.status}`);
-			return res.json() as Promise<PaletteConfigs>;
+			// The file wraps its records under `configs`, so it decodes as a shard, not an array.
+			return res.json().then((raw) => decodeShard(raw as PaletteConfigs, "configs"));
 		})
 		.then((data) => {
 			cache.set(name, data);

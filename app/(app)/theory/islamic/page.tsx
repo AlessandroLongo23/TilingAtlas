@@ -3,6 +3,7 @@ import path from "node:path";
 import { extractTableOfContents, structureTableOfContents } from "@/lib/utils/tableOfContents";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import { TheoryClient } from "../_theory-client";
+import { decodeAtlas } from "@/lib/services/atlasCodec";
 
 export const dynamic = "force-static";
 
@@ -24,10 +25,10 @@ async function loadTheoryMarkdown(): Promise<string> {
 async function loadIslamicCells(): Promise<Record<string, TranslationalCellData>> {
 	try {
 		const filePath = path.join(process.cwd(), "public", "reference-atlas-islamic.json");
-		const atlas = JSON.parse(await readFile(filePath, "utf8")) as {
+		const atlas = decodeAtlas<{
 			id: string;
 			renderCell: TranslationalCellData;
-		}[];
+		}>(JSON.parse(await readFile(filePath, "utf8")));
 		const cells: Record<string, TranslationalCellData> = {};
 		// Only the curated entries are embedded as theory cards; the ~90 engine-developed girih tilings
 		// (isl-girih-*) live in the /library and /play shelves, not on this page — skip them to keep the
