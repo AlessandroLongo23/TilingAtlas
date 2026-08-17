@@ -3,6 +3,7 @@ import { CyclotomicRing } from '@/classes/Cyclotomic';
 import { loadCatalogueKeys } from './catalogueKeys';
 import { assembleGraph, type FamilyRecord } from './graphAssembler';
 import type { ParametricCellData } from '@/lib/utils/paramCell';
+import { decodeAtlas } from '../atlas/encode.mjs';
 
 // Emits the self-contained data the interactive figure needs to render a tiling on hover: each family's
 // symbolic paramCell (Laurent terms in e^{iδ}, δ from α), each edge's α at both ends, and every node's
@@ -16,7 +17,7 @@ const PRETTY: Record<string, string> = {
   'ctrnact-01_3c-3a-1': '3.12.12', 'ctrnact-01_4-4n-1': '4⁴', 'ctrnact-01_46c-3c-1': '4.6.12', 'ctrnact-01_6-3d-1': '6³',
 };
 
-const atlas = JSON.parse(readFileSync('public/reference-atlas-isotoxal.json', 'utf8'));
+const atlas = decodeAtlas(JSON.parse(readFileSync('public/reference-atlas-isotoxal.json', 'utf8')));
 const records = (Array.isArray(atlas) ? atlas : atlas.records) as (FamilyRecord & {
   k?: number; source?: string; family?: string;
 })[];

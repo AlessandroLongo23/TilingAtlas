@@ -1,11 +1,12 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { assembleComplex } from './complexAssembler';
+import { decodeAtlas } from '../atlas/encode.mjs';
 
 // The k=2 two-parameter isotoxal families as 2-cells. assembleComplex reports homology on the
 // genuine-tiling subcomplex (⊥ removed — the headline) and the full complex (with ⊥). It throws if any
 // stitched face boundary is not a closed cycle (∂1∂2 ≠ 0), so a clean run is itself the validity
 // certificate — there is no separate self-check flag.
-const atlas = JSON.parse(readFileSync('public/reference-atlas-isotoxal.json', 'utf8'));
+const atlas = decodeAtlas(JSON.parse(readFileSync('public/reference-atlas-isotoxal.json', 'utf8')));
 const recs = (Array.isArray(atlas) ? atlas : atlas.records) as {
   family?: string; k?: number; source?: string; paramCell?: { params?: unknown[] };
 }[];

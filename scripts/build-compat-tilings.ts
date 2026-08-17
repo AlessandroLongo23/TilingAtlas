@@ -23,6 +23,8 @@ import { orbitsFor } from "@/lib/defense/orbitCache";
 import type { ExactCellSource } from "@/lib/services/cellCodecService";
 import { figureFromPlacedPolys } from "@/lib/render/vertexFigure";
 import { parseBaseCell, type RawPolygon, type TranslationalCellData } from "@/lib/utils/renderTiling";
+import { decodeAtlas } from "@/lib/services/atlasCodec";
+import { hydrateRenderCells } from "@/lib/services/renderCellDerive";
 
 /** How many tilings the random button cycles through. Each ships its own cell with the page. */
 const POOL_PER_K = 4;
@@ -173,7 +175,7 @@ function connected({ words, pairs }: Read): boolean {
 
 async function main() {
 	const raw = await readFile(path.join(process.cwd(), "public", "reference-atlas.json"), "utf8");
-	const atlas = JSON.parse(raw) as AtlasEntry[];
+	const atlas = hydrateRenderCells(decodeAtlas<AtlasEntry>(JSON.parse(raw)) as never) as AtlasEntry[];
 
 	const chosen: { id: string; k: number; read: Read }[] = [];
 	const rejected: string[] = [];

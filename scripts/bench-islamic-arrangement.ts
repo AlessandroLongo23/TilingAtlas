@@ -13,6 +13,7 @@ import { buildTilingFromCell } from "@/lib/render/buildPatchTiling";
 import { buildArrangement, extractFaces, colorFacesAbc, type Marker, type Segment } from "@/lib/utils/islamicArrangement";
 import { evaluateParamCell, resolveAlphaDegsRaw, type ParametricCellData } from "@/lib/utils/paramCell";
 import type { TranslationalCellData } from "@/classes/algorithm/types";
+import { decodeAtlas } from "@/lib/services/atlasCodec";
 
 const PATCH_MARGIN = Number(process.env.MARGIN || 3);
 const ANGLE = Number(process.env.ANGLE || 60) * (Math.PI / 180);
@@ -20,9 +21,9 @@ const OFFSET = Number(process.env.OFFSET || 0.2);
 const COUNT = Number(process.env.COUNT || 2);
 const REPS = Number(process.env.REPS || 12);
 
-const shelf = JSON.parse(
-	fs.readFileSync(path.join(process.cwd(), "public", "reference-atlas-mixed.json"), "utf8"),
-) as { id: string; paramCell?: ParametricCellData }[];
+const shelf = decodeAtlas<{ id: string; paramCell?: ParametricCellData }>(
+	JSON.parse(fs.readFileSync(path.join(process.cwd(), "public", "reference-atlas-mixed.json"), "utf8")),
+);
 
 const wanted = process.argv.slice(2);
 const rows = shelf.filter((r) => r.paramCell && (wanted.length === 0 || wanted.includes(r.id)));

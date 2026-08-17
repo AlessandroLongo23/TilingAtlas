@@ -26,6 +26,8 @@ import { UPDATES } from "@/lib/updates/entries";
 import { shelfPreviewCell } from "@/lib/updates/preview-cells";
 import { previewLabel } from "@/lib/updates/preview-ids";
 import type { ReferenceTiling } from "@/lib/services/referenceAtlas";
+import { decodeAtlas } from "@/lib/services/atlasCodec";
+import { hydrateRenderCells } from "@/lib/services/renderCellDerive";
 
 /** How many of the newest releases the modal can show previews for. The modal never reaches past
  *  this — a visitor that far behind gets the text and the "see all updates" link. */
@@ -61,7 +63,7 @@ async function loadAtlas(): Promise<ReferenceTiling[]> {
 	const parts = await Promise.all(
 		EAGER_ATLAS_FILES.map(async (name, i) => {
 			try {
-				return JSON.parse(await readFile(path.join(dir, name), "utf8")) as ReferenceTiling[];
+				return hydrateRenderCells(decodeAtlas<ReferenceTiling>(JSON.parse(await readFile(path.join(dir, name), "utf8"))));
 			} catch (e) {
 				if (i === 0) throw e;
 				return [] as ReferenceTiling[];
@@ -95,7 +97,7 @@ async function fillFromLazyShards(missing: Set<string>): Promise<Map<string, Ref
 		if (!missing.size) break;
 		let records: ReferenceTiling[];
 		try {
-			records = JSON.parse(await readFile(path.join(dir, f), "utf8")) as ReferenceTiling[];
+			records = hydrateRenderCells(decodeAtlas<ReferenceTiling>(JSON.parse(await readFile(path.join(dir, f), "utf8"))));
 		} catch {
 			continue; // an unreadable shard just leaves its ids without a preview
 		}

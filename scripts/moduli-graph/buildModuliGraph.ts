@@ -2,8 +2,9 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { CyclotomicRing } from '@/classes/Cyclotomic';
 import { loadCatalogueKeys } from './catalogueKeys';
 import { assembleGraph, type FamilyRecord } from './graphAssembler';
+import { decodeAtlas } from '../atlas/encode.mjs';
 
-const atlas = JSON.parse(readFileSync('public/reference-atlas-isotoxal.json', 'utf8'));
+const atlas = decodeAtlas(JSON.parse(readFileSync('public/reference-atlas-isotoxal.json', 'utf8')));
 const records = (Array.isArray(atlas) ? atlas : atlas.records) as FamilyRecord[];
 const families = records.filter(
   (r) => (r as { k?: number }).k === 1 && (r as { source?: string }).source === 'isotoxal' && r.paramCell?.params?.length === 1,

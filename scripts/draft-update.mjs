@@ -206,7 +206,9 @@ if (!NO_ATLAS) {
       const idsAt = (rev) => {
         const blob = sh(`git show ${rev}:${shard}`);
         if (!blob) return null;
-        try { return new Set(JSON.parse(blob).map((t) => t.id)); } catch { return null; }
+        // Shelf files are packed (scripts/atlas/encode.mjs), and an OLD rev may predate that, so
+        // decodeAtlas handles both shapes — otherwise every id reads as undefined and the diff is junk.
+        try { return new Set(decodeAtlas(JSON.parse(blob)).map((t) => t.id)); } catch { return null; }
       };
       const before = idsAt(last.commit);
       const after = idsAt('HEAD');

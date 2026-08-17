@@ -30,6 +30,7 @@ import { seedFromPeriodCell } from '@/lib/services/cellCodecService';
 import { analyzeSymmetry } from '@/lib/classes/symmetry/WallpaperSymmetry';
 import type { PeriodCell } from '@/classes/algorithm/PeriodSolver';
 import type { LatticeShape, WallpaperGroup } from '@/lib/classes/symmetry/types';
+import { decodeAtlas } from "@/lib/services/atlasCodec";
 
 const ATLAS_PATH = path.join(process.cwd(), 'public', 'reference-atlas.json');
 const CTRNACT_PATH = path.join(process.cwd(), 'figures', 'data', 'ctrnact.json');
@@ -142,7 +143,7 @@ const starOrbitsById = new Map<string, string[]>();
 // ── per-file enrichment ── enrich one atlas file in place (base atlas, or a higher-k shard). All the
 // source indexes above are shared, so calling this for several files loads ctrnact.json/star cells once.
 function enrichFile(atlasPath: string): void {
-	const atlas = JSON.parse(fs.readFileSync(atlasPath, 'utf8')) as AtlasEntry[];
+	const atlas = decodeAtlas<AtlasEntry>(JSON.parse(fs.readFileSync(atlasPath, 'utf8')));
 	log(`\n=== classify ${path.relative(process.cwd(), atlasPath)} (${atlas.length} entries) ===`);
 	const t0 = Date.now();
 	const stat = {

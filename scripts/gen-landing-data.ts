@@ -19,6 +19,8 @@ import path from "node:path";
 import { buildLandingPayload, drawableEuclidean, toSpecimen } from "@/lib/services/landing-core";
 import type { CataloguePatch } from "@/lib/render/hyperbolicDevelopedDraw";
 import type { ReferenceTiling } from "@/lib/services/referenceAtlas";
+import { decodeAtlas } from "@/lib/services/atlasCodec";
+import { hydrateRenderCells } from "@/lib/services/renderCellDerive";
 
 // The same eager set loadReferenceAtlas fetches client-side for /library, minus the lazy k≥8 shards,
 // so the landing counts exactly match the library's scope. The base atlas is required; every other
@@ -49,7 +51,7 @@ async function loadAtlas(): Promise<ReferenceTiling[]> {
 	const parts = await Promise.all(
 		EAGER_ATLAS_FILES.map(async (name, i) => {
 			try {
-				return JSON.parse(await readFile(path.join(dir, name), "utf8")) as ReferenceTiling[];
+				return hydrateRenderCells(decodeAtlas<ReferenceTiling>(JSON.parse(await readFile(path.join(dir, name), "utf8"))));
 			} catch (e) {
 				if (i === 0) throw e;
 				return [] as ReferenceTiling[];

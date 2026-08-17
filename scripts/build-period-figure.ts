@@ -20,6 +20,8 @@ import { CyclotomicRing, Cyclotomic, setActiveRing } from "@/classes/Cyclotomic"
 import { decodeGalebachVertex, reconstructOracleCell } from "@/classes/algorithm/oracleCellReconstruct";
 import type { ExactCellSource } from "@/lib/services/cellCodecService";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
+import { decodeAtlas } from "@/lib/services/atlasCodec";
+import { hydrateRenderCells } from "@/lib/services/renderCellDerive";
 
 const N = 24;
 const ring = CyclotomicRing.create(N);
@@ -28,8 +30,8 @@ setActiveRing(ring);
 const wanted = process.argv[2] ?? "t2001";
 
 type Row = { id: string; renderCell: TranslationalCellData; exactSource?: ExactCellSource };
-const atlas = JSON.parse(
-	readFileSync(path.join(process.cwd(), "public", "reference-atlas.json"), "utf8"),
+const atlas = hydrateRenderCells(
+	decodeAtlas<Row>(JSON.parse(readFileSync(path.join(process.cwd(), "public", "reference-atlas.json"), "utf8"))) as never,
 ) as Row[];
 
 const units = Array.from({ length: N }, (_, k) => Cyclotomic.zeta(ring, k));

@@ -37,6 +37,7 @@ import { hollowPeriodicCell } from "@/lib/render/periodic/hollow";
 import { tilingPeriodicCell } from "@/lib/render/periodic/tilings";
 import type { PeriodicCell } from "@/lib/render/periodicCell";
 import { periodicCellToSvg, type PeriodicSvg, type PeriodicSvgOptions } from "@/lib/render/periodicSvg";
+import { decodeAtlas } from "@/lib/services/atlasCodec";
 import { UNIFORM_CELLS } from "@/lib/render/uniformCells";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 
@@ -44,6 +45,10 @@ const root = process.cwd();
 
 const readJson = async <T>(rel: string): Promise<T> =>
 	JSON.parse(await readFile(path.join(root, rel), "utf8")) as T;
+
+/** Same, for a packed shelf file: decodes the container (or passes a legacy bare array through). */
+const readShelf = async <T>(rel: string): Promise<T[]> =>
+	decodeAtlas<T>(JSON.parse(await readFile(path.join(root, rel), "utf8")));
 
 const uniform = (id: string): TranslationalCellData =>
 	UNIFORM_CELLS.find((c) => c.id === id)!.cell;
@@ -95,7 +100,7 @@ const coloring = (file: string, id: string, label: string, w: number): SpecimenS
 	label,
 	href: `/play?tiling=${id}&coedge=0`,
 	cell: async () => {
-		const shelf = await readJson<ColorPattern[]>(`public/colors/${file}`);
+		const shelf = await readShelf<ColorPattern>(`public/colors/${file}`);
 		const p = shelf.find((c) => c.id === id);
 		if (!p) throw new Error(`${id}: not in ${file}`);
 		return colorsPeriodicCell(p, { dark: false, edges: false });
@@ -113,7 +118,7 @@ const edges = (file: string, id: string, label: string, w: number): SpecimenSpec
 	label,
 	href: `/play?tiling=${id}&fdfill=shape`,
 	cell: async () => {
-		const shelf = await readJson<FreedrawPattern[]>(`public/freedraw/${file}`);
+		const shelf = await readShelf<FreedrawPattern>(`public/freedraw/${file}`);
 		const p = shelf.find((f) => f.id === id);
 		if (!p) throw new Error(`${id}: not in ${file}`);
 		return edgesPeriodicCell(p, {
@@ -202,6 +207,7 @@ async function main() {
 // for how the seed and the live path fit together. Regenerate after a shelf rebake or a renderer change.
 
 import type { ErrorSpecimen } from "@/lib/render/errorSpecimen";
+import { decodeAtlas } from "@/lib/services/atlasCodec";
 
 export const ERROR_SPECIMENS: ErrorSpecimen[] = [
 ${entries.join("\n")}

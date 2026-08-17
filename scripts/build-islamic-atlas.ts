@@ -12,6 +12,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { ReferenceTiling, IslamicSystem } from "@/lib/services/referenceAtlas";
+import { stringifyAtlas } from './atlas/encode.mjs';
+import { decodeAtlas } from "@/lib/services/atlasCodec";
 import {
 	assemble, validateTiling, regular, girih, center, rotate, polygonFromTurns, polygonHue,
 	parallelohexagonCell, parallelogramCell, area,
@@ -298,7 +300,9 @@ function loadReuseCells(ids: Set<string>): Map<string, ReferenceTiling["renderCe
 		log(`  ⚑ base atlas missing (${path.relative(ROOT, ATLAS_PATH)}) — reuse entries will be skipped`);
 		return out;
 	}
-	const atlas = JSON.parse(fs.readFileSync(ATLAS_PATH, "utf8")) as { id: string; renderCell: ReferenceTiling["renderCell"] }[];
+	const atlas = decodeAtlas<{ id: string; renderCell: ReferenceTiling["renderCell"] }>(
+		JSON.parse(fs.readFileSync(ATLAS_PATH, "utf8")),
+	);
 	for (const t of atlas) if (ids.has(t.id)) out.set(t.id, t.renderCell);
 	return out;
 }
@@ -349,7 +353,7 @@ function main(): void {
 	out.push(...developedGirihTilings(curatedFps));
 
 	fs.mkdirSync(path.dirname(OUT_PATH), { recursive: true });
-	fs.writeFileSync(OUT_PATH, JSON.stringify(out, null, 0) + "\n");
+	fs.writeFileSync(OUT_PATH, stringifyAtlas(out) + "\n");
 	const sizeKB = (fs.statSync(OUT_PATH).size / 1024).toFixed(1);
 	log(`  wrote ${out.length} Islamic tilings (${skipped} skipped) → ${path.relative(ROOT, OUT_PATH)} (${sizeKB} KB), elapsed ${((Date.now() - t0) / 1000).toFixed(2)}s`);
 	fs.mkdirSync(path.dirname(LOG_PATH), { recursive: true });

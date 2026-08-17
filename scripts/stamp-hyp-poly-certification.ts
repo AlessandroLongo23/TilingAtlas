@@ -25,6 +25,7 @@ import { readFileSync, writeFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { buildDirichletDomain } from "../lib/render/hyperbolicDirichlet";
 import type { Darts } from "../lib/render/hyperbolicDevelopClient";
+import { decodeAtlas } from "@/lib/services/atlasCodec";
 
 interface PolyPattern {
 	id: string;
@@ -52,7 +53,7 @@ const t0 = Date.now();
 
 for (let s = 0; s < shards.length; s++) {
 	const path = shards[s];
-	const rows: PolyPattern[] = JSON.parse(readFileSync(path, "utf8"));
+	const rows = decodeAtlas<PolyPattern>(JSON.parse(readFileSync(path, "utf8")));
 	if (skipStamped && rows.length && rows.every((r) => typeof r.certified === "boolean")) {
 		skipped += rows.length;
 		continue;

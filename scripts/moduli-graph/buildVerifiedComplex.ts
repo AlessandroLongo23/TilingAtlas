@@ -1,7 +1,8 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { verifyComplex } from './verifyComplex';
+import { decodeAtlas } from '../atlas/encode.mjs';
 
-const atlas = JSON.parse(readFileSync('public/reference-atlas-isotoxal.json', 'utf8'));
+const atlas = decodeAtlas(JSON.parse(readFileSync('public/reference-atlas-isotoxal.json', 'utf8')));
 const recs = (Array.isArray(atlas) ? atlas : atlas.records) as { k?: number; source?: string; paramCell?: { params?: unknown[] } }[];
 const cluster = recs.filter((r) => r.k === 2 && r.source === 'isotoxal' && r.paramCell?.params?.length === 2);
 
