@@ -7,6 +7,7 @@ import { bumpBetween, compareVersions, isVersion, parseVersion, releaseLevel } f
 import { shelfPreviewCell } from "@/lib/updates/preview-cells";
 import { parseShelfPreviewId, previewHref } from "@/lib/updates/preview-ids";
 import { previewIdsIn, shouldAutoOpen, unseenSince } from "@/lib/updates/unseen";
+import { decodeAtlas } from "@/lib/services/atlasCodec";
 
 // Guards for the update notes. Atlas ids are opaque strings — "ctrnact-07_34-5c2_5e_5f3_6f-1" is a
 // real one — so a typo in an entry fails silently in the browser as a card that never appears. That
@@ -21,7 +22,10 @@ function atlasIds(): Set<string> {
 	for (const name of readdirSync(dir)) {
 		if (!/^reference-atlas.*\.json$/.test(name)) continue;
 		try {
-			for (const t of JSON.parse(readFileSync(path.join(dir, name), "utf8")) as { id?: string }[]) {
+			// decodeAtlas, not a bare JSON.parse: the shelves are moving to the packed container format
+			// ({atlas, dict, records}), and a packed file read as an array yields no ids at all — which
+			// reads here as "1.27.1 references unknown tiling", i.e. a real preview id looking like a typo.
+			for (const t of decodeAtlas<{ id?: string }>(JSON.parse(readFileSync(path.join(dir, name), "utf8")))) {
 				if (t.id) ids.add(t.id);
 			}
 		} catch {
