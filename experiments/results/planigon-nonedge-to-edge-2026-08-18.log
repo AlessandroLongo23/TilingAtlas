@@ -156,3 +156,63 @@ developed: {1: 36, 2: 399} total 435 failures 3
 [cert] A6: 86993 entries, pairwise non-isomorphic PASS
 [gen] wrote /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/tables/planigon-split-lite/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (86993 entries)
 [01:19:10] PHASE 1  solve (runtime alphabet, MAXNUM=3, EU_NOFILTER=1)
+
+# ================================================================================================
+# RESULT
+# ================================================================================================
+#
+# THE CONTROL MATTERS. planigon-split-lite drops four of the fifteen planigons, so comparing it with
+# the SHIPPED planigon shelf (18/67/233/749, all fifteen tiles) would confound two changes at once.
+# planigon-lite is the same eleven tiles with their edges left whole -- 11 tiles, 39 classes, 284
+# configs, 563 entries -- so the two runs differ in exactly one thing.
+#
+#     k        planigon-lite   planigon-split-lite    (primitive cells, supercell descriptions off)
+#     ---      -------------   -------------------
+#     k=1                  6                    36     6.0x
+#     k=2                 27                   195     7.2x
+#
+# CONTAINMENT: 0 of 33 lost, every one at the same k, by exact congruence (unimodular lattice map then
+# face-by-face shape match, the oracle self-checking first on 22 moved copies). So the split run is a
+# strict superset and the gain is real: about SEVEN TIMES the tilings, on the cheap two-thirds of the
+# palette.
+#
+# For a sense of scale against the shipped shelf: eleven of the fifteen planigons, non-edge-to-edge,
+# already give 195 tilings at k=2 where all fifteen edge-to-edge give 67.
+#
+# COST. Alphabet 1,821 -> 86,993 entries (48x), tables.bin 0.9 MB -> 37.8 MB. Solve times on this
+# machine: k=1 1s, k=2 101s.
+#
+# ------------------------------------------------------------------------------------------------
+# WHY THIS IS NOT SHIPPED
+# ------------------------------------------------------------------------------------------------
+# A planigon shelf missing P12.6.4, P12.12.3, P12.3.4.3 and P12.4.3.3 is a partial enumeration wearing
+# a complete shelf's clothes, which is exactly what AL had removed from the half-polygon shelf earlier
+# the same day. The four dropped tiles are not a rounding error either: they are every planigon that
+# touches a dodecagon, so the whole 3.4.3.12 / 3.12.12 / 4.6.12 corner of the family is absent.
+#
+# WHAT WOULD MAKE IT SHIPPABLE, and it is a representation problem, not a compute problem. The 1,853
+# figure comes from needing ONE TILE VARIANT PER ORDERED ATOMIC COMPOSITION of each edge, multiplied
+# across a tile's edges. P12.12.3's L7 edge alone has 45 compositions and it has three edges. Two
+# directions worth trying:
+#
+#   - Let a half-edge carry a COMPOSITION rather than a length, so the gluing rule matches an edge
+#     against any partition of it instead of requiring the partition to be baked into the tile. That
+#     is a change to the solver's edge-type matching, not to the palette, and it collapses 1,853 back
+#     toward 15.
+#   - Or split only the edges that a REACHABLE vertex configuration can actually divide. The 33
+#     decompositions are arithmetic; how many survive the angle condition at the division point (the
+#     flat 180 plus the neighbours' corners must make 360, from corners of 30/45/60/90/120 degrees) is
+#     not measured here, and if most die the palette shrinks a lot.
+#
+# Neither is a small change, and neither was attempted today.
+
+# ------------------------------------------------------------------------------------------------
+# THE 1,853 FIGURE, DRAWN
+# ------------------------------------------------------------------------------------------------
+# experiments/results/planigon-variants.pdf, from alphabets/plot_planigon_variants.py. Nine pages:
+# the argument on one planigon, the twelve lengths and how each cuts, all 45 atomic cuts of L7, all
+# 140 variants of P12.6.4 at full size, all 1,620 of P12.12.3 on one contact sheet, and the tally.
+#
+# The sheet is the point of it. Every one of those 1,620 outlines is the SAME 30-30-120 triangle; the
+# only thing that differs between any two of them is which colour the stripes are and where they
+# change, because that is where a neighbour is allowed to start.
