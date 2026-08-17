@@ -1,0 +1,24 @@
+{
+  "name": "eu-half-tri-mirror",
+  "D": 12,
+  "tileGeometry": "euclidean",
+  "closure": "euclidean",
+  "comment": "HALF A REGULAR 3-GON, cut by its mirror from a vertex to the midpoint of the opposite edge: the 30-60-90 triangle, legs 1 and sqrt3, hypotenuse 2. The SIXTH member of the Euclidean half-polygon family and the only one with no board of its own, because it already ships as P12.6.4 inside the planigon palette, mixed with fourteen other tiles. Its hypotenuse is exactly TWO SHORT LEGS, which makes it the most obviously divisible edge in the family and the case Marek Ctrnact's picture shows most directly. the board as the engine has always seen it: every edge matched whole. Angles in D-units of 30 degrees.",
+  "tiles": [
+    {
+      "kind": "composite",
+      "name": "T36",
+      "famchar": "m",
+      "angles": [
+        1,
+        2,
+        3
+      ],
+      "edgeLens": [
+        "2",
+        "1",
+        "sqrt3"
+      ]
+    }
+  ]
+}
