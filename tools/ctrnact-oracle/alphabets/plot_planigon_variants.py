@@ -316,9 +316,10 @@ def main():
              "expensive ones touch a DODECAGON, whose apothem is the long one, so the P12.* tiles carry the long\n"
              "edges and a long edge has the most ways to be cut.\n\n"
              "The bounded run that was measured keeps the eleven cheap planigons, 15 variants in all, and drops the\n"
-             "four P12.* tiles. On those eleven it finds 36 tilings at k=1 where matching every edge whole finds 6,\n"
-             "and 195 at k=2 where whole edges find 27. Shipping it would mean a planigon shelf missing a fifth of\n"
-             "its tiles, so it was not shipped.",
+             "four P12.* tiles. On those eleven it finds 10 tilings at k=1 where matching every edge whole finds 6,\n"
+             "and 56 at k=2 where whole edges find 27. Every one of the 4 and 29 it adds carries a T-junction, and\n"
+             "every tiling without one was already in the whole-edge run, so the arithmetic closes exactly.\n\n"
+             "Shipping it would mean a planigon shelf missing a fifth of its tiles, so it was not shipped.",
              fontsize=10.4, va="top", linespacing=1.62, color="#334155")
     pdf.savefig(fig); plt.close(fig)
 

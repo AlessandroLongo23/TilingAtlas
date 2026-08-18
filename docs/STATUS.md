@@ -27,9 +27,16 @@ squares on the shelf were filed as triangles.
 33 ways, so the shipped shelf (18/67/233/749) counts a subset. But the engine matches half-edge type to
 half-edge type, so only cutting EVERY edge into atoms (L2, L3, L9, L11, L12) makes every arrangement
 reachable, and that is **1,853 tile variants against the palette's 15**, P12.12.3 alone being 1,620.
-Bounded run on the eleven non-dodecagon planigons: k=1 6 → 36, k=2 27 → 195, containment exact, alphabet
+Bounded run on the eleven non-dodecagon planigons: k=1 6 → 10, k=2 27 → 56, containment exact, alphabet
 1,821 → 86,993 entries. Shipping eleven of fifteen tiles would be the same bug this section removed.
-**Next:** a cheaper representation of a divided edge than one variant per ordered composition.
+
+⚑ **First reported as 36 and 195, which was wrong** — undeduped records, on a supercell filter that
+compares face profiles and so cannot tell a tile from its rotated copy. Corrected to 10 and 56; the
+arithmetic closes exactly (+4 and +29 new, and exactly 4 and 29 carry a T-junction).
+**⚑ THE FILTER FLAW IS IN THE SHIPPED BUILDERS AND IS NOT FIXED.** Three replacements each moved the
+counts on every board; the working copies are stashed, not shipped. Next sitting, with the four
+analytic ground truths as the gate: plain hexv k=1 = 2, pent k=1 = 2, hexm = 1, sqmid = 1.
+**Also next:** a cheaper representation of a divided edge than one variant per ordered composition.
 
 ## The atlas container format: the corpus is half its old size (2026-08-17)
 

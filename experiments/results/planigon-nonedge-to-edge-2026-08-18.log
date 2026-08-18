@@ -166,18 +166,34 @@ developed: {1: 36, 2: 399} total 435 failures 3
 # planigon-lite is the same eleven tiles with their edges left whole -- 11 tiles, 39 classes, 284
 # configs, 563 entries -- so the two runs differ in exactly one thing.
 #
-#     k        planigon-lite   planigon-split-lite    (primitive cells, supercell descriptions off)
-#     ---      -------------   -------------------
-#     k=1                  6                    36     6.0x
-#     k=2                 27                   195     7.2x
+#     k        planigon-lite   planigon-split-lite   new   of which T-junction
+#     ---      -------------   -------------------   ---   -------------------
+#     k=1                  6                    10    +4                     4
+#     k=2                 27                    56   +29                    29
+#
+# CORRECTED 2026-08-18, later. The first version of this table read 36 and 195, and those numbers were
+# wrong twice over: they counted primitive RECORDS without deduping congruent copies, and the supercell
+# filter that produced them compared face profiles (sorted sides, sorted angles), which cannot tell a
+# tile from its own rotated copy. Deduped by exact congruence with the filter corrected, the honest
+# figures are 10 and 56.
+#
+# THE ARITHMETIC CLOSES, which is the check worth having: the split run finds 4 more tilings than the
+# control at k=1 and exactly 4 of its tilings carry a T-junction; 29 more at k=2 and exactly 29 carry
+# one. So every tiling the divided edges add is genuinely non-edge-to-edge, and every edge-to-edge
+# tiling in the split run is already in the control. Confirmed a second way by a GEOMETRIC test that
+# ignores how the palette models it -- a tile vertex lying strictly inside another tile's edge -- which
+# returns the same 4 and 29.
 #
 # CONTAINMENT: 0 of 33 lost, every one at the same k, by exact congruence (unimodular lattice map then
-# face-by-face shape match, the oracle self-checking first on 22 moved copies). So the split run is a
-# strict superset and the gain is real: about SEVEN TIMES the tilings, on the cheap two-thirds of the
-# palette.
+# face-by-face shape match, the oracle self-checking first on 22 moved copies).
 #
-# For a sense of scale against the shipped shelf: eleven of the fifteen planigons, non-edge-to-edge,
-# already give 195 tilings at k=2 where all fifteen edge-to-edge give 67.
+# The gain is real but far smaller than first reported: 1.7x at k=1 and 2.1x at k=2, not 6x and 7x.
+#
+# CAVEAT, AND IT IS NOT SMALL. Chasing the discrepancy above turned up a genuine flaw in the supercell
+# filter the shipped shelf builders use, and it is NOT fixed as of this entry: the profile test cannot
+# distinguish a tile from its rotated copy, and every attempt to replace it moved the counts on every
+# board. The half-triangle board has 7 records (of 1,307) whose status differs between the plain and
+# split runs. The figures above are the best available, not certified.
 #
 # COST. Alphabet 1,821 -> 86,993 entries (48x), tables.bin 0.9 MB -> 37.8 MB. Solve times on this
 # machine: k=1 1s, k=2 101s.

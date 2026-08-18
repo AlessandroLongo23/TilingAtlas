@@ -13393,9 +13393,29 @@ long edges and the long edges have the most ways to be cut.
 
 Bounded run instead — `planigon-split-lite`, the eleven planigons that never touch a dodecagon, 15
 variants — against `planigon-lite`, the same eleven with edges whole, so the two runs differ in exactly
-one thing. **k=1: 6 → 36. k=2: 27 → 195**, containment exact (0 of 33 lost). Roughly a sixfold gain, on
-the cheap two-thirds of the palette. The cost shows in the alphabet: 1,821 entries → **86,993**, a 48×
-blowup on 11 of 15 tiles.
+one thing. **k=1: 6 → 10. k=2: 27 → 56**, containment exact (0 of 33 lost). The cost shows in the
+alphabet: 1,821 entries → **86,993**, a 48× blowup on 11 of 15 tiles.
+
+⚑ **I first published 36 and 195 for those, and both were wrong** (AL asked to re-run the eleven cheap
+planigons, which is what surfaced it). They counted primitive RECORDS without deduping congruent
+copies, and the supercell filter behind them compares face PROFILES — sorted sides, sorted angles —
+which cannot tell a tile from its own rotated copy. Corrected: 10 and 56, a 1.7× and 2.1× gain, not 6×
+and 7×. The arithmetic now closes exactly, which is the check worth having: +4 tilings at k=1 and
+exactly 4 carry a T-junction, +29 at k=2 and exactly 29 carry one, so every tiling the divided edges add
+is genuinely non-edge-to-edge. A second, palette-independent test (a tile vertex lying strictly inside
+another tile's edge) returns the same 4 and 29.
+
+⚑ **And the filter flaw is REAL, in the shipped builders, and NOT fixed.** `isPrimitive` in both
+`build-euhalf-shelf.mjs` and `build-tri45-shelf.mjs` gates candidate translations on a profile match,
+so a tiling whose tiles are related by a half-turn can be mistaken for a supercell of itself, and the
+face-position test it then runs is keyed on coordinates rounded to 1e-4, which is fragile exactly at the
+rounding boundary. Three replacements were tried in one sitting and each moved the counts on every
+board (euhalf 12,872 → 12,849 → 12,592 → 12,939), so the working copies were stashed rather than
+shipped. What is proven: the half-triangle board has 7 records of 1,307 whose primitivity differs
+between the plain and split runs, and all 7 are supercells with a translational residual of exactly 0,
+so the shipped shelf is not missing them. What is not proven is the count to the last unit on any
+board. This is the next thing to fix, and it wants its own sitting with the four analytic ground truths
+as the gate (plain hexv k=1 = 2, pent k=1 = 2, hexm = 1, sqmid = 1 — the last two are proofs).
 
 Not shipped, and that is the point of the day's directive: a planigon shelf missing four of its fifteen
 tiles is exactly the partial enumeration wearing a complete shelf's clothes that we just spent the
