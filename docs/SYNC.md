@@ -2627,3 +2627,14 @@ each trap: profile comparison cannot tell a tile from its half-turn (it DELETED 
 tiling), rounded position keys miss symmetries with residual 0, flat corners must come off, and the map
 must be a shape-preserving bijection. Gate: hexv/pent k=1 = 2, hexm/sqmid total = 1 (both proved), plus
 containment on all five boards and tri45. euhalf 12,942, tri45 16,965. Detail: NOTES 2026-08-18 (second).
+
+## 2026-08-18 (third) — the facet memos stop rebuilding the corpus — CC
+
+/library's `polygonTokenCounts` and `anglePeriodOptions` read `renderCell` over every loaded record,
+which since the codec means firing 36,239 lazy ℤ[ζ₂₄] reconstructions to fill two filter chips:
+**47,033 ms -> 3 ms** on the base atlas, same answers. Both facets move to build time
+(`polygonSpecies`, `tilePeriods`; 90,247 records annotated, +0.8% brotli), with one shared walk so
+the shipped field and the fallback cannot drift. ⚑ Same leak in two more places: `referenceToCatalogue`
+copied the cell by value across /play's 16 merge sites, and `hydrateRenderCells` decided by property
+READ (40.8 -> 330.7 MB on scaled-k7). ⚑ /library's decoration chips fetched nothing — 342,693 entries
+shown as "No tilings match". /library heap 756 -> 111 MB. Detail: NOTES 2026-08-18.

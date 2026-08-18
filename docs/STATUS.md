@@ -38,6 +38,33 @@ counts on every board; the working copies are stashed, not shipped. Next sitting
 analytic ground truths as the gate: plain hexv k=1 = 2, pent k=1 = 2, hexm = 1, sqmid = 1.
 **Also next:** a cheaper representation of a divided edge than one variant per ordered composition.
 
+## /library opens in 111 MB, down from 756 (2026-08-18)
+
+The eager-load deferral (written 2026-08-17, committed since) plus the facet-memo fix. Measured with
+`node scripts/measure-page-load.mjs`: **67 JSON requests, 1.2 MB on the wire, 111 MB of JS heap**,
+against the deployed build's 118 / 14.1 MB / 756 MB.
+
+Most of the heap was the deferral: colors (~371 MB) and freedraw (~146 MB) were parsed at open for
+chips nobody had clicked. What the memo fix buys is TIME. `polygonTokenCounts` and
+`anglePeriodOptions` read `renderCell` over every loaded record, which since the codec means firing
+the lazy ℤ[ζ₂₄] reconstruction on all of them — **47,033 ms -> 3 ms** on the base atlas, identical
+answers. Both facets are precomputed now (`polygonSpecies`, `tilePeriods`, 90,247 records, +0.8%
+brotli), read in preference to the geometry, with one shared walk so field and fallback cannot drift.
+
+The two had to ship together: the deferral without the memo fix trades heap for a main-thread block.
+
+**⚑ Fixed here, and it was hiding data:** /library's Edge patterns and Colorings chips fetched
+nothing, because their loads sat inside an effect gated on curved geometry while euclidean is the
+default. `?dec=colorings` rendered "No tilings match" over 226,946 rows — 342,693 across both chips.
+
+Shelf files also got `Cache-Control: max-age=3600` instead of Next's `max-age=0`, which was costing
+118 conditional requests per load at ~107 ms each. Not `immutable`: that needs a content hash in the
+URL, and belongs with the browse-index work.
+
+**Next:** the browse manifest. `CatalogueListPanel` still builds its k rows from loaded tilings only,
+so a row for unloaded data cannot appear — the ~84,388 unreachable entries below. That is the one
+piece of the findability work still not started.
+
 ## The atlas container format: the corpus is half its old size (2026-08-17)
 
 Every shelf file, whatever its geometry, tile class or k, is now written and read through ONE format:

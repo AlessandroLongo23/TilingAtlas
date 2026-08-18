@@ -13585,3 +13585,65 @@ down.
 ⚑ These files landed inside a concurrent session's commit `5f6a9f8` rather than one of their own —
 both sessions had the index open at once. Nothing was lost, and the content is verified byte-for-byte
 against the working tree, but the commit message for this work is here rather than in the log.
+
+## The facet memos were reconstructing the whole corpus (2026-08-18, later)
+
+The container format's whole design is that `renderCell` is built for the ~25 tilings a page draws
+and no others. Two memos in /library quietly defeated that, and the number is worse than anyone
+guessed.
+
+`polygonTokenCounts` and `anglePeriodOptions` (reference-shelf.tsx) are unconditional `useMemo`s over
+`polygonScope`, which on a default load is every Euclidean record loaded. Both call into
+polygonSpecies.ts, which reads `renderCell.cellPolygons`. That cost 47 ms while cells were plain
+data. After the codec made them lazy accessors, and the strip made 36,239 of them reconstruct through
+exact ℤ[ζ₂₄] arithmetic, the same memo over the base atlas alone measures:
+
+    6,193 records, without the shipped field   47,033 ms
+    the same records, with it                       3 ms
+
+Same answers either way — 37 species, 2 periods. Fifteen thousand times, to populate two filter chips
+nobody had clicked.
+
+**Gating the memo is not available**, which is the part that makes this interesting. `showPolygons`
+tests `availablePolygons.length > 1`, and `availablePolygons` is derived from `polygonTokenCounts`.
+The memo computes its own gate, so there is no `if` to add. The answer has to leave runtime entirely.
+
+Both facets are pure functions of the cell, so they are written at build time now
+(`annotatePolygonFacets`, and a one-shot `scripts/atlas-annotate-facets.ts` for the 90,247 records
+already shipped) and read in preference to the geometry, with the walk as fallback. The walk itself
+was extracted to `speciesFromPolys` / `periodsFromPolys` and is called by BOTH sides. That is
+deliberate: a second copy living in a script is exactly how the shipped field and the fallback drift,
+and the drift is invisible because both answers look plausible. `polygonFacets.test.ts` pins the
+agreement across every shipped shelf and pins that the readers do not touch `renderCell` at all when
+the field is present.
+
+Cost on the wire: nothing. The values come from a tiny vocabulary — 5 distinct species arrays across
+11,866 records in `reference-atlas-k10.json` — so the codec's `refs` layer hoists them and the file
+goes 0.240 -> 0.242 MB brotli, +0.8%. Raw grows 59.2 -> 62.2 MB, which is the number to ignore.
+
+⚑ **Two more materialisation leaks, same shape, found by following the first.**
+`referenceToCatalogue` copied `renderCell` by value and /play maps it over the whole atlas at open
+across 16 merge sites, so the ADAPTER decided what got built rather than the renderer; it forwards
+lazily now. And `hydrateRenderCells` chose whether to install its getter by evaluating
+`rec.renderCell !== undefined` — a property read, which fires the codec's accessor and collapses it.
+On scaled-k7 that is 40.8 MB -> 330.7 MB with no consumer having touched anything. It was harmless
+only because that file loads through `loadShelfShard`, which does not call it; adding it there would
+have been a 293 MB regression with no visible cause. Ask the descriptor, never the value.
+
+**The heap was never the memos.** /library on the committed tree measures 111 MB against the
+deployed build's 756 MB, and almost all of that gap is the eager-load deferral, which was written on
+2026-08-17 and had been sitting uncommitted. Of the deployed 890 MB retained by `JSON.parse`, colors
+(~371 MB) and freedraw (~146 MB) were catalogues the default Euclidean view cannot render. What the
+memo fix buys is the 47 seconds, not the megabytes. Both had to ship together anyway: the deferral
+without the memo fix trades heap for a main-thread block.
+
+⚑ **/library's decoration chips fetched nothing at all.** The freedraw and colours loads sat inside
+the effect that returns early unless the geometry is curved, and euclidean is the default, so
+`?dec=colorings` rendered "No tilings match" over 226,946 rows that exist — 342,693 across both
+chips, presented as a complete shelf. `filters.decoration` was missing from that effect's deps too,
+so the chip could not re-run it even under a curved geometry. /play had it right the whole time.
+
+Also: `public/` shelf files now carry `Cache-Control: public, max-age=3600, must-revalidate` instead
+of Next's `max-age=0`, which was costing 118 conditional requests per /library load at ~107 ms each.
+Not `immutable` — that needs a content hash in the URL, and without one it would pin a viewer to a
+withdrawn shelf.
