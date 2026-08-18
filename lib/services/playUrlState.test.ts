@@ -36,6 +36,8 @@ describe("playUrlState", () => {
 				view[spec.field] = mid === def[spec.field] ? spec.max : mid;
 			} else if (spec.kind === "palette") {
 				view[spec.field] = [40, "dark"];
+			} else if (spec.kind === "mat2") {
+				view[spec.field] = [1, 0, 0.5, 1]; // a shear: admissible, det 1, not the identity
 			} else {
 				view[spec.field] = spec.values.find((v) => v !== def[spec.field]);
 			}
@@ -44,8 +46,8 @@ describe("playUrlState", () => {
 		const qs = serializePlayState(view, null, null);
 		const { config } = parse(qs);
 		for (const spec of Object.values(PLAY_PARAMS)) {
-			// Palettes are arrays, rebuilt by parse — value equality is the round-trip contract there.
-			if (spec.kind === "palette") {
+			// Palettes and the deform are arrays, rebuilt by parse — value equality is the contract there.
+			if (spec.kind === "palette" || spec.kind === "mat2") {
 				expect(config[spec.field], `field ${String(spec.field)} (key round-trip)`).toEqual(view[spec.field]);
 			} else {
 				expect(config[spec.field], `field ${String(spec.field)} (key round-trip)`).toBe(view[spec.field]);
@@ -100,9 +102,25 @@ describe("playUrlState", () => {
 		expect(parse("alpha=").alphas).toBeNull();
 	});
 
+	it("round-trips the deform matrix and omits it at identity", () => {
+		expect(parse("def=1,0,0.6,1").config.deform).toEqual([1, 0, 0.6, 1]);
+		const qs = serializePlayState({ ...defaults(), deformOn: true, deform: [1, 0, 0.6, 1] }, null, null);
+		const sp = new URLSearchParams(qs);
+		expect(sp.get("def")).toBe("1,0,0.6,1");
+		expect(sp.get("defon")).toBe("1");
+		expect(serializePlayState({ ...defaults(), deform: [1, 0, 0, 1] }, null, null)).toBe("");
+	});
+
+	it("rejects a deform a drag could not have produced", () => {
+		expect(parse("def=1,0,2,0").config.deform).toEqual([1, 0, 0, 1]); // singular
+		expect(parse("def=9,0,0,1").config.deform).toEqual([1, 0, 0, 1]); // outside the pad box
+		expect(parse("def=1,0,0").config.deform).toEqual([1, 0, 0, 1]); // wrong arity
+		expect(parse("def=1,0,x,1").config.deform).toEqual([1, 0, 0, 1]); // NaN
+	});
+
 	it("keeps URL keys unique", () => {
 		const fields = Object.values(PLAY_PARAMS).map((s) => s.field);
 		expect(new Set(fields).size).toBe(fields.length);
-		expect(Object.keys(PLAY_PARAMS)).toHaveLength(51);
+		expect(Object.keys(PLAY_PARAMS)).toHaveLength(53);
 	});
 });

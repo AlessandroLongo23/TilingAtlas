@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useConfiguration } from "@/stores/configuration";
+import { resolveDeform, useConfiguration } from "@/stores/configuration";
 import { useDebug, debugManager, updateDebugStore } from "@/stores/debug";
 import { useScreenshotPreview } from "@/stores/screenshotPreview";
 import { useLegacyTilingStore } from "@/stores/legacyTilingStore";
@@ -28,6 +28,8 @@ import {
 } from "@/lib/utils/canvasPick";
 import { useFamilyAlphas } from "@/stores/familyAlphas";
 import {
+	applyMat2,
+	isIdentityDeform,
 	latticeBasisFromCell,
 	latticeExtentFromBounds,
 	screenLatticeVectors,
@@ -173,6 +175,10 @@ function isFlatShaderActive(cfg: {
 	return cfg.euclideanShader && !cfg.inversive && !cfg.hyperbolic && !cfg.spherical && !cfg.freedraw && !cfg.hollow &&
 		!cfg.colors && !cfg.truchetActive && !cfg.isIslamic && !cfg.circlePacking && !cfg.showSymmetryElements;
 }
+
+// The predicate deciding which modes honour the view DEFORMATION lives in lib/stores/configuration.ts
+// (deformApplies / resolveDeform), because the canvases this file mounts need it too and importing back
+// from here would be a cycle.
 
 // Euclidean Islamic PLAIN and CHECKERBOARD fills render through the WebGL IslamicCanvas
 // (components/islamic-canvas.tsx) instead of p5 immediate mode — the same gate decides the React mount and
@@ -447,7 +453,11 @@ export function Canvas({
 					}
 					const zoomForFill = Math.min(ctrl.zoom, ctrl.targetZoom);
 					const rot = (ctrl.rotation || 0) * Math.PI / 180;
-					({ Ri, Rj } = computeFillRadii(v1, v2, det, zoomForFill, W, H, rot, cached.extent));
+					// The deform enters here too. In the p5-owned modes resolveDeform is the identity, so nothing
+					// changes; under the flat shader this grid is not drawn but IS what click-to-centre and the
+					// orbit hover test against, and a shrinking deform puts more of the plane on screen than an
+					// undeformed radius would reach.
+					({ Ri, Rj } = computeFillRadii(v1, v2, det, zoomForFill, W, H, rot, cached.extent, resolveDeform(cfg)));
 				}
 
 				const ruleChanged =
@@ -644,9 +654,18 @@ export function Canvas({
 				const tc = activeCellRef.current ?? propsRef.current.translationalCell;
 				const patch = tc ? buildTilingFromCell(tc, 1, 1) : tiling;
 
+				// The screenshot carries the view deformation (AL, 2026-08-18): a sheared picture on screen
+				// produces a sheared thumbnail. The auto-fit below then frames the DEFORMED patch, and
+				// g.strokeWeight(2 / fit) keeps meaning the same 2 px, so nothing else has to change.
+				const dfm = resolveDeform(cfg);
+				const place = isIdentityDeform(dfm)
+					? (v: { x: number; y: number }) => v
+					: (v: { x: number; y: number }) => applyMat2(dfm, v.x, v.y);
+
 				let maxX = 0, maxY = 0, minX = 0, minY = 0;
 				for (const n of patch.nodes) {
-					for (const v of n.vertices) {
+					for (const raw of n.vertices) {
+						const v = place(raw);
 						if (v.x > maxX) maxX = v.x;
 						if (v.y > maxY) maxY = v.y;
 						if (v.x < minX) minX = v.x;
@@ -665,7 +684,10 @@ export function Canvas({
 					g.push();
 					g.fill(((n.hue ?? 0) + (cfg.hueOffset || 0)) % 360, 40, 100, 1.0);
 					g.beginShape();
-					for (const v of n.vertices) g.vertex(v.x, v.y);
+					// Deformed at EMIT time, not through g.applyMatrix: a 2-D context transform carries the
+					// stroke with it, so a sheared matrix would thicken the outline one way and thin it the
+					// other. The context stays a plain scale, and strokeWeight keeps its screen meaning.
+					for (const raw of n.vertices) { const v = place(raw); g.vertex(v.x, v.y); }
 					g.endShape(g.CLOSE);
 					g.pop();
 				}
@@ -895,7 +917,7 @@ export function Canvas({
 						p5.mouseX >= 0 && p5.mouseX <= p5.width && p5.mouseY >= 0 && p5.mouseY <= p5.height;
 					const hoverWorld =
 						cfg.showVertexOrbits && overCanvas
-							? screenToWorld(p5.mouseX - p5.width / 2, p5.mouseY - p5.height / 2, drawOffset, ctrl.zoom, rot)
+							? screenToWorld(p5.mouseX - p5.width / 2, p5.mouseY - p5.height / 2, drawOffset, ctrl.zoom, rot, resolveDeform(cfg))
 							: null;
 					// tiling is null in the cold-load window (no cell resolved yet) — ensureTiling sets it null and
 					// returns, and the cull above already guards on it. Draw nothing instead of dereferencing null.show().
@@ -914,6 +936,10 @@ export function Canvas({
 						offset: { x: drawOffset.x, y: drawOffset.y },
 						width: p5.width,
 						height: p5.height,
+						// The FD sits on top of the WebGL fill, so it has to be deformed with it. The symmetry
+						// elements below never see a non-identity matrix — showSymmetryElements is one of the
+						// modes deformApplies() excludes.
+						deform: resolveDeform(cfg),
 					};
 					if (sd && cfg.showFundamentalDomain) drawFundamentalDomain(pen, sd, overlayView);
 					if (symmetryActive) {
@@ -1009,7 +1035,7 @@ export function Canvas({
 						R: cfg.inversiveRadiusFrac * Math.min(p5.width, p5.height) * 0.5,
 						kinv: { x: kinvMag * Math.cos(-tau), y: kinvMag * Math.sin(-tau) },
 					};
-					const w0 = inversiveScreenToWorld(mx, my, lens, ctrl.targetOffset, zoom, rot);
+					const w0 = inversiveScreenToWorld(mx, my, lens, ctrl.targetOffset, zoom, rot, resolveDeform(cfg));
 					// Colorings, edge patterns and hollow tilings carry a THROWAWAY translational cell — under
 					// the lens they render from their own periodic cell instead, so hit-testing the throwaway
 					// would centre on geometry that is not on screen. Send the clicked world point to the centre
@@ -1047,11 +1073,12 @@ export function Canvas({
 				const tc = activeCellRef.current;
 				if (!tiling || !tc) return;
 				const { v1, v2, det } = latticeBasisFromCell(tc);
-				const { draw } = wrapOffset(ctrl.targetOffset, v1, v2, det, zoom, rot);
-				const c = screenToWorld(mx, my, draw, zoom, rot);
+				const dfm = resolveDeform(cfg);
+				const { draw } = wrapOffset(ctrl.targetOffset, v1, v2, det, zoom, rot, dfm);
+				const c = screenToWorld(mx, my, draw, zoom, rot, dfm);
 				const hit = pickSnapTarget(c, tiling.nodes, tiling.maxRadius ?? 0, CLICK_SNAP_RADIUS_PX / zoom);
 				if (!hit) return;
-				const s = worldToScreen(hit.x, hit.y, draw, zoom, rot);
+				const s = worldToScreen(hit.x, hit.y, draw, zoom, rot, dfm);
 				ctrl.targetOffset.sub(new Vector(s.x, s.y));
 			};
 

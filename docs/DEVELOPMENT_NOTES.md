@@ -13647,3 +13647,84 @@ Also: `public/` shelf files now carry `Cache-Control: public, max-age=3600, must
 of Next's `max-age=0`, which was costing 118 conditional requests per /library load at ~107 ms each.
 Not `immutable` — that needs a content hash in the URL, and without one it would pin a viewer to a
 withdrawn shelf.
+
+## The tiling learns to be squished (2026-08-18, later still)
+
+AL wanted a matrix-transformation control: an identity matrix in the view options, red and blue vectors
+at (1,0) and (0,1) on a [-2,2] square ruled at 0.25, either draggable to any point in the box, with the
+whole tiling deforming to follow. His stated worry was line width — a sheared tiling drawn with sheared
+strokes reads as a rendering bug — and he expected that to force the transform down to the geometry
+level, with the renderer-level version being the cheap-but-wrong option.
+
+**The dichotomy does not hold here, and the renderer is both the cheap option and the correct one.**
+Stroke width in this codebase is already decoupled from geometry, by three independent mechanisms that
+all put the width in SCREEN units after the world→screen map: the flat WebGL pass emits a quad per edge
+and pushes it by `uHalfStrokePx` CSS px *after* the vertex is in screen space; p5 uses
+`strokeWeight(lineWidth / zoom)` cancelled by the CTM's `scale(zoom)`; the inversive shader derives a
+per-fragment world-units-per-pixel from `dFdx/dFdy`. So a deform injected as a uniform gets constant
+screen-space line width for free. Pushing it into the geometry would retriangulate and re-upload the
+cell mesh on every pointer move and still not change one line width, because line widths are not in the
+geometry. Measured: at 1600×1000, zoom floor, real M5 GPU, every deform from identity through a 2.0
+shear to the determinant floor sits at 8.3 ms — the 120 Hz refresh cap.
+
+**Everything downstream turned out affine-safe, which is luck the codebase earned.** Truchet arcs are
+cubic Béziers with explicit control points (`lib/freedraw/arcs.ts`), and a Bézier is affine-covariant:
+mapping its four control points gives the exact mapped curve, no sampling, no error. Islamic is straight
+segments, polygons and world-space quads throughout. There is no centre+radius circle anywhere in the
+Euclidean geometry, so the circle→ellipse hazard never arises. The one thing that had to change is the
+stroke DIRECTION: `STROKE_VERT` pushed the world normal through the same linear map, which is only valid
+because `zoom·R·flip` is conformal. Under a shear the push stops being perpendicular to the deformed
+edge and outlines slide off their own edges. Fixed by mapping the edge TANGENT and taking its
+perpendicular in screen space — four lines of GLSL, no attribute change, and provably the previous
+formula at D = I (for L a scaled reflection, `L·J = −J·L`, so `J·(L·J·n) = L·n`).
+
+⚑ **The rectangular instance grid had to go, and it was already costing the undeformed view.**
+`computeFillRadii` bounds each axis independently, i.e. it describes a rectangle in (i, j). For a
+square-ish lattice that is the viewport plus a margin; for a sheared one the viewport is a thin diagonal
+band in lattice coordinates and the enclosing rectangle is mostly empty. Measured at 4K on the zoom
+floor: a 2.0 shear wants 3.8M copies as a rectangle and 88k as the band, and the identity was paying
+2.2× more copies than it drew anything with. `computeFillGrid` computes each row's column span exactly
+(the viewport is a parallelogram in lattice coordinates, so intersecting it with the strip
+`a ∈ [i + aMin − 0.5, i + aMax + 0.5]` is an interval), and the count then IS the coverage need. The
+consequence worth stating: **an area-preserving deform — any shear, rotation or reflection — costs
+exactly what the identity costs**, and only shrinking costs more, by exactly 1/|det D|. The coverage
+guarantee is pinned by a test that walks every viewport corner under the worst wrap residual and demands
+every copy that could draw it be in the grid; a second test asserts the blind (deform-less) radii
+UNDER-cover, which is the black-wedge failure mode this prevents.
+
+**The determinant floor is a budget, not a taste.** First cut was 0.05 — a 20× area compression — and
+the coverage test failed at it immediately: the radii blow past `MAX_FILL_RADIUS`, so the picture
+develops uncovered wedges. With the span grid the cost is `identity_cost / |det|`, which makes the floor
+directly readable as a multiple of the worst load the app already handles (4K at 100%, `ZOOM_MIN`,
+~21k copies). 0.25 caps it at 4× and is what shipped. The rule is enforced as a perpendicular distance,
+because `|det| = |q| · dist(p, q's line)`, which also makes a constrained drag SLIDE along the wall on
+the side it arrived from instead of flipping the tiling inside out. Verified by driving a real pointer
+drag: red dragged onto blue's line stops at det = 0.25 exactly.
+
+**It is a drawer, not a loose control** (AL, on seeing it sitting above the rotation slider). Same shape
+as the Islamic and Inversive blocks it now sits beside at the END of the Options tab: a checkbox that
+turns the mode on, and a `Reveal` holding the pad. That also settles the question the plan had left open
+— what to do with a non-identity matrix when the viewer leaves. OFF means the identity is applied and
+the matrix is REMEMBERED, so closing the drawer restores the undeformed picture without discarding the
+shape that was dialled in, and reopening brings it back. `resolveDeform` in the store is the single
+answer to "what matrix does this frame use", so no canvas spells the rule out for itself.
+
+**Where it applies, and where it is hidden.** The flat WebGL renderer, both Islamic ones, the inversive
+lens (which takes D⁻¹ per fragment, so the lens looks at an already-deformed plane) and the Truchet 2-D
+overlay. NOT the p5-owned modes — circle packing, symmetry elements, the colors view, hollow — because
+p5's `strokeWeight` is carried by the context transform, so a sheared `applyMatrix` would draw elliptical
+strokes, and doing it honestly means emitting deformed vertices through every one of those paths
+(circle packing would need its ellipses rebuilt as polygons). `deformApplies` in the store is the mode
+predicate behind `resolveDeform`; the Options tab hides the drawer there rather than letting it sit
+doing nothing (AL's call).
+The fundamental-domain overlay, which still draws on top of the shader fill, folds D into its POINTS and
+not into the pen transform, for the same strokeWeight reason. The screenshot carries the deform (AL's
+call); the tile-hit picking and orbit hover take D⁻¹, while the wheel zoom-at-cursor and middle-click
+recentre need nothing — both reduce to `o' = s − (z'/z)(s − o)`, independent of the whole linear part.
+
+⚑ **The pad seeds its markup from the identity, not from the store.** Seeding from the current value
+produced a hydration mismatch, because /play rehydrates its view from the query string and the client's
+first render can hold a matrix the server never saw. The effect corrects the arrows a frame later. The
+pad is otherwise the `param-region-pad` discipline: memo'd, read/write/subscribe instead of a `value`
+prop, and the four moving things mutated through refs, so a drag is a dozen attribute writes and not a
+reconcile of ~280 SVG nodes.

@@ -11,6 +11,7 @@
 // (Was components/canvas-overlays.ts, when /play's p5 canvas was the only caller.)
 
 import type { Axis, Center, SymmetryData, Vec2 } from "@/lib/classes/symmetry/types";
+import { applyMat2, invertMat2, isIdentityDeform, type Mat2 } from "@/lib/render/flatView";
 import type { Pen } from "@/lib/render/overlayPen";
 
 // The draw state the overlay needs to map screen<->world and replicate elements across the whole
@@ -21,6 +22,9 @@ export interface OverlayView {
 	offset: Vec2; // the (wrapped) draw offset, pixels
 	width: number;
 	height: number;
+	/** The view deformation (lib/render/flatView.ts), when the surface underneath is drawing one. The
+	 *  overlay's own geometry has to go through it or the domain sits beside the tiles it describes. */
+	deform?: Mat2;
 }
 
 // Plain (monochrome) tiling render for the symmetry-elements view: light-grey tiles + thin dark edges,
@@ -36,13 +40,17 @@ export function drawTilingPlain(pen: Pen, tiling: { nodes: { vertices: Vec2[] }[
 }
 
 // World point currently under the SCREEN CENTRE: invert the canvas transform
-// screen = (W/2+off.x, H/2+off.y) + Rot(rot)·(zoom·wx, −zoom·wy) at screen = (W/2, H/2).
+// screen = (W/2+off.x, H/2+off.y) + Rot(rot)·(zoom·D·w) at screen = (W/2, H/2). The deform is undone
+// last, because it is applied first — the lattice snap below counts whole UNdeformed lattice vectors.
 function worldUnderCentre(view: OverlayView): Vec2 {
 	const { zoom, rotation: rot, offset } = view;
 	const c = Math.cos(rot), s = Math.sin(rot);
 	const px = -offset.x, py = -offset.y;
 	const rx = c * px + s * py, ry = -s * px + c * py;
-	return { x: rx / zoom, y: -ry / zoom };
+	const w = { x: rx / zoom, y: -ry / zoom };
+	if (isIdentityDeform(view.deform)) return w;
+	const inv = invertMat2(view.deform as Mat2);
+	return inv ? applyMat2(inv, w.x, w.y) : w;
 }
 
 // The whole-lattice-vector translate (m·c1 + n·c2, integer m,n) that brings `anchor` to its copy nearest
@@ -74,25 +82,32 @@ export function drawFundamentalDomain(pen: Pen, data: SymmetryData, view: Overla
 	// shared translate keeps it coherent — the FD stays inside its cell. cellOrigin is the documented
 	// anchor the cellPolygon is centred on.
 	const t = fdSnapTranslate(view, data.cell, data.cellOrigin);
-	pen.translate(t.x, t.y);
+	// The translate and the deform are folded into the points instead of into the pen's transform,
+	// because a p5/2-D context transform would carry the STROKE with it: a sheared view would draw the
+	// domain's outline thick one way and thin the other. Deforming the points leaves every strokeWeight
+	// below meaning exactly what it means today.
+	const d = view.deform;
+	const place = isIdentityDeform(d)
+		? (pts: Vec2[]) => pts.map((p) => ({ x: p.x + t.x, y: p.y + t.y }))
+		: (pts: Vec2[]) => pts.map((p) => applyMat2(d as Mat2, p.x + t.x, p.y + t.y));
 	// the drawn cell — the primitive parallelogram (hexagonal → 60° rhombus, cm/cmm → mirror rhombus); a
 	// thin neutral outline.
 	pen.noFill();
 	pen.stroke(0, 0, 55);
 	pen.strokeWeight(0.02);
-	pen.polygon(data.cellPolygon);
+	pen.polygon(place(data.cellPolygon));
 	// subdivision — the cell tiled by all its fundamental-domain copies, faint orange outlines (a single
 	// entry means the self-check declined a subdivision, so only the FD below is drawn).
 	if (data.subdivision.length > 1) {
 		pen.stroke(28, 60, 90);
 		pen.strokeWeight(0.02);
-		for (const copy of data.subdivision) pen.polygon(copy);
+		for (const copy of data.subdivision) pen.polygon(place(copy));
 	}
 	// emphasized fundamental domain — translucent yellow fill + orange edge, on top
 	pen.fill(48, 85, 100, 0.5);
 	pen.stroke(28, 90, 90);
 	pen.strokeWeight(0.03);
-	pen.polygon(data.fd);
+	pen.polygon(place(data.fd));
 	pen.pop();
 }
 

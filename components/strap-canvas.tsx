@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useConfiguration } from "@/stores/configuration";
+import { resolveDeform, useConfiguration } from "@/stores/configuration";
 import { buildCellMesh } from "@/lib/render/buildCellMesh";
-import { computeFillRadii, wrapOffset, type LatticeExtent } from "@/lib/render/flatView";
+import { IDENTITY_DEFORM, computeFillGrid, fillGridInstances, wrapOffset, type LatticeExtent, type Mat2 } from "@/lib/render/flatView";
 import { compileShader } from "@/lib/render/flatTilingGL";
 import { syncCanvasSize } from "@/lib/render/canvasSize";
 import { ISLAMIC_FILL_VERT, ISLAMIC_FILL_FRAG, STRAP_BORDER_VERT, STRAP_BORDER_FRAG } from "@/lib/render/islamicGL";
@@ -106,14 +106,14 @@ export function StrapCanvas({ translationalCell, translationalCellId, paramCell 
 	// rebuilt as ONE unit at a ~50% duty cycle measured from its own last run, so a drag can never spend
 	// more than about half the frame budget on it. See docs/DEVELOPMENT_NOTES.md §104c.
 	const alphaGateRef = useRef<{ last: number; cost: number; startedAt: number | null }>({ last: 0, cost: 0, startedAt: null });
-	const instRef = useRef<{ Ri: number; Rj: number; count: number }>({ Ri: -1, Rj: -1, count: 0 });
+	const instRef = useRef<{ key: string; count: number }>({ key: "", count: 0 });
 
 	useEffect(() => {
 		const cm = translationalCell ? buildCellMesh(translationalCell) : null;
 		metaRef.current = cm ? { v1: new Vector(cm.v1[0], cm.v1[1]), v2: new Vector(cm.v2[0], cm.v2[1]), det: cm.det, extent: cm.extent } : null;
 		patchBuiltRef.current = false;
 		meshSigRef.current = null;
-		instRef.current = { Ri: -1, Rj: -1, count: 0 };
+		instRef.current = { key: "", count: 0 };
 		liveCellRef.current = null;
 		alphaSigRef.current = null; // force the first frame to evaluate the family at its current tuple
 	}, [translationalCellId, translationalCell, paramCell]);
@@ -141,9 +141,9 @@ export function StrapCanvas({ translationalCell, translationalCellId, paramCell 
 		fillProgRef.current = fillProg;
 		borderProgRef.current = borderProg;
 
-		for (const n of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uHalf", "uHueOffset", "uColorA", "uColorB", "uColorC", "uMode", "uOpacity"]) fillU.current[n] = gl.getUniformLocation(fillProg, n);
+		for (const n of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uDeform", "uHalf", "uHueOffset", "uColorA", "uColorB", "uColorC", "uMode", "uOpacity"]) fillU.current[n] = gl.getUniformLocation(fillProg, n);
 		for (const n of ["aPos", "aInst"]) fillA.current[n] = gl.getAttribLocation(fillProg, n);
-		for (const n of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uHalf", "uOpacity"]) borderU.current[n] = gl.getUniformLocation(borderProg, n);
+		for (const n of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uDeform", "uHalf", "uOpacity"]) borderU.current[n] = gl.getUniformLocation(borderProg, n);
 		for (const n of ["aPos", "aColor", "aInst"]) borderA.current[n] = gl.getAttribLocation(borderProg, n);
 
 		fillPosRef.current = gl.createBuffer();
@@ -189,7 +189,7 @@ export function StrapCanvas({ translationalCell, translationalCellId, paramCell 
 					if (cm) metaRef.current = { v1: new Vector(cm.v1[0], cm.v1[1]), v2: new Vector(cm.v2[0], cm.v2[1]), det: cm.det, extent: cm.extent };
 					patchBuiltRef.current = false;
 					meshSigRef.current = null;
-					instRef.current = { Ri: -1, Rj: -1, count: 0 };
+					instRef.current = { key: "", count: 0 };
 				}
 			}
 			const cell = liveCellRef.current ?? baseCell;
@@ -240,17 +240,27 @@ export function StrapCanvas({ translationalCell, translationalCellId, paramCell 
 
 			g.viewport(0, 0, canvas.width, canvas.height);
 
-			const fr = computeFillRadii(meta.v1, meta.v2, meta.det, ctrl.zoom, w, h, rot, meta.extent);
-			const Ri = fr.Ri + INSTANCE_MARGIN, Rj = fr.Rj + INSTANCE_MARGIN;
-			if (Ri !== instRef.current.Ri || Rj !== instRef.current.Rj) {
-				const inst: number[] = [];
-				for (let i = -Ri; i <= Ri; i++) for (let j = -Rj; j <= Rj; j++) inst.push(i, j);
+			// The view deformation, when this mode honours it — a per-frame uniform, no mesh rebuild.
+			const dfm = resolveDeform(cfg);
+			const deform = dfm as unknown as Float32List;
+
+			// The copies that actually meet the viewport, per row rather than as a bounding rectangle.
+			// INSTANCE_MARGIN goes in as extra CONTENT extent, which is what it means: straps reach past
+			// their own cell.
+			const reach: LatticeExtent = {
+				aMin: meta.extent.aMin - INSTANCE_MARGIN, aMax: meta.extent.aMax + INSTANCE_MARGIN,
+				bMin: meta.extent.bMin - INSTANCE_MARGIN, bMax: meta.extent.bMax + INSTANCE_MARGIN,
+			};
+			const grid = computeFillGrid(meta.v1, meta.v2, meta.det, ctrl.zoom, w, h, rot, reach, dfm);
+			const gridKey = `${grid.iLo}:${grid.iHi}:${grid.count}`;
+			if (gridKey !== instRef.current.key) {
+				const inst = fillGridInstances(grid);
 				g.bindBuffer(g.ARRAY_BUFFER, instBufRef.current);
-				g.bufferData(g.ARRAY_BUFFER, new Float32Array(inst), g.DYNAMIC_DRAW);
-				instRef.current = { Ri, Rj, count: inst.length / 2 };
+				g.bufferData(g.ARRAY_BUFFER, inst, g.DYNAMIC_DRAW);
+				instRef.current = { key: gridKey, count: inst.length / 2 };
 			}
 
-			const { draw } = wrapOffset(ctrl.offset, meta.v1, meta.v2, meta.det, ctrl.zoom, rot);
+			const { draw } = wrapOffset(ctrl.offset, meta.v1, meta.v2, meta.det, ctrl.zoom, rot, dfm);
 			g.clearColor(0, 0, 0, 0);
 			g.clear(g.COLOR_BUFFER_BIT);
 			g.enable(g.BLEND);
@@ -271,6 +281,7 @@ export function StrapCanvas({ translationalCell, translationalCellId, paramCell 
 				g.uniform1f(BU.uRot, rot);
 				g.uniform2f(BU.uV1, meta.v1.x, meta.v1.y);
 				g.uniform2f(BU.uV2, meta.v2.x, meta.v2.y);
+				g.uniformMatrix2fv(BU.uDeform, false, deform);
 				g.uniform2f(BU.uHalf, w / 2, h / 2);
 				g.uniform1f(BU.uOpacity, 1);
 				g.drawArraysInstanced(g.TRIANGLES, 0, mesh.borderVertexCount, instRef.current.count);
@@ -287,6 +298,7 @@ export function StrapCanvas({ translationalCell, translationalCellId, paramCell 
 			g.uniform1f(FU.uRot, rot);
 			g.uniform2f(FU.uV1, meta.v1.x, meta.v1.y);
 			g.uniform2f(FU.uV2, meta.v2.x, meta.v2.y);
+			g.uniformMatrix2fv(FU.uDeform, false, deform);
 			g.uniform2f(FU.uHalf, w / 2, h / 2);
 			const fillCol = emboss ? FILL_EMBOSS : FILL_PLAIN;
 			g.uniform3f(FU.uColorA, fillCol[0], fillCol[1], fillCol[2]);

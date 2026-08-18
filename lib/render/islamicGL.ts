@@ -18,11 +18,12 @@ uniform float uZoom;
 uniform float uRot;
 uniform vec2 uV1;
 uniform vec2 uV2;
+uniform mat2 uDeform;   // world-space 2x2 (the sidebar's basis pad); identity = no deformation
 uniform vec2 uHalf;     // canvas CSS half-size (w/2, h/2)
 out float vHue;
 out float vClass;
 void main() {
-	vec2 world = aPos + aInst.x * uV1 + aInst.y * uV2;
+	vec2 world = uDeform * (aPos + aInst.x * uV1 + aInst.y * uV2);
 	float c = cos(uRot), s = sin(uRot);
 	float sx = uOffset.x + uZoom * (c * world.x + s * world.y);
 	float sy = uOffset.y + uZoom * (s * world.x - c * world.y);
@@ -71,17 +72,22 @@ uniform float uZoom;
 uniform float uRot;
 uniform vec2 uV1;
 uniform vec2 uV2;
+uniform mat2 uDeform;   // world-space 2x2 (the sidebar's basis pad); identity = no deformation
 uniform vec2 uHalf;
 uniform float uHalfStrokePx;
 void main() {
-	vec2 world = aPos + aInst.x * uV1 + aInst.y * uV2;
+	vec2 world = uDeform * (aPos + aInst.x * uV1 + aInst.y * uV2);
 	float c = cos(uRot), s = sin(uRot);
 	float sx = uOffset.x + uZoom * (c * world.x + s * world.y);
 	float sy = uOffset.y + uZoom * (s * world.x - c * world.y);
-	float nsx = uZoom * (c * aNorm.x + s * aNorm.y);
-	float nsy = uZoom * (s * aNorm.x - c * aNorm.y);
-	float nl = length(vec2(nsx, nsy));
-	vec2 n = nl > 0.0 ? vec2(nsx, nsy) / nl : vec2(0.0);
+	// Direction from the edge TANGENT, then perpendicular in SCREEN space (see flatTilingGL's
+	// STROKE_VERT for why the stored normal cannot be pushed through a non-conformal uDeform). Identical
+	// to the previous formula at uDeform = identity.
+	vec2 td = uDeform * vec2(-aNorm.y, aNorm.x);
+	float tsx = uZoom * (c * td.x + s * td.y);
+	float tsy = uZoom * (s * td.x - c * td.y);
+	float tl = length(vec2(tsx, tsy));
+	vec2 n = tl > 0.0 ? vec2(-tsy, tsx) / tl : vec2(0.0);
 	sx += aSide * uHalfStrokePx * n.x;
 	sy += aSide * uHalfStrokePx * n.y;
 	gl_Position = vec4(sx / uHalf.x, -sy / uHalf.y, 0.0, 1.0);
@@ -102,6 +108,8 @@ void main() { frag = vec4(uStroke, uOpacity); }
 // edges (baked from each segment's world normal at build time). aInst instances it like the fill.
 // It used to push a constant-CSS-width butt quad off a normal; that kept the border a fixed pixel size, so
 // zooming out fattened it relative to the band it wrapped. World-space keeps the two proportional.
+// Consequence under uDeform: the border squashes anisotropically with the band, which is correct and not
+// a bug — it is part of the ornament, not a line weight. Only the tile OUTLINE above is a line weight.
 export const STRAP_BORDER_VERT = `#version 300 es
 in vec2 aPos;
 in vec3 aColor;
@@ -111,10 +119,11 @@ uniform float uZoom;
 uniform float uRot;
 uniform vec2 uV1;
 uniform vec2 uV2;
+uniform mat2 uDeform;   // world-space 2x2 (the sidebar's basis pad); identity = no deformation
 uniform vec2 uHalf;
 out vec3 vColor;
 void main() {
-	vec2 world = aPos + aInst.x * uV1 + aInst.y * uV2;
+	vec2 world = uDeform * (aPos + aInst.x * uV1 + aInst.y * uV2);
 	float c = cos(uRot), s = sin(uRot);
 	float sx = uOffset.x + uZoom * (c * world.x + s * world.y);
 	float sy = uOffset.y + uZoom * (s * world.x - c * world.y);

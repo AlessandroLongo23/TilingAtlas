@@ -8,6 +8,7 @@
 // case then renders correctly with no special-casing, and the whole thing is line art, so 2D canvas is
 // fast enough and a tenth of the code. Promoting it to the GL path later is mechanical.
 
+import { applyMat2, invertMat2, isIdentityDeform, type Mat2 } from "@/lib/render/flatView";
 import { DEFAULT_TILE_RULE, type TileLoop, type TileRule } from "./arcs";
 import { analyseFaces, classifyFaces, classifyPatchFaces, type FaceAnalysis } from "./faces";
 import { coset, gridOf, type FreedrawPattern } from "./pattern";
@@ -27,6 +28,16 @@ export interface FreedrawView {
 	 * fights the rotation state.
 	 */
 	rot?: number;
+	/**
+	 * View deformation: a world-space 2x2 (column-major [a, b, c, d]; lib/render/flatView.ts), applied
+	 * to pattern coordinates before the centre/scale/rotate above. Omitted or identity means none.
+	 *
+	 * It is folded into the PROJECTION, never into the canvas transform: ctx.lineWidth is measured in
+	 * user space, so a sheared ctx.transform would draw thick strokes one way and thin the other. Going
+	 * through the points instead leaves every lineWidth in this file meaning screen pixels, which is how
+	 * the Truchet overlay keeps constant line weight over a sheared tiling.
+	 */
+	deform?: Mat2;
 }
 
 // Lattice basis per grid: world = (x + bx*y, by*y). Square is the identity; the triangular lattice
@@ -120,25 +131,28 @@ const arcRuleOf = (style: FreedrawStyle) => style.arcRule ?? DEFAULT_TILE_RULE;
  * Every loop carries its tile's own traversal orientation, so batching a whole screen of them into ONE
  * path and filling once is safe: a nonzero fill unions same-signed loops, and canvas fills nonzero by
  * default. Two loops of a crossing permutation therefore merge instead of punching a hole.
+ *
+ * The map is ONE function of both coordinates, not a separable pair, because the view deformation is a
+ * general 2x2 and x cannot be projected without y. The arcs survive it exactly: they are stored as cubic
+ * Béziers with explicit control points (lib/freedraw/arcs.ts), and a Bézier is affine-covariant — mapping
+ * its four control points gives precisely the mapped curve, with no sampling and no error.
  */
-function pathLoops(
-	ctx: CanvasRenderingContext2D,
-	loops: readonly TileLoop[],
-	sx: (x: number) => number,
-	sy: (y: number) => number,
-): void {
+type Project = (x: number, y: number) => readonly [number, number];
+
+function pathLoops(ctx: CanvasRenderingContext2D, loops: readonly TileLoop[], P: Project): void {
 	for (const loop of loops) {
-		ctx.moveTo(sx(loop.start[0]), sy(loop.start[1]));
+		const s0 = P(loop.start[0], loop.start[1]);
+		ctx.moveTo(s0[0], s0[1]);
 		for (const seg of loop.segs) {
 			if (seg.kind === "line") {
-				ctx.lineTo(sx(seg.to[0]), sy(seg.to[1]));
+				const t = P(seg.to[0], seg.to[1]);
+				ctx.lineTo(t[0], t[1]);
 				continue;
 			}
-			ctx.bezierCurveTo(
-				sx(seg.c1[0]), sy(seg.c1[1]),
-				sx(seg.c2[0]), sy(seg.c2[1]),
-				sx(seg.to[0]), sy(seg.to[1]),
-			);
+			const c1 = P(seg.c1[0], seg.c1[1]);
+			const c2 = P(seg.c2[0], seg.c2[1]);
+			const t = P(seg.to[0], seg.to[1]);
+			ctx.bezierCurveTo(c1[0], c1[1], c2[0], c2[1], t[0], t[1]);
 		}
 		ctx.closePath();
 	}
@@ -410,8 +424,8 @@ export function drawFreedraw(
 	if (style.showArcs) {
 		const rule = arcRuleOf(style);
 		const cells = gridCellArcs(pattern, rule);
-		const wsx = (wx: number) => width / 2 + (wx - view.cx) * scale;
-		const wsy = (wy: number) => height / 2 - (wy - view.cy) * scale;
+		const wsxy = (wx: number, wy: number) =>
+			[width / 2 + (wx - view.cx) * scale, height / 2 - (wy - view.cy) * scale] as const;
 		ctx.beginPath();
 		for (let y = span.y0; y <= span.y1; y++) {
 			for (let x = span.x0; x <= span.x1; x++) {
@@ -420,14 +434,13 @@ export function drawFreedraw(
 				// only thing that changes between copies.
 				const ox = x + bx * y;
 				const oy = by * y;
-				const sx = (wx: number) => wsx(wx + ox);
-				const sy = (wy: number) => wsy(wy + oy);
+				const P = (wx: number, wy: number) => wsxy(wx + ox, wy + oy);
 				if (!tri) {
-					pathLoops(ctx, cells[c], sx, sy);
+					pathLoops(ctx, cells[c], P);
 					continue;
 				}
-				pathLoops(ctx, cells[2 * c], sx, sy);
-				pathLoops(ctx, cells[2 * c + 1], sx, sy);
+				pathLoops(ctx, cells[2 * c], P);
+				pathLoops(ctx, cells[2 * c + 1], P);
 			}
 		}
 		ctx.fillStyle = style.dark ? "#f2f4f8" : "#101318";
@@ -464,8 +477,15 @@ function drawPatchPattern(
 	const [t1x, t1y] = patch.T1;
 	const [t2x, t2y] = patch.T2;
 	const det = t1x * t2y - t1y * t2x;
-	const px = (x: number) => width / 2 + (x - view.cx) * scale;
-	const py = (y: number) => height / 2 - (y - view.cy) * scale;
+	// The projection, deform included. `px`/`py` take BOTH coordinates now: under a general 2x2 the
+	// screen x depends on the world y, so a separable pair cannot express it.
+	const D = view.deform;
+	const flat = isIdentityDeform(D);
+	const dx = flat ? (x: number, _y: number) => x : (x: number, y: number) => applyMat2(D as Mat2, x, y).x;
+	const dy = flat ? (_x: number, y: number) => y : (x: number, y: number) => applyMat2(D as Mat2, x, y).y;
+	const px = (x: number, y: number) => width / 2 + (dx(x, y) - view.cx) * scale;
+	const py = (x: number, y: number) => height / 2 - (dy(x, y) - view.cy) * scale;
+	const P = (x: number, y: number) => [px(x, y), py(x, y)] as const;
 
 	ctx.clearRect(0, 0, width, height);
 	ctx.fillStyle = style.dark ? "#12151a" : "#ffffff";
@@ -477,10 +497,11 @@ function drawPatchPattern(
 	const ext = rotatedExtent(width, height, rot);
 	const halfW = ext.w / (2 * scale);
 	const halfH = ext.h / (2 * scale);
-	const inv = (wx: number, wy: number): [number, number] => [
-		(wx * t2y - wy * t2x) / det,
-		(t1x * wy - t1y * wx) / det,
-	];
+	const dInv = flat ? null : invertMat2(D as Mat2);
+	const inv = (wx: number, wy: number): [number, number] => {
+		const u = dInv ? applyMat2(dInv, wx, wy) : { x: wx, y: wy };
+		return [(u.x * t2y - u.y * t2x) / det, (t1x * u.y - t1y * u.x) / det];
+	};
 	let m0 = Infinity;
 	let m1 = -Infinity;
 	let n0 = Infinity;
@@ -543,17 +564,16 @@ function drawPatchPattern(
 		ey: number,
 	) => {
 		if (!curve) {
-			ctx.lineTo(px(ex), py(ey));
+			const e = P(ex, ey);
+			ctx.lineTo(e[0], e[1]);
 			return;
 		}
-		ctx.bezierCurveTo(
-			px(sx + curve[0]),
-			py(sy + curve[1]),
-			px(sx + curve[2]),
-			py(sy + curve[3]),
-			px(ex),
-			py(ey),
-		);
+		// Control points mapped, not the curve sampled: the projection is affine, and a cubic Bézier is
+		// affine-covariant, so this is the exact image of the arc under any deform.
+		const c1 = P(sx + curve[0], sy + curve[1]);
+		const c2 = P(sx + curve[2], sy + curve[3]);
+		const e = P(ex, ey);
+		ctx.bezierCurveTo(c1[0], c1[1], c2[0], c2[1], e[0], e[1]);
 	};
 
 	if (style.fillMode !== "none") {
@@ -582,7 +602,7 @@ function drawPatchPattern(
 						const [wi, wx, wy] = ring[(ci + 1) % ring.length];
 						const sx = vx(vi, ox + m, oy + n);
 						const sy = vy(vi, ox + m, oy + n);
-						if (ci === 0) ctx.moveTo(px(sx), py(sy));
+						if (ci === 0) { const p0 = P(sx, sy); ctx.moveTo(p0[0], p0[1]); }
 						arcTo(arcs?.[ci], sx, sy, vx(wi, wx + m, wy + n), vy(wi, wx + m, wy + n));
 					}
 					ctx.closePath();
@@ -611,7 +631,8 @@ function drawPatchPattern(
 				for (let m = m0; m <= m1; m++) {
 					const sx = vx(vi, m, n);
 					const sy = vy(vi, m, n);
-					ctx.moveTo(px(sx), py(sy));
+					const p0 = P(sx, sy);
+					ctx.moveTo(p0[0], p0[1]);
 					arcTo(curve, sx, sy, vx(vj, ox + m, oy + n), vy(vj, ox + m, oy + n));
 				}
 			}
@@ -633,11 +654,10 @@ function drawPatchPattern(
 		ctx.beginPath();
 		for (let n = n0; n <= n1; n++) {
 			for (let m = m0; m <= m1; m++) {
-				const dx = m * t1x + n * t2x;
-				const dy = m * t1y + n * t2y;
-				const sx = (wx: number) => px(wx + dx);
-				const sy = (wy: number) => py(wy + dy);
-				for (const fig of figures) pathLoops(ctx, fig, sx, sy);
+				const tdx = m * t1x + n * t2x;
+				const tdy = m * t1y + n * t2y;
+				const Pt = (wx: number, wy: number) => P(wx + tdx, wy + tdy);
+				for (const fig of figures) pathLoops(ctx, fig, Pt);
 			}
 		}
 		ctx.fillStyle = style.dark ? "#f2f4f8" : "#101318";
@@ -647,21 +667,22 @@ function drawPatchPattern(
 	if (style.showLattice) {
 		const accent = style.dark ? "hsl(345 90% 66%)" : "hsl(345 80% 46%)";
 		ctx.beginPath();
-		ctx.moveTo(px(0), py(0));
-		ctx.lineTo(px(t1x), py(t1y));
-		ctx.lineTo(px(t1x + t2x), py(t1y + t2y));
-		ctx.lineTo(px(t2x), py(t2y));
+		const L = (x: number, y: number) => { const q = P(x, y); return q; };
+		{ const q = L(0, 0); ctx.moveTo(q[0], q[1]); }
+		{ const q = L(t1x, t1y); ctx.lineTo(q[0], q[1]); }
+		{ const q = L(t1x + t2x, t1y + t2y); ctx.lineTo(q[0], q[1]); }
+		{ const q = L(t2x, t2y); ctx.lineTo(q[0], q[1]); }
 		ctx.closePath();
 		ctx.fillStyle = style.dark ? "hsl(345 90% 66% / 0.2)" : "hsl(345 80% 46% / 0.13)";
 		ctx.fill();
 		ctx.beginPath();
 		for (let n = n0; n <= n1; n++) {
-			ctx.moveTo(px(m0 * t1x + n * t2x), py(m0 * t1y + n * t2y));
-			ctx.lineTo(px(m1 * t1x + n * t2x), py(m1 * t1y + n * t2y));
+			{ const q = P(m0 * t1x + n * t2x, m0 * t1y + n * t2y); ctx.moveTo(q[0], q[1]); }
+			{ const q = P(m1 * t1x + n * t2x, m1 * t1y + n * t2y); ctx.lineTo(q[0], q[1]); }
 		}
 		for (let m = m0; m <= m1; m++) {
-			ctx.moveTo(px(m * t1x + n0 * t2x), py(m * t1y + n0 * t2y));
-			ctx.lineTo(px(m * t1x + n1 * t2x), py(m * t1y + n1 * t2y));
+			{ const q = P(m * t1x + n0 * t2x, m * t1y + n0 * t2y); ctx.moveTo(q[0], q[1]); }
+			{ const q = P(m * t1x + n1 * t2x, m * t1y + n1 * t2y); ctx.lineTo(q[0], q[1]); }
 		}
 		ctx.strokeStyle = accent;
 		ctx.lineWidth = 1.5;
@@ -707,7 +728,10 @@ function drawPatchPattern(
 				for (let vi = 0; vi < patch.verts.length; vi++) {
 					const o = patch.vorbit[vi];
 					ctx.beginPath();
-					ctx.arc(px(vx(vi, m, n)), py(vy(vi, m, n)), r * (orbitScales[o] ?? 1), 0, Math.PI * 2);
+					// A vertex dot marks a point, so it stays a DISC of constant screen radius under any
+					// deform — only its centre moves through the projection.
+					const q = P(vx(vi, m, n), vy(vi, m, n));
+					ctx.arc(q[0], q[1], r * (orbitScales[o] ?? 1), 0, Math.PI * 2);
 					ctx.fillStyle = orbitColour(o + 3, !style.dark);
 					ctx.fill();
 					ctx.stroke();

@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useConfiguration } from "@/stores/configuration";
+import { resolveDeform, useConfiguration } from "@/stores/configuration";
 import { buildCellMesh } from "@/lib/render/buildCellMesh";
-import { computeFillRadii, wrapOffset, type LatticeExtent } from "@/lib/render/flatView";
+import { IDENTITY_DEFORM, computeFillGrid, fillGridInstances, wrapOffset, type LatticeExtent, type Mat2 } from "@/lib/render/flatView";
 import { compileShader } from "@/lib/render/flatTilingGL";
 import { syncCanvasSize } from "@/lib/render/canvasSize";
 import { ISLAMIC_FILL_VERT, ISLAMIC_FILL_FRAG, ISLAMIC_STROKE_VERT, ISLAMIC_STROKE_FRAG } from "@/lib/render/islamicGL";
@@ -103,14 +103,14 @@ export function IslamicCanvas({ translationalCell, translationalCellId, paramCel
 	// it every tick put a k=2 star family at 35ms/frame with the arrangement alone costing ~10ms.
 	const alphaGateRef = useRef<{ last: number; cost: number; startedAt: number | null }>({ last: 0, cost: 0, startedAt: null });
 	// Instance grid over the visible lattice range; rebuilt only when the radius changes (like EuclideanCanvas).
-	const instRef = useRef<{ Ri: number; Rj: number; count: number }>({ Ri: -1, Rj: -1, count: 0 });
+	const instRef = useRef<{ key: string; count: number }>({ key: "", count: 0 });
 
 	useEffect(() => {
 		const cm = translationalCell ? buildCellMesh(translationalCell) : null;
 		metaRef.current = cm ? { v1: new Vector(cm.v1[0], cm.v1[1]), v2: new Vector(cm.v2[0], cm.v2[1]), det: cm.det, extent: cm.extent } : null;
 		patchBuiltRef.current = false; // new cell → rebuild patch, then mesh
 		meshSigRef.current = null;
-		instRef.current = { Ri: -1, Rj: -1, count: 0 };
+		instRef.current = { key: "", count: 0 };
 		liveCellRef.current = null;
 		alphaSigRef.current = null; // force the first frame to evaluate the family at its current tuple
 	}, [translationalCellId, translationalCell, paramCell]);
@@ -138,9 +138,9 @@ export function IslamicCanvas({ translationalCell, translationalCellId, paramCel
 		fillProgRef.current = fillProg;
 		strokeProgRef.current = strokeProg;
 
-		for (const n of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uHalf", "uHueOffset", "uColorA", "uColorB", "uColorC", "uMode", "uOpacity"]) fillU.current[n] = gl.getUniformLocation(fillProg, n);
+		for (const n of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uDeform", "uHalf", "uHueOffset", "uColorA", "uColorB", "uColorC", "uMode", "uOpacity"]) fillU.current[n] = gl.getUniformLocation(fillProg, n);
 		for (const n of ["aPos", "aHue", "aClass", "aInst"]) fillA.current[n] = gl.getAttribLocation(fillProg, n);
-		for (const n of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uHalf", "uHalfStrokePx", "uStroke", "uOpacity"]) strokeU.current[n] = gl.getUniformLocation(strokeProg, n);
+		for (const n of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uDeform", "uHalf", "uHalfStrokePx", "uStroke", "uOpacity"]) strokeU.current[n] = gl.getUniformLocation(strokeProg, n);
 		for (const n of ["aPos", "aNorm", "aSide", "aInst"]) strokeA.current[n] = gl.getAttribLocation(strokeProg, n);
 
 		fillPosRef.current = gl.createBuffer();
@@ -192,7 +192,7 @@ export function IslamicCanvas({ translationalCell, translationalCellId, paramCel
 					if (cm) metaRef.current = { v1: new Vector(cm.v1[0], cm.v1[1]), v2: new Vector(cm.v2[0], cm.v2[1]), det: cm.det, extent: cm.extent };
 					patchBuiltRef.current = false;
 					meshSigRef.current = null;
-					instRef.current = { Ri: -1, Rj: -1, count: 0 };
+					instRef.current = { key: "", count: 0 };
 				}
 			}
 			const cell = liveCellRef.current ?? baseCell;
@@ -245,19 +245,29 @@ export function IslamicCanvas({ translationalCell, translationalCellId, paramCel
 
 			g.viewport(0, 0, canvas.width, canvas.height);
 
-			// Instance grid over the visible lattice range (+ margin for the reach of origin-cell reps).
-			// Rebuilt only when the radius changes; a pan never touches it.
-			const fr = computeFillRadii(meta.v1, meta.v2, meta.det, ctrl.zoom, w, h, rot, meta.extent);
-			const Ri = fr.Ri + INSTANCE_MARGIN, Rj = fr.Rj + INSTANCE_MARGIN;
-			if (Ri !== instRef.current.Ri || Rj !== instRef.current.Rj) {
-				const inst: number[] = [];
-				for (let i = -Ri; i <= Ri; i++) for (let j = -Rj; j <= Rj; j++) inst.push(i, j);
+			// The view deformation, when this mode honours it. A per-frame uniform: a basis-pad drag
+			// re-uploads four floats and never rebuilds the mesh.
+			const dfm = resolveDeform(cfg);
+			const deform = dfm as unknown as Float32List;
+
+			// Instance grid: the copies that actually meet the viewport, per-row rather than a bounding
+			// rectangle, so a deformed lattice costs what it covers. INSTANCE_MARGIN is expressed where it
+			// belongs — as extra CONTENT extent, which is what "faces reach past their own cell" means —
+			// so the span computation accounts for it exactly instead of padding both axes blindly.
+			const reach: LatticeExtent = {
+				aMin: meta.extent.aMin - INSTANCE_MARGIN, aMax: meta.extent.aMax + INSTANCE_MARGIN,
+				bMin: meta.extent.bMin - INSTANCE_MARGIN, bMax: meta.extent.bMax + INSTANCE_MARGIN,
+			};
+			const grid = computeFillGrid(meta.v1, meta.v2, meta.det, ctrl.zoom, w, h, rot, reach, dfm);
+			const gridKey = `${grid.iLo}:${grid.iHi}:${grid.count}`;
+			if (gridKey !== instRef.current.key) {
+				const inst = fillGridInstances(grid);
 				g.bindBuffer(g.ARRAY_BUFFER, instBufRef.current);
-				g.bufferData(g.ARRAY_BUFFER, new Float32Array(inst), g.DYNAMIC_DRAW);
-				instRef.current = { Ri, Rj, count: inst.length / 2 };
+				g.bufferData(g.ARRAY_BUFFER, inst, g.DYNAMIC_DRAW);
+				instRef.current = { key: gridKey, count: inst.length / 2 };
 			}
 
-			const { draw } = wrapOffset(ctrl.offset, meta.v1, meta.v2, meta.det, ctrl.zoom, rot);
+			const { draw } = wrapOffset(ctrl.offset, meta.v1, meta.v2, meta.det, ctrl.zoom, rot, dfm);
 			g.clearColor(0, 0, 0, 0);
 			g.clear(g.COLOR_BUFFER_BIT);
 			g.enable(g.BLEND);
@@ -275,6 +285,7 @@ export function IslamicCanvas({ translationalCell, translationalCellId, paramCel
 			g.uniform1f(FU.uRot, rot);
 			g.uniform2f(FU.uV1, meta.v1.x, meta.v1.y);
 			g.uniform2f(FU.uV2, meta.v2.x, meta.v2.y);
+			g.uniformMatrix2fv(FU.uDeform, false, deform);
 			g.uniform2f(FU.uHalf, w / 2, h / 2);
 			g.uniform1f(FU.uHueOffset, cfg.hueOffset || 0);
 			// Checkerboard reads colours A/B from the checker palette; plain reads B/C from the A/B/C palette.
@@ -307,6 +318,7 @@ export function IslamicCanvas({ translationalCell, translationalCellId, paramCel
 				g.uniform1f(SU.uRot, rot);
 				g.uniform2f(SU.uV1, meta.v1.x, meta.v1.y);
 				g.uniform2f(SU.uV2, meta.v2.x, meta.v2.y);
+				g.uniformMatrix2fv(SU.uDeform, false, deform);
 				g.uniform2f(SU.uHalf, w / 2, h / 2);
 				g.uniform1f(SU.uHalfStrokePx, cfg.lineWidth * 0.5);
 				g.uniform3f(SU.uStroke, 0, 0, 0); // black, matching drawIslamicStarFill's border

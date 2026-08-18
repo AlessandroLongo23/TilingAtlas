@@ -1,4 +1,6 @@
 import { useConfiguration, type ConfigurationState } from "@/stores/configuration";
+import { isAdmissibleDeform } from "@/lib/render/basisPad";
+import type { Mat2 } from "@/lib/render/flatView";
 
 // ── /play ⇆ URL state ─────────────────────────────────────────────────────────────────────────────
 // The whole /play view round-trips through the query string: a reload restores it, and the share button
@@ -21,7 +23,11 @@ type Spec =
 	| { field: keyof ConfigurationState; kind: "enum"; values: readonly string[] }
 	// A tile-color palette: comma-joined entries, each a hue (0–359) or "cream"/"dark" — the colors
 	// view's per-color picker. Any malformed entry invalidates the whole param (never a mixed guess).
-	| { field: keyof ConfigurationState; kind: "palette" };
+	| { field: keyof ConfigurationState; kind: "palette" }
+	// The view deformation: four comma-joined numbers, the 2x2 column-major. Validated as a whole by
+	// isAdmissibleDeform — a link carrying a singular or out-of-box matrix falls back to the identity
+	// rather than handing a renderer a lattice it cannot cover the screen with.
+	| { field: keyof ConfigurationState; kind: "mat2" };
 
 export const PLAY_PARAMS: Record<string, Spec> = {
 	// global
@@ -29,6 +35,8 @@ export const PLAY_PARAMS: Record<string, Spec> = {
 	lw: { field: "lineWidth", kind: "num", min: 0, max: 5 },
 	hue: { field: "hueOffset", kind: "num", min: 0, max: 359 },
 	rot: { field: "rotation", kind: "num", min: 0, max: 360 },
+	defon: { field: "deformOn", kind: "bool" },
+	def: { field: "deform", kind: "mat2" },
 	pts: { field: "showPolygonPoints", kind: "bool" },
 	orb: { field: "showVertexOrbits", kind: "bool" },
 	trans: { field: "tilingTransition", kind: "bool" },
@@ -124,6 +132,10 @@ export function parsePlayState(sp: URLSearchParams): PlayUrlState {
 				return Number.isInteger(n) && n >= 0 && n <= 359 ? n : null;
 			});
 			config[spec.field] = parts.length && parts.every((p) => p !== null) ? parts : fallback;
+		} else if (spec.kind === "mat2") {
+			const parts = raw.split(",").map(Number);
+			config[spec.field] =
+				parts.length === 4 && isAdmissibleDeform(parts as unknown as Mat2) ? parts : fallback;
 		} else if (spec.kind === "num") {
 			const n = Number(raw);
 			if (!Number.isFinite(n)) {
@@ -165,9 +177,10 @@ export function serializePlayState(
 	for (const [key, spec] of Object.entries(PLAY_PARAMS)) {
 		const value = cfg[spec.field];
 		if (value === undefined) continue;
-		// Palettes are arrays: compare (and emit) by their joined string, since a parse round-trip
-		// yields a fresh array that is value-equal to the default but not reference-equal.
-		if (spec.kind === "palette" ? String(value) === String(def[spec.field]) : value === def[spec.field]) continue;
+		// Palettes and the deform matrix are arrays: compare (and emit) by their joined string, since a
+		// parse round-trip yields a fresh array that is value-equal to the default but not reference-equal.
+		const isArrayKind = spec.kind === "palette" || spec.kind === "mat2";
+		if (isArrayKind ? String(value) === String(def[spec.field]) : value === def[spec.field]) continue;
 		p.set(key, spec.kind === "bool" ? (value ? "1" : "0") : String(value));
 	}
 

@@ -3,6 +3,8 @@
 // and the embeddable cards (lib/render/flatTilingGL.ts) both call these, so the two cannot drift into
 // behaving differently. The numbers come from Tiling.drawVertexOrbits, the original p5 implementation.
 
+import { applyMat2, invertMat2, isIdentityDeform, type Mat2 } from "@/lib/render/flatView";
+
 /** Dot radius in CSS px. The shader's uRadiusPx and the hit-test radius are the same number by
  *  construction: hovering should start exactly when the pointer touches the disk, not before. */
 export const ORBIT_DOT_RADIUS_PX = 4;
@@ -36,8 +38,11 @@ export interface OrbitDot {
 
 /**
  * Screen position (centred CSS px, y down) back to world coordinates, inverting the transform every
- * flat shader applies:  sx = ox + zoom·(c·wx + s·wy),  sy = oy + zoom·(s·wx − c·wy).
- * That 2x2 is a reflection, so it is its own inverse.
+ * flat shader applies:  s = offset + zoom·R·flip·D·w. That 2x2 is a reflection, so it is its own
+ * inverse; the view deformation D is undone separately, and only here — the hit test compares against
+ * un-deformed dot positions, so a hover under a sheared view has to come back through D⁻¹ or it lands
+ * on the wrong orbit. A singular D has no inverse; the un-deformed point is returned, so the hover
+ * misses instead of returning NaN.
  */
 export function screenToWorld(
 	px: number,
@@ -45,12 +50,16 @@ export function screenToWorld(
 	offset: { x: number; y: number },
 	zoom: number,
 	rotRad: number,
+	deform?: Mat2,
 ): { x: number; y: number } {
 	const c = Math.cos(rotRad);
 	const s = Math.sin(rotRad);
 	const ax = (px - offset.x) / zoom;
 	const ay = (py - offset.y) / zoom;
-	return { x: c * ax + s * ay, y: s * ax - c * ay };
+	const w = { x: c * ax + s * ay, y: s * ax - c * ay };
+	if (isIdentityDeform(deform)) return w;
+	const inv = invertMat2(deform as Mat2);
+	return inv ? applyMat2(inv, w.x, w.y) : w;
 }
 
 /**

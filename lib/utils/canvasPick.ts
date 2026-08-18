@@ -1,29 +1,43 @@
 // Click-to-centre pick math for the tiling canvas. Pure functions (no p5, no store, no Vector class) so
 // the geometry is unit-testable. The canvas draw transform, in CENTRED screen coords, is
-//   s = offset + M·w   with   M·w = zoom·(cos·wx + sin·wy, sin·wx − cos·wy),
-// i.e. world -> y-flip -> scale(zoom) -> rotate(θ) -> +offset. This is the SAME map inlined in
-// makeVisibilityCull/makeWaveScale in canvas.tsx. M is a reflection scaled by zoom, so it is its own
-// inverse up to the zoom factor — screenToWorld and worldToScreen below are the same formula.
+//   s = offset + M·D·w   with   M·w = zoom·(cos·wx + sin·wy, sin·wx − cos·wy),
+// i.e. world -> deform(D) -> y-flip -> scale(zoom) -> rotate(θ) -> +offset. This is the SAME map inlined
+// in makeVisibilityCull/makeWaveScale in canvas.tsx and transcribed by the vertex shaders. M is a
+// reflection scaled by zoom, so it is its own inverse up to the zoom factor — screenToWorld and
+// worldToScreen below share that one formula and differ only in which side D lands on.
+//
+// D (lib/render/flatView.ts) is the sidebar's basis pad. It is optional and defaults to the identity, so
+// every caller that does not deform is byte-identical to the pre-deform code. Picking is the one place
+// the inverse is genuinely needed: the wheel zoom-at-cursor and the middle-click recentre both reduce to
+// o' = s − (z'/z)(s − o), which is independent of the whole linear part, D included.
+
+import { applyMat2, invertMat2, isIdentityDeform, type Mat2 } from "@/lib/render/flatView";
 
 export interface Pt {
 	x: number;
 	y: number;
 }
 
-/** Centred-screen px -> world. `offset` is the (already wrap-reduced) draw offset. Inverse of worldToScreen. */
-export function screenToWorld(sx: number, sy: number, offset: Pt, zoom: number, rot: number): Pt {
+/** Centred-screen px -> world. `offset` is the (already wrap-reduced) draw offset. Inverse of worldToScreen.
+ *  A degenerate deform has no inverse; the un-deformed point is returned rather than NaN, so a pick during
+ *  a pathological drag misses instead of poisoning the caller's arithmetic. */
+export function screenToWorld(sx: number, sy: number, offset: Pt, zoom: number, rot: number, deform?: Mat2): Pt {
 	const cos = Math.cos(rot), sin = Math.sin(rot);
 	const ux = (sx - offset.x) / zoom;
 	const uy = (sy - offset.y) / zoom;
-	return { x: cos * ux + sin * uy, y: sin * ux - cos * uy };
+	const w = { x: cos * ux + sin * uy, y: sin * ux - cos * uy };
+	if (isIdentityDeform(deform)) return w;
+	const inv = invertMat2(deform as Mat2);
+	return inv ? applyMat2(inv, w.x, w.y) : w;
 }
 
 /** World -> centred-screen px. Matches the canvas.tsx draw transform exactly. */
-export function worldToScreen(wx: number, wy: number, offset: Pt, zoom: number, rot: number): Pt {
+export function worldToScreen(wx: number, wy: number, offset: Pt, zoom: number, rot: number, deform?: Mat2): Pt {
 	const cos = Math.cos(rot), sin = Math.sin(rot);
+	const d = isIdentityDeform(deform) ? { x: wx, y: wy } : applyMat2(deform as Mat2, wx, wy);
 	return {
-		x: offset.x + zoom * (cos * wx + sin * wy),
-		y: offset.y + zoom * (sin * wx - cos * wy),
+		x: offset.x + zoom * (cos * d.x + sin * d.y),
+		y: offset.y + zoom * (sin * d.x - cos * d.y),
 	};
 }
 
@@ -85,10 +99,10 @@ export function lensInverse(s: Pt, lens: LensParams): Pt {
 // Full inverse for the inversive view: centred screen px -> world. Lens inverse, then the shared affine
 // inverse (screenToWorld operates on the lens output, not the raw pixel).
 export function inversiveScreenToWorld(
-	sx: number, sy: number, lens: LensParams, offset: Pt, zoom: number, rot: number,
+	sx: number, sy: number, lens: LensParams, offset: Pt, zoom: number, rot: number, deform?: Mat2,
 ): Pt {
 	const v = lensInverse({ x: sx, y: sy }, lens);
-	return screenToWorld(v.x, v.y, offset, zoom, rot);
+	return screenToWorld(v.x, v.y, offset, zoom, rot, deform);
 }
 
 // Reduce a world point into the fundamental parallelogram at the origin (lattice coords in [0,1)²), the

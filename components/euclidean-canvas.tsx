@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useConfiguration } from "@/stores/configuration";
+import { resolveDeform, useConfiguration } from "@/stores/configuration";
 import { buildCellMesh, type CellMesh } from "@/lib/render/buildCellMesh";
 import { buildOrbitDotMesh, type OrbitDotMesh } from "@/lib/render/buildOrbitDotMesh";
-import { computeFillRadii, wrapOffset } from "@/lib/render/flatView";
+import { computeFillGrid, fillGridInstances, wrapOffset } from "@/lib/render/flatView";
 import { syncCanvasSize } from "@/lib/render/canvasSize";
 import {
 	FILL_VERT, FILL_FRAG, STROKE_VERT, STROKE_FRAG, POINTS_VERT, POINTS_FRAG,
@@ -81,7 +81,9 @@ export function EuclideanCanvas({ translationalCell, translationalCellId, paramC
 	const orbitDataRef = useRef<OrbitData | null>(orbitData);
 	orbitDataRef.current = orbitData;
 	const meshRef = useRef<CellMesh | null>(null);
-	const instRef = useRef<{ Ri: number; Rj: number; count: number }>({ Ri: -1, Rj: -1, count: 0 });
+	// The uploaded instance grid, cached by a signature of its shape (see computeFillGrid): row range
+	// plus total, which changes whenever the spans do.
+	const instRef = useRef<{ key: string; count: number }>({ key: "", count: 0 });
 
 	// Selection-transition wave (M2), the shader port of makeWaveScale/transitionRef in canvas.tsx. When a
 	// NEW static tiling is picked, the current mesh COLLAPSES to its centroids (phase "out"), then the
@@ -124,7 +126,7 @@ export function EuclideanCanvas({ translationalCell, translationalCellId, paramC
 		gl.bindBuffer(gl.ARRAY_BUFFER, pointsColorBufRef.current);
 		gl.bufferData(gl.ARRAY_BUFFER, mesh.pointColor, gl.STATIC_DRAW);
 		meshRef.current = mesh;
-		instRef.current = { Ri: -1, Rj: -1, count: 0 }; // force an instance rebuild for the new basis
+		instRef.current = { key: "", count: 0 }; // force an instance rebuild for the new basis
 	};
 
 	// Upload the vertex-orbit dot mesh (M3), or clear it when there's no orbit data. Reset the eased hover
@@ -162,7 +164,7 @@ export function EuclideanCanvas({ translationalCell, translationalCellId, paramC
 		progRef.current = prog;
 		gl.useProgram(prog);
 
-		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uHalf", "uHueOffset", "uWavePhase", "uWaveP", "uFillDim", "uDimTarget"]) {
+		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uDeform", "uHalf", "uHueOffset", "uWavePhase", "uWaveP", "uFillDim", "uDimTarget"]) {
 			uniformsRef.current[name] = gl.getUniformLocation(prog, name);
 		}
 		for (const name of ["aPos", "aHue", "aInst", "aCentroid"]) {
@@ -187,7 +189,7 @@ export function EuclideanCanvas({ translationalCell, translationalCellId, paramC
 		}
 		strokeProgRef.current = strokeProg;
 
-		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uHalf", "uHalfStrokePx", "uStroke", "uWavePhase", "uWaveP", "uStrokeDim", "uDimTarget"]) {
+		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uDeform", "uHalf", "uHalfStrokePx", "uStroke", "uWavePhase", "uWaveP", "uStrokeDim", "uDimTarget"]) {
 			strokeUniformsRef.current[name] = gl.getUniformLocation(strokeProg, name);
 		}
 		for (const name of ["aPos", "aNorm", "aSide", "aInst", "aCentroid"]) {
@@ -212,7 +214,7 @@ export function EuclideanCanvas({ translationalCell, translationalCellId, paramC
 		}
 		pointsProgRef.current = pointsProg;
 
-		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uHalf", "uRadiusPx"]) {
+		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uDeform", "uHalf", "uRadiusPx"]) {
 			pointsUniformsRef.current[name] = gl.getUniformLocation(pointsProg, name);
 		}
 		for (const name of ["aPos", "aCorner", "aColor", "aInst"]) {
@@ -236,7 +238,7 @@ export function EuclideanCanvas({ translationalCell, translationalCellId, paramC
 		}
 		orbitProgRef.current = orbitProg;
 
-		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uHalf", "uRadiusPx", "uK", "uOrbitScale"]) {
+		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uDeform", "uHalf", "uRadiusPx", "uK", "uOrbitScale"]) {
 			orbitUniformsRef.current[name] = gl.getUniformLocation(orbitProg, name);
 		}
 		for (const name of ["aPos", "aCorner", "aOrbit", "aInst"]) {
@@ -309,18 +311,26 @@ export function EuclideanCanvas({ translationalCell, translationalCellId, paramC
 			const v1 = new Vector(mesh.v1[0], mesh.v1[1]);
 			const v2 = new Vector(mesh.v2[0], mesh.v2[1]);
 
-			// Instance grid: (i,j) over the visible lattice range. Rebuild only when the radius changes.
-			const { Ri, Rj } = computeFillRadii(v1, v2, mesh.det, ctrl.zoom, w, h, rot, mesh.extent);
-			if (Ri !== instRef.current.Ri || Rj !== instRef.current.Rj) {
-				const inst: number[] = [];
-				for (let i = -Ri; i <= Ri; i++) for (let j = -Rj; j <= Rj; j++) inst.push(i, j);
+			// The view deformation (the sidebar's basis pad), read imperatively like everything else on this
+			// hot path. It is a per-frame UNIFORM: a drag re-uploads four floats and touches no geometry.
+			const dfm = resolveDeform(cfg);
+			const deform = dfm as unknown as Float32List;
+
+			// Instance grid: the (i,j) copies that actually meet the viewport. computeFillGrid gives per-row
+			// column spans, so a deformed lattice costs what it covers instead of what its bounding rectangle
+			// would. Rebuild only when the grid's shape changes — `key` is the signature of that.
+			const grid = computeFillGrid(v1, v2, mesh.det, ctrl.zoom, w, h, rot, mesh.extent, dfm);
+			const gridKey = `${grid.iLo}:${grid.iHi}:${grid.count}`;
+			if (gridKey !== instRef.current.key) {
+				const inst = fillGridInstances(grid);
 				g.bindBuffer(g.ARRAY_BUFFER, instBufRef.current);
-				g.bufferData(g.ARRAY_BUFFER, new Float32Array(inst), g.DYNAMIC_DRAW);
-				instRef.current = { Ri, Rj, count: inst.length / 2 };
+				g.bufferData(g.ARRAY_BUFFER, inst, g.DYNAMIC_DRAW);
+				instRef.current = { key: gridKey, count: inst.length / 2 };
 			}
 
-			// Wrapped pan keeps the offset bounded so the fixed instance grid always covers the viewport.
-			const { draw } = wrapOffset(ctrl.offset, v1, v2, mesh.det, ctrl.zoom, rot);
+			// Wrapped pan keeps the offset bounded so the instance grid always covers the viewport. It
+			// reduces against the DEFORMED lattice — that is the one that is drawn.
+			const { draw } = wrapOffset(ctrl.offset, v1, v2, mesh.det, ctrl.zoom, rot, dfm);
 
 			g.clearColor(0, 0, 0, 0);
 			g.clear(g.COLOR_BUFFER_BIT);
@@ -360,6 +370,7 @@ export function EuclideanCanvas({ translationalCell, translationalCellId, paramC
 			g.uniform1f(U.uRot, rot);
 			g.uniform2f(U.uV1, mesh.v1[0], mesh.v1[1]);
 			g.uniform2f(U.uV2, mesh.v2[0], mesh.v2[1]);
+			g.uniformMatrix2fv(U.uDeform, false, deform);
 			g.uniform2f(U.uHalf, w / 2, h / 2);
 			g.uniform1f(U.uHueOffset, cfg.hueOffset || 0);
 			g.uniform1i(U.uWavePhase, wavePhaseInt);
@@ -409,6 +420,7 @@ export function EuclideanCanvas({ translationalCell, translationalCellId, paramC
 				g.uniform1f(SU.uRot, rot);
 				g.uniform2f(SU.uV1, mesh.v1[0], mesh.v1[1]);
 				g.uniform2f(SU.uV2, mesh.v2[0], mesh.v2[1]);
+				g.uniformMatrix2fv(SU.uDeform, false, deform);
 				g.uniform2f(SU.uHalf, w / 2, h / 2);
 				g.uniform1i(SU.uWavePhase, wavePhaseInt);
 				g.uniform1f(SU.uWaveP, waveP);
@@ -454,6 +466,7 @@ export function EuclideanCanvas({ translationalCell, translationalCellId, paramC
 				g.uniform1f(PU.uRot, rot);
 				g.uniform2f(PU.uV1, mesh.v1[0], mesh.v1[1]);
 				g.uniform2f(PU.uV2, mesh.v2[0], mesh.v2[1]);
+				g.uniformMatrix2fv(PU.uDeform, false, deform);
 				g.uniform2f(PU.uHalf, w / 2, h / 2);
 				g.uniform1f(PU.uRadiusPx, POINT_DOT_RADIUS_PX);
 				g.drawArraysInstanced(g.TRIANGLES, 0, mesh.pointVertexCount, instRef.current.count);
@@ -503,6 +516,7 @@ export function EuclideanCanvas({ translationalCell, translationalCellId, paramC
 				g.uniform1f(OU.uRot, rot);
 				g.uniform2f(OU.uV1, mesh.v1[0], mesh.v1[1]);
 				g.uniform2f(OU.uV2, mesh.v2[0], mesh.v2[1]);
+				g.uniformMatrix2fv(OU.uDeform, false, deform);
 				g.uniform2f(OU.uHalf, w / 2, h / 2);
 				g.uniform1f(OU.uRadiusPx, ORBIT_DOT_RADIUS_PX); // p5 drew an 8px-diameter orbit dot
 				g.uniform1f(OU.uK, k);

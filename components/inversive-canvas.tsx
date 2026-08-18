@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useConfiguration } from "@/stores/configuration";
+import { resolveDeform, useConfiguration } from "@/stores/configuration";
+import { IDENTITY_DEFORM, invertMat2, isIdentityDeform, mat2Singulars, type Mat2 } from "@/lib/render/flatView";
 import {
 	MAX_BUCKET_ENTRIES,
 	PRIM_TEXELS,
@@ -99,6 +100,16 @@ uniform int uSpiralDouble;   // spiral: 0 = one center, 1 = two centers (Droste)
 uniform vec2 uSpiralK;       // spiral: complex K = (a·v1+b·v2)/(2πi); world = cmul(K, log w − V)
 uniform vec2 uSpiralV;       // spiral: strip-space pan (x = dolly, y = spin; zoom + rotation folded in)
 
+// The view DEFORMATION (the sidebar's basis pad), as its INVERSE. This shader runs backwards — screen
+// pixel -> lens inverse -> affine inverse -> world -> lattice lookup — so the deform, which is applied to
+// the plane BEFORE the lens, is undone last. That ordering is the natural reading of the feature: the
+// lens looks at an already-deformed tiling.
+uniform mat2 uDeformInv;
+// Operator norm of that inverse (1/sigmaMin). A deform is not conformal, so a pixel's world footprint
+// becomes direction-dependent and pwRaw below can only carry one number; this is the worst case, which
+// keeps a line from thinning to nothing where the deform compresses.
+uniform float uDeformNorm;
+
 uniform mat2 uMinv;     // world -> lattice (a, b)
 uniform vec2 uV1;       // lattice basis vectors (world)
 uniform vec2 uV2;
@@ -171,12 +182,14 @@ void main() {
 		// merc = log w. θ+2π ⇒ world += cmul(K,(0,2π)) = a·v1+b·v2, a lattice translation — which is why
 		// the atan branch cut at θ = ±π closes seamlessly onto the same tile.
 		vec2 merc = vec2(0.5 * log(max(dot(w, w), 1e-30)), atan(w.y, w.x));
-		world = cmul(uSpiralK, merc - uSpiralV);
+		world = uDeformInv * cmul(uSpiralK, merc - uSpiralV);
 		// Footprint on the CONTINUOUS coord w: log is conformal (isotropic step |dw|/|w|) and K a
 		// similarity, so the world footprint is just |K|·|dw|/|w|. Measuring on w, not the folded
 		// world keeps the branch cut from spiking dFdx into a one-pixel radial seam.
 		float pw_w = max(length(dFdx(w)), length(dFdy(w)));
-		pwRaw = length(uSpiralK) * pw_w / max(length(w), 1e-6);
+		// Analytic, so the deform is folded in as a bound rather than remeasured — taking derivatives of
+		// the deformed world here would put the branch cut back into pwRaw, which is what this avoids.
+		pwRaw = length(uSpiralK) * pw_w / max(length(w), 1e-6) * uDeformNorm;
 	} else {
 		vec2 v;
 		if (uMode == 0) {
@@ -190,7 +203,8 @@ void main() {
 		// Undo affine (pan/zoom/rotate + y-flip): world = Rt * ((v - offset) / zoom), Rt an involution.
 		vec2 u = (v - uOffset) / uZoom;
 		float c = cos(uRot), sn = sin(uRot);
-		world = vec2(c * u.x + sn * u.y, sn * u.x - c * u.y);
+		world = uDeformInv * vec2(c * u.x + sn * u.y, sn * u.x - c * u.y);
+		// Measured AFTER the deform, so the footprint is exact here (no uDeformNorm bound needed).
 		pwRaw = max(length(dFdx(world)), length(dFdy(world)));
 	}
 
@@ -417,7 +431,7 @@ export function InversiveCanvas({ cell, cellId, paramCell = null, camera }: Inve
 		for (const name of [
 			"uRes", "uDpr", "uOffset", "uZoom", "uRot", "uMode", "uR", "uKinv",
 			"uSpiralDouble", "uSpiralK", "uSpiralV",
-			"uMinv", "uV1", "uV2",
+			"uMinv", "uV1", "uV2", "uDeformInv", "uDeformNorm",
 			"uVerts", "uVertsW", "uMeta", "uMetaW", "uHead", "uGrid", "uList", "uListW",
 			"uStrokeW", "uHueOffset", "uSurface", "uAvg", "uFeature",
 		]) {
@@ -510,6 +524,12 @@ export function InversiveCanvas({ cell, cellId, paramCell = null, camera }: Inve
 				-cam.offset.y * stripSc - (cam.rotationDeg * Math.PI) / 180 + drift.y,
 			];
 
+			// The view deformation, as the inverse the backwards shader needs plus the one scalar its
+			// stroke-width estimate can carry. Both are pure uniforms; a basis-pad drag rebuilds nothing.
+			const dfm = resolveDeform(cfg);
+			const dInv = invertMat2(dfm) ?? IDENTITY_DEFORM;
+			const dNorm = isIdentityDeform(dfm) ? 1 : 1 / Math.max(mat2Singulars(dfm)[1], 1e-6);
+
 			const U = uniformsRef.current;
 			g.uniform2f(U.uRes, w, h);
 			g.uniform1f(U.uDpr, dpr);
@@ -523,6 +543,10 @@ export function InversiveCanvas({ cell, cellId, paramCell = null, camera }: Inve
 			g.uniform2f(U.uSpiralK, spiral.k[0], spiral.k[1]);
 			g.uniform2f(U.uSpiralV, spiralV[0], spiralV[1]);
 			g.uniformMatrix2fv(U.uMinv, false, [m00, m10, m01, m11]);
+			// A singular deform has no inverse; fall back to the identity so the lens keeps drawing the
+			// undeformed tiling instead of every fragment resolving to NaN.
+			g.uniformMatrix2fv(U.uDeformInv, false, dInv as unknown as Float32List);
+			g.uniform1f(U.uDeformNorm, dNorm);
 			g.uniform2f(U.uV1, geom.v1[0], geom.v1[1]);
 			g.uniform2f(U.uV2, geom.v2[0], geom.v2[1]);
 			g.uniform1i(U.uVertsW, geom.vertsW);

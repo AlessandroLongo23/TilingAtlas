@@ -2,7 +2,7 @@
 
 import { Fragment } from "react";
 import { ArrowLeftRight } from "lucide-react";
-import { useConfiguration } from "@/stores/configuration";
+import { deformApplies, useConfiguration } from "@/stores/configuration";
 import { isChiralTiling } from "@/lib/services/chirality";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -19,6 +19,7 @@ import { polygonClassSupportsIslamic } from "@/lib/utils/tilingLabel";
 import { tileClassOf } from "@/lib/services/referenceAtlas";
 import { isDiskSurface, lensAppliesTo, surfaceOf } from "@/lib/services/shelfRegistry";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
+import { DeformPad } from "@/components/deform-pad";
 import { InversiveControls } from "@/components/inversive-controls";
 
 interface OptionsTabProps {
@@ -170,6 +171,19 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 	// patterns, hollow — as well as the plain tilings. It needs only a period lattice, which rules out
 	// exactly the hyperbolic and spherical shelves.
 	const lensApplies = lensAppliesTo(selected);
+	// Where the basis pad belongs. deformApplies() answers the MODE question (which renderer is painting);
+	// the surface question is separate — hyperbolic and spherical shelves have no plane to deform, and the
+	// freedraw/colors boards run their own cameras.
+	const deformShown =
+		deformApplies({
+			hyperbolic: isHyperbolicDisk || isHyperbolicColors,
+			spherical: isSpherical || isSphColors || isSphericalFreedraw,
+			freedraw: isFreedraw,
+			hollow: false,
+			colors: isAnyColors,
+			circlePacking: cfg.circlePacking,
+			showSymmetryElements: cfg.showSymmetryElements,
+		}) && (isFlat || lensApplies);
 
 	// One picker per tile color — shared by every colored view (Euclidean grid, hyperbolic disk, spherical
 	// solid): a hue ring plus the two swatches no hue reaches (cream + its near-black complement).
@@ -1070,6 +1084,29 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 						<Reveal show={cfg.inversive}>
 							<div className="pl-7">
 								<InversiveControls />
+							</div>
+						</Reveal>
+					) : null}
+					{/* The view DEFORMATION, last and behind its own toggle, the same shape as the two views
+					    above: drag the images of the unit vectors and the whole tiling follows. OFF is the
+					    identity and KEEPS the matrix, so closing the drawer restores the undeformed picture
+					    without discarding the shape that was dialled in.
+
+					    Offered only where it is actually applied (resolveDeform / deformApplies) — the flat
+					    WebGL renderer, the two Islamic ones, the lens and the Truchet overlay. The p5-owned
+					    modes hide it instead of letting it sit there doing nothing. */}
+					{deformShown ? (
+						<Checkbox
+							id="deformOn"
+							label="Deformation"
+							checked={cfg.deformOn}
+							onCheckedChange={(v) => setCfg({ deformOn: v })}
+						/>
+					) : null}
+					{deformShown ? (
+						<Reveal show={cfg.deformOn}>
+							<div className="pl-7">
+								<DeformPad />
 							</div>
 						</Reveal>
 					) : null}

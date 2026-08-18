@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { Vector } from "@/classes/Vector";
 import type { IcoMode } from "@/lib/render/icoFreedraw";
+import { IDENTITY_DEFORM, type Mat2 } from "@/lib/render/flatView";
 
 export interface SelectedTiling {
 	name: string;
@@ -44,6 +45,23 @@ export interface ConfigurationState {
 	parameter: number;
 	transformSteps: number;
 	rotation: number;
+	// The view DEFORMATION: a 2x2 linear map applied to world coordinates before the camera
+	// (world -> deform -> zoom*rotate*flip -> +pan), driven by the basis pad in the Options tab.
+	// Column-major, [a, b, c, d]: (a, b) is the image of (1, 0) — the pad's red vector — and (c, d) the
+	// image of (0, 1), blue. Identity is [1, 0, 0, 1] and means "no deformation".
+	//
+	// It lives here rather than in a canvas because five renderers have to agree on it: the flat WebGL
+	// pipeline (components/euclidean-canvas.tsx), the two Islamic ones (islamic-canvas, strap-canvas),
+	// the inversive lens (which applies its INVERSE per fragment) and the Truchet 2D overlay. All five
+	// read it imperatively each frame; the math is in lib/render/flatView.ts (Mat2, applyMat2, ...).
+	//
+	// Only wired for those renderers — see deformApplies() below. The p5-owned modes (circle packing,
+	// symmetry elements, colors, hollow) hide the control instead of ignoring it.
+	deform: [number, number, number, number];
+	/** Is the deformation drawer open — i.e. is `deform` actually applied? Off means the identity, and
+	 *  the matrix is REMEMBERED, so closing the drawer restores the undeformed picture without throwing
+	 *  away the shape that was dialled in. Same on/off shape as `isIslamic` and `inversive`. */
+	deformOn: boolean;
 
 	// Display toggles
 	showDualConnections: boolean;
@@ -266,6 +284,40 @@ export interface ConfigurationState {
 	set: (patch: Partial<ConfigurationState>) => void;
 }
 
+/**
+ * Where the view DEFORMATION (`deform`, the sidebar's basis pad) is actually wired.
+ *
+ * The flat WebGL renderer, the two Islamic ones, the inversive lens and the Truchet overlay all apply
+ * it. The p5-owned modes do not: p5's strokeWeight is carried by the context transform, so a sheared
+ * applyMatrix would draw elliptical strokes, and deforming those paths honestly means emitting deformed
+ * vertices through every one of them (circle packing would need its ellipses rebuilt as polygons).
+ * Until that is done the Options tab HIDES the drawer there — a control that silently does nothing is
+ * worse than an absent one.
+ *
+ * One predicate, so the sidebar's visibility and each renderer's "do I deform this frame" cannot drift.
+ * Takes a structural argument rather than the whole state so the canvases can call it with what they have.
+ */
+export function deformApplies(cfg: {
+	hyperbolic: boolean; spherical: boolean; freedraw: boolean; hollow?: boolean;
+	colors: boolean; circlePacking: boolean; showSymmetryElements: boolean;
+}): boolean {
+	return !cfg.hyperbolic && !cfg.spherical && !cfg.freedraw && !cfg.hollow &&
+		!cfg.colors && !cfg.circlePacking && !cfg.showSymmetryElements;
+}
+
+/**
+ * The deformation a renderer should use THIS FRAME: the stored matrix when the drawer is open and the
+ * mode honours it, the identity otherwise. Every canvas reads it through here, so "is the picture
+ * deformed" has exactly one answer and a mode that cannot apply D can never be handed one.
+ */
+export function resolveDeform(cfg: {
+	deform: [number, number, number, number]; deformOn: boolean;
+	hyperbolic: boolean; spherical: boolean; freedraw: boolean; hollow?: boolean;
+	colors: boolean; circlePacking: boolean; showSymmetryElements: boolean;
+}): Mat2 {
+	return cfg.deformOn && deformApplies(cfg) ? (cfg.deform as unknown as Mat2) : IDENTITY_DEFORM;
+}
+
 export const useConfiguration = create<ConfigurationState>()((set) => ({
 	selectedTiling: {
 		name: "square",
@@ -289,6 +341,8 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	parameter: 45,
 	transformSteps: 5,
 	rotation: 0,
+	deform: [1, 0, 0, 1],
+	deformOn: false,
 
 	showDualConnections: false,
 	showPolygonFill: true,

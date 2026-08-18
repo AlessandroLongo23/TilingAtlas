@@ -5,7 +5,8 @@ import { useIsDark } from "@/components/freedraw/freedraw-canvas";
 import type { FreedrawPattern } from "@/lib/freedraw/pattern";
 import { drawFreedraw, type FreedrawView } from "@/lib/freedraw/render";
 import { syncCanvasSize } from "@/lib/render/canvasSize";
-import { useConfiguration } from "@/stores/configuration";
+import { IDENTITY_DEFORM, type Mat2 } from "@/lib/render/flatView";
+import { resolveDeform, useConfiguration } from "@/stores/configuration";
 
 // The Truchet figures over a PLAIN tiling, as a true overlay.
 //
@@ -39,7 +40,7 @@ import { useConfiguration } from "@/stores/configuration";
  * tiling — but it is NOT a symmetry of a shuffled Truchet pattern, whose period is six cells. Reading
  * the true offset keeps this layer in world position while the tiling slides under its own symmetry.
  */
-function viewOf(zoom: number, offX: number, offY: number, rotDeg: number): FreedrawView {
+function viewOf(zoom: number, offX: number, offY: number, rotDeg: number, deform: Mat2): FreedrawView {
 	const rot = (rotDeg * Math.PI) / 180;
 	const a = -offX / zoom;
 	const b = -offY / zoom;
@@ -48,6 +49,11 @@ function viewOf(zoom: number, offX: number, offY: number, rotDeg: number): Freed
 		cy: a * Math.sin(rot) - b * Math.cos(rot),
 		scale: zoom,
 		rot,
+		// The centre above is derived from the camera, which sits AFTER the deform, so this is the map
+		// drawFreedraw applies to pattern coordinates before subtracting that centre — exactly matching
+		// the flat shader's uDeform. It goes through the projection and never the ctx transform, so the
+		// figures shear while lineWidth stays the same screen pixels (see FreedrawView.deform).
+		deform,
 	};
 }
 
@@ -69,9 +75,13 @@ export function TruchetOverlay({ pattern }: { pattern: FreedrawPattern }) {
 		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 		// The live camera, read fresh every frame. `controls` is mutated in place by the flat canvas's
 		// own loop (no per-frame setState), so subscribing to it in React would see nothing move.
-		const c = useConfiguration.getState().controls;
+		const cfg = useConfiguration.getState();
+		const c = cfg.controls;
 		if (!c.zoom) return;
-		drawFreedraw(ctx, w, h, pattern, viewOf(c.zoom, c.offset.x, c.offset.y, c.rotation), {
+		// Read fresh each frame like the camera: the basis pad writes to the store, and this layer has to
+		// stay glued to the flat view it sits over.
+		const deform = resolveDeform(cfg);
+		drawFreedraw(ctx, w, h, pattern, viewOf(c.zoom, c.offset.x, c.offset.y, c.rotation, deform), {
 			fillMode: "none",
 			showScaffold,
 			showVertices: false,

@@ -8,7 +8,7 @@
 import { Vector } from "@/classes/Vector";
 import type { CellMesh } from "@/lib/render/buildCellMesh";
 import type { OrbitDotMesh } from "@/lib/render/buildOrbitDotMesh";
-import { computeFillRadii, wrapOffset } from "@/lib/render/flatView";
+import { IDENTITY_DEFORM, computeFillGrid, fillGridInstances, wrapOffset, type Mat2 } from "@/lib/render/flatView";
 import {
 	ORBIT_DOT_RADIUS_PX,
 	hoveredOrbitAt,
@@ -41,6 +41,7 @@ uniform float uZoom;
 uniform float uRot;
 uniform vec2 uV1;
 uniform vec2 uV2;
+uniform mat2 uDeform;   // world-space 2x2 (the sidebar's basis pad); identity = no deformation
 uniform vec2 uHalf;     // canvas CSS half-size (w/2, h/2)
 uniform int uWavePhase; // 0 inactive, +1 grow-in, -1 collapse-out
 uniform float uWaveP;   // wave phase progress [0,1]
@@ -53,7 +54,7 @@ void main() {
 	if (uWavePhase != 0) {
 		// Scale the tile about its centroid. u = centroid's screen distance from centre / half-diagonal,
 		// so the wave stays radial about the canvas centre under any pan/zoom/rotation (matches makeWaveScale).
-		vec2 wc = aCentroid + aInst.x * uV1 + aInst.y * uV2;
+		vec2 wc = uDeform * (aCentroid + aInst.x * uV1 + aInst.y * uV2);
 		float csx = uOffset.x + uZoom * (c * wc.x + s * wc.y);
 		float csy = uOffset.y + uZoom * (s * wc.x - c * wc.y);
 		float dmax = max(1.0, length(uHalf));
@@ -61,7 +62,10 @@ void main() {
 		if (scale < 0.02) scale = 0.0; // WAVE_MIN_SCALE: collapse to a point (zero-area triangle)
 		pos = aCentroid + scale * (aPos - aCentroid);
 	}
-	vec2 world = pos + aInst.x * uV1 + aInst.y * uV2;
+	// uDeform is applied to the REPLICATED point. It is linear, so that is the same as deforming the cell
+	// and the lattice basis separately — which is exactly what the CPU does when it sizes the instance
+	// grid (computeFillGrid), so the two cannot disagree about where a copy lands.
+	vec2 world = uDeform * (pos + aInst.x * uV1 + aInst.y * uV2);
 	float sx = uOffset.x + uZoom * (c * world.x + s * world.y);
 	float sy = uOffset.y + uZoom * (s * world.x - c * world.y);
 	gl_Position = vec4(sx / uHalf.x, -sy / uHalf.y, 0.0, 1.0);
@@ -112,6 +116,7 @@ uniform float uZoom;
 uniform float uRot;
 uniform vec2 uV1;
 uniform vec2 uV2;
+uniform mat2 uDeform;   // world-space 2x2 (the sidebar's basis pad); identity = no deformation
 uniform vec2 uHalf;
 uniform float uHalfStrokePx;  // half stroke width, CSS px
 uniform int uWavePhase;       // 0 inactive, +1 grow-in, -1 collapse-out
@@ -125,7 +130,7 @@ void main() {
 	// strokeMul kills the outline push once the tile has collapsed, so no stroke speck lingers at the centroid.
 	float strokeMul = 1.0;
 	if (uWavePhase != 0) {
-		vec2 wc = aCentroid + aInst.x * uV1 + aInst.y * uV2;
+		vec2 wc = uDeform * (aCentroid + aInst.x * uV1 + aInst.y * uV2);
 		float csx = uOffset.x + uZoom * (c * wc.x + s * wc.y);
 		float csy = uOffset.y + uZoom * (s * wc.x - c * wc.y);
 		float dmax = max(1.0, length(uHalf));
@@ -133,16 +138,27 @@ void main() {
 		if (scale < 0.02) { scale = 0.0; strokeMul = 0.0; } // WAVE_MIN_SCALE: drop the tile entirely
 		pos = aCentroid + scale * (aPos - aCentroid);
 	}
-	vec2 world = pos + aInst.x * uV1 + aInst.y * uV2;
+	vec2 world = uDeform * (pos + aInst.x * uV1 + aInst.y * uV2);
 	// Same centred-screen map as the fill.
 	float sx = uOffset.x + uZoom * (c * world.x + s * world.y);
 	float sy = uOffset.y + uZoom * (s * world.x - c * world.y);
-	// Carry the edge normal through the SAME linear map (no translation), renormalise in screen space,
-	// push by half the stroke width -> constant CSS-px outline at any zoom.
-	float nsx = uZoom * (c * aNorm.x + s * aNorm.y);
-	float nsy = uZoom * (s * aNorm.x - c * aNorm.y);
-	float nl = length(vec2(nsx, nsy));
-	vec2 n = nl > 0.0 ? vec2(nsx, nsy) / nl : vec2(0.0);
+	// The outline direction comes from the edge TANGENT, not from the stored normal.
+	//
+	// Pushing the normal through the linear map is only right when that map is conformal, which
+	// zoom*R*flip is and uDeform is not: under a shear, a normal maps to something that is no longer
+	// perpendicular to the mapped edge, and the outline slides off its own edge. A tangent has no such
+	// problem — it is a difference of two points, so any linear map carries it correctly — and the
+	// perpendicular is then taken in SCREEN space where it is wanted.
+	//
+	// At uDeform = identity this is the previous formula exactly: the screen map L is a scaled reflection,
+	// so L*J = -J*L for the quarter-turn J, and J*(L*J*n) = L*n.
+	vec2 td = uDeform * vec2(-aNorm.y, aNorm.x);
+	float tsx = uZoom * (c * td.x + s * td.y);
+	float tsy = uZoom * (s * td.x - c * td.y);
+	float tl = length(vec2(tsx, tsy));
+	vec2 n = tl > 0.0 ? vec2(-tsy, tsx) / tl : vec2(0.0);
+	// uHalfStrokePx is applied AFTER the whole map, so the outline is that many CSS px wide whatever
+	// uDeform does: sheared tiles, uniform outlines.
 	sx += aSide * uHalfStrokePx * strokeMul * n.x;
 	sy += aSide * uHalfStrokePx * strokeMul * n.y;
 	gl_Position = vec4(sx / uHalf.x, -sy / uHalf.y, 0.0, 1.0);
@@ -177,12 +193,13 @@ uniform float uZoom;
 uniform float uRot;
 uniform vec2 uV1;
 uniform vec2 uV2;
+uniform mat2 uDeform;   // world-space 2x2 (the sidebar's basis pad); identity = no deformation
 uniform vec2 uHalf;
 uniform float uRadiusPx; // disk radius, CSS px
 out vec2 vCorner;
 out vec3 vColor;
 void main() {
-	vec2 world = aPos + aInst.x * uV1 + aInst.y * uV2;
+	vec2 world = uDeform * (aPos + aInst.x * uV1 + aInst.y * uV2);
 	float c = cos(uRot), s = sin(uRot);
 	float sx = uOffset.x + uZoom * (c * world.x + s * world.y);
 	float sy = uOffset.y + uZoom * (s * world.x - c * world.y);
@@ -224,6 +241,7 @@ uniform float uZoom;
 uniform float uRot;
 uniform vec2 uV1;
 uniform vec2 uV2;
+uniform mat2 uDeform;   // world-space 2x2 (the sidebar's basis pad); identity = no deformation
 uniform vec2 uHalf;
 uniform float uRadiusPx;          // base disk radius, CSS px
 uniform float uK;                 // orbit count, for the equidistant hue
@@ -231,7 +249,7 @@ uniform float uOrbitScale[${ORBIT_MAX}]; // per-orbit hover-grow scale (1 at res
 out vec2 vCorner;
 out float vHue;
 void main() {
-	vec2 world = aPos + aInst.x * uV1 + aInst.y * uV2;
+	vec2 world = uDeform * (aPos + aInst.x * uV1 + aInst.y * uV2);
 	float c = cos(uRot), s = sin(uRot);
 	float sx = uOffset.x + uZoom * (c * world.x + s * world.y);
 	float sy = uOffset.y + uZoom * (s * world.x - c * world.y);
@@ -319,6 +337,14 @@ export interface FlatDrawParams {
 	 * mesh in the same world space, which is two copies of a thing that must not disagree.
 	 */
 	onOrbitHover?: (orbit: number) => void;
+	/**
+	 * World-space 2x2 linear deformation, column-major [a, b, c, d] — the sidebar's basis pad
+	 * (lib/render/basisPad.ts). Omitted means the identity, which is what every preview card wants.
+	 *
+	 * A mat2 uniform that is never set reads as all zeros in GLSL, i.e. every vertex at the origin and a
+	 * blank card, so this is uploaded on every pass whether or not anything is deforming.
+	 */
+	deform?: Mat2;
 	/** Colour the tiles fade toward in orbit mode, 0..1. Defaults to white. */
 	dimTargetRGB?: [number, number, number];
 	/** Force the same fade with no orbit mesh loaded. The symmetry-elements overlay wants it: colour
@@ -357,7 +383,7 @@ export class FlatCellRenderer {
 	private strokeU: Record<string, WebGLUniformLocation | null> = {};
 	private strokeA: Record<string, number> = {};
 	private mesh: CellMesh | null = null;
-	private inst = { Ri: -1, Rj: -1, count: 0 };
+	private inst = { key: "", count: 0 };
 	private disposed = false;
 	// Vertex-orbit dots: its own program and buffers, drawn over the dimmed fill, sharing the fill's
 	// instance grid. Inert until uploadOrbitMesh() supplies a mesh.
@@ -403,25 +429,25 @@ export class FlatCellRenderer {
 		// renderer did that euclidean-canvas.tsx's pipeline does not. Some drivers tolerate it; others
 		// drop the draw, which showed up as strokeless (flat-filled) theory cards on Apple/ANGLE Metal
 		// while /play — which binds aCentroid in both passes — rendered correctly on the same GPU.
-		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uHalf", "uHueOffset", "uWavePhase", "uWaveP", "uFillDim", "uDimTarget"]) {
+		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uDeform", "uHalf", "uHueOffset", "uWavePhase", "uWaveP", "uFillDim", "uDimTarget"]) {
 			this.fillU[name] = gl.getUniformLocation(fillProg, name);
 		}
 		for (const name of ["aPos", "aHue", "aInst", "aCentroid"]) {
 			this.fillA[name] = gl.getAttribLocation(fillProg, name);
 		}
-		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uHalf", "uHalfStrokePx", "uStroke", "uWavePhase", "uWaveP", "uStrokeDim", "uDimTarget"]) {
+		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uDeform", "uHalf", "uHalfStrokePx", "uStroke", "uWavePhase", "uWaveP", "uStrokeDim", "uDimTarget"]) {
 			this.strokeU[name] = gl.getUniformLocation(strokeProg, name);
 		}
 		for (const name of ["aPos", "aNorm", "aSide", "aInst", "aCentroid"]) {
 			this.strokeA[name] = gl.getAttribLocation(strokeProg, name);
 		}
-		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uHalf", "uRadiusPx", "uK", "uOrbitScale"]) {
+		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uDeform", "uHalf", "uRadiusPx", "uK", "uOrbitScale"]) {
 			this.orbitU[name] = gl.getUniformLocation(orbitProg, name);
 		}
 		for (const name of ["aPos", "aCorner", "aOrbit", "aInst"]) {
 			this.orbitA[name] = gl.getAttribLocation(orbitProg, name);
 		}
-		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uHalf", "uRadiusPx"]) {
+		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uDeform", "uHalf", "uRadiusPx"]) {
 			this.pointsU[name] = gl.getUniformLocation(pointsProg, name);
 		}
 		for (const name of ["aPos", "aCorner", "aColor", "aInst"]) {
@@ -476,7 +502,7 @@ export class FlatCellRenderer {
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.pointsColorBuf);
 		gl.bufferData(gl.ARRAY_BUFFER, mesh.pointColor, gl.STATIC_DRAW);
 		this.mesh = mesh;
-		this.inst = { Ri: -1, Rj: -1, count: 0 }; // force an instance rebuild for the new basis
+		this.inst = { key: "", count: 0 }; // force an instance rebuild for the new basis
 	}
 
 	/** Supply (or clear) the vertex-orbit dots. With a mesh uploaded, draw() dims the tiles and paints
@@ -509,17 +535,19 @@ export class FlatCellRenderer {
 		const v1 = new Vector(mesh.v1[0], mesh.v1[1]);
 		const v2 = new Vector(mesh.v2[0], mesh.v2[1]);
 
-		// Instance grid: (i,j) over the visible lattice range, or the single copy (0,0) when the mesh is a
-		// finite patch. Rebuild only when the radius changes.
-		const fitted = computeFillRadii(v1, v2, mesh.det, p.zoom, p.width, p.height, rot, mesh.extent);
-		const Ri = p.single ? 0 : fitted.Ri;
-		const Rj = p.single ? 0 : fitted.Rj;
-		if (Ri !== this.inst.Ri || Rj !== this.inst.Rj) {
-			const inst: number[] = [];
-			for (let i = -Ri; i <= Ri; i++) for (let j = -Rj; j <= Rj; j++) inst.push(i, j);
+		// Instance grid: the (i,j) copies that actually meet the viewport, or the single copy (0,0) when
+		// the mesh is a finite patch. computeFillGrid gives per-row column spans instead of a bounding
+		// rectangle, so a sheared or deformed lattice costs what it covers. Rebuild only when the shape
+		// changes; `key` is the cheap signature of that (row range + total), since spans have no (Ri, Rj).
+		const grid = p.single
+			? null
+			: computeFillGrid(v1, v2, mesh.det, p.zoom, p.width, p.height, rot, mesh.extent, p.deform);
+		const key = grid ? `${grid.iLo}:${grid.iHi}:${grid.count}` : "single";
+		if (key !== this.inst.key) {
+			const inst = grid ? fillGridInstances(grid) : new Float32Array([0, 0]);
 			gl.bindBuffer(gl.ARRAY_BUFFER, this.instBuf);
-			gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(inst), gl.DYNAMIC_DRAW);
-			this.inst = { Ri, Rj, count: inst.length / 2 };
+			gl.bufferData(gl.ARRAY_BUFFER, inst, gl.DYNAMIC_DRAW);
+			this.inst = { key, count: inst.length / 2 };
 		}
 
 		// Wrapped pan keeps the offset bounded so the fixed instance grid always covers the viewport.
@@ -527,7 +555,7 @@ export class FlatCellRenderer {
 		// patch off-centre instead of leaving the picture unchanged.
 		const draw = p.single
 			? new Vector(p.offset.x, p.offset.y)
-			: wrapOffset(new Vector(p.offset.x, p.offset.y), v1, v2, mesh.det, p.zoom, rot).draw;
+			: wrapOffset(new Vector(p.offset.x, p.offset.y), v1, v2, mesh.det, p.zoom, rot, p.deform).draw;
 
 		gl.clearColor(0, 0, 0, 0);
 		gl.clear(gl.COLOR_BUFFER_BIT);
@@ -540,6 +568,7 @@ export class FlatCellRenderer {
 		// pass below still keys on orbitMode alone, so dimFill never conjures dots.
 		const dimmed = orbitMode || p.dimFill === true;
 		const dim = p.dimTargetRGB ?? ([1, 1, 1] as [number, number, number]);
+		const deform = (p.deform ?? IDENTITY_DEFORM) as unknown as Float32List;
 
 		// No VAOs: both programs share the default VAO and the instance buffer, so EVERY attribute must
 		// be fully rebound (bindBuffer + vertexAttribPointer + vertexAttribDivisor) before its own draw
@@ -568,6 +597,7 @@ export class FlatCellRenderer {
 			gl.uniform1f(U.uRot, rot);
 			gl.uniform2f(U.uV1, mesh.v1[0], mesh.v1[1]);
 			gl.uniform2f(U.uV2, mesh.v2[0], mesh.v2[1]);
+			gl.uniformMatrix2fv(U.uDeform, false, deform);
 			gl.uniform2f(U.uHalf, p.width / 2, p.height / 2);
 			gl.uniform1f(U.uHueOffset, p.hueOffsetDeg ?? 0);
 			gl.uniform1i(U.uWavePhase, 0); // this renderer never runs the selection wave
@@ -607,6 +637,7 @@ export class FlatCellRenderer {
 			gl.uniform1f(U.uRot, rot);
 			gl.uniform2f(U.uV1, mesh.v1[0], mesh.v1[1]);
 			gl.uniform2f(U.uV2, mesh.v2[0], mesh.v2[1]);
+			gl.uniformMatrix2fv(U.uDeform, false, deform);
 			gl.uniform2f(U.uHalf, p.width / 2, p.height / 2);
 			gl.uniform1f(U.uHalfStrokePx, p.lineWidth * 0.5);
 			gl.uniform3f(U.uStroke, p.strokeRGB[0], p.strokeRGB[1], p.strokeRGB[2]);
@@ -657,6 +688,7 @@ export class FlatCellRenderer {
 			gl.uniform1f(U.uRot, rot);
 			gl.uniform2f(U.uV1, mesh.v1[0], mesh.v1[1]);
 			gl.uniform2f(U.uV2, mesh.v2[0], mesh.v2[1]);
+			gl.uniformMatrix2fv(U.uDeform, false, deform);
 			gl.uniform2f(U.uHalf, p.width / 2, p.height / 2);
 			gl.uniform1f(U.uRadiusPx, POINT_DOT_RADIUS_PX);
 			gl.drawArraysInstanced(gl.TRIANGLES, 0, mesh.pointVertexCount, this.inst.count);
@@ -673,7 +705,7 @@ export class FlatCellRenderer {
 		}
 		if (orbitMode && orbitMesh) {
 			const world = p.orbitHoverPx
-				? screenToWorld(p.orbitHoverPx.x, p.orbitHoverPx.y, draw, p.zoom, rot)
+				? screenToWorld(p.orbitHoverPx.x, p.orbitHoverPx.y, draw, p.zoom, rot, p.deform)
 				: null;
 			const hovered = hoveredOrbitAt(orbitMesh.dots, world, mesh.v1, mesh.v2, mesh.det, p.zoom);
 			// Only on a change: this runs every frame, and a caller that sets React state from it would
@@ -709,6 +741,7 @@ export class FlatCellRenderer {
 			gl.uniform1f(U.uRot, rot);
 			gl.uniform2f(U.uV1, mesh.v1[0], mesh.v1[1]);
 			gl.uniform2f(U.uV2, mesh.v2[0], mesh.v2[1]);
+			gl.uniformMatrix2fv(U.uDeform, false, deform);
 			gl.uniform2f(U.uHalf, p.width / 2, p.height / 2);
 			gl.uniform1f(U.uRadiusPx, ORBIT_DOT_RADIUS_PX);
 			gl.uniform1f(U.uK, orbitMesh.k);
