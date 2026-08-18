@@ -343,6 +343,15 @@ export interface ReferenceTiling {
 	// — the genuinely new tilings the ζ₂₄ grid unlocks. Absent on every other source.
 	offGrid?: boolean;
 	note?: string; // free-text provenance caveat (convex-irregular demo: counts are illustrative, not all-and-only)
+	// Precomputed answers for the two /library facet memos that would otherwise walk `renderCell`.
+	// Both are pure functions of the render cell (lib/services/polygonSpecies.ts), written at build
+	// time by annotatePolygonFacets and read in preference to the geometry. They exist because
+	// `polygonTokenCounts` and `anglePeriodOptions` run over the WHOLE loaded corpus on every filter
+	// change, and since the codec made `renderCell` a lazy accessor that walk costs 18 s of main
+	// thread. Absent on a record whose cell has no polygons — every decoration row — where both
+	// helpers answer with a shared empty array instead.
+	polygonSpecies?: string[]; // e.g. ["3","4","12*30"] — sorted regular-then-star
+	tilePeriods?: number[]; // distinct interior-angle-word periods, ascending
 	// Present on family entries: the proven parametric cell driving the /play alpha slider
 	// (lib/utils/paramCell.ts). renderCell then holds the default-alpha evaluation (thumbnails).
 	paramCell?: ParametricCellData;
@@ -1343,12 +1352,13 @@ export function matchesReferenceFilters(t: ReferenceTiling, f: ReferenceFilter):
 // false (these are oracles, not our proven results) — the /play sidebar is told mode="reference" so it
 // shows an "Oracle" pill instead of the misleading "Candidate" badge.
 export function referenceToCatalogue(r: ReferenceTiling): CatalogueTiling {
-	return {
+	const out: CatalogueTiling = {
 		canonicalKey: r.id,
 		k: r.k,
 		family: r.family,
 		source: r.source,
-		renderCell: r.renderCell,
+		// renderCell is installed lazily below, NOT copied here — see the note after the return.
+		renderCell: undefined as unknown as CatalogueTiling["renderCell"],
 		certified: false,
 		runIds: [],
 		exactSource: r.exactSource,
@@ -1379,6 +1389,31 @@ export function referenceToCatalogue(r: ReferenceTiling): CatalogueTiling {
 		pentEdges: r.pentEdges,
 		ihEdges: r.ihEdges,
 	};
+	// Forward `renderCell` lazily instead of copying it.
+	//
+	// /play does `atlas.map(referenceToCatalogue)` over the WHOLE loaded corpus at open
+	// (_play-client.tsx), and a plain `renderCell: r.renderCell` is a property READ — which fires the
+	// codec's lazy accessor, or the ℤ[ζ₂₄] derive, on every record in the atlas. That defeats the
+	// laziness entirely: the adapter, not the renderer, decides what gets materialised. Sixteen merge
+	// sites do this, so it is the whole corpus every time a shard lands too.
+	//
+	// The getter collapses to a plain value on first read, so a card that actually draws pays once and
+	// `{...t}` behaves normally afterwards.
+	Object.defineProperty(out, "renderCell", {
+		configurable: true,
+		enumerable: true,
+		get() {
+			const cell = r.renderCell;
+			Object.defineProperty(out, "renderCell", {
+				value: cell,
+				writable: true,
+				enumerable: true,
+				configurable: true,
+			});
+			return cell;
+		},
+	});
+	return out;
 }
 
 // Freedraw patterns ship as their own catalogue (public/freedraw/solutions.json — the same file the

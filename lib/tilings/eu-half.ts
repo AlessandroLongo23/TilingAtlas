@@ -23,7 +23,7 @@
 // topped up from the plain runs, which put 27,362 edge-to-edge-only tilings into a shelf that read as
 // complete at every k it listed. Both slices are withdrawn: "if they are too heavy to run, I prefer not
 // to have them rather than having them present only partial enumeration." So the shelf went 27,728 →
-// 40,234 → 12,872, and the last number is the first one that means what it says. The withdrawn runs
+// 40,234 → 12,942, and the last number is the first one that means what it says. The withdrawn runs
 // are still on disk under tools/ctrnact-oracle/run-eu-half-hex-v-k13/ and run-eu-half-pent-k14/.
 //
 // THE FAMILY IS FINITE, and unusually for this atlas the bound is a proof rather than a budget. An
@@ -102,7 +102,7 @@ export const EU_HALF_BOARDS: EuHalfBoard[] = [
 		// STOPS AT 6, and the plain edge-to-edge run reached 13. Those seven further slices shipped for one
 		// day and were withdrawn: they counted 26,876 tilings, all real, but only the edge-to-edge ones.
 		lazyKs: [5, 6],
-		counts: { 1: 2, 2: 10, 3: 35, 4: 68, 5: 145, 6: 423 },
+		counts: { 1: 2, 2: 10, 3: 35, 4: 70, 5: 145, 6: 424 },
 		enumeratedTo: 6,
 		emptyKs: [],
 	},
@@ -138,7 +138,7 @@ export const EU_HALF_BOARDS: EuHalfBoard[] = [
 		D: 12,
 		eagerKs: [2, 4],
 		lazyKs: [5, 6, 7, 8, 9],
-		counts: { 2: 1, 4: 4, 5: 5, 6: 8, 7: 19, 8: 20, 9: 36 },
+		counts: { 2: 2, 4: 5, 5: 6, 6: 8, 7: 20, 8: 22, 9: 38 },
 		enumeratedTo: 9,
 		emptyKs: [1, 3],
 	},
@@ -155,7 +155,7 @@ export const EU_HALF_BOARDS: EuHalfBoard[] = [
 		D: 12,
 		eagerKs: [1, 2, 3, 4],
 		lazyKs: [5],
-		counts: { 1: 5, 2: 64, 3: 391, 4: 1989, 5: 9070 },
+		counts: { 1: 8, 2: 67, 3: 397, 4: 2000, 5: 9092 },
 		enumeratedTo: 5,
 		emptyKs: [],
 	},
@@ -175,8 +175,8 @@ export const EU_HALF_BOARDS: EuHalfBoard[] = [
 		// parallel lines and the short edges on the perpendicular family, which is the aligned grid and
 		// nothing else. That proof assumes every edge is matched WHOLE, and a domino's long side is two
 		// short sides. Allow it to be met by two tiles and running bond, herringbone and basketweave all
-		// arrive: 1 tiling becomes 496, the largest relative gain on the shelf.
-		counts: { 1: 2, 2: 6, 3: 21, 4: 55, 5: 131, 6: 281 },
+		// arrive: 1 tiling becomes 510, the largest relative gain on the shelf.
+		counts: { 1: 3, 2: 8, 3: 22, 4: 58, 5: 134, 6: 285 },
 		enumeratedTo: 6,
 		emptyKs: [],
 	},

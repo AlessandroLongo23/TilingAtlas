@@ -13,6 +13,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { stringifyAtlas } from './atlas/encode.mjs';
+import { isPrimitiveCell } from './atlas/primitive.mjs';
 
 // One shelf, several palettes: pass `tag=family=cells.json` per palette and they merge, each keeping
 // its own family string so /library can tell them apart inside one tile class.
@@ -47,28 +48,7 @@ const dropCollinear = (f) => {
   return out.length >= 3 ? out : f;
 };
 
-// IS THIS CELL PRIMITIVE? The flat corners give the search more ways to label the same geometry, and
-// some of them close on a lattice COARSER than the tiling's own. Such a record is one tiling written
-// twice as large, and the congruence fingerprint below cannot see it: that test re-anchors inside a
-// window of fixed radius, so a supercell and its primitive cell produce the same local picture only if
-// the window happens to reach far enough — and the whole point of a supercell is that it need not.
-// On the half-polygon shelf this filter dropped 63,031 of sqmid's 80,676 records.
-//
-// The test is direct. Any translation carrying the tiling to itself carries some face to a face of the
-// same shape, so every candidate is a difference of two same-shape face centroids. If one of those,
-// taken modulo the lattice, is nonzero and maps the whole marker set onto itself, the cell is a
-// supercell.
 const centroidOf = (f) => [f.reduce((u, q) => u + q[0], 0) / f.length, f.reduce((u, q) => u + q[1], 0) / f.length];
-const profileOf = (f) => {
-  const sides = [], angs = [];
-  for (let t = 0; t < f.length; t++) {
-    const p = f[t], u = f[(t - 1 + f.length) % f.length], v = f[(t + 1) % f.length];
-    sides.push(dist(p, v));
-    const ux = u[0] - p[0], uy = u[1] - p[1], vx = v[0] - p[0], vy = v[1] - p[1];
-    angs.push(Math.abs((Math.atan2(ux * vy - uy * vx, ux * vx + uy * vy) * 180) / Math.PI));
-  }
-  return { sides: sides.sort((a, b) => a - b), angs: angs.sort((a, b) => a - b) };
-};
 
 // A point reduced modulo the period lattice, keyed in CARTESIAN coordinates. Used by both the angle
 // certificate and the supercell filter, so it is defined once here.
@@ -82,29 +62,7 @@ const residue = (p, T1, T2) => {
   if (b > 1 - 1e-7) b -= 1;
   return `${Math.round((a * T1[0] + b * T2[0]) * 1e4)},${Math.round((a * T1[1] + b * T2[1]) * 1e4)}`;
 };
-const isPrimitive = (faces, T1, T2) => {
-  const marks = faces.map((f) => ({ c: centroidOf(f), s: profileOf(f) }));
-  const key = (p) => residue(p, T1, T2);
-  const have = new Set(marks.map((m) => key(m.c)));
-  const same = (a, b) => a.sides.length === b.sides.length
-    && a.sides.every((x, i) => Math.abs(x - b.sides[i]) < 1e-6)
-    && a.angs.every((x, i) => Math.abs(x - b.angs[i]) < 1e-4);
-  for (let j = 1; j < marks.length; j++) {
-    if (!same(marks[0].s, marks[j].s)) continue;
-    const t = [marks[j].c[0] - marks[0].c[0], marks[j].c[1] - marks[0].c[1]];
-    if (key(t) === key([0, 0])) continue;                       // a lattice vector: not a new symmetry
-    let all = true;
-    for (const m of marks) {
-      const img = key([m.c[0] + t[0], m.c[1] + t[1]]);
-      if (!have.has(img)) { all = false; break; }
-      const dst = marks.find((n) => key(n.c) === img);
-      if (!dst || !same(m.s, dst.s)) { all = false; break; }
-    }
-    if (all) return false;
-  }
-  return true;
-};
-const entries = rawEntries.filter((e) => isPrimitive(e.faces, e.T1, e.T2));
+const entries = rawEntries.filter((e) => isPrimitiveCell(e.faces, e.T1, e.T2));
 if (entries.length !== rawEntries.length) {
   console.log(`  supercell filter: dropped ${rawEntries.length - entries.length} of ${rawEntries.length} descriptions`);
 }

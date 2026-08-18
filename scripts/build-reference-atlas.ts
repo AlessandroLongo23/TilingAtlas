@@ -32,6 +32,9 @@ import {
 import { loadOracle, reconstructOracleCell } from './oracle-match';
 import { serializeCell, deserializeCell, type SerializedCell } from './scoutCodec';
 import { evaluateParamCell, type ParametricCellData } from '@/lib/utils/paramCell';
+import { stringifyAtlas } from './atlas/encode.mjs';
+import { stripDerivableRenderCells } from '@/lib/services/renderCellDerive';
+import { annotatePolygonFacets } from '@/lib/services/polygonFacets';
 
 const ring = CyclotomicRing.create(24);
 setActiveRing(ring);
@@ -391,7 +394,10 @@ function writeHigherKShards(): void {
 		}
 		entries.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 		const outPath = path.join(ROOT, 'public', `reference-atlas-k${k}.json`);
-		fs.writeFileSync(outPath, JSON.stringify(entries, null, 0) + '\n');
+		// Facets first: both are read off renderCell, and the strip is what deletes it.
+		annotatePolygonFacets(entries as never);
+		stripDerivableRenderCells(entries as never);
+		fs.writeFileSync(outPath, stringifyAtlas(entries) + '\n');
 		const bytes = fs.statSync(outPath).size;
 		log(`  → ${path.relative(ROOT, outPath)}  (${entries.length} tilings, ${(bytes / 1e6).toFixed(1)} MB)`);
 	}
@@ -654,7 +660,10 @@ function main(): void {
 		t.certification = a.certification;
 	}
 
-	fs.writeFileSync(OUT_PATH, JSON.stringify(atlas, null, 0) + '\n');
+	// Facets first: both are read off renderCell, and the strip is what deletes it.
+	annotatePolygonFacets(atlas as never);
+	stripDerivableRenderCells(atlas as never);
+	fs.writeFileSync(OUT_PATH, stringifyAtlas(atlas) + '\n');
 	fs.mkdirSync(LOG_DIR, { recursive: true });
 
 	if (!argv.includes('--no-ctrnact') && !argv.includes('--no-shards')) writeHigherKShards();

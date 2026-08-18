@@ -36,6 +36,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { stringifyAtlas } from './atlas/encode.mjs';
+import { isPrimitiveCell } from './atlas/primitive.mjs';
 
 const ROOT = process.cwd();
 const ORACLE = path.join(ROOT, 'tools', 'ctrnact-oracle');
@@ -149,39 +150,6 @@ const tJunctions = (faces, T1, T2, residueFn) => {
 	return n;
 };
 
-// IS THIS CELL PRIMITIVE? A `-split` palette can describe one tiling on a SUPERCELL: the flat corners
-// give the search more ways to label the same geometry, and some of them close on a lattice coarser than
-// the tiling's own. Such a record is not a new tiling, it is the same one written twice as large, and the
-// congruence dedup cannot see it — that predicate maps lattice onto lattice UNIMODULARLY, and a supercell
-// is by definition not unimodularly related to the cell inside it. Caught on hexv k=1: 3 records where
-// only 2 tilings exist, the extra one a 4-tile description of a 2-tile tiling.
-//
-// The test is direct. Any translation carrying the tiling to itself carries some face to a face of the
-// same shape, so every candidate is a difference of two same-shape face centroids. If one of those, taken
-// modulo the lattice, is nonzero and maps the whole marker set onto itself, the cell is a supercell.
-const isPrimitive = (faces, T1, T2, residueFn) => {
-	const marks = faces.map((f) => ({ c: centroid(f), s: profile(f) }));
-	const key = (p) => residueFn(p, T1, T2);
-	const have = new Set(marks.map((m) => key(m.c)));
-	const sameProfile = (a, b) => a.sides.length === b.sides.length
-		&& a.sides.every((x, i) => Math.abs(x - b.sides[i]) < 1e-6)
-		&& a.angs.every((x, i) => Math.abs(x - b.angs[i]) < 1e-4);
-	for (let j = 1; j < marks.length; j++) {
-		if (!sameProfile(marks[0].s, marks[j].s)) continue;
-		const t = [marks[j].c[0] - marks[0].c[0], marks[j].c[1] - marks[0].c[1]];
-		if (key(t) === key([0, 0])) continue;                       // a lattice vector: not a new symmetry
-		let all = true;
-		for (const m of marks) {
-			const img = key([m.c[0] + t[0], m.c[1] + t[1]]);
-			if (!have.has(img)) { all = false; break; }
-			const dst = marks.find((n) => key(n.c) === img);
-			if (!dst || !sameProfile(m.s, dst.s)) { all = false; break; }
-		}
-		if (all) return false;
-	}
-	return true;
-};
-
 const dist = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1]);
 const centroid = (f) => [f.reduce((u, q) => u + q[0], 0) / f.length, f.reduce((u, q) => u + q[1], 0) / f.length];
 const shoelace = (f) => {
@@ -262,7 +230,7 @@ for (const B of BOARDS) {
 	// cost: 26,876 hexv records at k=7..13 and 486 pent records at k=10..14. The deeper unsplit runs are
 	// still on disk under tools/ctrnact-oracle/run-eu-half-*-k1*/ if they are ever wanted back.
 	const entries0 = JSON.parse(readFileSync(path.join(ORACLE, B.cells), 'utf8'));
-	const entries = entries0.filter((e) => isPrimitive(e.faces, e.T1, e.T2, residue));
+	const entries = entries0.filter((e) => isPrimitiveCell(e.faces, e.T1, e.T2));
 	const supercells = entries0.length - entries.length;
 	if (supercells) console.log(`  ${B.id}: dropped ${supercells} supercell description(s) of ${entries0.length}`);
 	B.splitMax = Math.max(...entries.map((e) => e.k));

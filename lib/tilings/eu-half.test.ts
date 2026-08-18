@@ -13,7 +13,7 @@ import {
 
 // The Euclidean half-polygon shelf. scripts/build-euhalf-shelf.mjs refuses to write anything whose faces
 // are the wrong shape, leave a gap, overlap, or fold a vertex past 360°, so this does not re-litigate the
-// geometry on all 12,872 records. It guards what that script cannot: that the shipped METADATA says true
+// geometry on all 12,942 records. It guards what that script cannot: that the shipped METADATA says true
 // things, that the classification behind "there are exactly four boards" is written down and checked, and
 // that every row lands in the right folder.
 
@@ -187,7 +187,7 @@ describe.skipIf(!anyShard)("shipped rows", () => {
 	});
 
 	it("ships faces that are the tile, in a cell they exactly fill", () => {
-		// The builder checks this on all 12,872; here it runs on the SHIPPED eager bytes, which is a
+		// The builder checks this on all 12,942; here it runs on the SHIPPED eager bytes, which is a
 		// different artefact from the developer's scratch file and the one a visitor actually gets.
 		for (const r of eager()) {
 			const b = EU_HALF_BOARDS.find((x) => x.id === r.euHalfBoard)!;

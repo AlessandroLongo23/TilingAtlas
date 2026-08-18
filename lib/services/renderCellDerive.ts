@@ -199,7 +199,15 @@ interface Derivable {
  */
 export function hydrateRenderCells<T extends Derivable>(records: T[]): T[] {
 	for (const rec of records) {
-		if (!rec || rec.renderCell !== undefined || !rec.exactSource) continue;
+		if (!rec || !rec.exactSource) continue;
+		// Ask the DESCRIPTOR, never the value. `rec.renderCell !== undefined` reads the property, and
+		// on a geom-packed file that read fires the codec's own lazy accessor and collapses it — so
+		// merely deciding whether to install this getter would expand every cell in the file.
+		// Measured on reference-atlas-scaled-k7.json: 40.8 MB -> 330.7 MB with no consumer having
+		// touched anything. Harmless only because that file loads through loadShelfShard, which does
+		// not call this; adding it there would have been a 293 MB regression with no visible cause.
+		const existing = Object.getOwnPropertyDescriptor(rec, "renderCell");
+		if (existing && (existing.get !== undefined || existing.value !== undefined)) continue;
 		Object.defineProperty(rec, "renderCell", {
 			configurable: true,
 			enumerable: true,
