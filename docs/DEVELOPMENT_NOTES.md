@@ -13408,3 +13408,93 @@ when these palettes develop in ℤ[ζ₂₄] and need 24, which reported two pla
 simply sitting at 30°. And it bucketed candidates on a signature rounded to 1e-6, which puts two
 independently developed copies of one tiling in different buckets, reporting 16 tri45two tilings "lost"
 that were there. A containment check that finds losses should be doubted before the data is.
+
+## The container format lands, and three of its own claims turn out wrong (2026-08-18)
+
+The codec was written on 2026-08-17 and never committed. That mattered more than it sounds: HEAD had
+been importing `@/lib/services/atlasCodec` since it was written, and the file was untracked and not
+gitignored, so a clean clone of any of the last eight commits could not typecheck. `tsc --noEmit` in a
+detached worktree gave four `TS2307`. Nobody noticed because every working tree that mattered had the
+file sitting in it.
+
+Landed in 20 commits: codec source, then the four `renderCell`-stripped ctrnact files, then one commit
+per shelf directory, then the 53 reader migrations. **415 files, 1,886.7 MB → 881.5 MB (53%).**
+
+**The gate ran per file before anything was committed** — decode HEAD's copy, decode the working copy,
+compare with `sameRecords`. 411 came back identical and 4 differed, all four reporting "renderCell
+presence differs", which is the strip and not a fault. Those four were then re-verified per record
+against the cells HEAD actually shipped, through the same geometric `reproducesRenderCell` gate the
+migration used: **36,239 derived, 36,239 reproduce, zero mismatches, 117 keeping their cell** (63/32/22/0
+across base/k8/k9/k10). That reproduces the original claim exactly, from the other direction.
+
+**Ordering mistake worth recording.** The data commits precede the reader migrations, so that range is
+not independently runnable. Readers-first would have kept every commit green, because `decodeAtlas`
+passes a legacy bare array through unchanged — the same property that let the migration go file by file
+would have let the *commits* go reader-first. I had the tool for a clean history and used it backwards.
+
+### Three claims from the 2026-08-17 entry that verification did not support
+
+**The GitHub near-miss did not happen.** That entry says `reference-atlas-scaled-k7.json` was "four
+megabytes from being unpushable" at 95.5 MiB against a "104.9 MB blob limit". GitHub's hard block is
+100 MiB = 104,857,600 bytes, and 95.5 MiB is under it; it trips only the >50 MiB warning. The limit was
+breached once, by a different file — `public/reference-atlas.json` reached 110.3 MiB in commit `265c9c4`,
+history was rewritten around it, and both blobs are still in the local object store. The script that
+regenerates that file unpacked is `enrich-reference-atlas.ts`, which the entry never mentions.
+
+**"Every builder and reader goes through them" was not true.** Fifteen scripts write `public/` JSON
+without the encoder, including `enrich-reference-atlas.ts` (rewrites the base atlas in place),
+`build-scaled-atlas.ts` and `build-tetromino-atlas.ts` (full bypass), and the lazy-shard writes in
+`build-mixed-atlas.ts` and `build-planigon-shelf.mjs` whose main files ARE packed. The one that will
+bite is `reshard-star-shards.mjs`: it writes plain *and* reads with bare `JSON.parse`, so it will
+mis-handle a packed base atlas the moment anyone runs it. The fix that holds is a CI grep guard, not
+fifteen edits.
+
+**`schwarz-hyp` is not silently skipped.** The entry flags it as listed in `WRAPPED_DIRS` while holding
+bare arrays. Both premises are true and the consequence is not: `atlas-compact.mjs:124` detects shape
+per file, so those three take the `encodeAtlas` branch and `encodeShard`'s `Array.isArray` guard never
+fires. They skip on `MIN_RECORDS = 32`, holding 4, 10 and 13 records. Cosmetic mislabel, no effect.
+
+### What the next step actually costs, measured
+
+The 2026-08-17 entry scoped an index/payload split off "148 MB raw / 9.2 MB gzip". Both halves needed
+re-measuring, and the framing was hiding the real problem.
+
+**The wire was never the bottleneck.** Vercel serves every atlas file `content-encoding: br`, the
+34.5 MB one included; the deployed /library transfers 14.1 MB across 118 requests. Quoting raw bytes
+beside gzip bytes made transport look ~16× worse than it is. What is catastrophic is **756 MB of JS
+heap**, and it is not the codec's laziness being defeated — it is eager loading. HEAD fetches 118 files
+/ 226.2 MB raw and `JSON.parse` alone retains 890 MB, of which colors (~371 MB) and freedraw (~146 MB)
+are catalogues the default Euclidean view cannot render at all.
+
+**More packing is played out.** Re-encoding `vcs` as index arrays and bit-packing the boolean `cells` on
+`colors/tri-2-k6.json` is raw −59% and brotli −9%. `darts.rneig` is *provably* redundant — verified on
+4,000/4,000 records that it rebuilds exactly from consecutive face ranges plus one orientation bit per
+face — and it still gzips 6.6 MB to 0.08 MB on its own. Neither is worth building.
+
+**A facet index is cheap and complete.** All 34 predicates in `matchesReferenceFilters` are pure
+per-record and build-computable; `isMaximal` is `t.m === t.k`, and nothing is cross-record. With a
+segment table (~954 rows, one per file/id-prefix run) absorbing everything constant across a contiguous
+run, per-record columns come to ~13.2 MB raw, **2–3 MB gzipped for all 2.01M records**. Two traps: an
+index must ship *derived* `geometryOf` (118,355 records carry no `geometry` field, and /library defaults
+to Euclidean, so the raw field renders an empty library) and *derived* `subOf` (thirteen payload
+branches, and it is /play's whole tree axis). `family` itself is derived at load for 87.9% of records.
+
+**A range container is a random-access win and nothing else.** Vercel supports Range on static assets
+(206, `accept-ranges`, and the edge caches the whole object so unseen offsets still HIT). One page of
+`ie01-k14` costs ~11 KB against a 19.7 MB whole-shard read. But chunking at 256 costs **18.5% against
+simply gzipping each file whole** (75.98 MB vs 64.13 MB corpus-wide), so it cannot be sold as
+compression. Three things it must get right: never emit a multi-range header (Vercel answers
+`bytes=0-99,5000-5099` with a 200 and the entire file), hoist the file-wide `geom` shape table into the
+footer (left per-chunk it fans 585 → 15,805 on scaled-k7 and becomes 17.1% of the container), and store
+chunks itself, because the Cache API rejects 206 outright.
+
+⚑ **`hydrateRenderCells` has a landmine.** It decides whether to install its getter by evaluating
+`rec.renderCell !== undefined` — a property read, which fires the codec's getter and collapses it. On
+`scaled-k7` that is 40.8 MB → 330.7 MB with no consumer having touched anything. Harmless only because
+that file goes through `loadShelfShard`, which does not call it. Use
+`Object.getOwnPropertyDescriptor(rec, "renderCell")`.
+
+⚑ **Two live bugs found while auditing the filters, neither related to this work.**
+`tri45-k4-999 > tri45-k4-1000` lexicographically and `reference-shelf.tsx:1738` sorts ids as strings, so
+/library's order is inverted on eight files. And `period-k3-075` returns periods `{1,3,6}` instead of
+`{1,3}` because one hexagon's nominal 158.5° rounds to 159 at one corner and 158 at another.

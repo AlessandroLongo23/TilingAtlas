@@ -2607,3 +2607,14 @@ a deeper plain run, inside a shelf that read as complete. The top-up mechanism i
 is structural; shelf 40,234 → 12,872. **tri45 re-run on split palettes: 5,313 → 16,964**, containment
 exact by congruence. ⚑ Its dedup compared radius-3.2 patches and had merged distinct tilings since it
 shipped: 13,458 that way against 16,964 exact. Planigons measured, NOT shipped. Detail: NOTES 2026-08-18.
+
+## 2026-08-18 (second) — the container format is committed, and audited — CC
+
+**415 files, 1,886.7 MB → 881.5 MB (53%)**, in 20 commits: codec source first, then the four
+`renderCell`-stripped ctrnact files, then one per shelf directory, then 53 reader migrations. Gated per
+file on `sameRecords` against the committed form; the strip re-verified per record, 36,239 derived,
+**zero mismatches**, 117 kept. ⚑ HEAD had imported the untracked `atlasCodec` for eight commits, so a
+clean clone could not typecheck. ⚑ Three claims in the 2026-08-17 entry do not hold: the GitHub
+near-miss (95.5 MiB is *under* the 100 MiB block; the real breach was `reference-atlas.json` at
+110.3 MiB in `265c9c4`), "every builder goes through them" (fifteen scripts still bypass it), and the
+`schwarz-hyp` skip (cosmetic). Detail: NOTES 2026-08-18.

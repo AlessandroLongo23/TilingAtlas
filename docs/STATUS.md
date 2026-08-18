@@ -48,12 +48,36 @@ lazy accessor so none of its 72 read sites changed. The strip is gated per recor
 because reconstruction reorders polygons (3,410 of 6,193 come back written differently, all of them the
 same geometry up to rotation/reversal).
 
-**Defused:** `reference-atlas-scaled-k7.json` was staged at 95.5 MiB against GitHub's 100 MiB blob block.
-It is 10 MB now, and the largest file in the repo is 34.5 MiB.
+**Landed 2026-08-18**, in 20 commits: the codec source first (HEAD had been importing
+`@/lib/services/atlasCodec` for eight commits without shipping it, so a clean clone could not
+typecheck), then the four `renderCell`-stripped ctrnact files, then one commit per shelf directory,
+then the 53 reader migrations. Measured over the 415 files that moved: **1,886.7 MB → 881.5 MB (53%)**.
+Every file was gated before commit on decoding to records `sameRecords`-identical to its committed
+form, and the strip was re-verified per record against the shipped cells: 36,239 derived, 36,239
+reproduce, **zero mismatches**, 117 keeping their cell for a stated reason.
 
-**Next, scoped but not started:** the eager /library load is still 148 MB raw / 9.2 MB gzip (was 212 /
-12.2). The remainder is `patch.edges` and `darts`, genuinely unique per record, and only an index/payload
-split fixes it — ship a browse index (~5.6 bytes/record gzipped) and fetch geometry per visible tile.
+**Correction to the size story.** `reference-atlas-scaled-k7.json` at 95.5 MiB was *under* GitHub's
+100 MiB block, not four megabytes from unpushable — it tripped only the >50 MiB warning. The limit
+was genuinely breached once, by a different file: `public/reference-atlas.json` reached 110.3 MiB in
+commit `265c9c4`, history was rewritten around it, and both blobs still sit in the local object
+store. The script that regenerates that file unpacked is `enrich-reference-atlas.ts`. Largest blob
+under `public/` is now 34.5 MiB; largest tracked file in the repo is
+`experiments/composable-oracle/ctrnact-composite-convex-k4.cells.json` at 103 MB, outside `public/`.
+
+**⚑ Fifteen scripts still write `public/` JSON without the encoder**, so any of them re-emits an
+unpacked file: `build-scaled-atlas.ts`, `build-tetromino-atlas.ts`, `enrich-reference-atlas.ts`
+(rewrites the base atlas in place), the lazy-shard writes in `build-mixed-atlas.ts` and
+`build-planigon-shelf.mjs`, the four `stamp-*-certification` scripts, and others. The sharp one is
+`reshard-star-shards.mjs`, which writes plain *and* reads with bare `JSON.parse`, so it will
+mis-handle a packed base atlas the moment it runs. Needs a CI grep guard, not just fixes.
+
+**Next, scoped but not started:** the index/payload split. Measured since this entry was first
+written: the eager /library load is 118 files / 226.2 MB raw, and `JSON.parse` alone retains 890 MB,
+of which colors (~371 MB) and freedraw (~146 MB) are catalogues the default view cannot render. A
+facet index over all 2.01M records costs **2–3 MB gzipped** with a segment table, and answers all 34
+predicates in `matchesReferenceFilters`. A range-addressable payload container reaches any page in
+~11 KB against a whole-shard read, but it is **18.5% larger than simply gzipping each file whole**
+(75.98 MB against 64.13 MB corpus-wide) — it is a random-access win, not a compression win.
 
 ## Star polyhedra: 54 solids on a new spherical shelf (2026-08-17)
 
@@ -336,9 +360,22 @@ known-good regular tilings. `tools/ctrnact-oracle/develop_any.py` runs the share
 and certifies 658 of 658; its `--gate` requires all 31. Detail: NOTES 2026-08-12.
 
 ⚑ **The /play sidebar catalogue cannot reach any lazy shard** — `CatalogueListPanel` derives its k rows
-from loaded tilings only, so the k=3 row that would trigger the fetch can never appear. 5,697 entries are
-affected across composable/isotoxal/period/mixed, plus regular k=8/9/10. /library is unaffected
-(`?class=mixed&k=3` renders all 185). Not fixed; belongs in `CatalogueListPanel`.
+from loaded tilings only, so the k=3 row that would trigger the fetch can never appear. Not fixed;
+belongs in `CatalogueListPanel`, and the fix is a build-time manifest of per-(shelf, board, k) counts
+so a row can exist before its data does.
+
+**Count corrected 2026-08-18.** The 5,697 figure was already wrong when written: `KNOWN_HIGHER_TIERS`
+eagerly loaded composable and isotoxal by then, and period/tri45/penrose followed on 2026-08-15, so
+of the original 5,697 only mixed's 697 remain. Measured now, the unreachable-by-browsing total is
+about **84,388** — scaled k3–k7 (43,317), regular k8/9/10 (30,163), euhalf k5–k9 (10,211).
+
+⚑ **/library is NOT unaffected, and this is worse than the /play flag.** The freedraw and colours
+decoration fetches sit inside an effect that early-returns unless geometry is hyperbolic or spherical
+(`reference-shelf.tsx:817-818`), and Euclidean is the default (`parseViewState:320`). Driven in
+Chromium, `/library?dec=colorings` renders **0 cards and "No tilings match"** while /play reports
+226,946 for the same chip: **342,693 Euclidean decoration entries unreachable, presented as a
+complete shelf.** `filters.decoration` is also missing from that effect's dep array (:876).
+`_play-client.tsx:642-683` has it right — mirror it.
 
 ## Period-p: 427 entries, parametrized by the tilings' own corners (2026-08-09)
 
