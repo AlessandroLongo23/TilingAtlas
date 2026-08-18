@@ -11,12 +11,17 @@ import {
 } from "@/lib/services/referenceAtlas";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import { CatalogueListPanel } from "./catalogue-list-panel";
+import type { UnloadedTier } from "@/lib/services/atlasManifest";
 
 interface CatalogueTabProps {
 	/** Already filtered to the active geometry AND decoration — both splits live in the parent. */
 	items: CatalogueTiling[];
 	selectedKey: string | null;
 	onSelect?: (t: CatalogueTiling) => void;
+	/** Tiers that ship but are not loaded — passed straight through to the tree. */
+	unloaded?: UnloadedTier[];
+	onLoadTier?: (t: UnloadedTier) => void;
+	loadingTiers?: ReadonlySet<string>;
 	geometry: Geometry;
 	/** Tiling count per geometry — labels the segments and disables the empty ones (unloaded shards). */
 	geometryCounts: Record<Geometry, number>;
@@ -40,6 +45,9 @@ export function CatalogueTab({
 	items,
 	selectedKey,
 	onSelect,
+	unloaded,
+	onLoadTier,
+	loadingTiers,
 	geometry,
 	geometryCounts,
 	geometryPending,
@@ -102,7 +110,14 @@ export function CatalogueTab({
 			    contest (catalogue-list-panel.tsx) inside this scroller, so raising them above the tile
 			    ring can never reach the canvas overlay buttons next door. */}
 			<div className="isolate flex-1 overflow-y-auto bg-surface-chrome" data-sidebar-scroll>
-				<CatalogueListPanel items={items} selectedKey={selectedKey} onSelect={onSelect} />
+				<CatalogueListPanel
+					items={items}
+					selectedKey={selectedKey}
+					onSelect={onSelect}
+					unloaded={unloaded}
+					onLoadTier={onLoadTier}
+					loadingTiers={loadingTiers}
+				/>
 			</div>
 		</div>
 	);

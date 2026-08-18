@@ -5,6 +5,7 @@ import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
 import { Tabs } from "@/components/ui/tabs";
 import type { Geometry, Decoration } from "@/lib/services/referenceAtlas";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
+import type { UnloadedTier } from "@/lib/services/atlasManifest";
 import { NavHeader } from "./nav-header";
 import { CatalogueTab } from "./catalogue-tab";
 import { OptionsTab } from "./options-tab";
@@ -16,6 +17,9 @@ import { OptionsTab } from "./options-tab";
 interface TilingsTabProps {
 	selected: CatalogueTiling | null;
 	onSelect?: (t: CatalogueTiling) => void;
+	unloaded?: UnloadedTier[];
+	onLoadTier?: (t: UnloadedTier) => void;
+	loadingTiers?: ReadonlySet<string>;
 	onRandom?: () => void;
 	onPrev?: () => void;
 	onNext?: () => void;
@@ -40,6 +44,9 @@ const TAB_SHORTCUTS: Record<string, string> = { [TABS[0]]: "C", [TABS[1]]: "V" }
 export function TilingsTab({
 	selected,
 	onSelect,
+	unloaded,
+	onLoadTier,
+	loadingTiers,
 	onRandom,
 	onPrev,
 	onNext,
@@ -87,6 +94,9 @@ export function TilingsTab({
 								items={geometryList}
 								selectedKey={selected?.canonicalKey ?? null}
 								onSelect={onSelect}
+								unloaded={unloaded}
+								onLoadTier={onLoadTier}
+								loadingTiers={loadingTiers}
 								geometry={geometry}
 								geometryCounts={geometryCounts}
 								geometryPending={geometryPending}

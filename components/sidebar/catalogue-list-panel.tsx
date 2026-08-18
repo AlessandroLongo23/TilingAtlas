@@ -1,13 +1,14 @@
 "use client";
 
 import { Fragment, memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Download } from "lucide-react";
 import { useExpandableGroups } from "@/lib/hooks/useExpandableGroups";
 import { compactVertexConfig, tileClassOf, TILE_CLASS_ORDER, TILE_CLASS_LABEL, SUB_ORDER, subOf, familyOfSub, type TileClass } from "@/lib/services/referenceAtlas";
 import { cn } from "@/lib/utils/cn";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import { COLOR_SUB, FAMILY_LABEL, SUB_LABEL, shortSubLabel } from "@/lib/services/shelfLabels";
 import { kNounOf } from "@/lib/services/shelfRegistry";
+import { tierKey, type UnloadedTier } from "@/lib/services/atlasManifest";
 import { TileGrid } from "./tile-grid";
 
 // The /play picker: tilings nested by polygon class (regular / star / convex / isotoxal) then by k, each a
@@ -16,6 +17,10 @@ interface CatalogueListPanelProps {
 	items: CatalogueTiling[];
 	selectedKey: string | null;
 	onSelect?: (t: CatalogueTiling) => void;
+	/** Tiers that exist but are not loaded — drawn as rows so their data can be asked for. */
+	unloaded?: UnloadedTier[];
+	onLoadTier?: (t: UnloadedTier) => void;
+	loadingTiers?: ReadonlySet<string>;
 }
 
 // Initial expand state: EVERY row starts collapsed, nested ones included (class `c:…`, grid `s:…`,
@@ -53,7 +58,14 @@ const splitsByConfig = (sub: string, count: number) => sub.startsWith("hyt-") &&
 // every slider tick. Without memo, that re-rendered this whole thumbnail list (each a canvas) every tick
 // — the dominant cost of dragging the Islamic-angle / rotation / line-stroke sliders. memo skips it while
 // its props are referentially stable.
-export const CatalogueListPanel = memo(function CatalogueListPanel({ items, selectedKey, onSelect }: CatalogueListPanelProps) {
+export const CatalogueListPanel = memo(function CatalogueListPanel({
+	items,
+	selectedKey,
+	onSelect,
+	unloaded,
+	onLoadTier,
+	loadingTiers,
+}: CatalogueListPanelProps) {
 	// Three-level grouping: class → grid sub-level (freedraw only; one anonymous sub otherwise) → k.
 	const byClass = useMemo(() => {
 		const map = new Map<TileClass, Map<string, Map<number, CatalogueTiling[]>>>();
@@ -67,14 +79,31 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({ items, sele
 			if (!kMap.has(t.k)) kMap.set(t.k, []);
 			kMap.get(t.k)!.push(t);
 		}
+		// Tiers that ship but are not loaded get an EMPTY k bucket, so the row exists and clicking it
+		// is what fetches. Without this a row can only appear once its data has arrived, and the data
+		// only arrives when the row is clicked — the circularity that left 84,424 tilings unreachable.
+		// A tier whose records did arrive (deep link, another route) is skipped: unloadedTiers() has
+		// already cancelled it against the loaded set, and re-adding it here would draw an empty
+		// duplicate beside the real one.
+		const pendingAt = new Map<string, UnloadedTier>();
+		for (const u of unloaded ?? []) {
+			if (map.get(u.cls)?.get(u.sub)?.has(u.k)) continue;
+			pendingAt.set(tierKey(u.cls, u.sub, u.k), u);
+			if (!map.has(u.cls)) map.set(u.cls, new Map());
+			const subMap = map.get(u.cls)!;
+			if (!subMap.has(u.sub)) subMap.set(u.sub, new Map());
+			subMap.get(u.sub)!.set(u.k, []);
+		}
 		return TILE_CLASS_ORDER.filter((c) => map.has(c)).map((cls) => {
 			const subMap = map.get(cls)!;
 			const subs = SUB_ORDER.filter((s) => subMap.has(s)).map((sub) => {
 				const kMap = subMap.get(sub)!;
 				const ks = Array.from(kMap.entries())
 					.sort(([a], [b]) => a - b)
-					.map(([k, list]) => ({ k, list }));
-				return { sub, ks, count: ks.reduce((s2, g) => s2 + g.list.length, 0) };
+					.map(([k, list]) => ({ k, list, pending: pendingAt.get(tierKey(cls, sub, k)) }));
+				// An unloaded tier contributes its MANIFEST count to the parent totals, so a class header
+				// reads the number of tilings that exist, not the number currently in memory.
+				return { sub, ks, count: ks.reduce((s2, g) => s2 + (g.pending?.count ?? g.list.length), 0) };
 			});
 			// Gather the subs into families, in SUB_ORDER (families are contiguous there, which is what
 			// referenceAtlas' familyOfSub guarantees and its test enforces), so this pass is a scan and
@@ -104,7 +133,7 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({ items, sele
 			}
 			return { cls, subs, families, count: subs.reduce((s2, g) => s2 + g.count, 0) };
 		});
-	}, [items]);
+	}, [items, unloaded]);
 
 	// One flat expand-state set over every node id (class rows, grid rows, and their k rows).
 	const nodeIds = useMemo(() => {
@@ -208,7 +237,12 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({ items, sele
 	// be a second identical one. With two or more classes the class headers render normally.
 	const single = byClass.length === 1;
 
-	const kSections = (cls: TileClass, sub: string, ks: { k: number; list: CatalogueTiling[] }[], depth: 0 | 1 | 2 | 3) =>
+	const kSections = (
+		cls: TileClass,
+		sub: string,
+		ks: { k: number; list: CatalogueTiling[]; pending?: UnloadedTier }[],
+		depth: 0 | 1 | 2 | 3,
+	) =>
 		ks.map((kk) => {
 			const id = `k:${cls}:${sub}:${kk.k}`;
 			const open = expanded[id];
@@ -222,6 +256,27 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({ items, sele
 			// the ordinary reading and keeps the bare "k = 2", so most of the catalogue reads as it always did.
 			const kNoun = kk.list[0] ? kNounOf(kk.list[0]) : null;
 			const kLabel = kNoun ? `k = ${kk.k} ${kNoun}` : `k = ${kk.k}`;
+			// A row for a tier that ships but is not in memory. It shows the manifest count and fetches
+			// on click; it never expands, because there is nothing to expand into yet. Once the records
+			// merge, unloadedTiers() stops reporting it and it becomes an ordinary row on the next
+			// render, at which point the expand state it never used is simply unread.
+			if (kk.pending) {
+				const busy = loadingTiers?.has(kk.pending.key) ?? false;
+				return (
+					<div key={id} className="flex flex-col gap-px">
+						<TreeRow
+							label={kLabel}
+							count={kk.pending.count}
+							open={false}
+							depth={depth}
+							pending={busy ? "loading" : "unloaded"}
+							onToggle={() => {
+								if (!busy) onLoadTier?.(kk.pending!);
+							}}
+						/>
+					</div>
+				);
+			}
 			return (
 				// The wrapper is what bounds the sticky header: pinned while its own bucket is on screen,
 				// pushed off by the next one. Transparent, so the wall's line colour still fills its gaps.
@@ -452,18 +507,22 @@ function TreeRow({
 	open,
 	depth,
 	onToggle,
+	pending,
 }: {
 	label: string;
 	count: number;
 	open: boolean;
 	depth: 0 | 1 | 2 | 3;
 	onToggle: () => void;
+	/** Set on a row whose tilings ship but are not loaded: its count comes from the manifest. */
+	pending?: "unloaded" | "loading";
 }) {
 	return (
 		<button
 			type="button"
 			onClick={onToggle}
-			aria-expanded={open}
+			aria-expanded={pending ? undefined : open}
+			aria-busy={pending === "loading" || undefined}
 			className={cn(
 				// ta-sticky-rule (globals.css): a pinned row paints its own hairlines, since the wall's
 				// gaps have scrolling tiles behind them while it is stuck.
@@ -483,7 +542,14 @@ function TreeRow({
 				{label}
 				<span className="ml-1.5 text-fg tabular-nums">{count}</span>
 			</span>
-			{open ? (
+			{pending ? (
+				// A download glyph, not a chevron: this row fetches, it does not unfold. The count beside
+				// it is the manifest's, so it is honest before anything has been loaded.
+				<Download
+					size={13}
+					className={cn("shrink-0", pending === "loading" ? "text-fg animate-pulse" : "text-fg-muted")}
+				/>
+			) : open ? (
 				<ChevronDown size={13} className="text-fg-muted shrink-0" />
 			) : (
 				<ChevronRight size={13} className="text-fg-muted shrink-0" />

@@ -4,11 +4,15 @@ import { memo } from "react";
 import { PageSidebar } from "@/components/page-sidebar";
 import type { Geometry, Decoration } from "@/lib/services/referenceAtlas";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
+import type { UnloadedTier } from "@/lib/services/atlasManifest";
 import { TilingsTab } from "./tilings-tab";
 
 interface SidebarProps {
 	selected?: CatalogueTiling | null;
 	onSelect?: (t: CatalogueTiling) => void;
+	unloaded?: UnloadedTier[];
+	onLoadTier?: (t: UnloadedTier) => void;
+	loadingTiers?: ReadonlySet<string>;
 	/** Jump to a random tiling in the active geometry (wired to the sidebar button and the "R" shortcut). */
 	onRandom?: () => void;
 	/** Step to the previous / next tiling in list order (arrow buttons and ←/→ shortcuts). */
@@ -37,6 +41,9 @@ interface SidebarProps {
 export const Sidebar = memo(function Sidebar({
 	selected = null,
 	onSelect,
+	unloaded,
+	onLoadTier,
+	loadingTiers,
 	onRandom,
 	onPrev,
 	onNext,
@@ -55,6 +62,9 @@ export const Sidebar = memo(function Sidebar({
 			<TilingsTab
 				selected={selected}
 				onSelect={onSelect}
+				unloaded={unloaded}
+				onLoadTier={onLoadTier}
+				loadingTiers={loadingTiers}
 				onRandom={onRandom}
 				onPrev={onPrev}
 				onNext={onNext}

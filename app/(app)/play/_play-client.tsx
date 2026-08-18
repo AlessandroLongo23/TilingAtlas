@@ -33,6 +33,13 @@ import { useSymmetryData } from "@/lib/hooks/useSymmetryData";
 import { useVertexOrbits } from "@/lib/hooks/useVertexOrbits";
 import { buildTilingSpec } from "@/lib/services/tilingSpec";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
+import {
+	loadAtlasManifest,
+	unloadedTiers,
+	type AtlasManifest,
+	type TierShelf,
+	type UnloadedTier,
+} from "@/lib/services/atlasManifest";
 import { lensAppliesTo, surfaceOf } from "@/lib/services/shelfRegistry";
 import {
 	loadComposableAtlasShard,
@@ -71,6 +78,7 @@ import {
 	loadHyperbolicHalfShard,
 	referenceToCatalogue,
 	tileClassOf,
+	subOf,
 	compareCatalogueDisplayOrder,
 	geometryOf,
 	decorationOf,
@@ -139,6 +147,15 @@ const SHARD_LOADER = {
 // means a drag writes nothing until it settles; sustained interaction caps at 75 writes / 30s.
 const URL_MIRROR_DEBOUNCE_MS = 400;
 
+// Which loader reaches a manifest tier. The manifest names a shelf, not a function, so the file can
+// be regenerated (or replaced by a query) without knowing anything about this module.
+const TIER_LOADER: Record<TierShelf, (k: number) => Promise<ReferenceTiling[]>> = {
+	ctrnact: loadReferenceAtlasShard,
+	scaled: loadScaledAtlasShard,
+	euhalf: loadEuHalfAtlasShard,
+	mixed: loadMixedAtlasShard,
+};
+
 interface PlayClientProps {
 	tilings: CatalogueTiling[];
 }
@@ -181,6 +198,54 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// click). The Supabase certified catalogue is only a fallback while the atlas loads; it is
 	// currently empty (the certified/reference split was retired, the library is unified).
 	const [refList, setRefList] = useState<CatalogueTiling[] | null>(null);
+
+	// ── Tiers that ship but are not loaded ───────────────────────────────────────────────────────────
+	//
+	// The browse tree could only ever show a row for records it already held, and the shards it did
+	// not hold were the ones nothing would trigger a fetch for — 84,424 tilings that existed, shipped,
+	// and could not be reached by clicking. The manifest is a 1.8 KB list of counts, so a row can be
+	// drawn first and its data asked for second.
+	const [manifest, setManifest] = useState<AtlasManifest | null>(null);
+	const [loadingTiers, setLoadingTiers] = useState<ReadonlySet<string>>(new Set());
+	useEffect(() => {
+		let alive = true;
+		loadAtlasManifest().then((m) => alive && setManifest(m));
+		return () => {
+			alive = false;
+		};
+	}, []);
+
+	// Keyed on (class, sub, k) because that is what the tree groups by, so a tier whose records
+	// arrived by another route (a deep link, an eager tier) cancels instead of drawing an empty twin.
+	const unloaded = useMemo(
+		() =>
+			unloadedTiers(
+				manifest,
+				(refList ?? []).map((t) => ({ cls: tileClassOf(t), sub: subOf(t), k: t.k })),
+			),
+		[manifest, refList],
+	);
+
+	const loadTier = useCallback((tier: UnloadedTier) => {
+		setLoadingTiers((s) => new Set(s).add(tier.key));
+		TIER_LOADER[tier.shelf](tier.k)
+			.then((data) => {
+				const add = data.map(referenceToCatalogue);
+				setRefList((prev) => {
+					const base = prev ?? [];
+					const have = new Set(base.map((t) => t.canonicalKey));
+					const fresh = add.filter((t) => !have.has(t.canonicalKey));
+					return fresh.length ? [...base, ...fresh] : base;
+				});
+			})
+			// Drop the busy flag either way: a tier that failed has to be clickable again, and one that
+			// succeeded is about to disappear from `unloaded` on the next render anyway.
+			.finally(() => setLoadingTiers((s) => {
+				const next = new Set(s);
+				next.delete(tier.key);
+				return next;
+			}));
+	}, []);
 	useEffect(() => {
 		let alive = true;
 		loadReferenceAtlas()
@@ -1268,6 +1333,9 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				)}
 			>
 				<Sidebar
+					unloaded={unloaded}
+					onLoadTier={loadTier}
+					loadingTiers={loadingTiers}
 					selected={selected}
 					onSelect={setSelected}
 					onRandom={selectRandom}
