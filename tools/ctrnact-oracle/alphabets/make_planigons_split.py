@@ -93,6 +93,9 @@ def main():
     ap.add_argument("--max-variants", type=int, default=8,
                     help="drop any planigon needing more than this many atomised variants")
     ap.add_argument("--only", default="", help="comma-separated tile names to keep, before the cap")
+    ap.add_argument("--no-split", action="store_true",
+                    help="keep the same tiles with their edges WHOLE — the control run, so that the split "
+                         "and unsplit runs differ in exactly one thing and not in tile set as well")
     args = ap.parse_args()
 
     src = json.load(open(args.palette))
@@ -123,7 +126,10 @@ def main():
 
     tiles = []
     for t, _ in keep:
-        for choice in product(*[comps[e] for e in t["edges"]]):
+        # The control keeps each tile once, edges whole. Selection still runs through the same cap, so
+        # the control and the split palette always hold the SAME planigons.
+        choices = [tuple((e,) for e in t["edges"])] if args.no_split else product(*[comps[e] for e in t["edges"]])
+        for choice in choices:
             angles, edges = [], []
             for i, seq in enumerate(choice):
                 angles.append(t["angles"][i])
@@ -166,6 +172,9 @@ def main():
         "tileGeometry": "euclidean",
         "closure": "euclidean",
         "comment": (
+            ("THE CONTROL: the same planigons with their edges WHOLE, so that the difference against the "
+             "matching -split palette is exactly what dividing an edge buys and not a change of tile set. "
+             if args.no_split else "") +
             "THE PLANIGONS, atomised so the search can place them NON-EDGE-TO-EDGE. Seven of the twelve "
             "planigon edge lengths are sums of others (33 decompositions), so seven admit a T-junction "
             "where one tile's edge is met by two neighbours, and the edge-to-edge planigon shelf counts "
@@ -178,7 +187,8 @@ def main():
             "planigon is a restriction on the answer: tilings that use it are missing from this run, not "
             "absent from the plane. Needs the min_len fix of 2026-08-17 in gen_alphabet.py (a >= D//2)."
         ),
-        "edgeLengths": {k: v for k, v in spec["edgeLengths"].items() if k in A},
+        "edgeLengths": ({k: v for k, v in spec["edgeLengths"].items()} if args.no_split
+                        else {k: v for k, v in spec["edgeLengths"].items() if k in A}),
         "tiles": tiles,
     }
     json.dump(out, open(args.out, "w"), indent=2)

@@ -232,3 +232,55 @@ developed: {1: 36, 2: 399} total 435 failures 3
 # The sheet is the point of it. Every one of those 1,620 outlines is the SAME 30-30-120 triangle; the
 # only thing that differs between any two of them is which colour the stripes are and where they
 # change, because that is where a neighbour is allowed to start.
+
+[02:20:13] k=3 STOPPED after 59 min of solve (4,954 raw blocks and still growing). It shares the
+# eu_solver_rt binary with any other run, and AL asked for the next planigon added instead.
+./run-sts.sh: line 63: 78498 Terminated: 15          EU_NOFILTER="$EU_NOFILTER" EU_TABLES="$HERE/tables/$P/tables.bin" "$HERE/eu_solver_rt" > /dev/null 2> solver-stderr.log
+
+# ================================================================================================
+# ADDING THE NEXT CHEAPEST PLANIGON (AL, 2026-08-18)
+# ================================================================================================
+#
+# P12.3.4.3, edges L8 L11 L11 L8 = 6 x 1 x 1 x 6 = 36 variants. The palette goes from 11 planigons
+# / 15 variants to 12 planigons / 51 variants. Still dropped: P12.4.3.3 (42), P12.6.4 (140),
+# P12.12.3 (1,620).
+#
+# Control alphabet (12 planigons, edges whole): 13 tiles, 43 classes, 321 configs -> 635 entries.
+[02:30:55] === planigon-split-plus: alphabet ===
+[gen] mirror twins added for 2 chiral tile(s): P6.4.4.3/2112', P6.4.4.3/2112'
+[02:31:04] === planigon-plus (control, edges whole) k<=3 ===
+[02:31:04] PHASE 0  alphabet (palette=planigon-plus)
+[gen] EDGE TYPES (L1=1, L2=2, L3=3, L9=4, L10=5, L5=6, L11=7, L12=8, L8=9): 1532 incompatible adjacent pairs of 1849 forbidden at the vertex
+[gen] palette=planigon-plus D=24 tiles=13 classes=43 configs=321
+[cert] A6: 635 entries, pairwise non-isomorphic PASS
+[gen] wrote /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/tables/planigon-plus/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (635 entries)
+[02:31:05] PHASE 1  solve (runtime alphabet, MAXNUM=3, EU_NOFILTER=1)
+[02:31:06]   raw blocks: 262  (0s)
+[02:31:06] PHASE 2  prune
+  k=1 : 11
+  k=2 : 31
+  k=3 : 103
+total kept: 145
+store: peak 0.0192928 MB total, 0.0192928 MB resident
+[02:31:06]   (0s)
+[02:31:06] PHASE 3  develop (exact ℤ[ζ₂₄], one step per dart, length from the edge type)
+[gen] mirror twins added for 1 chiral tile(s): P6.4.4.3/1111'
+developed: {1: 11, 2: 31, 3: 103} total 145 failures 0
+[02:31:06]   (0s)
+[02:31:06] DONE  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-planigon-plus-k3/planigon-plus-cells.json
+[02:31:06] === planigon-plus k3 DONE ===
+
+# CONTROL RESULT (12 planigons, edges whole, k<=3): 11 / 21 / 83 = 115 distinct.
+# Against the 11-planigon control's 10 / 21 / 83 = 114, and containment verified (0 of 114 lost).
+# So EDGE-TO-EDGE, adding P12.3.4.3 buys exactly ONE tiling, at k=1, and nothing at k=2 or k=3.
+# That is the point of running the control: whatever the split run adds on top is attributable to the
+# divided edges and not to the extra tile.
+#
+# ⚑ AND THE COUNTS MOVED AGAIN. The 11-planigon control reads 10 / 21 / 83 here where an earlier entry
+# in this file reads 6 / 27 / 87, on the same cells file. The difference is entirely which revision of
+# the supercell filter was in the counting script -- profile-on-raw-faces, profile-on-real-faces, or the
+# vertex-set test -- and the three disagree. The internal closure check (every new tiling has a
+# T-junction, every T-junction-free one is already in the control) held for one revision and fails for
+# another, which is the clearest sign yet that the filter, not the enumeration, is what needs fixing.
+# TREAT EVERY ABSOLUTE PLANIGON COUNT IN THIS FILE AS PROVISIONAL. What is NOT in doubt: the tilings
+# exist, containment holds in every direction tested, and the alphabet cost below is measured.
