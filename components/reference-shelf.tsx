@@ -61,6 +61,9 @@ import {
 	loadPentagonEdgesShard,
 	loadIsohedralEdgesAtlas,
 	loadIsohedralEdgesShard,
+	loadColorsDecorAtlas,
+	loadFreedrawDecorAtlas,
+	loadHyperbolicBaseAtlas,
 	loadHyperbolicPolyAtlas,
 	loadHyperbolicPolyShard,
 	loadHyperbolicHalfShard,
@@ -831,6 +834,9 @@ export function ReferenceShelf() {
 				loadSphericalEdgesAtlas().then((d) => merge(d, eagerToken)).catch(() => {});
 				loadSphericalPolyAtlas().then((d) => merge(d, `${eagerToken}-poly`)).catch(() => {});
 			} else {
+				// The BASE hyperbolic shelf is deferred too (see loadHyperbolicBaseAtlas): 15.9 MB that
+				// used to be parsed on every /library load regardless of the geometry chip.
+				loadHyperbolicBaseAtlas().then((d) => merge(d, `${eagerToken}-base`)).catch(() => {});
 				loadHyperbolicPolyAtlas().then((d) => merge(d, eagerToken)).catch(() => {});
 			}
 		}
@@ -859,6 +865,42 @@ export function ReferenceShelf() {
 			alive = false;
 		};
 	}, [filters.geometry, filters.kValue, xLoaded, tilings]);
+
+	// The DECORATION catalogues, on their own effect and their own trigger.
+	//
+	// They used to live inside the curved-geometry effect above, which early-returns unless the
+	// geometry is hyperbolic or spherical — and `parseViewState` defaults the geometry to euclidean.
+	// So on /library the Edge patterns and Colorings chips fetched NOTHING: `?dec=colorings` rendered
+	// "No tilings match" over 226,946 rows that exist, 342,693 across both chips, presented as a
+	// complete shelf. `filters.decoration` was also missing from that effect's dep array, so even
+	// under a curved geometry the chip alone could not re-run it (setDecoration preserves kValue, so
+	// no other dep changed either). /play had this right all along — see _play-client.tsx, which
+	// gates on the chip outside any geometry guard. This mirrors it.
+	const [decorLoaded, setDecorLoaded] = useState<Set<string>>(new Set());
+	useEffect(() => {
+		if (!tilings) return; // the base atlas setTilings is a REPLACE; merging before it lands loses us
+		const dec = filters.decoration;
+		let alive = true;
+		const merge = (data: ReferenceTiling[], token: string) => {
+			if (!alive || !data.length) return;
+			setTilings((prev) => {
+				const base = prev ?? [];
+				const have = new Set(base.map((t) => t.id));
+				const add = data.filter((t) => !have.has(t.id));
+				return add.length ? [...base, ...add] : base;
+			});
+			setDecorLoaded((s) => new Set(s).add(token));
+		};
+		if (dec === "edges" && !decorLoaded.has("decor-fd")) {
+			loadFreedrawDecorAtlas().then((d) => merge(d, "decor-fd")).catch(() => {});
+		}
+		if (dec === "colorings" && !decorLoaded.has("decor-col")) {
+			loadColorsDecorAtlas().then((d) => merge(d, "decor-col")).catch(() => {});
+		}
+		return () => {
+			alive = false;
+		};
+	}, [filters.decoration, tilings, decorLoaded]);
 
 	// Colored tilings in H² and on S² — the same lazy shape as the edge systems. The eager per-base/solid
 	// slices load once their geometry is entered (making the "Colorings" class chip appear); dense shards load
