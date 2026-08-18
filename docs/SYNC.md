@@ -2638,3 +2638,32 @@ the shipped field and the fallback cannot drift. ⚑ Same leak in two more place
 copied the cell by value across /play's 16 merge sites, and `hydrateRenderCells` decided by property
 READ (40.8 -> 330.7 MB on scaled-k7). ⚑ /library's decoration chips fetched nothing — 342,693 entries
 shown as "No tilings match". /library heap 756 -> 111 MB. Detail: NOTES 2026-08-18.
+
+## 2026-08-18 (fourth) — squared rectangles from the atlas polyhedra — CC
+
+Brooks–Smith–Stone–Tutte run backwards over the catalogue: `lib/squaring/` + `public/squarings/`
+(76 polyhedra, 607 rectangles, 11 perfect, 5.0 MB) + the `/theory/perfect-rectangles` article. Two
+potentials give the two coordinates, one on vertices and one on faces, so one linear solve suffices;
+the matrix-tree normalisation makes it integer-only, needed since sides reach 10²⁷. Finding: |G| ≥ 6
+admits no perfect squaring, 21 of 21; the converse is false and is not claimed. ⚑ `pnpm build` blocked
+by unrelated in-flight `length-families.ts`. Detail: NOTES 2026-08-18, docs/PERFECT_RECTANGLES.md.
+
+## 2026-08-18 (fifth) — the parametric length shelf, three times its own size — CC
+
+AL: the first two cards were the same tiling, both with three sliders on a rectangle where two moved the
+same width. Both halves generalise. `chart2` counted one variable per edge of the SPLIT map, including
+split points that are a corner of no tile, so **134 of 146 rows had more sliders than freedom**; nothing
+deduplicated, so **102 of 146 were byte-identical**. `tiling_key.smooth` + a `family_key` (map + angles +
+which tiles are held equilateral, read at a GENERIC member) + pinning one edge as the unit:
+**192 → 58 rows, T-junction 146 → 21, 1422 → 77 sliders.** Detail: NOTES 2026-08-18 (fourth).
+
+## 2026-08-18 (fourth) — the browse tree offers what it has not loaded — CC
+
+`CatalogueListPanel` built its rows from loaded records, and the only thing that loaded a shard was
+clicking its row — so **84,424 tilings** shipped and were unreachable by browsing (scaled k3–k7
+43,317, regular k8/9/10 29,163, euhalf k5–k9 10,153, mixed k3–k4 697). A 1.8 KB
+`public/atlas-manifest.json` of counts per (class, sub, k) breaks the circularity: an unloaded tier
+draws a row with its real count and fetches on click. Counts are decoded from each shard, never
+declared, and `atlasManifest.test.ts` checks every one in both directions so a stale manifest fails
+the suite. Verified in Chromium: scaled k=4 reads 1,602 before and after loading. Interface kept
+narrow so a Postgres index would change only `loadAtlasManifest`. Detail: NOTES 2026-08-18.

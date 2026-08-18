@@ -13648,6 +13648,156 @@ of Next's `max-age=0`, which was costing 118 conditional requests per /library l
 Not `immutable` — that needs a content hash in the URL, and without one it would pin a viewer to a
 withdrawn shelf.
 
+## The parametric length shelf was three times its own size (2026-08-18, later still)
+
+AL, opening /play: *"the very first two tilings are the same tiling, and both have 3 parameters on a
+rectangular tiling, with the first and third parameter controlling the same edge length."* All of that
+is exactly right, and both halves of it generalise.
+
+`plen-tj-eu-half-sq-mid-split-1-00001` and `-00002` were **byte-identical apart from the id**. Both draw
+the plain rectangle grid: one face, lattice (0, ℓ₁) and (ℓ₀+ℓ₂, 0), so the split point at ℓ₀ along the
+top side is shared by the tile above and the tile below and neither turns at it. Widening ℓ₀ and
+widening ℓ₂ are the same widening. Setting `Edge 1 = 1.93` and `Edge 3 = 1.93` renders the same tiling,
+translated — checked on screen before anything was changed. That family is `plen-rect`, which was
+already on the same shelf, labelled "a slider demo, not a tiling".
+
+**The mechanism.** `length_family.chart2` builds one length variable per edge of the REFINED map, and
+`tiling_key.refine` promotes every point where a side is met part-way to a vertex — including points
+where every incident tile runs straight through. Such a point is a corner of nothing; the tiling cannot
+see it, and the split it names is a free relabelling. The cone therefore came out one dimension too big
+for each of them. Measured over the 146 shipped rows: **134 carried more sliders than the tiling has
+freedom** (24 rows offered 12 where 4 move, 22 offered 13 where 5 move, 14 offered 9 where 3 move).
+
+The fix is `tiling_key.smooth`, which deletes exactly those points and merges the edges they split, run
+before `refine` everywhere the length system is built. It is idempotent and a no-op on any edge-to-edge
+cell, so nothing else in the oracle sees it. Two consequences inside `chart2`: the developed member is
+no longer the all-ones point (a side that was 1 + 1 is one edge of length 2), so the anchor is now the
+developed member's own edge lengths read off the free columns, with a residual check that they lie in
+ker(A) replacing the old all-ones guard; and scale is removed by PINNING the longest edge as the unit,
+because scaling acts on the cone as c ↦ λc and the slice {c : c_j = c*_j} meets every similarity class
+exactly once. The label already said `d - 1` while the code built `d`.
+
+**No dedup existed anywhere.** The emitter walked the engine's blocks and appended. 102 of 146 rows were
+byte-identical to another row; by tiling congruence the 146 are **21 families**. The engine enumerates
+MAPS, and once a side may be split the same tiling carries many maps, so a per-block shelf was never
+going to be a per-tiling shelf.
+
+⚑ **The dedup key has to be more than the map, and it has to be read at a generic member.** Three
+separate traps, all of which bit:
+
+- `tiling_key` labels darts by face size, so the equiangular hexagon grid and the offset rows of squares
+  key the SAME — one face, two vertices, three edges in both, because a square met part-way along its
+  top and bottom is a six-cornered face. The key needs the corner ANGLES too.
+- Angles are still not enough. Rows of unit squares and rows of 1×h rectangles have the same map and the
+  same angles and are different families (two shift parameters against four). The difference is a
+  CONSTRAINT — which tiles the family holds equilateral — and it cannot be read off any one member's
+  lengths, only off whether the sides come out equal at a generic one. `family_key` is map + angles +
+  equalities.
+- At the developed member every edge is 1, which is the most symmetric point of the cone: distinct edges
+  coincide, and a primitive cell can look like a supercell, so `build_map`'s primitive reduction folds a
+  2-parameter family onto a 1-parameter one. `freedom` reports dim 2 for a cell whose chart correctly
+  says 3. Everything — the key, k, and the default sliders — is now read at a point pushed off the
+  centre by an irrational fraction of the box, the same discipline `SHIFT_DEFAULTS` already used.
+
+**Result: 192 rows → 58.** The T-junction shelf is 146 → 21 (1422 sliders → 77, every one verified to
+move the tiling). Across the whole shelf `family_key` then absorbed 9 more rows into 8 survivors:
+`plen-rect` absorbs the very first T-junction row (which is AL's report, exactly), `plen-strip-rr`
+absorbs another, `plen-strip-s` and `plen-strip-t` absorb `plen-enum-01` and `-02` — which the `KNOWN`
+table had *documented* as rediscoveries while shipping both anyway — and the search's own signature (a
+multiset of face words) had missed that `plen-enum-09/10/11`, `03/04`, `14/15` and `16/17` are one
+family each. The survivor's note names the rows it absorbed, so provenance outlives the card.
+
+**Two more things this uncovered.** `freedom` was reading V from `lattice_reps` on the GIVEN basis while
+E and F came from `build_map`'s primitive quotient, which is why 113 of the 146 records carried χ = 2, 3
+or 6; V is now the orbits of σ∘α on the same darts and χ = 0 on all of them. And `clampAlphaAt` snapped
+every parameter to `ALPHA_STEP_DEG = 0.5` — half a degree, the right grain for a corner and absurd for a
+length running over (0.07, 1.93), where it offers three positions. That is why setting 1.8 came back
+1.93. It fires on every selection change and again for the orbit-dot mesh, so the dots were being built
+at a different parameter value than the tiles under them.
+
+**The enumerated search stopped lying about its scope.** `realize` rejected every cone of dimension
+above 2 with "only 2 is emitted", discarding five real two-parameter families at V ≤ 4 while the shipped
+note claimed the search was "complete within its scope". It now emits N-parameter families: the cone is
+an affine slice transverse to scale, the valid region is a box grown one end at a time (exact for a
+single parameter, conservative above it, because a cone is not a box), and a coordinate is a constant
+point plus one derivative point per slider — written as (x, y) pairs, which also retires a format that
+the header described transposed from the way both sides read it. 20 families → 25, 0 of them rigid.
+
+And all five of the recovered families are `plen-strip-ss`, `-st` and `-tt` — the two-shift strip stacks
+the hand construction already had, found independently by a search that knows nothing about strips. That
+is the best cross-check this shelf has: the completeness claim is true now, and what completeness bought
+was a confirmation rather than a new tiling. The dedup absorbs all five, so the shelf total is unchanged
+at 58 and is now that number for the right reason.
+
+⚑ **The interior sample has to be the ROUNDEST member, not the one with the largest shortest edge.**
+Those look equivalent and are not: the cone is usually unbounded, so maximising the shortest edge runs
+away and centres the family on a sliver at coordinates in the tens. Maximising the ratio
+shortest/longest is scale-free and stops where the tiling is most nearly equilateral. The first version
+put 25 of the 30 enumerated sliders' useful range inside their first few percent, with the track running
+to 40. An unbounded direction now stops 4 past the sample, and the default steps off the round member by
+an irrational fraction of each half-width — because the roundest member is exactly where the extra
+symmetry lives, and k read there is the one value almost nothing in the family has.
+
+**Twenty-nine tests passed through all of this.** They checked that each row tiles, which every
+duplicate does, and that the anchor matches the defaults, which every phantom slider does. Three new
+ones close it: the slider count must equal `LENGTH_META.params`; no two rows may share a `family_key`;
+and — the one that does not trust the Python at all — differentiating the geometry with the collinear
+corners suppressed, the rank must equal the slider count. `scripts/check-length-sliders.mjs` now sweeps
+each slider ALONE and fails naming any that leaves the canvas untouched; it used to move two together
+and ask only whether anything at all had changed.
+
+## Every polyhedron hides a squared rectangle (2026-08-18, later still)
+
+AL sent a video on squared rectangles and asked for a page building the perfect rectangle attached to
+each of the atlas's polyhedra. The mathematics is Brooks–Smith–Stone–Tutte 1940: collapse each maximal
+horizontal segment of a squared rectangle to a node, turn each square into a wire, and both tiling
+conditions become Kirchhoff's current law and Ohm's law. A *simple* squaring's network is 3-connected,
+so by Steinitz it is a convex polyhedron's skeleton. Run backwards, every solid in this catalogue has
+rectangles attached to it, one per edge orbit.
+
+**Two potentials, not one, and only one linear solve.** The vertical coordinate is the potential `V` on
+vertices. The horizontal one is the stream function `ψ` on FACES, and it does not need a second solve:
+reinstate the battery edge carrying the return current, and `ψ` is determined by
+`ψ(right) − ψ(left) = I(e)` with one BFS over the dual, consistency being Kirchhoff again. The tile for
+`u→v` is `[ψ_left, ψ_right] × [V(v), V(u)]` and is automatically square, because the current is
+simultaneously the potential drop and the ψ jump. That identity is the whole construction.
+
+**The arithmetic is integer, and getting there was the load-bearing decision.** Solved naively this is a
+rational system whose numerators reach 27 digits on the sp5 records, and gcd-reduction dominates the
+runtime. Fixing `V(p) = det(A)` instead of 1 makes the solution `adj(A)·b` — integral, no division — and
+`det(A)` is the pole-separating 2-forest count by the all-minors matrix-tree theorem. Bareiss keeps the
+elimination integral too. Falls out as a free test: `W + H = τ(G)` for EVERY battery edge, so the cube's
+384 spanning trees fix `W + H = 384` for all of its rectangles before any of them is computed.
+
+**Symmetry is the obstruction, and it is graded.** Across the 36 records carrying a measured isometry
+group, no record with |G| ≥ 6 has a single perfect squaring — 21 of 21, exceptionless — because a
+symmetry carrying one vertex to another puts them at equal potential, and equal potentials are equal
+tiles. The shortfall climbs monotonically with |G| and is usually constant within an order: |G| = 6
+gives up exactly one size in all four cases, |G| = 10 exactly two in all three, |G| = 20 exactly four in
+all three, |G| = 120 gives up 66 of 119. ⚑ **The converse is false and I shipped it as a test before
+checking.** Low symmetry only PERMITS perfection: 10 of 11 records with |G| ≤ 4 have one, and
+`shcube-half-2-00005` (|G| = 4, four squarings, 13 sizes across 17 tiles) does not. Having few edge
+orbits to search is a second, independent obstruction. The test now asserts the one direction the corpus
+supports, and names the exception.
+
+**Consequences of edge-transitivity.** Every Platonic solid has exactly ONE squared rectangle, and none
+of the five is perfect — the reason BSST had to look past the regular solids. Dual pairs give transposed
+rectangles with identical side multisets (cube 10×14 / octahedron 14×10, icosahedron 38×22 /
+dodecahedron 22×38), which is a free correctness check and is pinned. The best exhibit is J62, the
+metabidiminished icosahedron: the icosahedron with two vertices removed, |G| collapsing 120 → 4, one
+rectangle becoming seven, two of them perfect, and the best a simple perfect 1238 × 1102 of order 19.
+
+⚑ **All 20 `public/spherical-poly/` records ship face rings that are not consistently oriented** and
+fail the half-edge certificate as written; `orientFaces` repairs all 20 by BFS over the dual. The
+halved-Platonic records and the hand-written solids were already consistent, which is why this is
+written as a repair and not a requirement.
+
+607 distinct squarings over 76 polyhedra, 11 with a perfect one, all 11 also simple. Not new
+mathematics — SPSRs are catalogued exhaustively to order 21 — the claim is the attachment of a
+particular rectangle to a particular solid. Full record, and the four deferred extensions (star
+polyhedra behind an Euler filter, the 171 MB edge shelf, shelf promotion, Tutte spring embedding), in
+`docs/PERFECT_RECTANGLES.md`.
+
 ## The tiling learns to be squished (2026-08-18, later still)
 
 AL wanted a matrix-transformation control: an identity matrix in the view options, red and blue vectors
@@ -13728,3 +13878,44 @@ first render can hold a matrix the server never saw. The effect corrects the arr
 pad is otherwise the `param-region-pad` discipline: memo'd, read/write/subscribe instead of a `value`
 prop, and the four moving things mutated through refs, so a drag is a dozen attribute writes and not a
 reconcile of ~280 SVG nodes.
+
+## The browse tree can offer what it has not loaded (2026-08-18, later still)
+
+The findability bug had a shape worth naming, because it looks like a UI oversight and is actually a
+circularity. `CatalogueListPanel` builds its rows by grouping the records it holds. A shard that is
+not loaded contributes no records, so it gets no row. The only thing that triggers a load is clicking
+its row. Every lazy tier held out of the eager load for payload reasons was therefore unreachable by
+browsing, forever, no matter how long you clicked: **84,424 tilings** — scaled k3–k7 (43,317),
+regular k8/9/10 (29,163), euhalf k5–k9 (10,153), mixed k3–k4 (697).
+
+The fix is 1.8 KB. `public/atlas-manifest.json` carries a count per (tile class, sub-family, k); an
+unloaded tier draws a row with that count and a download glyph instead of a chevron, and clicking it
+fetches the shard. Parent totals use the manifest count too, so a class header reads what EXISTS
+rather than what happens to be in memory — which was the more insidious half of the bug, since a
+collapsed header quietly under-reported the shelf.
+
+**Keyed on (class, sub, k), not on shelf identity.** That is what the tree groups by, so a tier whose
+records arrive by another route — a deep link, one of the eager `KNOWN_HIGHER_TIERS` — cancels
+against the loaded set instead of drawing an empty twin beside the real row.
+
+**The counts are decoded, never declared.** `scripts/gen-atlas-manifest.ts` opens each shard and calls
+the real `tileClassOf`/`subOf`. A hand-maintained table would be a second source of truth, and its
+failure mode is the one this project cares about most: a row promising 403 tilings and delivering 400,
+with nothing saying so. `atlasManifest.test.ts` checks every shipped count against its shard in both
+directions — every manifest row must match, and every group in the shard must appear in the manifest —
+so a stale manifest fails the suite rather than lying in the UI.
+
+Verified end to end in Chromium, which is the only check that means anything here: the scaled k=4 row
+reads 1,602 before anything is loaded, clicking it fetches `reference-atlas-scaled-k4.json`, and the
+row then reads 1,602 as an ordinary expandable row. Manifest and reality agree.
+
+⚑ **The interface is deliberately narrow, because the producer may not survive.** Everything is a
+count keyed by three fields and `unloadedTiers` is a set difference; nothing in the consumer knows
+where the numbers came from. If the browse index moves to Postgres (see
+`docs/superpowers/specs/2026-08-18-browse-index-design.md`), the generated file goes away and only
+`loadAtlasManifest` changes. Building the consumer first was the point — it is the ~90% that is
+reusable under either answer, so the open A-vs-B decision never blocked it.
+
+⚑ **zsh does not word-split unquoted variables**, and I walked into it committing this: `git add $P`
+with a path list in `$P` treated the whole string as one pathspec and staged nothing. It is written
+down in my own notes. Use an explicit list, and read the error instead of assuming the add worked.
