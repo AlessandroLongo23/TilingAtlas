@@ -13518,3 +13518,70 @@ that file goes through `loadShelfShard`, which does not call it. Use
 `tri45-k4-999 > tri45-k4-1000` lexicographically and `reference-shelf.tsx:1738` sorts ids as strings, so
 /library's order is inverted on eight files. And `period-k3-075` returns periods `{1,3,6}` instead of
 `{1,3}` because one hexagon's nominal 158.5° rounds to 159 at one corner and 158 at another.
+
+## 2026-08-18 (second) — the supercell filter, fixed and pinned
+
+AL: **"focus on fixing the supercell filter."** It had drifted into three copies giving three different
+answers for the same file — the half-polygon shelf read 12,872 / 12,849 / 12,592 / 12,939 depending on
+which one ran, which is why I had stashed the day's attempts rather than ship any of them. There is one
+now, `scripts/atlas/primitive.mjs`, and `scripts/atlas/primitive.test.mjs` pins every trap below.
+
+**The algorithm is exact, and the reason the candidate set is finite is worth writing down.** Any
+translation in the tiling's true group carries face 0 to some face j, so modulo the declared lattice
+every candidate is `c_j − c_0` for a face centroid c; a translation outside the lattice differs from
+its candidate by a lattice vector, which acts trivially. So testing `c_j − c_0` for every j finds every
+supercell and nothing else can be one. A candidate passes when translating by it maps the faces
+BIJECTIVELY onto the faces, modulo the lattice.
+
+**Four bugs, all live.**
+
+⚑ **Faces were compared by a PROFILE** — sorted side lengths, sorted angles. Sorting discards
+orientation, and a translation cannot rotate a tile. The hexagon-halves tiling is exactly that trap:
+two trapezoids a half-turn apart, identical profiles, centroids symmetric about the hexagon's centre.
+The filter called it a supercell of itself and DELETED it; the half-hexagon board lost its k=1 hexagon
+tiling. Faces are compared as point sets now, which is orientation-aware for free.
+
+⚑ **Positions were keyed on a rounded grid** (`round(x·1e4)`), so the same point reached by two
+arithmetic routes landed either side of a boundary and a symmetry with residual 0 went unseen.
+Everything is matched by tolerance now; the grid survives only as a bucket index, queried across its
+3×3 neighbourhood so a point near an edge is still found.
+
+⚑ **Flat corners were left on**, so two tiles that are translates but carry different atomised variants
+read as different polygons. The module drops collinear vertices itself instead of trusting the caller.
+
+⚑ **Only the marker SET had to map onto itself**, not a shape-preserving bijection. Both are enforced.
+
+⚑ **And one of my own diagnostics was wrong**, which is where the 7 "supercells" on the half-triangle
+board got their false certificate: it translated the tiling and asked whether every VERTEX landed on a
+vertex. A translation can preserve the vertex set without preserving the tiling — the vertex set of a
+30-60-90 triangle tiling has more symmetry than the tiling does. Those 7 are primitive and are on the
+shelf, and the "residual exactly 0" I reported for them was measuring the wrong thing. The lesson is
+the same one this file keeps recording: a check that finds a loss should be doubted before the data is.
+
+**The gate.** Any future change to this filter has to clear all six, and the middle two are proofs
+rather than measurements:
+
+| check | |
+|---|---|
+| hexv k=1 = 2 | long-shipped |
+| pent k=1 = 2 | long-shipped |
+| hexm total = 1 | proved: the single edge-to-edge tiling |
+| sqmid total = 1 | proved: the aligned grid and nothing else |
+| containment, five half-polygon boards, plain inside split | 0 lost of 283 / 1 / 1 / 53 / 1557 |
+| containment, tri45 | all 5,313 previously shipped, every one at the same k |
+
+**Counts: euhalf 12,872 → 12,942, tri45 16,964 → 16,965.** Both up, because the profile test had been
+deleting real tilings as well as keeping fake ones.
+
+**Planigons, recounted through it.** 11 planigons whole vs divided: k=1 10 → 16, k=2 31 → 105. k=1
+closes exactly (6 new, 6 carrying a T-junction); k=2 does not (74 new, 59 carrying one). ⚑ That gap is
+NOT this filter — containment holds, and two independent T-junction tests agree to the record (the
+flat-corner test, and a purely geometric one asking whether a tile vertex lies strictly inside another
+tile's edge). It points instead at the k LABEL differing between a plain and a split description of the
+same tiling: the containment run shows 2 tilings the plain palette calls k=1 that the split palette
+calls k=2. That is a question about the pruner's counting convention and it is the next thing to run
+down.
+
+⚑ These files landed inside a concurrent session's commit `5f6a9f8` rather than one of their own —
+both sessions had the index open at once. Nothing was lost, and the content is verified byte-for-byte
+against the working tree, but the commit message for this work is here rather than in the log.

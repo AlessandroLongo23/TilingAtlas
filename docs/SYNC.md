@@ -2618,3 +2618,12 @@ clean clone could not typecheck. ⚑ Three claims in the 2026-08-17 entry do not
 near-miss (95.5 MiB is *under* the 100 MiB block; the real breach was `reference-atlas.json` at
 110.3 MiB in `265c9c4`), "every builder goes through them" (fifteen scripts still bypass it), and the
 `schwarz-hyp` skip (cosmetic). Detail: NOTES 2026-08-18.
+
+## 2026-08-18 (second) — one supercell filter, exact, gated by four proofs — CC
+
+Three copies had drifted to three answers for one file (12,872 / 12,849 / 12,592 / 12,939), so the
+day's attempts were stashed. `scripts/atlas/primitive.mjs` is now the only one, with unit tests pinning
+each trap: profile comparison cannot tell a tile from its half-turn (it DELETED the hexagon-halves
+tiling), rounded position keys miss symmetries with residual 0, flat corners must come off, and the map
+must be a shape-preserving bijection. Gate: hexv/pent k=1 = 2, hexm/sqmid total = 1 (both proved), plus
+containment on all five boards and tri45. euhalf 12,942, tri45 16,965. Detail: NOTES 2026-08-18 (second).
