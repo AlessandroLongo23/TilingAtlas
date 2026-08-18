@@ -38,11 +38,13 @@ counts on every board; the working copies are stashed, not shipped. Next sitting
 analytic ground truths as the gate: plain hexv k=1 = 2, pent k=1 = 2, hexm = 1, sqmid = 1.
 **Also next:** a cheaper representation of a divided edge than one variant per ordered composition.
 
-## /library opens in 111 MB, down from 756 (2026-08-18)
+## /library opens in 73 MB, down from 756 (2026-08-18)
 
 The eager-load deferral (written 2026-08-17, committed since) plus the facet-memo fix. Measured with
-`node scripts/measure-page-load.mjs`: **67 JSON requests, 1.2 MB on the wire, 111 MB of JS heap**,
-against the deployed build's 118 / 14.1 MB / 756 MB.
+`node scripts/measure-page-load.mjs` against a PRODUCTION build, so it is like-for-like with the
+deployed figure: **67 JSON requests, 1.2 MB on the wire, 73 MB of JS heap**, against the deployed
+build's 118 / 14.1 MB / 756 MB. (The dev server reads 111 MB for the same page; use prod for any
+number that gets quoted.)
 
 Most of the heap was the deferral: colors (~371 MB) and freedraw (~146 MB) were parsed at open for
 chips nobody had clicked. What the memo fix buys is TIME. `polygonTokenCounts` and
