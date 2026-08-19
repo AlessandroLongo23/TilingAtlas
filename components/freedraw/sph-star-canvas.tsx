@@ -36,6 +36,7 @@ export function SphStarCanvas({
 			keepRadius
 			showGrid={showGrid}
 			crossings={scene.crossings}
+			tileHsb={scene.tileHsb}
 			showCrossings={showCrossings}
 		/>
 	);

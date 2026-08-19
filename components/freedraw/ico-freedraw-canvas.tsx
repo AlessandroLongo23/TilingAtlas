@@ -33,12 +33,14 @@ interface Props {
 	allEdges?: [number, number][];
 	/** Face-through-face creases (star polyhedra), drawn only when `showCrossings` is on. */
 	crossings?: import("@/lib/render/sphStar").Crease[];
+	/** Per-tile HSB, parallel to the pattern's tiles; see sphStar.faceHsb. */
+	tileHsb?: [number, number, number][];
 	showCrossings?: boolean;
 }
 
 const CAMERA_DISTANCE = 3.2;
 
-export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, allEdges, keepRadius, crossings, showCrossings }: Props) {
+export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, allEdges, keepRadius, crossings, showCrossings, tileHsb }: Props) {
 	const solid = useMemo(() => (vertices ? null : polyhedronForId(solidId)), [solidId, vertices]);
 	const verts = vertices ?? (solid?.vertices as [number, number, number][] | undefined);
 	const solidEdgeList = useMemo<[number, number][]>(
@@ -173,6 +175,7 @@ export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, 
 			allEdges: solidEdgeList,
 			crossings,
 			showCrossings,
+			tileHsb,
 		});
 		scene.add(content.object);
 		contentRef.current = content;
@@ -181,7 +184,7 @@ export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, 
 			content.dispose();
 			if (contentRef.current === content) contentRef.current = null;
 		};
-	}, [pattern, mode, showGrid, solid, solidEdgeList, crossings, showCrossings]);
+	}, [pattern, mode, showGrid, solid, solidEdgeList, crossings, showCrossings, tileHsb]);
 
 	if (errored) {
 		return (

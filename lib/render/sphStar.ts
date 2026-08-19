@@ -40,6 +40,58 @@
 import type { IcoPattern, V3 } from "@/lib/render/icoFreedraw";
 import type { SphSchwarzScene } from "@/lib/render/sphSchwarz";
 import type { SphStarPattern } from "@/lib/tilings/sph-star";
+import { polygonHue } from "@/lib/utils/renderTiling";
+
+/**
+ * The fill colour of one {n/d} face as HSB, hue in degrees.
+ *
+ * ⚑ AL, 2026-08-19, over three rounds, and the last two are why this looks the way it does.
+ *
+ * FIRST: "it's always green, red and purple, and sometimes it's all gray." The colours came from
+ * `tileColor`, which spaces hues by golden angle on the TILE INDEX. That index says nothing about the
+ * polygon: the first face type of every solid took the same hue, a solid with ONE face type took the
+ * neutral grey meant for a blank board, and a triangle here shared a colour with an octagram there.
+ *
+ * So hue is the polygon: `polygonHue(n)`, the by-side-count log ramp the Euclidean tilings use. A
+ * triangle is the same red on a star polyhedron as on a Euclidean tiling, an octagon the same teal.
+ *
+ * THEN, on how to mark a star: winding went into saturation, and "the saturation is not the same for
+ * all polygons" — a channel the tile palette holds fixed everywhere had been made to vary. Winding
+ * went into value instead, and "the latter are more muted, I don't like them", which is exactly what
+ * darkening does when every face of a solid is a star.
+ *
+ * So SATURATION AND VALUE ARE FIXED at the palette's own HSB(h, 0.40, 1.0), for convex and star alike.
+ * Nothing is muted and nothing varies in a channel the rest of the app pins. The whole distinction is
+ * carried by hue, and stars get an arc of the wheel the convex ramp does not reach: the shelf's convex
+ * faces run n = 3..10, hues 0 to 188, and a twelve-gon would still only be 217, so 240 upwards is
+ * free. A star is violet to magenta, and nothing convex ever is.
+ *
+ * Within that arc, point count spreads a star along it and winding nudges it on, so {7/2} and {7/3}
+ * separate. At most two star types share a solid across the whole shelf and the only pair that does is
+ * {5/2} + {10/3}, which land 56 degrees apart.
+ *
+ * Retrograde {n/d} with d > n/2 is the same polygon traversed backwards, so it is normalised first and
+ * colours identically to its forward twin, exactly as `starFaceRings` fills it identically.
+ */
+export function faceHsb(n: number, dRaw: number): [number, number, number] {
+	const d = dRaw > n / 2 ? n - dRaw : dRaw;
+	if (d <= 1) return [polygonHue(n), TILE_SAT, TILE_VAL];
+	const spread = (Math.min(12, Math.max(3, n)) - 3) / 9;
+	const hue = Math.min(STAR_ARC_END, STAR_ARC_START + spread * 80 + (d - 2) * 12);
+	return [hue, TILE_SAT, TILE_VAL];
+}
+
+// ⚑ 0.50/0.98, NOT the flat tiles' 0.40/1.00. AL, comparing a convex polyhedron with a star one:
+// "the latter are more muted, I don't like them". Both are lit 3D solids on this same canvas, and its
+// other shelves colour through `tileColor`, which is HSB(h, 0.50, 0.98). Matching the 2D fill's 0.40
+// instead left every star polyhedron visibly flatter than the uniform polyhedron beside it. The HUE is
+// still the Euclidean by-side-count ramp, which is what carries the polygon's identity; saturation and
+// value belong to the medium, and here the medium is the three.js canvas.
+const TILE_SAT = 0.5;
+const TILE_VAL = 0.98;
+/** The violet-to-magenta arc reserved for star faces; `polygonHue` never reaches it for any n < 17. */
+const STAR_ARC_START = 240;
+const STAR_ARC_END = 350;
 
 const dot = (a: V3, b: V3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 const sub = (a: V3, b: V3): V3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
@@ -251,7 +303,11 @@ function clipToRings(rs: number[][], verts: V3[], P: V3, u: V3): [number, number
  */
 export function sphStarScene(p: SphStarPattern): SphSchwarzScene {
 	const key = new Map<string, number>();
-	for (const [n, d] of p.stats.types) key.set(`${n}/${d}`, key.size);
+	const tileHsb: [number, number, number][] = [];
+	for (const [n, d] of p.stats.types) {
+		key.set(`${n}/${d}`, key.size);
+		tileHsb.push(faceHsb(n, d));
+	}
 	const verts: V3[] = p.vertices.map((v) => [...v] as V3);
 	const tiles: number[][][] = Array.from({ length: key.size }, () => []);
 	// Kept per face, because the crossing lines clip against exactly these: the filled region, not the
@@ -274,5 +330,5 @@ export function sphStarScene(p: SphStarPattern): SphSchwarzScene {
 		nDrawn: p.edges.length,
 		nTiles: tiles.length,
 	};
-	return { pattern, vertices: verts, allEdges: p.edges, crossings };
+	return { pattern, vertices: verts, allEdges: p.edges, crossings, tileHsb };
 }

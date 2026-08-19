@@ -42,6 +42,9 @@ export interface SphSchwarzScene {
 	 *  a separate channel: see `faceCrossings`. Carried as geometry rather than vertex indices, since a
 	 *  crease endpoint is not a vertex. Only the star shelf produces any. */
 	crossings?: import("@/lib/render/sphStar").Crease[];
+	/** Fill colour per tile as HSB (hue in degrees), parallel to `pattern.tiles`. Set by the star shelf,
+	 *  which colours by POLYGON rather than by tile index; omitted elsewhere, where tileColor applies. */
+	tileHsb?: [number, number, number][];
 }
 
 /** Group the board's faces by the pattern's merged tile, and read its drawn bits off the board's edge
