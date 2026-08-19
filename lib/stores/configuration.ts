@@ -298,6 +298,10 @@ export interface ConfigurationState {
 	// `grid` draws the solid's full edge grid faintly under the pattern. See components/freedraw/ico-freedraw-canvas.tsx.
 	sphericalFreedrawMode: IcoMode;
 	sphericalFreedrawGrid: boolean;
+	// Star polyhedra only: draw the creases where two faces cut through each other. Off by default,
+	// because a crease is not an edge of the solid and the plain view is the one whose ink agrees with
+	// the record's V, E and F. See lib/render/sphStar.ts `faceCrossings`.
+	sphStarCrossings: boolean;
 
 	// Color params
 	colorParams: ColorParams;
@@ -469,6 +473,7 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 
 	sphericalFreedrawMode: "polyhedron",
 	sphericalFreedrawGrid: false,
+	sphStarCrossings: false,
 
 	colorParams: { a: 180, b: 0 },
 

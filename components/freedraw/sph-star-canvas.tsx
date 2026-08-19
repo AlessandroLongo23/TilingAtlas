@@ -16,10 +16,14 @@ export function SphStarCanvas({
 	pattern,
 	mode = "polyhedron",
 	showGrid,
+	showCrossings = false,
 }: {
 	pattern: SphStarPattern;
 	mode?: IcoMode;
 	showGrid: boolean;
+	/** Draw the creases where two faces cut through each other. Off by default: they are not edges of
+	 *  the solid, so the plain view is the one whose ink matches the record's V, E and F. */
+	showCrossings?: boolean;
 }) {
 	const scene = useMemo(() => sphStarScene(pattern), [pattern]);
 	return (
@@ -31,6 +35,8 @@ export function SphStarCanvas({
 			mode={mode}
 			keepRadius
 			showGrid={showGrid}
+			crossings={scene.crossings}
+			showCrossings={showCrossings}
 		/>
 	);
 }

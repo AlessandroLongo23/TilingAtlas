@@ -116,6 +116,8 @@ export interface IcoOptions {
 	edgeThickness?: number; // drawn-edge tube radius (default 0.006 = buildFlatSolid's edgeRadius(1))
 	showGrid?: boolean; // draw ALL of the solid's edges faintly (the underlying grid)
 	allEdges?: [number, number][]; // the full edge list (vertex-index pairs), for showGrid
+	showCrossings?: boolean; // draw the face-through-face creases (star polyhedra only)
+	crossings?: [number, number][]; // those creases, as vertex-index pairs; see sphStar.faceCrossings
 }
 
 // Subdivision order for the curved spherical patches (sphere mode). N² sub-triangles per fan triangle.
@@ -264,6 +266,25 @@ export function buildIcoFreedraw(pattern: IcoPattern, rawVertices: V3[], opts: I
 		});
 		group.add(grid.object);
 		disposers.push(() => grid.dispose());
+	}
+
+	// --- face-through-face creases, UNDER the drawn edges so a crease never covers a real edge where the
+	// two run together. Thinner and paler on purpose: it is not an edge of the solid, it bounds no face,
+	// and if it read at edge weight the picture would contradict the V, E and F the record states. ---
+	if (opts.showCrossings && opts.crossings && opts.crossings.length) {
+		const crossThick = thickness * 0.5;
+		const crossColor: [number, number, number] = dark ? [0.42, 0.44, 0.52] : [0.46, 0.48, 0.56];
+		const crossArcs = (extend: number) => opts.crossings!.map(([i, j]) => edgeArc(i, j, radius, extend));
+		const cross = buildTubeSkeleton(crossArcs, 0, { section: "tube", thickness: crossThick, color: crossColor, union: false });
+		cross.object.traverse((o) => {
+			const mat = (o as THREE.Mesh).material as THREE.Material | undefined;
+			if (mat) {
+				mat.transparent = true;
+				(mat as THREE.MeshStandardMaterial).opacity = 0.9;
+			}
+		});
+		group.add(cross.object);
+		disposers.push(() => cross.dispose());
 	}
 
 	// --- drawn edges as tubes: arcs on the sphere, chords on the solid. Tube CENTRE on the surface

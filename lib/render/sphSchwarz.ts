@@ -38,6 +38,10 @@ export interface SphSchwarzScene {
 	vertices: V3[];
 	/** All of the board's edges, for the faint underlying-grid overlay. */
 	allEdges: [number, number][];
+	/** Where two faces cut through each other, as index pairs into `vertices`. Not edges of the solid,
+	 *  which is the whole reason they are a separate channel: see `faceCrossings`. Only the star shelf
+	 *  produces any, and it is behind a toggle. */
+	crossings?: [number, number][];
 }
 
 /** Group the board's faces by the pattern's merged tile, and read its drawn bits off the board's edge

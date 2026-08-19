@@ -97,6 +97,131 @@ export function starFaceRings(face: number[], d: number, verts: V3[]): number[][
 }
 
 /**
+ * The lines where two faces cut through each other.
+ *
+ * ⚑ Marek Čtrnáct, 2026-08-19, on the pentagrammic prism: "one of those concave edges just doesn't
+ * show". It is not an edge. Two of the prism's squares pass through one another, and the crease that
+ * makes is where their PLANES meet, clipped to where both faces actually are. The record cannot carry
+ * it, because `edges` is the polyhedron's own edge list and V, E, F have to keep meaning what they say.
+ * So it is computed here and drawn on its own channel, behind its own toggle.
+ *
+ * Two faces span one line at most, since two distinct planes meet in exactly one. Three things are
+ * subtracted from it:
+ *
+ *   parallel planes      no line at all, including the coplanar case;
+ *   outside either face  clipped against both filled regions, using the SAME convex rings the fill
+ *                        uses, so a pentagram's crossing line stops at the star and not at its hull;
+ *   the shared edge      two faces meeting along a real edge already have that line drawn. Only the
+ *                        span of the edge itself is removed, not the whole line: the planes can meet
+ *                        again beyond it, and that part is a crossing like any other.
+ */
+export function faceCrossings(p: SphStarPattern, verts: V3[], rings: number[][][]): [number, number][] {
+	const F = p.faces.length;
+	const planes = p.faces.map((f) => {
+		const a = verts[f[0]];
+		const n = unit(cross(sub(verts[f[1]], a), sub(verts[f[2]], a)));
+		return { n, d: dot(n, a) };
+	});
+	const realEdge = new Set(p.edges.map(([a, b]) => (a < b ? `${a},${b}` : `${b},${a}`)));
+	const out: [number, number][] = [];
+	const seen = new Set<string>();
+	const q = (v: V3) => `${v[0].toFixed(5)},${v[1].toFixed(5)},${v[2].toFixed(5)}`;
+
+	for (let i = 0; i < F; i++) {
+		for (let j = i + 1; j < F; j++) {
+			const A = planes[i];
+			const B = planes[j];
+			const dir = cross(A.n, B.n);
+			if (Math.hypot(dir[0], dir[1], dir[2]) < 1e-9) continue;
+			const u = unit(dir);
+			// The point on both planes closest to the origin, as the standard two-plane solve.
+			const nn = dot(A.n, B.n);
+			const denom = 1 - nn * nn;
+			if (Math.abs(denom) < 1e-12) continue;
+			const c1 = (A.d - B.d * nn) / denom;
+			const c2 = (B.d - A.d * nn) / denom;
+			const P: V3 = add(mul(A.n, c1), mul(B.n, c2));
+			const spans = (rs: number[][]) => clipToRings(rs, verts, P, u);
+			const IA = spans(rings[i]);
+			if (!IA.length) continue;
+			const IB = spans(rings[j]);
+			if (!IB.length) continue;
+			// The span of a shared real edge, to be cut out of the result.
+			let cut: [number, number] | null = null;
+			const shared = p.faces[i].filter((v) => p.faces[j].includes(v));
+			if (shared.length >= 2) {
+				const [a, b] = shared.slice(0, 2).sort((x, y) => x - y);
+				if (realEdge.has(`${a},${b}`)) {
+					const ta = dot(sub(verts[a], P), u);
+					const tb = dot(sub(verts[b], P), u);
+					cut = [Math.min(ta, tb), Math.max(ta, tb)];
+				}
+			}
+			for (const a of IA) {
+				for (const b of IB) {
+					const lo = Math.max(a[0], b[0]);
+					const hi = Math.min(a[1], b[1]);
+					if (hi - lo <= 1e-7) continue;
+					for (const [s0, s1] of cut ? minus([lo, hi], cut) : [[lo, hi] as [number, number]]) {
+						if (s1 - s0 <= 1e-7) continue;
+						const p0 = add(P, mul(u, s0));
+						const p1 = add(P, mul(u, s1));
+						const key = q(p0) < q(p1) ? `${q(p0)}|${q(p1)}` : `${q(p1)}|${q(p0)}`;
+						if (seen.has(key)) continue;
+						seen.add(key);
+						out.push([verts.push(p0) - 1, verts.push(p1) - 1]);
+					}
+				}
+			}
+		}
+	}
+	return out;
+}
+
+/** `a` with `b` removed: 0, 1 or 2 intervals. */
+function minus(a: [number, number], b: [number, number]): [number, number][] {
+	if (b[1] <= a[0] || b[0] >= a[1]) return [a];
+	const out: [number, number][] = [];
+	if (b[0] > a[0]) out.push([a[0], b[0]]);
+	if (b[1] < a[1]) out.push([b[1], a[1]]);
+	return out;
+}
+
+/** Where the line P + t·u lies inside the filled region, as parameter intervals. One per convex ring;
+ *  they are not merged, since overlapping tubes on the same line draw the same ink twice and nothing
+ *  downstream cares. */
+function clipToRings(rs: number[][], verts: V3[], P: V3, u: V3): [number, number][] {
+	const iv: [number, number][] = [];
+	for (const r of rs) {
+		if (r.length < 3) continue;
+		const nrm = unit(cross(sub(verts[r[1]], verts[r[0]]), sub(verts[r[2]], verts[r[0]])));
+		let lo = -Infinity;
+		let hi = Infinity;
+		let ok = true;
+		for (let k = 0; k < r.length; k++) {
+			const a = verts[r[k]];
+			const b = verts[r[(k + 1) % r.length]];
+			// Inward normal of this side, within the face's own plane.
+			const inward = cross(nrm, sub(b, a));
+			const num = dot(inward, sub(a, P));
+			const den = dot(inward, u);
+			if (Math.abs(den) < 1e-12) {
+				if (num > 1e-9) {
+					ok = false;
+					break;
+				}
+				continue;
+			}
+			const t = num / den;
+			if (den > 0) lo = Math.max(lo, t);
+			else hi = Math.min(hi, t);
+		}
+		if (ok && lo < hi - 1e-9) iv.push([lo, hi]);
+	}
+	return iv;
+}
+
+/**
  * Group the faces by TYPE and decompose every star face into convex pieces.
  *
  * One colour per {n/d} is the same rule sphPoly uses for polygon size, and it is the reading the
@@ -110,11 +235,17 @@ export function sphStarScene(p: SphStarPattern): SphSchwarzScene {
 	for (const [n, d] of p.stats.types) key.set(`${n}/${d}`, key.size);
 	const verts: V3[] = p.vertices.map((v) => [...v] as V3);
 	const tiles: number[][][] = Array.from({ length: key.size }, () => []);
+	// Kept per face, because the crossing lines clip against exactly these: the filled region, not the
+	// boundary ring and not the hull.
+	const rings: number[][][] = [];
 	p.faces.forEach((face, fi) => {
 		const [n, d] = p.faceType[fi];
 		const t = key.get(`${n}/${d}`) ?? 0;
-		for (const ring of starFaceRings(face, d, verts)) tiles[t].push(ring);
+		const fr = starFaceRings(face, d, verts);
+		rings.push(fr);
+		for (const ring of fr) tiles[t].push(ring);
 	});
+	const crossings = faceCrossings(p, verts, rings);
 	const pattern: IcoPattern = {
 		id: p.id,
 		k: 1,
@@ -124,5 +255,5 @@ export function sphStarScene(p: SphStarPattern): SphSchwarzScene {
 		nDrawn: p.edges.length,
 		nTiles: tiles.length,
 	};
-	return { pattern, vertices: verts, allEdges: p.edges };
+	return { pattern, vertices: verts, allEdges: p.edges, crossings };
 }

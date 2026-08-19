@@ -6,6 +6,7 @@ import { deformApplies, useConfiguration } from "@/stores/configuration";
 import { isChiralTiling } from "@/lib/services/chirality";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { InfoDot } from "@/components/ui/info-dot";
 import { Slider } from "@/components/ui/slider";
 import { Kbd } from "@/components/ui/kbd";
 import { HueRing } from "@/components/ui/hue-ring";
@@ -120,6 +121,10 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 	// (polyhedron/sphere + grid) apply, so every other control is hidden for it. The spherical Schwarz
 	// boards, the uniform polyhedra and the spherical 3.4.n.4 solids are the same canvas and the same block.
 	const isSphericalFreedraw = surface === "sphereEdges";
+	// A STAR polyhedron is the one record on that canvas whose faces pass through each other, so it is
+	// the only one with creases to offer. Keyed off the record, not the surface, which it shares with the
+	// Schwarz boards and the uniform polyhedra.
+	const isSphStar = !!selected?.sphStar;
 	// A colored tiling renders on its own 2D canvas like freedraw: no tiles, no polygon cell, so the shared
 	// fill/stroke/hue/points controls are all dead and its own palette + trio take their place. Rotation
 	// still applies (the field spins about the canvas centre), rendered inside that block.
@@ -1097,6 +1102,20 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 									shortcut="G"
 									checked={cfg.sphericalFreedrawGrid}
 									onCheckedChange={(v) => setCfg({ sphericalFreedrawGrid: v })}
+								/>
+							) : null}
+							{isSphStar ? (
+								<Checkbox
+									id="sphStarCrossings"
+									label="Crossings"
+									checked={cfg.sphStarCrossings}
+									onCheckedChange={(v) => setCfg({ sphStarCrossings: v })}
+									hint={
+										<InfoDot>
+											Where two faces pass through each other. Not an edge: it bounds no face, so V, E and
+											F are unchanged.
+										</InfoDot>
+									}
 								/>
 							) : null}
 						</div>

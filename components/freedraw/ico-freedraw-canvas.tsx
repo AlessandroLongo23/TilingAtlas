@@ -31,11 +31,14 @@ interface Props {
 	 *  list instead of indexing into a solid. Supplying both switches off the solid lookup entirely. */
 	vertices?: [number, number, number][];
 	allEdges?: [number, number][];
+	/** Face-through-face creases (star polyhedra), drawn only when `showCrossings` is on. */
+	crossings?: [number, number][];
+	showCrossings?: boolean;
 }
 
 const CAMERA_DISTANCE = 3.2;
 
-export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, allEdges, keepRadius }: Props) {
+export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, allEdges, keepRadius, crossings, showCrossings }: Props) {
 	const solid = useMemo(() => (vertices ? null : polyhedronForId(solidId)), [solidId, vertices]);
 	const verts = vertices ?? (solid?.vertices as [number, number, number][] | undefined);
 	const solidEdgeList = useMemo<[number, number][]>(
@@ -168,6 +171,8 @@ export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, 
 			keepRadius,
 			showGrid,
 			allEdges: solidEdgeList,
+			crossings,
+			showCrossings,
 		});
 		scene.add(content.object);
 		contentRef.current = content;
@@ -176,7 +181,7 @@ export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, 
 			content.dispose();
 			if (contentRef.current === content) contentRef.current = null;
 		};
-	}, [pattern, mode, showGrid, solid, solidEdgeList]);
+	}, [pattern, mode, showGrid, solid, solidEdgeList, crossings, showCrossings]);
 
 	if (errored) {
 		return (
