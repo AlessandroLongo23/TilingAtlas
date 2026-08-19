@@ -153,6 +153,106 @@ def _cls(a, b, L1, L2):
     return (a - n * h11, (b - n * h12) % h22)
 
 
+def refine(polys, basis):
+    """Promote every T-junction to a vertex, turning a NON-edge-to-edge cell into an edge-to-edge map.
+
+    `build_map` pairs darts by edge MIDPOINT, so a side that a neighbour meets part-way along has no
+    partner and the map is rejected — correctly, because the cell as GIVEN is not edge-to-edge. But the
+    tiling is still a map: a T-junction is a vertex that this tile's outline simply does not name. Naming
+    it costs nothing (the outline is unchanged, only the vertex list grows) and every consumer downstream
+    — build_map, orbit_count, corner_angles, length_family — then works unaltered on the whole
+    non-edge-to-edge shelf instead of refusing it.
+
+    Idempotent: a cell that is already edge-to-edge comes back unchanged.
+    """
+    Sm = vo.S()
+    ps = [p for p in polys if abs(Sm.signed_area(p["v"])) > Sm.ZERO_AREA]
+    if not ps:
+        return list(polys)
+    trans = vo._translates(basis, ps, vo.max_circum(ps) * 2 + 2.0)
+    pts = [z + t for t in trans for p in ps for z in p["v"]]
+    out = []
+    for p in ps:
+        vs = p["v"]
+        nv = []
+        for j in range(len(vs)):
+            a, b = vs[j], vs[(j + 1) % len(vs)]
+            d = b - a
+            L = abs(d)
+            nv.append(a)
+            if L <= TOL:
+                continue
+            hits = []
+            for z in pts:
+                w = (z - a) * d.conjugate() / (L * L)
+                if w.real <= TOL / L or w.real >= 1 - TOL / L:
+                    continue
+                if abs(w.imag) * L > TOL:
+                    continue
+                hits.append((w.real, a + w.real * d))
+            for s, z in sorted(hits, key=lambda h: h[0]):
+                if abs(nv[-1] - z) > TOL:
+                    nv.append(z)
+        out.append({"n": p.get("n", len(vs)), "v": nv})
+    return out
+
+
+def smooth(polys, basis):
+    """Delete the FALSE vertices — points that are a corner of no tile — merging the edges they split.
+
+    The inverse of the half of `refine` that is bookkeeping, not geometry, and the fix for a real
+    over-count. `refine` promotes every point where a side is met part-way to a vertex, which is right for
+    a T-junction (one tile has a corner there, its neighbour runs straight through) and wrong for a point
+    where EVERY incident tile runs straight through. Such a point is a corner of nothing: the tiling does
+    not know it is there, and the two edges it separates can trade length freely without a tile moving.
+
+    Leaving those in is what made `length_family` report a rectangle grid as a 3-parameter family, with
+    two sliders that only ever moved the invisible mark along the side. Once they are gone the closure
+    system has one variable per REAL edge and `dim ker(A)` is the tiling's own freedom.
+
+    Idempotent, and a no-op on any cell whose vertices are all genuine corners — which is every
+    edge-to-edge cell, so the rest of the oracle is untouched.
+    """
+    Sm = vo.S()
+    ps = [p for p in polys if abs(Sm.signed_area(p["v"])) > Sm.ZERO_AREA]
+    if not ps:
+        return list(polys)
+    b0, b1 = basis
+
+    def key(z):
+        a, b = _frac(z, b0, b1)
+        return (_fi(a), _fi(b))
+
+    def is_flat(v, j):
+        n = len(v)
+        d0 = v[j] - v[(j - 1) % n]
+        d1 = v[(j + 1) % n] - v[j]
+        if abs(d0) <= TOL or abs(d1) <= TOL:
+            return False
+        u0, u1 = d0 / abs(d0), d1 / abs(d1)
+        return abs(u1 - u0) <= 1e-9
+
+    # A key is LIVE as soon as one incident corner turns. Collected over one period only: every tile
+    # incident to a point is a lattice translate of some tile here, and a translate keys the same.
+    live = {}
+    for p in ps:
+        v = p["v"]
+        for j in range(len(v)):
+            k = key(v[j])
+            live[k] = live.get(k, False) or not is_flat(v, j)
+
+    out, changed = [], False
+    for p in ps:
+        v = p["v"]
+        nv = [z for j, z in enumerate(v) if live.get(key(z), True)]
+        if len(nv) < 3:
+            return list(polys)          # not a polygon any more: leave the cell alone, say nothing
+        if len(nv) != len(v):
+            changed = True
+        out.append({"n": len(nv), "v": nv})
+    return out if changed else [{"n": p.get("n", len(p["v"])), "v": list(p["v"])} for p in ps]
+
+
 def build_map(polys, basis):
     """(labels, sigma, alpha, reps, ps) — the tiling's dart map on its PRIMITIVE quotient.
 
@@ -276,6 +376,59 @@ def tiling_key(polys, basis):
     labels, sigma, alpha, reps, ps, darts = m
     best, _ = canonical(labels, sigma, alpha)
     return f"R{len(reps)}#{best}"
+
+
+def _face_equilateral(v, tol=1e-6):
+    """Does this face have all its geometric SIDES equal? A side is a maximal run of edges through flat
+    corners, so a square whose top is met part-way along is still a square, not a rigid hexagon."""
+    n = len(v)
+    d = [(v[(j + 1) % n] - v[j]) / abs(v[(j + 1) % n] - v[j]) for j in range(n)]
+    lens = []
+    for j in range(n):
+        if j == 0 or abs(d[j] - d[j - 1]) > 1e-9:
+            lens.append(0.0)
+        lens[-1] += abs(v[(j + 1) % n] - v[j])
+    if len(lens) > 1 and abs(d[0] - d[-1]) <= 1e-9:
+        t = lens.pop()
+        lens[0] += t
+    return all(abs(x - lens[0]) < tol * max(1.0, lens[0]) for x in lens)
+
+
+def family_key(polys, basis, q=6):
+    """The LENGTH FAMILY a tiling belongs to, as a string — the key the parametric shelf deduplicates on.
+
+    `tiling_key` is the map alone, and the map alone is not the family. It labels darts by tile size, so
+    the equiangular hexagon grid and the offset rows of squares carry the SAME key: one hexagonal face,
+    two vertices, three edges in both, because a square met part-way along its top and bottom is a
+    six-cornered face of the map. Deduplicating on it merged two tilings that share nothing but their
+    combinatorics.
+
+    Three things pin the family down, and it needs all three:
+
+        the MAP        which edge meets which, canonically labelled;
+        the ANGLES     fixed across a length family by definition, and what separates 90-90-180 from
+                       120-120-120 on the map above;
+        the EQUALITIES which tiles the family holds equilateral. Rows of unit squares and rows of
+                       1-by-h rectangles have the same map and the same angles and are not the same
+                       family: one has two shift parameters, the other four. The difference is a
+                       constraint, not a shape, so it cannot be read off any single member's lengths —
+                       only off whether the sides come out equal at a GENERIC one.
+
+    ⚑ Call this at a generic member. At a symmetric one distinct edges coincide, a primitive cell can
+    look like a supercell, and unrelated tiles come out equilateral by accident.
+    """
+    m = build_map(polys, basis)
+    if m is None:
+        return None
+    labels, sigma, alpha, reps, ps, darts = m
+    best, labelings = canonical(labels, sigma, alpha)
+    ang = corner_angles(m)
+    eq = {r: _face_equilateral(ps[reps[r]]["v"]) for r in {d[0] for d in darts}}
+    words = []
+    for order in labelings:
+        words.append(",".join(f"{ang[d]:.{q}f}" for d in order)
+                     + "|" + "".join("1" if eq[darts[d][0]] else "0" for d in order))
+    return f"R{len(reps)}#{best}#{min(words)}"
 
 
 def family_subspace(rec, samples=8):
