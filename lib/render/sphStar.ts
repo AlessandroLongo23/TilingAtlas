@@ -16,15 +16,26 @@
 //     radius R·cos(πd/n) / cos(πj/n),   angle  π(d−j)/n + 2πk/n
 //
 // because two chords of the star sit at the same distance R·cos(πd/n) from the centre and their normals
-// differ by 2πj/n, so they meet at that distance over cos(πj/n). Consecutive rings are offset by half a
-// step, which is why the band between them is n triangles and not n quads. The filled region — the
-// NONZERO winding reading, the same one lib/hollow/render.ts uses, since even-odd would punch the core
-// out of every pentagram and give the concave |n/d| shape instead — is then
+// differ by 2πj/n, so they meet at that distance over cos(πj/n).
 //
-//     the ring-1 n-gon, plus, for j = 1 … d−1, the n triangles (ring_{j+1}[k], ring_j[k−1], ring_j[k]).
+// ONLY THE OUTERMOST CROSSING RING MATTERS. Under the NONZERO winding reading — the same one
+// lib/hollow/render.ts uses, since even-odd would punch the core out of every pentagram and give the
+// concave |n/d| shape instead — the filled region is exactly the 2n-gon alternating the vertices with
+// ring d−1, and every ring inside that one is interior to it. So the decomposition is
 //
-// For a pentagram that is the inner pentagon plus five point triangles, which is the decomposition
-// anyone would draw by hand; for {8/3} and {10/3} it is two bands instead of one.
+//     the ring-(d−1) n-gon, plus the n triangles (vertex[k], ring_{d−1}[k−1], ring_{d−1}[k]).
+//
+// ⚑ CORRECTED 2026-08-19, Marek Čtrnáct: "some of them have holes". This used to start from the
+// INNERMOST ring and stack a band per crossing ring, which is the same thing when d = 2 and leaves a
+// gap at every notch when d ≥ 3. Measured against the sampled nonzero region: {8/3} short by 8.6%,
+// {10/3} by 7.3%, {7/3} by 7.5%, {12/5} by 18.5%. Twenty of the shelf's 54 records carry a d ≥ 3 face
+// and every one of them was drawn with holes. The rule above is verified pointwise, not by area alone:
+// zero disagreeing samples on a 1200² grid for {5/2} {7/2} {7/3} {8/3} {9/4} {10/3} {12/5}.
+//
+// ⚑ RETROGRADE FACES, same date. {n/d} with d > n/2 is the same polygon traversed backwards, so it
+// fills identically to {n/(n−d)} and is normalised to it on the way in. Without that, cos(πd/n) goes
+// negative while cos(πj/n) passes through zero, and the ring radii came out around 1e32. No record on
+// this shelf has one today; lib/hollow's Euclidean palette is full of them.
 
 import type { IcoPattern, V3 } from "@/lib/render/icoFreedraw";
 import type { SphSchwarzScene } from "@/lib/render/sphSchwarz";
@@ -46,8 +57,10 @@ function unit(a: V3): V3 {
 
 /** Rings of one face, expressed as NEW points appended to `verts`. Returns the convex rings that fill
  *  the face. A convex face (d = 1) returns its own ring untouched and appends nothing. */
-export function starFaceRings(face: number[], d: number, verts: V3[]): number[][] {
+export function starFaceRings(face: number[], dRaw: number, verts: V3[]): number[][] {
 	const n = face.length;
+	// A backwards traversal encloses the same region, and the ring formula only holds for d < n/2.
+	const d = dRaw > n / 2 ? n - dRaw : dRaw;
 	if (d <= 1 || n < 5) return [face];
 	// The face is planar in 3D, so work in its own plane. Centre = mean of the vertices, which for a
 	// regular star polygon is its centre exactly.
@@ -68,30 +81,19 @@ export function starFaceRings(face: number[], d: number, verts: V3[]): number[][
 	const a0 = geo[0].a;
 	const at = (radius: number, theta: number): V3 =>
 		add(c, add(mul(ex, radius * Math.cos(theta)), mul(ey, radius * Math.sin(theta))));
-	const h = R * Math.cos((Math.PI * d) / n);
-	// ring[j] for j = 1..d; ring[d] is the vertex ring itself, so reuse the record's own indices there
-	// instead of appending duplicate points on top of them.
-	const ring: number[][] = [];
-	for (let j = 1; j <= d; j++) {
-		if (j === d) {
-			ring.push(geo.map((g) => g.idx));
-			break;
-		}
-		const rad = h / Math.cos((Math.PI * j) / n);
-		const row: number[] = [];
-		for (let k = 0; k < n; k++) {
-			row.push(verts.length);
-			verts.push(at(rad, a0 + (Math.PI * (d - j)) / n + (2 * Math.PI * k) / n));
-		}
-		ring.push(row);
+	// The one ring that bounds the fill: j = d−1, the outermost crossing ring, half a step off the
+	// vertices. The inner rings are real crossings and are simply not on the boundary of the region.
+	const rad = (R * Math.cos((Math.PI * d) / n)) / Math.cos((Math.PI * (d - 1)) / n);
+	const core: number[] = [];
+	for (let k = 0; k < n; k++) {
+		core.push(verts.length);
+		verts.push(at(rad, a0 + Math.PI / n + (2 * Math.PI * k) / n));
 	}
-	const out: number[][] = [ring[0]]; // the innermost n-gon, the core
-	for (let j = 0; j < d - 1; j++) {
-		const inner = ring[j];
-		const outer = ring[j + 1];
-		for (let k = 0; k < n; k++) {
-			out.push([outer[k], inner[(k - 1 + n) % n], inner[k]]);
-		}
+	// The vertex ring reuses the record's own indices instead of appending duplicates on top of them.
+	const tips = geo.map((g) => g.idx);
+	const out: number[][] = [core];
+	for (let k = 0; k < n; k++) {
+		out.push([tips[k], core[(k - 1 + n) % n], core[k]]);
 	}
 	return out;
 }

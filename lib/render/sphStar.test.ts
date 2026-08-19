@@ -75,18 +75,73 @@ describe("starFaceRings", () => {
 		for (const p of inner) expect(Math.hypot(p[0], p[1], p[2])).toBeCloseTo(want, 9);
 	});
 
-	it("handles a three-winding star with two crossing rings", () => {
+	// ⚑ This used to assert the OLD decomposition: a core on the innermost crossing ring plus one band
+	// of triangles per ring, 17 rings and 16 appended points for {8/3}. That is the shape Marek Čtrnáct
+	// reported holes in, and the test agreed with the bug because it was written from the same picture.
+	// The fill is bounded by the OUTERMOST crossing ring alone; everything further in is interior.
+	it("bounds a three-winding star by its outer crossing ring, not its inner one", () => {
 		const verts = ngon(8);
 		const rings = starFaceRings(traversal(8, 3), 3, verts);
-		// core octagon + two bands of eight triangles
-		expect(rings.length).toBe(1 + 2 * 8);
+		// core octagon + eight point triangles, the same shape as a pentagram's
+		expect(rings.length).toBe(1 + 8);
 		expect(rings[0].length).toBe(8);
-		expect(verts.length).toBe(8 + 2 * 8);
-		const r1 = Math.cos((3 * Math.PI) / 8) / Math.cos(Math.PI / 8);
-		const r2 = Math.cos((3 * Math.PI) / 8) / Math.cos((2 * Math.PI) / 8);
-		const radii = verts.slice(8).map((p) => Math.hypot(p[0], p[1], p[2]));
-		expect(Math.min(...radii)).toBeCloseTo(r1, 9);
-		expect(Math.max(...radii)).toBeCloseTo(r2, 9);
+		expect(verts.length).toBe(8 + 8);
+		// ring d−1 = ring 2 of {8/3}, NOT ring 1
+		const outer = Math.cos((3 * Math.PI) / 8) / Math.cos((2 * Math.PI) / 8);
+		for (const p of verts.slice(8)) expect(Math.hypot(p[0], p[1], p[2])).toBeCloseTo(outer, 9);
+	});
+
+	// The area is the whole point: a decomposition that misses a notch still passes every structural
+	// check above. {8/3} was short by 8.6% and it showed as holes in the octagrammic prism.
+	it("covers the whole filled region for every winding on the shelf", () => {
+		const nonzero = (poly: V3[], px: number, py: number) => {
+			let w = 0;
+			for (let i = 0; i < poly.length; i++) {
+				const a = poly[i];
+				const b = poly[(i + 1) % poly.length];
+				const side = (b[0] - a[0]) * (py - a[1]) - (px - a[0]) * (b[1] - a[1]);
+				if (a[1] <= py) {
+					if (b[1] > py && side > 0) w++;
+				} else if (b[1] <= py && side < 0) w--;
+			}
+			return w !== 0;
+		};
+		const area = (pts: V3[]) => {
+			let s = 0;
+			for (let i = 0; i < pts.length; i++) {
+				const a = pts[i];
+				const b = pts[(i + 1) % pts.length];
+				s += a[0] * b[1] - b[0] * a[1];
+			}
+			return Math.abs(s) / 2;
+		};
+		// every star face type the spherical-star shelf actually carries, plus two retrograde forms
+		for (const [n, d] of [[5, 2], [7, 2], [7, 3], [8, 3], [10, 3], [8, 5], [12, 7]] as [number, number][]) {
+			const verts = ngon(n);
+			const face = traversal(n, d);
+			const poly = face.map((i) => verts[i]);
+			const got = starFaceRings(face, d, verts).reduce((s, r) => s + area(r.map((i) => verts[i])), 0);
+			const N = 500;
+			let hit = 0;
+			for (let i = 0; i < N; i++) {
+				for (let j = 0; j < N; j++) {
+					if (nonzero(poly, -1 + (2 * (i + 0.5)) / N, -1 + (2 * (j + 0.5)) / N)) hit++;
+				}
+			}
+			const want = (hit * 4) / (N * N);
+			expect(Math.abs(got - want) / want, `{${n}/${d}}`).toBeLessThan(0.01);
+		}
+	});
+
+	// {n/d} with d > n/2 is the same polygon traversed backwards. It used to send the ring radii to
+	// ~1e32, because cos(pi*d/n) turns negative while cos(pi*j/n) crosses zero.
+	it("fills a retrograde face exactly as it fills the forward one", () => {
+		const a = ngon(8);
+		const b = ngon(8);
+		const fwd = starFaceRings(traversal(8, 3), 3, a);
+		const rev = starFaceRings(traversal(8, 5), 5, b);
+		expect(rev.length).toBe(fwd.length);
+		for (const p of b.slice(8)) expect(Math.hypot(p[0], p[1], p[2])).toBeLessThan(1);
 	});
 });
 
