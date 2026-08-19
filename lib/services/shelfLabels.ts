@@ -207,6 +207,7 @@ export const SUB_LABEL: Record<string, string> = {
 	"el-tri45": "Triangles and squares",
 	"el-planigon": "Planigons",
 	"el-penrose": "Penrose kite and dart",
+	"el-plen": "Parametric edge lengths",
 	// The Euclidean half-polygons. Named by the polygon and the cut, because the cut is what decides
 	// the board — a hexagon halved two ways gives two entirely different catalogues.
 	"el-euh-tri": "Half equilateral triangle",

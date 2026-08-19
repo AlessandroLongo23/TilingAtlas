@@ -3,15 +3,22 @@
 import { useState } from "react";
 
 import { useFamilyAlphas } from "@/stores/familyAlphas";
-import { ALPHA_STEP_DEG, paramGlyph, resolveAlphaDegsRaw, type ParametricCellData } from "@/lib/utils/paramCell";
+import { ALPHA_STEP_DEG, LENGTH_STEP, paramGlyph, resolveAlphaDegsRaw, type ParametricCellData } from "@/lib/utils/paramCell";
 import { Kbd } from "@/components/ui/kbd";
 import { RangeInput } from "@/components/ui/range-input";
 import { useMetaKeyLabel } from "@/lib/hooks/useMetaKeyLabel";
 import { ParamRegionPad } from "@/components/param-region-pad";
 
 /** How many slider rows the panel shows before collapsing the rest. Four keeps the overlay shorter
- *  than the canvas is tall on a laptop, and covers all but 60 of the 470 period entries. */
+ *  than the canvas is tall on a laptop, and covers all but 60 of the 470 period entries and every
+ *  parametric-length family but three. */
 const VISIBLE_ROWS = 4;
+
+/** What a parameter is called on screen: a length has a name of its own ("Height", "Edge 3"), an angle
+ *  has a glyph. Used for the slider label, the aria-label and the scrub hint, so the three agree. */
+function paramName(p: ParametricCellData["params"][number], j: number): string {
+	return p.kind === "length" ? p.name ?? `Length ${j + 1}` : paramGlyph(p, j).glyph;
+}
 
 /** Where the fold centre sits along the track, 0–1, or null when there is none (or it is at an end). */
 function foldFraction(p: ParametricCellData["params"][number]): number | null {
@@ -70,8 +77,12 @@ export function ParamSliderPanel({ paramCell }: { paramCell: ParametricCellData 
 			<div className="flex flex-col justify-center gap-2">
 				{visible.map((p, j) => (
 					<div key={j} className="flex items-center gap-3">
+						{/* A LENGTH parameter is not an angle: it prints its own name and no degree sign,
+						    and two decimals, because the interesting members sit at ratios like 0.55. */}
 						<span className="text-xs font-medium text-accent whitespace-nowrap w-24">
-							{paramGlyph(p, j).glyph} = {effAlphas[j].toFixed(1)}°
+							{p.kind === "length"
+								? `${paramName(p, j)} = ${effAlphas[j].toFixed(2)}`
+								: `${paramName(p, j)} = ${effAlphas[j].toFixed(1)}\u00b0`}
 						</span>
 						{/* An intrinsic parameter IS a corner of the tiling, so the row says which one. A
 						    palette parameter has no such answer and the slot stays empty. */}
@@ -84,11 +95,13 @@ export function ParamSliderPanel({ paramCell }: { paramCell: ParametricCellData 
 							<RangeInput
 								min={p.alphaRangeDegOpen[0]}
 								max={p.alphaRangeDegOpen[1]}
-								step={ALPHA_STEP_DEG}
+								step={p.kind === "length" ? LENGTH_STEP : ALPHA_STEP_DEG}
 								value={effAlphas[j]}
 								onChange={(v) => setAlphaAt(j, v)}
 								className="w-56"
-								aria-label={`family angle ${paramGlyph(p, j).label}${p.tile ? ` (${p.tile})` : ""} in degrees`}
+								aria-label={p.kind === "length"
+									? `family edge length ${paramName(p, j)}`
+									: `family angle ${paramGlyph(p, j).label}${p.tile ? ` (${p.tile})` : ""} in degrees`}
 							/>
 							{/* Fold marker: past this angle the sweep replays tilings it already passed, mirrored or
 							    rotated. The range is deliberately NOT clipped there — the replay is still a real
@@ -103,7 +116,9 @@ export function ParamSliderPanel({ paramCell }: { paramCell: ParametricCellData 
 							) : null}
 						</div>
 						<span className="text-[10px] text-fg-muted whitespace-nowrap font-mono">
-							({p.alphaRangeDegOpen[0].toFixed(0)}°, {p.alphaRangeDegOpen[1].toFixed(0)}°)
+							{p.kind === "length"
+								? `(${p.alphaRangeDegOpen[0].toFixed(2)}, ${p.alphaRangeDegOpen[1].toFixed(2)})`
+								: `(${p.alphaRangeDegOpen[0].toFixed(0)}\u00b0, ${p.alphaRangeDegOpen[1].toFixed(0)}\u00b0)`}
 						</span>
 					</div>
 				))}
@@ -115,7 +130,9 @@ export function ParamSliderPanel({ paramCell }: { paramCell: ParametricCellData 
 					>
 						{expanded
 							? `show ${VISIBLE_ROWS} of ${paramCell.params.length}`
-							: `${paramCell.params.length - VISIBLE_ROWS} more corner${paramCell.params.length - VISIBLE_ROWS === 1 ? "" : "s"}`}
+							// "corner" is angle language and a length family has none — a six-slider rectangle
+							// stack was offering "1 more corner" for a strip shift.
+							: `${paramCell.params.length - VISIBLE_ROWS} more ${paramCell.params.some((p) => p.kind === "length") ? "parameter" : "corner"}${paramCell.params.length - VISIBLE_ROWS === 1 ? "" : "s"}`}
 					</button>
 				) : null}
 			</div>
@@ -130,11 +147,11 @@ export function ParamSliderPanel({ paramCell }: { paramCell: ParametricCellData 
 					<span className="inline-flex items-center gap-3 font-mono">
 						<span className="inline-flex items-center gap-1">
 							<span aria-hidden>↔</span>
-							<span className="text-accent">{paramGlyph(paramCell.params[0], 0).glyph}</span>
+							<span className="text-accent">{paramName(paramCell.params[0], 0)}</span>
 						</span>
 						<span className="inline-flex items-center gap-1">
 							<span aria-hidden>↕</span>
-							<span className="text-accent">{paramGlyph(paramCell.params[1], 1).glyph}</span>
+							<span className="text-accent">{paramName(paramCell.params[1], 1)}</span>
 						</span>
 					</span>
 				) : null}

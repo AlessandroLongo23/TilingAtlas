@@ -18,7 +18,11 @@
 // sizes to one, which is why its ratio is a real parameter and not a change of basis.
 
 import { evaluateParamCell, type ParametricCellData, type LenTerm } from "@/lib/utils/paramCell";
-import { vertexOrbits } from "@/lib/tilings/vertex-orbits";
+// k comes from the Python side (tools/ctrnact-oracle/vertex_orbits.py, via emit_length_meta.py) and is
+// no longer recomputed here. `lib/tilings/vertex-orbits.ts` was a re-implementation of that module and
+// disagreed with it on three families, so it is gone rather than kept as a second opinion.
+import { LENGTH_META } from "@/lib/tilings/length-meta.generated";
+import { TJUNCTION_FAMILIES } from "@/lib/tilings/tjunction-families.generated";
 import { ENUMERATED_FAMILIES, ENUMERATION_SCOPE } from "@/lib/tilings/enumerated-families.generated";
 
 /** A length slider: `name` is what the panel prints, the range is the OPEN interval it may take. */
@@ -71,15 +75,23 @@ function lengthFamily(
 	};
 }
 
-const A = 0, B = 1;
+// ONE EDGE IS THE UNIT, and it is not a slider. A family's geometry is homogeneous of degree 1 in its
+// lengths, so scaling every slider together is a similarity and not a new tiling: the cone has one more
+// dimension than the family has shapes. Pinning one length as the constant term cuts the cone by a
+// hyperplane that meets every similarity class exactly once — nothing is lost, nothing is reachable
+// twice, and the printed parameter count becomes the number of things the sliders can actually do.
+// (Until 2026-08-18 four families here shipped that extra slider; `LENGTH_META.params` had recorded the
+// honest count all along and nothing read it.)
+const KONST = -1; // the constant-term index, see LenTerm
+const B = 0, C = 1;
 const O: LenTerm[] = [];
-const a: LenTerm[] = [[A, 1, 0]];        // A to the right
+const a: LenTerm[] = [[KONST, 1, 0]];    // the unit edge, to the right
 const b: LenTerm[] = [[B, 0, 1]];        // B upwards
 const add = (...ts: LenTerm[][]): LenTerm[] => ts.flat();
 
-/** The A×B rectangle grid. Affinely the square grid — a slider smoke test, not a new tiling. */
+/** The 1×B rectangle grid. Affinely the square grid — a slider smoke test, not a new tiling. */
 export const RECT_GRID: ParametricCellData = lengthFamily(
-	[lenParam("A", 1, 0.1, 3), lenParam("B", 1, 0.1, 3)],
+	[lenParam("Height", 1, 0.1, 3)],
 	[{ n: 4, vertices: [O, a, add(a, b), b] }],
 	[a, b],
 );
@@ -89,19 +101,20 @@ export const RECT_GRID: ParametricCellData = lengthFamily(
 // test then makes good on by sampling. Non-edge-to-edge: a big square's side is met by one small
 // square's side and the remainder, which is precisely the case the SPHERICAL scaled work could not
 // express, because there the two sub-pieces were forced equal.
-const A2: LenTerm[] = [[A, 1, 0]];
+const A2: LenTerm[] = [[KONST, 1, 0]];
 const B2: LenTerm[] = [[B, 1, 0]];
-const Ay: LenTerm[] = [[A, 0, 1]];
+const Ay: LenTerm[] = [[KONST, 0, 1]];
 const By: LenTerm[] = [[B, 0, 1]];
 
 export const PYTHAGOREAN: ParametricCellData = lengthFamily(
-	[// NOT "large"/"small": the sliders are independent, so B may exceed A and the labels would lie.
-		lenParam("A", 1, 0.1, 3), lenParam("B", 0.55, 0.1, 3)],
+	[// The A-square is the unit, so the one slider IS the ratio. NOT called "small": B may exceed 1,
+		// which is the same tiling with the two roles swapped, and a size label would lie there.
+		lenParam("B", 0.55, 0.1, 3)],
 	[
 		{ n: 4, vertices: [O, A2, add(A2, Ay), Ay] },                          // the A-square at the origin
 		{ n: 4, vertices: [A2, add(A2, B2), add(A2, B2, By), add(A2, By)] },   // the B-square beside it
 	],
-	[add(A2, By), [[B, -1, 0], [A, 0, 1]]],                                    // T1 = (A, B), T2 = (−B, A)
+	[add(A2, By), [[B, -1, 0], [KONST, 0, 1]]],                                // T1 = (1, B), T2 = (−B, 1)
 );
 
 
@@ -117,13 +130,12 @@ export const PYTHAGOREAN: ParametricCellData = lengthFamily(
 // parameters (equilateral triangles are rigid), which is why free lengths do nothing for the
 // triangular grid, and n = 4 gives 1 — the rectangle's aspect ratio.
 const S3 = Math.sqrt(3) / 2;
-const C = 2;
-const h0: LenTerm[] = [[A, 1, 0]];          // a·d0
+const h0: LenTerm[] = [[KONST, 1, 0]];      // the unit side d0
 const h1: LenTerm[] = [[B, 0.5, S3]];       // b·d1
 const h2: LenTerm[] = [[C, -0.5, S3]];      // c·d2
 
 export const EQUIANGULAR_HEX: ParametricCellData = lengthFamily(
-	[lenParam("A", 1, 0.1, 3), lenParam("B", 1, 0.1, 3), lenParam("C", 1, 0.1, 3)],
+	[lenParam("B", 1, 0.1, 3), lenParam("C", 1, 0.1, 3)],
 	[{ n: 6, vertices: [O, h0, add(h0, h1), add(h0, h1, h2), add(h1, h2), h2] }],
 	[add(h0, h1), add(h1, h2)],
 );
@@ -157,7 +169,6 @@ export const EQUIANGULAR_HEX: ParametricCellData = lengthFamily(
 // That is also why RECT_GRID below is marked affinely trivial and these are not.
 
 const H_TRI = Math.sqrt(3) / 2;
-const KONST = -1; // the constant-term index, see LenTerm
 
 // A strip's local geometry. `y` is a term list rather than a number because a RECTANGLE strip's height
 // is a slider, so a vertex above it sits at a height that is itself a parameter.
@@ -288,7 +299,7 @@ function stripRow(w: string, note: string): LengthFamilyRow {
 		cell,
 		// k is a property of a POINT in the box, not of the family. Reported at the defaults, which are
 		// chosen generic precisely so this number is the one you see almost everywhere in the box.
-		k: vertexOrbits(evaluateParamCell(cell, cell.params.map((p) => p.defaultAlphaDeg))).k,
+		k: LENGTH_META[`plen-strip-${w.toLowerCase()}`]?.k ?? 1,
 	};
 }
 
@@ -430,19 +441,19 @@ export const HEX_ROTOR: ParametricCellData = lengthFamily(
 //     L1 = c + b*zeta        L2 = e^{i120} * L1 = (-b - c/2, (sqrt3/2)c)
 // a triangular lattice by construction, with |L1|^2 = b^2 + bc + c^2. Cell area (sqrt3/2)(b^2+bc+c^2)
 // equals (sqrt3/4)((b+c)^2 + b^2 + c^2), the three triangles, identically.
-const Bp = 0, Cp = 1;
+const Cp = 0;                                        // B is the unit; C is the one ratio that moves
 
 export const TRI_THREE_SIZE: ParametricCellData = lengthFamily(
-	[lenParam("B", 1, 0.15, 3), lenParam("C", 0.6, 0.15, 3)],
+	[lenParam("C", 0.6, 0.15, 3)],
 	[
-		// the big triangle, side B + C, pointing up
-		{ n: 3, vertices: [[], [[Bp, 1, 0], [Cp, 1, 0]], [[Bp, 0.5, H_TRI], [Cp, 0.5, H_TRI]]] },
-		// the B-triangle on [0, B], pointing down
-		{ n: 3, vertices: [[], [[Bp, 1, 0]], [[Bp, 0.5, -H_TRI]]] },
-		// the C-triangle on [B, B + C], pointing down
-		{ n: 3, vertices: [[[Bp, 1, 0]], [[Bp, 1, 0], [Cp, 1, 0]], [[Bp, 1, 0], [Cp, 0.5, -H_TRI]]] },
+		// the big triangle, side 1 + C, pointing up
+		{ n: 3, vertices: [[], [[KONST, 1, 0], [Cp, 1, 0]], [[KONST, 0.5, H_TRI], [Cp, 0.5, H_TRI]]] },
+		// the unit triangle on [0, 1], pointing down
+		{ n: 3, vertices: [[], [[KONST, 1, 0]], [[KONST, 0.5, -H_TRI]]] },
+		// the C-triangle on [1, 1 + C], pointing down
+		{ n: 3, vertices: [[[KONST, 1, 0]], [[KONST, 1, 0], [Cp, 1, 0]], [[KONST, 1, 0], [Cp, 0.5, -H_TRI]]] },
 	],
-	[[[Cp, 1, 0], [Bp, 0.5, H_TRI]], [[Bp, -1, 0], [Cp, -0.5, H_TRI]]],
+	[[[Cp, 1, 0], [KONST, 0.5, H_TRI]], [[KONST, -1, 0], [Cp, -0.5, H_TRI]]],
 );
 
 // ── ENUMERATED — found by search, not authored ──────────────────────────────────────────────────
@@ -453,20 +464,21 @@ export const TRI_THREE_SIZE: ParametricCellData = lengthFamily(
 // hand, which is the point — at k = 1 the literature supplies seven families to check against, but at
 // higher k there is no list, so the catalogue has to come from a search whose completeness is argued.
 //
-// Provenance is kept visible: `discoverer` says "enumerated", and where the search rediscovers a
-// family that was built by hand the note says so. Three of the seven do, which is the check working.
-const KNOWN: Record<string, string> = {
-	"2-3-1-4": "the same family as plen-strip-s, the offset rows of squares (Wikipedia 1-2)",
-	"2-4-2-3,3": "the same family as plen-strip-t, the offset rows of triangles (Wikipedia 3)",
-	"3-6-3-3,3,3": "the same family as plen-tri-three-size (Wikipedia 7)",
-};
-
+// Provenance is kept visible: `discoverer` says "enumerated". Where the search rediscovers a family
+// that already has a row, the DEDUP below drops this one and names it on the survivor — which is a
+// stronger statement than the prose note that used to sit here, because that note was written from a
+// V-E-F-tiles lookup that is not a signature and it shipped both cards anyway.
 export const ENUM_FAMILIES: LengthFamilyRow[] = ENUMERATED_FAMILIES.map((f) => {
-	const terms = (v: [number, number][]): LenTerm[] => [[KONST, v[0][0], v[0][1]], [0, v[1][0], v[1][1]]];
+	// Constant point first, then one derivative point per slider — read positionally, which is why the
+	// generator writes (x, y) pairs and not a transposed [[x0, dx], [y0, dy]] that either side could
+	// read the wrong way round without the types noticing.
+	const terms = (v: [number, number][]): LenTerm[] =>
+		v.map((q, i) => [i === 0 ? KONST : i - 1, q[0], q[1]] as LenTerm);
 	const cellPolygons = f.cellPolygons.map((p) => ({ n: p.n, vertices: p.v.map(terms) }));
 	const basis: [LenTerm[], LenTerm[]] = [terms(f.basis[0]), terms(f.basis[1])];
-	const cell = lengthFamily([lenParam("t", f.t0, f.range[0], f.range[1])], cellPolygons, basis, true);
-	const known = KNOWN[`${f.V}-${f.E}-${f.F}-${f.tiles.join(",")}`];
+	const cell = lengthFamily(
+		f.ranges.map((r, i) => lenParam(f.ranges.length === 1 ? "t" : `t${i + 1}`, f.c0[i], r[0], r[1])),
+		cellPolygons, basis, true);
 	const flats = f.words.reduce((a, w) => a + [...w].filter((c) => c === "6").length, 0);
 	return {
 		id: f.id,
@@ -476,14 +488,74 @@ export const ENUM_FAMILIES: LengthFamilyRow[] = ENUMERATED_FAMILIES.map((f) => {
 		note:
 			`Found by search, not authored. Map: V = ${f.V}, E = ${f.E}, F = ${f.F} per translational period, ` +
 			`with ${flats} T-junction${flats === 1 ? "" : "s"}; face corner words ${f.words.join(", ")} in 30-degree ` +
-			`units, where a 6 is the flat 180 of a subdivided side. The slider range (${f.range[0].toFixed(3)}, ` +
-			`${f.range[1].toFixed(3)}) is EXACT: it is the interval on which every edge length stays positive, ` +
-			`read off the closure system rather than chosen. ` +
-			(known ? `The search rediscovered ${known}. ` : `Not among the families built by hand here. `) +
+			`units, where a 6 is the flat 180 of a subdivided side. ` +
+			(f.ranges.length === 1
+				? `The slider range (${f.ranges[0][0].toFixed(3)}, ${f.ranges[0][1].toFixed(3)}) is EXACT: it is ` +
+					`the interval on which every edge length stays positive, read off the closure system and not ` +
+					`chosen. `
+				: `The cone has ${f.ranges.length} parameters after scale, and the sliders are a box fitted ` +
+					`inside it by interval arithmetic: every position is a tiling, and some tilings lie outside ` +
+					`the box, which is the price of an axis-aligned range on a cone. `) +
 			`Search scope: regular polygons {${ENUMERATION_SCOPE.palette.join(", ")}}, at most ` +
 			`${ENUMERATION_SCOPE.Vmax} vertices per period. Complete within that scope and silent outside it.`,
 		cell,
-		k: vertexOrbits(evaluateParamCell(cell, [f.t0])).k,
+		k: LENGTH_META[f.id]?.k ?? 1,
+	};
+});
+
+
+
+// ── T-JUNCTION SHELVES, MADE PARAMETRIC ─────────────────────────────────────────────────────────
+//
+// Not new tilings and not a new search. This is the half-square split shelf the engine already
+// enumerates — Marek Čtrnáct's `eu-half-sq-mid-split`, where a side of length 2 = 1 + 1 carries a flat
+// 180-degree corner so one tile's edge can be met by two — developed as usual with UNIT edges, because
+// a unit edge is the only length the alphabet names. That is why they shipped as rigid tilings.
+//
+// They are not rigid: hold every angle and the lengths still move. Each slider is one edge length, and
+// one edge is pinned as the unit so no slider is pure scale.
+//
+// ⚑ ONE ROW PER TILING, NOT PER SOLVED BLOCK — corrected 2026-08-18, and the correction is most of
+// this shelf. The engine enumerates MAPS, and once a side may be split the same tiling carries many
+// maps: a split at a point where both neighbouring tiles run straight through is a mark the tiling
+// cannot see. The first version of this shelf counted those marks as parameters and never deduped, so
+// 146 blocks shipped as 146 cards — the first two of them the plain rectangle grid under three sliders,
+// two of which moved the same width. The emitter now deletes the false vertices before building the
+// length system and keys each family by the canonical dart map of the smoothed tiling at a GENERIC
+// member, which is also where k is measured and where the card draws.
+export const TJUNCTION_ROWS: LengthFamilyRow[] = TJUNCTION_FAMILIES.map((f) => {
+	const params = Array.from({ length: f.d }, (_, i) =>
+		lenParam(`Edge ${i + 1}`, f.def[i], f.lo[i], f.hi[i]));
+	const cell = lengthFamily(
+		params,
+		f.cellPolygons.map((p) => ({ n: p.n, vertices: p.vertices as LenTerm[][] })),
+		[f.basis[0] as LenTerm[], f.basis[1] as LenTerm[]],
+		true,
+	);
+	return {
+		id: f.id,
+		label: `Half-square, split · ${f.F} tile${f.F > 1 ? "s" : ""}, ${f.d} parameter${f.d === 1 ? "" : "s"}`,
+		affineTrivial: false,
+		discoverer: "Marek Čtrnáct",
+		note:
+			`Enumerated by the Čtrnáct engine on the eu-half-sq-mid-split palette, where a side of length ` +
+			`2 = 1 + 1 carries a flat 180-degree corner so one tile's edge can be met by two. Map of the ` +
+			`SMOOTHED tiling: V = ${f.V}, E = ${f.E}, F = ${f.F} per translational period, V - E + F = 0. ` +
+			`The engine develops it with every edge at 1, and that is how it shipped — as a single rigid ` +
+			`tiling. Holding the angles and solving for the LENGTHS instead gives a cone of dimension ` +
+			`${f.d + 1}, so ${f.d} slider${f.d === 1 ? "" : "s"} once the longest edge is pinned as the ` +
+			`unit. The range is a box fitted inside that cone by interval arithmetic, so every position ` +
+			`is a tiling; it is conservative, and some members lie outside it. The default is a generic ` +
+			`point of that box, NOT the developed member — the developed member is the box centre, where ` +
+			`distinct edges coincide and vertex orbits fuse, so k read there would be the wrong number ` +
+			`for almost every tiling in the family. Covering multiplicity was checked at the developed ` +
+			`point, at this default and at a box corner before shipping. ` +
+			`⚑ SCOPE: the scan covered blocks whose DEVELOPED member has k <= 2. A generic member of such ` +
+			`a family has at least as many orbits and often more, and the k filed here is that generic ` +
+			`one — so this shelf is a complete list of the split-palette families at developed k <= 2, ` +
+			`and not a complete list of parametric families at the k it files them under.`,
+		cell,
+		k: f.k,
 	};
 });
 
@@ -499,12 +571,14 @@ export interface LengthFamilyRow {
 	k?: number;
 }
 
-export const LENGTH_FAMILIES: LengthFamilyRow[] = [
+// Every row built here, before deduplication — the list `export-length-cells.ts` dumps so the Python
+// side can measure k, the parameter count and the canonical family key for each one.
+export const LENGTH_FAMILIES_ALL: LengthFamilyRow[] = [
 	{
 		id: "plen-hex",
 		label: "Equiangular hexagon",
 		affineTrivial: false,
-		note: "All six corners 120 deg, opposite sides equal, sides A, B, C free. Closure is automatic because opposite edge directions cancel, so every positive (A, B, C) tiles — a 3-parameter cone, 2 after scale. At A = B = C it is the regular hexagonal grid; away from it the tile is a genuinely different hexagon, not a stretched one, because an affine map cannot hold all six angles at 120 deg while changing the side ratios.",
+		note: "All six corners 120 deg, opposite sides equal, sides 1, B, C. Closure is automatic because opposite edge directions cancel, so every positive (1, B, C) tiles — a 3-parameter cone, 2 once the first side is taken as the unit, which is what the two sliders are. At B = C = 1 it is the regular hexagonal grid; away from it the tile is a genuinely different hexagon, not a stretched one, because an affine map cannot hold all six angles at 120 deg while changing the side ratios.",
 		discoverer: "classical",
 		cell: EQUIANGULAR_HEX,
 	},
@@ -512,7 +586,7 @@ export const LENGTH_FAMILIES: LengthFamilyRow[] = [
 		id: "plen-rect",
 		label: "Rectangle grid",
 		affineTrivial: true,
-		note: "The square grid under a diagonal map. Both sliders only stretch it, which is why it is here as the machinery's smoke test and not as a tiling.",
+		note: "The square grid under a diagonal map. The one slider only stretches it, which is why it is here as the machinery's smoke test and not as a tiling. The width is the unit, so the slider is the aspect ratio; a second slider for the width would only zoom.",
 		discoverer: "classical",
 		cell: RECT_GRID,
 	},
@@ -520,7 +594,7 @@ export const LENGTH_FAMILIES: LengthFamilyRow[] = [
 		id: "plen-pythagorean",
 		label: "Two-square (Pythagorean) tiling",
 		affineTrivial: false,
-		note: "Squares of two sizes, one of each per period, lattice (A, B) and (−B, A). No affine map sends both sizes to one, so the ratio is a genuine parameter. Non-edge-to-edge: a large square's side is met by a small square's side plus the remainder.",
+		note: "Squares of two sizes, one of each per period, lattice (1, B) and (−B, 1) with the first square taken as the unit. No affine map sends both sizes to one, so the ratio B is a genuine parameter and the only one. Non-edge-to-edge: a large square's side is met by a small square's side plus the remainder.",
 		discoverer: "classical",
 		cell: PYTHAGOREAN,
 	},
@@ -531,7 +605,7 @@ export const LENGTH_FAMILIES: LengthFamilyRow[] = [
 		note: "Unit equilateral triangles with a regular hexagon of side g opened at every third vertex of the triangular grid, like a camera shutter. Six triangles surround every hexagon; each triangle side splits g against a hexagon and 1 - g against another triangle, and every vertex is 3.6.T (60 + 120 + 180). Closure is identical rather than conditional: the neighbouring hexagon centres satisfy |C1| = |C2| and cos(C1, C2) = 1/2 for EVERY g, so the centres form a triangular lattice throughout. g -> 0 shuts the aperture and returns the triangular tiling; g = 1 opens it to the trihexagonal tiling 3.6.3.6; everything between is non-edge-to-edge. Wikipedia's non-edge-to-edge family 6, p6.",
 		discoverer: "classical",
 		cell: TRI_HEX_SHUTTER,
-		k: vertexOrbits(evaluateParamCell(TRI_HEX_SHUTTER, [0.5])).k,
+		k: LENGTH_META["plen-tri-hex-shutter"]?.k ?? 1,
 	},
 	{
 		id: "plen-hex-rotor",
@@ -540,18 +614,74 @@ export const LENGTH_FAMILIES: LengthFamilyRow[] = [
 		note: "Unit regular hexagons turned against each other, opening an equilateral triangle of side t at every three-hexagon meeting. The dual of the shutter: here the HEXAGON is the subdivided face (6 corners plus 6 T-junctions) and the triangles are plain. Each hexagon side splits t against a triangle and 1 - t against another hexagon; every vertex is 3.6.T. The neighbouring centres are L and omega*L for L = (1 + omega) + t(omega - 1), so they form a triangular lattice at every t with no condition to check, and the cell area (sqrt3/2)(3 + t^2) is one hexagon plus two triangles of side t exactly. t -> 0 gives the hexagonal tiling, t = 1 the trihexagonal tiling 3.6.3.6. Wikipedia's non-edge-to-edge family 5, p6.",
 		discoverer: "classical",
 		cell: HEX_ROTOR,
-		k: vertexOrbits(evaluateParamCell(HEX_ROTOR, [0.5])).k,
+		k: LENGTH_META["plen-hex-rotor"]?.k ?? 1,
 	},
 	{
 		id: "plen-tri-three-size",
 		label: "Three size triangles",
 		affineTrivial: false,
-		note: "Equilateral triangles in three sizes B, C and B + C. The big one has all three sides subdivided, each into B + C, and the two small ones fill against those pieces — so every vertex is 3.3.3.T with one corner of each size plus a flat, which is where the name comes from. The counting forces the shape before any geometry: six pieces from the big triangle must match the six sides of the two small ones, so the big side is exactly the sum. Lattice C + B*zeta and its 120 deg turn, cell area (sqrt3/2)(B^2 + BC + C^2), equal to the three triangles identically. Wikipedia's non-edge-to-edge family 7, p3.",
+		note: "Equilateral triangles in three sizes 1, C and 1 + C, the first taken as the unit so the one slider is the ratio. The big one has all three sides subdivided, each into 1 + C, and the two small ones fill against those pieces — so every vertex is 3.3.3.T with one corner of each size plus a flat, which is where the name comes from. The counting forces the shape before any geometry: six pieces from the big triangle must match the six sides of the two small ones, so the big side is exactly the sum. Lattice C + zeta and its 120 deg turn, cell area (sqrt3/2)(1 + C + C^2), equal to the three triangles identically. Wikipedia's non-edge-to-edge family 7, p3.",
 		discoverer: "classical",
 		cell: TRI_THREE_SIZE,
-		k: vertexOrbits(evaluateParamCell(TRI_THREE_SIZE, [1, 0.6])).k,
+		k: LENGTH_META["plen-tri-three-size"]?.k ?? 1,
 	},
 	...STRIP_FAMILIES,
 	...STACK_FAMILIES,
 	...ENUM_FAMILIES,
+	...TJUNCTION_ROWS,
 ];
+
+// ── ONE ROW PER FAMILY ──────────────────────────────────────────────────────────────────────────
+//
+// Four independent sources feed this shelf and three of them rediscover each other: the search finds
+// the offset rows of squares that `plen-strip-s` already had, the split-palette engine finds the
+// rectangle grid that `plen-rect` already had, and the enumerator's own signature (a multiset of face
+// words) is too coarse to see that two of its maps carry one tiling. Shipping all of them was the
+// shelf's biggest error: 192 cards over 58 tilings.
+//
+// The key is `LENGTH_META[id].key`: the canonical dart map of the SMOOTHED tiling at a generic member,
+// with its corner angles, computed once in `tools/ctrnact-oracle/emit_length_meta.py`. Angles are fixed
+// across a length family, so that map determines the cone — two rows share a key exactly when they are
+// the same family. The first row wins, and the order below is the priority: hand-authored (which carry
+// the derivation and the literature reference), then strips, then the search, then the engine.
+//
+// A row whose id is missing from LENGTH_META is KEPT, never dropped: a stale meta table must not make
+// families disappear silently. `length-families.test.ts` fails if any id is missing.
+export const ABSORBED_BY: Record<string, string> = {};
+
+export const LENGTH_FAMILIES: LengthFamilyRow[] = (() => {
+	const byKey = new Map<string, LengthFamilyRow>();
+	const absorbed = new Map<string, string[]>();
+	const out: LengthFamilyRow[] = [];
+	for (const f of LENGTH_FAMILIES_ALL) {
+		const key = LENGTH_META[f.id]?.key;
+		if (key === undefined) { out.push(f); continue; }
+		const first = byKey.get(key);
+		if (first) {
+			ABSORBED_BY[f.id] = first.id;
+			absorbed.get(first.id)!.push(f.id);
+			continue;
+		}
+		byKey.set(key, f);
+		absorbed.set(f.id, []);
+		out.push(f);
+	}
+	// Provenance is not lost when a row is: the survivor says who else found it. This is the sentence
+	// the old `KNOWN` table tried to write from a V-E-F-tiles lookup that was not a signature.
+	return out.map((f) => {
+		const also = absorbed.get(f.id) ?? [];
+		if (!also.length) return f;
+		const bucket = (i: string) =>
+			i.startsWith("plen-enum-") ? "the search"
+				: i.startsWith("plen-tj-") ? "the split-palette engine"
+					: i.startsWith("plen-strip-") ? "the strip construction"
+						: "another hand-built row";
+		const groups = ["the search", "the split-palette engine", "the strip construction",
+			"another hand-built row"].map((who) => [who, also.filter((i) => bucket(i) === who)] as const);
+		const said = groups
+			.filter(([, ids]) => ids.length)
+			.map(([who, ids]) => `${who} found it ${ids.length === 1 ? "as" : `${ids.length} times, first as`} ${ids[0]}`)
+			.join("; ");
+		return { ...f, note: `${f.note} Rediscovered: ${said}.` };
+	});
+})();
