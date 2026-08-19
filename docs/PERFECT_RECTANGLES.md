@@ -908,3 +908,59 @@ the family whose walk is recurrent, so that a reader could watch a circumference
 that climb. The shelf is now four hyperbolic records and 2,084 certified squares. The finding is not
 lost, only unshipped: the direct-solve tests in `cylinderSquaring.test.ts` still compute {3,6} at r ≤ 4
 and still assert that it turns over while {3,7} climbs, and the article keeps it as the stated control.
+
+### Is the continuous family known? (researched 2026-08-19, AL question)
+
+AL asked whether the literature knows that a torus squaring can be morphed off the integer lattice and
+stay a valid tiling with irrational square sizes. It does, and the sharp statements are better than the
+question. Both new sections of the article come from this.
+
+**Dehn is why the question is interesting.** Dehn, *Über Zerlegung von Rechtecken in Rechtecke*, Math.
+Ann. **57** (1903), 314–332: a rectangle is squarable only if its side ratio is rational, and then every
+square is commensurable with every other. So the integer sides in the planar half of this page are not a
+scale convention, they are forced. The article had never mentioned this, which left the genus-1 sections
+looking like a bigger version of the same thing instead of a break from it.
+
+**Kenyon bounds the drift, exactly.** *Tiling with squares and square-tileable surfaces*, Prépublication
+ENS Lyon **119** (1993). Corollary 12: for a square-tiled closed surface of genus g the side lengths span
+a ℚ-vector space of dimension ≤ 2g, and the bound is optimal. Torus gets 2 where the rectangle gets 1.
+Our construction cannot exceed it by construction, since every side is `|a_e·m + b_e·n|` with a, b
+integers, so the sides always lie in the ℚ-span of {m, n}. Kenyon's bound and our linearity result are
+the same fact from two sides.
+
+Verified on our own data before writing it up. `uniform-3636` at class (1, √2): 4 of 6 tiles pick up a
+non-zero √2 part, the coefficient pairs span exactly 2 dimensions over ℚ, two tiles come out in ratio
+√2 − 1 = 0.414213562373, and Σ side² = covolume to 8.3e-9 relative. Incommensurable squares tiling a
+surface, at Kenyon's optimal bound.
+
+**Kenyon Theorem 10 is the limit in the other direction**, and it is the part that is easy to miss: the
+class does not choose a tiling of a fixed torus, it moves the torus too. Writing a flat torus as ℂ/⟨1, z⟩,
+T_z is square-tileable iff z lies on a circle of rational centre and rational radius clear of the real
+axis, or a horizontal line at rational height. Dense, and one-dimensional inside a two-dimensional space
+of shapes, so almost every flat torus admits no square tiling at all. The equilateral torus
+(z = ½ + i√3/2) is not squarable in any direction; the rectangular torus of height 1 − √3/2 is. That is
+consistent with our picture: one map contributes one curve of tori as the direction sweeps, and countably
+many maps give a countable union of curves.
+
+**Prior art on the parameter plane, restated honestly.** Dutour Sikirić's §4 is our Sq-domain figure
+essentially verbatim: H₁(T,ℝ) of dimension 2, the line L(e) where a square vanishes, the plane cut into
+angular sectors, and "if one goes towards L(e) then the length w(e) of the corresponding square vanish.
+After one passes through L(e), the square reappears but in a different position." He also declines the
+integer question outright: "if one imposes that square sizes are integral then we do not have the answer
+to the question." Chien (Rutgers, 2015) Theorem 3.3.1 does every genus from a generic class in
+H₁(Σ_g,ℝ)\{0}, where generic means no zero coefficient, which is our off-the-walls condition.
+
+⚑ **Citation corrected.** The Sources section had credited the characterisation of square-tileable tori
+to Kenyon's *Tilings and discrete Dirichlet problems*, Israel J. Math. **105** (1998). That paper does
+state it, but Theorems 9 and 10 and Corollary 12 are read here from the 1993 ENS Lyon preprint, which is
+now what the page cites for them. Both are listed.
+
+⚑ **Not done, and a real gate if wanted.** Every torus this repo produces must have its modulus on one of
+Kenyon's rational circles or rational horizontal lines. Nothing checks that. It is the strongest available
+external test of the lattice construction, since a record landing off those curves would be a proof of a
+bug, and it needs no external data.
+
+⚑ **Not modelled.** Chien Theorem 4.1.1 gives the wall case a structure theorem: the tiling lands on a
+surface of genus g₀ ≤ g with an explicit formula in |V₀|, |F₀| and the χ(H_j). We treat a wall as "a
+square vanished" and move on. Harmless at g = 1, but it is a degeneracy check where the literature has a
+theorem.

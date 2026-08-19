@@ -41,7 +41,9 @@ Going around any vertex, the currents sum to zero, so $\psi$ is consistent, and 
 
 Now the tile for the edge from $u$ down to $v$ is the box $[\psi_{\text{left}}, \psi_{\text{right}}] \times [V(v), V(u)]$, and it is automatically a **square**, because the edge's current is simultaneously its potential drop and its $\psi$ jump. The two sides are equal because they are the same number counted twice. That single identity is the entire trick.
 
-The sides come out as whole numbers for a reason worth stating, since it also gives a way to check the arithmetic. By Kirchhoff's matrix-tree theorem the natural scale for the solution is a count of spanning trees, and in that scale
+The sides come out as whole numbers, and not by a convenient choice of scale. Max Dehn proved in 1903 that a rectangle can be cut into squares only when the ratio of its two sides is rational, and that when it can, all the squares are commensurable: fix any one of them as a unit and every other side is a rational multiple of it. A squared rectangle with two tiles in the ratio $\sqrt{2}$ does not exist and cannot be built. Whole numbers are the only thing the plane offers, which is worth remembering when the torus turns out to offer more.
+
+The scale itself is worth stating too, since it gives a way to check the arithmetic. By Kirchhoff's matrix-tree theorem the natural scale for the solution is a count of spanning trees, and in that scale
 
 $$W + H = \tau(G)$$
 
@@ -127,6 +129,52 @@ through the origin, and those lines cut the circle of directions into angular se
 
 Two squares come out the same size where $|a_e m + b_e n| = |a_f m + b_f n|$, which is again a pair of lines through the origin. So a perfect squared torus is a class that misses every one of them: perfection is a condition on the parameter, not luck. And when $(a_e, b_e) = \pm(a_f, b_f)$ the two sides agree at every class at once and no line separates them, which is the half-turn rule made mechanical. A half-turn acts as $-1$ on $H^1$ for every class simultaneously, so it locks every edge orbit it moves and the tiling is imperfect everywhere. A 3-, 4- or 6-fold rotation costs nothing, because it fixes no non-zero class.
 
+## How far the sizes can drift
+
+Dehn's theorem is what makes the previous two sections surprising. In the plane the sides of a squaring are
+locked to a single ruler. On a torus they are not, and Richard Kenyon worked out exactly how far they get.
+
+Call a set of lengths $d$-dimensional over $\mathbb{Q}$ if you need $d$ fixed rulers to write them all as
+rational combinations, and no fewer. Dehn's theorem says a squared rectangle is one-dimensional: one ruler
+does the whole job. Kenyon's Corollary 12 says that a square tiling of a closed surface of genus $g$ is at
+most $2g$-dimensional, and that the bound is achieved. The torus gets two rulers where the rectangle gets
+one, and that second ruler is the entire extra freedom.
+
+It is easy to see why our construction can never exceed two, and the reason is the linear form from the
+previous section. Every side is $|a_e m + b_e n|$ with $a_e$ and $b_e$ integers fixed by the map, so every
+side is a rational combination of $m$ and $n$ and nothing else. Two rulers, handed to you by the two
+coordinates of the class. Kenyon's bound is not merely respected here; it is the same fact seen from the
+other side.
+
+Generically it is reached. Evaluating the trihexagonal record at the class $(1, \sqrt{2})$, a direction the
+pipeline page's control snaps past precisely because it misses the integer lattice, four of its six tiles
+pick up a non-zero $\sqrt{2}$ part, two come out in the ratio $\sqrt{2} - 1 = 0.41421356\ldots$, which no fraction equals, and
+$\sum \text{side}^2$ still lands on the covolume. Incommensurable squares, tiling a surface, exactly the
+thing Dehn ruled out one dimension down.
+
+## Which tori can be squared at all
+
+The freedom has a sharp limit in the other direction, and it is easy to miss while dragging the class around:
+you are not choosing a tiling of a fixed torus. The torus moves too. Each class gives a lattice, so sweeping
+the direction sweeps the shape of the surface as well as the sizes of the tiles.
+
+Kenyon settled which shapes are reachable. Write a flat torus as the plane divided by the lattice generated
+by $1$ and a complex number $z$ in the upper half-plane, so $z$ is the shape and every torus is some $z$. His
+Theorem 10 says $T_z$ can be tiled by squares exactly when $z$ lies on a circle of rational centre and
+rational radius that stays off the real axis, or on a horizontal line at rational height. Those curves are
+dense, and they are still only curves: the square-tileable tori are a one-dimensional subset of the
+two-dimensional space of shapes, so almost every flat torus admits no square tiling whatsoever.
+
+Two examples make the shape of that result concrete. The equilateral torus, $z = \tfrac{1}{2} + i\tfrac{\sqrt{3}}{2}$,
+the most symmetric one there is, cannot be squared in any direction at all. The rectangular torus of height
+$1 - \tfrac{\sqrt{3}}{2}$, an irrational shape with no symmetry to recommend it, can. Being square-tileable
+has nothing to do with looking regular.
+
+This is also the consistency check on everything above. A single map contributes one curve of tori as its
+class direction sweeps, because scaling a class scales the whole picture and leaves the shape alone. Countably
+many maps contribute countably many curves. A dense one-dimensional subset is exactly what that adds up to.
+
+
 ## Hyperbolic: a ball, and a cylinder
 
 A hyperbolic tiling is infinite, so there is no finite surface to divide it by and no homology class to choose. What gets squared instead is a ball cut out of the tiling with its whole boundary shorted to a single vertex. The answer is not a rectangle: the horizontal coordinate is only defined modulo the total current, because a loop around the centre picks that current up, so the tiling lives on a **cylinder**.
@@ -149,7 +197,13 @@ Stefan Felsner's survey *Rectangle and Square Representations of Planar Graphs* 
 
 Stuart Anderson's [squaring.net](https://www.squaring.net/) holds the exhaustive catalogues, the counts by order, and the history.
 
-The genus-1 case is Mathieu Dutour Sikirić, *Torus square tilings*, *Applicable Algebra in Engineering, Communication and Computing* **23** (2012), 251–261, whose Theorem 3(ii) identifies the space of periodic harmonic vectors with $H_1$ of the torus and whose §4 is the sector decomposition drawn on the pipeline page. Edward Chien's *Square tilings of surfaces from discrete harmonic 1-chains* (Rutgers, 2015) carries it to genus $g \ge 1$, and Richard Kenyon's *Tilings and discrete Dirichlet problems*, *Israel J. Math.* **105** (1998), 61–84, determines which Euclidean tori are square-tileable.
+The rationality of a planar squaring is Max Dehn, *Über Zerlegung von Rechtecken in Rechtecke*, *Mathematische Annalen* **57** (1903), 314–332; Andrew Putman's notes [*Tiling by squares*](https://academicweb.nd.edu/~andyp/notes/TilingBySquares.pdf) give a short modern proof.
+
+The genus-1 case is Mathieu Dutour Sikirić, *Torus square tilings*, *Applicable Algebra in Engineering, Communication and Computing* **23** (2012), 251–261 ([arXiv:1101.0223](https://arxiv.org/abs/1101.0223)), whose Theorem 3(ii) identifies the space of periodic harmonic vectors with $H_1(T,\mathbb{R})$ and whose §4 is the sector decomposition drawn on the pipeline page. He is explicit that the parameters are real and that integrality is a separate and harder question: “if one imposes that square sizes are integral then we do not have the answer to the question.”
+
+Edward Chien's *Square tilings of surfaces from discrete harmonic 1-chains* ([Rutgers, 2015](https://rucore.libraries.rutgers.edu/rutgers-lib/48436/)) carries the construction to every genus $g \ge 1$: his Theorem 3.3.1 builds a square-tiled flat cone metric from any generic class in $H_1(\Sigma_g,\mathbb{R}) \setminus \{0\}$, where generic means the harmonic representative has no zero coefficient, which is the condition of being off the walls above. His Theorem 4.1.1 handles the walls themselves, where the tiling lands on a surface of equal or lower genus.
+
+The two limits on how far the sizes can drift are both Richard Kenyon's, in [*Tiling with squares and square-tileable surfaces*](https://citeseerx.ist.psu.edu/document?repid=rep1&type=pdf&doi=eec731c9882dcb80a2fb1dbe2073b85e3ed13753) (Prépublication ENS Lyon **119**, 1993): Corollary 12 is the $2g$ bound on the dimension of the $\mathbb{Q}$-vector space generated by the side lengths, together with the fact that the bound is optimal, and Theorem 10 is the characterisation of the square-tileable tori as the rational circles and rational horizontal lines. His *Tilings and discrete Dirichlet problems*, *Israel J. Math.* **105** (1998), 61–84, is the published treatment of the same circle of ideas.
 
 The hyperbolic case is Itai Benjamini and Oded Schramm, *Random walks and harmonic functions on infinite planar graphs using square tilings*, *Annals of Probability* **24** (1996), 1219–1238. Agelos Georgakopoulos identified the resulting boundary circle with the Poisson boundary in *The boundary of a square tiling of a graph coincides with the Poisson boundary*, *Inventiones* **203** (2016).
 
