@@ -3,8 +3,52 @@
 > **What this file is.** The 30-second "where are we" snapshot. **Mutable, disposable,
 > clobber-tolerant** — if two agents overwrite it, nothing is lost, because the *canonical*
 > history lives in the append-only **ledgers** below. Regenerate it from the latest signed
-> entry of each ledger. **Never write history here.** — last updated 2026-08-17, CC
+> entry of each ledger. **Never write history here.** — last updated 2026-08-18, CC
 > (acting as TA too, AL authorization 2026-07-10).
+
+## Game of Life runs on the catalogue now — /automata (2026-08-18)
+
+Ported from AL's TilingLife course project, with the surface AL chose: a top-level `/automata` route
+(plural — Langton's ant and other automata are meant to follow) plus a `/theory/automata` article.
+
+**The board is the unbounded plane**, not a torus: a sparse map of 32×32-lattice-cell blocks allocated as
+the pattern reaches them and freed once it leaves, so a spaceship can leave and a methuselah can run. The
+torus is an option, and when chosen can be drawn on an actual 3D donut. Speed comes from the tiling being
+periodic: adjacency is translation-invariant, so a neighbour is a **constant byte offset** in a haloed
+scratch buffer and the inner loop needs no adjacency list. 17–77 M cell-updates/s.
+
+**The gate is Conway.** The square tiling runs the same generic path as everything else and must
+reproduce Life exactly — glider, blinker, block, and the R-pentomino settling at 116 after 1103
+generations (which is also the proof the board is genuinely unbounded).
+
+Standing rule this leaves behind: **a rule string is undetermined on a mixed-degree tiling**, so all
+three readings (absolute / normalized / per-shape) are a visible control, never a hidden branch.
+
+**Sidebar follows /play's conventions** (AL, same day): transport floats over the canvas, state lives in
+the info panel above the tabs, the rest is four horizontal tabs, and the tiling picker IS /play's
+`CatalogueListPanel` — the class→k thumbnail tree, not a hand-rolled list of family strings.
+
+**The board is a surface, not a flag. All five ship, and all four bounded ones have a 3D view.** Boundary
+is per-axis (`wrapI`, `wrapJ`). The five flat surfaces are the complete list (Gauss–Bonnet rules out
+ℝP²), and the two flipped ones are **gated on the tiling admitting a glide reflection** — 96% of the
+corpus does, and the one uniform tiling that does not is snub trihexagonal, the chiral one.
+
+**Möbius and Klein are simulated, not approximated (2026-08-19).** Each runs on its orientation double
+cover carrying a state invariant under the deck transformation ι; ι is a graph automorphism mapping every
+tile to a congruent one, so it commutes with the rule and the invariance holds exactly, in integer
+arithmetic, forever. The kernel keeps one code path. Checked against an independently built QUOTIENT graph
+(orbits as cells, neighbours counted with multiplicity) generation by generation, on the square grid and
+on the hexagonal one. The flip first refines the adjacency onto ⟨v₁, w⟩ where w is R's −1 eigenvector, an
+index-1-or-2 sublattice whose cell is a rectangle. ⚑ Board width is a HALF-INTEGER whenever the tiling's
+glide shifts by half a cell (6 of the 11 uniform tilings); the sidebar prints "12½×14" because that is
+where the seam closes. The Klein 3D view offers both standard immersions, bottle and bagel
+(figure-8), defaulting to the bottle; both pass through themselves, because every closed surface in ℝ³ is
+orientable. ⚑ The bottle's proportions are FIXED, so it cannot take the board's aspect ratio — it is
+several times longer than it is round, and a square-ish board draws tiles as long stripes.
+
+⚑ Not fixed, inherited: nothing here searches rule space. The open question the article names — run Bays'
+criteria (bounded growth + a glider that arises from soup) across the uniform tilings — is not done, and
+density-and-complexity metrics are the wrong instrument for it.
 
 ## The parametric length shelf is one row per TILING now (2026-08-18)
 

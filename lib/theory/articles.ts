@@ -53,6 +53,11 @@ export const THEORY_ARTICLES: TheoryArticle[] = [
 		blurb: "Brooks, Smith, Stone and Tutte turned a rectangle cut into unequal squares into an electrical circuit, and the circuit into a convex polyhedron. Run backwards over this catalogue's own solids: 667 rectangles across 105 of them, and why symmetry is what stops them being perfect.",
 	},
 	{
+		slug: "automata",
+		title: "Life on a tiling that isn't the square grid",
+		blurb: "Conway's rule needs a grid before it needs a rule. What is known about Life on hexagons, pentagons and Penrose tilings, why a B/S string is undetermined when tiles differ in degree, and what a tiling's periodicity buys the simulator.",
+	},
+	{
 		slug: "hyperbolic",
 		title: "Why the hyperbolic catalogue stops where it does",
 		blurb: "The hyperbolic tilings never run out, so the enumeration is bounded by palette, valence and uniformity. What identifies a tiling when its vertex configuration cannot, and where the search hits its limit.",

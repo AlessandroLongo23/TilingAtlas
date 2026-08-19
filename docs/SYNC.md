@@ -2667,3 +2667,20 @@ draws a row with its real count and fetches on click. Counts are decoded from ea
 declared, and `atlasManifest.test.ts` checks every one in both directions so a stale manifest fails
 the suite. Verified in Chromium: scaled k=4 reads 1,602 before and after loading. Interface kept
 narrow so a Postgres index would change only `loadAtlasManifest`. Detail: NOTES 2026-08-18.
+
+## 2026-08-18 (sixth) — Game of Life lands as /automata, on the plane — CC
+
+Ported the cellular-automata work from AL's TilingLife course project: new `/automata` route (plural, for
+Langton's ant later) + `/theory/automata`. Board is the **unbounded plane** by default (sparse 32×32
+blocks, allocated and freed as the pattern moves); an n×n torus is the option, drawn on a 3D donut.
+Adjacency comes from matching edge midpoints modulo the lattice, which makes a neighbour a constant byte
+offset in a haloed buffer: 17–77 M cell-updates/s. Gate: the square tiling reproduces Conway exactly,
+R-pentomino → 116 at gen 1103. Detail: NOTES 2026-08-18 (Game of Life comes over from TilingLife).
+
+## 2026-08-19 — /automata: the two non-orientable boards run, and are drawn — CC
+
+Möbius band and Klein bottle went from detected-but-disabled to simulated, with 3D views. Each runs on
+its **orientation double cover** carrying a state invariant under the deck transformation ι — exact, since
+ι is a graph automorphism onto congruent tiles and so commutes with the rule. Verified against an
+independently built quotient graph, generation by generation, on the square and hexagonal boards.
+⚑ Board width is a half-integer on 6 of the 11 uniform tilings, and the sidebar says so. NOTES 2026-08-19.

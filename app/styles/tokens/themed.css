@@ -69,6 +69,17 @@
   --shadow-xl:
     0 20px 48px oklch(from var(--palette-neutral-900) l c h / 0.12),
     0 4px 8px oklch(from var(--palette-neutral-900) l c h / 0.06);
+
+  /* ─────────── Automata canvas ───────────
+     WebGL cannot parse oklch(), so these are plain space-separated RGB triples in 0–1 read straight
+     into a uniform (components/automata/automata-canvas.tsx). They follow the monochrome rule: a live
+     cell is ink on paper, and the only hue on that canvas comes from the tiling showing through the
+     dead cells when "tint dead by tile" is on. */
+  --automata-live:  0.07 0.07 0.09;
+  --automata-dead:  0.97 0.97 0.97;
+  --automata-decay: 0.62 0.62 0.66;
+  /* Overlay guides (lattice dashes). Same plain-RGB reason as the three above. */
+  --automata-guide: 0.45 0.45 0.50;
 }
 
 .dark {
@@ -127,4 +138,10 @@
   --shadow-xl:
     0 20px 48px oklch(from var(--palette-black) l c h / 0.55),
     0 4px 8px oklch(from var(--palette-black) l c h / 0.35);
+
+  /* Automata canvas — inverted: ink becomes light, paper becomes dark. */
+  --automata-live:  0.96 0.96 0.97;
+  --automata-dead:  0.09 0.09 0.11;
+  --automata-decay: 0.40 0.40 0.46;
+  --automata-guide: 0.62 0.62 0.68;
 }
