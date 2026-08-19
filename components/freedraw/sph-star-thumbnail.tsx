@@ -16,11 +16,15 @@ export function SphStarThumbnail({
 	mode = "polyhedron",
 	showGrid = false,
 	size = 256,
+	showCrossings = true,
 }: {
 	pattern: SphStarPattern;
 	mode?: IcoMode;
 	showGrid?: boolean;
 	size?: number;
+	/** Draw the face-through-face creases. Defaults ON, matching the canvas's default view: a thumbnail
+	 *  that omits them shows a different solid from the one clicking it opens. */
+	showCrossings?: boolean;
 }) {
 	const scene = useMemo(() => sphStarScene(pattern), [pattern]);
 	return (
@@ -33,6 +37,9 @@ export function SphStarThumbnail({
 			keepRadius
 			showGrid={showGrid}
 			size={size}
+			crossings={scene.crossings}
+			showCrossings={showCrossings}
+			tileHsb={scene.tileHsb}
 		/>
 	);
 }

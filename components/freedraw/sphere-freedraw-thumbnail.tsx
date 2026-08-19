@@ -38,6 +38,11 @@ interface SphereFreedrawThumbnailProps {
 	 *  into a canonical solid — the same override IcoFreedrawCanvas takes, so both stay one look. */
 	vertices?: [number, number, number][];
 	allEdges?: [number, number][];
+	/** Face-through-face creases, and whether to draw them; see sphStar.faceCrossings. */
+	crossings?: import("@/lib/render/sphStar").Crease[];
+	showCrossings?: boolean;
+	/** Per-tile HSB, parallel to the pattern's tiles, overriding the golden-angle tileColor. */
+	tileHsb?: [number, number, number][];
 }
 
 let sharedRenderer: THREE.WebGLRenderer | null = null;
@@ -67,6 +72,9 @@ function renderToDataUrl(
 	showGrid: boolean,
 	vertices?: [number, number, number][],
 	allEdges?: [number, number][],
+	crossings?: import("@/lib/render/sphStar").Crease[],
+	showCrossings?: boolean,
+	tileHsb?: [number, number, number][],
 ): string | null {
 	const renderer = getSharedRenderer();
 	if (!renderer || !sharedCanvas) return null;
@@ -95,6 +103,9 @@ function renderToDataUrl(
 		keepRadius,
 		showGrid,
 		allEdges: showGrid ? (allEdges ?? (solid ? solidEdges(solid) : undefined)) : undefined,
+		crossings,
+		showCrossings,
+		tileHsb,
 	});
 	scene.add(content.object);
 	try {
@@ -116,11 +127,14 @@ export function SphereFreedrawThumbnail({
 	size = 256,
 	vertices,
 	allEdges,
+	crossings,
+	showCrossings,
+	tileHsb,
 }: SphereFreedrawThumbnailProps) {
 	const holderRef = useRef<HTMLDivElement | null>(null);
 	const [url, setUrl] = useState<string | null>(null);
 	const [failed, setFailed] = useState(false);
-	const specKey = `${solidId}-${pattern.id}-${mode}-${keepRadius ? "r" : ""}-${showGrid ? "g" : ""}`;
+	const specKey = `${solidId}-${pattern.id}-${mode}-${keepRadius ? "r" : ""}-${showGrid ? "g" : ""}-${showCrossings ? "x" : ""}`;
 
 	useEffect(() => {
 		const el = holderRef.current;
@@ -134,7 +148,7 @@ export function SphereFreedrawThumbnail({
 			// instead of firing alongside every other card's render in one task.
 			cancelJob = enqueueThumbnailRender(() => {
 				try {
-					const dataUrl = renderToDataUrl(pattern, solidId, size, mode, keepRadius, showGrid, vertices, allEdges);
+					const dataUrl = renderToDataUrl(pattern, solidId, size, mode, keepRadius, showGrid, vertices, allEdges, crossings, showCrossings, tileHsb);
 					if (dataUrl) setUrl(dataUrl);
 					else setFailed(true);
 				} catch (e) {
