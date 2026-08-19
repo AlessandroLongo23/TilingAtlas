@@ -1,0 +1,15 @@
+{
+  "name": "spherical-scaled",
+  "D": 120,
+  "closure": "positive-defect",
+  "maxValence": 6,
+  "comment": "SPHERICAL NON-EDGE-TO-EDGE, first test. Regular {3,4,5} at side lengths 1 and 2, the spherical sibling of regular-scaled-123. The point of a side-s tile is that its long side carries s-1 FLAT 180-degree corners, which is exactly how a T-junction is encoded: where one tile's vertex lands in the interior of another tile's side, the second tile sees a flat corner. On the sphere two unit arcs meeting at a flat vertex ARE one geodesic arc of twice the length, so the encoding carries over unchanged from the plane. What does NOT carry over is the ANGLE: gen_alphabet gives every scaled tile the EUCLIDEAN corner D/2 - D/n regardless of s, which is right in the plane and wrong on the sphere, where a regular polygon's interior angle grows with its side arc. That only affects the developer (the closure test is a necessary condition either way), and it is the thing this palette exists to expose. Target literature: Adams et al., 'The Rest of the Tilings of the Sphere by Regular Polygons' (arXiv:2101.10743, DCG 2024) — 5 kaleidoscope + 15 two-hemisphere CONTINUOUS families, plus 4 lunar, 5 sporadic, 5 composed and 1 magic-triangle tiling.",
+  "tiles": [
+    { "kind": "regular", "n": 3,            "name": "3",   "famchar": "3" },
+    { "kind": "regular", "n": 4,            "name": "4",   "famchar": "4" },
+    { "kind": "regular", "n": 5,            "name": "5",   "famchar": "5" },
+    { "kind": "scaled",  "n": 3, "scale": 2, "name": "3s2", "famchar": "t" },
+    { "kind": "scaled",  "n": 4, "scale": 2, "name": "4s2", "famchar": "q" },
+    { "kind": "scaled",  "n": 5, "scale": 2, "name": "5s2", "famchar": "p" }
+  ]
+}

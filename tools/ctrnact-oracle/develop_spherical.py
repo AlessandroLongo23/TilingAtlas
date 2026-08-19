@@ -157,8 +157,8 @@ def solve_rho_common(configs, dens=1, retro=frozenset(), tol=1e-6):
     unless the configs coincide there. Returns rho or None (no equal-edge realization)."""
     dl = dens if isinstance(dens, (list, tuple)) else [dens] * len(configs)
     rhos = [solve_rho(c, dv, retro) for c, dv in zip(configs, dl)]
-    if any(r is None for r in rhos):
-        return None
+    if not rhos or any(r is None for r in rhos):
+        return None                     # no configs parsed is "not realizable", not max() of nothing
     if max(rhos) - min(rhos) > tol:
         return None
     return sum(rhos) / len(rhos)
@@ -379,6 +379,22 @@ def parse_configs(vertypeline):
     """All per-orbit vertex configs on the header line (one per vertex type, k configs for k-uniform).
     A face token is "n" (convex) or "n_d" (the starpoly {n/d}); both come back as an (n, d) pair."""
     import re
+    # SCALED TILES ARE NOT SUPPORTED HERE, and the refusal is deliberate. A side-s tile is written
+    # "3s2" with flat corners "3s2~1", so the numeric regex below simply finds nothing, every config
+    # comes back empty, and solve_rho_common used to die on max() of an empty sequence — an obscure
+    # crash standing in for a real limitation. The limitation: this developer models a face's interior
+    # angle PER FACE (see develop_sphere.alpha, keyed on lvert alone), which is right for a regular
+    # polygon and wrong for a scaled one, whose corners alternate between the real angle and a flat pi.
+    # Supporting them needs a per-CORNER angle: gen_alphabet emitting the scale and boundary position
+    # beside CLASS_L/CLASS_WIND, alpha() reading the position, interior_angle taking scale*rho, and the
+    # rho bracket dropping to 2*pi*d/(n*scale). Until that exists, say so.
+    if re.search(r"[0-9]s[0-9]", vertypeline):
+        raise SystemExit(
+            "[develop_spherical] SCALED TILES ARE NOT DEVELOPED: %s\n"
+            "  This developer assumes every face is a REGULAR spherical polygon (one interior angle\n"
+            "  for the whole face). A side-s tile has s-1 flat 180-degree corners per side, so its\n"
+            "  angle is a property of the corner, not the face. See the note in parse_configs."
+            % vertypeline.strip()[:120])
     def tok(s):
         n, _, d = s.partition("_")
         return (int(n), int(d) if d else 1)
