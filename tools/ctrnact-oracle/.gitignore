@@ -28,3 +28,14 @@ __pycache__/
 *.pyc
 .maxnum-*
 check-k*/
+# The runtime-solver build stamp. `.maxnum-*` was ignored and its sibling was not, so `.maxnumrt-13`
+# reached master in d5b06b9 — an empty file whose only job is to tell make whether eu_solver_rt was
+# built at the current MAXNUM, and which `make clean` deletes.
+.maxnumrt-*
+# Ad-hoc palette-slice runs: <tag>-k<N>/ holding out/ plus a one-line solver log. The out/ tree is
+# already ignored; these are the wrappers around it, hundreds of MB, regenerable via
+# `PALETTE=<name> ./run-oracle.sh <k>`. What survives a run is the log in experiments/results/.
+hollow-k*/
+mid-k*/
+oct-k*/
+sq-k*/
