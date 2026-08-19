@@ -1,0 +1,26 @@
+{
+  "name": "hollow-eu",
+  "D": 24,
+  "closure": "density-flat",
+  "maxDensity": 3,
+  "maxValence": 6,
+  "comment": "EUCLIDEAN HOLLOW TILINGS — the plane's self-intersecting {n/d} space (Grunbaum, Miller & Shephard, 'Uniform Tilings with Hollow Tiles', Coxeter Festschrift 1981; Tilings and Patterns 12.3). Built to test whether STS can reproduce the 14 figures tools/hollow/ already ships from an independent exact Z[zeta24] engine. D=24 is forced, not chosen: {8/3} turns 45 degrees and {12/5} turns 30, so the octagon-blind 12-direction default cannot express them, and the 'any tiling with an octagon IS 4.8.8' lemma does not apply once the octagon may be traversed retrograde. Every tile of the published set is here: prograde convex {3,4,6,8,12}, the genuinely self-intersecting {8/3} and {12/5}, and the retrograde forms, which are the bulk of it — {3/2} {4/3} {6/5} {8/7} {12/11} are convex polygons walked backwards, taking the REFLEX corner. maxValence 6 is a bound, not a proof: the longest published config is 5 corners.",
+  "tiles": [
+    { "kind": "regular",  "n": 3,             "name": "3",    "famchar": "3" },
+    { "kind": "regular",  "n": 4,             "name": "4",    "famchar": "4" },
+    { "kind": "regular",  "n": 6,             "name": "6",    "famchar": "6" },
+    { "kind": "regular",  "n": 8,             "name": "8",    "famchar": "8" },
+    { "kind": "regular",  "n": 12,            "name": "12",   "famchar": "c" },
+
+    { "kind": "starpoly", "n": 8,  "d": 3,    "name": "8_3",  "famchar": "o" },
+    { "kind": "starpoly", "n": 12, "d": 5,    "name": "12_5", "famchar": "u" },
+
+    { "kind": "starpoly", "n": 3,  "d": 2,    "name": "3_2",  "famchar": "t" },
+    { "kind": "starpoly", "n": 4,  "d": 3,    "name": "4_3",  "famchar": "q" },
+    { "kind": "starpoly", "n": 6,  "d": 5,    "name": "6_5",  "famchar": "h" },
+    { "kind": "starpoly", "n": 8,  "d": 5,    "name": "8_5",  "famchar": "p" },
+    { "kind": "starpoly", "n": 8,  "d": 7,    "name": "8_7",  "famchar": "r" },
+    { "kind": "starpoly", "n": 12, "d": 7,    "name": "12_7", "famchar": "v" },
+    { "kind": "starpoly", "n": 12, "d": 11,   "name": "12_11","famchar": "w" }
+  ]
+}

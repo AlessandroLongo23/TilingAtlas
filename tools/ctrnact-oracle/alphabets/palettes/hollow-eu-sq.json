@@ -1,0 +1,14 @@
+{
+  "name": "hollow-eu-sq",
+  "D": 24,
+  "closure": "density-flat",
+  "maxDensity": 3,
+  "maxValence": 6,
+  "comment": "A DELIBERATELY SMALL slice of hollow-eu, for measuring what k=2 costs without waiting on the full 14-tile solve. Four tiles: {3} {4} and the retrograde {3/2} {6/5}. It is not arbitrary — this subset already carries four of the 25 known uniform answers (GMS 1.2 = 4.4.3/2.3/2.3/2, GMS 1.4 = 4.3/2.4.3/2.3/2, GMS 1.17 = 4.3/2.4.6/5, and the convex 3.3.3.3.3.3, 4.4.4.4, 3.3.3.4.4, 3.6.3.6 ...), so a k=2 run over it is a real measurement of the same space and not a toy. No {8}, {12} or their star forms: those carry the 2-unit and 3-unit corners that make the words long and the search wide.",
+  "tiles": [
+    { "kind": "regular",  "n": 3,          "name": "3",   "famchar": "3" },
+    { "kind": "regular",  "n": 4,          "name": "4",   "famchar": "4" },
+    { "kind": "starpoly", "n": 3, "d": 2,  "name": "3_2", "famchar": "t" },
+    { "kind": "starpoly", "n": 6, "d": 5,  "name": "6_5", "famchar": "h" }
+  ]
+}

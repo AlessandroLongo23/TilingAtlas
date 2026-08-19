@@ -1,0 +1,49 @@
+{
+  "name": "hollow-eu-mid",
+  "D": 24,
+  "closure": "density-flat",
+  "maxDensity": 3,
+  "maxValence": 6,
+  "comment": "Six tiles: hollow-eu-sq plus {8} and {8/5}, so it carries the convex 4.8.8 and GMS 1.8 (4.8/5.8/5) as well. The middle rung of the k=2 cost ladder \u2014 the 9-tile version did not finish a k=2 solve in 10 minutes, so the growth factor has to be pinned somewhere it does.",
+  "tiles": [
+    {
+      "kind": "regular",
+      "n": 3,
+      "name": "3",
+      "famchar": "3"
+    },
+    {
+      "kind": "regular",
+      "n": 4,
+      "name": "4",
+      "famchar": "4"
+    },
+    {
+      "kind": "regular",
+      "n": 8,
+      "name": "8",
+      "famchar": "8"
+    },
+    {
+      "kind": "starpoly",
+      "n": 3,
+      "d": 2,
+      "name": "3_2",
+      "famchar": "t"
+    },
+    {
+      "kind": "starpoly",
+      "n": 6,
+      "d": 5,
+      "name": "6_5",
+      "famchar": "h"
+    },
+    {
+      "kind": "starpoly",
+      "n": 8,
+      "d": 5,
+      "name": "8_5",
+      "famchar": "p"
+    }
+  ]
+}

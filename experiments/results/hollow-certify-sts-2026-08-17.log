@@ -1,0 +1,43 @@
+
+=== certify 23814 configurations  caps=[200, 2000, 20000]  kappa<=2  workers=8  2026-08-17 11:09:16 ===
+
+-- rung 1: node_cap=200 over 23814 configurations
+   TILING 12/5.4.6/5                     kappa=1 density=-1 cells=6    0.00s
+   TILING 6/5.6/5.6/5                    kappa=1 density=-1 cells=3    0.01s
+   TILING 4.8.8                          kappa=1 density=+1 cells=4    0.00s
+   TILING 4/3.8.8/5                      kappa=1 density=+1 cells=4    0.00s
+   TILING 4.8/5.8/5                      kappa=1 density=+1 cells=4    0.00s
+   TILING 12.12.3                        kappa=1 density=+1 cells=9    0.07s
+   TILING 12.4.6                         kappa=1 density=+1 cells=6    0.01s
+   TILING 12/11.12/5.6                   kappa=1 density=-2 cells=4    0.02s
+   TILING 12/7.12/7.3                    kappa=1 density=+1 cells=9    0.04s
+   TILING 12/7.3/2.12/7.6                kappa=1 density=+2 cells=4    0.00s
+   TILING 12.3/2.12.6                    kappa=1 density=+2 cells=4    0.01s
+   TILING 4.4.4.4                        kappa=1 density=+1 cells=2    0.00s
+   TILING 12.4.12/11.4/3                 kappa=2 density=+0 cells=8    0.01s
+   TILING 12/5.4.12/7.4/3                kappa=2 density=+0 cells=8    0.01s
+   TILING 3.4/3.6.4/3                    kappa=1 density=+1 cells=6    0.00s
+   TILING 3.6.3.6                        kappa=1 density=+1 cells=3    0.00s
+   TILING 3.4.6.4                        kappa=1 density=+1 cells=6    0.00s
+   TILING 12.12/5.12/11.12/7             kappa=2 density=+0 cells=4    0.20s
+   TILING 8.8/3.8/7.8/5                  kappa=1 density=+0 cells=4    0.01s
+   TILING 3.3.4.3.4                      kappa=1 density=+1 cells=6    0.00s
+   TILING 3.3.3.4.4                      kappa=1 density=+1 cells=6    0.01s
+   TILING 3.3.4/3.3.4/3                  kappa=1 density=-1 cells=6    0.00s
+   TILING 3.3.3.3.6                      kappa=1 density=+1 cells=9    0.01s
+   TILING 3.3.3.4/3.4/3                  kappa=1 density=-1 cells=6    0.02s
+   ... 2000/23814  tilings=24 rejected=1710 unresolved=249  71s eta=774s
+   ... 4000/23814  tilings=24 rejected=3604 unresolved=355  112s eta=554s
+   ... 6000/23814  tilings=24 rejected=5545 unresolved=414  143s eta=423s
+   ... 8000/23814  tilings=24 rejected=7422 unresolved=537  180s eta=357s
+   ... 10000/23814  tilings=24 rejected=9287 unresolved=672  221s eta=305s
+   ... 12000/23814  tilings=24 rejected=11222 unresolved=737  242s eta=238s
+   ... 14000/23814  tilings=24 rejected=13135 unresolved=824  268s eta=188s
+   TILING 3.3.3.3.3.3                    kappa=1 density=+1 cells=2    0.00s
+   ... 16000/23814  tilings=25 rejected=15036 unresolved=922  291s eta=142s
+   ... 18000/23814  tilings=25 rejected=16911 unresolved=1047  323s eta=104s
+   ... 20000/23814  tilings=25 rejected=18813 unresolved=1145  345s eta=66s
+   ... 22000/23814  tilings=25 rejected=20622 unresolved=1336  385s eta=32s
+   ... 23814/23814  tilings=25 rejected=22310 unresolved=1462  416s eta=0s
+
+-- rung 2: node_cap=2000 over 1462 configurations

@@ -1,0 +1,19 @@
+{
+  "name": "hollow-eu-oct",
+  "D": 24,
+  "closure": "density-flat",
+  "maxDensity": 3,
+  "maxValence": 6,
+  "comment": "The middle rung of the k=2 cost ladder: hollow-eu-sq plus the octagon family {8} {8/3} {8/5} {8/7}. Carries GMS 1.6, 1.7, 1.8 and the convex 4.8.8 on top of what -sq already had. Its only job is to sit between the 4-tile and 14-tile palettes so the k=1 -> k=2 growth factor can be measured twice and not assumed once.",
+  "tiles": [
+    { "kind": "regular",  "n": 3,          "name": "3",   "famchar": "3" },
+    { "kind": "regular",  "n": 4,          "name": "4",   "famchar": "4" },
+    { "kind": "regular",  "n": 8,          "name": "8",   "famchar": "8" },
+    { "kind": "starpoly", "n": 3, "d": 2,  "name": "3_2", "famchar": "t" },
+    { "kind": "starpoly", "n": 4, "d": 3,  "name": "4_3", "famchar": "q" },
+    { "kind": "starpoly", "n": 6, "d": 5,  "name": "6_5", "famchar": "h" },
+    { "kind": "starpoly", "n": 8, "d": 3,  "name": "8_3", "famchar": "o" },
+    { "kind": "starpoly", "n": 8, "d": 5,  "name": "8_5", "famchar": "p" },
+    { "kind": "starpoly", "n": 8, "d": 7,  "name": "8_7", "famchar": "r" }
+  ]
+}
