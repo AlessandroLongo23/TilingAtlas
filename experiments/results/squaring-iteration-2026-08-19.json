@@ -1,0 +1,1304 @@
+[
+ {
+  "seed": "4.4.4.4 square",
+  "rule": "fixed",
+  "steps": [
+   {
+    "step": 1,
+    "V": 1,
+    "E": 2,
+    "F": 1,
+    "tjunctions": 0,
+    "order": 1,
+    "distinct": 1,
+    "perfect": false,
+    "degenerate": 1,
+    "spread": 1,
+    "tau": {
+     "re": 0,
+     "im": 1
+    },
+    "degree3": 0,
+    "ms": 0.2628750000000082,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 2,
+    "V": 1,
+    "E": 2,
+    "F": 1,
+    "tjunctions": 0,
+    "order": 1,
+    "distinct": 1,
+    "perfect": false,
+    "degenerate": 1,
+    "spread": 1,
+    "tau": {
+     "re": 0,
+     "im": 1
+    },
+    "degree3": 0,
+    "ms": 0.027333999999996195,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 3,
+    "V": 1,
+    "E": 2,
+    "F": 1,
+    "tjunctions": 0,
+    "order": 1,
+    "distinct": 1,
+    "perfect": false,
+    "degenerate": 1,
+    "spread": 1,
+    "tau": {
+     "re": 0,
+     "im": 1
+    },
+    "degree3": 0,
+    "ms": 0.02287499999999909,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 4,
+    "V": 1,
+    "E": 2,
+    "F": 1,
+    "tjunctions": 0,
+    "order": 1,
+    "distinct": 1,
+    "perfect": false,
+    "degenerate": 1,
+    "spread": 1,
+    "tau": {
+     "re": 0,
+     "im": 1
+    },
+    "degree3": 0,
+    "ms": 0.02425000000000921,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 5,
+    "V": 1,
+    "E": 2,
+    "F": 1,
+    "tjunctions": 0,
+    "order": 1,
+    "distinct": 1,
+    "perfect": false,
+    "degenerate": 1,
+    "spread": 1,
+    "tau": {
+     "re": 0,
+     "im": 1
+    },
+    "degree3": 0,
+    "ms": 0.04220899999999972,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 6,
+    "V": 1,
+    "E": 2,
+    "F": 1,
+    "tjunctions": 0,
+    "order": 1,
+    "distinct": 1,
+    "perfect": false,
+    "degenerate": 1,
+    "spread": 1,
+    "tau": {
+     "re": 0,
+     "im": 1
+    },
+    "degree3": 0,
+    "ms": 0.02429100000000517,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 7,
+    "V": 1,
+    "E": 2,
+    "F": 1,
+    "tjunctions": 0,
+    "order": 1,
+    "distinct": 1,
+    "perfect": false,
+    "degenerate": 1,
+    "spread": 1,
+    "tau": {
+     "re": 0,
+     "im": 1
+    },
+    "degree3": 0,
+    "ms": 0.01491699999999696,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 8,
+    "V": 1,
+    "E": 2,
+    "F": 1,
+    "tjunctions": 0,
+    "order": 1,
+    "distinct": 1,
+    "perfect": false,
+    "degenerate": 1,
+    "spread": 1,
+    "tau": {
+     "re": 0,
+     "im": 1
+    },
+    "degree3": 0,
+    "ms": 0.015332999999998265,
+    "cls": [
+     1,
+     0
+    ]
+   }
+  ],
+  "stopped": "max steps"
+ },
+ {
+  "seed": "4.4.4.4 square",
+  "rule": "richest",
+  "steps": [
+   {
+    "step": 1,
+    "V": 1,
+    "E": 2,
+    "F": 1,
+    "tjunctions": 0,
+    "order": 2,
+    "distinct": 2,
+    "perfect": true,
+    "degenerate": 0,
+    "spread": 3,
+    "tau": {
+     "re": 0,
+     "im": 1
+    },
+    "degree3": 0,
+    "ms": 0.321708000000001,
+    "cls": [
+     -3,
+     1
+    ]
+   },
+   {
+    "step": 2,
+    "V": 4,
+    "E": 6,
+    "F": 2,
+    "tjunctions": 4,
+    "order": 6,
+    "distinct": 4,
+    "perfect": false,
+    "degenerate": 0,
+    "spread": 4,
+    "tau": {
+     "re": -0.25,
+     "im": 1.25
+    },
+    "degree3": 1,
+    "ms": 0.27362499999999557,
+    "cls": [
+     -2,
+     1
+    ]
+   },
+   {
+    "step": 3,
+    "V": 11,
+    "E": 17,
+    "F": 6,
+    "tjunctions": 10,
+    "order": 17,
+    "distinct": 9,
+    "perfect": false,
+    "degenerate": 0,
+    "spread": 4.6,
+    "tau": {
+     "re": -0.247191011235955,
+     "im": 1.8314606741573036
+    },
+    "degree3": 0.9090909090909091,
+    "ms": 0.8730410000000006,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 4,
+    "V": 33,
+    "E": 50,
+    "F": 17,
+    "tjunctions": 32,
+    "order": 50,
+    "distinct": 26,
+    "perfect": false,
+    "degenerate": 0,
+    "spread": 64.94693083318592,
+    "tau": {
+     "re": -0.2350576658478427,
+     "im": 3.23695368722851
+    },
+    "degree3": 0.9696969696969697,
+    "ms": 9.46229199999999,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 5,
+    "V": 100,
+    "E": 150,
+    "F": 50,
+    "tjunctions": 100,
+    "order": 150,
+    "distinct": 76,
+    "perfect": false,
+    "degenerate": 0,
+    "spread": 70.8798348992511,
+    "tau": {
+     "re": -0.40073091127513705,
+     "im": 6.443250878584869
+    },
+    "degree3": 1,
+    "ms": 162.99774999999997,
+    "cls": [
+     1,
+     0
+    ]
+   }
+  ],
+  "stopped": "map failed: unmatched-dart (no opposite dart at midpoint (0.9869, 0.5614))"
+ },
+ {
+  "seed": "3^6 triangular",
+  "rule": "fixed",
+  "steps": [
+   {
+    "step": 1,
+    "V": 1,
+    "E": 3,
+    "F": 2,
+    "tjunctions": 0,
+    "order": 2,
+    "distinct": 1,
+    "perfect": false,
+    "degenerate": 1,
+    "spread": 1,
+    "tau": {
+     "re": 0,
+     "im": 1
+    },
+    "degree3": 0,
+    "ms": 0.013000000000033651,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 2,
+    "V": 2,
+    "E": 4,
+    "F": 2,
+    "tjunctions": 0,
+    "order": 2,
+    "distinct": 1,
+    "perfect": false,
+    "degenerate": 2,
+    "spread": 1,
+    "tau": {
+     "re": 0,
+     "im": 1
+    },
+    "degree3": 0,
+    "ms": 0.010416000000020631,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 3,
+    "V": 2,
+    "E": 4,
+    "F": 2,
+    "tjunctions": 0,
+    "order": 2,
+    "distinct": 1,
+    "perfect": false,
+    "degenerate": 2,
+    "spread": 1,
+    "tau": {
+     "re": 0,
+     "im": 1
+    },
+    "degree3": 0,
+    "ms": 0.00770799999997962,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 4,
+    "V": 2,
+    "E": 4,
+    "F": 2,
+    "tjunctions": 0,
+    "order": 2,
+    "distinct": 1,
+    "perfect": false,
+    "degenerate": 2,
+    "spread": 1,
+    "tau": {
+     "re": 0,
+     "im": 1
+    },
+    "degree3": 0,
+    "ms": 0.008207999999967797,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 5,
+    "V": 2,
+    "E": 4,
+    "F": 2,
+    "tjunctions": 0,
+    "order": 2,
+    "distinct": 1,
+    "perfect": false,
+    "degenerate": 2,
+    "spread": 1,
+    "tau": {
+     "re": 0,
+     "im": 1
+    },
+    "degree3": 0,
+    "ms": 0.005875000000003183,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 6,
+    "V": 2,
+    "E": 4,
+    "F": 2,
+    "tjunctions": 0,
+    "order": 2,
+    "distinct": 1,
+    "perfect": false,
+    "degenerate": 2,
+    "spread": 1,
+    "tau": {
+     "re": 0,
+     "im": 1
+    },
+    "degree3": 0,
+    "ms": 0.006709000000000742,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 7,
+    "V": 2,
+    "E": 4,
+    "F": 2,
+    "tjunctions": 0,
+    "order": 2,
+    "distinct": 1,
+    "perfect": false,
+    "degenerate": 2,
+    "spread": 1,
+    "tau": {
+     "re": 0,
+     "im": 1
+    },
+    "degree3": 0,
+    "ms": 0.006291000000032909,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 8,
+    "V": 2,
+    "E": 4,
+    "F": 2,
+    "tjunctions": 0,
+    "order": 2,
+    "distinct": 1,
+    "perfect": false,
+    "degenerate": 2,
+    "spread": 1,
+    "tau": {
+     "re": 0,
+     "im": 1
+    },
+    "degree3": 0,
+    "ms": 0.006459000000006654,
+    "cls": [
+     1,
+     0
+    ]
+   }
+  ],
+  "stopped": "max steps"
+ },
+ {
+  "seed": "3^6 triangular",
+  "rule": "richest",
+  "steps": [
+   {
+    "step": 1,
+    "V": 1,
+    "E": 3,
+    "F": 2,
+    "tjunctions": 0,
+    "order": 3,
+    "distinct": 3,
+    "perfect": true,
+    "degenerate": 0,
+    "spread": 4,
+    "tau": {
+     "re": 0.10000000000000002,
+     "im": 1.2999999999999998
+    },
+    "degree3": 0,
+    "ms": 0.058250000000043656,
+    "cls": [
+     -3,
+     1
+    ]
+   },
+   {
+    "step": 2,
+    "V": 6,
+    "E": 9,
+    "F": 3,
+    "tjunctions": 6,
+    "order": 9,
+    "distinct": 5,
+    "perfect": false,
+    "degenerate": 0,
+    "spread": 4,
+    "tau": {
+     "re": 0.375,
+     "im": 0.9374999999999999
+    },
+    "degree3": 1,
+    "ms": 0.19220799999999372,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 3,
+    "V": 18,
+    "E": 27,
+    "F": 9,
+    "tjunctions": 18,
+    "order": 27,
+    "distinct": 15,
+    "perfect": false,
+    "degenerate": 0,
+    "spread": 22.567164179104477,
+    "tau": {
+     "re": 0.4319281271596406,
+     "im": 1.8182446440912234
+    },
+    "degree3": 1,
+    "ms": 1.2708749999999895,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 4,
+    "V": 54,
+    "E": 81,
+    "F": 27,
+    "tjunctions": 54,
+    "order": 81,
+    "distinct": 41,
+    "perfect": false,
+    "degenerate": 0,
+    "spread": 61.43473484338099,
+    "tau": {
+     "re": 0.2825123603370914,
+     "im": 3.6356342286415257
+    },
+    "degree3": 1,
+    "ms": 19.516750000000002,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 5,
+    "V": 162,
+    "E": 243,
+    "F": 81,
+    "tjunctions": 162,
+    "order": 243,
+    "distinct": 123,
+    "perfect": false,
+    "degenerate": 0,
+    "spread": 173.677338643962,
+    "tau": {
+     "re": 0.4838051784890094,
+     "im": 7.431419643052073
+    },
+    "degree3": 1,
+    "ms": 689.750084,
+    "cls": [
+     1,
+     0
+    ]
+   }
+  ],
+  "stopped": "map failed: unmatched-dart (no opposite dart at midpoint (0.9851, 0.0628))"
+ },
+ {
+  "seed": "6^3 hexagonal",
+  "rule": "fixed",
+  "steps": [
+   {
+    "step": 1,
+    "V": 2,
+    "E": 3,
+    "F": 1,
+    "tjunctions": 0,
+    "order": 3,
+    "distinct": 2,
+    "perfect": false,
+    "degenerate": 0,
+    "spread": 2,
+    "tau": {
+     "re": -0.5,
+     "im": 1.4999999999999998
+    },
+    "degree3": 1,
+    "ms": 0.027749999999969077,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 2,
+    "V": 4,
+    "E": 7,
+    "F": 3,
+    "tjunctions": 2,
+    "order": 7,
+    "distinct": 3,
+    "perfect": false,
+    "degenerate": 0,
+    "spread": 4,
+    "tau": {
+     "re": -0.5,
+     "im": 1.75
+    },
+    "degree3": 0.5,
+    "ms": 0.016457999999829553,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 3,
+    "V": 12,
+    "E": 19,
+    "F": 7,
+    "tjunctions": 10,
+    "order": 17,
+    "distinct": 5,
+    "perfect": false,
+    "degenerate": 2,
+    "spread": 5,
+    "tau": {
+     "re": -0.5,
+     "im": 2.6999999999999997
+    },
+    "degree3": 0.8333333333333334,
+    "ms": 0.044707999999900494,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 4,
+    "V": 26,
+    "E": 43,
+    "F": 17,
+    "tjunctions": 18,
+    "order": 41,
+    "distinct": 12,
+    "perfect": false,
+    "degenerate": 2,
+    "spread": 70,
+    "tau": {
+     "re": -0.5,
+     "im": 3.5428571428571427
+    },
+    "degree3": 0.6923076923076923,
+    "ms": 0.2277919999999085,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 5,
+    "V": 74,
+    "E": 115,
+    "F": 41,
+    "tjunctions": 66,
+    "order": 107,
+    "distinct": 26,
+    "perfect": false,
+    "degenerate": 8,
+    "spread": 108.67325428194994,
+    "tau": {
+     "re": -0.49999999999999994,
+     "im": 5.9561667252646
+    },
+    "degree3": 0.8918918918918919,
+    "ms": 3.0647079999998823,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 6,
+    "V": 184,
+    "E": 291,
+    "F": 107,
+    "tjunctions": 154,
+    "order": 283,
+    "distinct": 73,
+    "perfect": false,
+    "degenerate": 8,
+    "spread": 897.0055429793621,
+    "tau": {
+     "re": 0.4999999999999999,
+     "im": 8.793622284755822
+    },
+    "degree3": 0.8369565217391305,
+    "ms": 55.391624999999976,
+    "cls": [
+     1,
+     0
+    ]
+   }
+  ],
+  "stopped": "map failed: unmatched-dart (no opposite dart at midpoint (0.0013, 0.4878))"
+ },
+ {
+  "seed": "6^3 hexagonal",
+  "rule": "richest",
+  "steps": [
+   {
+    "step": 1,
+    "V": 2,
+    "E": 3,
+    "F": 1,
+    "tjunctions": 0,
+    "order": 3,
+    "distinct": 3,
+    "perfect": true,
+    "degenerate": 0,
+    "spread": 3.5,
+    "tau": {
+     "re": -0.13793103448275862,
+     "im": 1.3448275862068966
+    },
+    "degree3": 1,
+    "ms": 0.09387499999979809,
+    "cls": [
+     -3,
+     1
+    ]
+   },
+   {
+    "step": 2,
+    "V": 6,
+    "E": 9,
+    "F": 3,
+    "tjunctions": 6,
+    "order": 9,
+    "distinct": 5,
+    "perfect": false,
+    "degenerate": 0,
+    "spread": 4.5,
+    "tau": {
+     "re": -0.09836065573770503,
+     "im": 1.7486338797814207
+    },
+    "degree3": 1,
+    "ms": 0.2555839999999989,
+    "cls": [
+     -3,
+     1
+    ]
+   }
+  ],
+  "stopped": "map failed: unmatched-dart (no opposite dart at midpoint (0.5188, 0.4896))"
+ },
+ {
+  "seed": "3.6.3.6 trihexagonal",
+  "rule": "fixed",
+  "steps": [
+   {
+    "step": 1,
+    "V": 3,
+    "E": 6,
+    "F": 3,
+    "tjunctions": 0,
+    "order": 4,
+    "distinct": 1,
+    "perfect": false,
+    "degenerate": 2,
+    "spread": 1,
+    "tau": {
+     "re": -0.49999999999999994,
+     "im": 0.9999999999999999
+    },
+    "degree3": 0,
+    "ms": 0.010250000000041837,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 2,
+    "V": 4,
+    "E": 8,
+    "F": 4,
+    "tjunctions": 0,
+    "order": 4,
+    "distinct": 1,
+    "perfect": false,
+    "degenerate": 4,
+    "spread": 1,
+    "tau": {
+     "re": -0.49999999999999994,
+     "im": 0.9999999999999999
+    },
+    "degree3": 0,
+    "ms": 0.014208000000053289,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 3,
+    "V": 4,
+    "E": 8,
+    "F": 4,
+    "tjunctions": 0,
+    "order": 4,
+    "distinct": 1,
+    "perfect": false,
+    "degenerate": 4,
+    "spread": 1,
+    "tau": {
+     "re": -0.49999999999999994,
+     "im": 0.9999999999999999
+    },
+    "degree3": 0,
+    "ms": 0.01241600000003018,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 4,
+    "V": 4,
+    "E": 8,
+    "F": 4,
+    "tjunctions": 0,
+    "order": 4,
+    "distinct": 1,
+    "perfect": false,
+    "degenerate": 4,
+    "spread": 1,
+    "tau": {
+     "re": -0.49999999999999994,
+     "im": 0.9999999999999999
+    },
+    "degree3": 0,
+    "ms": 0.01191700000003948,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 5,
+    "V": 4,
+    "E": 8,
+    "F": 4,
+    "tjunctions": 0,
+    "order": 4,
+    "distinct": 1,
+    "perfect": false,
+    "degenerate": 4,
+    "spread": 1,
+    "tau": {
+     "re": -0.49999999999999994,
+     "im": 0.9999999999999999
+    },
+    "degree3": 0,
+    "ms": 0.010332999999945969,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 6,
+    "V": 4,
+    "E": 8,
+    "F": 4,
+    "tjunctions": 0,
+    "order": 4,
+    "distinct": 1,
+    "perfect": false,
+    "degenerate": 4,
+    "spread": 1,
+    "tau": {
+     "re": -0.49999999999999994,
+     "im": 0.9999999999999999
+    },
+    "degree3": 0,
+    "ms": 0.009958999999980733,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 7,
+    "V": 4,
+    "E": 8,
+    "F": 4,
+    "tjunctions": 0,
+    "order": 4,
+    "distinct": 1,
+    "perfect": false,
+    "degenerate": 4,
+    "spread": 1,
+    "tau": {
+     "re": -0.49999999999999994,
+     "im": 0.9999999999999999
+    },
+    "degree3": 0,
+    "ms": 0.025374999999939973,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 8,
+    "V": 4,
+    "E": 8,
+    "F": 4,
+    "tjunctions": 0,
+    "order": 4,
+    "distinct": 1,
+    "perfect": false,
+    "degenerate": 4,
+    "spread": 1,
+    "tau": {
+     "re": -0.49999999999999994,
+     "im": 0.9999999999999999
+    },
+    "degree3": 0,
+    "ms": 0.015540999999984706,
+    "cls": [
+     1,
+     0
+    ]
+   }
+  ],
+  "stopped": "max steps"
+ },
+ {
+  "seed": "3.6.3.6 trihexagonal",
+  "rule": "richest",
+  "steps": [
+   {
+    "step": 1,
+    "V": 3,
+    "E": 6,
+    "F": 3,
+    "tjunctions": 0,
+    "order": 6,
+    "distinct": 3,
+    "perfect": false,
+    "degenerate": 0,
+    "spread": 4,
+    "tau": {
+     "re": -0.43396226415094347,
+     "im": 0.9811320754716982
+    },
+    "degree3": 0,
+    "ms": 0.12124999999991815,
+    "cls": [
+     -3,
+     1
+    ]
+   },
+   {
+    "step": 2,
+    "V": 12,
+    "E": 18,
+    "F": 6,
+    "tjunctions": 12,
+    "order": 18,
+    "distinct": 11,
+    "perfect": false,
+    "degenerate": 0,
+    "spread": 5.642857142857143,
+    "tau": {
+     "re": 0.13418803418803418,
+     "im": 1.6376068376068376
+    },
+    "degree3": 1,
+    "ms": 0.7480409999998301,
+    "cls": [
+     -3,
+     1
+    ]
+   },
+   {
+    "step": 3,
+    "V": 36,
+    "E": 54,
+    "F": 18,
+    "tjunctions": 36,
+    "order": 54,
+    "distinct": 27,
+    "perfect": false,
+    "degenerate": 0,
+    "spread": 142.0964705882353,
+    "tau": {
+     "re": 0.10707525451475929,
+     "im": 3.4209682645248205
+    },
+    "degree3": 1,
+    "ms": 6.784167000000025,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 4,
+    "V": 108,
+    "E": 162,
+    "F": 54,
+    "tjunctions": 108,
+    "order": 162,
+    "distinct": 83,
+    "perfect": false,
+    "degenerate": 0,
+    "spread": 202.1724557273398,
+    "tau": {
+     "re": 0.0447262484507278,
+     "im": 6.6015096371147814
+    },
+    "degree3": 1,
+    "ms": 234.4698330000001,
+    "cls": [
+     1,
+     0
+    ]
+   }
+  ],
+  "stopped": "map failed: unmatched-dart (no opposite dart at midpoint (0.9973, 0.0352))"
+ },
+ {
+  "seed": "4.8.8 truncated square",
+  "rule": "fixed",
+  "steps": [
+   {
+    "step": 1,
+    "V": 4,
+    "E": 6,
+    "F": 2,
+    "tjunctions": 0,
+    "order": 5,
+    "distinct": 2,
+    "perfect": false,
+    "degenerate": 1,
+    "spread": 2,
+    "tau": {
+     "re": 0,
+     "im": 2
+    },
+    "degree3": 1,
+    "ms": 0.01566699999989396,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 2,
+    "V": 6,
+    "E": 11,
+    "F": 5,
+    "tjunctions": 2,
+    "order": 9,
+    "distinct": 4,
+    "perfect": false,
+    "degenerate": 2,
+    "spread": 5,
+    "tau": {
+     "re": 0,
+     "im": 2.2
+    },
+    "degree3": 0.3333333333333333,
+    "ms": 0.019375000000081855,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 3,
+    "V": 14,
+    "E": 23,
+    "F": 9,
+    "tjunctions": 10,
+    "order": 19,
+    "distinct": 5,
+    "perfect": false,
+    "degenerate": 4,
+    "spread": 5,
+    "tau": {
+     "re": 0,
+     "im": 3.2
+    },
+    "degree3": 0.7142857142857143,
+    "ms": 0.04791699999987031,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 4,
+    "V": 28,
+    "E": 47,
+    "F": 19,
+    "tjunctions": 18,
+    "order": 43,
+    "distinct": 13,
+    "perfect": false,
+    "degenerate": 4,
+    "spread": 97,
+    "tau": {
+     "re": 0,
+     "im": 4.030927835051546
+    },
+    "degree3": 0.6428571428571429,
+    "ms": 0.19829200000003766,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 5,
+    "V": 76,
+    "E": 119,
+    "F": 43,
+    "tjunctions": 66,
+    "order": 109,
+    "distinct": 26,
+    "perfect": false,
+    "degenerate": 10,
+    "spread": 108.67325428194994,
+    "tau": {
+     "re": 0,
+     "im": 6.456166725264601
+    },
+    "degree3": 0.868421052631579,
+    "ms": 3.2687089999999444,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 6,
+    "V": 186,
+    "E": 295,
+    "F": 109,
+    "tjunctions": 154,
+    "order": 285,
+    "distinct": 74,
+    "perfect": false,
+    "degenerate": 10,
+    "spread": 896.4398593152359,
+    "tau": {
+     "re": 0,
+     "im": 9.292740898769544
+    },
+    "degree3": 0.8279569892473119,
+    "ms": 59.32920800000011,
+    "cls": [
+     1,
+     0
+    ]
+   }
+  ],
+  "stopped": "map failed: unmatched-dart (no opposite dart at midpoint (0.9738, 0.4874))"
+ },
+ {
+  "seed": "4.8.8 truncated square",
+  "rule": "richest",
+  "steps": [
+   {
+    "step": 1,
+    "V": 4,
+    "E": 6,
+    "F": 2,
+    "tjunctions": 0,
+    "order": 6,
+    "distinct": 4,
+    "perfect": false,
+    "degenerate": 0,
+    "spread": 4,
+    "tau": {
+     "re": -0.25,
+     "im": 1.25
+    },
+    "degree3": 1,
+    "ms": 0.1267920000000231,
+    "cls": [
+     -2,
+     1
+    ]
+   },
+   {
+    "step": 2,
+    "V": 11,
+    "E": 17,
+    "F": 6,
+    "tjunctions": 10,
+    "order": 17,
+    "distinct": 9,
+    "perfect": false,
+    "degenerate": 0,
+    "spread": 4.6,
+    "tau": {
+     "re": -0.247191011235955,
+     "im": 1.8314606741573036
+    },
+    "degree3": 0.9090909090909091,
+    "ms": 0.4786670000000868,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 3,
+    "V": 33,
+    "E": 50,
+    "F": 17,
+    "tjunctions": 32,
+    "order": 50,
+    "distinct": 26,
+    "perfect": false,
+    "degenerate": 0,
+    "spread": 64.94693083318592,
+    "tau": {
+     "re": -0.2350576658478427,
+     "im": 3.23695368722851
+    },
+    "degree3": 0.9696969696969697,
+    "ms": 5.69683299999997,
+    "cls": [
+     1,
+     0
+    ]
+   },
+   {
+    "step": 4,
+    "V": 100,
+    "E": 150,
+    "F": 50,
+    "tjunctions": 100,
+    "order": 150,
+    "distinct": 76,
+    "perfect": false,
+    "degenerate": 0,
+    "spread": 70.8798348992511,
+    "tau": {
+     "re": -0.40073091127513705,
+     "im": 6.443250878584869
+    },
+    "degree3": 1,
+    "ms": 179.50466699999993,
+    "cls": [
+     1,
+     0
+    ]
+   }
+  ],
+  "stopped": "map failed: unmatched-dart (no opposite dart at midpoint (0.9912, 0.5084))"
+ }
+]

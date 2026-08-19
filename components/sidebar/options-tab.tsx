@@ -21,6 +21,8 @@ import { isDiskSurface, lensAppliesTo, surfaceOf } from "@/lib/services/shelfReg
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import { DeformPad } from "@/components/deform-pad";
 import { InversiveControls } from "@/components/inversive-controls";
+import { SquaringControls } from "@/components/squaring/squaring-controls";
+import { squaringAvailability } from "@/lib/squaring/playSquaring";
 
 interface OptionsTabProps {
 	selected: CatalogueTiling | null;
@@ -110,6 +112,8 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 	// is built on the client instead of shipped, which changes nothing above the renderer), so the registry
 	// files them on this surface and they take this whole block instead of near-duplicates of it.
 	const isFreedraw = surface === "grid2d";
+	// A LENGTH family is the only place the size-hue toggle means anything (see configuration.lengthSizeHue).
+	const isLengthFamily = !!selected?.paramCell?.lengths;
 	// A spherical-freedraw pattern renders on the self-contained three.js ico-freedraw canvas (its own
 	// ArcballControls, its own fixed edge tubes and golden-angle tile colours). Like planar freedraw it has no
 	// tiles/cell for the shared controls to touch — only the two Display controls the /freedraw arm carries
@@ -171,6 +175,18 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 	// patterns, hollow — as well as the plain tilings. It needs only a period lattice, which rules out
 	// exactly the hyperbolic and spherical shelves.
 	const lensApplies = lensAppliesTo(selected);
+	// The squared torus REPLACES what the canvas draws (see _play-client), so every control that makes a
+	// claim about the SELECTED tiling — its symmetry, its vertex orbits, its Truchet reading, its mirror,
+	// the family sliders — is describing something that is no longer on screen. Those go away while it is
+	// up. The ones that describe the DRAWING stay, and the conformal lens is one of them: it warps
+	// whatever periodic cell it is handed, and while the squaring is up that is the squaring's cell.
+	//
+	// Islamic is the one judgement call. It also decorates the drawn cell, so it would WORK — but a Hankin
+	// pattern generated off a squared torus and shown under the source tiling's name reads as a claim about
+	// the source, which the lens never does. Kept out, and kept inert in canvas.tsx so a flag left on from
+	// the previous selection cannot decorate the squaring behind a hidden control.
+	const squaringOn = cfg.squaring && squaringAvailability(selected).ok;
+	const sourceControls = !squaringOn;
 	// Where the basis pad belongs. deformApplies() answers the MODE question (which renderer is painting);
 	// the surface question is separate — hyperbolic and spherical shelves have no plane to deform, and the
 	// freedraw/colors boards run their own cameras.
@@ -495,6 +511,15 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							gesture={isHyperbolicDisk ? "scroll" : "shift-scroll"}
 						/>
 					) : null}
+					{/* Only meaningful for a LENGTH family, whose tiles the by-side-count ramp cannot separate. */}
+					{isLengthFamily && sourceControls ? (
+						<Checkbox
+							id="lengthSizeHue"
+							label="Colour tiles by size"
+							checked={cfg.lengthSizeHue}
+							onCheckedChange={(v) => setCfg({ lengthSizeHue: v })}
+						/>
+					) : null}
 					{!isFreedraw && !isSphericalFreedraw && !isColors && !isHyperbolicColors && !isSphColors ? (
 						<Checkbox
 							id="showPolygonPoints"
@@ -513,7 +538,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 					    exact ZZ[zeta_24] constructors, see lib/services/starExactCell.ts), so they enable here
 					    now. The out-of-ring 9-fold/5-fold records still do not: ExactStarPolygon requires the
 					    N=24 ring and those live in ZZ[zeta_18]/ZZ[zeta_20]. */}
-					{isFlat ? (
+					{isFlat && sourceControls ? (
 						<Checkbox
 							id="showVertexOrbits"
 							label="Show Vertex Orbits"
@@ -528,7 +553,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 					    triangle, 720 for a hexagon (lib/render/truchetTiling.ts). Shuffling draws each tile
 					    independently; the un-shuffled state applies one named wiring to every tile, which is the
 					    comparison the shuffle is against. */}
-					{isFlat ? (
+					{isFlat && sourceControls ? (
 						<>
 							<Checkbox
 								id="freedrawArcsFlat"
@@ -608,7 +633,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 					    nothing. Only the regular family carries a group, so elsewhere chirality is UNKNOWN and
 					    the toggle stays — unknown is not achiral, and suppressing it would hide a real second
 					    hand on the star, composite and period-p shelves. */}
-					{isFlat && isChiralTiling(selected ?? { wallpaperGroup: undefined }) !== false ? (
+					{isFlat && sourceControls && isChiralTiling(selected ?? { wallpaperGroup: undefined }) !== false ? (
 						<Checkbox
 							id="mirrorFlip"
 							label={
@@ -646,7 +671,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							onCheckedChange={(v) => setCfg({ circlePacking: v })}
 						/>
 					) : null} */}
-					{isIslamicClass && !cfg.isIslamic ? (
+					{isIslamicClass && sourceControls && !cfg.isIslamic ? (
 						<button
 							type="button"
 							onClick={() => setCfg({ isIslamic: true })}
@@ -656,7 +681,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							<span className="text-fg">Islamic construction</span> <Kbd>I</Kbd> to reveal the star pattern.
 						</button>
 					) : null}
-					{islamicSupported ? (
+					{islamicSupported && sourceControls ? (
 						<Checkbox
 							id="isIslamic"
 							label="Islamic"
@@ -665,7 +690,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							onCheckedChange={(v) => setCfg({ isIslamic: v })}
 						/>
 					) : null}
-					{islamicSupported ? (
+					{islamicSupported && sourceControls ? (
 						<Reveal show={cfg.isIslamic}>
 						<div className="space-y-2 pl-7">
 							{isSpherical ? (
@@ -906,9 +931,14 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 						</div>
 						</Reveal>
 					) : null}
+					{/* The squared torus: the tiling's own quotient graph turned into a square tiling of a flat
+					    torus, one per class in H¹(T;ℝ). Its own block because it is a TRANSFORM and not a
+					    decoration — the result is a different tiling in a different plane, so it draws in a
+					    floating panel and leaves every control here describing the tiling on the canvas. */}
+					<SquaringControls selected={selected} />
 					{/* Symmetry elements + fundamental domain are wallpaper-group overlays drawn by the flat p5
 					    path, which is skipped in hyperbolic (canvas.tsx) — hide them there. */}
-					{isFlat ? (
+					{isFlat && sourceControls ? (
 						<>
 							<Checkbox
 								id="showSymmetryElements"

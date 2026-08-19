@@ -8,14 +8,15 @@ import type { Mat2 } from "@/lib/render/flatView";
 // field to PLAY_PARAMS and both follow.
 //
 // Scope (spec: docs/superpowers/specs/2026-07-22-play-url-state-design.md) is exactly what the Options
-// tab can set — 51 fields. If a control exists the field travels, otherwise it does not. Deliberately
+// tab can set. If a control exists the field travels, otherwise it does not. Deliberately
 // OUT: the camera (zoom/pan/rotation live in `controls`, mutated in place per frame to stay off React,
 // so there is nothing to mirror); `hyperbolic`/`spherical`/the geometry toggle (all derived from the
 // selection, so `tiling` implies them); `immersive` (a viewing mode, not the artifact); the dev flags
 // `euclideanShader`/`debugView`; and the transient signals (takeScreenshot, hyperbolicClick, spiralVel…).
 //
 // Keys are a shared public contract — short, prefixed by group (bare = global, i* = Islamic,
-// s* = spherical, v* = inversive), and stable. Renaming one breaks every link already in the wild.
+// sq* = squared torus, s* = spherical, v* = inversive), and stable. Renaming one breaks every link
+// already in the wild. The squaring group takes sq* and not s*, since no spherical key starts sq.
 
 type Spec =
 	| { field: keyof ConfigurationState; kind: "bool" }
@@ -27,7 +28,11 @@ type Spec =
 	// The view deformation: four comma-joined numbers, the 2x2 column-major. Validated as a whole by
 	// isAdmissibleDeform — a link carrying a singular or out-of-box matrix falls back to the identity
 	// rather than handing a renderer a lattice it cannot cover the screen with.
-	| { field: keyof ConfigurationState; kind: "mat2" };
+	| { field: keyof ConfigurationState; kind: "mat2" }
+	// A homology class (m, n) for the squared torus: two comma-joined reals, not necessarily integers —
+	// the class lives in H¹(T;ℝ) and the dial reaches every direction, so a link has to carry the
+	// off-lattice ones too. Only (0, 0) is rejected, having no direction to name.
+	| { field: keyof ConfigurationState; kind: "class" };
 
 export const PLAY_PARAMS: Record<string, Spec> = {
 	// global
@@ -75,6 +80,13 @@ export const PLAY_PARAMS: Record<string, Spec> = {
 	ioff: { field: "islamicEdgeOffset", kind: "num", min: 0, max: 100 },
 	irays: { field: "islamicIntersectionCount", kind: "num", min: 1, max: 3, int: true },
 	ianim: { field: "islamicAnimate", kind: "bool" },
+	// squared torus (sq*)
+	sq: { field: "squaring", kind: "bool" },
+	sqcls: { field: "squaringClass", kind: "class" },
+	sqsnap: { field: "squaringSnap", kind: "bool" },
+	sqnum: { field: "squaringNumbers", kind: "bool" },
+	sqmono: { field: "squaringMono", kind: "bool" },
+	sqlat: { field: "squaringLattice", kind: "bool" },
 	// spherical view
 	swire: { field: "sphericalWireframe", kind: "bool" },
 	sreal: { field: "sphericalRealistic", kind: "bool" },
@@ -136,6 +148,11 @@ export function parsePlayState(sp: URLSearchParams): PlayUrlState {
 			const parts = raw.split(",").map(Number);
 			config[spec.field] =
 				parts.length === 4 && isAdmissibleDeform(parts as unknown as Mat2) ? parts : fallback;
+		} else if (spec.kind === "class") {
+			const parts = raw.split(",").map(Number);
+			const good =
+				parts.length === 2 && parts.every((n) => Number.isFinite(n)) && !(parts[0] === 0 && parts[1] === 0);
+			config[spec.field] = good ? parts : fallback;
 		} else if (spec.kind === "num") {
 			const n = Number(raw);
 			if (!Number.isFinite(n)) {
@@ -179,7 +196,7 @@ export function serializePlayState(
 		if (value === undefined) continue;
 		// Palettes and the deform matrix are arrays: compare (and emit) by their joined string, since a
 		// parse round-trip yields a fresh array that is value-equal to the default but not reference-equal.
-		const isArrayKind = spec.kind === "palette" || spec.kind === "mat2";
+		const isArrayKind = spec.kind === "palette" || spec.kind === "mat2" || spec.kind === "class";
 		if (isArrayKind ? String(value) === String(def[spec.field]) : value === def[spec.field]) continue;
 		p.set(key, spec.kind === "bool" ? (value ? "1" : "0") : String(value));
 	}

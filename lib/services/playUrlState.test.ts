@@ -38,6 +38,8 @@ describe("playUrlState", () => {
 				view[spec.field] = [40, "dark"];
 			} else if (spec.kind === "mat2") {
 				view[spec.field] = [1, 0, 0.5, 1]; // a shear: admissible, det 1, not the identity
+			} else if (spec.kind === "class") {
+				view[spec.field] = [2, 3]; // an integral class, and not the (1, 0) default
 			} else {
 				view[spec.field] = spec.values.find((v) => v !== def[spec.field]);
 			}
@@ -47,7 +49,7 @@ describe("playUrlState", () => {
 		const { config } = parse(qs);
 		for (const spec of Object.values(PLAY_PARAMS)) {
 			// Palettes and the deform are arrays, rebuilt by parse — value equality is the contract there.
-			if (spec.kind === "palette" || spec.kind === "mat2") {
+			if (spec.kind === "palette" || spec.kind === "mat2" || spec.kind === "class") {
 				expect(config[spec.field], `field ${String(spec.field)} (key round-trip)`).toEqual(view[spec.field]);
 			} else {
 				expect(config[spec.field], `field ${String(spec.field)} (key round-trip)`).toBe(view[spec.field]);
@@ -121,6 +123,6 @@ describe("playUrlState", () => {
 	it("keeps URL keys unique", () => {
 		const fields = Object.values(PLAY_PARAMS).map((s) => s.field);
 		expect(new Set(fields).size).toBe(fields.length);
-		expect(Object.keys(PLAY_PARAMS)).toHaveLength(53);
+		expect(Object.keys(PLAY_PARAMS)).toHaveLength(59);
 	});
 });
