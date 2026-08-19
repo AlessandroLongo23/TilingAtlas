@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { ArcballControls } from "three/examples/jsm/controls/ArcballControls.js";
 import { useConfiguration } from "@/stores/configuration";
 import { measureBox } from "@/lib/render/canvasSize";
+import { captureOverride, offerFrame } from "@/lib/render/capture";
 import { buildSphColors, type SphColorsScene } from "@/lib/render/sphColors";
 import { paletteRgb255 } from "@/lib/colors/render";
 import type { IcoMode } from "@/lib/render/icoFreedraw";
@@ -83,13 +84,20 @@ export function SphericalColorsCanvas({ pattern, mode }: Props) {
 		controls.setGizmosVisible(false);
 		controlsRef.current = controls;
 
-		let box = { w: 0, h: 0 };
+		let box = { w: 0, h: 0, r: 1 };
 		const animate = () => {
 			controlsRef.current?.update();
 			const cam = cameraRef.current;
-			const { w, h } = measureBox(host);
-			if (w > 0 && h > 0 && (w !== box.w || h !== box.h)) {
-				box = { w, h };
+			// An export in flight (lib/render/capture.ts) outranks the host box, the same override the flat
+			// and hyperbolic layers get through syncCanvasSize: the sphere is rendered at the requested
+			// aspect and resolution, then read back below while the frame is still in the drawing buffer.
+			// setSize's third argument stays false, so the element's CSS box never moves and nothing reflows.
+			const cap = captureOverride();
+			const ratio = cap ? cap.dpr : 1;
+			const { w, h } = cap ? { w: cap.w, h: cap.h } : measureBox(host);
+			if (w > 0 && h > 0 && (w !== box.w || h !== box.h || ratio !== box.r)) {
+				box = { w, h, r: ratio };
+				renderer.setPixelRatio(ratio);
 				renderer.setSize(w, h, false);
 				if (cam) {
 					cam.aspect = w / h;
@@ -97,6 +105,7 @@ export function SphericalColorsCanvas({ pattern, mode }: Props) {
 				}
 			}
 			if (cam) renderer.render(scene, cam);
+			if (cap) offerFrame(renderer.domElement);
 			rafRef.current = requestAnimationFrame(animate);
 		};
 		rafRef.current = requestAnimationFrame(animate);

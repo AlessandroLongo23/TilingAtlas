@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
 import { useSearchParams } from "next/navigation";
 import { Camera, Check, Link2, Maximize, Minimize } from "lucide-react";
-import { SCREENSHOT_BUTTONS_ENABLED } from "@/lib/utils/featureFlags";
 import { Canvas } from "@/components/canvas";
 import { InversiveCanvas } from "@/components/inversive-canvas";
 import { HyperbolicDevelopedCanvas } from "@/components/hyperbolic-developed-canvas";
@@ -14,6 +13,9 @@ import { SphericalCanvas } from "@/components/spherical-canvas";
 import { SphericalColorsCanvas } from "@/components/spherical-colors-canvas";
 import { FreedrawPlayCanvas } from "@/components/freedraw-play-canvas";
 import { TruchetOverlay } from "@/components/truchet-overlay";
+import { SquaringInset } from "@/components/squaring/squaring-inset";
+import { SquaringOverlay } from "@/components/squaring/squaring-overlay";
+import { blendedSquaring, exactSquaring, squaringAvailability, squaringCell } from "@/lib/squaring/playSquaring";
 import { truchetPattern as buildTruchetPattern } from "@/lib/render/truchetTiling";
 import { ColorsPlayCanvas } from "@/components/colors-play-canvas";
 import { HollowCanvas } from "@/components/hollow/hollow-canvas";
@@ -40,7 +42,8 @@ import {
 	type TierShelf,
 	type UnloadedTier,
 } from "@/lib/services/atlasManifest";
-import { lensAppliesTo, surfaceOf } from "@/lib/services/shelfRegistry";
+import { canCaptureImage, lensAppliesTo, surfaceOf } from "@/lib/services/shelfRegistry";
+import { useExportImage } from "@/stores/exportImage";
 import {
 	loadComposableAtlasShard,
 	loadIsotoxalAtlasShard,
@@ -1282,6 +1285,44 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		[mirrorFlip, baseRenderCell],
 	);
 	const renderCellId = selected?.canonicalKey ? `${selected.canonicalKey}${mirrorFlip ? "#mirror" : ""}` : null;
+
+	// THE SQUARED TORUS REPLACES THE CELL, it does not decorate it.
+	//
+	// Glue the translation cell's opposite sides and the tiling is a graph on a torus; a harmonic form on
+	// that graph turns every edge into a square, and the squares tile a flat torus. The result is a
+	// Euclidean periodic tiling in its own right, so the honest way to show it is as the tiling the canvas
+	// is drawing — which also means it pans, zooms, rotates, wraps and exports through the paths every
+	// other tiling already uses, with nothing new written for any of it.
+	//
+	// What it is NOT is a view of the selected tiling, and that governs everything gated on `squaringOn`
+	// below: the source's symmetry elements, vertex orbits, Truchet reading and conformal lens are all
+	// statements about a tiling that is no longer on screen. They go quiet, and the small panel over the
+	// canvas keeps the source in view instead (components/squaring/squaring-inset.tsx).
+	const squaringOn = useConfiguration((s) => s.squaring);
+	const squaringClass = useConfiguration((s) => s.squaringClass);
+	const squaringMono = useConfiguration((s) => s.squaringMono);
+	// Cached per record inside the adapter, so this is a map lookup on all but the first render for a
+	// given tiling. Deliberately not conditional on `squaringOn`: the Options tab asks the same question
+	// to decide whether the toggle is live, and both must get the same answer.
+	const squaringSupport = (() => {
+		const a = squaringAvailability(selected ?? null);
+		return a.ok ? a.support : null;
+	})();
+	const squaringActive = squaringOn && !!squaringSupport;
+	const squaringCellData = useMemo(() => {
+		if (!squaringActive || !squaringSupport) return null;
+		// The exact BigInt solve at an integral class, the float blend everywhere else. Both are real
+		// squared tori; only the exact one has integer sides, which is why only it may print them.
+		const sq =
+			exactSquaring(squaringSupport, squaringClass) ?? blendedSquaring(squaringSupport, squaringClass);
+		return sq ? squaringCell(squaringSupport, sq, squaringMono) : null;
+	}, [squaringActive, squaringSupport, squaringClass, squaringMono]);
+	const drawCell = squaringCellData ?? renderCell;
+	// The class is in the id because the canvases cache parsed geometry by it: without it, moving the dial
+	// would leave the previous squaring on screen. Same reason the mirror flip suffixes it above.
+	const drawCellId = squaringCellData
+		? `${selected?.canonicalKey ?? "sq"}#sq:${squaringClass[0]},${squaringClass[1]}${squaringMono ? ":m" : ""}`
+		: renderCellId;
 	// What the conformal lens draws: the selection reduced to the shared periodic-cell IR. One hook covers
 	// every Euclidean class, so the lens is no longer limited to the plain polygon-cell tilings.
 	// The Truchet reading of a PLAIN tiling: only built while the overlay is up and the selection is one
@@ -1291,7 +1332,8 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// Deps are VALUES, never `selected` itself: that object's identity changes on renders where the
 	// selection has not, and rebuilding here means 36 copies of the cell re-drawn — plus, with the
 	// publish effect below keyed on the result, a set/render/rebuild loop that hung the page.
-	const truchetOwnCanvas = !!selected?.freedraw || !!selected?.colors;
+	// A squaring is not the tiling the Truchet arcs were read off, so the overlay has nothing to sit on.
+	const truchetOwnCanvas = !!selected?.freedraw || !!selected?.colors || squaringActive;
 	const truchetPattern = useMemo(() => {
 		if (!freedrawArcs || !renderCell || truchetOwnCanvas) return null;
 		return buildTruchetPattern(renderCell, {
@@ -1307,14 +1349,24 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		useConfiguration.getState().set({ truchetActive });
 	}, [truchetActive]);
 
+	// The lens reads whatever the canvas is DRAWING, which is the squaring when that is up. Its cell is a
+	// periodic cell like any other, so the conformal view takes it unchanged; what it needs is the class in
+	// its id (the geometry moves while `canonicalKey` stands still) and the Hankin branch switched off,
+	// since the Islamic construction decorates the selected tiling and this is not that tiling.
 	const { cell: inversiveCell, cellId: inversiveCellId } = useInversiveCell(
 		selected ?? null,
-		renderCell,
+		drawCell,
 		truchetPattern,
+		squaringActive
+			? { key: `sq:${squaringClass[0]},${squaringClass[1]}${squaringMono ? ":m" : ""}`, plain: true }
+			: {},
 	);
 	// The lens is Euclidean-only: the hyperbolic and spherical shelves have no period lattice to reduce
 	// into, and each owns its own renderer below. Same predicate the Options tab uses to decide whether to
 	// OFFER the toggle, so a checkbox can no longer appear for a shelf this refuses to honour.
+	// The box every canvas fills. The export dialog measures it for the "Screen" aspect ratio and the
+	// 1x output size, so the export opens framed exactly like the view behind it.
+	const canvasHostRef = useRef<HTMLDivElement | null>(null);
 	const lensActive = inversive && !!inversiveCell && lensAppliesTo(selected);
 	// Colorings, edge patterns and hollow carry a throwaway translational cell; tell the input layer so
 	// click-to-centre doesn't hit-test geometry that isn't on screen.
@@ -1352,13 +1404,16 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					onDecorationChange={onDecorationChange}
 				/>
 			</div>
-			<div className="flex-1 min-w-0 relative">
+			<div ref={canvasHostRef} className="flex-1 min-w-0 relative">
+				{/* A squaring has no free angles to flex and no wallpaper group of the source's, so paramCell,
+				    symmetryData and orbitData all go null while it is up: each describes the tiling in the
+				    corner panel, not the one on the canvas. */}
 				<Canvas
-					translationalCell={renderCell}
-					translationalCellId={renderCellId}
-					paramCell={paramCell ?? null}
-					symmetryData={symmetryData}
-					orbitData={orbitData}
+					translationalCell={drawCell}
+					translationalCellId={drawCellId}
+					paramCell={squaringActive ? null : paramCell ?? null}
+					symmetryData={squaringActive ? null : symmetryData}
+					orbitData={squaringActive ? null : orbitData}
 					spec={tilingSpec}
 					showTilingRuleInput={false}
 					cellHasTiles={cellHasTiles}
@@ -1371,7 +1426,14 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					// The conformal lens owns the canvas whenever it is on and the selection is Euclidean. It used
 					// to sit at the BOTTOM of this chain, which is why every decoration below it silently lost the
 					// lens; each Euclidean class now has a periodic-cell representation, so the lens goes first.
-					<InversiveCanvas cell={inversiveCell} cellId={inversiveCellId} paramCell={paramCell ?? null} />
+					// paramCell goes null under the squaring for the same reason it does on the flat canvas: the
+					// squared torus has no free angle to flex, and the family this record belongs to is not what
+					// the lens is holding.
+					<InversiveCanvas
+						cell={inversiveCell}
+						cellId={inversiveCellId}
+						paramCell={squaringActive ? null : paramCell ?? null}
+					/>
 				) : selected?.hollow ? (
 					// Hollow tiling: self-intersecting {n/d} star polygons whose faces overlap by construction,
 					// so there is no polygon cell for the flat canvas to draw. Strokes each closed face path and
@@ -1489,7 +1551,21 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				    figures itself, through the periodic-cell IR, and a flat layer over a warped one is two
 				    different pictures at once. */}
 				{truchetPattern && !inversive ? <TruchetOverlay pattern={truchetPattern} /> : null}
-				{paramCell ? <ParamSliderPanel paramCell={paramCell} /> : null}
+				{/* The squared torus of the selected tiling, in a panel over the canvas. Outside the exclusive
+				    canvas chain for the same reason the Truchet overlay is: the flat canvas keeps drawing the
+				    tiling and keeps owning the pointer. It is not a decoration of that tiling though — it is a
+				    different Euclidean tiling derived from its quotient graph — which is exactly why it gets a
+				    frame of its own instead of the canvas. */}
+				<SquaringInset selected={selected ?? null} />
+				{/* The sizes and the image lattice, on a 2-D layer over the tiles: the flat pipeline draws
+				    polygons and has neither type nor a cell outline. Same contract as the Truchet overlay — it
+				    reads the live camera and takes no pointer input, so it cannot move the picture.
+				    Not under the lens: this layer projects affinely, so straight grid lines and centred type
+				    would sit where the squares USED to be, next to a picture that has been bent away. */}
+				{!lensActive ? <SquaringOverlay selected={selected ?? null} /> : null}
+				{/* The family's own sliders: a squaring has no free angle to flex, and the panel is driving the
+				    tiling in the corner rather than the one on the canvas while it is up. */}
+				{paramCell && !squaringActive ? <ParamSliderPanel paramCell={paramCell} /> : null}
 				{/* The pentagon family's shape controls sit OUTSIDE the exclusive canvas chain above, because
 				    the family is still what is being drawn when the conformal lens replaces the flat view —
 				    the sliders have to survive that swap. Their values live in the store for the same reason. */}
@@ -1532,23 +1608,35 @@ export function PlayClient({ tilings }: PlayClientProps) {
 						{shared ? <Check size={16} className="text-success" /> : <Link2 size={16} />}
 					</button>
 				</Tooltip>
-				{/* Screenshot: canvas.tsx runs the capture (createGraphics patch → preview modal) when it sees
-				    takeScreenshot flip; hovering frames the crop region via screenshotButtonHover. Third slot
-				    in the top-right stack, below Share. Hidden until the capture is ready. */}
-				{SCREENSHOT_BUTTONS_ENABLED ? (
-					<button
-						type="button"
-						onClick={() => useConfiguration.getState().set({ takeScreenshot: true })}
-						onMouseEnter={() => useConfiguration.getState().set({ screenshotButtonHover: true })}
-						onMouseLeave={() => useConfiguration.getState().set({ screenshotButtonHover: false })}
-						title="Screenshot"
-						aria-label="Take screenshot"
-						className={cn(
-							"absolute top-28 right-4 z-30 flex items-center justify-center rounded-lg p-2 text-fg-muted bg-surface-overlay/80 backdrop-blur-sm border border-line hover:text-fg hover:border-line-strong transition-colors",
-						)}
-					>
-						<Camera size={16} />
-					</button>
+				{/* Export image: opens the dialog, which drives the capture (one frame at the chosen size, read
+				    back inside the render loop — lib/render/capture.ts). Third slot in the same top-right
+				    control column, below Share. Absent, not disabled, on the shelves whose canvas host has not
+				    been wired for readback yet — a hidden button beats one that returns a blank PNG. */}
+				{canCaptureImage(selected) ? (
+					<Tooltip label="Export image" side="left" delay={0}>
+						<button
+							type="button"
+							onClick={() =>
+								useExportImage.getState().open({
+									rulestring: selected?.canonicalKey ?? useConfiguration.getState().selectedTiling.rulestring,
+									host: canvasHostRef.current,
+									// Only a EUCLIDEAN record hands over its cell. The hyperbolic and spherical shelves
+									// carry a throwaway one, and passing it would offer two controls that cannot work
+									// there: the zoom slider drives `controls.zoom`, which those canvases never read,
+									// and SVG renders a period lattice they do not have. Same predicate the conformal
+									// lens gates on, and for the same reason.
+									cell: lensAppliesTo(selected) ? renderCell : null,
+									paramCell: paramCell ?? null,
+								})
+							}
+							aria-label="Export image"
+							className={cn(
+								"absolute top-28 right-4 z-30 flex items-center justify-center rounded-lg p-2 text-fg-muted bg-surface-overlay/80 backdrop-blur-sm border border-line hover:text-fg hover:border-line-strong transition-colors",
+							)}
+						>
+							<Camera size={16} />
+						</button>
+					</Tooltip>
 				) : null}
 			</div>
 		</div>

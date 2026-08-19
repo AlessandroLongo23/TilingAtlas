@@ -23,6 +23,9 @@ interface ModalProps {
 	size?: ModalSize;
 	/** Escape hatch for a specific Tailwind `max-w-*` class. */
 	maxWidth?: string;
+	/** Accessible description, announced after the title. Rendered visually hidden. Radix warns in dev
+	 *  for any dialog without one; pass a sentence saying what the dialog is for. */
+	description?: string;
 	showHeader?: boolean;
 	header?: ReactNode;
 	children: ReactNode;
@@ -34,6 +37,7 @@ export function Modal({
 	title = "",
 	size = "lg",
 	maxWidth,
+	description,
 	showHeader = true,
 	header,
 	children,
@@ -51,6 +55,9 @@ export function Modal({
 						"data-[state=open]:animate-in data-[state=closed]:animate-out",
 					)}
 				>
+					{description ? (
+						<Dialog.Description className="sr-only">{description}</Dialog.Description>
+					) : null}
 					{showHeader ? (
 						<div className="flex items-center justify-between p-4 border-b border-line">
 							<Dialog.Title className="text-lg font-medium text-fg">{title}</Dialog.Title>

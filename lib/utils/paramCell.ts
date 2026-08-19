@@ -132,6 +132,8 @@ export interface ParamSegment {
 /** Slider grid for the free angles, in degrees. Every open endpoint the exporters emit is a multiple of
  *  15°, so this grid lands exactly on both ends of every family's range. */
 export const ALPHA_STEP_DEG = 0.5;
+/** The slider grid for a LENGTH parameter, matching the panel's own `step` — see clampAlphaAt. */
+export const LENGTH_STEP = 0.01;
 
 const GREEK = ["α", "β", "γ", "δ", "ε"];
 const GREEK_NAMES = ["alpha", "beta", "gamma", "delta", "epsilon"];
@@ -406,10 +408,18 @@ export function evaluateParamCell(pc: ParametricCellData, alphaDeg: number | num
 }
 
 /** Snap one parameter's angle to the slider grid and clamp it into the family's range. Snapping matters
- *  because a value carried over from another family (resolveAlphaDegs reuses the tuple) can land off-grid. */
+ *  because a value carried over from another family (resolveAlphaDegs reuses the tuple) can land off-grid.
+ *
+ *  A LENGTH parameter snaps to its OWN grid. ALPHA_STEP_DEG is half a degree, which is the right grain
+ *  for a corner and absurd for a length: the T-junction families run over (0.07, 1.93), so a half-unit
+ *  grid offers three positions and setting 1.8 came back as 1.93. It fires on every selection change
+ *  (_play-client) and again for the orbit-dot mesh (euclidean-canvas), which is how the dots came to be
+ *  built at a different parameter value than the tiles they sit on. */
 export function clampAlphaAt(pc: ParametricCellData, paramIndex: number, alphaDeg: number): number {
-	const [lo, hi] = pc.params[paramIndex].alphaRangeDegOpen;
-	const snapped = Math.round(alphaDeg / ALPHA_STEP_DEG) * ALPHA_STEP_DEG;
+	const p = pc.params[paramIndex];
+	const [lo, hi] = p.alphaRangeDegOpen;
+	const step = p.kind === "length" ? LENGTH_STEP : ALPHA_STEP_DEG;
+	const snapped = Math.round(alphaDeg / step) * step;
 	return Math.min(hi, Math.max(lo, snapped));
 }
 

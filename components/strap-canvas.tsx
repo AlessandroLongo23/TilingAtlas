@@ -6,6 +6,7 @@ import { buildCellMesh } from "@/lib/render/buildCellMesh";
 import { IDENTITY_DEFORM, computeFillGrid, fillGridInstances, wrapOffset, type LatticeExtent, type Mat2 } from "@/lib/render/flatView";
 import { compileShader } from "@/lib/render/flatTilingGL";
 import { syncCanvasSize } from "@/lib/render/canvasSize";
+import { captureOverride, offerFrame } from "@/lib/render/capture";
 import { ISLAMIC_FILL_VERT, ISLAMIC_FILL_FRAG, STRAP_BORDER_VERT, STRAP_BORDER_FRAG } from "@/lib/render/islamicGL";
 import { buildInstancedStrapMesh, type StrapMesh } from "@/lib/render/buildIslamicStrapMesh";
 import { buildTilingFromCell } from "@/lib/render/buildPatchTiling";
@@ -305,6 +306,10 @@ export function StrapCanvas({ translationalCell, translationalCellId, paramCell 
 			g.uniform1i(FU.uMode, 2);
 			g.uniform1f(FU.uOpacity, 1);
 			g.drawArraysInstanced(g.TRIANGLES, 0, mesh.fillVertexCount, instRef.current.count);
+
+			// Export: snapshot this layer while the frame is still in the drawing buffer. The context has no
+			// preserveDrawingBuffer, so a read from anywhere but here comes back blank (lib/render/capture.ts).
+			if (captureOverride()) offerFrame(canvas);
 		};
 		raf = requestAnimationFrame(render);
 

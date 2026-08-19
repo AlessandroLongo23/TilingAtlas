@@ -37,6 +37,16 @@ export function useInversiveCell(
 	 * while the overlay drew the figures flat on top of it — two different pictures at once.
 	 */
 	truchet: FreedrawPattern | null = null,
+	/**
+	 * Extras for callers that are NOT drawing the record's own cell.
+	 *
+	 * `key` joins the cell id, so a caller whose geometry moves under a fixed selection gets a re-upload;
+	 * the squared torus is the case that needs it, since its cell changes with the homology class while
+	 * `canonicalKey` stays put. `plain` skips the Hankin branch: the Islamic construction is a decoration
+	 * of the SELECTED tiling, and running it over a cell that is not that tiling would draw a pattern
+	 * nobody asked for.
+	 */
+	opts: { key?: string | null; plain?: boolean } = {},
 ): { cell: PeriodicCell | null; cellId: string | null } {
 	const dark = useDarkTheme();
 	// Style inputs the colour-bearing adapters bake into their primitives. Narrow subscriptions, so a
@@ -155,14 +165,14 @@ export function useInversiveCell(
 		}
 		// The Hankin construction replaces the plain tiling wherever it applies — the same precedence the
 		// flat renderers use, where the Islamic layers own the fill and p5 skips its own.
-		if (isIslamic) {
+		if (isIslamic && !opts.plain) {
 			const built = islamicPeriodicCell(renderCell, islamic);
 			if (built) return built;
 		}
 		return tilingPeriodicCell(renderCell);
 		// islamicKey stands in for the `islamic` object, which is rebuilt on every store read.
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [selected, renderCell, dark, colorsPalette, colorsEdges, freedrawFill, freedrawScaffold, freedrawArcs, freedrawArcWiring, freedrawArcTwist, truchet, freedrawPattern, faceAnalysis, hollowPatch, isIslamic, islamicKey]);
+	}, [selected, renderCell, dark, colorsPalette, colorsEdges, freedrawFill, freedrawScaffold, freedrawArcs, freedrawArcWiring, freedrawArcTwist, truchet, freedrawPattern, faceAnalysis, hollowPatch, isIslamic, islamicKey, opts.plain]);
 
 	// The id changes whenever the geometry or its baked colours do, so the canvas re-uploads exactly then.
 	// The pentagon parameters belong in it for the same reason the Islamic sliders do: they change the
@@ -170,7 +180,7 @@ export function useInversiveCell(
 	const pentKey = selected?.pentEdges ? Object.values(pentParams).join(",") : "-";
 	// The Truchet id carries its seed, so a reshuffle re-uploads the cell instead of showing the old draw.
 	const truchetKey = truchet?.id ?? "-";
-	const styleKey = `${dark ? "d" : "l"}:${colorsEdges ? 1 : 0}:${colorsPalette.join(",")}:${freedrawFill}:${freedrawScaffold ? 1 : 0}:${freedrawArcs ? freedrawArcWiring + (freedrawArcTwist ? "R" : "L") : "-"}:${isIslamic ? islamicKey : "-"}:${pentKey}:${truchetKey}`;
+	const styleKey = `${dark ? "d" : "l"}:${colorsEdges ? 1 : 0}:${colorsPalette.join(",")}:${freedrawFill}:${freedrawScaffold ? 1 : 0}:${freedrawArcs ? freedrawArcWiring + (freedrawArcTwist ? "R" : "L") : "-"}:${isIslamic && !opts.plain ? islamicKey : "-"}:${pentKey}:${truchetKey}:${opts.key ?? "-"}`;
 	const cellId = useMemo(
 		() => (cell && selected ? `${selected.canonicalKey}::${styleKey}` : null),
 		[cell, selected, styleKey],

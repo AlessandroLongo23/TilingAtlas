@@ -22,6 +22,7 @@ import { getIslamicField } from "@/lib/render/hyperbolicIslamic";
 import { su11Inverse } from "@/lib/render/hyperbolic";
 import { HyperbolicPerPixelRenderer } from "@/lib/render/hyperbolicPerPixelGL";
 import { syncCanvasSize } from "@/lib/render/canvasSize";
+import { captureOverride, offerFrame } from "@/lib/render/capture";
 import { islamicNormalAngleFromSlider } from "@/utils/islamicNoise";
 import { tileHueRgb01 } from "@/lib/render/hueRing";
 
@@ -437,6 +438,10 @@ export function HyperbolicDevelopedCanvas({ patchId, data, input, diskPadPx = DI
 					taper: cfg.hyperbolicLineMode !== "constant",
 				});
 			}
+
+			// Export: snapshot this layer while the frame is still in the drawing buffer. The context has no
+			// preserveDrawingBuffer, so a read from anywhere but here comes back blank (lib/render/capture.ts).
+			if (captureOverride()) offerFrame(canvas);
 		};
 		raf = requestAnimationFrame(render);
 		return () => {

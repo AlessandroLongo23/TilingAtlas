@@ -67,6 +67,10 @@ export interface ConfigurationState {
 	showDualConnections: boolean;
 	showPolygonFill: boolean;
 	showPolygonPoints: boolean;
+	/** LENGTH families only: colour each tile by its own SIZE rather than by the by-side-count ramp.
+	 *  The two-square tiling has both tiles at n = 4, so the ramp gives them one colour whatever the
+	 *  sliders say; size-hue separates them and moves as the sliders move. Off = the fixed scheme. */
+	lengthSizeHue: boolean;
 	showConstructionPoints: boolean;
 	showWallpaperGroup: boolean;
 	showSymmetryElements: boolean;
@@ -86,8 +90,6 @@ export interface ConfigurationState {
 	tilingTransition: boolean;
 
 	// Screenshot / export
-	screenshotButtonHover: boolean;
-	takeScreenshot: boolean;
 	exportGraphButtonHover: boolean;
 	exportGraph: boolean;
 
@@ -116,6 +118,26 @@ export interface ConfigurationState {
 	islamicFillHueC: number;          // A/B/C fill: edge-centre diamond hue°
 	circlePacking: boolean;
 	isTilingRegularOnly: boolean;
+
+	// Squared torus (Brooks–Smith–Stone–Tutte one genus up): the selected tiling's quotient graph carries
+	// a harmonic form for every class in H¹(T;ℝ) ≅ ℝ², and each one turns every edge into a square. The
+	// result is a Euclidean periodic tiling in its own right, drawn in a floating panel over the canvas
+	// (components/squaring/squaring-inset.tsx) so the main view stays on the tiling it came from. Offered
+	// only where lib/squaring/playSquaring.ts certifies the record's cell; the toggle is disabled with a
+	// reason everywhere else. The four-stage account of the construction is /theory/perfect-rectangles.
+	squaring: boolean;
+	/** The class (m, n). Integral values take the exact solve and may print their sides; every other
+	 *  direction is a real class blended from the frame, where "these two sides are equal" is undecidable
+	 *  and so is never claimed. Only the DIRECTION matters — scaling a class scales the tiling. */
+	squaringClass: [number, number];
+	/** Does the dial stick to integral classes? Off means the whole circle of real directions is reachable. */
+	squaringSnap: boolean;
+	/** Print each square's side inside it. Ignored off the integer lattice, where the sides are irrational. */
+	squaringNumbers: boolean;
+	/** One ink for every tile instead of the size-ranked ramp, so the sizes read from the drawing alone. */
+	squaringMono: boolean;
+	/** Outline one fundamental domain of the image lattice, the parallelogram the two periods span. */
+	squaringLattice: boolean;
 
 	// Inversive view (experimental): swaps the affine p5 render for a WebGL conformal-map render of the
 	// same tiling. Lens fixed at screen centre; panning slides the world under it. See components/
@@ -347,6 +369,7 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	showDualConnections: false,
 	showPolygonFill: true,
 	showPolygonPoints: false,
+	lengthSizeHue: true,
 	showConstructionPoints: false,
 	showWallpaperGroup: false,
 	showSymmetryElements: false,
@@ -362,8 +385,6 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 
 	tilingTransition: false,
 
-	screenshotButtonHover: false,
-	takeScreenshot: false,
 	exportGraphButtonHover: false,
 	exportGraph: false,
 
@@ -387,6 +408,15 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	islamicFillHueC: 200,
 	circlePacking: false,
 	isTilingRegularOnly: false,
+
+	squaring: false,
+	// (1, 0): the potential climbs by one across the first period and not at all across the second. Every
+	// certified quotient has a squaring there, and it is the simplest class to read off the dial.
+	squaringClass: [1, 0],
+	squaringSnap: true,
+	squaringNumbers: true,
+	squaringMono: false,
+	squaringLattice: true,
 
 	inversive: false,
 	inversiveMode: "inversion",

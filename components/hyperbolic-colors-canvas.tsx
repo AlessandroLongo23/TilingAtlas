@@ -20,6 +20,7 @@ import { FALLBACK_BOUND_R, FALLBACK_BUDGET, HyperbolicDeveloper } from "@/lib/re
 import { prepareEdgeShaderTiling, type ShaderTiling } from "@/lib/render/hyperbolicReduce";
 import { HyperbolicPerPixelRenderer } from "@/lib/render/hyperbolicPerPixelGL";
 import { syncCanvasSize } from "@/lib/render/canvasSize";
+import { captureOverride, offerFrame } from "@/lib/render/capture";
 import { paletteRgb255 } from "@/lib/colors/render";
 import type { HypColorsThumbInput } from "@/components/hyperbolic-colors-thumbnail";
 
@@ -280,6 +281,10 @@ export function HyperbolicColorsCanvas({ pattern }: Props) {
 					palette: pal,
 				});
 			}
+
+			// Export: snapshot this layer while the frame is still in the drawing buffer. The context has no
+			// preserveDrawingBuffer, so a read from anywhere but here comes back blank (lib/render/capture.ts).
+			if (captureOverride()) offerFrame(canvas);
 		};
 		raf = requestAnimationFrame(render);
 		return () => cancelAnimationFrame(raf);

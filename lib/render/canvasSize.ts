@@ -12,6 +12,8 @@
 // avoids the flush but delivers post-rAF, which puts the backing store one frame behind again — measurably
 // (a ~2.5% stretch mid-transition) and for no frame-time win, so it isn't worth the extra machinery.
 
+import { captureOverride } from "@/lib/render/capture";
+
 // Backing-store cap. Above 2x the extra pixels cost fill rate and buy nothing visible.
 export const MAX_DPR = 2;
 
@@ -39,6 +41,20 @@ export function measureBox(el: Element | null): Box {
  * or display:none) leaves the backing store alone — callers should skip the frame.
  */
 export function syncCanvasSize(canvas: HTMLCanvasElement): CanvasBox {
+	// An export in flight outranks the CSS box: the frame is drawn at the requested aspect and resolution
+	// instead of the one on screen, then read back inside the same callback (lib/render/capture.ts). The
+	// MAX_DPR cap is deliberately not applied — it exists to stop the LIVE view burning fill rate, and a
+	// 4x export is not the live view. Restored automatically on the first frame after the request clears.
+	const cap = captureOverride();
+	if (cap) {
+		const bw = Math.round(cap.w * cap.dpr);
+		const bh = Math.round(cap.h * cap.dpr);
+		if (canvas.width !== bw || canvas.height !== bh) {
+			canvas.width = bw;
+			canvas.height = bh;
+		}
+		return { w: cap.w, h: cap.h, dpr: cap.dpr };
+	}
 	const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
 	const { w, h } = measureBox(canvas);
 	if (w <= 0 || h <= 0) return { w, h, dpr };

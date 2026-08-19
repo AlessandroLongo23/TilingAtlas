@@ -39,11 +39,15 @@ const num = (v: number) => {
  * @param aspect      viewBox width / height. Only a hint: `slice` crops whatever doesn't match the
  *                    real cell, so a wrong value wastes tiles or hides them but never leaves a gap.
  *                    Matching the cell's shape keeps the patch from generating rows nobody sees.
+ * @param hueOffsetDeg global fill-hue rotation, the /play hue ring. Omitted ⇒ 0, which is what the
+ *                    error walls want; the image export passes the live ring so a vector export and a
+ *                    pixel export of the same view come out the same colour.
  */
 export function tilingToSvg(
 	cell: TranslationalCellData,
 	edgesAcross: number,
 	aspect = 1,
+	hueOffsetDeg = 0,
 ): TilingSvg | null {
 	const base = parseBaseCell(cell);
 	if (!base) return null;
@@ -80,7 +84,7 @@ export function tilingToSvg(
 			paths.push({
 				starts: [start],
 				rel,
-				fill: hsbToHsla(polygonFillHue(poly.vertices), 40, 100, TILE_FILL_ALPHA),
+				fill: hsbToHsla((polygonFillHue(poly.vertices) + hueOffsetDeg) % 360, 40, 100, TILE_FILL_ALPHA),
 			});
 		}
 	}

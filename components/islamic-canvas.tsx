@@ -6,6 +6,7 @@ import { buildCellMesh } from "@/lib/render/buildCellMesh";
 import { IDENTITY_DEFORM, computeFillGrid, fillGridInstances, wrapOffset, type LatticeExtent, type Mat2 } from "@/lib/render/flatView";
 import { compileShader } from "@/lib/render/flatTilingGL";
 import { syncCanvasSize } from "@/lib/render/canvasSize";
+import { captureOverride, offerFrame } from "@/lib/render/capture";
 import { ISLAMIC_FILL_VERT, ISLAMIC_FILL_FRAG, ISLAMIC_STROKE_VERT, ISLAMIC_STROKE_FRAG } from "@/lib/render/islamicGL";
 import { tileHueRgb01 } from "@/lib/render/hueRing";
 import { buildInstancedIslamicMesh, buildInstancedCheckerMesh, type IslamicMesh } from "@/lib/render/buildIslamicMesh";
@@ -325,6 +326,10 @@ export function IslamicCanvas({ translationalCell, translationalCellId, paramCel
 				g.uniform1f(SU.uOpacity, 1);
 				g.drawArraysInstanced(g.TRIANGLES, 0, mesh.strokeVertexCount, instRef.current.count);
 			}
+
+			// Export: snapshot this layer while the frame is still in the drawing buffer. The context has no
+			// preserveDrawingBuffer, so a read from anywhere but here comes back blank (lib/render/capture.ts).
+			if (captureOverride()) offerFrame(canvas);
 		};
 		raf = requestAnimationFrame(render);
 

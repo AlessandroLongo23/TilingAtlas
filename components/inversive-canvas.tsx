@@ -13,6 +13,7 @@ import {
 } from "@/lib/render/periodicCell";
 import { spiralSimilarity, wrapStripDrift } from "@/lib/render/spiralMap";
 import { syncCanvasSize } from "@/lib/render/canvasSize";
+import { captureOverride, offerFrame } from "@/lib/render/capture";
 import { evaluateParamCell, renderAlphaDegs, type ParametricCellData } from "@/lib/utils/paramCell";
 import { tilingPeriodicCell } from "@/lib/render/periodic/tilings";
 import { useFamilyAlphas } from "@/stores/familyAlphas";
@@ -577,6 +578,10 @@ export function InversiveCanvas({ cell, cellId, paramCell = null, camera }: Inve
 			bindTex(g, texRef.current.list, 3, U.uList);
 
 			g.drawArrays(g.TRIANGLES, 0, 6);
+
+			// Export: snapshot this layer while the frame is still in the drawing buffer. The context has no
+			// preserveDrawingBuffer, so a read from anywhere but here comes back blank (lib/render/capture.ts).
+			if (captureOverride()) offerFrame(canvas);
 		};
 		raf = requestAnimationFrame(render);
 

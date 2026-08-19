@@ -13919,3 +13919,488 @@ reusable under either answer, so the open A-vs-B decision never blocked it.
 ⚑ **zsh does not word-split unquoted variables**, and I walked into it committing this: `git add $P`
 with a path list in `$P` treated the whole string as one pathspec and staged nothing. It is written
 down in my own notes. Use an explicit list, and read the error instead of assuming the add worked.
+
+## Game of Life comes over from TilingLife, on a plane rather than a patch (2026-08-18, later still)
+
+AL asked me to port the cellular-automata work from his DTU course project (`~/Desktop/University/TilingLife`,
+SvelteKit) into the Atlas, research the state of the art first, and propose a surface before writing any
+code. Decisions AL made: a top-level `/automata` route (plural — Langton's ant is meant to follow) plus a
+`/theory/automata` article; all three mixed-degree rule readings exposed as a control; the board is the
+**unbounded plane by default**, with the torus as an option rendered on a 3D donut.
+
+**What the old simulator was actually doing.** Its README, its theory page and its rule browser all
+advertise Moore/von-Neumann neighbourhoods and a Larger-than-Life range. None of it ran.
+`GOLEngine.calculateGoLNeighbors` computes edge neighbours, then vertex neighbours, then a range-r BFS —
+all into `golNeighbors` — and then line 222 sets `node.golNeighbors = []` *before* line 229 reads it as
+the BFS frontier, line 257 `delete`s the field, and `Tiling.updateGameOfLife` reads `node.neighbors`
+instead. `node.neighbors` comes from `TilingGenerator.calculateNeighbors`, which matches edge midpoints
+only (it builds a `verticesSpatialMap` and never reads it), and `TilingGeneratorFromRule.svelte.ts:50`
+has the GoL neighbour call commented out. So every rule in that app ran on **pure edge adjacency**: on
+the square grid "B3/S23" was Conway's rule over 4 neighbours, not 8. That is a large part of why the
+metric sweep found rules that "die immediately or fill the grid" — the write-up blames the metrics.
+⚑ Do not port a claimed feature without reading the wire it hangs on.
+
+**What the periodicity buys.** Every Euclidean record is a fundamental cell of n tiles plus a lattice
+basis, so a tile is (i, j, t) and adjacency is translation-invariant: slot t's neighbours are a fixed list
+of (Δi, Δj, t′) — the tiling's analogue of the eight Moore offsets. `lib/automata/adjacency.ts` computes
+it by matching edge midpoints (and corners, for Moore) **pairwise modulo the lattice**, not by hashing
+quantised fractional coordinates: a midpoint sitting on a cell boundary lands in one bucket or its
+neighbour depending on the last bit of a divide, and the adjacency silently disappears. The cell has tens
+to a few hundred edges, so O(m²) is microseconds and cannot fall off a boundary.
+
+That invariance is also the whole performance story. `engine.ts` keeps the board as a sparse map of
+32×32-lattice-cell blocks allocated as the pattern reaches them and freed once it leaves; each block is
+gathered into a padded scratch buffer with an R-cell halo, and a neighbour's position in that buffer is a
+**constant byte offset** from the cell's own, precomputed per tiling. The inner loop is
+`count += src[base + off[k]] === 1` — no hash lookup, no bounds test, no per-cell adjacency list. This is
+QuickLife's tile-with-border idea (Rokicki, *Life Algorithms*, G4G13). Measured: square 18 M
+cell-updates/s unbounded, 51 M on a torus; triangular (n=2, 12 neighbours) 17 M; hex 35/77 M.
+⚑ The bit-packing/SWAR stack that takes square-grid Life past 10⁹ CUpS does **not** port: it works by
+shifting a machine word so every cell sees its neighbour at once, and on a tiling the offsets differ per
+slot so a shift does not align. Nibble packing would still apply and is the next lever if one is needed.
+HashLife generalises in principle (quadtree on the ℤ² lattice index, light cone = `radius` cells/gen) but
+advances 2^(k−2) generations per node, which is useless for a viewer that must show every generation.
+
+**The regression that makes any of this mean something.** `lib/automata/automata.test.ts` runs the square
+tiling through the same generic path everything else uses and demands Conway exactly: 4 edge and 8 corner
+neighbours falling out of the modulo-lattice match, a glider moving (1,1) every 4 generations, a still
+block, a period-2 blinker, and **the R-pentomino settling at population 116 after 1103 generations** —
+that last one doubles as proof the board is genuinely unbounded, since any wall in shot lowers it. Plus:
+hexagonal gets 6 and Moore adds nothing (three hexagons meet at a corner and each pair already shares an
+edge); triangular gets 3 edge / 12 corner; range 2 and 3 on the square Moore graph give 24 and 48; a
+glider survives 400 generations and 100 diagonal cells with the block count staying ≤ 9; a torus of side
+20 — deliberately **not** a multiple of the 32-cell block, the case a naive chunked gather gets wrong —
+returns a seam-straddling glider to its start after 4W generations.
+
+**The rule string is undetermined on a mixed-degree tiling, and that is the interesting part.** On
+3.4.6.4 a triangle has 3 edge-neighbours and a hexagon 6, so "born on exactly 3" is two unrelated
+automata. Three readings ship as a visible control — absolute (Owens & Stepney's Penrose convention),
+normalized (rescale each tile's count to the busiest tile's degree; reduces to absolute when the degrees
+agree, which is what makes it a generalisation), per-shape. The old code had two of these too, but chose
+between them by a magic branch (`birth.min <= 1 && birth.max <= 1` silently switched to fractions).
+
+**Rendering.** `automataGL.ts` is its own pipeline rather than a flag on `flatTilingGL.ts`, for one
+reason: /play replicates an identical cell so it can wrap the pan by whole periods, and here every copy
+carries different contents, so the instance grid must be real lattice indices. No instance buffer at all —
+position and state-texture row both come from `gl_InstanceID`; the only per-frame upload is one R8UI
+texture, one byte per cell. The 3D torus is the same board on a standard donut; the tiles stretch because
+no smooth isometric embedding of a flat torus into ℝ³ exists, and the page says so.
+
+**Literature, since the article's claim is a gap claim.** Bays did triangular (1994), hexagonal and Cairo
+pentagonal (*Complex Systems* 15(3), 2005) by hand, with explicit criteria for a rule to *be* a Game of
+Life (bounded growth, plus a glider that arises naturally from soup). Owens & Stepney (JCA 5(3), 2010)
+ran B3/S23 on Penrose kite-and-dart and rhomb and found no glider; Goucher (JCA 2012) built one in a
+custom 4-state automaton, not Life; Bailey & Lindsey (arXiv:1708.09301) get Life-isomorphic automata by
+construction; Hong & Mei (arXiv:2302.10157) classify 4-cell still lifes on the Robinson triangle. Whether
+B3/S23 admits a glider on any aperiodic tiling appears still open. Margenstern's hyperbolic work builds
+universal automata, not Life. For method, Rollier et al., *Essential metrics for Life on graphs* (Physica
+D, 2025) supersedes the density-and-complexity plane the TilingLife sweep used — and whose failure that
+write-up already diagnosed correctly.
+
+⚑ **Nav is at ten links now.** The keyboard map was `Number(e.key) - 1` over 1–9; the tenth takes `0`.
+Ten links plus ten keycaps plus the brand overflow a 1400px window, so the caps hide below 2xl and the
+row scrolls sideways instead of sliding under the theme toggle (the nav clips its overflow, so an
+unscrollable row would simply vanish).
+
+Not ported: the TouchDesigner/Ableton generative soundtrack, and the Taichi metric sweep.
+
+### The /automata sidebar, rebuilt to the /play pattern (2026-08-18, same day)
+
+AL, on seeing the first pass: the transport belongs on the canvas, the state readout belongs in the info
+panel "like normal tilings have", and the rest should be horizontal tabs instead of stacked accordions.
+All three are the /play conventions, so the rework is mostly deletion of a bespoke layout.
+
+- **Transport floats over the canvas** (`components/automata/automata-transport.tsx`): run/pause, step,
+  reseed, speed — bottom-centre, `bottom-6`, opaque. Not translucent: the board underneath is
+  high-contrast black-and-white noise and a frosted bar over it reads as mud. Speed rides a 13-stop
+  ladder (1…240 gen/s) so one drag reaches both ends. This is also the "video-style controls" item that
+  had been sitting unticked in TilingLife's own TODO.
+- **Info panel** (`automata-info.tsx`) is `NavHeader`'s shape: identity cell, prev/random/next row, then
+  the live readout — generation, alive, density, churn, neighbour degrees, tiles per cell, board, rate.
+  Above the tabs, so you can read the population while editing the rule instead of instead of it.
+- **Four horizontal tabs** (Tiling / Rule / Board / View) on the shared `Tabs`, inside the same
+  `ta-wall` the /play sidebar uses.
+
+Two things the rework taught, both worth keeping:
+
+⚑ **Four tabs and four keycaps do not fit a 320px panel** — the fourth trigger clipped. The caps come
+off (the shortcuts still work, and are listed in the View tab); a clipped tab is worse than an
+undiscoverable key.
+
+⚑ **`.ta-tab`'s idle fill IS the panel colour**, so a segmented control laid out with an ordinary `gap-1`
+has invisible unselected cells — it reads as one lone button floating in the panel. The group needs its
+own patch of `ta-wall` with `gap-px` behind it, exactly as the real tab strip has. Same trap for anything
+else reusing those fills outside the wall.
+
+Also: `bg-accent` is not this design system. Hierarchy is ink — `primary` is `bg-fg text-fg-inverse`
+(see `VARIANT_CLASSES` in `components/ui/button.tsx`), and the transport's play button matches it.
+
+### The board becomes a surface: plane, cylinder, torus — and why Möbius and Klein are gated (2026-08-18, same day)
+
+AL: "based on the boundary, the topology can be a plane, cylinder, torus, klein bottle, or mobius strip,
+right?" Right, and the list is exactly complete. A board is ℝ² quotiented by a group of isometries acting
+freely, i.e. a 2D Euclidean space form, and there are five. The projective plane is the one that looks
+like it belongs and cannot: a closed flat surface has χ = 0 by Gauss–Bonnet and χ(ℝP²) = 1. Worth writing
+down because I nearly added it before checking.
+
+**Two of the five are a property of the TILING, not of the board.** A seam glued by translation is free —
+translating by W·v₁ is a symmetry of every periodic tiling — so plane, cylinder and torus always exist. A
+flipped seam folds through a glide reflection, which is a quotient of the tiling only if the tiling admits
+it. `lib/automata/topology.ts` `findFlip` decides this per tiling by mapping every polygon and demanding
+the image be a polygon of the tiling modulo the lattice.
+
+⚑ **Do not guess the answer from the wallpaper-group name.** The group says a mirror exists somewhere, not
+that its axis lines up with the seam. And it is not the same question as chirality-in-general: snub square
+(p4g) has NO mirrors and still passes, because a Klein seam needs a GLIDE, which p4g has.
+
+⚑ **The reflection is not "negate the other lattice coordinate."** That is an isometry only on a
+rectangular lattice; on the hexagonal one it is a shear, which nothing is invariant under, so the naive
+form calls every oblique lattice chiral. It has to be the Euclidean reflection across the seam direction,
+whose lattice matrix then generally has an off-diagonal term: on the hexagonal lattice v₂ ↦ −v₁ − v₂, i.e.
+(i, j) ↦ (i − j, −j).
+
+**Measured before building on it.** Of the eleven uniform tilings, ten admit a flip and exactly one does
+not: snub trihexagonal (3.3.3.3.6, p6), the only chiral one. Over a 400-record corpus sample, 385 (96%)
+admit one, and every failure is p2, p4 or cm. So the gate is real but not restrictive, and it fires
+exactly where theory says it should.
+
+**What shipped.** The engine's boundary model is now per-axis: `{ wrapI, wrapJ }`, null for an open axis.
+(null, null) is the plane, (W, null) the cylinder, (W, H) the torus — one mechanism, three surfaces, and
+the cylinder came free. The 3D view generalises with it; the CYLINDER is the honest one, since a flat
+cylinder does embed in ℝ³ isometrically and its tiles keep their true shape everywhere, unlike the torus.
+Plus AL's two overlays on the flat view (`lib/automata/overlay.ts`): dashed lattice lines, and the board's
+boundary with gluing arrows, red for the identification along v₁ and blue for the one along v₂, one
+arrowhead against two so the pairing survives without colour. Selecting a closed board now also frames it,
+because at the default zoom an 8-cell torus filled the viewport and its seams sat off-screen.
+
+**What did NOT ship, precisely.** Möbius and Klein are modelled and detected but not simulated. The
+remaining work is not a switch: for a flipped board the second period is not v₂ but the −1 eigenvector of
+the reflection in the lattice (on the hexagonal lattice, v₁ + 2v₂), because the Klein group needs a
+translation a with R(a) = −a. So a flipped board runs on a DIFFERENT sublattice from the tiling's own, and
+the engine's wrap, halo gather and slot indexing all have to carry that. Their 3D views wait on it — and
+the Klein bottle can only ever be immersed, never embedded, so that view will pass through itself.
+
+⚑ A local `const surface = new THREE.Mesh(...)` in torus-view shadowed the new `surface` prop and put an
+earlier call to the prop in the local's temporal dead zone — a runtime "Cannot access before
+initialization" that types do not catch. Renamed to `surfaceMesh`.
+
+### 2026-08-19 — /automata: the Möbius band and Klein bottle actually run, and get 3D views
+
+Closes the gap the previous entry named. AL: "add the klein bottle and the mobius strip 3d models for the
+tilings that support that topology. Also, double check that the gol simulation is really run on those
+topologies." Both halves are done; the second half is the interesting one.
+
+**The engine still has no idea what a flip is, and that is the design.** A Möbius or Klein board is run on
+its ORIENTATION DOUBLE COVER — a cylinder for the Möbius band, a torus for the Klein bottle, twice as wide
+— carrying a state invariant under the deck transformation ι, which is the glide itself. This is not an
+approximation and not a picture: ι is an automorphism of the adjacency graph and maps every tile to a
+congruent one, so it commutes with the rule; an ι-invariant configuration stays ι-invariant exactly, in
+integer arithmetic, forever. Invariant configurations on the cover biject with configurations on the
+quotient, and a covering map preserves each cell's neighbour multiset. So running the cover IS running the
+quotient, and the kernel keeps one code path: plain modular wrapping, contiguous halo copies, no per-cell
+slot permutation in the inner loop. The whole flip is paid for once, when the soup is seeded
+(`AutomatonEngine.symmetrize`).
+
+**The sublattice, which is what made this look hard.** The previous entry got the obstruction right and
+the vector wrong. R's −1 eigenvector is PERPENDICULAR to v₁, and solving 2a + c·b = 0 for the reflection
+matrix [[1, c], [0, −1]] gives w = (−c/2, 1) when c is even and (−c, 2) when it is odd. On the hexagonal
+lattice c = 1, so w = 2v₂ − v₁ and the sublattice has index 2. `refineAdjacency` rewrites the whole
+adjacency on ⟨v₁, w⟩; the refined cell holds μ ∈ {1, 2} of the tiling's own and, because v₁ and w are the
+±1 eigenvectors of an orthogonal reflection, is a genuine RECTANGLE. In that basis the reflection is
+exactly diag(1, −1) and the glide is (A, B, s) ↦ (A + P[s], Q[s] − B, σ(s)) with integer P, Q.
+
+⚑ **P and Q are per-slot and cannot be otherwise.** The plane map is slot-independent; the slot dependence
+appears because a tile's cell coordinate is a discretisation, and the glide shuffles tiles between cells.
+Every slot must report the SAME α and β though, and `refinedFlip` returns null if they disagree — a cheap
+consistency check on the whole construction.
+
+⚑ **The board's width is a half-integer more often than not, and that is real.** g² is a translation along
+the axis by 2α, which must be a whole number of v₁ steps, so α ∈ ½ℤ. When α is a half-integer the glide
+shifts by half a cell and the seam genuinely closes up there. 6 of the 11 uniform tilings are like this
+(hexagonal, trihexagonal, truncated hexagonal, truncated trihexagonal, rhombitrihexagonal, snub square)
+and 115 of 480 corpus records. The sidebar prints "12½×14". Rounding it away would print a width the board
+does not have.
+
+⚑ **The half-integer case is also why the 3D mesh is not laid out column by column.** With an odd cover
+period there is no column-aligned fundamental domain at all. Instead the mesh walks the whole cover, keeps
+one tile from each ι-orbit, and places each from its OWN real lattice coordinates. A tile straddling the
+seam just has vertices at a slightly negative coordinate, and the embedding — being periodic in u — closes
+the surface with nothing to stitch. Works for even and odd alike, and needed no special case.
+
+**Verification, which was the explicit ask.** Three tests, escalating:
+1. ι is a graph automorphism: neighbours map to neighbours, degrees unchanged, σ² = id, Q constant on
+   orbits, P[s] + P[σs] constant and equal to 2α. Run on square, hexagonal and triangular.
+2. ι-invariance survives 1000 generations of B2/S23 on a hexagonal Klein board, and 200 on a Möbius band
+   whose second axis is unbounded.
+3. **The one that would catch a subtle error in 1 or 2**: build the QUOTIENT graph independently — cells
+   are ι-orbits, a cell's neighbours are the orbits its cover neighbours fall into counted WITH
+   multiplicity — run plain Life on it, and compare against the engine generation by generation for 40
+   generations. Done on the square grid AND on the hexagonal one, so the refinement path is covered.
+   They agree exactly.
+Plus: the orbit count is exactly half the cover (ι is free), a Klein board diverges from a torus board of
+the same size and seed, and population is reported as the surface's own (cover ÷ 2), not the cover's.
+
+**The 3D embeddings.** Möbius: (R + tρcos(u/2))·(cos u, ·, sin u) with height tρ sin(u/2); at u + 2π both
+half-angle terms flip sign, so the point at −t is reached, which IS the gluing. Klein: the figure-8
+immersion, same identity, and the only option — every closed surface embedded in ℝ³ is orientable, so the
+Klein view passes through itself along a circle. That crossing is an artefact of three dimensions; no cell
+there is adjacent to the one it appears to touch, and the sidebar says so. Normals are one finite-
+difference formula shared by all four surfaces. Minor radius comes from the board's aspect ratio, which is
+meaningful precisely because the refined cell is a rectangle.
+
+⚑ **`buildAutomataMesh` now takes the ADJACENCY, not the atlas record.** On a refined board the cell has
+2n slots and basis (v₁, w); meshing the record instead would draw a cell of a different size from the one
+the state texture is indexed by, and every tile would show a neighbour's state. One `BoardPlan` is built in
+the client and handed to the engine, the flat canvas and the 3D view, so the three cannot disagree about
+what a cell is.
+
+`components/automata/torus-view.tsx` is gone, replaced by `surface-view.tsx` (four surfaces). Article
+`/theory/automata` gained three sections: the five space forms and why there is no sixth, the double-cover
+construction, and what ℝ³ can and cannot hold. 43 automata tests pass; `pnpm build` clean. The one failing
+test in the suite is `tests/star-general-path.test.ts`, which times out at 60s on unmodified code too.
+
+## The play canvas learns to be exported (2026-08-19)
+
+`/play`'s camera button had been dark since it shipped, behind `SCREENSHOT_BUTTONS_ENABLED = false` with
+the note that "the capture output isn't ready to ship." Reading the capture explained the flag. It was a
+port of TilingLife's `p5.takeScreenshot`, and what it produced was a hardcoded 300×300 PNG of a fixed 3×3
+patch, auto-fitted, with the live zoom, pan and rotation thrown away. A thumbnail baker wearing a camera
+icon. Flipping the flag would have shipped the very thing that was gated off, so the whole path is
+replaced: `lib/render/capture.ts`, `components/export-image-modal.tsx`, `lib/stores/exportImage.ts`.
+
+⚑ **The readback has to happen inside the render loop.** None of /play's live WebGL contexts are created
+with `preserveDrawingBuffer` (only the offscreen thumbnail hosts are — `lib/render/hypThumbHost.ts`,
+`components/spherical-thumbnail.tsx`), so the drawing buffer is gone by the time a click handler runs and
+`canvas.toDataURL()` returns blank, every time, on every one of them. That single fact dictates the
+architecture: a module-level request polled from the rAF callbacks, the same discipline `canvasSize.ts`
+already documents for sizing. `captureFrame` publishes `{w, h, dpr}` and waits three frames; each host
+calls `offerFrame(canvas)` at the end of its draw, which `drawImage`s into a scratch surface
+synchronously; the driver composites the scratches in document order.
+
+`syncCanvasSize` consulting that request is one change that covers eight components — the flat, Islamic,
+strap, Truchet, inversive and all three hyperbolic canvases — because they already share it. Four hosts
+needed their own branch: the p5 layer (`resizeCanvas` plus `pixelDensity`, and its CSS size pinned back to
+the host box, since it lives in a `relative` container that would otherwise reflow the page around a 4K
+canvas), and the three three.js renderers (`setPixelRatio` plus `setSize(w, h, false)`).
+
+**Frame and resolution are separate rows in the dialog, and that is the whole design.** Excalidraw and
+Figma export a bounded artwork, so "fit to content" is well defined and a scale multiplier is the only
+knob anyone needs. A tiling is unbounded: there is no content to fit, the frame is a free choice, and the
+one knob splits into how much pattern is in frame (aspect and zoom) and how many pixels that frame gets. A
+2× that also showed twice as much pattern would be the obvious way to get this wrong. The zoom readout
+counts tile edges across, because `controls.zoom` defaults to 50 and that number means nothing to anyone.
+
+⚑ **The zoom slider and SVG gate on `lensAppliesTo`, not on cell presence.** Hyperbolic and spherical
+records carry a throwaway translational cell, so keying on `cell != null` offered both controls on shelves
+where neither can work: those canvases own their camera and never read `controls.zoom`, and SVG renders
+from a period lattice they do not have. Measured on the spherical shelf before the fix — the slider moved
+and the picture did not.
+
+Two measurements changed decisions. The parity check (mean absolute difference between the export at
+Screen/1× and a Playwright screenshot of the live canvas, both resampled to 320×252) came out at 4.5/255
+at scale 1.0 against 26–115 at every other scale in a 0.70–1.45 sweep, which is what proves the export
+frames what the view frames. And the file-size estimate came out 3× wrong — 14.7 MB predicted against
+5.1 MB actual at 8192px — because the downscaled preview antialiases every pixel while the full-resolution
+render is mostly flat runs that PNG collapses. A number that wrong is worse than no number, so it is gone.
+
+⚑ **`playSurfaceColor` returns an sRGB hex, not the token's own value.** The palette is authored in modern
+colour spaces, so `getComputedStyle` hands back `lab(98.25% -.22 -.71)`. Fine as a canvas fill in this
+browser, unreadable to the SVG renderers a downloaded `.svg` is supposed to open in. Painting it into a
+1×1 canvas makes the browser do the conversion, which is the one conversion guaranteed to agree with what
+it just drew.
+
+Five shelves stay out: freedraw, colors, hollow, and the two parametric edge shelves, whose hosts
+(`freedraw/freedraw-canvas.tsx`, `hollow/hollow-canvas.tsx`, `freedraw/parametric-edges-view.tsx`) have
+not been wired for readback. `canCaptureImage` in `lib/services/shelfRegistry.ts` hides the button there
+instead of leaving it to return a blank PNG, which is the failure mode a missed frame produces and the one
+most likely to ship unnoticed. Verified on Euclidean, hyperbolic and spherical: 18, 34 and 86 distinct
+colours in the preview, none of them blank. `pnpm build` clean; the suite's one failure is still
+`tests/star-general-path.test.ts` timing out at 60s, as it does on unmodified code.
+
+### 2026-08-19 (later) — the Klein bottle gets its recognisable shape, as an option
+
+AL, on seeing the figure-8: "The klein bottle doesn't have the typical klein bottle shape. Is there a
+reason why?" There was — the bagel's tube is near enough uniform, so it takes the board's aspect ratio and
+hides no cells — but the recognisable shape wins on being recognisable, so both ship and the BOTTLE is now
+the default. `kleinShape: "bottle" | "bagel"` in the store, a segmented control under "Draw it as".
+
+The classic parametrization turns out to fit the board's gluing exactly, which is why this was a branch in
+`makeEmbed` and not a rework. It runs u over [0, π] and closes as (u, v) ~ (u + π, π − v) — check u = 0
+against u = π and the two circles agree only after cos v ↦ −cos v. Our board glues (A, B) ~ (A + domainW,
+2·axisB − B), so u = πA/domainW and v = π/2 + 2π(B − axisB)/H lines the two up; the π/2 phase is what
+turns B ↦ 2·axisB − B into v ↦ π − v.
+
+⚑ **The bottle cannot take the board's aspect ratio.** Its proportions are baked into the formula: length
+~10 units against a tube circumference of ~2.5, so square tiles need roughly four times as many cells
+along v₁ as along v₂. The default 16×16 board draws them as long stripes. Said so in the tooltip; there is
+no fix, since stretching the formula would break the gluing.
+
+Its scale is also several times the other three and off-centre, so the mesh is normalized after building
+(bbox → centre, uniform scale to half-extent 1.25). A uniform scale plus a translation leaves the
+finite-difference normals pointing exactly where they did, so nothing else needed touching.
+
+⚑ Noticed mid-task: AL is editing `automata-sidebar.tsx` concurrently (View tab folded into Board, three
+tabs with keycaps, `InfoDot` hints). Every edit here was a targeted string replace on a freshly read file
+with an assert on the old text, so both sets of changes are in the file; nothing was clobbered.
+
+## What the export was actually getting wrong (2026-08-19, later)
+
+AL reported the export preview not tracking the zoom slider. It does, and every way of asking said so: a
+real pointer drag along the track moves the readout (21.6 → 15.2 → 10.9 → 8.6 edges across) and changes
+the preview bytes at every step, "Match current view" snaps back, and the download follows (232 kB at
+zoom 150 against 713 kB at zoom 20 on the same tiling). Zoom-sensitivity held in all eight view modes
+tried — plain, points, construction points, symmetry elements, fundamental domain, orbits, Islamic,
+circle packing. The best guess for what AL saw is a stale HMR module graph: the edits went through
+`lib/render/canvasSize.ts`, which most of the canvases import, and a half-applied update there gives two
+store instances, one written by the dialog and one read by the renderer. Every test here loads the page
+fresh, which is why none of them reproduce it. Unproven, and worth re-testing after a hard reload.
+
+Chasing it turned up four real defects anyway, all in the SVG path, all now fixed and measured. The
+measurement is the mean absolute difference (0–255) between the rasterised SVG and the PNG of the same
+view, both resampled to 300×236.
+
+⚑ **`tilingToSvg` centres its patch on the CELL CENTROID; the shader centres the view on the WORLD
+ORIGIN.** Left alone that is a constant offset between two exports of the same view, and not a lattice
+vector in general, so it is a different crop and not the same picture shifted by a whole tile. An
+innermost `translate(cx, -cy)` cancels it and the coverage grows by |cx|, |cy| to match. Plain view at
+Screen: 36.8 → 5.8. At 16:9: 44.1 → 11.7. At 1:1: 25.3 → 2.2.
+
+**Rotation and pan were silently dropped.** The SVG now carries both: `translate(pan) rotate(θ) recentre`,
+innermost first, which is the composition FILL_VERT applies — SVG's `rotate()` is clockwise in a y-down
+frame, the sense the shader's [[c,-s],[s,c]] already has after tilingToSvg's y flip, so no sign
+correction. The pan is reduced through the same `wrapOffset` the shader uses (both take their basis from
+`parseBaseCell`, so it is the identical reduction), which is also what keeps the over-cover bounded: a raw
+pan grows without limit as you drag. Rotated 30°: 35.9 → 6.0. Panned: 36.4 → 5.9. Both: 38.9 → 9.3.
+
+⚑ **A parametric family's `renderCell` is the ALPHA-INDEPENDENT base cell.** The canvases derive the live
+shape per frame from `paramCell` plus the familyAlphas store, so nothing alpha-dependent reaches React —
+which means the SVG was exporting the family at its default parameter while the screen showed another.
+The pixel export was never affected; it reads back the frame the shader drew. Fixed by evaluating through
+the same `evalWithHue` the flat canvas uses, now in `lib/render/paramCellRender.ts` instead of inside
+`euclidean-canvas.tsx`: the dialog is mounted in the app-shell layout, so importing it from the canvas
+would have shipped the whole flat WebGL renderer on every route. Verified at three parameters — the
+picture changes at each, and the SVG follows it (2.3, 2.1, 2.0).
+
+**SVG is now refused where it would be a different picture, not merely a plainer one:** the conformal
+lens, Islamic decoration, Truchet figures, circle packing, tile fill off, a non-identity deformation. The
+chip disables and names the reason. Additive marks — points, symmetry elements, orbits — stay allowed and
+are covered by the note under the format toggle.
+
+The capture protocol gained one guard: it now waits until some host has offered a frame at the size that
+was asked for, bounded at 16 frames, instead of trusting a fixed count. Without it the composite can be
+assembled from frames drawn before the request landed, which looks exactly like an export ignoring its
+settings, because that is what it is.
+
+⚑ **Truchet arcs wedge /play's main thread** on `composable-k3-000` — a bare `page.evaluate(() => 1+1)`
+never returns once `freedrawArcs` is on. Pre-existing and unrelated to the export: the only change to
+`components/truchet-overlay.tsx` is a per-frame read of a module-local `null`. It does mean the Truchet
+layer's capture is the one path here that could not be exercised.
+
+Verified after the fixes: six aspect × zoom combinations all distinct and correctly labelled (zoom 30 →
+36.0 edges across, zoom 120 → 9.0, exactly the 4× it should be; 16:9 at 30.3 against 1:1 at 17.0, ratio
+1.78); rotation, hue offset, fill-off and the conformal lens all present in the PNG; the clipboard follows
+both knobs (2160×1704 at two zooms with different content, 3030×1704 at 16:9); Euclidean, hyperbolic and
+spherical all non-blank at 18, 34 and 86 distinct colours. `pnpm build` clean.
+
+## Every periodic tiling is also a square tiling, and /play now draws that one (2026-08-19, later)
+
+AL asked whether the squared tori from `/theory/perfect-rectangles/pipeline` belong on /play, arguing
+that a tiling carries a whole circle of them the way it carries Islamic decorations, so neither wants a
+shelf. It does belong, but the Islamic analogy under-sells it and the difference decides the design.
+An Islamic pattern decorates the tiling in place — same lattice, same cell, tiles still visible
+underneath. A squared torus is a **different tiling in a different plane**: its lattice is the image
+lattice, its tiles are squares, its wallpaper group is not the source's. It is a transform, not a
+decoration.
+
+So the canvas draws the squaring, as an ordinary translation cell, and the source tiling moves to a small
+panel in the corner (AL's call, after I first built it the other way round). Writing the squaring as
+polygons plus a basis is what makes the rest free: pan, zoom, rotate, the wrap fill, the deform pad and
+the image export all come from the paths every other tiling already uses, and the only new drawing is a
+2-D overlay for the two things that pipeline has no notion of — the sizes and the cell outline —
+following `truchet-overlay.tsx`'s contract of reading the live camera and taking no pointer input.
+Every control that describes the SOURCE (symmetry elements, vertex orbits, mirror, Islamic, the family
+sliders, the conformal lens) goes quiet while it is up, because each would be a claim about a tiling that
+is no longer on screen.
+
+**Measured before designing (2026-08-19).** `squareTorus` on real atlas cells: 0.1–0.4 ms to E = 60,
+2.6 ms at E = 96, 18–20 ms at E = 144–180, 75 ms at E = 240. Sides come out 1–6 digits after the gcd and
+the max/min side ratio ran 5:1 to 115:1 at a generic class, so the small squares stay visible. Two solves
+span the whole family (`torusFrame` / `squareTorusAt`), so the dial drag is a dot product per edge and
+the exact BigInt solve runs off a `useDeferredValue` class.
+
+### α does not drive it, and the reason is not the obvious one
+
+I claimed the sliders cannot move the squaring because the construction puts unit conductance on every
+edge and so reads combinatorics, never geometry. AL pushed back and was right to. The claim is true of a
+FIXED map — 40 uniform α samples of `period-k2-044` at a fixed class gave one squaring with no jumps —
+but the map is not fixed under a flex: a vertex sitting on the cell boundary reduces into a different
+representative at a different α, which flips some `vshift`, and different vshifts are a different basis
+of H₁, so the label (m, n) names a different member of the same family. Over classes |m|, |n| ≤ 8 the
+SET of squarings was identical at two α on `period-k2-044/045/046` (23 of 23 shared); the labelling was
+not. Hence the rule the code is built on: read the record's own `renderCell`, once, and hold it.
+Pinned in `lib/squaring/playSquaring.test.ts`.
+
+### ⚑ The T-junction pass had been reading a fixed 3×3 block, and it cost ~27,000 records
+
+AL then said the star tilings were being refused for "no translation cell" and that this was not true.
+Two errors, both mine, both worth writing down:
+
+1. **The star gate.** I rejected any cell with a `star` polygon. That flag out of `parseBaseCell` covers
+   two different things: a genuinely self-intersecting {n/d} face, and an ordinary simple polygon whose
+   outline is star-SHAPED. The mixed shelves are full of the second kind. Removing the gate: mixed 86/86,
+   mixed-k3 185/185, mixed-k4 499/512, k8 32/32, k9 22/22, every squaring passing Σ side² = |det Λ|.
+   Nothing needs to tell the two kinds apart, because `buildTorusMap` already does — a self-intersecting
+   face leaves darts unpaired and overlapping faces cannot reach χ = 0.
+
+2. **The real bug.** `buildTorusMap`'s T-junction pass built its candidate split points from the
+   clustered vertices translated over a fixed 3×3 block **around the origin cell**, which silently
+   assumed a cell's tiles were drawn near the origin. Atlas `renderCell`s are not: spans reaching
+   u ∈ [−1.44, 0.78] are ordinary. A T-junction two cells out was never a candidate, its side went
+   unsplit, and the map failed to close — which is why the scaled shelves reported three records in four
+   as "not a consistent quotient" while their tile areas equalled their basis covolumes to the last digit.
+   Candidates now come from each SIDE's own extent in lattice coordinates, which is both correct and
+   cheaper (a side spans about one cell).
+
+   One trap on the way: "strictly inside" has to be measured in world units, not in the parameter t. A
+   candidate sitting exactly on an endpoint returns t ≈ 1e-7 once coordinates are a few units from the
+   origin, a fixed threshold on t lets it through, both faces split symmetrically so every dart still
+   pairs, and the map comes out with one edge too many and χ = −1. Tying the threshold to the same 1e-6
+   world tolerance the collinearity test uses fixed it.
+
+   **Whole-atlas effect: 77,773 → 104,989 of 113,768 records build a valid torus map (68.4% → 92.3%).**
+   scaled-k7 8,080 → 24,167; euhalf-k5 6,447 → 8,030; tri45-k4 13,803 → 14,629. A 1-in-7 sample of the
+   20,243 newly buildable records (2,269 of them) certified with Σ side² = |det Λ| exactly, zero
+   failures. 38 records went the other way and are now refused; that is 0.03% and they are refused
+   honestly rather than drawn wrong.
+
+⚑ `scripts/build-torus-shelf.ts` now has many more candidates to choose its curated 24 from, so the
+shipped shelf would change if rebuilt. Left alone — that is a corpus decision, not a refactor.
+
+**The conformal lens goes on top of it (AL, same session).** The lens warps whatever periodic cell it is
+handed, so pointing it at the squaring's cell instead of the record's is the whole change; `PeriodicCell`
+is already the shared IR and nothing in the renderer moved. Two things it needed. The cell id is
+`canonicalKey::styleKey`, which does not move when the homology class does, so the lens held the previous
+squaring while the dial ran — the class now joins the key. And `useInversiveCell` gained a `plain` flag
+that skips its Hankin branch, because the Islamic construction decorates the SELECTED tiling and the cell
+under the lens is not that tiling. Same reasoning put `isIslamic && !squaring` at the single subscription
+in `canvas.tsx`: the control is hidden while the squaring is up, and a hidden control must not still be
+acting on a flag left over from the previous selection.
+
+⚑ The sizes-and-lattice overlay does NOT draw under the lens. It projects affinely, so its grid lines and
+its centred type would sit where the squares were before the view was bent. Drawing the numbers correctly
+under a conformal map means placing them through the same map, which is the lens renderer's job and not
+a 2-D layer's.
+
+### Iterating the map (AL's question, same session)
+
+Feed a squared torus back in as the tiling and square it again. Euler settles the shape of the answer
+before any run: the squaring has one face per edge going in, its vertices are generically T-junctions of
+degree 3, and V − E' + F = 0 then forces **E' = 3E**. Measured exactly 3.000 once the deg-3 fraction
+reaches 100%. So the process is strictly expanding — no cycles, no combinatorial limit — except where it
+collapses, and it collapses exactly when the class returns a squaring with `distinct = 1`, which is the
+regular square grid and a fixed point. At class (1, 0) the square tiling squares to itself, and 3⁶ and
+3.6.3.6 fall into that same fixed point after one step, while 6³ and 4.8.8 grow. The reduced modulus τ of
+the image torus climbs monotonically up the imaginary axis in every growing run (~×1.8 per step), so the
+conformal structure runs to the boundary of moduli space instead of settling. Full log and the caveats —
+the runs end on a `buildTorusMap` tolerance, not a mathematical obstruction — in
+`experiments/results/squaring-iteration-2026-08-19.md`.

@@ -32,12 +32,41 @@ interface Props {
 	edges: number;
 	/** Off the integer lattice the sides are irrational and scale-arbitrary, so they are not printed. */
 	labels?: boolean;
+	/** Colour per quotient edge. Defaults to the size-ranked ramp; /play passes a flat one for monochrome. */
+	fills?: string[];
+	/** Outline one fundamental domain of the image lattice. */
+	lattice?: boolean;
+	/** The line of counts under the figure. Off where the panel prints them itself. */
+	caption?: boolean;
+	/** How many lattice steps out to repeat. Two fills a page; one is enough in a small panel. */
+	reach?: number;
+	/**
+	 * Multiplier on type and stroke weight, in viewBox units.
+	 *
+	 * The svg scales to its container, so a figure shown at 260 px renders a 24-unit label at about 6 px
+	 * and a 1.2-unit outline as a hairline. Weighting the ink up is the only way a small panel reads the
+	 * same as a full-page one; it also raises the bar `labelFits` sets, so the panel drops the numbers
+	 * that would be printed too small to read instead of printing them anyway.
+	 */
+	ink?: number;
 }
 
 const SIZE = 1000;
 const FONT = 24;
 
-export function SquaredTorusFigure({ squaring, hovered, onHover, onPick, edges, labels = true }: Props) {
+export function SquaredTorusFigure({
+	squaring,
+	hovered,
+	onHover,
+	onPick,
+	edges,
+	labels = true,
+	fills: fillsOverride,
+	lattice = true,
+	caption = true,
+	reach = 2,
+	ink = 1,
+}: Props) {
 	const { copies, project, fills, ring } = useMemo(() => {
 		const L: [number, number][] = [
 			[num(squaring.lattice[0][0]), num(squaring.lattice[0][1])],
@@ -63,9 +92,8 @@ export function SquaredTorusFigure({ squaring, hovered, onHover, onPick, edges, 
 		const cy = (cy0 + cy1) / 2;
 
 		const out: { x: number; y: number; s: number; edge: number; label: string; centre: boolean }[] = [];
-		const REACH = 2;
-		for (let i = -REACH; i <= REACH; i++) {
-			for (let j = -REACH; j <= REACH; j++) {
+		for (let i = -reach; i <= reach; i++) {
+			for (let j = -reach; j <= reach; j++) {
 				for (const q of sq) {
 					out.push({
 						x: q.x + i * L[0][0] + j * L[1][0],
@@ -88,8 +116,11 @@ export function SquaredTorusFigure({ squaring, hovered, onHover, onPick, edges, 
 			[L[0][0] + L[1][0], L[0][1] + L[1][1]],
 			[L[1][0], L[1][1]],
 		] as [number, number][]).map((p) => [p[0] - centreOfRing[0] + cx, p[1] - centreOfRing[1] + cy]);
-		return { copies: out, project: proj, fills: torusFills(squaring, edges), ring: corners.map(proj) };
-	}, [squaring, edges]);
+		return { copies: out, project: proj, fills: fillsOverride ?? torusFills(squaring, edges), ring: corners.map(proj) };
+	}, [squaring, edges, fillsOverride, reach]);
+
+	const k = ink;
+	const font = FONT * ink;
 
 	// SVG paints in document order and a highlight stroke straddles a shared edge, so the hovered tiles
 	// must come last or their outlines get half-swallowed by whichever neighbour is drawn after them.
@@ -127,17 +158,17 @@ export function SquaredTorusFigure({ squaring, hovered, onHover, onPick, edges, 
 								fill={fills[q.edge]}
 								fillOpacity={isHovered ? 1 : q.centre ? 0.92 : 0.62}
 								stroke={isHovered ? "var(--color-fg)" : "var(--color-line)"}
-								strokeWidth={isHovered ? 4 : 1.2}
+								strokeWidth={(isHovered ? 4 : 1.2) * k}
 							>
 								<title>{`${q.label} — from edge ${q.edge}`}</title>
 							</rect>
-							{labels && q.centre && w > FONT * (q.label.length * 0.62 + 0.6) ? (
+							{labels && q.centre && w > font * (q.label.length * 0.62 + 0.6) ? (
 								<text
 									x={x + w / 2}
 									y={y + w / 2}
 									textAnchor="middle"
 									dominantBaseline="central"
-									fontSize={FONT}
+									fontSize={font}
 									fill={tileInk(fills[q.edge])}
 									className="pointer-events-none font-mono"
 								>
@@ -147,15 +178,18 @@ export function SquaredTorusFigure({ squaring, hovered, onHover, onPick, edges, 
 						</g>
 					);
 				})}
-				<polygon
-					points={ring.map((p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ")}
-					fill="none"
-					stroke="var(--color-fg)"
-					strokeWidth={3.5}
-					strokeDasharray="11 8"
-					className="pointer-events-none"
-				/>
+				{lattice ? (
+					<polygon
+						points={ring.map((p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ")}
+						fill="none"
+						stroke="var(--color-fg)"
+						strokeWidth={3.5 * k}
+						strokeDasharray={`${11 * k} ${8 * k}`}
+						className="pointer-events-none"
+					/>
+				) : null}
 			</svg>
+			{caption ? (
 			<FigureCaption>
 				torus area {squaring.approx ? "≈ " : ""}
 				{squaring.covolume} · order {squaring.order}
@@ -166,6 +200,7 @@ export function SquaredTorusFigure({ squaring, hovered, onHover, onPick, edges, 
 						: ` · ${squaring.distinct} sizes across ${squaring.order} tiles`}
 				{onPick ? " · dashed outline is one fundamental domain" : ""}
 			</FigureCaption>
+			) : null}
 		</div>
 	);
 }

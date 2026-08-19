@@ -5,6 +5,7 @@ import { useIsDark } from "@/components/freedraw/freedraw-canvas";
 import type { FreedrawPattern } from "@/lib/freedraw/pattern";
 import { drawFreedraw, type FreedrawView } from "@/lib/freedraw/render";
 import { syncCanvasSize } from "@/lib/render/canvasSize";
+import { captureOverride, offerFrame } from "@/lib/render/capture";
 import { IDENTITY_DEFORM, type Mat2 } from "@/lib/render/flatView";
 import { resolveDeform, useConfiguration } from "@/stores/configuration";
 
@@ -91,6 +92,9 @@ export function TruchetOverlay({ pattern }: { pattern: FreedrawPattern }) {
 			arcRule: { wiring: arcWiring, twist: arcTwist ? 1 : 0 },
 			dark,
 		});
+		// Export: snapshot this layer in-frame. 2-D contexts keep their bitmap, but going through the same
+		// door as the WebGL layers is what keeps the composite ordered and the sizes in step.
+		if (captureOverride()) offerFrame(canvas);
 	}, [pattern, showScaffold, lineWidth, arcWiring, arcTwist, dark]);
 
 	// One frame loop, running as long as the overlay is up. The flat canvas eases zoom and pan toward

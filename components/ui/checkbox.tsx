@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { Kbd } from "./kbd";
@@ -57,9 +58,11 @@ interface CheckboxProps {
 	disabled?: boolean;
 	/** Keyboard-shortcut key shown as a keycap badge at the right of the row. */
 	shortcut?: string;
+	/** Optional node beside the label — an info dot carrying the control's description, say. */
+	hint?: ReactNode;
 }
 
-export function Checkbox({ id, label, checked, onCheckedChange, disabled = false, shortcut }: CheckboxProps) {
+export function Checkbox({ id, label, checked, onCheckedChange, disabled = false, shortcut, hint }: CheckboxProps) {
 	const toggle = () => {
 		if (disabled) return;
 		onCheckedChange(!checked);
@@ -82,7 +85,10 @@ export function Checkbox({ id, label, checked, onCheckedChange, disabled = false
 			<div className="flex items-center space-x-3 min-w-0">
 				<CheckboxBox id={id} checked={checked} onCheckedChange={onCheckedChange} disabled={disabled} />
 				{label ? (
-					<label className="text-sm font-medium text-fg-secondary cursor-pointer truncate">{label}</label>
+					<span className="flex items-center gap-1.5 min-w-0">
+						<label className="text-sm font-medium text-fg-secondary cursor-pointer truncate">{label}</label>
+						{hint}
+					</span>
 				) : null}
 			</div>
 			{shortcut ? <Kbd>{shortcut}</Kbd> : null}

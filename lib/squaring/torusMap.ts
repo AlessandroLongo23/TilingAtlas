@@ -145,34 +145,56 @@ export function buildTorusMap(cell: TorusCell): { ok: true; map: TorusMap } | { 
 	// along this tile's side, that side is one dart here and two darts there, and nothing pairs. Split
 	// every side at any vertex lying strictly inside it. Without this pass most of the atlas fails to
 	// close up at all, and the ones that do close come out with the wrong Euler characteristic.
-	const reps: [number, number][] = [];
-	for (const [fu, fv] of cellCoord) {
-		for (let du = -1; du <= 1; du++) {
-			for (let dv = -1; dv <= 1; dv++) {
-				const u = fu + du;
-				const v = fv + dv;
-				reps.push([u * a1[0] + v * a2[0], u * a1[1] + v * a2[1]]);
-			}
-		}
-	}
+	//
+	// The translates to test are chosen PER SIDE, from that side's own extent in lattice coordinates.
+	// They used to come from a fixed 3×3 block around the origin cell, which silently assumed the cell's
+	// tiles were drawn near the origin. They are not: an atlas `renderCell` places its tiles wherever the
+	// builder put them, and spans reaching u ∈ [−1.44, 0.78] are ordinary. A T-junction two cells out was
+	// then never a candidate, its side went unsplit, and the map failed to close — which is why the
+	// scaled shelves reported three records in four as "not a consistent quotient" when the cells were
+	// exact (measured 2026-08-19: tile area equalled the basis covolume to the last digit in every one
+	// of the failures sampled). Deriving the range from the segment costs less than the old block, too,
+	// since a side spans about one cell and the ranges below collapse to one or two values each.
 	let tjunctions = 0;
 	const split = (P: readonly [number, number], Q: readonly [number, number]): [number, number][] => {
 		const dx = Q[0] - P[0];
 		const dy = Q[1] - P[1];
 		const len2 = dx * dx + dy * dy;
 		const len = Math.sqrt(len2);
+		const uP = inv[0] * P[0] + inv[1] * P[1];
+		const vP = inv[2] * P[0] + inv[3] * P[1];
+		const uQ = inv[0] * Q[0] + inv[1] * Q[1];
+		const vQ = inv[2] * Q[0] + inv[3] * Q[1];
+		const uLo = Math.min(uP, uQ) - TOL;
+		const uHi = Math.max(uP, uQ) + TOL;
+		const vLo = Math.min(vP, vQ) - TOL;
+		const vHi = Math.max(vP, vQ) + TOL;
+		// "Strictly inside" has to be measured in WORLD units, not in the parameter t. A candidate sitting
+		// exactly on an endpoint comes back as t = 1e-7-ish once the coordinates are a few units from the
+		// origin, and a fixed threshold on t then lets it through: the side gets split at its own corner,
+		// both faces do it symmetrically so every dart still pairs, and the map comes out with one edge too
+		// many and χ = −1. Tying the threshold to the same 1e-6 world tolerance the collinearity test uses
+		// keeps the two agreeing wherever the tiles happen to have been drawn.
+		const tEps = Math.max(1e-9, 1e-6 / len);
 		const hits: { t: number; p: [number, number] }[] = [];
-		for (const R of reps) {
-			const t = ((R[0] - P[0]) * dx + (R[1] - P[1]) * dy) / len2;
-			if (!(t > 1e-7 && t < 1 - 1e-7)) continue;
-			if (Math.abs((R[0] - P[0]) * dy - (R[1] - P[1]) * dx) / len > 1e-6) continue;
-			hits.push({ t, p: R });
+		for (const [fu, fv] of cellCoord) {
+			for (let i = Math.ceil(uLo - fu); i <= Math.floor(uHi - fu); i++) {
+				for (let j = Math.ceil(vLo - fv); j <= Math.floor(vHi - fv); j++) {
+					const u = fu + i;
+					const v = fv + j;
+					const R: [number, number] = [u * a1[0] + v * a2[0], u * a1[1] + v * a2[1]];
+					const t = ((R[0] - P[0]) * dx + (R[1] - P[1]) * dy) / len2;
+					if (!(t > tEps && t < 1 - tEps)) continue;
+					if (Math.abs((R[0] - P[0]) * dy - (R[1] - P[1]) * dx) / len > 1e-6) continue;
+					hits.push({ t, p: R });
+				}
+			}
 		}
 		hits.sort((x, y) => x.t - y.t);
 		const out: [number, number][] = [[P[0], P[1]]];
-		let last = -1;
+		let last = -Infinity;
 		for (const h of hits) {
-			if (Math.abs(h.t - last) < 1e-6) continue;
+			if (h.t - last < tEps) continue;
 			last = h.t;
 			out.push(h.p);
 			tjunctions += 1;

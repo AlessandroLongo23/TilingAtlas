@@ -214,3 +214,21 @@ export const lensAppliesTo = (t: CatalogueTiling | null | undefined) => {
 	const s = surfaceOf(t);
 	return !isDiskSurface(s) && !isSphereSurface(s);
 };
+
+/**
+ * Shelves whose canvas cannot yet be read back into an image export.
+ *
+ * The export draws one frame at the requested size and reads it back inside the render loop
+ * (lib/render/capture.ts), which every host has to opt into. These five draw through hosts that have
+ * not been wired for it — components/freedraw/freedraw-canvas.tsx (freedraw and colors),
+ * components/hollow/hollow-canvas.tsx, components/freedraw/parametric-edges-view.tsx (both parametric
+ * edge shelves). The button is HIDDEN on them rather than left to produce a blank PNG, which is the
+ * failure mode a capture that misses its frame produces and the one most likely to ship unnoticed.
+ */
+const CAPTURE_UNSUPPORTED: ShelfId[] = ["freedraw", "colors", "hollow", "pentEdges", "ihEdges"];
+
+/** Whether /play can export an image of this record. True for a plain tiling (no shelf at all). */
+export const canCaptureImage = (t: CatalogueTiling | null | undefined) => {
+	const shelf = shelfOf(t);
+	return !shelf || !CAPTURE_UNSUPPORTED.includes(shelf.field);
+};

@@ -6,13 +6,15 @@ import { buildCellMesh, type CellMesh } from "@/lib/render/buildCellMesh";
 import { buildOrbitDotMesh, type OrbitDotMesh } from "@/lib/render/buildOrbitDotMesh";
 import { computeFillGrid, fillGridInstances, wrapOffset } from "@/lib/render/flatView";
 import { syncCanvasSize } from "@/lib/render/canvasSize";
+import { captureOverride, offerFrame } from "@/lib/render/capture";
+import { evalWithHue } from "@/lib/render/paramCellRender";
 import {
 	FILL_VERT, FILL_FRAG, STROKE_VERT, STROKE_FRAG, POINTS_VERT, POINTS_FRAG,
 	ORBIT_VERT, ORBIT_FRAG, ORBIT_MAX, POINT_DOT_RADIUS_PX, compileShader,
 } from "@/lib/render/flatTilingGL";
 import { ORBIT_DOT_RADIUS_PX, hoveredOrbitAt, parseDimTarget, stepOrbitScales } from "@/lib/render/orbitHover";
 import { getOrbitHoverWorld } from "@/lib/render/orbitHoverBridge";
-import { evaluateParamCell, resolveAlphaDegs, resolveAlphaDegsRaw, type ParametricCellData } from "@/lib/utils/paramCell";
+import { resolveAlphaDegs, resolveAlphaDegsRaw, type ParametricCellData } from "@/lib/utils/paramCell";
 import { useFamilyAlphas } from "@/stores/familyAlphas";
 import { Vector } from "@/classes/Vector";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
@@ -270,7 +272,7 @@ export function EuclideanCanvas({ translationalCell, translationalCellId, paramC
 				const sig = alphas.map((a) => a.toFixed(2)).join(",");
 				if (sig !== lastSigRef.current) {
 					lastSigRef.current = sig;
-					const mesh = buildCellMesh(evaluateParamCell(pc, alphas));
+					const mesh = buildCellMesh(evalWithHue(pc, alphas));
 					if (mesh) uploadMesh(g, mesh);
 				}
 			}
@@ -524,6 +526,10 @@ export function EuclideanCanvas({ translationalCell, translationalCellId, paramC
 				g.drawArraysInstanced(g.TRIANGLES, 0, orbitMesh.vertexCount, instRef.current.count);
 				g.useProgram(progRef.current); // restore the fill program for next frame's fill pass
 			}
+
+			// Export: snapshot this layer while the frame is still in the drawing buffer. The context has no
+			// preserveDrawingBuffer, so a read from anywhere but here comes back blank (lib/render/capture.ts).
+			if (captureOverride()) offerFrame(canvas);
 		};
 		raf = requestAnimationFrame(render);
 
@@ -573,7 +579,7 @@ export function EuclideanCanvas({ translationalCell, translationalCellId, paramC
 		const gl = glRef.current;
 		if (!gl || !orbitPosBufRef.current) return;
 		const cell = paramCell
-			? evaluateParamCell(paramCell, resolveAlphaDegs(paramCell, useFamilyAlphas.getState().values))
+			? evalWithHue(paramCell, resolveAlphaDegs(paramCell, useFamilyAlphas.getState().values))
 			: translationalCell;
 		uploadOrbitMesh(gl, buildOrbitDotMesh(cell, orbitData));
 	}, [translationalCellId, translationalCell, paramCell, orbitData]);

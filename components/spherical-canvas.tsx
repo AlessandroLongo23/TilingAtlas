@@ -6,6 +6,7 @@ import { ArcballControls } from "three/examples/jsm/controls/ArcballControls.js"
 import { useConfiguration } from "@/stores/configuration";
 import { polyhedronForId } from "@/lib/render/sphericalSolids";
 import { measureBox } from "@/lib/render/canvasSize";
+import { captureOverride, offerFrame } from "@/lib/render/capture";
 import { createSphere, type Sphere } from "@/lib/render/sphericalScene";
 import { buildFlatSolid, type FlatSolid } from "@/lib/render/sphericalPolyhedron";
 import { buildWireframe, type Wireframe } from "@/lib/render/sphericalWireframe";
@@ -205,6 +206,7 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 			};
 		}
 
+		let capRatio = 1;
 		const animate = () => {
 			const controls = controlsRef.current;
 			const cam = cameraRef.current;
@@ -212,14 +214,23 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 			// arrives a render later gets rescaled into the new box while a layout transition (the /play
 			// fullscreen toggle) is running, which reads as the sphere squashing and springing back.
 			// See lib/render/canvasSize.ts.
-			const { w, h } = measureBox(host);
-			if (w > 0 && h > 0 && (w !== boxRef.current.w || h !== boxRef.current.h)) {
+			// An export in flight (lib/render/capture.ts) outranks the host box, the same override the flat
+			// and hyperbolic layers get through syncCanvasSize: the sphere is rendered at the requested
+			// aspect and resolution, then read back below while the frame is still in the drawing buffer.
+			// setSize's third argument stays false, so the element's CSS box never moves and nothing reflows.
+			const cap = captureOverride();
+			const ratio = cap ? cap.dpr : 1;
+			const { w, h } = cap ? { w: cap.w, h: cap.h } : measureBox(host);
+			if (w > 0 && h > 0 && (w !== boxRef.current.w || h !== boxRef.current.h || ratio !== capRatio)) {
 				boxRef.current = { w, h };
+				capRatio = ratio;
+				renderer.setPixelRatio(ratio);
 				renderer.setSize(w, h, false);
 				if (cam) applyCameraAspect(cam, w, h, orthoHalfHeightFor(fitRef.current));
 			}
 			if (controls) controls.update();
 			if (cam) renderer.render(scene, cam);
+			if (cap) offerFrame(renderer.domElement);
 			rafRef.current = requestAnimationFrame(animate);
 		};
 		rafRef.current = requestAnimationFrame(animate);

@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { resolveDeform, useConfiguration } from "@/stores/configuration";
 import { useDebug, debugManager, updateDebugStore } from "@/stores/debug";
-import { useScreenshotPreview } from "@/stores/screenshotPreview";
 import { useLegacyTilingStore } from "@/stores/legacyTilingStore";
 import { Vector } from "@/classes/Vector";
 import { Tiling } from "@/classes/Tiling";
@@ -17,7 +16,7 @@ import {
 	prefersReducedMotion,
 	waveTileScale,
 } from "@/lib/utils/tilingTransition";
-import { evaluateParamCell, resolveAlphaDegsRaw, clampAlphaOnly, nearestInRegionDeg, renderAlphaDegs, type ParametricCellData } from "@/lib/utils/paramCell";
+import { LENGTH_STEP, evaluateParamCell, resolveAlphaDegsRaw, clampAlphaOnly, nearestInRegionDeg, renderAlphaDegs, type ParametricCellData } from "@/lib/utils/paramCell";
 import {
 	screenToWorld,
 	worldToScreen,
@@ -66,6 +65,7 @@ import { IslamicCanvas } from "./islamic-canvas";
 import { StrapCanvas } from "./strap-canvas";
 import { setOrbitHoverWorld } from "@/lib/render/orbitHoverBridge";
 import { measureBox } from "@/lib/render/canvasSize";
+import { captureOverride, offerFrame } from "@/lib/render/capture";
 import type { TranslationalCellData as FlatCellData } from "@/lib/utils/renderTiling";
 
 interface CanvasProps {
@@ -107,6 +107,11 @@ const CLICK_SNAP_RADIUS_PX = 12;
 // views settle in step. (The lattice/fill helpers this file used to define locally now live in
 // lib/render/flatView.ts — see the import above.)
 const ALPHA_DEG_PER_PX = 0.25;
+// A LENGTH parameter is not measured in degrees, and reusing the angle rate makes the gesture useless:
+// a length slider spans 0.1..3, so 0.25 per pixel crosses the whole family in twelve pixels. Scaled to
+// the parameter's own span (about 350 px end to end) and quantised to the slider's own step, so the
+// drag, the slider and the clamp all agree on the values they can reach.
+const LENGTH_DRAG_PX = 350;
 const ALPHA_DAMP = 0.2;
 // Draw-time off-screen cull. Returns a predicate on a world-space centroid: true iff the tile may touch
 // the viewport. The world -> centered-screen map here is the SAME one as screenLatticeVectors (in
@@ -328,7 +333,6 @@ export function Canvas({
 
 	const debugEnabled = useDebug((s) => s.isEnabled);
 	const debugPhases = useDebug((s) => s.timingData.phases.length);
-	const openScreenshotPreview = useScreenshotPreview((s) => s.open);
 	const selectedRule = useConfiguration((s) => s.selectedTiling.rulestring);
 	const colorParams = useConfiguration((s) => s.colorParams);
 	const setCfg = useConfiguration((s) => s.set);
@@ -339,7 +343,11 @@ export function Canvas({
 	// Narrow subscriptions (the `*Sel` suffix) feeding the EuclideanCanvas mount gate: each is its own
 	// selector so a change to one re-renders this component to (un)mount the shader canvas.
 	const euclideanShader = useConfiguration((s) => s.euclideanShader);
-	const isIslamicSel = useConfiguration((s) => s.isIslamic);
+	// AND `!squaring`: the Islamic construction decorates the SELECTED tiling, and while the squared torus
+	// is up that is not what this canvas is drawing. Folded in here rather than at each of the three gates
+	// below (the p5 fill skip, IslamicCanvas, StrapCanvas), so a flag left on from the previous selection
+	// cannot reach any of them.
+	const isIslamicSel = useConfiguration((s) => s.isIslamic && !s.squaring);
 	const circlePackingSel = useConfiguration((s) => s.circlePacking);
 	const inversiveSel = useConfiguration((s) => s.inversive);
 	const hyperbolicSel = useConfiguration((s) => s.hyperbolic);
@@ -626,91 +634,14 @@ export function Canvas({
 				}
 			};
 
-			const drawScreenshotOverlay = () => {
-				p5.push();
-				p5.resetMatrix();
-				const sss = 600;
-				p5.noStroke();
-				p5.fill(0, 0, 0, 0.5);
-				p5.rect(0, 0, p5.width / 2 - sss / 2, p5.height);
-				p5.rect(p5.width / 2 + sss / 2, 0, p5.width / 2 - sss / 2, p5.height);
-				p5.rect(p5.width / 2 - sss / 2, 0, sss, p5.height / 2 - sss / 2);
-				p5.rect(p5.width / 2 - sss / 2, p5.height / 2 + sss / 2, sss, p5.height / 2 - sss / 2);
-				p5.pop();
-			};
-
-			const takeScreenshotImpl = (cfg: ReturnType<typeof readCfg>, tiling: Tiling) => {
-				const filename = `${cfg.selectedTiling.rulestring}.png`;
-				const g = p5.createGraphics(300, 300);
-				g.pixelDensity(1);
-				g.colorMode(p5.HSB, 360, 100, 100);
-				g.translate(0, 300);
-				g.scale(0.5, -0.5);
-				g.background(240, 7, 16);
-				g.translate(300, 300);
-				g.stroke(0);
-				// A small fixed 3x3 patch -> deterministic thumbnail independent of play-mode zoom. Use the
-				// active cell so a parametric family's screenshot captures the current slider position.
-				const tc = activeCellRef.current ?? propsRef.current.translationalCell;
-				const patch = tc ? buildTilingFromCell(tc, 1, 1) : tiling;
-
-				// The screenshot carries the view deformation (AL, 2026-08-18): a sheared picture on screen
-				// produces a sheared thumbnail. The auto-fit below then frames the DEFORMED patch, and
-				// g.strokeWeight(2 / fit) keeps meaning the same 2 px, so nothing else has to change.
-				const dfm = resolveDeform(cfg);
-				const place = isIdentityDeform(dfm)
-					? (v: { x: number; y: number }) => v
-					: (v: { x: number; y: number }) => applyMat2(dfm, v.x, v.y);
-
-				let maxX = 0, maxY = 0, minX = 0, minY = 0;
-				for (const n of patch.nodes) {
-					for (const raw of n.vertices) {
-						const v = place(raw);
-						if (v.x > maxX) maxX = v.x;
-						if (v.y > maxY) maxY = v.y;
-						if (v.x < minX) minX = v.x;
-						if (v.y < minY) minY = v.y;
-					}
-				}
-				const bw = Math.max(maxX - minX, 1e-6);
-				const bh = Math.max(maxY - minY, 1e-6);
-				// The outer transform maps a 600x600 world box onto the 300px buffer; fit the patch in.
-				const fit = 0.9 * Math.min(600 / bw, 600 / bh);
-				g.strokeWeight(2 / fit);
-				g.scale(fit);
-				g.translate(-(maxX + minX) / 2, -(maxY + minY) / 2);
-
-				for (const n of patch.nodes) {
-					g.push();
-					g.fill(((n.hue ?? 0) + (cfg.hueOffset || 0)) % 360, 40, 100, 1.0);
-					g.beginShape();
-					// Deformed at EMIT time, not through g.applyMatrix: a 2-D context transform carries the
-					// stroke with it, so a sheared matrix would thicken the outline one way and thin it the
-					// other. The context stays a plain scale, and strokeWeight keeps its screen meaning.
-					for (const raw of n.vertices) { const v = place(raw); g.vertex(v.x, v.y); }
-					g.endShape(g.CLOSE);
-					g.pop();
-				}
-				const imageDataUrl = g.elt.toDataURL("image/png");
-				g.remove();
-
-				const baseRule = cfg.selectedTiling.rulestring.replace(/\*$/, "");
-				const store = useLegacyTilingStore.getState();
-				const db =
-					store.getTilingByRulestring(cfg.selectedTiling.rulestring) ??
-					store.getTilingByRulestring(baseRule);
-				openScreenshotPreview({
-					imageDataUrl,
-					filename,
-					rulestring: cfg.selectedTiling.rulestring,
-					groupId: db?.group_id ?? null,
-					allowSupabaseUpload: true,
-				});
-			};
+			// p5 picks its own pixel density at setup (the display's). A capture overrides it for a few
+			// frames and has to put it back exactly, so record it rather than assuming 1.
+			let baseDensity = 1;
 
 			p5.setup = () => {
 				const { w, h } = hostBox();
 				p5.createCanvas(w, h);
+				baseDensity = p5.pixelDensity();
 				prevRef.current.width = w;
 				prevRef.current.height = h;
 				p5.colorMode(p5.HSB, 360, 100, 100);
@@ -772,11 +703,27 @@ export function Canvas({
 				// React state is a render behind, so while the fullscreen toggle animates the layout the p5
 				// canvas would sit smaller than its container and the overlays would drift off the shader fill
 				// underneath. p5's draw runs in the same rAF slot the WebGL loops do, so both agree per frame.
-				const { w, h } = hostBox();
-				if (w > 0 && h > 0 && (w !== prevRef.current.width || h !== prevRef.current.height)) {
+				// An export in flight (lib/render/capture.ts) outranks the host box, the same way it outranks
+				// the CSS box in syncCanvasSize for the WebGL layers. It has to: the overlays this layer owns
+				// — symmetry elements, the fundamental domain, construction points — must land in the export
+				// registered with the shader fill underneath, which means the same projection box.
+				const cap = captureOverride();
+				const box = cap ? { w: cap.w, h: cap.h } : hostBox();
+				const density = cap ? cap.dpr : baseDensity;
+				const { w, h } = box;
+				if (w > 0 && h > 0 && (w !== prevRef.current.width || h !== prevRef.current.height || p5.pixelDensity() !== density)) {
+					p5.pixelDensity(density);
 					p5.resizeCanvas(w, h);
 					prevRef.current.width = w;
 					prevRef.current.height = h;
+				}
+				// resizeCanvas writes the CSS size along with the backing store, and this canvas sits in a
+				// `relative` container — left alone, a 4K capture would reflow the page around it for the
+				// three frames the request lasts. Pin the style back to the box the page actually has.
+				if (cap) {
+					const host = hostBox();
+					p5.canvas.style.width = `${host.w}px`;
+					p5.canvas.style.height = `${host.h}px`;
 				}
 
 				p5.clear();
@@ -947,7 +894,6 @@ export function Canvas({
 					}
 					p5.pop();
 
-					if (cfg.screenshotButtonHover) drawScreenshotOverlay();
 					}
 				} catch (e) {
 					showCanvasError(e instanceof Error ? e.message : String(e));
@@ -959,15 +905,14 @@ export function Canvas({
 					ctrl.targetOffset.add(Vector.sub(mouse, prevMouse));
 				}
 
-				if (cfg.takeScreenshot && tiling) {
-					takeScreenshotImpl(cfg, tiling);
-					useConfiguration.setState({ takeScreenshot: false });
-				}
 				if (cfg.exportGraph && tiling) {
 					if (gridStale) ensureTiling(true);
 					tilingRef.current!.exportGraph();
 					useConfiguration.setState({ exportGraph: false });
 				}
+
+				// Export: snapshot this layer in-frame, after every overlay has been drawn.
+				if (cap) offerFrame(p5.canvas);
 			};
 
 			p5.mousePressed = (event?: MouseEvent) => {
@@ -1162,8 +1107,21 @@ export function Canvas({
 				const fa = useFamilyAlphas.getState();
 				const cur = resolveAlphaDegsRaw(pc, fa.values); // clamp-only, off-grid — the continuous scrub base
 				let next = cur.slice();
-				next[0] = clampAlphaOnly(pc, 0, cur[0] + dx * ALPHA_DEG_PER_PX);
-				if (pc.params.length >= 2) next[1] = clampAlphaOnly(pc, 1, cur[1] - dy * ALPHA_DEG_PER_PX);
+				// Per-pixel rate is a property of the PARAMETER, not of the gesture: degrees for an angle,
+				// a fraction of its own range for a length, snapped to the step the slider uses.
+				const rateOf = (j: number) => {
+					const par = pc.params[j];
+					if (par?.kind !== "length") return { rate: ALPHA_DEG_PER_PX, step: 0 };
+					const [lo, hi] = par.alphaRangeDegOpen;
+					return { rate: (hi - lo) / LENGTH_DRAG_PX, step: LENGTH_STEP };
+				};
+				const snap = (v: number, step: number) => (step ? Math.round(v / step) * step : v);
+				const r0 = rateOf(0);
+				next[0] = clampAlphaOnly(pc, 0, snap(cur[0] + dx * r0.rate, r0.step));
+				if (pc.params.length >= 2) {
+					const r1 = rateOf(1);
+					next[1] = clampAlphaOnly(pc, 1, snap(cur[1] - dy * r1.rate, r1.step));
+				}
 				// A coupled family's valid set is a POLYGON, not the box those two clamps describe, so a diagonal
 				// scrub can leave it. Slide along the boundary (the same projection the 2-D pad uses) instead of
 				// letting the evaluator's walk-back yank the tiling back toward the family default mid-gesture.
