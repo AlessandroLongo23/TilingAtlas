@@ -19,6 +19,7 @@ import type { ReferenceTiling } from "@/lib/services/referenceAtlas";
 import { applyMergePlan } from "./merge-plan";
 import { applyRangePlan, rangeNote, type RangePlan } from "./range-plan";
 import { applyCoupledPlan } from "./coupled-plan";
+import { stringifyAtlas } from './atlas/encode.mjs';
 
 interface FamilyRecord {
 	id: string;
@@ -230,7 +231,7 @@ function main(): void {
 	const MAIN_MAX_K = 2;
 	const main_ = final.filter((t) => t.k <= MAIN_MAX_K);
 	const shardKs = [...new Set(final.filter((t) => t.k > MAIN_MAX_K).map((t) => t.k))].sort((a, b) => a - b);
-	fs.writeFileSync(OUT_PATH, JSON.stringify(main_, null, 0) + "\n");
+	fs.writeFileSync(OUT_PATH, stringifyAtlas(main_) + "\n");
 	for (const k of shardKs) {
 		const p = OUT_PATH.replace(/\.json$/, `-k${k}.json`);
 		fs.writeFileSync(p, JSON.stringify(final.filter((t) => t.k === k), null, 0) + "\n");

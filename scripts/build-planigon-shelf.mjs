@@ -18,6 +18,7 @@
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
+import { stringifyAtlas } from './atlas/encode.mjs';
 
 const ARGS = process.argv.slice(2);
 if (!ARGS.length) {
@@ -182,6 +183,6 @@ for (const k of [...byK.keys()].sort((a, b) => a - b)) {
 	});
 }
 writeFileSync(path.join(OUT, 'manifest.json'), JSON.stringify(manifest, null, 2));
-writeFileSync(path.join(PUB, 'reference-atlas-planigon.json'), JSON.stringify(ref));
+writeFileSync(path.join(PUB, 'reference-atlas-planigon.json'), stringifyAtlas(ref));
 console.log(`  atlas shelf: ${ref.length} entries -> public/reference-atlas-planigon.json`);
 console.log(`planigon: ${distinct.length} distinct tilings, shape err ${worstShape.toExponential(2)}, area err ${worstArea.toExponential(2)}, angle err ${worstAngle.toExponential(2)}° — certified`);

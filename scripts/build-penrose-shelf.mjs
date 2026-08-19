@@ -27,6 +27,7 @@
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
+import { stringifyAtlas } from './atlas/encode.mjs';
 
 const ARGS = process.argv.slice(2);
 if (!ARGS.length) {
@@ -318,7 +319,7 @@ for (const k of [...byK.keys()].sort((a, b) => a - b)) {
 		id: `penrose-${k}-${String(i + 1).padStart(5, '0')}`,
 		k, T1: e.T1, T2: e.T2, seeds: e.seeds, faces: e.faces, stats: e.stats,
 	}));
-	writeFileSync(path.join(OUT, `penrose-k${k}.json`), JSON.stringify(rows));
+	writeFileSync(path.join(OUT, `penrose-k${k}.json`), stringifyAtlas(rows));
 	manifest.k.push({ k, count: rows.length, file: `/penrose/penrose-k${k}.json` });
 	console.log(`  k=${k}: ${rows.length} tilings -> public/penrose/penrose-k${k}.json`);
 	byK.get(k).forEach((e, i) => {
@@ -355,11 +356,11 @@ writeFileSync(path.join(OUT, 'manifest.json'), JSON.stringify(manifest, null, 2)
 // k<=3 eager, deeper tiers as lazy shards — the split the mixed, scaled, period and tri45 shelves all
 // use. The whole shelf as one eager file is 18.7 MB on every page load; the eager tier is ~0.5 MB.
 const eager = ref.filter((r) => r.k <= 3);
-writeFileSync(path.join(PUB, 'reference-atlas-penrose.json'), JSON.stringify(eager));
+writeFileSync(path.join(PUB, 'reference-atlas-penrose.json'), stringifyAtlas(eager));
 console.log(`  atlas shelf: ${eager.length} entries (k<=3, eager) -> public/reference-atlas-penrose.json`);
 for (const k of [...new Set(ref.filter((r) => r.k > 3).map((r) => r.k))].sort((a, b) => a - b)) {
 	const rows = ref.filter((r) => r.k === k);
-	writeFileSync(path.join(PUB, `reference-atlas-penrose-k${k}.json`), JSON.stringify(rows));
+	writeFileSync(path.join(PUB, `reference-atlas-penrose-k${k}.json`), stringifyAtlas(rows));
 	console.log(`               ${rows.length} entries -> public/reference-atlas-penrose-k${k}.json (lazy)`);
 }
 console.log(`penrose: ${distinct.length} distinct tilings, shape err ${worstShape.toExponential(2)}, area err ${worstArea.toExponential(2)}, angle err ${worstAngle.toExponential(2)}° — certified`);

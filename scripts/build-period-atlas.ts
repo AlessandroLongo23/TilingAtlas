@@ -30,6 +30,7 @@ import { exactComposableKeys, type ExactComposableCell } from "@/classes/algorit
 import { evaluateParamCell, type ParametricCellData } from "@/lib/utils/paramCell";
 import { applyRangePlan, applyRegionPlan, rangeNote, regionNote, type RangePlan } from "./range-plan";
 import type { ReferenceTiling } from "@/lib/services/referenceAtlas";
+import { stringifyAtlas } from './atlas/encode.mjs';
 
 const ROOT = path.resolve(__dirname, "..");
 const IN_DIR = path.join(ROOT, "experiments", "period-oracle");
@@ -584,14 +585,14 @@ function main(): void {
 	const main_ = shipping.filter((t) => t.k <= MAIN_MAX_K);
 	const shardKs = [...new Set(shipping.filter((t) => t.k > MAIN_MAX_K).map((t) => t.k))].sort((a, b) => a - b);
 	const sizeKB = (p: string): string => (fs.statSync(p).size / 1024).toFixed(1);
-	fs.writeFileSync(OUT_PATH, JSON.stringify(main_, null, 0) + "\n");
+	fs.writeFileSync(OUT_PATH, stringifyAtlas(main_) + "\n");
 	log("");
 	log(`=== period atlas written (main + ${shardKs.length} shard${shardKs.length === 1 ? "" : "s"}) ===`);
 	log(`  main  k≤${MAIN_MAX_K}: ${main_.length} tilings → ${path.relative(ROOT, OUT_PATH)}  (${sizeKB(OUT_PATH)} KB)`);
 	for (const k of shardKs) {
 		const entries = shipping.filter((t) => t.k === k);
 		const p = shardPath(k);
-		fs.writeFileSync(p, JSON.stringify(entries, null, 0) + "\n");
+		fs.writeFileSync(p, stringifyAtlas(entries) + "\n");
 		log(`  shard k=${k}: ${entries.length} tilings → ${path.relative(ROOT, p)}  (${sizeKB(p)} KB)`);
 	}
 	for (const f of fs.readdirSync(PUBLIC_DIR)) {

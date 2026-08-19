@@ -35,6 +35,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { trueVertexOrbitCount } from "@/classes/algorithm/composable/canonicalTilingKey";
 import { exactComposableKeys, type ExactComposableCell } from "@/classes/algorithm/composable/exactComposableDedup";
+import { stringifyAtlas } from './atlas/encode.mjs';
 
 // The 7 composite convex tiles that dissect into regular polygons (the decomposable palette).
 const DECOMPOSABLE = new Set([
@@ -313,14 +314,14 @@ function main(): void {
 	const shardKs = [...new Set(deduped.filter((t) => t.k > MAIN_MAX_K).map((t) => t.k))].sort((a, b) => a - b);
 	const sizeKB = (p: string): string => (fs.statSync(p).size / 1024).toFixed(1);
 
-	fs.writeFileSync(OUT_PATH, JSON.stringify(main, null, 0) + "\n");
+	fs.writeFileSync(OUT_PATH, stringifyAtlas(main) + "\n");
 	log("");
 	log(`=== composable atlas written (main + ${shardKs.length} shard${shardKs.length === 1 ? "" : "s"}) ===`);
 	log(`  main  k≤${MAIN_MAX_K}: ${main.length} tilings → ${path.relative(ROOT, OUT_PATH)}  (${sizeKB(OUT_PATH)} KB)`);
 	for (const k of shardKs) {
 		const entries = deduped.filter((t) => t.k === k);
 		const p = shardPath(k);
-		fs.writeFileSync(p, JSON.stringify(entries, null, 0) + "\n");
+		fs.writeFileSync(p, stringifyAtlas(entries) + "\n");
 		log(`  shard k=${k}: ${entries.length} tilings → ${path.relative(ROOT, p)}  (${sizeKB(p)} KB)`);
 	}
 

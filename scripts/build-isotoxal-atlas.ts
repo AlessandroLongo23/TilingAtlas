@@ -23,6 +23,7 @@ import path from "node:path";
 import { evaluateParamCell, type ParametricCellData } from "@/lib/utils/paramCell";
 import type { ReferenceTiling } from "@/lib/services/referenceAtlas";
 import { applyMergePlan } from "./merge-plan";
+import { stringifyAtlas } from './atlas/encode.mjs';
 
 interface FamilyRecord {
 	id: string;
@@ -144,12 +145,12 @@ function main(): void {
 	// k≤MAIN_MAX_K → eager main file; each higher k → its own lazy shard.
 	const main = shipped.filter((t) => t.k <= MAIN_MAX_K);
 	const shardKs = [...new Set(shipped.filter((t) => t.k > MAIN_MAX_K).map((t) => t.k))].sort((a, b) => a - b);
-	fs.writeFileSync(OUT_PATH, JSON.stringify(main, null, 0) + "\n");
+	fs.writeFileSync(OUT_PATH, stringifyAtlas(main) + "\n");
 	log(`  main k≤${MAIN_MAX_K}: ${main.length} families → ${path.relative(ROOT, OUT_PATH)} (${sizeKB(OUT_PATH)} KB)`);
 	for (const k of shardKs) {
 		const entries = shipped.filter((t) => t.k === k);
 		const p = shardPath(k);
-		fs.writeFileSync(p, JSON.stringify(entries, null, 0) + "\n");
+		fs.writeFileSync(p, stringifyAtlas(entries) + "\n");
 		log(`  shard k=${k}: ${entries.length} families → ${path.relative(ROOT, p)} (${sizeKB(p)} KB)`);
 	}
 	// Drop any orphaned isotoxal shard from a prior build (a k that no longer has entries).
