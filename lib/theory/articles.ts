@@ -48,6 +48,11 @@ export const THEORY_ARTICLES: TheoryArticle[] = [
 		blurb: "The design systems behind Islamic star patterns: the tessellations underneath, with interactive previews of the curated tilings.",
 	},
 	{
+		slug: "perfect-rectangles",
+		title: "Every polyhedron hides a squared rectangle",
+		blurb: "Brooks, Smith, Stone and Tutte turned a rectangle cut into unequal squares into an electrical circuit, and the circuit into a convex polyhedron. Run backwards over this catalogue's own solids: 667 rectangles across 105 of them, and why symmetry is what stops them being perfect.",
+	},
+	{
 		slug: "hyperbolic",
 		title: "Why the hyperbolic catalogue stops where it does",
 		blurb: "The hyperbolic tilings never run out, so the enumeration is bounded by palette, valence and uniformity. What identifies a tiling when its vertex configuration cannot, and where the search hits its limit.",

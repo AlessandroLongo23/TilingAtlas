@@ -9,6 +9,8 @@ import { TheoryArticleNav } from "@/components/theory-article-nav";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { InteractiveTilingPreviewCard, CARD_LAYOUT_SPRING } from "@/components/interactive-tiling-preview-card";
 import { HyperbolicFigureCard } from "@/components/hyperbolic-figure-card";
+import { SquaringExampleCard } from "@/components/squaring/squaring-example-card";
+import type { PipelineRecord } from "@/lib/squaring/shelf";
 import { PreviewOverlayScope } from "@/lib/hooks/usePreviewOverlays";
 import { orbitsFor } from "@/lib/defense/orbitCache";
 import { symmetryFor } from "@/lib/services/symmetryCache";
@@ -32,6 +34,11 @@ interface TheoryClientProps {
 	 * Only the ones an article actually shows — the full catalogue is 11.6 MB.
 	 */
 	patches?: Record<string, CataloguePatch>;
+	/**
+	 * Solid id -> its pipeline record, resolved on the server. Only the handful an article embeds; the
+	 * full shelf is 607 rectangles across 5 MB of shards.
+	 */
+	squarings?: Record<string, PipelineRecord>;
 	/** The current article's slug, for the sidebar article switcher. */
 	currentSlug: string;
 }
@@ -47,6 +54,11 @@ interface TilingCardTagProps {
 interface HyperbolicCardTagProps {
 	patch?: string;
 	label?: string;
+	caption?: string;
+}
+
+interface SquaringCardTagProps {
+	solid?: string;
 	caption?: string;
 }
 
@@ -93,7 +105,7 @@ function AnimatedCardGrid({ cols, children }: { cols?: string; children?: React.
 	);
 }
 
-export function TheoryClient({ content, sections, cells, sources, patches, currentSlug }: TheoryClientProps) {
+export function TheoryClient({ content, sections, cells, sources, patches, squarings, currentSlug }: TheoryClientProps) {
 	const [targetSection, setTargetSection] = useState("");
 	const [activeSection, setActiveSection] = useState("");
 	const progressRef = useRef<HTMLDivElement | null>(null);
@@ -147,13 +159,27 @@ export function TheoryClient({ content, sections, cells, sources, patches, curre
 				}
 				return <HyperbolicFigureCard patchId={patch} patch={record} label={label} caption={caption} />;
 			},
+			// <squaring-card solid="cube" caption="…">
+			// The solid beside the rectangle it produces, hover-linked, with a button through to the
+			// four-stage pipeline page for the same solid.
+			"squaring-card": ({ solid, caption }: SquaringCardTagProps) => {
+				const record = solid ? squarings?.[solid] : undefined;
+				if (!record) {
+					return (
+						<div className="not-prose flex aspect-square items-center justify-center border border-line bg-surface-overlay/30 p-4 text-center text-xs text-fg-muted">
+							Unknown squaring: {solid ?? "(none)"}
+						</div>
+					);
+				}
+				return <SquaringExampleCard record={record} caption={caption} />;
+			},
 			// <card-grid cols="3"> … </card-grid> — a responsive grid for a run of cards. Mapped to a
 			// component (not authored classes) so Tailwind never needs to scan the markdown,
 			// and so expansion can animate the whole neighbourhood (see AnimatedCardGrid).
 			"card-grid": AnimatedCardGrid,
 		};
 		return map as unknown as Components;
-	}, [cells, sources, patches]);
+	}, [cells, sources, patches, squarings]);
 
 	return (
 		// One overlay scope for the whole article: o / s / d with no card focused toggle every preview

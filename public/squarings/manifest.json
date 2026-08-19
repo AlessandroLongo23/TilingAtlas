@@ -1,0 +1,2736 @@
+{
+	"polyhedra": 105,
+	"squarings": 667,
+	"entries": [
+		{
+			"id": "tetrahedron",
+			"name": "Tetrahedron",
+			"source": "solid",
+			"counts": {
+				"vertices": 4,
+				"edges": 6,
+				"faces": 4
+			},
+			"symmetryOrder": null,
+			"squarings": 1,
+			"perfect": 0,
+			"simple": 0,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "2",
+				"height": "2",
+				"order": 4,
+				"distinct": 1,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "octahedron",
+			"name": "Octahedron",
+			"source": "solid",
+			"counts": {
+				"vertices": 6,
+				"edges": 12,
+				"faces": 8
+			},
+			"symmetryOrder": null,
+			"squarings": 1,
+			"perfect": 0,
+			"simple": 0,
+			"best": {
+				"battery": [
+					0,
+					2
+				],
+				"width": "14",
+				"height": "10",
+				"order": 11,
+				"distinct": 4,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "icosahedron",
+			"name": "Icosahedron",
+			"source": "solid",
+			"counts": {
+				"vertices": 12,
+				"edges": 30,
+				"faces": 20
+			},
+			"symmetryOrder": null,
+			"squarings": 1,
+			"perfect": 0,
+			"simple": 0,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "38",
+				"height": "22",
+				"order": 25,
+				"distinct": 5,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "cube",
+			"name": "Cube",
+			"source": "solid",
+			"counts": {
+				"vertices": 8,
+				"edges": 12,
+				"faces": 6
+			},
+			"symmetryOrder": null,
+			"squarings": 1,
+			"perfect": 0,
+			"simple": 0,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "10",
+				"height": "14",
+				"order": 11,
+				"distinct": 4,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "dodecahedron",
+			"name": "Dodecahedron",
+			"source": "solid",
+			"counts": {
+				"vertices": 20,
+				"edges": 30,
+				"faces": 12
+			},
+			"symmetryOrder": null,
+			"squarings": 1,
+			"perfect": 0,
+			"simple": 0,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "22",
+				"height": "38",
+				"order": 25,
+				"distinct": 5,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "truncated-tetrahedron",
+			"name": "Truncated tetrahedron",
+			"source": "solid",
+			"counts": {
+				"vertices": 12,
+				"edges": 18,
+				"faces": 8
+			},
+			"symmetryOrder": null,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 0,
+			"best": {
+				"battery": [
+					0,
+					4
+				],
+				"width": "26",
+				"height": "34",
+				"order": 16,
+				"distinct": 8,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "cuboctahedron",
+			"name": "Cuboctahedron",
+			"source": "solid",
+			"counts": {
+				"vertices": 12,
+				"edges": 24,
+				"faces": 14
+			},
+			"symmetryOrder": null,
+			"squarings": 1,
+			"perfect": 0,
+			"simple": 0,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "26",
+				"height": "22",
+				"order": 21,
+				"distinct": 7,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "truncated-cube",
+			"name": "Truncated cube",
+			"source": "solid",
+			"counts": {
+				"vertices": 24,
+				"edges": 36,
+				"faces": 14
+			},
+			"symmetryOrder": null,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 0,
+			"best": {
+				"battery": [
+					0,
+					6
+				],
+				"width": "50",
+				"height": "70",
+				"order": 31,
+				"distinct": 9,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "truncated-octahedron",
+			"name": "Truncated octahedron",
+			"source": "solid",
+			"counts": {
+				"vertices": 24,
+				"edges": 36,
+				"faces": 14
+			},
+			"symmetryOrder": null,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 1,
+			"best": {
+				"battery": [
+					0,
+					2
+				],
+				"width": "766",
+				"height": "1250",
+				"order": 35,
+				"distinct": 17,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "rhombicuboctahedron",
+			"name": "Rhombicuboctahedron",
+			"source": "solid",
+			"counts": {
+				"vertices": 24,
+				"edges": 48,
+				"faces": 26
+			},
+			"symmetryOrder": null,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 1,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "558",
+				"height": "562",
+				"order": 47,
+				"distinct": 22,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "truncated-cuboctahedron",
+			"name": "Truncated cuboctahedron",
+			"source": "solid",
+			"counts": {
+				"vertices": 48,
+				"edges": 72,
+				"faces": 26
+			},
+			"symmetryOrder": null,
+			"squarings": 3,
+			"perfect": 0,
+			"simple": 3,
+			"best": {
+				"battery": [
+					0,
+					8
+				],
+				"width": "78202",
+				"height": "127718",
+				"order": 71,
+				"distinct": 37,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "snub-cube",
+			"name": "Snub cube",
+			"source": "solid",
+			"counts": {
+				"vertices": 24,
+				"edges": 60,
+				"faces": 38
+			},
+			"symmetryOrder": null,
+			"squarings": 3,
+			"perfect": 0,
+			"simple": 2,
+			"best": {
+				"battery": [
+					0,
+					4
+				],
+				"width": "47758",
+				"height": "28274",
+				"order": 59,
+				"distinct": 52,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "icosidodecahedron",
+			"name": "Icosidodecahedron",
+			"source": "solid",
+			"counts": {
+				"vertices": 30,
+				"edges": 60,
+				"faces": 32
+			},
+			"symmetryOrder": null,
+			"squarings": 1,
+			"perfect": 0,
+			"simple": 0,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "186",
+				"height": "174",
+				"order": 59,
+				"distinct": 16,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "truncated-dodecahedron",
+			"name": "Truncated dodecahedron",
+			"source": "solid",
+			"counts": {
+				"vertices": 60,
+				"edges": 90,
+				"faces": 32
+			},
+			"symmetryOrder": null,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 0,
+			"best": {
+				"battery": [
+					0,
+					9
+				],
+				"width": "366",
+				"height": "534",
+				"order": 87,
+				"distinct": 25,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "truncated-icosahedron",
+			"name": "Truncated icosahedron",
+			"source": "solid",
+			"counts": {
+				"vertices": 60,
+				"edges": 90,
+				"faces": 32
+			},
+			"symmetryOrder": null,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 0,
+			"best": {
+				"battery": [
+					0,
+					4
+				],
+				"width": "17614",
+				"height": "32546",
+				"order": 87,
+				"distinct": 34,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "rhombicosidodecahedron",
+			"name": "Rhombicosidodecahedron",
+			"source": "solid",
+			"counts": {
+				"vertices": 60,
+				"edges": 120,
+				"faces": 62
+			},
+			"symmetryOrder": null,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 0,
+			"best": {
+				"battery": [
+					0,
+					9
+				],
+				"width": "124594",
+				"height": "105086",
+				"order": 119,
+				"distinct": 53,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "truncated-icosidodecahedron",
+			"name": "Truncated icosidodecahedron",
+			"source": "solid",
+			"counts": {
+				"vertices": 120,
+				"edges": 180,
+				"faces": 62
+			},
+			"symmetryOrder": null,
+			"squarings": 3,
+			"perfect": 0,
+			"simple": 3,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "153734834",
+				"height": "381293926",
+				"order": 179,
+				"distinct": 87,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "snub-dodecahedron",
+			"name": "Snub dodecahedron",
+			"source": "solid",
+			"counts": {
+				"vertices": 60,
+				"edges": 150,
+				"faces": 92
+			},
+			"symmetryOrder": null,
+			"squarings": 3,
+			"perfect": 0,
+			"simple": 1,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "83784430",
+				"height": "59647970",
+				"order": 149,
+				"distinct": 127,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "triangular-prism",
+			"name": "Triangular prism",
+			"source": "solid",
+			"counts": {
+				"vertices": 6,
+				"edges": 9,
+				"faces": 5
+			},
+			"symmetryOrder": null,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 0,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "7",
+				"height": "8",
+				"order": 7,
+				"distinct": 4,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "pentagonal-prism",
+			"name": "Pentagonal prism",
+			"source": "solid",
+			"counts": {
+				"vertices": 10,
+				"edges": 15,
+				"faces": 7
+			},
+			"symmetryOrder": null,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 0,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "37",
+				"height": "58",
+				"order": 13,
+				"distinct": 7,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "hexagonal-prism",
+			"name": "Hexagonal prism",
+			"source": "solid",
+			"counts": {
+				"vertices": 12,
+				"edges": 18,
+				"faces": 8
+			},
+			"symmetryOrder": null,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 1,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "67",
+				"height": "113",
+				"order": 17,
+				"distinct": 10,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "octagonal-prism",
+			"name": "Octagonal prism",
+			"source": "solid",
+			"counts": {
+				"vertices": 16,
+				"edges": 24,
+				"faces": 10
+			},
+			"symmetryOrder": null,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 1,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "118",
+				"height": "218",
+				"order": 23,
+				"distinct": 11,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "decagonal-prism",
+			"name": "Decagonal prism",
+			"source": "solid",
+			"counts": {
+				"vertices": 20,
+				"edges": 30,
+				"faces": 12
+			},
+			"symmetryOrder": null,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 1,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "4247",
+				"height": "8293",
+				"order": 29,
+				"distinct": 16,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "square-antiprism",
+			"name": "Square antiprism",
+			"source": "solid",
+			"counts": {
+				"vertices": 8,
+				"edges": 16,
+				"faces": 10
+			},
+			"symmetryOrder": null,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 1,
+			"best": {
+				"battery": [
+					0,
+					2
+				],
+				"width": "97",
+				"height": "71",
+				"order": 15,
+				"distinct": 8,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "pentagonal-antiprism",
+			"name": "Pentagonal antiprism",
+			"source": "solid",
+			"counts": {
+				"vertices": 10,
+				"edges": 20,
+				"faces": 12
+			},
+			"symmetryOrder": null,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 0,
+			"best": {
+				"battery": [
+					0,
+					2
+				],
+				"width": "63",
+				"height": "47",
+				"order": 17,
+				"distinct": 8,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "hexagonal-antiprism",
+			"name": "Hexagonal antiprism",
+			"source": "solid",
+			"counts": {
+				"vertices": 12,
+				"edges": 24,
+				"faces": 14
+			},
+			"symmetryOrder": null,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 1,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "74",
+				"height": "70",
+				"order": 23,
+				"distinct": 12,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "octagonal-antiprism",
+			"name": "Octagonal antiprism",
+			"source": "solid",
+			"counts": {
+				"vertices": 16,
+				"edges": 32,
+				"faces": 18
+			},
+			"symmetryOrder": null,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 1,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "3926",
+				"height": "3970",
+				"order": 31,
+				"distinct": 16,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "decagonal-antiprism",
+			"name": "Decagonal antiprism",
+			"source": "solid",
+			"counts": {
+				"vertices": 20,
+				"edges": 40,
+				"faces": 22
+			},
+			"symmetryOrder": null,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 1,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "6592",
+				"height": "6938",
+				"order": 39,
+				"distinct": 19,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "triangular-orthobicupola",
+			"name": "Triangular orthobicupola (J27)",
+			"source": "solid",
+			"counts": {
+				"vertices": 12,
+				"edges": 24,
+				"faces": 14
+			},
+			"symmetryOrder": null,
+			"squarings": 4,
+			"perfect": 0,
+			"simple": 1,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "1867",
+				"height": "1553",
+				"order": 23,
+				"distinct": 20,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "pseudo-rhombicuboctahedron",
+			"name": "Pseudo-rhombicuboctahedron (J37)",
+			"source": "solid",
+			"counts": {
+				"vertices": 24,
+				"edges": 48,
+				"faces": 26
+			},
+			"symmetryOrder": null,
+			"squarings": 5,
+			"perfect": 0,
+			"simple": 2,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "1664403",
+				"height": "1400757",
+				"order": 47,
+				"distinct": 44,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "tridiminished-icosahedron",
+			"name": "Tridiminished icosahedron (J63)",
+			"source": "solid",
+			"counts": {
+				"vertices": 9,
+				"edges": 15,
+				"faces": 8
+			},
+			"symmetryOrder": null,
+			"squarings": 4,
+			"perfect": 0,
+			"simple": 1,
+			"best": {
+				"battery": [
+					3,
+					4
+				],
+				"width": "49",
+				"height": "53",
+				"order": 14,
+				"distinct": 12,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "diminished-icosahedron",
+			"name": "Diminished icosahedron (J11)",
+			"source": "solid",
+			"counts": {
+				"vertices": 11,
+				"edges": 25,
+				"faces": 16
+			},
+			"symmetryOrder": null,
+			"squarings": 4,
+			"perfect": 0,
+			"simple": 0,
+			"best": {
+				"battery": [
+					0,
+					2
+				],
+				"width": "541",
+				"height": "357",
+				"order": 24,
+				"distinct": 20,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "elongated-square-cupola",
+			"name": "Elongated square cupola (J19)",
+			"source": "solid",
+			"counts": {
+				"vertices": 20,
+				"edges": 36,
+				"faces": 18
+			},
+			"symmetryOrder": null,
+			"squarings": 7,
+			"perfect": 0,
+			"simple": 5,
+			"best": {
+				"battery": [
+					0,
+					3
+				],
+				"width": "949249",
+				"height": "1137011",
+				"order": 35,
+				"distinct": 34,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "pentagonal-orthobirotunda",
+			"name": "Pentagonal orthobirotunda (J34)",
+			"source": "solid",
+			"counts": {
+				"vertices": 30,
+				"edges": 60,
+				"faces": 32
+			},
+			"symmetryOrder": null,
+			"squarings": 5,
+			"perfect": 0,
+			"simple": 2,
+			"best": {
+				"battery": [
+					0,
+					2
+				],
+				"width": "4598229",
+				"height": "4369381",
+				"order": 59,
+				"distinct": 55,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "parabidiminished-rhombicosidodecahedron",
+			"name": "Parabidiminished rhombicosidodecahedron (J80)",
+			"source": "solid",
+			"counts": {
+				"vertices": 50,
+				"edges": 90,
+				"faces": 42
+			},
+			"symmetryOrder": null,
+			"squarings": 6,
+			"perfect": 0,
+			"simple": 3,
+			"best": {
+				"battery": [
+					0,
+					3
+				],
+				"width": "881072236",
+				"height": "1161891104",
+				"order": 89,
+				"distinct": 85,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "metabidiminished-icosahedron",
+			"name": "Metabidiminished icosahedron (J62)",
+			"source": "solid",
+			"counts": {
+				"vertices": 10,
+				"edges": 20,
+				"faces": 12
+			},
+			"symmetryOrder": null,
+			"squarings": 7,
+			"perfect": 2,
+			"simple": 4,
+			"best": {
+				"battery": [
+					1,
+					7
+				],
+				"width": "1238",
+				"height": "1102",
+				"order": 19,
+				"distinct": 19,
+				"perfect": true,
+				"simple": true
+			}
+		},
+		{
+			"id": "parabigyrate-rhombicosidodecahedron",
+			"name": "Parabigyrate rhombicosidodecahedron (J73)",
+			"source": "solid",
+			"counts": {
+				"vertices": 60,
+				"edges": 120,
+				"faces": 62
+			},
+			"symmetryOrder": null,
+			"squarings": 8,
+			"perfect": 0,
+			"simple": 4,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "542320908935",
+				"height": "595062708177",
+				"order": 119,
+				"distinct": 115,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "gyrate-diminished-rhombicosidodecahedron",
+			"name": "Gyrate diminished rhombicosidodecahedron (J77/J78)",
+			"source": "solid",
+			"counts": {
+				"vertices": 55,
+				"edges": 105,
+				"faces": 52
+			},
+			"symmetryOrder": null,
+			"squarings": 14,
+			"perfect": 0,
+			"simple": 7,
+			"best": {
+				"battery": [
+					0,
+					3
+				],
+				"width": "102305241452",
+				"height": "134240252608",
+				"order": 104,
+				"distinct": 102,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "diminished-rhombicosidodecahedron",
+			"name": "Diminished rhombicosidodecahedron (J76)",
+			"source": "solid",
+			"counts": {
+				"vertices": 55,
+				"edges": 105,
+				"faces": 52
+			},
+			"symmetryOrder": null,
+			"squarings": 14,
+			"perfect": 0,
+			"simple": 7,
+			"best": {
+				"battery": [
+					0,
+					3
+				],
+				"width": "504882772268",
+				"height": "662605715392",
+				"order": 104,
+				"distinct": 102,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "gyrate-rhombicosidodecahedron",
+			"name": "Gyrate rhombicosidodecahedron (J72)",
+			"source": "solid",
+			"counts": {
+				"vertices": 60,
+				"edges": 120,
+				"faces": 62
+			},
+			"symmetryOrder": null,
+			"squarings": 16,
+			"perfect": 0,
+			"simple": 8,
+			"best": {
+				"battery": [
+					0,
+					3
+				],
+				"width": "194980025543592",
+				"height": "164435068376818",
+				"order": 119,
+				"distinct": 117,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "sp3-1-00001",
+			"name": "cuboctahedron · sp3-1-00001",
+			"source": "sph-poly",
+			"counts": {
+				"vertices": 12,
+				"edges": 24,
+				"faces": 14
+			},
+			"symmetryOrder": 48,
+			"squarings": 1,
+			"perfect": 0,
+			"simple": 0,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "26",
+				"height": "22",
+				"order": 21,
+				"distinct": 7,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "sp3-2-00001",
+			"name": "3.4.3.4 · sp3-2-00001",
+			"source": "sph-poly",
+			"counts": {
+				"vertices": 9,
+				"edges": 15,
+				"faces": 8
+			},
+			"symmetryOrder": 6,
+			"squarings": 4,
+			"perfect": 0,
+			"simple": 1,
+			"best": {
+				"battery": [
+					0,
+					2
+				],
+				"width": "82",
+				"height": "83",
+				"order": 14,
+				"distinct": 13,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "sp3-2-00002",
+			"name": "3.4.3.4 · sp3-2-00002",
+			"source": "sph-poly",
+			"counts": {
+				"vertices": 12,
+				"edges": 24,
+				"faces": 14
+			},
+			"symmetryOrder": 12,
+			"squarings": 4,
+			"perfect": 0,
+			"simple": 1,
+			"best": {
+				"battery": [
+					0,
+					3
+				],
+				"width": "1867",
+				"height": "1553",
+				"order": 23,
+				"distinct": 20,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "sp4-1-00001",
+			"name": "rhombicuboctahedron · sp4-1-00001",
+			"source": "sph-poly",
+			"counts": {
+				"vertices": 24,
+				"edges": 48,
+				"faces": 26
+			},
+			"symmetryOrder": 48,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 1,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "558",
+				"height": "562",
+				"order": 47,
+				"distinct": 22,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "sp4-1-00002",
+			"name": "octagonal prism · sp4-1-00002",
+			"source": "sph-poly",
+			"counts": {
+				"vertices": 16,
+				"edges": 24,
+				"faces": 10
+			},
+			"symmetryOrder": 32,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 1,
+			"best": {
+				"battery": [
+					0,
+					2
+				],
+				"width": "118",
+				"height": "218",
+				"order": 23,
+				"distinct": 11,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "sp4-2-00001",
+			"name": "pseudo-rhombicuboctahedron (J37) · sp4-2-00001",
+			"source": "sph-poly",
+			"counts": {
+				"vertices": 24,
+				"edges": 48,
+				"faces": 26
+			},
+			"symmetryOrder": 16,
+			"squarings": 5,
+			"perfect": 0,
+			"simple": 2,
+			"best": {
+				"battery": [
+					0,
+					2
+				],
+				"width": "1664403",
+				"height": "1400757",
+				"order": 47,
+				"distinct": 44,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "sp4-3-00001",
+			"name": "3.4.4.4 · sp4-3-00001",
+			"source": "sph-poly",
+			"counts": {
+				"vertices": 20,
+				"edges": 36,
+				"faces": 18
+			},
+			"symmetryOrder": 8,
+			"squarings": 7,
+			"perfect": 0,
+			"simple": 5,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "949249",
+				"height": "1137011",
+				"order": 35,
+				"distinct": 34,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "sp5-1-00001",
+			"name": "rhombicosidodecahedron · sp5-1-00001",
+			"source": "sph-poly",
+			"counts": {
+				"vertices": 60,
+				"edges": 120,
+				"faces": 62
+			},
+			"symmetryOrder": 120,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 0,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "124594",
+				"height": "105086",
+				"order": 119,
+				"distinct": 53,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "sp5-12-00001",
+			"name": "3.4.5.4 · sp5-12-00001",
+			"source": "sph-poly",
+			"counts": {
+				"vertices": 60,
+				"edges": 120,
+				"faces": 62
+			},
+			"symmetryOrder": 6,
+			"squarings": 24,
+			"perfect": 0,
+			"simple": 16,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "254890848422094389",
+				"height": "279529778025090655",
+				"order": 119,
+				"distinct": 118,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "sp5-14-00001",
+			"name": "3.4.5.4 · sp5-14-00001",
+			"source": "sph-poly",
+			"counts": {
+				"vertices": 50,
+				"edges": 90,
+				"faces": 42
+			},
+			"symmetryOrder": 4,
+			"squarings": 26,
+			"perfect": 19,
+			"simple": 19,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "6150270004197663914",
+				"height": "10211083856154020550",
+				"order": 89,
+				"distinct": 89,
+				"perfect": true,
+				"simple": true
+			}
+		},
+		{
+			"id": "sp5-17-00001",
+			"name": "3.4.5.4 · sp5-17-00001",
+			"source": "sph-poly",
+			"counts": {
+				"vertices": 60,
+				"edges": 120,
+				"faces": 62
+			},
+			"symmetryOrder": 4,
+			"squarings": 34,
+			"perfect": 26,
+			"simple": 26,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "1046210792560774425262588767",
+				"height": "1157910596787298483277406281",
+				"order": 119,
+				"distinct": 119,
+				"perfect": true,
+				"simple": true
+			}
+		},
+		{
+			"id": "sp5-27-00001",
+			"name": "3.4.5.4 · sp5-27-00001",
+			"source": "sph-poly",
+			"counts": {
+				"vertices": 50,
+				"edges": 90,
+				"faces": 42
+			},
+			"symmetryOrder": 2,
+			"squarings": 49,
+			"perfect": 41,
+			"simple": 41,
+			"best": {
+				"battery": [
+					0,
+					2
+				],
+				"width": "72481529417524693746",
+				"height": "61971333880207375426",
+				"order": 89,
+				"distinct": 89,
+				"perfect": true,
+				"simple": true
+			}
+		},
+		{
+			"id": "sp5-29-00001",
+			"name": "3.4.5.4 · sp5-29-00001",
+			"source": "sph-poly",
+			"counts": {
+				"vertices": 55,
+				"edges": 105,
+				"faces": 52
+			},
+			"symmetryOrder": 2,
+			"squarings": 56,
+			"perfect": 49,
+			"simple": 49,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "2978609133988927715979485",
+				"height": "2564202703835337853722459",
+				"order": 104,
+				"distinct": 104,
+				"perfect": true,
+				"simple": true
+			}
+		},
+		{
+			"id": "sp5-29-00002",
+			"name": "3.4.5.4 · sp5-29-00002",
+			"source": "sph-poly",
+			"counts": {
+				"vertices": 55,
+				"edges": 105,
+				"faces": 52
+			},
+			"symmetryOrder": 2,
+			"squarings": 56,
+			"perfect": 49,
+			"simple": 49,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "55914005558443151677578",
+				"height": "56784871254925674556478",
+				"order": 104,
+				"distinct": 104,
+				"perfect": true,
+				"simple": true
+			}
+		},
+		{
+			"id": "sp5-3-00001",
+			"name": "3.4.5.4 · sp5-3-00001",
+			"source": "sph-poly",
+			"counts": {
+				"vertices": 50,
+				"edges": 90,
+				"faces": 42
+			},
+			"symmetryOrder": 20,
+			"squarings": 6,
+			"perfect": 0,
+			"simple": 3,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "4377463941",
+				"height": "3794389419",
+				"order": 89,
+				"distinct": 85,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "sp5-4-00001",
+			"name": "3.4.5.4 · sp5-4-00001",
+			"source": "sph-poly",
+			"counts": {
+				"vertices": 60,
+				"edges": 120,
+				"faces": 62
+			},
+			"symmetryOrder": 20,
+			"squarings": 8,
+			"perfect": 0,
+			"simple": 4,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "542320908935",
+				"height": "595062708177",
+				"order": 119,
+				"distinct": 115,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "sp5-7-00001",
+			"name": "3.4.5.4 · sp5-7-00001",
+			"source": "sph-poly",
+			"counts": {
+				"vertices": 55,
+				"edges": 105,
+				"faces": 52
+			},
+			"symmetryOrder": 10,
+			"squarings": 14,
+			"perfect": 0,
+			"simple": 7,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "2471469173933",
+				"height": "2101743711227",
+				"order": 104,
+				"distinct": 102,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "sp5-7-00002",
+			"name": "3.4.5.4 · sp5-7-00002",
+			"source": "sph-poly",
+			"counts": {
+				"vertices": 55,
+				"edges": 105,
+				"faces": 52
+			},
+			"symmetryOrder": 10,
+			"squarings": 14,
+			"perfect": 0,
+			"simple": 7,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "12206436262077",
+				"height": "10365007832683",
+				"order": 104,
+				"distinct": 102,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "sp5-8-00001",
+			"name": "3.4.5.4 · sp5-8-00001",
+			"source": "sph-poly",
+			"counts": {
+				"vertices": 60,
+				"edges": 120,
+				"faces": 62
+			},
+			"symmetryOrder": 10,
+			"squarings": 16,
+			"perfect": 0,
+			"simple": 8,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "682328751862453",
+				"height": "755331623819187",
+				"order": 119,
+				"distinct": 117,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "sp5-9-00001",
+			"name": "3.4.5.4 · sp5-9-00001",
+			"source": "sph-poly",
+			"counts": {
+				"vertices": 45,
+				"edges": 75,
+				"faces": 32
+			},
+			"symmetryOrder": 6,
+			"squarings": 16,
+			"perfect": 0,
+			"simple": 9,
+			"best": {
+				"battery": [
+					0,
+					2
+				],
+				"width": "2764722061",
+				"height": "3804842761",
+				"order": 74,
+				"distinct": 73,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "shcube-half-2-00001",
+			"name": "Cube halved · shcube-half-2-00001",
+			"source": "sph-half",
+			"counts": {
+				"vertices": 8,
+				"edges": 18,
+				"faces": 12
+			},
+			"symmetryOrder": 12,
+			"squarings": 3,
+			"perfect": 0,
+			"simple": 1,
+			"best": {
+				"battery": [
+					1,
+					4
+				],
+				"width": "131",
+				"height": "79",
+				"order": 17,
+				"distinct": 9,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "shcube-half-2-00002",
+			"name": "Cube halved · shcube-half-2-00002",
+			"source": "sph-half",
+			"counts": {
+				"vertices": 8,
+				"edges": 18,
+				"faces": 12
+			},
+			"symmetryOrder": 24,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 0,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "34",
+				"height": "26",
+				"order": 16,
+				"distinct": 8,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "shcube-half-2-00003",
+			"name": "Cube halved · shcube-half-2-00003",
+			"source": "sph-half",
+			"counts": {
+				"vertices": 8,
+				"edges": 18,
+				"faces": 12
+			},
+			"symmetryOrder": 8,
+			"squarings": 4,
+			"perfect": 0,
+			"simple": 2,
+			"best": {
+				"battery": [
+					0,
+					2
+				],
+				"width": "73",
+				"height": "47",
+				"order": 17,
+				"distinct": 13,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "shcube-half-2-00004",
+			"name": "Cube halved · shcube-half-2-00004",
+			"source": "sph-half",
+			"counts": {
+				"vertices": 8,
+				"edges": 18,
+				"faces": 12
+			},
+			"symmetryOrder": 12,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 1,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "113",
+				"height": "67",
+				"order": 17,
+				"distinct": 10,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "shcube-half-2-00005",
+			"name": "Cube halved · shcube-half-2-00005",
+			"source": "sph-half",
+			"counts": {
+				"vertices": 8,
+				"edges": 18,
+				"faces": 12
+			},
+			"symmetryOrder": 4,
+			"squarings": 4,
+			"perfect": 0,
+			"simple": 2,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "73",
+				"height": "47",
+				"order": 17,
+				"distinct": 13,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "shcube-half-4-00001",
+			"name": "Cube halved · shcube-half-4-00001",
+			"source": "sph-half",
+			"counts": {
+				"vertices": 8,
+				"edges": 18,
+				"faces": 12
+			},
+			"symmetryOrder": 4,
+			"squarings": 7,
+			"perfect": 3,
+			"simple": 4,
+			"best": {
+				"battery": [
+					0,
+					2
+				],
+				"width": "4031",
+				"height": "3109",
+				"order": 17,
+				"distinct": 17,
+				"perfect": true,
+				"simple": true
+			}
+		},
+		{
+			"id": "shcube-half-6-00001",
+			"name": "Cube halved · shcube-half-6-00001",
+			"source": "sph-half",
+			"counts": {
+				"vertices": 8,
+				"edges": 18,
+				"faces": 12
+			},
+			"symmetryOrder": 2,
+			"squarings": 11,
+			"perfect": 7,
+			"simple": 7,
+			"best": {
+				"battery": [
+					0,
+					2
+				],
+				"width": "4313",
+				"height": "3484",
+				"order": 17,
+				"distinct": 17,
+				"perfect": true,
+				"simple": true
+			}
+		},
+		{
+			"id": "shdodec-half-13-00001",
+			"name": "Dodecahedron halved · shdodec-half-13-00001",
+			"source": "sph-half",
+			"counts": {
+				"vertices": 26,
+				"edges": 48,
+				"faces": 24
+			},
+			"symmetryOrder": 2,
+			"squarings": 25,
+			"perfect": 23,
+			"simple": 25,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "3719295816",
+				"height": "4496360853",
+				"order": 47,
+				"distinct": 47,
+				"perfect": true,
+				"simple": true
+			}
+		},
+		{
+			"id": "shdodec-half-3-00001",
+			"name": "Dodecahedron halved · shdodec-half-3-00001",
+			"source": "sph-half",
+			"counts": {
+				"vertices": 26,
+				"edges": 48,
+				"faces": 24
+			},
+			"symmetryOrder": 24,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 1,
+			"best": {
+				"battery": [
+					1,
+					2
+				],
+				"width": "562",
+				"height": "558",
+				"order": 47,
+				"distinct": 22,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "shdodec-half-4-00001",
+			"name": "Dodecahedron halved · shdodec-half-4-00001",
+			"source": "sph-half",
+			"counts": {
+				"vertices": 26,
+				"edges": 48,
+				"faces": 24
+			},
+			"symmetryOrder": 12,
+			"squarings": 4,
+			"perfect": 0,
+			"simple": 3,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "104691",
+				"height": "127869",
+				"order": 47,
+				"distinct": 43,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "shdodec-half-5-00001",
+			"name": "Dodecahedron halved · shdodec-half-5-00001",
+			"source": "sph-half",
+			"counts": {
+				"vertices": 26,
+				"edges": 48,
+				"faces": 24
+			},
+			"symmetryOrder": 6,
+			"squarings": 9,
+			"perfect": 0,
+			"simple": 8,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "6113869",
+				"height": "7292147",
+				"order": 47,
+				"distinct": 46,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "shdodec-half-7-00001",
+			"name": "Dodecahedron halved · shdodec-half-7-00001",
+			"source": "sph-half",
+			"counts": {
+				"vertices": 26,
+				"edges": 48,
+				"faces": 24
+			},
+			"symmetryOrder": 4,
+			"squarings": 13,
+			"perfect": 11,
+			"simple": 13,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "79746252",
+				"height": "97351473",
+				"order": 47,
+				"distinct": 47,
+				"perfect": true,
+				"simple": true
+			}
+		},
+		{
+			"id": "shico-half-3-00001",
+			"name": "Icosahedron halved · shico-half-3-00001",
+			"source": "sph-half",
+			"counts": {
+				"vertices": 22,
+				"edges": 60,
+				"faces": 40
+			},
+			"symmetryOrder": 20,
+			"squarings": 5,
+			"perfect": 0,
+			"simple": 5,
+			"best": {
+				"battery": [
+					0,
+					2
+				],
+				"width": "41549554",
+				"height": "25603826",
+				"order": 59,
+				"distinct": 55,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "shico-half-6-00001",
+			"name": "Icosahedron halved · shico-half-6-00001",
+			"source": "sph-half",
+			"counts": {
+				"vertices": 22,
+				"edges": 60,
+				"faces": 40
+			},
+			"symmetryOrder": 4,
+			"squarings": 16,
+			"perfect": 14,
+			"simple": 16,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "951682594952",
+				"height": "530825666464",
+				"order": 59,
+				"distinct": 59,
+				"perfect": true,
+				"simple": true
+			}
+		},
+		{
+			"id": "shoct-half-2-00001",
+			"name": "Octahedron halved · shoct-half-2-00001",
+			"source": "sph-half",
+			"counts": {
+				"vertices": 10,
+				"edges": 24,
+				"faces": 16
+			},
+			"symmetryOrder": 32,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 1,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "218",
+				"height": "118",
+				"order": 23,
+				"distinct": 11,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "shoct-half-3-00001",
+			"name": "Octahedron halved · shoct-half-3-00001",
+			"source": "sph-half",
+			"counts": {
+				"vertices": 10,
+				"edges": 24,
+				"faces": 16
+			},
+			"symmetryOrder": 8,
+			"squarings": 5,
+			"perfect": 0,
+			"simple": 4,
+			"best": {
+				"battery": [
+					1,
+					2
+				],
+				"width": "2426",
+				"height": "1438",
+				"order": 23,
+				"distinct": 20,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "ss-10-15-7-d2",
+			"name": "pentagrammic prism",
+			"source": "sph-star",
+			"counts": {
+				"vertices": 10,
+				"edges": 15,
+				"faces": 7
+			},
+			"symmetryOrder": 20,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 0,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "37",
+				"height": "58",
+				"order": 13,
+				"distinct": 7,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "ss-10-20-12-d2",
+			"name": "pentagrammic antiprism",
+			"source": "sph-star",
+			"counts": {
+				"vertices": 10,
+				"edges": 20,
+				"faces": 12
+			},
+			"symmetryOrder": 20,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 0,
+			"best": {
+				"battery": [
+					0,
+					2
+				],
+				"width": "63",
+				"height": "47",
+				"order": 17,
+				"distinct": 8,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "ss-10-20-12-d3",
+			"name": "pentagrammic crossed antiprism",
+			"source": "sph-star",
+			"counts": {
+				"vertices": 10,
+				"edges": 20,
+				"faces": 12
+			},
+			"symmetryOrder": 20,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 0,
+			"best": {
+				"battery": [
+					0,
+					2
+				],
+				"width": "63",
+				"height": "47",
+				"order": 17,
+				"distinct": 8,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "ss-12-30-20-d7",
+			"name": "great icosahedron {3,5/2}",
+			"source": "sph-star",
+			"counts": {
+				"vertices": 12,
+				"edges": 30,
+				"faces": 20
+			},
+			"symmetryOrder": 120,
+			"squarings": 1,
+			"perfect": 0,
+			"simple": 0,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "38",
+				"height": "22",
+				"order": 25,
+				"distinct": 5,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "ss-120-180-62-d13",
+			"name": "great truncated icosidodecahedron (U68)",
+			"source": "sph-star",
+			"counts": {
+				"vertices": 120,
+				"edges": 180,
+				"faces": 62
+			},
+			"symmetryOrder": 120,
+			"squarings": 3,
+			"perfect": 0,
+			"simple": 3,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "187526480",
+				"height": "347502280",
+				"order": 179,
+				"distinct": 87,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "ss-14-21-9-d2",
+			"name": "heptagrammic prism {7/2}",
+			"source": "sph-star",
+			"counts": {
+				"vertices": 14,
+				"edges": 21,
+				"faces": 9
+			},
+			"symmetryOrder": 28,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 0,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "179",
+				"height": "318",
+				"order": 19,
+				"distinct": 10,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "ss-14-21-9-d3",
+			"name": "heptagrammic prism {7/3}",
+			"source": "sph-star",
+			"counts": {
+				"vertices": 14,
+				"edges": 21,
+				"faces": 9
+			},
+			"symmetryOrder": 28,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 0,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "179",
+				"height": "318",
+				"order": 19,
+				"distinct": 10,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "ss-14-28-16-d2",
+			"name": "heptagrammic antiprism {7/2}",
+			"source": "sph-star",
+			"counts": {
+				"vertices": 14,
+				"edges": 28,
+				"faces": 16
+			},
+			"symmetryOrder": 28,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 1,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "1331",
+				"height": "1308",
+				"order": 27,
+				"distinct": 14,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "ss-14-28-16-d3",
+			"name": "heptagrammic antiprism {7/3}",
+			"source": "sph-star",
+			"counts": {
+				"vertices": 14,
+				"edges": 28,
+				"faces": 16
+			},
+			"symmetryOrder": 28,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 1,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "1331",
+				"height": "1308",
+				"order": 27,
+				"distinct": 14,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "ss-14-28-16-d4",
+			"name": "heptagrammic crossed antiprism",
+			"source": "sph-star",
+			"counts": {
+				"vertices": 14,
+				"edges": 28,
+				"faces": 16
+			},
+			"symmetryOrder": 28,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 1,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "1331",
+				"height": "1308",
+				"order": 27,
+				"distinct": 14,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "ss-16-24-10-d3",
+			"name": "octagrammic prism",
+			"source": "sph-star",
+			"counts": {
+				"vertices": 16,
+				"edges": 24,
+				"faces": 10
+			},
+			"symmetryOrder": 32,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 1,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "118",
+				"height": "218",
+				"order": 23,
+				"distinct": 11,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "ss-16-32-18-d3",
+			"name": "octagrammic antiprism",
+			"source": "sph-star",
+			"counts": {
+				"vertices": 16,
+				"edges": 32,
+				"faces": 18
+			},
+			"symmetryOrder": 32,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 1,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "3926",
+				"height": "3970",
+				"order": 31,
+				"distinct": 16,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "ss-16-32-18-d5",
+			"name": "8/3.3.3.3 · ss-16-32-18-d5",
+			"source": "sph-star",
+			"counts": {
+				"vertices": 16,
+				"edges": 32,
+				"faces": 18
+			},
+			"symmetryOrder": 32,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 1,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "3926",
+				"height": "3970",
+				"order": 31,
+				"distinct": 16,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "ss-20-30-12-d3",
+			"name": "decagrammic prism",
+			"source": "sph-star",
+			"counts": {
+				"vertices": 20,
+				"edges": 30,
+				"faces": 12
+			},
+			"symmetryOrder": 40,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 1,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "4247",
+				"height": "8293",
+				"order": 29,
+				"distinct": 16,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "ss-20-30-12-d7",
+			"name": "great stellated dodecahedron {5/2,3}",
+			"source": "sph-star",
+			"counts": {
+				"vertices": 20,
+				"edges": 30,
+				"faces": 12
+			},
+			"symmetryOrder": 120,
+			"squarings": 1,
+			"perfect": 0,
+			"simple": 0,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "22",
+				"height": "38",
+				"order": 25,
+				"distinct": 5,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "ss-20-40-22-d3",
+			"name": "decagrammic antiprism",
+			"source": "sph-star",
+			"counts": {
+				"vertices": 20,
+				"edges": 40,
+				"faces": 22
+			},
+			"symmetryOrder": 40,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 1,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "6592",
+				"height": "6938",
+				"order": 39,
+				"distinct": 19,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "ss-24-36-14-d7",
+			"name": "stellated truncated hexahedron (U19)",
+			"source": "sph-star",
+			"counts": {
+				"vertices": 24,
+				"edges": 36,
+				"faces": 14
+			},
+			"symmetryOrder": 48,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 0,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "50",
+				"height": "70",
+				"order": 31,
+				"distinct": 9,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "ss-24-48-26-d5",
+			"name": "4.4.4.3 · ss-24-48-26-d5",
+			"source": "sph-star",
+			"counts": {
+				"vertices": 24,
+				"edges": 48,
+				"faces": 26
+			},
+			"symmetryOrder": 48,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 1,
+			"best": {
+				"battery": [
+					0,
+					4
+				],
+				"width": "558",
+				"height": "562",
+				"order": 47,
+				"distinct": 22,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "ss-30-60-32-d7",
+			"name": "great icosidodecahedron (U54)",
+			"source": "sph-star",
+			"counts": {
+				"vertices": 30,
+				"edges": 60,
+				"faces": 32
+			},
+			"symmetryOrder": 120,
+			"squarings": 1,
+			"perfect": 0,
+			"simple": 0,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "186",
+				"height": "174",
+				"order": 59,
+				"distinct": 16,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "ss-48-72-26-d1",
+			"name": "8/3.6.4 · ss-48-72-26-d1",
+			"source": "sph-star",
+			"counts": {
+				"vertices": 48,
+				"edges": 72,
+				"faces": 26
+			},
+			"symmetryOrder": 48,
+			"squarings": 3,
+			"perfect": 0,
+			"simple": 3,
+			"best": {
+				"battery": [
+					0,
+					3
+				],
+				"width": "78202",
+				"height": "127718",
+				"order": 71,
+				"distinct": 37,
+				"perfect": false,
+				"simple": true
+			}
+		},
+		{
+			"id": "ss-6-10-6-d2",
+			"name": "pentagrammic pyramid",
+			"source": "sph-star",
+			"counts": {
+				"vertices": 6,
+				"edges": 10,
+				"faces": 6
+			},
+			"symmetryOrder": 10,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 0,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "5",
+				"height": "6",
+				"order": 8,
+				"distinct": 3,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "ss-60-120-62-d13",
+			"name": "5/2.4.3.4 · ss-60-120-62-d13",
+			"source": "sph-star",
+			"counts": {
+				"vertices": 60,
+				"edges": 120,
+				"faces": 62
+			},
+			"symmetryOrder": 120,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 0,
+			"best": {
+				"battery": [
+					0,
+					3
+				],
+				"width": "124594",
+				"height": "105086",
+				"order": 119,
+				"distinct": 53,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "ss-60-150-92-d13",
+			"name": "5/2.3.3.3.3 · ss-60-150-92-d13",
+			"source": "sph-star",
+			"counts": {
+				"vertices": 60,
+				"edges": 150,
+				"faces": 92
+			},
+			"symmetryOrder": 60,
+			"squarings": 3,
+			"perfect": 0,
+			"simple": 1,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "83784430",
+				"height": "59647970",
+				"order": 149,
+				"distinct": 127,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "ss-60-150-92-d37",
+			"name": "5/2.3.3.3.3 · ss-60-150-92-d37",
+			"source": "sph-star",
+			"counts": {
+				"vertices": 60,
+				"edges": 150,
+				"faces": 92
+			},
+			"symmetryOrder": 60,
+			"squarings": 3,
+			"perfect": 0,
+			"simple": 1,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "83784430",
+				"height": "59647970",
+				"order": 149,
+				"distinct": 127,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "ss-60-150-92-d7",
+			"name": "great snub icosidodecahedron (U57)",
+			"source": "sph-star",
+			"counts": {
+				"vertices": 60,
+				"edges": 150,
+				"faces": 92
+			},
+			"symmetryOrder": 60,
+			"squarings": 3,
+			"perfect": 0,
+			"simple": 1,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "83784430",
+				"height": "59647970",
+				"order": 149,
+				"distinct": 127,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "ss-60-90-32-d13",
+			"name": "great stellated truncated dodecahedron (U66)",
+			"source": "sph-star",
+			"counts": {
+				"vertices": 60,
+				"edges": 90,
+				"faces": 32
+			},
+			"symmetryOrder": 120,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 0,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "366",
+				"height": "534",
+				"order": 87,
+				"distinct": 25,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "ss-60-90-32-d7",
+			"name": "great truncated icosahedron (U55)",
+			"source": "sph-star",
+			"counts": {
+				"vertices": 60,
+				"edges": 90,
+				"faces": 32
+			},
+			"symmetryOrder": 120,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 0,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "17614",
+				"height": "32546",
+				"order": 87,
+				"distinct": 34,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "ss-8-14-8-d2",
+			"name": "heptagrammic pyramid {7/2}",
+			"source": "sph-star",
+			"counts": {
+				"vertices": 8,
+				"edges": 14,
+				"faces": 8
+			},
+			"symmetryOrder": 14,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 0,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "13",
+				"height": "16",
+				"order": 12,
+				"distinct": 5,
+				"perfect": false,
+				"simple": false
+			}
+		},
+		{
+			"id": "ss-8-14-8-d3",
+			"name": "heptagrammic pyramid {7/3}",
+			"source": "sph-star",
+			"counts": {
+				"vertices": 8,
+				"edges": 14,
+				"faces": 8
+			},
+			"symmetryOrder": 14,
+			"squarings": 2,
+			"perfect": 0,
+			"simple": 0,
+			"best": {
+				"battery": [
+					0,
+					1
+				],
+				"width": "13",
+				"height": "16",
+				"order": 12,
+				"distinct": 5,
+				"perfect": false,
+				"simple": false
+			}
+		}
+	]
+}

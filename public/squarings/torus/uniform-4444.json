@@ -1,0 +1,1 @@
+{"id":"uniform-4444","name":"4.4.4.4 · square","category":"Uniform tilings","k":1,"cell":{"polygons":[[[0,0],[1,0],[1,1],[0,1]]],"basis":[[1,0],[0,1]]},"counts":{"vertices":1,"edges":2,"faces":1},"tiles":[4],"halfTurn":false,"halfTurnMoves":0,"tjunctions":0,"bestClass":[-6,1]}
