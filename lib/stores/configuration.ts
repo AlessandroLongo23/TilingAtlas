@@ -298,11 +298,12 @@ export interface ConfigurationState {
 	// `grid` draws the solid's full edge grid faintly under the pattern. See components/freedraw/ico-freedraw-canvas.tsx.
 	sphericalFreedrawMode: IcoMode;
 	sphericalFreedrawGrid: boolean;
-	// Star polyhedra only: draw the creases where two faces cut through each other. ON by default (AL,
-	// 2026-08-19): a crease is a real feature of the surface and the solid reads wrong without it, which
-	// is how Marek Čtrnáct found it missing. The toggle is there to take it away, not to add it. See
-	// lib/render/sphStar.ts `faceCrossings`.
-	sphStarCrossings: boolean;
+	// Star polyhedra only: HIDE the creases where two faces cut through each other. Phrased as hiding so
+	// the box is unticked in the default view (AL, 2026-08-19), which is the view that draws them: a
+	// crease is a real feature of the surface and the solid reads wrong without it, which is how Marek
+	// Čtrnáct found it missing. The control exists to take them away, so it is named for that.
+	// See lib/render/sphStar.ts `faceCrossings`.
+	sphStarHideCrossings: boolean;
 
 	// Color params
 	colorParams: ColorParams;
@@ -474,7 +475,7 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 
 	sphericalFreedrawMode: "polyhedron",
 	sphericalFreedrawGrid: false,
-	sphStarCrossings: true,
+	sphStarHideCrossings: false,
 
 	colorParams: { a: 180, b: 0 },
 

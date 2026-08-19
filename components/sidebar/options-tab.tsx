@@ -1106,14 +1106,14 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							) : null}
 							{isSphStar ? (
 								<Checkbox
-									id="sphStarCrossings"
-									label="Crossings"
-									checked={cfg.sphStarCrossings}
-									onCheckedChange={(v) => setCfg({ sphStarCrossings: v })}
+									id="sphStarHideCrossings"
+									label="Hide crossings"
+									checked={cfg.sphStarHideCrossings}
+									onCheckedChange={(v) => setCfg({ sphStarHideCrossings: v })}
 									hint={
 										<InfoDot>
-											Where two faces pass through each other. Not an edge: it bounds no face, so V, E and
-											F are unchanged.
+											Lines where two faces pass through each other. Drawn like edges, but they are not
+											edges: they bound no face, so V, E and F are unchanged.
 										</InfoDot>
 									}
 								/>

@@ -171,9 +171,9 @@ describe("faceCrossings", () => {
 		const { verts, segs } = build(p);
 		const real = p.edges.map(([a, b]) => [verts[a], verts[b]] as const);
 		const near = (u: number[], v: number[]) => Math.hypot(u[0] - v[0], u[1] - v[1], u[2] - v[2]) < 1e-6;
-		for (const [i, j] of segs) {
+		for (const c of segs) {
 			for (const [a, b] of real) {
-				expect((near(verts[i], a) && near(verts[j], b)) || (near(verts[i], b) && near(verts[j], a))).toBe(false);
+				expect((near(c.a, a) && near(c.b, b)) || (near(c.a, b) && near(c.b, a))).toBe(false);
 			}
 		}
 	});
@@ -192,17 +192,17 @@ describe("faceCrossings", () => {
 		const p = prism();
 		const { verts, segs } = build(p);
 		const q = (v: V3) => v.map((z) => z.toFixed(5)).join(",");
-		const keys = segs.map(([i, j]) => [q(verts[i]), q(verts[j])].sort().join("|"));
+		const keys = segs.map((c) => [q(c.a), q(c.b)].sort().join("|"));
 		expect(new Set(keys).size).toBe(keys.length);
 	});
 
 	it("puts both endpoints of every crease inside the circumsphere", () => {
 		// A crease is interior geometry by construction: two faces meet strictly inside the solid.
 		const p = prism();
-		const { verts, segs } = build(p);
-		for (const [i, j] of segs) {
-			for (const k of [i, j]) {
-				expect(Math.hypot(verts[k][0], verts[k][1], verts[k][2])).toBeLessThan(1 + 1e-6);
+		const { segs } = build(p);
+		for (const c of segs) {
+			for (const q of [c.a, c.b]) {
+				expect(Math.hypot(q[0], q[1], q[2])).toBeLessThan(1 + 1e-6);
 			}
 		}
 	});

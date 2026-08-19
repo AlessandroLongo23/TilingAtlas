@@ -1257,7 +1257,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// Spherical-freedraw Display controls (View options tab): mode = polyhedron/sphere, grid = faint edge grid.
 	const sphericalFreedrawMode = useConfiguration((s) => s.sphericalFreedrawMode);
 	const sphericalFreedrawGrid = useConfiguration((s) => s.sphericalFreedrawGrid);
-	const sphStarCrossings = useConfiguration((s) => s.sphStarCrossings);
+	const sphStarHideCrossings = useConfiguration((s) => s.sphStarHideCrossings);
 	// The Tiles overlay and its knobs. On a plain tiling these drive the Truchet reading below; on a
 	// freedraw pattern the canvas reads them itself, which is why only the seed is consumed here.
 	const freedrawArcs = useConfiguration((s) => s.freedrawArcs);
@@ -1502,7 +1502,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					// construction — that is what density means — so the curved-patch mode paints every record
 					// as one smooth ball. The flat facets are the figure, and the adapter decomposes each
 					// self-intersecting {n/d} face before it can be filled (lib/render/sphStar.ts).
-					<SphStarCanvas pattern={selected.sphStar} showGrid={sphericalFreedrawGrid} showCrossings={sphStarCrossings} />
+					<SphStarCanvas pattern={selected.sphStar} showGrid={sphericalFreedrawGrid} showCrossings={!sphStarHideCrossings} />
 				) : selected?.hypPoly ? (
 					// 3.4.n.4 tiling by regular polygons: not a decoration, so every edge is a real boundary and
 					// each face is filled by its POLYGON SIZE. That is the colored-tiling render exactly, so it

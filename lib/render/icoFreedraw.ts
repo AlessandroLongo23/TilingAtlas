@@ -117,7 +117,7 @@ export interface IcoOptions {
 	showGrid?: boolean; // draw ALL of the solid's edges faintly (the underlying grid)
 	allEdges?: [number, number][]; // the full edge list (vertex-index pairs), for showGrid
 	showCrossings?: boolean; // draw the face-through-face creases (star polyhedra only)
-	crossings?: [number, number][]; // those creases, as vertex-index pairs; see sphStar.faceCrossings
+	crossings?: import("./sphStar").Crease[]; // those creases as geometry; see sphStar.faceCrossings
 }
 
 // Subdivision order for the curved spherical patches (sphere mode). N² sub-triangles per fan triangle.
@@ -281,17 +281,65 @@ export function buildIcoFreedraw(pattern: IcoPattern, rawVertices: V3[], opts: I
 		disposers.push(() => grid.dispose());
 	}
 
-	// --- face-through-face creases, UNDER the drawn edges so a crease never covers a real edge where the
-	// two run together. SAME STROKE WEIGHT as an edge (AL, 2026-08-19): a crease is a real feature of the
-	// solid's surface and reads as one, so it gets an edge's weight. Only the colour separates them, grey
-	// against the edges' near-black, because a crease still bounds no face and is a vertex of nothing.
-	// The toggle and its tooltip carry that distinction; the line weight no longer has to. ---
+	// --- face-through-face creases. Same weight and same colour as a drawn edge (AL, 2026-08-19): a
+	// crease is a real feature of the surface and has to read as one, so nothing about the ink
+	// distinguishes it. What separates the two is the toggle and its tooltip, not the drawing.
+	//
+	// Two things have to be undone for a crease that are right for an edge, both because a crease lies
+	// INSIDE a face instead of at the join between two:
+	//
+	//   no overshoot   `buildTubeSkeleton` lengthens every arc by 0.9 × thickness so bars overlap at the
+	//                  vertex they share. A crease shares no vertex: its ends are where it leaves the
+	//                  filled region, so the overshoot just pokes a stub out past them. Those were the
+	//                  grey spikes radiating from the corners.
+	//
+	// ⚑ A RIBBON IN THE FACE PLANE, NOT A TUBE. A crease lies in both its faces' planes, so a tube round
+	// it sticks out a full radius on each side of each plane, and on a solid whose faces pass close by
+	// that perpendicular bulge surfaces through the neighbours as needles and slivers. That is the
+	// bleeding AL reported on ss-60-180-104-d4. Two things confirmed it: at a fifth of the weight it
+	// disappears, and lifting the tube clear of the face made it much worse, because a lifted tube floats
+	// free of the plane that was hiding most of it.
+	//
+	// A ribbon has no perpendicular extent to poke through anything. Each crease is drawn twice, once in
+	// each face's plane, a hair proud of it so it wins the z-fight with its own face and nothing else.
+	// Width matches the edge tubes' diameter and the colour is theirs, so the two read identically;
+	// occlusion is then ordinary depth testing, which is what puts a hidden crease behind its face.
 	if (opts.showCrossings && opts.crossings && opts.crossings.length) {
-		const crossColor: [number, number, number] = dark ? [0.42, 0.44, 0.52] : [0.46, 0.48, 0.56];
-		const crossArcs = (extend: number) => opts.crossings!.map(([i, j]) => edgeArc(i, j, radius, extend));
-		const cross = buildTubeSkeleton(crossArcs, 0, { section: "tube", thickness, color: crossColor, union: false });
-		group.add(cross.object);
-		disposers.push(() => cross.dispose());
+		const edgeColor: [number, number, number] = dark ? [0.06, 0.06, 0.08] : [0.1, 0.1, 0.12];
+		const LIFT = thickness * 0.06;
+		const pos: number[] = [];
+		const nor: number[] = [];
+		for (const c of opts.crossings) {
+			for (const n of [c.na, c.nb]) {
+				const a: V3 = [c.a[0] * radius + n[0] * LIFT, c.a[1] * radius + n[1] * LIFT, c.a[2] * radius + n[2] * LIFT];
+				const b: V3 = [c.b[0] * radius + n[0] * LIFT, c.b[1] * radius + n[1] * LIFT, c.b[2] * radius + n[2] * LIFT];
+				const d = nrm(sub(b, a));
+				const t = nrm(cross(n, d)); // in-plane, across the crease
+				const q = (p: V3, sgn: number): V3 => [p[0] + sgn * thickness * t[0], p[1] + sgn * thickness * t[1], p[2] + sgn * thickness * t[2]];
+				const A = q(a, -1);
+				const B = q(a, 1);
+				const C = q(b, 1);
+				const D = q(b, -1);
+				for (const v of [A, B, C, A, C, D]) {
+					pos.push(v[0], v[1], v[2]);
+					nor.push(n[0], n[1], n[2]);
+				}
+			}
+		}
+		const cgeom = new THREE.BufferGeometry();
+		cgeom.setAttribute("position", new THREE.BufferAttribute(new Float32Array(pos), 3));
+		cgeom.setAttribute("normal", new THREE.BufferAttribute(new Float32Array(nor), 3));
+		const cmat = new THREE.MeshStandardMaterial({
+			color: new THREE.Color().setRGB(edgeColor[0], edgeColor[1], edgeColor[2], THREE.SRGBColorSpace),
+			roughness: 0.5,
+			metalness: 0.0,
+			side: THREE.DoubleSide,
+		});
+		group.add(new THREE.Mesh(cgeom, cmat));
+		disposers.push(() => {
+			cgeom.dispose();
+			cmat.dispose();
+		});
 	}
 
 	// --- drawn edges as tubes: arcs on the sphere, chords on the solid. Tube CENTRE on the surface

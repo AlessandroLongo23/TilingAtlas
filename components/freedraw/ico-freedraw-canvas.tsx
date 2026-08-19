@@ -32,7 +32,7 @@ interface Props {
 	vertices?: [number, number, number][];
 	allEdges?: [number, number][];
 	/** Face-through-face creases (star polyhedra), drawn only when `showCrossings` is on. */
-	crossings?: [number, number][];
+	crossings?: import("@/lib/render/sphStar").Crease[];
 	showCrossings?: boolean;
 }
 

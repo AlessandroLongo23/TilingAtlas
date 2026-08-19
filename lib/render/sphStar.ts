@@ -117,7 +117,16 @@ export function starFaceRings(face: number[], dRaw: number, verts: V3[]): number
  *                        span of the edge itself is removed, not the whole line: the planes can meet
  *                        again beyond it, and that part is a crossing like any other.
  */
-export function faceCrossings(p: SphStarPattern, verts: V3[], rings: number[][][]): [number, number][] {
+export interface Crease {
+	/** Endpoints, in the record's own coordinates. */
+	a: V3;
+	b: V3;
+	/** Outward unit normals of the two faces that make the crease, for laying it ON each of them. */
+	na: V3;
+	nb: V3;
+}
+
+export function faceCrossings(p: SphStarPattern, verts: V3[], rings: number[][][]): Crease[] {
 	const F = p.faces.length;
 	const planes = p.faces.map((f) => {
 		const a = verts[f[0]];
@@ -125,7 +134,12 @@ export function faceCrossings(p: SphStarPattern, verts: V3[], rings: number[][][
 		return { n, d: dot(n, a) };
 	});
 	const realEdge = new Set(p.edges.map(([a, b]) => (a < b ? `${a},${b}` : `${b},${a}`)));
-	const out: [number, number][] = [];
+	const out: Crease[] = [];
+	// Outward, so a caller can lift the ink clear of the face it is drawn on.
+	const outward = (k: number): V3 => {
+		const { n } = planes[k];
+		return dot(n, verts[p.faces[k][0]]) < 0 ? [-n[0], -n[1], -n[2]] : n;
+	};
 	const seen = new Set<string>();
 	const q = (v: V3) => `${v[0].toFixed(5)},${v[1].toFixed(5)},${v[2].toFixed(5)}`;
 
@@ -171,7 +185,10 @@ export function faceCrossings(p: SphStarPattern, verts: V3[], rings: number[][][
 						const key = q(p0) < q(p1) ? `${q(p0)}|${q(p1)}` : `${q(p1)}|${q(p0)}`;
 						if (seen.has(key)) continue;
 						seen.add(key);
-						out.push([verts.push(p0) - 1, verts.push(p1) - 1]);
+						// Positions, not indices into `verts`: a crease endpoint is not a vertex of the
+						// polyhedron and appending it to the vertex array was only ever a way to reach the
+						// tube builder. Keeping it out means V stays what the record says it is.
+						out.push({ a: p0, b: p1, na: outward(i), nb: outward(j) });
 					}
 				}
 			}
