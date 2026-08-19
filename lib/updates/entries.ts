@@ -67,10 +67,138 @@ export interface UpdateEntry {
 /** Newest first. tests/updates.test.ts asserts that ordering, and every id below. */
 export const UPDATES: UpdateEntry[] = [
 	{
+		version: "1.33.0",
+		date: "2026-08-19",
+		title: "Parametric edge lengths",
+		commit: "369d3ab",
+		changes: [
+			{
+				kind: "feature",
+				text: "**58 families whose slider is an edge length instead of a corner angle**, so a tile's side can be met by two neighbours at any ratio you set.",
+				href: "/library",
+				tilings: ["plen-pythagorean", "plen-tri-hex-shutter", "plen-hex", "plen-strip-st"],
+			},
+			{
+				kind: "content",
+				text: "**Twenty of the 58 take a single parameter and four take six**, with the vertex-orbit count running from 1 to 8 across the shelf.",
+			},
+		],
+	},
+	{
+		version: "1.32.0",
+		date: "2026-08-19",
+		title: "Life on any tiling",
+		commit: "6652174",
+		changes: [
+			{
+				kind: "feature",
+				text: "**Conway's Life runs on any Euclidean tiling in the catalogue**, on the unbounded plane, at 17 to 77 million cell updates a second.",
+				href: "/automata",
+				tilings: ["t1005", "t1011", "t1001", "t1006"],
+			},
+			{
+				kind: "feature",
+				text: "**All five flat surfaces ship**, which is the complete list: a board is a 2D Euclidean space form, and Gauss-Bonnet rules out the projective plane.",
+			},
+			{
+				kind: "feature",
+				text: "**An article on what Life becomes off the square grid**, where a cell can have three neighbours or twelve.",
+				href: "/theory/automata",
+			},
+		],
+	},
+	{
+		version: "1.31.0",
+		date: "2026-08-19",
+		title: "Image export and the homology class",
+		commit: "9e3983b",
+		changes: [
+			{
+				kind: "feature",
+				text: "**The camera button exports what you are actually looking at**, at its live zoom, pan and rotation, in place of the fixed 300 by 300 patch it used to save.",
+				href: "/play",
+				tilings: ["t1005", "t1008"],
+			},
+			{
+				kind: "feature",
+				text: "**The homology class is now a dial on the Options tab**, with snap-to-integral, a fundamental-domain overlay and a button that finds the richest class.",
+				href: "/play",
+			},
+		],
+	},
+	{
+		version: "1.30.0",
+		date: "2026-08-19",
+		title: "Squared rectangles from polyhedra",
+		commit: "cc51ab7",
+		changes: [
+			{
+				kind: "feature",
+				text: "**667 squared rectangles across 105 solids**, where a polyhedron's skeleton becomes an electrical network and the currents in it are the sides of the squares. Eleven of the 105 square perfectly.",
+				href: "/theory/perfect-rectangles",
+			},
+			{
+				kind: "feature",
+				text: "**All four steps sit on one screen** on the pipeline page: click an edge and the polyhedron, the embedding, the Smith diagram and the tiling re-solve together.",
+				href: "/theory/perfect-rectangles/pipeline",
+			},
+			{
+				kind: "content",
+				text: "**On the torus there is no battery edge**, so the choice becomes a direction you drag: 24 records, snapping to the exact integer classes.",
+			},
+		],
+	},
+	{
+		version: "1.29.0",
+		date: "2026-08-18",
+		title: "Deformation by basis vectors",
+		commit: "bae8824",
+		changes: [
+			{
+				kind: "feature",
+				text: "**Drag a tiling's two basis vectors** and the whole plane deforms under any 2 by 2 linear map, live at the frame cap.",
+				href: "/play",
+				tilings: ["t1006", "tri45x-k2-069"],
+			},
+			{
+				kind: "content",
+				text: "**84,424 tilings that ship but were never loaded** now appear in the browse tree, each row showing its real count with a download glyph.",
+				href: "/library",
+				tilings: ["euhhexv-k4-0001", "planigon-k4-001"],
+			},
+		],
+	},
+	{
+		version: "1.28.1",
+		date: "2026-08-18",
+		title: "Smaller shelf files",
+		commit: "6bca8a2",
+		changes: [
+			{
+				kind: "perf",
+				text: "**The shelf files are 80% smaller**, 210.5 MB down to 42.4 MB, so a page that opens 118 of them stops paying for the wait.",
+				href: "/library",
+			},
+			{
+				kind: "perf",
+				text: "**Two filter chips were rebuilding the whole corpus to fill themselves**: 47 seconds becomes 3 milliseconds.",
+			},
+			{
+				kind: "perf",
+				text: "**Shelf files now carry an hour of browser cache**, so a reload no longer revalidates 118 of them one at a time.",
+			},
+			{
+				kind: "fix",
+				text: "**342,693 tilings were invisible in the library.** The Edge patterns and Colorings chips fetched nothing and reported no matches, while the same shelves were fully populated on the play page.",
+				href: "/library",
+			},
+		],
+	},
+	{
 		version: "1.28.0",
 		date: "2026-08-18",
 		title: "Tilings that are not edge-to-edge",
-		commit: "37c2b81",
+		commit: "9b56de1",
 		changes: [
 			{
 				kind: "feature",

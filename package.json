@@ -1,6 +1,6 @@
 {
 	"name": "tiling-atlas-next",
-	"version": "1.28.0",
+	"version": "1.33.0",
 	"private": true,
 	"scripts": {
 		"dev": "next dev",

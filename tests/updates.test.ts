@@ -6,6 +6,7 @@ import { formatMonth, groupByMonth } from "@/lib/updates/grouping";
 import { bumpBetween, compareVersions, isVersion, parseVersion, releaseLevel } from "@/lib/updates/version";
 import { shelfPreviewCell } from "@/lib/updates/preview-cells";
 import { parseShelfPreviewId, previewHref } from "@/lib/updates/preview-ids";
+import { lengthFamilyRows } from "@/lib/services/referenceAtlas";
 import { previewIdsIn, shouldAutoOpen, unseenSince } from "@/lib/updates/unseen";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
 
@@ -32,6 +33,11 @@ function atlasIds(): Set<string> {
 			// A shard that will not parse is another test's problem.
 		}
 	}
+	// The parametric edge-length shelf has no file to find: `lengthFamilyRows` evaluates it from linear
+	// forms at load time. Its ids are ordinary atlas ids everywhere else (they deep-link to /play and
+	// carry their own k), so leaving them out here would read as "references unknown tiling" for a
+	// preview that resolves perfectly well in both consumers.
+	for (const t of lengthFamilyRows()) ids.add(t.id);
 	return ids;
 }
 

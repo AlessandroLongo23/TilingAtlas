@@ -25,7 +25,7 @@ import { drawableEuclidean, toSpecimen, type LandingSpecimen } from "@/lib/servi
 import { UPDATES } from "@/lib/updates/entries";
 import { shelfPreviewCell } from "@/lib/updates/preview-cells";
 import { previewLabel } from "@/lib/updates/preview-ids";
-import type { ReferenceTiling } from "@/lib/services/referenceAtlas";
+import { lengthFamilyRows, type ReferenceTiling } from "@/lib/services/referenceAtlas";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
 import { hydrateRenderCells } from "@/lib/services/renderCellDerive";
 
@@ -70,7 +70,11 @@ async function loadAtlas(): Promise<ReferenceTiling[]> {
 			}
 		}),
 	);
-	return parts.flat();
+	// The parametric edge-length shelf is generated in process, not fetched: its geometry is a handful
+	// of linear forms evaluated at the family's defaults, so it ships in no JSON file and the lazy-shard
+	// walk below will never find it either. Appending it here is what makes a `plen-*` id previewable,
+	// and it arrives with its own label and its measured k like any other record.
+	return [...parts.flat(), ...lengthFamilyRows()];
 }
 
 /**

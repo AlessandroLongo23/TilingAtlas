@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 import { UPDATES } from "@/lib/updates/entries";
 import { shelfPreviewCell } from "@/lib/updates/preview-cells";
 import { previewIdsIn } from "@/lib/updates/unseen";
-import type { ReferenceTiling } from "@/lib/services/referenceAtlas";
+import { lengthFamilyRows, type ReferenceTiling } from "@/lib/services/referenceAtlas";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import { UpdatesClient } from "./_updates-client";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
@@ -52,6 +52,12 @@ async function loadCells(ids: string[]): Promise<Record<string, TranslationalCel
 	for (const id of wanted) {
 		const cell = shelfPreviewCell(id);
 		if (cell) out[id] = cell;
+	}
+	// Same reason, different mechanism: the parametric edge-length shelf IS a set of atlas records, but
+	// they are evaluated from linear forms at load time and written to no file, so the shard walk below
+	// cannot answer for a `plen-*` id however far it reads.
+	for (const t of lengthFamilyRows()) {
+		if (wanted.has(t.id) && t.renderCell && !out[t.id]) out[t.id] = t.renderCell;
 	}
 	for (const name of ATLAS_FILES) {
 		try {
