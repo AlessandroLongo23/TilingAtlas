@@ -153,7 +153,20 @@ function pushSphericalTri(positions: number[], normals: number[], colors: number
 export function pushFlatFace(positions: number[], normals: number[], colors: number[], ring: V3[], radius: number, col: V3) {
 	const P = ring.map((v) => [v[0] * radius, v[1] * radius, v[2] * radius] as V3);
 	let n = nrm(cross(sub(P[1], P[0]), sub(P[2], P[0])));
-	if (dot(n, P[0]) < 0) n = [-n[0], -n[1], -n[2]]; // outward
+	// The ring's own winding is what produced `n`, so when `n` points inward the fix is to reverse the
+	// RING, not just the vector.
+	//
+	// ⚑ Marek Čtrnáct, 2026-08-19: "there's two shades of the same color there", on one flat face of the
+	// octagrammic prism. Negating the vector alone leaves the emitted normal disagreeing with the
+	// emitted winding, and a DoubleSide material resolves that disagreement its own way: three.js
+	// multiplies the normal by gl_FrontFacing, so the triangles whose winding says "back" get the normal
+	// flipped straight back to inward and light as though they faced away. A star face is where it shows,
+	// because sphStar.ts hands over a core ring and its point triangles as one tile and the two wind
+	// oppositely, so half of one flat face lit one way and half the other.
+	if (dot(n, P[0]) < 0) {
+		n = [-n[0], -n[1], -n[2]]; // outward
+		P.reverse();
+	}
 	for (let i = 1; i < P.length - 1; i++) {
 		for (const p of [P[0], P[i], P[i + 1]]) {
 			positions.push(p[0], p[1], p[2]);
@@ -269,20 +282,14 @@ export function buildIcoFreedraw(pattern: IcoPattern, rawVertices: V3[], opts: I
 	}
 
 	// --- face-through-face creases, UNDER the drawn edges so a crease never covers a real edge where the
-	// two run together. Thinner and paler on purpose: it is not an edge of the solid, it bounds no face,
-	// and if it read at edge weight the picture would contradict the V, E and F the record states. ---
+	// two run together. SAME STROKE WEIGHT as an edge (AL, 2026-08-19): a crease is a real feature of the
+	// solid's surface and reads as one, so it gets an edge's weight. Only the colour separates them, grey
+	// against the edges' near-black, because a crease still bounds no face and is a vertex of nothing.
+	// The toggle and its tooltip carry that distinction; the line weight no longer has to. ---
 	if (opts.showCrossings && opts.crossings && opts.crossings.length) {
-		const crossThick = thickness * 0.5;
 		const crossColor: [number, number, number] = dark ? [0.42, 0.44, 0.52] : [0.46, 0.48, 0.56];
 		const crossArcs = (extend: number) => opts.crossings!.map(([i, j]) => edgeArc(i, j, radius, extend));
-		const cross = buildTubeSkeleton(crossArcs, 0, { section: "tube", thickness: crossThick, color: crossColor, union: false });
-		cross.object.traverse((o) => {
-			const mat = (o as THREE.Mesh).material as THREE.Material | undefined;
-			if (mat) {
-				mat.transparent = true;
-				(mat as THREE.MeshStandardMaterial).opacity = 0.9;
-			}
-		});
+		const cross = buildTubeSkeleton(crossArcs, 0, { section: "tube", thickness, color: crossColor, union: false });
 		group.add(cross.object);
 		disposers.push(() => cross.dispose());
 	}
