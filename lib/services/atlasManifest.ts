@@ -15,7 +15,7 @@
  * from, so replacing the generated file with a query changes only `loadAtlasManifest`.
  */
 
-import type { TileClass } from "@/lib/services/referenceAtlas";
+import type { Decoration, Geometry, TileClass } from "@/lib/services/referenceAtlas";
 
 /** Which loader reaches a tier. `"ctrnact"` is loadReferenceAtlasShard; the rest are loadShelfShard. */
 export type TierShelf = "ctrnact" | "scaled" | "euhalf" | "mixed";
@@ -26,6 +26,18 @@ export interface ManifestTier {
 	k: number;
 	count: number;
 	shelf: TierShelf;
+	/**
+	 * Which (geometry, decoration) cell the tier's records land in.
+	 *
+	 * ⚑ Added 2026-08-19 after Marek Čtrnáct reported the rows appearing under the wrong geometry.
+	 * The tree filters its LOADED records to one cell before grouping them, so a manifest row that
+	 * does not say which cell it belongs to is drawn in all of them: every tier here is Euclidean, so
+	 * switching to Hyperbolic or Spherical showed 27 rows promising 84,424 tilings that the geometry
+	 * filter then dropped the moment they arrived. Clicking one made it vanish, which is the symptom
+	 * he described and the clearest possible sign the row should never have been offered.
+	 */
+	geometry: Geometry;
+	decoration: Decoration;
 }
 
 export interface AtlasManifest {
@@ -57,20 +69,27 @@ export function loadAtlasManifest(): Promise<AtlasManifest | null> {
 }
 
 /**
- * The tiers in the manifest that the loaded records do not already cover.
+ * The tiers in the manifest that the loaded records do not already cover, WITHIN one cell.
  *
  * Keyed on (cls, sub, k) rather than on shelf identity because that is what the tree groups by: a
  * tier whose records have arrived under a different route must not reappear as an empty row.
+ *
+ * `scope` is the (geometry, decoration) the tree is currently showing, and a tier outside it is not
+ * a row at all. Optional so a caller that genuinely wants every tier (the generator's own test) can
+ * omit it, but /play always passes one: without it the rows advertise Euclidean shelves to someone
+ * browsing the hyperbolic plane.
  */
 export function unloadedTiers(
 	manifest: AtlasManifest | null,
 	loaded: Iterable<{ cls: TileClass; sub: string; k: number }>,
+	scope?: { geometry: Geometry; decoration: Decoration },
 ): UnloadedTier[] {
 	if (!manifest) return [];
 	const have = new Set<string>();
 	for (const t of loaded) have.add(tierKey(t.cls, t.sub, t.k));
 	const out: UnloadedTier[] = [];
 	for (const t of manifest.tiers) {
+		if (scope && (t.geometry !== scope.geometry || t.decoration !== scope.decoration)) continue;
 		const key = tierKey(t.cls, t.sub, t.k);
 		if (have.has(key)) continue;
 		out.push({ ...t, key });

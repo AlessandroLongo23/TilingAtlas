@@ -95,6 +95,7 @@ import {
 import {
 	sphStarFamilyLabel,
 	sphStarShardUrl,
+	densityUnresolved,
 	sphStarSub,
 	sphStarSubLabel,
 	SPH_STAR_INDEX,
@@ -548,7 +549,12 @@ export const SUB_ORDER = [
 	...HYP_HALF_BOARDS.map((b) => hypHalfSubOfBoard(b)),
 	// Their spherical siblings, n = 3, 4, 5. "spp-" namespaced.
 	...SPH_POLY_BOARDS.map((b) => sphPolySubOfBoard(b)),
-	...[...new Set(SPH_STAR_INDEX.map((e) => e.density))].sort((a, b) => a - b).map((d) => sphStarSub({ density: d })),
+	// Grouped by density, ascending, with the records whose density did NOT resolve collected in one
+	// row at the end instead of filed under the number the signed-area sum happened to produce.
+	...[...new Set(SPH_STAR_INDEX.filter((e) => !e.stats.densitySuspect).map((e) => e.density))]
+		.sort((a, b) => a - b)
+		.map((d) => sphStarSub({ density: d })),
+	...(SPH_STAR_INDEX.some((e) => e.stats.densitySuspect) ? ["sst-dx"] : []),
 	// The HALF-TILE spherical boards — a Platonic face cut in two — on the same axis, since the axis is
 	// "which spherical tiling board" and these are boards. Named ids, so they cannot collide with the
 	// 3.4.n.4 family's digits.
@@ -2233,7 +2239,7 @@ function sphStarToReference(p: SphStarPattern): ReferenceTiling {
 		id: p.id,
 		source: "spherical",
 		k: p.k,
-		family: `${sphStarSubLabel(p.density)} · ${sphStarFamilyLabel(p)}`,
+		family: `${sphStarSubLabel(p.density, densityUnresolved(p))} · ${sphStarFamilyLabel(p)}`,
 		renderCell: FREEDRAW_EMPTY_CELL,
 		sphStar: p,
 		geometry: "spherical",

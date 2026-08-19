@@ -220,15 +220,6 @@ export function PlayClient({ tilings }: PlayClientProps) {
 
 	// Keyed on (class, sub, k) because that is what the tree groups by, so a tier whose records
 	// arrived by another route (a deep link, an eager tier) cancels instead of drawing an empty twin.
-	const unloaded = useMemo(
-		() =>
-			unloadedTiers(
-				manifest,
-				(refList ?? []).map((t) => ({ cls: tileClassOf(t), sub: subOf(t), k: t.k })),
-			),
-		[manifest, refList],
-	);
-
 	const loadTier = useCallback((tier: UnloadedTier) => {
 		setLoadingTiers((s) => new Set(s).add(tier.key));
 		TIER_LOADER[tier.shelf](tier.k)
@@ -488,6 +479,20 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// Tilings / Edge patterns / Colorings — see decorationOf. Default "tilings", which is where the initial
 	// Euclidean selection lands.
 	const [decoration, setDecoration] = useState<Decoration>("tilings");
+
+	// Scoped to the ACTIVE cell, not the whole manifest: the tree draws these rows beside ones it built
+	// from `geometryList`, which is already filtered to (geometry, decoration), so an unscoped tier is a
+	// row for a shelf the current view cannot hold. Marek Čtrnáct caught it as Euclidean rows offered
+	// under Hyperbolic that vanished when clicked, the records having been filtered out on arrival.
+	const unloaded = useMemo(
+		() =>
+			unloadedTiers(
+				manifest,
+				(refList ?? []).map((t) => ({ cls: tileClassOf(t), sub: subOf(t), k: t.k })),
+				{ geometry, decoration },
+			),
+		[manifest, refList, geometry, decoration],
+	);
 	// The two decoration catalogues are deferred (see loadColorsDecorAtlas). Until one arrives its count
 	// is 0, and a 0 disables the chip — which would deadlock, because clicking the chip is what fetches
 	// it. This marks them PENDING so they stay clickable and read "…" instead of a wrong zero.

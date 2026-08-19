@@ -1,0 +1,26 @@
+{
+ "name": "sph-ico-half-split",
+ "D": 20,
+ "tileGeometry": "spherical",
+ "closure": "euclidean",
+ "comment": "SPLIT COUNTERPART of sph-ico-half: every edge that is exactly TWICE another carries a flat 180-degree corner at its midpoint, so one tile's side may be met by two. The icosahedron edge 63.4349 degrees is exactly twice its half 31.7175, so it carries a flat 180-degree corner at its midpoint and may be met by two neighbours. The tile area is unchanged, so every tiling still uses exactly 40 of them and the catalogue is finite before the search starts. Halving a regular tile always produces this ratio \u2014 the cut lands on a midpoint, and arc length is additive along a geodesic, in H^2 and on the sphere exactly as in the plane (AL, 2026-08-18). The unsplit board sees only the tilings where every edge is matched whole; this one is a SUPERSET of it, so containment is the check to run. Angles unchanged apart from the flats, which is why the curvature is too: a flat corner adds D/2 to the angle sum and 1 to n, and (n-2)*D/2 grows by exactly the same D/2, so the tile's area is untouched. HALF THE ICOSAHEDRON'S FACE. The icosahedron cuts the sphere into twenty equilateral triangles with 72-degree corners, because five faces meet at every vertex; an altitude cuts one into two 36-90-72 triangles. This is the first SCALENE half in the family, and so the first CHIRAL one: its three angles differ, its three sides differ, and its mirror image is a separate alphabet symbol \u2014 which is exactly the case the sided-classes repair of 2026-08-13 made runnable. The sides are the icosahedron's edge arccos(1/sqrt5) = 63.4349, half of it 31.7175, and the altitude 58.2825 degrees, so three edge types, none of them a round number. D=20 because 36 = 2pi/20 x 2; the angles are [2,5,4] and sum to 11 against the 10 a flat triangle would, so the excess is 1 unit = 18 degrees = pi/10 and every tiling uses exactly 4pi/(pi/10) = 40 tiles \u2014 the icosahedron's twenty faces, halved.",
+ "tiles": [
+  {
+   "kind": "composite",
+   "name": "I72",
+   "famchar": "i",
+   "angles": [
+    2,
+    5,
+    4,
+    10
+   ],
+   "edges": [
+    "alt",
+    "half",
+    "half",
+    "half"
+   ]
+  }
+ ]
+}

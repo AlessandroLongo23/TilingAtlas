@@ -1,0 +1,26 @@
+{
+ "name": "hyp-37-half-split",
+ "D": 28,
+ "tileGeometry": "hyperbolic",
+ "closure": "euclidean",
+ "comment": "SPLIT COUNTERPART of hyp-37-half: every edge that is exactly TWICE another carries a flat 180-degree corner at its midpoint, so one tile's side may be met by two. The {3,7} edge is EXACTLY twice the half \u2014 cosh(edge) = 2 cosh(half)^2 - 1 \u2014 so it carries a flat 180-degree corner at its midpoint and may be met by TWO neighbours. \u2691 This retires the parity prediction the unsplit palette states: the argument that no {3,7} vertex can be left uncut assumed each corner is flanked by one FULL edge and one HALF-edge and that the two must alternate round an odd vertex. With the full edge split there are no full edges left to alternate, so tilings below k=6 are no longer excluded and finding them is the point of this board. Halving a regular tile always produces this ratio \u2014 the cut lands on a midpoint, and arc length is additive along a geodesic, in H^2 and on the sphere exactly as in the plane (AL, 2026-08-18). The unsplit board sees only the tilings where every edge is matched whole; this one is a SUPERSET of it, so containment is the check to run. Angles unchanged apart from the flats, which is why the curvature is too: a flat corner adds D/2 to the angle sum and 1 to n, and (n-2)*D/2 grows by exactly the same D/2, so the tile's area is untouched. HALF THE {3,7} TRIANGLE. In the hyperbolic {3,7} tiling seven triangles meet at every vertex, so each corner is 360/7 degrees; an altitude cuts one into two triangles with angles pi/2, pi/7 and 2pi/7 \u2014 90, 180/7 and 360/7 degrees. Scalene, so CHIRAL, and so the mirror image is its own alphabet symbol; this palette runs only because of the sided-classes repair. Its sides are the {3,7} edge, half of it and the altitude \u2014 three edge types \u2014 and the edge is EXACTLY twice the half, which is what cosh(2x) = 2cosh(x)^2 - 1 says about the two: cosh(half) = 1.152389 and cosh(edge) = 1.656027 = 2(1.152389)^2 - 1. D=28 because that is the smallest ring holding all three angles: 180/7 = 2 units of 2pi/28, 360/7 = 4, and 90 = 7. They sum to 13 against the 14 a flat triangle would, so the deficit is 1 unit = 90/7 degrees, which is the tile's area.",
+ "tiles": [
+  {
+   "kind": "composite",
+   "name": "T37",
+   "famchar": "t",
+   "angles": [
+    2,
+    7,
+    4,
+    14
+   ],
+   "edges": [
+    "alt",
+    "half",
+    "half",
+    "half"
+   ]
+  }
+ ]
+}

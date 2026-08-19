@@ -6,8 +6,9 @@ import { decodeAtlas } from "./atlasCodec";
 import { tileClassOf, subOf, type ReferenceTiling } from "./referenceAtlas";
 
 const manifest = (tiers: AtlasManifest["tiers"]): AtlasManifest => ({ manifest: 1, tiers });
-const tier = (cls: string, sub: string, k: number, count = 1) =>
-	({ cls, sub, k, count, shelf: "scaled" }) as AtlasManifest["tiers"][number];
+const tier = (cls: string, sub: string, k: number, count = 1, geometry = "euclidean", decoration = "tilings") =>
+	({ cls, sub, k, count, shelf: "scaled", geometry, decoration }) as AtlasManifest["tiers"][number];
+const EUCLIDEAN = { geometry: "euclidean", decoration: "tilings" } as const;
 
 describe("unloadedTiers", () => {
 	it("reports a tier nothing has loaded", () => {
@@ -28,6 +29,28 @@ describe("unloadedTiers", () => {
 		const m = manifest([tier("scaled", "s", 4)]);
 		expect(unloadedTiers(m, [{ cls: "scaled" as never, sub: "s", k: 5 }])).toHaveLength(1);
 		expect(unloadedTiers(m, [{ cls: "scaled" as never, sub: "other", k: 4 }])).toHaveLength(1);
+	});
+
+	// ⚑ Marek Čtrnáct, 2026-08-19: every tier in the shipped manifest is Euclidean, and without a scope
+	// all 27 were drawn under Hyperbolic and Spherical too. Clicking one fetched records that the
+	// geometry filter then dropped, so the row vanished instead of filling in.
+	it("hides a tier from outside the active geometry", () => {
+		const m = manifest([tier("scaled", "s", 4)]);
+		expect(unloadedTiers(m, [], EUCLIDEAN)).toHaveLength(1);
+		expect(unloadedTiers(m, [], { geometry: "hyperbolic", decoration: "tilings" })).toEqual([]);
+		expect(unloadedTiers(m, [], { geometry: "spherical", decoration: "tilings" })).toEqual([]);
+	});
+
+	it("hides a tier from outside the active decoration", () => {
+		const m = manifest([tier("scaled", "s", 4)]);
+		expect(unloadedTiers(m, [], { geometry: "euclidean", decoration: "edges" })).toEqual([]);
+		expect(unloadedTiers(m, [], { geometry: "euclidean", decoration: "colorings" })).toEqual([]);
+	});
+
+	it("reports every tier when no scope is given", () => {
+		// The generator's own checks want the whole manifest, so the parameter stays optional.
+		const m = manifest([tier("scaled", "s", 4), tier("regular", "", 8, 1, "hyperbolic")]);
+		expect(unloadedTiers(m, [])).toHaveLength(2);
 	});
 
 	it("degrades to no rows when the manifest is missing", () => {

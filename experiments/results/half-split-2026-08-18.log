@@ -1,0 +1,6 @@
+[21:14:12] PHASE 0  alphabet (palette=sph-oct-half-split)
+[gen] palette=sph-oct-half-split D=8 tiles=1 classes=5 configs=35
+[cert] A6: 60 entries, pairwise non-isomorphic PASS
+[gen] SIDED CLASSES: 10 of 60 vertex types have a dart orbit whose two sides carry a class and its sigma-image — a mirror in the site symmetry maps a tile to its reflection. Their class array is the SIDE-0 reading and the identity sigma[cls[mirro]] = cls[rneig] carries the other side. Usable.
+[gen] wrote /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/tables/sph-oct-half-split/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (60 entries)
+[21:14:12] PHASE 1  solve (MAXNUM=16)

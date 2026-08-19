@@ -151,6 +151,9 @@ const NAMED: Record<string, string> = {
 	// shelf has no k axis (uniform means vertex-transitive, so every record is k = 1), and density is
 	// the quantity that orders it instead.
 	"sst-d1": "Density 1",
+	// Not a density. The signed-area sum cancelled to 1 on a solid with a self-intersecting face, so the
+	// number is not the covering number and the shelf declines to print one. See `densityUnresolved`.
+	"sst-dx": "Density unresolved",
 	"sst-d2": "Density 2",
 	"sst-d3": "Density 3",
 	"sst-d4": "Density 4",

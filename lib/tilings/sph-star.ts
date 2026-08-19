@@ -89,24 +89,45 @@ export type SphStarEntry = Omit<SphStarPattern, "vertices" | "faces" | "faceType
 
 export const sphStarShardUrl = (id: string): string => `/spherical-star/${id}.json`;
 
-/** The /play sub-axis key, namespaced against "sps-"/"spc-"/"spe-"/"spp-". */
-export const sphStarSub = (p: { density: number }): string => `sst-d${p.density}`;
+/**
+ * Is this record's density the covering number, or an artefact?
+ *
+ * Retrograde faces enter the signed-area sum negative, so they can cancel a genuine covering number
+ * down to 1. `emit_sph_star_shelf.py` sets `densitySuspect` when that happens on a solid that has a
+ * self-intersecting face, with the instruction that the UI must not present the result as a density.
+ *
+ * ⚑ Nothing read the flag until 2026-08-19, when Marek Čtrnáct asked why 8/3.6.4 was filed at density
+ * 1 and pointed out that a density-1 polyhedron is convex by definition, which that one plainly is
+ * not. He is right, the record is right, and only the label was wrong. One record is affected:
+ * ss-48-72-26-d1, the only density-1 entry on the shelf.
+ */
+export const densityUnresolved = (p: { density: number; stats: { densitySuspect?: boolean } }): boolean =>
+	p.stats.densitySuspect === true;
+
+/** The /play sub-axis key, namespaced against "sps-"/"spc-"/"spe-"/"spp-". A record whose density did
+ *  not resolve groups apart from the honest ones, so no row promises a number it cannot stand behind. */
+export const sphStarSub = (p: { density: number; stats?: { densitySuspect?: boolean } }): string =>
+	p.stats?.densitySuspect ? "sst-dx" : `sst-d${p.density}`;
 
 /** Sub-axis label: the shelf is grouped by DENSITY, which is the one number that orders this space and
  *  the one an ordinary tiling does not have. */
-export const sphStarSubLabel = (density: number): string => `density ${density}`;
+export const sphStarSubLabel = (density: number, unresolved = false): string =>
+	unresolved ? "density unresolved" : `density ${density}`;
 
 /** Card / search label. A named solid says its name; anything else says what it is made of, since a
  *  U-number guessed off a census is exactly the error the naming table refuses to make. */
 export function sphStarFamilyLabel(p: SphStarEntry): string {
 	if (p.solid) return p.solid;
 	const parts = p.stats.types.map(([n, d, c]) => `${c}{${d > 1 ? `${n}/${d}` : n}}`);
-	return `${parts.join(" + ")} · density ${p.density}`;
+	// Same refusal as sphStarSubLabel: the census is always true, the density is not.
+	return `${parts.join(" + ")} · ${densityUnresolved(p) ? "density unresolved" : `density ${p.density}`}`;
 }
 
 /** Whether any face of the record actually crosses itself. Every record on this shelf has density > 1,
  *  but not all of them have star FACES: the great dodecahedron and the great icosahedron are built from
- *  ordinary pentagons and triangles and are star polyhedra because their vertex figures wind twice. */
+ *  ordinary pentagons and triangles and are star polyhedra because their vertex figures wind twice.
+ *  ⚑ The "every record has density > 1" in the first line is not true: ss-48-72-26-d1 measures 1, which
+ *  is exactly the cancellation `densityUnresolved` exists to flag. */
 export const hasStarFace = (p: SphStarEntry): boolean => p.stats.types.some(([, d]) => d > 1);
 
 /** Distinct face types present, for the /library size facet. */
