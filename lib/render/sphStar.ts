@@ -293,6 +293,71 @@ function clipToRings(rs: number[][], verts: V3[], P: V3, u: V3): [number, number
 }
 
 /**
+ * The most sheets of this solid's surface that lie over any one direction — what the sphere view shades
+ * by, and the number its ramp is scaled to.
+ *
+ * ⚑ THIS IS NOT `pattern.density`, and on 24 of the shelf's 54 records it is a different number. Density
+ * is Cayley's SIGNED, winding-weighted count; this counts FACES, each once, the way the fill draws them.
+ * They come apart in both directions:
+ *
+ *   below   a pentagram is drawn as one sheet, but its core winds twice. The small stellated
+ *           dodecahedron {5/2,5} is covered by exactly 2 of its 12 pentagrams in every direction while
+ *           its density is 3, and the great stellated dodecahedron reads 4 against a density of 7.
+ *   above   a retrograde face subtracts covering from the density but still puts a sheet over the
+ *           directions it spans, so ss-48-72-26-d1 reads 4 against the density 1 that made the shelf
+ *           flag it unresolved.
+ *
+ * Sheets are what a ray from the centre actually crosses, so this is the quantity the picture can show;
+ * density is not, since a signed count can cancel and no fill can draw a negative sheet.
+ *
+ * Measured by casting a fixed Fibonacci set of directions against the same convex pieces the fill uses,
+ * so the number and the picture cannot disagree. Deterministic, and exact wherever the covering is
+ * uniform — every regular star polyhedron. A cell smaller than the sample spacing can be missed, and
+ * then only that cell saturates the top of the ramp.
+ */
+export function sheetCount(p: SphStarPattern, samples = 1024): number {
+	const verts: V3[] = p.vertices.map((v) => [...v] as V3);
+	const rings = p.faces.map((f, i) => starFaceRings(f, p.faceType[i][1], verts));
+	let max = 1;
+	const ga = Math.PI * (3 - Math.sqrt(5));
+	for (let i = 0; i < samples; i++) {
+		const z = 1 - (2 * i + 1) / samples;
+		const r = Math.sqrt(Math.max(0, 1 - z * z));
+		const u: V3 = [r * Math.cos(ga * i), r * Math.sin(ga * i), z];
+		let n = 0;
+		for (const face of rings) if (face.some((ring) => raySpans(ring, verts, u))) n++;
+		if (n > max) max = n;
+	}
+	return max;
+}
+
+/** Whether the ray from the origin along `u` passes through this convex, planar ring. */
+function raySpans(ring: number[], verts: V3[], u: V3): boolean {
+	if (ring.length < 3) return false;
+	const a = verts[ring[0]];
+	const n = cross(sub(verts[ring[1]], a), sub(verts[ring[2]], a));
+	const den = dot(n, u);
+	if (Math.abs(den) < 1e-12) return false;
+	const t = dot(n, a) / den;
+	if (t <= 0) return false;
+	const P: V3 = [u[0] * t, u[1] * t, u[2] * t];
+	let sign = 0;
+	for (let k = 0; k < ring.length; k++) {
+		const q = verts[ring[k]];
+		const r = verts[ring[(k + 1) % ring.length]];
+		const s = dot(n, cross(sub(r, q), sub(P, q)));
+		// A direction that lands ON a boundary counts for NEITHER face. Counting it for both is the
+		// tempting reading and it wrecks a maximum: one sample out of a thousand grazing a shared edge
+		// lifts the whole ramp by a sheet, so every record loses a level of contrast to an artifact.
+		if (Math.abs(s) < 1e-9) return false;
+		const sg = s > 0 ? 1 : -1;
+		if (sign === 0) sign = sg;
+		else if (sg !== sign) return false;
+	}
+	return true;
+}
+
+/**
  * Group the faces by TYPE and decompose every star face into convex pieces.
  *
  * One colour per {n/d} is the same rule sphPoly uses for polygon size, and it is the reading the

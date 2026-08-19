@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
-import { faceCrossings, starFaceRings } from "@/lib/render/sphStar";
+import { readFileSync, readdirSync } from "node:fs";
+import { faceCrossings, sheetCount, starFaceRings } from "@/lib/render/sphStar";
 import type { V3 } from "@/lib/render/icoFreedraw";
 import type { SphStarPattern } from "@/lib/tilings/sph-star";
 
@@ -204,6 +204,80 @@ describe("faceCrossings", () => {
 			for (const q of [c.a, c.b]) {
 				expect(Math.hypot(q[0], q[1], q[2])).toBeLessThan(1 + 1e-6);
 			}
+		}
+	});
+});
+
+// The sphere view shades by SHEETS — how many faces lie over a direction — and `sheetCount` scales its
+// ramp to the largest such number. The check here is an independent one: Sigma face area / 4*pi is the
+// MEAN sheets over the sphere, computed analytically from the same decomposition by Van
+// Oosterom-Strackee, and it has to bound the sampled maximum from below everywhere and meet it exactly
+// wherever the covering is uniform.
+describe("sheetCount", () => {
+	const load = (id: string): SphStarPattern =>
+		JSON.parse(readFileSync(`public/spherical-star/${id}.json`, "utf8"));
+
+	const dot3 = (a: V3, b: V3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+	const cross3 = (a: V3, b: V3): V3 => [
+		a[1] * b[2] - a[2] * b[1],
+		a[2] * b[0] - a[0] * b[2],
+		a[0] * b[1] - a[1] * b[0],
+	];
+	const unit3 = (a: V3): V3 => {
+		const n = Math.hypot(a[0], a[1], a[2]) || 1;
+		return [a[0] / n, a[1] / n, a[2] / n];
+	};
+
+	/** Mean sheets over the sphere: every convex piece's solid angle, summed, over 4*pi. */
+	function meanSheets(p: SphStarPattern): number {
+		const verts: V3[] = p.vertices.map((v) => [...v] as V3);
+		const rings = p.faces.map((f, i) => starFaceRings(f, p.faceType[i][1], verts));
+		let total = 0;
+		for (const face of rings) {
+			for (const ring of face) {
+				const u = ring.map((i) => unit3(verts[i]));
+				for (let k = 1; k < u.length - 1; k++) {
+					const [a, b, c] = [u[0], u[k], u[k + 1]];
+					total += 2 * Math.atan2(
+						Math.abs(dot3(a, cross3(b, c))),
+						1 + dot3(a, b) + dot3(b, c) + dot3(c, a),
+					);
+				}
+			}
+		}
+		return total / (4 * Math.PI);
+	}
+
+	it("meets the analytic mean exactly on the four regular star polyhedra, whose covering is uniform", () => {
+		for (const id of ["ss-12-30-12-d3", "ss-12-30-20-d7", "ss-12-30-12-d3-r20344", "ss-20-30-12-d7"]) {
+			const p = load(id);
+			expect(meanSheets(p)).toBeCloseTo(sheetCount(p), 6);
+		}
+	});
+
+	it("counts sheets, not Cayley density, where a star face winds more than once", () => {
+		// The small stellated dodecahedron is 12 pentagrams at density 3, and every direction lies under
+		// exactly TWO of them: the third turn is the pentagram's core winding twice, which the
+		// nonzero-winding fill draws as one sheet. Same story at 4 against 7 on the great stellated.
+		expect(sheetCount(load("ss-12-30-12-d3-r20344"))).toBe(2);
+		expect(sheetCount(load("ss-20-30-12-d7"))).toBe(4);
+		// And where no face winds twice, sheets and density agree.
+		expect(sheetCount(load("ss-12-30-12-d3"))).toBe(3);
+		expect(sheetCount(load("ss-12-30-20-d7"))).toBe(7);
+	});
+
+	it("rises above a density that a retrograde face cancelled", () => {
+		// The record the shelf flags as density-unresolved: the signed count closes at 1, and the faces
+		// plainly lie several deep. Sheets is what the picture can draw, and it is not 1.
+		const p = load("ss-48-72-26-d1");
+		expect(p.density).toBe(1);
+		expect(sheetCount(p)).toBeGreaterThan(1);
+	});
+
+	it("bounds the mean from above on every record of the shelf", () => {
+		for (const f of readdirSync("public/spherical-star").filter((x) => x.endsWith(".json"))) {
+			const p: SphStarPattern = JSON.parse(readFileSync(`public/spherical-star/${f}`, "utf8"));
+			expect(sheetCount(p)).toBeGreaterThanOrEqual(meanSheets(p) - 1e-6);
 		}
 	});
 });

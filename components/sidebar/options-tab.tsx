@@ -1104,7 +1104,16 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 									onCheckedChange={(v) => setCfg({ sphericalFreedrawGrid: v })}
 								/>
 							) : null}
-							{isSphStar ? (
+							{/* What the sphere view is showing, said once. A star polyhedron's faces overlap on the
+							    circumsphere, so the mode cannot draw a tiling the way it does for a convex solid, and
+							    a blue ball with arcs on it explains nothing on its own. */}
+							{isSphStar && cfg.sphericalFreedrawMode === "sphere" ? (
+								<p className="text-[11px] text-fg-muted leading-relaxed">
+									Star faces overlap on the sphere, so there is no tiling to draw. Each direction is
+									shaded by how many faces lie over it: the sheets a ray from the centre crosses.
+								</p>
+							) : null}
+							{isSphStar && cfg.sphericalFreedrawMode !== "sphere" ? (
 								<Checkbox
 									id="sphStarHideCrossings"
 									label="Hide crossings"

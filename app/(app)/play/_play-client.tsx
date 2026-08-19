@@ -1497,12 +1497,17 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					// boundary. Same three.js canvas as every other spherical Čtrnáct shelf.
 					<SphPolyCanvas pattern={selected.sphPoly} mode={sphericalFreedrawMode} showGrid={sphericalFreedrawGrid} />
 				) : selected?.sphStar ? (
-					// A STAR polyhedron. Same three.js canvas again, but the mode is forced to "polyhedron"
-					// instead of following `sphericalFreedrawMode`: its faces overlap on the circumsphere by
-					// construction — that is what density means — so the curved-patch mode paints every record
-					// as one smooth ball. The flat facets are the figure, and the adapter decomposes each
-					// self-intersecting {n/d} face before it can be filled (lib/render/sphStar.ts).
-					<SphStarCanvas pattern={selected.sphStar} showGrid={sphericalFreedrawGrid} showCrossings={!sphStarHideCrossings} />
+					// A STAR polyhedron. Same three.js canvas again, and it follows `sphericalFreedrawMode`
+					// like the shelves above it — but sphere mode means something different here. Its faces
+					// overlap on the circumsphere by construction, that being what density means, so there is
+					// no spherical tiling to draw; the sphere view draws the COVERING instead, shading each
+					// direction by how many sheets lie over it (lib/render/sphStar.ts, sph-star-canvas.tsx).
+					<SphStarCanvas
+						pattern={selected.sphStar}
+						mode={sphericalFreedrawMode}
+						showGrid={sphericalFreedrawGrid}
+						showCrossings={!sphStarHideCrossings}
+					/>
 				) : selected?.hypPoly ? (
 					// 3.4.n.4 tiling by regular polygons: not a decoration, so every edge is a real boundary and
 					// each face is filled by its POLYGON SIZE. That is the colored-tiling render exactly, so it

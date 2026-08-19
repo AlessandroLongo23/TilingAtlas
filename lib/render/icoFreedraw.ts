@@ -121,7 +121,16 @@ export interface IcoOptions {
 	tileHsb?: [number, number, number][];
 	showCrossings?: boolean; // draw the face-through-face creases (star polyhedra only)
 	crossings?: import("./sphStar").Crease[]; // those creases as geometry; see sphStar.faceCrossings
+	/** Sphere mode, star shelf only: how many times the faces cover the circumsphere (sphStar.sheetCount).
+	 *  Setting it swaps the lit tiling fill for the DENSITY fill described at its use below. */
+	densitySheets?: number;
 }
+
+// The colour a fully covered direction reaches in the density fill; the page background is the other end
+// of the ramp. Mid-luminance on purpose: the edge arcs stay black ink, and against a target any darker
+// they would disappear exactly where the covering is deepest.
+const DENSITY_INK_LIGHT: V3 = [0.30, 0.42, 0.72];
+const DENSITY_INK_DARK: V3 = [0.55, 0.68, 1.0];
 
 // Subdivision order for the curved spherical patches (sphere mode). N² sub-triangles per fan triangle.
 // High enough that the projected mesh reads as a true sphere — the rim is N segments per face edge, so
@@ -260,13 +269,83 @@ export function buildIcoFreedraw(pattern: IcoPattern, rawVertices: V3[], opts: I
 	geom.setAttribute("position", new THREE.BufferAttribute(new Float32Array(positions), 3));
 	geom.setAttribute("normal", new THREE.BufferAttribute(new Float32Array(normals), 3));
 	geom.setAttribute("color", new THREE.BufferAttribute(new Float32Array(colors), 3));
-	const facetMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0.0, side: THREE.DoubleSide });
+
+	// ⚑ THE DENSITY FILL. A star polyhedron projected onto its circumsphere is not a tiling and cannot be
+	// drawn as one: its faces cover the sphere `densitySheets` times over, all at radius 1, so the lit
+	// mesh below has that many coincident sheets to resolve and resolves them arbitrarily. That is the
+	// speckle the great truncated icosidodecahedron came out as. Nor is there a face to prefer — the
+	// great dodecahedron's twelve pentagons each cover a quarter of the sphere, so picking one sheet
+	// paints a plain ball.
+	//
+	// What IS single-valued over a direction is how many sheets lie there, and that is what this draws.
+	// The count accumulates in the framebuffer, so no spherical arrangement is ever computed: each patch
+	// is unlit and FRONT-SIDE only, which culls exactly the far hemisphere since pushSphericalFace winds
+	// every ring outward, and the blend is src·srcAlpha + dst at alpha 1/sheets. After k sheets the
+	// buffer holds (k/s)·ink with alpha k/s — premultiplied, which is how the browser composites a WebGL
+	// canvas — so the page shows through as page·(1 − k/s) + ink·(k/s). One distinct shade per covering
+	// number, LINEAR in it.
+	//
+	// Ordinary alpha compositing would give 1 − (1 − a)^k, monotone but bunched at the top, and the deep
+	// half of a density-13 solid would be one shade. That is the whole reason for the custom blend.
+	const density = mode === "sphere" && opts.densitySheets != null;
+	const sheets = Math.max(1, opts.densitySheets ?? 1);
+	const ink = dark ? DENSITY_INK_DARK : DENSITY_INK_LIGHT;
+	const facetMat: THREE.Material = density
+		? new THREE.MeshBasicMaterial({
+				color: new THREE.Color().setRGB(ink[0], ink[1], ink[2], THREE.SRGBColorSpace),
+				side: THREE.FrontSide,
+				transparent: true,
+				opacity: 1 / sheets,
+				// No depth at all between the sheets. They are nominally coincident at radius 1, but the
+				// fan tessellation puts a big face's sub-triangles as much as 0.19 inside it (measured:
+				// 0.8096 on ss-60-150-84-d9, where a fan triangle spans nearly a hemisphere), so ANY depth
+				// test between them drops whole sub-triangles of the deeper sheets and the count comes out
+				// mottled in a band round the rim. A missing sheet is a wrong number, so nothing here tests
+				// or writes depth; the prepass below carries the occlusion instead.
+				depthTest: false,
+				depthWrite: false,
+				blending: THREE.CustomBlending,
+				blendEquation: THREE.AddEquation,
+				blendSrc: THREE.SrcAlphaFactor,
+				blendDst: THREE.OneFactor,
+				blendEquationAlpha: THREE.AddEquation,
+				blendSrcAlpha: THREE.OneFactor,
+				blendDstAlpha: THREE.OneFactor,
+			})
+		: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0.0, side: THREE.DoubleSide });
 	const facetMesh = new THREE.Mesh(geom, facetMat);
 	group.add(facetMesh);
 	disposers.push(() => {
 		geom.dispose();
 		facetMat.dispose();
 	});
+
+	// Depth for the ARCS to hide behind — the sheets write none, so without it every edge on the far side
+	// of the sphere draws straight through the front and the solid reads as a glass globe.
+	//
+	// The occluder is the same geometry drawn once more with colour writing off: it conforms to the front
+	// surface exactly, sag and all, which a plain THREE.SphereGeometry cannot. Any inscribed sphere near
+	// enough to hide the back is also in front of the tessellation's own dips and eats the fill there.
+	if (density) {
+		const depthMat = new THREE.MeshBasicMaterial({ colorWrite: false, side: THREE.FrontSide });
+		const depthMesh = new THREE.Mesh(geom, depthMat);
+		depthMesh.renderOrder = -1;
+		group.add(depthMesh);
+		disposers.push(() => depthMat.dispose());
+	}
+
+	// The ink has to land ON the fill, and three.js renders every opaque object before every transparent
+	// one — so an opaque tube is painted first and then covered by the sheets stacked over it. Flagging
+	// the tubes transparent (at full opacity, which changes nothing else) moves them into the same pass,
+	// where renderOrder decides, and 1 puts them last.
+	const overFill = (o: THREE.Object3D) => {
+		if (!density) return;
+		o.traverse((n) => {
+			n.renderOrder = 1;
+			const mat = (n as THREE.Mesh).material as THREE.Material | undefined;
+			if (mat) mat.transparent = true;
+		});
+	};
 
 	const edgeArc = (i: number, j: number, r: number, extend: number) =>
 		mode === "sphere" ? greatCircleArc(V[i], V[j], 20, r, extend) : straightArc(V[i], V[j], r, extend);
@@ -285,6 +364,7 @@ export function buildIcoFreedraw(pattern: IcoPattern, rawVertices: V3[], opts: I
 				(mat as THREE.MeshStandardMaterial).opacity = 0.45;
 			}
 		});
+		overFill(grid.object);
 		group.add(grid.object);
 		disposers.push(() => grid.dispose());
 	}
@@ -312,7 +392,9 @@ export function buildIcoFreedraw(pattern: IcoPattern, rawVertices: V3[], opts: I
 	// each face's plane, a hair proud of it so it wins the z-fight with its own face and nothing else.
 	// Width matches the edge tubes' diameter and the colour is theirs, so the two read identically;
 	// occlusion is then ordinary depth testing, which is what puts a hidden crease behind its face.
-	if (opts.showCrossings && opts.crossings && opts.crossings.length) {
+	// Never in sphere mode: a crease is where one face passes THROUGH another, and on the circumsphere
+	// there is no through — every face is on the same surface, and the density fill is what says so.
+	if (!density && opts.showCrossings && opts.crossings && opts.crossings.length) {
 		const edgeColor: [number, number, number] = dark ? [0.06, 0.06, 0.08] : [0.1, 0.1, 0.12];
 		const LIFT = thickness * 0.06;
 		const pos: number[] = [];
@@ -357,6 +439,7 @@ export function buildIcoFreedraw(pattern: IcoPattern, rawVertices: V3[], opts: I
 		const edgeColor: [number, number, number] = dark ? [0.06, 0.06, 0.08] : [0.1, 0.1, 0.12];
 		const arcsFor = (extend: number) => pattern.drawn.map(([i, j]) => edgeArc(i, j, radius, extend));
 		const tubes: Wireframe = buildTubeSkeleton(arcsFor, 0, { section: "tube", thickness, color: edgeColor, union: false });
+		overFill(tubes.object);
 		group.add(tubes.object);
 		disposers.push(() => tubes.dispose());
 	}

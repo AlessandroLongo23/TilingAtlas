@@ -14422,3 +14422,71 @@ the image torus climbs monotonically up the imaginary axis in every growing run 
 conformal structure runs to the boundary of moduli space instead of settling. Full log and the caveats —
 the runs end on a `buildTorusMap` tolerance, not a mathematical obstruction — in
 `experiments/results/squaring-iteration-2026-08-19.md`.
+
+## 2026-08-20 — The star shelf gets a sphere view, and it is not a tiling
+
+AL asked whether the spherical-star records could have a sphere projection the way the convex shelves do.
+They can, and most of the way there was already built: `develop_spherical.py` realizes every record on S²
+by SO(3) flood-fill, solving the edge arc ρ from Σ angle = 2π·d_v, so each record ships as unit vectors
+and the flat facets are the DERIVED picture. `buildIcoFreedraw`'s `"sphere"` path also needed no geometry
+work, because radial projection carries a chord to the great-circle arc through the same two vertices, so
+`starFaceRings`' crossing points and its ring-(d−1) decomposition land exactly on the spherical star's own
+self-intersections.
+
+⚑ **The Polyhedron/Sphere buttons were dead on this shelf and had been since it shipped.** `sphStar` maps
+to `surface: "sphereEdges"` (shelfRegistry.ts), which is the gate that renders those buttons, but
+`_play-client.tsx` called `SphStarCanvas` with no `mode` and the component defaulted to `"polyhedron"`.
+All 54 records offered a control that changed nothing.
+
+**What the convex sphere mode cannot do here.** A star polyhedron covers its circumsphere several times
+and the sheets are coincident at radius 1, so the lit vertex-coloured mesh has nothing to sort by and
+resolves the stack arbitrarily. Measured: the great truncated icosidodecahedron (D = 13) came out as
+purple-and-green speckle, and the great dodecahedron as a plain green ball, its twelve pentagons each
+covering a quarter of the sphere so that no single face is ever the outermost one. Two approaches were
+tried and dropped. Partial radial inflation, r → (1−t)r + t, is strictly monotone and so preserves sheet
+order exactly; at t = 0.9 it does give a clean rounded figure, but it is a puffed polyhedron and not a
+projection, and the edge arcs sag inside the outer sheet (the great dodecahedron kept 6 of its 30). A
+single-sheet pick does not exist.
+
+**So the sphere view draws the COVERING.** Each direction is shaded by how many faces lie over it, which
+is single-valued where a tiling is not. No spherical arrangement is computed anywhere: the count
+accumulates in the framebuffer. Patches are unlit and `FrontSide` only, which culls exactly the far
+hemisphere because `pushSphericalFace` winds every ring outward, and the blend is `CustomBlending` with
+src·srcAlpha + dst at alpha 1/sheets, alpha factors One/One. After k sheets the buffer holds (k/s)·ink at
+alpha k/s, premultiplied, which is how the browser composites a WebGL canvas, so the page shows through
+as page·(1 − k/s) + ink·(k/s). LINEAR in the covering number, one shade per k. Ordinary alpha compositing
+gives 1 − (1 − a)^k instead, monotone but bunched at the top, and the deep half of a density-13 solid
+would be a single shade. Verified by sampling the render: the fully covered region reads (76, 108, 184)
+against the ink's (76, 107, 184), and a one-sheet region reads (165, 181, 219) against the predicted
+(166, 181, 220).
+
+⚑ **The occluder has to be the geometry itself.** The sheets write no depth (any test between them drops
+sub-triangles of the deeper ones and mottles the count), so without an occluder every arc on the far side
+draws through the front. A `THREE.SphereGeometry` inside the circumsphere looked obvious and eats the fill
+in a band round the rim: the fan tessellation puts a big face's sub-triangles as much as 0.19 INSIDE the
+sphere, measured at 0.8096 on ss-60-150-84-d9 where a fan triangle spans nearly a hemisphere, and any
+inscribed sphere near enough to hide the back is in front of those dips. Drawing the same `BufferGeometry`
+a second time with `colorWrite: false` conforms to the front surface exactly, sag and all. Also: three.js
+renders every opaque object before every transparent one, so the edge tubes had to be flagged transparent
+at full opacity and given `renderOrder = 1`, or the sheets stack on top of the ink.
+
+**`sheetCount` is not `pattern.density`, and differs on 21 of the 54 records.** Density is Cayley's signed,
+winding-weighted count; sheets counts faces, each once, the way the fill draws them. It goes both ways. A
+pentagram is one sheet whose core winds twice, so the small stellated dodecahedron {5/2,5} is covered by
+exactly 2 of its 12 pentagrams in every direction against a density of 3, and the great stellated reads 4
+against 7. A retrograde face subtracts from the density but still puts a sheet over what it spans, so
+ss-48-72-26-d1 reads 6 against the density 1 that got it flagged unresolved. Sheets is the quantity a fill
+can draw at all: a signed count can cancel, and no fill draws a negative sheet. Measured by casting a
+fixed 1024-point Fibonacci set against the same convex pieces the fill uses, ≤ 7.5 ms on the largest
+record, and called only in sphere mode so the 54 thumbnails never pay it.
+
+⚑ A direction landing ON a face boundary counts for NEITHER face. Counting it for both is the tempting
+reading and it wrecks a maximum: one grazing sample in a thousand lifts the whole ramp by a sheet, which
+is what made the great dodecahedron read 4 and the prism 3 before the tolerance was flipped.
+
+Cross-checked in `sphStar.test.ts` against an independent analytic mean, Σ solid angle / 4π by Van
+Oosterom–Strackee over the same pieces: it bounds the sampled maximum from below on all 54 records and
+meets it exactly on the four regular star polyhedra, whose covering is uniform. Creases are suppressed in
+sphere mode (nothing passes THROUGH anything when every face is on the one surface) and their toggle goes
+with them; the thumbnails stay on the flat facets, like every other spherical shelf's. Polyhedron mode is
+pixel-identical to before, checked against a pre-change capture.

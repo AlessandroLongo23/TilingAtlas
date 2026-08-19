@@ -2684,3 +2684,11 @@ its **orientation double cover** carrying a state invariant under the deck trans
 ι is a graph automorphism onto congruent tiles and so commutes with the rule. Verified against an
 independently built quotient graph, generation by generation, on the square and hexagonal boards.
 ⚑ Board width is a half-integer on 6 of the 11 uniform tilings, and the sidebar says so. NOTES 2026-08-19.
+
+## 2026-08-20 — Star polyhedra get a sphere view: the covering, not a tiling — CC
+
+The Polyhedron/Sphere buttons had been dead on all 54 star records since the shelf shipped: the canvas
+ignored the mode, and a star polyhedron's faces are coincident at radius 1, so the convex shelves' curved
+tiling has nothing to sort and paints speckle. Sphere now draws the COVERING, shading each direction by
+how many faces lie over it, accumulated by a custom additive blend at alpha 1/sheets so the shade is
+linear in the count. `sheetCount` is ray-sampled, not density; differs on 21 of 54. NOTES 2026-08-20.

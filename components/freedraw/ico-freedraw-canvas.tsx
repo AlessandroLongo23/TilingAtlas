@@ -36,11 +36,14 @@ interface Props {
 	/** Per-tile HSB, parallel to the pattern's tiles; see sphStar.faceHsb. */
 	tileHsb?: [number, number, number][];
 	showCrossings?: boolean;
+	/** Sphere mode, star shelf: covering number of the circumsphere, which swaps the lit tiling fill for
+	 *  the density fill. See lib/render/icoFreedraw.ts. */
+	densitySheets?: number;
 }
 
 const CAMERA_DISTANCE = 3.2;
 
-export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, allEdges, keepRadius, crossings, showCrossings, tileHsb }: Props) {
+export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, allEdges, keepRadius, crossings, showCrossings, tileHsb, densitySheets }: Props) {
 	const solid = useMemo(() => (vertices ? null : polyhedronForId(solidId)), [solidId, vertices]);
 	const verts = vertices ?? (solid?.vertices as [number, number, number][] | undefined);
 	const solidEdgeList = useMemo<[number, number][]>(
@@ -176,6 +179,7 @@ export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, 
 			crossings,
 			showCrossings,
 			tileHsb,
+			densitySheets,
 		});
 		scene.add(content.object);
 		contentRef.current = content;
@@ -184,7 +188,7 @@ export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, 
 			content.dispose();
 			if (contentRef.current === content) contentRef.current = null;
 		};
-	}, [pattern, mode, showGrid, solid, solidEdgeList, crossings, showCrossings, tileHsb]);
+	}, [pattern, mode, showGrid, solid, solidEdgeList, crossings, showCrossings, tileHsb, densitySheets]);
 
 	if (errored) {
 		return (
