@@ -99,8 +99,12 @@ picker tests the map itself and disables what it cannot honestly offer. Of the e
 pass; the one rejection is the snub trihexagonal tiling, which is the only chiral one. Across a
 five-hundred-record sample of the Atlas's Euclidean corpus, $96\%$ pass.
 
-Reading the wallpaper group is not a substitute for testing the map. The snub square tiling, $p4g$, has no
-mirror line at all and still passes, because a Klein seam needs a glide and $p4g$ has glides.
+Reading the wallpaper group is not a substitute for testing the map. The group says a mirror exists
+somewhere; it does not say the axis lines up with the seam being glued, and where the axes fall is not
+something the name records. The snub square tiling is $p4g$, which is $4\ast 2$ in orbifold notation, so
+the mirrors are there: two perpendicular families, running through the triangles and missing every square,
+because the square centres are its four-fold points and in $p4g$ those lie off the mirror lines. Which of
+its seams can be flipped is settled by mapping the polygons, not by reading the three letters.
 
 ## Running a board that has no consistent side
 

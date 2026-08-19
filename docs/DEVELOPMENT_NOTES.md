@@ -14053,6 +14053,24 @@ the image be a polygon of the tiling modulo the lattice.
 that its axis lines up with the seam. And it is not the same question as chirality-in-general: snub square
 (p4g) has NO mirrors and still passes, because a Klein seam needs a GLIDE, which p4g has.
 
+⚑⚑ **CORRECTED 2026-08-19, AL caught it: the snub square example above is false and the sentence above it
+is the only part worth keeping.** p4g is 4*2 in orbifold notation and the * IS a mirror, so p4g has them,
+always. Measured on t1009's own cell (a patch of 17x17 cells, pure reflections tested directly rather than
+inferred from a translation's parallel component, which is the bug that produced the wrong answer twice
+while I was checking): two perpendicular pure-mirror families at 60 and 150 degrees. Each runs through the
+centres of two of the four triangles per cell and misses BOTH squares, centre-to-axis 0.683 against an
+inradius of 0.5. AL's phrasing was exact: "they don't pass through the squares, but they are there."
+
+The reason is structural, and it is the fact that makes the corrected sentence worth having. A mirror maps
+tiles to tiles, so if one crossed a square's interior it would have to pass through that square's centre
+(otherwise the square's image is a distinct square overlapping it, which a tiling forbids). The square
+centres are the 4-fold points, measured 4-fold here, and in 4*2 the 4-fold gyrations lie OFF the mirror
+boundary. So no mirror can cross a square, and this is forced by the group, not an accident of the picture.
+
+What survives: the group is still not a substitute for testing the map, for the reason topology.ts already
+gave (an axis exists somewhere; that is not the same as lining up with the seam). The reader-facing text in
+public/theory/automata.md now says that and drops the false claim.
+
 ⚑ **The reflection is not "negate the other lattice coordinate."** That is an isometry only on a
 rectangular lattice; on the hexagonal one it is a shear, which nothing is invariant under, so the naive
 form calls every oblique lattice chiral. It has to be the Euclidean reflection across the seam direction,
