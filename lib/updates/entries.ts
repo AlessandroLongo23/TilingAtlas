@@ -67,6 +67,44 @@ export interface UpdateEntry {
 /** Newest first. tests/updates.test.ts asserts that ordering, and every id below. */
 export const UPDATES: UpdateEntry[] = [
 	{
+		version: "1.33.1",
+		date: "2026-08-20",
+		title: "Star polyhedra on the sphere",
+		commit: "066dafa",
+		changes: [
+			{
+				kind: "feature",
+				text: "**A sphere view for the 54 star polyhedra**, which shades every direction by how many of the solid's faces lie over it, since faces that overlap cannot be drawn as a tiling.",
+				href: "/play",
+			},
+			{
+				kind: "fix",
+				text: "**Twenty of the 54 star polyhedra were drawn with holes**, filled from the wrong crossing ring, which cost a {12/5} face 18.5% of its area and an {8/3} 8.6%.",
+			},
+			{
+				kind: "feature",
+				text: "**The lines where two faces pass through each other are drawn**, on a toggle, and they are not edges: they bound no face, so V, E and F are unchanged.",
+			},
+			{
+				kind: "changed",
+				text: "**A face is coloured by its polygon**, on the by-side-count ramp the Euclidean tilings already use, with a violet to magenta arc kept for the star faces.",
+			},
+			{
+				kind: "fix",
+				text: "**Two rows in the catalogue were wrong about what they held**, one of them vanishing when you clicked it.",
+				items: [
+					"A collection that had not loaded yet could be listed under the wrong geometry, and disappeared when opened.",
+					"The one star polyhedron whose signed density cancels to 1 while its faces plainly cross now lists under Density unresolved.",
+				],
+			},
+			{
+				kind: "content",
+				text: "**The snub square tiling does have mirror lines**, correcting the automata article, which said it had none; they run through the triangles and miss every square.",
+				href: "/theory/automata",
+			},
+		],
+	},
+	{
 		version: "1.33.0",
 		date: "2026-08-19",
 		title: "Parametric edge lengths",
