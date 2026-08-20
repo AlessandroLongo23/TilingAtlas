@@ -114,13 +114,20 @@ export const sphStarSub = (p: { density: number; stats?: { densitySuspect?: bool
 export const sphStarSubLabel = (density: number, unresolved = false): string =>
 	unresolved ? "density unresolved" : `density ${density}`;
 
-/** Card / search label. A named solid says its name; anything else says what it is made of, since a
+/** What an unnamed record is made of: "20{3} + 12{5/2} + 12{10}". Split out from the family label so a
+ *  card that shows the density on its own line does not get it twice. */
+export const sphStarCensusLabel = (p: SphStarEntry): string =>
+	p.stats.types.map(([n, d, c]) => `${c}{${d > 1 ? `${n}/${d}` : n}}`).join(" + ");
+
+/** The record's NAME: a named solid says its name, anything else says what it is made of, since a
  *  U-number guessed off a census is exactly the error the naming table refuses to make. */
+export const sphStarName = (p: SphStarEntry): string => p.solid ?? sphStarCensusLabel(p);
+
+/** Card / search label: the name, and the density under the same refusal as `sphStarSubLabel` — the
+ *  census is always true, the density is not. A named solid carries neither. */
 export function sphStarFamilyLabel(p: SphStarEntry): string {
 	if (p.solid) return p.solid;
-	const parts = p.stats.types.map(([n, d, c]) => `${c}{${d > 1 ? `${n}/${d}` : n}}`);
-	// Same refusal as sphStarSubLabel: the census is always true, the density is not.
-	return `${parts.join(" + ")} · ${densityUnresolved(p) ? "density unresolved" : `density ${p.density}`}`;
+	return `${sphStarCensusLabel(p)} · ${sphStarSubLabel(p.density, densityUnresolved(p))}`;
 }
 
 /** Whether any face of the record actually crosses itself. Every record on this shelf has density > 1,

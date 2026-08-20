@@ -98,6 +98,27 @@ describe("buildTilingSpec", () => {
 		expect(spec.detail).toBe("density 3");
 	});
 
+	it("an unnamed star polyhedron says its density once, not twice", () => {
+		// ⚑ Its family label carries the density too, since an unnamed record has nothing else to be called
+		// by. Reusing that as the heading's name printed "… · density 4" over "density 4".
+		const t: CatalogueTiling = {
+			...base,
+			canonicalKey: "ss-60-150-92-d4",
+			k: 1,
+			family: "20{3} + 12{5/2} + 12{10} · density 4",
+			sphStar: {
+				config: "3.10.5/2.10",
+				density: 4,
+				stats: { types: [[3, 1, 20], [5, 2, 12], [10, 1, 12]] },
+			} as unknown as CatalogueTiling["sphStar"],
+		};
+		const spec = buildTilingSpec(t, null, null);
+		if (spec.geometry !== "spherical") throw new Error("geometry");
+		expect(spec.label).toBe("20{3} + 12{5/2} + 12{10}");
+		expect(spec.label).not.toContain("density");
+		expect(spec.detail).toBe("density 4");
+	});
+
 	it("spherical shelves with no solid to name still say Spherical", () => {
 		const t: CatalogueTiling = {
 			...base,

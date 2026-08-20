@@ -10,7 +10,7 @@ import { geometryOf, hyperbolicParams } from "@/lib/services/referenceAtlas";
 import { tilingLevel, type TilingLevel } from "@/lib/tilings/tiling-level";
 import { analyseFaces, summarise } from "@/lib/freedraw/faces";
 import { colorCensus, colorsGridOf } from "@/lib/colors/pattern";
-import { densityUnresolved, sphStarFamilyLabel, sphStarSubLabel } from "@/lib/tilings/sph-star";
+import { densityUnresolved, sphStarName, sphStarSubLabel } from "@/lib/tilings/sph-star";
 import { isSphHalf, sphHalfBoardLabel, sphHalfDetailLabel } from "@/lib/tilings/sph-half";
 import { sphPolyBoardLabel, sphPolyFamilyLabel } from "@/lib/tilings/sph-poly";
 import { sphEdgesFamilyLabel } from "@/lib/freedraw/sph-edges";
@@ -214,9 +214,11 @@ function prettySolid(id: string): string {
 function sphericalHeading(t: CatalogueTiling): { name: string; detail: string } {
 	const join = (...parts: (string | false | null | undefined)[]) => parts.filter(Boolean).join(" · ");
 
+	// ⚑ The NAME, not `sphStarFamilyLabel`: that one appends the density for an unnamed record, which is
+	// this card's second line, and the record printed it twice.
 	if (t.sphStar) {
 		return {
-			name: sphStarFamilyLabel(t.sphStar),
+			name: sphStarName(t.sphStar),
 			detail: sphStarSubLabel(t.sphStar.density, densityUnresolved(t.sphStar)),
 		};
 	}

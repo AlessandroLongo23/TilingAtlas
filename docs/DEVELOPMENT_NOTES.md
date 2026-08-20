@@ -14531,3 +14531,10 @@ from them, so the card and the search label cannot drift apart.
 The geometry chip is gone from the spherical header (AL: "they're all spherical in the spherical page").
 Euclidean and hyperbolic keep theirs for now, though the same argument applies to them: /play is browsed
 one geometry at a time and the sidebar tab already says which.
+
+⚑ **And once more, same day.** An unnamed star record has no name but its face census, so
+`sphStarFamilyLabel` appends the density to it — which is the info card's second line, and the card
+printed it twice: `20{3} + 12{5/2} + 12{10} · density 4` over `density 4`. The census is now
+`sphStarCensusLabel`, the name is `sphStarName` (the solid, or the census), and the family label composes
+the two as before. The heading takes the name. Every other spherical shelf was checked for the same shape
+and none repeats: each detail is built from fields the name does not carry.
