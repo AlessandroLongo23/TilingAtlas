@@ -74,6 +74,46 @@ describe("buildTilingSpec", () => {
 		expect(spec.counts).toBeNull();
 	});
 
+	// ⚑ The two below are the regression: geometryOf answers "spherical" for six shelves, and until
+	// 2026-08-20 only `spherical` and `sphericalFreedraw` had a branch. The other four fell through to the
+	// Euclidean return and the info card printed "Euclidean" over a record on the sphere.
+	it("spherical star: the density leads and the solid's name goes on its own line", () => {
+		const t: CatalogueTiling = {
+			...base,
+			canonicalKey: "ss-12-30-12-d3",
+			k: 1,
+			family: "density 3 · great dodecahedron {5,5/2}",
+			sphStar: {
+				config: "5.5.5.5.5",
+				density: 3,
+				solid: "great dodecahedron {5,5/2}",
+				stats: { types: [[5, 1, 12]] },
+			} as unknown as CatalogueTiling["sphStar"],
+		};
+		const spec = buildTilingSpec(t, null, null);
+		expect(spec.geometry).toBe("spherical");
+		if (spec.geometry !== "spherical") throw new Error("geometry");
+		// The header truncates its label, so the long half has to be the one on the second line.
+		expect(spec.label).toBe("density 3");
+		expect(spec.solidName).toBe("great dodecahedron {5,5/2}");
+	});
+
+	it("spherical shelves with no solid to name still say Spherical", () => {
+		const t: CatalogueTiling = {
+			...base,
+			canonicalKey: "sp3-1-00001",
+			k: 1,
+			family: "3.4.3.4 · cuboctahedron",
+			sphPoly: { base: 3, config: "3.4" } as unknown as CatalogueTiling["sphPoly"],
+		};
+		const spec = buildTilingSpec(t, null, null);
+		expect(spec.geometry).toBe("spherical");
+		if (spec.geometry !== "spherical") throw new Error("geometry");
+		expect(spec.label).toBe("3.4.3.4 · cuboctahedron");
+		// Empty, so the presenter drops the line instead of printing a blank one.
+		expect(spec.solidName).toBe("");
+	});
+
 	it("V/E/F for the other four Platonic solids", () => {
 		const mk = (p: number, q: number, solid: string): CatalogueTiling => ({
 			...base, canonicalKey: solid, k: 1, family: "x", spherical: { p, q, solid },

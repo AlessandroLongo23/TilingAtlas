@@ -14490,3 +14490,26 @@ meets it exactly on the four regular star polyhedra, whose covering is uniform. 
 sphere mode (nothing passes THROUGH anything when every face is on the one surface) and their toggle goes
 with them; the thumbnails stay on the flat facets, like every other spherical shelf's. Polyhedron mode is
 pixel-identical to before, checked against a pre-change capture.
+
+### The info card, same day (AL, on a screenshot of the great dodecahedron)
+
+Two asks and one bug found while doing them.
+
+The star polyhedra were being cut off: their family label is `density 3 · great dodecahedron {5,5/2}`,
+the header renders `label` in one truncating mono line, and the names run to
+`great truncated icosidodecahedron (U68)`. The card already has a second line for a spherical record's
+own name, so the two halves now go where they belong: `label` is the density, `solidName` the polyhedron,
+which wraps in full.
+
+⚑ **`buildTilingSpec` answered "euclidean" for four spherical shelves.** `geometryOf` returns
+"spherical" for six (`spherical`, `sphericalFreedraw`, `sphColors`, `sphEdges`, `sphPoly`, `sphStar`),
+but only the first two had a branch; the rest fell through to the Euclidean return at the bottom of the
+function, which hardcodes `geometry: "euclidean"`. So the card printed "Euclidean" over a Schwarz board, a
+3.4.n.4 solid, a spherical colouring and a star polyhedron. A generic spherical branch now catches them,
+with `solidName` empty where there is no name to give and the presenter dropping that line rather than
+printing a blank one. Regression covered in `tests/tiling-spec.test.ts`.
+
+Clicking the icon pins the panel open. Hover alone closes it the moment the pointer leaves, which is
+exactly when you want it up: reading the orbit counts while dragging or rotating the tiling under them was
+impossible. Pinned, the button takes the solid variant, so it reads as held down, and `aria-pressed`
+carries the same fact.

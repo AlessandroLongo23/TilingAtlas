@@ -10,6 +10,7 @@ import { geometryOf, hyperbolicParams } from "@/lib/services/referenceAtlas";
 import { tilingLevel, type TilingLevel } from "@/lib/tilings/tiling-level";
 import { analyseFaces, summarise } from "@/lib/freedraw/faces";
 import { colorCensus, colorsGridOf } from "@/lib/colors/pattern";
+import { densityUnresolved, sphStarFamilyLabel, sphStarSubLabel } from "@/lib/tilings/sph-star";
 
 // Edge- and tile-orbit extraction does not exist yet (AL owns that logic). Until it does, buildTilingSpec
 // leaves both fields null and the card renders a muted "not computed" row. When the extractor lands, fill
@@ -231,6 +232,39 @@ export function buildTilingSpec(
 			geometry: "spherical",
 			label: selected.family,
 			solidName: prettySolid(selected.sphericalFreedraw.solid),
+			pointGroup: null,
+			orbifold: null,
+			counts: null,
+			...base,
+		};
+	}
+
+	// Star polyhedra. Their family label is "density 3 · great dodecahedron", and the header renders a
+	// label in one mono line that truncates: these names run to "great truncated icosidodecahedron (U68)"
+	// and were being cut on most records. The card already has a second line for a spherical solid's own
+	// name, so the two halves go where they belong. (AL, 2026-08-20.)
+	if (geometry === "spherical" && selected.sphStar) {
+		const p = selected.sphStar;
+		return {
+			geometry: "spherical",
+			label: sphStarSubLabel(p.density, densityUnresolved(p)),
+			solidName: sphStarFamilyLabel(p),
+			pointGroup: null,
+			orbifold: null,
+			counts: null,
+			...base,
+		};
+	}
+
+	// ⚑ Every other spherical shelf — Schwarz boards, the 3.4.n.4 solids, the colorings — fell through to
+	// the Euclidean return at the bottom until 2026-08-20, so the card printed "Euclidean" over a record
+	// on the sphere. None of them has a {p,q} or a canonical solid to name, so the honest card is the
+	// family label and the geometry, and `solidName` stays empty for the presenter to skip.
+	if (geometry === "spherical") {
+		return {
+			geometry: "spherical",
+			label: selected.family,
+			solidName: "",
 			pointGroup: null,
 			orbifold: null,
 			counts: null,

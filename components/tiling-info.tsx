@@ -111,6 +111,11 @@ function OrbitSection({ spec }: { spec: TilingSpec }) {
 
 export function TilingInfo({ spec, vcs = [] }: TilingInfoProps) {
 	const [isHovered, setIsHovered] = useState(false);
+	// Clicking the icon PINS the panel open (AL, 2026-08-20). Hover alone closes it the moment the pointer
+	// leaves, which is exactly when you want it: reading the numbers while dragging or rotating the tiling
+	// under them was impossible. Pinned, the button takes the solid variant, so it reads as held down.
+	const [isPinned, setIsPinned] = useState(false);
+	const open = !!spec && (isPinned || isHovered);
 
 	return (
 		<div
@@ -120,16 +125,20 @@ export function TilingInfo({ spec, vcs = [] }: TilingInfoProps) {
 			onMouseEnter={() => setIsHovered(true)}
 			onMouseLeave={() => setIsHovered(false)}
 		>
-			{/* Sits over the tiling canvas — needs an opaque fill, not the variant's transparent one. */}
+			{/* Sits over the tiling canvas — the secondary variant needs an opaque fill, not its transparent
+			    one; primary brings its own. */}
 			<Button
-				variant="secondary"
+				variant={isPinned ? "primary" : "secondary"}
 				size="icon"
 				icon={Info}
-				aria-label="Tiling information"
-				classes="bg-surface-raised hover:bg-surface-raised shadow-sm"
+				aria-label={isPinned ? "Unpin tiling information" : "Pin tiling information"}
+				aria-pressed={isPinned}
+				aria-expanded={open}
+				onClick={() => setIsPinned((p) => !p)}
+				classes={isPinned ? "shadow-sm" : "bg-surface-raised hover:bg-surface-raised shadow-sm"}
 			/>
 
-			{isHovered && spec ? (
+			{open && spec ? (
 				<div className="absolute left-0 top-10 z-50 min-w-56 max-w-[340px] rounded-lg border border-line bg-surface-overlay/95 p-3 shadow-xl backdrop-blur-sm">
 					<div className="flex flex-col gap-3">
 						{/* Header: Schläfli / vertex-config label + geometry (+ solid name for spherical) */}
@@ -140,7 +149,10 @@ export function TilingInfo({ spec, vcs = [] }: TilingInfoProps) {
 								</span>
 								<span className="shrink-0 text-xs text-fg-muted">{GEOMETRY_LABEL[spec.geometry]}</span>
 							</div>
-							{spec.geometry === "spherical" ? (
+							{/* The second line carries a spherical record's own name: the solid for a Platonic board,
+							    the polyhedron for a star one. Empty on the shelves that have no name to give, and
+							    then the line is dropped instead of printing a blank one. */}
+							{spec.geometry === "spherical" && spec.solidName ? (
 								<span className="text-xs text-fg-secondary">{spec.solidName}</span>
 							) : spec.geometry === "hyperbolic" ? (
 								<span className="text-xs text-fg-secondary">Poincaré disk</span>
