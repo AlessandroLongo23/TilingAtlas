@@ -86,8 +86,8 @@ describe("TilingInfo spec card", () => {
 	it("spherical Platonic: shows point group and V/E/F", () => {
 		const spec: TilingSpec = {
 			geometry: "spherical",
-			label: "{5,3}",
-			solidName: "Dodecahedron",
+			label: "Dodecahedron",
+			detail: "{5,3}",
 			pointGroup: "Ih",
 			orbifold: "*532",
 			counts: { V: 20, E: 30, F: 12 },

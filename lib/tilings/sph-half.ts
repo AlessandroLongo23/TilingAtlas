@@ -106,11 +106,20 @@ export const isSphHalf = (p: SphPolyPattern): boolean => SPH_HALF_BOARD_BY_ID.ha
 
 const POLYGON_NAME = ["", "", "", "triangle", "quadrilateral", "pentagon", "hexagon"];
 
-/** Card / search label: the board, the tile it is made of, and how symmetric this particular one is —
- *  which is the only thing separating two tilings that agree on V, E, F and the tile. */
-export function sphHalfFamilyLabel(p: SphPolyPattern): string {
+/** The board's own name, which is the half of the label a reader is looking for: "Icosahedron halved".
+ *  Split out so the info card can lead with it and put the rest on its own line. */
+export const sphHalfBoardLabel = (p: SphPolyPattern): string =>
+	SPH_HALF_BOARD_BY_ID.get(p.base)?.label ?? p.base;
+
+/** The rest: the tile the board is made of, and how symmetric this particular tiling is — which is the
+ *  only thing separating two that agree on V, E, F and the tile. */
+export function sphHalfDetailLabel(p: SphPolyPattern): string {
 	const b = SPH_HALF_BOARD_BY_ID.get(p.base);
 	// NOT always a triangle: the dodecahedron's half is a quadrilateral, and this said "triangle" for it.
 	const tile = b ? `${b.angles.join("-")} ${POLYGON_NAME[b.angles.length] ?? "tile"}` : "half-tile";
-	return `${b?.label ?? p.base} · ${tile} · symmetry order ${p.stats.symmetryOrder}`;
+	return `${tile} · symmetry order ${p.stats.symmetryOrder}`;
 }
+
+/** Card / search label: the two above, joined. */
+export const sphHalfFamilyLabel = (p: SphPolyPattern): string =>
+	`${sphHalfBoardLabel(p)} · ${sphHalfDetailLabel(p)}`;

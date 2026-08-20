@@ -11,6 +11,10 @@ import { tilingLevel, type TilingLevel } from "@/lib/tilings/tiling-level";
 import { analyseFaces, summarise } from "@/lib/freedraw/faces";
 import { colorCensus, colorsGridOf } from "@/lib/colors/pattern";
 import { densityUnresolved, sphStarFamilyLabel, sphStarSubLabel } from "@/lib/tilings/sph-star";
+import { isSphHalf, sphHalfBoardLabel, sphHalfDetailLabel } from "@/lib/tilings/sph-half";
+import { sphPolyBoardLabel, sphPolyFamilyLabel } from "@/lib/tilings/sph-poly";
+import { sphEdgesFamilyLabel } from "@/lib/freedraw/sph-edges";
+import { schwarzFamilyLabel } from "@/lib/freedraw/schwarz";
 
 // Edge- and tile-orbit extraction does not exist yet (AL owns that logic). Until it does, buildTilingSpec
 // leaves both fields null and the card renders a muted "not computed" row. When the extractor lands, fill
@@ -153,7 +157,9 @@ export interface HyperbolicSpec extends BaseSpec {
 
 export interface SphericalSpec extends BaseSpec {
 	geometry: "spherical";
-	solidName: string; // "Dodecahedron", "Truncated tetrahedron"
+	/** The second heading line: what separates this record from the others on its board. The NAME leads,
+	 *  in `label`; this is everything else. Empty when there is nothing more to say. */
+	detail: string;
 	pointGroup: string | null; // Td/Oh/Ih — Platonic {p,q} only
 	orbifold: string | null; // "*532" — Platonic only
 	counts: { V: number; E: number; F: number } | null; // Platonic only
@@ -194,6 +200,57 @@ function prettySolid(id: string): string {
 	return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
+/**
+ * The two halves of a spherical record's heading: the NAME, which leads, and the details under it.
+ *
+ * ⚑ AL, 2026-08-20: "the name is more important". The header renders one line and truncates it, and the
+ * names here are the long half — "great truncated icosidodecahedron (U68)", "Icosahedron halved" — so a
+ * card built the other way round spent its width on a count and cut the word the reader came for.
+ *
+ * Split per shelf off each record's own fields, NOT by cutting `family` at its first separator: the
+ * shelves do not agree on where the name sits in that string. A 3.4.n.4 record puts the board's vertex
+ * figure first and the solid's name second, and a chiral spherical colouring leads with "chiral".
+ */
+function sphericalHeading(t: CatalogueTiling): { name: string; detail: string } {
+	const join = (...parts: (string | false | null | undefined)[]) => parts.filter(Boolean).join(" · ");
+
+	if (t.sphStar) {
+		return {
+			name: sphStarFamilyLabel(t.sphStar),
+			detail: sphStarSubLabel(t.sphStar.density, densityUnresolved(t.sphStar)),
+		};
+	}
+	// The half-tile boards ride the same payload as the 3.4.n.4 solids; the board id is what tells them apart.
+	if (t.sphPoly) {
+		const p = t.sphPoly;
+		if (isSphHalf(p)) {
+			return { name: sphHalfBoardLabel(p), detail: join(p.chiral && "chiral", sphHalfDetailLabel(p)) };
+		}
+		const board = sphPolyBoardLabel(p.base);
+		return p.solid
+			? { name: p.solid, detail: join(p.chiral && "chiral", board) }
+			: { name: board, detail: join(p.chiral && "chiral", sphPolyFamilyLabel(p)) };
+	}
+	if (t.sphEdges) {
+		return { name: t.sphEdges.solid, detail: join(t.sphEdges.chiral && "chiral", sphEdgesFamilyLabel(t.sphEdges)) };
+	}
+	if (t.schwarz) {
+		return { name: t.schwarz.label, detail: join(t.schwarz.chiral && "chiral", schwarzFamilyLabel(t.schwarz)) };
+	}
+	if (t.sphColors) {
+		const p = t.sphColors.pattern;
+		return { name: p.config, detail: join(p.chiral && "chiral", `${p.stats.colorsUsed}-colored`) };
+	}
+	if (t.sphericalFreedraw) {
+		return { name: prettySolid(t.sphericalFreedraw.solid), detail: t.family };
+	}
+	if (t.spherical) {
+		const { p, q, solid } = t.spherical;
+		return { name: prettySolid(solid), detail: p != null && q != null ? `{${p},${q}}` : t.family };
+	}
+	return { name: t.family, detail: "" };
+}
+
 export function buildTilingSpec(
 	selected: CatalogueTiling,
 	symmetryData: SymmetryData | null,
@@ -210,64 +267,22 @@ export function buildTilingSpec(
 
 	const geometry = geometryOf(selected);
 
-	if (geometry === "spherical" && selected.spherical) {
-		const { p, q, solid } = selected.spherical;
-		const platonic = p != null && q != null;
-		return {
-			geometry: "spherical",
-			label: platonic ? `{${p},${q}}` : selected.family,
-			solidName: prettySolid(solid),
-			pointGroup: platonic ? platonicPointGroup(p, q) : null,
-			orbifold: platonic ? reflectionOrbifold(p, q) : null,
-			counts: platonic ? platonicCounts(p, q) : null,
-			...base,
-		};
-	}
-
-	// Spherical freedraw: a drawn edge subset of a Platonic solid. It has no {p,q} vertex figure (the tiles
-	// are the regions the drawn edges cut out), so the point-group / orbifold / V-E-F trio stays null; the
-	// honest card is just the solid it lives on. k here counts VERTEX orbits (see ReferenceTiling).
-	if (geometry === "spherical" && selected.sphericalFreedraw) {
-		return {
-			geometry: "spherical",
-			label: selected.family,
-			solidName: prettySolid(selected.sphericalFreedraw.solid),
-			pointGroup: null,
-			orbifold: null,
-			counts: null,
-			...base,
-		};
-	}
-
-	// Star polyhedra. Their family label is "density 3 · great dodecahedron", and the header renders a
-	// label in one mono line that truncates: these names run to "great truncated icosidodecahedron (U68)"
-	// and were being cut on most records. The card already has a second line for a spherical solid's own
-	// name, so the two halves go where they belong. (AL, 2026-08-20.)
-	if (geometry === "spherical" && selected.sphStar) {
-		const p = selected.sphStar;
-		return {
-			geometry: "spherical",
-			label: sphStarSubLabel(p.density, densityUnresolved(p)),
-			solidName: sphStarFamilyLabel(p),
-			pointGroup: null,
-			orbifold: null,
-			counts: null,
-			...base,
-		};
-	}
-
-	// ⚑ Every other spherical shelf — Schwarz boards, the 3.4.n.4 solids, the colorings — fell through to
-	// the Euclidean return at the bottom until 2026-08-20, so the card printed "Euclidean" over a record
-	// on the sphere. None of them has a {p,q} or a canonical solid to name, so the honest card is the
-	// family label and the geometry, and `solidName` stays empty for the presenter to skip.
+	// One branch for every spherical shelf. ⚑ Until 2026-08-20 there were two, for `spherical` and
+	// `sphericalFreedraw` alone, and the other four fell through to the Euclidean return at the bottom of
+	// this function — so the card printed "Euclidean" over a Schwarz board, a 3.4.n.4 solid, a spherical
+	// colouring and a star polyhedron. Catching the geometry itself is what stops that recurring.
 	if (geometry === "spherical") {
+		const { name, detail } = sphericalHeading(selected);
+		// The point group, the reflection orbifold and V/E/F are derived from a regular {p,q} and nothing
+		// else: a bare vertex configuration is a Wythoff inverse this does NOT perform.
+		const reg = selected.spherical?.p != null && selected.spherical?.q != null ? selected.spherical : null;
 		return {
 			geometry: "spherical",
-			label: selected.family,
-			solidName: "",
-			pointGroup: null,
-			orbifold: null,
-			counts: null,
+			label: name,
+			detail,
+			pointGroup: reg ? platonicPointGroup(reg.p!, reg.q!) : null,
+			orbifold: reg ? reflectionOrbifold(reg.p!, reg.q!) : null,
+			counts: reg ? platonicCounts(reg.p!, reg.q!) : null,
 			...base,
 		};
 	}

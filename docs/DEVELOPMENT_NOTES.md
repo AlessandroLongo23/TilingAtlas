@@ -14513,3 +14513,21 @@ Clicking the icon pins the panel open. Hover alone closes it the moment the poin
 exactly when you want it up: reading the orbit counts while dragging or rotating the tiling under them was
 impossible. Pinned, the button takes the solid variant, so it reads as held down, and `aria-pressed`
 carries the same fact.
+
+⚑ **Corrects the paragraph above, same day.** AL, on a half-tile board reading `Icosahedron halved ·
+90-72-3…`: "the name is more important". The split was right and the order was backwards, so the NAME now
+leads and the details go under it, everywhere on the sphere: `great truncated icosidodecahedron (U68)`
+over `density 13`, `Cube` over `{4,3}`, `cuboctahedron` over `3.4.3.4`, `Icosahedron halved` over
+`90-72-36 triangle · symmetry order 20`. `SphericalSpec.solidName` became `detail`, which is what it now
+holds. The primary line also WRAPS for spherical instead of truncating, since putting the long half first
+otherwise reintroduces the cut it was meant to fix.
+
+Split per shelf off each record's own fields (`sphericalHeading`), not by cutting `family` at its first
+separator: the shelves disagree about where the name sits in that string. A 3.4.n.4 record leads with the
+board's vertex figure and names the solid second, and a chiral spherical colouring leads with the word
+"chiral". `sphHalfFamilyLabel` was split into `sphHalfBoardLabel` + `sphHalfDetailLabel` and now composes
+from them, so the card and the search label cannot drift apart.
+
+The geometry chip is gone from the spherical header (AL: "they're all spherical in the spherical page").
+Euclidean and hyperbolic keep theirs for now, though the same argument applies to them: /play is browsed
+one geometry at a time and the sidebar tab already says which.

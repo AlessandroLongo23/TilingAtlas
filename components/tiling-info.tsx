@@ -143,17 +143,30 @@ export function TilingInfo({ spec, vcs = [] }: TilingInfoProps) {
 					<div className="flex flex-col gap-3">
 						{/* Header: Schläfli / vertex-config label + geometry (+ solid name for spherical) */}
 						<div className="flex flex-col gap-0.5">
+							{/* ⚑ The spherical header WRAPS instead of truncating, and drops the geometry chip. The
+							    name leads here (AL, 2026-08-20) and these names are long: on one truncating line
+							    "great truncated icosidodecahedron (U68)" is cut to "great truncated icosidode…", which
+							    is the half a reader came for. The chip is redundant on top of that, since /play is
+							    browsed one geometry at a time and the sidebar already says which. */}
 							<div className="flex min-w-0 items-baseline justify-between gap-3">
-								<span className="min-w-0 truncate font-mono text-sm font-semibold text-fg" title={spec.label}>
+								<span
+									className={`min-w-0 font-mono text-sm font-semibold text-fg ${
+										spec.geometry === "spherical" ? "break-words" : "truncate"
+									}`}
+									title={spec.label}
+								>
 									{compactVertexConfig(spec.label)}
 								</span>
-								<span className="shrink-0 text-xs text-fg-muted">{GEOMETRY_LABEL[spec.geometry]}</span>
+								{spec.geometry === "spherical" ? null : (
+									<span className="shrink-0 text-xs text-fg-muted">{GEOMETRY_LABEL[spec.geometry]}</span>
+								)}
 							</div>
-							{/* The second line carries a spherical record's own name: the solid for a Platonic board,
-							    the polyhedron for a star one. Empty on the shelves that have no name to give, and
-							    then the line is dropped instead of printing a blank one. */}
-							{spec.geometry === "spherical" && spec.solidName ? (
-								<span className="text-xs text-fg-secondary">{spec.solidName}</span>
+							{/* The second line carries what separates this record from its neighbours on the board:
+							    the density for a star polyhedron, {p,q} for a Platonic solid, the tile and symmetry
+							    order for a half-tile board. Empty where there is nothing more to say, and then the
+							    line is dropped instead of printing a blank one. */}
+							{spec.geometry === "spherical" && spec.detail ? (
+								<span className="text-xs text-fg-secondary">{spec.detail}</span>
 							) : spec.geometry === "hyperbolic" ? (
 								<span className="text-xs text-fg-secondary">Poincaré disk</span>
 							) : spec.geometry === "euclidean" && spec.freedraw ? (
