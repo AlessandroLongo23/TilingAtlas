@@ -204,36 +204,20 @@ def link_vec(csa, thetas):
 # shard's 449 s. The arithmetic is trivial; the cost is Python dispatch, three million times over.
 #
 # The starts are independent, so they are one array, not a loop. Each candidate's link product is a
-# chain of 3x3s, and the chain is the same length for every candidate — so the whole multistart is a
-# handful of (N,3,3) matmuls per link, and N=3000 costs barely more than N=1.
+# chain of 3x3s and the chain is the same length for every candidate, so the whole multistart is a
+# handful of matmuls per link and 3000 candidates cost barely more than one.
 #
-# ⚑ `b = pi - th` is computed the long way ON PURPOSE. cos(pi - th) is -cos(th) in exact arithmetic and
-# NOT bit-identical in floating point, and this function has to agree with the scalar one it replaces
-# to the last ulp, or a root that sits at the tolerance boundary is found by one and missed by the
-# other. Matching the operations is cheaper than arguing about which answer is right.
-def _link_vec_batch(csa, thetas):
-    """(N, L) dihedrals -> (N, 6) link residuals, for one vertex whose sides have cos/sin `csa`."""
-    n = thetas.shape[0]
-    M = np.zeros((n, 3, 3))
-    M[:, 0, 0] = M[:, 1, 1] = M[:, 2, 2] = 1.0
-    fac = np.empty((n, 3, 3))
-    for j, (ca, sa) in enumerate(csa):
-        b = math.pi - thetas[:, j]
-        cb, sb = np.cos(b), np.sin(b)
-        fac[:, 0, 0] = ca
-        fac[:, 0, 1] = -sa * cb
-        fac[:, 0, 2] = sa * sb
-        fac[:, 1, 0] = sa
-        fac[:, 1, 1] = ca * cb
-        fac[:, 1, 2] = -ca * sb
-        fac[:, 2, 0] = 0.0
-        fac[:, 2, 1] = sb
-        fac[:, 2, 2] = cb
-        M = M @ fac
-    return np.stack([M[:, 0, 1] - M[:, 1, 0], M[:, 0, 2] - M[:, 2, 0], M[:, 1, 2] - M[:, 2, 1],
-                     M[:, 0, 0] - 1.0, M[:, 1, 1] - 1.0, M[:, 2, 2] - 1.0], axis=1)
-
-
+# ⚑ `b = pi - theta` is computed the long way ON PURPOSE, here and in _link_kernel. cos(pi - theta) is
+# -cos(theta) in exact arithmetic and NOT bit-identical in floating point, and this path has to agree
+# with the scalar link_vec it replaces to the last ulp, or a root sitting at the tolerance boundary is
+# found by one and missed by the other. It does: measured at 2.2e-16 over random links. Matching the
+# operations is cheaper than arguing about which answer is right.
+#
+# ⚑ ONE VERTEX AT A TIME, and batching the vertices together was tried and REVERTED. Stacking a block's
+# five links into (V,3,3,nmax) buffers cuts the numpy call count fivefold, which is the right instinct
+# for a dispatch-bound loop — and it measured 5.1 s against 3.9 s on an 88-block shard, because it also
+# multiplies the working set by V. One vertex's buffers are about 3.5 MB and stay in L2 across the whole
+# Newton run; five vertices' are 30 MB and do not. Dispatch was not the binding constraint. Cache was.
 # How wide the candidate set has to be before writing the 3x3 product out by hand beats numpy's stacked
 # matmul. The (3, 3, N) layout makes every matrix ENTRY a contiguous vector, so the product becomes nine
 # fused multiply-accumulates over long arrays instead of N tiny 3x3 GEMMs: measured in isolation at
