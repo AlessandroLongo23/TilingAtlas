@@ -2801,8 +2801,8 @@ dispatch. Commits a8874e0, b398251. NOTES (eighth); `experiments/results/develop
 ## 2026-08-21 (ninth) — the star developer 11x, and the three tracks mapped — CC
 
 ⚑ The three searches do NOT share a developer. Johnson (convex/regular) and non-convex/regular are ONE
-run on `develop_euclid` — track 1 is the published oracle for track 2 — and the star search runs on
+run on `develop_euclid` — track 1 is the published oracle for track 2 — while the star search runs on
 `develop_spherical`, which the k=4 work never touched. 18.7 s → 4.9 s single process → **1.7 s** queued,
-every change bit-exact and all four check-star goldens matching. ⚑ The star runs were single-process,
-and moving them onto the queue needed `finalise_records()` extracted first or it would have shipped an
-uncollapsed catalogue. Commit 1cda197. NOTES (ninth); same experiments file.
+every change bit-exact, all four check-star goldens matching. ⚑ Moving the star runs onto the queue
+needed `finalise_records()` extracted first, or it would have shipped an uncollapsed, unordered
+catalogue. Commit 1cda197. NOTES (ninth); `experiments/results/develop-optimisation-2026-08-21.md`.
