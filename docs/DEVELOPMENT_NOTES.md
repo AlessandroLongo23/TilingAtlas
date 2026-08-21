@@ -15459,3 +15459,51 @@ The cap is on animation, so the loop now draws an entry when it is active OR has
 drains one BUILD per animation frame, so scenes become drawable a few at a time and the loop can only ever
 find that many new. Verified on `/library?geo=spherical` at 25 per page, before and after scrolling: zero
 on-screen cards left unpainted, where fifteen through twenty-five had been blank.
+
+## 2026-08-21 (ninth) — the STAR developer is 11x faster, and the three tracks do not share one
+
+Long form: `experiments/results/develop-optimisation-2026-08-21.md` (second half).
+
+AL named the three searches this pipeline exists for, and the important structural fact is that they do
+NOT share a developer:
+
+| track | palette | developer | completeness |
+|---|---|---|---|
+| Johnson — convex, regular polygons | `spherical` | `develop_euclid` | proven (Zalgaller) |
+| non-convex, regular polygons | `spherical` | `develop_euclid` | nothing published |
+| non-convex, regular + stars | `star-*` | `develop_spherical` | k=1 published; k>=2 open |
+
+⚑ **Tracks 1 and 2 are ONE search** — same palette, same run, same blocks, with the convex records going
+to johnsonSolids.ts and the reflex ones to nonconvexSolids.ts. Track 1 is the ORACLE for track 2: the
+Johnson solids have a published complete list, so reproducing them is what licenses believing the
+non-convex records that fall out of the same blocks. The k=4 optimisation served both at once.
+
+⚑ **Track 3 got none of it.** `develop_spherical` solves for a single edge arc rho and flood-fills on S2
+— no multistart, no ten-unknown Newton, no least squares — and its profile has nothing in common with
+develop_euclid's. Its cost was the flood fill's two hash tables, 75% of the profile, and almost none of
+that was the rounding: `R @ ZHAT` is a matvec against a BASIS VECTOR (column 2 and nothing else) and
+every `R[i,j]` after it returns an np.float64 whose __round__ is far slower than a plain float's. One
+`R.tolist()` per frame takes an instance key from 2.95 us to 0.47 us.
+
+18.7 s → 4.9 s single process on the gate blocks, → **1.7 s** on the work queue: unbox before keying
+(8.9 s), cache Rz(alpha) as a MATRIX and not just the angle since it was rebuilt 1.3 million times for a
+handful of rotations (6.1 s), give interior_angle three vertices in plain floats instead of a whole p-gon
+in numpy (4.9 s), and move the star runs off one core — run-star-wide-k1.sh, run-star-hept.sh and
+run_k2_buckets.py all called develop_spherical.py directly, and the star-wide k=2 run merges 422,206
+blocks.
+
+⚑ **That last one had a trap.** `develop_spherical.run()` COLLAPSES geometric duplicates and sorts before
+writing — a doubled vertex word develops to the same solid, and shipping both would inflate a catalogue
+whose k=1 count is meant to be checkable against a published one — and the sharded driver did neither.
+Routing a star search through it would have shipped a larger, unordered catalogue that looked fine. The
+collapse is `finalise_records()` now, called by both paths, verified identical at 1 and 10 workers.
+
+**Every change here is bit-exact and each was verified before it went in**, because rho is refined with
+these very functions: column-slice ≡ matvec and math.sqrt ≡ np.linalg.norm over 100,000 rotations, the
+interior_angle rewrite over 6,800 (p, d, rho) combinations, all four check-star goldens matching.
+
+⚑ **What I declined.** Precomputing Rz(alpha)·M is worth 20% and reassociates (R·A)·B to R·(A·B) —
+associative in mathematics, not in floating point, 3.9e-16 worst over 60,000 triples. Reusing the
+half-product the flood fill already formed gets the same speed with the association untouched. Frames as
+flat 9-tuples throughout would take another ~14% and differs from numpy's 3x3 product in 97.6% of cases
+at the last ulp, which would move every stored vertex. Not worth the exactness.

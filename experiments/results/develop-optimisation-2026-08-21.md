@@ -132,3 +132,82 @@ further means C, or changing what is computed — and what is computed is exactl
 - `per_block.py` — the per-block cost distribution that found the 12-of-88 concentration
 - `prof.py` — cProfile entry point
 - `joint_yield.py` — the multistart yield probe that saved the budget from being cut
+
+---
+
+# The star developer: 11x, and the three tracks it completes
+
+AL named the three searches this pipeline exists for. They do NOT share a developer, and the k=4 work
+above only touched one of them:
+
+| track | palette | developer | completeness |
+|---|---|---|---|
+| **1. Johnson** — convex, regular polygons | `spherical` | `develop_euclid` | proven (Zalgaller) |
+| **2. non-convex, regular polygons** | `spherical` | `develop_euclid` | nothing published |
+| **3. non-convex, regular + stars** | `star-*` | `develop_spherical` | k=1 published; k≥2 open |
+
+⚑ **Tracks 1 and 2 are one search.** Same palette, same run, same blocks — the convex records go to
+`johnsonSolids.ts` and the reflex ones to `nonconvexSolids.ts`. Track 1 is the *oracle* for track 2: the
+Johnson solids have a published complete list, so reproducing them is what licenses believing the
+non-convex records that fall out of the same search. Optimising `develop_euclid` served both at once.
+
+**Track 3 is a different algorithm and got none of it.** `develop_spherical` solves for a single edge arc
+ρ and flood-fills on S² — no multistart, no ten-unknown Newton, no least squares. Its profile has nothing
+in common with `develop_euclid`'s.
+
+## Where its time was
+
+```
+builtins.round   19,766,830 calls   8.16 s   34%
+_key_inst         2,460,868 calls   3.89 s        (9.86 s cumulative)
+develop_sphere          868 calls   2.91 s        (24.12 s cumulative)
+vid_of            1,667,204 calls   2.47 s
+```
+
+The flood fill's two hash tables, and **almost none of it was the rounding**. `R @ ZHAT` is a numpy
+matvec against a *basis vector* — column 2 and nothing else — and every `R[i,j]` after it returns an
+`np.float64` whose `__round__` is far slower than a plain float's.
+
+```
+R @ ZHAT (current)   2.95 us/key
+R[i,j] direct        2.28
+R.tolist()           0.47      ← adopted
+flat 9-tuple         0.37      ← would need frames refactored throughout
+```
+
+| | |
+|---|---|
+| unbox frames once with `.tolist()` before keying | 18.7 s → 8.9 s |
+| cache `Rz(alpha)` as a matrix, not just the angle (it was rebuilt 1.3M times) | 8.9 s → 6.1 s |
+| `interior_angle`: three vertices in plain floats, not a whole p-gon in numpy | 6.1 s → 4.9 s |
+| the star runs onto the work queue (they were single-process) | 4.9 s → **1.7 s** |
+
+## ⚑ The trap in moving the star runs onto the queue
+
+`develop_spherical.run()` **collapses geometric duplicates and sorts** before writing — a doubled vertex
+word like (5,5,5,5,5,5) develops to the same dodecahedron as (5,5,5), and shipping both would inflate a
+catalogue whose k=1 count is meant to be checkable against a published one. The sharded driver merged
+per-worker records and did *neither*. Routing a star search through it would have shipped a larger,
+unordered catalogue that looked perfectly fine.
+
+The collapse is `finalise_records()` now, called by both paths, and single-process against 10-worker
+output is verified identical.
+
+## Bit-exactness, verified per change
+
+Every change was checked before it went in, because ρ is refined with these very functions and the
+developer places geometry with the ρ they return:
+
+- `R @ ZHAT` ≡ column 2, and `math.sqrt(x²+y²+z²)` ≡ `np.linalg.norm` — 100,000 rotations, zero diffs
+- `interior_angle` scalar rewrite — 6,800 (p, d, ρ) combinations, zero diffs
+- the benchmark record hash unchanged throughout, and all four `check-star` goldens matching
+
+## What I declined here, measured
+
+**Precomputing `Rz(alpha) @ M`** is worth 20% and reassociates `(R·A)·B` to `R·(A·B)`. Matmul is
+associative in mathematics and not in floating point: 3.9e-16 worst over 60,000 triples, which is 4e-10
+of the 1e-6 key quantum — small, not nothing, and unnecessary. Reusing the half-product the flood fill
+has already formed gets the same speed with the association untouched.
+
+**Frames as flat 9-tuples throughout** would take another ~14%. The scalar 3×3 product differs from
+numpy's in 97.6% of cases at the last ulp, which would move every stored vertex coordinate. Declined.
