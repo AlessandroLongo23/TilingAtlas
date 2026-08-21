@@ -83,12 +83,12 @@ export const NCX_7_15_10: Polyhedron = {
 	],
 };
 
-// ncx-8-15-9  — 6{3} + 3{4}, self-intersecting
+// ncx-8-15-9  — 6{3}, 3{4}, self-intersecting
 export const NCX_8_15_9: Polyhedron = {
 	id: "ncx-8-15-9",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "3.3.3 + 4.4.3.3",
-	name: "6{3} + 3{4}",
+	name: "6{3}, 3{4}",
 	vertices: [
 		[-0.338349077, -0.195345931, -0.138130432],
 		[0.970958264, -0.195345931, -0.138130432],
@@ -211,12 +211,12 @@ export const NCX_9_21_14: Polyhedron = {
 	],
 };
 
-// ncx-10-20-12  — 8{3} + 4{4}, self-intersecting
+// ncx-10-20-12  — 8{3}, 4{4}, self-intersecting
 export const NCX_10_20_12: Polyhedron = {
 	id: "ncx-10-20-12",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "3.3.3.3 + 4.4.3.3",
-	name: "8{3} + 4{4}",
+	name: "8{3}, 4{4}",
 	vertices: [
 		[-0.169101979, -0.097631073, -0.138071187],
 		[0.985598560, -0.097631073, -0.138071187],
@@ -283,12 +283,12 @@ export const NCX_10_24_16: Polyhedron = {
 	],
 };
 
-// ncx-12-25-15-a  — 10{3} + 5{4}, self-intersecting
+// ncx-12-25-15-a  — 10{3}, 5{4}, self-intersecting
 export const NCX_12_25_15_A: Polyhedron = {
 	id: "ncx-12-25-15-a",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "4.4.3.3 + 3.3.3.3.3",
-	name: "10{3} + 5{4}",
+	name: "10{3}, 5{4}",
 	vertices: [
 		[-0.689151758, -0.689151758, 0.223918980],
 		[0.689151758, -0.689151758, 0.223918980],
@@ -322,12 +322,12 @@ export const NCX_12_25_15_A: Polyhedron = {
 	],
 };
 
-// ncx-12-25-15-b  — 10{3} + 5{4}, self-intersecting
+// ncx-12-25-15-b  — 10{3}, 5{4}, self-intersecting
 export const NCX_12_25_15_B: Polyhedron = {
 	id: "ncx-12-25-15-b",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "4.4.3.3 + 3.3.3.3.3",
-	name: "10{3} + 5{4}",
+	name: "10{3}, 5{4}",
 	vertices: [
 		[-0.506731854, -0.506731854, -0.697456562],
 		[0.506731854, -0.506731854, -0.697456562],
@@ -361,12 +361,12 @@ export const NCX_12_25_15_B: Polyhedron = {
 	],
 };
 
-// ncx-12-25-15-c  — 10{3} + 5{4}, self-intersecting
+// ncx-12-25-15-c  — 10{3}, 5{4}, self-intersecting
 export const NCX_12_25_15_C: Polyhedron = {
 	id: "ncx-12-25-15-c",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "4.4.3.3 + 3.3.3.3.3",
-	name: "10{3} + 5{4}",
+	name: "10{3}, 5{4}",
 	vertices: [
 		[-0.370191908, -0.370191908, -0.120282642],
 		[0.370191908, -0.370191908, -0.120282642],
@@ -400,12 +400,12 @@ export const NCX_12_25_15_C: Polyhedron = {
 	],
 };
 
-// ncx-12-28-18-a  — 16{3} + 2{4}, self-intersecting
+// ncx-12-28-18-a  — 16{3}, 2{4}, self-intersecting
 export const NCX_12_28_18_A: Polyhedron = {
 	id: "ncx-12-28-18-a",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "3.3.3.3 + 4.3.3.3.3",
-	name: "16{3} + 2{4}",
+	name: "16{3}, 2{4}",
 	vertices: [
 		[-0.169101979, -0.097631073, -0.138071187],
 		[0.985598560, -0.097631073, -0.138071187],
@@ -442,12 +442,12 @@ export const NCX_12_28_18_A: Polyhedron = {
 	],
 };
 
-// ncx-12-28-18-b  — 16{3} + 2{4}, embedded
+// ncx-12-28-18-b  — 16{3}, 2{4}, embedded
 export const NCX_12_28_18_B: Polyhedron = {
 	id: "ncx-12-28-18-b",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "3.3.3.3 + 4.3.3.3.3",
-	name: "16{3} + 2{4}",
+	name: "16{3}, 2{4}",
 	vertices: [
 		[-0.707106781, -0.408248290, -0.577350269],
 		[0.121320344, -0.408248290, -0.577350269],
@@ -484,12 +484,12 @@ export const NCX_12_28_18_B: Polyhedron = {
 	],
 };
 
-// ncx-15-30-17  — 12{3} + 3{4} + 2{6}, embedded
+// ncx-15-30-17  — 12{3}, 3{4}, 2{6}, embedded
 export const NCX_15_30_17: Polyhedron = {
 	id: "ncx-15-30-17",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "3.3.3.3 + 6.4.3.3",
-	name: "12{3} + 3{4} + 2{6}",
+	name: "12{3}, 3{4}, 2{6}",
 	vertices: [
 		[0.100508962, 0.058028876, 0.082065224],
 		[0.994936153, 0.058028876, 0.082065224],
@@ -528,12 +528,12 @@ export const NCX_15_30_17: Polyhedron = {
 	],
 };
 
-// ncx-15-35-22-a  — 20{3} + 2{5}, self-intersecting
+// ncx-15-35-22-a  — 20{3}, 2{5}, self-intersecting
 export const NCX_15_35_22_A: Polyhedron = {
 	id: "ncx-15-35-22-a",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "3.3.3.3 + 5.3.3.3.3",
-	name: "20{3} + 2{5}",
+	name: "20{3}, 2{5}",
 	vertices: [
 		[-0.013555589, -0.007826323, -0.011068092],
 		[0.999908119, -0.007826323, -0.011068092],
@@ -577,12 +577,12 @@ export const NCX_15_35_22_A: Polyhedron = {
 	],
 };
 
-// ncx-15-35-22-b  — 20{3} + 2{5}, embedded
+// ncx-15-35-22-b  — 20{3}, 2{5}, embedded
 export const NCX_15_35_22_B: Polyhedron = {
 	id: "ncx-15-35-22-b",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "3.3.3.3 + 5.3.3.3.3",
-	name: "20{3} + 2{5}",
+	name: "20{3}, 2{5}",
 	vertices: [
 		[-0.707106781, -0.408248290, -0.577350269],
 		[0.009586130, -0.408248290, -0.577350269],
@@ -626,12 +626,12 @@ export const NCX_15_35_22_B: Polyhedron = {
 	],
 };
 
-// ncx-16-32-18-a  — 8{3} + 10{4}, self-intersecting
+// ncx-16-32-18-a  — 8{3}, 10{4}, self-intersecting
 export const NCX_16_32_18_A: Polyhedron = {
 	id: "ncx-16-32-18-a",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "4.3.4.3 + 4.4.4.3",
-	name: "8{3} + 10{4}",
+	name: "8{3}, 10{4}",
 	vertices: [
 		[-0.146446609, -0.500000000, 0.146446609],
 		[0.853553391, -0.500000000, 0.146446609],
@@ -672,12 +672,12 @@ export const NCX_16_32_18_A: Polyhedron = {
 	],
 };
 
-// ncx-16-32-18-b  — 8{3} + 10{4}, self-intersecting
+// ncx-16-32-18-b  — 8{3}, 10{4}, self-intersecting
 export const NCX_16_32_18_B: Polyhedron = {
 	id: "ncx-16-32-18-b",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "4.4.3.3 + 4.4.4.3",
-	name: "8{3} + 10{4}",
+	name: "8{3}, 10{4}",
 	vertices: [
 		[-0.146446609, -0.500000000, -0.146446609],
 		[0.853553391, -0.500000000, -0.146446609],
@@ -718,12 +718,12 @@ export const NCX_16_32_18_B: Polyhedron = {
 	],
 };
 
-// ncx-16-40-26-a  — 24{3} + 2{4}, self-intersecting
+// ncx-16-40-26-a  — 24{3}, 2{4}, self-intersecting
 export const NCX_16_40_26_A: Polyhedron = {
 	id: "ncx-16-40-26-a",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "3.3.3.3.3 + 4.3.3.3.3",
-	name: "24{3} + 2{4}",
+	name: "24{3}, 2{4}",
 	vertices: [
 		[-0.548579401, -0.498588617, 0.075083711],
 		[0.863580817, -0.498588617, 0.075083711],
@@ -772,12 +772,12 @@ export const NCX_16_40_26_A: Polyhedron = {
 	],
 };
 
-// ncx-16-40-26-b  — 24{3} + 2{4}, self-intersecting
+// ncx-16-40-26-b  — 24{3}, 2{4}, self-intersecting
 export const NCX_16_40_26_B: Polyhedron = {
 	id: "ncx-16-40-26-b",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "3.3.3.3.3 + 4.3.3.3.3",
-	name: "24{3} + 2{4}",
+	name: "24{3}, 2{4}",
 	vertices: [
 		[-0.356030020, -0.496251322, 0.122223156],
 		[0.859532504, -0.496251322, 0.122223156],
@@ -826,12 +826,12 @@ export const NCX_16_40_26_B: Polyhedron = {
 	],
 };
 
-// ncx-16-40-26-c  — 24{3} + 2{4}, self-intersecting
+// ncx-16-40-26-c  — 24{3}, 2{4}, self-intersecting
 export const NCX_16_40_26_C: Polyhedron = {
 	id: "ncx-16-40-26-c",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "3.3.3.3.3 + 4.3.3.3.3",
-	name: "24{3} + 2{4}",
+	name: "24{3}, 2{4}",
 	vertices: [
 		[-0.258325080, -0.494559142, 0.147122471],
 		[0.856601561, -0.494559142, 0.147122471],
@@ -880,12 +880,12 @@ export const NCX_16_40_26_C: Polyhedron = {
 	],
 };
 
-// ncx-18-36-20-a  — 8{3} + 12{4}, self-intersecting
+// ncx-18-36-20-a  — 8{3}, 12{4}, self-intersecting
 export const NCX_18_36_20_A: Polyhedron = {
 	id: "ncx-18-36-20-a",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "4.3.4.3 + 4.4.4.3",
-	name: "8{3} + 12{4}",
+	name: "8{3}, 12{4}",
 	vertices: [
 		[-0.082065224, -0.447213595, 0.374256642],
 		[0.812361967, -0.447213595, 0.374256642],
@@ -930,12 +930,12 @@ export const NCX_18_36_20_A: Polyhedron = {
 	],
 };
 
-// ncx-18-36-20-b  — 8{3} + 12{4}, self-intersecting
+// ncx-18-36-20-b  — 8{3}, 12{4}, self-intersecting
 export const NCX_18_36_20_B: Polyhedron = {
 	id: "ncx-18-36-20-b",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "4.3.4.3 + 4.4.4.3",
-	name: "8{3} + 12{4}",
+	name: "8{3}, 12{4}",
 	vertices: [
 		[-0.082065224, -0.447213595, -0.374256642],
 		[0.812361967, -0.447213595, -0.374256642],
@@ -980,12 +980,12 @@ export const NCX_18_36_20_B: Polyhedron = {
 	],
 };
 
-// ncx-20-40-22-a  — 16{3} + 4{4} + 2{8}, embedded
+// ncx-20-40-22-a  — 16{3}, 4{4}, 2{8}, embedded
 export const NCX_20_40_22_A: Polyhedron = {
 	id: "ncx-20-40-22-a",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "3.3.3.3 + 8.4.3.3",
-	name: "16{3} + 4{4} + 2{8}",
+	name: "16{3}, 4{4}, 2{8}",
 	vertices: [
 		[0.252724733, 0.145910692, 0.206348880],
 		[0.967538221, 0.145910692, 0.206348880],
@@ -1034,12 +1034,12 @@ export const NCX_20_40_22_A: Polyhedron = {
 	],
 };
 
-// ncx-20-40-22-b  — 16{3} + 4{4} + 2{8}, embedded
+// ncx-20-40-22-b  — 16{3}, 4{4}, 2{8}, embedded
 export const NCX_20_40_22_B: Polyhedron = {
 	id: "ncx-20-40-22-b",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "3.3.3.3 + 8.4.3.3",
-	name: "16{3} + 4{4} + 2{8}",
+	name: "16{3}, 4{4}, 2{8}",
 	vertices: [
 		[-0.707106781, -0.408248290, -0.577350269],
 		[-0.184699031, -0.408248290, -0.577350269],
@@ -1088,12 +1088,12 @@ export const NCX_20_40_22_B: Polyhedron = {
 	],
 };
 
-// ncx-20-50-32-a  — 30{3} + 2{5}, self-intersecting
+// ncx-20-50-32-a  — 30{3}, 2{5}, self-intersecting
 export const NCX_20_50_32_A: Polyhedron = {
 	id: "ncx-20-50-32-a",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "3.3.3.3.3 + 5.3.3.3.3",
-	name: "30{3} + 2{5}",
+	name: "30{3}, 2{5}",
 	vertices: [
 		[-0.298895793, -0.499837117, -0.025523050],
 		[0.865743282, -0.499837117, -0.025523050],
@@ -1152,12 +1152,12 @@ export const NCX_20_50_32_A: Polyhedron = {
 	],
 };
 
-// ncx-20-50-32-b  — 30{3} + 2{5}, self-intersecting
+// ncx-20-50-32-b  — 30{3}, 2{5}, self-intersecting
 export const NCX_20_50_32_B: Polyhedron = {
 	id: "ncx-20-50-32-b",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "3.3.3.3.3 + 5.3.3.3.3",
-	name: "30{3} + 2{5}",
+	name: "30{3}, 2{5}",
 	vertices: [
 		[-0.309553295, -0.499991701, -0.005761563],
 		[0.866011030, -0.499991701, -0.005761563],
@@ -1216,12 +1216,12 @@ export const NCX_20_50_32_B: Polyhedron = {
 	],
 };
 
-// ncx-20-50-32-c  — 30{3} + 2{5}, embedded
+// ncx-20-50-32-c  — 30{3}, 2{5}, embedded
 export const NCX_20_50_32_C: Polyhedron = {
 	id: "ncx-20-50-32-c",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "3.3.3.3.3 + 5.3.3.3.3",
-	name: "30{3} + 2{5}",
+	name: "30{3}, 2{5}",
 	vertices: [
 		[-0.724660250, 0.029997804, 0.688453088],
 		[-0.051957721, 0.029997804, 0.688453088],
@@ -1280,12 +1280,12 @@ export const NCX_20_50_32_C: Polyhedron = {
 	],
 };
 
-// ncx-20-50-32-d  — 30{3} + 2{5}, self-intersecting
+// ncx-20-50-32-d  — 30{3}, 2{5}, self-intersecting
 export const NCX_20_50_32_D: Polyhedron = {
 	id: "ncx-20-50-32-d",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "3.3.3.3.3 + 5.3.3.3.3",
-	name: "30{3} + 2{5}",
+	name: "30{3}, 2{5}",
 	vertices: [
 		[-0.274297961, -0.499466653, -0.046176310],
 		[0.865101619, -0.499466653, -0.046176310],
@@ -1344,12 +1344,12 @@ export const NCX_20_50_32_D: Polyhedron = {
 	],
 };
 
-// ncx-24-48-26-a  — 8{3} + 18{4}, self-intersecting
+// ncx-24-48-26-a  — 8{3}, 18{4}, self-intersecting
 export const NCX_24_48_26_A: Polyhedron = {
 	id: "ncx-24-48-26-a",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "4.4.4.3 + 4.4.4.3",
-	name: "8{3} + 18{4}",
+	name: "8{3}, 18{4}",
 	vertices: [
 		[-0.862856209, -0.357406744, -0.357406744],
 		[-0.148042721, -0.357406744, -0.357406744],
@@ -1406,12 +1406,12 @@ export const NCX_24_48_26_A: Polyhedron = {
 	],
 };
 
-// ncx-24-48-26-b  — 8{3} + 18{4}, self-intersecting
+// ncx-24-48-26-b  — 8{3}, 18{4}, self-intersecting
 export const NCX_24_48_26_B: Polyhedron = {
 	id: "ncx-24-48-26-b",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "4.4.4.3 + 4.4.4.3",
-	name: "8{3} + 18{4}",
+	name: "8{3}, 18{4}",
 	vertices: [
 		[0.148042721, -0.357406744, 0.357406744],
 		[0.862856209, -0.357406744, 0.357406744],
@@ -1468,12 +1468,12 @@ export const NCX_24_48_26_B: Polyhedron = {
 	],
 };
 
-// ncx-25-50-27-a  — 20{3} + 5{4} + 2{10}, embedded
+// ncx-25-50-27-a  — 20{3}, 5{4}, 2{10}, embedded
 export const NCX_25_50_27_A: Polyhedron = {
 	id: "ncx-25-50-27-a",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "10.4.3.3 + 3.3.3.3",
-	name: "20{3} + 5{4} + 2{10}",
+	name: "20{3}, 5{4}, 2{10}",
 	vertices: [
 		[-0.222623087, -0.685163411, -0.222623087],
 		[0.222623087, -0.685163411, -0.222623087],
@@ -1532,12 +1532,12 @@ export const NCX_25_50_27_A: Polyhedron = {
 	],
 };
 
-// ncx-25-50-27-b  — 20{3} + 5{4} + 2{10}, embedded
+// ncx-25-50-27-b  — 20{3}, 5{4}, 2{10}, embedded
 export const NCX_25_50_27_B: Polyhedron = {
 	id: "ncx-25-50-27-b",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "10.4.3.3 + 3.3.3.3",
-	name: "20{3} + 5{4} + 2{10}",
+	name: "20{3}, 5{4}, 2{10}",
 	vertices: [
 		[-0.295241809, -0.908660855, -0.295241809],
 		[0.295241809, -0.908660855, -0.295241809],
@@ -1596,12 +1596,12 @@ export const NCX_25_50_27_B: Polyhedron = {
 	],
 };
 
-// ncx-30-60-32-a  — 10{3} + 20{4} + 2{5}, self-intersecting
+// ncx-30-60-32-a  — 10{3}, 20{4}, 2{5}, self-intersecting
 export const NCX_30_60_32_A: Polyhedron = {
 	id: "ncx-30-60-32-a",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "4.4.4.3 + 5.4.3.4",
-	name: "10{3} + 20{4} + 2{5}",
+	name: "10{3}, 20{4}, 2{5}",
 	vertices: [
 		[-0.928170895, -0.295241809, 0.226563598],
 		[-0.337687277, -0.295241809, 0.226563598],
@@ -1670,12 +1670,12 @@ export const NCX_30_60_32_A: Polyhedron = {
 	],
 };
 
-// ncx-30-60-32-b  — 10{3} + 20{4} + 2{5}, self-intersecting
+// ncx-30-60-32-b  — 10{3}, 20{4}, 2{5}, self-intersecting
 export const NCX_30_60_32_B: Polyhedron = {
 	id: "ncx-30-60-32-b",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "4.4.4.3 + 5.4.3.4",
-	name: "10{3} + 20{4} + 2{5}",
+	name: "10{3}, 20{4}, 2{5}",
 	vertices: [
 		[-0.928170895, -0.295241809, 0.226563598],
 		[-0.337687277, -0.295241809, 0.226563598],
@@ -1770,12 +1770,12 @@ export const NCX_6_12_8: Polyhedron = {
 	],
 };
 
-// ncx-7-12-7  — 4{3} + 3{4}, embedded
+// ncx-7-12-7  — 4{3}, 3{4}, embedded
 export const NCX_7_12_7: Polyhedron = {
 	id: "ncx-7-12-7",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "3.3.3 + 4.4.3.3 + 4.4.3",
-	name: "4{3} + 3{4}",
+	name: "4{3}, 3{4}",
 	vertices: [
 		[-0.278934720, -0.161043036, -0.113874623],
 		[0.980355910, -0.161043036, -0.113874623],
@@ -1796,12 +1796,12 @@ export const NCX_7_12_7: Polyhedron = {
 	],
 };
 
-// ncx-7-13-8  — 6{3} + 2{4}, embedded
+// ncx-7-13-8  — 6{3}, 2{4}, embedded
 export const NCX_7_13_8: Polyhedron = {
 	id: "ncx-7-13-8",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "4.4.3 + 4.3.3.3 + 3.3.3.3",
-	name: "6{3} + 2{4}",
+	name: "6{3}, 2{4}",
 	vertices: [
 		[-0.568605927, -0.634275644, -0.328284785],
 		[0.699945361, -0.634275644, -0.328284785],
@@ -1881,12 +1881,12 @@ export const NCX_7_15_10_B: Polyhedron = {
 	],
 };
 
-// ncx-8-17-11  — 10{3} + 1{4}, self-intersecting
+// ncx-8-17-11  — 10{3}, 1{4}, self-intersecting
 export const NCX_8_17_11: Polyhedron = {
 	id: "ncx-8-17-11",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "3.3.3.3 + 4.3.3.3 + 3.3.3.3.3",
-	name: "10{3} + 1{4}",
+	name: "10{3}, 1{4}",
 	vertices: [
 		[-0.373160012, -0.215444033, 0.235685560],
 		[0.870574480, -0.215444033, 0.235685560],
@@ -1912,12 +1912,12 @@ export const NCX_8_17_11: Polyhedron = {
 	],
 };
 
-// ncx-9-16-9  — 4{3} + 5{4}, embedded
+// ncx-9-16-9  — 4{3}, 5{4}, embedded
 export const NCX_9_16_9: Polyhedron = {
 	id: "ncx-9-16-9",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "4.4.4 + 4.4.3.3 + 3.3.3.3",
-	name: "4{3} + 5{4}",
+	name: "4{3}, 5{4}",
 	vertices: [
 		[-0.542332702, -0.568497056, -0.568497056],
 		[0.594661411, -0.568497056, -0.568497056],
@@ -1942,12 +1942,12 @@ export const NCX_9_16_9: Polyhedron = {
 	],
 };
 
-// ncx-9-20-13  — 12{3} + 1{4}, embedded
+// ncx-9-20-13  — 12{3}, 1{4}, embedded
 export const NCX_9_20_13: Polyhedron = {
 	id: "ncx-9-20-13",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "3.3.3.3 + 3.3.3.3.3 + 4.3.3.3",
-	name: "12{3} + 1{4}",
+	name: "12{3}, 1{4}",
 	vertices: [
 		[-0.214651509, -0.123929106, -0.175262223],
 		[0.976690703, -0.123929106, -0.175262223],
@@ -1976,12 +1976,12 @@ export const NCX_9_20_13: Polyhedron = {
 	],
 };
 
-// ncx-10-22-14  — 12{3} + 2{4}, embedded
+// ncx-10-22-14  — 12{3}, 2{4}, embedded
 export const NCX_10_22_14: Polyhedron = {
 	id: "ncx-10-22-14",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "3.3.3.3 + 4.3.3.3 + 4.3.3.3.3",
-	name: "12{3} + 2{4}",
+	name: "12{3}, 2{4}",
 	vertices: [
 		[-0.068813782, -0.039729656, 0.362372436],
 		[0.931186218, -0.039729656, 0.362372436],
@@ -2012,12 +2012,12 @@ export const NCX_10_22_14: Polyhedron = {
 	],
 };
 
-// ncx-11-20-11  — 5{3} + 5{4} + 1{5}, embedded
+// ncx-11-20-11  — 5{3}, 5{4}, 1{5}, embedded
 export const NCX_11_20_11: Polyhedron = {
 	id: "ncx-11-20-11",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "5.4.4 + 4.4.3.3 + 3.3.3.3.3",
-	name: "5{3} + 5{4} + 1{5}",
+	name: "5{3}, 5{4}, 1{5}",
 	vertices: [
 		[-0.506122792, -0.696618260, -0.503754955],
 		[0.506122792, -0.696618260, -0.503754955],
@@ -2046,12 +2046,12 @@ export const NCX_11_20_11: Polyhedron = {
 	],
 };
 
-// ncx-11-25-16  — 15{3} + 1{5}, embedded
+// ncx-11-25-16  — 15{3}, 1{5}, embedded
 export const NCX_11_25_16: Polyhedron = {
 	id: "ncx-11-25-16",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "5.3.3.3 + 3.3.3.3.3 + 3.3.3.3.3",
-	name: "15{3} + 1{5}",
+	name: "15{3}, 1{5}",
 	vertices: [
 		[-0.523465120, -0.720487927, -0.435729866],
 		[0.523465120, -0.720487927, -0.435729866],
@@ -2085,12 +2085,12 @@ export const NCX_11_25_16: Polyhedron = {
 	],
 };
 
-// ncx-12-26-16-a  — 12{3} + 4{4}, embedded
+// ncx-12-26-16-a  — 12{3}, 4{4}, embedded
 export const NCX_12_26_16_A: Polyhedron = {
 	id: "ncx-12-26-16-a",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "4.4.3 + 4.3.3.3.3 + 4.3.3.3.3",
-	name: "12{3} + 4{4}",
+	name: "12{3}, 4{4}",
 	vertices: [
 		[-0.807202295, -0.362260413, -0.466038462],
 		[-0.082681468, -0.362260413, -0.466038462],
@@ -2125,12 +2125,12 @@ export const NCX_12_26_16_A: Polyhedron = {
 	],
 };
 
-// ncx-12-26-16-b  — 12{3} + 4{4}, self-intersecting
+// ncx-12-26-16-b  — 12{3}, 4{4}, self-intersecting
 export const NCX_12_26_16_B: Polyhedron = {
 	id: "ncx-12-26-16-b",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "4.4.3 + 4.3.3.3.3 + 4.3.3.3.3",
-	name: "12{3} + 4{4}",
+	name: "12{3}, 4{4}",
 	vertices: [
 		[-0.469062691, -0.607781262, -0.270813471],
 		[0.746499834, -0.607781262, -0.270813471],
@@ -2165,12 +2165,12 @@ export const NCX_12_26_16_B: Polyhedron = {
 	],
 };
 
-// ncx-14-26-14  — 8{3} + 4{4} + 2{6}, embedded
+// ncx-14-26-14  — 8{3}, 4{4}, 2{6}, embedded
 export const NCX_14_26_14: Polyhedron = {
 	id: "ncx-14-26-14",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "6.4.4 + 6.4.3.3 + 3.3.3.3",
-	name: "8{3} + 4{4} + 2{6}",
+	name: "8{3}, 4{4}, 2{6}",
 	vertices: [
 		[-0.447213595, -0.774596669, -0.447213595],
 		[0.447213595, -0.774596669, -0.447213595],
@@ -2205,12 +2205,12 @@ export const NCX_14_26_14: Polyhedron = {
 	],
 };
 
-// ncx-15-27-14  — 4{3} + 9{4} + 1{6}, embedded
+// ncx-15-27-14  — 4{3}, 9{4}, 1{6}, embedded
 export const NCX_15_27_14: Polyhedron = {
 	id: "ncx-15-27-14",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "6.4.4 + 4.4.4.3 + 4.3.4.3",
-	name: "4{3} + 9{4} + 1{6}",
+	name: "4{3}, 9{4}, 1{6}",
 	vertices: [
 		[-0.435638897, -0.754548703, -0.380487608],
 		[0.435638897, -0.754548703, -0.380487608],
@@ -2246,12 +2246,12 @@ export const NCX_15_27_14: Polyhedron = {
 	],
 };
 
-// ncx-16-38-24-a  — 20{3} + 4{4}, self-intersecting
+// ncx-16-38-24-a  — 20{3}, 4{4}, self-intersecting
 export const NCX_16_38_24_A: Polyhedron = {
 	id: "ncx-16-38-24-a",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "4.4.3.3 + 4.3.3.3.3 + 3.3.3.3.3",
-	name: "20{3} + 4{4}",
+	name: "20{3}, 4{4}",
 	vertices: [
 		[-0.572714665, -0.652573067, -0.194145660],
 		[0.732431468, -0.652573067, -0.194145660],
@@ -2298,12 +2298,12 @@ export const NCX_16_38_24_A: Polyhedron = {
 	],
 };
 
-// ncx-16-38-24-b  — 20{3} + 4{4}, embedded
+// ncx-16-38-24-b  — 20{3}, 4{4}, embedded
 export const NCX_16_38_24_B: Polyhedron = {
 	id: "ncx-16-38-24-b",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "4.4.3.3 + 4.3.3.3.3 + 3.3.3.3.3",
-	name: "20{3} + 4{4}",
+	name: "20{3}, 4{4}",
 	vertices: [
 		[-0.479901643, -0.455696671, -0.749689907],
 		[0.431491698, -0.455696671, -0.749689907],
@@ -2350,12 +2350,12 @@ export const NCX_16_38_24_B: Polyhedron = {
 	],
 };
 
-// ncx-16-38-24-c  — 20{3} + 4{4}, self-intersecting
+// ncx-16-38-24-c  — 20{3}, 4{4}, self-intersecting
 export const NCX_16_38_24_C: Polyhedron = {
 	id: "ncx-16-38-24-c",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "4.4.3.3 + 4.3.3.3.3 + 3.3.3.3.3",
-	name: "20{3} + 4{4}",
+	name: "20{3}, 4{4}",
 	vertices: [
 		[-0.907534451, -0.393593730, 0.146510054],
 		[-0.120346990, -0.393593730, 0.146510054],
@@ -2402,12 +2402,12 @@ export const NCX_16_38_24_C: Polyhedron = {
 	],
 };
 
-// ncx-18-32-16-a  — 8{3} + 6{4} + 2{8}, embedded
+// ncx-18-32-16-a  — 8{3}, 6{4}, 2{8}, embedded
 export const NCX_18_32_16_A: Polyhedron = {
 	id: "ncx-18-32-16-a",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "8.4.4 + 8.4.3.3 + 3.3.3.3",
-	name: "8{3} + 6{4} + 2{8}",
+	name: "8{3}, 6{4}, 2{8}",
 	vertices: [
 		[-0.357406744, -0.862856209, -0.357406744],
 		[0.357406744, -0.862856209, -0.357406744],
@@ -2448,12 +2448,12 @@ export const NCX_18_32_16_A: Polyhedron = {
 	],
 };
 
-// ncx-18-32-16-b  — 8{3} + 6{4} + 2{8}, embedded
+// ncx-18-32-16-b  — 8{3}, 6{4}, 2{8}, embedded
 export const NCX_18_32_16_B: Polyhedron = {
 	id: "ncx-18-32-16-b",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "8.4.4 + 8.4.3.3 + 3.3.3.3",
-	name: "8{3} + 6{4} + 2{8}",
+	name: "8{3}, 6{4}, 2{8}",
 	vertices: [
 		[-0.261203875, -0.630601937, -0.261203875],
 		[0.261203875, -0.630601937, -0.261203875],
@@ -2494,12 +2494,12 @@ export const NCX_18_32_16_B: Polyhedron = {
 	],
 };
 
-// ncx-18-42-26  — 20{3} + 6{4}, self-intersecting
+// ncx-18-42-26  — 20{3}, 6{4}, self-intersecting
 export const NCX_18_42_26: Polyhedron = {
 	id: "ncx-18-42-26",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "4.3.4.3 + 4.3.3.3.3 + 4.3.3.3.3",
-	name: "20{3} + 6{4}",
+	name: "20{3}, 6{4}",
 	vertices: [
 		[-0.138556495, -0.459700843, 0.423031821],
 		[0.780845191, -0.459700843, 0.423031821],
@@ -2550,12 +2550,12 @@ export const NCX_18_42_26: Polyhedron = {
 	],
 };
 
-// ncx-20-36-18  — 4{3} + 13{4} + 1{8}, embedded
+// ncx-20-36-18  — 4{3}, 13{4}, 1{8}, embedded
 export const NCX_20_36_18: Polyhedron = {
 	id: "ncx-20-36-18",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "8.4.4 + 4.4.4.3 + 4.4.4.3",
-	name: "4{3} + 13{4} + 1{8}",
+	name: "4{3}, 13{4}, 1{8}",
 	vertices: [
 		[-0.353531838, -0.853501357, -0.324244301],
 		[0.353531838, -0.853501357, -0.324244301],
@@ -2600,12 +2600,12 @@ export const NCX_20_36_18: Polyhedron = {
 	],
 };
 
-// ncx-22-40-20  — 10{3} + 10{5}, embedded
+// ncx-22-40-20  — 10{3}, 10{5}, embedded
 export const NCX_22_40_20: Polyhedron = {
 	id: "ncx-22-40-20",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "5.5.5 + 5.5.3.3 + 3.3.3.3.3",
-	name: "10{3} + 10{5}",
+	name: "10{3}, 10{5}",
 	vertices: [
 		[-0.356822090, -0.491123473, -0.794654472],
 		[0.356822090, -0.491123473, -0.794654472],
@@ -2654,12 +2654,12 @@ export const NCX_22_40_20: Polyhedron = {
 	],
 };
 
-// ncx-24-56-34-a  — 24{3} + 10{4}, self-intersecting
+// ncx-24-56-34-a  — 24{3}, 10{4}, self-intersecting
 export const NCX_24_56_34_A: Polyhedron = {
 	id: "ncx-24-56-34-a",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "4.4.4.3 + 4.3.3.3.3 + 4.3.3.3.3",
-	name: "24{3} + 10{4}",
+	name: "24{3}, 10{4}",
 	vertices: [
 		[-0.865073780, -0.380741280, -0.326624298],
 		[-0.103591220, -0.380741280, -0.326624298],
@@ -2724,12 +2724,12 @@ export const NCX_24_56_34_A: Polyhedron = {
 	],
 };
 
-// ncx-24-56-34-b  — 24{3} + 10{4}, self-intersecting
+// ncx-24-56-34-b  — 24{3}, 10{4}, self-intersecting
 export const NCX_24_56_34_B: Polyhedron = {
 	id: "ncx-24-56-34-b",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "4.4.4.3 + 4.3.3.3.3 + 4.3.3.3.3",
-	name: "24{3} + 10{4}",
+	name: "24{3}, 10{4}",
 	vertices: [
 		[-0.865427566, -0.429415402, -0.258142481],
 		[-0.006596762, -0.429415402, -0.258142481],
@@ -2794,12 +2794,12 @@ export const NCX_24_56_34_B: Polyhedron = {
 	],
 };
 
-// ncx-24-56-34-c  — 24{3} + 10{4}, self-intersecting
+// ncx-24-56-34-c  — 24{3}, 10{4}, self-intersecting
 export const NCX_24_56_34_C: Polyhedron = {
 	id: "ncx-24-56-34-c",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "4.4.4.3 + 4.3.3.3.3 + 4.3.3.3.3",
-	name: "24{3} + 10{4}",
+	name: "24{3}, 10{4}",
 	vertices: [
 		[-0.740570027, -0.648408009, -0.176417374],
 		[0.556245991, -0.648408009, -0.176417374],
@@ -2864,12 +2864,12 @@ export const NCX_24_56_34_C: Polyhedron = {
 	],
 };
 
-// ncx-24-56-34-d  — 24{3} + 10{4}, self-intersecting
+// ncx-24-56-34-d  — 24{3}, 10{4}, self-intersecting
 export const NCX_24_56_34_D: Polyhedron = {
 	id: "ncx-24-56-34-d",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "4.4.4.3 + 4.3.3.3.3 + 4.3.3.3.3",
-	name: "24{3} + 10{4}",
+	name: "24{3}, 10{4}",
 	vertices: [
 		[-0.813475274, -0.581530884, -0.008933590],
 		[0.349586495, -0.581530884, -0.008933590],
@@ -2934,12 +2934,12 @@ export const NCX_24_56_34_D: Polyhedron = {
 	],
 };
 
-// ncx-24-56-34-e  — 24{3} + 10{4}, self-intersecting
+// ncx-24-56-34-e  — 24{3}, 10{4}, self-intersecting
 export const NCX_24_56_34_E: Polyhedron = {
 	id: "ncx-24-56-34-e",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "4.4.4.3 + 4.3.3.3.3 + 4.3.3.3.3",
-	name: "24{3} + 10{4}",
+	name: "24{3}, 10{4}",
 	vertices: [
 		[0.114655206, -0.363491342, -0.399399180],
 		[0.841637891, -0.363491342, -0.399399180],
@@ -3004,12 +3004,12 @@ export const NCX_24_56_34_E: Polyhedron = {
 	],
 };
 
-// ncx-25-45-22  — 5{3} + 15{4} + 1{5} + 1{10}, embedded
+// ncx-25-45-22  — 5{3}, 15{4}, 1{5}, 1{10}, embedded
 export const NCX_25_45_22: Polyhedron = {
 	id: "ncx-25-45-22",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "10.4.4 + 4.4.4.3 + 5.4.3.4",
-	name: "5{3} + 15{4} + 1{5} + 1{10}",
+	name: "5{3}, 15{4}, 1{5}, 1{10}",
 	vertices: [
 		[-0.294975924, -0.907842544, -0.291939900],
 		[0.294975924, -0.907842544, -0.291939900],
@@ -3063,12 +3063,12 @@ export const NCX_25_45_22: Polyhedron = {
 	],
 };
 
-// ncx-30-70-42  — 30{3} + 10{4} + 2{5}, self-intersecting
+// ncx-30-70-42  — 30{3}, 10{4}, 2{5}, self-intersecting
 export const NCX_30_70_42: Polyhedron = {
 	id: "ncx-30-70-42",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "5.4.3.4 + 4.3.3.3.3 + 4.3.3.3.3",
-	name: "30{3} + 10{4} + 2{5}",
+	name: "30{3}, 10{4}, 2{5}",
 	vertices: [
 		[-0.298595750, -0.410981792, -0.056454071],
 		[0.298595750, -0.410981792, -0.056454071],
@@ -3147,12 +3147,12 @@ export const NCX_30_70_42: Polyhedron = {
 	],
 };
 
-// ncx-32-60-30-a  — 16{3} + 10{4} + 4{8}, embedded
+// ncx-32-60-30-a  — 16{3}, 10{4}, 4{8}, embedded
 export const NCX_32_60_30_A: Polyhedron = {
 	id: "ncx-32-60-30-a",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "8.8.3 + 8.3.4.3 + 4.4.4.3",
-	name: "16{3} + 10{4} + 4{8}",
+	name: "16{3}, 10{4}, 4{8}",
 	vertices: [
 		[-0.281084638, -0.678598345, -0.678598345],
 		[0.281084638, -0.678598345, -0.678598345],
@@ -3221,12 +3221,12 @@ export const NCX_32_60_30_A: Polyhedron = {
 	],
 };
 
-// ncx-32-60-30-b  — 16{3} + 10{4} + 4{8}, embedded
+// ncx-32-60-30-b  — 16{3}, 10{4}, 4{8}, embedded
 export const NCX_32_60_30_B: Polyhedron = {
 	id: "ncx-32-60-30-b",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "8.8.3 + 8.4.3.3 + 4.4.4.3",
-	name: "16{3} + 10{4} + 4{8}",
+	name: "16{3}, 10{4}, 4{8}",
 	vertices: [
 		[-0.281084638, -0.678598345, -0.678598345],
 		[0.281084638, -0.678598345, -0.678598345],
@@ -3295,12 +3295,12 @@ export const NCX_32_60_30_B: Polyhedron = {
 	],
 };
 
-// ncx-40-80-42-a  — 20{3} + 10{4} + 12{5}, self-intersecting
+// ncx-40-80-42-a  — 20{3}, 10{4}, 12{5}, self-intersecting
 export const NCX_40_80_42_A: Polyhedron = {
 	id: "ncx-40-80-42-a",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "5.3.5.3 + 5.3.5.3 + 5.4.4.3",
-	name: "20{3} + 10{4} + 12{5}",
+	name: "20{3}, 10{4}, 12{5}",
 	vertices: [
 		[-0.295241809, -0.406365488, 0.517489167],
 		[0.295241809, -0.406365488, 0.517489167],
@@ -3389,12 +3389,12 @@ export const NCX_40_80_42_A: Polyhedron = {
 	],
 };
 
-// ncx-40-80-42-b  — 20{3} + 10{4} + 12{5}, self-intersecting
+// ncx-40-80-42-b  — 20{3}, 10{4}, 12{5}, self-intersecting
 export const NCX_40_80_42_B: Polyhedron = {
 	id: "ncx-40-80-42-b",
 	schlafli: [0, 0], // no {p,q} — routing keys on id
 	vertexConfig: "5.3.5.3 + 5.3.5.3 + 5.4.4.3",
-	name: "20{3} + 10{4} + 12{5}",
+	name: "20{3}, 10{4}, 12{5}",
 	vertices: [
 		[-0.295241809, -0.406365488, 0.517489167],
 		[0.295241809, -0.406365488, 0.517489167],

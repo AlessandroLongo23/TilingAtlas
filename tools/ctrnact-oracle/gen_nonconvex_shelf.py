@@ -176,8 +176,14 @@ def self_intersections(V, faces):
 
 
 def census(faces):
+    """The face census, "20{3}, 4{4}" — 20 triangles and 4 squares.
+
+    ⚑ COMMA, not " + ". The census doubles as the display name for these unnamed solids, and the card
+    runs a label through compactVertexConfig, which splits on " + " and rejoins with "; " because that is
+    the VERTEX-ORBIT separator everywhere else in the app. "20{3} + 4{4}" came out as "20{3}; 4{4}",
+    which reads as two orbits and is not what a face census means."""
     c = collections.Counter(len(f) for f in faces)
-    return " + ".join("%d{%d}" % (c[n], n) for n in sorted(c))
+    return ", ".join("%d{%d}" % (c[n], n) for n in sorted(c))
 
 
 def shelf_keys():

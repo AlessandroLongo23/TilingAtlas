@@ -214,7 +214,12 @@ export interface ReferenceTiling {
 	// `solid` (required) is the stable Polyhedron id the renderer routes on — Platonic AND Archimedean
 	// solids resolve by it (Archimedean have no {p,q}). p/q are the Schläfli symbol, present for the
 	// Platonic solids only (display).
-	spherical?: { p?: number; q?: number; solid: string };
+	// `name` is the DISPLAY NAME when the id does not prettify into one. The non-convex regular-faced
+	// solids are ids by construction — ncx-16-38-24-a — because nothing enumerates that class and a name
+	// guessed off a census is the error this shelf refuses to make. Running that id through prettySolid
+	// gave the card the title "Ncx 16 38 24 a", which is a mangled id pretending to be a name. The face
+	// census IS the honest label, so it is carried here and the card uses it.
+	spherical?: { p?: number; q?: number; solid: string; name?: string };
 	// Freedraw shelf only: the periodic edge subset of the square grid this entry IS (lib/freedraw/pattern.ts).
 	// Its presence routes /play + the thumbnails to the 2D grid renderer, the way `developed` routes to the
 	// Poincaré disk — freedraw has no polygon cell at all (an infinite strip has no vertex list, an annulus

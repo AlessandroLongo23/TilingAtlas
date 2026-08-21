@@ -63,7 +63,9 @@ const built = rows.map((r) => ({
 	source: "spherical",
 	k: r.k,
 	family: r.vertexConfig,
-	spherical: { solid: r.id },
+	// The census is the display name: these ship unnamed on purpose, and the alternative is the card
+	// titling the solid with its own id run through a prettifier ("Ncx 16 38 24 a").
+	spherical: { solid: r.id, name: r.census },
 	geometry: "spherical",
 	discoverer: DISCOVERER,
 	note: note(r),

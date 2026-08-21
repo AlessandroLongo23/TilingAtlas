@@ -250,8 +250,11 @@ function sphericalHeading(t: CatalogueTiling): { name: string; detail: string } 
 		return { name: prettySolid(t.sphericalFreedraw.solid), detail: t.family };
 	}
 	if (t.spherical) {
-		const { p, q, solid } = t.spherical;
-		return { name: prettySolid(solid), detail: p != null && q != null ? `{${p},${q}}` : t.family };
+		const { p, q, solid, name } = t.spherical;
+		// `name` first: an unnamed non-convex solid carries its face census, and prettySolid would turn
+		// its id into "Ncx 16 38 24 a" — a mangled id worn as a name. Every named solid has no `name`
+		// here and prettifies correctly from the id, as before.
+		return { name: name || prettySolid(solid), detail: p != null && q != null ? `{${p},${q}}` : t.family };
 	}
 	return { name: t.family, detail: "" };
 }

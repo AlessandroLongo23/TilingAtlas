@@ -51,7 +51,7 @@ export interface CatalogueTiling {
 	// Spherical shelf only: the {p,q} Schläfli symbol of a Platonic solid. Its presence routes /play + the
 	// thumbnails to the three.js sphere renderer (components/spherical-canvas.tsx), the way developed routes
 	// to the Poincaré disk. Carried through from ReferenceTiling by referenceToCatalogue.
-	spherical?: { p?: number; q?: number; solid: string };
+	spherical?: { p?: number; q?: number; solid: string; name?: string };
 	// Freedraw shelf only: the periodic square-grid edge subset this entry IS. Its presence routes /play +
 	// the thumbnails to the 2D grid renderer — freedraw has no polygon cell, so `renderCell` is a throwaway
 	// and is never drawn. NOTE its `k` counts GRID-POINT orbits, not vertex orbits (see ReferenceTiling).
