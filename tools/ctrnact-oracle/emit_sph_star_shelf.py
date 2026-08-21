@@ -16,10 +16,13 @@ geometry and shipped, and a record is admitted at any k. What is still rejected 
 between the measured orbit count and the certificate's k: that means the solver and the geometry are
 describing different objects.
 
-Naming is CONSERVATIVE. A solid gets its name only when its (V, E, F, face-type census, density)
-signature was checked against the published catalogue by hand; everything else ships unnamed and the
-UI falls back to the census. Guessing a U-number off V/E/F is exactly the mistake the J27/J37 pair
-punishes on the neighbouring shelf, and U69/U74 are a live example here: same V, E, F and density.
+Naming is CONSERVATIVE. A solid gets a CATALOGUE name only when its (V, E, F, face-type census,
+density) signature was checked against the published literature by hand; everything else ships unnamed
+and the UI falls back to the census. Guessing a U-number off V/E/F is exactly the mistake the J27/J37
+pair punishes on the neighbouring shelf, and U69/U74 are a live example here: same V, E, F and density.
+The one exception is derived_name(), which names a record from what its own signature proves rather
+than from a citation — n triangles, one {n/d} and n+1 vertices is a pyramid over {n/d} and can be
+nothing else.
 
 Usage: python3 emit_sph_star_shelf.py --cells <cells.json> --out ../../public/spherical-star
 """
@@ -71,17 +74,55 @@ NAMES = {
     (14, 21, 9, ((4, 1, 7), (7, 3, 2)), 3): "heptagrammic prism {7/3}",
     (14, 28, 16, ((3, 1, 14), (7, 3, 2)), 3): "heptagrammic antiprism {7/3}",
     (14, 28, 16, ((3, 1, 14), (7, 3, 2)), 4): "heptagrammic crossed antiprism",
-    # k=2. Apex 3^5, five base vertices 5/2.3.3 — the star analogue of a Johnson pyramid.
+    # k=2. Apex 3^5, five base vertices 5/2.3.3 — the star analogue of a Johnson pyramid. The rest of
+    # the family is named by derived_name() below, which is a construction and not a citation.
     (6, 10, 6, ((3, 1, 5), (5, 2, 1)), 2): "pentagrammic pyramid",
     (8, 14, 8, ((3, 1, 7), (7, 2, 1)), 2): "heptagrammic pyramid {7/2}",
     (8, 14, 8, ((3, 1, 7), (7, 3, 1)), 3): "heptagrammic pyramid {7/3}",
+    # Recovered 2026-08-20 by the multi-root fix in solve_rho: it closes with the PENTAGON retrograde,
+    # a config whose angle sum is not monotone in rho, so the old single bisection could not see it.
+    # V/E/F, face census, chi = -16 and the (5.5/3)^3 vertex figure checked against Wikipedia's article
+    # and MathWorld; density 4 against mathconsult.ch/static/unipoly/41.html. Middle member of the
+    # ditrigonal trio already half-present here: U30 at density 2, U47 at density 6.
+    (20, 60, 24, ((5, 1, 12), (5, 2, 12)), 4): "ditrigonal dodecadodecahedron (U41)",
+    # k=2, from the rho-bucketed exhaustive run of 2026-08-20. Both are in Wikipedia's star-cupola
+    # table (Cupola (geometry)), which names them by the RETROGRADE face, so the {4} this developer
+    # marks retrograde is its {4/3} and the {5/2} is its {5/3}. Top and base faces and the 4+4 / 5+5
+    # lateral count were read off that table, not inferred from V/E/F.
+    (12, 20, 10, ((3, 1, 4), (4, 1, 5), (8, 3, 1)), 1): "crossed square cupola",
+    (15, 25, 12, ((3, 1, 5), (4, 1, 5), (5, 2, 1), (10, 3, 1)), 3): "crossed pentagrammic cupola",
 }
 
 
+def derived_name(sig):
+    """A name a record's own signature PROVES, as opposed to one read out of the catalogue.
+
+    Only the pyramids. A record with n triangles, one {n/d} and n+1 vertices is a pyramid over {n/d}
+    and nothing else, so calling it one asserts no more than the geometry already certifies — unlike a
+    U-number, which is a claim about a published enumeration and stays hand-checked in NAMES above.
+
+    The family is infinite: a pyramid over {n/d} closes on the sphere exactly when 2 < n/d < 4, at
+    cos(rho) = c/(1-c) with c = cos(2*pi*d/n), covering the sphere d times (gen_star_pyramids.py). The
+    shelf ships a prefix of it, the way it ships a prefix of the star prisms and antiprisms."""
+    V, E, F, census, density = sig
+    if len(census) != 2:
+        return None
+    (a, b) = census
+    if a[:2] != (3, 1) or b[2] != 1:
+        return None
+    n, d, tri = b[0], b[1], a[2]
+    if d < 2 or (V, E, F, tri) != (n + 1, 2 * n, n + 1, n) or density != d:
+        return None
+    return "{%d/%d} pyramid" % (n, d)
+
+
 def isometries(V, faces):
-    """Rotations and reflections preserving both the vertex set and the face set, as vertex
-    permutations. Measured on the developed geometry, never taken from the certificate — the J27/J37
-    lesson: a vertex ARRANGEMENT can be more symmetric than the solid built on it."""
+    """(permutations, determinants) of the isometries preserving both the vertex set and the face set.
+
+    Measured on the developed geometry, never taken from the certificate — the J27/J37 lesson: a vertex
+    ARRANGEMENT can be more symmetric than the solid built on it. The determinant comes back beside the
+    permutation because it is the ONLY thing separating a rotation from a reflection, and so the only
+    honest test of chirality: a solid is chiral exactly when no isometry of it has det = -1."""
     n = len(V)
     anchor = list(faces[0])[:3]
     A = V[list(anchor)].T
@@ -92,12 +133,12 @@ def isometries(V, faces):
                 anchor, A = cand, V[cand].T
                 break
         else:
-            return []
+            return [], []
     Ainv = np.linalg.inv(A)
     d0 = [round(float(np.linalg.norm(V[anchor[i]] - V[anchor[j]])), 6) for i, j in ((0, 1), (1, 2), (0, 2))]
     key = {tuple(np.round(v, 6)): i for i, v in enumerate(V)}
     fset = set(frozenset(f) for f in faces)
-    out = []
+    out, dets = [], []
     for trip in itertools.permutations(range(n), 3):
         d = [round(float(np.linalg.norm(V[trip[i]] - V[trip[j]])), 6) for i, j in ((0, 1), (1, 2), (0, 2))]
         if d != d0:
@@ -111,7 +152,8 @@ def isometries(V, faces):
         if set(frozenset(img[i] for i in f) for f in faces) != fset:
             continue
         out.append(img)
-    return out
+        dets.append(float(np.linalg.det(M)))
+    return out, dets
 
 
 def orbits(n, perms):
@@ -144,12 +186,18 @@ def main():
     # geometric signature INCLUDING rho, which is what separates records a coarser key would fuse: the
     # great dodecahedron and the small stellated dodecahedron are both V=12 E=30 F=12 at density 3, and
     # differ only in that the vertices sit 63.43 degrees apart instead of 116.57.
+    #
+    # ⚑ And k, since 2026-08-20. Everything geometric can agree and the solids still differ: the k=2 run
+    # found a two-orbit solid with V=24, E=48, F=26, 8{3}+18{4}, density 5, at the SAME rho=1.4917053 as
+    # the one-orbit record already on the shelf. That is the rhombicuboctahedron/J37 relationship in its
+    # star form, one solid gyrated out of the other, and without k in the key the gyrate one is silently
+    # dropped as a duplicate of its own parent.
     seen_sig, uniq = set(), []
     for r in recs:
         e = sum(len(f) for f in r["faces"]) // 2
         sig = (len(r["vertices"]), e, len(r["faces"]),
                tuple(sorted(collections.Counter(tuple(t) for t in r["faceTypes"]).items())),
-               r["density"], round(r["rho"], 9))
+               r["density"], round(r["rho"], 9), r.get("k", 1))
         if sig in seen_sig:
             continue
         seen_sig.add(sig)
@@ -175,7 +223,7 @@ def main():
                         for f in faces for a, b in zip(f, f[1:] + f[:1])})
         census = tuple(sorted((n, d, c) for (n, d), c in collections.Counter(ftypes).items()))
         sig = (len(V), len(edges), len(faces), census, r["density"])
-        perms = isometries(V, faces)
+        perms, dets = isometries(V, faces)
         vorb = orbits(len(V), perms) if perms else list(range(len(V)))
         k_measured = len(set(vorb))
         # The certificate's k, from the record's own vertex word ("A + B" is two orbits). Kept separate
@@ -187,15 +235,26 @@ def main():
             skipped.append((r["id"], "orbit count %d disagrees with certificate k=%d" % (k_measured, k_cert)))
             continue
         sid = "ss-%d-%d-%d-d%d" % (len(V), len(edges), len(faces), r["density"])
-        if any(e["id"] == sid for e in index):
-            sid += "-r%d" % round(r["rho"] * 1e4)
+        taken = {e["id"] for e in index}
+        if sid in taken:
+            # rho first, because that is what usually separates two solids of the same V/E/F/density.
+            # When it does not — a gyrate pair shares its parent's arc exactly — fall through to the
+            # orbit count, and only then to a counter, so an id is never quietly reused.
+            for suffix in ["-r%d" % round(r["rho"] * 1e4), "-k%d" % k_measured] + \
+                          ["-r%d-k%d-%d" % (round(r["rho"] * 1e4), k_measured, i) for i in range(2, 9)]:
+                if sid + suffix not in taken:
+                    sid += suffix
+                    break
+            else:
+                skipped.append((r["id"], "no free id under %s" % sid))
+                continue
         rec = {
             "id": sid,
             "config": r["vertexConfig"],
             "k": k_measured,
             "density": r["density"],
             "rho": r["rho"],
-            "solid": NAMES.get(sig),
+            "solid": NAMES.get(sig) or derived_name(sig),
             "vertices": [[float(x) for x in v] for v in V],
             "faces": faces,
             "faceType": [list(t) for t in ftypes],
@@ -208,7 +267,11 @@ def main():
                 # signed-area sum cancelled, which the geometry allows and which makes the number
                 # unreliable for that record; the UI must not present it as the covering number.
                 "densitySuspect": bool(r["density"] < 2 and star_face),
-                "chiral": all(np.linalg.det(np.eye(3)) > 0 for _ in [0]) and len(perms) % 2 == 0,
+                # Chiral = the solid has NO orientation-reversing symmetry, so it is not superposable
+                # on its mirror image. ⚑ Until 2026-08-20 this read `det(I) > 0 and len(perms) % 2 == 0`,
+                # a tautology conjoined with the parity of a count: it said True for all 54 records, the
+                # achiral ones included. Nothing consumed it, and it is measured now.
+                "chiral": all(d > 0 for d in dets),
             },
         }
         json.dump(rec, open(os.path.join(args.out, sid + ".json"), "w"))
