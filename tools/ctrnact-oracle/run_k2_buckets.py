@@ -10,9 +10,16 @@ Per bucket: slice the alphabet (slice_tables), run eu_solver_rt on the slice, pr
 own eu_pruner, copy the surviving k=2 blocks into the merged tree under a bucket-unique name. The full
 tables.bin is parsed ONCE here, not once per bucket, which is the difference between minutes and hours.
 
-Afterwards, develop the merged tree in a single pass:
-    EU_PALETTE=<pal> EU_MAXDENS=3 python3 develop_spherical.py --kmin 2 --kmax 2 \
-        --pruned <out>/pruned --out <out>/cells.json --report <out>/report.txt
+Afterwards, develop the merged tree — through the WORK QUEUE, not one process. The star-wide k=2 run
+merges 422,206 blocks and develop was doing them one at a time on one core; blocks are independent and
+their costs are wildly uneven, so this is the one place in the pipeline where parallelism is free:
+
+    python3 run_develop_sharded.py --palette <pal> --maxdens 3 --kmin 2 --kmax 2 \
+        --developer develop_spherical.py --workers 10 \
+        --pruned <out>/pruned --out <out>/cells.json
+
+The output is identical to the single-process path: the duplicate collapse and the ordering both live
+in develop_spherical.finalise_records, which both callers use.
 
 Usage: python3 run_k2_buckets.py --palette star-wide --buckets buckets.json --out run-k2-star-wide
 """
@@ -99,8 +106,9 @@ def main():
                 % (i + 1, len(buckets), kept_tot, el, eta))
     log("DONE: %d buckets, %d with no vertex type in this alphabet, %d pruned k=2 blocks in %s"
         % (len(buckets), empty, kept_tot, merged))
-    log("next: EU_PALETTE=%s EU_MAXDENS=3 python3 develop_spherical.py --kmin 2 --kmax 2 "
-        "--pruned %s --out %s/cells.json --report %s/report.txt" % (args.palette, merged, out, out))
+    log("next: python3 run_develop_sharded.py --palette %s --maxdens 3 --kmin 2 --kmax 2 "
+        "--developer develop_spherical.py --workers 10 --pruned %s --out %s/cells.json"
+        % (args.palette, merged, out))
 
 
 if __name__ == "__main__":

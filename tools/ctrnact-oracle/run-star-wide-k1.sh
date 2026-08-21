@@ -22,8 +22,12 @@ EU_OUT="$OUT/out" EU_KMIN=1 EU_KMAX=1 "$HERE/eu_pruner.star-wide" >>"$LOG" 2>&1
 log "  pruned blocks: $(grep -ch 'TES file:' "$OUT/out"/pruned/eupruned_01_*.txt | paste -sd+ - | bc)  ($(( $(date +%s)-t1 ))s)"
 log "PHASE 3 develop"
 t2=$(date +%s)
-EU_PALETTE=star-wide EU_MAXDENS=3 python3 "$HERE/develop_spherical.py" --kmin 1 --kmax 1 \
-  --pruned "$OUT/out/pruned" --out "$OUT/cells.json" --report "$OUT/report.txt" 2>&1 | tee -a "$LOG"
+# Through the work queue, not one process: blocks are independent and their costs are wildly uneven,
+# so develop parallelises almost perfectly. The output is byte-identical either way — the duplicate
+# collapse and the ordering live in develop_spherical.finalise_records, which both paths call.
+python3 "$HERE/run_develop_sharded.py" --palette star-wide --maxdens 3 --kmin 1 --kmax 1 \
+  --workers "${WORKERS:-10}" --developer develop_spherical.py \
+  --pruned "$OUT/out/pruned" --out "$OUT/cells.json" 2>&1 | tee -a "$LOG"
 log "  develop done ($(( $(date +%s)-t2 ))s)"
 python3 "$HERE/star_digest.py" "$OUT/cells.json" > "$OUT/digest.txt"
 log "digest: $(tail -1 "$OUT/digest.txt")"

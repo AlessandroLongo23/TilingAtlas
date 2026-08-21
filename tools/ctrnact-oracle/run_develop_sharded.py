@@ -107,7 +107,12 @@ def main():
     # solid realized in two shards came out twice. Doing it once over the merged set is what that always
     # meant to be. develop_spherical has no such key — its notion of duplicate is a geometric-signature
     # AUDIT that includes density and rho — so its records are concatenated untouched, exactly as before.
-    if hasattr(dev, "congruence_key"):
+    if hasattr(dev, "finalise_records"):
+        # develop_spherical collapses geometric duplicates and sorts before it writes. That used to live
+        # inside its run(), so a sharded run would have merged the per-worker records and done NEITHER —
+        # shipping a larger, unordered catalogue that looked fine. Same function, both paths.
+        uniq = dev.finalise_records(records)
+    elif hasattr(dev, "congruence_key"):
         seen, uniq = set(), []
         for r in records:
             k = dev.congruence_key(r)

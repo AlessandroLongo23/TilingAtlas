@@ -17,8 +17,9 @@ run(){   # palette kmin kmax
   log "  raw: $(grep -rh 'Number of vertex types:' "$OUT/out"/eusolver_*.txt | wc -l | tr -d ' ')  ($(( $(date +%s)-t0 ))s)"
   EU_OUT="$OUT/out" EU_KMIN=1 EU_KMAX="$KMAX" "$HERE/eu_pruner.$PAL" >>"$LOG" 2>&1
   local t1=$(date +%s)
-  EU_PALETTE="$PAL" EU_MAXDENS=3 python3 "$HERE/develop_spherical.py" --kmin "$KMIN" --kmax "$KMAX" \
-    --pruned "$OUT/out/pruned" --out "$OUT/cells.json" --report "$OUT/report.txt" 2>&1 | tail -3 | tee -a "$LOG"
+  python3 "$HERE/run_develop_sharded.py" --palette "$PAL" --maxdens 3 --kmin "$KMIN" --kmax "$KMAX" \
+    --workers "${WORKERS:-10}" --developer develop_spherical.py \
+    --pruned "$OUT/out/pruned" --out "$OUT/cells.json" 2>&1 | tail -3 | tee -a "$LOG"
   log "  develop ($(( $(date +%s)-t1 ))s) -> $OUT/cells.json"
 }
 run star-hept 1 1

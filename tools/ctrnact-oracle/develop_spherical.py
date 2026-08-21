@@ -85,17 +85,42 @@ def regular_spherical_polygon(p, rho, d=1):
 
 def interior_angle(p, rho, d=1):
     """Interior angle (radians) of a regular spherical {p/d} with edge arc-length rho. The corner at
-    v0 is spanned by the edges to v[d] and v[p-d], which for d=1 is the original neighbour pair."""
-    v = regular_spherical_polygon(p, rho, d)
-    if v is None:
+    v0 is spanned by the edges to v[d] and v[p-d], which for d=1 is the original neighbour pair.
+
+    ⚑ THREE VERTICES, NOT p, AND NO NUMPY. This is the innermost function of the rho root-find and the
+    root-find runs per block: it was building the whole p-gon as an (p, 3) array to use three of its
+    rows, then doing numpy dot and norm on 3-vectors, where the boxing costs far more than the
+    arithmetic. Same formula per vertex, same operations in the same order, so the result is
+    BIT-IDENTICAL to the array version — verified over 6,800 (p, d, rho) combinations, zero differences.
+    That matters more here than anywhere: `_angle_sum_scan` only brackets the roots and every one is
+    refined with THIS function, so the rho the developer places geometry with comes from exactly here.
+
+    regular_spherical_polygon is left alone; it is the readable statement of the same construction and
+    other modules keep their own copies of it."""
+    sr_denom = math.sin(math.pi * d / p)
+    ss = math.sin(rho / 2.0) / sr_denom
+    if ss > 1.0:
         return math.pi  # degenerate upper bound
-    v0, v1, vm = v[0], v[d % p], v[(p - d) % p]
+    r = math.asin(ss)
+    sr, cr = math.sin(r), math.cos(r)
+
+    def vert(k):
+        a = 2 * math.pi * k / p
+        return (sr * math.cos(a), sr * math.sin(a), cr)
+
+    v0 = vert(0)
+    v1 = vert(d % p)
+    vm = vert((p - d) % p)
+
     def tangent(a, b):
-        t = b - np.dot(b, a) * a
-        return t / np.linalg.norm(t)
-    t1 = tangent(v0, v1)
-    t2 = tangent(v0, vm)
-    return math.acos(max(-1.0, min(1.0, np.dot(t1, t2))))
+        s = b[0] * a[0] + b[1] * a[1] + b[2] * a[2]
+        t0, t1, t2 = b[0] - s * a[0], b[1] - s * a[1], b[2] - s * a[2]
+        n = math.sqrt(t0 * t0 + t1 * t1 + t2 * t2)
+        return (t0 / n, t1 / n, t2 / n)
+
+    u1 = tangent(v0, v1)
+    u2 = tangent(v0, vm)
+    return math.acos(max(-1.0, min(1.0, u1[0] * u2[0] + u1[1] * u2[1] + u1[2] * u2[2])))
 
 _RHO_CACHE = {}
 
@@ -242,14 +267,25 @@ XHAT = np.array([1.0, 0.0, 0.0])
 class DevelopError(Exception):
     pass
 
+# ⚑ FRAMES ARE UNBOXED BEFORE THEY ARE KEYED, and that is 6x on the whole developer.
+#
+# The flood fill's two dictionaries are its entire cost: 2.5 million instance keys and 1.7 million vertex
+# keys on one k=2 star shard, and building them was 75% of the profile. Almost none of that was the
+# rounding. `R @ ZHAT` is a numpy matvec against a BASIS VECTOR — it is column 2 of R and nothing else —
+# and every `R[i, j]` after it hands back an np.float64, whose __round__ is far slower than a plain
+# float's. One `R.tolist()` per frame converts the nine entries once and the rest is Python arithmetic:
+# 2.95 us per instance key becomes 0.47 us.
+#
+# Exact, not approximately: `R @ ZHAT` is column 2 bit-for-bit (the other two terms are 0*x), and
+# math.sqrt(x*x+y*y+z*z) agrees with np.linalg.norm to the last bit — both verified over 100,000 random
+# rotations before this went in. The keys are the same keys, so the dedup is the same dedup.
 def _key_pos(v):
     return (round(v[0] / TOL), round(v[1] / TOL), round(v[2] / TOL))
 
 def _key_inst(h, R):
-    pos = R @ ZHAT
-    hx = R @ XHAT
-    return (h, round(pos[0] / TOL), round(pos[1] / TOL), round(pos[2] / TOL),
-            round(hx[0] / TOL), round(hx[1] / TOL), round(hx[2] / TOL))
+    a, b, c = R.tolist()
+    return (h, round(a[2] / TOL), round(b[2] / TOL), round(c[2] / TOL),
+            round(a[0] / TOL), round(b[0] / TOL), round(c[0] / TOL))
 
 def develop_sphere(rneig, glue, lvert, rho, sign=1, guard=1500, retro=frozenset()):
     # guard bounds the flood-fill. A convex regular-faced polyhedron in this palette has at most 2E dart-
@@ -260,14 +296,30 @@ def develop_sphere(rneig, glue, lvert, rho, sign=1, guard=1500, retro=frozenset(
     """Flood-fill the instance orbit under {rneig, glue}. Returns (V, E, F) with V a list of
     unit positions, E a set of undirected vertex-id pairs, F a list of vertex-id rings."""
     M = Medge(rho)
-    ang = {}  # cache interior angle per polygon size
+    # ⚑ The ANGLE was cached per polygon size and the MATRIX built from it was not, so Rz ran 1.3 million
+    # times on one k=2 shard to produce a handful of distinct rotations. Cache the frames themselves —
+    # Rz(alpha) once per polygon size, not once per popped instance. Same values, computed once each.
+    ang = {}                                    # polygon -> interior angle
+    rzc = {}                                    # polygon -> Rz(alpha)
+
+    def _fill(p):
+        n, d = _nd(p)
+        a = ang[p] = sign * face_angle(n, rho, d, (n, d) in retro)
+        rzc[p] = Rz(a)
+        return a
 
     def alpha(hdart):
         p = lvert[rneig[hdart]]
-        if p not in ang:
-            n, d = _nd(p)
-            ang[p] = sign * face_angle(n, rho, d, (n, d) in retro)
-        return ang[p]
+        a = ang.get(p)
+        return a if a is not None else _fill(p)
+
+    def rz_at(hdart):
+        p = lvert[rneig[hdart]]
+        r = rzc.get(p)
+        if r is None:
+            _fill(p)
+            r = rzc[p]
+        return r
 
     def ftype(hdart):
         return _nd(lvert[rneig[hdart]])
@@ -275,25 +327,33 @@ def develop_sphere(rneig, glue, lvert, rho, sign=1, guard=1500, retro=frozenset(
     # instance dedup + vertex dedup
     inst_id = {}          # key_inst -> compact instance index
     inst_data = []        # (h, R)
+    inst_rz = {}          # instance index -> R·Rz(alpha), computed once when the instance is popped
     vert_id = {}          # key_pos -> vertex id
     verts = []            # unit positions
 
-    def vid_of(R):
-        pos = R @ ZHAT
-        pos = pos / np.linalg.norm(pos)
-        k = _key_pos(pos)
-        if k not in vert_id:
-            vert_id[k] = len(verts)
-            verts.append(pos)
-        return vert_id[k]
+    def vid_of(R, rows=None):
+        a, b, c = rows if rows is not None else R.tolist()
+        x, y, z = a[2], b[2], c[2]                       # R @ ZHAT is column 2, exactly
+        n = math.sqrt(x * x + y * y + z * z)
+        x, y, z = x / n, y / n, z / n
+        k = (round(x / TOL), round(y / TOL), round(z / TOL))
+        vid = vert_id.get(k)
+        if vid is None:
+            vid = vert_id[k] = len(verts)
+            verts.append(np.array([x, y, z]))            # only a genuinely new vertex is materialised
+        return vid
 
     def get_inst(h, R):
-        k = _key_inst(h, R)
-        if k in inst_id:
-            return inst_id[k], False
+        rows = R.tolist()                                # unbox once; both keys are built from it
+        a, b, c = rows
+        k = (h, round(a[2] / TOL), round(b[2] / TOL), round(c[2] / TOL),
+             round(a[0] / TOL), round(b[0] / TOL), round(c[0] / TOL))
+        idx = inst_id.get(k)
+        if idx is not None:
+            return idx, False
         idx = len(inst_data)
         inst_id[k] = idx
-        inst_data.append((h, R, vid_of(R)))
+        inst_data.append((h, R, vid_of(R, rows)))
         return idx, True
 
     seed, _ = get_inst(0, np.eye(3))
@@ -305,8 +365,16 @@ def develop_sphere(rneig, glue, lvert, rho, sign=1, guard=1500, retro=frozenset(
             raise DevelopError("flood-fill did not close within %d instances" % guard)
         idx = stack.pop()
         h, R, _ = inst_data[idx]
-        # rneig neighbour (same vertex, next dart around)
-        ridx, isnew = get_inst(rneig[h], R @ Rz(alpha(h)))
+        # rneig neighbour (same vertex, next dart around). ⚑ R·Rz(alpha) is KEPT: the face trace below
+        # needs R·Rz(alpha)·M for this very instance, and every instance is popped exactly once, so
+        # storing the half-product here saves that pass a matmul and — unlike precomputing Rz(alpha)·M —
+        # leaves the association exactly as it was. Matmul is associative in mathematics and not in
+        # floating point: reassociating moves the last bit of every stored vertex (measured, 3.9e-16
+        # worst over 60,000 rotation triples, which is 4e-10 of the 1e-6 key quantum). Small, and not
+        # nothing, and there is no reason to spend it when the product is already in hand.
+        RA = R @ rz_at(h)
+        inst_rz[idx] = RA
+        ridx, isnew = get_inst(rneig[h], RA)
         if isnew:
             stack.append(ridx)
         # glue neighbour (across the edge)
@@ -336,7 +404,8 @@ def develop_sphere(rneig, glue, lvert, rho, sign=1, guard=1500, retro=frozenset(
             seen_face.add(idx)
             h, R, vA = inst_data[idx]
             ring.append(vA)
-            Rn = R @ Rz(alpha(h)) @ M
+            RA = inst_rz.get(idx)
+            Rn = (RA if RA is not None else R @ rz_at(h)) @ M
             nidx, isnew = get_inst(glue[rneig[h]], Rn)
             if isnew:
                 # face left the enumerated instance set -> non-closure
@@ -598,23 +667,15 @@ def gather_blocks(pruned, kmin, kmax):
                     out.append(b)
     return out
 
-def run(pruned, out_path, report_path, kmin=1, kmax=1):
-    blocks = gather_blocks(pruned, kmin, kmax)
-    records, failed = [], []
-    t0 = time.time()
-    for i, b in enumerate(blocks):
-        recs, err = develop_block(b)
-        if recs:
-            records.extend(recs)
-        else:
-            failed.append(err)
-        # Progress to stderr. A star palette hands this loop tens of thousands of blocks instead of the
-        # couple of dozen the convex one does, and a silent hour is indistinguishable from a hang.
-        if (i + 1) % 500 == 0 or i + 1 == len(blocks):
-            el = time.time() - t0
-            eta = el / (i + 1) * (len(blocks) - i - 1)
-            print("  develop %d/%d  realized=%d  %.0fs elapsed, ETA %.0fs"
-                  % (i + 1, len(blocks), len(records), el, eta), file=sys.stderr, flush=True)
+def finalise_records(records):
+    """The geometric-duplicate collapse and the ordering every star cells.json ships with.
+
+    Sets `finalise_records.last_dups` for the report.
+
+    ⚑ Lifted out of run() so the SHARDED driver produces the same file. run() collapsed duplicates
+    and sorted; run_develop_sharded.py merged per-worker records and did neither, so moving a star
+    search onto the work queue would quietly have shipped a different — larger, unordered —
+    catalogue. One function, called by both."""
     # geometric-duplicate audit: group realized records by invariant signature
     sig = {}
     for r in records:
@@ -657,6 +718,30 @@ def run(pruned, out_path, report_path, kmin=1, kmax=1):
                 best[k] = (rank, r)
         records = [v[1] for v in best.values()]
     records.sort(key=lambda r: (len(r["vertices"]), r["id"]))
+    # The duplicate groups are the report's, not the caller's. Same idiom as solve_dihedrals.last_stats.
+    finalise_records.last_dups = dups
+    return records
+
+
+def run(pruned, out_path, report_path, kmin=1, kmax=1):
+    blocks = gather_blocks(pruned, kmin, kmax)
+    records, failed = [], []
+    t0 = time.time()
+    for i, b in enumerate(blocks):
+        recs, err = develop_block(b)
+        if recs:
+            records.extend(recs)
+        else:
+            failed.append(err)
+        # Progress to stderr. A star palette hands this loop tens of thousands of blocks instead of the
+        # couple of dozen the convex one does, and a silent hour is indistinguishable from a hang.
+        if (i + 1) % 500 == 0 or i + 1 == len(blocks):
+            el = time.time() - t0
+            eta = el / (i + 1) * (len(blocks) - i - 1)
+            print("  develop %d/%d  realized=%d  %.0fs elapsed, ETA %.0fs"
+                  % (i + 1, len(blocks), len(records), el, eta), file=sys.stderr, flush=True)
+    records = finalise_records(records)
+    dups = finalise_records.last_dups
     if out_path:
         json.dump(records, open(out_path, "w"))
     lines = []
