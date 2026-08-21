@@ -51,8 +51,11 @@ export interface SphStarPattern {
 	density: number;
 	/** The forced edge arc, radians. Two solids can share a vertex word and differ only in this. */
 	rho: number;
-	/** The solid's name, present ONLY where the (V, E, F, face census, density) signature was checked
-	 *  against the published catalogue by hand. Never inferred: U69 and U74 agree on all five. */
+	/** The solid's name. A CATALOGUE name (a U-number, a Kepler–Poinsot name) is present only where the
+	 *  (V, E, F, face census, density) signature was checked against the literature by hand; never
+	 *  inferred, since U69 and U74 agree on all five. The pyramids are the one exception and are named
+	 *  from what the signature itself proves: n triangles, one {n/d} and n+1 vertices is a pyramid over
+	 *  {n/d} and can be nothing else, which is a construction rather than a citation. */
 	solid?: string;
 	/** Unit vectors, one per vertex. */
 	vertices: V3[];
@@ -67,9 +70,11 @@ export interface SphStarPattern {
 		verts: number;
 		edges: number;
 		faces: number;
-		/** Order of the measured isometry group, and its vertex-orbit count. The shelf only admits
-		 *  records with ONE orbit: a uniform polyhedron is vertex-transitive by definition, and the
-		 *  solver's combinatorial k = 1 is a claim about the certificate, not about the geometry. */
+		/** Order of the measured isometry group, and its vertex-orbit count. What the shelf requires is
+		 *  that the two AGREE — the orbit count is measured on the developed solid, the solver's k is a
+		 *  claim about the certificate, and a record whose geometry says something different from its
+		 *  certificate is rejected rather than filed. Every k = 1 record is vertex-transitive because
+		 *  uniform means exactly that; the k = 2 records are not uniform and are not meant to be. */
 		symmetryOrder: number;
 		symmetryOrbits: number;
 		/** Face census as [n, d, count], ascending. */
@@ -106,8 +111,12 @@ export const densityUnresolved = (p: { density: number; stats: { densitySuspect?
 
 /** The /play sub-axis key, namespaced against "sps-"/"spc-"/"spe-"/"spp-". A record whose density did
  *  not resolve groups apart from the honest ones, so no row promises a number it cannot stand behind. */
-export const sphStarSub = (p: { density: number; stats?: { densitySuspect?: boolean } }): string =>
-	p.stats?.densitySuspect ? "sst-dx" : `sst-d${p.density}`;
+// ⚑ ONE sub for the whole shelf, and the k rows underneath do the dividing (AL, 2026-08-21: "stop
+// subdividing the star polyhedra by their density"). It used to be one sub per DENSITY — thirteen rows
+// from 2 to 38 plus an unresolved one — which put a property of the SOLID on the axis that everywhere
+// else in the catalogue carries the number of vertex orbits, and left rows of one. Density is still on
+// every card and in the record; it is just not the shelf's spine. 52 at k=1, 37 at k=2.
+export const sphStarSub = (): string => "sst";
 
 /** Sub-axis label: the shelf is grouped by DENSITY, which is the one number that orders this space and
  *  the one an ordinary tiling does not have. */
@@ -170,6 +179,7 @@ export const SPH_STAR_INDEX: SphStarEntry[] = [
 	{ id: "ss-60-150-84-d3", config: "5/2.3.5.3.3", k: 1, density: 3, rho: 0, solid: "snub dodecadodecahedron (U40)", stats: { verts: 60, edges: 150, faces: 84, symmetryOrder: 60, symmetryOrbits: 1, types: [[3, 1, 60], [5, 1, 12], [5, 2, 12]] } },
 	{ id: "ss-120-180-54-d3", config: "10/3.10.4", k: 1, density: 3, rho: 0, solid: undefined, stats: { verts: 120, edges: 180, faces: 54, symmetryOrder: 120, symmetryOrbits: 1, types: [[4, 1, 30], [10, 1, 12], [10, 3, 12]] } },
 	{ id: "ss-14-28-16-d4", config: "7/3.3.3.3", k: 1, density: 4, rho: 0, solid: "heptagrammic crossed antiprism", stats: { verts: 14, edges: 28, faces: 16, symmetryOrder: 28, symmetryOrbits: 1, types: [[3, 1, 14], [7, 3, 2]] } },
+	{ id: "ss-20-60-24-d4", config: "5/2.5.5/2.5.5/2.5", k: 1, density: 4, rho: 0, solid: "ditrigonal dodecadodecahedron (U41)", stats: { verts: 20, edges: 60, faces: 24, symmetryOrder: 120, symmetryOrbits: 1, types: [[5, 1, 12], [5, 2, 12]] } },
 	{ id: "ss-24-48-20-d4", config: "8/3.4.8/3.3", k: 1, density: 4, rho: 0, solid: "great cubicuboctahedron (U14)", stats: { verts: 24, edges: 48, faces: 20, symmetryOrder: 48, symmetryOrbits: 1, types: [[3, 1, 8], [4, 1, 6], [8, 3, 6]] } },
 	{ id: "ss-48-72-20-d4", config: "8/3.8.6", k: 1, density: 4, rho: 0, solid: "cubitruncated cuboctahedron (U16)", stats: { verts: 48, edges: 72, faces: 20, symmetryOrder: 48, symmetryOrbits: 1, types: [[6, 1, 8], [8, 1, 6], [8, 3, 6]] } },
 	{ id: "ss-60-120-44-d4", config: "10/3.5.10/3.3", k: 1, density: 4, rho: 0, solid: "small ditrigonal dodecicosidodecahedron (U43)", stats: { verts: 60, edges: 120, faces: 44, symmetryOrder: 120, symmetryOrbits: 1, types: [[3, 1, 20], [5, 1, 12], [10, 3, 12]] } },
@@ -196,9 +206,43 @@ export const SPH_STAR_INDEX: SphStarEntry[] = [
 	{ id: "ss-120-180-62-d13", config: "10/3.6.4", k: 1, density: 13, rho: 0, solid: "great truncated icosidodecahedron (U68)", stats: { verts: 120, edges: 180, faces: 62, symmetryOrder: 120, symmetryOrbits: 1, types: [[4, 1, 30], [6, 1, 20], [10, 3, 12]] } },
 	{ id: "ss-60-150-92-d37", config: "5/2.3.3.3.3", k: 1, density: 37, rho: 0, solid: undefined, stats: { verts: 60, edges: 150, faces: 92, symmetryOrder: 60, symmetryOrbits: 1, types: [[3, 1, 80], [5, 2, 12]] } },
 	{ id: "ss-60-180-112-d38", config: "5/2.3.3.3.3.3", k: 1, density: 38, rho: 0, solid: undefined, stats: { verts: 60, edges: 180, faces: 112, symmetryOrder: 120, symmetryOrbits: 1, types: [[3, 1, 100], [5, 2, 12]] } },
+	{ id: "ss-12-20-10-d1", config: "8/3.4.3 + 4.4.4.3", k: 2, density: 1, rho: 0, solid: "crossed square cupola", stats: { verts: 12, edges: 20, faces: 10, symmetryOrder: 8, symmetryOrbits: 2, types: [[3, 1, 4], [4, 1, 5], [8, 3, 1]], densitySuspect: true } },
 	{ id: "ss-6-10-6-d2", config: "5/2.3.3 + 3.3.3.3.3", k: 2, density: 2, rho: 0, solid: "pentagrammic pyramid", stats: { verts: 6, edges: 10, faces: 6, symmetryOrder: 10, symmetryOrbits: 2, types: [[3, 1, 5], [5, 2, 1]] } },
 	{ id: "ss-8-14-8-d2", config: "7/2.3.3 + 3.3.3.3.3.3.3", k: 2, density: 2, rho: 0, solid: "heptagrammic pyramid {7/2}", stats: { verts: 8, edges: 14, faces: 8, symmetryOrder: 14, symmetryOrbits: 2, types: [[3, 1, 7], [7, 2, 1]] } },
 	{ id: "ss-8-14-8-d3", config: "7/3.3.3 + 3.3.3.3.3.3.3", k: 2, density: 3, rho: 0, solid: "heptagrammic pyramid {7/3}", stats: { verts: 8, edges: 14, faces: 8, symmetryOrder: 14, symmetryOrbits: 2, types: [[3, 1, 7], [7, 3, 1]] } },
+	{ id: "ss-9-16-9-d3", config: "8/3.3.3 + 3.3.3.3.3.3.3.3", k: 2, density: 3, rho: 0, solid: "{8/3} pyramid", stats: { verts: 9, edges: 16, faces: 9, symmetryOrder: 16, symmetryOrbits: 2, types: [[3, 1, 8], [8, 3, 1]] } },
+	{ id: "ss-11-20-11-d3", config: "10/3.3.3 + 3.3.3.3.3.3.3.3.3.3", k: 2, density: 3, rho: 0, solid: "{10/3} pyramid", stats: { verts: 11, edges: 20, faces: 11, symmetryOrder: 20, symmetryOrbits: 2, types: [[3, 1, 10], [10, 3, 1]] } },
+	{ id: "ss-12-22-12-d3", config: "11/3.3.3 + 3.3.3.3.3.3.3.3.3.3.3", k: 2, density: 3, rho: 0, solid: "{11/3} pyramid", stats: { verts: 12, edges: 22, faces: 12, symmetryOrder: 22, symmetryOrbits: 2, types: [[3, 1, 11], [11, 3, 1]] } },
+	{ id: "ss-15-25-12-d3", config: "10/3.4.3 + 5/2.4.3.4", k: 2, density: 3, rho: 0, solid: "crossed pentagrammic cupola", stats: { verts: 15, edges: 25, faces: 12, symmetryOrder: 10, symmetryOrbits: 2, types: [[3, 1, 5], [4, 1, 5], [5, 2, 1], [10, 3, 1]] } },
+	{ id: "ss-18-42-18-d3", config: "5/2.4.5.4 + 5/2.5.5/2.5.4", k: 2, density: 3, rho: 0, solid: undefined, stats: { verts: 18, edges: 42, faces: 18, symmetryOrder: 12, symmetryOrbits: 2, types: [[4, 1, 6], [5, 1, 6], [5, 2, 6]] } },
+	{ id: "ss-32-72-30-d3", config: "8.8.3.8.3 + 8.4.8.3", k: 2, density: 3, rho: 0, solid: undefined, stats: { verts: 32, edges: 72, faces: 30, symmetryOrder: 32, symmetryOrbits: 2, types: [[3, 1, 16], [4, 1, 4], [8, 1, 10]] } },
+	{ id: "ss-10-18-10-d4", config: "9/4.3.3 + 3.3.3.3.3.3.3.3.3", k: 2, density: 4, rho: 0, solid: "{9/4} pyramid", stats: { verts: 10, edges: 18, faces: 10, symmetryOrder: 18, symmetryOrbits: 2, types: [[3, 1, 9], [9, 4, 1]] } },
+	{ id: "ss-12-22-12-d4", config: "11/4.3.3 + 3.3.3.3.3.3.3.3.3.3.3", k: 2, density: 4, rho: 0, solid: "{11/4} pyramid", stats: { verts: 12, edges: 22, faces: 12, symmetryOrder: 22, symmetryOrbits: 2, types: [[3, 1, 11], [11, 4, 1]] } },
+	{ id: "ss-14-26-14-d4", config: "13/4.3.3 + 3.3.3.3.3.3.3.3.3.3.3.3.3", k: 2, density: 4, rho: 0, solid: "{13/4} pyramid", stats: { verts: 14, edges: 26, faces: 14, symmetryOrder: 26, symmetryOrbits: 2, types: [[3, 1, 13], [13, 4, 1]] } },
+	{ id: "ss-16-30-16-d4", config: "15/4.3.3 + 3.3.3.3.3.3.3.3.3.3.3.3.3.3.3", k: 2, density: 4, rho: 0, solid: "{15/4} pyramid", stats: { verts: 16, edges: 30, faces: 16, symmetryOrder: 30, symmetryOrbits: 2, types: [[3, 1, 15], [15, 4, 1]] } },
+	{ id: "ss-12-22-12-d5", config: "11/5.3.3 + 3.3.3.3.3.3.3.3.3.3.3", k: 2, density: 5, rho: 0, solid: "{11/5} pyramid", stats: { verts: 12, edges: 22, faces: 12, symmetryOrder: 22, symmetryOrbits: 2, types: [[3, 1, 11], [11, 5, 1]] } },
+	{ id: "ss-13-24-13-d5", config: "12/5.3.3 + 3.3.3.3.3.3.3.3.3.3.3.3", k: 2, density: 5, rho: 0, solid: "{12/5} pyramid", stats: { verts: 13, edges: 24, faces: 13, symmetryOrder: 24, symmetryOrbits: 2, types: [[3, 1, 12], [12, 5, 1]] } },
+	{ id: "ss-14-26-14-d5", config: "13/5.3.3 + 3.3.3.3.3.3.3.3.3.3.3.3.3", k: 2, density: 5, rho: 0, solid: "{13/5} pyramid", stats: { verts: 14, edges: 26, faces: 14, symmetryOrder: 26, symmetryOrbits: 2, types: [[3, 1, 13], [13, 5, 1]] } },
+	{ id: "ss-15-28-15-d5", config: "14/5.3.3 + 3.3.3.3.3.3.3.3.3.3.3.3.3.3", k: 2, density: 5, rho: 0, solid: "{14/5} pyramid", stats: { verts: 15, edges: 28, faces: 15, symmetryOrder: 28, symmetryOrbits: 2, types: [[3, 1, 14], [14, 5, 1]] } },
+	{ id: "ss-17-32-17-d5", config: "16/5.3.3 + 3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3", k: 2, density: 5, rho: 0, solid: "{16/5} pyramid", stats: { verts: 17, edges: 32, faces: 17, symmetryOrder: 32, symmetryOrbits: 2, types: [[3, 1, 16], [16, 5, 1]] } },
+	{ id: "ss-18-34-18-d5", config: "17/5.3.3 + 3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3", k: 2, density: 5, rho: 0, solid: "{17/5} pyramid", stats: { verts: 18, edges: 34, faces: 18, symmetryOrder: 34, symmetryOrbits: 2, types: [[3, 1, 17], [17, 5, 1]] } },
+	{ id: "ss-19-36-19-d5", config: "18/5.3.3 + 3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3", k: 2, density: 5, rho: 0, solid: "{18/5} pyramid", stats: { verts: 19, edges: 36, faces: 19, symmetryOrder: 36, symmetryOrbits: 2, types: [[3, 1, 18], [18, 5, 1]] } },
+	{ id: "ss-20-38-20-d5", config: "19/5.3.3 + 3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3", k: 2, density: 5, rho: 0, solid: "{19/5} pyramid", stats: { verts: 20, edges: 38, faces: 20, symmetryOrder: 38, symmetryOrbits: 2, types: [[3, 1, 19], [19, 5, 1]] } },
+	{ id: "ss-24-48-26-d5-r14917", config: "4.4.4.3 + 4.4.4.3", k: 2, density: 5, rho: 0, solid: undefined, stats: { verts: 24, edges: 48, faces: 26, symmetryOrder: 16, symmetryOrbits: 2, types: [[3, 1, 8], [4, 1, 18]] } },
+	{ id: "ss-32-72-30-d5", config: "8/3.4.8/3.3 + 8/3.8/3.3.8/3.3", k: 2, density: 5, rho: 0, solid: undefined, stats: { verts: 32, edges: 72, faces: 30, symmetryOrder: 32, symmetryOrbits: 2, types: [[3, 1, 16], [4, 1, 4], [8, 3, 10]] } },
+	{ id: "ss-14-26-14-d6", config: "13/6.3.3 + 3.3.3.3.3.3.3.3.3.3.3.3.3", k: 2, density: 6, rho: 0, solid: "{13/6} pyramid", stats: { verts: 14, edges: 26, faces: 14, symmetryOrder: 26, symmetryOrbits: 2, types: [[3, 1, 13], [13, 6, 1]] } },
+	{ id: "ss-18-34-18-d6", config: "17/6.3.3 + 3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3", k: 2, density: 6, rho: 0, solid: "{17/6} pyramid", stats: { verts: 18, edges: 34, faces: 18, symmetryOrder: 34, symmetryOrbits: 2, types: [[3, 1, 17], [17, 6, 1]] } },
+	{ id: "ss-20-38-20-d6", config: "19/6.3.3 + 3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3", k: 2, density: 6, rho: 0, solid: "{19/6} pyramid", stats: { verts: 20, edges: 38, faces: 20, symmetryOrder: 38, symmetryOrbits: 2, types: [[3, 1, 19], [19, 6, 1]] } },
+	{ id: "ss-16-30-16-d7", config: "15/7.3.3 + 3.3.3.3.3.3.3.3.3.3.3.3.3.3.3", k: 2, density: 7, rho: 0, solid: "{15/7} pyramid", stats: { verts: 16, edges: 30, faces: 16, symmetryOrder: 30, symmetryOrbits: 2, types: [[3, 1, 15], [15, 7, 1]] } },
+	{ id: "ss-17-32-17-d7", config: "16/7.3.3 + 3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3", k: 2, density: 7, rho: 0, solid: "{16/7} pyramid", stats: { verts: 17, edges: 32, faces: 17, symmetryOrder: 32, symmetryOrbits: 2, types: [[3, 1, 16], [16, 7, 1]] } },
+	{ id: "ss-18-34-18-d7", config: "17/7.3.3 + 3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3", k: 2, density: 7, rho: 0, solid: "{17/7} pyramid", stats: { verts: 18, edges: 34, faces: 18, symmetryOrder: 34, symmetryOrbits: 2, types: [[3, 1, 17], [17, 7, 1]] } },
+	{ id: "ss-19-36-19-d7", config: "18/7.3.3 + 3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3", k: 2, density: 7, rho: 0, solid: "{18/7} pyramid", stats: { verts: 19, edges: 36, faces: 19, symmetryOrder: 36, symmetryOrbits: 2, types: [[3, 1, 18], [18, 7, 1]] } },
+	{ id: "ss-20-38-20-d7", config: "19/7.3.3 + 3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3", k: 2, density: 7, rho: 0, solid: "{19/7} pyramid", stats: { verts: 20, edges: 38, faces: 20, symmetryOrder: 38, symmetryOrbits: 2, types: [[3, 1, 19], [19, 7, 1]] } },
+	{ id: "ss-21-40-21-d7", config: "20/7.3.3 + 3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3", k: 2, density: 7, rho: 0, solid: "{20/7} pyramid", stats: { verts: 21, edges: 40, faces: 21, symmetryOrder: 40, symmetryOrbits: 2, types: [[3, 1, 20], [20, 7, 1]] } },
+	{ id: "ss-18-34-18-d8", config: "17/8.3.3 + 3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3", k: 2, density: 8, rho: 0, solid: "{17/8} pyramid", stats: { verts: 18, edges: 34, faces: 18, symmetryOrder: 34, symmetryOrbits: 2, types: [[3, 1, 17], [17, 8, 1]] } },
+	{ id: "ss-20-38-20-d8", config: "19/8.3.3 + 3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3", k: 2, density: 8, rho: 0, solid: "{19/8} pyramid", stats: { verts: 20, edges: 38, faces: 20, symmetryOrder: 38, symmetryOrbits: 2, types: [[3, 1, 19], [19, 8, 1]] } },
+	{ id: "ss-20-38-20-d9", config: "19/9.3.3 + 3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3", k: 2, density: 9, rho: 0, solid: "{19/9} pyramid", stats: { verts: 20, edges: 38, faces: 20, symmetryOrder: 38, symmetryOrbits: 2, types: [[3, 1, 19], [19, 9, 1]] } },
+	{ id: "ss-21-40-21-d9", config: "20/9.3.3 + 3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3", k: 2, density: 9, rho: 0, solid: "{20/9} pyramid", stats: { verts: 21, edges: 40, faces: 21, symmetryOrder: 40, symmetryOrbits: 2, types: [[3, 1, 20], [20, 9, 1]] } },
 ];
 
 export const SPH_STAR_BY_ID = new Map(SPH_STAR_INDEX.map((e) => [e.id, e]));
