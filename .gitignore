@@ -148,6 +148,13 @@ tools/ctrnact-oracle/sph-k2-*/
 # spliced into a tracked file — the convex ones into lib/render/johnsonSolids.ts, the reflex ones into
 # lib/render/nonconvexSolids.ts. Ignored for the same reason sph-k2-*/ is.
 tools/ctrnact-oracle/sph-k3/
+tools/ctrnact-oracle/sph-k4/
+# Harvest intermediates: gen_johnson_deep.py and gen_nonconvex_shelf.py write these on the way to the
+# tracked TS tables and the atlas rows. Regenerable from the cell files above, and the shelf they feed
+# IS tracked — lib/render/{johnsonSolids,nonconvexSolids}.ts and public/reference-atlas-spherical.json.
+tools/ctrnact-oracle/johnson-deep.ts.part
+tools/ctrnact-oracle/johnson-deep-rows.json
+tools/ctrnact-oracle/nonconvex-rows.json
 
 # star-shelf build intermediates — all regenerable by tools/ctrnact-oracle/build-star-shelf.sh.
 # The rho buckets are derived from the palette (rho_buckets.py), the pyramid cells from a closed form
