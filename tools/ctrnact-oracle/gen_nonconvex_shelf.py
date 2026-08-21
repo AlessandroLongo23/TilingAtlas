@@ -26,13 +26,60 @@ TWO FACTS PER RECORD, both measured, both on the card:
   * INSCRIBED — is there a sphere through every vertex? One is. The other 33 have no circumsphere, so
     they have no spherical view at all (lib/tilings/sph-inscribed.ts withholds it).
 
-Usage: python3 gen_nonconvex_shelf.py [--emit]
+MORE THAN ONE SEARCH FEEDS THIS SHELF. It was first built from the k=2 develop output alone, and the
+k=3 harvest (gen_johnson_k3.py) kept only the CONVEX records and discarded the rest — 37 reflex records
+were computed and thrown away, 35 of them congruent to nothing the k=2 sweep had found. So --cells takes
+a LIST, oldest search first, and the shelf is the union.
+
+IDS ARE FROZEN, because they are permalinks. An id is `ncx-V-E-F` plus a letter when several solids share
+that signature, and appending a search can turn a signature that was unique into one that is not: k=3
+brought two more 7/15/10 solids, and a naive regeneration would have renamed the shipped `ncx-7-15-10` to
+`ncx-7-15-10-a`. Every id already in lib/render/nonconvexSolids.ts is therefore looked up by CONGRUENCE
+and reused verbatim; only genuinely new solids are allocated, taking the first letter free for their
+signature. Re-running with the same --cells is a no-op on the shipped rows, which is the gate.
+
+Usage: python3 gen_nonconvex_shelf.py [--emit] [--cells A.json B.json ...]
 """
-import argparse, collections, json, os
+import argparse, collections, json, os, re
 import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
+
+
+HEADER = """// NON-CONVEX REGULAR-FACED POLYHEDRA — every face a regular polygon, every edge the same length,
+// %(orbits)s vertex orbits, and at least one dihedral past pi.
+//
+// GENERATED FILE. Rebuild with tools/ctrnact-oracle/gen_nonconvex_shelf.py --emit; do not hand-edit,
+// since the next rebuild will overwrite it. Built from develop_euclid's %(cells)s output.
+//
+// There is no catalogue to check these against. Johnson's 92 and Zalgaller's completeness proof are for
+// CONVEX regular-faced polyhedra; Zalgaller's own extension ("convex regular-faced polyhedra with
+// conditional edges") is still convex, and Klitzing's survey of the territory puts non-convexity
+// explicitly out of scope. What is enumerated past convexity is the UNIFORM half — the 57 non-convex
+// uniform polyhedra, all one vertex orbit, all on the star shelf — and nothing systematic beyond it. So
+// these ship the way the star shelf ships a record it cannot name: with their measured signature and no
+// invented name. A name guessed off a census is exactly the error that discipline refuses to make.
+//
+// WHY THEY WERE INVISIBLE, and it is one fact: %(nosphere)d of the %(n)d have NO CIRCUMSPHERE, and
+// develop_spherical realizes maps on S2, so a solid without one is not something it can miss — it is
+// something it cannot express. develop_euclid solves for dihedral angles in R3 and assumes no sphere,
+// which is why they appear at all.
+//
+// TWO MEASURED FACTS travel with each, because they are different kinds of object and the shelf should
+// not file them together silently:
+//   * SELF-INTERSECTING (%(xing)d of %(n)d) — some face edge passes through the interior of a face it
+//     shares no vertex with. An embedded solid (%(emb)d of %(n)d) has no such crossing and is a
+//     polyhedron in the ordinary sense.
+//   * CIRCUMSPHERE (%(nosphere)d of %(n)d have none) — and so no spherical view.
+//     %(inscribed)s
+//     lib/tilings/sph-inscribed.ts measures this PER SOLID. It is not a property of the shelf, and
+//     assuming it was is how a solid that has a sphere was briefly denied the view of it.
+//
+// Ids are the signature, not a guess: ncx-<V>-<E>-<F>, lettered where several share it. They are FROZEN
+// across rebuilds — a shipped id is matched back by congruence and reused verbatim, so adding a search
+// appends rows and never renames one. That is why a bare id can sit beside a lettered one.
+"""
 
 
 def centre_and_scale(V):
@@ -131,22 +178,91 @@ def shelf_keys():
     return keys
 
 
+def frozen_ids():
+    """Every id already shipped in lib/render/nonconvexSolids.ts, by congruence key.
+
+    These are permalinks — a record on the shelf is reachable as /play?tiling=sph-<id> — so regenerating
+    the shelf must never rename one. The file is written by this script and nothing else, so its shape is
+    fixed and a regex over it is honest: `id: "ncx-..."` followed by the vertices block."""
+    path = os.path.join(ROOT, "lib", "render", "nonconvexSolids.ts")
+    if not os.path.exists(path):
+        return {}
+    src = open(path).read()
+    out = {}
+    for m in re.finditer(r'id:\s*"(ncx-[\w-]+)".*?vertices:\s*\[(.*?)\n\t\]', src, re.S):
+        vid, block = m.group(1), m.group(2)
+        V = [[float(x) for x in row] for row in re.findall(r"\[\s*(-?[\d.eE+-]+),\s*(-?[\d.eE+-]+),\s*(-?[\d.eE+-]+)\s*\]", block)]
+        if V:
+            out[congruence_key(V)] = vid
+    return out
+
+
+def allocate_ids(rows, frozen):
+    """Reuse a shipped id where the solid is already shelved; allocate only for the genuinely new.
+
+    A new solid takes `ncx-V-E-F` bare when nothing else carries that signature, and otherwise the first
+    letter suffix not already spoken for. A bare id that is already shipped STAYS bare even once a second
+    solid shares its signature: renaming it to `-a` for symmetry would break the permalink, and symmetry
+    is not worth that."""
+    taken = collections.defaultdict(set)          # (V,E,F) -> {"", "a", "b", ...}
+    for x in rows:
+        vid = frozen.get(x["key"])
+        if vid:
+            x["id"] = vid
+            rest = vid[len("ncx-"):].split("-")
+            taken[(x["V"], x["E"], x["F"])].add(rest[3] if len(rest) > 3 else "")
+    fresh = collections.Counter((x["V"], x["E"], x["F"]) for x in rows if not x.get("id"))
+    for x in rows:
+        if x.get("id"):
+            continue
+        vef = (x["V"], x["E"], x["F"])
+        used = taken[vef]
+        if not used and fresh[vef] == 1:
+            suffix = ""
+        else:
+            suffix = next(c for c in "abcdefghijklmnopqrstuvwxyz" if c not in used)
+        used.add(suffix)
+        x["id"] = "ncx-%d-%d-%d%s" % (vef + ((("-" + suffix) if suffix else ""),))
+    for x in rows:
+        x["ident"] = x["id"].upper().replace("-", "_")
+
+
+DEFAULT_CELLS = [os.path.join(HERE, "sph-k2-fix", "euclid-k2.json"),
+                 os.path.join(HERE, "sph-k3", "euclid-k3.json")]
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--emit", action="store_true")
-    ap.add_argument("--cells", default=os.path.join(HERE, "sph-k2-fix", "euclid-k2.json"))
+    ap.add_argument("--cells", nargs="+", default=DEFAULT_CELLS,
+                    help="develop_euclid outputs, OLDEST SEARCH FIRST — the order fixes which solid gets "
+                         "the bare id when several share a V-E-F signature.")
     args = ap.parse_args()
 
-    recs = json.load(open(args.cells))
-    reflex = [r for r in recs if not r["residual"].get("convex")]
-    coplanar = [r for r in recs
-                if r["residual"].get("convex") and r["residual"].get("coplanarNeighbour")]
-    print("k=2 records: %d  (reflex %d, degenerate-convex %d dropped)"
-          % (len(recs), len(reflex), len(coplanar)))
+    reflex = []
+    for src, path in enumerate(args.cells):
+        recs = json.load(open(path))
+        # chi != 2 is a PINCHED realization, not a solid: the flood fill sent two vertices of the map to
+        # one point and merged them. develop_euclid rejects these at source now, but the cell files
+        # already on disk predate that, and re-running develop costs 14 minutes to re-derive a record
+        # that is going to be thrown away. Filtered here too, and reported so it is never silent.
+        pinched = [r for r in recs if r["residual"].get("euler") != 2]
+        for r in pinched:
+            print("   ⚑ pinched (chi=%s), dropped: %s" % (r["residual"].get("euler"), r["id"]))
+        r_here = [r for r in recs
+                  if not r["residual"].get("convex") and r["residual"].get("euler") == 2]
+        degen = [r for r in recs
+                 if r["residual"].get("convex") and r["residual"].get("coplanarNeighbour")]
+        print("%-28s %3d records  (reflex %d, degenerate-convex %d dropped)"
+              % (os.path.basename(os.path.dirname(path)) + "/" + os.path.basename(path),
+                 len(recs), len(r_here), len(degen)))
+        reflex += [(src, r) for r in r_here]
 
     known = shelf_keys()
     picked, seen, dropped = [], {}, []
-    for r in sorted(reflex, key=lambda r: (len(r["vertices"]), len(r["faces"]), r["id"])):
+    # Sorted with the SOURCE FIRST so an added search cannot reorder the rows an earlier one produced;
+    # allocate_ids() relies on that to keep every shipped id where it is.
+    for src, r in sorted(reflex, key=lambda t: (t[0], len(t[1]["vertices"]), len(t[1]["faces"]), t[1]["id"])):
         k = congruence_key(r["vertices"])
         if k in known:
             dropped.append((r, known[k]))
@@ -154,10 +270,15 @@ def main():
         if k in seen:
             continue
         seen[k] = r
+        r["_src"] = src
+        r["_key"] = k
         picked.append(r)
     for r, why in dropped:
         print("   already on the star shelf: V=%d F=%d -> %s" % (len(r["vertices"]), len(r["faces"]), why))
-    print("distinct new solids: %d" % len(picked))
+    by_src = collections.Counter(r["_src"] for r in picked)
+    print("distinct solids: %d  (%s)"
+          % (len(picked), ", ".join("%s +%d" % (os.path.basename(os.path.dirname(args.cells[i])), n)
+                                    for i, n in sorted(by_src.items()))))
 
     rows = []
     tally = collections.Counter()
@@ -170,16 +291,11 @@ def main():
         tally["selfIntersecting" if xings else "embedded"] += 1
         tally["inscribed" if insc else "noCircumsphere"] += 1
         rows.append({"rec": r, "V": n, "E": e, "F": len(faces), "census": census(faces),
-                     "xings": xings, "inscribed": bool(insc)})
-    # ids: V-E-F, with a letter when several share it
-    by_vef = collections.Counter((x["V"], x["E"], x["F"]) for x in rows)
-    used = collections.Counter()
-    for x in rows:
-        vef = (x["V"], x["E"], x["F"])
-        used[vef] += 1
-        suffix = "" if by_vef[vef] == 1 else "-%s" % chr(ord("a") + used[vef] - 1)
-        x["id"] = "ncx-%d-%d-%d%s" % (vef[0], vef[1], vef[2], suffix)
-        x["ident"] = x["id"].upper().replace("-", "_")
+                     "xings": xings, "inscribed": bool(insc), "key": r["_key"]})
+    frozen = frozen_ids()
+    allocate_ids(rows, frozen)
+    kept = sum(1 for x in rows if x["key"] in frozen)
+    print("ids: %d reused from the shipped shelf, %d newly allocated" % (kept, len(rows) - kept))
     for x in rows:
         print("   %-16s V=%-3d E=%-3d F=%-3d %-22s %s%s"
               % (x["id"], x["V"], x["E"], x["F"], x["census"],
@@ -189,21 +305,37 @@ def main():
     if not args.emit:
         return
 
-    ts = []
+    ks = sorted({r["rec"]["k"] for r in rows})
+    xing = sum(1 for x in rows if x["xings"])
+    insc = [x["id"] for x in rows if x["inscribed"]]
+    header = HEADER % {
+        "n": len(rows),
+        "orbits": "%d" % ks[0] if len(ks) == 1 else "%d to %d" % (ks[0], ks[-1]),
+        "xing": xing, "emb": len(rows) - xing,
+        "nosphere": len(rows) - len(insc),
+        "inscribed": ("The exception%s: %s." % ("" if len(insc) == 1 else "s", ", ".join(insc)))
+                     if insc else "There is no exception on this shelf today.",
+        "cells": ", ".join(os.path.basename(os.path.dirname(c)) for c in args.cells),
+    }
+    ts = [header, '\nimport type { Polyhedron } from "./platonicSolids";\n']
     for x in rows:
         r = x["rec"]
-        ts.append("\n// %s  — %s, %s\nexport const %s: Polyhedron = {\n"
+        ts.append("\n// %s  — %s, %s%s\nexport const %s: Polyhedron = {\n"
                   "\tid: \"%s\",\n\tschlafli: [0, 0], // no {p,q} — routing keys on id\n"
                   "\tvertexConfig: \"%s\",\n\tname: \"%s\",\n\tvertices: [\n%s\t],\n\tfaces: [\n%s\t],\n};\n"
                   % (x["id"], x["census"], "self-intersecting" if x["xings"] else "embedded",
+                     ", inscribed" if x["inscribed"] else "",
                      x["ident"], x["id"], r["vertexConfig"], x["census"],
                      "".join("\t\t[%.9f, %.9f, %.9f],\n" % tuple(v) for v in centre_and_scale(r["vertices"])),
                      "".join("\t\t[%s],\n" % ", ".join(str(i) for i in f) for f in r["faces"])))
-    open(os.path.join(HERE, "nonconvex.ts.part"), "w").write("".join(ts))
+    ts.append("\nexport const NONCONVEX_SOLIDS: Polyhedron[] = [\n%s];\n"
+              % "".join("\t%s,\n" % x["ident"] for x in rows))
+    out = os.path.join(ROOT, "lib", "render", "nonconvexSolids.ts")
+    open(out, "w").write("".join(ts))
     json.dump([{k: x[k] for k in ("id", "V", "E", "F", "census", "xings", "inscribed")}
                | {"vertexConfig": x["rec"]["vertexConfig"], "k": x["rec"]["k"]} for x in rows],
               open(os.path.join(HERE, "nonconvex-rows.json"), "w"), indent=1)
-    print("wrote nonconvex.ts.part and nonconvex-rows.json (%d solids)" % len(rows))
+    print("wrote %s and nonconvex-rows.json (%d solids)" % (os.path.relpath(out, ROOT), len(rows)))
 
 
 if __name__ == "__main__":

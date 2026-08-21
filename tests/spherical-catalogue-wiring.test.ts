@@ -25,10 +25,12 @@ describe("spherical catalogue ↔ solid registry wiring", () => {
 		expect(unresolved, "catalogue entries with no matching solid").toEqual([]);
 	});
 
-	it("the registry holds 18 classical + 10 prisms/antiprisms + 62 Johnson + 34 non-convex (124 total)", () => {
+	it("the registry holds 18 classical + 10 prisms/antiprisms + 62 Johnson + 68 non-convex (158 total)", () => {
 		// 12 inscribable ones from develop_spherical, plus 19 from develop_euclid (2026-08-20), of which
 		// 14 have no circumsphere and could not have been developed on S2 at any k.
-		expect(SPHERICAL_SOLIDS.length).toBe(124);
+		// The non-convex shelf went 34 -> 69 when the k=3 develop output was re-harvested (2026-08-21):
+		// gen_johnson_k3.py had kept only the CONVEX records, so 37 reflex ones were computed and dropped.
+		expect(SPHERICAL_SOLIDS.length).toBe(158);
 		expect(polyhedronForId("snub-square-antiprism")).not.toBeNull();
 		expect(polyhedronForId("gyrobifastigium")).not.toBeNull();
 		expect(polyhedronForId("triangular-orthobicupola")).not.toBeNull();

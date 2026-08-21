@@ -157,13 +157,26 @@ export function sphericalSolidSub(solid: string): string {
  * J31 comes out as a green blob with a few slivers on it, which is what made AL ask whether it really
  * had regular faces (2026-08-21; it does — 10 triangles, 10 squares, 2 pentagons, all 40 edges equal to
  * nine decimal places). So the sphere is offered where it exists and withheld where it does not, and the
- * nineteen without one are drawn as the polyhedra they are.
+ * solids without one are drawn as the polyhedra they are.
  */
 export function hasSphereView(solid: string | undefined | null): boolean {
-	// The "ncx-" solids are the non-convex regular-faced ones, and not one of them has a circumsphere —
-	// that is why develop_spherical never saw them. A prefix rather than 34 more rows in the set below:
-	// the set is a list of EXCEPTIONS among solids that mostly do have one, and this shelf is the other
-	// way round. sph-inscribed.test.ts measures both, so neither can drift.
-	if (solid?.startsWith("ncx-")) return false;
+	if (solid?.startsWith("ncx-")) return NCX_INSCRIBED.has(solid);
 	return !!solid && !SPH_NOT_INSCRIBED.has(solid);
 }
+
+/**
+ * The non-convex regular-faced solids that DO have a circumsphere.
+ *
+ * The "ncx-" shelf is listed the other way round from `SPH_NOT_INSCRIBED` above, because the two
+ * populations sit on opposite sides of the same question: a convex regular-faced solid usually has a
+ * circumsphere and the set above names the exceptions, while an "ncx-" one almost never does and this
+ * set names those. Sixty-eight of the sixty-nine have none, which is the whole reason develop_spherical
+ * could not see this shelf at all.
+ *
+ * ⚑ It was a bare `return false` on the prefix until the k=3 search landed, on the stated grounds that
+ * "NOT ONE of them has a circumsphere". That was true of the 34 the k=2 sweep produced and false the
+ * moment 35 more arrived: ncx-7-15-10-a has one, and the prefix rule denied it a view of a sphere it
+ * actually has. A property measured across a partial corpus is not a property of the shelf.
+ * sph-inscribed.test.ts recomputes both directions from the vertices, so neither can drift again.
+ */
+export const NCX_INSCRIBED: ReadonlySet<string> = new Set(["ncx-7-15-10-a"]);

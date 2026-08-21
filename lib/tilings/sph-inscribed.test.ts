@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { SPHERICAL_SOLIDS } from "@/lib/render/sphericalSolids";
-import { circumsphereMiss, hasSphereView, isInscribed, SPH_NOT_INSCRIBED, sphericalSolidSub } from "./sph-inscribed";
+import {
+	circumsphereMiss,
+	hasSphereView,
+	isInscribed,
+	NCX_INSCRIBED,
+	SPH_NOT_INSCRIBED,
+	sphericalSolidSub,
+} from "./sph-inscribed";
 
 describe("circumsphere fit", () => {
 	it("finds the sphere a vertex CENTROID would miss", () => {
@@ -22,17 +29,25 @@ describe("circumsphere fit", () => {
 });
 
 describe("the shipped split", () => {
-	// The list in sph-inscribed.ts is what `subOf` reads, and this is what stops it drifting: recompute
-	// it from the vertices every run. A solid added to the shelf without a row here fails here.
-	// The "ncx-" shelf is non-convex regular-faced solids and NOT ONE of them has a circumsphere, which is
-	// why hasSphereView answers on the prefix instead of listing 34 more ids. Assert both halves: the
-	// prefix claim, and that the hand-list is exactly the remaining exceptions.
-	it("no ncx- solid has a circumsphere", () => {
+	// The two lists in sph-inscribed.ts are what `subOf` and the view options read, and this is what stops
+	// them drifting: recompute both from the vertices every run. A solid added to the shelf without a row
+	// fails here.
+	//
+	// The "ncx-" shelf is listed the other way round — NCX_INSCRIBED names the few that DO have a
+	// circumsphere — so assert it as a set equality, not as "none of them do". That claim was in this file
+	// as a for-loop until the k=3 search landed and produced one that does.
+	it("NCX_INSCRIBED is exactly the ncx- solids with a circumsphere", () => {
 		const ncx = SPHERICAL_SOLIDS.filter((s) => s.id.startsWith("ncx-"));
 		expect(ncx.length).toBeGreaterThan(0);
+		const measured = ncx
+			.filter((s) => isInscribed(s.vertices as [number, number, number][]))
+			.map((s) => s.id)
+			.sort();
+		expect(measured).toEqual([...NCX_INSCRIBED].sort());
 		for (const s of ncx) {
-			expect(isInscribed(s.vertices as [number, number, number][]), s.id).toBe(false);
-			expect(hasSphereView(s.id), s.id).toBe(false);
+			expect(hasSphereView(s.id), s.id).toBe(
+				isInscribed(s.vertices as [number, number, number][]),
+			);
 		}
 	});
 

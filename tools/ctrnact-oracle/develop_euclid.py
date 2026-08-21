@@ -920,6 +920,15 @@ def check_realized(V, E, F, Ftype, ninst, tol=1e-6):
     deg = sum(len(r) for r in F)
     res["mapOK"] = (2 * len(E) == ninst and deg == ninst
                     and all(len(r) == ds._nd(t)[0] for r, t in zip(F, Ftype)))
+    # ⚑ EULER IS PART OF VALIDITY, and leaving it out let a pinched solid through. The dart and ring
+    # checks above are all about the map's combinatorics, which survive a bad realization untouched: if
+    # the flood fill sends two distinct vertices of the map to the SAME POINT it merges them, V drops by
+    # one, and every count in mapOK still balances because no edge or face changed. The solid then
+    # touches itself at that point and is not a polyhedron. One k=3 record did exactly this
+    # (ctrnact-03_34-4af_4ap_5ae-1, second realization: 14 vertices become 13, chi = 1) and shipped as
+    # far as lib/squaring/smith.test.ts, which caught it on V - E + F. Every other record across k=1,
+    # k=2 and k=3 has chi = 2, so this rejects that one and nothing else.
+    res["mapOK"] = res["mapOK"] and res["euler"] == 2
     if not res["mapOK"]:
         return False, res
     Vn = [np.asarray(v) for v in V]

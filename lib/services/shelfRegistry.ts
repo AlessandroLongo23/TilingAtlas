@@ -152,7 +152,17 @@ export const SHELVES: Record<ShelfId, ShelfDef> = {
 	// is exactly the JOHNSON ones — a Johnson solid is by definition a convex regular-faced polyhedron
 	// that is not uniform. So the two are not a gloss on the orbit count, they ARE the orbit count, and
 	// the row says so instead of leaving a visitor to know it (AL, 2026-08-21).
-	spherical: { field: "spherical", surface: "sphere", kNoun: (t) => ((t.k ?? 1) > 1 ? "Johnson" : "uniform") },
+	// k names the solid on the convex half: k = 1 is exactly the uniform polyhedra and k > 1 exactly the
+	// Johnson ones, since a Johnson solid IS a convex regular-faced polyhedron that is not uniform.
+	// ⚑ That definition is why the non-convex "ncx-" records must not borrow the word — they were reading
+	// "k = 2 Johnson 34" in the tree, and a non-convex solid is not a Johnson solid at any k. They get the
+	// bare orbit count, which is all k means for them.
+	spherical: {
+		field: "spherical",
+		surface: "sphere",
+		kNoun: (t) =>
+			t.spherical?.solid?.startsWith("ncx-") ? null : (t.k ?? 1) > 1 ? "Johnson" : "uniform",
+	},
 	sphericalFreedraw: { field: "sphericalFreedraw", surface: "sphereEdges", kNoun: EDGE_ORBITS },
 	sphEdges: { field: "sphEdges", surface: "sphereEdges", kNoun: EDGE_ORBITS },
 	sphPoly: { field: "sphPoly", surface: "sphereEdges", kNoun: null },

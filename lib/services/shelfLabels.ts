@@ -152,10 +152,15 @@ const NAMED: Record<string, string> = {
 	// One row for the whole star shelf; the k rows beneath split it (52 at k=1, 37 at k=2). Density is on
 	// every card and in every record — it is just no longer the axis, which is what AL asked for.
 	sst: "Star polyhedra",
-	// The star shelf's sibling: non-convex, regular-faced, and NOT on a circumsphere — which is exactly
-	// why they are not on the star shelf, since that one is realized on S2 and a solid without a
-	// circumsphere cannot be. Unnamed by design; nothing enumerates this class.
-	"spn-solid": "No circumsphere",
+	// The star shelf's sibling, and the non-convex half of the same face-type split the convex side makes:
+	// every face here is an ordinary regular polygon and the SOLID is what bends past pi, where the star
+	// shelf's faces are the {n/d} themselves. Unnamed by design; nothing enumerates this class.
+	//
+	// ⚑ It read "No circumsphere" while every one of the 34 the k=2 sweep produced lacked one. The k=3
+	// harvest brought a solid that HAS a circumsphere (ncx-7-15-10-a), so the label described 67 of 68 and
+	// a shelf name has to be true of the shelf. The circumsphere is still measured per solid and still
+	// decides whether the spherical view is offered; it is not what these are.
+	"spn-solid": "Regular polygons",
 	// The two hyperbolic-poly families are NOT here either: their boards carry a label, so "3.4.7.4
 	// tilings" and "{3,7} tilings" are derived below off HYP_POLY_BOARDS.
 	// Hyperbolic edge systems: one sub per base tiling.
