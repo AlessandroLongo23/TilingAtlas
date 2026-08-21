@@ -47,7 +47,11 @@ function poolFor(spec: { orbits: string[]; variants: { n: number; alphaU: number
 }
 
 describe("Phase-1 general star path — compatibility & seed-set derivation (GATE-0 contract)", () => {
-	it("enumerates both orbit VCs of figs 40 and 43, incl. the purely-regular partner (includeStarFree)", () => {
+	// The FIRST test to touch a spec pays for building its pool, and the pool is the expensive part: this
+	// one builds both, which is ~150 s alone and longer under a parallel run. The 60 s file default is
+	// sized for tests that merely READ a cached pool, so it is the wrong budget here rather than this
+	// being a slow test to fix. Measured, not guessed: 148 s in isolation on this machine.
+	it("enumerates both orbit VCs of figs 40 and 43, incl. the purely-regular partner (includeStarFree)", { timeout: 600_000 }, () => {
 		for (const spec of [FIG40, FIG43]) {
 			const { map, names } = poolFor(spec);
 			expect(map.has(names[0])).toBe(true);

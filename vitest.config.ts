@@ -7,12 +7,19 @@ export default defineConfig({
     setupFiles: ["./vitest.setup.ts"],
     globals: true,
     // Several suites are CPU-bound exact-arithmetic / enumeration tests (fuzz, hyperbolic develop over
-    // all shipped patches, freedraw combined-grid, oracle classification) that legitimately run 10–20s.
-    // Under the default 16-way file parallelism they oversubscribe the CPU, so wall-time inflates and
-    // the 5s default timeout trips them intermittently. 60s gives finite tests headroom under load
-    // without letting a genuinely hung test block for too long.
-    testTimeout: 60_000,
-    hookTimeout: 60_000,
+    // all shipped patches, freedraw combined-grid, oracle classification, the k=2 star solve) that
+    // legitimately run tens of seconds. The default file parallelism oversubscribes this machine —
+    // 10 logical cores but only 4 performance ones — so those suites fight for the fast cores, wall
+    // time inflates several-fold, and whichever one loses the fight trips its timeout. WHICH one fails
+    // then varies run to run, which is the signature of contention and not of a slow test.
+    //
+    // Two knobs, and the first is the actual fix. Capping the workers at the performance-core count
+    // plus a little keeps the heavy suites from starving each other; the timeout is only the backstop
+    // for when one still gets unlucky. Raising the timeout ALONE makes contention worse, because a
+    // suite that used to die at 60 s and free its worker now holds it for the full run.
+    maxWorkers: 6,
+    testTimeout: 300_000,
+    hookTimeout: 300_000,
   },
   resolve: {
     // Order matters: most specific aliases first so `@/classes/Foo` resolves to
