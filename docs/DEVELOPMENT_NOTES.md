@@ -15367,3 +15367,27 @@ is free by comparison; the switch is the whole cost. The fix is a per-tiling tex
 renderer, so a `setTiling` for a field already uploaded is a bind and some uniforms — which would also
 stop the CURRENT static bakes re-uploading 1 MB per card on every scroll. Not done here: it is a change to
 the hot path of the interactive /play disk, which is a bigger decision than a thumbnail.
+
+⚑ **Three corrections to the drift, same day, all found by measuring it.** AL: "sometimes there is a jump,
+and they all go in different directions".
+
+**The jump was the shared clock.** A card outside `MAX_ACTIVE` holds its last frame, but the page-wide
+`elapsed` kept running without it, so re-entering the active set snapped it forward by however long it had
+been frozen — and on a scrolling grid cards cross that boundary constantly. Each card now carries its own
+travelled distance, advanced only on the frames it actually paints, so a pause resumes where it stopped.
+Measured on a library card pushed out of the active set: frozen difference 0 over six seconds, and 9.9 on
+resume against a control of 20.5 for the same 400 ms of ordinary motion. Resuming is now quieter than
+moving.
+
+**The scatter was taking each lattice's SHORTEST vector**, which points wherever that lattice points. The
+walk has to stay a lattice vector, so the direction cannot be imposed; what can be done is to pick, among
+the lattice vectors, the one nearest a direction they all share. `driftVector` now ranks i·v1 + j·v2 over
+a small range by angular bucket first and length second, against one target (the window right and slightly
+down, so the tiling slides left and slightly up). Measured across ten cards: all ten agree, at 3.5 px per
+half second.
+
+⚑ **And the drift was running at about an eighth of its configured speed**, which only showed up because
+the direction measurement came back an order of magnitude too small. `tick` measured `dt` from the last
+rAF TICK and then returned early on the paced-out frames, throwing that time away; the interval it wants
+is between PAINTED frames. Two lines, and the reason to write it down: a frame-paced loop that also
+integrates time has to take both numbers from the same clock.
