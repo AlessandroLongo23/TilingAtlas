@@ -13,10 +13,16 @@ export default defineConfig({
     // time inflates several-fold, and whichever one loses the fight trips its timeout. WHICH one fails
     // then varies run to run, which is the signature of contention and not of a slow test.
     //
-    // Two knobs, and the first is the actual fix. Capping the workers at the performance-core count
-    // plus a little keeps the heavy suites from starving each other; the timeout is only the backstop
-    // for when one still gets unlucky. Raising the timeout ALONE makes contention worse, because a
-    // suite that used to die at 60 s and free its worker now holds it for the full run.
+    // Capping the workers at the performance-core count plus a little keeps the heavy suites from
+    // starving each other; the timeout is only the backstop for when one still gets unlucky. Raising
+    // the timeout ALONE makes contention worse, because a suite that used to die at 60 s and free its
+    // worker then holds it for the full run.
+    //
+    // ⚑ The cap stopped being the fix later the same day: f0fc37a made the three expensive files stop
+    // repeating work (figure-trace 348 s -> 175 s, star-general-path caching its compatibility graph),
+    // which removed the contention at its source. Re-measured after that landed, the whole suite runs
+    // 204.6 s capped against 212.9 s uncapped and is green either way, so this is now a 4% margin and
+    // insurance, not a repair. Worth keeping at that price; not worth defending if it ever costs more.
     maxWorkers: 6,
     testTimeout: 300_000,
     hookTimeout: 300_000,

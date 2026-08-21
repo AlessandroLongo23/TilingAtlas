@@ -119,16 +119,17 @@ describe.skipIf(!anyShard)("the levels over every shipped curved shelf", () => {
 		// (2026-08-20), -> 71 when the spherical 3.4.n.4 shelf was folded in and its seven non-duplicate
 		// solids completed J72-J83, -> 105 with the 34 non-convex regular-faced solids, -> 124 with the
 		// k=3 Johnson run, -> 158 when the same k=3 output was re-harvested for the 34 non-convex solids
-		// its convex-only filter had discarded (all 2026-08-21). Every Johnson solid the Euclidean
-		// developer adds is a hybrid: two vertex configurations that are not one multiset reordered,
-		// which is the level. So is every non-convex one, for the same reason.
-		expect(rows.length).toBe(158);
+		// its convex-only filter had discarded, -> 247 with the k=4 run (+14 Johnson, +75 non-convex;
+		// all 2026-08-21). Every Johnson solid the Euclidean developer adds is a hybrid: two vertex
+		// configurations that are not one multiset reordered, which is the level. So is every
+		// non-convex one, for the same reason.
+		expect(rows.length).toBe(247);
 		expect(census(rows.map((r) => ({ level: tilingLevel({ ...r, spherical: {} }) })))).toEqual({
 			regular: 5,
 			archimedean: 23,
 			"pseudo-archimedean": 3,
-			combination: 6,
-			hybrid: 121,
+			combination: 7,
+			hybrid: 209,
 		});
 		const of = (id: string) => {
 			const r = rows.find((x) => x.id === id)!;

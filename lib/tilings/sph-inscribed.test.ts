@@ -60,7 +60,18 @@ describe("the shipped split", () => {
 		expect(measured).toEqual([...SPH_NOT_INSCRIBED].sort());
 	});
 
-	it("separates the two populations by seven orders of magnitude", () => {
+	// ⚑ The gap narrowed at k=4 and both thresholds moved with it. It read 1e-8 against 1e-2 while every
+	// shipped solid came from k <= 3; the k=4 records come out of a deeper dihedral-angle root-find, so
+	// the worst INSCRIBED one now misses its fitted sphere by 3.9e-7 of the radius and the closest
+	// NON-inscribed one by 8.2e-3 (it was past 1e-2). Four and a bit orders of magnitude of clear air
+	// instead of seven — still no borderline case anywhere, and isInscribed's own 1e-4 tolerance still
+	// sits comfortably between the two populations.
+	//
+	// Those numbers are a measurement of the corpus, not a law, and this is where the erosion would show
+	// if it continued. If k=5 narrows it again, move the numbers again and say so; do NOT widen
+	// isInscribed's tolerance to keep a stale assertion passing, because that is the classifier and this
+	// is only its evidence.
+	it("separates the two populations by four orders of magnitude", () => {
 		let worstIn = 0;
 		let bestOut = Infinity;
 		for (const s of SPHERICAL_SOLIDS) {
@@ -70,8 +81,8 @@ describe("the shipped split", () => {
 			if (SPH_NOT_INSCRIBED.has(s.id)) bestOut = Math.min(bestOut, miss);
 			else worstIn = Math.max(worstIn, miss);
 		}
-		expect(worstIn).toBeLessThan(1e-8);
-		expect(bestOut).toBeGreaterThan(1e-2);
+		expect(worstIn).toBeLessThan(1e-6);
+		expect(bestOut).toBeGreaterThan(5e-3);
 	});
 
 	// ONE row for all of them now: the shelf's split is convexity, with k naming uniform against Johnson

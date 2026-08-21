@@ -92,12 +92,17 @@ export function isInscribed(vertices: readonly V3[], tol = 1e-4): boolean {
  * 6.6e-10 of the radius and every one of these misses by more than 1e-2. There is no borderline case.
  *
  * It is a flat list rather than a grouped one because it is not a taxonomy — it is whatever the shipped
- * geometry measures, regenerated from it by the test whenever the shelf grows. It grew from 19 to 37
- * when the k=3 Johnson solids landed (2026-08-21); the "ncx-" shelf is not here at all, since NONE of
+ * geometry measures, regenerated from it by the test whenever the shelf grows. It grew from 19 to 37 when the k=3 Johnson
+ * solids landed and to 51 when the k=4 ones did (both 2026-08-21); the "ncx-" shelf is not here at all, since NONE of
  * those has a circumsphere and hasSphereView answers on the prefix.
  */
 export const SPH_NOT_INSCRIBED: ReadonlySet<string> = new Set([
+	"augmented-hexagonal-prism",
+	"augmented-pentagonal-prism",
 	"augmented-triangular-prism",
+	"augmented-tridiminished-icosahedron",
+	"augmented-truncated-tetrahedron",
+	"biaugmented-pentagonal-prism",
 	"biaugmented-triangular-prism",
 	"biaugmented-truncated-cube",
 	"bilunabirotunda",
@@ -109,6 +114,7 @@ export const SPH_NOT_INSCRIBED: ReadonlySet<string> = new Set([
 	"elongated-pentagonal-orthobicupola",
 	"elongated-pentagonal-orthobirotunda",
 	"elongated-pentagonal-pyramid",
+	"elongated-pentagonal-rotunda",
 	"elongated-square-bipyramid",
 	"elongated-square-pyramid",
 	"elongated-triangular-bipyramid",
@@ -118,20 +124,28 @@ export const SPH_NOT_INSCRIBED: ReadonlySet<string> = new Set([
 	"elongated-triangular-pyramid",
 	"gyrobifastigium",
 	"gyroelongated-pentagonal-bicupola",
+	"gyroelongated-pentagonal-cupola",
 	"gyroelongated-square-bicupola",
 	"gyroelongated-square-bipyramid",
+	"gyroelongated-square-cupola",
 	"gyroelongated-square-pyramid",
 	"gyroelongated-triangular-bicupola",
+	"gyroelongated-triangular-cupola",
+	"metabiaugmented-hexagonal-prism",
 	"parabiaugmented-dodecahedron",
 	"parabiaugmented-hexagonal-prism",
 	"pentagonal-bipyramid",
 	"pentagonal-gyrobicupola",
+	"pentagonal-gyrocupolarotunda",
 	"pentagonal-orthobicupola",
+	"pentagonal-orthocupolarotunda",
 	"snub-disphenoid",
 	"snub-square-antiprism",
+	"sphenocorona",
 	"square-gyrobicupola",
 	"square-orthobicupola",
 	"triangular-bipyramid",
+	"triangular-hebesphenorotunda",
 	"triaugmented-hexagonal-prism",
 	"triaugmented-triangular-prism",
 ]);

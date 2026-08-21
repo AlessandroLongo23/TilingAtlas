@@ -60,8 +60,10 @@ describe("derivation — searched, constructed, or tabulated", () => {
 			.filter((e) => e.derivation === "constructed")
 			.map((e) => e.spherical!.solid)
 			.sort();
-		expect(built.every((s) => /rhombicosidodecahedron|icosahedron/.test(s))).toBe(true);
-		expect(built).toHaveLength(12);
+		expect(built.every((s) => /rhombicosidodecahedron/.test(s))).toBe(true);
+		// 12 until the k=4 run reproduced two of them by search — metabidiminished-icosahedron and
+		// parabigyrate-rhombicosidodecahedron — which is precisely what this field is for.
+		expect(built).toHaveLength(10);
 	});
 });
 
@@ -73,12 +75,13 @@ describe("spherical catalogue ↔ solid registry wiring", () => {
 		expect(unresolved, "catalogue entries with no matching solid").toEqual([]);
 	});
 
-	it("the registry holds 18 classical + 10 prisms/antiprisms + 62 Johnson + 68 non-convex (158 total)", () => {
+	it("the registry holds 18 classical + 10 prisms/antiprisms + 76 Johnson + 143 non-convex (247 total)", () => {
 		// 12 inscribable ones from develop_spherical, plus 19 from develop_euclid (2026-08-20), of which
 		// 14 have no circumsphere and could not have been developed on S2 at any k.
 		// The non-convex shelf went 34 -> 69 when the k=3 develop output was re-harvested (2026-08-21):
 		// the k=3 harvest had kept only the CONVEX records, so 37 reflex ones were computed and dropped.
-		expect(SPHERICAL_SOLIDS.length).toBe(158);
+		// Then k=4 the same day: +14 Johnson (62 -> 76 of the 92) and +75 non-convex (68 -> 143).
+		expect(SPHERICAL_SOLIDS.length).toBe(247);
 		expect(polyhedronForId("snub-square-antiprism")).not.toBeNull();
 		expect(polyhedronForId("gyrobifastigium")).not.toBeNull();
 		expect(polyhedronForId("triangular-orthobicupola")).not.toBeNull();

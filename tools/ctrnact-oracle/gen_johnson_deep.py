@@ -46,6 +46,26 @@ NAMES = {
     (25, 45, 22, ((3, 5), (4, 15), (5, 1), (10, 1))): (20, "Elongated pentagonal cupola", "ELONGATED_PENTAGONAL_CUPOLA"),
     (30, 70, 42, ((3, 30), (4, 10), (5, 2))): (46, "Gyroelongated pentagonal bicupola", "GYROELONGATED_PENTAGONAL_BICUPOLA"),
     (32, 60, 30, ((3, 16), (4, 10), (8, 4))): (67, "Biaugmented truncated cube", "BIAUGMENTED_TRUNCATED_CUBE"),
+
+    # --- k=4 (2026-08-21). Each identification checked against Euler and the handshake 2E = sum(n*k),
+    # and against the parent construction that produces it, not against recall:
+    #   J64 = J63 + a tetrahedron on one triangle (V+1, E+3, F-1+3)
+    #   J52/J53 = pentagonal prism + one/two square pyramids;  J54/J56 = hexagonal prism, the same
+    #   J65 = truncated tetrahedron + triangular cupola J3 on a hexagon (V+3, E+9)
+    #   J22/J23/J24 = triangular/square/pentagonal cupola + the antiprism on its base polygon
+    #   J21 = pentagonal rotunda J6 + a decagonal prism
+    #   J86, J92 are elementary — no parent construction, which is what makes them elementary.
+    (10, 22, 14, ((3, 12), (4, 2))): (86, "Sphenocorona", "SPHENOCORONA"),
+    (10, 18, 10, ((3, 7), (5, 3))): (64, "Augmented tridiminished icosahedron", "AUGMENTED_TRIDIMINISHED_ICOSAHEDRON"),
+    (11, 19, 10, ((3, 4), (4, 4), (5, 2))): (52, "Augmented pentagonal prism", "AUGMENTED_PENTAGONAL_PRISM"),
+    (12, 23, 13, ((3, 8), (4, 3), (5, 2))): (53, "Biaugmented pentagonal prism", "BIAUGMENTED_PENTAGONAL_PRISM"),
+    (13, 22, 11, ((3, 4), (4, 5), (6, 2))): (54, "Augmented hexagonal prism", "AUGMENTED_HEXAGONAL_PRISM"),
+    (15, 27, 14, ((3, 8), (4, 3), (6, 3))): (65, "Augmented truncated tetrahedron", "AUGMENTED_TRUNCATED_TETRAHEDRON"),
+    (15, 33, 20, ((3, 16), (4, 3), (6, 1))): (22, "Gyroelongated triangular cupola", "GYROELONGATED_TRIANGULAR_CUPOLA"),
+    (18, 36, 20, ((3, 13), (4, 3), (5, 3), (6, 1))): (92, "Triangular hebesphenorotunda", "TRIANGULAR_HEBESPHENOROTUNDA"),
+    (20, 44, 26, ((3, 20), (4, 5), (8, 1))): (23, "Gyroelongated square cupola", "GYROELONGATED_SQUARE_CUPOLA"),
+    (25, 55, 32, ((3, 25), (4, 5), (5, 1), (10, 1))): (24, "Gyroelongated pentagonal cupola", "GYROELONGATED_PENTAGONAL_CUPOLA"),
+    (30, 55, 27, ((3, 10), (4, 10), (5, 6), (10, 1))): (21, "Elongated pentagonal rotunda", "ELONGATED_PENTAGONAL_ROTUNDA"),
 }
 PAIRS = {
     (40, 80, 42, ((3, 20), (4, 10), (5, 12))): ("mirror",
@@ -57,7 +77,34 @@ PAIRS = {
     (22, 40, 20, ((3, 10), (5, 10))): ("apexes",
         (59, "Parabiaugmented dodecahedron", "PARABIAUGMENTED_DODECAHEDRON"),
         (60, "Metabiaugmented dodecahedron", "METABIAUGMENTED_DODECAHEDRON")),
+    # ⚑ The mirror test does NOT apply here, and reaching for it would have been the natural mistake.
+    # A CUPOLAROTUNDA's two halves are a cupola and a rotunda — never congruent — so NEITHER member has
+    # an equatorial mirror and the test that separates J28/J29 and J42/J43 says the same thing about both.
+    # What separates them is what "ortho" means: the cupola's squares line up with the rotunda's
+    # pentagons. A square in a pentagonal cupola has one edge to the cupola's own top pentagon, two to
+    # cupola triangles, and one across the equator — so ortho gives it a SECOND pentagon neighbour and
+    # gyro gives it a triangle. Counted on edges: 10 square-pentagon edges for ortho, 5 for gyro.
+    # Measured on both k=4 records, with a second invariant agreeing (ortho has 5 triangle-triangle
+    # edges at the equator, gyro has none), which is why this is a measurement and not a guess.
+    (25, 50, 27, ((3, 15), (4, 5), (5, 7))): ("cupolarotunda",
+        (32, "Pentagonal orthocupolarotunda", "PENTAGONAL_ORTHOCUPOLAROTUNDA"),
+        (33, "Pentagonal gyrocupolarotunda", "PENTAGONAL_GYROCUPOLAROTUNDA")),
 }
+
+
+def square_pentagon_edges(faces):
+    """How many edges have a square on one side and a pentagon on the other.
+
+    Separates a cupolarotunda's ortho form from its gyro form. "Ortho" means the cupola's squares line
+    up with the rotunda's pentagons, so each square gains a pentagon across the equator on top of the
+    one it already has at the cupola's own apex: 10 such edges against gyro's 5. Purely combinatorial —
+    no coordinates, no tolerance, nothing to tune."""
+    import collections as _c
+    seen = _c.defaultdict(list)
+    for f in faces:
+        for a in range(len(f)):
+            seen[tuple(sorted((f[a], f[(a + 1) % len(f)])))].append(len(f))
+    return sum(1 for v in seen.values() if sorted(v) == [4, 5])
 
 
 def stats(r):
@@ -165,12 +212,16 @@ def main():
             how, first, second = PAIRS[sig]
             if how == "mirror":
                 pick = first if has_equatorial_mirror(V, F) else second
-            else:
+            elif how == "cupolarotunda":
+                pick = first if square_pentagon_edges(F) == 10 else second
+            elif how == "apexes":
                 ang = apex_angle(V, F)
                 if ang is None:
                     unnamed.append((r, sig, "could not find two apexes"))
                     continue
                 pick = first if ang > 170 else second
+            else:
+                raise SystemExit("unknown twin test %r for %r" % (how, sig))
             if pick[0] in twin_used:
                 unnamed.append((r, sig, "twin %d already claimed" % pick[0]))
                 continue
@@ -204,8 +255,8 @@ def main():
                 "vertexConfig": r["vertexConfig"], "V": sig[0], "E": sig[1], "F": sig[2],
                 "census": " + ".join("%d{%d}" % (c, n) for n, c in sig[3])}
                for j, name, ident, r, sig in out],
-              open(os.path.join(HERE, "johnson-k3-rows.json"), "w"), indent=1)
-    print("wrote johnson-k3.ts.part (%d solids)" % len(out))
+              open(os.path.join(HERE, "johnson-deep-rows.json"), "w"), indent=1)
+    print("wrote johnson-deep.ts.part (%d solids)" % len(out))
 
 
 if __name__ == "__main__":
