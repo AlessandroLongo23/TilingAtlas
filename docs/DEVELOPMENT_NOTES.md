@@ -15391,3 +15391,49 @@ the direction measurement came back an order of magnitude too small. `tick` meas
 rAF TICK and then returned early on the paced-out frames, throwing that time away; the interval it wants
 is between PAINTED frames. Two lines, and the reason to write it down: a frame-paced loop that also
 integrates time has to take both numbers from the same clock.
+
+## 2026-08-21 (eighth) — develop is ~120x faster, and every record is unchanged
+
+Long form: `experiments/results/develop-optimisation-2026-08-21.md`.
+
+AL: *"bring it down to the minimum possible: when you think it's enough, keep pushing."* k=4 develop
+**3065 s → 19–30 s**, k=3 **836 s → 5 s**, and on one 88-block shard single-process **531.9 s → 3.9 s**.
+k=1, 2, 3 and 4 all re-develop to the SAME solids — 111 records and 104 congruence classes at k=4, zero
+lost, zero gained — and all three oracle gates still pass.
+
+**Where the time was.** 12 of 88 blocks were 94% of a shard, all failing with "no dihedral solution":
+the blocks that stall corner propagation and fall back to `solve_joint`, which runs a 3000-start
+multistart Newton per branch. One block called `_mul` eleven million times. Trivial arithmetic, three
+million Python dispatches.
+
+Five changes, each measured on the full k=4 run: the multistart became **one array instead of a loop**
+(3065 → 210 s, same seeds and same stall rule, with the dedup still in start order); the Jacobian became
+**analytic** via dM/dθⱼ = Pⱼ·dGⱼ·Sⱼ, since forward differences walked the chain twelve times per step to
+learn what one walk knows (210 → 60 s); the layout became **(3,3,N)** so each matrix entry is a
+contiguous vector and the product nine fused multiply-accumulates instead of N tiny 3×3 GEMMs (60 →
+30 s); pinv's per-candidate SVD became **normal equations with Cholesky**; and the parallel split became
+a **work queue** (30 → 19–25 s).
+
+⚑ **Two things I checked before changing and did not change.** The 3000-start budget looked like a
+lottery at ten unknowns — it is not: measured across k=2, 3 and 4 the joint solve finds roots at every
+unknown count up to 12, and 82 of them at 16. Cutting it was the one change that would have cost solids.
+And the normal equations square the condition number, so a rank-deficient Jacobian gives a step lstsq
+would have kept small; a nan step has a nan norm, so the trust radius never fires and the candidate walks
+off to nan. That one is guarded by a fallback, not ignored.
+
+⚑ **Vertex batching was tried and REVERTED**, and the reason is worth keeping. Stacking a block's five
+links into (V,3,3,nmax) buffers cuts the numpy call count fivefold, which is the right instinct for a
+dispatch-bound loop. It measured 5.1 s against 3.9 s, because it also multiplies the working set by V:
+one vertex's buffers are ~3.5 MB and stay in L2 across a Newton run, five vertices' are 30 MB and do not.
+Dispatch was not the binding constraint; cache was. Two further micro-optimisations also measured SLOWER
+than the code already there (`max(abs(R))` beats `max(max,-min)`; six strided `+=` beat one batched), and
+copying JᵀJ contiguous is 2× worse than letting BLAS take the transpose as a flag.
+
+⚑ **numpy on Apple's Accelerate reports FP flags it should not.** `Jt @ J` claimed divide-by-zero and
+overflow on values bounded by 17; verified false three ways, including reproducing it on pure random
+data. Accelerate sets the flags from masked SIMD lanes and clearing the register first does not help.
+Suppressed narrowly, with the value check kept as the real guard.
+
+**Where the floor is.** 831 of 1169 blocks now finish under 0.1 s and the worst is 1.1 s; 76–89 s of
+single-process CPU against ~19–25 s wall is about 4× effective parallelism on a 4P+6E machine. Further
+gains need C, or changing what is computed — and what is computed is exactly what must not change.

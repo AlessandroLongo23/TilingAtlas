@@ -2789,3 +2789,11 @@ now, with the shape toggle, studio look, projection, hue ring and stroke shared,
 carved shader and the base grid kept where a renderer reads them. Four dead controls went: the Islamic gate
 was keyed on tile class and admitted four shelves whose canvas has no Islamic path, so it is keyed on the
 SURFACE now. Islamic vs shape is disabled with its reason instead of silently ignored. NOTES 2026-08-21.
+
+## 2026-08-21 (eighth) — develop ~120x faster, and the same solids exactly — CC
+
+k=4 develop **3065 s → 19–30 s**, k=3 **836 s → 5 s**, one shard single-process **531.9 s → 3.9 s**. All
+of k=1..4 re-develop to the same solids and the three oracle gates pass. Batched multistart, analytic
+Jacobian, (3,3,N) layout, Cholesky, work queue. ⚑ The 3000-start budget was NOT cut — measured, it finds
+roots at every unknown count up to 12. ⚑ Vertex batching measured slower and was reverted: cache, not
+dispatch. Commits a8874e0, b398251. NOTES (eighth); `experiments/results/develop-optimisation-2026-08-21.md`.
