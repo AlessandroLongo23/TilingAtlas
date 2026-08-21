@@ -35,11 +35,11 @@ def main():
         if logf:
             logf.write(line + "\n"); logf.flush()
 
-    files = sorted(glob.glob(os.path.join(args.pruned, "eupruned_*.txt")),
-                   key=lambda p: -os.path.getsize(p))          # biggest first: better load balance
+    files = glob.glob(os.path.join(args.pruned, "eupruned_*.txt"))
     if not files:
         sys.exit("no pruned files under " + args.pruned)
-    blocks = sum(1 for f in files for l in open(f) if l.startswith("TES file:"))
+    per_file = {f: sum(1 for l in open(f) if l.startswith("TES file:")) for f in files}
+    blocks = sum(per_file.values())
     # Scratch keyed to the OUTPUT FILE, not its directory. Two runs sharing a directory used to share
     # this one, and the second run silently emptied the first's shard dirs and truncated its progress
     # files: the workers already hold their blocks in memory so the run survives, but the per-worker
@@ -53,9 +53,26 @@ def main():
         for f in os.listdir(d):
             os.unlink(os.path.join(d, f))
         shards.append(d)
-    for i, f in enumerate(files):
-        os.symlink(os.path.abspath(f), os.path.join(shards[i % args.workers], os.path.basename(f)))
-    log("%d files / %d blocks over %d workers" % (len(files), blocks, args.workers))
+    # LPT (longest-processing-time-first): biggest file to the emptiest worker, by BLOCK COUNT.
+    #
+    # It was round-robin over files sorted by SIZE, and size is a poor proxy for work. The k=4 run had
+    # five of its eight workers idle for the last twenty minutes while three ground on: one worker drew
+    # 351 blocks and another 5. Measured on that same shard, 1798 blocks over 8 workers —
+    #   size round-robin  [410 274 241 188 185 171 170 159]   max 410
+    #   LPT on blocks     [302 277 277 219 195 182 173 173]   max 302
+    # a 1.36x better makespan bound, and 302 is close to the floor: the largest single file holds 277
+    # blocks and a file is never split, so no assignment can beat 277.
+    #
+    # Static assignment cannot be perfect anyway — block costs vary wildly, since one that fails on "no
+    # dihedral solution" is near-free and one that realizes twice is not — but counting the right thing
+    # beats counting file bytes.
+    load = [0] * args.workers
+    for f in sorted(files, key=lambda p: -per_file[p]):
+        w = load.index(min(load))
+        load[w] += per_file[f]
+        os.symlink(os.path.abspath(f), os.path.join(shards[w], os.path.basename(f)))
+    log("%d files / %d blocks over %d workers (per-worker blocks: %s)"
+        % (len(files), blocks, args.workers, " ".join(str(n) for n in load)))
 
     procs = []
     t0 = time.time()
