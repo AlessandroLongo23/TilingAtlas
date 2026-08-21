@@ -15323,3 +15323,47 @@ shipping.
 ⚑ Left divergent on purpose: `/freedraw` holds its own `useState<IcoMode>` and its own two buttons for the
 same sphere/polyhedron choice. Pointing it at the store would make browsing that page change what /play
 shows, which is a product decision, not a refactor.
+
+## 2026-08-21 — The flat thumbnails drift
+
+AL, after the spherical shelves gained their turntable: the Euclidean and hyperbolic cards should move
+too, "as if you were slooowly dragging to move the tiling". The Euclidean half landed; the hyperbolic half
+is measured and blocked on a decision, below.
+
+**The motion costs one blit per card per frame, and nothing else.** Re-rendering a tiling per frame is not
+affordable — a dense card is hundreds of 2D polygon fills and a grid shows fifty — so nothing is
+re-rendered. `lib/render/driftThumbStage.ts` draws the tiling ONCE into an offscreen sized the slot plus
+one period, and each frame blits a sub-rectangle of it at a moving offset.
+
+⚑ **It loops exactly because the offset walks a LATTICE VECTOR.** Translating a periodic tiling by one of
+its periods reproduces it pixel for pixel, so the window at offset P holds the same image as the window at
+offset 0: the loop closes with no fade and no jump. Verified in the browser rather than argued — sampling
+one library card every 250 ms for 35 s, the mean per-pixel difference against the opening frame peaks at
+54.8/255 and returns to **0.93 at t = 8.25 s**, which is the resampling softness of a fractional source
+offset and not a misalignment. The coverage the argument needs is real: `expandToViewport`'s `maxRadius`
+of 200 is a ring count, and a thumbnail needs about twenty, so the enlarged rect is filled completely.
+
+`driftVector` picks the shortest of v1, v2, v1±v2, which is where a shortest vector of a 2D lattice always
+lives, because that vector sets the offscreen's size. ⚑ It is returned SIGNED: the only other
+representative is its negation, which flips both components at once, so a period pointing up and to the
+right cannot be made positive component-wise. The window starts in the corner the walk moves away from
+instead.
+
+Speed is fixed in PIXELS per second, not in periods per second — tie it to the period and a small cell
+races while a big one crawls, which reads as the grid being out of step with itself. The rest is the
+sphere stage's discipline: one clock, `MAX_ACTIVE` chosen by viewport proximity, a per-card phase so the
+grid does not slide in lockstep, build on intersection and release on scroll-away, and reduced motion gets
+one still frame instead of a still one repainted forever.
+
+⚑ Drift is opt-IN, by passing `driftKey`. `TilingThumbnail` draws in a dozen places and most are not a
+catalogue grid — a squaring inset, a release-note preview, a landing mosaic — where a still frame is
+right. Only the /play sidebar grid and the /library cards ask for it.
+
+**The hyperbolic half is blocked on the disk renderer, and here is the number.** All three disk shelves
+prepare at `fieldRes: 512`, and `hyperbolicPerPixelGL.setTiling` re-uploads that field as a `texImage2D`
+every call: 1 MB. Animating means switching tiling once per card per frame, so fourteen cards at 22 fps is
+**308 MB/s of texture upload**, which is not a thing to ship. The draw itself is one full-screen pass and
+is free by comparison; the switch is the whole cost. The fix is a per-tiling texture cache in that
+renderer, so a `setTiling` for a field already uploaded is a bind and some uniforms — which would also
+stop the CURRENT static bakes re-uploading 1 MB per card on every scroll. Not done here: it is a change to
+the hot path of the interactive /play disk, which is a bigger decision than a thumbnail.

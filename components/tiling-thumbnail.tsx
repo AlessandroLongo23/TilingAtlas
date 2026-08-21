@@ -11,6 +11,7 @@ import {
 	renderTilingToContext,
 } from "@/lib/utils/renderTiling";
 import { enqueueThumbnailRender } from "@/lib/render/thumbnailQueue";
+import { driftPhase, driftVector, mountDriftingThumb } from "@/lib/render/driftThumbStage";
 import { ThumbnailSkeleton } from "@/components/ui/thumbnail-skeleton";
 import { cn } from "@/lib/utils/cn";
 
@@ -44,6 +45,17 @@ interface TilingThumbnailProps {
 	periodsAcross?: number;
 	/** Draw a unit-edge ruler in the bottom-right corner. */
 	scaleBar?: boolean;
+	/**
+	 * Opt this card into the slow pan, and give it a stable id — the canonical key is the obvious one.
+	 *
+	 * The id is not decoration: it offsets this card's phase within the loop, and without one every card on
+	 * screen starts together, which reads as the page sliding instead of as a shelf of tilings.
+	 *
+	 * Opt-IN, not opt-out, because this component draws in a dozen places and most of them are not a
+	 * catalogue grid — a squaring inset, a release-note preview, a landing mosaic. A still frame is right
+	 * for those, and making them prove it is the wrong default.
+	 */
+	driftKey?: string;
 }
 
 /**
@@ -75,6 +87,7 @@ export function TilingThumbnail({
 	fit,
 	periodsAcross,
 	scaleBar = false,
+	driftKey,
 }: TilingThumbnailProps) {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const [hasError, setHasError] = useState(false);
@@ -88,9 +101,79 @@ export function TilingThumbnail({
 	// deliberate exact-colors choice (vs a cheap CSS hue-rotate approximation); revisit if it janks.
 	const hueOffset = useConfiguration((s) => s.hueOffset);
 
+	// A resize has to rebuild the drifting offscreen (its size is the slot plus one period), and the stage
+	// builds once on intersection. Bumping this re-runs the effect, which remounts it at the new size.
+	const [sizeNonce, setSizeNonce] = useState(0);
+
+	// ── THE DRIFTING PATH: a repeating tiling, panned slowly across its own lattice ──────────────────
+	//
+	// Only a translational cell can drift: the pan loops by walking one lattice VECTOR, which is what
+	// makes it seamless, and a lone figure (`fit` mode) has no lattice and nothing to continue into.
+	// Everything else falls through to the one-shot draw below, unchanged.
+	const drifts = !!translationalCell && fit == null && !!driftKey;
+	useEffect(() => {
+		const canvas = canvasRef.current;
+		if (!canvas || !drifts || !translationalCell) return;
+		void sizeNonce; // a resize remounts the stage entry at the new slot size
+
+		const unmount = mountDriftingThumb({
+			canvas,
+			phase: driftPhase(driftKey ?? ""),
+			onReady: () => setDrawn(true),
+			onFail: () => setHasError(true),
+			build: (wDev, hDev, dpr) => {
+				const W = wDev / dpr;
+				const H = hDev / dpr;
+				const base = parseBaseCell(translationalCell);
+				if (!base) return null;
+				const edgePx =
+					(periodsAcross != null ? latticePxPerEdge(translationalCell, W, H, periodsAcross) : null) ??
+					pxPerEdge;
+				// Null where the period is unusable — too short to read, or long enough that the offscreen
+				// would dwarf the card. A zero step paints one still frame through the same path.
+				const step = driftVector(base.basis, edgePx / base.medianEdge, wDev, hDev) ?? { dx: 0, dy: 0 };
+				const offW = W + Math.abs(step.dx) / dpr;
+				const offH = H + Math.abs(step.dy) / dpr;
+				const off = document.createElement("canvas");
+				off.width = Math.ceil(offW * dpr);
+				off.height = Math.ceil(offH * dpr);
+				const octx = off.getContext("2d");
+				if (!octx) return null;
+				octx.setTransform(dpr, 0, 0, dpr, 0, 0);
+				const ok = renderTilingToContext(octx, offW, offH, {
+					translationalCell,
+					pxPerEdge: edgePx,
+					hueOffsetDeg: hueOffset,
+					// Transparent, as in the still path: the slot's own bg-surface-raised shows through, so a
+					// theme flip recolours the backdrop with no redraw.
+					background: null,
+				});
+				if (!ok) return null;
+				setUnit((prev) => (prev && prev.px === edgePx && prev.boxW === W ? prev : { px: edgePx, boxW: W }));
+				return { image: off, dx: step.dx, dy: step.dy };
+			},
+		});
+
+		let seen = false;
+		const ro = new ResizeObserver(() => {
+			// The first callback lands the moment we observe, at the size we are already building for.
+			if (!seen) {
+				seen = true;
+				return;
+			}
+			setSizeNonce((n) => n + 1);
+		});
+		ro.observe(canvas);
+		return () => {
+			ro.disconnect();
+			unmount();
+		};
+	}, [drifts, translationalCell, pxPerEdge, periodsAcross, hueOffset, driftKey, sizeNonce]);
+
 	useEffect(() => {
 		const canvas = canvasRef.current;
 		if (!canvas) return;
+		if (drifts) return; // the stage above owns this canvas
 		if (!translationalCell && !encodedTiling && !rawPolygons) return;
 
 		let disposed = false;
@@ -187,7 +270,7 @@ export function TilingThumbnail({
 			ro.disconnect();
 			cancelJob?.();
 		};
-	}, [encodedTiling, rawPolygons, translationalCell, pxPerEdge, fit, periodsAcross, hueOffset]);
+	}, [drifts, encodedTiling, rawPolygons, translationalCell, pxPerEdge, fit, periodsAcross, hueOffset]);
 
 	if (hasError) {
 		return (
