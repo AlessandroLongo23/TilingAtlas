@@ -10,6 +10,15 @@ const ATLAS_DIRS = [
   "spherical-poly", "spherical-star", "tri45", "vertex-configs",
 ];
 
+// In DEVELOPMENT the hour of freshness below is not a saving, it is a bug. Rebuilding a corpus is the
+// normal thing to do here, and a browser holding the previous shard for an hour reports the rebuild as
+// not having happened: on 2026-08-21 a shelf that had grown from 71 to 90 solids and gained a 34-record
+// sibling still read 71 and no sibling in an open tab, and the data, the code and the dev server were
+// all correct. The latency argument does not survive the move to localhost either — the 107 ms below
+// was measured over a network, and a conditional request to 127.0.0.1 is about 1 ms. So: long cache in
+// production, no cache in dev, where correctness is the only thing worth optimising.
+const DEV = process.env.NODE_ENV === "development";
+
 const ATLAS_CACHE = [
   {
     // An hour of freshness, then revalidate. Next's default for public/ is
@@ -21,7 +30,7 @@ const ATLAS_CACHE = [
     // withdrawn shelf with no way to correct it. Threading a build hash through the *ShardUrl
     // builders is the real fix and belongs with the browse-index work.
     key: "Cache-Control",
-    value: "public, max-age=3600, must-revalidate",
+    value: DEV ? "no-cache" : "public, max-age=3600, must-revalidate",
   },
 ];
 

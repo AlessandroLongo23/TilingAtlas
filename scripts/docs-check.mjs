@@ -84,7 +84,10 @@ if (existsSync(syncF) && (!STAGED || stagedFiles.includes('docs/SYNC.md'))) {
     // was invisible and its lines were charged to the entry ABOVE it — a 6-line entry reported as 31
     // because the four that followed it were suffixed. Same failure as the 2026-07-27 one directly
     // above: the check kept running and kept measuring the wrong thing. (Found 2026-08-02.)
-    if (/^(\*\*|#{2,4} )\d{4}-\d{2}-\d{2}( \(\d+\))? — /.test(l)) { flush(); cur = l.replace(/^#+ |\*\*/g, ''); count = 1; }
+    // …and a third time, 2026-08-21: the suffix is not always a NUMBER. "(later)" and "(third)" were
+    // written on one day and every line of both was charged to the entry above them, which reported as
+    // 19. The parenthetical is now anything at all, which is what the two fixes above should have done.
+    if (/^(\*\*|#{2,4} )\d{4}-\d{2}-\d{2}( \([^)]*\))? — /.test(l)) { flush(); cur = l.replace(/^#+ |\*\*/g, ''); count = 1; }
     else if (cur) { if (l.trim() === '---') { flush(); cur = null; } else if (l.trim()) count++; }
   }
   flush();
