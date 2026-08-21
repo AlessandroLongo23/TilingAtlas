@@ -35,6 +35,7 @@ namespace fs = std::filesystem;
 // bijective recoloring of the polygon size, so partitions and verdicts are unchanged.
 struct Sol {
 	std::vector<int16_t> rneig, lneig, lvert, mirro, glue;
+	std::vector<int16_t> fam;   // vertex-figure id per dart; see Graph::fam in ctrnact_decode.hpp
 };
 static std::vector<Sol> sols;                 // every kept solution
 static std::vector<std::string> siglist;      // distinct signatures
@@ -65,7 +66,7 @@ static size_t storeTotalBytes = 0, storeTotalPeak = 0, residentPeak = 0;
 
 static inline size_t solBytes(const Sol& s) {
 	return (s.rneig.size() + s.lneig.size() + s.lvert.size()
-	        + s.mirro.size() + s.glue.size()) * sizeof(int16_t);
+	        + s.mirro.size() + s.glue.size() + s.fam.size()) * sizeof(int16_t);
 }
 
 // Append every still-resident solution to the spill file and free its vectors.
@@ -89,13 +90,15 @@ static void spillResident() {
 		std::fwrite(s.lvert.data(), sizeof(int16_t), le, spillF);
 		std::fwrite(s.mirro.data(), sizeof(int16_t), le, spillF);
 		std::fwrite(s.glue.data(), sizeof(int16_t), le, spillF);
+		std::fwrite(s.fam.data(), sizeof(int16_t), le, spillF);
 		solOff[i] = off;
-		off += (long long)sizeof(le) + 5LL * le * (long long)sizeof(int16_t);
+		off += (long long)sizeof(le) + 6LL * le * (long long)sizeof(int16_t);
 		std::vector<int16_t>().swap(s.rneig);
 		std::vector<int16_t>().swap(s.lneig);
 		std::vector<int16_t>().swap(s.lvert);
 		std::vector<int16_t>().swap(s.mirro);
 		std::vector<int16_t>().swap(s.glue);
+		std::vector<int16_t>().swap(s.fam);
 		spillWrites++;
 	}
 	std::fflush(spillF);
@@ -122,6 +125,7 @@ static const Sol& solAt(int idx) {
 		}
 	};
 	rd(scratch.rneig); rd(scratch.lneig); rd(scratch.lvert); rd(scratch.mirro); rd(scratch.glue);
+	rd(scratch.fam);
 	spillReads++;
 	return scratch;
 }
@@ -158,6 +162,7 @@ static bool simplify(const Graph& g) {
 					int j = (w << 6) + __builtin_ctzll(bits);
 					bits &= bits - 1;
 					if (g.cls[i] != g.cls[j]
+					    || g.fam[i] != g.fam[j]
 					    || !test(j, i)
 					    || !test(g.mirro[i], g.mirro[j])
 					    || !test(g.glue[i], g.glue[j])
@@ -188,12 +193,14 @@ static bool comparesolutions(const Graph& x, int solIdx) {
 	int le = (int)x.rneig.size();
 	if ((int)s.rneig.size() != le) return false;   // same signature ⇒ same le; guard anyway
 	int n = 2 * le, nw = (n + 63) >> 6;
-	static std::vector<int> rn, ln, mi, lv, gl;
-	rn.resize(n); ln.resize(n); mi.resize(n); lv.resize(n); gl.resize(n);
+	static std::vector<int> rn, ln, mi, lv, gl, fm;
+	rn.resize(n); ln.resize(n); mi.resize(n); lv.resize(n); gl.resize(n); fm.resize(n);
 	for (int i = 0; i < le; i++) {
 		rn[i] = x.rneig[i]; ln[i] = x.lneig[i]; mi[i] = x.mirro[i]; lv[i] = x.cls[i]; gl[i] = x.glue[i];
+		fm[i] = x.fam[i];
 		rn[le + i] = le + s.rneig[i]; ln[le + i] = le + s.lneig[i];
 		mi[le + i] = le + s.mirro[i]; lv[le + i] = s.lvert[i]; gl[le + i] = le + s.glue[i];
+		fm[le + i] = s.fam[i];
 	}
 	static std::vector<uint64_t> A, snap;
 	A.assign((size_t)n * nw, 0);
@@ -223,6 +230,7 @@ static bool comparesolutions(const Graph& x, int solIdx) {
 					int j = (w << 6) + __builtin_ctzll(bits);
 					bits &= bits - 1;
 					if (lv[i] != lv[j]
+					    || fm[i] != fm[j]
 					    || !test(j, i)
 					    || !test(mi[i], mi[j])
 					    || !test(gl[i], gl[j])
@@ -254,7 +262,8 @@ static inline uint64_t mix(uint64_t h, uint64_t x) {
 static uint64_t fingerprint(const Graph& g) {
 	int le = (int)g.rneig.size();
 	std::vector<uint64_t> col(le), nc(le);
-	for (int i = 0; i < le; i++) col[i] = 1469598103934665603ULL ^ (uint64_t)(g.cls[i] + 1);
+	for (int i = 0; i < le; i++)
+		col[i] = mix(1469598103934665603ULL ^ (uint64_t)(g.cls[i] + 1), (uint64_t)(g.fam[i] + 1));
 	for (int r = 0; r < 3; r++) {
 		for (int i = 0; i < le; i++) {
 			uint64_t h = col[i] * 1099511628211ULL;
@@ -289,7 +298,8 @@ static bool compareToSeen(const Graph& g, const std::string& key) {
 static std::vector<int16_t> narrow(const std::vector<int>& v) { return {v.begin(), v.end()}; }
 
 static void addsolution(const Graph& g, const std::string& key) {
-	Sol s{ narrow(g.rneig), narrow(g.lneig), narrow(g.cls), narrow(g.mirro), narrow(g.glue) };
+	Sol s{ narrow(g.rneig), narrow(g.lneig), narrow(g.cls), narrow(g.mirro), narrow(g.glue),
+	       narrow(g.fam) };
 	size_t b = solBytes(s);
 	solsResidentBytes += b;
 	storeTotalBytes += b;

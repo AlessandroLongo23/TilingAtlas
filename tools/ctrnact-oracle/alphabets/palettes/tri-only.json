@@ -1,0 +1,15 @@
+{
+  "name": "tri-only",
+  "D": 120,
+  "closure": "positive-defect",
+  "maxValence": 5,
+  "comment": "Equilateral triangles alone, D=120: the alphabet with NO information in its corner classes, which is why it is a gate (see `make check-deltahedra`). Every dart of every configuration carries corner class 0, so any step that reasons about a block from its corner classes is blind here and only here. Two did: the solver's minimality refinement and the pruner's isomorphism test were both seeded on corner class alone, and between them they deleted every multi-orbit all-triangle map ever built \u2014 the whole 2-orbit deltahedron family. The catalogue this palette must produce is a theorem, not a measurement: the convex deltahedra are exactly eight, with 4, 6, 8, 10, 12, 14, 16 and 20 faces, and none with 18. maxValence 5 because 6 equilateral triangles are flat, which positive-defect closure rejects.",
+  "tiles": [
+    {
+      "kind": "regular",
+      "n": 3,
+      "name": "3",
+      "famchar": "3"
+    }
+  ]
+}

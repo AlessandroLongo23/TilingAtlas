@@ -932,6 +932,9 @@ int writesolution(configuration const& conf) {
 //     would change what gets emitted and therefore change downstream work, contaminating the number.
 static long long simplify_calls = 0, simplify_true = 0;
 static const bool dbl_simplify = std::getenv("EU_DOUBLE_SIMPLIFY") != nullptr;
+// EU_WL_ONLY=1 restores the pre-2026-08-20 seed colour (corner class alone). Kept as the A/B switch
+// that produced the numbers in the note below; it is an INCOMPLETE mode, not a speed dial.
+static const bool wl_only = std::getenv("EU_WL_ONLY") != nullptr;
 bool simplify_inner(configuration const& conf);
 bool simplify(configuration const& conf) {
     simplify_calls++;
@@ -940,10 +943,76 @@ bool simplify(configuration const& conf) {
     if (r) simplify_true++;
     return r;
 }
+
+// MINIMALITY, AND THE INVARIANT ITS SEED COLOUR WAS MISSING (2026-08-20).
+//
+// simplify_inner is not a heuristic isomorphism test, it is Moore partition refinement: it computes
+// the COARSEST congruence on the darts that refines the seed colouring and commutes with rneig,
+// lneig, mirro and glue, and accepts the closure iff that congruence is trivial. That is exactly the
+// right question. A configuration is C = T/H for the tiling T and a subgroup H of its symmetry
+// group; it is a record only when H is the WHOLE group, i.e. when C admits no proper quotient; and
+// the proper quotients of a connected map are precisely its nontrivial congruences.
+//
+// The seed colour was wrong. It was the CORNER CLASS alone (plus the edge type where the palette has
+// them), and a covering C -> C' preserves more than that: a dart of C is an H-orbit of darts of T, it
+// sits at one vertex of T, and its image sits at the SAME vertex — so the whole vertex figure, the
+// full cyclic word of the vertex, is an invariant of the covering and no congruence may merge across
+// it. Corner class does not imply vertex figure. Over a single-tile equilateral alphabet it implies
+// nothing at all: every dart of every configuration carries corner class 0.
+//
+// The cost of the omission was a family of solids. Triangles only, k <= 5: the solver builds 308
+// closed configurations and the old seed passes 3 (tetrahedron, octahedron, icosahedron). The
+// triangular bipyramid is built — v0 = (3,3,3)S3, v1 = (3,3,3,3)S2a, glue (0 0')(1'), three darts —
+// and rejected, because with one seed colour the whole three-dart set is a congruence, whose quotient
+// is the one-dart tetrahedron block. That "quotient" merges a 3-valent vertex with a 4-valent one and
+// is not a covering of anything. With the vertex figure in the seed the partition starts as
+// {0} {1,2}, splits on the glue image, discretizes, and the bipyramid is emitted. Same for the rest
+// of the 2-orbit deltahedra: J12, J13, J17, J51, J84.
+//
+// The family id is the vertex figure, read off the alphabet symbol: gen_alphabet writes
+// "(" + word + ")" + optional "|edges|" + variant, cyclic_reps has already canonicalized the word up
+// to rotation and reflection, and the variant is exactly the part that a fold is allowed to change
+// ((3,3,3)F, A, R3 and S3 are four foldings of one figure and share the prefix "(3,3,3)"). Two
+// distinct figures can only collide here if two corner classes share a display name, which makes the
+// seed COARSER than the truth — the safe direction, since a coarser seed accepts strictly less.
+//
+// Strictly a loosening: the new seed refines the old one, a finer seed gives a finer congruence, and
+// every closure the old test accepted had the discrete congruence already. `make check-regular` is
+// byte-identical (measured) and the star gate is unchanged.
+static std::vector<int> TYPE_FAM;      // vertex-type -> vertex-figure id
+static int NFAM = 0;
+static void build_type_families() {
+    std::vector<std::string> keys;
+    TYPE_FAM.assign(mainlist.size(), -1);
+    for (size_t t = 0; t < mainlist.size(); t++) {
+        const std::string& sym = mainlist[t].symbol;
+        size_t cut = sym.find(')');
+        if (cut == std::string::npos) cut = sym.size() - 1;         // no word: whole symbol is the key
+        else if (cut + 1 < sym.size() && sym[cut + 1] == '|') {     // free-edge palettes: keep |edges|
+            size_t e = sym.find('|', cut + 2);
+            if (e != std::string::npos) cut = e;
+        }
+        const std::string key = sym.substr(0, cut + 1);
+        int id = -1;
+        for (size_t i = 0; i < keys.size(); i++) if (keys[i] == key) { id = (int)i; break; }
+        if (id < 0) { id = (int)keys.size(); keys.push_back(key); }
+        TYPE_FAM[t] = id;
+    }
+    NFAM = (int)keys.size();
+    std::cerr << "vertex figures: " << NFAM << " over " << mainlist.size() << " types\n";
+}
+
 bool simplify_inner(configuration const& conf) {
     int le = conf.rneig.size();
 
     std::vector<int> eq_class(le, 0);
+    // dart -> vertex figure. Darts are appended one vertex at a time, in vertype order.
+    std::vector<int> fam(le, 0);
+    for (size_t v = 0, d = 0; v < conf.vertype.size(); v++) {
+        const int f = TYPE_FAM[conf.vertype[v]];
+        for (size_t q = 0; q < mainlist[conf.vertype[v]].rneig.size() && d < (size_t)le; q++)
+            fam[d++] = f;
+    }
 
     int num_eq_class = 1;
 
@@ -960,7 +1029,8 @@ bool simplify_inner(configuration const& conf) {
             // class and only its edge type differs, so colouring by class alone makes the refinement
             // homogeneous, it never discretizes, and every closure is rejected as non-rigid. Off
             // unless the alphabet declares edge types, so every equilateral palette is untouched.
-            data[i].first[0] = EDGE_TYPED ? conf.lvert[i] * ETSPAN + conf.etype[i] : conf.lvert[i];
+            data[i].first[0] = (EDGE_TYPED ? conf.lvert[i] * ETSPAN + conf.etype[i] : conf.lvert[i])
+                               * NFAM + (wl_only ? 0 : fam[i]);
             data[i].first[1] = eq_class[i];
             data[i].first[2] = eq_class[conf.mirro[i]];
             data[i].first[3] = eq_class[conf.glue[i]];
@@ -1575,6 +1645,7 @@ int main() {
     if (!SIGMA_TRIVIAL)
         std::cerr << "sided classes: sigma is not the identity on this alphabet\n";
     symbolcount = mainlist.size();
+    build_type_families();        // seed colour for simplify(); must precede the first closure
     for (int i = 0; i < (int)mainlist.size(); i++)
         if (!mainlist[i].counting) { has_noncounting = true; NC_IDX.push_back(i); }
     LBASE_OF.resize(mainlist.size());
@@ -1667,7 +1738,8 @@ int main() {
     // the catalog is on stdout and in out/*.txt, so this cannot perturb a digest.
     std::cerr << "nodes: " << solcount
               << "  simplify_calls: " << simplify_calls
-              << "  simplify_true: " << simplify_true << "\n";
+              << "  simplify_true: " << simplify_true
+              << "\n";
     if (max_nc > 0)
         std::cerr << "note: up to " << max_nc << " dent-fill (noncounting) vertices per configuration; "
                   << "no cap is applied.\n";

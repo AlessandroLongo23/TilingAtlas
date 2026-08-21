@@ -143,8 +143,40 @@ static int countk(const std::vector<int>& vertextypes) {
 struct Graph {
 	std::vector<int> rneig, lneig, mirro, lvert, glue;
 	std::vector<int> cls;    // corner-class ids (WL color; regular: bijective with lvert)
+	// VERTEX-FIGURE id per dart — the alphabet symbol with its site-symmetry variant stripped, so
+	// (3,3,3)S3, R3, A and F all share one id. Both refinements below (simplify's minimality test
+	// and comparesolutions' isomorphism test) are seeded on `cls` alone, and `cls` says which CORNER
+	// a dart sits in, never which VERTEX. On an equilateral single-tile alphabet every dart of every
+	// block carries corner class 0: simplify then finds the whole dart set to be one congruence
+	// class and rejects the block, and comparesolutions calls any two blocks with the same dart
+	// count isomorphic. gen_alphabet's A6 certificate has been reporting exactly this for years —
+	// "(3,3,3)S3 ~= (3,3,3,3)S4 — pruner dedup unreliable here" — one dart each, same corner class,
+	// indistinguishable. A covering of maps sends a dart to a dart at the SAME vertex of the tiling,
+	// so the vertex figure is a covering invariant and belongs in the seed. With it the triangular
+	// bipyramid survives; without it the whole 2-orbit deltahedron family (J12/J13/J17/J51/J84) is
+	// deleted between the solver and the pruner. (2026-08-20; see the note in eu_solver.cpp.)
+	std::vector<int> fam;
 	std::vector<std::string> label;
 };
+// Symbol -> vertex-figure key: gen_alphabet writes "(" + word + ")" + optional "|edges|" + variant,
+// and cyclic_reps has already canonicalized the word up to rotation and reflection. Duplicated in
+// eu_solver.cpp, which does not include this header.
+static std::string figure_key(const std::string& sym) {
+	size_t cut = sym.find(')');
+	if (cut == std::string::npos) return sym;
+	if (cut + 1 < sym.size() && sym[cut + 1] == '|') {
+		size_t e = sym.find('|', cut + 2);
+		if (e != std::string::npos) cut = e;
+	}
+	return sym.substr(0, cut + 1);
+}
+static int figure_id(const std::string& sym) {
+	static std::vector<std::string> keys;
+	const std::string k = figure_key(sym);
+	for (size_t i = 0; i < keys.size(); i++) if (keys[i] == k) return (int)i;
+	keys.push_back(k);
+	return (int)keys.size() - 1;
+}
 static Graph decode(const std::string& vertypeline, const std::string& conwayline) {
 	Graph gph;
 	std::vector<int> vt = buildvertextypes(vertypeline);
@@ -158,6 +190,7 @@ static Graph decode(const std::string& vertypeline, const std::string& conwaylin
 			gph.mirro.push_back(l + mirrolistin[i][gg]);
 			gph.lvert.push_back(lvertlistin[i][gg]);
 			gph.cls.push_back(clslistin[i][gg]);
+			gph.fam.push_back(figure_id(symbollist[i]));
 			gph.label.push_back(edgelabel(labellistin[i][gg], (int)j));
 		}
 	}

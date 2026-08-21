@@ -118,8 +118,24 @@ def face_area(n, alpha, d):
     252° and 468°, which sum to the whole sphere)."""
     return n * alpha - (n - 2 * d) * math.pi
 
-def solve_rho(config, dens=1, retro=frozenset()):
-    """Edge arc-length rho solving Σ_i interior_angle(p_i, d_i, rho) = 2π·dens.
+_SCAN_N = int(os.environ.get("EU_RHO_SCAN", "1024"))
+
+def _angle_sum_scan(nds, retro, rho):
+    """Σ interior angles over the face multiset `nds` at edge arc rho, in closed form:
+    sin(alpha/2) = cos(pi*d/n) / cos(rho/2). Vectorised over a numpy array of rho, NaN past a face
+    type's cap. Agrees with the interior_angle/face_angle path to 4.4e-15 (12 face types x 60 arcs),
+    and is used ONLY to locate sign changes — every root is then refined with face_angle itself, so
+    the returned rho comes from the same function the developer places geometry with."""
+    u = np.cos(np.asarray(rho, dtype=float) / 2.0)
+    tot = np.zeros_like(u)
+    for (n, d) in nds:
+        x = math.cos(math.pi * d / n) / u
+        a = np.where(x < 1.0, 2.0 * np.arcsin(np.clip(x, -1.0, 1.0)), np.nan)
+        tot = tot + ((2 * math.pi - a) if (n, d) in retro else a)
+    return tot
+
+def solve_rho_all(config, dens=1, retro=frozenset()):
+    """EVERY edge arc-length rho solving Σ_i interior_angle(p_i, d_i, rho) = 2π·dens, smallest first.
 
     dens is the VERTEX DENSITY: how many times the vertex figure winds about the vertex. dens=1 is the
     original positive-defect closure and is the only value a convex solid can take. A star polyhedron
@@ -129,39 +145,84 @@ def solve_rho(config, dens=1, retro=frozenset()):
     combinatorial vertex closes at two different rho, one per density, and both are real solids. This
     is why develop_block tries every density instead of stopping at the first hit.
 
-    Monotone increasing in rho, so bisection is safe. Memoized by (sorted config, dens)."""
+    WHY A LIST. With every face prograde the sum is strictly increasing in rho, so there is at most one
+    root and one bisection finds it. A RETROGRADE face contributes 2π − alpha, which DEcreases, so a
+    mixed config's sum is not monotone and can cross 2π·dens twice. The old single bisection could not
+    see those: its endpoint guard (f(lo) >= 0 or f(hi) <= 0) fires when both ends sit on the same side,
+    which is exactly the two-root case, so BOTH roots were dropped. Measured on the star-wide palette:
+    30 (multiset, density, retrograde) triples have two roots and all 30 were being lost.
+
+    The prograde branch below is the original code path, unchanged, so every prograde catalogue —
+    which is all of check-star's golden — comes out bit-identical. Memoized by (sorted config, dens,
+    retro)."""
     key = (tuple(sorted(_nd(p) for p in config)), dens, tuple(sorted(retro)))
     if key in _RHO_CACHE:
         return _RHO_CACHE[key]
+    nds = [_nd(p) for p in config]
     def f(rho):
-        return sum(face_angle(n, rho, d, (n, d) in retro)
-                   for (n, d) in map(_nd, config)) - 2 * math.pi * dens
+        return sum(face_angle(n, rho, d, (n, d) in retro) for (n, d) in nds) - 2 * math.pi * dens
     # rho is capped where the circumradius reaches pi/2: sin(rho/2) = sin(pi*d/n), i.e. rho = 2*pi*d/n.
-    lo, hi = 1e-7, min(2 * math.pi * d / n for (n, d) in map(_nd, config)) - 1e-7
-    if f(lo) >= 0 or f(hi) <= 0:
-        _RHO_CACHE[key] = None
-        return None
-    for _ in range(200):
-        mid = 0.5 * (lo + hi)
-        if f(mid) > 0:
-            hi = mid
-        else:
-            lo = mid
-    _RHO_CACHE[key] = 0.5 * (lo + hi)
-    return _RHO_CACHE[key]
+    lo0, hi0 = 1e-7, min(2 * math.pi * d / n for (n, d) in nds) - 1e-7
+    def bisect(lo, hi, hi_positive):
+        for _ in range(200):
+            mid = 0.5 * (lo + hi)
+            if (f(mid) > 0) == hi_positive:
+                hi = mid
+            else:
+                lo = mid
+        return 0.5 * (lo + hi)
+    if not retro:                                    # strictly increasing: the original branch
+        if f(lo0) >= 0 or f(hi0) <= 0:
+            _RHO_CACHE[key] = []
+            return []
+        _RHO_CACHE[key] = [bisect(lo0, hi0, True)]
+        return _RHO_CACHE[key]
+    grid = np.linspace(lo0, hi0, _SCAN_N)
+    vals = _angle_sum_scan(nds, retro, grid) - 2 * math.pi * dens
+    ok = ~np.isnan(vals)
+    out = []
+    for i in np.nonzero(ok[:-1] & ok[1:] & ((vals[:-1] > 0) != (vals[1:] > 0)))[0]:
+        r = bisect(float(grid[i]), float(grid[i + 1]), bool(vals[i + 1] > 0))
+        # A root at rho -> 0 is a FLAT vertex: the config's planar angles, read with this retrograde
+        # subset, already sum to a whole number of turns, so it is Euclidean and not a polyhedron.
+        # enum_configs excludes exact full turns for the prograde reading only; the retrograde
+        # reinterpretation re-admits them, and on star-wide that is 144 multisets.
+        if r > 1e-4:
+            out.append(r)
+    _RHO_CACHE[key] = out
+    return out
+
+def solve_rho(config, dens=1, retro=frozenset()):
+    """The smallest rho closing this config, or None. Scalar convenience wrapper over solve_rho_all,
+    kept because develop_ai1_sph.py imports it and wants one number."""
+    rr = solve_rho_all(config, dens, retro)
+    return rr[0] if rr else None
 
 def solve_rho_common(configs, dens=1, retro=frozenset(), tol=1e-6):
-    """Common edge arc-length rho closing EVERY vertex config (each Σ angle = 2π at the same rho).
-    For k=1 that is just solve_rho. For k>1 all orbits share edges, so a single rho must close
-    all of them — two different configs close at different rho (generic), so this returns None
-    unless the configs coincide there. Returns rho or None (no equal-edge realization)."""
+    """Every common edge arc-length rho closing ALL the vertex configs at once (each Σ angle = 2π·dens
+    at the same rho), smallest first. For k=1 that is just solve_rho_all. For k>1 all orbits share
+    edges, so ONE rho must close every one of them, and two different configs close at different rho
+    generically: the list comes back empty unless they coincide there. That single condition is what
+    kills 92.6% of the k=2 blocks on star-ico-d, and it depends only on the angle multisets, so it can
+    also be evaluated ahead of the search (see experiments/results/star-spherical-k2-2026-08-20.md)."""
     dl = dens if isinstance(dens, (list, tuple)) else [dens] * len(configs)
-    rhos = [solve_rho(c, dv, retro) for c, dv in zip(configs, dl)]
-    if not rhos or any(r is None for r in rhos):
-        return None                     # no configs parsed is "not realizable", not max() of nothing
-    if max(rhos) - min(rhos) > tol:
-        return None
-    return sum(rhos) / len(rhos)
+    if not configs:
+        return []                       # no configs parsed is "not realizable", not max() of nothing
+    spectra = [solve_rho_all(c, dv, retro) for c, dv in zip(configs, dl)]
+    if any(not s for s in spectra):
+        return []
+    out = []
+    for r in spectra[0]:                # a root of orbit 0 that every other orbit also has
+        matched = [r]
+        for s in spectra[1:]:
+            near = min(s, key=lambda x: abs(x - r))
+            if abs(near - r) > tol:
+                matched = None
+                break
+            matched.append(near)
+        if matched:
+            out.append(sum(matched) / len(matched))
+    return out
 
 # ----------------------------------------------------------------------------- SO(3) frames
 def Rz(a):
@@ -401,12 +462,40 @@ def parse_configs(vertypeline):
     return [[tok(x) for x in g.split(",")]
             for g in re.findall(r"\(([0-9_]+(?:,[0-9_]+)*)\)", vertypeline)]
 
+def orbit_folds(b, rneig, configs):
+    """Per vertex orbit, the ROTATIONAL FOLD m: how many times the site symmetry turns the vertex
+    figure onto itself. The quotient keeps q = n/m darts in one rneig cycle out of a word of length n;
+    a mirror-only fold leaves q = n and m = 1.
+
+    Returns (folds, orbit): the fold per vertex orbit, and the vertex orbit each DART belongs to.
+    Darts are laid out one vertex at a time in the header's order, so the second is just the ranges —
+    and it is the only sound way to say which vertex word a dart cycle belongs to. develop_euclid used
+    to guess that by matching the cycle's face sequence against every word and taking the smallest
+    repeat count, which on an all-triangle alphabet reads every word as every other one."""
+    vt = pr.buildvertextypes(b[0] + "\n")
+    folds, orbit, base = [], [], 0
+    for j, i in enumerate(vt):
+        q, x = 0, base
+        while True:
+            q += 1
+            x = rneig[x]
+            if x == base:
+                break
+        folds.append(len(configs[j]) // q)
+        sz = len(pr.rneiglistin[i])
+        orbit.extend([j] * sz)
+        base += sz
+    return folds, orbit
+
 def decode_block(b):
     """Reuse pruner.decode() -> copies of the quotient arrays + the per-orbit vertex configs."""
     pr.decode(b[0] + "\n", b[1] + "\n", b[3] + "\n", b[4] + "\n")
+    configs = parse_configs(b[0])
+    _folds, _orbit = orbit_folds(b, pr.rneig, configs)
     return {
         "rneig": list(pr.rneig), "glue": list(pr.glue), "lvert": list(pr.lvert),
-        "configs": parse_configs(b[0]),
+        "configs": configs,
+        "folds": _folds, "orbit": _orbit,
         "id": tes_id([l for l in b if l.startswith("TES file:")][0].split(":", 1)[1].strip()),
     }
 
@@ -443,24 +532,42 @@ def develop_block(b):
     # Ordered by total winding so the tamest reading wins ties.
     densities = sorted(itertools.product(range(1, MAXDENS + 1), repeat=len(configs)), key=lambda t: (sum(t), t))
     for dens in densities:
+        # THE VERTEX MUST NOT CLOSE EARLY (2026-08-20). A vertex figure folded by an m-fold rotation
+        # has a word of period n/m, so its first n/m angles already sum to 2*pi*d/m: the developed
+        # walk comes back to its starting dart AND its starting frame after n/m steps whenever
+        # m | d, and what gets built is a vertex of valence n/m wearing the label of one with
+        # valence n. Nothing downstream can see it — the flood fill closes, Euler is 2, every edge
+        # has the same length — because the object it built is a perfectly good polyhedron, just not
+        # this one. Measured on star-ico-d: (5,5,5,5,5,5)S2 at d=2 (m=2) develops into the
+        # DODECAHEDRON, comes back V=20 E=30 F=12 rho=0.729727656, and the catalogue gains it a
+        # second time as a bogus k=2 record beside the real (5,5,5)S3 one; the great stellated
+        # dodecahedron picks up the same twin at D=7. The condition is exactly gcd(m, d) = 1 —
+        # d=1 makes it vacuous, so every convex palette (MAXDENS=1) is untouched, and the genuinely
+        # wrapped vertices keep their records: (5,3,5,3,5,3)S3 has m=3 and closes at d=2, gcd = 1.
+        if any(math.gcd(m, d) != 1 for m, d in zip(dec["folds"], dens)):
+            continue
         for retro in subsets:
-            rho = solve_rho_common(configs, dens, retro)
-            if rho is None:
-                continue
-            for sign in (1, -1):
-                try:
-                    V, E, F, Ftype, ninst = develop_sphere(dec["rneig"], dec["glue"], dec["lvert"],
-                                                           rho, sign=sign, retro=retro)
-                except DevelopError as e:
-                    reasons.append("d=%s retro=%s sign=%+d: %s" % (dens, sorted(retro), sign, e))
-                    continue
-                ok, res = check_realized(V, E, F, Ftype, rho, ninst, retro)
-                if ok:
+            # A list, not a value: a retrograde config's angle sum is not monotone in rho and can close
+            # twice at one density. Both are separate solids and both are developed. Index 0 keeps the
+            # id it always had, so a single-root block (every prograde one) is byte-identical.
+            for ri, rho in enumerate(solve_rho_common(configs, dens, retro)):
+                for sign in (1, -1):
+                    try:
+                        V, E, F, Ftype, ninst = develop_sphere(dec["rneig"], dec["glue"], dec["lvert"],
+                                                               rho, sign=sign, retro=retro)
+                    except DevelopError as e:
+                        reasons.append("d=%s retro=%s sign=%+d: %s" % (dens, sorted(retro), sign, e))
+                        continue
+                    ok, res = check_realized(V, E, F, Ftype, rho, ninst, retro)
+                    if not ok:
+                        continue
                     tag = ""
                     if any(d != 1 for d in dens):
                         tag += "-d" + "_".join(str(d) for d in dens)
                     if retro:
                         tag += "-r" + "".join("%d_%d" % t for t in sorted(retro))
+                    if ri:
+                        tag += "-x%d" % ri
                     recs.append({
                         "id": dec["id"] + tag,
                         "vertexConfig": cfg_str, "k": len(configs),
@@ -591,8 +698,9 @@ def _selftest():
         for b in gather_blocks(fixtures, 1, 1):
             cfg = b[0]
             if cfg.split(")")[0] + ")" in targets:
-                rec, err = develop_block(b)
-                assert rec, "develop failed for %s: %s" % (cfg, err)
+                recs, err = develop_block(b)
+                assert recs, "develop failed for %s: %s" % (cfg, err)
+                rec = recs[0]           # develop_block returns a LIST (one entry per realization)
                 V = len(rec["vertices"]); F = len(rec["faces"])
                 Eset = set()
                 for ring in rec["faces"]:

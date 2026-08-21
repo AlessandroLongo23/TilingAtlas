@@ -10,7 +10,7 @@ PALETTE  ?= regular
 TB       := tables/$(PALETTE)
 SFX      := $(if $(filter regular,$(PALETTE)),,.$(PALETTE))
 
-.PHONY: all clean check-regular check-star
+.PHONY: all clean check-regular check-star check-deltahedra
 all: eu_solver$(SFX) eu_pruner$(SFX) eu_classify eu_develop$(SFX)
 
 # Regenerate tables when the palette spec or the generator changes. The generator
@@ -93,6 +93,24 @@ check-regular:
 	cd check-k6 && shasum -a 256 -c ../golden/regular-k6.sha256 --quiet
 	@echo "check-regular: PASS (byte-identical catalogs vs golden)"
 
+# The DELTAHEDRON gate. check-regular proves the Euclidean catalogue is undisturbed and check-star
+# does the same for the star machinery; both run on alphabets whose corner classes tell the darts
+# apart. This one runs on the alphabet where they do not — equilateral triangles alone, every dart
+# corner class 0 — and it is the only gate that would have caught the three stages that reasoned
+# from corner class alone and between them deleted every multi-orbit all-triangle map the search
+# ever built (see check_deltahedra.py for the three, and docs/DEVELOPMENT_NOTES.md for the hunt).
+#
+# The expected answer is a theorem, not a golden file: the convex deltahedra are exactly eight, with
+# 4, 6, 8, 10, 12, 14, 16 and 20 faces and none with 18. Five of them are 2-orbit. ~12s end to end.
+check-deltahedra:
+	$(MAKE) MAXNUM=2 PALETTE=tri-only
+	rm -rf check-delta && mkdir -p check-delta/out
+	cd check-delta && ../eu_solver.tri-only >/dev/null 2>&1
+	EU_OUT=check-delta/out EU_KMIN=1 EU_KMAX=2 ./eu_pruner.tri-only >/dev/null
+	EU_PALETTE=tri-only python3 develop_euclid.py --kmin 1 --kmax 2 \
+		--pruned check-delta/out/pruned --out check-delta/cells.json --report /dev/null >/dev/null
+	python3 check_deltahedra.py check-delta/cells.json
+
 clean:
 	rm -f eu_solver eu_solver.* eu_solver_rt eu_pruner eu_pruner.* eu_classify eu_develop eu_develop.* .maxnum-* .maxnumrt-*
 
@@ -107,7 +125,13 @@ clean:
 #      every byte without changing a single fact.
 #   2. DERIVED AT k=2. The same palette at MAXNUM=2, which is the only guard on the per-orbit density
 #      loop — at k=1 every density tuple has length one and that code cannot be exercised. ~13s.
-#   3. SHIPPED. Check the 47 files under public/spherical-star/ against their recorded hashes, so an
+#   3. BUCKETED AT k=2. The same k=2 catalogue again, through the rho-partitioned path
+#      (rho_buckets -> slice_tables -> eu_solver_rt -> eu_pruner), which searches one rho group at a
+#      time instead of the whole alphabet at once. It must return EXACTLY the golden: the partition is
+#      sound only because both orbits of a k>1 tiling close at the same edge arc, so anything the
+#      decomposition drops is a hole in that argument. ~5s, and it also exercises the runtime-alphabet
+#      solver and the table slicer, which nothing else gates.
+#   4. SHIPPED. Check the files under public/spherical-star/ against their recorded hashes, so an
 #      accidental edit to the shelf is caught even when the engine is untouched.
 #
 # The wide palette is deliberately NOT in this gate: it is ~20 minutes end to end, and the small one
@@ -131,5 +155,17 @@ check-star:
 	@python3 star_digest.py check-star-run2/cells.json > check-star-run2/digest.txt
 	@diff -u golden/star-ico-d-k2.txt check-star-run2/digest.txt \
 		&& echo "check-star: derived k=2 catalogue matches golden"
+	@$(MAKE) eu_solver_rt MAXNUM=2 >/dev/null
+	@rm -rf check-star-buckets && mkdir -p check-star-buckets
+	@EU_MAXDENS=3 python3 rho_buckets.py --palette star-ico-d \
+		--out check-star-buckets/buckets.json >/dev/null
+	@python3 run_k2_buckets.py --palette star-ico-d --buckets check-star-buckets/buckets.json \
+		--out check-star-buckets/run >/dev/null
+	@EU_PALETTE=star-ico-d EU_MAXDENS=3 python3 develop_spherical.py --kmin 2 --kmax 2 \
+		--pruned check-star-buckets/run/pruned --out check-star-buckets/cells.json \
+		--report /dev/null >/dev/null 2>&1
+	@python3 star_digest.py check-star-buckets/cells.json > check-star-buckets/digest.txt
+	@diff -u golden/star-ico-d-k2.txt check-star-buckets/digest.txt \
+		&& echo "check-star: rho-bucketed k=2 matches the full k=2 catalogue"
 	@cd ../../public/spherical-star && shasum -a 256 -c ../../tools/ctrnact-oracle/golden/star-shelf.sha256 --quiet \
-		&& echo "check-star: shipped shelf matches golden (54 files)"
+		&& echo "check-star: shipped shelf matches golden"
