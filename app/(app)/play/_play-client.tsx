@@ -916,10 +916,12 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		[],
 	);
 
-	// The Islamic construction now applies to EVERY class (hyperbolic included — the developed renderer
-	// bakes the plain Hankin field, lib/render/hyperbolicIslamic.ts). This guard only fires if a future
-	// class opts out of polygonClassSupportsIslamic, so a stale render can't linger when the sidebar
-	// hides the control.
+	// Clear the flag when the selected record lands on a renderer that does not draw the construction, so
+	// a stale one cannot linger behind a control the sidebar has just hidden.
+	//
+	// ⚑ This used to be a guard against a hypothetical future opt-out. Since polygonClassSupportsIslamic
+	// became surface-keyed (2026-08-21) it fires for four real shelves — star polyhedra, the 3.4.n.4
+	// solids on either geometry, and hollow — which is what the sidebar stopped offering the control for.
 	useEffect(() => {
 		if (selected && !polygonClassSupportsIslamic(selected) && useConfiguration.getState().isIslamic) {
 			useConfiguration.getState().set({ isIslamic: false });
@@ -1037,8 +1039,10 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		const cfg = useConfiguration.getState();
 		// Spherical freedraw rides the same flag: it too is a three.js overlay that must blank the flat p5 layer.
 		if (isSpherical || isSphericalFreedraw || isSphColors) {
-			// Islamic is NOT force-cleared here — the sphere canvas renders the construction as great-circle
-			// ribbons, and polygonClassSupportsIslamic now admits the spherical class, so the toggle persists.
+			// Islamic is NOT force-cleared here: components/spherical-canvas.tsx renders the construction as
+			// great-circle ribbons, so the toggle persists across a Platonic selection. The three.js shelves
+			// that do NOT draw it (ico-freedraw, the spherical colorings) are cleared by the surface-keyed
+			// guard above instead, which is where that judgement belongs — one gate, not two.
 			cfg.set({
 				spherical: true,
 				hyperbolic: false,

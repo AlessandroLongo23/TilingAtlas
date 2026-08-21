@@ -5,6 +5,17 @@ import * as THREE from "three";
 import { ArcballControls } from "three/examples/jsm/controls/ArcballControls.js";
 import { useMemo } from "react";
 import { useConfiguration } from "@/stores/configuration";
+import { edgeRadius } from "@/lib/render/sphericalPolyhedron";
+import {
+	applyCameraAspect,
+	cameraDistanceFor,
+	DEFAULT_FIT_FRACTION,
+	makeArcball,
+	makeSphericalCamera,
+	orthoHalfHeightFor,
+	swapProjection,
+	type SphericalCamera,
+} from "@/lib/render/sphericalCamera";
 import { polyhedronForId } from "@/lib/render/sphericalSolids";
 import { measureBox } from "@/lib/render/canvasSize";
 import { createOrbitMomentum, type OrbitMomentum } from "@/lib/render/orbitMomentum";
@@ -46,11 +57,18 @@ interface Props {
 	densitySheets?: number;
 }
 
-const CAMERA_DISTANCE = 3.2;
+// The framing every spherical view shares: the unit sphere at three quarters of the viewport half-height.
+// This used to be a hardcoded 3.2, which is what cameraDistanceFor(0.75) works out to; deriving it keeps
+// this canvas and the tiling sphere the same size on screen when either is retuned.
+const CAMERA_DISTANCE = cameraDistanceFor(DEFAULT_FIT_FRACTION);
 
 export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, allEdges, keepRadius, crossings, showCrossings, showEdges, tileHsb, densitySheets }: Props) {
-	// The one store flag this otherwise self-contained canvas reads: the shared spherical surface look.
+	// The store fields this otherwise self-contained canvas reads. It used to read only `sphericalStudio`,
+	// which is why the sidebar hid the hue ring and the stroke slider for every shelf on this canvas: the
+	// builder has taken `hueOffset` and `edgeThickness` all along, nothing passed them (AL, 2026-08-21).
 	const studio = useConfiguration((s) => s.sphericalStudio);
+	const hueOffset = useConfiguration((s) => s.hueOffset);
+	const lineWidth = useConfiguration((s) => s.lineWidth);
 	const solid = useMemo(() => (vertices ? null : polyhedronForId(solidId)), [solidId, vertices]);
 	const verts = vertices ?? (solid?.vertices as [number, number, number][] | undefined);
 	const solidEdgeList = useMemo<[number, number][]>(
@@ -60,7 +78,7 @@ export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, 
 	const hostRef = useRef<HTMLDivElement | null>(null);
 	const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
 	const sceneRef = useRef<THREE.Scene | null>(null);
-	const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+	const cameraRef = useRef<SphericalCamera | null>(null);
 	const controlsRef = useRef<ArcballControls | null>(null);
 	// Release momentum — let go mid-drag and the solid coasts (lib/render/orbitMomentum.ts).
 	const momentumRef = useRef<OrbitMomentum | null>(null);
@@ -102,23 +120,17 @@ export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, 
 		lookRigRef.current = installLookRig(renderer, scene, "catalogue", useConfiguration.getState().sphericalStudio);
 
 		const aspect0 = host.clientWidth > 0 && host.clientHeight > 0 ? host.clientWidth / host.clientHeight : 1;
-		const camera = new THREE.PerspectiveCamera(45, aspect0, 0.1, 100);
+		const camera = makeSphericalCamera(
+			useConfiguration.getState().sphericalOrthographic,
+			aspect0,
+			orthoHalfHeightFor(DEFAULT_FIT_FRACTION),
+		);
 		camera.position.set(1.35, 1.05, 2.6).setLength(CAMERA_DISTANCE);
 		camera.lookAt(0, 0, 0);
 		camera.updateProjectionMatrix();
 		cameraRef.current = camera;
 
-		const controls = new ArcballControls(camera, canvas, scene);
-		controls.enablePan = false;
-		controls.enableZoom = true;
-		controls.enableRotate = true;
-		controls.enableFocus = false;
-		controls.enableGrid = false;
-		controls.cursorZoom = false;
-		controls.enableAnimations = false;
-		controls.minDistance = 1.8;
-		controls.maxDistance = 8;
-		controls.setGizmosVisible(false);
+		const controls = makeArcball(camera, canvas, scene, { minDistance: 1.8 });
 		controlsRef.current = controls;
 		// ArcballControls' own inertia stays off above (enableAnimations = false): it runs a private rAF loop
 		// and its velocity estimate is unstable. This measures the camera basis instead, and is clamped.
@@ -147,10 +159,8 @@ export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, 
 				box = { w, h, r: ratio };
 				renderer.setPixelRatio(ratio);
 				renderer.setSize(w, h, false);
-				if (cam) {
-					cam.aspect = w / h;
-					cam.updateProjectionMatrix();
-				}
+				// Both projections: an orthographic camera re-fits its frustum, not an aspect field.
+				if (cam) applyCameraAspect(cam, w, h, orthoHalfHeightFor(DEFAULT_FIT_FRACTION));
 			}
 			// The light rig rides the camera, so a drag re-lights the solid (see LookRig.follow).
 			if (cam) lookRigRef.current?.follow(cam);
@@ -179,6 +189,32 @@ export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, 
 		};
 	}, []);
 
+	// Projection swap, the same shape as the tiling sphere's: a fresh camera AND fresh controls, because
+	// re-pointing a live ArcballControls leaves it half-bound to the old camera. `momentumRef` reads
+	// `cameraRef` through a closure, so it follows the swap without being rebuilt.
+	const orthographic = useConfiguration((s) => s.sphericalOrthographic);
+	useEffect(() => {
+		const renderer = rendererRef.current;
+		const scene = sceneRef.current;
+		const host = hostRef.current;
+		const prev = cameraRef.current;
+		const oldControls = controlsRef.current;
+		if (!renderer || !scene || !host || !prev || !oldControls) return;
+		const next = swapProjection({
+			orthographic,
+			prev,
+			renderer,
+			scene,
+			host,
+			fit: DEFAULT_FIT_FRACTION,
+			minDistance: 1.8,
+		});
+		if (!next) return; // already the requested projection
+		cameraRef.current = next.camera;
+		controlsRef.current = next.controls; // publish the fresh pair before disposing the old one
+		oldControls.dispose();
+	}, [orthographic]);
+
 	// Rebuild the pattern geometry when the pattern, solid, sphere/polyhedron mode, or grid toggle changes.
 	useEffect(() => {
 		const scene = sceneRef.current;
@@ -200,7 +236,12 @@ export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, 
 			allEdges: solidEdgeList,
 			crossings,
 			showCrossings,
-			showEdges,
+			// `edgeRadius` is the tiling sphere's own stroke curve (sphericalPolyhedron.ts), so stroke 1 is
+			// the 0.006 this canvas used to hardcode and the two spherical shelves thicken together. A stroke
+			// of 0 means no edges there, and it means the same here.
+			edgeThickness: edgeRadius(lineWidth),
+			showEdges: showEdges !== false && lineWidth > 0,
+			hueOffset,
 			tileHsb,
 			densitySheets,
 		});
@@ -214,7 +255,7 @@ export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, 
 		};
 		// `studio` rebuilds because the material tuning is applied to freshly built materials — turning the
 		// look off has to give back the untouched originals, not a second guess at what they were.
-	}, [pattern, mode, showGrid, solid, solidEdgeList, crossings, showCrossings, showEdges, tileHsb, densitySheets, studio]);
+	}, [pattern, mode, showGrid, solid, solidEdgeList, crossings, showCrossings, showEdges, tileHsb, densitySheets, studio, hueOffset, lineWidth]);
 
 	// Studio ⇄ plain: re-dial the lights and the environment in place (the geometry effect above re-tunes
 	// the materials from the same flag).

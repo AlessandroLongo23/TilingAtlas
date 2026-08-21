@@ -15258,3 +15258,49 @@ problem — "the latter are more muted, I don't like them" — and `TILE_SAT` wa
 compensate. With the linearisation fixed, that bump was a correction stacked on a correction, so both it
 and `tileColor`'s matching 0.50/0.98 go back to the Atlas's one tile palette, HSB(h, 0.40, 1.00). AL,
 2026-08-21: "use the non-star as reference for the look".
+
+## 2026-08-21 — The spherical View options: one block instead of three
+
+Three spherical shelves had grown three separate control blocks, one per shelf as each shipped, and they
+had drifted into three vocabularies for the same choices. AL: "it's not consistent with all the
+tilings/polyhedra", "some options are incompatible", "the color wheel should be always present". Plan in
+`~/.claude/plans/gleaming-bubbling-quail.md`; what it found and what landed:
+
+**Dead controls, three kinds.** "Show Polygon Points" rendered for the tiling sphere, which never reads
+it. "Realistic" stayed live while Islamic was on, where there is no base surface to carve. And the
+Islamic checkbox with its fifteen parameter controls rendered for the star polyhedra and the 3.4.n.4
+solids, whose canvas has no Islamic path at all.
+
+⚑ **The Islamic gate now asks the SURFACE, not the class.** `polygonClassSupportsIslamic` read the
+record's `source` and excluded freedraw and colors, which answers whether the TILES could carry a Hankin
+construction — a different question from whether the renderer on screen draws one. Four shelves passed it
+over canvases that ignore the flag: star polyhedra and 3.4.n.4 solids (source "spherical", ico-freedraw),
+the 3.4.n.4 hyperbolic tilings (source "hyperbolic", the colors shader), and hollow (canvas.tsx blanks
+its flat layer). The gate is now the three surfaces whose renderers read `isIslamic` and draw something,
+which is checkable by grep: flat, disk, sphere. The existing force-off effect in `_play-client` then
+cleared the four automatically, so no second gate was needed.
+
+**One shape control.** Sphere versus flat facets was a checkbox (`sphericalPolyhedron`) on one shelf and
+two ad-hoc buttons (`sphericalFreedrawMode`) on the others. Both now render through one `Toggle`. The two
+store fields survive on purpose: their defaults differ and both are deliberate, the tiling sphere opening
+round and the boards and star polyhedra opening as flat facets, which is the figure people recognise and
+where a star polyhedron's round view is a density map instead of a tiling.
+
+**What the ico-freedraw canvas was missing.** It read one store field, `sphericalStudio`. `buildIcoFreedraw`
+has accepted `hueOffset` and `edgeThickness` all along and nothing passed them, which is the whole reason
+the sidebar hid the hue ring and the stroke slider for the Schwarz boards, the 3.4.n.4 solids and the star
+polyhedra. Both are wired now, the stroke through `edgeRadius` — the tiling sphere's own curve, so stroke 1
+is the 0.006 this canvas used to hardcode and the shelves thicken together.
+
+**One camera for all three.** `lib/render/sphericalCamera.ts` now holds the framing (`cameraDistanceFor`,
+`orthoHalfHeightFor`, both derived from one fit fraction), `makeSphericalCamera`, `makeArcball`,
+`applyCameraAspect` and `swapProjection`. All three canvases had built the same camera and the same
+trackball inline with separately-arrived-at values, and only the tiling sphere had ever gained the
+projection swap — so Projection existed on one shelf of three, and its hard half, rebuilding the controls
+without corrupting the trackball, sat where the others could not reach it. ⚑ The controls are REBUILT on a
+swap, not re-pointed: mutating a live ArcballControls' camera leaves it half-bound to the old one.
+
+**Conflicts are disabled, not silently ignored.** While Islamic is on, Shape and Realistic go inert with
+the reason attached, since the construction is drawn on the circumsphere and the flat solid never enters
+the picture. `Checkbox`'s `disabled` reached only the input, so the row kept its pointer cursor, its
+contrast and its tab stop; it now dims and leaves the tab order, the way `Button` already did.

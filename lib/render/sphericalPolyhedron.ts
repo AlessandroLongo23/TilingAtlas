@@ -25,7 +25,7 @@ const LIGHT_LINE: [number, number, number] = [0.06, 0.06, 0.08];
 
 // Line-stroke slider (0..5) → edge-tube radius. 0 hides the edges; otherwise a thin dark bar that thickens
 // with the slider (unlike a WebGL line, whose width the driver clamps to 1px).
-function edgeRadius(lineWidth: number): number {
+export function edgeRadius(lineWidth: number): number {
 	return Math.max(0.0015, lineWidth * 0.006);
 }
 

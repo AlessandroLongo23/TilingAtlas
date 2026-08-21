@@ -4,6 +4,16 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { ArcballControls } from "three/examples/jsm/controls/ArcballControls.js";
 import { useConfiguration } from "@/stores/configuration";
+import {
+	applyCameraAspect,
+	cameraDistanceFor,
+	DEFAULT_FIT_FRACTION,
+	makeArcball,
+	makeSphericalCamera,
+	orthoHalfHeightFor,
+	swapProjection,
+	type SphericalCamera,
+} from "@/lib/render/sphericalCamera";
 import { polyhedronForId } from "@/lib/render/sphericalSolids";
 import { measureBox } from "@/lib/render/canvasSize";
 import { captureOverride, offerFrame } from "@/lib/render/capture";
@@ -54,67 +64,12 @@ interface SphericalCanvasProps {
 // Resting framing, as the fraction of the viewport half-height the unit sphere spans. 0.75 is /play's
 // long-standing look (camera distance 3.2, orthographic half-height 1.33); the two derivations below
 // reproduce those numbers exactly, and stay in step for any other fraction a caller asks for.
-const DEFAULT_FIT_FRACTION = 0.75;
-const HALF_FOV = Math.tan((22.5 * Math.PI) / 180); // fov 45° ⇒ half-height = distance · tan(22.5°)
-// The perspective distance that frames the unit sphere at `fit` of the half-height.
-const cameraDistanceFor = (fit: number) => 1 / (fit * HALF_FOV);
-// The orthographic half-height matching it, so the solid keeps its on-screen size across the
-// projection toggle (only the perspective foreshortening changes, not the framing).
-const orthoHalfHeightFor = (fit: number) => 1 / fit;
 // Maps the shared islamicBandWidth slider (a fraction, flat default 0.25) to the sphere strap's arc width in
 // radians — 0.25 → 0.09 rad, the tuned default look. The Border Width slider goes through the SAME factor, so
 // the border/band ratio on the sphere is identical to the flat one for any pair of slider values.
 const WEAVE_WIDTH_FACTOR = 0.36;
 
-type SphericalCamera = THREE.PerspectiveCamera | THREE.OrthographicCamera;
 type Content = { kind: "sphere"; sphere: Sphere } | { kind: "wire"; wire: Wireframe } | { kind: "solid"; solid: FlatSolid };
-
-// Perspective (foreshortened) or orthographic (parallel) camera framing the unit sphere identically.
-function makeSphericalCamera(orthographic: boolean, aspect: number, halfHeight: number): SphericalCamera {
-	if (orthographic) {
-		return new THREE.OrthographicCamera(-halfHeight * aspect, halfHeight * aspect, halfHeight, -halfHeight, 0.1, 100);
-	}
-	return new THREE.PerspectiveCamera(45, aspect, 0.1, 100);
-}
-
-// A configured ArcballControls for the sphere: free quaternion trackball, no pan, dolly/zoom on, gizmos
-// hidden. Factored out because the projection toggle recreates the controls fresh (full constructor re-init
-// = guaranteed-clean trackball state), instead of mutating a live instance's camera, which left rotation
-// in a corrupt state after a perspective⇄orthographic swap.
-function makeArcball(camera: SphericalCamera, canvas: HTMLCanvasElement, scene: THREE.Scene, interactive = true): ArcballControls {
-	const controls = new ArcballControls(camera, canvas, scene);
-	controls.enabled = interactive; // the master gate — every handler checks it before consuming an event
-	controls.enablePan = false; // keep the sphere centred (no panning, per design)
-	controls.enableZoom = true; // wheel / pinch dolly
-	controls.enableRotate = true; // free quaternion trackball rotation
-	controls.enableFocus = false; // no double-click recentre jump
-	controls.enableGrid = false;
-	controls.cursorZoom = false;
-	// ArcballControls' OWN inertia stays off: with the orthographic trackball radius its velocity estimate
-	// blows up into a runaway spin (the "it snaps to a different orientation when I lift the mouse" bug), and
-	// its animation runs a private rAF loop that fights ours. Release momentum is ours instead
-	// (lib/render/orbitMomentum.ts), measured from the camera basis and clamped, so it cannot run away.
-	controls.enableAnimations = false;
-	controls.minDistance = 1.6;
-	controls.maxDistance = 8;
-	controls.setGizmosVisible(false); // hide the trackball rings for a clean grab-and-spin feel
-	return controls;
-}
-
-// Re-fit either camera type to a viewport aspect (perspective: aspect; orthographic: the L/R/T/B frustum).
-function applyCameraAspect(camera: SphericalCamera, w: number, h: number, halfHeight: number): void {
-	const aspect = w > 0 && h > 0 ? w / h : 1;
-	if (camera instanceof THREE.OrthographicCamera) {
-		const hh = halfHeight;
-		camera.left = -hh * aspect;
-		camera.right = hh * aspect;
-		camera.top = hh;
-		camera.bottom = -hh;
-	} else {
-		camera.aspect = aspect;
-	}
-	camera.updateProjectionMatrix();
-}
 
 export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEFAULT_FIT_FRACTION }: SphericalCanvasProps) {
 	const poly = useMemo(() => polyhedronForId(solidId), [solidId]);
@@ -198,7 +153,7 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 		camera.lookAt(0, 0, 0);
 		camera.updateProjectionMatrix();
 		cameraRef.current = camera;
-		controlsRef.current = makeArcball(camera, canvas, scene, interactiveRef.current);
+		controlsRef.current = makeArcball(camera, canvas, scene, { interactive: interactiveRef.current });
 		momentumRef.current = createOrbitMomentum(() => cameraRef.current, { domElement: canvas });
 
 		// DEBUG (dev only): read the live camera + controls state to diagnose the projection-toggle drift.
@@ -283,18 +238,18 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 		const prev = cameraRef.current;
 		const oldControls = controlsRef.current;
 		if (!renderer || !scene || !host || !prev || !oldControls) return;
-		if ((prev instanceof THREE.OrthographicCamera) === orthographic) return; // already the requested projection
-		const aspect = host.clientWidth > 0 && host.clientHeight > 0 ? host.clientWidth / host.clientHeight : 1;
-		const camera = makeSphericalCamera(orthographic, aspect, orthoHalfHeightFor(fitRef.current));
-		// Preserve the current view: position + up drive the arcball's look direction; copy quaternion too so
-		// the first frame (before any update) matches.
-		camera.position.copy(prev.position);
-		camera.quaternion.copy(prev.quaternion);
-		camera.up.copy(prev.up);
-		camera.updateProjectionMatrix();
-		const controls = makeArcball(camera, renderer.domElement, scene, interactiveRef.current);
-		cameraRef.current = camera;
-		controlsRef.current = controls; // publish the fresh pair before disposing the old one
+		const next = swapProjection({
+			orthographic,
+			prev,
+			renderer,
+			scene,
+			host,
+			fit: fitRef.current,
+			interactive: interactiveRef.current,
+		});
+		if (!next) return; // already the requested projection
+		cameraRef.current = next.camera;
+		controlsRef.current = next.controls; // publish the fresh pair before disposing the old one
 		oldControls.dispose();
 	}, [orthographic]);
 

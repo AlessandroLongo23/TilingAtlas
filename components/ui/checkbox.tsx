@@ -70,10 +70,17 @@ export function Checkbox({ id, label, checked, onCheckedChange, disabled = false
 
 	return (
 		<div
-			tabIndex={0}
+			// ⚑ `disabled` used to reach only the input: the row kept its pointer cursor, its full contrast and
+			// its tab stop, so a disabled control looked and felt live and only refused on click. It now dims
+			// and drops out of the tab order, the way Button already does (2026-08-21).
+			tabIndex={disabled ? -1 : 0}
 			role="checkbox"
 			aria-checked={checked}
-			className="flex items-center justify-between gap-3 cursor-pointer"
+			aria-disabled={disabled}
+			className={cn(
+				"flex items-center justify-between gap-3",
+				disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer",
+			)}
 			onClick={toggle}
 			onKeyDown={(e) => {
 				if (e.key === " " || e.key === "Enter") {
@@ -86,7 +93,9 @@ export function Checkbox({ id, label, checked, onCheckedChange, disabled = false
 				<CheckboxBox id={id} checked={checked} onCheckedChange={onCheckedChange} disabled={disabled} />
 				{label ? (
 					<span className="flex items-center gap-1.5 min-w-0">
-						<label className="text-sm font-medium text-fg-secondary cursor-pointer truncate">{label}</label>
+						<label className={cn("text-sm font-medium text-fg-secondary truncate", disabled ? "cursor-not-allowed" : "cursor-pointer")}>
+							{label}
+						</label>
 						{hint}
 					</span>
 				) : null}

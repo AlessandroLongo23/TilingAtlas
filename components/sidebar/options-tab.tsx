@@ -150,6 +150,28 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 	const isSphColors = surface === "sphereColors";
 	// Any colored tiling (Euclidean grid, hyperbolic disk, or spherical solid): all carry the palette pickers.
 	const isAnyColors = isColors || isHyperbolicColors || isSphColors;
+	// Every three.js spherical view: the tiling sphere, the ico-freedraw canvas (Schwarz boards, the
+	// 3.4.n.4 solids, the star polyhedra) and the spherical colorings. They now take ONE block, because
+	// they are one kind of view and the three separate blocks had drifted into three vocabularies for the
+	// same choices (AL, 2026-08-21).
+	const isAnySpherical = isSpherical || isSphericalFreedraw || isSphColors;
+	// SHAPE: the round circumsphere, or the flat-faced solid.
+	//
+	// One control, two store fields, and the second field is not an oversight. Their DEFAULTS differ and
+	// both are deliberate: the tiling sphere opens round, because the tiling on the sphere is the point,
+	// while the boards and the star polyhedra open as flat facets, because that is the figure everyone
+	// recognises and on a star polyhedron the round view is a density map, not a tiling. Collapsing to one
+	// field would have to throw one of those away.
+	const shapeIsSphere = isSpherical ? !cfg.sphericalPolyhedron : cfg.sphericalFreedrawMode === "sphere";
+	const setShape = (v: string) =>
+		isSpherical
+			? setCfg({ sphericalPolyhedron: v === "polyhedron" })
+			: setCfg({ sphericalFreedrawMode: v === "sphere" ? "sphere" : "polyhedron" });
+	// The Islamic construction is drawn on the CIRCUMSPHERE, as great-circle ribbons: spherical-canvas.tsx
+	// hands back no base surface for it, and the flat solid never enters the picture. So while it is on,
+	// Shape and Realistic describe nothing. They stay visible and go inert, with the reason attached —
+	// silently ignoring a control the visitor can still click is how this was found (AL, 2026-08-21).
+	const islamicLocksShape = isSpherical && cfg.isIslamic;
 	const isHyperbolicDisk = isDiskSurface(surface);
 	// One picker per color of the SELECTED pattern (2 to 4 today), read off the record, not the
 	// palette — the store keeps a full-width palette so switching between a 2- and a 3-color tiling
@@ -461,7 +483,10 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 					) : null}
 					{/* Freedraw renders its own copy of this slider inside its block above, so the stroke sits
 					    with the fill it belongs to. Same store field either way — only the position differs. */}
-					{!isFreedraw && !isSphericalFreedraw && !isColors && !isSphColors ? (
+					{/* ⚑ `isSphericalFreedraw` left this list on 2026-08-21. The ico-freedraw canvas now reads
+					    `lineWidth` through the tiling sphere's own `edgeRadius` curve, so the two spherical
+					    shelves thicken together and a stroke of 0 means no edges on either. */}
+					{!isFreedraw && !isColors && !isSphColors ? (
 						<Slider
 							id="lineWidth"
 							label="Line stroke"
@@ -507,7 +532,12 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 					{/* Global hue rotation for every tile fill (all views + thumbnails) — preserves the
 					    pairwise hue distances between tiles while cycling the palette. Freedraw colours cells
 					    by face, off its own golden-angle walk, so this ring has nothing to rotate there. */}
-					{!isFreedraw && !isSphericalFreedraw && !isColors && !isHyperbolicColors && !isSphColors ? (
+					{/* ⚑ `isSphericalFreedraw` left this list on 2026-08-21 too: `buildIcoFreedraw` has always
+					    taken a `hueOffset` and turned both its colour paths with it (the golden-angle `tileColor`
+					    and the star shelf's by-polygon HSB), and the canvas simply never passed one. The
+					    colorings stay out — their colours are palette slots, and the pickers below are the
+					    control for those. */}
+					{!isFreedraw && !isColors && !isHyperbolicColors && !isSphColors ? (
 						<HueRing label="Hue shift" value={cfg.hueOffset} onChange={(v) => setCfg({ hueOffset: v })} />
 					) : null}
 					{/* Flat-view rotation. Hidden in spherical — that view rotates by quaternion (the
@@ -529,7 +559,11 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							onCheckedChange={(v) => setCfg({ lengthSizeHue: v })}
 						/>
 					) : null}
-					{!isFreedraw && !isSphericalFreedraw && !isColors && !isHyperbolicColors && !isSphColors ? (
+					{/* Vertex dots, drawn by the flat p5/WebGL layer and by the disk shader. ⚑ `isSpherical` joined
+					    the exclusions on 2026-08-21: components/spherical-canvas.tsx never reads
+					    `showPolygonPoints`, so the checkbox had been offered over the tiling sphere doing
+					    nothing at all. */}
+					{!isSpherical && !isFreedraw && !isSphericalFreedraw && !isColors && !isHyperbolicColors && !isSphColors ? (
 						<Checkbox
 							id="showPolygonPoints"
 							label="Show Polygon Points"
@@ -728,10 +762,10 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 									</div>
 									<p className="text-[11px] text-fg-muted">
 										{cfg.islamicStyle === "interlace"
-											? "Over/under woven straps on the sphere surface. Turn off Polygon fill for just the outlined straps; the angle slider sets the weave."
+											? "Over/under woven straps on the sphere surface. Wireframe leaves just the outlined straps; the angle slider sets the weave."
 											: cfg.islamicStyle === "outline"
 												? "The same straps crossed flat — the border survives only on the outside of the ribbon network, so the pattern reads as one silhouette."
-												: "Filled cells + star lines (the underlying tiling is hidden). Turn off Polygon fill for just the lines; turn on Wireframe to make the lines rigid 3D bars."}
+												: "Filled cells + star lines (the underlying tiling is hidden). Wireframe drops the cells and draws the lines as rigid 3D bars."}
 									</p>
 								</>
 							) : isHyperbolic ? (
@@ -965,103 +999,130 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							/>
 						</>
 					) : null}
-					{isSpherical ? (
+					{/* ONE block for every spherical shelf. It used to be two, one for the tiling sphere and one
+					    for the ico-freedraw canvases, and they had drifted: the same sphere/solid choice was a
+					    checkbox in one and a pair of buttons in the other, "Studio look" was written out twice so
+					    the two copies could differ, and Projection, Hue shift and Line stroke existed on the tiling
+					    sphere alone even though the other canvases can honour all three. The shared controls are
+					    here; a control that belongs to one shelf says which, and why. */}
+					{isAnySpherical ? (
 						<div className="space-y-2">
 							<p className="text-[11px] text-fg-muted leading-relaxed">
-								Drag the sphere to rotate it freely in any direction (no poles — every symmetry is reachable).
-								Scroll to zoom.
+								Drag to rotate the solid freely in any direction (no poles, so every symmetry is
+								reachable). Scroll to zoom.
 							</p>
-							{/* Fill vs Wireframe: one mutually-exclusive choice (sphericalWireframe), so exactly one is
-							    ever on. Fill = solid sphere / flat polyhedron / filled Islamic cells; Wireframe = hollow
-							    tube skeleton, no fill. Keys B / W flip it either way. */}
-							<Toggle
-								id="sphericalFillMode"
-								leftValue="fill"
-								rightValue="wireframe"
-								value={cfg.sphericalWireframe ? "wireframe" : "fill"}
-								onChange={(v) => setCfg({ sphericalWireframe: v === "wireframe" })}
-							/>
-							{/* Realistic: shade the round sphere as if the tiling lines were CARVED into it (faces
-							    raised, edges sunk into a smooth SDF groove, lit as matte stone). Round-sphere Fill
-							    only — no meaning for the wireframe or the flat Polyhedron, so hidden for both. */}
-							<Reveal show={!cfg.sphericalWireframe && !cfg.sphericalPolyhedron}>
-								<div className="pl-7">
-									<Checkbox
-										id="sphericalRealistic"
-										label="Realistic"
-										checked={cfg.sphericalRealistic}
-										onCheckedChange={(v) => setCfg({ sphericalRealistic: v })}
-									/>
-								</div>
+							{/* SHAPE. Hidden for a solid with NO CIRCUMSPHERE, where the canvas forces the flat view:
+							    the round one is the solid radially projected onto its circumsphere, and without one
+							    that projection moves every vertex a different distance and shows a different object
+							    (AL saw J31 come out as a blob, 2026-08-21). lib/tilings/sph-inscribed.ts decides. */}
+							<Reveal show={sphereViewAvailable}>
+								<Toggle
+									id="sphericalShape"
+									leftValue="sphere"
+									rightValue="polyhedron"
+									value={shapeIsSphere ? "sphere" : "polyhedron"}
+									onChange={setShape}
+									disabled={islamicLocksShape}
+								/>
 							</Reveal>
-							<Reveal show={cfg.sphericalWireframe}>
-								<div className="space-y-2 pl-7">
-									<span className="text-[11px] text-fg-muted">Section</span>
-									<div className="flex gap-2">
-										<Button
-											variant={cfg.sphericalWireSection === "tube" ? "primary" : "secondary"}
-											size="sm"
-											classes="flex-1"
-											onClick={() => setCfg({ sphericalWireSection: "tube" })}
-										>
-											Tube
-										</Button>
-										<Button
-											variant={cfg.sphericalWireSection === "rect" ? "primary" : "secondary"}
-											size="sm"
-											classes="flex-1"
-											onClick={() => setCfg({ sphericalWireSection: "rect" })}
-										>
-											Rectangle
-										</Button>
-									</div>
-									<Slider
-										id="sphericalWireThickness"
-										label="Thickness"
-										value={cfg.sphericalWireThickness}
-										onChange={(v) => setCfg({ sphericalWireThickness: v })}
-										min={0.005}
-										max={0.15}
-										step={0.005}
+							{islamicLocksShape ? (
+								<p className="text-[11px] text-fg-muted leading-relaxed">
+									The construction is drawn on the circumsphere, as great-circle ribbons, so there is no
+									flat solid to put it on.
+								</p>
+							) : null}
+							{/* Fill vs Wireframe, and the Realistic surface under it. The tiling sphere only: Fill is
+							    a solid sphere or flat polyhedron, Wireframe a hollow tube skeleton, and Realistic is
+							    a shader written for the tiling sphere (lib/render/sphericalCarvedMaterial.ts) with no
+							    counterpart for an arbitrary board. */}
+							{isSpherical ? (
+								<>
+									<Toggle
+										id="sphericalFillMode"
+										leftValue="fill"
+										rightValue="wireframe"
+										value={cfg.sphericalWireframe ? "wireframe" : "fill"}
+										onChange={(v) => setCfg({ sphericalWireframe: v === "wireframe" })}
 									/>
-									<Reveal show={cfg.sphericalWireSection === "rect"}>
-										<div className="space-y-2">
+									{/* Realistic shades the round sphere as if the tiling lines were CARVED into it:
+									    faces raised, edges sunk into a smooth SDF groove, lit as matte stone. There is
+									    nothing to carve on the wireframe, on the flat solid, or under the Islamic
+									    construction, which replaces the base surface entirely. */}
+									<Reveal show={!cfg.sphericalWireframe && shapeIsSphere}>
+										<div className="pl-7">
+											<Checkbox
+												id="sphericalRealistic"
+												label="Realistic"
+												checked={cfg.sphericalRealistic}
+												onCheckedChange={(v) => setCfg({ sphericalRealistic: v })}
+												disabled={islamicLocksShape}
+												hint={
+													islamicLocksShape ? (
+														<InfoDot>
+															The Islamic construction replaces the base surface with its own ribbons,
+															so there is no sphere left to carve.
+														</InfoDot>
+													) : undefined
+												}
+											/>
+										</div>
+									</Reveal>
+									<Reveal show={cfg.sphericalWireframe}>
+										<div className="space-y-2 pl-7">
+											<span className="text-[11px] text-fg-muted">Section</span>
+											<div className="flex gap-2">
+												<Button
+													variant={cfg.sphericalWireSection === "tube" ? "primary" : "secondary"}
+													size="sm"
+													classes="flex-1"
+													onClick={() => setCfg({ sphericalWireSection: "tube" })}
+												>
+													Tube
+												</Button>
+												<Button
+													variant={cfg.sphericalWireSection === "rect" ? "primary" : "secondary"}
+													size="sm"
+													classes="flex-1"
+													onClick={() => setCfg({ sphericalWireSection: "rect" })}
+												>
+													Rectangle
+												</Button>
+											</div>
 											<Slider
-												id="sphericalWireHeight"
-												label="Height"
-												value={cfg.sphericalWireHeight}
-												onChange={(v) => setCfg({ sphericalWireHeight: v })}
+												id="sphericalWireThickness"
+												label="Thickness"
+												value={cfg.sphericalWireThickness}
+												onChange={(v) => setCfg({ sphericalWireThickness: v })}
 												min={0.005}
 												max={0.15}
 												step={0.005}
 											/>
-											<Slider
-												id="sphericalWireBevel"
-												label="Bevel"
-												value={cfg.sphericalWireBevel}
-												onChange={(v) => setCfg({ sphericalWireBevel: v })}
-												min={0}
-												max={1}
-												step={0.05}
-											/>
+											<Reveal show={cfg.sphericalWireSection === "rect"}>
+												<div className="space-y-2">
+													<Slider
+														id="sphericalWireHeight"
+														label="Height"
+														value={cfg.sphericalWireHeight}
+														onChange={(v) => setCfg({ sphericalWireHeight: v })}
+														min={0.005}
+														max={0.15}
+														step={0.005}
+													/>
+													<Slider
+														id="sphericalWireBevel"
+														label="Bevel"
+														value={cfg.sphericalWireBevel}
+														onChange={(v) => setCfg({ sphericalWireBevel: v })}
+														min={0}
+														max={1}
+														step={0.05}
+													/>
+												</div>
+											</Reveal>
 										</div>
 									</Reveal>
-								</div>
-							</Reveal>
-							{/* Polyhedron: a "flatten" modifier, not a Fill sub-style — it works with EITHER base. With
-							    Fill it swaps the round sphere for the TRUE flat-faced solid (lit facets + dark edge
-							    tubes); with Wireframe it makes the tube bars straight chords instead of curved arcs.
-							    Hidden, and forced ON by the canvas, for a solid with NO CIRCUMSPHERE: there is no
-							    sphere to flatten from, so the checkbox would offer a view that is not of this solid
-							    (AL, 2026-08-21). lib/tilings/sph-inscribed.ts decides. */}
-							<Reveal show={sphereViewAvailable}>
-								<Checkbox
-									id="sphericalPolyhedron"
-									label="Polyhedron"
-									checked={cfg.sphericalPolyhedron}
-									onCheckedChange={(v) => setCfg({ sphericalPolyhedron: v })}
-								/>
-							</Reveal>
+								</>
+							) : null}
 							{/* Studio look: the shared surface treatment for every spherical 3D view — an image-based
 							    environment, reflective materials and a key/fill/rim rig, with the round tiling sphere
 							    shaded inside its own shader. Off returns the plain diagram look. One flag, so the
@@ -1080,7 +1141,8 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 								}
 							/>
 							{/* Camera projection: perspective (foreshortened) vs orthographic (parallel, the flat
-							    "isometric" solid look). One or the other, so a single toggle. */}
+							    "isometric" solid look). One or the other, so a single toggle. Shared by all three
+							    canvases through lib/render/sphericalCamera.ts. */}
 							<Toggle
 								id="sphericalProjection"
 								label="Projection"
@@ -1089,56 +1151,12 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 								value={cfg.sphericalOrthographic ? "orthographic" : "perspective"}
 								onChange={(v) => setCfg({ sphericalOrthographic: v === "orthographic" })}
 							/>
-						</div>
-					) : null}
-					{/* Spherical freedraw: the two Display controls the /freedraw spherical arm carries, and nothing
-					    else — the ico-freedraw canvas colours its own tiles and draws its own fixed edge tubes, so
-					    fill / stroke / hue / rotation / points / orbits have nothing to act on. Polyhedron/Sphere
-					    swaps flat facets for the round sphere; Grid draws the solid's full edge lattice faintly. */}
-					{isSphericalFreedraw || isSphColors ? (
-						<div className="space-y-2">
-							<p className="text-[11px] text-fg-muted leading-relaxed">
-								Drag to rotate the solid freely; scroll to zoom.
-							</p>
-							<span className="text-[11px] text-fg-muted">Display</span>
-							<div className="flex gap-2">
-								<Button
-									variant={cfg.sphericalFreedrawMode === "polyhedron" ? "primary" : "secondary"}
-									size="sm"
-									classes="flex-1"
-									onClick={() => setCfg({ sphericalFreedrawMode: "polyhedron" })}
-								>
-									Polyhedron
-								</Button>
-								<Button
-									variant={cfg.sphericalFreedrawMode === "sphere" ? "primary" : "secondary"}
-									size="sm"
-									classes="flex-1"
-									onClick={() => setCfg({ sphericalFreedrawMode: "sphere" })}
-								>
-									Sphere
-								</Button>
-							</div>
-							{/* Studio look: the shared surface treatment for every spherical 3D view — an image-based
-							    environment, reflective materials and a key/fill/rim rig, with the round tiling sphere
-							    shaded inside its own shader. Off returns the plain diagram look. One flag, so the
-							    solid, its thumbnails and the other spherical shelves all change together.
-							    See lib/render/sphericalLook.ts. */}
-							<Checkbox
-								id="sphericalStudio"
-								label="Studio look"
-								checked={cfg.sphericalStudio}
-								onCheckedChange={(v) => setCfg({ sphericalStudio: v })}
-								hint={
-									<InfoDot>
-										Lights the solid from a room instead of two lamps, and gives its surfaces a sheen.
-										Off draws the flat diagram look.
-									</InfoDot>
-								}
-							/>
-							{/* Spherical freedraw has a drawn/undrawn split, so it offers a faint base-grid toggle; a
-							    coloring has every edge as a real tile boundary, so there is nothing extra to reveal. */}
-							{isSphericalFreedraw ? (
+							{/* The faint base-grid overlay draws the solid's FULL edge lattice under the drawn ink, so
+							    it says something only where the drawn set is a proper subset of it: the spherical
+							    freedraw patterns and the edge-marked boards. On a star polyhedron or a 3.4.n.4 solid
+							    every edge is drawn already, so the grid would retrace the same lines — it rode the
+							    surface flag and showed there until 2026-08-21. */}
+							{selected?.sphericalFreedraw || selected?.sphEdges || selected?.schwarz ? (
 								<Checkbox
 									id="sphericalFreedrawGrid"
 									label="Grid"
@@ -1150,7 +1168,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							{/* What the sphere view is showing, said once. A star polyhedron's faces overlap on the
 							    circumsphere, so the mode cannot draw a tiling the way it does for a convex solid, and
 							    a blue ball with arcs on it explains nothing on its own. */}
-							{isSphStar && cfg.sphericalFreedrawMode === "sphere" ? (
+							{isSphStar && shapeIsSphere ? (
 								<p className="text-[11px] text-fg-muted leading-relaxed">
 									Star faces overlap on the sphere, so there is no tiling to draw. Each direction is
 									shaded by how many faces lie over it: the sheets a ray from the centre crosses.
@@ -1161,7 +1179,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							    through each other. All shows both (the honest picture of the surface), True drops the
 							    creases (which bound no face, so V, E and F are unchanged by dropping them), None
 							    leaves the bare coloured faces. */}
-							{isSphStar && cfg.sphericalFreedrawMode !== "sphere" ? (
+							{isSphStar && !shapeIsSphere ? (
 								<div className="space-y-2">
 									<span className="flex items-center gap-1 text-[11px] text-fg-muted">
 										Edges
