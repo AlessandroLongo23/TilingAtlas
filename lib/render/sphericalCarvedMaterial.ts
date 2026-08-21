@@ -76,6 +76,9 @@ export function createCarvedSphereMaterial(opts: CarvedMaterialOptions): CarvedM
 	// Matte stone: rough, non-metallic, so the grooves read through AO + soft form shading and the bright
 	// tile hues never blow out into specular hot spots.
 	const material = new THREE.MeshStandardMaterial({ roughness: 0.92, metalness: 0.0, side: THREE.FrontSide });
+	// The studio look re-tunes surfaces by role, and its default rule (single-colour ⇒ a line) would hand
+	// this ball the polished-graphite numbers. It is stone; say so. See lib/render/sphericalLook.ts.
+	material.userData.sphLook = "stone";
 
 	material.onBeforeCompile = (shader) => {
 		Object.assign(shader.uniforms, uniforms);

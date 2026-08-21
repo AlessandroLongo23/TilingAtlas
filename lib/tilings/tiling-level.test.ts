@@ -115,13 +115,17 @@ describe.skipIf(!anyShard)("the levels over every shipped curved shelf", () => {
 
 	it("classifies every solid, including the twins the census alone cannot separate", () => {
 		const rows = read(SPH) as { id: string; k: number; family: string }[];
-		expect(rows.length).toBe(40);
+		// 40 -> 59 when develop_euclid's nineteen landed, -> 64 when the 2-orbit deltahedra did
+		// (2026-08-20), -> 71 when the spherical 3.4.n.4 shelf was folded in and its seven non-duplicate
+		// solids completed J72-J83, -> 105 with the 34 non-convex regular-faced solids, -> 124 with the k=3 Johnson run (2026-08-21). Every Johnson solid the Euclidean developer adds is a
+		// hybrid: two vertex configurations that are not one multiset reordered, which is the level.
+		expect(rows.length).toBe(124);
 		expect(census(rows.map((r) => ({ level: tilingLevel({ ...r, spherical: {} }) })))).toEqual({
 			regular: 5,
 			archimedean: 23,
-			"pseudo-archimedean": 1,
-			combination: 4,
-			hybrid: 7,
+			"pseudo-archimedean": 3,
+			combination: 6,
+			hybrid: 87,
 		});
 		const of = (id: string) => {
 			const r = rows.find((x) => x.id === id)!;

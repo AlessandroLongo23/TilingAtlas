@@ -115,8 +115,11 @@ describe("starFaceRings", () => {
 			}
 			return Math.abs(s) / 2;
 		};
-		// every star face type the spherical-star shelf actually carries, plus two retrograde forms
-		for (const [n, d] of [[5, 2], [7, 2], [7, 3], [8, 3], [10, 3], [8, 5], [12, 7]] as [number, number][]) {
+		// The star face types the shelf carries, plus two retrograde forms. The pyramid family took the
+		// shelf well past {10/3} — a pyramid over {n/d} closes for every 2 < n/d < 4 — so the last three
+		// are its extremes: the largest n, the tightest winding, and one in between.
+		for (const [n, d] of [[5, 2], [7, 2], [7, 3], [8, 3], [10, 3], [8, 5], [12, 7],
+			[20, 9], [13, 6], [15, 4]] as [number, number][]) {
 			const verts = ngon(n);
 			const face = traversal(n, d);
 			const poly = face.map((i) => verts[i]);

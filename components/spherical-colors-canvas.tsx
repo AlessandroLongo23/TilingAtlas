@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { ArcballControls } from "three/examples/jsm/controls/ArcballControls.js";
 import { useConfiguration } from "@/stores/configuration";
 import { measureBox } from "@/lib/render/canvasSize";
+import { createOrbitMomentum, type OrbitMomentum } from "@/lib/render/orbitMomentum";
 import { captureOverride, offerFrame } from "@/lib/render/capture";
 import { buildSphColors, type SphColorsScene } from "@/lib/render/sphColors";
 import { paletteRgb255 } from "@/lib/colors/render";
@@ -29,6 +30,8 @@ export function SphericalColorsCanvas({ pattern, mode }: Props) {
 	const sceneRef = useRef<THREE.Scene | null>(null);
 	const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
 	const controlsRef = useRef<ArcballControls | null>(null);
+	// Release momentum — let go mid-drag and the solid coasts (lib/render/orbitMomentum.ts).
+	const momentumRef = useRef<OrbitMomentum | null>(null);
 	const rafRef = useRef<number | null>(null);
 	const contentRef = useRef<SphColorsScene | null>(null);
 	const [errored, setErrored] = useState(false);
@@ -83,9 +86,18 @@ export function SphericalColorsCanvas({ pattern, mode }: Props) {
 		controls.maxDistance = 8;
 		controls.setGizmosVisible(false);
 		controlsRef.current = controls;
+		// ArcballControls' own inertia stays off above (enableAnimations = false): it runs a private rAF loop
+		// and its velocity estimate is unstable. This measures the camera basis instead, and is clamped.
+		momentumRef.current = createOrbitMomentum(() => cameraRef.current, { domElement: canvas });
 
 		let box = { w: 0, h: 0, r: 1 };
+		let lastFrame = performance.now();
 		const animate = () => {
+			const t = performance.now();
+			const dt = Math.min((t - lastFrame) / 1000, 0.1); // a backgrounded tab must not launch a huge step
+			lastFrame = t;
+			// Before update(): the coast moves position/up and the controls' lookAt rebuilds the orientation.
+			momentumRef.current?.frame(dt);
 			controlsRef.current?.update();
 			const cam = cameraRef.current;
 			// An export in flight (lib/render/capture.ts) outranks the host box, the same override the flat
@@ -112,6 +124,8 @@ export function SphericalColorsCanvas({ pattern, mode }: Props) {
 
 		return () => {
 			if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
+			momentumRef.current?.dispose();
+			momentumRef.current = null;
 			controlsRef.current?.dispose();
 			contentRef.current?.dispose();
 			renderer.dispose();

@@ -29,6 +29,7 @@ export function SphPolyThumbnail({
 			solidId={`sphpoly-${pattern.base}`}
 			vertices={scene.vertices}
 			allEdges={scene.allEdges}
+			tileHsb={scene.tileHsb}
 			mode={mode}
 			showGrid={showGrid}
 			size={size}

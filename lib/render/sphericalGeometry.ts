@@ -170,18 +170,36 @@ export function vertexPoints(poly: Polyhedron, radius = 1): Vec3[] {
 	});
 }
 
+// FIT, DO NOT INFLATE. The polyhedron views scale the solid to `radius` by ONE factor for the whole
+// solid — the largest vertex radius — so the shape survives.
+//
+// ⚑ This used to be a PER-VERTEX normalise, and the comment that justified it said "for a
+// Platonic/Archimedean solid all vertices share one circumradius, so this is a UNIFORM scale … a
+// per-vertex normalise would only distort a solid whose corners sat at mixed radii — none here do".
+// That was true of the shelf it was written for and stopped being true the day the Johnson solids
+// landed: nineteen of the sixty-four have NO CIRCUMSPHERE (lib/tilings/sph-inscribed.ts), their corners
+// sit at mixed radii by definition, and pushing each one out to `radius` bends every face out of shape.
+// AL saw it on J31 — "this sph-pentagonal-gyrobicupola doesn't seem to be consisting of only regular
+// polygons" (2026-08-21). It consists of nothing else: 10 triangles, 10 squares, 2 pentagons, all 40
+// edges equal to nine decimal places. The renderer was inflating it onto a sphere it does not have.
+//
+// For a solid whose vertices DO share a radius about the origin the two agree exactly — max|v| = |v| for
+// every v, so the factor is the same one a normalise applied — which is why every Platonic, Archimedean,
+// prism and antiprism render is untouched.
+export function solidFitScale(poly: Polyhedron, radius = 1): Vec3[] {
+	let far = 0;
+	for (const v of poly.vertices) far = Math.max(far, Math.hypot(v[0], v[1], v[2]));
+	const s = far > 1e-12 ? radius / far : radius;
+	return poly.vertices.map((v) => [v[0] * s, v[1] * s, v[2] * s] as Vec3);
+}
+
 // The TRUE flat facets of the solid (not the round sphere) as a non-indexed triangle soup — one fan per
-// face, ready to hand to a flat-shaded BufferGeometry. Every vertex is normalised onto the sphere of
-// `radius`; for a Platonic/Archimedean solid all vertices share one circumradius, so this is a UNIFORM
-// scale that keeps the flat facets intact (a per-vertex normalise would only distort a solid whose corners
-// sat at mixed radii — none here do). Fan triangulation (v0,vk,vk+1) is valid because every face is a
-// convex regular polygon. `positions` is the flattened xyz (9 floats per triangle); `faceSizes[t]` is the
-// source face's vertex count for triangle t, so the mesh builder can colour by polygon size.
+// face, ready to hand to a flat-shaded BufferGeometry. Fan triangulation (v0,vk,vk+1) is valid because
+// every face is a convex regular polygon. `positions` is the flattened xyz (9 floats per triangle);
+// `faceSizes[t]` is the source face's vertex count for triangle t, so the mesh builder can colour by
+// polygon size.
 export function flatSolidTriangles(poly: Polyhedron, radius = 1): { positions: Float32Array; faceSizes: number[] } {
-	const unit = poly.vertices.map((v) => {
-		const n = normalize(v);
-		return [n[0] * radius, n[1] * radius, n[2] * radius] as Vec3;
-	});
+	const unit = solidFitScale(poly, radius);
 	const triCount = poly.faces.reduce((sum, f) => sum + (f.length - 2), 0);
 	const positions = new Float32Array(triCount * 9);
 	const faceSizes: number[] = new Array(triCount);
@@ -212,16 +230,16 @@ export function flatSolidTriangles(poly: Polyhedron, radius = 1): { positions: F
 	return { positions, faceSizes };
 }
 
-// The unique polyhedron edges as STRAIGHT chords (2 points each) between the normalised vertices — the flat
-// solid's real edges, ready to feed the tube skeleton (buildTubeSkeleton) exactly like edgeArcs, but straight
-// instead of curved. `extend` (in the same length units as `radius`) overshoots each end along the chord so
-// adjacent tube bars overlap into a filled joint at every corner, matching edgeArcs' overshoot. This is what
-// makes Wireframe + Polyhedron draw straight bars, and the flat solid's own edge tubes straight.
+// The unique polyhedron edges as STRAIGHT chords (2 points each) — the flat solid's real edges, ready to
+// feed the tube skeleton (buildTubeSkeleton) exactly like edgeArcs, but straight instead of curved.
+// `extend` (in the same length units as `radius`) overshoots each end along the chord so adjacent tube
+// bars overlap into a filled joint at every corner, matching edgeArcs' overshoot. This is what makes
+// Wireframe + Polyhedron draw straight bars, and the flat solid's own edge tubes straight.
+//
+// Uses the same whole-solid fit as the facets, so the tubes land ON the edges they are drawing. When this
+// normalised per vertex and the facets did too they at least agreed; the pair has to move together.
 export function straightEdges(poly: Polyhedron, radius = 1, extend = 0): Float32Array[] {
-	const unit = poly.vertices.map((v) => {
-		const n = normalize(v);
-		return [n[0] * radius, n[1] * radius, n[2] * radius] as Vec3;
-	});
+	const unit = solidFitScale(poly, radius);
 	return solidEdges(poly).map(([a, b]) => {
 		const A = unit[a];
 		const B = unit[b];

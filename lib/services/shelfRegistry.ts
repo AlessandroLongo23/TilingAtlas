@@ -147,7 +147,12 @@ export const SHELVES: Record<ShelfId, ShelfDef> = {
 	hypPoly: { field: "hypPoly", surface: "diskColors", kNoun: null },
 
 	// --- Spherical ---
-	spherical: { field: "spherical", surface: "sphere", kNoun: null },
+	// k NAMES THE CLASS on this shelf. Among convex polyhedra with regular faces, k = 1 is exactly the
+	// UNIFORM ones (vertex-transitive: 5 Platonic, 13 Archimedean, the prisms and antiprisms) and k > 1
+	// is exactly the JOHNSON ones — a Johnson solid is by definition a convex regular-faced polyhedron
+	// that is not uniform. So the two are not a gloss on the orbit count, they ARE the orbit count, and
+	// the row says so instead of leaving a visitor to know it (AL, 2026-08-21).
+	spherical: { field: "spherical", surface: "sphere", kNoun: (t) => ((t.k ?? 1) > 1 ? "Johnson" : "uniform") },
 	sphericalFreedraw: { field: "sphericalFreedraw", surface: "sphereEdges", kNoun: EDGE_ORBITS },
 	sphEdges: { field: "sphEdges", surface: "sphereEdges", kNoun: EDGE_ORBITS },
 	sphPoly: { field: "sphPoly", surface: "sphereEdges", kNoun: null },

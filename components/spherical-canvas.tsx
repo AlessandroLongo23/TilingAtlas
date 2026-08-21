@@ -8,7 +8,9 @@ import { polyhedronForId } from "@/lib/render/sphericalSolids";
 import { measureBox } from "@/lib/render/canvasSize";
 import { captureOverride, offerFrame } from "@/lib/render/capture";
 import { createSphere, type Sphere } from "@/lib/render/sphericalScene";
+import { createOrbitMomentum, type OrbitMomentum } from "@/lib/render/orbitMomentum";
 import { buildFlatSolid, type FlatSolid } from "@/lib/render/sphericalPolyhedron";
+import { hasSphereView } from "@/lib/tilings/sph-inscribed";
 import { buildWireframe, type Wireframe } from "@/lib/render/sphericalWireframe";
 import { buildIslamicPattern, type IslamicPattern } from "@/lib/render/sphericalIslamicMesh";
 import { buildIslamicFill, type IslamicFill } from "@/lib/render/sphericalIslamicFill";
@@ -87,10 +89,10 @@ function makeArcball(camera: SphericalCamera, canvas: HTMLCanvasElement, scene: 
 	controls.enableFocus = false; // no double-click recentre jump
 	controls.enableGrid = false;
 	controls.cursorZoom = false;
-	// Inertia OFF: the release-momentum animation spins the solid on AFTER the mouse is up — and with the
-	// orthographic trackball radius the velocity blows up into a runaway spin (the "it snaps to a different
-	// orientation when I lift the mouse" bug). A direct grab-and-stop is also the right feel for inspecting a
-	// solid. This also removes ArcballControls' own rAF loop, so our render loop is the only driver.
+	// ArcballControls' OWN inertia stays off: with the orthographic trackball radius its velocity estimate
+	// blows up into a runaway spin (the "it snaps to a different orientation when I lift the mouse" bug), and
+	// its animation runs a private rAF loop that fights ours. Release momentum is ours instead
+	// (lib/render/orbitMomentum.ts), measured from the camera basis and clamped, so it cannot run away.
 	controls.enableAnimations = false;
 	controls.minDistance = 1.6;
 	controls.maxDistance = 8;
@@ -132,6 +134,9 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 	const sceneRef = useRef<THREE.Scene | null>(null);
 	const cameraRef = useRef<SphericalCamera | null>(null);
 	const controlsRef = useRef<ArcballControls | null>(null);
+	// Release momentum: let go mid-drag and the solid coasts (lib/render/orbitMomentum.ts). It reads the
+	// camera through a ref, so the projection toggle's fresh camera keeps the spin instead of dropping it.
+	const momentumRef = useRef<OrbitMomentum | null>(null);
 	// Last host box the renderer was sized to. Cleared to force a re-apply when the projection toggle
 	// swaps in a fresh camera; the render loop owns every other update.
 	const boxRef = useRef({ w: 0, h: 0 });
@@ -193,6 +198,7 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 		camera.updateProjectionMatrix();
 		cameraRef.current = camera;
 		controlsRef.current = makeArcball(camera, canvas, scene, interactiveRef.current);
+		momentumRef.current = createOrbitMomentum(() => cameraRef.current, { domElement: canvas });
 
 		// DEBUG (dev only): read the live camera + controls state to diagnose the projection-toggle drift.
 		if (process.env.NODE_ENV !== "production") {
@@ -207,7 +213,14 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 		}
 
 		let capRatio = 1;
+		let lastFrame = performance.now();
 		const animate = () => {
+			const t = performance.now();
+			const dt = Math.min((t - lastFrame) / 1000, 0.1); // a backgrounded tab must not launch a huge step
+			lastFrame = t;
+			// Before controls.update(): the coast moves position/up, and the controls' own lookAt then
+			// rebuilds the orientation from them in the same frame.
+			momentumRef.current?.frame(dt);
 			const controls = controlsRef.current;
 			const cam = cameraRef.current;
 			// Track the host box here, in the loop, not through a React size prop: a size that
@@ -237,6 +250,8 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 
 		return () => {
 			if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
+			momentumRef.current?.dispose();
+			momentumRef.current = null;
 			controlsRef.current?.dispose(); // the LATEST controls (a projection toggle may have swapped it)
 			renderer.dispose();
 			renderer.forceContextLoss();
@@ -301,6 +316,13 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 		if (!renderer || !scene) return;
 		const cfg = useConfiguration.getState();
 		const dark = document.documentElement.classList.contains("dark");
+		// ⚑ A solid with NO CIRCUMSPHERE has no spherical view, so the flat one is not a preference here,
+		// it is the only honest reading. The round sphere is the solid RADIALLY PROJECTED onto its
+		// circumsphere; without one, projection moves every vertex a different distance and what appears is
+		// a different object — AL saw J31 come out as a blob and asked whether its faces were really regular
+		// (2026-08-21). The Options tab hides the toggle for the same records, so this is not overriding a
+		// control a visitor can see. lib/tilings/sph-inscribed.ts holds the list and the fit that derives it.
+		const flat = cfg.sphericalPolyhedron || !hasSphereView(solidId);
 		let content: Content | null = null;
 		if (cfg.isIslamic) {
 			// No base surface — the overlay effect below draws the star lines (flat ribbons, or rigid tubes
@@ -314,13 +336,13 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 				bevel: cfg.sphericalWireBevel,
 				hueOffset: cfg.hueOffset,
 				// Polyhedron ON ⇒ straight chord bars (the solid's real edges); OFF ⇒ curved great-circle arcs.
-				straight: cfg.sphericalPolyhedron,
+				straight: flat,
 			});
 			if (wire) {
 				scene.add(wire.object);
 				content = { kind: "wire", wire };
 			}
-		} else if (cfg.sphericalPolyhedron) {
+		} else if (flat) {
 			// The TRUE flat-faced solid instead of the round sphere: lit facets + dark edge tubes, same hue.
 			const solid = buildFlatSolid(poly, { hueOffset: cfg.hueOffset, lineWidth: cfg.lineWidth, dark });
 			if (solid) {
@@ -349,7 +371,9 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 			}
 			contentRef.current = null;
 		};
-	}, [poly, wireframe, isIslamic, realistic, polyhedron]);
+		// solidId is listed even though `poly` is derived from it: the flat/sphere decision above reads the
+		// id directly (hasSphereView), so the effect has to re-run when it changes.
+	}, [poly, solidId, wireframe, isIslamic, realistic, polyhedron]);
 
 	// Wireframe geometry controls: rebuild the tubes in place when section / thickness / height change.
 	const section = useConfiguration((s) => s.sphericalWireSection);

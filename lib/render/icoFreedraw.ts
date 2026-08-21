@@ -389,11 +389,28 @@ export function buildIcoFreedraw(pattern: IcoPattern, rawVertices: V3[], opts: I
 	// free of the plane that was hiding most of it.
 	//
 	// A ribbon has no perpendicular extent to poke through anything. Each crease is drawn twice, once in
-	// each face's plane, a hair proud of it so it wins the z-fight with its own face and nothing else.
-	// Width matches the edge tubes' diameter and the colour is theirs, so the two read identically;
-	// occlusion is then ordinary depth testing, which is what puts a hidden crease behind its face.
+	// each face's plane, so it wins the z-fight with its own face and nothing else. Width matches the
+	// edge tubes' diameter and the colour is theirs, so the two read identically; occlusion is then
+	// ordinary depth testing, which is what puts a hidden crease behind its face.
 	// Never in sphere mode: a crease is where one face passes THROUGH another, and on the circumsphere
 	// there is no through — every face is on the same surface, and the density fill is what says so.
+	//
+	// ⚑ THE DEPTH BIAS IS A CONSTANT, AND polygonOffsetFactor MUST STAY 0. A crease is COPLANAR with the
+	// face it is drawn on, so the two never diverge across the polygon and a constant `units` bias is the
+	// whole of what it needs to win that tie. `factor` scales with the polygon's DEPTH SLOPE, which on a
+	// steeply inclined face is large — and a star polyhedron is layers of steeply inclined faces, so a
+	// slope term pulls creases on hidden layers far enough forward to punch through the faces in front of
+	// them. Measured on ss-60-120-62-d13 (V=60, F=62, density 13): factor -4 / units -8 differs from
+	// no-offset-at-all by 1,171,827 in summed pixel difference, and every bit of it is hairlines wandering
+	// across faces that should be solid — AL: "on some others there are some strange lying artefacts"
+	// (2026-08-21). factor 0 / units -2 differs by 1,145, which is antialiasing.
+	//
+	// What this is NOT is the fix for "the intersections of planes are not drawn as edges" (AL, the day
+	// before, on the crossed square cupola). `faceCrossings` returns every crease there is — brute-forced
+	// against a sampling of every face pair on all 89 star records, zero uncovered spans — and a crease
+	// that does not appear is one correctly hidden behind a face. This is only the small, standard decal
+	// bias that keeps a coplanar ribbon from losing to its own face; the geometric lift below stays, at a
+	// hair, for the same reason.
 	if (!density && opts.showCrossings && opts.crossings && opts.crossings.length) {
 		const edgeColor: [number, number, number] = dark ? [0.06, 0.06, 0.08] : [0.1, 0.1, 0.12];
 		const LIFT = thickness * 0.06;
@@ -424,6 +441,9 @@ export function buildIcoFreedraw(pattern: IcoPattern, rawVertices: V3[], opts: I
 			roughness: 0.5,
 			metalness: 0.0,
 			side: THREE.DoubleSide,
+			polygonOffset: true,
+			polygonOffsetFactor: 0,
+			polygonOffsetUnits: -2,
 		});
 		group.add(new THREE.Mesh(cgeom, cmat));
 		disposers.push(() => {

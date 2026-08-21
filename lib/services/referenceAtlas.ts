@@ -84,12 +84,7 @@ import {
 	type SphEdgesShard,
 } from "@/lib/freedraw/sph-edges";
 import {
-	sphPolyBoardLabel,
-	sphPolyFamilyLabel,
-	sphPolyShardUrl,
 	sphPolySub,
-	SPH_POLY_BOARDS,
-	sphPolySubOfBoard,
 	type SphPolyPattern,
 } from "@/lib/tilings/sph-poly";
 import {
@@ -109,6 +104,7 @@ import {
 	sphHalfSubOfBoard,
 	isSphHalf,
 } from "@/lib/tilings/sph-half";
+import { sphericalSolidSub } from "@/lib/tilings/sph-inscribed";
 import {
 	hypPolyBoardLabel,
 	hypPolyFamilyLabel,
@@ -547,18 +543,27 @@ export const SUB_ORDER = [
 	...HYP_TILING_BOARDS.map((b) => hypTilingSubOfBoard(b)),
 	// The HALF-TILE hyperbolic boards — a {p,q} face cut in two — on the same axis, "hph-" namespaced.
 	...HYP_HALF_BOARDS.map((b) => hypHalfSubOfBoard(b)),
-	// Their spherical siblings, n = 3, 4, 5. "spp-" namespaced.
-	...SPH_POLY_BOARDS.map((b) => sphPolySubOfBoard(b)),
-	// Grouped by density, ascending, with the records whose density did NOT resolve collected in one
-	// row at the end instead of filed under the number the signed-area sum happened to produce.
-	...[...new Set(SPH_STAR_INDEX.filter((e) => !e.stats.densitySuspect).map((e) => e.density))]
-		.sort((a, b) => a - b)
-		.map((d) => sphStarSub({ density: d })),
-	...(SPH_STAR_INDEX.some((e) => e.stats.densitySuspect) ? ["sst-dx"] : []),
+	// ── the SPHERICAL tiling shelves, CONVEX first and then not (AL, 2026-08-21) ──────────────────
+	// Convexity is the shelf's top split now, so its subs have to be contiguous here — familyOfSub can
+	// only gather a run. That is why the star rows moved to the END of this block: they used to sit
+	// between the 3.4.n.4 boards and the halved ones, which would have cut the convex family in two.
+	//
+	// The reference solids — Platonic, Archimedean, prisms, antiprisms, Johnson — as ONE row, because
+	// the k axis beneath it already draws the line that matters: k = 1 is exactly the uniform solids and
+	// k > 1 is exactly the Johnson ones. "spx-" namespaced against every other spherical prefix.
+	"spx-solid",
+	// (The spherical 3.4.n.4 boards had a row here. Their twenty solids all live on the reference shelf
+	// now — see loadSphericalPolyAtlas — so the row would always be empty.)
 	// The HALF-TILE spherical boards — a Platonic face cut in two — on the same axis, since the axis is
 	// "which spherical tiling board" and these are boards. Named ids, so they cannot collide with the
 	// 3.4.n.4 family's digits.
 	...SPH_HALF_BOARDS.map((b) => sphHalfSubOfBoard(b)),
+	// The star polyhedra: one row, the k level below it doing the dividing.
+	"sst",
+	// Their sibling: the non-convex regular-faced solids that are NOT on a circumsphere, which is why
+	// develop_spherical could not express them and the dihedral-angle developer had to find them. No
+	// catalogue names them; see lib/render/nonconvexSolids.ts.
+	"spn-solid",
 	// Parametric-pentagon edge systems: one sub per Kershner type. "pen-" namespaced.
 	...PENT_EDGE_BOARDS.map((b) => pentEdgeSubOfBoard(b)),
 	// Parametric-isohedral edge systems: one sub per isohedral type. "ih-" namespaced.
@@ -598,13 +603,12 @@ export type SubFamily =
 	// The base hyperbolic shelf, one family per VALENCE — "hyt-v3" … "hyt-v8". A template member and not
 	// six literals: the valences are whatever the corpus holds, and HYP_TILING_VALENCES is the list.
 	| `hyt-v${number}`
-	| "sph-poly"
-	// The star polyhedra: one sub per DENSITY, "sst-" namespaced. Its own family — these are not
-	// members of the 3.4.n.4 solids and they are the only spherical shelf with no k axis.
-	| "sph-star"
-	// A Platonic / {p,q} face cut in two — its own family, because these boards are NOT members of the
-	// 3.4.n.4 ones and reusing their prefix filed them under that heading on screen.
-	| "sph-half"
+	// CONVEXITY is the spherical shelf's top split (AL, 2026-08-21). It is a hard property, not a
+	// curatorial one: every star polyhedron is non-convex and everything else here is convex, so the two
+	// families partition the shelf exactly. Under "convex" sit the regular-faced solids, the 3.4.n.4
+	// boards and the halved boards; under "non-convex", the star polyhedra alone.
+	| "sph-convex"
+	| "sph-nonconvex"
 	| "hyp-half"
 	| "pent"
 	| "ih";
@@ -621,12 +625,12 @@ export function familyOfSub(sub: string): SubFamily | null {
 	if (sub.startsWith("sps-") || sub.startsWith("hys-")) return "schwarz-board";
 	if (sub.startsWith("spe-")) return "sph-edges";
 	if (sub.startsWith("hph-")) return "hyp-half";
-	if (sub.startsWith("sph-")) return "sph-half";
+	if (sub.startsWith("sph-")) return "sph-convex";   // the halved Platonic boards
 	if (sub.startsWith("hpo-")) return "hyp-poly";
 	// One shelf, two one-parameter families: 3.4.n.4 under "hpo-", {3,n} under "hpt-".
 	if (sub.startsWith("hpt-")) return "hyp-poly-t";
-	if (sub.startsWith("spp-")) return "sph-poly";
-	if (sub.startsWith("sst-")) return "sph-star";
+	if (sub.startsWith("spx-")) return "sph-convex";   // the reference solids
+	if (sub === "sst" || sub === "spn-solid") return "sph-nonconvex";
 	// The base hyperbolic shelf: one family per valence, "hyt-v8". A regex and not a table, because the
 	// six families are the six valences the corpus contains and hypTilingFamilyOfSub is the one place
 	// that parses the id.
@@ -644,6 +648,7 @@ export function subOf(t: {
 	family?: string;
 	/** The four Euclidean half-polygon boards share one source, so the board comes off the row. */
 	euHalfBoard?: string;
+	spherical?: { solid: string };
 	sphericalFreedraw?: { solid: string };
 	freedraw?: FreedrawPattern;
 	colors?: ColorPattern;
@@ -669,8 +674,11 @@ export function subOf(t: {
 	if (t.sphEdges) return sphEdgesSub(t.sphEdges);
 	if (t.hypPoly) return isHypHalf(t.hypPoly) ? hypHalfSub(t.hypPoly) : hypPolySub(t.hypPoly);
 	if (t.sphPoly) return isSphHalf(t.sphPoly) ? sphHalfSub(t.sphPoly) : sphPolySub(t.sphPoly);
-	if (t.sphStar) return sphStarSub(t.sphStar as { density: number });
+	if (t.sphStar) return sphStarSub();
 	if (t.sphericalFreedraw) return t.sphericalFreedraw.solid;
+	// A reference-atlas solid. AFTER sphericalFreedraw, which is a decoration OF one of these and owns
+	// its own axis. These used to fall through to the anonymous spine and render as one flat row of 64.
+	if (t.spherical) return sphericalSolidSub(t.spherical.solid);
 	if (t.hypEdges) return hypEdgesSub(t.hypEdges);
 	if (t.hypColors) return hypColorsSub(t.hypColors);
 	if (t.sphColors) return sphColorsSub(t.sphColors.pattern);
@@ -2246,27 +2254,11 @@ function sphStarToReference(p: SphStarPattern): ReferenceTiling {
 		discoverer: "Marek Čtrnáct",
 		// The enumeration is the Čtrnáct engine's, extended here with a {n/d} tile kind and a density
 		// closure; the geometry is measured, not looked up — each record's flood-fill closes, every edge
-		// measures the one forced arc, every face is planar and equilateral, the isometry group acts with a
-		// SINGLE vertex orbit, and Sigma face area is 4*pi times a whole number. Where that signature was
-		// checked by hand against the published catalogue the solid carries its name; where it was not it
-		// ships unnamed. Either way the enumeration is not independently proved complete here.
-		certification: "candidate",
-	};
-}
-
-function sphPolyToReference(p: SphPolyPattern): ReferenceTiling {
-	return {
-		id: p.id,
-		source: "spherical",
-		k: p.k,
-		family: `${sphPolyBoardLabel(p.base)}${p.chiral ? " · chiral" : ""} · ${sphPolyFamilyLabel(p)}`,
-		renderCell: FREEDRAW_EMPTY_CELL,
-		sphPoly: p,
-		geometry: "spherical",
-		discoverer: "Marek Čtrnáct",
-		// Every record closes to Euler 2 with every side measuring the one forced arc and every ring the
-		// length its letter claims, and its k is the orbit count MEASURED off the finished solid — which
-		// agrees with Marek's on all 20. The enumeration itself is his alone, so "candidate".
+		// measures the one forced arc, every face is planar and equilateral, the measured vertex-orbit
+		// count agrees with the certificate's k, and Sigma face area is 4*pi times a whole number. Where
+		// that signature was checked by hand against the published catalogue the solid carries its name;
+		// where it was not it ships unnamed, except the pyramids, whose name their own signature proves.
+		// Either way the enumeration is not independently proved complete here.
 		certification: "candidate",
 	};
 }
@@ -2297,15 +2289,18 @@ let sphPolyInflight: Promise<ReferenceTiling[]> | null = null;
 export async function loadSphericalPolyAtlas(): Promise<ReferenceTiling[]> {
 	if (sphPolyCache) return sphPolyCache;
 	if (sphPolyInflight) return sphPolyInflight;
+	// ⚑ THE SPHERICAL 3.4.n.4 BOARDS ARE NOT FETCHED. All twenty of their solids are uniform or Johnson
+	// ones and the reference shelf now holds every one: thirteen duplicated a record already there
+	// (cuboctahedron, rhombicuboctahedron, rhombicosidodecahedron, the octagonal prism, J3, J19, J27,
+	// J37, J72, J73, J76, J77, J80 — matched by congruence, not by name) and the other seven completed
+	// J72-J83, the gyrate/diminished rhombicosidodecahedra, which the shelf had five of. Loading them
+	// too would put the same solid on the shelf twice under two headings, which is what AL asked to stop
+	// (2026-08-21). The shards stay in public/spherical-poly/ — they are develop_ai1_sph's output and the
+	// squaring shelf reads them — and tools/ctrnact-oracle/gen_johnson_rhombicosi.py is what turned the
+	// seven into records here. The HYPERBOLIC half of the family ("hpo-") is untouched: it is infinite,
+	// and nothing else in the catalogue holds it.
 	sphPolyInflight = Promise.all(
-		SPH_POLY_BOARDS.flatMap((b) =>
-			b.ks.map((k) =>
-				fetch(sphPolyShardUrl(b.n, k))
-					.then((res) => (res.ok ? readAtlas<SphPolyPattern>(res) : []))
-					.catch(() => [] as SphPolyPattern[])
-					.then((recs) => recs.map(sphPolyToReference)),
-			),
-		).concat(
+		([] as Promise<ReferenceTiling[]>[]).concat(
 			SPH_HALF_BOARDS.flatMap((b) =>
 				b.ks.map((k) =>
 					fetch(sphHalfShardUrl(b.id, k))
@@ -2316,7 +2311,7 @@ export async function loadSphericalPolyAtlas(): Promise<ReferenceTiling[]> {
 			),
 		).concat(
 			// One fetch per solid: this shelf has no shared board to index into (every record IS a different
-			// polyhedron) and the whole thing is ~310 kB across 46 files, so there is nothing to defer.
+			// polyhedron) and the whole thing is ~460 kB across 83 files, so there is nothing to defer.
 			SPH_STAR_INDEX.map((e) =>
 				fetch(sphStarShardUrl(e.id))
 					.then((res) => (res.ok ? (res.json() as Promise<SphStarPattern>) : null))

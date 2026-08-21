@@ -65,11 +65,11 @@ export const FAMILY_LABEL: Record<string, string> = {
 	// The base hyperbolic shelf, one heading per valence. Derived, so a corpus that reaches valence 9
 	// arrives named instead of rendering "hyt-v9" at a visitor.
 	...Object.fromEntries(HYP_TILING_VALENCES.map((v) => [`hyt-v${v}`, hypTilingValenceLabel(v)])),
-	"sph-poly": "3.4.n.4 solids",
-	"sph-star": "Star polyhedra",
-	// A regular face cut in two. Their own heading, because they are not members of the 3.4.n.4 families
-	// and were filed under that heading while they shared its prefix.
-	"sph-half": "Halved Platonic faces",
+	// CONVEXITY, the spherical shelf's top split (AL, 2026-08-21). A hard property and an exact partition:
+	// every star polyhedron is non-convex, everything else here is convex. Convex gathers the reference
+	// solids, the 3.4.n.4 boards and the halved boards; non-convex is the star shelf alone.
+	"sph-convex": "Convex",
+	"sph-nonconvex": "Non-convex",
 	"hyp-half": "Halved {p,q} faces",
 	pent: "Pentagon families",
 	ih: "Isohedral families",
@@ -144,27 +144,18 @@ const NAMED: Record<string, string> = {
 	"sph-cube-half": "Cube halved (12 tiles)",
 	"sph-ico-half": "Icosahedron halved (40 tiles)",
 	"sph-dodec-half": "Dodecahedron halved (24 tiles)",
-	"spp-3": "3.4.3.4 solids",
-	"spp-4": "3.4.4.4 solids",
-	"spp-5": "3.4.5.4 solids",
-	// Star polyhedra, one sub per DENSITY — the number of times the solid wraps its circumsphere. This
-	// shelf has no k axis (uniform means vertex-transitive, so every record is k = 1), and density is
-	// the quantity that orders it instead.
-	"sst-d1": "Density 1",
-	// Not a density. The signed-area sum cancelled to 1 on a solid with a self-intersecting face, so the
-	// number is not the covering number and the shelf declines to print one. See `densityUnresolved`.
-	"sst-dx": "Density unresolved",
-	"sst-d2": "Density 2",
-	"sst-d3": "Density 3",
-	"sst-d4": "Density 4",
-	"sst-d5": "Density 5",
-	"sst-d6": "Density 6",
-	"sst-d7": "Density 7",
-	"sst-d9": "Density 9",
-	"sst-d10": "Density 10",
-	"sst-d13": "Density 13",
-	"sst-d37": "Density 37",
-	"sst-d38": "Density 38",
+	// The reference solids as ONE row: Platonic, Archimedean, prisms, antiprisms and Johnson, every face a
+	// regular polygon. The k rows beneath already draw the line that matters — k = 1 is exactly the
+	// UNIFORM solids and k > 1 is exactly the JOHNSON ones (a Johnson solid is by definition a convex
+	// regular-faced polyhedron that is not uniform), which is why the k row names them.
+	"spx-solid": "Regular polygons",
+	// One row for the whole star shelf; the k rows beneath split it (52 at k=1, 37 at k=2). Density is on
+	// every card and in every record — it is just no longer the axis, which is what AL asked for.
+	sst: "Star polyhedra",
+	// The star shelf's sibling: non-convex, regular-faced, and NOT on a circumsphere — which is exactly
+	// why they are not on the star shelf, since that one is realized on S2 and a solid without a
+	// circumsphere cannot be. Unnamed by design; nothing enumerates this class.
+	"spn-solid": "No circumsphere",
 	// The two hyperbolic-poly families are NOT here either: their boards carry a label, so "3.4.7.4
 	// tilings" and "{3,7} tilings" are derived below off HYP_POLY_BOARDS.
 	// Hyperbolic edge systems: one sub per base tiling.
@@ -240,6 +231,9 @@ export const SUB_LABEL: Record<string, string> = {
 			`${hypTilingBoardLabel(b)}, ${hypTilingValenceLabel(b.valence)}`,
 		]),
 	),
+	// Star polyhedra, one row per density the shelf actually holds. Derived for the same reason as the
+	// board shelves above: which densities exist is a fact about the records, and writing them out by
+	// hand is how a new solid ships a row labelled with its own slug.
 	...NAMED,
 };
 

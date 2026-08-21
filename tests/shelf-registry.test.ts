@@ -140,9 +140,21 @@ describe("sub families", () => {
 		}
 	});
 
-	it("files every star-polyhedron sub under one family", () => {
-		const subs = SUB_ORDER.filter((s) => s.startsWith("sst-"));
-		expect(subs.length).toBeGreaterThan(0);
-		expect(new Set(subs.map(familyOfSub))).toEqual(new Set(["sph-star"]));
+	// The star shelf is ONE sub now, not one per density (AL, 2026-08-21) — the k rows below it divide it
+	// instead. What still has to hold is that it is the whole of the non-convex family and nothing else
+	// lands there: every star polyhedron is non-convex, and every other spherical board is convex.
+	it("files the star shelf and its no-circumsphere sibling as the non-convex family", () => {
+		expect(SUB_ORDER).toContain("sst");
+		expect(familyOfSub("sst")).toBe("sph-nonconvex");
+		expect(SUB_ORDER.filter((s) => familyOfSub(s) === "sph-nonconvex")).toEqual(["sst", "spn-solid"]);
+		// …and the convex family is the other three spherical shelves, contiguous so the tree can gather
+		// them in one run (which tests/catalogue-sub-family.test.ts asserts generally).
+		// Convex is the reference solids plus the halved boards. (The spherical 3.4.n.4 boards were here
+		// too until 2026-08-21; all twenty of their solids were duplicates of reference records or the
+		// rest of J72-J83, so the shelf was folded into that one and its rows retired.)
+		const convex = SUB_ORDER.filter((s) => familyOfSub(s) === "sph-convex");
+		expect(convex[0]).toBe("spx-solid");
+		expect(convex.some((s) => s.startsWith("sph-") && s.endsWith("-half"))).toBe(true);
+		expect(convex.some((s) => s.startsWith("spp-"))).toBe(false);
 	});
 });

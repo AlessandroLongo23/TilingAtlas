@@ -74,9 +74,19 @@ export function buildFlatSolid(poly: Polyhedron | null, opts: FlatSolidOptions =
 
 	// flatShading derives each facet's normal from position derivatives (no normal attribute) — a fan of
 	// coplanar triangles then shades as one flat face.
+	// ⚑ DOUBLE-SIDED, and the reason is the shelf it now carries. This was FrontSide, on the grounds that
+	// the solid is convex and closed with its triangles wound outward, so the near facets occlude the far
+	// ones and culling the backs is free. The winding that makes that true is flatSolidTriangles' — it
+	// orients each triangle away from the ORIGIN — and "away from the origin" is only "outward" for a
+	// convex solid containing it. The non-convex regular-faced shelf (lib/render/nonconvexSolids.ts,
+	// 2026-08-21) is neither: a face whose outward normal points back toward the centre gets flipped and
+	// then culled, and the solid renders with holes in it and edge tubes floating in the gaps. DoubleSide
+	// draws a facet whichever way it faces and three.js flips the normal for the back, so the lighting is
+	// right either way; on a convex solid the result is pixel-identical, since the back faces it now
+	// draws are the ones the front faces already cover.
 	const faceMat = new THREE.MeshStandardMaterial({
 		vertexColors: true,
-		side: THREE.FrontSide, // convex closed solid, triangles wound outward — the near facets occlude the far
+		side: THREE.DoubleSide,
 		roughness: 0.9,
 		metalness: 0.0,
 		flatShading: true,

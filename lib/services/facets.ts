@@ -222,9 +222,10 @@ export function boardFamiliesFor(
 				"hyp-half",
 				...HYP_TILING_VALENCES.map((v): SubFamily => `hyt-v${v}`),
 			],
-			// "sph-star" belongs here and not under edges: a star polyhedron is a TILING of the sphere, every
-			// edge a real face boundary, and its boards are the DENSITY rows rather than a base solid.
-			spherical: ["sph-poly", "sph-half", "sph-star"],
+			// The spherical shelf splits on CONVEXITY (AL, 2026-08-21) and both halves belong under tilings,
+			// not edges: every face boundary here is a real one. Non-convex is the star shelf, which is a
+			// tiling of the sphere in the covering sense — its faces wrap it `density` times.
+			spherical: ["sph-convex", "sph-nonconvex"],
 		},
 		edges: {
 			euclidean: ["grid", "schwarz-eu", "pent", "ih"],

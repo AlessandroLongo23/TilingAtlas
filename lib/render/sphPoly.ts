@@ -15,6 +15,15 @@
 import type { IcoPattern } from "@/lib/render/icoFreedraw";
 import type { SphSchwarzScene } from "@/lib/render/sphSchwarz";
 import type { SphPolyPattern } from "@/lib/tilings/sph-poly";
+import { polygonHue } from "@/lib/utils/renderTiling";
+
+// The star shelf's fill, and for the same reason (lib/render/sphStar.ts `faceHsb`): saturation and
+// value belong to the medium — this three.js canvas — and the hue carries the polygon.
+const TILE_SAT = 0.5;
+const TILE_VAL = 0.98;
+// Golden angle, the spacing `tileColor` uses on its index ramp. Reused here for the SECOND axis on a
+// half-tile board, where every face is the same polygon and the groups are symmetry orbits.
+const GOLDEN = 137.508;
 
 /** Group the solid's faces by polygon size and mark every edge a boundary. The record's arrays are
  *  handed through, never copied. */
@@ -49,5 +58,29 @@ export function sphPolyScene(p: SphPolyPattern): SphSchwarzScene {
 		nTiles: tiles.length,
 		vorbit: p.symOrbit,
 	};
-	return { pattern, vertices: p.vertices, allEdges: p.edges };
+	return { pattern, vertices: p.vertices, allEdges: p.edges, tileHsb: tileHsb(p, nGroups) };
+}
+
+/**
+ * One HSB per fill group, so this shelf never falls through to `tileColor`'s index ramp.
+ *
+ * ⚑ AL, 2026-08-21: "some polyhedra are still rendered as grey". `tileColor` answers a one-tile pattern
+ * with a neutral blue-grey, and that neutral is for a BLANK FREEDRAW BOARD — a solid with nothing drawn
+ * on it, where a real colour would claim a decoration that is not there. A tiling is never blank: one
+ * group means one polygon, and one polygon has a colour. Four half-tile records have a single face
+ * orbit (shoct-half-2-00001, shcube-half-2-00002, shcube-half-2-00004, shdodec-half-3-00001) and all
+ * four came out as that grey. It is the same complaint AL raised about the star shelf in 2026-08-19
+ * ("sometimes it's all gray"), reaching the two shelves that fix did not touch.
+ *
+ * Hue is the POLYGON, `polygonHue`, exactly as `faceHsb` does it — so a square is the same yellow on a
+ * 3.4.n.4 solid, on a star polyhedron and on a Euclidean tiling, instead of "whatever group index it
+ * landed in". On a size-keyed record that is the whole rule. On a half-tile record every face is the
+ * same polygon and the groups are symmetry ORBITS, so the polygon's hue is the starting point and the
+ * orbits spread from it by golden angle — which leaves the triangle boards (hue 0) exactly where they
+ * already were, and moves the two dodecahedron boards onto their quadrilateral's hue.
+ */
+function tileHsb(p: SphPolyPattern, nGroups: number): [number, number, number][] {
+	if (!p.fillGroup) return p.stats.sizes.map((n) => [polygonHue(n), TILE_SAT, TILE_VAL]);
+	const base = polygonHue(p.stats.sizes[0] ?? p.faceSize[0] ?? 3);
+	return Array.from({ length: nGroups }, (_, i) => [base + i * GOLDEN, TILE_SAT, TILE_VAL]);
 }

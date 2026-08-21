@@ -3,6 +3,7 @@
 import { Fragment } from "react";
 import { ArrowLeftRight } from "lucide-react";
 import { deformApplies, useConfiguration } from "@/stores/configuration";
+import { hasSphereView } from "@/lib/tilings/sph-inscribed";
 import { isChiralTiling } from "@/lib/services/chirality";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -125,6 +126,9 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 	// the only one with creases to offer. Keyed off the record, not the surface, which it shares with the
 	// Schwarz boards and the uniform polyhedra.
 	const isSphStar = !!selected?.sphStar;
+	// Whether the round spherical view exists for this record. False for the nineteen reference solids with
+	// no circumsphere, where the canvas forces the flat polyhedron and this hides the toggle back to it.
+	const sphereViewAvailable = !selected?.spherical || hasSphereView(selected.spherical.solid);
 	// A colored tiling renders on its own 2D canvas like freedraw: no tiles, no polygon cell, so the shared
 	// fill/stroke/hue/points controls are all dead and its own palette + trio take their place. Rotation
 	// still applies (the field spins about the canvas centre), rendered inside that block.
@@ -1046,13 +1050,18 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							</Reveal>
 							{/* Polyhedron: a "flatten" modifier, not a Fill sub-style — it works with EITHER base. With
 							    Fill it swaps the round sphere for the TRUE flat-faced solid (lit facets + dark edge
-							    tubes); with Wireframe it makes the tube bars straight chords instead of curved arcs. */}
-							<Checkbox
-								id="sphericalPolyhedron"
-								label="Polyhedron"
-								checked={cfg.sphericalPolyhedron}
-								onCheckedChange={(v) => setCfg({ sphericalPolyhedron: v })}
-							/>
+							    tubes); with Wireframe it makes the tube bars straight chords instead of curved arcs.
+							    Hidden, and forced ON by the canvas, for a solid with NO CIRCUMSPHERE: there is no
+							    sphere to flatten from, so the checkbox would offer a view that is not of this solid
+							    (AL, 2026-08-21). lib/tilings/sph-inscribed.ts decides. */}
+							<Reveal show={sphereViewAvailable}>
+								<Checkbox
+									id="sphericalPolyhedron"
+									label="Polyhedron"
+									checked={cfg.sphericalPolyhedron}
+									onCheckedChange={(v) => setCfg({ sphericalPolyhedron: v })}
+								/>
+							</Reveal>
 							{/* Camera projection: perspective (foreshortened) vs orthographic (parallel, the flat
 							    "isometric" solid look). One or the other, so a single toggle. */}
 							<Toggle

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { useConfiguration } from "@/stores/configuration";
 import { polyhedronForId } from "@/lib/render/sphericalSolids";
-import { createSphere } from "@/lib/render/sphericalScene";
+import { buildFlatSolid } from "@/lib/render/sphericalPolyhedron";
 import { enqueueThumbnailRender } from "@/lib/render/thumbnailQueue";
 import { ThumbnailSkeleton } from "@/components/ui/thumbnail-skeleton";
 
@@ -55,16 +55,30 @@ function renderToDataUrl(solidId: string, size: number, hueOffset = 0): string |
 
 	const dark = document.documentElement.classList.contains("dark");
 	const lineWidth = useConfiguration.getState().lineWidth;
-	// The tiling is drawn procedurally per fragment (no bake), so a still is just one render — sharp and cheap.
-	const sphere = createSphere(renderer, polyhedronForId(solidId), { hueOffset, lineWidth, dark });
-	if (!sphere) return null;
-	scene.add(sphere.mesh);
+	const poly = polyhedronForId(solidId);
+	if (!poly) return null;
+
+	// ⚑ THE POLYHEDRON, NOT THE SPHERE (AL, 2026-08-21: "all polyhedra should have the polyhedra view in
+	// the thumbnail instead of the spherical inflation"). Every card on this shelf is a solid; the round
+	// tiling sphere is one WAY of looking at a solid and it is only available to the ones that have a
+	// circumsphere. For the nineteen that do not, the sphere builder was drawing the radial projection onto a
+	// sphere they do not have, which turns J31 into a green blob with a few slivers on it. Faces first,
+	// projection second — the interactive view still offers the sphere where it means something.
+	const solid = buildFlatSolid(poly, { hueOffset, lineWidth, dark });
+	if (!solid) return null;
+	// The interactive canvas' rig, so a card and the view it opens read the same. buildFlatSolid's facets
+	// are MeshStandardMaterial and go black without it.
+	const hemi = new THREE.HemisphereLight(0xffffff, 0x445566, 0.85);
+	const dir = new THREE.DirectionalLight(0xffffff, 0.8);
+	dir.position.set(3, 4, 5);
+	const ambient = new THREE.AmbientLight(0xffffff, 0.2);
+	scene.add(hemi, dir, ambient, solid.object);
 	try {
 		renderer.setRenderTarget(null);
 		renderer.render(scene, camera);
 		return sharedCanvas.toDataURL("image/png");
 	} finally {
-		sphere.dispose();
+		solid.dispose();
 	}
 }
 

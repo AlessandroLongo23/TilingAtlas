@@ -25,14 +25,30 @@ describe("spherical catalogue ↔ solid registry wiring", () => {
 		expect(unresolved, "catalogue entries with no matching solid").toEqual([]);
 	});
 
-	it("the registry holds 18 classical + 10 prisms/antiprisms + 12 inscribable Johnson solids (40 total)", () => {
-		expect(SPHERICAL_SOLIDS.length).toBe(40);
+	it("the registry holds 18 classical + 10 prisms/antiprisms + 62 Johnson + 34 non-convex (124 total)", () => {
+		// 12 inscribable ones from develop_spherical, plus 19 from develop_euclid (2026-08-20), of which
+		// 14 have no circumsphere and could not have been developed on S2 at any k.
+		expect(SPHERICAL_SOLIDS.length).toBe(124);
+		expect(polyhedronForId("snub-square-antiprism")).not.toBeNull();
+		expect(polyhedronForId("gyrobifastigium")).not.toBeNull();
 		expect(polyhedronForId("triangular-orthobicupola")).not.toBeNull();
 		expect(polyhedronForId("pseudo-rhombicuboctahedron")).not.toBeNull();
 		expect(polyhedronForId("decagonal-prism")).not.toBeNull();
 		expect(polyhedronForId("square-antiprism")).not.toBeNull();
 		expect(polyhedronForId("gyrate-rhombicosidodecahedron")).not.toBeNull();
 		expect(polyhedronForId("tridiminished-icosahedron")).not.toBeNull();
+		// the 2-orbit deltahedra (2026-08-20)
+		expect(polyhedronForId("snub-disphenoid")).not.toBeNull();
+		expect(polyhedronForId("pentagonal-bipyramid")).not.toBeNull();
+		// J72–J83 complete: the seven the spherical 3.4.n.4 shelf carried (2026-08-21)
+		expect(polyhedronForId("trigyrate-rhombicosidodecahedron")).not.toBeNull();
+		expect(polyhedronForId("tridiminished-rhombicosidodecahedron")).not.toBeNull();
+		// the non-convex regular-faced shelf (2026-08-21), which no catalogue names
+		expect(polyhedronForId("ncx-7-15-10")).not.toBeNull();
+		expect(polyhedronForId("ncx-30-60-32-a")).not.toBeNull();
+		// the k=3 Johnson run (2026-08-21)
+		expect(polyhedronForId("pentagonal-rotunda")).not.toBeNull();
+		expect(polyhedronForId("bilunabirotunda")).not.toBeNull();
 	});
 
 	it("solid ids are unique", () => {
