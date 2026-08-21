@@ -22,6 +22,22 @@ const GEOMETRY_LABEL: Record<TilingSpec["geometry"], string> = {
 	spherical: "Spherical",
 };
 
+// The three ways a solid reaches the spherical shelf. Spelled out on the card because "searched" and
+// "constructed" are a claim about THIS repo's evidence, and a reader has no way to guess which is which.
+const DERIVATION_LABEL: Record<"searched" | "constructed" | "tabulated", string> = {
+	searched: "Found by search",
+	constructed: "Built from a parent",
+	tabulated: "Classical coordinates",
+};
+const DERIVATION_NOTE: Record<"searched" | "constructed" | "tabulated", string> = {
+	searched:
+		"The Čtrnáct engine enumerated this solid: dual search over vertex figures, then a dihedral-angle solve in R³. Independent of any published list.",
+	constructed:
+		"Built by operating on a parent solid — gyrating or diminishing it — because no search here reaches its orbit count. Its coordinates are exact; they were not derived by the engine.",
+	tabulated:
+		"Classical closed-form coordinates. Platonic, Archimedean, prism or antiprism; never the output of a search.",
+};
+
 function SectionTitle({ children }: { children: ReactNode }) {
 	return <h4 className="text-xs font-medium text-fg-muted uppercase tracking-wider">{children}</h4>;
 }
@@ -318,6 +334,21 @@ export function TilingInfo({ spec, vcs = [] }: TilingInfoProps) {
 								<Row label="Vertices" value={spec.counts.V} />
 								<Row label="Edges" value={spec.counts.E} />
 								<Row label="Faces" value={spec.counts.F} />
+							</div>
+						) : null}
+
+						{/* How this repo got the record — NOT who first described the solid, which is the
+						    discoverer line. A reader comparing "62 of the 92 Johnson solids" against the
+						    literature needs to know that twelve of them were built by gyrating a parent
+						    rather than found by the engine. Measured per solid; see
+						    tools/ctrnact-oracle/annotate_derivation.py. */}
+						{spec.geometry === "spherical" && spec.derivation ? (
+							<div className="flex flex-col gap-1.5 border-t border-line pt-3">
+								<SectionTitle>Derivation</SectionTitle>
+								<Row label="Method" value={DERIVATION_LABEL[spec.derivation]} />
+								<p className="text-[11px] leading-snug text-fg-muted">
+									{DERIVATION_NOTE[spec.derivation]}
+								</p>
 							</div>
 						) : null}
 

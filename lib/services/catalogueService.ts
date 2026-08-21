@@ -40,6 +40,9 @@ export interface CatalogueTiling {
 	// card. Carried through from ReferenceTiling by referenceToCatalogue.
 	edge?: number;
 	discoverer?: string;
+	/** How this repo derived the record: searched by the engine, constructed from a parent solid, or
+	 *  classical tabulated coordinates. Spherical shelf only; see ReferenceEntry.derivation. */
+	derivation?: "searched" | "constructed" | "tabulated";
 	// Hyperbolic shelf: id of a developed Poincaré patch (public/hyperbolic-developed.json). Its presence
 	// routes /play + the sidebar/library thumbnails to the per-pixel Poincaré-disk renderer instead of the
 	// Euclidean cell path. Carried through from ReferenceTiling by referenceToCatalogue. Present on every

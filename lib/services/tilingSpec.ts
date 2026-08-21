@@ -163,6 +163,9 @@ export interface SphericalSpec extends BaseSpec {
 	pointGroup: string | null; // Td/Oh/Ih — Platonic {p,q} only
 	orbifold: string | null; // "*532" — Platonic only
 	counts: { V: number; E: number; F: number } | null; // Platonic only
+	/** How the shelf got this record — engine search, construction from a parent, or classical
+	 *  tabulation. Null off the reference-solid shelves, which make no such claim. */
+	derivation: "searched" | "constructed" | "tabulated" | null;
 }
 
 export type TilingSpec = EuclideanSpec | HyperbolicSpec | SphericalSpec;
@@ -285,6 +288,7 @@ export function buildTilingSpec(
 			pointGroup: reg ? platonicPointGroup(reg.p!, reg.q!) : null,
 			orbifold: reg ? reflectionOrbifold(reg.p!, reg.q!) : null,
 			counts: reg ? platonicCounts(reg.p!, reg.q!) : null,
+			derivation: selected.derivation ?? null,
 			...base,
 		};
 	}

@@ -319,6 +319,16 @@ export interface ReferenceTiling {
 	// Historical first-discoverer of this tiling (Kepler, Krötenheerdt, Chavey, Galebach, Čtrnáct,
 	// Joseph Myers, Alessandro Longo). One attribute, orthogonal to certification.
 	discoverer: string;
+	// HOW THIS REPO GOT THE RECORD, which is a different question from who first described the solid:
+	//   searched     the Čtrnáct solve -> prune -> develop pipeline produced it
+	//   constructed  built by operating on a parent solid (gyrate/diminish), because no search of ours
+	//                reaches it — the rhombicosidodecahedron families run to k = 27 and 29
+	//   tabulated    classical closed-form coordinates, never searched for
+	// Spherical shelf only for now. Measured, not asserted: tools/ctrnact-oracle/annotate_derivation.py
+	// decides "searched" by CONGRUENCE against every realized develop record, so a solid moves to
+	// "searched" the moment a run actually finds it. "62 of the 92 Johnson solids" means fifty found and
+	// twelve built, and a catalogue that cannot say which is not a catalogue.
+	derivation?: "searched" | "constructed" | "tabulated";
 	// Rigorous completeness status of this tiling's enumeration level:
 	//   proven      — this work's method has a completeness certificate (regular k≤3)
 	//   reproduced  — count matches a published enumeration, not independently proven here
@@ -1381,6 +1391,7 @@ export function referenceToCatalogue(r: ReferenceTiling): CatalogueTiling {
 		schlafli: r.schlafli,
 		edge: r.edge,
 		discoverer: r.discoverer,
+		derivation: r.derivation,
 		developed: r.developed,
 		spherical: r.spherical,
 		geometry: r.geometry,

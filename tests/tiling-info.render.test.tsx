@@ -91,6 +91,7 @@ describe("TilingInfo spec card", () => {
 			pointGroup: "Ih",
 			orbifold: "*532",
 			counts: { V: 20, E: 30, F: 12 },
+			derivation: "tabulated",
 			...orbits,
 		};
 		render(<TilingInfo spec={spec} />);
@@ -99,6 +100,26 @@ describe("TilingInfo spec card", () => {
 		expect(screen.getByText("Ih")).toBeInTheDocument();
 		expect(screen.getByText("Vertices")).toBeInTheDocument();
 		expect(screen.getByText("30")).toBeInTheDocument();
+		expect(screen.getByText("Classical coordinates")).toBeInTheDocument();
+	});
+
+	// The point of the field: a reader comparing the shelf's Johnson count against the literature has to
+	// be able to tell a solid the engine found from one built by gyrating a parent.
+	it("spherical: a constructed solid says so, and does not claim the engine found it", () => {
+		const spec: TilingSpec = {
+			geometry: "spherical",
+			label: "Trigyrate rhombicosidodecahedron",
+			detail: "3.4.5.4",
+			pointGroup: null,
+			orbifold: null,
+			counts: null,
+			derivation: "constructed",
+			...orbits,
+		};
+		render(<TilingInfo spec={spec} />);
+		hover();
+		expect(screen.getByText("Built from a parent")).toBeInTheDocument();
+		expect(screen.queryByText("Found by search")).not.toBeInTheDocument();
 	});
 
 	/** The euclidean shell /isohedral and /pentagons share: no wallpaper data, no orbit counts. */
