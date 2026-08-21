@@ -34,8 +34,15 @@ kept block at k = 1..4 was realized or rejected for a mathematical reason, never
 congruence against the develop outputs, so it moves on its own as searches deepen (it fell 12 → 10 at
 k=4). `discoverer` is a different axis: who first described the solid, not how this repo got it.
 
+**⚑ develop is ~120x faster since 2026-08-21** — k=4 **3065 s → 19–30 s**, k=3 **836 s → 5 s** — with
+every record identical at every k. That changes what is affordable: k=5 is roughly 3,000 blocks, which is
+now well under an hour rather than most of a day. Batched multistart, analytic Jacobian, (3,3,N) layout,
+Cholesky, dynamic work queue; the measurement harness is `tools/ctrnact-oracle/bench/`.
+⚑ Do NOT cut the 3000-start joint budget to go faster: measured, it finds roots at every unknown count
+up to 12 and 82 of them at 16. It is the one knob that would cost solids.
+
 **Active gates:** `make check-regular` (byte-identical to golden), `check-star`, `check-deltahedra`
-(all 8 convex deltahedra, nothing at F=18). Full suite 2816 pass, 0 fail.
+(all 8 convex deltahedra, nothing at F=18). Full suite 2823 pass, 0 fail.
 
 ## The spherical shelves got a studio look, a turntable, and release momentum (2026-08-21)
 
