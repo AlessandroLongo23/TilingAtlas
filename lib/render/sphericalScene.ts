@@ -38,6 +38,10 @@ export interface Sphere {
 
 export interface SphereOptions extends SurfaceOptions {
 	realistic?: boolean; // carve the lines into a lit MeshStandardMaterial (see sphericalCarvedMaterial.ts)
+	/** Studio look: shade the FLAT surface in-shader instead of drawing it as a flat colour field. The
+	 *  realistic surface needs nothing here — it is a MeshStandardMaterial, so the scene's studio
+	 *  environment and light rig reach it on their own. See lib/render/sphericalLook.ts. */
+	studio?: boolean;
 }
 
 // Build the sphere for a solid (Platonic or Archimedean), drawing its tiling procedurally on the surface.
@@ -56,7 +60,7 @@ export function createSphere(_renderer: THREE.WebGLRenderer, poly: Polyhedron | 
 	if (realistic) {
 		carved = createCarvedSphereMaterial({ poly, hueOffset: opts.hueOffset, lineWidth: opts.lineWidth });
 	} else {
-		flat = createSphereMaterial({ poly, hueOffset: opts.hueOffset, lineWidth: opts.lineWidth, dark: opts.dark });
+		flat = createSphereMaterial({ poly, hueOffset: opts.hueOffset, lineWidth: opts.lineWidth, dark: opts.dark, studio: opts.studio });
 	}
 	const mat = (carved ?? flat!).material;
 	const mesh = new THREE.Mesh(geom, mat);
