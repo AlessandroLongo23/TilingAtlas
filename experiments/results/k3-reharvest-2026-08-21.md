@@ -154,3 +154,102 @@ finish let it hold one for 150 s and starve two others instead.
 
 Full suite after: **2811 passed, 0 failed, 196 s** against 222 s before — fewer workers, less time, the
 diagnosis confirming itself.
+
+---
+
+# k = 4 — 14 more Johnson solids and 75 more non-convex ones
+
+Run straight after, on the same palette. **Solve and prune are free; develop is the entire cost.**
+
+```
+solve    103,668 nodes -> 2,589 raw blocks        0 s
+prune    -> 1,169 pruned at k=4 (k1 28, k2 141, k3 460 — identical to the earlier runs)   0 s
+develop  1,169 blocks -> 111 realized            3,065 s (51 min) on 8 workers
+```
+
+That k=1/2/3 come back at exactly 28/141/460 is the cheapest possible check that the morning's
+`develop_euclid` change did not disturb the search.
+
+| | before | after |
+|---|---|---|
+| Johnson solids | 62 | **76** of the 92 |
+| non-convex regular-faced | 68 | **143** |
+| registry | 158 | **247** |
+
+Still missing: J25, 40, 41, 47, 48, 58, 60, 61, 66, 68–71, 87–89. Sixteen, needing k ≥ 5.
+
+## Naming: 14 named, 0 unnamed
+
+Every identification is checked three ways — Euler, the handshake 2E = Σn·k, and the parent
+construction that produces the solid — so a wrong name fails arithmetic and not merely taste. J64 is
+J63 plus a tetrahedron on one triangle (V+1, E+3, F−1+3); J65 is a truncated tetrahedron plus a
+triangular cupola on one hexagon (V+3, E+9); J22/J23/J24 are the triangular/square/pentagonal cupola
+plus the antiprism on its base polygon; J21 is the pentagonal rotunda plus a decagonal prism; J86 and
+J92 are elementary, which is what makes them elementary.
+
+## ⚑ J32/J33: the obvious test would have been the wrong one
+
+They share a signature (25 V, 50 E, 27 F; 15{3}, 5{4}, 7{5}) and the reflex is to reach for
+`has_equatorial_mirror`, which splits J28/J29 and J42/J43. **It cannot work here.** A cupolarotunda's
+two halves are a *cupola* and a *rotunda* — never congruent — so neither member has an equatorial
+mirror and the test returns the same answer for both.
+
+What "ortho" actually means is that the cupola's squares line up with the rotunda's pentagons. A square
+in a pentagonal cupola has one edge to the cupola's own apex pentagon, two to cupola triangles, and one
+across the equator; ortho makes that fourth face a pentagon, gyro makes it a triangle.
+
+```
+square-pentagon edges    ortho 10    gyro 5
+triangle-triangle edges  ortho  5    gyro 0     ← independent, and it agrees
+```
+
+Both measured on the two k=4 records. Two invariants agreeing is why this ships as a measurement.
+
+## k=4 is complete on the same evidence
+
+```
+blocks in 1169 | realized 111 | non-realizable 1122
+  1116  no dihedral solution
+     6  degenerate dihedral (a flat edge)
+```
+
+All mathematical. No numerical failure, no cap, and **no pinched record** — the Euler gate added that
+morning was live for this run, which is the first evidence it works prospectively and not only on the
+one case that motivated it.
+
+## ⚑ The derivation field moved on its own
+
+`constructed` fell **12 → 10**. The search independently reproduced *metabidiminished icosahedron* and
+*parabigyrate rhombicosidodecahedron*, which had only ever been built by gyrating a parent. That is
+exactly what the field was added for, and nobody had to edit a list to make it happen.
+
+## Two thresholds moved with the corpus, and say so
+
+`SPH_NOT_INSCRIBED` went 37 → 51. The separation between the inscribed and non-inscribed populations
+narrowed from seven orders of magnitude to four — worst inscribed 3.9e-7 of the radius, closest
+non-inscribed 8.2e-3 — because a k=4 record comes out of a deeper dihedral-angle root-find. Both
+assertions were moved to match the measurement, with the numbers written down. `isInscribed`'s own
+1e-4 tolerance still sits comfortably between the two populations; **it was not touched**, because it
+is the classifier and the assertions are only its evidence.
+
+## Sharding, measured
+
+The run left five of eight workers idle for its last twenty minutes: files were dealt round-robin after
+sorting by BYTES, and one worker drew 351 blocks while another drew 5. LPT on block counts instead,
+measured on that same shard —
+
+```
+size round-robin  [410 274 241 188 185 171 170 159]   max 410
+LPT on blocks     [302 277 277 219 195 182 173 173]   max 302
+```
+
+1.36× better makespan bound, and near the floor: the largest single file holds 277 blocks and a file is
+never split.
+
+## A concurrent session fixed the test suite properly
+
+While this ran, `f0fc37a` landed from another session and removed the contention at its source —
+figure-trace was doing the same traced solve five times (348 s → 175 s) and star-general-path built a
+2839-placement compatibility graph to look up one edge. Re-measured after: **204.6 s capped against
+212.9 s uncapped, green either way.** So `maxWorkers: 6` is now a 4% margin and insurance, not a repair,
+and the config says so.

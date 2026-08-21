@@ -3,8 +3,62 @@
 > **What this file is.** The 30-second "where are we" snapshot. **Mutable, disposable,
 > clobber-tolerant** — if two agents overwrite it, nothing is lost, because the *canonical*
 > history lives in the append-only **ledgers** below. Regenerate it from the latest signed
-> entry of each ledger. **Never write history here.** — last updated 2026-08-18, CC
+> entry of each ledger. **Never write history here.** — last updated 2026-08-21, CC
 > (acting as TA too, AL authorization 2026-07-10).
+
+## The spherical shelf, after k=4 (2026-08-21)
+
+```
+Convex 120                      Non-convex 232
+  Regular polygons  104           Star polyhedra    89
+    k=1 uniform      28           Regular polygons 143
+    k=2 Johnson      26
+    k=3 Johnson      24         registry: 247 solids
+    k=4 Johnson      16         Johnson: 76 of the 92
+    k=6..29          16
+  halved boards      16
+```
+
+**Frontier: k = 5.** Sixteen Johnson solids left — J25, 40, 41, 47, 48, 58, 60, 61, 66, 68–71, 87–89 —
+and an unknown number of non-convex ones. Cost shape is known and it is all in develop: solve and prune
+are seconds at k=4, develop was 51 min on 8 workers for 1,169 blocks. Blocks roughly 2.5× per k
+(141 → 460 → 1169), so k=5 is ~3,000 blocks and a few hours, not a day.
+
+**What the non-convex shelf is complete FOR** — state this whenever the count is quoted. k ≤ 4, regular
+{3,4,5,6,8,10}-gons, and only solids where EVERY vertex has positive angular defect. The engine's
+closure test is positive-defect (that is what forces the map onto a sphere by Gauss-Bonnet), so a saddle
+vertex is *outside* the search, not missed by it. Within those bounds it is complete and measured: every
+kept block at k = 1..4 was realized or rejected for a mathematical reason, never a numerical one.
+
+**Every record carries `derivation`** — searched 209 / constructed 10 / tabulated 28 — measured by
+congruence against the develop outputs, so it moves on its own as searches deepen (it fell 12 → 10 at
+k=4). `discoverer` is a different axis: who first described the solid, not how this repo got it.
+
+**Active gates:** `make check-regular` (byte-identical to golden), `check-star`, `check-deltahedra`
+(all 8 convex deltahedra, nothing at F=18). Full suite 2816 pass, 0 fail.
+
+## The spherical shelves got a studio look, a turntable, and release momentum (2026-08-21)
+
+Three changes across every 3D spherical view — the uniform-tiling sphere, the flat solid, the wireframe,
+the Islamic relief, and the freedraw / star / Schwarz / colouring shelves.
+
+**Drag and let go and the solid coasts** (`lib/render/orbitMomentum.ts`), measured off the camera's own
+basis so it cannot run away the way ArcballControls' own inertia did.
+
+**Thumbnails turn slowly**, all of them off one clock and one WebGL context
+(`lib/render/sphereThumbStage.ts`) — down from three module-level renderers, and holding the display's
+frame cap with 50 cards on screen.
+
+**`cfg.sphericalStudio` (default ON, URL key `sstu`, "Studio look" in View options)** switches the whole
+shelf between the plain diagram look and a lit one: room environment, reflective materials, key/fill/rim
+with shadows, a colour grade, and analytic shading inside the tiling sphere's own shader. Off is the
+byte-for-byte old look, so the two are comparable. Lights ride the camera — world-fixed ones froze the
+shading, since these views orbit the camera and never move the solid.
+
+**Star edges are a three-state control** (`cfg.sphStarEdges`, URL `sedge`): All / True / None.
+
+Not yet committed. `docs/DEVELOPMENT_NOTES.md` (2026-08-21, sixth) carries the detail, including the
+radial-AO idea that failed and why creases needed a tube's normals.
 
 ## Game of Life runs on the catalogue now — /automata (2026-08-18)
 

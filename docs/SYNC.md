@@ -2763,3 +2763,11 @@ at, 35 congruent to nothing k=2 found. Non-convex shelf 34 → 68 with no new se
 (two vertices merged, χ=1) and `mapOK` passed it, since every check it makes is combinatorial. Shelf
 scope is stated at last, and every record carries a measured `derivation`. Commits 2885309..b369de7.
 NOTES 2026-08-21 (fifth); long form `experiments/results/k3-reharvest-2026-08-21.md`.
+
+## 2026-08-21 (sixth) — k=4: 14 more Johnson solids, 75 more non-convex — CC
+
+Johnson **62 → 76 of the 92**, non-convex **68 → 143**, registry 158 → 247. Solve+prune are free; develop
+is 51 min on 8 workers for 111 records. All 14 named, 0 unnamed. ⚑ J32/J33 needed a NEW test — a
+cupolarotunda has no equatorial mirror to measure, so it splits on square-pentagon edges (10 ortho / 5
+gyro), two invariants agreeing. ⚑ k=4 complete on the same evidence: all 1122 non-realizations
+mathematical. `constructed` fell 12 → 10 on its own. Commit 8ab153b. NOTES 2026-08-21 (sixth).

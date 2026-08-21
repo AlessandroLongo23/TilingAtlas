@@ -15115,3 +15115,116 @@ varied — the signature of contention, on a machine with 10 logical cores and 4
 `maxWorkers: 6` fixed it; raising the timeout alone made it worse, measurably, because a suite that used
 to die at 60 s and free its worker then held one for 150 s and starved two others. 2811 passed, 0 failed,
 196 s against 222 s before.
+
+## 2026-08-21 (sixth) — The spherical shelves get a studio, a turntable, and momentum
+
+AL, on the 3D shelves: the controls stop dead on release, the thumbnails are frozen stills, and "the
+plain and flat look is a bit cheap". Three separate pieces of work, one toggle so the last one can be
+judged against what it replaced.
+
+**Release momentum** (`lib/render/orbitMomentum.ts`). ArcballControls' own inertia has been off in every
+spherical view since it shipped, because with the orthographic trackball radius its velocity estimate
+blows up into a runaway spin. The replacement never asks the controls what the pointer did; it measures
+what the CAMERA did. The view is fully determined by the camera's position and up (ArcballControls ends
+every `update()` with `lookAt(target)`), so a frame's rotation is the delta of the quaternion built from
+those two vectors — 2° in 16 ms is 2.2 rad/s regardless of projection or trackball radius, and it is
+clamped besides. Coasting rotates position and up and lets the controls' own lookAt rebuild the
+orientation, so nothing touches ArcballControls' internals and a drag started mid-spin picks up where
+the coast left off (its pointerdown re-reads `camera.matrix`). Velocity is blended as a VECTOR, so a
+drag that stops before the release launches nothing.
+
+**Spinning thumbnails** (`lib/render/sphereThumbStage.ts`). A still three-quarter view hides most of what
+distinguishes one solid from another; rotation gives it back through motion parallax, the same argument
+`components/squaring/polyhedron-thumb.tsx` has made for its wireframe picker since it shipped. A live
+context per card is impossible — browsers cap them near 16 and a library page shows fifty — so there is
+ONE renderer drawing one card at a time into an offscreen buffer and blitting into each card's plain 2D
+canvas. It replaces the three module-level renderers the thumbnail components each kept, so the page uses
+one context where it used three. Measured: 50 spherical cards on /library hold the 120 Hz frame cap.
+The build is kept while a card is on screen and disposed when it leaves (the old code disposed right
+after baking a PNG, which is why per-frame rendering was never possible before), at most 14 animate at
+once, and `prefers-reduced-motion` gets one frame.
+
+**The studio look** (`lib/render/sphericalLook.ts`, `cfg.sphericalStudio`, default ON). One switch for
+every spherical view: an image-based environment (PMREM of RoomEnvironment), materials that actually
+reflect it, a key/fill/rim rig with the key casting shadows, and a colour grade that deepens the
+catalogue's deliberately pale HSB 0.40/1.00 fills, which wash to near-white the moment they are lit. The
+unlit tiling sphere is the one surface an environment cannot reach — a RawShaderMaterial has no lighting
+chunks — so it carries its own analytic rig in `sphericalMaterial.ts`, including an ENGRAVED line: the
+edge gets a height profile and the shading normal is tilted by that height's screen-space gradient, the
+trick the carved material uses minus the displacement.
+
+⚑ **The lights ride the camera, and that is not a style choice.** These views rotate by orbiting the
+camera around a solid that never moves, so world-fixed lights keep hitting the same faces from the same
+angle forever and the shading reads as painted on (AL: "the shadows are static, regardless of the
+rotation"). `LookRig.follow(camera)` rotates the three directional lights into the camera's frame each
+frame, which is also the frame the tiling sphere's own shader lights in.
+
+⚑ **A failed idea, kept here so it is not tried again: radial ambient occlusion.** A star polyhedron
+barely self-shadows — its spikes point away from each other, so from any one light there is almost
+nothing to occlude — and AL wanted the pockets to read as recessed. Distance from the centre looks like a
+free proxy for enclosure on such a solid, and it is not: the interior of any FLAT polygon is nearer the
+centre than its own corners, so every face picked up a dark blob in the middle of it corresponding to
+nothing. AL spotted it on the first solid he looked at. Real occlusion needs real visibility — ray-cast
+per vertex at build time, or screen-space in a post pass; there is no cheap stand-in.
+
+⚑ **Creases had to be given a tube's normals.** A star polyhedron's face-through-face creases are drawn
+as flat in-plane ribbons, deliberately (a tube around a crease bulges a full radius out of both face
+planes and surfaces through the neighbours as needles — the bleeding on ss-60-180-104-d4). Flat, they lit
+as flat strips beside edges that lit as cylinders: "the true edges and the intersection lines react
+different to light". The geometry cannot become a tube, so the SHADING became one — the ribbon is widened
+into columns at offset r·sinθ carrying the normal cosθ·n + sinθ·t, which is exactly the normal field of a
+half-buried cylinder while every vertex stays dead flat in the plane.
+
+**Edges are now three states, not a checkbox** (`cfg.sphStarEdges`). A star polyhedron carries two kinds
+of line answering different questions, so: All (edges + creases, the honest surface), True (edges only —
+the creases bound no face, so V, E and F are unchanged without them), None (bare coloured faces).
+
+## 2026-08-21 (sixth) — k=4: fourteen more Johnson solids, seventy-five more non-convex ones
+
+Long form: `experiments/results/k3-reharvest-2026-08-21.md` (second half).
+
+Same search a fourth orbit deep. **Solve and prune are free and develop is the entire cost**: 103,668
+nodes → 2,589 raw → 1,169 pruned in about a second, then 51 minutes on 8 workers for 111 realized
+records. k=1/2/3 come back at exactly 28/141/460, which is the cheapest possible check that the
+morning's `develop_euclid` change did not disturb the search.
+
+**Johnson 62 → 76 of the 92; non-convex 68 → 143; registry 158 → 247.** Sixteen Johnson solids left
+(J25, 40, 41, 47, 48, 58, 60, 61, 66, 68–71, 87–89), needing k ≥ 5. Every one of the 14 is named and
+none unnamed, each checked three ways — Euler, the handshake 2E = Σn·k, and the parent construction that
+produces it, so a wrong name fails arithmetic and not merely taste.
+
+⚑ **J32/J33 needed a new measurement and the obvious one would have been wrong.** The reflex is
+`has_equatorial_mirror`, which splits J28/J29 and J42/J43. It cannot work here: a cupolarotunda's halves
+are a cupola and a rotunda, never congruent, so NEITHER has an equatorial mirror and the test answers
+identically for both. What ortho means is that the cupola's squares line up with the rotunda's pentagons
+— a square already has a pentagon at the cupola's apex and gains a second across the equator, where gyro
+gives it a triangle. Counted on edges: 10 square-pentagon edges ortho, 5 gyro, with a second invariant
+agreeing independently (5 triangle-triangle edges ortho, 0 gyro).
+
+⚑ **k=4 is complete on the same evidence k ≤ 3 was**: all 1,122 non-realizations are mathematical (1,116
+"no dihedral solution", 6 "degenerate dihedral"). No numerical failure, no cap, and no pinched record —
+the Euler gate added that morning was live for this run, which is the first evidence it works
+prospectively and not only on the case that motivated it.
+
+⚑ **The derivation field moved on its own**: `constructed` fell 12 → 10, because the search independently
+reproduced metabidiminished icosahedron and parabigyrate rhombicosidodecahedron, which had only ever been
+built by gyrating a parent. Nobody edited a list to make that happen, which is the whole point of
+measuring it.
+
+**Two thresholds moved with the corpus and say so.** `SPH_NOT_INSCRIBED` 37 → 51, and the separation
+between the inscribed and non-inscribed populations narrows from seven orders of magnitude to four
+(worst inscribed 3.9e-7 of the radius, closest non-inscribed 8.2e-3) because a k=4 record comes out of a
+deeper root-find. `isInscribed`'s own 1e-4 tolerance was NOT touched: it is the classifier and those
+assertions are only its evidence, and loosening the classifier to keep a stale assertion passing is how
+a measurement quietly becomes a wish.
+
+**Sharding, measured.** The run left five of eight workers idle for its last twenty minutes — files dealt
+round-robin by BYTES, one worker drawing 351 blocks and another 5. LPT on block counts gives max 302
+against 410 on that same shard, a 1.36× better makespan bound and near the floor (the largest single file
+holds 277 blocks and a file is never split).
+
+**A concurrent session fixed the test suite properly while this ran.** f0fc37a removed the contention at
+its source — figure-trace was doing one traced solve five times (348 s → 175 s), star-general-path built
+a 2839-placement compatibility graph to look up one edge. Re-measured after it landed: 204.6 s capped
+against 212.9 s uncapped, green either way. So this morning's `maxWorkers: 6` is now a 4% margin and
+insurance, not a repair, and the config says so rather than continuing to claim the credit.
