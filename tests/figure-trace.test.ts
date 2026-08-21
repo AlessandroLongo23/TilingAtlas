@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
@@ -38,46 +38,58 @@ describe('figureTrace sink', () => {
   });
 });
 
-describe('VCGenerator trace', () => {
+/**
+ * Everything below reads ONE traced k=2 {3,4,6} solve, plus one untraced solve to compare against.
+ *
+ * It used to be five solves: three describes that each ran their own traced solve to read a different
+ * JSONL file out of it, and a separate figure-trace-noop.test.ts that ran the on/off pair again. Those
+ * five runs were 348 s, 31% of the whole suite's CPU, and four of them were re-deriving a solve that
+ * had already been done. A traced solve writes vc/pool/lattice/torus JSONL in the same pass, so one
+ * run answers all four questions; the untraced partner is the only genuinely second solve, because the
+ * "tracing changes nothing" claim needs a control.
+ */
+describe('a traced k=2 solve', () => {
   let dir: string;
-  beforeEach(() => { dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ftvc-')); });
-  afterEach(() => { delete process.env.TRACE_FIGURES; trace._reconfigureFromEnv(); fs.rmSync(dir, { recursive: true, force: true }); });
+  let on: ReturnType<typeof solveK2>;
+  let off: ReturnType<typeof solveK2>;
+  const read = (f: string) =>
+    fs.readFileSync(path.join(dir, f), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
 
-  it('emits vc nodes with real verdicts when tracing on', () => {
+  // Two full k=2 solves, ~110-150 s together on this machine and longer when the suite is running
+  // them alongside the other CPU-bound files. The budget is the hook's, not any one test's, so a
+  // timeout here fails the whole block — deliberate, since all four tests read this one solve.
+  beforeAll(() => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ftrace-solve-'));
     process.env.TRACE_FIGURES = dir; trace._reconfigureFromEnv();
-    solveK2([3, 4, 6]);
-    const vc = fs.readFileSync(path.join(dir, 'vc.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+    on = solveK2([3, 4, 6]);                                   // solveK2 clears the module-global caches internally
+    delete process.env.TRACE_FIGURES; trace._reconfigureFromEnv();
+    off = solveK2([3, 4, 6]);
+  }, 600_000);
+
+  afterAll(() => { delete process.env.TRACE_FIGURES; trace._reconfigureFromEnv(); fs.rmSync(dir, { recursive: true, force: true }); });
+
+  it('is pure observation: the VC + cell sets are identical with tracing on vs off', () => {
+    expect(on.vcNames).toEqual(off.vcNames);
+    expect(on.cellKeys).toEqual(off.cellKeys); // a hook leaking into control flow would diverge here
+  });
+
+  it('emits vc nodes with real verdicts', () => {
+    const vc = read('vc.jsonl');
     const verdicts = new Set(vc.map((r) => r.verdict));
     expect(vc.length).toBeGreaterThan(5);
-    expect(verdicts.has('emit')).toBe(true);   // at least one VC closes at 2π
+    expect(verdicts.has('emit')).toBe(true);    // at least one VC closes at 2π
     expect(verdicts.has('extend')).toBe(true);  // at least one interior node
-  }, 180000); // long timeout: solveK2 runs a full k=2 solve
-});
-
-describe('pool + lattice trace', () => {
-  let dir: string;
-  beforeEach(() => { dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ftpool-')); });
-  afterEach(() => { delete process.env.TRACE_FIGURES; trace._reconfigureFromEnv(); fs.rmSync(dir, { recursive: true, force: true }); });
+  });
 
   it('emits a non-empty pool and >=1 candidate lattice', () => {
-    process.env.TRACE_FIGURES = dir; trace._reconfigureFromEnv();
-    solveK2([3, 4, 6]);
-    const pool = fs.readFileSync(path.join(dir, 'pool.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
-    const lattice = fs.readFileSync(path.join(dir, 'lattice.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+    const pool = read('pool.jsonl');
+    const lattice = read('lattice.jsonl');
     expect(pool.some((p) => Array.isArray(p.vectors) && p.vectors.length > 0)).toBe(true);
     expect(lattice.some((l) => Array.isArray(l.candidates) && l.candidates.length > 0)).toBe(true);
-  }, 180000);
-});
-
-describe('torus-fill trace', () => {
-  let dir: string;
-  beforeEach(() => { dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fttorus-')); });
-  afterEach(() => { delete process.env.TRACE_FIGURES; trace._reconfigureFromEnv(); fs.rmSync(dir, { recursive: true, force: true }); });
+  });
 
   it('emits root/place/prune/emit torus nodes, groupable by fillId', () => {
-    process.env.TRACE_FIGURES = dir; trace._reconfigureFromEnv();
-    solveK2([3, 4, 6]);
-    const torus = fs.readFileSync(path.join(dir, 'torus.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+    const torus = read('torus.jsonl');
     const verdicts = new Set(torus.map((r) => r.verdict));
     const fills = new Set(torus.map((r) => r.fillId));
     expect(verdicts.has('root')).toBe(true);
@@ -85,5 +97,5 @@ describe('torus-fill trace', () => {
     expect(verdicts.has('emit')).toBe(true);
     expect([...verdicts].some((v) => String(v).startsWith('prune-'))).toBe(true);
     expect(fills.size).toBeGreaterThan(0);
-  }, 180000);
+  });
 });
