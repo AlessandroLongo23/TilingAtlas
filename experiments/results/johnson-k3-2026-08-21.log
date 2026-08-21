@@ -1,0 +1,10 @@
+[10:12:39] 81 files / 629 blocks over 8 workers
+[10:26:34]   worker 0 finished (836s)
+[10:26:34]   worker 1 finished (836s)
+[10:26:34]   worker 2 finished (836s)
+[10:26:34]   worker 3 finished (836s)
+[10:26:34]   worker 4 finished (836s)
+[10:26:34]   worker 5 finished (836s)
+[10:26:34]   worker 6 finished (836s)
+[10:26:34]   worker 7 finished (836s)
+[10:26:34] merged 68 realized records -> sph-k3/euclid-k3.json (836s total)

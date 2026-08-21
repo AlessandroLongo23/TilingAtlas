@@ -1,0 +1,10 @@
+[21:11:06] 270 files / 28840 blocks over 8 workers
+[21:11:53]   worker 0 finished (48s)
+[21:30:33]   worker 1 finished (1167s)
+[21:30:33]   worker 2 finished (1167s)
+[21:30:33]   worker 3 finished (1167s)
+[21:30:33]   worker 4 finished (1167s)
+[21:38:37]   worker 5 finished (1651s)
+[21:38:37]   worker 6 finished (1651s)
+[21:38:37]   worker 7 finished (1651s)
+[21:38:37] merged 62 realized records -> run-kall-spherical/euclid-k3.json (1651s total)

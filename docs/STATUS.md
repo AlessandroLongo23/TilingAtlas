@@ -179,23 +179,103 @@ predicates in `matchesReferenceFilters`. A range-addressable payload container r
 ~11 KB against a whole-shard read, but it is **18.5% larger than simply gzipping each file whole**
 (75.98 MB against 64.13 MB corpus-wide) — it is a random-access win, not a compression win.
 
-## Star polyhedra: 54 solids on a new spherical shelf (2026-08-17)
+## The all-triangle polyhedra were being deleted, in three places (2026-08-20)
 
-The Atlas had no self-intersecting {n/d} face anywhere on the sphere. It has one now, and with it the
-four Kepler–Poinsot solids, ~27 more uniform star polyhedra, the star prisms and antiprisms, and the
-7-fold family that needed a D=840 angular grid to be expressible at all. Shelf: Spherical →
-Star polyhedra, foldered by density 1…38. 40 of the 54 carry hand-verified names.
+AL parked the k=3 run for this: *"It's useless to run k=3 if we don't first fix the algorithm and why
+is it dropping the all triangles polyhedra."* The k=2 Johnson gate had one systematic miss — the 2-orbit
+deltahedra J12, J13, J17, J51, J84 — and there was no `eupruned_02_3.txt` at all. The pipeline was
+finding three of the eight convex deltahedra.
 
-**This shelf has a real oracle**, unlike every Marek corpus: k=1 uniform polyhedra are complete by
-CLM 1954 / Sopov 1970 / Skilling 1975. Checked against it, zero false positives.
+**One mistake, made three times independently: reasoning about a block from its CORNER CLASSES.** On an
+all-triangle alphabet every dart of every configuration has corner class 0, so corner class carries no
+information — and only there. The three:
 
-**k=2 is barely explored and that is a cost problem, not a correctness one.** Yield on the small
-palette is 1 in 3,636 blocks, because `solve_rho_common` requires every orbit to close at the same
-edge arc. Two k=2 records so far: the pentagrammic pyramid and both heptagrammic ones. The wide
-palette at k=2 is ~40 hours of develop for an expected yield in the low tens; not run.
+1. `eu_solver`'s `simplify()`, which is Moore partition refinement deciding whether a configuration is
+   the minimal quotient, seeded on corner class. Triangles only, k ≤ 5: 308 closures built, **3**
+   accepted. The bipyramid is built and thrown away as a "fold" of the tetrahedron.
+2. `eu_pruner`'s `simplify()`/`comparesolutions()`, same seed. With the solver fixed and the pruner not,
+   12 new blocks went in and **0** came out.
+3. `develop_euclid`'s `unfold()`, which guessed a dart cycle's vertex word by matching face sequences.
+   J13's block closed as the **octahedron**, `(3,3,3)A + (3,3,3,3)S4` as the **tetrahedron**.
+
+`gen_alphabet`'s A6 certificate had been printing the tell for years: *"(3,3,3)S3 ~= (3,3,3,3)S4 —
+pruner dedup unreliable here"*.
+
+Fixed all three by carrying the VERTEX FIGURE per dart — a covering maps a dart to a dart at the same
+vertex of the tiling, so the figure is a covering invariant and belongs in every one of those seeds.
+`develop_spherical` needed a fourth, smaller fix the star gate caught: a vertex figure folded m-fold and
+developed at density d closes early whenever `gcd(m, d) > 1`, which turned `(5,5,5,5,5,5)S2` at d=2 into
+a second copy of the dodecahedron.
+
+**Result: k=2 convex records 21 → 26, every one a genuine Johnson solid, zero unidentified.** Shelf
+59 → 64. ⚑ Do NOT re-litigate the criterion as `Aut(C) = 1`: `Aut(T/H) = N_G(H)/H`, so a non-normal `H`
+is not minimal yet has trivial automorphisms, and that reading let the tetrahedron back in as
+`(3,3,3)A` (quotient by `D_2d`, index 3 in `T_d`). Minimality is about quotients.
+
+**Gate: `make check-deltahedra`** (new, ~12s). The all-triangle alphabet at k ≤ 2 must return exactly the
+eight convex deltahedra — F ∈ {4, 6, 8, 10, 12, 14, 16, 20}, nothing at 18 (Freudenthal & van der
+Waerden 1947). A theorem, not a golden file, and the only gate here that runs on an alphabet whose
+corner classes say nothing. `check-regular` byte-identical, `check-star` unchanged on all four claims.
+Write-up: `experiments/results/deltahedra-fix-2026-08-20.md`, NOTES 2026-08-20 (fifth).
+
+**NEXT: k=3 is unblocked.** Re-run it on the fixed pipeline, not the old output.
+
+## Star polyhedra: 89 solids, k=2 enumerated, and the limit is the SPHERE (2026-08-20)
+
+The shelf shipped at 54 on 2026-08-17 (four Kepler–Poinsot, ~27 more uniform star polyhedra, the star
+prisms and antiprisms, the 7-fold family that needed a D=840 grid). It now holds **83**, foldered by
+density 1…38 under Spherical → Star polyhedra, 69 of them named.
+
+**The k=2 question has a mathematical answer, not a compute one.** For every {n/d} with 2 < n/d < 4
+there is a spherical PYRAMID: apex 3^n at cos(rho) = c/(1-c) with c = cos(2*pi*d/n), base vertex
+exactly one turn, total area exactly 4*pi*d, so V = n+1, E = 2n, F = n+1 at density d. The family is
+infinite (121 members to n = 40) and the engine can never enumerate it, since the apex needs
+maxValence >= n. **28 of them ship, {8/3} through {20/9}**, straight from the closed form and through
+the same `check_realized` gate as every searched record. Beyond that, "exhaustive at k=2" is only
+well-posed once the face set and the valence are bounded.
+
+**One uniform polyhedron was missing and is now in: U41, the ditrigonal dodecadodecahedron** (V=20,
+E=60, F=24, density 4). `solve_rho` bisected on a monotonicity that a RETROGRADE face breaks, so a
+config crossing 2*pi*D twice failed the endpoint guard and lost both roots. 30 such triples on
+star-wide. Fixed by returning every root; the prograde branch is untouched and bit-identical.
+
+**The rho partition made the bounded k=2 search cheap, and it RAN.** Both orbits of a k>1 tiling close
+at the same edge arc, and that depends only on the angle multisets, so it is decided BEFORE the search:
+star-wide's 53,330 config words fall into 3,902 groups (3,754 singletons, worst 134 words). Solve plus
+prune over all of them is **134 seconds** against a 40-hour projection, giving 422,206 k=2 blocks;
+develop is 2.6 hours across 8 workers. Result: **9 distinct solids** from 422,206 blocks.
+
+Two of the nine are the convex Johnson solids **J27** (triangular orthobicupola) and **J37**
+(pseudo-rhombicuboctahedron), rediscovered from scratch, which is the validation that matters: they are
+this repo's standing example of geometry having fewer symmetries than its vertex arrangement. Two more
+are catalogued star cupolas ({4/3} over {8/3}, {5/3} over {10/3}). Six ship, taking the shelf to 89.
+
+⚑ **Every one of the nine has exactly ONE axis of order >= 3.** Orders 8 to 32, all cyclic or dihedral,
+nothing tetrahedral, octahedral or icosahedral. That is not luck, and it is the finding that matters:
+
+**⚑ THE REAL LIMIT: `develop_spherical` realizes maps on S2, so everything it can find is INSCRIBED.**
+Regular faces, equal edges AND a circumsphere. At k=1 that costs nothing, because vertex-transitive
+forces a circumsphere (the symmetry group fixes the vertex centroid), which is why the k=1 shelf could
+be checked against a complete published catalogue. **At k >= 2 it is a strict subclass**: J58, the
+augmented dodecahedron, has regular faces and two vertex orbits and no circumsphere (its dodecahedral
+vertices sit at 1.4013 for edge 1, the pyramid apex at 1.6392), and nothing in this pipeline can express
+it. So the k=2 shelf enumerates ORBIFORM two-orbit star polyhedra, not all of them, and the missing ones
+are exactly where a high-symmetry solid would live: gyration keeps the sphere and costs the symmetry,
+augmentation keeps the symmetry and leaves the sphere.
+
+**NEXT (AL directive, 2026-08-20): generalize the developer, do not assemble from known pieces.** Solve
+for DIHEDRAL ANGLES in R^3 instead of one edge arc on S2. The link of a vertex is a spherical polygon
+whose sides are the face angles (fixed, faces are regular) and whose angles are the dihedrals; closure
+per vertex orbit is the equation, one dihedral per edge orbit is the unknown, and a valence-3 vertex
+forces its three dihedrals outright (spherical law of cosines), so they propagate. The spherical
+developer is the special case where a single rho closes everything, so `make check-star` gates the port.
+Gate for the general case: run the convex palette BLIND and compare the output to Zalgaller's 92 Johnson
+solids afterwards. No Johnson data enters the code. ⚑ AL: fitting the algorithm to the oracle and
+generalizing it until it matches the oracle are different things, and only the second is acceptable.
 
 **Open:** the hemipolyhedra (faces are hemispheres at ρ=90°, where density stops being defined), and
-the `{3,4,8,8/3}` k=2 probe for the octagrammic pyramid. Gate: `make check-star`, three claims.
+how far the pyramid family should ship (n <= 20 today). Gate: `make check-star`, four claims, the new
+one being that the rho-bucketed k=2 path returns the full k=2 catalogue exactly.
 
 ## Marek's 2026-08-12 drop: the easy half is on the shelves
 

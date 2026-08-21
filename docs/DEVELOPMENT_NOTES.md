@@ -14538,3 +14538,514 @@ printed it twice: `20{3} + 12{5/2} + 12{10} · density 4` over `density 4`. The 
 `sphStarCensusLabel`, the name is `sphStarName` (the solid, or the census), and the family label composes
 the two as before. The heading takes the name. Every other spherical shelf was checked for the same shape
 and none repeats: each detail is built from fields the name does not carry.
+
+## 2026-08-20 (later) — What "exhaustive" can mean at k=2 for star polyhedra
+
+AL asked whether the k=2 star polyhedra could be enumerated exhaustively, having noticed that the shelf
+carried all the k=1 uniform solids and exactly three k=2 records, all pyramids. The answer turned out to
+be a theorem, a bug, and a search decomposition, in that order. Measurements in
+`experiments/results/star-spherical-k2-2026-08-20.md`.
+
+### The class is infinite, so the literal question has no yes
+
+A pyramid over a regular {n/d} with n equilateral triangles closes on the sphere exactly when the lateral
+arc equals the base arc:
+
+    cos(rho) = c / (1 - c),      c = cos(2*pi*d/n)
+
+which is solvable iff n/d < 6. At that rho the triangle's interior angle is exactly 2*pi*d/n and the
+{n/d}'s is exactly 2*pi - 4*pi*d/n. So the apex 3^n sums to exactly 2*pi*d and the base (n/d).3.3 to
+exactly one full turn, but only when 2*pi*d/n > pi/2, i.e. **n/d < 4**; between 4 and 6 the base sums to
+8*pi*d/n, not a whole number of turns, and there is no pyramid. Total face area
+n*(3*alpha - pi) + (n*beta - (n-2d)*pi) collapses to 4*pi*d identically, so the covering density is d
+with no numerics involved, and V = n+1, E = 2n, F = n+1.
+
+That is an infinite family (121 members up to n = 40) and it settles the question the way k=1 is settled:
+the catalogue there is 75 uniform solids PLUS two infinite prismatic families, and the shelf ships a
+prefix of each. The formula reproduces the three shipped pyramids to the digit ({5/2} at 116.5651 with
+density 2, {7/2} at 100.4873 with 2, {7/3} at 118.2912 with 3), which is the check that it is describing
+the same objects. 28 more now ship, {8/3} through {20/9}, from `gen_star_pyramids.py`, each one still put
+through `develop_spherical.check_realized` so its certificate is the same one a searched record gets.
+
+The engine could never have found them: a pyramid over {n/d} has apex 3^n, so it needs maxValence >= n,
+which is why `star-hept-pyr` had to go to valence 7 for {7/2} and {7/3}. Nothing about the search is
+wrong there; the object is simply outside any bounded alphabet.
+
+### The bug the fix uncovered: a retrograde face breaks the monotonicity solve_rho assumed
+
+`solve_rho` bisected for the arc where the vertex angles sum to 2*pi*D, documented as safe because the
+sum increases with rho. True with every face prograde. A RETROGRADE face contributes 2*pi - alpha, which
+DEcreases, so a mixed config can cross the target twice, and then the guard `if f(lo) >= 0 or f(hi) <= 0:
+return None` fires because both ends sit on the same side. Both roots lost, silently. On star-wide, 30
+(multiset, density, retrograde) triples are in that state and all 30 were being dropped.
+
+It now returns every root: prograde configs take the original code path unchanged (so every prograde
+catalogue is bit-identical, which `make check-star` proves), and a retrograde one is scanned at 1024
+points for sign changes with each one bisected by `face_angle` itself. Resolution checked against a
+40,000-point reference over 26,406 triples from a 600-multiset sample: zero disagreements.
+
+Re-running k=1 on star-wide, the gate immediately printed one new line, which is what a gate is for:
+
+    5/2.5.5/2.5.5/2.5   D=4  k=1  V=20  E=60  F=24  rho=1.230959417  12x{5/1} 12x{5/2}
+
+The **ditrigonal dodecadodecahedron U41**, chi = -16, vertex figure (5.5/3)^3, Wythoff 3 | 5/3 5. It
+closes at rho = arccos(1/3) with the PENTAGON retrograde and vertex density 2; density 4 to 4.4e-15, edge
+CV 2.1e-15, planarity 1.2e-15. It was missing from the shelf since the day it shipped, and it is the
+middle member of a trio whose other two were already there: U30 at density 2, U47 at density 6. Checked
+against Wikipedia's article and MathWorld for V/E/F, census, chi and vertex figure, and against
+mathconsult.ch/static/unipoly/41.html for the density. That is the only solid the fix adds at k=1.
+
+### The decomposition: partition the alphabet by rho, do not search across it
+
+At k > 1 every orbit shares its edges, so ONE arc must close all of them (`solve_rho_common`). That
+condition depends only on each orbit's angle MULTISET, not on the gluing and not on k, so it can be
+decided before the search runs. Give every multiset its rho spectrum (every root, at every density and
+every retrograde subset) and group the ones that share a value: a k=2 tiling has both orbits in one
+group, so running the solver once per group and taking the union is exhaustive, and the cross-group
+pairs, which are 99.99% of the alphabet's product, are never enumerated at all.
+
+On star-wide: 53,330 config words, 4,871 multisets, 4,001 of which close anywhere, falling into **3,902
+groups** (3,754 singletons; the largest holds 22 multisets, the heaviest 134 config words). Solve and
+prune over all 3,902: **134 seconds**, against the ~40 hours the feasibility study projected for the
+undecomposed search. 422,206 pruned k=2 blocks.
+
+Three new tools do it. `rho_buckets.py` computes the groups using `solve_rho_all` itself, so the grouping
+and the developer cannot disagree about what closes where. `slice_tables.py` cuts a `tables.bin` down to
+one group's vertex types, which works because entries are self-contained: lneig/rneig/mirro index darts
+inside one entry and gluing across entries goes by edge LABEL. `run_k2_buckets.py` drives solver and
+pruner per group, parsing the 23 MB table once instead of once per group.
+
+⚑ The trap in the slicer, which cost an hour: a vertex type's `cls` array is the QUOTIENT of its vertex
+under the word's own symmetry, so `(3,3,3,3,3)S5` carries ONE corner and `(5_2,3,3,5_2,3,3)S2` carries
+three. Filtering on `cls` keeps the wrong types and drops the ones a real block needs, and the first
+sliced run found nothing at all because the pentagrammic pyramid uses exactly the S5 fold. The multiset
+has to be read off the SYMBOL.
+
+The regression that makes the decomposition trustworthy is now a fourth claim in `make check-star`: on
+star-ico-d the bucketed path returns the full k=2 golden EXACTLY, from 390 pruned blocks instead of
+3,636. If the partition ever drops something, that claim breaks.
+
+### What shipped, and what is still running
+
+The shelf is 54 → **83** records, 69 named. Nothing was lost: every one of the 54 ids is reproduced by
+the rebuild, and the only change to their files is the `chiral` flag. The develop over the 422,206 k=2
+blocks is running at ~23 blocks/s per core across 8 workers; its records are not on the shelf yet.
+
+Two unrelated things fixed on the way. `_selftest` had been indexing `develop_block`'s return value as a
+dict since it started returning a list, so it threw whenever the fixtures directory existed. And
+`stats.chiral` read `det(I) > 0 and len(perms) % 2 == 0`, a tautology conjoined with the parity of a
+count: it said true for all 54 records, achiral ones included. `isometries()` now returns determinants
+beside the permutations and chirality is "no isometry with det = -1", which picks out exactly the six
+snub solids, each with |G| = 60.
+
+⚑ And one that the sidebar caught: the star shelf's density labels were written out one per density in
+`shelfLabels.ts`, so the pyramids' new density 8 reached the tree as the raw slug `sst-d8`. Caught by
+tests/shelf-registry, and the rows are derived off the index now, the way the board shelves already are.
+
+⚑ Still open: the hemipolyhedra (their faces are hemispheres at rho = 90 degrees, where density stops
+being defined), and how far the pyramid family should ship. n <= 20 is 31 members and an arbitrary line;
+the family does not stop.
+
+## 2026-08-20 (third) — The assumption the k=2 star catalogue was hiding
+
+The rho-bucketed k=2 run landed: 422,206 blocks, 2.6 hours of develop across 8 workers, **9 distinct
+solids**. AL asked, while it was running, whether what came out would be more than pyramids and whether
+any of it would be a new HIGH-SYMMETRY polyhedron. The first answer is yes, the second is no, and the
+second answer turned out to be about the method, not about the objects.
+
+### What the run found
+
+| V | E | F | D | faces | \|G\| | identification |
+|---|---|---|---|---|---|---|
+| 6 | 10 | 6 | 2 | 5{3}+1{5/2} | 10 | pentagrammic pyramid (already shipped) |
+| 12 | 24 | 14 | 1 | 8{3}+6{4} | 12 | J27 triangular orthobicupola |
+| 12 | 20 | 10 | 1 | 4{3}+5{4}+1{8/3} | 8 | crossed square cupola, {4/3} over {8/3} |
+| 15 | 25 | 12 | 3 | 5{3}+5{4}+1{5/2}+1{10/3} | 10 | crossed pentagrammic cupola, {5/3} over {10/3} |
+| 18 | 42 | 18 | 3 | 6{4}+6{5}+6{5/2} | 12 | unidentified |
+| 24 | 48 | 26 | 1 | 8{3}+18{4} | 16 | J37 pseudo-rhombicuboctahedron |
+| 24 | 48 | 26 | 5 | 8{3}+18{4} | 16 | the same map at rho=85.468, triangles retrograde |
+| 32 | 72 | 30 | 3 | 16{3}+4{4}+10{8} | 32 | unidentified |
+| 32 | 72 | 30 | 5 | 16{3}+4{4}+10{8/3} | 32 | unidentified |
+
+Only ONE is a pyramid. **J27 and J37 came out of the search from scratch**, which is the validation that
+counts: they are this repo's own standing example of a solid whose geometry has fewer symmetries than
+its vertex arrangement, and the k=2 machinery rediscovered both without being told they exist. Both are
+convex at density 1 with no star face, so the shelf filters them; the star cupolas are in Wikipedia's
+star-cupola table, which names them by the retrograde face, so this developer's retrograde {4} is that
+table's {4/3}. Six records ship, 83 → 89.
+
+I read the nine mid-run rather than waiting: `develop_spherical` writes cells only at the end, but each
+worker's block order is deterministic and its progress lines say which 500-block window the counter went
+up in, so re-cutting six windows reproduced all of them in three minutes. The finished run confirmed the
+set exactly.
+
+### Every one of them is dihedral, and that is the method talking
+
+Reconstructing each solid's isometry group as MATRICES (not just permutations) and counting rotation
+axes: all nine have **exactly one axis of order >= 3**. Orders 8 to 32, cyclic or dihedral, nothing
+tetrahedral, octahedral or icosahedral.
+
+The reason is the developer. It realizes a map by SO(3) flood-fill on S2 with a single edge arc rho, so
+everything it can express has regular faces, equal edges AND A CIRCUMSPHERE. That is the class Zalgaller
+calls orbiform.
+
+At k=1 the assumption costs nothing and that is why nobody noticed: uniform means vertex-transitive, the
+symmetry group fixes the vertex centroid, and every vertex is therefore the same distance from it. Every
+uniform polyhedron is inscribed. It is also why the k=1 shelf could be checked against a complete
+published catalogue and come out clean.
+
+**At k >= 2 it is a strict subclass.** J58, the augmented dodecahedron, has regular faces and two vertex
+orbits; for edge 1 its dodecahedral vertices sit at 1.4013 from the centre and the pyramid apex at
+1.1135 + 0.5257 = 1.6392. No circumsphere, no representation in this pipeline. Most of the Johnson
+solids are in that position, everything elongated, gyroelongated or augmented.
+
+So the two ways to get a second vertex orbit pull against each other under this shelf's constraint.
+GYRATION (rotate a cap about its axis) keeps every vertex on the sphere and destroys exactly the
+symmetries that mixed the twisted cap with the rest: the cuboctahedron is order 48 and J27 is 12, the
+rhombicuboctahedron is 48 and J37 is 16, and both showed up here. AUGMENTATION keeps the symmetry and
+leaves the sphere. Hence: dihedral, all the way down.
+
+### What replaces the assumption (AL directive, 2026-08-20)
+
+AL: fitting the algorithm to an oracle and generalizing it until it matches the oracle are different
+things, and only the second is acceptable. So no cap-catalogue assembly, which could only ever emit what
+its pieces express. Generalize the realization instead, and leave the search alone.
+
+The solver, the maps and the vertex prune all stay. `enum_configs`'s closure rule survives unchanged: at
+any vertex the faces fold into a cone whose link is a closed spherical polygon, and a closed spherical
+polygon has perimeter below a whole turn, which is the "angle sum short of 2*pi*D" test already there.
+
+What changes is the unknown. **The link of a vertex is a spherical polygon whose SIDES are the face
+angles and whose ANGLES are the dihedral angles.** Faces are regular, so every side is known before the
+search starts. The dihedrals are the unknowns, one per edge orbit; closure per vertex orbit is the
+equation. The spherical developer is the special case where one rho closes all the links at once, so the
+new developer strictly contains it and `make check-star` gates the port.
+
+One lever falls out and is worth naming because it is derived rather than supplied: at a valence-3
+vertex the link is a spherical triangle with three prescribed sides, so its angles are DETERMINED by the
+spherical law of cosines. Every dihedral at such a vertex is forced, and forcing propagates along shared
+edges. That is the analogue of rho being forced by a single closure equation.
+
+Gate: run the convex palette blind, take whatever set comes out, compare it to Zalgaller's 92 afterwards.
+No Johnson data in the code, the palettes or the search. 91 or 94 is a finding to report, not a number
+to tune toward. Two costs to measure first instead of assuming: how far k has to climb to cover the 92,
+and whether "no solution" can be made trustworthy, which is the difference between a demo and an
+enumeration.
+
+### Fixed on the way
+
+⚑ The emitter's dedup key was (V, E, F, census, density, rho) with no k. The run found a two-orbit solid
+at V=24, E=48, F=26, 8{3}+18{4}, density 5, at rho=1.4917053, which is EXACTLY the arc of the one-orbit
+record already on the shelf: the rhombicuboctahedron/J37 relationship in star form, one solid gyrated out
+of the other. Without k in the key the gyrate one is dropped as a duplicate of its own parent. Fixed,
+and the id-collision path now falls through rho to the orbit count so an id is never quietly reused.
+
+⚑ `run_develop_sharded.py` derived its scratch directory from the output file's DIRECTORY, so a second
+run sharing that directory emptied the first run's shard folders and truncated its progress files. The
+workers survive (they hold their blocks in memory) but the per-worker cells collide. Caught while it was
+happening, on a priority pass I started and then killed; scratch is keyed to the output file now.
+
+## 2026-08-20 (fifth) — The all-triangle polyhedra: three bugs, one blind spot
+
+AL, after the k=2 Johnson gate reported its one systematic miss: *"It's useless to run k=3 if we don't
+first fix the algorithm and why is it dropping the all triangles polyhedra. I need you to debug the
+algorithm, understand why it doesn't find them, and fix it. We need to ensure completeness."* He was
+right to park k=3. A search that drops a whole family at k=2 is not a search you extend.
+
+The missing family: the 2-orbit deltahedra — J12 triangular bipyramid, J13 pentagonal bipyramid, J17
+gyroelongated square bipyramid, J51 triaugmented triangular prism, J84 snub disphenoid. Together with
+the tetrahedron, octahedron and icosahedron these are the eight convex deltahedra, and the pipeline was
+finding three of eight.
+
+**One mistake, made three times: reasoning about a block from its CORNER CLASSES.** Equilateral
+triangles alone give every dart of every configuration corner class 0, so on that alphabet — and only on
+that alphabet — corner class carries no information at all. Nothing else in the repo exercises an
+alphabet that degenerate, which is how three separate stages could get this wrong and stay wrong.
+
+`gen_alphabet`'s A6 certificate had been printing the tell the whole time:
+
+    [cert] A6 WARNING (non-pinned palette): 4 isomorphic-fold collisions — pruner dedup unreliable here:
+            (3,3,3)S3  ~=  (3,3,3,3)S4
+
+One dart each, same corner class, indistinguishable. A warning nobody followed up is a bug with a
+timestamp on it.
+
+### 1. `eu_solver.cpp` — `simplify()` deleted them at closure
+
+`simplify_inner` is not a heuristic isomorphism test, which is how I first read it. It is **Moore
+partition refinement**: the coarsest congruence on darts refining a seed colour and commuting with
+rneig/lneig/mirro/glue, accepted iff trivial. That is exactly the right question. A configuration is
+`T/H` for a subgroup `H` of the tiling's symmetry group and is a record only when `H` is the whole
+group, i.e. when it admits no proper quotient, and the proper quotients of a connected map are precisely
+its nontrivial congruences.
+
+The seed was wrong. A covering `C → C'` preserves more than the corner class: a dart of `C` is an
+`H`-orbit of darts of `T`, it sits at one vertex of `T`, and its image sits at the SAME vertex, so the
+whole vertex figure is a covering invariant. Corner class does not imply vertex figure, and on a
+single-tile alphabet it implies nothing.
+
+Triangles only, k ≤ 5: the solver builds 308 closed configurations and the old seed passes **three** —
+tetrahedron, octahedron, icosahedron. The triangular bipyramid IS built, `(3,3,3)S3` + `(3,3,3,3)S2a`,
+glue `(0 0')(1')`, three darts, and thrown away, because with one seed colour the whole three-dart set
+is a congruence whose quotient is the one-dart tetrahedron block — a "quotient" that merges a 3-valent
+vertex with a 4-valent one and covers nothing. Fix: seed with the vertex figure, read off the alphabet
+symbol with its site-symmetry variant stripped, so `(3,3,3)` covers S3/R3/A/F. Strictly a loosening.
+
+⚑ **The wrong fix, and why it is wrong.** My first attempt replaced the refinement with an exact
+automorphism search — `Aut(C) = 1`, decidable in O(le²) because a connected map's automorphism is pinned
+by the image of one dart. It is not the criterion. `Aut(T/H) = N_G(H)/H`, so a NON-NORMAL `H` gives a
+trivial automorphism group for a configuration that is not minimal, and the test let the tetrahedron
+back in as `(3,3,3)A` — the tetrahedron quotiented by `D_2d`, index 3 in `T_d`, three conjugates, self
+normalizing. All-triangle k=1 went from 3 blocks to 7. Reverted. Minimality is about quotients, not
+automorphisms, and the engine had it right all along.
+
+### 2. `eu_pruner.cpp` — the survivors were deleted as duplicates
+
+The same seed, twice over: `simplify()` rejected what the fixed solver now emitted, and
+`comparesolutions()` would have called any two blocks with the same dart count isomorphic. With the
+solver fixed and the pruner not, 12 new k=2 triangle blocks went in and **zero** came out. Fix:
+`Graph::fam` in `ctrnact_decode.hpp`, one vertex-figure id per dart, into the seed of both refinements,
+into the fingerprint, and into the spilled `Sol` record.
+
+### 3. `develop_euclid.py` — `unfold()` guessed the vertex word
+
+A valence-5 vertex whose figure has a 5-fold rotation is a cycle of ONE dart and its link closes only
+after five passes, so the developer needs `f = len(config)/len(cycle)`. It found the config by matching
+the cycle's face sequence against every word in the block and keeping the smallest repeat count. Here
+every word matches every other: the 1-dart cycle of `(3,3,3,3,3)S5` matched the OTHER orbit's
+`(3,3,3,3)` and came back `f=4`, so a valence-5 vertex was developed as a valence-4 one. J13's block
+closed as the **octahedron** and `(3,3,3)A + (3,3,3,3)S4` closed as the **tetrahedron**, both passing
+every certificate downstream because both are perfectly good polyhedra — just not the ones asked for.
+Its own docstring said "invisible on an equilateral vertex and wrong everywhere else". Fix: take the
+dart → vertex-orbit map from `decode_block`; darts are laid out one vertex at a time in the header's
+order, which is not a guess.
+
+### 4. `develop_spherical.py` — a vertex that closes early
+
+Not part of the original hole; the loosened solver surfaced it and `make check-star` caught it, which is
+the gate doing its job. A vertex figure folded by an m-fold rotation has a word of period `n/m`, so its
+first `n/m` angles already sum to `2πd/m`: the developed walk returns to its starting dart AND frame
+after `n/m` steps whenever `m | d`, building a valence-`n/m` vertex wearing a valence-`n` label. Nothing
+downstream sees it. `(5,5,5,5,5,5)S2` at `d=2` develops into the **dodecahedron** and the catalogue
+gained it a second time as a bogus k=2 record; the great stellated dodecahedron picked up the same twin
+at D=7. Condition: `gcd(m, d) = 1`. Vacuous at `d=1`, so every convex palette is untouched, and the
+genuinely wrapped vertices keep their records — `(5,3,5,3,5,3)S3` has `m=3`, closes at `d=2`, `gcd=1`.
+
+### What changed
+
+tri-only k≤5 emitted 3 → 45 of 308 closures. Spherical k≤2 raw blocks 188 → 200, pruned 132 → 141,
+`develop_euclid` congruence classes 54 → 68, **convex with no coplanar neighbour 21 → 26, every one a
+genuine Johnson solid, zero unidentified**. The five new ones are exactly the five that were missing.
+Shelf 59 → 64.
+
+### The gate
+
+`make check-deltahedra` (new). The all-triangle alphabet at k ≤ 2 must return exactly the eight convex
+deltahedra: F ∈ {4, 6, 8, 10, 12, 14, 16, 20} and **nothing at 18** (Freudenthal & van der Waerden
+1947). It is a theorem, not a golden file, and it is the only gate in the repo that runs on an alphabet
+whose corner classes carry no information. ~12s. `check-regular` stays byte-identical (A068599
+10/20/61/151/332/673 at k≤6), `check-star` matches golden on all four claims, `develop_euclid` k=1 is
+unchanged at 30 records / 28 shapes, and `develop_spherical` k=2 on the spherical palette returns the
+same 2 records as before.
+
+⚑ Also fixed, from before this session: `public/reference-atlas-spherical.json` had been rewritten as a
+plain array when the nineteen Johnson solids landed, dropping the container's shared `geom` legend, so
+`renderCell` indices pointed at nothing and `atlasCodec`'s round-trip test failed. Repacked as
+`{atlas, geom, records}`.
+
+⚑ `tests/star-general-path.test.ts` times out at the default 60s under a parallel `pnpm test` and passes
+alone in 148s. Pre-existing, unrelated to any of this, and not touched.
+
+## 2026-08-21 — Tilings of the sphere, polyhedra, and the difference
+
+Three things AL asked for on the spherical shelf. The write-up with the numbers is
+`experiments/results/deltahedra-fix-2026-08-20.md` (follow-ups section); the durable points:
+
+**A polyhedron is a tiling of the sphere only if it has a CIRCUMSPHERE.** Radial projection is the map
+between the two, and it needs one point equidistant from every vertex. Nineteen of the sixty-four solids
+on the reference shelf have none — the elongated bipyramids, the bicupolas, the gyrobifastigium, the
+triaugmented prisms, the snub square antiprism, the snub disphenoid, the bipyramids — so they are
+polyhedra and not spherical tilings, and the shelf now says so: **Regular-faced solids → Tilings of the
+sphere (45) / Polyhedra, no circumsphere (19)**. The other direction fails too, and the halved-Platonic
+boards are where: a face cut in two and reassembled can put two coplanar triangles where a polyhedron has
+one face, so those are spherical tilings that are not polyhedra.
+
+⚑ **Do not test inscribability from the vertex CENTROID.** The square pyramid's circumcentre is the
+centre of its base, and a diminished solid keeps its parent's circumsphere while its vertex centroid
+moves off that centre. The centroid reading calls J1, J11, J62, J63, J76 and J80 non-inscribable and all
+six plainly are. Fit the sphere (`|v−c|² = R²` is linear in `(c, R²−|c|²)`, four unknowns, least
+squares) and read the worst miss. `lib/tilings/sph-inscribed.ts`, and its test recomputes the shipped
+list from the vertices every run so it cannot drift.
+
+⚑ **`tileColor`'s neutral grey belongs to a BLANK FREEDRAW BOARD, not to a one-tile tiling.** A board
+with nothing drawn on it must not claim a decoration; a tiling with one face type has a colour, and that
+colour is its polygon's. Four half-tile records (one face orbit each) were coming out grey. `sphPolyScene`
+now hands an explicit `tileHsb` keyed on `polygonHue`, which is the rule the star shelf already uses —
+the same complaint AL raised there in 2026-08-19 ("sometimes it's all gray"), reaching the shelves that
+fix did not touch.
+
+⚑ **The face-through-face creases were losing a depth fight, not going uncomputed.** `faceCrossings` is
+COMPLETE: brute-forced on every face pair of all 89 star records — sample the plane-intersection line,
+keep what lies inside both filled regions and outside a shared real edge, check a crease covers it —
+**zero uncovered spans**. What was wrong is that the crease ribbon was lifted off its face by a fixed
+`thickness * 0.06` in WORLD units, and how much depth buffer that buys depends on the camera and the
+face's inclination. It is a `polygonOffset` now. Whether that is the case AL is looking at is still open:
+the default camera hides all five squares of the crossed square cupola and his screenshot is a rotated
+view, so I could not put my eye on the same line.
+
+⚑ **The star-wide k=2 catalogue is unchanged by the deltahedra fix.** The loosened solver adds 673
+blocks (422,206 → 422,879); a full 2h25m re-develop returns **the same 9 distinct solids**, identical in
+V, F, density, rho and vertex configuration. The corner-class blind spot cost the Euclidean developer
+five solids and cost the star shelf nothing — the new blocks are all-triangle multi-orbit maps, and on
+the star palette a triangles-only orbit closes at a rho the other orbit cannot match. No re-derivation
+of `public/spherical-star/` is needed.
+
+
+## 2026-08-21 (later) — The renderer was inflating solids onto a sphere they do not have
+
+AL, on J31: *"this sph-pentagonal-gyrobicupola doesn't seem to be consisting of only regular polygons."*
+It consists of nothing else — V=20, E=40, F=22, 10 triangles + 10 squares + 2 pentagons, all 40 edges
+equal to nine decimal places, every face planar with equal angles. A sweep over all 64 shipped solids
+finds no face irregular by more than 1e-6. The data was never wrong.
+
+⚑ **`flatSolidTriangles` and `straightEdges` NORMALISED EVERY VERTEX onto the sphere of `radius`**, and
+the comment above them said why that was safe: *"for a Platonic/Archimedean solid all vertices share one
+circumradius, so this is a UNIFORM scale … a per-vertex normalise would only distort a solid whose
+corners sat at mixed radii — none here do."* None did, on the shelf that comment was written for.
+Nineteen do now. This is the deltahedra mistake wearing a different hat: an invariant asserted in prose,
+invalidated by new data, and nothing measuring it. Both call `solidFitScale` now — one factor for the
+whole solid, `radius / max|v|` — which for a solid whose corners share a radius about the origin is
+exactly the factor the normalise applied, so every Platonic, Archimedean, prism and antiprism is
+untouched.
+
+⚑ **The round spherical view is only defined where there is a circumsphere.** It radially projects the
+solid onto one; without it, projection moves every vertex a different distance and what appears is a
+different object. It was the DEFAULT look for these records, which is how J31 reached AL as a green
+blob. Now: thumbnails draw the polyhedron for every record on the shelf, `spherical-canvas` forces the
+flat solid where there is no circumsphere, and the Options tab hides the Polyhedron checkbox there since
+the view it toggles back to does not exist. One decision, `hasSphereView` in `lib/tilings/sph-inscribed.ts`.
+
+Gate: `lib/render/sphericalGeometry.test.ts` measures what the RENDERER produces, not what the data says
+— one scale factor, every drawn edge equal, every drawn face equilateral, and a non-inscribable solid's
+corners must NOT come back on a sphere. Re-introducing the normalise fails all four.
+
+⚑ **Correction to the crease note above: `polygonOffsetFactor` must stay 0.** AL: *"on some others there
+are some strange lying artefacts."* The factor term scales with the polygon's depth slope, and a star
+polyhedron is layers of steeply inclined faces, so it pulled creases on hidden layers forward until they
+punched through the faces in front. Measured on ss-60-120-62-d13 (density 13): factor -4 / units -8
+differs from no offset at all by 1,171,827 in summed pixel difference, every bit of it hairlines across
+faces that should be solid; factor 0 / units -2 differs by 1,145, which is antialiasing. A crease is
+coplanar with its face, so a constant bias is all it needs. It was never the fix for the original
+"intersections not drawn" complaint either — the crease set is complete and a crease that does not appear
+is one correctly hidden.
+
+
+## 2026-08-21 (third) — Convexity is the spherical shelf's split, and the 3.4.n.4 shelf was a duplicate
+
+AL redrew the hierarchy: convex / non-convex at the top, regular polygons then k under convex, star
+polyhedra with k (not density) under non-convex. Two corrections went in with it.
+
+⚑ **k = 1 is UNIFORM, not "regular".** Only the five Platonic solids are regular polyhedra; the 28 at
+k = 1 are 5 Platonic + 13 Archimedean + 10 prisms and antiprisms, and what they share is being
+vertex-transitive — which is exactly what k = 1 means. The other half is exact as AL wrote it: a Johnson
+solid is by definition a convex regular-faced polyhedron that is not uniform, so k > 1 IS the Johnson
+solids. The k rows now name the class rather than leaving it to be known.
+
+⚑ **Density left the star axis.** One sub per density put a property of the SOLID on the axis that
+carries the vertex-orbit count everywhere else in the catalogue, and left rows of one. One row now, k
+beneath it: 52 and 37. Density is still on every card and in every record.
+
+⚑ **The tree has exactly three grouping levels above the cards** (family → sub → k). The convex branch
+spends all three, so the four halved boards sit as siblings of "Regular polygons" rather than under a
+"Halved" heading of their own. Worth knowing before the next reshape: a fourth level means changing
+catalogue-list-panel, not the sub axis.
+
+⚑ **The spherical 3.4.n.4 shelf held twenty solids and not one of them was new.** Matched by congruence
+(sorted pairwise vertex distances after a common fit): 13 duplicated a reference record and the other 7
+were the rest of J72–J83. The shelf is retired — `loadSphericalPolyAtlas` no longer fetches those
+shards, the `spp-` rows are gone, the shards stay on disk for the squaring shelf, and the HYPERBOLIC
+half of the family is untouched because it is infinite and nothing else holds it.
+
+⚑ **The seven were NAMED BY DERIVATION, not by looking at pictures.** Every member of the
+gyrate/diminished rhombicosidodecahedron family is that solid with two integers on it, both readable off
+the vertex census: g = (#3.4.4.5)/10 gyrations, d = (#4.5.10)/10 diminishments, calibrated against the
+five already shipped. (g, d) names ten of the twelve; the two para/meta pairs it cannot separate are
+split by SYMMETRY ORDER, para being D_5d at 20 and meta C_2v at 4. That is the J28/J29 test again —
+emission order is not evidence. Reference shelf 64 → 71.
+
+
+⚑ **Audit, 2026-08-21: nothing convex we produced is unshipped, and the missing Johnson solids all need
+k >= 3.** Congruence-matched every develop_euclid record against the shelf — k=1: 28 convex, 0 missing;
+k=2: 26 convex, 0 missing. 43 of the 92 are on the shelf (J1-5, 11-17, 19, 26-31, 34-39, 51, 57, 62, 63,
+72-85). The reason for the other 49 is derived: a Johnson solid is convex, regular-faced and NOT uniform,
+so none has one vertex orbit; develop_euclid is exhaustive over the palette at a given k, the palette
+covers every Johnson face and valence, and it has been run at k=1 and k=2 only. It returned 26 convex
+solids at k=2 and every one is a Johnson solid, so **the 26 with exactly two orbits are all here and all
+49 missing ones have three or more**. The blocker is one run: develop_euclid at k=3, launched 2026-08-20,
+parked for the deltahedra bug, unblocked since.
+
+⚑ **38 non-convex solids we produced are on no shelf.** Not Johnson solids (Johnson is convex), so they
+do not touch that count, but they are real regular-faced polyhedra with nowhere to live. At k=1 both
+non-convex records are on the star shelf; at k=2 only 1 of 39 distinct shapes is, because the star shelf
+comes from develop_spherical and is inscribable-only. The other 38 are precisely the non-inscribable
+non-convex ones — the gap develop_euclid exists to close, that the shelf has not caught up with.
+
+⚑ **J77/J78 hedge resolved.** `gyrate-diminished-rhombicosidodecahedron` shipped as "(J77/J78)" because
+the census cannot separate them; symmetry order can (J77 C_5v at 10, J78 C_s at 2) and it measures 10, so
+it is J77 paragyrate diminished. J78 arrived from the 3.4.n.4 shelf measuring 2. The id keeps its
+spelling — ids are the routing key — and the name carries the correction.
+
+
+⚑ **`pnpm docs:check` was not measuring most SYNC entries, for the THIRD time.** Its heading regex took
+`(2)`/`(3)` as a boundary suffix but not a WORD one, so "(later)" and "(third)" were not entry starts and
+every line of both was charged to the entry above — reported as 19 lines for a 6-line entry. The same
+failure the file's own comment already records twice (2026-07-27: only one of the two heading formats
+matched; 2026-08-02: the numeric suffix was not a boundary). The parenthetical is now anything at all,
+which is what both earlier fixes should have done. It reveals 31 historical entries that were over
+length and invisible; they stay as written — the ledger is append-only and never trimmed.
+
+
+## 2026-08-21 (fourth) — The non-convex shelf, and k=3: nineteen more Johnson solids
+
+⚑ **There is no published catalogue of non-convex regular-faced polyhedra.** Johnson's 92 and Zalgaller's
+completeness proof are for CONVEX ones; Zalgaller's own extension ("with conditional edges") is still
+convex; Klitzing's survey puts non-convexity explicitly out of scope. What is enumerated past convexity
+is the uniform half — the 57 non-convex uniform polyhedra, one orbit each, already on the star shelf.
+So the 34 ship with their measured signature and no invented name, the way the star shelf ships an
+unrecognised record. Shelf: **Non-convex → No circumsphere (34)**, a sibling of the star shelf.
+
+⚑ **The 38 are 38 REFLEX records, not 42.** Four of the "non-convex" k=2 records are convex with two
+COPLANAR neighbours — a face drawn as two, not a solid — and are dropped on the same test the convex gate
+uses. Of the 38: 35 distinct by congruence, 1 already on the star shelf, 34 shipped (26 self-intersecting,
+8 embedded).
+
+⚑ **The one already shelved is the only one with a circumsphere**, which is the causal story in a single
+data point: develop_spherical realizes maps on S², so a solid without one is not something it can miss —
+it is something it cannot express.
+
+⚑ **Two renderer bugs fell out of shipping them.** `buildFlatSolid` used FrontSide because "the solid is
+convex and closed with its triangles wound outward"; that winding orients each triangle away from the
+ORIGIN, which is only outward for a convex solid containing it, so non-convex faces were culled and the
+solid rendered with holes. DoubleSide now — identical on a convex solid. And develop_euclid's records
+come out in its own frame with the seed vertex AT the origin; they are centred and normalised now, caught
+by sphericalGeometry.test.ts measuring the scale factor rather than by eye.
+
+⚑ **k=3 gives 19 more Johnson solids** (653 raw blocks, 460 pruned, 68 realized, 14 min on 8 workers):
+24 distinct convex solids, 5 already shipped. J6, J7, J8, J9, J10, J18, J20, J42, J43, J44, J45, J46,
+J49, J50, J55, J59, J67, J90, J91. Named against the published constituent-polygon table, with the three
+pairs it cannot separate settled by measurement — J42/J43 by the equatorial mirror (the J28/J29 test),
+J55/J56 and J59/J60 by the angle between the two pyramid apexes, π for para and short of it for meta.
+Both came out para, which is what k=3 should give: the meta member is less symmetric, so more orbits.
+**Shelf 43 → 62 of the 92; the remaining 30 need k >= 4.**
+
+⚑ **The hour-long atlas cache reported all of the above as not having happened.** AL's tab still read
+"Regular polygons 71 / Star polyhedra 89" with no non-convex sibling while the disk held 124 records, the
+dev server served 124, and a fresh browser drew the new tree. The cause is `ATLAS_CACHE` in
+next.config.ts: `public, max-age=3600, must-revalidate`, added so /library's 118 shard requests do not
+each pay a conditional round trip. Inside the hour a browser answers from its own cache without asking,
+so a rebuilt corpus is invisible until it expires. Its justifying comment says these files "change when a
+corpus is rebuilt, not between page views" — true, and in THIS repo rebuilding a corpus during a session
+is the normal thing to do, so the assumption is exactly inverted in dev. The 107 ms it buys was measured
+over a network; the same conditional request to 127.0.0.1 is about 1 ms. Now `no-cache` when
+NODE_ENV=development and unchanged in production, both verified by curling the header off `pnpm dev` and
+off a `NEXT_DIST_DIR=.next-prod pnpm start`. Nothing else was wrong — no code or data change was needed.

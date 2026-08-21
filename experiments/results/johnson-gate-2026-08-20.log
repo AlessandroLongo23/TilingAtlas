@@ -1,0 +1,58 @@
+[16:22:16] 270 files / 28840 blocks over 8 workers
+
+================================================================================
+THE k=2 GATE, RUN AND CHECKED (AL: "do k=2, why do you want to run k=4?")
+================================================================================
+AL was right that k=2 is a complete claim on its own and that the k=3..8 sweep was
+over-reach. The k=2 output was already sitting there unchecked. Result:
+
+  54 congruence classes; 21 of them convex with no coplanar neighbours.
+  ALL 21 ARE GENUINE JOHNSON SOLIDS. Zero false positives.
+
+  V=5   4{3}+1{4}                  J1  square pyramid
+  V=6   5{3}+1{5}                  J2  pentagonal pyramid
+  V=8   4{3}+4{4}                  J26 gyrobifastigium
+  V=8   6{3}+3{4}                  J14 elongated triangular bipyramid
+  V=9   4{3}+3{4}+1{6}             J3  triangular cupola
+  V=10  8{3}+4{4}                  J15 elongated square bipyramid
+  V=12  4{3}+5{4}+1{8}             J4  square cupola
+  V=12  8{3}+6{4}                  J27 triangular orthobicupola
+  V=12  10{3}+5{4}                 J16 elongated pentagonal bipyramid
+  V=15  5{3}+5{4}+1{5}+1{10}       J5  pentagonal cupola
+  V=15  12{3}+3{4}+2{6}            J57 triaugmented hexagonal prism
+  V=16  8{3}+10{4}  (two of them)  J28 / J29 square ortho- and gyrobicupola
+  V=16  24{3}+2{4}                 J85 SNUB SQUARE ANTIPRISM
+  V=18  8{3}+12{4}  (two of them)  J35 / J36 elongated triangular ortho/gyrobicupola
+  V=20  10{3}+10{4}+2{5} (two)     J30 / J31 pentagonal ortho/gyrobicupola
+  V=24  8{3}+18{4}                 J37 pseudo-rhombicuboctahedron
+  V=30  10{3}+20{4}+2{5} (two)     J38 / J39 elongated pentagonal ortho/gyrobicupola
+
+J85 matters most: it is one of the ELEMENTARY Johnson solids, the ones that cannot be
+cut and pasted out of uniform solids, so it is precisely what a cap-and-glue builder
+would have missed and a genuine search finds. Verified against Wikipedia digit for
+digit: V=16, E=40, F=26, 24 triangles + 2 squares, 8 vertices at 3^5 and 8 at 3^4.4.
+J57 was derived rather than looked up: a hexagonal prism with all three side squares
+augmented gives exactly 15/30/17 and 12{3}+3{4}+2{6}.
+
+For comparison, develop_spherical on the SAME 132 blocks returns 2 records.
+
+⚑ ONE SYSTEMATIC MISS, AND IT IS UPSTREAM OF THE DEVELOPER.
+The 2-orbit DELTAHEDRA are absent: J12 triangular bipyramid, J13 pentagonal bipyramid,
+J17 gyroelongated square bipyramid, J51 triaugmented triangular prism, J84 snub
+disphenoid. Not a develop failure -- the blocks do not exist. There is no
+eupruned_02_3.txt at all: the triangles-only family produces zero k=2 blocks.
+
+Isolated it: slice the alphabet to the three all-triangle vertex figures (3^3, 3^4,
+3^5 -- 16 of the palette's 125 vertex types) and run eu_solver_rt at MAXNUM=5. It
+returns THREE maps, all with one vertex type: (3,3,3)S3, (3,3,3,3)S4, (3,3,3,3,3)S5.
+The tetrahedron, the octahedron and the icosahedron. No multi-type all-triangle map at
+any k up to 5. So every deltahedron beyond the three Platonic ones is outside what this
+pipeline can enumerate, and the cause is in the combinatorial solver or the alphabet,
+not in develop_euclid. One for Marek.
+
+State of the corner solver at this point: closed form for <=3 distinct unknowns
+(validated 15/15 against published dihedral angles), fold trace for folded corners
+(finds the icosahedron AND the great icosahedron in closed form), 1-D scan for a single
+repeated unknown. Proves 48-80% of blocks with no root-finding, ~0.02 s each, solution
+counts unchanged (88 at k=2, 22 at k=3). Three grid-based accelerations were built and
+REVERTED for losing roots; each is recorded in develop_euclid.py with its numbers.

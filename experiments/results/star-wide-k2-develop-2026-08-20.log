@@ -1,0 +1,10 @@
+[10:43:53] 1664 files / 422206 blocks over 8 workers
+[13:07:56]   worker 0 finished (8643s)
+[13:11:48]   worker 1 finished (8875s)
+[13:12:46]   worker 2 finished (8933s)
+[13:12:46]   worker 3 finished (8933s)
+[13:12:46]   worker 4 finished (8933s)
+[13:12:46]   worker 5 finished (8933s)
+[13:17:45]   worker 6 finished (9232s)
+[13:17:45]   worker 7 finished (9232s)
+[13:17:45] merged 11 realized records -> run-k2-star-wide/cells.json (9232s total)

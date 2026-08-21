@@ -2692,3 +2692,66 @@ ignored the mode, and a star polyhedron's faces are coincident at radius 1, so t
 tiling has nothing to sort and paints speckle. Sphere now draws the COVERING, shading each direction by
 how many faces lie over it, accumulated by a custom additive blend at alpha 1/sheets so the shade is
 linear in the count. `sheetCount` is ray-sampled, not density; differs on 21 of 54. NOTES 2026-08-20.
+
+## 2026-08-20 (later) — Star shelf 54 → 83: the pyramid family, and a uniform solid that was being lost — CC
+
+Every {n/d} with 2 < n/d < 4 has a spherical pyramid in closed form, so k=2 cannot be exhaustive; 28
+ship, {8/3} to {20/9}. ⚑ `solve_rho` bisected on a monotonicity a RETROGRADE face breaks, losing BOTH
+roots of any config crossing twice (30 triples); fixing it recovered U41, missing since the shelf
+shipped. ⚑ The k>1 common-arc test partitions the alphabet: star-wide solve+prune is 134s, not 40h.
+NOTES 2026-08-20 (later).
+
+## 2026-08-20 (third) — k=2 star polyhedra enumerated: 9 solids, every one dihedral — CC
+
+422,206 blocks, 2.6h of develop, **9 distinct solids**, 6 new on the shelf (83 → 89); two are J27 and
+J37 rediscovered from scratch. ⚑ Every one has exactly ONE axis of order >= 3, and the cause is the
+METHOD: `develop_spherical` realizes maps on S2, so it only finds INSCRIBED solids — free at k=1, a
+strict subclass at k >= 2. ⚑ Also fixed: the emitter's dedup key had no k, so a gyrate solid sharing its
+parent's V/E/F/density/rho was dropped as its own duplicate. NOTES 2026-08-20 (third).
+
+## 2026-08-20 (fourth) — The Johnson gate on develop_euclid: 21 solids, zero false positives — CC
+
+`develop_euclid.py` solves for DIHEDRAL ANGLES in R3 and assumes no sphere, so it reaches solids
+`develop_spherical` structurally cannot: 54 k=2 congruence classes against that developer's 2. All 21
+convex ones are genuine Johnson solids, J85 the snub square antiprism among them — ELEMENTARY, exactly
+what a cap-and-glue builder would miss. 19 shipped. NOTES 2026-08-20 (fourth).
+
+## 2026-08-20 (fifth) — The all-triangle polyhedra: three bugs, one blind spot — CC
+
+The gate's one miss was the 2-orbit deltahedra (J12/J13/J17/J51/J84). Three stages independently seeded
+a decision on a dart's CORNER CLASS, which on an all-triangle alphabet is 0 everywhere; `gen_alphabet`'s
+A6 certificate had warned about it for years. k=2 convex 21 → 26, all Johnson, shelf → 64. ⚑ New gate
+`make check-deltahedra`, a theorem not a golden file. experiments/results/deltahedra-fix-2026-08-20.md,
+NOTES 2026-08-20 (fifth).
+
+## 2026-08-21 — The spherical shelf splits tilings from polyhedra — CC
+
+A polyhedron projects to a spherical tiling only through a CIRCUMSPHERE, and 19 of the 64 shipped solids
+have none: **Regular-faced solids → Tilings of the sphere (45) / Polyhedra, no circumsphere (19)**. Fit
+the sphere, never from the centroid. Also: a one-face-orbit tiling rendered in `tileColor`'s blank-board
+grey, and the creases lost a depth fight to a fixed world-unit lift (polygonOffset now). ⚑ `faceCrossings`
+is COMPLETE — every face pair of all 89 star records, zero uncovered. NOTES 2026-08-21.
+
+## 2026-08-21 (later) — The polyhedron views were inflating solids onto a sphere — CC
+
+J31's 40 edges are equal to nine decimal places; the RENDERER was wrong. `flatSolidTriangles` and
+`straightEdges` normalised every vertex onto the sphere — safe only while every solid had a
+circumsphere, and nineteen now do not. One whole-solid fit instead, and the round sphere is no longer
+their default: thumbnails draw the polyhedron, the canvas forces it, the Options toggle hides. ⚑ Also
+reverted the crease `polygonOffsetFactor`. NOTES 2026-08-21 (later).
+
+## 2026-08-21 (third) — Convex/non-convex shelf, and the 3.4.n.4 duplicates folded in — CC
+
+The spherical shelf splits on CONVEXITY now, with k naming uniform (k=1) against Johnson (k>1) under it
+and the star shelf on k instead of density (52 / 37). ⚑ The spherical 3.4.n.4 shelf held twenty solids
+and none were new: 13 duplicated a reference record by congruence, the other 7 completed J72–J83, named
+by derivation from (gyrations, diminishments) with the para/meta pairs split by symmetry order. Shelf
+retired, reference shelf 64 → 71. NOTES 2026-08-21 (third).
+
+## 2026-08-21 (fourth) — Non-convex shelf added, and k=3 gives 19 more Johnson solids — CC
+
+⚑ No published catalogue of non-convex regular-faced polyhedra exists (Zalgaller and Klitzing are both
+convex-only), so the 34 ship by measured signature, unnamed, as **Non-convex → No circumsphere** — a
+sibling of the star shelf, per AL's guess. The one of the 38 already shelved is the only one WITH a
+circumsphere, which is the whole causal story. ⚑ k=3: 24 distinct convex solids, **19 new Johnson
+solids**, shelf 43 → 62 of 92; the rest need k >= 4. NOTES 2026-08-21 (fourth).

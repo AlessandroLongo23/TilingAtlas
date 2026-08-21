@@ -4,3 +4,21 @@
 [gen] SIDED CLASSES: 10 of 60 vertex types have a dart orbit whose two sides carry a class and its sigma-image — a mirror in the site symmetry maps a tile to its reflection. Their class array is the SIDE-0 reading and the identity sigma[cls[mirro]] = cls[rneig] carries the other side. Usable.
 [gen] wrote /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/tables/sph-oct-half-split/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (60 entries)
 [21:14:12] PHASE 1  solve (MAXNUM=16)
+[00:02:22] PHASE 0  alphabet (palette=sph-oct-half-split)
+[gen] palette=sph-oct-half-split D=8 tiles=1 classes=5 configs=35
+[cert] A6: 60 entries, pairwise non-isomorphic PASS
+[gen] SIDED CLASSES: 10 of 60 vertex types have a dart orbit whose two sides carry a class and its sigma-image — a mirror in the site symmetry maps a tile to its reflection. Their class array is the SIDE-0 reading and the identity sigma[cls[mirro]] = cls[rneig] carries the other side. Usable.
+[gen] wrote /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/tables/sph-oct-half-split/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (60 entries)
+[00:02:22] PHASE 1  solve (MAXNUM=6)
+[00:03:07]   raw blocks: 52608
+[00:03:07] PHASE 2  prune
+  k=1 : 0
+  k=2 : 6
+  k=3 : 83
+  k=4 : 223
+  k=5 : 336
+  k=6 : 7486
+total kept: 8134
+store: peak 5.6839 MB total, 5.6839 MB resident
+[00:03:11] PHASE 3  develop on S(2) (SO(3) flood, per-dart arc and declared angle)
+tile T224 has 5 sides, so its angles do not determine it; the palette must declare edgeArcsDeg
