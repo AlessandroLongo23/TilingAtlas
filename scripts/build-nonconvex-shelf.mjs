@@ -11,6 +11,12 @@
 // SURGICAL, not a rewrite of the file: the ncx rows are replaced in place and every other record —
 // Platonic, Archimedean, prism, Johnson — is left exactly as it was, byte for byte where unchanged.
 //
+// ⚑ ORDER MATTERS. This rebuilds each ncx record from its row, so it does NOT carry the `derivation`
+// field that annotate_derivation.py writes; run that AFTER this, never before. The full rebuild is:
+//   python3 tools/ctrnact-oracle/gen_nonconvex_shelf.py --emit
+//   node scripts/build-nonconvex-shelf.mjs --write
+//   python3 tools/ctrnact-oracle/annotate_derivation.py --write
+//
 //   node scripts/build-nonconvex-shelf.mjs            # report only
 //   node scripts/build-nonconvex-shelf.mjs --write
 import fs from "node:fs";
@@ -20,6 +26,10 @@ const ROOT = path.resolve(import.meta.dirname, "..");
 const ROWS = path.join(ROOT, "tools", "ctrnact-oracle", "nonconvex-rows.json");
 const ATLAS = path.join(ROOT, "public", "reference-atlas-spherical.json");
 const DISCOVERER = "Čtrnáct engine + develop_euclid, 2026-08-21";
+const rows = JSON.parse(fs.readFileSync(ROWS, "utf8"));
+// How deep the search has been run — read off the rows, so the claim on every card cannot outrun the
+// evidence behind it. See the completeness section in lib/render/nonconvexSolids.ts for the other bounds.
+const KMAX = Math.max(...rows.map((r) => r.k));
 
 // The identity board. Spherical records are placed by their solid, not by a translation cell, so this is
 // the same two basis vectors for all of them; it exists because the reader expects the field.
@@ -38,11 +48,13 @@ function note(r) {
 		`Non-convex regular-faced polyhedron: ${r.census}, ${r.V} vertices, ${r.E} edges, ${r.F} faces, ` +
 		`${r.k} vertex orbits. ${crossing}${sphere}. It ships unnamed: Johnson's 92 and Zalgaller's ` +
 		`completeness proof are for CONVEX regular-faced polyhedra, past convexity only the 57 non-convex ` +
-		`UNIFORM polyhedra are enumerated, and there is no catalogue a name could be checked against.`
+		`UNIFORM polyhedra are enumerated, and there is no catalogue a name could be checked against. ` +
+		`This shelf is complete for up to ${KMAX} vertex orbits over regular {3,4,5,6,8,10}-gons, and ` +
+		`only for solids whose every vertex has positive angular defect — a saddle vertex, where the ` +
+		`angles sum past 360°, is outside what the search enumerates rather than something it missed.`
 	);
 }
 
-const rows = JSON.parse(fs.readFileSync(ROWS, "utf8"));
 const atlas = JSON.parse(fs.readFileSync(ATLAS, "utf8"));
 if (!Array.isArray(atlas.records)) throw new Error("atlas is not {atlas, geom, records}");
 

@@ -9,7 +9,7 @@ symlinks and merges the JSON at the end. Measured single-thread rate on that run
 Usage: python3 run_develop_sharded.py --palette star-wide --pruned <dir> --out <cells.json> \
            --workers 8 --kmin 2 --kmax 2 --log <logfile>
 """
-import argparse, glob, json, os, subprocess, sys, time
+import argparse, collections, glob, json, os, re, subprocess, sys, time
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -69,6 +69,36 @@ def main():
                              env=env, stdout=subprocess.DEVNULL,
                              stderr=open(os.path.join(work, "progress-w%d.txt" % w), "w"))
         procs.append((w, p, cells))
+
+    # PROGRESS, because a run that says nothing for a quarter of an hour is indistinguishable from a
+    # hung one. Each worker already writes "develop 189/351 realized=20 ... ETA 456s" to its own progress
+    # file; nothing was reading them, so the log jumped straight from "1798 blocks over 8 workers" to
+    # "done". The slowest worker sets the finish, so that is the ETA worth printing.
+    def snapshot():
+        done = total = realized = 0
+        eta = 0
+        for w in range(args.workers):
+            try:
+                tail = open(os.path.join(work, "progress-w%d.txt" % w)).read().replace("\r", "\n")
+            except OSError:
+                continue
+            m = None
+            for line in tail.strip().split("\n"):
+                g = re.search(r"develop (\d+)/(\d+)\s+realized=(\d+).*?ETA (\d+)s", line)
+                if g:
+                    m = g
+            if m:
+                done += int(m.group(1)); total += int(m.group(2))
+                realized += int(m.group(3)); eta = max(eta, int(m.group(4)))
+        return done, total, realized, eta
+
+    while any(p.poll() is None for _, p, _ in procs):
+        time.sleep(30)
+        d, t, r, eta = snapshot()
+        if t:
+            log("  %d/%d blocks  realized=%d  %.0fs elapsed, ETA %ds (slowest worker)"
+                % (d, t, r, time.time() - t0, eta))
+
     for w, p, cells in procs:
         p.wait()
         log("  worker %d finished (%.0fs)" % (w, time.time() - t0))
@@ -78,6 +108,41 @@ def main():
             recs.extend(json.load(open(cells)))
     json.dump(recs, open(args.out, "w"))
     log("merged %d realized records -> %s (%.0fs total)" % (len(recs), args.out, time.time() - t0))
+
+    # MERGE THE REPORTS. Each worker writes one and they were being left in the scratch directory, so a
+    # sharded run produced no account of what did NOT realize — and that account is the whole basis for
+    # saying a shelf is complete. A block rejected for "no dihedral solution" is a mathematical fact; one
+    # that failed to converge is a gap. Without the merged report the two are indistinguishable, which is
+    # how the k=3 shelf shipped a completeness claim it could not support.
+    reasons, totals = collections.Counter(), collections.Counter()
+    lines = []
+    for w in range(args.workers):
+        rp = os.path.join(work, "report-w%d.txt" % w)
+        if not os.path.exists(rp):
+            continue
+        for line in open(rp):
+            g = re.match(r"^(blocks in|realized|non-realizable)\s*:\s*(\d+)", line)
+            if g:
+                totals[g.group(1)] += int(g.group(2))
+            elif "reason=" in line:
+                reasons[line.split("reason=", 1)[1].strip()] += 1
+                lines.append(line.rstrip())
+    if totals:
+        rp = os.path.splitext(args.out)[0] + "-report.txt"
+        with open(rp, "w") as f:
+            f.write("euclidean develop report (k=%d..%d, %d workers merged)\n"
+                    % (args.kmin, args.kmax, args.workers))
+            for k in ("blocks in", "realized", "non-realizable"):
+                f.write("%-15s: %d\n" % (k, totals[k]))
+            f.write("\nnon-realizable by reason\n")
+            for why, n in reasons.most_common():
+                f.write("%6d  %s\n" % (n, why[:120]))
+            f.write("\n")
+            f.write("\n".join(lines) + "\n")
+        log("  report -> %s  (%s)" % (os.path.basename(rp),
+                                      ", ".join("%s=%d" % (k, v) for k, v in totals.items())))
+        for why, n in reasons.most_common(5):
+            log("     %5d  %s" % (n, why[:90]))
 
 
 if __name__ == "__main__":

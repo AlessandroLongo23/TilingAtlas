@@ -79,6 +79,27 @@ HEADER = """// NON-CONVEX REGULAR-FACED POLYHEDRA — every face a regular polyg
 // Ids are the signature, not a guess: ncx-<V>-<E>-<F>, lettered where several share it. They are FROZEN
 // across rebuilds — a shipped id is matched back by congruence and reused verbatim, so adding a search
 // appends rows and never renames one. That is why a bare id can sit beside a lettered one.
+//
+// WHAT THIS SHELF IS COMPLETE FOR, stated because a partial corpus presented as a catalogue is a
+// data-integrity bug, and this one IS partial in a specific way:
+//
+//   * ORBITS: every solid with at most %(kmax)s vertex orbits that the search can express. Not a cap
+//     anyone chose — it is how deep the search has been run. k = %(kmaxnext)s is more solids, not a
+//     different kind of solid.
+//   * FACES: regular {3,4,5,6,8,10}-gons, the spherical palette. Not a restriction on the CONVEX half:
+//     a Johnson solid's faces are exactly these six. It is a restriction here.
+//   * VERTICES: every vertex has POSITIVE ANGULAR DEFECT — its face angles sum to strictly under 360°.
+//     ⚑ This is the real bound. The engine's closure test is positive-defect, which is what forces the
+//     glued map onto a sphere by discrete Gauss-Bonnet, so a SADDLE vertex (angles summing past 360°,
+//     paid for by defect elsewhere, total still 720°) is not something the search misses — it is outside
+//     what the search enumerates. Non-convex regular-faced solids with a saddle vertex exist and NONE of
+//     them can be here. Measured on the shipped shelf: worst valence 5 against the palette's cap of 6,
+//     worst angle sum 354°.
+//
+//   Within those bounds it IS complete, and that is measured too, not assumed: across k = 1, 2 and 3
+//   every block the pruner kept was either realized or rejected for a MATHEMATICAL reason — "no dihedral
+//   solution" (554 of them) or "degenerate dihedral, a flat edge" (4). No numerical failure, no
+//   non-convergence, no node cap. Nothing was dropped because it was expensive.
 """
 
 
@@ -316,6 +337,7 @@ def main():
         "inscribed": ("The exception%s: %s." % ("" if len(insc) == 1 else "s", ", ".join(insc)))
                      if insc else "There is no exception on this shelf today.",
         "cells": ", ".join(os.path.basename(os.path.dirname(c)) for c in args.cells),
+        "kmax": ks[-1], "kmaxnext": ks[-1] + 1,
     }
     ts = [header, '\nimport type { Polyhedron } from "./platonicSolids";\n']
     for x in rows:
