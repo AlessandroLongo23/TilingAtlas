@@ -1,17 +1,52 @@
 #!/usr/bin/env python3
 """Develop a pruned tree in parallel and merge the cells.
 
-develop_spherical.py is one process over one directory, which is the right shape for a few thousand
-blocks and the wrong one for a few hundred thousand: the bucketed k=2 run on star-wide emits 422,206,
-and a block is completely independent of every other block, so this hands each worker a directory of
-symlinks and merges the JSON at the end. Measured single-thread rate on that run: ~23 blocks/s.
+One block is completely independent of every other, so this hands them out across processes and merges
+the JSON at the end. develop_spherical.py alone is one process over one directory, which is the right
+shape for a few thousand blocks and the wrong one for a few hundred thousand — the bucketed k=2 run on
+star-wide emits 422,206.
+
+⚑ A WORK QUEUE, NOT A STATIC SPLIT, and the difference is most of the wall clock. Blocks were dealt to
+workers up front — first round-robin by file size, then longest-processing-time-first by block count —
+and both are guesses at a cost nobody can predict. Block costs do not merely vary, they are pathological:
+on a k=4 shard, 12 of 88 blocks were 94% of the time, because a block that fails on "no dihedral
+solution" is nearly free and one that stalls propagation runs a 3000-start multistart. Measured with the
+LPT split at ten workers: three workers ran 27 s and the other seven finished in 0 to 9 s, so the machine
+sat 60% idle while the run waited on the unlucky three.
+
+Handing blocks out ONE AT A TIME as workers come free needs no prediction at all. The floor becomes the
+single most expensive block instead of the worst assignment, and on the same shard the wall clock went
+from 28 s to 13 s with no change to what is computed.
 
 Usage: python3 run_develop_sharded.py --palette star-wide --pruned <dir> --out <cells.json> \
            --workers 8 --kmin 2 --kmax 2 --log <logfile>
 """
-import argparse, collections, glob, json, os, re, subprocess, sys, time
+import argparse, collections, json, multiprocessing as mp, os, sys, time
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
+
+
+def _init(palette, maxdens, developer):
+    """Per-worker setup. The palette is read at import time, so it has to be in the environment before
+    the developer module is imported — which under `spawn` (the macOS default) is right here."""
+    os.environ["EU_PALETTE"] = palette
+    os.environ["EU_MAXDENS"] = str(maxdens)
+    # One BLAS thread per worker. The developer's inner loop is many small matmuls, so a multithreaded
+    # BLAS inside every one of ten processes only fights itself for the four performance cores.
+    os.environ.setdefault("VECLIB_MAXIMUM_THREADS", "1")
+    os.environ.setdefault("OMP_NUM_THREADS", "1")
+    os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+    sys.path.insert(0, _HERE)
+    global _DEV, _NARGS
+    _DEV = __import__(os.path.splitext(developer)[0])
+    import inspect
+    _NARGS = len(inspect.signature(_DEV.develop_block).parameters)
+
+
+def _develop_one(block):
+    # ⚑ The two developers disagree on arity: develop_euclid.develop_block(b, maxretro) takes the retro
+    # budget, develop_spherical.develop_block(b) does not. Both return (records, error).
+    return _DEV.develop_block(block, 0) if _NARGS > 1 else _DEV.develop_block(block)
 
 
 def main():
@@ -27,7 +62,7 @@ def main():
     ap.add_argument("--developer", default="develop_spherical.py",
                     help="develop_spherical.py (on S2) or develop_euclid.py (dihedral angles in R3)")
     args = ap.parse_args()
-    logf = open(args.log, "w") if args.log else None
+    logf = open(args.log, "w") if args.log and args.log != "/dev/null" else None
 
     def log(m):
         line = "[%s] %s" % (time.strftime("%H:%M:%S"), m)
@@ -35,131 +70,78 @@ def main():
         if logf:
             logf.write(line + "\n"); logf.flush()
 
-    files = glob.glob(os.path.join(args.pruned, "eupruned_*.txt"))
-    if not files:
-        sys.exit("no pruned files under " + args.pruned)
-    per_file = {f: sum(1 for l in open(f) if l.startswith("TES file:")) for f in files}
-    blocks = sum(per_file.values())
-    # Scratch keyed to the OUTPUT FILE, not its directory. Two runs sharing a directory used to share
-    # this one, and the second run silently emptied the first's shard dirs and truncated its progress
-    # files: the workers already hold their blocks in memory so the run survives, but the per-worker
-    # cells JSON collides and whichever finishes last wins. (2026-08-20, caught while it was happening.)
-    work = os.path.abspath(args.out) + ".shards"
-    os.makedirs(work, exist_ok=True)
-    shards = []
-    for w in range(args.workers):
-        d = os.path.join(work, "w%d" % w)
-        os.makedirs(d, exist_ok=True)
-        for f in os.listdir(d):
-            os.unlink(os.path.join(d, f))
-        shards.append(d)
-    # LPT (longest-processing-time-first): biggest file to the emptiest worker, by BLOCK COUNT.
-    #
-    # It was round-robin over files sorted by SIZE, and size is a poor proxy for work. The k=4 run had
-    # five of its eight workers idle for the last twenty minutes while three ground on: one worker drew
-    # 351 blocks and another 5. Measured on that same shard, 1798 blocks over 8 workers —
-    #   size round-robin  [410 274 241 188 185 171 170 159]   max 410
-    #   LPT on blocks     [302 277 277 219 195 182 173 173]   max 302
-    # a 1.36x better makespan bound, and 302 is close to the floor: the largest single file holds 277
-    # blocks and a file is never split, so no assignment can beat 277.
-    #
-    # Static assignment cannot be perfect anyway — block costs vary wildly, since one that fails on "no
-    # dihedral solution" is near-free and one that realizes twice is not — but counting the right thing
-    # beats counting file bytes.
-    load = [0] * args.workers
-    for f in sorted(files, key=lambda p: -per_file[p]):
-        w = load.index(min(load))
-        load[w] += per_file[f]
-        os.symlink(os.path.abspath(f), os.path.join(shards[w], os.path.basename(f)))
-    log("%d files / %d blocks over %d workers (per-worker blocks: %s)"
-        % (len(files), blocks, args.workers, " ".join(str(n) for n in load)))
+    os.environ["EU_PALETTE"] = args.palette
+    os.environ["EU_MAXDENS"] = str(args.maxdens)
+    sys.path.insert(0, _HERE)
+    # Block IO and the palette install live in develop_spherical whichever developer runs — develop_euclid
+    # imports them from there rather than duplicating them.
+    import develop_spherical as blockio
+    dev = __import__(os.path.splitext(args.developer)[0])
+    blocks = blockio.gather_blocks(args.pruned, args.kmin, args.kmax)
+    if not blocks:
+        sys.exit("no blocks under " + args.pruned)
+    log("%d blocks over %d workers (dynamic queue)" % (len(blocks), args.workers))
 
-    procs = []
     t0 = time.time()
-    for w, d in enumerate(shards):
-        cells = os.path.join(work, "cells-w%d.json" % w)
-        rep = os.path.join(work, "report-w%d.txt" % w)
-        env = dict(os.environ, EU_PALETTE=args.palette, EU_MAXDENS=str(args.maxdens))
-        p = subprocess.Popen([sys.executable, os.path.join(_HERE, args.developer),
-                              "--kmin", str(args.kmin), "--kmax", str(args.kmax),
-                              "--pruned", d, "--out", cells, "--report", rep],
-                             env=env, stdout=subprocess.DEVNULL,
-                             stderr=open(os.path.join(work, "progress-w%d.txt" % w), "w"))
-        procs.append((w, p, cells))
+    records, failed = [], []
+    ctx = mp.get_context("spawn")
+    with ctx.Pool(args.workers, initializer=_init,
+                  initargs=(args.palette, args.maxdens, args.developer)) as pool:
+        last = 0.0
+        # chunksize=1 is the whole point: a worker takes the next block only when it has finished the
+        # last one, so one pathological block delays nobody but itself.
+        for i, (recs, err) in enumerate(pool.imap_unordered(_develop_one, blocks, chunksize=1)):
+            if recs:
+                records.extend(recs)
+            else:
+                failed.append(err)
+            el = time.time() - t0
+            if el - last >= 30 or i + 1 == len(blocks):
+                last = el
+                done = i + 1
+                log("  develop %d/%d  realized=%d  %.0fs elapsed, ETA %.0fs"
+                    % (done, len(blocks), len(records), el, el / done * (len(blocks) - done)))
 
-    # PROGRESS, because a run that says nothing for a quarter of an hour is indistinguishable from a
-    # hung one. Each worker already writes "develop 189/351 realized=20 ... ETA 456s" to its own progress
-    # file; nothing was reading them, so the log jumped straight from "1798 blocks over 8 workers" to
-    # "done". The slowest worker sets the finish, so that is the ETA worth printing.
-    def snapshot():
-        done = total = realized = 0
-        eta = 0
-        for w in range(args.workers):
-            try:
-                tail = open(os.path.join(work, "progress-w%d.txt" % w)).read().replace("\r", "\n")
-            except OSError:
+    # Dedup only where the developer defines what a duplicate IS. develop_euclid has a congruence key
+    # and its own run() applies it; the sharded path used to apply it per worker and concatenate, so a
+    # solid realized in two shards came out twice. Doing it once over the merged set is what that always
+    # meant to be. develop_spherical has no such key — its notion of duplicate is a geometric-signature
+    # AUDIT that includes density and rho — so its records are concatenated untouched, exactly as before.
+    if hasattr(dev, "congruence_key"):
+        seen, uniq = set(), []
+        for r in records:
+            k = dev.congruence_key(r)
+            if k in seen:
                 continue
-            m = None
-            for line in tail.strip().split("\n"):
-                g = re.search(r"develop (\d+)/(\d+)\s+realized=(\d+).*?ETA (\d+)s", line)
-                if g:
-                    m = g
-            if m:
-                done += int(m.group(1)); total += int(m.group(2))
-                realized += int(m.group(3)); eta = max(eta, int(m.group(4)))
-        return done, total, realized, eta
+            seen.add(k)
+            uniq.append(r)
+    else:
+        uniq = records
+    if len(uniq) != len(records):
+        log("  %d records -> %d congruence classes" % (len(records), len(uniq)))
+    json.dump(uniq, open(args.out, "w"))
+    log("merged %d realized records -> %s (%.0fs total)" % (len(uniq), args.out, time.time() - t0))
 
-    while any(p.poll() is None for _, p, _ in procs):
-        time.sleep(30)
-        d, t, r, eta = snapshot()
-        if t:
-            log("  %d/%d blocks  realized=%d  %.0fs elapsed, ETA %ds (slowest worker)"
-                % (d, t, r, time.time() - t0, eta))
-
-    for w, p, cells in procs:
-        p.wait()
-        log("  worker %d finished (%.0fs)" % (w, time.time() - t0))
-    recs = []
-    for w, p, cells in procs:
-        if os.path.exists(cells):
-            recs.extend(json.load(open(cells)))
-    json.dump(recs, open(args.out, "w"))
-    log("merged %d realized records -> %s (%.0fs total)" % (len(recs), args.out, time.time() - t0))
-
-    # MERGE THE REPORTS. Each worker writes one and they were being left in the scratch directory, so a
-    # sharded run produced no account of what did NOT realize — and that account is the whole basis for
-    # saying a shelf is complete. A block rejected for "no dihedral solution" is a mathematical fact; one
-    # that failed to converge is a gap. Without the merged report the two are indistinguishable, which is
-    # how the k=3 shelf shipped a completeness claim it could not support.
-    reasons, totals = collections.Counter(), collections.Counter()
-    lines = []
-    for w in range(args.workers):
-        rp = os.path.join(work, "report-w%d.txt" % w)
-        if not os.path.exists(rp):
-            continue
-        for line in open(rp):
-            g = re.match(r"^(blocks in|realized|non-realizable)\s*:\s*(\d+)", line)
-            if g:
-                totals[g.group(1)] += int(g.group(2))
-            elif "reason=" in line:
-                reasons[line.split("reason=", 1)[1].strip()] += 1
-                lines.append(line.rstrip())
-    if totals:
-        rp = os.path.splitext(args.out)[0] + "-report.txt"
-        with open(rp, "w") as f:
-            f.write("euclidean develop report (k=%d..%d, %d workers merged)\n"
-                    % (args.kmin, args.kmax, args.workers))
-            for k in ("blocks in", "realized", "non-realizable"):
-                f.write("%-15s: %d\n" % (k, totals[k]))
-            f.write("\nnon-realizable by reason\n")
-            for why, n in reasons.most_common():
-                f.write("%6d  %s\n" % (n, why[:120]))
-            f.write("\n")
-            f.write("\n".join(lines) + "\n")
-        log("  report -> %s  (%s)" % (os.path.basename(rp),
-                                      ", ".join("%s=%d" % (k, v) for k, v in totals.items())))
-        for why, n in reasons.most_common(5):
-            log("     %5d  %s" % (n, why[:90]))
+    # THE REPORT IS THE COMPLETENESS EVIDENCE, so it is written here and not left in a scratch directory
+    # for nobody to read. A block rejected for "no dihedral solution" is a fact about the map; one that
+    # failed to converge is a gap; without this census the two are indistinguishable, and a shelf cannot
+    # claim to be complete for a k it cannot account for.
+    rp = os.path.splitext(args.out)[0] + "-report.txt"
+    reasons = collections.Counter(e.get("reason", "?") for e in failed)
+    with open(rp, "w") as fh:
+        fh.write("euclidean develop report (k=%d..%d, %d workers)\n" % (args.kmin, args.kmax, args.workers))
+        fh.write("%-15s: %d\n%-15s: %d\n%-15s: %d\n\n"
+                 % ("blocks in", len(blocks), "realized", len(uniq), "non-realizable", len(failed)))
+        fh.write("non-realizable by reason\n")
+        for why, n in reasons.most_common():
+            fh.write("%6d  %s\n" % (n, why[:120]))
+        fh.write("\n")
+        for e in failed:
+            fh.write("   - %s  config=%s  reason=%s\n"
+                     % (e.get("id", "?"), e.get("config", "?"), e.get("reason", "?")))
+    log("  report -> %s" % os.path.basename(rp))
+    for why, n in reasons.most_common(5):
+        log("     %5d  %s" % (n, why[:90]))
 
 
 if __name__ == "__main__":

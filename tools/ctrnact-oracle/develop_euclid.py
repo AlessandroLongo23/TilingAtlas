@@ -197,6 +197,364 @@ def link_vec(csa, thetas):
                      M[0] - 1.0, M[4] - 1.0, M[8] - 1.0])
 
 
+# ----------------------------------------------------------------------------- the same link, batched
+# WHY THIS EXISTS. A block that stalls propagation falls back to solve_joint, which runs a 3000-start
+# multistart Newton PER BRANCH, and every Newton step evaluates the link product for every vertex. On a
+# k=4 shard that is 11 million calls to _mul for ONE block, and 12 blocks out of 88 were 94% of the
+# shard's 449 s. The arithmetic is trivial; the cost is Python dispatch, three million times over.
+#
+# The starts are independent, so they are one array, not a loop. Each candidate's link product is a
+# chain of 3x3s, and the chain is the same length for every candidate — so the whole multistart is a
+# handful of (N,3,3) matmuls per link, and N=3000 costs barely more than N=1.
+#
+# ⚑ `b = pi - th` is computed the long way ON PURPOSE. cos(pi - th) is -cos(th) in exact arithmetic and
+# NOT bit-identical in floating point, and this function has to agree with the scalar one it replaces
+# to the last ulp, or a root that sits at the tolerance boundary is found by one and missed by the
+# other. Matching the operations is cheaper than arguing about which answer is right.
+def _link_vec_batch(csa, thetas):
+    """(N, L) dihedrals -> (N, 6) link residuals, for one vertex whose sides have cos/sin `csa`."""
+    n = thetas.shape[0]
+    M = np.zeros((n, 3, 3))
+    M[:, 0, 0] = M[:, 1, 1] = M[:, 2, 2] = 1.0
+    fac = np.empty((n, 3, 3))
+    for j, (ca, sa) in enumerate(csa):
+        b = math.pi - thetas[:, j]
+        cb, sb = np.cos(b), np.sin(b)
+        fac[:, 0, 0] = ca
+        fac[:, 0, 1] = -sa * cb
+        fac[:, 0, 2] = sa * sb
+        fac[:, 1, 0] = sa
+        fac[:, 1, 1] = ca * cb
+        fac[:, 1, 2] = -ca * sb
+        fac[:, 2, 0] = 0.0
+        fac[:, 2, 1] = sb
+        fac[:, 2, 2] = cb
+        M = M @ fac
+    return np.stack([M[:, 0, 1] - M[:, 1, 0], M[:, 0, 2] - M[:, 2, 0], M[:, 1, 2] - M[:, 2, 1],
+                     M[:, 0, 0] - 1.0, M[:, 1, 1] - 1.0, M[:, 2, 2] - 1.0], axis=1)
+
+
+# How wide the candidate set has to be before writing the 3x3 product out by hand beats numpy's stacked
+# matmul. The (3, 3, N) layout makes every matrix ENTRY a contiguous vector, so the product becomes nine
+# fused multiply-accumulates over long arrays instead of N tiny 3x3 GEMMs: measured in isolation at
+# N=3000, 103.6us for (N,3,3) `A @ B` against 31.7us written out. The advantage inverts for a narrow
+# candidate set, where nine numpy calls cost more than one BLAS dispatch, and the tail of a Newton run is
+# exactly that — three or four candidates limping to step 80.
+#
+# ⚑ The crossover in ISOLATION is a few hundred; in the real loop it is nearer a thousand, and the
+# microbenchmark would have set this three times too low. Measured end to end on an 88-block shard, three
+# runs each: 4.70s at 128, 4.57s at 512, 4.47s at 1024 and 1536, 4.50s at 2048, 4.57s at 2900 (always
+# explicit), 4.90s with the explicit path off altogether. Cache pressure from the real buffers is the
+# difference, which is the usual reason a kernel benchmark disagrees with the program it lives in.
+_EXPLICIT_MIN = int(os.environ.get("EU_EXPLICIT_MIN", "1024"))
+
+
+def _mm(A, B, C, n, T, kcols=(0, 1, 2), urows=(0, 1, 2)):
+    """C = A B over the first n candidates, for (3, 3, nmax) stacks.
+
+    `kcols` and `urows` restrict which result columns are computed and which inner index actually
+    contributes — that is where the sparsity of these particular factors is spent. dG/dtheta has a zero
+    first COLUMN, so P.dG needs only columns 1 and 2 (its column 0 is zero and is filled in by the
+    caller), and anything left-multiplied by that product needs only u in {1, 2}. Nine multiply-adds
+    become six."""
+    if n >= _EXPLICIT_MIN:
+        for i in range(3):
+            for k in kcols:
+                c = C[i, k, :n]
+                first = True
+                for u in urows:
+                    if first:
+                        np.multiply(A[i, u, :n], B[u, k, :n], out=c)
+                        first = False
+                    else:
+                        np.multiply(A[i, u, :n], B[u, k, :n], out=T[:n])
+                        c += T[:n]
+    else:
+        C[:, :, :n] = (A[:, :, :n].transpose(2, 0, 1) @ B[:, :, :n].transpose(2, 0, 1)).transpose(1, 2, 0)
+
+
+def _link_kernel(csa, cols, nmax):
+    """Prepare one vertex's link and return a closure that fills its residual and Jacobian rows.
+
+    The link is a chain M = G_0 G_1 ... G_{L-1} with G_j = Rz(a_j) Rx(pi - theta_j), and the residual is
+    six entries of M - I. Differentiating a chain in ONE slot needs nothing new:
+
+        dM/dtheta_j  =  (G_0..G_{j-1}) . dG_j/dtheta_j . (G_{j+1}..G_{L-1})  =  P_j . D_j . S_j
+
+    so with the prefixes and suffixes accumulated once — 2L matmuls — every column of the Jacobian is
+    two more. About 4L matmuls for the whole thing, against the (nx+1)L a forward-difference Jacobian
+    costs, and nx is ten or eleven here: the chain was being walked twelve times per Newton step to
+    learn what one walk already knows.
+
+    Writing Rz(a)Rx(b) out, dG/dtheta = -dG/db is
+
+        [ 0  -sa.sb  -sa.cb ]        against        [ ca  -sa.cb   sa.sb ]
+        [ 0   ca.sb   ca.cb ]              G   =    [ sa   ca.cb  -ca.sb ]
+        [ 0    -cb      sb  ]                       [ 0     sb      cb   ]
+
+    and that zero first column is worth having: it makes two of the three derivative products two-thirds
+    the work, and it means dM's own first column is zero for free at the end of the chain.
+
+    WHY A CLOSURE. Everything above is fixed for the life of one solve_joint — the chain length, which
+    slots are unknown, and the first column of every factor, which holds no theta at all. Only six
+    entries per factor vary between Newton steps. The buffers are therefore allocated once, at the widest
+    the candidate set will ever be, in the (3, 3, nmax) layout _mm wants, and every product writes
+    through `out=`.
+
+    ⚑ An unknown may occupy MORE THAN ONE slot of the same link, so the Jacobian columns accumulate with
+    += and are not assigned. Getting that wrong would silently halve a derivative."""
+    L = len(cols)
+    G = [np.zeros((3, 3, nmax)) for _ in range(L)]
+    for j, (src, cbc, sbc) in enumerate(cols):
+        ca, sa = csa[j]
+        G[j][0, 0] = ca                          # column 0 carries no theta: written once, never again
+        G[j][1, 0] = sa
+        if src < 0:                              # a fixed dihedral: the whole factor is constant
+            G[j][0, 1] = -sa * cbc
+            G[j][0, 2] = sa * sbc
+            G[j][1, 1] = ca * cbc
+            G[j][1, 2] = -ca * sbc
+            G[j][2, 1] = sbc
+            G[j][2, 2] = cbc
+    Pb = [np.empty((3, 3, nmax)) for _ in range(L)]
+    Sb = [np.empty((3, 3, nmax)) for _ in range(L)]
+    Mb = np.empty((3, 3, nmax))
+    Db = np.zeros((3, 3, nmax))                  # its first column stays zero for good
+    T1 = np.empty((3, 3, nmax))
+    T2 = np.empty((3, 3, nmax))
+    T = np.empty(nmax)                           # scratch for one multiply-accumulate term
+    live = [(j, src) for j, (src, _c, _s) in enumerate(cols) if src >= 0]
+
+    def run(cb_all, sb_all, R, J, row, n):
+        for j, src in live:
+            ca, sa = csa[j]
+            cb, sb = cb_all[src, :n], sb_all[src, :n]
+            g = G[j]
+            np.multiply(cb, -sa, out=g[0, 1, :n])
+            np.multiply(sb, sa, out=g[0, 2, :n])
+            np.multiply(cb, ca, out=g[1, 1, :n])
+            np.multiply(sb, -ca, out=g[1, 2, :n])
+            g[2, 1, :n] = sb
+            g[2, 2, :n] = cb
+
+        # P[j] = G_0..G_{j-1}, S[j] = G_{j+1}..G_{L-1}, with both ends left implicitly the identity —
+        # P[0] and S[L-1] are never read and the multiplies that would have used them are skipped.
+        P, S = list(Pb), list(Sb)
+        if L > 1:
+            P[1] = G[0]
+            for j in range(2, L):
+                _mm(P[j - 1], G[j - 1], Pb[j], n, T)
+                P[j] = Pb[j]
+            S[L - 2] = G[L - 1]
+            for j in range(L - 3, -1, -1):
+                _mm(G[j + 1], S[j + 1], Sb[j], n, T)
+                S[j] = Sb[j]
+            _mm(P[L - 1], G[L - 1], Mb, n, T)
+            M = Mb
+        else:
+            M = G[0]
+
+        R[:, row + 0] = M[0, 1, :n] - M[1, 0, :n]
+        R[:, row + 1] = M[0, 2, :n] - M[2, 0, :n]
+        R[:, row + 2] = M[1, 2, :n] - M[2, 1, :n]
+        R[:, row + 3] = M[0, 0, :n] - 1.0
+        R[:, row + 4] = M[1, 1, :n] - 1.0
+        R[:, row + 5] = M[2, 2, :n] - 1.0
+
+        for j, src in live:
+            ca, sa = csa[j]
+            cb, sb = cb_all[src, :n], sb_all[src, :n]
+            np.multiply(sb, -sa, out=Db[0, 1, :n])
+            np.multiply(cb, -sa, out=Db[0, 2, :n])
+            np.multiply(sb, ca, out=Db[1, 1, :n])
+            np.multiply(cb, ca, out=Db[1, 2, :n])
+            np.negative(cb, out=Db[2, 1, :n])
+            Db[2, 2, :n] = sb
+            if L == 1:
+                dM = Db
+            elif j == 0:
+                _mm(Db, S[0], T1, n, T, urows=(1, 2))       # Db's column 0 is zero: skip u = 0
+                dM = T1
+            elif j == L - 1:
+                _mm(P[j], Db, T1, n, T, kcols=(1, 2))       # so is the product's, and it is needed
+                T1[:, 0, :n] = 0.0
+                dM = T1
+            else:
+                _mm(P[j], Db, T1, n, T, kcols=(1, 2))
+                _mm(T1, S[j], T2, n, T, urows=(1, 2))       # T1's column 0 is zero: never read
+                dM = T2
+            J[:, row + 0, src] += dM[0, 1, :n] - dM[1, 0, :n]
+            J[:, row + 1, src] += dM[0, 2, :n] - dM[2, 0, :n]
+            J[:, row + 2, src] += dM[1, 2, :n] - dM[2, 1, :n]
+            J[:, row + 3, src] += dM[0, 0, :n]
+            J[:, row + 4, src] += dM[1, 1, :n]
+            J[:, row + 5, src] += dM[2, 2, :n]
+
+    return run
+
+
+def _lstsq_batch(J, R):
+    """The damped-Newton step for a whole batch: argmin |J x + R| for each (m, n) system, stacked.
+
+    ⚑ NOT pinv. pinv is an SVD per system, and with 3000 candidates alive that was 42% of the whole
+    profile — an enormous price for a 30x10 least-squares solve. The normal equations give the same
+    answer whenever J has full column rank, which it does here: the system is overdetermined (six
+    equations per vertex against ten or eleven unknowns overall) and a rank drop means a genuinely
+    degenerate configuration, not a numerical accident.
+
+    So: solve JᵀJ x = -Jᵀr, and fall back to pinv for the whole batch if LAPACK reports a singular
+    matrix. The fallback is what keeps this from being a behaviour change — when the normal equations
+    are valid they agree with pinv, and when they are not, pinv still runs."""
+    # ⚑ matmul, not einsum. einsum builds its own loop nest and does not reach BLAS here; the same two
+    # contractions written as stacked matmuls were 30% of the profile and became 4%.
+    Jt = J.transpose(0, 2, 1)
+    # ⚑ errstate, and it is NOT papering over a real overflow. Apple's Accelerate BLAS raises FP flags
+    # from masked SIMD lanes, so a stacked matmul reports "divide by zero / overflow / invalid" on input
+    # that cannot produce any of them: measured over a k=4 shard, 240 calls, every J finite and bounded
+    # by 2, max|JᵀJ| = 17.35, zero non-finite results. The scalar path never saw this because it never
+    # called BLAS. Clearing the flag register first does not help — Accelerate sets it inside the call.
+    #
+    # The suppression is narrow (these two contractions) and it is not the safety net: the non-finite
+    # check below inspects the actual numbers, so a genuine blow-up is still caught and still falls back.
+    with np.errstate(divide="ignore", over="ignore", invalid="ignore"):
+        A = Jt @ J
+        b = -(Jt @ R[..., None])[..., 0]
+    # JᵀJ is symmetric POSITIVE DEFINITE wherever J has full column rank, so the LU factorisation
+    # np.linalg.solve performs is twice the arithmetic needed. numpy stacks cholesky but not the
+    # triangular solves, so those are written out — nx² vectorised passes over the candidate axis, which
+    # beats LAPACK's per-matrix dispatch at every size this solver produces (measured at k=2000:
+    # 475us/233us at nx=4, 1566/990 at nx=11, 4018/3310 at nx=22 — cholesky wins throughout).
+    #
+    # Positive definiteness is the assumption and the fallback is the check: cholesky raises on a batch
+    # containing a non-PD matrix, and then this drops to solve, and then to pinv. Measured over an
+    # 88-block k=4 shard, 1825 calls, it never had to.
+    try:
+        with np.errstate(divide="ignore", over="ignore", invalid="ignore"):
+            L = np.linalg.cholesky(A)
+        step = _chol_solve(L, b)
+    except np.linalg.LinAlgError:
+        try:
+            # The trailing axis is not decoration: numpy 2 reads a stacked solve's (N, n) right-hand
+            # side as ONE (m, n) matrix, not N vectors, and raises on the dimension mismatch.
+            step = np.linalg.solve(A, b[..., None])[..., 0]
+        except np.linalg.LinAlgError:
+            return _pinv_step(J, R)
+
+    # ⚑ WHERE THE NORMAL EQUATIONS ARE NOT ALLOWED TO STAND. JᵀJ squares the condition number, so a
+    # rank-deficient Jacobian — a genuinely degenerate configuration, and they do occur — gives an
+    # enormous or non-finite step where lstsq's minimum-norm solution stays small and sensible. The
+    # trust radius does not save it either: a nan step has a nan norm, `sn > 0.5` is False, the cap
+    # never fires, and the candidate walks off to nan instead of converging.
+    #
+    # That is a real behaviour change, not a rounding one, and it announced itself as overflow warnings
+    # the scalar path never produced. So the fast path is kept for the candidates it is valid for and
+    # the rest fall back to pinv, which is what they would have had all along.
+    bad = ~np.isfinite(step).all(axis=1)
+    if bad.any():
+        step[bad] = _pinv_step(J[bad], R[bad])
+    return step
+
+
+def _chol_solve(L, b):
+    """Solve L Lᵀ x = b for a stack of lower-triangular L. Forward then back substitution, written out
+    because numpy stacks the factorisation but not the triangular solves."""
+    n = L.shape[-1]
+    y = np.empty_like(b)
+    for i in range(n):
+        acc = b[:, i].copy()
+        for j in range(i):
+            acc -= L[:, i, j] * y[:, j]
+        y[:, i] = acc / L[:, i, i]
+    x = np.empty_like(b)
+    for i in range(n - 1, -1, -1):
+        acc = y[:, i].copy()
+        for j in range(i + 1, n):
+            acc -= L[:, j, i] * x[:, j]
+        x[:, i] = acc / L[:, i, i]
+    return x
+
+
+def _pinv_step(J, R):
+    """The minimum-norm least-squares step, via SVD. Correct for a rank-deficient J and slow."""
+    return -(np.linalg.pinv(J) @ R[..., None])[..., 0]
+
+
+def _newton_batch(Fb, X0, tol, steps=80):
+    """_newton, run on every start at once. Returns (X, ok) with ok true where a root was found.
+
+    Step for step the same damped Gauss-Newton as the scalar version — same 0.999 improvement rule, same
+    8-stall bail, same 0.5 trust radius, same final tolerance check — with each candidate's control flow
+    carried in a mask instead of a return statement. Candidates drop out as they converge or stall, so
+    only the survivors are ever evaluated.
+
+    `Fb(X)` returns (residuals, JACOBIAN) together. The scalar version built its Jacobian by forward
+    difference, which costs one extra residual evaluation per unknown, and these systems have ten or
+    eleven — so twelve full link products per step where one will do. The link product is a chain of
+    3x3s and its derivative in any one slot is prefix · dG · suffix, so all eleven columns come out of
+    two extra passes over the chain. See _link_res_jac.
+
+    The least-squares step is pinv rather than lstsq because pinv is the one numpy stacks. Both give the
+    minimum-norm least-squares solution; on these systems (six equations, one to four unknowns, full
+    rank away from a degeneracy) they agree, and the benchmark's record hashes are what checks that."""
+    N, nx = X0.shape
+    X = X0.copy()
+    best = np.full(N, np.inf)
+    stall = np.zeros(N, np.int32)
+    ok = np.zeros(N, bool)
+    live = np.ones(N, bool)
+    for _ in range(steps):
+        idx = np.nonzero(live)[0]
+        if idx.size == 0:
+            break
+        Xi = X[idx]
+        R, Jm = Fb(Xi)
+        nrm = np.max(np.abs(R), axis=1)
+
+        # A candidate that has run off to inf or nan is dead. The scalar version reached the same
+        # verdict the slow way — nan fails `< tol`, then fails `< best*0.999`, so it stalls out over
+        # eight more steps — and killing it here is the same answer without the eight steps, or the
+        # overflow warnings its Jacobian throws on the way.
+        gone = ~np.isfinite(nrm)
+        if gone.any():
+            live[idx[gone]] = False
+
+        conv = np.logical_and(nrm < tol, ~gone)
+        if conv.any():                       # converged: keep x as it stands, stop working on it
+            ok[idx[conv]] = True
+            live[idx[conv]] = False
+
+        run = ~np.logical_or(conv, gone)
+        if not run.any():
+            continue
+        j = idx[run]
+        nr = nrm[run]
+        better = nr < best[j] * 0.999
+        best[j] = np.where(better, nr, best[j])
+        stall[j] = np.where(better, 0, stall[j] + 1)
+        dead = stall[j] >= 8
+        if dead.any():                       # stalled: the scalar version returns None here
+            live[j[dead]] = False
+        j = j[~dead]
+        if j.size == 0:
+            continue
+
+        Xj, Rj, Jj = X[j], R[run][~dead], Jm[run][~dead]
+        step = _lstsq_batch(Jj, Rj)
+        sn = np.linalg.norm(step, axis=1)
+        big = sn > 0.5
+        if big.any():
+            step[big] *= (0.5 / sn[big])[:, None]
+        X[j] = Xj + step
+
+    # The scalar version's tail: a candidate that used all its steps without converging is still a root
+    # if it happens to satisfy the tolerance now.
+    idx = np.nonzero(live)[0]
+    if idx.size:
+        fin = np.max(np.abs(Fb(X[idx])[0]), axis=1) < tol
+        ok[idx[fin]] = True
+    return X, ok
+
+
 def link_residual(cycle, eid, alpha, theta):
     """How far this vertex's link is from closing, as the 3 independent entries of M - I."""
     M = np.eye(3)
@@ -619,23 +977,53 @@ def solve_joint(verts, known, rest, tol=1e-11, seeds=7, budget=3000):
     finds is certain and what it misses is not provable; propagation runs first precisely to make this
     space as small as possible."""
     csas = [[(math.cos(a), math.sin(a)) for a in al] for al, es in verts]
-    def F(x):
-        th = dict(known)
-        th.update(zip(rest, x))
-        return np.concatenate([link_vec(c, [th[e] for e in es])
-                               for c, (al, es) in zip(csas, verts)])
+
+    # Every start at once. `rest` are the unknown edge orbits; `known` is fixed, so each vertex reads a
+    # (N, L) slab of dihedrals whose columns are either a constant or one of the unknowns, and its link
+    # residual is six columns of that. The per-vertex column maps are built once, outside the iteration.
+    # Per vertex, per side: which unknown column feeds this slot (or the constant cos/sin of a slot
+    # whose dihedral is already fixed). Built once — inside the iteration it is pure indexing.
+    pos = {e: i for i, e in enumerate(rest)}
+    nx = len(rest)
+    plan = []
+    for csa, (al, es) in zip(csas, verts):
+        cols = []
+        for e in es:
+            if e in pos:
+                cols.append((pos[e], 0.0, 0.0))
+            else:
+                b = math.pi - known[e]
+                cols.append((-1, math.cos(b), math.sin(b)))
+        plan.append((csa, cols))
+
+    nmax = budget if seeds ** len(rest) > budget else seeds ** len(rest)
+    kernels = [_link_kernel(csa, cols, nmax) for csa, cols in plan]
+
+    def Fb(X):
+        """(N, nx) dihedrals -> (residuals, Jacobian) for every vertex at once."""
+        n = X.shape[0]
+        # (nx, n), not (n, nx): the kernel reads one unknown's whole column at a time, eight or so times
+        # per Newton step, and a strided gather each time costs more than the one transpose here.
+        b = math.pi - np.ascontiguousarray(X.T)
+        cb_all, sb_all = np.cos(b), np.sin(b)
+        R = np.empty((n, 6 * len(plan)))
+        J = np.zeros((n, 6 * len(plan), nx))
+        for vi, run in enumerate(kernels):
+            run(cb_all, sb_all, R, J, 6 * vi, n)
+        return R, J
 
     if seeds ** len(rest) <= budget:
         starts = list(itertools.product(np.linspace(0.35, 2 * math.pi - 0.35, seeds), repeat=len(rest)))
     else:
         rng = np.random.default_rng(20260820)
         starts = [tuple(rng.uniform(0.15, 2 * math.pi - 0.15, len(rest))) for _ in range(budget)]
+    X, ok = _newton_batch(Fb, np.array(starts, float), tol)
+
+    # Dedup in the ORIGINAL start order. It decides which of several near-identical roots is kept, and
+    # keeping a different one would move a shipped solid's coordinates by a hair for no reason.
     out = []
-    for st in starts:
-        x = _newton(F, st, tol)
-        if x is None:
-            continue
-        x = np.mod(x, 2 * math.pi)
+    for i in np.nonzero(ok)[0]:
+        x = np.mod(X[i], 2 * math.pi)
         if any(np.max(np.abs(np.mod(x - y + math.pi, 2 * math.pi) - math.pi)) < 1e-6 for y in out):
             continue
         out.append(x)

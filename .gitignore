@@ -176,3 +176,17 @@ materials/
 
 # one-off driver scripts (Playwright probes, throwaway harnesses). Never part of a build.
 scripts/tmp/
+
+# develop benchmark block sets and their outputs — copies of pruned files, rebuilt by bench/setup.sh.
+# The harness itself (bench/*.sh, bench/*.py) IS tracked; its inputs are search output, not source.
+tools/ctrnact-oracle/bench/tiny/
+tools/ctrnact-oracle/bench/one/
+tools/ctrnact-oracle/bench/hot/
+tools/ctrnact-oracle/bench/fast/
+tools/ctrnact-oracle/bench/big/
+tools/ctrnact-oracle/bench/real/
+tools/ctrnact-oracle/bench/*.json
+tools/ctrnact-oracle/bench/*.json.shards/
+tools/ctrnact-oracle/bench/*-report.txt
+tools/ctrnact-oracle/bench/*-driver.log
+tools/ctrnact-oracle/bench/*.log
