@@ -267,11 +267,7 @@ function Tile({
 				) : t.developed ? (
 					<HyperbolicDevelopedThumbnail patch={t.developed.patch} />
 				) : t.renderCell ? (
-					<TilingThumbnail
-						translationalCell={t.renderCell as TranslationalCellData}
-						pxPerEdge={14}
-						driftKey={t.canonicalKey}
-					/>
+					<TilingThumbnail translationalCell={t.renderCell as TranslationalCellData} pxPerEdge={14} />
 				) : null}
 				{t.paramCell ? <ParamBadge paramCell={t.paramCell} /> : null}
 			</div>

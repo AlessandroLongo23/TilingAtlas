@@ -15437,3 +15437,12 @@ Suppressed narrowly, with the value check kept as the real guard.
 **Where the floor is.** 831 of 1169 blocks now finish under 0.1 s and the worst is 1.1 s; 76–89 s of
 single-process CPU against ~19–25 s wall is about 4× effective parallelism on a 4P+6E machine. Further
 gains need C, or changing what is computed — and what is computed is exactly what must not change.
+
+⚑ **REVERTED, 2026-08-21.** AL, after the three fixes above: "still doesn't work". Backed out whole —
+`lib/render/driftThumbStage.ts` and its test deleted, and the three call sites returned byte-identical to
+their pre-drift state. The entries above stay because the ledger is where failed ideas live: the mechanism
+(draw once oversized, blit a moving sub-rectangle, loop on a lattice vector) is sound and measured, so
+anyone who tries this again should start from what it got wrong rather than from scratch. What is NOT
+established is why it still read badly on the real page after the jump, the scatter and the speed were
+each fixed and measured — that was never diagnosed, and a second attempt should begin by asking AL what he
+was seeing before touching any of the code.

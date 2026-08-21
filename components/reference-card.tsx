@@ -197,7 +197,7 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 				) : tiling.developed ? (
 					<HyperbolicDevelopedThumbnail patch={tiling.developed.patch} />
 				) : (
-					<TilingThumbnail translationalCell={tiling.renderCell} pxPerEdge={22} driftKey={tiling.id} />
+					<TilingThumbnail translationalCell={tiling.renderCell} pxPerEdge={22} />
 				)}
 				{/* The screenshot path renders the polygon cell — freedraw's is a throwaway, so it is excluded
 				    along with the two non-Euclidean renderers. */}
