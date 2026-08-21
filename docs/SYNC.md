@@ -2771,3 +2771,13 @@ is 51 min on 8 workers for 111 records. All 14 named, 0 unnamed. ⚑ J32/J33 nee
 cupolarotunda has no equatorial mirror to measure, so it splits on square-pentagon edges (10 ortho / 5
 gyro), two invariants agreeing. ⚑ k=4 complete on the same evidence: all 1122 non-realizations
 mathematical. `constructed` fell 12 → 10 on its own. Commit 8ab153b. NOTES 2026-08-21 (sixth).
+
+## 2026-08-21 (seventh) — A studio look for every spherical 3D shelf — CC
+
+`cfg.sphericalStudio` (default on, `sstu`) switches all of them between the plain diagram look and a lit
+one — room environment, reflective materials, key/fill/rim with shadows, and analytic engraved lines in
+the tiling sphere's own shader. Off is byte-for-byte the old look. Drag-release momentum, thumbnails that
+turn off one clock and one context (down from three), star edges as All/True/None. ⚑ Three pre-existing
+bugs underneath: coplanar faces z-fought, duplicate exit normals painted a solid black ball, and
+icoFreedraw never linearised its fills — which is what "the star shelf looks muted" was, and what a
+palette bump had been compensating for. Commit 657515d. NOTES 2026-08-21 (seventh).
