@@ -15049,3 +15049,69 @@ is the normal thing to do, so the assumption is exactly inverted in dev. The 107
 over a network; the same conditional request to 127.0.0.1 is about 1 ms. Now `no-cache` when
 NODE_ENV=development and unchanged in production, both verified by curling the header off `pnpm dev` and
 off a `NEXT_DIST_DIR=.next-prod pnpm start`. Nothing else was wrong — no code or data change was needed.
+
+## 2026-08-21 (fifth) — The k=3 output had 34 non-convex solids nobody harvested
+
+Long form: `experiments/results/k3-reharvest-2026-08-21.md`.
+
+AL asked one question that turned out to be the session: *"why are you so confident that the solids we
+generated for each k are not all that there are to be found and we have some missing ones?"* I had been
+hand-waving, and the real answer is worse than the guess.
+
+All 34 shipped non-convex records sat at **k=2**. None at k=1 (correct — a one-orbit non-convex
+regular-faced solid is a non-convex UNIFORM polyhedron, and those 57 are on the star shelf) and none at
+k=3. `gen_johnson_k3.py` filtered its 68 realized records to `convex and not coplanarNeighbour` and
+discarded the rest, so 37 reflex records had been developed, were sitting on disk, and no code path had
+ever looked at them. **35 were congruent to nothing the k=2 sweep produced.** No new search: the shelf
+went 34 → 68 off geometry already computed.
+
+⚑ **Euler is part of validity and develop_euclid was not checking it.** Every block develops twice, and
+one block's second realization sent two vertices of a 14-vertex map to the same point. The flood fill
+merged them, V dropped to 13, χ went to 1 — and `mapOK` still said true, correctly on its own terms:
+`2|E| == darts`, `Σ|ring| == darts`, ring lengths matching their face types are all statements about the
+map's COMBINATORICS, which a bad realization leaves untouched. No edge and no face changed; only the
+vertex identification did. The solid touches itself at a point and is not a polyhedron. It shipped as far
+as `lib/squaring/smith.test.ts`, which caught it on V − E + F. Every other record across k=1, 2, 3 has
+χ = 2, so the gate drops exactly that one.
+
+⚑ **A property measured across a partial corpus is not a property of the shelf**, and the same mistake
+had been made twice. `hasSphereView` returned false for the whole `ncx-` prefix on the written grounds
+that "NOT ONE of them has a circumsphere" — true of the 34, false the moment 34 more arrived, and
+`ncx-7-15-10-a` was denied the view of a sphere it actually has. The shelf label read "No circumsphere",
+which then described 67 of 68, and its k rows read "k = 2 Johnson" when a Johnson solid is by definition
+CONVEX. Now: `NCX_INSCRIBED` names the exceptions, the shelf is "Regular polygons" (the non-convex half
+of the same face-type split the convex side makes), and its k rows are bare orbit counts.
+
+**Ids are permalinks, so they are frozen.** k=3 brought two more 7/15/10 solids and a naive regeneration
+would have renamed the shipped `ncx-7-15-10` to `ncx-7-15-10-a`. Shipped ids are matched back by
+congruence and reused verbatim; rebuilding from the k=2 cells alone reproduces the shipped 34 exactly,
+which is the gate. Two artefacts became regenerable on the way: `gen_nonconvex_shelf.py --emit` writes
+the whole TS table, and `scripts/build-nonconvex-shelf.mjs` writes the atlas rows, which had gone in by
+hand — the rebuild reproduced all 34 byte for byte, which is how I know the note text was reconstructed
+and not approximated.
+
+**What the shelf is complete FOR**, stated because it shipped with no scope at all: k ≤ 3, regular
+{3,4,5,6,8,10}-gons, and — the bound that matters — only solids where EVERY vertex has positive angular
+defect. The engine's closure test is positive-defect, which is what forces the glued map onto a sphere by
+discrete Gauss-Bonnet, so a SADDLE vertex (angles past 360°, paid for elsewhere, total still 720°) is not
+missed by the search, it is outside it. Measured on the shelf: worst valence 5 against a cap of 6, worst
+angle sum 354°. Within those bounds it IS complete and that is measured: across k=1,2,3 every kept block
+was realized or rejected for a mathematical reason (554 "no dihedral solution", 4 "degenerate dihedral").
+
+⚑ That evidence nearly did not exist. `run_develop_sharded.py` left all eight per-worker reports unread
+in its scratch directory, so the sharded k=3 run produced no account of what did not realize — the entire
+basis for a completeness claim. "No dihedral solution" is a fact about the map; a convergence failure is
+a gap; unmerged, the two are indistinguishable. Merged now, and the driver logs the slowest worker's ETA
+every 30 s instead of saying nothing for a quarter of an hour.
+
+**Provenance.** `discoverer` says who first described a solid; it cannot say whether the engine derived
+this record. "62 of the 92 Johnson solids" quietly meant fifty found and twelve built by gyrating a
+parent. `derivation` is now on every record — searched 118, constructed 12, tabulated 28 — decided by
+congruence against every realized develop record, so a solid moves to "searched" the moment a run finds
+it and never the other way. The 12 came out exactly the gyrate/diminished families.
+
+**The test suite was failing a lottery, not a test.** Two or three files timed out per run and WHICH ones
+varied — the signature of contention, on a machine with 10 logical cores and 4 performance ones.
+`maxWorkers: 6` fixed it; raising the timeout alone made it worse, measurably, because a suite that used
+to die at 60 s and free its worker then held one for 150 s and starved two others. 2811 passed, 0 failed,
+196 s against 222 s before.

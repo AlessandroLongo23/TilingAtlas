@@ -1,0 +1,21 @@
+[12:12:07] k=4 spherical palette — solve + prune sizing run
+[12:12:07] baseline k=3: solve 27082 nodes -> 653 raw / 460 pruned blocks; develop 836s wall on 8 workers (~10.6 CPU-s per block)
+[12:12:07] build (MAXNUM=4 PALETTE=spherical)
+[12:12:09]   built in 2s
+[12:12:09] PHASE 1 solve
+[12:12:09]   solve 0s | vertex figures: 63 over 125 types bucket key unique (BUCKET_OK): yes OKPAIR: 294 admissible (tkey, Q(f)) pairs nodes: 103668  simplify_calls: 5058  simplify_true: 2589 
+[12:12:09]   raw blocks: 2589
+[12:12:21] PHASE 2 prune
+  k=1 : 28
+  k=2 : 141
+  k=3 : 460
+  k=4 : 1169
+total kept: 1798
+store: peak 0.279419 MB total, 0.279419 MB resident
+[12:12:21]   prune 0s
+[12:12:21]   pruned blocks by k: k=1:0 k=0: k=2:0 k=0: k=3:0 k=0: k=4:0 k=0: 
+[12:12:21]   pruned files: 121  total blocks: 0
+[12:12:41] PHASE 3 develop (k=4 only; k<=3 already harvested) — 1169 blocks, 8 workers
+[12:12:41]   estimate: k=3 measured 10.6 CPU-s/block, so 1169 blocks is ~26 min wall at that rate;
+[12:12:41]   expect longer, since a 4-orbit flood fill is bigger than a 3-orbit one. Progress below.
+[12:12:41] 121 files / 1798 blocks over 8 workers

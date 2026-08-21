@@ -2755,3 +2755,11 @@ convex-only), so the 34 ship by measured signature, unnamed, as **Non-convex →
 sibling of the star shelf, per AL's guess. The one of the 38 already shelved is the only one WITH a
 circumsphere, which is the whole causal story. ⚑ k=3: 24 distinct convex solids, **19 new Johnson
 solids**, shelf 43 → 62 of 92; the rest need k >= 4. NOTES 2026-08-21 (fourth).
+
+## 2026-08-21 (fifth) — The k=3 output had 34 non-convex solids the harvest discarded — CC
+
+⚑ The k=3 harvest filtered to CONVEX and dropped the rest: 37 reflex records developed and never looked
+at, 35 congruent to nothing k=2 found. Non-convex shelf 34 → 68 with no new search. ⚑ One was PINCHED
+(two vertices merged, χ=1) and `mapOK` passed it, since every check it makes is combinatorial. Shelf
+scope is stated at last, and every record carries a measured `derivation`. Commits 2885309..b369de7.
+NOTES 2026-08-21 (fifth); long form `experiments/results/k3-reharvest-2026-08-21.md`.
