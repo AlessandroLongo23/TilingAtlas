@@ -15446,3 +15446,16 @@ anyone who tries this again should start from what it got wrong rather than from
 established is why it still read badly on the real page after the jump, the scatter and the speed were
 each fixed and measured — that was never diagnosed, and a second attempt should begin by asking AL what he
 was seeing before touching any of the code.
+
+⚑ **The library's spherical grid went blank after the fourteenth card** (AL, 2026-08-21: "why do the last
+one of each row doesn't load"). Not a row effect and not a WebGL context limit, which is what fourteen
+looks like: `MAX_ACTIVE = 14` in `lib/render/sphereThumbStage.ts` caps how many previews TURN at once, and
+its own note says the extras "hold their first frame". They never got one. The draw loop opened with
+`if (!e.active || !e.scene) continue`, so an entry past the cap was skipped entirely, never called
+`onReady`, and its canvas stayed at `opacity 0` behind a skeleton that never dropped.
+
+The cap is on animation, so the loop now draws an entry when it is active OR has not been drawn yet, and
+`built` makes that exactly once. No cap on first frames per tick is needed: `enqueueThumbnailRender`
+drains one BUILD per animation frame, so scenes become drawable a few at a time and the loop can only ever
+find that many new. Verified on `/library?geo=spherical` at 25 per page, before and after scrolling: zero
+on-screen cards left unpainted, where fifteen through twenty-five had been blank.

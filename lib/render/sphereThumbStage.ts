@@ -176,7 +176,17 @@ function tick(now: number) {
 	if (!r || !camera) return;
 	const still = prefersReducedMotion();
 	for (const e of entries) {
-		if (!e.active || !e.scene) continue;
+		if (!e.scene) continue;
+		// ⚑ MAX_ACTIVE caps ANIMATION, not drawing, and this line is what makes that true. Without it an
+		// entry past the cap was never rendered at all: it never got a frame, so it never called `onReady`,
+		// so its canvas stayed at opacity 0 behind a skeleton that never dropped. On a 25-card library page
+		// that was the fifteenth card onward blank (AL, 2026-08-21). A card past the cap now gets exactly
+		// one frame and holds it, which is what the note on MAX_ACTIVE always claimed.
+		//
+		// No cap on first frames per tick: `enqueueThumbnailRender` drains one BUILD per animation frame,
+		// so scenes become drawable a few at a time and this loop can only ever find that many new.
+		const firstFrame = !e.built;
+		if (!e.active && !firstFrame) continue;
 		const stage = getStage(e.flavor, e.studio);
 		if (!stage) continue;
 		e.holder.rotation.y = still ? 0 : angle + (e.phase ?? 0);
