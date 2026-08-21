@@ -15304,3 +15304,22 @@ swap, not re-pointed: mutating a live ArcballControls' camera leaves it half-bou
 the reason attached, since the construction is drawn on the circumsphere and the flat solid never enters
 the picture. `Checkbox`'s `disabled` reached only the input, so the row kept its pointer cursor, its
 contrast and its tab stop; it now dims and leaves the tab order, the way `Button` already did.
+
+⚑ **A fourth dead control, and the guard against a fifth (same session).** The faint base-grid toggle rode
+the SURFACE flag, so it rendered for every record on the ico-freedraw canvas. It draws the solid's full
+edge lattice under the drawn ink, which says something only where the drawn set is a proper subset of it:
+true for the spherical freedraw patterns and the edge-marked boards, false for a star polyhedron and a
+3.4.n.4 solid, where every edge is drawn already and the overlay retraced the same lines. It is gated on
+the shelf now. The spherical Islamic hints also named a control that shelf does not have ("turn off Polygon
+fill", which is the flat block's); on the sphere that state is Wireframe, and they say so.
+
+`tests/options-tab.surfaces.test.tsx` is the guard: it renders the tab per surface and asserts which
+controls appear, with the rule that a control is listed for a surface only where that surface's renderer
+reads the field behind it. Four of the five cases are assertions that something is ABSENT, because every
+defect above was a control that was present and inert. This is the shelf registry's own failure mode one
+level up — nothing forced a new shelf into the tab's inline gates — and it now fails a test instead of
+shipping.
+
+⚑ Left divergent on purpose: `/freedraw` holds its own `useState<IcoMode>` and its own two buttons for the
+same sphere/polyhedron choice. Pointing it at the store would make browsing that page change what /play
+shows, which is a product decision, not a refactor.

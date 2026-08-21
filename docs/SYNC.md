@@ -2781,3 +2781,11 @@ turn off one clock and one context (down from three), star edges as All/True/Non
 bugs underneath: coplanar faces z-fought, duplicate exit normals painted a solid black ball, and
 icoFreedraw never linearised its fills — which is what "the star shelf looks muted" was, and what a
 palette bump had been compensating for. Commit 657515d. NOTES 2026-08-21 (seventh).
+
+## 2026-08-21 — The spherical View options collapse into one block — CC
+
+Three spherical shelves offered different controls, in different words, for the same choices. One block
+now, with the shape toggle, studio look, projection, hue ring and stroke shared, and the wireframe, the
+carved shader and the base grid kept where a renderer reads them. Four dead controls went: the Islamic gate
+was keyed on tile class and admitted four shelves whose canvas has no Islamic path, so it is keyed on the
+SURFACE now. Islamic vs shape is disabled with its reason instead of silently ignored. NOTES 2026-08-21.
