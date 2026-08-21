@@ -27,7 +27,7 @@ TWO FACTS PER RECORD, both measured, both on the card:
     they have no spherical view at all (lib/tilings/sph-inscribed.ts withholds it).
 
 MORE THAN ONE SEARCH FEEDS THIS SHELF. It was first built from the k=2 develop output alone, and the
-k=3 harvest (gen_johnson_k3.py) kept only the CONVEX records and discarded the rest — 37 reflex records
+k=3 harvest (gen_johnson_deep.py, then named for k=3) kept only the CONVEX records and discarded the rest — 37 reflex records
 were computed and thrown away, 35 of them congruent to nothing the k=2 sweep had found. So --cells takes
 a LIST, oldest search first, and the shelf is the union.
 

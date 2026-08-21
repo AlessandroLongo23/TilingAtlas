@@ -77,7 +77,7 @@ describe("spherical catalogue ↔ solid registry wiring", () => {
 		// 12 inscribable ones from develop_spherical, plus 19 from develop_euclid (2026-08-20), of which
 		// 14 have no circumsphere and could not have been developed on S2 at any k.
 		// The non-convex shelf went 34 -> 69 when the k=3 develop output was re-harvested (2026-08-21):
-		// gen_johnson_k3.py had kept only the CONVEX records, so 37 reflex ones were computed and dropped.
+		// the k=3 harvest had kept only the CONVEX records, so 37 reflex ones were computed and dropped.
 		expect(SPHERICAL_SOLIDS.length).toBe(158);
 		expect(polyhedronForId("snub-square-antiprism")).not.toBeNull();
 		expect(polyhedronForId("gyrobifastigium")).not.toBeNull();

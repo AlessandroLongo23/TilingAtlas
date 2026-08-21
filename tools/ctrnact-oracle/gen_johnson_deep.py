@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Bake the 3-orbit Johnson solids develop_euclid found at k=3 into lib/render/johnsonSolids.ts.
+"""Bake the Johnson solids develop_euclid found into lib/render/johnsonSolids.ts, at any depth.
 
-The k=2 run gave the 26 Johnson solids with exactly two vertex orbits; this is the same search one orbit
-deeper. It returns 24 distinct convex regular-faced solids, five of which the shelf already holds, so
+Was gen_johnson_k3.py, which is what it did once: --cells takes a list of develop outputs at any k now,
+because a script named for one depth is a trap once the same search runs deeper. The k=2 run gave the 26
+Johnson solids with exactly two vertex orbits; k=3 was the same search one orbit deeper. It returns 24 distinct convex regular-faced solids, five of which the shelf already holds, so
 NINETEEN are new. Every one of them is a Johnson solid and that is not an inference from the census — it
 is Zalgaller's theorem: a convex polyhedron with regular faces is Platonic, Archimedean, a prism, an
 antiprism, or one of the 92, and none of these is uniform, since a uniform solid has one vertex orbit.
@@ -19,7 +20,7 @@ emission order — the discipline J28/J29 and J77/J78 both cost us:
              faces, so the two pyramid apexes are antipodal about the centre and the angle between them
              is pi. META puts them anywhere else, and the angle is visibly short of it.
 
-Usage: python3 gen_johnson_k3.py [--emit-ts]
+Usage: python3 gen_johnson_deep.py [--emit-ts] [--cells A.json B.json ...]
 """
 import argparse, collections, json, math, os
 import numpy as np
@@ -127,13 +128,25 @@ def shipped_keys():
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--cells", default=os.path.join(HERE, "sph-k3", "euclid-k3.json"))
+    ap.add_argument("--cells", nargs="+", default=[os.path.join(HERE, "sph-k3", "euclid-k3.json")],
+                    help="develop_euclid outputs to harvest; any k, one or many.")
     ap.add_argument("--emit-ts", action="store_true")
     args = ap.parse_args()
-    recs = json.load(open(args.cells))
-    conv = [r for r in recs if r["residual"].get("convex") and not r["residual"].get("coplanarNeighbour")]
+    recs = []
+    for path in args.cells:
+        recs += json.load(open(path))
+    # chi != 2 is a PINCHED realization — the flood fill sent two vertices of the map to one point and
+    # merged them, so the solid touches itself and is not a polyhedron. develop_euclid rejects these at
+    # source now; cell files written before that fix still carry them.
+    pinched = [r for r in recs if r["residual"].get("euler") != 2]
+    for r in pinched:
+        print("   ⚑ pinched (chi=%s), dropped: %s" % (r["residual"].get("euler"), r["id"]))
+    conv = [r for r in recs if r["residual"].get("euler") == 2
+            and r["residual"].get("convex") and not r["residual"].get("coplanarNeighbour")]
     shipped = shipped_keys()
-    print("k=3 records %d, convex %d, already-shipped solids indexed %d" % (len(recs), len(conv), len(shipped)))
+    ks = sorted({r["k"] for r in conv}) or [0]
+    print("records %d over k=%s, convex %d, already-shipped solids indexed %d"
+          % (len(recs), "/".join(str(k) for k in ks), len(conv), len(shipped)))
 
     seen, out, dup, unnamed = {}, [], [], []
     twin_used = set()
@@ -180,13 +193,13 @@ def main():
     ts = []
     for j, name, ident, r, sig in out:
         W = centre_and_scale(np.array(r["vertices"], float))
-        ts.append("\n// %s (J%d)  — from develop_euclid, k=3\nexport const %s: Polyhedron = {\n"
+        ts.append("\n// %s (J%d)  — from develop_euclid, k=%d\nexport const %s: Polyhedron = {\n"
                   "\tid: \"%s\",\n\tschlafli: [0, 0], // Johnson solid, no {p,q} — routing keys on id\n"
                   "\tvertexConfig: \"%s\",\n\tname: \"%s (J%d)\",\n\tvertices: [\n%s\t],\n\tfaces: [\n%s\t],\n};\n"
-                  % (name, j, ident, ident.lower().replace("_", "-"), r["vertexConfig"], name, j,
+                  % (name, j, r["k"], ident, ident.lower().replace("_", "-"), r["vertexConfig"], name, j,
                      "".join("\t\t[%.9f, %.9f, %.9f],\n" % tuple(v) for v in W),
                      "".join("\t\t[%s],\n" % ", ".join(str(i) for i in f) for f in r["faces"])))
-    open(os.path.join(HERE, "johnson-k3.ts.part"), "w").write("".join(ts))
+    open(os.path.join(HERE, "johnson-deep.ts.part"), "w").write("".join(ts))
     json.dump([{"id": ident.lower().replace("_", "-"), "j": j, "name": name, "k": r["k"],
                 "vertexConfig": r["vertexConfig"], "V": sig[0], "E": sig[1], "F": sig[2],
                 "census": " + ".join("%d{%d}" % (c, n) for n, c in sig[3])}
