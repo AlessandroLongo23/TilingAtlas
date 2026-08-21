@@ -55,9 +55,13 @@ function hsb2rgb(hueDeg: number, s: number, v: number): [number, number, number]
 
 // A tile's colour: golden-angle hue spacing keyed on tile index, so adjacent tiles stay distinct. The
 // single-tile case (a blank solid) gets a neutral base hue so it doesn't scream.
+//
+// 0.40/1.00 is the whole Atlas's tile palette (lib/render/hueRing.ts tileHueRgb01) — the convex shelf's,
+// the flat renderer's, the hue ring's. It read 0.50/0.98 here while these fills were being written to the
+// colour attribute unlinearised, which washed them out; see the linearise note in buildIcoFreedraw.
 export function tileColor(tileIndex: number, tileCount: number, hueOffset = 0): [number, number, number] {
 	if (tileCount <= 1) return hsb2rgb(210 + hueOffset, 0.32, 0.95);
-	return hsb2rgb(tileIndex * 137.508 + hueOffset, 0.5, 0.98);
+	return hsb2rgb(tileIndex * 137.508 + hueOffset, 0.4, 1.0);
 }
 
 // A great-circle arc between two unit vertices (slerp), radius `radius`, `extend` overshoots each end.
@@ -120,6 +124,9 @@ export interface IcoOptions {
 	 *  The star shelf sets it so a face is coloured by its POLYGON: see sphStar.faceHsb. */
 	tileHsb?: [number, number, number][];
 	showCrossings?: boolean; // draw the face-through-face creases (star polyhedra only)
+	/** Draw the pattern's own edges at all. False leaves the bare coloured faces — the star shelf's
+	 *  "no edges" state, where the facet colours alone say where the faces are. Defaults to true. */
+	showEdges?: boolean;
 	crossings?: import("./sphStar").Crease[]; // those creases as geometry; see sphStar.faceCrossings
 	/** Sphere mode, star shelf only: how many times the faces cover the circumsphere (sphStar.sheetCount).
 	 *  Setting it swaps the lit tiling fill for the DENSITY fill described at its use below. */
@@ -252,13 +259,27 @@ export function buildIcoFreedraw(pattern: IcoPattern, rawVertices: V3[], opts: I
 	const positions: number[] = [];
 	const normals: number[] = [];
 	const colors: number[] = [];
+	// ⚑ LINEARISE THE FILL. hsb2rgb returns a DISPLAY (sRGB) value, and three.js reads a colour
+	// BufferAttribute as LINEAR working space, so a raw sRGB value written here is re-encoded on output
+	// and comes back washed out: the star shelf's HSB(h, 0.50, 0.98) yellow — already MORE saturated in
+	// HSB than the convex shelf's 0.40/1.00 — rendered as (0.99, 0.99, 0.73) instead of (0.98, 0.98,
+	// 0.49), which is why every star and halved solid looked more muted than the regular-polygon solid
+	// beside it (AL, 2026-08-21). lib/render/sphericalPolyhedron.ts and lib/render/sphColors.ts both do
+	// this conversion — sphColors' comment describes this exact failure — and this file did not.
+	const scratch = new THREE.Color();
+	const linear = (c: V3): V3 => {
+		scratch.setRGB(c[0], c[1], c[2], THREE.SRGBColorSpace);
+		return [scratch.r, scratch.g, scratch.b];
+	};
 	pattern.tiles.forEach((tile, ti) => {
 		// An explicit per-tile colour wins over the golden-angle index ramp. The hue ring still turns it,
 		// so the shelf keeps its polygon meaning and the user keeps the global rotation.
 		const hsb = opts.tileHsb?.[ti];
-		const col = hsb
-			? hsb2rgb(hsb[0] + (opts.hueOffset ?? 0), hsb[1], hsb[2])
-			: tileColor(ti, pattern.nTiles, opts.hueOffset ?? 0);
+		const col = linear(
+			hsb
+				? hsb2rgb(hsb[0] + (opts.hueOffset ?? 0), hsb[1], hsb[2])
+				: tileColor(ti, pattern.nTiles, opts.hueOffset ?? 0),
+		);
 		for (const face of tile) {
 			const ring = face.map((idx) => V[idx]);
 			if (mode === "sphere") pushSphericalFace(positions, normals, colors, ring, radius, col, V);
@@ -414,6 +435,20 @@ export function buildIcoFreedraw(pattern: IcoPattern, rawVertices: V3[], opts: I
 	if (!density && opts.showCrossings && opts.crossings && opts.crossings.length) {
 		const edgeColor: [number, number, number] = dark ? [0.06, 0.06, 0.08] : [0.1, 0.1, 0.12];
 		const LIFT = thickness * 0.06;
+		// ⚑ THE RIBBON CARRIES A TUBE'S NORMALS. Flat across its width, it lit as a flat strip while the
+		// drawn edge beside it lit as a cylinder, and the two read as different objects under the same
+		// light — bright where the tube was shaded, dull where the tube caught the key (AL, 2026-08-21:
+		// "the true edges and the intersection lines react different to light"). The geometry cannot
+		// become a tube, for the bleeding reason above, so the SHADING becomes one instead: the strip is
+		// widened into columns sampled around a half-circle, at offset r·sinθ across the crease and
+		// carrying the normal cosθ·n + sinθ·t. That is exactly the normal field of a cylinder of radius r
+		// lying half-buried in the face — which is what a drawn edge is — while every vertex stays dead
+		// flat in the plane, so nothing pokes through anything.
+		const COLUMNS = 7; // θ in 30° steps across the half-circle; the sweep is smooth well before this
+		const cols = Array.from({ length: COLUMNS }, (_, i) => {
+			const th = -Math.PI / 2 + (Math.PI * i) / (COLUMNS - 1);
+			return { s: Math.sin(th), c: Math.cos(th) };
+		});
 		const pos: number[] = [];
 		const nor: number[] = [];
 		for (const c of opts.crossings) {
@@ -422,20 +457,40 @@ export function buildIcoFreedraw(pattern: IcoPattern, rawVertices: V3[], opts: I
 				const b: V3 = [c.b[0] * radius + n[0] * LIFT, c.b[1] * radius + n[1] * LIFT, c.b[2] * radius + n[2] * LIFT];
 				const d = nrm(sub(b, a));
 				const t = nrm(cross(n, d)); // in-plane, across the crease
-				const q = (p: V3, sgn: number): V3 => [p[0] + sgn * thickness * t[0], p[1] + sgn * thickness * t[1], p[2] + sgn * thickness * t[2]];
-				const A = q(a, -1);
-				const B = q(a, 1);
-				const C = q(b, 1);
-				const D = q(b, -1);
-				for (const v of [A, B, C, A, C, D]) {
-					pos.push(v[0], v[1], v[2]);
-					nor.push(n[0], n[1], n[2]);
+				// Column i: both ends of the crease at offset r·sinθ, with the half-cylinder normal.
+				const at = (p: V3, k: number): V3 => [
+					p[0] + cols[k].s * thickness * t[0],
+					p[1] + cols[k].s * thickness * t[1],
+					p[2] + cols[k].s * thickness * t[2],
+				];
+				const nAt = (k: number): V3 =>
+					nrm([
+						cols[k].c * n[0] + cols[k].s * t[0],
+						cols[k].c * n[1] + cols[k].s * t[1],
+						cols[k].c * n[2] + cols[k].s * t[2],
+					]);
+				for (let k = 0; k < COLUMNS - 1; k++) {
+					const A = at(a, k);
+					const B = at(a, k + 1);
+					const C = at(b, k + 1);
+					const D = at(b, k);
+					const nA = nAt(k);
+					const nB = nAt(k + 1);
+					for (const [v, vn] of [
+						[A, nA], [B, nB], [C, nB],
+						[A, nA], [C, nB], [D, nA],
+					] as [V3, V3][]) {
+						pos.push(v[0], v[1], v[2]);
+						nor.push(vn[0], vn[1], vn[2]);
+					}
 				}
 			}
 		}
 		const cgeom = new THREE.BufferGeometry();
 		cgeom.setAttribute("position", new THREE.BufferAttribute(new Float32Array(pos), 3));
 		cgeom.setAttribute("normal", new THREE.BufferAttribute(new Float32Array(nor), 3));
+		// The edge tubes' material, parameter for parameter (buildTubeSkeleton's MeshStandardMaterial),
+		// so the studio look's role tuning lands on both identically.
 		const cmat = new THREE.MeshStandardMaterial({
 			color: new THREE.Color().setRGB(edgeColor[0], edgeColor[1], edgeColor[2], THREE.SRGBColorSpace),
 			roughness: 0.5,
@@ -455,7 +510,7 @@ export function buildIcoFreedraw(pattern: IcoPattern, rawVertices: V3[], opts: I
 	// --- drawn edges as tubes: arcs on the sphere, chords on the solid. Tube CENTRE on the surface
 	// (radius), so half the section is inside the sphere and only the outer half is visible — ink on the
 	// surface, not a bar floating above it. ---
-	if (pattern.drawn.length > 0) {
+	if (pattern.drawn.length > 0 && opts.showEdges !== false) {
 		const edgeColor: [number, number, number] = dark ? [0.06, 0.06, 0.08] : [0.1, 0.1, 0.12];
 		const arcsFor = (extend: number) => pattern.drawn.map(([i, j]) => edgeArc(i, j, radius, extend));
 		const tubes: Wireframe = buildTubeSkeleton(arcsFor, 0, { section: "tube", thickness, color: edgeColor, union: false });

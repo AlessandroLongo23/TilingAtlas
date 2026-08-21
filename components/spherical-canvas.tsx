@@ -9,6 +9,7 @@ import { measureBox } from "@/lib/render/canvasSize";
 import { captureOverride, offerFrame } from "@/lib/render/capture";
 import { createSphere, type Sphere } from "@/lib/render/sphericalScene";
 import { createOrbitMomentum, type OrbitMomentum } from "@/lib/render/orbitMomentum";
+import { installLookRig, applyStudioMaterials, type LookRig } from "@/lib/render/sphericalLook";
 import { buildFlatSolid, type FlatSolid } from "@/lib/render/sphericalPolyhedron";
 import { hasSphereView } from "@/lib/tilings/sph-inscribed";
 import { buildWireframe, type Wireframe } from "@/lib/render/sphericalWireframe";
@@ -137,6 +138,9 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 	// Release momentum: let go mid-drag and the solid coasts (lib/render/orbitMomentum.ts). It reads the
 	// camera through a ref, so the projection toggle's fresh camera keeps the spin instead of dropping it.
 	const momentumRef = useRef<OrbitMomentum | null>(null);
+	// Lights + environment for the current surface look (lib/render/sphericalLook.ts). Held in a ref so the
+	// Studio toggle re-dials it in place instead of rebuilding the WebGL context.
+	const lookRigRef = useRef<LookRig | null>(null);
 	// Last host box the renderer was sized to. Cleared to force a re-apply when the projection toggle
 	// swaps in a fresh camera; the render loop owns every other update.
 	const boxRef = useRef({ w: 0, h: 0 });
@@ -176,16 +180,13 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 		const scene = new THREE.Scene();
 		sceneRef.current = scene;
 
-		// Light rig — shades every lit material: the wireframe/weave tubes, the flat polyhedron facets, and in
-		// Realistic mode the carved sphere and the raised Islamic relief tiles. Boosted from the original
-		// 0.55/0.55 (+ a small ambient) so lit tile hues read as brightly as the unlit flat modes; roughness 0.9
-		// keeps specular soft so the extra intensity doesn't clip on saturated hues. Inert on the unlit solid
-		// sphere / flat Islamic fill (their RawShaderMaterial / MeshBasicMaterial ignore lights). Tuned by eye.
-		const hemi = new THREE.HemisphereLight(0xffffff, 0x445566, 0.85);
-		const dir = new THREE.DirectionalLight(0xffffff, 0.8);
-		dir.position.set(3, 4, 5);
-		const ambient = new THREE.AmbientLight(0xffffff, 0.2);
-		scene.add(hemi, dir, ambient);
+		// Light rig + environment — shades every lit material: the wireframe/weave tubes, the flat polyhedron
+		// facets, and in Realistic mode the carved sphere and the raised Islamic relief tiles. Inert on the
+		// unlit surfaces (the solid sphere's RawShaderMaterial, the flat Islamic fill's MeshBasicMaterial),
+		// which is why the tiling sphere carries its own shading in Studio. The plain rig is the long-standing
+		// 0.85 / 0.8 / 0.2 by eye; Studio swaps in a room environment and a key/fill/rim set. Both live in
+		// lib/render/sphericalLook.ts so every spherical view changes together.
+		lookRigRef.current = installLookRig(renderer, scene, "tiling", useConfiguration.getState().sphericalStudio);
 
 		// Camera + trackball controls. The loop reads BOTH from refs each frame because the projection toggle
 		// (effect below) recreates them as a fresh pair; reading refs keeps the rendered camera and the
@@ -242,6 +243,9 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 				if (cam) applyCameraAspect(cam, w, h, orthoHalfHeightFor(fitRef.current));
 			}
 			if (controls) controls.update();
+			// The light rig rides the camera, so a drag re-lights the solid instead of sliding a frozen
+			// highlight across it. After controls.update(), which is what settles the camera for this frame.
+			if (cam) lookRigRef.current?.follow(cam);
 			if (cam) renderer.render(scene, cam);
 			if (cap) offerFrame(renderer.domElement);
 			rafRef.current = requestAnimationFrame(animate);
@@ -252,6 +256,8 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 			if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
 			momentumRef.current?.dispose();
 			momentumRef.current = null;
+			lookRigRef.current?.dispose();
+			lookRigRef.current = null;
 			controlsRef.current?.dispose(); // the LATEST controls (a projection toggle may have swapped it)
 			renderer.dispose();
 			renderer.forceContextLoss();
@@ -309,6 +315,7 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 	const wireframe = useConfiguration((s) => s.sphericalWireframe);
 	const isIslamic = useConfiguration((s) => s.isIslamic);
 	const realistic = useConfiguration((s) => s.sphericalRealistic);
+	const studio = useConfiguration((s) => s.sphericalStudio);
 	const polyhedron = useConfiguration((s) => s.sphericalPolyhedron);
 	useEffect(() => {
 		const renderer = rendererRef.current;
@@ -339,6 +346,7 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 				straight: flat,
 			});
 			if (wire) {
+				applyStudioMaterials(wire.object, cfg.sphericalStudio);
 				scene.add(wire.object);
 				content = { kind: "wire", wire };
 			}
@@ -346,12 +354,20 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 			// The TRUE flat-faced solid instead of the round sphere: lit facets + dark edge tubes, same hue.
 			const solid = buildFlatSolid(poly, { hueOffset: cfg.hueOffset, lineWidth: cfg.lineWidth, dark });
 			if (solid) {
+				applyStudioMaterials(solid.object, cfg.sphericalStudio);
 				scene.add(solid.object);
 				content = { kind: "solid", solid };
 			}
 		} else {
-			const sphere = createSphere(renderer, poly, { hueOffset: cfg.hueOffset, lineWidth: cfg.lineWidth, dark, realistic: cfg.sphericalRealistic });
+			const sphere = createSphere(renderer, poly, {
+				hueOffset: cfg.hueOffset,
+				lineWidth: cfg.lineWidth,
+				dark,
+				realistic: cfg.sphericalRealistic,
+				studio: cfg.sphericalStudio,
+			});
 			if (sphere) {
+				applyStudioMaterials(sphere.mesh, cfg.sphericalStudio);
 				scene.add(sphere.mesh);
 				content = { kind: "sphere", sphere };
 			}
@@ -373,7 +389,16 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 		};
 		// solidId is listed even though `poly` is derived from it: the flat/sphere decision above reads the
 		// id directly (hasSphereView), so the effect has to re-run when it changes.
-	}, [poly, solidId, wireframe, isIslamic, realistic, polyhedron]);
+		// `studio` is a rebuild dep and not a live uniform: the flat sphere's two looks are two different
+		// fragment shaders, so the surface has to be rebuilt to swap between them. The light rig does NOT
+		// rebuild (its own effect re-dials it), and neither does the WebGL context.
+	}, [poly, solidId, wireframe, isIslamic, realistic, polyhedron, studio]);
+
+	// Studio ⇄ plain: re-dial the lights and the environment in place. The materials are re-tuned by the
+	// rebuild above, which runs from the same flag.
+	useEffect(() => {
+		lookRigRef.current?.setStudio(studio);
+	}, [studio]);
 
 	// Wireframe geometry controls: rebuild the tubes in place when section / thickness / height change.
 	const section = useConfiguration((s) => s.sphericalWireSection);
@@ -458,11 +483,12 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 			dark: document.documentElement.classList.contains("dark"),
 		});
 		if (pattern) {
+			applyStudioMaterials(pattern.object, useConfiguration.getState().sphericalStudio);
 			scene.add(pattern.object);
 			islamicRef.current = pattern;
 		}
 		return clear;
-	}, [poly, isIslamic, isStrapStyle, islamicAngle, islamicEdgeOffset, islamicIntersectionCount, lineWidth, wireframe, section, thickness, wireHeight, bevel]);
+	}, [poly, isIslamic, isStrapStyle, islamicAngle, islamicEdgeOffset, islamicIntersectionCount, lineWidth, wireframe, section, thickness, wireHeight, bevel, studio]);
 
 	// Islamic cell fill: the regions the star lines cut, coloured by cell shape and laid on the sphere just
 	// under the lines. Gated by the spherical Fill/Wireframe toggle (the two are mutually exclusive): Fill
@@ -512,6 +538,7 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 				dark: document.documentElement.classList.contains("dark"),
 			});
 			if (weave) {
+				applyStudioMaterials(weave.object, cfg.sphericalStudio);
 				scene.add(weave.object);
 				weaveRef.current = weave;
 			}
@@ -532,11 +559,12 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 			relief: cfg.sphericalRealistic, // Realistic + Islamic ⇒ raised, lit tiles instead of the flat shell
 		});
 		if (fill) {
+			applyStudioMaterials(fill.object, cfg.sphericalStudio);
 			scene.add(fill.object);
 			fillRef.current = fill;
 		}
 		return clear;
-	}, [poly, isIslamic, islamicFill, islamicStyle, isStrapStyle, islamicAngle, islamicEdgeOffset, islamicIntersectionCount, islamicBandWidth, islamicOutlineWidth, wireframe, weaveFlat, realistic]);
+	}, [poly, isIslamic, islamicFill, islamicStyle, isStrapStyle, islamicAngle, islamicEdgeOffset, islamicIntersectionCount, islamicBandWidth, islamicOutlineWidth, wireframe, weaveFlat, realistic, studio]);
 
 	if (errored) {
 		return (

@@ -193,19 +193,72 @@ export function solidFitScale(poly: Polyhedron, radius = 1): Vec3[] {
 	return poly.vertices.map((v) => [v[0] * s, v[1] * s, v[2] * s] as Vec3);
 }
 
+// Faces that share a PLANE, numbered within their group: 0 for a face alone in its plane, 1 for the
+// second face found in a plane already seen, and so on.
+//
+// Why this exists: eleven of the fifteen faces of ncx-11-24-15-f lie in ONE plane, four of its eleven
+// vertices are coincident to 1.5e-6, and the result on screen was a yellow/pink dither crawling across
+// the solid as the depth buffer picked a different winner per pixel (AL, 2026-08-21). Coincident geometry
+// has no depth answer, so the renderer has to be given one; the number here is that answer, and
+// buildFlatSolid turns it into a per-layer polygon offset. Scanned across the whole corpus: 18 of the 143
+// non-convex solids have coplanar face groups, and none of the Platonic, Archimedean, Johnson or prism
+// solids has any — so this is exactly zero change for every shelf but that one.
+//
+// Note that "coplanar" is not "overlapping": most of the eighteen are pairs of faces meeting edge-to-edge
+// in a shared plane, which never fought in the first place. Numbering them anyway costs a depth bias of a
+// couple of ULPs on a face nothing else is drawn on.
+const COPLANAR_EPS = 1e-3;
+export function coplanarFaceLayers(poly: Polyhedron, unit: readonly Vec3[]): number[] {
+	const planes: { n: Vec3; d: number; used: number }[] = [];
+	return poly.faces.map((f) => {
+		const a = unit[f[0]];
+		const b = unit[f[1]];
+		const c = unit[f[2]];
+		const n: Vec3 = [
+			(b[1] - a[1]) * (c[2] - a[2]) - (b[2] - a[2]) * (c[1] - a[1]),
+			(b[2] - a[2]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[2] - a[2]),
+			(b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]),
+		];
+		const L = Math.hypot(n[0], n[1], n[2]);
+		if (L < 1e-12) return 0; // degenerate face: no plane to share
+		n[0] /= L;
+		n[1] /= L;
+		n[2] /= L;
+		let d = n[0] * a[0] + n[1] * a[1] + n[2] * a[2];
+		// A plane is unoriented here — two faces of the same plane can wind oppositely, and they still
+		// occupy the same pixels. Canonicalise the sign so they group.
+		if (d < 0) {
+			n[0] = -n[0];
+			n[1] = -n[1];
+			n[2] = -n[2];
+			d = -d;
+		}
+		const hit = planes.find(
+			(p) => Math.abs(p.d - d) < COPLANAR_EPS && Math.hypot(p.n[0] - n[0], p.n[1] - n[1], p.n[2] - n[2]) < COPLANAR_EPS,
+		);
+		if (hit) return hit.used++;
+		planes.push({ n, d, used: 1 });
+		return 0;
+	});
+}
+
 // The TRUE flat facets of the solid (not the round sphere) as a non-indexed triangle soup — one fan per
 // face, ready to hand to a flat-shaded BufferGeometry. Fan triangulation (v0,vk,vk+1) is valid because
 // every face is a convex regular polygon. `positions` is the flattened xyz (9 floats per triangle);
 // `faceSizes[t]` is the source face's vertex count for triangle t, so the mesh builder can colour by
-// polygon size.
-export function flatSolidTriangles(poly: Polyhedron, radius = 1): { positions: Float32Array; faceSizes: number[] } {
+// polygon size; `triLayers[t]` is its face's coplanar layer (see coplanarFaceLayers), which is 0 for
+// every triangle of every solid that has no two faces in one plane.
+export function flatSolidTriangles(poly: Polyhedron, radius = 1): { positions: Float32Array; faceSizes: number[]; triLayers: number[] } {
 	const unit = solidFitScale(poly, radius);
 	const triCount = poly.faces.reduce((sum, f) => sum + (f.length - 2), 0);
 	const positions = new Float32Array(triCount * 9);
 	const faceSizes: number[] = new Array(triCount);
+	const triLayers: number[] = new Array(triCount);
+	const faceLayers = coplanarFaceLayers(poly, unit);
 	let p = 0;
 	let t = 0;
-	for (const f of poly.faces) {
+	for (let fi = 0; fi < poly.faces.length; fi++) {
+		const f = poly.faces[fi];
 		const a = unit[f[0]];
 		for (let k = 1; k < f.length - 1; k++) {
 			let b = unit[f[k]];
@@ -224,10 +277,11 @@ export function flatSolidTriangles(poly: Polyhedron, radius = 1): { positions: F
 			positions[p++] = a[0]; positions[p++] = a[1]; positions[p++] = a[2];
 			positions[p++] = b[0]; positions[p++] = b[1]; positions[p++] = b[2];
 			positions[p++] = c[0]; positions[p++] = c[1]; positions[p++] = c[2];
+			triLayers[t] = faceLayers[fi];
 			faceSizes[t++] = f.length;
 		}
 	}
-	return { positions, faceSizes };
+	return { positions, faceSizes, triLayers };
 }
 
 // The unique polyhedron edges as STRAIGHT chords (2 points each) — the flat solid's real edges, ready to

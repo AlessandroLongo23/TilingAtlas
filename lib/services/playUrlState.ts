@@ -90,6 +90,7 @@ export const PLAY_PARAMS: Record<string, Spec> = {
 	// spherical view
 	swire: { field: "sphericalWireframe", kind: "bool" },
 	sreal: { field: "sphericalRealistic", kind: "bool" },
+	sstu: { field: "sphericalStudio", kind: "bool" },
 	ssec: { field: "sphericalWireSection", kind: "enum", values: ["tube", "rect"] },
 	sthk: { field: "sphericalWireThickness", kind: "num", min: 0.005, max: 0.15 },
 	shgt: { field: "sphericalWireHeight", kind: "num", min: 0.005, max: 0.15 },
@@ -97,6 +98,7 @@ export const PLAY_PARAMS: Record<string, Spec> = {
 	spoly: { field: "sphericalPolyhedron", kind: "bool" },
 	sortho: { field: "sphericalOrthographic", kind: "bool" },
 	sweave: { field: "sphericalWeaveFlat", kind: "bool" },
+	sedge: { field: "sphStarEdges", kind: "enum", values: ["none", "true", "all"] },
 	// inversive view
 	v: { field: "inversive", kind: "bool" },
 	vmode: { field: "inversiveMode", kind: "enum", values: ["inversion", "mobius", "spiral"] },

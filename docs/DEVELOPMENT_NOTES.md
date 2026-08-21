@@ -15116,7 +15116,57 @@ varied — the signature of contention, on a machine with 10 logical cores and 4
 to die at 60 s and free its worker then held one for 150 s and starved two others. 2811 passed, 0 failed,
 196 s against 222 s before.
 
-## 2026-08-21 (sixth) — The spherical shelves get a studio, a turntable, and momentum
+## 2026-08-21 (sixth) — k=4: fourteen more Johnson solids, seventy-five more non-convex ones
+
+Long form: `experiments/results/k3-reharvest-2026-08-21.md` (second half).
+
+Same search a fourth orbit deep. **Solve and prune are free and develop is the entire cost**: 103,668
+nodes → 2,589 raw → 1,169 pruned in about a second, then 51 minutes on 8 workers for 111 realized
+records. k=1/2/3 come back at exactly 28/141/460, which is the cheapest possible check that the
+morning's `develop_euclid` change did not disturb the search.
+
+**Johnson 62 → 76 of the 92; non-convex 68 → 143; registry 158 → 247.** Sixteen Johnson solids left
+(J25, 40, 41, 47, 48, 58, 60, 61, 66, 68–71, 87–89), needing k ≥ 5. Every one of the 14 is named and
+none unnamed, each checked three ways — Euler, the handshake 2E = Σn·k, and the parent construction that
+produces it, so a wrong name fails arithmetic and not merely taste.
+
+⚑ **J32/J33 needed a new measurement and the obvious one would have been wrong.** The reflex is
+`has_equatorial_mirror`, which splits J28/J29 and J42/J43. It cannot work here: a cupolarotunda's halves
+are a cupola and a rotunda, never congruent, so NEITHER has an equatorial mirror and the test answers
+identically for both. What ortho means is that the cupola's squares line up with the rotunda's pentagons
+— a square already has a pentagon at the cupola's apex and gains a second across the equator, where gyro
+gives it a triangle. Counted on edges: 10 square-pentagon edges ortho, 5 gyro, with a second invariant
+agreeing independently (5 triangle-triangle edges ortho, 0 gyro).
+
+⚑ **k=4 is complete on the same evidence k ≤ 3 was**: all 1,122 non-realizations are mathematical (1,116
+"no dihedral solution", 6 "degenerate dihedral"). No numerical failure, no cap, and no pinched record —
+the Euler gate added that morning was live for this run, which is the first evidence it works
+prospectively and not only on the case that motivated it.
+
+⚑ **The derivation field moved on its own**: `constructed` fell 12 → 10, because the search independently
+reproduced metabidiminished icosahedron and parabigyrate rhombicosidodecahedron, which had only ever been
+built by gyrating a parent. Nobody edited a list to make that happen, which is the whole point of
+measuring it.
+
+**Two thresholds moved with the corpus and say so.** `SPH_NOT_INSCRIBED` 37 → 51, and the separation
+between the inscribed and non-inscribed populations narrows from seven orders of magnitude to four
+(worst inscribed 3.9e-7 of the radius, closest non-inscribed 8.2e-3) because a k=4 record comes out of a
+deeper root-find. `isInscribed`'s own 1e-4 tolerance was NOT touched: it is the classifier and those
+assertions are only its evidence, and loosening the classifier to keep a stale assertion passing is how
+a measurement quietly becomes a wish.
+
+**Sharding, measured.** The run left five of eight workers idle for its last twenty minutes — files dealt
+round-robin by BYTES, one worker drawing 351 blocks and another 5. LPT on block counts gives max 302
+against 410 on that same shard, a 1.36× better makespan bound and near the floor (the largest single file
+holds 277 blocks and a file is never split).
+
+**A concurrent session fixed the test suite properly while this ran.** f0fc37a removed the contention at
+its source — figure-trace was doing one traced solve five times (348 s → 175 s), star-general-path built
+a 2839-placement compatibility graph to look up one edge. Re-measured after it landed: 204.6 s capped
+against 212.9 s uncapped, green either way. So this morning's `maxWorkers: 6` is now a 4% margin and
+insurance, not a repair, and the config says so rather than continuing to claim the credit.
+
+## 2026-08-21 (seventh) — The spherical shelves get a studio, a turntable, and momentum
 
 AL, on the 3D shelves: the controls stop dead on release, the thumbnails are frozen stills, and "the
 plain and flat look is a bit cheap". Three separate pieces of work, one toggle so the last one can be
@@ -15179,52 +15229,32 @@ half-buried cylinder while every vertex stays dead flat in the plane.
 of line answering different questions, so: All (edges + creases, the honest surface), True (edges only —
 the creases bound no face, so V, E and F are unchanged without them), None (bare coloured faces).
 
-## 2026-08-21 (sixth) — k=4: fourteen more Johnson solids, seventy-five more non-convex ones
+### Three things that were wrong before any of it (same day, after AL looked at the shelf)
 
-Long form: `experiments/results/k3-reharvest-2026-08-21.md` (second half).
+**Z-fighting on ncx-11-24-15-f.** Eleven of its fifteen faces lie in ONE plane and four of its eleven
+vertices are coincident to 1.5e-6, so the depth buffer picked a different winner per pixel and the solid
+crawled with a yellow/pink dither. Coincident geometry has no depth answer of its own, so the renderer
+now supplies one: `coplanarFaceLayers` numbers faces within each shared plane and `buildFlatSolid` turns
+that number into a constant `polygonOffsetUnits` per layer, drawn as geometry groups over one buffer.
+Scanned across the corpus — 18 of 143 non-convex solids have coplanar face groups, and the Platonic,
+Archimedean, Johnson and prism shelves have none — so every other solid still builds exactly one group
+and one material, which is the single mesh it always drew. `polygonOffsetFactor` stays 0 for the reason
+icoFreedraw already documents: the factor scales with depth slope, and these faces are steep.
 
-Same search a fourth orbit deep. **Solve and prune are free and develop is the entire cost**: 103,668
-nodes → 2,589 raw → 1,169 pruned in about a second, then 51 minutes on 8 workers for 111 realized
-records. k=1/2/3 come back at exactly 28/141/460, which is the cheapest possible check that the
-morning's `develop_euclid` change did not disturb the search.
+**sph-ncx-7-15-10-a rendered as a solid black ball.** Same root cause, different consequence. Faces
+sharing a plane share an exit normal exactly, and `sphClassify` normalises the gap g by |N_best − N_f| —
+so a duplicate normal drives that separation to zero and g collapses to 0 over the whole sphere, painting
+every fragment as an edge. `buildFaceUniforms` now keeps one entry per PLANE, which is all the classifier
+could ever distinguish anyway.
 
-**Johnson 62 → 76 of the 92; non-convex 68 → 143; registry 158 → 247.** Sixteen Johnson solids left
-(J25, 40, 41, 47, 48, 58, 60, 61, 66, 68–71, 87–89), needing k ≥ 5. Every one of the 14 is named and
-none unnamed, each checked three ways — Euler, the handshake 2E = Σn·k, and the parent construction that
-produces it, so a wrong name fails arithmetic and not merely taste.
-
-⚑ **J32/J33 needed a new measurement and the obvious one would have been wrong.** The reflex is
-`has_equatorial_mirror`, which splits J28/J29 and J42/J43. It cannot work here: a cupolarotunda's halves
-are a cupola and a rotunda, never congruent, so NEITHER has an equatorial mirror and the test answers
-identically for both. What ortho means is that the cupola's squares line up with the rotunda's pentagons
-— a square already has a pentagon at the cupola's apex and gains a second across the equator, where gyro
-gives it a triangle. Counted on edges: 10 square-pentagon edges ortho, 5 gyro, with a second invariant
-agreeing independently (5 triangle-triangle edges ortho, 0 gyro).
-
-⚑ **k=4 is complete on the same evidence k ≤ 3 was**: all 1,122 non-realizations are mathematical (1,116
-"no dihedral solution", 6 "degenerate dihedral"). No numerical failure, no cap, and no pinched record —
-the Euler gate added that morning was live for this run, which is the first evidence it works
-prospectively and not only on the case that motivated it.
-
-⚑ **The derivation field moved on its own**: `constructed` fell 12 → 10, because the search independently
-reproduced metabidiminished icosahedron and parabigyrate rhombicosidodecahedron, which had only ever been
-built by gyrating a parent. Nobody edited a list to make that happen, which is the whole point of
-measuring it.
-
-**Two thresholds moved with the corpus and say so.** `SPH_NOT_INSCRIBED` 37 → 51, and the separation
-between the inscribed and non-inscribed populations narrows from seven orders of magnitude to four
-(worst inscribed 3.9e-7 of the radius, closest non-inscribed 8.2e-3) because a k=4 record comes out of a
-deeper root-find. `isInscribed`'s own 1e-4 tolerance was NOT touched: it is the classifier and those
-assertions are only its evidence, and loosening the classifier to keep a stale assertion passing is how
-a measurement quietly becomes a wish.
-
-**Sharding, measured.** The run left five of eight workers idle for its last twenty minutes — files dealt
-round-robin by BYTES, one worker drawing 351 blocks and another 5. LPT on block counts gives max 302
-against 410 on that same shard, a 1.36× better makespan bound and near the floor (the largest single file
-holds 277 blocks and a file is never split).
-
-**A concurrent session fixed the test suite properly while this ran.** f0fc37a removed the contention at
-its source — figure-trace was doing one traced solve five times (348 s → 175 s), star-general-path built
-a 2839-placement compatibility graph to look up one edge. Re-measured after it landed: 204.6 s capped
-against 212.9 s uncapped, green either way. So this morning's `maxWorkers: 6` is now a 4% margin and
-insurance, not a repair, and the config says so rather than continuing to claim the credit.
+⚑ **The star and halved shelves were washing out their own colours, and a previous session compensated
+for it in the palette.** `icoFreedraw` pushed `hsb2rgb`'s DISPLAY value straight into a colour
+BufferAttribute. three reads that attribute as LINEAR working space and re-encodes on output, so
+HSB(60°, 0.50, 0.98) — display (0.98, 0.98, 0.49) — reached the screen as (0.99, 0.99, 0.73). Every star
+and halved solid was visibly paler than the regular-polygon solid beside it. `sphericalPolyhedron.ts` and
+`sphColors.ts` both convert with `setRGB(…, SRGBColorSpace)` first, and sphColors' comment describes this
+exact failure; this file never did. The trap is that on 2026-08-19 the symptom was read as a palette
+problem — "the latter are more muted, I don't like them" — and `TILE_SAT` was raised 0.40 → 0.50 to
+compensate. With the linearisation fixed, that bump was a correction stacked on a correction, so both it
+and `tileColor`'s matching 0.50/0.98 go back to the Atlas's one tile palette, HSB(h, 0.40, 1.00). AL,
+2026-08-21: "use the non-star as reference for the look".

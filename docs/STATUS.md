@@ -57,8 +57,14 @@ shading, since these views orbit the camera and never move the solid.
 
 **Star edges are a three-state control** (`cfg.sphStarEdges`, URL `sedge`): All / True / None.
 
-Not yet committed. `docs/DEVELOPMENT_NOTES.md` (2026-08-21, sixth) carries the detail, including the
-radial-AO idea that failed and why creases needed a tube's normals.
+Three bugs fixed underneath, all pre-existing: coplanar faces now get a per-layer polygon offset (the
+dither on `ncx-11-24-15-f`, whose 15 faces include 11 in one plane); duplicate exit normals are deduped
+in the tiling shader (`sph-ncx-7-15-10-a` rendered as a black ball); and `icoFreedraw` linearises its
+tile fills, which is why the star and halved shelves looked muted — with that fixed, `TILE_SAT` and
+`tileColor` go back from the compensating 0.50/0.98 to the Atlas palette's 0.40/1.00.
+
+`docs/DEVELOPMENT_NOTES.md` (2026-08-21, seventh) carries the detail, including the radial-AO idea that
+failed and why creases needed a tube's normals.
 
 ## Game of Life runs on the catalogue now — /automata (2026-08-18)
 

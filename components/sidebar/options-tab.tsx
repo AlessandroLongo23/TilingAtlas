@@ -1062,6 +1062,23 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 									onCheckedChange={(v) => setCfg({ sphericalPolyhedron: v })}
 								/>
 							</Reveal>
+							{/* Studio look: the shared surface treatment for every spherical 3D view — an image-based
+							    environment, reflective materials and a key/fill/rim rig, with the round tiling sphere
+							    shaded inside its own shader. Off returns the plain diagram look. One flag, so the
+							    solid, its thumbnails and the other spherical shelves all change together.
+							    See lib/render/sphericalLook.ts. */}
+							<Checkbox
+								id="sphericalStudio"
+								label="Studio look"
+								checked={cfg.sphericalStudio}
+								onCheckedChange={(v) => setCfg({ sphericalStudio: v })}
+								hint={
+									<InfoDot>
+										Lights the solid from a room instead of two lamps, and gives its surfaces a sheen.
+										Off draws the flat diagram look.
+									</InfoDot>
+								}
+							/>
 							{/* Camera projection: perspective (foreshortened) vs orthographic (parallel, the flat
 							    "isometric" solid look). One or the other, so a single toggle. */}
 							<Toggle
@@ -1102,6 +1119,23 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 									Sphere
 								</Button>
 							</div>
+							{/* Studio look: the shared surface treatment for every spherical 3D view — an image-based
+							    environment, reflective materials and a key/fill/rim rig, with the round tiling sphere
+							    shaded inside its own shader. Off returns the plain diagram look. One flag, so the
+							    solid, its thumbnails and the other spherical shelves all change together.
+							    See lib/render/sphericalLook.ts. */}
+							<Checkbox
+								id="sphericalStudio"
+								label="Studio look"
+								checked={cfg.sphericalStudio}
+								onCheckedChange={(v) => setCfg({ sphericalStudio: v })}
+								hint={
+									<InfoDot>
+										Lights the solid from a room instead of two lamps, and gives its surfaces a sheen.
+										Off draws the flat diagram look.
+									</InfoDot>
+								}
+							/>
 							{/* Spherical freedraw has a drawn/undrawn split, so it offers a faint base-grid toggle; a
 							    coloring has every edge as a real tile boundary, so there is nothing extra to reveal. */}
 							{isSphericalFreedraw ? (
@@ -1122,19 +1156,38 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 									shaded by how many faces lie over it: the sheets a ray from the centre crosses.
 								</p>
 							) : null}
+							{/* Edge ink, in three steps. A star polyhedron carries two kinds of line and they answer
+							    different questions: the solid's real EDGES, and the CREASES where two faces cut
+							    through each other. All shows both (the honest picture of the surface), True drops the
+							    creases (which bound no face, so V, E and F are unchanged by dropping them), None
+							    leaves the bare coloured faces. */}
 							{isSphStar && cfg.sphericalFreedrawMode !== "sphere" ? (
-								<Checkbox
-									id="sphStarHideCrossings"
-									label="Hide crossings"
-									checked={cfg.sphStarHideCrossings}
-									onCheckedChange={(v) => setCfg({ sphStarHideCrossings: v })}
-									hint={
+								<div className="space-y-2">
+									<span className="flex items-center gap-1 text-[11px] text-fg-muted">
+										Edges
 										<InfoDot>
-											Lines where two faces pass through each other. Drawn like edges, but they are not
-											edges: they bound no face, so V, E and F are unchanged.
+											True edges bound the faces. Crossings are where two faces pass through each other:
+											drawn the same way, but they bound no face, so V, E and F are unchanged by them.
 										</InfoDot>
-									}
-								/>
+									</span>
+									<div className="flex gap-2">
+										{([
+											["none", "None"],
+											["true", "True"],
+											["all", "All"],
+										] as const).map(([value, label]) => (
+											<Button
+												key={value}
+												variant={cfg.sphStarEdges === value ? "primary" : "secondary"}
+												size="sm"
+												classes="flex-1"
+												onClick={() => setCfg({ sphStarEdges: value })}
+											>
+												{label}
+											</Button>
+										))}
+									</div>
+								</div>
 							) : null}
 						</div>
 					) : null}

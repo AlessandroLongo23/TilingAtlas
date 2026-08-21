@@ -123,6 +123,6 @@ describe("playUrlState", () => {
 	it("keeps URL keys unique", () => {
 		const fields = Object.values(PLAY_PARAMS).map((s) => s.field);
 		expect(new Set(fields).size).toBe(fields.length);
-		expect(Object.keys(PLAY_PARAMS)).toHaveLength(60);
+		expect(Object.keys(PLAY_PARAMS)).toHaveLength(61);
 	});
 });

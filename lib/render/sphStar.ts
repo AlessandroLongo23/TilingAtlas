@@ -81,14 +81,16 @@ export function faceHsb(n: number, dRaw: number): [number, number, number] {
 	return [hue, TILE_SAT, TILE_VAL];
 }
 
-// ⚑ 0.50/0.98, NOT the flat tiles' 0.40/1.00. AL, comparing a convex polyhedron with a star one:
-// "the latter are more muted, I don't like them". Both are lit 3D solids on this same canvas, and its
-// other shelves colour through `tileColor`, which is HSB(h, 0.50, 0.98). Matching the 2D fill's 0.40
-// instead left every star polyhedron visibly flatter than the uniform polyhedron beside it. The HUE is
-// still the Euclidean by-side-count ramp, which is what carries the polygon's identity; saturation and
-// value belong to the medium, and here the medium is the three.js canvas.
-const TILE_SAT = 0.5;
-const TILE_VAL = 0.98;
+// ⚑ 0.40/1.00 — the SAME palette as the convex shelf (lib/render/hueRing.ts tileHueRgb01), and the
+// history is worth keeping. This was 0.50/0.98, bumped on 2026-08-19 because AL, comparing a convex
+// polyhedron with a star one, said "the latter are more muted, I don't like them". He was right about
+// what he saw and the cause was elsewhere: icoFreedraw wrote these sRGB values straight into a colour
+// BufferAttribute, which three reads as LINEAR, so every star fill came out re-encoded and washed out no
+// matter what saturation it was given. With that fixed (2026-08-21) the bump was compensation on top of a
+// correction, and the two shelves can share one palette again — which is what AL asked for: "use the
+// non-star as reference for the look".
+const TILE_SAT = 0.4;
+const TILE_VAL = 1.0;
 /** The violet-to-magenta arc reserved for star faces; `polygonHue` never reaches it for any n < 17. */
 const STAR_ARC_START = 240;
 const STAR_ARC_END = 350;

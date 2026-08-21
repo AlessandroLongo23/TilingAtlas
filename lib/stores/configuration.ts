@@ -191,6 +191,13 @@ export interface ConfigurationState {
 	// Driven live from the same edge-distance field the texture baker uses. Solid sphere only (no effect in
 	// wireframe / Islamic modes). See lib/render/sphericalCarvedMaterial.ts.
 	sphericalRealistic: boolean;
+	// The SURFACE LOOK of every spherical 3D view — the round tiling sphere, the flat-faced solid, the
+	// wireframe bars, the Islamic relief, and the freedraw / star / Schwarz / colouring shelves alike.
+	// false = the plain diagram look the Atlas has always drawn (a small light rig, matte materials, an
+	// UNLIT tiling sphere); true = studio (an image-based environment, reflective materials, a key/fill/rim
+	// rig, and analytic shading inside the tiling sphere's own shader). One switch so the two are
+	// comparable side by side. See lib/render/sphericalLook.ts.
+	sphericalStudio: boolean;
 	// Spherical "polyhedron" mode: replace the round tiling sphere with the TRUE flat-faced solid — real
 	// facets, corners and edges — lit by the scene so each face reads as 3D, keeping the per-polygon hue.
 	// Solid Fill only (mutually exclusive with Realistic; no effect in wireframe / Islamic modes).
@@ -298,12 +305,16 @@ export interface ConfigurationState {
 	// `grid` draws the solid's full edge grid faintly under the pattern. See components/freedraw/ico-freedraw-canvas.tsx.
 	sphericalFreedrawMode: IcoMode;
 	sphericalFreedrawGrid: boolean;
-	// Star polyhedra only: HIDE the creases where two faces cut through each other. Phrased as hiding so
-	// the box is unticked in the default view (AL, 2026-08-19), which is the view that draws them: a
-	// crease is a real feature of the surface and the solid reads wrong without it, which is how Marek
-	// Čtrnáct found it missing. The control exists to take them away, so it is named for that.
+	// Star polyhedra only: how much of the edge ink to draw. Three states, because a star polyhedron has
+	// two KINDS of line and they answer different questions (AL, 2026-08-21):
+	//   "all"  — the solid's edges plus the creases where two faces cut through each other. The default,
+	//            and the honest picture of the surface: a crease is a real feature of it, and the solid
+	//            reads wrong without it (Marek Čtrnáct found it missing, 2026-08-19).
+	//   "true" — edges only. The creases bound no face, so V, E and F are unchanged by dropping them;
+	//            this is the view that shows the COMBINATORICS and nothing else.
+	//   "none" — bare coloured faces, for reading the tile shapes with no ink over them.
 	// See lib/render/sphStar.ts `faceCrossings`.
-	sphStarHideCrossings: boolean;
+	sphStarEdges: "none" | "true" | "all";
 
 	// Color params
 	colorParams: ColorParams;
@@ -446,6 +457,7 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	sphericalWireHeight: 0.025,
 	sphericalWireBevel: 0.25,
 	sphericalRealistic: false,
+	sphericalStudio: true,
 	sphericalPolyhedron: false,
 	sphericalOrthographic: false,
 	sphericalWeaveFlat: false,
@@ -475,7 +487,7 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 
 	sphericalFreedrawMode: "polyhedron",
 	sphericalFreedrawGrid: false,
-	sphStarHideCrossings: false,
+	sphStarEdges: "all",
 
 	colorParams: { a: 180, b: 0 },
 

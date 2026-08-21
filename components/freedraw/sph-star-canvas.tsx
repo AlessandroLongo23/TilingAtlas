@@ -26,15 +26,16 @@ export function SphStarCanvas({
 	pattern,
 	mode = "polyhedron",
 	showGrid,
-	showCrossings = true,
+	edges = "all",
 }: {
 	pattern: SphStarPattern;
 	mode?: IcoMode;
 	showGrid: boolean;
-	/** Draw the creases where two faces cut through each other. On by default: without them a face that
-	 *  passes through another reads as unbroken, which is the thing that looked wrong. Sphere mode has
-	 *  no creases to draw, so it ignores this. */
-	showCrossings?: boolean;
+	/** How much edge ink to draw: "all" = the solid's edges plus the creases where two faces cut through
+	 *  each other, "true" = edges only (the creases bound no face), "none" = bare faces. Defaults to
+	 *  "all": without the creases a face that passes through another reads as unbroken, which is the
+	 *  thing that looked wrong. Sphere mode has no creases to draw, so it only sees the edge half. */
+	edges?: "none" | "true" | "all";
 }) {
 	const scene = useMemo(() => sphStarScene(pattern), [pattern]);
 	// Only sphere mode reads it, and it costs a sample sweep over every face — so it is measured here on
@@ -51,7 +52,8 @@ export function SphStarCanvas({
 			showGrid={showGrid}
 			crossings={scene.crossings}
 			tileHsb={scene.tileHsb}
-			showCrossings={showCrossings}
+			showCrossings={edges === "all"}
+			showEdges={edges !== "none"}
 			densitySheets={sheets}
 		/>
 	);

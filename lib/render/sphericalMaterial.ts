@@ -11,6 +11,7 @@
 import * as THREE from "three";
 import type { Polyhedron } from "./platonicSolids";
 import { buildFaceUniforms, EDGE_ANGLE_PER_STROKE, MAX_FACES, TILING_GLSL_CORE, TILING_GLSL_EDGE } from "./sphericalTilingShader";
+import { LOOK } from "./sphericalLook";
 
 export interface SphereMaterialOptions {
 	poly: Polyhedron;
@@ -77,33 +78,72 @@ void main() {
 // the highlight sits still under the trackball instead of sliding across the surface as the sphere turns,
 // the way a studio lamp behaves relative to the camera.
 //
-// Four terms, and each is there for a reason a flat disc lacks:
-//   • wrapped diffuse from a key and a fill. Wrapping (the +w)/(1+w) form) softens the terminator so a
+// Five terms, each there for something a flat disc lacks:
+//   • an ENGRAVED line. The tiling edge gets a height profile (a shallow trench across the same g the line
+//     is drawn from), and the shading normal is tilted by that height's surface gradient — the screen-space
+//     derivative trick the carved material uses, minus the displacement. This is what makes the line read
+//     as cut into the surface, catching light on one wall and shadow on the other, rather than printed on.
+//   • wrapped diffuse from a key and a fill. Wrapping (the (·+w)/(1+w) form) softens the terminator so a
 //     matte ball does not show the hard day/night line a raw N·L gives.
 //   • a Blinn-Phong highlight, tight and weak — the "this is a glossy object" cue.
-//   • a Fresnel rim, which is what stops a dark solid from dissolving into a dark page.
-//   • a groove shadow beside every tiling edge, from the SAME g the line is drawn with: the line reads as
-//     sunk into the surface rather than printed on it, at zero geometry cost.
-const FRAG_STUDIO = /* glsl */ `${FRAG_HEAD}
+//   • a Fresnel rim, which is what stops a solid from dissolving into the page at its silhouette.
+//   • ambient occlusion in the trench, so the groove stays dark even where the light falls into it.
+const fragStudio = () => /* glsl */ `${FRAG_HEAD}
 const vec3 KEY_DIR  = normalize(vec3(0.42, 0.62, 0.66));
 const vec3 FILL_DIR = normalize(vec3(-0.72, 0.10, 0.42));
+// Depth of the engraved trench, in the same units as the view-space position the gradient is taken in
+// (sphere radius 1, no scale in the model matrix, so these are radii).
+const float GROOVE_DEPTH = 0.012;
+const float GROOVE_TILT = 1.0; // how hard the trench wall turns the shading normal
+
 float wrapped(vec3 N, vec3 L, float w) { return clamp((dot(N, L) + w) / (1.0 + w), 0.0, 1.0); }
+// Trench half-width: a few stroke widths, floored so a hairline stroke still gets a wall to shade.
+float grooveWidth() { return max(uSphEdgeWidth * 3.0, 0.018); }
+// 0 on the face, −GROOVE_DEPTH in the line, joined smoothly across the wall.
+float grooveHeight(float g) { return -GROOVE_DEPTH * (1.0 - smoothstep(0.0, grooveWidth(), g)); }
+
 void main() {
 	vec3 dir = normalize(vLocal);
 	int best;
 	float g = sphClassify(dir, best);
 	float line = sphEdge(g);
-	vec3 base = mix(sphFaceColor(best), uSphLineColor, line);
-	// The groove: darkest right beside the line, gone a few line-widths into the face.
-	base *= mix(0.80, 1.0, smoothstep(uSphEdgeWidth, uSphEdgeWidth * 4.0 + 0.006, g));
+	// Deepen the fill before lighting it: the catalogue hue is a pale HSB 0.40/1.0, chosen for an UNLIT
+	// fill, and lit as-is it washes to near-white under the key. See LOOK.sat in sphericalLook.ts.
+	vec3 face = sphFaceColor(best);
+	float lum = dot(face, vec3(0.2126, 0.7152, 0.0722));
+	face = clamp(mix(vec3(lum), face, ${LOOK.sat.toFixed(3)}) * ${LOOK.val.toFixed(3)}, 0.0, 1.0);
+	vec3 base = mix(face, uSphLineColor, line);
+	// The rim carries the surface's own colour, not a blue-white wash — a white rim is what makes a
+	// rendered ball look like a stock 3D icon.
+	vec3 rim = mix(vec3(0.30, 0.33, 0.40), face, 0.55);
 
 	vec3 N = normalize(vViewNor);
 	vec3 V = normalize(-vViewPos);
-	float diffuse = 0.40 + 0.50 * wrapped(N, KEY_DIR, 0.45) + 0.16 * wrapped(N, FILL_DIR, 0.7);
-	float spec = pow(max(dot(N, normalize(KEY_DIR + V)), 0.0), 48.0) * 0.30;
-	float fres = pow(1.0 - clamp(dot(N, V), 0.0, 1.0), 3.5);
-	// The rim reads as light, so it is weaker on the dark lines (which should stay dark) than on the faces.
-	vec3 col = base * diffuse + vec3(spec) * (1.0 - 0.6 * line) + vec3(0.34, 0.37, 0.44) * fres * 0.55;
+
+	// Tilt the normal by the surface gradient of the trench. r1/r2/det build the screen-space→surface
+	// basis without a tangent attribute; identical to lib/render/sphericalCarvedMaterial.ts.
+	{
+		float H = grooveHeight(g);
+		vec3 fdx = dFdx(vViewPos), fdy = dFdy(vViewPos);
+		vec3 r1 = cross(fdy, N);
+		vec3 r2 = cross(N, fdx);
+		float det = dot(fdx, r1);
+		vec3 grad = sign(det) * (dFdx(H) * r1 + dFdy(H) * r2);
+		N = normalize(abs(det) * N - GROOVE_TILT * grad);
+	}
+
+	// Occlusion inside the trench and along its shoulder — a groove the light reaches into still reads
+	// as a groove because this darkens it independently of direction.
+	float ao = mix(0.74, 1.0, smoothstep(0.0, grooveWidth() * 1.7, g));
+
+	float diffuse = 0.40 + 0.48 * wrapped(N, KEY_DIR, 0.45) + 0.15 * wrapped(N, FILL_DIR, 0.7);
+	float spec = pow(max(dot(N, normalize(KEY_DIR + V)), 0.0), ${LOOK.specPower.toFixed(1)}) * ${LOOK.specStrength.toFixed(3)};
+	float fres = pow(1.0 - clamp(dot(normalize(vViewNor), V), 0.0, 1.0), 3.5);
+	// The highlight and the rim both read as light, so both are pulled back on the dark lines, which have
+	// to stay dark for the tiling to read.
+	vec3 col = base * diffuse * ao
+		+ vec3(spec) * ao * (1.0 - 0.75 * line)
+		+ rim * fres * ${LOOK.fresnel.toFixed(3)} * (1.0 - 0.5 * line);
 	fragColor = vec4(min(col, vec3(1.0)), 1.0);
 }`;
 
@@ -125,7 +165,7 @@ export function createSphereMaterial(opts: SphereMaterialOptions): SphereMateria
 	const material = new THREE.RawShaderMaterial({
 		glslVersion: THREE.GLSL3,
 		vertexShader: VERT,
-		fragmentShader: opts.studio ? FRAG_STUDIO : FRAG_PLAIN,
+		fragmentShader: opts.studio ? fragStudio() : FRAG_PLAIN,
 		uniforms,
 		side: THREE.FrontSide, // a convex sphere occludes its own back
 	});

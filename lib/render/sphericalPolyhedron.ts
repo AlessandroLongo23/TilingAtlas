@@ -48,7 +48,7 @@ export function buildFlatSolid(poly: Polyhedron | null, opts: FlatSolidOptions =
 
 	// Faces: a non-indexed fan-triangle soup on the unit sphere, flat-shaded, one hue per source face. Every
 	// triangle is oriented outward (flatSolidTriangles), so FrontSide culling shows a clean opaque solid.
-	const { positions, faceSizes } = flatSolidTriangles(poly, SPHERE_RADIUS);
+	const { positions, faceSizes, triLayers } = flatSolidTriangles(poly, SPHERE_RADIUS);
 	const triHues = faceSizes.map((n) => polygonHue(n)); // one base hue per triangle (by polygon size)
 	const geom = new THREE.BufferGeometry();
 	geom.setAttribute("position", new THREE.BufferAttribute(positions, 3));
@@ -84,14 +84,45 @@ export function buildFlatSolid(poly: Polyhedron | null, opts: FlatSolidOptions =
 	// draws a facet whichever way it faces and three.js flips the normal for the back, so the lighting is
 	// right either way; on a convex solid the result is pixel-identical, since the back faces it now
 	// draws are the ones the front faces already cover.
-	const faceMat = new THREE.MeshStandardMaterial({
-		vertexColors: true,
-		side: THREE.DoubleSide,
-		roughness: 0.9,
-		metalness: 0.0,
-		flatShading: true,
-	});
-	const faceMesh = new THREE.Mesh(geom, faceMat);
+	const makeFaceMat = (layer: number) => {
+		const mat = new THREE.MeshStandardMaterial({
+			vertexColors: true,
+			side: THREE.DoubleSide,
+			roughness: 0.9,
+			metalness: 0.0,
+			flatShading: true,
+		});
+		// STACKED FACES GET A DEPTH ORDER. Coincident geometry has no depth answer of its own, so without
+		// one the buffer picks a different winner per pixel and the solid crawls with a dither — eleven of
+		// ncx-11-24-15-f's fifteen faces share a single plane (AL, 2026-08-21). One constant bias per layer
+		// settles it: the later face in a plane wins, everywhere, every frame.
+		//
+		// polygonOffsetFactor stays 0, for the reason lib/render/icoFreedraw.ts spells out at length: the
+		// factor scales with the polygon's DEPTH SLOPE, which on the steeply inclined faces of a non-convex
+		// solid is large enough to pull a biased face clean through the ones in front of it. A constant
+		// `units` is the whole of what coplanar geometry needs, because coplanar surfaces never diverge.
+		if (layer > 0) {
+			mat.polygonOffset = true;
+			mat.polygonOffsetFactor = 0;
+			mat.polygonOffsetUnits = -2 * layer;
+		}
+		return mat;
+	};
+	const layerCount = triLayers.reduce((m, l) => Math.max(m, l), 0) + 1;
+	const faceMats = Array.from({ length: layerCount }, (_, i) => makeFaceMat(i));
+	// One draw range per run of same-layer triangles. Every Platonic, Archimedean, Johnson and prism solid
+	// — and 125 of the 143 non-convex ones — has a single layer, so this is one group and one material,
+	// exactly the single mesh this always drew.
+	if (layerCount > 1) {
+		let start = 0;
+		for (let t = 1; t <= triLayers.length; t++) {
+			if (t === triLayers.length || triLayers[t] !== triLayers[start]) {
+				geom.addGroup(start * 3, (t - start) * 3, triLayers[start]);
+				start = t;
+			}
+		}
+	}
+	const faceMesh = new THREE.Mesh(geom, layerCount > 1 ? faceMats : faceMats[0]);
 
 	// Edges: dark straight tube bars along the real polyhedron edges, radius from the Line-stroke slider. Same
 	// tube builder as the wireframe (straight mode), so a corner is a rounded bar, not a driver-clamped 1px line.
@@ -117,7 +148,7 @@ export function buildFlatSolid(poly: Polyhedron | null, opts: FlatSolidOptions =
 		},
 		dispose: () => {
 			geom.dispose();
-			faceMat.dispose();
+			for (const m of faceMats) m.dispose();
 			edges.dispose();
 		},
 	};

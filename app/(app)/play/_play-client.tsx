@@ -1257,7 +1257,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// Spherical-freedraw Display controls (View options tab): mode = polyhedron/sphere, grid = faint edge grid.
 	const sphericalFreedrawMode = useConfiguration((s) => s.sphericalFreedrawMode);
 	const sphericalFreedrawGrid = useConfiguration((s) => s.sphericalFreedrawGrid);
-	const sphStarHideCrossings = useConfiguration((s) => s.sphStarHideCrossings);
+	const sphStarEdges = useConfiguration((s) => s.sphStarEdges);
 	// The Tiles overlay and its knobs. On a plain tiling these drive the Truchet reading below; on a
 	// freedraw pattern the canvas reads them itself, which is why only the seed is consumed here.
 	const freedrawArcs = useConfiguration((s) => s.freedrawArcs);
@@ -1506,7 +1506,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 						pattern={selected.sphStar}
 						mode={sphericalFreedrawMode}
 						showGrid={sphericalFreedrawGrid}
-						showCrossings={!sphStarHideCrossings}
+						edges={sphStarEdges}
 					/>
 				) : selected?.hypPoly ? (
 					// 3.4.n.4 tiling by regular polygons: not a decoration, so every edge is a real boundary and

@@ -6,6 +6,7 @@ import { ArcballControls } from "three/examples/jsm/controls/ArcballControls.js"
 import { useConfiguration } from "@/stores/configuration";
 import { measureBox } from "@/lib/render/canvasSize";
 import { createOrbitMomentum, type OrbitMomentum } from "@/lib/render/orbitMomentum";
+import { installLookRig, applyStudioMaterials, type LookRig } from "@/lib/render/sphericalLook";
 import { captureOverride, offerFrame } from "@/lib/render/capture";
 import { buildSphColors, type SphColorsScene } from "@/lib/render/sphColors";
 import { paletteRgb255 } from "@/lib/colors/render";
@@ -32,10 +33,13 @@ export function SphericalColorsCanvas({ pattern, mode }: Props) {
 	const controlsRef = useRef<ArcballControls | null>(null);
 	// Release momentum — let go mid-drag and the solid coasts (lib/render/orbitMomentum.ts).
 	const momentumRef = useRef<OrbitMomentum | null>(null);
+	// Lights + environment for the current surface look (lib/render/sphericalLook.ts).
+	const lookRigRef = useRef<LookRig | null>(null);
 	const rafRef = useRef<number | null>(null);
 	const contentRef = useRef<SphColorsScene | null>(null);
 	const [errored, setErrored] = useState(false);
 	const palette = useConfiguration((s) => s.colorsPalette);
+	const studio = useConfiguration((s) => s.sphericalStudio);
 
 	useEffect(() => {
 		const host = hostRef.current;
@@ -60,12 +64,9 @@ export function SphericalColorsCanvas({ pattern, mode }: Props) {
 
 		const scene = new THREE.Scene();
 		sceneRef.current = scene;
-		// Flat lighting so a color reads the same wherever it sits on the sphere (see IcoFreedrawCanvas).
-		const hemi = new THREE.HemisphereLight(0xffffff, 0xccd0d6, 0.45);
-		const dir = new THREE.DirectionalLight(0xffffff, 0.12);
-		dir.position.set(2, 3, 4);
-		const ambient = new THREE.AmbientLight(0xffffff, 0.85);
-		scene.add(hemi, dir, ambient);
+		// The "catalogue" rig: flat in the plain look so a color reads the same wherever it sits on the
+		// sphere, gently lit in Studio (see IcoFreedrawCanvas and lib/render/sphericalLook.ts).
+		lookRigRef.current = installLookRig(renderer, scene, "catalogue", useConfiguration.getState().sphericalStudio);
 
 		const aspect0 = host.clientWidth > 0 && host.clientHeight > 0 ? host.clientWidth / host.clientHeight : 1;
 		const camera = new THREE.PerspectiveCamera(45, aspect0, 0.1, 100);
@@ -116,6 +117,8 @@ export function SphericalColorsCanvas({ pattern, mode }: Props) {
 					cam.updateProjectionMatrix();
 				}
 			}
+			// The light rig rides the camera, so a drag re-lights the solid (see LookRig.follow).
+			if (cam) lookRigRef.current?.follow(cam);
 			if (cam) renderer.render(scene, cam);
 			if (cap) offerFrame(renderer.domElement);
 			rafRef.current = requestAnimationFrame(animate);
@@ -126,6 +129,8 @@ export function SphericalColorsCanvas({ pattern, mode }: Props) {
 			if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
 			momentumRef.current?.dispose();
 			momentumRef.current = null;
+			lookRigRef.current?.dispose();
+			lookRigRef.current = null;
 			controlsRef.current?.dispose();
 			contentRef.current?.dispose();
 			renderer.dispose();
@@ -152,6 +157,7 @@ export function SphericalColorsCanvas({ pattern, mode }: Props) {
 			paletteRgb255(pattern.colors, palette, dark),
 			{ dark, mode },
 		);
+		applyStudioMaterials(content.object, studio);
 		scene.add(content.object);
 		contentRef.current = content;
 		return () => {
@@ -159,7 +165,13 @@ export function SphericalColorsCanvas({ pattern, mode }: Props) {
 			content.dispose();
 			if (contentRef.current === content) contentRef.current = null;
 		};
-	}, [pattern, mode, palette]);
+		// `studio` rebuilds so the material tuning always lands on fresh materials.
+	}, [pattern, mode, palette, studio]);
+
+	// Studio ⇄ plain: re-dial the lights and the environment in place.
+	useEffect(() => {
+		lookRigRef.current?.setStudio(studio);
+	}, [studio]);
 
 	if (errored) {
 		return (

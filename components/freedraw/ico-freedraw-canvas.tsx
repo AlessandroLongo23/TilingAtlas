@@ -4,9 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { ArcballControls } from "three/examples/jsm/controls/ArcballControls.js";
 import { useMemo } from "react";
+import { useConfiguration } from "@/stores/configuration";
 import { polyhedronForId } from "@/lib/render/sphericalSolids";
 import { measureBox } from "@/lib/render/canvasSize";
 import { createOrbitMomentum, type OrbitMomentum } from "@/lib/render/orbitMomentum";
+import { installLookRig, applyStudioMaterials, type LookRig } from "@/lib/render/sphericalLook";
 import { captureOverride, offerFrame } from "@/lib/render/capture";
 import { solidEdges } from "@/lib/render/sphericalGeometry";
 import { buildIcoFreedraw, type IcoPattern, type IcoFreedraw, type IcoMode } from "@/lib/render/icoFreedraw";
@@ -37,6 +39,8 @@ interface Props {
 	/** Per-tile HSB, parallel to the pattern's tiles; see sphStar.faceHsb. */
 	tileHsb?: [number, number, number][];
 	showCrossings?: boolean;
+	/** Draw the pattern's own edges at all. False is the star shelf's "no edges" state. */
+	showEdges?: boolean;
 	/** Sphere mode, star shelf: covering number of the circumsphere, which swaps the lit tiling fill for
 	 *  the density fill. See lib/render/icoFreedraw.ts. */
 	densitySheets?: number;
@@ -44,7 +48,9 @@ interface Props {
 
 const CAMERA_DISTANCE = 3.2;
 
-export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, allEdges, keepRadius, crossings, showCrossings, tileHsb, densitySheets }: Props) {
+export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, allEdges, keepRadius, crossings, showCrossings, showEdges, tileHsb, densitySheets }: Props) {
+	// The one store flag this otherwise self-contained canvas reads: the shared spherical surface look.
+	const studio = useConfiguration((s) => s.sphericalStudio);
 	const solid = useMemo(() => (vertices ? null : polyhedronForId(solidId)), [solidId, vertices]);
 	const verts = vertices ?? (solid?.vertices as [number, number, number][] | undefined);
 	const solidEdgeList = useMemo<[number, number][]>(
@@ -58,6 +64,8 @@ export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, 
 	const controlsRef = useRef<ArcballControls | null>(null);
 	// Release momentum — let go mid-drag and the solid coasts (lib/render/orbitMomentum.ts).
 	const momentumRef = useRef<OrbitMomentum | null>(null);
+	// Lights + environment for the current surface look (lib/render/sphericalLook.ts).
+	const lookRigRef = useRef<LookRig | null>(null);
 	const rafRef = useRef<number | null>(null);
 	const contentRef = useRef<IcoFreedraw | null>(null);
 	const [errored, setErrored] = useState(false);
@@ -86,16 +94,12 @@ export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, 
 
 		const scene = new THREE.Scene();
 		sceneRef.current = scene;
-		// Deliberately FLAT lighting: a tile is a catalogue colour, so the same tile must read as the same
-		// lightness wherever it sits on the sphere — a strong directional light turned same-coloured regions
-		// into wildly different shades (bright where they faced the light, near-black where they faced away).
-		// Mostly ambient + a near-white hemisphere (light ground, so downward faces aren't dark) + a whisper
-		// of directional just to hint at the round form.
-		const hemi = new THREE.HemisphereLight(0xffffff, 0xccd0d6, 0.45);
-		const dir = new THREE.DirectionalLight(0xffffff, 0.12);
-		dir.position.set(2, 3, 4);
-		const ambient = new THREE.AmbientLight(0xffffff, 0.85);
-		scene.add(hemi, dir, ambient);
+		// The "catalogue" rig, whose plain look is deliberately FLAT: a tile is a catalogue colour, so the same
+		// tile must read as the same lightness wherever it sits on the sphere — a strong directional light
+		// turned same-coloured regions into wildly different shades (bright where they faced the light,
+		// near-black where they faced away). Studio lights it properly but keeps that constraint, holding the
+		// ambient high and the key low. Both sets live in lib/render/sphericalLook.ts.
+		lookRigRef.current = installLookRig(renderer, scene, "catalogue", useConfiguration.getState().sphericalStudio);
 
 		const aspect0 = host.clientWidth > 0 && host.clientHeight > 0 ? host.clientWidth / host.clientHeight : 1;
 		const camera = new THREE.PerspectiveCamera(45, aspect0, 0.1, 100);
@@ -148,6 +152,8 @@ export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, 
 					cam.updateProjectionMatrix();
 				}
 			}
+			// The light rig rides the camera, so a drag re-lights the solid (see LookRig.follow).
+			if (cam) lookRigRef.current?.follow(cam);
 			if (cam) renderer.render(scene, cam);
 			if (cap) offerFrame(renderer.domElement);
 			rafRef.current = requestAnimationFrame(animate);
@@ -158,6 +164,8 @@ export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, 
 			if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
 			momentumRef.current?.dispose();
 			momentumRef.current = null;
+			lookRigRef.current?.dispose();
+			lookRigRef.current = null;
 			controlsRef.current?.dispose();
 			contentRef.current?.dispose();
 			renderer.dispose();
@@ -192,9 +200,11 @@ export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, 
 			allEdges: solidEdgeList,
 			crossings,
 			showCrossings,
+			showEdges,
 			tileHsb,
 			densitySheets,
 		});
+		applyStudioMaterials(content.object, studio);
 		scene.add(content.object);
 		contentRef.current = content;
 		return () => {
@@ -202,7 +212,15 @@ export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, 
 			content.dispose();
 			if (contentRef.current === content) contentRef.current = null;
 		};
-	}, [pattern, mode, showGrid, solid, solidEdgeList, crossings, showCrossings, tileHsb, densitySheets]);
+		// `studio` rebuilds because the material tuning is applied to freshly built materials — turning the
+		// look off has to give back the untouched originals, not a second guess at what they were.
+	}, [pattern, mode, showGrid, solid, solidEdgeList, crossings, showCrossings, showEdges, tileHsb, densitySheets, studio]);
+
+	// Studio ⇄ plain: re-dial the lights and the environment in place (the geometry effect above re-tunes
+	// the materials from the same flag).
+	useEffect(() => {
+		lookRigRef.current?.setStudio(studio);
+	}, [studio]);
 
 	if (errored) {
 		return (

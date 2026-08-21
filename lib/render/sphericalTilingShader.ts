@@ -28,12 +28,26 @@ export const EDGE_ANGLE_PER_STROKE = 0.011;
 // share a hue, so a Platonic solid is one hue and an Archimedean solid is one hue per polygon size.
 export function buildFaceUniforms(poly: Polyhedron): { faces: THREE.Vector4[]; count: number } {
 	const N = faceExitNormals(poly);
+	// ⚑ ONE ENTRY PER PLANE, not per face. Faces that share a plane share an exit normal exactly, and the
+	// classifier cannot tell them apart in the first place: it asks which plane a direction exits through.
+	// Feeding it the same normal twice is worse than useless — the gap g is normalised by |N_best − N_f|,
+	// so a duplicate makes that separation ~0 and g collapses to 0 over the WHOLE sphere, which paints
+	// every fragment as an edge. That is why sph-ncx-7-15-10-a rendered as a solid black ball: three of its
+	// seven vertices are coincident to 1.5e-6 and seven of its ten faces lie in one plane (AL, 2026-08-21).
+	// The non-convex shelf is the only one with such solids; every other shelf dedupes to itself.
+	const DUP_EPS = 1e-4;
+	const kept: { n: readonly [number, number, number]; hue: number }[] = [];
+	for (let i = 0; i < N.length && kept.length < MAX_FACES; i++) {
+		const n = N[i];
+		if (kept.some((k) => Math.hypot(k.n[0] - n[0], k.n[1] - n[1], k.n[2] - n[2]) < DUP_EPS)) continue;
+		kept.push({ n: [n[0], n[1], n[2]], hue: polygonHue(poly.faces[i].length) });
+	}
 	const faces = Array.from({ length: MAX_FACES }, () => new THREE.Vector4());
 	for (let i = 0; i < MAX_FACES; i++) {
-		if (i < N.length) faces[i].set(N[i][0], N[i][1], N[i][2], polygonHue(poly.faces[i].length));
+		if (i < kept.length) faces[i].set(kept[i].n[0], kept[i].n[1], kept[i].n[2], kept[i].hue);
 		else faces[i].set(0, 0, 0, 0);
 	}
-	return { faces, count: Math.min(N.length, MAX_FACES) };
+	return { faces, count: kept.length };
 }
 
 // The fwidth-free CORE, safe in BOTH shader stages: the uniform block + classification/colour helpers.
