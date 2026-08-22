@@ -44,7 +44,7 @@ def _run_bucket(job):
     stage later. The merged file NAMES do not depend on which worker ran which bucket, and
     develop_spherical.gather_blocks sorts them, so the merged catalogue is identical to a serial run.
     """
-    i, bdir, solver, pruner, k, merged, nocycles = job
+    i, bdir, solver, pruner, k, merged, nocycles, pshards, pmin = job
     t0 = time.time()
     tb = os.path.join(bdir, "tables.bin")
     # EU_NOCYCLES: the raw blocks written here are read by exactly one thing, the pruner two lines
@@ -58,8 +58,24 @@ def _run_bucket(job):
     raw = len([f for f in os.listdir(outdir) if f.startswith("eusolver_")])
     kept = 0
     if raw:
-        subprocess.run([pruner], cwd=bdir, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                       env=dict(os.environ, EU_OUT=outdir, EU_KMIN=str(k), EU_KMAX=str(k)))
+        penv = dict(os.environ, EU_OUT=outdir, EU_KMIN=str(k), EU_KMAX=str(k))
+        # SHARD THE PRUNER on the big buckets only. The whole k=3 run is 359 s and ONE bucket is
+        # 224 s of it, almost all of it pruning — 3.85M blocks, 99% of them in a single family, so
+        # there is nothing to split at the file level. eu_pruner shards on its own dedup key instead
+        # (EU_SIGSHARD_N/W), which is exact. Small buckets stay single-process: sharding costs every
+        # shard a full decode pass, so it only pays where there is a lot to divide.
+        nbytes = sum(os.path.getsize(os.path.join(outdir, f)) for f in os.listdir(outdir)
+                     if f.startswith("eusolver_"))
+        if pshards > 1 and nbytes >= pmin * 1048576:
+            procs = [subprocess.Popen([pruner], cwd=bdir, stdout=subprocess.DEVNULL,
+                                      stderr=subprocess.DEVNULL,
+                                      env=dict(penv, EU_SIGSHARD_N=str(pshards), EU_SIGSHARD_W=str(w)))
+                     for w in range(pshards)]
+            for q in procs:
+                q.wait()
+        else:
+            subprocess.run([pruner], cwd=bdir, stdout=subprocess.DEVNULL,
+                           stderr=subprocess.DEVNULL, env=penv)
         pdir = os.path.join(outdir, "pruned")
         if os.path.isdir(pdir):
             pref = "eupruned_%02d" % k
@@ -83,6 +99,13 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--log", default=None)
     ap.add_argument("--limit", type=int, default=0, help="stop after N buckets (smoke test)")
+    ap.add_argument("--prune-shards", type=int, default=1,
+                    help="split the pruner of a LARGE bucket this many ways, on its own dedup key "
+                         "(exact: two blocks are only ever compared when that key matches). The run's "
+                         "critical path is a single bucket's pruner.")
+    ap.add_argument("--prune-shard-min-mb", type=int, default=200,
+                    help="only shard a bucket whose raw blocks exceed this. Each shard pays a full "
+                         "decode pass, so below this it is a loss.")
     ap.add_argument("--keep-cycles", action="store_true",
                     help="write the face-cycle text into the raw blocks. Nothing reads it — the pruner "
                          "skips straight past it — so this is for eyeballing raw output only.")
@@ -141,7 +164,8 @@ def main():
         os.makedirs(os.path.join(bdir, "out"))
         st.write(os.path.join(bdir, "tables.bin"),
                  head[0], head[1], head[2], head[3], head[4], head[5], head[6], sub)
-        jobs.append((i, bdir, solver, pruner, args.k, merged, not args.keep_cycles))
+        jobs.append((i, bdir, solver, pruner, args.k, merged, not args.keep_cycles,
+                     args.prune_shards, args.prune_shard_min_mb))
     log("sliced %d buckets (%d had no vertex type in this alphabet)" % (len(jobs), empty))
 
     t0, raw_tot, kept_tot, done = time.time(), 0, 0, 0

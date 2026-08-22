@@ -341,6 +341,46 @@ static std::string filecodebase;
 static std::string OUTDIR, PRUNEDDIR;
 static long keptTotal = 0;
 
+// SIGNATURE SHARDING (EU_SIGSHARD_N / EU_SIGSHARD_W, default 1/0 = the old single-process pass).
+//
+// The dedup key is keyOf(signatureline, fingerprint), so two blocks are only ever compared when their
+// SIGNATURE LINES are equal. An isomorphism class therefore lives entirely inside one signature, and
+// splitting the input by a hash of that line is exact: every duplicate still meets its representative,
+// and within a shard the blocks arrive in input order, so first-seen-wins picks the same one.
+//
+// Why it is needed: the whole star-wide k=3 run is 359 s and ONE bucket is 224 s of it, of which 101 s
+// is its pruner (10.7 s is the solve). 99% of that bucket's 3.85M blocks sit in a single family, so
+// splitting by family — the other obvious cut — buys nothing there.
+// SHARDING THE DEDUP (EU_SIGSHARD_N / EU_SIGSHARD_W, default 1/0 = one process, unchanged).
+//
+// compareToSeen only ever compares two blocks when their FULL key — keyOf(signatureline,
+// fingerprint) — is equal, so partitioning the input by a hash of that key is exact: every duplicate
+// still meets its representative, and within a shard blocks arrive in input order so first-seen-wins
+// picks the same one. Each shard writes its own file; the merged set is identical.
+//
+// ⚑ SHARDING ON THE SIGNATURE ALONE DOES NOT WORK, and the measurement is why this keys on the whole
+// thing. b00118's dominant family is 3,813,645 blocks over just 189 distinct signature lines, and the
+// heaviest is 16.7% of them. Hashing those 189 weights into 8 bins put 29-52% on one shard; weighting
+// by block count and assigning longest-processing-time-first fixed the balance and barely moved the
+// clock (48.4s -> 44.5s), because cost is superlinear in signature size — the shard holding the
+// biggest signature ran 39.8s while the other seven ran 6.5-10.4s. The full key splits the same file
+// into ~587,000 buckets, which balances on its own.
+//
+// The price is that decode + fingerprint must run in EVERY shard, since the key is not knowable
+// without them. `sample` puts those at ~9% of the pruner, against the 46% in compareToSeen that this
+// actually divides.
+static int SIGSHARD_N = 1, SIGSHARD_W = 0;
+static inline bool key_mine(const std::string& key) {
+	if (SIGSHARD_N <= 1) return true;
+	size_t h = 1469598103934665603ULL;
+	for (unsigned char c : key) { h ^= c; h *= 1099511628211ULL; }
+	h ^= h >> 29; h *= 0xBF58476D1CE4E5B9ULL; h ^= h >> 32;
+	return (int)(h % (size_t)SIGSHARD_N) == SIGSHARD_W;
+}
+static std::string shard_suffix() {
+	return SIGSHARD_N > 1 ? (".s" + std::to_string(SIGSHARD_W)) : std::string();
+}
+
 static long processfile(const std::string& fam) {
 	std::string filecode = filecodebase + "_" + fam;
 	std::string inpath = OUTDIR + "eusolver_" + filecode + ".txt";
@@ -354,7 +394,7 @@ static long processfile(const std::string& fam) {
 	// version wanted 24 GB on a 24 GB machine: the star-wide k=3 run's stragglers were pruners
 	// thrashing, not pruners computing. The per-block loop only ever needs four lines at a time.
 	std::ifstream in(inpath);
-	std::ofstream globe(PRUNEDDIR + "eupruned_" + filecode + ".txt");
+	std::ofstream globe(PRUNEDDIR + "eupruned_" + filecode + shard_suffix() + ".txt");
 	long kept = 0;
 	std::string line, vertypeline, signatureline, tesline, conwayline;
 	auto rd = [&](std::string& dst) -> bool {
@@ -386,8 +426,12 @@ static long processfile(const std::string& fam) {
 		kept++;
 #else
 		Graph g = decode(vertypeline, conwayline);
-		if (!simplify(g)) continue;
+		// key first, so a shard can drop a block it does not own before the expensive work.
+		// simplify moves after it: it cannot change the key, and a block it rejects is dropped
+		// either way — now only by its owning shard, which sees exactly the same blocks.
 		std::string key = keyOf(signatureline, fingerprint(g));
+		if (!key_mine(key)) continue;
+		if (!simplify(g)) continue;
 		if (compareToSeen(g, key)) continue;
 		addsolution(g, key);
 		kept++;
@@ -417,8 +461,9 @@ static long processstream(std::istream& in, int konly, std::map<int,long>& keptB
 		                                                     // buildvertextypes also sets countsignature
 		if (konly > 0 && k != konly) continue;               // drop before the expensive decode
 		Graph g = decode(vertypeline, conwayline);           // recomputes the same countsignature
-		if (!simplify(g)) continue;
 		std::string key = keyOf(signatureline, fingerprint(g));
+		if (!key_mine(key)) continue;
+		if (!simplify(g)) continue;
 		if (compareToSeen(g, key)) continue;
 		addsolution(g, key);
 		kept++; keptByK[k]++;
@@ -464,6 +509,9 @@ int main() {
 		resetStore();
 		return 0;
 	}
+
+	if (const char* v = std::getenv("EU_SIGSHARD_N")) SIGSHARD_N = std::max(1, atoi(v));
+	if (const char* v = std::getenv("EU_SIGSHARD_W")) SIGSHARD_W = atoi(v);
 
 	int KMIN = std::getenv("EU_KMIN") ? atoi(std::getenv("EU_KMIN")) : 1;
 	int KMAX = std::getenv("EU_KMAX") ? atoi(std::getenv("EU_KMAX")) : 11;

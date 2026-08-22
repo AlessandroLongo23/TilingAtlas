@@ -255,3 +255,42 @@ unsound guard.
 worst case is 120·k·6: 720 at k=1, 1440 at k=2, **2160 at k=3**, 2880 at k=4. The shipped shelf — 52
 k=1 and 37 k=2 solids — was never at risk; k=3 is the first depth where the constant stops being a
 bound at all.
+
+## Pushing past six minutes: two more levers, both measured, both capped
+
+**Sharding the pruner (built, exact, off by default).** `compareToSeen` only compares blocks whose
+full key — `keyOf(signatureline, fingerprint)` — matches, so partitioning the input by a hash of that
+key is exact. `EU_SIGSHARD_N`/`EU_SIGSHARD_W` do it, and eight shards on b00118 reproduce the serial
+903,188 blocks as an exact multiset.
+
+⚑ **Sharding on the SIGNATURE alone does not work**, which is worth recording because it is the
+obvious thing to try. b00118's dominant family is 3,813,645 blocks over just **189** distinct signature
+lines, the heaviest 16.7% of them. Hashing 189 weights into 8 bins put 29–52% on one shard. Replacing
+the hash with a count-weighted longest-processing-time assignment balanced the *counts* and barely
+moved the clock — 48.4 s → 44.5 s — because cost is superlinear in signature size: the shard holding
+the biggest signature ran **39.8 s while the other seven ran 6.5–10.4 s**. The full key splits the
+same file into ~587,000 buckets and needs no plan at all.
+
+Its ceiling is the decode. A shard cannot know a block's key without decoding and fingerprinting it,
+so that work happens in every shard: measured at **23.5 s of the 86.8 s serial run** (a shard owning
+nothing takes 23.5 s). The floor is therefore 23.5 + 63.3/N, i.e. **3.7× however many shards you
+throw at it**, and eight shards delivered 1.6× (86.8 s → 53.4 s).
+
+**And end to end it is a LOSS.** The whole run:
+
+```
+--workers 10                        359 s     40,487,641 blocks
+--workers 10 --prune-shards 6       518 s     40,487,641 blocks
+```
+
+b00118 does improve, 224 s → 148 s. But the bucket pool already saturates ten cores, so every shard
+process is taken from another bucket: b03719 went 84 s → 177 s and the rest with it. **Off by
+default**, kept behind the flag for a machine with cores to spare.
+
+**What the search is bound by now.** Not the algorithm — packing. Total prune CPU divided by ten
+workers is around 250 s against the 359 s observed, and the gap is that the expensive buckets are
+dispatched in bucket order while their cost is not predictable from anything known at slice time
+(b03719 has two words and two multisets and takes 84 s; b00000 has 134 words and takes 5.4 s). Closing
+it needs a two-phase runner — solve everything first, then prune longest-first on measured raw size —
+at the cost of holding every bucket's raw blocks on disk at once. About 100 s, in front of a stage
+that is four and a half days.
