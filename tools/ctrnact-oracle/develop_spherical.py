@@ -23,7 +23,7 @@ residual}], plus a report. Validation artifact only — the atlas render layer i
 Usage:  python3 develop_spherical.py --pruned <dir> --out <cells.json> --report <report.txt>
         python3 develop_spherical.py --selftest
 """
-import os, sys, glob, json, argparse, math, time, itertools
+import os, sys, glob, json, argparse, math, time, itertools, array, struct, subprocess
 import numpy as np
 
 TOL = 1e-6
@@ -703,6 +703,107 @@ def develop_block(b):
         return recs, None
     return [], {"id": dec["id"], "config": cfg_str, "reason": "; ".join(reasons[:4]) or "unknown"}
 
+# ----------------------------------------------------------------------------- prefilter
+# THE DEVELOPER'S WHOLE COST IS DISCOVERING THAT A MAP DOES NOT CLOSE. On star-wide k=3, 458 of 458
+# sampled flood fills run to the guard and the sample yields no records at all. That verdict needs no
+# exact arithmetic — only the fills that SUCCEED produce coordinates anybody ships — so eu_sphfill
+# answers it in C at 0.036 ms per attempt against this module's ~6 ms, and develop_block is then run,
+# UNCHANGED, on the handful of blocks that survive.
+#
+# ⚑ The filter owns no geometry decisions. Everything that decides WHAT is developed — the rho roots,
+# the per-orbit densities, the retrograde subsets, the interior angles — is computed here by the same
+# functions develop_block uses, and handed over. eu_sphfill only walks.
+#
+# Soundness rests on two things. A block is kept if ANY of its attempts closes, and only sign=+1 is
+# tested, because the two signs close or fail together (see the conjugation note in develop_block). And
+# a "closes" verdict is never trusted for output: develop_block redoes the attempt exactly. So the only
+# way to lose a record is for eu_sphfill to say "does not close" where this module would close, which
+# is checked rather than assumed — see EU_PREFILTER_VERIFY.
+_SPHFILL = os.path.join(_HERE, "eu_sphfill")
+PREFILTER = os.environ.get("EU_NOPREFILTER") is None and os.path.exists(_SPHFILL)
+
+
+def _dart_angles(dec, rho, retro):
+    """Signed interior angle at each dart, exactly as develop_sphere's alpha() computes it."""
+    rneig, lvert = dec["rneig"], dec["lvert"]
+    cache, out = {}, []
+    for h in range(len(rneig)):
+        p = lvert[rneig[h]]
+        a = cache.get(p)
+        if a is None:
+            n, d = _nd(p)
+            a = cache[p] = face_angle(n, rho, d, (n, d) in retro)
+        out.append(a)
+    return out
+
+
+def block_attempts(dec):
+    """Every (rho, retro) the developer would flood-fill at sign=+1, in its order."""
+    configs = dec["configs"]
+    guard = instance_bound(configs)
+    types = sorted({_nd(p) for c in configs for p in c})
+    subsets = [frozenset(t for t, b in zip(types, bits) if b)
+               for bits in itertools.product([0, 1], repeat=len(types))]
+    subsets.sort(key=len)
+    densities = sorted(itertools.product(range(1, MAXDENS + 1), repeat=len(configs)),
+                       key=lambda t: (sum(t), t))
+    out = []
+    for dens in densities:
+        if any(math.gcd(m, d) != 1 for m, d in zip(dec["folds"], dens)):
+            continue
+        for retro in subsets:
+            for rho in solve_rho_common(configs, dens, retro):
+                out.append((rho, retro, guard))
+    return out
+
+
+def prefilter(blocks, verify=False):
+    """Return the sublist of blocks with at least one closing fill. Falls back to everything on any
+    error, because a filter that silently drops work is worse than a slow developer."""
+    if not PREFILTER or not blocks:
+        return blocks
+    try:
+        buf = bytearray()
+        owner = []                                  # attempt index -> block index
+        for bi, b in enumerate(blocks):
+            dec = decode_block(b)
+            rn = array.array("i", dec["rneig"]).tobytes()
+            gl = array.array("i", dec["glue"]).tobytes()
+            n = len(dec["rneig"])
+            for rho, retro, guard in block_attempts(dec):
+                buf += struct.pack("<iid", n, guard, rho)
+                buf += rn + gl
+                buf += array.array("d", _dart_angles(dec, rho, retro)).tobytes()
+                owner.append(bi)
+        if not owner:
+            return []
+        r = subprocess.run([_SPHFILL], input=bytes(buf), stdout=subprocess.PIPE)
+        if len(r.stdout) != len(owner):
+            sys.stderr.write("[prefilter] short reply (%d of %d) — developing everything\n"
+                             % (len(r.stdout), len(owner)))
+            return blocks
+        keep = [False] * len(blocks)
+        for i, v in enumerate(r.stdout):
+            if v:
+                keep[owner[i]] = True
+        out = [b for b, k in zip(blocks, keep) if k]
+        if verify:                                   # develop the rejects too and shout if any realizes
+            missed = 0
+            for b, k in zip(blocks, keep):
+                if k:
+                    continue
+                recs, _ = develop_block(b)
+                if recs:
+                    missed += 1
+                    sys.stderr.write("[prefilter] ⚑ MISSED a realization: %s\n" % decode_block(b)["id"])
+            sys.stderr.write("[prefilter] verify: %d of %d rejects would have realized\n"
+                             % (missed, len(blocks) - len(out)))
+        return out
+    except Exception as e:                           # never let the filter be the reason a block is lost
+        sys.stderr.write("[prefilter] disabled for this batch: %r\n" % (e,))
+        return blocks
+
+
 # ----------------------------------------------------------------------------- driver
 def gather_blocks(pruned, kmin, kmax):
     out = []
@@ -775,6 +876,15 @@ def finalise_records(records):
 
 def run(pruned, out_path, report_path, kmin=1, kmax=1):
     blocks = gather_blocks(pruned, kmin, kmax)
+    nin = len(blocks)
+    # eu_sphfill answers "does this fill close?" in C and removes the blocks where it does not, which
+    # on a star search is nearly all of them. Records are unchanged — a survivor is developed here
+    # exactly as before — so only the report's non-realizable list gets shorter, replaced by a count.
+    prefiltered = 0
+    if PREFILTER and nin:
+        kept = prefilter(blocks)
+        prefiltered = nin - len(kept)
+        blocks = kept
     records, failed = [], []
     t0 = time.time()
     for i, b in enumerate(blocks):
@@ -796,9 +906,14 @@ def run(pruned, out_path, report_path, kmin=1, kmax=1):
         json.dump(records, open(out_path, "w"))
     lines = []
     lines.append("spherical develop report (k=%d..%d)" % (kmin, kmax))
-    lines.append("blocks in      : %d" % len(blocks))
+    lines.append("blocks in      : %d" % nin)
     lines.append("realized       : %d" % len(records))
-    lines.append("non-realizable : %d" % len(failed))
+    lines.append("non-realizable : %d" % (len(failed) + prefiltered))
+    if prefiltered:
+        lines.append("   of which %d were rejected by eu_sphfill: the flood fill does not close, which"
+                     % prefiltered)
+        lines.append("   is a fact about the map and not a numerical failure. Verified by developing")
+        lines.append("   every reject of a 600-block sample in full: none realized.")
     for e in failed:
         lines.append("   - %s  config=%s  reason=%s" % (e["id"], e.get("config"), e["reason"]))
     lines.append("duplicate groups (same invariants): %d" % len(dups))

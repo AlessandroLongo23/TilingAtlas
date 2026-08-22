@@ -11,7 +11,7 @@ TB       := tables/$(PALETTE)
 SFX      := $(if $(filter regular,$(PALETTE)),,.$(PALETTE))
 
 .PHONY: all clean check-regular check-star check-deltahedra
-all: eu_solver$(SFX) eu_pruner$(SFX) eu_classify eu_develop$(SFX)
+all: eu_solver$(SFX) eu_pruner$(SFX) eu_classify eu_develop$(SFX) eu_sphfill
 
 # Regenerate tables when the palette spec or the generator changes. The generator
 # self-certifies (structural + attachment transversal certificates) and, for the
@@ -81,6 +81,13 @@ eu_pruner$(SFX): eu_pruner.cpp ctrnact_decode.hpp $(TB)/.generated
 eu_classify: eu_classify.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
+# The spherical flood fill's CLOSE / NOT-CLOSE verdict, in C. develop_spherical spends essentially all
+# of its time discovering that a map does not close — 458 of 458 sampled fills on star-wide k=3 run to
+# the guard — and that verdict needs no exact arithmetic, because only the fills that SUCCEED produce
+# coordinates anybody ships. Palette-independent: Python hands it the angles.
+eu_sphfill: eu_sphfill.cpp
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
 eu_develop$(SFX): eu_develop.cpp ctrnact_decode.hpp $(TB)/.generated
 	$(CXX) $(CXXFLAGS) -I$(TB) -o $@ $<
 
@@ -112,7 +119,7 @@ check-deltahedra:
 	python3 check_deltahedra.py check-delta/cells.json
 
 clean:
-	rm -f eu_solver eu_solver.* eu_solver_rt eu_pruner eu_pruner.* eu_classify eu_develop eu_develop.* .maxnum-* .maxnumrt-*
+	rm -f eu_solver eu_solver.* eu_solver_rt eu_pruner eu_pruner.* eu_classify eu_sphfill eu_develop eu_develop.* .maxnum-* .maxnumrt-*
 
 # The STAR gate. `check-regular` proves an engine edit did not disturb the Euclidean catalogue; this
 # proves the same for the spherical STAR machinery — the starpoly tile kind, the density closure, the

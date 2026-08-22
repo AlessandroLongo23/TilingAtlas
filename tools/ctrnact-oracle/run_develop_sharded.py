@@ -49,6 +49,29 @@ def _develop_one(block):
     return _DEV.develop_block(block, 0) if _NARGS > 1 else _DEV.develop_block(block)
 
 
+def _develop_chunk(chunk):
+    """A CHUNK, not a block, because develop_spherical has a C prefilter that answers 'does this fill
+    close?' for a whole batch in one call and removes the ones where it does not — on a star search
+    that is nearly all of them. Records are unchanged: a survivor goes through develop_block exactly
+    as a single block always did.
+
+    Chunking costs a little of the dynamic queue's balance, which was the point of chunksize=1. It is
+    affordable now precisely BECAUSE of the prefilter: a rejected block costs a flat ~1.3 ms, so a
+    chunk's cost is dominated by how many survivors it happens to hold, and those are rare.
+    """
+    n_in = len(chunk)
+    if hasattr(_DEV, "prefilter") and getattr(_DEV, "PREFILTER", False):
+        chunk = _DEV.prefilter(chunk)
+    recs, errs = [], []
+    for b in chunk:
+        r, e = _develop_one(b)
+        if r:
+            recs.extend(r)
+        else:
+            errs.append(e)
+    return recs, errs, n_in - len(chunk)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--palette", required=True)
@@ -59,6 +82,9 @@ def main():
     ap.add_argument("--kmax", type=int, default=2)
     ap.add_argument("--maxdens", type=int, default=3)
     ap.add_argument("--log", default=None)
+    ap.add_argument("--chunk", type=int, default=2000,
+                    help="blocks per work item. develop_spherical prefilters a whole chunk in one C "
+                         "call, so this trades a little queue balance for a lot of throughput.")
     ap.add_argument("--developer", default="develop_spherical.py",
                     help="develop_spherical.py (on S2) or develop_euclid.py (dihedral angles in R3)")
     args = ap.parse_args()
@@ -83,24 +109,28 @@ def main():
     log("%d blocks over %d workers (dynamic queue)" % (len(blocks), args.workers))
 
     t0 = time.time()
-    records, failed = [], []
+    records, failed, prefiltered = [], [], 0
+    chunks = [blocks[i:i + args.chunk] for i in range(0, len(blocks), args.chunk)]
+    log("  %d chunks of up to %d blocks" % (len(chunks), args.chunk))
     ctx = mp.get_context("spawn")
     with ctx.Pool(args.workers, initializer=_init,
                   initargs=(args.palette, args.maxdens, args.developer)) as pool:
         last = 0.0
-        # chunksize=1 is the whole point: a worker takes the next block only when it has finished the
-        # last one, so one pathological block delays nobody but itself.
-        for i, (recs, err) in enumerate(pool.imap_unordered(_develop_one, blocks, chunksize=1)):
-            if recs:
-                records.extend(recs)
-            else:
-                failed.append(err)
+        done = 0
+        # chunksize=1 on the CHUNK list: a worker takes the next chunk only when it has finished the
+        # last one, so one pathological chunk delays nobody but itself.
+        for recs, errs, npre in pool.imap_unordered(_develop_chunk, chunks, chunksize=1):
+            records.extend(recs)
+            failed.extend(errs)
+            prefiltered += npre
+            done += len(recs) and 0 or 0
+            done += 1
             el = time.time() - t0
-            if el - last >= 30 or i + 1 == len(blocks):
+            if el - last >= 30 or done == len(chunks):
                 last = el
-                done = i + 1
-                log("  develop %d/%d  realized=%d  %.0fs elapsed, ETA %.0fs"
-                    % (done, len(blocks), len(records), el, el / done * (len(blocks) - done)))
+                log("  develop %d/%d chunks (%d blocks)  realized=%d  prefiltered=%d  %.0fs, ETA %.0fs"
+                    % (done, len(chunks), done * args.chunk, len(records), prefiltered, el,
+                       el / done * (len(chunks) - done)))
 
     # Dedup only where the developer defines what a duplicate IS. develop_euclid has a congruence key
     # and its own run() applies it; the sharded path used to apply it per worker and concatenate, so a
@@ -135,8 +165,13 @@ def main():
     reasons = collections.Counter(e.get("reason", "?") for e in failed)
     with open(rp, "w") as fh:
         fh.write("euclidean develop report (k=%d..%d, %d workers)\n" % (args.kmin, args.kmax, args.workers))
-        fh.write("%-15s: %d\n%-15s: %d\n%-15s: %d\n\n"
-                 % ("blocks in", len(blocks), "realized", len(uniq), "non-realizable", len(failed)))
+        fh.write("%-15s: %d\n%-15s: %d\n%-15s: %d\n"
+                 % ("blocks in", len(blocks), "realized", len(uniq),
+                    "non-realizable", len(failed) + prefiltered))
+        if prefiltered:
+            fh.write("   of which %d rejected by eu_sphfill (the flood fill does not close — a fact\n"
+                     "   about the map, not a numerical failure)\n" % prefiltered)
+        fh.write("\n")
         fh.write("non-realizable by reason\n")
         for why, n in reasons.most_common():
             fh.write("%6d  %s\n" % (n, why[:120]))
