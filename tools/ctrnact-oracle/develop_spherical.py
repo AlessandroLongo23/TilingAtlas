@@ -757,6 +757,39 @@ def block_attempts(dec):
     return out
 
 
+# ⚑ EVERYTHING BUT THE GLUING IS SHARED, and that is the whole cost. `block_attempts` calls
+# solve_rho_all once per (density tuple, retrograde subset) — 820 times per block on star-wide k=3,
+# and `sample` puts it at 12.1s of a 13s prefilter. But it depends only on the vertex-type line, and
+# so do rneig, lvert, mirro and the per-dart angles: a block's conway string decides its GLUE and
+# nothing else. Blocks repeat their vertypeline enormously — b00118 is 3,813,645 blocks over 189
+# distinct signature lines — so plan once per line and reuse.
+_PLAN_CACHE = {}
+_PLAN_CAP = 20000
+
+def _block_plan(b):
+    """(mirro, label, [(header+rneig bytes, angle bytes)]) for this block's vertex-type line."""
+    plan = _PLAN_CACHE.get(b[0])
+    if plan is not None:
+        return plan
+    if len(_PLAN_CACHE) >= _PLAN_CAP:
+        _PLAN_CACHE.clear()               # blocks arrive grouped by bucket, so locality is high
+    pr.decode(b[0] + "\n", b[1] + "\n", b[3] + "\n", b[4] + "\n")
+    rneig = list(pr.rneig); lvert = list(pr.lvert)
+    mirro = list(pr.mirro); label = list(pr.label)
+    configs = parse_configs(b[0])
+    folds, _orbit = orbit_folds(b, rneig, configs)
+    dec = {"rneig": rneig, "lvert": lvert, "configs": configs, "folds": folds}
+    n = len(rneig)
+    rn = array.array("i", rneig).tobytes()
+    parts = []
+    for rho, retro, guard in block_attempts(dec):
+        parts.append((struct.pack("<iid", n, guard, rho) + rn,
+                      array.array("d", _dart_angles(dec, rho, retro)).tobytes()))
+    plan = (mirro, label, parts)
+    _PLAN_CACHE[b[0]] = plan
+    return plan
+
+
 def prefilter(blocks, verify=False):
     """Return the sublist of blocks with at least one closing fill. Falls back to everything on any
     error, because a filter that silently drops work is worse than a slow developer."""
@@ -766,14 +799,12 @@ def prefilter(blocks, verify=False):
         buf = bytearray()
         owner = []                                  # attempt index -> block index
         for bi, b in enumerate(blocks):
-            dec = decode_block(b)
-            rn = array.array("i", dec["rneig"]).tobytes()
-            gl = array.array("i", dec["glue"]).tobytes()
-            n = len(dec["rneig"])
-            for rho, retro, guard in block_attempts(dec):
-                buf += struct.pack("<iid", n, guard, rho)
-                buf += rn + gl
-                buf += array.array("d", _dart_angles(dec, rho, retro)).tobytes()
+            mirro, label, parts = _block_plan(b)
+            if not parts:
+                continue
+            gl = array.array("i", pr.makeglue(b[4] + "\n", mirro, label)).tobytes()
+            for head, ang in parts:
+                buf += head + gl + ang
                 owner.append(bi)
         if not owner:
             return []
