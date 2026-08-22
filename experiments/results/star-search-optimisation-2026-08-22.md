@@ -250,3 +250,8 @@ all four, `check-deltahedra` pass.
 **Corrected size for star-wide k=3 develop: 40,487,641 × 39.6 ms = 445 CPU-hours**, about four and a
 half days at this machine's ~4x effective parallelism. The earlier 318 CPU-hours was measuring an
 unsound guard.
+
+⚑ **The constant was safe up to k=2 and breaks at exactly k=3.** star-wide's `maxValence` is 6, so the
+worst case is 120·k·6: 720 at k=1, 1440 at k=2, **2160 at k=3**, 2880 at k=4. The shipped shelf — 52
+k=1 and 37 k=2 solids — was never at risk; k=3 is the first depth where the constant stops being a
+bound at all.

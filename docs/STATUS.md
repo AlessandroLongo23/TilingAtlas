@@ -24,9 +24,17 @@ at 20–144 instances but the shipped k=1 shelf holds V=120 solids), so it must 
 available: a failing fill is 1500 iterations of two numpy 3x3 matmuls and two hashed keys, and none of
 that arithmetic needs to be bit-exact — only fills that SUCCEED produce shipped coordinates.
 
-⚑ **40,487,641 pruned k=3 blocks**, and 150 of them sampled develop at 28.3 ms each — **318
-CPU-hours**, about three and a half days at this machine's ~4x effective parallelism. Star-wide k=3 is
-NOT ready to run end to end: the search is, the developer is not.
+⚑ **40,487,641 pruned k=3 blocks** at **39.6 ms each = 445 CPU-hours**, about four and a half days at
+this machine's ~4x effective parallelism. Star-wide k=3 is NOT ready to run end to end: the search is,
+the developer is not, and **nothing k=3 exists yet to put on the shelf** — the search emits candidate
+blocks, and the shelf is built from developed cells.json.
+
+⚑ **The flood-fill guard was a hardcoded 1500 and is not a bound at k=3** (fixed 2026-08-22, now
+derived per block). ninst = 2E exactly, and the point groups give 2E ≤ max(120, 4·maxrot)·Σ orbit
+valences; star-wide's maxValence 6 makes that 720 at k=1, 1440 at k=2, **2160 at k=3**. The shipped 52
+k=1 and 37 k=2 solids were never at risk — k=3 is the first depth where the constant stops bounding
+anything, and a solid with more than 750 edges would have been filed as "did not close". The fix is
+also 2.4x FASTER at k=2 (50.2 → 21.1 ms/block), because a failing fill runs to the guard.
 
 Detail: `experiments/results/star-search-optimisation-2026-08-22.md`.
 
