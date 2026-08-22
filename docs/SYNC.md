@@ -2805,3 +2805,11 @@ dispatch. Commits a8874e0, b398251. NOTES (eighth); `experiments/results/develop
 `develop_spherical`, which the k=4 work never touched. 18.7 s → 4.9 s → **1.7 s** queued, bit-exact,
 all four check-star goldens matching. ⚑ Queueing the star runs needed `finalise_records()` extracted
 first. Commit 1cda197. NOTES (ninth); `experiments/results/develop-optimisation-2026-08-21.md`.
+
+## 2026-08-22 — k=5 lands; star k=3 is a search problem, not a develop one — CC
+
+Tracks 1+2 at **k=5**: 2412 blocks, develop **70 s**, Johnson 76 → **84 of 92**, non-convex 143 → **243**,
+complete on the same evidence. ⚑ J40/J41 and J69/J70 each needed a NEW measurement. ⚑ Track 3: bucketing
+now takes `--k` (full star-ico-d k=3 hit 559,405 blocks in 28 min; bucketed, 8,013 in 5 s), but
+**star-wide k=3 sizes at ~7.5M blocks / 16.5 h of develop for the cheap 96% of buckets alone** — not
+started. Commits 93e2221, 07dd926. NOTES 2026-08-22.
