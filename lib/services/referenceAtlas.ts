@@ -93,9 +93,12 @@ import {
 	densityUnresolved,
 	sphStarSub,
 	sphStarSubLabel,
+	sphStarKind,
 	SPH_STAR_INDEX,
+	type SphStarKind,
 	type SphStarPattern,
 } from "@/lib/tilings/sph-star";
+import { ncxSelfIntersects } from "@/lib/tilings/ncx-crossing";
 import {
 	sphHalfFamilyLabel,
 	SPH_HALF_BOARDS,
@@ -1210,6 +1213,15 @@ export interface ReferenceFilter {
 	// Convex-irregular shelf facet: keep only decomposable-family or only uses-non-decomposable tilings.
 	// Any tiling outside that class (decomposableOnly undefined) is EXCLUDED while this is active.
 	convexDecomp?: "decomposable" | "non-decomposable";
+	// Star-polyhedra shelf facet: which of the four shapes the solid is, read off its structure by
+	// `sphStarKind`. Two thirds of that shelf ships unnamed, so this is the axis that separates the
+	// pyramids and the prism bands from the uniform polyhedra without a catalogue to look them up in.
+	// Anything outside that shelf never matches while this is active.
+	starKind?: SphStarKind;
+	// Non-convex regular-faced shelf facet: whether the solid passes through itself. Both kinds live on
+	// that one shelf and they are different objects — an embedded one is a polyhedron in the ordinary
+	// sense, non-convex but not crossing. Anything outside that shelf never matches while this is active.
+	ncxCrossing?: "self-intersecting" | "embedded";
 	mValue?: number; // single distinct-vertex-config count; unclassified tilings never match
 	partitionKey?: string; // single partition key (e.g. "511"); unclassified tilings never match
 	maximalOnly?: boolean; // Krötenheerdt: keep only m === k
@@ -1298,6 +1310,17 @@ export function matchesReferenceFilters(t: ReferenceTiling, f: ReferenceFilter):
 		if (t.decomposableOnly == null) return false; // tilings outside the convex-irregular class never match this facet
 		if (f.convexDecomp === "decomposable" && !t.decomposableOnly) return false;
 		if (f.convexDecomp === "non-decomposable" && t.decomposableOnly) return false;
+	}
+	if (f.starKind) {
+		if (!t.sphStar) return false; // anything off the star shelf never matches this facet
+		if (sphStarKind(t.sphStar) !== f.starKind) return false;
+	}
+	if (f.ncxCrossing) {
+		// The "ncx-" prefix IS the shelf: lib/render/nonconvexSolids.ts ids every solid ncx-<V>-<E>-<F>,
+		// and lib/tilings/sph-inscribed.ts keys its own per-solid answers on the same prefix.
+		const solid = t.spherical?.solid;
+		if (!solid?.startsWith("ncx-")) return false;
+		if (ncxSelfIntersects(solid) !== (f.ncxCrossing === "self-intersecting")) return false;
 	}
 	// M/partition/maximal: an active filter EXCLUDES unclassified tilings instead of matching them —
 	// completeness ethos, we never silently pass a tiling whose classification we don't have.

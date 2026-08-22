@@ -139,6 +139,43 @@ export function sphStarFamilyLabel(p: SphStarEntry): string {
 	return `${sphStarCensusLabel(p)} · ${sphStarSubLabel(p.density, densityUnresolved(p))}`;
 }
 
+/** The four shapes this shelf sorts into; "other" is the uniform polyhedra and everything unnamed. */
+export type SphStarKind = "pyramid" | "prism" | "antiprism" | "other";
+
+/**
+ * Which of the four a star polyhedron is, read off its STRUCTURE and not off its name.
+ *
+ * The three named families have signatures nothing else can wear, so this needs no table and no
+ * catalogue lookup — which matters on a shelf where two thirds of the records ship unnamed because the
+ * naming discipline refuses to guess:
+ *
+ *   pyramid    one {n/d}, n triangles, n+1 vertices, 2n edges — an apex over the base and nothing else
+ *   prism      two {n/d}, n squares, 2n vertices, 3n edges
+ *   antiprism  two {n/d}, 2n triangles, 2n vertices, 4n edges
+ *
+ * The counts are all checked, not just the census: a face tally alone would let a different solid with
+ * the same faces through. A crossed antiprism is an antiprism here, which is what it is — the crossing
+ * is in how the band is joined, not in the structure this asks about.
+ *
+ * ⚑ Cross-checked against the 71 records that DO carry a catalogue name: zero disagreements
+ * (2026-08-22). That is the whole argument for reading structure instead of parsing "…prism" out of a
+ * string — it agrees wherever there is a name to agree with, and it still answers for the other 18.
+ */
+export function sphStarKind(p: SphStarEntry): SphStarKind {
+	const { verts, edges, faces, types } = p.stats;
+	const count = (n: number) => types.find(([tn, td]) => tn === n && td === 1)?.[2] ?? 0;
+	const tri = count(3);
+	const sq = count(4);
+	// The base is whatever is left once the triangles and squares that make the sides are set aside.
+	const bases = types.filter(([n, d]) => !(n === 3 && d === 1) && !(n === 4 && d === 1));
+	if (bases.length !== 1) return "other";
+	const [n, , c] = bases[0];
+	if (c === 1 && tri === n && verts === n + 1 && edges === 2 * n && faces === n + 1) return "pyramid";
+	if (c === 2 && sq === n && verts === 2 * n && edges === 3 * n && faces === n + 2) return "prism";
+	if (c === 2 && tri === 2 * n && verts === 2 * n && edges === 4 * n && faces === 2 * n + 2) return "antiprism";
+	return "other";
+}
+
 /** Whether any face of the record actually crosses itself. Every record on this shelf has density > 1,
  *  but not all of them have star FACES: the great dodecahedron and the great icosahedron are built from
  *  ordinary pentagons and triangles and are star polyhedra because their vertex figures wind twice.

@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { ReferenceCard } from "@/components/reference-card";
 import { cn } from "@/lib/utils/cn";
 import type { ColorsGrid } from "@/lib/colors/pattern";
+import type { SphStarKind } from "@/lib/tilings/sph-star";
 import type { FreedrawCatalogueGrid, FreedrawGrid } from "@/lib/freedraw/pattern";
 import { hypEdgesLazyShardsForK } from "@/lib/freedraw/hyp-edges";
 import { hypColorsLazyShardsForK } from "@/lib/colors/hyp-colors";
@@ -172,6 +173,32 @@ const DECOMP_OPTIONS: { value: "all" | "decomposable" | "non-decomposable"; labe
 	{ value: "all", label: "All" },
 	{ value: "decomposable", label: "Decomposable" },
 	{ value: "non-decomposable", label: "Uses non-decomp." },
+];
+
+// The star shelf's four shapes. Read off each record's structure, never off its name — two thirds of that
+// shelf ships unnamed, and the three families have signatures nothing else wears. See sphStarKind.
+const STAR_KIND_LABEL: Record<SphStarKind, string> = {
+	pyramid: "pyramids",
+	prism: "prisms",
+	antiprism: "antiprisms",
+	other: "other",
+};
+
+const STAR_KIND_OPTIONS: { value: "all" | SphStarKind; label: string }[] = [
+	{ value: "all", label: "All" },
+	{ value: "pyramid", label: "Pyramids" },
+	{ value: "prism", label: "Prisms" },
+	{ value: "antiprism", label: "Antiprisms" },
+	{ value: "other", label: "Other" },
+];
+
+// The non-convex regular-faced shelf holds two different kinds of object under one roof: solids whose
+// faces pass through one another, and solids that are non-convex but embedded — polyhedra in the ordinary
+// sense. The split is the shelf generator's own measurement; see lib/tilings/ncx-crossing.ts.
+const NCX_CROSSING_OPTIONS: { value: "all" | "self-intersecting" | "embedded"; label: string }[] = [
+	{ value: "all", label: "All" },
+	{ value: "self-intersecting", label: "Self-intersecting" },
+	{ value: "embedded", label: "Embedded" },
 ];
 const PARAM_OPTIONS: { value: "all" | "rigid" | "family"; label: string }[] = [
 	{ value: "all", label: "All" },
@@ -344,6 +371,10 @@ function parseViewState(sp: URLSearchParams): ViewState {
 	}
 	const decomp = sp.get("decomp");
 	if (decomp === "decomposable" || decomp === "non-decomposable") f.convexDecomp = decomp;
+	const skind = sp.get("skind");
+	if (skind === "pyramid" || skind === "prism" || skind === "antiprism" || skind === "other") f.starKind = skind;
+	const ncx = sp.get("ncx");
+	if (ncx === "self-intersecting" || ncx === "embedded") f.ncxCrossing = ncx;
 	const m = num("m");
 	if (m != null) f.mValue = m;
 	const partition = sp.get("partition");
@@ -425,6 +456,8 @@ function serializeView(v: ViewState): string {
 	if (f.hypPolygon) p.set("palette", f.hypPolygon.join(","));
 	if (f.hypEdge) p.set("edge", f.hypEdge.map((n) => String(Math.round(n * 100) / 100)).join(","));
 	if (f.convexDecomp) p.set("decomp", f.convexDecomp);
+	if (f.starKind) p.set("skind", f.starKind);
+	if (f.ncxCrossing) p.set("ncx", f.ncxCrossing);
 	if (f.mValue != null) p.set("m", String(f.mValue));
 	if (f.partitionKey) p.set("partition", f.partitionKey);
 	if (f.maximalOnly) p.set("maximal", "1");
@@ -1299,7 +1332,16 @@ export function ReferenceShelf() {
 			board: v === "all" ? undefined : v,
 			freedrawGrid: undefined,
 			colorsGrid: undefined,
+			// Both of these are sub-facets OF a board, and each renders only while its own board is
+			// selected. Leaving one set while moving to another board would filter the new board down to
+			// nothing behind a control that is no longer on screen.
+			starKind: v === "sst" ? filters.starKind : undefined,
+			ncxCrossing: v === "spn-solid" ? filters.ncxCrossing : undefined,
 		});
+	const setStarKind = (v: "all" | SphStarKind) =>
+		setFilters({ ...filters, starKind: v === "all" ? undefined : v });
+	const setNcxCrossing = (v: "all" | "self-intersecting" | "embedded") =>
+		setFilters({ ...filters, ncxCrossing: v === "all" ? undefined : v });
 	const setColorsCount = (v: "all" | number) =>
 		setFilters({ ...filters, colorsCount: v === "all" ? undefined : v });
 	const setFreedrawRegular = (v: "all" | FreedrawRegular) =>
@@ -1368,6 +1410,9 @@ export function ReferenceShelf() {
 			next.latticeShapes = undefined;
 			// Čtrnáct's ladder is defined for tilings by regular polygons, so it leaves with them.
 			next.levels = undefined;
+			// Both spherical board sub-facets live under Tilings, and their controls go away with the board.
+			next.starKind = undefined;
+			next.ncxCrossing = undefined;
 		}
 		if (v !== "edges") {
 			next.freedrawKind = undefined;
@@ -1411,6 +1456,10 @@ export function ReferenceShelf() {
 						// Nor does Čtrnáct's ladder: in E² the edge function is unconstrained, so its top rung
 						// costs nothing and stops meaning anything.
 						levels: undefined,
+						// Both board sub-facets are spherical-only, and their controls render only while their
+						// board is chosen — so left set here they would be invisible active filters.
+						starKind: undefined,
+						ncxCrossing: undefined,
 					}
 				: {
 						geometry: g,
@@ -1721,6 +1770,8 @@ export function ReferenceShelf() {
 		(filters.kValue != null ? 1 : 0) +
 		(filters.tileClass ? 1 : 0) +
 		(filters.convexDecomp ? 1 : 0) +
+		(filters.starKind ? 1 : 0) +
+		(filters.ncxCrossing ? 1 : 0) +
 		(filters.isotoxalShape ? 1 : 0) +
 		(filters.scaledScaleSet ? 1 : 0) +
 		(filters.polyominoOrder ? 1 : 0) +
@@ -1995,10 +2046,55 @@ export function ReferenceShelf() {
 									/>
 								</div>
 							))}
+							{decoration === "colorings" ? (
+								<GroupNote>
+									Which board the coloring lives on. Each (grid, palette size) pair is its own catalogue.
+								</GroupNote>
+							) : null}
+						</FilterGroup>
+					) : null}
+
+					{/* Two facets that live INSIDE a board, so each renders only while its own board is chosen.
+					    They are the axis that board is actually browsed along: the star shelf mixes four shapes
+					    and the non-convex regular-faced shelf mixes two kinds of object (AL, 2026-08-22). */}
+					{filters.board === "sst" ? (
+						<FilterGroup
+							title="Shape"
+							summary={filters.starKind ? STAR_KIND_LABEL[filters.starKind] : null}
+							note="pyramid, prism, antiprism"
+						>
+							<OptionWall
+								columns={3}
+								options={STAR_KIND_OPTIONS}
+								selected={filters.starKind ?? "all"}
+								onChange={setStarKind}
+							/>
 							<GroupNote>
-								{decoration === "colorings"
-									? "Which board the coloring lives on. Each (grid, palette size) pair is its own catalogue."
-									: "Which board the drawn edges decorate. Square patterns tile with polyominoes, triangular ones with polyiamonds, hexagonal ones with polyhexes, and the parametric boards carry a tile you can move with the sliders in Play."}
+								Read off each solid&apos;s structure, not its name: a pyramid is one star face, n triangles
+								and n+1 vertices, and nothing else can wear that signature. Two thirds of this shelf ships
+								unnamed, so the name would answer for a third of it. &quot;Other&quot; is the uniform star
+								polyhedra and everything the three families do not describe.
+							</GroupNote>
+						</FilterGroup>
+					) : null}
+
+					{filters.board === "spn-solid" ? (
+						<FilterGroup
+							title="Crossing"
+							summary={filters.ncxCrossing ?? null}
+							note="does it pass through itself"
+						>
+							<OptionWall
+								columns={3}
+								options={NCX_CROSSING_OPTIONS}
+								selected={filters.ncxCrossing ?? "all"}
+								onChange={setNcxCrossing}
+							/>
+							<GroupNote>
+								A solid is self-intersecting when some face edge passes through the interior of a face it
+								shares no vertex with. The rest are non-convex but embedded, which makes them polyhedra in
+								the ordinary sense. The shelf holds 112 of the first and 131 of the second, measured when
+								the solids were built.
 							</GroupNote>
 						</FilterGroup>
 					) : null}

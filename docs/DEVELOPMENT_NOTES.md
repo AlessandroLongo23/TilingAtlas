@@ -15572,3 +15572,46 @@ blocks — the k=2 write-up recorded 390, so more blocks in and the same solids 
 
 **Bucketed star-ico-d k=3: 5 SECONDS** for 8,013 blocks, against 28 minutes and unfinished. 6 records in
 23 s of develop, three of them carrying {5/2} faces. star-wide k=3 is the real target and is running.
+
+## 2026-08-22 — Two board sub-facets for the non-convex spherical shelves
+
+AL, on /library: the star shelf should separate prisms, antiprisms and pyramids from everything else,
+and the non-convex regular-faced shelf should separate the solids that pass through themselves from the
+ones that do not. Both render only while their own board is selected, which is what makes them sub-facets
+of a board rather than another row in the panel.
+
+**The star shapes are read off STRUCTURE, never off the name.** Two thirds of that shelf ships unnamed —
+the naming discipline refuses to guess a U-number off a census — so a `name.includes("prism")` test would
+answer for a third of it and stay silent on the rest. The three families wear signatures nothing else can:
+
+    pyramid    one {n/d}, n triangles, n+1 vertices, 2n edges
+    prism      two {n/d}, n squares, 2n vertices, 3n edges
+    antiprism  two {n/d}, 2n triangles, 2n vertices, 4n edges
+
+The counts matter, not just the census: a face tally alone lets a different solid with the same faces
+through, which `tests/star-kind.test.ts` pins by faking a pyramid with one extra vertex. ⚑ Cross-checked
+against all 71 records that DO carry a name: zero disagreements. That is the argument for reading
+structure — it agrees wherever there is something to agree with, and it still answers for the other 18.
+Shelf split: 31 pyramids, 5 prisms, 8 antiprisms, 45 other, and 31 + 5 + 8 + 45 = 89.
+
+**The self-intersection flag already existed and no consumer could read it.**
+`gen_nonconvex_shelf.py` measures it per solid — "some face edge passes through the interior of a face it
+shares no vertex with" — and writes it into the COMMENT above each entry. Rather than re-derive a delicate
+3D predicate in TypeScript and hope the two agree, `scripts/gen-ncx-crossing.mjs` lifts the generator's own
+answer into `lib/tilings/ncx-crossing.ts`. One predicate, one implementation. Re-run it after any rebuild
+of that shelf; `tests/ncx-crossing.test.ts` fails if the set and the shipped shelf stop partitioning each
+other, so a stale run is loud rather than quietly wrong.
+
+⚑ The first extraction came out 242 of 243. The flag is a comma-separated TOKEN and not the end of the
+line: `ncx-7-15-10-a` reads "…, self-intersecting, inscribed", because it is the one solid on that shelf
+with a circumsphere — the same exception `NCX_INSCRIBED` names. Anchoring the regex on the line end
+dropped it silently, and only the header's own "112 of 243" caught it.
+
+Verified in the browser by clicking, not by URL: 89 on the star board splitting 31/5/8/45, and 243 on the
+non-convex board splitting 112/131. ⚑ A `?board=` link alone does NOT reproduce this — those records are
+in lazy tiers the board chip fetches on click, so a URL-driven board reads 0 tilings. Worth knowing before
+concluding a filter is broken. The Board group also needs `dec=tilings` to render at all, since
+`boardFamiliesFor` takes one decoration and "All" is not one.
+
+Also removed, at AL's request: the Board group's note about which board the drawn edges decorate. It
+described the Euclidean edge-pattern boards and was showing under every board wall, including these two.
