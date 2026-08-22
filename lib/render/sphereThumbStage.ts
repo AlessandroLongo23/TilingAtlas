@@ -15,7 +15,8 @@
 // This also replaces the three separate module-level renderers the thumbnail components used to keep
 // (one per component file), freeing two contexts.
 //
-// COST. Each active thumbnail is one draw of a few thousand triangles at 320², plus a 320² blit, at ~22 fps.
+// COST. One draw is a few thousand triangles at 320² plus a 320² blit, and DRAWS_PER_TICK bounds how many
+// happen per frame — so the stage costs the same whether the page shows six previews or sixty.
 // The build — geometry, materials, colours — happens ONCE per mount and is kept while the card is on
 // screen, which is the only reason per-frame rendering is affordable at all; the old code disposed the
 // scene right after baking a PNG. Scrolling a card out disposes its scene and leaves the last painted
@@ -32,11 +33,18 @@ const RADIANS_PER_SECOND = 0.28;
 /** ~22 fps. A turn this slow is indistinguishable from one at 120, at a fifth of the draw calls. */
 const FRAME_MS = 45;
 /**
- * How many previews may animate at once. Past this the extras hold their first frame: a page showing
- * eighty solids does not need eighty of them turning, and the cost is linear in the count. Chosen by
- * viewport proximity, recomputed only when the visible set changes.
+ * How many previews may be DRAWN in one tick. The cost of this stage is draws per second and nothing
+ * else, so this is the budget: at the pace below it is about 300 a second, whatever the page is showing.
+ *
+ * ⚑ It used to be a cap on WHICH cards animate — the fourteen nearest the top of the viewport turned and
+ * every other one held a still frame (AL, 2026-08-22: "it renders but it doesn't spin"). On a library page
+ * that shows fifteen cards at once, that is fourteen turning and the fifteenth frozen beside them, which
+ * reads as a broken card and not as a budget. The budget is now spent ROUND-ROBIN over everything on
+ * screen: thirty visible cards each turn at ten frames a second instead of fourteen at twenty-two and
+ * sixteen at none. The rotation is a function of absolute `angle`, so a card drawn less often takes a
+ * coarser step and stays exactly in step with the rest.
  */
-const MAX_ACTIVE = 14;
+const DRAWS_PER_TICK = 14;
 /** Offscreen buffer size. Every thumbnail renders here and is blitted down into its own canvas. */
 const STAGE_SIZE = 320;
 /** The framing every spherical thumbnail has always used — the interactive canvas' resting camera. */
@@ -71,7 +79,6 @@ interface Entry extends SpinningThumbOptions {
 	scene: ThumbScene | null;
 	built: boolean;
 	visible: boolean;
-	active: boolean; // visible AND within MAX_ACTIVE
 	cancelBuild: (() => void) | null;
 }
 
@@ -129,7 +136,6 @@ let frame: number | null = null;
 let angle = 0;
 let lastTick = 0;
 let lastEmit = 0;
-let activeDirty = false;
 
 const prefersReducedMotion = () =>
 	typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -147,21 +153,8 @@ function stopClock() {
 	frame = null;
 }
 
-// Which entries actually animate: the MAX_ACTIVE visible ones nearest the top of the viewport. The
-// layout read here is the reason this runs on set changes (an IntersectionObserver firing) and not per
-// frame — scrolling within an unchanged set keeps the same choice, which is fine, since every one of
-// them is on screen either way.
-function rechooseActive() {
-	activeDirty = false;
-	const visible = [...entries].filter((e) => e.visible);
-	if (visible.length > MAX_ACTIVE) {
-		visible.sort((a, b) => a.canvas.getBoundingClientRect().top - b.canvas.getBoundingClientRect().top);
-	}
-	visible.forEach((e, i) => {
-		e.active = i < MAX_ACTIVE;
-	});
-	for (const e of entries) if (!e.visible) e.active = false;
-}
+// The round-robin cursor into the visible set, so the budget lands on a different slice each tick.
+let cursor = 0;
 
 function tick(now: number) {
 	frame = requestAnimationFrame(tick);
@@ -170,29 +163,19 @@ function tick(now: number) {
 	if (now - lastEmit < FRAME_MS) return;
 	lastEmit = now;
 	if (document.hidden) return;
-	if (activeDirty) rechooseActive();
-
 	const r = getRenderer();
 	if (!r || !camera) return;
 	const still = prefersReducedMotion();
-	for (const e of entries) {
-		if (!e.scene) continue;
-		// ⚑ MAX_ACTIVE caps ANIMATION, not drawing, and this line is what makes that true. Without it an
-		// entry past the cap was never rendered at all: it never got a frame, so it never called `onReady`,
-		// so its canvas stayed at opacity 0 behind a skeleton that never dropped. On a 25-card library page
-		// that was the fifteenth card onward blank (AL, 2026-08-21). A card past the cap now gets exactly
-		// one frame and holds it, which is what the note on MAX_ACTIVE always claimed.
-		//
-		// No cap on first frames per tick: `enqueueThumbnailRender` drains one BUILD per animation frame,
-		// so scenes become drawable a few at a time and this loop can only ever find that many new.
-		const firstFrame = !e.built;
-		if (!e.active && !firstFrame) continue;
+
+	// One draw: render the entry into the shared buffer and blit it into its own canvas.
+	const draw = (e: Entry) => {
+		if (!e.scene) return;
 		const stage = getStage(e.flavor, e.studio);
-		if (!stage) continue;
+		if (!stage) return;
 		e.holder.rotation.y = still ? 0 : angle + (e.phase ?? 0);
 		stage.scene.add(e.holder);
-		stage.rig.follow(camera);
-		r.render(stage.scene, camera);
+		stage.rig.follow(camera!);
+		r.render(stage.scene, camera!);
 		stage.scene.remove(e.holder);
 		const ctx = e.ctx;
 		if (ctx) {
@@ -203,9 +186,28 @@ function tick(now: number) {
 			e.built = true;
 			e.onReady?.();
 		}
-		// Reduced motion wants ONE frame, not a still one re-rendered forever.
-		if (still) e.active = false;
+	};
+
+	// FIRST FRAMES come off the budget's books. A card that has never been drawn is showing a skeleton at
+	// opacity 0, and `onReady` is what drops it — making that wait for a turn in the rotation would leave
+	// cards blank in exactly the way the cap used to (AL, 2026-08-21). It costs nothing to exempt them:
+	// `enqueueThumbnailRender` drains one BUILD per animation frame, so at most a few become drawable per
+	// tick, and `built` makes each one eligible exactly once.
+	const ready: Entry[] = [];
+	for (const e of entries) {
+		if (!e.scene) continue;
+		if (!e.built) draw(e);
+		else if (e.visible) ready.push(e);
 	}
+
+	// Reduced motion wants ONE frame each, not a still one re-rendered forever.
+	if (still) return;
+
+	// Then the rotation budget, round-robin over everything on screen, so no card is left frozen beside
+	// its turning neighbours.
+	const n = Math.min(DRAWS_PER_TICK, ready.length);
+	for (let k = 0; k < n; k++) draw(ready[(cursor + k) % ready.length]);
+	cursor = ready.length > 0 ? (cursor + n) % ready.length : 0;
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────────────────────────
@@ -225,7 +227,6 @@ export function mountSpinningThumb(opts: SpinningThumbOptions): () => void {
 		scene: null,
 		built: false,
 		visible: false,
-		active: false,
 		cancelBuild: null,
 	};
 
@@ -269,7 +270,6 @@ export function mountSpinningThumb(opts: SpinningThumbOptions): () => void {
 			const on = records[0]?.isIntersecting ?? false;
 			if (on === entry.visible) return;
 			entry.visible = on;
-			activeDirty = true;
 			if (on) build();
 			else release();
 		},
@@ -283,7 +283,9 @@ export function mountSpinningThumb(opts: SpinningThumbOptions): () => void {
 		io.disconnect();
 		release();
 		entries.delete(entry);
-		activeDirty = true;
+		// The cursor indexes a list rebuilt every tick, so a removal cannot leave it dangling; resetting
+		// only avoids skipping a slice on the tick right after one.
+		cursor = 0;
 		if (entries.size === 0) stopClock();
 	};
 }

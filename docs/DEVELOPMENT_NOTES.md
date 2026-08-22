@@ -15507,3 +15507,29 @@ associative in mathematics, not in floating point, 3.9e-16 worst over 60,000 tri
 half-product the flood fill already formed gets the same speed with the association untouched. Frames as
 flat 9-tuples throughout would take another ~14% and differs from numpy's 3x3 product in 97.6% of cases
 at the last ulp, which would move every stored vertex. Not worth the exactness.
+
+⚑ **And then they rendered but did not turn** (AL, 2026-08-22). The fix above gave every card past the cap
+its first frame; it did not give it a second one, because `MAX_ACTIVE = 14` was a cap on WHICH cards
+animate. On a library page showing fifteen at once that is fourteen turning and the fifteenth sitting
+still beside them, which reads as a broken card rather than as a budget — and the more of the page you can
+see, the more of it is frozen.
+
+The cost of this stage is draws per second and nothing else, so the cap is now a per-tick BUDGET spent
+round-robin over everything on screen: `DRAWS_PER_TICK` entries per tick, starting where the last tick
+left off. Twenty visible cards each turn at about fifteen frames a second instead of fourteen at
+twenty-two and six at none, for the same total work. This is safe because the rotation is a function of
+the absolute `angle`, not of an accumulated per-card step: a card drawn less often takes a coarser step
+and stays exactly in step with its neighbours.
+
+First frames stay off the budget's books, for the reason the entry above gives — `onReady` is what drops
+the skeleton, so making it wait for a turn reintroduces blank cards. `enqueueThumbnailRender` drains one
+BUILD per animation frame, so only a few can ever be pending at once.
+
+Measured on `/library?geo=spherical` at 1700×1500, twenty cards visible: all twenty move, where fourteen
+moved and six were frozen before. Under `prefers-reduced-motion: reduce`, all twenty paint (16–50% ink)
+and none move.
+
+⚑ Worth recording because it cost time: the first measurement of this said NOTHING on the page moved, and
+that was the wrong URL. The library's geometry filter is `?geo=`, not `?geometry=`, so the page under test
+was the Euclidean shelf, whose cards are not supposed to turn at all. Check the filter took before
+concluding the renderer is broken.
