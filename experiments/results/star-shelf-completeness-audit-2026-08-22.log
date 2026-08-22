@@ -1,0 +1,575 @@
+===========================================================================
+STAR-POLYHEDRON PIPELINE COMPLETENESS AUDIT   (audit-a)
+started 2026-08-22 19:45:56
+scope: public/spherical-star 99 records (52 k=1, 37 k=2, 10 k=3)
+items: 1 PREFILTER/eu_sphfill   2 instance_bound   3 emitter funnel   4 k=1/k=2 reproduction
+all work under /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/34adc110-941e-4169-8297-5e417a748958/scratchpad/audit-a ; nothing written into tools/ctrnact-oracle/run-*/ or public/
+===========================================================================
+
+[19:45:56] SETUP  building private binaries (no make, no table regeneration)
+  built eu_solver_sw_k1 (MAXNUM=1, star-wide compiled tables)
+  built eu_solver_sw_k2 (MAXNUM=2)
+  built eu_pruner_sw (star-wide)
+  built eu_solver_rt_k3 (MAXNUM=3, runtime tables)
+[19:46:44] ITEM 4a  star-wide k=1 reproduction from scratch
+[19:46:45]   k=1 solve: raw blocks 17458  (1s)
+[19:46:46]   k=1 prune: pruned blocks 15936  (1s)
+[19:46:55]   k=1 develop done (9s): 75 records
+[19:46:55]   k=1 digest: records: 75
+[19:46:55]   ITEM 4a VERDICT: digest IDENTICAL to shipped run-star-wide-k1/digest.txt
+[19:46:55]   k=1 total 11s
+[19:52:11] ITEM 1 [pilot]  corpus scan: 2393 files, 40487641 pruned k=3 blocks (29s)
+[19:52:11] ITEM 1 [pilot]  sampling every 10121th block -> ~4000 blocks, 3 workers
+[19:52:41]   [pilot] 39/2393 files  blocks=1453 attempts=2590  DISAGREEMENTS=0  LOST=0  30s ETA 1831s
+[19:53:11]   [pilot] 132/2393 files  blocks=2789 attempts=5467  DISAGREEMENTS=0  LOST=0  61s ETA 1036s
+[19:53:41]   [pilot] 681/2393 files  blocks=3910 attempts=8105  DISAGREEMENTS=0  LOST=0  91s ETA 228s
+[19:53:44]   [pilot] 2393/2393 files  blocks=3978 attempts=8294  DISAGREEMENTS=0  LOST=0  93s ETA 0s
+[19:53:44] ITEM 1 [pilot] RESULT: blocks checked 3978 (0.01% of corpus), attempts checked 8294
+[19:53:44]   [pilot] C said CLOSED on 2 attempts, Python said CLOSED on 2
+[19:53:44]   [pilot] per-attempt DISAGREEMENTS: 0
+[19:53:44]   [pilot] rejected blocks that develop_block WOULD have realized (LOST SOLUTIONS): 0
+[19:56:09] ITEM 4b  star-wide k=2 reproduction from scratch (bucketed, regenerated buckets, 3 workers)
+[19:56:41]   k=2 solve+prune: [19:56:41] DONE: 3902 buckets, 0 with no vertex type in this alphabet, 0 all-convex, 422879 pruned k=2 blocks in /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/34adc110-941e-4169-8297-5e417a748958/scratchpad/audit-a/runs/k2/pruned (29s)
+[19:56:41]   k=2 merged pruned: 1669 files, 422879 blocks
+[19:56:42]   k=2 SHIPPED pruned: 1664 files, 422206 blocks
+[19:57:17]   k=2 develop done (35s)
+  k=2 repro records 9 ; shipped 11 ; signature sets identical: False
+[19:57:17]   k=2 total 68s
+[19:59:37] ITEM 1 [main]  corpus scan: 2393 files, 40487641 pruned k=3 blocks (32s)
+[19:59:37] ITEM 1 [main]  sampling every 80th block -> ~506095 blocks, 3 workers
+[20:00:30] ITEM 1b [pilot] margin probe: sampling every 2024th of 40487641 k=3 blocks
+[20:01:30]   [pilot] blocks=12500 attempts=27203 minMargin=1.164e-10 maxNinst=2162 60s
+[20:01:50] ITEM 1b [pilot] RESULT blocks=20004 attempts=41642 (C closed 6, guard-hit 41636)
+[20:01:50]   [pilot] MIN quantisation margin over every key component of every insertion: 0 quanta (= 0 absolute)
+[20:01:50]   [pilot] margin histogram by decade (1e-1..<1e-9): [0, 2, 70, 10858, 25821, 4541, 271, 57, 8, 14]
+[20:01:50]   [pilot] key comparisons performed by the open-addressed table: 45517915
+[20:01:50]   [pilot] max instances any attempt reached: 2162
+[20:01:50]   [pilot] worst-margin attempt: {'vertypeline': '(6,4,4)F, (6,4,6,4,4,4)F, (6,4,4,6,4,4)F', 'margin': 0.0, 'ninst': 1801, 'closed': 0}
+[20:03:18]   [main] 1/2393 files  blocks=8053 attempts=8053  DISAGREEMENTS=0  LOST=0  221s ETA 527789s
+[20:04:18]   [main] 3/2393 files  blocks=29054 attempts=28651  DISAGREEMENTS=0  LOST=0  280s ETA 223282s
+[20:04:43] ITEM 1 verify relaunched at 150,000-block target (the 500k target ETA'd at 2.5h under contention)
+[20:05:09] ITEM 1 [main]  corpus scan: 2393 files, 40487641 pruned k=3 blocks (26s)
+[20:05:09] ITEM 1 [main]  sampling every 269th block -> ~150511 blocks, 3 workers
+[20:05:43] ITEM 1d [pilot] perturbation differential: 2393 files, step=4000, 1 workers
+[20:06:44]   [pilot] 71/2393 files  blocks=5312 attempts=9824  VERDICT-DIFFS=0  LOST=0  keptStock=0 keptAlt=0  60s ETA 1975s
+[20:07:23]   [main] 1/2393 files  blocks=2395 attempts=2395  DISAGREEMENTS=0  LOST=0  134s ETA 320760s
+[20:07:44]   [pilot] 332/2393 files  blocks=9517 attempts=19577  VERDICT-DIFFS=0  LOST=0  keptStock=2 keptAlt=2  120s ETA 748s
+[20:07:57]   [main] 3/2393 files  blocks=8640 attempts=8520  DISAGREEMENTS=0  LOST=0  167s ETA 133425s
+[20:08:44]   [pilot] 2148/2393 files  blocks=11714 attempts=24884  VERDICT-DIFFS=0  LOST=0  keptStock=21 keptAlt=21  180s ETA 21s
+[20:08:49]   [pilot] 2393/2393 files  blocks=11959 attempts=25494  VERDICT-DIFFS=0  LOST=0  keptStock=24 keptAlt=24  186s ETA 0s
+[20:08:49] ITEM 1d [pilot] RESULT blocks=11959 attempts=25494 verdict-diffs=0 lost=0 keptStock=24 keptAlt=24
+[20:09:42]   [main] 4/2393 files  blocks=10616 attempts=10496  DISAGREEMENTS=0  LOST=0  272s ETA 162666s
+[20:11:09]   [main] 7/2393 files  blocks=16955 attempts=16782  DISAGREEMENTS=0  LOST=0  360s ETA 122574s
+[20:11:41]   [main] 8/2393 files  blocks=18588 attempts=20048  DISAGREEMENTS=0  LOST=0  392s ETA 116734s
+[20:12:18] ITEM 1e  rho-scan resolution check: 4871 angle multisets, grid 1024 vs 32768
+[20:12:30]   [main] 11/2393 files  blocks=23556 attempts=26766  DISAGREEMENTS=0  LOST=0  441s ETA 95393s
+[20:13:05]   [main] 12/2393 files  blocks=25099 attempts=29852  DISAGREEMENTS=0  LOST=0  475s ETA 94330s
+[20:13:19]   scan=1024   : 10896 (multiset,retro,density) triples close, 10930 roots (61s)
+[20:13:58]   [main] 14/2393 files  blocks=27819 attempts=33896  DISAGREEMENTS=0  LOST=0  528s ETA 89763s
+[20:14:40]   [main] 16/2393 files  blocks=30463 attempts=37893  DISAGREEMENTS=0  LOST=0  571s ETA 84814s
+[20:15:43]   [main] 17/2393 files  blocks=31825 attempts=41979  DISAGREEMENTS=0  LOST=0  634s ETA 88597s
+[20:16:36]   [main] 21/2393 files  blocks=36524 attempts=50062  DISAGREEMENTS=0  LOST=0  687s ETA 77546s
+[20:17:08]   [main] 22/2393 files  blocks=37678 attempts=52370  DISAGREEMENTS=0  LOST=0  719s ETA 77496s
+[20:17:57]   [main] 24/2393 files  blocks=39955 attempts=58067  DISAGREEMENTS=0  LOST=0  767s ETA 75756s
+[20:18:42]   [main] 26/2393 files  blocks=42231 attempts=65981  DISAGREEMENTS=0  LOST=0  813s ETA 73984s
+[20:19:22]   scan=32768  : 10896 triples close, 10930 roots (362s)
+[20:19:22]   triples the FINE grid finds and the shipped 1024 grid MISSES ENTIRELY: 0
+[20:19:22]   triples where the fine grid finds MORE roots: 0
+[20:19:22]   triples the 1024 grid had and the fine grid does not (grid artefacts): 0
+
+---------------------------------------------------------------------------
+ITEM 3  EMITTER FUNNEL  (replayed from the eight source cells.json in build-star-shelf.sh order,
+                         writing nothing to public/)
+---------------------------------------------------------------------------
+  source                                recs   by k
+  run-star-wide-k1/cells.json             75   k=1
+  run-star-hept-k1/cells.json             18   k=1
+  check-star-run/cells.json               26   k=1   (star-ico-d, the check-star gate)
+  run-star-hept-pyr-k2/cells.json          2   k=2
+  check-star-run2/cells.json               1   k=2
+  run-k2-star-wide/cells.json             11   k=2
+  run-k3-star-wide/cells.json             15   k=3
+  pyramid-cells.json                      31   k=2   (closed form, n <= 20)
+  TOTAL RAW IN                           179
+
+  stage                        k=1    k=2    k=3   total
+  raw certificates in          119     45     15     179
+  - geometric dedup             37      6      0      43
+  - density<2 and no star face  30      2      5      37
+  - orbit count != cert k        0      0      0       0
+  - no free id                   0      0      0       0
+  = SHIPPED                     52     37     10      99
+
+  Replay id set == the 99 files on the shelf: TRUE (no stale files, emitter deterministic).
+
+  shipped by source: k=1 star-wide 47 + star-hept 5 ; k=2 pyramids 28 + star-wide 6 +
+  hept-pyr 2 + star-ico-d 1 ; k=3 star-wide 10.  All 26 star-ico-d k=1 records dedup into
+  star-wide's, as they must (its tiles are a subset).
+
+  The 5 k=3 drops are convex Johnson solids (density 1, every face d=1): J63-type 9/15/8,
+  J11 11/25/16, 20/36/18 with an octagon, J42 30/60/32, 50/90/42. Each has a STAR twin at the
+  same V/E/F that DOES ship. Out of scope for a star shelf, not a leak - but nothing else picks
+  them up either.
+[20:20:16]   [main] 28/2393 files  blocks=44312 attempts=70074  DISAGREEMENTS=0  LOST=0  906s ETA 76551s
+[20:20:51]   [main] 31/2393 files  blocks=47449 attempts=79623  DISAGREEMENTS=0  LOST=0  942s ETA 71755s
+[20:21:21]   [main] 33/2393 files  blocks=49428 attempts=82608  DISAGREEMENTS=0  LOST=0  972s ETA 69509s
+[20:22:07]   [main] 35/2393 files  blocks=51309 attempts=87357  DISAGREEMENTS=0  LOST=0  1018s ETA 68590s
+[20:22:42]   [main] 36/2393 files  blocks=52182 attempts=89976  DISAGREEMENTS=0  LOST=0  1052s ETA 68899s
+
+---------------------------------------------------------------------------
+ITEM 2  instance_bound() - what it really asserts, and how much room it has
+---------------------------------------------------------------------------
+The docstring's derivation ("2E = sum over orbits of |orbit| * valence, |orbit| <= |point group|")
+is the right ANSWER by a different route than the one written. The exact statement:
+
+  * The frames the fill reaches at a fixed quotient dart form a GROUP Gamma0 <= SO(3). Closure:
+    a word w that returns the walk to dart 0 with frame g, followed by a word u that does the same
+    with frame g', returns to dart 0 with frame g*g'. The walk is reversible (glue and M are
+    involutions; rneig has finite period), so every dart carries a coset of Gamma0 and they all
+    have the same size. Hence   ninst = Q * |Gamma0|,   Q = len(rneig) = the quotient dart count.
+  * MEASURED: the alphabet stores each vertex half-edge TWICE, so Q = sum over orbits of
+    2*valence/fold  <=  2*total. (Verified over 4,000 star-wide vertex types: word length 3 gives
+    quotient darts 6/3/2/1 at folds 1/2/3/6, and so on.)
+  * instance_bound returns max(120, 4*maxrot) * total = 2*total * max(60, 2*maxrot). So the bound
+    is EXACTLY the claim  |Gamma0| <= max(60, 2*maxrot),  and Gamma0 is a finite subgroup of SO(3),
+    i.e. C_n (order n), D_n (order 2n), T (12), O (24) or I (60).
+      - POLYHEDRAL Gamma0: |Gamma0| <= 60 <= max(60, 2*maxrot). SOUND unconditionally; maxrot is
+        not used at all.
+      - AXIAL Gamma0 = C_n or D_n: need 2n <= max(60, 2*maxrot), i.e. n <= 30 OR n <= maxrot.
+  * So the only way the bound can truncate a closing fill is an n-fold axis with n > 30 AND
+    n > maxrot (on star-wide maxrot <= 10, so: n > 30). The docstring's reason why that cannot
+    happen ("the axis passes through a vertex, an edge midpoint or a face centre") is NOT airtight
+    for a STAR polyhedron: the faces are a branched cover of density D, so the axis point can be
+    covered by n/m faces that C_n permutes with none of them centred there, giving only
+    n <= n_face * D. With densities up to 38 on this shelf that is not vacuous. Hence the
+    empirical test below.
+
+MEASURED HEADROOM on the 148 realized certificates: median ninst/bound = 0.136, and FOUR k=1
+records sit at EXACTLY 1.000 -
+    10.6.4      V=120 E=180 F=62  d=1   ninst=360 bound=360   (truncated icosidodecahedron)
+    10/3.6.4    V=120 E=180 F=62  d=13  ninst=360 bound=360   (U68)
+    10/3.10.4   V=120 E=180 F=54  d=3   ninst=360 bound=360
+    10/3.10.6   V=120 E=180 F=44  d=4   ninst=360 bound=360
+These are |Gamma0| = 60 = |I|, the largest a rotation group can be, so the bound is TIGHT and
+cannot be lowered. It also means the guard comparison must stay `>` and never `>=`; both
+eu_sphfill (`if (++pops > guard)`) and develop_sphere (`if pops > guard`) use `>`. Checked.
+
+---------------------------------------------------------------------------
+ITEM 1e  the 1024-point bracketing scan in solve_rho_all misses nothing
+---------------------------------------------------------------------------
+The retrograde branch locates roots by sign change on EU_RHO_SCAN=1024 points; two roots in one
+cell, or a tangency, would both be lost silently. Recomputed the entire star-wide spectrum at 1024
+and at 32,768 points (4,871 angle multisets x every retrograde subset x densities 1..3):
+    scan=1024   : 10,896 (multiset, retro, density) triples close, 10,930 roots
+    scan=32768  : 10,896 triples,                                  10,930 roots
+    missed entirely 0 ; extra roots 0 ; 1024-only artefacts 0.
+SOUND.
+
+---------------------------------------------------------------------------
+ITEM 4  reproduction
+---------------------------------------------------------------------------
+k=1 star-wide, from scratch with privately built binaries (MAXNUM=1 verified distinct from the
+MAXNUM=2 build): 17,458 raw -> 15,936 pruned -> 75 records, digest BYTE-IDENTICAL to the shipped
+run-star-wide-k1/digest.txt. 11 s.
+
+k=2 star-wide, from scratch, buckets REGENERATED (rho_buckets.py reproduces the shipped 3,902
+bucket groups exactly), MAXNUM=2 runtime solver, 3 workers:
+    pruned  1,669 files / 422,879 blocks   vs shipped 1,664 / 422,206
+    the shipped pruned set is a strict SUBSET: 0 blocks lost, 673 new
+    develop  ->  9 records   vs shipped file's 11
+    the shipped run-k2-star-wide/cells.json carries TWO EXACT DUPLICATES
+    (ctrnact-02_34-4bat_4bau-1 and ...-d2_2-r3_1 each appear twice) - an artefact of the old
+    sharded merge that ran before finalise_records was wired into run_develop_sharded.py.
+    The 9 distinct solids are identical in both. The emitter's cross-file dedup already removed
+    the two, so the shelf is unaffected.
+BOTH COUNTS HOLD.
+
+Bucket decomposition coverage (the step that could silently exclude vertex types): of 58,682
+vertex types in tables/star-wide/tables.bin, 52,054 land in a bucket and 6,628 (870 face
+multisets) do not - and every one of those 870 multisets closes at NO rho for any density 1..3 and
+any retrograde subset, so the developer would reject them anyway. 0 leaks.
+[20:23:17]   [main] 38/2393 files  blocks=53904 attempts=95053  DISAGREEMENTS=0  LOST=0  1087s ETA 67393s
+[20:23:50]   [main] 39/2393 files  blocks=54752 attempts=97507  DISAGREEMENTS=0  LOST=0  1121s ETA 67666s
+[20:24:24]   [main] 41/2393 files  blocks=56425 attempts=100894  DISAGREEMENTS=0  LOST=0  1155s ETA 66266s
+[20:24:59]   [main] 42/2393 files  blocks=57242 attempts=103322  DISAGREEMENTS=0  LOST=0  1190s ETA 66596s
+[20:25:34]   [main] 45/2393 files  blocks=59668 attempts=108159  DISAGREEMENTS=0  LOST=0  1225s ETA 63925s
+[20:26:06]   [main] 48/2393 files  blocks=62078 attempts=112980  DISAGREEMENTS=0  LOST=0  1257s ETA 61400s
+[20:26:44]   [main] 51/2393 files  blocks=64355 attempts=115180  DISAGREEMENTS=0  LOST=0  1295s ETA 59446s
+[20:27:15]   [main] 53/2393 files  blocks=65904 attempts=119082  DISAGREEMENTS=0  LOST=0  1325s ETA 58518s
+[20:27:52]   [main] 56/2393 files  blocks=68134 attempts=122056  DISAGREEMENTS=0  LOST=0  1363s ETA 56872s
+[20:28:36]   [main] 60/2393 files  blocks=71043 attempts=126423  DISAGREEMENTS=0  LOST=0  1406s ETA 54686s
+[20:29:08]   [main] 63/2393 files  blocks=73177 attempts=131415  DISAGREEMENTS=0  LOST=0  1438s ETA 53191s
+[20:29:48]   [main] 64/2393 files  blocks=73871 attempts=132803  DISAGREEMENTS=0  LOST=0  1479s ETA 53806s
+[20:30:44]   [main] 67/2393 files  blocks=75932 attempts=138928  DISAGREEMENTS=0  LOST=0  1534s ETA 53270s
+[20:31:42]   [main] 72/2393 files  blocks=79284 attempts=146161  DISAGREEMENTS=0  LOST=0  1593s ETA 51356s
+[20:32:17]   [main] 75/2393 files  blocks=81135 attempts=150490  DISAGREEMENTS=0  LOST=0  1627s ETA 50300s
+[20:32:49]   [main] 78/2393 files  blocks=82825 attempts=153870  DISAGREEMENTS=0  LOST=0  1660s ETA 49262s
+[20:33:22]   [main] 80/2393 files  blocks=83949 attempts=157242  DISAGREEMENTS=0  LOST=0  1693s ETA 48949s
+[20:34:10]   [main] 83/2393 files  blocks=85576 attempts=162123  DISAGREEMENTS=0  LOST=0  1741s ETA 48451s
+[20:34:55]   [main] 87/2393 files  blocks=87718 attempts=166399  DISAGREEMENTS=0  LOST=0  1785s ETA 47321s
+[20:35:28]   [main] 92/2393 files  blocks=90224 attempts=170532  DISAGREEMENTS=0  LOST=0  1819s ETA 45493s
+[20:36:05]   [main] 94/2393 files  blocks=91124 attempts=172779  DISAGREEMENTS=0  LOST=0  1856s ETA 45394s
+[20:36:48]   [main] 100/2393 files  blocks=93745 attempts=178512  DISAGREEMENTS=0  LOST=0  1898s ETA 43528s
+[20:37:19]   [main] 103/2393 files  blocks=94962 attempts=179729  DISAGREEMENTS=0  LOST=0  1930s ETA 42903s
+[20:38:00]   [main] 108/2393 files  blocks=96904 attempts=186003  DISAGREEMENTS=0  LOST=0  1970s ETA 41689s
+[20:38:30]   [main] 114/2393 files  blocks=99063 attempts=192159  DISAGREEMENTS=0  LOST=0  2001s ETA 39994s
+[20:39:09]   [main] 121/2393 files  blocks=101499 attempts=196396  DISAGREEMENTS=0  LOST=0  2040s ETA 38298s
+[20:39:39]   [main] 127/2393 files  blocks=103459 attempts=201281  DISAGREEMENTS=0  LOST=0  2070s ETA 36936s
+[20:40:14]   [main] 135/2393 files  blocks=105935 attempts=206823  DISAGREEMENTS=0  LOST=0  2105s ETA 35210s
+[20:40:46]   [main] 142/2393 files  blocks=108065 attempts=213825  DISAGREEMENTS=0  LOST=0  2137s ETA 33869s
+[20:41:17]   [main] 145/2393 files  blocks=108954 attempts=217973  DISAGREEMENTS=0  LOST=0  2167s ETA 33602s
+[20:41:49]   [main] 153/2393 files  blocks=111298 attempts=224434  DISAGREEMENTS=0  LOST=0  2200s ETA 32209s
+[20:42:20]   [main] 161/2393 files  blocks=113553 attempts=229755  DISAGREEMENTS=0  LOST=0  2231s ETA 30927s
+[20:42:51]   [main] 170/2393 files  blocks=115958 attempts=234780  DISAGREEMENTS=0  LOST=0  2262s ETA 29579s
+[20:43:23]   [main] 178/2393 files  blocks=118041 attempts=241019  DISAGREEMENTS=0  LOST=0  2294s ETA 28540s
+[20:43:54]   [main] 187/2393 files  blocks=120294 attempts=246769  DISAGREEMENTS=0  LOST=0  2324s ETA 27419s
+[20:44:25]   [main] 200/2393 files  blocks=123220 attempts=251290  DISAGREEMENTS=0  LOST=0  2355s ETA 25828s
+[20:44:59]   [main] 211/2393 files  blocks=125465 attempts=256397  DISAGREEMENTS=0  LOST=0  2390s ETA 24713s
+[20:45:29]   [main] 227/2393 files  blocks=128346 attempts=262483  DISAGREEMENTS=0  LOST=0  2420s ETA 23093s
+[20:46:00]   [main] 246/2393 files  blocks=130944 attempts=268093  DISAGREEMENTS=0  LOST=0  2451s ETA 21392s
+[20:46:32]   [main] 265/2393 files  blocks=133166 attempts=272604  DISAGREEMENTS=0  LOST=0  2482s ETA 19934s
+[20:47:04]   [main] 289/2393 files  blocks=135523 attempts=278054  DISAGREEMENTS=0  LOST=0  2514s ETA 18304s
+[20:47:39]   [main] 319/2393 files  blocks=138078 attempts=282991  DISAGREEMENTS=0  LOST=0  2550s ETA 16580s
+[20:48:11]   [main] 348/2393 files  blocks=140299 attempts=288572  DISAGREEMENTS=0  LOST=0  2582s ETA 15170s
+[20:48:41]   [main] 390/2393 files  blocks=142472 attempts=293497  DISAGREEMENTS=0  LOST=0  2612s ETA 13415s
+[20:49:12]   [main] 454/2393 files  blocks=144453 attempts=298478  DISAGREEMENTS=0  LOST=0  2642s ETA 11285s
+
+===========================================================================
+AUDIT RESUMED (audit-a, second agent) 20:50
+tasks: 1 GREAT-CIRCLE LEAK fix+measure   2 stratified prefilter verify (35min cap)
+       3 instance_bound 10x empirical    4 emitter funnel (already tabled above)
+===========================================================================
+[20:49:12] ITEM 1 [main] sequential verify STOPPED at the 3-core budget: final tally
+           454/2393 files  blocks=144453  attempts=298478  DISAGREEMENTS=0  LOST=0  (2642s)
+           This prefix is sample (0) of the pooled prefilter bound in ITEM 2 below.
+[20:53:57] ITEM GC-1  star-wide k=1 develop with the great-circle fix (full 15,936-block corpus)
+[20:58:26] ITEM GC-2  9 NEW rho buckets (248 words) from the fixed spectrum -> solve+prune at k=2 and k=3
+[21:04:22] ITEM GC-3  k=3 develop of the 9 new buckets: 1,035,941 pruned blocks (885,588 of them unreachable from any shipped bucket), 3 workers
+[21:06:06]   GC-3 develop: 28 files -> 168 shard-jobs, 3 workers
+
+---------------------------------------------------------------------------
+ITEM GC  THE GREAT-CIRCLE LEAK: fix, and what it adds
+---------------------------------------------------------------------------
+THE FIX (in a private copy, gc/develop_spherical.py -- NOTHING in the repo was edited):
+    cap = min(2*pi*d/n for (n,d) in nds)          # was inlined into hi0
+    lo0, hi0 = 1e-7, cap - 1e-7
+    prograde branch:  return [cap] if |f(cap)| <= 1e-9 else []      (was: [])
+    retrograde branch: append cap to out when |f(cap)| <= 1e-9 and no root is already there
+f's slope -> -infinity at the cap (alpha = pi - C*sqrt(cap-rho)), so a 1e-9 tolerance on f is
+~1e-18 in rho: it cannot admit a non-root, and a genuine interior root can never be within 1e-7
+of the cap without the bisection having found it. VERIFIED bit-exact: sin(cap/2) and
+sin(pi*d/n) are the same double (scaling by 2 is exact), so ss == 1.0 exactly, asin gives pi/2,
+and interior_angle returns pi to the last bit. face_area(n, pi, d) = 2*d*pi -- the hemisphere.
+
+DOWNSTREAM, for a hemisphere face: nothing needed touching.
+  * flood fill      Rz(pi) is an ordinary frame; no special case.
+  * planarity       the face's n vertices sit on a great circle, centroid = origin, SVD normal
+                    = the circle's axis, deviation 0.0 exactly. Measured on all three new records.
+  * map consistency 2|E| == ninst and deg_sum == ninst held on every new record.
+  * density/area    n*pi - (n-2d)*pi = 2*d*pi, exact; densityErr = 0.0 on all three.
+  * symmetry        emit_sph_star_shelf.isometries/orbits works off coordinates only.
+
+SPECTRUM DIFF over the whole star-wide space (4,871 angle multisets x every retrograde subset
+x densities 1..3): 92 (multiset, dens, retro) triples gain a root; 33 distinct multisets; 17 of
+them closed NOWHERE before. ZERO roots are lost (asserted per triple, not sampled).
+The gainers split in two:
+  (a) DEGENERATE, m equal faces meeting at a pole with m*pi = 2*pi*d -- 3.3.3.3(d2), 5.5.5.5(d2),
+      6.6.6.6(d2), 8.8.8.8(d2), 10.10.10.10(d2), 5/2^4(d2), 8/3^4(d2), 10/3^4(d2), and the
+      six-fold versions at d=3. These are hosohedron-like double covers, not polyhedra.
+  (b) REAL, a face whose circumcircle is a great circle -- 3.3.4 (J1's base vertex),
+      3.4.6 (J3), 3.5.10 (J6), and their star twins 3.5/2.10/3, 5.5/2.6, 3.3.8.8/3.
+
+THE LEAK IS UPSTREAM OF develop_spherical, NOT INSIDE IT. rho_buckets.py builds the k>=2 search
+alphabet from ds.solve_rho_all, so a multiset with no root is in NO bucket and is never searched.
+star-wide: 3,902 shipped buckets -> 3,906 with the fix, 9 NEW / 5 subsumed, 248 config words.
+star-ico-d (the check-star palette): 50 -> 52 buckets.
+[21:10:17]   GC-3 develop: 28 files -> 1120 shard-jobs, 3 workers
+
+WHAT THE FIX ADDS  --  k=1 (complete, whole corpus)
+  star-wide k=1, all 15,936 pruned blocks redeveloped with the fixed module:
+      75 records, signature-for-signature IDENTICAL to the shipped run-star-wide-k1/cells.json.
+      0 new, 0 lost.
+  Reason: no k=1 block carries a great-circle word. 3.3.4 / 3.4.6 / 3.5.10 have ZERO k=1
+  combinatorial blocks (a 1-uniform closure with those words does not exist), and the 25 k=1
+  blocks that DO carry a gaining multiset are all the degenerate m-hemispheres-at-a-pole family,
+  which the fill / gcd(fold,density) test rejects. VERDICT k=1: the fix changes nothing.
+
+WHAT THE FIX ADDS  --  k=2 (complete over the 9 new buckets)
+  4,864 pruned k=2 blocks -> 2,756 prefilter survivors -> 5 raw -> 3 distinct records:
+    ctrnact-02_34-4bac_3du-1   V=5  E=8  F=5   4{3}+1{4}      d=1 rho=pi/2       *** NEW ***
+       = J1, the SQUARE PYRAMID. The square is the great circle.
+    ctrnact-02_346-3gi_4bap-1  V=9  E=15 F=8   4{3}+3{4}+1{6} d=1 rho=pi/3       *** NEW ***
+       = J3, the TRIANGULAR CUPOLA (half a cuboctahedron). The hexagon is the great circle.
+    ctrnact-02_34-4bap_4bar-1  V=12 E=24 F=14  8{3}+6{4}      d=1 rho=pi/3       already shipped
+       = J27, the triangular orthobicupola; it reappears only because the 9 new buckets are
+         SUPERSETS of 5 shipped ones, so re-running them re-derives what was already found.
+  Both new solids are REAL polyhedra, not degenerate: Euler 2, mapOK, edgeCV 0.0, planarity 0.0,
+  faceEdgeCV 0.0, densityErr 0.0.
+  NEITHER WOULD SHIP: density 1 with no star face, so emit_sph_star_shelf drops them at the star
+  filter. The shelf is unchanged; the underlying CATALOGUE was incomplete.
+
+  ⚑ J1 FELL THROUGH BOTH DOORS. gen_star_pyramids.py rejects n/d >= 4 ("base vertex is not a
+  whole turn"), but the base sum is 2*pi for EVERY n/d -- what actually fails at n/d = 4 is that
+  the base {n/d}'s interior angle is exactly pi, i.e. the same hemisphere. So the closed-form
+  generator and the search are blocked by the identical condition, and {4/1} is the unique
+  primitive n/d = 4 pyramid. It is missing from both.
+
+GATES
+  check-star: all three develop_spherical stages replayed on the shipped pruned trees with the
+  fixed module -- k=1, k=2 and the rho-bucketed k=2 -- digests BYTE-IDENTICAL to
+  golden/star-ico-d-k1.txt and golden/star-ico-d-k2.txt, and identical to the stock replay.
+  The fix also gives star-ico-d 2 new buckets (5/2^4|5/2^6 and 5^4|5^6); solved at k=2 they give
+  72 pruned blocks and 0 records, so the re-bucketed check-star stage still matches golden too.
+  check-regular: develop_spherical.py is not on its path at all (run-oracle.sh -> eu_solver /
+  eu_pruner / eu_develop, Euclidean). Unaffected by construction; not re-run, because
+  `make check-regular` rebuilds the regular binaries and would disturb the other agent's k=4 run.
+[21:12:01]   GC-3 1/1120 jobs blocks=4700 survivors=4155 rawrecs=0 104s ETA 116861s
+[21:13:53] ITEM 2 [rand] seeded shuffle of all 2393 files (seed 20260822)
+[21:13:53] ITEM 2 [rand] sampling every 674th block of 40487641 -> ~60070 blocks, 2 workers, 900s cap
+[21:14:41]   [rand] 29/2393 files blocks=535 attempts=1106 DISAGREEMENTS=0 LOST=0 48s
+[21:15:02]   GC-3R 20 files -> 160 shard-jobs, 1 workers (NEW ATTEMPTS ONLY)
+
+WHAT THE FIX ADDS  --  k=3 (in progress; scope and method)
+  The 9 new buckets solved+pruned at k=3: 1,035,941 pruned blocks (121s, 3 workers).
+  A straight redevelop is NOT affordable: these buckets are the geometrically live ones, so
+  eu_sphfill keeps 88% of the blocks instead of the usual ~0%, and the measured rate was 45
+  blocks/s/worker => ETA 32 hours. Narrowed instead to the attempts the fix actually adds:
+    * 708,863 of the 1,035,941 blocks (68.4%, over 204 distinct multiset triples) have a
+      solve_rho_common spectrum that DIFFERS between the stock and fixed solvers;
+    * for each of those, only the rho in (fixed \ stock) are flood-filled, with develop_block's
+      own guard, gcd(fold,dens) test, sign handling and check_realized.
+    A block whose spectrum does not differ cannot yield a new solid: the 9 new buckets are
+    single-link merges of 5 shipped ones, and two multisets whose roots differ by more than the
+    1e-6 tolerance can never satisfy solve_rho_common anyway, so a merge without a gainer is dead.
+[21:15:29]   [rand] 77/2393 files blocks=1976 attempts=4417 DISAGREEMENTS=0 LOST=0 96s
+[21:16:15]   [rand] 166/2393 files blocks=3742 attempts=7088 DISAGREEMENTS=0 LOST=0 141s
+[21:17:02]   [rand] 246/2393 files blocks=4979 attempts=9981 DISAGREEMENTS=0 LOST=0 188s
+[21:17:21]   GC-3R 20 files -> 20 shard-jobs, 1 workers (NEW ATTEMPTS ONLY)
+
+---------------------------------------------------------------------------
+ITEM 2 (cont.)  instance_bound: sharpening the one gap, then testing it
+---------------------------------------------------------------------------
+Restating the earlier derivation in the form that can actually fail.
+  ninst = Q * |Gamma0|, Q = len(rneig) <= 2*total, Gamma0 = the frame group at dart 0, which acts
+  FREELY on instances (a dart plus a frame pins the rotation, so only the identity fixes one).
+  instance_bound = max(120, 4*maxrot)*total = 2*total * max(60, 2*maxrot), so the whole content of
+  the bound is    |Gamma0| <= max(60, 2*maxrot),  Gamma0 in {C_n, D_n, T(12), O(24), I(60)}.
+  Polyhedral Gamma0: <= 60. UNCONDITIONALLY SOUND, maxrot unused.
+  Axial Gamma0: need n <= 30 or n <= maxrot. star-wide has maxrot <= 10, so the bound can only
+  break on an n-fold axis with n >= 31.
+Where does such an axis live? Let r have order n >= 31.
+  * axis through a VERTEX: r cyclically permutes that vertex's darts, so n | valence <= 6.
+    Impossible. (This is the case the docstring names, and for it the docstring is right.)
+  * axis through an EDGE midpoint: order <= 2. Impossible.
+  * axis through a FACE INTERIOR: this is the case the docstring gets wrong for a star. r permutes
+    the D_p face-sheets covering the axis point p; the stabiliser of one sheet is cyclic of order
+    dividing that face's n_f, so   n <= n_f * D_p <= 10 * D_p   on this palette.
+    n >= 31 therefore needs an axis point covered by at least FOUR sheets, cyclically permuted, on
+    a solid whose faces come from {3,4,5,6,8,10,5/2,8/3,10/3}. Not excluded by any argument I can
+    make; the shelf carries densities up to 38, so D_p >= 4 is not absurd.
+So the bound is a THEOREM for polyhedral Gamma0 and a CONJECTURE for axial Gamma0 with n >= 31.
+Empirical test (guard x10) below.
+[21:17:50]   [rand] 256/2393 files blocks=6744 attempts=12711 DISAGREEMENTS=0 LOST=0 236s
+  Emitter check on the three new k=2 records (isometries/orbits run for real, hemisphere and all):
+    J1  square pyramid          |sym|=8  (C4v)  orbits=2 = k_cert   -> dropped, density 1 no star face
+    J3  triangular cupola       |sym|=6  (C3v)  orbits=2 = k_cert   -> dropped, density 1 no star face
+    J27 triangular orthobicupola|sym|=12 (D3h)  orbits=2 = k_cert   -> dropped (already shipped anyway)
+  The symmetry measurement needs no change for a hemisphere face: it works off coordinates.
+[21:18:35]   [rand] 314/2393 files blocks=7605 attempts=15105 DISAGREEMENTS=0 LOST=0 282s
+[21:19:31]   [rand] 337/2393 files blocks=8232 attempts=17177 DISAGREEMENTS=0 LOST=0 338s
+[21:20:44]   [rand] 372/2393 files blocks=9931 attempts=21252 DISAGREEMENTS=0 LOST=0 411s
+[21:21:30]   [rand] 450/2393 files blocks=11664 attempts=24503 DISAGREEMENTS=0 LOST=0 456s
+[21:22:16]   [rand] 491/2393 files blocks=12604 attempts=27002 DISAGREEMENTS=0 LOST=0 503s
+[21:22:30]   GC-3R 20 files -> 20 shard-jobs, 1 workers (NEW ATTEMPTS ONLY)
+[21:23:02]   [rand] 566/2393 files blocks=13861 attempts=29747 DISAGREEMENTS=0 LOST=0 548s
+[21:24:01]   [rand] 630/2393 files blocks=15412 attempts=32290 DISAGREEMENTS=0 LOST=0 607s
+  Other shelf sources re-developed with the fixed module, to see whether ANY shipped record moves:
+    star-hept k=1      18 -> 18   0 new, 0 lost
+    star-hept-pyr k=2   2 ->  2   0 new, 0 lost
+    star-ico-d k=1/k=2 (check-star)  digests byte-identical to golden
+    star-wide k=1      75 -> 75   0 new, 0 lost
+  So the ONLY place the fix moves anything is the star-wide k>=2 bucketed search.
+[21:24:51]   [rand] 664/2393 files blocks=16261 attempts=34704 DISAGREEMENTS=0 LOST=0 658s
+[21:25:39]   [rand] 699/2393 files blocks=17298 attempts=37518 DISAGREEMENTS=0 LOST=0 706s
+[21:26:28]   [rand] 766/2393 files blocks=18508 attempts=40502 DISAGREEMENTS=0 LOST=0 755s
+[21:27:21]   [rand] 799/2393 files blocks=19487 attempts=43819 DISAGREEMENTS=0 LOST=0 808s
+[21:28:07]   [rand] 831/2393 files blocks=20508 attempts=46234 DISAGREEMENTS=0 LOST=0 854s
+[21:29:07]   [rand] 878/2393 files blocks=21042 attempts=48070 DISAGREEMENTS=0 LOST=0 914s
+[21:29:07]   [rand] WALL-CLOCK CAP reached at 914s -- stopping
+[21:29:07] ITEM 2 [rand] RESULT files=878/2393 (capped) blocks=21042 attempts=48070 DISAGREEMENTS=0 LOST=0 (914s)
+[21:29:07]   [rand] C closed 9 attempts, Python closed 9
+[21:29:36] ITEM 2 [heavy] buckets b00118,b03719,b03199,b03737,b03872 -> 7 files, 1768096 blocks (4.4% of the 40.5M corpus)
+[21:29:36] ITEM 2 [heavy] sampling every 70th block of 1768096 -> ~25258 blocks, 1 workers, 780s cap
+[21:29:36] ITEM 2 [gx10] guard x10 over the k=3 corpus, step=300, 1 workers
+[21:30:38]   [gx10] 16/2393 files blocks=27275 attempts=37997 closedAt10x=1 OVER-BOUND=0 maxCloseNinst=720  62s ETA 9191s
+[21:31:41]   [gx10] 35/2393 files blocks=45974 attempts=77557 closedAt10x=1 OVER-BOUND=0 maxCloseNinst=720  125s ETA 8452s
+[21:32:46]   [gx10] 51/2393 files blocks=57291 attempts=101655 closedAt10x=1 OVER-BOUND=0 maxCloseNinst=720  190s ETA 8728s
+[21:33:47]   [gx10] 71/2393 files blocks=70410 attempts=130322 closedAt10x=1 OVER-BOUND=0 maxCloseNinst=720  252s ETA 8227s
+[21:34:50]   [gx10] 90/2393 files blocks=79877 attempts=151404 closedAt10x=1 OVER-BOUND=0 maxCloseNinst=720  314s ETA 8044s
+[21:35:51]   [gx10] 111/2393 files blocks=87812 attempts=170386 closedAt10x=1 OVER-BOUND=0 maxCloseNinst=720  376s ETA 7724s
+[21:36:55]   [gx10] 137/2393 files blocks=95530 attempts=187167 closedAt10x=1 OVER-BOUND=0 maxCloseNinst=720  439s ETA 7229s
+[21:37:56]   [gx10] 165/2393 files blocks=102773 attempts=207295 closedAt10x=1 OVER-BOUND=0 maxCloseNinst=720  501s ETA 6759s
+[21:38:56]   [gx10] 212/2393 files blocks=112729 attempts=231033 closedAt10x=2 OVER-BOUND=0 maxCloseNinst=720  561s ETA 5768s
+[21:39:58]   [gx10] 306/2393 files blocks=122949 attempts=252005 closedAt10x=16 OVER-BOUND=0 maxCloseNinst=1080  622s ETA 4241s
+[21:40:29]   GC-3R 5 files -> 5 shard-jobs, 1 workers (NEW ATTEMPTS ONLY)
+[21:40:58]   [gx10] 443/2393 files blocks=129459 attempts=267570 closedAt10x=21 OVER-BOUND=0 maxCloseNinst=1800  682s ETA 3001s
+[21:41:58]   [gx10] 871/2393 files blocks=134207 attempts=279035 closedAt10x=35 OVER-BOUND=0 maxCloseNinst=1800  742s ETA 1297s
+[21:42:58]   [gx10] 2102/2393 files blocks=136157 attempts=283867 closedAt10x=50 OVER-BOUND=0 maxCloseNinst=1800  802s ETA 111s
+[21:43:08]   [gx10] 2393/2393 files blocks=136448 attempts=284592 closedAt10x=56 OVER-BOUND=0 maxCloseNinst=1800  812s ETA 0s
+[21:43:08] ITEM 2 [gx10] RESULT blocks=136448 attempts=284592 ; fills that close at 10x guard=56 ; of those, 0 needed MORE than instance_bound
+[21:43:08]   [gx10] largest instance count reached by ANY closing fill: 1800
+[21:43:08]   [gx10] blocks that needed the bigger guard: 0 ; records they produce: 0
+[21:43:25]   [heavy] 4/7 files blocks=12904 attempts=12435 DISAGREEMENTS=0 LOST=0 829s
+[21:43:25]   [heavy] WALL-CLOCK CAP reached at 829s -- stopping
+[21:43:25] ITEM 2 [heavy] RESULT files=4/7 (capped) blocks=12904 attempts=12435 DISAGREEMENTS=0 LOST=0 (829s)
+[21:43:25]   [heavy] C closed 0 attempts, Python closed 0
+[21:45:25]   GC-3R 1/5 jobs blocks=6201 newattempts=22674 recs=4 296s ETA 1183s
+[21:47:52]   GC-3R 2/5 jobs blocks=12019 newattempts=33882 recs=4 443s ETA 664s
+[21:49:02]   GC-3R 3/5 jobs blocks=14702 newattempts=38844 recs=4 513s ETA 342s
+[21:49:04]   GC-3R 5/5 jobs blocks=14765 newattempts=38966 recs=4 515s ETA 0s
+[21:49:04]   GC-3R DONE blocks=14765 new-attempts=38966 raw=4 final=2 (515s)
+
+WHAT THE FIX ADDS  --  k=3  (PARTIAL: 2.08% of the affected blocks, and it already found one)
+  Full coverage was not affordable. Measured rate on the reduced-attempt developer: 28.7 blocks/s
+  on one core => 708,863 blocks = 6.9 CPU-hours. Retargeted at the subset that can produce a
+  SHELF-RELEVANT record: the blocks carrying one of the ten STAR gainer multisets
+  (3.5/2.10/3, 5.5/2.6, 3.3.8.8/3 and their d=2 relatives) -- 14,765 blocks, 2.083%.
+  14,765 blocks, 38,966 new attempts, 515s, 4 raw -> 2 distinct records, BOTH NEW:
+
+  *** ctrnact-03_3pr-3cp_4bep_4beq-1-GC
+      config 10/3.5/2.3 + 5/2.3.5/2.3 + 5/2.3.5/2.3
+      V=20 E=35 F=17   10{3} + 6{5/2} + 1{10/3}   density 5   rho = 3*pi/5 = 2*pi*3/10 (the {10/3} cap)
+      euler 2, mapOK, edgeCV 0.0, planarity 0.0, faceEdgeCV 0.0, densityErr 0.0 -- exact
+      |sym| = 10 (C5v), 3 orbits = certificate k.  PASSES EVERY EMITTER RULE: IT WOULD SHIP.
+      This is the star analogue of J6, the pentagonal rotunda: same V/E/F (20/35/17), same
+      10 triangles + 6 pentagon-class + 1 decagon-class census, with {5/2} and {10/3} in place of
+      {5} and {10}. Its parent is the GREAT ICOSIDODECAHEDRON U54 (20{3} + 12{5/2}, V=30 E=60
+      F=32, density 7), cut on the great circle that carries the {10/3}: the two non-cut orbits
+      are 5/2.3.5/2.3, U54's own vertex figure, and rho = 108 deg is U54's edge arc. The density
+      checks out arithmetically -- half of 4*pi*7 is 14*pi, plus the {10/3} hemisphere's
+      10*pi - (10-6)*pi = 6*pi, giving 20*pi = 4*pi*5.
+
+  *** ctrnact-03_3pr-3cp_4bep_4beq-1-d2_3_3-r3_15_2-GC
+      the same combinatorial block read at densities (2,3,3) with {3} and {5/2} retrograde,
+      same V/E/F, density 2. It also passes every emitter rule, but I do NOT trust it:
+      its residuals are 2e-8..5e-8 instead of 0.0, and emit_sph_star_shelf.isometries reports
+      |sym| = 7, which is not the order of any point group containing a 5-fold axis and cannot
+      be a group at all. Flagging it, not endorsing it.
+
+  ⚑ 97.9% of the affected k=3 blocks are STILL UNEXAMINED (694,098 blocks, ~6.8 CPU-hours).
+  The 2% that was examined produced a shipping record, so the remainder is not a formality.
+
+VERDICT ITEM GC: LEAK, CONFIRMED AND FIXED IN A PRIVATE COPY.
+  It loses nothing at k=1 and nothing on star-hept / star-hept-pyr / star-ico-d.
+  It loses, on star-wide: J1 (square pyramid) and J3 (triangular cupola) at k=2 -- real solids,
+  both filtered off the star shelf as density-1 convex -- and at least ONE genuine star polyhedron
+  at k=3, the pentagrammic rotunda V=20/35/17 at density 5, which the shelf WOULD ship.
+  99 records on the shelf would become 100 from the 2% already checked.
+  NOTHING WAS WRITTEN TO public/ AND NOTHING IN THE REPO WAS EDITED.
+  The patch lives at <scratchpad>/audit-a/gc/develop_spherical.py (diff is 4 lines + a comment).
+
+---------------------------------------------------------------------------
+ITEM 2 (stratified)  eu_sphfill PREFILTER: pooled soundness bound
+---------------------------------------------------------------------------
+⚑ FIRST, A CORRECTION TO THE PREMISE. verify_prefilter.py sorts its jobs
+`jobs.sort(key=lambda j: -counts[j[0]])`, so the sweep that was stopped at 454/2393 files did the
+454 LARGEST files, which hold 38,858,662 of the 40,487,641 blocks -- 96.0% of the corpus by block
+count -- and it had already covered b03199 (size-rank 1), b03719 (220), b03737 (246) and the main
+b00118 file (rank 0). It was biased toward the HEAVIEST buckets, not away from them. b03872 has no
+file in the corpus at all: that bucket produced zero pruned k=3 blocks.
+
+Two further stratified samples, each capped:
+  (a) RANDOM  seeded shuffle of all 2,393 files (seed 20260822), 1-in-674 blocks, 2 workers,
+      900s cap -> 878/2393 files, 21,042 blocks, 48,070 attempts, 0 disagreements, 0 lost.
+      (C said CLOSED on 9 attempts, Python on the same 9.)
+  (b) HEAVY   the files of b00118/b03719/b03199/b03737 (b03872 has none): 7 files, 1,768,096
+      blocks = 4.4% of the corpus, 1-in-70, 780s cap -> 4/7 files, 12,904 blocks, 12,435
+      attempts, 0 disagreements, 0 lost. (C closed 0, Python closed 0.)
+
+POOLED over all four samples (sequential prefix + earlier uniform pilot + rand + heavy):
+      182,377 blocks   367,277 attempts   0 disagreements   0 lost solutions
+  95% upper bound, rule of three:
+      per-ATTEMPT false-negative rate   <= 3/367,277 = 8.2e-6
+      per-BLOCK  lost-solution rate     <= 3/182,377 = 1.6e-5
+      i.e. at most ~666 of the 40,487,641 blocks could be losing a solid, at 95% confidence.
+VERDICT: SOUND on the evidence. The bound is a bound, not a proof -- 666 blocks is not zero, and
+the only way to zero it is the full differential sweep (~15 CPU-hours at the measured rate).
+
+---------------------------------------------------------------------------
+ITEM 2 (empirical)  instance_bound at 10x
+---------------------------------------------------------------------------
+eu_sphfill re-run with the guard multiplied by 10 over a 1-in-300 sample of the real k=3 corpus:
+      136,448 blocks, 284,592 attempts, 56 fills CLOSE at the 10x guard,
+      of those 0 needed more than instance_bound(configs),
+      largest instance count reached by any closing fill: 1,800.
+No block anywhere in the sample produced a record that the shipped guard would have truncated.
+VERDICT: SOUND. Unconditionally proved for polyhedral Gamma0; for an axial Gamma0 with an n >= 31
+axis the argument needs an axis point covered by >= 4 face sheets, and 284,592 attempts at 10x
+found no fill that even approaches the bound from above.
+
+---------------------------------------------------------------------------
+ITEM 3  EMITTER FUNNEL -- re-verified against the code and the shelf
+---------------------------------------------------------------------------
+The table logged earlier reproduces exactly (179 raw in, 99 out, replay id set == the 99 files on
+the shelf). Checked against emit_sph_star_shelf.main: the four drop rules in the table are ALL the
+drop rules there are -- cross-file geometric dedup on (V,E,F,census,density,rho,k); the
+`density<2 and not star_face` star filter; `k_measured != k_cert`; and `no free id`. Nothing else
+in the emitter can drop a record.
+  stage                         k=1      k=2      k=3    total
+  raw_in                        119       45       15      179
+  drop_dedup                     37        6        0       43
+  drop_density1_nostar           30        2        5       37
+  drop_k_disagree                 0        0        0        0
+  drop_no_free_id                 0        0        0        0
+  shipped                        52       37       10       99
+  shelf on disk: 99 files, by k {1: 52, 2: 37, 3: 10}.  MATCHES.
+VERDICT: SOUND. No record is lost silently; every drop has a named rule and a reason.
+[21:51:32]   GC-3R 20 files -> 20 shard-jobs, 1 workers (NEW ATTEMPTS ONLY)
+[21:51:32]   GC-3R 19 files -> 19 shard-jobs, 1 workers (NEW ATTEMPTS ONLY)
+[21:51:32]   GC-3R 19 files -> 19 shard-jobs, 1 workers (NEW ATTEMPTS ONLY)
+
+[21:52] EXTENDING k=3 COVERAGE with the remaining budget: a uniform 1-in-5 sample of the 708,863
+        affected blocks (141,773 blocks) split three ways, reduced-attempt developer, 3 workers.
+        Artifacts: <scratchpad>/audit-a/gc-k3-p{0,1,2}.json, logs gck3-p{0,1,2}.log.
+        The two k=3 records already found are saved at <scratchpad>/audit-a/NEW-RECORDS-k3-star.json.
+[21:53:32]   GC-3R 1/19 jobs blocks=12531 newattempts=22224 recs=0 119s ETA 2151s
+[21:53:33]   GC-3R 1/19 jobs blocks=12532 newattempts=22226 recs=0 120s ETA 2166s
+[21:53:35]   GC-3R 1/20 jobs blocks=12532 newattempts=22192 recs=0 123s ETA 2332s
+[21:55:31]   GC-3R 2/19 jobs blocks=25062 newattempts=44416 recs=0 239s ETA 2030s
+[21:55:32]   GC-3R 2/19 jobs blocks=25063 newattempts=44418 recs=0 240s ETA 2040s
+[21:55:38]   GC-3R 2/20 jobs blocks=25064 newattempts=44414 recs=0 246s ETA 2210s
+[21:57:24]   GC-3R 3/19 jobs blocks=33852 newattempts=60228 recs=0 352s ETA 1877s
+[21:57:26]   GC-3R 3/19 jobs blocks=33854 newattempts=60200 recs=0 353s ETA 1885s
+[21:57:33]   GC-3R 3/20 jobs blocks=33854 newattempts=60216 recs=0 360s ETA 2042s
+[21:59:08]   GC-3R 4/19 jobs blocks=42643 newattempts=76010 recs=0 456s ETA 1709s
+[21:59:10]   GC-3R 4/19 jobs blocks=42644 newattempts=75954 recs=0 458s ETA 1717s
+[21:59:19]   GC-3R 4/20 jobs blocks=42644 newattempts=76048 recs=0 467s ETA 1868s
+[22:00:03]   GC-3R 6/19 jobs blocks=45920 newattempts=82630 recs=0 511s ETA 1106s
+[22:00:06]   GC-3R 6/19 jobs blocks=45920 newattempts=82614 recs=0 513s ETA 1113s
+[22:00:15]   GC-3R 6/20 jobs blocks=45921 newattempts=82690 recs=0 523s ETA 1220s
+[22:00:27]   GC-3R 19/19 jobs blocks=47258 newattempts=85881 recs=0 535s ETA 0s
+[22:00:27]   GC-3R DONE blocks=47258 new-attempts=85881 raw=0 final=0 (535s)
+[22:00:30]   GC-3R 19/19 jobs blocks=47257 newattempts=85860 recs=0 538s ETA 0s
+[22:00:30]   GC-3R DONE blocks=47257 new-attempts=85860 raw=0 final=0 (538s)
+[22:00:38]   GC-3R 20/20 jobs blocks=47258 newattempts=85943 recs=0 546s ETA 0s
+[22:00:38]   GC-3R DONE blocks=47258 new-attempts=85943 raw=0 final=0 (546s)
+[22:00] k=3 EXTENDED SAMPLE RESULT
+        1-in-5 uniform sample of the 708,863 affected blocks: 141,773 blocks, 257,684 new
+        attempts, 0 records, 1,619s over 3 workers.
+        Combined k=3 coverage of the affected set:
+          * the STAR-face gainer subset (3.5/2.10/3, 5.5/2.6, 3.3.8.8/3 + d=2 relatives):
+            14,765 blocks = 100% COMPLETE -> 2 records, 1 of which would ship.
+          * everything else affected: 20% uniform, 0 records.
+        The one hit sits in the star subset, which is why the uniform sample missed it: the whole
+        star subset is 2.08% of the affected blocks and only ONE of its 14,765 blocks realizes.
+        Remaining unexamined: ~555,000 blocks (78% of the non-star-gainer remainder), ~5.4 CPU-h.
+
+===========================================================================
+AUDIT CLOSED 22:01.  Nothing written to public/. Nothing in the repo edited.
+The other agent's uncommitted run_k2_buckets.py and landing-data.generated.json are untouched.
+Patch, new records and all scratch artifacts under
+  <scratchpad>/audit-a/gc/develop_spherical.py        the 4-line fix
+  <scratchpad>/audit-a/NEW-RECORDS-k3-star.json       the 2 new k=3 records
+  <scratchpad>/audit-a/gc-k2-new-cells.json           the 3 k=2 records (2 new: J1, J3)
+  <scratchpad>/audit-a/buckets-star-wide-gc.json      3,906 buckets vs the shipped 3,902
+===========================================================================

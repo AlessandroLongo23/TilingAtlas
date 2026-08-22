@@ -15928,3 +15928,76 @@ angle breaks `enum_configs`' monotone prune, so it is a search change and not an
 only solids whose every vertex has positive angular defect. Within those bounds the search is
 exhaustive and every one of the 40,487,641 blocks was accounted for: 40,476,751 rejected because the
 fill does not close, the rest developed in full.
+
+### The great-circle leak, and the star shelf reaches 100 (2026-08-23)
+
+AL asked why the star counts read 52 / 37 / 10 when the non-convex regular-faced shelf grows
+34 / 34 / 75 / 100, and whether star polyhedra should not grow too. They should, and the sequence was
+never one sequence. **31 of the 37 at k=2 are `{n/d}` pyramids from `gen_star_pyramids.py`, whose
+count is set by `--nmax 20` in `build-star-shelf.sh`** — an infinite family truncated by a CLI flag.
+k=1 and k=3 have none. Like for like, one palette and one developer, the searched sequence is
+**47 -> 8 -> 10** shelf-eligible (40 -> 5 -> 10 star-faced), and it rises at k=3. k=1 is not a trend
+point either: k=1 means vertex-transitive, which is the uniform polyhedra, classified in 1954.
+
+The deeper answer is that the two shelves count different objects. `develop_spherical` materialises
+every vertex as a normalised column of a rotation matrix, so inscribed-in-a-common-sphere is not a
+filter it applies, it is the only thing it can express. `lib/tilings/sph-inscribed.ts` measures that
+exactly **one** of the 243 non-convex regular-faced solids has a circumsphere. Across k = 1..5 the
+inscribed counts are 28, 7, 7, 2, 0, and the ones that are genuinely spherical tilings are 28, 4, 6,
+2, 0 — so the star-wide k=3 run found five of the six at k=3, not five of fifty-eight. **What the
+Atlas is missing is the star analogue of the 243-solid `ncx-` shelf: star-faced solids with NO
+circumsphere.** Nobody has enumerated it, and it is a developer change, not a search change —
+`develop_euclid` already develops {5/2} to machine precision and rejects the small stellated
+dodecahedron on one line, `res["euler"] == 2`, which is the wrong gate for a chi = -6 solid the star
+shelf already knows about.
+
+**The leak.** `solve_rho_all` bracketed at `[1e-7, cap - 1e-7]`, `cap = min(2*pi*d/n)`, and required a
+sign change strictly inside. At the cap the capped face has circumradius pi/2 and interior angle
+exactly pi: it is a HEMISPHERE, and those are the halved solids. Measured `f(cap) = 0` exactly for
+`3.3.4`, `3.4.6` and `3.5.10` — J1, J3, J6 — and for 15 star-bearing multisets besides. No epsilon
+fixes it; the deficit falls like sqrt(eps). The leak is upstream of the developer, since
+`rho_buckets.py` builds the k>=2 search alphabet from the same function, so those multisets sat in no
+bucket at all. Fixed by evaluating f AT the cap and admitting the root when it vanishes: star-wide
+3,902 -> 3,906 buckets, 40,487,641 -> 41,375,367 blocks, 15 -> 18 k=3 congruence classes, none lost.
+`ss-20-35-17-d5` ships: V=20 E=35 F=17, density 5, rho = 108 degrees, C5v, 10{3} + 6{5/2} + 1{10/3},
+half a great icosidodecahedron.
+
+**Two bugs in the fix, and what caught them.** A third record claimed the same V/E/F/census/rho as the
+new solid at density 2 instead of 5. That cannot be: density is Sigma face area / 4pi and those inputs
+fix it. Recomputing gave 4.999999947, and its rho was 107.99999999999996. Cause one: admitting the cap
+only when no root was within 1e-9 let the retrograde scan's near-cap root stand — it must SNAP.
+Cause two: `solve_rho_common` returns the MEAN of the k matched roots, and averaging an exact cap root
+against two ordinary bisections moved it 4e-14. Both are amplified by `dalpha/drho` diverging at the
+cap, 4e-14 in rho becoming 2e-7 in the angle, producing a degraded TWIN (residuals 4.6e-8 against
+2.7e-15) that `finalise_records` could not collapse because the two disagreed on density. An exact
+root now beats an averaged one. The twin proved to be the same solid in a different orientation and
+is collapsed by a congruence test added AFTER the emitter's signature dedup — the signature separates
+on density on purpose and must keep doing so.
+
+**`eu_sphfill` runs `mapOK` now.** A hemisphere closes the fill by construction, so survivors went
+0.027% -> 1.4% and develop 19.6 -> 46 minutes. Of 2,031 `check_realized` calls on survivors, 2,024
+(99.7%) died on `mapOK` — `2|E| == ninst`, face degrees summing to `ninst`, a {n/d} face tracing n
+darts. Pure counting, no geometry, so it moved into C. 583,863 of 583,880 survivors killed, 17 blocks
+reached the developer, develop back to 26 minutes, 0 violations over 753 verified survivors.
+
+⚑ **Handing the FILL back was built, verified compatible, and abandoned. Do not retry it.** C's frames
+differ from the developer's by up to 2.33e-15 on 66 of 67 blocks: numpy's 3x3 matmul is BLAS, not a
+naive triple product, and disagrees with one on 1,942 of 2,000 random pairs. Nine orders inside the
+1e-6 key quantum, so the MAP is identical and counting it in C is sound; the shelf ships full float64,
+so no float from that side may reach `public/`. Matching numpy would mean replicating Accelerate's
+dgemm.
+
+**Also landed, from the same session.** `--require-star` on `run_k2_buckets.py` (sound: a solid has a
+star face iff one of its vertex figures carries a star tile, confirmed on 40.5M blocks — star-free
+buckets emitted 6,314,170 blocks all star-free, all-star buckets emitted zero star-free ones; worth
+17.7% of solve+prune). `--fuse`, after two real bugs: `processstream` was pre-canonical-form code, and
+`std::cin` reads one character at a time through libc++'s `__stdinbuf` regardless of
+`sync_with_stdio(false)` — a 1 MB fd reader took the parse 51.75s -> 3.01s and turned the fuse from
+3.1x slower into 1.58x faster. `EU_PRUNED_STDOUT` + `develop_spherical --stdin` + `--develop` complete
+the zero-disk pipeline. ⚑ That last one is a DISK change, not a speed one: at k=3 the pruned tree is
+10 GB moved across a 26-minute develop. It exists because k=4's projected 1.8 TB catalogue does not
+fit in 566 GB, and `eu_sphfill` throws away 99.97% of it anyway.
+
+**k=4, measured not guessed.** 5.2e9 blocks under `--require-star`, 38.5 CPU-hours of search (~5 h
+wall on 8 cores), 712 CPU-hours of develop. Growth is ACCELERATING: 96x, 96x, **156x**. Plan k=5 at
+156x+. Disk was the wall and the pipe is the answer.

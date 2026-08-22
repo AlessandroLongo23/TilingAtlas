@@ -3,8 +3,52 @@
 > **What this file is.** The 30-second "where are we" snapshot. **Mutable, disposable,
 > clobber-tolerant** — if two agents overwrite it, nothing is lost, because the *canonical*
 > history lives in the append-only **ledgers** below. Regenerate it from the latest signed
-> entry of each ledger. **Never write history here.** — last updated 2026-08-22, CC
+> entry of each ledger. **Never write history here.** — last updated 2026-08-23, CC
 > (acting as TA too, AL authorization 2026-07-10).
+
+## The great-circle leak: the star shelf is 100, and the k=3 row was incomplete (2026-08-23)
+
+**One new star polyhedron, and it was never being searched for.** `solve_rho_all` bracketed at
+`hi0 = min(2*pi*d/n) - 1e-7` and required a sign change strictly inside, so a closure root sitting
+exactly ON the cap could not be found: at the cap the capped face has circumradius pi/2, its vertices
+lie on a great circle, it IS a hemisphere and its interior angle is exactly pi. Measured `f(cap) = 0`
+for `3.3.4` (J1, half an octahedron), `3.4.6` (J3, half a cuboctahedron), `3.5.10` (J6, half an
+icosidodecahedron). Shrinking the epsilon cannot rescue it: the deficit at `cap - eps` falls like
+sqrt(eps), 0.036 degrees at 1e-7.
+
+⚑ **The leak was UPSTREAM of the developer.** `rho_buckets.py` builds the k>=2 search alphabet from
+`solve_rho_all`, so a multiset with no root sat in no bucket and was never searched. star-wide went
+**3,902 -> 3,906 buckets** and **40,487,641 -> 41,375,367 blocks**, and the k=3 develop gave **18
+congruence classes against 15, with none lost**. Of the three new ones: J6 (convex, star-free, dropped
+by the emitter — it is on the convex shelf already), the shipping record, and a duplicate.
+
+**The new solid: `ss-20-35-17-d5`.** V=20 E=35 F=17, chi=2, density 5, rho = 108 degrees, C5v,
+10{3} + 6{5/2} + 1{10/3}, three orbits. Half a great icosidodecahedron cut on the great circle
+bearing the {10/3} — the star analogue of J6, which the same bug was losing.
+
+**Two numerical bugs in the fix itself, both caught by not trusting a third record.** It reported the
+same V/E/F/census/rho as the new solid at density 2 instead of 5, which is impossible: density is
+Sigma face area / 4pi and those inputs fix it. (i) Admitting the cap only when no root was already
+within 1e-9 left the retrograde scan's root 4e-14 short — it must SNAP, not append. (ii)
+`solve_rho_common` returns the MEAN of the k matched roots, so an exact cap root got averaged against
+two ordinary bisections and dragged 4e-14 off. Both matter because `dalpha/drho` diverges at the cap:
+4e-14 in rho is 2e-7 in the angle, and the block developed a numerically degraded TWIN with residuals
+4.6e-8 against 2.7e-15. Fixed: all four readings now land at exactly 108 degrees, worst residual
+2.5e-15. The twin turned out to be the same solid in a different orientation and is now collapsed by
+a CONGRUENCE test in the emitter, added after the signature dedup (which separates on density
+deliberately and must keep doing so).
+
+**`eu_sphfill` now runs the map-consistency test.** A hemisphere closes the fill by construction, so
+prefilter survivors went from 0.027% to 1.4% and the develop went 19.6 -> 46 minutes. Of 2,031
+`check_realized` calls on survivors, **2,024 (99.7%) died on `mapOK`** — the integer counting test,
+which needs no geometry. Moved into C: 583,863 of 583,880 survivors killed, **17** blocks reached the
+full developer, develop back to 26 minutes, and **0 violations** over 753 verified survivors.
+
+⚑ **Returning the FILL from `eu_sphfill` was built and abandoned, and the reason is load-bearing.**
+C's frames differ from the developer's by up to **2.33e-15** on 66 of 67 blocks, because numpy's 3x3
+matmul is BLAS and not a naive triple product (it disagrees with one on 1,942 of 2,000 random pairs).
+That is nine orders inside the 1e-6 key quantum, so the MAP is identical and counting it in C is
+sound — but the shelf ships full float64, so no float from that side may ever reach `public/`.
 
 ## The star shelf reaches k=3: 99 solids (2026-08-22)
 

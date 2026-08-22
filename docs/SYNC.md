@@ -2861,3 +2861,12 @@ five are density-1 with no star face and were ALREADY on the atlas as **J63, J11
 matched by congruence — a star search rediscovering five Johnson solids from another palette and
 another developer. ⚑ Two naming bugs fixed: `NAMES` was keyed without the orbit count and a 3-orbit
 solid wore U54's name; every unnamed record printed its density twice. 470e364, 3f8a804.
+
+## 2026-08-23 (1) — the great-circle leak takes the star shelf to 100 — CC
+
+`solve_rho_all` could not see a closure root sitting exactly ON its bracket cap, where the capped face
+is a hemisphere; `rho_buckets.py` builds the k≥2 alphabet from it, so those multisets sat in no bucket
+and were never searched. star-wide 3,902 → 3,906 buckets, 15 → 18 k=3 records, none lost —
+**`ss-20-35-17-d5`**, half a great icosidodecahedron. ⚑ Two numerics bugs in the fix itself produced a
+degraded twin, residuals 4.6e-8 against 2.7e-15. `eu_sphfill` runs `mapOK` now (99.7% of survivors)
+and the pruner can stream to it. Detail: DEVELOPMENT_NOTES 2026-08-23. e2544ce 84fce0b 219d13f f1a2f36

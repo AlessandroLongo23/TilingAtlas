@@ -1,0 +1,96 @@
+[22:41:19] 41375367 blocks in 20688 work items over 8 workers
+[22:41:49]   develop 318/20688  blocks=41375367  realized=8  prefiltered=635618  30s, ETA 1932s
+[22:42:25]   develop 490/20688  blocks=41375367  realized=8  prefiltered=977732  65s, ETA 2698s
+[22:43:05]   develop 499/20688  blocks=41375367  realized=8  prefiltered=981780  106s, ETA 4272s
+[22:43:46]   develop 507/20688  blocks=41375367  realized=8  prefiltered=982558  147s, ETA 5841s
+[22:44:26]   develop 515/20688  blocks=41375367  realized=8  prefiltered=983266  187s, ETA 7318s
+[22:45:09]   develop 523/20688  blocks=41375367  realized=8  prefiltered=983882  230s, ETA 8856s
+[22:45:50]   develop 531/20688  blocks=41375367  realized=8  prefiltered=984782  271s, ETA 10281s
+[22:46:34]   develop 539/20688  blocks=41375367  realized=8  prefiltered=985620  315s, ETA 11768s
+[22:47:08]   develop 548/20688  blocks=41375367  realized=8  prefiltered=990020  348s, ETA 12804s
+[22:47:43]   develop 564/20688  blocks=41375367  realized=13  prefiltered=1007317  383s, ETA 13678s
+[22:48:13]   develop 623/20688  blocks=41375367  realized=13  prefiltered=1125317  413s, ETA 13315s
+[22:48:43]   develop 821/20688  blocks=41375367  realized=13  prefiltered=1521317  444s, ETA 10736s
+[22:49:14]   develop 1399/20688  blocks=41375367  realized=13  prefiltered=2677317  474s, ETA 6540s
+[22:49:44]   develop 1480/20688  blocks=41375367  realized=13  prefiltered=2839317  504s, ETA 6547s
+[22:50:15]   develop 1552/20688  blocks=41375367  realized=13  prefiltered=2983317  535s, ETA 6600s
+[22:50:45]   develop 1621/20688  blocks=41375367  realized=13  prefiltered=3121317  566s, ETA 6654s
+[22:51:15]   develop 1682/20688  blocks=41375367  realized=13  prefiltered=3243317  596s, ETA 6732s
+[22:51:46]   develop 1759/20688  blocks=41375367  realized=13  prefiltered=3397317  626s, ETA 6741s
+[22:52:16]   develop 1831/20688  blocks=41375367  realized=13  prefiltered=3541317  657s, ETA 6763s
+[22:52:46]   develop 1897/20688  blocks=41375367  realized=13  prefiltered=3673317  687s, ETA 6805s
+[22:53:17]   develop 1976/20688  blocks=41375367  realized=13  prefiltered=3831317  717s, ETA 6793s
+[22:53:47]   develop 2243/20688  blocks=41375367  realized=17  prefiltered=4364417  747s, ETA 6146s
+[22:54:26]   develop 2311/20688  blocks=41375367  realized=27  prefiltered=4495092  787s, ETA 6255s
+[22:55:01]   develop 2319/20688  blocks=41375367  realized=27  prefiltered=4495767  822s, ETA 6508s
+[22:55:41]   develop 2327/20688  blocks=41375367  realized=27  prefiltered=4496401  862s, ETA 6803s
+[22:56:14]   develop 2334/20688  blocks=41375367  realized=27  prefiltered=4496565  895s, ETA 7035s
+[22:56:49]   develop 2340/20688  blocks=41375367  realized=27  prefiltered=4496633  930s, ETA 7294s
+[22:57:24]   develop 2346/20688  blocks=41375367  realized=27  prefiltered=4496937  965s, ETA 7545s
+[22:57:57]   develop 2352/20688  blocks=41375367  realized=27  prefiltered=4497114  998s, ETA 7781s
+[22:58:29]   develop 2359/20688  blocks=41375367  realized=27  prefiltered=4497369  1030s, ETA 8003s
+[22:59:01]   develop 2366/20688  blocks=41375367  realized=27  prefiltered=4501748  1061s, ETA 8218s
+[22:59:31]   develop 2509/20688  blocks=41375367  realized=27  prefiltered=4774580  1091s, ETA 7907s
+[23:00:01]   develop 2788/20688  blocks=41375367  realized=27  prefiltered=5332580  1121s, ETA 7200s
+[23:00:31]   develop 3092/20688  blocks=41375367  realized=27  prefiltered=5940580  1152s, ETA 6553s
+[23:01:01]   develop 3420/20688  blocks=41375367  realized=27  prefiltered=6596580  1182s, ETA 5966s
+[23:01:31]   develop 3755/20688  blocks=41375367  realized=27  prefiltered=7266580  1212s, ETA 5464s
+[23:02:01]   develop 4078/20688  blocks=41375367  realized=27  prefiltered=7912580  1242s, ETA 5058s
+[23:02:31]   develop 4413/20688  blocks=41375367  realized=27  prefiltered=8582580  1272s, ETA 4691s
+[23:03:01]   develop 4851/20688  blocks=41375367  realized=27  prefiltered=9458580  1302s, ETA 4251s
+[23:03:31]   develop 5176/20688  blocks=41375367  realized=27  prefiltered=10108580  1332s, ETA 3992s
+[23:04:02]   develop 5535/20688  blocks=41375367  realized=27  prefiltered=10826580  1363s, ETA 3730s
+[23:04:32]   develop 5867/20688  blocks=41375367  realized=27  prefiltered=11490580  1393s, ETA 3518s
+[23:05:02]   develop 6069/20688  blocks=41375367  realized=27  prefiltered=11891579  1423s, ETA 3428s
+[23:05:34]   develop 6082/20688  blocks=41375367  realized=27  prefiltered=11892130  1455s, ETA 3495s
+[23:06:05]   develop 6090/20688  blocks=41375367  realized=27  prefiltered=11892479  1486s, ETA 3561s
+[23:06:37]   develop 6098/20688  blocks=41375367  realized=27  prefiltered=11892893  1518s, ETA 3631s
+[23:07:09]   develop 6106/20688  blocks=41375367  realized=27  prefiltered=11893016  1549s, ETA 3700s
+[23:07:39]   develop 6113/20688  blocks=41375367  realized=27  prefiltered=11893176  1580s, ETA 3767s
+[23:08:12]   develop 6121/20688  blocks=41375367  realized=27  prefiltered=11893487  1613s, ETA 3839s
+[23:08:48]   develop 6129/20688  blocks=41375367  realized=27  prefiltered=11893866  1649s, ETA 3917s
+[23:09:22]   develop 6137/20688  blocks=41375367  realized=27  prefiltered=11893953  1683s, ETA 3990s
+[23:09:53]   develop 6145/20688  blocks=41375367  realized=27  prefiltered=11894266  1714s, ETA 4056s
+[23:10:23]   develop 6392/20688  blocks=41375367  realized=27  prefiltered=12373981  1744s, ETA 3901s
+[23:10:53]   develop 6874/20688  blocks=41375367  realized=27  prefiltered=13337822  1774s, ETA 3565s
+[23:11:23]   develop 7317/20688  blocks=41375367  realized=34  prefiltered=14223086  1804s, ETA 3297s
+[23:11:53]   develop 7859/20688  blocks=41375367  realized=34  prefiltered=15307002  1834s, ETA 2994s
+[23:12:24]   develop 8193/20688  blocks=41375367  realized=34  prefiltered=15974864  1864s, ETA 2843s
+[23:12:54]   develop 8571/20688  blocks=41375367  realized=34  prefiltered=16730864  1894s, ETA 2678s
+[23:13:24]   develop 8997/20688  blocks=41375367  realized=34  prefiltered=17582864  1925s, ETA 2501s
+[23:13:54]   develop 9632/20688  blocks=41375367  realized=34  prefiltered=18852864  1955s, ETA 2244s
+[23:14:24]   develop 10184/20688  blocks=41375367  realized=34  prefiltered=19956864  1985s, ETA 2047s
+[23:14:54]   develop 10860/20688  blocks=41375367  realized=34  prefiltered=21308864  2015s, ETA 1824s
+[23:15:24]   develop 11574/20688  blocks=41375367  realized=34  prefiltered=22736864  2045s, ETA 1610s
+[23:15:54]   develop 12269/20688  blocks=41375367  realized=34  prefiltered=24126864  2075s, ETA 1424s
+[23:16:24]   develop 13209/20688  blocks=41375367  realized=34  prefiltered=26006864  2105s, ETA 1192s
+[23:16:54]   develop 13910/20688  blocks=41375367  realized=34  prefiltered=27408864  2135s, ETA 1040s
+[23:17:24]   develop 14749/20688  blocks=41375367  realized=34  prefiltered=29086314  2165s, ETA 872s
+[23:17:54]   develop 15453/20688  blocks=41375367  realized=34  prefiltered=30492940  2195s, ETA 744s
+[23:18:25]   develop 16024/20688  blocks=41375367  realized=34  prefiltered=31634729  2225s, ETA 648s
+[23:18:55]   develop 16606/20688  blocks=41375367  realized=34  prefiltered=32798729  2255s, ETA 554s
+[23:19:25]   develop 17279/20688  blocks=41375367  realized=34  prefiltered=34144729  2285s, ETA 451s
+[23:19:55]   develop 18140/20688  blocks=41375367  realized=34  prefiltered=35866703  2315s, ETA 325s
+[23:20:25]   develop 18775/20688  blocks=41375367  realized=34  prefiltered=37135679  2345s, ETA 239s
+[23:20:55]   develop 19052/20688  blocks=41375367  realized=34  prefiltered=37686411  2376s, ETA 204s
+[23:21:26]   develop 19060/20688  blocks=41375367  realized=34  prefiltered=37686810  2407s, ETA 206s
+[23:21:57]   develop 19069/20688  blocks=41375367  realized=34  prefiltered=37687223  2438s, ETA 207s
+[23:22:28]   develop 19077/20688  blocks=41375367  realized=34  prefiltered=37687735  2469s, ETA 208s
+[23:22:59]   develop 19085/20688  blocks=41375367  realized=34  prefiltered=37687831  2500s, ETA 210s
+[23:23:34]   develop 19093/20688  blocks=41375367  realized=34  prefiltered=37687906  2535s, ETA 212s
+[23:24:05]   develop 19102/20688  blocks=41375367  realized=34  prefiltered=37688264  2566s, ETA 213s
+[23:24:36]   develop 19111/20688  blocks=41375367  realized=34  prefiltered=37688728  2597s, ETA 214s
+[23:25:07]   develop 19119/20688  blocks=41375367  realized=34  prefiltered=37688839  2628s, ETA 216s
+[23:25:37]   develop 19125/20688  blocks=41375367  realized=34  prefiltered=37689104  2658s, ETA 217s
+[23:26:08]   develop 19178/20688  blocks=41375367  realized=34  prefiltered=37781173  2688s, ETA 212s
+[23:26:38]   develop 19891/20688  blocks=41375367  realized=34  prefiltered=39198120  2718s, ETA 109s
+[23:27:08]   develop 20643/20688  blocks=41375367  realized=34  prefiltered=40702120  2748s, ETA 6s
+[23:27:10]   develop 20688/20688  blocks=41375367  realized=34  prefiltered=40791487  2750s, ETA 0s
+[23:27:10]   34 records -> 18 congruence classes
+[23:27:10] merged 18 realized records -> /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/34adc110-941e-4169-8297-5e417a748958/scratchpad/gcfix/cells-k3.json (2750s total)
+[23:27:10]   report -> cells-k3-report.txt
+[23:27:10]      580843  unknown
+[23:27:10]       1638  d=(3, 3, 3) retro=[(8, 3)] sign=+1: flood-fill did not close within 2160 instances; d=(3, 
+[23:27:10]        252  d=(1, 1, 1) retro=[] sign=+1: flood-fill did not close within 2160 instances; d=(1, 1, 1) 
+[23:27:10]        192  d=(3, 3, 3) retro=[(5, 1)] sign=+1: flood-fill did not close within 2160 instances; d=(3, 
+[23:27:10]        110  d=(3, 3, 3) retro=[(5, 2)] sign=+1: flood-fill did not close within 2160 instances; d=(3, 
