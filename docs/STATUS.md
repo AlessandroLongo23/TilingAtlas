@@ -6,6 +6,26 @@
 > entry of each ledger. **Never write history here.** — last updated 2026-08-22, CC
 > (acting as TA too, AL authorization 2026-07-10).
 
+## The star shelf reaches k=3: 99 solids (2026-08-22)
+
+**52 k=1 + 37 k=2 + 10 k=3.** The star-wide k=3 run — 40,487,641 blocks, whole pipeline 22 minutes —
+gave 15 records; ten are star polyhedra and ship, and the other five are density-1 with no star face
+and were ALREADY on the atlas as Johnson solids **J63, J11, J19, J34, J80**, matched by congruence.
+A star search rediscovering five known Johnson solids from a different palette and a different
+developer is the best cross-check this pipeline has produced.
+
+⚑ **What the k=3 row is complete FOR**, and say this whenever the count is quoted: the `star-wide`
+palette ({3,4,5,6,8,10} and {5/2},{8/3},{10/3}), per-orbit density ≤ 3, PROGRADE faces only (the
+retrograde family {5/3},{5/4},{10/7},{3/2} is outside the palette by design), and only solids whose
+every vertex has positive angular defect.
+
+⚑ Two naming bugs the addition exposed, both fixed. `NAMES` was keyed without the orbit count, so a
+3-orbit solid with the great icosidodecahedron's V/E/F/census/density AND rho took U54's name for one
+build — it is not that solid (distance multisets differ by 0.293, symmetry order 20 against 120) and
+now ships unnamed. And every unnamed record printed its density twice on the card.
+
+All 89 previously shipped solids are byte-identical; the golden is regenerated to 99.
+
 ## The star combinatorial search is no longer the bottleneck (2026-08-22)
 
 **Whole star-wide k=3 search — 3902 rho buckets, solve + prune, 10 workers: 133 s.** The estimate

@@ -15891,3 +15891,40 @@ k=3 row joins them is AL's call. `build-star-shelf.sh` needs `run-k3-star-wide/c
 its cell list, and the completeness sentence on the cards would need to say what k=3 is complete FOR:
 the star-wide palette, per-orbit density ≤ 3, prograde faces only, positive angular defect at every
 vertex.
+
+### The k=3 star polyhedra reach the shelf (2026-08-22, same session)
+
+`build-star-shelf.sh` takes `run-k3-star-wide/cells.json` now and the shelf is **99**: 52 k=1, 37 k=2,
+10 k=3.
+
+**Ten of the fifteen ship.** The emitter admits a record if it covers the sphere more than once OR
+carries a self-crossing face, and five of the fifteen are density-1 with neither. ⚑ All five turn out
+to be **already on the atlas as Johnson solids — J63, J11, J19, J34 and J80** — matched by congruence
+(sorted pairwise-distance multiset) against `johnsonSolids.ts`. A star search on the `star-wide`
+palette with `develop_spherical` independently rediscovering five Johnson solids that the `spherical`
+palette found with `develop_euclid` is the strongest cross-check this pipeline has produced, and it is
+why nothing is lost by the filter excluding them here.
+
+⚑ **Two naming bugs the addition exposed.** `NAMES` was keyed on (V, E, F, census, density) with NO
+orbit count, and a catalogue name names ONE solid: `ss-30-60-32-d7-r18850` has V=30, E=60, F=32,
+12{5/2}+20{3}, density 7 and rho=1.884956 — every one of those equal to the great icosidodecahedron's
+— and it shipped for one build wearing U54's name. It is not that solid: the pairwise-distance
+multisets differ by 0.293 and its symmetry order is 20 against 120. It is a real three-orbit sibling
+and ships unnamed. The orbit count is in the key now, and every row carries the k its name actually
+ships with — read off the shipped shelf, not guessed, after guessing cost three pyramids their names
+for one build.
+
+And `sphStarToReference` built its family string as "density N · sphStarFamilyLabel", where that
+helper already appends the density for an unnamed record, so all 18 previously-unnamed records read
+"density 7 · census · density 7". `tilingSpec.ts` had hit the same trap and left a note; this call
+site was missed.
+
+All 89 previously shipped solids are byte-identical, nothing removed, golden regenerated to 99.
+
+⚑ **What the k=3 row is complete FOR** — quote this with the count. The `star-wide` palette
+({3,4,5,6,8,10} plus {5/2}, {8/3}, {10/3}), per-orbit density ≤ 3, PROGRADE faces only (the
+retrograde family {5/3}, {5/4}, {10/7}, {3/2} is outside the palette by design — a negative corner
+angle breaks `enum_configs`' monotone prune, so it is a search change and not an alphabet row), and
+only solids whose every vertex has positive angular defect. Within those bounds the search is
+exhaustive and every one of the 40,487,641 blocks was accounted for: 40,476,751 rejected because the
+fill does not close, the rest developed in full.

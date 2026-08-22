@@ -2853,3 +2853,11 @@ J·Medge·J = Medge, so the orbits are conjugate); the close/not-close verdict m
 0.036 ms/attempt against ~6 ms); the rho solving plans once per vertex-type LINE, not per block. k=2
 develop 56 min → 14 s, same 9 records, max vertex coord difference 0.0. **k=3: 40,487,641 blocks → 15
 records**, NOT shipped — a k=3 shelf row is AL's call. e51a7d0, 14b5942, 7dba79e, 1197a49, 5fc6616.
+
+## 2026-08-22 (5) — ten k=3 star polyhedra on the shelf: 89 → 99 — CC
+
+Star shelf is 52 k=1 + 37 k=2 + **10 k=3**. Of the 15 k=3 records ten are star polyhedra; the other
+five are density-1 with no star face and were ALREADY on the atlas as **J63, J11, J19, J34, J80**,
+matched by congruence — a star search rediscovering five Johnson solids from another palette and
+another developer. ⚑ Two naming bugs fixed: `NAMES` was keyed without the orbit count and a 3-orbit
+solid wore U54's name; every unnamed record printed its density twice. 470e364, 3f8a804.
