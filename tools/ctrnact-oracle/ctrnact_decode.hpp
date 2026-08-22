@@ -15,6 +15,13 @@
 // (corner-class ids), countinglist (1 = true vertex, 0 = dent-fill point) and class tables.
 #include "pruner_tables.inc"
 
+// PTAB_ETYPE ships in every generated pruner table and nothing built a nested view of it, so every
+// refinement in eu_pruner has been seeded on (cls, fam) while the solver seeds on
+// (cls*ETSPAN + etype, fam). A dart is (half-edge, side) and its EDGE TYPE is part of the structure —
+// a leg may not be glued to a hypotenuse — so an isomorphism has to preserve it and a congruence has
+// to refine it. Both of the pruner's tests were therefore working with less than the truth.
+static const std::vector<std::vector<int> > etypelistin = _ptab_nest(PTAB_ETYPE, PTAB_OFF, PTAB_N);
+
 static std::string countsignature; // set by buildvertextypes; read by the pruner's signature bucketing
 
 // ---------- string helpers ----------
@@ -61,6 +68,60 @@ static void deciphersymbol(const std::string& symbol, std::string& first, std::s
 	if (mirror) second = "*" + second;
 }
 
+// LABEL KEYS AS INTEGERS.
+//
+// decode() built a std::string per dart — edgelabel() concatenates — and makeglue then hashed all of
+// them into a string-keyed map to look up two darts per glue token. On star-wide b118 that is ~30
+// string constructions and one string hash table per block, 3.85M blocks: `sample` put allocation at
+// 40% of the pruner and memcmp at 20%.
+//
+// A label is base + (tile apostrophes, or "@tile"), and decipher() reads it back as (mirror, num,
+// til). When no base carries an apostrophe or '@' — true of every palette in this repo, checked at
+// startup — the tile part is exactly `til = j` and the triple is a faithful key for the string. So
+// carry the triple packed into an int and never build the string at all.
+//
+// ⚑ The guard is not decoration. With an apostrophe in a base the map stops being injective:
+// base "0'" at j=5 renders "0'@5", which decipher reads as til = 1*10+5 = 15 — the same triple as
+// base "0" at j=15. Different strings, one key, and a wrong gluing. LABELS_SIMPLE is false then and
+// the string path below runs unchanged.
+static bool LABELS_SIMPLE = true, LABELS_SCANNED = false;
+static std::vector<std::vector<int> > LBL_KEY0;   // [type][dart] -> (num << 1) | mirror
+
+static inline int lbl_pack(int num, int til, bool mirror) {
+	return ((num * 65536 + til) << 1) | (mirror ? 1 : 0);
+}
+
+static void scan_labels() {
+	if (LABELS_SCANNED) return;
+	LABELS_SCANNED = true;
+	LBL_KEY0.resize(labellistin.size());
+	for (size_t t = 0; t < labellistin.size(); t++) {
+		LBL_KEY0[t].resize(labellistin[t].size());
+		for (size_t d = 0; d < labellistin[t].size(); d++) {
+			const std::string& b = labellistin[t][d];
+			if (b.find('\'') != std::string::npos || b.find('@') != std::string::npos)
+				LABELS_SIMPLE = false;
+			size_t i = 0; bool mir = false; int num = 0;
+			if (i < b.size() && b[i] == '*') { mir = true; i++; }
+			while (i < b.size() && isnum(b[i])) { num = num * 10 + (b[i] - '0'); i++; }
+			LBL_KEY0[t][d] = (num << 1) | (mir ? 1 : 0);
+		}
+	}
+}
+
+// FIGURE ID PER TYPE, not per dart. figure_id() built a key string and then LINEARLY SCANNED every
+// figure seen so far comparing strings — and decode() called it once per DART. ~98 figures on
+// star-wide times ~30 darts times 3.85M blocks is billions of string comparisons for a value that
+// depends only on the vertex type.
+static std::vector<int> FIGURE_OF_TYPE;
+static int figure_id(const std::string& sym);
+static inline int figure_of_type(int t) {
+	if (FIGURE_OF_TYPE.empty()) FIGURE_OF_TYPE.assign(symbollist.size(), -1);
+	int& v = FIGURE_OF_TYPE[t];
+	if (v < 0) v = figure_id(symbollist[t]);
+	return v;
+}
+
 // makeglue: build the glue array from the conway string
 static std::vector<int> makeglue(const std::string& conway, const std::vector<int>& mirro,
                                  const std::vector<std::string>& label) {
@@ -88,6 +149,40 @@ static std::vector<int> makeglue(const std::string& conway, const std::vector<in
 		glue[mirro[k[1]]] = mirro[k[0]];
 	}
 	return glue;
+}
+
+// Same walk, no strings: scan the conway line by index, decipher each token into (mirror, num, til)
+// and look the dart up by the packed key. lkey has a few dozen entries so a linear scan beats a hash.
+static void makeglue_fast(const std::string& c, const std::vector<int>& mirro,
+                          const std::vector<int>& lkey, std::vector<int>& glue) {
+	glue.assign(mirro.size(), -1);
+	size_t p = 0;
+	const size_t n = c.size();
+	while (p + 1 < n) {
+		size_t e = p;
+		while (e < n && c[e] != ')' && c[e] != ']') e++;
+		if (e >= n) break;
+		const bool mirror = (c[p] == '[');
+		// first token
+		size_t a = p + 1, b = a;
+		while (b < e && c[b] != ' ') b++;
+		Dec w0 = decipher(c.substr(a, b - a));
+		Dec w1;
+		if (b < e) { w1 = decipher(c.substr(b + 1, e - b - 1)); }
+		else       { w1 = w0; }
+		if (mirror) w1.mirror = !w1.mirror;      // deciphersymbol prefixes '*' to the second token
+		int k[2] = { -1, -1 };
+		const Dec* ws[2] = { &w0, &w1 };
+		for (int i = 0; i < 2; i++) {
+			const int want = lbl_pack(ws[i]->num, ws[i]->til, ws[i]->mirror);
+			for (size_t q = 0; q < lkey.size(); q++) if (lkey[q] == want) { k[i] = (int)q; break; }
+		}
+		glue[k[0]] = k[1];
+		glue[k[1]] = k[0];
+		glue[mirro[k[0]]] = mirro[k[1]];
+		glue[mirro[k[1]]] = mirro[k[0]];
+		p = e + 1;
+	}
 }
 
 // SYMBOL LOOKUP — this was a linear std::find over the WHOLE alphabet, with a string compare at
@@ -165,6 +260,8 @@ static int countk(const std::vector<int>& vertextypes) {
 // ---------- decode: vertypeline + conway -> full glue graph ----------
 struct Graph {
 	std::vector<int> rneig, lneig, mirro, lvert, glue;
+	std::vector<int> etype;  // per-dart edge type, 0 where the palette declares none
+	std::vector<int> lkey;   // packed (num, tile, mirror) per dart — replaces `label` where LABELS_SIMPLE
 	std::vector<int> cls;    // corner-class ids (WL color; regular: bijective with lvert)
 	// VERTEX-FIGURE id per dart — the alphabet symbol with its site-symmetry variant stripped, so
 	// (3,3,3)S3, R3, A and F all share one id. Both refinements below (simplify's minimality test
@@ -200,23 +297,41 @@ static int figure_id(const std::string& sym) {
 	keys.push_back(k);
 	return (int)keys.size() - 1;
 }
-static Graph decode(const std::string& vertypeline, const std::string& conwayline) {
-	Graph gph;
+// decode_into: the same decode, writing into a caller-owned Graph so a hot loop can reuse its
+// buffers. Constructing a Graph is eight vector allocations, and the pruner does it 3.85M times on
+// one star bucket; `sample` had malloc/free at 38% of the run after the string labels went.
+static void decode_into(Graph& gph, const std::string& vertypeline, const std::string& conwayline) {
+	scan_labels();
+	gph.rneig.clear(); gph.lneig.clear(); gph.mirro.clear(); gph.lvert.clear();
+	gph.cls.clear(); gph.fam.clear(); gph.lkey.clear(); gph.label.clear(); gph.etype.clear();
 	std::vector<int> vt = buildvertextypes(vertypeline);
 	for (size_t j = 0; j < vt.size(); j++) {
 		int i = vt[j];
 		int l = (int)gph.rneig.size();
 		int sl = (int)rneiglistin[i].size();
+		const int fig = figure_of_type(i);            // per TYPE; was recomputed per dart
 		for (int gg = 0; gg < sl; gg++) {
 			gph.rneig.push_back(l + rneiglistin[i][gg]);
 			gph.lneig.push_back(l + lneiglistin[i][gg]);
 			gph.mirro.push_back(l + mirrolistin[i][gg]);
 			gph.lvert.push_back(lvertlistin[i][gg]);
 			gph.cls.push_back(clslistin[i][gg]);
-			gph.fam.push_back(figure_id(symbollist[i]));
-			gph.label.push_back(edgelabel(labellistin[i][gg], (int)j));
+			gph.etype.push_back(etypelistin[i][gg]);
+			gph.fam.push_back(fig);
+			if (LABELS_SIMPLE) {
+				const int k0 = LBL_KEY0[i][gg];
+				gph.lkey.push_back(lbl_pack(k0 >> 1, (int)j, (k0 & 1) != 0));
+			} else {
+				gph.label.push_back(edgelabel(labellistin[i][gg], (int)j));
+			}
 		}
 	}
-	gph.glue = makeglue(conwayline, gph.mirro, gph.label);
+	if (LABELS_SIMPLE) makeglue_fast(conwayline, gph.mirro, gph.lkey, gph.glue);
+	else               gph.glue = makeglue(conwayline, gph.mirro, gph.label);
+}
+
+static Graph decode(const std::string& vertypeline, const std::string& conwayline) {
+	Graph gph;
+	decode_into(gph, vertypeline, conwayline);
 	return gph;
 }

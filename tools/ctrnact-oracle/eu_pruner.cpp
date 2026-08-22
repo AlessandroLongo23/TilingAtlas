@@ -36,7 +36,7 @@ namespace fs = std::filesystem;
 // bijective recoloring of the polygon size, so partitions and verdicts are unchanged.
 struct Sol {
 	std::vector<int16_t> rneig, lneig, lvert, mirro, glue;
-	std::vector<int16_t> fam;   // vertex-figure id per dart; see Graph::fam in ctrnact_decode.hpp
+	std::vector<int16_t> fam, etype;   // vertex-figure id per dart; see Graph::fam in ctrnact_decode.hpp
 };
 static std::vector<Sol> sols;                 // every kept solution
 static std::vector<std::string> siglist;      // distinct signatures
@@ -67,7 +67,7 @@ static size_t storeTotalBytes = 0, storeTotalPeak = 0, residentPeak = 0;
 
 static inline size_t solBytes(const Sol& s) {
 	return (s.rneig.size() + s.lneig.size() + s.lvert.size()
-	        + s.mirro.size() + s.glue.size() + s.fam.size()) * sizeof(int16_t);
+	        + s.mirro.size() + s.glue.size() + s.fam.size() + s.etype.size()) * sizeof(int16_t);
 }
 
 // Append every still-resident solution to the spill file and free its vectors.
@@ -92,14 +92,16 @@ static void spillResident() {
 		std::fwrite(s.mirro.data(), sizeof(int16_t), le, spillF);
 		std::fwrite(s.glue.data(), sizeof(int16_t), le, spillF);
 		std::fwrite(s.fam.data(), sizeof(int16_t), le, spillF);
+		std::fwrite(s.etype.data(), sizeof(int16_t), le, spillF);   // seven arrays now, not six
 		solOff[i] = off;
-		off += (long long)sizeof(le) + 6LL * le * (long long)sizeof(int16_t);
+		off += (long long)sizeof(le) + 7LL * le * (long long)sizeof(int16_t);
 		std::vector<int16_t>().swap(s.rneig);
 		std::vector<int16_t>().swap(s.lneig);
 		std::vector<int16_t>().swap(s.lvert);
 		std::vector<int16_t>().swap(s.mirro);
 		std::vector<int16_t>().swap(s.glue);
 		std::vector<int16_t>().swap(s.fam);
+		std::vector<int16_t>().swap(s.etype);
 		spillWrites++;
 	}
 	std::fflush(spillF);
@@ -126,7 +128,7 @@ static const Sol& solAt(int idx) {
 		}
 	};
 	rd(scratch.rneig); rd(scratch.lneig); rd(scratch.lvert); rd(scratch.mirro); rd(scratch.glue);
-	rd(scratch.fam);
+	rd(scratch.fam); rd(scratch.etype);
 	spillReads++;
 	return scratch;
 }
@@ -164,6 +166,7 @@ static bool simplify(const Graph& g) {
 					bits &= bits - 1;
 					if (g.cls[i] != g.cls[j]
 					    || g.fam[i] != g.fam[j]
+					    || g.etype[i] != g.etype[j]
 					    || !test(j, i)
 					    || !test(g.mirro[i], g.mirro[j])
 					    || !test(g.glue[i], g.glue[j])
@@ -194,14 +197,14 @@ static bool comparesolutions(const Graph& x, int solIdx) {
 	int le = (int)x.rneig.size();
 	if ((int)s.rneig.size() != le) return false;   // same signature ⇒ same le; guard anyway
 	int n = 2 * le, nw = (n + 63) >> 6;
-	static std::vector<int> rn, ln, mi, lv, gl, fm;
-	rn.resize(n); ln.resize(n); mi.resize(n); lv.resize(n); gl.resize(n); fm.resize(n);
+	static std::vector<int> rn, ln, mi, lv, gl, fm, et;
+	rn.resize(n); ln.resize(n); mi.resize(n); lv.resize(n); gl.resize(n); fm.resize(n); et.resize(n);
 	for (int i = 0; i < le; i++) {
 		rn[i] = x.rneig[i]; ln[i] = x.lneig[i]; mi[i] = x.mirro[i]; lv[i] = x.cls[i]; gl[i] = x.glue[i];
-		fm[i] = x.fam[i];
+		fm[i] = x.fam[i]; et[i] = x.etype[i];
 		rn[le + i] = le + s.rneig[i]; ln[le + i] = le + s.lneig[i];
 		mi[le + i] = le + s.mirro[i]; lv[le + i] = s.lvert[i]; gl[le + i] = le + s.glue[i];
-		fm[le + i] = s.fam[i];
+		fm[le + i] = s.fam[i]; et[le + i] = s.etype[i];
 	}
 	static std::vector<uint64_t> A, snap;
 	A.assign((size_t)n * nw, 0);
@@ -232,6 +235,7 @@ static bool comparesolutions(const Graph& x, int solIdx) {
 					bits &= bits - 1;
 					if (lv[i] != lv[j]
 					    || fm[i] != fm[j]
+					    || et[i] != et[j]
 					    || !test(j, i)
 					    || !test(mi[i], mi[j])
 					    || !test(gl[i], gl[j])
@@ -263,9 +267,11 @@ static inline uint64_t mix(uint64_t h, uint64_t x) {
 static std::vector<uint64_t> FP_COL;   // set by fingerprint(), read by canon_code()
 static uint64_t fingerprint(const Graph& g) {
 	int le = (int)g.rneig.size();
-	std::vector<uint64_t> col(le), nc(le);
+	static std::vector<uint64_t> col, nc;      // reused: two allocations per block otherwise
+	col.resize(le); nc.resize(le);
 	for (int i = 0; i < le; i++)
-		col[i] = mix(1469598103934665603ULL ^ (uint64_t)(g.cls[i] + 1), (uint64_t)(g.fam[i] + 1));
+		col[i] = mix(mix(1469598103934665603ULL ^ (uint64_t)(g.cls[i] + 1), (uint64_t)(g.fam[i] + 1)),
+		             (uint64_t)(g.etype[i] + 1));
 	// SIX ROUNDS, not three. The fingerprint's only job is to keep the bucket small enough that
 	// comparesolutions — an exact relation refinement over the disjoint union of two graphs, ~8 us —
 	// runs rarely. Three rounds does that on the regular palette (mean bucket 6.3) and does NOT on
@@ -295,8 +301,12 @@ static uint64_t fingerprint(const Graph& g) {
 // store bucketed by (sigline, fingerprint): both are isomorphism invariants, so a real duplicate
 // always shares both keys ⇒ comparesolutions is guaranteed to see it. Near-O(1) bucket size.
 static std::unordered_map<std::string, std::vector<int>> bucket;
-static std::string keyOf(const std::string& sigline, uint64_t fp) {
-	return sigline + '\x01' + std::to_string(fp);
+static std::string KEY_BUF;
+static const std::string& keyOf(const std::string& sigline, uint64_t fp) {
+	KEY_BUF.assign(sigline);                   // reused: one string built per block otherwise
+	KEY_BUF += '\x01';
+	KEY_BUF += std::to_string(fp);
+	return KEY_BUF;
 }
 
 // CANONICAL FORM — replaces the pairwise isomorphism test.
@@ -318,7 +328,8 @@ static std::string keyOf(const std::string& sigline, uint64_t fp) {
 static std::vector<int> CF_pos, CF_ord;
 static void canon_code(const Graph& g, std::string& out) {
 	const int le = (int)g.rneig.size();
-	std::string best, cur;
+	static std::string best, cur;   // reused across calls
+	best.clear();
 	uint64_t cmin = FP_COL.empty() ? 0 : FP_COL[0];
 	for (int i = 1; i < le && i < (int)FP_COL.size(); i++) if (FP_COL[i] < cmin) cmin = FP_COL[i];
 	for (int d0 = 0; d0 < le; d0++) {
@@ -340,6 +351,7 @@ static void canon_code(const Graph& g, std::string& out) {
 			cur.push_back((char)(unsigned char)((g.cls[d] >> 8) & 0xFF));
 			cur.push_back((char)(unsigned char)(g.fam[d] & 0xFF));
 			cur.push_back((char)(unsigned char)((g.fam[d] >> 8) & 0xFF));
+			cur.push_back((char)(unsigned char)(g.etype[d] & 0xFF));
 			if (!best.empty() && cur.size() <= best.size() &&
 			    best.compare(0, cur.size(), cur) < 0) { worse = true; break; }
 		}
@@ -391,7 +403,7 @@ static std::vector<int16_t> narrow(const std::vector<int>& v) { return {v.begin(
 
 static void addsolution(const Graph& g, const std::string& key) {
 	Sol s{ narrow(g.rneig), narrow(g.lneig), narrow(g.cls), narrow(g.mirro), narrow(g.glue),
-	       narrow(g.fam) };
+	       narrow(g.fam), narrow(g.etype) };
 	size_t b = solBytes(s);
 	solsResidentBytes += b;
 	storeTotalBytes += b;
@@ -502,7 +514,7 @@ static long processfile(const std::string& fam) {
 		prof_simpl += std::chrono::duration<double>(_t2 - _t1).count();
 		if (!_s) continue;
 		auto _t3 = std::chrono::steady_clock::now();
-		std::string key = keyOf(signatureline, fingerprint(g));
+		const std::string& key = keyOf(signatureline, fingerprint(g));
 		bool _seen = compareToSeen(g, key);
 		auto _t4 = std::chrono::steady_clock::now();
 		prof_fpcmp += std::chrono::duration<double>(_t4 - _t3).count();
@@ -510,11 +522,11 @@ static long processfile(const std::string& fam) {
 		addsolution(g, key);
 		kept++;
 #else
-		Graph g = decode(vertypeline, conwayline);
+		static Graph g; decode_into(g, vertypeline, conwayline);
 		// key first, so a shard can drop a block it does not own before the expensive work.
 		// simplify moves after it: it cannot change the key, and a block it rejects is dropped
 		// either way — now only by its owning shard, which sees exactly the same blocks.
-		std::string key = keyOf(signatureline, fingerprint(g));
+		const std::string& key = keyOf(signatureline, fingerprint(g));
 		if (!key_mine(key)) continue;
 		if (!SKIP_MINIMALITY && !simplify(g)) continue;
 		bool dup;
@@ -558,8 +570,8 @@ static long processstream(std::istream& in, int konly, std::map<int,long>& keptB
 		int k = countk(buildvertextypes(vertypeline));       // counting types only (Myers convention);
 		                                                     // buildvertextypes also sets countsignature
 		if (konly > 0 && k != konly) continue;               // drop before the expensive decode
-		Graph g = decode(vertypeline, conwayline);           // recomputes the same countsignature
-		std::string key = keyOf(signatureline, fingerprint(g));
+		static Graph g; decode_into(g, vertypeline, conwayline);  // recomputes the same countsignature
+		const std::string& key = keyOf(signatureline, fingerprint(g));
 		if (!key_mine(key)) continue;
 		if (!simplify(g)) continue;
 		if (compareToSeen(g, key)) continue;
