@@ -71,6 +71,10 @@ HEADER = """// NON-CONVEX REGULAR-FACED POLYHEDRA — every face a regular polyg
 //   * SELF-INTERSECTING (%(xing)d of %(n)d) — some face edge passes through the interior of a face it
 //     shares no vertex with. An embedded solid (%(emb)d of %(n)d) has no such crossing and is a
 //     polyhedron in the ordinary sense.
+//     ⚑ That split UNDERCOUNTS the crossings, and knowing by how much needs a second measurement:
+//     this script's test exempts any two faces that SHARE A VERTEX, and on a small solid nearly every
+//     pair does. lib/tilings/ncx-crossing.ts is the authority — it unions this answer with one that
+//     exempts no pair, and four solids move from embedded to self-intersecting when it does.
 //   * CIRCUMSPHERE (%(nosphere)d of %(n)d have none) — and so no spherical view.
 //     %(inscribed)s
 //     lib/tilings/sph-inscribed.ts measures this PER SOLID. It is not a property of the shelf, and

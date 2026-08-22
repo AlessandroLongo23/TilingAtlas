@@ -88,13 +88,19 @@ export function isInscribed(vertices: readonly V3[], tol = 1e-4): boolean {
  * the whole vertex corpus there to answer a yes/no question about nineteen ids would pull the Platonic,
  * Archimedean, prism and Johnson tables into the Euclidean shelf's bundle.
  *
- * The measurement is not close: across the shelf, the inscribed miss their fitted sphere by at most
- * 6.6e-10 of the radius and every one of these misses by more than 1e-2. There is no borderline case.
+ * The measurement is not close: the inscribed among these miss their fitted sphere by at most 6.8e-10
+ * of the radius, and the closest of THESE misses by 8.2e-3 (the gyroelongated square cupola). Across the
+ * whole shelf, "ncx-" included, the worst inscribed miss is 3.9e-7 and it belongs to ncx-7-15-10-a; the
+ * k=4 records come out of a deeper dihedral root-find and that is where the erosion shows.
+ * sph-inscribed.test.ts re-measures both populations, so neither figure can go stale unnoticed.
  *
  * It is a flat list rather than a grouped one because it is not a taxonomy — it is whatever the shipped
  * geometry measures, regenerated from it by the test whenever the shelf grows. It grew from 19 to 37 when the k=3 Johnson
- * solids landed, to 51 at k=4 and to 59 at k=5; the "ncx-" shelf is not here at all, since NONE of
- * those has a circumsphere and hasSphereView answers on the prefix.
+ * solids landed, to 51 at k=4 and to 59 at k=5; the "ncx-" shelf is not here at all, because it is
+ * listed the other way round, by NCX_INSCRIBED below.
+ *
+ * ⚑ This read "NONE of those has a circumsphere and hasSphereView answers on the prefix" until
+ * ncx-7-15-10-a arrived with one. hasSphereView consults NCX_INSCRIBED; the prefix rule is gone.
  */
 export const SPH_NOT_INSCRIBED: ReadonlySet<string> = new Set([
 	"augmented-dodecahedron",
