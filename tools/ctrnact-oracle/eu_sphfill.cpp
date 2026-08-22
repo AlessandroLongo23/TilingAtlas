@@ -24,12 +24,54 @@
  *
  * ⚑ All N are READ before any byte is written, and the reply is flushed as one block. Interleaving
  * would deadlock: the writer is still writing when the reader would need to drain.
+ *
+ * EU_SPHFILL_MAPOK — also run the MAP-CONSISTENCY test, and reject on it.
+ *
+ * The verdict alone stopped being selective. Measured on the k=3 corpus after the great-circle fix:
+ * of 698 blocks that survive the verdict, check_realized rejects 2,024 of its 2,031 calls — 99.7% —
+ * and every one of them on mapOK, the COUNTING test: 2|E| == ninst, the face degrees sum to ninst,
+ * and a {n/d} face traces exactly n darts. Seven realize. So the developer is being handed a hundred
+ * blocks for every one it can use, and the thing that throws them out needs no geometry at all.
+ *
+ * ⚑ WHY THIS TEST AND NOT THE OTHERS. mapOK is integer counting over the instance set this function
+ * already built. The rest of check_realized (edge CV, planarity, face regularity, integral density)
+ * reads COORDINATES, and the coordinates here are not the ones the shelf ships: numpy's 3x3 matmul is
+ * BLAS, not a naive triple product (it disagrees with one on 1,942 of 2,000 random pairs), so these
+ * frames differ from the developer's by up to 2.3e-15. That is nine orders inside the 1e-6 key
+ * quantum, so the MAP is identical and counting it here is sound; it is not zero, so no float this
+ * side may ever reach public/. Returning the fill for the developer to use was tried and abandoned
+ * for exactly that reason.
+ *
+ *   in:   as below, plus int32 nsize[n]   the polygon size at each dart, ftype's n
+ *   out:  N x int32                       -1 did not close, 0 closed but mapOK false, 1 usable
+ *
+ * EU_SPHFILL_INSTANCES — return the FILL, not just the verdict.
+ *
+ * The verdict protocol throws away the very thing it just computed. A survivor's instance set is
+ * (dart, frame) pairs, and develop_sphere then walks the identical fill again in Python to rebuild
+ * them. That cost nothing while survivors were 10,890 of 40,487,641 blocks (0.027%). The great-circle
+ * fix changed the arithmetic: a hemisphere config closes by construction, survivors on the k=3 corpus
+ * run at 3.4%, and a survivor costs 19.6 ms of Python against 0.036 ms for the verdict — 545x. Handing
+ * the fill back removes one of the two identical walks.
+ *
+ * ⚑ OPT-IN, because a running job must not have its protocol changed underneath it. Without the
+ * variable this binary is byte-for-byte the old one on the wire.
+ *
+ *   out:  N x int32 status            -1 did not close, -2 closed but payload capped, else ninst
+ *         then, in attempt order, for each status > 0:
+ *               ninst x { int32 h; double R[9] }
+ *
+ * The cap bounds one batch's reply: 20,000 attempts at 3% closure and 2,160 instances each would be
+ * 93 MB, which is survivable but not something to leave unbounded. Past it the verdict is still
+ * exact (-2 means CLOSED) and Python refills those few itself.
  */
 #include <cstdio>
 #include <cstdint>
 #include <cmath>
 #include <vector>
 #include <cstring>
+#include <cstdlib>
+#include <algorithm>
 
 static const double TOL = 1e-6;
 
@@ -70,10 +112,19 @@ int main() {
     std::vector<Mat3> stackR;
 
     std::vector<unsigned char> verdicts;
+    const bool want_inst = std::getenv("EU_SPHFILL_INSTANCES") != nullptr;
+    const bool want_mapok = std::getenv("EU_SPHFILL_MAPOK") != nullptr;
+    std::vector<int32_t> nsize;
+    const size_t PAYLOAD_CAP = 256u << 20;               // bytes of instance payload per batch
+    std::vector<int32_t> status;                         // instance protocol: one int32 per attempt
+    std::vector<unsigned char> payload;
+    std::vector<int32_t> instH;                          // this attempt's darts, in discovery order
+    std::vector<Mat3> instR;                             // …and its frames
     for (;;) {
       int32_t N = 0;
       if (std::fread(&N, 4, 1, stdin) != 1) break;
       verdicts.clear(); verdicts.reserve(N);
+      status.clear(); status.reserve(N); payload.clear();
       for (int32_t rec = 0; rec < N; rec++) {
         int32_t n = 0, guard = 0; double rho = 0;
         if (std::fread(&n, 4, 1, stdin) != 1) return 1;
@@ -83,6 +134,10 @@ int main() {
         if ((int)std::fread(rneig.data(), 4, n, stdin) != n) return 1;
         if ((int)std::fread(glue.data(), 4, n, stdin) != n) return 1;
         if ((int)std::fread(alpha.data(), 8, n, stdin) != n) return 1;
+        if (want_mapok) {
+            nsize.resize(n);
+            if ((int)std::fread(nsize.data(), 4, n, stdin) != n) return 1;
+        }
 
         RZ.resize(n);
         for (int h = 0; h < n; h++) {
@@ -100,6 +155,8 @@ int main() {
         keys.clear(); keys.reserve(guard + 8);
         stackH.clear(); stackR.clear();
 
+        instH.clear(); instR.clear();
+        const bool keep_inst = want_inst || want_mapok;
         auto insert = [&](int32_t h, const Mat3& R) -> bool {   // true if new
             Key k; k.h = h;
             k.a = q(R.m[2]); k.b = q(R.m[5]); k.c = q(R.m[8]);   // column 2, rows 0..2
@@ -107,8 +164,25 @@ int main() {
             uint32_t p = (uint32_t)(hashkey(k) & mask);
             for (;;) {
                 const int32_t idx = slot[p];
-                if (idx < 0) { slot[p] = (int32_t)keys.size(); keys.push_back(k); return true; }
+                if (idx < 0) {
+                    slot[p] = (int32_t)keys.size(); keys.push_back(k);
+                    if (keep_inst) { instH.push_back(h); instR.push_back(R); }
+                    return true;
+                }
                 if (same(keys[idx], k)) return false;
+                p = (p + 1) & mask;
+            }
+        };
+
+        auto find_inst = [&](int32_t h, const Mat3& R) -> int32_t {
+            Key k; k.h = h;
+            k.a = q(R.m[2]); k.b = q(R.m[5]); k.c = q(R.m[8]);
+            k.d = q(R.m[0]); k.e = q(R.m[3]); k.f = q(R.m[6]);
+            uint32_t p = (uint32_t)(hashkey(k) & mask);
+            for (;;) {
+                const int32_t idx = slot[p];
+                if (idx < 0) return -1;
+                if (same(keys[idx], k)) return idx;
                 p = (p + 1) & mask;
             }
         };
@@ -127,9 +201,99 @@ int main() {
             if (insert(glue[h], RM))  { stackH.push_back(glue[h]);  stackR.push_back(RM); }
             if ((long)keys.size() > guard) { closed = false; break; }
         }
+        // MAP CONSISTENCY, the same three counts check_realized runs, on the fill just built.
+        int mapok = -1;                                  // -1 = not asked
+        if (want_mapok) {
+            mapok = 0;
+            if (closed) {
+                const size_t ni = instH.size();
+                // vertex id = quantised UNIT column 2, exactly as vid_of normalises before rounding
+                std::vector<int64_t> vkey(ni * 3);
+                std::vector<int32_t> vid(ni);
+                auto vid_of = [&](const Mat3& R, int64_t* out) {
+                    double x = R.m[2], y = R.m[5], z = R.m[8];
+                    const double nn = std::sqrt(x*x + y*y + z*z);
+                    x /= nn; y /= nn; z /= nn;
+                    out[0] = q(x); out[1] = q(y); out[2] = q(z);
+                };
+                std::vector<int64_t> vtab; std::vector<int32_t> vidx;   // linear-probe on 3 int64
+                auto vlookup = [&](const int64_t* k3) -> int32_t {
+                    for (size_t i = 0; i < vidx.size(); i++)
+                        if (vtab[i*3]==k3[0] && vtab[i*3+1]==k3[1] && vtab[i*3+2]==k3[2]) return vidx[i];
+                    vtab.push_back(k3[0]); vtab.push_back(k3[1]); vtab.push_back(k3[2]);
+                    vidx.push_back((int32_t)vidx.size());
+                    return vidx.back();
+                };
+                for (size_t i = 0; i < ni; i++) { vid_of(instR[i], &vkey[i*3]); vid[i] = vlookup(&vkey[i*3]); }
+                // edges: {vid(R), vid(R*M)} over every instance, distinct undirected pairs
+                std::vector<uint64_t> ep; ep.reserve(ni);
+                for (size_t i = 0; i < ni; i++) {
+                    int64_t k3[3]; Mat3 Rg = mul(instR[i], M); vid_of(Rg, k3);
+                    const int32_t vB = vlookup(k3), vA = vid[i];
+                    if (vA != vB) {
+                        const uint32_t lo = (uint32_t)(vA < vB ? vA : vB), hi = (uint32_t)(vA < vB ? vB : vA);
+                        ep.push_back(((uint64_t)lo << 32) | hi);
+                    }
+                }
+                std::sort(ep.begin(), ep.end());
+                ep.erase(std::unique(ep.begin(), ep.end()), ep.end());
+                bool ok = (2 * ep.size() == ni);
+                // faces: orbits of (glue[rneig[h]], R*Rz(alpha[h])*M); ring length must be ftype's n
+                if (ok) {
+                    std::vector<char> seen(ni, 0);
+                    size_t degsum = 0;
+                    for (size_t st0 = 0; st0 < ni && ok; st0++) {
+                        if (seen[st0]) continue;
+                        const int32_t want = nsize[instH[st0]];
+                        size_t len = 0; int32_t idx2 = (int32_t)st0;
+                        for (;;) {
+                            if (idx2 < 0 || seen[idx2]) { ok = (idx2 == (int32_t)st0 && len > 0); break; }
+                            seen[idx2] = 1; len++;
+                            const int32_t hh = instH[idx2];
+                            const Mat3 Rn = mul(mul(instR[idx2], RZ[hh]), M);
+                            idx2 = find_inst(glue[rneig[hh]], Rn);
+                            if (idx2 == (int32_t)st0) break;
+                            if (len > (size_t)guard) { ok = false; break; }
+                        }
+                        if (!ok) break;
+                        if ((int32_t)len != want) { ok = false; break; }
+                        degsum += len;
+                    }
+                    ok = ok && (degsum == ni);
+                }
+                mapok = ok ? 1 : 0;
+            }
+        }
         verdicts.push_back(closed ? 1 : 0);
+        if (want_mapok) status.push_back(closed ? mapok : -1);
+        if (want_inst) {
+            if (!closed) {
+                status.push_back(-1);
+            } else {
+                const size_t need = instH.size() * (4 + 9 * 8);
+                if (payload.size() + need > PAYLOAD_CAP) {
+                    status.push_back(-2);                 // closed; Python refills this one
+                } else {
+                    status.push_back((int32_t)instH.size());
+                    const size_t at = payload.size();
+                    payload.resize(at + need);
+                    unsigned char* w = payload.data() + at;
+                    for (size_t i = 0; i < instH.size(); i++) {
+                        std::memcpy(w, &instH[i], 4); w += 4;
+                        std::memcpy(w, instR[i].m, 9 * 8); w += 9 * 8;
+                    }
+                }
+            }
+        }
       }
-      std::fwrite(verdicts.data(), 1, verdicts.size(), stdout);
+      if (want_mapok) {
+          std::fwrite(status.data(), 4, status.size(), stdout);
+      } else if (want_inst) {
+          std::fwrite(status.data(), 4, status.size(), stdout);
+          if (!payload.empty()) std::fwrite(payload.data(), 1, payload.size(), stdout);
+      } else {
+          std::fwrite(verdicts.data(), 1, verdicts.size(), stdout);
+      }
       std::fflush(stdout);
     }
     return 0;

@@ -214,6 +214,44 @@ def main():
     if len(uniq) != len(recs):
         print("merged %d records -> %d distinct solids" % (len(recs), len(uniq)))
     recs = uniq
+
+    # THEN COLLAPSE ON THE GEOMETRY ITSELF, which is strictly stronger than the signature above.
+    #
+    # The signature deliberately SEPARATES on density, and that is right almost always: two solids can
+    # agree on everything else and differ in how many times they wrap. It is wrong when one solid gets
+    # read twice. The great-circle fix produced exactly that — 10{3}+6{5/2}+1{10/3} at rho=108 came out
+    # once prograde at density 5 and once with {3} and {5/2} read retrograde at density 2, and the two
+    # records have the SAME vertex set and the SAME face rings to the last bit. One polyhedron, two
+    # accountings of its covering, two cards on the shelf.
+    #
+    # ⚑ This cannot fuse the cases the signature exists to protect. The great dodecahedron and the small
+    # stellated dodecahedron have different rho, so different vertices; the gyrate k=2 pair is a
+    # different arrangement of them. Only records that are the same point set carrying the same faces
+    # collapse, and the FIRST is kept, so a searched record still beats a closed-form one.
+    # ⚑ CONGRUENCE, not coordinate identity. The two readings are the same solid in different
+    # ORIENTATIONS — same pairwise-distance multiset, different absolute coordinates — so comparing the
+    # vertex arrays finds nothing. The key is everything the signature uses EXCEPT density, plus the
+    # multiset of pairwise distances, which is the same invariant the Johnson-solid matching used.
+    def geom_key(r):
+        V = [tuple(float(x) for x in v) for v in r["vertices"]]
+        d = sorted(round(math.dist(V[i], V[j]), 9)
+                   for i in range(len(V)) for j in range(i + 1, len(V)))
+        e = sum(len(f) for f in r["faces"]) // 2
+        return (len(V), e, len(r["faces"]),
+                tuple(sorted(collections.Counter(tuple(t) for t in r["faceTypes"]).items())),
+                round(r["rho"], 9), r.get("k", 1), tuple(d))
+    seen_geom, ug, collapsed = set(), [], []
+    for r in recs:
+        g = geom_key(r)
+        if g in seen_geom:
+            collapsed.append(r["id"])
+            continue
+        seen_geom.add(g)
+        ug.append(r)
+    if collapsed:
+        print("collapsed %d record(s) congruent to one already kept: %s"
+              % (len(collapsed), ", ".join(collapsed)))
+    recs = ug
     index, skipped = [], []
     for r in recs:
         # A record belongs to this shelf if it covers the sphere more than once OR carries a face that

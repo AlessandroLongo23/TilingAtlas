@@ -159,6 +159,24 @@ def _angle_sum_scan(nds, retro, rho):
         tot = tot + ((2 * math.pi - a) if (n, d) in retro else a)
     return tot
 
+# THE CAP IS A LEGAL ROOT. rho may equal min(2*pi*d/n) exactly, and there the capped face has
+# circumradius pi/2: its vertices sit on a great circle, it IS a hemisphere, and its interior angle is
+# exactly pi. Those are the halved solids — J1 is half an octahedron, J3 half a cuboctahedron, J6 half
+# an icosidodecahedron, and the star analogue is half a great icosidodecahedron cut on the {10/3}.
+#
+# ⚑ The bracket [1e-7, cap-1e-7] can NEVER find them: at the cap the angle sum reaches 2*pi*dens with
+# infinite slope, so the deficit at cap-eps falls like sqrt(eps), not eps. Measured: 3.3.4 sits 0.036
+# degrees short at cap-1e-7, 3.4.6 0.028, 3.5.10 0.021. Shrinking the epsilon does not rescue it and
+# would wreck the conditioning if it did. f is evaluated AT the cap instead and the root admitted when
+# it vanishes. Because the slope diverges there, a 1e-9 tolerance on f is ~1e-18 in rho: it cannot
+# admit a non-root.
+#
+# This leak is UPSTREAM of the developer. rho_buckets.py builds the k>=2 search alphabet from
+# solve_rho_all, so a multiset with no root sat in no bucket and was never searched at all — star-wide
+# 3902 buckets became 3906. Found 2026-08-22; it cost J1 and J3 at k=2 and one shipping star record at
+# k=3 (V=20 E=35 F=17, 10{3}+6{5/2}+1{10/3}, density 5, rho = 108 degrees).
+_CAPTOL = 1e-9
+
 def solve_rho_all(config, dens=1, retro=frozenset()):
     """EVERY edge arc-length rho solving Σ_i interior_angle(p_i, d_i, rho) = 2π·dens, smallest first.
 
@@ -187,7 +205,8 @@ def solve_rho_all(config, dens=1, retro=frozenset()):
     def f(rho):
         return sum(face_angle(n, rho, d, (n, d) in retro) for (n, d) in nds) - 2 * math.pi * dens
     # rho is capped where the circumradius reaches pi/2: sin(rho/2) = sin(pi*d/n), i.e. rho = 2*pi*d/n.
-    lo0, hi0 = 1e-7, min(2 * math.pi * d / n for (n, d) in nds) - 1e-7
+    cap = min(2 * math.pi * d / n for (n, d) in nds)
+    lo0, hi0 = 1e-7, cap - 1e-7
     def bisect(lo, hi, hi_positive):
         for _ in range(200):
             mid = 0.5 * (lo + hi)
@@ -197,9 +216,9 @@ def solve_rho_all(config, dens=1, retro=frozenset()):
                 lo = mid
         return 0.5 * (lo + hi)
     if not retro:                                    # strictly increasing: the original branch
-        if f(lo0) >= 0 or f(hi0) <= 0:
-            _RHO_CACHE[key] = []
-            return []
+        if f(lo0) >= 0 or f(hi0) <= 0:                    # no sign change strictly inside…
+            _RHO_CACHE[key] = [cap] if abs(f(cap)) <= _CAPTOL else []   # …but the cap itself may be it
+            return _RHO_CACHE[key]
         _RHO_CACHE[key] = [bisect(lo0, hi0, True)]
         return _RHO_CACHE[key]
     grid = np.linspace(lo0, hi0, _SCAN_N)
@@ -214,6 +233,23 @@ def solve_rho_all(config, dens=1, retro=frozenset()):
         # reinterpretation re-admits them, and on star-wide that is 144 multisets.
         if r > 1e-4:
             out.append(r)
+    if abs(f(cap)) <= _CAPTOL:
+        # SNAP, do not merely append. The retrograde scan bisects on a grid whose top cell ends at
+        # cap-1e-7, so when the true root IS the cap it returns something a hair short of it — measured
+        # 4e-14 short on 10/3.5/2.3 + 5/2.3.5/2.3 x2. That looks harmless and is not: dalpha/drho
+        # diverges at the cap, so 4e-14 in rho comes out as 2e-7 in the angle, and the record developed
+        # from it carried residuals of 4.6e-8 against 2.7e-15 for the same solid found at the exact cap
+        # — a numerically degraded TWIN that finalise_records could not collapse, because the two
+        # disagreed on density (5 against a spurious 2). Replace any root inside the last grid cell
+        # with the exact value; only add cap when there is none.
+        near = [i for i, r in enumerate(out) if abs(r - cap) <= 1e-6]
+        if near:
+            for i in near:
+                out[i] = cap
+            out = sorted(set(out))
+        else:
+            out.append(cap)
+            out.sort()
     _RHO_CACHE[key] = out
     return out
 
@@ -236,6 +272,7 @@ def solve_rho_common(configs, dens=1, retro=frozenset(), tol=1e-6):
     spectra = [solve_rho_all(c, dv, retro) for c, dv in zip(configs, dl)]
     if any(not s for s in spectra):
         return []
+    caps = {min(2 * math.pi * d / n for (n, d) in (_nd(p) for p in c)) for c in configs}
     out = []
     for r in spectra[0]:                # a root of orbit 0 that every other orbit also has
         matched = [r]
@@ -246,7 +283,21 @@ def solve_rho_common(configs, dens=1, retro=frozenset(), tol=1e-6):
                 break
             matched.append(near)
         if matched:
-            out.append(sum(matched) / len(matched))
+            r_out = sum(matched) / len(matched)
+            # ⚑ AN EXACT ROOT BEATS AN AVERAGED ONE. Averaging is the right way to pick one
+            # representative from k approximate bisections, and it is the wrong way the moment one of
+            # them is exact. solve_rho_all returns a cap root bit-exactly; the other orbits, for whom
+            # the same rho is an ordinary interior root, bisect to within ~1e-13 of it, and the mean
+            # lands 4e-14 off the exact value. That looks like nothing and is not: at a cap
+            # dalpha/drho diverges, so 4e-14 in rho is 2e-7 in the angle, and the block then developed
+            # a numerically degraded TWIN of a solid it had already found exactly — residuals 4.6e-8
+            # against 2.7e-15, reporting a different density, which finalise_records could not
+            # collapse. Measured on 10/3.5/2.3 + 5/2.3.5/2.3 x2 at rho = 108 degrees.
+            for m in matched:
+                if any(m == c for c in caps):
+                    r_out = m
+                    break
+            out.append(r_out)
     return out
 
 # ----------------------------------------------------------------------------- SO(3) frames
@@ -722,6 +773,19 @@ def develop_block(b):
 _SPHFILL = os.path.join(_HERE, "eu_sphfill")
 PREFILTER = os.environ.get("EU_NOPREFILTER") is None and os.path.exists(_SPHFILL)
 
+# MAPOK — let eu_sphfill also run check_realized's map-consistency test and reject on it.
+#
+# The verdict alone stopped being selective when the great-circle fix opened the hemisphere configs: a
+# hemisphere closes the fill by construction, so survivors on the k=3 corpus went from 0.027% to 1.4%,
+# and of 753 of them the developer realized TWO. Every one of the other 751 died on mapOK, which is
+# integer counting over the instance set eu_sphfill has already built and needs no geometry at all.
+# Measured: 99.7% of survivors killed, 0 of the realizing blocks touched.
+#
+# ⚑ OFF unless the binary understands it. An old eu_sphfill would read the extra nsize array as the
+# next record's header and answer nonsense, so the switch is opt-out, not opt-in, and _sphfill_ask
+# falls back to developing everything if the reply length is wrong.
+MAPOK = PREFILTER and os.environ.get("EU_NOMAPOK") is None
+
 
 def _dart_angles(dec, rho, retro):
     """Signed interior angle at each dart, exactly as develop_sphere's alpha() computes it."""
@@ -771,18 +835,20 @@ _PLAN_CAP = 20000
 # header lets it read everything before it replies, which is what keeps the pipe from deadlocking.
 _SPHPROC = None
 
-def _sphfill_ask(n, payload):
+def _sphfill_ask(n, payload, width=1):
     global _SPHPROC
     try:
         if _SPHPROC is None or _SPHPROC.poll() is not None:
+            env = dict(os.environ, EU_SPHFILL_MAPOK="1") if MAPOK else None
             _SPHPROC = subprocess.Popen([_SPHFILL], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                        bufsize=0)
+                                        bufsize=0, env=env)
         _SPHPROC.stdin.write(struct.pack("<i", n))
         _SPHPROC.stdin.write(bytes(payload))
         _SPHPROC.stdin.flush()
+        need = n * width                        # 1 byte per attempt, or an int32 when MAPOK is on
         out = bytearray()
-        while len(out) < n:
-            got = _SPHPROC.stdout.read(n - len(out))
+        while len(out) < need:
+            got = _SPHPROC.stdout.read(need - len(out))
             if not got:
                 return None
             out += got
@@ -812,10 +878,13 @@ def _block_plan(b):
     dec = {"rneig": rneig, "lvert": lvert, "configs": configs, "folds": folds}
     n = len(rneig)
     rn = array.array("i", rneig).tobytes()
+    # ftype's n at each dart, for eu_sphfill's mapOK ring-length test. Same expression develop_sphere's
+    # ftype() uses, so the two cannot drift.
+    ns = array.array("i", [_nd(lvert[rneig[h]])[0] for h in range(n)]).tobytes()
     parts = []
     for rho, retro, guard in block_attempts(dec):
         parts.append((struct.pack("<iid", n, guard, rho) + rn,
-                      array.array("d", _dart_angles(dec, rho, retro)).tobytes()))
+                      array.array("d", _dart_angles(dec, rho, retro)).tobytes(), ns))
     plan = (mirro, label, parts)
     _PLAN_CACHE[b[0]] = plan
     return plan
@@ -834,18 +903,19 @@ def prefilter(blocks, verify=False):
             if not parts:
                 continue
             gl = array.array("i", pr.makeglue(b[4] + "\n", mirro, label)).tobytes()
-            for head, ang in parts:
-                buf += head + gl + ang
+            for head, ang, ns in parts:
+                buf += head + gl + ang + (ns if MAPOK else b"")
                 owner.append(bi)
         if not owner:
             return []
-        reply = _sphfill_ask(len(owner), buf)
-        if reply is None or len(reply) != len(owner):
+        reply = _sphfill_ask(len(owner), buf, width=4 if MAPOK else 1)
+        if reply is None or len(reply) != len(owner) * (4 if MAPOK else 1):
             sys.stderr.write("[prefilter] short reply — developing everything\n")
             return blocks
+        verdict = struct.unpack("<%di" % len(owner), reply) if MAPOK else reply
         keep = [False] * len(blocks)
-        for i, v in enumerate(reply):
-            if v:
+        for i, v in enumerate(verdict):
+            if v > 0:                          # MAPOK: 1 usable, 0 closed-but-inconsistent, -1 no close
                 keep[owner[i]] = True
         out = [b for b, k in zip(blocks, keep) if k]
         if verify:                                   # develop the rejects too and shout if any realizes
@@ -909,6 +979,39 @@ def file_chunks(path, size):
                 buf = []
     if buf:
         yield buf
+
+
+def iter_blocks_fh(fh):
+    """Blocks off an open text stream, one at a time.
+
+    read_blocks materialises a whole file into a list, which is fine for a pruned file and impossible
+    for a PIPE: with EU_PRUNED_STDOUT the pruner hands over a projected 1.8 TB at k=4 and nothing may
+    accumulate. Same block grammar — non-blank lines collect, a blank line closes the block."""
+    buf = []
+    for raw in fh:
+        if raw.strip() == "":
+            if buf:
+                yield buf
+                buf = []
+        else:
+            buf.append(raw.rstrip("\n"))
+    if buf:
+        yield buf
+
+
+def stdin_chunks(size, fh=None):
+    """Prefilter-sized chunks straight off the pruner's stdout. The counterpart of stream_chunks for
+    the pipe: same order, same filter, no file ever written."""
+    fh = fh if fh is not None else sys.stdin
+    out = []
+    for b in iter_blocks_fh(fh):
+        if any(l.startswith("TES file:") for l in b):
+            out.append(b)
+            if len(out) >= size:
+                yield out
+                out = []
+    if out:
+        yield out
 
 
 def count_blocks(pruned, kmin, kmax):
@@ -987,6 +1090,51 @@ def finalise_records(records):
     records.sort(key=lambda r: (len(r["vertices"]), r["id"]))
     # The duplicate groups are the report's, not the caller's. Same idiom as solve_dihedrals.last_stats.
     finalise_records.last_dups = dups
+    return records
+
+
+def run_stdin(out_path, report_path, chunk=20000, fh=None):
+    """Develop straight from the pruner's stdout: no pruned catalogue is ever written or read.
+
+    The chunk is the prefilter batch. Larger is better for eu_sphfill (one round trip per batch) and
+    worse for latency, and 20k blocks is ~5 MB of Python strings, which is nothing. Records are
+    accumulated because they are the OUTPUT and there are a handful of them; blocks never are.
+    """
+    nin = prefiltered = 0
+    records, failed = [], []
+    t0 = time.time()
+    for batch in stdin_chunks(chunk, fh):
+        nin += len(batch)
+        kept = prefilter(batch) if PREFILTER else batch
+        prefiltered += len(batch) - len(kept)
+        for b in kept:
+            recs, err = develop_block(b)
+            if recs:
+                records.extend(recs)
+            else:
+                failed.append(err)
+        el = time.time() - t0
+        print("  develop(pipe) %d blocks in, %d survived prefilter, realized=%d, %.0fs"
+              % (nin, nin - prefiltered, len(records), el), file=sys.stderr, flush=True)
+    records = finalise_records(records)
+    dups = finalise_records.last_dups
+    if out_path:
+        json.dump(records, open(out_path, "w"))
+    lines = ["spherical develop report (piped from eu_pruner)",
+             "blocks in      : %d" % nin,
+             "realized       : %d" % len(records),
+             "non-realizable : %d" % (len(failed) + prefiltered)]
+    if prefiltered:
+        lines.append("   of which %d were rejected by eu_sphfill" % prefiltered)
+    for e in failed:
+        lines.append("   - %s  config=%s  reason=%s" % (e["id"], e.get("config"), e["reason"]))
+    lines.append("duplicate groups (same invariants): %d" % len(dups))
+    for k, ids in dups.items():
+        lines.append("   - %s : %s" % (k, ids))
+    report = "\n".join(lines) + "\n"
+    if report_path:
+        open(report_path, "w").write(report)
+    sys.stderr.write(report)
     return records
 
 
@@ -1090,9 +1238,16 @@ def main():
     ap.add_argument("--kmin", type=int, default=1)
     ap.add_argument("--kmax", type=int, default=1)
     ap.add_argument("--selftest", action="store_true")
+    ap.add_argument("--stdin", action="store_true",
+                    help="read pruned blocks from stdin (eu_pruner with EU_PRUNED_STDOUT=1) instead of "
+                         "from a pruned directory. Nothing is written between the two stages.")
+    ap.add_argument("--chunk", type=int, default=20000, help="prefilter batch size in --stdin mode")
     args = ap.parse_args()
     if args.selftest:
         _selftest()
+        return
+    if args.stdin:
+        run_stdin(args.out, args.report, args.chunk)
         return
     run(args.pruned, args.out, args.report, args.kmin, args.kmax)
 

@@ -321,6 +321,7 @@ export const SPH_STAR_INDEX: SphStarEntry[] = [
 	{ id: "ss-50-80-32-d3", config: "6.5.4 + 6.5.4 + 5/2.6.5.6", k: 3, density: 3, rho: 0, solid: undefined, stats: { verts: 50, edges: 80, faces: 32, symmetryOrder: 20, symmetryOrbits: 3, types: [[4, 1, 10], [5, 1, 10], [5, 2, 2], [6, 1, 10]] } },
 	{ id: "ss-20-36-18-d4", config: "8/3.4.4 + 4.4.4.3 + 4.4.4.3", k: 3, density: 4, rho: 0, solid: undefined, stats: { verts: 20, edges: 36, faces: 18, symmetryOrder: 8, symmetryOrbits: 3, types: [[3, 1, 4], [4, 1, 13], [8, 3, 1]] } },
 	{ id: "ss-11-25-16-d5", config: "5/2.3.3.3 + 3.3.3.3.3 + 3.3.3.3.3", k: 3, density: 5, rho: 0, solid: undefined, stats: { verts: 11, edges: 25, faces: 16, symmetryOrder: 10, symmetryOrbits: 3, types: [[3, 1, 15], [5, 2, 1]] } },
+	{ id: "ss-20-35-17-d5", config: "10/3.5/2.3 + 5/2.3.5/2.3 + 5/2.3.5/2.3", k: 3, density: 5, rho: 0, solid: undefined, stats: { verts: 20, edges: 35, faces: 17, symmetryOrder: 10, symmetryOrbits: 3, types: [[3, 1, 10], [5, 2, 6], [10, 3, 1]] } },
 	{ id: "ss-30-60-32-d7-r18850", config: "5/2.3.5/2.3 + 5/2.3.5/2.3 + 5/2.5/2.3.3", k: 3, density: 7, rho: 0, solid: undefined, stats: { verts: 30, edges: 60, faces: 32, symmetryOrder: 20, symmetryOrbits: 3, types: [[3, 1, 20], [5, 2, 12]] } },
 	{ id: "ss-50-90-42-d7", config: "10/3.5/2.4 + 5/2.4.3.4 + 5/2.4.3.4", k: 3, density: 7, rho: 0, solid: undefined, stats: { verts: 50, edges: 90, faces: 42, symmetryOrder: 20, symmetryOrbits: 3, types: [[3, 1, 10], [4, 1, 20], [5, 2, 10], [10, 3, 2]] } },
 ];
