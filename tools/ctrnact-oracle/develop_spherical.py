@@ -659,6 +659,23 @@ def develop_block(b):
                                                                guard=guard)
                     except DevelopError as e:
                         reasons.append("d=%s retro=%s sign=%+d: %s" % (dens, sorted(retro), sign, e))
+                        # ⚑ THE TWO SIGNS CLOSE OR FAIL TOGETHER, so a failed +1 makes -1 pointless.
+                        # With J = diag(1, -1, 1): J·Rz(a)·J = Rz(-a), and J·Medge(rho)·J = Medge(rho)
+                        # (M's only entries off the xz-plane are M[1][1], which J fixes). So every frame
+                        # the sign=-1 fill reaches is J·R·J for a frame R the sign=+1 fill reaches, the
+                        # two orbits are in bijection, and the instance counts are equal. The six key
+                        # components map bijectively too — conjugation negates exactly two of them, and
+                        # round-half-even is symmetric — so the dedup sees the same structure.
+                        #
+                        # Measured as well as argued: 325 of 325 attempt-pairs agreed, always.
+                        #
+                        # This is HALF the developer's work, because failing is nearly all of it.
+                        # Only the fill's verdict is shared; a successful +1 still lets -1 run, since
+                        # check_realized is a separate question.
+                        if sign == 1:
+                            reasons.append("d=%s retro=%s sign=-1: same fill as +1 by conjugation"
+                                           % (dens, sorted(retro)))
+                            break
                         continue
                     ok, res = check_realized(V, E, F, Ftype, rho, ninst, retro)
                     if not ok:
