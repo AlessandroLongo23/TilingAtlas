@@ -193,6 +193,21 @@ constexpr bool eu_trace = EU_TRACE;
 // block format itself is unchanged; only the sink changes.
 static const bool eu_stream = std::getenv("EU_STREAM") != nullptr;
 
+// EU_NOCYCLES — drop the per-face cycle text from an emitted block. OPT-IN, so every existing caller
+// is byte-identical without it.
+//
+// A raw block is five header lines, then one line per face cycle, then "---". NOTHING READS THE CYCLE
+// LINES. eu_pruner takes vertypeline/signatureline/tesline/conwayline and then skips forward to the
+// "---"; develop_spherical and develop_euclid read the PRUNED blocks, which never had them.
+//
+// Measured on star-wide b00002 at k<=3 (187,522 blocks): 710 bytes per block with them, 267 without,
+// so they are 62% of everything the solver writes and everything the pruner then reads past. The
+// function that produces them, writecyclefinal, is 18% of the solver by `sample`. The PRUNED output
+// is byte-identical either way, which is the check that matters.
+//
+// The separator still goes out, because that is what the pruner's skip loop stops on.
+static const bool eu_nocycles = std::getenv("EU_NOCYCLES") != nullptr;
+
 struct vertexdef {
     std::string symbol;
     std::vector<std::string> label;
@@ -534,7 +549,7 @@ const std::string& writeconway(configuration const& conf) {
     static unsigned smet_gen = 0;
     const int NDARTS = (int)conf.glue.size();
     if ((int)smet_stamp.size() < NDARTS) smet_stamp.resize(NDARTS, 0u);
-    ++smet_gen;
+    if (++smet_gen == 0u) { std::fill(smet_stamp.begin(), smet_stamp.end(), 0u); smet_gen = 1u; }
     CONWAY_BUF.clear();
     for (int cy = 0; cy < NDARTS; cy++) {
         if (smet_stamp[cy] != smet_gen && conf.glue[cy] != -1) {
@@ -648,12 +663,29 @@ bool checkpart(configuration const& conf) {
 // Walking those and nothing else is equivalent to the full scan, and costs chain length instead of
 // configuration size.
 static bool checkpart_inc(configuration const& conf, const int* changed, int nchanged) {
+    // FIX 19 — the four changed positions are not four different faces. Gluing firstfree to i puts
+    // both on the SAME face chain, and their mirror images often land on it too, so the backward
+    // walks repeat each other: the second walk re-derives the same set of starts and calls checkface
+    // on every one of them again. Stamp the starts. A start already visited in this call had
+    // checkface run on it AND on every predecessor the new walk would reach, and all of them
+    // returned true (any false and we would have returned already), so skipping is exact.
+    static std::vector<unsigned> start_stamp;
+    static unsigned start_gen = 0;
+    const int NDARTS = (int)conf.rneig.size();
+    if ((int)start_stamp.size() < NDARTS) start_stamp.resize(NDARTS, 0u);
+    // ⚑ WRAP. A generation stamp is only sound while the counter is injective, and this one is bumped
+    // once per checkpart_inc — 2.48e9 times in a single star24full k=2 run, which is within a factor
+    // of two of 2^32. On the wrap a stale stamp reads as current, the walk is skipped, and a face
+    // that was never checked passes: a lost tiling, silently. One compare per call buys it back.
+    if (++start_gen == 0u) { std::fill(start_stamp.begin(), start_stamp.end(), 0u); start_gen = 1u; }
     for (int t = 0; t < nchanged; t++) {
         const int x = changed[t];
         if (x < 0) continue;
         const int start = conf.lneig[x];
+        if (start_stamp[start] == start_gen) continue;
         int free = start;
         for (;;) {
+            start_stamp[free] = start_gen;
             if (!checkface(conf, free)) return false;
             const int prev = conf.glue[free];
             if (prev == -1) break;
@@ -674,7 +706,7 @@ int writecycle(configuration const& conf, std::ostream& filen) {
     static unsigned smet_gen = 0;
     const int NDARTS = (int)conf.glue.size();
     if ((int)smet_stamp.size() < NDARTS) smet_stamp.resize(NDARTS, 0u);
-    ++smet_gen;
+    if (++smet_gen == 0u) { std::fill(smet_stamp.begin(), smet_stamp.end(), 0u); smet_gen = 1u; }
     for (int cy = 0; cy < NDARTS; cy++) {
         std::string mainst;
         int count = 0;
@@ -895,12 +927,13 @@ int initex() {
 //   * mainstlist was a fresh vector<string> per call, so every cycle string was an allocation.
 // Static buffers keep their capacity across calls. Output bytes are unchanged.
 int writecyclefinal(configuration const& conf, std::ostream& filen) {
+    if (eu_nocycles) { filen << "---\n"; return 0; }
     int v = 0;
     static std::vector<unsigned> smet_stamp;
     static unsigned smet_gen = 0;
     const int NDARTS = (int)conf.glue.size();
     if ((int)smet_stamp.size() < NDARTS) smet_stamp.resize(NDARTS, 0u);
-    ++smet_gen;
+    if (++smet_gen == 0u) { std::fill(smet_stamp.begin(), smet_stamp.end(), 0u); smet_gen = 1u; }
     static std::vector<std::string> mainstlist;
     static std::vector<int> sublist;
     static std::vector<int> repeatlist;
@@ -934,7 +967,10 @@ int writecyclefinal(configuration const& conf, std::ostream& filen) {
                     cont = false;
                 }
             }
-            mainst.resize(mainst.size() - 1);        // was substr(0, size()-1)
+            // guard: substr(0, size()-1) on an empty string returns "", resize(size()-1)
+            // wraps to SIZE_MAX and throws. The walk always appends at least once, so this
+            // cannot fire — but the old form could not crash and this one can.
+            if (!mainst.empty()) mainst.resize(mainst.size() - 1);
             int ratio = v / count;
             repeatlist.push_back(ratio);
             if (ratio != 1) {
@@ -943,7 +979,10 @@ int writecyclefinal(configuration const& conf, std::ostream& filen) {
             }
             if (mainstlist.size() <= nmain) mainstlist.resize(nmain + 1);
             mainstlist[nmain++] = mainst;
-            if (smet_stamp[minmirror] == smet_gen) {
+            // minmirror starts at glue.size(); the walk always lowers it, but the old
+            // std::find simply failed to find an out-of-range value where an index into the
+            // stamp array would read past the darts.
+            if (minmirror < NDARTS && smet_stamp[minmirror] == smet_gen) {
                 sublist.push_back(0);
                 ultrachiral = false;
             }
@@ -967,7 +1006,7 @@ int writecyclefinal(configuration const& conf, std::ostream& filen) {
                         cont = false;
                     }
                 }
-                mainst.resize(mainst.size() - 1);
+                if (!mainst.empty()) mainst.resize(mainst.size() - 1);
                 repeatlist.push_back(ratio);
                 if (ratio != 1) {
                     mainst.insert(mainst.begin(), '[');

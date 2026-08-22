@@ -264,7 +264,15 @@ static uint64_t fingerprint(const Graph& g) {
 	std::vector<uint64_t> col(le), nc(le);
 	for (int i = 0; i < le; i++)
 		col[i] = mix(1469598103934665603ULL ^ (uint64_t)(g.cls[i] + 1), (uint64_t)(g.fam[i] + 1));
-	for (int r = 0; r < 3; r++) {
+	// SIX ROUNDS, not three. The fingerprint's only job is to keep the bucket small enough that
+	// comparesolutions — an exact relation refinement over the disjoint union of two graphs, ~8 us —
+	// runs rarely. Three rounds does that on the regular palette (mean bucket 6.3) and does NOT on
+	// star blocks: on star-wide b00000, 1,076,011 blocks at k=3, three rounds gives a max bucket of
+	// 168 and 2,368,755 comparisons where six gives 16 and 518,313 — 4.6x fewer, for three more
+	// passes over a colour array that `sample` puts at 1.3% of the run. Same 597,760 kept either way;
+	// more WL rounds refine an isomorphism invariant, so isomorphic graphs still share the key and
+	// the verdicts cannot move.
+	for (int r = 0; r < 6; r++) {
 		for (int i = 0; i < le; i++) {
 			uint64_t h = col[i] * 1099511628211ULL;
 			h = mix(h, col[g.mirro[i]] * 2 + 1);
@@ -333,30 +341,32 @@ static std::string filecodebase;
 static std::string OUTDIR, PRUNEDDIR;
 static long keptTotal = 0;
 
-static std::vector<std::string> readlines(const std::string& path) {
-	std::vector<std::string> v;
-	std::ifstream f(path);
-	std::string line;
-	while (std::getline(f, line)) { if (!line.empty() && line.back() == '\r') line.pop_back(); v.push_back(line); }
-	return v;
-}
-
 static long processfile(const std::string& fam) {
 	std::string filecode = filecodebase + "_" + fam;
 	std::string inpath = OUTDIR + "eusolver_" + filecode + ".txt";
 	if (!fs::exists(inpath)) return 0;
-	std::vector<std::string> P = readlines(inpath);
+	// STREAM the file, do not slurp it. This used to read the whole thing into a vector<string>
+	// holding EVERY line, most of them face-cycle text it then skips.
+	//
+	// ⚑ This is a MEMORY fix, not a speed fix, and the distinction is the whole point. On b00000's
+	// 749 MB raw file the two are the same wall clock (38.8s vs 40.2s, noise) but peak RSS goes
+	// 2.41 GB -> 0.67 GB. Ten of these run at once under run_k2_buckets.py --workers 10, so the old
+	// version wanted 24 GB on a 24 GB machine: the star-wide k=3 run's stragglers were pruners
+	// thrashing, not pruners computing. The per-block loop only ever needs four lines at a time.
+	std::ifstream in(inpath);
 	std::ofstream globe(PRUNEDDIR + "eupruned_" + filecode + ".txt");
-	size_t lc = 0, lpr = P.size();
 	long kept = 0;
-	while (lc < lpr) {
-		lc++; if (lc >= lpr) break; std::string vertypeline = P[lc];
-		lc++; if (lc >= lpr) break; std::string signatureline = P[lc];
-		lc++; if (lc >= lpr) break; std::string tesline = P[lc];
-		lc++; if (lc >= lpr) break; std::string conwayline = P[lc];
-		lc++;
-		while (lc < lpr && !(!P[lc].empty() && P[lc][0] == '-')) lc++;
-		lc += 3;
+	std::string line, vertypeline, signatureline, tesline, conwayline;
+	auto rd = [&](std::string& dst) -> bool {
+		if (!std::getline(in, dst)) return false;
+		if (!dst.empty() && dst.back() == '\r') dst.pop_back();
+		return true;
+	};
+	while (rd(line)) {                                  // "Number of vertex types: N"
+		if (!rd(vertypeline) || !rd(signatureline) || !rd(tesline) || !rd(conwayline)) break;
+		// skip the face-cycle lines, then the "---" separator and the two blank lines after it
+		while (rd(line) && !(!line.empty() && line[0] == '-')) {}
+		if (!rd(line) || !rd(line)) { /* trailing block: fall through and process it */ }
 #ifdef PROFILE
 		auto _t0 = std::chrono::steady_clock::now();
 		Graph g = decode(vertypeline, conwayline);

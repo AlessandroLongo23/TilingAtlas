@@ -412,6 +412,30 @@ def codcon(x):
   else:
     return str(x);
 
+# SYMBOL LOOKUP. This was `symbollist.index(sym)` — a linear scan over the whole alphabet with a
+# string compare at every step, in Python, once per vertex token per block. On star-wide that list is
+# 50,229 long, and develop_spherical calls decode() and orbit_folds() per block, so a k=3 block paid
+# it six times. Same fix as ctrnact_decode.hpp's; `list.index` returns the FIRST match, so a dict
+# built forward agrees, and an absent symbol still raises ValueError.
+#
+# Keyed on the identity of `symbollist` because develop_spherical.install_palette REBINDS it to swap
+# in a generated palette, and a cache that survived that swap would resolve every symbol wrongly.
+_symidx = None
+_symidx_src = None
+
+def symbol_index(sym):
+  global _symidx, _symidx_src;
+  if _symidx_src is not symbollist:
+    _symidx_src = symbollist;
+    _symidx = {};
+    for _i, _s in enumerate(symbollist):
+      if _s not in _symidx:
+        _symidx[_s] = _i;
+  try:
+    return _symidx[sym];
+  except KeyError:
+    raise ValueError("%r is not in symbollist" % (sym,));
+
 def buildvertextypes(vertypeline):
   global countsignature;
   vertextypes = [];
@@ -431,7 +455,7 @@ def buildvertextypes(vertypeline):
       sym2sig = sym2list.index(sym2);
       sym2code[sym2sig] += 1;
     g = g[ind+1:];
-    ind2 = symbollist.index(sym);
+    ind2 = symbol_index(sym);
     vertextypes.append(ind2);
   countsignature = str(len(sym2list));
   secsig = " (";
