@@ -15815,3 +15815,30 @@ seeds on `(cls, fam)` where the solver's seeds on `(cls·ETSPAN + etype, fam)`. 
 coarser congruence, which rejects MORE — so on the edge-typed palettes (eu-half-*, fdsq, tri45, the
 planigons) the pruner may be dropping blocks the solver correctly emitted. Unmeasured, and unrelated
 to the star work, but it is a completeness question and someone should look.
+
+### Round three, and the thing I left hanging (2026-08-22, same session)
+
+Re-profiling after the canonical form found two more of the same shape. **`decode()` built a
+`std::string` per dart** and `makeglue()` hashed them all into a string-keyed map per block; a label
+is `base + (tile apostrophes, or "@tile")` and `decipher` reads it back as `(mirror, num, til)`, so
+the triple is a faithful key and the string never needs to exist. ⚑ Only where no base carries an
+apostrophe: base `0'` at tile 5 renders `0'@5`, read back as `til = 1·10+5 = 15`, the same triple as
+base `0` at tile 15 — different strings, one key, a wrong gluing. Guarded at startup. And
+**`figure_id()` ran per DART**, building a key string and linearly scanning every figure seen so far,
+for a value that depends only on the vertex type.
+
+b00118's pruner across the whole session: **213 s → 10.3 s**. The whole star-wide k=3 search:
+**133 s**, from a multi-day estimate. 40,487,641 blocks on all nine full runs.
+
+⚑ **And the edge-type question, which I raised and left unmeasured — closed.** `PTAB_ETYPE` ships in
+every generated pruner table and nothing had built a nested view, so both of the pruner's refinements
+seeded on `(cls, fam)` where the solver seeds on `(cls·ETSPAN + etype, fam)`. A dart's edge type is
+structure, so an isomorphism must preserve it and a congruence must refine it; in the isomorphism
+direction a coarser colour is the dangerous one, because it can call two non-isomorphic blocks
+duplicates and drop one. Measured before and after on every edge-typed palette that produces blocks —
+tri45two-split 804, eu-half-tri-mirror-split 472, planigon-lite 28, eu-half-sq-mid 1 — **not one
+verdict moves**, and `simplify` rejects 0 of every block on all of them. Real in the code, never once
+fired. Kept because it is now right by construction instead of by luck.
+
+The lesson from the first round held all the way down: every one of these was invisible on the
+workload the code was last profiled against, and obvious on this one.

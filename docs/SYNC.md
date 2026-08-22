@@ -2837,3 +2837,11 @@ one dart. Every start costs 15.1 µs/block, worse than what it replaces; seeding
 colour class gives 0.85 µs, and `EU_CANON_VERIFY` found 0 disagreements over 3,836,914 blocks. Plus
 key sharding (exact, a LOSS end to end, off) and skipping a minimality test that never fires. b00118's
 pruner 213 s → 30.6 s; star-wide k=3 **187 s / 40,487,641 blocks**. cf46c56, 49e6173, 73cd5f3, d5bc4d4.
+
+## 2026-08-22 (3) — 133 s, and the edge-type question closed — CC
+
+⚑ `decode()` built a std::string per dart and `figure_id()` ran per DART; integer labels and a
+per-type table remove both, guarded by the injectivity condition that makes the packing safe. Plus
+buffer reuse and skipping the fingerprint hash nobody reads. b00118's pruner **213 s → 10.3 s**, whole
+star-wide k=3 **133 s**. ⚑ The edge-type asymmetry I flagged is measured: adding etype to every pruner
+colour moves NOT ONE verdict on any edge-typed palette. 9e2a683, 4cb1265, 04e7a51; NOTES 2026-08-22.
