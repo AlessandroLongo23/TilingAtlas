@@ -15733,3 +15733,44 @@ flood fills hitting the guard, zero records**. The whole set is **318 CPU-hours*
 half days at this machine's ~4x effective parallelism. The search for star-wide k=3 takes six
 minutes; developing what it found does not. AL should decide whether the developer gets the same
 treatment before that run is started.
+
+## 2026-08-22 — six board chips filtered to zero because two loaders shared one guard
+
+AL opened the star-polyhedra board on `/library` and got "No tilings match the current filters" with
+Shape on All. The four halved Platonic boards were empty the same way. Every one of those 105 records
+comes from `loadSphericalPolyAtlas`, and that is the whole diagnosis: the shelf's extra-corpus effect
+issued two eager loads under ONE `xLoaded` token.
+
+```js
+const eagerToken = `xtra-${geo}`;
+if (!xLoaded.has(eagerToken)) {
+	loadSphericalEdgesAtlas().then((d) => merge(d, eagerToken)).catch(() => {});
+	loadSphericalPolyAtlas().then((d) => merge(d, `${eagerToken}-poly`)).catch(() => {});
+}
+```
+
+The effect lists `tilings` in its deps, so the first load to merge re-runs it, and the cleanup marks
+the run that owns the other promise dead. The loser's `merge` becomes a no-op, its own token is never
+written, and the retry is then blocked by the token the winner already wrote. The records are
+fetched, parsed and thrown away, once per session.
+
+Measured against the running dev server before the fix: all 101 `/spherical-star/` and
+`/spherical-half/` shards answer 200, `board=sst` gives 0 four times out of four, and
+`geo=spherical&dec=tilings` with no board gives 460 three times out of three, a 460 that already
+contains the poly records. The URL decides which load wins because it decides how much work the
+render does; with a board chip that matches nothing there are no cards to paint, the edges merge
+lands first, and the poly promise resolves into a dead closure. That is why it looked deterministic
+and did not look like a race.
+
+One guard per load fixes it, because the loser is re-issued on the next run and resolves off
+`sphPolyCache` with no second fetch. Board by board afterwards: 112 + 2 + 7 + 5 + 2 + 89 + 243 = 460,
+and the star shelf still splits 31/5/8/2/43 across the five shapes.
+
+⚑ The hyperbolic branch is written the same way (`loadHyperbolicBaseAtlas` and
+`loadHyperbolicPolyAtlas` under `xtra-hyperbolic`) and is fixed with it, though it was never observed
+failing: the base shelf is 15.9 MB and does not win that race in practice.
+
+⚑ Nothing guards this in the test suite. It is a React effect race over `fetch`, and the shelf's
+tests are pure functions; asserting the two tokens differ would test the patch, not the property. The
+property worth holding is that every board chip the sidebar offers has records behind it, and that
+needs the real corpus and a browser.

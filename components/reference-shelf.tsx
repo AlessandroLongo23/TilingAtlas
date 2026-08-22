@@ -864,14 +864,28 @@ export function ReferenceShelf() {
 			setXLoaded((s) => new Set(s).add(token));
 		};
 		const eagerToken = `xtra-${geo}`;
-		if (!xLoaded.has(eagerToken)) {
-			if (geo === "spherical") {
+		// ⚑ ONE GUARD PER LOAD, never one guard around two. This effect lists `tilings` as a dep, so the
+		// FIRST load to merge re-runs it, and the cleanup marks the run that owns the other load dead —
+		// its `merge` becomes a no-op and its token is never recorded. Under a shared `if (!has(token))`
+		// the retry is then blocked by the token the winner already wrote, and the loser's whole shelf
+		// stays out of the corpus for the session. That is what happened to the star polyhedra and the
+		// four halved boards: 105 records, every shard fetched with a 200, all six board chips filtering
+		// to zero (AL found it, 2026-08-22). With a token each the loser is simply re-issued on the next
+		// run and resolves off `sphPolyCache` with no second fetch.
+		if (geo === "spherical") {
+			if (!xLoaded.has(eagerToken)) {
 				loadSphericalEdgesAtlas().then((d) => merge(d, eagerToken)).catch(() => {});
+			}
+			if (!xLoaded.has(`${eagerToken}-poly`)) {
 				loadSphericalPolyAtlas().then((d) => merge(d, `${eagerToken}-poly`)).catch(() => {});
-			} else {
-				// The BASE hyperbolic shelf is deferred too (see loadHyperbolicBaseAtlas): 15.9 MB that
-				// used to be parsed on every /library load regardless of the geometry chip.
+			}
+		} else {
+			// The BASE hyperbolic shelf is deferred too (see loadHyperbolicBaseAtlas): 15.9 MB that
+			// used to be parsed on every /library load regardless of the geometry chip.
+			if (!xLoaded.has(`${eagerToken}-base`)) {
 				loadHyperbolicBaseAtlas().then((d) => merge(d, `${eagerToken}-base`)).catch(() => {});
+			}
+			if (!xLoaded.has(eagerToken)) {
 				loadHyperbolicPolyAtlas().then((d) => merge(d, eagerToken)).catch(() => {});
 			}
 		}
