@@ -342,3 +342,41 @@ observed                      295 s
 **The queue is within 5% of optimal**, so there is no scheduling headroom — the earlier guess that
 packing was worth ~100 s was wrong, and the simulation is what says so. The run is CPU-bound, and the
 only remaining direction is less work per block.
+
+## And the test that never fires
+
+With the canonical form in, `sample` put **`simplify()` at the top of the pruner** — and it had
+already been measured rejecting **0 of 3,836,914 blocks**. It cannot fire on eu_solver output:
+`simplify_inner` computes the same coarsest congruence at every closure and only emits when it is
+trivial. `EU_SKIP_MINIMALITY` skips it; `run_k2_buckets.py` sets it, because that script produced the
+blocks itself two lines earlier.
+
+Two conditions keep it off by default. The pruner also reads `pruner.py` and Marek's solvers, which
+run no such test. And ⚑ **this file does not model edge types at all** — its seed is `(cls, fam)`
+where the solver's is `(cls·ETSPAN + etype, fam)` — so on an EDGE-TYPED palette the pruner's seed is
+strictly coarser, its congruence can be nontrivial where the solver's was not, and the two tests are
+genuinely different. star-wide declares no edge types, so there they coincide. (That asymmetry is
+worth a separate look: a coarser seed rejects MORE, so on the edge-typed palettes — eu-half-*, fdsq,
+tri45, the planigons — the pruner may be dropping blocks the solver correctly emitted. Unmeasured.)
+
+If the assumption ever breaks the failure is loud, not silent: a non-minimal block survives, the
+catalogue grows, and the goldens fail on the count.
+
+## The ladder, end to end
+
+```
+star-wide bucket b00118 (3,853,279 raw -> 903,188 kept), pruner alone
+  as committed this morning                 ~213 s
+  + symbol index, 6 WL rounds                 92.8 s
+  + canonical form                            36.5 s
+  + skip the redundant minimality test        30.6 s      7x
+
+whole star-wide k=3 search, 3902 buckets, 10 workers
+  estimate carried into the session         multi-day
+  after the emission and pruner fixes          295 s
+  + canonical form                             228 s
+  + skip minimality                            187 s
+  worst bucket                          224 s -> 68.8 s
+```
+
+40,487,641 pruned blocks every time, across six independent full runs.

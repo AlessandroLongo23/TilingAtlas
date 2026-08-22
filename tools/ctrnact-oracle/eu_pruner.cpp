@@ -360,6 +360,22 @@ static void canon_code(const Graph& g, std::string& out) {
 // but say so rather than corrupt a code silently.
 static bool canon_fits(const Graph& g) { return g.rneig.size() < 256; }
 
+// EU_SKIP_MINIMALITY — do not re-run the minimality test on blocks eu_solver produced.
+//
+// `sample` puts simplify() at the TOP of the pruner now that the canonical form has taken
+// compareToSeen's 46%, and it **rejected 0 of 3,836,914 blocks** on star-wide b00118. It cannot fire
+// on eu_solver output: simplify_inner already computes the same coarsest congruence at every closure
+// and only emits when it is trivial.
+//
+// ⚑ Two conditions, and they are why this is OFF by default rather than deleted. The pruner also
+// reads pruner.py and Marek's solvers, which run no such test. And on an EDGE-TYPED palette the two
+// seeds differ — this file does not model etype at all, so its seed is strictly coarser than the
+// solver's and its congruence can be nontrivial where the solver's was not. run_k2_buckets.py sets
+// it because it produced the blocks itself with eu_solver; nothing else does.
+//
+// The failure mode if the assumption ever breaks is LOUD, not silent: a non-minimal block survives,
+// the catalogue grows, and check-regular / the star24full digests fail on the count.
+static bool SKIP_MINIMALITY = false;
 static std::unordered_set<std::string> CANON_SEEN;
 static bool CANON_ON = true, CANON_VERIFY = false;
 static long long CANON_DISAGREE = 0;
@@ -500,7 +516,7 @@ static long processfile(const std::string& fam) {
 		// either way — now only by its owning shard, which sees exactly the same blocks.
 		std::string key = keyOf(signatureline, fingerprint(g));
 		if (!key_mine(key)) continue;
-		if (!simplify(g)) continue;
+		if (!SKIP_MINIMALITY && !simplify(g)) continue;
 		bool dup;
 		std::string code;
 		if (CANON_ON && canon_fits(g)) canon_code(g, code);
@@ -569,6 +585,7 @@ static std::string famof(const std::string& fname) {
 }
 
 int main() {
+	SKIP_MINIMALITY = std::getenv("EU_SKIP_MINIMALITY") != nullptr;
 	CANON_ON = std::getenv("EU_NOCANON") == nullptr;      // EU_NOCANON=1 restores pairwise testing
 	CANON_VERIFY = std::getenv("EU_CANON_VERIFY") != nullptr;
 	OUTDIR = std::getenv("EU_OUT") ? std::getenv("EU_OUT") : "out";

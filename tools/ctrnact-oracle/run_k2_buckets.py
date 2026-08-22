@@ -58,7 +58,13 @@ def _run_bucket(job):
     raw = len([f for f in os.listdir(outdir) if f.startswith("eusolver_")])
     kept = 0
     if raw:
-        penv = dict(os.environ, EU_OUT=outdir, EU_KMIN=str(k), EU_KMAX=str(k))
+        # EU_SKIP_MINIMALITY: this function produced the blocks itself, two lines up, with eu_solver,
+        # whose simplify_inner already applied the minimality test at every closure. Measured: the
+        # pruner's copy rejected 0 of 3,836,914 blocks on b00118, and skipping it is 36.5s -> 30.6s
+        # there. If the assumption ever breaks a non-minimal block survives and the catalogue GROWS,
+        # which the goldens catch — a loud failure, not a lost tiling.
+        penv = dict(os.environ, EU_OUT=outdir, EU_KMIN=str(k), EU_KMAX=str(k),
+                    EU_SKIP_MINIMALITY="1")
         # SHARD THE PRUNER on the big buckets only. The whole k=3 run is 359 s and ONE bucket is
         # 224 s of it, almost all of it pruning — 3.85M blocks, 99% of them in a single family, so
         # there is nothing to split at the file level. eu_pruner shards on its own dedup key instead
@@ -106,6 +112,14 @@ def main():
     ap.add_argument("--prune-shard-min-mb", type=int, default=200,
                     help="only shard a bucket whose raw blocks exceed this. Each shard pays a full "
                          "decode pass, so below this it is a loss.")
+    ap.add_argument("--cost-out", default=None,
+                    help="write per-bucket solve+prune seconds here, for a later --cost-in.")
+    ap.add_argument("--cost-in", default=None,
+                    help="a --cost-out file from a previous run: dispatch buckets most-expensive "
+                         "first. Bucket cost is not predictable from anything known at slice time, so "
+                         "the pool otherwise deals them in bucket order and the expensive ones land in "
+                         "the tail. Changes only the ORDER work is handed out; the merged catalogue is "
+                         "identical (verified: same 40,487,641 blocks).")
     ap.add_argument("--keep-cycles", action="store_true",
                     help="write the face-cycle text into the raw blocks. Nothing reads it — the pruner "
                          "skips straight past it — so this is for eyeballing raw output only.")
@@ -166,6 +180,11 @@ def main():
                  head[0], head[1], head[2], head[3], head[4], head[5], head[6], sub)
         jobs.append((i, bdir, solver, pruner, args.k, merged, not args.keep_cycles,
                      args.prune_shards, args.prune_shard_min_mb))
+    if args.cost_in:
+        cost = {int(a): float(b) for a, b in
+                (l.split() for l in open(args.cost_in) if l.strip())}
+        jobs.sort(key=lambda j: -cost.get(j[0], 0.0))
+        log("dispatch order: most-expensive-first from %s" % os.path.basename(args.cost_in))
     log("sliced %d buckets (%d had no vertex type in this alphabet)" % (len(jobs), empty))
 
     t0, raw_tot, kept_tot, done = time.time(), 0, 0, 0
@@ -178,15 +197,20 @@ def main():
         it = pool.imap_unordered(_run_bucket, jobs, chunksize=1)
     else:
         pool, it = None, (_run_bucket(j) for j in jobs)
+    costf = open(args.cost_out, "w") if args.cost_out else None
     for i, raw, kept, el in it:
         raw_tot += raw; kept_tot += kept; done += 1
         slowest.append((el, i))
+        if costf:
+            costf.write("%d %.3f\n" % (i, el)); costf.flush()
         if done % 100 == 0 or done == len(jobs):
             e = time.time() - t0
             log("  bucket %d/%d  pruned k=%d blocks so far: %d   %.0fs elapsed, ETA %.0fs"
                 % (done, len(jobs), args.k, kept_tot, e, e / done * (len(jobs) - done)))
     if pool:
         pool.close(); pool.join()
+    if costf:
+        costf.close()
     slowest.sort(reverse=True)
     log("slowest buckets: " + ", ".join("b%05d %.1fs" % (i, t) for t, i in slowest[:8]))
     log("DONE: %d buckets, %d with no vertex type in this alphabet, %d pruned k=%d blocks in %s (%.0fs)"
