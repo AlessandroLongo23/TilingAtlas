@@ -365,7 +365,27 @@ static int lbase_id(const std::string& b) {
 static std::vector<std::vector<int> > LBASE_OF;   // [type][dart] -> interned base id
 static inline int label_code(int base_id, int tile) { return base_id * 4096 + tile; }
 static inline bool label_star(int code) { return LBASE_STAR[code / 4096] != 0; }
-static std::string label_str(int code) { return edgelabel(LBASE[code / 4096], code % 4096); }
+// FIX 16a — label_str RENDERED a string every time it was asked for one.
+// edgelabel() concatenates ("@" + to_string(tile), or one apostrophe per tile), so every call is a
+// fresh heap string, and writecyclefinal asks for two of them per dart per SOLUTION. The text depends
+// only on (base id, tile) — a few hundred bases against tile < num — so render each once and hand
+// back a reference. Same bytes, no allocation.
+// deque, NOT vector, and the difference is a dangling reference that check-regular caught.
+// writeconway holds `first` across the call that produces `second`; a vector growing inside that
+// second call MOVES the strings, and the held reference reads freed storage. The symptom was one
+// character in one block of one k=4 family — `(1 1')` printed as `( 1')` — with every star bucket
+// still byte-identical, because they had already warmed the row. std::deque guarantees references to
+// existing elements survive insertion at either end, which is what growth at the back is.
+static std::deque<std::deque<std::string> > LSTR_CACHE;
+static const std::string& label_str(int code) {
+    const int b = code / 4096, t = code % 4096;
+    if ((int)LSTR_CACHE.size() <= b) LSTR_CACHE.resize(b + 1);
+    std::deque<std::string>& row = LSTR_CACHE[b];
+    if ((int)row.size() <= t) row.resize(t + 1);
+    std::string& v = row[t];
+    if (v.empty()) v = edgelabel(LBASE[b], t);   // never legitimately empty: every base is non-empty
+    return v;
+}
 
 struct runt {
     std::string soltype;
@@ -398,7 +418,8 @@ std::string finename(configuration const& conf);
 int ferk(vertexdef const& x);
 std::string edgelabel(const std::string& edge, int tile);
 std::string conwaysymbol(std::string const& first, std::string const& second);
-std::string writeconway(configuration const& conf);
+void conway_append(std::string& out, std::string const& first, std::string const& second);
+const std::string& writeconway(configuration const& conf);
 std::string verbalvertices(std::vector<int> const& vertype);
 bool checkpart(configuration const& conf);
 static bool checkpart_inc(configuration const& conf, const int* changed, int nchanged);
@@ -458,6 +479,21 @@ std::string edgelabel(const std::string& edge, int tile) {
     return m;
 }
 
+// Appending form, so writeconway builds no temporaries. Same bytes as conwaysymbol below, which is
+// kept for the trace path; the two are checked against each other by the golden catalogs.
+void conway_append(std::string& out, std::string const& first, std::string const& second) {
+    const char* f = first.c_str(); size_t fn = first.size();
+    const char* g = second.c_str(); size_t gn = second.size();
+    int mirrornum = 0;
+    if (fn && f[0] == '*') { f++; fn--; mirrornum++; }
+    if (gn && g[0] == '*') { g++; gn--; mirrornum++; }
+    const bool same = (fn == gn) && std::memcmp(f, g, fn) == 0;
+    out += (mirrornum != 1) ? '(' : '[';
+    out.append(f, fn);
+    if (!same) { out += ' '; out.append(g, gn); }
+    out += (mirrornum != 1) ? ')' : ']';
+}
+
 std::string conwaysymbol(std::string const& first, std::string const& second) {
     int mirrornum = 0;
     std::string mfirst = first;
@@ -489,27 +525,36 @@ std::string conwaysymbol(std::string const& first, std::string const& second) {
     }
 }
 
-std::string writeconway(configuration const& conf) {
-    std::vector<int> smet = {};
-    std::string conwaystring = "";
-    for (int cy = 0; cy < (int)conf.glue.size(); cy++) {
-        if ((std::find(smet.begin(), smet.end(), cy) == smet.end()) && (conf.glue[cy] != -1)) {
-            std::string first = label_str(conf.label[cy]);
-            std::string second = label_str(conf.label[conf.glue[cy]]);
-            smet.push_back(cy);
-            smet.push_back(conf.glue[cy]);
-            smet.push_back(conf.mirro[cy]);
-            smet.push_back(conf.glue[conf.mirro[cy]]);
-            conwaystring = conwaystring + conwaysymbol(first, second);
+// FIX 16c — same three costs as writecyclefinal, same three fixes. Returns a REFERENCE to a static
+// buffer: valid until the next call, which is enough for both call sites (writesolution streams it
+// before anything else can call this, and the trace path streams it immediately).
+static std::string CONWAY_BUF;
+const std::string& writeconway(configuration const& conf) {
+    static std::vector<unsigned> smet_stamp;
+    static unsigned smet_gen = 0;
+    const int NDARTS = (int)conf.glue.size();
+    if ((int)smet_stamp.size() < NDARTS) smet_stamp.resize(NDARTS, 0u);
+    ++smet_gen;
+    CONWAY_BUF.clear();
+    for (int cy = 0; cy < NDARTS; cy++) {
+        if (smet_stamp[cy] != smet_gen && conf.glue[cy] != -1) {
+            const std::string& first = label_str(conf.label[cy]);
+            const std::string& second = label_str(conf.label[conf.glue[cy]]);
+            smet_stamp[cy] = smet_gen;
+            smet_stamp[conf.glue[cy]] = smet_gen;
+            smet_stamp[conf.mirro[cy]] = smet_gen;
+            smet_stamp[conf.glue[conf.mirro[cy]]] = smet_gen;
+            conway_append(CONWAY_BUF, first, second);
         }
     }
-    return conwaystring;
+    return CONWAY_BUF;
 }
 
 std::string verbalvertices(std::vector<int> const& vertype) {
-    std::string s = "";
-    for (int i : vertype) s = s + mainlist[i].symbol + ", ";
-    return s.substr(0, s.size() - 2);
+    std::string s;
+    for (int i : vertype) { s += mainlist[i].symbol; s += ", "; }
+    if (s.size() >= 2) s.resize(s.size() - 2);
+    return s;
 }
 
 // Face-cycle validity over corner CLASSES. Regular palette (period p=1, CLASS_NEXT=id,
@@ -718,38 +763,87 @@ std::vector<int> sigresult(std::vector<int> const& vertype) {
     return result;
 }
 
+// FIX 16d — both signatures walked a vector as long as the WHOLE ALPHABET to read `num` non-zeros.
+// sigresult allocates symbolcount ints and sig/filesignature then loop over all of them, twice per
+// solution. Sorting the vertype (conf.num ints) visits the same types in the same ascending order, so
+// the text is identical, and the cost stops depending on how big the palette is: star24full's 60,927
+// entries were being scanned to find at most a dozen.
+static std::vector<int> SIG_SORT;
+static const std::vector<int>& sorted_vertype(std::vector<int> const& vertype) {
+    SIG_SORT.assign(vertype.begin(), vertype.end());
+    std::sort(SIG_SORT.begin(), SIG_SORT.end());
+    return SIG_SORT;
+}
+
 std::string signature(std::vector<int> const& vertype) {
-    return sig(sigresult(vertype));
+    const std::vector<int>& v = sorted_vertype(vertype);
+    std::string s;
+    for (size_t a = 0; a < v.size(); ) {
+        size_t b = a; while (b < v.size() && v[b] == v[a]) b++;
+        s += mainlist[v[a]].symbol;
+        if (b - a > 1) { s += "x"; s += std::to_string((int)(b - a)); }
+        s += ", ";
+        a = b;
+    }
+    if (s.size() >= 2) s.resize(s.size() - 2);
+    return s;
 }
 
 std::string filesignature(std::vector<int> const& vertype) {
-    std::vector<int> result = sigresult(vertype);
-    std::string s = "";
-    for (int i = 0; i < (int)result.size(); i++) {
-        if (result[i] > 0) {
-            s = s + mainlist[i].code;
-            if (result[i] > 1) {
-                s = s + std::to_string(result[i]);
-            }
-            s = s + " ";
-        }
+    const std::vector<int>& v = sorted_vertype(vertype);
+    std::string s;
+    for (size_t a = 0; a < v.size(); ) {
+        size_t b = a; while (b < v.size() && v[b] == v[a]) b++;
+        s += mainlist[v[a]].code;
+        if (b - a > 1) s += std::to_string((int)(b - a));
+        s += " ";
+        a = b;
     }
-    return s.substr(0, s.size() - 1);
+    if (s.size() >= 1) s.resize(s.size() - 1);
+    return s;
 }
 
-int vertypesolvedadd(std::vector<int> const& vertype) {
-    std::vector<int> result = sigresult(vertype);
-    std::vector<int> res2;
-    int x = 0;
-    while (x < (int)vertypesolved.size()) {
-        res2 = vertypesolved[x].vertices;
-        if (result == res2) {
-            vertypesolved[x].count++;
-            return x;
-        }
-        x++;
+// FIX 15 — the emission counter was O(solutions x signatures x alphabet), with a COPY per compare.
+//
+// It exists only to number the .tes files: solutions sharing a vertex-type multiset get 1, 2, 3, ...
+// The old body built a length-`symbolcount` occurrence vector per solution, then walked every
+// signature seen so far, ASSIGNING each stored vector into `res2` before comparing it. Three costs
+// stacked: an allocation the size of the whole alphabet, a full vector copy per candidate, and a
+// linear scan that grows with the answer set.
+//
+// Nobody had measured it, because until the star searches every run emitted a few hundred solutions.
+// star-wide bucket b00002 at k<=3 emits 187,522, and `sample` puts memmove + __assign_with_size +
+// memcmp under this one function at 64% of the whole search.
+//
+// Two vertype vectors have equal sigresult() exactly when they are equal as MULTISETS, so the sorted
+// vertype (length = conf.num, a handful of ints) is a faithful key and the alphabet-sized vector is
+// not needed at all. Hash it; the counts, the numbering and therefore every .tes name are unchanged.
+namespace {
+struct VecHash {
+    size_t operator()(std::vector<int> const& v) const {
+        size_t h = 1469598103934665603ULL;            // FNV-1a over the raw ints
+        for (int x : v) { h ^= (size_t)(unsigned)x; h *= 1099511628211ULL; }
+        return h;
     }
-    vertypesolved.push_back({ result,1 });
+};
+}
+#include <unordered_map>
+static std::unordered_map<std::vector<int>, int, VecHash> VTS_IDX;   // sorted vertype -> index
+
+int vertypesolvedadd(std::vector<int> const& vertype) {
+    std::vector<int> key(vertype);
+    std::sort(key.begin(), key.end());
+    std::unordered_map<std::vector<int>, int, VecHash>::iterator it = VTS_IDX.find(key);
+    if (it != VTS_IDX.end()) {
+        vertypesolved[it->second].count++;
+        return it->second;
+    }
+    const int x = (int)vertypesolved.size();
+    // `vertices` used to hold the alphabet-sized occurrence vector and nothing ever read it back
+    // (the one use was the comparison this replaces). It holds the sorted multiset now, which is the
+    // same information in conf.num ints instead of symbolcount.
+    vertypesolved.push_back({ key, 1 });
+    VTS_IDX.emplace(key, x);
     return x;
 }
 
@@ -788,28 +882,49 @@ int initex() {
 }
 
 
+// FIX 16b — the emission path was HALF the cost of a star search, and this function was most of it.
+//
+// `sample` on star-wide bucket b00002 at k<=3 (187,522 solutions): writecyclefinal 29.7% of self time
+// against checkface's 15.9%. Three things, all of them bookkeeping:
+//   * `smet` was a std::vector searched with std::find INSIDE a loop over every dart — the same
+//     O(darts^2)-plus-an-allocation pattern fix 5 removed from writecycle. It was left alone then
+//     because this function is "output only", which was true when a run emitted a few hundred
+//     solutions and is false for a star search that emits millions.
+//   * every `mainst = mainst + a + "/" + b + "(" + c + ")-"` built a chain of temporaries; += into a
+//     reused buffer builds none.
+//   * mainstlist was a fresh vector<string> per call, so every cycle string was an allocation.
+// Static buffers keep their capacity across calls. Output bytes are unchanged.
 int writecyclefinal(configuration const& conf, std::ostream& filen) {
     int v = 0;
-    std::vector<int> smet = {};
-    std::vector<std::string> mainstlist = {};
-    std::vector<int> sublist = {};
+    static std::vector<unsigned> smet_stamp;
+    static unsigned smet_gen = 0;
+    const int NDARTS = (int)conf.glue.size();
+    if ((int)smet_stamp.size() < NDARTS) smet_stamp.resize(NDARTS, 0u);
+    ++smet_gen;
+    static std::vector<std::string> mainstlist;
+    static std::vector<int> sublist;
+    static std::vector<int> repeatlist;
+    static std::string mainst;
+    size_t nmain = 0;                     // entries of mainstlist in use this call
+    sublist.clear(); repeatlist.clear();
     bool ultrachiral = true;
-    std::vector<int> repeatlist = {};
-    for (int cy = 0; cy < (int)conf.glue.size(); cy++) {
-        std::string mainst = "";
+    for (int cy = 0; cy < NDARTS; cy++) {
+        mainst.clear();
         int count = 0;
         int minmirror = conf.glue.size();
-        if (std::find(smet.begin(), smet.end(), cy) == smet.end()) {
+        if (smet_stamp[cy] != smet_gen) {
             int left = cy;
             int right = conf.rneig[left];
             v = CLASS_L[conf.lvert[right]];
             bool cont = true;
             while (cont) {
-                smet.push_back(left);
+                smet_stamp[left] = smet_gen;
                 if (conf.mirro[right] < minmirror) {
                     minmirror = conf.mirro[right];
                 }
-                mainst = mainst + label_str(conf.label[left]) + "/" + label_str(conf.label[right]) + "(" + CLASS_DISP[conf.lvert[right]] + ")-";
+                mainst += label_str(conf.label[left]); mainst += '/';
+                mainst += label_str(conf.label[right]); mainst += '(';
+                mainst += CLASS_DISP[conf.lvert[right]]; mainst += ")-";
                 count++;
                 left = conf.glue[right];
                 if (left != cy) {
@@ -819,26 +934,30 @@ int writecyclefinal(configuration const& conf, std::ostream& filen) {
                     cont = false;
                 }
             }
-            mainst = mainst.substr(0, mainst.size() - 1);
+            mainst.resize(mainst.size() - 1);        // was substr(0, size()-1)
             int ratio = v / count;
             repeatlist.push_back(ratio);
             if (ratio != 1) {
-                mainst = "[" + mainst + "]x" + std::to_string(ratio);
+                mainst.insert(mainst.begin(), '[');
+                mainst += "]x"; mainst += std::to_string(ratio);
             }
-            mainstlist.push_back(mainst);
-            if (std::find(smet.begin(), smet.end(), minmirror) != smet.end()) {
+            if (mainstlist.size() <= nmain) mainstlist.resize(nmain + 1);
+            mainstlist[nmain++] = mainst;
+            if (smet_stamp[minmirror] == smet_gen) {
                 sublist.push_back(0);
                 ultrachiral = false;
             }
             else {
                 int left = minmirror;
-                mainst = "";
+                mainst.clear();
                 right = conf.rneig[left];
                 v = CLASS_L[conf.lvert[right]];
                 cont = true;
                 while (cont) {
-                    smet.push_back(left);
-                    mainst = mainst + label_str(conf.label[left]) + "/" + label_str(conf.label[right]) + "(" + CLASS_DISP[conf.lvert[right]] + ")-";
+                    smet_stamp[left] = smet_gen;
+                    mainst += label_str(conf.label[left]); mainst += '/';
+                    mainst += label_str(conf.label[right]); mainst += '(';
+                    mainst += CLASS_DISP[conf.lvert[right]]; mainst += ")-";
                     count++;
                     left = conf.glue[right];
                     if (left != minmirror) {
@@ -848,33 +967,36 @@ int writecyclefinal(configuration const& conf, std::ostream& filen) {
                         cont = false;
                     }
                 }
-                mainst = mainst.substr(0, mainst.size() - 1);
+                mainst.resize(mainst.size() - 1);
                 repeatlist.push_back(ratio);
                 if (ratio != 1) {
-                    mainst = "[" + mainst + "]x" + std::to_string(ratio);
+                    mainst.insert(mainst.begin(), '[');
+                    mainst += "]x"; mainst += std::to_string(ratio);
                 }
-                mainstlist.push_back(mainst);
+                if (mainstlist.size() <= nmain) mainstlist.resize(nmain + 1);
+                mainstlist[nmain++] = mainst;
                 sublist.push_back(1);
                 sublist.push_back(2);
             }
         }
     }
-    std::string header;
-    std::string subheader;
-    for (int m = 0; m < (int)mainstlist.size(); m++) {
-        std::string mainst = mainstlist[m];
+    static std::string header, subheader;
+    for (int m = 0; m < (int)nmain; m++) {
+        const std::string& mainst = mainstlist[m];
         int sub = sublist[m];
         if (sub == 0) {
             filen << std::to_string(m) << ": " << mainst;
         }
         else if (sub == 1) {
+            header.clear();
             if (!ultrachiral) {
-                header = std::to_string(m) + "/" + std::to_string(m + 1) + ": ";
+                header += std::to_string(m); header += '/';
+                header += std::to_string(m + 1); header += ": ";
             }
             else {
-                header = std::to_string(m / 2) + ": ";
+                header += std::to_string(m / 2); header += ": ";
             }
-            subheader = std::string(header.size(), ' ');
+            subheader.assign(header.size(), ' ');
             filen << header << mainst;
         }
         else {
@@ -886,12 +1008,59 @@ int writecyclefinal(configuration const& conf, std::ostream& filen) {
     return 0;
 }
 
+// FIX 18 — the file path OPENED AND CLOSED a file per solution.
+//
+// writesolution appended one block at a time, reopening `out/eusolver_<family>.txt` each time and
+// closing it before returning. On star-wide bucket b00002 at k<=3 (187,522 solutions) that is 3.0 s
+// of SYSTEM time against 3.8 s of user — the run costs 6.9 s writing files and 1.7 s streaming the
+// identical bytes to a pipe. On b00000, with 1,076,011 solutions, it is what made the bucket look
+// like it would never finish.
+//
+// Hold the handles open instead. A bounded LRU, because the family count is data-dependent (up to
+// one per k per subset of tile families) and macOS ships a 256-descriptor soft limit — evicting to
+// append mode reopens exactly where it left off, so the bytes do not change. The first open of a
+// family truncates and every later one appends, which is what the old `found` flag encoded.
+static const size_t FSTREAM_CAP = 48;
+static std::map<std::string, std::ofstream*> FSTREAMS;
+static std::deque<std::string> FSTREAM_LRU;      // front = least recently used
+static std::map<std::string, bool> FSTREAM_SEEN; // has this family been opened before (=> append)
+
+static std::ostream& family_stream(const std::string& fine) {
+    std::map<std::string, std::ofstream*>::iterator it = FSTREAMS.find(fine);
+    if (it != FSTREAMS.end()) {
+        for (std::deque<std::string>::iterator q = FSTREAM_LRU.begin(); q != FSTREAM_LRU.end(); ++q)
+            if (*q == fine) { FSTREAM_LRU.erase(q); break; }
+        FSTREAM_LRU.push_back(fine);
+        return *it->second;
+    }
+    while (FSTREAMS.size() >= FSTREAM_CAP && !FSTREAM_LRU.empty()) {
+        const std::string victim = FSTREAM_LRU.front();
+        FSTREAM_LRU.pop_front();
+        std::map<std::string, std::ofstream*>::iterator v = FSTREAMS.find(victim);
+        if (v != FSTREAMS.end()) { v->second->close(); delete v->second; FSTREAMS.erase(v); }
+    }
+    const bool seen = FSTREAM_SEEN[fine];
+    FSTREAM_SEEN[fine] = true;
+    std::ofstream* f = new std::ofstream(filepath + listfile + fine + ".txt",
+                                         seen ? std::ios::app : std::ios::out);
+    FSTREAMS[fine] = f;
+    FSTREAM_LRU.push_back(fine);
+    return *f;
+}
+
+static void family_streams_close() {
+    for (std::map<std::string, std::ofstream*>::iterator q = FSTREAMS.begin(); q != FSTREAMS.end(); ++q) {
+        q->second->close(); delete q->second;
+    }
+    FSTREAMS.clear(); FSTREAM_LRU.clear();
+}
+
 int writesolution(configuration const& conf) {
     solfound++;
     std::string fine = finename(conf);
     std::string vv = verbalvertices(conf.vertype);
     std::string versig = signature(conf.vertype);
-    std::string wc = writeconway(conf);
+    const std::string& wc = writeconway(conf);   // static buffer, streamed below before any other call
     int re = vertypesolvedadd(conf.vertype);
     std::string ret = std::to_string(vertypesolved[re].count);
     std::string filesig = filesignature(conf.vertype);
@@ -904,12 +1073,7 @@ int writesolution(configuration const& conf) {
     if (eu_stream) {
         blkp = &std::cout;
     } else {
-        std::string fullname = filepath + listfile + fine + ".txt";
-        bool found = false;
-        for (auto& rt : runtotal) if (fine == rt.soltype) { rt.solnum++; found = true; break; }
-        if (!found) runtotal.push_back(runt{fine, 1});
-        globe.open(fullname, found ? std::ios::app : std::ios::out);
-        blkp = &globe;
+        blkp = &family_stream(fine);
     }
     std::ostream& blk = *blkp;
     blk << "Number of vertex types: " << conf.num << "\n"
@@ -918,7 +1082,6 @@ int writesolution(configuration const& conf) {
         << wc << "\n";
     writecyclefinal(conf, blk);
     blk << "\n\n";
-    if (!eu_stream) globe.close();
     return 0;
 }
 
@@ -1002,54 +1165,69 @@ static void build_type_families() {
     std::cerr << "vertex figures: " << NFAM << " over " << mainlist.size() << " types\n";
 }
 
+// FIX 17 — the refinement allocated four vectors per call and re-sorted 28-byte records per round.
+//
+// It runs at every CLOSURE, which on a star search is millions of times, and `sample` put it at 18%
+// of star-wide b00002 with std::__introsort alone at 8.7%. Three changes, none to the mathematics:
+//
+//   * the buffers are static and keep their capacity, instead of four fresh allocations per call and
+//     one more per refinement round;
+//   * the seed colour is loop-INVARIANT (it reads lvert, etype and fam, none of which the loop
+//     touches), so it is computed once instead of once per round;
+//   * the grouping is a hash of the 6-tuple, not a sort of it. Moore refinement's fixed point is a
+//     PARTITION, and the sequence of partitions does not depend on how the classes are NUMBERED —
+//     the operator reads eq_class only through equality. The old code numbered by sorted key order
+//     and this one numbers by first appearance; the partition at every round, the round count and
+//     therefore the answer `num_eq_class == le` are identical. Verified against check-regular,
+//     check-deltahedra and all four star goldens, which is the point of having them: this is the
+//     function whose seed colour once deleted every 2-orbit deltahedron.
 bool simplify_inner(configuration const& conf) {
-    int le = conf.rneig.size();
-
-    std::vector<int> eq_class(le, 0);
-    // dart -> vertex figure. Darts are appended one vertex at a time, in vertype order.
-    std::vector<int> fam(le, 0);
+    const int le = (int)conf.rneig.size();
+    static std::vector<int> eq_class, seed, key, next_class, htab;
+    eq_class.assign(le, 0);
+    seed.resize(le);
+    key.resize((size_t)le * 5);
+    next_class.resize(le);
     for (size_t v = 0, d = 0; v < conf.vertype.size(); v++) {
         const int f = TYPE_FAM[conf.vertype[v]];
-        for (size_t q = 0; q < mainlist[conf.vertype[v]].rneig.size() && d < (size_t)le; q++)
-            fam[d++] = f;
+        for (size_t q = 0; q < mainlist[conf.vertype[v]].rneig.size() && d < (size_t)le; q++, d++)
+            seed[d] = (EDGE_TYPED ? conf.lvert[d] * ETSPAN + conf.etype[d] : conf.lvert[d])
+                      * NFAM + (wl_only ? 0 : f);
     }
+    // Power-of-two table, at least 4x the dart count so probe chains stay short.
+    int cap = 16; while (cap < le * 4) cap <<= 1;
+    const size_t mask = (size_t)cap - 1;
+    htab.assign(cap, -1);
 
-    int num_eq_class = 1;
-
-    int last_num_eq_class = 0;
-
+    int num_eq_class = 1, last_num_eq_class = 0;
     while (num_eq_class > last_num_eq_class) {
-        using vertex_data = std::array<int, 6>;
-        std::vector<std::pair<vertex_data, int > > data(le);
-
         last_num_eq_class = num_eq_class;
         for (int i = 0; i < le; i++) {
-            // Seed colour: the corner class, and the EDGE TYPE where the class alone does not
-            // separate the darts. On a free-edge palette every dart of the square grid is the same
-            // class and only its edge type differs, so colouring by class alone makes the refinement
-            // homogeneous, it never discretizes, and every closure is rejected as non-rigid. Off
-            // unless the alphabet declares edge types, so every equilateral palette is untouched.
-            data[i].first[0] = (EDGE_TYPED ? conf.lvert[i] * ETSPAN + conf.etype[i] : conf.lvert[i])
-                               * NFAM + (wl_only ? 0 : fam[i]);
-            data[i].first[1] = eq_class[i];
-            data[i].first[2] = eq_class[conf.mirro[i]];
-            data[i].first[3] = eq_class[conf.glue[i]];
-            data[i].first[4] = eq_class[conf.lneig[i]];
-            data[i].first[5] = eq_class[conf.rneig[i]];
-            data[i].second = i;
+            int* k = &key[(size_t)i * 5];
+            k[0] = eq_class[i];
+            k[1] = eq_class[conf.mirro[i]];
+            k[2] = eq_class[conf.glue[i]];
+            k[3] = eq_class[conf.lneig[i]];
+            k[4] = eq_class[conf.rneig[i]];
         }
-
-        sort(data.begin(), data.end());
-        eq_class[data[0].second] = 0;
-
+        std::fill(htab.begin(), htab.end(), -1);
         num_eq_class = 0;
-
-        for (int i = 1; i < le; i++) {
-            if (data[i].first != data[i - 1].first) num_eq_class++;
-            eq_class[data[i].second] = num_eq_class;
+        for (int i = 0; i < le; i++) {
+            const int* ki = &key[(size_t)i * 5];
+            size_t h = (size_t)(unsigned)seed[i] * 1000003u;
+            for (int q = 0; q < 5; q++) h = h * 1000003u + (size_t)(unsigned)ki[q];
+            size_t sl = h & mask;
+            for (;;) {
+                const int j = htab[sl];
+                if (j < 0) { htab[sl] = i; next_class[i] = num_eq_class++; break; }
+                const int* kj = &key[(size_t)j * 5];
+                if (seed[j] == seed[i] && kj[0] == ki[0] && kj[1] == ki[1] && kj[2] == ki[2]
+                    && kj[3] == ki[3] && kj[4] == ki[4]) { next_class[i] = next_class[j]; break; }
+                sl = (sl + 1) & mask;
+            }
         }
-
-        num_eq_class++;
+        eq_class.swap(next_class);
+        next_class.resize(le);
     }
 
     return num_eq_class == le;
@@ -1730,6 +1908,7 @@ int main() {
         gen.open(filepath + genfile + std::to_string(filecount) + ".txt");
     }
     initex();
+    family_streams_close();     // flush and close the per-family output handles (FIX 18)
     if (eu_trace) gen.close();
     // DFS node count: one per extend() call, i.e. every partial configuration the search expanded.
     // Needed to price isomorph-free generation. The duplication table counts emitted LEAVES (raw
