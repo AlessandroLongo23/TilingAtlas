@@ -766,6 +766,37 @@ def block_attempts(dec):
 _PLAN_CACHE = {}
 _PLAN_CAP = 20000
 
+# ONE eu_sphfill PER WORKER, kept alive. Spawning it per batch measured slower than the walk on a
+# run with many small files (k=2 star-wide: 1,664 files, 254 blocks each, 14.2s -> 18.5s). The batch
+# header lets it read everything before it replies, which is what keeps the pipe from deadlocking.
+_SPHPROC = None
+
+def _sphfill_ask(n, payload):
+    global _SPHPROC
+    try:
+        if _SPHPROC is None or _SPHPROC.poll() is not None:
+            _SPHPROC = subprocess.Popen([_SPHFILL], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                        bufsize=0)
+        _SPHPROC.stdin.write(struct.pack("<i", n))
+        _SPHPROC.stdin.write(bytes(payload))
+        _SPHPROC.stdin.flush()
+        out = bytearray()
+        while len(out) < n:
+            got = _SPHPROC.stdout.read(n - len(out))
+            if not got:
+                return None
+            out += got
+        return bytes(out)
+    except Exception:
+        try:
+            if _SPHPROC:
+                _SPHPROC.kill()
+        except Exception:
+            pass
+        _SPHPROC = None
+        return None
+
+
 def _block_plan(b):
     """(mirro, label, [(header+rneig bytes, angle bytes)]) for this block's vertex-type line."""
     plan = _PLAN_CACHE.get(b[0])
@@ -808,13 +839,12 @@ def prefilter(blocks, verify=False):
                 owner.append(bi)
         if not owner:
             return []
-        r = subprocess.run([_SPHFILL], input=bytes(buf), stdout=subprocess.PIPE)
-        if len(r.stdout) != len(owner):
-            sys.stderr.write("[prefilter] short reply (%d of %d) — developing everything\n"
-                             % (len(r.stdout), len(owner)))
+        reply = _sphfill_ask(len(owner), buf)
+        if reply is None or len(reply) != len(owner):
+            sys.stderr.write("[prefilter] short reply — developing everything\n")
             return blocks
         keep = [False] * len(blocks)
-        for i, v in enumerate(r.stdout):
+        for i, v in enumerate(reply):
             if v:
                 keep[owner[i]] = True
         out = [b for b, k in zip(blocks, keep) if k]
@@ -863,6 +893,20 @@ def stream_chunks(pruned, kmin, kmax, size):
                 if len(buf) >= size:
                     yield buf
                     buf = []
+    if buf:
+        yield buf
+
+
+def file_chunks(path, size):
+    """Blocks of one pruned file, in chunks. Lets a worker read its own file instead of having the
+    parent parse 10 GB of text and pickle it down a pipe."""
+    buf = []
+    for b in read_blocks(path):
+        if any(l.startswith("TES file:") for l in b):
+            buf.append(b)
+            if len(buf) >= size:
+                yield buf
+                buf = []
     if buf:
         yield buf
 

@@ -14,14 +14,16 @@
  * by R·Rz(alpha[h]) around a vertex and by R·M across an edge, and the key is the dart with columns 2
  * and 0 of the frame rounded at TOL. Same rounding (round-half-even), same order of multiplication.
  *
- * Protocol, little-endian, on stdin — one record per attempt:
- *     int32   n          darts
- *     int32   guard      instance bound (develop_spherical.instance_bound)
- *     double  rho        edge arc
- *     int32   rneig[n]
- *     int32   glue[n]
- *     double  alpha[n]   signed, retrograde-adjusted interior angle at dart h
- * and one byte per attempt on stdout: 1 = closed within guard, 0 = did not.
+ * Protocol, little-endian. The process is PERSISTENT: a worker starts one and feeds it batch after
+ * batch, because spawning it per batch cost more than the walk on a run with many small files.
+ *
+ *   in:   int32 N                      attempts in this batch
+ *         N x { int32 n; int32 guard; double rho;
+ *               int32 rneig[n]; int32 glue[n]; double alpha[n] }
+ *   out:  N bytes                      1 = closed within guard, 0 = did not
+ *
+ * ⚑ All N are READ before any byte is written, and the reply is flushed as one block. Interleaving
+ * would deadlock: the writer is still writing when the reader would need to drain.
  */
 #include <cstdio>
 #include <cstdint>
@@ -67,15 +69,20 @@ int main() {
     std::vector<int32_t> stackH;
     std::vector<Mat3> stackR;
 
+    std::vector<unsigned char> verdicts;
     for (;;) {
+      int32_t N = 0;
+      if (std::fread(&N, 4, 1, stdin) != 1) break;
+      verdicts.clear(); verdicts.reserve(N);
+      for (int32_t rec = 0; rec < N; rec++) {
         int32_t n = 0, guard = 0; double rho = 0;
-        if (std::fread(&n, 4, 1, stdin) != 1) break;
-        if (std::fread(&guard, 4, 1, stdin) != 1) break;
-        if (std::fread(&rho, 8, 1, stdin) != 1) break;
+        if (std::fread(&n, 4, 1, stdin) != 1) return 1;
+        if (std::fread(&guard, 4, 1, stdin) != 1) return 1;
+        if (std::fread(&rho, 8, 1, stdin) != 1) return 1;
         rneig.resize(n); glue.resize(n); alpha.resize(n);
-        if ((int)std::fread(rneig.data(), 4, n, stdin) != n) break;
-        if ((int)std::fread(glue.data(), 4, n, stdin) != n) break;
-        if ((int)std::fread(alpha.data(), 8, n, stdin) != n) break;
+        if ((int)std::fread(rneig.data(), 4, n, stdin) != n) return 1;
+        if ((int)std::fread(glue.data(), 4, n, stdin) != n) return 1;
+        if ((int)std::fread(alpha.data(), 8, n, stdin) != n) return 1;
 
         RZ.resize(n);
         for (int h = 0; h < n; h++) {
@@ -120,9 +127,10 @@ int main() {
             if (insert(glue[h], RM))  { stackH.push_back(glue[h]);  stackR.push_back(RM); }
             if ((long)keys.size() > guard) { closed = false; break; }
         }
-        unsigned char out = closed ? 1 : 0;
-        std::fwrite(&out, 1, 1, stdout);
+        verdicts.push_back(closed ? 1 : 0);
+      }
+      std::fwrite(verdicts.data(), 1, verdicts.size(), stdout);
+      std::fflush(stdout);
     }
-    std::fflush(stdout);
     return 0;
 }
