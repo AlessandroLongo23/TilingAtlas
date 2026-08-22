@@ -8,14 +8,19 @@
 
 ## The star combinatorial search is no longer the bottleneck (2026-08-22)
 
-**Whole star-wide k=3 search — 3902 rho buckets, solve + prune, 10 workers: 359 s.** The estimate
+**Whole star-wide k=3 search — 3902 rho buckets, solve + prune, 10 workers: 187 s.** The estimate
 carried into this session was multi-day, with 148 buckets whose solve "looked open-ended"; b00000
-alone ran nine minutes without finishing. It now takes **5.4 s**.
+alone ran nine minutes without finishing. It now takes **5.4 s**, and the worst bucket in the
+whole run (b00118) is 68.8 s.
 
 What was wrong: the solver's emission path cost O(solutions x signatures x alphabet) and the pruner
 resolved every vertex symbol by a linear scan over 50,229 strings. Both were 64% of their program on
 a star bucket, and both were invisible on star24full, where a whole k=2 run emits 146 blocks against
-a star-wide bucket's 1,076,011. Nine fixes, every output byte-identical, gates all green.
+a star-wide bucket's 1,076,011. Then the pruner, which the solver fixes exposed: symbol lookup by
+linear scan over 50,229 strings, a WL fingerprint two rounds too weak for star blocks, pairwise
+isomorphism testing where a canonical form does, and a minimality test that rejected 0 of 3,836,914
+blocks because the solver had already applied it. One bucket's pruner went 213 s → 30.6 s.
+Twelve fixes, every output byte-identical, gates all green.
 
 **The wall is now develop, and the diagnosis is exact.** On a random 400 of the k=2 star-wide blocks,
 **1,696 of 1,700 flood fills run to the 1500-instance guard** — the developer's whole cost is the cost

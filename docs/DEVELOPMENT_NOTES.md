@@ -15774,3 +15774,44 @@ failing: the base shelf is 15.9 MB and does not win that race in practice.
 tests are pure functions; asserting the two tokens differ would test the patch, not the property. The
 property worth holding is that every board chip the sidebar offers has records behind it, and that
 needs the real corpus and a browser.
+
+### The pruner had the same disease, one layer down (2026-08-22, same session)
+
+Fixing the solver made the pruner the whole cost, and it turned out to be carrying four separate
+versions of the same mistake — work whose price nobody had measured on a workload this size.
+
+**`buildvertextypes` resolved every vertex token by a linear `std::find` over `symbollist`** — 50,229
+strings on star-wide, once per token per block, 64% of the pruner. `pruner.py` has the identical line
+in Python and `develop_spherical` reaches it six times per k=3 block.
+
+**The WL fingerprint ran three rounds.** Enough for the regular palette (the code's own note records
+mean bucket 6.3, max 400 at k=13) and not for star blocks: six rounds took b00000's max bucket from
+168 to 16 and its comparisons from 2,368,755 to 518,313.
+
+**The dedup was pairwise isomorphism where a canonical form does.** A connected map's isomorphisms are
+pinned by the image of one dart, so the lexicographic minimum code over admissible starts decides it
+outright and dedup becomes a set insertion. ⚑ The obvious version — try every dart — costs 15.1 µs a
+block, MORE than the 10.4 µs the pairwise test already cost; seeding only from the smallest WL colour
+class, which `fingerprint()` already computes and which is an isomorphism invariant, gives **0.85 µs**.
+A factor of twelve between a pessimisation and the biggest win in the file. `EU_CANON_VERIFY` runs
+both and counts disagreements: **0 over 3,836,914 blocks**.
+
+**And a minimality test that rejected 0 of 3,836,914 blocks**, because `simplify_inner` had already
+applied it at every closure.
+
+One bucket's pruner, 3,853,279 blocks in and 903,188 out: **213 s → 30.6 s**. The whole star-wide k=3
+search, 3902 buckets on ten workers: **187 s**, against the multi-day estimate this session started
+with. 40,487,641 pruned blocks, identical across six independent full runs.
+
+⚑ **Two things measured and NOT kept.** Sharding the pruner on its dedup key is exact and helps the
+worst bucket (224 s → 148 s), but the whole run goes 359 s → 518 s because ten workers already
+saturate ten cores and every shard is stolen from another bucket. And the scheduler has no headroom
+left: simulating from a full run's per-bucket costs, the dynamic queue's makespan is 295 s against an
+LPT and perfect-packing bound of 280 s. The search is CPU-bound, not packing-bound — an earlier guess
+that packing was worth ~100 s was simply wrong.
+
+⚑ **A separate thing this turned up.** `eu_pruner` does not model edge types at all: its refinement
+seeds on `(cls, fam)` where the solver's seeds on `(cls·ETSPAN + etype, fam)`. A coarser seed gives a
+coarser congruence, which rejects MORE — so on the edge-typed palettes (eu-half-*, fdsq, tri45, the
+planigons) the pruner may be dropping blocks the solver correctly emitted. Unmeasured, and unrelated
+to the star work, but it is a completeness question and someone should look.

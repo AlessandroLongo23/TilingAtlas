@@ -2829,3 +2829,11 @@ The star-polyhedra board and the four halved Platonic boards filtered to zero. T
 `tilings` dep let the winner's re-render kill the loser's merge before it could claim a token of its
 own: 105 records fetched and discarded once per session. One guard per load; the boards now read
 112/2/7/5/2/89/243, summing to the 460 the unfiltered shelf always showed. Commit 91c2d8a. NOTES 08-22.
+
+## 2026-08-22 (2) — the pruner gets the same treatment: 187 s for the whole k=3 search — CC
+
+⚑ Dedup is a CANONICAL FORM, not pairwise isomorphism: a connected map's isomorphisms are pinned by
+one dart. Every start costs 15.1 µs/block, worse than what it replaces; seeding from the smallest WL
+colour class gives 0.85 µs, and `EU_CANON_VERIFY` found 0 disagreements over 3,836,914 blocks. Plus
+key sharding (exact, a LOSS end to end, off) and skipping a minimality test that never fires. b00118's
+pruner 213 s → 30.6 s; star-wide k=3 **187 s / 40,487,641 blocks**. cf46c56, 49e6173, 73cd5f3, d5bc4d4.
