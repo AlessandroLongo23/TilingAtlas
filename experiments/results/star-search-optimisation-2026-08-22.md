@@ -188,3 +188,24 @@ Same 597,760 kept either way, and the pruned files are byte-identical — more W
 isomorphism invariant, so isomorphic graphs still collide and no verdict can move. The three extra
 passes are over a colour array that `sample` puts at 1.3% of the run. `check-regular` stays
 byte-identical, which is the test that this did not disturb the Euclidean catalogue.
+
+## Where the search floor is, and one thing left on the table deliberately
+
+The whole run is 359 s and **one bucket is 224 s of it**: b00118, whose solve is only 10.7 s and whose
+pruner is the other 101 s alone (213 s under ten-way contention). 99% of its 3,853,279 blocks sit in a
+single family, so parallelising the pruner across families buys nothing there.
+
+Sharding the pruner by `hash(signatureline)` WOULD work and is sound — a duplicate pair always shares
+its signature, so an isomorphism class is always decided inside one shard, and the first-seen
+representative per class does not move. It would take the run to roughly 150 s. **Not built**, because
+the stage after it is three and a half days: two more minutes off a six-minute search is not worth a
+change that reorders the emitted blocks (the same caveat depth-2 sharding carries — it changes the
+catalogue TEXT, not the tiling set).
+
+⚑ **The pruner's `simplify` rejected 0 of 3,836,914 blocks** on b00118. It cannot fire on eu_solver
+output, because `simplify_inner` already ran the same minimality test at every closure — so it is
+about 10% of the pruner spent on a check that has never once disagreed. **Kept on purpose.** It is an
+independent implementation (bitset relation refinement against the solver's Moore partition
+refinement) of the test that once deleted every 2-orbit deltahedron, and the pruner also reads output
+from `pruner.py` and from Marek's solvers, which do not run it. If someone ever wants that 10%, this
+is the measurement to start from — and the reason not to.
