@@ -88,7 +88,7 @@ import {
 	type SphPolyPattern,
 } from "@/lib/tilings/sph-poly";
 import {
-	sphStarFamilyLabel,
+	sphStarName,
 	sphStarShardUrl,
 	densityUnresolved,
 	sphStarSub,
@@ -2286,7 +2286,12 @@ function sphStarToReference(p: SphStarPattern): ReferenceTiling {
 		id: p.id,
 		source: "spherical",
 		k: p.k,
-		family: `${sphStarSubLabel(p.density, densityUnresolved(p))} · ${sphStarFamilyLabel(p)}`,
+		// ⚑ The NAME, not `sphStarFamilyLabel`: that one appends the density for an unnamed record,
+		// and this string already leads with it, so every unnamed record read "density 7 · census ·
+		// density 7". tilingSpec.ts hit the same trap and its note is right there; this call site was
+		// missed. Pre-existing — it affected the 18 unnamed records already shipped, and the k=3
+		// additions of 2026-08-22 are what made it visible.
+		family: `${sphStarSubLabel(p.density, densityUnresolved(p))} · ${sphStarName(p)}`,
 		renderCell: FREEDRAW_EMPTY_CELL,
 		sphStar: p,
 		geometry: "spherical",
