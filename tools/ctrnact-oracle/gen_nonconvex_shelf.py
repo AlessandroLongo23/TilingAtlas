@@ -256,7 +256,8 @@ def allocate_ids(rows, frozen):
 
 DEFAULT_CELLS = [os.path.join(HERE, "sph-k2-fix", "euclid-k2.json"),
                  os.path.join(HERE, "sph-k3", "euclid-k3.json"),
-                 os.path.join(HERE, "sph-k4", "euclid-k4.json")]
+                 os.path.join(HERE, "sph-k4", "euclid-k4.json"),
+                 os.path.join(HERE, "sph-k5", "euclid-k5.json")]
 
 
 def main():

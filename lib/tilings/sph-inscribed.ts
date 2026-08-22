@@ -93,14 +93,16 @@ export function isInscribed(vertices: readonly V3[], tol = 1e-4): boolean {
  *
  * It is a flat list rather than a grouped one because it is not a taxonomy — it is whatever the shipped
  * geometry measures, regenerated from it by the test whenever the shelf grows. It grew from 19 to 37 when the k=3 Johnson
- * solids landed and to 51 when the k=4 ones did (both 2026-08-21); the "ncx-" shelf is not here at all, since NONE of
+ * solids landed, to 51 at k=4 and to 59 at k=5; the "ncx-" shelf is not here at all, since NONE of
  * those has a circumsphere and hasSphereView answers on the prefix.
  */
 export const SPH_NOT_INSCRIBED: ReadonlySet<string> = new Set([
+	"augmented-dodecahedron",
 	"augmented-hexagonal-prism",
 	"augmented-pentagonal-prism",
 	"augmented-triangular-prism",
 	"augmented-tridiminished-icosahedron",
+	"augmented-truncated-cube",
 	"augmented-truncated-tetrahedron",
 	"biaugmented-pentagonal-prism",
 	"biaugmented-triangular-prism",
@@ -111,8 +113,10 @@ export const SPH_NOT_INSCRIBED: ReadonlySet<string> = new Set([
 	"elongated-pentagonal-cupola",
 	"elongated-pentagonal-gyrobicupola",
 	"elongated-pentagonal-gyrobirotunda",
+	"elongated-pentagonal-gyrocupolarotunda",
 	"elongated-pentagonal-orthobicupola",
 	"elongated-pentagonal-orthobirotunda",
+	"elongated-pentagonal-orthocupolarotunda",
 	"elongated-pentagonal-pyramid",
 	"elongated-pentagonal-rotunda",
 	"elongated-square-bipyramid",
@@ -125,15 +129,18 @@ export const SPH_NOT_INSCRIBED: ReadonlySet<string> = new Set([
 	"gyrobifastigium",
 	"gyroelongated-pentagonal-bicupola",
 	"gyroelongated-pentagonal-cupola",
+	"gyroelongated-pentagonal-rotunda",
 	"gyroelongated-square-bicupola",
 	"gyroelongated-square-bipyramid",
 	"gyroelongated-square-cupola",
 	"gyroelongated-square-pyramid",
 	"gyroelongated-triangular-bicupola",
 	"gyroelongated-triangular-cupola",
+	"hebesphenomegacorona",
 	"metabiaugmented-hexagonal-prism",
 	"parabiaugmented-dodecahedron",
 	"parabiaugmented-hexagonal-prism",
+	"parabiaugmented-truncated-dodecahedron",
 	"pentagonal-bipyramid",
 	"pentagonal-gyrobicupola",
 	"pentagonal-gyrocupolarotunda",
@@ -142,6 +149,7 @@ export const SPH_NOT_INSCRIBED: ReadonlySet<string> = new Set([
 	"snub-disphenoid",
 	"snub-square-antiprism",
 	"sphenocorona",
+	"sphenomegacorona",
 	"square-gyrobicupola",
 	"square-orthobicupola",
 	"triangular-bipyramid",

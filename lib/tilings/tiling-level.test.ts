@@ -123,13 +123,13 @@ describe.skipIf(!anyShard)("the levels over every shipped curved shelf", () => {
 		// all 2026-08-21). Every Johnson solid the Euclidean developer adds is a hybrid: two vertex
 		// configurations that are not one multiset reordered, which is the level. So is every
 		// non-convex one, for the same reason.
-		expect(rows.length).toBe(247);
+		expect(rows.length).toBe(355);
 		expect(census(rows.map((r) => ({ level: tilingLevel({ ...r, spherical: {} }) })))).toEqual({
 			regular: 5,
 			archimedean: 23,
 			"pseudo-archimedean": 3,
 			combination: 7,
-			hybrid: 209,
+			hybrid: 317,
 		});
 		const of = (id: string) => {
 			const r = rows.find((x) => x.id === id)!;

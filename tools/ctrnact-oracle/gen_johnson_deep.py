@@ -66,6 +66,16 @@ NAMES = {
     (20, 44, 26, ((3, 20), (4, 5), (8, 1))): (23, "Gyroelongated square cupola", "GYROELONGATED_SQUARE_CUPOLA"),
     (25, 55, 32, ((3, 25), (4, 5), (5, 1), (10, 1))): (24, "Gyroelongated pentagonal cupola", "GYROELONGATED_PENTAGONAL_CUPOLA"),
     (30, 55, 27, ((3, 10), (4, 10), (5, 6), (10, 1))): (21, "Elongated pentagonal rotunda", "ELONGATED_PENTAGONAL_ROTUNDA"),
+
+    # --- k=5 (2026-08-22), each checked the same way: Euler, the handshake 2E = sum(n*k), and the
+    # parent construction. J58 = dodecahedron + a pentagonal pyramid; J66 = truncated cube + a square
+    # cupola J4 on an octagon; J25 = pentagonal rotunda J6 + a decagonal antiprism; J88 and J89 are
+    # elementary, which is what makes them elementary.
+    (12, 28, 18, ((3, 16), (4, 2))): (88, "Sphenomegacorona", "SPHENOMEGACORONA"),
+    (14, 33, 21, ((3, 18), (4, 3))): (89, "Hebesphenomegacorona", "HEBESPHENOMEGACORONA"),
+    (21, 35, 16, ((3, 5), (5, 11))): (58, "Augmented dodecahedron", "AUGMENTED_DODECAHEDRON"),
+    (28, 48, 22, ((3, 12), (4, 5), (8, 5))): (66, "Augmented truncated cube", "AUGMENTED_TRUNCATED_CUBE"),
+    (30, 65, 37, ((3, 30), (5, 6), (10, 1))): (25, "Gyroelongated pentagonal rotunda", "GYROELONGATED_PENTAGONAL_ROTUNDA"),
 }
 PAIRS = {
     (40, 80, 42, ((3, 20), (4, 10), (5, 12))): ("mirror",
@@ -89,6 +99,23 @@ PAIRS = {
     (25, 50, 27, ((3, 15), (4, 5), (5, 7))): ("cupolarotunda",
         (32, "Pentagonal orthocupolarotunda", "PENTAGONAL_ORTHOCUPOLAROTUNDA"),
         (33, "Pentagonal gyrocupolarotunda", "PENTAGONAL_GYROCUPOLAROTUNDA")),
+    # ⚑ The ELONGATED cupolarotundas need a THIRD test, and the reason is instructive: a decagonal prism
+    # now sits between the cupola and the rotunda, so the two halves never touch and the edge census that
+    # splits J32/J33 is IDENTICAL for both — measured, {(3,4):20, (3,5):25, (4,4):15, (4,5):10} either way.
+    # The alignment is still there, one face further out. `longitude` finds the 5-fold axis through the
+    # cupola's top pentagon (the one pentagon whose five neighbours are all squares), projects the cupola
+    # squares and the rotunda's lateral pentagons onto it, and reads the offset: 0 for ortho, 36 degrees
+    # for gyro. Confirmed against an independent combinatorial invariant — the distance-2 face path census
+    # — which separates them 20/15 on square-square-pentagon and 10/5 on triangle-square-triangle.
+    (35, 70, 37, ((3, 15), (4, 15), (5, 7))): ("longitude",
+        (40, "Elongated pentagonal orthocupolarotunda", "ELONGATED_PENTAGONAL_ORTHOCUPOLAROTUNDA"),
+        (41, "Elongated pentagonal gyrocupolarotunda", "ELONGATED_PENTAGONAL_GYROCUPOLAROTUNDA")),
+    # Two pentagonal cupolas on a truncated dodecahedron. The cupola tops are the only two pentagons, so
+    # the para/meta split is the angle between their centroids about the centre — pi for para. Measured
+    # 180.00 degrees, so k=5 found the PARA one; J70 is still missing.
+    (70, 120, 52, ((3, 30), (4, 10), (5, 2), (10, 10))): ("caps",
+        (69, "Parabiaugmented truncated dodecahedron", "PARABIAUGMENTED_TRUNCATED_DODECAHEDRON"),
+        (70, "Metabiaugmented truncated dodecahedron", "METABIAUGMENTED_TRUNCATED_DODECAHEDRON")),
 }
 
 
@@ -105,6 +132,70 @@ def square_pentagon_edges(faces):
         for a in range(len(f)):
             seen[tuple(sorted((f[a], f[(a + 1) % len(f)])))].append(len(f))
     return sum(1 for v in seen.values() if sorted(v) == [4, 5])
+
+
+def _face_adjacency(F):
+    """faces -> {face index: set of neighbouring face indices}."""
+    owner = collections.defaultdict(list)
+    for fi, f in enumerate(F):
+        for a in range(len(f)):
+            owner[tuple(sorted((f[a], f[(a + 1) % len(f)])))].append(fi)
+    adj = collections.defaultdict(set)
+    for fs in owner.values():
+        if len(fs) == 2:
+            adj[fs[0]].add(fs[1])
+            adj[fs[1]].add(fs[0])
+    return adj
+
+
+def cap_angle(V, F, n=5):
+    """Angle at the centre between the centroids of the two n-gon faces — pi when they are opposite.
+
+    The pyramid version (apex_angle) looks for a VERTEX all of whose faces are triangles, which is what
+    an augmenting pyramid leaves behind. A cupola leaves a FACE instead, so the same para/meta question
+    needs the face centroids. On the biaugmented truncated dodecahedron the two cupola tops are the
+    solid's only pentagons."""
+    W = centre_and_scale(np.asarray(V, float))
+    caps = [f for f in F if len(f) == n]
+    if len(caps) != 2:
+        return None
+    c = [W[f].mean(axis=0) for f in caps]
+    c = [x / (np.linalg.norm(x) or 1.0) for x in c]
+    return math.degrees(math.acos(max(-1.0, min(1.0, float(c[0] @ c[1])))))
+
+
+def cupolarotunda_offset(V, F):
+    """Longitude offset between the cupola's squares and the rotunda's lateral pentagons: 0 for ortho,
+    36 degrees for gyro.
+
+    ⚑ Why not the square-pentagon edge count that splits J32/J33. Elongating a cupolarotunda puts a
+    decagonal prism between the two halves, so they never touch and that census comes out IDENTICAL for
+    both — measured, {(3,4):20, (3,5):25, (4,4):15, (4,5):10} either way. The alignment survives one face
+    further out, so read it geometrically instead: the 5-fold axis runs through the cupola's top pentagon
+    (the only pentagon whose five neighbours are all squares), and the question is whether the squares
+    around it sit at the same longitude as the rotunda's pentagons on the far side."""
+    W = centre_and_scale(np.asarray(V, float))
+    cen = [W[f].mean(axis=0) for f in F]
+    adj = _face_adjacency(F)
+    top = [fi for fi, f in enumerate(F) if len(f) == 5 and all(len(F[n]) == 4 for n in adj[fi])]
+    if len(top) != 1:
+        return None
+    axis = cen[top[0]] / (np.linalg.norm(cen[top[0]]) or 1.0)
+    e1 = np.cross(axis, [1.0, 0.0, 0.0])
+    if np.linalg.norm(e1) < 1e-9:
+        e1 = np.cross(axis, [0.0, 1.0, 0.0])
+    e1 = e1 / np.linalg.norm(e1)
+    e2 = np.cross(axis, e1)
+
+    def lon(c):
+        return math.degrees(math.atan2(float(c @ e2), float(c @ e1))) % 72.0
+
+    cup = [lon(cen[nb]) for nb in adj[top[0]]]
+    rot = [lon(cen[fi]) for fi, f in enumerate(F)
+           if len(f) == 5 and fi != top[0] and float(cen[fi] @ axis) < 0]
+    if not cup or not rot:
+        return None
+    return min(abs(a - b) for a in cup for b in rot)
 
 
 def stats(r):
@@ -214,6 +305,18 @@ def main():
                 pick = first if has_equatorial_mirror(V, F) else second
             elif how == "cupolarotunda":
                 pick = first if square_pentagon_edges(F) == 10 else second
+            elif how == "longitude":
+                off = cupolarotunda_offset(V, F)
+                if off is None:
+                    unnamed.append((r, sig, "could not find the cupola axis"))
+                    continue
+                pick = first if off < 5.0 else second
+            elif how == "caps":
+                ang = cap_angle(V, F)
+                if ang is None:
+                    unnamed.append((r, sig, "could not find two cap faces"))
+                    continue
+                pick = first if ang > 170 else second
             elif how == "apexes":
                 ang = apex_angle(V, F)
                 if ang is None:
