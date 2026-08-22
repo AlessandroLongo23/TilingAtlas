@@ -15615,3 +15615,48 @@ concluding a filter is broken. The Board group also needs `dec=tilings` to rende
 
 Also removed, at AL's request: the Board group's note about which board the drawn edges decorate. It
 described the Euclidean edge-pattern boards and was showing under every board wall, including these two.
+
+⚑ **The crossing flag was wrong on four solids, and AL found one by looking at it** (2026-08-22:
+"sph-ncx-6-11-7 is categorized as embedded, but it's self intersecting"). He is right, and the mistake was
+mine in kind: the entry above says the flag was lifted from the shelf generator rather than re-derived,
+"one predicate with one implementation is better than two that can disagree". That reasoning holds only
+while the one implementation is correct, and this one is not. `self_intersections` in
+`gen_nonconvex_shelf.py` opens each pair with
+
+    if i == j or set(fi) & set(fj): continue
+
+so it never compares two faces that SHARE A VERTEX. On a six-vertex solid nearly every pair does, which is
+exactly why the counterexample is a small one.
+
+An independent test — every ordered face pair, no exemptions, an edge piercing the STRICT interior of
+another face — was run over the shipped geometry and diffed three ways: shipped label, the generator's own
+algorithm re-run in TS, and the new measurement. The generator's algorithm re-run agrees with its labels,
+so the labels are not stale; the algorithm is what is wrong. Two directions of disagreement:
+
+  * FOUR it misses — ncx-6-11-7, ncx-12-28-18-f, ncx-7-14-9-b, ncx-8-16-10-d — where an edge really does
+    pierce an interior, through a pair sharing a vertex.
+  * THIRTY-SIX it counts where nothing pierces an interior. The crossing point lands ON another face's
+    boundary, with a margin of ~1e-11 against real margins of ~1e-1: two EDGES crossing in space, not a
+    face passing through a face. Its point-in-polygon test is a ray-crossing parity count, which is
+    undefined exactly on the boundary, and it lands there.
+
+`scripts/gen-ncx-crossing.ts` (was .mjs) now UNIONS the two, which only ever adds and so cannot un-flag a
+solid the generator flagged: 116 self-intersecting, 127 embedded. The four are pinned by name in
+`tests/ncx-crossing.test.ts`.
+
+⚑ AL should decide the thirty-six, and this note is the ask. A solid whose edges cross is not embedded
+either, so calling them self-intersecting is defensible — but it is a different fact from "a face passes
+through a face", and the shelf currently files both under one word. The union keeps them where they were.
+
+**Cupolas are the fifth star shape** (AL, same day). Two records: `ss-12-20-10-d1` crossed square cupola
+and `ss-15-25-12-d3` crossed pentagrammic cupola. An n-gon over a 2n-gon banded by n triangles and n
+squares, so V = 3n, E = 5n, F = 2n + 2.
+
+⚑ The census is compared BY SIZE and not by face type, because a cupola's top can hide inside its own
+band: the crossed square cupola ships as "4{3} + 5{4} + 1{8/3}" — four side triangles and FIVE squares,
+the fifth being the top. Look for a distinct top face and this one is invisible, which is also why the
+"set the triangles and squares aside" reading the other three families use cannot find it. Tested first
+for the same reason; its V, E and F cannot be a prism's or an antiprism's at any n, and match a pyramid's
+only at n = 2, which the predicate rejects.
+
+Shelf now: 31 pyramids, 5 prisms, 8 antiprisms, 2 cupolas, 43 other = 89. Verified by clicking.

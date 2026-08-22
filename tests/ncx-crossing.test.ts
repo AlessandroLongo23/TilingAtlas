@@ -24,11 +24,22 @@ describe("the non-convex shelf's crossing split", () => {
 		expect(strays, `not on the shelf: ${strays.join(", ")}`).toEqual([]);
 	});
 
-	it("holds the counts the shelf's own header states", () => {
-		// nonconvexSolids.ts opens with "SELF-INTERSECTING (112 of 243)" and "An embedded solid (131 of
-		// 243)". If a rebuild moves these, that header and this test are both meant to move with it.
-		expect(NCX_SELF_INTERSECTING.size).toBe(112);
-		expect(NCX_EMBEDDED.size).toBe(131);
+	it("holds the counts, which are NOT the shelf header's", () => {
+		// nonconvexSolids.ts opens with "SELF-INTERSECTING (112 of 243)". That header is the generator's own
+		// tally and it is four short: its test skips any two faces that share a vertex, and on a small solid
+		// nearly every pair does. The script unions in an independent measurement, so 116 is the number.
+		expect(NCX_SELF_INTERSECTING.size).toBe(116);
+		expect(NCX_EMBEDDED.size).toBe(127);
+	});
+
+	it("flags the four the shelf generator files as embedded", () => {
+		// ⚑ AL found ncx-6-11-7 by looking at it (2026-08-22) — its faces plainly pass through each other
+		// and the shelf called it embedded. The other three came out of the same check. Each has an edge
+		// piercing the strict interior of a face it shares a vertex with, which is exactly the case the
+		// generator's `set(fi) & set(fj)` skip drops.
+		for (const id of ["ncx-6-11-7", "ncx-12-28-18-f", "ncx-7-14-9-b", "ncx-8-16-10-d"]) {
+			expect(ncxSelfIntersects(id), `${id} should be self-intersecting`).toBe(true);
+		}
 	});
 
 	it("answers false for anything off this shelf", () => {

@@ -181,6 +181,7 @@ const STAR_KIND_LABEL: Record<SphStarKind, string> = {
 	pyramid: "pyramids",
 	prism: "prisms",
 	antiprism: "antiprisms",
+	cupola: "cupolas",
 	other: "other",
 };
 
@@ -189,6 +190,7 @@ const STAR_KIND_OPTIONS: { value: "all" | SphStarKind; label: string }[] = [
 	{ value: "pyramid", label: "Pyramids" },
 	{ value: "prism", label: "Prisms" },
 	{ value: "antiprism", label: "Antiprisms" },
+	{ value: "cupola", label: "Cupolas" },
 	{ value: "other", label: "Other" },
 ];
 
@@ -372,7 +374,7 @@ function parseViewState(sp: URLSearchParams): ViewState {
 	const decomp = sp.get("decomp");
 	if (decomp === "decomposable" || decomp === "non-decomposable") f.convexDecomp = decomp;
 	const skind = sp.get("skind");
-	if (skind === "pyramid" || skind === "prism" || skind === "antiprism" || skind === "other") f.starKind = skind;
+	if (skind === "pyramid" || skind === "prism" || skind === "antiprism" || skind === "cupola" || skind === "other") f.starKind = skind;
 	const ncx = sp.get("ncx");
 	if (ncx === "self-intersecting" || ncx === "embedded") f.ncxCrossing = ncx;
 	const m = num("m");
@@ -2061,7 +2063,7 @@ export function ReferenceShelf() {
 						<FilterGroup
 							title="Shape"
 							summary={filters.starKind ? STAR_KIND_LABEL[filters.starKind] : null}
-							note="pyramid, prism, antiprism"
+							note="pyramid, prism, antiprism, cupola"
 						>
 							<OptionWall
 								columns={3}

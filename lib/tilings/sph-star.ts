@@ -139,8 +139,8 @@ export function sphStarFamilyLabel(p: SphStarEntry): string {
 	return `${sphStarCensusLabel(p)} · ${sphStarSubLabel(p.density, densityUnresolved(p))}`;
 }
 
-/** The four shapes this shelf sorts into; "other" is the uniform polyhedra and everything unnamed. */
-export type SphStarKind = "pyramid" | "prism" | "antiprism" | "other";
+/** The shapes this shelf sorts into; "other" is the uniform polyhedra and everything the rest miss. */
+export type SphStarKind = "pyramid" | "prism" | "antiprism" | "cupola" | "other";
 
 /**
  * Which of the four a star polyhedron is, read off its STRUCTURE and not off its name.
@@ -152,6 +152,7 @@ export type SphStarKind = "pyramid" | "prism" | "antiprism" | "other";
  *   pyramid    one {n/d}, n triangles, n+1 vertices, 2n edges — an apex over the base and nothing else
  *   prism      two {n/d}, n squares, 2n vertices, 3n edges
  *   antiprism  two {n/d}, 2n triangles, 2n vertices, 4n edges
+ *   cupola     an n-gon over a 2n-gon banded by n triangles and n squares; 3n vertices, 5n edges
  *
  * The counts are all checked, not just the census: a face tally alone would let a different solid with
  * the same faces through. A crossed antiprism is an antiprism here, which is what it is — the crossing
@@ -163,6 +164,11 @@ export type SphStarKind = "pyramid" | "prism" | "antiprism" | "other";
  */
 export function sphStarKind(p: SphStarEntry): SphStarKind {
 	const { verts, edges, faces, types } = p.stats;
+	// Cupola first, because it is the one shape whose top face can hide inside the band's census and so
+	// cannot be found by setting the triangles and squares aside the way the other three are. Its V, E and
+	// F cannot be a prism's or an antiprism's at any n, and match a pyramid's only at n = 2, which `isCupola`
+	// rejects — so testing it first takes nothing from the others.
+	if (isCupola(p)) return "cupola";
 	const count = (n: number) => types.find(([tn, td]) => tn === n && td === 1)?.[2] ?? 0;
 	const tri = count(3);
 	const sq = count(4);
@@ -174,6 +180,33 @@ export function sphStarKind(p: SphStarEntry): SphStarKind {
 	if (c === 2 && sq === n && verts === 2 * n && edges === 3 * n && faces === n + 2) return "prism";
 	if (c === 2 && tri === 2 * n && verts === 2 * n && edges === 4 * n && faces === 2 * n + 2) return "antiprism";
 	return "other";
+}
+
+/**
+ * A cupola: an n-gon over a 2n-gon, joined by a band of n triangles and n squares.
+ *
+ * V = 3n, E = 5n, F = 2n + 2, and the census is n triangles, n squares, one n-gon and one 2n-gon.
+ *
+ * ⚑ Compared BY SIZE, ignoring the winding, because the top merges into the band when it is small: the
+ * crossed square cupola ships as "4{3} + 5{4} + 1{8/3}", four side triangles and FIVE squares, because
+ * its top square is a square like the four in the band. Look for a separate top face and this one is
+ * invisible. Its {8/3} bottom is a star and the top is not, which is why "one n-gon" cannot be read off
+ * the star faces either.
+ */
+function isCupola(p: SphStarEntry): boolean {
+	const { verts, edges, faces, types } = p.stats;
+	const n = verts / 3;
+	if (!Number.isInteger(n) || n < 3) return false;
+	if (edges !== 5 * n || faces !== 2 * n + 2) return false;
+	const want = new Map<number, number>();
+	const bump = (m: Map<number, number>, size: number, c: number) => m.set(size, (m.get(size) ?? 0) + c);
+	bump(want, 3, n);
+	bump(want, 4, n);
+	bump(want, n, 1);
+	bump(want, 2 * n, 1);
+	const have = new Map<number, number>();
+	for (const [size, , c] of types) bump(have, size, c);
+	return want.size === have.size && [...want].every(([size, c]) => have.get(size) === c);
 }
 
 /** Whether any face of the record actually crosses itself. Every record on this shelf has density > 1,

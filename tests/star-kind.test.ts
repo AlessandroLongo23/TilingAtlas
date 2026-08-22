@@ -15,11 +15,13 @@ describe("sphStarKind", () => {
 			// "crossed antiprism" contains "prism" too, so antiprism is tested first.
 			const fromName: SphStarKind = name.includes("pyramid")
 				? "pyramid"
-				: name.includes("antiprism")
-					? "antiprism"
-					: name.includes("prism")
-						? "prism"
-						: "other";
+				: name.includes("cupola")
+					? "cupola"
+					: name.includes("antiprism")
+						? "antiprism"
+						: name.includes("prism")
+							? "prism"
+							: "other";
 			if (sphStarKind(e) !== fromName) wrong.push(`${e.id} "${e.solid}": structure=${sphStarKind(e)} name=${fromName}`);
 		}
 		expect(wrong, wrong.join("; ")).toEqual([]);
@@ -30,9 +32,20 @@ describe("sphStarKind", () => {
 		for (const e of SPH_STAR_INDEX) counts.set(sphStarKind(e), (counts.get(sphStarKind(e)) ?? 0) + 1);
 		const total = [...counts.values()].reduce((a, b) => a + b, 0);
 		expect(total).toBe(SPH_STAR_INDEX.length);
-		for (const k of ["pyramid", "prism", "antiprism", "other"] as const) {
+		for (const k of ["pyramid", "prism", "antiprism", "cupola", "other"] as const) {
 			expect(counts.get(k) ?? 0, `no ${k} on the shelf`).toBeGreaterThan(0);
 		}
+	});
+
+	it("finds the square cupola, whose top face hides inside its band", () => {
+		// A cupola's top is an n-gon, and for n = 4 it is a square like the four in the band — so the
+		// crossed square cupola ships as "4{3} + 5{4} + 1{8/3}" with no separate top to look for. Reading
+		// the census by SIZE is what catches it; looking for a distinct top face does not.
+		const square = SPH_STAR_INDEX.find((e) => e.id === "ss-12-20-10-d1");
+		expect(square?.solid).toContain("cupola");
+		expect(sphStarKind(square!)).toBe("cupola");
+		const pent = SPH_STAR_INDEX.find((e) => e.id === "ss-15-25-12-d3");
+		expect(sphStarKind(pent!)).toBe("cupola");
 	});
 
 	it("takes a crossed antiprism as an antiprism", () => {
