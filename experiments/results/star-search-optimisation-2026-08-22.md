@@ -294,3 +294,51 @@ dispatched in bucket order while their cost is not predictable from anything kno
 it needs a two-phase runner — solve everything first, then prune longest-first on measured raw size —
 at the cost of holding every bucket's raw blocks on disk at once. About 100 s, in front of a stage
 that is four and a half days.
+
+## The dedup is a canonical form now, and that is the last big one
+
+With the six-round fingerprint in, `compareToSeen` was still **46%** of the pruner on b00118 — not
+because buckets are big (median 1) but because 76% of that bucket's blocks are duplicates and each
+needs one exact relation refinement over the disjoint union of two graphs, ~5.5 µs. 3,836,914 calls,
+7,252,663 comparisons.
+
+A connected map's isomorphisms are pinned by the image of ONE dart: rneig, lneig, mirro and glue act
+transitively, so `d0 → 0` determines the whole bijection. Relabel by BFS in a fixed generator order,
+emit (images, cls, fam) per dart, take the lexicographic minimum over admissible starts — two blocks
+are isomorphic exactly when their codes match, and dedup becomes a set insertion.
+
+⚑ **The obvious version is a pessimisation.** Trying every dart as a start costs **15.1 µs per block**,
+more than the 10.4 µs per block that pairwise comparison already cost there. Restricting starts to the
+smallest WL colour class — which the fingerprint already computes, and which is an isomorphism
+invariant so it cannot change the minimum — takes it to **0.85 µs**. Twelve times cheaper, and the
+difference between a loss and the biggest single win in the pruner.
+
+```
+b00118, 3,853,279 raw blocks -> 903,188 kept
+  pairwise (EU_NOCANON=1)   92.8 s    peak RSS 0.85 GB
+  canonical form            36.5 s    peak RSS 0.39 GB     2.5x, and less memory
+```
+
+Verified rather than argued: a `EU_CANON_VERIFY` mode runs both and counts disagreements —
+**0 over 3,836,914 blocks**, same 903,188 kept, pruned files byte-identical. The code is stored
+exactly (one byte per entry, ~240 bytes per kept block against the ~400 the solution store held), not
+hashed, so there is no collision argument to make. Connectedness is the assumption the construction
+rests on; an unreached dart returns an empty code and falls back to the pairwise test.
+
+**Whole star-wide k=3 search: 295 s → 228 s**, same 40,487,641 blocks, worst bucket 224 s → 91.4 s.
+
+## Where the search floor is, measured
+
+From the per-bucket costs of a full run (`--cost-out`), simulating the scheduler:
+
+```
+total prune+solve CPU        2803 s
+perfect packing over 10       280 s
+LPT makespan                  280 s
+bucket-order makespan         295 s   <- what the dynamic queue does
+observed                      295 s
+```
+
+**The queue is within 5% of optimal**, so there is no scheduling headroom — the earlier guess that
+packing was worth ~100 s was wrong, and the simulation is what says so. The run is CPU-bound, and the
+only remaining direction is less work per block.

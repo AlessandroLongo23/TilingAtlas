@@ -12,6 +12,7 @@
 #include <string>
 #include <set>
 #include <unordered_map>
+#include <unordered_set>
 #include <map>
 #include <fstream>
 #include <sstream>
@@ -259,6 +260,7 @@ static inline uint64_t mix(uint64_t h, uint64_t x) {
 	h ^= x + 0x9e3779b97f4a7c15ULL + (h << 6) + (h >> 2);
 	return h;
 }
+static std::vector<uint64_t> FP_COL;   // set by fingerprint(), read by canon_code()
 static uint64_t fingerprint(const Graph& g) {
 	int le = (int)g.rneig.size();
 	std::vector<uint64_t> col(le), nc(le);
@@ -283,6 +285,7 @@ static uint64_t fingerprint(const Graph& g) {
 		}
 		col.swap(nc);
 	}
+	FP_COL = col;                     // per-dart refined colour, before the sort (see canon_code)
 	std::sort(col.begin(), col.end());
 	uint64_t f = (uint64_t)le;
 	for (uint64_t c : col) f = mix(f, c);
@@ -295,6 +298,71 @@ static std::unordered_map<std::string, std::vector<int>> bucket;
 static std::string keyOf(const std::string& sigline, uint64_t fp) {
 	return sigline + '\x01' + std::to_string(fp);
 }
+
+// CANONICAL FORM — replaces the pairwise isomorphism test.
+//
+// A connected map's isomorphisms are pinned by the image of ONE dart: rneig, lneig, mirro and glue
+// generate a transitive action on the darts, so d0 -> 0 determines the whole bijection. Relabel by
+// breadth-first search in a fixed generator order, emit (images, cls, fam) per dart, and take the
+// lexicographic minimum over admissible starts. Two blocks are isomorphic exactly when their codes
+// are equal, so dedup becomes a set insertion and comparesolutions never runs.
+//
+// ⚑ The start set is the smallest WL colour class, and that is what makes it affordable. Trying every
+// dart cost 15.1 us per block on star-wide b00118 — MORE than the 10.4 us that compareToSeen already
+// cost there, so the obvious version is a pessimisation. The colour is an isomorphism invariant, so
+// both graphs' minimal class corresponds under any isomorphism and restricting to it cannot change
+// the minimum; it only drops starts that could never win. Measured 0.85 us per block.
+//
+// The code is kept EXACTLY, one byte per entry, not hashed: ~240 bytes per kept block against the
+// ~400 the solution store held, so this costs less memory than what it replaces and stays exact.
+static std::vector<int> CF_pos, CF_ord;
+static void canon_code(const Graph& g, std::string& out) {
+	const int le = (int)g.rneig.size();
+	std::string best, cur;
+	uint64_t cmin = FP_COL.empty() ? 0 : FP_COL[0];
+	for (int i = 1; i < le && i < (int)FP_COL.size(); i++) if (FP_COL[i] < cmin) cmin = FP_COL[i];
+	for (int d0 = 0; d0 < le; d0++) {
+		if (!FP_COL.empty() && FP_COL[d0] != cmin) continue;
+		CF_pos.assign(le, -1);
+		CF_ord.clear();
+		CF_pos[d0] = 0; CF_ord.push_back(d0);
+		cur.clear();
+		bool worse = false;
+		for (size_t h = 0; h < CF_ord.size(); h++) {
+			const int d = CF_ord[h];
+			const int nb[4] = { g.rneig[d], g.lneig[d], g.mirro[d], g.glue[d] };
+			for (int t = 0; t < 4; t++) {
+				int x = nb[t];
+				if (CF_pos[x] < 0) { CF_pos[x] = (int)CF_ord.size(); CF_ord.push_back(x); }
+				cur.push_back((char)(unsigned char)CF_pos[x]);
+			}
+			cur.push_back((char)(unsigned char)(g.cls[d] & 0xFF));
+			cur.push_back((char)(unsigned char)((g.cls[d] >> 8) & 0xFF));
+			cur.push_back((char)(unsigned char)(g.fam[d] & 0xFF));
+			cur.push_back((char)(unsigned char)((g.fam[d] >> 8) & 0xFF));
+			if (!best.empty() && cur.size() <= best.size() &&
+			    best.compare(0, cur.size(), cur) < 0) { worse = true; break; }
+		}
+		if (worse) continue;
+		// ⚑ CONNECTEDNESS is the assumption the whole construction rests on: the code pins an
+		// isomorphism only because rneig/lneig/mirro/glue act transitively, and if the BFS does not
+		// reach every dart the code describes a component instead of the map. Every block eu_solver
+		// emits is connected by construction (it is grown by gluing to a free dart of what is already
+		// there), but say so by testing rather than by assuming — an unreached dart returns an empty
+		// code and the caller falls back to the exact pairwise test.
+		if ((int)CF_ord.size() != le) { out.clear(); return; }
+		if (best.empty() || cur < best) best.swap(cur);
+	}
+	out.swap(best);
+}
+
+// ⚑ le must fit a byte for the packing above; every configuration this solver emits is far smaller,
+// but say so rather than corrupt a code silently.
+static bool canon_fits(const Graph& g) { return g.rneig.size() < 256; }
+
+static std::unordered_set<std::string> CANON_SEEN;
+static bool CANON_ON = true, CANON_VERIFY = false;
+static long long CANON_DISAGREE = 0;
 
 static bool compareToSeen(const Graph& g, const std::string& key) {
 	auto it = bucket.find(key);
@@ -331,6 +399,7 @@ static void reportStore() {
 
 // Free the whole store (see the per-k note at the call site).
 static void resetStore() {
+	CANON_SEEN.clear();
 	sols.clear(); bucket.clear(); solOff.clear();
 	solsResidentBytes = 0; storeTotalBytes = 0;
 	if (spillF) { std::fclose(spillF); std::remove(spillPath.c_str()); spillF = nullptr; }
@@ -432,8 +501,21 @@ static long processfile(const std::string& fam) {
 		std::string key = keyOf(signatureline, fingerprint(g));
 		if (!key_mine(key)) continue;
 		if (!simplify(g)) continue;
-		if (compareToSeen(g, key)) continue;
-		addsolution(g, key);
+		bool dup;
+		std::string code;
+		if (CANON_ON && canon_fits(g)) canon_code(g, code);
+		if (!code.empty()) {
+			dup = !CANON_SEEN.insert(code).second;
+			if (CANON_VERIFY) {
+				const bool ref = compareToSeen(g, key);
+				if (ref != dup) CANON_DISAGREE++;
+				if (!ref) addsolution(g, key);
+			}
+		} else {
+			dup = compareToSeen(g, key);
+			if (!dup) addsolution(g, key);
+		}
+		if (dup) continue;
 		kept++;
 #endif
 		// minimal decode.py-compatible block (skip cycles/.tes/assembly)
@@ -487,6 +569,8 @@ static std::string famof(const std::string& fname) {
 }
 
 int main() {
+	CANON_ON = std::getenv("EU_NOCANON") == nullptr;      // EU_NOCANON=1 restores pairwise testing
+	CANON_VERIFY = std::getenv("EU_CANON_VERIFY") != nullptr;
 	OUTDIR = std::getenv("EU_OUT") ? std::getenv("EU_OUT") : "out";
 	if (OUTDIR.back() != '/') OUTDIR += "/";
 	PRUNEDDIR = OUTDIR + "pruned/";
@@ -536,6 +620,7 @@ int main() {
 		std::cerr << "  k=" << k << " : " << kc << "\n";
 	}
 	std::cerr << "total kept: " << keptTotal << "\n";
+	if (CANON_VERIFY) std::cerr << "canon vs pairwise disagreements: " << CANON_DISAGREE << "\n";
 	reportStore();
 	resetStore();
 #ifdef PROFILE
