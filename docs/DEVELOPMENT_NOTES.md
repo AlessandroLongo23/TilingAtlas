@@ -15842,3 +15842,52 @@ fired. Kept because it is now right by construction instead of by luck.
 
 The lesson from the first round held all the way down: every one of these was invisible on the
 workload the code was last profiled against, and obvious on this one.
+
+### The developer, and star-wide k=3 end to end (2026-08-22, same session)
+
+With the search at minutes, develop was 4.6 days, and AL asked for it too. `cProfile` on real k=3
+blocks said **59% hashing and rounding**, not matmuls — 12.9M `round()` calls and 1.59M dict lookups
+for 794,880 pops, every fill running to the guard.
+
+**The two signs close or fail together.** `develop_block` tries `sign=+1` then `sign=-1` and, since
+essentially every fill fails, both always ran. With `J = diag(1,-1,1)`: `J·Rz(a)·J = Rz(-a)` and
+`J·Medge(ρ)·J = Medge(ρ)`, because M's only entry off the xz-plane is `M[1][1]`, which J fixes. Every
+frame the `-1` fill reaches is `J·R·J` for a frame the `+1` fill reaches; the orbits are in bijection
+and the instance counts equal. Half the developer, for a conjugation.
+
+**The verdict moved to C.** Only fills that SUCCEED produce coordinates anybody ships, so
+close/not-close needs no exact arithmetic. `eu_sphfill` answers it at 0.036 ms per attempt against
+~6 ms, and Python keeps every geometry decision — ρ roots, densities, retrograde subsets, sign,
+angles. ⚑ The three legs of soundness: a block is kept if ANY attempt closes; only `+1` is tested,
+by the conjugation above; and a "closes" verdict is never trusted for output, since `develop_block`
+redoes it exactly. So the only way to lose a record is a false "does not close" — checked on the 21
+closing fills of the realized k=2 blocks, on 564 failing k=3 attempts, and by developing every
+REJECT of a 600-block sample in full (0 of 600 realized).
+
+**Then the planning.** With the fill in C, `block_attempts` was 12.1s of a 13s prefilter: it calls
+`solve_rho_all` once per (density tuple, retrograde subset), 820 times per block. None of it depends
+on the block — a conway string decides the GLUE and nothing else — and blocks repeat their
+vertypeline enormously. 3.2 ms → 0.230 ms.
+
+⚑ **And two mistakes worth keeping.** `gather_blocks` returns a LIST, and the first k=3 launch sat in
+it silently: 40.5M blocks is tens of gigabytes of Python strings before one is developed. It streams
+now. Then the parent's own reading became the bottleneck, which `--by-file` removes by handing workers
+paths instead of block text — measured both ways, because chunks still win when the files are small.
+
+```
+k=2 develop, 422,206 blocks     ~56 min -> 14 s     240x, same 9 records
+star-wide k=3 develop           19.6 min            (was 4.6 days)
+star-wide k=3 search             2.2 min
+whole pipeline                  ~22 min
+```
+
+**15 k=3 star polyhedra**, from 28 realizations collapsed by geometric signature: χ ∈ {2, −3, −4},
+density ∈ {1, 3, 4, 5, 7}, V from 9 to 50, all passing the residual gates with exactly three vertex
+orbits. 40,476,751 of the 40,487,641 blocks were rejected because their fill does not close — a fact
+about the map, not a numerical failure.
+
+⚑ NOT SHIPPED, and this note is the ask. The star shelf carries 52 k=1 and 37 k=2 solids; whether a
+k=3 row joins them is AL's call. `build-star-shelf.sh` needs `run-k3-star-wide/cells.json` added to
+its cell list, and the completeness sentence on the cards would need to say what k=3 is complete FOR:
+the star-wide palette, per-orbit density ≤ 3, prograde faces only, positive angular defect at every
+vertex.
