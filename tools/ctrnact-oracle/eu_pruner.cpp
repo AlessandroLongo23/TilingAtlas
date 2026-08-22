@@ -264,8 +264,14 @@ static inline uint64_t mix(uint64_t h, uint64_t x) {
 	h ^= x + 0x9e3779b97f4a7c15ULL + (h << 6) + (h >> 2);
 	return h;
 }
-static std::vector<uint64_t> FP_COL;   // set by fingerprint(), read by canon_code()
-static uint64_t fingerprint(const Graph& g) {
+static std::vector<uint64_t> FP_COL;   // set by refine_colours(), read by canon_code()
+
+// The WL refinement and the hash of it are two different needs, and only one of them is always
+// wanted. canon_code needs the per-dart COLOURS (to pick its start set); the sorted-and-mixed 64-bit
+// value is only the bucket key, and with the canonical form deciding isomorphism outright the key is
+// used for nothing but EU_SIGSHARD. So split them and skip the sort when no one will read it —
+// `sample` had std::__introsort at 8% of the pruner.
+static void refine_colours(const Graph& g) {
 	int le = (int)g.rneig.size();
 	static std::vector<uint64_t> col, nc;      // reused: two allocations per block otherwise
 	col.resize(le); nc.resize(le);
@@ -291,10 +297,16 @@ static uint64_t fingerprint(const Graph& g) {
 		}
 		col.swap(nc);
 	}
-	FP_COL = col;                     // per-dart refined colour, before the sort (see canon_code)
-	std::sort(col.begin(), col.end());
-	uint64_t f = (uint64_t)le;
-	for (uint64_t c : col) f = mix(f, c);
+	FP_COL.swap(col);                 // per-dart refined colour; col is scratch, reused next call
+}
+
+static uint64_t fingerprint(const Graph& g) {
+	refine_colours(g);
+	static std::vector<uint64_t> srt;
+	srt = FP_COL;
+	std::sort(srt.begin(), srt.end());
+	uint64_t f = (uint64_t)g.rneig.size();
+	for (uint64_t c : srt) f = mix(f, c);
 	return f;
 }
 
@@ -526,8 +538,18 @@ static long processfile(const std::string& fam) {
 		// key first, so a shard can drop a block it does not own before the expensive work.
 		// simplify moves after it: it cannot change the key, and a block it rejects is dropped
 		// either way — now only by its owning shard, which sees exactly the same blocks.
-		const std::string& key = keyOf(signatureline, fingerprint(g));
-		if (!key_mine(key)) continue;
+		// The key is only needed for sharding and for the pairwise path; the canonical form does
+		// not use it, so in the default configuration the sort and the string build never happen.
+		// The key is only wanted for sharding and for the pairwise path; the canonical form decides
+		// isomorphism outright and never reads it. So in the default configuration the sort and the
+		// string build simply do not happen — only the refinement canon_code needs.
+		if ((SIGSHARD_N > 1) || !CANON_ON) {
+			keyOf(signatureline, fingerprint(g));       // fills KEY_BUF
+			if (!key_mine(KEY_BUF)) continue;
+		} else {
+			refine_colours(g);
+		}
+		const std::string& key = KEY_BUF;               // read only on the pairwise path
 		if (!SKIP_MINIMALITY && !simplify(g)) continue;
 		bool dup;
 		std::string code;
