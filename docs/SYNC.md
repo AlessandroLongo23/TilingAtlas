@@ -2821,3 +2821,11 @@ Nine byte-identical fixes across `eu_solver.cpp`, `eu_pruner.cpp`, `ctrnact_deco
 the WL fingerprint ran three rounds where star blocks need six. b00000 133.7 s → **5.4 s**; whole
 star-wide k=3 **359 s / 40,487,641 blocks**, was estimated multi-day. ⚑ Develop is the wall: 916 of 916
 flood fills hit the guard, **318 CPU-h**. 41488c6, ab28ac0, f4432a0; NOTES + experiments/results/ 08-22.
+
+## 2026-08-22 — six library board chips had no records behind them — CC
+
+The star-polyhedra board and the four halved Platonic boards filtered to zero. The shelf issued
+`loadSphericalEdgesAtlas` and `loadSphericalPolyAtlas` under ONE `xLoaded` token, and the effect's
+`tilings` dep let the winner's re-render kill the loser's merge before it could claim a token of its
+own: 105 records fetched and discarded once per session. One guard per load; the boards now read
+112/2/7/5/2/89/243, summing to the 460 the unfiltered shelf always showed. Commit 91c2d8a. NOTES 08-22.
