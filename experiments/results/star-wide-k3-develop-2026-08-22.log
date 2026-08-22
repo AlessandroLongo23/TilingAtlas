@@ -1,0 +1,45 @@
+[18:14:49] 2393 files in 2393 work items over 10 workers
+[18:15:50]   develop 1/2393  blocks=531717  realized=0  prefiltered=531717  61s, ETA 145428s
+[18:16:27]   develop 9/2393  blocks=5388094  realized=0  prefiltered=5387966  98s, ETA 25860s
+[18:17:00]   develop 15/2393  blocks=7755264  realized=0  prefiltered=7755136  131s, ETA 20778s
+[18:17:31]   develop 22/2393  blocks=10006532  realized=0  prefiltered=10006404  162s, ETA 17503s
+[18:18:07]   develop 26/2393  blocks=11247299  realized=0  prefiltered=11247171  198s, ETA 18053s
+[18:18:39]   develop 33/2393  blocks=13255023  realized=0  prefiltered=13254895  230s, ETA 16470s
+[18:19:12]   develop 37/2393  blocks=14196638  realized=0  prefiltered=14196510  263s, ETA 16743s
+[18:19:47]   develop 47/2393  blocks=16357420  realized=0  prefiltered=16357231  298s, ETA 14857s
+[18:20:27]   develop 53/2393  blocks=17537244  realized=0  prefiltered=17537055  338s, ETA 14927s
+[18:21:02]   develop 64/2393  blocks=19782727  realized=0  prefiltered=19782477  373s, ETA 13570s
+[18:21:38]   develop 72/2393  blocks=21261022  realized=0  prefiltered=21260772  409s, ETA 13197s
+[18:22:08]   develop 79/2393  blocks=22325364  realized=0  prefiltered=22325114  440s, ETA 12876s
+[18:22:42]   develop 89/2393  blocks=23692477  realized=0  prefiltered=23692227  473s, ETA 12245s
+[18:23:16]   develop 101/2393  blocks=25295415  realized=0  prefiltered=25295165  508s, ETA 11519s
+[18:23:50]   develop 111/2393  blocks=26313397  realized=0  prefiltered=26313098  541s, ETA 11114s
+[18:24:20]   develop 119/2393  blocks=27061068  realized=0  prefiltered=27060769  571s, ETA 10918s
+[18:24:51]   develop 128/2393  blocks=27874563  realized=0  prefiltered=27874245  603s, ETA 10663s
+[18:25:23]   develop 138/2393  blocks=28712052  realized=0  prefiltered=28711734  634s, ETA 10363s
+[18:25:55]   develop 151/2393  blocks=29745141  realized=0  prefiltered=29744804  666s, ETA 9888s
+[18:26:29]   develop 166/2393  blocks=30870189  realized=0  prefiltered=30869822  700s, ETA 9391s
+[18:27:00]   develop 183/2393  blocks=32041663  realized=0  prefiltered=32041296  731s, ETA 8828s
+[18:27:31]   develop 201/2393  blocks=33192870  realized=0  prefiltered=33192241  763s, ETA 8316s
+[18:28:02]   develop 219/2393  blocks=34127174  realized=0  prefiltered=34126545  793s, ETA 7870s
+[18:28:35]   develop 230/2393  blocks=34570979  realized=0  prefiltered=34568842  826s, ETA 7764s
+[18:29:05]   develop 247/2393  blocks=35237896  realized=0  prefiltered=35233006  857s, ETA 7442s
+[18:29:36]   develop 277/2393  blocks=36133121  realized=0  prefiltered=36128231  887s, ETA 6773s
+[18:30:10]   develop 305/2393  blocks=36820591  realized=0  prefiltered=36815701  921s, ETA 6304s
+[18:30:42]   develop 322/2393  blocks=37203278  realized=0  prefiltered=37198388  953s, ETA 6130s
+[18:31:12]   develop 361/2393  blocks=37944432  realized=0  prefiltered=37938688  983s, ETA 5535s
+[18:31:42]   develop 396/2393  blocks=38362312  realized=0  prefiltered=38356149  1013s, ETA 5110s
+[18:32:13]   develop 460/2393  blocks=38877764  realized=2  prefiltered=38871146  1044s, ETA 4388s
+[18:32:43]   develop 622/2393  blocks=39588692  realized=4  prefiltered=39581793  1074s, ETA 3059s
+[18:33:13]   develop 818/2393  blocks=40042758  realized=5  prefiltered=40035483  1104s, ETA 2127s
+[18:33:43]   develop 1082/2393  blocks=40317637  realized=17  prefiltered=40308943  1134s, ETA 1375s
+[18:34:13]   develop 2034/2393  blocks=40466630  realized=24  prefiltered=40455782  1164s, ETA 206s
+[18:34:24]   develop 2393/2393  blocks=40487641  realized=28  prefiltered=40476751  1175s, ETA 0s
+[18:34:24]   28 records -> 15 congruence classes
+[18:34:24] merged 15 realized records -> /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/34adc110-941e-4169-8297-5e417a748958/scratchpad/starbench/sw-k3/cells.json (1175s total)
+[18:34:24]   report -> cells-report.txt
+[18:34:24]       7985  unknown
+[18:34:24]       1638  d=(3, 3, 3) retro=[(8, 3)] sign=+1: flood-fill did not close within 2160 instances; d=(3, 
+[18:34:24]        252  d=(1, 1, 1) retro=[] sign=+1: flood-fill did not close within 2160 instances; d=(1, 1, 1) 
+[18:34:24]        192  d=(3, 3, 3) retro=[(5, 1)] sign=+1: flood-fill did not close within 2160 instances; d=(3, 
+[18:34:24]        110  d=(3, 3, 3) retro=[(5, 2)] sign=+1: flood-fill did not close within 2160 instances; d=(3, 

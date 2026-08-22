@@ -458,3 +458,64 @@ whole star-wide k=3 search, 3902 buckets, 10 workers
 ```
 
 40,487,641 pruned blocks on every one of nine independent full runs.
+
+# The developer, and star-wide k=3 end to end
+
+AL: *"optimize it even more, to the bare minimum"* — of the develop, once the search was minutes and
+develop was four and a half days.
+
+## Where develop's time was
+
+`cProfile` on real k=3 blocks: **59% hashing and rounding**, not matmuls — 12.9M `round()` calls and
+1.59M dict lookups for 794,880 flood-fill pops, and every fill running to the guard.
+
+## Four changes
+
+**The two signs close or fail together.** `develop_block` tries `sign=+1` then `sign=-1`, and since
+essentially every fill fails, both always ran. With `J = diag(1,-1,1)`: `J·Rz(a)·J = Rz(-a)` and
+`J·Medge(ρ)·J = Medge(ρ)` (M's only entry off the xz-plane is `M[1][1]`, which J fixes). So every
+frame the `-1` fill reaches is `J·R·J` for a frame the `+1` fill reaches — the orbits are in
+bijection, the instance counts equal, and the six key components map bijectively because conjugation
+negates exactly two and round-half-even is symmetric. Measured too: 325 of 325 pairs agreed. **2×.**
+
+**The verdict moves to C** (`eu_sphfill`). Only fills that SUCCEED produce coordinates anybody ships,
+so close/not-close needs no exact arithmetic. Python keeps every geometry decision — ρ roots,
+densities, retrograde subsets, sign, angles — and the C only walks. **0.036 ms per attempt against
+~6 ms.**
+
+**Plan once per vertex-type line.** With the fill in C, `block_attempts` was 12.1s of a 13s prefilter:
+it calls `solve_rho_all` once per (density tuple, retrograde subset), 820 times per block. None of it
+depends on the block — a conway string decides the GLUE and nothing else — and blocks repeat their
+vertypeline enormously. **3.2 ms → 0.230 ms per block.**
+
+**A persistent filter, and workers that read their own files.** Spawning `eu_sphfill` per batch cost
+more than the walk on many small files; `--by-file` keeps 10 GB of block text out of the parent.
+
+## Verified, not asserted
+
+```
+21 closing fills of the realized k=2 blocks     C agrees on 21
+564 failing k=3 attempts                        agrees on 564
+develop every REJECT of a 600-block sample      0 of 600 would have realized
+whole k=2 develop, 422,206 blocks               same 9 unique records,
+                                                max vertex coord difference 0.0
+```
+
+## What it cost, and what it found
+
+```
+k=2 develop, 422,206 blocks        ~56 min  ->  14 s        240x
+star-wide k=3 develop, 40,487,641 blocks     19.6 min       (was 4.6 days)
+star-wide k=3 search                          2.2 min
+                                   -----------------------
+whole pipeline, solve to solids               ~22 min
+```
+
+**15 k=3 star polyhedra**, from 28 realizations collapsed by geometric signature. χ ∈ {2, −3, −4},
+density ∈ {1, 3, 4, 5, 7}, V from 9 to 50; every one passes the residual gates (edge equality, face
+regularity, planarity, whole-number density) and has exactly three vertex orbits. 40,476,751 of the
+40,487,641 blocks were rejected by `eu_sphfill` because their fill does not close, which is a fact
+about the map and not a numerical failure.
+
+⚑ NOT SHIPPED. The shelf carries 52 k=1 and 37 k=2 solids; adding a k=3 row is AL's call, and it needs
+`build-star-shelf.sh` to pick up `run-k3-star-wide/cells.json`.
