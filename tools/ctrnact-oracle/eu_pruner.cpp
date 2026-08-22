@@ -21,6 +21,8 @@
 #include <filesystem>
 #include <cstdlib>
 #include <cstdio>
+#include <cstring>
+#include <unistd.h>
 #include <chrono>
 #ifdef PROFILE
 static double prof_decode = 0, prof_simpl = 0, prof_fpcmp = 0;
@@ -448,6 +450,53 @@ static void resetStore() {
 // ---------- file processing ----------
 static std::string filecodebase;
 static std::string OUTDIR, PRUNEDDIR;
+
+// EU_PRUNED_STDOUT — write kept blocks to fd 1 instead of to eupruned_*.txt.
+//
+// WHY. The pruned catalogue is the SECOND thing a k=4 run cannot fit: 5.2e9 kept blocks at ~348 B is
+// a projected 1.8 TB against 0.57 TB free, and EU_STREAM only removes the 4.1 TB of RAW blocks ahead
+// of it. Almost none of it is wanted — develop_spherical's eu_sphfill prefilter rejected 40,476,751
+// of 40,487,641 blocks at k=3, or 99.973% — so the catalogue exists only to be read once and thrown
+// away. Piped straight into the prefilter it never lands at all.
+//
+// ⚑ Same buffering lesson as the read side. std::cout after sync_with_stdio(false) is fine, but the
+// block writer is on the hot path for billions of blocks, so it gets an explicit 1 MB buffer and one
+// ::write per fill. stderr keeps every progress line, so a pipeline's log is unaffected.
+static bool PRUNED_STDOUT = false;
+struct FdOut {
+	int fd; std::string buf;
+	explicit FdOut(int f) : fd(f) { buf.reserve(1 << 20); }
+	void put(const std::string& s) { buf += s; if (buf.size() >= (1u << 20)) flush(); }
+	void put(const char* s) { buf += s; if (buf.size() >= (1u << 20)) flush(); }
+	void flush() {
+		size_t off = 0;
+		while (off < buf.size()) {
+			ssize_t n = ::write(fd, buf.data() + off, buf.size() - off);
+			if (n <= 0) break;
+			off += (size_t)n;
+		}
+		buf.clear();
+	}
+	~FdOut() { flush(); }
+};
+static FdOut PRUNED_OUT(1);
+
+// The one place a kept block is rendered, so the file path and the pipe cannot drift apart.
+static void emit_block(std::ostream* f, const std::string& vertypeline, const std::string& signatureline,
+                       const std::string& countsignature, const std::string& tesline,
+                       const std::string& conwayline) {
+	if (PRUNED_STDOUT) {
+		PRUNED_OUT.put(vertypeline); PRUNED_OUT.put("\n");
+		PRUNED_OUT.put(signatureline); PRUNED_OUT.put("\n");
+		PRUNED_OUT.put("Count type: "); PRUNED_OUT.put(countsignature); PRUNED_OUT.put("\n");
+		PRUNED_OUT.put(tesline); PRUNED_OUT.put("\n");
+		PRUNED_OUT.put(conwayline); PRUNED_OUT.put("\n---\n\n");
+		return;
+	}
+	*f << vertypeline << "\n" << signatureline << "\n"
+	   << "Count type: " << countsignature << "\n"
+	   << tesline << "\n" << conwayline << "\n---\n\n";
+}
 static long keptTotal = 0;
 
 // SIGNATURE SHARDING (EU_SIGSHARD_N / EU_SIGSHARD_W, default 1/0 = the old single-process pass).
@@ -503,7 +552,10 @@ static long processfile(const std::string& fam) {
 	// version wanted 24 GB on a 24 GB machine: the star-wide k=3 run's stragglers were pruners
 	// thrashing, not pruners computing. The per-block loop only ever needs four lines at a time.
 	std::ifstream in(inpath);
-	std::ofstream globe(PRUNEDDIR + "eupruned_" + filecode + shard_suffix() + ".txt");
+	// In EU_PRUNED_STDOUT mode nothing is written here, so do not leave an empty file behind for every
+	// family — at k=4 that is 2,393 of them.
+	std::ofstream globe;
+	if (!PRUNED_STDOUT) globe.open(PRUNEDDIR + "eupruned_" + filecode + shard_suffix() + ".txt");
 	long kept = 0;
 	std::string line, vertypeline, signatureline, tesline, conwayline;
 	auto rd = [&](std::string& dst) -> bool {
@@ -569,9 +621,7 @@ static long processfile(const std::string& fam) {
 		kept++;
 #endif
 		// minimal decode.py-compatible block (skip cycles/.tes/assembly)
-		globe << vertypeline << "\n" << signatureline << "\n"
-		      << "Count type: " << countsignature << "\n"
-		      << tesline << "\n" << conwayline << "\n---\n\n";
+		emit_block(&globe, vertypeline, signatureline, countsignature, tesline, conwayline);
 	}
 	return kept;
 }
@@ -581,32 +631,90 @@ static long processfile(const std::string& fam) {
 // header fields, then let the outer loop resync on the next "Number of vertex types:" — cycle/blank
 // lines never start with that prefix, so no explicit blank-counting is needed. Dedup is identical to
 // processfile; kept blocks route to per-k output files eupruned_<NN>.txt.
-static long processstream(std::istream& in, int konly, std::map<int,long>& keptByK) {
+// ⚑ NOT std::cin. libc++ backs std::cin with __stdinbuf, which pulls one character at a time
+// through the C stdio layer, and sync_with_stdio(false) does not change that. Measured on star-wide
+// b03228 at k=4 (1,991,043 blocks, 15.9M lines, 0.80 GB, redirected from a FILE so no pipe is in it):
+// getline-off-cin plus the header parse was 48 s of a 55 s run, against 11.96 s for the WHOLE file
+// path over the same blocks. Reading fd 0 into a 1 MB buffer and splitting it here removes that.
+struct FdLines {
+	int fd; std::vector<char> buf; size_t pos = 0, len = 0; bool eof = false;
+	explicit FdLines(int f) : fd(f), buf(1 << 20) {}
+	bool next(std::string& out) {
+		out.clear();
+		for (;;) {
+			if (pos == len) {
+				if (eof) return !out.empty();
+				ssize_t n = ::read(fd, buf.data(), buf.size());
+				if (n <= 0) { eof = true; return !out.empty(); }
+				pos = 0; len = (size_t)n;
+			}
+			const char* base = buf.data() + pos;
+			const char* nl = (const char*)memchr(base, '\n', len - pos);
+			if (nl) {
+				out.append(base, (size_t)(nl - base));
+				pos += (size_t)(nl - base) + 1;
+				if (!out.empty() && out.back() == '\r') out.pop_back();
+				return true;
+			}
+			out.append(base, len - pos);
+			pos = len;
+		}
+	}
+};
+
+static long processstream(FdLines& in, int konly, std::map<int,long>& keptByK) {
 	long kept = 0; std::string line;
 	std::map<int, std::ofstream> outByK;
-	while (std::getline(in, line)) {
+	while (in.next(line)) {
 		if (line.rfind("Number of vertex types:", 0) != 0) continue;   // sync to a block header
 		std::string vertypeline, signatureline, tesline, conwayline;
-		if (!std::getline(in, vertypeline) || !std::getline(in, signatureline)
-		    || !std::getline(in, tesline)  || !std::getline(in, conwayline)) break;
+		if (!in.next(vertypeline) || !in.next(signatureline)
+		    || !in.next(tesline)  || !in.next(conwayline)) break;
 		int k = countk(buildvertextypes(vertypeline));       // counting types only (Myers convention);
 		                                                     // buildvertextypes also sets countsignature
 		if (konly > 0 && k != konly) continue;               // drop before the expensive decode
 		static Graph g; decode_into(g, vertypeline, conwayline);  // recomputes the same countsignature
-		const std::string& key = keyOf(signatureline, fingerprint(g));
-		if (!key_mine(key)) continue;
-		if (!simplify(g)) continue;
-		if (compareToSeen(g, key)) continue;
-		addsolution(g, key);
-		kept++; keptByK[k]++;
-		auto it = outByK.find(k);
-		if (it == outByK.end()) {
-			char nn[4]; std::snprintf(nn, sizeof(nn), "%02d", k);
-			it = outByK.emplace(k, std::ofstream(PRUNEDDIR + "eupruned_" + nn + ".txt")).first;
+		// ⚑ SAME DEDUP AS processfile, and it has to be spelled the same way. This path used to be
+		// the pre-2026-08 code — keyOf + simplify + pairwise compareToSeen on every block — while
+		// the file path moved to the canonical form and to trusting the solver's minimality test.
+		// Measured on star-wide b03228 at k=4, shard 0/128, 0.80 GB of blocks read from a FILE in
+		// both cases (so the pipe is not in it): 80.99 s the old way against 11.96 s for the file
+		// path, 6.8x, same 1,847,795 kept. That gap is what made the EU_STREAM fuse — the only
+		// arrangement in which a k=4 run's 4 TB of raw never lands on disk — look unaffordable.
+		if ((SIGSHARD_N > 1) || !CANON_ON) {
+			keyOf(signatureline, fingerprint(g));       // fills KEY_BUF
+			if (!key_mine(KEY_BUF)) continue;
+		} else {
+			refine_colours(g);
 		}
-		it->second << vertypeline << "\n" << signatureline << "\n"
-		           << "Count type: " << countsignature << "\n"
-		           << tesline << "\n" << conwayline << "\n---\n\n";
+		const std::string& key = KEY_BUF;               // read only on the pairwise path
+		if (!SKIP_MINIMALITY && !simplify(g)) continue;
+		bool dup;
+		std::string code;
+		if (CANON_ON && canon_fits(g)) canon_code(g, code);
+		if (!code.empty()) {
+			dup = !CANON_SEEN.insert(code).second;
+			if (CANON_VERIFY) {
+				const bool ref = compareToSeen(g, key);
+				if (ref != dup) CANON_DISAGREE++;
+				if (!ref) addsolution(g, key);
+			}
+		} else {
+			dup = compareToSeen(g, key);
+			if (!dup) addsolution(g, key);
+		}
+		if (dup) continue;
+		kept++; keptByK[k]++;
+		std::ofstream* dst = nullptr;
+		if (!PRUNED_STDOUT) {                        // the pipe has no per-k file to open
+			auto it = outByK.find(k);
+			if (it == outByK.end()) {
+				char nn[4]; std::snprintf(nn, sizeof(nn), "%02d", k);
+				it = outByK.emplace(k, std::ofstream(PRUNEDDIR + "eupruned_" + nn + ".txt")).first;
+			}
+			dst = &it->second;
+		}
+		emit_block(dst, vertypeline, signatureline, countsignature, tesline, conwayline);
 	}
 	return kept;
 }
@@ -619,6 +727,16 @@ static std::string famof(const std::string& fname) {
 }
 
 int main() {
+	// ⚑ EU_STREAM reads the whole catalog through std::cin, and a stdio-tied cin services every
+	// getline one character at a time through the C layer. eu_solver has this call on its WRITE side
+	// with a comment saying exactly that; the pruner's matching READ side never got it. Measured on
+	// star-wide b03228 at k=4 (0.80 GB, 1.99M blocks, read from a file so no pipe is involved):
+	// 45.4 s of the 55.5 s stream run was spent before a single block was decoded. Nothing here uses
+	// printf — the only C-stdio call in the pruner or its decode header is an fprintf(stderr) that
+	// aborts on the next line — so untying is safe. File mode uses std::ifstream and is unaffected.
+	std::ios::sync_with_stdio(false);
+	std::cin.tie(nullptr);
+	PRUNED_STDOUT = std::getenv("EU_PRUNED_STDOUT") != nullptr;
 	SKIP_MINIMALITY = std::getenv("EU_SKIP_MINIMALITY") != nullptr;
 	CANON_ON = std::getenv("EU_NOCANON") == nullptr;      // EU_NOCANON=1 restores pairwise testing
 	CANON_VERIFY = std::getenv("EU_CANON_VERIFY") != nullptr;
@@ -636,10 +754,12 @@ int main() {
 	int konly = std::getenv("EU_KONLY") ? atoi(std::getenv("EU_KONLY")) : 0;
 	if (stream) {
 		std::map<int,long> keptByK;
-		long kept = processstream(std::cin, konly, keptByK);
+		FdLines src(0);
+		long kept = processstream(src, konly, keptByK);
 		for (auto& kv : keptByK)                                  // same "  k=<k> : <n>" format as file mode
 			std::cerr << "  k=" << kv.first << " : " << kv.second << "\n";
 		std::cerr << "total kept: " << kept << "\n";
+		PRUNED_OUT.flush();        // before the reader sees EOF, not at static-destruction time
 		reportStore();
 		resetStore();
 		return 0;
@@ -672,6 +792,7 @@ int main() {
 	}
 	std::cerr << "total kept: " << keptTotal << "\n";
 	if (CANON_VERIFY) std::cerr << "canon vs pairwise disagreements: " << CANON_DISAGREE << "\n";
+	PRUNED_OUT.flush();
 	reportStore();
 	resetStore();
 #ifdef PROFILE
