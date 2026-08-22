@@ -90,6 +90,29 @@ static std::vector<int> makeglue(const std::string& conway, const std::vector<in
 	return glue;
 }
 
+// SYMBOL LOOKUP — this was a linear std::find over the WHOLE alphabet, with a string compare at
+// every step, run once per vertex token per block. On star-wide that is 50,229 symbols, and `sample`
+// put buildvertextypes at 64% of the pruner on one star bucket (2,608 of 4,100 samples, plus most of
+// the 871 in memcmp). The pruner reads far more blocks than the solver writes types, so this is the
+// same shape of mistake as the solver's emission counter and it costs more.
+//
+// Index it once. std::find returns the FIRST match, so the map keeps the first insertion and a
+// duplicated symbol resolves exactly as before; a symbol that is absent still returns
+// symbollist.size(), which is the sentinel the palette-mismatch abort below tests for.
+static std::unordered_map<std::string, int>& symbol_index_map() {
+	static std::unordered_map<std::string, int> m;
+	if (m.empty()) {
+		m.reserve(symbollist.size() * 2);
+		for (size_t i = 0; i < symbollist.size(); i++) m.emplace(symbollist[i], (int)i);
+	}
+	return m;
+}
+static int symbol_index(const std::string& sym) {
+	std::unordered_map<std::string, int>& m = symbol_index_map();
+	std::unordered_map<std::string, int>::const_iterator it = m.find(sym);
+	return it == m.end() ? (int)symbollist.size() : it->second;
+}
+
 // ---------- buildvertextypes: parse the "(3,3,6,6)A, (…)S6" line, set countsignature ----------
 static std::vector<int> buildvertextypes(const std::string& vertypeline) {
 	std::vector<int> vertextypes;
@@ -106,7 +129,7 @@ static std::vector<int> buildvertextypes(const std::string& vertypeline) {
 		if (it == sym2list.end()) { sym2list.push_back(sym2); sym2code.push_back(1); }
 		else sym2code[it - sym2list.begin()]++;
 		g = g.substr(ind + 1);
-		int ind2 = (int)(std::find(symbollist.begin(), symbollist.end(), sym) - symbollist.begin());
+		int ind2 = symbol_index(sym);
 		if (ind2 == (int)symbollist.size()) {
 			// unknown symbol would index past every table (silent UB); cannot fire on
 			// valid input from the matching solver palette — a mismatch means the solver

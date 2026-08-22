@@ -1903,6 +1903,10 @@ int main() {
             }
     }
     build_okpair();
+    // Same reason as eu_pruner: with EU_STREAM the catalog goes out through std::cout one small
+    // insertion at a time, and the stdio tie makes every one of them pay for a lock. Nothing here
+    // uses printf.
+    std::ios::sync_with_stdio(false);
     if (eu_trace) {
         int filecount = 1;
         gen.open(filepath + genfile + std::to_string(filecount) + ".txt");
