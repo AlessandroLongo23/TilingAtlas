@@ -15660,3 +15660,76 @@ for the same reason; its V, E and F cannot be a prism's or an antiprism's at any
 only at n = 2, which the predicate rejects.
 
 Shelf now: 31 pyramids, 5 prisms, 8 antiprisms, 2 cupolas, 43 other = 89. Verified by clicking.
+
+## The star combinatorial search was quadratic in its own answers (2026-08-22)
+
+AL asked for the star search to be pushed to its floor, explicitly so that higher k becomes
+reachable. It went 4.3x on a medium bucket and 25x on the worst one, and the interesting part is that
+the search was never what was slow.
+
+**The measurement that reframed it.** `sample` on star-wide bucket b00002 at k<=3 — 4,098,851 nodes,
+187,522 solutions — put `vertypesolvedadd` at **64% of the whole run**. That function exists to
+number the `.tes` files, and it did it by walking every vertex-type signature seen so far and COPYING
+each alphabet-sized occurrence vector before comparing it: O(solutions x signatures x alphabet).
+
+Nobody had seen it because every earlier optimisation pass on this solver measured on star24full,
+where a whole k=2 run emits 146 blocks. A star-wide bucket emits up to 1,076,011. Same code, same
+alphabet machinery, a regime three orders of magnitude away, and a term that is invisible in one and
+is the entire program in the other. ⚑ **A profile is a statement about a workload, not about a
+program.** The nine fixes in `docs/ctrnact-solver-optimizations.md` are all still right; they were
+just measured somewhere else.
+
+The pruner had the same shape of mistake in a different place: `buildvertextypes` resolved every
+vertex token with a linear `std::find` over `symbollist`, 50,229 strings, once per token per block —
+64% of the pruner. `pruner.py` has the identical line in Python (`symbollist.index(sym)`), and
+`develop_spherical` reaches it six times per k=3 block.
+
+Full account, with everything that did not pay:
+`experiments/results/star-search-optimisation-2026-08-22.md`.
+
+### Two things worth keeping in mind next time
+
+**The gate found a dangling reference that every star hash missed.** `label_str` hands back a
+reference into a cache; `writeconway` holds the first label across the call that produces the second;
+a `std::vector` growing inside that second call moves the strings. The corruption was one character
+in one block of one k=4 family, `(1 1')` printed as `( 1')`, and every star bucket digest still
+matched because those had warmed the row already. `make check-regular` is what caught it. Backing
+store is `std::deque` now, whose references survive growth at either end.
+
+**Generation stamps need a wrap guard.** Four of them here, one bumped 2.48e9 times in a single
+star24full k=2 run — within a factor of two of 2^32. On the wrap a stale stamp reads as current, a
+face check is skipped, and a tiling is lost with no symptom at all. One compare per call.
+
+### What it bought
+
+The whole star-wide k=3 search — 3902 rho buckets, solve and prune, 10 workers — is **359 seconds**,
+and it emits **40,487,641 pruned k=3 blocks**. The estimate carried in from the previous session was
+multi-day. b00118 is the floor at 223.9 s; nothing else exceeds 96 s.
+
+⚑ The block count was underestimated by more than 5x (7.5M extrapolated from 200 singleton buckets,
+40.5M actual), so the two halves of the old estimate were wrong in opposite directions. Three
+independent runs of the whole search agree block-for-block at every logged checkpoint, which is the
+evidence that none of these changes moved the catalogue.
+
+### The wall moved, and it is not the search any more
+
+Develop, measured on a random 400 of the k=2 star-wide blocks: **1,696 of 1,700 flood fills run to
+the 1500-instance guard**. Every one of the 400 failed. The whole cost of the developer is the cost
+of *failing*, at ~50 ms per block single-process.
+
+The guard is not a speed dial. The eleven realized k=2 records close at 20 to 144 dart instances, but
+the shipped k=1 shelf contains V=120 solids, so the headroom above the largest realizable case is
+about 2x, not 10x. Lowering it is exactly the "completeness knobs are not speed dials" trap.
+
+What *is* available is that a failing fill is 1500 iterations of two numpy 3x3 matmuls and two
+hashed keys, at ~8 us each, and none of that arithmetic needs to be bit-exact — only the fills that
+SUCCEED produce shipped coordinates. A fast pass that decides closure and falls back to the exact
+path when it closes (or when a key lands near a rounding boundary) is the same shape as the batched
+Newton that gave `develop_euclid` its 120x. That is the next piece of work, and it is the developer,
+not the search.
+
+Sized on the real k=3 blocks: 150 sampled from the 40,487,641 develop in **28.3 ms each, 916 of 916
+flood fills hitting the guard, zero records**. The whole set is **318 CPU-hours**, about three and a
+half days at this machine's ~4x effective parallelism. The search for star-wide k=3 takes six
+minutes; developing what it found does not. AL should decide whether the developer gets the same
+treatment before that run is started.

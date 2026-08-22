@@ -3,8 +3,32 @@
 > **What this file is.** The 30-second "where are we" snapshot. **Mutable, disposable,
 > clobber-tolerant** — if two agents overwrite it, nothing is lost, because the *canonical*
 > history lives in the append-only **ledgers** below. Regenerate it from the latest signed
-> entry of each ledger. **Never write history here.** — last updated 2026-08-21, CC
+> entry of each ledger. **Never write history here.** — last updated 2026-08-22, CC
 > (acting as TA too, AL authorization 2026-07-10).
+
+## The star combinatorial search is no longer the bottleneck (2026-08-22)
+
+**Whole star-wide k=3 search — 3902 rho buckets, solve + prune, 10 workers: 359 s.** The estimate
+carried into this session was multi-day, with 148 buckets whose solve "looked open-ended"; b00000
+alone ran nine minutes without finishing. It now takes **5.4 s**.
+
+What was wrong: the solver's emission path cost O(solutions x signatures x alphabet) and the pruner
+resolved every vertex symbol by a linear scan over 50,229 strings. Both were 64% of their program on
+a star bucket, and both were invisible on star24full, where a whole k=2 run emits 146 blocks against
+a star-wide bucket's 1,076,011. Nine fixes, every output byte-identical, gates all green.
+
+**The wall is now develop, and the diagnosis is exact.** On a random 400 of the k=2 star-wide blocks,
+**1,696 of 1,700 flood fills run to the 1500-instance guard** — the developer's whole cost is the cost
+of failing, ~50 ms/block single-process. The guard is a completeness knob (realized k=2 records close
+at 20–144 instances but the shipped k=1 shelf holds V=120 solids), so it must not be lowered. What is
+available: a failing fill is 1500 iterations of two numpy 3x3 matmuls and two hashed keys, and none of
+that arithmetic needs to be bit-exact — only fills that SUCCEED produce shipped coordinates.
+
+⚑ **40,487,641 pruned k=3 blocks**, and 150 of them sampled develop at 28.3 ms each — **318
+CPU-hours**, about three and a half days at this machine's ~4x effective parallelism. Star-wide k=3 is
+NOT ready to run end to end: the search is, the developer is not.
+
+Detail: `experiments/results/star-search-optimisation-2026-08-22.md`.
 
 ## The spherical shelf, after k=4 (2026-08-21)
 

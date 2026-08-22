@@ -2813,3 +2813,11 @@ complete on the same evidence. ⚑ J40/J41 and J69/J70 each needed a NEW measure
 now takes `--k` (full star-ico-d k=3 hit 559,405 blocks in 28 min; bucketed, 8,013 in 5 s), but
 **star-wide k=3 sizes at ~7.5M blocks / 16.5 h of develop for the cheap 96% of buckets alone** — not
 started. Commits 93e2221, 07dd926. NOTES 2026-08-22.
+
+## 2026-08-22 — the star search was quadratic in its own answers; the wall is develop — CC
+
+Nine byte-identical fixes across `eu_solver.cpp`, `eu_pruner.cpp`, `ctrnact_decode.hpp`, `pruner.py`.
+⚑ Emission cost O(solutions × signatures × alphabet), symbol lookup scanned 50,229 strings linearly,
+the WL fingerprint ran three rounds where star blocks need six. b00000 133.7 s → **5.4 s**; whole
+star-wide k=3 **359 s / 40,487,641 blocks**, was estimated multi-day. ⚑ Develop is the wall: 916 of 916
+flood fills hit the guard, **318 CPU-h**. 41488c6, ab28ac0, f4432a0; NOTES + experiments/results/ 08-22.
