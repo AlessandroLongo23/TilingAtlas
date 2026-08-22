@@ -13,6 +13,7 @@
 #   star-ico-d     k=2   the pentagrammic pyramid
 #   pyramids             the {n/d} pyramid family in closed form, n <= NMAX (gen_star_pyramids.py)
 #   k=2 buckets    k=2   the rho-bucketed exhaustive k=2 run, when present
+#   k=3 buckets    k=3   the same at three orbits (2026-08-22), when present
 #
 # Usage: ./build-star-shelf.sh [NMAX]      (NMAX defaults to 20)
 set -e
@@ -27,6 +28,7 @@ for c in "$HERE/run-star-wide-k1/cells.json" \
          "$HERE/run-star-hept-pyr-k2/cells.json" \
          "$HERE/check-star-run2/cells.json" \
          "$HERE/run-k2-star-wide/cells.json" \
+         "$HERE/run-k3-star-wide/cells.json" \
          "$HERE/pyramid-cells.json"; do
   [ -f "$c" ] && CELLS+=("$c") || echo "  (missing, skipped: $c)"
 done

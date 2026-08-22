@@ -29,68 +29,77 @@ Usage: python3 emit_sph_star_shelf.py --cells <cells.json> --out ../../public/sp
 import argparse, collections, itertools, json, math, os
 import numpy as np
 
-# (V, E, F, sorted (n,d,count) census, density) -> name. Verified against Wikipedia's per-solid pages
+# (V, E, F, sorted (n,d,count) census, density, ORBIT COUNT) -> name.
+#
+# ⚑ THE ORBIT COUNT IS PART OF THE KEY, and it was not until 2026-08-22. A catalogue name names ONE
+# solid, and without k this table hands a uniform polyhedron's name to any lower-symmetry solid that
+# happens to share its V/E/F/census/density. The k=3 run produced exactly that: a 3-orbit solid with
+# V=30, E=60, F=32, 12{5/2}+20{3}, density 7, at rho=1.884956 — every one of those equal to the great
+# icosidodecahedron's, and it is NOT that solid (pairwise-distance multisets differ by 0.293, symmetry
+# order 20 against 120). It shipped for one build wearing U54's name. Every entry below is a uniform
+# or regular star polyhedron, hence vertex-transitive, hence k=1 — except the two cupolas, which have
+# two orbits. Verified against Wikipedia's per-solid pages
 # on 2026-08-17; the V/E/F and face composition of every row below was read off the article, not
 # inferred. Rows with no entry ship unnamed on purpose.
 NAMES = {
-    (12, 30, 12, ((5, 2, 12),), 3): "small stellated dodecahedron {5/2,5}",
-    (12, 30, 12, ((5, 1, 12),), 3): "great dodecahedron {5,5/2}",
-    (20, 30, 12, ((5, 2, 12),), 7): "great stellated dodecahedron {5/2,3}",
-    (12, 30, 20, ((3, 1, 20),), 7): "great icosahedron {3,5/2}",
-    (30, 60, 24, ((5, 1, 12), (5, 2, 12)), 3): "dodecadodecahedron (U36)",
-    (30, 60, 32, ((3, 1, 20), (5, 2, 12)), 7): "great icosidodecahedron (U54)",
-    (20, 60, 32, ((3, 1, 20), (5, 2, 12)), 2): "small ditrigonal icosidodecahedron (U30)",
-    (20, 60, 32, ((3, 1, 20), (5, 1, 12)), 6): "great ditrigonal icosidodecahedron (U47)",
-    (60, 180, 112, ((3, 1, 100), (5, 2, 12)), 2): "small snub icosicosidodecahedron (U32)",
-    (60, 150, 84, ((3, 1, 60), (5, 1, 12), (5, 2, 12)), 3): "snub dodecadodecahedron (U40)",
-    (60, 150, 84, ((3, 1, 60), (5, 1, 12), (5, 2, 12)), 9): "inverted snub dodecadodecahedron (U60)",
-    (60, 180, 104, ((3, 1, 80), (5, 1, 12), (5, 2, 12)), 4): "snub icosidodecadodecahedron (U46)",
-    (60, 150, 92, ((3, 1, 80), (5, 2, 12)), 7): "great snub icosidodecahedron (U57)",
-    (60, 90, 24, ((5, 2, 12), (10, 1, 12)), 3): "truncated great dodecahedron (U37)",
-    (60, 120, 54, ((4, 1, 30), (5, 1, 12), (5, 2, 12)), 3): "rhombidodecadodecahedron (U38)",
-    (60, 90, 32, ((5, 2, 12), (6, 1, 20)), 7): "great truncated icosahedron (U55)",
-    (60, 90, 24, ((5, 1, 12), (10, 3, 12)), 9): "small stellated truncated dodecahedron (U58)",
-    (60, 90, 32, ((3, 1, 20), (10, 3, 12)), 13): "great stellated truncated dodecahedron (U66)",
-    (120, 180, 62, ((4, 1, 30), (6, 1, 20), (10, 3, 12)), 13): "great truncated icosidodecahedron (U68)",
-    (60, 120, 44, ((3, 1, 20), (5, 1, 12), (10, 3, 12)), 4): "small ditrigonal dodecicosidodecahedron (U43)",
-    (120, 180, 44, ((6, 1, 20), (10, 1, 12), (10, 3, 12)), 4): "icositruncated dodecadodecahedron (U45)",
-    (60, 120, 52, ((3, 1, 20), (5, 2, 12), (6, 1, 20)), 2): "small icosicosidodecahedron (U31)",
-    (24, 36, 14, ((3, 1, 8), (8, 3, 6)), 7): "stellated truncated hexahedron (U19)",
-    (24, 48, 20, ((3, 1, 8), (4, 1, 6), (8, 3, 6)), 4): "great cubicuboctahedron (U14)",
-    (48, 72, 20, ((6, 1, 8), (8, 1, 6), (8, 3, 6)), 4): "cubitruncated cuboctahedron (U16)",
-    (10, 15, 7, ((4, 1, 5), (5, 2, 2)), 2): "pentagrammic prism",
-    (10, 20, 12, ((3, 1, 10), (5, 2, 2)), 2): "pentagrammic antiprism",
-    (10, 20, 12, ((3, 1, 10), (5, 2, 2)), 3): "pentagrammic crossed antiprism",
-    (16, 24, 10, ((4, 1, 8), (8, 3, 2)), 3): "octagrammic prism",
-    (16, 32, 18, ((3, 1, 16), (8, 3, 2)), 3): "octagrammic antiprism",
-    (20, 30, 12, ((4, 1, 10), (10, 3, 2)), 3): "decagrammic prism",
-    (20, 40, 22, ((3, 1, 20), (10, 3, 2)), 3): "decagrammic antiprism",
+    (12, 30, 12, ((5, 2, 12),), 3, 1): "small stellated dodecahedron {5/2,5}",
+    (12, 30, 12, ((5, 1, 12),), 3, 1): "great dodecahedron {5,5/2}",
+    (20, 30, 12, ((5, 2, 12),), 7, 1): "great stellated dodecahedron {5/2,3}",
+    (12, 30, 20, ((3, 1, 20),), 7, 1): "great icosahedron {3,5/2}",
+    (30, 60, 24, ((5, 1, 12), (5, 2, 12)), 3, 1): "dodecadodecahedron (U36)",
+    (30, 60, 32, ((3, 1, 20), (5, 2, 12)), 7, 1): "great icosidodecahedron (U54)",
+    (20, 60, 32, ((3, 1, 20), (5, 2, 12)), 2, 1): "small ditrigonal icosidodecahedron (U30)",
+    (20, 60, 32, ((3, 1, 20), (5, 1, 12)), 6, 1): "great ditrigonal icosidodecahedron (U47)",
+    (60, 180, 112, ((3, 1, 100), (5, 2, 12)), 2, 1): "small snub icosicosidodecahedron (U32)",
+    (60, 150, 84, ((3, 1, 60), (5, 1, 12), (5, 2, 12)), 3, 1): "snub dodecadodecahedron (U40)",
+    (60, 150, 84, ((3, 1, 60), (5, 1, 12), (5, 2, 12)), 9, 1): "inverted snub dodecadodecahedron (U60)",
+    (60, 180, 104, ((3, 1, 80), (5, 1, 12), (5, 2, 12)), 4, 1): "snub icosidodecadodecahedron (U46)",
+    (60, 150, 92, ((3, 1, 80), (5, 2, 12)), 7, 1): "great snub icosidodecahedron (U57)",
+    (60, 90, 24, ((5, 2, 12), (10, 1, 12)), 3, 1): "truncated great dodecahedron (U37)",
+    (60, 120, 54, ((4, 1, 30), (5, 1, 12), (5, 2, 12)), 3, 1): "rhombidodecadodecahedron (U38)",
+    (60, 90, 32, ((5, 2, 12), (6, 1, 20)), 7, 1): "great truncated icosahedron (U55)",
+    (60, 90, 24, ((5, 1, 12), (10, 3, 12)), 9, 1): "small stellated truncated dodecahedron (U58)",
+    (60, 90, 32, ((3, 1, 20), (10, 3, 12)), 13, 1): "great stellated truncated dodecahedron (U66)",
+    (120, 180, 62, ((4, 1, 30), (6, 1, 20), (10, 3, 12)), 13, 1): "great truncated icosidodecahedron (U68)",
+    (60, 120, 44, ((3, 1, 20), (5, 1, 12), (10, 3, 12)), 4, 1): "small ditrigonal dodecicosidodecahedron (U43)",
+    (120, 180, 44, ((6, 1, 20), (10, 1, 12), (10, 3, 12)), 4, 1): "icositruncated dodecadodecahedron (U45)",
+    (60, 120, 52, ((3, 1, 20), (5, 2, 12), (6, 1, 20)), 2, 1): "small icosicosidodecahedron (U31)",
+    (24, 36, 14, ((3, 1, 8), (8, 3, 6)), 7, 1): "stellated truncated hexahedron (U19)",
+    (24, 48, 20, ((3, 1, 8), (4, 1, 6), (8, 3, 6)), 4, 1): "great cubicuboctahedron (U14)",
+    (48, 72, 20, ((6, 1, 8), (8, 1, 6), (8, 3, 6)), 4, 1): "cubitruncated cuboctahedron (U16)",
+    (10, 15, 7, ((4, 1, 5), (5, 2, 2)), 2, 1): "pentagrammic prism",
+    (10, 20, 12, ((3, 1, 10), (5, 2, 2)), 2, 1): "pentagrammic antiprism",
+    (10, 20, 12, ((3, 1, 10), (5, 2, 2)), 3, 1): "pentagrammic crossed antiprism",
+    (16, 24, 10, ((4, 1, 8), (8, 3, 2)), 3, 1): "octagrammic prism",
+    (16, 32, 18, ((3, 1, 16), (8, 3, 2)), 3, 1): "octagrammic antiprism",
+    (20, 30, 12, ((4, 1, 10), (10, 3, 2)), 3, 1): "decagrammic prism",
+    (20, 40, 22, ((3, 1, 20), (10, 3, 2)), 3, 1): "decagrammic antiprism",
     # The 7-FOLD family, from the D=840 palette. Everything 7-fold on the sphere is dihedral: no finite
     # rotation group has a 7-fold axis outside the D7 series, so these six plus the two convex ones are
     # the whole uniform heptagonal set. {7/3} carries two antiprisms at different rho — the ordinary one
     # and the CROSSED one, whose bowtie vertex figure is what puts it at density 4.
-    (14, 21, 9, ((4, 1, 7), (7, 2, 2)), 2): "heptagrammic prism {7/2}",
-    (14, 28, 16, ((3, 1, 14), (7, 2, 2)), 2): "heptagrammic antiprism {7/2}",
-    (14, 21, 9, ((4, 1, 7), (7, 3, 2)), 3): "heptagrammic prism {7/3}",
-    (14, 28, 16, ((3, 1, 14), (7, 3, 2)), 3): "heptagrammic antiprism {7/3}",
-    (14, 28, 16, ((3, 1, 14), (7, 3, 2)), 4): "heptagrammic crossed antiprism",
+    (14, 21, 9, ((4, 1, 7), (7, 2, 2)), 2, 1): "heptagrammic prism {7/2}",
+    (14, 28, 16, ((3, 1, 14), (7, 2, 2)), 2, 1): "heptagrammic antiprism {7/2}",
+    (14, 21, 9, ((4, 1, 7), (7, 3, 2)), 3, 1): "heptagrammic prism {7/3}",
+    (14, 28, 16, ((3, 1, 14), (7, 3, 2)), 3, 1): "heptagrammic antiprism {7/3}",
+    (14, 28, 16, ((3, 1, 14), (7, 3, 2)), 4, 1): "heptagrammic crossed antiprism",
     # k=2. Apex 3^5, five base vertices 5/2.3.3 — the star analogue of a Johnson pyramid. The rest of
     # the family is named by derived_name() below, which is a construction and not a citation.
-    (6, 10, 6, ((3, 1, 5), (5, 2, 1)), 2): "pentagrammic pyramid",
-    (8, 14, 8, ((3, 1, 7), (7, 2, 1)), 2): "heptagrammic pyramid {7/2}",
-    (8, 14, 8, ((3, 1, 7), (7, 3, 1)), 3): "heptagrammic pyramid {7/3}",
+    (6, 10, 6, ((3, 1, 5), (5, 2, 1)), 2, 2): "pentagrammic pyramid",
+    (8, 14, 8, ((3, 1, 7), (7, 2, 1)), 2, 2): "heptagrammic pyramid {7/2}",
+    (8, 14, 8, ((3, 1, 7), (7, 3, 1)), 3, 2): "heptagrammic pyramid {7/3}",
     # Recovered 2026-08-20 by the multi-root fix in solve_rho: it closes with the PENTAGON retrograde,
     # a config whose angle sum is not monotone in rho, so the old single bisection could not see it.
     # V/E/F, face census, chi = -16 and the (5.5/3)^3 vertex figure checked against Wikipedia's article
     # and MathWorld; density 4 against mathconsult.ch/static/unipoly/41.html. Middle member of the
     # ditrigonal trio already half-present here: U30 at density 2, U47 at density 6.
-    (20, 60, 24, ((5, 1, 12), (5, 2, 12)), 4): "ditrigonal dodecadodecahedron (U41)",
+    (20, 60, 24, ((5, 1, 12), (5, 2, 12)), 4, 1): "ditrigonal dodecadodecahedron (U41)",
     # k=2, from the rho-bucketed exhaustive run of 2026-08-20. Both are in Wikipedia's star-cupola
     # table (Cupola (geometry)), which names them by the RETROGRADE face, so the {4} this developer
     # marks retrograde is its {4/3} and the {5/2} is its {5/3}. Top and base faces and the 4+4 / 5+5
     # lateral count were read off that table, not inferred from V/E/F.
-    (12, 20, 10, ((3, 1, 4), (4, 1, 5), (8, 3, 1)), 1): "crossed square cupola",
-    (15, 25, 12, ((3, 1, 5), (4, 1, 5), (5, 2, 1), (10, 3, 1)), 3): "crossed pentagrammic cupola",
+    (12, 20, 10, ((3, 1, 4), (4, 1, 5), (8, 3, 1)), 1, 2): "crossed square cupola",
+    (15, 25, 12, ((3, 1, 5), (4, 1, 5), (5, 2, 1), (10, 3, 1)), 3, 2): "crossed pentagrammic cupola",
 }
 
 
@@ -254,7 +263,7 @@ def main():
             "k": k_measured,
             "density": r["density"],
             "rho": r["rho"],
-            "solid": NAMES.get(sig) or derived_name(sig),
+            "solid": NAMES.get(sig + (k_measured,)) or derived_name(sig),
             "vertices": [[float(x) for x in v] for v in V],
             "faces": faces,
             "faceType": [list(t) for t in ftypes],
