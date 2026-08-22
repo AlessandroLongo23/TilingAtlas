@@ -15533,3 +15533,42 @@ and none move.
 that was the wrong URL. The library's geometry filter is `?geo=`, not `?geometry=`, so the page under test
 was the Euclidean shelf, whose cards are not supposed to turn at all. Check the filter took before
 concluding the renderer is broken.
+
+## 2026-08-22 — k=5 on the regular palette, and the star search needed its bucketing generalised
+
+Log: `experiments/results/k5-and-star-k3-2026-08-22.log`.
+
+AL: *"let's try running all three on one k higher compared to the results we have."* Tracks 1 and 2 are
+one search, so that is two runs: spherical k=5, and star k=3.
+
+**Tracks 1+2, k=5.** Solve and prune are a second (324,583 nodes, 6469 raw, 2412 pruned); develop is
+**70 SECONDS** on the queue for 115 records. k=1..4 re-prune to exactly 28/141/460/1169.
+
+  Johnson 76 → **84 of the 92**  ·  non-convex 143 → **243**  ·  registry 247 → **355**
+
+⚑ **k=5 is complete on the same evidence as every k below it**: all 2378 non-realizations are
+mathematical (2368 "no dihedral solution", 10 "degenerate dihedral"), no numerical failure, no cap, no
+pinched record. The eight new Johnson solids are J25, J40, J41, J58, J66, J69, J88, J89, each checked
+against Euler, the handshake 2E = Σn·k, and its parent construction. Eight left: J47, 48, 60, 61, 68,
+70, 71, 87.
+
+⚑ **Two pairs needed measurements this file had not needed, and in both the obvious test was wrong.**
+J40/J41 are the ELONGATED cupolarotundas: a decagonal prism now sits between the cupola and the rotunda,
+so the halves never touch and the square-pentagon edge census that splits J32/J33 is IDENTICAL for both
+(measured: {(3,4):20, (3,5):25, (4,4):15, (4,5):10} either way). The alignment survives one face further
+out and is read as a longitude offset about the 5-fold axis — 0.0° ortho against 36.0° gyro — confirmed
+by an independent distance-2 face-path census that separates them 20/15 and 10/5 and agrees. J69/J70:
+`apex_angle` looks for a VERTEX all of whose faces are triangles, which is what an augmenting pyramid
+leaves behind; a cupola leaves a FACE, so `cap_angle` measures the two cupola tops instead — 180.00°
+exactly, so k=5 found the para one.
+
+**Track 3, and the lesson is about the search, not the developer.** A full star-ico-d k=3 search was
+launched and killed at **559,405 raw blocks / 343 MB after 28 minutes**, still growing — on the SMALL
+three-tile gate palette, whose k=2 full search is 3,636 blocks. The star k=2 runs used rho BUCKETING for
+exactly this reason, and the argument is k-independent: a tiling has ONE edge arc and every one of its
+vertex figures closes at it, so all k orbits sit in the same bucket whatever k is. `run_k2_buckets.py`
+takes `--k` now; re-run at k=2 it reproduces the star-ico-d golden exactly (50 buckets, 408 pruned
+blocks — the k=2 write-up recorded 390, so more blocks in and the same solids out).
+
+**Bucketed star-ico-d k=3: 5 SECONDS** for 8,013 blocks, against 28 minutes and unfinished. 6 records in
+23 s of develop, three of them carrying {5/2} faces. star-wide k=3 is the real target and is running.

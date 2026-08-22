@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Run the k=2 search one rho bucket at a time, and merge the pruned blocks into one directory.
+"""Run the k-orbit search one rho bucket at a time, and merge the pruned blocks into one directory.
+
+Was k=2 only; --k picks the orbit count now. Nothing about the decomposition is specific to two orbits.
 
 The exhaustive k=2 search over a star palette, decomposed. rho_buckets.py has already grouped the
 vertex configs by the edge arc they close at; a k=2 tiling has BOTH orbits in one group, so searching
@@ -37,6 +39,13 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--log", default=None)
     ap.add_argument("--limit", type=int, default=0, help="stop after N buckets (smoke test)")
+    ap.add_argument("--k", type=int, default=2,
+                    help="orbit count to search for. ⚑ The bucket argument is k-INDEPENDENT: a tiling "
+                         "has ONE edge arc and every one of its vertex figures closes at it, so all k "
+                         "orbits sit in the same rho bucket whatever k is. Searching each bucket alone "
+                         "and taking the union therefore loses nothing at k=3 for the same reason it "
+                         "lost nothing at k=2, where it was checked against the full search (390 "
+                         "bucketed blocks against 3,636, reproducing the star-ico-d golden exactly).")
     args = ap.parse_args()
 
     tables = os.path.join(_HERE, "tables", args.palette, "tables.bin")
@@ -44,8 +53,8 @@ def main():
     pruner = os.path.join(_HERE, "eu_pruner." + args.palette)
     for p in (tables, solver, pruner):
         if not os.path.exists(p):
-            sys.exit("missing %s (build it: make eu_solver_rt MAXNUM=2; make PALETTE=%s MAXNUM=2)"
-                     % (p, args.palette))
+            sys.exit("missing %s (build it: make eu_solver_rt MAXNUM=%d; make PALETTE=%s MAXNUM=%d)"
+                     % (p, args.k, args.palette, args.k))
     buckets = json.load(open(args.buckets))["buckets"]
     if args.limit:
         buckets = buckets[:args.limit]
@@ -85,30 +94,32 @@ def main():
         raw = len([f for f in os.listdir(os.path.join(bdir, "out")) if f.startswith("eusolver_")])
         if raw:
             subprocess.run([pruner], cwd=_HERE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                           env=dict(os.environ, EU_OUT=os.path.join(bdir, "out"), EU_KMIN="2", EU_KMAX="2"))
+                           env=dict(os.environ, EU_OUT=os.path.join(bdir, "out"),
+                                    EU_KMIN=str(args.k), EU_KMAX=str(args.k)))
             pdir = os.path.join(bdir, "out", "pruned")
             if os.path.isdir(pdir):
+                pref = "eupruned_%02d" % args.k
                 for f in sorted(os.listdir(pdir)):
-                    if not f.startswith("eupruned_02"):
+                    if not f.startswith(pref):
                         continue
                     n = sum(1 for l in open(os.path.join(pdir, f)) if l.startswith("TES file:"))
                     if not n:
                         continue
                     kept_tot += n
                     shutil.copy(os.path.join(pdir, f),
-                                os.path.join(merged, "eupruned_02_b%05d_%s" % (i, f[len("eupruned_02_"):])))
+                                os.path.join(merged, "%s_b%05d_%s" % (pref, i, f[len(pref) + 1:])))
         raw_tot += raw
         shutil.rmtree(bdir, ignore_errors=True)          # the raw blocks are large and already merged
         if (i + 1) % 100 == 0 or i + 1 == len(buckets):
             el = time.time() - t0
             eta = el / (i + 1) * (len(buckets) - i - 1)
-            log("  bucket %d/%d  pruned k=2 blocks so far: %d   %.0fs elapsed, ETA %.0fs"
-                % (i + 1, len(buckets), kept_tot, el, eta))
-    log("DONE: %d buckets, %d with no vertex type in this alphabet, %d pruned k=2 blocks in %s"
-        % (len(buckets), empty, kept_tot, merged))
-    log("next: python3 run_develop_sharded.py --palette %s --maxdens 3 --kmin 2 --kmax 2 "
+            log("  bucket %d/%d  pruned k=%d blocks so far: %d   %.0fs elapsed, ETA %.0fs"
+                % (i + 1, len(buckets), args.k, kept_tot, el, eta))
+    log("DONE: %d buckets, %d with no vertex type in this alphabet, %d pruned k=%d blocks in %s"
+        % (len(buckets), empty, kept_tot, args.k, merged))
+    log("next: python3 run_develop_sharded.py --palette %s --maxdens 3 --kmin %d --kmax %d "
         "--developer develop_spherical.py --workers 10 --pruned %s --out %s/cells.json"
-        % (args.palette, merged, out))
+        % (args.palette, args.k, args.k, merged, out))
 
 
 if __name__ == "__main__":

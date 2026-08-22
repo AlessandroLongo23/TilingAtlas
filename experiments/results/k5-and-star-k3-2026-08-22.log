@@ -1,0 +1,61 @@
+[12:15:12] TRACKS 1+2 (convex + non-convex, REGULAR polygons): spherical palette, k=5
+[12:15:12]   baseline k=4: 2589 raw / 1169 pruned; develop 111 records in ~20s on the queue
+[12:15:12] build (MAXNUM=5 PALETTE=spherical)
+[12:15:14]   built in 2s
+[12:15:14] PHASE 1 solve
+[12:15:15]   solve 1s | vertex figures: 63 over 125 types bucket key unique (BUCKET_OK): yes OKPAIR: 294 admissible (tkey, Q(f)) pairs nodes: 324583  simplify_calls: 10643  simplify_true: 6469 
+[12:15:15] PHASE 2 prune
+  k=1 : 28
+  k=2 : 141
+  k=3 : 460
+  k=4 : 1169
+  k=5 : 2412
+total kept: 4210
+store: peak 0.785076 MB total, 0.785076 MB resident
+[12:15:15]   prune 0s
+[12:15:31] PHASE 3 develop (k=5 only, 2412 blocks, 10 workers on the dynamic queue)
+[12:15:32] 2412 blocks over 10 workers (dynamic queue)
+[12:16:02]   develop 835/2412  realized=126  30s elapsed, ETA 57s
+[12:16:32]   develop 2066/2412  realized=209  60s elapsed, ETA 10s
+[12:16:41]   develop 2412/2412  realized=213  70s elapsed, ETA 0s
+[12:16:41]   213 records -> 115 congruence classes
+[12:16:41] merged 115 realized records -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/sph-k5/euclid-k5.json (70s total)
+[12:16:41]   report -> euclid-k5-report.txt
+[12:16:41]       2368  no dihedral solution
+[12:16:41]          9  retro=[]: degenerate dihedral (a flat edge); retro=[]: degenerate dihedral (a flat edge); 
+[12:16:41]          1  retro=[]: degenerate dihedral (a flat edge); retro=[]: degenerate dihedral (a flat edge); 
+[12:20:37] TRACK 3 sizing: star-ico-d (the small gate palette) at k=3, full search, to get the growth factor
+[12:30:26] TRACK 3: the full star-ico-d k=3 search was stopped at 559,405 raw blocks / 343 MB after 28 min.
+[12:30:26]   The k=2 star runs used rho BUCKETING for exactly this reason. The argument is k-independent:
+[12:30:26]   a tiling has ONE edge arc and every vertex figure closes at it, so all k orbits share a bucket.
+[12:30:26]   run_k2_buckets.py generalised to --k. First: reproduce the known k=2 result with it.
+[buckets] 50 distinct groups; sizes {1: 44, 2: 3, 6: 1, 8: 2}; largest 6 multisets / 15 config words
+[buckets] wrote /tmp/b2.json
+[12:30:28] DONE: 50 buckets, 0 with no vertex type in this alphabet, 2 pruned k=408 blocks in /tmp/bk2/pruned
+[12:30:28] next: python3 run_develop_sharded.py --palette star-ico-d --maxdens 3 --kmin 2 --kmax 2 --developer develop_spherical.py --workers 10 --pruned /tmp/bk2/pruned --out /tmp/bk2/cells.json
+[12:31:06]   bucketed k=2 on star-ico-d: 50 buckets, 408 pruned blocks, digest MATCHES golden.
+[12:31:06]   (the k=2 write-up recorded 390 pruned blocks for the same run; more blocks in, same solids out)
+[12:31:06] TRACK 3: bucketed star-ico-d at k=3
+[buckets] wrote /tmp/b3.json
+[12:31:13] DONE: 50 buckets, 0 with no vertex type in this alphabet, 8013 pruned k=3 blocks in /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/star-ico-k3/pruned
+[12:31:13] next: python3 run_develop_sharded.py --palette star-ico-d --maxdens 3 --kmin 3 --kmax 3 --developer develop_spherical.py --workers 10 --pruned /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/star-ico-k3/pruned --out /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/star-ico-k3/cells.json
+[12:31:13]   solve+prune 5s
+[12:31:51]       1474  d=(1, 1, 1) retro=[] sign=+1: flood-fill did not close within 1500 instances; d=(1, 1, 1) 
+[12:31:51]       1139  d=(2, 2, 2) retro=[] sign=+1: flood-fill did not close within 1500 instances; d=(2, 2, 2) 
+[12:31:51]        695  d=(1, 2, 2) retro=[] sign=+1: flood-fill did not close within 1500 instances; d=(1, 2, 2) 
+[12:31:51]        526  d=(2, 2, 2) retro=[] sign=+1: flood-fill did not close within 1500 instances; d=(2, 2, 2) 
+[12:31:51]   develop 23s
+[12:32:21]   star-ico-d k=3: 8013 blocks -> 6 records in 23s. Three carry {5/2} faces or D>1.
+[12:32:21] TRACK 3, the real target: star-wide (9 tiles, the palette the shelf's k=1 and k=2 came from) at k=3
+[12:32:21]   baseline: star-wide k=2 was 3,902 buckets -> 422,206 pruned blocks in 134s of solve+prune
+[buckets] wrote /tmp/bw3.json
+[12:33:01] star-wide: 58682 vertex types in the full alphabet, 3902 buckets to run
+[12:51:04] TRACK 3 SIZING RESULT: star-wide k=3 is a multi-day run, and the bottleneck is the SEARCH.
+[12:51:04]   bucket size census over 3902 buckets: {1: 3754, 2: 114, 3: 15, 4: 5, 5: 1, 6: 6, 7: 3, 8: 2, 14: 1, 22: 1}
+[12:51:04]   200 singleton buckets -> 399,875 pruned blocks in 55s  (the whole k=2 run was 422,206)
+[12:51:04]   extrapolated singletons: ~7.5M blocks
+[12:51:04]   measured develop rate at k=3 on star-wide: 20,412 blocks in 162s = 126 blocks/s on 10 workers
+[12:51:04]   => singletons alone are ~16.5 HOURS of develop, and that is the CHEAP 96% of the buckets.
+[12:51:04]   The 148 multi-multiset buckets are the rest: b00000 (14 multisets, 2nd largest) ran 9 minutes of
+[12:51:04]   SOLVE without finishing and had emitted 569 MB of raw blocks. The 22-multiset bucket is worse.
+[12:51:04]   Conclusion: not started. It needs AL's go-ahead and probably a smarter decomposition.
