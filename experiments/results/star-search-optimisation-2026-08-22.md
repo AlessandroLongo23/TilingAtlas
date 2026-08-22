@@ -209,3 +209,44 @@ independent implementation (bitset relation refinement against the solver's Moor
 refinement) of the test that once deleted every 2-orbit deltahedron, and the pruner also reads output
 from `pruner.py` and from Marek's solvers, which do not run it. If someone ever wants that 10%, this
 is the measurement to start from — and the reason not to.
+
+## The flood-fill guard was not a valid bound at k=3 (found while sizing the run)
+
+`develop_sphere` cut the fill off at a hardcoded **1500 instances**. The fill returns `ninst = 2E`
+exactly — verified on all eleven realized star-wide k=2 records against the sum of their face-ring
+lengths — so that constant is a cap of **E ≤ 750**, and it is derived from nothing.
+
+It is bounded properly by the point groups. Every vertex orbit of the developed solid is a single
+G-orbit on S², so it holds at most |G| points; a rotation of G fixes an axis through a vertex, an edge
+midpoint or a face centre, so its order divides a valence, or 2, or a face size; the finite subgroups
+of O(3) are the polyhedral ones (≤ 120) and the axial families C_n, C_nh, C_nv, S_2n, D_n, D_nd, D_nh
+(≤ 4n). Hence
+
+> `2E = Σ_v valence(v) = Σ_orbits |orbit|·valence ≤ max(120, 4·maxrot) · Σ_orbits valence`
+
+computable from the block's own vertex words. Checked against all eleven k=2 records (bounds 840–1080,
+actual 20–144).
+
+⚑ **star-wide allows valence 6, so a three-orbit block bounds at 120·(6+6+6) = 2160, and every one of
+150 sampled k=3 blocks bounds there.** At 1500 the developer would have rejected any k=3 solid with
+more than 750 edges as "did not close" — a lost tiling with no symptom. Whether one exists in that
+window is exactly what the run is for, so the run could not have claimed completeness.
+
+It is also **tighter than 1500 where that matters more**, because a failing fill runs to the guard and
+failing is nearly all of the work:
+
+```
+                        guard      ms/block     (400 k=2 blocks, seed 1)
+constant                 1500        50.2
+derived                840-1080      21.1        2.4x
+                        guard      ms/block     (150 k=3 blocks)
+constant                 1500        28.3        <- incomplete
+derived                  2160        39.6        <- correct
+```
+
+Records bit-identical: same nine ids, **max vertex coordinate difference 0**, same rho. `check-star`
+all four, `check-deltahedra` pass.
+
+**Corrected size for star-wide k=3 develop: 40,487,641 × 39.6 ms = 445 CPU-hours**, about four and a
+half days at this machine's ~4x effective parallelism. The earlier 318 CPU-hours was measuring an
+unsound guard.

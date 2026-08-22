@@ -287,12 +287,40 @@ def _key_inst(h, R):
     return (h, round(a[2] / TOL), round(b[2] / TOL), round(c[2] / TOL),
             round(a[0] / TOL), round(b[0] / TOL), round(c[0] / TOL))
 
+def instance_bound(configs):
+    """A SOUND upper bound on the flood fill's instance count, from the block's own vertex words.
+
+    The fill returns ninst = 2E exactly — verified on all eleven realized star-wide k=2 records, each
+    against the sum of its face-ring lengths. So bounding instances is bounding edges, and edges are
+    bounded by the point groups:
+
+      * every vertex orbit of the developed solid is a single G-orbit on S2, so it holds at most |G|
+        points;
+      * a rotation of G fixes an axis through a vertex, an edge midpoint or a face centre, so its
+        order divides a valence, or 2, or a face size — here at most `maxrot`;
+      * the finite subgroups of O(3) are the polyhedral ones (order <= 120) and the axial families
+        C_n, C_nh, C_nv, S_2n, D_n, D_nd, D_nh (order <= 4n), so |G| <= max(120, 4 * maxrot);
+      * therefore 2E = sum over vertices of valence = sum over orbits of |orbit| * valence
+                     <= |G| * sum over orbits of valence.
+
+    ⚑ THIS REPLACES A CONSTANT 1500, WHICH IS NOT SAFE AT k=3. 1500 caps E at 750; star-wide allows
+    valence 6, so a three-orbit solid can reach 120*(6+6+6) = 2160 and would have been truncated and
+    filed as "did not close" — a lost tiling with no symptom. It is also TIGHTER than 1500 wherever it
+    matters less: the eleven k=2 records bound at 840-1080, so a failing fill on a k=2 block now costs
+    a third less than it did.
+    """
+    maxrot = 2
+    total = 0
+    for c in configs:
+        total += len(c)
+        maxrot = max(maxrot, len(c), max(_nd(p)[0] for p in c))
+    return max(120, 4 * maxrot) * total
+
+
 def develop_sphere(rneig, glue, lvert, rho, sign=1, guard=1500, retro=frozenset()):
-    # guard bounds the flood-fill. A convex regular-faced polyhedron in this palette has at most 2E dart-
-    # instances: 360 for the k=1 truncated icosidodecahedron (V120), and ≤240 for every k≥3 solid (the
-    # rhombicosidodecahedron family, V≤60). 1500 is ~6× headroom over the largest realizable case while
-    # cutting a NON-closing map (passes the common-rho filter, never closes) off ~130× sooner than 200k —
-    # what makes k≥5 develop in seconds instead of timing out. k=1 (V120) is developed via its own run.
+    # guard bounds the flood fill, and callers should pass instance_bound(configs) rather than take the
+    # default — see that function for why a constant is unsound at k >= 3. The default is kept only so
+    # that ad-hoc callers behave as they always did.
     """Flood-fill the instance orbit under {rneig, glue}. Returns (V, E, F) with V a list of
     unit positions, E a set of undirected vertex-id pairs, F a list of vertex-id rings."""
     M = Medge(rho)
@@ -590,6 +618,10 @@ def develop_block(b):
     # each type independently takes the small spherical polygon or its complement, and the choice is
     # invisible to the combinatorial search. Subsets are tried smallest first so the all-prograde
     # reading wins ties, and the cheap rho bisection filters almost all of them before any flood-fill.
+    # Derived per block, not the constant 1500: sound at k >= 3, and smaller than 1500 for most
+    # blocks, which is where the developer spends nearly all of its time (a failing fill runs to the
+    # guard). See instance_bound.
+    guard = instance_bound(configs)
     types = sorted({_nd(p) for c in configs for p in c})
     subsets = [frozenset(t for t, b in zip(types, bits) if b)
                for bits in itertools.product([0, 1], repeat=len(types))]
@@ -623,7 +655,8 @@ def develop_block(b):
                 for sign in (1, -1):
                     try:
                         V, E, F, Ftype, ninst = develop_sphere(dec["rneig"], dec["glue"], dec["lvert"],
-                                                               rho, sign=sign, retro=retro)
+                                                               rho, sign=sign, retro=retro,
+                                                               guard=guard)
                     except DevelopError as e:
                         reasons.append("d=%s retro=%s sign=%+d: %s" % (dens, sorted(retro), sign, e))
                         continue
