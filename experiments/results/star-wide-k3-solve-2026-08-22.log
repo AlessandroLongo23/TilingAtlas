@@ -1,45 +1,45 @@
-[16:40:09] star-wide: 58682 vertex types in the full alphabet, 3902 buckets, 10 worker(s)
-[16:40:10] sliced 3902 buckets (0 had no vertex type in this alphabet)
-[16:40:11]   bucket 100/3902  pruned k=3 blocks so far: 13272   0s elapsed, ETA 18s
-[16:40:12]   bucket 200/3902  pruned k=3 blocks so far: 111338   2s elapsed, ETA 33s
-[16:40:15]   bucket 300/3902  pruned k=3 blocks so far: 561294   4s elapsed, ETA 52s
-[16:40:15]   bucket 400/3902  pruned k=3 blocks so far: 909311   5s elapsed, ETA 46s
-[16:40:17]   bucket 500/3902  pruned k=3 blocks so far: 965533   6s elapsed, ETA 43s
-[16:40:18]   bucket 600/3902  pruned k=3 blocks so far: 1193190   7s elapsed, ETA 40s
-[16:40:18]   bucket 700/3902  pruned k=3 blocks so far: 1367552   8s elapsed, ETA 36s
-[16:40:23]   bucket 800/3902  pruned k=3 blocks so far: 2181555   13s elapsed, ETA 49s
-[16:40:27]   bucket 900/3902  pruned k=3 blocks so far: 3074409   17s elapsed, ETA 56s
-[16:40:33]   bucket 1000/3902  pruned k=3 blocks so far: 4680508   23s elapsed, ETA 67s
-[16:40:38]   bucket 1100/3902  pruned k=3 blocks so far: 7184362   28s elapsed, ETA 70s
-[16:40:42]   bucket 1200/3902  pruned k=3 blocks so far: 8193844   31s elapsed, ETA 71s
-[16:40:44]   bucket 1300/3902  pruned k=3 blocks so far: 8794879   34s elapsed, ETA 68s
-[16:40:46]   bucket 1400/3902  pruned k=3 blocks so far: 9108648   36s elapsed, ETA 64s
-[16:40:48]   bucket 1500/3902  pruned k=3 blocks so far: 10226591   38s elapsed, ETA 61s
-[16:41:00]   bucket 1600/3902  pruned k=3 blocks so far: 12835013   50s elapsed, ETA 72s
-[16:41:03]   bucket 1700/3902  pruned k=3 blocks so far: 13904694   52s elapsed, ETA 68s
-[16:41:06]   bucket 1800/3902  pruned k=3 blocks so far: 14861743   55s elapsed, ETA 65s
-[16:41:07]   bucket 1900/3902  pruned k=3 blocks so far: 15184960   57s elapsed, ETA 60s
-[16:41:10]   bucket 2000/3902  pruned k=3 blocks so far: 16080803   60s elapsed, ETA 57s
-[16:41:13]   bucket 2100/3902  pruned k=3 blocks so far: 16840878   63s elapsed, ETA 54s
-[16:41:17]   bucket 2200/3902  pruned k=3 blocks so far: 17746840   67s elapsed, ETA 51s
-[16:41:20]   bucket 2300/3902  pruned k=3 blocks so far: 19656811   70s elapsed, ETA 49s
-[16:41:25]   bucket 2400/3902  pruned k=3 blocks so far: 21184372   75s elapsed, ETA 47s
-[16:41:28]   bucket 2500/3902  pruned k=3 blocks so far: 21952800   77s elapsed, ETA 43s
-[16:41:34]   bucket 2600/3902  pruned k=3 blocks so far: 23189699   84s elapsed, ETA 42s
-[16:41:39]   bucket 2700/3902  pruned k=3 blocks so far: 24060806   89s elapsed, ETA 39s
-[16:41:43]   bucket 2800/3902  pruned k=3 blocks so far: 24695159   93s elapsed, ETA 37s
-[16:41:46]   bucket 2900/3902  pruned k=3 blocks so far: 26588284   96s elapsed, ETA 33s
-[16:41:56]   bucket 3000/3902  pruned k=3 blocks so far: 28317430   105s elapsed, ETA 32s
-[16:42:08]   bucket 3100/3902  pruned k=3 blocks so far: 31247684   118s elapsed, ETA 31s
-[16:42:16]   bucket 3200/3902  pruned k=3 blocks so far: 33428380   126s elapsed, ETA 28s
-[16:42:21]   bucket 3300/3902  pruned k=3 blocks so far: 34447184   131s elapsed, ETA 24s
-[16:42:24]   bucket 3400/3902  pruned k=3 blocks so far: 34617877   134s elapsed, ETA 20s
-[16:42:25]   bucket 3500/3902  pruned k=3 blocks so far: 34641553   135s elapsed, ETA 16s
-[16:42:27]   bucket 3600/3902  pruned k=3 blocks so far: 34971724   136s elapsed, ETA 11s
-[16:42:28]   bucket 3700/3902  pruned k=3 blocks so far: 34986522   137s elapsed, ETA 7s
-[16:42:47]   bucket 3800/3902  pruned k=3 blocks so far: 37115274   157s elapsed, ETA 4s
-[16:43:14]   bucket 3900/3902  pruned k=3 blocks so far: 40170691   184s elapsed, ETA 0s
-[16:43:17]   bucket 3902/3902  pruned k=3 blocks so far: 40487641   187s elapsed, ETA 0s
-[16:43:17] slowest buckets: b00118 68.8s, b03719 46.2s, b03199 44.3s, b03760 28.0s, b03177 26.3s, b03737 25.4s, b00097 24.6s, b03799 24.3s
-[16:43:17] DONE: 3902 buckets, 0 with no vertex type in this alphabet, 40487641 pruned k=3 blocks in /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/34adc110-941e-4169-8297-5e417a748958/scratchpad/starbench/sw-k3/pruned (187s)
-[16:43:17] next: python3 run_develop_sharded.py --palette star-wide --maxdens 3 --kmin 3 --kmax 3 --developer develop_spherical.py --workers 10 --pruned /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/34adc110-941e-4169-8297-5e417a748958/scratchpad/starbench/sw-k3/pruned --out /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/34adc110-941e-4169-8297-5e417a748958/scratchpad/starbench/sw-k3/cells.json
+[17:15:23] star-wide: 58682 vertex types in the full alphabet, 3902 buckets, 10 worker(s)
+[17:15:25] sliced 3902 buckets (0 had no vertex type in this alphabet)
+[17:15:25]   bucket 100/3902  pruned k=3 blocks so far: 13272   1s elapsed, ETA 26s
+[17:15:27]   bucket 200/3902  pruned k=3 blocks so far: 166799   2s elapsed, ETA 33s
+[17:15:28]   bucket 300/3902  pruned k=3 blocks so far: 677146   4s elapsed, ETA 44s
+[17:15:29]   bucket 400/3902  pruned k=3 blocks so far: 909311   4s elapsed, ETA 38s
+[17:15:30]   bucket 500/3902  pruned k=3 blocks so far: 1017562   5s elapsed, ETA 37s
+[17:15:31]   bucket 600/3902  pruned k=3 blocks so far: 1291570   6s elapsed, ETA 34s
+[17:15:31]   bucket 700/3902  pruned k=3 blocks so far: 1369280   7s elapsed, ETA 31s
+[17:15:35]   bucket 800/3902  pruned k=3 blocks so far: 2206124   10s elapsed, ETA 39s
+[17:15:38]   bucket 900/3902  pruned k=3 blocks so far: 3671880   13s elapsed, ETA 44s
+[17:15:42]   bucket 1000/3902  pruned k=3 blocks so far: 5909171   17s elapsed, ETA 49s
+[17:15:45]   bucket 1100/3902  pruned k=3 blocks so far: 7271764   20s elapsed, ETA 52s
+[17:15:48]   bucket 1200/3902  pruned k=3 blocks so far: 8380402   23s elapsed, ETA 52s
+[17:15:50]   bucket 1300/3902  pruned k=3 blocks so far: 8805933   26s elapsed, ETA 51s
+[17:15:52]   bucket 1400/3902  pruned k=3 blocks so far: 9868599   27s elapsed, ETA 48s
+[17:15:53]   bucket 1500/3902  pruned k=3 blocks so far: 10142480   28s elapsed, ETA 45s
+[17:16:01]   bucket 1600/3902  pruned k=3 blocks so far: 12857465   36s elapsed, ETA 52s
+[17:16:03]   bucket 1700/3902  pruned k=3 blocks so far: 15003270   38s elapsed, ETA 49s
+[17:16:05]   bucket 1800/3902  pruned k=3 blocks so far: 15760131   40s elapsed, ETA 47s
+[17:16:06]   bucket 1900/3902  pruned k=3 blocks so far: 16496398   41s elapsed, ETA 43s
+[17:16:08]   bucket 2000/3902  pruned k=3 blocks so far: 16983991   43s elapsed, ETA 41s
+[17:16:09]   bucket 2100/3902  pruned k=3 blocks so far: 17716113   44s elapsed, ETA 38s
+[17:16:12]   bucket 2200/3902  pruned k=3 blocks so far: 18627203   47s elapsed, ETA 37s
+[17:16:14]   bucket 2300/3902  pruned k=3 blocks so far: 19653245   49s elapsed, ETA 34s
+[17:16:17]   bucket 2400/3902  pruned k=3 blocks so far: 21169082   53s elapsed, ETA 33s
+[17:16:20]   bucket 2500/3902  pruned k=3 blocks so far: 21952800   55s elapsed, ETA 31s
+[17:16:24]   bucket 2600/3902  pruned k=3 blocks so far: 23189699   59s elapsed, ETA 29s
+[17:16:27]   bucket 2700/3902  pruned k=3 blocks so far: 24136473   62s elapsed, ETA 28s
+[17:16:30]   bucket 2800/3902  pruned k=3 blocks so far: 25226775   66s elapsed, ETA 26s
+[17:16:32]   bucket 2900/3902  pruned k=3 blocks so far: 27119983   67s elapsed, ETA 23s
+[17:16:38]   bucket 3000/3902  pruned k=3 blocks so far: 28317430   73s elapsed, ETA 22s
+[17:16:46]   bucket 3100/3902  pruned k=3 blocks so far: 31565463   81s elapsed, ETA 21s
+[17:16:51]   bucket 3200/3902  pruned k=3 blocks so far: 33428380   86s elapsed, ETA 19s
+[17:16:55]   bucket 3300/3902  pruned k=3 blocks so far: 34447184   90s elapsed, ETA 16s
+[17:16:57]   bucket 3400/3902  pruned k=3 blocks so far: 34922924   92s elapsed, ETA 14s
+[17:16:58]   bucket 3500/3902  pruned k=3 blocks so far: 34946601   93s elapsed, ETA 11s
+[17:16:59]   bucket 3600/3902  pruned k=3 blocks so far: 35101893   95s elapsed, ETA 8s
+[17:17:00]   bucket 3700/3902  pruned k=3 blocks so far: 35116703   96s elapsed, ETA 5s
+[17:17:11]   bucket 3800/3902  pruned k=3 blocks so far: 37115274   107s elapsed, ETA 3s
+[17:17:29]   bucket 3900/3902  pruned k=3 blocks so far: 40440478   124s elapsed, ETA 0s
+[17:17:37]   bucket 3902/3902  pruned k=3 blocks so far: 40487641   133s elapsed, ETA 0s
+[17:17:37] slowest buckets: b00118 37.1s, b03719 36.9s, b03199 26.7s, b03737 25.2s, b03177 16.3s, b03760 15.5s, b03872 15.1s, b00097 15.0s
+[17:17:37] DONE: 3902 buckets, 0 with no vertex type in this alphabet, 40487641 pruned k=3 blocks in /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/34adc110-941e-4169-8297-5e417a748958/scratchpad/starbench/sw-k3/pruned (133s)
+[17:17:37] next: python3 run_develop_sharded.py --palette star-wide --maxdens 3 --kmin 3 --kmax 3 --developer develop_spherical.py --workers 10 --pruned /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/34adc110-941e-4169-8297-5e417a748958/scratchpad/starbench/sw-k3/pruned --out /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/34adc110-941e-4169-8297-5e417a748958/scratchpad/starbench/sw-k3/cells.json

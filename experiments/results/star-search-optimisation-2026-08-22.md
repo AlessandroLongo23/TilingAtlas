@@ -380,3 +380,81 @@ whole star-wide k=3 search, 3902 buckets, 10 workers
 ```
 
 40,487,641 pruned blocks every time, across six independent full runs.
+
+## Round three: the decode, and closing the edge-type question
+
+Re-profiling after the canonical form put allocation at 38% and memcmp at 20%, and both traced to the
+same place.
+
+**`decode()` built a `std::string` per dart** via `edgelabel()`, and `makeglue()` then hashed all of
+them into a string-keyed map to resolve two darts per glue token. A label is `base + (tile
+apostrophes, or "@tile")` and `decipher` reads it back as `(mirror, num, til)`, so where no base
+carries an apostrophe or `@` the triple is a faithful key for the string. Carry it packed in an int
+and never build the string.
+
+⚑ The guard is load-bearing. With an apostrophe in a base the map stops being injective: base `0'` at
+tile 5 renders `0'@5`, which `decipher` reads as `til = 1·10+5 = 15` — the same triple as base `0` at
+tile 15. Different strings, one key, a wrong gluing. Every palette in the repo has clean bases
+(checked: the only characters across all of them are `*` and digits), and `LABELS_SIMPLE` falls back
+to the string path where that is not true.
+
+**`figure_id()` ran per DART.** It built a key string and linearly scanned every figure seen so far
+comparing strings — ~98 figures × ~30 darts × 3.85M blocks — for a value that depends only on the
+vertex type.
+
+Then buffer reuse (`decode_into` writes a caller-owned Graph instead of allocating eight vectors per
+block; `fingerprint`'s colour arrays, `canon_code`'s strings and `keyOf`'s are static), and finally
+splitting the WL refinement from its hash: `canon_code` wants the colours, the 64-bit value is only
+the bucket key, and with the canonical form deciding isomorphism the key is read by nothing but
+`EU_SIGSHARD` and the pairwise fallback.
+
+### The edge-type question, closed
+
+I flagged that `eu_pruner` does not model edge types — its refinements seed on `(cls, fam)` where the
+solver seeds on `(cls·ETSPAN + etype, fam)` — and left it unmeasured. It is measured now.
+
+`PTAB_ETYPE` ships in every generated pruner table and nothing had ever built a nested view of it. A
+dart's edge type is structure (a leg may not glue to a hypotenuse), so an isomorphism must preserve it
+and a congruence must refine it: **both of the pruner's tests were working with less than the truth**,
+and in the isomorphism direction a coarser colour is the dangerous one — it can call two
+non-isomorphic blocks duplicates and drop one.
+
+Measured on every edge-typed palette that produces blocks, before and after adding it:
+
+```
+                          kept before   kept after   simplify rejections
+tri45two-split                    804          804     0 of 1939
+eu-half-tri-mirror-split          472          472     0 of  963
+planigon-lite                      28           28     0 of   74
+eu-half-sq-mid                      1            1     0 of    1
+star-wide b00118              903,188      903,188     0 of 3,836,914
+```
+
+**Not one verdict moves.** Real in the code, never once fired. Kept anyway, because it is now right by
+construction rather than by luck, and it costs 0.5 s on b00118. The spill file carries seven arrays
+now instead of six.
+
+### The ladder
+
+```
+b00118's pruner (3,853,279 blocks in, 903,188 out)
+  as committed this morning                        ~213 s
+  + symbol index, 6 WL rounds                        92.8
+  + canonical form                                   36.5
+  + skip the redundant minimality test               30.6
+  + integer labels, figure_id per type               13.9
+  + reuse the per-block buffers                      10.7
+  + edge type in the colours (correctness)           11.2
+  + skip the hash nobody reads                       10.3    21x
+
+whole star-wide k=3 search, 3902 buckets, 10 workers
+  estimate carried into the session              multi-day
+  after the emission and pruner fixes                295 s
+  canonical form                                     228
+  skip minimality                                    187
+  integer labels                                     145
+  buffer reuse                                       131
+  final                                              133 s
+```
+
+40,487,641 pruned blocks on every one of nine independent full runs.
