@@ -103,15 +103,26 @@ def main():
     # imports them from there rather than duplicating them.
     import develop_spherical as blockio
     dev = __import__(os.path.splitext(args.developer)[0])
-    blocks = blockio.gather_blocks(args.pruned, args.kmin, args.kmax)
-    if not blocks:
-        sys.exit("no blocks under " + args.pruned)
-    log("%d blocks over %d workers (dynamic queue)" % (len(blocks), args.workers))
+    # ⚑ STREAM the blocks, do not gather them. gather_blocks returns a list, and star-wide k=3 is
+    # 40,487,641 blocks: tens of gigabytes of Python strings before a single one is developed. The
+    # pool only ever needs the next chunk, and imap_unordered consumes an iterable lazily.
+    if hasattr(blockio, "stream_chunks"):
+        nblocks = blockio.count_blocks(args.pruned, args.kmin, args.kmax)
+        if not nblocks:
+            sys.exit("no blocks under " + args.pruned)
+        chunks = blockio.stream_chunks(args.pruned, args.kmin, args.kmax, args.chunk)
+        nchunks = (nblocks + args.chunk - 1) // args.chunk
+    else:
+        blocks = blockio.gather_blocks(args.pruned, args.kmin, args.kmax)
+        if not blocks:
+            sys.exit("no blocks under " + args.pruned)
+        nblocks = len(blocks)
+        chunks = [blocks[i:i + args.chunk] for i in range(0, nblocks, args.chunk)]
+        nchunks = len(chunks)
+    log("%d blocks in %d chunks of %d over %d workers" % (nblocks, nchunks, args.chunk, args.workers))
 
     t0 = time.time()
     records, failed, prefiltered = [], [], 0
-    chunks = [blocks[i:i + args.chunk] for i in range(0, len(blocks), args.chunk)]
-    log("  %d chunks of up to %d blocks" % (len(chunks), args.chunk))
     ctx = mp.get_context("spawn")
     with ctx.Pool(args.workers, initializer=_init,
                   initargs=(args.palette, args.maxdens, args.developer)) as pool:
@@ -126,11 +137,11 @@ def main():
             done += len(recs) and 0 or 0
             done += 1
             el = time.time() - t0
-            if el - last >= 30 or done == len(chunks):
+            if el - last >= 30 or done == nchunks:
                 last = el
                 log("  develop %d/%d chunks (%d blocks)  realized=%d  prefiltered=%d  %.0fs, ETA %.0fs"
-                    % (done, len(chunks), done * args.chunk, len(records), prefiltered, el,
-                       el / done * (len(chunks) - done)))
+                    % (done, nchunks, done * args.chunk, len(records), prefiltered, el,
+                       el / done * max(0, nchunks - done)))
 
     # Dedup only where the developer defines what a duplicate IS. develop_euclid has a congruence key
     # and its own run() applies it; the sharded path used to apply it per worker and concatenate, so a
@@ -164,9 +175,9 @@ def main():
     rp = os.path.splitext(args.out)[0] + "-report.txt"
     reasons = collections.Counter(e.get("reason", "?") for e in failed)
     with open(rp, "w") as fh:
-        fh.write("euclidean develop report (k=%d..%d, %d workers)\n" % (args.kmin, args.kmax, args.workers))
+        fh.write("develop report (k=%d..%d, %d workers)\n" % (args.kmin, args.kmax, args.workers))
         fh.write("%-15s: %d\n%-15s: %d\n%-15s: %d\n"
-                 % ("blocks in", len(blocks), "realized", len(uniq),
+                 % ("blocks in", nblocks, "realized", len(uniq),
                     "non-realizable", len(failed) + prefiltered))
         if prefiltered:
             fh.write("   of which %d rejected by eu_sphfill (the flood fill does not close — a fact\n"

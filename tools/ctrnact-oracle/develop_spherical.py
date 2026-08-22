@@ -805,6 +805,47 @@ def prefilter(blocks, verify=False):
 
 
 # ----------------------------------------------------------------------------- driver
+def block_files(pruned, kmin, kmax):
+    """The pruned files a run covers, in the order gather_blocks would read them."""
+    out = []
+    for k in range(kmin, kmax + 1):
+        cand = set(glob.glob(os.path.join(pruned, "eupruned_%02d_*.txt" % k)))
+        cand |= set(glob.glob(os.path.join(pruned, "eupruned_%d_*.txt" % k)))
+        cand.add(os.path.join(pruned, "eupruned_%02d.txt" % k))
+        cand.add(os.path.join(pruned, "eupruned_%d.txt" % k))
+        out.extend(sorted(p for p in cand if os.path.exists(p)))
+    return out
+
+
+def stream_chunks(pruned, kmin, kmax, size):
+    """Blocks in gather_blocks' order, handed out in chunks, WITHOUT materialising them all.
+
+    ⚑ gather_blocks returns a list, and star-wide k=3 is 40,487,641 blocks — tens of gigabytes of
+    Python strings before a single one is developed. The driver never needs them all at once; it needs
+    the next chunk.
+    """
+    buf = []
+    for f in block_files(pruned, kmin, kmax):
+        for b in read_blocks(f):
+            if any(l.startswith("TES file:") for l in b):
+                buf.append(b)
+                if len(buf) >= size:
+                    yield buf
+                    buf = []
+    if buf:
+        yield buf
+
+
+def count_blocks(pruned, kmin, kmax):
+    n = 0
+    for f in block_files(pruned, kmin, kmax):
+        with open(f) as fh:
+            for line in fh:
+                if line.startswith("TES file:"):
+                    n += 1
+    return n
+
+
 def gather_blocks(pruned, kmin, kmax):
     out = []
     for k in range(kmin, kmax + 1):
