@@ -2848,9 +2848,8 @@ colour moves NOT ONE verdict on any edge-typed palette. 9e2a683, 4cb1265, 04e7a5
 
 ## 2026-08-22 (4) — star-wide k=3 develops: 15 star polyhedra, 22 minutes end to end — CC
 
-⚑ Develop was 4.6 days and is 19.6 min. Four changes: the two SIGNS close or fail together (J·Rz(a)·J
-= Rz(-a) and J·Medge·J = Medge, so the orbits are conjugate — 2x); the close/not-close verdict moved
-to C (`eu_sphfill`, 0.036 ms/attempt against ~6 ms); the rho solving planned once per vertex-type LINE
-instead of per block (3.2 → 0.23 ms); a persistent filter and `--by-file` workers. k=2 develop 56 min
-→ 14 s, same 9 records, max vertex coord difference 0.0. **k=3: 40,487,641 blocks → 15 records**, NOT
-shipped — a k=3 shelf row is AL's call. e51a7d0, 14b5942, 7dba79e, 1197a49, 5fc6616.
+⚑ Develop was 4.6 days and is 19.6 min. The two SIGNS close or fail together (J·Rz(a)·J = Rz(-a) and
+J·Medge·J = Medge, so the orbits are conjugate); the close/not-close verdict moved to C (`eu_sphfill`,
+0.036 ms/attempt against ~6 ms); the rho solving plans once per vertex-type LINE, not per block. k=2
+develop 56 min → 14 s, same 9 records, max vertex coord difference 0.0. **k=3: 40,487,641 blocks → 15
+records**, NOT shipped — a k=3 shelf row is AL's call. e51a7d0, 14b5942, 7dba79e, 1197a49, 5fc6616.
