@@ -46,14 +46,17 @@ export interface BubblePattern {
 	grid: BubbleGrid;
 }
 
-export type BubbleGrid = "triangle" | "square" | "hex";
+/** The SUBSTRATE a bubble tiling decorates. "tri-hex" is a mixed substrate and not a lattice of its
+ *  own: triangles and hexagons on one board, which is the tile set the paper's mixed (T,H) rows need. */
+export type BubbleGrid = "triangle" | "square" | "hex" | "tri-hex";
 
 /** Display order and labels for the lattice facet — the shelf's "folders". */
-export const BUBBLE_GRID_ORDER: BubbleGrid[] = ["triangle", "square", "hex"];
+export const BUBBLE_GRID_ORDER: BubbleGrid[] = ["triangle", "square", "hex", "tri-hex"];
 export const BUBBLE_GRID_LABEL: Record<BubbleGrid, string> = {
 	triangle: "Triangle",
 	square: "Square",
 	hex: "Hexagon",
+	"tri-hex": "Triangle + hexagon",
 };
 
 /** One file per lattice, all small enough to load eagerly together (tens of KB). */
@@ -63,6 +66,7 @@ export const BUBBLE_FILES = [
 	...[1, 2, 3, 4].map((k) => `/bubble/tri-k${k}.json`),
 	...[1, 2, 3, 4, 5].map((k) => `/bubble/sq-k${k}.json`),
 	...[1, 2, 3, 4, 5].map((k) => `/bubble/hex-k${k}.json`),
+	...[1, 2, 3].map((k) => `/bubble/th-k${k}.json`),
 ];
 
 /**
@@ -109,6 +113,10 @@ function necklaceOrder(n: number): Map<string, number> {
  * where this writes 3A and 3B, so its 3B/3C become 3C/3D. The partition into tiles is identical, only
  * the labels differ — worth reconciling before quoting hexagonal names back at the authors.
  */
+/** The family letter, read off the TILE and not off the catalogue: a mixed substrate carries both
+ *  triangles and hexagons, so "which letter" is a per-tile question. Matches the paper's T / S / H. */
+export const FAMILY_LETTER: Record<number, string> = { 3: "T", 4: "S", 6: "H" };
+
 export function tileNameOf(biteWord: number[]): string {
 	const n = biteWord.length;
 	const key = tileKeyOf(biteWord);
@@ -138,15 +146,14 @@ export function tileHueOf(biteWord: number[]): number {
 export function bubbleFamilyLabel(p: BubblePattern): string {
 	const count = new Map<string, number>();
 	for (const w of p.bites) {
-		const t = tileNameOf(w);
+		const t = FAMILY_LETTER[w.length] + tileNameOf(w);
 		count.set(t, (count.get(t) ?? 0) + 1);
 	}
 	const gcd = (a: number, b: number): number => (b ? gcd(b, a % b) : a);
 	const g = [...count.values()].reduce(gcd, 0) || 1;
-	const letter = p.grid === "square" ? "S" : p.grid === "hex" ? "H" : "T";
 	return [...count.entries()]
 		.sort((a, b) => a[0].localeCompare(b[0]))
-		.map(([t, n]) => `${letter}${t}×${n / g}`)
+		.map(([t, n]) => `${t}×${n / g}`)
 		.join(" ");
 }
 

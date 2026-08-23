@@ -1,0 +1,19 @@
+== bubble-th: mixed triangle + hexagon bubble tiles ==
+target: the (T,H) cells Table 2 leaves Unknown
+        ratio 2:3 bite pairs (0,4) and (3,2); ratio 4:3 bite pairs (0,5) and (3,1)
+alphabet: 18 tiles, 22,767 vertex types (vs 5,488 hexagon-only)
+
+-- k<=2 building 01:13:56
+   build 8s  solving 01:14:04
+   k<=2  solve 1.4s  nodes 2677774  raw 187
+   kept:   k=1 : 13   k=2 : 168 
+developed: {1: 13, 2: 168} total 181 failures 0
+
+-- k<=3 building 01:14:07
+   build 2s  solving 01:14:09
+   k<=3  solve 324.5s  nodes 1347631404  raw 1875
+   kept:   k=1 : 13   k=2 : 168   k=3 : 1515 
+developed: {1: 13, 2: 168, 3: 1515} total 1696 failures 0
+
+-- k<=4 building 01:19:37
+   build 2s  solving 01:19:39
