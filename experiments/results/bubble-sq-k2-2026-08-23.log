@@ -1,0 +1,7 @@
+== bubble-sq k<=2  2026-08-23 18:07:08 ==
+palette: 6 square bubble tiles (S0,S1,S2A,S2B,S3,S4), complementary gluing
+raw blocks: 125
+  k=1 : 11
+  k=2 : 102
+total kept: 113
+store: peak 0 MB total, 0 MB resident

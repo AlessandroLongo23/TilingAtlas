@@ -1,0 +1,135 @@
+== Bubble-tile scaling sweep ==
+started      2026-08-23 18:28:25
+machine      arm64 mac, single-threaded DFS (eu_solver), EU_EDGE_COMPL=1
+note         the face + pair filters are OFF under complementary gluing (they lose tilings),
+             so this is the unfiltered cost. Straight k-uniform runs are much cheaper.
+
+LATTICE        k    BUILD_s    SOLVE_s    PRUNE_s        RAW       KEPT
+-- bubble-tri k<=1 : building 18:28:25
+   solving  18:28:26  (build 1.4s)
+   pruning  18:28:27  (solve 0.3s, raw 7)
+bubble-tri     1        1.4        0.3        0.0          7          7
+   per-k kept:   k=1 : 7 
+
+-- bubble-tri k<=2 : building 18:28:27
+   solving  18:28:28  (build 1.1s)
+   pruning  18:28:28  (solve 0.2s, raw 79)
+bubble-tri     2        1.1        0.2        0.0         79         74
+   per-k kept:   k=1 : 7   k=2 : 67 
+
+-- bubble-tri k<=3 : building 18:28:28
+   solving  18:28:29  (build 1.1s)
+   pruning  18:28:31  (solve 2.0s, raw 1064)
+bubble-tri     3        1.1        2.0        0.0       1064        923
+   per-k kept:   k=1 : 7   k=2 : 67   k=3 : 849 
+
+-- bubble-sq k<=1 : building 18:28:31
+   solving  18:28:32  (build 1.1s)
+   pruning  18:28:33  (solve 0.3s, raw 11)
+bubble-sq      1        1.1        0.3        0.0         11         11
+   per-k kept:   k=1 : 11 
+
+-- bubble-sq k<=2 : building 18:28:33
+   solving  18:28:34  (build 1.1s)
+   pruning  18:28:34  (solve 0.3s, raw 125)
+bubble-sq      2        1.1        0.3        0.0        125        113
+   per-k kept:   k=1 : 11   k=2 : 102 
+
+-- bubble-sq k<=3 : building 18:28:34
+   solving  18:28:35  (build 1.1s)
+   pruning  18:28:36  (solve 0.5s, raw 992)
+bubble-sq      3        1.1        0.5        0.0        992        806
+   per-k kept:   k=1 : 11   k=2 : 102   k=3 : 693 
+
+-- bubble-hex k<=1 : building 18:28:36
+   solving  18:28:36  (build 0.0s)
+   pruning  18:28:36  (solve 0.1s, raw 3)
+bubble-hex     1        0.0        0.1        0.0          3          3
+   per-k kept:   k=1 : 3 
+
+-- bubble-hex k<=2 : building 18:28:36
+   solving  18:28:38  (build 1.2s)
+   pruning  18:28:38  (solve 0.4s, raw 14)
+bubble-hex     2        1.2        0.4        0.0         14         14
+   per-k kept:   k=1 : 3   k=2 : 11 
+
+-- bubble-hex k<=3 : building 18:28:38
+   solving  18:28:39  (build 1.2s)
+   pruning  18:28:40  (solve 0.7s, raw 65)
+bubble-hex     3        1.2        0.7        0.0         65         65
+   per-k kept:   k=1 : 3   k=2 : 11   k=3 : 51 
+
+finished 2026-08-23 18:28:40
+
+== k=4 pass (k<=3 times were startup-dominated; measuring instead of extrapolating) ==
+-- bubble-tri k<=4 : building 18:29:35
+   solving  18:29:36
+   bubble-tri k<=4  solve 92.3s  prune 0.1s  raw 8334
+   per-k kept:   k=1 : 7   k=2 : 67   k=3 : 849   k=4 : 6157 
+
+-- bubble-sq k<=4 : building 18:31:09
+   solving  18:31:10
+   bubble-sq k<=4  solve 4.4s  prune 0.1s  raw 9789
+   per-k kept:   k=1 : 11   k=2 : 102   k=3 : 693   k=4 : 6992 
+
+-- bubble-hex k<=4 : building 18:31:14
+   solving  18:31:16
+   bubble-hex k<=4  solve 8.2s  prune 0.0s  raw 362
+   per-k kept:   k=1 : 3   k=2 : 11   k=3 : 51   k=4 : 294 
+
+k=4 pass finished 2026-08-23 18:31:24
+
+== k=5 pass (predicted 22 min / 2 min / 2 min — measuring instead of trusting the fit) ==
+-- bubble-sq k<=5 : building 18:32:36
+   solving  18:32:37
+   bubble-sq k<=5  solve 59.9s  prune 0.3s  nodes 115824793
+   per-k kept:   k=1 : 11   k=2 : 102   k=3 : 693   k=4 : 6992   k=5 : 33377 
+
+-- bubble-hex k<=5 : building 18:33:37
+   solving  18:33:39
+   bubble-hex k<=5  solve 148.0s  prune 0.1s  nodes 700782790
+   per-k kept:   k=1 : 3   k=2 : 11   k=3 : 51   k=4 : 294   k=5 : 228 
+
+-- bubble-tri k<=5 : building 18:36:07
+   solving  18:36:08
+
+
+== FINAL TABLE (measured; triangle k=5 not run, AL asked for hexagons only) ==
+
+lattice   quantity            k=1          k=2          k=3          k=4          k=5
+triangle  solutions             7           67          849        6,157            -
+          nodes               974       85,468    6,544,938  175,223,708            -
+          solve s             0.3          0.2          2.0         92.3            -
+square    solutions            11          102          693        6,992       33,377
+          nodes             1,145       49,525      773,912   18,208,552  115,824,793
+          solve s             0.3          0.3          0.5          4.4         59.9
+hexagon   solutions             3           11           51          294          228
+          nodes             6,713      161,777    2,931,498   38,985,671  700,782,790
+          solve s             0.1          0.4          0.7          8.2        148.0
+
+RATIOS vs previous k
+
+  triangle  solutions    9.57   12.67    7.25       -   nodes    87.7    76.6    26.8       -
+  square    solutions    9.27    6.79   10.09    4.77   nodes    43.3    15.6    23.5     6.4
+  hexagon   solutions    3.67    4.64    5.76    0.78   nodes    24.1    18.1    13.3    18.0
+
+READINGS
+
+1. HEXAGON k=5 HAS FEWER SOLUTIONS THAN k=4 (228 < 294). The count is NOT monotone in k, so no
+   growth model that assumes it can be right. Ratios oscillate everywhere: square solutions ran
+   9.3, 6.8, 10.1, 4.8. The likely cause is arithmetic, not geometry -- the number of index-n
+   sublattices is sigma(n), which dips at primes (k=3, k=5) and jumps at composites (k=4).
+
+2. GEOMETRIC EXTRAPOLATION OVERSHOOTS BADLY. From k<=4 the fit predicted square k=5 at ~71,000
+   solutions in ~2 min; the truth is 33,377 in 60 s -- 2.1x and 2x over. Nodes were 3.7x over.
+   Quote a measured number or a range, never a single extrapolated one.
+
+3. COST DOES NOT TRACK COUNT. Hexagon k=5 burned 700.8M nodes for 228 tilings; square k=5 burned
+   115.8M for 33,377. The hexagonal alphabet is the largest (14 tiles, 5,488 vertex types) and its
+   yield the smallest, because three hexagons at a vertex leave only 2^3 edge states against 2^6
+   for six triangles. Big alphabet, tight constraint, most search per result.
+
+4. TRIANGLE k=5 ESTIMATE (not run): node ratios are decaying (87.7, 76.6, 26.8), so ~15-25x on
+   175.2M gives 2.6-4.4G nodes; at the ~2M nodes/s measured for the triangular palette that is
+   20-35 min. Solutions ~25,000-35,000 if k=5 dips like square's did.
+
