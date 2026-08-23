@@ -1,5 +1,11 @@
 import { chiralityOf, type ChiralityFacet } from "@/lib/services/chirality";
-import { polygonSpeciesOf, tilePeriodsOf, tilingHasSpecies } from "@/lib/services/polygonSpecies";
+import {
+	polygonSpeciesOf,
+	tilePeriodsOf,
+	tilingHasSpecies,
+	EMPTY_SPECIES,
+	EMPTY_PERIODS,
+} from "@/lib/services/polygonSpecies";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import { evaluateParamCell, type ParametricCellData } from "@/lib/utils/paramCell";
 import { LENGTH_FAMILIES } from "@/lib/tilings/length-families";
@@ -11,7 +17,7 @@ import MERGED_ALIASES_MIXED from "@/lib/services/mergedFamilyAliases.json";
 import MERGED_ALIASES_ISOTOXAL from "@/lib/services/mergedFamilyAliases.isotoxal.json";
 import COUPLED_ALIASES_MIXED from "@/lib/services/coupledFamilyAliases.json";
 import ABSORBED_ALIASES from "@/lib/services/absorbedFamilyAliases.json";
-import { decodeAtlas, decodeShard, readAtlas } from "@/lib/services/atlasCodec";
+import { decodeAtlas, decodeShard, defineLazyRenderCell, readAtlas } from "@/lib/services/atlasCodec";
 import { hydrateRenderCells } from "@/lib/services/renderCellDerive";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import type { ExactCellSource } from "@/lib/services/cellCodecService";
@@ -35,6 +41,17 @@ import {
 	type FreedrawGrid,
 	type FreedrawPattern,
 } from "@/lib/freedraw/pattern";
+import {
+	BUBBLE_FILES,
+	BUBBLE_GRID_ORDER,
+	bubbleFamilyLabel,
+	bubbleRenderCell,
+	type BubbleGrid,
+	type BubblePattern,
+} from "@/lib/bubble/pattern";
+
+/** The bubble shelf's sub ids, one per lattice. */
+export const BUBBLE_GRID_SUBS = BUBBLE_GRID_ORDER.map((g) => `bub-${g}`);
 import {
 	hypEdgesBaseLabel,
 	hypEdgesFamilyLabel,
@@ -179,7 +196,7 @@ export type PolygonMode = "all" | "any" | "only";
 
 export interface ReferenceTiling {
 	id: string; // "t4001" (galebach) | "myers-k1-star-03" (myers) | "ctrnact-07_..." (ctrnact)
-	source: "galebach" | "myers" | "ctrnact" | "ctrnact-star" | "composable" | "isotoxal" | "mixed" | "scaled" | "polyomino" | "islamic" | "freedraw" | "colors" | "hyperbolic" | "spherical" | "hollow" | "period" | "tri45" | "planigon" | "penrose" | "euhalf" | "lengthparam";
+	source: "galebach" | "myers" | "ctrnact" | "ctrnact-star" | "composable" | "isotoxal" | "mixed" | "scaled" | "polyomino" | "islamic" | "freedraw" | "bubble" | "colors" | "hyperbolic" | "spherical" | "hollow" | "period" | "tri45" | "planigon" | "penrose" | "euhalf" | "lengthparam";
 	/** Which half-polygon board an `euhalf` row belongs to ("hexv", "pent", "hexm", "sqmid"); absent
 	 *  elsewhere. The sub-axis needs it because the four boards share one source. */
 	euHalfBoard?: string;
@@ -233,6 +250,11 @@ export interface ReferenceTiling {
 	// so the two are browsable together, but every surface that shows it (card sub-line, /play nav header +
 	// info panel, the catalogue tree's k rows) must say "grid points", never "vertices".
 	freedraw?: FreedrawPattern;
+	/** Bubble shelf: which lattice the substrate is — the shelf's sub axis, so the tree gets one
+	 *  folder per lattice. A bare string and not the pattern: a bubble tiling ships a plain `renderCell`
+	 *  like every other Euclidean row, so there is no payload to carry, and a string keeps the sub axis
+	 *  from firing the lazy renderCell accessor over the whole corpus. */
+	bubbleGrid?: BubbleGrid;
 	// Colored-tiling shelf only: a periodic 2-coloring of the square grid (lib/colors/pattern.ts, decoded
 	// from Čtrnáct's PT certificates to public/colors/squares-2-k*.json). Its presence routes /play + the
 	// thumbnails to the colors renderer the way `freedraw` routes to the grid view — `renderCell` is a
@@ -433,7 +455,7 @@ export const EUHALF_SHARD_KS = [5, 6, 7, 8, 9];
 // tileClass, the primary shelf axis: "convex" (convex-irregular) iff the tiling comes from the convex
 // unit-edge super-tile demo (source-driven — source "composable" — since it has no "*" token); else
 // "star" iff its family carries a star token ("n*"); "regular" otherwise. Matches polygonClassLabel.
-export type TileClass = "regular" | "star" | "hollow" | "convex" | "isotoxal" | "mixed" | "scaled" | "period" | "polyomino" | "islamic" | "freedraw" | "colors" | "hyperbolic" | "spherical" | "edgelen";
+export type TileClass = "regular" | "star" | "hollow" | "convex" | "isotoxal" | "mixed" | "scaled" | "period" | "polyomino" | "islamic" | "freedraw" | "bubble" | "colors" | "hyperbolic" | "spherical" | "edgelen";
 // Bonner's design systems — the sub-facet axis for the Islamic class (docs/ISLAMIC_TILINGS.md). The
 // underlying tessellation's tile kit, independent of the strap-pattern family (acute/median/obtuse).
 /** The palettes inside the "Multiple edge lengths" class — its sub-facet axis, the way IslamicSystem
@@ -463,6 +485,7 @@ export function tileClassOf(t: { family: string; source?: ReferenceTiling["sourc
 	if (t.source === "polyomino") return "polyomino";
 	if (t.source === "islamic") return "islamic";
 	if (t.source === "freedraw") return "freedraw";
+	if (t.source === "bubble") return "bubble";
 	if (t.source === "colors") return "colors";
 	if (t.family.includes("cx")) return "convex";
 	if (t.family.includes("α")) return "isotoxal";
@@ -472,7 +495,7 @@ export function tileClassOf(t: { family: string; source?: ReferenceTiling["sourc
 // Single source of truth for the tile-class axis, consumed by BOTH /library (filter chips) and /play
 // (catalogue groups). To add a class: one entry here + one tileClassOf branch + one bestEffort fetch in
 // loadReferenceAtlas — and it appears on both pages. No per-page class list to keep in sync.
-export const TILE_CLASS_ORDER: TileClass[] = ["regular", "star", "hollow", "convex", "isotoxal", "mixed", "scaled", "period", "edgelen", "polyomino", "islamic", "freedraw", "colors", "hyperbolic", "spherical"];
+export const TILE_CLASS_ORDER: TileClass[] = ["regular", "star", "hollow", "convex", "isotoxal", "mixed", "scaled", "period", "edgelen", "polyomino", "islamic", "freedraw", "bubble", "colors", "hyperbolic", "spherical"];
 export const TILE_CLASS_LABEL: Record<TileClass, { short: string; long: string }> = {
 	regular: { short: "Regular", long: "Regular polygons" },
 	star: { short: "Star", long: "Star polygons" },
@@ -488,6 +511,9 @@ export const TILE_CLASS_LABEL: Record<TileClass, { short: string; long: string }
 	polyomino: { short: "Polyominoes", long: "Polyominoes" },
 	islamic: { short: "Islamic", long: "Islamic geometric systems" },
 	freedraw: { short: "Freedraw", long: "Freedraw edge patterns" },
+	// The second edge system, and the first with a COMPLEMENTARY matching rule: freedraw's two
+	// sides of an edge agree, a bubble tile's must differ (a bump meets a bite).
+	bubble: { short: "Bubble", long: "Bubble tiles" },
 	colors: { short: "Colored", long: "Colored tilings" },
 	hyperbolic: { short: "Hyperbolic", long: "Hyperbolic tilings" },
 	spherical: { short: "Spherical", long: "Spherical tilings" },
@@ -527,6 +553,10 @@ export const SUB_ORDER = [
 	// four depths of one. `lib/tilings/eu-half.ts` says why there are exactly four.
 	...EU_HALF_BOARDS.map(euHalfSubOfBoard),
 	...FREEDRAW_GRID_SUBS,
+	// Bubble tiles, one row per LATTICE: the four triangular tiles, the six square ones and the fourteen
+	// hexagonal ones are three catalogues, not three depths of one — same reasoning as the half-polygon
+	// boards above. Contiguous, and adjacent to the freedraw grids because both are edge systems.
+	...BUBBLE_GRID_SUBS,
 	// Colors: grid-major, then palette size — "square-2" is every 2-coloring of the 4^4 grid.
 	"square-2",
 	"square-3",
@@ -608,6 +638,7 @@ export const SUB_ORDER = [
  */
 export type SubFamily =
 	| "grid"
+	| "bubble-grid"
 	| "schwarz-eu"
 	| "grid-colors"
 	| "platonic"
@@ -652,6 +683,7 @@ export function familyOfSub(sub: string): SubFamily | null {
 	// The base hyperbolic shelf: one family per valence, "hyt-v8". A regex and not a table, because the
 	// six families are the six valences the corpus contains and hypTilingFamilyOfSub is the one place
 	// that parses the id.
+	if (sub.startsWith("bub-")) return "bubble-grid";
 	if (sub.startsWith("hyt-")) return hypTilingFamilyOfSub(sub) as SubFamily | null;
 	if (sub === "sch236" || sub === "sch244") return "schwarz-eu";
 	if (/^(square|triangle|hex|ts)$/.test(sub)) return "grid";
@@ -662,6 +694,9 @@ export function familyOfSub(sub: string): SubFamily | null {
 
 export function subOf(t: {
 	source?: ReferenceTiling["source"];
+	/** The bubble shelf's lattice. A bare string and not the pattern, so the sub axis costs no geometry
+	 *  and never fires the lazy renderCell accessor. */
+	bubbleGrid?: BubbleGrid;
 	/** The base hyperbolic shelf has no board object to key on — its axis comes off the configuration. */
 	family?: string;
 	/** The four Euclidean half-polygon boards share one source, so the board comes off the row. */
@@ -681,6 +716,7 @@ export function subOf(t: {
 	pentEdges?: PentEdgeRecord;
 	ihEdges?: IhEdgeRecord;
 }): string {
+	if (t.bubbleGrid) return `bub-${t.bubbleGrid}`;
 	if (t.source === "tri45") return "el-tri45";
 	if (t.source === "planigon") return "el-planigon";
 	if (t.source === "penrose") return "el-penrose";
@@ -724,15 +760,64 @@ export function subOf(t: {
 // before freedraw and colors. Within hyperbolic and spherical it corrects a real inversion: "hyperbolic"
 // and "spherical" sort LAST in TILE_CLASS_ORDER, so the developed patches used to trail the edge patterns
 // and colorings that decorate them.
+// Rank tables, so the three axes cost a hash lookup and not a linear scan of the order arrays. An id
+// the table does not know sorts last, which is what `indexOf`'s -1 did NOT do.
+//
+// Built on first use, not at module scope: DECORATION_ORDER is declared further down this file, and a
+// const initialised up here would read it in its temporal dead zone.
+let RANKS: { dec: Map<string, number>; cls: Map<string, number>; sub: Map<string, number> } | null = null;
+function ranks() {
+	if (!RANKS)
+		RANKS = {
+			dec: new Map(DECORATION_ORDER.map((d, i) => [d as string, i])),
+			cls: new Map(TILE_CLASS_ORDER.map((c, i) => [c as string, i])),
+			sub: new Map(SUB_ORDER.map((sub, i) => [sub as string, i])),
+		};
+	return RANKS;
+}
+const rank = (m: Map<string, number>, key: string) => m.get(key) ?? m.size;
+
 export function compareCatalogueDisplayOrder(a: CatalogueTiling, b: CatalogueTiling): number {
-	const dec = DECORATION_ORDER.indexOf(decorationOf(a)) - DECORATION_ORDER.indexOf(decorationOf(b));
+	const r = ranks();
+	const dec = rank(r.dec, decorationOf(a)) - rank(r.dec, decorationOf(b));
 	if (dec) return dec;
-	const cls = TILE_CLASS_ORDER.indexOf(tileClassOf(a)) - TILE_CLASS_ORDER.indexOf(tileClassOf(b));
+	const cls = rank(r.cls, tileClassOf(a)) - rank(r.cls, tileClassOf(b));
 	if (cls) return cls;
-	const sub = SUB_ORDER.indexOf(subOf(a)) - SUB_ORDER.indexOf(subOf(b));
+	const sub = rank(r.sub, subOf(a)) - rank(r.sub, subOf(b));
 	if (sub) return sub;
 	if (a.k !== b.k) return a.k - b.k;
 	return a.canonicalKey < b.canonicalKey ? -1 : a.canonicalKey > b.canonicalKey ? 1 : 0;
+}
+
+/**
+ * The same order, for a WHOLE list, without paying for the keys once per comparison.
+ *
+ * `compareCatalogueDisplayOrder` derives three keys from each side every time it is called, and two of
+ * them (tileClassOf, subOf) walk strings. A sort makes n log n calls, so on /play's accumulated corpus
+ * that was ~5.5 million derivations of ~300k distinct answers: 1.05 s of the 3.96 s a chip switch cost,
+ * measured, and it re-ran on every shard that merged.
+ *
+ * Deriving each record's key ONCE and sorting on the keys is the same order by construction — the
+ * comparison below is field-for-field what the comparator does, and the test that pins the order runs
+ * against both.
+ */
+export function sortCatalogueForDisplay<T extends CatalogueTiling>(rows: readonly T[]): T[] {
+	const r = ranks();
+	const keyed = rows.map((t) => ({
+		t,
+		dec: rank(r.dec, decorationOf(t)),
+		cls: rank(r.cls, tileClassOf(t)),
+		sub: rank(r.sub, subOf(t)),
+		k: t.k,
+		key: t.canonicalKey,
+	}));
+	keyed.sort((x, y) =>
+		x.dec - y.dec ||
+		x.cls - y.cls ||
+		x.sub - y.sub ||
+		x.k - y.k ||
+		(x.key < y.key ? -1 : x.key > y.key ? 1 : 0));
+	return keyed.map((e) => e.t);
 }
 
 // The geometry axis — the /play catalogue's top-level split (Euclidean / hyperbolic / spherical), one
@@ -786,7 +871,7 @@ export type Decoration = "tilings" | "edges" | "colorings";
 // decoration classes, and referenceAtlas.displayOrder.test.ts asserts the mapping is total.
 export function decorationOf(t: { family: string; source?: ReferenceTiling["source"] }): Decoration {
 	const c = tileClassOf(t);
-	if (c === "freedraw") return "edges";
+	if (c === "freedraw" || c === "bubble") return "edges";
 	if (c === "colors") return "colorings";
 	return "tilings";
 }
@@ -1428,6 +1513,7 @@ export function referenceToCatalogue(r: ReferenceTiling): CatalogueTiling {
 		wallpaperGroup: r.wallpaperGroup,
 		latticeShape: r.latticeShape,
 		freedraw: r.freedraw,
+		bubbleGrid: r.bubbleGrid,
 		colors: r.colors,
 		hollow: r.hollow,
 		sphericalFreedraw: r.sphericalFreedraw,
@@ -1450,22 +1536,9 @@ export function referenceToCatalogue(r: ReferenceTiling): CatalogueTiling {
 	// laziness entirely: the adapter, not the renderer, decides what gets materialised. Sixteen merge
 	// sites do this, so it is the whole corpus every time a shard lands too.
 	//
-	// The getter collapses to a plain value on first read, so a card that actually draws pays once and
-	// `{...t}` behaves normally afterwards.
-	Object.defineProperty(out, "renderCell", {
-		configurable: true,
-		enumerable: true,
-		get() {
-			const cell = r.renderCell;
-			Object.defineProperty(out, "renderCell", {
-				value: cell,
-				writable: true,
-				enumerable: true,
-				configurable: true,
-			});
-			return cell;
-		},
-	});
+	// Non-enumerable, so that a prop walk cannot do the same thing the adapter is careful not to do:
+	// React DEV's render logging read all 6,200 of these on every /play open. See defineLazyRenderCell.
+	defineLazyRenderCell(out, () => r.renderCell);
 	return out;
 }
 
@@ -2435,6 +2508,62 @@ export async function loadFreedrawDecorAtlas(): Promise<ReferenceTiling[]> {
 		.then((rows) => { fdDecorCache = rows; fdDecorInflight = null; return rows; })
 		.catch((err) => { fdDecorInflight = null; throw err; });
 	return fdDecorInflight;
+}
+
+function bubbleToReference(p: BubblePattern): ReferenceTiling {
+	const out: ReferenceTiling = {
+		id: p.id,
+		source: "bubble",
+		k: p.k,
+		family: bubbleFamilyLabel(p),
+		// A REAL translational cell, not freedraw's throwaway: a bubble tiling is an ordinary periodic
+		// tiling whose tiles have curved edges, so every existing surface draws it and it inherits fill
+		// mode, line stroke, hue shift, rotation and the conformal lens with no renderer of its own.
+		// Installed lazily below, NOT built here — see the note after the return.
+		renderCell: undefined as unknown as ReferenceTiling["renderCell"],
+		// The polygon facets, stated rather than left for the reader to derive. A bubble tile is bounded
+		// by circular arcs, so "which regular polygon is this" has no answer, and the flattened arc a
+		// walk would measure is a hundred-gon that means nothing. Saying so on the record is also what
+		// keeps /library's facet memos off this shelf: polygonSpeciesOf and tilePeriodsOf read these
+		// fields first and only walk `renderCell` when they are missing, and walking is what built
+		// every one of these cells on the Edge patterns chip.
+		polygonSpecies: EMPTY_SPECIES,
+		tilePeriods: EMPTY_PERIODS,
+		bubbleGrid: p.grid,
+		geometry: "euclidean",
+		discoverer: "Chase, Field & McCluer",
+		// CANDIDATE, and it stays that way until something independent enumerates the family. What
+		// this slice DOES check: all 74 develop with no failures, every glue joins two complementary
+		// edge types, and every solution satisfies the balance equation — which is the handshake
+		// identity for the induced orientation of the dual graph, so it fails exactly when an edge
+		// got a bump on both sides. It also reproduces all four of the paper's Figure 13 two-tile
+		// tilings. That is the decoder checking itself plus one published cross-check, not an
+		// independent enumeration.
+		certification: "candidate",
+	};
+	// Curved-edge geometry is the most expensive cell the atlas builds — arcs flattened to cubics, per
+	// face — and the shelf ships 35 MB of bubble patterns, of which a page draws 25. Deriving it on
+	// first read is the same bargain the ℤ[ζ₂₄] cells already take.
+	defineLazyRenderCell(out, () => bubbleRenderCell(p));
+	return out;
+}
+
+let bubDecorCache: ReferenceTiling[] | null = null;
+let bubDecorInflight: Promise<ReferenceTiling[]> | null = null;
+/** Bubble tilings — 34 KB in one file, so this is eager where freedraw shards. */
+export async function loadBubbleDecorAtlas(): Promise<ReferenceTiling[]> {
+	if (bubDecorCache) return bubDecorCache;
+	if (bubDecorInflight) return bubDecorInflight;
+	bubDecorInflight = Promise.all(
+			BUBBLE_FILES.map((url) =>
+				fetch(url)
+					.then((res) => (res.ok ? readAtlas<BubblePattern>(res) : []))
+					.catch(() => [] as BubblePattern[]),
+			),
+		).then((lists) => lists.flat().map(bubbleToReference))
+		.then((rows) => { bubDecorCache = rows; bubDecorInflight = null; return rows; })
+		.catch((err) => { bubDecorInflight = null; throw err; });
+	return bubDecorInflight;
 }
 
 let colDecorCache: ReferenceTiling[] | null = null;

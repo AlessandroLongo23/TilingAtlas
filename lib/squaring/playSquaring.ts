@@ -27,7 +27,7 @@
 
 import { parseBaseCell, type TranslationalCellData } from "@/lib/utils/renderTiling";
 import { sizeHue } from "@/lib/utils/paramCell";
-import { surfaceOf } from "@/lib/services/shelfRegistry";
+import { hasCurvedTiles, surfaceOf } from "@/lib/services/shelfRegistry";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import { buildTorusMap, halfTurn, type TorusCell, type TorusMap } from "./torusMap";
 import { squareTorus, type TorusSquaring } from "./torusSquaring";
@@ -114,6 +114,8 @@ export function squaringAvailability(t: CatalogueTiling | null | undefined): Squ
 	// Euclidean tiling and is the only surface with a period lattice AND real tile bodies. Hollow draws
 	// on its own canvas from self-intersecting faces, and every disk/sphere surface is the wrong genus.
 	if (surfaceOf(t) !== "flat") return { ok: false, reason: "geometry" };
+	// A squared torus cuts the cell into rectangles, which a curved tile boundary cannot bound.
+	if (hasCurvedTiles(t)) return { ok: false, reason: "geometry" };
 
 	const key = t.canonicalKey;
 	const hit = supportCache.get(key);

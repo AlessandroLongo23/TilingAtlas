@@ -424,6 +424,10 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 							    sets in that class and tells the reader nothing about the tiling in front of them. */}
 							k={tiling.k} ·{" "}
 							{edgeBoardOf(tiling) ? EDGE_BOARD_LABEL[edgeBoardOf(tiling)!] : TILE_CLASS_LABEL[tileClassOf(tiling)].long}
+							{/* A bubble tiling has no vertex configuration to name it by — the substrate is always
+							    the same triangular tiling — so the PROTOTILE SET is the identity, the way the colour
+							    census is for a colouring. "T0×1 T3×1" is the paper's T{0,3}(1:1). */}
+							{tileClassOf(tiling) === "bubble" ? ` · ${tiling.family}` : ""}
 						</p>
 						{classLabel || tiling.wallpaperGroup ? (
 							<p

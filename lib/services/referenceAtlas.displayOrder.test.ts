@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
 	compareCatalogueDisplayOrder,
+	sortCatalogueForDisplay,
 	decorationOf,
 	tileClassOf,
 	DECORATION_ORDER,
@@ -142,6 +143,9 @@ describe("decorationOf", () => {
 		polyomino: T({ canonicalKey: "p", k: 1, source: "polyomino" }),
 		islamic: T({ canonicalKey: "is", k: 1, source: "islamic" }),
 		freedraw: T({ canonicalKey: "fd", k: 1, source: "freedraw" }),
+		// The second occupant of the edges segment: freedraw's two sides of an edge agree, a bubble
+		// tile's must differ. Both are edge systems, so both must land in "edges".
+		bubble: T({ canonicalKey: "bt", k: 1, source: "bubble" }),
 		colors: T({ canonicalKey: "co", k: 1, source: "colors" }),
 		hyperbolic: T({ canonicalKey: "hy", k: 1, source: "hyperbolic" }),
 		spherical: T({ canonicalKey: "sp", k: 1, source: "spherical" }),
@@ -155,14 +159,49 @@ describe("decorationOf", () => {
 		}
 	});
 
-	// The two decoration classes are the ONLY ones outside Tilings. Stated positively so that adding a
-	// class here is a deliberate edit, not a silent default.
-	it("routes freedraw to edges, colors to colorings, everything else to tilings", () => {
+	// The decoration classes are the ONLY ones outside Tilings. Stated positively so that adding a
+	// class here is a deliberate edit, not a silent default. Two of them share the edges segment:
+	// freedraw and bubble are both edge systems, differing in the matching rule (agree vs differ).
+	it("routes freedraw and bubble to edges, colors to colorings, everything else to tilings", () => {
 		expect(decorationOf(BY_CLASS.freedraw)).toBe("edges");
+		expect(decorationOf(BY_CLASS.bubble)).toBe("edges");
 		expect(decorationOf(BY_CLASS.colors)).toBe("colorings");
 		for (const cls of TILE_CLASS_ORDER) {
-			if (cls === "freedraw" || cls === "colors") continue;
+			if (cls === "freedraw" || cls === "bubble" || cls === "colors") continue;
 			expect(decorationOf(BY_CLASS[cls]), `class "${cls}" left the Tilings segment`).toBe("tilings");
 		}
+	});
+	// The anti-drift gate. sortCatalogueForDisplay derives each record's keys ONCE and sorts on those,
+	// which is the whole reason a chip switch is affordable; it is a second expression of the comparator
+	// above and would otherwise be free to disagree with it. Every fixture in this file, sorted both
+	// ways, must come out in the same order.
+	it("sortCatalogueForDisplay agrees with the comparator on every fixture here", () => {
+		const pools: CatalogueTiling[][] = [
+			TILE_CLASS_ORDER.map((cls) => BY_CLASS[cls]),
+			[
+				T({ canonicalKey: "r1", k: 1, family: "3.3.3.3.3.3" }),
+				T({ canonicalKey: "r2b", k: 2, family: "3.3.3.3.3.3" }),
+				T({ canonicalKey: "r2a", k: 2, family: "3.3.3.3.3.3" }),
+				T({ canonicalKey: "s1", k: 1, family: "5*2" }),
+				T({ canonicalKey: "fd1", k: 3, source: "freedraw" }),
+				T({ canonicalKey: "bub1", k: 2, source: "bubble" }),
+				T({ canonicalKey: "col1", k: 1, source: "colors" }),
+				T({ canonicalKey: "hyp1", k: 4, source: "hyperbolic" }),
+			],
+		];
+		for (const pool of pools) {
+			const viaComparator = [...pool].sort(compareCatalogueDisplayOrder).map((t) => t.canonicalKey);
+			const viaKeyedSort = sortCatalogueForDisplay(pool).map((t) => t.canonicalKey);
+			expect(viaKeyedSort).toEqual(viaComparator);
+		}
+	});
+
+	// It must not mutate its input either: /play holds `working` across renders and sorts it every time
+	// a shard merges, so an in-place sort would reorder the array React is still holding.
+	it("sortCatalogueForDisplay leaves its input alone", () => {
+		const pool = TILE_CLASS_ORDER.map((cls) => BY_CLASS[cls]);
+		const before = pool.map((t) => t.canonicalKey);
+		sortCatalogueForDisplay(pool);
+		expect(pool.map((t) => t.canonicalKey)).toEqual(before);
 	});
 });

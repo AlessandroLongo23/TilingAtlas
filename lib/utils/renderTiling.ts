@@ -9,6 +9,17 @@ export interface RawPolygon {
 	 *  whose boundary side count doesn't distinguish the pieces — a per-piece identity hue does. */
 	hue?: number;
 	/**
+	 * Indices into `vertices` that are TRUE TILE CORNERS, for a ring whose curved edges arrived
+	 * FLATTENED into many short segments. Absent on a straight-edged ring, where every vertex is a
+	 * corner and the distinction does not exist.
+	 *
+	 * Everything that reads a ring as a polygon needs this, because a flattening point is not a corner
+	 * and must not be treated as one: `showPolygonPoints` was dotting every subdivision blue and every
+	 * subdivision midpoint green, and `medianEdge` — which sizes thumbnails — was measuring the
+	 * flattening resolution instead of the tile's edge.
+	 */
+	corners?: number[];
+	/**
 	 * An open polyline: stroked along vertices 0..n-1 and NOT closed, with no fill.
 	 *
 	 * The isohedral shelf's interior markings are the only user. A mark is a drawn ⌐, the way Grünbaum
@@ -33,6 +44,10 @@ interface CellPolyData {
 	star?: boolean;
 	hue?: number;
 	open?: boolean;
+	/** Indices into `v` that are TRUE TILE CORNERS, when the ring's curved edges arrive flattened.
+	 *  Additive: no other cell sets it, and every existing cell keeps the every-vertex-is-a-corner
+	 *  reading byte for byte. See RawPolygon.corners for why every polygon consumer needs it. */
+	corners?: number[];
 }
 
 export interface BaseCell {
@@ -211,12 +226,23 @@ export function parseBaseCell(cell: TranslationalCellData): BaseCell | null {
 			if (v.y < minY) minY = v.y;
 			if (v.y > maxY) maxY = v.y;
 		}
-		for (let i = 0; i < verts.length; i++) {
-			const a = verts[i];
-			const b = verts[(i + 1) % verts.length];
-			edges.push(Math.hypot(b.x - a.x, b.y - a.y));
+		// Corner to corner where the ring declares its corners, segment to segment otherwise. The
+		// chord between two corners IS the tile's edge length, which is the quantity medianEdge is for.
+		const cs = poly.corners;
+		if (cs && cs.length >= 3) {
+			for (let i = 0; i < cs.length; i++) {
+				const a = verts[cs[i]];
+				const b = verts[cs[(i + 1) % cs.length]];
+				if (a && b) edges.push(Math.hypot(b.x - a.x, b.y - a.y));
+			}
+		} else {
+			for (let i = 0; i < verts.length; i++) {
+				const a = verts[i];
+				const b = verts[(i + 1) % verts.length];
+				edges.push(Math.hypot(b.x - a.x, b.y - a.y));
+			}
 		}
-		polys.push({ n: poly.n ?? verts.length, vertices: verts, star: poly.star === true || ((poly.n ?? verts.length) >= 3 && verts.length === 2 * (poly.n ?? verts.length)), hue: poly.hue, open: poly.open });
+		polys.push({ corners: poly.corners, n: poly.n ?? verts.length, vertices: verts, star: poly.star === true || ((poly.n ?? verts.length) >= 3 && verts.length === 2 * (poly.n ?? verts.length)), hue: poly.hue, open: poly.open });
 	}
 	if (polys.length === 0 || edges.length === 0) return null;
 	edges.sort((a, b) => a - b);

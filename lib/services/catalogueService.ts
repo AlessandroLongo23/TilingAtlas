@@ -56,6 +56,8 @@ export interface CatalogueTiling {
 	// the thumbnails to the 2D grid renderer — freedraw has no polygon cell, so `renderCell` is a throwaway
 	// and is never drawn. NOTE its `k` counts GRID-POINT orbits, not vertex orbits (see ReferenceTiling).
 	freedraw?: import("@/lib/freedraw/pattern").FreedrawPattern;
+	/** Bubble shelf: which lattice the substrate is — the shelf's sub axis. */
+	bubbleGrid?: import("@/lib/bubble/pattern").BubbleGrid;
 	// Colored-tiling shelf only: a periodic 2-coloring of the square grid. Its presence routes /play + the
 	// thumbnails to the colors renderer — `renderCell` is a throwaway. `k` counts COLORED VERTEX classes
 	// (vertex orbits under color-preserving symmetry; see ReferenceTiling.colors).

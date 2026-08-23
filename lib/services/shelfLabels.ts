@@ -53,6 +53,10 @@ export const COLOR_SUB = /^(square|triangle|hex|ts)-(\d+)$/;
 export const FAMILY_LABEL: Record<string, string> = {
 	grid: "Regular grids",
 	"grid-colors": "Regular grids",
+	// Bubble tiles get their own family row rather than joining "Regular grids": the lattice is the
+	// SUBSTRATE the tiles decorate, and its tile set differs per lattice (4 triangular, 6 square,
+	// 14 hexagonal), so these are three catalogues and not three views of one.
+	"bubble-grid": "Bubble lattices",
 	"schwarz-eu": "Schwarz boards",
 	"schwarz-board": "Schwarz boards",
 	platonic: "Platonic solids",
@@ -202,6 +206,10 @@ const NAMED: Record<string, string> = {
  * better name than its number.
  */
 export const SUB_LABEL: Record<string, string> = {
+	// One per bubble lattice. Named by the substrate polygon, which is what the tile set follows from.
+	"bub-triangle": "Triangle lattice",
+	"bub-square": "Square lattice",
+	"bub-hex": "Hexagon lattice",
 	// The palettes under "Different edge lengths".
 	"el-tri45": "Triangles and squares",
 	"el-planigon": "Planigons",

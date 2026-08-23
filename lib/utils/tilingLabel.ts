@@ -2,7 +2,7 @@
 // lib/services/referenceAtlas.ts (source-driven, with a family-token fallback for source-less rows) —
 // and both /library and /play read it through the TILE_CLASS_LABEL registry. This file only adds the
 // capability gate below, which is keyed on the RENDERER rather than the class — see the note on it.
-import { surfaceOf, type ShelfSurface } from "@/lib/services/shelfRegistry";
+import { hasCurvedTiles, surfaceOf, type ShelfSurface } from "@/lib/services/shelfRegistry";
 
 // The Hankin construction is shape-agnostic — it reads only vertices, edge midpoints, centroid, and
 // per-edge inward normals — so it applies to every tile class the catalogue ships. Scaled tiles carry
@@ -32,5 +32,7 @@ import { surfaceOf, type ShelfSurface } from "@/lib/services/shelfRegistry";
 const ISLAMIC_SURFACES: ReadonlySet<ShelfSurface> = new Set<ShelfSurface>(["flat", "disk", "sphere"]);
 
 export function polygonClassSupportsIslamic(t: Parameters<typeof surfaceOf>[0]): boolean {
-	return ISLAMIC_SURFACES.has(surfaceOf(t));
+	// Curved tiles are the one exclusion the surface alone does not catch: the construction reads
+	// per-edge inward normals, and a flattened arc presents dozens of them where the tile has one.
+	return ISLAMIC_SURFACES.has(surfaceOf(t)) && !hasCurvedTiles(t);
 }

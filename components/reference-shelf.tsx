@@ -64,6 +64,7 @@ import {
 	loadIsohedralEdgesShard,
 	loadColorsDecorAtlas,
 	loadFreedrawDecorAtlas,
+	loadBubbleDecorAtlas,
 	loadHyperbolicBaseAtlas,
 	loadHyperbolicPolyAtlas,
 	loadHyperbolicPolyShard,
@@ -711,6 +712,11 @@ export function ReferenceShelf() {
 	const [heLoaded, setHeLoaded] = useState<Set<string>>(new Set());
 	useEffect(() => {
 		if (filters.geometry !== "hyperbolic") return;
+		// Decoration shelf, so the chip gates it and not the geometry. These rows are decoration
+		// "edges"; a Tilings view cannot show one, yet entering the geometry fetched them all.
+		// Measured on /library?geo=spherical: 321 JSON requests, 147 long tasks and 17.6 s of
+		// blocking, of which 207 requests were decoration shelves nothing on screen could display.
+		if (filters.decoration !== "edges") return;
 		// Wait for the base atlas: its own load does setTilings(d) (a REPLACE), so a merge that landed first
 		// would be clobbered. Gating on `tilings` and depending on it re-runs the merge once the base is in.
 		if (!tilings) return;
@@ -738,7 +744,7 @@ export function ReferenceShelf() {
 		return () => {
 			alive = false;
 		};
-	}, [filters.geometry, filters.kValue, heLoaded, tilings]);
+	}, [filters.geometry, filters.decoration, filters.kValue, heLoaded, tilings]);
 
 	// Parametric-pentagon edge systems — EUCLIDEAN, so this effect runs under the plane, unlike every
 	// other Čtrnáct edge shelf. Eager slices (k = 2, 4, 6) arrive with the geometry; k = 8 and 10 are
@@ -747,6 +753,7 @@ export function ReferenceShelf() {
 	useEffect(() => {
 		if ((filters.geometry ?? "euclidean") !== "euclidean") return;
 		if (!tilings) return; // wait for the base atlas (its setTilings is a REPLACE)
+		const dec = filters.decoration;
 		let alive = true;
 		const merge = (data: ReferenceTiling[], token: string) => {
 			if (!alive || !data.length) return;
@@ -758,11 +765,16 @@ export function ReferenceShelf() {
 			});
 			setPenLoaded((s) => new Set(s).add(token));
 		};
-		if (!penLoaded.has("pen-eager")) {
+		// Behind the Edge patterns chip, exactly like freedraw and bubble: these records are
+		// decoration="edges" (source "freedraw" -> tileClassOf "freedraw" -> decorationOf "edges"), so
+		// they are only ever VISIBLE under that chip, and the eager slices were nonetheless fetched on
+		// every Euclidean open. Measured on /play: pentagon + isohedral were 53 of the 80 JSON requests
+		// a default open made, for rows the current chip cannot show.
+		if (dec === "edges" && !penLoaded.has("pen-eager")) {
 			loadPentagonEdgesAtlas().then((d) => merge(d, "pen-eager")).catch(() => {});
 		}
 		const k = filters.kValue;
-		if (k != null) {
+		if (dec === "edges" && k != null) {
 			for (const b of pentEdgeLazyShardsForK(k)) {
 				const token = `pen-${b.id}-${k}`;
 				if (penLoaded.has(token)) continue;
@@ -772,7 +784,7 @@ export function ReferenceShelf() {
 		return () => {
 			alive = false;
 		};
-	}, [filters.geometry, filters.kValue, penLoaded, tilings]);
+	}, [filters.geometry, filters.decoration, filters.kValue, penLoaded, tilings]);
 
 	// Parametric-isohedral edge systems — EUCLIDEAN too, and the same lazy shape as the pentagon board
 	// above. Eager slices (k = 2…10) arrive with the geometry; k = 12 and 14 are 14.1 and 35.0 MB and
@@ -781,6 +793,7 @@ export function ReferenceShelf() {
 	useEffect(() => {
 		if ((filters.geometry ?? "euclidean") !== "euclidean") return;
 		if (!tilings) return; // wait for the base atlas (its setTilings is a REPLACE)
+		const dec = filters.decoration;
 		let alive = true;
 		const merge = (data: ReferenceTiling[], token: string) => {
 			if (!alive || !data.length) return;
@@ -792,11 +805,11 @@ export function ReferenceShelf() {
 			});
 			setIhLoaded((s) => new Set(s).add(token));
 		};
-		if (!ihLoaded.has("ih-eager")) {
+		if (dec === "edges" && !ihLoaded.has("ih-eager")) {
 			loadIsohedralEdgesAtlas().then((d) => merge(d, "ih-eager")).catch(() => {});
 		}
 		const k = filters.kValue;
-		if (k != null) {
+		if (dec === "edges" && k != null) {
 			for (const b of ihEdgeLazyShardsForK(k)) {
 				const token = `ih-${b.id}-${k}`;
 				if (ihLoaded.has(token)) continue;
@@ -806,7 +819,7 @@ export function ReferenceShelf() {
 		return () => {
 			alive = false;
 		};
-	}, [filters.geometry, filters.kValue, ihLoaded, tilings]);
+	}, [filters.geometry, filters.decoration, filters.kValue, ihLoaded, tilings]);
 
 	// Schwarz-triangle edge systems — the freedraw class on a (p,q,r) mirror board. Same lazy shape as the
 	// {p,q} edge systems, but it spans BOTH curved geometries, so the effect runs under either and pulls
@@ -816,6 +829,11 @@ export function ReferenceShelf() {
 	useEffect(() => {
 		const geo = filters.geometry;
 		if (geo !== "hyperbolic" && geo !== "spherical") return;
+		// Decoration shelf, so the chip gates it and not the geometry. These rows are decoration
+		// "edges"; a Tilings view cannot show one, yet entering the geometry fetched them all.
+		// Measured on /library?geo=spherical: 321 JSON requests, 147 long tasks and 17.6 s of
+		// blocking, of which 207 requests were decoration shelves nothing on screen could display.
+		if (filters.decoration !== "edges") return;
 		if (!tilings) return; // wait for the base atlas (its setTilings is a REPLACE, see the edge-systems effect)
 		let alive = true;
 		const merge = (data: ReferenceTiling[], token: string) => {
@@ -843,7 +861,7 @@ export function ReferenceShelf() {
 		return () => {
 			alive = false;
 		};
-	}, [filters.geometry, filters.kValue, schLoaded, tilings]);
+	}, [filters.geometry, filters.decoration, filters.kValue, schLoaded, tilings]);
 
 	// Uniform-polyhedron edge systems (spherical) and the 3.4.n.4 tilings (hyperbolic) — one shelf per
 	// curved geometry, same lazy shape: eager slices with the geometry, dense tails on their k chip.
@@ -873,7 +891,11 @@ export function ReferenceShelf() {
 		// to zero (AL found it, 2026-08-22). With a token each the loser is simply re-issued on the next
 		// run and resolves off `sphPolyCache` with no second fetch.
 		if (geo === "spherical") {
-			if (!xLoaded.has(eagerToken)) {
+			// The uniform-polyhedron EDGE systems are decoration "edges" (145 of the 321 requests a
+			// spherical open made); the polyhedra themselves are tilings and stay with the geometry.
+			// One guard per load, per the warning above — the decoration test is folded into this
+			// load's own guard and does not wrap the poly load below it.
+			if (filters.decoration === "edges" && !xLoaded.has(eagerToken)) {
 				loadSphericalEdgesAtlas().then((d) => merge(d, eagerToken)).catch(() => {});
 			}
 			if (!xLoaded.has(`${eagerToken}-poly`)) {
@@ -894,7 +916,7 @@ export function ReferenceShelf() {
 			if (geo === "spherical") {
 				for (const b of sphEdgesLazyShardsForK(k)) {
 					const token = `spe-${b.id}-${k}`;
-					if (!xLoaded.has(token)) loadSphericalEdgesShard(b.id, k).then((d) => merge(d, token)).catch(() => {});
+					if (filters.decoration === "edges" && !xLoaded.has(token)) loadSphericalEdgesShard(b.id, k).then((d) => merge(d, token)).catch(() => {});
 				}
 			} else {
 				for (const b of hypPolyLazyShardsForK(k)) {
@@ -913,7 +935,7 @@ export function ReferenceShelf() {
 		return () => {
 			alive = false;
 		};
-	}, [filters.geometry, filters.kValue, xLoaded, tilings]);
+	}, [filters.geometry, filters.decoration, filters.kValue, xLoaded, tilings]);
 
 	// The DECORATION catalogues, on their own effect and their own trigger.
 	//
@@ -928,6 +950,12 @@ export function ReferenceShelf() {
 	const [decorLoaded, setDecorLoaded] = useState<Set<string>>(new Set());
 	useEffect(() => {
 		if (!tilings) return; // the base atlas setTilings is a REPLACE; merging before it lands loses us
+		// Euclidean shelves, so the plane gates them as well as the chip. Freedraw, bubble and the
+		// colourings are all `geometry: "euclidean"`, and the geometry filter drops every one of them
+		// under a curved view — so fetching them there is 29 requests and ~1 MB for rows that cannot
+		// appear. This is NOT the old bug the note above records: that one required a CURVED geometry
+		// and so starved the chip everywhere; this asks for the geometry these records actually live in.
+		if ((filters.geometry ?? "euclidean") !== "euclidean") return;
 		const dec = filters.decoration;
 		let alive = true;
 		const merge = (data: ReferenceTiling[], token: string) => {
@@ -943,13 +971,18 @@ export function ReferenceShelf() {
 		if (dec === "edges" && !decorLoaded.has("decor-fd")) {
 			loadFreedrawDecorAtlas().then((d) => merge(d, "decor-fd")).catch(() => {});
 		}
+		// Bubble tiles are the second occupant of the Euclidean × edges cell, so they ride the same
+		// chip as freedraw and are told apart by the tile-class facet.
+		if (dec === "edges" && !decorLoaded.has("decor-bub")) {
+			loadBubbleDecorAtlas().then((d) => merge(d, "decor-bub")).catch(() => {});
+		}
 		if (dec === "colorings" && !decorLoaded.has("decor-col")) {
 			loadColorsDecorAtlas().then((d) => merge(d, "decor-col")).catch(() => {});
 		}
 		return () => {
 			alive = false;
 		};
-	}, [filters.decoration, tilings, decorLoaded]);
+	}, [filters.geometry, filters.decoration, tilings, decorLoaded]);
 
 	// Colored tilings in H² and on S² — the same lazy shape as the edge systems. The eager per-base/solid
 	// slices load once their geometry is entered (making the "Colorings" class chip appear); dense shards load
@@ -958,6 +991,11 @@ export function ReferenceShelf() {
 	useEffect(() => {
 		const geo = filters.geometry;
 		if (geo !== "hyperbolic" && geo !== "spherical") return;
+		// Decoration shelf, so the chip gates it and not the geometry. These rows are decoration
+		// "colorings"; a Tilings view cannot show one, yet entering the geometry fetched them all.
+		// Measured on /library?geo=spherical: 321 JSON requests, 147 long tasks and 17.6 s of
+		// blocking, of which 207 requests were decoration shelves nothing on screen could display.
+		if (filters.decoration !== "colorings") return;
 		if (!tilings) return; // wait for the base atlas (its setTilings is a REPLACE, see the edge-systems effect)
 		let alive = true;
 		const merge = (data: ReferenceTiling[], token: string) => {
@@ -989,7 +1027,7 @@ export function ReferenceShelf() {
 		return () => {
 			alive = false;
 		};
-	}, [filters.geometry, filters.kValue, colLoaded, tilings]);
+	}, [filters.geometry, filters.decoration, filters.kValue, colLoaded, tilings]);
 
 	// Lazy convex-irregular k≥3 shards. The demo keeps k≤2 in the main atlas and splits each higher k into
 	// public/reference-atlas-composable-k{k}.json (COMPOSABLE_HIGHER_K). Fetch a shard when it's in view:
@@ -1695,11 +1733,15 @@ export function ReferenceShelf() {
 	// include the seven spherical hybrids and promise 1023 where the shelf then shows 1016.
 	const levelCounts = useMemo(() => {
 		const c = new Map<TilingLevel, number>();
+		// The filter object is built ONCE, not per record: it was being spread inside the loop, which is
+		// one throwaway object per loaded tiling every time any filter changed. And the filter is tested
+		// BEFORE tilingLevel, because the level is the expensive half (it canonicalises every vertex
+		// configuration of the record) and a tiling the filter rejects never needs its level at all.
+		const scope = { ...filters, levels: undefined };
 		for (const t of tilings ?? []) {
+			if (!matchesReferenceFilters(t, scope)) continue;
 			const lv = tilingLevel(t);
-			if (lv && matchesReferenceFilters(t, { ...filters, levels: undefined })) {
-				c.set(lv, (c.get(lv) ?? 0) + 1);
-			}
+			if (lv) c.set(lv, (c.get(lv) ?? 0) + 1);
 		}
 		return c;
 	}, [tilings, filters]);

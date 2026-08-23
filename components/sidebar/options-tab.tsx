@@ -19,7 +19,7 @@ import { colorCountOf, colorLetter } from "@/lib/colors/pattern";
 import { cellFill, DEFAULT_PALETTE, paletteFor, type ColorChoice } from "@/lib/colors/render";
 import { polygonClassSupportsIslamic } from "@/lib/utils/tilingLabel";
 import { tileClassOf } from "@/lib/services/referenceAtlas";
-import { isDiskSurface, lensAppliesTo, surfaceOf } from "@/lib/services/shelfRegistry";
+import { hasCurvedTiles, isDiskSurface, lensAppliesTo, surfaceOf } from "@/lib/services/shelfRegistry";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import { DeformPad } from "@/components/deform-pad";
 import { InversiveControls } from "@/components/inversive-controls";
@@ -90,6 +90,8 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 	// Hankin construction handles them all). Hyperbolic tilings run it as geodesic rays baked into the
 	// developed per-pixel renderer (plain style, lib/render/hyperbolicIslamic.ts).
 	const islamicSupported = !!selected && polygonClassSupportsIslamic(selected);
+	// Truchet joins EDGE MIDPOINTS with arcs, so it needs the edge to be a chord — see hasCurvedTiles.
+	const curvedTiles = hasCurvedTiles(selected);
 	// An Islamic-category tiling (an underlying tessellation from Bonner's systems). We suggest — but never
 	// force — turning the construction on for these, so the underlying tiling can be enjoyed on its own.
 	const isIslamicClass = !!selected && tileClassOf(selected) === "islamic";
@@ -596,7 +598,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 					    triangle, 720 for a hexagon (lib/render/truchetTiling.ts). Shuffling draws each tile
 					    independently; the un-shuffled state applies one named wiring to every tile, which is the
 					    comparison the shuffle is against. */}
-					{isFlat && sourceControls ? (
+					{isFlat && sourceControls && !curvedTiles ? (
 						<>
 							<Checkbox
 								id="freedrawArcsFlat"
@@ -980,8 +982,13 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 					    floating panel and leaves every control here describing the tiling on the canvas. */}
 					<SquaringControls selected={selected} />
 					{/* Symmetry elements + fundamental domain are wallpaper-group overlays drawn by the flat p5
-					    path, which is skipped in hyperbolic (canvas.tsx) — hide them there. */}
-					{isFlat && sourceControls ? (
+					    path, which is skipped in hyperbolic (canvas.tsx) — hide them there.
+					    Hidden for CURVED tiles too, and for the same reason star tilings have no
+					    `wallpaperGroup`: WallpaperSymmetry needs exact convex-tile intersection, and a bitten
+					    bubble tile is non-convex (NOTES §9.4 — exact segment intersection is the unbuilt
+					    prerequisite). With no symmetry data the overlay drew a flat wash over the whole canvas
+					    instead of nothing, which read as a broken tiling. Showing neither beats showing that. */}
+					{isFlat && sourceControls && !curvedTiles ? (
 						<>
 							<Checkbox
 								id="showSymmetryElements"

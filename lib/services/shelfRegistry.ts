@@ -20,6 +20,7 @@
 
 import { freedrawKNoun, gridOf } from "@/lib/freedraw/pattern";
 import type { CatalogueTiling } from "./catalogueService";
+import { tileClassOf } from "./referenceAtlas";
 
 export type ShelfId =
 	| "developed"
@@ -198,6 +199,23 @@ export function surfaceOf(t: CatalogueTiling | null | undefined): ShelfSurface {
 	const shelf = shelfOf(t);
 	if (!shelf) return "flat";
 	return typeof shelf.surface === "function" ? shelf.surface(t!) : shelf.surface;
+}
+
+/**
+ * Does this record's tiles have CURVED edges, reaching the renderers as flattened polylines?
+ *
+ * Three features read a tile as a straight-sided polygon and quietly produce nonsense on a curved one,
+ * so each gates on this: the Truchet wiring joins EDGE MIDPOINTS with arcs and needs the edge to be a
+ * chord; the Islamic construction springs its straps off per-edge inward normals, which a flattened
+ * curve has dozens of; and the squared torus cuts the cell into rectangles, which a curved boundary
+ * cannot bound. Disabling beats drawing something wrong.
+ *
+ * Keyed on the tile class rather than probed off `renderCell`, because reading that property fires the
+ * lazy accessor referenceToCatalogue installs and would materialise the cell for every row in the
+ * corpus just to answer a UI question. One line per future curved class.
+ */
+export function hasCurvedTiles(t: CatalogueTiling | null | undefined): boolean {
+	return !!t && tileClassOf(t) === "bubble";
 }
 
 /** What this record's `k` counts, or null when it means the ordinary vertex-orbit count. */

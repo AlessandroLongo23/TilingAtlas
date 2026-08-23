@@ -228,7 +228,9 @@ export function boardFamiliesFor(
 			spherical: ["sph-convex", "sph-nonconvex"],
 		},
 		edges: {
-			euclidean: ["grid", "schwarz-eu", "pent", "ih"],
+			// "bubble-grid" is the second Euclidean edge system, after freedraw's "grid": both decorate a
+			// lattice, and they differ in the matching rule (agree vs differ), not in the segment.
+			euclidean: ["grid", "bubble-grid", "schwarz-eu", "pent", "ih"],
 			hyperbolic: ["hyp-edges", "schwarz-board"],
 			spherical: ["platonic", "sph-edges", "schwarz-board"],
 		},

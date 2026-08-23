@@ -75,6 +75,7 @@ import {
 	loadIsohedralEdgesShard,
 	loadColorsDecorAtlas,
 	loadFreedrawDecorAtlas,
+	loadBubbleDecorAtlas,
 	loadHyperbolicBaseAtlas,
 	loadHyperbolicPolyAtlas,
 	loadHyperbolicPolyShard,
@@ -82,7 +83,7 @@ import {
 	referenceToCatalogue,
 	tileClassOf,
 	subOf,
-	compareCatalogueDisplayOrder,
+	sortCatalogueForDisplay,
 	geometryOf,
 	decorationOf,
 	type Geometry,
@@ -466,7 +467,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// compareCatalogueDisplayOrder). Making this THE order means arrow-key / prev-next browsing steps through
 	// the visible list, and the default first paint + a geometry switch both land on that geometry's first
 	// sidebar row. Deterministic (never random), so the first paint is still stable.
-	const sorted = useMemo(() => [...working].sort(compareCatalogueDisplayOrder), [working]);
+	const sorted = useMemo(() => sortCatalogueForDisplay(working), [working]);
 
 	const { selected, setSelected } = useCatalogueSelection(sorted, requestedKey);
 
@@ -484,14 +485,17 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// from `geometryList`, which is already filtered to (geometry, decoration), so an unscoped tier is a
 	// row for a shelf the current view cannot hold. Marek Čtrnáct caught it as Euclidean rows offered
 	// under Hyperbolic that vanished when clicked, the records having been filtered out on arrival.
+	// The (class, sub, k) of everything loaded. This is a property of `refList` and of nothing else, but
+	// it used to be rebuilt inside the memo below, which also depends on the two chips — so every switch
+	// re-ran tileClassOf and subOf over the whole corpus and allocated an object per record. That was the
+	// single most expensive thing a switch did: 3.1 s on Hyperbolic × Edge patterns, which fetches nothing.
+	const loadedTiers = useMemo(
+		() => (refList ?? []).map((t) => ({ cls: tileClassOf(t), sub: subOf(t), k: t.k })),
+		[refList],
+	);
 	const unloaded = useMemo(
-		() =>
-			unloadedTiers(
-				manifest,
-				(refList ?? []).map((t) => ({ cls: tileClassOf(t), sub: subOf(t), k: t.k })),
-				{ geometry, decoration },
-			),
-		[manifest, refList, geometry, decoration],
+		() => unloadedTiers(manifest, loadedTiers, { geometry, decoration }),
+		[manifest, loadedTiers, geometry, decoration],
 	);
 	// The two decoration catalogues are deferred (see loadColorsDecorAtlas). Until one arrives its count
 	// is 0, and a 0 disables the chip — which would deadlock, because clicking the chip is what fetches
@@ -503,25 +507,49 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// Same story one axis up: the base hyperbolic shelf is deferred, so its geometry chip reads 0 and
 	// `disabled={empty}` would grey out the only control that fetches it.
 	const [hypLoaded, setHypLoaded] = useState(false);
-	// Per-geometry tiling counts (labels the segments; a zero disables its segment until the lazy shard
-	// merges in). Derived once per atlas change, not per geometry switch.
-	const geometryCounts = useMemo(() => {
-		const c: Record<Geometry, number> = { euclidean: 0, hyperbolic: 0, spherical: 0 };
-		for (const t of sorted) c[geometryOf(t)] += 1;
-		return c;
+	// THE nine cells, built in one pass and keyed by (geometry, decoration).
+	//
+	// The segment counts and the active list used to be three separate sweeps of the whole corpus, two
+	// of them re-running on every switch — and geometryOf/decorationOf both go through tileClassOf,
+	// which is a chain of string tests per record. With every shelf a session has visited still in
+	// `refList` (it only ever grows), switching a chip was 300k+ classifications for numbers that do
+	// not depend on the chip at all. Measured on /play: 2.0-4.4 s per switch, on transitions that
+	// fetched nothing.
+	//
+	// Partitioning once per atlas change makes every switch a Map lookup. The buckets keep `sorted`'s
+	// order because they are filled by walking it, which is what the sidebar, the nav count and
+	// random/prev/next all read.
+	const cells = useMemo(() => {
+		const m = new Map<string, CatalogueTiling[]>();
+		const geo: Record<Geometry, number> = { euclidean: 0, hyperbolic: 0, spherical: 0 };
+		for (const t of sorted) {
+			const g = geometryOf(t);
+			const d = decorationOf(t);
+			geo[g] += 1;
+			const key = `${g}|${d}`;
+			const bucket = m.get(key);
+			if (bucket) bucket.push(t);
+			else m.set(key, [t]);
+		}
+		return { byCell: m, geo };
 	}, [sorted]);
+	/** One shared empty list, so an unvisited cell does not hand React a new array identity each render. */
+	const EMPTY_CELL = useMemo(() => [] as CatalogueTiling[], []);
+	// Per-geometry tiling counts (labels the segments; a zero disables its segment until the lazy shard
+	// merges in).
+	const geometryCounts = cells.geo;
 	// Decoration counts WITHIN the active geometry — the segment row is scoped to it, and the hyperbolic /
 	// spherical edge + colour shards load lazily, so a segment starts empty (disabled) and fills in.
-	const decorationCounts = useMemo(() => {
-		const c: Record<Decoration, number> = { tilings: 0, edges: 0, colorings: 0 };
-		for (const t of sorted) if (geometryOf(t) === geometry) c[decorationOf(t)] += 1;
-		return c;
-	}, [sorted, geometry]);
+	const decorationCounts = useMemo(() => ({
+		tilings: (cells.byCell.get(`${geometry}|tilings`) ?? EMPTY_CELL).length,
+		edges: (cells.byCell.get(`${geometry}|edges`) ?? EMPTY_CELL).length,
+		colorings: (cells.byCell.get(`${geometry}|colorings`) ?? EMPTY_CELL).length,
+	}) as Record<Decoration, number>, [cells, geometry, EMPTY_CELL]);
 	// The active (geometry, decoration) cell, in the same class → sub → k → key display order — the catalogue
 	// list, the nav count, and the scope for random/prev/next all read this.
 	const geometryList = useMemo(
-		() => sorted.filter((t) => geometryOf(t) === geometry && decorationOf(t) === decoration),
-		[sorted, geometry, decoration],
+		() => cells.byCell.get(`${geometry}|${decoration}`) ?? EMPTY_CELL,
+		[cells, geometry, decoration, EMPTY_CELL],
 	);
 	// Dev-only: expose the catalogue selection so the Playwright visual/parity tools (see CLAUDE.md) can
 	// pick specific tilings, e.g. window.__play.select(window.__play.list.find(t => t.star)).
@@ -560,15 +588,41 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		[decoration, geometry, sorted, setSelected],
 	);
 	// Keep both toggles in sync with the selection — covers deep-links, the initial atlas load, and any path
-	// that sets `selected` outside the toggles ("R", ←/→, a click in the list). When a toggle drives the
-	// change, `selected` already sits in the new cell, so this is a no-op.
+	// that sets `selected` outside the toggles ("R", ←/→, a click in the list).
+	//
+	// ⚑ It must follow a NEW SELECTION, never a new toggle, and the difference is the whole bug this ref
+	// fixes. Hyperbolic and Spherical are deferred shelves, so pressing their chip on a fresh page runs
+	// `onGeometryChange` with no records of that geometry loaded yet: `sorted.find(...)` returns nothing,
+	// `selected` keeps its Euclidean tiling, and this effect then read that tiling and set the geometry
+	// straight back. The chip flipped and reverted within a frame, and the load it had just triggered
+	// arrived into a view that was Euclidean again. Measured before the fix: clicking Hyperbolic left
+	// Euclidean pressed for the full 22 s it was watched, which is what "switching geometry is slow"
+	// actually was — not slow, undone.
+	//
+	// Skipping when `selected` is the same object leaves a deliberate switch alone; the effect below
+	// finishes it once that geometry's records land.
+	const lastSyncedSelection = useRef<CatalogueTiling | null>(null);
 	useEffect(() => {
 		if (!selected) return;
+		if (lastSyncedSelection.current === selected) return;
+		lastSyncedSelection.current = selected;
 		const g = geometryOf(selected);
 		if (g !== geometry) setGeometry(g);
 		const d = decorationOf(selected);
 		if (d !== decoration) setDecoration(d);
 	}, [selected, geometry, decoration]);
+	// Finish a switch whose cell was empty when it was made. The toggles jump the selection themselves
+	// when they can; when the target shelf is still in flight there is nothing to jump to, so the canvas
+	// keeps showing the old tiling while the chips already read the new cell. As soon as the cell has
+	// rows, move to its first — the same tiling `onGeometryChange` would have picked had the data been
+	// there. Only ever fires when the selection sits OUTSIDE the active cell, so it cannot fight a
+	// deep-link or a click in the list, both of which land inside it.
+	useEffect(() => {
+		if (!geometryList.length) return;
+		if (selected && geometryOf(selected) === geometry && decorationOf(selected) === decoration) return;
+		lastSyncedSelection.current = geometryList[0];
+		setSelected(geometryList[0]);
+	}, [geometryList, selected, geometry, decoration, setSelected]);
 
 	// Spherical freedraw (~19.5k patterns, ~10 MB across 30 shards) is deliberately NOT in the base atlas —
 	// loading it up front would tax every /play visit for a shelf many never open. Pull it once the Spherical
@@ -705,7 +759,11 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			});
 		};
 		if (wantSph) {
-			loadSphericalEdgesAtlas().then(merge).catch(() => {});
+			// The polyhedron EDGE systems are decoration "edges"; the polyhedra themselves are tilings.
+			// Entering Spherical fetched both, and the Tilings chip cannot show one of the edge rows.
+			if (decoration === "edges" || requestedKey?.startsWith("xe")) {
+				loadSphericalEdgesAtlas().then(merge).catch(() => {});
+			}
 			loadSphericalPolyAtlas().then(merge).catch(() => {});
 		}
 		if (wantHyp) {
@@ -715,18 +773,33 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		// The DECORATION catalogues are the bulk of what /play used to parse at open: ~70 MB of colourings
 		// and ~25 MB of edge patterns, for chips the viewer had not clicked. Gated on the chip, plus the
 		// id prefixes so a deep link into either still resolves instead of falling back to t1001.
-		if (decoration === "edges" || requestedKey?.startsWith("fd")) {
+		// EUCLIDEAN shelves, so the plane gates them as well as the chip: freedraw, bubble and the
+		// colourings are all `geometry: "euclidean"`, and under a curved view the geometry filter drops
+		// every row they bring. Fetching them there cost 3.4 s and ~700 MB on Hyperbolic × Edge patterns,
+		// a transition that otherwise issues one request.
+		if (wantEuc && (decoration === "edges" || requestedKey?.startsWith("fd"))) {
 			loadFreedrawDecorAtlas()
 				.then((d) => { mergeAlways(d); setDecorLoaded((s) => (s.edges ? s : { ...s, edges: true })); })
 				.catch(() => {});
 		}
-		if (decoration === "colorings" || requestedKey?.startsWith("col")) {
+		if (wantEuc && (decoration === "edges" || requestedKey?.startsWith("bt-") || requestedKey?.startsWith("bs-") || requestedKey?.startsWith("bh-"))) {
+			loadBubbleDecorAtlas().then(mergeAlways).catch(() => {});
+		}
+		if (wantEuc && (decoration === "colorings" || requestedKey?.startsWith("col"))) {
 			loadColorsDecorAtlas()
 				.then((d) => { mergeAlways(d); setDecorLoaded((s) => (s.colorings ? s : { ...s, colorings: true })); })
 				.catch(() => {});
 		}
-		if (wantEuc) loadPentagonEdgesAtlas().then(merge).catch(() => {});
-		if (wantEuc) loadIsohedralEdgesAtlas().then(merge).catch(() => {});
+		// Same chip as freedraw and bubble above: these are decoration="edges" records (source
+		// "freedraw"), so the Tilings chip cannot show one, yet their eager slices were fetched on every
+		// Euclidean open — 53 of the 80 JSON requests a default /play open made. Deep links still work:
+		// the id prefix opens the shelf the same way "fd" does for freedraw.
+		if (wantEuc && (decoration === "edges" || requestedKey?.startsWith("pe"))) {
+			loadPentagonEdgesAtlas().then(merge).catch(() => {});
+		}
+		if (wantEuc && (decoration === "edges" || requestedKey?.startsWith("ie"))) {
+			loadIsohedralEdgesAtlas().then(merge).catch(() => {});
+		}
 		const pe = requestedKey?.match(/^pe(.+?)-(\d+)-/);
 		if (pe && pentEdgeLazyShardsForK(Number(pe[2])).some((b) => b.id === pe[1])) {
 			loadPentagonEdgesShard(pe[1], Number(pe[2])).then(merge).catch(() => {});

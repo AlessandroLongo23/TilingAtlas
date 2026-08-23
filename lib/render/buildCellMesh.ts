@@ -175,8 +175,13 @@ export function buildCellMesh(cell: TranslationalCellData | null): CellMesh | nu
 	// constant dot. Shared vertices/halfways between adjacent polygons are emitted per polygon (harmless
 	// overdraw — the disks are opaque and identical), mirroring Tiling.show's per-node loop.
 	const QUAD: readonly [number, number][] = [[-1, -1], [1, -1], [1, 1], [-1, -1], [1, 1], [-1, 1]];
+	// A ring that declares `corners` is a flattened curve: its CORNERS are the tile's vertices and the
+	// segment ends between them are not, so both the blue vertex dots and the green halfways count
+	// corners, not subdivisions. Without this a bubble tile drew a dot on every flattening point.
+	const cornerCount = (poly: (typeof base.polys)[number]) =>
+		poly.corners && poly.corners.length >= 3 ? poly.corners.length : poly.vertices.length;
 	let pCount = 0;
-	for (const poly of base.polys) pCount += 1 + 2 * poly.vertices.length; // centroid + n halfways + n vertices
+	for (const poly of base.polys) pCount += 1 + 2 * cornerCount(poly); // centroid + n halfways + n vertices
 	const pointPos = new Float32Array(pCount * 6 * 2);
 	const pointCorner = new Float32Array(pCount * 6 * 2);
 	const pointColor = new Float32Array(pCount * 6 * 3);
@@ -195,11 +200,25 @@ export function buildCellMesh(cell: TranslationalCellData | null): CellMesh | nu
 		for (const v of vs) { cx += v.x; cy += v.y; }
 		cx /= vs.length; cy /= vs.length;
 		pushPoint(cx, cy, 1, 0, 0); // centroid: red
-		for (let k = 0; k < vs.length; k++) {
-			const a = vs[k], b = vs[(k + 1) % vs.length];
-			pushPoint((a.x + b.x) / 2, (a.y + b.y) / 2, 0, 1, 0); // halfway (edge midpoint): green
+		const cs = poly.corners && poly.corners.length >= 3 ? poly.corners : null;
+		if (cs) {
+			// The halfway of a CURVED edge is the point halfway along the curve, not the midpoint of the
+			// chord — it has to sit ON the boundary, which is the whole point of the marker.
+			for (let k = 0; k < cs.length; k++) {
+				const i0 = cs[k];
+				const i1 = cs[(k + 1) % cs.length];
+				const span = (i1 - i0 + vs.length) % vs.length;
+				const mid = vs[(i0 + (span >> 1)) % vs.length];
+				pushPoint(mid.x, mid.y, 0, 1, 0);
+			}
+			for (const i of cs) pushPoint(vs[i].x, vs[i].y, 0, 0, 1);
+		} else {
+			for (let k = 0; k < vs.length; k++) {
+				const a = vs[k], b = vs[(k + 1) % vs.length];
+				pushPoint((a.x + b.x) / 2, (a.y + b.y) / 2, 0, 1, 0); // halfway (edge midpoint): green
+			}
+			for (const v of vs) pushPoint(v.x, v.y, 0, 0, 1); // vertex: blue
 		}
-		for (const v of vs) pushPoint(v.x, v.y, 0, 0, 1); // vertex: blue
 	}
 
 	return {
