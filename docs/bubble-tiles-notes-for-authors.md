@@ -80,15 +80,33 @@ Second, and more useful: your "any ratio" rows are solved statistical-mechanics 
 The same framing gives your arc duality a one-line description: it reverses every arrow, which is
 why it is an involution and why it commutes with isometries and so preserves the symmetry group.
 
-## 4. Offer
+## 4. The mixed (T,H) rows: every known case reproduces, no unknown one appears
 
-The catalogue is browsable and we are happy to share the raw data, per lattice and per k. Two things
-we could run if useful:
+We ran the combined triangle-and-hexagon tile set (18 tiles) to k = 3, giving 1,696 mixed tilings.
 
-- The remaining Unknown cells in Table 2 are the mixed (T,H) rows at 2:3 and 4:3. Those need a
-  combined triangle-and-hexagon tile set, which is a small change for us, and would either produce a
-  realization or give the same kind of evidence as in item 1 above.
-- Any specific prototile set and ratio you want checked to a given k.
+Every (T,H) entry Table 2 marks as realized comes back, all twelve of the hexagonal panels in
+Figure 15 among them:
+
+| ratio | bite pair | found at |
+|---|---|---|
+| 2:1 | (0,6), (3,0) | k=1 |
+| 2:1 | (1,4), (2,2) | k=2 and k=3, and for all three of the 4-bite and 2-bite tiles |
+| 4:1 | (1,5), (2,1) | k=2 |
+| 6:1 | (1,6), (2,0) | k=3 |
+
+None of the four Unknown entries appears: not (0,4) or (3,2) at 2:3, and not (0,5) or (3,1) at 4:3.
+
+We think the first table is what makes the second worth reading. A search that recovers twelve of
+twelve known realizations, including the ones needing three vertex orbits, and then returns nothing
+for the four open cells, is saying something more than "we did not find them". It is still bounded
+evidence: a realization could need more than three vertex orbits, and the near misses suggest where
+to look, since at k = 2 we do get T0x4 T3x2 H4x3, T0x5 T3x1 H5x3 and T0x1 T3x5 H1x3, which carry the
+target hexagonal component at the target ratio but with a third tile in the set.
+
+## 5. Offer
+
+The catalogue is browsable and we are happy to share the raw data, per lattice and per k, or to check
+any specific prototile set and ratio to a given k. The mixed run is continuing to k = 4.
 
 ## Caveats
 
