@@ -247,6 +247,12 @@ struct configuration {
 // EDGE TYPES. False for every palette that declares none (and for the whole compiled-table
 // path), in which case conf.etype stays empty and none of this costs anything beyond one branch.
 static bool EDGE_TYPED = false;
+// COMPLEMENTARY gluing (bubble tiles): the two sides of an edge must DIFFER, not agree. A bump must
+// meet a bite, so the matching relation is irreflexive and no relabelling of a like-to-like alphabet
+// can express it. With exactly two edge types "differ" IS the complement, so no pairing convention
+// is needed. develop_marked.py --complement re-checks every glue, which is what catches a run whose
+// palette is complementary but whose solver was launched without this knob.
+static const bool EDGE_COMPL = std::getenv("EU_EDGE_COMPL") != nullptr;
 // SIDED CLASSES. A dart is (half-edge, side); lvert stores the SIDE-0 corner class and CLASS_SIGMA
 // maps it to the side-1 one. They differ only when a tile's mirror image permutes its corner classes
 // — never for an equilateral tile, so sigma is the identity for the regular, star, isotoxal, scaled
@@ -452,7 +458,8 @@ bool simplify(configuration const& conf);
 static inline bool edge_ok(configuration const& c, int x, int y) {
     if (!EDGE_TYPED) return true;
     const int a = c.etype[x], b = c.etype[y];
-    return a == 0 || b == 0 || a == b;   // 0 is a wildcard: an untyped edge glues to anything
+    if (a == 0 || b == 0) return true;   // 0 is a wildcard: an untyped edge glues to anything
+    return EDGE_COMPL ? a != b : a == b;
 }
 
 int extend(configuration& slist);
@@ -1590,7 +1597,12 @@ static long XORB_STEPS = 0;
 static void face_filter() {
     const int NT = (int)mainlist.size();
     TYPE_OK.assign(NT, 1);
-    if (std::getenv("EU_NOFILTER")) return;
+    // EDGE_COMPL: refuse, for the same reason as the cross-orbit case below. This digraph walks
+    // CORNER CLASSES only and knows nothing about edge types, which is sound while the two sides of
+    // an edge agree. Under complementary matching it under-approximates and deletes reachable types:
+    // measured on bubble-tri at k<=2, filtering on gave 1 raw block where filtering off gives 79,
+    // losing the T{1,2} tiling among others. Losing tilings is a correctness bug, not a slow path.
+    if (EDGE_COMPL || std::getenv("EU_NOFILTER")) return;
     const int NKEY = NCLS * NCLS * 2;
     std::vector<int> orb(NCLS, -1), orbL, orbP;
     for (int c = 0; c < NCLS; c++) {
@@ -1694,7 +1706,7 @@ static void face_filter() {
 // at bit c-1 (one step already consumed by fixing the successor), so it is recorded at EVERY t.
 static void build_okpair() {
     const int NT = (int)mainlist.size();
-    if (!PAIRFILTER || std::getenv("EU_NOFILTER")) { PAIRFILTER = false; return; }
+    if (!PAIRFILTER || EDGE_COMPL || std::getenv("EU_NOFILTER")) { PAIRFILTER = false; return; }
     NKEY_ = NCLS * NCLS * 2;
     OKPAIR.assign(((size_t)NKEY_ * NKEY_ + 63) / 64, 0ULL);
     std::vector<int> orb(NCLS, -1), orbL, orbP;

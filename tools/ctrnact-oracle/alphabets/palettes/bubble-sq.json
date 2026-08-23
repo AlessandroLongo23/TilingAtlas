@@ -1,0 +1,16 @@
+{
+  "name": "bubble-sq",
+  "D": 24,
+  "maxValence": 4,
+  "edgeComplement": true,
+  "edgeLengths": { "B": "1", "I": "1" },
+  "comment": "SQUARE BUBBLE TILES (Chase, Field & McCluer, 'Puzzle Pieces and Bubble Tiles', working draft 2026-08-22). Sibling of bubble-tri: same complementary matching rule (a bump must meet a bite), square substrate instead of triangular. The six tiles are the binary necklaces of length 4 (OEIS A000031), the paper's S0/S1/S2A/S2B/S3/S4. Unlike the triangular family the BITE COUNT is no longer the tile's identity: two bites splits into S2A (adjacent, edges IIBB) and S2B (opposite, IBIB), which is why the shelf keys tiles on the canonical rotation of the whole bite word. B = bump, I = bIte, both unit length. Angles in D=24 units: 90 = 6, four to a vertex, so maxValence 4 is exact and not a bound. All six tiles are achiral (each necklace's reverse is one of its own rotations), so no mirror twins appear. The SEARCH needs EU_EDGE_COMPL=1 and the developer --complement.",
+  "tiles": [
+    { "kind": "composite", "name": "S0",  "famchar": "a", "angles": [6, 6, 6, 6], "edges": ["B", "B", "B", "B"] },
+    { "kind": "composite", "name": "S1",  "famchar": "b", "angles": [6, 6, 6, 6], "edges": ["I", "B", "B", "B"] },
+    { "kind": "composite", "name": "S2A", "famchar": "c", "angles": [6, 6, 6, 6], "edges": ["I", "I", "B", "B"] },
+    { "kind": "composite", "name": "S2B", "famchar": "d", "angles": [6, 6, 6, 6], "edges": ["I", "B", "I", "B"] },
+    { "kind": "composite", "name": "S3",  "famchar": "e", "angles": [6, 6, 6, 6], "edges": ["I", "I", "I", "B"] },
+    { "kind": "composite", "name": "S4",  "famchar": "f", "angles": [6, 6, 6, 6], "edges": ["I", "I", "I", "I"] }
+  ]
+}

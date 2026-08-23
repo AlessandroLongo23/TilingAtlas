@@ -119,6 +119,10 @@ def main():
                     help="comma-separated edge-type labels meaning DRAWN; defaults to the palette's "
                          "own drawnTypes, which normalize_palette derives from \"freedraw\": true")
     ap.add_argument("--sign", type=int, default=1, choices=[1, -1])
+    ap.add_argument("--complement", action="store_true",
+                    help="BUBBLE TILES: the two sides of an edge must DIFFER (a bump meets a bite) "
+                         "instead of agreeing. Faces are not merged; --drawn names the BITE type, and "
+                         "each face reports its per-edge bite word, which is its tile identity.")
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
 
@@ -170,8 +174,16 @@ def main():
                     continue
                 # Find the gluing line by shape, not by index: raw blocks carry no "Count type" line,
                 # so it sits one row earlier there than in the pruned ones.
-                conway = next((l for l in b if re.fullmatch(r"[\(\[][()\[\]0-9 '*]*", l)), None)
+                # ⛑ `@` IS PART OF THE ALPHABET, and leaving it out silently deleted every k >= 5.
+                # Vertices past the fourth are written `0@4`, `1@4`, ...; primes only run to three
+                # (0, 0', 0'', 0'''). So at k <= 4 the line never contains an `@` and the omission is
+                # invisible, while at k = 5 the pattern matched nothing, `conway` came back None, and
+                # the block was dropped by the `continue`: 33,377 square tilings developed as ZERO,
+                # with no error raised and no failure counted. Anything that can lose a whole k slice
+                # has to be loud, so an unparseable block is now a recorded failure.
+                conway = next((l for l in b if re.fullmatch(r"[\(\[][()\[\]0-9 '*@]*", l)), None)
                 if conway is None:
+                    fails.append((k, "?", "no gluing line found in block"))
                     continue
                 tes = [l for l in b if l.startswith("TES file:")]
                 tid = tes[0].split("/")[-1].strip().replace(".tes", "").replace(" ", "_") if tes else "?"
@@ -184,12 +196,28 @@ def main():
                     # two half-edges, and they must be the same type. If this ever fires the solver
                     # emitted something its alphabet forbids.
                     for h, g in enumerate(glue):
-                        if g >= 0 and typ[h] != typ[g]:
+                        if g < 0:
+                            continue
+                        if (typ[h] == typ[g]) if args.complement else (typ[h] != typ[g]):
                             raise dt.DevelopError("glue joins edge types %d and %d" % (typ[h], typ[g]))
                     T1, T2, seeds, placed, _etype_prop = dt.develop(
                         rneig, lneig, mirro, cls, glue, units, ein, eout, args.sign, types=typ)
                     faces = faces_with_darts(placed, rneig, glue, cls, units, lambda h: typ[h], args.sign)
-                    cells, unmatched = merge_cells(faces, glue, typ, drawn_ids)
+                    # Per-face BITE word, in boundary-edge order: 1 where this face owns the bite, 0
+                    # where it owns the bump. It is both the arc direction for rendering and, up to
+                    # rotation, the face's bubble-tile identity.
+                    bites = [[int(typ[h] in drawn_ids) for h in f["darts"]] for f in faces]
+                    if args.complement:
+                        # THE BALANCE EQUATION, as an invariant rather than a filter. Orient every
+                        # edge bump-side to bite-side and sum(indeg - outdeg) over the quotient torus
+                        # is |E| - |E| = 0 for ANY orientation, so this is the handshake identity and
+                        # holds for every genuine bubble tiling. It fails exactly when some edge got a
+                        # bump on both sides, which is the one way complementary gluing can go wrong.
+                        if sum(2 * sum(w) - len(w) for w in bites):
+                            raise dt.DevelopError("balance equation violated")
+                        cells, unmatched = [[i] for i in range(len(faces))], 0
+                    else:
+                        cells, unmatched = merge_cells(faces, glue, typ, drawn_ids)
                     if unmatched:
                         raise dt.DevelopError("%d undrawn half-edges with no neighbouring face" % unmatched)
                     # Drawn segments, deduplicated: a drawn edge is walked once from each side.
@@ -219,6 +247,7 @@ def main():
                         "faces": [[[round(dt.zfloat(p).real, 9), round(dt.zfloat(p).imag, 9)]
                                    for p in f["verts"]] for f in faces],
                         "cells": cells,
+                        "bites": bites,
                         "stats": {"vertices": len(placed), "faces": len(faces),
                                   "cells": len(cells), "drawnEdges": len(segs)},
                     })

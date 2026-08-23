@@ -58,6 +58,7 @@ def _word_period(w):
 _EDGE_IDS = {}
 _EDGE_LABEL = {}   # id -> label, for naming free-edge vertex symbols
 _CLASSES = []   # set once in main(); fold() needs class ein/eout by id
+_EDGE_COMPL = False   # set once in main() from the palette's "edgeComplement"; see fold()
 _MIRROR = []    # class id -> its image under reading the tile boundary BACKWARDS
 
 def mirror_cid(cid):
@@ -158,8 +159,14 @@ def free_assignments(c, classes, free_types):
     return out
 
 
-def edge_type_forbidden_pairs(classes):
+def edge_type_forbidden_pairs(classes, compl=False):
     """Ordered corner-class pairs (a, b) that may not be cyclically adjacent at a vertex.
+
+    `compl` swaps the matching relation from "the two sides agree" to "the two sides DIFFER", which
+    is the bubble-tile rule: a bump must meet a bite, and two bumps or two bites cannot meet. That
+    relation is irreflexive, so it is NOT reachable by relabelling a like-to-like alphabet — set
+    intersection is reflexive on any non-empty label set. It has to be its own branch, here and in
+    eu_solver's edge_ok. With exactly two edge types "differ" is exactly the complement.
 
     Two consecutive corners at a vertex share exactly one half-edge, and the types they assign to
     it must agree. WHICH pair of ends meet follows from the orientations: with tile boundaries and
@@ -175,7 +182,11 @@ def edge_type_forbidden_pairs(classes):
     bad = set()
     for a in classes:
         for b in classes:
-            if a.ein_opts is not None and b.eout_opts is not None and not (a.ein_opts & b.eout_opts):
+            if a.ein_opts is None or b.eout_opts is None:
+                continue
+            ok = any(x != y for x in a.ein_opts for y in b.eout_opts) if compl \
+                else bool(a.ein_opts & b.eout_opts)
+            if not ok:
                 bad.add((a.cid, b.cid))
     return bad
 
@@ -949,9 +960,13 @@ def fold(c, H):
         return _CLASSES[c[(i - 1) % m]], _CLASSES[c[i]]
 
     def _frame_ok(sel):
+        # Like-to-like wants the two readings of a half-edge EQUAL; complementary wants them to
+        # DIFFER (a bump on one side, a bite on the other). etype_of below then stores the ein-side
+        # reading, so the two ENDS of one tiling edge store opposite types and eu_solver's
+        # EU_EDGE_COMPL `a != b` is the matching test.
         for i in range(m):
             x, y = sel(*_pair(i))
-            if x and y and x != y:
+            if x and y and ((x == y) if _EDGE_COMPL else (x != y)):
                 return False
         return True
 
@@ -970,13 +985,18 @@ def fold(c, H):
         raise AssertionError(f"edge-type clash in word {c}: consistent in neither orientation")
 
     def etype_of(d):
-        i, _b = d
+        # SIDED, because the two darts of half-edge i are its two TILES: cls(i,0) = c[i-1] and
+        # cls(i,1) = c[i]. So x is dart (i,0)'s own reading of the shared edge and y is dart (i,1)'s.
+        # Like-to-like forces x == y and this is exactly the old `x or y or 0` for every existing
+        # palette, byte for byte; under complementary matching the two differ and mirro, which flips
+        # only the side, correctly flips bump to bite.
+        i, b = d
         if _EDGES is not None:
             return _EDGES[i % m]
         if _sel is None:
             return 0
         x, y = _sel(*_pair(i))
-        return x or y or 0
+        return (y or x or 0) if b else (x or y or 0)
     ent.etype = [etype_of(next(iter(o))) for o in order]
     # well-definedness check: every member of an orbit must agree on cls and images
     for o in order:
@@ -1537,12 +1557,16 @@ def main():
               f"({time.time() - t_pairs:.1f}s) — pruned inside the DFS")
     # EDGE TYPES: a correctness constraint, so it applies in every closure mode and regardless of
     # EU_PRUNE_OVERLAP. Empty for every palette that declares no edge types.
-    edge_bad = edge_type_forbidden_pairs(classes)
+    global _EDGE_COMPL
+    _EDGE_COMPL = ecompl = bool(spec.get("edgeComplement"))
+    edge_bad = edge_type_forbidden_pairs(classes, ecompl)
     if edge_bad:
         forbidden = edge_bad if forbidden is None else (set(forbidden) | edge_bad)
         types = ", ".join(f"{lab}={i}" for lab, i in sorted(_EDGE_IDS.items(), key=lambda kv: kv[1]))
-        print(f"[gen] EDGE TYPES ({types}): {len(edge_bad)} incompatible adjacent pairs of "
-              f"{len(classes) ** 2} forbidden at the vertex")
+        print(f"[gen] EDGE TYPES ({types}, {'COMPLEMENTARY' if ecompl else 'like-to-like'}): "
+              f"{len(edge_bad)} incompatible adjacent pairs of {len(classes) ** 2} forbidden at the vertex")
+        if ecompl:
+            print("[gen] NOTE: run eu_solver with EU_EDGE_COMPL=1, and develop with --complement")
     configs = enum_configs(D, classes, min_len, spec.get("maxValence", 24), closure, forbidden,
                            spec.get("maxDensity", 1))
     if prune_overlap:

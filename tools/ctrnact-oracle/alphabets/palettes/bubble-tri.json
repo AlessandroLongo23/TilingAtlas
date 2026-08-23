@@ -1,0 +1,14 @@
+{
+  "name": "bubble-tri",
+  "D": 24,
+  "maxValence": 6,
+  "edgeComplement": true,
+  "edgeLengths": { "B": "1", "I": "1" },
+  "comment": "TRIANGULAR BUBBLE TILES (Chase, Field & McCluer, 'Puzzle Pieces and Bubble Tiles', working draft 2026-08-22). A bubble tile is an equilateral polygon whose every edge carries one of two states, a BUMP that protrudes or a BITE that is cut in, with a COMPLEMENTARY matching rule: a bump must meet a bite, and two bumps or two bites cannot meet. The four triangular tiles are the four binary necklaces of length 3 (OEIS A000031), the paper's T0/T1/T2/T3, named here by bite count. B = bump, I = bIte, both at unit length: the arcs are a decoration and the developed substrate is the plain triangular tiling. Angles in D=24 units: 60 = 4, six to a vertex, so maxValence 6 is exact and not a bound. \"edgeComplement\" flips gen_alphabet's vertex-adjacency predicate; the SEARCH needs EU_EDGE_COMPL=1 and the developer --complement, and develop_marked re-checks every glue so a run that forgets the knob fails loudly instead of emitting a wrong catalogue. Reflections: all four tiles are achiral (each necklace's reverse is one of its own rotations), so no mirror twins appear and the k counts here are directly comparable to the merge-mirrors convention the rest of the atlas uses.",
+  "tiles": [
+    { "kind": "composite", "name": "T0", "famchar": "p", "angles": [4, 4, 4], "edges": ["B", "B", "B"] },
+    { "kind": "composite", "name": "T1", "famchar": "q", "angles": [4, 4, 4], "edges": ["I", "B", "B"] },
+    { "kind": "composite", "name": "T2", "famchar": "r", "angles": [4, 4, 4], "edges": ["I", "I", "B"] },
+    { "kind": "composite", "name": "T3", "famchar": "s", "angles": [4, 4, 4], "edges": ["I", "I", "I"] }
+  ]
+}
