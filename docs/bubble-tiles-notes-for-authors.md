@@ -38,11 +38,18 @@ but it is the direction we would bet on.
 ## 2. Bite counts do not determine realizability, and the hexagonal table shows it
 
 Table 2's (H,H) 1:3 row reads "(0,4), (6,2)" as regular. At the level of individual tiles the
-enumeration separates them: H{0,4B} and H{0,4C} realize at 1:3 and H{0,4A} never does, and likewise
-H{6,2B} and H{6,2C} against H{6,2A}. This agrees with Figure 8, which already lists H{0,4A}(1:3) and
-H{6,2A}(1:3) as impossible, and your caption does warn that the figure references need not realize
-every cyclic bite structure with the listed counts. We mention it only because the two surfaces read
-differently at a glance, and the per-tile version is now checkable against data.
+enumeration separates them: of the three 4-bite hexagonal tiles, exactly two realize with H0 at 1:3
+and the third never does, and the same split appears among the three 2-bite tiles paired with H6.
+This agrees with Figure 8, which already lists one tile from each triple as impossible, and your
+caption does warn that the figure references need not realize every cyclic bite structure with the
+listed counts. We mention it because the two surfaces read differently at a glance.
+
+We have deliberately NOT said which letters. Your A/B/C labels within a bite count and ours are both
+arbitrary orderings of the same three necklaces, and we have not established the correspondence, so
+naming them would be a guess dressed as a result. If you tell us your convention, or if the cyclic
+bite words in Figure 3 are unambiguous enough to read off, we can state it in your labels. (Our
+ordering does at least pair the same way yours does: our 2X and 4X are arc duals for each X, matching
+your "2B and 4B are arc duals".)
 
 ## 3. The balanced families are ice models, with exactly known entropy
 
@@ -86,6 +93,8 @@ we could run if useful:
 ## Caveats
 
 k counts vertex orbits, so "absent at k ≤ 5" is bounded evidence and never a proof of impossibility.
-Our hexagonal tile names differ from yours at three bites: we write 3A/3B/3C/3D where you write
-3A/3A*/3B/3C. The partition into tiles is identical; only the labels differ, and we have used your
-labels throughout this note.
+Our hexagonal A/B/C letters within a bite count are an arbitrary ordering of the necklaces and we
+have not matched them to yours, so this note never names one. At three bites the schemes differ in
+shape as well: we write 3A/3B/3C/3D where you write 3A/3A*/3B/3C. The partition into tiles is
+identical either way. Where a bite count has only one tile (0, 1, 5, 6 on hexagons; every triangular
+count) there is no ambiguity, and item 1 above rests only on those.
