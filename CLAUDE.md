@@ -104,6 +104,25 @@ before asking AL how to run one.
 
 After every code change, run `pnpm build` to check for errors and warnings before reporting the task complete. `pnpm lint` and `pnpm test` are not substitutes — only a full build surfaces the real issues.
 
+## Fewer lines out than in (durable; AL directive, 2026-08-23)
+
+**Every task carries a secondary goal: finish with fewer lines of code than you started with.**
+Every line written is a line to be maintained, and an LLM's default failure mode is to write a new
+implementation beside the one that already exists. This repo is large and most pieces already exist.
+
+- **Search before writing.** Before adding a function, a script, a decoder or a component, grep for
+  one that already does the job. `develop_*.py`, `check_*.py` and the `components/*-canvas.tsx`
+  family are full of near-misses that want a parameter, not a sibling.
+- **Prefer a parameter to a fork.** `check_marked_grid.py` is `check_marked_square.py` with the
+  lattice as an argument; that is the pattern. A new tile family is a palette JSON plus a bounded
+  generalization, never a new search.
+- **Delete as you go.** When a generalization subsumes an older path, remove the older path in the
+  same commit. Leaving both is how the duplication compounds.
+- **Report the delta.** State `+N/-M` lines when reporting a task complete, and say plainly when the
+  count went up.
+- Net-new features (a new page, a new shelf) legitimately add lines. Optimizations, fixes,
+  generalizations and refactors should not. When the count must rise, say why in one sentence.
+
 ## Visual inspection (Playwright — the default tool)
 
 To SEE a change in the real running app, drive it with Playwright and screenshot it, then Read the PNG back. Playwright (`playwright` ^1.61, Chromium already installed) is the default visual-inspection tool — prefer it over guessing or asking AL to check.

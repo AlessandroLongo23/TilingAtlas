@@ -16001,3 +16001,89 @@ fit in 566 GB, and `eu_sphfill` throws away 99.97% of it anyway.
 **k=4, measured not guessed.** 5.2e9 blocks under `--require-star`, 38.5 CPU-hours of search (~5 h
 wall on 8 cores), 712 CPU-hours of develop. Growth is ACCELERATING: 96x, 96x, **156x**. Plan k=5 at
 156x+. Disk was the wall and the pipe is the answer.
+
+## 2026-08-23 — bubble tiles: a complementary edge system, and the three things it broke
+
+Source: Chase, Field & McCluer, *Puzzle Pieces and Bubble Tiles*, working draft dated 2026-08-22,
+archived at `../resources/papers/`. A bubble tile is an equilateral polygon whose every edge carries
+one of two states, a BUMP that protrudes or a BITE cut into it, under a COMPLEMENTARY matching rule:
+a bump must meet a bite, and two bumps or two bites cannot meet. Hokusai drew the hexagonal family in
+1824; the tile counts are the binary necklaces, OEIS A000031, so 4 triangular, 6 square, 14 hexagonal.
+
+**The reframing worth keeping.** Orient every edge from its bump side toward its bite side and a
+bubble tiling IS an orientation of the dual graph, nothing more. Two consequences. The paper's
+"balance equation" `sum f_i (b_i - p_i) = 0` is the handshake lemma: on the quotient torus
+`sum (indeg - outdeg) = |E| - |E| = 0` for ANY orientation of ANY graph, which is why it is necessary,
+and why it is weak (one global identity, blind to everything local). And the balanced families are
+ice models: a 2-bite square is the ice rule on the square lattice (six-vertex, Lieb's residual entropy
+`(4/3)^(3/2)`), a 3-bite hexagon is the twenty-vertex model on the triangular lattice. The paper cites
+neither. That is the entropy statement behind its own Figures 9 and 11 (non-uniqueness, "any ratio").
+
+**Complementary matching is NOT reachable by relabelling a like-to-like alphabet.** Set-intersection
+non-emptiness is reflexive on any non-empty label set; "must differ" is irreflexive. So it needs its
+own branch, in exactly two places, plus a third that was hiding an assumption:
+
+- `eu_solver.cpp` `edge_ok`: `a == b` became `EDGE_COMPL ? a != b : a == b`, behind `EU_EDGE_COMPL`.
+  With exactly two edge types "differ" IS the complement, so no id-pairing arithmetic is needed.
+- `gen_alphabet.py` `edge_type_forbidden_pairs`: the same flip at the vertex-adjacency level.
+- `gen_alphabet.py` `fold`: edge types are now SIDED. The two darts of half-edge i are its two TILES
+  (`cls(i,0) = c[i-1]`, `cls(i,1) = c[i]`), so under complementary matching `mirro`, which flips only
+  the side, correctly flips bump to bite. Like-to-like forces the two readings equal, so this is
+  byte-identical for every existing palette. `make check-regular` still passes.
+
+⚑ **The face and pair filters LOSE TILINGS under complementary gluing and are refused there.** Their
+reachability digraph walks CORNER CLASSES only and knows nothing about edge types, which is sound
+while the two sides of an edge agree and under-approximating otherwise. Measured on bubble-tri at
+k<=2: filtering on gave 1 raw block where filtering off gives 79, losing the T{1,2} tiling among
+others. Losing tilings is a correctness bug, not a slow path (NOTES §11.4). **Not established whether
+the same filter is sound for the OTHER edge-typed palettes** (tri45, fdsq2, …); they have their own
+validated gates, but nobody has checked the filter itself. Worth an afternoon before the next one.
+
+**The renderer mistake, recorded because it cost a full rebuild.** The first version drew its own SVG
+component. It had no pan, zoom, rotation, fill mode, line stroke, hue shift or lens, and it
+double-stroked every shared edge because each face stroked its own boundary. A bubble tiling is an
+ORDINARY periodic tiling whose tiles have curved edges, so it needs no renderer: it ships a plain
+`renderCell` and every existing surface draws it. Curved edges reach the renderers as flattened
+polylines, which is what the isohedral shelf's bulged edges already do. Deleting the component also
+deleted a config-store flag, a `skipFlat` clause, a `ShelfId` member and surface, a payload field on
+two interfaces, and three render branches. Net negative lines for strictly more behaviour.
+
+**`corners` in the cell IR.** A flattened ring's points are not tile vertices, and three consumers
+were reading them as such: `showPolygonPoints` dotted every subdivision, and `medianEdge`, which sizes
+thumbnails, measured the flattening resolution instead of the edge. `RawPolygon.corners` carries the
+true indices; absent on straight-edged rings, so every existing cell is unchanged. Truchet, Islamic
+and the squared torus are refused for curved tiles via `hasCurvedTiles` (they read edge midpoints,
+per-edge normals, and rectangle-bounded cells respectively).
+
+⚑ **Symmetry elements and the fundamental domain are HIDDEN for curved tiles, not fixed.**
+WallpaperSymmetry needs exact convex-tile intersection and a bitten tile is non-convex, the same
+reason star tilings carry no `wallpaperGroup` (NOTES §9.4). With no symmetry data the overlay painted
+a flat wash over the whole canvas. Unblocking this means the exact segment intersection that §9.4
+lists as the unbuilt prerequisite; it is not a patch.
+
+⚑ **`develop_marked.py` silently dropped every k >= 5.** Its gluing-line regex omitted `@`, and
+vertices past the fourth are written `0@4` (primes only run to three), so at k <= 4 the omission is
+invisible. At k = 5 it matched nothing and the block hit a bare `continue`: 33,377 square tilings
+developed as ZERO while reporting "failures 0". Fixed, and an unparseable block is now a recorded
+failure. `develop_freedraw.py` parses `@` correctly and raises, so the shipped k<=9 freedraw
+catalogues are unaffected.
+
+**Counts.** Three palettes, all developing with zero failures and the balance equation holding on
+every solution (the handshake identity is the real gate: it fails exactly when an edge got a bump on
+both sides). Triangle k=1..4: 7 / 67 / 849 / 6,157. Square k=1..5: 11 / 102 / 693 / 6,992 / 33,377.
+Hexagon k=1..5: 3 / 11 / 51 / 294 / 228. All four of the paper's Figure 13 triangular tilings and all
+seven of its square results are reproduced, and nothing else is monohedral, matching its Table 1.
+
+⚑ **The count is NOT monotone in k** (hexagon 294 at k=4, 228 at k=5) and the ratios oscillate
+(square solutions 9.3, 6.8, 10.1, 4.8). Likely arithmetic and not geometry: index-n sublattices number
+sigma(n), which dips at primes and jumps at composites. A geometric fit from k<=4 overshot square k=5
+by 2.1x on solutions and 3.7x on nodes. Quote measured numbers or a range, never a point estimate.
+Cost does not track count either: hexagon k=5 burned 700.8M nodes for 228 tilings where square burned
+115.8M for 33,377, because three hexagons at a vertex leave 2^3 edge states against 2^6 for six
+triangles. Full table in `experiments/results/bubble-scaling-2026-08-23.log`.
+
+**A finding for the authors.** Their Figure 8 lists H{0,5}(2:3) and H{6,1}(2:3) as "Not possible with
+regular tiles" while Table 2 puts the same two bite pairs in the Unknown column. Those are different
+claims. Neither appears among the 587 hexagonal tilings at k <= 5, which is evidence for the Figure 8
+reading. The census also separates cases their bite-count rows cannot: H{0,4B} and H{0,4C} realize at
+1:3 but H{0,4A} never does, and likewise H{6,2B}/H{6,2C} against H{6,2A}.
