@@ -2873,11 +2873,8 @@ and the pruner can stream to it. Detail: DEVELOPMENT_NOTES 2026-08-23. e2544ce 8
 
 ## 2026-08-23 (2) — bubble tiles: a second Euclidean edge system — CC
 
-A bubble tile carries a bump or a bite on each edge under a COMPLEMENTARY rule (a bump meets a bite),
-which is irreflexive and so unreachable by relabelling freedraw's like-to-like alphabet: `edge_ok`,
-`edge_type_forbidden_pairs` and `fold`'s now-SIDED edge types each needed a branch. check-regular
-byte-identical. ⚑ The face/pair filters LOSE tilings here (1 raw block against 79) and are refused
-under EDGE_COMPL; whether they are sound for the other edge-typed palettes is UNCHECKED. ⚑
-`develop_marked` was silently dropping every k>=5 (its regex omitted `@`). 48,842 tilings over three
-lattices reproduce every triangular and square result in the paper. Detail: DEVELOPMENT_NOTES
-2026-08-23. c80d467 23f6c88 69e6f1f
+Complementary edge matching (a bump meets a bite) is irreflexive, so relabelling freedraw's
+like-to-like alphabet cannot reach it; `edge_ok`, `edge_type_forbidden_pairs` and `fold`'s now-sided
+edge types each took a branch. check-regular byte-identical. ⚑ The face/pair filters lose tilings here
+and are refused under EDGE_COMPL; soundness elsewhere unchecked. ⚑ `develop_marked` silently dropped
+every k>=5. 48,842 tilings. Detail: DEVELOPMENT_NOTES 2026-08-23. c80d467 23f6c88 69e6f1f 893da17
