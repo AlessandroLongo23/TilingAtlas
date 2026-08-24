@@ -782,7 +782,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				.then((d) => { mergeAlways(d); setDecorLoaded((s) => (s.edges ? s : { ...s, edges: true })); })
 				.catch(() => {});
 		}
-		if (wantEuc && (decoration === "edges" || requestedKey?.startsWith("bt-") || requestedKey?.startsWith("bs-") || requestedKey?.startsWith("bh-") || requestedKey?.startsWith("bth-") || requestedKey?.startsWith("bts-") || requestedKey?.startsWith("btsh-"))) {
+		if (wantEuc && (decoration === "edges" || requestedKey?.startsWith("bt-") || requestedKey?.startsWith("bs-") || requestedKey?.startsWith("bh-") || requestedKey?.startsWith("bth-") || requestedKey?.startsWith("bts-") || requestedKey?.startsWith("btsh-") || requestedKey?.startsWith("brh-"))) {
 			loadBubbleDecorAtlas().then(mergeAlways).catch(() => {});
 		}
 		if (wantEuc && (decoration === "colorings" || requestedKey?.startsWith("col"))) {

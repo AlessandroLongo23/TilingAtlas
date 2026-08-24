@@ -55,10 +55,10 @@ export interface BubblePattern {
 
 /** The SUBSTRATE a bubble tiling decorates. "tri-hex" is a mixed substrate and not a lattice of its
  *  own: triangles and hexagons on one board, which is the tile set the paper's mixed (T,H) rows need. */
-export type BubbleGrid = "triangle" | "square" | "hex" | "tri-hex" | "tri-square" | "tri-sq-hex";
+export type BubbleGrid = "triangle" | "square" | "hex" | "tri-hex" | "tri-square" | "tri-sq-hex" | "rhombus";
 
 /** Display order and labels for the lattice facet — the shelf's "folders". */
-export const BUBBLE_GRID_ORDER: BubbleGrid[] = ["triangle", "square", "hex", "tri-hex", "tri-square", "tri-sq-hex"];
+export const BUBBLE_GRID_ORDER: BubbleGrid[] = ["triangle", "square", "hex", "tri-hex", "tri-square", "tri-sq-hex", "rhombus"];
 export const BUBBLE_GRID_LABEL: Record<BubbleGrid, string> = {
 	triangle: "Triangle",
 	square: "Square",
@@ -66,6 +66,7 @@ export const BUBBLE_GRID_LABEL: Record<BubbleGrid, string> = {
 	"tri-hex": "Triangle + hexagon",
 	"tri-square": "Triangle + square",
 	"tri-sq-hex": "Triangle + square + hexagon",
+	rhombus: "Rhombus (2-iamond)",
 };
 
 /** One shard per (board, k). Loaded together on the Edge patterns chip, the way the colouring
@@ -77,6 +78,7 @@ export const BUBBLE_FILES = [
 	...[1, 2, 3].map((k) => `/bubble/th-k${k}.json`),
 	...[1, 2, 3].map((k) => `/bubble/ts-k${k}.json`),
 	...[1, 2].map((k) => `/bubble/tsh-k${k}.json`),
+	...[1, 2, 3].map((k) => `/bubble/rh-k${k}.json`),
 ];
 
 /**
@@ -88,29 +90,42 @@ export const BUBBLE_FILES = [
  * (3A, 3A-star, 3B, 3C). Rotation and not reflection, because the engine cannot place a tile reflected
  * and the paper counts chiral partners as distinct tiles — H3A and H3A-star are two tiles, not one.
  */
-export function tileKeyOf(biteWord: number[]): string {
+export function tileKeyOf(biteWord: number[], step = 1): string {
 	const s = biteWord.join("");
 	let best = s;
-	for (let i = 1; i < s.length; i++) {
+	for (let i = step; i < s.length; i += step) {
 		const r = s.slice(i) + s.slice(0, i);
 		if (r < best) best = r;
 	}
 	return best;
 }
 
+/**
+ * How far a rotation has to turn before it maps the SUBSTRATE to itself, in edges.
+ *
+ * 1 for a regular polygon, where every rotation is a symmetry. 2 for the 60-degree rhombus, whose
+ * angle word is (60,120,60,120): only the half turn is a symmetry, so two bite words are the same
+ * tile iff they differ by a rotation of TWO. Getting this wrong does not corrupt the catalogue, whose
+ * tiles come from the solver, but it merges names that denote different tiles: at step 1 the rhombic
+ * family reads as 6 tiles like a square's, where Burnside over the real symmetry gives
+ * (2^4 + 2^2)/2 = 10, which is the paper's Figure 27 count.
+ */
+export const rotStepOf = (grid: BubbleGrid) => (grid === "rhombus" ? 2 : 1);
+
 /** Every necklace of length n, in a stable order, memoised. n ≤ 6, so brute force over 2^n is free. */
 const necklaceIndex = new Map<number, Map<string, number>>();
-function necklaceOrder(n: number): Map<string, number> {
-	const hit = necklaceIndex.get(n);
+function necklaceOrder(n: number, step = 1): Map<string, number> {
+	const cacheKey = n * 10 + step;
+	const hit = necklaceIndex.get(cacheKey);
 	if (hit) return hit;
 	const keys = new Set<string>();
 	for (let m = 0; m < 1 << n; m++) {
 		const w: number[] = [];
 		for (let b = 0; b < n; b++) w.push((m >> b) & 1);
-		keys.add(tileKeyOf(w));
+		keys.add(tileKeyOf(w, step));
 	}
 	const map = new Map([...keys].sort().map((k, i) => [k, i] as const));
-	necklaceIndex.set(n, map);
+	necklaceIndex.set(cacheKey, map);
 	return map;
 }
 
@@ -127,11 +142,15 @@ function necklaceOrder(n: number): Map<string, number> {
  *  triangles and hexagons, so "which letter" is a per-tile question. Matches the paper's T / S / H. */
 export const FAMILY_LETTER: Record<number, string> = { 3: "T", 4: "S", 6: "H" };
 
-export function tileNameOf(biteWord: number[]): string {
+/** A RHOMBUS also has four edges, so its tiles cannot be told from a square's by edge count alone.
+ *  The two are never on the same board, so the board decides: only the rhombic board carries R. */
+export const rhombicLetter = (grid: BubbleGrid) => (grid === "rhombus" ? "R" : null);
+
+export function tileNameOf(biteWord: number[], step = 1): string {
 	const n = biteWord.length;
-	const key = tileKeyOf(biteWord);
+	const key = tileKeyOf(biteWord, step);
 	const weight = (k: string) => [...k].filter((c) => c === "1").length;
-	const sameWeight = [...necklaceOrder(n).keys()].filter((k) => weight(k) === weight(key)).sort();
+	const sameWeight = [...necklaceOrder(n, step).keys()].filter((k) => weight(k) === weight(key)).sort();
 	const w = String(weight(key));
 	return sameWeight.length === 1 ? w : w + String.fromCharCode(65 + sameWeight.indexOf(key));
 }
@@ -145,9 +164,9 @@ export function tileNameOf(biteWord: number[]): string {
  * position among its family's necklaces. Stable per family, and spread far enough apart that 14
  * hexagonal tiles stay told apart.
  */
-export function tileHueOf(biteWord: number[]): number {
-	const order = necklaceOrder(biteWord.length);
-	return (34 + (order.get(tileKeyOf(biteWord)) ?? 0) * 137.508) % 360;
+export function tileHueOf(biteWord: number[], step = 1): number {
+	const order = necklaceOrder(biteWord.length, step);
+	return (34 + (order.get(tileKeyOf(biteWord, step)) ?? 0) * 137.508) % 360;
 }
 
 /** The card + search label: the prototile set with its frequency ratio, reduced — "T0×1 T3×1" is the
@@ -156,7 +175,7 @@ export function tileHueOf(biteWord: number[]): number {
 export function bubbleFamilyLabel(p: BubblePattern): string {
 	const count = new Map<string, number>();
 	for (const w of p.bites) {
-		const t = FAMILY_LETTER[w.length] + tileNameOf(w);
+		const t = (rhombicLetter(p.grid) ?? FAMILY_LETTER[w.length]) + tileNameOf(w, rotStepOf(p.grid));
 		count.set(t, (count.get(t) ?? 0) + 1);
 	}
 	const gcd = (a: number, b: number): number => (b ? gcd(b, a % b) : a);
@@ -271,7 +290,7 @@ export function bubbleRenderCell(p: BubblePattern): TranslationalCellData {
 			// `n` = the flattened point count, so a ring can never be mistaken for a star (that test is
 			// verts.length === 2n). `corners` is what every polygon consumer reads as the tile's real
 			// vertices — the dots, the halfways, and medianEdge.
-			return { v: verts, n: verts.length, corners, hue: tileHueOf(bites) };
+			return { v: verts, n: verts.length, corners, hue: tileHueOf(bites, rotStepOf(p.grid)) };
 		}),
 	};
 }

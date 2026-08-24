@@ -52,6 +52,10 @@ import {
 
 /** The bubble shelf's sub ids, one per lattice. */
 export const BUBBLE_GRID_SUBS = BUBBLE_GRID_ORDER.map((g) => `bub-${g}`);
+/** Bubble boards whose tile is a POLYIAMOND (a polyform of equilateral triangles) and not a regular
+ *  polygon. The rhombus is the 2-iamond; the paper's trapezoid is the 3-iamond, and the hexagon is
+ *  the 6-iamond, which is why this is a naming split and not a classification. */
+export const BUBBLE_POLY_SUBS = new Set(["bub-rhombus"]);
 import {
 	hypEdgesBaseLabel,
 	hypEdgesFamilyLabel,
@@ -639,6 +643,7 @@ export const SUB_ORDER = [
 export type SubFamily =
 	| "grid"
 	| "bubble-grid"
+	| "bubble-poly"
 	| "schwarz-eu"
 	| "grid-colors"
 	| "platonic"
@@ -683,6 +688,10 @@ export function familyOfSub(sub: string): SubFamily | null {
 	// The base hyperbolic shelf: one family per valence, "hyt-v8". A regex and not a table, because the
 	// six families are the six valences the corpus contains and hypTilingFamilyOfSub is the one place
 	// that parses the id.
+	// The bubble boards split in two: regular polygons and their mixes on one heading, polyforms of the
+	// triangular atomic tile on another. Not a partition of SHAPES — a hexagon is regular AND a 6-iamond —
+	// but of what each family is naturally called, which is what a heading is for.
+	if (BUBBLE_POLY_SUBS.has(sub)) return "bubble-poly";
 	if (sub.startsWith("bub-")) return "bubble-grid";
 	if (sub.startsWith("hyt-")) return hypTilingFamilyOfSub(sub) as SubFamily | null;
 	if (sub === "sch236" || sub === "sch244") return "schwarz-eu";

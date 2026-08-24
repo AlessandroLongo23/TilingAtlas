@@ -1,0 +1,183 @@
+{
+  "name": "bubble-rhomb",
+  "D": 24,
+  "maxValence": 6,
+  "edgeComplement": true,
+  "edgeLengths": {
+    "B": "1",
+    "I": "1"
+  },
+  "comment": "60-DEGREE RHOMBUS BUBBLE TILES, the 2-iamond family (Chase, Field & McCluer Appendix B, Figure 27). A rhombus is equilateral but NOT regular: the angle word is (60,120,60,120), period 2, so a bite word is canonical up to rotation by two and the family is (2^4 + 2^2)/2 = 10 tiles, not the square's 6. Three of the ten are chiral partners of another three (the paper's 1*, 2A*, 3*); the engine cannot place a tile reflected, so each is its own alphabet symbol and both are listed. Angles in D=24 units: 60 = 4, 120 = 8, so a vertex is any multiset of 4s and 8s summing to 24 - valence 3 to 6.",
+  "tiles": [
+    {
+      "kind": "composite",
+      "name": "R0",
+      "famchar": "a",
+      "angles": [
+        4,
+        8,
+        4,
+        8
+      ],
+      "edges": [
+        "B",
+        "B",
+        "B",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "R1A",
+      "famchar": "b",
+      "angles": [
+        4,
+        8,
+        4,
+        8
+      ],
+      "edges": [
+        "B",
+        "B",
+        "B",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "R1B",
+      "famchar": "c",
+      "angles": [
+        4,
+        8,
+        4,
+        8
+      ],
+      "edges": [
+        "B",
+        "B",
+        "I",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "R2A",
+      "famchar": "d",
+      "angles": [
+        4,
+        8,
+        4,
+        8
+      ],
+      "edges": [
+        "B",
+        "B",
+        "I",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "R2B",
+      "famchar": "e",
+      "angles": [
+        4,
+        8,
+        4,
+        8
+      ],
+      "edges": [
+        "B",
+        "I",
+        "B",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "R2C",
+      "famchar": "f",
+      "angles": [
+        4,
+        8,
+        4,
+        8
+      ],
+      "edges": [
+        "B",
+        "I",
+        "I",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "R2D",
+      "famchar": "g",
+      "angles": [
+        4,
+        8,
+        4,
+        8
+      ],
+      "edges": [
+        "I",
+        "B",
+        "I",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "R3A",
+      "famchar": "h",
+      "angles": [
+        4,
+        8,
+        4,
+        8
+      ],
+      "edges": [
+        "B",
+        "I",
+        "I",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "R3B",
+      "famchar": "i",
+      "angles": [
+        4,
+        8,
+        4,
+        8
+      ],
+      "edges": [
+        "I",
+        "B",
+        "I",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "R4",
+      "famchar": "j",
+      "angles": [
+        4,
+        8,
+        4,
+        8
+      ],
+      "edges": [
+        "I",
+        "I",
+        "I",
+        "I"
+      ]
+    }
+  ]
+}

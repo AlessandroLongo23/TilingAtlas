@@ -1,0 +1,13 @@
+== bubble-rhomb: 60-degree rhombus bubble tiles (2-iamonds), k<=3 ==
+tiles: 10 ['R0', 'R1A', 'R1B', 'R2A', 'R2B', 'R2C', 'R2D', 'R3A', 'R3B', 'R4']
+-- generating alphabet 10:22:10
+[gen] tables.bin: 16.1 MB (runtime-loadable; build the solver with RUNTIME_TABLES=1 and point EU_TABLES at it to skip compiling the alphabet)
+[gen] wrote tables/bubble-rhomb/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (42112 entries)
+-- building k<=3 10:22:19
+   solving 10:22:37
+   solve 167.8s  nodes 592902109
+   kept:   k=1 : 7   k=2 : 91   k=3 : 639 
+developed: {1: 7, 2: 91, 3: 639} total 737 failures 0
+finished 2026-08-24 10:25:35
+
+-- k<=4 pass: does the paper Fig 28 monohedral pair (our R2B/R2D) appear? 10:28:49

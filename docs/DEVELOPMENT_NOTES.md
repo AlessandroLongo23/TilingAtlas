@@ -16134,3 +16134,32 @@ In a connected edge-to-edge tiling using only those two families some square and
 a vertex, and none can. The search returns 0 at k<=2, which is the argument confirmed and not the
 reason to believe it. So the regular-polygon bubble boards are SIX and not seven: T, S, H, T+S, T+H,
 T+S+H. Do not build an S+H palette.
+
+**Rhombi (2-iamonds), and a disagreement with the paper's Figure 28.** The 60-degree rhombus is
+equilateral but NOT regular: its angle word is (60,120,60,120), period 2, so only the half turn is a
+symmetry and a bite word is canonical up to rotation by TWO. Burnside gives (2^4 + 2^2)/2 = 10 tiles,
+not the square's 6, and 10 is exactly the paper's Figure 27. Our chirality and arc-duality structure
+reproduces theirs independently: three chiral PAIRS (their 1*, 2A*, 3*), and at two bites an
+arc-self-dual pair plus an arc-dual pair. That pins the name correspondence without guessing letters:
+our R2B/R2D are their chiral 2A/2A*, our R2A/R2C their arc-self-dual 2B/2C.
+
+k<=3: 42,112 vertex types, 168s, 593M nodes, 737 tilings, zero failures.
+
+⚑ **Their Figure 28 shows FOUR monohedral rhombic tilings; we find TWO at k<=3.** The two we find are
+exactly the arc-self-dual pair (their 2B, 2C). The two we do not are the chiral arc-dual pair (their
+2A, 2A*). Leading hypothesis is a k bound and not a disagreement: a monohedral rhombille-type tiling
+has two vertex orbits UNDECORATED, and decorating can push it past three. A k=4 pass is running. Do
+not quote this at the authors until it resolves.
+
+**A naming bug the rhombus exposed.** `tileKeyOf` canonicalised a bite word under ALL rotations, which
+is right for a regular polygon and wrong for a rhombus: at step 1 the rhombic family reads as 6 tiles
+like a square's. `rotStepOf` now carries the substrate's rotational symmetry (2 for the rhombus, 1
+otherwise) through naming and hue. The catalogue was never affected, since tiles come from the solver;
+only the displayed names were. A rhombus also has four edges, so FAMILY_LETTER could not tell it from
+a square either, and the board now supplies the R.
+
+**Shelf hierarchy.** Two headings, not a second tree level: "Bubble — regular polygons" (6 boards) and
+"Bubble — polyiamonds" (the rhombus). The sub axis stays one layer, which is what `subOf`/`SUB_ORDER`
+are built for, and BOARD_FAMILIES already renders a heading per family. ⚑ The split is by what a
+family is CALLED and not by shape: a hexagon is regular AND a 6-iamond, and the paper's trapezoid is
+the 3-iamond, so the polyiamond heading is where the trapezoid goes next.

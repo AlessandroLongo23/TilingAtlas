@@ -56,7 +56,8 @@ export const FAMILY_LABEL: Record<string, string> = {
 	// Bubble tiles get their own family row rather than joining "Regular grids": the lattice is the
 	// SUBSTRATE the tiles decorate, and its tile set differs per lattice (4 triangular, 6 square,
 	// 14 hexagonal), so these are three catalogues and not three views of one.
-	"bubble-grid": "Bubble lattices",
+	"bubble-grid": "Bubble — regular polygons",
+	"bubble-poly": "Bubble — polyiamonds",
 	"schwarz-eu": "Schwarz boards",
 	"schwarz-board": "Schwarz boards",
 	platonic: "Platonic solids",
@@ -214,6 +215,7 @@ export const SUB_LABEL: Record<string, string> = {
 	"bub-tri-hex": "Triangle + hexagon",
 	"bub-tri-square": "Triangle + square",
 	"bub-tri-sq-hex": "Triangle + square + hexagon",
+	"bub-rhombus": "Rhombus (2-iamond)",
 	// The palettes under "Different edge lengths".
 	"el-tri45": "Triangles and squares",
 	"el-planigon": "Planigons",
