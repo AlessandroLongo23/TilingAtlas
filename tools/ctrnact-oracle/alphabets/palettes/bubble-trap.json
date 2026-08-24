@@ -1,0 +1,621 @@
+{
+  "name": "bubble-trap",
+  "D": 24,
+  "maxValence": 6,
+  "edgeComplement": true,
+  "edgeLengths": {
+    "B": "1",
+    "I": "1"
+  },
+  "comment": "TRAPEZOIDAL BUBBLE TILES, the 3-iamond family (Chase, Field & McCluer Appendix C, Figure 32). Three equilateral triangles in a row give an isosceles trapezoid with sides 1,1,1,2; reading the long base as two collinear unit edges makes it a weakly convex equilateral PENTAGON, angles 60/180/60/120/120 = 4/12/4/8/8 in D=24 units. The 180-degree corner is the point: it admits vertices where only TWO tiles meet, which is what widens the feasibility space in their Appendix A. No rotational period, so all 2^5 = 32 bite words are distinct tiles.",
+  "tiles": [
+    {
+      "kind": "composite",
+      "name": "P00000",
+      "famchar": "a",
+      "angles": [
+        4,
+        12,
+        4,
+        8,
+        8
+      ],
+      "edges": [
+        "B",
+        "B",
+        "B",
+        "B",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P10000",
+      "famchar": "b",
+      "angles": [
+        4,
+        12,
+        4,
+        8,
+        8
+      ],
+      "edges": [
+        "I",
+        "B",
+        "B",
+        "B",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P01000",
+      "famchar": "c",
+      "angles": [
+        4,
+        12,
+        4,
+        8,
+        8
+      ],
+      "edges": [
+        "B",
+        "I",
+        "B",
+        "B",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P11000",
+      "famchar": "d",
+      "angles": [
+        4,
+        12,
+        4,
+        8,
+        8
+      ],
+      "edges": [
+        "I",
+        "I",
+        "B",
+        "B",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P00100",
+      "famchar": "e",
+      "angles": [
+        4,
+        12,
+        4,
+        8,
+        8
+      ],
+      "edges": [
+        "B",
+        "B",
+        "I",
+        "B",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P10100",
+      "famchar": "f",
+      "angles": [
+        4,
+        12,
+        4,
+        8,
+        8
+      ],
+      "edges": [
+        "I",
+        "B",
+        "I",
+        "B",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P01100",
+      "famchar": "g",
+      "angles": [
+        4,
+        12,
+        4,
+        8,
+        8
+      ],
+      "edges": [
+        "B",
+        "I",
+        "I",
+        "B",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P11100",
+      "famchar": "h",
+      "angles": [
+        4,
+        12,
+        4,
+        8,
+        8
+      ],
+      "edges": [
+        "I",
+        "I",
+        "I",
+        "B",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P00010",
+      "famchar": "i",
+      "angles": [
+        4,
+        12,
+        4,
+        8,
+        8
+      ],
+      "edges": [
+        "B",
+        "B",
+        "B",
+        "I",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P10010",
+      "famchar": "j",
+      "angles": [
+        4,
+        12,
+        4,
+        8,
+        8
+      ],
+      "edges": [
+        "I",
+        "B",
+        "B",
+        "I",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P01010",
+      "famchar": "k",
+      "angles": [
+        4,
+        12,
+        4,
+        8,
+        8
+      ],
+      "edges": [
+        "B",
+        "I",
+        "B",
+        "I",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P11010",
+      "famchar": "l",
+      "angles": [
+        4,
+        12,
+        4,
+        8,
+        8
+      ],
+      "edges": [
+        "I",
+        "I",
+        "B",
+        "I",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P00110",
+      "famchar": "m",
+      "angles": [
+        4,
+        12,
+        4,
+        8,
+        8
+      ],
+      "edges": [
+        "B",
+        "B",
+        "I",
+        "I",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P10110",
+      "famchar": "n",
+      "angles": [
+        4,
+        12,
+        4,
+        8,
+        8
+      ],
+      "edges": [
+        "I",
+        "B",
+        "I",
+        "I",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P01110",
+      "famchar": "o",
+      "angles": [
+        4,
+        12,
+        4,
+        8,
+        8
+      ],
+      "edges": [
+        "B",
+        "I",
+        "I",
+        "I",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P11110",
+      "famchar": "p",
+      "angles": [
+        4,
+        12,
+        4,
+        8,
+        8
+      ],
+      "edges": [
+        "I",
+        "I",
+        "I",
+        "I",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P00001",
+      "famchar": "q",
+      "angles": [
+        4,
+        12,
+        4,
+        8,
+        8
+      ],
+      "edges": [
+        "B",
+        "B",
+        "B",
+        "B",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P10001",
+      "famchar": "r",
+      "angles": [
+        4,
+        12,
+        4,
+        8,
+        8
+      ],
+      "edges": [
+        "I",
+        "B",
+        "B",
+        "B",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P01001",
+      "famchar": "s",
+      "angles": [
+        4,
+        12,
+        4,
+        8,
+        8
+      ],
+      "edges": [
+        "B",
+        "I",
+        "B",
+        "B",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P11001",
+      "famchar": "t",
+      "angles": [
+        4,
+        12,
+        4,
+        8,
+        8
+      ],
+      "edges": [
+        "I",
+        "I",
+        "B",
+        "B",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P00101",
+      "famchar": "u",
+      "angles": [
+        4,
+        12,
+        4,
+        8,
+        8
+      ],
+      "edges": [
+        "B",
+        "B",
+        "I",
+        "B",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P10101",
+      "famchar": "v",
+      "angles": [
+        4,
+        12,
+        4,
+        8,
+        8
+      ],
+      "edges": [
+        "I",
+        "B",
+        "I",
+        "B",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P01101",
+      "famchar": "w",
+      "angles": [
+        4,
+        12,
+        4,
+        8,
+        8
+      ],
+      "edges": [
+        "B",
+        "I",
+        "I",
+        "B",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P11101",
+      "famchar": "x",
+      "angles": [
+        4,
+        12,
+        4,
+        8,
+        8
+      ],
+      "edges": [
+        "I",
+        "I",
+        "I",
+        "B",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P00011",
+      "famchar": "y",
+      "angles": [
+        4,
+        12,
+        4,
+        8,
+        8
+      ],
+      "edges": [
+        "B",
+        "B",
+        "B",
+        "I",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P10011",
+      "famchar": "z",
+      "angles": [
+        4,
+        12,
+        4,
+        8,
+        8
+      ],
+      "edges": [
+        "I",
+        "B",
+        "B",
+        "I",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P01011",
+      "famchar": "A",
+      "angles": [
+        4,
+        12,
+        4,
+        8,
+        8
+      ],
+      "edges": [
+        "B",
+        "I",
+        "B",
+        "I",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P11011",
+      "famchar": "B",
+      "angles": [
+        4,
+        12,
+        4,
+        8,
+        8
+      ],
+      "edges": [
+        "I",
+        "I",
+        "B",
+        "I",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P00111",
+      "famchar": "C",
+      "angles": [
+        4,
+        12,
+        4,
+        8,
+        8
+      ],
+      "edges": [
+        "B",
+        "B",
+        "I",
+        "I",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P10111",
+      "famchar": "D",
+      "angles": [
+        4,
+        12,
+        4,
+        8,
+        8
+      ],
+      "edges": [
+        "I",
+        "B",
+        "I",
+        "I",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P01111",
+      "famchar": "E",
+      "angles": [
+        4,
+        12,
+        4,
+        8,
+        8
+      ],
+      "edges": [
+        "B",
+        "I",
+        "I",
+        "I",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "P11111",
+      "famchar": "F",
+      "angles": [
+        4,
+        12,
+        4,
+        8,
+        8
+      ],
+      "edges": [
+        "I",
+        "I",
+        "I",
+        "I",
+        "I"
+      ]
+    }
+  ]
+}

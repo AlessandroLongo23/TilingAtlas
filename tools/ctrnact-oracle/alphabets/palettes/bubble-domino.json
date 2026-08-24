@@ -1,0 +1,769 @@
+{
+  "name": "bubble-domino",
+  "D": 24,
+  "maxValence": 4,
+  "edgeComplement": true,
+  "edgeLengths": {
+    "B": "1",
+    "I": "1"
+  },
+  "comment": "DOMINO BUBBLE TILES, the 2-omino family. A 1x2 rectangle with each long side read as two collinear unit edges is a weakly convex equilateral hexagon, angles 90/180/90/90/180/90. Angle word period 3, so the half turn is a symmetry and the family is (2^6 + 2^3)/2 = 36 tiles, 192 corner classes. maxValence 4 is EXACT and not a bound: the smallest angle is 90, and 4x90 = 360. That exponent is why a square-based polyform is cheaper than a triangle-based one, whose 60-degree corners admit valence 6.",
+  "tiles": [
+    {
+      "kind": "composite",
+      "name": "D000000",
+      "famchar": "a",
+      "angles": [
+        6,
+        12,
+        6,
+        6,
+        12,
+        6
+      ],
+      "edges": [
+        "B",
+        "B",
+        "B",
+        "B",
+        "B",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "D000001",
+      "famchar": "b",
+      "angles": [
+        6,
+        12,
+        6,
+        6,
+        12,
+        6
+      ],
+      "edges": [
+        "B",
+        "B",
+        "B",
+        "B",
+        "B",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "D000010",
+      "famchar": "c",
+      "angles": [
+        6,
+        12,
+        6,
+        6,
+        12,
+        6
+      ],
+      "edges": [
+        "B",
+        "B",
+        "B",
+        "B",
+        "I",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "D000011",
+      "famchar": "d",
+      "angles": [
+        6,
+        12,
+        6,
+        6,
+        12,
+        6
+      ],
+      "edges": [
+        "B",
+        "B",
+        "B",
+        "B",
+        "I",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "D000100",
+      "famchar": "e",
+      "angles": [
+        6,
+        12,
+        6,
+        6,
+        12,
+        6
+      ],
+      "edges": [
+        "B",
+        "B",
+        "B",
+        "I",
+        "B",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "D000101",
+      "famchar": "f",
+      "angles": [
+        6,
+        12,
+        6,
+        6,
+        12,
+        6
+      ],
+      "edges": [
+        "B",
+        "B",
+        "B",
+        "I",
+        "B",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "D000110",
+      "famchar": "g",
+      "angles": [
+        6,
+        12,
+        6,
+        6,
+        12,
+        6
+      ],
+      "edges": [
+        "B",
+        "B",
+        "B",
+        "I",
+        "I",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "D000111",
+      "famchar": "h",
+      "angles": [
+        6,
+        12,
+        6,
+        6,
+        12,
+        6
+      ],
+      "edges": [
+        "B",
+        "B",
+        "B",
+        "I",
+        "I",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "D001001",
+      "famchar": "i",
+      "angles": [
+        6,
+        12,
+        6,
+        6,
+        12,
+        6
+      ],
+      "edges": [
+        "B",
+        "B",
+        "I",
+        "B",
+        "B",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "D001010",
+      "famchar": "j",
+      "angles": [
+        6,
+        12,
+        6,
+        6,
+        12,
+        6
+      ],
+      "edges": [
+        "B",
+        "B",
+        "I",
+        "B",
+        "I",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "D001011",
+      "famchar": "k",
+      "angles": [
+        6,
+        12,
+        6,
+        6,
+        12,
+        6
+      ],
+      "edges": [
+        "B",
+        "B",
+        "I",
+        "B",
+        "I",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "D001100",
+      "famchar": "l",
+      "angles": [
+        6,
+        12,
+        6,
+        6,
+        12,
+        6
+      ],
+      "edges": [
+        "B",
+        "B",
+        "I",
+        "I",
+        "B",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "D001101",
+      "famchar": "m",
+      "angles": [
+        6,
+        12,
+        6,
+        6,
+        12,
+        6
+      ],
+      "edges": [
+        "B",
+        "B",
+        "I",
+        "I",
+        "B",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "D001110",
+      "famchar": "n",
+      "angles": [
+        6,
+        12,
+        6,
+        6,
+        12,
+        6
+      ],
+      "edges": [
+        "B",
+        "B",
+        "I",
+        "I",
+        "I",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "D001111",
+      "famchar": "o",
+      "angles": [
+        6,
+        12,
+        6,
+        6,
+        12,
+        6
+      ],
+      "edges": [
+        "B",
+        "B",
+        "I",
+        "I",
+        "I",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "D010010",
+      "famchar": "p",
+      "angles": [
+        6,
+        12,
+        6,
+        6,
+        12,
+        6
+      ],
+      "edges": [
+        "B",
+        "I",
+        "B",
+        "B",
+        "I",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "D010011",
+      "famchar": "q",
+      "angles": [
+        6,
+        12,
+        6,
+        6,
+        12,
+        6
+      ],
+      "edges": [
+        "B",
+        "I",
+        "B",
+        "B",
+        "I",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "D010100",
+      "famchar": "r",
+      "angles": [
+        6,
+        12,
+        6,
+        6,
+        12,
+        6
+      ],
+      "edges": [
+        "B",
+        "I",
+        "B",
+        "I",
+        "B",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "D010101",
+      "famchar": "s",
+      "angles": [
+        6,
+        12,
+        6,
+        6,
+        12,
+        6
+      ],
+      "edges": [
+        "B",
+        "I",
+        "B",
+        "I",
+        "B",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "D010110",
+      "famchar": "t",
+      "angles": [
+        6,
+        12,
+        6,
+        6,
+        12,
+        6
+      ],
+      "edges": [
+        "B",
+        "I",
+        "B",
+        "I",
+        "I",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "D010111",
+      "famchar": "u",
+      "angles": [
+        6,
+        12,
+        6,
+        6,
+        12,
+        6
+      ],
+      "edges": [
+        "B",
+        "I",
+        "B",
+        "I",
+        "I",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "D011011",
+      "famchar": "v",
+      "angles": [
+        6,
+        12,
+        6,
+        6,
+        12,
+        6
+      ],
+      "edges": [
+        "B",
+        "I",
+        "I",
+        "B",
+        "I",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "D011100",
+      "famchar": "w",
+      "angles": [
+        6,
+        12,
+        6,
+        6,
+        12,
+        6
+      ],
+      "edges": [
+        "B",
+        "I",
+        "I",
+        "I",
+        "B",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "D011101",
+      "famchar": "x",
+      "angles": [
+        6,
+        12,
+        6,
+        6,
+        12,
+        6
+      ],
+      "edges": [
+        "B",
+        "I",
+        "I",
+        "I",
+        "B",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "D011110",
+      "famchar": "y",
+      "angles": [
+        6,
+        12,
+        6,
+        6,
+        12,
+        6
+      ],
+      "edges": [
+        "B",
+        "I",
+        "I",
+        "I",
+        "I",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "D011111",
+      "famchar": "z",
+      "angles": [
+        6,
+        12,
+        6,
+        6,
+        12,
+        6
+      ],
+      "edges": [
+        "B",
+        "I",
+        "I",
+        "I",
+        "I",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "D100100",
+      "famchar": "A",
+      "angles": [
+        6,
+        12,
+        6,
+        6,
+        12,
+        6
+      ],
+      "edges": [
+        "I",
+        "B",
+        "B",
+        "I",
+        "B",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "D100101",
+      "famchar": "B",
+      "angles": [
+        6,
+        12,
+        6,
+        6,
+        12,
+        6
+      ],
+      "edges": [
+        "I",
+        "B",
+        "B",
+        "I",
+        "B",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "D100110",
+      "famchar": "C",
+      "angles": [
+        6,
+        12,
+        6,
+        6,
+        12,
+        6
+      ],
+      "edges": [
+        "I",
+        "B",
+        "B",
+        "I",
+        "I",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "D100111",
+      "famchar": "D",
+      "angles": [
+        6,
+        12,
+        6,
+        6,
+        12,
+        6
+      ],
+      "edges": [
+        "I",
+        "B",
+        "B",
+        "I",
+        "I",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "D101101",
+      "famchar": "E",
+      "angles": [
+        6,
+        12,
+        6,
+        6,
+        12,
+        6
+      ],
+      "edges": [
+        "I",
+        "B",
+        "I",
+        "I",
+        "B",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "D101110",
+      "famchar": "F",
+      "angles": [
+        6,
+        12,
+        6,
+        6,
+        12,
+        6
+      ],
+      "edges": [
+        "I",
+        "B",
+        "I",
+        "I",
+        "I",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "D101111",
+      "famchar": "G",
+      "angles": [
+        6,
+        12,
+        6,
+        6,
+        12,
+        6
+      ],
+      "edges": [
+        "I",
+        "B",
+        "I",
+        "I",
+        "I",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "D110110",
+      "famchar": "H",
+      "angles": [
+        6,
+        12,
+        6,
+        6,
+        12,
+        6
+      ],
+      "edges": [
+        "I",
+        "I",
+        "B",
+        "I",
+        "I",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "D110111",
+      "famchar": "I",
+      "angles": [
+        6,
+        12,
+        6,
+        6,
+        12,
+        6
+      ],
+      "edges": [
+        "I",
+        "I",
+        "B",
+        "I",
+        "I",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "D111111",
+      "famchar": "J",
+      "angles": [
+        6,
+        12,
+        6,
+        6,
+        12,
+        6
+      ],
+      "edges": [
+        "I",
+        "I",
+        "I",
+        "I",
+        "I",
+        "I"
+      ]
+    }
+  ]
+}

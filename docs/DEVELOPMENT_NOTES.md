@@ -16163,3 +16163,41 @@ a square either, and the board now supplies the R.
 are built for, and BOARD_FAMILIES already renders a heading per family. ⚑ The split is by what a
 family is CALLED and not by shape: a hexagon is regular AND a 6-iamond, and the paper's trapezoid is
 the 3-iamond, so the polyiamond heading is where the trapezoid goes next.
+
+**The polyform ceiling: order 1 on squares, order 2 on triangles.** Two families were built and
+neither can ship. Recorded because the palettes are cheap to write and the wall is not where you
+would guess.
+
+The cost of a palette is (corner classes at its SMALLEST angle) ^ (360 / that angle). The exponent
+comes from the atomic tile, since the smallest angle sets the maximum valence: 60 degrees admits
+valence 6, 90 admits 4, 120 admits 3. The base grows with the tile count. A polyform pays on both.
+
+| family | tiles | classes | min angle | maxVal | classes at min | configs at maxVal |
+|---|---|---|---|---|---|---|
+| triangle (1-iamond) | 4 | 8 | 60 | 6 | 8 | 1,365 |
+| rhombus (2-iamond) | 10 | 32 | 60 | 6 | 16 | 87,381 |
+| trapezoid (3-iamond) | 32 | 160 | 60 | 6 | 64 | 357,913,941 |
+| square (1-omino) | 6 | 16 | 90 | 4 | 16 | 2,048 |
+| domino (2-omino) | 36 | 192 | 90 | 4 | 128 | 8,388,608 |
+| I-tromino (3-omino) | 136 | 1,024 | 90 | 4 | 512 | 2,147,483,648 |
+
+⚑ **TRAPEZOID: gen_alphabet does not terminate.** Killed after 10 minutes of CPU with no output.
+maxValence 6 over 64 sixty-degree classes is the whole problem, and turning maxValence down would
+lose tilings, which is the incomplete regime and not the fast one (NOTES 11.4).
+
+⚑ **DOMINO: the alphabet GENERATES and the pipeline still cannot finish.** 2,163,488 configs,
+2,164,592 vertex types, 3.2 GB of tables (the estimate above was 4x high). `eu_solver_rt` loads it
+from tables.bin without complaint, so the SOLVER has no wall. `eu_pruner` does: it has no runtime
+path and #includes a 527 MB .inc, which is the shape of file the Makefile already records as OOMing
+g++ and as what killed combined-z24. No dedup, no catalogue. And behind that sits a second wall —
+k=1 emitted nothing in 90 seconds, because 2.16M vertex types are 2.16M candidate seeds.
+
+Two things would be needed, in order: a runtime-tables PRUNER mirroring eu_solver_rt, then some way
+to make a 2M-type search tractable. Only the first is bounded work.
+
+**The route that would actually finish**, for both families: a polyform tiling is a tiling of the
+ATOMIC board with cells grouped, so a domino board is the square board (16 corner classes) plus a
+pairing constraint, and a trapezoid board is the triangle board (8 classes) plus a 3-block
+constraint. That is a different method and not a palette, but it is the only version of this whose
+alphabet stays small. Both palettes are committed unused so the next attempt starts from the shape,
+not from scratch.
