@@ -16,6 +16,10 @@ MAXK="${1:-11}"
 PALETTE="${PALETTE:-regular}"
 SFX=""; [ "$PALETTE" != regular ] && SFX=".$PALETTE"
 OUT="${2:-$HERE/run-k$MAXK-$PALETTE}"
+# Which phase-3 developer the palette asks for. Declared IN the palette, so a new one needs no edit
+# here — the list of names this used to carry grew with every polyform family.
+DEVELOPER=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("develop",""))' \
+  "$HERE/alphabets/palettes/$PALETTE.json" 2>/dev/null || echo "")
 CELLS="$OUT/ctrnact-cells-k$MAXK.json"
 ts(){ date '+%H:%M:%S'; }
 log(){ echo "[$(ts)] $*"; }
@@ -39,7 +43,7 @@ if [ "$PALETTE" = regular ]; then
   t2=$(date +%s)
   python3 "$HERE/develop.py" --kmin 1 --kmax "$MAXK" --pruned "$OUT/out/pruned" --out "$CELLS"
   log "  ($(( $(date +%s)-t2 ))s)"
-elif [ "$PALETTE" = regular-doubled ] || [ "$PALETTE" = regular-scaled-123 ] || [ "$PALETTE" = tetromino ] || [ "$PALETTE" = tetromino-free ]; then
+elif [ "$DEVELOPER" = eu_develop ]; then
   log "PHASE 3  develop (C++ eu_develop, per-corner CLASS_UNITS + EU_FACES tile polygons + area cert) -> cells"
   t2=$(date +%s)
   EU_FACES=1 "$HERE/eu_develop$SFX" --kmin 1 --kmax "$MAXK" --pruned "$OUT/out/pruned" --out "$CELLS"

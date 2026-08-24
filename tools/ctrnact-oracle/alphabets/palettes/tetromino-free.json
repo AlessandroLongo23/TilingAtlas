@@ -3,6 +3,7 @@
  "D": 12,
  "pinnedLegacy": false,
  "maxValence": 4,
+ "develop": "eu_develop",
  "comment": "The 5 FREE tetrominoes (I,O,T,S,L). The one-sided Tetris set also carries Z and J, but Z is S reflected and J is L reflected, and the engine dart set is chirality-DOUBLED (mirro(i,b)=(i,1-b), reflections act as (i,b)->(a-i,1-b)), so it already places every tile in both handednesses. Carrying the mirror twin as a separate alphabet symbol therefore represents the same physical tiling twice. Free set per AL 2026-08-08, and consistent with the settled mirror-merge convention (CLAUDE.md, A068599).",
  "tiles": [
   {

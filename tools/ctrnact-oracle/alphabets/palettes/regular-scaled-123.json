@@ -2,6 +2,7 @@
   "name": "regular-scaled-123",
   "D": 12,
   "pinnedLegacy": false,
+  "develop": "eu_develop",
   "comment": "Regular {3,4,6,12} at side lengths 1, 2 AND 3 together — the superclass of the regular-doubled (sides 1-2) palette. A side-s N-gon is modeled as a degenerate sN-gon with unit edges whose boundary word is (real corner θ_N = D/2 - D/N, then s-1 flat 180° corners = D/2), i.e. L=sN, p=s. Flat corners are noncounting, so a (flat,flat) mid-edge abutment of two same-scale tiles is not a k-vertex. s=1 is the plain regular tile, s=2 reproduces the doubled kind. Exploratory demo: NO external oracle (not A068599), counts are observations. The kept catalog is filtered to genuine size-mixers (a T-junction present) — single-scale regular tilings at any scale are dropped. See docs/DEVELOPMENT_NOTES.md.",
   "tiles": [
     { "kind": "regular", "n": 3,  "name": "3",    "famchar": "3" },

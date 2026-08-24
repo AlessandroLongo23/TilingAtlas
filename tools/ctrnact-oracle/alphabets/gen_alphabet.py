@@ -45,6 +45,7 @@ from fractions import Fraction
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from palette_spec import normalize_palette          # noqa: E402  (shared with develop_tri45)
+from polyform import polyform_angle_word, config_overlaps   # noqa: E402  (shared with gen_polyform_palette)
 
 def _word_period(w):
     L = len(w)
@@ -191,41 +192,6 @@ def edge_type_forbidden_pairs(classes, compl=False):
     return bad
 
 
-def _poly_boundary(cells):
-    """CCW outer boundary of a polyomino (unit squares keyed by bottom-left corner) as a loop of grid
-    vertices, EVERY grid point on the boundary kept (straight runs carry flat 180° corners, notches carry
-    reflex 270°). Simply-connected, no diagonal pinch (holds for all polyominoes we use) ⇒ each boundary
-    vertex has one outgoing directed edge, so the walk is a function. Interior on the left ⇒ CCW."""
-    has = {(x, y) for x, y in cells}
-    nxt = {}
-    for x, y in cells:
-        if (x, y - 1) not in has: nxt[(x, y)] = (x + 1, y)          # bottom edge, heading +x
-        if (x + 1, y) not in has: nxt[(x + 1, y)] = (x + 1, y + 1)  # right edge, heading +y
-        if (x, y + 1) not in has: nxt[(x + 1, y + 1)] = (x, y + 1)  # top edge, heading -x
-        if (x - 1, y) not in has: nxt[(x, y + 1)] = (x, y)          # left edge, heading -y
-    start = min(cells, key=lambda c: (c[1], c[0]))
-    sk = (start[0], start[1])
-    verts, cur, g = [], sk, 0
-    while True:
-        verts.append(cur)
-        cur = nxt[cur]
-        g += 1
-        if cur == sk or g > 100000:
-            break
-    return verts
-
-def polyomino_angle_word(cells, D):
-    """Cyclic interior-angle word (D-units) around a polyomino boundary: 90°→D/4, 180°→D/2, 270°→3D/4,
-    classified by the signed turn (left=convex, straight=flat, right=reflex) of a CCW traversal."""
-    v = _poly_boundary(cells)
-    m = len(v)
-    w = []
-    for i in range(m):
-        px, py = v[(i - 1) % m]; cx, cy = v[i]; nx, ny = v[(i + 1) % m]
-        cross = (cx - px) * (ny - cy) - (cy - py) * (nx - cx)
-        w.append(D // 4 if cross > 0 else (3 * D // 4 if cross < 0 else D // 2))
-    return w
-
 # ---------------------------------------------------------------- palette
 
 class Tile:
@@ -272,9 +238,9 @@ class Tile:
             self.scale = spec["scale"]        # side length s (>=1); s=1 ≡ regular, s=2 ≡ doubled
             self.L = self.scale * self.n      # boundary word length: sN unit edges
             self.p = self.scale               # word period: (real corner, then s-1 flat 180° corners)
-        elif self.kind == "polyomino":        # union of unit squares; boundary = unit-edge {90,180,270}-gon
-            self.cells = spec["cells"]        # unit squares, bottom-left integer corners
-            self.angles = spec["angles"]      # cyclic interior-angle word in D-units (from polyomino_angle_word)
+        elif self.kind == "polyomino":        # POLYFORM: a union of atomic cells, boundary = unit-edge
+            self.cells = spec["cells"]        # cells in the palette's lattice (see alphabets/polyform.py)
+            self.angles = spec["angles"]      # cyclic interior-angle word in D-units (from the cells)
             self.n = len(self.angles)         # boundary vertex count (perimeter in unit edges)
             self.L = self.n
             self.p = _word_period(self.angles)  # corner classes = fundamental-period positions
@@ -347,9 +313,10 @@ def mirror_expand(spec, D):
     catalogue can present one tile species and merge the pair when counting.
     """
     out, expanded = [], []
+    lattice = spec.get("lattice", "square")
     for t in spec["tiles"]:
         if t.get("kind") == "polyomino" and "angles" not in t:
-            t["angles"] = polyomino_angle_word(t["cells"], D)
+            t["angles"] = polyform_angle_word([tuple(c) for c in t["cells"]], D, lattice)
         out.append(t)
     # CHIRALITY IS DECIDED ON THE (ANGLE, EDGE) WORD, NOT THE ANGLES ALONE. An edged tile can have an
     # achiral angle word and still be chiral through its sides: the {5,4} half is 45-90-90-90, whose
@@ -409,8 +376,8 @@ def load_palette(path):
     spec = mirror_expand(spec, D)
     tiles, classes = [], []
     for t in spec["tiles"]:
-        if t.get("kind") == "polyomino" and "angles" not in t:
-            t["angles"] = polyomino_angle_word(t["cells"], D)  # derive the boundary angle word from cells
+        if t.get("kind") == "polyomino" and "angles" not in t:  # boundary angle word from the cells
+            t["angles"] = polyform_angle_word([tuple(c) for c in t["cells"]], D, spec.get("lattice", "square"))
         tile = Tile(len(tiles), t)
         tiles.append(tile)
         if tile.kind == "regular":
@@ -467,7 +434,7 @@ def load_palette(path):
                 cf = CornerClass(len(classes), tile, pos, D // 2, f"{tile.name}~{pos}")
                 cf.is_point = False
                 classes.append(cf)
-        elif tile.kind == "polyomino":  # one class per fundamental-period boundary position (90/180/270)
+        elif tile.kind == "polyomino":  # one class per fundamental-period boundary position
             assert sum(tile.angles) == (tile.n - 2) * (D // 2), \
                 f"polyomino {tile.name} angle sum {sum(tile.angles)} != {(tile.n-2)*(D//2)}"
             for pos in range(tile.p):
@@ -536,7 +503,26 @@ def cyclic_reps(words):
             reps.append(list(key))
     return reps
 
-def forbidden_adjacent_pairs(classes, D):
+def overlap_tester(classes, D, lattice=None):
+    """A predicate `word -> do the placed tiles of this vertex figure collide?`.
+
+    POLYFORM palettes get an EXACT INTEGER test. Every corner of a polyform is an atomic-lattice
+    point and every interior angle a whole number of lattice rotations, so placing the figure is an
+    integer map on cell centres and the collision test is set intersection — no floats, no epsilon.
+    The Shapely placement is the only other option and it is the wrong one twice over: it is sound
+    only for convex tiles (NOTES 9.4) and a polyform is never convex past the monoform, and
+    export_vertex_configs.KIND_OF has no "polyomino" entry, so it raises instead of answering. That
+    is why EU_PRUNE_OVERLAP had never once run on one of these palettes.
+    """
+    if lattice is not None:
+        return lambda w: config_overlaps(
+            [([tuple(c) for c in classes[i].tile.cells], classes[i].pos, classes[i].units) for i in w],
+            lattice, D)
+    from export_vertex_configs import build_config   # deferred: the float placement, convex tiles only
+    return lambda w: build_config(classes, D, list(w))["overlap"]
+
+
+def forbidden_adjacent_pairs(classes, D, lattice=None):
     """{(cid_a, cid_b)} whose PLACED tiles already collide as a bare 2-corner fan.
 
     The geometric generalization of the point-adjacency lemma below: that lemma is the hand-derived
@@ -557,13 +543,13 @@ def forbidden_adjacent_pairs(classes, D):
     build_config is planar, and in the defect modes the word does not close, so the tiles it would place
     are not the tiles of the actual spherical/hyperbolic vertex.
     """
-    from export_vertex_configs import build_config  # deferred: same exact placement the filter uses
+    overlaps = overlap_tester(classes, D, lattice)
     bad = set()
     for a in range(len(classes)):
         for b in range(len(classes)):
             if classes[a].units + classes[b].units > D:
                 continue  # cannot occur as an adjacent pair in any word that closes
-            if build_config(classes, D, [a, b])["overlap"]:
+            if overlaps([a, b]):
                 bad.add((a, b))
     return bad
 
@@ -1540,7 +1526,17 @@ def main():
     # It used to be env-only, and the Makefile never set it — so `make PALETTE=isotoxal-star-z24` produced
     # 285,899 vertexdefs where the SHIPPED table has 34,329, silently and with no way to tell from the output.
     # The env var still forces it on, for probing a palette that does not declare it.
-    prune_overlap = bool(spec.get("pruneOverlap")) or bool(os.environ.get("EU_PRUNE_OVERLAP"))
+    # A POLYFORM palette prunes by default. For every other kind this stays opt-in, because the test
+    # there is the float one and turning it on silently changes a certified table; for a polyform the
+    # test is exact integer arithmetic, it is the only thing that keeps geometrically impossible
+    # vertex figures out of the alphabet, and leaving it off costs ~3x the search for nothing. The
+    # regular/star/isotoxal tables carry no polyomino tile, so check-regular does not move.
+    poly_lattice = (spec.get("lattice", "square")
+                    if tiles and all(t.kind == "polyomino" for t in tiles) else None)
+    # EU_NO_PRUNE_OVERLAP — diagnostic escape hatch, for pricing the prune against an unpruned run.
+    prune_overlap = ((bool(spec.get("pruneOverlap")) or bool(os.environ.get("EU_PRUNE_OVERLAP"))
+                      or poly_lattice is not None)
+                     and not os.environ.get("EU_NO_PRUNE_OVERLAP"))
     # The overlap test is PLANAR (build_config places tiles in the Euclidean plane), so applying it to a
     # defect-closure palette tests a figure that does not exist: every spherical/hyperbolic config "overlaps"
     # and the table comes out EMPTY. That is a silent, total loss — hyp-p7 goes from 6,719 entries to 0 with
@@ -1552,7 +1548,7 @@ def main():
     forbidden = None
     if prune_overlap and closure == "euclidean":
         t_pairs = time.time()
-        forbidden = forbidden_adjacent_pairs(classes, D)
+        forbidden = forbidden_adjacent_pairs(classes, D, poly_lattice)
         print(f"[gen] EU_PRUNE_OVERLAP: {len(forbidden)} forbidden adjacent pairs of {len(classes) ** 2} "
               f"({time.time() - t_pairs:.1f}s) — pruned inside the DFS")
     # EDGE TYPES: a correctness constraint, so it applies in every closure mode and regardless of
@@ -1570,9 +1566,9 @@ def main():
     configs = enum_configs(D, classes, min_len, spec.get("maxValence", 24), closure, forbidden,
                            spec.get("maxDensity", 1))
     if prune_overlap:
-        from export_vertex_configs import build_config  # deferred: reuse the exact placement + overlap test
+        overlaps = overlap_tester(classes, D, poly_lattice)
         before = len(configs)
-        configs = [c for c in configs if not build_config(classes, D, c)["overlap"]]
+        configs = [c for c in configs if not overlaps(c)]
         print(f"[gen] EU_PRUNE_OVERLAP: dropped {before - len(configs)} residual overlapping configs "
               f"({before} -> {len(configs)}) — the 3+-corner collisions the pair table cannot see")
     if args.quotient or spec.get("quotientPeriod"):
