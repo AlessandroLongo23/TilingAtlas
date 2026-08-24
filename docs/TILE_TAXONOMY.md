@@ -185,7 +185,7 @@ Mapping the classes onto §1:
 | Convex irregular | equilateral, convex, `p ∈ {2,3,4,5,7}` | ✗ **not `p = 2` only**, see §5.1 |
 | Mixed | union of the above in one palette | palette-level, not a shape class |
 | Scaled | coarse-**regular** with `ℓ = s > 1` | ✗ **not a shape class**, see §5.2 |
-| Polyomino | equilateral, `α ∈ {90°, 270°}` coarse, `p` arbitrary | ✓ `p` up to 10 measured |
+| Polyform | equilateral, coarse, `p` arbitrary; `α ∈ {90°,180°,270°}` on squares, multiples of 60° on triangles and hexagons | ✓ `p` up to 10 measured; nine boards since 2026-08-24 |
 | Islamic | `D = 20` shapes **+ strapwork decoration** | axis-3 item |
 | Freedraw | tiles *derived*, not chosen | different generative mode, §8.2 |
 | Colors | decoration only | axis-3 item |
@@ -267,8 +267,9 @@ palette, for a reason worth knowing).
 
 ### 7.1 Concave with p ≥ 3 is essentially unexplored (the main gap)
 
-Concave tiles in the Atlas are stars (`p = 2` by construction), polyominoes (hardcoded), and one girih
-bowtie. There is no systematic search anywhere in `p ≥ 3` concave. Your own S-octagon is exactly this
+Concave tiles in the Atlas are stars (`p = 2` by construction), polyforms (generated from a lattice and
+an order by `alphabets/gen_polyform_palette.py`, so their concavity is whatever the shape has), and one
+girih bowtie. There is no systematic search anywhere in `p ≥ 3` concave. Your own S-octagon is exactly this
 family: `(90, 45, 270, 135)`, `p = 4`, all angles multiples of 15°, so it is representable at `D = 24`
 today and it is in no palette.
 

@@ -4,7 +4,35 @@
 > clobber-tolerant** — if two agents overwrite it, nothing is lost, because the *canonical*
 > history lives in the append-only **ledgers** below. Regenerate it from the latest signed
 > entry of each ledger. **Never write history here.** — last updated 2026-08-23, CC
-> (acting as TA too, AL authorization 2026-07-10).
+> (acting as TA too, AL authorization 2026-07-10). Last touched 2026-08-24.
+
+## Polyforms: the shelf is nine boards, and two engine defects came with it (2026-08-24)
+
+**27 tilings become 2,047.** The Polyominoes shelf is now Polyforms: polyominoes, polyiamonds and
+polyhexes at orders 2, 3 and 4, one board each on the ordinary sub axis, k up to 5. Dominoes 95,
+trominoes 231, tetrominoes 578, diamonds 205, triamonds 130, tetriamonds 299, dihexes 153, trihexes
+108, tetrahexes 248. Board table: `lib/tilings/polyform.ts`; builder: `scripts/build-polyform-atlas.ts`.
+
+**Three levels: form, then n, then k.** /play's tree nests them (Polyforms → Polyominoes (squares) →
+n = 3 · trominoes → k = 2); /library says it in facets (Form wall, Board wall narrowed to that form, k
+chips). ⚑ The tree showed no levels at all until `referenceToCatalogue` was made to carry
+`polyformOrder` onto `CatalogueTiling` — the same desync `euHalfBoard` documents.
+
+**No new search.** A tile reaches the engine as a cyclic interior-angle word, so a polyiamond is the
+same kind of object as a polyomino. `alphabets/polyform.py` is a boundary walk over three lattices and
+`gen_polyform_palette.py` writes the palettes; the enumeration reproduces all six OEIS sequences and
+the hand-written tetromino palette. Order 5 is past the alphabet wall (71M configurations).
+
+⚑ **Two engine defects, both live before this work.** (1) `eu_solver` disabled its face filter only for
+FLAT corners, but a REFLEX corner sits at a 2-valent vertex too: trihex k<=3 gave 2 tilings with the
+filter on and 475 with it off. Fixed to `>= D/2`; star18 k<=2 gives the same 18/19 either way, so the
+star counts are corroborated, and higher k is unmeasured. (2) The pruner emits one of each mirror pair
+(26 of 51 tetromino tile-multiset classes were asymmetric), so the builder takes the mirror closure by
+exact conjugation. Both are in DEVELOPMENT_NOTES 2026-08-24.
+
+⚑ **Not committed.** The working tree also carries somebody else's spherical/squaring edits and a
+regenerated `landing-data.generated.json` (euclidean 6,924 -> 8,944 from this shelf, spherical 355 ->
+414 from that other work).
 
 ## The great-circle leak: the star shelf is 100, and the k=3 row was incomplete (2026-08-23)
 

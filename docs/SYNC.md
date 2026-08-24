@@ -2878,3 +2878,11 @@ like-to-like alphabet cannot reach it; `edge_ok`, `edge_type_forbidden_pairs` an
 edge types each took a branch. check-regular byte-identical. ⚑ The face/pair filters lose tilings here
 and are refused under EDGE_COMPL; soundness elsewhere unchecked. ⚑ `develop_marked` silently dropped
 every k>=5. 48,842 tilings. Detail: DEVELOPMENT_NOTES 2026-08-23. c80d467 23f6c88 69e6f1f 893da17
+
+## 2026-08-24 — Polyforms: the polyomino shelf becomes nine boards — CC
+
+27 tetromino tilings become 2,047 across polyominoes, polyiamonds and polyhexes of orders 2-4, nested
+form → n → k in both surfaces. No new search: a tile is a cyclic angle word, so one lattice-aware
+boundary walk (OEIS-checked) plus a palette per board was the engine side. ⚑ Three defects: the face
+filter is unsound on any REFLEX palette (trihex 2 against 475), the pruner emits one of each mirror
+pair, and `referenceToCatalogue` dropped the board so /play showed no levels. NOTES 2026-08-24.

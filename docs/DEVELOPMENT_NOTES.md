@@ -16201,3 +16201,89 @@ pairing constraint, and a trapezoid board is the triangle board (8 classes) plus
 constraint. That is a different method and not a palette, but it is the only version of this whose
 alphabet stays small. Both palettes are committed unused so the next attempt starts from the shape,
 not from scratch.
+
+## 2026-08-24 — the polyomino shelf becomes nine polyform boards, and two engine defects it exposed
+
+**What shipped.** The Polyominoes shelf (27 tilings, tetrominoes only, k=1) is now Polyforms: nine
+boards over three lattices, 2,047 tilings, k up to 5. Dominoes 95, trominoes 231, tetrominoes 578,
+diamonds 205, triamonds 130, tetriamonds 299, dihexes 153, trihexes 108, tetrahexes 248. The shelf
+axis is the ordinary sub axis (`pfm-*` in SUB_ORDER, one family heading per lattice), so /library's
+board wall and /play's tree both grew the folders from one table, `lib/tilings/polyform.ts`.
+
+**THREE LEVELS: form, then n, then k** (AL, 2026-08-24). /play's tree nests them directly —
+Polyforms → Polyominoes (squares) → n = 3 · trominoes → k = 2 — and /library says the same thing in
+facets: a Form wall (the atomic tile), a Board wall beneath it holding only that form's boards, and
+the k chips. Two things had to change for it. The board rows are named by n under their form heading
+(`polyformOrderLabel`), since the heading already says which lattice; and picking a form narrows the
+board wall, so level 2 only ever offers the children of the level-1 node in hand.
+
+⚑ **AND ONE BUG: /play SAW NO LEVELS AT ALL.** The tree read `Polyforms → k` with 2,047 rows behind
+five k chips, because `referenceToCatalogue` did not carry `polyformOrder` onto `CatalogueTiling`, so
+`subOf` returned the anonymous spine for every polyform row and all nine boards collapsed. Exactly the
+failure `euHalfBoard` carries a comment about (the same desync, found the same way: /library reads the
+ReferenceTiling directly and looked right). One field.
+
+**No new search was needed, and that is the point.** A tile reaches the Čtrnáct engine as a cyclic
+interior-angle word and nothing else, so a polyiamond is the same KIND of object as a polyomino: only
+the word differs. The whole addition on the engine side is `alphabets/polyform.py`, a boundary walk
+that knows three lattices (unit squares keyed by corner, unit triangles keyed by (a,b,up/down), unit
+hexagons keyed by axial coordinates, the last two sharing one integer basis because a hexagon's six
+corners ARE the six triangular-lattice neighbours of its centre), plus `gen_polyform_palette.py`,
+which enumerates the shapes and writes the palette. Every boundary edge is one of 4 or 6 unit
+directions, so the interior angle is D/2 − turn·D/N exactly: integer arithmetic, no rounding.
+`gen_alphabet` lost its own square-only boundary walk (35 lines) and imports this one.
+
+The enumerator reproduces all six OEIS sequences at orders 1..6 — A000105/A000988 (polyominoes),
+A000577/A006534 (polyiamonds), A000228/A006535 (polyhexes), free and one-sided — and the generated
+square-order-4 palette reproduces the hand-written tetromino palette tile for tile, letters included.
+
+⚑ **ORDER 5 IS OUT OF REACH, from the formula the bubble palettes already measured.** Alphabet cost is
+(corner classes at the smallest angle) ^ (360 / that angle): 71M configurations for pentominoes and
+pentahexes, 7.5M for pentiamonds, against 105K for the largest board that ships. Orders 2-4 cost 21 to
+104,301 vertex types and generate in seconds.
+
+⚑ **THE FACE FILTER WAS UNSOUND ON EVERY REFLEX PALETTE, and had been since it was switched on.**
+`eu_solver` disables its three filters when the palette has a FLAT corner, because the face-closure
+model does not describe a 2-valent vertex. A reflex corner sits at a 2-valent vertex for exactly the
+same reason (a 240° notch filled by one 120° corner is two tiles), and a palette can carry reflex
+corners and no flat ones: every polyhex board is such a palette. Measured on trihex k≤3, filters on
+gave **2 tilings and filters off 475**. The test is now `>= D/2` instead of `== D/2`, which is what it
+should always have read. Cost is real but bounded: star18 k≤2 went from 6,299 nodes to 1,231,598 for
+the SAME 18/19 answer, so the star shelf's counts at k≤2 are corroborated rather than changed. Higher
+k is unmeasured. `EU_UNSAFE_FILTERS=1` restores the old behaviour for pricing the fix and reproducing
+an older run; it prints that the catalogue it produces is not complete.
+
+⚑ **THE ENGINE DOES NOT EMIT BOTH HANDEDNESSES, so the shelf takes the mirror closure itself.** The
+protoset of every board is one-sided (closed under reflection), so the set of tilings is closed under
+reflection too, and a chirality-distinguishing catalogue must hold both halves of every pair. The
+engine's dart set is chirality-doubled, and the pruner can identify a configuration with its mirror
+and emit one of the two: on tetromino k≤2, **26 of 51 tile-multiset classes were asymmetric**, mono-Z
+present 19 times and mono-S never. `build-polyform-atlas.ts` now conjugates the ℤ[ζ₁₂] coordinates and
+swaps each piece for its twin, adding the reflections whose key is absent (151 on tetrominoes, 66 on
+tetrahexes, 52 on diamonds, 0 on trominoes). The twin map is read off the tile SHAPES in the data (a
+reflection reverses the cyclic turn word), not from a palette table, so it cannot drift.
+
+⚑ **THE DEDUP KEY WAS ORIGIN-RELATIVE, and the anchor rule is now canonical.** It anchored on every
+rare-piece face within 4.2 of the ORIGIN, which is where the developer happened to put the cell and
+not a property of the tiling, so two presentations of one geometry could minimise over different
+candidate sets. The same 27 tetromino geometries came out as 27 from one run's 39 presentations and 26
+from another's 55. Anchoring on the faces of the fundamental domain instead makes the candidate set the
+tiling's own: a supercell has more faces, but each is a lattice translate of one of these and
+contributes the same key, so the minimum cannot move. `--selftest` asserts it directly by doubling
+each cell and comparing keys (39/39 on the old tetromino run).
+
+The same pass made the build 7× faster (75.6s to 10.7s on diamonds, 33s for all nine boards): the
+gather radius is now R_ANCHOR + R_WINDOW instead of 30 (a point past their sum can never enter a key),
+the rotation is hoisted out of the anchor loop since g(P − A) = g(P) − g(A), and candidates are
+compared as sorted integer rows instead of 10 KB strings.
+
+⚑ **A GEOMETRY'S k IS THE LOWEST ANY PRESENTATION REPORTED, which is a lower bound in principle.** A
+supercell presentation splits vertex orbits and reports a k the geometry does not have, so the keeper
+of each key is now the min-k (then min-area) record, not the min-area one. Where the engine emits no
+primitive presentation at all, the k stays inflated. More presentations can only sharpen it, which is
+why the builder now reads EVERY run a board has on disk and not only the deepest: merging the older
+tetromino k=1 run into the k≤2 one moved 5 of 38 geometries down from k=2 (the board total, 578, did
+not move). A tiling can still sit one folder too deep where no run reached its primitive cell.
+
+**Sizes.** 2,047 records are 4.8 MB raw and **671 KB through the atlas codec** (the repeated note is
+1.1 KB of every record), so the shelf loads eagerly and needs no lazy shard.
