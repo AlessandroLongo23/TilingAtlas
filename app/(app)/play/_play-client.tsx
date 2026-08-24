@@ -558,6 +558,10 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		(window as any).__play = { list: geometryList, select: setSelected, selected };
 	}, [geometryList, setSelected, selected]);
+	// Set when a geometry/decoration switch could NOT move the selection, because the target cell was
+	// still in flight. It is the ONLY thing that licenses the effect below to pull the selection into the
+	// active cell — see the ⚑ there for what inferring it from a mismatch cost.
+	const awaitingSwitch = useRef(false);
 	// Switch geometry from the toggle: set the mode and jump to that geometry's first tiling so the canvas
 	// follows. Reads `sorted` (not `geometryList`, which still holds the OLD cell this render).
 	//
@@ -574,6 +578,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			setDecoration(d);
 			const first = sorted.find((t) => geometryOf(t) === g && decorationOf(t) === d);
 			if (first) setSelected(first);
+			awaitingSwitch.current = !first;
 		},
 		[geometry, decoration, sorted, setSelected],
 	);
@@ -584,6 +589,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			setDecoration(d);
 			const first = sorted.find((t) => geometryOf(t) === geometry && decorationOf(t) === d);
 			if (first) setSelected(first);
+			awaitingSwitch.current = !first;
 		},
 		[decoration, geometry, sorted, setSelected],
 	);
@@ -615,11 +621,24 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// when they can; when the target shelf is still in flight there is nothing to jump to, so the canvas
 	// keeps showing the old tiling while the chips already read the new cell. As soon as the cell has
 	// rows, move to its first — the same tiling `onGeometryChange` would have picked had the data been
-	// there. Only ever fires when the selection sits OUTSIDE the active cell, so it cannot fight a
-	// deep-link or a click in the list, both of which land inside it.
+	// there.
+	//
+	// ⚑ It fires on `awaitingSwitch` and NOT on "the selection sits outside the active cell", which was
+	// the old test and was wrong for one render every time. `geometry` is separate state that catches up
+	// to a new selection in the effect above, so a deep link into a curved geometry IS outside the cell
+	// for exactly one commit — long enough for this effect to throw it away and replace it with the
+	// Euclidean cell's first row, after which useCatalogueSelection has recorded the key as applied and
+	// never retries. Measured 2026-08-24 on production: EVERY spherical and hyperbolic /play link landed
+	// on arch-cuboctahedron or hp7-1-00001, Marek Čtrnáct's four ncx links among them. Euclidean links
+	// worked, which is why it went unseen — that is the one geometry the chip already agrees with.
 	useEffect(() => {
 		if (!geometryList.length) return;
-		if (selected && geometryOf(selected) === geometry && decorationOf(selected) === decoration) return;
+		if (selected && geometryOf(selected) === geometry && decorationOf(selected) === decoration) {
+			awaitingSwitch.current = false;
+			return;
+		}
+		if (!awaitingSwitch.current) return;
+		awaitingSwitch.current = false;
 		lastSyncedSelection.current = geometryList[0];
 		setSelected(geometryList[0]);
 	}, [geometryList, selected, geometry, decoration, setSelected]);
