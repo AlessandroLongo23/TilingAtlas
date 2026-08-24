@@ -55,16 +55,17 @@ export interface BubblePattern {
 
 /** The SUBSTRATE a bubble tiling decorates. "tri-hex" is a mixed substrate and not a lattice of its
  *  own: triangles and hexagons on one board, which is the tile set the paper's mixed (T,H) rows need. */
-export type BubbleGrid = "triangle" | "square" | "hex" | "tri-hex" | "tri-square";
+export type BubbleGrid = "triangle" | "square" | "hex" | "tri-hex" | "tri-square" | "tri-sq-hex";
 
 /** Display order and labels for the lattice facet — the shelf's "folders". */
-export const BUBBLE_GRID_ORDER: BubbleGrid[] = ["triangle", "square", "hex", "tri-hex", "tri-square"];
+export const BUBBLE_GRID_ORDER: BubbleGrid[] = ["triangle", "square", "hex", "tri-hex", "tri-square", "tri-sq-hex"];
 export const BUBBLE_GRID_LABEL: Record<BubbleGrid, string> = {
 	triangle: "Triangle",
 	square: "Square",
 	hex: "Hexagon",
 	"tri-hex": "Triangle + hexagon",
 	"tri-square": "Triangle + square",
+	"tri-sq-hex": "Triangle + square + hexagon",
 };
 
 /** One shard per (board, k). Loaded together on the Edge patterns chip, the way the colouring
@@ -75,6 +76,7 @@ export const BUBBLE_FILES = [
 	...[1, 2, 3, 4, 5].map((k) => `/bubble/hex-k${k}.json`),
 	...[1, 2, 3].map((k) => `/bubble/th-k${k}.json`),
 	...[1, 2, 3].map((k) => `/bubble/ts-k${k}.json`),
+	...[1, 2].map((k) => `/bubble/tsh-k${k}.json`),
 ];
 
 /**

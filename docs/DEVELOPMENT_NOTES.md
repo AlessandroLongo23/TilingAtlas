@@ -16121,3 +16121,16 @@ the cross-validation now covers three independent palettes.
 ⚑ The shelf is five boards: triangle k<=4, square k<=5, hexagon k<=5, tri+hex k<=3, tri+square k<=3.
 Adding rhombi would open the three (T,S) rows the paper reaches only with them, and is the obvious
 next palette: the rhombic family is 10 tiles (3 of them chiral pairs) per its Figure 27.
+
+**T+S+H, and the consistency check closes.** 24 tiles, 39,945 vertex types, k<=2 in 4.3s. 553 tilings,
+of which only 129 use all three families and ship. The other 424 decompose EXACTLY into the boards
+already built: 21/180 single-family (7+11+3 and 67+102+11), 7/216 two-family (3+4 and 90+126). Every
+subset count is reproduced to the tile by a palette six times the size of the smallest. Five
+independent alphabets (4, 6, 10, 14, 18, 24 tiles) now agree on every overlap.
+
+⚑ **SQUARE + HEXAGON IS EMPTY, at every k, and needs no search.** 90a + 120b = 360 has no solution
+with a, b >= 1 (b=1 gives a=8/3, b=2 gives a=4/3), so no vertex can hold both a square and a hexagon.
+In a connected edge-to-edge tiling using only those two families some square and hexagon must meet at
+a vertex, and none can. The search returns 0 at k<=2, which is the argument confirmed and not the
+reason to believe it. So the regular-polygon bubble boards are SIX and not seven: T, S, H, T+S, T+H,
+T+S+H. Do not build an S+H palette.

@@ -1,0 +1,19 @@
+== bubble-tsh: triangle + square + hexagon, k<=2 ==
+24 tiles (4 + 6 + 14 necklaces), 88 corner classes.
+Angles 60/90/120 at D=24 -> 4/6/8; angle-valid vertices run valence 3..6.
+Shipping only tilings that use ALL THREE families; every smaller subset is
+already a board (triangle, square, hexagon, tri+hex, tri+square).
+
+palette: 24 tiles
+-- generating alphabet 10:10:40
+[gen] tables.bin: 11.9 MB (runtime-loadable; build the solver with RUNTIME_TABLES=1 and point EU_TABLES at it to skip compiling the alphabet)
+[gen] wrote tables/bubble-tsh/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (39945 entries)
+   gen 8s
+-- building k<=2 10:10:48
+   build 16s  solving 10:11:03
+   solve 4.3s  nodes 9038670
+   kept:   k=1 : 34   k=2 : 519 
+developed: {1: 34, 2: 519} total 553 failures 0
+  k=1: total 34, 21 1 family, 7 2 families, 6 all three
+  k=2: total 519, 180 1 family, 216 2 families, 123 all three
+finished 2026-08-24 10:11:15

@@ -213,6 +213,7 @@ export const SUB_LABEL: Record<string, string> = {
 	// Not a lattice: a mixed substrate, the board the paper's (T,H) rows live on.
 	"bub-tri-hex": "Triangle + hexagon",
 	"bub-tri-square": "Triangle + square",
+	"bub-tri-sq-hex": "Triangle + square + hexagon",
 	// The palettes under "Different edge lengths".
 	"el-tri45": "Triangles and squares",
 	"el-planigon": "Planigons",
