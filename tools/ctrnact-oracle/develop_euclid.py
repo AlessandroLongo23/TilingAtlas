@@ -1144,7 +1144,7 @@ class DevelopError(Exception):
     pass
 
 
-def develop(dec, theta, retro=frozenset(), guard=2000):
+def develop(dec, theta, retro=frozenset(), guard=None):
     """Flood-fill the dart instances in SE(3) and return (V, E, F, Ftype).
 
     A dart instance is (quotient dart h, position t, frame R) with the frame's first column along the
@@ -1177,8 +1177,18 @@ def develop(dec, theta, retro=frozenset(), guard=2000):
                tuple(np.round(R[:, 0] / 1e-6).astype(np.int64)) + \
                tuple(np.round(R[:, 2] / 1e-6).astype(np.int64))
 
+    # ⚑ NOT A CONSTANT. guard was a hardcoded 2000, which caps E at 1000 and silently files anything
+    # larger as "did not close" — a lost solid with no symptom, and star palettes reach further than
+    # the convex one ever did. develop_spherical.instance_bound derives it: 2E = sum over orbits of
+    # |orbit| * valence <= |G| * sum of valences, and a finite subgroup of O(3) has order at most
+    # max(120, 4 * maxrot). The argument is about the point group, so it transfers to a Euclidean
+    # realization unchanged.
+    if guard is None:
+        guard = max(2000, ds.instance_bound(dec["configs"]))
+
     inst_id, inst = {}, []
     vert_id, verts = {}, []
+    rn_pairs = []                    # (instance, its rneig neighbour) — the same-vertex relation
 
     def vid(t):
         k = tuple(np.round(t / 1e-6).astype(np.int64))
@@ -1209,6 +1219,7 @@ def develop(dec, theta, retro=frozenset(), guard=2000):
         hn = rneig[h]
         Rn = R @ Rz(alpha[hn]) @ Rx(math.pi - theta[eid[hn]])
         j, new = get(hn, t, Rn)
+        rn_pairs.append((i, j))      # both sit at the SAME map vertex, by construction
         if new:
             stack.append(j)
         # across the edge: step to the far end and reverse
@@ -1246,7 +1257,21 @@ def develop(dec, theta, retro=frozenset(), guard=2000):
         else:
             raise DevelopError("face did not close")
         F.append(ring)
-    return verts, E, F, Ftype, len(inst)
+    # The MAP's vertex count: orbits of the instance set under the rneig step, which never moves the
+    # translation t, so every instance in an orbit sits at one map vertex. Compare it with len(verts),
+    # the number of DISTINCT POINTS the fill produced, and a pinch is the difference.
+    parent = list(range(len(inst)))
+    def find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+    for a, b in rn_pairs:
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            parent[ra] = rb
+    nvmap = len({find(x) for x in range(len(inst))})
+    return verts, E, F, Ftype, len(inst), nvmap
 
 
 def convexity(V, F):
@@ -1283,7 +1308,7 @@ def vertex_orbit_proxy(V, F):
     return len(fp)
 
 
-def check_realized(V, E, F, Ftype, ninst, tol=1e-6):
+def check_realized(V, E, F, Ftype, ninst, tol=1e-6, nvmap=None):
     """(ok, residual). Every edge unit, every face a regular planar {n/d}, the map consistent.
 
     No area or density certificate here: those are spherical statements. What replaces them is that
@@ -1292,15 +1317,26 @@ def check_realized(V, E, F, Ftype, ninst, tol=1e-6):
     deg = sum(len(r) for r in F)
     res["mapOK"] = (2 * len(E) == ninst and deg == ninst
                     and all(len(r) == ds._nd(t)[0] for r, t in zip(F, Ftype)))
-    # ⚑ EULER IS PART OF VALIDITY, and leaving it out let a pinched solid through. The dart and ring
-    # checks above are all about the map's combinatorics, which survive a bad realization untouched: if
-    # the flood fill sends two distinct vertices of the map to the SAME POINT it merges them, V drops by
-    # one, and every count in mapOK still balances because no edge or face changed. The solid then
-    # touches itself at that point and is not a polyhedron. One k=3 record did exactly this
-    # (ctrnact-03_34-4af_4ap_5ae-1, second realization: 14 vertices become 13, chi = 1) and shipped as
-    # far as lib/squaring/smith.test.ts, which caught it on V - E + F. Every other record across k=1,
-    # k=2 and k=3 has chi = 2, so this rejects that one and nothing else.
-    res["mapOK"] = res["mapOK"] and res["euler"] == 2
+    # ⚑ TEST THE PINCH DIRECTLY, do not infer it from chi. The dart and ring checks above are about
+    # the map's combinatorics, which survive a bad realization untouched: if the flood fill sends two
+    # distinct vertices of the MAP to the same POINT it merges them, V drops by one, and every count in
+    # mapOK still balances because no edge or face changed. The solid touches itself there and is not a
+    # polyhedron. One k=3 record did exactly this (ctrnact-03_34-4af_4ap_5ae-1, second realization: 14
+    # map vertices onto 13 points, chi = 1) and shipped as far as lib/squaring/smith.test.ts.
+    #
+    # That was caught with `euler == 2`, which worked because every other record across k=1..k=3 has
+    # chi = 2. It is the wrong invariant. A star polyhedron need not: two of the four Kepler-Poinsot
+    # solids close at chi = -6, and lib/tilings/sph-star.ts explains at length why chi is not the
+    # certificate on that shelf. develop_euclid realizes the small stellated dodecahedron to machine
+    # precision today and throws it away on this line alone. So count the map's vertices and require
+    # the fill to have produced that many distinct points, which is what "pinched" actually means, and
+    # report chi instead of gating on it.
+    res["vmap"] = nvmap
+    if nvmap is not None:
+        res["pinched"] = (nvmap != len(V))
+        res["mapOK"] = res["mapOK"] and not res["pinched"]
+    else:
+        res["mapOK"] = res["mapOK"] and res["euler"] == 2      # callers that cannot supply it
     if not res["mapOK"]:
         return False, res
     Vn = [np.asarray(v) for v in V]
@@ -1347,7 +1383,7 @@ def develop_block(b, maxretro=0):
     for retro in subsets:
         for theta in solve_dihedrals(dec, retro):
             try:
-                V, E, F, Ftype, ninst = develop(dec, theta, retro)
+                V, E, F, Ftype, ninst, nvmap = develop(dec, theta, retro)
             except DevelopError as e:
                 why.append("retro=%s: %s" % (sorted(retro), e))
                 continue
@@ -1358,7 +1394,7 @@ def develop_block(b, maxretro=0):
                    for t in theta):
                 why.append("retro=%s: degenerate dihedral (a flat edge)" % sorted(retro))
                 continue
-            ok, res = check_realized(V, E, F, Ftype, ninst)
+            ok, res = check_realized(V, E, F, Ftype, ninst, nvmap=nvmap)
             if not ok:
                 why.append("retro=%s: certificate failed %s" % (sorted(retro), res))
                 continue
