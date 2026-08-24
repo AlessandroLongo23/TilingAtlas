@@ -67,6 +67,69 @@ export interface UpdateEntry {
 /** Newest first. tests/updates.test.ts asserts that ordering, and every id below. */
 export const UPDATES: UpdateEntry[] = [
 	{
+		version: "1.35.0",
+		date: "2026-08-24",
+		title: "Bubble tiles",
+		commit: "7d38964",
+		changes: [
+			{
+				kind: "feature",
+				text: "**Bubble tiles**, a second Euclidean edge system: 52,140 tilings whose every edge carries a bump or a bite, matched so that a bump always meets a bite.",
+				href: "/library?dec=edges&class=bubble",
+				tilings: ["bt-1-00003", "brh-1-00001", "bth-1-00005", "bs-1-00001"],
+			},
+			{
+				kind: "feature",
+				text: "**Seven boards** carry them: the triangle, square and hexagon lattices, three boards that mix those, and the rhombus.",
+				tilings: ["bh-1-00001", "bts-1-00008", "btsh-1-00005"],
+			},
+			{
+				kind: "feature",
+				text: "**The curved tiles draw like every other tiling**, so the cell fill, the line stroke, the hue ring, rotation and the conformal lens all drive them.",
+				href: "/play",
+			},
+			{
+				kind: "content",
+				text: "**The tiles are Katsushika Hokusai's**, drawn in 1824 and named by Lauren Siegel of MathHappens in 2023; this catalogue follows the 2026 study by John Chase, Will Field and Alex McCluer.",
+			},
+		],
+	},
+	{
+		version: "1.34.0",
+		date: "2026-08-23",
+		title: "Polyhedra with regular faces",
+		commit: "6519258",
+		changes: [
+			{
+				kind: "feature",
+				text: "**355 solids on the sphere**, 112 of them convex with regular faces and 243 non-convex, where the shelf held a fraction of that.",
+				href: "/library?geo=spherical",
+			},
+			{
+				kind: "feature",
+				text: "**The search reached k=4 and k=5**, adding 16 convex and 75 non-convex solids at four vertex orbits, then 8 convex and 100 non-convex at five.",
+			},
+			{
+				kind: "changed",
+				text: "**Convex and non-convex are separate shelves** now, and a solid is no longer inflated to a sphere it does not have.",
+				href: "/play",
+			},
+			{
+				kind: "feature",
+				text: "**Filter the solids by shape** (pyramid, prism, antiprism, cupola) and the non-convex shelf by whether its faces cross.",
+				href: "/library?geo=spherical",
+			},
+			{
+				kind: "feature",
+				text: "**Every 3D shelf is lit the same way**, and every record now says how the shelf obtained it, not only who first described it.",
+			},
+			{
+				kind: "fix",
+				text: "**The landing page counted 124 spherical tilings** when there are 355.",
+			},
+		],
+	},
+	{
 		version: "1.33.1",
 		date: "2026-08-20",
 		title: "Star polyhedra on the sphere",

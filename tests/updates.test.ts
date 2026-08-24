@@ -6,7 +6,7 @@ import { formatMonth, groupByMonth } from "@/lib/updates/grouping";
 import { bumpBetween, compareVersions, isVersion, parseVersion, releaseLevel } from "@/lib/updates/version";
 import { shelfPreviewCell } from "@/lib/updates/preview-cells";
 import { parseShelfPreviewId, previewHref } from "@/lib/updates/preview-ids";
-import { lengthFamilyRows } from "@/lib/services/referenceAtlas";
+import { EXTERNAL_CELL_CATALOGUES, lengthFamilyRows } from "@/lib/services/referenceAtlas";
 import { previewIdsIn, shouldAutoOpen, unseenSince } from "@/lib/updates/unseen";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
 
@@ -38,6 +38,20 @@ function atlasIds(): Set<string> {
 	// carry their own k), so leaving them out here would read as "references unknown tiling" for a
 	// preview that resolves perfectly well in both consumers.
 	for (const t of lengthFamilyRows()) ids.add(t.id);
+	// Catalogues that live outside the reference-atlas shards and still ship a real flat cell. Read
+	// from the SAME registry `scripts/gen-updates-data.ts` builds previews from, so this guard cannot
+	// pass an id the generator would fail to draw, or fail one it can.
+	for (const { files } of EXTERNAL_CELL_CATALOGUES) {
+		for (const url of files) {
+			try {
+				for (const row of JSON.parse(readFileSync(path.join(dir, url), "utf8")) as { id?: string }[]) {
+					if (row.id) ids.add(row.id);
+				}
+			} catch {
+				// absent in a lean checkout, same as a missing shard above
+			}
+		}
+	}
 	return ids;
 }
 

@@ -25,7 +25,7 @@ import { drawableEuclidean, toSpecimen, type LandingSpecimen } from "@/lib/servi
 import { UPDATES } from "@/lib/updates/entries";
 import { shelfPreviewCell } from "@/lib/updates/preview-cells";
 import { previewLabel } from "@/lib/updates/preview-ids";
-import { lengthFamilyRows, type ReferenceTiling } from "@/lib/services/referenceAtlas";
+import { EXTERNAL_CELL_CATALOGUES, lengthFamilyRows, type ReferenceTiling } from "@/lib/services/referenceAtlas";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
 import { hydrateRenderCells } from "@/lib/services/renderCellDerive";
 
@@ -114,6 +114,37 @@ async function fillFromLazyShards(missing: Set<string>): Promise<Map<string, Ref
 	return found;
 }
 
+/**
+ * Cells for ids held by a catalogue outside the reference-atlas shards.
+ *
+ * Driven by `EXTERNAL_CELL_CATALOGUES`, which names the files and the row builder, so this function
+ * knows about no particular shelf. Rows are built by the SAME converter the client loader uses, so a
+ * preview cannot drift from what the library draws. Same contract as fillFromLazyShards: read, return
+ * only what was asked for.
+ */
+async function fillFromExternal(missing: Set<string>): Promise<Map<string, ReferenceTiling>> {
+	const found = new Map<string, ReferenceTiling>();
+	if (!missing.size) return found;
+	for (const { files, build } of EXTERNAL_CELL_CATALOGUES) {
+		for (const url of files) {
+			if (!missing.size) break;
+			let rows: unknown[];
+			try {
+				rows = JSON.parse(await readFile(path.join(process.cwd(), "public", url), "utf8")) as unknown[];
+			} catch {
+				continue; // a missing catalogue just leaves its ids without a preview
+			}
+			for (const row of rows) {
+				const t = build(row as never);
+				if (!missing.has(t.id)) continue;
+				found.set(t.id, t);
+				missing.delete(t.id);
+			}
+		}
+	}
+	return found;
+}
+
 async function main(): Promise<void> {
 	const recent = UPDATES.slice(0, RECENT_RELEASES);
 	const wanted: string[] = [];
@@ -141,6 +172,7 @@ async function main(): Promise<void> {
 	// Anything the eager set could not answer and that is not a shelf id: look in the lazy shards.
 	const stillMissing = new Set(wanted.filter((id) => !renderable.has(id) && !shelfPreviewCell(id)));
 	for (const [id, t] of await fillFromLazyShards(stillMissing)) renderable.set(id, t);
+	for (const [id, t] of await fillFromExternal(stillMissing)) renderable.set(id, t);
 
 	const out: Record<string, LandingSpecimen> = {};
 	const skipped: string[] = [];

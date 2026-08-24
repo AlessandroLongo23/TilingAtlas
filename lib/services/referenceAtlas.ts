@@ -2519,7 +2519,7 @@ export async function loadFreedrawDecorAtlas(): Promise<ReferenceTiling[]> {
 	return fdDecorInflight;
 }
 
-function bubbleToReference(p: BubblePattern): ReferenceTiling {
+export function bubbleToReference(p: BubblePattern): ReferenceTiling {
 	const out: ReferenceTiling = {
 		id: p.id,
 		source: "bubble",
@@ -2574,6 +2574,23 @@ export async function loadBubbleDecorAtlas(): Promise<ReferenceTiling[]> {
 		.catch((err) => { bubDecorInflight = null; throw err; });
 	return bubDecorInflight;
 }
+
+/**
+ * Catalogues that live OUTSIDE the reference-atlas shards and still ship a real flat cell.
+ *
+ * The three decoration shelves each keep their own directory under public/ and their own loader, so
+ * nothing that scans `reference-atlas-*.json` can see them. That is fine for freedraw and colours,
+ * which carry a throwaway cell and draw through their own canvases, but a bubble tiling is an
+ * ordinary periodic tiling and IS drawable, so the preview generator has to reach it somehow.
+ *
+ * Declared as DATA and not as a function per shelf. `scripts/gen-updates-data.ts` iterates this and
+ * names no shelf; a fourth catalogue that ships a real cell adds one entry here and the generator
+ * needs no edit. The first version of that generator had a `fillFromBubble` written into it, which is
+ * how the next shelf would have got a `fillFromColors` beside it (AL, 2026-08-24).
+ */
+export const EXTERNAL_CELL_CATALOGUES: { files: readonly string[]; build: (row: never) => ReferenceTiling }[] = [
+	{ files: BUBBLE_FILES, build: bubbleToReference as (row: never) => ReferenceTiling },
+];
 
 let colDecorCache: ReferenceTiling[] | null = null;
 let colDecorInflight: Promise<ReferenceTiling[]> | null = null;
