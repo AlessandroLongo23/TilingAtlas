@@ -1895,12 +1895,19 @@ int main() {
     // candidate bucketing) and scan every type at every node. Only ever removes optimizations, so it
     // cannot lose a tiling; it prices the stack on any palette. Measured on isotox-cx45-z24, see
     // experiments/results/period3-palette-2026-08-07.md.
-    // ⚑ FLAT-CORNER PALETTES GET NO FILTERS. A corner of exactly D/2 units (180°) is a degenerate
-    // boundary position — the scaled/doubled construction's "s-1 flat corners per side", and every
-    // polyomino corner that is not a real turn. It sits at a 2-VALENT vertex, and the face-closure
-    // model the three filters share does not describe those: measured 2026-08-08 on tetromino, the
-    // static filter called 68,038 of 68,370 vertex types impossible and the k=1 catalog fell from 76
-    // to 20 — 56 real tilings deleted, silently. regular-scaled-123 lost 4 of 222 the same way.
+    // ⚑ PALETTES WITH A 180°-OR-WIDER CORNER GET NO FILTERS. Such a corner is a degenerate boundary
+    // position — the scaled/doubled construction's "s-1 flat corners per side", every polyomino corner
+    // that is not a real turn, and every reflex corner (a polyform notch, a star's dent). It sits at a
+    // 2-VALENT vertex, and the face-closure model the three filters share does not describe those:
+    // measured 2026-08-08 on tetromino, the static filter called 68,038 of 68,370 vertex types
+    // impossible and the k=1 catalog fell from 76 to 20 — 56 real tilings deleted, silently.
+    // regular-scaled-123 lost 4 of 222 the same way.
+    //
+    // The test was `== D/2` until 2026-08-24 and should always have been `>= D/2`: a REFLEX corner
+    // sits at a 2-valent vertex for exactly the same reason a flat one does (dent + point = 360° with
+    // two tiles), and a palette can carry reflex corners and no flat ones. Measured that day on
+    // trihex, which is such a palette: filters on gave 2 tilings at k<=3, filters off 475. The same
+    // 473-of-475 deletion, and the same silence.
     //
     // This was invisible until today for the same reason the dyn_build bug was: BUCKET_OK is false on
     // every flat-corner palette (their periods exceed 2), so the filters had never once run against
@@ -1909,17 +1916,22 @@ int main() {
     // The CANDIDATE INDEX is unaffected and stays on — it is a necessary-condition prune straight out
     // of checkface's first step, with no closure model in it, and it is where the speedup lives
     // anyway (EU_NOFILTER=1, i.e. bucketing only, reproduces the old 76 on tetromino exactly).
-    bool has_flat = false;
-    for (int c = 0; c < NCLS && !has_flat; c++) if (CLASS_UNITS[c] * 2 == TABLE_D) has_flat = true;
+    bool two_valent = false;   // some corner is 180° or wider ⇒ a 2-valent vertex is possible
+    for (int c = 0; c < NCLS && !two_valent; c++) if (CLASS_UNITS[c] * 2 >= TABLE_D) two_valent = true;
     if (std::getenv("EU_NOBUCKET")) {
         TYPE_OK.assign(mainlist.size(), 1);
         PAIRFILTER = false;
-    } else if (has_flat) {
+    } else if (two_valent && !std::getenv("EU_UNSAFE_FILTERS")) {
         TYPE_OK.assign(mainlist.size(), 1);
         PAIRFILTER = false;
-        std::cerr << "filters: DISABLED — palette has flat 180° corners, whose 2-valent vertices the "
-                     "face-closure model does not describe (candidate index stays on)\n";
+        std::cerr << "filters: DISABLED — palette has corners of 180° or wider, whose 2-valent vertices "
+                     "the face-closure model does not describe (candidate index stays on)\n";
     } else {
+        // EU_UNSAFE_FILTERS — the pre-2026-08-24 behaviour on a wide-corner palette, kept ONLY to price
+        // the fix and to reproduce an older run. It can delete real tilings (473 of 475 on trihex).
+        if (two_valent)
+            std::cerr << "filters: FORCED ON by EU_UNSAFE_FILTERS on a wide-corner palette — this can "
+                         "DELETE REAL TILINGS; the catalogue it produces is not complete\n";
         face_filter();
         if (!std::getenv("EU_NODYN")) dyn_build();
     }
