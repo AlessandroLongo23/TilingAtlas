@@ -16087,3 +16087,17 @@ regular tiles" while Table 2 puts the same two bite pairs in the Unknown column.
 claims. Neither appears among the 587 hexagonal tilings at k <= 5, which is evidence for the Figure 8
 reading. The census also separates cases their bite-count rows cannot: H{0,4B} and H{0,4C} realize at
 1:3 but H{0,4A} never does, and likewise H{6,2B}/H{6,2C} against H{6,2A}.
+
+**Mixed (T,H), and a cross-validation worth more than the shelf.** The 18-tile triangle-plus-hexagon
+palette (22,767 vertex types) runs to k=3 for 1,696 tilings, but only 708 genuinely mix: an all-tile
+palette contains the single-substrate searches as special cases, so 923 are pure triangle and 65 pure
+hexagon. Those pure slices match the dedicated 4-tile and 14-tile catalogues EXACTLY at every k
+(7/67/849 and 3/11/51), which is two different alphabets and two independent searches agreeing on 988
+tilings. The shelf ships only the 708. ⚑ Any future all-in-one palette has the same overlap and needs
+the same filter; a mixed BOARD must actually mix, or the atlas lists one tiling under two boards.
+
+On the paper: every (T,H) entry Table 2 marks realized reproduces, including all twelve hexagonal
+panels of Figure 15, and none of the four Unknown entries appears. Twelve of twelve known against
+zero of four open is what makes the null informative. Still bounded evidence: k counts vertex orbits
+and a realization could need more. k=4 on this palette was started and lost to a session teardown;
+k<=3 cost 1.35G nodes in 324s, so k=4 is a 1.5-3 hour job.

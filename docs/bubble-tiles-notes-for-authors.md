@@ -82,7 +82,12 @@ why it is an involution and why it commutes with isometries and so preserves the
 
 ## 4. The mixed (T,H) rows: every known case reproduces, no unknown one appears
 
-We ran the combined triangle-and-hexagon tile set (18 tiles) to k = 3, giving 1,696 mixed tilings.
+We ran the combined triangle-and-hexagon tile set (18 tiles) to k = 3. It returns 1,696 tilings, of
+which 708 genuinely use both a triangle and a hexagon; the other 988 are all-triangle or all-hexagon
+and are exactly the single-substrate results, which is itself a useful check. The pure slices of this
+18-tile search agree tile for tile with our separate 4-tile and 14-tile searches at every k (7 / 67 /
+849 triangular, 3 / 11 / 51 hexagonal), so two quite different alphabets and two independent searches
+land on the same catalogue.
 
 Every (T,H) entry Table 2 marks as realized comes back, all twelve of the hexagonal panels in
 Figure 15 among them:
