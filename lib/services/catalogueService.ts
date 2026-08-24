@@ -33,6 +33,10 @@ export interface CatalogueTiling {
 	 *  sub "el-euh-" — absent from SUB_ORDER — and vanished from the /play tree while /library, which
 	 *  reads the ReferenceTiling directly, still showed them. That was the library/play desync. */
 	euHalfBoard?: string;
+	/** Which polyform board this row belongs to ("tetromino", "trihex", …). Carried for the same reason
+	 *  euHalfBoard is: /play derives its sub-family from it, and without it all nine boards collapsed
+	 *  onto the anonymous spine and the tree showed Polyforms → k with no form and no order between. */
+	polyformOrder?: string;
 	// Hyperbolic shelf only: the {p,q} Schläfli symbol (regular entries; kept as the card label).
 	schlafli?: [number, number];
 	// Hyperbolic shelf only: the forced edge length ℓ of the developed patch, and the provenance string

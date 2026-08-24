@@ -1,0 +1,27 @@
+=== build-polyform-atlas (9 boards, chirality-distinguished) ===
+  ⚑ domino: 15 geometries arrived at more than one k (supercell presentations) — filed at the lowest
+  ⚑ domino: mirror closure ADDED 4 reflections the engine did not emit (see the note in this file)
+  Dominoes      4632 raw →    95 distinct (mirror-merged not computed)   k=1: 30→3  k=2: 262→7  k=3: 726→23  k=4: 3614→62
+  ⚑ tromino: 17 geometries arrived at more than one k (supercell presentations) — filed at the lowest
+  Trominoes     1771 raw →   231 distinct (mirror-merged not computed)   k=1: 25→8  k=2: 224→39  k=3: 1522→184
+  ⚑ tetromino: 21 geometries arrived at more than one k (supercell presentations) — filed at the lowest
+  ⚑ tetromino: mirror closure ADDED 144 reflections the engine did not emit (see the note in this file)
+  Tetrominoes    873 raw →   578 distinct (mirror-merged not computed)   k=1: 94→38  k=2: 779→540
+  ⚑ diamond: mirror closure ADDED 52 reflections the engine did not emit (see the note in this file)
+  Diamonds       153 raw →   205 distinct (mirror-merged not computed)   k=1: 2→3  k=2: 6→8  k=3: 17→23  k=4: 40→52  k=5: 88→119
+  ⚑ triamond: 15 geometries arrived at more than one k (supercell presentations) — filed at the lowest
+  ⚑ triamond: mirror closure ADDED 4 reflections the engine did not emit (see the note in this file)
+  Triamonds     1908 raw →   130 distinct (mirror-merged not computed)   k=1: 6→2  k=2: 53→11  k=3: 306→39  k=4: 1543→78
+  ⚑ tetriamond: 10 geometries arrived at more than one k (supercell presentations) — filed at the lowest
+  ⚑ tetriamond: mirror closure ADDED 1 reflections the engine did not emit (see the note in this file)
+  Tetriamonds    643 raw →   299 distinct (mirror-merged not computed)   k=1: 46→22  k=2: 597→277
+  ⚑ dihex: 8 geometries arrived at more than one k (supercell presentations) — filed at the lowest
+  ⚑ dihex: mirror closure ADDED 1 reflections the engine did not emit (see the note in this file)
+  Dihexes        971 raw →   153 distinct (mirror-merged not computed)   k=1: 8→6  k=2: 18→4  k=3: 96→21  k=4: 217→35  k=5: 632→87
+  ⚑ trihex: 7 geometries arrived at more than one k (supercell presentations) — filed at the lowest
+  ⚑ trihex: mirror closure ADDED 2 reflections the engine did not emit (see the note in this file)
+  Trihexes       475 raw →   108 distinct (mirror-merged not computed)   k=1: 20→8  k=2: 93→30  k=3: 362→70
+  ⚑ tetrahex: 13 geometries arrived at more than one k (supercell presentations) — filed at the lowest
+  ⚑ tetrahex: mirror closure ADDED 66 reflections the engine did not emit (see the note in this file)
+  Tetrahexes     347 raw →   248 distinct (mirror-merged not computed)   k=1: 36→20  k=2: 311→228
+  TOTAL 2047 tilings → public/reference-atlas-polyomino.json (672.4 KB), 29.6s

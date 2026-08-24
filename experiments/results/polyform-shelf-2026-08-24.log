@@ -1,0 +1,410 @@
+[12:45:30] === polyform shelf: solve+prune+develop per palette ===
+[12:45:30] --- diamond  k<=5   (start)
+python3 alphabets/gen_alphabet.py --palette alphabets/palettes/diamond.json --out tables/diamond --certify
+[gen] palette=diamond D=12 tiles=1 classes=2 configs=5
+[cert] A6: 23 entries, pairwise non-isomorphic PASS
+[gen] tables.bin: 0.0 MB (runtime-loadable; build the solver with RUNTIME_TABLES=1 and point EU_TABLES at it to skip compiling the alphabet)
+[gen] wrote tables/diamond/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (23 entries)
+touch tables/diamond/.generated
+rm -f .maxnum-diamond-*
+touch .maxnum-diamond-5
+c++ -O2 -std=c++17 -DMAXNUM=5 -Itables/diamond -o eu_solver.diamond eu_solver.cpp
+c++ -O2 -std=c++17 -Itables/diamond -o eu_pruner.diamond eu_pruner.cpp
+c++ -O2 -std=c++17 -Itables/diamond -o eu_develop.diamond eu_develop.cpp
+[12:45:36]     built (6s), searching…
+[12:45:36] build (MAXNUM=5 PALETTE=diamond)
+[12:45:36] PHASE 1  solve (C++ DFS, all k<=5)
+vertex figures: 5 over 23 types
+bucket key unique (BUCKET_OK): yes
+OKPAIR: 18 admissible (tkey, Q(f)) pairs
+nodes: 10817  simplify_calls: 2431  simplify_true: 671
+[12:45:36]   raw blocks: 671  (0s)
+[12:45:36] PHASE 2  prune (C++, fingerprint + bitset WL)
+  k=1 : 2
+  k=2 : 6
+  k=3 : 17
+  k=4 : 40
+  k=5 : 88
+total kept: 153
+store: peak 0 MB total, 0 MB resident
+[12:45:36]   (0s)
+[12:45:36] PHASE 3  develop (C++ eu_develop, per-corner CLASS_UNITS + EU_FACES tile polygons + area cert) -> cells
+developed 153 tilings -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k5-diamond/ctrnact-cells-k5.json
+  k=1 : 2
+  k=2 : 6
+  k=3 : 17
+  k=4 : 40
+  k=5 : 88
+area-cert (float Σface=|detΛ|): 153/153 tilings PASS
+[12:45:36]   (0s)
+[12:45:36] DONE  total 0s  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k5-diamond/ctrnact-cells-k5.json
+[12:45:37] --- diamond  k<=5  DONE in 6s: raw developed 153 {1: 2, 2: 6, 3: 17, 4: 40, 5: 88}
+[12:45:37] --- dihex  k<=5   (start)
+python3 alphabets/gen_alphabet.py --palette alphabets/palettes/dihex.json --out tables/dihex --certify
+[gen] palette=dihex D=12 tiles=1 classes=5 configs=14
+[cert] A6: 16 entries, pairwise non-isomorphic PASS
+[gen] tables.bin: 0.0 MB (runtime-loadable; build the solver with RUNTIME_TABLES=1 and point EU_TABLES at it to skip compiling the alphabet)
+[gen] wrote tables/dihex/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (16 entries)
+touch tables/dihex/.generated
+rm -f .maxnum-dihex-*
+touch .maxnum-dihex-5
+c++ -O2 -std=c++17 -DMAXNUM=5 -Itables/dihex -o eu_solver.dihex eu_solver.cpp
+c++ -O2 -std=c++17 -Itables/dihex -o eu_pruner.dihex eu_pruner.cpp
+c++ -O2 -std=c++17 -Itables/dihex -o eu_develop.dihex eu_develop.cpp
+[12:45:43]     built (6s), searching…
+[12:45:43] build (MAXNUM=5 PALETTE=dihex)
+[12:45:43] PHASE 1  solve (C++ DFS, all k<=5)
+sided classes: sigma is not the identity on this alphabet
+vertex figures: 14 over 16 types
+face filter: 6 of 16 vertex types can occur in a tiling (10 impossible)
+bucket key unique (BUCKET_OK): no — 4-bucket union active
+OKPAIR: 400 admissible (tkey, Q(f)) pairs
+nodes: 10111  simplify_calls: 1014  simplify_true: 650
+note: up to 7 dent-fill (noncounting) vertices per configuration; no cap is applied.
+[12:45:43]   raw blocks: 650  (0s)
+[12:45:43] PHASE 2  prune (C++, fingerprint + bitset WL)
+  k=1 : 4
+  k=2 : 8
+  k=3 : 24
+  k=4 : 43
+  k=5 : 96
+total kept: 175
+store: peak 0 MB total, 0 MB resident
+[12:45:43]   (0s)
+[12:45:43] PHASE 3  develop (C++ eu_develop, per-corner CLASS_UNITS + EU_FACES tile polygons + area cert) -> cells
+developed 175 tilings -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k5-dihex/ctrnact-cells-k5.json
+  k=1 : 4
+  k=2 : 8
+  k=3 : 24
+  k=4 : 43
+  k=5 : 96
+area-cert (float Σface=|detΛ|): 175/175 tilings PASS
+[12:45:44]   (1s)
+[12:45:44] DONE  total 1s  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k5-dihex/ctrnact-cells-k5.json
+[12:45:44] --- dihex  k<=5  DONE in 7s: raw developed 175 {1: 4, 2: 8, 3: 24, 4: 43, 5: 96}
+[12:45:44] --- triamond  k<=4   (start)
+python3 alphabets/gen_alphabet.py --palette alphabets/palettes/triamond.json --out tables/triamond --certify
+[gen] palette=triamond D=12 tiles=1 classes=5 configs=51
+[cert] A6: 72 entries, pairwise non-isomorphic PASS
+[gen] SIDED CLASSES: 9 of 72 vertex types have a dart orbit whose two sides carry a class and its sigma-image — a mirror in the site symmetry maps a tile to its reflection. Their class array is the SIDE-0 reading and the identity sigma[cls[mirro]] = cls[rneig] carries the other side. Usable.
+[gen] tables.bin: 0.0 MB (runtime-loadable; build the solver with RUNTIME_TABLES=1 and point EU_TABLES at it to skip compiling the alphabet)
+[gen] wrote tables/triamond/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (72 entries)
+touch tables/triamond/.generated
+rm -f .maxnum-triamond-*
+touch .maxnum-triamond-4
+c++ -O2 -std=c++17 -DMAXNUM=4 -Itables/triamond -o eu_solver.triamond eu_solver.cpp
+c++ -O2 -std=c++17 -Itables/triamond -o eu_pruner.triamond eu_pruner.cpp
+c++ -O2 -std=c++17 -Itables/triamond -o eu_develop.triamond eu_develop.cpp
+[12:45:49]     built (5s), searching…
+[12:45:50] build (MAXNUM=4 PALETTE=triamond)
+[12:45:50] PHASE 1  solve (C++ DFS, all k<=4)
+sided classes: sigma is not the identity on this alphabet
+vertex figures: 51 over 72 types
+filters: DISABLED — palette has flat 180° corners, whose 2-valent vertices the face-closure model does not describe (candidate index stays on)
+bucket key unique (BUCKET_OK): no — 4-bucket union active
+nodes: 3025622  simplify_calls: 9413  simplify_true: 7951
+note: up to 4 dent-fill (noncounting) vertices per configuration; no cap is applied.
+[12:45:51]   raw blocks: 7951  (1s)
+[12:45:51] PHASE 2  prune (C++, fingerprint + bitset WL)
+  k=1 : 6
+  k=2 : 53
+  k=3 : 306
+  k=4 : 1543
+total kept: 1908
+store: peak 0 MB total, 0 MB resident
+[12:45:52]   (1s)
+[12:45:52] PHASE 3  develop (C++ eu_develop, per-corner CLASS_UNITS + EU_FACES tile polygons + area cert) -> cells
+developed 1908 tilings -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k4-triamond/ctrnact-cells-k4.json
+  k=1 : 6
+  k=2 : 53
+  k=3 : 306
+  k=4 : 1543
+area-cert (float Σface=|detΛ|): 1908/1908 tilings PASS
+[12:45:52]   (0s)
+[12:45:52] DONE  total 2s  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k4-triamond/ctrnact-cells-k4.json
+[12:45:52] --- triamond  k<=4  DONE in 8s: raw developed 1908 {1: 6, 2: 53, 3: 306, 4: 1543}
+[12:45:52] --- domino  k<=4   (start)
+rm -f .maxnum-domino-*
+touch .maxnum-domino-4
+c++ -O2 -std=c++17 -DMAXNUM=4 -Itables/domino -o eu_solver.domino eu_solver.cpp
+[12:45:54]     built (2s), searching…
+[12:45:54] build (MAXNUM=4 PALETTE=domino)
+[12:45:54] PHASE 1  solve (C++ DFS, all k<=4)
+sided classes: sigma is not the identity on this alphabet
+vertex figures: 8 over 21 types
+filters: DISABLED — palette has flat 180° corners, whose 2-valent vertices the face-closure model does not describe (candidate index stays on)
+bucket key unique (BUCKET_OK): no — 4-bucket union active
+nodes: 381635  simplify_calls: 43319  simplify_true: 26955
+note: up to 8 dent-fill (noncounting) vertices per configuration; no cap is applied.
+[12:45:55]   raw blocks: 26955  (1s)
+[12:45:55] PHASE 2  prune (C++, fingerprint + bitset WL)
+  k=1 : 15
+  k=2 : 131
+  k=3 : 726
+  k=4 : 3614
+total kept: 4486
+store: peak 0 MB total, 0 MB resident
+[12:45:55]   (0s)
+[12:45:55] PHASE 3  develop (C++ eu_develop, per-corner CLASS_UNITS + EU_FACES tile polygons + area cert) -> cells
+developed 4486 tilings -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k4-domino/ctrnact-cells-k4.json
+  k=1 : 15
+  k=2 : 131
+  k=3 : 726
+  k=4 : 3614
+area-cert (float Σface=|detΛ|): 4486/4486 tilings PASS
+[12:45:56]   (1s)
+[12:45:56] DONE  total 2s  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k4-domino/ctrnact-cells-k4.json
+[12:45:56] --- domino  k<=4  DONE in 4s: raw developed 4486 {1: 15, 2: 131, 3: 726, 4: 3614}
+[12:45:56] --- tromino  k<=3   (start)
+python3 alphabets/gen_alphabet.py --palette alphabets/palettes/tromino.json --out tables/tromino --certify
+[gen] palette=tromino D=12 tiles=2 classes=12 configs=430
+[cert] A6: 493 entries, pairwise non-isomorphic PASS
+[gen] SIDED CLASSES: 35 of 493 vertex types have a dart orbit whose two sides carry a class and its sigma-image — a mirror in the site symmetry maps a tile to its reflection. Their class array is the SIDE-0 reading and the identity sigma[cls[mirro]] = cls[rneig] carries the other side. Usable.
+[gen] tables.bin: 0.1 MB (runtime-loadable; build the solver with RUNTIME_TABLES=1 and point EU_TABLES at it to skip compiling the alphabet)
+[gen] wrote tables/tromino/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (493 entries)
+touch tables/tromino/.generated
+rm -f .maxnum-tromino-*
+touch .maxnum-tromino-3
+c++ -O2 -std=c++17 -DMAXNUM=3 -Itables/tromino -o eu_solver.tromino eu_solver.cpp
+c++ -O2 -std=c++17 -Itables/tromino -o eu_pruner.tromino eu_pruner.cpp
+c++ -O2 -std=c++17 -Itables/tromino -o eu_develop.tromino eu_develop.cpp
+[12:46:02]     built (6s), searching…
+[12:46:02] build (MAXNUM=3 PALETTE=tromino)
+[12:46:02] PHASE 1  solve (C++ DFS, all k<=3)
+sided classes: sigma is not the identity on this alphabet
+vertex figures: 430 over 493 types
+filters: DISABLED — palette has flat 180° corners, whose 2-valent vertices the face-closure model does not describe (candidate index stays on)
+bucket key unique (BUCKET_OK): no — 4-bucket union active
+nodes: 5240454  simplify_calls: 9860  simplify_true: 5958
+note: up to 8 dent-fill (noncounting) vertices per configuration; no cap is applied.
+[12:46:05]   raw blocks: 5958  (3s)
+[12:46:05] PHASE 2  prune (C++, fingerprint + bitset WL)
+  k=1 : 25
+  k=2 : 224
+  k=3 : 1522
+total kept: 1771
+store: peak 0 MB total, 0 MB resident
+[12:46:05]   (0s)
+[12:46:05] PHASE 3  develop (C++ eu_develop, per-corner CLASS_UNITS + EU_FACES tile polygons + area cert) -> cells
+developed 1771 tilings -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k3-tromino/ctrnact-cells-k3.json
+  k=1 : 25
+  k=2 : 224
+  k=3 : 1522
+area-cert (float Σface=|detΛ|): 1771/1771 tilings PASS
+[12:46:06]   (1s)
+[12:46:06] DONE  total 4s  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k3-tromino/ctrnact-cells-k3.json
+[12:46:06] --- tromino  k<=3  DONE in 10s: raw developed 1771 {1: 25, 2: 224, 3: 1522}
+[12:46:06] --- trihex  k<=3   (start)
+python3 alphabets/gen_alphabet.py --palette alphabets/palettes/trihex.json --out tables/trihex --certify
+[gen] palette=trihex D=12 tiles=3 classes=25 configs=1060
+[cert] A6: 1110 entries, pairwise non-isomorphic PASS
+[gen] SIDED CLASSES: 32 of 1110 vertex types have a dart orbit whose two sides carry a class and its sigma-image — a mirror in the site symmetry maps a tile to its reflection. Their class array is the SIDE-0 reading and the identity sigma[cls[mirro]] = cls[rneig] carries the other side. Usable.
+[gen] tables.bin: 0.2 MB (runtime-loadable; build the solver with RUNTIME_TABLES=1 and point EU_TABLES at it to skip compiling the alphabet)
+[gen] wrote tables/trihex/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (1110 entries)
+touch tables/trihex/.generated
+rm -f .maxnum-trihex-*
+touch .maxnum-trihex-3
+c++ -O2 -std=c++17 -DMAXNUM=3 -Itables/trihex -o eu_solver.trihex eu_solver.cpp
+c++ -O2 -std=c++17 -Itables/trihex -o eu_pruner.trihex eu_pruner.cpp
+c++ -O2 -std=c++17 -Itables/trihex -o eu_develop.trihex eu_develop.cpp
+[12:46:12]     built (6s), searching…
+[12:46:12] build (MAXNUM=3 PALETTE=trihex)
+[12:46:12] PHASE 1  solve (C++ DFS, all k<=3)
+sided classes: sigma is not the identity on this alphabet
+vertex figures: 1060 over 1110 types
+face filter: 5 of 1110 vertex types can occur in a tiling (1105 impossible)
+bucket key unique (BUCKET_OK): no — 4-bucket union active
+OKPAIR: 72 admissible (tkey, Q(f)) pairs
+nodes: 196  simplify_calls: 4  simplify_true: 4
+note: up to 7 dent-fill (noncounting) vertices per configuration; no cap is applied.
+[12:46:12]   raw blocks: 4  (0s)
+[12:46:12] PHASE 2  prune (C++, fingerprint + bitset WL)
+  k=1 : 0
+  k=2 : 2
+  k=3 : 0
+total kept: 2
+store: peak 0 MB total, 0 MB resident
+[12:46:13]   (1s)
+[12:46:13] PHASE 3  develop (C++ eu_develop, per-corner CLASS_UNITS + EU_FACES tile polygons + area cert) -> cells
+developed 2 tilings -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k3-trihex/ctrnact-cells-k3.json
+  k=2 : 2
+area-cert (float Σface=|detΛ|): 2/2 tilings PASS
+[12:46:13]   (0s)
+[12:46:13] DONE  total 1s  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k3-trihex/ctrnact-cells-k3.json
+[12:46:13] --- trihex  k<=3  DONE in 7s: raw developed 2 {2: 2}
+[12:46:13] === all requested palettes finished ===
+[12:52:56] === polyform shelf: solve+prune+develop per palette ===
+[12:52:56] --- dihex  k<=5   (start)
+c++ -O2 -std=c++17 -DMAXNUM=5 -Itables/dihex -o eu_solver.dihex eu_solver.cpp
+[12:52:58]     built (2s), searching…
+[12:52:58] build (MAXNUM=5 PALETTE=dihex)
+[12:52:58] PHASE 1  solve (C++ DFS, all k<=5)
+sided classes: sigma is not the identity on this alphabet
+vertex figures: 14 over 16 types
+filters: DISABLED — palette has corners of 180° or wider, whose 2-valent vertices the face-closure model does not describe (candidate index stays on)
+bucket key unique (BUCKET_OK): no — 4-bucket union active
+nodes: 363721  simplify_calls: 3880  simplify_true: 3316
+note: up to 8 dent-fill (noncounting) vertices per configuration; no cap is applied.
+[12:52:59]   raw blocks: 3316  (1s)
+[12:52:59] PHASE 2  prune (C++, fingerprint + bitset WL)
+  k=1 : 8
+  k=2 : 18
+  k=3 : 96
+  k=4 : 217
+  k=5 : 632
+total kept: 971
+store: peak 0 MB total, 0 MB resident
+[12:52:59]   (0s)
+[12:52:59] PHASE 3  develop (C++ eu_develop, per-corner CLASS_UNITS + EU_FACES tile polygons + area cert) -> cells
+developed 971 tilings -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k5-dihex/ctrnact-cells-k5.json
+  k=1 : 8
+  k=2 : 18
+  k=3 : 96
+  k=4 : 217
+  k=5 : 632
+area-cert (float Σface=|detΛ|): 971/971 tilings PASS
+[12:52:59]   (0s)
+[12:52:59] DONE  total 1s  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k5-dihex/ctrnact-cells-k5.json
+[12:52:59] --- dihex  k<=5  DONE in 3s: raw developed 971 {1: 8, 2: 18, 3: 96, 4: 217, 5: 632}
+[12:52:59] --- trihex  k<=3   (start)
+c++ -O2 -std=c++17 -DMAXNUM=3 -Itables/trihex -o eu_solver.trihex eu_solver.cpp
+[12:53:00]     built (1s), searching…
+[12:53:00] build (MAXNUM=3 PALETTE=trihex)
+[12:53:00] PHASE 1  solve (C++ DFS, all k<=3)
+sided classes: sigma is not the identity on this alphabet
+vertex figures: 1060 over 1110 types
+filters: DISABLED — palette has corners of 180° or wider, whose 2-valent vertices the face-closure model does not describe (candidate index stays on)
+bucket key unique (BUCKET_OK): no — 4-bucket union active
+nodes: 5750663  simplify_calls: 1224  simplify_true: 784
+note: up to 11 dent-fill (noncounting) vertices per configuration; no cap is applied.
+[12:53:02]   raw blocks: 784  (2s)
+[12:53:02] PHASE 2  prune (C++, fingerprint + bitset WL)
+  k=1 : 20
+  k=2 : 93
+  k=3 : 362
+total kept: 475
+store: peak 0 MB total, 0 MB resident
+[12:53:02]   (0s)
+[12:53:02] PHASE 3  develop (C++ eu_develop, per-corner CLASS_UNITS + EU_FACES tile polygons + area cert) -> cells
+developed 475 tilings -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k3-trihex/ctrnact-cells-k3.json
+  k=1 : 20
+  k=2 : 93
+  k=3 : 362
+area-cert (float Σface=|detΛ|): 475/475 tilings PASS
+[12:53:02]   (0s)
+[12:53:02] DONE  total 2s  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k3-trihex/ctrnact-cells-k3.json
+[12:53:02] --- trihex  k<=3  DONE in 3s: raw developed 475 {1: 20, 2: 93, 3: 362}
+[12:53:02] --- tetrahex  k<=2   (start)
+python3 alphabets/gen_alphabet.py --palette alphabets/palettes/tetrahex.json --out tables/tetrahex --certify
+[gen] palette=tetrahex D=12 tiles=10 classes=126 configs=104169
+[cert] A6: 104301 entries, pairwise non-isomorphic PASS
+[gen] SIDED CLASSES: 84 of 104301 vertex types have a dart orbit whose two sides carry a class and its sigma-image — a mirror in the site symmetry maps a tile to its reflection. Their class array is the SIDE-0 reading and the identity sigma[cls[mirro]] = cls[rneig] carries the other side. Usable.
+[gen] tables.bin: 24.0 MB (runtime-loadable; build the solver with RUNTIME_TABLES=1 and point EU_TABLES at it to skip compiling the alphabet)
+[gen] wrote tables/tetrahex/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (104301 entries)
+touch tables/tetrahex/.generated
+rm -f .maxnum-tetrahex-*
+touch .maxnum-tetrahex-2
+c++ -O2 -std=c++17 -DMAXNUM=2 -Itables/tetrahex -o eu_solver.tetrahex eu_solver.cpp
+c++ -O2 -std=c++17 -Itables/tetrahex -o eu_pruner.tetrahex eu_pruner.cpp
+c++ -O2 -std=c++17 -Itables/tetrahex -o eu_develop.tetrahex eu_develop.cpp
+[12:53:24]     built (22s), searching…
+[12:53:24] build (MAXNUM=2 PALETTE=tetrahex)
+[12:53:24] PHASE 1  solve (C++ DFS, all k<=2)
+sided classes: sigma is not the identity on this alphabet
+vertex figures: 104169 over 104301 types
+filters: DISABLED — palette has corners of 180° or wider, whose 2-valent vertices the face-closure model does not describe (candidate index stays on)
+bucket key unique (BUCKET_OK): no — 4-bucket union active
+nodes: 93882860  simplify_calls: 684  simplify_true: 422
+note: up to 15 dent-fill (noncounting) vertices per configuration; no cap is applied.
+[12:53:55]   raw blocks: 422  (31s)
+[12:53:55] PHASE 2  prune (C++, fingerprint + bitset WL)
+  k=1 : 36
+  k=2 : 311
+total kept: 347
+store: peak 0 MB total, 0 MB resident
+[12:53:55]   (0s)
+[12:53:55] PHASE 3  develop (C++ eu_develop, per-corner CLASS_UNITS + EU_FACES tile polygons + area cert) -> cells
+developed 347 tilings -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k2-tetrahex/ctrnact-cells-k2.json
+  k=1 : 36
+  k=2 : 311
+area-cert (float Σface=|detΛ|): 347/347 tilings PASS
+[12:53:56]   (1s)
+[12:53:56] DONE  total 32s  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k2-tetrahex/ctrnact-cells-k2.json
+[12:53:56] --- tetrahex  k<=2  DONE in 54s: raw developed 347 {1: 36, 2: 311}
+[12:53:56] === all requested palettes finished ===
+[12:54:45] === polyform shelf: solve+prune+develop per palette ===
+[12:54:45] --- tetriamond  k<=2   (start)
+python3 alphabets/gen_alphabet.py --palette alphabets/palettes/tetriamond.json --out tables/tetriamond --certify
+[gen] palette=tetriamond D=12 tiles=4 classes=14 configs=3732
+[cert] A6: 3955 entries, pairwise non-isomorphic PASS
+[gen] SIDED CLASSES: 149 of 3955 vertex types have a dart orbit whose two sides carry a class and its sigma-image — a mirror in the site symmetry maps a tile to its reflection. Their class array is the SIDE-0 reading and the identity sigma[cls[mirro]] = cls[rneig] carries the other side. Usable.
+[gen] tables.bin: 1.4 MB (runtime-loadable; build the solver with RUNTIME_TABLES=1 and point EU_TABLES at it to skip compiling the alphabet)
+[gen] wrote tables/tetriamond/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (3955 entries)
+touch tables/tetriamond/.generated
+rm -f .maxnum-tetriamond-*
+touch .maxnum-tetriamond-2
+c++ -O2 -std=c++17 -DMAXNUM=2 -Itables/tetriamond -o eu_solver.tetriamond eu_solver.cpp
+c++ -O2 -std=c++17 -Itables/tetriamond -o eu_pruner.tetriamond eu_pruner.cpp
+c++ -O2 -std=c++17 -Itables/tetriamond -o eu_develop.tetriamond eu_develop.cpp
+[12:54:50]     built (5s), searching…
+[12:54:50] build (MAXNUM=2 PALETTE=tetriamond)
+[12:54:50] PHASE 1  solve (C++ DFS, all k<=2)
+sided classes: sigma is not the identity on this alphabet
+vertex figures: 3732 over 3955 types
+filters: DISABLED — palette has corners of 180° or wider, whose 2-valent vertices the face-closure model does not describe (candidate index stays on)
+bucket key unique (BUCKET_OK): no — 4-bucket union active
+nodes: 3406571  simplify_calls: 1733  simplify_true: 1052
+note: up to 7 dent-fill (noncounting) vertices per configuration; no cap is applied.
+[12:54:51]   raw blocks: 1052  (1s)
+[12:54:51] PHASE 2  prune (C++, fingerprint + bitset WL)
+  k=1 : 46
+  k=2 : 597
+total kept: 643
+store: peak 0 MB total, 0 MB resident
+[12:54:51]   (0s)
+[12:54:51] PHASE 3  develop (C++ eu_develop, per-corner CLASS_UNITS + EU_FACES tile polygons + area cert) -> cells
+developed 643 tilings -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k2-tetriamond/ctrnact-cells-k2.json
+  k=1 : 46
+  k=2 : 597
+area-cert (float Σface=|detΛ|): 643/643 tilings PASS
+[12:54:52]   (0s)
+[12:54:52] DONE  total 2s  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k2-tetriamond/ctrnact-cells-k2.json
+[12:54:52] --- tetriamond  k<=2  DONE in 7s: raw developed 643 {1: 46, 2: 597}
+[12:54:52] --- tetromino  k<=2   (start)
+python3 alphabets/gen_alphabet.py --palette alphabets/palettes/tetromino.json --out tables/tetromino --certify
+[gen] palette=tetromino D=12 tiles=7 classes=47 configs=54248
+[cert] A6: 54856 entries, pairwise non-isomorphic PASS
+[gen] SIDED CLASSES: 403 of 54856 vertex types have a dart orbit whose two sides carry a class and its sigma-image — a mirror in the site symmetry maps a tile to its reflection. Their class array is the SIDE-0 reading and the identity sigma[cls[mirro]] = cls[rneig] carries the other side. Usable.
+[gen] tables.bin: 15.4 MB (runtime-loadable; build the solver with RUNTIME_TABLES=1 and point EU_TABLES at it to skip compiling the alphabet)
+[gen] wrote tables/tetromino/{solver_tables.inc,pruner_tables.inc,tables.py,certs.txt} (54856 entries)
+touch tables/tetromino/.generated
+rm -f .maxnum-tetromino-*
+touch .maxnum-tetromino-2
+c++ -O2 -std=c++17 -DMAXNUM=2 -Itables/tetromino -o eu_solver.tetromino eu_solver.cpp
+c++ -O2 -std=c++17 -Itables/tetromino -o eu_pruner.tetromino eu_pruner.cpp
+c++ -O2 -std=c++17 -Itables/tetromino -o eu_develop.tetromino eu_develop.cpp
+[12:55:07]     built (15s), searching…
+[12:55:07] build (MAXNUM=2 PALETTE=tetromino)
+[12:55:07] PHASE 1  solve (C++ DFS, all k<=2)
+sided classes: sigma is not the identity on this alphabet
+vertex figures: 54248 over 54856 types
+filters: DISABLED — palette has corners of 180° or wider, whose 2-valent vertices the face-closure model does not describe (candidate index stays on)
+bucket key unique (BUCKET_OK): no — 4-bucket union active
+nodes: 113607298  simplify_calls: 3375  simplify_true: 1716
+note: up to 9 dent-fill (noncounting) vertices per configuration; no cap is applied.
+[12:55:32]   raw blocks: 1716  (25s)
+[12:55:32] PHASE 2  prune (C++, fingerprint + bitset WL)
+  k=1 : 55
+  k=2 : 779
+total kept: 834
+store: peak 0 MB total, 0 MB resident
+[12:55:32]   (0s)
+[12:55:32] PHASE 3  develop (C++ eu_develop, per-corner CLASS_UNITS + EU_FACES tile polygons + area cert) -> cells
+developed 834 tilings -> /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k2-tetromino/ctrnact-cells-k2.json
+  k=1 : 55
+  k=2 : 779
+area-cert (float Σface=|detΛ|): 834/834 tilings PASS
+[12:55:33]   (1s)
+[12:55:33] DONE  total 26s  ->  /Users/alessandro/Desktop/University/Thesis/TilingAtlas/tools/ctrnact-oracle/run-k2-tetromino/ctrnact-cells-k2.json
+[12:55:33] --- tetromino  k<=2  DONE in 41s: raw developed 834 {1: 55, 2: 779}
+[12:55:33] === all requested palettes finished ===

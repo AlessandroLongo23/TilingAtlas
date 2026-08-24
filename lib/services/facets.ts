@@ -213,7 +213,9 @@ export function boardFamiliesFor(
 	const BY_SEGMENT: Record<typeof decoration, Record<typeof geometry, SubFamily[]>> = {
 		// Two hyperbolic tiling families, both one corpus per board: 3.4.n.4 and {3,n}.
 		tilings: {
-			euclidean: [],
+			// The polyform shelf, one heading per atomic tile. Euclidean TILINGS and not edges: a
+			// polyomino is a tile, not a decoration of one.
+			euclidean: ["pf-polyomino", "pf-polyiamond", "pf-polyhex"],
 			// The BASE corpus's boards are one per valence — HYP_TILING_VALENCES and not six literals, so a
 			// corpus that reaches valence 9 lands in the wall without an edit here.
 			hyperbolic: [

@@ -24,6 +24,12 @@ import {
 	hypTilingSubOfBoard,
 	hypTilingValenceLabel,
 } from "@/lib/tilings/hyp-tilings";
+import {
+	polyformOrderLabel,
+	polyformSubOfBoard,
+	POLYFORM_BOARDS,
+	POLYFORM_FAMILY_LABEL,
+} from "@/lib/tilings/polyform";
 
 /** "pseudo-rhombicuboctahedron (J37)" → "Pseudo-rhombicuboctahedron". The parenthetical is the Johnson
  *  number, which the card already carries and a 14-character sidebar chip cannot. */
@@ -60,6 +66,11 @@ export const FAMILY_LABEL: Record<string, string> = {
 	// already on screen twice above them.
 	"bubble-grid": "Regular polygons",
 	"bubble-poly": "Polyiamonds",
+	// The polyform shelf: one heading per atomic tile, named for what the pieces are made of.
+	...Object.fromEntries(
+		(Object.keys(POLYFORM_FAMILY_LABEL) as (keyof typeof POLYFORM_FAMILY_LABEL)[])
+			.map((f) => [`pf-${f}`, POLYFORM_FAMILY_LABEL[f]]),
+	),
 	"schwarz-eu": "Schwarz boards",
 	"schwarz-board": "Schwarz boards",
 	platonic: "Platonic solids",
@@ -209,6 +220,8 @@ const NAMED: Record<string, string> = {
  * better name than its number.
  */
 export const SUB_LABEL: Record<string, string> = {
+	// One per polyform board. Derived, so a pentomino board would arrive named.
+	...Object.fromEntries(POLYFORM_BOARDS.map((b) => [polyformSubOfBoard(b), b.label])),
 	// One per bubble lattice. Named by the substrate polygon, which is what the tile set follows from.
 	"bub-triangle": "Triangle lattice",
 	"bub-square": "Square lattice",
@@ -272,6 +285,8 @@ const FAMILY_WORD = /^(Schwarz|Isohedral|Pentagon)\s+/i;
 const SHELF_WORD = /\s+(grid|edges|colored|tilings|solids|board)$/i;
 
 export const SUB_SHORT_LABEL: Record<string, string> = {
+	// The polyform boards under their form heading: the form is on screen, so the chip names n.
+	...Object.fromEntries(POLYFORM_BOARDS.map((b) => [polyformSubOfBoard(b), polyformOrderLabel(b)])),
 	// Derived from the board tables, like the long names above, so a new board arrives short too.
 	...Object.fromEntries(PENT_EDGE_BOARDS.map((b) => [pentEdgeSubOfBoard(b), `Kershner ${b.type}`])),
 	...Object.fromEntries(IH_EDGE_BOARDS.map((b) => [ihEdgeSubOfBoard(b), b.label])),

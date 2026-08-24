@@ -66,6 +66,15 @@ import {
 } from "@/lib/freedraw/hyp-edges";
 import { classifyRegular, type RegularKind } from "@/lib/freedraw/regular";
 import {
+	polyformBoard,
+	polyformFamilyOfSub,
+	polyformSub,
+	polyformSubOfBoard,
+	POLYFORM_BOARDS,
+	type PolyformFamily,
+	type PolyformOrder,
+} from "@/lib/tilings/polyform";
+import {
 	hypColorsBaseLabel,
 	hypColorsFamilyLabel,
 	hypColorsSub,
@@ -373,9 +382,9 @@ export interface ReferenceTiling {
 	// Convex-irregular shelf only: true iff every composite tile it uses dissects into regular pieces (the
 	// decomposable palette); false iff it uses a non-decomposable composite. Absent on every other source.
 	decomposableOnly?: boolean;
-	// Polyomino shelf only: which polyomino ORDER this tiling's tiles belong to — the sub-class facet
-	// (Tetrominoes now; Pentominoes etc. later). Absent on every other source.
-	polyominoOrder?: "tetromino";
+	// Polyform shelf only: which BOARD this tiling's tiles come from — "tetromino", "trihex", … — which
+	// is the shelf's sub-axis (lib/tilings/polyform.ts). Absent on every other source.
+	polyformOrder?: PolyformOrder;
 	// Islamic shelf only: which of Bonner's design systems the underlying tessellation belongs to — the
 	// sub-class facet (see docs/ISLAMIC_TILINGS.md). Absent on every other source.
 	islamicSystem?: IslamicSystem;
@@ -512,7 +521,9 @@ export const TILE_CLASS_LABEL: Record<TileClass, { short: string; long: string }
 	// The first class whose tile has two edge LENGTHS. Everything above it is equilateral, because
 	// the alphabet could only say "unit edge" until edge types landed (2026-08-13).
 	edgelen: { short: "Different edge lengths", long: "Different edge lengths" },
-	polyomino: { short: "Polyominoes", long: "Polyominoes" },
+	// One class, nine boards: polyominoes, polyiamonds and polyhexes of orders 2-4. The id stays
+	// "polyomino" (it is in shipped URLs and row ids) though the shelf outgrew the word in 2026-08.
+	polyomino: { short: "Polyforms", long: "Polyforms" },
 	islamic: { short: "Islamic", long: "Islamic geometric systems" },
 	freedraw: { short: "Freedraw", long: "Freedraw edge patterns" },
 	// The second edge system, and the first with a COMPLEMENTARY matching rule: freedraw's two
@@ -556,6 +567,9 @@ export const SUB_ORDER = [
 	// The Euclidean half-polygons: one row per board, because the four are four catalogues and not
 	// four depths of one. `lib/tilings/eu-half.ts` says why there are exactly four.
 	...EU_HALF_BOARDS.map(euHalfSubOfBoard),
+	// The polyform boards: one row per (lattice, order), lattice-major so each family heading is a
+	// contiguous run. "pfm-" namespaced against everything else.
+	...POLYFORM_BOARDS.map(polyformSubOfBoard),
 	...FREEDRAW_GRID_SUBS,
 	// Bubble tiles, one row per LATTICE: the four triangular tiles, the six square ones and the fourteen
 	// hexagonal ones are three catalogues, not three depths of one — same reasoning as the half-polygon
@@ -642,6 +656,9 @@ export const SUB_ORDER = [
  */
 export type SubFamily =
 	| "grid"
+	// One heading per polyform lattice: squares, triangles, hexagons. A template member for the same
+	// reason the hyperbolic valences are — the families are whatever POLYFORM_BOARDS holds.
+	| `pf-${PolyformFamily}`
 	| "bubble-grid"
 	| "bubble-poly"
 	| "schwarz-eu"
@@ -691,6 +708,10 @@ export function familyOfSub(sub: string): SubFamily | null {
 	// The bubble boards split in two: regular polygons and their mixes on one heading, polyforms of the
 	// triangular atomic tile on another. Not a partition of SHAPES — a hexagon is regular AND a 6-iamond —
 	// but of what each family is naturally called, which is what a heading is for.
+	if (sub.startsWith("pfm-")) {
+		const f = polyformFamilyOfSub(sub);
+		return f ? (`pf-${f}` as SubFamily) : null;
+	}
 	if (BUBBLE_POLY_SUBS.has(sub)) return "bubble-poly";
 	if (sub.startsWith("bub-")) return "bubble-grid";
 	if (sub.startsWith("hyt-")) return hypTilingFamilyOfSub(sub) as SubFamily | null;
@@ -710,6 +731,8 @@ export function subOf(t: {
 	family?: string;
 	/** The four Euclidean half-polygon boards share one source, so the board comes off the row. */
 	euHalfBoard?: string;
+	/** The polyform shelf's board — nine of them share one source, so it comes off the row too. */
+	polyformOrder?: PolyformOrder;
 	spherical?: { solid: string };
 	sphericalFreedraw?: { solid: string };
 	freedraw?: FreedrawPattern;
@@ -731,6 +754,7 @@ export function subOf(t: {
 	if (t.source === "penrose") return "el-penrose";
 	if (t.source === "lengthparam") return "el-plen";
 	if (t.source === "euhalf") return euHalfSub(t.euHalfBoard ?? "");
+	if (t.polyformOrder) return polyformSub(t.polyformOrder);
 	if (t.pentEdges) return pentEdgeSub(t.pentEdges);
 	if (t.ihEdges) return ihEdgeSub(t.ihEdges);
 	if (t.schwarz) return schwarzSub(t.schwarz);
@@ -950,12 +974,11 @@ export function scaledMaxScaleOf(t: { family: string; source?: ReferenceTiling["
 	return max;
 }
 
-// Polyomino shelf only: the polyomino ORDER a tiling belongs to (its sub-class facet). Read straight from
-// the build-stamped field — null for every non-polyomino tiling (so the facet excludes them, matching the
-// M/partition exclude-the-unclassified ethos). Only "tetromino" exists today; pentominoes etc. extend this.
-export function polyominoOrderOf(t: Pick<ReferenceTiling, "source" | "polyominoOrder">): "tetromino" | null {
-	if (t.source !== "polyomino") return null;
-	return t.polyominoOrder ?? null;
+// Polyform shelf, level 1: which atomic tile the pieces are made of. Level 2 is the board (how many
+// cells), which is the sub axis, and level 3 is k — so the three facets nest the way /play's tree does.
+// Null for every non-polyform tiling, so the facet excludes them (the exclude-the-unclassified ethos).
+export function polyformFamilyOf(t: Pick<ReferenceTiling, "polyformOrder">): PolyformFamily | null {
+	return (t.polyformOrder && polyformBoard(t.polyformOrder)?.family) || null;
 }
 
 // Islamic shelf sub-facet: which Bonner design system the tiling belongs to — the build-stamped field,
@@ -1276,9 +1299,9 @@ export interface ReferenceFilter {
 	// Scaled shelf sub-class: "s12" keeps only tilings within sides {1,2} (the former Doubled class);
 	// "s123" keeps only tilings that use a side-3 tile. Non-scaled tilings never match while this is active.
 	scaledScaleSet?: "s12" | "s123";
-	// Polyomino shelf sub-class: keep only tilings whose tiles are of this polyomino order ("tetromino" today).
-	// Non-polyomino tilings never match while this is active.
-	polyominoOrder?: "tetromino";
+	// Polyform shelf level 1: keep only tilings whose pieces are built from this atomic tile. Non-polyform
+	// tilings never match while this is active. The board facet is level 2 beneath it.
+	polyformFamily?: PolyformFamily;
 	// Islamic shelf sub-class: keep only tilings in this Bonner design system. Non-Islamic tilings never
 	// match while this is active.
 	islamicSystem?: IslamicSystem;
@@ -1371,8 +1394,8 @@ export function matchesReferenceFilters(t: ReferenceTiling, f: ReferenceFilter):
 		if (f.scaledScaleSet === "s12" && ms > 2) return false;
 		if (f.scaledScaleSet === "s123" && ms < 3) return false;
 	}
-	if (f.polyominoOrder) {
-		if (polyominoOrderOf(t) !== f.polyominoOrder) return false; // non-polyomino tilings never match the order facet
+	if (f.polyformFamily) {
+		if (polyformFamilyOf(t) !== f.polyformFamily) return false; // non-polyform tilings never match the form facet
 	}
 	if (f.islamicSystem) {
 		if (islamicSystemOf(t) !== f.islamicSystem) return false; // non-Islamic tilings never match the system facet
@@ -1510,6 +1533,7 @@ export function referenceToCatalogue(r: ReferenceTiling): CatalogueTiling {
 		exactSource: r.exactSource,
 		paramCell: r.paramCell,
 		euHalfBoard: r.euHalfBoard,
+		polyformOrder: r.polyformOrder,
 		schlafli: r.schlafli,
 		edge: r.edge,
 		discoverer: r.discoverer,

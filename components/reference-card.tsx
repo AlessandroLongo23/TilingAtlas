@@ -37,6 +37,7 @@ import {
 	edgeBoardOf,
 } from "@/lib/services/referenceAtlas";
 import { EDGE_BOARD_LABEL } from "@/lib/services/facets";
+import { polyformBoard } from "@/lib/tilings/polyform";
 
 // A tiling card in the unified library. Shows the DISCOVERER (historical first-finder) and a
 // CERTIFICATION badge (proven / reproduced / candidate — the rigorous completeness status of its
@@ -73,6 +74,10 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 	const isConvex = tileClassOf(tiling) === "convex";
 	const isIsotoxal = tileClassOf(tiling) === "isotoxal";
 	const isMixed = tileClassOf(tiling) === "mixed";
+	// "Polyforms" names nine boards, so a polyform card says which one — "Tetrominoes", "Trihexes" —
+	// where every other class says the class. The board is the only thing that tells a 4-hex tiling
+	// from a 4-omino one at thumbnail size.
+	const polyLabel = tiling.polyformOrder ? polyformBoard(tiling.polyformOrder)?.label : undefined;
 	const isFreedraw = !!tiling.freedraw;
 	const freedrawStats = freedrawStatsOf(tiling);
 	const folds = tileClassOf(tiling) === "star" || isMixed ? starFoldsOf(tiling) : [];
@@ -423,7 +428,7 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 							    palette is what the card should say — "Multiple edge lengths" is true of both tile
 							    sets in that class and tells the reader nothing about the tiling in front of them. */}
 							k={tiling.k} ·{" "}
-							{edgeBoardOf(tiling) ? EDGE_BOARD_LABEL[edgeBoardOf(tiling)!] : TILE_CLASS_LABEL[tileClassOf(tiling)].long}
+							{polyLabel ?? (edgeBoardOf(tiling) ? EDGE_BOARD_LABEL[edgeBoardOf(tiling)!] : TILE_CLASS_LABEL[tileClassOf(tiling)].long)}
 							{/* A bubble tiling has no vertex configuration to name it by — the substrate is always
 							    the same triangular tiling — so the PROTOTILE SET is the identity, the way the colour
 							    census is for a colouring. "T0×1 T3×1" is the paper's T{0,3}(1:1). */}

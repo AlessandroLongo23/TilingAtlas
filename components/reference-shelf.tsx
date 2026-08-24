@@ -134,6 +134,7 @@ import {
 	type LatticeShape,
 	type WallpaperGroup,
 } from "@/lib/classes/symmetry/types";
+import { polyformFamilyShort, POLYFORM_FAMILIES, type PolyformFamily } from "@/lib/tilings/polyform";
 
 // The unified Tiling Library: one display-only atlas of every tiling (regular k=1..7 + stars in the
 // base file; regular k=8..10 as lazy per-k shards loaded on demand), fetched from public/reference-
@@ -225,11 +226,12 @@ const SCALE_SET_OPTIONS: { value: "all" | "s12" | "s123"; label: string }[] = [
 	{ value: "s12", label: "Sides 1–2" },
 	{ value: "s123", label: "Sides 1–3" },
 ];
-// Polyomino-shelf sub-class facet: which polyomino ORDER the tiles belong to. Only "Tetrominoes" exists
-// today (the Tetris set); pentominoes etc. extend this. Shown only for the polyomino class.
-const POLY_ORDER_OPTIONS: { value: "all" | "tetromino"; label: string }[] = [
+// Polyform-shelf level 1: which atomic tile the pieces are built from. Level 2 (how many cells) is the
+// BOARD wall below, which groups its nine chips under these same three headings, and level 3 is k — the
+// same nesting /play's tree walks. Shown only for the polyform class.
+const POLYFORM_FORM_OPTIONS: { value: "all" | PolyformFamily; label: string }[] = [
 	{ value: "all", label: "All" },
-	{ value: "tetromino", label: "Tetrominoes" },
+	...POLYFORM_FAMILIES.map((f) => ({ value: f, label: polyformFamilyShort(f) })),
 ];
 // Islamic-shelf sub-class facet: Bonner's design system (the underlying tile kit). Shown only for the
 // Islamic class. See docs/ISLAMIC_TILINGS.md.
@@ -391,8 +393,8 @@ function parseViewState(sp: URLSearchParams): ViewState {
 	if (iso === "alpha" || iso === "alpha-beta") f.isotoxalShape = iso;
 	const scaleSet = sp.get("scaleset");
 	if (scaleSet === "s12" || scaleSet === "s123") f.scaledScaleSet = scaleSet;
-	const polyOrder = sp.get("polyorder");
-	if (polyOrder === "tetromino") f.polyominoOrder = polyOrder;
+	const pform = sp.get("pform");
+	if (pform && (POLYFORM_FAMILIES as readonly string[]).includes(pform)) f.polyformFamily = pform as PolyformFamily;
 	const islamicSystem = sp.get("islamicsystem");
 	if (islamicSystem && (ISLAMIC_SYSTEM_VALUES as string[]).includes(islamicSystem)) f.islamicSystem = islamicSystem as IslamicSystem;
 	const edgeBoard = sp.get("edgeboard");
@@ -468,7 +470,7 @@ function serializeView(v: ViewState): string {
 	if (f.parametric) p.set("param", f.parametric);
 	if (f.isotoxalShape) p.set("iso", f.isotoxalShape);
 	if (f.scaledScaleSet) p.set("scaleset", f.scaledScaleSet);
-	if (f.polyominoOrder) p.set("polyorder", f.polyominoOrder);
+	if (f.polyformFamily) p.set("pform", f.polyformFamily);
 	if (f.islamicSystem) p.set("islamicsystem", f.islamicSystem);
 	if (f.edgeBoard) p.set("edgeboard", f.edgeBoard);
 	if (f.freedrawKind) p.set("fdkind", f.freedrawKind);
@@ -1331,8 +1333,8 @@ export function ReferenceShelf() {
 		if (v !== "isotoxal") next.isotoxalShape = undefined;
 		// The scale-set (sides 1-2 / 1-3) facet only means something inside the scaled class — drop it otherwise.
 		if (v !== "scaled") next.scaledScaleSet = undefined;
-		// The polyomino-order facet only means something inside the polyomino class — drop it otherwise.
-		if (v !== "polyomino") next.polyominoOrder = undefined;
+		// The polyform FORM facet only means something inside the polyform class — drop it otherwise.
+		if (v !== "polyomino") next.polyformFamily = undefined;
 		// The Islamic-system facet only means something inside the Islamic class — drop it otherwise.
 		if (v !== "islamic") next.islamicSystem = undefined;
 		if (v !== "edgelen") next.edgeBoard = undefined;
@@ -1370,8 +1372,8 @@ export function ReferenceShelf() {
 		setFilters({ ...filters, convexDecomp: v === "all" ? undefined : v });
 	const setScaledScaleSet = (v: "all" | "s12" | "s123") =>
 		setFilters({ ...filters, scaledScaleSet: v === "all" ? undefined : v });
-	const setPolyominoOrder = (v: "all" | "tetromino") =>
-		setFilters({ ...filters, polyominoOrder: v === "all" ? undefined : v });
+	const setPolyformFamily = (v: "all" | PolyformFamily) =>
+		setFilters({ ...filters, polyformFamily: v === "all" ? undefined : v });
 	const setIslamicSystem = (v: "all" | IslamicSystem) =>
 		setFilters({ ...filters, islamicSystem: v === "all" ? undefined : v });
 	const setEdgeBoard = (v: "all" | EdgeBoard) =>
@@ -1449,7 +1451,7 @@ export function ReferenceShelf() {
 			next.convexDecomp = undefined;
 			next.isotoxalShape = undefined;
 			next.scaledScaleSet = undefined;
-			next.polyominoOrder = undefined;
+			next.polyformFamily = undefined;
 			next.islamicSystem = undefined;
 			next.edgeBoard = undefined;
 			// Neither an edge pattern nor a coloring carries the uniform-tiling classification: freedraw faces
@@ -1786,7 +1788,7 @@ export function ReferenceShelf() {
 	const showConvex = tileClass === "convex";
 	const showIsotoxalShape = tileClass === "isotoxal";
 	const showScaledScaleSet = tileClass === "scaled";
-	const showPolyominoOrder = tileClass === "polyomino";
+	const showPolyformFamily = tileClass === "polyomino";
 	const showIslamicSystem = tileClass === "islamic";
 	// Freedraw's tile-kind / regular-polygon facets read the pattern's own face analysis, which only the
 	// EUCLIDEAN grid patterns ship, so they stay Euclidean-only.
@@ -1796,14 +1798,18 @@ export function ReferenceShelf() {
 	// palette axis of their own.
 	const showColorsGrid = isEuclidean && decoration === "colorings";
 	// The BOARD facet, unlike the grid walls it replaces, is defined in every geometry: each segment has its
-	// own families (hyperbolic edges group by base tiling, spherical by solid), and boardFamiliesFor names
-	// them off the same SUB_ORDER run /play's tree walks. Empty for the Tilings segment, which has no board.
+	// own families (hyperbolic edges group by base tiling, spherical by solid, Euclidean tilings by polyform
+	// lattice), and boardFamiliesFor names them off the same SUB_ORDER run /play's tree walks.
 	// "all" spans the three segments at once, and a board wall then means nothing — the same sub can be a
 	// grid under Edge patterns and a palette stem under Colorings. Shown once a segment is chosen.
-	const boardFamilies = useMemo(
-		() => (decoration === "all" ? [] : boardFamiliesFor(geometry, decoration)),
-		[geometry, decoration],
-	);
+	// Picking a FORM narrows the board wall to that form's boards, so level 2 only ever offers the
+	// children of the level-1 node in hand. Without it the wall keeps offering the other six polyform
+	// boards, each of which lands on an empty page.
+	const boardFamilies = useMemo(() => {
+		if (decoration === "all") return [];
+		const fams = boardFamiliesFor(geometry, decoration);
+		return filters.polyformFamily ? fams.filter((f) => f.family === `pf-${filters.polyformFamily}`) : fams;
+	}, [geometry, decoration, filters.polyformFamily]);
 	// k is shared across the three segments but does NOT mean the same thing in each: vertex orbits of a
 	// tiling, GRID-POINT orbits of a PLANAR edge pattern (including points with no drawn edge), colored
 	// vertex classes of a coloring. Sharing the axis is what makes them browsable together; naming the
@@ -1832,7 +1838,7 @@ export function ReferenceShelf() {
 		(filters.ncxCrossing ? 1 : 0) +
 		(filters.isotoxalShape ? 1 : 0) +
 		(filters.scaledScaleSet ? 1 : 0) +
-		(filters.polyominoOrder ? 1 : 0) +
+		(filters.polyformFamily ? 1 : 0) +
 		(filters.islamicSystem ? 1 : 0) +
 		(filters.edgeBoard ? 1 : 0) +
 		(filters.freedrawKind ? 1 : 0) +
@@ -2011,20 +2017,21 @@ export function ReferenceShelf() {
 						</FilterGroup>
 					) : null}
 
-					{showPolyominoOrder ? (
+					{showPolyformFamily ? (
 						<FilterGroup
-							title="Polyomino order"
-							summary={filters.polyominoOrder === "tetromino" ? "tetromino" : null}
-							note="piece family"
+							title="Form"
+							summary={filters.polyformFamily ? polyformFamilyShort(filters.polyformFamily) : null}
+							note="the atomic tile"
 						>
 							<OptionWall
 								columns={2}
-								options={POLY_ORDER_OPTIONS}
-								selected={filters.polyominoOrder ?? "all"}
-								onChange={setPolyominoOrder}
+								options={POLYFORM_FORM_OPTIONS}
+								selected={filters.polyformFamily ?? "all"}
+								onChange={setPolyformFamily}
 							/>
 							<GroupNote>
-								The seven Tetris pieces. More polyomino families to come.
+								What the pieces are made of. Under it, the Board wall picks how many cells a piece has,
+								and k divides that: three levels, the same ones the Play sidebar nests.
 							</GroupNote>
 						</FilterGroup>
 					) : null}
@@ -2077,7 +2084,7 @@ export function ReferenceShelf() {
 						<FilterGroup
 							title="Board"
 							summary={filters.board ? boardSummary(filters.board) : null}
-							note={decoration === "colorings" ? "the colored board" : "the decorated board"}
+							note={tileClass === "polyomino" ? "cells per piece" : decoration === "colorings" ? "the colored board" : "the decorated board"}
 						>
 							{/* One wall per family, in SUB_ORDER sequence — the same grouping and the same order
 							    /play's tree renders, because both read boardFamiliesFor(). A family heading appears
