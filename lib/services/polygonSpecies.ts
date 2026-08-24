@@ -71,8 +71,11 @@ export function polygonPeriodOf(vs: number[][]): number {
 }
 
 /** Shared results for a cell with no polygons, so 342k decoration rows cost nothing to answer. */
-const EMPTY_SPECIES: string[] = Object.freeze([]) as string[];
-const EMPTY_PERIODS: number[] = Object.freeze([]) as number[];
+// Exported so a shelf whose rows have no polygon reading can SAY so on the record, instead of
+// leaving the field unset and making the facet memos walk its geometry to find out. One frozen array
+// shared by every such row, which is the difference between a marker and 250k allocations.
+export const EMPTY_SPECIES: string[] = Object.freeze([]) as string[];
+export const EMPTY_PERIODS: number[] = Object.freeze([]) as number[];
 
 const periodCache = new Map<string, number[]>();
 

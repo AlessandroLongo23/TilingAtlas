@@ -215,22 +215,9 @@ function unpackRecords<T>(records: unknown[], tables: Tables): T[] {
 		const packed = out.renderCell as PackedCell | undefined;
 		if (geom && packed?.i) {
 			// LAZY, for the same reason the derived cells are: expanding a 29,500-record shelf up front
-			// is millions of array allocations for the ~25 tilings a page actually draws. The accessor
-			// collapses to a plain value on first read, so every consumer keeps reading `t.renderCell`.
-			Object.defineProperty(out, "renderCell", {
-				configurable: true,
-				enumerable: true,
-				get() {
-					const cell = expandCell(packed, geom);
-					Object.defineProperty(this, "renderCell", {
-						value: cell,
-						writable: true,
-						enumerable: true,
-						configurable: true,
-					});
-					return cell;
-				},
-			});
+			// is millions of array allocations for the ~25 tilings a page actually draws.
+			// enumerable: the builder round-trip re-encodes these records with Object.keys. See above.
+			defineLazyRenderCell(out, () => expandCell(packed, geom), true);
 		}
 		return out as T;
 	});
@@ -256,4 +243,49 @@ export async function fetchAtlas<T>(
 	const res = await fetch(url);
 	if (res.status === 404 && missing === "empty") return [];
 	return readAtlas<T>(res);
+}
+
+/**
+ * Install a lazy `renderCell` that derives on first read and then collapses to a plain value.
+ *
+ * NON-ENUMERABLE, and that is the whole point. React 19's DEV build logs every component render
+ * through `logComponentRender` -> `addObjectDiffToProperties`, which walks props with `for...in` and
+ * READS each value to diff it. An enumerable lazy getter on an atlas record is therefore fired for
+ * every record the moment it reaches a component as a prop, which is the entire corpus: measured on
+ * /play with the dev server, that was one 14.95 s main-thread block, 6,200 ℤ[ζ₂₄] cell
+ * reconstructions nobody asked for, and Chrome's "page unresponsive" dialog. `for...in` skips
+ * non-enumerable properties, so hiding the property from enumeration is what makes the laziness
+ * actually lazy. Production never had the block (its react-dom has no such logging) but paid the
+ * same fragility: any prop walk, JSON.stringify or structuredClone would have detonated it too.
+ *
+ * Every consumer reads `t.renderCell` directly, which is unaffected — the 72 read sites keep working
+ * unchanged. What DOES change is `{...t}`: a spread no longer carries the cell. Nothing in the app
+ * spreads a record (checked), and the collapsed value keeps the same enumerability as the getter, so
+ * the behaviour does not shift under a caller at first read.
+ *
+ * `enumerable` EXISTS FOR ONE CALLER, decodeAtlas below, and defaults to the safe value for everyone
+ * else. The builders round-trip through decode -> encode, and scripts/atlas/encode.mjs collects fields
+ * with `Object.keys` — so a non-enumerable cell there is not hidden from React, it is DROPPED FROM THE
+ * FILE, and a rebuild would ship shelves with no geometry. Its expansion is array copying rather than
+ * the ℤ[ζ₂₄] reconstruction that caused the stall, so leaving it visible costs little.
+ */
+export function defineLazyRenderCell<T extends object, C>(
+	target: T,
+	compute: (self: T) => C,
+	enumerable = false,
+): void {
+	Object.defineProperty(target, "renderCell", {
+		configurable: true,
+		enumerable,
+		get(this: T) {
+			const cell = compute(this);
+			Object.defineProperty(this, "renderCell", {
+				value: cell,
+				writable: true,
+				enumerable,
+				configurable: true,
+			});
+			return cell;
+		},
+	});
 }
