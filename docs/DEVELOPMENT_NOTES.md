@@ -16287,3 +16287,48 @@ not move). A tiling can still sit one folder too deep where no run reached its p
 
 **Sizes.** 2,047 records are 4.8 MB raw and **671 KB through the atlas codec** (the repeated note is
 1.1 KB of every record), so the shelf loads eagerly and needs no lazy shard.
+
+## 2026-08-24 — the rhombic bubble board coloured a tile as its own mirror image
+
+AL reported "bubble tiling where the same shape has different colors" on `brh-1-00005`, four rhombi
+painted 3 + 1. Both halves of that report were half right, and the fix is one function.
+
+⚑ **THE BITE WORD IS INDEXED FROM THE DEVELOPER'S WALK, so index 0 means nothing.** `faces_with_darts`
+starts each face at whichever half-edge it reached first, and `tileHueOf` keyed a tile by the least
+rotation of that word. On a regular substrate the two cancel — every rotation is a symmetry, so the
+arbitrary start is quotiented away, which is why triangle, square and hexagon show zero defects across
+47,000 tilings. The rhombus has only the half turn, so a word read from a 60° corner and the SAME
+tile's word read from its 120° corner differ by an odd rotation and land in different classes. On
+`brh-1-00005` faces 0 and 3 are one tile and faces 1 and 2 its mirror; the old key put face 3 with the
+mirror pair. **409 of the 737 rhombic tilings split a tile from itself, and 475 gave a tile and its
+mirror one colour** — the same mistake seen from either side, and **553 of the 737 came out with the
+wrong partition into tiles altogether**. `bubbleFamilyLabel` reads the same word, so 644 rhombic card
+labels move: 553 of them were counting wrong (`brh-1-00005` said `R2B×3 R2D×1`; it is `R2B×1 R2D×1`),
+the other 91 only pick a different representative of the right partition and rename a tile.
+
+⚑ **AL'S DIAGNOSIS WAS WRONG ON THE MATHEMATICS AND RIGHT ON THE SYMPTOM.** The two colours are not
+"the same tile rotated": a rhombus with its bites on one pair of opposite edges and one with them on
+the other pair are ENANTIOMORPHS. Only `{id, half turn}` preserve a rhombus and preserve orientation,
+and both fix each edge pair, so no rotation carries one to the other; a flip does. Checked
+independently of the key, by sampling both developed outlines at 480 points and minimising over every
+cyclic correspondence: **residual 0.143 over rotations, 9e-6 once a flip is allowed.** So two colours
+is right and 3 + 1 was wrong — the correct picture is 2 + 2.
+
+**The fix — `alignedTile`, replacing `rotStepOf(grid)`.** Let the tile choose index 0 instead of the
+walk: pair every bite with the corner its edge leaves and take the least rotation of that pair
+sequence. Winding is normalised first (a ring read backwards spells the mirror tile, and the corpus
+happens to emit all 847,628 faces clockwise). The angles also give the rotation step for free — the
+least rotation fixing the angle word IS the substrate's rotational symmetry, 1 for a regular polygon
+and 2 for the rhombus — so the per-grid table is gone and a future non-regular substrate needs no case.
+
+⚑ **THE MIXED BOARDS PAINTED DIFFERENT TILES ALIKE, the same defect from the other end.** The hue
+walked the golden angle indexed by position WITHIN a family, so the bare triangle and the bare hexagon
+were both index 0, both hue 34, on all 2,431 tri-hex, tri-square and tri-sq-hex tilings. `familyStart`
+offsets each family past the necklaces of the smaller ones. Costs the square, hexagonal and rhombic
+boards a one-off palette rotation; a tile keeps its colour on every board it appears on.
+
+**Verification.** Over all 52,140 tilings and 847,628 faces, one tile class carries exactly one hue and
+one hue carries exactly one tile class, checked against an invariant that normalises to CCW — the
+opposite convention to the implementation's, so the agreement is about the partition and not a copy of
+the code. Per-board tile counts come out 4 / 6 / 14 / 10 for triangle / square / hexagon / rhombus,
+the last being the Figure 27 count of the paper. No non-rhombic label moved.

@@ -89,6 +89,10 @@ export const BUBBLE_FILES = [
  * paper's S2A (adjacent, 0011) and S2B (opposite, 0101), and on hexagons three bites splits four ways
  * (3A, 3A-star, 3B, 3C). Rotation and not reflection, because the engine cannot place a tile reflected
  * and the paper counts chiral partners as distinct tiles — H3A and H3A-star are two tiles, not one.
+ *
+ * Feed it an ANCHORED word (`alignedTile`) and not a raw one off the pattern: a raw word starts
+ * wherever the developer's face walk did, which the least rotation only forgives when every rotation
+ * is a symmetry of the substrate.
  */
 export function tileKeyOf(biteWord: number[], step = 1): string {
 	const s = biteWord.join("");
@@ -101,16 +105,62 @@ export function tileKeyOf(biteWord: number[], step = 1): string {
 }
 
 /**
- * How far a rotation has to turn before it maps the SUBSTRATE to itself, in edges.
+ * A face's bite word ANCHORED to its own geometry, plus the rotation step that word lives modulo.
  *
- * 1 for a regular polygon, where every rotation is a symmetry. 2 for the 60-degree rhombus, whose
- * angle word is (60,120,60,120): only the half turn is a symmetry, so two bite words are the same
- * tile iff they differ by a rotation of TWO. Getting this wrong does not corrupt the catalogue, whose
- * tiles come from the solver, but it merges names that denote different tiles: at step 1 the rhombic
- * family reads as 6 tiles like a square's, where Burnside over the real symmetry gives
- * (2^4 + 2^2)/2 = 10, which is the paper's Figure 27 count.
+ * `bites[i]` is indexed from the developer's face walk, which starts at whichever half-edge the walk
+ * reached first (`faces_with_darts` in develop_marked.py), so index 0 carries no meaning of its own.
+ * On a REGULAR substrate that costs nothing: every rotation is a symmetry, so `tileKeyOf` quotients
+ * the arbitrary start away. On the 60-degree rhombus it is a colouring bug. Only the half turn is a
+ * symmetry there, so a word read from a 60-degree corner and the SAME tile's word read from its
+ * 120-degree corner differ by an odd rotation and land in different classes: brh-1-00005 painted its
+ * four rhombi 3 + 1 where the truth is 2 + 2, and 409 of the 737 rhombic tilings split a tile from
+ * itself this way (475 also gave a tile and its mirror one colour, the same mistake from the other side).
+ *
+ * The fix is to let the TILE choose index 0 instead of the walk: pair every bite with the corner its
+ * edge leaves, and take the least rotation of that pair sequence. The angles give the step for free —
+ * the least rotation fixing the angle word IS the substrate's rotational symmetry, 1 for a regular
+ * polygon and 2 for the rhombus (Burnside over that gives the (2^4 + 2^2)/2 = 10 rhombic tiles of the
+ * paper's Figure 27) — so no per-grid table is needed and a non-regular substrate needs no new case.
+ *
+ * Winding is normalised first, because a ring read backwards spells the MIRROR tile and chiral
+ * partners are distinct tiles here. The convention is the one the corpus already emits (every face
+ * clockwise, all 52,140 of them); any fixed choice serves as well, since what breaks chirality is
+ * having no convention and not which one.
  */
-export const rotStepOf = (grid: BubbleGrid) => (grid === "rhombus" ? 2 : 1);
+function alignedTile(pts: [number, number][], bites: number[]): { word: number[]; step: number; ccw: boolean } {
+	const n = pts.length;
+	let area = 0;
+	for (let i = 0; i < n; i++) {
+		const [x1, y1] = pts[i];
+		const [x2, y2] = pts[(i + 1) % n];
+		area += x1 * y2 - x2 * y1;
+	}
+	const ccw = area > 0;
+	// Reading the ring backwards turns edge i into edge n-2-i, edge i being the one LEAVING corner i.
+	const ring = ccw ? [...pts].reverse() : pts;
+	const word = ccw ? bites.map((_, i) => bites[(n - 2 - i + n) % n]) : bites;
+	// Corner label: the turn from "towards the next corner" to "towards the previous one". Which of the
+	// two angles at a corner this names follows the winding, now fixed, so equal labels mean equal corners.
+	const ang = ring.map(([x, y], i) => {
+		const [ax, ay] = ring[(i + n - 1) % n];
+		const [bx, by] = ring[(i + 1) % n];
+		const t = Math.atan2(ay - y, ax - x) - Math.atan2(by - y, bx - x);
+		return Math.round((((t * 180) / Math.PI) % 360 + 360) % 360);
+	});
+	let step = n;
+	for (let s = 1; s < n; s++)
+		if (ang.every((a, i) => a === ang[(i + s) % n])) {
+			step = s;
+			break;
+		}
+	// Anchor at the rotation whose (corner, bite) sequence is least. The angle dominates each pair, so
+	// index 0 lands on the same corner of every copy of the tile; the bites break the remaining tie,
+	// which is exactly the freedom `step` describes.
+	const rot = ang.map((_, s) => ang.map((_, i) => `${String(ang[(i + s) % n]).padStart(3, "0")}${word[(i + s) % n]}`).join(""));
+	let best = 0;
+	for (let s = 1; s < n; s++) if (rot[s] < rot[best]) best = s;
+	return { word: word.map((_, i) => word[(i + best) % n]), step, ccw };
+}
 
 /** Every necklace of length n, in a stable order, memoised. n ≤ 6, so brute force over 2^n is free. */
 const necklaceIndex = new Map<number, Map<string, number>>();
@@ -166,18 +216,27 @@ export function tileNameOf(biteWord: number[], step = 1): string {
  */
 export function tileHueOf(biteWord: number[], step = 1): number {
 	const order = necklaceOrder(biteWord.length, step);
-	return (34 + (order.get(tileKeyOf(biteWord, step)) ?? 0) * 137.508) % 360;
+	return (34 + (familyStart(biteWord.length) + (order.get(tileKeyOf(biteWord, step)) ?? 0)) * 137.508) % 360;
 }
+
+/** Where a family starts in that walk: past every necklace of the smaller families. Indexing by
+ *  position WITHIN a family alone is enough on a board with one family and wrong on a mixed one — the
+ *  bare triangle and the bare hexagon were both index 0, so both hue 34, on all 2,431 tri-hex,
+ *  tri-square and tri-sq-hex tilings. The rhombus starts where the square does, which is sound only
+ *  because no board mixes rhombi with hexagons. Costs the square and hexagonal boards a one-off
+ *  recolour, the tiles keeping their colours across every board they appear on. */
+const familyStart = (n: number) => (n > 3 ? necklaceOrder(3).size : 0) + (n > 4 ? necklaceOrder(4).size : 0);
 
 /** The card + search label: the prototile set with its frequency ratio, reduced — "T0×1 T3×1" is the
  *  paper's T{0,3}(1:1). There is no vertex configuration to name a bubble tiling by (the substrate is
  *  always the plain triangular tiling), so the tile census is the identity, as it is for colourings. */
 export function bubbleFamilyLabel(p: BubblePattern): string {
 	const count = new Map<string, number>();
-	for (const w of p.bites) {
-		const t = (rhombicLetter(p.grid) ?? FAMILY_LETTER[w.length]) + tileNameOf(w, rotStepOf(p.grid));
+	p.polys.forEach((poly, f) => {
+		const { word, step } = alignedTile(poly.map((i) => p.verts[i]), p.bites[f]);
+		const t = (rhombicLetter(p.grid) ?? FAMILY_LETTER[word.length]) + tileNameOf(word, step);
 		count.set(t, (count.get(t) ?? 0) + 1);
-	}
+	});
 	const gcd = (a: number, b: number): number => (b ? gcd(b, a % b) : a);
 	const g = [...count.values()].reduce(gcd, 0) || 1;
 	return [...count.entries()]
@@ -268,15 +327,9 @@ export function bubbleRenderCell(p: BubblePattern): TranslationalCellData {
 		cellPolygons: p.polys.map((poly, f) => {
 			const pts = poly.map((i) => p.verts[i]);
 			const bites = p.bites[f];
-			// Shoelace: which side "left of a→b" is depends on the ring's winding, and the developer's
-			// walk direction is not guaranteed, so read it off the face instead of assuming.
-			let area = 0;
-			for (let i = 0; i < pts.length; i++) {
-				const [x1, y1] = pts[i];
-				const [x2, y2] = pts[(i + 1) % pts.length];
-				area += x1 * y2 - x2 * y1;
-			}
-			const ccw = area > 0;
+			// `ccw` because which side "left of a→b" is depends on the ring's winding and the developer's
+			// walk direction is not guaranteed; `word`/`step` because which TILE this face is does too.
+			const { word, step, ccw } = alignedTile(pts, bites);
 			const ring: Pt[] = [];
 			const corners: number[] = [];
 			for (let i = 0; i < pts.length; i++) {
@@ -290,7 +343,7 @@ export function bubbleRenderCell(p: BubblePattern): TranslationalCellData {
 			// `n` = the flattened point count, so a ring can never be mistaken for a star (that test is
 			// verts.length === 2n). `corners` is what every polygon consumer reads as the tile's real
 			// vertices — the dots, the halfways, and medianEdge.
-			return { v: verts, n: verts.length, corners, hue: tileHueOf(bites, rotStepOf(p.grid)) };
+			return { v: verts, n: verts.length, corners, hue: tileHueOf(word, step) };
 		}),
 	};
 }
