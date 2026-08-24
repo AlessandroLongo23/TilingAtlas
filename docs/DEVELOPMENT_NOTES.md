@@ -16101,3 +16101,23 @@ panels of Figure 15, and none of the four Unknown entries appears. Twelve of twe
 zero of four open is what makes the null informative. Still bounded evidence: k counts vertex orbits
 and a realization could need more. k=4 on this palette was started and lost to a session teardown;
 k<=3 cost 1.35G nodes in 324s, so k=4 is a 1.5-3 hour job.
+
+**Mixed (T,S): the sharpest confirmation yet.** 10 tiles, 5,169 vertex types, k<=3 in 43s for 3,453
+tilings; 1,724 genuinely mix and ship. Table 2 gives four (T,S) rows and the run agrees with every
+one, 8 predictions for 8:
+
+- 2:1 with bite pairs (1,3) and (2,1), regular: BOTH FOUND, and they are the ONLY two-tile (T,S) sets
+  the search produces anywhere. {T1,S3} and {T2,S1}, the paper's Figure 15(a) and (d).
+- 4:3 with (0,4) and (3,0), killed by their Lemma 1: ABSENT. Worth noting this is an independent
+  confirmation of a PROOF, not of a construction. Lemma 1 argues that P all-bump against Q all-bite
+  forces the two tile types to alternate around every vertex, so k(60+90) = 360 must have an integer
+  solution and does not. The search knows nothing of that argument and reaches the same place.
+- 2:3 with (0,3),(3,1) and 4:1 with (1,4),(2,0), realizable only with RHOMBI: ABSENT, as they must be
+  in a palette holding no rhombi. A negative control, and it passed.
+
+Pure slices again match the dedicated shelves exactly (7/67/849 triangular, 11/102/693 square), so
+the cross-validation now covers three independent palettes.
+
+⚑ The shelf is five boards: triangle k<=4, square k<=5, hexagon k<=5, tri+hex k<=3, tri+square k<=3.
+Adding rhombi would open the three (T,S) rows the paper reaches only with them, and is the obvious
+next palette: the rhombic family is 10 tiles (3 of them chiral pairs) per its Figure 27.

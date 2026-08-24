@@ -1,0 +1,175 @@
+{
+  "name": "bubble-ts",
+  "D": 24,
+  "maxValence": 6,
+  "edgeComplement": true,
+  "edgeLengths": {
+    "B": "1",
+    "I": "1"
+  },
+  "comment": "MIXED TRIANGLE + SQUARE BUBBLE TILES. 10 tiles: the 4 binary necklaces of length 3 and the 6 of length 4, under the same complementary rule as the other bubble palettes. Angles in D=24 units: 60 = 4, 90 = 6, so the angle-valid vertices are 6x60, 4x90 and 3x60+2x90 (the 3.3.3.4.4 and 3.3.4.3.4 stars) - valence 4 to 6, hence maxValence 6. Chase, Field & McCluer's Table 2 gives four (T,S) rows: 2:1 with bite pairs (1,3) and (2,1) is realized with regular tiles [Figure 15a,d]; 4:3 with (0,4) and (3,0) is killed by their Lemma 1 (60+90 = 150 and 150k = 360 has no integer solution); 2:3 with (0,3),(3,1) and 4:1 with (1,4),(2,0) are realizable only with RHOMBI, which this palette does not contain. So a correct run finds the 2:1 pair and none of the other three. NAMING of the A/B/C letters within a bite count is this repo's necklace order and not necessarily the paper's. The SEARCH needs EU_EDGE_COMPL=1 and the developer --complement.",
+  "tiles": [
+    {
+      "kind": "composite",
+      "name": "T0",
+      "famchar": "a",
+      "angles": [
+        4,
+        4,
+        4
+      ],
+      "edges": [
+        "B",
+        "B",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "T1",
+      "famchar": "b",
+      "angles": [
+        4,
+        4,
+        4
+      ],
+      "edges": [
+        "B",
+        "B",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "T2",
+      "famchar": "c",
+      "angles": [
+        4,
+        4,
+        4
+      ],
+      "edges": [
+        "B",
+        "I",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "T3",
+      "famchar": "d",
+      "angles": [
+        4,
+        4,
+        4
+      ],
+      "edges": [
+        "I",
+        "I",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "S0",
+      "famchar": "e",
+      "angles": [
+        6,
+        6,
+        6,
+        6
+      ],
+      "edges": [
+        "B",
+        "B",
+        "B",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "S1",
+      "famchar": "f",
+      "angles": [
+        6,
+        6,
+        6,
+        6
+      ],
+      "edges": [
+        "B",
+        "B",
+        "B",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "S2A",
+      "famchar": "g",
+      "angles": [
+        6,
+        6,
+        6,
+        6
+      ],
+      "edges": [
+        "B",
+        "B",
+        "I",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "S2B",
+      "famchar": "h",
+      "angles": [
+        6,
+        6,
+        6,
+        6
+      ],
+      "edges": [
+        "B",
+        "I",
+        "B",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "S3",
+      "famchar": "i",
+      "angles": [
+        6,
+        6,
+        6,
+        6
+      ],
+      "edges": [
+        "B",
+        "I",
+        "I",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "S4",
+      "famchar": "j",
+      "angles": [
+        6,
+        6,
+        6,
+        6
+      ],
+      "edges": [
+        "I",
+        "I",
+        "I",
+        "I"
+      ]
+    }
+  ]
+}

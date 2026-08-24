@@ -18,10 +18,17 @@
 // polylines; that is not a workaround, it is what the isohedral shelf's bulged edges already do (see
 // the featureOf note in lib/render/periodic/tilings.ts).
 //
-// ⚑ COVERAGE. This shelf is the TRIANGULAR family at k ≤ 2 only. `k` counts VERTEX ORBITS, so k ≤ 2
-// bounds the shelf and not the family: bubble tilings exist at every k, and the balanced families
-// have positive entropy (the 2-bite square family is in bijection with square ice, whose residual
-// entropy is Lieb's (4/3)^{3/2}). Never relabel this "all bubble tilings".
+// ⚑ COVERAGE. Five boards, each to its own k: triangle 4, square 5, hexagon 5, and the two mixed
+// substrates 3. `k` counts VERTEX ORBITS, so those bound the SHELF and not the family. Bubble tilings
+// exist at every k, and the balanced families have positive entropy (the 2-bite square family is in
+// bijection with square ice, residual entropy Lieb's (4/3)^{3/2}), so no k bound will ever make this
+// complete. Never relabel it "all bubble tilings".
+//
+// ⚑ A MIXED BOARD SHIPS ONLY GENUINELY MIXED TILINGS. An all-tile palette contains the
+// single-substrate searches as special cases, so the triangle+hexagon run returned 923 all-triangle
+// and 65 all-hexagon solutions that are already on their own boards. Those pure slices match the
+// dedicated catalogues EXACTLY at every k, which is the best cross-validation the bubble work has,
+// but shipping them would list one tiling under two boards. Publishing filters them out.
 
 import { cubicFlatness, cubicSegmentCount, flattenCubicOpen, type Cubic, type Pt } from "@/lib/render/cubic";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
@@ -48,25 +55,26 @@ export interface BubblePattern {
 
 /** The SUBSTRATE a bubble tiling decorates. "tri-hex" is a mixed substrate and not a lattice of its
  *  own: triangles and hexagons on one board, which is the tile set the paper's mixed (T,H) rows need. */
-export type BubbleGrid = "triangle" | "square" | "hex" | "tri-hex";
+export type BubbleGrid = "triangle" | "square" | "hex" | "tri-hex" | "tri-square";
 
 /** Display order and labels for the lattice facet — the shelf's "folders". */
-export const BUBBLE_GRID_ORDER: BubbleGrid[] = ["triangle", "square", "hex", "tri-hex"];
+export const BUBBLE_GRID_ORDER: BubbleGrid[] = ["triangle", "square", "hex", "tri-hex", "tri-square"];
 export const BUBBLE_GRID_LABEL: Record<BubbleGrid, string> = {
 	triangle: "Triangle",
 	square: "Square",
 	hex: "Hexagon",
 	"tri-hex": "Triangle + hexagon",
+	"tri-square": "Triangle + square",
 };
 
-/** One file per lattice, all small enough to load eagerly together (tens of KB). */
-/** One shard per (lattice, k). Loaded together on the Edge patterns chip, the way the colouring
- *  catalogues load on Colorings — 37 MB in total, of which sq-k5 alone is 27. */
+/** One shard per (board, k). Loaded together on the Edge patterns chip, the way the colouring
+ *  catalogues load on Colorings. ~37 MB in total, of which sq-k5 alone is 27. */
 export const BUBBLE_FILES = [
 	...[1, 2, 3, 4].map((k) => `/bubble/tri-k${k}.json`),
 	...[1, 2, 3, 4, 5].map((k) => `/bubble/sq-k${k}.json`),
 	...[1, 2, 3, 4, 5].map((k) => `/bubble/hex-k${k}.json`),
 	...[1, 2, 3].map((k) => `/bubble/th-k${k}.json`),
+	...[1, 2, 3].map((k) => `/bubble/ts-k${k}.json`),
 ];
 
 /**
