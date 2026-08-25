@@ -66,6 +66,18 @@ export function makeArcball(
 	controls.minDistance = opts.minDistance ?? 1.6;
 	controls.maxDistance = 8;
 	controls.setGizmosVisible(false); // hide the trackball rings for a clean grab-and-spin feel
+	// ⚑ Restore the invariant ArcballControls only assumes. It captures `camera.up` once, here in the
+	// constructor, and then rebuilds the up vector on every rotate frame as `captured · camera.quaternion`
+	// (applyTransformMatrix) — treating the captured value as a CAMERA-LOCAL axis, which is true only while
+	// up is still the default +Y. But a drag leaves `camera.up` pointing along the camera's own screen-up in
+	// WORLD space, so controls built on an already-rotated camera — precisely what swapProjection builds —
+	// capture a world vector and then rotate it a SECOND time on the next pointer move. The view snapped as
+	// soon as you touched it after a projection toggle, by more the further the solid had been turned, and
+	// not at all if you toggled before rotating: measured on /play?tiling=sph-3-3, 2026-08-25, a 2-pixel drag
+	// moved the camera 8–12° after a toggle against 0.3° with no toggle. The camera-local up axis is +Y by
+	// definition, so one assignment fixes it. (`_up0` is left alone: reset() pairs it with the
+	// constructor-time camera matrix, and that pair is consistent.)
+	(controls as unknown as { _upState: THREE.Vector3 })._upState.set(0, 1, 0);
 	return controls;
 }
 
