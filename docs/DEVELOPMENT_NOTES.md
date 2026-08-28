@@ -16386,3 +16386,309 @@ opacity, the dodecahedron opens as a flat solid, Islamic appears on the sphere a
 2,819 passing. Net **-371 lines** measured over the files this pass owns outright (the deleted carved
 material is 141 of them); the six it shares with another session's concurrent spherical work are all
 negative too but cannot be attributed cleanly, and are worth roughly another -120.
+
+## 2026-08-27 — the three rhombic bubble mixtures: all tractable, all one k short
+
+AL asked whether rhombus+triangle, rhombus+hexagon and rhombus+triangle+hexagon are as tractable as
+the regular-polygon mixtures already shipped, how far k pushes, and how many solutions there are. Three
+palettes built, swept under a 15-minute-per-solve cap, every solution developed. Full log in
+`experiments/results/bubble-rhombic-2026-08-27.log`.
+
+**Counts.** Solutions that genuinely use every family on the board, which is what a mixed board may
+ship (the rest are already on their own boards):
+
+| board | tiles | vertex types | k=1 | k=2 | k=3 | reached in |
+|---|---|---|---|---|---|---|
+| rhombus + hexagon | 24 | 192,792 | 0 | 36 | 316 | 6.3 min to k=3 |
+| rhombus + triangle | 14 | 343,143 | 0 | 244 | — | 3.7 min to k=2 |
+| rhombus + tri + hex | 28 | 853,127 | 4 | 60 | — | 12 min to k=2 |
+
+352 + 244 + 64 = 660 new tilings. All 2,193 solutions (mixed and not) develop with ZERO failures, so
+every glue joins a bump to a bite on every one of them.
+
+⚑ **BOTH TWO-FAMILY BOARDS ARE EMPTY AT k=1.** One vertex orbit cannot hold a rhombus and a triangle,
+nor a rhombus and a hexagon. The three-family board is not — it has 4 at k=1 — so this is not a
+statement about mixing generally. Any shelf built from these starts at k=2, and a k=1 folder would be
+an empty row.
+
+**The cross-validation is the strongest the bubble work has produced.** Every palette contains its
+sub-boards as special cases, and every sub-board count came back exact. The 28-tile board at k<=2
+reproduces SEVEN of them at once: hexagon 3/11, rhombus 7/91, triangle 7/67, tri+hex 3/90 (the shipped
+board), and rhombus+hexagon 0/36 and rhombus+triangle 0/244 as this sweep's own two smaller palettes
+found them. 559 of its 623 solutions were predicted to the tile by a different alphabet. Six alphabets
+(4, 10, 14, 18, 24, 28 tiles) now agree on every overlap.
+
+`bubble_mix_census.py` reads that decomposition off the PRUNED FILENAMES — the solver names each file
+by the set of tile famchars its blocks use — so it costs nothing and needs no development. ⚑ Its per-
+solution marker is the `TES file:` line; the SOLVER's raw files use `Number of vertex types:` instead,
+and counting that against a pruned directory silently returns zero rather than failing.
+
+⚑ **THE DOMINO WALL WAS NOT REACHED, and the prediction that it would be was wrong.** The cost model
+(2026-08-23) says a palette pays (corner classes at its smallest angle) ^ (360/that angle), and
+rhombus+triangle pays 16 + 8 = 24 classes at valence 6 where tri+hex and tri+square pay 8 — which put
+it at domino scale on paper. It generated in 140s and compiled. The measured wall is the `.inc` g++
+has to swallow: 233 MB (bubble-rth) compiles, domino's 527 MB OOMs. All three of these die to SEARCH
+cost instead, which grows ~27x per k with nodes ~90x: rhombus+hexagon k=3 burned 1.91G nodes in 377s
+and its k=4 is a ~3-hour job.
+
+**What is NOT here.** The two Table 2 rows Chase, Field & McCluer call realizable only with rhombi are
+(T,S) rows, so reaching them needs rhombus + triangle + SQUARE, which no palette in this sweep or on
+the shelf contains. On these cost numbers it is affordable. That is the palette that would settle
+something the paper leaves open; these three extend the catalogue.
+
+**Tooling.** `alphabets/gen_bubble_palette.py` composes a mixed bubble palette by merging the
+single-family ones verbatim (only `famchar` is rewritten, for uniqueness), which is what makes a mixed
+board's tile names comparable to the dedicated boards tile for tile. `run-bubble-sweep.sh` is the
+build/solve/prune sweep with a per-solve wall-clock cap; the 2026-08-23 sweep had no script and this
+is it. ⚑ Neither is a fork of anything: a fourth mixture is a one-line palette merge and a sweep
+invocation, not new search code.
+
+### The three rhombic boards ship, and the heading split had to change
+
+AL's call, and the reasoning is his: **a hexagon is the 6-iamond as much as a rhombus is the 2-iamond**,
+so "is this board regular or polyiamond" has no answer once two families share it. Every one of the
+three new boards is a polyiamond board under that reading, which means the classification cannot be the
+axis. Third heading instead — **Mixed families** — and the existing mixtures moved into it: leaving
+triangle+hexagon under "Regular polygons" while rhombus+hexagon sat under "Mixed" would have been one
+mixture under each of two headings, which is the incoherence the split was meant to remove. Three
+headings now: single-family boards grouped by what their family is CALLED (Regular polygons, Polyiamonds),
+every mixture together.
+
+Shipped: rt-k2 (244), rhx-k2/k3 (36 + 316), rth-k1/k2 (4 + 60). 660 rows, 336 kB. The shelf reads 52,800.
+
+⚑ **NO NEW CONVERTER.** `develop_marked.py` already held the deduplicated vertex keys and was throwing
+them away at emit — spelling every face corner out — so the shelf form is `--shelf <grid>`, twelve lines
+inside the existing emit, plus `--mixed` and `--id-prefix`. The mixed filter IMPORTS `bubble_mix_census`'s
+famchar→family read rather than restating it; two copies of "which family is this famchar" is how the
+rhombus/square confusion of 2026-08-24 gets reintroduced. ⚑ That import needed the census's CLI moved
+under `main()`: its module-level `parse_args()` ran on import and ate the developer's own argv, failing
+with the census's usage message.
+
+⚑ **THREE ORDERING TRAPS, two of which shipped broken before the guards caught them.**
+
+1. **/play carried its own list of bubble id PREFIXES**, seven of them, so a deep link could decide to
+   load the catalogue before knowing what the id is. `brt-`/`brx-`/`brth-` were not in it and the failure
+   is SILENT — the link resolves to the atlas's default tiling. Now `BUBBLE_ID_PREFIXES` + `isBubbleId`
+   live beside `BUBBLE_FILES`, and `bubble/shards.test.ts` reads the SHIPPED shards and checks every id
+   against them, so the list cannot drift from the data again.
+2. **`BUBBLE_GRID_ORDER` must be grouped by heading.** /play gathers sub rows into families by SCANNING
+   that order, not re-sorting it — the only way the tree matches the browse arrows — so a family must be
+   one contiguous run. The rhombus sitting after the mixed regular boards split "Mixed families" into two
+   runs under one heading. `tests/catalogue-sub-family.test.ts` caught it; single-family boards now come
+   first.
+3. **Ids are dense here and sparse on the older mixed boards** (`bth-1-00004` is the first tri+hex
+   record). Those were numbered before the mix filter ran; `--mixed` skips whole FILES, so numbering
+   starts at 1. Ids only have to be unique, and both forms are.
+
+The two-family boards ship with NO k=1 shard, because both are genuinely empty there.
+
+## 2026-08-27 — spherical bubble tiles: counted, not searched, and 10^52 of them
+
+AL asked how many bubble tilings the 28 k=1 spherical boards (5 Platonic, 13 Archimedean, 5 prisms,
+5 antiprisms) carry. The answer needed no solver, and that is the finding.
+
+**THERE IS NOTHING TO SEARCH.** On the plane the hard part is finding a substrate, which is why the
+Euclidean boards are a DFS over vertex types. On the sphere the substrate is one of a fixed list, and
+the complementary rule — a bump meets a bite — is satisfied by CONSTRUCTION once each edge names which
+of its two faces owns the bump. So a decoration is a free binary choice per edge and the count is the
+orbit count of 2^E under the solid's symmetry group: a Burnside sum, exact and instant even at 2^180.
+`scripts/bubble-sphere-census.ts`.
+
+⚑ **THE CONSEQUENCE IS THAT k IS NOT A BOUND HERE, IT IS THE ONLY THING MAKING A SHELF POSSIBLE.**
+Total over the 28 boards: 1.277e52. The truncated icosidodecahedron alone has 1.28e52 decorations and
+exactly EIGHT of them are vertex-transitive. Low k is not a slice of the catalogue; it is the
+catalogue, and everything else is noise that happens to be well-defined.
+
+**Counts.** 76 tilings at k=1 and 1,048 at k<=3. Eight of the 28 boards admit NO vertex-transitive
+decoration at all: tetrahedron, truncated tetrahedron, truncated dodecahedron, truncated icosahedron,
+and both snubs. The snubs have a reason — their symmetry group is already the rotation group, with no
+reflections to spare for a stabiliser.
+
+⚑ **DUALS SHARE A TOTAL AND NOT A SHELF.** Dodecahedron and icosahedron both have exactly 8,948,312
+decorations (as do cube and octahedron, 112) — the dart action is the same — but split 0/4/0 against
+0/20/0 by k, and 4/10/0 against 3/6/7. k counts VERTEX orbits and duals swap vertices for faces, so a
+board's total says nothing about the shelf it makes.
+
+⚑ **A BUG THAT SURVIVED ITS OWN CROSS-CHECK.** A dart here is a directed edge, and the rotation about
+its tail is next∘twin; an orientation-PRESERVING automorphism commutes with that and carries tails to
+tails, but a REVERSING one carries a dart to one whose HEAD is the image vertex. Reading the tail
+regardless made the vertex-orbit union-find chain unrelated vertices, and every k=1 count came out
+inflated by two orders of magnitude (octahedron 38 against the true 3). The brute-force check passed
+throughout, because BOTH routes read the vertex map the same wrong way. The tell was a reflection of
+order 2 on the decagonal antiprism reported as vertex-transitive on 20 vertices, which is impossible.
+A verification that shares a subroutine with the thing it verifies is checking arithmetic, not truth.
+
+**Verification, and its exact scope** (`scripts/bubble-sphere-verify.ts`, sharing NO code with the
+census — the group comes from the COORDINATES as orthogonal maps permuting the vertex set, so it is a
+vertex permutation from the outset and the vertex action needs no derivation):
+
+- all 28 TOTALS agree between the two implementations, and |Sym| matches |Aut| on every board;
+- 12 boards agree on the full k column by independent enumeration of all 2^E — including the
+  cuboctahedron, octagonal prism and hexagonal antiprism, which the census reached only by its
+  subgroup argument, so that argument is independently validated;
+- 4 more agree on k=1 by a third route: where V = |Sym| a vertex-transitive subgroup must be the whole
+  group, so k=1 is just the count of fully-symmetric decorations (truncated cuboctahedron 8, snub cube
+  0, truncated icosidodecahedron 8, snub dodecahedron 0);
+- the tetrahedron's 4 is OEIS A000568(4), the number of tournaments on 4 nodes: it is self-dual, so a
+  face-choice per edge is an orientation of K4 and the group is S4. A literature anchor, not a self-check.
+
+⚑ Twelve boards' k columns still rest on the census's subgroup route alone (dodecahedron, icosahedron,
+truncated cube/octahedron, rhombicuboctahedron, icosidodecahedron, truncated dodecahedron/icosahedron,
+rhombicosidodecahedron, decagonal prism, octagonal and decagonal antiprism). E > 24 puts enumeration
+out of reach at ~10^9 masks. Say so when quoting them.
+
+⚑ Two float traps, both silent. `orientFaces` exists because the solid catalogue does NOT wind its face
+rings consistently — the cube's disagree, and the renderer never cared because it normalises each face's
+own normal. And a `toFixed(6)` vertex key looked safe (no two vertices are within 1e-6) but failed on a
+ROUNDING BOUNDARY: the dodecahedron's golden-ratio coordinates came back from a 3x3 solve at 0.4999999
+against a stored 0.5000001, and the whole solid reported zero symmetries, identity included.
+
+### The spherical bubble shelf ships: 29,517 tilings on 28 boards
+
+Coverage is per board and the RULE is uniform even though the cutoff is not (AL's call): a board ships
+COMPLETE where its whole decoration set fits under 20,000, and its k <= 3 slice otherwise. Eight boards
+are complete (28,621 rows), twenty are k-limited (896). That is the convention the Euclidean sibling
+already follows — triangle stops at k=4, square and hexagon at k=5 — so per-board coverage is existing
+practice, not an exception. The complete boards carry `certification: "proven"`: their row count is
+asserted equal to the Burnside total at build time, which no other bubble slice can claim.
+
+⚑ **THE SAME PICKER, AND NOT ONE LINE OF NEW PROFILE CODE.** `pushEdge` on the unit chord returns the
+very polyline the flat canvas draws, so the spherical surface asks lib/bubble/edges.ts for its profiles
+and maps (t, h) onto each edge's great-circle arc. Arc, shallow, deep, Koch with its level slider,
+crenel, dovetail and jigsaw are one table serving both geometries; a jigsaw tab is the same tab on a
+sphere. `triangulateFillCell` (sphericalIslamicFill.ts) is reused too — it ear-clips a cell in a face's
+tangent plane, and its own comment says it is ear-clipping RATHER than a centroid fan because a fan
+folds over on a CONCAVE cell, which is exactly what a bitten tile is.
+
+⚑ **NO POLYHEDRON VIEW, and it is not a preference.** Every other spherical record offers the flat solid;
+these cannot, because a bubble tile's sides are arcs or crenels or jigsaw tabs and there is no
+flat-faced polyhedron whose faces those are. The canvas ignores `sphericalPolyhedron` for them and the
+Options tab hides the toggle rather than disabling it.
+
+⚑ **A SHADER WAS BUILT, VERIFIED, AND THEN RETIRED — record it so it is not rebuilt.** The spherical
+surface is normally procedural: a fragment is classified by argmax over the face exit normals, so the
+boundary between two faces is dot(dir, N_A - N_B) = 0, and OFFSETTING that plane gives a small circle,
+which is an arc. That was implemented and checked over 10^6 directions on all 28 boards — depth 0
+reproduced the existing shader exactly and a real decoration left 0.00% of the sphere unclaimed. It
+carries the ARC FAMILY ONLY. A crenel is not a circle, so the moment the picker was required in full it
+had to go, and the tiles are meshed instead. Two findings survive it and are load-bearing:
+
+- the boundary circle must pass through the edge's TWO ENDPOINTS. A constant offset off the
+  face-separating plane is still a small circle and still looks like an arc, but it misses the solid's
+  vertices, so three tiles meeting at one stop closing and the sphere renders with a hole at every
+  vertex — 5% of the tetrahedron was unclaimed before the pencil-of-planes form replaced it;
+- `bubbleDepth`, the per-board cap: a fixed depth overshot the truncated icosidodecahedron's 180 short
+  edges while the tetrahedron's six long ones were fine at the same number.
+
+⚑ **THREE SCALING ATTEMPTS, MEASURED BY AREA.** The mesh is gated on total tile area equalling 4pi —
+overlap pushes it over, gaps fall short, and both happened. Scaling the profile's h by the edge's arc
+length ignored that a spherical edge is LONG relative to its tile (a tetrahedron's face has 120°
+corners) and the jigsaw self-intersected so badly the tiles covered 646% of the sphere. Normalising each
+profile to the same depth then broke the SHALLOW ones: the dovetail is planar-shallow because it is
+WIDE, and inflating it 1.4x crossed its flanks at the corners of small triangular faces, where the ear
+clipper silently returned a partial fan and three boards came out 3% short. What works is one scale for
+all profiles, set by the deepest, which preserves the relative depths their planar margins were
+measured at.
+
+⚑ **AND TWO WIRING TRAPS, both silent.** The /play sidebar draws its cards from `tile-grid.tsx`, NOT
+`reference-card.tsx` — wiring only the latter leaves every card in the browse tree blank while the
+library looks right. And a new board family must be added to `facets.ts`'s (geometry, decoration)
+routing or it renders nowhere; tests/catalogue-one-taxonomy.test.ts is the guard that caught it.
+
+⚑ **AND THE ONE THAT ACTUALLY SHIPPED BROKEN: `geometryOf` INFERS THE PLANE FROM WHICH PAYLOAD FIELD IS
+SET**, not from the record's own `geometry` string. A new spherical shelf that does not name itself in
+that function is filed under EUCLIDEAN — its rows counted on the wrong chip and missing from the one
+that should show them — with no error anywhere. All 29,517 spherical bubble records sat inside the
+Euclidean count, under a "Spherical solids" heading nested in the Euclidean tree, and every test passed:
+the taxonomy guard checks that a family is ROUTED to a segment, not that its records reach it. AL caught
+it by looking at the shelf. Setting `geometry: "spherical"` on the record does nothing on its own.
+
+### The spherical bubble renderer, corrected against AL's review (2026-08-28)
+
+Five defects, four of them mine and one a spec I had not been given.
+
+⚑ **A `MeshBasicMaterial` IS SILENTLY SKIPPED BY `applyStudioMaterials`**, which only touches
+MeshStandardMaterial. The surface therefore rendered unlit — AL: "it doesn't feel three-dimensional even
+in perspective". Nothing errors; the object just never enters the lighting rig.
+
+⚑ **`LineBasicMaterial` IGNORES `linewidth` IN WEBGL**, so the stroke slider could only turn the outline
+on and off — AL: "the line stroke is either there or not there, and it's not a tube as it is for all the
+other freedraw edge patterns". The other spherical shelves stroke with `buildTubeSkeleton`, which takes
+polylines; the per-edge curves already are polylines, so it was reuse, not new code.
+
+⚑ **Face opacity did nothing** because the builder exposed no `setOpacity` and the canvas effect only
+knew about the flat solid.
+
+⚑ **`computeVertexNormals()` IS WRONG ON A SPHERE.** It averages the triangle normals of a subdivided
+patch, so every sub-quad shaded as its own facet and each tile came out blotched. The normal at a point
+of a sphere IS that point; writing them radially is exact, cheaper, and removes the banding entirely.
+The subdivision cap also had to rise from the Islamic fill's 10 to 26 — an Islamic cell is a sliver
+inside one face, a bubble tile IS a face and on the octahedron spans an octant.
+
+**And the depth rule, which AL specified: the arc should be just deep enough that the BIGGEST polygon on
+the board reads as a circle when all its edges bump out.** A spherical regular n-gon has its vertices at
+angular radius R and its edge midpoints at the inradius r, so an arc rising R - r puts the whole boundary
+on the circumcircle. ⚑ It must be read off the LARGEST face, not maximised: at a fixed edge length a
+triangle needs 0.289a to close and a hexagon only 0.134a, so the maximum picks the triangle and
+over-inflates everything else.
+
+⚑ **Anchoring EVERY profile to that sagitta was the wrong reading and looked it.** On a board with a big
+largest face it made the default arc 7% of the edge against the plane's 13.4% — a decoration you have to
+hunt for. An ordinary profile now keeps its PLANAR proportion (h × the edge's angular length, exactly
+what it means on the flat canvas) and only "deep" targets the circle rule. Both are held under a bite
+bound of 40% of the tightest inradius, without which h × edgeArc self-intersects on long-edged solids —
+the tetrahedron's jigsaw covered 646% of the sphere before that bound existed, and at 75% the
+icosahedron's all-bites triangle still overlapped by 2.25%.
+
+⚑ **THE STROKE IS `THREE.TubeGeometry`, and the reason is the corners.** Three attempts: `LineBasicMaterial`
+ignores `linewidth` in WebGL, so the slider could only toggle the outline; `buildTubeSkeleton` sweeps ONE
+frame along a whole polyline, which leaves the cross-section sheared through a sharp turn and made the
+tube fatten and thin visibly across a crenel's right angle and a dovetail's flare (AL); splitting into
+one straight bar per segment fixes that but throws away the curve. TubeGeometry computes FRENET FRAMES,
+so the section stays perpendicular to the direction all along the path — which is the property that was
+missing. The path is a `CurvePath` of straight `LineCurve3` pieces and not a Catmull-Rom through the
+points: a spline rounds a crenel's corners off, and the corners ARE the profile.
+
+⚑ And the depth cap is 0.6 of the tightest inradius, not 0.4: at 0.4 the deep profiles were SQUASHED
+against the edge instead of reaching into the tile — AL saw it on the Koch curve, the same complaint the
+jigsaw drew earlier. 0.75 is too loose (the icosahedron's all-bites triangle overlaps by 2.25% of the
+sphere there); 0.6 clears both ends.
+
+⚑ **AND THE TUBE PATH IS SAMPLED BY INDEX, NOT BY ARC LENGTH.** `THREE.CurvePath` maps its parameter by
+arc LENGTH, so `TubeGeometry`'s uniform sampling lands BETWEEN a polyline's vertices and cuts every
+corner off — the stroke then traced a visibly different line from the fill it bounds, worst on the
+crenel and dovetail, whose long runs and short tab sides differ most in length (AL: "the tubes follow
+different lines... I don't know why"). A curve parameterised by INDEX, with tubularSegments = points - 1,
+puts one sample on each vertex exactly.
+
+⚑ **A tube segment is a straight CHORD**, so between two points far apart on a sphere it passes BELOW
+the surface and the middle of a long segment sinks into the fill and vanishes. Every stroke path is
+slerped to a maximum step of 0.035 rad first, which keeps the tube on the surface AND puts it on the
+same great-circle arcs the fill'''s own barycentric subdivision follows — that shared sampling is what
+makes stroke and fill coincide rather than merely nearly coincide.
+
+⚑ **AND THEN `TubeGeometry` WENT TOO** — the corner is where a swept tube has one ring to spend and needs
+two. Its frame at a corner is perpendicular to the BISECTOR, so the band arriving is sheared, the band
+leaving is sheared the other way, and the corner itself is a chord between two rings that never reaches
+the apex; AL described exactly that ("a bridge between two points... stretched and skewed geometry that
+doesn't really follow the tube up until the vertex"), and no amount of extra sampling touches it. The
+replacement (`buildTubeGeometry`) gives each SEGMENT its own pair of rings, exactly perpendicular to that
+segment, and each CORNER a round joint: extra rings sharing the corner's centre, the section rotated from
+the incoming direction to the outgoing one about the turn axis, 30° at a time. Rotating the frame IS its
+parallel transport, so the ring vertices stay in correspondence and no twist accumulates. The joint's
+outer silhouette is an arc of the tube's own radius about the corner point, which is a round line join.
+Path ends get a ball, because several decorated edges meet at a solid's vertex at wide angles and flat
+caps leave a notch there. Indexed, preallocated typed arrays: a Koch level-4 board is ~1M vertices.
+
+⚑ **A RADIAL OFFSET CANNOT BE RIGHT AT EVERY VIEWING ANGLE.** The stroke was pushed out by one tube radius
+(1.006) to stop it z-fighting the fill. Looking straight down at the sphere that is invisible; at the limb
+it is exactly one stroke-width of lateral displacement, and AL read it as parallax between the tube and the
+colours. The offset belongs in DEPTH, not in space: the stroke sits on the boundary curve itself and the
+fill material carries `polygonOffset`, which biases only the depth it is tested at. Same lesson as the
+normals — anything faked in the geometry shows up somewhere on a sphere, because every viewing angle is
+present at once.
+
+⚑ **"Deep arc" removed entirely** (AL, 2026-08-28), and with it `hasDeepArc`, the per-board arc override in
+`bump()`, the picker's board-dependent filter, the `bubedge=deep` URL value, and `circleSagitta` /
+`sphereDepths().circle` on the spherical side — the circle-making sagitta had no other consumer. Six
+profiles, one authored at the triangle scale, one depth rule (planar proportion under the bite cap).

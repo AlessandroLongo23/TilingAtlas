@@ -11,6 +11,7 @@
 // after they landed. The test asserts every member of SUB_ORDER has a label, so the next board that
 // arrives without one fails a test instead of reaching visitors as a slug.
 
+import { SPH_BUBBLE_SOLIDS } from "@/lib/services/referenceAtlas";
 import { HYP_EDGES_BASES } from "@/lib/freedraw/hyp-edges";
 import { SCHWARZ_BOARDS, schwarzSubOfBoard } from "@/lib/freedraw/schwarz";
 import { SPH_EDGES_BOARDS, sphEdgesSubOfBoard } from "@/lib/freedraw/sph-edges";
@@ -66,6 +67,16 @@ export const FAMILY_LABEL: Record<string, string> = {
 	// already on screen twice above them.
 	"bubble-grid": "Regular polygons",
 	"bubble-poly": "Polyiamonds",
+	// The third heading, and the reason the first two can stay honest. A hexagon is the 6-iamond as
+	// much as a rhombus is the 2-iamond, so "is this board regular or polyiamond" has no answer once
+	// two families share a board — the mixtures get their own row instead of being filed under
+	// whichever family was named first (AL, 2026-08-27). Triangle+hexagon and triangle+square moved
+	// here from "Regular polygons" for the same reason: one mixture under one heading and another
+	// under a different one was the incoherence.
+	"bubble-mixed": "Mixed families",
+	// The spherical bubble boards. Named for the solids rather than "Bubble tiles" because the heading
+	// renders inside the bubble class, where that word is already on screen.
+	"sph-bubble": "Spherical solids",
 	// The polyform shelf: one heading per atomic tile, named for what the pieces are made of.
 	...Object.fromEntries(
 		(Object.keys(POLYFORM_FAMILY_LABEL) as (keyof typeof POLYFORM_FAMILY_LABEL)[])
@@ -231,6 +242,17 @@ export const SUB_LABEL: Record<string, string> = {
 	"bub-tri-square": "Triangle + square",
 	"bub-tri-sq-hex": "Triangle + square + hexagon",
 	"bub-rhombus": "Rhombus (2-iamond)",
+	"bub-rhomb-tri": "Rhombus + triangle",
+	"bub-rhomb-hex": "Rhombus + hexagon",
+	"bub-rhomb-tri-hex": "Rhombus + triangle + hexagon",
+	// The spherical bubble boards, named by their solid. Derived so a board cannot be added to the shelf
+	// and left unnamed in the tree.
+	...Object.fromEntries(
+		SPH_BUBBLE_SOLIDS.map((s) => [
+			`sbub-${s}`,
+			s.replace(/-/g, " ").replace(/^./, (c) => c.toUpperCase()),
+		]),
+	),
 	// The palettes under "Different edge lengths".
 	"el-tri45": "Triangles and squares",
 	"el-planigon": "Planigons",

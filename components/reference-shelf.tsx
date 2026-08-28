@@ -295,6 +295,7 @@ const ALL_STR = ""; // sentinel: the "All" chip for the partition group
 
 // Enum whitelists for URL parsing — a hand-edited or stale link can carry any string, so only accept
 // values the filter actually understands (an unknown one is dropped, never injected into state).
+const CLASS_OPTIONS_NO_BUBBLE = CLASS_OPTIONS.filter((o) => o.value !== "bubble");
 const TILE_CLASS_VALUES = CLASS_OPTIONS.map((o) => o.value).filter((v): v is TileClass => v !== "all");
 const CERT_VALUES = CERT_OPTIONS.map((o) => o.value);
 
@@ -363,6 +364,10 @@ function parseViewState(sp: URLSearchParams): ViewState {
 		f.decoration = cls === "freedraw" ? "edges" : "colorings";
 	} else if (cls && (TILE_CLASS_VALUES as string[]).includes(cls)) {
 		f.tileClass = cls as TileClass;
+		// A bubble tiling is decoration "edges", so `class=bubble&dec=tilings` is a link that can only
+		// read 0. The class is the more specific half of that pair, so keep it and drop the segment —
+		// same move as the two promotions above, one axis over.
+		if (cls === "bubble" && f.decoration === "tilings") f.decoration = undefined;
 	}
 	// The hyperbolic interval facets only mean something on the hyperbolic shelf — under any other
 	// geometry an active one would just filter the view to zero, so drop them from foreign links.
@@ -975,7 +980,13 @@ export function ReferenceShelf() {
 		}
 		// Bubble tiles are the second occupant of the Euclidean × edges cell, so they ride the same
 		// chip as freedraw and are told apart by the tile-class facet.
-		if (dec === "edges" && !decorLoaded.has("decor-bub")) {
+		//
+		// They are ALSO the only shape-class chip whose rows live outside the eager atlas, so the class
+		// wall can ask for them with no Kind chosen — and then this effect, gated on the Kind alone,
+		// fetched nothing and the Bubble chip read "No tilings match" over 52,140 rows that exist. The
+		// class is its own trigger. Under Kind=Tilings it is not: decorationOf(bubble) is "edges", so
+		// that segment excludes every bubble row and a fetch there is 37 MB spent to display zero.
+		if ((dec === "edges" || (!dec && filters.tileClass === "bubble")) && !decorLoaded.has("decor-bub")) {
 			loadBubbleDecorAtlas().then((d) => merge(d, "decor-bub")).catch(() => {});
 		}
 		if (dec === "colorings" && !decorLoaded.has("decor-col")) {
@@ -984,7 +995,7 @@ export function ReferenceShelf() {
 		return () => {
 			alive = false;
 		};
-	}, [filters.geometry, filters.decoration, tilings, decorLoaded]);
+	}, [filters.geometry, filters.decoration, filters.tileClass, tilings, decorLoaded]);
 
 	// Colored tilings in H² and on S² — the same lazy shape as the edge systems. The eager per-base/solid
 	// slices load once their geometry is entered (making the "Colorings" class chip appear); dense shards load
@@ -1470,6 +1481,10 @@ export function ReferenceShelf() {
 			next.starKind = undefined;
 			next.ncxCrossing = undefined;
 		}
+		// ...and the Tilings segment, which keeps the class, still cannot hold a BUBBLE one: those rows
+		// are decoration "edges". Left set it would filter the segment to 0 behind a chip the wall no
+		// longer draws.
+		if (dec === "tilings" && next.tileClass === "bubble") next.tileClass = undefined;
 		if (v !== "edges") {
 			next.freedrawKind = undefined;
 			next.freedrawGrid = undefined;
@@ -1761,6 +1776,11 @@ export function ReferenceShelf() {
 	// (the developed patches, the Platonic solids), so a wall with one live chip would say nothing the
 	// geometry segment hasn't. This is what the old non-Euclidean class relabeling was standing in for.
 	const showTileClass = isEuclidean && inTilings;
+	// Bubble is the one shape class that is also a DECORATION (decorationOf → "edges"), so the explicit
+	// Tilings segment excludes every one of its rows. Offering the chip there is a promise the segment
+	// cannot keep — it can only ever read 0 — so the wall drops it and keeps it under "All", which is
+	// the segment that does show a bubble tiling.
+	const classOptions = decoration === "tilings" ? CLASS_OPTIONS_NO_BUBBLE : CLASS_OPTIONS;
 	// Classes carrying NO vertex-configuration classification — no M/partition, no star folds, no wallpaper
 	// group or lattice. The convex-irregular + isotoxal demo shelves, whose builds don't compute it.
 	const isUnclassified = tileClass === "convex" || tileClass === "isotoxal";
@@ -1962,7 +1982,7 @@ export function ReferenceShelf() {
 					    Hidden off the plane and outside Tilings, where it has at most one live chip. */}
 					{showTileClass ? (
 						<FilterGroup title="Tile class" summary={filters.tileClass ?? null}>
-							<OptionWall columns={3} options={CLASS_OPTIONS} selected={tileClass} onChange={setTileClass} />
+							<OptionWall columns={3} options={classOptions} selected={tileClass} onChange={setTileClass} />
 						</FilterGroup>
 					) : null}
 

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { Vector } from "@/classes/Vector";
-import type { IcoMode } from "@/lib/render/icoFreedraw";
+import { BUBBLE_KOCH_LEVELS, DEFAULT_BUBBLE_EDGE_STYLE, type BubbleEdgeStyle } from "@/lib/bubble/edges";
 import { IDENTITY_DEFORM, type Mat2 } from "@/lib/render/flatView";
 
 export interface SelectedTiling {
@@ -80,6 +80,12 @@ export interface ConfigurationState {
 	// A068599 convention — see lib/services/chirality.ts), so the second hand has nowhere to live except
 	// as a view of the first. Render-only: it reflects float geometry and never touches a count or an id.
 	mirrorFlip: boolean;
+	// Bubble shelf: which EDGE PROFILE the bump/bite decoration is drawn with (lib/bubble/edges.ts).
+	// Render-only in the same sense as `mirrorFlip` — the combinatorics, the tile names and the counts
+	// are the same tiling under every profile, only the curve between two tile corners changes.
+	bubbleEdgeStyle: BubbleEdgeStyle;
+	/** Iterations of the Koch generator, when `bubbleEdgeStyle` is "koch". Ignored by every other. */
+	bubbleKochLevel: number;
 	debugView: boolean;
 	// Flat view: draw the plain coloured-tile fill/stroke with the WebGL2 renderer
 	// (components/euclidean-canvas.tsx) instead of p5 immediate mode. Dev flag until parity is reached.
@@ -390,6 +396,8 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	showFundamentalDomain: false,
 	showVertexOrbits: false,
 	mirrorFlip: false,
+	bubbleEdgeStyle: DEFAULT_BUBBLE_EDGE_STYLE,
+	bubbleKochLevel: BUBBLE_KOCH_LEVELS.default,
 	debugView: false,
 	// On by default: the flat plain-tile view renders through the WebGL2 renderer (M1 fill+stroke, M1b
 	// points). Verified at parity with the p5 path across regular/star/parametric/dense/dark tilings

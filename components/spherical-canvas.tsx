@@ -21,6 +21,7 @@ import { createSphere, type Sphere } from "@/lib/render/sphericalScene";
 import { createOrbitMomentum, type OrbitMomentum } from "@/lib/render/orbitMomentum";
 import { installLookRig, applyStudioMaterials, type LookRig } from "@/lib/render/sphericalLook";
 import { buildFlatSolid, type FlatSolid } from "@/lib/render/sphericalPolyhedron";
+import { buildBubbleSphere, type BubbleSphere } from "@/lib/render/sphBubble";
 import { hasSphereView } from "@/lib/tilings/sph-inscribed";
 import { createEdgeOcclusion, type EdgeOcclusion } from "@/lib/render/edgeOcclusion";
 import { buildIslamicPattern, type IslamicPattern } from "@/lib/render/sphericalIslamicMesh";
@@ -44,6 +45,15 @@ import { buildIslamicWeave, type IslamicWeave } from "@/lib/render/sphericalIsla
 interface SphericalCanvasProps {
 	/** Stable solid id ("tetrahedron", "cuboctahedron", …) — the routing key for Platonic + Archimedean. */
 	solidId: string;
+	/**
+	 * SPHERICAL BUBBLE: the per-face bite words of a bump/bite decoration of `solidId`.
+	 *
+	 * Its presence replaces the surface entirely — the procedural shader classifies a direction against
+	 * FACE PLANES, and a bubble tile's sides are arcs, crenels or jigsaw tabs, none of which is a plane.
+	 * So these draw as a mesh (lib/render/sphBubble.ts) and, unlike every other spherical record, have
+	 * NO polyhedron view: there is no flat-faced solid whose faces these are.
+	 */
+	bubbleBites?: number[][];
 	/**
 	 * Whether the solid takes input at all — drag, wheel and touch together. False renders the same
 	 * scene inert, which is what an embedded sphere in a SCROLLING page (the landing wall) needs
@@ -71,9 +81,10 @@ const WEAVE_WIDTH_FACTOR = 0.36;
 
 type Content =
 	| { kind: "sphere"; sphere: Sphere }
-	| { kind: "solid"; solid: FlatSolid };
+	| { kind: "solid"; solid: FlatSolid }
+	| { kind: "bubble"; bubble: BubbleSphere };
 
-export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEFAULT_FIT_FRACTION }: SphericalCanvasProps) {
+export function SphericalCanvas({ solidId, bubbleBites, interactive = true, fitFraction = DEFAULT_FIT_FRACTION }: SphericalCanvasProps) {
 	const poly = useMemo(() => polyhedronForId(solidId), [solidId]);
 	const hostRef = useRef<HTMLDivElement | null>(null);
 	// The canvas element itself (created imperatively below) — the gate effect writes its touch-action,
@@ -285,6 +296,10 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 	const islamicRigid = useConfiguration((s) => s.islamicRigid);
 	const isIslamic = useConfiguration((s) => s.isIslamic);
 	const polyhedron = useConfiguration((s) => s.sphericalPolyhedron);
+	// The bubble surface is rebuilt when the profile changes: the arcs are baked into its geometry, so a
+	// new profile is new triangles, not a uniform write.
+	const edgeStyle = useConfiguration((s) => s.bubbleEdgeStyle);
+	const kochLevel = useConfiguration((s) => s.bubbleKochLevel);
 	useEffect(() => {
 		const renderer = rendererRef.current;
 		const scene = sceneRef.current;
@@ -297,9 +312,26 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 		// a different object — AL saw J31 come out as a blob and asked whether its faces were really regular
 		// (2026-08-21). The Options tab hides the toggle for the same records, so this is not overriding a
 		// control a visitor can see. lib/tilings/sph-inscribed.ts holds the list and the fit that derives it.
-		const flat = cfg.sphericalPolyhedron || !hasSphereView(solidId);
+		// ⚑ A bubble decoration overrides the shape toggle, it does not read it. See `bubbleBites`.
+		const flat = !bubbleBites && (cfg.sphericalPolyhedron || !hasSphereView(solidId));
 		let content: Content | null = null;
-		if (cfg.isIslamic) {
+		if (bubbleBites) {
+			const bubble = buildBubbleSphere(poly, bubbleBites, {
+				style: cfg.bubbleEdgeStyle,
+				kochLevel: cfg.bubbleKochLevel,
+				hueOffset: cfg.hueOffset,
+				lineWidth: cfg.lineWidth,
+				dark,
+				faceOpacity: cfg.sphericalFaceOpacity,
+			});
+			if (bubble) {
+				// ⚑ The studio pass is what makes it read as a lit solid rather than a flat disc, and it only
+				// touches MeshStandardMaterial — skipping this call was half of why the surface looked 2D.
+				applyStudioMaterials(bubble.object);
+				scene.add(bubble.object);
+				content = { kind: "bubble", bubble };
+			}
+		} else if (cfg.isIslamic) {
 			// No base surface — the overlay effect below draws the star lines (flat ribbons, or rigid tubes
 			// when Wireframe is also on; the Wireframe toggle makes the LINES rigid, it does not add edges).
 			content = null;
@@ -328,7 +360,10 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 		contentRef.current = content;
 		return () => {
 			if (!content) return;
-			if (content.kind === "sphere") {
+			if (content.kind === "bubble") {
+				scene.remove(content.bubble.object);
+				content.bubble.dispose();
+			} else if (content.kind === "sphere") {
 				scene.remove(content.sphere.mesh);
 				content.sphere.dispose();
 			} else {
@@ -342,15 +377,16 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 		// `faceOpacity` is NOT a rebuild dep. Crossing 1 changes how the faces are drawn, and the builder
 		// answers that live through `setOpacity` below — re-deriving the creases of a 212-face solid on every
 		// frame of a slider drag is not something a drag can afford.
-	}, [poly, solidId, isIslamic, polyhedron]);
+	}, [poly, solidId, isIslamic, polyhedron, bubbleBites, edgeStyle, kochLevel]);
 
 	// Face opacity, live. The hidden-edge test does not switch off below 1, it SOFTENS: a bar behind a face
 	// is worth 1 − opacity, so it is dropped behind a solid face and comes back as the face turns to glass.
 	useEffect(() => {
 		const c = contentRef.current;
 		if (c?.kind === "solid") c.solid.setOpacity(faceOpacity);
+		else if (c?.kind === "bubble") c.bubble.setOpacity(faceOpacity);
 		occlusionRef.current?.setFaceOpacity(faceOpacity);
-	}, [faceOpacity, poly, solidId, polyhedron, isIslamic]);
+	}, [faceOpacity, poly, solidId, polyhedron, isIslamic, bubbleBites]);
 
 	// Cross-section of the RIGID Islamic bars (the overlay effect below rebuilds from these).
 	const section = useConfiguration((s) => s.islamicBarSection);
@@ -377,7 +413,10 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 		const dark = document.documentElement.classList.contains("dark");
 		const c = contentRef.current;
 		if (c) {
-			if (c.kind === "sphere") c.sphere.recolor({ hueOffset, lineWidth, dark });
+			// The bubble surface has no stroke of its own — its tiles ARE the drawing — so only the hue
+			// ring reaches it, and it takes that as a vertex-colour rewrite with no rebuild.
+			if (c.kind === "bubble") { c.bubble.recolor(hueOffset); c.bubble.setLineWidth(lineWidth, dark); }
+			else if (c.kind === "sphere") c.sphere.recolor({ hueOffset, lineWidth, dark });
 			else c.solid.recolor({ hueOffset, lineWidth, dark });
 		}
 		// The Islamic overlay + cell fill live in their own refs (independent of the base content) — recolour too.

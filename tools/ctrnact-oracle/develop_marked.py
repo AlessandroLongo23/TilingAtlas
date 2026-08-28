@@ -123,6 +123,19 @@ def main():
                     help="BUBBLE TILES: the two sides of an edge must DIFFER (a bump meets a bite) "
                          "instead of agreeing. Faces are not merged; --drawn names the BITE type, and "
                          "each face reports its per-edge bite word, which is its tile identity.")
+    ap.add_argument("--shelf", default=None, metavar="GRID",
+                    help="BUBBLE SHELF FORM: emit the record public/bubble/*.json holds — id, k, grid, "
+                         "T1, T2, deduplicated verts, polys as index rings, bites — instead of the "
+                         "developer's own. GRID is the BubbleGrid string the shelf keys the board on.")
+    ap.add_argument("--mixed", action="store_true",
+                    help="A MIXED BOARD MUST ACTUALLY MIX: keep only solutions using every family in "
+                         "the palette. An all-tile palette contains the single-family searches as "
+                         "special cases, so without this a mixed board lists tilings that are already "
+                         "on their own board (923 of tri+hex's 1,696 were pure triangle).")
+    ap.add_argument("--id-prefix", default=None,
+                    help="Record-id prefix; defaults to the tables directory name. The shelf's ids are "
+                         "short codes (bt, bs, bh, brh, bth), not palette names, and they only have to "
+                         "be unique across the atlas.")
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
 
@@ -145,6 +158,16 @@ def main():
                              f"({sorted(edge_ids)})")
     drawn_ids = frozenset(edge_ids[lab] for lab in labels)
 
+    # The --mixed filter reads the family set off each output file's NAME, which is where the solver
+    # already records it. Imported rather than restated: bubble_mix_census.py is the census that made
+    # the same read, and two copies of "which family is this famchar" is how the rhombus/square
+    # confusion gets reintroduced.
+    fam_of = all_fams = None
+    if args.mixed:
+        sys.path.insert(0, HERE)
+        from bubble_mix_census import families_in, palette_families
+        fam_of, all_fams = palette_families(os.path.splitext(os.path.basename(args.palette))[0])
+
     tab = ff.load_tables(args.tables)
     if not hasattr(tab, "ETYPE"):
         raise SystemExit(f"{args.tables}/tables.py has no ETYPE — regenerate the alphabet")
@@ -152,6 +175,9 @@ def main():
     out, fails = [], []
     for k in range(args.kmin, args.kmax + 1):
         for path in sorted(glob.glob(os.path.join(args.pruned, "eupruned_%02d_*.txt" % k))):
+            # Whole FILES are skipped, not blocks: every solution in one file uses the same tile set.
+            if args.mixed and families_in(os.path.basename(path), fam_of) != all_fams:
+                continue
             blocks, cur = [], []
             for line in open(path):
                 line = line.rstrip("\n")
@@ -236,9 +262,33 @@ def main():
                                 continue
                             segkey.add(key)
                             segs.append([list(fp), list(fq)])
+                    rec_id = "%s-%d-%05d" % (args.id_prefix or os.path.basename(args.tables), k,
+                                             len([o for o in out if o["k"] == k]) + 1)
+                    if args.shelf:
+                        # The shelf form. `faces` already holds each ring as PLACED-VERTEX KEYS, so the
+                        # deduplication the catalogue wants is a numbering of the keys already in hand —
+                        # the developer was throwing it away and spelling every corner out. A square k=5
+                        # cell has ~20 distinct vertices behind ~70 corners, which is the four-times-the-
+                        # bytes the shelf note records. 4 decimals, the substrate being a unit lattice.
+                        vidx, verts, polys = {}, [], []
+                        for f in faces:
+                            ring = []
+                            for key in f["verts"]:
+                                if key not in vidx:
+                                    vidx[key] = len(verts)
+                                    z = dt.zfloat(key)
+                                    verts.append([round(z.real, 4), round(z.imag, 4)])
+                                ring.append(vidx[key])
+                            polys.append(ring)
+                        out.append({
+                            "id": rec_id, "k": k, "grid": args.shelf,
+                            "T1": [round(dt.zfloat(T1).real, 4), round(dt.zfloat(T1).imag, 4)],
+                            "T2": [round(dt.zfloat(T2).real, 4), round(dt.zfloat(T2).imag, 4)],
+                            "verts": verts, "polys": polys, "bites": bites,
+                        })
+                        continue
                     out.append({
-                        "id": "%s-%d-%05d" % (os.path.basename(args.tables), k,
-                                              len([o for o in out if o["k"] == k]) + 1),
+                        "id": rec_id,
                         "k": k,
                         "source": tid,
                         "T1": [round(dt.zfloat(T1).real, 9), round(dt.zfloat(T1).imag, 9)],

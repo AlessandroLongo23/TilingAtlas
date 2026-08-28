@@ -187,6 +187,8 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 					<SphSchwarzThumbnail pattern={tiling.sphEdges} />
 				) : tiling.hypPoly ? (
 					<HyperbolicColorsThumbnail pattern={hypPolyMeta(tiling.hypPoly)} />
+				) : tiling.sphBubble ? (
+					<SphericalThumbnail solidId={tiling.sphBubble.solid} bubbleBites={tiling.sphBubble.bites} />
 				) : tiling.spherical ? (
 					<SphericalThumbnail solidId={tiling.spherical.solid} />
 				) : tiling.sphColors ? (

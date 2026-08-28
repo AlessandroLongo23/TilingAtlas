@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useConfiguration } from "@/stores/configuration";
 import { polyhedronForId } from "@/lib/render/sphericalSolids";
+import { buildBubbleSphere } from "@/lib/render/sphBubble";
 import { buildFlatSolid } from "@/lib/render/sphericalPolyhedron";
 import { applyStudioMaterials } from "@/lib/render/sphericalLook";
 import { mountSpinningThumb, thumbPhase } from "@/lib/render/sphereThumbStage";
@@ -17,16 +18,23 @@ import { ThumbnailSkeleton } from "@/components/ui/thumbnail-skeleton";
 interface SphericalThumbnailProps {
 	/** Stable solid id ("tetrahedron", "cuboctahedron", …). */
 	solidId: string;
+	/** Spherical bubble: the decoration's per-face bite words. Its presence swaps the flat solid for the
+	 *  meshed bubble surface — those records have no flat-faced solid to draw (lib/render/sphBubble.ts). */
+	bubbleBites?: number[][];
 	/** Render resolution in device px (square). The canvas scales to fill its slot. */
 	size?: number;
 }
 
-export function SphericalThumbnail({ solidId, size = 256 }: SphericalThumbnailProps) {
+export function SphericalThumbnail({ solidId, bubbleBites, size = 256 }: SphericalThumbnailProps) {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	// The key that has painted, not a boolean: resetting a boolean at the top of the effect would be a
 	// synchronous setState inside it (a cascading render), where comparing keys just re-derives.
 	const [readyKey, setReadyKey] = useState<string | null>(null);
 	const [failed, setFailed] = useState(false);
+	// ⚑ The effect below keys on this STRING, never on `bubbleBites` itself. An array prop is a fresh
+	// identity on every render, so listing it as a dep tore the thumbnail down and rebuilt it forever and
+	// `onReady` never fired — every spherical bubble card sat on its skeleton, blank.
+	const bitesKey = bubbleBites ? bubbleBites.map((w) => w.join("")).join("|") : "";
 	// Global hue ring: subscribed LIVE — every visible preview rebuilds per drag tick, matching the
 	// hyperbolic thumbnails' exact-colours choice.
 	const hueOffset = useConfiguration((s) => s.hueOffset);
@@ -51,6 +59,13 @@ export function SphericalThumbnail({ solidId, size = 256 }: SphericalThumbnailPr
 				// drawing the radial projection onto a sphere they do not have, which turns J31 into a green
 				// blob with a few slivers on it. Faces first, projection second — the interactive view still
 				// offers the sphere where it means something.
+				if (bubbleBites) {
+					const cfg = useConfiguration.getState();
+					const bubble = buildBubbleSphere(poly, bubbleBites, {
+						style: cfg.bubbleEdgeStyle, kochLevel: cfg.bubbleKochLevel, hueOffset, lineWidth, dark,
+					});
+					return bubble ? { object: bubble.object, dispose: bubble.dispose } : null;
+				}
 				const solid = buildFlatSolid(poly, { hueOffset, lineWidth, dark });
 				if (!solid) return null;
 				applyStudioMaterials(solid.object);
@@ -59,7 +74,7 @@ export function SphericalThumbnail({ solidId, size = 256 }: SphericalThumbnailPr
 			onReady: () => setReadyKey(solidId),
 			onFail: () => setFailed(true),
 		});
-	}, [solidId, size, hueOffset]);
+	}, [solidId, size, hueOffset, bitesKey]);
 
 	if (failed) {
 		return (

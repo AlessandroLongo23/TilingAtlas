@@ -245,6 +245,10 @@ function Tile({
 					) : (
 						<HyperbolicEdgesThumbnail pattern={hypSchwarzMeta(t.schwarz)} />
 					)
+				) : t.sphBubble ? (
+					// A spherical bubble decoration draws through the same thumbnail, which swaps the flat
+					// solid for the meshed bubble surface when it is handed the bite words.
+					<SphericalThumbnail solidId={t.sphBubble.solid} bubbleBites={t.sphBubble.bites} />
 				) : t.spherical ? (
 					<SphericalThumbnail solidId={t.spherical.solid} />
 				) : t.sphColors ? (

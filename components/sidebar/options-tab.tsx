@@ -20,6 +20,7 @@ import { cellFill, DEFAULT_PALETTE, paletteFor, type ColorChoice } from "@/lib/c
 import { polygonClassSupportsIslamic } from "@/lib/utils/tilingLabel";
 import { tileClassOf } from "@/lib/services/referenceAtlas";
 import { hasCurvedTiles, isDiskSurface, lensAppliesTo, surfaceOf } from "@/lib/services/shelfRegistry";
+import { BUBBLE_EDGE_STYLES, BUBBLE_KOCH_LEVELS } from "@/lib/bubble/edges";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import { DeformPad } from "@/components/deform-pad";
 import { InversiveControls } from "@/components/inversive-controls";
@@ -667,6 +668,51 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							</Reveal>
 						</>
 					) : null}
+					{/* BUBBLE EDGE PROFILE. The shelf's decoration is one bit per edge — a bump that protrudes or
+					    a bite cut into it — and the CURVE that draws that bit is a free choice. The 60° arc the
+					    catalogue is enumerated and thumbnailed in is the default; the rest are the profiles the
+					    tessellation and puzzle-cutting literatures actually name (lib/bubble/edges.ts carries
+					    the derivation, including the one family that is mathematically forbidden here).
+					    Combinatorics-free: every profile draws the SAME tiling, so nothing downstream of the
+					    cell — tile names, counts, k, the family label — changes with the picker. */}
+					{/* The SAME picker on both geometries. The profiles are one table (lib/bubble/edges.ts) and
+					    the spherical surface asks it for the very polyline the flat canvas draws, so a jigsaw tab
+					    is the same tab on a sphere. */}
+					{(isFlat && curvedTiles && selected?.bubble) || selected?.sphBubble ? (
+						<div className="space-y-2">
+							<p className="text-xs font-medium text-fg-muted">Edge decoration</p>
+							<div className="grid grid-cols-3 gap-1">
+								{BUBBLE_EDGE_STYLES.map(({ value, label }) => (
+									<Button
+										key={value}
+										variant={cfg.bubbleEdgeStyle === value ? "primary" : "secondary"}
+										size="sm"
+										classes="flex-1 px-0"
+										onClick={() => setCfg({ bubbleEdgeStyle: value })}
+									>
+										{label}
+									</Button>
+								))}
+							</div>
+							<p className="text-[11px] text-fg-muted leading-relaxed">
+								{BUBBLE_EDGE_STYLES.find((r) => r.value === cfg.bubbleEdgeStyle)?.help}
+							</p>
+							{/* The Koch generator's one parameter. Its depth does not move with the level — every
+							    later bump sits on a segment already tilted away from the peak — so the slider is
+							    free of the depth budget and bounded only by cost: 4ⁿ+1 points per edge. */}
+							{cfg.bubbleEdgeStyle === "koch" ? (
+								<Slider
+									id="bubbleKochLevel"
+									label="Koch level"
+									value={cfg.bubbleKochLevel}
+									onChange={(v) => setCfg({ bubbleKochLevel: v })}
+									min={BUBBLE_KOCH_LEVELS.min}
+									max={BUBBLE_KOCH_LEVELS.max}
+									step={1}
+								/>
+							) : null}
+						</div>
+					) : null}
 					{/* Mirror view. A chiral tiling and its mirror image are ONE catalogue entry — the A068599
 					    convention the whole atlas counts in, and the reason the Archimedean tilings are eleven
 					    and not twelve (3.3.3.3.6 is chiral and counted once). Merging is right for counting and
@@ -1087,10 +1133,11 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							    that projection moves every vertex a different distance and shows a different object
 							    (AL saw J31 come out as a blob, 2026-08-21). lib/tilings/sph-inscribed.ts decides. */}
 							{/* ⚑ Hidden for a SPHERICAL BUBBLE too, and for a different reason: not that the
+							    circumsphere is wrong, but that the flat solid does not EXIST. A bubble tile's
 							    sides are arcs, crenels or jigsaw tabs, so there is no flat-faced polyhedron whose
 							    faces these are, and the canvas ignores the field rather than reading it (AL,
 							    2026-08-27). */}
-							<Reveal show={sphereViewAvailable}>
+							<Reveal show={sphereViewAvailable && !selected?.sphBubble}>
 								<Toggle
 									id="sphericalShape"
 									leftValue="sphere"

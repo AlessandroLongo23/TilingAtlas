@@ -48,6 +48,15 @@ export const PLAY_PARAMS: Record<string, Spec> = {
 	sym: { field: "showSymmetryElements", kind: "bool" },
 	dom: { field: "showFundamentalDomain", kind: "bool" },
 	hline: { field: "hyperbolicLineMode", kind: "enum", values: ["geometry", "constant"] },
+	// Bubble shelf: which edge profile the bump/bite decoration is drawn with. Values spelled out and
+	// not imported so the table stays the one readable place a link's vocabulary is defined; the enum
+	// is pinned to BUBBLE_EDGE_STYLE_VALUES by a test in playUrlState.test.ts.
+	bubedge: {
+		field: "bubbleEdgeStyle",
+		kind: "enum",
+		values: ["shallow", "arc", "koch", "crenel", "dovetail", "jigsaw"],
+	},
+	bubkoch: { field: "bubbleKochLevel", kind: "num", min: 1, max: 4, int: true },
 	// freedraw view (fd*) — `lw` above is shared, so the stroke needs no key of its own
 	fdfill: { field: "freedrawFill", kind: "enum", values: ["none", "rank", "shape", "pose", "orbit"] },
 	fdgrid: { field: "freedrawScaffold", kind: "bool" },

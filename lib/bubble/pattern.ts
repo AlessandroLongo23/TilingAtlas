@@ -30,7 +30,8 @@
 // dedicated catalogues EXACTLY at every k, which is the best cross-validation the bubble work has,
 // but shipping them would list one tiling under two boards. Publishing filters them out.
 
-import { cubicFlatness, cubicSegmentCount, flattenCubicOpen, type Cubic, type Pt } from "@/lib/render/cubic";
+import { BUBBLE_KOCH_LEVELS, DEFAULT_BUBBLE_EDGE_STYLE, pushEdge, type BubbleEdgeStyle } from "@/lib/bubble/edges";
+import type { Pt } from "@/lib/render/cubic";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 
 /** One developed solution, as `tools/ctrnact-oracle/develop_marked.py --complement` emits it. */
@@ -55,10 +56,24 @@ export interface BubblePattern {
 
 /** The SUBSTRATE a bubble tiling decorates. "tri-hex" is a mixed substrate and not a lattice of its
  *  own: triangles and hexagons on one board, which is the tile set the paper's mixed (T,H) rows need. */
-export type BubbleGrid = "triangle" | "square" | "hex" | "tri-hex" | "tri-square" | "tri-sq-hex" | "rhombus";
+export type BubbleGrid =
+	| "triangle" | "square" | "hex"
+	| "tri-hex" | "tri-square" | "tri-sq-hex"
+	| "rhombus"
+	| "rhomb-tri" | "rhomb-hex" | "rhomb-tri-hex";
 
 /** Display order and labels for the lattice facet — the shelf's "folders". */
-export const BUBBLE_GRID_ORDER: BubbleGrid[] = ["triangle", "square", "hex", "tri-hex", "tri-square", "tri-sq-hex", "rhombus"];
+// ⚑ GROUPED BY HEADING, and it has to be. /play gathers sub rows into families by SCANNING this order
+// rather than re-sorting it, which is the only way the tree can show the same sequence the browse
+// arrows walk — so a family must occupy ONE contiguous run. Leaving the rhombus where it used to sit,
+// after the mixed regular boards, split "Mixed families" into two runs under one heading; the guard is
+// tests/catalogue-sub-family.test.ts. Single-family boards first, then every mixture.
+export const BUBBLE_GRID_ORDER: BubbleGrid[] = [
+	"triangle", "square", "hex",
+	"rhombus",
+	"tri-hex", "tri-square", "tri-sq-hex",
+	"rhomb-tri", "rhomb-hex", "rhomb-tri-hex",
+];
 export const BUBBLE_GRID_LABEL: Record<BubbleGrid, string> = {
 	triangle: "Triangle",
 	square: "Square",
@@ -67,6 +82,13 @@ export const BUBBLE_GRID_LABEL: Record<BubbleGrid, string> = {
 	"tri-square": "Triangle + square",
 	"tri-sq-hex": "Triangle + square + hexagon",
 	rhombus: "Rhombus (2-iamond)",
+	// ⚑ These three are NOT "the polyiamond mixtures". The hexagon is the 6-iamond as much as the
+	// rhombus is the 2-iamond, so every board here is a polyiamond board and the classification cannot
+	// be the axis (AL, 2026-08-27). What distinguishes them is that they mix FAMILIES, which is the
+	// third heading — and it is why tri+hex and tri+square moved under it too.
+	"rhomb-tri": "Rhombus + triangle",
+	"rhomb-hex": "Rhombus + hexagon",
+	"rhomb-tri-hex": "Rhombus + triangle + hexagon",
 };
 
 /** One shard per (board, k). Loaded together on the Edge patterns chip, the way the colouring
@@ -79,7 +101,27 @@ export const BUBBLE_FILES = [
 	...[1, 2, 3].map((k) => `/bubble/ts-k${k}.json`),
 	...[1, 2].map((k) => `/bubble/tsh-k${k}.json`),
 	...[1, 2, 3].map((k) => `/bubble/rh-k${k}.json`),
+	// The rhombic mixtures. Each starts where it has something to show: the two-family boards are
+	// EMPTY at k=1 (one vertex orbit cannot hold a rhombus with a triangle, nor with a hexagon), and
+	// listing a k=1 shard for them would be an empty folder in the tree. The three-family board has 4.
+	`/bubble/rt-k2.json`,
+	...[2, 3].map((k) => `/bubble/rhx-k${k}.json`),
+	...[1, 2].map((k) => `/bubble/rth-k${k}.json`),
 ];
+
+/**
+ * The id prefixes the shelf's records use, so a DEEP LINK can decide to load this catalogue before it
+ * knows what the id is.
+ *
+ * Here and not in /play because it belongs with the shard list: a new board is a grid string, a shard
+ * and a prefix, and those were in two files with only somebody's memory joining them. `brth-` and
+ * `brt-` were both added to BUBBLE_FILES while /play still carried the seven-prefix chain that predated
+ * them, and the effect is silent — the link resolves to the atlas's default tiling instead of failing.
+ * bubble.shards.test.ts reads the SHIPPED shards and checks every id against this list.
+ */
+export const BUBBLE_ID_PREFIXES = ["bt-", "bs-", "bh-", "bth-", "bts-", "btsh-", "brh-", "brt-", "brx-", "brth-"];
+export const isBubbleId = (key: string | null | undefined) =>
+	!!key && BUBBLE_ID_PREFIXES.some((p) => key.startsWith(p));
 
 /**
  * A face's TILE IDENTITY: the lexicographically least rotation of its bite word.
@@ -124,7 +166,7 @@ export function tileKeyOf(biteWord: number[], step = 1): string {
  *
  * Winding is normalised first, because a ring read backwards spells the MIRROR tile and chiral
  * partners are distinct tiles here. The convention is the one the corpus already emits (every face
- * clockwise, all 52,140 of them); any fixed choice serves as well, since what breaks chirality is
+ * clockwise, all 52,800 of them); any fixed choice serves as well, since what breaks chirality is
  * having no convention and not which one.
  */
 function alignedTile(pts: [number, number][], bites: number[]): { word: number[]; step: number; ccw: boolean } {
@@ -245,83 +287,23 @@ export function bubbleFamilyLabel(p: BubblePattern): string {
 		.join(" ");
 }
 
-// A 60° arc on a unit chord has radius exactly 1 (r = chord / 2·sin(θ/2) = 1 / 2·sin 30°), and one
-// cubic Bézier carries a 60° arc to within ~1e-6: the handle length is (4/3)·tan(θ/4)·r. So each
-// decorated edge is ONE cubic, flattened by the shared flattener the isohedral page and the lens both
-// use — same curve, same segment count, so the views cannot disagree about faceting.
-const ARC_HANDLE = (4 / 3) * Math.tan(Math.PI / 12);
-// Flattening tolerance, as a fraction of the edge. Tighter than the 0.004 that lib/render/periodic/
-// edges.ts uses for its Truchet arcs, because those arcs are line art and these are a tile BOUNDARY
-// that the eye reads as a smooth curve along its whole length.
-//
-// Sized against the zoom range rather than guessed. cubicFlatness of a 60° arc's cubic is ≈0.1925, and
-// the bound is error = 0.75·M/n², so 0.004 gives 7 segments and ≈0.003 world units of error — 0.44 px
-// at ZOOM_MAX = 150 px per world unit, which is visible on a long arc and much worse under the
-// conformal lens, whose magnification is unbounded near the inversion centre. 0.0004 gives 19 segments
-// and ≈0.075 px, under the flat view's resolution with room left for the lens.
-//
-// ⚑ This is a FIXED resolution, not a zoom-adaptive one. Re-tessellating per zoom would mean keying
-// the mesh cache on the zoom level, which no shelf does today; flattening fine enough that the range
-// cannot resolve the facets buys the same result for one constant.
-const ARC_TOL_FRAC = 0.0004;
-const MAX_ARC_SEGMENTS = 48;
-
-/** One decorated edge from `a` to `b`, appended to `out` WITHOUT its endpoint (the next edge starts
- *  there). `outward` bulges the arc to the left of a→b; the caller orients that by the ring's winding. */
-function pushArc(out: Pt[], a: [number, number], b: [number, number], outward: boolean) {
-	const [ax, ay] = a;
-	const [bx, by] = b;
-	const dx = bx - ax;
-	const dy = by - ay;
-	const L = Math.hypot(dx, dy);
-	if (!(L > 0)) return;
-	const ux = dx / L;
-	const uy = dy / L;
-	// Left normal of a→b, and the chord midpoint.
-	const nx = -uy;
-	const ny = ux;
-	const mx = (ax + bx) / 2;
-	const my = (ay + by) / 2;
-	// r = L / (2·sin(θ/2)) = L at θ = 60°, so the arc scales with the chord and never needs the tile's
-	// edge length passed in. The centre sits h off the midpoint, on the side AWAY from the bulge.
-	const r = L;
-	const h = Math.sqrt(Math.max(0, r * r - (L / 2) * (L / 2)));
-	const side = outward ? 1 : -1;
-	const cx = mx - side * h * nx;
-	const cy = my - side * h * ny;
-	// Tangent at an endpoint is its radius turned a quarter turn; which of the two turns is the
-	// direction of travel is settled by the sign of the dot with a→b, so no sweep bookkeeping is
-	// needed. |radius| = r already, so k·tangent has exactly the handle length k·r.
-	const tangent = (px: number, py: number): [number, number] => {
-		let tx = -(py - cy);
-		let ty = px - cx;
-		if (tx * ux + ty * uy < 0) {
-			tx = -tx;
-			ty = -ty;
-		}
-		return [tx, ty];
-	};
-	const [t1x, t1y] = tangent(ax, ay);
-	const [t2x, t2y] = tangent(bx, by);
-	const cubic: Cubic = [
-		{ x: ax, y: ay },
-		{ x: ax + ARC_HANDLE * t1x, y: ay + ARC_HANDLE * t1y },
-		{ x: bx - ARC_HANDLE * t2x, y: by - ARC_HANDLE * t2y },
-		{ x: bx, y: by },
-	];
-	// flattenCubicOpen omits the endpoint, which is the next arc's start — that is what lets a ring be
-	// concatenated arc by arc with no duplicate vertex, and a duplicate would be a zero-area ear.
-	flattenCubicOpen(cubic, cubicSegmentCount(cubicFlatness(cubic), 1, ARC_TOL_FRAC * L, MAX_ARC_SEGMENTS), out);
-}
-
 /**
  * The tiling as a translational cell: one ring per bubble tile, curved edges flattened.
  *
  * This is the whole renderer. Everything downstream — the flat canvas, the conformal lens through
  * `tilingPeriodicCell`, the SVG export, the card and tree thumbnails — consumes `renderCell`, so
  * emitting one here is what makes a bubble tiling behave like every other Euclidean row.
+ *
+ * `style` picks the EDGE PROFILE (lib/bubble/edges.ts), `kochLevel` its one parameter. They only ever change the flattened polyline
+ * between two consecutive tile corners: the substrate, the bite words, the tile identities and the
+ * hues are all combinatorics and are untouched by it, which is why /play can restyle a selection by
+ * calling this again and nothing else in the record has to be rebuilt.
  */
-export function bubbleRenderCell(p: BubblePattern): TranslationalCellData {
+export function bubbleRenderCell(
+	p: BubblePattern,
+	style: BubbleEdgeStyle = DEFAULT_BUBBLE_EDGE_STYLE,
+	kochLevel: number = BUBBLE_KOCH_LEVELS.default,
+): TranslationalCellData {
 	return {
 		basis: [p.T1, p.T2],
 		cellPolygons: p.polys.map((poly, f) => {
@@ -337,7 +319,7 @@ export function bubbleRenderCell(p: BubblePattern): TranslationalCellData {
 				// index. Everything after it up to the next corner is flattening, not geometry.
 				corners.push(ring.length);
 				// A bump bulges away from this face, a bite cuts into it.
-				pushArc(ring, pts[i], pts[(i + 1) % pts.length], (bites[i] === 0) === ccw);
+				pushEdge(ring, pts[i], pts[(i + 1) % pts.length], (bites[i] === 0) === ccw, style, p.grid, kochLevel);
 			}
 			const verts = ring.map((q) => [q.x, q.y]);
 			// `n` = the flattened point count, so a ring can never be mistaken for a star (that test is

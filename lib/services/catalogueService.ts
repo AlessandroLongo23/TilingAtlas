@@ -62,6 +62,12 @@ export interface CatalogueTiling {
 	freedraw?: import("@/lib/freedraw/pattern").FreedrawPattern;
 	/** Bubble shelf: which lattice the substrate is — the shelf's sub axis. */
 	bubbleGrid?: import("@/lib/bubble/pattern").BubbleGrid;
+	/** Bubble shelf: the combinatorics, so /play can re-derive the cell in another edge profile. Unlike
+	 *  `freedraw`/`colors` its presence routes nothing — the row already draws as an ordinary flat one. */
+	bubble?: import("@/lib/bubble/pattern").BubblePattern;
+	/** Spherical bubble shelf: routes /play + thumbnails to the meshed bubble surface. The one spherical
+	 *  shelf with no polyhedron view — a bubble tile has curved sides, so there is no flat solid. */
+	sphBubble?: import("@/lib/bubble/sphere").SphBubblePattern;
 	// Colored-tiling shelf only: a periodic 2-coloring of the square grid. Its presence routes /play + the
 	// thumbnails to the colors renderer — `renderCell` is a throwaway. `k` counts COLORED VERTEX classes
 	// (vertex orbits under color-preserving symmetry; see ReferenceTiling.colors).

@@ -29,6 +29,7 @@ export type ShelfId =
 	| "colors"
 	| "hollow"
 	| "sphericalFreedraw"
+	| "sphBubble"
 	| "hypEdges"
 	| "hypColors"
 	| "sphColors"
@@ -101,6 +102,7 @@ export const SHELF_ORDER: ShelfId[] = [
 	"hypPoly",
 	"spherical",
 	"sphericalFreedraw",
+	"sphBubble",
 	"hypEdges",
 	"hypColors",
 	"sphColors",
@@ -165,6 +167,9 @@ export const SHELVES: Record<ShelfId, ShelfDef> = {
 			t.spherical?.solid?.startsWith("ncx-") ? null : (t.k ?? 1) > 1 ? "Johnson" : "uniform",
 	},
 	sphericalFreedraw: { field: "sphericalFreedraw", surface: "sphereEdges", kNoun: EDGE_ORBITS },
+	// The spherical bubble boards draw on the ordinary sphere surface, not the edge-overlay one: a bubble
+	// tiling IS the tiling, not a decoration drawn over a base solid.
+	sphBubble: { field: "sphBubble", surface: "sphere", kNoun: null },
 	sphEdges: { field: "sphEdges", surface: "sphereEdges", kNoun: EDGE_ORBITS },
 	sphPoly: { field: "sphPoly", surface: "sphereEdges", kNoun: null },
 	// Star polyhedra draw on the same three.js canvas as every other spherical shelf; what is different

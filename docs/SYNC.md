@@ -2893,3 +2893,35 @@ rig, `FRAG_PLAIN`, the `relief` fill path, two URL keys). Polyhedron is the defa
 `sphericalFreedrawMode` collapse into `sphericalPolyhedron`; Islamic is offered on the sphere alone. ⚑ The
 sidebar's phantom horizontal scroll was `.ta-track-travel` overflowing by `--f` of its own width — fixed
 once on 2026-07-23, but scoped to `.ta-ival` and never applied to the track it came from. NOTES 2026-08-25. -371 lines.
+
+## 2026-08-27 — bubble edge profiles, and the three rhombic mixtures measured — CC
+
+/play picks the bubble shelf's edge profile: arc (default, unchanged), shallow, deep, Koch with a level
+slider, crenel, dovetail, jigsaw tab. Depth is capped per board — simplicity binds at the tightest corner,
+as tan(φ/2) — making the paper's 60° arc, and a true Koch generator, both EXTREMAL on triangles. AL's
+rhombic question: rhombus+hexagon reaches k=3 (352 mixed), rhombus+triangle k=2 (244), rhombus+tri+hex
+k=2 (64), zero develop failures, none reaching the domino alphabet wall. NOTES 2026-08-27.
+
+## 2026-08-27 (second) — three rhombic bubble boards on the shelf, under a new heading — CC
+
+660 rows ship: rhombus+triangle k=2 (244), rhombus+hexagon k≤3 (352), all three families k≤2 (64); the
+shelf reads 52,800. AL's call on the split — a hexagon is the 6-iamond as much as a rhombus is the
+2-iamond — gives a third heading, Mixed families, which triangle+hexagon and triangle+square move into.
+No new converter: develop_marked gained `--shelf`, `--mixed`, `--id-prefix`. ⚑ /play's own seven-prefix
+deep-link list did not know the new ids and failed SILENTLY. NOTES 2026-08-27.
+
+## 2026-08-28 — spherical bubble tiles: 29,517 on 28 solids — CC
+
+The bubble shelf reaches the sphere. Nothing to search there — the substrate is one of the 28 k=1
+boards and complementarity holds by construction — so the counts are Burnside sums, all 28 verified
+against an independent coordinate-derived implementation. Complete boards under 20,000 rows, k<=3 above.
+Same picker as the plane and no new profile code: `pushEdge` on the unit chord IS the profile. ⚑ A
+verified arc-only shader was retired for meshed tiles once the full picker was required. NOTES 2026-08-28.
+
+## 2026-08-28 — the bubble stroke: round joints, no parallax, five profiles + Koch — CC
+
+Three renderer fixes on AL's review. `TubeGeometry` replaced by a hand-built tube: one ring pair per
+segment, a round joint (rotating rings about the turn axis) at every corner, a ball at each path end —
+a swept tube has ONE ring at a corner and needs two, which is why the corners were bridged and skewed.
+The stroke's radial 1.006 lift, invisible head-on and a full stroke-width at the limb, became a
+`polygonOffset` on the fill. "Deep arc" removed end to end. NOTES 2026-08-28.

@@ -1,3 +1,4 @@
+import { BUBBLE_EDGE_STYLE_VALUES } from "@/lib/bubble/edges";
 import { describe, expect, it } from "vitest";
 import { useConfiguration } from "@/stores/configuration";
 import { PLAY_PARAMS, parsePlayState, serializePlayState } from "./playUrlState";
@@ -123,6 +124,19 @@ describe("playUrlState", () => {
 	it("keeps URL keys unique", () => {
 		const fields = Object.values(PLAY_PARAMS).map((s) => s.field);
 		expect(new Set(fields).size).toBe(fields.length);
-		expect(Object.keys(PLAY_PARAMS)).toHaveLength(61);
+		// 62 until `sreal`/`sstu` went with the Realistic and Studio-look controls (2026-08-25); 61 since
+		// `bubedge` + `bubkoch` arrived with the bubble shelf's edge-profile picker (2026-08-27).
+		expect(Object.keys(PLAY_PARAMS)).toHaveLength(62);
+	});
+});
+
+// The link's vocabulary and the picker's must not drift: PLAY_PARAMS spells its enum out so the table
+// reads as the one place a URL's values are defined, and this is what keeps that spelling honest. A
+// profile added to lib/bubble/edges.ts without a key here would silently drop out of every shared link.
+describe("bubedge", () => {
+	it("lists exactly the edge profiles the bubble shelf offers", () => {
+		const spec = PLAY_PARAMS.bubedge;
+		expect(spec.kind).toBe("enum");
+		expect(spec.kind === "enum" ? [...spec.values].sort() : []).toEqual([...BUBBLE_EDGE_STYLE_VALUES].sort());
 	});
 });

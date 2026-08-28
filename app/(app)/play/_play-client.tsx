@@ -27,6 +27,8 @@ import { Sidebar } from "@/components/sidebar";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useConfiguration, type ConfigurationState } from "@/stores/configuration";
 import { isChiralTiling, reflectRenderCell } from "@/lib/services/chirality";
+import { DEFAULT_BUBBLE_EDGE_STYLE } from "@/lib/bubble/edges";
+import { bubbleRenderCell, isBubbleId } from "@/lib/bubble/pattern";
 import { useImmersive } from "@/stores/immersive";
 import { cn } from "@/lib/utils/cn";
 import { useInversiveCell } from "@/lib/hooks/useInversiveCell";
@@ -77,6 +79,7 @@ import {
 	loadColorsDecorAtlas,
 	loadFreedrawDecorAtlas,
 	loadBubbleDecorAtlas,
+	loadSphBubbleAtlas,
 	loadHyperbolicBaseAtlas,
 	loadHyperbolicPolyAtlas,
 	loadHyperbolicPolyShard,
@@ -802,8 +805,16 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				.then((d) => { mergeAlways(d); setDecorLoaded((s) => (s.edges ? s : { ...s, edges: true })); })
 				.catch(() => {});
 		}
-		if (wantEuc && (decoration === "edges" || requestedKey?.startsWith("bt-") || requestedKey?.startsWith("bs-") || requestedKey?.startsWith("bh-") || requestedKey?.startsWith("bth-") || requestedKey?.startsWith("bts-") || requestedKey?.startsWith("btsh-") || requestedKey?.startsWith("brh-"))) {
+		if (wantEuc && (decoration === "edges" || isBubbleId(requestedKey))) {
 			loadBubbleDecorAtlas().then(mergeAlways).catch(() => {});
+		}
+		// The spherical bubble boards are the same shelf on the other surface. ⚑ Gated on the SPHERE plane
+		// or an "sb…" deep link — NOT on `!wantEuc`, which is true under Hyperbolic as well and, more to
+		// the point, false for a link arriving while the plane still reads Euclidean. That is how the first
+		// spherical link resolved to the atlas's default tiling instead of the record it named.
+		if ((geometry === "spherical" || requestedKey?.startsWith("sb"))
+			&& (decoration === "edges" || requestedKey?.startsWith("sb"))) {
+			loadSphBubbleAtlas().then(mergeAlways).catch(() => {});
 		}
 		if (wantEuc && (decoration === "colorings" || requestedKey?.startsWith("col"))) {
 			loadColorsDecorAtlas()
@@ -1377,7 +1388,25 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// The alpha-independent base cell + id. For a parametric family the canvases derive the live cell
 	// from `paramCell` + the store's `familyAlphas` in their own draw loops (they append the alpha
 	// signature to this base id), so nothing alpha-dependent flows through this render.
-	const baseRenderCell = (selected?.renderCell ?? null) as TranslationalCellData | null;
+	const rawRenderCell = (selected?.renderCell ?? null) as TranslationalCellData | null;
+	// BUBBLE EDGE PROFILE. The bump/bite decoration is drawn as a curve between two tile corners, and
+	// which curve is a view choice (lib/bubble/edges.ts): arc, scallop, chevron, crenel, dovetail, or the
+	// puzzle trade's jigsaw tab. Re-deriving the cell is the whole implementation — the substrate, the
+	// bite words, the tile names and the hues are combinatorics and identical under every profile — so
+	// this composes with the mirror flip below exactly the way the squared torus composes with neither.
+	// Off the default profile the record's own memoised `renderCell` is bypassed, so `bubbleEdgeStyle`
+	// joins the id for the same reason `mirrorFlip` does: the canvases cache parsed geometry by it.
+	const bubbleEdgeStyle = useConfiguration((s) => s.bubbleEdgeStyle);
+	const bubbleKochLevel = useConfiguration((s) => s.bubbleKochLevel);
+	const bubblePattern = selected?.bubble ?? null;
+	const styledCell = useMemo(
+		() =>
+			bubblePattern && bubbleEdgeStyle !== DEFAULT_BUBBLE_EDGE_STYLE
+				? bubbleRenderCell(bubblePattern, bubbleEdgeStyle, bubbleKochLevel)
+				: null,
+		[bubblePattern, bubbleEdgeStyle, bubbleKochLevel],
+	);
+	const baseRenderCell = styledCell ?? rawRenderCell;
 	// Mirror view. The catalogue counts a chiral tiling and its mirror as one entry, so the other hand is
 	// shown by reflecting the render cell here — the single point every flat canvas draws from. The id
 	// gets a suffix because the canvases cache parsed geometry by id; without it the flip would not
@@ -1391,7 +1420,9 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		() => (mirrorFlip && baseRenderCell ? (reflectRenderCell(baseRenderCell) as TranslationalCellData) : baseRenderCell),
 		[mirrorFlip, baseRenderCell],
 	);
-	const renderCellId = selected?.canonicalKey ? `${selected.canonicalKey}${mirrorFlip ? "#mirror" : ""}` : null;
+	const renderCellId = selected?.canonicalKey
+		? `${selected.canonicalKey}${styledCell ? `#bub:${bubbleEdgeStyle}:${bubbleKochLevel}` : ""}${mirrorFlip ? "#mirror" : ""}`
+		: null;
 
 	// THE SQUARED TORUS REPLACES THE CELL, it does not decorate it.
 	//
@@ -1614,6 +1645,11 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					// each face is filled by its POLYGON SIZE. That is the colored-tiling render exactly, so it
 					// uses that canvas with the size index standing in for the colour index.
 					<HyperbolicColorsCanvas pattern={hypPolyMeta(selected.hypPoly)} />
+				) : selected?.sphBubble ? (
+					// A spherical bubble tiling: the same three.js canvas, drawing MESHED tiles instead of the
+					// procedural face classification. It carries no polyhedron view — a bubble tile's sides are
+					// curved, so there is no flat-faced solid to fall back to.
+					<SphericalCanvas solidId={selected.sphBubble.solid} bubbleBites={selected.sphBubble.bites} />
 				) : isSpherical && selected?.spherical ? (
 					<SphericalCanvas solidId={selected.spherical.solid} />
 				) : selected?.sphericalFreedraw ? (

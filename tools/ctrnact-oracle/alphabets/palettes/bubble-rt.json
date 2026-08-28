@@ -1,0 +1,243 @@
+{
+  "name": "bubble-rt",
+  "D": 24,
+  "maxValence": 6,
+  "edgeComplement": true,
+  "edgeLengths": {
+    "B": "1",
+    "I": "1"
+  },
+  "comment": "RHOMBUS + TRIANGLE BUBBLE TILES. 14 tiles: the 10 rhombic (binary necklaces of length 4 up to rotation by TWO, the rhombus being equilateral but not regular) and the 4 triangular. Both families are 60-degree-cornered, so this is the first mixed bubble board whose two families BOTH raise the count of 60-degree corner classes: 16 + 8 = 24, against the 8 that tri+hex and tri+square pay. The cost model in DEVELOPMENT_NOTES (2026-08-23) makes that the whole question of tractability. Motivation: Chase, Field & McCluer's Table 2 lists two (T,S) rows -- 2:3 with (0,3),(3,1) and 4:1 with (1,4),(2,0) -- as realizable only with RHOMBI, which no shipped palette contains. Angles in D=24 units: 60 = 4, 120 = 8. The SEARCH needs EU_EDGE_COMPL=1 and the developer --complement.",
+  "tiles": [
+    {
+      "kind": "composite",
+      "name": "R0",
+      "famchar": "t00",
+      "angles": [
+        4,
+        8,
+        4,
+        8
+      ],
+      "edges": [
+        "B",
+        "B",
+        "B",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "R1A",
+      "famchar": "t01",
+      "angles": [
+        4,
+        8,
+        4,
+        8
+      ],
+      "edges": [
+        "B",
+        "B",
+        "B",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "R1B",
+      "famchar": "t02",
+      "angles": [
+        4,
+        8,
+        4,
+        8
+      ],
+      "edges": [
+        "B",
+        "B",
+        "I",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "R2A",
+      "famchar": "t03",
+      "angles": [
+        4,
+        8,
+        4,
+        8
+      ],
+      "edges": [
+        "B",
+        "B",
+        "I",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "R2B",
+      "famchar": "t04",
+      "angles": [
+        4,
+        8,
+        4,
+        8
+      ],
+      "edges": [
+        "B",
+        "I",
+        "B",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "R2C",
+      "famchar": "t05",
+      "angles": [
+        4,
+        8,
+        4,
+        8
+      ],
+      "edges": [
+        "B",
+        "I",
+        "I",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "R2D",
+      "famchar": "t06",
+      "angles": [
+        4,
+        8,
+        4,
+        8
+      ],
+      "edges": [
+        "I",
+        "B",
+        "I",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "R3A",
+      "famchar": "t07",
+      "angles": [
+        4,
+        8,
+        4,
+        8
+      ],
+      "edges": [
+        "B",
+        "I",
+        "I",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "R3B",
+      "famchar": "t08",
+      "angles": [
+        4,
+        8,
+        4,
+        8
+      ],
+      "edges": [
+        "I",
+        "B",
+        "I",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "R4",
+      "famchar": "t09",
+      "angles": [
+        4,
+        8,
+        4,
+        8
+      ],
+      "edges": [
+        "I",
+        "I",
+        "I",
+        "I"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "T0",
+      "famchar": "t10",
+      "angles": [
+        4,
+        4,
+        4
+      ],
+      "edges": [
+        "B",
+        "B",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "T1",
+      "famchar": "t11",
+      "angles": [
+        4,
+        4,
+        4
+      ],
+      "edges": [
+        "I",
+        "B",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "T2",
+      "famchar": "t12",
+      "angles": [
+        4,
+        4,
+        4
+      ],
+      "edges": [
+        "I",
+        "I",
+        "B"
+      ]
+    },
+    {
+      "kind": "composite",
+      "name": "T3",
+      "famchar": "t13",
+      "angles": [
+        4,
+        4,
+        4
+      ],
+      "edges": [
+        "I",
+        "I",
+        "I"
+      ]
+    }
+  ]
+}

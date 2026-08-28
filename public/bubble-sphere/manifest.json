@@ -1,0 +1,266 @@
+[
+ {
+  "solid": "tetrahedron",
+  "coverage": "complete",
+  "total": "4",
+  "shards": [
+   "sbtet-k2.json",
+   "sbtet-k4.json"
+  ]
+ },
+ {
+  "solid": "cube",
+  "coverage": "complete",
+  "total": "112",
+  "shards": [
+   "sbcub-k1.json",
+   "sbcub-k2.json",
+   "sbcub-k4.json",
+   "sbcub-k8.json"
+  ]
+ },
+ {
+  "solid": "octahedron",
+  "coverage": "complete",
+  "total": "112",
+  "shards": [
+   "sboct-k1.json",
+   "sboct-k2.json",
+   "sboct-k3.json",
+   "sboct-k4.json",
+   "sboct-k6.json"
+  ]
+ },
+ {
+  "solid": "dodecahedron",
+  "coverage": "k<=3",
+  "total": "8948312",
+  "shards": [
+   "sbdod-k2.json"
+  ]
+ },
+ {
+  "solid": "icosahedron",
+  "coverage": "k<=3",
+  "total": "8948312",
+  "shards": [
+   "sbico-k2.json"
+  ]
+ },
+ {
+  "solid": "truncated-tetrahedron",
+  "coverage": "complete",
+  "total": "10944",
+  "shards": [
+   "sbttet-k4.json",
+   "sbttet-k12.json"
+  ]
+ },
+ {
+  "solid": "cuboctahedron",
+  "coverage": "k<=3",
+  "total": "352744",
+  "shards": [
+   "sbco-k1.json",
+   "sbco-k2.json",
+   "sbco-k3.json"
+  ]
+ },
+ {
+  "solid": "truncated-cube",
+  "coverage": "k<=3",
+  "total": "1431743968",
+  "shards": [
+   "sbtcub-k1.json",
+   "sbtcub-k2.json",
+   "sbtcub-k3.json"
+  ]
+ },
+ {
+  "solid": "truncated-octahedron",
+  "coverage": "k<=3",
+  "total": "1431940576",
+  "shards": [
+   "sbtoct-k1.json",
+   "sbtoct-k3.json"
+  ]
+ },
+ {
+  "solid": "rhombicuboctahedron",
+  "coverage": "k<=3",
+  "total": "5864090687872",
+  "shards": [
+   "sbrco-k1.json",
+   "sbrco-k2.json",
+   "sbrco-k3.json"
+  ]
+ },
+ {
+  "solid": "truncated-cuboctahedron",
+  "coverage": "k<=3",
+  "total": "98382635280262125568",
+  "shards": [
+   "sbtco-k1.json",
+   "sbtco-k2.json",
+   "sbtco-k3.json"
+  ]
+ },
+ {
+  "solid": "snub-cube",
+  "coverage": "k<=3",
+  "total": "48038396159860736",
+  "shards": [
+   "sbscub-k2.json"
+  ]
+ },
+ {
+  "solid": "icosidodecahedron",
+  "coverage": "k<=3",
+  "total": "9607679885269312",
+  "shards": [
+   "sbid-k1.json",
+   "sbid-k2.json",
+   "sbid-k3.json"
+  ]
+ },
+ {
+  "solid": "truncated-dodecahedron",
+  "coverage": "k<=3",
+  "total": "10316166994045129006275072",
+  "shards": []
+ },
+ {
+  "solid": "truncated-icosahedron",
+  "coverage": "k<=3",
+  "total": "10316166994045129006275072",
+  "shards": []
+ },
+ {
+  "solid": "rhombicosidodecahedron",
+  "coverage": "k<=3",
+  "total": "11076899964874301400431118585745408",
+  "shards": [
+   "sbrid-k1.json",
+   "sbrid-k3.json"
+  ]
+ },
+ {
+  "solid": "truncated-icosidodecahedron",
+  "coverage": "k<=3",
+  "total": "12770796173882407152986235294831562910069326555119616",
+  "shards": [
+   "sbtid-k1.json"
+  ]
+ },
+ {
+  "solid": "snub-dodecahedron",
+  "coverage": "k<=3",
+  "total": "23787461545099331350971432824533552671490048",
+  "shards": []
+ },
+ {
+  "solid": "triangular-prism",
+  "coverage": "complete",
+  "total": "50",
+  "shards": [
+   "sbp3-k1.json",
+   "sbp3-k2.json",
+   "sbp3-k3.json",
+   "sbp3-k6.json"
+  ]
+ },
+ {
+  "solid": "pentagonal-prism",
+  "coverage": "complete",
+  "total": "1692",
+  "shards": [
+   "sbp5-k1.json",
+   "sbp5-k2.json",
+   "sbp5-k5.json",
+   "sbp5-k10.json"
+  ]
+ },
+ {
+  "solid": "hexagonal-prism",
+  "coverage": "complete",
+  "total": "11464",
+  "shards": [
+   "sbp6-k1.json",
+   "sbp6-k2.json",
+   "sbp6-k3.json",
+   "sbp6-k4.json",
+   "sbp6-k6.json",
+   "sbp6-k12.json"
+  ]
+ },
+ {
+  "solid": "octagonal-prism",
+  "coverage": "k<=3",
+  "total": "529162",
+  "shards": [
+   "sbp8-k1.json",
+   "sbp8-k2.json"
+  ]
+ },
+ {
+  "solid": "decagonal-prism",
+  "coverage": "k<=3",
+  "total": "26891888",
+  "shards": [
+   "sbp10-k1.json",
+   "sbp10-k2.json"
+  ]
+ },
+ {
+  "solid": "square-antiprism",
+  "coverage": "complete",
+  "total": "4243",
+  "shards": [
+   "sba4-k1.json",
+   "sba4-k2.json",
+   "sba4-k3.json",
+   "sba4-k4.json",
+   "sba4-k5.json",
+   "sba4-k8.json"
+  ]
+ },
+ {
+  "solid": "pentagonal-antiprism",
+  "coverage": "k<=3",
+  "total": "52996",
+  "shards": [
+   "sba5-k1.json",
+   "sba5-k2.json"
+  ]
+ },
+ {
+  "solid": "hexagonal-antiprism",
+  "coverage": "k<=3",
+  "total": "701298",
+  "shards": [
+   "sba6-k1.json",
+   "sba6-k2.json",
+   "sba6-k3.json"
+  ]
+ },
+ {
+  "solid": "octagonal-antiprism",
+  "coverage": "k<=3",
+  "total": "134252563",
+  "shards": [
+   "sba8-k1.json",
+   "sba8-k2.json",
+   "sba8-k3.json"
+  ]
+ },
+ {
+  "solid": "decagonal-antiprism",
+  "coverage": "k<=3",
+  "total": "27488341276",
+  "shards": [
+   "sba10-k1.json",
+   "sba10-k2.json",
+   "sba10-k3.json"
+  ]
+ }
+]

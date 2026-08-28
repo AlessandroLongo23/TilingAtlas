@@ -232,9 +232,12 @@ export function boardFamiliesFor(
 		edges: {
 			// "bubble-grid" is the second Euclidean edge system, after freedraw's "grid": both decorate a
 			// lattice, and they differ in the matching rule (agree vs differ), not in the segment.
-			euclidean: ["grid", "bubble-grid", "bubble-poly", "schwarz-eu", "pent", "ih"],
+			euclidean: ["grid", "bubble-grid", "bubble-poly", "bubble-mixed", "schwarz-eu", "pent", "ih"],
 			hyperbolic: ["hyp-edges", "schwarz-board"],
-			spherical: ["platonic", "sph-edges", "schwarz-board"],
+			// "sph-bubble" is the Euclidean bubble shelf on the other surface, so it sits under EDGES beside
+			// the freedraw boards for the same reason "bubble-grid" does — a bump/bite decoration is an edge
+			// system whichever geometry carries it.
+			spherical: ["platonic", "sph-edges", "schwarz-board", "sph-bubble"],
 		},
 		colorings: {
 			euclidean: ["grid-colors"],

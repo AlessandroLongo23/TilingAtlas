@@ -41,6 +41,7 @@ import {
 	type FreedrawGrid,
 	type FreedrawPattern,
 } from "@/lib/freedraw/pattern";
+import type { SphBubbleBoard, SphBubblePattern } from "@/lib/bubble/sphere";
 import {
 	BUBBLE_FILES,
 	BUBBLE_GRID_ORDER,
@@ -52,9 +53,24 @@ import {
 
 /** The bubble shelf's sub ids, one per lattice. */
 export const BUBBLE_GRID_SUBS = BUBBLE_GRID_ORDER.map((g) => `bub-${g}`);
-/** Bubble boards whose tile is a POLYIAMOND (a polyform of equilateral triangles) and not a regular
- *  polygon. The rhombus is the 2-iamond; the paper's trapezoid is the 3-iamond, and the hexagon is
- *  the 6-iamond, which is why this is a naming split and not a classification. */
+/** The 28 spherical bubble boards, in the order the k=1 spherical shelf already lists its solids:
+ *  Platonic, Archimedean, prisms, antiprisms. */
+export const SPH_BUBBLE_SOLIDS = [
+	"tetrahedron", "cube", "octahedron", "dodecahedron", "icosahedron",
+	"truncated-tetrahedron", "cuboctahedron", "truncated-cube", "truncated-octahedron",
+	"rhombicuboctahedron", "truncated-cuboctahedron", "snub-cube", "icosidodecahedron",
+	"truncated-dodecahedron", "truncated-icosahedron", "rhombicosidodecahedron",
+	"truncated-icosidodecahedron", "snub-dodecahedron",
+	"triangular-prism", "pentagonal-prism", "hexagonal-prism", "octagonal-prism", "decagonal-prism",
+	"square-antiprism", "pentagonal-antiprism", "hexagonal-antiprism", "octagonal-antiprism",
+	"decagonal-antiprism",
+];
+export const SPH_BUBBLE_SUBS = SPH_BUBBLE_SOLIDS.map((s) => `sbub-${s}`);
+/** Bubble boards whose SINGLE tile family is a polyiamond named as one. The rhombus is the 2-iamond
+ *  and the paper's trapezoid is the 3-iamond; the hexagon is the 6-iamond too, which is exactly why
+ *  this is a naming split and not a classification, and why it can only ever hold SINGLE-family
+ *  boards. A board mixing a rhombus with a hexagon is no more or less polyiamond than either — it
+ *  goes under "bubble-mixed" below. */
 export const BUBBLE_POLY_SUBS = new Set(["bub-rhombus"]);
 import {
 	hypEdgesBaseLabel,
@@ -264,10 +280,17 @@ export interface ReferenceTiling {
 	// info panel, the catalogue tree's k rows) must say "grid points", never "vertices".
 	freedraw?: FreedrawPattern;
 	/** Bubble shelf: which lattice the substrate is — the shelf's sub axis, so the tree gets one
-	 *  folder per lattice. A bare string and not the pattern: a bubble tiling ships a plain `renderCell`
-	 *  like every other Euclidean row, so there is no payload to carry, and a string keeps the sub axis
-	 *  from firing the lazy renderCell accessor over the whole corpus. */
+	 *  folder per lattice. A bare string and NOT read off the pattern below, so the sub axis costs no
+	 *  geometry and never fires the lazy renderCell accessor over the whole corpus. */
 	bubbleGrid?: BubbleGrid;
+	/** Bubble shelf: the pattern itself. Unlike `freedraw` and `colors`, whose presence ROUTES the row
+	 *  to another renderer, this one changes nothing about how the row draws — a bubble tiling ships a
+	 *  plain `renderCell` like every other Euclidean row. It is here for one reason: /play lets the
+	 *  reader pick the EDGE PROFILE (lib/bubble/edges.ts), and re-deriving the cell in another profile
+	 *  needs the combinatorics back. Holding it costs the corpus's ~37 MB for the session; the lazy
+	 *  renderCell closure already retained it up to first read, so the change is that it no longer
+	 *  falls away after. */
+	bubble?: BubblePattern;
 	// Colored-tiling shelf only: a periodic 2-coloring of the square grid (lib/colors/pattern.ts, decoded
 	// from Čtrnáct's PT certificates to public/colors/squares-2-k*.json). Its presence routes /play + the
 	// thumbnails to the colors renderer the way `freedraw` routes to the grid view — `renderCell` is a
@@ -281,6 +304,11 @@ export interface ReferenceTiling {
 	// solid sphere and `freedraw` to the 2D grid — `renderCell` is a throwaway here, never drawn. `solid` is
 	// the Polyhedron id the renderer resolves vertices from; `k` counts VERTEX orbits (not grid points).
 	sphericalFreedraw?: { solid: string; k: number; pattern: IcoPattern };
+	/** Spherical bubble shelf: a bump/bite decoration of one of the 28 k=1 spherical boards. Its presence
+	 *  routes /play and the thumbnails to the meshed bubble surface (lib/render/sphBubble.ts) instead of
+	 *  the procedural one, and it is the ONE spherical shelf with no polyhedron view — a bubble tile's
+	 *  sides are curved, so there is no flat-faced solid to fall back to (AL, 2026-08-27). */
+	sphBubble?: SphBubblePattern;
 	// Hyperbolic edge-system shelf only: Čtrnáct's freedraw moved to H² (tools/ctrnact-oracle/develop_hyp_edges.py,
 	// decoded to public/hyperbolic-edges/e<base>-k<k>.json). Its presence routes /play + the thumbnails to the
 	// developed-edge renderer (HyperbolicDeveloper.developEdges + drawDevelopedEdgePatch) the way `freedraw`
@@ -575,6 +603,10 @@ export const SUB_ORDER = [
 	// hexagonal ones are three catalogues, not three depths of one — same reasoning as the half-polygon
 	// boards above. Contiguous, and adjacent to the freedraw grids because both are edge systems.
 	...BUBBLE_GRID_SUBS,
+	// The spherical bubble boards, one row per solid. Kept together and adjacent to the Euclidean bubble
+	// rows because they are the SAME shelf on the other surface — and the family scan needs one
+	// contiguous run per heading (tests/catalogue-sub-family.test.ts).
+	...SPH_BUBBLE_SUBS,
 	// Colors: grid-major, then palette size — "square-2" is every 2-coloring of the 4^4 grid.
 	"square-2",
 	"square-3",
@@ -661,6 +693,8 @@ export type SubFamily =
 	| `pf-${PolyformFamily}`
 	| "bubble-grid"
 	| "bubble-poly"
+	| "bubble-mixed"
+	| "sph-bubble"
 	| "schwarz-eu"
 	| "grid-colors"
 	| "platonic"
@@ -712,8 +746,13 @@ export function familyOfSub(sub: string): SubFamily | null {
 		const f = polyformFamilyOfSub(sub);
 		return f ? (`pf-${f}` as SubFamily) : null;
 	}
+	if (sub.startsWith("sbub-")) return "sph-bubble";
 	if (BUBBLE_POLY_SUBS.has(sub)) return "bubble-poly";
-	if (sub.startsWith("bub-")) return "bubble-grid";
+	// A bubble board is MIXED when its grid names more than one family, which the grid string already
+	// says: the single-family boards are "triangle"/"square"/"hex"/"rhombus" and every mixture joins
+	// its families with a hyphen. Derived rather than listed, so a new mixture is one palette and one
+	// grid string, with no second place to remember.
+	if (sub.startsWith("bub-")) return sub.slice(4).includes("-") ? "bubble-mixed" : "bubble-grid";
 	if (sub.startsWith("hyt-")) return hypTilingFamilyOfSub(sub) as SubFamily | null;
 	if (sub === "sch236" || sub === "sch244") return "schwarz-eu";
 	if (/^(square|triangle|hex|ts)$/.test(sub)) return "grid";
@@ -735,6 +774,7 @@ export function subOf(t: {
 	polyformOrder?: PolyformOrder;
 	spherical?: { solid: string };
 	sphericalFreedraw?: { solid: string };
+	sphBubble?: SphBubblePattern;
 	freedraw?: FreedrawPattern;
 	colors?: ColorPattern;
 	hypEdges?: HypEdgesPattern;
@@ -748,6 +788,7 @@ export function subOf(t: {
 	pentEdges?: PentEdgeRecord;
 	ihEdges?: IhEdgeRecord;
 }): string {
+	if (t.sphBubble) return `sbub-${t.sphBubble.solid}`;
 	if (t.bubbleGrid) return `bub-${t.bubbleGrid}`;
 	if (t.source === "tri45") return "el-tri45";
 	if (t.source === "planigon") return "el-planigon";
@@ -870,11 +911,17 @@ export function geometryOf(t: {
 	hypPoly?: unknown;
 	sphPoly?: unknown;
 	sphStar?: unknown;
+	sphBubble?: unknown;
 }): Geometry {
 	// The Schwarz shelf is the one payload that spans two geometries, so it names its own instead of
 	// being inferred from which field is set.
 	if (t.schwarz) return t.schwarz.geometry;
-	if (t.spherical || t.sphericalFreedraw || t.sphColors || t.sphEdges || t.sphPoly || t.sphStar) return "spherical";
+	// ⚑ The plane is inferred from WHICH PAYLOAD IS SET, not from the record's `geometry` string — so a
+	// new spherical shelf that forgets to name itself here is silently filed under Euclidean, with its
+	// rows counted on the wrong chip and absent from the one that should show them. That is exactly what
+	// the spherical bubble boards did until AL spotted 29,517 of them inside the Euclidean count.
+	if (t.spherical || t.sphericalFreedraw || t.sphColors || t.sphEdges || t.sphPoly || t.sphStar || t.sphBubble)
+		return "spherical";
 	if (t.developed || t.hypEdges || t.hypColors || t.hypPoly) return "hyperbolic";
 	return "euclidean";
 }
@@ -1547,9 +1594,11 @@ export function referenceToCatalogue(r: ReferenceTiling): CatalogueTiling {
 		latticeShape: r.latticeShape,
 		freedraw: r.freedraw,
 		bubbleGrid: r.bubbleGrid,
+		bubble: r.bubble,
 		colors: r.colors,
 		hollow: r.hollow,
 		sphericalFreedraw: r.sphericalFreedraw,
+		sphBubble: r.sphBubble,
 		hypEdges: r.hypEdges,
 		hypColors: r.hypColors,
 		sphColors: r.sphColors,
@@ -2563,6 +2612,7 @@ export function bubbleToReference(p: BubblePattern): ReferenceTiling {
 		polygonSpecies: EMPTY_SPECIES,
 		tilePeriods: EMPTY_PERIODS,
 		bubbleGrid: p.grid,
+		bubble: p,
 		geometry: "euclidean",
 		discoverer: "Chase, Field & McCluer",
 		// CANDIDATE, and it stays that way until something independent enumerates the family. What
@@ -2579,6 +2629,54 @@ export function bubbleToReference(p: BubblePattern): ReferenceTiling {
 	// first read is the same bargain the ℤ[ζ₂₄] cells already take.
 	defineLazyRenderCell(out, () => bubbleRenderCell(p));
 	return out;
+}
+
+/** Adapt one spherical bubble record. `renderCell` is a throwaway — every consumer branches on
+ *  `sphBubble` first, exactly as the other spherical shelves branch on their own payload. */
+function sphBubbleToReference(p: SphBubblePattern, board: SphBubbleBoard): ReferenceTiling {
+	const tiles = new Set(p.bites.map((w) => w.join(""))).size;
+	return {
+		id: p.id,
+		source: "bubble",
+		k: p.k,
+		family: `${p.solid.replace(/-/g, " ")} · ${tiles} tile${tiles === 1 ? "" : "s"}`,
+		renderCell: FREEDRAW_EMPTY_CELL,
+		sphBubble: p,
+		geometry: "spherical",
+		discoverer: "Chase, Field & McCluer",
+		// ⚑ PROVEN on the complete boards, and it is the only bubble slice that can be. There is nothing to search here: the
+		// substrate is a fixed solid and complementarity is satisfied by construction, so the count is a
+		// Burnside sum over the symmetry group. Every complete board is asserted equal to that sum at
+		// build time, and an independent implementation reproduces all 28 totals (DEVELOPMENT_NOTES
+		// 2026-08-27). A k<=3 board is complete FOR ITS k, not for the board.
+		certification: board.coverage === "complete" ? "proven" : "candidate",
+	};
+}
+
+let sphBubCache: ReferenceTiling[] | null = null;
+let sphBubInflight: Promise<ReferenceTiling[]> | null = null;
+/** The spherical bubble shelf: a manifest of 28 boards, then their shards. 4.7 MB in total. */
+export async function loadSphBubbleAtlas(): Promise<ReferenceTiling[]> {
+	if (sphBubCache) return sphBubCache;
+	if (sphBubInflight) return sphBubInflight;
+	sphBubInflight = fetch("/bubble-sphere/manifest.json")
+		.then((res) => (res.ok ? (res.json() as Promise<SphBubbleBoard[]>) : []))
+		.then((boards) =>
+			Promise.all(
+				boards.flatMap((b) =>
+					b.shards.map((f) =>
+						fetch(`/bubble-sphere/${f}`)
+							.then((res) => (res.ok ? (res.json() as Promise<SphBubblePattern[]>) : []))
+							.then((rows) => rows.map((r) => sphBubbleToReference(r, b)))
+							.catch(() => [] as ReferenceTiling[]),
+					),
+				),
+			),
+		)
+		.then((lists) => lists.flat())
+		.then((rows) => { sphBubCache = rows; sphBubInflight = null; return rows; })
+		.catch((err) => { sphBubInflight = null; throw err; });
+	return sphBubInflight;
 }
 
 let bubDecorCache: ReferenceTiling[] | null = null;
