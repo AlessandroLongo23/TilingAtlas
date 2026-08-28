@@ -3,8 +3,7 @@
 // belongs to is argmax(dot(dir, N_f)) over the solid's exit-face normals, and an edge is where the top two
 // faces are near-tied — so evaluating it in the fragment shader keeps every edge pixel-sharp at any zoom
 // (the baked-texture approach it replaced went soft the moment the camera dollied in and one texel spanned
-// many screen pixels). Both surface looks use this: the flat sphere (sphericalMaterial.ts) and the carved
-// realistic sphere (sphericalCarvedMaterial.ts).
+// many screen pixels). The tiling sphere's material (sphericalMaterial.ts) is the one surface built on it.
 
 import * as THREE from "three";
 import type { Polyhedron } from "./platonicSolids";

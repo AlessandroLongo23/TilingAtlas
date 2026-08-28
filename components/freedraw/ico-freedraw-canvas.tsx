@@ -23,6 +23,7 @@ import { installLookRig, applyStudioMaterials, type LookRig } from "@/lib/render
 import { captureOverride, offerFrame } from "@/lib/render/capture";
 import { solidEdges } from "@/lib/render/sphericalGeometry";
 import { buildIcoFreedraw, type IcoPattern, type IcoFreedraw, type IcoMode } from "@/lib/render/icoFreedraw";
+import { createEdgeOcclusion, type EdgeOcclusion } from "@/lib/render/edgeOcclusion";
 
 // Interactive viewer for one Platonic-solid freedraw pattern: a real 3D three.js solid you rotate freely
 // with a quaternion trackball (ArcballControls — no poles, no gimbal lock), same input model as the
@@ -63,12 +64,12 @@ interface Props {
 const CAMERA_DISTANCE = cameraDistanceFor(DEFAULT_FIT_FRACTION);
 
 export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, allEdges, keepRadius, crossings, showCrossings, showEdges, tileHsb, densitySheets }: Props) {
-	// The store fields this otherwise self-contained canvas reads. It used to read only `sphericalStudio`,
-	// which is why the sidebar hid the hue ring and the stroke slider for every shelf on this canvas: the
-	// builder has taken `hueOffset` and `edgeThickness` all along, nothing passed them (AL, 2026-08-21).
-	const studio = useConfiguration((s) => s.sphericalStudio);
+	// The store fields this otherwise self-contained canvas reads. It used to read only the surface-look
+	// flag, which is why the sidebar hid the hue ring and the stroke slider for every shelf on this canvas:
+	// the builder has taken `hueOffset` and `edgeThickness` all along, nothing passed them (AL, 2026-08-21).
 	const hueOffset = useConfiguration((s) => s.hueOffset);
 	const lineWidth = useConfiguration((s) => s.lineWidth);
+	const faceOpacity = useConfiguration((s) => s.sphericalFaceOpacity);
 	const solid = useMemo(() => (vertices ? null : polyhedronForId(solidId)), [solidId, vertices]);
 	const verts = vertices ?? (solid?.vertices as [number, number, number][] | undefined);
 	const solidEdgeList = useMemo<[number, number][]>(
@@ -86,6 +87,9 @@ export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, 
 	const lookRigRef = useRef<LookRig | null>(null);
 	const rafRef = useRef<number | null>(null);
 	const contentRef = useRef<IcoFreedraw | null>(null);
+	// Depth of the FACES alone, re-rendered each frame, so an edge bar can be hidden by the edge's own
+	// visibility instead of its surface's (lib/render/edgeOcclusion.ts).
+	const occlusionRef = useRef<EdgeOcclusion | null>(null);
 	const [errored, setErrored] = useState(false);
 
 	// Renderer + scene + camera + controls + RAF loop, created once per mount.
@@ -117,7 +121,9 @@ export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, 
 		// turned same-coloured regions into wildly different shades (bright where they faced the light,
 		// near-black where they faced away). Studio lights it properly but keeps that constraint, holding the
 		// ambient high and the key low. Both sets live in lib/render/sphericalLook.ts.
-		lookRigRef.current = installLookRig(renderer, scene, "catalogue", useConfiguration.getState().sphericalStudio);
+		lookRigRef.current = installLookRig(renderer, scene, "catalogue");
+		occlusionRef.current = createEdgeOcclusion();
+		occlusionRef.current.setFaceOpacity(useConfiguration.getState().sphericalFaceOpacity);
 
 		const aspect0 = host.clientWidth > 0 && host.clientHeight > 0 ? host.clientWidth / host.clientHeight : 1;
 		const camera = makeSphericalCamera(
@@ -164,6 +170,12 @@ export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, 
 			}
 			// The light rig rides the camera, so a drag re-lights the solid (see LookRig.follow).
 			if (cam) lookRigRef.current?.follow(cam);
+			// Back-to-front the see-through facets before anything is drawn (lib/render/depthSort.ts), then
+			// take the faces' depth for the hidden-edge test (lib/render/edgeOcclusion.ts).
+			if (cam) {
+				contentRef.current?.depthSort(cam);
+				occlusionRef.current?.capture(renderer, scene, cam);
+			}
 			if (cam) renderer.render(scene, cam);
 			if (cap) offerFrame(renderer.domElement);
 			rafRef.current = requestAnimationFrame(animate);
@@ -176,6 +188,8 @@ export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, 
 			momentumRef.current = null;
 			lookRigRef.current?.dispose();
 			lookRigRef.current = null;
+			occlusionRef.current?.dispose();
+			occlusionRef.current = null;
 			controlsRef.current?.dispose();
 			contentRef.current?.dispose();
 			renderer.dispose();
@@ -244,8 +258,13 @@ export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, 
 			hueOffset,
 			tileHsb,
 			densitySheets,
+			faceOpacity,
+			occlude: occlusionRef.current?.uniforms,
 		});
-		applyStudioMaterials(content.object, studio);
+		// A hidden bar is worth 1 − opacity: dropped outright behind solid faces, and increasingly visible
+		// as they turn to glass.
+		occlusionRef.current?.setFaceOpacity(faceOpacity);
+		applyStudioMaterials(content.object);
 		scene.add(content.object);
 		contentRef.current = content;
 		return () => {
@@ -253,15 +272,9 @@ export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, 
 			content.dispose();
 			if (contentRef.current === content) contentRef.current = null;
 		};
-		// `studio` rebuilds because the material tuning is applied to freshly built materials — turning the
-		// look off has to give back the untouched originals, not a second guess at what they were.
-	}, [pattern, mode, showGrid, solid, solidEdgeList, crossings, showCrossings, showEdges, tileHsb, densitySheets, studio, hueOffset, lineWidth]);
-
-	// Studio ⇄ plain: re-dial the lights and the environment in place (the geometry effect above re-tunes
-	// the materials from the same flag).
-	useEffect(() => {
-		lookRigRef.current?.setStudio(studio);
-	}, [studio]);
+		// `faceOpacity` IS a rebuild dep here, unlike the tiling sphere's: this builder makes the facet
+		// meshes and their materials in one pass and has no live setter, and the boards it serves are small.
+	}, [pattern, mode, showGrid, solid, solidEdgeList, crossings, showCrossings, showEdges, tileHsb, densitySheets, hueOffset, lineWidth, faceOpacity]);
 
 	if (errored) {
 		return (

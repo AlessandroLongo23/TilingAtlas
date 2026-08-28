@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import * as THREE from "three";
 import { PLATONIC_SOLIDS, type Polyhedron } from "@/lib/render/platonicSolids";
 import { sphericalIslamicFaceData } from "@/lib/render/sphericalIslamic";
-import { triangulateFillCell, reliefHeight, buildIslamicFill } from "@/lib/render/sphericalIslamicFill";
+import { triangulateFillCell, buildIslamicFill } from "@/lib/render/sphericalIslamicFill";
 import { extractFaces, colorFacesAbc, pointInPolygon, signedArea, type Marker, type Segment } from "@/lib/utils/islamicArrangement";
 import { polygonHue } from "@/lib/utils/renderTiling";
 import { Vector } from "@/classes/Vector";
@@ -140,44 +140,15 @@ describe("sphericalIslamicFaceData — edge offset still partitions", () => {
 	}
 });
 
-describe("reliefHeight — 0 on the boundary, ramps to depth in the interior", () => {
-	// Unit square centred at the origin (side 1), CCW. Nearest-boundary distance at the centre is 0.5.
-	const square = [new Vector(-0.5, -0.5), new Vector(0.5, -0.5), new Vector(0.5, 0.5), new Vector(-0.5, 0.5)];
-	const depth = 0.03;
-	const bevel = 0.2;
-
-	it("is 0 exactly on a boundary vertex", () => {
-		expect(reliefHeight(-0.5, -0.5, square, depth, bevel)).toBeCloseTo(0, 9);
-	});
-
-	it("is 0 at the midpoint of a boundary edge", () => {
-		expect(reliefHeight(0, -0.5, square, depth, bevel)).toBeCloseTo(0, 9);
-	});
-
-	it("reaches full depth well inside the bevel band (centre, dist 0.5 > bevel 0.2)", () => {
-		expect(reliefHeight(0, 0, square, depth, bevel)).toBeCloseTo(depth, 9);
-	});
-
-	it("is a monotonic non-decreasing ramp moving inward from an edge", () => {
-		const a = reliefHeight(0, -0.45, square, depth, bevel); // near edge
-		const b = reliefHeight(0, -0.35, square, depth, bevel);
-		const c = reliefHeight(0, -0.25, square, depth, bevel);
-		expect(a).toBeLessThan(b);
-		expect(b).toBeLessThan(c);
-		expect(a).toBeGreaterThanOrEqual(0);
-		expect(c).toBeLessThanOrEqual(depth + 1e-9);
-	});
-
-	it("degenerate bevel (<= 0) gives full depth off the boundary", () => {
-		expect(reliefHeight(0, 0, square, depth, 0)).toBeCloseTo(depth, 9);
-	});
-});
-
-describe("buildIslamicFill — relief mode", () => {
+describe("buildIslamicFill — the fill surface", () => {
 	const opts = { angleRad: (45 * Math.PI) / 180 };
 
-	function radii(fill: NonNullable<ReturnType<typeof buildIslamicFill>>): { min: number; max: number; count: number } {
+	it("puts every vertex on the sphere, under an unlit MeshBasicMaterial", () => {
+		const fill = buildIslamicFill(bySolid("tetrahedron"), opts)!;
 		const mesh = fill.object.children[0] as THREE.Mesh;
+		expect(mesh.material).toBeInstanceOf(THREE.MeshBasicMaterial);
+		// DoubleSide: the cells tile the whole sphere into an opaque shell, near side occluding far.
+		expect((mesh.material as THREE.Material).side).toBe(THREE.DoubleSide);
 		const pos = (mesh.geometry as THREE.BufferGeometry).getAttribute("position");
 		let min = Infinity;
 		let max = -Infinity;
@@ -186,37 +157,7 @@ describe("buildIslamicFill — relief mode", () => {
 			if (r < min) min = r;
 			if (r > max) max = r;
 		}
-		return { min, max, count: pos.count };
-	}
-
-	it("flat mode (default): all vertices on the sphere, unlit MeshBasicMaterial", () => {
-		const fill = buildIslamicFill(bySolid("tetrahedron"), opts)!;
-		const mesh = fill.object.children[0] as THREE.Mesh;
-		expect(mesh.material).toBeInstanceOf(THREE.MeshBasicMaterial);
-		expect((mesh.material as THREE.Material).side).toBe(THREE.DoubleSide);
-		const { min, max } = radii(fill);
 		expect(min).toBeCloseTo(1, 4);
 		expect(max).toBeCloseTo(1, 4);
-	});
-
-	it("relief mode: boundary vertices stay on the sphere, interior pushed out, lit flat-shaded material", () => {
-		const flat = buildIslamicFill(bySolid("tetrahedron"), opts)!;
-		const relief = buildIslamicFill(bySolid("tetrahedron"), { ...opts, relief: true })!;
-		const mesh = relief.object.children[0] as THREE.Mesh;
-		const mat = mesh.material as THREE.MeshStandardMaterial;
-		expect(mat).toBeInstanceOf(THREE.MeshStandardMaterial);
-		expect(mat.flatShading).toBe(true);
-		expect(mat.vertexColors).toBe(true);
-		expect(mat.side).toBe(THREE.FrontSide); // FrontSide makes cell winding load-bearing — guard it
-		expect(mat.roughness).toBeCloseTo(0.9);
-		expect(mat.metalness).toBe(0);
-
-		const rFlat = radii(flat);
-		const rRelief = radii(relief);
-		// Same tessellation (same vertex count), just displaced.
-		expect(rRelief.count).toBe(rFlat.count);
-		// The lowest points (cell boundaries) are still on the unit sphere; the highest bulge outward.
-		expect(rRelief.min).toBeCloseTo(1, 3);
-		expect(rRelief.max).toBeGreaterThan(1.01);
 	});
 });

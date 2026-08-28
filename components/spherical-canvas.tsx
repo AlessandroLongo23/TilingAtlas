@@ -22,7 +22,7 @@ import { createOrbitMomentum, type OrbitMomentum } from "@/lib/render/orbitMomen
 import { installLookRig, applyStudioMaterials, type LookRig } from "@/lib/render/sphericalLook";
 import { buildFlatSolid, type FlatSolid } from "@/lib/render/sphericalPolyhedron";
 import { hasSphereView } from "@/lib/tilings/sph-inscribed";
-import { buildWireframe, type Wireframe } from "@/lib/render/sphericalWireframe";
+import { createEdgeOcclusion, type EdgeOcclusion } from "@/lib/render/edgeOcclusion";
 import { buildIslamicPattern, type IslamicPattern } from "@/lib/render/sphericalIslamicMesh";
 import { buildIslamicFill, type IslamicFill } from "@/lib/render/sphericalIslamicFill";
 import { buildIslamicWeave, type IslamicWeave } from "@/lib/render/sphericalIslamicWeaveMesh";
@@ -32,10 +32,10 @@ import { buildIslamicWeave, type IslamicWeave } from "@/lib/render/sphericalIsla
 // there are no poles). It owns its own input — z-10 above the p5 layer's z-[1], ArcballControls consumes
 // drag (rotate) + wheel (zoom); panning is off so the sphere stays centred.
 //
-// Three looks: the SOLID sphere (the tiling drawn procedurally per fragment on a UV sphere — flat surface
-// edges, stroke slider, pixel-sharp at any zoom); the WIREFRAME skeleton (the tiling edges as hollow 3D tube bars); and
-// the ISLAMIC construction (the star pattern as a hollow line structure, no base surface — flat ribbons, or
-// rigid tube bars when Wireframe is also on, which makes the LINES rigid instead of adding tiling edges).
+// Two looks: the BASE SURFACE — the round sphere (the tiling drawn procedurally per fragment on a UV sphere
+// — flat surface edges, stroke slider, pixel-sharp at any zoom) or the flat-faced solid, either of them as
+// see-through as the opacity slider says; and the ISLAMIC construction (the star pattern as a hollow line
+// structure, no base surface — flat ribbons, or rigid tube bars when Rigid is on).
 // The <canvas> is created imperatively per mount (a canvas holds one WebGL context for life; forceContextLoss
 // on teardown would poison a reused node across a StrictMode remount).
 
@@ -69,7 +69,9 @@ interface SphericalCanvasProps {
 // the border/band ratio on the sphere is identical to the flat one for any pair of slider values.
 const WEAVE_WIDTH_FACTOR = 0.36;
 
-type Content = { kind: "sphere"; sphere: Sphere } | { kind: "wire"; wire: Wireframe } | { kind: "solid"; solid: FlatSolid };
+type Content =
+	| { kind: "sphere"; sphere: Sphere }
+	| { kind: "solid"; solid: FlatSolid };
 
 export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEFAULT_FIT_FRACTION }: SphericalCanvasProps) {
 	const poly = useMemo(() => polyhedronForId(solidId), [solidId]);
@@ -93,14 +95,17 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 	// Release momentum: let go mid-drag and the solid coasts (lib/render/orbitMomentum.ts). It reads the
 	// camera through a ref, so the projection toggle's fresh camera keeps the spin instead of dropping it.
 	const momentumRef = useRef<OrbitMomentum | null>(null);
-	// Lights + environment for the current surface look (lib/render/sphericalLook.ts). Held in a ref so the
-	// Studio toggle re-dials it in place instead of rebuilding the WebGL context.
+	// Lights + environment (lib/render/sphericalLook.ts). Held in a ref so the render loop can aim it at
+	// the camera each frame without the mount effect re-running.
 	const lookRigRef = useRef<LookRig | null>(null);
 	// Last host box the renderer was sized to. Cleared to force a re-apply when the projection toggle
 	// swaps in a fresh camera; the render loop owns every other update.
 	const boxRef = useRef({ w: 0, h: 0 });
 	const rafRef = useRef<number | null>(null);
 	const contentRef = useRef<Content | null>(null);
+	// Depth of the FACES alone, re-rendered each frame, so an edge bar can be hidden by the edge's own
+	// visibility instead of its surface's (lib/render/edgeOcclusion.ts).
+	const occlusionRef = useRef<EdgeOcclusion | null>(null);
 	const islamicRef = useRef<IslamicPattern | null>(null);
 	const fillRef = useRef<IslamicFill | null>(null);
 	const weaveRef = useRef<IslamicWeave | null>(null);
@@ -135,13 +140,13 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 		const scene = new THREE.Scene();
 		sceneRef.current = scene;
 
-		// Light rig + environment — shades every lit material: the wireframe/weave tubes, the flat polyhedron
-		// facets, and in Realistic mode the carved sphere and the raised Islamic relief tiles. Inert on the
-		// unlit surfaces (the solid sphere's RawShaderMaterial, the flat Islamic fill's MeshBasicMaterial),
-		// which is why the tiling sphere carries its own shading in Studio. The plain rig is the long-standing
-		// 0.85 / 0.8 / 0.2 by eye; Studio swaps in a room environment and a key/fill/rim set. Both live in
-		// lib/render/sphericalLook.ts so every spherical view changes together.
-		lookRigRef.current = installLookRig(renderer, scene, "tiling", useConfiguration.getState().sphericalStudio);
+		// Light rig + environment — a room environment and a key/fill/rim set, shading every lit material:
+		// the weave tubes and the flat polyhedron facets. Inert on the unlit surfaces (the tiling sphere's
+		// RawShaderMaterial, the flat Islamic fill's MeshBasicMaterial), which is why the tiling sphere
+		// carries its own shading in its own shader. It lives in lib/render/sphericalLook.ts so every
+		// spherical view changes together.
+		lookRigRef.current = installLookRig(renderer, scene, "tiling");
+		occlusionRef.current = createEdgeOcclusion();
 
 		// Camera + trackball controls. The loop reads BOTH from refs each frame because the projection toggle
 		// (effect below) recreates them as a fresh pair; reading refs keeps the rendered camera and the
@@ -201,6 +206,13 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 			// The light rig rides the camera, so a drag re-lights the solid instead of sliding a frozen
 			// highlight across it. After controls.update(), which is what settles the camera for this frame.
 			if (cam) lookRigRef.current?.follow(cam);
+			// Back-to-front the see-through facets before anything is drawn (lib/render/depthSort.ts), then
+			// take the faces' depth for the hidden-edge test (lib/render/edgeOcclusion.ts).
+			if (cam) {
+				const c = contentRef.current;
+			if (c?.kind === "solid") c.solid.depthSort(cam);
+				occlusionRef.current?.capture(renderer, scene, cam);
+			}
 			if (cam) renderer.render(scene, cam);
 			if (cap) offerFrame(renderer.domElement);
 			rafRef.current = requestAnimationFrame(animate);
@@ -213,6 +225,8 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 			momentumRef.current = null;
 			lookRigRef.current?.dispose();
 			lookRigRef.current = null;
+			occlusionRef.current?.dispose();
+			occlusionRef.current = null;
 			controlsRef.current?.dispose(); // the LATEST controls (a projection toggle may have swapped it)
 			renderer.dispose();
 			renderer.forceContextLoss();
@@ -265,12 +279,11 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 	}, [interactive, orthographic]);
 
 	// The BASE surface — rebuilt when the solid or a mode changes. Islamic wins: with it on there is NO base
-	// (no sphere, no tiling-edge wireframe) — the star construction lines are the whole picture, drawn by the
+	// (no sphere, no flat solid) — the star construction lines are the whole picture, drawn by the
 	// overlay effect. Otherwise Wireframe gives the hollow tiling-edge tube skeleton, else the solid sphere.
-	const wireframe = useConfiguration((s) => s.sphericalWireframe);
+	const faceOpacity = useConfiguration((s) => s.sphericalFaceOpacity);
+	const islamicRigid = useConfiguration((s) => s.islamicRigid);
 	const isIslamic = useConfiguration((s) => s.isIslamic);
-	const realistic = useConfiguration((s) => s.sphericalRealistic);
-	const studio = useConfiguration((s) => s.sphericalStudio);
 	const polyhedron = useConfiguration((s) => s.sphericalPolyhedron);
 	useEffect(() => {
 		const renderer = rendererRef.current;
@@ -290,39 +303,24 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 			// No base surface — the overlay effect below draws the star lines (flat ribbons, or rigid tubes
 			// when Wireframe is also on; the Wireframe toggle makes the LINES rigid, it does not add edges).
 			content = null;
-		} else if (cfg.sphericalWireframe) {
-			const wire = buildWireframe(poly, {
-				section: cfg.sphericalWireSection,
-				thickness: cfg.sphericalWireThickness,
-				height: cfg.sphericalWireHeight,
-				bevel: cfg.sphericalWireBevel,
-				hueOffset: cfg.hueOffset,
-				// Polyhedron ON ⇒ straight chord bars (the solid's real edges); OFF ⇒ curved great-circle arcs.
-				straight: flat,
-			});
-			if (wire) {
-				applyStudioMaterials(wire.object, cfg.sphericalStudio);
-				scene.add(wire.object);
-				content = { kind: "wire", wire };
-			}
 		} else if (flat) {
 			// The TRUE flat-faced solid instead of the round sphere: lit facets + dark edge tubes, same hue.
-			const solid = buildFlatSolid(poly, { hueOffset: cfg.hueOffset, lineWidth: cfg.lineWidth, dark });
+			const solid = buildFlatSolid(poly, {
+				hueOffset: cfg.hueOffset,
+				lineWidth: cfg.lineWidth,
+				dark,
+				faceOpacity: cfg.sphericalFaceOpacity,
+				occlude: occlusionRef.current?.uniforms,
+			});
 			if (solid) {
-				applyStudioMaterials(solid.object, cfg.sphericalStudio);
+				applyStudioMaterials(solid.object);
 				scene.add(solid.object);
 				content = { kind: "solid", solid };
 			}
 		} else {
-			const sphere = createSphere(renderer, poly, {
-				hueOffset: cfg.hueOffset,
-				lineWidth: cfg.lineWidth,
-				dark,
-				realistic: cfg.sphericalRealistic,
-				studio: cfg.sphericalStudio,
-			});
+			const sphere = createSphere(renderer, poly, { hueOffset: cfg.hueOffset, lineWidth: cfg.lineWidth, dark });
 			if (sphere) {
-				applyStudioMaterials(sphere.mesh, cfg.sphericalStudio);
+				applyStudioMaterials(sphere.mesh);
 				scene.add(sphere.mesh);
 				content = { kind: "sphere", sphere };
 			}
@@ -333,9 +331,6 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 			if (content.kind === "sphere") {
 				scene.remove(content.sphere.mesh);
 				content.sphere.dispose();
-			} else if (content.kind === "wire") {
-				scene.remove(content.wire.object);
-				content.wire.dispose();
 			} else {
 				scene.remove(content.solid.object);
 				content.solid.dispose();
@@ -344,27 +339,24 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 		};
 		// solidId is listed even though `poly` is derived from it: the flat/sphere decision above reads the
 		// id directly (hasSphereView), so the effect has to re-run when it changes.
-		// `studio` is a rebuild dep and not a live uniform: the flat sphere's two looks are two different
-		// fragment shaders, so the surface has to be rebuilt to swap between them. The light rig does NOT
-		// rebuild (its own effect re-dials it), and neither does the WebGL context.
-	}, [poly, solidId, wireframe, isIslamic, realistic, polyhedron, studio]);
+		// `faceOpacity` is NOT a rebuild dep. Crossing 1 changes how the faces are drawn, and the builder
+		// answers that live through `setOpacity` below — re-deriving the creases of a 212-face solid on every
+		// frame of a slider drag is not something a drag can afford.
+	}, [poly, solidId, isIslamic, polyhedron]);
 
-	// Studio ⇄ plain: re-dial the lights and the environment in place. The materials are re-tuned by the
-	// rebuild above, which runs from the same flag.
-	useEffect(() => {
-		lookRigRef.current?.setStudio(studio);
-	}, [studio]);
-
-	// Wireframe geometry controls: rebuild the tubes in place when section / thickness / height change.
-	const section = useConfiguration((s) => s.sphericalWireSection);
-	const thickness = useConfiguration((s) => s.sphericalWireThickness);
-	const wireHeight = useConfiguration((s) => s.sphericalWireHeight);
-	const bevel = useConfiguration((s) => s.sphericalWireBevel);
+	// Face opacity, live. The hidden-edge test does not switch off below 1, it SOFTENS: a bar behind a face
+	// is worth 1 − opacity, so it is dropped behind a solid face and comes back as the face turns to glass.
 	useEffect(() => {
 		const c = contentRef.current;
-		if (!c || c.kind !== "wire") return;
-		c.wire.setGeometry({ section, thickness, height: wireHeight, bevel });
-	}, [section, thickness, wireHeight, bevel]);
+		if (c?.kind === "solid") c.solid.setOpacity(faceOpacity);
+		occlusionRef.current?.setFaceOpacity(faceOpacity);
+	}, [faceOpacity, poly, solidId, polyhedron, isIslamic]);
+
+	// Cross-section of the RIGID Islamic bars (the overlay effect below rebuilds from these).
+	const section = useConfiguration((s) => s.islamicBarSection);
+	const thickness = useConfiguration((s) => s.islamicBarThickness);
+	const wireHeight = useConfiguration((s) => s.islamicBarHeight);
+	const bevel = useConfiguration((s) => s.islamicBarBevel);
 
 	// A projection toggle swaps in a fresh camera, which starts with no aspect applied. Drop the tracked box
 	// so the render loop re-fits it (perspective aspect or orthographic frustum) on its next frame; plain
@@ -386,7 +378,6 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 		const c = contentRef.current;
 		if (c) {
 			if (c.kind === "sphere") c.sphere.recolor({ hueOffset, lineWidth, dark });
-			else if (c.kind === "wire") c.wire.setColor(hueOffset);
 			else c.solid.recolor({ hueOffset, lineWidth, dark });
 		}
 		// The Islamic overlay + cell fill live in their own refs (independent of the base content) — recolour too.
@@ -396,8 +387,7 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 	}, [hueOffset, lineWidth]);
 
 	// Islamic star-pattern overlay: the construction as great-circle ribbons — a hollow structure with no base
-	// surface behind it. Independent of the base: it stands alone (Islamic only) OR sits over the wireframe
-	// tubes (both toggles on). Rebuilt when a construction param or the stroke width changes, torn down when
+	// surface behind it. Rebuilt when a construction param or the stroke width changes, torn down when
 	// Islamic turns off.
 	const islamicAngle = useConfiguration((s) => s.islamicAngle);
 	const islamicEdgeOffset = useConfiguration((s) => s.islamicEdgeOffset);
@@ -426,9 +416,9 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 			angleRad: (Math.min(Math.max(islamicAngle, 0), 90) * Math.PI) / 180,
 			edgeOffsetFrac: Math.min(Math.max(islamicEdgeOffset, 0), 100) / 100,
 			intersectionCount: islamicIntersectionCount,
-			// Wireframe ON ⇒ the star lines become rigid tube/rect bars (same sweep as the tiling wireframe,
-			// shaped by Section / Thickness / Height / Bevel); OFF ⇒ flat surface ribbons sized by the stroke.
-			rigid: wireframe,
+			// Rigid ON ⇒ the star lines become 3D tube/rect bars, shaped by Section / Thickness / Height /
+			// Bevel; OFF ⇒ flat surface ribbons sized by the stroke.
+			rigid: islamicRigid,
 			section,
 			thickness,
 			height: wireHeight,
@@ -438,19 +428,18 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 			dark: document.documentElement.classList.contains("dark"),
 		});
 		if (pattern) {
-			applyStudioMaterials(pattern.object, useConfiguration.getState().sphericalStudio);
+			applyStudioMaterials(pattern.object);
 			scene.add(pattern.object);
 			islamicRef.current = pattern;
 		}
 		return clear;
-	}, [poly, isIslamic, isStrapStyle, islamicAngle, islamicEdgeOffset, islamicIntersectionCount, lineWidth, wireframe, section, thickness, wireHeight, bevel, studio]);
+	}, [poly, isIslamic, isStrapStyle, islamicAngle, islamicEdgeOffset, islamicIntersectionCount, lineWidth, islamicRigid, section, thickness, wireHeight, bevel]);
 
 	// Islamic cell fill: the regions the star lines cut, coloured by cell shape and laid on the sphere just
-	// under the lines. Gated by the spherical Fill/Wireframe toggle (the two are mutually exclusive): Fill
-	// (wireframe off) ⇒ filled cells + flat ribbon lines; Wireframe (on) ⇒ hollow just-lines look with rigid
-	// tube lines and no fill. Only the construction params rebuild it, so it does NOT rebuild on the
-	// wireframe/stroke/thickness drags that only reshape the lines — the wireframe flag flips it on/off.
-	const islamicFill = !wireframe;
+	// under the lines. Rigid OFF ⇒ filled cells + flat ribbon lines; Rigid ON ⇒ the hollow just-lines look,
+	// rigid bars and no fill. Only the construction params rebuild it, so it does NOT rebuild on the
+	// stroke/thickness drags that only reshape the lines — the Rigid flag flips it on/off.
+	const islamicFill = !islamicRigid;
 	useEffect(() => {
 		const scene = sceneRef.current;
 		if (!scene) return;
@@ -487,13 +476,13 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 				// crossings paint it out, leaving the silhouette of the ribbon union.
 				weave: !outlineStyle,
 				showBodies: islamicFill,
-				// Wireframe ON ⇒ extrude the straps into lit 3D ribbons, over/under separated radially.
-				solid: wireframe,
+				// Rigid ON ⇒ extrude the straps into lit 3D ribbons, over/under separated radially.
+				solid: islamicRigid,
 				solidFlat: outlineStyle || weaveFlat, // flat coplanar ribbons instead of the woven relief
 				dark: document.documentElement.classList.contains("dark"),
 			});
 			if (weave) {
-				applyStudioMaterials(weave.object, cfg.sphericalStudio);
+				applyStudioMaterials(weave.object);
 				scene.add(weave.object);
 				weaveRef.current = weave;
 			}
@@ -511,15 +500,14 @@ export function SphericalCanvas({ solidId, interactive = true, fitFraction = DEF
 			fillHueC: cfg.islamicFillHueC,
 			checkerHueA: cfg.islamicCheckerHueA,
 			checkerHueB: cfg.islamicCheckerHueB,
-			relief: cfg.sphericalRealistic, // Realistic + Islamic ⇒ raised, lit tiles instead of the flat shell
 		});
 		if (fill) {
-			applyStudioMaterials(fill.object, cfg.sphericalStudio);
+			applyStudioMaterials(fill.object);
 			scene.add(fill.object);
 			fillRef.current = fill;
 		}
 		return clear;
-	}, [poly, isIslamic, islamicFill, islamicStyle, isStrapStyle, islamicAngle, islamicEdgeOffset, islamicIntersectionCount, islamicBandWidth, islamicOutlineWidth, wireframe, weaveFlat, realistic, studio]);
+	}, [poly, isIslamic, islamicFill, islamicStyle, isStrapStyle, islamicAngle, islamicEdgeOffset, islamicIntersectionCount, islamicBandWidth, islamicOutlineWidth, islamicRigid, weaveFlat]);
 
 	if (errored) {
 		return (

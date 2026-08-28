@@ -11,7 +11,10 @@
 // here is that same array normalised. Reuses buildTubeSkeleton (the wireframe sweep) for the edges.
 
 import * as THREE from "three";
-import { buildTubeSkeleton, type Wireframe } from "./sphericalWireframe";
+import { buildCreaseRibbons, buildTubeSkeleton, CREASES_AS_TUBES, type Wireframe } from "./sphericalWireframe";
+import { creaseChords } from "./sphericalGeometry";
+import { markOccluder, type EdgeOcclusionUniforms } from "./edgeOcclusion";
+import { makeTriangleSorter } from "./depthSort";
 
 export type IcoMode = "sphere" | "polyhedron";
 
@@ -106,6 +109,8 @@ export function straightArc(u: V3, v: V3, radius: number, extend = 0): Float32Ar
 
 export interface IcoFreedraw {
 	object: THREE.Group;
+	/** Back-to-front the facets for this camera. Call once per frame; a no-op while the faces are opaque. */
+	depthSort: (camera: THREE.Camera) => void;
 	dispose: () => void;
 }
 
@@ -128,6 +133,11 @@ export interface IcoOptions {
 	 *  "no edges" state, where the facet colours alone say where the faces are. Defaults to true. */
 	showEdges?: boolean;
 	crossings?: import("./sphStar").Crease[]; // those creases as geometry; see sphStar.faceCrossings
+	/** Face opacity, 0..1. Below 1 the facets blend and the solid's inside shows through — the only way to
+	 *  read a star polyhedron of density 13. 0 leaves the edge bars alone in space. */
+	faceOpacity?: number;
+	/** Per-pixel hidden-edge test for the bars; see lib/render/edgeOcclusion.ts. */
+	occlude?: EdgeOcclusionUniforms;
 	/** Sphere mode, star shelf only: how many times the faces cover the circumsphere (sphStar.sheetCount).
 	 *  Setting it swaps the lit tiling fill for the DENSITY fill described at its use below. */
 	densitySheets?: number;
@@ -334,8 +344,25 @@ export function buildIcoFreedraw(pattern: IcoPattern, rawVertices: V3[], opts: I
 				blendDstAlpha: THREE.OneFactor,
 			})
 		: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0.0, side: THREE.DoubleSide });
+	// Below opacity 1 the facets stop writing depth, and the order they blend in is then whatever order they
+	// sit in the buffer — a far facet painting over a near one. makeTriangleSorter puts them back-to-front
+	// per frame; see lib/render/depthSort.ts. The DENSITY fill is untouched and must stay that way: it is
+	// FrontSide with its own custom blend, and its whole point is that the sheets are NOT resolved against
+	// each other.
+	const opacity = density ? 1 : Math.min(Math.max(opts.faceOpacity ?? 1, 0), 1);
+	if (opacity < 1) {
+		const std = facetMat as THREE.MeshStandardMaterial;
+		std.transparent = true;
+		std.opacity = opacity;
+		std.depthWrite = false;
+	}
+	const sorter = makeTriangleSorter(geom);
+	sorter.enabled = opacity < 1;
 	const facetMesh = new THREE.Mesh(geom, facetMat);
+	facetMesh.visible = opacity > 0;
 	group.add(facetMesh);
+	// The faces, and only the faces, are what the hidden-edge prepass renders.
+	markOccluder(facetMesh);
 	disposers.push(() => {
 		geom.dispose();
 		facetMat.dispose();
@@ -377,7 +404,7 @@ export function buildIcoFreedraw(pattern: IcoPattern, rawVertices: V3[], opts: I
 		const gridThick = thickness * 0.28;
 		const gridColor: [number, number, number] = dark ? [0.5, 0.5, 0.56] : [0.5, 0.5, 0.55];
 		const gridArcs = (extend: number) => opts.allEdges!.map(([i, j]) => edgeArc(i, j, radius, extend));
-		const grid = buildTubeSkeleton(gridArcs, 0, { section: "tube", thickness: gridThick, color: gridColor, union: false });
+		const grid = buildTubeSkeleton(gridArcs, 0, { section: "tube", thickness: gridThick, color: gridColor, occlude: opts.occlude, joints: true });
 		grid.object.traverse((o) => {
 			const mat = (o as THREE.Mesh).material as THREE.Material | undefined;
 			if (mat) {
@@ -394,126 +421,32 @@ export function buildIcoFreedraw(pattern: IcoPattern, rawVertices: V3[], opts: I
 	// crease is a real feature of the surface and has to read as one, so nothing about the ink
 	// distinguishes it. What separates the two is the toggle and its tooltip, not the drawing.
 	//
-	// Two things have to be undone for a crease that are right for an edge, both because a crease lies
-	// INSIDE a face instead of at the join between two:
+	// The geometry — an in-plane ribbon carrying a tube's normal field, and why it cannot be a tube — moved
+	// to buildCreaseRibbons in lib/render/sphericalWireframe.ts, because buildFlatSolid drew the very same
+	// creases as TUBES and the whole non-convex reference shelf carried the artefact this had already fixed.
 	//
-	//   no overshoot   `buildTubeSkeleton` lengthens every arc by 0.9 × thickness so bars overlap at the
-	//                  vertex they share. A crease shares no vertex: its ends are where it leaves the
-	//                  filled region, so the overshoot just pokes a stub out past them. Those were the
-	//                  grey spikes radiating from the corners.
-	//
-	// ⚑ A RIBBON IN THE FACE PLANE, NOT A TUBE. A crease lies in both its faces' planes, so a tube round
-	// it sticks out a full radius on each side of each plane, and on a solid whose faces pass close by
-	// that perpendicular bulge surfaces through the neighbours as needles and slivers. That is the
-	// bleeding AL reported on ss-60-180-104-d4. Two things confirmed it: at a fifth of the weight it
-	// disappears, and lifting the tube clear of the face made it much worse, because a lifted tube floats
-	// free of the plane that was hiding most of it.
-	//
-	// A ribbon has no perpendicular extent to poke through anything. Each crease is drawn twice, once in
-	// each face's plane, so it wins the z-fight with its own face and nothing else. Width matches the
-	// edge tubes' diameter and the colour is theirs, so the two read identically; occlusion is then
-	// ordinary depth testing, which is what puts a hidden crease behind its face.
 	// Never in sphere mode: a crease is where one face passes THROUGH another, and on the circumsphere
 	// there is no through — every face is on the same surface, and the density fill is what says so.
-	//
-	// ⚑ THE DEPTH BIAS IS A CONSTANT, AND polygonOffsetFactor MUST STAY 0. A crease is COPLANAR with the
-	// face it is drawn on, so the two never diverge across the polygon and a constant `units` bias is the
-	// whole of what it needs to win that tie. `factor` scales with the polygon's DEPTH SLOPE, which on a
-	// steeply inclined face is large — and a star polyhedron is layers of steeply inclined faces, so a
-	// slope term pulls creases on hidden layers far enough forward to punch through the faces in front of
-	// them. Measured on ss-60-120-62-d13 (V=60, F=62, density 13): factor -4 / units -8 differs from
-	// no-offset-at-all by 1,171,827 in summed pixel difference, and every bit of it is hairlines wandering
-	// across faces that should be solid — AL: "on some others there are some strange lying artefacts"
-	// (2026-08-21). factor 0 / units -2 differs by 1,145, which is antialiasing.
-	//
-	// What this is NOT is the fix for "the intersections of planes are not drawn as edges" (AL, the day
-	// before, on the crossed square cupola). `faceCrossings` returns every crease there is — brute-forced
-	// against a sampling of every face pair on all 89 star records, zero uncovered spans — and a crease
-	// that does not appear is one correctly hidden behind a face. This is only the small, standard decal
-	// bias that keeps a coplanar ribbon from losing to its own face; the geometric lift below stays, at a
-	// hair, for the same reason.
-	if (!density && opts.showCrossings && opts.crossings && opts.crossings.length) {
-		const edgeColor: [number, number, number] = dark ? [0.06, 0.06, 0.08] : [0.1, 0.1, 0.12];
-		const LIFT = thickness * 0.06;
-		// ⚑ THE RIBBON CARRIES A TUBE'S NORMALS. Flat across its width, it lit as a flat strip while the
-		// drawn edge beside it lit as a cylinder, and the two read as different objects under the same
-		// light — bright where the tube was shaded, dull where the tube caught the key (AL, 2026-08-21:
-		// "the true edges and the intersection lines react different to light"). The geometry cannot
-		// become a tube, for the bleeding reason above, so the SHADING becomes one instead: the strip is
-		// widened into columns sampled around a half-circle, at offset r·sinθ across the crease and
-		// carrying the normal cosθ·n + sinθ·t. That is exactly the normal field of a cylinder of radius r
-		// lying half-buried in the face — which is what a drawn edge is — while every vertex stays dead
-		// flat in the plane, so nothing pokes through anything.
-		const COLUMNS = 7; // θ in 30° steps across the half-circle; the sweep is smooth well before this
-		const cols = Array.from({ length: COLUMNS }, (_, i) => {
-			const th = -Math.PI / 2 + (Math.PI * i) / (COLUMNS - 1);
-			return { s: Math.sin(th), c: Math.cos(th) };
-		});
-		const pos: number[] = [];
-		const nor: number[] = [];
-		for (const c of opts.crossings) {
-			for (const n of [c.na, c.nb]) {
-				const a: V3 = [c.a[0] * radius + n[0] * LIFT, c.a[1] * radius + n[1] * LIFT, c.a[2] * radius + n[2] * LIFT];
-				const b: V3 = [c.b[0] * radius + n[0] * LIFT, c.b[1] * radius + n[1] * LIFT, c.b[2] * radius + n[2] * LIFT];
-				const d = nrm(sub(b, a));
-				const t = nrm(cross(n, d)); // in-plane, across the crease
-				// Column i: both ends of the crease at offset r·sinθ, with the half-cylinder normal.
-				const at = (p: V3, k: number): V3 => [
-					p[0] + cols[k].s * thickness * t[0],
-					p[1] + cols[k].s * thickness * t[1],
-					p[2] + cols[k].s * thickness * t[2],
-				];
-				const nAt = (k: number): V3 =>
-					nrm([
-						cols[k].c * n[0] + cols[k].s * t[0],
-						cols[k].c * n[1] + cols[k].s * t[1],
-						cols[k].c * n[2] + cols[k].s * t[2],
-					]);
-				for (let k = 0; k < COLUMNS - 1; k++) {
-					const A = at(a, k);
-					const B = at(a, k + 1);
-					const C = at(b, k + 1);
-					const D = at(b, k);
-					const nA = nAt(k);
-					const nB = nAt(k + 1);
-					for (const [v, vn] of [
-						[A, nA], [B, nB], [C, nB],
-						[A, nA], [C, nB], [D, nA],
-					] as [V3, V3][]) {
-						pos.push(v[0], v[1], v[2]);
-						nor.push(vn[0], vn[1], vn[2]);
-					}
-				}
-			}
-		}
-		const cgeom = new THREE.BufferGeometry();
-		cgeom.setAttribute("position", new THREE.BufferAttribute(new Float32Array(pos), 3));
-		cgeom.setAttribute("normal", new THREE.BufferAttribute(new Float32Array(nor), 3));
-		// The edge tubes' material, parameter for parameter (buildTubeSkeleton's MeshStandardMaterial),
-		// so the studio look's role tuning lands on both identically.
-		const cmat = new THREE.MeshStandardMaterial({
-			color: new THREE.Color().setRGB(edgeColor[0], edgeColor[1], edgeColor[2], THREE.SRGBColorSpace),
-			roughness: 0.5,
-			metalness: 0.0,
-			side: THREE.DoubleSide,
-			polygonOffset: true,
-			polygonOffsetFactor: 0,
-			polygonOffsetUnits: -2,
-		});
-		group.add(new THREE.Mesh(cgeom, cmat));
-		disposers.push(() => {
-			cgeom.dispose();
-			cmat.dispose();
-		});
+	const edgeColor: [number, number, number] = dark ? [0.06, 0.06, 0.08] : [0.1, 0.1, 0.12];
+	const creases = !density && opts.showCrossings && opts.crossings?.length ? opts.crossings : [];
+	if (creases.length && !CREASES_AS_TUBES) {
+		const ribbons = buildCreaseRibbons(creases, { radius, thickness, color: edgeColor, occlude: opts.occlude });
+		group.add(ribbons.object);
+		disposers.push(ribbons.dispose);
 	}
 
-	// --- drawn edges as tubes: arcs on the sphere, chords on the solid. Tube CENTRE on the surface
-	// (radius), so half the section is inside the sphere and only the outer half is visible — ink on the
-	// surface, not a bar floating above it. ---
-	if (pattern.drawn.length > 0 && opts.showEdges !== false) {
-		const edgeColor: [number, number, number] = dark ? [0.06, 0.06, 0.08] : [0.1, 0.1, 0.12];
-		const arcsFor = (extend: number) => pattern.drawn.map(([i, j]) => edgeArc(i, j, radius, extend));
-		const tubes: Wireframe = buildTubeSkeleton(arcsFor, 0, { section: "tube", thickness, color: edgeColor, union: false });
+	// --- ALL the ink as tubes: arcs on the sphere, chords on the solid, and — while CREASES_AS_TUBES — the
+	// creases in the same skeleton, so a joint welds across both. Tube CENTRE on the surface (radius), so
+	// half the section is inside and only the outer half is visible: ink on the surface, not a bar floating
+	// above it. ---
+	const drawEdges = pattern.drawn.length > 0 && opts.showEdges !== false;
+	const tubeCreases = CREASES_AS_TUBES ? creases : [];
+	if (drawEdges || tubeCreases.length) {
+		const arcsFor = (extend: number) => [
+			...(drawEdges ? pattern.drawn.map(([i, j]) => edgeArc(i, j, radius, extend)) : []),
+			...creaseChords(tubeCreases, radius, extend),
+		];
+		const tubes: Wireframe = buildTubeSkeleton(arcsFor, 0, { section: "tube", thickness, color: edgeColor, occlude: opts.occlude, joints: true });
 		overFill(tubes.object);
 		group.add(tubes.object);
 		disposers.push(() => tubes.dispose());
@@ -521,6 +454,7 @@ export function buildIcoFreedraw(pattern: IcoPattern, rawVertices: V3[], opts: I
 
 	return {
 		object: group,
+		depthSort: sorter.sort,
 		dispose: () => disposers.forEach((d) => d()),
 	};
 }

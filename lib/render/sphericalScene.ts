@@ -4,24 +4,17 @@
 // baked texture — sphericalTilingShader.ts), so edges stay pixel-sharp at any zoom; hue-ring and
 // stroke-slider changes are plain uniform writes via recolor(). Client-only (imports three).
 //
-// Two surface looks share this assembly. FLAT (default): an unlit material showing the tiling — edges lie
-// flat on the surface (sphericalMaterial.ts). REALISTIC: the tiling lines shaded as if carved into the
-// sphere — a lit MeshStandardMaterial driven from the same edge-distance field (sphericalCarvedMaterial.ts),
-// on a finer-tessellated sphere so the real displacement resolves.
+// There used to be a second surface here, "Realistic", which carved the tiling lines into the sphere as
+// displaced geometry on a 512×256 mesh. Deleted with its material and its control (AL, 2026-08-25).
 
 import * as THREE from "three";
 import type { Polyhedron } from "./platonicSolids";
-import { createSphereMaterial, type SphereMaterial } from "./sphericalMaterial";
-import { createCarvedSphereMaterial, type CarvedMaterial } from "./sphericalCarvedMaterial";
+import { createSphereMaterial } from "./sphericalMaterial";
 
 export const SPHERE_RADIUS = 1;
-// Flat surface: comfortably smooth silhouette, no displacement to resolve.
+// Comfortably smooth silhouette; nothing displaces the surface, so this is all it has to carry.
 const SPHERE_WIDTH_SEGMENTS = 160;
 const SPHERE_HEIGHT_SEGMENTS = 120;
-// Realistic surface: finer, so the carved fillet (a few line-widths wide) spans several segments and the
-// vertex displacement reads as a smooth groove on the silhouette, not a faceted notch.
-const REALISTIC_WIDTH_SEGMENTS = 512;
-const REALISTIC_HEIGHT_SEGMENTS = 256;
 
 // Live surface controls — the hue ring, stroke width, and theme, all written straight into shader uniforms.
 export interface SurfaceOptions {
@@ -36,44 +29,22 @@ export interface Sphere {
 	dispose: () => void; // frees geometry + material
 }
 
-export interface SphereOptions extends SurfaceOptions {
-	realistic?: boolean; // carve the lines into a lit MeshStandardMaterial (see sphericalCarvedMaterial.ts)
-	/** Studio look: shade the FLAT surface in-shader instead of drawing it as a flat colour field. The
-	 *  realistic surface needs nothing here — it is a MeshStandardMaterial, so the scene's studio
-	 *  environment and light rig reach it on their own. See lib/render/sphericalLook.ts. */
-	studio?: boolean;
-}
-
 // Build the sphere for a solid (Platonic or Archimedean), drawing its tiling procedurally on the surface.
 // Returns null for a missing solid. Caller owns add/remove + dispose(). (The renderer arg is no longer
 // needed — kept for a stable signature with the callers — since there is no bake pass.)
-export function createSphere(_renderer: THREE.WebGLRenderer, poly: Polyhedron | null, opts: SphereOptions = {}): Sphere | null {
+export function createSphere(_renderer: THREE.WebGLRenderer, poly: Polyhedron | null, opts: SurfaceOptions = {}): Sphere | null {
 	if (!poly) return null;
 
-	const realistic = opts.realistic ?? false;
-	const wSeg = realistic ? REALISTIC_WIDTH_SEGMENTS : SPHERE_WIDTH_SEGMENTS;
-	const hSeg = realistic ? REALISTIC_HEIGHT_SEGMENTS : SPHERE_HEIGHT_SEGMENTS;
-	const geom = new THREE.SphereGeometry(SPHERE_RADIUS, wSeg, hSeg);
-
-	let flat: SphereMaterial | null = null;
-	let carved: CarvedMaterial | null = null;
-	if (realistic) {
-		carved = createCarvedSphereMaterial({ poly, hueOffset: opts.hueOffset, lineWidth: opts.lineWidth });
-	} else {
-		flat = createSphereMaterial({ poly, hueOffset: opts.hueOffset, lineWidth: opts.lineWidth, dark: opts.dark, studio: opts.studio });
-	}
-	const mat = (carved ?? flat!).material;
-	const mesh = new THREE.Mesh(geom, mat);
+	const geom = new THREE.SphereGeometry(SPHERE_RADIUS, SPHERE_WIDTH_SEGMENTS, SPHERE_HEIGHT_SEGMENTS);
+	const surface = createSphereMaterial({ poly, hueOffset: opts.hueOffset, lineWidth: opts.lineWidth, dark: opts.dark });
+	const mesh = new THREE.Mesh(geom, surface.material);
 
 	return {
 		mesh,
-		recolor: (o: SurfaceOptions) => {
-			if (carved) carved.update({ hueOffset: o.hueOffset, lineWidth: o.lineWidth });
-			else flat!.update(o);
-		},
+		recolor: (o: SurfaceOptions) => surface.update(o),
 		dispose: () => {
 			geom.dispose();
-			(carved ?? flat!).dispose();
+			surface.dispose();
 		},
 	};
 }

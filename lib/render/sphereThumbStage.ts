@@ -61,8 +61,6 @@ export interface SpinningThumbOptions {
 	canvas: HTMLCanvasElement;
 	/** Which light rig this shelf uses; see lib/render/sphericalLook.ts. */
 	flavor: LookFlavor;
-	/** Current surface look. All thumbnails on a page share it. */
-	studio: boolean;
 	/** Build the content. Called once, off the shared frame-paced queue. Return null to fail the card. */
 	build: () => ThumbScene | null;
 	/** Radians of offset, so neighbouring cards are not all at the same angle (a page-wide wobble). */
@@ -86,9 +84,9 @@ interface Entry extends SpinningThumbOptions {
 let renderer: THREE.WebGLRenderer | null = null;
 let rendererFailed = false;
 let camera: THREE.PerspectiveCamera | null = null;
-// One scene per flavor: the two differ in their PLAIN light rig (see sphericalLook.ts), and a scene
-// carries exactly one rig.
-const stages = new Map<LookFlavor, { scene: THREE.Scene; rig: LookRig; studio: boolean }>();
+// One scene per flavor: the two differ in their light rig (see sphericalLook.ts), and a scene carries
+// exactly one rig.
+const stages = new Map<LookFlavor, { scene: THREE.Scene; rig: LookRig }>();
 
 function getRenderer(): THREE.WebGLRenderer | null {
 	if (renderer || rendererFailed) return renderer;
@@ -112,20 +110,15 @@ function getRenderer(): THREE.WebGLRenderer | null {
 	}
 }
 
-function getStage(flavor: LookFlavor, studio: boolean) {
+function getStage(flavor: LookFlavor) {
 	const r = getRenderer();
 	if (!r) return null;
 	let stage = stages.get(flavor);
 	if (!stage) {
 		const scene = new THREE.Scene();
 		// 512 is plenty of shadow map for a 320 px frame, and a quarter of the interactive view's cost.
-		const rig = installLookRig(r, scene, flavor, studio, 512);
-		stage = { scene, rig, studio };
+		stage = { scene, rig: installLookRig(r, scene, flavor, 512) };
 		stages.set(flavor, stage);
-	}
-	if (stage.studio !== studio) {
-		stage.rig.setStudio(studio);
-		stage.studio = studio;
 	}
 	return stage;
 }
@@ -170,7 +163,7 @@ function tick(now: number) {
 	// One draw: render the entry into the shared buffer and blit it into its own canvas.
 	const draw = (e: Entry) => {
 		if (!e.scene) return;
-		const stage = getStage(e.flavor, e.studio);
+		const stage = getStage(e.flavor);
 		if (!stage) return;
 		e.holder.rotation.y = still ? 0 : angle + (e.phase ?? 0);
 		stage.scene.add(e.holder);

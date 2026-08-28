@@ -16332,3 +16332,57 @@ one hue carries exactly one tile class, checked against an invariant that normal
 opposite convention to the implementation's, so the agreement is about the partition and not a copy of
 the code. Per-board tile counts come out 4 / 6 / 14 / 10 for triangle / square / hexagon / rhombus,
 the last being the Figure 27 count of the paper. No non-rhombic label moved.
+## 2026-08-25 — The spherical View-options pass: two controls deleted, one toggle rebuilt
+
+AL sent a screenshot of the spherical View options tab with six complaints, all of them about the panel
+and none about the geometry. Taking them in the order the fixes landed.
+
+**The Toggle was wrong three ways at once, and the third one is the interesting one.** It rendered two
+separately bordered buttons inside an `inline-flex`, so the pair sized to its own text and never filled
+the sidebar row — the leftover width read as an empty muted container, which is what AL was describing
+when he said "it seems like their container continues to fill the whole space, but it's muted". The two
+halves came out unequal for the same reason: each sized to its own label, so Sphere/Polyhedron and
+Fill/Wireframe were lopsided in different directions. And the seam always showed the UNSELECTED button's
+border, because the left button carried `border-r-0` and the divider was therefore the right button's left
+edge no matter which one was active — "the selected one has one border left on the shared side". It is now
+one track with `grid-cols-2` and no per-segment borders: equal halves by construction, and no seam to get
+wrong. `align="center"` went with it, having had no callers since it was written.
+
+**Why the sidebar scrolled sideways, which AL noticed and asked about separately.** `.ta-track-travel` is
+the box that carries the slider thumb. It was full-track-width and translated by `--f * 100%` — a fraction
+of ITS OWN width — so at any value above 0 its right edge stuck out past the track by exactly that
+fraction, invisible and pointer-inert but real scrollable overflow. Hence a horizontal scroll whose extent
+grew with the value, which is why the face-opacity slider was the one that made it obvious. Measured after
+the fix: at f=1 the thumb sits flush at 283..295 in a 295px track and the travel overhang is 0, where the
+old rule gave +283. ⚑ This exact bug was diagnosed and fixed on 2026-07-23 — and the fix was written as
+`.ta-ival > .ta-track-travel`, scoped to the dual-thumb IntervalSlider it was found on. The single-thumb
+track it had been copied from kept the bug for another month. The container-query form now lives on
+`.ta-track` itself and the `.ta-ival` override is deleted, so there is one spelling of it.
+
+**Studio look and Realistic are gone, with their code.** Studio was a checkbox over two complete render
+paths: a plain rig (`RIGS[flavor].plain`), an unlit `FRAG_PLAIN` for the tiling sphere, a `setStudio`
+re-dial on the rig, a `studio` boolean threaded through `installLookRig`, `applyStudioMaterials`, the
+thumbnail stage and six components, and a rebuild dependency in four effects. Realistic was a whole second
+sphere: `sphericalCarvedMaterial.ts` (deleted), a 512x256 tessellation that existed only so its vertex
+displacement would resolve, the `stone` material role, and a `relief` path in `sphericalIslamicFill.ts`
+with `reliefHeight`, `pointSegDist2` and a flat-shaded material branch. Both are deleted outright rather
+than defaulted-on-and-hidden, which is the version of this that leaves the second path alive.
+
+**Polyhedron is the default now**, and that let the two shape fields collapse. `sphericalPolyhedron` and
+`sphericalFreedrawMode` were kept apart precisely because their defaults differed — the tiling sphere
+opened round, the boards opened as facets. With both opening as facets the second field says nothing the
+first does not, so `_play-client` derives the `IcoMode` the canvases take from the one flag. The sphere
+half of the toggle was already withheld for the solids with no circumsphere (`hasSphereView`) and stays so.
+
+**The Islamic conflict is resolved by the control instead of by a paragraph.** The construction is drawn on
+the circumsphere as great-circle ribbons and has no flat-solid form. That used to be handled by DISABLING
+the shape toggle and printing an explanation of why it was disabled; it is now simply not offered while the
+solid is showing, and switching to the solid turns it off. The gesture note ("drag to rotate the solid
+freely...") moved to the end of the block, since it describes the canvas and not the control it sat under.
+
+Verified in the running app with Playwright: no element in the sidebar has horizontal overflow at any face
+opacity, the dodecahedron opens as a flat solid, Islamic appears on the sphere and not on the solid, and
+`sph-bilunabirotunda` (no circumsphere) offers no shape toggle at all. `pnpm build` clean, `pnpm test`
+2,819 passing. Net **-371 lines** measured over the files this pass owns outright (the deleted carved
+material is 141 of them); the six it shares with another session's concurrent spherical work are all
+negative too but cannot be attributed cleanly, and are worth roughly another -120.

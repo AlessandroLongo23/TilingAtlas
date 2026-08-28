@@ -35,6 +35,7 @@ import { useSymmetryData } from "@/lib/hooks/useSymmetryData";
 import { useVertexOrbits } from "@/lib/hooks/useVertexOrbits";
 import { buildTilingSpec } from "@/lib/services/tilingSpec";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
+import type { IcoMode } from "@/lib/render/icoFreedraw";
 import {
 	loadAtlasManifest,
 	unloadedTiers,
@@ -42,7 +43,7 @@ import {
 	type TierShelf,
 	type UnloadedTier,
 } from "@/lib/services/atlasManifest";
-import { canCaptureImage, lensAppliesTo, surfaceOf } from "@/lib/services/shelfRegistry";
+import { canCaptureImage, isSphereSurface, lensAppliesTo, surfaceOf } from "@/lib/services/shelfRegistry";
 import { useExportImage } from "@/stores/exportImage";
 import {
 	loadComposableAtlasShard,
@@ -1293,10 +1294,13 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				c.set({ freedrawScaffold: !c.freedrawScaffold });
 				return;
 			}
-			if (!!selected?.spherical && (e.key === "w" || e.key === "W" || e.key === "b" || e.key === "B")) {
+			// W / B on any three.js spherical shelf: the faces off and back on. It used to flip the
+			// Fill/Wireframe toggle, which is now the two ends of the opacity slider — so the key drives the
+			// slider's ends and any value the visitor dialled in between counts as "on".
+			if (isSphereSurface(surfaceOf(selected)) && (e.key === "w" || e.key === "W" || e.key === "b" || e.key === "B")) {
 				e.preventDefault();
 				const c = useConfiguration.getState();
-				c.set({ sphericalWireframe: !c.sphericalWireframe });
+				c.set({ sphericalFaceOpacity: c.sphericalFaceOpacity > 0 ? 0 : 1 });
 				return;
 			}
 			if (e.key === "r" || e.key === "R") {
@@ -1350,8 +1354,9 @@ export function PlayClient({ tilings }: PlayClientProps) {
 
 	// Inversive (experimental) view: a WebGL overlay renders the same cell through a conformal map.
 	const inversive = useConfiguration((s) => s.inversive);
-	// Spherical-freedraw Display controls (View options tab): mode = polyhedron/sphere, grid = faint edge grid.
-	const sphericalFreedrawMode = useConfiguration((s) => s.sphericalFreedrawMode);
+	// Spherical Display controls (View options tab): shape = polyhedron/sphere, grid = faint edge grid. The
+	// shape is one store flag for every spherical shelf, spelled here as the IcoMode these canvases take.
+	const sphericalShape: IcoMode = useConfiguration((s) => (s.sphericalPolyhedron ? "polyhedron" : "sphere"));
 	const sphericalFreedrawGrid = useConfiguration((s) => s.sphericalFreedrawGrid);
 	const sphStarEdges = useConfiguration((s) => s.sphStarEdges);
 	// The Tiles overlay and its knobs. On a plain tiling these drive the Truchet reading below; on a
@@ -1552,7 +1557,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					selected.schwarz.geometry === "spherical" ? (
 						<SphSchwarzCanvas
 							pattern={selected.schwarz}
-							mode={sphericalFreedrawMode}
+							mode={sphericalShape}
 							showGrid={sphericalFreedrawGrid}
 						/>
 					) : (
@@ -1585,22 +1590,22 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					// three.js canvas. Those boards mix face sizes, which the adapter never assumed away.
 					<SphSchwarzCanvas
 						pattern={selected.sphEdges}
-						mode={sphericalFreedrawMode}
+						mode={sphericalShape}
 						showGrid={sphericalFreedrawGrid}
 					/>
 				) : selected?.sphPoly ? (
 					// A 3.4.n.4 tiling on the sphere: its own solid, faces filled by polygon size, every edge a
 					// boundary. Same three.js canvas as every other spherical Čtrnáct shelf.
-					<SphPolyCanvas pattern={selected.sphPoly} mode={sphericalFreedrawMode} showGrid={sphericalFreedrawGrid} />
+					<SphPolyCanvas pattern={selected.sphPoly} mode={sphericalShape} showGrid={sphericalFreedrawGrid} />
 				) : selected?.sphStar ? (
-					// A STAR polyhedron. Same three.js canvas again, and it follows `sphericalFreedrawMode`
+					// A STAR polyhedron. Same three.js canvas again, and it follows `sphericalShape`
 					// like the shelves above it — but sphere mode means something different here. Its faces
 					// overlap on the circumsphere by construction, that being what density means, so there is
 					// no spherical tiling to draw; the sphere view draws the COVERING instead, shading each
 					// direction by how many sheets lie over it (lib/render/sphStar.ts, sph-star-canvas.tsx).
 					<SphStarCanvas
 						pattern={selected.sphStar}
-						mode={sphericalFreedrawMode}
+						mode={sphericalShape}
 						showGrid={sphericalFreedrawGrid}
 						edges={sphStarEdges}
 					/>
@@ -1619,7 +1624,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					<IcoFreedrawCanvas
 						pattern={selected.sphericalFreedraw.pattern}
 						solidId={selected.sphericalFreedraw.solid}
-						mode={sphericalFreedrawMode}
+						mode={sphericalShape}
 						showGrid={sphericalFreedrawGrid}
 					/>
 				) : selected?.freedraw ? (
@@ -1635,7 +1640,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					// Spherical colored tiling: an n-coloring of a Platonic solid on its own three.js canvas with
 					// ArcballControls, the exact sibling of the ico-freedraw sphere. Mode (polyhedron/sphere) comes
 					// from the View options tab; it owns its own pointer input.
-					<SphericalColorsCanvas pattern={selected.sphColors.pattern} mode={sphericalFreedrawMode} />
+					<SphericalColorsCanvas pattern={selected.sphColors.pattern} mode={sphericalShape} />
 				) : selected?.hypColors ? (
 					// Hyperbolic colored tiling: an n-coloring of a {p,q} tiling, the per-pixel disk shader in colors
 					// mode — fills to the rim, infinite drift-free pan, GPU, exactly like the edge systems.

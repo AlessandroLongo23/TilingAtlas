@@ -27,7 +27,6 @@ export function SphericalColorsThumbnail({ pattern, mode, size = 256 }: Props) {
 	const [readyKey, setReadyKey] = useState<string | null>(null);
 	const [failed, setFailed] = useState(false);
 	const palette = useConfiguration((s) => s.colorsPalette);
-	const studio = useConfiguration((s) => s.sphericalStudio);
 	const specKey = `${pattern.id}-${mode}-${palette.join(",")}`;
 	const ready = readyKey === specKey;
 
@@ -37,7 +36,6 @@ export function SphericalColorsThumbnail({ pattern, mode, size = 256 }: Props) {
 		return mountSpinningThumb({
 			canvas,
 			flavor: "catalogue",
-			studio,
 			phase: thumbPhase(specKey),
 			build: () => {
 				const dark = document.documentElement.classList.contains("dark");
@@ -49,14 +47,14 @@ export function SphericalColorsThumbnail({ pattern, mode, size = 256 }: Props) {
 					paletteRgb255(pattern.colors, palette, dark),
 					{ dark, mode },
 				);
-				applyStudioMaterials(content.object, studio);
+				applyStudioMaterials(content.object);
 				return { object: content.object, dispose: content.dispose };
 			},
 			onReady: () => setReadyKey(specKey),
 			onFail: () => setFailed(true),
 		});
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [specKey, size, studio]);
+	}, [specKey, size]);
 
 	if (failed) {
 		return (

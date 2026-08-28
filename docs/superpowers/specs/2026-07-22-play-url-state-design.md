@@ -76,12 +76,11 @@ Keys are prefixed by group: bare for global, `i*` Islamic, `s*` spherical, `v*` 
 | `irays` | `islamicIntersectionCount` | int 1–3 | 1 |
 | `ianim` | `islamicAnimate` | bool | `false` |
 | `swire` | `sphericalWireframe` | bool | `false` |
-| `sreal` | `sphericalRealistic` | bool | `false` |
 | `ssec` | `sphericalWireSection` | enum `tube` \| `rect` | `tube` |
 | `sthk` | `sphericalWireThickness` | num 0.005–0.15 | 0.025 |
 | `shgt` | `sphericalWireHeight` | num 0.005–0.15 | 0.025 |
 | `sbev` | `sphericalWireBevel` | num 0–1 | 0.25 |
-| `spoly` | `sphericalPolyhedron` | bool | `false` |
+| `spoly` | `sphericalPolyhedron` | bool | `true` |
 | `sortho` | `sphericalOrthographic` | bool | `false` |
 | `sweave` | `sphericalWeaveFlat` | bool | `false` |
 | `v` | `inversive` | bool | `false` |

@@ -20,9 +20,13 @@ import {
 	type V3,
 } from "./icoFreedraw";
 import { buildTubeSkeleton } from "./sphericalWireframe";
+import { markOccluder, type EdgeOcclusionUniforms } from "./edgeOcclusion";
+import { makeTriangleSorter } from "./depthSort";
 
 export interface SphColorsScene {
 	object: THREE.Group;
+	/** Back-to-front the facets for this camera. Call once per frame; a no-op while the faces are opaque. */
+	depthSort: (camera: THREE.Camera) => void;
 	dispose: () => void;
 }
 
@@ -31,6 +35,10 @@ export interface SphColorsOptions {
 	radius?: number;
 	dark?: boolean;
 	edgeThickness?: number;
+	/** Face opacity, 0..1 — below 1 the colouring's far side shows through the near one. */
+	faceOpacity?: number;
+	/** Per-pixel hidden-edge test for the bars; see lib/render/edgeOcclusion.ts. */
+	occlude?: EdgeOcclusionUniforms;
 }
 
 /**
@@ -78,9 +86,25 @@ export function buildSphColors(
 	geom.setAttribute("position", new THREE.BufferAttribute(new Float32Array(positions), 3));
 	geom.setAttribute("normal", new THREE.BufferAttribute(new Float32Array(normals), 3));
 	geom.setAttribute("color", new THREE.BufferAttribute(new Float32Array(colors), 3));
-	const facetMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0.0, side: THREE.DoubleSide });
+	// See-through faces stop writing depth, so their blend order becomes buffer order and a far facet paints
+	// over a near one; makeTriangleSorter puts them back-to-front per frame (lib/render/depthSort.ts).
+	const opacity = Math.min(Math.max(opts.faceOpacity ?? 1, 0), 1);
+	const facetMat = new THREE.MeshStandardMaterial({
+		vertexColors: true,
+		roughness: 0.85,
+		metalness: 0.0,
+		side: THREE.DoubleSide,
+		transparent: opacity < 1,
+		opacity,
+		depthWrite: opacity >= 1,
+	});
+	const sorter = makeTriangleSorter(geom);
+	sorter.enabled = opacity < 1;
 	const facetMesh = new THREE.Mesh(geom, facetMat);
+	facetMesh.visible = opacity > 0;
 	group.add(facetMesh);
+	// The faces, and only the faces, are what the hidden-edge prepass renders.
+	markOccluder(facetMesh);
 	disposers.push(() => {
 		geom.dispose();
 		facetMat.dispose();
@@ -95,7 +119,8 @@ export function buildSphColors(
 			section: "tube",
 			thickness: thickness * 0.7,
 			color: edgeColor,
-			union: false,
+			occlude: opts.occlude,
+			joints: true,
 		});
 		group.add(tubes.object);
 		disposers.push(() => tubes.dispose());
@@ -103,6 +128,7 @@ export function buildSphColors(
 
 	return {
 		object: group,
+		depthSort: sorter.sort,
 		dispose: () => disposers.forEach((d) => d()),
 	};
 }

@@ -5,6 +5,7 @@
 // dot, which fixes a constant angular edge width across solids). No three.js here — these are pure and
 // unit-tested like lib/render/hyperbolic.ts.
 
+import { polyhedronAsStarPattern, ringTurning, sphStarScene, starFaceRings, type Crease } from "./sphStar";
 import type { Polyhedron, Vec3 } from "./platonicSolids";
 
 function normalize(a: Vec3): Vec3 {
@@ -112,64 +113,6 @@ export function classifyFace(dir: Vec3, normals: Vec3[]): number {
 	return idx;
 }
 
-// A great-circle arc between two unit directions (slerp), sampled into `segments + 1` points on the sphere
-// of the given radius, flattened xyz. `extend` (radians) grows the arc PAST both endpoints along the great
-// circle — the wireframe uses it so adjacent bars overlap at a vertex and fill the joint (no sphere caps).
-function greatCircleArc(u: Vec3, v: Vec3, segments: number, radius: number, extend = 0): Float32Array {
-	const out = new Float32Array((segments + 1) * 3);
-	const omega = Math.acos(Math.max(-1, Math.min(1, dot(u, v))));
-	const sinOmega = Math.sin(omega);
-	const span = omega + 2 * extend;
-	for (let i = 0; i <= segments; i++) {
-		const theta = -extend + (i / segments) * span; // angle from u toward v, extended at both ends
-		let x: number, y: number, z: number;
-		if (sinOmega < 1e-6) {
-			const t = theta / (omega || 1);
-			x = u[0] + (v[0] - u[0]) * t;
-			y = u[1] + (v[1] - u[1]) * t;
-			z = u[2] + (v[2] - u[2]) * t;
-		} else {
-			const wa = Math.sin(omega - theta) / sinOmega;
-			const wb = Math.sin(theta) / sinOmega;
-			x = u[0] * wa + v[0] * wb;
-			y = u[1] * wa + v[1] * wb;
-			z = u[2] * wa + v[2] * wb;
-		}
-		const p = normalize([x, y, z]);
-		out[i * 3] = p[0] * radius;
-		out[i * 3 + 1] = p[1] * radius;
-		out[i * 3 + 2] = p[2] * radius;
-	}
-	return out;
-}
-
-// One great-circle polyline per UNIQUE polyhedron edge (each shared by two faces, deduped). `extend`
-// (radians) overshoots each end so wireframe bars overlap into a filled joint at every vertex.
-export function edgeArcs(poly: Polyhedron, segments = 28, radius = 1, extend = 0): Float32Array[] {
-	const unit = poly.vertices.map(normalize);
-	const seen = new Set<string>();
-	const arcs: Float32Array[] = [];
-	for (const face of poly.faces) {
-		for (let k = 0; k < face.length; k++) {
-			const a = face[k];
-			const b = face[(k + 1) % face.length];
-			const key = a < b ? `${a}-${b}` : `${b}-${a}`;
-			if (seen.has(key)) continue;
-			seen.add(key);
-			arcs.push(greatCircleArc(unit[a], unit[b], segments, radius, extend));
-		}
-	}
-	return arcs;
-}
-
-// The polyhedron vertices on the sphere (for wireframe joint caps).
-export function vertexPoints(poly: Polyhedron, radius = 1): Vec3[] {
-	return poly.vertices.map((v) => {
-		const n = normalize(v);
-		return [n[0] * radius, n[1] * radius, n[2] * radius];
-	});
-}
-
 // FIT, DO NOT INFLATE. The polyhedron views scale the solid to `radius` by ONE factor for the whole
 // solid — the largest vertex radius — so the shape survives.
 //
@@ -242,15 +185,29 @@ export function coplanarFaceLayers(poly: Polyhedron, unit: readonly Vec3[]): num
 	});
 }
 
+
 // The TRUE flat facets of the solid (not the round sphere) as a non-indexed triangle soup — one fan per
-// face, ready to hand to a flat-shaded BufferGeometry. Fan triangulation (v0,vk,vk+1) is valid because
-// every face is a convex regular polygon. `positions` is the flattened xyz (9 floats per triangle);
+// face, ready to hand to a flat-shaded BufferGeometry.
+//
+// ⚑ THE FAN ORIGIN IS NOT ALWAYS v0. Fan triangulation (v0,vk,vk+1) is valid because every CONVEX face
+// is covered by it, and a {n/d} star face is not: a pentagram fanned from v0 gives v0-v2-v4, v0-v4-v1,
+// v0-v1-v3, which is a jagged blade and not the star. A star face is decomposed into CONVEX rings first
+// — starFaceRings, the same function the star shelf has used since 2026-08-19 — and each ring is fanned.
+// Convex faces take the untouched v0 fan and render byte-identically.
+//
+// `positions` is the flattened xyz (9 floats per triangle);
 // `faceSizes[t]` is the source face's vertex count for triangle t, so the mesh builder can colour by
 // polygon size; `triLayers[t]` is its face's coplanar layer (see coplanarFaceLayers), which is 0 for
 // every triangle of every solid that has no two faces in one plane.
 export function flatSolidTriangles(poly: Polyhedron, radius = 1): { positions: Float32Array; faceSizes: number[]; triLayers: number[] } {
-	const unit = solidFitScale(poly, radius);
-	const triCount = poly.faces.reduce((sum, f) => sum + (f.length - 2), 0);
+	// starFaceRings APPENDS the crossing-ring points it needs, so the scaled copy has to be extendable.
+	const unit: Vec3[] = [...solidFitScale(poly, radius)];
+	// One entry per source face: the convex rings that fill it. d = 1 gives back the face itself.
+	const fill = poly.faces.map((f) => {
+		const d = ringTurning(unit, f);
+		return d > 1 ? (starFaceRings(f, d, unit as never) as number[][]) : [f];
+	});
+	const triCount = fill.reduce((sum, rings) => sum + rings.reduce((n, r) => n + r.length - 2, 0), 0);
 	const positions = new Float32Array(triCount * 9);
 	const faceSizes: number[] = new Array(triCount);
 	const triLayers: number[] = new Array(triCount);
@@ -258,7 +215,8 @@ export function flatSolidTriangles(poly: Polyhedron, radius = 1): { positions: F
 	let p = 0;
 	let t = 0;
 	for (let fi = 0; fi < poly.faces.length; fi++) {
-		const f = poly.faces[fi];
+		const srcLen = poly.faces[fi].length;
+		for (const f of fill[fi]) {
 		const a = unit[f[0]];
 		for (let k = 1; k < f.length - 1; k++) {
 			let b = unit[f[k]];
@@ -278,7 +236,10 @@ export function flatSolidTriangles(poly: Polyhedron, radius = 1): { positions: F
 			positions[p++] = b[0]; positions[p++] = b[1]; positions[p++] = b[2];
 			positions[p++] = c[0]; positions[p++] = c[1]; positions[p++] = c[2];
 			triLayers[t] = faceLayers[fi];
-			faceSizes[t++] = f.length;
+			// The SOURCE face's size, not the ring's: hue is per polygon, and a star face's fill rings
+			// are a core n-gon plus n triangles that must not colour as triangles.
+			faceSizes[t++] = srcLen;
+		}
 		}
 	}
 	return { positions, faceSizes, triLayers };
@@ -292,6 +253,44 @@ export function flatSolidTriangles(poly: Polyhedron, radius = 1): { positions: F
 //
 // Uses the same whole-solid fit as the facets, so the tubes land ON the edges they are drawing. When this
 // normalised per vertex and the facets did too they at least agreed; the pair has to move together.
+/**
+ * The CREASES: where two faces of the solid cut through one another.
+ *
+ * ⚑ These are not edges and the record cannot carry them — `edges` is the polyhedron's own edge list and
+ * V, E, F have to keep meaning what they say. They are a real feature of the surface all the same, and a
+ * solid that passes through itself reads as unbroken without them (Marek Čtrnáct found them missing on
+ * the pentagrammic prism, 2026-08-19).
+ *
+ * All of the work is sphStar.ts's, unchanged: the star shelf has drawn exactly this since then. The only
+ * new part is `polyhedronAsStarPattern`, because `Polyhedron` carries no faceType and no edge list. It
+ * matters for far more than the star records — 167 of the 302 solids on the non-convex shelf
+ * self-intersect, including convex-faced ones like ncx-7-15-10, and none of them had a crease drawn.
+ *
+ * The creases come back WHOLE (with each face's outward normal), already scaled to `radius`, because they
+ * are drawn as in-plane ribbons and not as tubes: a tube round a crease bulges a full radius out of both
+ * face planes and surfaces through the neighbours as needles. See buildCreaseRibbons in
+ * lib/render/sphericalWireframe.ts, which is where they go.
+ */
+export function solidCreaseList(poly: Polyhedron, radius = 1): Crease[] {
+	return sphStarScene(
+		polyhedronAsStarPattern({ id: poly.id, vertices: solidFitScale(poly, radius), faces: poly.faces }),
+	).crossings;
+}
+
+/** The creases as straight 2-point segments, the same form `straightEdges` returns, ready for the same
+ *  tube builder. `radius` scales them; `solidCreaseList` has already scaled its own, so pass 1 for those. */
+export function creaseChords(creases: readonly Crease[], radius = 1, extend = 0): Float32Array[] {
+	return creases.map(({ a, b }) => {
+		const A: Vec3 = [a[0] * radius, a[1] * radius, a[2] * radius];
+		const B: Vec3 = [b[0] * radius, b[1] * radius, b[2] * radius];
+		const d = normalize([B[0] - A[0], B[1] - A[1], B[2] - A[2]]);
+		return new Float32Array([
+			A[0] - d[0] * extend, A[1] - d[1] * extend, A[2] - d[2] * extend,
+			B[0] + d[0] * extend, B[1] + d[1] * extend, B[2] + d[2] * extend,
+		]);
+	});
+}
+
 export function straightEdges(poly: Polyhedron, radius = 1, extend = 0): Float32Array[] {
 	const unit = solidFitScale(poly, radius);
 	return solidEdges(poly).map(([a, b]) => {

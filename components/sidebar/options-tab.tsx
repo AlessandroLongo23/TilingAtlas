@@ -157,23 +157,18 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 	// they are one kind of view and the three separate blocks had drifted into three vocabularies for the
 	// same choices (AL, 2026-08-21).
 	const isAnySpherical = isSpherical || isSphericalFreedraw || isSphColors;
-	// SHAPE: the round circumsphere, or the flat-faced solid.
-	//
-	// One control, two store fields, and the second field is not an oversight. Their DEFAULTS differ and
-	// both are deliberate: the tiling sphere opens round, because the tiling on the sphere is the point,
-	// while the boards and the star polyhedra open as flat facets, because that is the figure everyone
-	// recognises and on a star polyhedron the round view is a density map, not a tiling. Collapsing to one
-	// field would have to throw one of those away.
-	const shapeIsSphere = isSpherical ? !cfg.sphericalPolyhedron : cfg.sphericalFreedrawMode === "sphere";
-	const setShape = (v: string) =>
-		isSpherical
-			? setCfg({ sphericalPolyhedron: v === "polyhedron" })
-			: setCfg({ sphericalFreedrawMode: v === "sphere" ? "sphere" : "polyhedron" });
+	// SHAPE: the round circumsphere, or the flat-faced solid. ONE store field for every spherical shelf.
+	// It used to be two, one for the tiling sphere and one for the boards, kept apart so their defaults
+	// could differ — the sphere opened round, the boards opened as facets. Both open as facets now (AL,
+	// 2026-08-25), so the second field was saying nothing the first did not.
+	const shapeIsSphere = !cfg.sphericalPolyhedron;
 	// The Islamic construction is drawn on the CIRCUMSPHERE, as great-circle ribbons: spherical-canvas.tsx
-	// hands back no base surface for it, and the flat solid never enters the picture. So while it is on,
-	// Shape and Realistic describe nothing. They stay visible and go inert, with the reason attached —
-	// silently ignoring a control the visitor can still click is how this was found (AL, 2026-08-21).
-	const islamicLocksShape = isSpherical && cfg.isIslamic;
+	// hands back no base surface for it, and the flat solid never enters the picture. So it is offered on
+	// the sphere and nowhere else, and switching to the solid turns it off — that is the honest resolution
+	// of a control that cannot describe the shape now on screen. This replaced a disabled Shape toggle with
+	// a paragraph explaining why it was disabled, which is a worse way to say the same thing.
+	const setShape = (v: string) =>
+		setCfg(v === "polyhedron" ? { sphericalPolyhedron: true, isIslamic: false } : { sphericalPolyhedron: false });
 	const isHyperbolicDisk = isDiskSurface(surface);
 	// One picker per color of the SELECTED pattern (2 to 4 today), read off the record, not the
 	// palette — the store keeps a full-width palette so switching between a 2- and a 3-color tiling
@@ -220,6 +215,10 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 	// the previous selection cannot decorate the squaring behind a hidden control.
 	const squaringOn = cfg.squaring && squaringAvailability(selected).ok;
 	const sourceControls = !squaringOn;
+	// Where the Islamic controls belong: every surface that supports the construction, except the tiling
+	// sphere while it is showing the flat solid — see setShape above for why the sphere is the only place
+	// the spherical construction exists.
+	const islamicAvailable = islamicSupported && sourceControls && (!isSpherical || shapeIsSphere);
 	// Where the basis pad belongs. deformApplies() answers the MODE question (which renderer is painting);
 	// the surface question is separate — hyperbolic and spherical shelves have no plane to deform, and the
 	// freedraw/colors boards run their own cameras.
@@ -472,9 +471,9 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							) : null}
 						</div>
 					) : null}
-					{/* The global fill flag. Hidden in spherical — there the Fill/Wireframe pair (below) is the
-					    view's own mutually-exclusive fill control, driven by sphericalWireframe. */}
-					{!isSpherical && !isFreedraw && !isSphericalFreedraw && !isColors && !isSphColors ? (
+					{/* The global fill flag. Hidden on every three.js spherical shelf — there the Opacity slider
+					    (below) is the view's own fill control, and it says more than a checkbox can. */}
+					{!isAnySpherical && !isFreedraw && !isColors ? (
 						<Checkbox
 							id="showPolygonFill"
 							label="Polygon fill"
@@ -716,7 +715,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							onCheckedChange={(v) => setCfg({ circlePacking: v })}
 						/>
 					) : null} */}
-					{isIslamicClass && sourceControls && !cfg.isIslamic ? (
+					{isIslamicClass && islamicAvailable && !cfg.isIslamic ? (
 						<button
 							type="button"
 							onClick={() => setCfg({ isIslamic: true })}
@@ -726,7 +725,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							<span className="text-fg">Islamic construction</span> <Kbd>I</Kbd> to reveal the star pattern.
 						</button>
 					) : null}
-					{islamicSupported && sourceControls ? (
+					{islamicAvailable ? (
 						<Checkbox
 							id="isIslamic"
 							label="Islamic"
@@ -735,7 +734,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							onCheckedChange={(v) => setCfg({ isIslamic: v })}
 						/>
 					) : null}
-					{islamicSupported && sourceControls ? (
+					{islamicAvailable ? (
 						<Reveal show={cfg.isIslamic}>
 						<div className="space-y-2 pl-7">
 							{isSpherical ? (
@@ -850,8 +849,77 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 									/>
 								</div>
 							</Reveal>
-							{/* Solid 3D ribbons (Interlace + Wireframe): woven over/under relief, or flat coplanar bands. */}
-							<Reveal show={isSpherical && cfg.islamicStyle === "interlace" && cfg.sphericalWireframe}>
+							{/* RIGID construction lines: the star lines as real 3D bars instead of flat surface
+							    ribbons, shaped by the Section / Thickness / Height / Bevel below. This used to ride
+							    on the spherical Fill/Wireframe toggle, so choosing rigid lines meant giving up the
+							    filled cells and vice versa — a coupling nobody chose and the toggle's removal
+							    (2026-08-25) had no reason to keep. */}
+							<Reveal show={isSpherical}>
+								<div className="space-y-2">
+									<Checkbox
+										id="islamicRigid"
+										label="Rigid lines"
+										checked={cfg.islamicRigid}
+										onCheckedChange={(v) => setCfg({ islamicRigid: v })}
+									/>
+									<Reveal show={cfg.islamicRigid}>
+										<div className="space-y-2 pl-7">
+											<span className="text-[11px] text-fg-muted">Section</span>
+											<div className="flex gap-2">
+												<Button
+													variant={cfg.islamicBarSection === "tube" ? "primary" : "secondary"}
+													size="sm"
+													classes="flex-1"
+													onClick={() => setCfg({ islamicBarSection: "tube" })}
+												>
+													Tube
+												</Button>
+												<Button
+													variant={cfg.islamicBarSection === "rect" ? "primary" : "secondary"}
+													size="sm"
+													classes="flex-1"
+													onClick={() => setCfg({ islamicBarSection: "rect" })}
+												>
+													Rectangle
+												</Button>
+											</div>
+											<Slider
+												id="islamicBarThickness"
+												label="Thickness"
+												value={cfg.islamicBarThickness}
+												onChange={(v) => setCfg({ islamicBarThickness: v })}
+												min={0.005}
+												max={0.15}
+												step={0.005}
+											/>
+											<Reveal show={cfg.islamicBarSection === "rect"}>
+												<div className="space-y-2">
+													<Slider
+														id="islamicBarHeight"
+														label="Height"
+														value={cfg.islamicBarHeight}
+														onChange={(v) => setCfg({ islamicBarHeight: v })}
+														min={0.005}
+														max={0.15}
+														step={0.005}
+													/>
+													<Slider
+														id="islamicBarBevel"
+														label="Bevel"
+														value={cfg.islamicBarBevel}
+														onChange={(v) => setCfg({ islamicBarBevel: v })}
+														min={0}
+														max={1}
+														step={0.05}
+													/>
+												</div>
+											</Reveal>
+										</div>
+									</Reveal>
+								</div>
+							</Reveal>
+							{/* Solid 3D ribbons (Interlace + Rigid): woven over/under relief, or flat coplanar bands. */}
+							<Reveal show={isSpherical && cfg.islamicStyle === "interlace" && cfg.islamicRigid}>
 								<div className="space-y-2">
 									<span className="text-[11px] text-fg-muted">Ribbons</span>
 									<div className="flex gap-2">
@@ -1014,14 +1082,14 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 					    here; a control that belongs to one shelf says which, and why. */}
 					{isAnySpherical ? (
 						<div className="space-y-2">
-							<p className="text-[11px] text-fg-muted leading-relaxed">
-								Drag to rotate the solid freely in any direction (no poles, so every symmetry is
-								reachable). Scroll to zoom.
-							</p>
 							{/* SHAPE. Hidden for a solid with NO CIRCUMSPHERE, where the canvas forces the flat view:
 							    the round one is the solid radially projected onto its circumsphere, and without one
 							    that projection moves every vertex a different distance and shows a different object
 							    (AL saw J31 come out as a blob, 2026-08-21). lib/tilings/sph-inscribed.ts decides. */}
+							{/* ⚑ Hidden for a SPHERICAL BUBBLE too, and for a different reason: not that the
+							    sides are arcs, crenels or jigsaw tabs, so there is no flat-faced polyhedron whose
+							    faces these are, and the canvas ignores the field rather than reading it (AL,
+							    2026-08-27). */}
 							<Reveal show={sphereViewAvailable}>
 								<Toggle
 									id="sphericalShape"
@@ -1029,123 +1097,22 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 									rightValue="polyhedron"
 									value={shapeIsSphere ? "sphere" : "polyhedron"}
 									onChange={setShape}
-									disabled={islamicLocksShape}
 								/>
 							</Reveal>
-							{islamicLocksShape ? (
-								<p className="text-[11px] text-fg-muted leading-relaxed">
-									The construction is drawn on the circumsphere, as great-circle ribbons, so there is no
-									flat solid to put it on.
-								</p>
-							) : null}
-							{/* Fill vs Wireframe, and the Realistic surface under it. The tiling sphere only: Fill is
-							    a solid sphere or flat polyhedron, Wireframe a hollow tube skeleton, and Realistic is
-							    a shader written for the tiling sphere (lib/render/sphericalCarvedMaterial.ts) with no
-							    counterpart for an arbitrary board. */}
-							{isSpherical ? (
-								<>
-									<Toggle
-										id="sphericalFillMode"
-										leftValue="fill"
-										rightValue="wireframe"
-										value={cfg.sphericalWireframe ? "wireframe" : "fill"}
-										onChange={(v) => setCfg({ sphericalWireframe: v === "wireframe" })}
-									/>
-									{/* Realistic shades the round sphere as if the tiling lines were CARVED into it:
-									    faces raised, edges sunk into a smooth SDF groove, lit as matte stone. There is
-									    nothing to carve on the wireframe, on the flat solid, or under the Islamic
-									    construction, which replaces the base surface entirely. */}
-									<Reveal show={!cfg.sphericalWireframe && shapeIsSphere}>
-										<div className="pl-7">
-											<Checkbox
-												id="sphericalRealistic"
-												label="Realistic"
-												checked={cfg.sphericalRealistic}
-												onCheckedChange={(v) => setCfg({ sphericalRealistic: v })}
-												disabled={islamicLocksShape}
-												hint={
-													islamicLocksShape ? (
-														<InfoDot>
-															The Islamic construction replaces the base surface with its own ribbons,
-															so there is no sphere left to carve.
-														</InfoDot>
-													) : undefined
-												}
-											/>
-										</div>
-									</Reveal>
-									<Reveal show={cfg.sphericalWireframe}>
-										<div className="space-y-2 pl-7">
-											<span className="text-[11px] text-fg-muted">Section</span>
-											<div className="flex gap-2">
-												<Button
-													variant={cfg.sphericalWireSection === "tube" ? "primary" : "secondary"}
-													size="sm"
-													classes="flex-1"
-													onClick={() => setCfg({ sphericalWireSection: "tube" })}
-												>
-													Tube
-												</Button>
-												<Button
-													variant={cfg.sphericalWireSection === "rect" ? "primary" : "secondary"}
-													size="sm"
-													classes="flex-1"
-													onClick={() => setCfg({ sphericalWireSection: "rect" })}
-												>
-													Rectangle
-												</Button>
-											</div>
-											<Slider
-												id="sphericalWireThickness"
-												label="Thickness"
-												value={cfg.sphericalWireThickness}
-												onChange={(v) => setCfg({ sphericalWireThickness: v })}
-												min={0.005}
-												max={0.15}
-												step={0.005}
-											/>
-											<Reveal show={cfg.sphericalWireSection === "rect"}>
-												<div className="space-y-2">
-													<Slider
-														id="sphericalWireHeight"
-														label="Height"
-														value={cfg.sphericalWireHeight}
-														onChange={(v) => setCfg({ sphericalWireHeight: v })}
-														min={0.005}
-														max={0.15}
-														step={0.005}
-													/>
-													<Slider
-														id="sphericalWireBevel"
-														label="Bevel"
-														value={cfg.sphericalWireBevel}
-														onChange={(v) => setCfg({ sphericalWireBevel: v })}
-														min={0}
-														max={1}
-														step={0.05}
-													/>
-												</div>
-											</Reveal>
-										</div>
-									</Reveal>
-								</>
-							) : null}
-							{/* Studio look: the shared surface treatment for every spherical 3D view — an image-based
-							    environment, reflective materials and a key/fill/rim rig, with the round tiling sphere
-							    shaded inside its own shader. Off returns the plain diagram look. One flag, so the
-							    solid, its thumbnails and the other spherical shelves all change together.
-							    See lib/render/sphericalLook.ts. */}
-							<Checkbox
-								id="sphericalStudio"
-								label="Studio look"
-								checked={cfg.sphericalStudio}
-								onCheckedChange={(v) => setCfg({ sphericalStudio: v })}
-								hint={
-									<InfoDot>
-										Lights the solid from a room instead of two lamps, and gives its surfaces a sheen.
-										Off draws the flat diagram look.
-									</InfoDot>
-								}
+							{/* FACE OPACITY, every spherical shelf. This replaced a Fill/Wireframe toggle (AL,
+							    2026-08-25), which was this same choice with two values and no way to say anything
+							    between them: at 1 the solid is opaque, at 0 only the edge bars are left, and in
+							    between you read a solid of density 13 or genus 3 from the inside — which is the
+							    whole reason those shelves exist. At 1, and only at 1, the renderers also drop the
+							    parts of a bar the faces cover (lib/render/edgeOcclusion.ts). */}
+							<Slider
+								id="sphericalFaceOpacity"
+								label="Face opacity"
+								value={cfg.sphericalFaceOpacity}
+								onChange={(v) => setCfg({ sphericalFaceOpacity: v })}
+								min={0}
+								max={1}
+								step={0.05}
 							/>
 							{/* Camera projection: perspective (foreshortened) vs orthographic (parallel, the flat
 							    "isometric" solid look). One or the other, so a single toggle. Shared by all three
@@ -1214,6 +1181,12 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 									</div>
 								</div>
 							) : null}
+							{/* The gesture note, last: it explains the CANVAS, not a control, so it belongs after the
+							    controls and not wedged between two of them (AL, 2026-08-25). */}
+							<p className="text-[11px] text-fg-muted leading-relaxed">
+								Drag to rotate the solid freely in any direction (no poles, so every symmetry is
+								reachable). Scroll to zoom.
+							</p>
 						</div>
 					) : null}
 					{lensApplies ? (

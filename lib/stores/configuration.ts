@@ -177,36 +177,34 @@ export interface ConfigurationState {
 	// for the three.js sphere renderer (components/spherical-canvas.tsx), which owns its own pointer input
 	// (ArcballControls free rotation + zoom). While on, the p5 canvas draws nothing (blanked like hyperbolic).
 	spherical: boolean;
-	// Spherical wireframe mode: drop the solid textured sphere and render ONLY the tiling edges as 3D
-	// tubes — a hollow skeleton. `section` picks the cross-section (round tube vs rectangular bar);
-	// `thickness` is the line width (tube radius / bar width along the surface); `height` is the bar's
-	// radial depth (rectangular section only). See components/spherical-canvas.tsx + lib/render/sphericalWireframe.ts.
-	sphericalWireframe: boolean;
-	sphericalWireSection: "tube" | "rect";
-	sphericalWireThickness: number;
-	sphericalWireHeight: number;
-	sphericalWireBevel: number; // rectangular section only: chamfer size as a fraction (0 = sharp corners)
-	// Spherical "realistic" mode: keep the solid textured sphere, but shade it like the tiling lines were
-	// CARVED into the surface — faces raised, edges sunk into a smooth SDF-fillet groove, lit as matte stone.
-	// Driven live from the same edge-distance field the texture baker uses. Solid sphere only (no effect in
-	// wireframe / Islamic modes). See lib/render/sphericalCarvedMaterial.ts.
-	sphericalRealistic: boolean;
-	// The SURFACE LOOK of every spherical 3D view — the round tiling sphere, the flat-faced solid, the
-	// wireframe bars, the Islamic relief, and the freedraw / star / Schwarz / colouring shelves alike.
-	// false = the plain diagram look the Atlas has always drawn (a small light rig, matte materials, an
-	// UNLIT tiling sphere); true = studio (an image-based environment, reflective materials, a key/fill/rim
-	// rig, and analytic shading inside the tiling sphere's own shader). One switch so the two are
-	// comparable side by side. See lib/render/sphericalLook.ts.
-	sphericalStudio: boolean;
-	// Spherical "polyhedron" mode: replace the round tiling sphere with the TRUE flat-faced solid — real
-	// facets, corners and edges — lit by the scene so each face reads as 3D, keeping the per-polygon hue.
-	// Solid Fill only (mutually exclusive with Realistic; no effect in wireframe / Islamic modes).
-	// See lib/render/sphericalPolyhedron.ts.
+	// FACE OPACITY on every three.js spherical view, 0..1. Replaces the old Fill/Wireframe toggle, which
+	// was the same choice with two values: 1 is the opaque solid, 0 leaves the edge bars alone in space, and
+	// the range between is what the toggle could not say — see through the near faces and read a solid of
+	// density 13 or genus 3 from the inside (AL, 2026-08-25). At 1, and only at 1, the renderers also drop
+	// the parts of an edge bar the faces cover, per pixel (lib/render/edgeOcclusion.ts).
+	sphericalFaceOpacity: number;
+	// Islamic construction lines as RIGID 3D bars instead of flat surface ribbons, shaped by the four
+	// `islamicBar*` fields below. This used to ride on the wireframe toggle, which is why the two looks were
+	// mutually exclusive for no reason anyone chose; it is its own switch now.
+	// `islamicBarSection` picks the cross-section (round tube vs rectangular bar); `islamicBarThickness` is
+	// the bar width along the surface; `islamicBarHeight` is its radial depth (rectangular section only).
+	islamicRigid: boolean;
+	islamicBarSection: "tube" | "rect";
+	islamicBarThickness: number;
+	islamicBarHeight: number;
+	islamicBarBevel: number; // rectangular section only: chamfer size as a fraction (0 = sharp corners)
+	// SHAPE, for every three.js spherical view at once — the tiling sphere, the flat-faced solid, and the
+	// freedraw / star / Schwarz / colouring shelves alike. true = the TRUE flat-faced solid (real facets,
+	// corners and edges, each face keeping its own hue); false = the round circumsphere, the solid radially
+	// projected onto it. It defaults to the solid: that is the figure everyone recognises, and on a star
+	// polyhedron the round view is a density map and not a tiling (AL, 2026-08-25). Forced true for a solid
+	// with no circumsphere, and no effect under the Islamic construction, which is drawn on the circumsphere
+	// and nowhere else. See lib/render/sphericalPolyhedron.ts and lib/render/icoFreedraw.ts.
 	sphericalPolyhedron: boolean;
 	// Spherical camera projection: false = perspective (foreshortened, the default), true = orthographic
 	// (parallel projection — no perspective distortion, the "isometric" solid look). See spherical-canvas.tsx.
 	sphericalOrthographic: boolean;
-	// Interlace + Wireframe (solid 3D ribbons): false = the woven over/under relief (ribbons ride out/in at
+	// Interlace + Rigid (solid 3D ribbons): false = the woven over/under relief (ribbons ride out/in at
 	// crossings); true = flat ribbons, still 3D solids but coplanar on the sphere (no over/under undulation).
 	sphericalWeaveFlat: boolean;
 
@@ -300,10 +298,9 @@ export interface ConfigurationState {
 	// it. See lib/colors/render.ts ColorChoice/cellFill.
 	colorsPalette: (number | "cream" | "dark")[];
 
-	// Spherical freedraw (Platonic-solid freedraw on /play): the two Display controls the /freedraw spherical
-	// arm exposes. `mode` swaps the flat-faced polyhedron for the round sphere (curved patches + arc edges);
-	// `grid` draws the solid's full edge grid faintly under the pattern. See components/freedraw/ico-freedraw-canvas.tsx.
-	sphericalFreedrawMode: IcoMode;
+	// Spherical freedraw (Platonic-solid freedraw on /play): draws the solid's full edge grid faintly under
+	// the pattern. The SHAPE it is drawn on is `sphericalPolyhedron` above — one field for every spherical
+	// shelf, since one control sets it. See components/freedraw/ico-freedraw-canvas.tsx.
 	sphericalFreedrawGrid: boolean;
 	// Star polyhedra only: how much of the edge ink to draw. Three states, because a star polyhedron has
 	// two KINDS of line and they answer different questions (AL, 2026-08-21):
@@ -451,14 +448,13 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	hyperbolicResetView: false,
 
 	spherical: false,
-	sphericalWireframe: false,
-	sphericalWireSection: "tube",
-	sphericalWireThickness: 0.025,
-	sphericalWireHeight: 0.025,
-	sphericalWireBevel: 0.25,
-	sphericalRealistic: false,
-	sphericalStudio: true,
-	sphericalPolyhedron: false,
+	sphericalFaceOpacity: 1,
+	islamicRigid: false,
+	islamicBarSection: "tube",
+	islamicBarThickness: 0.025,
+	islamicBarHeight: 0.025,
+	islamicBarBevel: 0.25,
+	sphericalPolyhedron: true,
 	sphericalOrthographic: false,
 	sphericalWeaveFlat: false,
 
@@ -485,7 +481,6 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	colorsLattice: false,
 	colorsPalette: ["cream", 215, 15],
 
-	sphericalFreedrawMode: "polyhedron",
 	sphericalFreedrawGrid: false,
 	sphStarEdges: "all",
 

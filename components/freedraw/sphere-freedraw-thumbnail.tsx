@@ -62,7 +62,6 @@ export function SphereFreedrawThumbnail({
 	// synchronous setState inside it (a cascading render), where comparing keys just re-derives.
 	const [readyKey, setReadyKey] = useState<string | null>(null);
 	const [failed, setFailed] = useState(false);
-	const studio = useConfiguration((s) => s.sphericalStudio);
 	const specKey = `${solidId}-${pattern.id}-${mode}-${keepRadius ? "r" : ""}-${showGrid ? "g" : ""}-${showCrossings ? "x" : ""}-${showEdges === false ? "e0" : ""}`;
 	const ready = readyKey === specKey;
 
@@ -72,7 +71,6 @@ export function SphereFreedrawThumbnail({
 		return mountSpinningThumb({
 			canvas,
 			flavor: "catalogue",
-			studio,
 			phase: thumbPhase(specKey),
 			build: () => {
 				const solid = vertices ? null : polyhedronForId(solidId);
@@ -90,14 +88,14 @@ export function SphereFreedrawThumbnail({
 					showEdges,
 					tileHsb,
 				});
-				applyStudioMaterials(content.object, studio);
+				applyStudioMaterials(content.object);
 				return { object: content.object, dispose: content.dispose };
 			},
 			onReady: () => setReadyKey(specKey),
 			onFail: () => setFailed(true),
 		});
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [specKey, size, studio]);
+	}, [specKey, size]);
 
 	if (failed) {
 		return (

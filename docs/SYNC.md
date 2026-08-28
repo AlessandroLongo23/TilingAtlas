@@ -2886,3 +2886,10 @@ form → n → k in both surfaces. No new search: a tile is a cyclic angle word,
 boundary walk (OEIS-checked) plus a palette per board was the engine side. ⚑ Three defects: the face
 filter is unsound on any REFLEX palette (trihex 2 against 475), the pruner emits one of each mirror
 pair, and `referenceToCatalogue` dropped the board so /play showed no levels. NOTES 2026-08-24.
+## 2026-08-25 — Spherical View options: two looks deleted, the segmented toggle rebuilt — CC
+
+Studio look and Realistic are gone with their code (`sphericalCarvedMaterial.ts` deleted, the plain light
+rig, `FRAG_PLAIN`, the `relief` fill path, two URL keys). Polyhedron is the default shape, which let
+`sphericalFreedrawMode` collapse into `sphericalPolyhedron`; Islamic is offered on the sphere alone. ⚑ The
+sidebar's phantom horizontal scroll was `.ta-track-travel` overflowing by `--f` of its own width — fixed
+once on 2026-07-23, but scoped to `.ta-ival` and never applied to the track it came from. NOTES 2026-08-25. -371 lines.

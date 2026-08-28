@@ -109,6 +109,48 @@ function unit(a: V3): V3 {
 	return [a[0] / n, a[1] / n, a[2] / n];
 }
 
+/**
+ * The ring's TURNING NUMBER: 1 for an ordinary convex face, d for a {n/d} star face.
+ *
+ * A star face's ring is its TRAVERSAL order — a {5/2} is v0,v2,v4,v1,v3, so consecutive entries are its
+ * real edges and the ring crosses itself. Nothing in `Polyhedron` records that, and nothing needs to:
+ * the ring says it. Sum the signed turn between consecutive edges about the face normal and it comes to
+ * 2*pi*d. Newell's normal, because a self-crossing ring can put any three of its vertices on a line.
+ */
+export function ringTurning(unit: V3[], f: number[]): number {
+	let nx = 0;
+	let ny = 0;
+	let nz = 0;
+	for (let i = 0; i < f.length; i++) {
+		const a = unit[f[i]];
+		const b = unit[f[(i + 1) % f.length]];
+		nx += (a[1] - b[1]) * (a[2] + b[2]);
+		ny += (a[2] - b[2]) * (a[0] + b[0]);
+		nz += (a[0] - b[0]) * (a[1] + b[1]);
+	}
+	const nl = Math.hypot(nx, ny, nz) || 1;
+	nx /= nl;
+	ny /= nl;
+	nz /= nl;
+	let turn = 0;
+	for (let i = 0; i < f.length; i++) {
+		const a = unit[f[i]];
+		const b = unit[f[(i + 1) % f.length]];
+		const c = unit[f[(i + 2) % f.length]];
+		const ux = b[0] - a[0];
+		const uy = b[1] - a[1];
+		const uz = b[2] - a[2];
+		const vx = c[0] - b[0];
+		const vy = c[1] - b[1];
+		const vz = c[2] - b[2];
+		const sx = uy * vz - uz * vy;
+		const sy = uz * vx - ux * vz;
+		const sz = ux * vy - uy * vx;
+		turn += Math.atan2(sx * nx + sy * ny + sz * nz, ux * vx + uy * vy + uz * vz);
+	}
+	return Math.max(1, Math.round(Math.abs(turn) / (2 * Math.PI)));
+}
+
 /** Rings of one face, expressed as NEW points appended to `verts`. Returns the convex rings that fill
  *  the face. A convex face (d = 1) returns its own ring untouched and appends nothing. */
 export function starFaceRings(face: number[], dRaw: number, verts: V3[]): number[][] {
@@ -398,4 +440,61 @@ export function sphStarScene(p: SphStarPattern): SphSchwarzScene {
 		nTiles: tiles.length,
 	};
 	return { pattern, vertices: verts, allEdges: p.edges, crossings, tileHsb };
+}
+
+/**
+ * A plain Polyhedron seen as a star pattern, so the non-convex shelf can use this file's machinery.
+ *
+ * lib/render/nonconvexSolids.ts ships `Polyhedron`, which carries faces and vertices and nothing else —
+ * no faceType, no edge list, no census. Every one of those is recoverable: a {n/d} face's ring IS its
+ * traversal, so `ringTurning` reads d off it, the edges are the ring's adjacent pairs, and the census
+ * follows. That is all `sphStarScene` wants, so the 41 star-faced records the 2026-08-24 run put on that
+ * shelf get the SAME fill rings and the SAME face-crossing lines the star shelf has drawn since
+ * 2026-08-19, instead of a second implementation of both.
+ */
+export function polyhedronAsStarPattern(poly: {
+	id: string;
+	vertices: readonly (readonly number[])[];
+	faces: number[][];
+}): SphStarPattern {
+	const verts = poly.vertices.map((v) => [v[0], v[1], v[2]] as V3);
+	const faceType = poly.faces.map((f) => [f.length, ringTurning(verts, f)] as [number, number]);
+	const seen = new Set<string>();
+	const edges: [number, number][] = [];
+	for (const f of poly.faces) {
+		for (let i = 0; i < f.length; i++) {
+			const a = f[i];
+			const b = f[(i + 1) % f.length];
+			const k = a < b ? `${a},${b}` : `${b},${a}`;
+			if (seen.has(k)) continue;
+			seen.add(k);
+			edges.push(a < b ? [a, b] : [b, a]);
+		}
+	}
+	const count = new Map<string, number>();
+	for (const [n, d] of faceType) count.set(`${n}/${d}`, (count.get(`${n}/${d}`) ?? 0) + 1);
+	const types = [...count].map(([k, c]) => {
+		const [n, d] = k.split("/").map(Number);
+		return [n, d, c] as [number, number, number];
+	});
+	types.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+	return {
+		id: poly.id,
+		config: "",
+		k: 1,
+		density: 1,
+		rho: 0,
+		vertices: verts,
+		faces: poly.faces,
+		faceType,
+		edges,
+		stats: {
+			verts: verts.length,
+			edges: edges.length,
+			faces: poly.faces.length,
+			symmetryOrder: 0,
+			symmetryOrbits: 0,
+			types,
+		},
+	} as SphStarPattern;
 }

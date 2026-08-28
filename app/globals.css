@@ -124,11 +124,13 @@ body {
 /* No width here on purpose: unlayered rules beat Tailwind's `@layer utilities`, so a width in
    this block would silently override the w-* class a caller passes (as .ta-range did). Width
    comes from RangeInput's className, which defaults to w-full. */
+/* A size container, so .ta-track-travel below can ride on container units. See the note there. */
 .ta-track {
   position: relative;
   display: block;
   height: 14px;
   cursor: pointer;
+  container-type: inline-size;
 }
 .ta-track-line,
 .ta-track-fill {
@@ -165,14 +167,21 @@ body {
     transparent 1px calc((100% - 1px) / var(--ticks, 1))
   );
 }
+/* The thumb's carrier. It is THUMB-SIZED and travels the container's own width minus the thumb, which
+   is the only form of this that does not overflow: a full-track-width box translated by a fraction of
+   its own width sticks out past the track by exactly that fraction — invisible and pointer-inert, but
+   real SCROLLABLE overflow, so the sidebar gained a phantom horizontal scroll that GREW WITH THE VALUE
+   (AL saw it on the face-opacity slider, 2026-08-25). That was diagnosed and fixed once already, on
+   2026-07-23, but only inside .ta-ival — the single-thumb track it was copied from kept the bug for
+   another month. Fixed here now, where both spellings of the track read it. */
 .ta-track-travel {
   position: absolute;
   top: 0;
   left: 0;
-  width: calc(100% - 12px);
+  width: 12px;
   height: 100%;
   pointer-events: none;
-  transform: translateX(calc(var(--f, 0) * 100%));
+  transform: translateX(calc(var(--f, 0) * (100cqi - 12px)));
 }
 .ta-track-thumb {
   position: absolute;
@@ -247,16 +256,6 @@ body {
    horizontal touch drags instead of fighting the sidebar scroll. */
 .ta-ival {
   touch-action: none;
-  container-type: inline-size;
-}
-/* .ta-track-travel is a full-track-width box translated by up to its own width, so at high values it
-   sticks out past the track — invisible and pointer-inert, but real SCROLLABLE overflow, which gave
-   the /library sidebar a phantom horizontal scroll (AL, 2026-07-23). Inside .ta-ival the track is a
-   size container, so the travel can be thumb-sized and ride on container units instead: it never
-   leaves the track, and the composited-transform glide is unchanged. */
-.ta-ival > .ta-track-travel {
-  width: 12px;
-  transform: translateX(calc(var(--f, 0) * (100cqi - 12px)));
 }
 .ta-ival-fill {
   position: absolute;

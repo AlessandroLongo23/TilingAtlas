@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { OptionsTab } from "@/components/sidebar/options-tab";
 import { useConfiguration } from "@/lib/stores/configuration";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
@@ -35,26 +35,41 @@ describe("OptionsTab — the controls each spherical surface offers", () => {
 		// Shared across every spherical shelf.
 		expect(offered("Sphere")).toBe(true);
 		expect(offered("Polyhedron")).toBe(true);
-		expect(offered("Studio look")).toBe(true);
 		expect(offered("Projection")).toBe(true);
 		expect(offered("Hue shift")).toBe(true);
 		expect(offered("Line stroke")).toBe(true);
-		// Its own: the wireframe skeleton and the carved shader, neither of which the other canvases have.
-		expect(offered("Wireframe")).toBe(true);
-		expect(offered("Realistic")).toBe(true);
-		// components/spherical-canvas.tsx renders the construction as great-circle ribbons.
+		// Face opacity replaced the Fill/Wireframe toggle and is shared by all three canvases.
+		expect(offered("Face opacity")).toBe(true);
+		// The surface look is no longer a choice, so there is no control for it (AL, 2026-08-25).
+		expect(offered("Studio look")).toBe(false);
+		expect(offered("Realistic")).toBe(false);
+	});
+
+	// The construction is drawn on the circumsphere as great-circle ribbons and has no flat-solid form, so
+	// it is offered on the sphere and nowhere else. The shape now DEFAULTS to the solid, which is why the
+	// first case has to set it.
+	it("offers the Islamic construction on the sphere, and not on the flat solid", () => {
+		useConfiguration.setState({ sphericalPolyhedron: false });
+		render(<OptionsTab selected={spherical} />);
 		expect(offered("Islamic")).toBe(true);
+	});
+
+	it("hides the Islamic construction while the tiling sphere shows the flat solid", () => {
+		render(<OptionsTab selected={spherical} />);
+		expect(useConfiguration.getState().sphericalPolyhedron).toBe(true); // the default
+		expect(offered("Islamic")).toBe(false);
 	});
 
 	it("gives the ico-freedraw canvas the same shared controls", () => {
 		render(<OptionsTab selected={star} />);
 		expect(offered("Sphere")).toBe(true);
 		expect(offered("Polyhedron")).toBe(true);
-		expect(offered("Studio look")).toBe(true);
 		expect(offered("Projection")).toBe(true);
 		// ⚑ Both of these were hidden until the canvas was wired to read them (2026-08-21).
 		expect(offered("Hue shift")).toBe(true);
 		expect(offered("Line stroke")).toBe(true);
+		// buildIcoFreedraw takes `faceOpacity` and `occlude` like the other two builders.
+		expect(offered("Face opacity")).toBe(true);
 	});
 
 	it("offers no control the ico-freedraw canvas ignores", () => {
@@ -62,9 +77,9 @@ describe("OptionsTab — the controls each spherical surface offers", () => {
 		// No Islamic path on that canvas, and its fifteen parameter controls came with the checkbox.
 		expect(offered("Islamic")).toBe(false);
 		expect(offered("Islamic Angle")).toBe(false);
-		// The carved shader and the tube skeleton are the tiling sphere's alone.
-		expect(offered("Realistic")).toBe(false);
-		expect(offered("Wireframe")).toBe(false);
+		// The rigid Islamic bars and everything that shapes them are the tiling sphere's alone.
+		expect(offered("Rigid lines")).toBe(false);
+		expect(offered("Section")).toBe(false);
 		// Never read outside the flat and disk renderers.
 		expect(offered("Show Polygon Points")).toBe(false);
 		expect(offered("Symmetry elements")).toBe(false);
@@ -83,16 +98,16 @@ describe("OptionsTab — the controls each spherical surface offers", () => {
 		expect(offered("Grid")).toBe(true);
 	});
 
-	it("keeps the Islamic conflict visible instead of silently ignoring it", () => {
-		useConfiguration.setState({ isIslamic: true });
+	// The Islamic conflict used to be handled by DISABLING the shape toggle and printing a paragraph about
+	// why. The shape is live now and switching to the solid turns the construction off — the control says
+	// what it does instead of explaining what it will not do.
+	it("leaves the shape toggle live under the Islamic construction", () => {
+		useConfiguration.setState({ isIslamic: true, sphericalPolyhedron: false });
 		render(<OptionsTab selected={spherical} />);
-		// The construction replaces the base surface, so neither the shape nor the carved shader applies.
-		// They stay on screen and go inert: a control that can still be clicked and is then ignored is what
-		// this replaced.
 		// The toggle's buttons carry the raw value as their aria-label and the capitalised one as text.
-		expect(screen.getByRole("radio", { name: "sphere" })).toBeDisabled();
-		expect(screen.getByRole("radio", { name: "polyhedron" })).toBeDisabled();
-		const realistic = screen.getByText("Realistic").closest("[role='checkbox']");
-		expect(realistic?.getAttribute("aria-disabled")).toBe("true");
+		expect(screen.getByRole("radio", { name: "sphere" })).not.toBeDisabled();
+		fireEvent.click(screen.getByRole("radio", { name: "polyhedron" }));
+		expect(useConfiguration.getState().sphericalPolyhedron).toBe(true);
+		expect(useConfiguration.getState().isIslamic).toBe(false);
 	});
 });

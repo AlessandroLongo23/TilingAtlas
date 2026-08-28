@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { PLATONIC_SOLIDS, polyhedronForSchlafli, type Polyhedron, type Vec3 } from "@/lib/render/platonicSolids";
-import { classifyFace, edgeArcs, faceNormals, flatSolidTriangles, maxAdjacentNormalDot, solidEdges, straightEdges, vertexPoints } from "@/lib/render/sphericalGeometry";
+import { classifyFace, faceNormals, flatSolidTriangles, maxAdjacentNormalDot, solidEdges, straightEdges } from "@/lib/render/sphericalGeometry";
 
 // Expected combinatorics of the 5 Platonic solids: {p,q}, V, E, F. Euler: V − E + F = 2.
 const EXPECTED = [
@@ -239,23 +239,3 @@ describe.each(EXPECTED)("straight edges for $id", (e) => {
 	});
 });
 
-describe.each(EXPECTED)("wireframe edges for $id", (e) => {
-	const poly = polyhedronForSchlafli(e.p, e.q)!;
-	const R = 1.5;
-
-	it("emits one great-circle arc per unique edge, all points on the sphere", () => {
-		const arcs = edgeArcs(poly, 12, R);
-		expect(arcs).toHaveLength(e.E);
-		for (const arc of arcs) {
-			for (let i = 0; i < arc.length / 3; i++) {
-				expect(Math.hypot(arc[i * 3], arc[i * 3 + 1], arc[i * 3 + 2])).toBeCloseTo(R, 5);
-			}
-		}
-	});
-
-	it("places one vertex point per vertex on the sphere", () => {
-		const pts = vertexPoints(poly, R);
-		expect(pts).toHaveLength(e.V);
-		for (const p of pts) expect(norm(p)).toBeCloseTo(R, 6);
-	});
-});

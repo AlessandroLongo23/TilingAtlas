@@ -1,12 +1,9 @@
-// The flat spherical surface: an unlit tiling drawn PROCEDURALLY in the fragment shader (no baked texture).
-// The tiling is a function of the surface direction — face = argmax(dot(dir, N_f)), edge = where the top
-// two faces are near-tied (sphericalTilingShader.ts) — so evaluating it per fragment keeps every edge
+// The spherical surface: the tiling drawn PROCEDURALLY in the fragment shader (no baked texture). The
+// tiling is a function of the surface direction — face = argmax(dot(dir, N_f)), edge = where the top two
+// faces are near-tied (sphericalTilingShader.ts) — so evaluating it per fragment keeps every edge
 // pixel-sharp at any zoom. This replaced a 2048×1024 equirectangular bake that went soft under the camera
 // dolly (one texel spanning many screen pixels). Hue-ring / stroke changes are plain uniform writes now,
 // not a re-bake.
-//
-// The realistic/carved surface (sphericalCarvedMaterial.ts) shares the same classification but is lit and
-// carves the edges into geometry.
 
 import * as THREE from "three";
 import type { Polyhedron } from "./platonicSolids";
@@ -18,7 +15,6 @@ export interface SphereMaterialOptions {
 	hueOffset?: number;
 	lineWidth?: number; // the cfg.lineWidth stroke slider (0 hides edges)
 	dark?: boolean; // theme — sets the line colour
-	studio?: boolean; // shade the surface in-shader instead of drawing it flat (lib/render/sphericalLook.ts)
 }
 
 export interface SphereMaterial {
@@ -39,15 +35,14 @@ void main() {
 	// Object-space position IS the surface direction (unit sphere at the origin); classified against the
 	// solid's exit-face normals, which live in the same object space. No UV, so no equirect seam or pole pinch.
 	vLocal = position;
-	// View-space position + normal, for the studio shading below. Unused (and free) in the plain look —
-	// a RawShaderMaterial declares its own built-ins, and three binds normalMatrix like any other material.
+	// View-space position + normal, for the shading below. A RawShaderMaterial declares its own built-ins,
+	// and three binds normalMatrix like any other material.
 	vec4 mv = modelViewMatrix * vec4(position, 1.0);
 	vViewPos = mv.xyz;
 	vViewNor = normalMatrix * normalize(position);
 	gl_Position = projectionMatrix * mv;
 }`;
 
-// The tiling colour, shared by both looks. Everything above the shading is identical between them.
 const FRAG_HEAD = /* glsl */ `precision highp float;
 in vec3 vLocal;
 in vec3 vViewPos;
@@ -58,25 +53,12 @@ ${TILING_GLSL_EDGE}
 uniform vec3 uSphLineColor;
 `;
 
-// PLAIN: unlit, exactly as this surface has always drawn — a flat field of face colour with the edge lines
-// painted on. NOTE: no `#version 300 es` — three prepends it for a RawShaderMaterial with glslVersion GLSL3.
-const FRAG_PLAIN = /* glsl */ `${FRAG_HEAD}
-void main() {
-	vec3 dir = normalize(vLocal);
-	int best;
-	float g = sphClassify(dir, best);
-	vec3 faceCol = sphFaceColor(best);
-	vec3 col = mix(faceCol, uSphLineColor, sphEdge(g));
-	// RawShaderMaterial output is verbatim (three appends no colour-space/tonemapping chunk), and the scene
-	// uses the default NoToneMapping + sRGB output — so write the DISPLAY value directly. This is exactly the
-	// pixel the old MeshBasic + baked map produced (baker linearised, MeshBasic re-encoded → net identity).
-	fragColor = vec4(col, 1.0);
-}`;
-
-// STUDIO: the same tiling, lit. This material cannot use the scene's lights (a RawShaderMaterial has no
-// lighting chunks and no envMap), so the rig is written out analytically in VIEW space — which also means
-// the highlight sits still under the trackball instead of sliding across the surface as the sphere turns,
+// The tiling, lit. This material cannot use the scene's lights (a RawShaderMaterial has no lighting
+// chunks and no envMap), so the rig is written out analytically in VIEW space — which also means the
+// highlight sits still under the trackball instead of sliding across the surface as the sphere turns,
 // the way a studio lamp behaves relative to the camera.
+//
+// NOTE: no `#version 300 es` — three prepends it for a RawShaderMaterial with glslVersion GLSL3.
 //
 // Five terms, each there for something a flat disc lacks:
 //   • an ENGRAVED line. The tiling edge gets a height profile (a shallow trench across the same g the line
@@ -88,7 +70,7 @@ void main() {
 //   • a Blinn-Phong highlight, tight and weak — the "this is a glossy object" cue.
 //   • a Fresnel rim, which is what stops a solid from dissolving into the page at its silhouette.
 //   • ambient occlusion in the trench, so the groove stays dark even where the light falls into it.
-const fragStudio = () => /* glsl */ `${FRAG_HEAD}
+const frag = () => /* glsl */ `${FRAG_HEAD}
 const vec3 KEY_DIR  = normalize(vec3(0.42, 0.62, 0.66));
 const vec3 FILL_DIR = normalize(vec3(-0.72, 0.10, 0.42));
 // Depth of the engraved trench, in the same units as the view-space position the gradient is taken in
@@ -121,7 +103,7 @@ void main() {
 	vec3 V = normalize(-vViewPos);
 
 	// Tilt the normal by the surface gradient of the trench. r1/r2/det build the screen-space→surface
-	// basis without a tangent attribute; identical to lib/render/sphericalCarvedMaterial.ts.
+	// basis without a tangent attribute — no normal/tangent attribute is needed on the sphere geometry.
 	{
 		float H = grooveHeight(g);
 		vec3 fdx = dFdx(vViewPos), fdy = dFdy(vViewPos);
@@ -165,7 +147,7 @@ export function createSphereMaterial(opts: SphereMaterialOptions): SphereMateria
 	const material = new THREE.RawShaderMaterial({
 		glslVersion: THREE.GLSL3,
 		vertexShader: VERT,
-		fragmentShader: opts.studio ? fragStudio() : FRAG_PLAIN,
+		fragmentShader: frag(),
 		uniforms,
 		side: THREE.FrontSide, // a convex sphere occludes its own back
 	});

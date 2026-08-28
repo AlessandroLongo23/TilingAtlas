@@ -19,6 +19,7 @@ import { createOrbitMomentum, type OrbitMomentum } from "@/lib/render/orbitMomen
 import { installLookRig, applyStudioMaterials, type LookRig } from "@/lib/render/sphericalLook";
 import { captureOverride, offerFrame } from "@/lib/render/capture";
 import { buildSphColors, type SphColorsScene } from "@/lib/render/sphColors";
+import { createEdgeOcclusion, type EdgeOcclusion } from "@/lib/render/edgeOcclusion";
 import { paletteRgb255 } from "@/lib/colors/render";
 import type { IcoMode } from "@/lib/render/icoFreedraw";
 import type { SphColorsPattern } from "@/lib/colors/sph-colors";
@@ -49,9 +50,12 @@ export function SphericalColorsCanvas({ pattern, mode }: Props) {
 	const lookRigRef = useRef<LookRig | null>(null);
 	const rafRef = useRef<number | null>(null);
 	const contentRef = useRef<SphColorsScene | null>(null);
+	// Depth of the FACES alone, re-rendered each frame, so an edge bar can be hidden by the edge's own
+	// visibility instead of its surface's (lib/render/edgeOcclusion.ts).
+	const occlusionRef = useRef<EdgeOcclusion | null>(null);
 	const [errored, setErrored] = useState(false);
 	const palette = useConfiguration((s) => s.colorsPalette);
-	const studio = useConfiguration((s) => s.sphericalStudio);
+	const faceOpacity = useConfiguration((s) => s.sphericalFaceOpacity);
 
 	useEffect(() => {
 		const host = hostRef.current;
@@ -78,7 +82,9 @@ export function SphericalColorsCanvas({ pattern, mode }: Props) {
 		sceneRef.current = scene;
 		// The "catalogue" rig: flat in the plain look so a color reads the same wherever it sits on the
 		// sphere, gently lit in Studio (see IcoFreedrawCanvas and lib/render/sphericalLook.ts).
-		lookRigRef.current = installLookRig(renderer, scene, "catalogue", useConfiguration.getState().sphericalStudio);
+		lookRigRef.current = installLookRig(renderer, scene, "catalogue");
+		occlusionRef.current = createEdgeOcclusion();
+		occlusionRef.current.setFaceOpacity(useConfiguration.getState().sphericalFaceOpacity);
 
 		const aspect0 = host.clientWidth > 0 && host.clientHeight > 0 ? host.clientWidth / host.clientHeight : 1;
 		const camera = makeSphericalCamera(
@@ -123,6 +129,12 @@ export function SphericalColorsCanvas({ pattern, mode }: Props) {
 			}
 			// The light rig rides the camera, so a drag re-lights the solid (see LookRig.follow).
 			if (cam) lookRigRef.current?.follow(cam);
+			// Back-to-front the see-through facets before anything is drawn (lib/render/depthSort.ts), then
+			// take the faces' depth for the hidden-edge test (lib/render/edgeOcclusion.ts).
+			if (cam) {
+				contentRef.current?.depthSort(cam);
+				occlusionRef.current?.capture(renderer, scene, cam);
+			}
 			if (cam) renderer.render(scene, cam);
 			if (cap) offerFrame(renderer.domElement);
 			rafRef.current = requestAnimationFrame(animate);
@@ -135,6 +147,8 @@ export function SphericalColorsCanvas({ pattern, mode }: Props) {
 			momentumRef.current = null;
 			lookRigRef.current?.dispose();
 			lookRigRef.current = null;
+			occlusionRef.current?.dispose();
+			occlusionRef.current = null;
 			controlsRef.current?.dispose();
 			contentRef.current?.dispose();
 			renderer.dispose();
@@ -184,9 +198,12 @@ export function SphericalColorsCanvas({ pattern, mode }: Props) {
 			pattern.faceColor,
 			pattern.edges,
 			paletteRgb255(pattern.colors, palette, dark),
-			{ dark, mode },
+			{ dark, mode, faceOpacity, occlude: occlusionRef.current?.uniforms },
 		);
-		applyStudioMaterials(content.object, studio);
+		// A hidden bar is worth 1 − opacity: dropped outright behind solid faces, and increasingly visible
+		// as they turn to glass.
+		occlusionRef.current?.setFaceOpacity(faceOpacity);
+		applyStudioMaterials(content.object);
 		scene.add(content.object);
 		contentRef.current = content;
 		return () => {
@@ -194,13 +211,9 @@ export function SphericalColorsCanvas({ pattern, mode }: Props) {
 			content.dispose();
 			if (contentRef.current === content) contentRef.current = null;
 		};
-		// `studio` rebuilds so the material tuning always lands on fresh materials.
-	}, [pattern, mode, palette, studio]);
-
-	// Studio ⇄ plain: re-dial the lights and the environment in place.
-	useEffect(() => {
-		lookRigRef.current?.setStudio(studio);
-	}, [studio]);
+		// `faceOpacity` is a rebuild dep because this builder makes the facet meshes and their materials in
+		// one pass.
+	}, [pattern, mode, palette, faceOpacity]);
 
 	if (errored) {
 		return (

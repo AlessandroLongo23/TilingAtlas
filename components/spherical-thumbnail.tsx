@@ -30,7 +30,6 @@ export function SphericalThumbnail({ solidId, size = 256 }: SphericalThumbnailPr
 	// Global hue ring: subscribed LIVE — every visible preview rebuilds per drag tick, matching the
 	// hyperbolic thumbnails' exact-colours choice.
 	const hueOffset = useConfiguration((s) => s.hueOffset);
-	const studio = useConfiguration((s) => s.sphericalStudio);
 	const ready = readyKey === solidId;
 
 	useEffect(() => {
@@ -39,7 +38,6 @@ export function SphericalThumbnail({ solidId, size = 256 }: SphericalThumbnailPr
 		return mountSpinningThumb({
 			canvas,
 			flavor: "tiling",
-			studio,
 			phase: thumbPhase(solidId),
 			build: () => {
 				const poly = polyhedronForId(solidId);
@@ -55,13 +53,13 @@ export function SphericalThumbnail({ solidId, size = 256 }: SphericalThumbnailPr
 				// offers the sphere where it means something.
 				const solid = buildFlatSolid(poly, { hueOffset, lineWidth, dark });
 				if (!solid) return null;
-				applyStudioMaterials(solid.object, studio);
+				applyStudioMaterials(solid.object);
 				return { object: solid.object, dispose: solid.dispose };
 			},
 			onReady: () => setReadyKey(solidId),
 			onFail: () => setFailed(true),
 		});
-	}, [solidId, size, hueOffset, studio]);
+	}, [solidId, size, hueOffset]);
 
 	if (failed) {
 		return (
