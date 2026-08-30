@@ -1370,6 +1370,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	const sphericalShape: IcoMode = useConfiguration((s) => (s.sphericalPolyhedron ? "polyhedron" : "sphere"));
 	const sphericalFreedrawGrid = useConfiguration((s) => s.sphericalFreedrawGrid);
 	const sphStarEdges = useConfiguration((s) => s.sphStarEdges);
+	const starMod2 = useConfiguration((s) => s.starMod2);
 	// The Tiles overlay and its knobs. On a plain tiling these drive the Truchet reading below; on a
 	// freedraw pattern the canvas reads them itself, which is why only the seed is consumed here.
 	const freedrawArcs = useConfiguration((s) => s.freedrawArcs);
@@ -1578,7 +1579,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					// fills translucently with the nonzero winding rule, so the overlaps accumulate and the
 					// density structure shows. Owns its pan/zoom, like freedraw and colors.
 					<div className="absolute inset-0 z-10">
-						<HollowCanvas patchId={selected.hollow.patch} />
+						<HollowCanvas patchId={selected.hollow.patch} mod2={starMod2} />
 					</div>
 				) : selected?.schwarz ? (
 					// Schwarz board: Čtrnáct's freedraw on the board cut by a (p,q,r) reflection group. The one
@@ -1639,6 +1640,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 						mode={sphericalShape}
 						showGrid={sphericalFreedrawGrid}
 						edges={sphStarEdges}
+						mod2={starMod2}
 					/>
 				) : selected?.hypPoly ? (
 					// 3.4.n.4 tiling by regular polygons: not a decoration, so every edge is a real boundary and

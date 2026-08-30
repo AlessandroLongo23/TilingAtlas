@@ -46,6 +46,10 @@ export interface FlatSolidOptions {
 	faceOpacity?: number;
 	/** Per-pixel hidden-edge test for the bars; see lib/render/edgeOcclusion.ts. */
 	occlude?: EdgeOcclusionUniforms;
+	/** Fill {n/d} faces modulo 2 (even-odd) instead of by nonzero winding: a pentagram's core is covered
+	 *  twice, so it empties and the crossings read as a checkerboard. Changes the facet geometry, so it
+	 *  rebuilds the solid; solids with no star face are unaffected. See lib/render/sphStar.ts. */
+	starMod2?: boolean;
 }
 
 export interface FlatSolid {
@@ -63,7 +67,7 @@ export function buildFlatSolid(poly: Polyhedron | null, opts: FlatSolidOptions =
 	if (!poly) return null;
 
 	// Faces: a non-indexed fan-triangle soup on the unit sphere, flat-shaded, one hue per source face.
-	const { positions, faceSizes, triLayers } = flatSolidTriangles(poly, SPHERE_RADIUS);
+	const { positions, faceSizes, triLayers } = flatSolidTriangles(poly, SPHERE_RADIUS, opts.starMod2 ?? false);
 	const triHues = faceSizes.map((n) => polygonHue(n)); // one base hue per triangle (by polygon size)
 	const geom = new THREE.BufferGeometry();
 	geom.setAttribute("position", new THREE.BufferAttribute(positions, 3));
@@ -158,7 +162,7 @@ export function buildFlatSolid(poly: Polyhedron | null, opts: FlatSolidOptions =
 
 	// Derived once and kept: finding the creases is a face-pair sweep, 54 ms on ncx-120-330-212-h, and the
 	// stroke slider must not pay it per frame.
-	const creaseList = edgeInk === "all" ? solidCreaseList(poly, SPHERE_RADIUS) : [];
+	const creaseList = edgeInk === "all" ? solidCreaseList(poly, SPHERE_RADIUS, opts.starMod2 ?? false) : [];
 
 	// ALL the ink, as one capsule union: the polyhedron's own edges, and — while CREASES_AS_TUBES — the
 	// creases where its faces cut through one another. One skeleton means one set of joints, welded across

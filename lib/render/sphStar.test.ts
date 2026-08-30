@@ -13,8 +13,9 @@ import type { SphStarPattern } from "@/lib/tilings/sph-star";
 //
 //     A = ½ · 10 · 1 · r · sin(36°) = 5 · (cos72°/cos36°) · sin36° = 1.1225699…
 //
-// The convex hull would be 2.377641 and the even-odd reading (core punched out) 0.775775, so a wrong
-// decomposition cannot pass by accident.
+// The convex hull would be 2.377641 and the even-odd reading (core punched out) 0.7756768, so a wrong
+// decomposition cannot pass by accident. That last number is A minus the core pentagon's own area,
+// (5/2)·r²·sin(72°) = 0.3468932; it read 0.775775 here until the mod-2 rings were written against it.
 
 function polyArea(ring: number[], verts: V3[]): number {
 	// Planar polygon area in 3D via the vector area of a fan; the pieces are convex and coplanar.
@@ -133,6 +134,95 @@ describe("starFaceRings", () => {
 			}
 			const want = (hit * 4) / (N * N);
 			expect(Math.abs(got - want) / want, `{${n}/${d}}`).toBeLessThan(0.01);
+		}
+	});
+
+	// ── The MODULO-2 (even-odd) reading ────────────────────────────────────────────────────────
+	// Suggested by polytopologist on Discord, 2026-08-31: a pentagram is a branched double cover, and
+	// the inner pentagon has two preimages, so mod 2 it is empty. The rings are checked the same way
+	// the nonzero ones are — against a sampled point-in-polygon test with the OTHER fill rule.
+	const evenOdd = (poly: V3[], px: number, py: number) => {
+		let inside = false;
+		for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+			const a = poly[i];
+			const b = poly[j];
+			if (a[1] > py !== b[1] > py && px < ((b[0] - a[0]) * (py - a[1])) / (b[1] - a[1]) + a[0]) {
+				inside = !inside;
+			}
+		}
+		return inside;
+	};
+	const shoelace = (pts: V3[]) => {
+		let s = 0;
+		for (let i = 0; i < pts.length; i++) {
+			const a = pts[i];
+			const b = pts[(i + 1) % pts.length];
+			s += a[0] * b[1] - b[0] * a[1];
+		}
+		return Math.abs(s) / 2;
+	};
+
+	it("empties the pentagram's core, and takes its area down to the even-odd number", () => {
+		const verts = ngon(5);
+		const rings = starFaceRings(traversal(5, 2), 2, verts, true);
+		// Five point triangles, no core: the nonzero decomposition's first ring is exactly what goes.
+		expect(rings.length).toBe(5);
+		expect(rings.every((r) => r.length === 3)).toBe(true);
+		const area = rings.reduce((s, r) => s + polyArea(r, verts), 0);
+		// Nonzero 1.1225699 minus the core pentagon, both in closed form; see the top of this file.
+		const r = Math.cos((2 * Math.PI) / 5) / Math.cos(Math.PI / 5);
+		expect(area).toBeCloseTo(5 * r * Math.sin(Math.PI / 5) - 2.5 * r * r * Math.sin((2 * Math.PI) / 5), 9);
+	});
+
+	it("agrees with the even-odd rule pointwise on every winding the shelf carries", () => {
+		for (const [n, d] of [[5, 2], [7, 2], [7, 3], [8, 3], [9, 4], [10, 3], [12, 5], [8, 5],
+			[12, 7], [20, 9], [13, 6], [15, 4]] as [number, number][]) {
+			const verts = ngon(n);
+			const face = traversal(n, d);
+			const poly = face.map((i) => verts[i]);
+			const got = starFaceRings(face, d, verts, true).reduce((s, r) => s + shoelace(r.map((i) => verts[i])), 0);
+			const N = 500;
+			let hit = 0;
+			for (let i = 0; i < N; i++) {
+				for (let j = 0; j < N; j++) {
+					if (evenOdd(poly, -1 + (2 * (i + 0.5)) / N, -1 + (2 * (j + 0.5)) / N)) hit++;
+				}
+			}
+			const want = (hit * 4) / (N * N);
+			expect(Math.abs(got - want) / want, `{${n}/${d}}`).toBeLessThan(0.01);
+		}
+	});
+
+	it("keeps the mod-2 pieces disjoint, so a translucent face does not darken where it is one sheet", () => {
+		// Area alone cannot see an overlap that a gap elsewhere pays for. Sum of piece areas has to be
+		// the area of the union, and the union is the even-odd region the test above already pinned.
+		for (const [n, d] of [[7, 3], [9, 4], [12, 5]] as [number, number][]) {
+			const verts = ngon(n);
+			const rings = starFaceRings(traversal(n, d), d, verts, true);
+			const N = 400;
+			let over = 0;
+			for (let i = 0; i < N; i++) {
+				for (let j = 0; j < N; j++) {
+					const px = -1 + (2 * (i + 0.5)) / N;
+					const py = -1 + (2 * (j + 0.5)) / N;
+					let cover = 0;
+					for (const r of rings) if (evenOdd(r.map((x) => verts[x]), px, py)) cover++;
+					if (cover > 1) over++;
+				}
+			}
+			expect(over, `{${n}/${d}} overlaps`).toBe(0);
+		}
+	});
+
+	it("leaves the nonzero decomposition untouched", () => {
+		// The flag is additive: with it off, ring for ring and appended point for appended point, the
+		// output is what it was before the mod-2 path existed.
+		for (const [n, d] of [[5, 2], [8, 3], [12, 5]] as [number, number][]) {
+			const a = ngon(n);
+			const b = ngon(n);
+			expect(starFaceRings(traversal(n, d), d, a)).toEqual(starFaceRings(traversal(n, d), d, b, false));
+			expect(a).toEqual(b);
+			expect(a.length).toBe(n + n);
 		}
 	});
 

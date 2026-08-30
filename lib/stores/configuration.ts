@@ -318,6 +318,14 @@ export interface ConfigurationState {
 	//   "none" — bare coloured faces, for reading the tile shapes with no ink over them.
 	// See lib/render/sphStar.ts `faceCrossings`.
 	sphStarEdges: "none" | "true" | "all";
+	// Star tiles only: fill them MODULO 2 (even-odd) instead of by nonzero winding. A pentagram is a
+	// branched double cover of its core, so mod 2 the core is empty and the crossings read as a
+	// checkerboard — the way polytopologist glazes his ceramic star polyhedra (Discord, 2026-08-31).
+	// Off by default: the nonzero silhouette is the classical plate. Read by all three shelves that draw
+	// a self-crossing {n/d}: the star polyhedra and the star-faced non-convex solids (lib/render/sphStar.ts
+	// starFaceRings, which decomposes the odd-winding bands), and the Euclidean hollow tilings
+	// (lib/hollow/render.ts, where it is the canvas fill rule and nothing more).
+	starMod2: boolean;
 
 	// Color params
 	colorParams: ColorParams;
@@ -491,6 +499,7 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 
 	sphericalFreedrawGrid: false,
 	sphStarEdges: "all",
+	starMod2: false,
 
 	colorParams: { a: 180, b: 0 },
 

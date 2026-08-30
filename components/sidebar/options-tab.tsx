@@ -4,6 +4,8 @@ import { Fragment } from "react";
 import { ArrowLeftRight } from "lucide-react";
 import { deformApplies, useConfiguration } from "@/stores/configuration";
 import { hasSphereView } from "@/lib/tilings/sph-inscribed";
+import { solidHasStarFace } from "@/lib/render/sphericalGeometry";
+import { polyhedronForId } from "@/lib/render/sphericalSolids";
 import { isChiralTiling } from "@/lib/services/chirality";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -129,6 +131,13 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 	// the only one with creases to offer. Keyed off the record, not the surface, which it shares with the
 	// Schwarz boards and the uniform polyhedra.
 	const isSphStar = !!selected?.sphStar;
+	// The MODULO-2 fill applies wherever a {n/d} face is drawn, which is two shelves: every record on the
+	// star shelf, and the 41 non-convex solids whose faces wind more than once. Convex-faced solids —
+	// including the self-intersecting ones — see no change, so they are not offered the control.
+	// The hollow shelf is the Euclidean member of the set: its tiles are self-crossing {n/d} by
+	// definition, so the rule applies to every record on it.
+	const starFillApplies =
+		isSphStar || surface === "hollow2d" || solidHasStarFace(polyhedronForId(selected?.spherical?.solid ?? ""));
 	// Whether the round spherical view exists for this record. False for the nineteen reference solids with
 	// no circumsphere, where the canvas forces the flat polyhedron and this hides the toggle back to it.
 	const sphereViewAvailable = !selected?.spherical || hasSphereView(selected.spherical.solid);
@@ -1235,6 +1244,28 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 								reachable). Scroll to zoom.
 							</p>
 						</div>
+					) : null}
+					{/* MODULO 2, and OUTSIDE the spherical block on purpose: the rule belongs to the star tile, not
+					    to the canvas drawing it, and the hollow shelf is 2D. A star face is a branched cover of
+					    its own middle — a pentagram covers its core twice, and mod 2 that is zero, so the core
+					    goes empty and the crossings read as a checkerboard. Suggested by polytopologist on
+					    Discord (2026-08-31), who glazes his ceramic star polyhedra this way. Off by default (the
+					    nonzero silhouette is the classical plate), and offered only where a self-crossing face is
+					    actually drawn. */}
+					{starFillApplies ? (
+						<Checkbox
+							id="star-mod2"
+							label="Modulo 2 fill"
+							checked={cfg.starMod2}
+							onCheckedChange={(v) => setCfg({ starMod2: v })}
+							hint={
+								<InfoDot>
+									A star face covers part of itself more than once. Modulo 2, a region covered an even
+									number of times is empty — so a pentagram becomes five points around a hollow pentagon,
+									and the edge crossings read as a checkerboard.
+								</InfoDot>
+							}
+						/>
 					) : null}
 					{lensApplies ? (
 						<Checkbox

@@ -7,8 +7,12 @@
  * accumulate and the density structure — the thing that distinguishes a hollow tiling from an
  * ordinary one — is visible as darker regions, not hidden.
  *
- * Fill uses the NONZERO winding rule deliberately. Even-odd would punch a hole in the middle of
- * every pentagram-like tile, which is the `|n/d|` concave reading — the wrong tile.
+ * Fill uses the NONZERO winding rule by default. Even-odd punches a hole in the middle of every
+ * pentagram-like tile, which is the `|n/d|` concave reading and the wrong tile — unless it is asked
+ * for, which is what `mod2` is: the modulo-2 reading, where a region covered an even number of times
+ * is empty because 2 = 0 (polytopologist, Discord, 2026-08-31). Here it costs one argument to
+ * `ctx.fill`, because canvas implements both rules; the spherical shelves have to build the odd-winding
+ * bands themselves (lib/render/sphStar.ts starFaceRings).
  */
 import type { HollowFace, HollowPatch } from "@/lib/hollow/pattern";
 
@@ -26,6 +30,8 @@ export type HollowFillMode = "none" | "tile" | "density";
 
 export interface HollowStyle {
 	fillMode: HollowFillMode;
+	/** Fill each face even-odd instead of nonzero: a pentagram becomes five points round a hole. */
+	mod2: boolean;
 	showVertices: boolean;
 	lineWidth: number;
 	dark: boolean;
@@ -33,6 +39,7 @@ export interface HollowStyle {
 
 export const DEFAULT_HOLLOW_STYLE: Omit<HollowStyle, "dark"> = {
 	fillMode: "tile",
+	mod2: false,
 	showVertices: false,
 	lineWidth: 1.25,
 };
@@ -159,7 +166,7 @@ export function drawHollow(
 					const hue = tileHue(f.n, f.d);
 					ctx.fillStyle = `hsla(${hue}, 72%, ${style.dark ? 60 : 54}%, 0.30)`;
 				}
-				ctx.fill("nonzero");
+				ctx.fill(style.mod2 ? "evenodd" : "nonzero");
 			}
 		}
 	}

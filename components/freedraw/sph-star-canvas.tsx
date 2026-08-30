@@ -27,6 +27,7 @@ export function SphStarCanvas({
 	mode = "polyhedron",
 	showGrid,
 	edges = "all",
+	mod2 = false,
 }: {
 	pattern: SphStarPattern;
 	mode?: IcoMode;
@@ -36,11 +37,18 @@ export function SphStarCanvas({
 	 *  "all": without the creases a face that passes through another reads as unbroken, which is the
 	 *  thing that looked wrong. Sphere mode has no creases to draw, so it only sees the edge half. */
 	edges?: "none" | "true" | "all";
+	/** Fill each {n/d} face modulo 2 instead of by nonzero winding: the core of a pentagram is covered
+	 *  twice, so it goes empty and the crossings read as a checkerboard. See starFaceRings. */
+	mod2?: boolean;
 }) {
-	const scene = useMemo(() => sphStarScene(pattern), [pattern]);
+	const scene = useMemo(() => sphStarScene(pattern, mod2), [pattern, mod2]);
 	// Only sphere mode reads it, and it costs a sample sweep over every face — so it is measured here on
 	// demand instead of inside the scene, which the thumbnails build too.
-	const sheets = useMemo(() => (mode === "sphere" ? sheetCount(pattern) : undefined), [pattern, mode]);
+	// The sphere view's ramp has to be scaled to the sheets the FILL draws, so it reads the same flag.
+	const sheets = useMemo(
+		() => (mode === "sphere" ? sheetCount(pattern, 1024, mod2) : undefined),
+		[pattern, mode, mod2],
+	);
 	return (
 		<IcoFreedrawCanvas
 			pattern={scene.pattern}

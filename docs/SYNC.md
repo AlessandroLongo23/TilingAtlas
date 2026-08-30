@@ -2886,6 +2886,17 @@ form → n → k in both surfaces. No new search: a tile is a cyclic angle word,
 boundary walk (OEIS-checked) plus a palette per board was the engine side. ⚑ Three defects: the face
 filter is unsound on any REFLEX palette (trihex 2 against 475), the pruner emits one of each mirror
 pair, and `referenceToCatalogue` dropped the board so /play showed no levels. NOTES 2026-08-24.
+
+## 2026-08-24 (second) — Marek's four links: a deep-link bug and 24 solids that were not polyhedra — CC
+
+Every spherical and hyperbolic /play link opened arch-cuboctahedron: `geometry` catches up to a new
+selection one commit late, and the empty-switch effect read that one-render mismatch as licence to
+replace it. Fires on an explicit ref now. Separately the non-convex shelf went 302 → 278 — 4 records
+with two vertices of the map on one point (`pinched` measures the FILL's merge, not the geometry's),
+20 with two faces sharing an edge and a plane, a test that had run on the convex half only. ⚑
+`annotate_derivation` globbed a narrower cell list than the shelf and had filed 59 searched records
+"constructed". NOTES 2026-08-24 (second). 8490380
+
 ## 2026-08-25 — Spherical View options: two looks deleted, the segmented toggle rebuilt — CC
 
 Studio look and Realistic are gone with their code (`sphericalCarvedMaterial.ts` deleted, the plain light
@@ -2925,3 +2936,40 @@ segment, a round joint (rotating rings about the turn axis) at every corner, a b
 a swept tube has ONE ring at a corner and needs two, which is why the corners were bridged and skewed.
 The stroke's radial 1.006 lift, invisible head-on and a full stroke-width at the limb, became a
 `polygonOffset` on the fill. "Deep arc" removed end to end. NOTES 2026-08-28.
+
+## 2026-08-29 — Marek's drop lands: eleven boards, 460,612 certificates, 0 failures — CC
+
+Twelve archives out of `to_sort`, filed and manifested. Eight hyperbolic edge boards, the dodecagonal
+prism and the two Archimedean freedraw boards (3.4.6.4, 4.8.8) reached existing shelves; 4412 and 488
+reproduce their censuses exactly. ⚑ An id there is a vertex COMBINATION, not one board. ⚑ Two bugs
+fixed: the freedraw driver parsed `solution_list.txt` as a certificate, and the octagon was missing from
+`REGULAR_KINDS`. `abcdtest` (1.18M certs) needs a driver, not an engine. NOTES 2026-08-29.
+
+## 2026-08-25 (third) — the isotoxal star develops; two solids, and no star-faced one — CC
+
+The 3D developers assumed a face's angle follows from (n, d), which is false for an isotoxal n*a — its
+point and dent share n, d and tile. lvert carries the alphabet's CLASS_UNITS now, planar_angle reads the
+corner, and check_realized compares measured angles instead of the regular chord table. Strict
+generalization: 0 disagreements with the old formula on toroid/spherical/star-wide, all three engine
+guards green, a shipped genus group re-develops identically. ⚑ 67 solids from the isotoxal palette at
+k<=2 and NOT ONE has a star face — the star blocks reach solve_dihedrals with correct angles and get no
+root. Two new: the dodecagonal prism and antiprism. NOTES 2026-08-25 (third).
+
+## 2026-08-31 — concave star faces: negative to k=4, and the example is not equilateral — CC
+
+Chased AL's U30 construction four ways. The first isotoxal palette had no pentagon and could not have
+answered it; the D=120 rebuild gives 258 solids at k<=4 with zero star faces. ⚑ The obstruction is the
+CLOSURE and not a circumsphere — a 252-degree dent forces its vertex past 504 and so is always a saddle,
+which positive-defect excludes by construction (AL caught that mislabel). Under mixed closure, with a
+targeted 3-tile palette and a new verified prune (vertex_polygon_filter.py, 4,000 rejects checked, 0
+missed), 2,425 star-bearing blocks reach the developer and all return no dihedral solution. And U30's
+resolved arrangement has FOUR edge lengths, so the example is not an equilateral polyhedron.
+NOTES 2026-08-31.
+
+## 2026-08-31 (second) — star faces fill modulo 2 — CC
+
+polytopologist's Discord suggestion, shipped as a view toggle: even-odd instead of nonzero winding, so a
+pentagram is five points around a hole and the crossings checkerboard. New band decomposition in
+`starFaceRings` (odd-winding bands: n tip + n notch triangles each), verified against sampled even-odd
+over 12 {n/d} types with zero double coverage. One flag, `starMod2`, on the star shelf, the 41 star-faced
+non-convex solids and the hollow tilings. NOTES 2026-08-31 (second).

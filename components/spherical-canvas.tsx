@@ -300,6 +300,9 @@ export function SphericalCanvas({ solidId, bubbleBites, interactive = true, fitF
 	// new profile is new triangles, not a uniform write.
 	const edgeStyle = useConfiguration((s) => s.bubbleEdgeStyle);
 	const kochLevel = useConfiguration((s) => s.bubbleKochLevel);
+	// Subscribed, not read off getState() with the rest: the mod-2 fill changes which triangles exist, so
+	// the solid has to be rebuilt when it flips and the effect needs it as a dependency.
+	const starMod2 = useConfiguration((s) => s.starMod2);
 	useEffect(() => {
 		const renderer = rendererRef.current;
 		const scene = sceneRef.current;
@@ -343,6 +346,7 @@ export function SphericalCanvas({ solidId, bubbleBites, interactive = true, fitF
 				dark,
 				faceOpacity: cfg.sphericalFaceOpacity,
 				occlude: occlusionRef.current?.uniforms,
+				starMod2,
 			});
 			if (solid) {
 				applyStudioMaterials(solid.object);
@@ -377,7 +381,8 @@ export function SphericalCanvas({ solidId, bubbleBites, interactive = true, fitF
 		// `faceOpacity` is NOT a rebuild dep. Crossing 1 changes how the faces are drawn, and the builder
 		// answers that live through `setOpacity` below — re-deriving the creases of a 212-face solid on every
 		// frame of a slider drag is not something a drag can afford.
-	}, [poly, solidId, isIslamic, polyhedron, bubbleBites, edgeStyle, kochLevel]);
+		// starMod2 belongs here and not in the recolor pass: it changes which triangles exist.
+	}, [poly, solidId, isIslamic, polyhedron, bubbleBites, edgeStyle, kochLevel, starMod2]);
 
 	// Face opacity, live. The hidden-edge test does not switch off below 1, it SOFTENS: a bar behind a face
 	// is worth 1 − opacity, so it is dropped behind a solid face and comes back as the face turns to glass.

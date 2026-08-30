@@ -25,9 +25,12 @@ interface Props {
 	style?: Omit<HollowStyle, "dark">;
 	interactive?: boolean;
 	className?: string;
+	/** Even-odd fill, overriding whatever `style` carries. /play drives it from the sidebar toggle; the
+	 *  thumbnails leave it alone, so a card keeps drawing the tile the classical way. */
+	mod2?: boolean;
 }
 
-export function HollowCanvas({ patchId, style, interactive = true, className }: Props) {
+export function HollowCanvas({ patchId, style, interactive = true, className, mod2 }: Props) {
 	const ref = useRef<HTMLCanvasElement | null>(null);
 	const dark = useIsDark();
 	const [patch, setPatch] = useState<HollowPatch | null>(null);
@@ -63,13 +66,14 @@ export function HollowCanvas({ patchId, style, interactive = true, className }: 
 			if (!ctx) return;
 			ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 			if (!viewRef.current) viewRef.current = fitHollowView(patch, w, h);
-			drawHollow(ctx, patch, viewRef.current, { ...(style ?? DEFAULT_HOLLOW_STYLE), dark }, w, h);
+			const base = style ?? DEFAULT_HOLLOW_STYLE;
+			drawHollow(ctx, patch, viewRef.current, { ...base, dark, mod2: mod2 ?? base.mod2 }, w, h);
 		};
 		paint();
 		const ro = new ResizeObserver(paint);
 		ro.observe(cv);
 		return () => ro.disconnect();
-	}, [patch, style, dark]);
+	}, [patch, style, dark, mod2]);
 
 	// Pan + zoom. Kept local to the ref so a drag does not re-render the tree every frame.
 	useEffect(() => {
@@ -134,7 +138,7 @@ export function HollowCanvas({ patchId, style, interactive = true, className }: 
 			ctx,
 			patch,
 			viewRef.current,
-			{ ...(style ?? DEFAULT_HOLLOW_STYLE), dark },
+			{ ...(style ?? DEFAULT_HOLLOW_STYLE), dark, mod2: mod2 ?? (style ?? DEFAULT_HOLLOW_STYLE).mod2 },
 			cv.clientWidth,
 			cv.clientHeight,
 		);

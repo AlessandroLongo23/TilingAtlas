@@ -151,9 +151,25 @@ export function ringTurning(unit: V3[], f: number[]): number {
 	return Math.max(1, Math.round(Math.abs(turn) / (2 * Math.PI)));
 }
 
-/** Rings of one face, expressed as NEW points appended to `verts`. Returns the convex rings that fill
- *  the face. A convex face (d = 1) returns its own ring untouched and appends nothing. */
-export function starFaceRings(face: number[], dRaw: number, verts: V3[]): number[][] {
+/**
+ * Rings of one face, expressed as NEW points appended to `verts`. Returns the convex rings that fill
+ * the face. A convex face (d = 1) returns its own ring untouched and appends nothing.
+ *
+ * `mod2` switches the fill rule from nonzero winding to EVEN-ODD, which is what the discussion above
+ * calls the modulo-2 reading: a pentagram drawn this way is five points around an empty pentagon,
+ * because the core is covered twice and 2 = 0 mod 2. Under it the region splits into concentric bands,
+ * one per crossing ring, and only the odd-numbered ones are ink — so a {n/d} reads as d alternating
+ * layers instead of one silhouette, and the checkerboard shows where the edges cross.
+ *
+ * The band structure follows from the same ring formula. The region covered w times or more is the
+ * 2n-gon alternating ring d−w+1 (its tips) with ring d−w (its notches), so band w — winding exactly w
+ * — is that 2n-gon minus the next one in: n TIP triangles reaching out to ring d−w+1, plus n NOTCH
+ * triangles dipping in to ring d−w−1. Two degenerate ends. At w = d the inner 2n-gon is empty and the
+ * band is the plain ring-1 n-gon; at j = d−w = 1 the dip ring sits ON the edges of the ring-1 n-gon
+ * (its radius is exactly that n-gon's inradius), so the notches have zero area and are not emitted.
+ * That last case is the whole of d = 2: a pentagram's odd band is its five points and nothing else.
+ */
+export function starFaceRings(face: number[], dRaw: number, verts: V3[], mod2 = false): number[][] {
 	const n = face.length;
 	// A backwards traversal encloses the same region, and the ring formula only holds for d < n/2.
 	const d = dRaw > n / 2 ? n - dRaw : dRaw;
@@ -177,19 +193,50 @@ export function starFaceRings(face: number[], dRaw: number, verts: V3[]): number
 	const a0 = geo[0].a;
 	const at = (radius: number, theta: number): V3 =>
 		add(c, add(mul(ex, radius * Math.cos(theta)), mul(ey, radius * Math.sin(theta))));
-	// The one ring that bounds the fill: j = d−1, the outermost crossing ring, half a step off the
-	// vertices. The inner rings are real crossings and are simply not on the boundary of the region.
-	const rad = (R * Math.cos((Math.PI * d) / n)) / Math.cos((Math.PI * (d - 1)) / n);
-	const core: number[] = [];
-	for (let k = 0; k < n; k++) {
-		core.push(verts.length);
-		verts.push(at(rad, a0 + Math.PI / n + (2 * Math.PI * k) / n));
-	}
 	// The vertex ring reuses the record's own indices instead of appending duplicates on top of them.
 	const tips = geo.map((g) => g.idx);
-	const out: number[][] = [core];
-	for (let k = 0; k < n; k++) {
-		out.push([tips[k], core[(k - 1 + n) % n], core[k]]);
+	// Ring j: n points at radius R·cos(πd/n)/cos(πj/n), angle a0 + π(d−j)/n + 2πk/n. Ring d IS the
+	// vertices; the inner ones are crossings and get appended, once each, only if a band asks for them.
+	const cache = new Map<number, number[]>();
+	const ring = (j: number): number[] => {
+		if (j >= d) return tips;
+		const had = cache.get(j);
+		if (had) return had;
+		const rad = (R * Math.cos((Math.PI * d) / n)) / Math.cos((Math.PI * j) / n);
+		const idx: number[] = [];
+		for (let k = 0; k < n; k++) {
+			idx.push(verts.length);
+			verts.push(at(rad, a0 + (Math.PI * (d - j)) / n + (2 * Math.PI * k) / n));
+		}
+		cache.set(j, idx);
+		return idx;
+	};
+
+	if (!mod2) {
+		// The one ring that bounds the fill: j = d−1, the outermost crossing ring, half a step off the
+		// vertices. The inner rings are real crossings and are simply not on the boundary of the region.
+		const core = ring(d - 1);
+		const out: number[][] = [core];
+		for (let k = 0; k < n; k++) out.push([tips[k], core[(k - 1 + n) % n], core[k]]);
+		return out;
+	}
+
+	const out: number[][] = [];
+	for (let w = 1; w <= d; w += 2) {
+		const j = d - w;
+		if (j === 0) {
+			// The innermost band is bounded by ring 1 alone: its own notch ring is that n-gon's incircle.
+			out.push(ring(1));
+			continue;
+		}
+		const inner = ring(j);
+		const outer = ring(j + 1);
+		for (let k = 0; k < n; k++) out.push([outer[k], inner[(k - 1 + n) % n], inner[k]]);
+		// j = 1 puts the dip points on the edges of the ring-1 n-gon, so those notches are empty.
+		if (j >= 2) {
+			const dip = ring(j - 1);
+			for (let k = 0; k < n; k++) out.push([inner[k], dip[k], inner[(k + 1) % n]]);
+		}
 	}
 	return out;
 }
@@ -359,9 +406,9 @@ function clipToRings(rs: number[][], verts: V3[], P: V3, u: V3): [number, number
  * uniform — every regular star polyhedron. A cell smaller than the sample spacing can be missed, and
  * then only that cell saturates the top of the ramp.
  */
-export function sheetCount(p: SphStarPattern, samples = 1024): number {
+export function sheetCount(p: SphStarPattern, samples = 1024, mod2 = false): number {
 	const verts: V3[] = p.vertices.map((v) => [...v] as V3);
-	const rings = p.faces.map((f, i) => starFaceRings(f, p.faceType[i][1], verts));
+	const rings = p.faces.map((f, i) => starFaceRings(f, p.faceType[i][1], verts, mod2));
 	let max = 1;
 	const ga = Math.PI * (3 - Math.sqrt(5));
 	for (let i = 0; i < samples; i++) {
@@ -410,7 +457,7 @@ function raySpans(ring: number[], verts: V3[], u: V3): boolean {
  * vertices of the polyhedron and shipping them would misstate V. They are appended past the record's
  * own vertices so the edge list, which indexes only the real ones, stays valid.
  */
-export function sphStarScene(p: SphStarPattern): SphSchwarzScene {
+export function sphStarScene(p: SphStarPattern, mod2 = false): SphSchwarzScene {
 	const key = new Map<string, number>();
 	const tileHsb: [number, number, number][] = [];
 	for (const [n, d] of p.stats.types) {
@@ -425,7 +472,7 @@ export function sphStarScene(p: SphStarPattern): SphSchwarzScene {
 	p.faces.forEach((face, fi) => {
 		const [n, d] = p.faceType[fi];
 		const t = key.get(`${n}/${d}`) ?? 0;
-		const fr = starFaceRings(face, d, verts);
+		const fr = starFaceRings(face, d, verts, mod2);
 		rings.push(fr);
 		for (const ring of fr) tiles[t].push(ring);
 	});

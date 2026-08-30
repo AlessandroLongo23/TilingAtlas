@@ -199,13 +199,14 @@ export function coplanarFaceLayers(poly: Polyhedron, unit: readonly Vec3[]): num
 // `faceSizes[t]` is the source face's vertex count for triangle t, so the mesh builder can colour by
 // polygon size; `triLayers[t]` is its face's coplanar layer (see coplanarFaceLayers), which is 0 for
 // every triangle of every solid that has no two faces in one plane.
-export function flatSolidTriangles(poly: Polyhedron, radius = 1): { positions: Float32Array; faceSizes: number[]; triLayers: number[] } {
+export function flatSolidTriangles(poly: Polyhedron, radius = 1, mod2 = false): { positions: Float32Array; faceSizes: number[]; triLayers: number[] } {
 	// starFaceRings APPENDS the crossing-ring points it needs, so the scaled copy has to be extendable.
 	const unit: Vec3[] = [...solidFitScale(poly, radius)];
 	// One entry per source face: the convex rings that fill it. d = 1 gives back the face itself.
+	// `mod2` is the even-odd fill rule, which empties a pentagram's core; see starFaceRings.
 	const fill = poly.faces.map((f) => {
 		const d = ringTurning(unit, f);
-		return d > 1 ? (starFaceRings(f, d, unit as never) as number[][]) : [f];
+		return d > 1 ? (starFaceRings(f, d, unit as never, mod2) as number[][]) : [f];
 	});
 	const triCount = fill.reduce((sum, rings) => sum + rings.reduce((n, r) => n + r.length - 2, 0), 0);
 	const positions = new Float32Array(triCount * 9);
@@ -245,6 +246,23 @@ export function flatSolidTriangles(poly: Polyhedron, radius = 1): { positions: F
 	return { positions, faceSizes, triLayers };
 }
 
+/**
+ * Whether any face of this solid is a {n/d} star — the only solids where the mod-2 fill rule can change
+ * a pixel. 41 of the non-convex shelf's records qualify; every convex-faced one, self-intersecting or
+ * not, does not, and the sidebar hides the toggle for those instead of offering a control that does
+ * nothing. Read off the face rings themselves (`ringTurning`), the same way flatSolidTriangles does.
+ */
+export function solidHasStarFace(poly: Polyhedron | null | undefined): boolean {
+	if (!poly) return false;
+	const cached = STAR_FACED.get(poly.id);
+	if (cached !== undefined) return cached;
+	const unit = solidFitScale(poly, 1);
+	const has = poly.faces.some((f) => ringTurning(unit, f) > 1);
+	STAR_FACED.set(poly.id, has);
+	return has;
+}
+const STAR_FACED = new Map<string, boolean>();
+
 // The unique polyhedron edges as STRAIGHT chords (2 points each) — the flat solid's real edges, ready to
 // feed the tube skeleton (buildTubeSkeleton) exactly like edgeArcs, but straight instead of curved.
 // `extend` (in the same length units as `radius`) overshoots each end along the chord so adjacent tube
@@ -271,9 +289,12 @@ export function flatSolidTriangles(poly: Polyhedron, radius = 1): { positions: F
  * face planes and surfaces through the neighbours as needles. See buildCreaseRibbons in
  * lib/render/sphericalWireframe.ts, which is where they go.
  */
-export function solidCreaseList(poly: Polyhedron, radius = 1): Crease[] {
+export function solidCreaseList(poly: Polyhedron, radius = 1, mod2 = false): Crease[] {
+	// `mod2` clips the creases to the even-odd region, so they stop at the ink the fill actually lays
+	// down instead of crossing the emptied core of a star face.
 	return sphStarScene(
 		polyhedronAsStarPattern({ id: poly.id, vertices: solidFitScale(poly, radius), faces: poly.faces }),
+		mod2,
 	).crossings;
 }
 

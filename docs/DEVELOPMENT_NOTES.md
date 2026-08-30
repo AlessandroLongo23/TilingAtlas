@@ -16332,6 +16332,179 @@ one hue carries exactly one tile class, checked against an invariant that normal
 opposite convention to the implementation's, so the agreement is about the partition and not a copy of
 the code. Per-board tile counts come out 4 / 6 / 14 / 10 for triangle / square / hexagon / rhombus,
 the last being the Figure 27 count of the paper. No non-rhombic label moved.
+
+## 2026-08-24 — the Euclidean fill moves to C, and star-wide k=2 becomes affordable
+
+The star analogue of the 243-solid `ncx-` shelf — star-faced solids with NO circumsphere — was piloted
+on 2026-08-23 with `star-ico-d`, three tiles and 3,967 blocks. AL's instruction was the full palette:
+`star-wide`, {3,4,5,6,8,10} plus {5/2}, {8/3}, {10/3}.
+
+**The search was never the problem.** `run_k2_buckets.py --require-star --fuse` over the post-great-circle
+3,906 buckets takes **23 seconds** and emits **355,207 pruned k=2 blocks** (589 buckets skipped as
+all-convex — their solids are the `spherical` palette's shelf, which is star-wide's convex subset and is
+already enumerated). The developer is the wall.
+
+**Measured before touching anything** (`experiments/results/star-ncx-k2-euclid-cost-2026-08-24.log`,
+350 blocks): `develop_euclid` costs **4.7 s per block**, split `solve_dihedrals` 22%, `develop` 78%,
+`check_realized` 0%. A failing fill runs the full 2,000-instance guard at ~1.85 ms per pop, because
+every pop builds three 3x3 numpy arrays and rounds two of them into a key. 355,207 blocks at that rate
+is **464 core-hours**. Without a prefilter a like-for-like slice measured 9.2 core-s per block, 908
+core-hours.
+
+**So the same move `eu_sphfill` made for the spherical developer, for this one.** The two fills are the
+same breadth-first walk over dart instances and differ only in what an instance IS: on S² it is
+(dart, frame) with one global edge arc folding every edge, in R³ it is (dart, position, frame), each
+edge folds by its own dihedral, and stepping across an edge translates by the frame's first column.
+That is a per-dart `theta[]` instead of one `rho`, and a position in the key. The guard, the
+round-half-even quantum, the open-addressed instance table and the three map-consistency counts are
+identical, so `EU_FILL_EUCLID` is a mode of `eu_sphfill.cpp` and not a second binary. The abandoned
+`EU_SPHFILL_INSTANCES` path came out in the same edit — it is dead by directive, and deleting it paid
+for a third of the addition.
+
+⚑ **Association matters here in a way it did not on the sphere.** numpy evaluates `R @ Rz(a) @ Rx(b)`
+as `(R @ Rz(a)) @ Rx(b)`, so the C does two multiplications in that order instead of folding `Rz*Rx`
+once per dart. The difference is ~1e-16 per step against a 1e-6 key quantum, but the POSITION
+accumulates over the walk where a spherical frame does not, and there is no reason to spend the margin.
+
+**Speed: 437x on the fill**, measured attempt by attempt on the pilot corpus. End to end a block goes
+from 4.7 s to ~1.9 core-s, and what is left is `solve_dihedrals`, which is now essentially the whole
+cost.
+
+**The soundness gate is the pilot corpus, developed both ways.** `star-ico-d` k=2, all 3,967 blocks:
+the prefilter rejects **3,928 of them (99.0%)** and the run returns **673 realizations collapsing to 83
+congruence classes** — the same 673 and the SAME SET OF 83 SOLIDS the no-prefilter pilot found, verified
+by congruence key, 0 missing on either side. Three records carry different ids: the sharded dedup keeps
+whichever representative of a class it sees first and the chunk order differs between runs, which is the
+`--fuse` caveat again and not the filter. `make check-star` still matches golden on all four claims, so
+the spherical mode is undisturbed by both the new mode and the deletion.
+
+⚑ **`solve_dihedrals` NEVER PROPAGATES on this palette.** 60 of 60 sampled star-wide k=2 blocks take
+the multistart-Newton fallback, against the 89% corner-propagation rate measured on the convex palettes
+at k=3..6. The reason is structural: propagation needs a corner with three or fewer unknown folds, and a
+k=2 block has exactly two corners with valence up to 6, so unless one of them is a valence-3 vertex there
+is nothing to start from. Inside that fallback `np.linalg.svd` is 57% of the profile — the pinv step
+`_lstsq_batch` falls back to when the normal equations give a non-finite step. Levenberg-Marquardt
+damping would cut it, and it is NOT being done: it changes the step direction for exactly the
+rank-deficient candidates, which is a completeness question, and this file already records three
+occasions where a change to how the root space is covered cost solids.
+
+**Resumable, because the machine is shared.** `run_develop_sharded.py` holds every record in the parent
+and writes once at the end, which is right for minutes and wrong for a day: a crash at hour 18 loses all
+of it. `run_euclid_groups.py` splits the pruned FILES into round-robin groups (round-robin, not
+contiguous, because bucket cost spans four orders of magnitude), runs the sharded developer once per
+group into its own JSON, skips any group already written, and merges the union through
+`develop_euclid.congruence_key` — the same key the single-process path uses, because two groups can
+realize the same solid.
+
+## 2026-08-24 (second) — Marek Čtrnáct sent four links, and every one of them was a defect
+
+He was clicking the non-convex shelf. Four `/play` links and a handful of remarks, and the useful thing
+about the set is that no two of the four failures are the same failure while three of them share one
+cause.
+
+### The links themselves did not work, and neither did any other curved link
+
+Measured on production before touching anything: `?tiling=sph-ncx-8-18-12-a` opened
+**arch-cuboctahedron**. So did every other spherical link; hyperbolic ones opened `hp7-1-00001`.
+Euclidean links worked, which is exactly why nobody had seen it — Euclidean is the one geometry whose
+chip already agrees with the selection at mount.
+
+`geometry` is React state that catches up to a new selection in the effect AFTER the one that sets it,
+so a deep link into a curved geometry sits OUTSIDE the active (geometry, decoration) cell for precisely
+one commit. The "finish a switch whose cell was empty" effect tested for that mismatch, so it fired on
+that one commit, threw the linked tiling away and put the Euclidean cell's first row in its place —
+after which `useCatalogueSelection` had recorded the key as applied and never retried. It fires on an
+explicit `awaitingSwitch` ref now, set by the two toggles when they could not move the selection
+themselves. A one-render mismatch licenses nothing.
+
+⚑ This is the FIFTH time /play's deep-link path has needed a line, and the first four were all "the new
+shelf's id prefix is not in the loader's test". This one is not that shape, and would not have been
+caught by adding a prefix: the record was loaded, in the tree, and findable. The selection was taken
+away from it afterwards.
+
+### 24 of the 302 non-convex solids were not polyhedra
+
+Two failures, each one of Marek's links:
+
+**Coincident vertices — 4 records.** `sph-ncx-8-18-12-a`, which he asked about as "does it have an extra
+triangle in the middle cutting it in half that is not visible from the outside?", claims eight vertices
+and has five distinct points. `sph-ncx-11-24-15-e` ("What's this...?") claims eleven and has seven. The
+other two are `ncx-11-24-15-f` and `ncx-7-15-10-a`. The surface folds shut where the points meet, and
+since the id IS `ncx-V-E-F` the id is wrong as well.
+
+⚑ **`develop_euclid` already measured a pinch and this is not the same pinch.** `residual.pinched`
+compares the map's vertex count against the number of entries the FILL emitted, which catches a fill
+whose own dedup merged two map vertices. Here the fill kept them apart and the geometry brought them
+together: `len(V)` still equals `nvmap`, `pinched` reads false, `chi` is still 2. The measurement that
+was missing is over the POSITIONS, and it is now in `check_realized` beside the other one.
+
+There is no threshold judgement in this. The four sit at 1.0e-6 to 1.6e-6 of an edge and the closest
+clean record in all 414 is `ncx-14-33-21-i` at 5.1e-3. Three orders of magnitude of daylight.
+
+**Coplanar neighbouring faces — 20 more.** Two faces share an edge and a plane, so their union is the
+real face and the shared edge is not an edge; where they continue through it the union is a rhombus,
+which is not a regular polygon. Marek arrived at this from the other end: *"It seems a bit inconsistent
+that this one is allowed [`sph-ncx-10-22-14`] but not just gluing two triangular prisms into a rhombic
+prism."* He is right and the asymmetry was one line:
+
+    r_here = [r for r in recs if not r["residual"].get("convex") and not is_pinched(r)]
+    degen  = [r for r in recs if r["residual"].get("convex") and r["residual"].get("coplanarNeighbour")]
+
+The degeneracy test ran on the CONVEX half only. Two triangular prisms glued on a square face is convex
+and was dropped; `ncx-10-22-14` is reflex, carries two flat edges of the identical kind, and shipped.
+`convexity()`'s own docstring had been arguing his side the whole time — "adjacent triangles merge into
+rhombi and the faces stop being the faces", which is why the fully augmented dodecahedron is not a
+Johnson solid.
+
+⚑ **The gate is NOT `residual.coplanarNeighbour`.** That asks whether ANY vertex outside a face lies in
+its plane, which is a broader question and the wrong one here: it flags 44 of the 302, including
+`ncx-32-60-30-b`, whose thirty faces meet at no flat edge at all. ADJACENCY is what makes two faces
+merge into one, so adjacency is what `degeneracy()` tests.
+
+**302 → 278**, and the two measurements agree with each other: the 4 coincident records are exactly the
+4 whose coplanar edges are folds (dihedral 0) rather than flat continuations (dihedral π). All 278
+surviving ids were reused verbatim, so nothing that stays moved. Downstream: 155/123 on the crossing
+split (was 167/135, and two of the four solids the union used to add went with the drop),
+`NCX_INSCRIBED` back to one entry for the third time and the third reason, level census hybrid 335 →
+311 with the other five buckets untouched.
+
+### And the provenance pass was reading a different corpus from the shelf
+
+Running the documented rebuild surfaced this on its own. `annotate_derivation.py` globbed
+`sph-k*/euclid-k*.json` for its default cells; the shelf builds from a list that also has
+`star-ico-k2-euclid.json`, sitting bare in the same directory. So the provenance pass saw four files
+where the shelf saw five, found no search evidence for the 59 star records, and filed every one of them
+**"constructed"** — the claim that the atlas built them by hand when a search had just found them. That
+is the precise error the flag one level down in that same function already warns about. One list now,
+in `gen_nonconvex_shelf.DEFAULT_CELLS`, imported by the other script.
+
+### What Marek raised that is NOT fixed here
+
+* **The circumsphere centre can lie outside the solid**, and `hasSphereView` only asks whether a
+  circumsphere EXISTS. Three shipped solids fail on it — pentagonal cupola, pentagonal pyramid, square
+  cupola — and all three are handed the round view, which is what he was looking at when he wrote "the
+  triangles aren't even triangular … majority of the sphere should be taken by that decagon because
+  it's inverse". For J5 the centre sits ~1.15 below the decagon plane, so the whole solid subtends a
+  cone of half-angle 54.5° from it and the decagon has to take the complementary 79%.
+* **The pyramids at 4 < n/d < 6.** His bound is the condition for the pyramid to exist in R³; the
+  2026-08-20 note above derives n/d < 4 and says "there is no pyramid" past it. Both are right about
+  different objects and the gap between them is the SAME fact as the bullet above: the circumcentre is
+  on the base plane at n/d = 4 and below it beyond. Eight are missing inside the n ≤ 20 range the shelf
+  already ships — {9/2}, {11/2}, {13/3}, {14/3}, {16/3}, {17/3}, {17/4} and his {19/4}.
+* **The five levels are not on /theory**, only in `TILING_LEVEL_NOTE` as filter tooltips.
+* **Retrograde notation** ({3/2}, {5/3}, {5/4}) has nothing to apply to yet: zero shipped records carry
+  a retrograde face, `star-wide.json` excluding them by design because a negative corner angle breaks
+  `enum_configs`' monotonic prune.
+* **The torus.** `ncx-32-60-30-b` does have the pair he remembers — exactly one pair of parallel coaxial
+  squares, centres 0.562 apart, and nothing else in the solid is close to parallel-and-coaxial. No
+  toroid can ever come out of this search and it is not a question of k: `gen_alphabet`'s
+  "positive-defect" closure requires every vertex to close with 0 < Σ angles < 2π, and discrete
+  Gauss–Bonnet then forces χ = 2. A torus has χ = 0, so its total defect is 0 and it needs saddle
+  vertices to pay for the positive ones. Measured on this solid: all 32 vertices under 345°, every one
+  of them positive. Stewart's toroids are a different closure mode, not a deeper run.
+* **Deep links to the 24 withdrawn records** now fall through to the first Euclidean tiling, the
+  ordinary unknown-key path. Two of Marek's four links are in that set.
+
 ## 2026-08-25 — The spherical View-options pass: two controls deleted, one toggle rebuilt
 
 AL sent a screenshot of the spherical View options tab with six complaints, all of them about the panel
@@ -16692,3 +16865,245 @@ present at once.
 `bump()`, the picker's board-dependent filter, the `bubedge=deep` URL value, and `circleSagitta` /
 `sphereDepths().circle` on the spherical side — the circle-making sagitta had no other consumer. Six
 profiles, one authored at the triangle scale, one depth rule (planar proportion under the bite cap).
+
+## 2026-08-29 — Marek's drop: eleven boards ingested, two grids built, two bugs found
+
+Twelve archives arrived in `materials/solvers/to_sort/` with a written description of the complexity
+levels. Filed into the geometry/decoration leaves with sha256 rows in `MANIFEST.tsv`; `levels.txt` sits
+beside `tilings_exploration.txt` in `writeups/`. Full measurement log:
+`experiments/results/2026-08-29-hyp-edges-ingest.md`.
+
+**460,612 certificates developed, zero failures, across eleven boards.** Eight hyperbolic edge boards
+(33337, 33346, 33355, 33356, 33445, 33446, 34444, 333334), the dodecagonal prism 4412, and the two
+Archimedean Euclidean boards 3.4.6.4 and 4.8.8. Both boards that ship a census reproduce it exactly:
+4412 over k=1..24 and 488 over k=1..10. Two developed slices are withheld for size — `e33355-k5`
+(90,387 tilings, 82 MB packed) and `e33445-k5` (78,019, 72 MB) — against a 36 MB largest shipped shard,
+and both are named in their board rows so the shelf does not imply it holds them.
+
+**An id in these corpora is a vertex COMBINATION, not one board.** This corrects what I first assumed.
+`33445` carries four cyclic configurations of {3,3,4,4,5} and a SINGLE certificate mixes them, so the
+underlying board is not uniform — level 4, "Combination", on the ladder `levels.txt` describes, which is
+why the prose and the corpora arrived together. It cost no code: `develop_hyp_edges` reads `config` only
+as a multiset, for the forced ℓ and one angle unit per distinct face, and the per-certificate figure
+drives every vertex table. Only the label had to change, to name the combination and not one of its
+configurations.
+
+**The two freedraw grids were data rows, not new machinery — including 4.8.8.** The README had carried
+"needs a new freedraw grid" for `4436` since the 2026-08-12 ingest, and I repeated the implication that
+this meant new geometry. It did not. 3.4.6.4's corners are 60/90/120°, which are 2/3/4 in 30° units and
+close at 12, so it was never blocked on anything and only wanted a row. 4.8.8 was genuinely blocked, on
+one thing: 135° is not a multiple of 30°, so the board is off the 12-direction ring entirely. It takes
+`"ring": 8` — the ℤ[ζ₈] ring the `sch244` Schwarz board introduced on 2026-07-29 — where A4=2, A8=3 and
+the figure closes at 8. Both take the patch path for hex's reason (6 and 4 vertices per unit cell, so no
+lattice a bitmask could index).
+
+Verified three ways rather than by absence of an exception: the unit-cell area against the sum of
+regular-polygon face areas (4.8.8: 5.82845 vs 5.82843, one square + one octagon; 3.4.6.4: 6.46411 vs
+6.46410, 2 triangles + 3 squares + 1 hexagon); the digon-free slice — nothing drawn, so the bare
+underlying tiling — coming back exactly once per k; and 488's census.
+
+**Bug: the freedraw driver decoded Marek's census as a certificate.** `solution_list.txt` is a `.txt`
+sitting beside the certificates, and `main()` swept `*.txt` unfiltered, so the parser turned its header
+into a block with an empty `rneig` and the develop died on an `IndexError` — 18,000 certificates into
+the 4436 run, which is why it looked like a rare geometry failure and not a driver one. Both hyperbolic
+drivers already gated on the certificate filename; `develop_freedraw.py` now does too (`CERT_FILE`).
+
+**Bug: the octagon was excluded from `REGULAR_KINDS`, and adding the 4.8.8 board made that wrong.** The
+exclusion was correct and well argued — on a triangle/square grid 135° is not a non-negative integer
+combination of 60° and 90°, so no octagon can appear, the same lone exception as t1002 under the
+12-direction decision. But the 4.8.8 board does not sit on a triangle/square grid; that is the whole
+reason it needed its own ring, and its octagons are base faces. With 8 absent, `classifyRegular`
+returned null for every octagon and the undecorated truncated square tiling — an Archimedean tiling —
+came back `allRegular: false`. Measured before (`n=[4,null]`) and after (`n=[4,8]`, `allRegular=true`,
+with exactly one of the five k=1 patterns all-regular, which is the bare board). The general lesson:
+a provable-impossibility comment is scoped to the boards that existed when it was written.
+
+**⚑ `abcdtest` needs a driver, not an engine.** 264 boards, every one a 4-valent vertex figure over
+sizes 3–11; 247 hyperbolic (1,177,806 certificates), 14 spherical (24), 3 Euclidean (3), and six boards
+hold 77% of it. Its object is exactly what `develop_ai1.py` already ships — a k-uniform hyperbolic
+tiling by regular polygons, no digons, `S<n>` letters, dart records — and running the existing
+`develop_ai1.develop_cert` over five of its boards developed 87,179 certificates with zero failures,
+deriving ℓ from the id's digits and the alphabet from `interior_angle`. What is missing is `board_of`,
+which hardcodes the 3.4.n.4 family's {3, 4, n, 2n} and needs a second mode reading the alphabet off the
+id. The blocking question is editorial: at ~1.5 KB of darts per record the corpus is ~1.8 GB against a
+1.2 GB `public/`, so only a few percent can ship, and choosing breadth (every board, shallow) over depth
+(few boards, exhaustive) is a decision about what the shelf claims. Awaiting AL. One id is misnamed:
+`3711` is the 3-valent 3.7.11, since Marek writes 11 as `b` everywhere else.
+
+**⚑ `levels.txt` has SIX levels and ours has five.** Level 6, "scaled hybrid", allows several
+commensurable edge lengths — the {5,4} superfamily has twelve polygons at four lengths — and
+`lib/tilings/tiling-level.ts` has no notion of edge length at all. Marek also applies the ladder to
+Euclidean tilings, where our implementation deliberately refuses to; his level-3 claim (no Euclidean
+members) is one we cannot currently display. The Euclidean catalogue ships `m` and `partition` but no
+per-orbit configurations, so levels 4/5 there need data we do not have. Unresolved, not started.
+
+## 2026-08-25 (third) — the OTHER star: isotoxal outlines develop, and what came out
+
+AL: *"we use the star polygon as a self-intersecting polygon with exactly n sides … but in the Euclidean
+tilings we use the different definition, the non-self-intersecting 2n-gon with alternating angles. If we
+have that palette instead, what kinds of polyhedra do we get?"*
+
+The repo already draws that distinction — `kind: "starpoly"` is the self-intersecting {n/d}, `kind:
+"star"` the isotoxal outline — and every polyhedron the atlas held used starpoly. The isotoxal palettes
+(star18/20/24, isotoxal-*, ring*) existed in bulk and every one carried `closure: None`, the flat plane.
+None had ever been run with a defect closure, and none could have been: the 3D developers rejected them.
+
+### The blocker was ONE assumption in three places, and it was already written down
+
+`parse_configs` says it, about scaled tiles: *"the angle is a property of the corner, not the face."* An
+isotoxal star n*a is the same case — its point and its dent share n, d and tile and differ by up to 200°
+— so (n, d) cannot name the angle. The three places that assumed it could:
+
+  * `install_palette` built lvert as `(CLASS_L, CLASS_WIND)`, throwing the angle away. It now carries
+    `CLASS_UNITS` as a third element. ⚑ That is a strict generalization and not a change: CLASS_UNITS
+    agrees with `(n-2d)π/n` on EVERY class of toroid, spherical and star-wide — 0 disagreements measured
+    — and differs on 30 of 35 isotoxal classes, which is exactly where the formula is wrong. `_nd` reads
+    elements 0 and 1 and ignores the rest, so no call site moved.
+  * `planar_angle` computed the formula. It reads the corner now, and the formula is deleted.
+  * `check_realized` tested the regular chord identity `sin(πsd/n)/sin(πd/n)`, false for two radii. It
+    compares the MEASURED corner angles against the ones the alphabet asked for — the same test for a
+    regular face, the right one for any other, and O(n) instead of O(n²).
+
+⚑ **The first version of the parse fix was wrong and check-deltahedra caught it.** Deriving the vertex
+words from `pr.lvertlistin` looked cleaner and gave length 1 for a tetrahedron's (3,3,3): that array is
+the QUOTIENT word, one dart per orbit. The header parse was right all along and only its regex was too
+narrow — `[0-9_]+` cannot match `3*d15`, so the list came back short and `orbit_folds` died on
+`configs[j]`. Widening it is the whole fix, and the token carries its own angle: `3*d15` IS the 3-star's
+dent at 15 units.
+
+**Regression, all green:** check-deltahedra (8 convex deltahedra, nothing at F=18), check-star (4 claims
+vs golden), check-regular (byte-identical), and a shipped genus group re-developed to the same 97 solids
+and the same χ census. The 2,831-test suite passes.
+
+### What the isotoxal palette actually produces, which is the answer to the question
+
+`isotox-sph` = star24's tiles at positive-defect closure. 8,521 vertex figures, 634 blocks at k=1 and
+2,404 at k=2, 84% and 88% of them using a star tile. **67 distinct solids realize. Not one has a star
+face.**
+
+That is not a plumbing failure and it was checked: the star blocks reach the developer with correct
+angles (a 225° dent beside a 60° triangle) and `solve_dihedrals` returns nothing. Turning the C
+prefilter off changes the answer not at all — 19 solids either way at k=1, 0 lost.
+
+The angle budget says why. Dents on this palette run 210°–300°, all reflex, so two of them already pass
+a full turn: **at most one dent per vertex, with 60–150° left over.** The vertex figures split into
+dents plugged by one or two tiles at 2-valent vertices and points poking into otherwise ordinary
+vertices. Nothing in that budget survives closing in 3D at k ≤ 2.
+
+### Two solids, and they went in through the shelf that already existed
+
+61 of the 67 were already in the atlas. Of the remaining six, four are degenerate — coplanar
+neighbouring faces, Zalgaller's conditional-edge class — and the existing gate drops them. The two clean
+ones are the **dodecagonal prism and antiprism**, and they belong to `prismSolids.ts` by that file's own
+stated rule: which n ship is the palette's answer, not a choice, and `isotox-sph` is the first palette
+here with a 12-gon. Both inscribed to 7e-10, both with a sphere view.
+
+⚑ Feeding the isotoxal cells to `gen_nonconvex_shelf.py --cells` added NOTHING: 26 reflex records, all
+congruent to solids the convex palette had already found. Which is consistent — no star face survived,
+so nothing here is out of that palette's reach.
+
+⚑ **My novelty count was wrong twice before it was right.** A Python regex over the TS tables reads no
+coordinates from the Platonic and Archimedean ones, which are written as expressions, so it called the
+cuboctahedron and the truncated cuboctahedron new; then a TS reimplementation of the congruence key
+disagreed with itself. Settled by exporting the live registry and running the repo's OWN
+`congruence_key` on both sides. One implementation, or the count is fiction.
+
+### Caught in passing: the provenance pass knew four solid tables and there are six
+
+`annotate_derivation.py` names its tables in two literal lists, and `genusSolids` and `hemiSolids` were
+in neither — 95 records with no derivation, and it refused to write rather than annotate half the atlas.
+Both added. And its evidence list had to widen past `DEFAULT_CELLS`: that is what the NON-CONVEX shelf is
+built from and must stay so, but a search that realized a solid is evidence wherever the solid lands, and
+without the genus and isotoxal outputs 80 of the 86 genus records were filed "constructed" — the claim
+that the atlas built by hand what a search had found, the exact error that file's own flag warns about.
+
+## 2026-08-31 — the concave star face, chased to k=4 and into the mixed closure
+
+AL, on the isotoxal run: *"I gave you a k=2 example, so it cannot be empty"* — the small ditrigonal
+icosidodecahedron U30 (5/2.3.5/2.3.5/2.3) with its pentagrams redrawn as outlines and its triangles cut
+into the small visible pieces. Chased from four directions; all four agree and the answer is negative.
+
+**1. The first palette could not have answered it.** `isotox-sph` used star24's tiles, a 15-degree grid
+carrying {3,4,6,8,12} and NO PENTAGON. U30 is 5-fold, so that run was sound and answering a different
+question. `isotox-wide` is star-wide tile for tile at D=120 with the three star faces swapped to their
+outlines: {5/2} -> 5*12 (point 36, dent 252), {8/3} -> 8*15, {10/3} -> 10*24.
+
+**2. k = 1 to 4 on that palette: 258 solids, ZERO with a concave star face.** 520 star-bearing blocks at
+k=4 alone. The detector was checked rather than trusted — it fires on a synthetic 5* outline (36/108),
+and the 52 realized ten-vertex rings are regular decagons.
+
+**3. ⚑ THE OBSTRUCTION IS THE CLOSURE, NOT A CIRCUMSPHERE, and I said it wrong first.** A vertex figure
+is a closed spherical polygon whose SIDES are the face angles, and a 252-degree dent needs the rest of
+its vertex to sum PAST 252 — so the total passes 504 and the vertex is a SADDLE. `positive-defect`
+admits only convex vertices and therefore excludes every dent vertex by construction. That is nothing to
+do with inscribability: the whole ncx shelf is non-inscribable and still positive-defect. AL caught the
+mislabel.
+
+**4. Under MIXED closure it is still empty at k=2.** The nine-tile alphabet explodes — 586 configs at
+positive-defect against 207,658 mixed, and its solver wrote 30 GB in ten minutes, so the blunt run is
+not affordable. `isotox-penta` is the worked example as its own three-tile palette ({3}, {5}, 5*12), the
+star-ico-d pattern. 424,700 blocks at k<=2; a new prune cuts them to 3,328.
+
+⚑ **`vertex_polygon_filter.py` — a sound prune the solver does not do.** Its closure tests the TOTAL and
+says nothing about the largest single corner, so a 252-degree dent beside two triangles passes the word
+enumeration and dies in solve_dihedrals every time. Every side of a closed polygon must be under the sum
+of the others. VERIFIED, not assumed: 4,000 rejects developed in full, 0 would have realized.
+
+**2,425 star-bearing blocks survive that filter and reach the developer. All 2,425 return no dihedral
+solution.** 36 solids came out, none star-faced. So the inequality is necessary and not sufficient, and
+something further obstructs a dent vertex in R3.
+
+**5. And AL's example, measured on U30's own geometry.** Cutting every face by every other face's plane
+and measuring the surviving segments gives FOUR edge lengths: 0.272588, 0.441056, 0.713644, 1.154701.
+The outline edge is s/(2+phi) = 0.276 of the triangle's, and the chords the star cuts across the
+triangles agree with neither. The construction does produce a polyhedron with concave star faces — it is
+simply not EQUILATERAL, so it is outside what any palette here can express.
+
+⚑ **That last point is the one that matters and it is a measurement, not a search result.** "No such
+solid at k <= 4" is evidence; "your example has four edge lengths" is a fact about the example. If the
+atlas ever admits faces at more than one edge length, this object comes back into scope immediately.
+
+## 2026-08-31 (second) — modulo-2 star fills
+
+polytopologist, on the Atlas Discord: a pentagram is a discrete branched double cover, so every point of
+its inner pentagon has two preimages, and drawn modulo 2 that pentagon is empty — leaving a checkerboard
+where the edges cross. He glazes ceramic star polyhedra this way and AL wanted the reading available as
+a view toggle. It is the EVEN-ODD fill rule, and the Atlas already had a note saying it was the wrong
+one; now it is a choice.
+
+**What the geometry needed.** `starFaceRings` (lib/render/sphStar.ts) decomposes a {n/d} face into
+convex pieces, and its 2026-08-19 correction pinned the NONZERO region as one 2n-gon: the ring-(d−1)
+n-gon plus n tip triangles. Modulo 2 does not simplify to that — it is a band structure. The region
+covered w times or more is the 2n-gon alternating ring d−w+1 (tips) with ring d−w (notches), so band w
+is that 2n-gon minus the next one in: n tip triangles reaching out to ring d−w+1, plus n notch triangles
+dipping in to ring d−w−1. Fill the odd w and skip the even. Two degenerate ends make it read right at
+the extremes: at w = d the inner 2n-gon is empty and the band is the plain ring-1 n-gon, and at
+d − w = 1 the dip ring sits exactly on the ring-1 n-gon's incircle, so those notches have zero area.
+That second one is the whole of d = 2 — a pentagram's odd band is its five points and nothing else,
+which is the picture that started this.
+
+⚑ **Checked against the rule and not against itself**, the same way the nonzero rings were: sampled
+even-odd point-in-polygon over {5/2} {7/2} {7/3} {8/3} {9/4} {10/3} {12/5} {8/5} {12/7} {20/9} {13/6}
+{15/4}, area within 1% on every one, and — the check the nonzero test could not have made, since a
+missing notch paid for by an overlap elsewhere passes on area alone — zero doubly-covered samples on
+{7/3} {9/4} {12/5}. The nonzero path is asserted byte-identical, ring for ring and appended point for
+appended point.
+
+**Where it is wired.** One store flag, `starMod2`, read by the three shelves that draw a self-crossing
+face: the star polyhedra (sphStarScene + sheetCount, so the sphere view's density ramp counts the sheets
+the fill actually lays down), the 41 star-faced records on the non-convex shelf (flatSolidTriangles, and
+solidCreaseList so a crease stops at the ink instead of crossing an emptied core), and the Euclidean
+hollow tilings — where it costs one argument to `ctx.fill`, because canvas implements both rules. The
+sidebar offers it only where a star face is actually drawn (`solidHasStarFace` reads the winding off the
+rings; a convex-faced self-intersecting solid is not offered a control that changes nothing).
+
+⚑ **The effect is invisible on some records and that is correct.** A small stellated dodecahedron's
+pentagram cores are interior — buried inside the spikes — so emptying them changes no visible pixel. The
+pentagrammic prism is the clear case: its cap goes hollow and the inside squares show through. On the
+hollow shelf the change is real but muted, because that renderer accumulates translucent overlapping
+copies by design, and one removed layer out of four barely reads.
+
+⚑ **Found in passing, in AL's uncommitted `lib/tilings/sph-star.ts`:** 14 records carried `solid:
+undefined` AND a solid name — a duplicate key. Last wins in JS so the names were live, but `tsc` fails
+on it, and the build with it. The dead `solid: undefined` was removed from those 14; nothing else in
+that edit was touched.
