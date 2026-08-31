@@ -158,10 +158,12 @@ export function installLookRig(
 	scene.environment = studioEnvironment(renderer);
 	scene.environmentIntensity = RIG.env;
 	// Shadows are renderer-global state; every spherical view on a page shares one look, so this is never
-	// contested. PCFSoft costs a blur in the lookup and is what keeps a 2048 map from reading as a
-	// staircase along a star polyhedron's ridge.
+	// contested. PCFSoft is deprecated as of three 0.185 (WebGLShadowMap downgrades it to PCF and warns on
+	// every render), so ask for PCF directly; its hardware comparison tap is what keeps a 2048 map from
+	// reading as a staircase along a star polyhedron's ridge. VSM is the one soft mode left and is wrong
+	// here: it makes every receiver a caster and bleeds light through this much concavity.
 	renderer.shadowMap.enabled = true;
-	renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+	renderer.shadowMap.type = THREE.PCFShadowMap;
 	renderer.shadowMap.needsUpdate = true;
 
 	// Rotate each light's camera-frame offset into world space. The lights all aim at their default target,
