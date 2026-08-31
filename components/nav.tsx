@@ -6,11 +6,14 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { BookOpen, Grid3x3, Library, Palette, Pentagon, PenLine, Play, Shapes, Waves } from "lucide-react"; // History icon commented out with its nav link below
 import { HatMonotile } from "@/components/icons/hat-monotile";
+import { DiscordIcon } from "@/components/icons/discord";
 import { cn } from "@/lib/utils/cn";
 import { useImmersive } from "@/stores/immersive";
 import { Kbd } from "@/components/ui/kbd";
+import { Tooltip } from "@/components/ui/tooltip";
 import { UpdatesButton } from "@/components/updates/updates-button";
 import { CURRENT_VERSION } from "@/lib/updates/entries";
+import { DISCORD_INVITE } from "@/lib/constants";
 import { ThemeToggle } from "./ThemeToggle";
 
 const LINKS = [
@@ -99,6 +102,17 @@ export function Nav() {
 			</div>
 
 			<div className="flex items-center gap-2">
+				<Tooltip label="Join the Discord" side="left" delay={0}>
+					<a
+						href={DISCORD_INVITE}
+						target="_blank"
+						rel="noreferrer"
+						aria-label="Join the Tiling Atlas Discord"
+						className="flex items-center justify-center w-8 h-8 rounded-control border border-line text-fg-muted hover:text-fg hover:bg-surface-overlay transition-colors focus:outline-none"
+					>
+						<DiscordIcon size={15} />
+					</a>
+				</Tooltip>
 				<UpdatesButton />
 				<ThemeToggle />
 			</div>

@@ -13,6 +13,8 @@ import { IsohedralMini } from "@/components/landing/isohedral-mini";
 import { PentagonMini } from "@/components/landing/pentagon-mini";
 import { UpdatesGate } from "@/components/updates/updates-gate";
 import { CURRENT_DATE, CURRENT_VERSION } from "@/lib/updates/entries";
+import { DiscordIcon } from "@/components/icons/discord";
+import { DISCORD_INVITE } from "@/lib/constants";
 
 // The landing page (spec: docs/superpowers/specs/2026-07-22-landing-page-design.md).
 // Conventional skeleton, catalog material: every visual is a real render from the atlas, every
@@ -214,6 +216,16 @@ export default async function HomePage() {
 						Built by Alessandro Longo as part of an MSc thesis on the enumeration of k-uniform
 						tilings.
 					</p>
+					{/* The landing page carries no Nav, so the header's Discord button is repeated here. */}
+					<a
+						href={DISCORD_INVITE}
+						target="_blank"
+						rel="noreferrer"
+						className="mt-1 inline-flex w-fit items-center gap-1.5 text-fg-secondary hover:text-fg transition-colors"
+					>
+						<DiscordIcon size={14} />
+						Join the Discord
+					</a>
 				</div>
 			</footer>
 
