@@ -525,6 +525,39 @@ body {
   }
 }
 
+/* The catalogue tree's reveal (components/sidebar/catalogue-list-panel.tsx): the rows a folder opens
+   into fade up to full ink. An animation, not a transition — the block MOUNTS when the row opens, and
+   only an animation runs on an element's first paint.
+
+   OPACITY ONLY, and the two rules behind that are worth keeping.
+
+   No height collapse: every header in that tree is `position: sticky`, and folding a height needs
+   `overflow: hidden` (a scroll container) or `overflow: clip` (a clip box) between those headers and
+   the scroller. Either one un-pins them, so animating the fold would break the pinned path the fold
+   just created.
+
+   No transform either, which is subtler and cost a bug first. TileGrid virtualises off
+   `getBoundingClientRect().top` measured against the scroller, and it recomputes on EVERY render with
+   no dep array. A 4px translate on an ancestor moves that rect, so a grid inside a reveal picked its
+   visible row window from the animated offset and painted the wrong tiles until the next commit —
+   a flash of the wrong thumbnails. Opacity moves nothing and measures the same. */
+@keyframes ta-tree-reveal {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.ta-tree-reveal {
+  animation: ta-tree-reveal var(--duration-base) var(--ease-out) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ta-tree-reveal {
+    animation: none;
+  }
+}
+
 /* A spread slide (2026-08-02): the prose holds together and the figure floats with EQUAL air above
    and below it. `margin-block: auto` is flex's own free-space distribution, not a chosen number: two
    auto margins on the same item split whatever the slide has left over into two equal halves, so the

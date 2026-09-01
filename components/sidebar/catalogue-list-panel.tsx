@@ -1,7 +1,7 @@
 "use client";
 
-import { Fragment, memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronRight, Download } from "lucide-react";
+import { Fragment, memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { ChevronRight, ChevronsDownUp, Download } from "lucide-react";
 import { useExpandableGroups } from "@/lib/hooks/useExpandableGroups";
 import { compactVertexConfig, tileClassOf, TILE_CLASS_ORDER, TILE_CLASS_LABEL, SUB_ORDER, subOf, familyOfSub, type TileClass } from "@/lib/services/referenceAtlas";
 import { cn } from "@/lib/utils/cn";
@@ -31,6 +31,24 @@ interface CatalogueListPanelProps {
 // path reads as an indented tree pinned to the top of the scrollport.
 const ROW_H = 36;
 const NESTED_TOP = ROW_H + 1;
+// The collapse-all strip pins above the whole header stack, so every sticky row starts one strip
+// further down.
+const TOOLBAR_H = 28;
+
+// Indent guides. A row at depth d draws one hairline per ancestor level, so a nested row can be
+// traced back to the heading that owns it: indentation alone gave four levels of 16px steps and no
+// way to see, at a glance, which heading a "k = 2" belongs to. x follows the pl- steps below (12px,
+// then 16px a level), parked 11px to the left of the child's own text.
+const RAIL_X = (level: number) => 17 + level * 16;
+
+// Ink ranks the levels the way the rails group them: a class heading is the heaviest thing in the
+// wall, its members lighter, the leaves lighter again.
+const DEPTH_TEXT: Record<0 | 1 | 2 | 3, string> = {
+	0: "text-xs font-semibold text-fg",
+	1: "text-xs font-medium text-fg-secondary",
+	2: "text-[11px] font-medium text-fg-secondary",
+	3: "text-[11px] font-normal text-fg-secondary",
+};
 
 // A board on the base hyperbolic shelf ("hyt-…") earns the configuration level only when the level
 // DIVIDES something — the same test the family row already applies one level up. Under 60 tilings the
@@ -156,7 +174,9 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({
 		}
 		return ids;
 	}, [byClass]);
-	const { expanded, toggle, openGroups } = useExpandableGroups(nodeIds, (id) => id, false);
+	const { expanded, toggle, openGroups, toggleAll } = useExpandableGroups(nodeIds, (id) => id, false);
+	// How many folders stand open — the collapse-all strip's label and its disabled state.
+	const openCount = useMemo(() => Object.values(expanded).filter(Boolean).length, [expanded]);
 
 	// One width for every bucket. Measured here, not per grid, so that a single commit gives
 	// them ALL their real heights: a scroll target computed while some buckets were still zero-height
@@ -368,7 +388,7 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({
 						depth={baseDepth}
 						onToggle={() => toggle(id)}
 					/>
-					{expanded[id] ? kSections(g.cls, s.sub, s.ks, (baseDepth + 1) as 1 | 2 | 3) : null}
+					{expanded[id] ? <Reveal>{kSections(g.cls, s.sub, s.ks, (baseDepth + 1) as 1 | 2 | 3)}</Reveal> : null}
 				</div>
 			);
 		});
@@ -401,7 +421,7 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({
 						depth={baseDepth}
 						onToggle={() => toggle(id)}
 					/>
-					{expanded[id] ? paletteRows(g, st.subs, (baseDepth + 1) as 1 | 2) : null}
+					{expanded[id] ? <Reveal>{paletteRows(g, st.subs, (baseDepth + 1) as 1 | 2)}</Reveal> : null}
 				</div>
 			);
 		});
@@ -432,11 +452,13 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({
 						depth={baseDepth}
 						onToggle={() => toggle(id)}
 					/>
-					{expanded[id]
-						? splitsByConfig(s.sub, s.count)
-							? configSections(g.cls, s.sub, s.ks, (baseDepth + 1) as 1 | 2 | 3)
-							: kSections(g.cls, s.sub, s.ks, (baseDepth + 1) as 1 | 2 | 3)
-						: null}
+					{expanded[id] ? (
+						<Reveal>
+							{splitsByConfig(s.sub, s.count)
+								? configSections(g.cls, s.sub, s.ks, (baseDepth + 1) as 1 | 2 | 3)
+								: kSections(g.cls, s.sub, s.ks, (baseDepth + 1) as 1 | 2 | 3)}
+						</Reveal>
+					) : null}
 				</div>
 			);
 		});
@@ -470,7 +492,9 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({
 						onToggle={() => toggle(id)}
 					/>
 					{/* A family row was just rendered above, so the subs beneath it drop the family word. */}
-					{expanded[id] ? subRows(g, f.subs, (baseDepth + 1) as 1 | 2, f.family, f.family !== null) : null}
+					{expanded[id] ? (
+						<Reveal>{subRows(g, f.subs, (baseDepth + 1) as 1 | 2, f.family, f.family !== null)}</Reveal>
+					) : null}
 				</div>
 			);
 		});
@@ -479,6 +503,27 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({
 	return (
 		// The list is a wall: rows stacked edge to edge, the 1px gaps between them the only rules.
 		<div ref={listRef} className="ta-wall flex flex-col gap-px">
+			{/* One way out of a deep tree. There is deliberately no expand-all counterpart: opening every
+			    node would mount a TileGrid for every tiling on the shelf at once — six figures of them on
+			    the euclidean one — which is not a control, it is a way to hang the tab. It pins ABOVE the
+			    header stack, which is why every sticky row below starts at TOOLBAR_H. */}
+			<button
+				type="button"
+				onClick={() => toggleAll(false)}
+				disabled={openCount === 0}
+				className={cn(
+					"ta-sticky-rule bg-surface-chrome sticky top-0 z-50 flex items-center gap-1.5 px-3 text-left",
+					"text-[11px] font-medium text-fg-muted cursor-pointer",
+					"hover:bg-surface-sunken hover:text-fg dark:hover:bg-surface-overlay transition-colors",
+					"focus:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-fg",
+					"disabled:pointer-events-none disabled:opacity-40",
+				)}
+				style={{ height: TOOLBAR_H }}
+			>
+				<ChevronsDownUp size={12} className="shrink-0" aria-hidden />
+				Collapse all
+				{openCount > 0 ? <span className="ml-auto tabular-nums">{openCount} open</span> : null}
+			</button>
 			{byClass.map((g) => {
 				if (single) return <Fragment key={g.cls}>{subSections(g, 0)}</Fragment>;
 				const id = `c:${g.cls}`;
@@ -491,7 +536,7 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({
 							depth={0}
 							onToggle={() => toggle(id)}
 						/>
-						{expanded[id] ? subSections(g, 1) : null}
+						{expanded[id] ? <Reveal>{subSections(g, 1)}</Reveal> : null}
 					</div>
 				);
 			})}
@@ -537,9 +582,20 @@ function TreeRow({
 				// context (catalogue-tab.tsx), so these values never reach the canvas overlay buttons.
 				depth === 0 ? "pl-3 z-40" : depth === 1 ? "pl-7 z-30" : depth === 2 ? "pl-11 z-20" : "pl-[3.75rem] z-[15]",
 			)}
-			style={{ height: ROW_H, top: depth === 0 ? 0 : NESTED_TOP * depth }}
+			style={{ height: ROW_H, top: TOOLBAR_H + NESTED_TOP * depth }}
 		>
-			<span className="min-w-0 flex-1 truncate text-xs font-medium text-fg-secondary">{label}</span>
+			{/* One rail per ancestor level. Absolute inside the row, which `sticky` already positions —
+			    the wall's 1px gaps between rows carry the same line colour, so the rails read as
+			    continuous even though each row paints only its own slice. */}
+			{Array.from({ length: depth }, (_, i) => (
+				<span
+					key={i}
+					aria-hidden
+					className="pointer-events-none absolute inset-y-0 w-px bg-line"
+					style={{ left: RAIL_X(i) }}
+				/>
+			))}
+			<span className={cn("min-w-0 flex-1 truncate", DEPTH_TEXT[depth])}>{label}</span>
 			{/* The count reads as a chip parked against the chevron, not as a number glued to the label:
 			    the labels vary in length, so an inline count landed at a different x on every row. */}
 			<Badge className="shrink-0 rounded-full bg-fg/10 tabular-nums text-fg-secondary">
@@ -552,11 +608,26 @@ function TreeRow({
 					size={13}
 					className={cn("shrink-0", pending === "loading" ? "text-fg animate-pulse" : "text-fg-muted")}
 				/>
-			) : open ? (
-				<ChevronDown size={13} className="text-fg-muted shrink-0" />
 			) : (
-				<ChevronRight size={13} className="text-fg-muted shrink-0" />
+				// ONE glyph that turns, not two that swap: a swap remounts the element and lands the new
+				// arrow with no travel, which is what made opening a folder feel like a jump cut.
+				<ChevronRight
+					size={13}
+					className={cn(
+						"text-fg-muted shrink-0 transition-transform duration-[var(--duration-base)] ease-[var(--ease-out)]",
+						"motion-reduce:transition-none",
+						open && "rotate-90",
+					)}
+				/>
 			)}
 		</button>
 	);
+}
+
+// What a folder row of ROWS opens into. It carries the reveal animation (.ta-tree-reveal, globals.css)
+// and the wall's 1px gaps, which the parent's own `gap-px` cannot reach through this extra box.
+// A k row's TileGrid is deliberately NOT wrapped: it already choreographs its own reveal (scroll +
+// pulse) and it virtualises off its own box, so a second fade over it only competed with that.
+function Reveal({ children }: { children: ReactNode }) {
+	return <div className="ta-tree-reveal flex flex-col gap-px">{children}</div>;
 }
