@@ -61,7 +61,13 @@ NAMES = {
     (60, 90, 24, ((5, 1, 12), (10, 3, 12)), 9, 1): "small stellated truncated dodecahedron (U58)",
     (60, 90, 32, ((3, 1, 20), (10, 3, 12)), 13, 1): "great stellated truncated dodecahedron (U66)",
     (120, 180, 62, ((4, 1, 30), (6, 1, 20), (10, 3, 12)), 13, 1): "great truncated icosidodecahedron (U68)",
-    (60, 120, 44, ((3, 1, 20), (5, 1, 12), (10, 3, 12)), 4, 1): "small ditrigonal dodecicosidodecahedron (U43)",
+    # ⚑ CORRECTED 2026-08-30. This row shipped as U43 and the census is U42's. Both are (60,120,44) at
+    # density 4 with one orbit, so V/E/F/density/k cannot separate them and the CENSUS is the whole
+    # test: U42 great ditrigonal dodecicosidodecahedron is 20{3}+12{5}+12{10/3}, U43 small ditrigonal
+    # dodecicosidodecahedron is 20{3}+12{5/2}+12{10}. Checked against both Wikipedia articles
+    # separately. The record that really is U43 was sitting unnamed two rows down.
+    (60, 120, 44, ((3, 1, 20), (5, 1, 12), (10, 3, 12)), 4, 1): "great ditrigonal dodecicosidodecahedron (U42)",
+    (60, 120, 44, ((3, 1, 20), (5, 2, 12), (10, 1, 12)), 4, 1): "small ditrigonal dodecicosidodecahedron (U43)",
     (120, 180, 44, ((6, 1, 20), (10, 1, 12), (10, 3, 12)), 4, 1): "icositruncated dodecadodecahedron (U45)",
     (60, 120, 52, ((3, 1, 20), (5, 2, 12), (6, 1, 20)), 2, 1): "small icosicosidodecahedron (U31)",
     (24, 36, 14, ((3, 1, 8), (8, 3, 6)), 7, 1): "stellated truncated hexahedron (U19)",
@@ -100,6 +106,31 @@ NAMES = {
     # lateral count were read off that table, not inferred from V/E/F.
     (12, 20, 10, ((3, 1, 4), (4, 1, 5), (8, 3, 1)), 1, 2): "crossed square cupola",
     (15, 25, 12, ((3, 1, 5), (4, 1, 5), (5, 2, 1), (10, 3, 1)), 3, 2): "crossed pentagrammic cupola",
+    # --- 2026-08-30: the fourteen k=1 records that were shipping unnamed. Same discipline as the rows
+    # above — the FACE CENSUS is the test, read off each solid's own Wikipedia article, never inferred
+    # from V/E/F. Eleven were settled by census alone (no other published solid shares it at that
+    # signature). Three could not be: at (60,150,92) the census 80{3}+12{5/2} belongs to U57, U69 and
+    # U74 alike, and at (60,180,112) 100{3}+12{5/2} belongs to U32 and U72. Those were settled on
+    # CIRCUMRADIUS, measured off our own developed geometry as 1/(2 sin(rho/2)) and compared with the
+    # published decimal — nine significant figures, and U74 (0.5800015046) against U72 (0.5806948001)
+    # differ only in the fourth, so the test genuinely discriminates rather than merely agreeing.
+    (24, 48, 20, ((3, 1, 8), (4, 1, 6), (8, 1, 6)), 2, 1): "small cubicuboctahedron (U13)",
+    (24, 48, 26, ((3, 1, 8), (4, 1, 18)), 5, 1): "nonconvex great rhombicuboctahedron (U17)",
+    (48, 72, 26, ((4, 1, 12), (6, 1, 8), (8, 3, 6)), 1, 1): "great truncated cuboctahedron (U20)",
+    (60, 120, 44, ((3, 1, 20), (5, 1, 12), (10, 1, 12)), 2, 1): "small dodecicosidodecahedron (U33)",
+    (60, 120, 44, ((5, 1, 12), (5, 2, 12), (6, 1, 20)), 4, 1): "icosidodecadodecahedron (U44)",
+    (60, 120, 44, ((3, 1, 20), (5, 2, 12), (10, 3, 12)), 10, 1): "great dodecicosidodecahedron (U61)",
+    (60, 120, 52, ((3, 1, 20), (5, 1, 12), (6, 1, 20)), 6, 1): "great icosicosidodecahedron (U48)",
+    (60, 120, 62, ((3, 1, 20), (4, 1, 30), (5, 2, 12)), 13, 1): "nonconvex great rhombicosidodecahedron (U67)",
+    (120, 180, 54, ((4, 1, 30), (10, 1, 12), (10, 3, 12)), 3, 1): "truncated dodecadodecahedron (U59)",
+    # Separated by circumradius, not by census:
+    (60, 150, 92, ((3, 1, 80), (5, 2, 12)), 13, 1): "great inverted snub icosidodecahedron (U69)",
+    (60, 150, 92, ((3, 1, 80), (5, 2, 12)), 37, 1): "great retrosnub icosidodecahedron (U74)",
+    (60, 180, 112, ((3, 1, 100), (5, 2, 12)), 38, 1): "small retrosnub icosicosidodecahedron (U72)",
+    # The prismatic family, on the convention this table already uses for {5/2} and {7/3}: the higher
+    # density of a pair sharing a census is the CROSSED (retrograde) one. Structural, not a citation.
+    (16, 32, 18, ((3, 1, 16), (8, 3, 2)), 5, 1): "octagrammic crossed antiprism",
+
 }
 
 
