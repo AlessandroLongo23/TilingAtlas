@@ -9,6 +9,7 @@ import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import { COLOR_SUB, FAMILY_LABEL, SUB_LABEL, shortSubLabel } from "@/lib/services/shelfLabels";
 import { kNounOf } from "@/lib/services/shelfRegistry";
 import { tierKey, type UnloadedTier } from "@/lib/services/atlasManifest";
+import { Badge } from "@/components/ui/badge";
 import { TileGrid } from "./tile-grid";
 
 // The /play picker: tilings nested by polygon class (regular / star / convex / isotoxal) then by k, each a
@@ -526,7 +527,7 @@ function TreeRow({
 			className={cn(
 				// ta-sticky-rule (globals.css): a pinned row paints its own hairlines, since the wall's
 				// gaps have scrolling tiles behind them while it is stuck.
-				"ta-sticky-rule bg-surface-chrome sticky flex items-center justify-between gap-2 pr-3 text-left cursor-pointer",
+				"ta-sticky-rule bg-surface-chrome sticky flex items-center gap-2 pr-3 text-left cursor-pointer",
 				"hover:bg-surface-sunken dark:hover:bg-surface-overlay transition-colors",
 				"focus:outline-none focus-visible:relative focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-fg",
 				// Every level sits ABOVE a tile's z-10 selection/hover ring (tile-grid.tsx): the ring and
@@ -538,10 +539,12 @@ function TreeRow({
 			)}
 			style={{ height: ROW_H, top: depth === 0 ? 0 : NESTED_TOP * depth }}
 		>
-			<span className="text-xs font-medium text-fg-secondary truncate">
-				{label}
-				<span className="ml-1.5 text-fg tabular-nums">{count}</span>
-			</span>
+			<span className="min-w-0 flex-1 truncate text-xs font-medium text-fg-secondary">{label}</span>
+			{/* The count reads as a chip parked against the chevron, not as a number glued to the label:
+			    the labels vary in length, so an inline count landed at a different x on every row. */}
+			<Badge className="shrink-0 rounded-full bg-fg/10 tabular-nums text-fg-secondary">
+				{count}
+			</Badge>
 			{pending ? (
 				// A download glyph, not a chevron: this row fetches, it does not unfold. The count beside
 				// it is the manifest's, so it is honest before anything has been loaded.
