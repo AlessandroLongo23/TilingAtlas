@@ -33,6 +33,9 @@ export function edgeRadius(lineWidth: number): number {
 
 export interface FlatSolidOptions {
 	hueOffset?: number;
+	/** Per-source-face hue in degrees, overriding the by-polygon-size ramp. The compound view uses it
+	 *  to put its two components half a turn apart; everything else leaves it undefined. */
+	hueFor?: (faceIndex: number, faceSize: number) => number;
 	lineWidth?: number; // the stroke slider — 0 hides the edge tubes, else sets their radius
 	dark?: boolean; // theme — edge-tube colour (baked at build, like the rest of the spherical view)
 	/** How much edge ink: "all" = the solid's edges PLUS the creases where two faces cut through each
@@ -67,8 +70,11 @@ export function buildFlatSolid(poly: Polyhedron | null, opts: FlatSolidOptions =
 	if (!poly) return null;
 
 	// Faces: a non-indexed fan-triangle soup on the unit sphere, flat-shaded, one hue per source face.
-	const { positions, faceSizes, triLayers } = flatSolidTriangles(poly, SPHERE_RADIUS, opts.starMod2 ?? false);
-	const triHues = faceSizes.map((n) => polygonHue(n)); // one base hue per triangle (by polygon size)
+	const { positions, faceSizes, triLayers, triFace } = flatSolidTriangles(poly, SPHERE_RADIUS, opts.starMod2 ?? false);
+	// One base hue per triangle, by polygon size — unless the caller overrides per source face, which
+	// only the COMPOUND view does: two interpenetrating solids that both have squares are one colour
+	// under the size ramp, and then the figure reads as a single lumpy solid instead of as two.
+	const triHues = faceSizes.map((n, t) => opts.hueFor?.(triFace[t], n) ?? polygonHue(n));
 	const geom = new THREE.BufferGeometry();
 	geom.setAttribute("position", new THREE.BufferAttribute(positions, 3));
 	const colorAttr = new THREE.BufferAttribute(new Float32Array(positions.length), 3);

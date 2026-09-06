@@ -15,6 +15,8 @@ import {
 	type SphericalCamera,
 } from "@/lib/render/sphericalCamera";
 import { polyhedronForId } from "@/lib/render/sphericalSolids";
+import { dualCompound, polarDual } from "@/lib/render/dualSolid";
+import { polygonHue } from "@/lib/utils/renderTiling";
 import { measureBox } from "@/lib/render/canvasSize";
 import { captureOverride, offerFrame } from "@/lib/render/capture";
 import { createSphere, type Sphere } from "@/lib/render/sphericalScene";
@@ -85,7 +87,28 @@ type Content =
 	| { kind: "bubble"; bubble: BubbleSphere };
 
 export function SphericalCanvas({ solidId, bubbleBites, interactive = true, fitFraction = DEFAULT_FIT_FRACTION }: SphericalCanvasProps) {
-	const poly = useMemo(() => polyhedronForId(solidId), [solidId]);
+	// THE DUAL IS A VIEW, not another record: when the toggle is on, the canvas draws the polar
+	// reciprocal computed here (lib/render/dualSolid.ts) and nothing else in the pipeline changes —
+	// same mesh builder, same edge bars, same opacity slider. Where the reciprocal does not exist
+	// (a face through the centre, or two coplanar faces) this falls back to the solid; the Options tab
+	// withholds the toggle in that case, so the fallback is a belt-and-braces and not the usual path.
+	const mode = useConfiguration((s) => s.solidDualMode);
+	// `dualFaceStart` rides along so the mesh builder can colour the two components apart: within each
+	// one the by-polygon-size ramp still reads, and the dual's half of the figure is put half a turn
+	// away on the hue ring. Without that a cuboctahedron and its rhombic dodecahedron are one colour,
+	// because the size ramp sees squares in both.
+	const { poly, dualFaceStart } = useMemo(() => {
+		const base = polyhedronForId(solidId);
+		if (!base || mode === "solid") return { poly: base, dualFaceStart: -1 };
+		if (mode === "compound") {
+			const c = dualCompound(base);
+			return "compound" in c
+				? { poly: c.compound, dualFaceStart: c.dualFaceStart }
+				: { poly: base, dualFaceStart: -1 };
+		}
+		const r = polarDual(base);
+		return { poly: "dual" in r ? r.dual : base, dualFaceStart: -1 };
+	}, [solidId, mode]);
 	const hostRef = useRef<HTMLDivElement | null>(null);
 	// The canvas element itself (created imperatively below) — the gate effect writes its touch-action,
 	// and the mount effect reads the gate without taking it as a dep (it must never rebuild the WebGL
@@ -347,6 +370,12 @@ export function SphericalCanvas({ solidId, bubbleBites, interactive = true, fitF
 				faceOpacity: cfg.sphericalFaceOpacity,
 				occlude: occlusionRef.current?.uniforms,
 				starMod2,
+				// Compound only: the dual's half goes 180° round the hue ring, so the two solids read as
+				// two. Within each the by-size ramp is untouched.
+				hueFor:
+					dualFaceStart >= 0
+						? (fi, n) => polygonHue(n) + (fi >= dualFaceStart ? 180 : 0)
+						: undefined,
 			});
 			if (solid) {
 				applyStudioMaterials(solid.object);

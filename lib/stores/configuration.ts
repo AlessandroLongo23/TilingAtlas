@@ -207,6 +207,19 @@ export interface ConfigurationState {
 	// with no circumsphere, and no effect under the Islamic construction, which is drawn on the circumsphere
 	// and nowhere else. See lib/render/sphericalPolyhedron.ts and lib/render/icoFreedraw.ts.
 	sphericalPolyhedron: boolean;
+	/**
+	 * Show the POLAR RECIPROCAL of the solid instead of the solid (lib/render/dualSolid.ts).
+	 *
+	 * A view and not a shelf, deliberately: a dual is a function of a solid, so all 577 of them are
+	 * computed on demand and none is stored. The reciprocal of an Archimedean solid is its Catalan
+	 * solid, of a Platonic solid its partner, and of a hemipolyhedron nothing at all — its faces pass
+	 * through the centre, so the dual's vertices are at infinity and the control is withheld.
+	 *
+	 * "compound" draws both at once. It is offered wherever the dual exists, and it is CANONICAL — the
+	 * two interlocking with edges crossing edges — only where the solid has a midsphere, which 67 of
+	 * the 501 do. Elsewhere the picture is true but the relative size of the two is a choice.
+	 */
+	solidDualMode: "solid" | "dual" | "compound";
 	// Spherical camera projection: false = perspective (foreshortened, the default), true = orthographic
 	// (parallel projection — no perspective distortion, the "isometric" solid look). See spherical-canvas.tsx.
 	sphericalOrthographic: boolean;
@@ -471,6 +484,7 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	islamicBarHeight: 0.025,
 	islamicBarBevel: 0.25,
 	sphericalPolyhedron: true,
+	solidDualMode: "solid" as const,
 	sphericalOrthographic: false,
 	sphericalWeaveFlat: false,
 

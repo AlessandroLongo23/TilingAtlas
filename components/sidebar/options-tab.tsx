@@ -1,11 +1,13 @@
 "use client";
 
-import { Fragment } from "react";
+import { Fragment, useMemo } from "react";
 import { ArrowLeftRight } from "lucide-react";
 import { deformApplies, useConfiguration } from "@/stores/configuration";
 import { hasSphereView } from "@/lib/tilings/sph-inscribed";
 import { solidHasStarFace } from "@/lib/render/sphericalGeometry";
+import { ButtonGroup } from "@/components/ui/button-group";
 import { polyhedronForId } from "@/lib/render/sphericalSolids";
+import { dualIsIsohedral, midradius, polarDual } from "@/lib/render/dualSolid";
 import { isChiralTiling } from "@/lib/services/chirality";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -179,6 +181,27 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 	// a paragraph explaining why it was disabled, which is a worse way to say the same thing.
 	const setShape = (v: string) =>
 		setCfg(v === "polyhedron" ? { sphericalPolyhedron: true, isIslamic: false } : { sphericalPolyhedron: false });
+	// THE DUAL. Offered where the polar reciprocal exists, which is a property of the solid and not of
+	// the shelf: a face through the centre sends a dual vertex to infinity (every hemipolyhedron, and a
+	// few genus and non-convex records), and two coplanar faces collapse to one dual vertex. In both
+	// cases there is no dual polyhedron to draw and the control is withheld rather than shown disabled.
+	//
+	// The caption states the ONE fact that makes the reciprocal worth looking at: whether it is
+	// isohedral. It is exactly when the solid is vertex-transitive, so the Archimedean solids answer
+	// yes and hand back the thirteen Catalan solids, and the Johnson solids answer no. Read off the
+	// SOLID's vertex orbits, never off the dual's faces — see dualSolid.ts for why that is the sound
+	// side of the identity.
+	const dualSolid = useMemo(() => {
+		const base = polyhedronForId(selected?.spherical?.solid ?? "");
+		if (!base) return null;
+		const r = polarDual(base);
+		if (!("dual" in r)) return null;
+		// The midsphere GATES the compound. "These two interlock" and "these two are drawn at a size I
+		// chose" are different claims, and the atlas does not make the first when only the second is
+		// true — so where there is no midsphere the option is disabled and says why, rather than
+		// rendering a figure whose scale is arbitrary.
+		return { isohedral: dualIsIsohedral(base), hasMidsphere: midradius(base) !== null };
+	}, [selected?.spherical?.solid]);
 	const isHyperbolicDisk = isDiskSurface(surface);
 	// One picker per color of the SELECTED pattern (2 to 4 today), read off the record, not the
 	// palette — the store keeps a full-width palette so switching between a 2- and a 3-color tiling
@@ -1154,6 +1177,33 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 									rightValue="polyhedron"
 									value={shapeIsSphere ? "sphere" : "polyhedron"}
 									onChange={setShape}
+								/>
+							</Reveal>
+							{/* THE DUAL, every spherical solid whose reciprocal exists. */}
+							<Reveal show={!!dualSolid && !selected?.sphBubble}>
+								<ButtonGroup
+									options={[
+										{ value: "solid" as const, label: "Solid" },
+										{
+											value: "dual" as const,
+											label: "Dual",
+											tooltip: dualSolid?.isohedral
+												? "The polar reciprocal. Isohedral — one face orbit — because this solid is vertex-transitive."
+												: "The polar reciprocal. Not isohedral: this solid is not vertex-transitive.",
+										},
+										{
+											value: "compound" as const,
+											label: "Compound",
+											disabled: !dualSolid?.hasMidsphere,
+											tooltip: dualSolid?.hasMidsphere
+												? "Both at once, reciprocated about the MIDSPHERE — their edges cross, perpendicularly, at the tangency points."
+												: "No compound: this solid has no midsphere — no one sphere touches all its edges — so nothing fixes the two components' relative size, and the figure would say nothing true about either.",
+										},
+									]}
+									selected={cfg.solidDualMode}
+									onChange={(v) =>
+										setCfg({ solidDualMode: v, ...(v === "solid" ? {} : { sphericalPolyhedron: true, isIslamic: false }) })
+									}
 								/>
 							</Reveal>
 							{/* FACE OPACITY, every spherical shelf. This replaced a Fill/Wireframe toggle (AL,
