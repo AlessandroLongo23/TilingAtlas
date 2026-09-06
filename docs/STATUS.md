@@ -4,14 +4,14 @@
 > clobber-tolerant** — if two agents overwrite it, nothing is lost, because the *canonical*
 > history lives in the append-only **ledgers** below. Regenerate it from the latest signed
 > entry of each ledger. **Never write history here.** — last updated 2026-08-23, CC
-> (acting as TA too, AL authorization 2026-07-10). Last touched 2026-08-24 (second).
+> (acting as TA too, AL authorization 2026-07-10). Last touched 2026-09-06.
 
 ## Marek Čtrnáct's shelf review: what is fixed and what is open (2026-08-24)
 
 **FIXED.** Every spherical and hyperbolic /play deep link opened the wrong tiling (arch-cuboctahedron,
 or hp7-1-00001) — a one-render geometry/selection mismatch that the empty-switch effect read as licence
 to replace the selection. Commit 8490380, verified against a production build on all four of his links
-plus a hyperbolic and a Euclidean control. **NOT PUSHED** — AL's call.
+plus a hyperbolic and a Euclidean control. Committed 2026-09-06 with the rest of the 08-24..09-01 work; not pushed, AL reviews first.
 
 **FIXED.** The non-convex shelf is 278, not 302: 24 records were not polyhedra (4 with two vertices of
 the map on one point, 20 with two faces sharing an edge AND a plane). All 278 surviving ids reused, so
@@ -24,7 +24,7 @@ check-star and check-deltahedra all pass; full suite 2,831 green; `pnpm build` c
 never where its centre is; pentagonal cupola, pentagonal pyramid and square cupola have it OUTSIDE and
 all three render wrong. (2) The {n/d} pyramids with 4 < n/d < 6 are missing for the same reason — eight
 of them inside the n ≤ 20 range already shipped, {19/4} among them. (3) The five levels are nowhere on
-/theory. (4) Retrograde notation, the vertex-figure view, and the hemipolyhedra. Detail:
+/theory. (4) Retrograde notation and the vertex-figure view; the hemipolyhedra shipped 2026-08-30. Detail:
 DEVELOPMENT_NOTES 2026-08-24 (second).
 
 ## PAUSED: star-wide k=2, the non-inscribed star shelf (2026-08-24)

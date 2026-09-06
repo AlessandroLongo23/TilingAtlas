@@ -3007,3 +3007,11 @@ a URL-driven check cannot see: `board` was parsed from the URL but never seriali
 and reload dropped it, on every board shelf); selecting an ai1/ai2 board loaded only its eager slices
 (3.4.7.4 read 10 against 16,459 shipped); the edge bases had the same gap. All three fixed, six boards
 verified against their shipped totals. NOTES 2026-09-01.
+
+## 2026-09-06 — the 2026-08-24..09-01 work is 17 commits and two releases, not pushed — CC
+
+1,274 uncommitted paths split by thread into 17 commits on `polyforms-shelf`; v1.36.0 (past the
+sphere) and v1.37.0 (every board, whole) written. The split found a check-star golden stale since
+8e4e344 (refreshed), tetromino tables that were the unpruned alphabet (regenerated to the Makefile
+default) and every a.b.c.d deep link opening the default tiling (fixed). ⚑ The shader edge reducer
+refuses high-k hyperbolic records and logs an error for each. NOTES 2026-09-06.
