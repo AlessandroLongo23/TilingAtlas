@@ -1,0 +1,4 @@
+[20:05:45] 1272 files, 355207 blocks, 32 groups, 8 workers
+[20:09:15] 1272 files, 355207 blocks, 64 groups, 8 workers
+[20:56:18] group 1/64: 2 records  2823s elapsed, ETA 177853s
+[21:20:11] group 2/64: 1 records  4256s elapsed, ETA 131930s

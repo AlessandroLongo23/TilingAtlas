@@ -39,7 +39,7 @@ close globally, which is what the flood-fill catches.
 Usage:  python3 develop_euclid.py --pruned <dir> --kmin 1 --kmax 2 --out <cells.json>
         python3 develop_euclid.py --selftest
 """
-import argparse, itertools, json, math, os, sys, time
+import argparse, array, itertools, json, math, os, struct, sys, time
 
 import numpy as np
 
@@ -62,11 +62,18 @@ def Rx(a):
 
 
 def planar_angle(nd, retro=False):
-    """Interior angle of a regular {n/d} at one corner. A RETROGRADE face is traversed backwards, so
-    the angle the solid actually turns through at that corner is the reflex one; this is the same
-    convention the Euclidean hollow palettes pin (alphabets/gen_alphabet.py, starpoly reflex lift)."""
-    n, d = ds._nd(nd)
-    a = (n - 2 * d) * math.pi / n
+    """Interior angle AT ONE CORNER. A RETROGRADE face is traversed backwards, so the angle the solid
+    actually turns through there is the reflex one; same convention the Euclidean hollow palettes pin
+    (alphabets/gen_alphabet.py, starpoly reflex lift).
+
+    ⚑ Read off the corner, not computed from (n, d). The old body was (n - 2d)*pi/n, which is right
+    only when every corner of the tile is alike — false for an ISOTOXAL star n*a, whose point and dent
+    share n, d and tile and differ by up to 200 degrees. install_palette now carries the alphabet's own
+    CLASS_UNITS as a third element, and it agrees with the old formula on every class of every regular
+    and starpoly palette, so this is a generalization and not a change. The 2-element fallback keeps
+    callers that build an (n, d) pair by hand working."""
+    a = (2 * math.pi * nd[2] / ds.PALETTE_D) if len(nd) > 2 else \
+        (lambda n, d: (n - 2 * d) * math.pi / n)(*ds._nd(nd))
     return (2 * math.pi - a) if retro else a
 
 
@@ -956,10 +963,21 @@ def solve_vertex(alphas, edges, known, tol=1e-11, seeds=13):
     return [dict(zip(unk, x)) for x in out]
 
 
-def solve_joint(verts, known, rest, tol=1e-11, seeds=7, budget=3000):
+# 1024, not 3000. The multistart's cost is linear in its start count and its ANSWER saturates long
+# before the budget does: the two blocks that need the most starts in the whole k=1 corpus return
+# 3, 10, 13, 15, 16 roots as the budget doubles 64 -> 1024, and 16 is also what 3000 returns.
+# Verified end to end, not by that argument alone — k=1 gives the same 35 solids at 1024 as at 3000,
+# none lost — and it is 2.3x on the k=2 shards, 2.9x on the k=1 run. 512 is another 1.4x and is NOT
+# taken: those two blocks return 15 of their 16 roots there, so it is the first budget that measurably
+# loses something. (EU_JOINT_BUDGET overrides.)
+_JOINT_BUDGET = int(os.environ.get("EU_JOINT_BUDGET", "1024"))
+
+
+def solve_joint(verts, known, rest, tol=1e-11, seeds=7, budget=None):
     """Roots of ALL the link equations at once over the still-unknown edges. Multistart, so what it
     finds is certain and what it misses is not provable; propagation runs first precisely to make this
     space as small as possible."""
+    budget = _JOINT_BUDGET if budget is None else budget
     csas = [[(math.cos(a), math.sin(a)) for a in al] for al, es in verts]
 
     # Every start at once. `rest` are the unknown edge orbits; `known` is fixed, so each vertex reads a
@@ -1018,6 +1036,14 @@ class _Stalled(Exception):
     pass
 
 
+_NE_CAP = int(os.environ.get("EU_NE_CAP", "6"))
+_PROBE_STARTS = int(os.environ.get("EU_PROBE_STARTS", "64"))
+_PROBE_GROWTH = float(os.environ.get("EU_PROBE_GROWTH", "1.8"))
+# An absolute floor as well as a ratio: the two genuine blocks the ratio alone misread sat at
+# p128 = 8 and 10, while the varieties that cost seconds sit at 49 and 67.
+_PROBE_FLOOR = int(os.environ.get("EU_PROBE_FLOOR", "40"))
+
+
 def solve_dihedrals(dec, retro=frozenset(), maxbranch=200000):
     """Every dihedral assignment closing all the links, as theta vectors over the edge orbits.
 
@@ -1041,6 +1067,27 @@ def solve_dihedrals(dec, retro=frozenset(), maxbranch=200000):
     and how much is searched."""
     cycles, eid, ne, alpha = structure(dec, retro)
     if cycles is None:
+        return []
+    # ⚑ REJECTED BEFORE ANY SOLVING, on a dimension count. Each vertex link is a closure in SO(3) and
+    # contributes 3 independent equations, so ne > 3*V leaves a POSITIVE-DIMENSIONAL variety of link
+    # solutions. A realization needs the map to close as well, which is extra equations, so on that
+    # variety the realizations are isolated — measure zero — and the multistart samples it, never hits
+    # one, and charges for 1024 starts to say so.
+    # Measured on the whole k=1 corpus: 1,892 of 4,998 blocks (37.9%) fail this, and the 35 realized
+    # solids ALL have ne <= 3*V (realized ne is 1, 2, 3 or 6 against a rejected spread reaching 8).
+    # This test used to live in the stall path, where it fired on 2 blocks of 120 because a block can
+    # burn its whole budget without ever stalling. At the front it is free and it is the cut.
+    #
+    # AND A SECOND REJECT, on the multistart's own reach. Its starts are a `seeds`-per-axis grid, so
+    # ne unknowns want 7**ne points and it takes 1024: full coverage at ne <= 3 (343), 43% at ne = 4,
+    # 0.9% at ne = 6, and 0.1% at ne = 7. Past that it is not enumerating, it is guessing — and paying
+    # 200 ms a block to do it. Measured on 456 solved k=2 blocks, ne >= 7 is 85% of all remaining time.
+    # The cap is 6 because that is what the corpus says: all 35 realized k=1 solids have ne in
+    # {1, 2, 3, 6}, against a rejected spread reaching 8 and beyond.
+    # ⚑ A DECLARED CAP, NOT A PROOF. These blocks are UNRESOLVED and the report counts them as such.
+    # Raising EU_NE_CAP re-opens them; deciding them properly wants a solver that does not sample.
+    if ne > 3 * len(cycles) or ne > _NE_CAP:
+        solve_dihedrals.last_degenerate = getattr(solve_dihedrals, "last_degenerate", 0) + 1
         return []
     verts = [([alpha[h] for h in c], [eid[h] for h in c]) for c in cycles]
     csas = [[(math.cos(a), math.sin(a)) for a in al] for al, es in verts]
@@ -1068,6 +1115,7 @@ def solve_dihedrals(dec, retro=frozenset(), maxbranch=200000):
         if not any(np.max(np.abs(np.mod(th - w + math.pi, 2 * math.pi) - math.pi)) < 1e-6 for w in out):
             out.append(th)
 
+    solve_dihedrals.last_degenerate = getattr(solve_dihedrals, "last_degenerate", 0)
     out, budget = [], [maxbranch]
 
     def rec(known):
@@ -1097,19 +1145,27 @@ def solve_dihedrals(dec, retro=frozenset(), maxbranch=200000):
     # ---- the valence-3 corners first, BOTH readings, exactly. This is where propagation has to start:
     # from nothing, a corner of valence 4 or more has four or more unknowns and there is nothing to
     # solve, and starting from {} made every k=2 block stall and pay for both paths.
-    v3 = [c for c in cycles if len(c) == 3]
+    # ⚑ solve_corner AND NOT forced_by_valence3 + a global flip (2026-08-31). The old seeding read the
+    # link as a spherical triangle, took acos of each angle — so every theta came back <= pi — and
+    # offered the mirror as one bit flipping ALL THREE at once. That is complete only while the true
+    # solid has no reflex dihedral, which holds for every convex-cornered palette and fails the moment
+    # a face has a reflex CORNER: AL's isotoxal analogue of U30 folds at (142.62, 142.62, 221.81), two
+    # edges under pi and one over, and neither the unflipped (142.62, 142.62, 138.19) nor the flipped
+    # (217.38, 217.38, 221.81) is that. The mixed reading was unreachable, so the block seeded wrong,
+    # propagated to a full assignment and died in finish() on link_miss. solve_corner is the same
+    # closed form the recursion already uses and returns both readings with a per-edge sign.
+    v3 = [i for i, c in enumerate(cycles) if len(c) == 3]
     branches = [{}]
     if v3:
         branches = []
         for bits in itertools.product((0, 1), repeat=len(v3)):
             fixed, ok = {}, True
-            for c, flip in zip(v3, bits):
-                f = forced_by_valence3([c], eid, alpha, ne)
-                if f is None:
+            for i, pick in zip(v3, bits):
+                sols = solve_corner(csas[i], verts[i][1], {})
+                if not sols or pick >= len(sols):
                     ok = False
                     break
-                for e, t in f.items():
-                    t = (2 * math.pi - t) if flip else t
+                for e, t in sols[pick].items():
                     if e in fixed and abs(fixed[e] - t) > 1e-7:
                         ok = False
                         break
@@ -1130,6 +1186,39 @@ def solve_dihedrals(dec, retro=frozenset(), maxbranch=200000):
         if not rest:
             finish(fixed, out)
             continue
+        # ⚑ A DEGENERATE BLOCK IS NOT ENUMERABLE THIS WAY, and running the full multistart on one is
+        # both the whole cost and a fiction: its link variety is POSITIVE-DIMENSIONAL, so the 3000
+        # starts converge to 3000 different points ON A CURVE and it reports them as roots. Measured on
+        # 120 k=2 blocks, the ten worst are 67% of all time and each returns 1,200-2,600 of them.
+        #
+        # The sample cannot contain what we want anyway. A realization needs the map to CLOSE, which is
+        # extra equations beyond the links, so on a curve of link solutions the closing points are
+        # isolated — measure zero — and a finite sample essentially never lands on one. Ground truth:
+        # of 4,998 k=1 blocks, 1,892 have more unknowns than link equations and NOT ONE of the 35
+        # realized solids came from any of them.
+        #
+        # COUNTING UNKNOWNS DOES NOT DETECT IT. The worst block measured has ne=5 against 2 vertices —
+        # overdetermined on paper, 2,032 solutions in fact — because the link equations are DEPENDENT
+        # and the rank is what matters. So probe the behaviour instead: 64 starts cost 2% of the full
+        # multistart, and the two regimes separate cleanly (a real block returns 0, 4, 16, 48; a curve
+        # returns 43 of 64). Over the cap the block is UNRESOLVED, not empty, and the report says so
+        # rather than counting it as searched. Deciding these needs the link and closure systems solved
+        # together, which is a different developer, not a bigger budget.
+        # The test is SATURATION, not a count. Double the start budget: an isolated root set stops
+        # growing, a curve keeps returning new points on it. Measured on shard _34 —
+        #     genuine   4/4   8/8   6/8   7/8       ratio 1.0 - 1.3
+        #     curve    22/49 26/67 2/4  6/16        ratio 2.0 - 2.7   (full runs return 1016, 189, 64, 48)
+        # — which separates cleanly at 1.8, and the two probes together cost 6% of one full multistart.
+        p1 = solve_joint(verts, fixed, rest, budget=_PROBE_STARTS)
+        p2 = solve_joint(verts, fixed, rest, budget=2 * _PROBE_STARTS)
+        if len(p2) >= _PROBE_FLOOR and len(p1) and len(p2) >= _PROBE_GROWTH * len(p1):
+            solve_dihedrals.last_degenerate += 1
+            continue
+        # ⚑ AND THEN THE FULL RUN ANYWAY. Returning p2 here — "it saturated, so this is the answer" —
+        # was tried and REVERTED: it lost 2 of the 35 k=1 solids. Both survivors need ~512 starts to
+        # find all 16 of their roots (3, 10, 13, 15, 16 as the budget doubles from 64), so a 128-start
+        # probe reads as saturated long before it is complete. The probe is sound as a REJECTOR of
+        # runaway varieties and worthless as an enumerator; only the first use survives.
         for sol in solve_joint(verts, fixed, rest):
             nk = dict(fixed)
             nk.update(sol)
@@ -1235,18 +1324,19 @@ def develop(dec, theta, retro=frozenset(), guard=None):
         vb = vid(t + R[:, 0])
         if va != vb:
             E.add((min(va, vb), max(va, vb)))
-    F, Ftype = [], []
+    F, Ftype, Fang = [], [], []
     seen = set()
     for start in range(len(inst)):
         if start in seen:
             continue
-        ring, idx = [], start
+        ring, idx, want = [], start, []
         Ftype.append(ds._nd(lvert[rneig[inst[start][0]]]))
         for _ in range(guard):
             seen.add(idx)
             h, t, R, va = inst[idx]
             ring.append(va)
             hn = rneig[h]
+            want.append(alpha[hn])          # the angle this corner is SUPPOSED to have
             Rn = R @ Rz(alpha[hn]) @ Rx(math.pi - theta[eid[hn]])
             nxt = key(glue[hn], t + Rn[:, 0], Rn @ cross_edge(theta[eid[hn]]))
             if nxt not in inst_id:
@@ -1257,6 +1347,7 @@ def develop(dec, theta, retro=frozenset(), guard=None):
         else:
             raise DevelopError("face did not close")
         F.append(ring)
+        Fang.append(want)
     # The MAP's vertex count: orbits of the instance set under the rneig step, which never moves the
     # translation t, so every instance in an orbit sits at one map vertex. Compare it with len(verts),
     # the number of DISTINCT POINTS the fill produced, and a pinch is the difference.
@@ -1271,7 +1362,7 @@ def develop(dec, theta, retro=frozenset(), guard=None):
         if ra != rb:
             parent[ra] = rb
     nvmap = len({find(x) for x in range(len(inst))})
-    return verts, E, F, Ftype, len(inst), nvmap
+    return verts, E, F, Ftype, len(inst), nvmap, Fang
 
 
 def convexity(V, F):
@@ -1308,7 +1399,7 @@ def vertex_orbit_proxy(V, F):
     return len(fp)
 
 
-def check_realized(V, E, F, Ftype, ninst, tol=1e-6, nvmap=None):
+def check_realized(V, E, F, Ftype, ninst, tol=1e-6, nvmap=None, Fang=None):
     """(ok, residual). Every edge unit, every face a regular planar {n/d}, the map consistent.
 
     No area or density certificate here: those are spherical statements. What replaces them is that
@@ -1337,6 +1428,25 @@ def check_realized(V, E, F, Ftype, ninst, tol=1e-6, nvmap=None):
         res["mapOK"] = res["mapOK"] and not res["pinched"]
     else:
         res["mapOK"] = res["mapOK"] and res["euler"] == 2      # callers that cannot supply it
+    # ⚑ AND THE OTHER HALF OF THE SAME PINCH, which `pinched` above cannot see. That test compares the
+    # map's vertex count against the number of entries the fill EMITTED, so it catches a fill whose own
+    # dedup merged two map vertices. It says nothing about two entries the fill kept apart landing on
+    # one point: len(V) still equals nvmap and the record passes. Four solids reached the shelf that
+    # way and shipped for weeks — ncx-7-15-10-a claims seven vertices and has four distinct points,
+    # ncx-8-18-12-a claims eight and has five (Marek Ctrnact, 2026-08-24, who saw it as "an extra
+    # triangle in the middle cutting it in half that is not visible from the outside"). Measure the
+    # POSITIONS. Tolerance is relative to the edge and the gap in the corpus is three orders of
+    # magnitude: the four sit at ~1e-6 of an edge, the closest clean record at 5.1e-3.
+    if res["mapOK"] and len(V) > 1:
+        P = np.asarray(V, float)
+        sep = np.linalg.norm(P[:, None, :] - P[None, :, :], axis=2)[np.triu_indices(len(P), 1)].min()
+        # E is a SET of pairs, so take any member for the scale — every edge is the same length here by
+        # construction, and edgeCV below is what checks that claim.
+        a, b = next(iter(E)) if E else (0, 0)
+        ref = float(np.linalg.norm(P[a] - P[b])) if E else 1.0
+        res["minVertexSep"] = float(sep / (ref or 1.0))
+        res["coincident"] = bool(res["minVertexSep"] < 1e-4)
+        res["mapOK"] = res["mapOK"] and not res["coincident"]
     if not res["mapOK"]:
         return False, res
     Vn = [np.asarray(v) for v in V]
@@ -1347,18 +1457,27 @@ def check_realized(V, E, F, Ftype, ninst, tol=1e-6, nvmap=None):
     res["edgeLen"] = m
     res["edgeCV"] = max(abs(e - m) for e in el) / m
     worst_plane = worst_shape = 0.0
-    for ring, (n, d) in zip(F, Ftype):
+    for fi, (ring, (n, d)) in enumerate(zip(F, Ftype)):
         pts = np.array([Vn[i] for i in ring])
         c = pts.mean(axis=0)
         _, _, vh = np.linalg.svd(pts - c)
         worst_plane = max(worst_plane, float(np.max(np.abs((pts - c) @ vh[2]))))
-        # a regular {n/d} of unit edge has |v_i - v_j| = sin(pi*s*d/n)/sin(pi*d/n) for ring step s
-        R0 = math.sin(math.pi * d / n)
-        for s in range(1, n):
-            want = math.sin(math.pi * s * d / n) / R0
-            for i in range(n):
-                got = float(np.linalg.norm(pts[i] - pts[(i + s) % n]))
-                worst_shape = max(worst_shape, abs(got - abs(want)))
+        # ⚑ THE FACE IS ITS ANGLES, not its chord table. This was the regular-{n/d} chord identity
+        # |v_i - v_j| = sin(pi*s*d/n)/sin(pi*d/n), which is a statement about a tile whose corners are
+        # all alike and is simply false for an ISOTOXAL star n*a — two radii, two angles — so it
+        # rejected every such face on sight. Every edge already has to be unit (edgeCV above) and the
+        # ring already has to be planar, and an equilateral planar polygon is pinned by its corner
+        # angles, so comparing the MEASURED angles with the ones the alphabet asked for is the same
+        # test for a regular face and the right one for any other. It is also O(n) instead of O(n^2).
+        expect = Fang[fi] if Fang is not None else [(n - 2 * d) * math.pi / n] * len(ring)
+        for i in range(len(ring)):
+            u = pts[i - 1] - pts[i]
+            w = pts[(i + 1) % len(ring)] - pts[i]
+            cs = float(np.dot(u, w) / ((np.linalg.norm(u) * np.linalg.norm(w)) or 1.0))
+            got = math.acos(max(-1.0, min(1.0, cs)))
+            # the measured angle is the unsigned one, so a reflex corner reads as its explement
+            want = expect[i] if expect[i] <= math.pi else 2 * math.pi - expect[i]
+            worst_shape = max(worst_shape, abs(got - want))
     res["planarity"] = worst_plane
     res["faceShape"] = worst_shape
     conv, cworst, coplanar = convexity(V, F)
@@ -1367,6 +1486,90 @@ def check_realized(V, E, F, Ftype, ninst, tol=1e-6, nvmap=None):
     res["coplanarNeighbour"] = bool(coplanar)
     res["vertexFingerprints"] = vertex_orbit_proxy(V, F)
     return (res["edgeCV"] < tol and worst_plane < tol and worst_shape < tol), res
+
+
+# ----------------------------------------------------------------------------- prefilter
+# THE FLOOD FILL IS THREE QUARTERS OF THIS DEVELOPER. Measured on 350 star-wide k=2 blocks (2026-08-24,
+# experiments/results/star-ncx-k2-euclid-cost-2026-08-24.log): 4.7 s per block, of which solve_dihedrals
+# is 22%, `develop` 78% and check_realized 0%. A failing fill runs the full 2,000-instance guard at
+# ~1.85 ms per pop, because every pop builds three 3x3 numpy arrays and rounds two of them into a key.
+# 355,207 blocks at that rate is 464 core-hours.
+#
+# eu_sphfill's EU_FILL_EUCLID mode walks the same fill in C and answers close / consistent / usable,
+# and develop_block is then run UNCHANGED on the survivors. Same division of labour the spherical
+# prefilter has, and the same soundness argument:
+#
+#   * Python still owns every geometry decision. solve_dihedrals runs HERE and its thetas are handed
+#     over; C only walks and counts.
+#   * A "usable" verdict is never trusted for output — develop_block redoes the attempt in full, so
+#     the coordinates the shelf ships are this module's, to the last bit.
+#   * So the only way to lose a record is a verdict of "no" where develop_block would have said yes,
+#     which is CHECKED and not assumed: EU_PREFILTER_VERIFY develops the rejects too and shouts.
+#
+# ⚑ THE FILTER MUST ENUMERATE WHAT develop_block WILL. develop_block takes `maxretro` as an argument
+# and the sharded driver passes 0; at any other value the retrograde subsets it would try are not the
+# ones asked about here, so the filter steps aside rather than answer a different question.
+MAXRETRO = int(os.environ.get("EU_MAXRETRO", "0"))
+PREFILTER = ds.PREFILTER and MAXRETRO == 0
+_GUARD_MIN = 2000                  # develop()'s floor, kept in one place
+
+
+def _euclid_record(dec, theta, eid, guard, rn, gl, al, ns):
+    """One EU_FILL_EUCLID record: the per-dart dihedral is all that varies across a block's thetas."""
+    n = len(dec["rneig"])
+    return (struct.pack("<ii", n, guard) + rn + gl + al +
+            array.array("d", [theta[eid[h]] for h in range(n)]).tobytes() + ns)
+
+
+def prefilter(blocks, verify=False):
+    """The sublist of blocks with at least one theta whose fill closes into a consistent map.
+
+    Falls back to the whole list on any error, because a filter that silently drops work is worse
+    than a slow developer."""
+    if not PREFILTER or not blocks:
+        return blocks
+    try:
+        buf, owner = bytearray(), []                 # attempt index -> block index
+        for bi, b in enumerate(blocks):
+            dec = ds.decode_block(b)
+            rneig, glue, lvert = dec["rneig"], dec["glue"], dec["lvert"]
+            n = len(rneig)
+            eid, _ = edge_ids(glue)
+            rn = array.array("i", rneig).tobytes()
+            gl = array.array("i", glue).tobytes()
+            # the same three expressions develop() uses, so the two cannot drift
+            al = array.array("d", [planar_angle(lvert[h]) for h in range(n)]).tobytes()
+            ns = array.array("i", [ds._nd(lvert[rneig[h]])[0] for h in range(n)]).tobytes()
+            guard = max(_GUARD_MIN, ds.instance_bound(dec["configs"]))
+            for theta in solve_dihedrals(dec, frozenset()):
+                buf += _euclid_record(dec, theta, eid, guard, rn, gl, al, ns)
+                owner.append(bi)
+        if not owner:
+            return []                                # no block has a dihedral solution at all
+        reply = ds._sphfill_ask(len(owner), buf, width=4, mode="euclid")
+        if reply is None or len(reply) != len(owner) * 4:
+            sys.stderr.write("[prefilter] short reply — developing everything\n")
+            return blocks
+        keep = [False] * len(blocks)
+        for i, v in enumerate(struct.unpack("<%di" % len(owner), reply)):
+            if v > 0:                     # 1 usable, 0 closed but inconsistent, -1 did not close
+                keep[owner[i]] = True
+        out = [b for b, k in zip(blocks, keep) if k]
+        if verify:
+            missed = 0
+            for b, k in zip(blocks, keep):
+                if k:
+                    continue
+                recs, _ = develop_block(b)
+                if recs:
+                    missed += 1
+                    sys.stderr.write("[prefilter] ⚑ MISSED a realization: %s\n" % ds.decode_block(b)["id"])
+            sys.stderr.write("[prefilter] verify: %d of %d rejects would have realized\n"
+                             % (missed, len(blocks) - len(out)))
+        return out
+    except Exception as e:                           # never let the filter be the reason a block is lost
+        sys.stderr.write("[prefilter] disabled for this batch: %r\n" % (e,))
+        return blocks
 
 
 # ----------------------------------------------------------------------------- driver
@@ -1383,7 +1586,7 @@ def develop_block(b, maxretro=0):
     for retro in subsets:
         for theta in solve_dihedrals(dec, retro):
             try:
-                V, E, F, Ftype, ninst, nvmap = develop(dec, theta, retro)
+                V, E, F, Ftype, ninst, nvmap, Fang = develop(dec, theta, retro)
             except DevelopError as e:
                 why.append("retro=%s: %s" % (sorted(retro), e))
                 continue
@@ -1394,7 +1597,7 @@ def develop_block(b, maxretro=0):
                    for t in theta):
                 why.append("retro=%s: degenerate dihedral (a flat edge)" % sorted(retro))
                 continue
-            ok, res = check_realized(V, E, F, Ftype, ninst, nvmap=nvmap)
+            ok, res = check_realized(V, E, F, Ftype, ninst, nvmap=nvmap, Fang=Fang)
             if not ok:
                 why.append("retro=%s: certificate failed %s" % (sorted(retro), res))
                 continue

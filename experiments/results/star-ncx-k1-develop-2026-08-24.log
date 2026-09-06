@@ -1,0 +1,9 @@
+[19:35:44] 15936 blocks in 80 work items over 9 workers
+[19:38:45]   develop 1/80  blocks=15936  realized=2  prefiltered=199  181s, ETA 14262s
+[19:39:20]   develop 3/80  blocks=15936  realized=20  prefiltered=591  216s, ETA 5545s
+[19:39:57]   develop 6/80  blocks=15936  realized=198  prefiltered=1160  253s, ETA 3123s
+[19:41:18]   develop 8/80  blocks=15936  realized=204  prefiltered=1557  334s, ETA 3007s
+[19:42:03]   develop 9/80  blocks=15936  realized=220  prefiltered=1749  379s, ETA 2987s
+[19:43:58]   develop 10/80  blocks=15936  realized=228  prefiltered=1945  494s, ETA 3458s
+[19:59:17]   develop 11/80  blocks=15936  realized=234  prefiltered=2142  1413s, ETA 8866s
+[20:04:58]   develop 12/80  blocks=15936  realized=234  prefiltered=2342  1754s, ETA 9940s

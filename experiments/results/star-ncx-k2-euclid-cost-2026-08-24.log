@@ -1,0 +1,19 @@
+19140 blocks from 60 files
+/Users/alessandro/Library/Python/3.9/lib/python/site-packages/numpy/linalg/_linalg.py:3220: RuntimeWarning: divide by zero encountered in matmul
+  return _core_matmul(x1, x2)
+/Users/alessandro/Library/Python/3.9/lib/python/site-packages/numpy/linalg/_linalg.py:3220: RuntimeWarning: overflow encountered in matmul
+  return _core_matmul(x1, x2)
+/Users/alessandro/Library/Python/3.9/lib/python/site-packages/numpy/linalg/_linalg.py:3220: RuntimeWarning: invalid value encountered in matmul
+  return _core_matmul(x1, x2)
+  25/150  93.5s  3.738 s/blk  ETA 467s   dih=25% dev=75% chk=0%
+  50/150  190.3s  3.807 s/blk  ETA 381s   dih=24% dev=75% chk=0%
+  75/150  343.1s  4.575 s/blk  ETA 343s   dih=21% dev=78% chk=0%
+  100/150  449.5s  4.495 s/blk  ETA 225s   dih=22% dev=78% chk=0%
+  125/150  551.1s  4.409 s/blk  ETA 110s   dih=23% dev=76% chk=0%
+  150/150  625.8s  4.172 s/blk  ETA 0s   dih=24% dev=75% chk=0%
+
+150 blocks, 625.8s, mean 4.1717 s/blk, median 3.4861, p90 8.4909, p99 17.5513, max 18.1682
+solve_dihedrals 150.8s (24%)   develop 470.4s (75%)   check 0.0s (0%)
+theta solutions 15755, fills that closed 0, realized 0, timeouts 0
+  fill: flood-fill did not close within 20  15755
+top 10% of blocks = 32.3% of time

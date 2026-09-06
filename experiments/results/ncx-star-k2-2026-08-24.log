@@ -1,0 +1,53 @@
+[12:03:32] 3967 blocks in 80 work items over 8 workers
+[12:04:55]   develop 1/80  blocks=3967  realized=0  prefiltered=0  83s, ETA 6574s
+[12:06:21]   develop 2/80  blocks=3967  realized=0  prefiltered=0  169s, ETA 6604s
+[12:07:07]   develop 4/80  blocks=3967  realized=68  prefiltered=0  215s, ETA 4086s
+[12:07:53]   develop 6/80  blocks=3967  realized=167  prefiltered=0  261s, ETA 3224s
+[12:08:32]   develop 7/80  blocks=3967  realized=167  prefiltered=0  300s, ETA 3131s
+[12:09:41]   develop 8/80  blocks=3967  realized=167  prefiltered=0  369s, ETA 3322s
+[12:10:37]   develop 9/80  blocks=3967  realized=171  prefiltered=0  426s, ETA 3360s
+[12:11:20]   develop 10/80  blocks=3967  realized=171  prefiltered=0  468s, ETA 3277s
+[12:12:02]   develop 13/80  blocks=3967  realized=171  prefiltered=0  510s, ETA 2629s
+[12:12:54]   develop 15/80  blocks=3967  realized=171  prefiltered=0  563s, ETA 2440s
+[12:13:56]   develop 18/80  blocks=3967  realized=229  prefiltered=0  624s, ETA 2150s
+[12:15:27]   develop 20/80  blocks=3967  realized=229  prefiltered=0  715s, ETA 2146s
+[12:16:13]   develop 22/80  blocks=3967  realized=229  prefiltered=0  762s, ETA 2008s
+[12:16:53]   develop 23/80  blocks=3967  realized=229  prefiltered=0  802s, ETA 1987s
+[12:21:51]   develop 26/80  blocks=3967  realized=229  prefiltered=0  1099s, ETA 2283s
+[12:22:30]   develop 28/80  blocks=3967  realized=229  prefiltered=0  1138s, ETA 2114s
+[12:24:11]   develop 30/80  blocks=3967  realized=229  prefiltered=0  1239s, ETA 2065s
+[12:24:48]   develop 31/80  blocks=3967  realized=229  prefiltered=0  1276s, ETA 2018s
+[12:25:20]   develop 34/80  blocks=3967  realized=229  prefiltered=0  1308s, ETA 1770s
+[12:26:11]   develop 36/80  blocks=3967  realized=229  prefiltered=0  1359s, ETA 1661s
+[12:26:45]   develop 38/80  blocks=3967  realized=426  prefiltered=0  1393s, ETA 1540s
+[12:27:59]   develop 40/80  blocks=3967  realized=426  prefiltered=0  1468s, ETA 1468s
+[12:29:58]   develop 41/80  blocks=3967  realized=426  prefiltered=0  1587s, ETA 1509s
+[12:30:43]   develop 43/80  blocks=3967  realized=426  prefiltered=0  1632s, ETA 1404s
+[12:33:42]   develop 45/80  blocks=3967  realized=657  prefiltered=0  1811s, ETA 1408s
+[12:34:39]   develop 47/80  blocks=3967  realized=657  prefiltered=0  1868s, ETA 1311s
+[12:35:18]   develop 48/80  blocks=3967  realized=657  prefiltered=0  1906s, ETA 1271s
+[12:37:24]   develop 49/80  blocks=3967  realized=657  prefiltered=0  2033s, ETA 1286s
+[12:37:55]   develop 50/80  blocks=3967  realized=665  prefiltered=0  2063s, ETA 1238s
+[12:39:42]   develop 52/80  blocks=3967  realized=665  prefiltered=0  2170s, ETA 1169s
+[12:40:42]   develop 56/80  blocks=3967  realized=665  prefiltered=0  2231s, ETA 956s
+[12:41:16]   develop 58/80  blocks=3967  realized=665  prefiltered=0  2264s, ETA 859s
+[12:42:02]   develop 60/80  blocks=3967  realized=665  prefiltered=0  2310s, ETA 770s
+[12:42:55]   develop 61/80  blocks=3967  realized=665  prefiltered=0  2364s, ETA 736s
+[12:44:30]   develop 63/80  blocks=3967  realized=665  prefiltered=0  2458s, ETA 663s
+[12:45:11]   develop 65/80  blocks=3967  realized=665  prefiltered=0  2500s, ETA 577s
+[12:46:20]   develop 69/80  blocks=3967  realized=665  prefiltered=0  2568s, ETA 409s
+[12:48:25]   develop 70/80  blocks=3967  realized=665  prefiltered=0  2694s, ETA 385s
+[12:49:15]   develop 71/80  blocks=3967  realized=665  prefiltered=0  2744s, ETA 348s
+[12:50:23]   develop 73/80  blocks=3967  realized=665  prefiltered=0  2812s, ETA 270s
+[12:51:13]   develop 75/80  blocks=3967  realized=665  prefiltered=0  2861s, ETA 191s
+[12:52:53]   develop 77/80  blocks=3967  realized=673  prefiltered=0  2961s, ETA 115s
+[12:55:42]   develop 79/80  blocks=3967  realized=673  prefiltered=0  3130s, ETA 40s
+[12:55:56]   develop 80/80  blocks=3967  realized=673  prefiltered=0  3145s, ETA 0s
+[12:55:57]   673 records -> 83 congruence classes
+[12:55:57] merged 83 realized records -> /private/tmp/claude-501/-Users-alessandro-Desktop-University-Thesis-TilingAtlas/34adc110-941e-4169-8297-5e417a748958/scratchpad/ncx-star-k2/euclid-star-ico-k2.json (3145s total)
+[12:55:57]   report -> euclid-star-ico-k2-report.txt
+[12:55:57]       3421  retro=[]: flood-fill did not close within 2000 instances; retro=[]: flood-fill did not clo
+[12:55:57]        311  no dihedral solution
+[12:55:57]         16  retro=[]: flood-fill did not close within 2000 instances; retro=[]: flood-fill did not clo
+[12:55:57]         14  retro=[]: flood-fill did not close within 2000 instances; retro=[]: flood-fill did not clo
+[12:55:57]         12  retro=[]: degenerate dihedral (a flat edge); retro=[]: degenerate dihedral (a flat edge); 

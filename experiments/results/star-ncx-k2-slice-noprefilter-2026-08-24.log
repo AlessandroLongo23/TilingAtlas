@@ -1,0 +1,4 @@
+[19:12:58] 2475 blocks in 21 work items over 7 workers
+[19:25:10]   develop 1/21  blocks=2475  realized=0  prefiltered=0  732s, ETA 14646s
+[19:27:12]   develop 2/21  blocks=2475  realized=0  prefiltered=0  853s, ETA 8108s
+[19:31:56]   develop 3/21  blocks=2475  realized=0  prefiltered=0  1137s, ETA 6825s
