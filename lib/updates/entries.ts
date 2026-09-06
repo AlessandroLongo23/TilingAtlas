@@ -67,6 +67,89 @@ export interface UpdateEntry {
 /** Newest first. tests/updates.test.ts asserts that ordering, and every id below. */
 export const UPDATES: UpdateEntry[] = [
 	{
+		version: "1.37.0",
+		date: "2026-09-06",
+		title: "Every board, whole",
+		commit: "a2f4fdf",
+		changes: [
+			{
+				kind: "feature",
+				text: "**271 hyperbolic boards ship whole**, 2,191,775 tilings where 60,400 were. The 247 a.b.c.d boards of Marek Čtrnáct's enumeration join the 3.4.n.4 and {3,n} families, and no board is truncated any more.",
+				href: "/library?geo=hyperbolic&dec=tilings&board=hpq-4568",
+			},
+			{
+				kind: "feature",
+				text: "**Two Archimedean boards in the freedraw browser**, 3.4.6.4 with 18,992 edge patterns to k = 6 and 4.8.8 with 71,331 to k = 10.",
+				href: "/freedraw?g=488",
+			},
+			{
+				kind: "feature",
+				text: "**Eight hyperbolic edge bases**, 282,289 edge systems from 3^4.7 to 3^5.4, among them 3^3.5^2 at k = 5 with 90,387 of its own.",
+				href: "/library?geo=hyperbolic&dec=edges&board=hyp-33355",
+			},
+			{
+				kind: "feature",
+				text: "**The dodecagonal prism's edge systems**, 109,437 of them to k = 24, complete against the census.",
+				href: "/library?geo=spherical&dec=edges&board=spe-4412",
+			},
+			{
+				kind: "fix",
+				text: "**The browse tree counts the atlas**, not what is loaded, so the hyperbolic Tilings row reads 2,220,588 where it read the 32,403 in memory.",
+				href: "/play",
+			},
+			{
+				kind: "fix",
+				text: "**A board survives Copy link**, picking a board fetches the whole board on every board shelf, and a link into an a.b.c.d tiling opens that tiling instead of the default one.",
+			},
+			{
+				kind: "perf",
+				text: "**Picking a board loads only that board's shards**, where a k chip used to pull that k from every board at once and build hundreds of megabytes of heap.",
+			},
+		],
+	},
+	{
+		version: "1.36.0",
+		date: "2026-09-06",
+		title: "Past the sphere",
+		commit: "62d3a0f",
+		changes: [
+			{
+				kind: "feature",
+				text: "**506 solids on the spherical shelf** where there were 355. The 86 of genus 1 to 9 are the atlas's first solids that are not maps on a sphere, the nine hemipolyhedra and 19 isotoxal-star solids arrive with them, and the non-convex shelf grows to 278 after shedding 24 records that were not polyhedra.",
+				href: "/library?geo=spherical",
+			},
+			{
+				kind: "feature",
+				text: "**Every solid can be seen as its dual**, the polar reciprocal, or as the compound of the two where a midsphere fixes their relative size, which 67 solids have. Solid, Dual and Compound sit in View options.",
+				href: "/play?tiling=arch-cuboctahedron",
+			},
+			{
+				kind: "feature",
+				text: "**Nine polyform boards** replace the polyomino shelf, dominoes to tetrominoes, diamonds to tetriamonds and dihexes to tetrahexes, and 27 tilings become 2,047.",
+				tilings: ["dom-ctrnact-01_i-2aa_4aa-1", "tia-ctrnact-01_c-2aa_4ng-1", "teh-ctrnact-01_i-2aa_2ab_2ad_3ap-1", "tet-ctrnact-01_t-2ex_2fj_4clyx-1"],
+			},
+			{
+				kind: "feature",
+				text: "**Bubble tiles reach the sphere**, 29,517 tilings on 28 solids, and the squared Koch curve joins the bubble profiles as the crenel given a level slider.",
+				href: "/library?geo=spherical&dec=edges&class=bubble",
+			},
+			{
+				kind: "feature",
+				text: "**A modulo-2 fill empties a pentagram's core** on the star polyhedra, the star-faced solids and the hollow tilings, and every k = 1 star record now carries its catalogue name.",
+				href: "/play?tiling=ss-10-15-7-d2",
+			},
+			{
+				kind: "changed",
+				text: "**The catalogue tree opens with a fade**, carries each shelf's count in a pill beside the chevron, and the header carries a Discord button.",
+				href: "/play",
+			},
+			{
+				kind: "fix",
+				text: "**Every spherical and hyperbolic link opened the wrong tiling**; the projection toggle rolled the view on the next click; the rhombic bubble board coloured a tile as its own mirror image.",
+			},
+		],
+	},
+	{
 		version: "1.35.0",
 		date: "2026-08-24",
 		title: "Bubble tiles",
