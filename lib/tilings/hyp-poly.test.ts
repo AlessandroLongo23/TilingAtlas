@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
+import { gunzipSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
 import {
@@ -20,14 +21,21 @@ import {
 // matches the files, and the two different kinds of missing k (the corpus has none / this shelf did not
 // ship it) stay distinguishable.
 
+// The abcd shards are stored gzipped (703 MB of packed JSON to 48 MB, in a git-tracked public/), so a
+// reader here has to gunzip exactly as atlasCodec's `shardBody` does in the browser.
 const shardOf = (b: HypPolyBoard, k: number): HypPolyPattern[] | null => {
 	const f = `public${hypPolyShardUrl(b.id, k)}`;
-	return existsSync(f) ? decodeAtlas<HypPolyPattern>(JSON.parse(readFileSync(f, "utf8"))) : null;
+	if (!existsSync(f)) return null;
+	const text = f.endsWith(".gz") ? gunzipSync(readFileSync(f)).toString("utf8") : readFileSync(f, "utf8");
+	return decodeAtlas<HypPolyPattern>(JSON.parse(text));
 };
 
-const anyShard = existsSync("public/hyperbolic-poly/hp7-k1.json");
+// Through `hypPolyShardUrl`, not a literal path: every shard on this shelf became `.json.gz` on
+// 2026-08-31, and a hardcoded ".json" here turned the whole `shards` block into 9 silent skips.
+const anyShard = existsSync(`public${hypPolyShardUrl("7", 1)}`);
 const ai1 = HYP_POLY_BOARDS.filter((b) => b.family === "ai1");
 const ai2 = HYP_POLY_BOARDS.filter((b) => b.family === "ai2");
+const abcd = HYP_POLY_BOARDS.filter((b) => b.family === "abcd");
 
 /** Interior angle of a regular p-gon of edge ℓ in H² — the same formula the developer and the client use. */
 const alpha = (p: number, l: number) => 2 * Math.asin(Math.cos(Math.PI / p) / Math.cosh(l / 2));
@@ -45,10 +53,18 @@ describe("board manifest", () => {
 		}
 	});
 
-	it("is hyperbolic on every board — n >= 7 in both families", () => {
+	it("is hyperbolic on every board — n >= 7 in the two families, angle sum > 2pi on abcd", () => {
 		// 3.4.n.4 is spherical for n = 3, 4, 5 and Euclidean at n = 6; {3,n} likewise. Only n >= 7 develops
 		// in the disk.
-		for (const b of HYP_POLY_BOARDS) expect(b.n, b.id).toBeGreaterThanOrEqual(7);
+		for (const b of [...ai1, ...ai2]) expect(b.n, b.id).toBeGreaterThanOrEqual(7);
+		// abcd is not a one-parameter family, so `n` says nothing and the FIGURE has to be checked instead:
+		// a board develops in the disk exactly when its Euclidean angle sum exceeds 2pi. This is the claim
+		// `Board.abcd` enforces in the developer (solve_edge_length answers only for negative defect), and
+		// it is the one that keeps the 17 spherical and Euclidean ids in Marek's drop off this shelf.
+		for (const b of abcd) {
+			const sum = b.label.split(".").map(Number).reduce((t, p) => t + Math.PI * (p - 2) / p, 0);
+			expect(sum, `${b.id} (${b.label})`).toBeGreaterThan(2 * Math.PI + 1e-9);
+		}
 	});
 
 	it("splits the two families by sub-axis prefix, so the tree can head them apart", () => {
@@ -67,12 +83,12 @@ describe("board manifest", () => {
 		}
 	});
 
-	it("names the four boards that ship their whole corpus, so an empty `dropped` is never a shrug", () => {
-		// Everywhere else an empty `dropped` would mean somebody forgot to record the budget. On these
-		// four the budget never bit: every certificate Marek's run produced is on the shelf. That is
-		// still not the same as the board being exhausted — t11 and t14 have a `missing` k below.
-		expect(HYP_POLY_BOARDS.filter((b) => b.dropped.length === 0).map((b) => b.id))
-			.toEqual(["t11", "t13", "t14", "t15"]);
+	it("drops nothing, on any board", () => {
+		// The whole shelf ships every certificate its corpus carries (CLAUDE.md, "everything we have goes
+		// in the atlas"). ai1 and ai2 were budget-truncated until 2026-08-31 — 64 k slices across 19
+		// boards — and are not any more, so a non-empty `dropped` anywhere is now a regression to fix and
+		// never a fact to record. `dropped` stays on the type for a corpus that one day will not fit.
+		expect(HYP_POLY_BOARDS.filter((b) => b.dropped.length > 0).map((b) => b.id)).toEqual([]);
 	});
 
 	it("reports the corpus's own k holes", () => {
@@ -92,8 +108,24 @@ describe("board manifest", () => {
 });
 
 describe.skipIf(!anyShard)("shards", () => {
-	it("matches the manifest: every listed (board, k) exists with the listed count", () => {
+	// EVERY row, but only a `stat`: a board row that promises a shard the shelf does not carry is the one
+	// failure that reaches a reader as a blank grid, and it costs nothing to rule out across all 272
+	// boards. The contents are checked below, on a sample, because decoding all of them is 703 MB.
+	it("has a file behind every (board, k) it lists", () => {
 		for (const b of HYP_POLY_BOARDS) {
+			for (const k of hypPolyBoardKs(b)) {
+				expect(existsSync(`public${hypPolyShardUrl(b.id, k)}`), `${b.id} k=${k}`).toBe(true);
+			}
+		}
+	});
+
+	// The two one-parameter families in full, and every 16th abcd board. abcd is 247 boards and 1,177,806
+	// tilings; decoding all of it here would put minutes on every run of the suite for a check whose
+	// failure mode is systematic, not per-board — the developer writes every shard through one path, so a
+	// wrong count or a mislabelled record shows up on any board that has it.
+	const sampled = [...ai1, ...ai2, ...abcd.filter((_, i) => i % 16 === 0)];
+	it("matches the manifest: the listed count, and records that agree with their board", () => {
+		for (const b of sampled) {
 			for (const k of hypPolyBoardKs(b)) {
 				const recs = shardOf(b, k);
 				expect(recs, `${b.id} k=${k}`).not.toBeNull();
@@ -153,7 +185,7 @@ describe.skipIf(!anyShard)("shards", () => {
 	});
 
 	it("ships darts the client can develop: faceColor indexes `sizes`, lvert reproduces the angles", () => {
-		for (const b of HYP_POLY_BOARDS) {
+		for (const b of sampled) {
 			for (const r of shardOf(b, hypPolyBoardKs(b)[0])!) {
 				const n = r.darts.rneig.length;
 				expect(r.darts.glue.length).toBe(n);
@@ -229,10 +261,15 @@ describe("the three ways a k can be absent", () => {
 		//   missing  — ⚑ the census COUNTS them and the drop does not contain them: 416,137 certificates
 		//              at k = 27…30.
 		const b = HYP_POLY_BOARDS.find((x) => x.id === "13")!;
-		expect(b.dropped).toEqual([21, 22, 23, 24, 26]);
+		// `dropped` is empty here now, and that is the POINT of the 2026-08-31 re-develop: k = 21…26 used
+		// to sit in it and now ship. The other two claims are unaffected, which is what keeps them
+		// distinguishable — a k we chose not to ship, a k the enumeration found empty, and a k the census
+		// counts and the drop does not contain are three different statements.
+		expect(b.dropped).toEqual([]);
 		expect(b.missing).toEqual([27, 28, 29, 30]);
-		expect(hypPolyKGaps(b)).toEqual([2, 3, 4, 5, 6, 9, 10, 11, 12, 17, 18, 19]);
-		expect(b.counts).toEqual({ 1: 1, 7: 4, 8: 4, 13: 33, 14: 104, 15: 94, 16: 23, 20: 2097 });
+		expect(hypPolyKGaps(b)).toEqual([2, 3, 4, 5, 6, 9, 10, 11, 12, 17, 18, 19, 25]);
+		expect(b.counts[21]).toBeGreaterThan(0);
+		expect(b.counts[26]).toBeGreaterThan(0);
 	});
 
 	it("leaves `missing` ABSENT on every board with no census, and never defaults it to []", () => {

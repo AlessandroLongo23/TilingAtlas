@@ -55,6 +55,57 @@ TWO_PI = 2 * math.pi
 # The boards in Marek's drop. n is the family parameter; everything else is derived.
 FAMILY_NS = [7, 8, 9, 10, 11, 12, 14, 15, 16, 17, 18, 19, 20, 23]
 
+# Marek's digit alphabet for a board id: one character per polygon, 3..9 then a=10, b=11. `35bb` is
+# 3.5.11.11. He is not consistent about it — `3711` spells 11 in full and is the 3-VALENT 3.7.11, the
+# only such id in the drop — so `sizes_of_id` reads the letters and falls back to a digit pair.
+_DIGIT = {c: i for i, c in enumerate("3456789ab", start=3)}
+
+
+def sizes_of_id(bid):
+    """The polygon multiset a board id names, as a sorted list. Raises on an id it cannot read."""
+    if all(c in _DIGIT for c in bid):
+        return sorted(_DIGIT[c] for c in bid)
+    m = re.fullmatch(r"(\d)(\d)(\d\d)", bid)   # `3711` -> 3.7.11
+    if m:
+        return sorted(int(g) for g in m.groups())
+    raise DevelopError(f"cannot read board id {bid!r}")
+
+
+class Board:
+    """(id, label, ℓ, {letter: angle}, sizes) — everything a develop needs about one board.
+
+    TWO FAMILIES, ONE OBJECT. `Board.family(n)` is the 3.4.n.4 alphabet {3, 4, n, 2n}, which is BIGGER
+    than the board's own vertex figure because α(3,ℓ) + α(4,ℓ) = α(2n,ℓ) at that ℓ, so a 2n-gon also
+    closes and appears in the certificates. `Board.abcd(id)` is the general vertex figure a.b.c.d, whose
+    alphabet is exactly its own digits — checked against the certificates, which use no other letter.
+    Everything downstream (build_block, develop_patch, quotient_faces, emit_darts) reads only ℓ, units
+    and sizes, so the two families share one developer and this class is the whole difference."""
+
+    __slots__ = ("id", "label", "l", "units", "sizes", "prefix")
+
+    def __init__(self, bid, label, l, sizes, prefix):
+        self.id, self.label, self.l, self.sizes, self.prefix = bid, label, l, sizes, prefix
+        self.units = {f"S{p}": interior_angle(p, l) for p in sizes}
+
+    @staticmethod
+    def family(n):
+        l, units, sizes = board_of(n)
+        b = Board.__new__(Board)
+        b.id, b.label, b.l, b.units, b.sizes, b.prefix = f"{n}", f"3.4.{n}.4", l, units, sizes, "hp"
+        return b
+
+    @staticmethod
+    def abcd(bid, sizes=None):
+        """One `abcdtest` board. ℓ is the length at which its own vertex figure closes; the alphabet is
+        its own polygons. Refuses the spherical and Euclidean members for solve_edge_length's reason —
+        it answers only for negative defect — so the 14 + 3 of those in the drop are named, not silently
+        developed into something else."""
+        sizes = sorted(sizes) if sizes else sizes_of_id(bid)
+        l = solve_edge_length(sizes)
+        if l is None:
+            raise DevelopError(f"board {bid} ({'.'.join(map(str, sizes))}) is not hyperbolic")
+        return Board(bid, ".".join(map(str, sizes)), l, sorted(set(sizes)), "hpq")
+
 
 def board_of(n):
     """(ℓ, {letter: angle}, alphabet sizes) for the 3.4.n.4 board. The alphabet is {3,4,n,2n} at the ℓ
@@ -101,9 +152,17 @@ def emit_darts(block, face_of, faces, sizes):
     }
 
 
-def develop_cert(cert, n, l, units, sizes, boundR=0.86):
-    """One certificate -> one record, or (None, reason, ncombo)."""
-    blocks, ncombo, reasons = build_block(cert, units)
+def develop_cert(cert, board, boundR=0.86):
+    """One certificate -> one record, or (None, reason, ncombo). `board` is a Board: the 3.4.n.4 family
+    and the general a.b.c.d boards differ only in the alphabet it carries."""
+    l, units, sizes = board.l, board.units, board.sizes
+    try:
+        blocks, ncombo, reasons = build_block(cert, units)
+    except DevelopError as e:
+        # A figure the board's alphabet cannot close. One bad certificate must cost ONE certificate, not
+        # the whole board: before this, `5677` (whose id disagrees with its own vertex figure) raised
+        # here and took all 7,650 of its tilings down with it.
+        return None, f"build: {e}", 0
     if not blocks:
         return None, "glue: " + "; ".join(sorted(set(reasons))[:2]), ncombo
     for block in blocks:
@@ -125,9 +184,9 @@ def develop_cert(cert, n, l, units, sizes, boundR=0.86):
         figures = [".".join(str(tile_size(c)) for c in t["figure"]) for t in cert["types"]]
         return {
             "k": cert.get("k"),
-            "base": f"{n}",
+            "base": board.id,
             "config": " + ".join(figures),
-            "family": f"3.4.{n}.4",
+            "family": board.label,
             "edge": l,
             "tiles": res["faces"],
             "darts": darts,
@@ -142,12 +201,36 @@ def develop_cert(cert, n, l, units, sizes, boundR=0.86):
     return None, "develop: " + "; ".join(sorted(set(reasons))[:2]), ncombo
 
 
+def figure_in(source):
+    """The vertex multiset the CERTIFICATES actually carry, read off the first one that has a figure.
+
+    THE ID IS A NAME, NOT A SPECIFICATION. Marek's board directories are almost always the sorted digits
+    of their vertex figure, and on `5677` they are not: that board's certificates are 5.5.6.7, so the ℓ
+    solved from {5,6,7,7} does not close them. Deriving the alphabet from the certificates makes the id
+    purely a label — which is what keeps the shard filenames and record ids stable at what Marek called
+    them — and makes a mistyped directory a one-line warning instead of a lost board.
+
+    Nothing silently develops at a wrong ℓ either way: `vtable_variants_hyp` asserts every figure's angle
+    sum divides 2π, which is exactly this check, and is why 5677 failed loudly rather than emitting
+    garbage. This just removes the need for it to fail at all."""
+    paths = sorted(glob.glob(os.path.join(source, "*.txt"))) if os.path.isdir(source) else [source]
+    for path in paths:
+        if not CERT_NAME.match(os.path.basename(path)):
+            continue
+        for cert in fd.parse_file(path):
+            for t in cert["types"]:
+                fig = [tile_size(c) for c in t["figure"]]
+                if len(fig) >= 3:
+                    return sorted(fig)
+    return None
+
+
 # ------------------------------------------------------------------ driver
 CERT_NAME = re.compile(r"^(?P<fam>.+)solver_(?P<k>\d+)_(?P<tok>[A-Za-z0-9]+?)(?P<chir>_o)?_(?P<n>\d+)\.txt$")
 
 
-def run(source, n, out_prefix, ks=None, report_path=None, budget=None, boundR=0.86, progress=0):
-    l, units, sizes = board_of(n)
+def run(source, board, out_prefix, ks=None, report_path=None, budget=None, boundR=0.86, progress=0):
+    l, units, sizes = board.l, board.units, board.sizes
     paths = sorted(glob.glob(os.path.join(source, "*.txt"))) if os.path.isdir(source) else [source]
 
     # Which k slices fit the budget. Decided from the CERTIFICATE COUNT before anything develops, so a
@@ -191,7 +274,7 @@ def run(source, n, out_prefix, ks=None, report_path=None, budget=None, boundR=0.
             if cert.get("k") != k:
                 failures["certificate k disagrees with the file name"] += 1
                 continue
-            rec, err, ncombo = develop_cert(cert, n, l, units, sizes, boundR=boundR)
+            rec, err, ncombo = develop_cert(cert, board, boundR=boundR)
             if rec is None:
                 key = err.split(":")[0]
                 failures[key] += 1
@@ -207,7 +290,7 @@ def run(source, n, out_prefix, ks=None, report_path=None, budget=None, boundR=0.
     for k in sorted(by_k):
         recs = by_k[k]
         for i, r in enumerate(recs, start=1):
-            r["id"] = f"hp{n}-{k}-{i:05d}"
+            r["id"] = f"{board.prefix}{board.id}-{k}-{i:05d}"
             r["name"] = r["id"]
         if out_prefix:
             os.makedirs(os.path.dirname(out_prefix) or ".", exist_ok=True)
@@ -216,7 +299,7 @@ def run(source, n, out_prefix, ks=None, report_path=None, budget=None, boundR=0.
                 json.dump(recs, fh, separators=(",", ":"))
             written.append((path, len(recs), os.path.getsize(path)))
 
-    lines = [f"3.4.{n}.4 family develop — tilings by regular {sizes} at one edge length",
+    lines = [f"{board.label} develop ({board.id}) — tilings by regular {sizes} at one edge length",
              f"source          : {source}",
              f"forced edge len : l = {l:.12f}",
              "angles          : " + ", ".join(f"{p}-gon {math.degrees(units[f'S{p}']):.4f}deg" for p in sizes),
@@ -263,13 +346,29 @@ def _selftest():
         except DevelopError:
             pass
     print("[selftest] the spherical (n=3,4,5) and Euclidean (n=6) boards are refused")
+    # The a.b.c.d boards, on the same two claims: a hyperbolic one resolves, and the boards whose
+    # Euclidean angle sum is <= 2pi are refused rather than developed into something they are not.
+    for bid, want in [("4568", [4, 5, 6, 8]), ("35bb", [3, 5, 11]), ("48bb", [4, 8, 11])]:
+        b = Board.abcd(bid)
+        assert b.sizes == want, (bid, b.sizes)
+        assert b.l > 0 and b.prefix == "hpq"
+        close = sum(b.units[f"S{p}"] for p in sizes_of_id(bid))
+        assert abs(close - TWO_PI) < 1e-9, (bid, close)
+    for bid in ("3333", "4444", "3446", "3711"):
+        try:
+            Board.abcd(bid)
+            raise AssertionError(f"accepted {bid}, whose angle sum is not hyperbolic")
+        except DevelopError:
+            pass
+    print("[selftest] a.b.c.d boards close at their own l; the non-hyperbolic ids are refused")
     print("[selftest] PASS")
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("source", nargs="?")
-    ap.add_argument("--n", type=int, default=7)
+    ap.add_argument("--n", type=int, help="the 3.4.n.4 family parameter")
+    ap.add_argument("--board", help="an abcdtest board id (e.g. 4568, 35bb) — the general a.b.c.d boards")
     ap.add_argument("--out")
     ap.add_argument("--report")
     ap.add_argument("--ks")
@@ -283,8 +382,19 @@ def main():
         return
     if not args.source:
         ap.error("source is required unless --selftest")
+    if (args.n is None) == (args.board is None):
+        ap.error("give exactly one of --n (the 3.4.n.4 family) or --board (an a.b.c.d board id)")
+    if args.n is not None:
+        board = Board.family(args.n)
+    else:
+        # The certificates decide the alphabet; the id only names the board. See `figure_in`.
+        fig = figure_in(args.source)
+        if fig and fig != sizes_of_id(args.board):
+            print(f"NOTE: board id {args.board} spells {'.'.join(map(str, sizes_of_id(args.board)))} but its "
+                  f"certificates are {'.'.join(map(str, fig))}; developing at the certificates' edge length.")
+        board = Board.abcd(args.board, fig)
     ks = set(int(x) for x in args.ks.split(",")) if args.ks else None
-    run(args.source, args.n, args.out, ks, args.report, args.budget, args.boundR, args.progress)
+    run(args.source, board, args.out, ks, args.report, args.budget, args.boundR, args.progress)
 
 
 if __name__ == "__main__":

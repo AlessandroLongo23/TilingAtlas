@@ -223,10 +223,41 @@ function unpackRecords<T>(records: unknown[], tables: Tables): T[] {
 	});
 }
 
+/**
+ * Read a shard body, transparently un-gzipping one stored as `.json.gz`.
+ *
+ * WHY A SHARD WOULD BE STORED COMPRESSED. `public/` is tracked in git and already ~1.3 GB, and these
+ * files are dart arrays — thousands of small repeated integers, which gzip 10-17x. Serving them plain
+ * costs nothing on the wire (the server gzips on the fly) but costs that factor in the REPOSITORY, in
+ * every clone and in the deploy. Storing the compressed bytes makes disk size mean what the wire
+ * already meant, which is what lets a corpus the size of `abcdtest` ship whole.
+ *
+ * SNIFFED, NOT DECLARED, because who decompresses is not ours to choose. If a server or CDN labels the
+ * response `Content-Encoding: gzip`, `fetch` unwraps it before we see it and the body is already JSON;
+ * if it serves the bytes verbatim (the usual case for `.gz`), it is not. Testing the two-byte gzip
+ * magic covers both, and covers a future CDN changing its mind without a code change here.
+ */
+async function shardBody(res: Response): Promise<unknown> {
+	// `res.url?` and not `res.url`: a Response built by hand (the shard tests) has no url, and the right
+	// answer there is the behaviour every caller had before gzipped shards existed.
+	if (!res.url?.endsWith(".gz")) return res.json();
+	const buf = await res.arrayBuffer();
+	const head = new Uint8Array(buf, 0, Math.min(2, buf.byteLength));
+	if (!(head[0] === 0x1f && head[1] === 0x8b)) return JSON.parse(new TextDecoder().decode(buf));
+	if (typeof DecompressionStream === "undefined") {
+		throw new Error(`${res.url}: gzipped shard needs DecompressionStream, which this runtime lacks`);
+	}
+	// `new Response(buf).body` rather than `new Blob([buf]).stream()`: both are standard in a browser,
+	// but only the former exists in the Node/undici runtime the tests and any server-side read use.
+	const body = new Response(buf).body;
+	if (!body) throw new Error(`${res.url}: gzipped shard has no readable body`);
+	return JSON.parse(await new Response(body.pipeThrough(new DecompressionStream("gzip"))).text());
+}
+
 /** `fetch(url).then(readAtlas)` — the shelf loaders' one-liner. Throws on a non-OK response. */
 export async function readAtlas<T>(res: Response): Promise<T[]> {
 	if (!res.ok) throw new Error(`${res.url}: HTTP ${res.status}`);
-	return decodeAtlas<T>(await res.json());
+	return decodeAtlas<T>(await shardBody(res));
 }
 
 /**

@@ -91,6 +91,7 @@ export const FAMILY_LABEL: Record<string, string> = {
 	"hyp-colors": "Base tilings",
 	"hyp-poly": "3.4.n.4 boards",
 	"hyp-poly-t": "{3,n} boards",
+	"hyp-poly-q": "a.b.c.d boards",
 	// The base hyperbolic shelf, one heading per valence. Derived, so a corpus that reaches valence 9
 	// arrives named instead of rendering "hyt-v9" at a visitor.
 	...Object.fromEntries(HYP_TILING_VALENCES.map((v) => [`hyt-v${v}`, hypTilingValenceLabel(v)])),

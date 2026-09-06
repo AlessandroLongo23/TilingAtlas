@@ -718,6 +718,7 @@ export type SubFamily =
 	| "sph-edges"
 	| "hyp-poly"
 	| "hyp-poly-t"
+	| "hyp-poly-q"
 	// The base hyperbolic shelf, one family per VALENCE — "hyt-v3" … "hyt-v8". A template member and not
 	// six literals: the valences are whatever the corpus holds, and HYP_TILING_VALENCES is the list.
 	| `hyt-v${number}`
@@ -747,6 +748,8 @@ export function familyOfSub(sub: string): SubFamily | null {
 	if (sub.startsWith("hpo-")) return "hyp-poly";
 	// One shelf, two one-parameter families: 3.4.n.4 under "hpo-", {3,n} under "hpt-".
 	if (sub.startsWith("hpt-")) return "hyp-poly-t";
+	// The third family on that shelf: every 4-valent a.b.c.d that closes hyperbolically (`abcdtest`).
+	if (sub.startsWith("hpq-")) return "hyp-poly-q";
 	if (sub.startsWith("spx-")) return "sph-convex";   // the reference solids
 	if (sub === "sst" || sub === "sis-solid" || sub === "spn-solid" || sub === "spt-solid") return "sph-nonconvex";
 	if (/^spg\d+-solid$/.test(sub)) return "sph-nonconvex";
@@ -2211,7 +2214,10 @@ async function fetchHypPolyShard(n: string, k: number): Promise<ReferenceTiling[
 	try {
 		const res = await fetch(hypPolyShardUrl(n, k));
 		if (!res.ok) return [];
-		const recs = decodeAtlas<HypPolyPattern>(await res.json());
+		// `readAtlas` and not `res.json()`: the abcd shards are stored gzipped, and parsing those bytes as
+		// JSON throws into the catch below, which returns [] — a board that fetched its shard with a 200
+		// and then rendered "No tilings match the current filters".
+		const recs = await readAtlas<HypPolyPattern>(res);
 		return recs.map(hypPolyToReference);
 	} catch {
 		return [];

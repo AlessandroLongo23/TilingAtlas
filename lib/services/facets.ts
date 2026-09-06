@@ -221,6 +221,7 @@ export function boardFamiliesFor(
 			hyperbolic: [
 				"hyp-poly",
 				"hyp-poly-t",
+				"hyp-poly-q",
 				"hyp-half",
 				...HYP_TILING_VALENCES.map((v): SubFamily => `hyt-v${v}`),
 			],
