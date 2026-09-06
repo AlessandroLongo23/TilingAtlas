@@ -40,3 +40,36 @@ mid-k*/
 oct-k*/
 sq-k*/
 eu_sphfill
+# The runtime-table pruner, eu_solver_rt's companion (Makefile `eu_pruner_rt`). Same rule as the
+# solver binaries in the root .gitignore: compiled, regenerable, never committed.
+eu_pruner_rt
+# Search and develop output of the 2026-08 curved runs, by palette tag: the isotoxal sweeps
+# (iso-k*, im-k*, ip-k*, iw-k*, cmp-isotox-*, pair5-6, k3-*, k4-*, sweep-size*), the toroid probes
+# (toroid-*), the rhombic bubble mixtures and the paused star-wide k=2 develop. Between 40 KB and
+# 24 GB each, all regenerable via `PALETTE=<name> ./run-oracle-pool.sh <k>` plus the developer, and
+# every solid worth keeping out of them is spliced into a tracked table under lib/render/. Same rule
+# as sph-k3/ in the root .gitignore. The logs that record the runs live in experiments/results/.
+cmp-isotox-*/
+im-k*/
+ip-k*/
+iso-k*/
+iw-k*/
+k3-*/
+k4-*/
+pair5-6/
+sweep-size*/
+sweep*.log
+toroid-*/
+bubble-rhombic/
+star-wide-k2-euclid-parts/
+keep-verified/
+# A develop output that sits bare in this directory instead of under a run dir. gen_nonconvex_shelf.py
+# reads it as a sixth --cells file (DEFAULT_CELLS); ignored for the reason the sph-k*/ cells are.
+star-ico-k2-euclid.json
+# Harvest intermediates on the way to lib/render/{genusSolids,hemiSolids,isotoxalSolids}.ts and the
+# spherical atlas rows — genus_harvest.py, gen_genus_shelf.py, gen_hemi_shelf.py, gen_isotoxal_shelf.py
+# write these and scripts/build-*-shelf.mjs read them. Same rule as nonconvex-rows.json.
+genus-rows.json
+genus-atlas-rows.json
+hemi-atlas-rows.json
+isotoxal-atlas-rows.json
