@@ -1,0 +1,190 @@
+[09:59:27] 55 files, 21121 blocks, 64 groups, 8 workers
+[10:04:06] group 1/64: 99 records  279s elapsed, ETA 17587s
+[10:05:15] group 2/64: 45 records  347s elapsed, ETA 10772s
+[10:06:56] group 3/64: 10 records  448s elapsed, ETA 9117s
+[10:09:42] group 4/64: 0 records  615s elapsed, ETA 9219s
+[10:11:03] group 5/64: 0 records  696s elapsed, ETA 8209s
+[10:13:07] group 6/64: 2 records  820s elapsed, ETA 7925s
+[10:15:14] group 7/64: 0 records  947s elapsed, ETA 7709s
+[10:17:33] group 8/64: 0 records  1085s elapsed, ETA 7598s
+[10:19:00] group 9/64: 7 records  1172s elapsed, ETA 7165s
+[10:26:12] group 10/64: 28 records  1605s elapsed, ETA 8664s
+[10:44:06] group 11/64: 12 records  2679s elapsed, ETA 12906s
+[11:04:08] group 12/64: 0 records  3881s elapsed, ETA 16817s
+[11:19:04] group 13/64: 10 records  4777s elapsed, ETA 18739s
+[11:28:20] group 14/64: 36 records  5333s elapsed, ETA 19045s
+[11:45:39] group 15/64: 0 records  6372s elapsed, ETA 20816s
+[11:51:07] group 16/64: 22 records  6700s elapsed, ETA 20099s
+[11:51:58] group 17/64: 19 records  6751s elapsed, ETA 18664s
+[11:53:56] group 18/64: 10 records  6869s elapsed, ETA 17553s
+[11:55:08] group 19/64: 0 records  6940s elapsed, ETA 16438s
+[11:55:27] group 20/64: 0 records  6960s elapsed, ETA 15312s
+[11:56:09] group 21/64: 0 records  7001s elapsed, ETA 14336s
+[11:57:03] group 22/64: 0 records  7056s elapsed, ETA 13470s
+[11:57:47] group 23/64: 0 records  7099s elapsed, ETA 12656s
+[11:58:20] group 24/64: 6 records  7132s elapsed, ETA 11887s
+[12:00:20] group 25/64: 11 records  7253s elapsed, ETA 11315s
+[12:10:08] group 26/64: 2 records  7840s elapsed, ETA 11459s
+[12:22:00] group 27/64: 0 records  8553s elapsed, ETA 11721s
+[12:27:57] group 28/64: 2 records  8910s elapsed, ETA 11455s
+[12:33:40] group 29/64: 14 records  9253s elapsed, ETA 11168s
+[12:39:28] group 30/64: 0 records  9601s elapsed, ETA 10881s
+[12:42:10] group 31/64: 16 records  9763s elapsed, ETA 10393s
+[12:42:38] group 32/64: 3 records  9791s elapsed, ETA 9791s
+[12:44:37] group 33/64: 4 records  9910s elapsed, ETA 9309s
+[12:49:36] group 34/64: 4 records  10209s elapsed, ETA 9008s
+[15:03:54] 55 files, 21121 blocks, 64 groups, 8 workers
+[15:03:54] group 1/64: already done, skipping
+[15:03:54] group 2/64: already done, skipping
+[15:03:54] group 3/64: already done, skipping
+[15:03:54] group 4/64: already done, skipping
+[15:03:54] group 5/64: already done, skipping
+[15:03:54] group 6/64: already done, skipping
+[15:03:54] group 7/64: already done, skipping
+[15:03:54] group 8/64: already done, skipping
+[15:03:54] group 9/64: already done, skipping
+[15:03:54] group 10/64: already done, skipping
+[15:03:54] group 11/64: already done, skipping
+[15:03:54] group 12/64: already done, skipping
+[15:03:54] group 13/64: already done, skipping
+[15:03:54] group 14/64: already done, skipping
+[15:03:54] group 15/64: already done, skipping
+[15:03:54] group 16/64: already done, skipping
+[15:03:54] group 17/64: already done, skipping
+[15:03:54] group 18/64: already done, skipping
+[15:03:54] group 19/64: already done, skipping
+[15:03:54] group 20/64: already done, skipping
+[15:03:54] group 21/64: already done, skipping
+[15:03:54] group 22/64: already done, skipping
+[15:03:54] group 23/64: already done, skipping
+[15:03:54] group 24/64: already done, skipping
+[15:03:54] group 25/64: already done, skipping
+[15:03:54] group 26/64: already done, skipping
+[15:03:54] group 27/64: already done, skipping
+[15:03:54] group 28/64: already done, skipping
+[15:03:54] group 29/64: already done, skipping
+[15:03:54] group 30/64: already done, skipping
+[15:03:54] group 31/64: already done, skipping
+[15:03:54] group 32/64: already done, skipping
+[15:03:54] group 33/64: already done, skipping
+[15:03:54] group 34/64: already done, skipping
+[15:12:17] group 35/64: 0 records  503s elapsed, ETA 417s
+[15:15:17] group 36/64: 0 records  683s elapsed, ETA 531s
+[17:34:18] group 37/64: 0 records  9024s elapsed, ETA 6585s
+[17:39:55] group 38/64: 0 records  9362s elapsed, ETA 6405s
+[17:45:56] group 39/64: 0 records  9722s elapsed, ETA 6232s
+[17:49:00] group 40/64: 0 records  9906s elapsed, ETA 5944s
+[17:59:29] group 41/64: 12 records  10535s elapsed, ETA 5910s
+[18:47:54] group 42/64: 6 records  13440s elapsed, ETA 7040s
+[19:40:15] group 43/64: 0 records  16581s elapsed, ETA 8098s
+[20:05:09] group 44/64 FAILED rc=-15: line 373, in _send
+    n = write(self._handle, buf)
+BrokenPipeError: [Errno 32] Broken pipe
+/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/multiprocessing/resource_tracker.py:216: UserWarning: resource_tracker: There appear to be 6 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+
+[20:15:34] group 45/64: 3 records  18700s elapsed, ETA 7896s
+[20:36:08] group 46/64: 0 records  19934s elapsed, ETA 7800s
+[20:41:56] group 47/64: 3 records  20282s elapsed, ETA 7336s
+[20:42:00] group 48/64: 1 records  20286s elapsed, ETA 6762s
+[20:44:04] group 49/64: 0 records  20410s elapsed, ETA 6248s
+[20:46:16] group 50/64: 0 records  20542s elapsed, ETA 5752s
+[20:46:58] group 51/64: 0 records  20584s elapsed, ETA 5247s
+[20:48:02] group 52/64: 0 records  20648s elapsed, ETA 4765s
+[20:49:12] group 53/64: 0 records  20718s elapsed, ETA 4300s
+[20:49:48] group 54/64: 0 records  20754s elapsed, ETA 3843s
+[20:50:08] group 55/64: 0 records  20774s elapsed, ETA 3399s
+[20:50:08] group 56/64 FAILED rc=1: no blocks under toroid-k2/toroid-k2-euclid-parts/g055
+
+[20:50:08] group 57/64 FAILED rc=1: no blocks under toroid-k2/toroid-k2-euclid-parts/g056
+
+[20:50:08] group 58/64 FAILED rc=1: no blocks under toroid-k2/toroid-k2-euclid-parts/g057
+
+[20:50:08] group 59/64 FAILED rc=1: no blocks under toroid-k2/toroid-k2-euclid-parts/g058
+
+[20:50:08] group 60/64 FAILED rc=1: no blocks under toroid-k2/toroid-k2-euclid-parts/g059
+
+[20:50:08] group 61/64 FAILED rc=1: no blocks under toroid-k2/toroid-k2-euclid-parts/g060
+
+[20:50:08] group 62/64 FAILED rc=1: no blocks under toroid-k2/toroid-k2-euclid-parts/g061
+
+[20:50:08] group 63/64 FAILED rc=1: no blocks under toroid-k2/toroid-k2-euclid-parts/g062
+
+[20:50:08] group 64/64 FAILED rc=1: no blocks under toroid-k2/toroid-k2-euclid-parts/g063
+
+[20:50:09] MERGED 387 records from 54 groups -> 387 congruence classes -> toroid-k2/toroid-k2-euclid.json (20775s)
+[21:24:15] 55 files, 21121 blocks, 64 groups, 8 workers
+[21:24:15] group 1/64: already done, skipping
+[21:24:15] group 2/64: already done, skipping
+[21:24:15] group 3/64: already done, skipping
+[21:24:15] group 4/64: already done, skipping
+[21:24:15] group 5/64: already done, skipping
+[21:24:15] group 6/64: already done, skipping
+[21:24:15] group 7/64: already done, skipping
+[21:24:15] group 8/64: already done, skipping
+[21:24:15] group 9/64: already done, skipping
+[21:24:15] group 10/64: already done, skipping
+[21:24:15] group 11/64: already done, skipping
+[21:24:15] group 12/64: already done, skipping
+[21:24:15] group 13/64: already done, skipping
+[21:24:15] group 14/64: already done, skipping
+[21:24:15] group 15/64: already done, skipping
+[21:24:15] group 16/64: already done, skipping
+[21:24:15] group 17/64: already done, skipping
+[21:24:15] group 18/64: already done, skipping
+[21:24:15] group 19/64: already done, skipping
+[21:24:15] group 20/64: already done, skipping
+[21:24:15] group 21/64: already done, skipping
+[21:24:15] group 22/64: already done, skipping
+[21:24:15] group 23/64: already done, skipping
+[21:24:15] group 24/64: already done, skipping
+[21:24:15] group 25/64: already done, skipping
+[21:24:15] group 26/64: already done, skipping
+[21:24:15] group 27/64: already done, skipping
+[21:24:15] group 28/64: already done, skipping
+[21:24:15] group 29/64: already done, skipping
+[21:24:15] group 30/64: already done, skipping
+[21:24:15] group 31/64: already done, skipping
+[21:24:15] group 32/64: already done, skipping
+[21:24:15] group 33/64: already done, skipping
+[21:24:15] group 34/64: already done, skipping
+[21:24:15] group 35/64: already done, skipping
+[21:24:15] group 36/64: already done, skipping
+[21:24:15] group 37/64: already done, skipping
+[21:24:15] group 38/64: already done, skipping
+[21:24:15] group 39/64: already done, skipping
+[21:24:15] group 40/64: already done, skipping
+[21:24:15] group 41/64: already done, skipping
+[21:24:15] group 42/64: already done, skipping
+[21:24:15] group 43/64: already done, skipping
+[21:50:02] group 44/64: 7 records  1547s elapsed, ETA 703s
+[21:50:02] group 45/64: already done, skipping
+[21:50:02] group 46/64: already done, skipping
+[21:50:02] group 47/64: already done, skipping
+[21:50:02] group 48/64: already done, skipping
+[21:50:02] group 49/64: already done, skipping
+[21:50:02] group 50/64: already done, skipping
+[21:50:02] group 51/64: already done, skipping
+[21:50:02] group 52/64: already done, skipping
+[21:50:02] group 53/64: already done, skipping
+[21:50:02] group 54/64: already done, skipping
+[21:50:02] group 55/64: already done, skipping
+[21:50:02] group 56/64 FAILED rc=1: no blocks under toroid-k2/toroid-k2-euclid-parts/g055
+
+[21:50:02] group 57/64 FAILED rc=1: no blocks under toroid-k2/toroid-k2-euclid-parts/g056
+
+[21:50:02] group 58/64 FAILED rc=1: no blocks under toroid-k2/toroid-k2-euclid-parts/g057
+
+[21:50:02] group 59/64 FAILED rc=1: no blocks under toroid-k2/toroid-k2-euclid-parts/g058
+
+[21:50:02] group 60/64 FAILED rc=1: no blocks under toroid-k2/toroid-k2-euclid-parts/g059
+
+[21:50:02] group 61/64 FAILED rc=1: no blocks under toroid-k2/toroid-k2-euclid-parts/g060
+
+[21:50:02] group 62/64 FAILED rc=1: no blocks under toroid-k2/toroid-k2-euclid-parts/g061
+
+[21:50:02] group 63/64 FAILED rc=1: no blocks under toroid-k2/toroid-k2-euclid-parts/g062
+
+[21:50:03] group 64/64 FAILED rc=1: no blocks under toroid-k2/toroid-k2-euclid-parts/g063
+
+[21:50:03] MERGED 394 records from 55 groups -> 394 congruence classes -> toroid-k2/toroid-k2-euclid.json (1548s)

@@ -1,0 +1,6 @@
+[00:49:19] 400 blocks in 1 work items over 8 workers
+[00:49:20]   develop 1/1  blocks=400  realized=0  prefiltered=0  1s, ETA 0s
+[00:49:20] merged 0 realized records -> toroid-sample/cells.json (1s total)
+[00:49:20]   report -> cells-report.txt
+[00:49:20]        397  unknown
+[00:49:20]          3  d=(1, 2) retro=[] sign=+1: flood-fill did not close within 1080 instances; d=(1, 2) retro=

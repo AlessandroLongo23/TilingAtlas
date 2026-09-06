@@ -1,0 +1,8 @@
+[22:25:10] 11874 blocks in 6 work items over 8 workers
+[23:09:52]   develop 1/6  blocks=11874  realized=22  prefiltered=1871  2682s, ETA 13409s
+[23:10:41]   develop 2/6  blocks=11874  realized=32  prefiltered=3868  2731s, ETA 5462s
+[23:11:12]   develop 6/6  blocks=11874  realized=83  prefiltered=11860  2763s, ETA 0s
+[23:11:12]   83 records -> 28 congruence classes
+[23:11:12] merged 28 realized records -> toroid-k2/allsaddle-pilot/cells.json (2763s total)
+[23:11:12]   report -> cells-report.txt
+[23:11:12]          1  retro=[]: degenerate dihedral (a flat edge)

@@ -727,6 +727,11 @@ static std::string famof(const std::string& fname) {
 }
 
 int main() {
+#ifdef EU_RUNTIME_TABLES
+	// Must precede everything: every ...listin is empty until this runs, and a zero-size alphabet
+	// prunes silently to nothing instead of failing.
+	load_runtime_tables_or_die();
+#endif
 	// ⚑ EU_STREAM reads the whole catalog through std::cin, and a stdio-tied cin services every
 	// getline one character at a time through the C layer. eu_solver has this call on its WRITE side
 	// with a comment saying exactly that; the pruner's matching READ side never got it. Measured on

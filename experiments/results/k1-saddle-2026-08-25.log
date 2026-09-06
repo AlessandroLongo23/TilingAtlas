@@ -1,0 +1,10 @@
+[17:33:42] 2839 blocks in 2 work items over 2 workers
+[17:33:51]   develop 2/2  blocks=2839  realized=9  prefiltered=0  9s, ETA 0s
+[17:33:51]   9 records -> 5 congruence classes
+[17:33:51] merged 5 realized records -> toroid-k1saddle/cells.json (9s total)
+[17:33:51]   report -> cells-report.txt
+[17:33:51]        972  unknown
+[17:33:51]        390  d=(2,) retro=[] sign=+1: flood-fill did not close within 720 instances; d=(2,) retro=[] si
+[17:33:51]        298  d=(2,) retro=[] sign=+1: flood-fill did not close within 720 instances; d=(2,) retro=[] si
+[17:33:51]         95  d=(2,) retro=[] sign=+1: flood-fill did not close within 720 instances; d=(2,) retro=[] si
+[17:33:51]         69  d=(3,) retro=[(8, 1)] sign=+1: flood-fill did not close within 720 instances; d=(3,) retro

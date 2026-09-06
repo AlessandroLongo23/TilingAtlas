@@ -1,0 +1,59 @@
+{
+ "name": "isotox-v5-12_10",
+ "D": 120,
+ "closure": "mixed",
+ "maxValence": 5,
+ "comment": "VALENCE-STRATIFIED k=3 RUN (AL, 2026-09-01). Same tiles as isotox-sub-12_10, vertex valence capped at 5. COMPLETE for every solid all of whose vertices are valence <= 5, and that is not a small stratum: of the 640 vertices in the 14 solids this shelf ships, 490 are valence 3, 120 valence 4, 10 valence 5 and only 20 are valence 6 \u2014 all twenty inside one solid, iso-80-150-72. The cap is what makes k=3 affordable: measured on one shard of 200, valence 6 costs 3,782,076,670 nodes and ~10 GB against 9,509,261 and 56 MB here, ~400x. The valence-6 stratum is a separate, much larger run and is NOT covered by this one.",
+ "tiles": [
+  {
+   "kind": "regular",
+   "n": 3,
+   "name": "3",
+   "famchar": "3"
+  },
+  {
+   "kind": "regular",
+   "n": 4,
+   "name": "4",
+   "famchar": "4"
+  },
+  {
+   "kind": "regular",
+   "n": 5,
+   "name": "5",
+   "famchar": "5"
+  },
+  {
+   "kind": "regular",
+   "n": 6,
+   "name": "6",
+   "famchar": "6"
+  },
+  {
+   "kind": "regular",
+   "n": 8,
+   "name": "8",
+   "famchar": "8"
+  },
+  {
+   "kind": "regular",
+   "n": 10,
+   "name": "10",
+   "famchar": "a"
+  },
+  {
+   "kind": "regular",
+   "n": 12,
+   "name": "12",
+   "famchar": "c"
+  },
+  {
+   "kind": "star",
+   "n": 12,
+   "alphaU": 10,
+   "name": "12*10",
+   "famchar": "z"
+  }
+ ],
+ "starFirst": true
+}

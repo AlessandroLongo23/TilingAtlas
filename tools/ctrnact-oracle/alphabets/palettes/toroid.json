@@ -1,0 +1,15 @@
+{
+  "name": "toroid",
+  "D": 120,
+  "closure": "mixed",
+  "maxValence": 6,
+  "comment": "TOROID PROBE (2026-08-25, AL). The `spherical` palette's six tiles, {3,4,5,6,8,10}, with closure=mixed: a vertex figure is admitted whenever its interior angles sum to anything OTHER than a full turn, on either side. A closed surface of genus g has total angular defect 2*pi*(2-2g), so genus 1 is total defect ZERO and every convex vertex must be paid for by a saddle elsewhere; positive-defect cannot express the saddle and negative-defect cannot express the convex vertex, so neither mode can produce a torus at any k. That is the whole reason no toroid has ever come out of this engine, and it is not a question of how deep the search has been run. Flat vertices (sum == 360) stay excluded for the reason the spherical mode excludes them: two faces meeting at a flat corner are one face, and a rhombus made of two coplanar triangles is not a regular polygon (gen_nonconvex_shelf.degeneracy). ⚑ THIS PALETTE IS NOT A CENSUS AND MUST NOT BE PRESENTED AS ONE. The spherical search is finite because the total defect is 4*pi and the smallest positive defect these tiles admit is 6 degrees (4.6.10, angles summing to 354), giving V <= 720/6 = 120 — attained exactly by the truncated icosidodecahedron. At total defect zero there is no quantum, nothing in a block's own data bounds V, and develop_spherical.instance_bound stops being derived: its |G| argument bounds a rotation's order by a valence or a face size on the grounds that the axis meets the surface, and a toroid's principal axis can run down the hole and meet it nowhere. Whatever this finds is a FIND. Same six tiles as `spherical` on purpose, so a difference in output is a difference in closure and nothing else.",
+  "tiles": [
+    { "kind": "regular", "n": 3,  "name": "3",  "famchar": "3" },
+    { "kind": "regular", "n": 4,  "name": "4",  "famchar": "4" },
+    { "kind": "regular", "n": 5,  "name": "5",  "famchar": "5" },
+    { "kind": "regular", "n": 6,  "name": "6",  "famchar": "6" },
+    { "kind": "regular", "n": 8,  "name": "8",  "famchar": "8" },
+    { "kind": "regular", "n": 10, "name": "10", "famchar": "a" }
+  ]
+}

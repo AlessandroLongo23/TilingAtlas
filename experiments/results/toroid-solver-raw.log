@@ -1,0 +1,5 @@
+vertex figures: 5454 over 6851 types
+bucket key unique (BUCKET_OK): yes
+OKPAIR: 294 admissible (tkey, Q(f)) pairs
+nodes: 88376467  simplify_calls: 6794923  simplify_true: 6183367
+../eu_solver.toroid  27.84s user 1.51s system 96% cpu 30.363 total

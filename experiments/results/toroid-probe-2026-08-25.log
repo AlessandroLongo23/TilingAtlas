@@ -1,0 +1,98 @@
+# TOROID PROBE — can the engine produce a genus-1 regular-faced polyhedron?
+# Palette: toroid (= spherical's {3,4,5,6,8,10}, closure "mixed"), maxValence 6.
+# Question: does anything come out of solve -> prune -> develop_euclid with chi = 0?
+# NOT a census. See the palette comment for why the finiteness argument does not survive genus 1.
+[00:30:57] alphabet build starting
+[00:31:29] alphabet: 6851 entries (spherical, same six tiles, has 125) — 55x, and 154 cert collisions WARN
+[00:31:29] solver k<=2 starting (eu_solver.toroid)
+[00:32:17] solver DONE 30s — 5454 vertex figures over 6851 types, 88,376,467 nodes
+[00:32:17] pruner k=1..2 starting
+[00:34:02] pruner DONE 22s — k=1: 2,867  k=2: 3,811,172  total 3,814,039 blocks (3.3 GB)
+[00:34:02] ⚑ k=1 CANNOT produce a toroid, by argument not by search: at one orbit every
+                     vertex has the same defect d, so total = V*d = 2*pi*chi, and chi=0 forces d=0,
+                     a flat vertex, which the mixed closure excludes. Genus 1 needs k >= 2.
+[00:34:02] genus-1 sign filter over the k<=2 pruned set starting
+[00:37:12] sign filter DONE 164s — 21,121 of 3,814,039 blocks can close at genus 1 (0.55%)
+                     all-positive (sphere only)     169
+                     all-negative (genus>=2 only)   3,792,749
+                     mixed (genus 1 possible)       21,121
+[00:37:12] develop_euclid over the 21,121, 8 workers — looking for chi = 0
+[00:38:47] ⚑ the C prefilter rejected ALL 21,121 in 6s. 100% is a red flag, not an answer:
+                     nobody has ever run EU_FILL_EUCLID on saddle vertices. Checking it with
+                     EU_NOPREFILTER on a 400-block sample before believing the verdict.
+[09:34:30] ⚑ MY ERROR: run_develop_sharded --developer defaults to develop_spherical.py.
+                     Both earlier sharded runs used the SPHERICAL developer on Euclidean candidates,
+                     which is why 21,121 blocks 'finished' in 6s with everything rejected. Void.
+[09:34:30] measured properly by calling develop_euclid.prefilter directly:
+                     40 blocks, 40s, kept 0 — and EU_PREFILTER_VERIFY develops the rejects:
+                     '0 of 40 rejects would have realized'. The rejections are real.
+[09:34:30] also measured: 95 of 150 random candidates DO have a dihedral solution (63%),
+                     so they die in the FILL, not in solve_dihedrals. Saddle links are fine:
+                     solve_joint closes 3.3.4.4.4 (390deg), 4.4.4.4.3 (420), 4.4.4.4.4 (450) to 1e-16.
+                     ⚑ 4.8.10 (369, valence 3) correctly has NO solution: a valence-3 link is a
+                     spherical triangle and its sides must sum under 2*pi. Only 12 of 21,121 die there.
+[09:34:30] full run over all 21,121 with --developer develop_euclid.py, 8 workers
+[09:59:27] ⚑ run_develop_sharded holds every record in the PARENT and writes once at the
+                     end, so there is nothing to poll — and its workers had gone quiet anyway.
+                     Switching to run_euclid_groups.py, which writes a JSON per group as it
+                     finishes and skips groups already written. 64 groups over 21,121 blocks.
+
+# ── CORRECTION, 2026-08-25 15:10 ─────────────────────────────────────────────────────────────────
+# The line above labels the 3,792,749 discarded blocks "all-negative (genus>=2 only)". That label is
+# WRONG and the number is right. Those blocks produce NOTHING, at any genus.
+#
+# Every finite point set has a vertex on its convex hull; at a hull vertex every incident edge points
+# into one half-space, so the vertex figure lies in a hemisphere and the face angles sum under 360.
+# So EVERY closed polyhedron in R^3 — any genus, embedded or self-intersecting — has at least one
+# CONVEX vertex, and a block whose every vertex type is a saddle cannot be realized at all.
+#
+# Tested rather than assumed: 400 all-negative blocks sampled from the unfiltered pruned set, blocks
+# the developer had never seen because this filter discarded them. ZERO realized, and they fail in the
+# flood fill, which is where a surface that does not exist should fail.
+#
+# Consequence for this run, and it is the useful part: the filter was built to hunt GENUS 1, where
+# Gauss-Bonnet forces total defect zero and therefore both signs. For genus >= 2 curvature alone
+# permits an all-saddle solid, so on the reasoning available at the time these 3.79M blocks should
+# have been kept and searched. The theorem says they were dead. The 21,121 that survived are therefore
+# the exhaustive candidate set for EVERY genus at k=2, not just for tori.
+#
+# ⚑ That is a statement about the CANDIDATE SET and not about the shelf. develop's guard is still
+# max(2000, develop_spherical.instance_bound), and instance_bound's derivation assumes a rotation axis
+# meets the surface at a vertex, an edge midpoint or a face centre — false when the axis runs down a
+# hole. So the search is exhaustive and the develop stage is capped, and "complete" needs both.
+
+# ── RETRACTION OF THE CORRECTION ABOVE, 2026-08-25 ───────────────────────────────────────────────
+# The correction block above is WRONG and is retracted. It claimed every closed polyhedron in R^3 has
+# at least one CONVEX vertex, proved it from the convex hull, and concluded that all-saddle blocks are
+# dead and 96.6% of a k=3 search could be discarded. All three parts are false.
+#
+# THE COUNTEREXAMPLE IS ALREADY IN THIS ATLAS. ss-12-30-12-d3, the great dodecahedron: twelve
+# vertices, five pentagons at each, 5*108 = 540 degrees. Every vertex a saddle, not one convex corner.
+# Ten star-shelf solids are all-saddle — ditrigonal dodecadodecahedron, great ditrigonal
+# icosidodecahedron, snub icosidodecadodecahedron and four unnamed ones with them.
+#
+# THE PROOF'S ERROR. "The farthest vertex in any direction has all its neighbours behind it, so its
+# vertex figure lies in a hemisphere, so its angles sum under 360" holds only when the vertex figure is
+# a SIMPLE closed curve. A self-intersecting solid's vertex figure can cross itself, and a
+# self-crossing spherical polygon inside a hemisphere has no perimeter bound. Measured over the 456
+# shipped Polyhedron records: 59 of them have a SADDLE as their farthest vertex in some direction.
+#
+# THE EVIDENCE'S ERROR, which is the worse one. The 400-block test that "confirmed" it drew every
+# block from a k=2 run over a six-tile CONVEX palette. Each counterexample carries a star face, which
+# that palette does not contain. The claim was tested on exactly the population where it holds.
+#
+# ⚑ A THIRD ERROR, caught only by re-measuring: the first corpus scan computed interior angles as
+# 180 - 360/n from the RING LENGTH, which reads a {5/2} as a pentagon (108 instead of 36). Angles must
+# come from the coordinates, or from faceType, never from the ring length.
+#
+# WHAT SURVIVES. The k=2 filter is still right, for the narrow reason it was built on and nothing more:
+# genus 1 forces total defect to zero, which needs both signs. That is Gauss-Bonnet and it stands. The
+# claim that the same filter was also complete for genus >= 2 does NOT stand — 3,792,749 all-saddle
+# blocks were discarded unexamined and may hold higher-genus solids.
+#
+# STILL OPEN, and being tested rather than asserted this time: whether an all-saddle solid can exist
+# over the CONVEX palette {3,4,5,6,8,10}, where every known counterexample's star face is unavailable.
+# Testing it by looking where a counterexample would hide, not by sampling again: the great
+# dodecahedron is vertex-transitive, so the 2,839 all-saddle k=1 blocks are the highest-yield place,
+# and every one of them was discarded by the genus-1 filter without ever being developed.
+# See k1-saddle-2026-08-25.log.

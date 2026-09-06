@@ -1,0 +1,73 @@
+== Bubble rhombic-mixture sweep ==
+started      2026-08-27 15:13:23
+machine      arm64 mac, single-threaded DFS (eu_solver), EU_EDGE_COMPL=1
+palettes     bubble-rh bubble-rt bubble-rth
+kmax 8   solve cap 900s per k
+note         no face/pair filters — they lose tilings under complementary gluing, so this is
+             the unfiltered cost, the same regime the 2026-08-23 sweep measured.
+
+-- bubble-rh
+   [15:14:21] alphabet 58s   tiles 24   tables 281MB
+   [15:14:35] k=1  solve 12s  prune 1s  nodes 194152  raw 10  kept 10  | k=1 : 10 |  (vertex figures: 191732 over 192792 types)
+   [15:14:58] k=2  solve 14s  prune 0s  nodes 20637165  raw 154  kept 148  | k=1 : 10  k=2 : 138 |  (vertex figures: 191732 over 192792 types)
+   [15:21:23] k=3  solve 377s  prune 0s  nodes 1907972829  raw 1243  kept 1154  | k=1 : 10  k=2 : 138  k=3 : 1006 |  (vertex figures: 191732 over 192792 types)
+   [15:36:30] k=4 SOLVE CAP at 900s — bubble-rh stops here
+
+-- bubble-rt
+   [15:38:50] alphabet 140s   tiles 14   tables 625MB
+   [15:39:33] k=1  solve 40s  prune 2s  nodes 363205  raw 14  kept 14  | k=1 : 14 |  (vertex figures: 340210 over 343143 types)
+   [15:42:56] k=2  solve 184s  prune 0s  nodes 690132658  raw 435  kept 416  | k=1 : 14  k=2 : 402 |  (vertex figures: 340210 over 343143 types)
+   [15:58:13] k=3 SOLVE CAP at 900s — bubble-rt stops here
+
+-- bubble-rth
+   [16:03:06] alphabet 293s   tiles 28   tables 1378MB
+   [16:06:17] k=1  solve 186s  prune 4s  nodes 932802  raw 24  kept 24  | k=1 : 24 |  (vertex figures: 849010 over 853127 types)
+   [16:15:51] k=2  solve 530s  prune 1s  nodes 1471497629  raw 643  kept 623  | k=1 : 24  k=2 : 599 |  (vertex figures: 849010 over 853127 types)
+   [16:31:26] k=3 SOLVE CAP at 900s — bubble-rth stops here
+
+sweep finished 2026-08-27 16:31:26
+
+== CENSUS: which families each solution actually uses ==
+(bubble_mix_census.py reads the tile set off the pruned filenames; no development needed)
+
+bubble-rh: families H+R, pruned dir /tmp/bubble-sweep/bubble-rh-k3/out/pruned
+uses    k=1      k=2      k=3      total
+H       3        11       51       65
+R       7        91       639      737
+HR      0        36       316      352
+
+total 1154   genuinely mixing all 2 families: 352   already on another board: 802
+
+bubble-rt: families R+T, pruned dir /tmp/bubble-sweep/bubble-rt-k2/out/pruned
+uses    k=1      k=2      total
+R       7        91       98
+T       7        67       74
+RT      0        244      244
+
+total 416   genuinely mixing all 2 families: 244   already on another board: 172
+
+bubble-rth: families H+R+T, pruned dir /tmp/bubble-sweep/bubble-rth-k2/out/pruned
+uses    k=1      k=2      total
+H       3        11       14
+R       7        91       98
+T       7        67       74
+HR      0        36       36
+HT      3        90       93
+RT      0        244      244
+HRT     4        60       64
+
+total 623   genuinely mixing all 3 families: 64   already on another board: 559
+
+== DEVELOPMENT (develop_marked.py --complement): every glue re-checked, bump against bite ==
+bubble-rh  k<=3   1154 developed, 0 failures
+bubble-rt  k<=2    416 developed, 0 failures
+bubble-rth k<=2    623 developed, 0 failures
+
+== ALPHABET COST ==
+palette      tiles  vertex types   gen_s   tables    solver_tables.inc
+bubble-rh      24        192,792      58    281 MB       (g++ ok)
+bubble-rt      14        343,143     140    625 MB    114 MB (g++ ok)
+bubble-rth     28        853,127     293   1378 MB    233 MB (g++ ok)
+reference: domino 2,164,592 types, 3.2 GB, 527 MB .inc -- g++ OOM, pipeline dead (2026-08-23).
+So the compile wall sits between 233 MB and 527 MB of .inc, and none of these palettes reaches it:
+all three die to SEARCH cost, not to the alphabet.

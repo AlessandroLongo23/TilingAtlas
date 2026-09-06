@@ -1,0 +1,10 @@
+# k=3 PRICING for the toroid palette (mixed closure, {3,4,5,6,8,10}, maxValence 6).
+# Built as palette "toroid3" into tables/toroid3 so the running k=2 develop is untouched — same
+# alphabet, verified byte-identical against tables/toroid.
+# Baseline at k<=2: solver 30s / 88,376,467 nodes; pruner 22s; 2,867 k=1 + 3,811,172 k=2 blocks; 3.2 GB raw.
+[10:18:43] k<=3 solver launched (competing with the 8 k=2 develop workers on 10 cores)
+[10:28:03] k=3 solver KILLED at 34.4 GB / ~450s. Rate held at 60-80 MB/s throughout with
+                     no deceleration. The whole k<=2 raw output is 2.6 GB, so k=3 had already
+                     produced 13x it and was nowhere near done. Scratch removed.
+[10:28:03] k=2 baseline for the chain: 2.6 GB raw -> 3,811,172 pruned (1.47M blocks/GB)
+                     -> 21,121 genus-1 candidates (0.55%) -> ~72,000 core-s of develop (3.4 core-s each)

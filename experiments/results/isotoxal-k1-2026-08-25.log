@@ -1,0 +1,7 @@
+[22:52:20] 634 blocks in 1 work items over 8 workers
+[22:52:21]   develop 1/1  blocks=634  realized=44  prefiltered=613  1s, ETA 0s
+[22:52:21]   44 records -> 21 congruence classes
+[22:52:21] merged 21 realized records -> iso-k1/cells.json (1s total)
+[22:52:21]   report -> cells-report.txt
+[22:52:21]          1  retro=[]: degenerate dihedral (a flat edge); retro=[]: degenerate dihedral (a flat edge)
+[22:52:21]          1  retro=[]: degenerate dihedral (a flat edge)

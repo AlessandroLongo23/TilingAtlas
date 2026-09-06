@@ -13,6 +13,11 @@
 // Generated per palette by alphabets/gen_alphabet.py, resolved via -I tables/$(PALETTE):
 // legacy arrays (symbollist + {r,l}neig/mirro/lvert/label listin) plus clslistin
 // (corner-class ids), countinglist (1 = true vertex, 0 = dent-fill point) and class tables.
+#ifdef EU_RUNTIME_TABLES
+// Same nine tables, read from tables.bin at startup. For alphabets whose .inc the compiler cannot
+// take — see ctrnact_runtime_tables.hpp. It defines etypelistin too.
+#include "ctrnact_runtime_tables.hpp"
+#else
 #include "pruner_tables.inc"
 
 // PTAB_ETYPE ships in every generated pruner table and nothing built a nested view of it, so every
@@ -21,6 +26,7 @@
 // a leg may not be glued to a hypotenuse — so an isomorphism has to preserve it and a congruence has
 // to refine it. Both of the pruner's tests were therefore working with less than the truth.
 static const std::vector<std::vector<int> > etypelistin = _ptab_nest(PTAB_ETYPE, PTAB_OFF, PTAB_N);
+#endif
 
 static std::string countsignature; // set by buildvertextypes; read by the pruner's signature bucketing
 

@@ -1,0 +1,28 @@
+{
+  "name": "isotox-penta",
+  "D": 120,
+  "closure": "mixed",
+  "maxValence": 6,
+  "comment": "AL's WORKED EXAMPLE, as its own palette (2026-08-25). U30 is 5/2.3.5/2.3.5/2.3; its isotoxal analogue needs only the triangle, the pentagon and the pentagram OUTLINE 5*12 (point 36, dent 252). Three tiles instead of nine, which is the star-ico-d / star-hept-pyr pattern: a targeted palette is how this engine answers a specific question. The full nine-tile isotox-mixed alphabet is 207,658 configs against 586 at positive-defect and its solver wrote 30 GB in ten minutes \u2014 a mixed closure on a D=120 grid is not something to run blind. \u2691 MIXED and not positive-defect, because a 252-degree dent forces its vertex past 504 degrees and so is always a SADDLE; that is about the closure and not about a circumsphere.",
+  "tiles": [
+    {
+      "kind": "regular",
+      "n": 3,
+      "name": "3",
+      "famchar": "3"
+    },
+    {
+      "kind": "regular",
+      "n": 5,
+      "name": "5",
+      "famchar": "5"
+    },
+    {
+      "kind": "star",
+      "n": 5,
+      "alphaU": 12,
+      "name": "5*12",
+      "famchar": "p"
+    }
+  ]
+}

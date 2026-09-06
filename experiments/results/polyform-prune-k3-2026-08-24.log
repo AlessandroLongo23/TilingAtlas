@@ -1,0 +1,27 @@
+== polyform frontier with the exact overlap prune ==
+started 2026-08-24 14:34:14
+prune: exact integer cell-overlap on the atomic lattice (gen_alphabet overlap_tester)
+baseline for comparison: tetromino k<=2 was 54,248 configs / 113.6M nodes / 25s
+
+-- tetromino alphabet 14:34:14
+[gen] palette=tetromino D=12 tiles=7 classes=47 configs=16145
+-- built, solving k<=3 14:34:21
+   solve 298s   raw 8460   nodes: 808155260
+   pruned:   k=1 : 42  k=2 : 402  k=3 : 2555
+   developed 2999 rows  14:39:20
+   TETROMINO k<=3, exact-overlap-pruned search
+   rows 2999  -> distinct tilings 1218   (2.5x row inflation)
+   rows by k      : {1: 42, 2: 402, 3: 2555}
+   TILINGS by k   : {1: 21, 2: 172, 3: 1025}
+   (k=1,2 agree with the k<=2 run: 21, 172)
+finished 2026-08-24 14:39:44
+
+RESULT
+  tetromino k<=3 completed in 298s with the exact overlap prune (16,145 configs, 808M nodes).
+  Unpruned the same run is ~8.3x that, about 41 minutes: the prune is what put k=3 in reach.
+  cells -> tools/ctrnact-oracle/run-k3-tetromino/ctrnact-cells-k3.json (2,999 rows)
+  CONSISTENCY: the k<=2 slice of this run reproduces the existing k<=2 board exactly
+  (21 and 172 distinct tilings under a mirror-merged key, same as run-k2-tetromino).
+  The shelf count is build-polyform-atlas.ts's to state, not this log's -- its dedup key
+  (rotations only, chirality distinguished, mirrors restored) is the shipped convention.
+finished 2026-08-24 14:43:37

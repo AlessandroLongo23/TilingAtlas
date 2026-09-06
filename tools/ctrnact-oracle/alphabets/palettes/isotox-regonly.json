@@ -1,0 +1,45 @@
+{
+ "name": "isotox-regonly",
+ "D": 120,
+ "closure": "mixed",
+ "maxValence": 6,
+ "comment": "THE REGULAR-ONLY SUBTREE OF A SINGLE-STAR ISOTOXAL PALETTE, as its own palette. Under the min-type-root rule a configuration never uses a vertex type below its root, so if the alphabet is ordered star-bearing types FIRST, every subtree rooted at a regular-only type explores regular-only types and nothing else \u2014 i.e. exactly this search. Measuring it prices what restricting the roots to star types would skip. Same regulars and closure as isotox-sub-10_12, star removed.",
+ "tiles": [
+  {
+   "kind": "regular",
+   "n": 3,
+   "name": "3",
+   "famchar": "3"
+  },
+  {
+   "kind": "regular",
+   "n": 4,
+   "name": "4",
+   "famchar": "4"
+  },
+  {
+   "kind": "regular",
+   "n": 5,
+   "name": "5",
+   "famchar": "5"
+  },
+  {
+   "kind": "regular",
+   "n": 6,
+   "name": "6",
+   "famchar": "6"
+  },
+  {
+   "kind": "regular",
+   "n": 8,
+   "name": "8",
+   "famchar": "8"
+  },
+  {
+   "kind": "regular",
+   "n": 10,
+   "name": "10",
+   "famchar": "a"
+  }
+ ]
+}

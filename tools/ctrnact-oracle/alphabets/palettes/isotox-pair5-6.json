@@ -1,0 +1,59 @@
+{
+ "name": "isotox-pair5-6",
+ "D": 120,
+ "closure": "mixed",
+ "maxValence": 6,
+ "comment": "THE FIRST PAIR PALETTE (AL, 2026-08-31). Every isotoxal run so far carries at most one star family beside the regulars, so a solid whose faces include TWO DIFFERENT stars could not appear in any of them \u2014 and the first answer given for why that was acceptable was circular: \"none of the six found so far is one\", from a search that could not express one. There is NO mathematical ground for the exclusion, only cost. This palette removes it for one pair. \u2691 WHY PAIRS AND NOT ALL ELEVEN AT ONCE. Corner classes drive the alphabet through the point-adjacency transfer matrix: all 11 outlines together is 29 classes and ~13.1M entries against isotox-mixed's 219,868, a tables.bin near 5.3 GB, and a k=2 search of roughly 590M blocks \u2014 about 320 hours. A PAIR is 10 classes and lands under isotox-mixed, so it is CHEAPER than the run that found the first six solids. 55 pairs cover the question exhaustively; isotox-mixed already covered three of them (it carries 5*12, 8*15 and 10*24 together) and found no mixed-star solid, which is the one real datum so far. 5* and 6* first because 5*12 is the family that produced both non-prism solids \u2014 AL's U30 analogue and the genus-9 record \u2014 while every other star family has yielded only its prism.",
+ "tiles": [
+  {
+   "kind": "regular",
+   "n": 3,
+   "name": "3",
+   "famchar": "3"
+  },
+  {
+   "kind": "regular",
+   "n": 4,
+   "name": "4",
+   "famchar": "4"
+  },
+  {
+   "kind": "regular",
+   "n": 5,
+   "name": "5",
+   "famchar": "5"
+  },
+  {
+   "kind": "regular",
+   "n": 6,
+   "name": "6",
+   "famchar": "6"
+  },
+  {
+   "kind": "regular",
+   "n": 8,
+   "name": "8",
+   "famchar": "8"
+  },
+  {
+   "kind": "regular",
+   "n": 10,
+   "name": "10",
+   "famchar": "a"
+  },
+  {
+   "kind": "star",
+   "n": 5,
+   "alphaU": 12,
+   "name": "5*12",
+   "famchar": "p"
+  },
+  {
+   "kind": "star",
+   "n": 6,
+   "alphaU": 20,
+   "name": "6*20",
+   "famchar": "s"
+  }
+ ]
+}

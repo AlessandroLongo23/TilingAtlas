@@ -1,0 +1,145 @@
+{
+  "name": "isotox-sph",
+  "D": 24,
+  "pinnedLegacy": false,
+  "maxValence": 12,
+  "comment": "PROBE 2026-08-25 (AL): star24 tiles with a SPHERICAL closure. The isotoxal outline n*a is the NON-self-intersecting 2n-gon with alternating point and dent angles; every polyhedron this atlas holds so far used the OTHER star, the self-intersecting {n/d} (kind starpoly). Dents here are 210-300 deg and reflex, so two of them already pass a full turn: at most ONE dent per vertex, with 60-150 deg left over.",
+  "tiles": [
+    {
+      "kind": "regular",
+      "n": 3,
+      "name": "3",
+      "famchar": "3"
+    },
+    {
+      "kind": "regular",
+      "n": 4,
+      "name": "4",
+      "famchar": "4"
+    },
+    {
+      "kind": "regular",
+      "n": 6,
+      "name": "6",
+      "famchar": "6"
+    },
+    {
+      "kind": "regular",
+      "n": 8,
+      "name": "8",
+      "famchar": "8"
+    },
+    {
+      "kind": "regular",
+      "n": 12,
+      "name": "12",
+      "famchar": "c"
+    },
+    {
+      "kind": "star",
+      "n": 3,
+      "alphaU": 1,
+      "name": "3*1",
+      "famchar": "sA"
+    },
+    {
+      "kind": "star",
+      "n": 3,
+      "alphaU": 2,
+      "name": "3*2",
+      "famchar": "sB"
+    },
+    {
+      "kind": "star",
+      "n": 4,
+      "alphaU": 2,
+      "name": "4*2",
+      "famchar": "sC"
+    },
+    {
+      "kind": "star",
+      "n": 4,
+      "alphaU": 3,
+      "name": "4*3",
+      "famchar": "sD"
+    },
+    {
+      "kind": "star",
+      "n": 4,
+      "alphaU": 4,
+      "name": "4*4",
+      "famchar": "sE"
+    },
+    {
+      "kind": "star",
+      "n": 6,
+      "alphaU": 2,
+      "name": "6*2",
+      "famchar": "sF"
+    },
+    {
+      "kind": "star",
+      "n": 6,
+      "alphaU": 4,
+      "name": "6*4",
+      "famchar": "sG"
+    },
+    {
+      "kind": "star",
+      "n": 6,
+      "alphaU": 5,
+      "name": "6*5",
+      "famchar": "sH"
+    },
+    {
+      "kind": "star",
+      "n": 6,
+      "alphaU": 6,
+      "name": "6*6",
+      "famchar": "sK"
+    },
+    {
+      "kind": "star",
+      "n": 8,
+      "alphaU": 1,
+      "name": "8*1",
+      "famchar": "sI"
+    },
+    {
+      "kind": "star",
+      "n": 8,
+      "alphaU": 3,
+      "name": "8*3",
+      "famchar": "sL"
+    },
+    {
+      "kind": "star",
+      "n": 8,
+      "alphaU": 6,
+      "name": "8*6",
+      "famchar": "sM"
+    },
+    {
+      "kind": "star",
+      "n": 12,
+      "alphaU": 2,
+      "name": "12*2",
+      "famchar": "sJ"
+    },
+    {
+      "kind": "star",
+      "n": 12,
+      "alphaU": 4,
+      "name": "12*4",
+      "famchar": "sN"
+    },
+    {
+      "kind": "star",
+      "n": 12,
+      "alphaU": 6,
+      "name": "12*6",
+      "famchar": "sO"
+    }
+  ],
+  "closure": "positive-defect"
+}

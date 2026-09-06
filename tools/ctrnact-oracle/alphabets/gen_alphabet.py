@@ -477,6 +477,16 @@ def load_palette(path):
 
 # ---------------------------------------------------------------- configurations
 
+def canon_key(w):
+    """The lex-max over all rotations of w and of its MIRRORED reversal. See cyclic_reps for why the
+    reversal goes through mirror_cid and not through `reversed` alone."""
+    m = len(w)
+    orbit = [tuple(w[(i + s) % m] for i in range(m)) for s in range(m)]
+    rev = tuple(mirror_cid(x) for x in reversed(w))
+    orbit += [tuple(rev[(i + s) % m] for i in range(m)) for s in range(m)]
+    return max(orbit)
+
+
 def cyclic_reps(words):
     """Deduplicate words up to rotation and reflection; keep one representative each
     (the lex-max over all rotations of word and reversed word).
@@ -493,11 +503,7 @@ def cyclic_reps(words):
     single kind of grid point, and 16 of the 21 were a figure paired with its own mirror."""
     seen, reps = set(), []
     for w in words:
-        m = len(w)
-        orbit = [tuple(w[(i + s) % m] for i in range(m)) for s in range(m)]
-        rev = tuple(mirror_cid(x) for x in reversed(w))
-        orbit += [tuple(rev[(i + s) % m] for i in range(m)) for s in range(m)]
-        key = max(orbit)
+        key = canon_key(w)
         if key not in seen:
             seen.add(key)
             reps.append(list(key))
@@ -582,9 +588,39 @@ def enum_configs(D, classes, min_len, max_len, closure="euclidean", forbidden=No
     angles already exceed 2pi.) Without this lemma the unit-1/2 point corners make the
     word enumeration explode combinatorially; with it, points and >=4-unit separators
     alternate, bounding word length."""
-    out = []
+    # ⚑ DEDUP AS WE GO, not at the end (2026-08-31). This used to append every accepted word and hand
+    # the whole list to cyclic_reps, so the peak held one list per WORD where the answer needs one per
+    # ORBIT — about 12x more at valence 6. Measured on isotox-mixed: 0.23 GB of the generator's 1.12 GB
+    # peak, for 144,346 configurations. On the 11-outline palette that term alone is ~11 GB and it is
+    # what stops the alphabet being generatable at all. Same representative (the lex-max of the orbit)
+    # and same order (first appearance of each orbit), so the pinned tables do not move.
+    out, seen_orbit = [], set()
+
+    def emit(word):
+        key = canon_key(word)
+        if key not in seen_orbit:
+            seen_orbit.add(key)
+            out.append(list(key))
+
     unit = {c.cid: c.units for c in classes}
     pt = {c.cid: getattr(c, "is_point", False) for c in classes}
+    # THE CONTRAPOSITIVE OF THE POINT-ADJACENCY LEMMA, and free (2026-08-31). The lemma's own proof
+    # runs through the OTHER end of the shared edge: two adjacent points at v force two adjacent DENTS
+    # at w. A star tile has period 2 with the boundary alternating point/dent, so next == prev == the
+    # point-dent swap and the implication is an INVOLUTION — {solids with a point-point vertex} =
+    # {solids with a dent-dent vertex}. Banning dent-dent on top of the shipped point-point ban
+    # therefore removes exactly zero solids, and it is checkable rather than merely arguable: over the
+    # shipped isotox-mixed runs, 4,877,234 star-bearing blocks at k<=2 (3,876,563 of them carrying a
+    # dent) and 4,740 at k=1 contain ZERO adjacent dent pairs, cyclic wrap included.
+    #
+    # ⚑ A DENT IS next_class(point) ON A STAR TILE, NOT "units > D/2". The angle test would also catch
+    # the retrograde starpoly classes of the hollow palettes (3_2, 4_3, 6_5, 8_5, 8_7, 12_7, 12_11 all
+    # exceed D/2 under density-flat's cap = 3D) where two of them legally abut, and it would delete
+    # real tilings there. Read off the tile, `dn` is empty for every palette with no `star` tile, so
+    # the starpoly, hollow, composite, polyform and girih palettes are untouched by construction.
+    dn = {next_class(c, classes) for c in classes if getattr(c, "is_point", False)}
+    def pair_ok(a, b):
+        return not ((pt[a] and pt[b]) or (a in dn and b in dn))
     cids = sorted(unit, key=lambda k: (-unit[k], k))
     spherical = (closure == "positive-defect")
     hyperbolic = (closure == "negative-defect")
@@ -602,11 +638,27 @@ def enum_configs(D, classes, min_len, max_len, closure="euclidean", forbidden=No
     # come out identical. Unlike the curved modes there is no defect to solve away afterwards: the
     # Euclidean angles are rigid, so closure here is an equality and the arithmetic is the whole test.
     flat_mode = (closure == "density-flat")
+    # "mixed" (TOROID PROBE, 2026-08-25): both signs of defect in one map, flat vertices excluded. A
+    # closed surface of genus g has total defect 2*pi*chi = 2*pi*(2 - 2g), so genus 1 is total defect
+    # ZERO: every positive-defect vertex has to be paid for by a saddle somewhere else, and neither
+    # "positive-defect" nor "negative-defect" can express a map that needs both. This is their union
+    # minus the flat vertices, which are excluded for the reason the spherical mode already excludes
+    # them — two faces meeting at a flat corner are one face, and if that union is not a regular
+    # polygon the solid is not regular-faced (gen_nonconvex_shelf.degeneracy).
+    #
+    # ⚑ IT IS NOT A DROP-IN FOR THE SPHERICAL SEARCH AND MUST NOT BE USED AS ONE. The spherical mode
+    # is FINITE because the total defect is 4*pi and this palette's smallest positive defect is 6
+    # degrees (4.6.10, angles summing to 354), so V <= 720/6 = 120 — a bound the truncated
+    # icosidodecahedron attains exactly. At total defect zero there is no such quantum and nothing in a
+    # block's own data bounds V, so develop's guard (develop_spherical.instance_bound) stops being a
+    # derived bound and becomes a number someone picked. Anything found under this mode is a FIND, not
+    # a census.
+    mixed = (closure == "mixed")
     cap = D * maxdens if (dens_mode or flat_mode) else D
     # The wrap pair (last, first) is only genuinely adjacent when the word CLOSES a full turn, so the
     # cyclic half of the pair prune is euclidean-only even if a caller hands us a table in a defect mode.
     bad = forbidden if forbidden else frozenset()
-    bad_wrap = bad if not (spherical or hyperbolic) else frozenset()
+    bad_wrap = bad if not (spherical or hyperbolic or mixed) else frozenset()
 
     # "negative-defect" (hyperbolic palette): a vertex closes with STRICTLY NEGATIVE angular defect
     # (total > D), the mirror image of the spherical case. The EUCLIDEAN interior angles overfill a full
@@ -621,37 +673,43 @@ def enum_configs(D, classes, min_len, max_len, closure="euclidean", forbidden=No
     def rec(word, total):
         if flat_mode:
             if len(word) >= min_len and total > 0 and total % D == 0:
-                if not (pt[word[-1]] and pt[word[0]]):
-                    out.append(list(word))
+                if pair_ok(word[-1], word[0]):
+                    emit(word)
                 # fall through, unlike plain "euclidean": a word that closes at one full turn can be
                 # EXTENDED to a different, still-valid word closing at two. 4.8/5.8/5 (delta=2) is not
                 # reachable any other way.
         elif dens_mode:
             if len(word) >= min_len and 0 < total < cap and total % D != 0:
-                if not (pt[word[-1]] and pt[word[0]]):
-                    out.append(list(word))
+                if pair_ok(word[-1], word[0]):
+                    emit(word)
                 # fall through: like the defect modes, a longer word is a different valid vertex
         elif spherical:
             if len(word) >= min_len and 0 < total < D:
-                if not (pt[word[-1]] and pt[word[0]]):  # cyclic point-adjacency
-                    out.append(list(word))
+                if pair_ok(word[-1], word[0]):  # cyclic point-adjacency
+                    emit(word)
                 # fall through: a longer word is a distinct, still-valid defect vertex
         elif hyperbolic:
             if len(word) >= min_len and total > D:
-                if not (pt[word[-1]] and pt[word[0]]):  # cyclic point-adjacency
-                    out.append(list(word))
+                if pair_ok(word[-1], word[0]):  # cyclic point-adjacency
+                    emit(word)
                 # fall through: a longer word is a distinct, larger hyperbolic vertex
+        elif mixed:
+            if len(word) >= min_len and total != D:
+                if pair_ok(word[-1], word[0]):  # cyclic point-adjacency
+                    emit(word)
+                # fall through, on BOTH sides of the full turn: a longer word is a distinct vertex
+                # whether it is still short of one (spherical branch) or already past it (hyperbolic).
         else:
             if len(word) >= min_len and total == D:
-                if not (pt[word[-1]] and pt[word[0]]) and (word[-1], word[0]) not in bad_wrap:
-                    out.append(list(word))
+                if pair_ok(word[-1], word[0]) and (word[-1], word[0]) not in bad_wrap:
+                    emit(word)
                 return
         if len(word) >= max_len:
             return
-        if not hyperbolic and total >= cap:  # euclidean/spherical/density prune at or past the cap
+        if not (hyperbolic or mixed) and total >= cap:  # euclidean/spherical/density prune at the cap
             return
         for cid in cids:
-            if word and pt[word[-1]] and pt[cid]:   # point-adjacency lemma
+            if word and not pair_ok(word[-1], cid):   # point-adjacency lemma and its contrapositive
                 continue
             if word and (word[-1], cid) in bad:     # geometric generalization of the same lemma
                 continue
@@ -660,12 +718,13 @@ def enum_configs(D, classes, min_len, max_len, closure="euclidean", forbidden=No
             # euclidean reaches a full turn (nxt <= D); spherical stays strictly under it (nxt < D) so a
             # flat vertex is never developed; hyperbolic overshoots freely (bounded only by max_len).
             ok = (nxt <= cap) if flat_mode else \
-                 (nxt < cap) if (spherical or dens_mode) else (True if hyperbolic else (nxt <= D))
+                 (nxt < cap) if (spherical or dens_mode) else \
+                 (True if (hyperbolic or mixed) else (nxt <= D))
             if ok:
                 rec(word, nxt)
             word.pop()
     rec([], 0)
-    return cyclic_reps(out)
+    return out
 
 
 # ---------------------------------------------------------------- period quotient
@@ -1229,40 +1288,81 @@ def emit_binary(outdir, D, tiles, classes, entries, maxL, palette_name):
     Written alongside the .inc, never instead of it: the compiled path stays the default and stays
     byte-identical, so `make check-regular` keeps protecting it.
     """
-    import struct
-    buf = bytearray()
-    def i32(x):  buf.extend(struct.pack("<i", int(x)))
-    def s(x):    b = x.encode("utf-8"); i32(len(b)); buf.extend(b)
-    def iv(xs):  i32(len(xs)); [i32(x) for x in xs]
-    def sv(xs):  i32(len(xs)); [s(x) for x in xs]
-
-    # CTRNTB03 adds CLASS_SIGMA after CLASS_TILE: the class a corner becomes when its tile is placed
-    # mirrored. Identity for every equilateral palette, so the only difference there is a run of
-    # 0,1,2,... in place of nothing.
-    # CTRNTB02 adds one i32vec per vertex type (etype, the per-dart edge type) after reps.
-    # A palette with no edge types writes all zeros there, and the solver treats 0 as a wildcard,
-    # so the only difference for every existing palette is a run of zeros.
-    buf.extend(b"CTRNTB03")
-    i32(D); i32(maxL); i32(len(classes)); i32(len(tiles)); i32(len(entries))
-    for f in (lambda c: c.units, lambda c: c.tile.L, lambda c: c.tile.p,
-              lambda c: next_class(c, classes), lambda c: prev_class(c, classes),
-              lambda c: c.tile.tid, lambda c: mirror_cid(c.cid)):
-        for c in classes:
-            i32(f(c))
-    sv([c.disp for c in classes])
-    sv([t.famchar for t in tiles])
-    sv([t.name for t in tiles])
-    # lvert must match the .inc's STAB_CLS (the corner-CLASS id), NOT the display-numeric LVERT
-    # variant, which is a legacy alias used only where classes happen to be numeric.
+    path = os.path.join(outdir, "tables.bin")
+    w = BinWriter(path, D, tiles, classes, maxL)
     for e in entries:
+        w.entry(e)
+    return path, w.close()
+
+
+# NTYPES sits at byte 24: magic(8) + D, MAXL, NCLS, NTILES (4 i32). Streaming does not know it until
+# the last entry is written, so the header goes out with a placeholder and gets patched at close().
+_BIN_NTYPES_OFF = 24
+
+
+class BinWriter:
+    """Streaming writer for tables.bin — one entry at a time, nothing retained.
+
+    ⚑ THE POINT IS MEMORY, not speed (2026-08-31). The generator used to hold every folded Entry in a
+    list so emit() could walk it several times, and an Entry costs ~6.2 kB in Python (measured: 950 MB
+    for isotox-mixed's 154,008). At the 11-outline isotoxal palette's ~5.65M entries that is ~35 GB on
+    a 24 GB machine, and it is the only thing stopping that alphabet from being built at all — the
+    SEARCH needs 11.3 GB for the same alphabet and fits. Writing each entry as it is folded makes the
+    generator's peak the configuration list instead, which is under a gigabyte.
+
+    emit_binary() drives this over a materialized list, so the non-streaming path is byte-identical by
+    construction rather than by a parallel implementation that could drift."""
+
+    def __init__(self, path, D, tiles, classes, maxL):
+        import struct
+        self._struct = struct
+        self.f = open(path, "wb")
+        self.n = 0
+        self.bytes = 0
+        buf = bytearray()
+        def i32(x): buf.extend(struct.pack("<i", int(x)))
+        def s(x):   b = x.encode("utf-8"); i32(len(b)); buf.extend(b)
+        def sv(xs): i32(len(xs)); [s(x) for x in xs]
+        # CTRNTB03 adds CLASS_SIGMA after CLASS_TILE: the class a corner becomes when its tile is
+        # placed mirrored. Identity for every equilateral palette, so the only difference there is a
+        # run of 0,1,2,... in place of nothing.
+        # CTRNTB02 adds one i32vec per vertex type (etype, the per-dart edge type) after reps.
+        # A palette with no edge types writes all zeros there, and the solver treats 0 as a wildcard,
+        # so the only difference for every existing palette is a run of zeros.
+        buf.extend(b"CTRNTB03")
+        i32(D); i32(maxL); i32(len(classes)); i32(len(tiles)); i32(0)   # NTYPES patched at close()
+        for fn in (lambda c: c.units, lambda c: c.tile.L, lambda c: c.tile.p,
+                   lambda c: next_class(c, classes), lambda c: prev_class(c, classes),
+                   lambda c: c.tile.tid, lambda c: mirror_cid(c.cid)):
+            for c in classes:
+                i32(fn(c))
+        sv([c.disp for c in classes])
+        sv([t.famchar for t in tiles])
+        sv([t.name for t in tiles])
+        self.f.write(buf)
+        self.bytes += len(buf)
+
+    def entry(self, e):
+        struct = self._struct
+        buf = bytearray()
+        def i32(x): buf.extend(struct.pack("<i", int(x)))
+        def s(x):   b = x.encode("utf-8"); i32(len(b)); buf.extend(b)
+        def iv(xs): i32(len(xs)); [i32(x) for x in xs]
+        def sv(xs): i32(len(xs)); [s(x) for x in xs]
+        # lvert must match the .inc's STAB_CLS (the corner-CLASS id), NOT the display-numeric LVERT
+        # variant, which is a legacy alias used only where classes happen to be numeric.
         s(e.symbol); s(e.code); i32(e.ferkval); i32(1 if e.counting else 0)
         sv(list(e.labels)); iv(e.lneig); iv(e.rneig); iv(e.mirro); iv(e.cls); iv(e.reps)
         iv(getattr(e, "etype", None) or [0] * len(e.cls))
+        self.f.write(buf)
+        self.bytes += len(buf)
+        self.n += 1
 
-    path = os.path.join(outdir, "tables.bin")
-    with open(path, "wb") as f:
-        f.write(buf)
-    return path, len(buf)
+    def close(self):
+        self.f.seek(_BIN_NTYPES_OFF)
+        self.f.write(self._struct.pack("<i", self.n))
+        self.f.close()
+        return self.bytes
 
 
 def emit(outdir, D, tiles, classes, entries, cert_lines, palette_name):
@@ -1418,6 +1518,11 @@ def main():
     ap.add_argument("--palette", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--certify", action="store_true")
+    ap.add_argument("--stream", action="store_true",
+                    help="write ONLY tables.bin, one entry at a time, retaining none. For alphabets "
+                         "too big to hold in Python (see BinWriter). Non-pinned palettes only; the "
+                         ".inc/.py/certs forms and the whole-alphabet certificates are skipped, so "
+                         "the solver must be eu_solver_rt with EU_TABLES pointing at the result.")
     # See quotient_period(): collapses period-p tiles differing only in their grid angle word into one
     # symbolic shape. Alphabet only — the search is untouched, and every emitted configuration is the
     # image of one that really closes. Solutions become candidate FAMILIES, decided by the linear
@@ -1509,6 +1614,21 @@ def main():
         t.kind == "composite" and any(a >= D // 2 for a in t.angles) for t in tiles
     )
     min_len = 2 if (any(t.kind in ("star", "doubled", "scaled", "polyomino") for t in tiles) or has_flat_or_reflex_composite) else 3
+    # ⚑ BUT NOT ON A CURVED SURFACE (AL, 2026-08-31). Every reason above is a statement about the
+    # PLANE. A vertex with only two faces has only two edges, so its link is a spherical DIGON: both
+    # corner arcs run between the same two edge directions, and the great circle through two
+    # non-antipodal points is unique, so both faces lie in ONE plane and their angles must sum to a
+    # full turn. (The antipodal case is the flat-flat mid-edge point, 180 + 180, which is the same
+    # sum.) So a real 2-corner vertex ALWAYS totals exactly D — which is precisely what every curved
+    # closure excludes. Under positive-defect, negative-defect, density or mixed, not one 2-corner
+    # word can occur in any solid, and admitting them is not conservative, it is unsound in the
+    # cheap direction: they are NONCOUNTING, so eu_solver does not bound them by k (see its max_nc
+    # note), and a "k=1" search explores configurations carrying up to 33 of them.
+    # Measured on isotox-mixed k=1: 2,859,640 of 2,870,830 raw header lines carry at least one, so
+    # this is 99.6% of that search — and the 11,190 that remain are the same order as star-wide's
+    # 17,458, which is what a palette with no dents costs.
+    if spec.get("closure", "euclidean") in ("positive-defect", "negative-defect", "density", "mixed"):
+        min_len = 3
     # Optional geometric pre-filter (EU_PRUNE_OVERLAP=1): drop vertex configs whose PLACED tiles physically
     # overlap. The solver is combinatorial (no geometry), so an overlapping figure would otherwise seed
     # geometrically-impossible tilings; an overlapping figure appears in zero real tilings, so dropping it is
@@ -1651,7 +1771,65 @@ def main():
         # sorted by decreasing |H|; base names F / R<r> / A / S<r>; same-base classes
         # within one config disambiguated by trailing a, b, c...
         entries = []
-        for c in sorted(configs, key=lambda w: (len(w), [classes[x].disp for x in w])):
+        # STREAMING SINK. `take` either keeps the entry (the historical path, byte-identical) or names
+        # it, writes it to tables.bin and drops it. The code counter and the A6 scan run inline in the
+        # streaming case because both are sequential over the same order the list pass used, so the
+        # answer does not depend on which path ran.
+        stream = None
+        st = {"by_val": {}, "a6": set(), "coll": 0, "sided": 0}
+        if args.stream:
+            if pinned:
+                raise SystemExit("--stream refuses a pinned palette: the legacy-table gate needs the "
+                                 "whole entry list to match against")
+            os.makedirs(args.out, exist_ok=True)
+            stream = BinWriter(os.path.join(args.out, "tables.bin"), D, tiles, classes,
+                               max(t.L for t in tiles))
+            print("[gen] STREAM: writing tables.bin only; no .inc, no tables.py, no certs.txt")
+
+        def take(ent):
+            if stream is None:
+                entries.append(ent)
+                return
+            v = len(ent.config)
+            i = st["by_val"].get(v, 0)
+            st["by_val"][v] = i + 1
+            tail, j = "", i
+            while True:
+                tail = chr(ord('a') + j % 26) + tail
+                j //= 26
+                if j == 0:
+                    break
+            ent.code = f"{v}{'a' * max(0, 2 - len(tail))}{tail}"
+            # A6 by HASH, not by the key itself: 5.65M iso_keys as tuples would put the retention back
+            # that streaming just removed. A hash collision can only over-report a collision, and on a
+            # non-pinned palette A6 is already a warning rather than a gate.
+            h = hash(iso_key(ent))
+            if h in st["a6"]:
+                st["coll"] += 1
+            else:
+                st["a6"].add(h)
+            if getattr(ent, "sigma_mixed", 0):
+                st["sided"] += 1
+            stream.entry(ent)
+
+        # STAR-FIRST ORDERING (palette flag "starFirst", AL 2026-08-31). eu_solver roots the search at
+        # a configuration's MINIMUM vertex type — extend never adds a type below vertype[0] — so if
+        # every star-bearing type sorts before every regular-only one, a solid containing a star face
+        # necessarily roots at a star type, and EU_STAR_ROOTS can skip the regular-only roots without
+        # losing one. The skipped subtree is the regular-only search, which is worth skipping: measured
+        # on the one-star isotox-sub-10_12 at k<=2 it is 88,376,467 of 351,464,898 nodes (25%) but
+        # 6,183,367 of 7,358,693 raw blocks (84%) and 2.6 of 4.0 GB written (65%), and blocks and bytes
+        # are what the pruner and the disk care about.
+        #
+        # Behind a flag because it REORDERS the alphabet, and an entry's index is its identity in the
+        # emitted tables. Palettes without the flag are byte-identical; the pinned regular tables have
+        # no star tile and could not move anyway.
+        star_cids = {c.cid for c in classes if getattr(c.tile, "kind", None) == "star"}
+        star_first = bool(spec.get("starFirst")) and bool(star_cids)
+        def order_key(w):
+            base = (len(w), [classes[x].disp for x in w])
+            return ((0 if star_cids.intersection(w) else 1,) + base) if star_first else base
+        for c in sorted(configs, key=order_key):
             folds = [(len(H), H, fold(c, H)) for H in subgroups_up_to_conjugacy(c)]
             folds.sort(key=lambda t: (-t[0], sorted(t[1])))
             base_of = []
@@ -1674,13 +1852,22 @@ def main():
                 ent.symbol = star_symbol(ent, classes, base + suffix)
                 fk, lines = certify(ent, ent.symbol)
                 ent.ferkval = fk
-                cert_lines += lines
-                entries.append(ent)
+                if stream is None:
+                    cert_lines += lines
+                take(ent)
         # codes: valence digit(s) + letters-only tail (digit-free, tes_id-safe). Tail is
         # base-26 with 'a'=0, left-padded to width 2; width grows past 'zz' (i>=676),
         # which large palettes hit (star24full: 21100 valence-6 entries). Fixed-width
         # 2 chars overflowed into non-ASCII via chr(ord('a')+i//26). Injective: width-2
         # covers i<676 exactly, wider tails have a nonzero leading digit.
+        if stream is not None:
+            nbytes = stream.close()
+            print("[gen] STREAM: wrote %s/tables.bin — %d entries, %.1f MB, %d iso-fold hash "
+                  "collisions (A6 is a WARNING on a non-pinned palette; the pruner's dedup is not "
+                  "trusted here either way)" % (args.out, stream.n, nbytes / 1e6, st["coll"]))
+            if st["sided"]:
+                print("[gen] SIDED CLASSES: %d of %d entries" % (st["sided"], stream.n))
+            return
         by_val = {}
         for e in entries:
             v = len(e.config)

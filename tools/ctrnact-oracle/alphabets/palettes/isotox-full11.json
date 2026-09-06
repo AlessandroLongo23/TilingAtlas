@@ -1,0 +1,128 @@
+{
+ "name": "isotox-full11",
+ "D": 120,
+ "closure": "mixed",
+ "maxValence": 6,
+ "comment": "EVERY ISOTOXAL OUTLINE THE D=120 GRID CARRIES, IN ONE PALETTE (AL, 2026-08-31). The 11 outlines are the boundaries of {5/2}, {6/2}, {8/2}, {8/3}, {10/2}, {10/3}, {10/4}, {12/2}, {12/3}, {12/4} and {12/5}: point angle 60*(n-2d)/n units, which is an integer exactly for these. 7-pointed and 9-pointed stars need a grid divisible by 7 or 9 and are off this one entirely. Together with the seven regular n-gons whose corner is a whole number of units (3,4,5,6,8,10,12) that is 29 corner classes. Under mixed closure enum_configs applies no angle bound, so the alphabet is ~C^V/(2V): ~25.0M configurations, 124x isotox-mixed, of which 96% are valence 6. This palette is the COMPLETE single run; the 55 pair palettes are its decomposition by star family and cover only solids using at most two of the eleven.",
+ "tiles": [
+  {
+   "kind": "regular",
+   "n": 3,
+   "name": "3",
+   "famchar": "3"
+  },
+  {
+   "kind": "regular",
+   "n": 4,
+   "name": "4",
+   "famchar": "4"
+  },
+  {
+   "kind": "regular",
+   "n": 5,
+   "name": "5",
+   "famchar": "5"
+  },
+  {
+   "kind": "regular",
+   "n": 6,
+   "name": "6",
+   "famchar": "6"
+  },
+  {
+   "kind": "regular",
+   "n": 8,
+   "name": "8",
+   "famchar": "8"
+  },
+  {
+   "kind": "regular",
+   "n": 10,
+   "name": "10",
+   "famchar": "a"
+  },
+  {
+   "kind": "regular",
+   "n": 12,
+   "name": "12",
+   "famchar": "c"
+  },
+  {
+   "kind": "star",
+   "n": 5,
+   "alphaU": 12,
+   "name": "5*12",
+   "famchar": "p"
+  },
+  {
+   "kind": "star",
+   "n": 6,
+   "alphaU": 20,
+   "name": "6*20",
+   "famchar": "s"
+  },
+  {
+   "kind": "star",
+   "n": 8,
+   "alphaU": 30,
+   "name": "8*30",
+   "famchar": "t"
+  },
+  {
+   "kind": "star",
+   "n": 8,
+   "alphaU": 15,
+   "name": "8*15",
+   "famchar": "q"
+  },
+  {
+   "kind": "star",
+   "n": 10,
+   "alphaU": 36,
+   "name": "10*36",
+   "famchar": "u"
+  },
+  {
+   "kind": "star",
+   "n": 10,
+   "alphaU": 24,
+   "name": "10*24",
+   "famchar": "r"
+  },
+  {
+   "kind": "star",
+   "n": 10,
+   "alphaU": 12,
+   "name": "10*12",
+   "famchar": "v"
+  },
+  {
+   "kind": "star",
+   "n": 12,
+   "alphaU": 40,
+   "name": "12*40",
+   "famchar": "w"
+  },
+  {
+   "kind": "star",
+   "n": 12,
+   "alphaU": 30,
+   "name": "12*30",
+   "famchar": "x"
+  },
+  {
+   "kind": "star",
+   "n": 12,
+   "alphaU": 20,
+   "name": "12*20",
+   "famchar": "y"
+  },
+  {
+   "kind": "star",
+   "n": 12,
+   "alphaU": 10,
+   "name": "12*10",
+   "famchar": "z"
+  }
+ ]
+}

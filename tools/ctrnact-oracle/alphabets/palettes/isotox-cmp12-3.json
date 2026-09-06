@@ -1,0 +1,58 @@
+{
+ "name": "isotox-cmp12-3",
+ "D": 120,
+ "closure": "mixed",
+ "maxValence": 6,
+ "comment": "ONE MISSING ISOTOXAL OUTLINE, as its own palette (AL, 2026-08-31: \"close the compound gap\"). isotox-mixed carried only 5*12, 8*15 and 10*24 \u2014 the outlines of {5/2}, {8/3}, {10/3} \u2014 because it was built tile for tile against star-wide, whose star faces are the PROGRADE ones a uniform polyhedron uses. That restriction belongs to the SELF-INTERSECTING definition and was imported without being questioned: an isotoxal outline is a simple 2n-gon and needs no gcd(n,d)=1. {12/3} is a compound of 3 {4/1}s, not a polygon this atlas could draw, yet its outline is an ordinary 24-gon with a 90-degree point and a 240-degree reflex dent. \u2691 ONE STAR PER PALETTE, deliberately. Corner classes drive the alphabet as classes^valence, so folding all eight missing outlines into one palette takes 12 classes to 28 and the alphabet from 220k entries to tens of millions, which will not compile. Eight small palettes cost less than one large one and each is a targeted question, which is how this engine is meant to be asked. The price is declared: a solid mixing TWO different star families cannot be found this way, and none of the six found so far is one.",
+ "tiles": [
+  {
+   "kind": "regular",
+   "n": 3,
+   "name": "3",
+   "famchar": "3"
+  },
+  {
+   "kind": "regular",
+   "n": 4,
+   "name": "4",
+   "famchar": "4"
+  },
+  {
+   "kind": "regular",
+   "n": 5,
+   "name": "5",
+   "famchar": "5"
+  },
+  {
+   "kind": "regular",
+   "n": 6,
+   "name": "6",
+   "famchar": "6"
+  },
+  {
+   "kind": "regular",
+   "n": 8,
+   "name": "8",
+   "famchar": "8"
+  },
+  {
+   "kind": "regular",
+   "n": 10,
+   "name": "10",
+   "famchar": "a"
+  },
+  {
+   "kind": "regular",
+   "n": 12,
+   "name": "12",
+   "famchar": "c"
+  },
+  {
+   "kind": "star",
+   "n": 12,
+   "alphaU": 30,
+   "name": "12*30",
+   "famchar": "s"
+  }
+ ]
+}

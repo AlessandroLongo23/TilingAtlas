@@ -1,0 +1,66 @@
+{
+  "name": "isotox-mixed",
+  "D": 120,
+  "closure": "mixed",
+  "maxValence": 6,
+  "comment": "THE ISOTOXAL PALETTE AT MIXED CLOSURE (2026-08-25, AL). Same nine tiles as isotox-wide, both signs of defect admitted. \u2691 THE OBSTRUCTION IS THE CLOSURE, NOT A CIRCUMSPHERE. A vertex figure is a closed spherical polygon whose SIDES are the face angles, and each side must be under the sum of the others; the 5*12 dent is 252 degrees, so the rest of that vertex must sum PAST 252 and the total past 504 \u2014 a SADDLE vertex. positive-defect admits only convex vertices (total under 360), so it excludes every dent vertex by construction, which is why all 935 star-bearing blocks at k=2..4 returned zero dihedral solutions. That says nothing about inscribability: the whole ncx shelf is non-inscribable and still positive-defect. Mixed is the closure a concave star face needs, and it is the one the genus shelves already use.",
+  "tiles": [
+    {
+      "kind": "regular",
+      "n": 3,
+      "name": "3",
+      "famchar": "3"
+    },
+    {
+      "kind": "regular",
+      "n": 4,
+      "name": "4",
+      "famchar": "4"
+    },
+    {
+      "kind": "regular",
+      "n": 5,
+      "name": "5",
+      "famchar": "5"
+    },
+    {
+      "kind": "regular",
+      "n": 6,
+      "name": "6",
+      "famchar": "6"
+    },
+    {
+      "kind": "regular",
+      "n": 8,
+      "name": "8",
+      "famchar": "8"
+    },
+    {
+      "kind": "regular",
+      "n": 10,
+      "name": "10",
+      "famchar": "a"
+    },
+    {
+      "kind": "star",
+      "n": 5,
+      "alphaU": 12,
+      "name": "5*12",
+      "famchar": "p"
+    },
+    {
+      "kind": "star",
+      "n": 8,
+      "alphaU": 15,
+      "name": "8*15",
+      "famchar": "q"
+    },
+    {
+      "kind": "star",
+      "n": 10,
+      "alphaU": 24,
+      "name": "10*24",
+      "famchar": "r"
+    }
+  ]
+}

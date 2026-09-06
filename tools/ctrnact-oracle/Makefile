@@ -78,6 +78,14 @@ eu_solver_rt: eu_solver.cpp .maxnumrt-$(MAXNUM)
 eu_pruner$(SFX): eu_pruner.cpp ctrnact_decode.hpp $(TB)/.generated
 	$(CXX) $(CXXFLAGS) -I$(TB) -o $@ $<
 
+# Runtime-alphabet pruner, the companion to eu_solver_rt. Same dedup; the tables come from tables.bin
+# at startup (EU_TABLES=<path>) instead of being #included as C++. ONE binary serves every palette,
+# and it is the only way to prune a palette whose pruner_tables.inc the compiler cannot take — the
+# 11-outline isotoxal alphabet is 5.65M vertex types and a 1.54 GB .inc. No palette dependency, so
+# no -I and no $(TB) prerequisite.
+eu_pruner_rt: eu_pruner.cpp ctrnact_decode.hpp ctrnact_runtime_tables.hpp
+	$(CXX) $(CXXFLAGS) -DEU_RUNTIME_TABLES -o $@ $<
+
 eu_classify: eu_classify.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
@@ -119,7 +127,7 @@ check-deltahedra:
 	python3 check_deltahedra.py check-delta/cells.json
 
 clean:
-	rm -f eu_solver eu_solver.* eu_solver_rt eu_pruner eu_pruner.* eu_classify eu_sphfill eu_develop eu_develop.* .maxnum-* .maxnumrt-*
+	rm -f eu_solver eu_solver.* eu_solver_rt eu_pruner eu_pruner.* eu_pruner_rt eu_classify eu_sphfill eu_develop eu_develop.* .maxnum-* .maxnumrt-*
 
 # The STAR gate. `check-regular` proves an engine edit did not disturb the Euclidean catalogue; this
 # proves the same for the spherical STAR machinery — the starpoly tile kind, the density closure, the

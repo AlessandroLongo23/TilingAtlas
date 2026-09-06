@@ -16,6 +16,10 @@
 #include <deque>
 #include <iterator>
 #include <ctime>
+#include <cerrno>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 std::string solvercode = "eu";
 std::string filepath = "out/";
@@ -129,7 +133,9 @@ static bool has_noncounting = false;  // set in main(); false for the regular pa
 // pruned catalog is byte-identical (the acceptance gate). No shared state: each worker is its own
 // process. Default N=1 => sequential, unchanged.
 static const int shard_n = std::getenv("EU_SHARD_N") ? atoi(std::getenv("EU_SHARD_N")) : 1;
-static const int shard_w = std::getenv("EU_SHARD_W") ? atoi(std::getenv("EU_SHARD_W")) : 0;
+// NOT const: EU_FORK (see main) re-points a forked child at its own shard index after the alphabet is
+// built, which is the whole reason the fork saves memory.
+static int shard_w = std::getenv("EU_SHARD_W") ? atoi(std::getenv("EU_SHARD_W")) : 0;
 
 // DEPTH-2 SHARDING (EU_SHARD_D2=<f>, default 1 = the depth-1 behaviour above, unchanged).
 //
@@ -158,9 +164,16 @@ static const int shard_w = std::getenv("EU_SHARD_W") ? atoi(std::getenv("EU_SHAR
 // ⚑ EU_SHARD_N must be divisible by EU_SHARD_D2; main() refuses otherwise rather than silently
 // dropping the remainder, which would lose tilings.
 static const int shard_d2 = std::getenv("EU_SHARD_D2") ? atoi(std::getenv("EU_SHARD_D2")) : 1;
-static const int shard_n1 = (shard_d2 > 1) ? shard_n / shard_d2 : shard_n;
-static const int shard_w1 = (shard_d2 > 1) ? shard_w / shard_d2 : shard_w;
-static const int shard_w2 = (shard_d2 > 1) ? shard_w % shard_d2 : 0;
+static int shard_n1 = (shard_d2 > 1) ? shard_n / shard_d2 : shard_n;
+static int shard_w1 = (shard_d2 > 1) ? shard_w / shard_d2 : shard_w;
+static int shard_w2 = (shard_d2 > 1) ? shard_w % shard_d2 : 0;
+// Adopt shard index w. Same arithmetic as the initializers above; a forked child calls it.
+static void shard_set(int w) {
+    shard_w  = w;
+    shard_n1 = (shard_d2 > 1) ? shard_n / shard_d2 : shard_n;
+    shard_w1 = (shard_d2 > 1) ? w / shard_d2 : w;
+    shard_w2 = (shard_d2 > 1) ? w % shard_d2 : 0;
+}
 static long long branch_ctr = 0;   // root-level branch number; see shard_take_branch()
 
 // True iff this shard owns the next root-level branch. Called ONLY at dfs_depth==1 and only after
@@ -867,6 +880,7 @@ struct VecHash {
 };
 }
 #include <unordered_map>
+#include <string_view>
 static std::unordered_map<std::vector<int>, int, VecHash> VTS_IDX;   // sorted vertype -> index
 
 int vertypesolvedadd(std::vector<int> const& vertype) {
@@ -886,9 +900,24 @@ int vertypesolvedadd(std::vector<int> const& vertype) {
     return x;
 }
 
+// EU_STAR_ROOTS=1 — root the search ONLY at star-bearing vertex types (AL, 2026-08-31).
+//
+// extend() never adds a vertex type below vertype[0], so every configuration's types are >= its root.
+// If the alphabet is ordered with every star-bearing type before every regular-only one, then a solid
+// carrying at least one star FACE has a star type as its minimum, and rooting only at star types
+// finds exactly the star-bearing solids and loses nothing. What it skips is the regular-only subtree,
+// which on the one-star isotox-sub-10_12 at k<=2 is 25% of the nodes but 84% of the raw blocks and
+// 65% of the bytes written — and blocks and bytes, not nodes, are what stop a k=3 run.
+//
+// STAR_ROOTS is the count of the leading run of star-bearing types. main() refuses the flag unless
+// those types really are a PREFIX, because on an unordered alphabet this silently loses solids.
+static int STAR_ROOTS = -1;
+static const bool star_roots = std::getenv("EU_STAR_ROOTS") != nullptr;
+
 int initex() {
     long t_start = (long)time(nullptr), last_progress = t_start;
-    for (int i = 0; i < symbolcount; i++) {
+    const int root_end = (star_roots && STAR_ROOTS >= 0) ? STAR_ROOTS : symbolcount;
+    for (int i = 0; i < root_end; i++) {
         if (shard_n1 > 1 && i % shard_n1 != shard_w1) continue;  // this worker's slice of the roots
         if (!TYPE_OK[i]) continue;                             // type cannot occur in any tiling
         if (progress_sec > 0) {
@@ -1190,9 +1219,23 @@ bool simplify(configuration const& conf) {
 // byte-identical (measured) and the star gate is unchanged.
 static std::vector<int> TYPE_FAM;      // vertex-type -> vertex-figure id
 static int NFAM = 0;
+//
+// ⚑ THE ID LOOKUP IS A HASH, NOT A SCAN (2026-08-31). It was a linear scan over every figure seen so
+// far, so this function cost types x figures string comparisons — quadratic in the alphabet, and
+// nearly the worst case possible here because almost every vertex type is its OWN figure (measured:
+// 207,589 figures over 219,868 types on isotox-mixed, 80,345 over 87,121 on isotox-pair5-6). That is
+// ~2.3e10 comparisons on isotox-mixed, a visible slice of its 15-minute solve, and ~3.4e14 on the
+// 11-star isotoxal palette: about 310 HOURS in this one function before a single search node is
+// expanded, paid AGAIN by every shard process, which is what made the full run look untouchable.
+// The map assigns ids in first-seen scan order exactly as the scan did, so TYPE_FAM, NFAM and every
+// catalogue built on them are unchanged; check-regular stays byte-identical.
 static void build_type_families() {
-    std::vector<std::string> keys;
+    // string_view, not string: the key is a prefix of mainlist[t].symbol, which outlives this loop and
+    // is neither mutated nor reallocated in it, and the keys measure 29-43 chars on this alphabet —
+    // past libc++'s 22-char SSO, so a copy would be one more heap allocation per vertex type.
+    std::unordered_map<std::string_view, int> keys;
     TYPE_FAM.assign(mainlist.size(), -1);
+    keys.reserve(mainlist.size() * 2);
     for (size_t t = 0; t < mainlist.size(); t++) {
         const std::string& sym = mainlist[t].symbol;
         size_t cut = sym.find(')');
@@ -1201,11 +1244,8 @@ static void build_type_families() {
             size_t e = sym.find('|', cut + 2);
             if (e != std::string::npos) cut = e;
         }
-        const std::string key = sym.substr(0, cut + 1);
-        int id = -1;
-        for (size_t i = 0; i < keys.size(); i++) if (keys[i] == key) { id = (int)i; break; }
-        if (id < 0) { id = (int)keys.size(); keys.push_back(key); }
-        TYPE_FAM[t] = id;
+        TYPE_FAM[t] = keys.try_emplace(std::string_view(sym).substr(0, cut + 1),
+                                       (int)keys.size()).first->second;
     }
     NFAM = (int)keys.size();
     std::cerr << "vertex figures: " << NFAM << " over " << mainlist.size() << " types\n";
@@ -1553,13 +1593,10 @@ int extend(configuration& slist) {
 // Face-walk keys. tkey(f) identifies f as a GLUING TARGET; qkey(e) is the key a free dart e demands
 // of whatever gets glued to it. successors(x) = { f : tkey(f) == qkey(rneig[x]) } — the same identity
 // fix 2 uses to bucket candidates, reused here to reason about whether a face can ever close.
-static inline int qkey_of(const vertexdef& V, int e) {
-    return cand_key(CLASS_NEXT[V.lvert[V.rneig[e]]], CLASS_NEXT[V.lvert[e]], V.mirro[e] == e);
-}
 static inline int tkey_of(const vertexdef& V, int f) {
     return cand_key(V.lvert[f], V.lvert[V.rneig[f]], V.mirro[f] == f);
 }
-// The 1..4 query keys of dart e. Under BUCKET_OK this is exactly {qkey_of(V, e)}, so every filter
+// The 1..4 query keys of dart e. Under BUCKET_OK this set is a singleton, so every filter
 // below reduces to its old self and the golden catalogs stay byte-identical.
 static inline int qkeys_of(const vertexdef& V, int e, int* out) {
     return qkeys(V.lvert[e], V.lvert[V.rneig[e]], V.mirro[e] == e, out);
@@ -1672,11 +1709,29 @@ static void face_filter() {
             if (!liveT[T]) continue;
             const vertexdef& V = mainlist[T];
             bool ok = true;
+            // ⚑ THE UNION, NOT THE SINGLE CLASS_NEXT KEY (2026-08-31). R above is built from
+            // qkeys_of — all 1..4 admissible successor keys — but this test used to start its chain
+            // from qkey_of, which is only qkeys_of's element 0. On a palette where CLASS_PREV !=
+            // CLASS_NEXT that declares impossible every face which must be walked in the PREV
+            // direction, and checkface locks its direction only at the first step and accepts either.
+            // THAT is the trihex 475 -> 2 and tetromino 76 -> 20 catastrophe, not the reflex corner it
+            // was blamed on. Under BUCKET_OK the two forms are the same key, so every pinned table and
+            // all three gate palettes are untouched (measured: regular 44/44, tri-only 16/16,
+            // star-ico-d 329/329, isotox-cmp8-2 26,214/28,549 — delta 0 everywhere). The change only
+            // ADDS admissible chain starts, so it can only kill FEWER types: monotone in the safe
+            // direction, and it cannot newly trip the XORB_STEPS self-disable because round 1 already
+            // runs on every type.
             for (int x = 0; x < (int)V.rneig.size() && ok; x++) {
-                int tk = tkey_of(V, x), qk = qkey_of(V, V.rneig[x]);
-                int o = korb[tk];
-                if (o < 0 || loc[qk] < 0 || loc[tk] < 0 || korb[qk] != o) { ok = false; break; }
-                if (OKMASK[o][(size_t)loc[qk] * keys[o].size() + loc[tk]] == 0ULL) ok = false;
+                const int tk = tkey_of(V, x);
+                const int o = korb[tk];
+                if (o < 0 || loc[tk] < 0) { ok = false; break; }
+                int qs[4];
+                const int nq = qkeys_of(V, V.rneig[x], qs);
+                bool any = false;
+                for (int t = 0; t < nq && !any; t++)
+                    if (loc[qs[t]] >= 0 && korb[qs[t]] == o
+                        && OKMASK[o][(size_t)loc[qs[t]] * keys[o].size() + loc[tk]] != 0ULL) any = true;
+                if (!any) ok = false;
             }
             if (!ok) { liveT[T] = 0; killed++; } else nlive++;
         }
@@ -1875,6 +1930,38 @@ int main() {
         std::cerr << "sided classes: sigma is not the identity on this alphabet\n";
     symbolcount = mainlist.size();
     build_type_families();        // seed colour for simplify(); must precede the first closure
+    {
+        // A class is a STAR class when its tile's name carries the '*' of an isotoxal outline
+        // ("10*12"); a vertex type is star-bearing when any of its darts sits on one.
+        std::vector<char> star_class(CLASS_TILE.size(), 0);
+        for (size_t c = 0; c < CLASS_TILE.size(); c++) {
+            const int t = CLASS_TILE[c];
+            if (t >= 0 && t < (int)TILE_NAME.size() && TILE_NAME[t].find('*') != std::string::npos)
+                star_class[c] = 1;
+        }
+        int last_star = -1, first_plain = -1, nstar = 0;
+        for (size_t i = 0; i < mainlist.size(); i++) {
+            bool bear = false;
+            for (size_t d = 0; d < mainlist[i].lvert.size() && !bear; d++) {
+                const int c = mainlist[i].lvert[d];
+                if (c >= 0 && c < (int)star_class.size() && star_class[c]) bear = true;
+            }
+            if (bear) { last_star = (int)i; nstar++; }
+            else if (first_plain < 0) first_plain = (int)i;
+        }
+        STAR_ROOTS = (first_plain < 0) ? (int)mainlist.size() : first_plain;
+        if (star_roots) {
+            if (last_star >= 0 && first_plain >= 0 && last_star > first_plain) {
+                std::cerr << "EU_STAR_ROOTS: the star-bearing types are NOT a prefix of this alphabet "
+                             "(first plain " << first_plain << ", last star " << last_star << ") — "
+                             "rooting only at them would lose solids. Regenerate the palette with "
+                             "\"starFirst\": true, or drop the flag.\n";
+                return 2;
+            }
+            std::cerr << "star roots: " << STAR_ROOTS << " of " << mainlist.size()
+                      << " types (" << nstar << " star-bearing); the regular-only subtree is skipped\n";
+        }
+    }
     for (int i = 0; i < (int)mainlist.size(); i++)
         if (!mainlist[i].counting) { has_noncounting = true; NC_IDX.push_back(i); }
     LBASE_OF.resize(mainlist.size());
@@ -1885,9 +1972,11 @@ int main() {
     }
     NCLS = (int)CLASS_NEXT.size();
     CN_ = CLASS_NEXT.data(); CP_ = CLASS_PREV.data();   // must precede the first qkeys() call
-    // BUCKET_OK is now REPORTING ONLY: it says whether the admissible (A,B) pair happens to be unique,
-    // i.e. whether qkeys() will return 1 everywhere and the union degenerates to the single bucket the
-    // engine used before 2026-08-08. Nothing branches on it any more; the union handles both cases.
+    // BUCKET_OK says whether the admissible (A,B) pair is unique, i.e. whether qkeys() returns 1
+    // everywhere and the union degenerates to the single bucket the engine used before 2026-08-08. The
+    // candidate index handles both cases, so nothing there branches on it — but the three FILTERS do,
+    // since it is exactly the condition under which their per-orbit reachability is the certified
+    // pre-union one (see the gate below). It stopped being reporting-only on 2026-08-31.
     BUCKET_OK = true;
     for (int c = 0; c < NCLS && BUCKET_OK; c++)
         if (CLASS_PREV[c] != CLASS_NEXT[c] || CLASS_NEXT[CLASS_NEXT[c]] != c) BUCKET_OK = false;
@@ -1895,43 +1984,46 @@ int main() {
     // candidate bucketing) and scan every type at every node. Only ever removes optimizations, so it
     // cannot lose a tiling; it prices the stack on any palette. Measured on isotox-cx45-z24, see
     // experiments/results/period3-palette-2026-08-07.md.
-    // ⚑ PALETTES WITH A 180°-OR-WIDER CORNER GET NO FILTERS. Such a corner is a degenerate boundary
-    // position — the scaled/doubled construction's "s-1 flat corners per side", every polyomino corner
-    // that is not a real turn, and every reflex corner (a polyform notch, a star's dent). It sits at a
-    // 2-VALENT vertex, and the face-closure model the three filters share does not describe those:
-    // measured 2026-08-08 on tetromino, the static filter called 68,038 of 68,370 vertex types
-    // impossible and the k=1 catalog fell from 76 to 20 — 56 real tilings deleted, silently.
-    // regular-scaled-123 lost 4 of 222 the same way.
+    // ⚑ THE GATE IS !BUCKET_OK, NOT "SOME CORNER IS 180° OR WIDER" (2026-08-31). It read the corner
+    // ANGLE until today, on the reasoning that a reflex or flat corner sits at a 2-VALENT vertex the
+    // face-closure model does not describe — measured damage: tetromino's k=1 catalog fell 76 -> 20,
+    // trihex k<=3 fell 475 -> 2. The damage was real; the diagnosis was wrong. The defect was the
+    // single-CLASS_NEXT-key alive test in face_filter (fixed above), which declares impossible every
+    // face that has to be walked in the CLASS_PREV direction. That is vacuous exactly when
+    // CLASS_PREV == CLASS_NEXT, i.e. under BUCKET_OK — and tetromino and trihex are both
+    // BUCKET_OK=false, while every isotoxal palette is BUCKET_OK=true by construction: a regular tile
+    // is a CLASS_NEXT self-loop and an isotoxal star is exactly two classes, point and dent, swapped
+    // by NEXT. So the old gate switched the filters off on precisely the palettes where they are
+    // provably identical to the pre-2026-08-08 certified ones.
     //
-    // The test was `== D/2` until 2026-08-24 and should always have been `>= D/2`: a REFLEX corner
-    // sits at a 2-valent vertex for exactly the same reason a flat one does (dent + point = 360° with
-    // two tiles), and a palette can carry reflex corners and no flat ones. Measured that day on
-    // trihex, which is such a palette: filters on gave 2 tilings at k<=3, filters off 475. The same
-    // 473-of-475 deletion, and the same silence.
+    // Measured, both directions, this machine: isotox-cmp8-2 k<=2 full run, filters on vs off, raw
+    // blocks 7,497,140 EITHER WAY and all 227 out/eusolver_*.txt cksum-identical, for 432,679,770 ->
+    // 358,714,952 nodes. isotox-mixed shard 0 of 64, byte-identical over 111 MB of solver output, for
+    // 98,637,170 -> 54,007,313 nodes = 1.83x. Kill rate grows with the palette: 8.2% of types at one
+    // star, 19.6% at two, 30.0% at three, 67.9% on the 20-tile isotox-sph.
     //
-    // This was invisible until today for the same reason the dyn_build bug was: BUCKET_OK is false on
-    // every flat-corner palette (their periods exceed 2), so the filters had never once run against
-    // one. The 4-bucket union switched them on and the unsoundness surfaced immediately.
+    // Kept conservative for !BUCKET_OK: the alive-test fix makes the filter sound there too in the
+    // monotone direction, but it does not PROVE the residual kills are sound, so those palettes keep
+    // the filters off until someone gates them properly.
     //
-    // The CANDIDATE INDEX is unaffected and stays on — it is a necessary-condition prune straight out
-    // of checkface's first step, with no closure model in it, and it is where the speedup lives
-    // anyway (EU_NOFILTER=1, i.e. bucketing only, reproduces the old 76 on tetromino exactly).
-    bool two_valent = false;   // some corner is 180° or wider ⇒ a 2-valent vertex is possible
-    for (int c = 0; c < NCLS && !two_valent; c++) if (CLASS_UNITS[c] * 2 >= TABLE_D) two_valent = true;
+    // The CANDIDATE INDEX is unaffected and stays on either way — it is a necessary-condition prune
+    // straight out of checkface's first step, with no closure model in it (EU_NOFILTER=1, i.e.
+    // bucketing only, reproduces the old 76 on tetromino exactly).
     if (std::getenv("EU_NOBUCKET")) {
         TYPE_OK.assign(mainlist.size(), 1);
         PAIRFILTER = false;
-    } else if (two_valent && !std::getenv("EU_UNSAFE_FILTERS")) {
+    } else if (!BUCKET_OK && !std::getenv("EU_UNSAFE_FILTERS")) {
         TYPE_OK.assign(mainlist.size(), 1);
         PAIRFILTER = false;
-        std::cerr << "filters: DISABLED — palette has corners of 180° or wider, whose 2-valent vertices "
-                     "the face-closure model does not describe (candidate index stays on)\n";
+        std::cerr << "filters: DISABLED — CLASS_PREV != CLASS_NEXT, so the per-orbit face-closure "
+                     "reachability cannot be trusted to keep every real vertex type "
+                     "(candidate index stays on)\n";
     } else {
-        // EU_UNSAFE_FILTERS — the pre-2026-08-24 behaviour on a wide-corner palette, kept ONLY to price
-        // the fix and to reproduce an older run. It can delete real tilings (473 of 475 on trihex).
-        if (two_valent)
-            std::cerr << "filters: FORCED ON by EU_UNSAFE_FILTERS on a wide-corner palette — this can "
-                         "DELETE REAL TILINGS; the catalogue it produces is not complete\n";
+        // EU_UNSAFE_FILTERS — kept ONLY to price the gate and to reproduce an older run. On a
+        // !BUCKET_OK palette it can still delete real tilings (473 of 475 on trihex).
+        if (!BUCKET_OK)
+            std::cerr << "filters: FORCED ON by EU_UNSAFE_FILTERS on a CLASS_PREV != CLASS_NEXT "
+                         "palette — this can DELETE REAL TILINGS; the catalogue is not complete\n";
         face_filter();
         if (!std::getenv("EU_NODYN")) dyn_build();
     }
@@ -1973,6 +2065,72 @@ int main() {
     if (eu_trace) {
         int filecount = 1;
         gen.open(filepath + genfile + std::to_string(filecount) + ".txt");
+    }
+    // EU_FORK=<P> — P WORKER PROCESSES SHARING ONE ALPHABET (2026-08-31).
+    //
+    // The pool runner gets its parallelism from P independent solver processes, and each one builds
+    // the whole alphabet for itself. That is free at 220k vertex types (414 MB) and impossible at the
+    // 11-outline palette's ~9.7M (measured 2.0 kB/type, so ~19 GB) — one copy fills a 24 GB machine
+    // and the run is stuck on a single core for want of RAM, not of time.
+    //
+    // Everything above this line is built once and never written again: mainlist, CAND/CAND_NC,
+    // TYPE_OK, OKPAIR, DYN_ACC, the CLASS_ tables. So fork here and the children share every one of
+    // those pages copy-on-write — P workers cost ~19 GB plus each one's small search state, not
+    // P x 19 GB. No thread safety is involved: separate address spaces, and the shared pages are
+    // read-only in practice.
+    //
+    // Child c takes shard indices {i : i % P == c} of the EU_SHARD_N decomposition and runs initex()
+    // once per index, so over-decomposition still works — which matters, because the skew at
+    // EU_SHARD_N == P is severe (run-oracle-parallel.sh measured one shard at 64% of the work at
+    // N=8). It writes into fork<c>/out/, which the merge step globs alongside s*/out/.
+    const int nfork = std::getenv("EU_FORK") ? atoi(std::getenv("EU_FORK")) : 0;
+    if (nfork > 1) {
+        if (eu_stream) {
+            // Every child would write the catalogue into the same inherited stdout, interleaved at
+            // whatever granularity the buffers flush at. There is no catalogue to salvage from that.
+            std::cerr << "EU_FORK and EU_STREAM are incompatible: the workers share one stdout\n";
+            return 2;
+        }
+        if (shard_n % nfork != 0) {
+            std::cerr << "EU_FORK=" << nfork << " must divide EU_SHARD_N=" << shard_n
+                      << " — refusing to run an incomplete partition\n";
+            return 2;
+        }
+        std::cerr << "fork: " << nfork << " workers over " << shard_n
+                  << " shards, sharing one alphabet\n";
+        std::vector<pid_t> kids;
+        for (int c = 0; c < nfork; c++) {
+            const pid_t pid = fork();
+            if (pid < 0) { std::cerr << "fork failed\n"; return 2; }
+            if (pid == 0) {
+                char dir[64];
+                snprintf(dir, sizeof dir, "fork%d", c);
+                if (mkdir(dir, 0755) && errno != EEXIST) _exit(3);
+                if (chdir(dir)) _exit(3);
+                if (mkdir("out", 0755) && errno != EEXIST) _exit(3);
+                for (int i = c; i < shard_n; i += nfork) {
+                    shard_set(i);
+                    // ⚑ MUST reset. shard_take_branch() slices the root-level branch NUMBER, and the
+                    // numbering is only a partition because every shard sharing a w1 counts the same
+                    // sequence from zero. Carrying the counter into the next shard index would shift
+                    // the slice and silently drop branches — i.e. lose tilings.
+                    branch_ctr = 0;
+                    initex();
+                }
+                family_streams_close();
+                std::cerr << "fork" << c << ": nodes " << solcount << "\n";
+                _exit(0);
+            }
+            kids.push_back(pid);
+        }
+        int bad = 0;
+        for (pid_t pid : kids) {
+            int st = 0;
+            waitpid(pid, &st, 0);
+            if (!WIFEXITED(st) || WEXITSTATUS(st)) bad++;
+        }
+        if (bad) { std::cerr << bad << " fork worker(s) failed\n"; return 2; }
+        return 0;
     }
     initex();
     family_streams_close();     // flush and close the per-family output handles (FIX 18)

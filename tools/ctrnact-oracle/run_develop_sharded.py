@@ -105,6 +105,9 @@ def main():
     ap.add_argument("--chunk", type=int, default=2000,
                     help="blocks per work item. develop_spherical prefilters a whole chunk in one C "
                          "call, so this trades a little queue balance for a lot of throughput.")
+    ap.add_argument("--fork", action="store_true",
+                    help="share ONE copy of the palette tables across workers by forking instead of "
+                         "spawning. For alphabets whose tables cost gigabytes per worker.")
     ap.add_argument("--developer", default="develop_spherical.py",
                     help="develop_spherical.py (on S2) or develop_euclid.py (dihedral angles in R3)")
     args = ap.parse_args()
@@ -119,6 +122,16 @@ def main():
     os.environ["EU_PALETTE"] = args.palette
     os.environ["EU_MAXDENS"] = str(args.maxdens)
     sys.path.insert(0, _HERE)
+    if args.fork:
+        # ⚑ FORK MODE EXISTS FOR MEMORY, and the env has to be set BEFORE the developer import below
+        # pulls in numpy — under spawn each worker sets these in _init, under fork they are inherited.
+        # The palette tables are the reason: a worker holds ~1 kB per vertex type (measured 47-66 MB
+        # on a 51,647-type palette), so the 11-outline alphabet sliced to the types its blocks name is
+        # ~3.3 GB EACH, or 26 GB across eight private copies on a 24 GB machine. The parent installs
+        # the palette at import time, so forked children share that one copy copy-on-write and the
+        # whole run costs 3.3 GB once. Nothing about what is computed changes.
+        for v in ("VECLIB_MAXIMUM_THREADS", "OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS"):
+            os.environ.setdefault(v, "1")
     # Block IO and the palette install live in develop_spherical whichever developer runs — develop_euclid
     # imports them from there rather than duplicating them.
     import develop_spherical as blockio
@@ -159,7 +172,10 @@ def main():
 
     t0 = time.time()
     records, failed, prefiltered = [], [], 0
-    ctx = mp.get_context("spawn")
+    # spawn is the macOS default and stays the default here: forked children inherit an already
+    # initialized numpy/BLAS, which is only safe because the thread caps above are set before the
+    # import and the workers never thread. Opt in with --fork when the tables are too big to copy.
+    ctx = mp.get_context("fork" if args.fork else "spawn")
     with ctx.Pool(args.workers, initializer=_init,
                   initargs=(args.palette, args.maxdens, args.developer)) as pool:
         last = 0.0

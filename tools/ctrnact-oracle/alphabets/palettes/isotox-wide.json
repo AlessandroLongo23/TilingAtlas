@@ -1,0 +1,18 @@
+{
+  "name": "isotox-wide",
+  "D": 120,
+  "closure": "positive-defect",
+  "maxValence": 6,
+  "comment": "THE ISOTOXAL COUNTERPART OF star-wide (2026-08-25, AL). Tile for tile the same palette — regular {3,4,5,6,8,10} — with the three star faces swapped from the SELF-INTERSECTING {n/d} to their concave OUTLINES: the pentagram {5/2} becomes the 10-gon 5*12 (point 36 deg, dent 252), {8/3} becomes 8*15 (45, 270), {10/3} becomes 10*24 (72, 252). Same shape on the page, different polygon: one has n sides that cross, the other 2n that do not (docs/TILE_TAXONOMY.md 2.1). AL's construction: take a star polyhedron, resolve its self-intersections into real vertices, and its star face becomes this outline while the faces it cut become the small pieces around it. U30, the small ditrigonal icosidodecahedron (5/2.3.5/2.3.5/2.3), is the worked example. ⚑ D=120 AND NOT 24. The first isotoxal probe used star24's tiles, whose 15-degree grid carries {3,4,6,8,12} and NO PENTAGON, so it could not express a 5-fold solid at any k — the run was sound and the palette was answering a different question. 3 degrees is the grid that holds 60 and 108 at once. maxValence 6 is the spherical bound the other palettes use.",
+  "tiles": [
+    { "kind": "regular", "n": 3,  "name": "3",  "famchar": "3" },
+    { "kind": "regular", "n": 4,  "name": "4",  "famchar": "4" },
+    { "kind": "regular", "n": 5,  "name": "5",  "famchar": "5" },
+    { "kind": "regular", "n": 6,  "name": "6",  "famchar": "6" },
+    { "kind": "regular", "n": 8,  "name": "8",  "famchar": "8" },
+    { "kind": "regular", "n": 10, "name": "10", "famchar": "a" },
+    { "kind": "star", "n": 5,  "alphaU": 12, "name": "5*12",  "famchar": "p" },
+    { "kind": "star", "n": 8,  "alphaU": 15, "name": "8*15",  "famchar": "q" },
+    { "kind": "star", "n": 10, "alphaU": 24, "name": "10*24", "famchar": "r" }
+  ]
+}

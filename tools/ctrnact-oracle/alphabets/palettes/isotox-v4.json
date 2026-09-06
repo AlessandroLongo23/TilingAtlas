@@ -1,0 +1,53 @@
+{
+ "name": "isotox-v4",
+ "D": 120,
+ "closure": "mixed",
+ "maxValence": 4,
+ "comment": "VALENCE-STRATIFIED probe: same tiles as isotox-sub-10_12, maxValence 4. Complete for every solid whose vertices are all valence <= 4.",
+ "tiles": [
+  {
+   "kind": "regular",
+   "n": 3,
+   "name": "3",
+   "famchar": "3"
+  },
+  {
+   "kind": "regular",
+   "n": 4,
+   "name": "4",
+   "famchar": "4"
+  },
+  {
+   "kind": "regular",
+   "n": 5,
+   "name": "5",
+   "famchar": "5"
+  },
+  {
+   "kind": "regular",
+   "n": 6,
+   "name": "6",
+   "famchar": "6"
+  },
+  {
+   "kind": "regular",
+   "n": 8,
+   "name": "8",
+   "famchar": "8"
+  },
+  {
+   "kind": "regular",
+   "n": 10,
+   "name": "10",
+   "famchar": "a"
+  },
+  {
+   "kind": "star",
+   "n": 10,
+   "alphaU": 12,
+   "name": "10*12",
+   "famchar": "v"
+  }
+ ],
+ "starFirst": true
+}

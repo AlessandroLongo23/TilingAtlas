@@ -41,6 +41,9 @@ _spec = importlib.util.spec_from_file_location("pr", os.path.join(_HERE, "pruner
 pr = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(pr)
 
+PALETTE_D = 24
+
+
 def install_palette(palette):
     """Swap pruner.py's hardcoded REGULAR vertexdef tables for the generated <palette> ones
     (tables/<palette>/tables.py). pr.decode()'s makeglue/buildvertextypes are palette-agnostic;
@@ -59,8 +62,18 @@ def install_palette(palette):
     # (5, 2) and needs both numbers, because n alone cannot tell a pentagon from a pentagram and a
     # palette may carry both. pruner.decode() only copies and compares lvert entries, so a tuple is as
     # good as an int there.
+    # ⚑ AND THE CORNER'S OWN ANGLE, as a third element. (n, d) fixes the angle only when every corner
+    # of the tile is alike, which is false for an ISOTOXAL star n*a: its point and its dent share n, d
+    # and tile, and differ by up to 200 degrees. parse_configs already said so for scaled tiles — "the
+    # angle is a property of the corner, not the face" — and this is that sentence applied. CLASS_UNITS
+    # is the alphabet's own exact value in D-units and agrees with the (n, d) formula on every class of
+    # every regular and starpoly palette (checked: toroid, spherical, star-wide, 0 disagreements), so
+    # nothing that worked before moves. _nd reads elements 0 and 1 and ignores the rest.
     _wind = getattr(tm, "CLASS_WIND", [1] * len(tm.CLASS_DISP))
-    pr.lvertlistin = [[(int(tm.CLASS_L[c]), int(_wind[c])) for c in row] for row in tm.CLS]
+    pr.lvertlistin = [[(int(tm.CLASS_L[c]), int(_wind[c]), int(tm.CLASS_UNITS[c])) for c in row]
+                      for row in tm.CLS]
+    global PALETTE_D
+    PALETTE_D = int(tm.D)
     return tm
 
 install_palette(os.environ.get("EU_PALETTE", "spherical"))
@@ -604,11 +617,30 @@ def parse_configs(vertypeline):
             "  for the whole face). A side-s tile has s-1 flat 180-degree corners per side, so its\n"
             "  angle is a property of the corner, not the face. See the note in parse_configs."
             % vertypeline.strip()[:120])
+    # ⚑ THE TOKEN CARRIES ITS OWN ANGLE and the regex has to let it through. This matched only
+    # r"[0-9_]+", digits and underscores, so an isotoxal group like "(3*d15,3)A" matched NOTHING: the
+    # list came back shorter than the vertex-type list and orbit_folds died on configs[j] with an
+    # IndexError. An isotoxal token is <n>*<d|p><units> — "3*d15" is the 3-star's DENT at 15 units of
+    # 360/D, "4*p3" its POINT at 3 — so the third element needs no lookup, it is written down.
+    #
+    # ⚑ NOT pr.lvertlistin[i], which was the first fix and was wrong: that is the QUOTIENT word, one
+    # dart per orbit, and it reads length 1 for a tetrahedron's (3,3,3). check-deltahedra caught it.
     def tok(s):
-        n, _, d = s.partition("_")
-        return (int(n), int(d) if d else 1)
+        if "*" in s:                                   # isotoxal: 3*d15, 4*p3
+            # ⚑ 2n, NOT n. The token names the star by its POINT count, the alphabet by its BOUNDARY
+            # edge count (CLASS_L = 2n: an isotoxal n-star is a simple 2n-gon alternating point and
+            # dent). develop_euclid.unfold compares this tuple against lvert, which comes from
+            # CLASS_L, so returning n made every isotoxal star block fail _cyc_eq, unfold returned
+            # None, structure returned None and solve_dihedrals returned [] — reported as "no dihedral
+            # solution" without one equation ever being formed. Every star-bearing block of every
+            # isotoxal run died here (2026-08-31).
+            n, _, rest = s.partition("*")
+            return (2 * int(n), 1, int(rest[1:]))
+        n, _, d = s.partition("_")                     # starpoly 5_2, or a plain n-gon
+        n, d = int(n), int(d) if d else 1
+        return (n, d, (n - 2 * d) * PALETTE_D // (2 * n))
     return [[tok(x) for x in g.split(",")]
-            for g in re.findall(r"\(([0-9_]+(?:,[0-9_]+)*)\)", vertypeline)]
+            for g in re.findall(r"\(([0-9_*dp]+(?:,[0-9_*dp]+)*)\)", vertypeline)]
 
 def orbit_folds(b, rneig, configs):
     """Per vertex orbit, the ROTATIONAL FOLD m: how many times the site symmetry turns the vertex
@@ -650,7 +682,18 @@ def decode_block(b):
 MAXDENS = int(os.environ.get("EU_MAXDENS", "1"))
 
 def _face_str(nd):
+    """The face's name in a vertex configuration: "5", "5/2" for the pentagram, "5*" for its OUTLINE.
+
+    ⚑ THE STAR MARK IS NOT COSMETIC. An isotoxal n-star is a simple 2n-gon, so parse_configs names it
+    by its boundary edge count to match the alphabet's CLASS_L — and that makes a pentagram's outline
+    print as "10", exactly like a regular decagon. They are different polygons with different corner
+    angles (36/252 against 144), and the tuple carries that in its third element, but the STRING did
+    not: every isotoxal record read as though its star faces were convex 2n-gons, on the card and in
+    every test that greps a family. A corner whose angle is not the regular n-gon's is a star corner,
+    which is exactly the discriminator, and it needs no new palette data."""
     n, d = _nd(nd)
+    if d == 1 and len(nd) > 2 and n % 2 == 0 and nd[2] * 2 * n != (n - 2) * PALETTE_D:
+        return "%d*" % (n // 2)
     return str(n) if d == 1 else "%d/%d" % (n, d)
 
 def develop_block(b):
@@ -830,36 +873,45 @@ def block_attempts(dec):
 _PLAN_CACHE = {}
 _PLAN_CAP = 20000
 
-# ONE eu_sphfill PER WORKER, kept alive. Spawning it per batch measured slower than the walk on a
-# run with many small files (k=2 star-wide: 1,664 files, 254 blocks each, 14.2s -> 18.5s). The batch
-# header lets it read everything before it replies, which is what keeps the pipe from deadlocking.
-_SPHPROC = None
+# ONE eu_sphfill PER WORKER PER MODE, kept alive. Spawning it per batch measured slower than the walk
+# on a run with many small files (k=2 star-wide: 1,664 files, 254 blocks each, 14.2s -> 18.5s). The
+# batch header lets it read everything before it replies, which is what keeps the pipe from deadlocking.
+#
+# ⚑ PER MODE, because the walk is chosen by the ENVIRONMENT at spawn and the record layouts differ:
+# "" is this module's spherical fill, "euclid" is develop_euclid's SE(3) one. A worker that developed
+# both would otherwise feed Euclidean records to a spherical process and read the reply as truth.
+_SPHPROC = {}
 
-def _sphfill_ask(n, payload, width=1):
-    global _SPHPROC
+def _sphfill_ask(n, payload, width=1, mode=""):
+    proc = _SPHPROC.get(mode)
     try:
-        if _SPHPROC is None or _SPHPROC.poll() is not None:
-            env = dict(os.environ, EU_SPHFILL_MAPOK="1") if MAPOK else None
-            _SPHPROC = subprocess.Popen([_SPHFILL], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                        bufsize=0, env=env)
-        _SPHPROC.stdin.write(struct.pack("<i", n))
-        _SPHPROC.stdin.write(bytes(payload))
-        _SPHPROC.stdin.flush()
+        if proc is None or proc.poll() is not None:
+            env = None
+            if MAPOK or mode:
+                env = dict(os.environ, EU_SPHFILL_MAPOK="1")
+            if mode == "euclid":
+                env["EU_FILL_EUCLID"] = "1"
+            proc = subprocess.Popen([_SPHFILL], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                    bufsize=0, env=env)
+            _SPHPROC[mode] = proc
+        proc.stdin.write(struct.pack("<i", n))
+        proc.stdin.write(bytes(payload))
+        proc.stdin.flush()
         need = n * width                        # 1 byte per attempt, or an int32 when MAPOK is on
         out = bytearray()
         while len(out) < need:
-            got = _SPHPROC.stdout.read(need - len(out))
+            got = proc.stdout.read(need - len(out))
             if not got:
                 return None
             out += got
         return bytes(out)
     except Exception:
         try:
-            if _SPHPROC:
-                _SPHPROC.kill()
+            if proc:
+                proc.kill()
         except Exception:
             pass
-        _SPHPROC = None
+        _SPHPROC[mode] = None
         return None
 
 

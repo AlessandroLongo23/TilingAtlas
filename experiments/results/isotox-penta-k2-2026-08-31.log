@@ -1,0 +1,6 @@
+[00:04:24] 3292 blocks in 2 work items over 8 workers
+[00:05:35]   develop 1/2  blocks=3292  realized=8  prefiltered=1288  71s, ETA 71s
+[00:10:27]   develop 2/2  blocks=3292  realized=169  prefiltered=3270  363s, ETA 0s
+[00:10:27]   169 records -> 36 congruence classes
+[00:10:27] merged 36 realized records -> ip-k2/cells2.json (363s total)
+[00:10:27]   report -> cells2-report.txt

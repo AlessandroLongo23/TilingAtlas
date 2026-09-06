@@ -29,17 +29,33 @@
 # efc8c1d6bc3cbb36, while the raw shas split d2da5fc0… / 62fedb90… / 62fedb90….
 #
 # Usage:  EU_SHARD_N=200 EU_POOL=10 PALETTE=star24full ./run-oracle-pool.sh 2 [outdir]
+#         EU_SHARD_N=320 EU_SHARD_D2=16 EU_POOL=10 PALETTE=isotox-full11 ./run-oracle-pool.sh 2
 set -e
 HERE="$(cd "$(dirname "$0")" && pwd)"
 MAXK="${1:-11}"
 PALETTE="${PALETTE:-regular}"
 POOL="${EU_POOL:-$(sysctl -n hw.ncpu 2>/dev/null || nproc)}"
+# EU_FORK=<P>: one process, P forked workers sharing the alphabet. For palettes whose alphabet is
+# too big to hold once per slot. Must divide EU_SHARD_N.
+FORK="${EU_FORK:-}"
 N="${EU_SHARD_N:-$((POOL * 20))}"
+# DEPTH-2 (EU_SHARD_D2), forwarded since 2026-08-31. The pool splits on FIRST vertex type only, so a
+# single dominating root is the floor this script's own header names; eu_solver has carried the
+# depth-2 cut since the k=8 star work and neither runner forwarded it here. run-oracle-parallel.sh
+# measured the difference on regular-doubled k=5: at N=64, D2 8 -> 16 took the speedup ceiling from
+# 5.80x to 8.58x, more than N 8 -> 64 bought at fixed D2. ⚑ A D2 run is NOT text-identical to a
+# depth-1 one and catalog_digest.py reports it as DIFFERENT for the same set of tilings; gate it with
+# the union re-prune instead (concatenate both runs' raw eusolver_*.txt and re-prune).
+D2="${EU_SHARD_D2:-1}"
 B="${EU_NCBUDGET:-0}"   # vestigial: the solver ignores it since 2026-08-07
 SFX=""; [ "$PALETTE" != regular ] && SFX=".$PALETTE"
 OUT="${2:-$HERE/run-pool-k$MAXK-$PALETTE}"
 ts(){ date '+%H:%M:%S'; }
 log(){ echo "[$(ts)] $*"; }
+# main() refuses a non-divisible pair; failing here names the problem instead of leaving N dead shards.
+if [ "$D2" -gt 1 ] && [ $((N % D2)) -ne 0 ]; then
+  echo "EU_SHARD_N ($N) must be divisible by EU_SHARD_D2 ($D2)" >&2; exit 1
+fi
 
 # EU_SOLVER_BIN points the run at a prebuilt solver and skips make — how an experimental binary gets
 # A/B'd against the committed one without touching the tree.
@@ -53,23 +69,34 @@ else
 fi
 
 rm -rf "$OUT"; mkdir -p "$OUT/out"
-log "PHASE 1  pooled solve — $N shards through $POOL slots, budget $B"
+log "PHASE 1  ${FORK:+forked }solve — $N shards, depth2 $D2, through ${FORK:-$POOL} ${FORK:+forked workers sharing one alphabet}${FORK:+ }${FORK:-slots}"
 t0=$(date +%s)
 
 # One shard = one process in its own dir. xargs -P is the pool; macOS ships bash 3.2, which has no
 # `wait -n`, so this is the portable way to keep every slot fed. NOT `xargs -I{}`: BSD xargs caps the
 # assembled command at 255 bytes with a replacement string ("command line cannot be assembled, too
 # long"), so the index arrives as $1 instead.
-export HERE SFX N B OUT BIN
+export HERE SFX N D2 B OUT BIN
+if [ -n "$FORK" ]; then
+  # EU_FORK mode: ONE process builds the alphabet and forks $FORK workers that share it copy-on-write.
+  # The only reason to prefer this over the xargs pool is MEMORY — a process pool needs one alphabet
+  # per slot, which at ~2.0 kB per vertex type is ~19 GB per worker on the 11-outline palette and
+  # simply does not fit. Below that size the pool is the better shape (independent processes, no
+  # shared failure mode), so this stays opt-in.
+  mkdir -p "$OUT/f/out"
+  ( cd "$OUT/f" && EU_SHARD_N="$N" EU_SHARD_D2="$D2" EU_FORK="$FORK" EU_NCBUDGET="$B" \
+      "$BIN" >/dev/null 2>solver-stderr.log ) || { echo "the forking solver failed" >&2; exit 1; }
+else
 seq 0 $((N-1)) | xargs -P "$POOL" -n 1 bash -c '
   w="$1"
   mkdir -p "$OUT/s$w/out"
   cd "$OUT/s$w" || exit 1
   s=$(date +%s)
-  EU_SHARD_N="$N" EU_SHARD_W="$w" EU_NCBUDGET="$B" \
+  EU_SHARD_N="$N" EU_SHARD_W="$w" EU_SHARD_D2="$D2" EU_NCBUDGET="$B" \
     "$BIN" >/dev/null 2>solver-stderr.log || exit 1
   echo "$w $(( $(date +%s) - s ))" >> "$OUT/shard-times.txt"
 ' _ || { echo "a shard failed" >&2; exit 1; }
+fi
 
 log "  shards done ($(( $(date +%s)-t0 ))s wall)"
 # The skew is the whole point of this script, so report it rather than hide it.
@@ -79,12 +106,23 @@ if [ -s "$OUT/shard-times.txt" ]; then
 fi
 
 log "PHASE 1b  merge shard outputs"
-for d in "$OUT"/s*/out; do
-  for f in "$d"/*.txt; do
-    [ -e "$f" ] || continue
-    cat "$f" >> "$OUT/out/$(basename "$f")"
-  done
-done
+# ⚑ ONE cat PER FAMILY FILE, not one per (shard, family) pair. The old loop spawned a `cat` and a
+# `basename` for every file in every shard — at 200 shards over ~726 families that is ~145,000 process
+# spawns, and it measured ~290 s of the 466 s wall on isotox-mixed k=2 while all ten solver slots sat
+# idle. The shards themselves summed to 1,325 s with a 15 s maximum, i.e. a parallel ceiling of 88x,
+# so the merge was most of what stood between 2.8x and that. Grouping by basename first does the same
+# bytes in ~726 cats. `find` + `sed` avoids an argv overflow on the 145,000 paths.
+find "$OUT" \( -path "$OUT/s*/out/*.txt" -o -path "$OUT/f/fork*/out/*.txt" \) -type f \
+  | sed 's|.*/||' | sort -u > "$OUT/.families"
+while read -r n; do
+  [ -n "$n" ] || continue
+  # `|| true` is load-bearing under `set -e`: exactly one of the two globs matches (pool mode has no
+  # f/, fork mode has no s*/), so the unmatched one reaches cat as a literal path, cat exits nonzero
+  # after copying the files that DO exist, and the shell would otherwise abandon the merge silently —
+  # leaving an empty out/ and a prune over nothing.
+  cat "$OUT"/s*/out/"$n" "$OUT"/f/fork*/out/"$n" >> "$OUT/out/$n" 2>/dev/null || true
+done < "$OUT/.families"
+rm -f "$OUT/.families"
 raw=$(grep -rh 'Number of vertex types:' "$OUT/out"/*.txt 2>/dev/null | wc -l | tr -d ' ')
 log "  merged raw blocks: $raw"
 # The EU_NCBUDGET dent cap was removed from eu_solver.cpp on 2026-08-07 (it was an incompleteness
