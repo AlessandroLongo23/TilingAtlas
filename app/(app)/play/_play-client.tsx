@@ -865,10 +865,15 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		if (xe && sphEdgesLazyShardsForK(Number(xe[2])).some((b) => b.id === xe[1])) {
 			loadSphericalEdgesShard(xe[1], Number(xe[2])).then(merge).catch(() => {});
 		}
-		// `hpt7-…` as well as `hp7-…`: the shelf carries two families and only the ai2 half is prefixed.
-		const hp = requestedKey?.match(/^hp(t?\d+)-(\d+)-/);
-		if (hp && hypPolyLazyShardsForK(Number(hp[2])).some((b) => b.id === hp[1])) {
-			loadHyperbolicPolyShard(hp[1], Number(hp[2])).then(merge).catch(() => {});
+		// `hpt7-…` and `hpq4568-…` as well as `hp7-…`: the shelf carries three families, and only the ai1
+		// half is unprefixed. The stem after "hp" is the board id for ai1 and ai2 ("7", "t7"); the abcd
+		// ids carry a "q" that the board id does not (`hypPolyShardUrl` adds it back on the file side).
+		// ⚑ This matched `hp(t?\d+)` until 2026-09-06, so every deep link into an a.b.c.d tiling, all
+		// 1,177,806 of them, silently landed on the default tiling: found by loading
+		// ?tiling=hpq4568-10-00001 and watching it open composable-k3-000.
+		const hp = requestedKey?.match(/^hp(q?)([a-z0-9]+)-(\d+)-/);
+		if (hp && hypPolyLazyShardsForK(Number(hp[3])).some((b) => b.id === hp[2])) {
+			loadHyperbolicPolyShard(hp[2], Number(hp[3])).then(merge).catch(() => {});
 		}
 		// Half-tile boards: ids are "hh<board>-<k>-". Which k are lazy is the board's business, not a
 		// constant here — {4,5} k=4, {6,4} k=3 and 4, {4,6} k=2 and 3 today.
