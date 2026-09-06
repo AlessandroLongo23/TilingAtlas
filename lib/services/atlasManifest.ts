@@ -17,8 +17,10 @@
 
 import type { Decoration, Geometry, TileClass } from "@/lib/services/referenceAtlas";
 
-/** Which loader reaches a tier. `"ctrnact"` is loadReferenceAtlasShard; the rest are loadShelfShard. */
-export type TierShelf = "ctrnact" | "scaled" | "euhalf" | "mixed";
+/** Which loader reaches a tier. `"ctrnact"` is loadReferenceAtlasShard, `"hyppoly"` is
+ *  loadHyperbolicPolyShard (the only one that needs a board as well as a k); the rest are
+ *  loadShelfShard. */
+export type TierShelf = "ctrnact" | "scaled" | "euhalf" | "mixed" | "hyppoly";
 
 export interface ManifestTier {
 	cls: TileClass;
@@ -38,6 +40,14 @@ export interface ManifestTier {
 	 */
 	geometry: Geometry;
 	decoration: Decoration;
+	/**
+	 * The board a per-board shelf's tier belongs to, when `k` alone does not address it.
+	 *
+	 * ⚑ Added 2026-08-31. The hyperbolic-poly shelf is 271 BOARDS, and its shard is a (board, k) pair —
+	 * so a tier there cannot be fetched from `k` the way the four Euclidean shelves can. Absent on those,
+	 * which is why it is optional rather than a fifth required field.
+	 */
+	board?: string;
 }
 
 export interface AtlasManifest {

@@ -157,11 +157,14 @@ const URL_MIRROR_DEBOUNCE_MS = 400;
 
 // Which loader reaches a manifest tier. The manifest names a shelf, not a function, so the file can
 // be regenerated (or replaced by a query) without knowing anything about this module.
-const TIER_LOADER: Record<TierShelf, (k: number) => Promise<ReferenceTiling[]>> = {
-	ctrnact: loadReferenceAtlasShard,
-	scaled: loadScaledAtlasShard,
-	euhalf: loadEuHalfAtlasShard,
-	mixed: loadMixedAtlasShard,
+// Takes the whole TIER and not just its k: the hyperbolic-poly shelf is per BOARD, so its shard is a
+// (board, k) pair and `k` alone does not address it. The four Euclidean shelves ignore the rest.
+const TIER_LOADER: Record<TierShelf, (t: UnloadedTier) => Promise<ReferenceTiling[]>> = {
+	ctrnact: (t) => loadReferenceAtlasShard(t.k),
+	scaled: (t) => loadScaledAtlasShard(t.k),
+	euhalf: (t) => loadEuHalfAtlasShard(t.k),
+	mixed: (t) => loadMixedAtlasShard(t.k),
+	hyppoly: (t) => (t.board ? loadHyperbolicPolyShard(t.board, t.k) : Promise.resolve([])),
 };
 
 interface PlayClientProps {
@@ -227,7 +230,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// arrived by another route (a deep link, an eager tier) cancels instead of drawing an empty twin.
 	const loadTier = useCallback((tier: UnloadedTier) => {
 		setLoadingTiers((s) => new Set(s).add(tier.key));
-		TIER_LOADER[tier.shelf](tier.k)
+		TIER_LOADER[tier.shelf](tier)
 			.then((data) => {
 				const add = data.map(referenceToCatalogue);
 				setRefList((prev) => {
@@ -497,6 +500,18 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		() => (refList ?? []).map((t) => ({ cls: tileClassOf(t), sub: subOf(t), k: t.k })),
 		[refList],
 	);
+	// The SAME set difference, unscoped: what every cell is still missing. The segment labels below add
+	// it to what they hold, so a segment reads the number of tilings that EXIST rather than the number
+	// currently in memory — the same rule the tree's rows follow. Without it the two disagreed on screen:
+	// the hyperbolic Tilings segment read 32,403 above rows summing to 2,220,588 (AL spotted it).
+	const pendingByCell = useMemo(() => {
+		const m = new Map<string, number>();
+		for (const t of unloadedTiers(manifest, loadedTiers)) {
+			const key = `${t.geometry}|${t.decoration}`;
+			m.set(key, (m.get(key) ?? 0) + t.count);
+		}
+		return m;
+	}, [manifest, loadedTiers]);
 	const unloaded = useMemo(
 		() => unloadedTiers(manifest, loadedTiers, { geometry, decoration }),
 		[manifest, loadedTiers, geometry, decoration],
@@ -541,14 +556,21 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	const EMPTY_CELL = useMemo(() => [] as CatalogueTiling[], []);
 	// Per-geometry tiling counts (labels the segments; a zero disables its segment until the lazy shard
 	// merges in).
-	const geometryCounts = cells.geo;
+	const geometryCounts = useMemo(() => {
+		const out = { ...cells.geo };
+		for (const [key, n] of pendingByCell) {
+			const g = key.split("|")[0] as Geometry;
+			out[g] += n;
+		}
+		return out;
+	}, [cells, pendingByCell]);
 	// Decoration counts WITHIN the active geometry — the segment row is scoped to it, and the hyperbolic /
 	// spherical edge + colour shards load lazily, so a segment starts empty (disabled) and fills in.
-	const decorationCounts = useMemo(() => ({
-		tilings: (cells.byCell.get(`${geometry}|tilings`) ?? EMPTY_CELL).length,
-		edges: (cells.byCell.get(`${geometry}|edges`) ?? EMPTY_CELL).length,
-		colorings: (cells.byCell.get(`${geometry}|colorings`) ?? EMPTY_CELL).length,
-	}) as Record<Decoration, number>, [cells, geometry, EMPTY_CELL]);
+	const decorationCounts = useMemo(() => {
+		const of = (d: Decoration) =>
+			(cells.byCell.get(`${geometry}|${d}`) ?? EMPTY_CELL).length + (pendingByCell.get(`${geometry}|${d}`) ?? 0);
+		return { tilings: of("tilings"), edges: of("edges"), colorings: of("colorings") } as Record<Decoration, number>;
+	}, [cells, geometry, EMPTY_CELL, pendingByCell]);
 	// The active (geometry, decoration) cell, in the same class → sub → k → key display order — the catalogue
 	// list, the nav count, and the scope for random/prev/next all read this.
 	const geometryList = useMemo(
