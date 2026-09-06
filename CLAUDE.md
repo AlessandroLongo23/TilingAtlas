@@ -25,8 +25,7 @@ Myers** — so new corpora will keep arriving and the scope is deliberately open
 
 ### The thesis is DONE and OUT OF SCOPE — never raise it again
 
-The thesis was **submitted**; the defense is **2026-08-10**. AL is preparing the defense himself and
-that work is **not part of this repo or this project**.
+The thesis was **submitted** and the defense done: that work is **not part of this repo or this project**.
 
 **Hard rule (AL directive, 2026-07-25):** do NOT bring up the thesis, its chapters, its deadlines, its
 `\describedcommit` anchor, "what belongs in the thesis", or whether recent work advanced it. Do not
@@ -103,6 +102,28 @@ before asking AL how to run one.
 ## Workflow rule
 
 After every code change, run `pnpm build` to check for errors and warnings before reporting the task complete. `pnpm lint` and `pnpm test` are not substitutes — only a full build surfaces the real issues.
+
+## EVERYTHING WE HAVE GOES IN THE ATLAS (durable; AL directive, 2026-08-31)
+
+**There is no situation in which we do not add tilings we already have.** A corpus that developed
+cleanly gets shipped. Never propose omitting a slice, withholding a k, or asking AL to choose which
+part of a corpus to publish — the answer is always all of it. "What kind of atlas would it be if we
+didn't add everything we have?"
+
+This overrides every size instinct. The 2026-08-29 drop is the case that produced the rule: two
+developed slices (`e33355-k5`, 90,387 tilings; `e33445-k5`, 78,019) were withheld for weight, and a
+breadth-vs-depth question was put to AL that should never have been asked. A catalogue with named
+holes in it is the data-integrity bug the mission section already forbids — the hole is worse than
+the megabytes.
+
+**Page weight is a DELIVERY problem, not a coverage problem, and it is solved in the delivery layer:**
+shard by k, pack through `scripts/atlas-compact.mjs`, keep the eager set small, fetch the rest on
+demand (`freedrawLazyShardsForK`, `hypEdgesLazyShardsForK`, per-board `eagerKs`/`lazyKs`), and split a
+slice further when one shard is too big to fetch at once. If a slice is too heavy to load, make it
+load differently — never make it absent. See `docs/DEVELOPMENT_NOTES.md` "everything ships".
+
+If a corpus genuinely cannot ship (no decoder exists, certificates fail to develop), that is a
+DIFFERENT statement and must be recorded as such: what is missing and why, never as a size decision.
 
 ## Fewer lines out than in (durable; AL directive, 2026-08-23)
 

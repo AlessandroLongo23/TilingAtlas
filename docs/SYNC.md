@@ -2974,6 +2974,23 @@ pentagram is five points around a hole and the crossings checkerboard. New band 
 over 12 {n/d} types with zero double coverage. One flag, `starMod2`, on the star shelf, the 41 star-faced
 non-convex solids and the hollow tilings. NOTES 2026-08-31 (second).
 
+## 2026-08-31 — the hyperbolic-poly shelf ships whole: 271 boards, 2,191,775 tilings — CC
+
+abcdtest lands (247 boards, 1,177,806 tilings, 0 failures) via a generalized `develop_ai1.py` whose
+3.4.n.4 path stays byte-identical. Landing it exposed that ai1/ai2 were themselves budget-truncated —
+64 k slices — so those were re-developed with no budget too. 60,400 tilings became 2,191,775 for 74 MB
+to 106 MB, because every shard is now stored gzipped; page cost is unchanged at 117 requests / 2.0 MB.
+⚑ `5677` is misnamed and `4aab` is empty in the drop. NOTES 2026-08-31.
+
+## 2026-08-31 (second) — the browse tree counts the atlas, not what is in memory — CC
+
+AL spotted /play's tree reading "3.4.n.4 boards 1357" (the eager-only count, against 412,532 shipped)
+with no a.b.c.d row at all. The sidebar groups LOADED records, which is the circularity
+`atlas-manifest.json` exists to break — I had wrongly dropped that work on the grounds that /library's
+board chips are static. Manifest now carries the 271 hyp-poly boards (first per-BOARD tiers, so a tier
+gained `board`); segment counts add pending tiers too. Tree reads 412,532 / 601,437 / 1,177,806 and the
+segment 2,220,588. NOTES 2026-08-31.
+
 ## 2026-09-01 — the squared Koch, which is the crenel with a slider — CC
 
 The quadratic Koch curve (dim 1.465) joins the picker, and it costs one style rather than adding one:
@@ -2982,3 +2999,11 @@ and the two fractals are that function under two generators. ⚑ Its depth, unli
 grows with the level (the tab top is parallel to the chord), so the authored number is the EXTENT and h
 is divided back out per level. The Minkowski sausage is unavailable to this shelf: it is antisymmetric,
 so bite = bump. NOTES 2026-09-01.
+
+## 2026-09-01 — the new boards are discoverable, after three click-only fixes — CC
+
+Playwright walk from the site root, clicking only. Both surfaces reach every board. Three defects that
+a URL-driven check cannot see: `board` was parsed from the URL but never serialized to it (Copy link
+and reload dropped it, on every board shelf); selecting an ai1/ai2 board loaded only its eager slices
+(3.4.7.4 read 10 against 16,459 shipped); the edge bases had the same gap. All three fixed, six boards
+verified against their shipped totals. NOTES 2026-09-01.

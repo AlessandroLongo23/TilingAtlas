@@ -17108,6 +17108,234 @@ undefined` AND a solid name — a duplicate key. Last wins in JS so the names we
 on it, and the build with it. The dead `solid: undefined` was removed from those 14; nothing else in
 that edit was touched.
 
+## 2026-08-31 — everything ships; page weight is heap, not bytes
+
+AL directive, now in CLAUDE.md: **there is no situation in which we do not add tilings we already
+have.** Never propose omitting a slice or ask which part of a corpus to publish. A catalogue with
+named holes is the data-integrity bug the mission section already forbids.
+
+**I had withheld two developed slices on the wrong measurement.** `e33355-k5` (90,387 tilings) and
+`e33445-k5` (78,019) were held back at 82 and 78 MB packed. Bytes on disk are not what a viewer waits
+for. Over the wire they are 8.9 and 8.0 MB, fetched in under a second, because a dart array is
+thousands of small repeated integers and compresses 10-17x. For scale, `reference-atlas-hyperbolic`
+has shipped for months at 17.7 MB on disk and 0.4 MB on the wire. Both slices are now lazy shards on
+their boards. Every size figure in the board tables should be read as a wire figure from here on.
+
+A trap that cost me a wrong conclusion mid-session, recorded so it does not again: a HEAD request to
+the Next server returns the UNCOMPRESSED `Content-Length` and no `Content-Encoding` header, which reads
+exactly like a server that does not compress. It does, on GET. Measure with
+`curl -o /dev/null -w '%{size_download}'`, never `curl -I`.
+
+**The real cost is heap, and it was a fan-out.** `scripts/measure-page-load.mjs` against `next start`:
+`/library` is 14 requests / 0.9 MB / 58 MB heap; adding `?geo=hyperbolic&dec=edges` is 210 / 3.7 MB /
+125 MB; adding `&k=5` is 226 / 29 MB / **527 MB**. The wire was never the problem — 29 MB arrives in
+under a second — but 527 MB of live objects is what kills a tab, since the graph runs 3-6x its source
+text. The cause: picking a k chip fetched that k's shard from EVERY base, because
+`hypEdgesLazyShardsForK(k)` returns all of them and reference-shelf looped over the lot.
+
+Scoping that loop to the selected board takes the worst board (33355, the 8.5 MB slice) to 13.2 MB /
+273 MB / 0.21 s blocking, and a small board (4455) to 5.2 MB / 159 MB / 0.07 s. Heap halves, blocking
+drops 4x, and the cost now tracks the board being read. With no board selected the fan-out is
+unchanged on purpose: the unfiltered count has to be the true one.
+
+**⚑ The next wall is request COUNT, and `abcdtest` will hit it.** 217 requests for a single board is
+the EAGER fan-out, one fetch per (base, eager k); 247 more boards would add hundreds of requests before
+anything appears. The mechanism already exists and was built for precisely this circularity —
+`public/atlas-manifest.json` and `lib/services/atlasManifest.ts` declare counts per tier so a row can
+be drawn before its records exist, and clicking it is what fetches them. It covers only the four
+Euclidean tiers today. Extending it to the board shelves collapses the eager fan-out to one request and
+is the prerequisite for landing abcd at full breadth. Not started.
+
+**⚑ No eviction.** `heShardCache` (and its siblings) never release, so heap accumulates across k
+switches within a session. An LRU bound would cap it. Not started.
+
+## 2026-08-31 (second) — abcdtest lands whole: 247 boards, 1,177,806 tilings, zero failures
+
+The corpus I had said needed "a driver and a shipping policy" is on the shelf, and the shipping policy
+turned out to be the directive: all of it. Measurements: `experiments/results/2026-08-29-hyp-edges-ingest.md`.
+
+**The developer is a generalization, not a second script.** `develop_ai1.py`'s `board_of(n)` became a
+`Board` class: `Board.family(n)` carries ai1's {3, 4, n, 2n} alphabet, `Board.abcd(id)` derives the
+alphabet from the board's own vertex figure. Block builder, H² develop, patch checker and dart emitter
+are untouched — they only ever read (ℓ, units, sizes). The load-bearing guard: re-developing the shipped
+`hp7` slices through the refactor is BYTE-IDENTICAL.
+
+**Two corpus facts, both recorded on the board rows.** `5677`'s certificates are 5.5.6.7, not the
+5.6.7.7 its digits spell, so the developer now reads the figure from the CERTIFICATES and treats the id
+as a name; and `4aab` (4.10.10.11) is an empty directory in Marek's drop, which is his gap, not ours.
+Also, 17 of the 265 ids are not hyperbolic and are refused — `3711` is the 3-valent 3.7.11 at 335.8°,
+correcting the earlier note that counted it hyperbolic.
+
+**A raise in `build_block` used to cost a whole board.** It escaped `develop_cert`, so `5677` lost all
+7,650 of its tilings to one certificate. A build failure is now counted per certificate like every other
+failure. This is the second time this session a single bad input took down a whole run — the first was
+`solution_list.txt` in the freedraw driver — and both had the same shape: an exception path that no
+single-certificate failure could reach.
+
+**1.18M tilings, and `/library` costs exactly what it did before they existed.** 117 requests, 2.1 MB,
+111 MB heap on the hyperbolic tilings shelf with all 247 boards present. Three mechanisms:
+
+- **The board chips are static.** `BOARD_FAMILIES` derives from the TS board tables, not from loaded
+  records, so 247 rows draw with no fetch. This is why the `atlas-manifest.json` extension I proposed as
+  the prerequisite was NOT needed: the circularity the manifest exists to break does not apply to boards,
+  only to the tier rows the tree groups out of loaded data. Worth remembering before reaching for it again.
+- **Every abcd slice is lazy** (`eagerKs: []`); a board's shards load when the board is opened.
+- **The shards are stored gzipped** (`.json.gz`), 703 MB of packed JSON down to 48 MB. `public/` is
+  tracked in git and would otherwise have doubled. The wire is identical either way — the server already
+  gzips a plain .json — so this is free to a viewer. `atlasCodec.shardBody` sniffs the gzip magic rather
+  than trusting the extension, so a CDN that decides to unwrap the response still reads correctly.
+
+**Two bugs the browser caught and the tests did not.** `fetchHypPolyShard` called `res.json()` directly,
+bypassing the gzip-aware reader, and its `catch { return [] }` turned the parse error into an empty
+shelf: a 200 on the wire and "No tilings match the current filters" on screen. And
+`scripts/measure-page-load.mjs` matched `/\.json(\?|$)/`, so a page that had just fetched gzipped shards
+reported fetching nothing — I nearly concluded the loader was broken when the instrument was.
+
+**⚑ The ai1/ai2 boards are still budget-truncated**, which is the same violation predating this session:
+64 dropped k slices across 19 boards, ~773,000 certificates Marek enumerated and this shelf does not
+carry. Re-developing them with no budget is running now; the gzip storage is what makes it affordable.
+
+---
+
+## 2026-08-31 — The isotoxal star shelf: AL's U30 analogue, four developer bugs, and a 15,000x pipeline
+
+AL, looking at ss-20-60-32-d2 (U30, the small ditrigonal icosidodecahedron): *"if we replace the
+pentagram with a star with ten edges, and the big triangles with the small red ones, that should be a
+k=2 polyhedron with stars."* It is. Built it from U30's own coordinates: 12 isotoxal 10-gons whose
+dents sit on U30's self-crossing points, 60 triangles from the corners its own crossings cut off,
+V=80 E=150 F=72, chi=2, and all 150 edges one length — 0.441056, the vertex-to-adjacent-dent distance
+AL named. Both vertex figures check out: point 3(36)+3(60) = 288 (defect +72), dent 252+60+60 = 372
+(defect −12, a SADDLE), and 20(72) + 60(−12) = 720 = 2*pi*chi exactly.
+
+### Why the engine had never found it — four bugs, each hiding the next
+
+1. **`parse_configs` named an isotoxal star by its POINT count n**, the alphabet by its boundary edge
+   count 2n (CLASS_L). `unfold` compares those tuples, so it never matched, `structure` returned None,
+   `solve_dihedrals` returned [] — and every star-bearing block of every isotoxal run was reported
+   "no dihedral solution" without one equation being formed.
+2. **`solve_dihedrals` seeded from `forced_by_valence3`**, whose `acos` can only return theta <= 180,
+   offering the mirror as one bit flipping every edge together. AL's solid folds at
+   (142.62, 142.62, 221.81) — two under pi and one over. That mixed reading was unreachable. Seeds
+   from `solve_corner` now, which returns both readings with a per-edge sign.
+3. **`_face_str` printed the 2n**, so a pentagram's outline read as a regular decagon on every card
+   and in every test that greps a family. It prints "5*".
+4. **`min_len` dropped to 2 for any star palette** — AL again, and this one was worth 257x. On a
+   curved surface a 2-face vertex has two edges, so its link is a spherical DIGON: the great circle
+   through two non-antipodal points is unique, both faces lie in ONE plane, and their angles sum to a
+   full turn — which every curved closure excludes. Measured: 2,859,640 of 2,870,830 raw k=1 header
+   lines carried at least one such vertex. **99.6% of that search was vertices that cannot exist.**
+
+### The pipeline, end to end
+
+| stage | before | after |
+|-------|-------:|------:|
+| k=1 solve      | 1,435,415 raw blocks, 1.5 GB | 5,595 blocks, 2.0 MB (**257x**) |
+| k=2 solve      | 71 GB in 45 min, no end   | 10,059,930 blocks in 15 min |
+| develop        | 908 ms/block              | **15.7 ms/block (58x)**, 80% rejected free |
+| k=2 star-shard develop | ~7 days (projected) | **714 s** |
+
+Four develop levers, each verified against the 35 k=1 solids (35 -> 35, none lost) with check-regular
+byte-identical throughout: `ne > 3V` early reject (a theorem — each link is a closure in SO(3), so
+ne > 3V leaves a positive-dimensional variety the multistart can only SAMPLE), an `ne > 6` cap (a
+DECLARED cap: 1024 starts over a 7^ne grid is 0.1% coverage at ne=7, and all 35 realized solids have
+ne in {1,2,3,6}), the degeneracy saturation probe, and the multistart budget 3000 -> 1024.
+
+**Three dead ends, recorded because each cost real time.** (a) Detecting degeneracy by counting
+unknowns *in the stall path* — fires on 2 blocks of 120, because a block can burn its whole budget
+without stalling. (b) Using the saturation probe as an ENUMERATOR — 4-5.5x faster and loses 2 of the
+35, since a 128-start probe reads saturated long before it is complete. (c) **Gauss-Bonnet
+pre-rejection** — rejects 99.4% with no dihedral solve and deletes every negative-defect solid:
+ctrnact-01_34-6gzyo-1 has six vertices at −120 deg, chi = −2, genus 2. ⚑ This run is NOT a sphere
+search.
+
+### The shelf, and what is still missing
+
+Six solids, all six star-faced, all six new against the 487-solid registry; `iso-80-150-72` is AL's
+solid and the search's answer is CONGRUENT to the hand construction. Renderer needed real work: these
+are the first CONCAVE faces on any spherical shelf, `ringTurning` reads 1 for them so the v0 fan
+claimed them and painted over every dent — `flatSolidTriangles` now fans a concave ring from its
+centroid, verified by area (10.018387 rendered against 10.018387 analytic, exact).
+
+⚑ **AL then found the coverage gap, and it was bigger than it looked.** D=120 admits ELEVEN isotoxal
+outlines; the palette carried three. The eight missing are {6/2}, {8/2}, {10/2}, {10/4}, {12/2},
+{12/3}, {12/4}, {12/5} — seven "compounds" plus one genuine star polygon. The cause: `isotox-mixed`
+was built tile-for-tile against `star-wide`, whose star faces are the prograde ones a UNIFORM
+polyhedron uses. **That restriction belongs to the self-intersecting definition** — an isotoxal
+outline is a simple 2n-gon and needs no gcd(n,d)=1. 7- and 9-pointed stars need a different grid
+(D divisible by 7 or 9); D=120 is 3 degrees and holds n = 3,4,5,6,8,10,12 only.
+
+⚑ **A SOLID WITH TWO DIFFERENT STAR FAMILIES IS NOT EXCLUDED ON ANY MATHEMATICAL GROUND** — only on
+cost, and AL was right to challenge the first answer given ("none of the six is one", which is
+circular: a palette that cannot express such a solid will never report one). Measured: all 11
+outlines in one palette is 29 corner classes, ~13.1M alphabet entries against isotox-mixed's 219,868,
+and a k=2 search of roughly 590M blocks — about 320 hours. A PAIR is 11 classes and ~130k entries,
+CHEAPER than the run that found the six. So the multi-star question is settled by 55 pair palettes,
+not by assumption, and that is the work queued behind the eight singles.
+
+## 2026-08-31 (third) — the hyperbolic-poly shelf is untruncated: 271 boards, 2,191,775 tilings
+
+Landing abcd exposed that the boards already on this shelf were budget-truncated — 64 k slices across
+19 boards, ~950,000 tilings Marek enumerated that no reader could reach — which is the same omission
+the new directive forbids, predating it by weeks. Re-developed with no budget: 1,013,969 ai1/ai2
+certificates, zero failures, no BUDGET line in any report.
+
+The shelf went from 24 boards / 60,400 tilings / 74 MB to **271 boards / 2,191,775 tilings / 106 MB**.
+36x the tilings for 1.4x the disk, because every shard is now stored gzipped (1,617 MB packed JSON in
+110 MB). Page cost is unchanged: 117 requests, 2.0 MB, 117 MB heap on the hyperbolic tilings shelf,
+the same as when it held 60,400. Board 3.4.13.4 at k=26, one of the dropped slices, shows 10,956.
+
+`dropped` stays on `HypPolyBoard` because a future corpus may not fit in one run, but an entry there is
+now a bug to fix rather than a fact to record, and a test asserts it is empty on every board. The other
+two ways a k can be absent are untouched and still distinguishable: `hypPolyKGaps` is a hole the
+enumeration proved empty, `missing` is a k Marek's census counts whose certificates his drop lacks.
+
+Two traps worth keeping:
+
+**ai2 has its own developer.** I nearly ran the ai2 boards through `develop_ai1.py --n`, which would
+have built them on the 3.4.n.4 alphabet {3, 4, n, 2n} instead of {3, n} — the two families share a
+shelf, a record shape and a renderer but NOT a developer. Caught before anything was written.
+
+**A test guard on a literal shard path failed open.** `existsSync("public/hyperbolic-poly/hp7-k1.json")`
+gated the whole `shards` describe block; moving the shelf to `.json.gz` made it false and 9 tests
+skipped silently while the suite reported green. Guards on shipped data must go through the same URL
+builder the app uses — it now does.
+
+## 2026-08-31 (fourth) — the browse tree was counting memory, not the atlas (AL spotted it)
+
+AL sent a screenshot of /play's hyperbolic Tilings tree: "3.4.n.4 boards 1357", "{3,n} boards 2233", no
+a.b.c.d row at all, and a Tilings segment reading 32,403. Every number was a count of LOADED RECORDS.
+1357 and 2233 are exactly the ai1 and ai2 EAGER-only totals against 412,532 and 601,437 shipped, and
+abcd has no eager slice, so its 1,177,806 tilings had no row to appear in.
+
+**This was my error, and specifically the one I had talked myself out of.** I proposed extending
+`atlas-manifest.json` to the board shelves, then dropped it on finding that /library's board CHIPS come
+from static tables — true, and irrelevant to this surface. `components/sidebar/catalogue-list-panel.tsx`
+builds its rows by grouping the records it holds, which is precisely the circularity the manifest was
+built to break, and its own header says so. A shelf can be reachable by one surface and invisible to
+another; "the chips are static" answered a different question than the one I was asking.
+
+Fixed by generating the hyp-poly tiers into the manifest, which needed three things:
+
+- `TierShelf` gains `"hyppoly"`, and `ManifestTier` an optional `board`. It is the first per-BOARD
+  shelf in there: its shard is a (board, k) pair, so `k` alone cannot address it, and `TIER_LOADER`
+  now takes the whole tier instead of just a k.
+- The counts come from `HYP_POLY_BOARDS`, not from decoding 702 shards. That is not a second source of
+  truth: `pack-hyp-poly-shelf.mjs` writes the table and the shards in one pass, and hyp-poly.test.ts
+  re-reads the shipped shards and asserts every count.
+- ⚑ `cls` had to be MEASURED. I guessed `"regular"`; these records classify as `"hyperbolic"`, and
+  since `unloadedTiers` cancels on (cls, sub, k), the wrong cls could not collide with a loaded row —
+  so all 2,191,775 drew a second class row beside the real one instead of merging into it.
+
+The geometry and decoration SEGMENT counts had the same flaw and now add their pending tiers too;
+they were reading 32,403 above rows summing to 2,220,588. The tree now reads 412,532 / 601,437 /
+1,177,806 for the three families, and the segment reads 2,220,588 — which is those three plus the
+28,813 on the valence and halved boards, exactly.
+
+⚑ Unrelated failure, NOT mine and left alone: `lib/tilings/tiling-level.test.ts` fails on the spherical
+star shelf. HEAD moved to 0b9cba8 during this session, and that file's uncommitted edit moves two
+assertions to 58 while leaving `null: 50` in the third. One stale literal in someone else's in-flight
+work.
+
 ### The squared Koch: one iterator, two generators (2026-09-01)
 
 AL asked for a fractal edge profile that is square instead of triangular. It exists, it is the
@@ -17139,3 +17367,34 @@ The simplicity test needed no new case beyond widening its level sweep to both f
 on every board, every bite word, levels 1–4, with the 12% margin. That is a stronger result than it
 looks: the squared generator puts tabs on its own vertical flanks, pointing sideways into the notch
 between two bumps, and nothing guaranteed in advance that they would clear.
+
+## 2026-09-01 — walking the shelf by CLICK found three things reading by URL never would
+
+AL asked whether the new boards are actually discoverable: navigate, don't deep-link. Driven with
+Playwright from the site root, clicking only. Both surfaces reach every board — `A.B.C.D BOARDS` is a
+heading in /library's Board facet with 247 chips under it, and `a.b.c.d boards 1177806` is a row in
+/play's tree that opens to a board, then to a k, then to a rendered tiling. But three defects only
+exist for someone who clicks, and every one of them had been invisible to a session that types URLs.
+
+**The board never reached the URL.** `parseFilter` READ `?board=` and `serializeFilter` never WROTE
+it, so the round trip was one-way: my own deep links worked all session while the UI could not produce
+one. Copy link and a plain reload both dropped the selection, on all 271 hyperbolic-poly boards, the 32
+edge bases, and every spherical and freedraw board. One line, and it predates this session — but I had
+been testing exactly the direction that works.
+
+**Selecting an ai1/ai2 board loaded only its eager slices.** Clicking 3.4.7.4 in /library showed
+**10** tilings against 16,459 shipped, and {3,7} showed 254 against 39,140. I had added board-triggered
+loading for the `hpq-` boards alone, because those were the ones with no eager slice at all — so the
+asymmetry I introduced was invisible unless you clicked the OTHER two families. Now all three load the
+board the chip promises.
+
+**The edge bases had the same gap**: a base selected with no k chose its eager slices and said nothing
+about the rest. 3^3.5^2 read its eager slices where the board carries 91,772.
+
+After the fixes, six sampled boards read their shipped totals exactly: 3.4.7.4 → 16,459, {3,7} →
+39,140, 4.5.6.8 → 2,602, 5.6.8.10 → 132,788, 3.3.6.9 → 1, 9.10.10.10 → 1; and on the edge shelf
+3^3.5^2 → 91,772, 3^2.4^2.5 → 78,911, 6.6.7 → 36,451.
+
+The lesson is the same one the manifest taught two days earlier, and I did not generalise it then: a
+shelf can be correct by every measurement a URL-driven check can make and still be unreachable, or
+lying, to someone using the interface. Walk it by click.

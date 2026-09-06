@@ -4,7 +4,56 @@
 > clobber-tolerant** — if two agents overwrite it, nothing is lost, because the *canonical*
 > history lives in the append-only **ledgers** below. Regenerate it from the latest signed
 > entry of each ledger. **Never write history here.** — last updated 2026-08-23, CC
-> (acting as TA too, AL authorization 2026-07-10). Last touched 2026-08-24.
+> (acting as TA too, AL authorization 2026-07-10). Last touched 2026-08-24 (second).
+
+## Marek Čtrnáct's shelf review: what is fixed and what is open (2026-08-24)
+
+**FIXED.** Every spherical and hyperbolic /play deep link opened the wrong tiling (arch-cuboctahedron,
+or hp7-1-00001) — a one-render geometry/selection mismatch that the empty-switch effect read as licence
+to replace the selection. Commit 8490380, verified against a production build on all four of his links
+plus a hyperbolic and a Euclidean control. **NOT PUSHED** — AL's call.
+
+**FIXED.** The non-convex shelf is 278, not 302: 24 records were not polyhedra (4 with two vertices of
+the map on one point, 20 with two faces sharing an edge AND a plane). All 278 surviving ids reused, so
+no permalink that stays has moved. The 24 withdrawn ones now fall through to the unknown-key path, and
+two of Marek's four links are among them. Gates are in `develop_euclid.check_realized` (for future
+develops) and `gen_nonconvex_shelf.degeneracy()` (for the shipped cell files). check-regular,
+check-star and check-deltahedra all pass; full suite 2,831 green; `pnpm build` clean.
+
+**OPEN, and the first two are one fact.** (1) `hasSphereView` asks whether a circumsphere EXISTS and
+never where its centre is; pentagonal cupola, pentagonal pyramid and square cupola have it OUTSIDE and
+all three render wrong. (2) The {n/d} pyramids with 4 < n/d < 6 are missing for the same reason — eight
+of them inside the n ≤ 20 range already shipped, {19/4} among them. (3) The five levels are nowhere on
+/theory. (4) Retrograde notation, the vertex-figure view, and the hemipolyhedra. Detail:
+DEVELOPMENT_NOTES 2026-08-24 (second).
+
+## PAUSED: star-wide k=2, the non-inscribed star shelf (2026-08-24)
+
+**A ~30-hour develop is NOT running.** It stopped after group 2 of 64 (no process alive; the log's own
+ETA was ~37 h remaining). It is resumable — re-run the same command and it skips every group whose JSON
+already exists.
+
+**When it was in flight:** `run_euclid_groups.py` over 355,207 pruned blocks, 64 resumable
+groups, log at `experiments/results/star-ncx-k2-develop-2026-08-24.log` and per-group logs under
+`tools/ctrnact-oracle/star-wide-k2-euclid-parts/`. Measured rate 3.3 blocks/s. **It is resumable**:
+re-run the same command and it skips every group whose JSON already exists. Output goes to
+`star-wide-k2-euclid.json`, then into the shelf as a 6th `--cells` file to
+`gen_nonconvex_shelf.py --emit` (verified today: with the existing five it still gives 302 solids and
+reuses all 302 ids, so nothing already shipped moves).
+
+**What it is for.** Star-faced solids with NO circumsphere — the star analogue of the `ncx-` shelf.
+`develop_spherical` cannot express them at all; exactly 2 of the 302 non-convex regular-faced solids
+have a circumsphere. The 2026-08-23 pilot did this on `star-ico-d`, three tiles, and AL asked for the
+full palette.
+
+**The enabler is the fill in C**, `EU_FILL_EUCLID` in `eu_sphfill.cpp`: 437x on the fill, a block from
+4.7 s to ~1.9 core-s, 908 core-hours down to ~100. Gate: the whole pilot corpus developed both ways
+gives the same 673 realizations and the SAME 83 solids, 0 lost. `make check-star` still matches golden.
+
+⚑ **Still owed on this thread**: the k=1 star-wide positive control (started, stopped to give k=2 the
+machine — it had realized 228 solids in 2,000 blocks). Its answer is known independently, since every
+vertex-transitive solid is inscribed, so `develop_spherical`'s 75 k=1 records must ALL reappear;
+`check_euclid_covers.py` is the gate and has not been run yet.
 
 ## Polyforms: the shelf is nine boards, and two engine defects came with it (2026-08-24)
 
@@ -191,11 +240,16 @@ basis so it cannot run away the way ArcballControls' own inertia did.
 (`lib/render/sphereThumbStage.ts`) — down from three module-level renderers, and holding the display's
 frame cap with 50 cards on screen.
 
-**`cfg.sphericalStudio` (default ON, URL key `sstu`, "Studio look" in View options)** switches the whole
-shelf between the plain diagram look and a lit one: room environment, reflective materials, key/fill/rim
-with shadows, a colour grade, and analytic shading inside the tiling sphere's own shader. Off is the
-byte-for-byte old look, so the two are comparable. Lights ride the camera — world-fixed ones froze the
-shading, since these views orbit the camera and never move the solid.
+**The lit look is the only look** (`lib/render/sphericalLook.ts`): room environment, reflective materials,
+key/fill/rim with shadows, a colour grade, and analytic shading inside the tiling sphere's own shader. It
+was a "Studio look" checkbox against the old plain diagram look until 2026-08-25, when the choice and the
+whole plain path were deleted. Lights ride the camera — world-fixed ones froze the shading, since these
+views orbit the camera and never move the solid.
+
+**`cfg.sphericalPolyhedron` (default ON since 2026-08-25, URL key `spoly`)** is the SHAPE for every
+spherical shelf: the flat-faced solid, or the round circumsphere. One field, one control; the boards used
+to carry a second one. The sphere half is hidden for the solids with no circumsphere (`hasSphereView`),
+and the Islamic construction is offered on the sphere alone, so choosing the solid turns it off.
 
 **Star edges are a three-state control** (`cfg.sphStarEdges`, URL `sedge`): All / True / None.
 
