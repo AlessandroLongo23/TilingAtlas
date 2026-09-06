@@ -2973,3 +2973,12 @@ pentagram is five points around a hole and the crossings checkerboard. New band 
 `starFaceRings` (odd-winding bands: n tip + n notch triangles each), verified against sampled even-odd
 over 12 {n/d} types with zero double coverage. One flag, `starMod2`, on the star shelf, the 41 star-faced
 non-convex solids and the hollow tilings. NOTES 2026-08-31 (second).
+
+## 2026-09-01 — the squared Koch, which is the crenel with a slider — CC
+
+The quadratic Koch curve (dim 1.465) joins the picker, and it costs one style rather than adding one:
+the crenel IS its level-1 generator, so `kochProfile` generalised to `fractalProfile(level, generator)`
+and the two fractals are that function under two generators. ⚑ Its depth, unlike the triangular Koch's,
+grows with the level (the tab top is parallel to the chord), so the authored number is the EXTENT and h
+is divided back out per level. The Minkowski sausage is unavailable to this shelf: it is antisymmetric,
+so bite = bump. NOTES 2026-09-01.

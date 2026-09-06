@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BUBBLE_EDGE_STYLES, BUBBLE_KOCH_LEVELS, boardCornerAngle, pushEdge } from "@/lib/bubble/edges";
+import { BUBBLE_EDGE_STYLES, BUBBLE_KOCH_LEVELS, boardCornerAngle, hasLevels, pushEdge, type BubbleEdgeStyle } from "@/lib/bubble/edges";
 import { BUBBLE_GRID_ORDER, type BubbleGrid } from "@/lib/bubble/pattern";
 import type { Pt } from "@/lib/render/cubic";
 
@@ -63,10 +63,12 @@ function isSimple(ring: Pt[]): boolean {
 }
 
 describe("bubble edge profiles", () => {
-	// Only the Koch profile has a parameter, and it gets every setting of it: the claim that the depth
-	// budget is settled at level 1 is worth nothing unless levels 2–4 are checked against it.
+	// The two fractal profiles have a parameter, and each gets every setting of it: the claim that the
+	// depth budget is settled across the slider is worth nothing unless levels 2–4 are checked against it.
+	// It bites hardest on the SQUARED Koch, whose tab height is divided back out per level precisely so
+	// that its extent does not grow — this is what holds that arithmetic honest.
 	const LEVELS = (style: string) =>
-		style === "koch"
+		hasLevels(style as BubbleEdgeStyle)
 			? Array.from({ length: BUBBLE_KOCH_LEVELS.max - BUBBLE_KOCH_LEVELS.min + 1 }, (_, i) => BUBBLE_KOCH_LEVELS.min + i)
 			: [BUBBLE_KOCH_LEVELS.default];
 

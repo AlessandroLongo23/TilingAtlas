@@ -22,7 +22,7 @@ import { cellFill, DEFAULT_PALETTE, paletteFor, type ColorChoice } from "@/lib/c
 import { polygonClassSupportsIslamic } from "@/lib/utils/tilingLabel";
 import { tileClassOf } from "@/lib/services/referenceAtlas";
 import { hasCurvedTiles, isDiskSurface, lensAppliesTo, surfaceOf } from "@/lib/services/shelfRegistry";
-import { BUBBLE_EDGE_STYLES, BUBBLE_KOCH_LEVELS } from "@/lib/bubble/edges";
+import { BUBBLE_EDGE_STYLES, BUBBLE_KOCH_LEVELS, hasLevels } from "@/lib/bubble/edges";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import { DeformPad } from "@/components/deform-pad";
 import { InversiveControls } from "@/components/inversive-controls";
@@ -706,10 +706,11 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							<p className="text-[11px] text-fg-muted leading-relaxed">
 								{BUBBLE_EDGE_STYLES.find((r) => r.value === cfg.bubbleEdgeStyle)?.help}
 							</p>
-							{/* The Koch generator's one parameter. Its depth does not move with the level — every
-							    later bump sits on a segment already tilted away from the peak — so the slider is
-							    free of the depth budget and bounded only by cost: 4ⁿ+1 points per edge. */}
-							{cfg.bubbleEdgeStyle === "koch" ? (
+							{/* The two fractal profiles' one parameter. Neither reaches further as it climbs: the
+							    triangular Koch's later bumps sit on segments already tilted away from the peak, and
+							    the squared one divides its tab height back out per level. So the slider is free of
+							    the depth budget and bounded only by cost, 4ⁿ or 5ⁿ points per edge. */}
+							{hasLevels(cfg.bubbleEdgeStyle) ? (
 								<Slider
 									id="bubbleKochLevel"
 									label="Koch level"

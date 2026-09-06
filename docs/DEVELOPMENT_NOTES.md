@@ -17107,3 +17107,35 @@ copies by design, and one removed layer out of four barely reads.
 undefined` AND a solid name — a duplicate key. Last wins in JS so the names were live, but `tsc` fails
 on it, and the build with it. The dead `solid: undefined` was removed from those 14; nothing else in
 that edit was touched.
+
+### The squared Koch: one iterator, two generators (2026-09-01)
+
+AL asked for a fractal edge profile that is square instead of triangular. It exists, it is the
+quadratic Koch curve (dimension log 5 / log 3 = 1.465 against the triangular one's log 4 / log 3 =
+1.262), and the shelf was already drawing its level 1: the `crenel` is exactly a square tab across the
+middle third, which is the generator. So this is not a seventh profile. It is the crenel given the
+slider, the same relation the chevron had to the Koch, and the same resolution AL chose then: keep one
+entry, level 1 is the simple shape, and the fractal owns the name.
+
+`kochProfile` became `fractalProfile(level, generator)`, a generator being a polyline on the unit chord
+whose `y` rides the segment's left normal. Both profiles are now that one function under a different
+generator, which is the whole difference between them. Net for the feature: +118/-49 in edges.ts, and
+one style out of the picker.
+
+⚑ **THE SQUARED ONE'S DEPTH MOVES WITH THE LEVEL, AND THE TRIANGULAR ONE'S DOES NOT.** A Koch bump sits
+on a segment already tilted away from the peak, so nothing a later level adds can reach over it and the
+budget is settled at level 1. The square tab's top is PARALLEL to the chord, so level 2 stands another
+tab on it, level 3 another on that, and the extent is h(1 + 1/3 + 1/9 + …) converging to 1.5h. The fix
+is to author the EXTENT and divide `h` back out per level (`thirdsSum`), which holds the profile's
+reach identical at every setting and leaves level 1 at exactly the 0.155 crenel the shelf shipped with.
+Measured: extent 0.2685 on the square board at all four levels, point counts 5/25/125/625.
+
+⚑ **THE FAMOUS SQUARED FRACTAL IS THE ONE WE CANNOT HAVE.** The Minkowski sausage (log 8 / log 4 = 1.5)
+rises on the first half of the chord and falls on the second: h(1-t) = -h(t). That is the antisymmetric
+family at the top of edges.ts, where bite = bump and the edge stops carrying its bit. Same death as the
+ogee. Only the one-sided five-segment generator survives complementarity.
+
+The simplicity test needed no new case beyond widening its level sweep to both fractals, and it passes
+on every board, every bite word, levels 1–4, with the 12% margin. That is a stronger result than it
+looks: the squared generator puts tabs on its own vertical flanks, pointing sideways into the notch
+between two bumps, and nothing guaranteed in advance that they would clear.
