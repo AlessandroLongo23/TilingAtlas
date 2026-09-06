@@ -25,15 +25,20 @@ the shelf tells the truth again. Nothing moves the other way.
 
 Usage: python3 annotate_derivation.py [--write] [--cells A.json B.json ...]
 """
-import argparse, collections, glob, json, os, re
+import argparse, glob, collections, json, os, re
 import numpy as np
+
+from gen_nonconvex_shelf import DEFAULT_CELLS
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
 
 # The classical shelves: closed-form coordinates, never the output of a search.
-TABULATED = ["platonicSolids", "archimedeanSolids", "prismSolids"]
-SEARCHABLE = ["johnsonSolids", "nonconvexSolids"]
+# ⚑ EVERY SOLID TABLE HAS TO BE NAMED HERE. A table missing from both lists leaves each of its records
+# with no derivation, and the run refuses to write rather than annotate half the atlas — which is how
+# genusSolids (86 records) and hemiSolids (9) were caught on 2026-08-25, both added the same day.
+TABULATED = ["platonicSolids", "archimedeanSolids", "prismSolids", "hemiSolids"]
+SEARCHABLE = ["johnsonSolids", "nonconvexSolids", "genusSolids", "isotoxalSolids"]
 
 
 def congruence_key(V, q=1e-3):
@@ -80,17 +85,51 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--write", action="store_true")
     ap.add_argument("--cells", nargs="*", default=None,
-                    help="develop outputs; default is every euclid-k*.json under sph-k*/")
+                    help="develop outputs; default is gen_nonconvex_shelf.DEFAULT_CELLS, the same list "
+                         "the shelf itself is built from")
     args = ap.parse_args()
 
-    cells = args.cells if args.cells is not None else sorted(glob.glob(os.path.join(HERE, "sph-k*", "euclid-k*.json")))
+    # ⚑ SHARED WITH THE SHELF BUILD, and it has to be. This globbed `sph-k*/euclid-k*.json` for itself
+    # until 2026-08-24, and a search whose output lands anywhere else is then invisible HERE and visible
+    # THERE: star-ico-k2-euclid.json sits bare in this directory, so the shelf built from five files
+    # while this pass read four, found no evidence for the 59 star records, and filed every one of them
+    # "constructed". That is a provenance claim that the atlas built them by hand when a search had just
+    # found them, which is the exact error the flag below already warns about one level down.
+    # ⚑ EVIDENCE IS EVERY DEVELOP OUTPUT, which is a WIDER list than the non-convex shelf's cells.
+    # DEFAULT_CELLS is what that shelf is BUILT from and must stay that way — feeding it the genus or
+    # isotoxal runs would file their solids on the non-convex shelf, where they do not belong. But a
+    # search that realized a solid is evidence the solid was searched no matter which shelf it lands
+    # on, and leaving those outputs out filed 80 of the 86 genus records "constructed" on 2026-08-25:
+    # the claim that the atlas built them by hand when a search had just found them, which is the exact
+    # error the flag below warns about. More evidence can only move a record constructed -> searched.
+    extra = [os.path.join(HERE, x) for x in
+             ("toroid-k2/toroid-k2-euclid.json", "iso-k1/cells.json", "iso-k2/cells.json",
+              "im-k1b/cells.json", "im-k2b/cells-star.json")]
+    # ⚑ AND EVERY SINGLE-STAR ISOTOXAL RUN, by glob rather than by name — the one-star palettes arrive
+    # eleven at a time from the subset sweep and naming them here would go stale on the next batch.
+    # Leaving them out filed seven prisms "constructed" on 2026-08-31, the same wrong provenance claim
+    # the comment above describes: the atlas did not build them, a search found them.
+    extra += sorted(glob.glob(os.path.join(HERE, "cmp-isotox-*", "cells.json")))
+    extra += sorted(glob.glob(os.path.join(HERE, "sweep-size*", "keep", "*.json")))
+    extra += sorted(glob.glob(os.path.join(HERE, "k3-*", "cells.json")))
+    cells = args.cells if args.cells is not None else \
+        list(DEFAULT_CELLS) + [x for x in extra if os.path.exists(x)]
     found = {}
     for path in cells:
         recs = json.load(open(path))
         n = 0
         for r in recs:
-            if r["residual"].get("euler") != 2:
-                continue          # pinched: not a solid, cannot be evidence that one was found
+            # A PINCHED realization is not a solid and cannot be evidence that one was found.
+            #
+            # ⚑ THIS READ `euler != 2`, WHICH IS A DIFFERENT QUESTION — the third place in the pipeline
+            # to make that substitution, after develop_euclid.check_realized and gen_nonconvex_shelf.py.
+            # It is safe only while every record comes from the convex palette, where a pinch is the one
+            # way to lose Euler's 2. A star solid can close at chi = -6 legitimately, and 21 of them were
+            # being skipped here and then filed as "constructed" — a provenance claim that the atlas had
+            # built them by hand, when a search had just found them.
+            res = r["residual"]
+            if bool(res["pinched"]) if "pinched" in res else res.get("euler") != 2:
+                continue
             found.setdefault(congruence_key(r["vertices"]), os.path.basename(path))
             n += 1
         print("%-40s %4d realized records" % (os.path.relpath(path, HERE), n))

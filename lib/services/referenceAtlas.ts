@@ -658,10 +658,20 @@ export const SUB_ORDER = [
 	...SPH_HALF_BOARDS.map((b) => sphHalfSubOfBoard(b)),
 	// The star polyhedra: one row, the k level below it doing the dividing.
 	"sst",
+	// Its sibling by FACE TYPE and not by anything else: the same drawing, the other polygon. An "sst"
+	// face is the {n/d} of Schlafli, n sides that cross; a "sis-solid" face is the simple 2n-gon that
+	// traces its outline, alternating a sharp point with a reflex dent. Adjacent to "sst" because
+	// familyOfSub can only gather a RUN and both are non-convex.
+	"sis-solid",
 	// Their sibling: the non-convex regular-faced solids that are NOT on a circumsphere, which is why
 	// develop_spherical could not express them and the dihedral-angle developer had to find them. No
 	// catalogue names them; see lib/render/nonconvexSolids.ts.
 	"spn-solid",
+	// Genus 1, the same family: a regular-faced solid that is not a map on a sphere. Contiguous
+	// with "spn-solid" because familyOfSub can only gather a RUN, and followed immediately by the
+	// higher genera for the same reason.
+	"spt-solid",
+	...Array.from({ length: 23 }, (_, i) => `spg${i + 2}-solid`),
 	// Parametric-pentagon edge systems: one sub per Kershner type. "pen-" namespaced.
 	...PENT_EDGE_BOARDS.map((b) => pentEdgeSubOfBoard(b)),
 	// Parametric-isohedral edge systems: one sub per isohedral type. "ih-" namespaced.
@@ -735,7 +745,8 @@ export function familyOfSub(sub: string): SubFamily | null {
 	// One shelf, two one-parameter families: 3.4.n.4 under "hpo-", {3,n} under "hpt-".
 	if (sub.startsWith("hpt-")) return "hyp-poly-t";
 	if (sub.startsWith("spx-")) return "sph-convex";   // the reference solids
-	if (sub === "sst" || sub === "spn-solid") return "sph-nonconvex";
+	if (sub === "sst" || sub === "sis-solid" || sub === "spn-solid" || sub === "spt-solid") return "sph-nonconvex";
+	if (/^spg\d+-solid$/.test(sub)) return "sph-nonconvex";
 	// The base hyperbolic shelf: one family per valence, "hyt-v8". A regex and not a table, because the
 	// six families are the six valences the corpus contains and hypTilingFamilyOfSub is the one place
 	// that parses the id.

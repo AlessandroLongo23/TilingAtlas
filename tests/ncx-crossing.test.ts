@@ -25,19 +25,32 @@ describe("the non-convex shelf's crossing split", () => {
 	});
 
 	it("holds the counts, which are NOT the shelf header's", () => {
-		// nonconvexSolids.ts opens with "SELF-INTERSECTING (112 of 243)". That header is the generator's own
-		// tally and it is four short: its test skips any two faces that share a vertex, and on a small solid
-		// nearly every pair does. The script unions in an independent measurement, so 116 is the number.
-		expect(NCX_SELF_INTERSECTING.size).toBe(116);
-		expect(NCX_EMBEDDED.size).toBe(127);
+		// nonconvexSolids.ts opens with "SELF-INTERSECTING (153 of 278)". That header is the generator's own
+		// tally and it is two short: its test skips any two faces that share a vertex, and on a small solid
+		// nearly every pair does. The script unions in an independent measurement, so 155 is the number.
+		//
+		// It was 116 of 243 until the star run of 2026-08-24 added 59 solids, 41 of them with a {n/d} face.
+		// ⚑ Both measurements had to learn the star first, and the same way: a same-side or even-odd
+		// interior test is only right on a CONVEX face. The intersection of a pentagram's five half-planes
+		// is its central pentagon, so an edge through one of its arms read as no crossing at all. Both now
+		// use nonzero winding, which agrees with the old rule on every convex face.
+		//
+		// -> 155 of 278 the same day, when the degeneracy gate dropped 24 records that were not polyhedra
+		// (coincident vertices, or two faces sharing an edge and a plane). Ten of the 24 were on the
+		// self-intersecting side, and two of them were among the four the union used to add.
+		expect(NCX_SELF_INTERSECTING.size).toBe(155);
+		expect(NCX_EMBEDDED.size).toBe(123);
 	});
 
-	it("flags the four the shelf generator files as embedded", () => {
+	it("flags the ones the shelf generator files as embedded", () => {
 		// ⚑ AL found ncx-6-11-7 by looking at it (2026-08-22) — its faces plainly pass through each other
-		// and the shelf called it embedded. The other three came out of the same check. Each has an edge
+		// and the shelf called it embedded. The others came out of the same check. Each has an edge
 		// piercing the strict interior of a face it shares a vertex with, which is exactly the case the
 		// generator's `set(fi) & set(fj)` skip drops.
-		for (const id of ["ncx-6-11-7", "ncx-12-28-18-f", "ncx-7-14-9-b", "ncx-8-16-10-d"]) {
+		//
+		// It was four until 2026-08-24: ncx-12-28-18-f and ncx-8-16-10-d were among them and the degeneracy
+		// gate took both off the shelf, each for two faces sharing an edge and a plane.
+		for (const id of ["ncx-6-11-7", "ncx-7-14-9-b"]) {
 			expect(ncxSelfIntersects(id), `${id} should be self-intersecting`).toBe(true);
 		}
 	});
@@ -50,9 +63,12 @@ describe("the non-convex shelf's crossing split", () => {
 	});
 
 	it("agrees with the one solid the circumsphere list also names", () => {
-		// ncx-7-15-10-a is the only solid on this shelf WITH a circumsphere, and its comment therefore ends
-		// ", self-intersecting, inscribed" instead of with the flag. The first version of the extractor
-		// anchored on the end of the line and silently dropped it, coming out 242 of 243.
-		expect(ncxSelfIntersects("ncx-7-15-10-a")).toBe(true);
+		// ncx-120-240-112 is the only solid on this shelf WITH a circumsphere, and its comment therefore
+		// ends ", self-intersecting, inscribed" instead of with the flag. The first version of the extractor
+		// anchored on the end of the line and silently dropped the inscribed one, coming out 242 of 243.
+		// That solid was ncx-7-15-10-a then; the degeneracy gate of 2026-08-24 dropped it (seven claimed
+		// vertices, four distinct points) and the trailing-", inscribed" case moved to this id. The regex
+		// still has to survive it, which is the whole point of the assertion.
+		expect(ncxSelfIntersects("ncx-120-240-112")).toBe(true);
 	});
 });

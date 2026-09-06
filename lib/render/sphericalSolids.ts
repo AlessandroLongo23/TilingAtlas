@@ -1,7 +1,12 @@
 // The full spherical-solid catalogue as generic Polyhedra: the 5 Platonic + 13 Archimedean solids, the
 // prisms and antiprisms, the 43 Johnson solids the Čtrnáct engine develops, and the 34 NON-CONVEX
 // regular-faced solids develop_euclid found that no catalogue names (lib/render/nonconvexSolids.ts) —
-// each resolvable by a stable string id.
+// each resolvable by a stable string id, and the NON-SPHERICAL ones (lib/render/genusSolids.ts),
+// whose surface closes at V - E + F != 2 — genus 1 upward — and the nine HEMIPOLYHEDRA
+// (lib/render/hemiSolids.ts), the uniform polyhedra whose faces pass through the centre of the solid.
+// Those nine are the only ONE-SIDED records here: eight are non-orientable, so V - E + F can be ODD
+// (the tetrahemihexahedron closes at 1, a projective plane) and anything iterating this list that
+// assumes an orientable map has to say so.
 // The spherical renderer and thumbnail key on this id (Archimedean/Johnson solids have no Schläfli symbol
 // {p,q}, so id — not [p,q] — is the routing key for the whole shelf).
 
@@ -10,6 +15,9 @@ import { ARCHIMEDEAN_SOLIDS } from "./archimedeanSolids";
 import { JOHNSON_SOLIDS } from "./johnsonSolids";
 import { PRISM_ANTIPRISM_SOLIDS } from "./prismSolids";
 import { NONCONVEX_SOLIDS } from "./nonconvexSolids";
+import { GENUS_SOLIDS } from "./genusSolids";
+import { HEMI_SOLIDS } from "./hemiSolids";
+import { ISOTOXAL_SOLIDS } from "./isotoxalSolids";
 
 export const SPHERICAL_SOLIDS: Polyhedron[] = [
 	...PLATONIC_SOLIDS,
@@ -17,6 +25,9 @@ export const SPHERICAL_SOLIDS: Polyhedron[] = [
 	...PRISM_ANTIPRISM_SOLIDS,
 	...JOHNSON_SOLIDS,
 	...NONCONVEX_SOLIDS,
+	...GENUS_SOLIDS,
+	...HEMI_SOLIDS,
+	...ISOTOXAL_SOLIDS,
 ];
 
 const BY_ID = new Map(SPHERICAL_SOLIDS.map((s) => [s.id, s]));

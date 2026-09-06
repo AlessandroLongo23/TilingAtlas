@@ -90,13 +90,55 @@ function decodeBouwkamp(code: string): { width: bigint; height: bigint; squares:
 }
 
 describe("squared rectangles from polyhedra", () => {
-	it("every named solid is a 3-connected planar map with Euler characteristic 2", () => {
+	// Every solid whose surface is a SPHERE has to be a 3-connected planar map, because that is what
+	// Smith's construction consumes. The star-faced records the 2026-08-24 run added are not spheres —
+	// they close at chi = -6, genus 4 — so they are partitioned out here and the pipeline rejects them by
+	// the same test, with a reason. Asserting chi = 2 over the whole registry would now be asserting
+	// that the shelf contains no star polyhedra, which is no longer true and is not what this guards.
+	// ⚑ AND THE HEMIPOLYHEDRA ARE NOT ORIENTED MAPS AT ALL. Eight of the nine are ONE-SIDED, so no
+	// consistent orientation of their face rings exists and planarMapFromFaces correctly returns null —
+	// the tetrahemihexahedron is a projective plane, chi = 1, which is odd, which the parity check
+	// below would flag as impossible were it a closed orientable surface. They are named here rather
+	// than skipped by prefix so that the count is an assertion: exactly eight, and the ninth (the
+	// octahemioctahedron, chi = 0) goes through the ordinary higher-genus branch.
+	it("every named solid is an oriented map, and every SPHERICAL one is 3-connected planar", () => {
+		let spheres = 0;
+		let higherGenus = 0;
+		let oneSided = 0;
+		let notPolyhedral = 0;
 		for (const s of SPHERICAL_SOLIDS) {
 			const map = planarMapFromFaces(s.faces, s.vertices.length);
+			if (map === null) {
+				expect(s.id, "only a hemipolyhedron may fail to orient").toMatch(/^hemi-/);
+				oneSided++;
+				continue;
+			}
 			expect(map, `${s.id}: face rings do not form an oriented planar map`).not.toBeNull();
-			expect(eulerCharacteristic(map as PlanarMap), `${s.id}: V-E+F`).toBe(2);
-			expect(isThreeConnected(map as PlanarMap), `${s.id}: skeleton not 3-connected`).toBe(true);
+			const chi = eulerCharacteristic(map as PlanarMap);
+			if (chi === 2) {
+				// ⚑ A SPHERE IS NOT ENOUGH FOR 3-CONNECTEDNESS, and the isotoxal shelf is where that shows.
+				// Steinitz's theorem pairs 3-connected planar graphs with CONVEX polytopes; a solid with a
+				// 252-degree reflex dent is not one, and iso-80-150-72 — AL's U30 analogue — has a genuine
+				// 2-cut. It is still a closed sphere with every edge in exactly two faces; what it is not is
+				// a polyhedral map Smith's construction can consume, and the pipeline refuses it for that
+				// reason. Counted rather than skipped, so the exception stays exactly one record wide.
+				if (!isThreeConnected(map as PlanarMap)) {
+					expect(s.id, "only an isotoxal-star record may be a sphere and not 3-connected").toMatch(/^iso-/);
+					notPolyhedral++;
+					continue;
+				}
+				spheres++;
+			} else {
+				higherGenus++;
+				// Math.abs: -6 % 2 is -0 in JS and Object.is(-0, 0) is false.
+				expect(Math.abs(chi % 2), `${s.id}: chi ${chi} is odd, which no closed orientable surface has`).toBe(0);
+				expect(chi, `${s.id}: chi ${chi} above 2 is not a closed orientable surface`).toBeLessThan(2);
+			}
 		}
+		expect(spheres + higherGenus + oneSided + notPolyhedral).toBe(SPHERICAL_SOLIDS.length);
+		expect(notPolyhedral, "spheres whose skeleton is not 3-connected").toBe(1);
+		expect(oneSided, "the one-sided records are exactly the eight non-orientable hemipolyhedra").toBe(8);
+		expect(higherGenus, "star-faced records at chi < 2").toBeGreaterThan(0);
 	});
 
 	it("the spherical shelves need their face rings reoriented, and every one of them takes it", () => {

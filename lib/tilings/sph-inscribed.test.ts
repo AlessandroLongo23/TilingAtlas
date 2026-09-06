@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { HEMI_STAR_FACED } from "@/lib/render/hemiSolids";
 import { SPHERICAL_SOLIDS } from "@/lib/render/sphericalSolids";
 import {
 	circumsphereMiss,
@@ -8,6 +9,9 @@ import {
 	SPH_NOT_INSCRIBED,
 	sphericalSolidSub,
 } from "./sph-inscribed";
+
+/** A record past the sphere: genus 1 ships as "tor-" (its permalinks came first), genus >= 2 as "gen<g>-". */
+const isGenus = (id: string) => id.startsWith("tor-") || /^gen\d+-/.test(id);
 
 describe("circumsphere fit", () => {
 	it("finds the sphere a vertex CENTROID would miss", () => {
@@ -51,9 +55,14 @@ describe("the shipped split", () => {
 		}
 	});
 
+	// The GENUS records are excluded for the same reason "ncx-" is, and with a stronger claim behind it:
+	// a surface of genus >= 1 has no circumsphere AT ALL — the round view is a radial projection onto one
+	// and such a surface does not project onto a sphere — so hasSphereView answers on the prefix and the
+	// measured list has nothing to say about them.
 	it("SPH_NOT_INSCRIBED is exactly the OTHER solids with no circumsphere", () => {
 		const measured = SPHERICAL_SOLIDS.filter(
-			(s) => !s.id.startsWith("ncx-") && !isInscribed(s.vertices as [number, number, number][]),
+			(s) => !s.id.startsWith("ncx-") && !isGenus(s.id)
+				&& !isInscribed(s.vertices as [number, number, number][]),
 		)
 			.map((s) => s.id)
 			.sort();
@@ -76,6 +85,7 @@ describe("the shipped split", () => {
 		let bestOut = Infinity;
 		for (const s of SPHERICAL_SOLIDS) {
 			if (s.id.startsWith("ncx-")) continue;   // measured by the test above, on its own claim
+			if (isGenus(s.id)) continue;             // no circumsphere by topology, not by measurement
 			const V = s.vertices as [number, number, number][];
 			const miss = circumsphereMiss(V) / Math.max(...V.map((v) => Math.hypot(v[0], v[1], v[2])));
 			if (SPH_NOT_INSCRIBED.has(s.id)) bestOut = Math.min(bestOut, miss);
@@ -88,12 +98,42 @@ describe("the shipped split", () => {
 	// ONE row for all of them now: the shelf's split is convexity, with k naming uniform against Johnson
 	// underneath (2026-08-21). The circumsphere is still measured and still gates the sphere view — it is
 	// simply not an axis, so nothing here may send a solid to a row the tree does not have.
-	it("routes every solid to one of the two rows the tree has", () => {
+	// The row set GROWS as the genus search finds new genera, so assert the RULE and not the set: every
+	// solid routes by its prefix, and nothing lands on a row the tree cannot draw.
+	it("routes every solid by its prefix, one row per genus", () => {
 		const subs = new Set(SPHERICAL_SOLIDS.map((s) => sphericalSolidSub(s.id)));
-		expect([...subs].sort()).toEqual(["spn-solid", "spx-solid"]);
-		// …and the split is exactly the ncx- prefix, so nothing lands on the wrong side of it.
+		expect(subs.has("spn-solid") && subs.has("spx-solid") && subs.has("spt-solid")).toBe(true);
+		expect(subs.has("hemi-solid"), "the hemipolyhedra are a k row, not a sub").toBe(false);
 		for (const s of SPHERICAL_SOLIDS) {
-			expect(sphericalSolidSub(s.id)).toBe(s.id.startsWith("ncx-") ? "spn-solid" : "spx-solid");
+			const g = /^gen(\d+)-/.exec(s.id);
+			expect(sphericalSolidSub(s.id)).toBe(
+				g ? `spg${g[1]}-solid`
+					: s.id.startsWith("hemi-") ? (HEMI_STAR_FACED.has(s.id) ? "sst" : "spn-solid")
+					: s.id.startsWith("tor-") ? "spt-solid"
+					// The isotoxal shelf, "sis-solid": the star shelf's sibling by FACE TYPE, and not a
+					// convex row — AL, 2026-08-31, on finding these six under the Johnson heading.
+					: s.id.startsWith("iso-") ? "sis-solid"
+					: s.id.startsWith("ncx-") ? "spn-solid" : "spx-solid",
+			);
+		}
+	});
+
+	it("offers nothing past the sphere a sphere view, and that is a theorem not a measurement", () => {
+		const tor = SPHERICAL_SOLIDS.filter((s) => isGenus(s.id));
+		expect(tor.length).toBeGreaterThan(0);
+		for (const s of tor) {
+			expect(hasSphereView(s.id), s.id).toBe(false);
+			// V - E + F != 2 is what puts them past the sphere, and it is what makes the view meaningless.
+			const E = new Set<string>();
+			for (const f of s.faces) for (let i = 0; i < f.length; i++) {
+				const a = f[i], b = f[(i + 1) % f.length];
+				E.add(a < b ? `${a}-${b}` : `${b}-${a}`);
+			}
+			const chi = s.vertices.length - E.size + s.faces.length;
+			expect(chi, s.id).toBeLessThan(2);
+			expect(Math.abs(chi % 2), `${s.id} chi=${chi} is not 2-2g for an integer genus`).toBe(0);
+			const g = /^gen(\d+)-/.exec(s.id);
+			expect((2 - chi) / 2, s.id).toBe(g ? Number(g[1]) : 1);
 		}
 	});
 });

@@ -12,7 +12,7 @@
 
 import { bouwkampCode, isPerfect, isSimple, order, tiledArea, tilesExactly } from "./classify";
 import { integerDet } from "./linalg";
-import { planarMapFromFaces, type PlanarMap } from "./planarMap";
+import { eulerCharacteristic, planarMapFromFaces, type PlanarMap } from "./planarMap";
 import { squaringFrom, type Squaring } from "./smith";
 import { outerFaceForBattery, tutteEmbedding } from "./tutte";
 import type { PipelineRecord, PolyhedronSquarings, SquaringRecord } from "./shelf";
@@ -85,6 +85,19 @@ export function buildPipelineRecord(
 ): { ok: true; record: PipelineRecord } | { ok: false; error: PipelineFailure } {
 	const map = planarMapFromFaces(base.faces, base.vertices.length);
 	if (!map) return { ok: false, error: { stage: "map", detail: "face rings are not an oriented planar map" } };
+	// ⚑ SMITH NEEDS A PLANAR MAP, and an oriented map is not automatically one. Tutte's theorem gives the
+	// squaring from a 3-connected PLANAR graph, and V - E + F = 2 is what says the surface is a sphere.
+	// Every solid on the shelves satisfied it until the star run of 2026-08-24, whose {n/d}-faced records
+	// close at chi = -6 — genus 4, a degree-3 branched cover, and no more planar than a torus is. Rings
+	// that glue into a valid oriented map of the wrong genus reach here happily, so the genus is checked
+	// rather than assumed.
+	const chi = eulerCharacteristic(map);
+	if (chi !== 2) {
+		return {
+			ok: false,
+			error: { stage: "map", detail: `V - E + F = ${chi}, not a planar map — no squaring exists` },
+		};
+	}
 
 	const squaring = squaringFrom(map, battery);
 	if (!squaring) {

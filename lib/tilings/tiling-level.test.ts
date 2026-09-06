@@ -114,7 +114,7 @@ describe.skipIf(!anyShard)("the levels over every shipped curved shelf", () => {
 	});
 
 	it("classifies every solid, including the twins the census alone cannot separate", () => {
-		const rows = read(SPH) as { id: string; k: number; family: string }[];
+		let rows = read(SPH) as { id: string; k: number; family: string }[];
 		// 40 -> 59 when develop_euclid's nineteen landed, -> 64 when the 2-orbit deltahedra did
 		// (2026-08-20), -> 71 when the spherical 3.4.n.4 shelf was folded in and its seven non-duplicate
 		// solids completed J72-J83, -> 105 with the 34 non-convex regular-faced solids, -> 124 with the
@@ -123,13 +123,59 @@ describe.skipIf(!anyShard)("the levels over every shipped curved shelf", () => {
 		// all 2026-08-21). Every Johnson solid the Euclidean developer adds is a hybrid: two vertex
 		// configurations that are not one multiset reordered, which is the level. So is every
 		// non-convex one, for the same reason.
-		expect(rows.length).toBe(355);
-		expect(census(rows.map((r) => ({ level: tilingLevel({ ...r, spherical: {} }) })))).toEqual({
+		// -> 414 with the star run (2026-08-24, +59 non-convex, 41 of them {n/d}-faced).
+		//
+		// ⚑ THOSE 41 HAVE NO LEVEL, and that is the vocabulary's limit, not a bug in the shelf.
+		// canonicalConfig returns null for a config that is not a dot-separated list of polygon SIZES,
+		// which its own docstring has always said, and "5/2.3.5/2.3" is not one: a {5/2} is a different
+		// polygon from a {5} and the level names — regular, archimedean, hybrid — are a classification of
+		// UNIFORM tilings by convex regular polygons. By the same argument that makes every other
+		// non-convex record here a hybrid, these are hybrids too, and saying so needs canonicalConfig to
+		// carry the density. Asserted as its own bucket so the gap is counted rather than rounded off.
+		// -> 390 later the same day, when the degeneracy gate dropped 24 non-convex records that were not
+		// polyhedra. Every one of them was a hybrid, so that bucket carries the whole loss and the other
+		// five are untouched — including the 41, none of which was degenerate.
+		// The GENUS shelves are still filling (2026-08-25), so they are held out of the fixed counts and
+		// asserted on its own: every one of its records is a hybrid, two vertex configurations that are
+		// not one multiset reordered, for the same reason every non-convex record here is.
+		const isGenus = (id: string) => id.startsWith("sph-tor-") || /^sph-gen\d+-/.test(id);
+		const tor = rows.filter((r) => isGenus(r.id));
+		expect(tor.length, "the genus shelves should not be empty").toBeGreaterThan(0);
+		for (const r of tor) {
+			expect(tilingLevel({ ...r, spherical: {} }), r.id).toBe("hybrid");
+		}
+		rows = rows.filter((r) => !isGenus(r.id));
+		// -> 401 on 2026-08-25: the dodecagonal prism and antiprism from the isotoxal palette, and the
+		// nine hemipolyhedra.
+		// -> 407 on 2026-08-31 with the ISOTOXAL-STAR shelf, whose six records carry a face written
+		// "5*" — the simple 2n-gon that traces a {n/d}'s outline. They join the unnamed bucket for the
+		// SAME reason the {n/d} records do and not a new one: canonicalConfig reads a dot-separated
+		// list of polygon SIZES, and neither "5/2" nor "5*" is one.
+		// -> 415 later the same day: one palette per star outline instead of three in one.
+		// -> 420 with the first k=3 isotoxal run (valence capped at 5).
+		expect(rows.length).toBe(420);
+		const levels = census(rows.map((r) => ({ level: tilingLevel({ ...r, spherical: {} }) })));
+		const unlevelled = (levels as Record<string, number>).null ?? 0;
+		// -> 44 with the hemipolyhedra (2026-08-25): three of the nine carry a {n/d} face, and
+		// great-icosihemidodecahedron's "3.10/3.3.10/3" is the same limit for the same reason.
+		// -> 50 on 2026-08-31: the six isotoxal-star records, whose faces are written "5*", "8*", "10*".
+		// -> 58 with the per-outline runs, which add "6*" and "12*" to that list.
+		expect(unlevelled, "star-faced records the level vocabulary cannot name").toBe(63);
+		expect(
+			rows.filter((r) => /\d+\/\d+/.test(r.family) || /\d+\*/.test(r.family)).length,
+			"every unlevelled record has a star face — {n/d} on the star shelf, n* on the isotoxal one",
+		).toBe(63);
+		// archimedean 23 -> 31 on 2026-08-25: the six levellable hemipolyhedra (the other three carry a
+		// {n/d} face and fall in the null bucket) plus the dodecagonal prism and antiprism. 5 + 31 + 3 +
+		// 7 + 311 + 44 = 401, which was the row count then; the isotoxal records land wholly in the
+		// null bucket, so only that number moves as the shelf grows.
+		expect(levels).toEqual({
 			regular: 5,
-			archimedean: 23,
+			archimedean: 31,
 			"pseudo-archimedean": 3,
 			combination: 7,
-			hybrid: 317,
+			hybrid: 311,
+			null: 63,
 		});
 		const of = (id: string) => {
 			const r = rows.find((x) => x.id === id)!;

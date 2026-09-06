@@ -199,19 +199,68 @@ export function coplanarFaceLayers(poly: Polyhedron, unit: readonly Vec3[]): num
 // `faceSizes[t]` is the source face's vertex count for triangle t, so the mesh builder can colour by
 // polygon size; `triLayers[t]` is its face's coplanar layer (see coplanarFaceLayers), which is 0 for
 // every triangle of every solid that has no two faces in one plane.
-export function flatSolidTriangles(poly: Polyhedron, radius = 1, mod2 = false): { positions: Float32Array; faceSizes: number[]; triLayers: number[] } {
+/** Does this ring turn the same way at every corner? Concave faces need a different fan. */
+function isConvexRing(unit: Vec3[], f: number[]): boolean {
+	let nx = 0;
+	let ny = 0;
+	let nz = 0;
+	for (let i = 0; i < f.length; i++) {
+		const a = unit[f[i]];
+		const b = unit[f[(i + 1) % f.length]];
+		nx += (a[1] - b[1]) * (a[2] + b[2]);
+		ny += (a[2] - b[2]) * (a[0] + b[0]);
+		nz += (a[0] - b[0]) * (a[1] + b[1]);
+	}
+	for (let i = 0; i < f.length; i++) {
+		const p = unit[f[i]];
+		const q = unit[f[(i + 1) % f.length]];
+		const r = unit[f[(i + 2) % f.length]];
+		const ux = q[0] - p[0];
+		const uy = q[1] - p[1];
+		const uz = q[2] - p[2];
+		const vx = r[0] - q[0];
+		const vy = r[1] - q[1];
+		const vz = r[2] - q[2];
+		const turn = (uy * vz - uz * vy) * nx + (uz * vx - ux * vz) * ny + (ux * vy - uy * vx) * nz;
+		if (turn < -1e-9) return false;
+	}
+	return true;
+}
+
+export function flatSolidTriangles(poly: Polyhedron, radius = 1, mod2 = false): { positions: Float32Array; faceSizes: number[]; triLayers: number[]; triFace: number[] } {
 	// starFaceRings APPENDS the crossing-ring points it needs, so the scaled copy has to be extendable.
 	const unit: Vec3[] = [...solidFitScale(poly, radius)];
 	// One entry per source face: the convex rings that fill it. d = 1 gives back the face itself.
 	// `mod2` is the even-odd fill rule, which empties a pentagram's core; see starFaceRings.
 	const fill = poly.faces.map((f) => {
 		const d = ringTurning(unit, f);
-		return d > 1 ? (starFaceRings(f, d, unit as never, mod2) as number[][]) : [f];
+		if (d > 1) return starFaceRings(f, d, unit as never, mod2) as number[][];
+		// ⚑ A SIMPLE RING IS NOT NECESSARILY A CONVEX ONE. The isotoxal shelf's faces are 2n-gons that
+		// alternate a sharp point with a REFLEX dent: they never cross, so ringTurning reads 1 and the
+		// v0 fan claims them — and a v0 fan of a concave polygon paints straight over every dent, which
+		// turns a pentagram's outline into a blob. They are star-shaped about their own centre, so a fan
+		// from the CENTROID is exact: append it and emit one triangle per edge.
+		if (!isConvexRing(unit, f)) {
+			const c: Vec3 = [0, 0, 0];
+			for (const i of f) {
+				c[0] += unit[i][0] / f.length;
+				c[1] += unit[i][1] / f.length;
+				c[2] += unit[i][2] / f.length;
+			}
+			const ci = unit.push(c) - 1;
+			return f.map((v, k) => [ci, v, f[(k + 1) % f.length]]);
+		}
+		return [f];
 	});
 	const triCount = fill.reduce((sum, rings) => sum + rings.reduce((n, r) => n + r.length - 2, 0), 0);
 	const positions = new Float32Array(triCount * 9);
 	const faceSizes: number[] = new Array(triCount);
 	const triLayers: number[] = new Array(triCount);
+	// Which SOURCE face each triangle came from. Only the compound view needs it — colouring by
+	// polygon size cannot separate two interpenetrating solids that both have squares — but it costs
+	// one integer per triangle and it is the only honest way to give a caller per-face control without
+	// overloading `faceSizes`, which means what its name says.
+	const triFace: number[] = new Array(triCount);
 	const faceLayers = coplanarFaceLayers(poly, unit);
 	let p = 0;
 	let t = 0;
@@ -237,13 +286,14 @@ export function flatSolidTriangles(poly: Polyhedron, radius = 1, mod2 = false): 
 			positions[p++] = b[0]; positions[p++] = b[1]; positions[p++] = b[2];
 			positions[p++] = c[0]; positions[p++] = c[1]; positions[p++] = c[2];
 			triLayers[t] = faceLayers[fi];
+			triFace[t] = fi;
 			// The SOURCE face's size, not the ring's: hue is per polygon, and a star face's fill rings
 			// are a core n-gon plus n triangles that must not colour as triangles.
 			faceSizes[t++] = srcLen;
 		}
 		}
 	}
-	return { positions, faceSizes, triLayers };
+	return { positions, faceSizes, triLayers, triFace };
 }
 
 /**

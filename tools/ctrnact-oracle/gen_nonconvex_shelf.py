@@ -4,9 +4,14 @@
 There is no published catalogue to check these against. Klitzing's survey puts non-convexity explicitly
 out of scope, and Zalgaller's extension of Johnson's 92 is to "convex regular-faced polyhedra with
 CONDITIONAL EDGES" — still convex. What exists for non-convex regular-faced solids is the uniform half
-(the 57 non-convex uniform polyhedra, all k=1 and all on the star shelf) and nothing systematic beyond
+(the 57 non-convex uniform polyhedra, all k=1) and nothing systematic beyond
 it. So these ship the way the star shelf ships an unrecognised record: with their measured signature and
 no invented name. A name guessed off a census is exactly the error that discipline refuses to make.
+
+⚑ CORRECTED 2026-08-30: that sentence used to end "all on the star shelf", asserted and never measured.
+The star shelf holds 39 of the 57. Nine are the HEMIPOLYHEDRA (gen_hemi_shelf.py builds them now); nine
+more are still missing, among them the seven one-sided figures U18, U21, U39, U50, U56, U63, U73 and the
+great dirhombicosidodecahedron.
 
 WHAT QUALIFIES. From develop_euclid's k=2 output, a record ships here when it is:
   * REFLEX — at least one dihedral past pi. `residual.convex` is false.
@@ -57,9 +62,18 @@ HEADER = """// NON-CONVEX REGULAR-FACED POLYHEDRA — every face a regular polyg
 // CONVEX regular-faced polyhedra; Zalgaller's own extension ("convex regular-faced polyhedra with
 // conditional edges") is still convex, and Klitzing's survey of the territory puts non-convexity
 // explicitly out of scope. What is enumerated past convexity is the UNIFORM half — the 57 non-convex
-// uniform polyhedra, all one vertex orbit, all on the star shelf — and nothing systematic beyond it. So
+// uniform polyhedra, all one vertex orbit — and nothing systematic beyond it. So
 // these ship the way the star shelf ships a record it cannot name: with their measured signature and no
 // invented name. A name guessed off a census is exactly the error that discipline refuses to make.
+//
+// ⚑ CORRECTED 2026-08-30: the line above used to end "all on the star shelf", which was asserted and
+// never measured. The star shelf holds 39 of the 57. Nine are the HEMIPOLYHEDRA — a face through the
+// centre makes the density that shelf orders by undefined — and they ship on their own row now
+// (lib/render/hemiSolids.ts). Nine more are still absent, and after the naming pass of 2026-08-30 the
+// list is exact, not a shortfall estimate: U18, U21, U39, U50, U56, U63, U73 (the seven two-face-type
+// figures with a p.q.p.q crossed vertex figure), U64 great snub dodecicosidodecahedron, and U75 the
+// great dirhombicosidodecahedron, the only non-Wythoffian one, whose edges carry FOUR faces and so
+// cannot be expressed by any shelf here. 48 of the 57 are now on a shelf and named.
 //
 // WHY THEY WERE INVISIBLE, and it is one fact: %(nosphere)d of the %(n)d have NO CIRCUMSPHERE, and
 // develop_spherical realizes maps on S2, so a solid without one is not something it can miss — it is
@@ -74,7 +88,8 @@ HEADER = """// NON-CONVEX REGULAR-FACED POLYHEDRA — every face a regular polyg
 //     ⚑ That split UNDERCOUNTS the crossings, and knowing by how much needs a second measurement:
 //     this script's test exempts any two faces that SHARE A VERTEX, and on a small solid nearly every
 //     pair does. lib/tilings/ncx-crossing.ts is the authority — it unions this answer with one that
-//     exempts no pair, and four solids move from embedded to self-intersecting when it does.
+//     exempts no pair, and it names the solids that move from embedded to self-intersecting when it
+//     does. The number is written down THERE and not here, because it is that script's measurement.
 //   * CIRCUMSPHERE (%(nosphere)d of %(n)d have none) — and so no spherical view.
 //     %(inscribed)s
 //     lib/tilings/sph-inscribed.ts measures this PER SOLID. It is not a property of the shelf, and
@@ -120,6 +135,69 @@ def centre_and_scale(V):
     return W / (np.max(np.linalg.norm(W, axis=1)) or 1.0)
 
 
+def degeneracy(V, faces, tol=1e-4):
+    """Why this realization is not a polyhedron, or None if it is one.
+
+    Two separate failures, both of which the shelf was shipping until 2026-08-24, and both of which
+    Marek Ctrnact found by clicking: sph-ncx-8-18-12-a ("does it have an extra triangle in the middle
+    cutting it in half that is not visible from the outside?") and sph-ncx-11-24-15-e ("What's
+    this...?") are one of each.
+
+      * COINCIDENT — two vertices of the MAP land on the same point. The surface folds shut there and
+        the record's V is a count of something that is not in the picture: ncx-7-15-10-a claims seven
+        vertices and has four distinct points, ncx-8-18-12-a claims eight and has five. Since the id IS
+        ncx-V-E-F, the id is wrong too.
+        ⚑ develop_euclid ALREADY measures a pinch and this is not it. `residual.pinched` compares the
+        map's vertex count against the number of positions the FILL emitted, so it catches a fill that
+        merged two map vertices into one entry. Here the fill kept them apart and the geometry brought
+        them together, so len(V) still equals the map count and `pinched` reads false. Measure the
+        positions.
+
+      * COPLANAR NEIGHBOURS — two faces sharing an edge lie in one plane, so their union is the real
+        face and the shared edge is not an edge. Where they continue through it (dihedral pi) that
+        union is a rhombus, which is not a regular polygon: this is exactly why the fully augmented
+        dodecahedron is not a Johnson solid, and convexity()'s own docstring says so. The shelf
+        already dropped the CONVEX records on this test and shipped the reflex ones, which is the
+        asymmetry Marek named — gluing two triangular prisms into a rhombic prism was refused while
+        ncx-10-22-14, carrying two flat edges of the identical kind, shipped.
+
+    ⚑ NOT develop_euclid's `coplanarNeighbour`, which asks whether ANY vertex outside a face lies in
+    its plane. That is a broader question and a different one: it flags 44 of the 302, ncx-32-60-30-b
+    among them, whose ten squares and four octagons meet at no flat edge at all. Adjacency is what
+    makes two faces merge into one, so adjacency is what is tested.
+
+    Tolerance is relative to the edge, and the corpus leaves no room for argument: the four coincident
+    records sit at ~1e-6 of an edge and the closest clean record in all 414 is at 5.1e-3, three orders
+    of magnitude away.
+    """
+    P = np.asarray(V, float)
+    edge = np.linalg.norm(P[faces[0][0]] - P[faces[0][1]]) or 1.0
+    d = np.linalg.norm(P[:, None, :] - P[None, :, :], axis=2)
+    iu = np.triu_indices(len(P), 1)
+    if len(P) > 1 and float(d[iu].min()) < tol * edge:
+        distinct = len({tuple(np.round(p / (tol * edge)).astype(np.int64)) for p in P})
+        return "coincident vertices (V=%d, %d distinct points)" % (len(P), distinct)
+
+    def newell(f):
+        n = np.zeros(3)
+        for i in range(len(f)):
+            a, b = P[f[i]], P[f[(i + 1) % len(f)]]
+            n += [(a[1] - b[1]) * (a[2] + b[2]), (a[2] - b[2]) * (a[0] + b[0]), (a[0] - b[0]) * (a[1] + b[1])]
+        return n / (np.linalg.norm(n) or 1.0)
+
+    nrm = [newell(f) for f in faces]
+    share = collections.defaultdict(list)
+    for fi, f in enumerate(faces):
+        for i in range(len(f)):
+            a, b = f[i], f[(i + 1) % len(f)]
+            share[(a, b) if a < b else (b, a)].append(fi)
+    flat = sum(1 for fs in share.values()
+               if len(fs) == 2 and abs(abs(float(nrm[fs[0]] @ nrm[fs[1]])) - 1.0) < 1e-7)
+    if flat:
+        return "coplanar neighbouring faces (%d edge%s)" % (flat, "" if flat == 1 else "s")
+    return None
+
+
 def congruence_key(V, q=1e-3):
     V = np.asarray(V, float)
     n = len(V)
@@ -143,7 +221,15 @@ def circumsphere_miss(V):
 
 
 def self_intersections(V, faces):
-    """How many times a face EDGE passes through the interior of a face it shares no vertex with."""
+    """How many times a face EDGE passes through the interior of a face it shares no vertex with.
+
+    ⚑ NONZERO WINDING, not even-odd. They agree on every convex face, so the 243 convex-faced records
+    are untouched, and they disagree on a star one exactly where it matters. A {5/2} ring is
+    v0,v2,v4,v1,v3 and its boundary crosses itself, so an even-odd ray crossing counts the central
+    pentagon TWICE and calls it outside — an edge passing straight through the middle of a pentagram
+    face would read as no crossing at all. The face covers that centre: it is what
+    face_area = n*alpha - (n-2d)*pi counts d times, and what makes {5/2} a tile rather than five
+    triangles. Winding gets it right and costs nothing."""
     V = np.asarray(V, float)
     planes = []
     for f in faces:
@@ -169,23 +255,36 @@ def self_intersections(V, faces):
                     continue
                 X = P + (dp / (dp - dq)) * (Q - P)
                 x, y = (X - a) @ ex, (X - a) @ ey
-                inside = False
+                wind = 0
                 for k in range(len(poly)):
-                    (x1, y1), (x2, y2) = poly[k], poly[k - 1]
-                    if (y1 > y) != (y2 > y) and x < (x2 - x1) * (y - y1) / (y2 - y1) + x1:
-                        inside = not inside
-                if inside:
+                    (x1, y1), (x2, y2) = poly[k - 1], poly[k]
+                    side = (x2 - x1) * (y - y1) - (x - x1) * (y2 - y1)
+                    if y1 <= y < y2 and side > 0:
+                        wind += 1
+                    elif y2 <= y < y1 and side < 0:
+                        wind -= 1
+                if wind != 0:
                     hits += 1
     return hits
 
 
-def census(faces):
+def census(faces, ftypes=None):
     """The face census, "20{3}, 4{4}" — 20 triangles and 4 squares.
 
     ⚑ COMMA, not " + ". The census doubles as the display name for these unnamed solids, and the card
     runs a label through compactVertexConfig, which splits on " + " and rejoins with "; " because that is
     the VERTEX-ORBIT separator everywhere else in the app. "20{3} + 4{4}" came out as "20{3}; 4{4}",
-    which reads as two orbits and is not what a face census means."""
+    which reads as two orbits and is not what a face census means.
+
+    ⚑ COUNT THE FACE TYPE, NOT THE RING LENGTH. A {n/d} face has n edges however far it winds, so
+    len(ring) calls a pentagram a pentagon: the first star run through this shelf reported
+    "200{3}, 12{5}" for a solid whose twelve faces are {5/2}, which is a different solid and a
+    different tile. The convex records have no faceTypes and are unaffected, so this stays a fallback
+    rather than a rewrite."""
+    if ftypes:
+        c = collections.Counter((int(t[0]), int(t[1])) for t in ftypes)
+        return ", ".join(("%d{%d/%d}" % (c[t], t[0], t[1])) if t[1] > 1 else ("%d{%d}" % (c[t], t[0]))
+                         for t in sorted(c))
     c = collections.Counter(len(f) for f in faces)
     return ", ".join("%d{%d}" % (c[n], n) for n in sorted(c))
 
@@ -258,10 +357,24 @@ def allocate_ids(rows, frozen):
         x["ident"] = x["id"].upper().replace("-", "_")
 
 
+# THE CELL LIST IS SHARED, and annotate_derivation.py imports it from here. It used to glob
+# `sph-k*/euclid-k*.json` for itself, which stopped matching the moment a search wrote its output
+# somewhere that glob does not reach: star-ico-k2-euclid.json sits bare in this directory, so the two
+# scripts were reading different corpora. The shelf built from five files and the provenance pass saw
+# four, found no evidence for the 59 star records, and filed every one of them "constructed" — a claim
+# that the atlas built them by hand when a search had just found them. One list, one place.
 DEFAULT_CELLS = [os.path.join(HERE, "sph-k2-fix", "euclid-k2.json"),
                  os.path.join(HERE, "sph-k3", "euclid-k3.json"),
                  os.path.join(HERE, "sph-k4", "euclid-k4.json"),
-                 os.path.join(HERE, "sph-k5", "euclid-k5.json")]
+                 os.path.join(HERE, "sph-k5", "euclid-k5.json"),
+                 os.path.join(HERE, "star-ico-k2-euclid.json")]
+
+
+def _cell_name(path):
+    """What to call a cells file in the provenance line. The run DIRECTORY names the search
+    (sph-k3, run-k2-star-wide-ncx); a file passed bare has no directory, and joining "" left the
+    generated header reading "sph-k5,  output"."""
+    return os.path.basename(os.path.dirname(path)) or os.path.splitext(os.path.basename(path))[0]
 
 
 def main():
@@ -275,20 +388,50 @@ def main():
     reflex = []
     for src, path in enumerate(args.cells):
         recs = json.load(open(path))
-        # chi != 2 is a PINCHED realization, not a solid: the flood fill sent two vertices of the map to
-        # one point and merged them. develop_euclid rejects these at source now, but the cell files
-        # already on disk predate that, and re-running develop costs 14 minutes to re-derive a record
-        # that is going to be thrown away. Filtered here too, and reported so it is never silent.
-        pinched = [r for r in recs if r["residual"].get("euler") != 2]
+        # A PINCHED realization is not a solid: the flood fill sent two vertices of the MAP to one point
+        # and merged them, so the surface touches itself there. develop_euclid measures that directly
+        # now and stores `pinched` — the map's vertex count against the number of distinct points.
+        #
+        # ⚑ THIS USED TO READ chi != 2, AND THAT IS NOT THE SAME QUESTION. It worked while every record
+        # came from the convex palette, where a pinch is the only way to lose Euler's 2. It is wrong the
+        # moment a star face appears: two of the four Kepler-Poinsot solids close at chi = -6, and the
+        # star run of 2026-08-24 had 21 records at chi = -6 or -8 thrown out under that label, every one
+        # of them a perfectly good star polyhedron. Trust the measurement where it exists.
+        #
+        # Where it does not — cell files written before develop_euclid measured it — there is nothing in
+        # the record to tell a pinch from a star, so the old test stands and says so. Re-run those
+        # through the current developer to recover whatever they are hiding.
+        def is_pinched(r):
+            res = r["residual"]
+            if "pinched" in res:
+                return bool(res["pinched"])
+            return res.get("euler") != 2
+        pinched = [r for r in recs if is_pinched(r)]
+        legacy = any("pinched" not in r["residual"] for r in recs)
         for r in pinched:
-            print("   ⚑ pinched (chi=%s), dropped: %s" % (r["residual"].get("euler"), r["id"]))
-        r_here = [r for r in recs
-                  if not r["residual"].get("convex") and r["residual"].get("euler") == 2]
+            res = r["residual"]
+            how = "measured" if "pinched" in res else "INFERRED from chi, may be a star solid"
+            print("   ⚑ pinched (chi=%s, %s), dropped: %s" % (res.get("euler"), how, r["id"]))
+        if legacy:
+            print("   ⚑ %s predates the pinch measurement: chi != 2 is being used as a proxy and it "
+                  "cannot see a star solid. Re-run it to recover them." % os.path.basename(path))
+        reflex_here = [r for r in recs
+                       if not r["residual"].get("convex") and not is_pinched(r)]
+        # The same degeneracy test the convex gate has always run, now run on the reflex half too. It
+        # is computed HERE and not read off the residual because these cell files predate it and
+        # because the residual's own coplanarNeighbour asks a broader question — see degeneracy().
+        r_here, bad = [], []
+        for r in reflex_here:
+            why = degeneracy(r["vertices"], r["faces"])
+            (bad if why else r_here).append((r, why))
+        r_here = [r for r, _ in r_here]
+        for r, why in bad:
+            print("   ⚑ degenerate, dropped: V=%d F=%d — %s" % (len(r["vertices"]), len(r["faces"]), why))
         degen = [r for r in recs
                  if r["residual"].get("convex") and r["residual"].get("coplanarNeighbour")]
-        print("%-28s %3d records  (reflex %d, degenerate-convex %d dropped)"
+        print("%-28s %3d records  (reflex %d, degenerate-reflex %d dropped, degenerate-convex %d dropped)"
               % (os.path.basename(os.path.dirname(path)) + "/" + os.path.basename(path),
-                 len(recs), len(r_here), len(degen)))
+                 len(recs), len(r_here), len(bad), len(degen)))
         reflex += [(src, r) for r in r_here]
 
     known = shelf_keys()
@@ -310,7 +453,7 @@ def main():
         print("   already on the star shelf: V=%d F=%d -> %s" % (len(r["vertices"]), len(r["faces"]), why))
     by_src = collections.Counter(r["_src"] for r in picked)
     print("distinct solids: %d  (%s)"
-          % (len(picked), ", ".join("%s +%d" % (os.path.basename(os.path.dirname(args.cells[i])), n)
+          % (len(picked), ", ".join("%s +%d" % (_cell_name(args.cells[i]), n)
                                     for i, n in sorted(by_src.items()))))
 
     rows = []
@@ -323,7 +466,8 @@ def main():
         insc = circumsphere_miss(V) < 1e-4 * max(np.linalg.norm(np.asarray(V, float), axis=1))
         tally["selfIntersecting" if xings else "embedded"] += 1
         tally["inscribed" if insc else "noCircumsphere"] += 1
-        rows.append({"rec": r, "V": n, "E": e, "F": len(faces), "census": census(faces),
+        rows.append({"rec": r, "V": n, "E": e, "F": len(faces),
+                     "census": census(faces, r.get("faceTypes")),
                      "xings": xings, "inscribed": bool(insc), "key": r["_key"]})
     frozen = frozen_ids()
     allocate_ids(rows, frozen)
@@ -348,7 +492,7 @@ def main():
         "nosphere": len(rows) - len(insc),
         "inscribed": ("The exception%s: %s." % ("" if len(insc) == 1 else "s", ", ".join(insc)))
                      if insc else "There is no exception on this shelf today.",
-        "cells": ", ".join(os.path.basename(os.path.dirname(c)) for c in args.cells),
+        "cells": ", ".join(_cell_name(c) for c in args.cells),
         "kmax": ks[-1], "kmaxnext": ks[-1] + 1,
     }
     ts = [header, '\nimport type { Polyhedron } from "./platonicSolids";\n']

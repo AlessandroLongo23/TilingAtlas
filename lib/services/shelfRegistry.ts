@@ -19,6 +19,7 @@
 // a Schwarz grid depending on its pattern), so a per-shelf family constant would be a lie.
 
 import { freedrawKNoun, gridOf } from "@/lib/freedraw/pattern";
+import { HEMI_STAR_FACED } from "@/lib/render/hemiSolids";
 import type { CatalogueTiling } from "./catalogueService";
 import { tileClassOf } from "./referenceAtlas";
 
@@ -159,12 +160,28 @@ export const SHELVES: Record<ShelfId, ShelfDef> = {
 	// Johnson ones, since a Johnson solid IS a convex regular-faced polyhedron that is not uniform.
 	// ⚑ That definition is why the non-convex "ncx-" records must not borrow the word — they were reading
 	// "k = 2 Johnson 34" in the tree, and a non-convex solid is not a Johnson solid at any k. They get the
-	// bare orbit count, which is all k means for them.
+	// bare orbit count, which is all k means for them. The TOROIDAL "tor-" records are out for the same
+	// reason and a stronger one: a Johnson solid is convex AND a map on a sphere, and a surface of
+	// genus >= 1 is neither. Same for "gen<g>-".
 	spherical: {
 		field: "spherical",
 		surface: "sphere",
-		kNoun: (t) =>
-			t.spherical?.solid?.startsWith("ncx-") ? null : (t.k ?? 1) > 1 ? "Johnson" : "uniform",
+		kNoun: (t) => {
+			const solid = t.spherical?.solid;
+			// The non-convex shelf's k = 1 row IS the hemipolyhedra — k = 1 regular-faced means
+			// vertex-transitive means uniform, and the uniform non-convex solids whose faces are all
+			// ordinary regular polygons are exactly the six that land there. So the row names the class,
+			// the way k = 1 names "uniform" and k > 1 names "Johnson" on the convex half.
+			// ⚑ SIX, not nine. The other three carry a {n/d} face and file under the star shelf, whose
+			// k = 1 row holds 52 records that are NOT hemipolyhedra — so that row takes no noun at all,
+			// which is what the null below already gives every sphStar record. Do not name it.
+			if (solid?.startsWith("hemi-")) return HEMI_STAR_FACED.has(solid) ? null : "hemipolyhedra";
+			// ⚑ "iso-" out for the same reason as "ncx-": a Johnson solid is CONVEX with regular faces,
+			// and a face with a 252° reflex dent is neither convex nor one of Johnson's. Bare orbit count.
+			if (solid?.startsWith("ncx-") || solid?.startsWith("tor-") || solid?.startsWith("iso-")
+				|| /^gen\d+-/.test(solid ?? "")) return null;
+			return (t.k ?? 1) > 1 ? "Johnson" : "uniform";
+		},
 	},
 	sphericalFreedraw: { field: "sphericalFreedraw", surface: "sphereEdges", kNoun: EDGE_ORBITS },
 	// The spherical bubble boards draw on the ordinary sphere surface, not the edge-overlay one: a bubble

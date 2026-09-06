@@ -180,7 +180,17 @@ const NAMED: Record<string, string> = {
 	"spx-solid": "Regular polygons",
 	// One row for the whole star shelf; the k rows beneath split it (52 at k=1, 37 at k=2). Density is on
 	// every card and in every record — it is just no longer the axis, which is what AL asked for.
-	sst: "Star polyhedra",
+	// ⚑ Its k = 1 row gained the three star-faced HEMIPOLYHEDRA on 2026-08-30 and is NOT named for them:
+	// 52 of its 55 members are ordinary uniform star polyhedra. Only the non-convex shelf's k = 1 row,
+	// which is nothing but hemipolyhedra, carries that noun.
+	// ⚑ THE SYMBOL IS THE POINT (AL, 2026-08-31). Two shelves now hold star-faced solids and the word
+	// "star" alone does not say which star: this one's faces are the {n/d} of Schlafli, n sides that
+	// CROSS, drawn in one stroke, one corner angle. Its sibling's are the simple 2n-gon outline.
+	sst: "Star polyhedra {n/d}",
+	// The other star, written the way the cards and the census write it: 5*, 8*, 10*. A simple 2n-gon
+	// alternating a sharp point with a REFLEX dent — no self-intersection, and no gcd(n,d) = 1 either,
+	// which is why this shelf can hold the outline of a compound like {6/2} that is not a polygon at all.
+	"sis-solid": "Star polyhedra n*",
 	// The star shelf's sibling, and the non-convex half of the same face-type split the convex side makes:
 	// every face here is an ordinary regular polygon and the SOLID is what bends past pi, where the star
 	// shelf's faces are the {n/d} themselves. Unnamed by design; nothing enumerates this class.
@@ -189,7 +199,23 @@ const NAMED: Record<string, string> = {
 	// harvest brought a solid that HAS a circumsphere (ncx-7-15-10-a), so the label described 67 of 68 and
 	// a shelf name has to be true of the shelf. The circumsphere is still measured per solid and still
 	// decides whether the spherical view is offered; it is not what these are.
+	// ⚑ Its k = 1 row is SIX of the nine HEMIPOLYHEDRA (2026-08-30), and it was empty until they landed.
+	// k = 1 regular-faced means vertex-transitive means uniform, so that row could only ever hold the
+	// uniform non-convex solids, and the ones with a face through the centre are the ones no other shelf
+	// can take — the star shelf orders by density and a central face has none. The other three of the
+	// nine carry a {5/2} or {10/3} face and file under "sst" with the rest of the star-faced records,
+	// because that is the split these two headings already make. See lib/render/hemiSolids.ts.
 	"spn-solid": "Regular polygons",
+	// Genus 1: the surface closes at V - E + F = 0. Its own row and not a facet under the
+	// non-convex one, because the topology is what these ARE — every other solid in the atlas,
+	// star and non-convex included, is a map on a sphere.
+	"spt-solid": "Toroidal",
+	// …and one row per genus above it. Written over a RANGE and not over the genera that happen to
+	// exist today: the search that produces these is still running, a genus with no records simply
+	// never draws a row, and the alternative is a code change every time the run finds a new one.
+	...Object.fromEntries(
+		Array.from({ length: 23 }, (_, i) => [`spg${i + 2}-solid`, `Genus ${i + 2}`]),
+	),
 	// The two hyperbolic-poly families are NOT here either: their boards carry a label, so "3.4.7.4
 	// tilings" and "{3,7} tilings" are derived below off HYP_POLY_BOARDS.
 	// Hyperbolic edge systems: one sub per base tiling.

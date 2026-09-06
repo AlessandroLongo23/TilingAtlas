@@ -143,10 +143,26 @@ describe("sub families", () => {
 	// The star shelf is ONE sub now, not one per density (AL, 2026-08-21) — the k rows below it divide it
 	// instead. What still has to hold is that it is the whole of the non-convex family and nothing else
 	// lands there: every star polyhedron is non-convex, and every other spherical board is convex.
+	// "spt-solid" joined them on 2026-08-25 (the TOROIDAL solids, genus 1) and the "spg<g>-solid" rows
+	// with it, one per genus above. Non-convex by the same argument as the rest — a saddle vertex is
+	// non-convex by definition — and contiguous, since familyOfSub can only gather a run.
 	it("files the star shelf and its no-circumsphere sibling as the non-convex family", () => {
 		expect(SUB_ORDER).toContain("sst");
 		expect(familyOfSub("sst")).toBe("sph-nonconvex");
-		expect(SUB_ORDER.filter((s) => familyOfSub(s) === "sph-nonconvex")).toEqual(["sst", "spn-solid"]);
+		const nonconvex = SUB_ORDER.filter((s) => familyOfSub(s) === "sph-nonconvex");
+		// The genus rows are declared over a RANGE, not over the genera that exist today, so assert the
+		// shape and not the length: the three named rows first, then one row per genus from 2 up, in order.
+		// ⚑ "hemi-solid" was a fourth row here for part of 2026-08-30 and is NOT one any more. The nine
+		// hemipolyhedra are a k row, not a sub: the six with all-convex faces are "spn-solid" at k = 1
+		// and the three with a {n/d} face are "sst" at k = 1, split by face type the way those two
+		// headings already split (AL). Asserted as an absence so the row cannot quietly grow back.
+		// ⚑ FOUR named rows since 2026-08-31: "sis-solid" joined between the star shelf and its
+		// no-circumsphere sibling. Its faces are stars that do NOT cross themselves — the simple 2n-gon
+		// outline — so it belongs beside "sst" and nowhere near the CONVEX heading, which is where it
+		// landed until AL said so ("they are not johnson solids").
+		expect(nonconvex.slice(0, 4)).toEqual(["sst", "sis-solid", "spn-solid", "spt-solid"]);
+		expect(nonconvex).not.toContain("hemi-solid");
+		expect(nonconvex.slice(4)).toEqual(nonconvex.slice(4).map((_, i) => `spg${i + 2}-solid`));
 		// …and the convex family is the other three spherical shelves, contiguous so the tree can gather
 		// them in one run (which tests/catalogue-sub-family.test.ts asserts generally).
 		// Convex is the reference solids plus the halved boards. (The spherical 3.4.n.4 boards were here

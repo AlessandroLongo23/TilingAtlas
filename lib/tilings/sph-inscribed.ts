@@ -19,6 +19,11 @@
 // the same test tools/ctrnact-oracle/gen_johnson_euclid.py runs, ported so the shelf can ask it of any
 // record without a build step.
 
+// The one import here, and it is data the generator measured: which of the nine hemipolyhedra carry a
+// {n/d} face. That decides the shelf below, and hand-listing three ids in a routing function is exactly
+// how a shelf and its generator drift apart.
+import { HEMI_STAR_FACED } from "@/lib/render/hemiSolids";
+
 type V3 = readonly [number, number, number] | readonly number[];
 
 /**
@@ -103,6 +108,33 @@ export function isInscribed(vertices: readonly V3[], tol = 1e-4): boolean {
  * ncx-7-15-10-a arrived with one. hasSphereView consults NCX_INSCRIBED; the prefix rule is gone.
  */
 export const SPH_NOT_INSCRIBED: ReadonlySet<string> = new Set([
+	// ⚑ THE ISOTOXAL SHELF, ALL 19, and not one of them is close: they miss a fitted sphere by
+	// 0.10 to 0.45 of their radius. It is structural rather than numerical. An isotoxal star face has a
+	// sharp POINT and a reflex DENT, and those are different vertices of the solid at different
+	// distances from the centre — every record here has exactly two distinct vertex radii — so no one
+	// sphere passes through them and there is no centre to project a spherical view from. AL's own
+	// worked example is the clearest case: iso-80-150-72 puts its 20 star points at radius 1 and its 60
+	// dents at 0.827794. The widest miss is the {12/5} family at 0.44 to 0.45, the narrowest the {12/2}
+	// prism at 0.10 — the sharper the star's point, the further its dents fall inside.
+	"iso-120-240-104",
+	"iso-132-300-152-a",
+	"iso-132-300-152-b",
+	"iso-140-300-144-a",
+	"iso-140-300-144-b",
+	"iso-15-30-17",
+	"iso-20-30-12",
+	"iso-20-40-22",
+	"iso-24-36-14",
+	"iso-32-48-18",
+	"iso-32-48-18-a",
+	"iso-40-60-22",
+	"iso-40-60-22-a",
+	"iso-40-60-22-b",
+	"iso-48-72-26-a",
+	"iso-48-72-26-b",
+	"iso-48-72-26-c",
+	"iso-48-72-26-d",
+	"iso-80-150-72",
 	"augmented-dodecahedron",
 	"augmented-hexagonal-prism",
 	"augmented-pentagonal-prism",
@@ -174,6 +206,32 @@ export const SPH_NOT_INSCRIBED: ReadonlySet<string> = new Set([
  * card; it is not an axis.
  */
 export function sphericalSolidSub(solid: string): string {
+	// Genus is the axis past the sphere: "tor-" is genus 1 (its permalinks predate the rest) and
+	// "gen<g>-" carries its own. One row per genus, because a genus-3 and a genus-9 solid are no
+	// more the same shelf than a sphere and a torus are.
+	// THE HEMIPOLYHEDRA SPLIT BY FACE TYPE, which is the split these two shelves already make between
+	// them: the non-convex shelf is the one whose faces are ordinary regular polygons and whose SOLID
+	// bends past pi, the star shelf is the one whose FACES are the {n/d}. So the six all-convex-faced
+	// hemipolyhedra fill the non-convex shelf's k = 1 row and the three star-faced ones go to the star
+	// shelf's (AL, 2026-08-30). They were briefly all nine on the non-convex row, which put three
+	// records with {5/2} and {10/3} faces under a heading reading "Regular polygons".
+	//
+	// The k = 1 row was empty on the non-convex side because the CLASS was missing — k = 1 with regular
+	// faces means vertex-transitive means uniform, so nothing but the uniform non-convex solids could
+	// ever have filled it. On the star side k = 1 already holds 52 records, which is why that row is
+	// NOT labelled "hemipolyhedra": three of its members are, and the other 52 are not.
+	if (solid.startsWith("hemi-")) return HEMI_STAR_FACED.has(solid) ? "sst" : "spn-solid";
+	if (solid.startsWith("tor-")) return "spt-solid";
+	const g = /^gen(\d+)-/.exec(solid);
+	if (g) return `spg${g[1]}-solid`;
+	// ⚑ THE ISOTOXAL SHELF IS THE STAR SHELF'S OTHER SIBLING, not a convex row (AL, 2026-08-31: they
+	// "are not johnson solids"). Without this they fell through to "spx-solid" — Platonic, Archimedean,
+	// prisms, Johnson — which is the CONVEX heading, and a face with a 252-degree reflex dent is not
+	// convex by any reading. The split that already exists here is by FACE TYPE: "spn-solid" is the
+	// shelf whose faces are ordinary regular polygons and whose SOLID bends past pi, "sst" the one whose
+	// FACES are the {n/d}. These are the third case — faces that are stars but do NOT cross themselves —
+	// so they take their own row beside "sst" rather than crowding either.
+	if (solid.startsWith("iso-")) return "sis-solid";
 	return solid.startsWith("ncx-") ? "spn-solid" : "spx-solid";
 }
 
@@ -188,6 +246,15 @@ export function sphericalSolidSub(solid: string): string {
  * solids without one are drawn as the polyhedra they are.
  */
 export function hasSphereView(solid: string | undefined | null): boolean {
+	// NOTHING PAST THE SPHERE has one, and this is a theorem and not a measurement: the round view
+	// is a radial projection onto a circumsphere, and a surface of genus >= 1 does not project onto
+	// a sphere at all. No genus record is ever offered it.
+	if (solid?.startsWith("tor-") || /^gen\d+-/.test(solid ?? "")) return false;
+	// A hemipolyhedron is the one case where the MEASUREMENT would say yes and be wrong. Its vertices
+	// are its parent quasiregular solid's, so they do sit on a common sphere — but a hemi face's plane
+	// contains the centre, so radial projection sends it to a great circle instead of a spherical
+	// polygon, and V - E + F is never 2 anyway. The view is withheld by id, not by the fit.
+	if (solid?.startsWith("hemi-")) return false;
 	if (solid?.startsWith("ncx-")) return NCX_INSCRIBED.has(solid);
 	return !!solid && !SPH_NOT_INSCRIBED.has(solid);
 }
@@ -198,13 +265,17 @@ export function hasSphereView(solid: string | undefined | null): boolean {
  * The "ncx-" shelf is listed the other way round from `SPH_NOT_INSCRIBED` above, because the two
  * populations sit on opposite sides of the same question: a convex regular-faced solid usually has a
  * circumsphere and the set above names the exceptions, while an "ncx-" one almost never does and this
- * set names those. Sixty-eight of the sixty-nine have none, which is the whole reason develop_spherical
+ * set names those. All but one of the 278 have none, which is the whole reason develop_spherical
  * could not see this shelf at all.
  *
- * ⚑ It was a bare `return false` on the prefix until the k=3 search landed, on the stated grounds that
- * "NOT ONE of them has a circumsphere". That was true of the 34 the k=2 sweep produced and false the
- * moment 35 more arrived: ncx-7-15-10-a has one, and the prefix rule denied it a view of a sphere it
- * actually has. A property measured across a partial corpus is not a property of the shelf.
- * sph-inscribed.test.ts recomputes both directions from the vertices, so neither can drift again.
+ * ⚑ It has been two entries and it has been one, and BOTH facts were about the corpus and not about the
+ * shelf. It was a bare `return false` on the prefix until the k=3 search landed, on the stated grounds
+ * that "NOT ONE of them has a circumsphere" — true of the 34 the k=2 sweep produced, false the moment 35
+ * more arrived, and ncx-7-15-10-a was denied a view of a sphere it actually had. Then the star run of
+ * 2026-08-24 brought ncx-120-240-112 and it read two. Then the degeneracy gate of the same day took
+ * ncx-7-15-10-a off the shelf altogether: it claims seven vertices and has four distinct points, so
+ * whatever sphere it fitted was a sphere through a folded surface. One entry today, for the third time
+ * for a third reason. sph-inscribed.test.ts recomputes both directions from the vertices, which is why
+ * none of those three states could be asserted anywhere but here.
  */
-export const NCX_INSCRIBED: ReadonlySet<string> = new Set(["ncx-7-15-10-a"]);
+export const NCX_INSCRIBED: ReadonlySet<string> = new Set(["ncx-120-240-112"]);

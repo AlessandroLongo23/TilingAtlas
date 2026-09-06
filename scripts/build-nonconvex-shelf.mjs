@@ -11,8 +11,10 @@
 // SURGICAL, not a rewrite of the file: the ncx rows are replaced in place and every other record —
 // Platonic, Archimedean, prism, Johnson — is left exactly as it was, byte for byte where unchanged.
 //
-// ⚑ ORDER MATTERS. This rebuilds each ncx record from its row, so it does NOT carry the `derivation`
-// field that annotate_derivation.py writes; run that AFTER this, never before. The full rebuild is:
+// ⚑ ORDER NO LONGER MATTERS, since 2026-08-24: the ncx rows are MERGED, so any field this script does
+// not own — `derivation` from annotate_derivation.py, `polygonSpecies` and `tilePeriods` from the
+// species pass — survives a rebuild. It used to replace them wholesale and delete those. The canonical
+// rebuild is still:
 //   python3 tools/ctrnact-oracle/gen_nonconvex_shelf.py --emit
 //   node scripts/build-nonconvex-shelf.mjs --write
 //   python3 tools/ctrnact-oracle/annotate_derivation.py --write
@@ -75,6 +77,21 @@ const built = rows.map((r) => ({
 const before = atlas.records.filter((x) => x.id.startsWith("sph-ncx-"));
 const others = atlas.records.filter((x) => !x.id.startsWith("sph-ncx-"));
 const seen = new Map(before.map((x) => [x.id, x]));
+
+// MERGE, do not replace. This rebuilds the fields it owns and carries every OTHER field on the row
+// through untouched, because the atlas rows accumulate annotations from later passes that this script
+// knows nothing about: `derivation` from annotate_derivation.py, and `polygonSpecies` / `tilePeriods`
+// from the species pass. Replacing wholesale silently deleted them, which is why the header above had
+// to say "run annotate_derivation AFTER this, never before" — an ordering constraint that only existed
+// because of this line. Merging removes the constraint instead of documenting it.
+//
+// A field the builder DOES own always wins, so a stale census or note is still corrected.
+for (const x of built) {
+	const old = seen.get(x.id);
+	if (!old) continue;
+	for (const [k, v] of Object.entries(old)) if (!(k in x)) x[k] = v;
+}
+
 const added = built.filter((x) => !seen.has(x.id));
 const gone = before.filter((x) => !built.some((y) => y.id === x.id));
 const changed = built.filter((x) => {
