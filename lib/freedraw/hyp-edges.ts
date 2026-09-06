@@ -92,6 +92,35 @@ export const HYP_EDGES_BASES: HypEdgesBase[] = [
 	{ id: "4447", label: "4.4.4.7", eagerKs: [1, 2], lazyKs: [4, 5] },
 	{ id: "4455", label: "4.5.4.5", eagerKs: [1, 2, 3, 4], lazyKs: [5] }, // k=6 is 31,605 tilings (~38 MB) — omitted
 	{ id: "4456", label: "4.6.4.5", eagerKs: [1, 2, 3], lazyKs: [4, 5] },
+	// Marek's 2026-08-29 drop: eight boards, 282,289 certificates, 0 develop failures on every one.
+	// Two things separate them from every base above.
+	//
+	// FIRST, an id here is a vertex COMBINATION and not one board. 33346, 33355, 33356, 33445 and 33446
+	// each carry several cyclic configurations of their multiset — 33445 has four — and a SINGLE
+	// certificate mixes them, so the underlying board is not uniform and cannot be split per board the
+	// way `4435` split into three solids. That is level 4 ("Combination") on Marek's own ladder, which
+	// is why `levels.txt` came in the same drop. The label therefore names the combination in exponent
+	// form and never one configuration, or the shelf would claim a board that is not there. Nothing
+	// downstream minds: develop_hyp_edges reads `config` only as a multiset.
+	//
+	// SECOND, only 33337 ships a census, so `complete` is UNKNOWN for the other seven and the shipped k
+	// are what the drop carries, not what the board holds. This shelf has no `complete` field to say so
+	// (SPH_EDGES_BOARDS has one); until it does, that claim lives here and in the README, and no row
+	// below should be read as an exhausted catalogue.
+	//
+	// EVERY DEVELOPED SLICE SHIPS. The two big ones here (33355 k=5, 33445 k=5) were briefly held back
+	// on their PACKED size, which was the wrong measure: what a viewer waits for is the wire, and these
+	// gzip to 8.9 and 8.4 MB because a dart array is thousands of small repeated integers. They are lazy,
+	// so nothing pays for them until their k is opened. Sizing a slice by its bytes on disk is how a
+	// catalogue ends up with holes in it — see CLAUDE.md, "everything we have goes in the atlas".
+	{ id: "33337", label: "3^4.7", eagerKs: [1], lazyKs: [] }, // k=1 only: the census counts 359,104 more at k=7 and the zip ships none of them
+	{ id: "33346", label: "3^3.4.6", eagerKs: [1, 2, 3], lazyKs: [4, 5] }, // k=4 is 4.0 MB, k=5 is 15.0 MB -> lazy
+	{ id: "33355", label: "3^3.5^2", eagerKs: [1, 3, 4], lazyKs: [5] }, // k=5 is 90,387 tilings — 82 MB packed, 8.9 MB gzipped over the wire
+	{ id: "33356", label: "3^3.5.6", eagerKs: [1, 2], lazyKs: [5] }, // k=5 is 30.8 MB -> lazy
+	{ id: "33445", label: "3^2.4^2.5", eagerKs: [4], lazyKs: [5] }, // k=5 is 78,019 tilings — 78 MB packed, 8.4 MB gzipped over the wire
+	{ id: "33446", label: "3^2.4^2.6", eagerKs: [2], lazyKs: [3, 4] }, // k=3 is 4.2 MB, k=4 is 2.6 MB -> lazy
+	{ id: "34444", label: "3.4^4", eagerKs: [1, 2], lazyKs: [3] }, // k=3 is 15.3 MB -> lazy
+	{ id: "333334", label: "3^5.4", eagerKs: [1, 2, 3], lazyKs: [4] }, // k=4 is 24.7 MB -> lazy
 	{ id: "37", label: "{3,7}", eagerKs: [1, 2], lazyKs: [] }, // k=3 is 29k tilings (~40 MB) — omitted
 	{ id: "38", label: "{3,8}", eagerKs: [1], lazyKs: [] }, // k=2 is 13.5k (~13 MB) — omitted
 	{ id: "45", label: "{4,5}", eagerKs: [1, 2], lazyKs: [] },

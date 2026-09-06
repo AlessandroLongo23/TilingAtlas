@@ -93,6 +93,22 @@ GRIDS = {
     # assumption, and PatchComplex reads face size off the letter ("A6" -> 6 corners), so it needed
     # nothing new. step = None is what selects that path.
     "hex": {"units": {"A2": 0, "A6": 4}, "step": None, "axes": None, "axis_names": None},
+    # The two ARCHIMEDEAN Euclidean boards, from Marek's `pt_edges_4436.exe` / `pt_edges_488.exe`. Both
+    # take the patch path for hex's reason — the rhombitrihexagonal tiling has 6 vertices per unit cell
+    # and the truncated square tiling 4, so neither vertex set is a lattice a bitmask could index — and
+    # both keep the ordinary digon convention (a digon marks a DRAWN edge; undrawn edges vanish and the
+    # faces merge), which is the default and needs no knob.
+    #
+    # 3.4.6.4 stays in Z[zeta12]: its corners are 60/90/120 degrees, so in 30-degree units A3 = 2,
+    # A4 = 3, A6 = 4, and the figure closes at 2 + 3 + 4 + 3 = 12.
+    "4436": {"units": {"A2": 0, "A3": 2, "A4": 3, "A6": 4},
+             "step": None, "axes": None, "axis_names": None},
+    # 4.8.8 does NOT. Its corners are 90 and 135 degrees and 135 is not a multiple of 30, so the whole
+    # board is off the 12-direction ring — which is why this one sat unshipped and not because it needed
+    # new geometry. It needs the ring sch244 already brought in: in 45-degree units A4 = 2, A8 = 3, and
+    # the figure closes at 2 + 3 + 3 = 8. Every edge is a unit, so there is no `edge_len` to declare.
+    "488": {"units": {"A2": 0, "A4": 2, "A8": 3},
+            "step": None, "axes": None, "axis_names": None, "ring": 8},
     # The (2,3,6) SCHWARZ TRIANGLE grid -- Marek's pt_schwarz_edges_236.exe. Three things make it
     # unlike every grid above, and each one is a knob added below, not a new code path:
     #
@@ -1158,7 +1174,8 @@ def develop_block(cert, grid):
     return out, len(combos), reasons
 
 
-PATCH_ID_PREFIX = {"ts": "fdts", "hex": "fdh", "sch236": "sch236", "sch244": "sch244"}
+PATCH_ID_PREFIX = {"ts": "fdts", "hex": "fdh", "sch236": "sch236", "sch244": "sch244",
+                   "4436": "fd4436", "488": "fd488"}
 
 
 def run_patch(certs, args, grid):
@@ -1218,6 +1235,10 @@ def run_patch(certs, args, grid):
             print(f"wrote {path}: {len(recs)} patches, {sz/1e6:.1f} MB")
 
 
+# `<tag>solver_<k>_<alphabet>[_o]_<n>.txt` — the shape every one of Marek's certificate files has.
+CERT_FILE = re.compile(r"^.+solver_\d+_[A-Za-z0-9]+(_o)?_\d+\.txt$")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("source")
@@ -1228,8 +1249,12 @@ def main():
                     help="patch grids: print a progress/ETA line every N certificates")
     args = ap.parse_args()
 
+    # Marek ships the census (`solution_list.txt`) next to the certificates. It is a .txt and it is not
+    # a certificate, so a bare *.txt sweep feeds the parser a header it decodes into a block with an
+    # empty rneig and the develop dies on an IndexError 18,000 certificates in. Both hyperbolic drivers
+    # already gate on the certificate filename; this one now does too.
     paths = ([os.path.join(args.source, p) for p in sorted(os.listdir(args.source))
-              if p.endswith(".txt")] if os.path.isdir(args.source) else [args.source])
+              if CERT_FILE.match(p)] if os.path.isdir(args.source) else [args.source])
     certs = []
     for p in paths:
         certs.extend(parse_file(p))

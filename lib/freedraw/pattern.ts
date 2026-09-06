@@ -48,7 +48,10 @@
 // NOT a fundamental domain for the translations — it spans two of them — so the period is recovered
 // from the develop and checked, never taken from the record (lib/isohedral/edgePatch.ts).
 /** The boards the shipped freedraw CATALOGUE covers: one browser, one filter, one set of shards. */
-export type FreedrawCatalogueGrid = "square" | "triangle" | "ts" | "hex" | "sch236" | "sch244";
+export type FreedrawCatalogueGrid =
+	| "square" | "triangle" | "ts" | "hex" | "sch236" | "sch244"
+	/** The two ARCHIMEDEAN boards: 3.4.6.4 and 4.8.8, both patch grids (see below). */
+	| "4436" | "488";
 /** Every board a pattern can decorate. Wider than the catalogue: the two parametric boards are their own
  *  shelves (`pen-1`, `ih-1`), reached from the Edge patterns tab and not from the freedraw browser, so
  *  they must not appear in that browser's grid pickers — which is what the two types keep apart. */
@@ -131,7 +134,8 @@ export interface FreedrawPattern {
 	orbit: number[];
 	/** Which grid the bits decorate. Absent = "square" (the original catalogue predates the field). */
 	grid?: FreedrawGrid;
-	/** Patch grids only: the explicit per-period geometry. Present when grid is "ts", "hex" or "sch236". */
+	/** Patch grids only: the explicit per-period geometry. Present on every grid whose vertex set is not a
+	 *  lattice: "ts", "hex", "sch236", "sch244", "4436" and "488". */
 	patch?: FreedrawPatch;
 }
 
@@ -176,20 +180,44 @@ export const FREEDRAW_EAGER_FILES = [
 	"/freedraw/sch236-solutions-k4.json",
 	"/freedraw/sch244-solutions-k2.json",
 	"/freedraw/sch244-solutions-k3.json",
+	// The two Archimedean boards, 2026-08-29. 3.4.6.4 developed 18,992/18,992 and 4.8.8 71,331/71,331,
+	// both with 0 failures, and 4.8.8 reproduces every per-k count in its census. On each the digon-free
+	// slice — nothing drawn, so the bare underlying tiling — came back exactly once per k, which is the
+	// check that says the grid is the right one and not merely a consistent one.
+	"/freedraw/4436-solutions-k1.json",
+	"/freedraw/4436-solutions-k2.json",
+	"/freedraw/4436-solutions-k3.json",
+	"/freedraw/4436-solutions-k4.json",
+	"/freedraw/488-solutions-k1.json",
+	"/freedraw/488-solutions-k2.json",
+	"/freedraw/488-solutions-k3.json",
+	"/freedraw/488-solutions-k4.json",
+	"/freedraw/488-solutions-k5.json",
+	"/freedraw/488-solutions-k6.json",
+	"/freedraw/488-solutions-k7.json",
 ];
 
-/** Hexagonal-grid k slices that load on demand: k=7 (6.4 MB), k=8 (17.6 MB), k=9 (58 MB). */
-export const FREEDRAW_HEX_LAZY_KS = [7, 8, 9];
-
-/** The Schwarz (2,4,4) board's dense tail: k=4 is 12,361 patterns / 18.8 MB. */
-export const FREEDRAW_SCH244_LAZY_KS = [4];
+/** The dense tails, per shard prefix: k slices too big to load with the atlas, fetched when that k comes
+ *  into view. One row per board, so a new grid's tail is a row and not another `if` below. Sizes are
+ *  what is on disk after scripts/atlas-compact.mjs, which is where the two Archimedean boards fit at
+ *  all — a freedraw patch packs to about a fifth of the developer's raw output.
+ *
+ *    hex     k=7, k=8 (5.1 MB), k=9 (16.7 MB)
+ *    sch244  k=4 (5.8 MB)
+ *    4436    k=5 (7.2 MB), k=6 (9.5 MB)
+ *    488     k=8 (7.8 MB), k=9 (11.8 MB), k=10 (25.2 MB) */
+export const FREEDRAW_LAZY_KS: Record<string, number[]> = {
+	hex: [7, 8, 9],
+	sch244: [4],
+	"4436": [5, 6],
+	"488": [8, 9, 10],
+};
 
 /** Lazy (url, k) shards to fetch when vertex-count `k` comes into view. */
 export function freedrawLazyShardsForK(k: number): { url: string; k: number }[] {
-	const out: { url: string; k: number }[] = [];
-	if (FREEDRAW_HEX_LAZY_KS.includes(k)) out.push({ url: `/freedraw/hex-solutions-k${k}.json`, k });
-	if (FREEDRAW_SCH244_LAZY_KS.includes(k)) out.push({ url: `/freedraw/sch244-solutions-k${k}.json`, k });
-	return out;
+	return Object.entries(FREEDRAW_LAZY_KS)
+		.filter(([, ks]) => ks.includes(k))
+		.map(([prefix]) => ({ url: `/freedraw/${prefix}-solutions-k${k}.json`, k }));
 }
 
 export const cosetCount = (p: Pick<FreedrawPattern, "a" | "d">) => p.a * p.d;

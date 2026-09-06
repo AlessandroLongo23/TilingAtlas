@@ -39,7 +39,7 @@ REPORTS = os.path.join(ROOT, "experiments", "results")
 # census, since the solver enumerated both in one run.
 CORPUS_OF = {
     "443": "edges_443", "445": "edges_445", "446": "edges_446", "447": "edges_447",
-    "448": "edges_448", "4410": "edges_4410", "4411": "edges_4411",
+    "448": "edges_448", "4410": "edges_4410", "4411": "edges_4411", "4412": "edges_4412",
     "663": "edges_663", "664": "edges_664", "665": "edges_665",
     "3334": "edges_3334", "3335": "edges_3335", "3336": "edges_3336", "3337": "edges_3337",
     "3339": "edges_3339", "33310": "edges_33310",

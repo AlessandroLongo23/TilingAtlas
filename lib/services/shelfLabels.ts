@@ -115,6 +115,10 @@ const NAMED: Record<string, string> = {
 	ts: "Triangle + square grid",
 	sch236: "Schwarz (2,3,6) grid",
 	sch244: "Schwarz (2,4,4) grid",
+	// Named after the vertex figure, like the two Schwarz boards are named after their triple: the id is
+	// Marek's digit string and "4436" says nothing to a reader.
+	"4436": "3.4.6.4 grid",
+	"488": "4.8.8 grid",
 	// The two PARAMETRIC namespaces are NOT here: their boards carry a label of their own, so the entries
 	// are derived below and a new board arrives named. Marek sends these in batches — IH05 and IH06 landed
 	// while this file was being written, IH07 and IH08 an hour later — and a hand-written row per board is

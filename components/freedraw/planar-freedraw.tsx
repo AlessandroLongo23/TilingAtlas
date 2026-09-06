@@ -53,6 +53,8 @@ const GRID_OPTIONS: { value: FreedrawGrid; label: string }[] = [
 	{ value: "ts", label: "Tri + squares" },
 	{ value: "sch236", label: "Schwarz 236" },
 	{ value: "sch244", label: "Schwarz 244" },
+	{ value: "4436", label: "3.4.6.4" },
+	{ value: "488", label: "4.8.8" },
 ];
 
 // k ranges per grid track what the catalogues hold: squares to k=5, triangles to k=4, the combined
@@ -72,6 +74,10 @@ const K_OPTIONS: Record<FreedrawCatalogueGrid, { value: number; label: string }[
 	// have here. Add 5 back with the data, not before.
 	sch236: [0, 3, 4].map((k) => ({ value: k, label: k ? String(k) : "All" })),
 	sch244: [0, 2, 3, 4].map((k) => ({ value: k, label: k ? String(k) : "All" })),
+	// The two Archimedean boards, both solved from k=1. 3.4.6.4 stops at 6 and 4.8.8 at 10, which is
+	// where Marek's runs stop, not where the boards do.
+	"4436": [0, 1, 2, 3, 4, 5, 6].map((k) => ({ value: k, label: k ? String(k) : "All" })),
+	"488": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((k) => ({ value: k, label: k ? String(k) : "All" })),
 };
 
 // The face classes, one has/none/any row each (they COMBINE — "a strip is fine, an unbounded sheet is
@@ -99,7 +105,7 @@ const REGULARITY_OPTIONS: { value: FreedrawFilter["regularity"]; label: string }
 	{ value: "unit", label: "k-uniform" },
 ];
 
-const POLYGON_LABEL: Record<RegularKind, string> = { 3: "△ 3", 4: "▢ 4", 6: "⬡ 6", 12: "12-gon" };
+const POLYGON_LABEL: Record<RegularKind, string> = { 3: "△ 3", 4: "▢ 4", 6: "⬡ 6", 8: "8-gon", 12: "12-gon" };
 
 const FILL_OPTIONS = FILL_MODES.map(({ value, label }) => ({ value, label: label.toLowerCase() }));
 
@@ -166,6 +172,28 @@ const CATALOGUE: Record<FreedrawCatalogueGrid, { url: string; ks: number[]; heav
 		{ url: "/freedraw/hex-solutions-k7.json", ks: [7], heavy: true },
 		{ url: "/freedraw/hex-solutions-k8.json", ks: [8], heavy: true },
 		{ url: "/freedraw/hex-solutions-k9.json", ks: [9], heavy: true },
+	],
+	// 3.4.6.4 and 4.8.8, 2026-08-29. Same `heavy` policy: the tails stay out of the "All" fetch and
+	// load when their own k chip is picked.
+	"4436": [
+		{ url: "/freedraw/4436-solutions-k1.json", ks: [1] },
+		{ url: "/freedraw/4436-solutions-k2.json", ks: [2] },
+		{ url: "/freedraw/4436-solutions-k3.json", ks: [3] },
+		{ url: "/freedraw/4436-solutions-k4.json", ks: [4] },
+		{ url: "/freedraw/4436-solutions-k5.json", ks: [5], heavy: true },
+		{ url: "/freedraw/4436-solutions-k6.json", ks: [6], heavy: true },
+	],
+	"488": [
+		{ url: "/freedraw/488-solutions-k1.json", ks: [1] },
+		{ url: "/freedraw/488-solutions-k2.json", ks: [2] },
+		{ url: "/freedraw/488-solutions-k3.json", ks: [3] },
+		{ url: "/freedraw/488-solutions-k4.json", ks: [4] },
+		{ url: "/freedraw/488-solutions-k5.json", ks: [5] },
+		{ url: "/freedraw/488-solutions-k6.json", ks: [6] },
+		{ url: "/freedraw/488-solutions-k7.json", ks: [7] },
+		{ url: "/freedraw/488-solutions-k8.json", ks: [8], heavy: true },
+		{ url: "/freedraw/488-solutions-k9.json", ks: [9], heavy: true },
+		{ url: "/freedraw/488-solutions-k10.json", ks: [10], heavy: true },
 	],
 };
 

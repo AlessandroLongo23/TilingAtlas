@@ -135,7 +135,7 @@ const readTri = (raw: string | null): Tri =>
 
 // Exhaustive by construction: a new member of FreedrawGrid fails to compile here instead of silently
 // becoming an unshareable link.
-const GRIDS: Record<FreedrawCatalogueGrid, true> = { square: true, triangle: true, hex: true, ts: true, sch236: true, sch244: true };
+const GRIDS: Record<FreedrawCatalogueGrid, true> = { square: true, triangle: true, hex: true, ts: true, sch236: true, sch244: true, "4436": true, "488": true };
 const isGrid = (raw: string | null): raw is FreedrawGrid =>
 	raw !== null && Object.hasOwn(GRIDS, raw);
 

@@ -81,6 +81,8 @@ BOARDS = {
              "vef": (20, 30, 12), "solver": "pt_edges_4410.exe"},
     "4411": {"config": [4, 4, 11], "label": "4.4.11", "solid": "hendecagonal prism",
              "vef": (22, 33, 13), "solver": "pt_edges_4411.exe"},
+    "4412": {"config": [4, 4, 12], "label": "4.4.12", "solid": "dodecagonal prism",
+             "vef": (24, 36, 14), "solver": "pt_edges_4412.exe"},
     "663": {"config": [6, 6, 3], "label": "3.6.6", "solid": "truncated tetrahedron",
             "vef": (12, 18, 8), "solver": "pt_edges_663.exe"},
     "664": {"config": [6, 6, 4], "label": "4.6.6", "solid": "truncated octahedron",

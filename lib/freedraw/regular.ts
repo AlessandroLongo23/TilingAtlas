@@ -8,6 +8,14 @@
 // not a non-negative integer combination of 60° and 90°, so 4.8.8 has no dissection into unit
 // triangles and squares — the same lone exception as t1002 under the settled 12-direction decision.
 //
+// THE OCTAGON IS NOW REACHABLE, on exactly one board. That last paragraph is a statement about the
+// TRIANGLE/SQUARE grids, and it stays true of them. The 4.8.8 board added on 2026-08-29 does not sit on
+// a triangle/square grid at all — it lives in ℤ[ζ₈], which is precisely why it needed its own ring —
+// and its octagons are base faces. Leaving 8 out of REGULAR_KINDS made `classifyRegular` return null
+// for every one of them, so the undecorated truncated square tiling, an Archimedean tiling, came back
+// `allRegular: false`. 8 is in the list for that board and unreachable on every other, so no other
+// board's classification moves.
+//
 // THE TRAP. A tile is a component of the underlying faces glued across UNDRAWN edges, so its boundary
 // is the DRAWN edges it touches, NOT the outer hull of its cells. A drawn edge with the same component
 // on both sides is a slit reaching into the tile; the boundary walk crosses it twice and the tile is
@@ -26,8 +34,9 @@
 import { componentLifts, type FaceAnalysis, type FaceInfo } from "./faces";
 import { coset, gridOf, type FreedrawGrid, type FreedrawPattern } from "./pattern";
 
-/** Regular polygons reachable on a triangle/square grid. The octagon provably cannot appear. */
-export const REGULAR_KINDS = [3, 4, 6, 12] as const;
+/** The regular polygons a freedraw tile can be. 3/4/6/12 are what a triangle/square grid reaches; 8 is
+ *  reachable only on the 4.8.8 board, which is not one of those grids (see above). */
+export const REGULAR_KINDS = [3, 4, 6, 8, 12] as const;
 export type RegularKind = (typeof REGULAR_KINDS)[number];
 
 export interface RegularFace {

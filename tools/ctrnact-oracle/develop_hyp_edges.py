@@ -86,6 +86,19 @@ BASES = {
     "4447": {"config": [4, 4, 4, 7], "label": "4.4.4.7", "solver": "pt_edges_4447.exe"},
     "4455": {"config": [4, 5, 4, 5], "label": "4.5.4.5", "solver": "pt_edges_4455.exe"},
     "4456": {"config": [4, 6, 4, 5], "label": "4.6.4.5", "solver": "pt_edges_4456.exe"},
+    # Marek's 2026-08-29 drop. These ids are a vertex COMBINATION and not one board: 33346, 33355,
+    # 33356, 33445 and 33446 each carry several cyclic configurations, and a single certificate mixes
+    # them, so the base tiling itself is level-4 ("Combination") and cannot be split per board. Nothing
+    # downstream minds: `config` is read only as a MULTISET, for the forced l and one unit per distinct
+    # face, and the per-certificate figure drives every vertex table. `label` names the combination.
+    "33337": {"config": [3, 3, 3, 3, 7], "label": "3^4.7", "solver": "pt_edges_33337.exe"},
+    "33346": {"config": [3, 3, 4, 3, 6], "label": "3^3.4.6", "solver": "pt_edges_33346.exe"},
+    "33355": {"config": [3, 3, 5, 3, 5], "label": "3^3.5^2", "solver": "pt_edges_33355.exe"},
+    "33356": {"config": [3, 3, 5, 3, 6], "label": "3^3.5.6", "solver": "pt_edges_33356.exe"},
+    "33445": {"config": [3, 3, 4, 4, 5], "label": "3^2.4^2.5", "solver": "pt_edges_33445.exe"},
+    "33446": {"config": [3, 3, 4, 4, 6], "label": "3^2.4^2.6", "solver": "pt_edges_33446.exe"},
+    "34444": {"config": [3, 4, 4, 4, 4], "label": "3.4^4", "solver": "pt_edges_34444.exe"},
+    "333334": {"config": [3, 3, 3, 3, 3, 4], "label": "3^5.4", "solver": "pt_edges_333334.exe"},
     "37": {"config": [3, 3, 3, 3, 3, 3, 3], "label": "3^7", "solver": "pt_triangles_edges_3_7.exe"},
     "38": {"config": [3] * 8, "label": "3^8", "solver": "pt_triangles_edges_3_8.exe"},
     "45": {"config": [4, 4, 4, 4, 4], "label": "4^5", "solver": "pt_squares_edges_4_5.exe"},

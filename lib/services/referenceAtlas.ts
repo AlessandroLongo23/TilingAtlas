@@ -575,7 +575,10 @@ export const TILE_CLASS_LABEL: Record<TileClass, { short: string; long: string }
 // The two parametric boards are FreedrawGrids but NOT catalogue grids: each is its own shelf with its
 // own sub row (`pen-1` from PENT_EDGE_BOARDS, `ih-1` from IH_EDGE_BOARDS), so listing them here would
 // give them two.
-const FREEDRAW_GRID_SUBS = ["square", "triangle", "hex", "ts", "sch236", "sch244"] as const satisfies readonly FreedrawCatalogueGrid[];
+// Order matters: SUB_ORDER must keep each sub-family in ONE contiguous run (tests/catalogue-sub-family),
+// and the two Schwarz boards are family "schwarz-eu" while every other board here is family "grid". So
+// the Archimedean pair goes with the grids, not after the Schwarz pair.
+const FREEDRAW_GRID_SUBS = ["square", "triangle", "hex", "ts", "4436", "488", "sch236", "sch244"] as const satisfies readonly FreedrawCatalogueGrid[];
 // ...and this is what makes "fails to compile" true, not aspirational: `satisfies` alone would
 // accept a SHORT list. Leaving a grid out makes the Exclude non-never, so the assignment errors.
 type UnlistedGrid = Exclude<FreedrawCatalogueGrid, (typeof FREEDRAW_GRID_SUBS)[number]>;
@@ -766,7 +769,7 @@ export function familyOfSub(sub: string): SubFamily | null {
 	if (sub.startsWith("bub-")) return sub.slice(4).includes("-") ? "bubble-mixed" : "bubble-grid";
 	if (sub.startsWith("hyt-")) return hypTilingFamilyOfSub(sub) as SubFamily | null;
 	if (sub === "sch236" || sub === "sch244") return "schwarz-eu";
-	if (/^(square|triangle|hex|ts)$/.test(sub)) return "grid";
+	if (/^(square|triangle|hex|ts|4436|488)$/.test(sub)) return "grid";
 	if (/^(square|triangle|hex|ts)-\d+$/.test(sub)) return "grid-colors";
 	if (PLATONIC_SUBS.has(sub)) return "platonic";
 	return null;
@@ -1166,6 +1169,8 @@ const FREEDRAW_FINITE_NOUN: Record<FreedrawCatalogueGrid, readonly [string, stri
 	// A 45-45-90 triangle is a "abolo" — the (2,4,4) board's tile, and the standard name for a
 	// half-square polyform (Gardner, 1967).
 	sch244: ["polyabolo", "polyaboloes"],
+	"4436": ["polyform", "polyforms"],
+	"488": ["polyform", "polyforms"],
 };
 export function freedrawFamilyLabel(s: FreedrawStats, grid: FreedrawGrid = "square"): string {
 	const noun = FREEDRAW_FINITE_NOUN[grid];

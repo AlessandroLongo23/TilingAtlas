@@ -160,8 +160,8 @@ describe("URL codec", () => {
 			filter({ finite: "require", sizes: [4, 5, 12], sizeMode: "any" }),
 			filter({ grid: "triangle", k: 2, strip: "exclude", finite: "require", sizes: [6] }),
 			filter({ grid: "ts", regularity: "unit" }),
-			filter({ grid: "ts", regularity: "regular", polygons: { 3: "require", 4: "any", 6: "require", 12: "exclude" } }),
-			filter({ grid: "ts", polygons: { 3: "exclude", 4: "require", 6: "any", 12: "require" } }),
+			filter({ grid: "ts", regularity: "regular", polygons: { 3: "require", 4: "any", 6: "require", 8: "any", 12: "exclude" } }),
+			filter({ grid: "ts", polygons: { 3: "exclude", 4: "require", 6: "any", 8: "any", 12: "require" } }),
 		];
 		for (const f of cases) expect(round(f)).toEqual(f);
 	});
@@ -277,7 +277,7 @@ describe("the combined-grid catalogue — regular-polygon filter", () => {
 	it.skipIf(!have)("reproduces the tri-square oracle on the squares+triangles slice", () => {
 		// Edge-to-edge, no hexagon, no dodecagon: every tile is a unit triangle or square. This is the
 		// classical k-uniform {3,4} catalogue, so it must match the tri-square oracle palette: 4/7/17.
-		const polygons = { 3: "any", 4: "any", 6: "exclude", 12: "exclude" } as const;
+		const polygons = { 3: "any", 4: "any", 6: "exclude", 8: "exclude", 12: "exclude" } as const;
 		expect(count(all, { regularity: "unit", polygons })).toBe(28); // 4 + 7 + 17
 	});
 

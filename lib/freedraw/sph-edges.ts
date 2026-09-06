@@ -138,6 +138,10 @@ export const SPH_EDGES_BOARDS: SphEdgesBoard[] = [
 	// n-gonal prism has 2n vertices and both censuses reach k = 2n exactly.
 	{ id: "4410", config: "4.4.10", solid: "decagonal prism", eagerKs: [1, 2, 3, 5, 6, 10, 12], lazyKs: [20], complete: true, missing: [], counts: { 1: 5, 2: 3, 3: 18, 5: 136, 6: 133, 10: 1454, 12: 221, 20: 8702 } }, // k=20 is 3.1 MB -> lazy
 	{ id: "4411", config: "4.4.11", solid: "hendecagonal prism", eagerKs: [1, 2, 6, 11, 12], lazyKs: [22], complete: true, missing: [], counts: { 1: 3, 2: 1, 6: 374, 11: 2237, 12: 1348, 22: 29719 } }, // k=22 is 11.0 MB -> lazy
+	// The dodecagonal prism, from Marek's 2026-08-29 drop. The third finished prism in a row: 109,437
+	// certificates, 0 develop failures, and every per-k count reproduces its census, which reaches
+	// k = 24 = V. Row emitted by emit_board_tables.py off the shipped shards.
+	{ id: "4412", config: "4.4.12", solid: "dodecagonal prism", eagerKs: [1, 2, 3, 4, 6, 7, 8, 14], lazyKs: [12, 24], complete: true, missing: [], counts: { 1: 5, 2: 13, 3: 22, 4: 26, 6: 368, 7: 311, 8: 13, 12: 7203, 14: 880, 24: 100596 } }, // k=12 is 1.4 MB -> lazy // k=24 is 19.0 MB -> lazy
 	{ id: "468", config: "4.6.8", solid: "truncated cuboctahedron", eagerKs: [1, 2, 3, 4, 6, 8], lazyKs: [12], complete: false, missing: [], counts: { 1: 5, 2: 5, 3: 29, 4: 42, 6: 638, 8: 1203, 12: 35312 } }, // k=12 is 17.5 MB -> lazy
 	{ id: "663", config: "3.6.6", solid: "truncated tetrahedron", eagerKs: [1, 2, 3, 4, 6, 7, 12], lazyKs: [], complete: true, missing: [], counts: { 1: 3, 2: 5, 3: 11, 4: 14, 6: 11, 7: 58, 12: 53 } },
 	{ id: "664", config: "4.6.6", solid: "truncated octahedron", eagerKs: [1, 2, 3, 4, 5, 6, 8, 10, 16], lazyKs: [12, 24], complete: true, missing: [], counts: { 1: 4, 2: 10, 3: 10, 4: 58, 5: 18, 6: 140, 8: 173, 10: 29, 12: 4776, 16: 885, 24: 101887 } }, // k=12 is 1.8 MB -> lazy // k=24 is 38.6 MB -> lazy

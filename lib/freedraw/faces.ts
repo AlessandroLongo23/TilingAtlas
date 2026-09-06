@@ -700,6 +700,10 @@ const FINITE_LABEL: Record<FreedrawGrid, string> = {
 	// exact board are the polydrafters — the pieces of the Eternity puzzle.
 	sch236: "polydrafter",
 	sch244: "polyabolo",
+	// The two Archimedean boards merge faces of DIFFERENT sizes — triangles, squares and hexagons on
+	// 3.4.6.4, squares and octagons on 4.8.8 — so no single-tile polyform name fits, exactly as on "ts".
+	"4436": "polyform",
+	"488": "polyform",
 	// The cell is a Kershner type 1 pentagon whose SHAPE moves with the sliders, so there is no fixed
 	// figure to name after — "polypent" would imply a settled family the way polyomino and polyabolo do,
 	// and this one has five free parameters. The generic name is the honest one.
