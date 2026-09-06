@@ -1,0 +1,16 @@
+
+=== 1.1555 pentagons+dodecagons ===
+  (3.5.12^2      ) s = 1.1555211355997
+     polynomial degree 12 in t
+  (4.5^2.12      ) s = 1.1555211355997
+     polynomial degree 12 in t
+  gcd degree 10 -> EXACT IDENTITY PROVEN
+  min poly of cosh(s): -191*y**4 + 424*y**3 - 10*y**2 - 328*y + 121
+
+=== 1.2537 {4,5} with 10- and 30-gons ===
+  (4^5           ) s = 1.2537393258124
+     polynomial degree 2 in t
+  (4^2.10.30     ) s = 1.2537393258124
+     polynomial degree 12 in t
+  gcd degree 1 -> EXACT IDENTITY PROVEN
+  min poly of cosh(s): -5*y**2 + 10*y - 1

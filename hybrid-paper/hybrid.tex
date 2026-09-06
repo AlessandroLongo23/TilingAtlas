@@ -1,0 +1,908 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage[margin=1.1in]{geometry}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{observation}[theorem]{Computational observation}
+
+\newcommand{\HH}{\mathbb{H}^2}
+\newcommand{\ZZ}{\mathbb{Z}}
+\newcommand{\QQ}{\mathbb{Q}}
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\vc}[1]{(#1)}
+\DeclareMathOperator{\Res}{Res}
+\DeclareMathOperator{\area}{area}
+
+\title{Exact algebraic structure of hyperbolic hybrid tilings}
+\author{Marek \v{C}trn\'{a}ct \and Alessandro Longo}
+\date{Draft of \today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+A \emph{hybrid} system in the hyperbolic plane is a collection of vertex
+combinations of regular polygons that close at a common edge length, so that they
+may occur in a single tiling. Catalogues of such systems have so far been built
+numerically: the shared edge lengths are computed by iteration to some fifty
+decimal places, and the coincidences are believed but not proved. We show that
+these edge lengths are algebraic numbers, that a defining polynomial for each is
+computable by elimination, and that the question of whether two vertex
+combinations share an edge is decidable exactly. Applying the procedure we give
+closed forms for eight catalogued edges, among them
+$\cosh s=\varphi$, $\cosh s=(3+8\sqrt2)/7$ and $s=\log 3$, and we prove exact
+every identity in those systems. The apparatus is insensitive to the sign of the
+curvature, so it treats spherical and Euclidean systems at the same time. For the system at $\cosh s=\varphi$ we then give
+a complete additive description: all twelve polygons occurring at integer
+multiples of the base edge have interior angles lying in a rank-three lattice
+spanned by $\pi$, $\arccos(1/\varphi)$ and $\arccos(-1/\varphi^{2})$, so that
+enumerating the vertex combinations reduces to three linear Diophantine
+equations. Finally we classify the systems in which an equilateral triangle at
+$r$ times the base edge has $r$ times the area, obtaining
+$\cosh s=1+\sqrt[3]{2}+\sqrt[3]{4}$, $(5+\sqrt{33})/4$, $(3+\sqrt{33})/4$ and
+$\varphi$ for $r=2,3,4,7$, and showing that these are the only values of $r$ for
+which further polygons occur.
+\end{abstract}
+
+\section{Introduction}
+
+Let $\HH$ denote the hyperbolic plane of curvature $-1$. A regular $n$-gon with
+side length $s$ exists in $\HH$ for every $n\ge 3$ and every $s>0$, and its
+interior angle $\theta_n(s)$ decreases from the Euclidean value
+$(1-2/n)\pi$ towards $0$ as $s$ grows. The apeirogon, which we write $n=\infty$,
+is the limiting case: a regular polygon with infinitely many sides of length $s$
+inscribed in a horocycle.
+
+Because the angle depends on the side, polygons of different shapes can be made to
+fit around a vertex by choosing the side length appropriately. This is the
+mechanism behind what the first author's working notes call \emph{hybrid}
+systems: a set of vertex combinations that all close at one and the same edge
+length. Such a set is the raw material of a tiling in which several distinct
+regular polygons occur, all with a common side.
+
+The catalogues of these systems have been assembled experimentally. For each
+candidate vertex combination one solves a transcendental equation numerically for
+the edge, records the result to high precision, and groups combinations whose
+recorded edges agree. Agreement to fifty decimal places is persuasive, and a
+mismatch at that precision would be strange, but it is not a proof. Recording
+this as an open problem, those notes ask for the identities to be established
+exactly.
+
+That is the first thing we do here. The key observation is elementary: the
+closure condition at a vertex, which as stated is a transcendental equation in
+the edge, becomes a \emph{multiplicative} relation among algebraic numbers on the
+unit circle once one passes to half-angles (Theorem~\ref{thm:closure}). From this
+the edge is seen to be algebraic, an explicit defining polynomial is computable by
+resultants, and the question of whether two combinations share an edge becomes a
+greatest common divisor computation (Theorem~\ref{thm:decide}). Section~\ref{sec:table}
+carries this out for eight systems of the catalogue.
+
+The remainder of the paper studies one system in detail, the one at
+$\cosh s=\varphi$ where $\varphi=(1+\sqrt5)/2$, together with the polygons that
+occur at integer multiples of its base edge. Section~\ref{sec:lattice} shows that
+all twelve such polygons have interior angles in a lattice of rank three, which
+reduces the enumeration of their vertex combinations to linear algebra over
+$\ZZ$. Section~\ref{sec:star} isolates the geometric construction behind two of
+the coincidences and determines exactly when it applies.
+Section~\ref{sec:rfamily} classifies a one-parameter family of systems singled
+out by an area condition.
+
+Throughout we distinguish carefully between statements we prove and statements
+established by computation over a bounded search range; the latter are labelled
+as computational observations.
+
+\section{Preliminaries}
+
+\begin{lemma}\label{lem:basic}
+Let $P$ be a regular $n$-gon in $\HH$ with side length $s$ and interior angle
+$\theta$, where $3\le n\le\infty$. Write $c=\cosh(s/2)$ and $c_n=\cos(\pi/n)$,
+with $c_\infty=1$. Then
+\begin{equation}\label{eq:basic}
+  \sin\frac{\theta}{2}=\frac{c_n}{c},
+  \qquad
+  \cos\frac{\theta}{2}=\frac{\sqrt{c^{2}-c_n^{2}}}{c}.
+\end{equation}
+The polygon exists precisely when $c>c_n$, and then $\theta\in(0,\pi)$.
+\end{lemma}
+
+\begin{proof}
+Join the centre of $P$ to a vertex and to the midpoint of an adjacent side. This
+produces a right triangle with legs meeting at the centre in the angle $\pi/n$,
+at the vertex in the angle $\theta/2$, and with the side opposite the central
+angle equal to $s/2$. The hyperbolic right-triangle relation
+$\cosh a=\cos A/\sin B$, where $a$ is the side opposite $A$ and $B$ is the third
+angle, gives $\cosh(s/2)=\cos(\pi/n)/\sin(\theta/2)$, which is the first identity.
+Since $\theta\in(0,\pi)$ we have $\theta/2\in(0,\pi/2)$, so the cosine is
+positive and the second identity follows. The apeirogon is the limit $n\to\infty$,
+for which $c_n\to1$.
+\end{proof}
+
+\begin{remark}[Curvature is a sign, not a case]\label{rem:curvature}
+Nothing below uses $c>1$. In all three geometries of constant curvature the same
+relation holds,
+\[
+  c=\frac{\cos(\pi/n)}{\sin(\theta/2)},
+  \qquad
+  c=\begin{cases}
+      \cos(s/2) & \text{on the sphere},\\
+      1         & \text{in the Euclidean plane},\\
+      \cosh(s/2)& \text{in }\HH,
+    \end{cases}
+\]
+the spherical case being the substitution $s\mapsto is$. Thus $c$ alone carries
+the geometry: a solution of the polynomial $P_m$ of Theorem~\ref{thm:algebraic}
+with $c<1$ is a spherical vertex, $c=1$ a Euclidean one, and $c>1$ hyperbolic.
+For instance the cube $\{4,3\}$ has $c=\cos(\pi/4)/\sin(\pi/3)=\sqrt{2/3}$, and
+its edge is $2\arccos c=70.5288\dots^{\circ}$. We phrase everything for $\HH$
+because that is where the systems are plentiful, but every statement that does not
+mention $\cosh$ applies verbatim to the other two geometries.
+\end{remark}
+
+\begin{remark}[Shortchord, and cyclic polygons]\label{rem:shortchord}
+The constant $c_n=\cos(\pi/n)$ is half the \emph{shortchord} of a Euclidean
+regular $n$-gon of side $1$, that is half its shortest diagonal. With that
+reading, \eqref{eq:closure} says
+$\sum_i 2\arcsin\bigl(a_i/(2R)\bigr)=2\pi$ with $a_i=2c_{n_i}$ and $R=c$, which
+is exactly the condition that a Euclidean polygon with sides $a_i$ be inscribed
+in a circle of radius $R$ containing its centre. So $P_m$ is also a defining
+polynomial for the circumradius of a cyclic polygon with prescribed sides. That
+problem is not open: Robbins~\cite{robbins} obtained the analogous area
+polynomial in 1994 and Pech~\cite{pech} the circumradius polynomial in 2006,
+both of degree $7$ in the pentagon and heptagon cases, with later work by
+Varfolomeev and others; explicit general formulas beyond small $n$ remain hard.
+The elimination of Theorem~\ref{thm:algebraic} is an independent route to those
+polynomials, and conversely their degree bounds are the natural place to look for
+the height bound requested in Section~\ref{sec:limits}.
+\end{remark}
+
+For fixed $n$ the map $c\mapsto\theta_n(c)=2\arcsin(c_n/c)$ is strictly
+decreasing on $(c_n,\infty)$, with $\theta_n(c)\to\pi-2\pi/n$ as $c\downarrow c_n$
+and $\theta_n(c)\to0$ as $c\to\infty$.
+
+\begin{definition}[Vertex combination and edge function]
+A \emph{vertex combination} is a function $m$ from $\{3,4,5,\dots\}\cup\{\infty\}$
+to $\ZZ_{\ge0}$ with finite support, written multiplicatively as
+$\vc{n_1^{m_1}.n_2^{m_2}\cdots}$. Its \emph{degree} is $M=\sum_n m_n$. We say $m$
+\emph{closes} at $c$ if
+\begin{equation}\label{eq:closure}
+  \sum_n m_n\,\theta_n(c)=2\pi .
+\end{equation}
+\end{definition}
+
+\begin{lemma}\label{lem:unique}
+A vertex combination closes at no more than one value of $c$.
+\end{lemma}
+
+\begin{proof}
+On the common domain $c>\max\{c_n: m_n>0\}$ each $\theta_n$ is strictly
+decreasing, hence so is the finite positive combination
+$\sum_n m_n\theta_n$. A strictly monotone function attains the value $2\pi$ at
+most once.
+\end{proof}
+
+When the value exists we write $e(m)=c$ for it, and call it the \emph{edge
+function} of $m$; we shall also refer to $s=2\operatorname{arcosh}c$ as the edge.
+Two vertex combinations $m,m'$ with $e(m)=e(m')$ are said to satisfy a
+\emph{hybrid identity}; a maximal set of combinations pairwise satisfying one is a
+\emph{hybrid system}. Only combinations in a common system can occur in a single
+tiling by regular polygons of one side length.
+
+\section{The closure condition is a multiplicative relation}\label{sec:decide}
+
+Fix a vertex combination $m$ with support $S$ and degree $M$. For $n\in S$
+introduce the auxiliary quantity $u_n=\sqrt{c^{2}-c_n^{2}}$, so that by
+Lemma~\ref{lem:basic}
+\[
+  z_n \;=\; e^{i\theta_n/2}\;=\;\frac{u_n+i\,c_n}{c}.
+\]
+
+\begin{theorem}\label{thm:closure}
+With the notation above, $m$ closes at $c$ if and only if
+\begin{equation}\label{eq:mult}
+  \prod_{n\in S}\bigl(u_n+i\,c_n\bigr)^{m_n}\;=\;-\,c^{M},
+\end{equation}
+and \eqref{eq:mult} implies, more weakly,
+$\sum_n m_n\theta_n\equiv2\pi \pmod{4\pi}$.
+\end{theorem}
+
+\begin{proof}
+Condition \eqref{eq:closure} is equivalent to $\sum_n m_n\theta_n/2=\pi$, hence to
+$\prod_n z_n^{m_n}=e^{i\pi}=-1$. Multiplying by $c^{M}$ gives \eqref{eq:mult}.
+Conversely \eqref{eq:mult} gives $\prod_n z_n^{m_n}=-1$, that is
+$\sum_n m_n\theta_n/2\equiv\pi\pmod{2\pi}$, which is the stated congruence.
+\end{proof}
+
+The point of \eqref{eq:mult} is that its two sides are polynomials in $c$, the
+$u_n$, and the algebraic numbers $c_n$, whereas \eqref{eq:closure} is
+transcendental. Separating real and imaginary parts, the imaginary part of the
+left side of \eqref{eq:mult} must vanish; that is a single polynomial condition.
+
+\begin{theorem}\label{thm:algebraic}
+Let $m$ be a vertex combination that closes. Then $e(m)$ is an algebraic number,
+and a nonzero polynomial $P_m\in\QQ(\{c_n\}_{n\in S})[X]$ with $P_m(e(m))=0$ is
+computable by the following procedure.
+\begin{enumerate}
+\item Expand $W=\prod_{n\in S}(U_n+i\,c_n)^{m_n}$ as a polynomial in independent
+      indeterminates $U_n$.
+\item Reduce every $U_n^{2}$ to $X^{2}-c_n^{2}$, so that each $U_n$ occurs to
+      degree at most one.
+\item Let $E=\operatorname{Im}W$, a polynomial in $X$ and the $U_n$.
+\item Successively eliminate the $U_n$ by
+      $E\mapsto\Res_{U_n}\!\bigl(E,\;U_n^{2}-(X^{2}-c_n^{2})\bigr)$.
+\end{enumerate}
+The result $P_m$ is a polynomial in $X$ alone, and it is even in $X$.
+\end{theorem}
+
+\begin{proof}
+By Theorem~\ref{thm:closure} the number $c=e(m)$, together with the positive
+square roots $u_n=\sqrt{c^{2}-c_n^{2}}$, satisfies $\operatorname{Im}W=0$ after
+substituting $X=c$, $U_n=u_n$. Steps~2 and~4 are the standard elimination of the
+$u_n$: the resultant of $E$ with the minimal polynomial of $u_n$ over
+$\QQ(\{c_j\},X)$ lies in the ideal generated by them, so it vanishes at
+$X=c$, and it no longer involves $U_n$. After all eliminations $P_m(c)=0$.
+Nonvanishing of $P_m$ as a polynomial is checked in the course of the
+computation. Since $\theta_n$ depends on $c$ only through $c^{2}$ in
+\eqref{eq:basic} after the substitution $u_n^{2}=c^{2}-c_n^{2}$, the surviving
+polynomial is even in $X$; we write $P_m(X)=F_m(X^{2})$.
+\end{proof}
+
+\begin{remark}
+The root set of $P_m$ is in general larger than $\{e(m)\}$. Two sources of
+spurious roots are visible in the proof: the congruence in
+Theorem~\ref{thm:closure} admits $\sum m_n\theta_n\in\{2\pi,6\pi,\dots\}$, and
+the elimination step forgets the sign conditions $u_n>0$. This does not affect
+what follows, because we always identify the relevant root by numerical
+isolation.
+\end{remark}
+
+\begin{theorem}[Decision procedure]\label{thm:decide}
+Let $m,m'$ be vertex combinations that close, with $P_m,P_{m'}$ as above, and let
+$G=\gcd(P_m,P_{m'})$, computed exactly. Suppose $I\subset\RR$ is an interval such
+that
+\begin{enumerate}
+\item $P_m$ has exactly one root in $I$, and $P_{m'}$ has exactly one root in
+      $I$;
+\item $e(m)\in I$ and $e(m')\in I$;
+\item $G$ has a root in $I$.
+\end{enumerate}
+Then $e(m)=e(m')$. If instead $G$ has no root in $I$, then $e(m)\ne e(m')$.
+\end{theorem}
+
+\begin{proof}
+Let $\alpha\in I$ be a root of $G$. Then $\alpha$ is a root of $P_m$, and $e(m)$
+is a root of $P_m$ lying in $I$; by hypothesis~(1) they coincide, so
+$\alpha=e(m)$. The same argument applied to $P_{m'}$ gives $\alpha=e(m')$. Hence
+$e(m)=e(m')$. If $G$ has no root in $I$ then $e(m)$, being in $I$, is not a
+common root, so $e(m)\ne e(m')$.
+\end{proof}
+
+All three hypotheses are effectively checkable: root counting in an interval is
+Sturm's theorem over $\QQ$, or root isolation over the coefficient field in
+general, and $e(m)$ is located to any desired precision by
+Lemma~\ref{lem:unique} together with bisection. The procedure therefore decides
+hybrid identities. This settles, in principle, the question of whether the
+numerically observed coincidences are exact; the remaining difficulty is
+computational, and we return to it in Section~\ref{sec:limits}.
+
+\section{Exact edges for eight catalogued systems}\label{sec:table}
+
+We have run the procedure of Theorems~\ref{thm:algebraic} and~\ref{thm:decide} on
+part of the catalogue. Table~\ref{tab:edges} records the outcome. In each case
+the polynomials $F_m$ were computed symbolically, the greatest common divisor was
+taken exactly, and the resulting value of $\cosh s=2c^{2}-1$ was solved in closed
+form, where the degree permits, and then verified against every member
+combination of the system to eighty decimal digits. The quartic at $1.1555$ is
+irreducible over $\QQ$; we give its minimal polynomial instead of a radical
+expression.
+
+\begin{table}[t]
+\centering
+\begin{tabular}{@{}lll@{}}
+\toprule
+$s$ (as catalogued) & vertex combinations & $\cosh s$ exactly \\
+\midrule
+$0.6196\dots$ & $\vc{3^{2}.5.\infty}$, $\vc{3.5^{3}}$
+  & $\dfrac{2+5\sqrt5}{11}$ \\[2mm]
+$1.0612\dots$ & $\vc{3^{4}.4^{2}}$, $\vc{3^{2}.4.5^{2}}$, $\vc{3.4.10.20}$, $\vc{5^{4}}$
+  & $\varphi=\dfrac{1+\sqrt5}{2}$ \\[2mm]
+$1.0986\dots$ & $\vc{4^{2}.5.\infty}$, $\vc{\infty^{3}}$
+  & $\dfrac53$, \; so $s=\log 3$ \\[2mm]
+$1.1555\dots$ & $\vc{3.5.12^{2}}$, $\vc{4.5^{2}.12}$
+  & root of $191y^{4}-424y^{3}+10y^{2}+328y-121$ \\[2mm]
+$1.2537\dots$ & $\vc{4^{5}}$, $\vc{4^{2}.10.30}$
+  & $\dfrac{5+2\sqrt5}{5}=1+\dfrac{2}{\sqrt5}$ \\[2mm]
+$1.3424\dots$ & $\vc{3^{3}.\infty^{2}}$, $\vc{3.8.24.\infty}$
+  & $\dfrac{3+8\sqrt2}{7}$ \\[2mm]
+$1.6628\dots$ & $\vc{3^{4}.\infty^{2}}$, $\vc{3^{2}.12^{2}.\infty}$, $\vc{12^{4}}$
+  & $1+\sqrt3$ \\[2mm]
+$1.7627\dots$ & $\vc{4^{6}}$, $\vc{4^{3}.\infty^{2}}$, $\vc{\infty^{4}}$
+  & $3$, \; so $s=\log(3+2\sqrt2)$ \\
+\bottomrule
+\end{tabular}
+\caption{Exact edge lengths. Every hybrid identity in these eight systems is a
+theorem, by Theorem~\ref{thm:decide}.}
+\label{tab:edges}
+\end{table}
+
+\begin{example}
+Take $\vc{3^{4}.4^{2}}$, four triangles and two squares. Here
+$c_3=\tfrac12$, $c_4=\tfrac{\sqrt2}{2}$, $M=6$, and the elimination of
+Theorem~\ref{thm:algebraic} yields $P(X)=4X^{4}-6X^{2}+1$, so
+$c^{2}=(3+\sqrt5)/4$ and
+\[
+  \cosh s=2c^{2}-1=\frac{1+\sqrt5}{2}=\varphi .
+\]
+The same value is returned by $\vc{5^{4}}$, by $\vc{3^{2}.4.5^{2}}$ and by
+$\vc{3.4.10.20}$, and in each case the greatest common divisor of the two
+polynomials is of positive degree, so the identity is exact.
+\end{example}
+
+\begin{remark}
+Two of the eight edges satisfy $\cosh s\in\QQ$, whence $e^{s}$ is an algebraic
+unit and $s$ is the logarithm of one: $s=\log3$ and $s=\log(3+2\sqrt2)$. We note
+in passing that $s$ itself is never algebraic here. Indeed if $s\ne0$ were
+algebraic then $\cosh s$ would be transcendental by the Lindemann--Weierstrass
+theorem, contradicting Theorem~\ref{thm:algebraic}. This is consistent with, and
+a special case of, the theorem of Calcut~\cite{calcutrational} that a hyperbolic
+triangle with all angles rational multiples of $\pi$ has transcendental sides.
+\end{remark}
+
+\section{The system at \texorpdfstring{$\cosh s=\varphi$}{cosh s = phi}}\label{sec:lattice}
+
+We now fix the system of Table~\ref{tab:edges} with $\cosh s=\varphi$ and study
+the polygons occurring at integer multiples of its base edge. Following the
+catalogue's notation we write a letter for the multiplier and a number for the
+number of sides, so that $\mathrm{A}3$ is a triangle of side $s$, $\mathrm{B}4$ a
+square of side $2s$, $\mathrm{G}3$ a triangle of side $7s$, and
+$\mathrm{D}\infty$ an apeirogon of side $4s$.
+
+\begin{lemma}\label{lem:base}
+The base edge satisfies $\cosh s=\varphi$, and it is the edge of the regular
+tiling $\{5,4\}$, and of $\{5,6\}$, $\{3,10\}$ and $\{10,5\}$ at twice its
+length. Moreover
+\[
+  \cosh\frac{s}{2}=\frac{\varphi}{\sqrt2},\quad
+  \cosh s=\varphi,\quad
+  \cosh 2s=\varphi^{3},\quad
+  \cosh\frac{7s}{2}=\frac{\varphi^{7}}{\sqrt2}.
+\]
+\end{lemma}
+
+\begin{proof}
+For $\{5,4\}$, Lemma~\ref{lem:basic} with $n=5$ and $\theta=\pi/2$ gives
+$\cosh(s/2)=\cos(\pi/5)/\sin(\pi/4)=\varphi/\sqrt2$, whence
+$\cosh s=2\varphi^{2}/2-1=\varphi^{2}-1=\varphi$. For $\{5,6\}$ one finds
+$\cosh(s'/2)=\cos(\pi/5)/\sin(\pi/6)=\varphi=\cosh s$, so $s'=2s$; the
+computation for $\{3,10\}$ and $\{10,5\}$ is identical, with
+$\cos(\pi/3)/\sin(\pi/10)=\varphi$ and $\cos(\pi/10)/\sin(\pi/5)=\varphi$.
+Finally $\cosh(ks)=T_k(\cosh s)=T_k(\varphi)$ for the Chebyshev polynomial
+$T_k$, and $2\cosh^{2}(ks/2)=T_k(\varphi)+1$; for $k=7$ one computes
+$T_7(\varphi)+1=377\varphi+233=\varphi^{14}$, using $F_{14}=377$ and $F_{13}=233$.
+\end{proof}
+
+\begin{remark}
+Three regular tilings therefore share the edge $2s$: $\{5,6\}$, $\{3,10\}$ and
+$\{10,5\}$, that is the vertex combinations $\vc{5^{6}}$, $\vc{3^{10}}$ and
+$\vc{10^{5}}$. This is the only coincidence of three regular tilings at one edge
+known to us, and Table~\ref{tab:poly} exhibits it as the three polygons
+$\mathrm{B}5$, $\mathrm{B}3$, $\mathrm{B}10$ whose angles are $\pi/3$, $\pi/5$
+and $2\pi/5$.
+\end{remark}
+
+\begin{remark}
+The full symmetry group of $\{5,4\}$ is the triangle group $(2,4,5)$, which by
+Takeuchi's classification~\cite{takeuchi} is arithmetic with invariant trace
+field $\QQ(\sqrt5)$. That is the structural reason the quantities $\cosh(ks)$
+are algebraic integers of $\ZZ[\varphi]$.
+\end{remark}
+
+\begin{theorem}\label{thm:lattice}
+Put $a=\arccos(1/\varphi)$ and $t=\arccos(-1/\varphi^{2})$. The twelve polygons
+listed in Table~\ref{tab:poly} have the interior angles shown there. In
+particular every one of them lies in the additive group
+$\QQ\pi+\ZZ a+\ZZ t$.
+\end{theorem}
+
+\begin{table}[t]
+\centering
+\begin{tabular}{@{}lccll@{}}
+\toprule
+symbol & $n$ & edge & interior angle & $\cos\theta$\\
+\midrule
+$\mathrm{A}3$   & $3$      & $s$  & $a$            & $1/\varphi$\\
+$\mathrm{A}4$   & $4$      & $s$  & $\pi-2a$       & $1/\varphi^{3}=\sqrt5-2$\\
+$\mathrm{A}5$   & $5$      & $s$  & $\pi/2$        & $0$\\
+$\mathrm{A}10$  & $10$     & $s$  & $t$            & $-1/\varphi^{2}$\\
+$\mathrm{A}20$  & $20$     & $s$  & $\pi+a-t$      & root of $x^{4}+8x^{3}+4x^{2}-8x-4$\\
+$\mathrm{B}3$   & $3$      & $2s$ & $\pi/5$        & $(1+\sqrt5)/4$\\
+$\mathrm{B}4$   & $4$      & $2s$ & $a$            & $1/\varphi$\\
+$\mathrm{B}5$   & $5$      & $2s$ & $\pi/3$        & $1/2$\\
+$\mathrm{B}10$  & $10$     & $2s$ & $2\pi/5$       & $(\sqrt5-1)/4$\\
+$\mathrm{B}\infty$ & $\infty$ & $2s$ & $\pi-2a$    & $1/\varphi^{3}$\\
+$\mathrm{D}\infty$ & $\infty$ & $4s$ & $4a-\pi$    & $8\sqrt5-17$\\
+$\mathrm{G}3$   & $3$      & $7s$ & $7a-2\pi$      & $1-\varphi^{-14}$\\
+\bottomrule
+\end{tabular}
+\caption{The twelve polygons of the system, and their angles in the lattice.}
+\label{tab:poly}
+\end{table}
+
+\begin{proof}[Proof of the first two rows, the rest being similar]
+By Lemma~\ref{lem:basic} and Lemma~\ref{lem:base},
+$\sin(\theta_3/2)=\tfrac12\cdot\sqrt2/\varphi=1/(\sqrt2\varphi)$ and, using
+$2\varphi+1=\varphi^{3}$,
+$\cos(\theta_3/2)=\sqrt{\varphi^{3}}/(\sqrt2\varphi)=\sqrt{\varphi}/\sqrt2$.
+Hence $\cos\theta_3=1-2\sin^{2}(\theta_3/2)=1-1/\varphi^{2}=1/\varphi$, which is
+the assertion $\theta_3=a$. Likewise $\sin(\theta_4/2)=1/\varphi$ and
+$\cos(\theta_4/2)=1/\sqrt{\varphi}$, so with
+$\zeta_3=e^{i\theta_3/2}=(\varphi^{3/2}+i)/(\sqrt2\varphi)$ and
+$\zeta_4=e^{i\theta_4/2}=(\sqrt{\varphi}+i)/\varphi$ we get
+\[
+  \zeta_3^{2}\zeta_4
+  =\frac{1+i\sqrt{\varphi}}{\varphi}\cdot\frac{\sqrt{\varphi}+i}{\varphi}
+  =\frac{i(1+\varphi)}{\varphi^{2}}=i ,
+\]
+that is $\theta_3+\theta_4/2=\pi/2$, or $2\theta_3+\theta_4=\pi$.
+\end{proof}
+
+\begin{corollary}\label{cor:g3}
+$\cos\mathrm{G}3=L_7/\varphi^{7}=1-\varphi^{-14}=(377\sqrt5-841)/2$, where
+$L_7=29$ is a Lucas number.
+\end{corollary}
+
+\begin{proof}
+Writing $\omega=e^{ia}=(1+i\sqrt\varphi)/\varphi$, which has modulus one because
+$1+\varphi=\varphi^{2}$, one has
+$\cos(ka)=\operatorname{Re}(1+i\sqrt\varphi)^{k}/\varphi^{k}$.
+Expanding, $\operatorname{Re}(1+i\sqrt\varphi)^{7}=1-21\varphi+35\varphi^{2}-7\varphi^{3}=29$,
+using $\varphi^{2}=\varphi+1$ and $\varphi^{3}=2\varphi+1$. Since
+$\mathrm{G}3=7a-2\pi$ we get $\cos\mathrm{G}3=\cos7a=29/\varphi^{7}$, and
+$29=L_7=\varphi^{7}-\varphi^{-7}$ gives the stated forms.
+\end{proof}
+
+\begin{observation}\label{obs:indep}
+Writing $\operatorname{Re}(1+i\sqrt\varphi)^{k}=p_k+q_k\varphi$ with
+$p_k,q_k\in\ZZ$, the recursion $p_k=2p_{k-1}-(p_{k-2}+q_{k-2})$,
+$q_k=2q_{k-1}-(p_{k-2}+2q_{k-2})$ gives $q_k=0$ for $k\le20000$ only at $k=1$ and
+$k=7$. These are exactly the two multiples of the base edge at which the system
+carries an equilateral triangle.
+\end{observation}
+
+\begin{observation}\label{obs:rank}
+The integer relation algorithm PSLQ, applied at $200$ digits to
+$(\pi,a,t)$, finds no relation with coefficients below $10^{15}$. We therefore
+treat the lattice of Theorem~\ref{thm:lattice} as having rank three. The margin
+matters for what follows only through coefficients of size at most about $900$,
+since a vertex combination is bounded by $2\pi$ divided by the smallest angle.
+\end{observation}
+
+\subsection{Enumerating the vertex combinations}
+
+Granting Observation~\ref{obs:rank}, closing a vertex becomes linear. Writing
+$m(\cdot)$ for multiplicities and clearing denominators, the three coordinates of
+$\sum m(P)\theta_P=2\pi$ in the basis $(t,a,\pi)$ read
+\begin{align}
+  m(\mathrm{A}10)-m(\mathrm{A}20)&=0,\label{eq:t}\\
+  m(\mathrm{A}3)+m(\mathrm{B}4)+m(\mathrm{A}20)-2m(\mathrm{A}4)-2m(\mathrm{B}\infty)
+  +4m(\mathrm{D}\infty)+7m(\mathrm{G}3)&=0,\label{eq:a}\\
+  \begin{split}
+  30m(\mathrm{A}4)+15m(\mathrm{A}5)+30m(\mathrm{A}20)+6m(\mathrm{B}3)+10m(\mathrm{B}5)\hspace{6em}&\\
+  {}+12m(\mathrm{B}10)+30m(\mathrm{B}\infty)-30m(\mathrm{D}\infty)-60m(\mathrm{G}3)&=60 .
+  \end{split}\label{eq:pi}
+\end{align}
+
+\begin{observation}\label{obs:106}
+The system \eqref{eq:t}--\eqref{eq:pi} has exactly $106$ solutions in
+non-negative integers; these fall into $30$ classes if polygons are identified by
+angle rather than by shape. The analogous system with right-hand side $\pi$,
+describing vertices lying in the interior of a longer edge, has exactly $14$
+solutions in $7$ angle classes. Each of the twelve polygons occurs in at least
+one solution.
+\end{observation}
+
+The count $106$ agrees with the catalogue. Two structural consequences are worth
+recording, both immediate from the equations.
+
+\begin{proposition}
+In any solution of \eqref{eq:t}--\eqref{eq:pi}, $m(\mathrm{A}10)=m(\mathrm{A}20)$.
+Consequently a $20$-gon and a decagon occur at exactly the same vertices, and in
+equal numbers.
+\end{proposition}
+
+\begin{proof}
+Immediate from \eqref{eq:t}.
+\end{proof}
+
+\begin{proposition}\label{prop:g3}
+In any solution, $m(\mathrm{G}3)\le1$.
+\end{proposition}
+
+\begin{proof}
+By \eqref{eq:a},
+$7m(\mathrm{G}3)\le 2\bigl(m(\mathrm{A}4)+m(\mathrm{B}\infty)\bigr)$. The
+polygons $\mathrm{A}4$ and $\mathrm{B}\infty$ both have interior angle
+$\pi-2a$, and $5(\pi-2a)>2\pi$ numerically, so at most four of them meet at a
+vertex. Hence $7m(\mathrm{G}3)\le8$ and $m(\mathrm{G}3)\le1$.
+\end{proof}
+
+Proposition~\ref{prop:g3} is sharp in an instructive way: the bound is $8/7$, so
+a single unit of slack separates this system from one in which two large
+triangles could meet. In the systems of Section~\ref{sec:rfamily} with
+$r\in\{2,3,4\}$ the corresponding coefficient is $r<8/2$ and repetitions do occur.
+
+\section{Augmentation, and when it applies}\label{sec:star}
+
+Two of the coincidences in Table~\ref{tab:poly}, namely
+$\mathrm{B}4=\mathrm{A}3$ and $\mathrm{B}\infty=\mathrm{A}4$, deserve separate
+comment because only the first has a geometric explanation.
+
+\begin{theorem}[Augmentation]\label{thm:star}
+Let $s>0$ and $3\le m\le\infty$, and suppose
+$\theta_m(s)+2\theta_3(s)=\pi$. Then $\theta_m(2s)=\theta_3(s)$.
+\end{theorem}
+
+\begin{proof}
+Write $c=\cosh(s/2)$ and $u=\sin(\theta_3/2)=1/(2c)$ by Lemma~\ref{lem:basic}.
+The hypothesis gives $\sin(\theta_m/2)=\cos\theta_3=1-2u^{2}$, hence
+$\cos(\pi/m)=c\,(1-2u^{2})=(1-2u^{2})/(2u)$. At the doubled edge
+$\cosh(s)=2c^{2}-1=1/(2u^{2})-1$, so
+\[
+  \sin\frac{\theta_m(2s)}{2}
+  =\frac{\cos(\pi/m)}{\cosh s}
+  =\frac{1-2u^{2}}{2u}\cdot\frac{2u^{2}}{1-2u^{2}}
+  =u=\sin\frac{\theta_3(s)}{2}. \qedhere
+\]
+\end{proof}
+
+Geometrically: attach a triangle of side $s$ to each side of the $m$-gon. At each
+original vertex the angle becomes $\theta_m+2\theta_3=\pi$, so those vertices
+straighten away, and what remains is an $m$-gon whose sides consist of two base
+edges each and whose angles are $\theta_3$. The hypothesis is exactly the
+statement that a vertex of type $\vc{3^{4}.m^{2}}$ closes.
+
+\begin{theorem}[Tripling]\label{thm:triple}
+Let $s>0$ and $2\le n\le\infty$, and suppose $\theta_3(s)+\theta_{2n}(s)=\pi$.
+Then $\theta_n(3s)=\theta_3(s)$.
+\end{theorem}
+
+\begin{proof}
+Write $c$ for the parameter of Remark~\ref{rem:curvature} and
+$u=\sin(\theta_3/2)=1/(2c)$. The hypothesis gives
+$\sin(\theta_{2n}/2)=\cos(\theta_3/2)$, hence
+$\cos(\pi/2n)=c\sqrt{1-u^{2}}$ and
+\[
+  \cos(\pi/n)=2\cos^{2}(\pi/2n)-1=2c^{2}\Bigl(1-\tfrac{1}{4c^{2}}\Bigr)-1
+  =\tfrac{4c^{2}-3}{2}.
+\]
+Since the parameter at the tripled edge is $T_3(c)=4c^{3}-3c=c(4c^{2}-3)$,
+\[
+  \sin\frac{\theta_n(3s)}{2}=\frac{\cos(\pi/n)}{T_3(c)}
+  =\frac{4c^{2}-3}{2\,c\,(4c^{2}-3)}=\frac{1}{2c}=u . \qedhere
+\]
+\end{proof}
+
+Geometrically the hypothesis says that a vertex of type $\vc{3.2n.3.2n}$ closes.
+Attach a triangle of side $s$ to every second side of the $2n$-gon. Each of its
+$2n$ vertices then carries $\theta_{2n}+\theta_3=\pi$ and straightens away,
+leaving an $n$-gon whose sides are three base edges long and whose angles are
+$\theta_3$. By Remark~\ref{rem:curvature} the theorem is not confined to $\HH$:
+at $n=2$ it applies on the sphere to the cuboctahedron $\vc{3.4.3.4}$, where
+$c=\sqrt3/2$, the edge is $60^{\circ}$, and the conclusion degenerates correctly
+to $\cos(\pi/2)=0$.
+
+\begin{theorem}[Doubling criterion]\label{thm:double}
+For $3\le n,m\le\infty$ and $s>0$,
+\[
+  \theta_m(2s)=\theta_n(s)
+  \iff
+  \frac{\cos(\pi/m)}{\cos(\pi/n)}=\frac{\cosh s}{\cosh(s/2)} .
+\]
+\end{theorem}
+
+\begin{proof}
+By Lemma~\ref{lem:basic}, $\theta_m(2s)=\theta_n(s)$ if and only if
+$\cos(\pi/m)/\cosh(s)=\cos(\pi/n)/\cosh(s/2)$.
+\end{proof}
+
+\begin{proposition}\label{prop:twoonly}
+In the system of Section~\ref{sec:lattice} one has
+$\cosh s/\cosh(s/2)=\sqrt2$, and the equation
+$\cos(\pi/m)=\sqrt2\cos(\pi/n)$ has exactly two solutions with
+$3\le n,m\le\infty$, namely $(n,m)=(3,4)$ and $(n,m)=(4,\infty)$. These give
+$\mathrm{B}4=\mathrm{A}3$ and $\mathrm{B}\infty=\mathrm{A}4$ respectively.
+\end{proposition}
+
+\begin{proof}
+$\cosh s/\cosh(s/2)=\varphi/(\varphi/\sqrt2)=\sqrt2$. Since
+$\cos(\pi/m)\le1$ we need $\cos(\pi/n)\le1/\sqrt2$, hence $\pi/n\ge\pi/4$ and
+$n\le4$. For $n=3$, $\cos(\pi/m)=\sqrt2/2$ forces $m=4$; for $n=4$,
+$\cos(\pi/m)=1$ forces $m=\infty$.
+\end{proof}
+
+\begin{proposition}
+The hypothesis of Theorem~\ref{thm:star}, with a general $n$-gon in place of the
+triangle, is equivalent to the criterion of Theorem~\ref{thm:double} only when
+$n=3$.
+\end{proposition}
+
+\begin{proof}
+Writing $x=\cos(\pi/n)$ and $c=\cosh(s/2)$, the augmentation hypothesis
+$\theta_m(s)+2\theta_n(s)=\pi$ gives $\cos(\pi/m)=c-2x^{2}/c$, while the
+criterion gives $\cos(\pi/m)=x(2c-1/c)$. Their difference, multiplied by $c$,
+factors as $(1-2x)(c^{2}+x)$. The second factor is positive, so the two agree if
+and only if $x=1/2$, that is $n=3$.
+\end{proof}
+
+Thus $\mathrm{B}4=\mathrm{A}3$ arises from the augmentation picture, while
+$\mathrm{B}\infty=\mathrm{A}4$ satisfies the criterion without any such
+construction behind it.
+
+\section{Triangles of proportional area}\label{sec:rfamily}
+
+The system of Section~\ref{sec:lattice} contains a triangle at seven times the
+base edge whose area is also exactly seven times that of the base triangle. We
+classify this phenomenon.
+
+\begin{proposition}\label{prop:rcond}
+Let $s>0$, let $r\ge2$ be an integer, and write $\theta(s)$ for the interior
+angle of the equilateral triangle of side $s$. The following are equivalent:
+\begin{enumerate}
+\item $\area\bigl(\triangle(rs)\bigr)=r\cdot\area\bigl(\triangle(s)\bigr)$;
+\item $\theta(rs)=r\,\theta(s)-(r-1)\pi/3$.
+\end{enumerate}
+Moreover for each $r$ there is exactly one such $s$.
+\end{proposition}
+
+\begin{proof}
+The area of a hyperbolic triangle with angles $\theta$ is $\pi-3\theta$, so (1)
+reads $\pi-3\theta(rs)=r(\pi-3\theta(s))$, which rearranges to (2). For
+uniqueness, put $f(s)=\area(\triangle(rs))/\area(\triangle(s))$. As $s\to0$ the
+geometry is asymptotically Euclidean and areas scale as the square of the side,
+so $f(s)\to r^{2}$; as $s\to\infty$ both areas tend to $\pi$ and $f(s)\to1$. The
+function $f$ is continuous, and computation shows it to be strictly decreasing,
+so it attains the value $r\in(1,r^{2})$ exactly once.
+\end{proof}
+
+Condition (2) is again a relation between half-angles at two edge multiples, and
+the elimination of Theorem~\ref{thm:algebraic} applies verbatim. Writing
+$\zeta=e^{i\theta(s)/2}=(u+\tfrac{i}{2})/c$ and
+$\zeta_r=e^{i\theta(rs)/2}=(u_r+\tfrac{i}{2})/T_r(c)$ with $c=\cosh(s/2)$,
+$u=\sqrt{c^{2}-\tfrac14}$ and $u_r=\sqrt{T_r(c)^{2}-\tfrac14}$, condition (2)
+says
+\begin{equation}\label{eq:rcond}
+  \zeta^{\,r}=e^{i(r-1)\pi/6}\,\zeta_r ,
+\end{equation}
+whose imaginary part, after eliminating $u$ and $u_r$ by resultants, is a
+polynomial in $c$ that is even, hence a polynomial in $\cosh s=2c^{2}-1$.
+
+\begin{theorem}\label{thm:rvalues}
+The edge of Proposition~\ref{prop:rcond} satisfies, for $r=2,3,4,7$
+respectively,
+\[
+  \cosh s\;=\;1+\sqrt[3]{2}+\sqrt[3]{4}\;=\;\frac{1}{\sqrt[3]{2}-1},
+  \qquad \frac{5+\sqrt{33}}{4},
+  \qquad \frac{3+\sqrt{33}}{4},
+  \qquad \varphi,
+\]
+with respective minimal polynomials over $\QQ$
+\[
+  y^{3}-3y^{2}-3y-1,\qquad 2y^{2}-5y-1,\qquad 2y^{2}-3y-3,\qquad y^{2}-y-1 .
+\]
+In particular $\cosh s_{3}-\cosh s_{4}=\tfrac12$, and indeed
+$y\mapsto y+\tfrac12$ carries $2y^{2}-5y-1$ to $2y^{2}-3y-3$.
+\end{theorem}
+
+\begin{proof}
+Carry out the elimination described above for \eqref{eq:rcond}, factor the
+resulting polynomial in $\cosh s$ over $\QQ$, and select the irreducible factor
+vanishing at the numerical value of $\cosh s$; the four factors are those listed.
+Solving each gives the stated closed forms. For $r=2$ the cubic
+$y^{3}-3y^{2}-3y-1$ is irreducible over $\QQ$; substituting $y=1+z+z^{2}$ and
+reducing modulo $z^{3}=2$ gives $0$, so $1+\sqrt[3]{2}+\sqrt[3]{4}$ is its real
+root, and $1+z+z^{2}=(z^{3}-1)/(z-1)=1/(\sqrt[3]{2}-1)$.
+\end{proof}
+
+The case $r=7$ is the system of Section~\ref{sec:lattice}: the triangle
+$\mathrm{G}3$ has $\theta=7a-2\pi$ and therefore area $7(\pi-3a)$.
+
+\begin{table}[t]
+\centering
+\begin{tabular}{@{}llll@{}}
+\toprule
+ & $r=2$ & $r=3$ & $r=4$ \\
+\midrule
+$\cosh s$ & $1+\sqrt[3]{2}+\sqrt[3]{4}$ & $(5+\sqrt{33})/4$ & $(3+\sqrt{33})/4$\\
+rank      & $2$ & $3$ & $4$\\
+basis     & $\pi,a$ & $\pi,a,g$ & $\pi,a,b,d$\\
+\midrule
+          & $\mathrm{A}3=a$          & $\mathrm{A}3=a$            & $\mathrm{A}3=a$\\
+          & $\mathrm{A}6=\pi-3a$     & $\mathrm{A}6=g$            & $\mathrm{A}6=\pi-2a$\\
+          & $\mathrm{B}3=2a-\pi/3$   & $\mathrm{B}3=\pi-2g$       & $\mathrm{B}6=a$\\
+          & $\mathrm{B}\infty=\pi-4a$& $\mathrm{C}3=3a-2\pi/3$    & $\mathrm{B}\infty=b$\\
+          &                          & $\mathrm{C}6=\pi/3-a$      & $\mathrm{D}3=4a-\pi$\\
+          &                          &                            & $\mathrm{D}\infty=d$\\
+          &                          &                            & $\mathrm{F}\infty=\pi-3b-d$\\
+\midrule
+vertices  & $16$ & $12$ & $14$\\
+flat      & $6$  & $5$  & $5$\\
+\bottomrule
+\end{tabular}
+\caption{The three smaller systems of Proposition~\ref{prop:rcond}, reduced. The
+letter records the edge multiple, so $\mathrm{C}6$ is a hexagon of side $3s$.
+Here $a=\theta_3(s)$ throughout, while $g$, $b$, $d$ are the extra generators
+carried respectively by $\mathrm{A}6$, $\mathrm{B}\infty$ and $\mathrm{D}\infty$.}
+\label{tab:rsys}
+\end{table}
+
+The polygons themselves are listed in Table~\ref{tab:rsys}; the system $r=7$ is
+Table~\ref{tab:poly}. In each case the base tiling recorded in the catalogue
+appears among the vertex combinations: $\vc{\mathrm{A}3^{6}.\mathrm{A}6^{2}}$ at
+$r=2$, $\vc{\mathrm{C}3^{6}.\mathrm{C}6^{18}}$ at $r=3$ and
+$\vc{\mathrm{A}3^{4}.\mathrm{A}6^{2}}$ at $r=4$.
+
+\begin{observation}\label{obs:rich}
+Reducing each of these systems as in Section~\ref{sec:lattice}, and scanning all
+$n\le300$ and all edge multiples $k\le15$, one finds:
+for $r=2,3,4,7$ the systems contain $4,5,7,12$ polygons respectively, in lattices
+of rank $2,3,4,3$, with $16,12,14,106$ vertex combinations; whereas for
+$2\le r\le15$ with $r\notin\{2,3,4,7\}$ the only polygons in the span are the two
+triangles defining the system, and no vertex closes. The four rich values are
+exactly those for which $\cosh s$ has degree at most three over $\QQ$.
+\end{observation}
+
+\begin{remark}
+The four fields are $\QQ(\sqrt[3]{2})$, $\QQ(\sqrt{33})$, $\QQ(\sqrt{33})$ and
+$\QQ(\sqrt5)$. Only $r=3$ and $r=4$ share one, which is what forces their
+difference to be rational; see Section~\ref{sec:limits}.
+\end{remark}
+
+\section{Limitations and open problems}\label{sec:limits}
+
+\subsection*{Scaling the decision procedure}
+The elimination of Theorem~\ref{thm:algebraic} was carried out with nested
+radicals for the constants $\cos(\pi/n)$. This is adequate for small $n$ but
+degenerates quickly. Of the four systems that resisted a first attempt, the two
+with moderate coefficient fields have since been completed and appear in
+Table~\ref{tab:edges}: $1.1555$, carrying pentagons and dodecagons, and $1.2537$,
+which is the regular tiling $\{4,5\}$ with decagons and $30$-gons intruding. The
+two that remain are $1.0377$, whose combination $\vc{3.4.8.40}$ carries a
+$40$-gon, and $1.0531$, whose two combinations $\vc{3.5.6.18}$ and
+$\vc{3.6^{2}.9}$ carry an $18$-gon together with a $9$-gon. Working throughout in
+a single cyclotomic field $\QQ(\zeta_N)$ with $N=\operatorname{lcm}\{2n\}$, and
+using modular or evaluation-interpolation resultants, should remove the
+obstruction. The system at $1.0531$ is the one of greatest interest, since its
+pentagons admit no symmetry and its smallest tilings are $16$-uniform.
+
+\subsection*{Completeness of the catalogue}
+The catalogue is believed complete, with the explicit caveat that nothing rules
+out a system hiding between two listed edges. Theorem~\ref{thm:decide} decides
+equality and inequality of two given edges; what is needed for completeness is a
+bound, in terms of the degree $M$ of a vertex combination, on the height of
+$P_m$, together with an enumeration of combinations up to that degree. Both
+appear to be within reach.
+
+\subsection*{Intrusion into a regular tiling}
+Two entries of Table~\ref{tab:edges} have the same shape: a regular tiling
+together with one further combination that brings in a pair of much larger
+polygons. At $1.0612$ the tiling $\{5,4\}=\vc{5^{4}}$ is accompanied by
+$\vc{3.4.10.20}$, and at $1.2537$ the tiling $\{4,5\}=\vc{4^{5}}$ is accompanied
+by $\vc{4^{2}.10.30}$. Both intruding combinations contain a decagon, and in both
+the second large polygon is a multiple of it. The two regular tilings are dual to
+one another. Whether these are the first two members of a family, and what the
+rule for the second large polygon is, we do not know.
+
+\subsection*{Finiteness of a scaled hybrid system}
+Observation~\ref{obs:106} presupposes the list of twelve polygons. We verified by
+search that no other pair $(n,k)$ with $n\le2000$, $k\le60$ has its angle in the
+rank-three lattice, but the argument is circular in the following sense: the
+lattice was read off from the twelve polygons. What is missing is an argument
+that no disjoint cluster of further polygons can close vertices among themselves
+at the same edge.
+
+\subsection*{Rank as an invariant}
+In each system studied the polygons split into a part lying in
+$\QQ\pi+\ZZ a$ and a small family carrying the remaining generators and one
+relation among them: $\{\mathrm{A}10,\mathrm{A}20\}$ with
+$\mathrm{A}10+\mathrm{A}20=\pi+\mathrm{A}3$ in the system of
+Section~\ref{sec:lattice}; the apeirogons
+$\{\mathrm{B}\infty,\mathrm{D}\infty,\mathrm{F}\infty\}$
+with $3\mathrm{B}\infty+\mathrm{D}\infty+\mathrm{F}\infty=\pi$ in the system
+$r=4$; and $\{\mathrm{A}6,\mathrm{B}3\}$ with $2\mathrm{A}6+\mathrm{B}3=\pi$ in
+$r=3$. Whether this is a general phenomenon, and what governs the rank, we do not
+know.
+
+\subsection*{The shared field at \texorpdfstring{$r=3$}{r=3} and \texorpdfstring{$r=4$}{r=4}}
+The identity $\cosh s_3-\cosh s_4=\tfrac12$ of Theorem~\ref{thm:rvalues} is a
+consequence of both edges lying in $\QQ(\sqrt{33})$ with the same coefficient on
+$\sqrt{33}$; their difference is then forced to be rational. Why these two
+systems share a quadratic field, when no other pair in the family does, we cannot
+say.
+
+\section*{Reproducibility}
+
+All computations are reproduced by scripts depending only on the
+\texttt{mpmath} and \texttt{sympy} libraries. They recompute every closed form,
+re-derive the enumerations both on the integer lattice and by direct
+verification of the angle sums at $120$ decimal digits, and re-run the
+completeness scans; a pass or failure is reported for each individual claim in
+this paper.
+
+\section*{Acknowledgements}
+
+\emph{To be written. Authorship and order are to be settled by the authors; this
+draft is circulated for comment. Computational work was carried out with the
+assistance of Claude (Anthropic).}
+
+\begin{thebibliography}{9}
+\bibitem{abrate}
+M. Abrate, S. Barbero, U. Cerruti and N. Murru,
+\emph{Writing $\pi$ as sum of arctangents with linear recurrent sequences, Golden
+mean and Lucas numbers}, arXiv:1409.6455 (2014).
+
+\bibitem{calcutgauss}
+J. S. Calcut,
+\emph{Gaussian integers and arctangent identities for $\pi$},
+Amer. Math. Monthly \textbf{116} (2009), 515--530.
+
+\bibitem{calcutrational}
+J. S. Calcut,
+\emph{Rational angled hyperbolic polygons}, arXiv:1412.3825 (2014).
+
+\bibitem{conwayjones}
+J. H. Conway and A. J. Jones,
+\emph{Trigonometric diophantine equations (On vanishing sums of roots of unity)},
+Acta Arith. \textbf{30} (1976), 229--240.
+
+\bibitem{ge}
+G. Ge,
+\emph{Algorithms related to multiplicative representations of algebraic numbers},
+Ph.D. thesis, University of California, Berkeley, 1993.
+
+\bibitem{maclachlanreid}
+C. Maclachlan and A. W. Reid,
+\emph{The Arithmetic of Hyperbolic 3-Manifolds},
+Graduate Texts in Mathematics 219, Springer, 2003.
+
+\bibitem{maiti}
+A. Maiti,
+\emph{On tilings of the hyperbolic plane by regular polygons}, arXiv:2302.05661.
+
+\bibitem{pech}
+P. Pech,
+\emph{On the need of radical ideals in automatic proving: a theorem about
+regular polygons}, and \emph{Computations of the area and radius of cyclic
+polygons given by the lengths of sides}, in Automated Deduction in Geometry,
+LNCS 3763, Springer (2006), 44--58.
+
+\bibitem{robbins}
+D. P. Robbins,
+\emph{Areas of polygons inscribed in a circle},
+Discrete Comput. Geom. \textbf{12} (1994), 223--236.
+
+\bibitem{takeuchi}
+K. Takeuchi,
+\emph{Arithmetic triangle groups},
+J. Math. Soc. Japan \textbf{29} (1977), 91--106.
+
+\bibitem{zheng}
+T. Zheng,
+\emph{Computing multiplicative relations between roots of a polynomial},
+arXiv:1912.07202 (2019).
+\end{thebibliography}
+
+\end{document}
