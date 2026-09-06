@@ -739,11 +739,21 @@ export function ReferenceShelf() {
 			setHeLoaded((s) => new Set(s).add(token));
 		};
 		if (!heLoaded.has("eager")) loadHyperbolicEdgesAtlas().then((d) => merge(d, "eager")).catch(() => {});
-		// Selecting a k chip pulls every base's lazy (base, k) shard for that k — 6.6.7's k=12/13, the
-		// high-valence bases' k=2.
+		// Selecting a k chip pulls the lazy (base, k) shards for that k — 6.6.7's k=12/13, the high-valence
+		// bases' k=2, the 2026-08-29 bases' k=3..5.
+		//
+		// SCOPED TO THE SELECTED BOARD, and that is a heap fix, not a bytes one. Every shard for a k used
+		// to be fetched whenever that k was picked, so `?geo=hyperbolic&dec=edges&k=5` pulled 29 MB over
+		// the wire — fine, under a second — and built 527 MB of JS heap, because a record's dart arrays
+		// expand several-fold as live objects and the shard cache never lets go. Measured with
+		// scripts/measure-page-load.mjs. With one board chosen only its own shard loads, which is what a
+		// reader looking at one board was ever going to look at. With no board chosen the fan-out is
+		// unchanged, because the unfiltered count has to be the true one.
 		const k = filters.kValue;
 		if (k != null) {
+			const only = filters.board?.startsWith("hyp-") ? filters.board.slice(4) : null;
 			for (const { base } of hypEdgesLazyShardsForK(k)) {
+				if (only && base !== only) continue;
 				const token = `${base}-${k}`;
 				if (!heLoaded.has(token)) loadHyperbolicEdgesShard(base, k).then((d) => merge(d, token)).catch(() => {});
 			}
@@ -751,7 +761,7 @@ export function ReferenceShelf() {
 		return () => {
 			alive = false;
 		};
-	}, [filters.geometry, filters.decoration, filters.kValue, heLoaded, tilings]);
+	}, [filters.geometry, filters.decoration, filters.kValue, filters.board, heLoaded, tilings]);
 
 	// Parametric-pentagon edge systems — EUCLIDEAN, so this effect runs under the plane, unlike every
 	// other Čtrnáct edge shelf. Eager slices (k = 2, 4, 6) arrive with the geometry; k = 8 and 10 are
@@ -926,7 +936,13 @@ export function ReferenceShelf() {
 					if (filters.decoration === "edges" && !xLoaded.has(token)) loadSphericalEdgesShard(b.id, k).then((d) => merge(d, token)).catch(() => {});
 				}
 			} else {
+				// Scoped to the selected board for the reason the hyperbolic EDGE bases are (see that effect):
+				// a k chip used to pull that k from every board at once, which is heap, not bytes.
+				const onlyPoly = filters.board?.startsWith("hpo-") || filters.board?.startsWith("hpq-")
+					? filters.board.slice(4)
+					: filters.board?.startsWith("hpt-") ? `t${filters.board.slice(4)}` : null;
 				for (const b of hypPolyLazyShardsForK(k)) {
+					if (onlyPoly && b.id !== onlyPoly) continue;
 					const token = `hpo-${b.id}-${k}`;
 					if (!xLoaded.has(token)) loadHyperbolicPolyShard(b.id, k).then((d) => merge(d, token)).catch(() => {});
 				}
@@ -942,7 +958,7 @@ export function ReferenceShelf() {
 		return () => {
 			alive = false;
 		};
-	}, [filters.geometry, filters.decoration, filters.kValue, xLoaded, tilings]);
+	}, [filters.geometry, filters.decoration, filters.kValue, filters.board, xLoaded, tilings]);
 
 	// The DECORATION catalogues, on their own effect and their own trigger.
 	//

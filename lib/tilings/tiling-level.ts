@@ -69,7 +69,24 @@ const ORBIT_SPLIT = /\s*[+/]\s*/;
  *  when the string is not a dot-separated list of polygon sizes — a star "n*", an "α" family label, a
  *  freedraw tile count — or when it is a QUOTIENT figure too short to be a vertex (see `sp3-1-00001`,
  *  whose "3.4" is the cuboctahedron's figure modulo a 2-fold site rotation, not its 3.4.3.4 vertex). */
+/**
+ * Memoised on the config STRING, because the corpus repeats it heavily: /library's `levelCounts` memo
+ * calls this once per vertex configuration of every loaded record on every filter change, and the
+ * whole hyperbolic shelf draws on a few hundred distinct configs. The work itself is 2n rotations of
+ * an n-array plus a comparison each, so it is the repetition and not the function that costs — 382 ms
+ * measured on a hyperbolic open, against a table of a few hundred entries once this is in place.
+ */
+const canonicalCache = new Map<string, number[] | null>();
+
 export function canonicalConfig(config: string): number[] | null {
+	const hit = canonicalCache.get(config);
+	if (hit !== undefined) return hit;
+	const out = computeCanonicalConfig(config);
+	canonicalCache.set(config, out);
+	return out;
+}
+
+function computeCanonicalConfig(config: string): number[] | null {
 	const parts = config.trim().split(".");
 	if (parts.length < 3) return null;
 	const a: number[] = [];
