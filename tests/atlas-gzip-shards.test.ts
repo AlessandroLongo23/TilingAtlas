@@ -10,6 +10,8 @@ import fs from "node:fs";
 import zlib from "node:zlib";
 import { readAtlas, decodeAtlas } from "@/lib/services/atlasCodec";
 
+/** What the assertions below read off a record; the rest of the shape is decodeAtlas's business. */
+type Rec = { id: string; darts: unknown };
 const bodyOf = (buf: Buffer, url: string) =>
 	({ ok: true, url, arrayBuffer: async () => buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength), json: async () => JSON.parse(buf.toString("utf8")) }) as unknown as Response;
 
@@ -17,23 +19,23 @@ describe("gzipped shards", () => {
 	// A shard that is stored PLAIN, so the three shapes below can be compared against one source. The
 	// hyperbolic-poly shelf is entirely gzipped now, so this reads one from a shelf that is not.
 	const raw = fs.readFileSync("public/hyperbolic-edges/e667-k1.json");
-	const want = decodeAtlas<any>(JSON.parse(raw.toString("utf8")));
+	const want = decodeAtlas<Rec>(JSON.parse(raw.toString("utf8")));
 
 	it("reads a .json.gz identically to its .json", async () => {
 		const gz = zlib.gzipSync(raw);
-		const got = await readAtlas<any>(bodyOf(gz, "https://x/e667-k1.json.gz"));
+		const got = await readAtlas<Rec>(bodyOf(gz, "https://x/e667-k1.json.gz"));
 		expect(got.map((r) => r.id)).toEqual(want.map((r) => r.id));
 		expect(JSON.stringify(got[0].darts)).toEqual(JSON.stringify(want[0].darts));
 		expect(gz.length).toBeLessThan(raw.length / 2);
 	});
 
 	it("still reads a .json.gz whose server already decompressed it", async () => {
-		const got = await readAtlas<any>(bodyOf(raw, "https://x/e667-k1.json.gz"));
+		const got = await readAtlas<Rec>(bodyOf(raw, "https://x/e667-k1.json.gz"));
 		expect(got.map((r) => r.id)).toEqual(want.map((r) => r.id));
 	});
 
 	it("leaves plain .json alone", async () => {
-		const got = await readAtlas<any>(bodyOf(raw, "https://x/e667-k1.json"));
+		const got = await readAtlas<Rec>(bodyOf(raw, "https://x/e667-k1.json"));
 		expect(got.map((r) => r.id)).toEqual(want.map((r) => r.id));
 	});
 });
