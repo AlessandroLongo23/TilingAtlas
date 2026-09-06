@@ -15,12 +15,12 @@ import { cn } from "@/lib/utils/cn";
 import type { ColorsGrid } from "@/lib/colors/pattern";
 import type { SphStarKind } from "@/lib/tilings/sph-star";
 import type { FreedrawCatalogueGrid, FreedrawGrid } from "@/lib/freedraw/pattern";
-import { hypEdgesLazyShardsForK } from "@/lib/freedraw/hyp-edges";
+import { HYP_EDGES_BASES, hypEdgesLazyShardsForK } from "@/lib/freedraw/hyp-edges";
 import { hypColorsLazyShardsForK } from "@/lib/colors/hyp-colors";
 import { sphColorsLazyShardsForK } from "@/lib/colors/sph-colors";
 import { schwarzLazyShardsForK } from "@/lib/freedraw/schwarz";
 import { sphEdgesLazyShardsForK } from "@/lib/freedraw/sph-edges";
-import { hypPolyLazyShardsForK } from "@/lib/tilings/hyp-poly";
+import { HYP_POLY_BOARD_BY_ID, hypPolyLazyShardsForK } from "@/lib/tilings/hyp-poly";
 import { hypHalfLazyShardsForK } from "@/lib/tilings/hyp-half";
 import { pentEdgeLazyShardsForK } from "@/lib/pentagon/edge-shelf";
 import { ihEdgeLazyShardsForK } from "@/lib/isohedral/edge-shelf";
@@ -477,6 +477,11 @@ function serializeView(v: ViewState): string {
 	if (f.scaledScaleSet) p.set("scaleset", f.scaledScaleSet);
 	if (f.polyformFamily) p.set("pform", f.polyformFamily);
 	if (f.islamicSystem) p.set("islamicsystem", f.islamicSystem);
+	// `board` is READ by parseFilter above and was never WRITTEN here, so the round trip was one-way: a
+	// link carrying ?board= selected the board, and the UI could not produce one. Copy link and a plain
+	// reload both dropped the selection — on all 271 hyperbolic-poly boards, the 32 edge bases and every
+	// spherical and freedraw board. Found 2026-09-01 walking the shelf by click instead of by URL.
+	if (f.board) p.set("board", f.board);
 	if (f.edgeBoard) p.set("edgeboard", f.edgeBoard);
 	if (f.freedrawKind) p.set("fdkind", f.freedrawKind);
 	if (f.freedrawGrid) p.set("fdgrid", f.freedrawGrid);
@@ -758,6 +763,19 @@ export function ReferenceShelf() {
 				if (!heLoaded.has(token)) loadHyperbolicEdgesShard(base, k).then((d) => merge(d, token)).catch(() => {});
 			}
 		}
+		// Selecting a base with NO k chosen loads that base's dense slices — the same rule the poly shelf
+		// follows, and for the same reason: the chip promises the board, so picking it fetches the board.
+		// Without this, 3^3.5^2 read its eager slices alone and said nothing about the 90,387 at k = 5.
+		const heBase = filters.board?.startsWith("hyp-") ? filters.board.slice(4) : null;
+		if (heBase && k == null) {
+			for (const b of HYP_EDGES_BASES) {
+				if (b.id !== heBase) continue;
+				for (const bk of b.lazyKs) {
+					const token = `${b.id}-${bk}`;
+					if (!heLoaded.has(token)) loadHyperbolicEdgesShard(b.id, bk).then((d) => merge(d, token)).catch(() => {});
+				}
+			}
+		}
 		return () => {
 			alive = false;
 		};
@@ -953,6 +971,28 @@ export function ReferenceShelf() {
 					const token = `hph-${b.id}-${k}`;
 					if (!xLoaded.has(token)) loadHyperbolicHalfShard(b.id, k).then((d) => merge(d, token)).catch(() => {});
 				}
+			}
+		}
+		// SELECTING A BOARD LOADS THAT BOARD, on all three hyperbolic-poly families.
+		//
+		// The abcd boards have no eager slice at all — 247 boards with even one eager k would be 247
+		// requests before anything displayed, which is the wall this shelf had to clear to ship the corpus
+		// whole — and the ai1/ai2 boards have five, out of the hundred-odd k each now carries. Either way,
+		// what the board chip promises is the board, so picking it fetches the board.
+		//
+		// ⚑ This covered `hpq-` only until 2026-09-01, and the asymmetry was visible on screen: clicking
+		// 3.4.7.4 in /library showed 10 tilings, its five eager slices, against 16,459 shipped. Found by
+		// walking the shelf by click instead of by URL. With a k also chosen, just that slice loads.
+		const polyBoard = filters.board?.startsWith("hpq-") || filters.board?.startsWith("hpo-")
+			? HYP_POLY_BOARD_BY_ID.get(filters.board.slice(4))
+			: filters.board?.startsWith("hpt-")
+				? HYP_POLY_BOARD_BY_ID.get(`t${filters.board.slice(4)}`)
+				: undefined;
+		if (polyBoard) {
+			for (const bk of polyBoard.lazyKs) {
+				if (k != null && bk !== k) continue;
+				const token = `hpo-${polyBoard.id}-${bk}`;
+				if (!xLoaded.has(token)) loadHyperbolicPolyShard(polyBoard.id, bk).then((d) => merge(d, token)).catch(() => {});
 			}
 		}
 		return () => {
