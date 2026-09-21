@@ -14,6 +14,7 @@
 // slider, and raw overlapping bars are what every remaining caller already used.
 
 import * as THREE from "three";
+import { tileHueRgb01 } from "@/lib/render/tilePalette";
 import { applyEdgeOcclusion, markEdgeOverlay, type EdgeOcclusionUniforms } from "./edgeOcclusion";
 import type { Crease } from "./sphStar";
 import { polygonHue } from "@/lib/utils/renderTiling";
@@ -26,17 +27,6 @@ function nrm(a: V3): V3 {
 }
 function crs(a: V3, b: V3): V3 {
 	return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
-}
-
-// Matches the flat renderer's hsb2rgb so the skeleton takes the tiling's tile-shape hue.
-function hsb2rgb(hueDeg: number, s: number, v: number): [number, number, number] {
-	const h = (((hueDeg / 360) % 1) + 1) % 1;
-	const k = (o: number) => {
-		const x = (((h * 6 + o) % 6) + 6) % 6;
-		return Math.min(Math.max(Math.abs(x - 3) - 1, 0), 1);
-	};
-	const m = (kk: number) => v * (1 - s) + v * s * kk;
-	return [m(k(0)), m(k(4)), m(k(2))];
 }
 
 export type WireSection = "tube" | "rect";
@@ -281,7 +271,7 @@ export function buildTubeSkeleton(
 	// A fixed `color` (the flat solid's dark edges) overrides the tiling hue and ignores the hue-ring offset.
 	const fixed = opts.color;
 	const applyColor = (hueOffset: number) => {
-		const [r, g, b] = fixed ?? hsb2rgb(baseHue + hueOffset, 0.4, 1.0);
+		const [r, g, b] = fixed ?? tileHueRgb01(baseHue + hueOffset);
 		material.color.setRGB(r, g, b, THREE.SRGBColorSpace);
 	};
 	applyColor(opts.hueOffset ?? 0);

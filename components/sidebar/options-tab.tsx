@@ -20,6 +20,7 @@ import { Toggle } from "@/components/ui/toggle";
 import { WIRINGS } from "@/lib/freedraw/arcs";
 import { FILL_MODES } from "@/lib/freedraw/render";
 import { colorCountOf, colorLetter } from "@/lib/colors/pattern";
+import { FILL_AMOUNT_MAX, FILL_AMOUNT_MIN, FILL_AMOUNT_STEP } from "@/lib/render/tilePalette";
 import { cellFill, DEFAULT_PALETTE, paletteFor, type ColorChoice } from "@/lib/colors/render";
 import { polygonClassSupportsIslamic } from "@/lib/utils/tilingLabel";
 import { tileClassOf } from "@/lib/services/referenceAtlas";
@@ -504,15 +505,24 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							) : null}
 						</div>
 					) : null}
-					{/* The global fill flag. Hidden on every three.js spherical shelf — there the Opacity slider
-					    (below) is the view's own fill control, and it says more than a checkbox can. */}
+					{/* The global fill, as a slider. It was a Polygon-fill CHECKBOX, and 0 is still exactly that
+					    checkbox's off state — no fill at all, outline only — so B keeps flipping between off and
+					    the default. Everything above 0 is how much colour the tiles carry: the dial is 0–1 and
+					    its top is HSB saturation 60, not 100, so every position on it is a usable tiling (see
+					    lib/render/tilePalette.ts). Untouched it sits at the atlas palette's own saturation.
+					    Hidden on every three.js spherical shelf — there the Opacity slider (below) is the view's
+					    own fill control, and it says more than this can. */}
 					{!isAnySpherical && !isFreedraw && !isColors ? (
-						<Checkbox
-							id="showPolygonFill"
-							label="Polygon fill"
-							shortcut="B"
-							checked={cfg.showPolygonFill}
-							onCheckedChange={(v) => setCfg({ showPolygonFill: v })}
+						<Slider
+							id="fillAmount"
+							label="Fill"
+							hint={<Kbd>B</Kbd>}
+							value={cfg.fillAmount}
+							onChange={(v) => setCfg({ fillAmount: v })}
+							min={FILL_AMOUNT_MIN}
+							max={FILL_AMOUNT_MAX}
+							step={FILL_AMOUNT_STEP}
+							format={(v) => (v <= 0 ? "off" : v.toFixed(2))}
 						/>
 					) : null}
 					{/* Freedraw renders its own copy of this slider inside its block above, so the stroke sits

@@ -1,3 +1,9 @@
+import { tileFill } from "@/lib/render/tilePalette";
+
+// ⚑ getHue is NOT polygonHue: it is a LINEAR (n−3)/9 ramp over 0..300°, where the atlas' ramp is
+// logarithmic over 0..360°, so a hexagon icon is not the hexagon colour the canvas paints beside it.
+// Only the saturation and lightness are shared (tileFill). Left as it is deliberately — unifying the
+// hue is a visible change to every icon in the UI and wants its own look.
 interface ShapeIconProps {
 	sides?: number;
 	size?: number;
@@ -20,7 +26,7 @@ function getPolygonPoints(sides: number, radius: number, cx: number, cy: number)
 }
 
 export function ShapeIcon({ sides = 3, size = 32, color }: ShapeIconProps) {
-	const fill = color ?? `hsla(${getHue(sides)}, 100%, 80%, 0.8)`;
+	const fill = color ?? tileFill(getHue(sides), 0.8);
 	return (
 		<svg
 			width={size}

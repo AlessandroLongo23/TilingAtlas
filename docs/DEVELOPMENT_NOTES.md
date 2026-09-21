@@ -17438,3 +17438,99 @@ case at the top of every board. Untouched here; it wants a look at the rim bound
 Measured on the dev server, headed (scripts/measure-play-cells.mjs, 9 s settle): Hyperbolic x Tilings
 127 requests, 2.8 MB, 4.7 s blocking; Spherical x Tilings 192 requests, 0.9 MB, 2.2 s; 2.5 GB of heap
 after all nine cells in one page. No baseline from before the batch was taken.
+
+**One constant for the tile palette, and the fill put on a slider.**
+
+AL asked what the saturation of the euclidean tiles was and said it could be higher. The answer had a
+correction in it worth keeping: at HSB(h, 0.40, 1.0) the fill is ALREADY 100% saturated in HSL, because
+HSB(h, s, 1.0) ≡ HSL(h, 100%, 100·(1 − s/2)%) for every s. With value pinned at 1, the HSB saturation is
+a pure lightness dial and nothing else. "More saturated" therefore means "less light", and the limit is
+set by the near-black tile stroke, not by the colour.
+
+The pair was written out by hand at about fifty call sites across p5, three.js, canvas2d, SVG and nine
+GLSL programs. `lib/render/tilePalette.ts` now owns it: `TILE_SAT`/`TILE_VAL` and their 0–100 and HSL
+forms, `tileFill(hue, alpha)`, `tileLine(hue)`, `tileHueRgb01`, `hsbDegToRgb01`, and `TILE_PALETTE_GLSL`
+— a shader chunk declaring `hsb2rgb` and `tileFill(hueDeg)` that replaced seven byte-identical copies of
+the same four-line GLSL helper. `sphericalTilingShader.ts` keeps its `sph`-prefixed copy on purpose (it
+is injected into a three.js MeshStandardMaterial, where a bare `hsb2rgb` can collide) and takes the
+numbers through `TILE_SAT_GLSL`/`TILE_VAL_GLSL` instead.
+
+⚑ **The two spherical shelves had been out of step and nobody noticed.** `sphStar.ts` moved to the atlas
+palette (0.40/1.00) on 2026-08-21 with a comment saying the two shelves "share one palette again", but
+`sphPoly.ts` was never moved and still held its own 0.50/0.98, so the convex shelf had been painting a
+notch deeper than the star shelf it is meant to match. Both take the constant now. This is exactly the
+drift a spelled-out literal produces, and the reason for the module.
+
+Also collapsed: `hsbToHsl` (drawVertexConfiguration) and `hsbToHsla` (renderTiling) were the same
+conversion written twice; four files carried their own identical HSB→RGB helper (three degree-based, plus
+`hsb01` in strap-canvas); and a second unnamed pair, `hsbToHsla(h, 55, 62, 1)`, sat at eleven figure-card
+sites and is now `tileLine`. Net across the 62 existing files touched is +131 lines, plus a 164-line new
+module — the count rose because a user-facing control and its plumbing through nine shader programs are
+net-new, not because the duplication survived.
+
+Saturation 40/55/65 were compared by capturing /play on the same tiling at each: 65 is where yellow
+starts reading as amber. 55 shipped briefly as the new fixed value, and then AL asked for the choice to
+be the visitor's, so it is a slider instead.
+
+**The Polygon-fill CHECKBOX is now the Fill SLIDER** (`showPolygonFill: boolean` → `fillAmount: number`).
+The dial is 0–1 and maps onto saturation 0–60 (`fillAmountToSatPct`), so its top is a deep-but-legible
+tiling and not a fully saturated one — past about 60 the fill stops separating from the near-black tile
+stroke, and it closes on the `tileLine` pair the figure cards draw at HSL lightness 45.
+
+It rests at 0.8 (AL), which is HSB saturation 48, HSL lightness 76. The DIRECTION OF DERIVATION matters
+and is the opposite of what it was at first: `DEFAULT_FILL_AMOUNT` is the constant, and `TILE_SAT_PCT`
+— the value every surface the slider does not reach paints with — is computed from it. Written the other
+way round the two can disagree, which is exactly the failure sphPoly.ts had been sitting in. So the
+palette moved 40 → 48 with the slider's resting position, and the play canvas, the thumbnails, the
+figures, the spherical shelves and the orbit dots all moved together.
+
+0 IS THE OLD CHECKBOX'S OFF STATE — no fill at all, outline only, white stroke on a dark theme — and NOT
+a saturation of zero, which is a white tile. Every consumer gates on `> 0` and converts only above it;
+the GLSL chunk deliberately does not declare the uniform itself, because an unset uniform reads 0 and
+would paint white in any of the nine programs that forgot to set it. B keeps working, flipping between
+off and the default, on the same pattern `sphericalFaceOpacity` already used when its Fill/Wireframe
+toggle became a slider. `fill=0` in a previously shared link still means off: the checkbox defaulted to
+on, so a link carried `fill=0` or nothing, and both still read correctly as a 0–1 number.
+
+Verified by URL (`?fill=…`, which is deterministic where a setState races the mount-time URL hydration —
+that race, not a bug, is what made an early screenshot pass show amount 1 rendering as the default):
+measured saturation at the rendered pixels is 19.6 / 47.8 / 60.0 at amounts 0.33 / 0.8 / 1, matching the
+mapping to within 8-bit rounding, and 0 paints no fill at all. The p5 and WebGL euclidean paths agree exactly on fill colour at every position (they differ
+only in stroke antialiasing at DPR 1). All 21 module-level shader programs compile in a real WebGL2
+context. The lit spherical shelf is NOT under the slider — the checkbox was hidden there too — and keeps
+the palette default; its LOOK.sat 1.35 grade was already clipping red before any of this (72.9% of
+surface pixels had a pinned channel), so nothing there moved.
+
+⚑ Not fixed, deliberately: `components/shape-icon.tsx` computes its hue with a LINEAR (n−3)/9 ramp over
+0..300°, where `polygonHue` is logarithmic over 0..360°, so a hexagon icon is not the hexagon colour the
+canvas paints beside it. Only S/V are shared now. Unifying the hue changes every icon in the UI and
+wants its own look. `TILE_LINE_*` does not move with the slider either: the fill/line lightness gap is
+35 points at the default and 15 at the slider's top, which is part of why the top is 60 and not 100.
+The catalogue thumbnails that follow the slider are the hyperbolic developed ones (they paint through
+`tileHueRgb01`); the colors and edges shelves take their fills from a coloring palette, not from
+`tileFill`, so the slider gates them on/off as the checkbox did and leaves their hues alone.
+
+**An edit followed the selection onto the next tiling.** AL: the changes were "brought to it with a
+mapping that doesn't make sense because it doesn't translate". Correct, and it could not have been made
+to work: `dropped`, `cuts`, `moved` and `edges` name edges, rings and vertices by CONTENT key
+(`va,vb,dx,dy` for an edge, a canonical ring for a face), and such a key is only meaningful against the
+cell it was built on. On another tiling it either fails to resolve or resolves onto an unrelated edge,
+which is the worse half: a plausible edit nobody asked for.
+
+The doc is now STAMPED with its cell. `useStudio.openOn(cellId)` drops the doc, both history stacks, the
+uncommitted cut path and any standing refusal when the cell differs, and is a no-op when it is the same
+cell, so leaving the editor and coming back keeps the work. `_play-client.tsx` calls it on every
+`drawCellId` change, which also covers a mirror flip, a bubble restyle and a squaring, since each of
+those renumbers the cell.
+
+The call sits OUTSIDE the editor's own subtree deliberately. Keyed to the canvas it would miss the
+longer route to the same bug: switch tiling with the editor closed, then reopen it, and the stale doc
+reaches a cell it was never built against. Measured in the running app: an edit of one dropped edge plus
+one painted tile with two history steps on `ctrnact-star-k5-n0082` came back empty with an empty history
+on `n0083` (editor open) and again on `n0084` (editor closed for the switch, reopened after), no console
+errors. `lib/stores/studio.test.ts` holds the five boundary cases, including that the tool and the
+period mode survive the switch, being preferences and not edits.
+
+Also: a `wallpaper` period mode no longer survives onto a tiling with no computed group, where the chip
+would have read as pressed and disabled at once.
+

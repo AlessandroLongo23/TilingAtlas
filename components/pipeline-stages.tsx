@@ -7,7 +7,7 @@ import {
 	ACCEPT, arc, arrowHead, congruent, DART, dot, freeEnd, gluedEdge, GHOST, halo, INK, rad, REJECT,
 	segment, SOFT, T1_COLOUR, T2_COLOUR, type Api, type Pt,
 } from "@/lib/render/figureGlyphs";
-import { hsbToHsla, polygonHue } from "@/lib/utils/renderTiling";
+import { polygonHue, tileFill, tileLine } from "@/lib/utils/renderTiling";
 
 // One panel per pipeline stage, each drawn from what that stage's source actually does.
 //
@@ -261,8 +261,8 @@ function drawDevelop(api: Api, dev: Developed) {
 	const { tiles, origin, dir, t1, t2 } = dev;
 
 	for (const t of tiles) {
-		ctx.fillStyle = hsbToHsla(polygonHue(t.n), 40, 100, 0.82);
-		ctx.strokeStyle = hsbToHsla(polygonHue(t.n), 55, 62, 1);
+		ctx.fillStyle = tileFill(polygonHue(t.n), 0.82);
+		ctx.strokeStyle = tileLine(polygonHue(t.n));
 		ctx.lineWidth = 1.1 / s;
 		ctx.beginPath();
 		ctx.moveTo(t.pts[0][0], t.pts[0][1]);

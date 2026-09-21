@@ -1,5 +1,5 @@
 import { buildCell } from "@/lib/pentagon/build";
-import { hsbToHsla } from "@/lib/utils/renderTiling";
+import { tileFill } from "@/lib/utils/renderTiling";
 
 // The Pentagons card's media: a real patch of Type 15, built by the same code the /pentagons page
 // draws — `buildCell` solves the pentagon, replays its assembly recipe and hands back the twelve
@@ -117,7 +117,7 @@ export function PentagonMini() {
 					<polygon
 						key={i}
 						points={t.points}
-						fill={hsbToHsla(t.hue, 40, 100, 1)}
+						fill={tileFill(t.hue, 1)}
 						stroke="rgba(0, 0, 0, 0.45)"
 						strokeWidth={period * 0.008}
 						strokeLinejoin="round"

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import { prepare, screenMapper } from "@/lib/render/figureCanvas";
-import { hsbToHsla, polygonHue } from "@/lib/utils/renderTiling";
+import { polygonHue, tileFill, tileLine } from "@/lib/utils/renderTiling";
 
 // One rejected assembly per local rule, drawn from what the solver actually tests.
 //
@@ -40,8 +40,8 @@ const INK = "rgba(20,20,20,0.88)";
 const SOFT = "rgba(20,20,20,0.42)";
 const GHOST = "rgba(20,20,20,0.22)";
 
-const fill = (n: number) => hsbToHsla(polygonHue(n), 40, 100, 0.9);
-const line = (n: number) => hsbToHsla(polygonHue(n), 55, 62, 1);
+const fill = (n: number) => tileFill(polygonHue(n), 0.9);
+const line = (n: number) => tileLine(polygonHue(n));
 
 interface Api {
 	ctx: CanvasRenderingContext2D;

@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { Vector } from "@/classes/Vector";
 import { BUBBLE_KOCH_LEVELS, DEFAULT_BUBBLE_EDGE_STYLE, type BubbleEdgeStyle } from "@/lib/bubble/edges";
 import { IDENTITY_DEFORM, type Mat2 } from "@/lib/render/flatView";
+import { DEFAULT_FILL_AMOUNT } from "@/lib/render/tilePalette";
 
 export interface SelectedTiling {
 	name: string;
@@ -65,7 +66,20 @@ export interface ConfigurationState {
 
 	// Display toggles
 	showDualConnections: boolean;
-	showPolygonFill: boolean;
+	/**
+	 * How much colour the tiles carry, 0–1 — the /play sidebar's Fill slider, which replaced the
+	 * Polygon-fill checkbox this field used to be.
+	 *
+	 * It is an AMOUNT, not a saturation: `fillAmountToSatPct` maps it onto 0–FILL_MAX_SAT_PCT (60), so 1
+	 * is the deepest usable fill and not a fully saturated tile — see lib/render/tilePalette.ts for why
+	 * the dial stops there. The default is DEFAULT_FILL_AMOUNT, which is exactly the palette's own
+	 * saturation, so an untouched slider paints what every other surface in the atlas paints.
+	 *
+	 * 0 IS THE OLD CHECKBOX'S OFF STATE: no fill at all, outline only (and the stroke goes white on a
+	 * dark theme), NOT a saturation of zero, which would be a white tile. Every consumer therefore tests
+	 * `> 0` before painting, and converts only above 0.
+	 */
+	fillAmount: number;
 	showPolygonPoints: boolean;
 	/** LENGTH families only: colour each tile by its own SIZE rather than by the by-side-count ramp.
 	 *  The two-square tiling has both tiles at n = 4, so the ramp gives them one colour whatever the
@@ -114,8 +128,9 @@ export interface ConfigurationState {
 	// It is band geometry, not a stroke: dragging it rebuilds the mesh. 0 = no border.
 	islamicOutlineWidth: number;
 	islamicChirality: boolean;        // flips which strand rides over at every crossing (the two chiralities)
-	// Region fills are hue-only — saturation/lightness are locked to the tile palette (HSL 100%/80% ≡
-	// HSB 0.40/1.0), like the hue-shift ring — so a fill is always a tile-palette colour, never off-palette.
+	// Region fills are hue-only — saturation and lightness are locked to the tile palette (TILE_SAT /
+	// TILE_VAL in lib/render/tilePalette.ts), like the hue-shift ring — so a fill is always a tile-palette
+	// colour, never off-palette, and it follows the palette if the palette moves.
 	islamicCheckerHueA: number;       // checkerboard field A: hue° (0–360)
 	islamicCheckerHueB: number;       // checkerboard field B: hue°
 	// Plain-fill A/B/C: star bodies (A) keep their tile hue; the two background classes take these shared
@@ -408,7 +423,7 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	deformOn: false,
 
 	showDualConnections: false,
-	showPolygonFill: true,
+	fillAmount: DEFAULT_FILL_AMOUNT,
 	showPolygonPoints: false,
 	lengthSizeHue: true,
 	showConstructionPoints: false,

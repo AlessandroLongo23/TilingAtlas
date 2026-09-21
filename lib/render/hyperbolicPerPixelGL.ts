@@ -8,6 +8,7 @@
 // certificate accepts — regular, mixed, k-uniform alike — and fills the disk to the rim.
 
 import type { Su11 } from "@/lib/render/hyperbolic";
+import { TILE_PALETTE_GLSL, TILE_SAT_PCT } from "@/lib/render/tilePalette";
 import { EDGE_SCALE, type ShaderTiling, type TileField } from "@/lib/render/hyperbolicReduce";
 
 const MAX_GENS = 128; // uniform array bound; side pairings ∪ inverses (measured ≤ ~48 across the atlas)
@@ -40,6 +41,7 @@ uniform vec3 uStroke;      // stroke colour
 uniform float uHueOffset;  // global hue rotation (deg)
 uniform float uStrokePx;   // stroke width, device px
 uniform float uShowFill;   // 1 fill by tile, 0 flat background
+uniform float uTileSat;    // tile saturation 0..1 — the sidebar's Fill slider (0 = uShowFill 0)
 uniform float uTaper;      // 1 taper the stroke toward the rim
 uniform float uEdgeMode;   // 1 = edge-pattern field: R=orbit, G=drawn-edge dist, B=scaffold dist
 uniform float uScaffold;   // edge mode: 1 = also stroke the faint undrawn base-tiling grid
@@ -54,10 +56,7 @@ vec2 cconj(vec2 a) { return vec2(a.x, -a.y); }
 // SU(1,1) action z -> (a z + b)/(conj(b) z + conj(a))
 vec2 su11(vec2 a, vec2 b, vec2 z) { return cdiv(cmul(a, z) + b, cmul(cconj(b), z) + cconj(a)); }
 
-vec3 hsb2rgb(float h, float s, float v) {
-	vec3 k = clamp(abs(mod(h * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
-	return v * mix(vec3(1.0), k, s);
-}
+${TILE_PALETTE_GLSL}
 
 void main() {
 	vec2 z = (gl_FragCoord.xy - uCenter) / uR;
@@ -131,7 +130,7 @@ void main() {
 		// COLOURINGS keep the palette: there the colours ARE the catalogued object, not a backdrop.
 		vec3 tileCol = uColorsMode > 0.5
 			? uPalette[int(clamp(orbit, 0.0, 3.0))]
-			: hsb2rgb(mod(2.0 * 47.0 + uHueOffset, 360.0) / 360.0, 0.40, 1.0);
+			: tileFillAt(2.0 * 47.0 + uHueOffset, uTileSat);
 		vec3 fill = uShowFill > 0.5 ? tileCol * dim : uBg;
 		// The depth shade lights the INK as well as the paper — see the note on ink in the tile branch.
 		float ink = uShowFill > 0.5 ? dim : 1.0;
@@ -187,7 +186,7 @@ void main() {
 	float dim = 1.0 - 0.5 * dep * dep;
 	// class A (star body) keeps its tile's hue (the hue ring rotates it); B/C take the two shared
 	// background colours, fixed like the euclid plain fill.
-	vec3 tileCol = hsb2rgb(mod(sides * 47.0 + uHueOffset, 360.0) / 360.0, 0.40, 1.0);
+	vec3 tileCol = tileFillAt(sides * 47.0 + uHueOffset, uTileSat);
 	if (cls > 1.5) tileCol = cls > 2.5 ? uColC : uColB;
 	vec3 fill = uShowFill > 0.5 ? tileCol * dim : uBg;
 	// THE SHADE LIGHTS THE INK TOO, and leaving it off the stroke inverted the figure halfway out.
@@ -235,6 +234,9 @@ export interface PerPixelDrawParams {
 	canvasH: number; // backing height, device px (for the y flip)
 	dark: boolean;
 	showFill: boolean;
+	/** Tile saturation 0–100, the sidebar's Fill slider. Omitted ⇒ the palette default. Pair it with
+	 *  `showFill`: 0 is not a saturation here, it is `showFill: false`. */
+	fillSatPct?: number;
 	hueOffset: number;
 	strokePx: number;
 	taper: boolean;
@@ -286,7 +288,7 @@ export class HyperbolicPerPixelRenderer {
 		this.prog = prog;
 		for (const n of [
 			"uCenter", "uR", "uView", "uGens", "uNumGens", "uField", "uRTex", "uRIn", "uRes", "uBg",
-			"uStroke", "uHueOffset", "uStrokePx", "uShowFill", "uTaper",
+			"uStroke", "uHueOffset", "uTileSat", "uStrokePx", "uShowFill", "uTaper",
 			"uIslamicField", "uIslamicOn", "uResI", "uColB", "uColC",
 			"uEdgeMode", "uScaffold", "uStrokeSca", "uColorsMode", "uPalette",
 		]) {
@@ -377,6 +379,7 @@ export class HyperbolicPerPixelRenderer {
 		gl.uniform1f(this.u.uHueOffset, p.hueOffset);
 		gl.uniform1f(this.u.uStrokePx, p.strokePx); // 0 = no stroke (callers floor nonzero widths)
 		gl.uniform1f(this.u.uShowFill, p.showFill ? 1 : 0);
+		gl.uniform1f(this.u.uTileSat, (p.fillSatPct ?? TILE_SAT_PCT) / 100);
 		gl.uniform1f(this.u.uTaper, p.taper ? 1 : 0);
 		const islamicOn = !!p.islamic && this.hasIslamic;
 		gl.uniform1f(this.u.uIslamicOn, islamicOn ? 1 : 0);

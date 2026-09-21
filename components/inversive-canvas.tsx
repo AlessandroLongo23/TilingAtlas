@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { fillAmountToSatPct, TILE_PALETTE_GLSL } from "@/lib/render/tilePalette";
 import { resolveDeform, useConfiguration } from "@/stores/configuration";
 import { IDENTITY_DEFORM, invertMat2, isIdentityDeform, mat2Singulars, type Mat2 } from "@/lib/render/flatView";
 import {
@@ -125,7 +126,8 @@ uniform sampler2D uList;    // RGBA32F, [primIndex, di, dj, 0] per bucket entry
 uniform int uListW;
 
 uniform float uStrokeW;   // the "Line stroke" slider, CSS px — the flat renderer's uHalfStrokePx doubled
-uniform float uHueOffset; // global hue rotation, degrees (the sidebar hue ring); hsb2rgb wraps via mod
+uniform float uHueOffset; // global hue rotation, degrees (the sidebar hue ring); tileFill wraps via mod
+uniform float uTileSat;   // tile saturation 0..1 — the sidebar's Fill slider
 uniform vec3 uSurface;
 uniform vec3 uAvg;      // cell average fill (already hue-shifted CPU-side); the unresolvable centre blends to this
 uniform float uFeature; // median TILE size (world), not the cell period and not a segment length — the
@@ -139,10 +141,7 @@ vec2 cdiv(vec2 a, vec2 b) {
 	return vec2(a.x * b.x + a.y * b.y, a.y * b.x - a.x * b.y) / d;
 }
 
-vec3 hsb2rgb(float h, float s, float v) {
-	vec3 k = clamp(abs(mod(h * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
-	return v * mix(vec3(1.0), k, s);
-}
+${TILE_PALETTE_GLSL}
 
 vec2 getVert(int idx) {
 	return texelFetch(uVerts, ivec2(idx % uVertsW, idx / uVertsW), 0).xy;
@@ -314,10 +313,16 @@ void main() {
 		if (!isOpen && fillC.a > 0.0) {
 			bool ins = nonzero ? (wind != 0) : ((cross - 2 * (cross / 2)) == 1);
 			if (ins) {
-				// s=0.40, b=1.0 — the same HSB fill the raster paths use (Tiling.show, drawPolygons). A
-				// literal-RGB prim (colorings, hollow, Islamic) ignores the hue ring by design.
-				vec3 c = hueFill ? hsb2rgb((m0.w + uHueOffset) / 360.0, 0.40, 1.0) : fillC.rgb;
-				fillCol = mix(fillCol, c, fillC.a);
+				// The same palette fill the raster paths use (Tiling.show, drawPolygons), at the sidebar's
+				// Fill saturation. A literal-RGB prim (colorings, hollow, Islamic) ignores the hue ring by
+				// design, and keeps its colour at any saturation.
+				//
+				// uTileSat 0 is the slider's OFF, not a saturation — it would paint white here — so a
+				// hue-filled prim drops out entirely and leaves the background, which is what off means on
+				// the flat canvas beside this one.
+				vec3 c = hueFill ? tileFillAt(m0.w + uHueOffset, uTileSat) : fillC.rgb;
+				float a = (hueFill && uTileSat <= 0.0) ? 0.0 : fillC.a;
+				fillCol = mix(fillCol, c, a);
 			}
 		}
 
@@ -434,7 +439,7 @@ export function InversiveCanvas({ cell, cellId, paramCell = null, camera }: Inve
 			"uSpiralDouble", "uSpiralK", "uSpiralV",
 			"uMinv", "uV1", "uV2", "uDeformInv", "uDeformNorm",
 			"uVerts", "uVertsW", "uMeta", "uMetaW", "uHead", "uGrid", "uList", "uListW",
-			"uStrokeW", "uHueOffset", "uSurface", "uAvg", "uFeature",
+			"uStrokeW", "uHueOffset", "uTileSat", "uSurface", "uAvg", "uFeature",
 		]) {
 			uniformsRef.current[name] = gl.getUniformLocation(prog, name);
 		}
@@ -557,6 +562,7 @@ export function InversiveCanvas({ cell, cellId, paramCell = null, camera }: Inve
 			// The slider itself: the shader turns it into a constant CSS-px width. 0 → no strokes.
 			g.uniform1f(U.uStrokeW, cam.lineWidth);
 			g.uniform1f(U.uHueOffset, cfg.hueOffset || 0);
+			g.uniform1f(U.uTileSat, fillAmountToSatPct(cfg.fillAmount) / 100);
 			g.uniform3f(U.uSurface, dark ? 0.08 : 0.96, dark ? 0.09 : 0.96, dark ? 0.11 : 0.97);
 			// uAvg must be averaged AFTER the hue rotation (rotating the averaged RGB would be wrong);
 			// cached per (offset, cell) so the per-frame cost is two comparisons while the ring is idle.

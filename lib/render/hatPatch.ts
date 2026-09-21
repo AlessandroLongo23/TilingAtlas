@@ -278,7 +278,8 @@ function constructMetatiles(patch: Extract<Geom, { kind: "meta" }>): Quad {
 
 // --- flattening -------------------------------------------------------------------------------
 
-/** Hues in the HSB(·, 40, 100) space every card fills with. The hat and its mirror image, nothing
+/** Hues only; the palette's saturation and value come from lib/render/tilePalette.ts, as on every
+ *  other card. The hat and its mirror image, nothing
  *  else: colouring by metatile would suggest four tile shapes where there is one. */
 const HAT_HUE = 200;
 const REFLECTED_HUE = 25;

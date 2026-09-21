@@ -68,10 +68,12 @@ describe("playUrlState", () => {
 		expect(sp.has("lw")).toBe(false);
 	});
 
-	// showPolygonFill defaults to true, so "off" has to be expressible — presence-as-true would lose it.
+	// fillAmount defaults to the palette's own saturation, so "off" (0) has to be expressible — a
+	// presence-as-true encoding would lose it, and every link shared while this was the Polygon-fill
+	// checkbox carried exactly `fill=0` for off, so 0 has to keep meaning off.
 	it("expresses a true-by-default boolean turned off", () => {
-		expect(serializePlayState({ ...defaults(), showPolygonFill: false }, null, null)).toBe("fill=0");
-		expect(parse("fill=0").config.showPolygonFill).toBe(false);
+		expect(serializePlayState({ ...defaults(), fillAmount: 0 }, null, null)).toBe("fill=0");
+		expect(parse("fill=0").config.fillAmount).toBe(0);
 	});
 
 	it("clamps out-of-range numbers to the slider range", () => {

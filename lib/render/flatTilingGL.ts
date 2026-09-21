@@ -6,6 +6,7 @@
 // onto FlatCellRenderer is a welcome follow-up once its in-flight work lands).
 
 import { Vector } from "@/classes/Vector";
+import { TILE_PALETTE_GLSL, TILE_SAT_PCT } from "@/lib/render/tilePalette";
 import type { CellMesh } from "@/lib/render/buildCellMesh";
 import type { OrbitDotMesh } from "@/lib/render/buildOrbitDotMesh";
 import { IDENTITY_DEFORM, computeFillGrid, fillGridInstances, wrapOffset, type Mat2 } from "@/lib/render/flatView";
@@ -76,17 +77,18 @@ void main() {
 export const FILL_FRAG = `#version 300 es
 precision highp float;
 in float vHue;
-uniform float uHueOffset; // global hue rotation, degrees (the sidebar hue ring); hsb2rgb wraps via mod
+uniform float uHueOffset; // global hue rotation, degrees (the sidebar hue ring); tileFill wraps via mod
+uniform float uTileSat;   // tile saturation 0..1 — the sidebar's Fill slider. Programs that draw tiles the
+                          // slider does not govern still have to SET it; it has no safe default (0 is white),
+                          // which is why the draw call falls back to TILE_SAT rather than leaving it unset.
 uniform float uFillDim;   // 0 = full colour; 1 fades the tile toward uDimTarget for vertex-orbit mode (M3).
                           // Default 0 keeps every other consumer (theory cards, FlatCellRenderer) untouched.
 uniform vec3 uDimTarget;  // the surface background colour to fade toward when dimming (theme-dependent)
 out vec4 frag;
-vec3 hsb2rgb(float h, float s, float v) {
-	vec3 k = clamp(abs(mod(h * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
-	return v * mix(vec3(1.0), k, s);
-}
+${TILE_PALETTE_GLSL}
 void main() {
-	// s=0.40, b=1.0 — matches Tiling.show and the inversive shader so the views agree on colour. In orbit
+	// tileFill is the shared palette (lib/render/tilePalette.ts), so this agrees with Tiling.show and the
+	// inversive shader by construction instead of by hand. In orbit
 	// mode (uFillDim=1) the tile fades to 0.3 of its colour over the surface background, OPAQUELY: p5 draws
 	// the fill at alpha 0.3 over its background, which is exactly mix(bg, tile, 0.3). Doing it as an opaque
 	// mix (not a translucent fragment) sidesteps the premultiplied-alpha double-fade on this alpha canvas.
@@ -97,7 +99,7 @@ void main() {
 	// a second colour scale on top of the aspect tints only makes the tints harder to read. Same sentinel
 	// the PeriodicCell IR already uses (see lib/render/periodicCell.ts), so the lens and the flat view
 	// agree without a second convention.
-	vec3 tile = vHue < 0.0 ? vec3(0.05, 0.05, 0.07) : hsb2rgb((vHue + uHueOffset) / 360.0, 0.40, 1.0);
+	vec3 tile = vHue < 0.0 ? vec3(0.05, 0.05, 0.07) : tileFillAt(vHue + uHueOffset, uTileSat);
 	frag = vec4(mix(uDimTarget, tile, 1.0 - 0.7 * uFillDim), 1.0);
 }
 `;
@@ -269,16 +271,13 @@ precision highp float;
 in vec2 vCorner;
 in float vHue;
 out vec4 frag;
-vec3 hsb2rgb(float h, float s, float v) {
-	vec3 k = clamp(abs(mod(h * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
-	return v * mix(vec3(1.0), k, s);
-}
+${TILE_PALETTE_GLSL}
 void main() {
 	float d = length(vCorner);
 	float aa = fwidth(d);
 	float alpha = 1.0 - smoothstep(1.0 - aa, 1.0 + aa, d);
 	if (alpha <= 0.0) discard;
-	vec3 col = hsb2rgb(vHue / 360.0, 0.40, 1.0);  // orbitColor(id,k): S=40, B=100
+	vec3 col = tileFill(vHue);  // orbitColor(id,k) is the tile palette's own S/V, so this matches it
 	float ring = smoothstep(0.62, 0.76, d);       // black outline, echoing drawVertexOrbits' 1.5px stroke
 	frag = vec4(mix(col, vec3(0.0), ring), alpha);
 }
@@ -326,6 +325,10 @@ export interface FlatDrawParams {
 	showFill: boolean;
 	strokeRGB: [number, number, number]; // 0..1
 	hueOffsetDeg?: number; // global fill-hue rotation (degrees); omitted ⇒ 0 (theory cards)
+	/** Tile saturation 0–100, the sidebar's Fill slider. Omitted ⇒ the palette default, which is what
+	 *  the theory cards and every other non-/play caller want. 0 is not a value to pass here: it is
+	 *  a white fill, and "no fill" is the caller's job to skip. */
+	fillSatPct?: number;
 	/** Pointer position in centred CSS px, y down, or null when it is off the surface. Only read when
 	 *  an orbit mesh is uploaded; the renderer converts it to world space itself, so a caller never has
 	 *  to reproduce the shader's transform. */
@@ -429,7 +432,7 @@ export class FlatCellRenderer {
 		// renderer did that euclidean-canvas.tsx's pipeline does not. Some drivers tolerate it; others
 		// drop the draw, which showed up as strokeless (flat-filled) theory cards on Apple/ANGLE Metal
 		// while /play — which binds aCentroid in both passes — rendered correctly on the same GPU.
-		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uDeform", "uHalf", "uHueOffset", "uWavePhase", "uWaveP", "uFillDim", "uDimTarget"]) {
+		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uDeform", "uHalf", "uHueOffset", "uTileSat", "uWavePhase", "uWaveP", "uFillDim", "uDimTarget"]) {
 			this.fillU[name] = gl.getUniformLocation(fillProg, name);
 		}
 		for (const name of ["aPos", "aHue", "aInst", "aCentroid"]) {
@@ -600,6 +603,7 @@ export class FlatCellRenderer {
 			gl.uniformMatrix2fv(U.uDeform, false, deform);
 			gl.uniform2f(U.uHalf, p.width / 2, p.height / 2);
 			gl.uniform1f(U.uHueOffset, p.hueOffsetDeg ?? 0);
+			gl.uniform1f(U.uTileSat, (p.fillSatPct ?? TILE_SAT_PCT) / 100);
 			gl.uniform1i(U.uWavePhase, 0); // this renderer never runs the selection wave
 			gl.uniform1f(U.uWaveP, 0);
 			gl.uniform1f(U.uFillDim, dimmed ? 1 : 0);

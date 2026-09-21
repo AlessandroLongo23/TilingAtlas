@@ -8,6 +8,8 @@
 // Fill: per-vertex hue + class. Class 0 = A → the tile hue (rotated by the global hue ring, same s/b as
 // every other fill path). Class 1 = B, class 2 = C → the two shared background colours (uniforms, so
 // recolouring never touches the mesh).
+import { TILE_PALETTE_GLSL } from "@/lib/render/tilePalette";
+
 export const ISLAMIC_FILL_VERT = `#version 300 es
 in vec2 aPos;
 in float aHue;
@@ -38,21 +40,19 @@ precision highp float;
 in float vHue;
 in float vClass;
 uniform float uHueOffset;
+uniform float uTileSat;   // tile saturation 0..1 — the sidebar's Fill slider
 uniform vec3 uColorA;   // checkerboard colour A (uMode 1) / solid strap-body colour (uMode 2)
 uniform vec3 uColorB;
 uniform vec3 uColorC;
 uniform int uMode;      // 0 = plain A/B/C, 1 = checkerboard two-colour, 2 = solid (strap bodies)
 uniform float uOpacity;
 out vec4 frag;
-vec3 hsb2rgb(float h, float s, float v) {
-	vec3 k = clamp(abs(mod(h * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
-	return v * mix(vec3(1.0), k, s);
-}
+${TILE_PALETTE_GLSL}
 void main() {
 	vec3 rgb;
 	if (uMode == 2) rgb = uColorA;                                                     // solid strap body
 	else if (uMode == 1) rgb = vClass < 0.5 ? uColorA : uColorB;                       // checkerboard 0/1
-	else if (vClass < 0.5) rgb = hsb2rgb(mod(vHue + uHueOffset, 360.0) / 360.0, 0.40, 1.0); // A: tile hue
+	else if (vClass < 0.5) rgb = tileFillAt(vHue + uHueOffset, uTileSat); // A: tile hue
 	else if (vClass < 1.5) rgb = uColorB;                                              // B: side field
 	else rgb = uColorC;                                                                // C: edge diamond
 	frag = vec4(rgb, uOpacity);

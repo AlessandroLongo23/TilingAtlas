@@ -11,6 +11,7 @@
 // here is that same array normalised. Reuses buildTubeSkeleton (the wireframe sweep) for the edges.
 
 import * as THREE from "three";
+import { hsbDegToRgb01, tileHueRgb01 } from "@/lib/render/tilePalette";
 import { buildCreaseRibbons, buildTubeSkeleton, CREASES_AS_TUBES, type Wireframe } from "./sphericalWireframe";
 import { creaseChords } from "./sphericalGeometry";
 import { markOccluder, type EdgeOcclusionUniforms } from "./edgeOcclusion";
@@ -45,26 +46,16 @@ function cross(a: V3, b: V3): V3 {
 	return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 }
 
-// HSB→RGB (0..1), matching the app's tile-hue convention (hsb2rgb in sphericalWireframe).
-function hsb2rgb(hueDeg: number, s: number, v: number): [number, number, number] {
-	const h = (((hueDeg / 360) % 1) + 1) % 1;
-	const k = (o: number) => {
-		const x = (((h * 6 + o) % 6) + 6) % 6;
-		return Math.min(Math.max(Math.abs(x - 3) - 1, 0), 1);
-	};
-	const m = (kk: number) => v * (1 - s) + v * s * kk;
-	return [m(k(0)), m(k(4)), m(k(2))];
-}
-
 // A tile's colour: golden-angle hue spacing keyed on tile index, so adjacent tiles stay distinct. The
 // single-tile case (a blank solid) gets a neutral base hue so it doesn't scream.
 //
-// 0.40/1.00 is the whole Atlas's tile palette (lib/render/hueRing.ts tileHueRgb01) — the convex shelf's,
-// the flat renderer's, the hue ring's. It read 0.50/0.98 here while these fills were being written to the
-// colour attribute unlinearised, which washed them out; see the linearise note in buildIcoFreedraw.
+// The saturation and value come from tileHueRgb01 (lib/render/tilePalette.ts) — the whole Atlas's tile
+// palette, the convex shelf's, the flat renderer's, the hue ring's. They read 0.50/0.98 here while these
+// fills were being written to the colour attribute unlinearised, which washed them out; see the linearise
+// note in buildIcoFreedraw.
 export function tileColor(tileIndex: number, tileCount: number, hueOffset = 0): [number, number, number] {
-	if (tileCount <= 1) return hsb2rgb(210 + hueOffset, 0.32, 0.95);
-	return hsb2rgb(tileIndex * 137.508 + hueOffset, 0.4, 1.0);
+	if (tileCount <= 1) return hsbDegToRgb01(210 + hueOffset, 0.32, 0.95);
+	return tileHueRgb01(tileIndex * 137.508 + hueOffset);
 }
 
 // A great-circle arc between two unit vertices (slerp), radius `radius`, `extend` overshoots each end.
@@ -269,7 +260,7 @@ export function buildIcoFreedraw(pattern: IcoPattern, rawVertices: V3[], opts: I
 	const positions: number[] = [];
 	const normals: number[] = [];
 	const colors: number[] = [];
-	// ⚑ LINEARISE THE FILL. hsb2rgb returns a DISPLAY (sRGB) value, and three.js reads a colour
+	// ⚑ LINEARISE THE FILL. tileHueRgb01 returns a DISPLAY (sRGB) value, and three.js reads a colour
 	// BufferAttribute as LINEAR working space, so a raw sRGB value written here is re-encoded on output
 	// and comes back washed out: the star shelf's HSB(h, 0.50, 0.98) yellow — already MORE saturated in
 	// HSB than the convex shelf's 0.40/1.00 — rendered as (0.99, 0.99, 0.73) instead of (0.98, 0.98,
@@ -287,7 +278,7 @@ export function buildIcoFreedraw(pattern: IcoPattern, rawVertices: V3[], opts: I
 		const hsb = opts.tileHsb?.[ti];
 		const col = linear(
 			hsb
-				? hsb2rgb(hsb[0] + (opts.hueOffset ?? 0), hsb[1], hsb[2])
+				? hsbDegToRgb01(hsb[0] + (opts.hueOffset ?? 0), hsb[1], hsb[2])
 				: tileColor(ti, pattern.nTiles, opts.hueOffset ?? 0),
 		);
 		for (const face of tile) {

@@ -1,13 +1,5 @@
+import { tileFill } from "@/lib/render/tilePalette";
 import type { VertexConfiguration } from "@/classes/algorithm/VertexConfiguration";
-
-/** Converts HSB (0-360, 0-100, 0-100) to HSL for CSS */
-export function hsbToHsl(h: number, s: number, b: number): { h: number; s: number; l: number } {
-	s /= 100;
-	b /= 100;
-	const l = b * (1 - s / 2);
-	const sl = l === 0 || l === 1 ? 0 : (b - l) / Math.min(l, 1 - l);
-	return { h, s: sl * 100, l: l * 100 };
-}
 
 /**
  * Draws a VertexConfiguration to a 2D canvas context.
@@ -55,8 +47,7 @@ export function drawVertexConfiguration(
 
 	for (const polygon of vc.polygons) {
 		if (!polygon.vertices || polygon.vertices.length === 0) continue;
-		const hsl = hsbToHsl(polygon.hue, 40, 100);
-		ctx.fillStyle = `hsla(${hsl.h}, ${hsl.s}%, ${hsl.l}%, 0.85)`;
+		ctx.fillStyle = tileFill(polygon.hue, 0.85);
 		ctx.strokeStyle = "rgba(0, 0, 0, 0.7)";
 		ctx.lineWidth = 1.5 / scale;
 		ctx.beginPath();

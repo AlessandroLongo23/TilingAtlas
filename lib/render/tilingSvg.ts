@@ -1,11 +1,4 @@
-import {
-	TILE_FILL_ALPHA,
-	expandToViewport,
-	hsbToHsla,
-	parseBaseCell,
-	polygonFillHue,
-	type TranslationalCellData,
-} from "@/lib/utils/renderTiling";
+import { expandToViewport, parseBaseCell, polygonFillHue, TILE_FILL_ALPHA, tileFill, type TranslationalCellData } from "@/lib/utils/renderTiling";
 
 // Turns a translational cell into inline SVG, as the canvas path (renderTilingToContext) does for
 // thumbnails. Used where a tiling has to exist in the server-rendered HTML with no canvas and no
@@ -84,7 +77,7 @@ export function tilingToSvg(
 			paths.push({
 				starts: [start],
 				rel,
-				fill: hsbToHsla((polygonFillHue(poly.vertices) + hueOffsetDeg) % 360, 40, 100, TILE_FILL_ALPHA),
+				fill: tileFill(polygonFillHue(poly.vertices) + hueOffsetDeg, TILE_FILL_ALPHA),
 			});
 		}
 	}

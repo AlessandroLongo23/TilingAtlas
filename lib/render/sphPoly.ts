@@ -15,12 +15,13 @@
 import type { IcoPattern } from "@/lib/render/icoFreedraw";
 import type { SphSchwarzScene } from "@/lib/render/sphSchwarz";
 import type { SphPolyPattern } from "@/lib/tilings/sph-poly";
+import { TILE_SAT, TILE_VAL } from "@/lib/render/tilePalette";
 import { polygonHue } from "@/lib/utils/renderTiling";
 
 // The star shelf's fill, and for the same reason (lib/render/sphStar.ts `faceHsb`): saturation and
-// value belong to the medium — this three.js canvas — and the hue carries the polygon.
-const TILE_SAT = 0.5;
-const TILE_VAL = 0.98;
+// value belong to the medium — this three.js canvas — and the hue carries the polygon. Taken from the
+// shared constant: this file had held its own 0.50/0.98 since before sphStar moved to the atlas palette,
+// so the convex shelf had been painting a notch deeper than the star shelf it is meant to match.
 // Golden angle, the spacing `tileColor` uses on its index ramp. Reused here for the SECOND axis on a
 // half-tile board, where every face is the same polygon and the groups are symmetry orbits.
 const GOLDEN = 137.508;

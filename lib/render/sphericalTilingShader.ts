@@ -6,6 +6,7 @@
 // many screen pixels). The tiling sphere's material (sphericalMaterial.ts) is the one surface built on it.
 
 import * as THREE from "three";
+import { TILE_SAT_GLSL, TILE_VAL_GLSL } from "@/lib/render/tilePalette";
 import type { Polyhedron } from "./platonicSolids";
 import { faceExitNormals } from "./sphericalGeometry";
 import { polygonHue } from "@/lib/utils/renderTiling";
@@ -61,7 +62,10 @@ uniform int  uSphFaceCount;
 uniform float uSphHueOffset; // global hue ring
 uniform float uSphEdgeWidth; // edge half-width in the classification-gap (arc) metric
 
-// Matches flatTilingGL FILL_FRAG exactly so a spherical face is the same colour as a Euclidean one.
+// Matches flatTilingGL FILL_FRAG exactly so a spherical face is the same colour as a Euclidean one. The
+// name is sph-prefixed, and the S/V pair spelled out from the shared constants instead of pulling in
+// TILE_PALETTE_GLSL, because this chunk is injected into a three.js MeshStandardMaterial where a bare
+// hsb2rgb / tileFill could collide with three's own code.
 vec3 sphHsb2rgb(float h, float s, float v) {
 	vec3 k = clamp(abs(mod(h * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
 	return v * mix(vec3(1.0), k, s);
@@ -111,7 +115,7 @@ float sphClassify(vec3 dir, out int best) {
 
 // The face's fill hue (with the global hue-ring offset applied), matching the flat Euclidean tiles.
 vec3 sphFaceColor(int best) {
-	return sphHsb2rgb((uSphFace[best].w + uSphHueOffset) / 360.0, 0.40, 1.0);
+	return sphHsb2rgb(mod(uSphFace[best].w + uSphHueOffset, 360.0) / 360.0, ${TILE_SAT_GLSL}, ${TILE_VAL_GLSL});
 }
 `;
 

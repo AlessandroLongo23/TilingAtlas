@@ -8,6 +8,7 @@
 // sites), and the central tiles as geodesic-conic edge tests. buildDevelopedUniforms() flattens the group.
 
 import type { HyperbolicTilingGL } from "@/lib/render/hyperbolicGroup";
+import { TILE_PALETTE_GLSL } from "@/lib/render/tilePalette";
 
 export const MAX_GEN = 64;
 export const MAX_TILE = 40;
@@ -94,13 +95,10 @@ vec4 su11mul(vec4 m, vec4 n) {
 // distance proxy monotone in hyperbolic distance from z to p: |z−p|²/(1−|p|²) (drop the common 1−|z|²).
 float distProxy(vec2 z, vec2 p, float invDen) { vec2 d = z - p; return dot(d, d) * invDen; }
 
-// Tile palette, byte-identical to the euclidean/spherical fill (lib/render/hueRing.ts tileHueRgb01):
-// HSB(h, 0.40, 1.0), h in [0,1]. Keeps hyperbolic tiles the same material as the other two geometries so
+// Tile palette, byte-identical to the euclidean/spherical fill because it is literally the same chunk
+// (lib/render/tilePalette.ts). Keeps hyperbolic tiles the same material as the other two geometries so
 // their brightness matches.
-vec3 hsb2rgb(float h, float s, float v) {
-	vec3 k = clamp(abs(mod(h * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
-	return v * mix(vec3(1.0), k, s);
-}
+${TILE_PALETTE_GLSL}
 
 void main() {
 	vec2 fragCss = gl_FragCoord.xy / uDpr;
@@ -157,13 +155,13 @@ void main() {
 	// so the whole tile takes ONE shade (the fold-shader look), not a per-pixel radial gradient.
 	vec4 Ginv = vec4(G.x, -G.y, -G.z, -G.w);
 	vec2 tileCentreScreen = viewForward(applyMobius(Ginv, uTileCentroid[found]));
-	// Base colour is the bright euclidean/spherical pastel (HSB 0.40, 1.0), then dimmed by tile DEPTH:
+	// Base colour is the bright euclidean/spherical pastel (the shared tileFill), then dimmed by tile DEPTH:
 	// dim = 1 − 0.5·r² with r the tile centre's screen radius (full brightness at the disk centre, ×0.5 at
 	// the rim). One shade per tile (the fold-shader look), theme-independent like the flat tiles.
 	float depth = clamp(length(tileCentreScreen), 0.0, 1.0);
 	float dim = 1.0 - 0.5 * depth * depth;
 	vec3 fill = uShowFill == 1
-		? hsb2rgb(mod(uTileHue[found] + uHueOffset, 360.0) / 360.0, 0.40, 1.0) * dim
+		? tileFill(uTileHue[found] + uHueOffset) * dim
 		: uSurface;
 
 	// stroke: geometry mode keeps a constant HYPERBOLIC half-width (so it tapers toward the rim with the

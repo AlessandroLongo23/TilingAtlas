@@ -1,4 +1,5 @@
 import { useConfiguration } from "@/stores/configuration";
+import { fillAmountToSatPct, TILE_VAL_PCT } from "@/lib/render/tilePalette";
 import { isWithinConvexHull, segmentsIntersect, getAngleAtVertex, isWithinTolerance } from '@/utils';
 import { Vector } from '@/classes';
 import { Cyclotomic } from "../Cyclotomic";
@@ -436,7 +437,7 @@ export class Polygon {
             ctx.strokeWeight(lineWidthValue / cfg.controls.zoom);
             // Outline-only tiles on a dark canvas need a light stroke to be visible; a colored fill
             // (or a light theme) reads best with the dark stroke. HSB: (0,0,100)=white, (0,0,0)=black.
-            const lightStroke = !cfg.showPolygonFill && document.documentElement.classList.contains("dark");
+            const lightStroke = cfg.fillAmount <= 0 && document.documentElement.classList.contains("dark");
             ctx.stroke(0, 0, lightStroke ? 100 : 0, opacity);
         }
 
@@ -446,8 +447,8 @@ export class Polygon {
             this.showIslamicDimBase(ctx, opacity);
             this.showIslamicLines(ctx, opacity);
         } else {
-            if (cfg.showPolygonFill) {
-                ctx.fill(customColor || this.hue, 40, 100 / opacity, 1.0 * opacity);
+            if (cfg.fillAmount > 0) {
+                ctx.fill(customColor || this.hue, fillAmountToSatPct(cfg.fillAmount), TILE_VAL_PCT / opacity, 1.0 * opacity);
             } else {
                 ctx.noFill();
             }
@@ -670,11 +671,11 @@ export class Polygon {
     /** Pass 1 of the Islamic line mode: the base tile drawn faint, so the construction lines dominate. */
     showIslamicDimBase = (ctx, opacity: number = 0.80): void => {
         if (this.offScreen(ctx)) return;
-        const zoom = useConfiguration.getState().controls.zoom;
+        const { controls, fillAmount } = useConfiguration.getState();
         ctx.push();
-        ctx.strokeWeight(1 / zoom);
+        ctx.strokeWeight(1 / controls.zoom);
         ctx.stroke(0, 0, 0, 0.22 * opacity);              // faint outline
-        ctx.fill(this.hue, 40, 100 / opacity, 1.0 * opacity); // full-strength fill
+        ctx.fill(this.hue, fillAmountToSatPct(fillAmount), TILE_VAL_PCT / opacity, 1.0 * opacity); // full-strength fill
         ctx.beginShape();
         for (let i = 0; i < this.vertices.length; i++) ctx.vertex(this.vertices[i].x, this.vertices[i].y);
         ctx.endShape(ctx.CLOSE);
@@ -711,7 +712,7 @@ export class Polygon {
         ctx.push();
         ctx.noStroke();
         // Tile-hue fill → the global hue ring rotates it like every other fill path.
-        ctx.fill(((customColor ?? this.hue) + (cfg.hueOffset || 0)) % 360, 40, 100 / opacity, 1.0 * opacity);
+        ctx.fill(((customColor ?? this.hue) + (cfg.hueOffset || 0)) % 360, fillAmountToSatPct(cfg.fillAmount), TILE_VAL_PCT / opacity, 1.0 * opacity);
         ctx.beginShape();
         for (let i = 0; i < this.halfways.length; i++) {
             ctx.vertex(this.halfways[i].x, this.halfways[i].y);

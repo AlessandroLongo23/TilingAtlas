@@ -5,6 +5,7 @@ import { resolveDeform, useConfiguration } from "@/stores/configuration";
 import { buildCellMesh } from "@/lib/render/buildCellMesh";
 import { IDENTITY_DEFORM, computeFillGrid, fillGridInstances, wrapOffset, type LatticeExtent, type Mat2 } from "@/lib/render/flatView";
 import { compileShader } from "@/lib/render/flatTilingGL";
+import { fillAmountToSatPct, hsbDegToRgb01 } from "@/lib/render/tilePalette";
 import { syncCanvasSize } from "@/lib/render/canvasSize";
 import { captureOverride, offerFrame } from "@/lib/render/capture";
 import { ISLAMIC_FILL_VERT, ISLAMIC_FILL_FRAG, STRAP_BORDER_VERT, STRAP_BORDER_FRAG } from "@/lib/render/islamicGL";
@@ -48,15 +49,10 @@ const PATCH_MARGIN = 3;
 const INSTANCE_MARGIN = 2;
 const MESH_REBUILD_THROTTLE_MS = 100;
 
-// p5 HSB (h 0..360, s/b 0..100) → linear [r,g,b] in 0..1, matching the shaders' hsb2rgb exactly.
-function hsb01(h: number, s: number, b: number): [number, number, number] {
-	const hh = h / 360, ss = s / 100, bb = b / 100;
-	const k = (o: number) => {
-		let x = (hh * 6 + o) % 6; if (x < 0) x += 6;
-		return Math.min(Math.max(Math.abs(x - 3) - 1, 0), 1);
-	};
-	return [bb * (1 - ss + k(0) * ss), bb * (1 - ss + k(4) * ss), bb * (1 - ss + k(2) * ss)];
-}
+// p5 HSB (h 0..360, s/b 0..100) → [r,g,b] in 0..1, matching the shaders' hsb2rgb exactly. These are the
+// STRAP body colours, not the tile palette — a strap is warm paper, not a tile — so only the conversion
+// is shared (lib/render/tilePalette.ts), not the numbers.
+const hsb01 = (h: number, s: number, b: number) => hsbDegToRgb01(h, s / 100, b / 100);
 
 // The three strap styles and their p5 colours (drawIslamicInterlace). Fill is a solid body colour; the
 // border is dark warm, except emboss lights each edge from its world normal (Kaplan's raised ribbon).
@@ -142,7 +138,7 @@ export function StrapCanvas({ translationalCell, translationalCellId, paramCell 
 		fillProgRef.current = fillProg;
 		borderProgRef.current = borderProg;
 
-		for (const n of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uDeform", "uHalf", "uHueOffset", "uColorA", "uColorB", "uColorC", "uMode", "uOpacity"]) fillU.current[n] = gl.getUniformLocation(fillProg, n);
+		for (const n of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uDeform", "uHalf", "uHueOffset", "uTileSat", "uColorA", "uColorB", "uColorC", "uMode", "uOpacity"]) fillU.current[n] = gl.getUniformLocation(fillProg, n);
 		for (const n of ["aPos", "aInst"]) fillA.current[n] = gl.getAttribLocation(fillProg, n);
 		for (const n of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uDeform", "uHalf", "uOpacity"]) borderU.current[n] = gl.getUniformLocation(borderProg, n);
 		for (const n of ["aPos", "aColor", "aInst"]) borderA.current[n] = gl.getAttribLocation(borderProg, n);
@@ -301,6 +297,9 @@ export function StrapCanvas({ translationalCell, translationalCellId, paramCell 
 			g.uniform2f(FU.uV2, meta.v2.x, meta.v2.y);
 			g.uniformMatrix2fv(FU.uDeform, false, deform);
 			g.uniform2f(FU.uHalf, w / 2, h / 2);
+			// uMode 2 paints a literal colour, so this program never reaches the tile-hue branch — set the
+			// saturation anyway, because an unset uniform reads 0 and 0 is a white fill, not an off switch.
+			g.uniform1f(FU.uTileSat, fillAmountToSatPct(cfg.fillAmount) / 100);
 			const fillCol = emboss ? FILL_EMBOSS : FILL_PLAIN;
 			g.uniform3f(FU.uColorA, fillCol[0], fillCol[1], fillCol[2]);
 			g.uniform1i(FU.uMode, 2);

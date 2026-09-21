@@ -5,7 +5,7 @@ import { prepare, type Box } from "@/lib/render/figureCanvas";
 import {
 	arrowHead, DART, dot, drawWithText, halo, INK, SOFT, T1_COLOUR, T2_COLOUR, type Api, type Pt,
 } from "@/lib/render/figureGlyphs";
-import { hsbToHsla, polygonHue } from "@/lib/utils/renderTiling";
+import { polygonHue, tileFill, tileLine } from "@/lib/utils/renderTiling";
 
 // What a Delaney–Dress symbol is, in two panels: the chamber system on the left, the quotient on the
 // right, with the same three colours naming the same three involutions in both.
@@ -105,8 +105,8 @@ const centroid = (p: Pt[]): Pt => [(p[0][0] + p[1][0] + p[2][0]) / 3, (p[0][1] +
 
 const S0 = T1_COLOUR, S1 = T2_COLOUR, S2 = DART;
 
-const chamberFill = (n: number, a: number) => hsbToHsla(polygonHue(n), 40, 100, a);
-const chamberLine = (n: number) => hsbToHsla(polygonHue(n), 55, 62, 1);
+const chamberFill = (n: number, a: number) => tileFill(polygonHue(n), a);
+const chamberLine = (n: number) => tileLine(polygonHue(n));
 
 function path({ ctx }: Api, p: Pt[]) {
 	ctx.beginPath();

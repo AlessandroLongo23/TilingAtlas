@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import type { Polygon } from "@/classes/polygons/Polygon";
-import { hsbToHsl } from "@/lib/utils/drawVertexConfiguration";
+import { tileFill } from "@/lib/render/tilePalette";
 
 interface PolygonsCanvasOptions {
 	backgroundColor?: string;
@@ -73,8 +73,7 @@ export function usePolygonsCanvas(
 
 			for (const polygon of polygons) {
 				if (!polygon.vertices || polygon.vertices.length === 0) continue;
-				const hsl = hsbToHsl(polygon.hue ?? 200, 40, 100);
-				ctx.fillStyle = `hsla(${hsl.h}, ${hsl.s}%, ${hsl.l}%, 0.85)`;
+				ctx.fillStyle = tileFill(polygon.hue ?? 200, 0.85);
 				ctx.strokeStyle = strokeColor;
 				ctx.lineWidth = 1.5 / scale;
 				ctx.beginPath();

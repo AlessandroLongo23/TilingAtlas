@@ -6,7 +6,7 @@ import {
 	arrowHead, DART, dot, GHOST, halo, INK, rad, REJECT, segment, SOFT, T1_COLOUR, T2_COLOUR,
 	type Api, type Pt,
 } from "@/lib/render/figureGlyphs";
-import { hsbToHsla, polygonHue } from "@/lib/utils/renderTiling";
+import { polygonHue, tileFill, tileLine } from "@/lib/utils/renderTiling";
 
 // Obligation 5: a finished gluing is abstract, and turning it into a picture is where the two failures
 // live that no local rule can see. Four frames, risk then remedy then conclusion.
@@ -29,8 +29,8 @@ const D = 12;
 const units = (n: number) => D / 2 - D / n;
 const WORD = [3, 4, 6, 4];
 
-const wedgeFill = (n: number) => hsbToHsla(polygonHue(n), 40, 100, 0.85);
-const wedgeLine = (n: number) => hsbToHsla(polygonHue(n), 55, 62, 1);
+const wedgeFill = (n: number) => tileFill(polygonHue(n), 0.85);
+const wedgeLine = (n: number) => tileLine(polygonHue(n));
 
 /** One tile's corner at the shared vertex, spanning its true angle. */
 function wedge({ ctx, s }: Api, at: Pt, from: number, span: number, n: number, r: number) {

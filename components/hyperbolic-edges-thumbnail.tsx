@@ -96,7 +96,7 @@ export function HyperbolicEdgesThumbnail({
 	size?: number;
 }) {
 	const hueOffset = useConfiguration((s) => s.hueOffset);
-	const showFill = useConfiguration((s) => s.showPolygonFill);
+	const showFill = useConfiguration((s) => s.fillAmount > 0);
 	const showScaffold = useConfiguration((s) => s.freedrawScaffold);
 	const lineMode = useConfiguration((s) => s.hyperbolicLineMode);
 	const lineWidth = useConfiguration((s) => s.lineWidth);

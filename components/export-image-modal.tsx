@@ -149,7 +149,7 @@ export function ExportImageModal() {
 			: c.isIslamic ? "Islamic decoration"
 			: c.truchetActive ? "Truchet figures"
 			: c.circlePacking ? "circle packing"
-			: !c.showPolygonFill ? "the tile fill being off"
+			: c.fillAmount <= 0 ? "the tile fill being off"
 			: !isIdentityDeform(resolveDeform(c)) ? "the basis deformation"
 			: null,
 		);

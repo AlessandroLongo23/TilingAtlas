@@ -21,6 +21,7 @@
 // face are sampled identically (no cracks). Client-only (imports three).
 
 import * as THREE from "three";
+import { tileHueRgb01 } from "@/lib/render/tilePalette";
 import { Vector } from "@/classes/Vector";
 import { extractFaces, colorFacesAbc, pointInPolygon, type Marker, type Segment } from "@/lib/utils/islamicArrangement";
 import { twoColorFaces } from "@/lib/utils/islamicInterlace";
@@ -30,25 +31,13 @@ import { polygonHue } from "@/lib/utils/renderTiling";
 
 type V3 = [number, number, number];
 
-// Matches the flat renderer's hsb2rgb so a star body is the same colour as the Euclidean tiles (S 0.40,
-// B 1.0). Returns display (sRGB) components; converted to linear for the vertex-colour attribute below.
-function hsb2rgb(hueDeg: number, s: number, v: number): [number, number, number] {
-	const h = (((hueDeg / 360) % 1) + 1) % 1;
-	const k = (o: number) => {
-		const x = (((h * 6 + o) % 6) + 6) % 6;
-		return Math.min(Math.max(Math.abs(x - 3) - 1, 0), 1);
-	};
-	const m = (kk: number) => v * (1 - s) + v * s * kk;
-	return [m(k(0)), m(k(4)), m(k(2))];
-}
-
 // Target arc length of a fill triangle edge (radians) — sets how finely each cell is subdivided so the
 // surface and silhouette read as smooth. Only angle/offset/count slider drags re-tessellate.
 const TARGET_SEG = 0.05;
 const MAX_SUBDIV = 24;
 
 // Default fill hues (the store's islamicFillHueB/C and islamicCheckerHueA/B defaults) — used when the
-// caller doesn't pass them. Rendered at the tile palette's locked S/L (see hsb2rgb above).
+// caller doesn't pass them. Rendered at the tile palette's locked S/V (lib/render/tilePalette.ts).
 const DEFAULT_HUE_B = 45;
 const DEFAULT_HUE_C = 200;
 
@@ -258,8 +247,8 @@ export function buildIslamicFill(poly: Polyhedron | null, opts: IslamicFillOptio
 	// two checker fields (class 1 = the centre-cell parity). Neither rotates with the hue ring.
 	const fixed1 = isChecker ? (opts.checkerHueA ?? DEFAULT_HUE_B) : (opts.fillHueB ?? DEFAULT_HUE_B);
 	const fixed2 = isChecker ? (opts.checkerHueB ?? DEFAULT_HUE_C) : (opts.fillHueC ?? DEFAULT_HUE_C);
-	const bLin = new THREE.Color().setRGB(...hsb2rgb(fixed1, 0.4, 1.0), THREE.SRGBColorSpace);
-	const cLin = new THREE.Color().setRGB(...hsb2rgb(fixed2, 0.4, 1.0), THREE.SRGBColorSpace);
+	const bLin = new THREE.Color().setRGB(...tileHueRgb01(fixed1), THREE.SRGBColorSpace);
+	const cLin = new THREE.Color().setRGB(...tileHueRgb01(fixed2), THREE.SRGBColorSpace);
 
 	const scratch = new THREE.Color();
 	const applyColor = (hueOffset: number) => {
@@ -269,7 +258,7 @@ export function buildIslamicFill(poly: Polyhedron | null, opts: IslamicFillOptio
 			let g: number;
 			let b: number;
 			if (vClass[i] === 0) {
-				const [sr, sg, sb] = hsb2rgb(vAHue[i] + hueOffset, 0.4, 1.0);
+				const [sr, sg, sb] = tileHueRgb01(vAHue[i] + hueOffset);
 				scratch.setRGB(sr, sg, sb, THREE.SRGBColorSpace); // → linear, matching the wireframe/line colours
 				r = scratch.r;
 				g = scratch.g;

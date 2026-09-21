@@ -3,14 +3,7 @@
 import { useMemo } from "react";
 import { Camera } from "lucide-react";
 import type { VertexConfig } from "@/lib/configs/vertexConfigs";
-import {
-	hsbToHsla,
-	polygonFillHue,
-	renderFigureToDataUrl,
-	starApexAngleDeg,
-	starHue,
-	TILE_FILL_ALPHA,
-} from "@/lib/utils/renderTiling";
+import { polygonFillHue, renderFigureToDataUrl, starApexAngleDeg, starHue, TILE_FILL_ALPHA, tileFill } from "@/lib/utils/renderTiling";
 import { SCREENSHOT_BUTTONS_ENABLED } from "@/lib/utils/featureFlags";
 import { useScreenshotPreview } from "@/stores/screenshotPreview";
 
@@ -51,7 +44,7 @@ export function VertexConfigCard({ config, unitsAcross }: { config: VertexConfig
 				const verts = p.verts.map(([x, y]) => ({ x, y }));
 				const hue = p.kind === "star" ? starHue(p.n, starApexAngleDeg(verts)) : polygonFillHue(verts);
 				return {
-					fill: hsbToHsla(hue, 40, 100, FILL_ALPHA),
+					fill: tileFill(hue, FILL_ALPHA),
 					points: p.verts.map(([x, y]) => `${tx(x).toFixed(2)},${ty(y).toFixed(2)}`).join(" "),
 				};
 			}),

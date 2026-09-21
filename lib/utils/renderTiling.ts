@@ -1,5 +1,13 @@
 // Shared canvas rendering for tilings. Used by thumbnails and screenshot capture.
 
+import { hsbToHsla, tileFill, tileLine } from "@/lib/render/tilePalette";
+
+// The palette's saturation and value live in lib/render/tilePalette.ts. Re-exported here because this
+// module is where most callers already reach for a fill:
+// `tileFill(hue, alpha)` and its companion `tileLine(hue)` are the ones to use, and `hsbToHsla` stays
+// available for the few colours that are not tiles.
+export { hsbToHsla, tileFill, tileLine };
+
 export interface RawPolygon {
 	n: number;
 	vertices: { x: number; y: number }[];
@@ -188,20 +196,12 @@ export const TILE_FILL_ALPHA = 1;
 /**
  * The fill for a polygon whose `hue` is negative: neutral ink, not a colour.
  *
- * The hue ramp is `hsb(h, 40, 100)`, so every hue is a light pastel and none of them can be dark. A
+ * The hue ramp is `hsb(h, TILE_SAT, TILE_VAL)`, so every hue is a light pastel and none can be dark. A
  * prim that has to read as a MARK rather than as a tile therefore needs a way out of the ramp, and a
  * negative hue is it — the same sentinel the PeriodicCell IR already documents, so the flat view, the
  * 2-D fallback and the lens all agree. Matches TILE_LINE_RGB, the near-black the tile edges use.
  */
 export const INK_FILL = "rgb(13, 13, 18)";
-
-export function hsbToHsla(h: number, s: number, b: number, a: number) {
-	const sf = s / 100;
-	const bf = b / 100;
-	const l = bf * (1 - sf / 2);
-	const sl = l === 0 || l === 1 ? 0 : (bf - l) / Math.min(l, 1 - l);
-	return `hsla(${h.toFixed(1)}, ${(sl * 100).toFixed(1)}%, ${(l * 100).toFixed(1)}%, ${a})`;
-}
 
 export function parseBaseCell(cell: TranslationalCellData): BaseCell | null {
 	const polyArray = (cell.p ?? cell.cellPolygons ?? []) as CellPolyData[];
@@ -353,7 +353,7 @@ export function drawPolygons(
 		const hue = poly.hue ?? (poly.star ? starHue(poly.n, starApexAngleDeg(poly.vertices)) : polygonFillHue(poly.vertices));
 		// Negative hue = ink, the same sentinel FILL_FRAG and the PeriodicCell IR use. Nothing on the hue
 		// wheel can be dark at b=100.
-		ctx.fillStyle = hue < 0 ? INK_FILL : hsbToHsla((hue + hueOffsetDeg) % 360, 40, 100, TILE_FILL_ALPHA);
+		ctx.fillStyle = hue < 0 ? INK_FILL : tileFill(hue + hueOffsetDeg, TILE_FILL_ALPHA);
 		ctx.closePath();
 		ctx.fill();
 		if (outlinePx > 0) ctx.stroke();

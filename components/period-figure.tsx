@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { prepare, screenMapper } from "@/lib/render/figureCanvas";
 import { colourOf, drawZetaWheel } from "@/lib/render/zetaWheel";
-import { hsbToHsla, polygonHue } from "@/lib/utils/renderTiling";
+import { polygonHue, tileFill, tileLine } from "@/lib/utils/renderTiling";
 
 // The bounded-weight theorem as one case you can read off the plane.
 //
@@ -194,8 +194,8 @@ export function PeriodFigure({ panel, dirs, size }: { panel?: string; dirs?: str
 				ctx.clip();
 				ctx.lineWidth = 1.3 / s;
 				for (const t of tiles) {
-					ctx.fillStyle = hsbToHsla(polygonHue(t.n), 40, 100, 0.9);
-					ctx.strokeStyle = hsbToHsla(polygonHue(t.n), 55, 62, 1);
+					ctx.fillStyle = tileFill(polygonHue(t.n), 0.9);
+					ctx.strokeStyle = tileLine(polygonHue(t.n));
 					tracePoly(ctx, t.q);
 					ctx.fill();
 					ctx.stroke();

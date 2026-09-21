@@ -6,7 +6,7 @@ import {
 	arc, arrowHead, DART, dot, halo, INK, rad, segment, SOFT, T1_COLOUR,
 	type Api, type Pt,
 } from "@/lib/render/figureGlyphs";
-import { hsbToHsla, polygonHue } from "@/lib/utils/renderTiling";
+import { polygonHue, tileFill, tileLine } from "@/lib/utils/renderTiling";
 
 // Obligation 6 runs the other way round from the rest: not "what the engine builds is a tiling" but
 // "every tiling is something the engine could have built". Three steps, one panel each.
@@ -26,8 +26,8 @@ import { hsbToHsla, polygonHue } from "@/lib/utils/renderTiling";
 //    Panel three folds by the LATTICE, not by the whole group, which is what lets the drawing be exact:
 //    the honeycomb modulo its translations is two vertices, three edges and one face.
 
-const fill = (n: number) => hsbToHsla(polygonHue(n), 40, 100, 0.85);
-const stroke = (n: number) => hsbToHsla(polygonHue(n), 55, 62, 1);
+const fill = (n: number) => tileFill(polygonHue(n), 0.85);
+const stroke = (n: number) => tileLine(polygonHue(n));
 
 function polygon({ ctx, s }: Api, c: Pt, n: number, r: number, turn = 90, w = 1.4) {
 	ctx.fillStyle = fill(n);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { fillAmountToSatPct } from "@/lib/render/tilePalette";
 import { resolveDeform, useConfiguration } from "@/stores/configuration";
 import { buildCellMesh, type CellMesh } from "@/lib/render/buildCellMesh";
 import { buildOrbitDotMesh, type OrbitDotMesh } from "@/lib/render/buildOrbitDotMesh";
@@ -166,7 +167,7 @@ export function EuclideanCanvas({ translationalCell, translationalCellId, paramC
 		progRef.current = prog;
 		gl.useProgram(prog);
 
-		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uDeform", "uHalf", "uHueOffset", "uWavePhase", "uWaveP", "uFillDim", "uDimTarget"]) {
+		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uDeform", "uHalf", "uHueOffset", "uTileSat", "uWavePhase", "uWaveP", "uFillDim", "uDimTarget"]) {
 			uniformsRef.current[name] = gl.getUniformLocation(prog, name);
 		}
 		for (const name of ["aPos", "aHue", "aInst", "aCentroid"]) {
@@ -375,12 +376,16 @@ export function EuclideanCanvas({ translationalCell, translationalCellId, paramC
 			g.uniformMatrix2fv(U.uDeform, false, deform);
 			g.uniform2f(U.uHalf, w / 2, h / 2);
 			g.uniform1f(U.uHueOffset, cfg.hueOffset || 0);
+			// The Fill slider, as a 0..1 saturation. At 0 this uniform says "white", which is harmless
+			// because the fill draw below is skipped entirely at 0 — that is the old Polygon-fill
+			// checkbox's off state, and it is a skipped draw, never a saturation of zero.
+			g.uniform1f(U.uTileSat, fillAmountToSatPct(cfg.fillAmount) / 100);
 			g.uniform1i(U.uWavePhase, wavePhaseInt);
 			g.uniform1f(U.uWaveP, waveP);
 			g.uniform1f(U.uFillDim, orbitMode ? 1 : 0);
 			g.uniform3f(U.uDimTarget, dim[0], dim[1], dim[2]);
 
-			if (cfg.showPolygonFill) {
+			if (cfg.fillAmount > 0) {
 				g.drawArraysInstanced(g.TRIANGLES, 0, mesh.fillVertexCount, instRef.current.count);
 			}
 
@@ -430,7 +435,7 @@ export function EuclideanCanvas({ translationalCell, translationalCellId, paramC
 				g.uniform3f(SU.uDimTarget, dim[0], dim[1], dim[2]);
 				g.uniform1f(SU.uHalfStrokePx, cfg.lineWidth * 0.5); // p5 strokeWeight(lineWidth/zoom) => lineWidth px
 				const dark = document.documentElement.classList.contains("dark");
-				const lightStroke = !cfg.showPolygonFill && dark; // matches Tiling.show white-stroke case
+				const lightStroke = cfg.fillAmount <= 0 && dark; // matches Tiling.show white-stroke case
 				if (lightStroke) g.uniform3f(SU.uStroke, 1, 1, 1);
 				else g.uniform3f(SU.uStroke, 0, 0, 0);
 				g.drawArraysInstanced(g.TRIANGLES, 0, mesh.strokeVertexCount, instRef.current.count);

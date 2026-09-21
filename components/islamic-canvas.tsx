@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { fillAmountToSatPct } from "@/lib/render/tilePalette";
 import { resolveDeform, useConfiguration } from "@/stores/configuration";
 import { buildCellMesh } from "@/lib/render/buildCellMesh";
 import { IDENTITY_DEFORM, computeFillGrid, fillGridInstances, wrapOffset, type LatticeExtent, type Mat2 } from "@/lib/render/flatView";
@@ -139,7 +140,7 @@ export function IslamicCanvas({ translationalCell, translationalCellId, paramCel
 		fillProgRef.current = fillProg;
 		strokeProgRef.current = strokeProg;
 
-		for (const n of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uDeform", "uHalf", "uHueOffset", "uColorA", "uColorB", "uColorC", "uMode", "uOpacity"]) fillU.current[n] = gl.getUniformLocation(fillProg, n);
+		for (const n of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uDeform", "uHalf", "uHueOffset", "uTileSat", "uColorA", "uColorB", "uColorC", "uMode", "uOpacity"]) fillU.current[n] = gl.getUniformLocation(fillProg, n);
 		for (const n of ["aPos", "aHue", "aClass", "aInst"]) fillA.current[n] = gl.getAttribLocation(fillProg, n);
 		for (const n of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uDeform", "uHalf", "uHalfStrokePx", "uStroke", "uOpacity"]) strokeU.current[n] = gl.getUniformLocation(strokeProg, n);
 		for (const n of ["aPos", "aNorm", "aSide", "aInst"]) strokeA.current[n] = gl.getAttribLocation(strokeProg, n);
@@ -289,6 +290,8 @@ export function IslamicCanvas({ translationalCell, translationalCellId, paramCel
 			g.uniformMatrix2fv(FU.uDeform, false, deform);
 			g.uniform2f(FU.uHalf, w / 2, h / 2);
 			g.uniform1f(FU.uHueOffset, cfg.hueOffset || 0);
+			// Class-A star bodies keep the TILE hue, so they follow the Fill slider like every other tile.
+			g.uniform1f(FU.uTileSat, fillAmountToSatPct(cfg.fillAmount) / 100);
 			// Checkerboard reads colours A/B from the checker palette; plain reads B/C from the A/B/C palette.
 			if (style === "checkerboard") {
 				const [ar, ag, ab] = tileHueRgb01(cfg.islamicCheckerHueA);

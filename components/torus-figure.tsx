@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { prepare, screenMapper, type Box } from "@/lib/render/figureCanvas";
-import { hsbToHsla, polygonHue, TILE_FILL_ALPHA } from "@/lib/utils/renderTiling";
+import { polygonHue, TILE_FILL_ALPHA, tileFill, tileLine } from "@/lib/utils/renderTiling";
 
 // Why fixing the period lattice first makes the search finite, in two panels.
 //
@@ -50,8 +50,8 @@ const PLANE_WINDOW = 2.4;
 const PLANE_ZOOM = 0.95;
 
 /** The atlas's own fill for a regular n-gon — triangle red, hexagon green — so hover names the shape. */
-const tileFill = (n: number) => hsbToHsla(polygonHue(n), 40, 100, TILE_FILL_ALPHA);
-const tileStroke = (n: number) => hsbToHsla(polygonHue(n), 55, 62, 1);
+const sideFill = (n: number) => tileFill(polygonHue(n), TILE_FILL_ALPHA);
+const sideStroke = (n: number) => tileLine(polygonHue(n));
 
 /** Clip a polygon against one half-plane of the unit square, in lattice coordinates. */
 function clipHalf(poly: Pt[], keep: (p: Pt) => boolean, cut: (a: Pt, b: Pt) => Pt): Pt[] {
@@ -254,8 +254,8 @@ export function TorusFigure() {
 				// separate accent hue, so the resting state is already the palette hovering uses.
 				const isHover = h?.copy === c;
 				const lit = isHover || (!h && copies[c].idx === accent && copies[c].meetsCell);
-				ctx.fillStyle = lit ? tileFill(sides[copies[c].idx]) : TILE_FILL;
-				ctx.strokeStyle = lit ? tileStroke(sides[copies[c].idx]) : TILE_LINE;
+				ctx.fillStyle = lit ? sideFill(sides[copies[c].idx]) : TILE_FILL;
+				ctx.strokeStyle = lit ? sideStroke(sides[copies[c].idx]) : TILE_LINE;
 				ctx.lineWidth = lit ? 2 / s : 1 / s;
 				fillStroke(ctx, w);
 			}
@@ -381,8 +381,8 @@ export function TorusFigure() {
 				// EVERY piece of the hovered tile, however many the boundary cut it into: on the torus they
 				// are one tile, which is the whole point of hovering.
 				const lit = h ? h.idx === piece.idx : piece.idx === accent;
-				ctx.fillStyle = lit ? tileFill(sides[piece.idx]) : TILE_FILL;
-				ctx.strokeStyle = lit ? tileStroke(sides[piece.idx]) : TILE_LINE;
+				ctx.fillStyle = lit ? sideFill(sides[piece.idx]) : TILE_FILL;
+				ctx.strokeStyle = lit ? sideStroke(sides[piece.idx]) : TILE_LINE;
 				ctx.lineWidth = lit ? 2 / s : 1 / s;
 				fillStroke(ctx, piece.ab.map(world));
 			}

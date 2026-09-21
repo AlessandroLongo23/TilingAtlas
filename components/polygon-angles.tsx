@@ -1,7 +1,7 @@
 "use client";
 
 import { INK } from "@/lib/render/figureGlyphs";
-import { hsbToHsla, polygonFillHue, TILE_FILL_ALPHA } from "@/lib/utils/renderTiling";
+import { polygonFillHue, TILE_FILL_ALPHA, tileFill } from "@/lib/utils/renderTiling";
 
 // The five tiles of the 12-direction pool, each with the interior angle this slide turns on marked at
 // one corner.
@@ -87,7 +87,7 @@ function Tile({ s }: { s: Shape }) {
 		<svg viewBox={`0 0 ${w.toFixed(4)} ${h.toFixed(4)}`} className="h-auto w-full" aria-hidden>
 			<polygon
 				points={path(s.pts)}
-				fill={hsbToHsla(polygonFillHue(s.pts.map(([x, y]) => ({ x, y }))), 40, 100, TILE_FILL_ALPHA)}
+				fill={tileFill(polygonFillHue(s.pts.map(([x, y]) => ({ x, y }))), TILE_FILL_ALPHA)}
 				stroke="rgba(20,20,20,0.5)"
 				strokeWidth={0.022}
 				strokeLinejoin="round"

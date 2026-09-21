@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { ALPHABET_44, type AlphabetLetter } from "@/lib/defense/alphabet44";
 import { figureFromWord } from "@/lib/render/vertexFigure";
-import { hsbToHsla, polygonHue } from "@/lib/utils/renderTiling";
+import { polygonHue, tileFill, tileLine } from "@/lib/utils/renderTiling";
 
 // The whole alphabet on one slide: 44 letters, grouped by the 14 configurations they refine.
 //
@@ -124,8 +124,8 @@ function LetterCell({ letter }: { letter: AlphabetLetter }) {
 								<path
 									key={i}
 									d={p.d}
-									fill={hsbToHsla(polygonHue(p.n), 40, 100, 0.9)}
-									stroke={hsbToHsla(polygonHue(p.n), 55, 62, 1)}
+									fill={tileFill(polygonHue(p.n), 0.9)}
+									stroke={tileLine(polygonHue(p.n))}
 									strokeWidth={0.035}
 									strokeLinejoin="round"
 								/>

@@ -274,7 +274,7 @@ export interface SubRosaDrawParams {
 	centreY: number;
 	light: number; // HSL lightness 0..100
 	/** HSL saturation 0..1. Defaults to the rhombic views' 0.58; the finite-patch views pass 1.0 with
-	 *  light 80, which is exactly the atlas' HSB(h, 40, 100) tile fill in HSL terms. */
+	 *  TILE_HSL_SAT_01 / TILE_HSL_LIGHT_PCT, which is the atlas' tile fill in HSL terms. */
 	sat?: number;
 	/** Outline width in CSS px — the whole line across a shared edge, as /play's `lineWidth` means it.
 	 *  0 disables outlines. The outline pass draws it centred on the edge; the wireframe fallback halves

@@ -172,7 +172,7 @@ function facePrims(
 			const [cx, cy] = centroidOf(face.vertices);
 			if (!inOriginCell(cx, cy, v1, v2)) continue;
 			// Class A keeps the TILE HUE, so it stays live under the sidebar's hue ring exactly as the flat
-			// shader does (its fill branch is the same hsb(h, 0.40, 1.0)). B and C are literal colours; when
+			// shader does (its fill branch is the same shared tileFill). B and C are literal colours; when
 			// the A/B split is degenerate, C collapses into B — the two-tone fallback.
 			if (klass === "A") prims.push({ verts: flat(face.vertices), hue, z: 0 });
 			else if (klass === "C" && !degenerate) prims.push({ verts: flat(face.vertices), fillRgb: cRgb, z: 0 });

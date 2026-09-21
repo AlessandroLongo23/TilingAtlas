@@ -42,24 +42,10 @@ export function arcPath(cx: number, cy: number, radius: number, a0: number, a1: 
 	return `M ${f(cx + p0.x)} ${f(cy + p0.y)} A ${radius} ${radius} 0 ${large} 1 ${f(cx + p1.x)} ${f(cy + p1.y)}`;
 }
 
-/** Tile-fill palette color at a hue: HSB(h, 0.40, 1.0) expressed in CSS HSL — exactly HSL(h, 100%, 80%). */
-export function ringColor(hueDeg: number): string {
-	return `hsl(${wrapHue(hueDeg).toFixed(1)}, 100%, 80%)`;
-}
-
 /**
- * Tile-palette RGB (each channel 0–1) at a hue: HSB(h, 0.40, 1.0) — the RGB form of `ringColor`, and the
- * same conversion the flat shader's hsb2rgb applies to class-A star bodies. Feed a region-fill hue into a
- * WebGL/Three colour uniform through this so the fill is the same material as the tiles, differing only in
- * hue. Mirrors the degree-based hsb2rgb duplicated in lib/render/{sphericalIslamicFill,sphericalWireframe}.ts.
+ * The palette colour at a hue, for the ring's own rainbow track and thumb. `ringColor` and the tile
+ * fill are the same colour by definition — the ring previews what the canvas will paint — so this is
+ * `tileFill` under the ring's name, and `tileHueRgb01` is its RGB form for a WebGL/three.js uniform.
+ * Both live in lib/render/tilePalette.ts, the one place the palette's saturation and value are set.
  */
-export function tileHueRgb01(hueDeg: number): [number, number, number] {
-	const h = (((hueDeg / 360) % 1) + 1) % 1;
-	const s = 0.4, v = 1.0;
-	const k = (o: number) => {
-		const x = (((h * 6 + o) % 6) + 6) % 6;
-		return Math.min(Math.max(Math.abs(x - 3) - 1, 0), 1);
-	};
-	const m = (kk: number) => v * (1 - s) + v * s * kk;
-	return [m(k(0)), m(k(4)), m(k(2))];
-}
+export { tileFill as ringColor, tileHueRgb01 } from "./tilePalette";

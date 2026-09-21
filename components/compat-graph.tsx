@@ -7,12 +7,7 @@ import { COMPAT_TILINGS } from "@/lib/defense/vcTilings";
 import { INK, SOFT } from "@/lib/render/figureGlyphs";
 import { orbitColor } from "@/lib/utils/orbitColors";
 import { figureFromWord } from "@/lib/render/vertexFigure";
-import {
-	hsbToHsla,
-	polygonFillHue,
-	TILE_FILL_ALPHA,
-	type TranslationalCellData,
-} from "@/lib/utils/renderTiling";
+import { hsbToHsla, polygonFillHue, TILE_FILL_ALPHA, tileFill, type TranslationalCellData } from "@/lib/utils/renderTiling";
 
 // The compatibility graph over the fifteen vertex configurations that appear in a tiling: an edge
 // joins two of them when they can sit at the two ends of one edge. The relation is the app's own
@@ -266,7 +261,7 @@ function tilesOf(word: string, r: number) {
 	const oy = (s * (minY + maxY)) / 2;
 	return polys.map((p, k) => ({
 		key: k,
-		fill: hsbToHsla(polygonFillHue(p.vertices), 40, 100, TILE_FILL_ALPHA),
+		fill: tileFill(polygonFillHue(p.vertices), TILE_FILL_ALPHA),
 		// y is flipped: the figure is built in maths orientation, the viewBox runs downward.
 		points: p.vertices.map((v) => `${(ox + s * v.x).toFixed(3)},${(oy - s * v.y).toFixed(3)}`).join(" "),
 	}));

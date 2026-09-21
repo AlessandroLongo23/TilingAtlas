@@ -91,7 +91,7 @@ function renderThumb(pattern: HypColorsThumbInput, size: number, opts: ThumbOpts
 
 export function HyperbolicColorsThumbnail({ pattern, size = 256 }: { pattern: HypColorsThumbInput; size?: number }) {
 	const palette = useConfiguration((s) => s.colorsPalette);
-	const showFill = useConfiguration((s) => s.showPolygonFill);
+	const showFill = useConfiguration((s) => s.fillAmount > 0);
 	const lineMode = useConfiguration((s) => s.hyperbolicLineMode);
 	const lineWidth = useConfiguration((s) => s.lineWidth);
 

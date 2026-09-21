@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
+import { DEFAULT_FILL_AMOUNT } from "@/lib/render/tilePalette";
 import { useSearchParams } from "next/navigation";
 import { Camera, Check, Link2, Maximize, Minimize } from "lucide-react";
 import { Canvas } from "@/components/canvas";
@@ -1240,7 +1241,6 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	useEffect(() => {
 		// Shortcut key → the boolean config field it toggles (matches the Kbd badges in the sidebar).
 		const TOGGLES: Record<string, keyof ConfigurationState> = {
-			b: "showPolygonFill",
 			p: "showPolygonPoints",
 			i: "isIslamic",
 			s: "showSymmetryElements",
@@ -1339,6 +1339,16 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				e.preventDefault();
 				const c = useConfiguration.getState();
 				c.set({ sphericalFaceOpacity: c.sphericalFaceOpacity > 0 ? 0 : 1 });
+				return;
+			}
+			// B on a flat shelf: the tile fill off and back on. Same story one line up — it used to flip the
+			// Polygon-fill checkbox, which is now the Fill slider, so the key drives that slider's ends and
+			// any saturation dialled in between counts as "on". Off returns to the palette default, not to
+			// whatever was dialled, which is what the spherical pair above does too.
+			if (e.key === "b" || e.key === "B") {
+				e.preventDefault();
+				const c = useConfiguration.getState();
+				c.set({ fillAmount: c.fillAmount > 0 ? 0 : DEFAULT_FILL_AMOUNT });
 				return;
 			}
 			if (e.key === "r" || e.key === "R") {

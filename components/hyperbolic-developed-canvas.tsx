@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { fillAmountToSatPct } from "@/lib/render/tilePalette";
 import type { RefObject } from "react";
 import { useConfiguration } from "@/stores/configuration";
 import {
@@ -407,7 +408,8 @@ export function HyperbolicDevelopedCanvas({ patchId, data, input, diskPadPx = DI
 					cy: bh / 2,
 					canvasH: bh,
 					dark,
-					showFill: cfg.showPolygonFill,
+					showFill: cfg.fillAmount > 0,
+					fillSatPct: fillAmountToSatPct(cfg.fillAmount),
 					hueOffset: cfg.hueOffset || 0,
 					strokePx: cfg.lineWidth <= 0 ? 0 : Math.max(cfg.lineWidth, 0.5) * dpr * 1.1, // 0 = no stroke
 					taper: cfg.hyperbolicLineMode !== "constant",
@@ -432,7 +434,8 @@ export function HyperbolicDevelopedCanvas({ patchId, data, input, diskPadPx = DI
 					cy: bh / 2,
 					dark,
 					frame: false,
-					showFill: cfg.showPolygonFill,
+					showFill: cfg.fillAmount > 0,
+					fillSatPct: fillAmountToSatPct(cfg.fillAmount),
 					hueOffset: cfg.hueOffset || 0,
 					strokePx: cfg.lineWidth <= 0 ? 0 : Math.max(cfg.lineWidth, 0.5) * dpr * 1.1, // 0 = no stroke
 					taper: cfg.hyperbolicLineMode !== "constant",

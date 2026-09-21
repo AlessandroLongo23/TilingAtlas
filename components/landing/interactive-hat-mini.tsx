@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef } from "react";
+import { TILE_HSL_LIGHT_PCT, TILE_HSL_SAT_01 } from "@/lib/render/tilePalette";
 import { cn } from "@/lib/utils/cn";
 import { useCardActivation } from "@/lib/hooks/useCardActivation";
 import { useInViewMount } from "@/lib/hooks/useInViewMount";
@@ -45,11 +46,11 @@ const HAT_MINI_LEVEL = 5;
  */
 const HOME_WINDOW = 17;
 
-// The shader's HSL saturation/lightness, and the outline. Same numbers as the explorer's patch view:
-// HSL(h, 100%, 80%) is exactly the atlas' HSB(h, 40, 100) tile fill, so this card and every hat
-// thumbnail are the same picture.
-const PATCH_SAT = 1.0;
-const PATCH_LIGHT = 80;
+// The shader's HSL saturation/lightness, and the outline. Same source as the explorer's patch view: the
+// tile palette in HSL terms (lib/render/tilePalette.ts), so this card and every hat thumbnail are the
+// same picture, and stay that way if the palette moves.
+const PATCH_SAT = TILE_HSL_SAT_01;
+const PATCH_LIGHT = TILE_HSL_LIGHT_PCT;
 const STROKE_RGBA: [number, number, number, number] = [0, 0, 0, 1];
 const STROKE_CSS = "#000";
 const STROKE_PX = 1.5;

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { prepare, screenMapper } from "@/lib/render/figureCanvas";
-import { hsbToHsla, polygonHue } from "@/lib/utils/renderTiling";
+import { polygonHue, tileFill, tileLine } from "@/lib/utils/renderTiling";
 
 // The abstract vertex as the engine holds it, and NOT as a vertex configuration, which is what it
 // becomes the moment the tiles and the edges are drawn whole.
@@ -79,8 +79,8 @@ export function AbstractVertex({ word = "3.4.6.4" }: { word?: string }) {
 			const from = model.dirs[i];
 			const to = from + (2 * Math.PI * model.units[i]) / D;
 			const hue = polygonHue(model.ns[i]);
-			ctx.fillStyle = hsbToHsla(hue, 40, 100, 0.85);
-			ctx.strokeStyle = hsbToHsla(hue, 55, 62, 1);
+			ctx.fillStyle = tileFill(hue, 0.85);
+			ctx.strokeStyle = tileLine(hue);
 			ctx.lineWidth = 1.3 / s;
 			ctx.beginPath();
 			ctx.moveTo(0, 0);

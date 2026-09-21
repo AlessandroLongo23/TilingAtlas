@@ -10,9 +10,9 @@
 // is a non-convex 13-gon, which the renderer's original quad split (two triangles across a diagonal)
 // cannot represent at all, so uploadPolygons ear-clips instead — see lib/render/triangulate.ts.
 //
-// The colours are the atlas', not the rhombic views': the shader is handed saturation 1.0 and
-// lightness 80, which is exactly HSB(h, 40, 100), the tile fill the /defense cards and every
-// thumbnail use. So moving to the GPU changed what these can do, not what they look like.
+// The colours are the atlas', not the rhombic views': the shader is handed the tile palette converted
+// to HSL (PATCH_SAT / PATCH_LIGHT below), the same fill the /defense cards and every thumbnail use. So
+// moving to the GPU changed what these can do, not what they look like.
 //
 // A 2-D fallback stays for canvases with no WebGL2 context, drawing the same polygons through
 // drawPolygons.
@@ -29,6 +29,7 @@
 // Scale across constructions is matched by the DEFAULT LEVELS instead — see the `def` fields below.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { TILE_HSL_LIGHT_PCT, TILE_HSL_SAT_01 } from "@/lib/render/tilePalette";
 import { HAT_LEVEL, hatPatch } from "@/lib/render/hatPatch";
 import { penrosePatch, penroseRuleFigure } from "@/lib/render/penrosePatch";
 import {
@@ -105,12 +106,12 @@ interface PatchDef {
 const PENROSE_MAX_DEPTH = 11;
 const HAT_MAX_LEVEL = 6;
 
-// The shader's HSL saturation/lightness for the patch fills. HSB(h, 40, 100) — the atlas' tile fill,
-// used by drawPolygons and so by every thumbnail and card — is exactly HSL(h, 100%, 80%):
-// l = v(1 − s/2) = 0.8, and s_hsl = (v − l)/min(l, 1−l) = 1. Keeping the GPU path on these numbers is
-// what makes the move invisible.
-const PATCH_SAT = 1.0;
-const PATCH_LIGHT = 80;
+// The shader's HSL saturation/lightness for the patch fills: the atlas' tile fill — used by drawPolygons
+// and so by every thumbnail and card — converted to HSL, since this path is handed saturation and
+// lightness as uniforms instead of a colour string. Keeping the GPU path on the SAME numbers is what
+// makes the move from the 2-D path invisible, so they are derived, not copied.
+const PATCH_SAT = TILE_HSL_SAT_01;
+const PATCH_LIGHT = TILE_HSL_LIGHT_PCT;
 
 /**
  * sqrt(mean tile area) — the characteristic size the default levels are matched on.
@@ -296,8 +297,8 @@ function patchAt(id: keyof typeof PATCHES, level: number, sample: Sample): RawPo
 /**
  * One panel of a rule figure: the pieces one substitution step produces, fitted to a small SVG.
  *
- * Fills use the same HSL the GPU path is handed (saturation 1, lightness 80 — HSB(h, 40, 100)), so a
- * piece here is exactly the colour it will be on the canvas. y is flipped because SVG counts down and
+ * Fills use the same HSL the GPU path is handed (PATCH_SAT / PATCH_LIGHT, the tile palette in HSL), so
+ * a piece here is exactly the colour it will be on the canvas. y is flipped because SVG counts down and
  * every tiling in the atlas counts up.
  */
 function RulePanel({ caption, pieces }: { caption: string; pieces: RawPolygon[] }) {

@@ -170,6 +170,8 @@ export interface DrawOpts {
 	frame?: boolean;
 	/** false = edges only (fill each tile with the surface colour). Default true. */
 	showFill?: boolean;
+	/** Tile saturation 0–100, the Fill slider. Omitted ⇒ the palette default. See showFill for 0. */
+	fillSatPct?: number;
 	/** global hue rotation (deg) from the hue ring. */
 	hueOffset?: number;
 	/** stroke width in device px. Default ~R·0.006. */
@@ -215,10 +217,10 @@ export function drawDevelopedPatch(
 		ccx /= sides;
 		ccy /= sides;
 		// PER-TILE depth: one shade per tile, dimmed by its centre's screen radius (dim = 1 − 0.5·r²) —
-		// byte-identical to the shader / euclidean / spherical fill (HSB(h,0.40,1.0)·dim, theme-independent).
+		// byte-identical to the shader / euclidean / spherical fill (tileHueRgb01·dim, theme-independent).
 		const dep = Math.min(1, Math.hypot(ccx, ccy));
 		const dim = 1 - 0.5 * dep * dep;
-		const [fr, fg, fb] = tileHueRgb01(tileHue(sides) + (opts.hueOffset ?? 0));
+		const [fr, fg, fb] = tileHueRgb01(tileHue(sides) + (opts.hueOffset ?? 0), opts.fillSatPct);
 		ctx.fillStyle =
 			opts.showFill === false
 				? dark

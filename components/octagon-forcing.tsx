@@ -4,7 +4,7 @@ import { FigurePanel, type PanelSpec } from "@/components/figure-panel";
 import { type Box } from "@/lib/render/figureCanvas";
 import { dot, halo, rad, SOFT, type Api, type Pt } from "@/lib/render/figureGlyphs";
 import { drawZetaWheel } from "@/lib/render/zetaWheel";
-import { hsbToHsla, polygonHue } from "@/lib/utils/renderTiling";
+import { polygonHue, tileFill, tileLine } from "@/lib/utils/renderTiling";
 
 // Why an octagon has no choices left to make, in three frames that are the same picture growing.
 //
@@ -57,8 +57,8 @@ function truncatedSquare(reach: number): Tile[] {
 	return out;
 }
 
-const fill = (n: number, a = 0.85) => hsbToHsla(polygonHue(n), 40, 100, a);
-const line = (n: number) => hsbToHsla(polygonHue(n), 55, 62, 1);
+const fill = (n: number, a = 0.85) => tileFill(polygonHue(n), a);
+const line = (n: number) => tileLine(polygonHue(n));
 
 function drawTile({ ctx, s }: Api, t: Tile, alpha = 0.85, w = 1.6) {
 	ctx.fillStyle = fill(t.n, alpha);

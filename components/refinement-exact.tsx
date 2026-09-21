@@ -6,7 +6,7 @@ import {
 	arc, arrowHead, DART, dot, GHOST, halo, INK, REJECT, segment, SOFT,
 	type Api, type Pt,
 } from "@/lib/render/figureGlyphs";
-import { hsbToHsla, polygonHue } from "@/lib/utils/renderTiling";
+import { polygonHue, tileFill, tileLine } from "@/lib/utils/renderTiling";
 
 // Obligation 4 is the authors' one theorem, and the only one this project restates and reproves.
 //
@@ -36,8 +36,8 @@ import { hsbToHsla, polygonHue } from "@/lib/utils/renderTiling";
 // not available to the abstract assembly the algorithm manipulates.
 
 /** The face fill, at whatever value the panel wants: the two faces differ by value, not by hue. */
-const face = (alpha: number) => hsbToHsla(polygonHue(6), 40, 100, alpha);
-const edge = (n: number) => hsbToHsla(polygonHue(n), 55, 62, 1);
+const face = (alpha: number) => tileFill(polygonHue(6), alpha);
+const edge = (n: number) => tileLine(polygonHue(n));
 
 // ---------------------------------------------------------------------------------------------
 

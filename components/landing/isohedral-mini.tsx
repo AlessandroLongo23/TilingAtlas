@@ -1,5 +1,5 @@
 import { isohedralPatchCells } from "@/lib/render/landingPatches";
-import { hsbToHsla, polygonHue } from "@/lib/utils/renderTiling";
+import { polygonHue, tileFill } from "@/lib/utils/renderTiling";
 
 // The Isohedral card's media: a patch of IH1, the type the /isohedral page opens on — a hexagon whose
 // opposite edges are translates of each other, so every tile is the same tile moved. The edges are
@@ -44,12 +44,7 @@ export function IsohedralMini() {
 					<polygon
 						key={i}
 						points={toPoints(poly)}
-						fill={hsbToHsla(
-							(BASE_HUE + COLOUR_OFFSETS[(((a + b) % 3) + 3) % 3]) % 360,
-							40,
-							100,
-							1,
-						)}
+						fill={tileFill(BASE_HUE + COLOUR_OFFSETS[(((a + b) % 3) + 3) % 3])}
 						stroke="rgba(0, 0, 0, 0.45)"
 						strokeWidth={0.035}
 						strokeLinejoin="round"

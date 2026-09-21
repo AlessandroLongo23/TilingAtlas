@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
+import { fillAmountToSatPct } from "@/lib/render/tilePalette";
 import { useConfiguration } from "@/stores/configuration";
 import { su11Identity } from "@/lib/render/hyperbolic";
 import { loadDevelopedPatches, drawDevelopedPatch, type CataloguePatch } from "@/lib/render/hyperbolicDevelopedDraw";
@@ -23,6 +24,10 @@ import { DiskThumbnail } from "@/components/ui/disk-thumbnail";
 interface ThumbOpts {
 	hueOffset: number;
 	showFill: boolean;
+	/** The Fill slider's saturation, so a catalogue thumbnail stays the colour the play canvas paints —
+	 *  the invariant TILE_FILL_ALPHA in lib/utils/renderTiling.ts is there to protect. `showFill` carries
+	 *  the slider's 0. */
+	fillSatPct: number;
 	lineMode: "geometry" | "constant";
 	lineWidth: number;
 }
@@ -51,6 +56,7 @@ function renderThumbGL(patch: CataloguePatch, size: number, opts: ThumbOpts): st
 		canvasH: size,
 		dark,
 		showFill: opts.showFill,
+		fillSatPct: opts.fillSatPct,
 		hueOffset: opts.hueOffset || 0,
 		strokePx: opts.lineWidth <= 0 ? 0 : Math.max(opts.lineWidth, 0.5) * 1.1, // 0 = no stroke
 		taper: opts.lineMode !== "constant",
@@ -75,6 +81,7 @@ function renderThumb2d(patch: CataloguePatch, size: number, opts: ThumbOpts): st
 		dark,
 		frame: true,
 		showFill: opts.showFill,
+		fillSatPct: opts.fillSatPct,
 		hueOffset: opts.hueOffset || 0,
 		strokePx: opts.lineWidth <= 0 ? 0 : Math.max(opts.lineWidth, 0.5) * 1.1, // 0 = no stroke
 		taper: opts.lineMode !== "constant",
@@ -104,7 +111,8 @@ export function HyperbolicDevelopedThumbnail({ patch, size = 256, data }: Props)
 	// Live config — re-render the preview on hue-ring drags and stroke-option changes, exactly as the
 	// euclidean and spherical thumbnails redraw on the hue ring. Cheap: the reduction field is cached per patch.
 	const hueOffset = useConfiguration((s) => s.hueOffset);
-	const showFill = useConfiguration((s) => s.showPolygonFill);
+	const fillSatPct = useConfiguration((s) => fillAmountToSatPct(s.fillAmount));
+	const showFill = fillSatPct > 0;
 	const lineMode = useConfiguration((s) => s.hyperbolicLineMode);
 	const lineWidth = useConfiguration((s) => s.lineWidth);
 
@@ -119,8 +127,8 @@ export function HyperbolicDevelopedThumbnail({ patch, size = 256, data }: Props)
 		[patch, data],
 	);
 	const bake = useCallback(
-		(p: CataloguePatch) => renderThumb(p, size, { hueOffset, showFill, lineMode, lineWidth }),
-		[size, hueOffset, showFill, lineMode, lineWidth],
+		(p: CataloguePatch) => renderThumb(p, size, { hueOffset, showFill, fillSatPct, lineMode, lineWidth }),
+		[size, hueOffset, showFill, fillSatPct, lineMode, lineWidth],
 	);
 
 	return (

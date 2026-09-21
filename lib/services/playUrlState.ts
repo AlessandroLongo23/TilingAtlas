@@ -36,7 +36,10 @@ type Spec =
 
 export const PLAY_PARAMS: Record<string, Spec> = {
 	// global
-	fill: { field: "showPolygonFill", kind: "bool" },
+	// Was a bool while this was the Polygon-fill checkbox, and every previously shared link still reads
+	// correctly as a 0–100 number: the checkbox defaulted to ON, so a link carried `fill=0` for off and
+	// nothing at all for on — 0 is still off here, and absent is still the default.
+	fill: { field: "fillAmount", kind: "num", min: 0, max: 1 },
 	lw: { field: "lineWidth", kind: "num", min: 0, max: 5 },
 	hue: { field: "hueOffset", kind: "num", min: 0, max: 359 },
 	rot: { field: "rotation", kind: "num", min: 0, max: 360 },
@@ -188,7 +191,7 @@ export function parsePlayState(sp: URLSearchParams): PlayUrlState {
 }
 
 // Serialize a view back to a query string. Only non-defaults are emitted, so the default view produces
-// "" (a bare /play). Booleans emit their literal value, not presence-as-true — showPolygonFill
+// "" (a bare /play). Booleans emit their literal value, not presence-as-true — a default-true flag
 // defaults to true and needs a way to say "off".
 export function serializePlayState(
 	config: Partial<ConfigurationState>,

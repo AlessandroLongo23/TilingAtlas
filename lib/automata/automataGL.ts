@@ -13,6 +13,7 @@
 // per frame except the state texture itself, which is a single texSubImage of one byte per cell.
 
 import type { PeriodicAdjacency } from "@/lib/automata/adjacency";
+import { TILE_PALETTE_GLSL } from "@/lib/render/tilePalette";
 import { polygonFillHue, starApexAngleDeg, starHue } from "@/lib/utils/renderTiling";
 import { triangulate } from "@/lib/render/triangulate";
 
@@ -231,16 +232,13 @@ uniform vec3 uDead;         // colour of state 0
 uniform vec3 uDecayFar;     // colour the decay tail fades toward
 uniform float uTint;        // 0 = flat dead colour; 1 = tint dead cells by the tiling's own hue
 out vec4 frag;
-vec3 hsb2rgb(float h, float s, float v) {
-	vec3 k = clamp(abs(mod(h * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
-	return v * mix(vec3(1.0), k, s);
-}
+${TILE_PALETTE_GLSL}
 void main() {
 	if (vState < 0.5) {
 		// Dead. Optionally keep the tiling's own colouring underneath, heavily muted, so the geometry the
 		// automaton runs on stays readable without competing with the live cells for attention — the
 		// substrate should be legible, not loud.
-		vec3 tile = hsb2rgb(vHue / 360.0, 0.40, 1.0);
+		vec3 tile = tileFill(vHue);
 		frag = vec4(mix(uDead, mix(uDead, tile, 0.18), uTint), 1.0);
 	} else if (vState < 1.5) {
 		frag = vec4(uLive, 1.0);

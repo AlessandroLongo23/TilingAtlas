@@ -89,7 +89,7 @@ void main() {
 	int best;
 	float g = sphClassify(dir, best);
 	float line = sphEdge(g);
-	// Deepen the fill before lighting it: the catalogue hue is a pale HSB 0.40/1.0, chosen for an UNLIT
+	// Deepen the fill before lighting it: the catalogue hue is the pale TILE_SAT / TILE_VAL, chosen for an UNLIT
 	// fill, and lit as-is it washes to near-white under the key. See LOOK.sat in sphericalLook.ts.
 	vec3 face = sphFaceColor(best);
 	float lum = dot(face, vec3(0.2126, 0.7152, 0.0722));

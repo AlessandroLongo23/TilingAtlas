@@ -40,6 +40,7 @@
 import type { IcoPattern, V3 } from "@/lib/render/icoFreedraw";
 import type { SphSchwarzScene } from "@/lib/render/sphSchwarz";
 import type { SphStarPattern } from "@/lib/tilings/sph-star";
+import { TILE_SAT, TILE_VAL } from "@/lib/render/tilePalette";
 import { polygonHue } from "@/lib/utils/renderTiling";
 
 /**
@@ -81,16 +82,15 @@ export function faceHsb(n: number, dRaw: number): [number, number, number] {
 	return [hue, TILE_SAT, TILE_VAL];
 }
 
-// ⚑ 0.40/1.00 — the SAME palette as the convex shelf (lib/render/hueRing.ts tileHueRgb01), and the
-// history is worth keeping. This was 0.50/0.98, bumped on 2026-08-19 because AL, comparing a convex
-// polyhedron with a star one, said "the latter are more muted, I don't like them". He was right about
-// what he saw and the cause was elsewhere: icoFreedraw wrote these sRGB values straight into a colour
-// BufferAttribute, which three reads as LINEAR, so every star fill came out re-encoded and washed out no
-// matter what saturation it was given. With that fixed (2026-08-21) the bump was compensation on top of a
-// correction, and the two shelves can share one palette again — which is what AL asked for: "use the
-// non-star as reference for the look".
-const TILE_SAT = 0.4;
-const TILE_VAL = 1.0;
+// ⚑ The palette comes from lib/render/tilePalette.ts now, and the history is worth keeping. These were
+// 0.50/0.98, bumped on 2026-08-19 because AL, comparing a convex polyhedron with a star one, said "the
+// latter are more muted, I don't like them". He was right about what he saw and the cause was elsewhere:
+// icoFreedraw wrote these sRGB values straight into a colour BufferAttribute, which three reads as
+// LINEAR, so every star fill came out re-encoded and washed out no matter what saturation it was given.
+// With that fixed (2026-08-21) the bump was compensation on top of a correction, and the two shelves can
+// share one palette again — which is what AL asked for: "use the non-star as reference for the look".
+// Sharing it through the constant is what makes that stick: sphPoly.ts had stayed at 0.50/0.98 while
+// this file moved to 0.40/1.00, so the two shelves had been out of step ever since.
 /** The violet-to-magenta arc reserved for star faces; `polygonHue` never reaches it for any n < 17. */
 const STAR_ARC_START = 240;
 const STAR_ARC_END = 350;

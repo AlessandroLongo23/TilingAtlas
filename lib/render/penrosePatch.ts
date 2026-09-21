@@ -69,7 +69,8 @@ function subdivide(tris: Tri[]): Tri[] {
 	return out;
 }
 
-/** Hues for the two rhombi, in the same HSB(·, 40, 100) space every other card fills with. */
+/** Hues for the two rhombi. Only the hue lives here: the saturation and value come from the shared
+ *  palette (lib/render/tilePalette.ts), the same one every other card fills with. */
 const THICK_HUE = 205;
 const THIN_HUE = 35;
 
