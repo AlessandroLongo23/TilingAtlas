@@ -32,7 +32,7 @@ import {
 	type OutlineSeg,
 } from "@/lib/utils/islamicInterlace";
 import { twoColorFaces } from "@/lib/utils/islamicInterlace";
-import { islamicNormalAngleFromSlider } from "@/lib/utils/islamicNoise";
+import { islamicEdgeOffsetFrac, islamicNormalAngleFromSlider } from "@/lib/utils/islamicNoise";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import type { TranslationalCellData as AlgoCellData } from "@/classes/algorithm/types";
 import type { PeriodicCell, PeriodicPrim } from "../periodicCell";
@@ -89,9 +89,9 @@ export function islamicPeriodicCell(
 
 	const patch = buildTilingFromCell(cell as unknown as AlgoCellData, PATCH_MARGIN, PATCH_MARGIN, null, null);
 	const theta = islamicNormalAngleFromSlider(Math.min(Math.max(opts.angle, 0), 90));
-	const offset = Math.min(Math.max(opts.edgeOffset, 0), 100) / 100;
+	const offset = islamicEdgeOffsetFrac(opts.edgeOffset);
 	const count = Math.min(Math.max(Math.round(opts.intersectionCount), 1), 3);
-	const splitCrossings = offset > 0 || count > 1;
+	const splitCrossings = offset !== 0 || count > 1;
 
 	const strap = STRAP_STYLES[opts.style as keyof typeof STRAP_STYLES];
 	const prims = strap

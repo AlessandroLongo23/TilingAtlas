@@ -58,3 +58,9 @@ export const islamicTipsAngleFromSlider = (sliderDeg: number): number =>
 // source of truth — every from-normal consumer routes through here.
 export const islamicNormalAngleFromSlider = (sliderDeg: number): number =>
     (90 - Math.min(Math.max(sliderDeg, 0), 90)) * Math.PI / 180;
+
+// The edge-offset slider (store %, signed) as a fraction of the half-edge. Positive CROSSES: each ray roots
+// on the side opposite its lean, so the pair meets just over the midpoint. Negative SPLITS: each ray roots on
+// its own side and the pair moves apart, and the stretch of edge between the two roots stays a drawn line.
+// 0 is the classic single contact at the midpoint. Every consumer routes through here.
+export const islamicEdgeOffsetFrac = (pct: number): number => Math.min(Math.max(pct, -100), 100) / 100;

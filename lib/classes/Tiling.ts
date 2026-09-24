@@ -1,7 +1,7 @@
 import { type Polygon, Vector, type Gyration, type Reflection, type GlideReflection } from '@/classes';
 import { fillAmountToSatPct, TILE_VAL_PCT } from "@/lib/render/tilePalette";
 import type { VertexConfiguration } from '@/classes/algorithm/VertexConfiguration';
-import { islamicAnglesForHalfways, islamicNormalAngleFromSlider, islamicTipsAngleFromSlider } from '@/utils/islamicNoise';
+import { islamicAnglesForHalfways, islamicEdgeOffsetFrac, islamicNormalAngleFromSlider, islamicTipsAngleFromSlider } from '@/utils/islamicNoise';
 import { tolerance } from "@/utils/tolerance";
 import { WAVE_MIN_SCALE } from "@/lib/utils/tilingTransition";
 import { useConfiguration } from "@/stores/configuration";
@@ -277,7 +277,7 @@ export class Tiling {
     drawIslamicStarFill = (ctx, opacity: number = 1): void => {
         const cfg = useConfiguration.getState();
         const theta = Math.min(Math.max(cfg.islamicAngle, 0), 90);
-        const offset = Math.min(Math.max(cfg.islamicEdgeOffset, 0), 100) / 100; // 0–1 fraction of half-edge
+        const offset = islamicEdgeOffsetFrac(cfg.islamicEdgeOffset); // signed fraction of the half-edge
         const count = Math.min(Math.max(Math.round(cfg.islamicIntersectionCount), 1), 3);
         const cache = this.islamicFillCache;
         // Animated mode re-picks the per-edge angle every frame, so it can't be cached.
@@ -293,10 +293,10 @@ export class Tiling {
                 for (const s of node.calculateIslamicSegments(a, offset, count, true)) segments.push(s); // fill — trim overshoots
                 for (const m of node.islamicMarkers()) markers.push(m);
             }
-            // Transversal crossings appear once offset > 0 (converging split rays cross their sibling)
+            // Transversal crossings appear once offset ≠ 0 (crossing rays meet their sibling mid-body)
             // or count > 1 (rays pass through each other), so the arrangement must split them; at the
             // classic offset 0 / count 1 rays only stop on contact, so the cheaper path stays.
-            const { faces: abc, degenerate } = colorFacesAbc(extractFaces(segments, offset > 0 || count > 1), markers);
+            const { faces: abc, degenerate } = colorFacesAbc(extractFaces(segments, offset !== 0 || count > 1), markers);
             this.islamicFillCache = { nodesRef: this.nodes, theta, offset, count, abc, degenerate, segments };
         }
         const { abc, degenerate, segments } = this.islamicFillCache!;
@@ -340,7 +340,7 @@ export class Tiling {
     drawIslamicInterlace = (ctx, opacity: number = 1, weave: boolean = true, emboss: boolean = false): void => {
         const cfg = useConfiguration.getState();
         const theta = Math.min(Math.max(cfg.islamicAngle, 0), 90);
-        const offset = Math.min(Math.max(cfg.islamicEdgeOffset, 0), 100) / 100;
+        const offset = islamicEdgeOffsetFrac(cfg.islamicEdgeOffset);
         const count = Math.min(Math.max(Math.round(cfg.islamicIntersectionCount), 1), 3);
         const bandWidth = cfg.islamicBandWidth;
         const borderWidth = emboss ? Math.max(cfg.islamicOutlineWidth, EMBOSS_MIN_BORDER) : cfg.islamicOutlineWidth;
@@ -365,7 +365,7 @@ export class Tiling {
             const border = Math.max(0, borderWidth * scale);
             // Off-midpoint contact (offset > 0) or pass-through rays (count > 1) put real crossings mid-
             // segment, so the weave graph must split them; the clean construction (offset 0, count 1) needn't.
-            const splitCrossings = offset > 0 || count > 1;
+            const splitCrossings = offset !== 0 || count > 1;
             const { bands } = buildIslamicInterlace(segments, { width, border, startUnder: chirality, squareCap: true, weave, splitCrossings });
             this.islamicInterlaceCache = { nodesRef: this.nodes, theta, offset, count, bandWidth, borderWidth, chirality, weave, bands };
         }
@@ -415,7 +415,7 @@ export class Tiling {
     drawIslamicCheckerboard = (ctx, opacity: number = 1): void => {
         const cfg = useConfiguration.getState();
         const theta = Math.min(Math.max(cfg.islamicAngle, 0), 90);
-        const offset = Math.min(Math.max(cfg.islamicEdgeOffset, 0), 100) / 100;
+        const offset = islamicEdgeOffsetFrac(cfg.islamicEdgeOffset);
         const count = Math.min(Math.max(Math.round(cfg.islamicIntersectionCount), 1), 3);
         const cache = this.islamicCheckerCache;
         const fresh = cache && cache.nodesRef === this.nodes && cache.theta === theta
@@ -427,7 +427,7 @@ export class Tiling {
                 if (!node.vertices || !node.halfways) continue;
                 for (const s of node.calculateIslamicSegments(angle, offset, count, true)) segments.push(s); // checkerboard fill — trim overshoots
             }
-            const faces = extractFaces(segments, offset > 0 || count > 1);
+            const faces = extractFaces(segments, offset !== 0 || count > 1);
             const colors = twoColorFaces(faces);
             this.islamicCheckerCache = { nodesRef: this.nodes, theta, offset, count, faces, colors, segments };
         }

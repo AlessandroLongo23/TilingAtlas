@@ -73,8 +73,9 @@ export interface SphericalIslamicOptions {
 	 *  tiling); π/2 ⇒ rays along the inward normal (meetings collapse to the face centroid — the dual).
 	 *  Internally the ray is rotated from the inward normal by (π/2 − angle), i.e. the flat a/2. */
 	angleRad: number;
-	/** Kaplan polygons-in-contact offset ∈ [0,1]: slides the two ray origins symmetrically along the
-	 *  edge arc away from the midpoint. 0 ⇒ both at the midpoint (classic construction). */
+	/** Kaplan polygons-in-contact offset ∈ [−1,1]: slides the two ray origins symmetrically along the
+	 *  edge arc away from the midpoint. 0 ⇒ both at the midpoint (classic construction); positive crosses
+	 *  the pair, negative splits it and draws the edge arc between the roots (islamicEdgeOffsetFrac). */
 	edgeOffsetFrac?: number;
 	/** A ray passes the first N−1 crossings and stops at the N-th (clamped so no ray is ever dropped). */
 	intersectionCount?: number;
@@ -95,7 +96,7 @@ function computeFaceRays(
 	nStop: number,
 	eps: number,
 	trim: boolean,
-): { origins: V3[]; tangents: V3[]; stops: number[]; C: V3 } {
+): { origins: V3[]; tangents: V3[]; stops: number[]; C: V3; contacts: Array<[V3, V3]> } {
 	// Face centroid direction — the inward side every edge-normal points toward.
 	let c: V3 = [0, 0, 0];
 	for (const vi of face) c = add(c, unit[vi]);
@@ -106,6 +107,7 @@ function computeFaceRays(
 	const tangents: V3[] = []; // forward tangent at O, unit
 	const planeN: V3[] = []; // great-circle plane normal
 	const edgeOf: number[] = [];
+	const contacts: Array<[V3, V3]> = []; // split (frac < 0): the edge arc between the two roots
 
 	const pushRay = (O: V3, dirAtM: V3) => {
 		let P = normalize(cross(O, dirAtM)); // plane of the great circle through O aiming along dirAtM
@@ -138,7 +140,8 @@ function computeFaceRays(
 		const dMinus = rotTangent(nrm, -fromNormal, M);
 
 		// Converging symmetric split: each ray roots on the side OPPOSITE its lean so both origins stay on
-		// the edge and the pair crosses just off the midpoint. At frac 0 both collapse to M.
+		// the edge and the pair crosses just off the midpoint. At frac 0 both collapse to M. A negative frac
+		// flips the shift, rooting each ray on its own side: the pair splits and the arc between is drawn.
 		const arcLen = Math.acos(clamp(dot(v0, v1), -1, 1));
 		const shift = frac * 0.5 * arcLen;
 		const oPos = slide(M, shift, eHat); // toward v1
@@ -147,6 +150,7 @@ function computeFaceRays(
 		pushRay(plusLeansPlus ? oNeg : oPos, dPlus);
 		pushRay(plusLeansPlus ? oPos : oNeg, dMinus);
 		edgeOf.push(e, e);
+		if (frac < 0) contacts.push([oNeg, oPos]);
 	}
 
 	const R = origins.length;
@@ -215,7 +219,7 @@ function computeFaceRays(
 	for (let i = 0; i < R; i++) cap[i] = exitArc(i);
 	const stop = resolveRayStops(xs, nStop, cap, eps, trim);
 
-	return { origins, tangents, stops: stop, C };
+	return { origins, tangents, stops: stop, C, contacts };
 }
 
 // One sampled great-circle polyline per construction segment, pooled across every face of the solid. Each
@@ -224,7 +228,7 @@ function computeFaceRays(
 export function sphericalIslamicArcs(poly: Polyhedron, opts: SphericalIslamicOptions): Float32Array[] {
 	const segs = Math.max(2, Math.round(opts.segments ?? 24));
 	const radius = opts.radius ?? 1;
-	const frac = clamp(opts.edgeOffsetFrac ?? 0, 0, 1);
+	const frac = clamp(opts.edgeOffsetFrac ?? 0, -1, 1);
 	const nStop = Math.max(1, Math.round(opts.intersectionCount ?? 1));
 	const angle = opts.angleRad;
 	const eps = 1e-9;
@@ -234,7 +238,16 @@ export function sphericalIslamicArcs(poly: Polyhedron, opts: SphericalIslamicOpt
 
 	for (const face of poly.faces) {
 		// trim = true: these are the DRAWN lines, where an overshoot stub past a crossing is the visible defect.
-		const { origins, tangents, stops } = computeFaceRays(unit, face, angle, frac, nStop, eps, true);
+		const { origins, tangents, stops, contacts } = computeFaceRays(unit, face, angle, frac, nStop, eps, true);
+		// Split contacts: the edge arc between the roots, sampled as normalised chords (still on the arc).
+		for (const [a, b] of contacts) {
+			const arr = new Float32Array((segs + 1) * 3);
+			for (let k = 0; k <= segs; k++) {
+				const P = normalize(add(scale(a, 1 - k / segs), scale(b, k / segs)));
+				arr.set([P[0] * radius, P[1] * radius, P[2] * radius], k * 3);
+			}
+			out.push(arr);
+		}
 		for (let i = 0; i < origins.length; i++) {
 			const s1 = stops[i];
 			if (!isFinite(s1) || s1 <= eps) continue; // no partner ever caught it (or zero-length) — drop
@@ -261,7 +274,7 @@ export function sphericalIslamicArcs(poly: Polyhedron, opts: SphericalIslamicOpt
 // the EXACT same origin (the arc midpoint M = normalize(v0+v1), computed identically from both faces), so the
 // weave map dedupes them into one 4-valent crossing — which is where the whole over/under weave lives.
 export function sphericalIslamicRaySegments(poly: Polyhedron, opts: SphericalIslamicOptions): Array<[V3, V3]> {
-	const frac = clamp(opts.edgeOffsetFrac ?? 0, 0, 1);
+	const frac = clamp(opts.edgeOffsetFrac ?? 0, -1, 1);
 	const nStop = Math.max(1, Math.round(opts.intersectionCount ?? 1));
 	const angle = opts.angleRad;
 	const eps = 1e-9;
@@ -271,7 +284,8 @@ export function sphericalIslamicRaySegments(poly: Polyhedron, opts: SphericalIsl
 	for (const face of poly.faces) {
 		// trim = false: the interlace weave needs clean shared crossings; a trimmed T-junction has odd degree
 		// and would break the over/under assignment. The weave carries the crossing, so no stub shows anyway.
-		const { origins, tangents, stops } = computeFaceRays(unit, face, angle, frac, nStop, eps, false);
+		const { origins, tangents, stops, contacts } = computeFaceRays(unit, face, angle, frac, nStop, eps, false);
+		for (const c of contacts) out.push(c);
 		for (let i = 0; i < origins.length; i++) {
 			const s1 = stops[i];
 			if (!isFinite(s1) || s1 <= eps) continue;
@@ -302,7 +316,7 @@ export interface FaceFillData {
 }
 
 export function sphericalIslamicFaceData(poly: Polyhedron, opts: SphericalIslamicOptions): FaceFillData[] {
-	const frac = clamp(opts.edgeOffsetFrac ?? 0, 0, 1);
+	const frac = clamp(opts.edgeOffsetFrac ?? 0, -1, 1);
 	const nStop = Math.max(1, Math.round(opts.intersectionCount ?? 1));
 	const angle = opts.angleRad;
 	const eps = 1e-9;
@@ -312,7 +326,7 @@ export function sphericalIslamicFaceData(poly: Polyhedron, opts: SphericalIslami
 
 	for (const face of poly.faces) {
 		// trim = true: the fill traces cells from these rays; an overshoot stub cuts a spurious sliver cell.
-		const { origins, tangents, stops, C } = computeFaceRays(unit, face, angle, frac, nStop, eps, true);
+		const { origins, tangents, stops, C, contacts } = computeFaceRays(unit, face, angle, frac, nStop, eps, true);
 		// Orthonormal tangent frame at the centroid (u, v ⟂ C), with a well-conditioned reference axis.
 		const ref: V3 = Math.abs(C[0]) < 0.9 ? [1, 0, 0] : [0, 1, 0];
 		const u = normalize(cross(C, ref));
@@ -334,6 +348,7 @@ export function sphericalIslamicFaceData(poly: Polyhedron, opts: SphericalIslami
 			const [ex, ey] = project(E);
 			rays.push([ox, oy, ex, ey]);
 		}
+		for (const [a, b] of contacts) rays.push([...project(a), ...project(b)]);
 		const boundary = face.map((vi) => project(unit[vi]));
 		out.push({ C, u, v, rays, boundary });
 	}

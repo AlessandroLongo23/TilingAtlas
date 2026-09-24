@@ -121,7 +121,7 @@ export interface ConfigurationState {
 	// Islamic / rendering variants
 	isIslamic: boolean;
 	islamicAngle: number;
-	islamicEdgeOffset: number;        // % of the half-edge the ray origins slide outward (0 = midpoint)
+	islamicEdgeOffset: number;        // signed % of the half-edge the ray origins slide (0 = midpoint, + cross, − split)
 	islamicIntersectionCount: number; // ray stops at the N-th crossing (1 = first contact, max 3)
 	islamicAnimate: boolean;
 	// Decoration style for the Islamic construction. 'plain' = colored cells + border lines (the classic

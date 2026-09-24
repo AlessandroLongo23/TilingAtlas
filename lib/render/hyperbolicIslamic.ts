@@ -108,17 +108,19 @@ function rayChord(M: Complex, t: Complex): { o: Complex; d: Complex; sMax: numbe
  * exact flat calculateIslamicSegments contract). Angles are conformal, so the ±theta tilt is a plain
  * 2D rotation of the Poincaré tangent.
  *
- * `offsetFrac ∈ [0,1]` is Kaplan/Bonner's two-point split, in HYPERBOLIC arc length: the two roots
+ * `offsetFrac ∈ [−1,1]` is Kaplan/Bonner's two-point split, in HYPERBOLIC arc length: the two roots
  * slide symmetrically from the midpoint to M ± frac·(half edge) along the edge geodesic (1 ⇒ the
  * tiling vertices), and each ray leans toward the FAR side (the +ê-leaning ray roots at M − d·ê),
  * so the pair converges just off the midpoint — the flat construction's exact contract. At 0 both
- * roots collapse onto M and the classic single-contact rays come back bit-for-bit.
+ * roots collapse onto M and the classic single-contact rays come back bit-for-bit. A negative frac
+ * roots each ray on its OWN side instead: the pair splits apart (islamicEdgeOffsetFrac), and
+ * islamicSegmentsForTile draws the edge between the two roots.
  */
 function tileRays(polyP: Complex[], center: Complex, theta: number, offsetFrac: number): RayK[] {
 	const n = polyP.length;
 	const cosT = Math.cos(theta);
 	const sinT = Math.sin(theta);
-	const frac = Math.min(Math.max(offsetFrac, 0), 1);
+	const frac = Math.min(Math.max(offsetFrac, -1), 1);
 	const epsS = 1e-9 * KLEIN_SCALE;
 	// the tile as a Klein chord polygon (convex for regular hyperbolic tiles) — the ray exit cap
 	const polyK = polyP.map((p) => {
@@ -147,11 +149,12 @@ function tileRays(polyP: Complex[], center: Complex, theta: number, offsetFrac: 
 		const v0 = polyP[i];
 		const v1 = polyP[(i + 1) % n];
 		const M = hypMidpoint(v0, v1);
-		const d = frac * 0.5 * hypDist(v0, v1);
-		// (root, lean toward v1?) — the +ê-leaning ray roots on the v0 side and vice versa
+		const d = Math.abs(frac) * 0.5 * hypDist(v0, v1);
+		// (root, lean toward v1?) — crossing: the +ê-leaning ray roots on the v0 side and vice versa;
+		// split: each ray roots on the side it leans toward
 		const roots: [Complex, boolean][] = [
-			[d > 0 ? geodesicMove(M, v0, d) : M, true],
-			[d > 0 ? geodesicMove(M, v1, d) : M, false],
+			[d > 0 ? geodesicMove(M, v0, d) : M, frac >= 0],
+			[d > 0 ? geodesicMove(M, v1, d) : M, frac < 0],
 		];
 		for (const [o, leanPlus] of roots) {
 			// unit tangent toward v1 at the root — taken toward the FARTHER endpoint so it stays
@@ -270,6 +273,8 @@ export function islamicSegmentsForTile(
 			{ x: rays[i].o.x + s * rays[i].d.x, y: rays[i].o.y + s * rays[i].d.y },
 		]);
 	}
+	// Split: the edge between an edge's two roots (rays 2i, 2i+1) is drawn — a Klein chord is the geodesic.
+	if (offsetFrac < 0) for (let i = 0; i < R; i += 2) segments.push([{ ...rays[i].o }, { ...rays[i + 1].o }]);
 	return segments;
 }
 
@@ -385,7 +390,7 @@ export function prepareIslamicField(
 	// vertices and new junctions snap the arrangement topology (measured: ~8 % of texels flip in the
 	// last 1 % of the slider vs ~1.5 % per percent elsewhere). Capping at 99.8 % keeps the roots a
 	// sub-pixel shy of the vertices — the offset-100 look, without the pop AL asked to avoid.
-	const frac = Math.min(Math.max(offsetFrac, 0), 0.998);
+	const frac = Math.min(Math.max(offsetFrac, -0.998), 0.998);
 	const segments: Segment[] = [];
 	const centers: Vector[] = []; // one per tile (hyp barycenter), scaled Klein
 	const contacts: Vector[] = []; // one per tiling EDGE (hyp midpoint), scaled Klein, deduped
@@ -416,7 +421,7 @@ export function prepareIslamicField(
 	// face trace non-simple and can void whole regions of the field. Prune dangling chains back to
 	// the last real junction: what remains is a closed subdivision, every face is simple, and the
 	// bake stays TOTAL. At the classic settings no pendant exists and this is a no-op.
-	const arr = buildArrangement(segments, frac > 0);
+	const arr = buildArrangement(segments, frac !== 0);
 	const deg = new Array<number>(arr.pts.length).fill(0);
 	const vEdges: number[][] = arr.pts.map(() => []);
 	for (let ei = 0; ei < arr.edges.length; ei++) {
@@ -496,7 +501,8 @@ export function prepareIslamicField(
 	//     be parity noise; the C diamonds have zero area, so C simply does not exist.
 	//   * angle 90 (θ = 0) at offset 0: the apothem walls pass THROUGH the tile centres, making each
 	//     centre a face vertex — and the star bodies have shrunk to nothing, so A does not exist.
-	const centersActive = !(angleFromNormalRad < 1e-9 && frac < 1e-9);
+	// A split (frac < 0) puts every midpoint ON its drawn contact segment, so C is empty there too.
+	const centersActive = !(angleFromNormalRad < 1e-9 && Math.abs(frac) < 1e-9);
 	const centerGrid = centersActive ? gridOf(centers) : new Map<string, number[]>();
 	const contactGrid = frac > 0 ? gridOf(contacts) : new Map<string, number[]>();
 	const heldMarkers = (fi: number, grid: Map<string, number[]>, pts: Vector[]): Vector[] => {

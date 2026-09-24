@@ -12,7 +12,7 @@ import { ISLAMIC_FILL_VERT, ISLAMIC_FILL_FRAG, STRAP_BORDER_VERT, STRAP_BORDER_F
 import { buildInstancedStrapMesh, type StrapMesh } from "@/lib/render/buildIslamicStrapMesh";
 import { buildTilingFromCell } from "@/lib/render/buildPatchTiling";
 import { buildIslamicInterlace, strapWidthScale, EMBOSS_MIN_BORDER, type OutlineSeg } from "@/lib/utils/islamicInterlace";
-import { islamicNormalAngleFromSlider } from "@/utils/islamicNoise";
+import { islamicEdgeOffsetFrac, islamicNormalAngleFromSlider } from "@/utils/islamicNoise";
 import { evaluateParamCell, resolveAlphaDegsRaw, type ParametricCellData } from "@/lib/utils/paramCell";
 import { useFamilyAlphas } from "@/stores/familyAlphas";
 import { Vector } from "@/classes/Vector";
@@ -198,7 +198,7 @@ export function StrapCanvas({ translationalCell, translationalCellId, paramCell 
 			const rot = ((ctrl.rotation || 0) * Math.PI) / 180;
 
 			const theta = Math.min(Math.max(cfg.islamicAngle, 0), 90);
-			const offset = Math.min(Math.max(cfg.islamicEdgeOffset, 0), 100) / 100;
+			const offset = islamicEdgeOffsetFrac(cfg.islamicEdgeOffset);
 			const count = Math.min(Math.max(Math.round(cfg.islamicIntersectionCount), 1), 3);
 			const bandWidth = cfg.islamicBandWidth;
 			const chirality = cfg.islamicChirality;
@@ -349,7 +349,7 @@ function buildStrapMeshFromPatch(
 	// The border rides the SAME length scale as the band, so the two sliders read on one ruler and the
 	// ratio between them survives any zoom. It grows outward: the band stays the cream body's full width.
 	const border = Math.max(0, borderWidth * scale);
-	const splitCrossings = offset > 0 || count > 1;
+	const splitCrossings = offset !== 0 || count > 1;
 	const { bands } = buildIslamicInterlace(segments, { width, border, startUnder: chirality, squareCap: true, weave, splitCrossings });
 
 	// Border colour per segment: dark warm, or (emboss) a highlight/shadow chosen from the world normal vs

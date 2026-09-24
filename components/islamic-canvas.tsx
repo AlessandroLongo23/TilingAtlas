@@ -14,7 +14,7 @@ import { buildInstancedIslamicMesh, buildInstancedCheckerMesh, type IslamicMesh 
 import { buildTilingFromCell } from "@/lib/render/buildPatchTiling";
 import { extractFaces, colorFacesAbc, type Segment, type Marker } from "@/utils/islamicArrangement";
 import { twoColorFaces } from "@/lib/utils/islamicInterlace";
-import { islamicNormalAngleFromSlider } from "@/utils/islamicNoise";
+import { islamicEdgeOffsetFrac, islamicNormalAngleFromSlider } from "@/utils/islamicNoise";
 import { evaluateParamCell, resolveAlphaDegsRaw, type ParametricCellData } from "@/lib/utils/paramCell";
 import { useFamilyAlphas } from "@/stores/familyAlphas";
 import { Vector } from "@/classes/Vector";
@@ -206,7 +206,7 @@ export function IslamicCanvas({ translationalCell, translationalCellId, paramCel
 			const rot = ((ctrl.rotation || 0) * Math.PI) / 180;
 
 			const theta = Math.min(Math.max(cfg.islamicAngle, 0), 90);
-			const offset = Math.min(Math.max(cfg.islamicEdgeOffset, 0), 100) / 100;
+			const offset = islamicEdgeOffsetFrac(cfg.islamicEdgeOffset);
 			const count = Math.min(Math.max(Math.round(cfg.islamicIntersectionCount), 1), 3);
 			// Which decorative style this canvas owns. "checkerboard" builds a two-colour face mesh; anything
 			// else here is the plain A/B/C fill (the gate in canvas.tsx only mounts this canvas for those two).
@@ -370,7 +370,7 @@ function buildMeshFromPatch(
 		for (const s of node.calculateIslamicSegments(angle, offset, count, true)) segments.push(s);
 		for (const m of node.islamicMarkers()) markers.push(m);
 	}
-	const split = offset > 0 || count > 1;
+	const split = offset !== 0 || count > 1;
 	if (style === "checkerboard") {
 		// Same pooled faces as the plain fill, bipartite two-coloured (twoColorFaces), reusing drawIslamicCheckerboard's rule.
 		const faces = extractFaces(segments, split);

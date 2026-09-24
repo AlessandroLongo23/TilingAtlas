@@ -15,6 +15,7 @@ import { InfoDot } from "@/components/ui/info-dot";
 import { Slider } from "@/components/ui/slider";
 import { Kbd } from "@/components/ui/kbd";
 import { HueRing } from "@/components/ui/hue-ring";
+import { HankinPad } from "@/components/ui/hankin-pad";
 import { Reveal } from "@/components/ui/reveal";
 import { Toggle } from "@/components/ui/toggle";
 import { WIRINGS } from "@/lib/freedraw/arcs";
@@ -929,15 +930,15 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 								))}
 							</div>
 							)}
-							<Slider
-								id="islamicAngle"
-								label="Islamic Angle"
-								value={cfg.islamicAngle}
-								onChange={(v) => setCfg({ islamicAngle: v })}
-								min={0}
-								max={90}
-								step={1}
-								unit="°"
+							{/* Angle + edge offset on one drawn edge. For interlace/outline these weave too: off-midpoint
+							    contact (edge offset) is Bonner's two-point family, canonically interwoven. In hyperbolic
+							    the two roots slide by hyperbolic arc length along the edge geodesic. */}
+							<HankinPad
+								label="Islamic angle"
+								angle={cfg.islamicAngle}
+								offset={cfg.islamicEdgeOffset}
+								onAngleChange={(v) => setCfg({ islamicAngle: v })}
+								onOffsetChange={(v) => setCfg({ islamicEdgeOffset: v })}
 							/>
 							{/* Bonner's acute/median/obtuse families for the regular-polygon system, in this
 							    slider's from-normal convention (30 / 45 / 60). */}
@@ -1135,19 +1136,6 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 									</div>
 								</div>
 							</Reveal>
-							{/* Construction knobs. For interlace/outline these weave too — off-midpoint contact (edge
-							    offset) is Bonner's two-point family, canonically interwoven. In hyperbolic the two
-							    roots slide by hyperbolic arc length along the edge geodesic. */}
-							<Slider
-								id="islamicEdgeOffset"
-								label="Edge Offset"
-								value={cfg.islamicEdgeOffset}
-								onChange={(v) => setCfg({ islamicEdgeOffset: v })}
-								min={0}
-								max={100}
-								step={1}
-								unit="%"
-							/>
 							{/* Ray-stops-at (intersection count) is first-contact only in the hyperbolic bake. */}
 							{!isHyperbolic ? (
 							<Slider

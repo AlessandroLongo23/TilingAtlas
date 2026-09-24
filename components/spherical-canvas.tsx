@@ -29,6 +29,7 @@ import { createEdgeOcclusion, type EdgeOcclusion } from "@/lib/render/edgeOcclus
 import { buildIslamicPattern, type IslamicPattern } from "@/lib/render/sphericalIslamicMesh";
 import { buildIslamicFill, type IslamicFill } from "@/lib/render/sphericalIslamicFill";
 import { buildIslamicWeave, type IslamicWeave } from "@/lib/render/sphericalIslamicWeaveMesh";
+import { islamicEdgeOffsetFrac } from "@/utils/islamicNoise";
 
 // The spherical tiling renderer: a real 3D three.js scene with the tiling on a centred sphere, rotated
 // FREELY by quaternion (ArcballControls — a virtual trackball, no gimbal lock, no up-vector constraint, so
@@ -487,7 +488,7 @@ export function SphericalCanvas({ solidId, bubbleBites, interactive = true, fitF
 		if (!isIslamic || isStrapStyle) return;
 		const pattern = buildIslamicPattern(poly, {
 			angleRad: (Math.min(Math.max(islamicAngle, 0), 90) * Math.PI) / 180,
-			edgeOffsetFrac: Math.min(Math.max(islamicEdgeOffset, 0), 100) / 100,
+			edgeOffsetFrac: islamicEdgeOffsetFrac(islamicEdgeOffset),
 			intersectionCount: islamicIntersectionCount,
 			// Rigid ON ⇒ the star lines become 3D tube/rect bars, shaped by Section / Thickness / Height /
 			// Bevel; OFF ⇒ flat surface ribbons sized by the stroke.
@@ -532,7 +533,7 @@ export function SphericalCanvas({ solidId, bubbleBites, interactive = true, fitF
 		if (!isIslamic) return;
 		const cfg = useConfiguration.getState();
 		const angleRad = (Math.min(Math.max(islamicAngle, 0), 90) * Math.PI) / 180;
-		const edgeOffsetFrac = Math.min(Math.max(islamicEdgeOffset, 0), 100) / 100;
+		const edgeOffsetFrac = islamicEdgeOffsetFrac(islamicEdgeOffset);
 
 		if (isStrapStyle) {
 			// Straps + border rings. Not gated by Polygon fill — the borders always show; the fill toggle only

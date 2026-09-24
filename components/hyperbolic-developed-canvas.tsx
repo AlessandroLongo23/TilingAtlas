@@ -24,7 +24,7 @@ import { su11Inverse } from "@/lib/render/hyperbolic";
 import { HyperbolicPerPixelRenderer } from "@/lib/render/hyperbolicPerPixelGL";
 import { syncCanvasSize } from "@/lib/render/canvasSize";
 import { captureOverride, offerFrame } from "@/lib/render/capture";
-import { islamicNormalAngleFromSlider } from "@/utils/islamicNoise";
+import { islamicEdgeOffsetFrac, islamicNormalAngleFromSlider } from "@/utils/islamicNoise";
 import { tileHueRgb01 } from "@/lib/render/hueRing";
 
 // Interactive view of an engine-developed hyperbolic tiling. It reduces each PIXEL into the fundamental
@@ -374,7 +374,7 @@ export function HyperbolicDevelopedCanvas({ patchId, data, input, diskPadPx = DI
 				// resolution. Both bakes hit the per-(tiling, angle, res) cache on revisits.
 				let islamicActive = false;
 				if (cfg.isIslamic && stRef.current && patchRef.current?.darts) {
-					const offsetPct = Math.round(Math.min(Math.max(cfg.islamicEdgeOffset, 0), 100));
+					const offsetPct = Math.round(islamicEdgeOffsetFrac(cfg.islamicEdgeOffset) * 100);
 					const key = `${meta.id}|${Math.round(cfg.islamicAngle)}|${offsetPct}`;
 					const now = performance.now();
 					const fullRes = Math.min(stRef.current.field.res, 1024);

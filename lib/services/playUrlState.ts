@@ -94,7 +94,7 @@ export const PLAY_PARAMS: Record<string, Spec> = {
 	ikb: { field: "islamicCheckerHueB", kind: "num", min: 0, max: 359 },
 	ifb: { field: "islamicFillHueB", kind: "num", min: 0, max: 359 },
 	ifc: { field: "islamicFillHueC", kind: "num", min: 0, max: 359 },
-	ioff: { field: "islamicEdgeOffset", kind: "num", min: 0, max: 100 },
+	ioff: { field: "islamicEdgeOffset", kind: "num", min: -100, max: 100 },
 	irays: { field: "islamicIntersectionCount", kind: "num", min: 1, max: 3, int: true },
 	ianim: { field: "islamicAnimate", kind: "bool" },
 	// squared torus (sq*)

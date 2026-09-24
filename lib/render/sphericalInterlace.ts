@@ -254,7 +254,7 @@ export function buildSphericalInterlace(poly: Polyhedron, opts: SphInterlaceOpti
 	// so split there to surface them as 4-valent vertices — same rule as the fill's splitCrossings. At the
 	// default construction rays are contained in their own face (computeFaceRays' exit clamp), so every crossing
 	// already sits at a shared endpoint and no split is needed.
-	const split = (opts.edgeOffsetFrac ?? 0) > 1e-9 || (opts.intersectionCount ?? 1) > 1;
+	const split = Math.abs(opts.edgeOffsetFrac ?? 0) > 1e-9 || (opts.intersectionCount ?? 1) > 1;
 	const rays = split ? splitAtCrossings(raw) : raw;
 
 	const vmap = new Map<string, number>();

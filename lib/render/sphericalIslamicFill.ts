@@ -106,7 +106,7 @@ export function buildIslamicFill(poly: Polyhedron | null, opts: IslamicFillOptio
 	const nCount = opts.intersectionCount ?? 1;
 	// Off-midpoint contact (offset) and pass-through rays (count > 1) put real crossings mid-segment, so the
 	// arrangement must inject them as vertices — same rule as the flat renderer.
-	const splitCrossings = frac > 0 || nCount > 1;
+	const splitCrossings = frac !== 0 || nCount > 1;
 	const isChecker = opts.style === "checkerboard";
 
 	const faceData = sphericalIslamicFaceData(poly, {

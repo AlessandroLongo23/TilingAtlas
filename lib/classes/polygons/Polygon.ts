@@ -5,7 +5,7 @@ import { Vector } from '@/classes';
 import { Cyclotomic } from "../Cyclotomic";
 import type { CyclotomicRing } from "../Cyclotomic";
 import { tolerance } from "@/utils/tolerance";
-import { islamicAnglesForHalfways, islamicNormalAngleFromSlider, islamicTipsAngleFromSlider } from "@/utils/islamicNoise";
+import { islamicAnglesForHalfways, islamicEdgeOffsetFrac, islamicNormalAngleFromSlider, islamicTipsAngleFromSlider } from "@/utils/islamicNoise";
 import { exactPolygonsOverlap } from "../algorithm/exact/exactOverlap";
 import { type Marker, tipPoint } from "@/utils/islamicArrangement";
 import { resolveRayStops, type RayCrossing } from "@/utils/islamicRayStops";
@@ -506,10 +506,11 @@ export class Polygon {
      * `theta` is measured from the inward normal: 0 ⇒ along the normal (all meetings collapse to the
      * centroid), π/2 ⇒ along the edge. Accepts a per-edge array (animated angle) or a scalar.
      *
-     * `edgeOffsetFrac` ∈ [0, 1] slides the two rays' origins symmetrically outward from the midpoint
+     * `edgeOffsetFrac` ∈ [−1, 1] slides the two rays' origins symmetrically outward from the midpoint
      * along the edge (Kaplan's polygons-in-contact generalization): 0 ⇒ both at the midpoint (the
-     * classic construction), 1 ⇒ the two origins reach the edge's two vertices. The split keeps the
-     * tiling's mirror symmetry and opens the extra edge polygons.
+     * classic construction), ±1 ⇒ the two origins reach the edge's two vertices. Positive crosses the
+     * pair over the midpoint (opening the edge diamonds); negative splits it apart and also emits the
+     * edge stretch between the two roots as a segment. Both keep the tiling's mirror symmetry.
      *
      * `intersectionCount` ∈ {1, 2, 3, …} lets a ray pass through the first N−1 crossings and stop at
      * the N-th (1 ⇒ the classic "stop on first contact"). A ray with fewer than N qualifying crossings
@@ -528,12 +529,13 @@ export class Polygon {
     ): [Vector, Vector][] => {
         const nEdges = this.halfways.length;
         const eps = 1e-9;
-        const frac = Math.min(Math.max(edgeOffsetFrac, 0), 1);
+        const frac = Math.min(Math.max(edgeOffsetFrac, -1), 1);
         const nStop = Math.max(1, Math.round(intersectionCount));
         // Two inward rays per edge, at ±theta from the true inward edge-normal.
         const origins: Vector[] = [];
         const dirs: Vector[] = [];
         const edgeOf: number[] = [];
+        const contacts: [Vector, Vector][] = []; // split (frac < 0): the edge between the two roots
         for (let i = 0; i < nEdges; i++) {
             const v0 = this.vertices[i];
             const v1 = this.vertices[(i + 1) % nEdges];
@@ -551,6 +553,8 @@ export class Polygon {
             // two rays cross ("meet") just off the midpoint while BOTH roots stay ON the edge. The split
             // is mirror-symmetric across the edge normal. At frac 0 both origins collapse to the midpoint
             // and this is byte-identical to the classic construction (same ray order, dPlus then dMinus).
+            // A NEGATIVE frac flips the shift, so the same assignment roots each ray on its OWN side: the
+            // pair splits apart instead of crossing, and the edge between the roots stays a drawn line.
             const eHat = edge.normalize();
             const shift = Vector.scale(eHat, frac * 0.5 * Vector.distance(v0, v1));
             const oRight = Vector.add(this.halfways[i], shift); // toward +ê (v1)
@@ -559,6 +563,7 @@ export class Polygon {
             origins.push(plusLeansPlus ? oLeft : oRight, plusLeansPlus ? oRight : oLeft);
             dirs.push(dPlus, dMinus);
             edgeOf.push(i, i);
+            if (frac < 0) contacts.push([oLeft, oRight]);
         }
         const R = dirs.length;
 
@@ -624,6 +629,8 @@ export class Polygon {
             }
             segments.push([origins[i], Vector.add(origins[i], Vector.scale(dirs[i], stop[i]))]);
         }
+        // Both tiles on an edge emit its contact stretch; the arrangement collapses the duplicate.
+        for (const c of contacts) segments.push(c);
         return segments;
     }
 
@@ -689,7 +696,7 @@ export class Polygon {
         const zoom = cfg.controls.zoom;
         let angle: number | number[] = islamicNormalAngleFromSlider(cfg.islamicAngle);
         if (cfg.islamicAnimate) angle = islamicAnglesForHalfways(ctx, this.halfways);
-        const offset = Math.min(Math.max(cfg.islamicEdgeOffset, 0), 100) / 100;
+        const offset = islamicEdgeOffsetFrac(cfg.islamicEdgeOffset);
         const count = Math.min(Math.max(Math.round(cfg.islamicIntersectionCount), 1), 3);
         const segments = this.calculateIslamicSegments(angle, offset, count, true); // drawn lines — trim overshoots
         ctx.push();
