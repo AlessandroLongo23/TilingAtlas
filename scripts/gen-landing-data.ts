@@ -16,14 +16,23 @@
 // `pnpm landing:data` after regenerating the atlas.
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { buildLandingPayload, drawableEuclidean, toSpecimen } from "@/lib/services/landing-core";
+import { buildLandingPayload, countsOf, drawableEuclidean, toSpecimen, type LandingCounts } from "@/lib/services/landing-core";
+import type { AtlasManifest } from "@/lib/services/atlasManifest";
+import {
+	COMPOSABLE_SHARD_KS,
+	ISOTOXAL_SHARD_KS,
+	PENROSE_SHARD_KS,
+	PERIOD_SHARD_KS,
+	TRI45_SHARD_KS,
+} from "@/lib/services/referenceAtlas";
 import type { CataloguePatch } from "@/lib/render/hyperbolicDevelopedDraw";
 import type { ReferenceTiling } from "@/lib/services/referenceAtlas";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
 import { hydrateRenderCells } from "@/lib/services/renderCellDerive";
 
-// The same eager set loadReferenceAtlas fetches client-side for /library, minus the lazy k≥8 shards,
-// so the landing counts exactly match the library's scope. The base atlas is required; every other
+// The same eager set loadReferenceAtlas fetches client-side for /library (plus the hyperbolic base
+// shelf it defers), minus the lazy k≥8 shards. Keep it in step with that function's fetch list: six
+// shelves had fallen out of this one by 2026-09-24. The base atlas is required; every other
 // shard degrades to an empty merge (best-effort), mirroring loadReferenceAtlas's semantics.
 const EAGER_ATLAS_FILES = [
 	"reference-atlas.json", // required
@@ -31,10 +40,16 @@ const EAGER_ATLAS_FILES = [
 	"reference-atlas-isotoxal.json",
 	"reference-atlas-mixed.json",
 	"reference-atlas-scaled.json",
+	"reference-atlas-period.json",
+	"reference-atlas-tri45.json",
+	"reference-atlas-planigon.json",
+	"reference-atlas-penrose.json",
+	"reference-atlas-euhalf.json",
 	"reference-atlas-polyomino.json",
 	"reference-atlas-islamic.json",
 	"reference-atlas-hyperbolic.json",
 	"reference-atlas-spherical.json",
+	"reference-atlas-hollow.json",
 ];
 
 const PAYLOAD_OUT = path.join(process.cwd(), "lib", "services", "landing-data.generated.json");
@@ -46,14 +61,25 @@ const HERO_CELLS_DIR = path.join(process.cwd(), "public", "hero-cells");
 // (e.g. "t1003", "ctrnact-07_34-5c2_5e_5f3_6f-1"); anything else is skipped defensively.
 const SAFE_ID = /^[A-Za-z0-9._-]+$/;
 
-async function loadAtlas(): Promise<ReferenceTiling[]> {
+// The higher-k shards /play preloads (KNOWN_HIGHER_TIERS in _play-client.tsx). Counted, never drawn.
+const HIGHER_ATLAS_FILES = (
+	[
+		["composable", COMPOSABLE_SHARD_KS],
+		["isotoxal", ISOTOXAL_SHARD_KS],
+		["period", PERIOD_SHARD_KS],
+		["tri45", TRI45_SHARD_KS],
+		["penrose", PENROSE_SHARD_KS],
+	] as const
+).flatMap(([shelf, ks]) => ks.map((k) => `reference-atlas-${shelf}-k${k}.json`));
+
+async function loadAtlas(files = EAGER_ATLAS_FILES): Promise<ReferenceTiling[]> {
 	const dir = path.join(process.cwd(), "public");
 	const parts = await Promise.all(
-		EAGER_ATLAS_FILES.map(async (name, i) => {
+		files.map(async (name, i) => {
 			try {
 				return hydrateRenderCells(decodeAtlas<ReferenceTiling>(JSON.parse(await readFile(path.join(dir, name), "utf8"))));
 			} catch (e) {
-				if (i === 0) throw e;
+				if (i === 0 && files === EAGER_ATLAS_FILES) throw e;
 				return [] as ReferenceTiling[];
 			}
 		}),
@@ -90,11 +116,29 @@ async function hyperbolicPatchesFor(ids: string[]): Promise<Record<string, Catal
 	return out;
 }
 
+/**
+ * The whole catalogue, counted the way /play's geometry segments count it: the eager set, the shards
+ * /play preloads, and every lazy tier in the manifest. The landing page used to count the eager set
+ * alone and announced "over 37000" for an atlas of more than two million.
+ */
+async function catalogueCounts(eager: ReferenceTiling[]): Promise<LandingCounts> {
+	const seen = new Set(eager.map((t) => t.id));
+	const higher = (await loadAtlas(HIGHER_ATLAS_FILES)).filter((t) => !seen.has(t.id) && seen.add(t.id));
+	const counts = countsOf([...eager, ...higher]);
+	const manifest = JSON.parse(await readFile(path.join(process.cwd(), "public", "atlas-manifest.json"), "utf8")) as AtlasManifest;
+	for (const t of manifest.tiers) {
+		counts[t.geometry] += t.count;
+		counts.total += t.count;
+	}
+	return counts;
+}
+
 async function main(): Promise<void> {
 	const atlas = await loadAtlas();
 
 	// 1. Bundled payload.
 	const payload = buildLandingPayload(atlas);
+	payload.counts = await catalogueCounts(atlas);
 	payload.hyperbolicPatches = await hyperbolicPatchesFor(payload.hyperbolicPool);
 	await writeFile(PAYLOAD_OUT, `${JSON.stringify(payload)}\n`, "utf8");
 
