@@ -1,11 +1,15 @@
-// Post the newest release note to the Discord updates channel.
+// Post release notes to the Discord updates channel.
 //
-//   pnpm updates:announce --dry-run              render it, post nothing
-//   pnpm updates:announce --since <sha>          post only if the newest version changed since <sha>
+//   pnpm updates:announce --dry-run              render the newest, post nothing
+//   pnpm updates:announce --after 1.35.0         post every release newer than 1.35.0, oldest first
+//   pnpm updates:announce --since <sha>          the same, taking the version <sha> served
 //   pnpm updates:announce --site https://…       override the site the links point at
 //
-// Run by .github/workflows/release-discord.yml once the deploy is live. The workflow already
-// decides whether a release happened, so --since is a second, cheap guard for running this by hand.
+// Run by .github/workflows/release-discord.yml once the deploy is live, with --after set to the
+// version the site served BEFORE the push. EVERY RELEASE GETS ITS OWN MESSAGE, IN ORDER (AL,
+// 2026-09-24): a push that carries three releases posts three messages, oldest first, and one that
+// carries none posts nothing. With no --after and no --since only the newest is posted, so a
+// hand run can never replay the whole history into the channel.
 //
 // TEXT AND LINKS ONLY (AL, 2026-09-21). The previews on /updates are vector cells drawn in the
 // browser and there is no raster of them anywhere, so nothing here tries to send a picture. Each
@@ -18,7 +22,7 @@
 import { execFileSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
 import { UPDATES, KIND_ORDER, KIND_LABEL, type Change, type UpdateEntry } from "@/lib/updates/entries";
-import { releaseLevel } from "@/lib/updates/version";
+import { compareVersions, releaseLevel } from "@/lib/updates/version";
 
 /** The site the links point at. Overridden by --site or SITE_URL; no trailing slash. */
 const DEFAULT_SITE = "https://tiling-atlas.vercel.app";
@@ -133,6 +137,43 @@ export function buildPayload(entry: UpdateEntry, base: string): unknown {
 	};
 }
 
+/**
+ * The releases to announce, OLDEST FIRST, which is the order they go out in.
+ *
+ * `after` is the newest version the site served before this push. Null means that is unknown (a first
+ * push, or a hand run with no bound), and then only the newest entry qualifies: replaying every
+ * release since 1.0.0 into the channel is the one failure worse than missing a message.
+ */
+export function pendingReleases(updates: readonly UpdateEntry[], after: string | null): UpdateEntry[] {
+	if (!updates.length) return [];
+	if (after === null) return [updates[0]];
+	return updates.filter((u) => compareVersions(u.version, after) > 0).sort((a, b) => compareVersions(a.version, b.version));
+}
+
+/**
+ * POST one message and wait until Discord has created it (`wait=true`), so the next one cannot
+ * overtake it. A 429 is Discord asking for a pause, not a failure: it says how long, and the same
+ * message is sent again after that.
+ */
+async function post(webhook: string, payload: unknown): Promise<void> {
+	const url = `${webhook}${webhook.includes("?") ? "&" : "?"}wait=true`;
+	for (let attempt = 0; attempt < 5; attempt++) {
+		const res = await fetch(url, {
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify(payload),
+		});
+		if (res.ok) return;
+		if (res.status === 429) {
+			const body = (await res.json().catch(() => ({}))) as { retry_after?: number };
+			await new Promise((r) => setTimeout(r, Math.ceil((body.retry_after ?? 2) * 1000) + 250));
+			continue;
+		}
+		throw new Error(`Discord answered ${res.status} ${res.statusText}\n${await res.text()}`);
+	}
+	throw new Error("Discord kept rate-limiting after 5 attempts");
+}
+
 /** The newest version recorded at a past commit, or null if the file was not there yet. */
 function versionAt(sha: string): string | null {
 	try {
@@ -153,22 +194,17 @@ async function main(): Promise<void> {
 	const dryRun = args.includes("--dry-run");
 	const base = site(flag("--site") ?? process.env.SITE_URL ?? DEFAULT_SITE);
 	const since = flag("--since");
+	const after = flag("--after") || (since ? versionAt(since) : null);
 
-	const entry = UPDATES[0];
-
-	if (since) {
-		const previous = versionAt(since);
-		if (previous === entry.version) {
-			console.log(`announce: v${entry.version} was already the newest at ${since}; nothing to post`);
-			return;
-		}
-		console.log(`announce: ${previous ?? "(none)"} → ${entry.version}`);
+	const entries = pendingReleases(UPDATES, after);
+	if (!entries.length) {
+		console.log(`announce: nothing newer than v${after}; nothing to post`);
+		return;
 	}
-
-	const payload = buildPayload(entry, base);
+	console.log(`announce: ${after ?? "(unbounded)"} → ${entries.map((e) => e.version).join(", ")}`);
 
 	if (dryRun) {
-		console.log(JSON.stringify(payload, null, 2));
+		for (const e of entries) console.log(JSON.stringify(buildPayload(e, base), null, 2));
 		return;
 	}
 
@@ -178,16 +214,19 @@ async function main(): Promise<void> {
 		process.exit(1);
 	}
 
-	const res = await fetch(webhook, {
-		method: "POST",
-		headers: { "content-type": "application/json" },
-		body: JSON.stringify(payload),
-	});
-	if (!res.ok) {
-		console.error(`announce: Discord answered ${res.status} ${res.statusText}\n${await res.text()}`);
-		process.exit(1);
+	for (const [i, entry] of entries.entries()) {
+		try {
+			await post(webhook, buildPayload(entry, base));
+		} catch (e) {
+			// Say exactly what went out, so a rerun can start past it with --after.
+			const sent = entries.slice(0, i).map((x) => x.version);
+			console.error(`announce: v${entry.version} failed; already posted: ${sent.join(", ") || "none"}`);
+			throw e;
+		}
+		console.log(`announce: posted v${entry.version} (${entry.title})`);
+		// A beat between messages, well inside the webhook's rate limit, so a burst never meets a 429.
+		if (i < entries.length - 1) await new Promise((r) => setTimeout(r, 1500));
 	}
-	console.log(`announce: posted v${entry.version} (${entry.title})`);
 }
 
 // Only when run as a command. tests/announce-release.test.ts imports the renderers above, and an

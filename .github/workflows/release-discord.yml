@@ -59,6 +59,9 @@ jobs:
           fi
 
           echo "version=$NEW" >> "$GITHUB_OUTPUT"
+          # The version served BEFORE the push: the script announces every release newer than it,
+          # oldest first, so a push carrying several releases posts each of them in order.
+          echo "previous=$OLD" >> "$GITHUB_OUTPUT"
           if [ "$OLD" = "$NEW" ]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No release in this push: still v$NEW."
@@ -110,4 +113,5 @@ jobs:
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           SITE_URL: ${{ vars.SITE_URL }}
-        run: pnpm updates:announce
+          AFTER: ${{ steps.release.outputs.previous }}
+        run: pnpm updates:announce --after "$AFTER"

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { UPDATES, KIND_LABEL } from "@/lib/updates/entries";
-import { buildPayload, linkBold, renderChange, renderEntry } from "@/scripts/announce-release";
+import { buildPayload, linkBold, pendingReleases, renderChange, renderEntry } from "@/scripts/announce-release";
 
 // The Discord announcement is written once and then fires unattended, so what it can get wrong it
 // gets wrong silently in a channel nobody is watching at the time. These lock the two things that
@@ -104,5 +104,27 @@ describe("a group larger than the whole budget", () => {
 		expect(body.length).toBeLessThanOrEqual(3800);
 		expect(body).toContain("**A**");
 		expect(body).toContain("The rest of this release is on the site.");
+	});
+});
+
+describe("pendingReleases", () => {
+	const at = (version: string) => ({ version, date: "2026-01-01", commit: "abc1234", title: version, changes: [] });
+	// Newest first, as UPDATES is.
+	const updates = [at("1.38.0"), at("1.37.0"), at("1.36.0"), at("1.35.0"), at("1.34.0")];
+
+	it("announces every release a push carries, oldest first", () => {
+		expect(pendingReleases(updates, "1.35.0").map((u) => u.version)).toEqual(["1.36.0", "1.37.0", "1.38.0"]);
+	});
+
+	it("announces nothing when the push carries no release", () => {
+		expect(pendingReleases(updates, "1.38.0")).toEqual([]);
+	});
+
+	it("posts only the newest when the previous version is unknown, never the whole history", () => {
+		expect(pendingReleases(updates, null).map((u) => u.version)).toEqual(["1.38.0"]);
+	});
+
+	it("orders by version, not string order", () => {
+		expect(pendingReleases([at("1.10.0"), at("1.9.0")], "1.8.0").map((u) => u.version)).toEqual(["1.9.0", "1.10.0"]);
 	});
 });
