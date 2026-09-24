@@ -57,7 +57,13 @@ export interface UpdateEntry {
 	version: string;
 	/** ISO date, YYYY-MM-DD. */
 	date: string;
-	/** A few words. Shown as the entry's heading on /updates. */
+	/**
+	 * A few words, naming the CONTENT. Shown as the entry's heading on /updates.
+	 *
+	 * No punchlines (AL, 2026-09-21). "Genus solids on the spherical shelf" tells a visitor what
+	 * the release holds; "Past the sphere" and "Every board, whole" tell them nothing and are the
+	 * shape to avoid. A title that needs the body to be understood is not a title. Say the objects.
+	 */
 	title: string;
 	/** The commit this release was cut at — the next range starts here. */
 	commit: string;
