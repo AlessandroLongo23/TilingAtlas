@@ -172,9 +172,10 @@ public/hero-cells/
 # local corpora drops from Marek/Craig/Joseph — gigabytes, and the shipped artefacts are what get committed
 materials/
 
-# production build output, when `NEXT_DIST_DIR=.next-prod pnpm build` is used to keep a prod build
-# from clobbering the running dev server's `.next` (see next.config.ts)
-.next-prod/
+# any other Next dist dir: `NEXT_DIST_DIR=.next-prod pnpm build` keeps a prod build from clobbering the
+# running dev server's `.next` (see next.config.ts), `.next-studio` is the same for a second dev server,
+# and a stale cache moved aside lands here too. Each holds thousands of files.
+.next-*/
 
 # one-off driver scripts (Playwright probes, throwaway harnesses). Never part of a build.
 scripts/tmp/
