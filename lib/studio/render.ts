@@ -33,10 +33,10 @@ import type { ConstructionPoint, Curve4, Lift, Pt, StudioPatch, StudioTool } fro
  *  and past that the picture is texture, not tiling. The same instinct as MAX_FILL_INSTANCES. */
 const MAX_COPIES = 4000;
 
-/** Caps on the symmetry overlay. An axis family and a centre orbit are both infinite, and past these
- *  counts the structure stops being a map and becomes a texture over the tiling. */
-const MAX_AXIS_LINES = 24;
-const MAX_CENTRE_DOTS = 160;
+/** Below this on-screen period-cell area (px²) the group's axes and centres are texture, not a map, so
+ *  they are left out whole. A count cap was the old answer and it lied: copies arrive in raster order,
+ *  so the budget ran out in one corner and the overlay showed a fraction of the group as if it were all. */
+const MIN_STRUCTURE_CELL_PX2 = 40 * 40;
 
 /**
  * The view, in exactly the terms the catalogue canvas already uses.
@@ -636,9 +636,27 @@ function drawGroupStructure(
 		}
 	}
 
+	// Too small a cell on screen and every line and dot below merges into a mesh: stop at the subdivision.
+	const o = P(0, 0);
+	const e1 = P(t1x, t1y);
+	const e2 = P(t2x, t2y);
+	const cellPx2 = Math.abs((e1[0] - o[0]) * (e2[1] - o[1]) - (e1[1] - o[1]) * (e2[0] - o[0]));
+	if (cellPx2 < MIN_STRUCTURE_CELL_PX2) {
+		ctx.restore();
+		return;
+	}
+
 	// Axes: one stroke per DISTINCT line, across the whole visible extent, because a mirror does not
-	// stop at a cell boundary and drawing it as a segment would misread the group.
-	const span = (Math.hypot(t1x, t1y) + Math.hypot(t2x, t2y)) * 4;
+	// stop at a cell boundary and drawing it as a segment would misread the group. Every anchor lies in
+	// the copy grid, so the grid's own diameter reaches past the far edge from any of them.
+	let iLo = Infinity, iHi = -Infinity, jLo = Infinity, jHi = -Infinity;
+	for (const [i, j] of copies) {
+		if (i < iLo) iLo = i;
+		if (i > iHi) iHi = i;
+		if (j < jLo) jLo = j;
+		if (j > jHi) jHi = j;
+	}
+	const span = Math.hypot(t1x, t1y) * (iHi - iLo + 2) + Math.hypot(t2x, t2y) * (jHi - jLo + 2);
 	const seen = new Set<string>();
 	ctx.lineWidth = 1;
 	for (const axis of sym.axes ?? []) {
@@ -652,9 +670,7 @@ function drawGroupStructure(
 		}
 		ctx.strokeStyle = ink;
 		ctx.setLineDash(axis.kind === "glide" ? [5, 4] : []);
-		let drawn = 0;
 		for (const [i, j] of copies) {
-			if (drawn >= MAX_AXIS_LINES) break;
 			const ox = axis.p.x + i * t1x + j * t2x;
 			const oy = axis.p.y + i * t1y + j * t2y;
 			// Signed distance from the origin along the normal: the line's identity, given the direction.
@@ -662,7 +678,6 @@ function drawGroupStructure(
 			const key = `${axis.kind}:${ux.toFixed(4)},${uy.toFixed(4)},${(dist / tol).toFixed(0)}`;
 			if (seen.has(key)) continue;
 			seen.add(key);
-			drawn++;
 			const a = P(ox - ux * span, oy - uy * span);
 			const b = P(ox + ux * span, oy + uy * span);
 			ctx.beginPath();
@@ -676,17 +691,14 @@ function drawGroupStructure(
 	// Rotation centres, sized by order so a 6-fold reads as more than a 2-fold, deduped by position.
 	ctx.fillStyle = ink;
 	const dots = new Set<string>();
-	let placed = 0;
 	for (const c of sym.centers ?? []) {
 		const r = 1.5 + c.order * 0.45;
 		for (const [i, j] of copies) {
-			if (placed >= MAX_CENTRE_DOTS) break;
 			const x = c.z.x + i * t1x + j * t2x;
 			const y = c.z.y + i * t1y + j * t2y;
 			const key = `${(x / tol).toFixed(0)},${(y / tol).toFixed(0)}`;
 			if (dots.has(key)) continue;
 			dots.add(key);
-			placed++;
 			const p = P(x, y);
 			ctx.beginPath();
 			ctx.arc(p[0], p[1], r, 0, Math.PI * 2);
