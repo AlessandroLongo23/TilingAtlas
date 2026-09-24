@@ -39,8 +39,8 @@ interface SphereFreedrawThumbnailProps {
 	showCrossings?: boolean;
 	/** Draw the pattern's own edges at all; see IcoFreedrawCanvas. */
 	showEdges?: boolean;
-	/** Per-tile HSB, parallel to the pattern's tiles, overriding the golden-angle tileColor. */
-	tileHsb?: [number, number, number][];
+	/** Per-tile hue, parallel to the pattern's tiles, overriding the golden-angle tileColor. */
+	tileHue?: number[];
 }
 
 export function SphereFreedrawThumbnail({
@@ -55,7 +55,7 @@ export function SphereFreedrawThumbnail({
 	crossings,
 	showCrossings,
 	showEdges,
-	tileHsb,
+	tileHue,
 }: SphereFreedrawThumbnailProps) {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	// The key that has painted, not a boolean: resetting a boolean at the top of the effect would be a
@@ -86,7 +86,7 @@ export function SphereFreedrawThumbnail({
 					crossings,
 					showCrossings,
 					showEdges,
-					tileHsb,
+					tileHue,
 				});
 				applyStudioMaterials(content.object);
 				return { object: content.object, dispose: content.dispose };

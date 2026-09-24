@@ -116,9 +116,9 @@ export interface IcoOptions {
 	edgeThickness?: number; // drawn-edge tube radius (default 0.006 = buildFlatSolid's edgeRadius(1))
 	showGrid?: boolean; // draw ALL of the solid's edges faintly (the underlying grid)
 	allEdges?: [number, number][]; // the full edge list (vertex-index pairs), for showGrid
-	/** Per-tile HSB (hue in degrees), parallel to `pattern.tiles`, overriding the golden-angle tileColor.
-	 *  The star shelf sets it so a face is coloured by its POLYGON: see sphStar.faceHsb. */
-	tileHsb?: [number, number, number][];
+	/** Per-tile hue in degrees, parallel to `pattern.tiles`, overriding the golden-angle tileColor.
+	 *  The star shelf sets it so a face is coloured by its POLYGON: see sphStar.faceHue. */
+	tileHue?: number[];
 	showCrossings?: boolean; // draw the face-through-face creases (star polyhedra only)
 	/** Draw the pattern's own edges at all. False leaves the bare coloured faces — the star shelf's
 	 *  "no edges" state, where the facet colours alone say where the faces are. Defaults to true. */
@@ -275,10 +275,10 @@ export function buildIcoFreedraw(pattern: IcoPattern, rawVertices: V3[], opts: I
 	pattern.tiles.forEach((tile, ti) => {
 		// An explicit per-tile colour wins over the golden-angle index ramp. The hue ring still turns it,
 		// so the shelf keeps its polygon meaning and the user keeps the global rotation.
-		const hsb = opts.tileHsb?.[ti];
+		const hue = opts.tileHue?.[ti];
 		const col = linear(
-			hsb
-				? hsbDegToRgb01(hsb[0] + (opts.hueOffset ?? 0), hsb[1], hsb[2])
+			hue !== undefined
+				? tileHueRgb01(hue + (opts.hueOffset ?? 0))
 				: tileColor(ti, pattern.nTiles, opts.hueOffset ?? 0),
 		);
 		for (const face of tile) {

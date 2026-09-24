@@ -24,6 +24,8 @@
 // what is actually near it. That both removes the 9× copy factor the old shader paid on every pixel and
 // lifts the 128-primitive ceiling, which no coloring or edge-pattern cell would have fit under.
 
+import { tileHueRgb01 } from "./tilePalette";
+
 /** One ring (implicitly closed) or polyline, with an optional fill and an optional stroke. */
 export interface PeriodicPrim {
 	/** Flat world coordinates, [x0, y0, x1, y1, …]. */
@@ -115,15 +117,6 @@ const LIST_TEX_W = 1024;
  * it drops geometry, which is why `packPeriodicCell` warns instead of truncating quietly.
  */
 export const MAX_BUCKET_ENTRIES = 512;
-
-/** Matches the shader's hsb2rgb(h, s, v). Periodic in h with period 1, so an offset needs no wrap. */
-export function hsb2rgb(h: number, s: number, v: number): [number, number, number] {
-	const f = (n: number) => {
-		const k = Math.min(Math.max(Math.abs(((h * 6 + n) % 6) - 3) - 1, 0), 1);
-		return v * (1 - s + s * k);
-	};
-	return [f(0), f(4), f(2)];
-}
 
 /**
  * Bucket margin as a fraction of `feature`. A prim's stroke reaches `strokeScale · uStrokePx · uFeature`
@@ -231,7 +224,7 @@ export function packPeriodicCell(cell: PeriodicCell | null): PackedCell | null {
 		meta[m + 17] = prim.z ?? 0;
 
 		// Average fill, area-weighted, for the centre blend.
-		const rgb = hue >= 0 ? hsb2rgb(hue / 360, 0.4, 1) : (fillRgb as [number, number, number]);
+		const rgb = hue >= 0 ? tileHueRgb01(hue) : (fillRgb as [number, number, number]);
 		const w = area * fillAlpha;
 		avgR += rgb[0] * w;
 		avgG += rgb[1] * w;
@@ -366,7 +359,7 @@ export function averageCellFill(avgParts: Float32Array, hueOffsetDeg: number): [
 		const weight = area * alpha;
 		if (weight <= 0) continue;
 		const rgb = hue >= 0
-			? hsb2rgb((hue + hueOffsetDeg) / 360, 0.4, 1)
+			? tileHueRgb01(hue + hueOffsetDeg)
 			: [avgParts[i + 1], avgParts[i + 2], avgParts[i + 3]];
 		r += rgb[0] * weight;
 		g += rgb[1] * weight;

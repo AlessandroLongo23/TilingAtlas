@@ -59,7 +59,7 @@ export function SphStarCanvas({
 			keepRadius
 			showGrid={showGrid}
 			crossings={scene.crossings}
-			tileHsb={scene.tileHsb}
+			tileHue={scene.tileHue}
 			showCrossings={edges === "all"}
 			showEdges={edges !== "none"}
 			densitySheets={sheets}

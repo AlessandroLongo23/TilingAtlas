@@ -1,5 +1,5 @@
 import { useConfiguration } from "@/stores/configuration";
-import { fillAmountToSatPct, TILE_VAL_PCT } from "@/lib/render/tilePalette";
+import { fillAmountToSatPct, tileFill } from "@/lib/render/tilePalette";
 import { isWithinConvexHull, segmentsIntersect, getAngleAtVertex, isWithinTolerance } from '@/utils';
 import { Vector } from '@/classes';
 import { Cyclotomic } from "../Cyclotomic";
@@ -448,7 +448,7 @@ export class Polygon {
             this.showIslamicLines(ctx, opacity);
         } else {
             if (cfg.fillAmount > 0) {
-                ctx.fill(customColor || this.hue, fillAmountToSatPct(cfg.fillAmount), TILE_VAL_PCT / opacity, 1.0 * opacity);
+                ctx.fill(tileFill(customColor || this.hue, opacity, fillAmountToSatPct(cfg.fillAmount)));
             } else {
                 ctx.noFill();
             }
@@ -682,7 +682,7 @@ export class Polygon {
         ctx.push();
         ctx.strokeWeight(1 / controls.zoom);
         ctx.stroke(0, 0, 0, 0.22 * opacity);              // faint outline
-        ctx.fill(this.hue, fillAmountToSatPct(fillAmount), TILE_VAL_PCT / opacity, 1.0 * opacity); // full-strength fill
+        ctx.fill(tileFill(this.hue, opacity, fillAmountToSatPct(fillAmount))); // full-strength fill
         ctx.beginShape();
         for (let i = 0; i < this.vertices.length; i++) ctx.vertex(this.vertices[i].x, this.vertices[i].y);
         ctx.endShape(ctx.CLOSE);
@@ -719,7 +719,7 @@ export class Polygon {
         ctx.push();
         ctx.noStroke();
         // Tile-hue fill → the global hue ring rotates it like every other fill path.
-        ctx.fill(((customColor ?? this.hue) + (cfg.hueOffset || 0)) % 360, fillAmountToSatPct(cfg.fillAmount), TILE_VAL_PCT / opacity, 1.0 * opacity);
+        ctx.fill(tileFill(((customColor ?? this.hue) + (cfg.hueOffset || 0)) % 360, opacity, fillAmountToSatPct(cfg.fillAmount)));
         ctx.beginShape();
         for (let i = 0; i < this.halfways.length; i++) {
             ctx.vertex(this.halfways[i].x, this.halfways[i].y);

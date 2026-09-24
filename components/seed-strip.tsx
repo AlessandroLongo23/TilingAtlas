@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
 import { cn } from "@/lib/utils/cn";
 import { orbitColor } from "@/lib/utils/orbitColors";
-import { drawPolygons, hsbToHsla, type RawPolygon } from "@/lib/utils/renderTiling";
+import { drawPolygons, type RawPolygon } from "@/lib/utils/renderTiling";
 
 // Assembling a seed, run by hand in front of the room: one vertex configuration of the set at the
 // origin, then the other two placed on it.
@@ -201,10 +201,9 @@ function SeedCard({
 
 		// Placed centres last, over everything: they are the k orbits the seed exists to carry.
 		placed.forEach(([x, y], i) => {
-			const col = orbitColor(i, k);
-			ctx.beginPath();
+						ctx.beginPath();
 			ctx.arc(tx(x), ty(y), PLACED_R, 0, 2 * Math.PI);
-			ctx.fillStyle = hsbToHsla(col.h, col.s, col.b, 1);
+			ctx.fillStyle = orbitColor(i, k);
 			ctx.fill();
 			ctx.strokeStyle = "rgba(20,20,20,0.8)";
 			ctx.lineWidth = 1.4;

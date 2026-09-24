@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
 import { cn } from "@/lib/utils/cn";
 import { orbitColor } from "@/lib/utils/orbitColors";
-import { drawPolygons, hsbToHsla, type RawPolygon } from "@/lib/utils/renderTiling";
+import { drawPolygons, type RawPolygon } from "@/lib/utils/renderTiling";
 
 // The expansion, run by hand in front of the room: a k=3 seed, then the two stamps that grow it.
 //
@@ -347,13 +347,12 @@ function GrowthCard({
 			};
 			for (const f of frontier ?? []) dot(f, OPEN_R, "#fff", "rgba(0,0,0,0.45)", 1.2);
 			for (const c of collapsed ?? []) {
-				const { h: hue, s: sat, b } = orbitColor(c.orbit, k);
-				// A white halo under the dot. The orbit colours are the tiles' own saturation and
-				// brightness (orbitColor matches Tiling.show), which is right on /play where orbit mode
+								// A white halo under the dot. The orbit colours are the tile palette
+				// (orbitColor matches Tiling.show), which is right on /play where orbit mode
 				// dims the fill — but here the tiles are at full strength and a red dot on a red triangle
 				// disappears. The halo is what separates them without inventing a second palette.
 				dot(c.at, DOT_R + 1.4, "#fff", "rgba(255,255,255,0)", 0);
-				dot(c.at, DOT_R, hsbToHsla(hue, sat, b, 1), "rgba(0,0,0,0.9)", 1.4);
+				dot(c.at, DOT_R, orbitColor(c.orbit, k), "rgba(0,0,0,0.9)", 1.4);
 			}
 			if (target) dot(target, TARGET_R, "none", "#e8590c", 2);
 		};

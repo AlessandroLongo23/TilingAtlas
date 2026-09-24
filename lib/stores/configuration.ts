@@ -133,8 +133,8 @@ export interface ConfigurationState {
 	// It is band geometry, not a stroke: dragging it rebuilds the mesh. 0 = no border.
 	islamicOutlineWidth: number;
 	islamicChirality: boolean;        // flips which strand rides over at every crossing (the two chiralities)
-	// Region fills are hue-only — saturation and lightness are locked to the tile palette (TILE_SAT /
-	// TILE_VAL in lib/render/tilePalette.ts), like the hue-shift ring — so a fill is always a tile-palette
+	// Region fills are hue-only — saturation and lightness are locked to the tile palette (tileFill
+	// in lib/render/tilePalette.ts), like the hue-shift ring — so a fill is always a tile-palette
 	// colour, never off-palette, and it follows the palette if the palette moves.
 	islamicCheckerHueA: number;       // checkerboard field A: hue° (0–360)
 	islamicCheckerHueB: number;       // checkerboard field B: hue°

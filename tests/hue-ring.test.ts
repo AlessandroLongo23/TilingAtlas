@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { arcPath, hueFromPointer, ringColor, thumbPosition, wrapHue } from "@/lib/render/hueRing";
-import { hsbToHsl, TILE_SAT, TILE_SAT_PCT, TILE_VAL, TILE_VAL_PCT, tileFill } from "@/lib/render/tilePalette";
+import { FILL_MAX_SAT_PCT, tileFill, tileHueRgb01 } from "@/lib/render/tilePalette";
 
 describe("wrapHue", () => {
 	it("wraps onto [0, 360)", () => {
@@ -63,29 +63,42 @@ describe("arcPath", () => {
 
 describe("ringColor", () => {
 	// The ring has to preview the colour the canvas will actually paint, so `ringColor` IS `tileFill`
-	// (lib/render/tilePalette.ts). Asserted against the palette constants, not against a colour string:
-	// the point of the test is that the two stay the same colour when TILE_SAT moves, and a hardcoded
-	// "hsl(h, 100%, 80%)" would have to be re-typed on every change — which is exactly how the numbers
-	// drifted apart across ~45 sites before the constant existed.
-	const { s, l } = hsbToHsl(0, TILE_SAT_PCT, TILE_VAL_PCT);
-	const at = (h: string) => `hsla(${h}, ${s.toFixed(1)}%, ${l.toFixed(1)}%, 1)`;
-
+	// (lib/render/tilePalette.ts).
 	it("is the tile fill under the ring's name", () => {
 		expect(ringColor(0)).toBe(tileFill(0));
-		expect(ringColor(137.25)).toBe(at("137.3"));
+		expect(ringColor(137.25)).toBe(tileFill(137.25));
 	});
 
 	it("wraps the hue onto [0, 360)", () => {
-		expect(ringColor(360)).toBe(at("0.0"));
-		expect(ringColor(-90)).toBe(at("270.0"));
+		expect(ringColor(360)).toBe(ringColor(0));
+		expect(ringColor(-90)).toBe(ringColor(270));
+	});
+});
+
+// The OKLCH palette. Relative luminance stands in for perceived lightness, since OKLab L is a cube
+// root of a luminance-like mix: the point of the ramp is that no hue is much lighter than another.
+describe("tile palette", () => {
+	const lum = ([r, g, b]: [number, number, number]) => {
+		const lin = (c: number) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+		return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+	};
+
+	it("keeps every hue at about the same lightness", () => {
+		const ls = Array.from({ length: 36 }, (_, i) => lum(tileHueRgb01(i * 10)));
+		expect(Math.max(...ls) - Math.min(...ls)).toBeLessThan(0.06);
 	});
 
-	// With TILE_VAL pinned at 1 the fill is ALREADY fully saturated in HSL, and TILE_SAT only moves
-	// lightness: HSB(h, s, 1) ≡ HSL(h, 100%, 100·(1 − s/2)%). That identity is the reason "make the
-	// tiles more saturated" is carried out by raising TILE_SAT, and it is worth failing loudly on.
-	it("is a pure lightness dial while TILE_VAL is 1", () => {
-		expect(TILE_VAL).toBe(1);
-		expect(s).toBeCloseTo(100, 10);
-		expect(l).toBeCloseTo(100 - 50 * TILE_SAT, 10);
+	// polygonHue still means what it did: triangle 0 → red, hexagon 108 → green, 12-gon 217 → blue.
+	it("keeps the polygon identity hues", () => {
+		const [r0, g0, b0] = tileHueRgb01(0);
+		expect(r0).toBeGreaterThan(Math.max(g0, b0));
+		const [r6, g6, b6] = tileHueRgb01(108);
+		expect(g6).toBeGreaterThan(Math.max(r6, b6));
+		const [r12, g12, b12] = tileHueRgb01(217);
+		expect(b12).toBeGreaterThan(Math.max(r12, g12));
+	});
+
+	it("deepens as the Fill slider rises", () => {
+		expect(lum(tileHueRgb01(108, FILL_MAX_SAT_PCT))).toBeLessThan(lum(tileHueRgb01(108, 10)));
 	});
 });

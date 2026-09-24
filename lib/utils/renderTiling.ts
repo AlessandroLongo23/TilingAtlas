@@ -205,7 +205,7 @@ export const TILE_FILL_ALPHA = 1;
 /**
  * The fill for a polygon whose `hue` is negative: neutral ink, not a colour.
  *
- * The hue ramp is `hsb(h, TILE_SAT, TILE_VAL)`, so every hue is a light pastel and none can be dark. A
+ * The tile palette (lib/render/tilePalette.ts) puts every hue at one light lightness, so none can be dark. A
  * prim that has to read as a MARK rather than as a tile therefore needs a way out of the ramp, and a
  * negative hue is it — the same sentinel the PeriodicCell IR already documents, so the flat view, the
  * 2-D fallback and the lens all agree. Matches TILE_LINE_RGB, the near-black the tile edges use.

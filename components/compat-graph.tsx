@@ -5,9 +5,9 @@ import { InteractiveTilingPreviewCard } from "@/components/interactive-tiling-pr
 import { COMPAT_EDGES, COMPAT_NODES } from "@/lib/defense/vcCompatibility";
 import { COMPAT_TILINGS } from "@/lib/defense/vcTilings";
 import { INK, SOFT } from "@/lib/render/figureGlyphs";
-import { orbitColor } from "@/lib/utils/orbitColors";
+import { orbitHue } from "@/lib/utils/orbitColors";
 import { figureFromWord } from "@/lib/render/vertexFigure";
-import { hsbToHsla, polygonFillHue, TILE_FILL_ALPHA, tileFill, type TranslationalCellData } from "@/lib/utils/renderTiling";
+import { polygonFillHue, TILE_FILL_ALPHA, tileFill, tileLine, type TranslationalCellData } from "@/lib/utils/renderTiling";
 
 // The compatibility graph over the fifteen vertex configurations that appear in a tiling: an edge
 // joins two of them when they can sit at the two ends of one edge. The relation is the app's own
@@ -452,8 +452,7 @@ export function CompatGraph({ cells, overlayData }: CompatGraphProps) {
 	const orbitMark = useMemo(() => {
 		const word = tiling?.orbitWords?.[hoverOrbit];
 		if (!tiling || hoverOrbit < 0 || !word) return null;
-		const { h, s, b } = orbitColor(hoverOrbit, tiling.k);
-		return { word, colour: hsbToHsla(h, s, Math.min(b, 72), 1) };
+		return { word, colour: tileLine(orbitHue(hoverOrbit, tiling.k)) };
 	}, [tiling, hoverOrbit]);
 	const lit = (word: string) =>
 		focus ? word === focus || near!.has(word) : !showingTiling || inTiling.has(word);

@@ -40,7 +40,7 @@ export function SphStarThumbnail({
 			crossings={scene.crossings}
 			showCrossings={edges === "all"}
 			showEdges={edges !== "none"}
-			tileHsb={scene.tileHsb}
+			tileHue={scene.tileHue}
 		/>
 	);
 }

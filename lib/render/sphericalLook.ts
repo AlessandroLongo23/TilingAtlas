@@ -39,7 +39,7 @@ export type LookFlavor =
 // side by side instead of hunted across four files. In dev this is reachable as `window.__sphLook` (see
 // the bottom of this file), which is how the values below were chosen.
 export const LOOK = {
-	// Colour grade. The catalogue hues are deliberately pale (TILE_SAT / TILE_VAL) because a
+	// Colour grade. The catalogue hues are deliberately pale (the tile palette) because a
 	// flat unlit fill has nothing but hue to work with. Lit, that same pale fill washes to near-white
 	// wherever the key hits it, so studio deepens the colour to give the light something to sit on.
 	sat: 1.35, // >1 pushes away from grey, around the colour's own luminance
@@ -109,7 +109,7 @@ export interface LookRig {
 // AL, 2026-08-21: "the colors of the convex solids are more saturated than those of the non-convex",
 // which is exactly backwards from the palettes as they then stood (star tiles HSB 0.50/0.98, convex ones
 // 0.40/1.00). Flat white ambient was eating the saturation. Every spherical shelf is lit identically now,
-// and both shelves take TILE_SAT / TILE_VAL from lib/render/tilePalette.ts, so they cannot drift apart.
+// and both shelves take their fill from lib/render/tilePalette.ts, so they cannot drift apart.
 const RIG = { hemi: 0.18, ambient: 0.06, key: 1.15, fill: 0.3, rim: 0.55, env: LOOK.envTiling };
 
 // Light positions, in the CAMERA's frame (x right, y up, z toward the viewer) — see LookRig.follow. Key

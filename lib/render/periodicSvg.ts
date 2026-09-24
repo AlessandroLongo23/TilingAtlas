@@ -1,5 +1,5 @@
 import type { PeriodicCell, PeriodicPrim } from "./periodicCell";
-import { hsb2rgb } from "./periodicCell";
+import { tileHueRgb01 } from "./tilePalette";
 
 // Static SVG for anything the periodic-cell IR can describe — tilings, colorings, edge patterns,
 // hollow tilings, the Islamic construction — with an optional conformal map so the inversive lenses
@@ -113,7 +113,7 @@ const css = (rgb: readonly [number, number, number]) =>
 function fillOf(prim: PeriodicPrim, hueOffset: number): [number, number, number] | null {
 	if (prim.open) return null;
 	const hue = prim.hue ?? -1;
-	if (hue >= 0) return hsb2rgb((hue + hueOffset) / 360, 0.4, 1);
+	if (hue >= 0) return tileHueRgb01(hue + hueOffset);
 	return prim.fillRgb ?? null;
 }
 

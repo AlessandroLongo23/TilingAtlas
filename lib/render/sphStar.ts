@@ -40,11 +40,10 @@
 import type { IcoPattern, V3 } from "@/lib/render/icoFreedraw";
 import type { SphSchwarzScene } from "@/lib/render/sphSchwarz";
 import type { SphStarPattern } from "@/lib/tilings/sph-star";
-import { TILE_SAT, TILE_VAL } from "@/lib/render/tilePalette";
 import { polygonHue } from "@/lib/utils/renderTiling";
 
 /**
- * The fill colour of one {n/d} face as HSB, hue in degrees.
+ * The fill hue of one {n/d} face, in degrees.
  *
  * ⚑ AL, 2026-08-19, over three rounds, and the last two are why this looks the way it does.
  *
@@ -61,7 +60,7 @@ import { polygonHue } from "@/lib/utils/renderTiling";
  * went into value instead, and "the latter are more muted, I don't like them", which is exactly what
  * darkening does when every face of a solid is a star.
  *
- * So SATURATION AND VALUE ARE FIXED at the palette's own HSB(h, 0.40, 1.0), for convex and star alike.
+ * So the fill is the palette default (tileHueRgb01) for convex and star alike.
  * Nothing is muted and nothing varies in a channel the rest of the app pins. The whole distinction is
  * carried by hue, and stars get an arc of the wheel the convex ramp does not reach: the shelf's convex
  * faces run n = 3..10, hues 0 to 188, and a twelve-gon would still only be 217, so 240 upwards is
@@ -74,12 +73,11 @@ import { polygonHue } from "@/lib/utils/renderTiling";
  * Retrograde {n/d} with d > n/2 is the same polygon traversed backwards, so it is normalised first and
  * colours identically to its forward twin, exactly as `starFaceRings` fills it identically.
  */
-export function faceHsb(n: number, dRaw: number): [number, number, number] {
+export function faceHue(n: number, dRaw: number): number {
 	const d = dRaw > n / 2 ? n - dRaw : dRaw;
-	if (d <= 1) return [polygonHue(n), TILE_SAT, TILE_VAL];
+	if (d <= 1) return polygonHue(n);
 	const spread = (Math.min(12, Math.max(3, n)) - 3) / 9;
-	const hue = Math.min(STAR_ARC_END, STAR_ARC_START + spread * 80 + (d - 2) * 12);
-	return [hue, TILE_SAT, TILE_VAL];
+	return Math.min(STAR_ARC_END, STAR_ARC_START + spread * 80 + (d - 2) * 12);
 }
 
 // ⚑ The palette comes from lib/render/tilePalette.ts now, and the history is worth keeping. These were
@@ -459,10 +457,10 @@ function raySpans(ring: number[], verts: V3[], u: V3): boolean {
  */
 export function sphStarScene(p: SphStarPattern, mod2 = false): SphSchwarzScene {
 	const key = new Map<string, number>();
-	const tileHsb: [number, number, number][] = [];
+	const tileHue: number[] = [];
 	for (const [n, d] of p.stats.types) {
 		key.set(`${n}/${d}`, key.size);
-		tileHsb.push(faceHsb(n, d));
+		tileHue.push(faceHue(n, d));
 	}
 	const verts: V3[] = p.vertices.map((v) => [...v] as V3);
 	const tiles: number[][][] = Array.from({ length: key.size }, () => []);
@@ -486,7 +484,7 @@ export function sphStarScene(p: SphStarPattern, mod2 = false): SphSchwarzScene {
 		nDrawn: p.edges.length,
 		nTiles: tiles.length,
 	};
-	return { pattern, vertices: verts, allEdges: p.edges, crossings, tileHsb };
+	return { pattern, vertices: verts, allEdges: p.edges, crossings, tileHue };
 }
 
 /**

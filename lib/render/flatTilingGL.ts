@@ -277,7 +277,7 @@ void main() {
 	float aa = fwidth(d);
 	float alpha = 1.0 - smoothstep(1.0 - aa, 1.0 + aa, d);
 	if (alpha <= 0.0) discard;
-	vec3 col = tileFill(vHue);  // orbitColor(id,k) is the tile palette's own S/V, so this matches it
+	vec3 col = tileFill(vHue);  // orbitColor(id,k) is tileFill too, so this matches it
 	float ring = smoothstep(0.62, 0.76, d);       // black outline, echoing drawVertexOrbits' 1.5px stroke
 	frag = vec4(mix(col, vec3(0.0), ring), alpha);
 }

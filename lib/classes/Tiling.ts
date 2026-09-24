@@ -1,5 +1,5 @@
 import { type Polygon, Vector, type Gyration, type Reflection, type GlideReflection } from '@/classes';
-import { fillAmountToSatPct, TILE_VAL_PCT } from "@/lib/render/tilePalette";
+import { fillAmountToSatPct, tileFill } from "@/lib/render/tilePalette";
 import type { VertexConfiguration } from '@/classes/algorithm/VertexConfiguration';
 import { islamicAnglesForHalfways, islamicEdgeOffsetFrac, islamicNormalAngleFromSlider, islamicTipsAngleFromSlider } from '@/utils/islamicNoise';
 import { tolerance } from "@/utils/tolerance";
@@ -94,7 +94,7 @@ export class Tiling {
                     ? Vector.distance(node.centroid, node.halfways[0]) * s
                     : 0;
                 if (radius > 0) {
-                    ctx.fill((node.hue + hueOff) % 360, fillAmountToSatPct(cfg.fillAmount), TILE_VAL_PCT / opacity, 1.0 * opacity);
+                    ctx.fill(tileFill((node.hue + hueOff) % 360, opacity, fillAmountToSatPct(cfg.fillAmount)));
                     ctx.ellipse(node.centroid.x, node.centroid.y, radius * 2, radius * 2);
                 }
             }
@@ -125,11 +125,9 @@ export class Tiling {
             // AND supplies its saturation — see `fillAmount` in lib/stores/configuration.ts.
             const fillSat = fillAmountToSatPct(cfg.fillAmount);
             const showFill = fillSat > 0;
-            const fillV = TILE_VAL_PCT / opacity;
             // Tiles are painted OPAQUE: at α<1 the near-black surface bleeds through and drops every fill's
             // perceived lightness by ~0.13 (that is the whole reason the inversive view looked brighter —
             // its shader writes alpha 1). `opacity` still multiplies, so the layer fade-in is unaffected.
-            const fillA = 1.0 * opacity;
             if (!skipFill) {
                 for (let i = 0; i < this.nodes.length; i++) {
                     const node = this.nodes[i];
@@ -139,7 +137,7 @@ export class Tiling {
                     // and is dropped, so it doesn't linger as a dot of stroke.
                     const s = scaleOf ? scaleOf(node.centroid) : 1;
                     if (s < WAVE_MIN_SCALE) continue;
-                    if (showFill) ctx.fill((node.hue + hueOff) % 360, fillSat, fillV, fillA);
+                    if (showFill) ctx.fill(tileFill((node.hue + hueOff) % 360, opacity, fillSat));
                     else ctx.noFill();
                     const vs = node.vertices;
                     ctx.beginShape();
@@ -254,15 +252,13 @@ export class Tiling {
                     enlarged.push(vs[c].x, vs[c].y, o);
                     continue;
                 }
-                const col = orbitColor(o, k);
-                ctx.fill(col.h, col.s, col.b);
+                ctx.fill(orbitColor(o, k));
                 ctx.ellipse(vs[c].x, vs[c].y, diameter, diameter);
             }
         }
         for (let i = 0; i < enlarged.length; i += 3) {
             const o = enlarged[i + 2];
-            const col = orbitColor(o, k);
-            ctx.fill(col.h, col.s, col.b);
+            ctx.fill(orbitColor(o, k));
             const d = diameter * s[o];
             ctx.ellipse(enlarged[i], enlarged[i + 1], d, d);
         }
@@ -310,7 +306,7 @@ export class Tiling {
         ctx.push();
         ctx.noStroke();
         for (const { face, klass, hue } of abc) {
-            if (klass === "A") ctx.fill((hue + hueOff) % 360, fillAmountToSatPct(cfg.fillAmount), TILE_VAL_PCT / opacity, 1.0 * opacity);
+            if (klass === "A") ctx.fill(tileFill((hue + hueOff) % 360, opacity, fillAmountToSatPct(cfg.fillAmount)));
             else if (klass === "C" && !degenerate) ctx.fill(colorC);
             else ctx.fill(colorB);
             ctx.beginShape();
@@ -630,7 +626,7 @@ export class Tiling {
             const armsArr = ordered.map(armsOf);
             const hue = vertexFigureHue(ordered.map(c => c.tile.n));
 
-            ctx.fill((hue + (cfg.hueOffset || 0)) % 360, fillAmountToSatPct(cfg.fillAmount), TILE_VAL_PCT / opacity, 1.0 * opacity);
+            ctx.fill(tileFill((hue + (cfg.hueOffset || 0)) % 360, opacity, fillAmountToSatPct(cfg.fillAmount)));
             ctx.beginShape();
             for (let i = 0; i < ordered.length; i++) {
                 ctx.vertex(armsArr[i].cwArm.x, armsArr[i].cwArm.y);

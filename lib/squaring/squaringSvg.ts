@@ -8,12 +8,12 @@
 // doubles would decide two distinct tiles were the same size — but a tile's POSITION on a 1000-unit
 // canvas only ever needs three or four significant figures.
 //
-// Colour runs a hue ramp by rank of size, smallest to largest, through the atlas's own hsbToHsla. In a
+// Colour runs a hue ramp by rank of size, smallest to largest, through the atlas's own tileFill. In a
 // perfect squaring every tile therefore gets its own hue and the picture reads as a gradient; in an
 // imperfect one, equal tiles share a colour and the repeats are visible at a glance. That is the
 // distinction the whole subject turns on, so it should be the thing the eye sees first.
 
-import { hsbToHsla, TILE_FILL_ALPHA } from "@/lib/utils/renderTiling";
+import { TILE_FILL_ALPHA, tileFill } from "@/lib/utils/renderTiling";
 import type { SquaringRecord } from "./shelf";
 
 export interface SquaringSvgRect {
@@ -55,7 +55,7 @@ export function squareFills(record: SquaringRecord, hueSpan = 300): string[] {
 	const rank = new Map(sizes.map((s, i) => [s, i]));
 	const span = Math.max(sizes.length - 1, 1);
 	return record.squares.map((s) =>
-		hsbToHsla(((rank.get(s.side) as number) / span) * hueSpan, 38, 100, TILE_FILL_ALPHA),
+		tileFill(((rank.get(s.side) as number) / span) * hueSpan, TILE_FILL_ALPHA),
 	);
 }
 

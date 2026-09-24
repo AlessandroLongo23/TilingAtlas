@@ -48,8 +48,8 @@ interface Props {
 	allEdges?: [number, number][];
 	/** Face-through-face creases (star polyhedra), drawn only when `showCrossings` is on. */
 	crossings?: import("@/lib/render/sphStar").Crease[];
-	/** Per-tile HSB, parallel to the pattern's tiles; see sphStar.faceHsb. */
-	tileHsb?: [number, number, number][];
+	/** Per-tile hue, parallel to the pattern's tiles; see sphStar.faceHue. */
+	tileHue?: number[];
 	showCrossings?: boolean;
 	/** Draw the pattern's own edges at all. False is the star shelf's "no edges" state. */
 	showEdges?: boolean;
@@ -63,7 +63,7 @@ interface Props {
 // this canvas and the tiling sphere the same size on screen when either is retuned.
 const CAMERA_DISTANCE = cameraDistanceFor(DEFAULT_FIT_FRACTION);
 
-export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, allEdges, keepRadius, crossings, showCrossings, showEdges, tileHsb, densitySheets }: Props) {
+export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, allEdges, keepRadius, crossings, showCrossings, showEdges, tileHue, densitySheets }: Props) {
 	// The store fields this otherwise self-contained canvas reads. It used to read only the surface-look
 	// flag, which is why the sidebar hid the hue ring and the stroke slider for every shelf on this canvas:
 	// the builder has taken `hueOffset` and `edgeThickness` all along, nothing passed them (AL, 2026-08-21).
@@ -256,7 +256,7 @@ export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, 
 			edgeThickness: edgeRadius(lineWidth),
 			showEdges: showEdges !== false && lineWidth > 0,
 			hueOffset,
-			tileHsb,
+			tileHue,
 			densitySheets,
 			faceOpacity,
 			occlude: occlusionRef.current?.uniforms,
@@ -274,7 +274,7 @@ export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, 
 		};
 		// `faceOpacity` IS a rebuild dep here, unlike the tiling sphere's: this builder makes the facet
 		// meshes and their materials in one pass and has no live setter, and the boards it serves are small.
-	}, [pattern, mode, showGrid, solid, solidEdgeList, crossings, showCrossings, showEdges, tileHsb, densitySheets, hueOffset, lineWidth, faceOpacity]);
+	}, [pattern, mode, showGrid, solid, solidEdgeList, crossings, showCrossings, showEdges, tileHue, densitySheets, hueOffset, lineWidth, faceOpacity]);
 
 	if (errored) {
 		return (

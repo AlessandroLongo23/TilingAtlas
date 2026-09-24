@@ -28,7 +28,7 @@ export function SphPolyCanvas({
 			solidId={`sphpoly-${pattern.base}`}
 			vertices={scene.vertices}
 			allEdges={scene.allEdges}
-			tileHsb={scene.tileHsb}
+			tileHue={scene.tileHue}
 			mode={mode}
 			showGrid={showGrid}
 		/>
