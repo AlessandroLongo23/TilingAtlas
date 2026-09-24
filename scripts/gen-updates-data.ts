@@ -55,6 +55,15 @@ const EAGER_ATLAS_FILES = [
 
 const OUT = path.join(process.cwd(), "public", "updates-cells.json");
 
+// The release the built site serves, as a static asset. Written here because this script already
+// runs in `pnpm build` and already holds UPDATES.
+//
+// It exists so the Discord announcement can tell that a deploy is LIVE and not merely that Vercel
+// reported success: .github/workflows/release-discord.yml polls this file until `version` matches
+// the release it is about to announce, then posts. Scraping /updates for a version string would
+// read the page's markup, which is not a contract; this is.
+const RELEASE_OUT = path.join(process.cwd(), "public", "release.json");
+
 // Ids must be safe in a URL and a JSON key; every real atlas id is [A-Za-z0-9._-].
 const SAFE_ID = /^[A-Za-z0-9._-]+$/;
 
@@ -191,6 +200,14 @@ async function main(): Promise<void> {
 	}
 
 	await writeFile(OUT, `${JSON.stringify(out)}\n`, "utf8");
+
+	const live = UPDATES[0];
+	await writeFile(
+		RELEASE_OUT,
+		`${JSON.stringify({ version: live.version, date: live.date, commit: live.commit, title: live.title }, null, 2)}\n`,
+		"utf8",
+	);
+	console.log(`updates: release.json says v${live.version} (${live.title})`);
 
 	const kb = Math.round(JSON.stringify(out).length / 1024);
 	console.log(

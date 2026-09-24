@@ -1,0 +1,113 @@
+# Announce a release in the Discord updates channel, once the deploy is actually serving it.
+#
+# Fires on every push to master and posts on almost none of them: a push only carries a release when
+# it changes the newest version in lib/updates/entries.ts, which the release ritual bumps and nothing
+# else touches (.claude/skills/release-notes/SKILL.md). Every other push ends at the first step.
+#
+# "Deployed" is read off the site and not off Vercel: the build writes public/release.json naming the
+# release it serves (scripts/gen-updates-data.ts), so polling that file proves the new build is live
+# and being served. Vercel reporting success does not prove that, and reading it needs an API token
+# this workflow otherwise has no use for.
+#
+# Setup, once:
+#   - secret   DISCORD_WEBHOOK_URL   Discord → the updates channel → Edit Channel → Integrations →
+#                                    Webhooks → New Webhook → Copy Webhook URL. It is a password:
+#                                    anyone holding it can post to that channel.
+#   - variable SITE_URL              the production origin, no trailing slash.
+name: Announce release on Discord
+
+on:
+  push:
+    branches: [master]
+
+# One announcement at a time. Two releases pushed back to back would otherwise race on the poll and
+# could post out of order; never cancel a run in flight, since a cancelled one is a lost message.
+concurrency:
+  group: release-discord
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  announce:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+        with:
+          # Full history so the version before the push can be read, blobless so this stays quick:
+          # public/ is 1.6 GB and a normal deep clone would spend minutes fetching atlas shards that
+          # this job never opens. Blobs arrive only for the one file `git show` below asks for.
+          fetch-depth: 0
+          filter: blob:none
+
+      - name: Did this push cut a release?
+        id: release
+        run: |
+          set -euo pipefail
+          # UPDATES is newest-first, so the file's first version literal is the release it serves.
+          newest() { sed -n 's/.*version: "\([0-9]*\.[0-9]*\.[0-9]*\)".*/\1/p' "$1" | head -1; }
+          NEW="$(newest lib/updates/entries.ts)"
+          BEFORE="${{ github.event.before }}"
+          if [ -z "$NEW" ]; then echo "could not read a version from lib/updates/entries.ts" >&2; exit 1; fi
+
+          OLD=""
+          if [ "$BEFORE" != "0000000000000000000000000000000000000000" ]; then
+            git show "$BEFORE:lib/updates/entries.ts" > /tmp/before.ts 2>/dev/null || true
+            [ -s /tmp/before.ts ] && OLD="$(newest /tmp/before.ts)" || true
+          fi
+
+          echo "version=$NEW" >> "$GITHUB_OUTPUT"
+          if [ "$OLD" = "$NEW" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No release in this push: still v$NEW."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Release: ${OLD:-(none)} -> v$NEW."
+          fi
+
+      - name: Wait for the deploy to serve it
+        if: steps.release.outputs.changed == 'true'
+        env:
+          SITE: ${{ vars.SITE_URL }}
+          WANT: ${{ steps.release.outputs.version }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SITE:-}" ]; then echo "the SITE_URL repository variable is not set" >&2; exit 1; fi
+          # 15 minutes at 15-second steps. A Vercel build for this repo runs a few minutes; the rest
+          # is headroom for a queued build, and timing out is better than announcing a release that
+          # a visitor following the link cannot see yet.
+          for i in $(seq 1 60); do
+            LIVE="$(curl -fsS --max-time 20 "$SITE/release.json" 2>/dev/null | jq -r '.version // empty' || true)"
+            if [ "$LIVE" = "$WANT" ]; then echo "v$WANT is live after $((i * 15))s."; exit 0; fi
+            echo "serving ${LIVE:-nothing}, waiting for v$WANT ($i/60)"
+            sleep 15
+          done
+          echo "v$WANT was not served within 15 minutes; not announcing" >&2
+          exit 1
+
+      # package.json pins no `packageManager`, so the version goes here or the action refuses to
+      # pick one. Keep it on the major this repo develops against (pnpm 10, lockfile 9).
+      - uses: pnpm/action-setup@v4
+        if: steps.release.outputs.changed == 'true'
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        if: steps.release.outputs.changed == 'true'
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install
+        if: steps.release.outputs.changed == 'true'
+        # --ignore-scripts: the announcement needs tsx and the two dependency-free modules it imports,
+        # never a Playwright browser or any other postinstall download.
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Post to Discord
+        if: steps.release.outputs.changed == 'true'
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: pnpm updates:announce

@@ -8,6 +8,7 @@
 		"landing:data": "tsx scripts/gen-landing-data.ts",
 		"updates:data": "tsx scripts/gen-updates-data.ts",
 		"updates:draft": "node scripts/draft-update.mjs",
+		"updates:announce": "tsx scripts/announce-release.ts",
 		"start": "next start",
 		"lint": "eslint",
 		"test": "vitest run",

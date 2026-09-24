@@ -64,6 +64,11 @@ the thresholds trip anew.
      (`tests/star-general-path.test.ts` times out at 60 s and needs 167 s; that failure is
      pre-existing and not yours.)
    - Commit (`feat(updates): v<version> — <title>`), then push.
+   - **The push announces itself.** `.github/workflows/release-discord.yml` sees the version change,
+     waits until `<site>/release.json` serves the new version, and posts the entry to the Discord
+     updates channel as text and links. Nothing to run by hand. Check the message with
+     `pnpm updates:announce --dry-run` BEFORE pushing if the entry has unusual markup: the channel
+     gets one shot, and the house style's single bold noun per line is what becomes the link there.
 
 ## Voice
 
@@ -99,7 +104,9 @@ The commit subjects already read the way these should. Lift the register, not th
 | `lib/updates/entries.ts` | the source of truth — the array you append to |
 | `lib/updates/version.ts` | bump semantics |
 | `scripts/draft-update.mjs` | the digest; `--check` is the hook's mode, and the `NUDGE` block holds the thresholds |
-| `scripts/gen-updates-data.ts` | `pnpm updates:data` — preview cells for the modal |
+| `scripts/gen-updates-data.ts` | `pnpm updates:data` — preview cells for the modal, and `public/release.json` |
+| `scripts/announce-release.ts` | `pnpm updates:announce` — the Discord message; `--dry-run` to read it first |
+| `.github/workflows/release-discord.yml` | posts it once the deploy serves the new version |
 | `.claude/hooks/release-nudge.sh` | the push-time trigger |
 | `app/(app)/updates/` | the history page |
 | `components/updates/` | the modal, the gate, the nav button |
