@@ -10,6 +10,7 @@ import {
 	hypPolyMeta,
 	hypPolyShardUrl,
 	hypPolySubOfBoard,
+	HYP_POLY_BOARD_BY_ID,
 	HYP_POLY_BOARDS,
 	type HypPolyBoard,
 	type HypPolyPattern,
@@ -62,7 +63,7 @@ describe("board manifest", () => {
 		// `Board.abcd` enforces in the developer (solve_edge_length answers only for negative defect), and
 		// it is the one that keeps the 17 spherical and Euclidean ids in Marek's drop off this shelf.
 		for (const b of abcd) {
-			const sum = b.label.split(".").map(Number).reduce((t, p) => t + Math.PI * (p - 2) / p, 0);
+			const sum = b.label.split(",").map(Number).reduce((t, p) => t + Math.PI * (p - 2) / p, 0);
 			expect(sum, `${b.id} (${b.label})`).toBeGreaterThan(2 * Math.PI + 1e-9);
 		}
 	});
@@ -133,7 +134,9 @@ describe.skipIf(!anyShard)("shards", () => {
 				for (const r of recs!) {
 					expect(r.k).toBe(k);
 					expect(r.base).toBe(b.id);
-					expect(r.family).toBe(b.label);
+					// Punctuation aside: abcd shards packed before 2026-09-24 spell the multiset "3.4.4.8",
+					// which the manifest now writes "3,4,4,8" so it cannot be read as a vertex figure.
+					expect(r.family.replaceAll(".", ",")).toBe(b.label.replaceAll(".", ","));
 				}
 			}
 		}
@@ -207,15 +210,20 @@ describe.skipIf(!anyShard)("shards", () => {
 		}
 	});
 
-	it("names only the polygon sizes a tiling actually uses", () => {
+	it("names a tiling by its vertex figures, in canonical cyclic order", () => {
 		const r = shardOf(ai1[0], 1)![0];
-		expect(hypPolyFamilyLabel(r)).toBe("3 · 4 · 7"); // 3.4.7.4 uses no 14-gon
+		expect(hypPolyFamilyLabel(r)).toBe("3.4.7.4");
 		expect(hypPolyMeta(r).colors).toBe(4); // the palette still needs one entry per alphabet size
 		expect(hypPolyMeta(r).darts).toBe(r.darts);
-		// {3,7}'s first record is 3.3.7.3.7, which uses both of its two sizes.
 		const t = shardOf(ai2[0], 1)![0];
-		expect(hypPolyFamilyLabel(t)).toBe("3 · 7");
+		expect(hypPolyFamilyLabel(t)).toBe("3.3.7.3.7");
 		expect(hypPolyMeta(t).colors).toBe(2);
+		// Marek's catch (2026-09-24): boards {3,4,4,8} and {3,4,8,8} both use only 3, 4 and 8, so a size
+		// list read the same on both. The figures do not: 3.4.8.4 on one, 3.8.4.8 on the other.
+		const q = (id: string) => shardOf(HYP_POLY_BOARD_BY_ID.get(id)!, 1)![0];
+		expect(hypPolyFamilyLabel(q("3448"))).toBe("3.4.8.4");
+		expect(hypPolyFamilyLabel(q("3488"))).toBe("3.8.4.8");
+		expect(hypPolyFamilyLabel({ ...r, config: "4.8.4.3 + 3.4.8.4 + 8.4.3.4" })).toBe("3.4.8.4");
 	});
 
 	// The offline per-pixel certification stamp (scripts/stamp-hyp-poly-certification.ts) is rolling out

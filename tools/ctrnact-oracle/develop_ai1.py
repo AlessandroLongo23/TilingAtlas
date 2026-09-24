@@ -104,7 +104,7 @@ class Board:
         l = solve_edge_length(sizes)
         if l is None:
             raise DevelopError(f"board {bid} ({'.'.join(map(str, sizes))}) is not hyperbolic")
-        return Board(bid, ".".join(map(str, sizes)), l, sorted(set(sizes)), "hpq")
+        return Board(bid, ",".join(map(str, sizes)), l, sorted(set(sizes)), "hpq")
 
 
 def board_of(n):
