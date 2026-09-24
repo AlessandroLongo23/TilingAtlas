@@ -164,18 +164,15 @@ export function AutomataClient() {
 					plan={plan}
 					loading={loading}
 					available={available}
-					onRandom={onRandom}
-					onPrev={onPrev}
-					onNext={onNext}
 				/>
 			</PageSidebar>
-			<div className="flex-1 min-w-0 relative bg-surface">
+			<div className="flex-1 min-w-0 min-h-0 relative overflow-hidden bg-surface">
 				{show3D ? (
 					<SurfaceView plan={plan} engineRef={engineRef} />
 				) : (
 					<AutomataCanvas plan={plan} engineRef={engineRef} />
 				)}
-				<AutomataTransport disabled={!cell} />
+				<AutomataTransport disabled={!cell} onPrev={onPrev} onRandom={onRandom} onNext={onNext} />
 				{!cell && !loading && (
 					<div className="absolute inset-0 grid place-items-center pointer-events-none">
 						<p className="text-sm text-fg-muted">Pick a tiling to start.</p>

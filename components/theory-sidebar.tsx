@@ -50,8 +50,8 @@ export function TheorySidebar({
 
 	return (
 		<div className="h-full flex flex-col">
-			<div className="px-4 pt-4 pb-2">
-				<h3 className="text-[11px] font-medium uppercase tracking-wide text-fg-muted">
+			<div className="px-4 pt-5 pb-1">
+				<h3 className="ta-label text-fg-muted">
 					Contents
 				</h3>
 			</div>
@@ -110,8 +110,8 @@ function SectionItem({
 		<div>
 			<div
 				className={cn(
-					"group flex items-center rounded-control transition-colors",
-					isActive ? "bg-accent-subtle" : "hover:bg-surface-overlay/60",
+					"group flex items-center rounded-r-control border-l-2 transition-colors",
+					isActive ? "border-fg" : "border-transparent hover:bg-surface-overlay/60",
 				)}
 			>
 				<button
@@ -133,9 +133,9 @@ function SectionItem({
 					type="button"
 					onClick={() => onSelect(section.id)}
 					className={cn(
-						"flex-1 min-w-0 text-left py-1.5 pr-2 text-xs leading-snug wrap-break-word transition-colors",
+						"flex-1 min-w-0 text-left py-1.5 pr-2 text-[13px] leading-snug wrap-break-word transition-colors",
 						depth === 0 ? "font-medium" : "font-normal",
-						isActive ? "text-accent" : "text-fg-secondary group-hover:text-fg",
+						isActive ? "text-fg font-medium" : "text-fg-secondary group-hover:text-fg",
 					)}
 				>
 					{section.title}
@@ -151,7 +151,7 @@ function SectionItem({
 						transition={{ duration: 0.15 }}
 						className="overflow-hidden"
 					>
-						<div className="ml-3 mt-0.5 flex flex-col gap-0.5">
+						<div className="ml-2 mt-0.5 flex flex-col gap-0.5">
 							{section.subsections!.map((sub) => (
 								<SectionItem
 									key={sub.id}

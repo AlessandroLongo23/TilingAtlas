@@ -63,7 +63,7 @@ export function IsohedralEdgesControls({ ih }: { ih: number }) {
 		spec.slots.every((n, i) => n > 1 || info.edgeShapes[i] === "S" || info.edgeShapes[i] === "I");
 
 	return (
-		<div className="absolute bottom-3 left-3 z-20 flex flex-col gap-1 rounded-md bg-surface-overlay/95 p-3 text-xs backdrop-blur">
+		<div className="absolute bottom-3 left-3 z-20 flex flex-col gap-1 ta-float p-3 text-xs">
 			<div className="flex items-center justify-between gap-4 pb-1">
 				<span className="font-mono text-fg-secondary">{info?.label ?? `IH${ih}`}</span>
 				<button type="button" onClick={reset} className="text-fg-muted underline hover:text-fg">

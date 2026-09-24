@@ -13,11 +13,6 @@ interface SidebarProps {
 	unloaded?: UnloadedTier[];
 	onLoadTier?: (t: UnloadedTier) => void;
 	loadingTiers?: ReadonlySet<string>;
-	/** Jump to a random tiling in the active geometry (wired to the sidebar button and the "R" shortcut). */
-	onRandom?: () => void;
-	/** Step to the previous / next tiling in list order (arrow buttons and ←/→ shortcuts). */
-	onPrev?: () => void;
-	onNext?: () => void;
 	/** Active geometry — the catalogue's top-level split; also scopes random/prev/next. */
 	geometry: Geometry;
 	/** The active (geometry, decoration) cell's tilings (catalogue list + nav count). */
@@ -44,9 +39,6 @@ export const Sidebar = memo(function Sidebar({
 	unloaded,
 	onLoadTier,
 	loadingTiers,
-	onRandom,
-	onPrev,
-	onNext,
 	geometry,
 	geometryList,
 	geometryCounts,
@@ -65,9 +57,6 @@ export const Sidebar = memo(function Sidebar({
 				unloaded={unloaded}
 				onLoadTier={onLoadTier}
 				loadingTiers={loadingTiers}
-				onRandom={onRandom}
-				onPrev={onPrev}
-				onNext={onNext}
 				geometry={geometry}
 				geometryList={geometryList}
 				geometryCounts={geometryCounts}

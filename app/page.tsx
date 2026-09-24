@@ -15,12 +15,19 @@ import { UpdatesGate } from "@/components/updates/updates-gate";
 import { CURRENT_DATE, CURRENT_VERSION } from "@/lib/updates/entries";
 import { DiscordIcon } from "@/components/icons/discord";
 import { DISCORD_INVITE } from "@/lib/constants";
+import { APERIODIC_VIEWS } from "@/app/(app)/aperiodic/_views";
 
 // The landing page (spec: docs/superpowers/specs/2026-07-22-landing-page-design.md).
 // Conventional skeleton, catalog material: every visual is a real render from the atlas, every
 // number is computed from the atlas files at request time. force-dynamic so each request gets a
 // fresh hero specimen and a re-dealt library mosaic.
 export const dynamic = "force-dynamic";
+
+const START_HERE = [
+	["tilings-vertices-and-notation", "What is a tiling?"],
+	["the-three-regular-tilings", "The eleven uniform tilings"],
+	["why-exactly-eleven", "Why exactly eleven?"],
+] as const;
 
 const fmt = (n: number) => n.toLocaleString("en-US");
 
@@ -30,79 +37,70 @@ export default async function HomePage() {
 
 	return (
 		<main className="flex-1 bg-surface text-fg">
-			{/* P1+P2 — hero: drifting live specimen rotating through a pool every 10 s with the
-			    radial-wave transition, masthead over a legibility scrim, citable caption. */}
-			<section className="relative min-h-[520px] h-[68vh] flex items-center overflow-hidden">
+			{/* One column; sections are separated by 64px of space, not by rules. The grid below sits on
+			    the same text edge as the headings. */}
+			<div className="mx-auto max-w-7xl px-6 md:px-12">
+			{/* P1+P2, hero: the masthead on plain paper, the live specimen framed beside it (below it on
+			    a phone), rotating through a pool every 10 s with the radial-wave transition. */}
+			<section className="pt-12 lg:pt-16 grid gap-10 lg:gap-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] items-start">
 				<HeroSpecimenProvider initialId={data.heroPool[0]?.id ?? null}>
-					<HeroRotator specimens={data.heroPool} />
-					<div
-						aria-hidden="true"
-						className="absolute inset-y-0 left-0 w-full md:w-[46rem] bg-linear-to-r from-surface via-surface/85 via-55% to-transparent pointer-events-none"
-					/>
-					<div className="relative z-10 px-6 md:px-12 max-w-2xl">
-						<h1 className="text-4xl md:text-5xl font-semibold tracking-tight">The Tiling Atlas</h1>
-						<p className="mt-4 text-base md:text-lg text-fg-secondary">
-							A catalogue of tilings of the plane, the sphere, and the hyperbolic plane.
-						</p>
-						<p className="mt-3 text-sm text-fg-secondary">
+					<div className="flex flex-col lg:pt-10">
+						<p className="ta-label">
 							<Link href="/library" className="hover:text-fg transition-colors">
-								Over {Math.floor(counts.total / 1000) * 1000} tilings
+								{fmt(counts.total)} tilings
 							</Link>
 						</p>
-						<div className="mt-8">
+						<h1 className="mt-5 text-5xl md:text-6xl xl:text-7xl font-semibold tracking-[-0.035em] leading-[0.98]">
+							The Tiling Atlas
+						</h1>
+						<p className="mt-6 max-w-md text-lg md:text-xl leading-snug text-fg-secondary">
+							A catalogue of tilings of the plane, the sphere, and the hyperbolic plane.
+						</p>
+						<div className="mt-10">
 							<LandingButtons />
 						</div>
+					</div>
+					<div className="relative h-80 sm:h-[26rem] lg:h-[34rem] rounded-surface ring-1 ring-line-subtle overflow-hidden">
+						<HeroRotator specimens={data.heroPool} />
 					</div>
 				</HeroSpecimenProvider>
 			</section>
 
-			{/* P6 — start here: three quiet deep links for the newcomer. */}
-			<section className="border-y border-line-subtle bg-surface-raised/40">
-				<p className="max-w-6xl mx-auto px-6 md:px-12 py-3 text-xs text-fg-muted flex flex-wrap items-center gap-x-2 gap-y-1">
-					<span className="uppercase tracking-wider text-[10px]">Start here</span>
-					<span aria-hidden="true" className="mx-1">
-						·
-					</span>
-					<Link href="/theory/uniform-tilings#tilings-vertices-and-notation" className="text-fg-secondary hover:text-fg transition-colors">
-						What is a tiling?
+			{/* P6, start here: three deep links for the newcomer, as hover chips on one line with the label. */}
+			<nav aria-label="Start here" className="mt-8 pt-3 border-t border-line-subtle flex flex-wrap items-center gap-x-1 gap-y-1 text-[13px]">
+				<span className="ta-label mr-3">Start here</span>
+				{START_HERE.map(([hash, label]) => (
+					<Link
+						key={hash}
+						href={`/theory/uniform-tilings#${hash}`}
+						className="inline-flex h-7 items-center px-2.5 rounded-control text-fg hover:bg-surface-overlay hover:text-accent transition-colors"
+					>
+						{label}
 					</Link>
-					<span aria-hidden="true">·</span>
-					<Link href="/theory/uniform-tilings#the-three-regular-tilings" className="text-fg-secondary hover:text-fg transition-colors">
-						The eleven uniform tilings
-					</Link>
-					<span aria-hidden="true">·</span>
-					<Link href="/theory/uniform-tilings#why-exactly-eleven" className="text-fg-secondary hover:text-fg transition-colors">
-						Why exactly eleven?
-					</Link>
-				</p>
-			</section>
+				))}
+			</nav>
 
-			{/* P3+P4+P5 — the collections: a full-bleed wall, cells split by hairlines only.
-			    Mixed cell sizes on a 4×4 field: Play and Aperiodic claim 2×2 each, Parquet 2×1, the
-			    other six 1×1 — 4+4+2+6 = sixteen cells exactly, so document order alone places the
-			    wall with no holes and no explicit grid coordinates. Order is load-bearing twice
-			    over: sparse auto-placement never walks the cursor backwards, and the pairing below
-			    (Isohedral under Hyperbolic, Pentagons under Spherical) only holds at this order.
-			    The row track is FIXED,
-			    not minmax(…, auto): a media box with an intrinsic aspect (the disk, the
-				    ball) inflates an auto row to max-content and the rows stop matching, which is
-				    the whole point of a modular wall. Media flexes into what the caption leaves. */}
-			<section>
-				<h2 className="text-xs uppercase tracking-wider text-fg-muted px-6 md:px-12 pt-10 pb-4">
-					The collections
-				</h2>
-				<div className="ta-wall grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 auto-rows-[22rem] sm:auto-rows-[19rem] lg:auto-rows-[21rem] gap-px border-t border-line-subtle">
+			{/* P3+P4+P5, the collections: three rows of four columns, each row one wide card and two
+			    square ones, so every row sums to four and document order alone places the grid. The
+			    row track is FIXED, not minmax(…, auto): a media box with an intrinsic aspect (the disk,
+			    the ball) would inflate an auto row and the rows would stop matching. Media flexes into
+			    what the caption leaves, and the caption is the same shape on every card, so each row
+			    has one text baseline. */}
+			<section className="mt-10">
+				<p className="ta-label">Nine collections</p>
+				<h2 className="mt-2 mb-6 text-[28px] leading-tight font-semibold tracking-[-0.02em]">The collections</h2>
+				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 auto-rows-[24rem] sm:auto-rows-[22rem] lg:auto-rows-[23rem] gap-4">
 					{/* The four live cells (Play, Hyperbolic, Spherical, Aperiodic) render real canvases
 					    instead of baked stills, so their media takes the drag and the caption below carries
 					    the link — see CollectionCard's `interactive`. */}
 					<CollectionCard
 						title="Play"
-						span="2x2"
+						span="2x1"
 						interactive
 						subtitle={`${fmt(counts.total)} tilings`}
 						href={`/play?source=reference&tiling=${encodeURIComponent(data.play.id)}`}
 						description="Explore any tiling in the atlas from the interactive viewer."
-						badge={<CompletenessBadge tone="complete" label="all three geometries" />}
+						badge={<CompletenessBadge tone="complete" label="3 geometries" />}
 					>
 						<PlayMini cell={data.play.cell} />
 					</CollectionCard>
@@ -112,30 +110,19 @@ export default async function HomePage() {
 						subtitle={`${fmt(counts.euclidean)} Euclidean tilings`}
 						href="/library"
 						description="Every tiling on a filterable shelf: geometry, tile class, symmetry."
-						badge={<CompletenessBadge tone="complete" label="complete through k = 6" />}
+						badge={<CompletenessBadge tone="complete" label="k ≤ 6 complete" />}
 					>
 						<LibraryMosaic tilings={data.mosaic} />
 					</CollectionCard>
 
 					<CollectionCard
 						title="Theory"
-						subtitle="Understand the concepts"
+						subtitle="11 uniform tilings"
 						href="/theory"
 						description="In the theory section, you can learn about the geometric concepts behind tilings."
-						badge={<CompletenessBadge tone="proven" label="exactly 11, proven" />}
+						badge={<CompletenessBadge tone="proven" label="11 · proven" />}
 					>
 						<TheoryRing tilings={data.uniformEleven} />
-					</CollectionCard>
-
-					<CollectionCard
-						title="Parquet deformations"
-						span="2x1"
-						subtitle=""
-						href="/parquet"
-						description="Tilings that deform across a strip, in the tradition of Huff and Hofstadter."
-						badge={<CompletenessBadge tone="infinite" label="infinite family" />}
-					>
-						<ParquetMini />
 					</CollectionCard>
 
 					<CollectionCard
@@ -144,7 +131,7 @@ export default async function HomePage() {
 						subtitle={`${fmt(counts.hyperbolic)} tilings`}
 						href="/library?geo=hyperbolic"
 						description="Tilings of the hyperbolic plane, developed into the Poincaré disk."
-						badge={<CompletenessBadge tone="infinite" label="infinite family" />}
+						badge={<CompletenessBadge tone="infinite" label="infinite" />}
 					>
 						{data.hyperbolicPatch ? (
 							<HyperbolicMini patch={data.hyperbolicPatch} data={data.hyperbolicPatchData ?? undefined} />
@@ -157,19 +144,30 @@ export default async function HomePage() {
 						subtitle={`${fmt(counts.spherical)} tilings`}
 						href="/library?geo=spherical"
 						description="Platonic and Archimedean solids as tilings of the sphere."
-						badge={<CompletenessBadge tone="finite" label="finite catalogue" />}
+						badge={<CompletenessBadge tone="finite" label="finite" />}
 					>
 						{data.sphericalSolid ? <SphericalMini solidId={data.sphericalSolid} /> : null}
 					</CollectionCard>
 
 					<CollectionCard
+						title="Parquet deformations"
+						span="2x1"
+						subtitle="1 family, parametric"
+						href="/parquet"
+						description="Tilings that deform across a strip, in the tradition of Huff and Hofstadter."
+						badge={<CompletenessBadge tone="infinite" label="infinite" />}
+					>
+						<ParquetMini />
+					</CollectionCard>
+
+					<CollectionCard
 						title="Aperiodic"
-						span="2x2"
+						span="2x1"
 						interactive
-						subtitle="the hat, Penrose, Sub Rosa"
+						subtitle={`${APERIODIC_VIEWS.length} constructions`}
 						href="/aperiodic?view=hat"
 						description="Tilings that never repeat, by substitution and by projection."
-						badge={<CompletenessBadge tone="infinite" label="infinite family" />}
+						badge={<CompletenessBadge tone="infinite" label="infinite" />}
 					>
 						<HatMini />
 					</CollectionCard>
@@ -179,7 +177,7 @@ export default async function HomePage() {
 						subtitle="93 types, IH1 to IH93"
 						href="/isohedral"
 						description="Every tiling with one tile up to symmetry, with its corners and edges live."
-						badge={<CompletenessBadge tone="proven" label="exactly 93, proven" />}
+						badge={<CompletenessBadge tone="proven" label="93 · proven" />}
 					>
 						<IsohedralMini />
 					</CollectionCard>
@@ -189,7 +187,7 @@ export default async function HomePage() {
 						subtitle="15 types"
 						href="/pentagons"
 						description="The convex pentagons that tile the plane, a list Rao closed in 2017."
-						badge={<CompletenessBadge tone="proven" label="exactly 15, proven" />}
+						badge={<CompletenessBadge tone="proven" label="15 · proven" />}
 					>
 						<PentagonMini />
 					</CollectionCard>
@@ -197,8 +195,8 @@ export default async function HomePage() {
 			</section>
 
 			{/* P7 — footer with the citation block. */}
-			<footer className="border-t border-line-subtle">
-				<div className="max-w-6xl mx-auto px-6 md:px-12 py-8 flex flex-col gap-2 text-xs text-fg-muted">
+			<footer className="mt-16 border-t border-line-subtle">
+				<div className="pt-8 pb-12 flex flex-col gap-2 text-xs text-fg-muted">
 					{/* The landing page carries no Nav, so this line is the only "what's new" affordance here. */}
 					<p>
 						Updated{" "}
@@ -228,6 +226,7 @@ export default async function HomePage() {
 					</a>
 				</div>
 			</footer>
+			</div>
 
 			{/* Mounted here, not in the root layout, so /defense, which is also outside (app),
 			    cannot ever pop this mid-talk. */}

@@ -4,9 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { useRouter, useSearchParams } from "next/navigation";
 import { Check, Library, Link2, Loader2, X } from "lucide-react";
 import { PageSidebar } from "@/components/page-sidebar";
-import { ButtonGroup } from "@/components/ui/button-group";
 import { IntervalSlider } from "@/components/ui/interval-slider";
 import { OptionWall } from "@/components/ui/option-wall";
+import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
 import { RangeInput } from "@/components/ui/range-input";
 import { Switch } from "@/components/ui/switch";
@@ -525,12 +525,79 @@ const META = "text-[11px] font-normal leading-snug text-fg-muted";
 
 // A caption row inside a filter group — a thinner echo of the group heading, same chrome band.
 function SubLabel({ children }: { children: ReactNode }) {
-	return <span className={cn("bg-surface-chrome", META, "px-3 pt-2.5 pb-1.5 font-medium")}>{children}</span>;
+	return <span className="pt-1 text-xs text-fg-secondary">{children}</span>;
 }
 
-// An explanatory line under a group's controls. This one IS content, so it stays a tile.
+// An explanatory line under a group's controls: helper text, 4px under what it explains.
 function GroupNote({ children }: { children: ReactNode }) {
-	return <p className={cn("ta-wall-cell bg-surface-chrome px-3 py-2", META, "leading-relaxed")}>{children}</p>;
+	return <p className={cn(META, "-mt-1")}>{children}</p>;
+}
+
+// A long pick-one list (Tile class): 28px left-aligned rows with no track, the selected row lifted
+// like a segmented tab. A 13-cell track read as a grey slab. A label too long for half the panel
+// spans both columns (dense flow backfills the gap) so no class name is ever truncated.
+function RowList<T extends string>({
+	options,
+	selected,
+	onChange,
+}: {
+	options: { value: T; label: string }[];
+	selected: T;
+	onChange: (v: T) => void;
+}) {
+	return (
+		<div className="grid grid-flow-row-dense grid-cols-2 gap-0.5">
+			{options.map((o) => (
+				<button
+					key={o.value}
+					type="button"
+					aria-pressed={selected === o.value}
+					onClick={() => onChange(o.value)}
+					title={o.label}
+					className={cn(
+						o.label.length > 18 && "col-span-2",
+						"ta-tab h-7 cursor-pointer truncate px-2 text-left text-[13px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
+						selected === o.value ? "font-medium text-fg" : "text-fg-secondary hover:text-fg",
+					)}
+				>
+					{o.label}
+				</button>
+			))}
+		</div>
+	);
+}
+
+// Numeric and code chips (k, star folds): one wrapping row of bordered 28px chips, the selected ones
+// in ink. A segmented track stops reading as one control past about five options.
+function ChipRow<T extends string | number>({
+	options,
+	isOn,
+	onChange,
+}: {
+	options: { value: T; label: ReactNode }[];
+	isOn: (v: T) => boolean;
+	onChange: (v: T) => void;
+}) {
+	return (
+		<div className="flex flex-wrap gap-1.5">
+			{options.map((o) => (
+				<button
+					key={o.value}
+					type="button"
+					aria-pressed={isOn(o.value)}
+					onClick={() => onChange(o.value)}
+					className={cn(
+						"h-7 min-w-8 cursor-pointer rounded-control border px-2 text-xs font-medium tabular-nums transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
+						isOn(o.value)
+							? "border-fg bg-fg text-fg-inverse"
+							: "border-line-subtle text-fg-secondary hover:border-line-strong hover:text-fg",
+					)}
+				>
+					{o.label}
+				</button>
+			))}
+		</div>
+	);
 }
 
 // A filter cell holding one IntervalSlider plus its live readout — the hyperbolic Valence / Palette /
@@ -556,7 +623,7 @@ function IntervalFilterCell({
 	format?: (n: number) => string;
 }) {
 	return (
-		<div className="ta-wall-cell bg-surface-chrome flex flex-col gap-1 px-3 pt-2 pb-2.5">
+		<div className="flex flex-col gap-1 pb-1">
 			<div className="flex justify-end">
 				<span className={cn("text-[10px] font-medium tabular-nums", active ? "text-fg" : "text-fg-muted")}>
 					{format(value[0])} – {format(value[1])}
@@ -586,15 +653,13 @@ function FilterGroup({
 	children: ReactNode;
 }) {
 	return (
-		<section className="flex flex-col gap-px">
-			<div className="bg-surface-chrome flex items-baseline justify-between gap-2 px-3 pt-4 pb-2">
-				<h3 className="text-sm font-semibold tracking-tight text-fg">
-					{title}
-					{summary ? <span className={cn(META, "ml-1.5")}>{summary}</span> : null}
-				</h3>
-				{note ? <span className={cn(META, "shrink-0")}>{note}</span> : null}
-			</div>
-			{children}
+		<section className="mt-3 flex flex-col border-t border-line-subtle">
+			{/* The gloss is a tooltip on the heading: a right-aligned note broke the panel's one left edge. */}
+			<h3 className="ta-label px-3.5 pt-4 pb-2" title={note}>
+				{title}
+				{summary ? <span className={cn(META, "ml-1.5 normal-case tracking-normal")}>{summary}</span> : null}
+			</h3>
+			<div className="flex flex-col gap-2 px-3.5">{children}</div>
 		</section>
 	);
 }
@@ -1997,13 +2062,9 @@ export function ReferenceShelf() {
 	return (
 		<div className="flex flex-1 min-h-0 overflow-hidden">
 			<PageSidebar>
-				{/* The filter panel is one wall: every row an opaque cell on a line-coloured container,
-				    so the 1px gaps between them are the only rules, and the diamonds fall out wherever
-				    a vertical gap crosses a horizontal one — which in a grid of option cells is
-				    everywhere. Same mechanism as the /play catalogue (globals.css, .ta-wall). */}
-				<div className="ta-wall ta-wall-dense flex flex-col gap-px pb-4 text-sm">
-					<div className="ta-wall-cell bg-surface-chrome flex h-9 items-center justify-between px-3">
-						<span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-fg-muted">Filters</span>
+				<div className="flex flex-col gap-px pb-12 text-sm">
+					<div className="flex h-11 items-center justify-between px-3.5">
+						<span className="text-[13px] font-semibold text-fg">Filters</span>
 						{activeFilterCount > 0 ? (
 							<button
 								onClick={() => setFilters({ geometry: "euclidean" })}
@@ -2018,7 +2079,7 @@ export function ReferenceShelf() {
 						value={filters.query ?? ""}
 						onChange={(e) => setFilters({ ...filters, query: e.target.value })}
 						placeholder="Search id or family…"
-						className="ta-wall-cell bg-surface-chrome w-full px-3 py-2 text-xs text-fg placeholder:text-fg-muted focus:outline-none focus:bg-surface-raised"
+						className="mx-3.5 h-8 rounded-control border border-line bg-surface-raised px-2.5 text-[13px] text-fg shadow-sm placeholder:text-fg-muted focus:outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/40"
 					/>
 
 					<FilterGroup title="Geometry" summary={isEuclidean ? null : GEOMETRY_LABEL[geometry]}>
@@ -2038,7 +2099,7 @@ export function ReferenceShelf() {
 					    Hidden off the plane and outside Tilings, where it has at most one live chip. */}
 					{showTileClass ? (
 						<FilterGroup title="Tile class" summary={filters.tileClass ?? null}>
-							<OptionWall columns={3} options={classOptions} selected={tileClass} onChange={setTileClass} />
+							<RowList options={classOptions} selected={tileClass} onChange={setTileClass} />
 						</FilterGroup>
 					) : null}
 
@@ -2173,9 +2234,9 @@ export function ReferenceShelf() {
 								onChange={setBoard}
 							/>
 							{boardFamilies.map((fam) => (
-								<div key={fam.family} className="flex flex-col gap-px">
+								<div key={fam.family} className="flex flex-col gap-1">
 									{boardFamilies.length > 1 ? (
-										<div className="bg-surface-chrome px-3 pt-2 pb-1 text-[11px] font-medium tracking-wide text-fg-muted uppercase">
+										<div className="pt-1 text-xs text-fg-muted">
 											{fam.label}
 										</div>
 									) : null}
@@ -2298,24 +2359,21 @@ export function ReferenceShelf() {
 					) : null}
 
 					<FilterGroup title={kGroupTitle} summary={filters.kValue ?? null}>
-						<OptionWall
-							columns={6}
+						<ChipRow
 							options={[
 								{ value: ALL_NUM, label: "All" },
 								...kChips.map((k) => ({ value: k, label: k })),
 							]}
-							selected={filters.kValue ?? ALL_NUM}
+							isOn={(v) => v === (filters.kValue ?? ALL_NUM)}
 							onChange={(v) => setKValue(v === ALL_NUM ? undefined : v)}
 						/>
 						{/* Maximal (M = k) is a Krötenheerdt property of Euclidean uniform tilings — no meaning off
 						    the plane, and none in the other two segments, whose k isn't a vertex-orbit count. */}
 						{isEuclidean && inTilings ? (
-							<OptionWall
-								columns={1}
-								options={[{ value: "maximal", label: "Maximal (M = k)" }]}
-								selected={filters.maximalOnly ? "maximal" : null}
-								onChange={toggleMaximal}
-							/>
+							<label className="flex h-7 cursor-pointer items-center justify-between text-xs text-fg-secondary">
+								Maximal (M = k)
+								<Switch size="sm" checked={!!filters.maximalOnly} onCheckedChange={toggleMaximal} />
+							</label>
 						) : null}
 						{showFreedrawKind ? (
 							<GroupNote>
@@ -2449,11 +2507,9 @@ export function ReferenceShelf() {
 					{showStar ? (
 						<FilterGroup title="Star" note="star polygons">
 							<SubLabel>Fold (n-pointed)</SubLabel>
-							<OptionWall
-								multi
-								columns={5}
+							<ChipRow
 								options={availableFolds.map((n) => ({ value: n, label: `${n}★` }))}
-								selected={filters.starFolds ?? []}
+								isOn={(n) => !!filters.starFolds?.includes(n)}
 								onChange={toggleFold}
 							/>
 							<SubLabel>Shape</SubLabel>
@@ -2504,6 +2560,7 @@ export function ReferenceShelf() {
 									<OptionWall
 										multi
 										columns={6}
+										fill={false}
 										options={distinctPolygonOptions.map((n) => ({ value: n, label: String(n) }))}
 										selected={filters.distinctPolygons ?? []}
 										onChange={toggleDistinctPolygons}
@@ -2516,6 +2573,7 @@ export function ReferenceShelf() {
 									<OptionWall
 										multi
 										columns={6}
+										fill={false}
 										options={distinctStarOptions.map((n) => ({ value: n, label: String(n) }))}
 										selected={filters.distinctStars ?? []}
 										onChange={toggleDistinctStars}
@@ -2527,7 +2585,8 @@ export function ReferenceShelf() {
 									<SubLabel>Angle-word period</SubLabel>
 									<OptionWall
 										multi
-										columns={6}
+										columns={2}
+										fill={false}
 										options={anglePeriodOptions.map((n) => ({ value: n, label: periodLabel(n) }))}
 										selected={filters.anglePeriods ?? []}
 										onChange={toggleAnglePeriods}
@@ -2617,17 +2676,16 @@ export function ReferenceShelf() {
 			    positioned sr-only <label>; without it the label anchors to <html> and stretches the
 			    document ~1000px below the app shell (a phantom black scroll region). */}
 			<main className="relative flex-1 overflow-y-auto p-5">
-				<div className="flex items-center gap-3 mb-5">
-					<Library size={18} className="text-fg-secondary" />
-					<h1 className="text-base font-semibold text-fg">Tiling Library</h1>
-					<span className="text-xs px-2 py-0.5 bg-surface-overlay border border-line text-fg-muted">
-						{filtered.length} tilings
-					</span>
-					{groupVariants && geometry === "hyperbolic" ? (
-						<span className="text-xs px-2 py-0.5 bg-surface-overlay border border-line text-fg-muted">
-							{displayGroups.length} families
+				<div className="mb-4 flex min-h-10 flex-wrap items-center gap-x-4 gap-y-2">
+					<h1 className="flex items-baseline gap-2 text-lg font-semibold tracking-tight text-fg">
+						Tiling Library
+						<span className="font-mono text-xs font-normal tracking-normal text-fg-muted tabular-nums">
+							{filtered.length.toLocaleString("en-US")} tilings
+							{groupVariants && geometry === "hyperbolic"
+								? ` · ${displayGroups.length.toLocaleString("en-US")} families`
+								: null}
 						</span>
-					) : null}
+					</h1>
 					{loadingShards.size > 0 ? (
 						<span className="flex items-center gap-1.5 text-xs text-fg-muted">
 							<Loader2 size={12} className="animate-spin text-fg-muted" />
@@ -2654,15 +2712,14 @@ export function ReferenceShelf() {
 								/>
 							</span>
 						) : null}
-						<button
-							type="button"
+						<Button
+							variant="secondary"
+							size="sm"
 							onClick={copyLink}
 							title="Copy a link to this filtered view"
-							className="flex items-center gap-1.5 rounded-md border border-line bg-surface-raised px-2 py-1 text-xs text-fg-muted transition-colors hover:border-line-strong hover:text-fg focus:border-line-strong focus:outline-none"
-						>
-							{copied ? <Check size={12} className="text-success" /> : <Link2 size={12} />}
-							{copied ? "Copied" : "Copy link"}
-						</button>
+							icon={copied ? Check : Link2}
+							label={copied ? "Copied" : "Copy link"}
+						/>
 						<label className="flex items-center gap-2 text-xs text-fg-muted">
 							Columns
 							<RangeInput
@@ -2674,7 +2731,7 @@ export function ReferenceShelf() {
 								aria-label="Grid columns"
 								className="w-24"
 							/>
-							<span className="w-3 text-center tabular-nums font-medium text-accent">{gridColumns}</span>
+							<span className="w-3 text-center tabular-nums font-medium text-fg">{gridColumns}</span>
 						</label>
 						<div
 							role="group"
@@ -2682,13 +2739,12 @@ export function ReferenceShelf() {
 							className="flex items-center gap-2 text-xs text-fg-muted"
 						>
 							<span>Per page</span>
-							<ButtonGroup
+							<OptionWall
+								columns={PAGE_SIZE_OPTIONS.length}
 								options={PAGE_SIZE_OPTIONS.map((n) => ({ value: n, label: n }))}
 								selected={pageSize}
 								onChange={setPageSize}
-								gap="gap-1"
-								wrap={false}
-								classes="[&>button]:w-8 [&>button]:px-0 tabular-nums"
+								classes="w-28 tabular-nums"
 							/>
 						</div>
 					</div>
@@ -2716,13 +2772,8 @@ export function ReferenceShelf() {
 					</div>
 				) : (
 					<>
-						<Pagination
-							totalItems={displayGroups.length}
-							pageSize={pageSize}
-							currentPage={currentPage}
-							onPageChange={setCurrentPage}
-						/>
-						<div className="ta-lanes grid mt-4" style={gridStyle}>
+						{/* One pager, under the grid: the header count already gives the total. */}
+						<div className="ta-lanes grid !gap-3" style={gridStyle}>
 							{paginated.map((g) => (
 								<ReferenceCard
 									key={g.key}
@@ -2732,7 +2783,7 @@ export function ReferenceShelf() {
 								/>
 							))}
 						</div>
-						<div className="mt-4">
+						<div className="mt-5">
 							<Pagination
 								totalItems={displayGroups.length}
 								pageSize={pageSize}

@@ -1,12 +1,15 @@
 "use client";
 
-import { Play } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+	CATALOGUE_GRID,
+	CatalogueCard,
+	DetailPane,
 	type FreedrawGeometry,
 	GeometryGroup,
 	ToggleCell,
+	ToggleRow,
 	WallBar,
 	WallColumn,
 	WallGroup,
@@ -14,7 +17,6 @@ import {
 } from "@/components/freedraw/filter-wall";
 import { HyperbolicEdgesCanvas } from "@/components/hyperbolic-edges-canvas";
 import { HyperbolicEdgesThumbnail } from "@/components/hyperbolic-edges-thumbnail";
-import { Button } from "@/components/ui/button";
 import { OptionWall } from "@/components/ui/option-wall";
 import { Pagination } from "@/components/ui/pagination";
 import { useGridArrowNav } from "@/lib/hooks/useGridArrowNav";
@@ -27,7 +29,6 @@ import {
 	schwarzKGaps,
 	type HypSchwarzPattern,
 } from "@/lib/freedraw/schwarz";
-import { cn } from "@/lib/utils/cn";
 
 // The hyperbolic arm of /freedraw — Marek Čtrnáct's freedraw on a hyperbolic SCHWARZ board, laid out like
 // the other two arms: filters on top, a paginated thumbnail catalogue on the left, an interactive preview
@@ -164,18 +165,13 @@ export function HyperbolicFreedraw({
 	return (
 		<div className="flex flex-1 min-w-0 flex-col min-h-0">
 			<header className="shrink-0 border-b border-line-subtle">
-				<WallBar
-					top={
-						<span className="tabular-nums text-text-muted">
-							{patterns === null ? "loading…" : `${total.toLocaleString()} at k = ${k}`}
-						</span>
-					}
-				>
+				<WallBar count={patterns === null ? "loading…" : `${total.toLocaleString()} at k = ${k}`}>
 					<WallColumn>
 						<GeometryGroup value={geometry} onChange={onGeometryChange} />
 						<WallGroup title="k" note="orbits">
 							<OptionWall
-								columns={4}
+								columns={kList.length}
+								fill={false}
 								options={kList.map((kk) => ({ value: kk, label: String(kk) }))}
 								selected={k}
 								onChange={(v) => {
@@ -195,20 +191,21 @@ export function HyperbolicFreedraw({
 								selected={boardId}
 								onChange={switchBoard}
 							/>
-							{/* k coverage is Marek's solve, not the board — a hole in it has to say so. */}
+							{/* k coverage is Marek's solve, not the board; a hole in it has to say so. */}
 							{kGaps.length ? <WallSubLabel>{`no k = ${kGaps.join(", ")} in this run`}</WallSubLabel> : null}
 						</WallGroup>
 					</WallColumn>
 
 					<WallColumn>
-						<WallGroup title="Display">
-							<WallSubLabel>Overlays</WallSubLabel>
-							<ToggleCell
-								label="Grid"
-								shortcut="G"
-								on={showScaffold}
-								onClick={() => setCfg({ freedrawScaffold: !showScaffold })}
-							/>
+						<WallGroup title="Overlays">
+							<ToggleRow>
+								<ToggleCell
+									label="Grid"
+									shortcut="G"
+									on={showScaffold}
+									onClick={() => setCfg({ freedrawScaffold: !showScaffold })}
+								/>
+							</ToggleRow>
 						</WallGroup>
 					</WallColumn>
 				</WallBar>
@@ -216,34 +213,25 @@ export function HyperbolicFreedraw({
 
 			<div className="flex-1 min-h-0 flex">
 				<div className="flex-1 min-w-0 overflow-y-auto p-4">
-					{patterns === null && <div className="p-8 text-text-muted">Loading the {board.label} catalogue…</div>}
-					<div ref={gridRef} className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(116px,1fr))]">
+					{patterns === null && <div className="p-8 text-fg-muted">Loading the {board.label} catalogue…</div>}
+					<div ref={gridRef} className={CATALOGUE_GRID}>
 						{pageRows.map((pattern) => (
-							<button
+							<CatalogueCard
 								key={pattern.id}
-								type="button"
-								data-selected={selected?.id === pattern.id ? "" : undefined}
+								selected={selected?.id === pattern.id}
 								onClick={() => setSelectedId(pattern.id)}
-								className={cn(
-									"rounded-md overflow-hidden border text-left transition-colors",
-									selected?.id === pattern.id
-										? "border-accent ring-1 ring-accent"
-										: "border-line-subtle hover:border-border-strong",
-								)}
-							>
-								<div className="aspect-square">
-									<HyperbolicEdgesThumbnail pattern={hypSchwarzMeta(pattern)} size={232} />
-								</div>
-								<div className="px-1.5 py-1 text-[11px] leading-tight text-text-muted">
-									<div className="font-mono text-text-secondary">{pattern.id}</div>
-									<div>
+								title={pattern.id}
+								subtitle={
+									<>
 										{pattern.stats.finite ? `${pattern.stats.finite} finite` : ""}
 										{pattern.stats.finite && pattern.stats.unbounded ? " + " : ""}
 										{pattern.stats.unbounded ? `${pattern.stats.unbounded} unbounded` : ""}
 										{pattern.chiral ? " · chiral" : ""}
-									</div>
-								</div>
-							</button>
+									</>
+								}
+							>
+								<HyperbolicEdgesThumbnail pattern={hypSchwarzMeta(pattern)} size={232} />
+							</CatalogueCard>
 						))}
 					</div>
 					{total > PAGE_SIZE && (
@@ -254,42 +242,23 @@ export function HyperbolicFreedraw({
 				</div>
 
 				{selected && (
-					<aside className="w-[380px] shrink-0 border-l border-line-subtle flex flex-col min-h-0">
-						<div className="relative aspect-square border-b border-line-subtle overflow-hidden bg-bg-subtle">
-							<HyperbolicEdgesCanvas key={selected.id} pattern={hypSchwarzMeta(selected)} />
-						</div>
-						<div className="p-4 overflow-y-auto text-sm space-y-3">
-							<div>
-								<div className="font-mono font-semibold text-text-primary">{selected.id}</div>
-								<div className="text-text-muted text-xs">drag to pan the disk</div>
-							</div>
-							{playHref && (
-								<Button href={playHref} variant="secondary" size="sm" icon={Play} label="Open in play" fullWidth />
-							)}
-							<dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
-								<dt className="text-text-muted">board</dt>
-								<dd className="text-text-secondary">{board.label}</dd>
-								<dt className="text-text-muted">vertex orbits</dt>
-								<dd className="text-text-secondary">k = {selected.k}</dd>
-								<dt className="text-text-muted">drawn edges</dt>
-								<dd className="text-text-secondary">
-									{selected.stats.drawnEdgeOrbits} of {selected.stats.edgeOrbits} orbits
-								</dd>
-								<dt className="text-text-muted">tiles</dt>
-								<dd className="text-text-secondary">
-									{selected.stats.sizes.map((n) => (n < 0 ? "∞" : n)).join(", ")}
-								</dd>
-								{/* H² has no similarity, so the board's three side lengths are a real coordinate — the
-								    thing that makes (2,3,7) a different shape from (2,4,5), not a scaling of it. */}
-								<dt className="text-text-muted">edge lengths</dt>
-								<dd className="text-text-secondary tabular-nums">
-									{selected.edges.map((e) => e.toFixed(4)).join(" · ")}
-								</dd>
-								<dt className="text-text-muted">symmetry</dt>
-								<dd className="text-text-secondary">{selected.chiral ? "chiral" : "achiral"}</dd>
-							</dl>
-						</div>
-					</aside>
+					<DetailPane
+						previewClassName="bg-bg-subtle"
+						preview={<HyperbolicEdgesCanvas key={selected.id} pattern={hypSchwarzMeta(selected)} />}
+						title={selected.id}
+						hint="drag to pan the disk"
+						playHref={playHref}
+						meta={[
+							["board", board.label],
+							["vertex orbits", `k = ${selected.k}`],
+							["drawn edges", `${selected.stats.drawnEdgeOrbits} of ${selected.stats.edgeOrbits} orbits`],
+							["tiles", selected.stats.sizes.map((n) => (n < 0 ? "∞" : n)).join(", ")],
+							// H² has no similarity, so the board's three side lengths are a real coordinate: the
+							// thing that makes (2,3,7) a different shape from (2,4,5), not a scaling of it.
+							["edge lengths", selected.edges.map((e) => e.toFixed(4)).join(" · ")],
+							["symmetry", selected.chiral ? "chiral" : "achiral"],
+						]}
+					/>
 				)}
 			</div>
 		</div>

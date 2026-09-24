@@ -17,8 +17,7 @@ interface ToggleButtonProps extends Omit<ComponentProps<"button">, "className" |
 	classes?: string;
 }
 
-// Squared w/b design system: both shapes are sharp rectangles now; the variant prop survives so
-// call sites don't churn (and so a future distinction stays cheap).
+// Both shapes share the control radius; the variant prop survives so call sites don't churn.
 const SHAPE: Record<Variant, string> = {
 	chip: "",
 	pill: "",
@@ -34,10 +33,11 @@ const ICON_SIZE: Record<Size, string> = {
 	md: "w-4 h-4",
 };
 
-// Selected = full inversion (fg fill, inverse text) — the monochrome replacement for the green tint.
+// Selected = raised paper with an ink edge, the same look as a selected OptionWall cell (.ta-tab), so
+// every "pick one" control in the app selects the same way.
 const STATE_CLASSES = {
-	on: "bg-fg border-fg text-fg-inverse hover:bg-fg",
-	off: "bg-transparent border-line text-fg-muted hover:text-fg hover:border-fg",
+	on: "bg-surface-raised border-line-strong text-fg shadow-sm",
+	off: "bg-transparent border-line text-fg-muted hover:text-fg hover:bg-surface-overlay",
 };
 
 export function ToggleButton({
@@ -72,7 +72,7 @@ export function ToggleButton({
 				if (!e.defaultPrevented) onPressedChange?.(!pressed);
 			}}
 			className={cn(
-				"inline-flex items-center justify-center font-medium border transition-colors duration-150 focus:outline-none focus-visible:ring-1 focus-visible:ring-fg focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
+				"inline-flex items-center justify-center rounded-control font-medium border transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
 				SHAPE[variant],
 				SIZE_CLASSES[size],
 				pressed ? STATE_CLASSES.on : STATE_CLASSES.off,

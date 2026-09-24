@@ -39,7 +39,7 @@ export function SearchInput({
 
 	return (
 		<div className="flex flex-col gap-2">
-			<span className="text-xs uppercase text-fg-muted font-medium tracking-wider">Search</span>
+			<span className="ta-label">Search</span>
 			<div className="relative">
 				<Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted pointer-events-none" />
 				<input
@@ -47,7 +47,7 @@ export function SearchInput({
 					value={local}
 					onChange={handleInput}
 					placeholder={placeholder}
-					className="w-full h-9 rounded-md border border-line bg-surface-overlay/90 pl-9 pr-8 py-2 text-sm text-fg placeholder:text-fg-disabled focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-line-focus/40 focus-visible:border-line-focus transition-all"
+					className="w-full h-9 rounded-md border border-line bg-surface-raised shadow-sm pl-9 pr-8 py-2 text-sm text-fg placeholder:text-fg-disabled focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:border-accent transition-all"
 				/>
 				{local ? (
 					<button

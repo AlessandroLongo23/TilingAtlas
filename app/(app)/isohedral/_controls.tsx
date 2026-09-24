@@ -8,22 +8,36 @@
 // controls. A single scroll pane would put the parameter sliders below ninety-three chips, so choosing
 // a type would scroll the thing you came to adjust off the bottom of the panel.
 
-import type { ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { PageSidebar } from "@/components/page-sidebar";
 
 export { Section, Details, Segmented, type SegmentedOption } from "@/components/shelf";
 
+/**
+ * The type grid's scroll box, snapped to whole rows: four rows of chips at the Segmented pitch (35.5px
+ * chip + 2px gap) plus the track's 3px inset, so the box never ends halfway through a row. Four, not
+ * six: at a 900px window six pushed the parameter sliders off the bottom.
+ */
+const TYPE_BOX_PX = 3 + 4 * 37.5;
+const SHADOW = "pointer-events-none absolute inset-x-0 h-2 from-black/10 dark:from-black/50 to-transparent";
+
 export function IsohedralSidebar({
 	header,
 	filters,
+	typeCount,
+	totalCount,
 	types,
 	children,
 	collapsed = false,
 }: {
-	/** Bare wall cells: the current type's identity line. */
+	/** The current type's identity line. */
 	header: ReactNode;
 	/** Pinned above the type grid, so narrowing the list never scrolls the filters away. */
 	filters: ReactNode;
+	/** How many types the filters let through, shown beside the grid's label. */
+	typeCount: number;
+	/** The unfiltered total, so a narrowed grid reads "12 of 93". */
+	totalCount: number;
 	/** The 93-entry grid. Capped and scrolled on its own. */
 	types: ReactNode;
 	/** Parameters, edge curvature, view, details. */
@@ -31,20 +45,48 @@ export function IsohedralSidebar({
 	/** Immersive mode: slide the whole panel shut and give the canvas the window. */
 	collapsed?: boolean;
 }) {
+	// Which edges of the type box have rows past them. Remeasured on scroll and whenever a filter
+	// changes how many rows there are.
+	const boxRef = useRef<HTMLDivElement>(null);
+	const [more, setMore] = useState({ up: false, down: false });
+	const measure = useCallback(() => {
+		const t = boxRef.current;
+		if (t) setMore({ up: t.scrollTop > 1, down: t.scrollTop + t.clientHeight < t.scrollHeight - 1 });
+	}, []);
+	useEffect(measure, [measure, typeCount]);
+
 	return (
 		<PageSidebar scrollable={false} collapsed={collapsed}>
-			<div className="ta-wall ta-wall-dense h-full flex flex-col gap-px">
-				{header}
-				{/* Vertical padding only: the filter rows are grids of wall cells like the type grid below
-				    them, so they run to both panel edges and only their captions carry the indent. */}
-				<div className="bg-surface-chrome shrink-0 py-3 flex flex-col gap-3">{filters}</div>
-				{/* Capped, not proportional: nine rows of chips is enough to browse in, and a proportional
-				    split would shrink the controls to nothing on a short window. */}
-				<div className="bg-surface-chrome shrink-0 max-h-64 overflow-y-auto overflow-x-hidden scrollbar-hide">
-					{types}
+			{/* One 14px gutter for every region; a full-bleed hairline and 16px between them. */}
+			<div className="h-full flex flex-col bg-surface-chrome divide-y divide-line-subtle">
+				<div className="shrink-0 px-3.5 py-4">{header}</div>
+				<div className="shrink-0 px-3.5 py-4">{filters}</div>
+				<div className="shrink-0 px-3.5 py-4 flex flex-col gap-2">
+					<div className="flex items-baseline justify-between">
+						<span className="ta-label">Type</span>
+						<span className="font-mono text-[11px] tabular-nums text-fg-muted">
+							{typeCount === totalCount ? `${totalCount} types` : `${typeCount} of ${totalCount}`}
+						</span>
+					</div>
+					{/* Capped, not proportional: a proportional split would shrink the controls to nothing on a
+					    short window. Overlay scrollbars draw nothing at rest, so an 8px inner shadow marks
+					    whichever edge has more rows past it. The negative margin parks a classic scrollbar in
+					    the gutter, so the grid lines up with the filters either way. */}
+					<div className="relative">
+						<div
+							className="-mr-2.5 pr-2.5 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-line-strong"
+							style={{ maxHeight: TYPE_BOX_PX }}
+							ref={boxRef}
+							onScroll={measure}
+						>
+							{types}
+						</div>
+						{more.up ? <div className={`${SHADOW} top-0 rounded-t-surface bg-gradient-to-b`} /> : null}
+						{more.down ? <div className={`${SHADOW} bottom-0 rounded-b-surface bg-gradient-to-t`} /> : null}
+					</div>
 				</div>
-				<div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hide bg-surface-chrome">
-					<div className="p-3 flex flex-col gap-3">{children}</div>
+				<div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hide ta-scroll-fade">
+					<div className="pb-10 divide-y divide-line-subtle [&>*]:px-3.5 [&>*]:py-4">{children}</div>
 				</div>
 			</div>
 		</PageSidebar>

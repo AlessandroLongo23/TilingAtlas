@@ -1,6 +1,7 @@
 "use client";
 
 import { RangeInput } from "./range-input";
+import { withUnit } from "./slider";
 
 type SingleValue = number;
 type RangeValue = [number, number];
@@ -55,9 +56,9 @@ export function RangeSlider({
 
 	const displayValue = isRange
 		? rangeMin === rangeMax
-			? `${rangeMin}${unit ? " " + unit : ""}`
-			: `${(value as RangeValue)[0]} – ${(value as RangeValue)[1]}${unit ? " " + unit : ""}`
-		: `${value}${unit ? " " + unit : ""}`;
+			? withUnit(rangeMin, unit)
+			: withUnit(`${(value as RangeValue)[0]} – ${(value as RangeValue)[1]}`, unit)
+		: withUnit(value as number, unit);
 
 	const lowPercent = ((rangeMin - min) / (max - min)) * 100;
 	const highPercent = ((rangeMax - min) / (max - min)) * 100;
@@ -66,8 +67,8 @@ export function RangeSlider({
 		<div className="grid w-full gap-1.5">
 			{label ? (
 				<div className="flex flex-row justify-between items-center">
-					<label htmlFor={id} className="text-xs font-medium text-fg-muted">{label}</label>
-					<span className="text-[10px] text-fg font-medium tabular-nums">{displayValue}</span>
+					<label htmlFor={id} className="text-[13px] font-medium text-fg-secondary">{label}</label>
+					<span className="font-mono text-xs text-fg tabular-nums">{displayValue}</span>
 				</div>
 			) : null}
 
@@ -84,9 +85,9 @@ export function RangeSlider({
 				/>
 			) : isRange ? (
 				<div className="relative w-full h-5 flex items-center">
-					<div className="absolute h-[2px] bg-line w-full pointer-events-none" aria-hidden="true" />
+					<div className="absolute h-1 w-full rounded-full bg-surface-sunken ring-1 ring-inset ring-line-subtle pointer-events-none" aria-hidden="true" />
 					<div
-						className="absolute h-[2px] bg-fg pointer-events-none"
+						className="absolute h-1 rounded-full bg-fg pointer-events-none"
 						style={{ left: `${lowPercent}%`, width: `${highPercent - lowPercent}%` }}
 						aria-hidden="true"
 					/>

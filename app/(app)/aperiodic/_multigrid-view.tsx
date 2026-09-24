@@ -23,6 +23,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RangeInput } from "@/components/ui/range-input";
+import { FullscreenToggle } from "@/components/fullscreen-toggle";
 import { AperiodicSidebar, Section, Segmented } from "./_controls";
 import { Details, strokePxAt, STROKE_CSS, STROKE_RGBA, STROKE_WIDTH, ViewFooter } from "./_view-chrome";
 
@@ -404,7 +405,7 @@ export function MultigridView({ header }: { header: React.ReactNode }) {
 			<AperiodicSidebar header={header}>
 				<Section label="Symmetry">
 					<Segmented
-						cols={4}
+						cols={MULTIGRID_SYMMETRIES.length}
 						options={MULTIGRID_SYMMETRIES.map((s) => ({ v: String(s), label: `${2 * s}` }))}
 						value={String(n)}
 						onChange={(v) => changeN(Number(v))}
@@ -497,6 +498,7 @@ export function MultigridView({ header }: { header: React.ReactNode }) {
 					/>
 					<canvas ref={tilingOverlayRef} className="absolute inset-0 w-full h-full pointer-events-none" />
 					<PanelTag>dual tiling</PanelTag>
+					<FullscreenToggle />
 				</div>
 			</div>
 		</div>
@@ -508,7 +510,7 @@ const sub = (j: number) => String(j).split("").map((d) => SUBS[Number(d)]).join(
 
 function PanelTag({ children }: { children: React.ReactNode }) {
 	return (
-		<div className="absolute top-2 left-2 text-[11px] text-fg-subtle bg-surface-raised/80 px-1.5 py-0.5 rounded pointer-events-none">
+		<div className="ta-float absolute top-4 left-4 px-2.5 py-1 text-xs text-fg-secondary pointer-events-none">
 			{children}
 		</div>
 	);

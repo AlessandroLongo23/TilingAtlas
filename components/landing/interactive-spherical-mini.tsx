@@ -35,9 +35,14 @@ export function InteractiveSphericalMini({ solidId }: { solidId: string }) {
 				active ? "cursor-grab" : "cursor-pointer",
 			)}
 		>
-			{/* fitFraction 1: the cell IS the picture, so the solid meets its top and bottom edges — the
-			    same framing the disk next to it gets from diskPadPx 0. */}
-			{inView ? <SphericalCanvas solidId={solidId} interactive={active} fitFraction={1} /> : null}
+			{/* fitFraction 0.85: the perspective camera draws near vertices larger than the bounding
+			    sphere, so a full-height fit let some solids spill past the plate. */}
+			{inView ? (
+				<SphericalCanvas solidId={solidId} interactive={active} fitFraction={0.85} />
+			) : (
+				// Out of view: the ball's silhouette as a quiet skeleton on the sunken plate.
+				<div aria-hidden="true" className="absolute inset-0 m-auto h-full aspect-square rounded-full bg-surface-overlay" />
+			)}
 		</div>
 	);
 }

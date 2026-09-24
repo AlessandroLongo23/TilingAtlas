@@ -22,7 +22,7 @@ export const THEORY_ELEMENTS: TheoryArticle[] = [
 	{
 		slug: "tiles",
 		title: "Prototiles",
-		blurb: "The individual tile shapes behind the tilings — regular, convex-irregular, star and isotoxal — as one browsable gallery.",
+		blurb: "The individual tile shapes behind the tilings (regular, convex-irregular, star and isotoxal) as one browsable gallery.",
 	},
 	{
 		slug: "configs",

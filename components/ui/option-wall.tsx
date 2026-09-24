@@ -5,9 +5,10 @@ import { cn } from "@/lib/utils/cn";
 import { Tooltip } from "./tooltip";
 
 // ButtonGroup's wall-mounted twin: the same options in/value out, laid out as a fixed grid of cells
-// instead of a wrapped row of chips. Every cell is the same size, the 1px gaps between them are the
-// only separation, and the last row is padded with blanks so the block stays rectangular — a ragged
-// edge would break the grid the whole design is made of.
+// instead of a wrapped row of chips. The 1px gaps between cells are the only separation, and the block
+// is always a rectangle: a short last row stretches its cells to share the full width. (It used to be
+// padded with blank cells, which read as missing buttons.) The grid is `columns × r` tracks, r being
+// the last row's length: ordinary cells span r of them, last-row cells span `columns`.
 //
 // State rides on aria-pressed, which is what `.ta-tab` (globals.css) styles off: idle cells take the
 // panel fill, the selected one goes to pure white/black, hover moves toward the line colour.
@@ -29,6 +30,9 @@ type CommonProps<T> = {
 	options: OptionWallItem<T>[];
 	/** Cells per row. Pick it from the label lengths: 6 for numbers, 2–3 for words. */
 	columns: number;
+	/** Stretch a short last row to the full width (default, right for words); `false` keeps the
+	 *  column grid, which numbers and codes want so they line up. */
+	fill?: boolean;
 	classes?: string;
 };
 
@@ -45,17 +49,18 @@ type MultiProps<T> = CommonProps<T> & {
 };
 
 export function OptionWall<T>(props: SingleProps<T> | MultiProps<T>) {
-	const { options, columns, classes } = props;
+	const { options, columns, classes, fill = true } = props;
 	const isPressed = (value: T): boolean =>
 		props.multi ? props.selected.includes(value) : props.selected === value;
-	const blanks = (columns - (options.length % columns)) % columns;
+	const r = fill ? options.length % columns || columns : 1;
+	const lastRow = fill ? options.length - r : options.length;
 
 	return (
 		<div
-			className={cn("grid gap-px", classes)}
-			style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
+			className={cn("ta-seg grid", classes)}
+			style={{ gridTemplateColumns: `repeat(${columns * r}, minmax(0, 1fr))` }}
 		>
-			{options.map((opt) => {
+			{options.map((opt, i) => {
 				const key = opt.key ?? String(opt.value);
 				const button = (
 					<button
@@ -66,9 +71,10 @@ export function OptionWall<T>(props: SingleProps<T> | MultiProps<T>) {
 						aria-disabled={opt.disabled}
 						title={opt.title}
 						onClick={() => props.onChange(opt.value)}
+						style={{ gridColumn: `span ${i < lastRow ? r : columns}` }}
 						className={cn(
-							"ta-tab ta-wall-cell flex min-h-8 items-center justify-center px-1.5 py-1.5 text-center text-xs font-medium leading-tight transition-colors",
-							"focus:outline-none focus-visible:relative focus-visible:z-10 focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-fg",
+							"ta-tab flex min-h-7 items-center justify-center px-1.5 py-1 text-center text-xs font-medium leading-tight transition-colors",
+							"focus:outline-none focus-visible:relative focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-accent/50",
 							isPressed(opt.value) ? "text-fg" : "text-fg-muted hover:text-fg-secondary",
 							opt.disabled ? "cursor-not-allowed opacity-40" : "cursor-pointer",
 						)}
@@ -84,9 +90,6 @@ export function OptionWall<T>(props: SingleProps<T> | MultiProps<T>) {
 					button
 				);
 			})}
-			{Array.from({ length: blanks }, (_, i) => (
-				<div key={`blank-${i}`} className="ta-wall-cell bg-surface-chrome" />
-			))}
 		</div>
 	);
 }

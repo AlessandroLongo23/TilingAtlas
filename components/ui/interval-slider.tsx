@@ -2,10 +2,9 @@
 
 import { useRef, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react";
 import { cn } from "@/lib/utils/cn";
-import { tickIntervals } from "./range-input";
 
-// The dual-thumb sibling of <RangeInput>: same .ta-track anatomy (2px square-ended track, ticks for
-// short value sets, 12px square thumbs), but the value is an interval [lo, hi] and the selected span
+// The dual-thumb sibling of <RangeInput>: same .ta-track anatomy (rounded track, 12px round thumbs),
+// but the value is an interval [lo, hi] and the selected span
 // is filled between the two thumbs. No native <input type="range"> pair can express the coincident-
 // handle rule below, so the track handles pointers itself and each thumb is its own ARIA slider
 // (role="slider" + arrow keys) for keyboard and screen-reader access.
@@ -80,7 +79,6 @@ export function IntervalSlider({
 	const span = max - min;
 	const fLo = span > 0 ? (lo - min) / span : 0;
 	const fHi = span > 0 ? (hi - min) / span : 0;
-	const ticks = tickIntervals(min, max, step);
 
 	// Same mapping the native control uses: thumb centres travel [6px, width-6px] (the 12px thumb).
 	const valueAt = (clientX: number): number => {
@@ -158,13 +156,6 @@ export function IntervalSlider({
 			onPointerCancel={handlePointerEnd}
 		>
 			<span className="ta-track-line" aria-hidden="true" />
-			{ticks !== null ? (
-				<span
-					className="ta-track-ticks"
-					style={{ "--ticks": ticks } as CSSProperties}
-					aria-hidden="true"
-				/>
-			) : null}
 			<span className="ta-ival-fill" aria-hidden="true" />
 			<span className="ta-track-travel" style={{ "--f": fLo } as CSSProperties}>
 				<span

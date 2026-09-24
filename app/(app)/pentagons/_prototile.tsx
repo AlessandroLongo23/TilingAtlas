@@ -13,22 +13,28 @@
 import { useId } from "react";
 import type { Angles, Point, Sides } from "@/lib/pentagon/solve";
 import type { PentagonType } from "@/lib/pentagon/types";
+import { tileFill } from "@/lib/render/tilePalette";
 
 const CORNER_NAMES = ["A", "B", "C", "D", "E"] as const;
 /** Side i is the one ARRIVING at corner i, so the edge from corner k to k+1 carries side (k+1) mod 5. */
 const SIDE_OF_EDGE = [1, 2, 3, 4, 0] as const;
 const SIDE_NAMES = ["a", "b", "c", "d", "e"] as const;
 
-const BOX = 132;
-const PAD = 22;
+/** Drawing box in CSS px: the viewBox matches the rendered size, so font sizes below are real px. */
+const BOX_W = 280;
+const BOX_H = 170;
+const PAD = 20;
 
 export function PrototileInspector({
 	type,
 	corners,
 	angles,
 	sides,
+	hue,
 }: {
 	type: PentagonType;
+	/** Hue of tile 1 on the canvas, so the drawing is the same tile in the same colour. */
+	hue: number;
 	corners: Point[];
 	angles: Angles;
 	sides: Sides;
@@ -45,20 +51,21 @@ export function PrototileInspector({
 	}
 	const w = maxx - minx || 1;
 	const h = maxy - miny || 1;
-	const s = (BOX - 2 * PAD) / Math.max(w, h);
-	const ox = PAD + (BOX - 2 * PAD - w * s) / 2;
-	const oy = PAD + (BOX - 2 * PAD - h * s) / 2;
-	const px = (p: Point) => ({ x: ox + (p.x - minx) * s, y: BOX - (oy + (p.y - miny) * s) });
+	const s = Math.min((BOX_W - 2 * PAD) / w, (BOX_H - 2 * PAD) / h);
+	const ox = (BOX_W - w * s) / 2;
+	const oy = (BOX_H - h * s) / 2;
+	const px = (p: Point) => ({ x: ox + (p.x - minx) * s, y: BOX_H - (oy + (p.y - miny) * s) });
 
 	const pts = corners.map(px);
 	const cx = pts.reduce((a, p) => a + p.x, 0) / pts.length;
 	const cy = pts.reduce((a, p) => a + p.y, 0) / pts.length;
 
 	return (
-		<div className="flex flex-col gap-2">
+		<div className="flex flex-col items-center gap-2 rounded-surface border border-line-subtle bg-surface-raised p-2">
 			<svg
-				viewBox={`0 0 ${BOX} ${BOX}`}
-				className="w-full h-auto"
+				viewBox={`0 0 ${BOX_W} ${BOX_H}`}
+				className="w-full"
+				style={{ maxWidth: BOX_W, height: BOX_H }}
 				role="img"
 				aria-labelledby={`${uid}-title`}
 			>
@@ -67,8 +74,9 @@ export function PrototileInspector({
 				</title>
 				<polygon
 					points={pts.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(" ")}
-					className="fill-accent-subtle stroke-fg-secondary"
-					strokeWidth={1.25}
+					fill={tileFill(hue)}
+					stroke="#000"
+					strokeWidth={1.5}
 					strokeLinejoin="round"
 				/>
 
@@ -83,12 +91,12 @@ export function PrototileInspector({
 					return (
 						<text
 							key={`s${i}`}
-							x={mx + (dx / d) * 9}
-							y={my + (dy / d) * 9}
+							x={mx + (dx / d) * 10}
+							y={my + (dy / d) * 10}
 							textAnchor="middle"
 							dominantBaseline="middle"
-							className="fill-fg-muted"
-							style={{ fontSize: 8.5, fontStyle: "italic" }}
+							className="fill-fg-muted font-sans italic"
+							style={{ fontSize: 11 }}
 						>
 							{SIDE_NAMES[SIDE_OF_EDGE[i]]}
 						</text>
@@ -103,12 +111,13 @@ export function PrototileInspector({
 					return (
 						<text
 							key={`c${i}`}
-							x={p.x - (dx / d) * 13}
-							y={p.y - (dy / d) * 13}
+							x={p.x - (dx / d) * 14}
+							y={p.y - (dy / d) * 14}
 							textAnchor="middle"
 							dominantBaseline="middle"
-							className="fill-fg"
-							style={{ fontSize: 9, fontWeight: 600 }}
+							fill="#000"
+							className="font-sans"
+							style={{ fontSize: 11, fontWeight: 600 }}
 						>
 							{CORNER_NAMES[i]}
 						</text>
@@ -116,12 +125,15 @@ export function PrototileInspector({
 				})}
 			</svg>
 
-			{/* The type's conditions with the current numbers substituted in. */}
-			<dl className="flex flex-col gap-1 text-[11px]">
+			{/* The type's conditions as chips, with the current numbers substituted in on the right. */}
+			<dl className="flex w-full flex-col gap-1 font-mono text-[11px] tabular-nums">
 				{type.constraints.map((c) => (
-					<div key={c.text} className="flex flex-col">
+					<div
+						key={c.text}
+						className="flex flex-wrap items-baseline justify-between gap-x-2 rounded-control bg-surface-sunken px-2.5 py-2"
+					>
 						<dt className="text-fg-secondary">{c.text}</dt>
-						<dd className="text-fg-muted tabular-nums">{c.live(angles, sides)}</dd>
+						<dd className="ml-auto text-right text-fg">{c.live(angles, sides)}</dd>
 					</div>
 				))}
 			</dl>

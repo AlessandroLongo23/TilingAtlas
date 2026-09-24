@@ -20,11 +20,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
 import { useSearchParams } from "next/navigation";
-import { RotateCcw } from "lucide-react";
+import { Lock, RotateCcw } from "lucide-react";
 import { useParametricTilingCanvas } from "@/lib/hooks/useParametricTilingCanvas";
 import { tilingPeriodicCell } from "@/lib/render/periodic/tilings";
-import { Kbd } from "@/components/ui/kbd";
-import { Slider } from "@/components/ui/slider";
+import { Button } from "@/components/ui/button";
+import { RangeInput } from "@/components/ui/range-input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Reveal } from "@/components/ui/reveal";
 import { TilingInfo } from "@/components/tiling-info";
@@ -217,8 +217,13 @@ export function PentagonsClient() {
 		() =>
 			PENTAGON_TYPES.map((t) => ({
 				v: String(t.id),
-				label: String(t.id),
-				sub: t.dof === 0 ? "rigid" : `${t.dof}p`,
+				label: <span className="text-[13px] tabular-nums">{t.id}</span>,
+				// Sans at 11px so "1" never reads as "i"; a lock marks the rigid types.
+				sub: (
+					<span className="font-sans text-[11px]">
+						{t.dof === 0 ? <Lock size={10} className="inline" aria-label="rigid" /> : t.dof}
+					</span>
+				),
 				dim: !hasAssembly(t.id),
 				title: `${t.label} · ${t.discovered} · ${t.dof} degree${t.dof === 1 ? "" : "s"} of freedom · ${t.tilesPerUnit} tiles per unit · ${t.constraints.map((c) => c.text).join("; ")}`,
 			})),
@@ -226,12 +231,17 @@ export function PentagonsClient() {
 	);
 
 	const header = (
-		<div className="ta-wall-cell bg-surface-chrome px-3 py-2.5 flex flex-col gap-1">
-			<span className="text-xs font-mono text-fg-secondary">
-				{type.label} · {type.dof === 0 ? "rigid" : `${type.dof} parameter${type.dof === 1 ? "" : "s"}`}
+		<div className="ta-wall-cell bg-surface-chrome px-3.5 py-3 flex flex-col gap-1.5">
+			<span className="text-[15px] font-semibold text-fg">{type.label}</span>
+			<span className="text-xs text-fg-secondary">
+				{type.discovered} · {type.tilesPerUnit} tiles/unit
 			</span>
-			<span className="text-[10px] font-mono text-fg-disabled truncate">
-				{type.discovered} · {type.tilesPerUnit} tiles/unit · {type.groups}
+			<span className="flex flex-wrap gap-1">
+				{type.groups.split(", ").map((g) => (
+					<span key={g} className="rounded-control bg-surface-sunken px-1.5 py-0.5 font-mono text-[11px] text-fg-secondary">
+						{g}
+					</span>
+				))}
 			</span>
 		</div>
 	);
@@ -284,12 +294,14 @@ export function PentagonsClient() {
 				collapsed={immersive}
 				header={header}
 				types={
-					<Segmented
-						cols={GRID_COLS}
-						options={typeOptions}
-						value={String(id)}
-						onChange={(v) => selectType(Number(v))}
-					/>
+					<Section label="Family">
+						<Segmented
+							cols={GRID_COLS}
+							options={typeOptions}
+							value={String(id)}
+							onChange={(v) => selectType(Number(v))}
+						/>
+					</Section>
 				}
 			>
 				{cell ? (
@@ -299,46 +311,42 @@ export function PentagonsClient() {
 							corners={cell.prototile}
 							angles={cell.angles}
 							sides={cell.sides}
+							hue={cell.polygons[0]?.hue ?? 0}
 						/>
 					</Section>
 				) : null}
 
 				{type.angleParams.length + type.sideParams.length > 0 ? (
 					<Section label="Parameters">
-						{type.angleParams.map((p, i) => (
-							<Slider
-								key={p.key}
-								id={`pent-angle-${i}`}
-								label={p.key}
-								value={angles[i] ?? p.def}
-								onChange={(v) => setAngles((prev) => prev.map((old, j) => (j === i ? v : old)))}
-								min={p.min}
-								max={p.max}
-								step={p.step}
-								unit="°"
-							/>
-						))}
-						{type.sideParams.map((p, i) => (
-							<Slider
-								key={p.key}
-								id={`pent-side-${i}`}
-								label={p.key}
-								value={sides[i] ?? p.def}
-								onChange={(v) => setSides((prev) => prev.map((old, j) => (j === i ? v : old)))}
-								min={p.min}
-								max={p.max}
-								step={p.step}
-								format={(v) => v.toFixed(3)}
-							/>
-						))}
-						<button
-							type="button"
-							onClick={resetShape}
-							className="ta-wall ta-wall-dense ta-tab ta-wall-cell flex cursor-pointer items-center justify-center gap-1.5 px-2 py-1.5 text-xs text-fg-muted hover:text-fg transition-colors focus:outline-none focus-visible:relative focus-visible:z-10 focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-fg"
-						>
-							<RotateCcw size={12} />
-							Reset
-						</button>
+						<div className="flex flex-col">
+							{type.angleParams.map((p, i) => (
+								<ParamRow
+									key={p.key}
+									id={`pent-angle-${i}`}
+									label={p.key}
+									value={angles[i] ?? p.def}
+									onChange={(v) => setAngles((prev) => prev.map((old, j) => (j === i ? v : old)))}
+									min={p.min}
+									max={p.max}
+									step={p.step}
+									format={(v) => `${v}°`}
+								/>
+							))}
+							{type.sideParams.map((p, i) => (
+								<ParamRow
+									key={p.key}
+									id={`pent-side-${i}`}
+									label={p.key}
+									value={sides[i] ?? p.def}
+									onChange={(v) => setSides((prev) => prev.map((old, j) => (j === i ? v : old)))}
+									min={p.min}
+									max={p.max}
+									step={p.step}
+									format={(v) => v.toFixed(3)}
+								/>
+							))}
+						</div>
+						<Button variant="ghost" size="sm" icon={RotateCcw} label="Reset" onClick={resetShape} classes="border-line-subtle" />
 						{result.ok ? null : (
 							<p className="text-[11px] text-fg-muted">
 								No pentagon here: {result.reason}. The tiling shown is the last valid one.
@@ -357,32 +365,29 @@ export function PentagonsClient() {
 				    duplicate the gesture and, because changing the framing refits, would yank the view back
 				    to home the moment you touched it. */}
 				<Section label="View">
-					<Slider
-						id="pent-rotation"
-						label="Rotation"
-						hint={
-							<span className="inline-flex items-center gap-1 text-[10px] text-fg-muted whitespace-nowrap">
-								<Kbd>Shift</Kbd>
-								<span>+ scroll</span>
-							</span>
-						}
-						value={view.rotationDeg}
-						onChange={view.setRotation}
-						min={0}
-						max={359}
-						step={1}
-						unit="°"
-					/>
-					<Slider
-						id="pent-outlines"
-						label="Tile outlines"
-						value={strokeWidth}
-						onChange={setStrokeWidth}
-						min={STROKE_WIDTH.min}
-						max={STROKE_WIDTH.max}
-						step={STROKE_WIDTH.step}
-						format={(v) => (v === 0 ? "off" : `${v} px`)}
-					/>
+					<div className="flex flex-col">
+						<ParamRow
+							id="pent-rotation"
+							label="Rotation"
+							title="Shift + scroll over the canvas also rotates"
+							value={view.rotationDeg}
+							onChange={view.setRotation}
+							min={0}
+							max={359}
+							step={1}
+							format={(v) => `${v}°`}
+						/>
+						<ParamRow
+							id="pent-outlines"
+							label="Outlines"
+							value={strokeWidth}
+							onChange={setStrokeWidth}
+							min={STROKE_WIDTH.min}
+							max={STROKE_WIDTH.max}
+							step={STROKE_WIDTH.step}
+							format={(v) => (v === 0 ? "off" : `${v} px`)}
+						/>
+					</div>
 					<Checkbox
 						id="pent-inversive"
 						label="Inversive view"
@@ -416,6 +421,35 @@ export function PentagonsClient() {
 				{/* Opposite corner, and the only control that stays put while immersive — it is the way back. */}
 				<FullscreenToggle />
 			</div>
+		</div>
+	);
+}
+
+/** One slider on a single 36px line: name, track, tabular value. Every slider in the panel uses it. */
+function ParamRow({
+	id,
+	label,
+	title,
+	format,
+	...range
+}: {
+	id: string;
+	label: string;
+	title?: string;
+	value: number;
+	onChange: (v: number) => void;
+	min: number;
+	max: number;
+	step: number;
+	format: (v: number) => string;
+}) {
+	return (
+		<div className="grid h-9 grid-cols-[3.75rem_1fr_3.5rem] items-center gap-3">
+			<label htmlFor={id} title={title} className="text-[13px] font-medium text-fg-secondary">
+				{label}
+			</label>
+			<RangeInput id={id} {...range} />
+			<span className="text-right font-mono text-xs text-fg tabular-nums">{format(range.value)}</span>
 		</div>
 	);
 }

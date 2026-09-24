@@ -224,7 +224,7 @@ export function InteractiveTilingPreviewCard({
 						// (nothing happens on click).
 						!interactive ? "cursor-default" : live ? "cursor-grab" : "cursor-pointer",
 						focused && interactive && !alwaysActive
-							? "border-accent ring-2 ring-accent/60"
+							? "border-fg ring-2 ring-fg/60"
 							: "border-line hover:border-line-strong",
 					)}
 				>
@@ -253,7 +253,7 @@ export function InteractiveTilingPreviewCard({
 								title={expanded ? "Close" : "Expand"}
 								aria-label={expanded ? "Close the expanded preview" : "Expand preview"}
 								aria-pressed={expanded}
-								className="flex items-center justify-center rounded-lg border border-line bg-surface-overlay/80 p-2 text-fg-muted backdrop-blur-sm transition-colors hover:border-line-strong hover:text-fg"
+								className="flex items-center justify-center ta-float p-2 text-fg-secondary transition-colors hover:text-fg"
 							>
 								{lifted ? <X size={14} /> : expanded ? <Minimize size={14} /> : <Maximize size={14} />}
 							</button>
@@ -264,7 +264,7 @@ export function InteractiveTilingPreviewCard({
 								onPointerDown={stopDrag}
 								title={openHref ? "Open" : "Open in Play"}
 								aria-label={openHref ? "Open this tiling on its page" : "Open this tiling in Play"}
-								className="flex items-center justify-center rounded-lg border border-line bg-surface-overlay/80 p-2 text-fg-muted backdrop-blur-sm transition-colors hover:border-line-strong hover:text-fg"
+								className="flex items-center justify-center ta-float p-2 text-fg-secondary transition-colors hover:text-fg"
 							>
 								{openInPlayIcon === "play" ? (
 									<Play size={14} className="fill-current" />

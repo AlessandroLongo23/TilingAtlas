@@ -188,10 +188,11 @@ export function TheoryClient({ content, sections, cells, sources, patches, squar
 			<div className="flex h-full min-h-0 w-full overflow-hidden">
 			<PageSidebar scrollable={false}>
 				<div className="flex h-full min-h-0 flex-col">
-					<div className="shrink-0 border-b border-line-subtle pb-2">
+					<div className="shrink-0 pb-2 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:scrollbar-hide">
 						<TheoryArticleNav currentSlug={currentSlug} />
 					</div>
-					<div className="min-h-0 flex-1">
+					{/* Below xl the page contents share the left column; from xl up they move to the right rail. */}
+					<div className="min-h-0 flex-1 border-t border-line-subtle xl:hidden">
 						<TheorySidebar
 							sections={sections}
 							activeSection={activeSection}
@@ -201,7 +202,7 @@ export function TheoryClient({ content, sections, cells, sources, patches, squar
 				</div>
 			</PageSidebar>
 
-			<div className="w-full min-w-0 flex flex-col overflow-hidden">
+			<div className="flex w-full min-w-0 flex-col overflow-hidden bg-surface">
 				<div className="h-0.5 w-full bg-transparent shrink-0">
 					<div
 						ref={progressRef}
@@ -224,6 +225,14 @@ export function TheoryClient({ content, sections, cells, sources, patches, squar
 					</div>
 				)}
 			</div>
+
+			<aside className="hidden h-full w-60 shrink-0 bg-surface pt-8 xl:block">
+				<TheorySidebar
+					sections={sections}
+					activeSection={activeSection}
+					onSectionSelect={setTargetSection}
+				/>
+			</aside>
 			</div>
 		</PreviewOverlayScope>
 	);

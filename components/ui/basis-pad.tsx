@@ -178,8 +178,8 @@ export const BasisPad = memo(function BasisPad({ read, write: commit, subscribe,
 			    already names it), but the determinant is not — it is the quantity the drag is constrained
 			    by, so the wall a drag hits always has a number attached to it. */}
 			<div className="flex flex-row items-center justify-between">
-				{label ? <span className="text-sm font-medium text-fg-secondary">{label}</span> : <span />}
-				<span className="text-xs font-medium text-accent">
+				{label ? <span className="text-[13px] font-medium text-fg-secondary">{label}</span> : <span />}
+				<span className="font-mono text-xs text-fg">
 					det <span ref={(el) => { live.current.out = el; }} className="tabular-nums">1.00</span>
 				</span>
 			</div>

@@ -40,13 +40,13 @@ export function Slider({
 			{label ? (
 				<div className="flex flex-row justify-between items-center gap-2">
 					<div className="flex items-center gap-1.5 min-w-0">
-						<label htmlFor={id} className="text-sm font-medium text-fg-secondary">
+						<label htmlFor={id} className="text-[13px] font-medium text-fg-secondary">
 							{label}
 						</label>
 						{hint}
 					</div>
-					<span className="text-xs text-fg font-medium tabular-nums whitespace-nowrap">
-						{format ? format(value) : `${value} ${unit}`}
+					<span className="font-mono text-xs text-fg tabular-nums whitespace-nowrap">
+						{format ? format(value) : withUnit(value, unit)}
 					</span>
 				</div>
 			) : null}
@@ -62,3 +62,7 @@ export function Slider({
 		</div>
 	);
 }
+
+/** "120°" and "40%" hug the number; a word unit ("px", "gen/s") takes a space; no unit, no space. */
+export const withUnit = (value: number | string, unit: string): string =>
+	!unit ? String(value) : /^[°%′″]/.test(unit) ? `${value}${unit}` : `${value} ${unit}`;

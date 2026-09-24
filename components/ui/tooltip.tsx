@@ -69,13 +69,13 @@ export function Tooltip({
 				>
 					<BaseTooltip.Popup
 						className={cn(
-							"border border-line bg-surface-overlay text-fg rounded-md shadow-xl",
 							"transition duration-150 ease-out motion-reduce:transition-none",
 							"data-[starting-style]:opacity-0 data-[ending-style]:opacity-0",
 							enterFrom,
+							// A plain label is a small ink chip; rich content gets a white card.
 							content != null
-								? "p-3 max-w-[min(90vw,26rem)]"
-								: "flex items-center gap-2 px-2 py-1 text-xs text-fg-secondary",
+								? "rounded-lg bg-surface-raised text-fg shadow-lg ring-1 ring-line-subtle p-3 max-w-[min(90vw,26rem)]"
+								: "flex items-center gap-2 rounded-md bg-fg px-2 py-1 text-xs font-medium text-fg-inverse shadow-md",
 						)}
 					>
 						<BaseTooltip.Arrow className={arrow.inset}>
@@ -84,7 +84,11 @@ export function Tooltip({
 									d={arrow.d}
 									strokeWidth={1}
 									strokeLinejoin="round"
-									style={{ fill: "var(--color-surface-overlay)", stroke: "var(--color-line)" }}
+									style={
+										content != null
+											? { fill: "var(--color-surface-raised)", stroke: "var(--color-border-subtle)" }
+											: { fill: "var(--color-text-primary)", stroke: "var(--color-text-primary)" }
+									}
 								/>
 							</svg>
 						</BaseTooltip.Arrow>
@@ -94,7 +98,7 @@ export function Tooltip({
 							<>
 								<span>{label}</span>
 								{shortcut ? (
-									<kbd className="px-1.5 py-0.5 rounded bg-surface border border-line text-[11px] text-fg-muted font-sans">
+									<kbd className="rounded bg-fg-inverse/15 px-1.5 py-0.5 font-mono text-[10.5px] text-fg-inverse/75">
 										{shortcut}
 									</kbd>
 								) : null}

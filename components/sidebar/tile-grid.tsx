@@ -22,6 +22,7 @@ import { SphericalColorsThumbnail } from "@/components/spherical-colors-thumbnai
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import { paramGlyphs, type ParametricCellData } from "@/lib/utils/paramCell";
+import { compactVertexConfig } from "@/lib/services/referenceAtlas";
 
 // The /play picker's tile wall for one k-bucket: two columns of thumbnails on the wall grid, with a
 // GUTTER lane between them — a strip of panel colour a few px wide whose two edges are hairlines.
@@ -34,10 +35,16 @@ import { paramGlyphs, type ParametricCellData } from "@/lib/utils/paramCell";
 // altogether and NOTHING painted (small buckets were fine — the failure was purely one of scale).
 // Only the rows near the viewport are mounted; everything above and below is one flat spacer cell.
 const COLS = 2;
-const GUTTER = 6;
+const GUTTER = 10;
+// Every tile carries a one-line caption under its square preview; part of the row pitch.
+const CAPTION = 24;
 const OVERSCAN = 2;
-// Room left above a revealed tile so it doesn't land under the sticky class/k headers.
-const REVEAL_INSET = 84;
+// Room left above a revealed tile so it doesn't land under the sticky headers: the bottom of this
+// bucket's own k row once pinned (its sticky top plus its height), plus a few px of air.
+const revealInset = (host: HTMLElement) => {
+	const header = host.parentElement?.previousElementSibling as HTMLElement | null;
+	return header ? parseFloat(getComputedStyle(header).top) + header.offsetHeight + 4 : 84;
+};
 
 interface TileGridProps {
 	items: CatalogueTiling[];
@@ -53,6 +60,13 @@ interface TileGridProps {
 	width: number;
 }
 
+// "ctrnact-star-k7-n1248" → "n1248"; a bare serial like "col-6-00001" keeps its parent segment ("6-00001").
+const keyTail = (key: string) => {
+	const parts = key.split("-");
+	const last = parts[parts.length - 1];
+	return /^\d+$/.test(last) && parts.length > 1 ? parts.slice(-2).join("-") : last;
+};
+
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
 // A one-shot outline that radiates and fades — draws the eye after a jump (R / arrows / deep link).
@@ -61,8 +75,8 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
 function pulse(el: HTMLElement) {
 	el.animate(
 		[
-			{ outlineStyle: "solid", outlineWidth: "3px", outlineColor: "oklch(from var(--color-fg) l c h / 0.9)", outlineOffset: "-3px" },
-			{ outlineStyle: "solid", outlineWidth: "3px", outlineColor: "oklch(from var(--color-fg) l c h / 0)", outlineOffset: "2px" },
+			{ outlineStyle: "solid", outlineWidth: "3px", outlineColor: "oklch(from var(--color-text-primary) l c h / 0.9)", outlineOffset: "-3px" },
+			{ outlineStyle: "solid", outlineWidth: "3px", outlineColor: "oklch(from var(--color-text-primary) l c h / 0)", outlineOffset: "2px" },
 		],
 		{ duration: 650, easing: "ease-out" },
 	);
@@ -75,8 +89,9 @@ export function TileGrid({ items, selectedKey, onSelect, revealKey, width }: Til
 	// Column width drives everything: tiles are square, so it is also the row height. A row is
 	// COLS tiles, COLS+1 lanes, and a hairline between each of those.
 	const cell = width > 0 ? (width - (COLS + 1) * GUTTER - (2 * COLS)) / COLS : 0;
-	// Row pitch: one tile row, the two hairlines around the gutter row, and the gutter row itself.
-	const stride = cell + GUTTER + 2;
+	// Row pitch: one tile row (preview + caption), the two 1px gaps around the gutter row, and the
+	// gutter row itself.
+	const stride = cell + CAPTION + GUTTER + 2;
 	const rows = Math.ceil(items.length / COLS);
 
 	const recompute = useCallback(() => {
@@ -132,6 +147,7 @@ export function TileGrid({ items, selectedKey, onSelect, revealKey, width }: Til
 		const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 		const row = Math.floor(idx / COLS);
 		const selector = `[data-tiling-key="${CSS.escape(revealKey)}"]`;
+		const inset = revealInset(el);
 
 		let timer = 0;
 		let tries = 0;
@@ -141,8 +157,8 @@ export function TileGrid({ items, selectedKey, onSelect, revealKey, width }: Til
 			if (btn) {
 				const b = btn.getBoundingClientRect();
 				const s = scroller.getBoundingClientRect();
-				const off = b.top - s.top - REVEAL_INSET;
-				if (b.top < s.top + REVEAL_INSET || b.bottom > s.bottom) {
+				const off = b.top - s.top - inset;
+				if (b.top < s.top + inset || b.bottom > s.bottom) {
 					scroller.scrollBy({ top: off, behavior: tries === 0 && !reduce ? "smooth" : "auto" });
 				}
 				// Pulse the ring overlay, for the same paint-order reason the ring lives there.
@@ -156,7 +172,7 @@ export function TileGrid({ items, selectedKey, onSelect, revealKey, width }: Til
 				const y =
 					el.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop +
 					row * rowStride;
-				scroller.scrollTo({ top: Math.max(0, y - REVEAL_INSET), behavior: "auto" });
+				scroller.scrollTo({ top: Math.max(0, y - inset), behavior: "auto" });
 			}
 			if (++tries < 6) timer = window.setTimeout(step, 60);
 		};
@@ -170,36 +186,40 @@ export function TileGrid({ items, selectedKey, onSelect, revealKey, width }: Til
 	const visible: number[] = [];
 	for (let r = range.start; r < range.end; r++) visible.push(r);
 
+	// The pt-1 wrapper keeps the first row clear of the sticky k header's rule. It sits outside hostRef,
+	// so every offset above is still measured from the first row.
 	return (
-		<div ref={hostRef} className="ta-wall flex flex-col gap-px">
-			{range.start > 0 ? <div className="ta-wall-cell bg-surface-chrome" style={{ height: range.start * stride - 1 }} /> : null}
-			{visible.map((r, i) => (
-				<div key={r} className="contents">
-					{/* The horizontal lane, split by the three vertical ones — this is where the diamonds
-					    land. Not before the first mounted row: the spacer above already ends in a hairline,
-					    and the row pitch (spacer height = start*stride - 1) is measured on that. */}
-					{i > 0 ? (
-						<div className="grid gap-px" style={{ ...lanes, height: GUTTER }}>
-							{/* The squares where lanes cross are the cells left sharp: at GUTTER px across one
-							    would otherwise round into a dot, and its curve would swallow the diamonds its
-							    rounded neighbours open at each of the four corners. */}
-							<div className="bg-surface-chrome" />
+		<div className="pt-1">
+			<div ref={hostRef} className="ta-wall flex flex-col gap-px">
+				{range.start > 0 ? <div className="ta-wall-cell bg-surface-chrome" style={{ height: range.start * stride - 1 }} /> : null}
+				{visible.map((r, i) => (
+					<div key={r} className="contents">
+						{/* The horizontal lane, split by the three vertical ones — this is where the diamonds
+						    land. Not before the first mounted row: the spacer above already ends in a hairline,
+						    and the row pitch (spacer height = start*stride - 1) is measured on that. */}
+						{i > 0 ? (
+							<div className="grid gap-px" style={{ ...lanes, height: GUTTER }}>
+								{/* The squares where lanes cross are the cells left sharp: at GUTTER px across one
+								    would otherwise round into a dot, and its curve would swallow the diamonds its
+								    rounded neighbours open at each of the four corners. */}
+								<div className="bg-surface-chrome" />
+								<div className="ta-wall-cell bg-surface-chrome" />
+								<div className="bg-surface-chrome" />
+								<div className="ta-wall-cell bg-surface-chrome" />
+								<div className="bg-surface-chrome" />
+							</div>
+						) : null}
+						<div className="grid gap-px" style={lanes}>
 							<div className="ta-wall-cell bg-surface-chrome" />
-							<div className="bg-surface-chrome" />
+							<Tile t={items[r * COLS]} selectedKey={selectedKey} onSelect={onSelect} />
 							<div className="ta-wall-cell bg-surface-chrome" />
-							<div className="bg-surface-chrome" />
+							<Tile t={items[r * COLS + 1]} selectedKey={selectedKey} onSelect={onSelect} />
+							<div className="ta-wall-cell bg-surface-chrome" />
 						</div>
-					) : null}
-					<div className="grid gap-px" style={lanes}>
-						<div className="ta-wall-cell bg-surface-chrome" />
-						<Tile t={items[r * COLS]} selectedKey={selectedKey} onSelect={onSelect} />
-						<div className="ta-wall-cell bg-surface-chrome" />
-						<Tile t={items[r * COLS + 1]} selectedKey={selectedKey} onSelect={onSelect} />
-						<div className="ta-wall-cell bg-surface-chrome" />
 					</div>
-				</div>
-			))}
-			{range.end < rows ? <div className="ta-wall-cell bg-surface-chrome" style={{ height: (rows - range.end) * stride - 1 }} /> : null}
+				))}
+				{range.end < rows ? <div className="ta-wall-cell bg-surface-chrome" style={{ height: (rows - range.end) * stride - 1 }} /> : null}
+			</div>
 		</div>
 	);
 }
@@ -222,7 +242,7 @@ function Tile({
 			type="button"
 			onClick={() => onSelect?.(t)}
 			title={`${t.canonicalKey} · {${t.family}}`}
-			className="ta-wall-cell group relative flex flex-col bg-surface-raised overflow-hidden cursor-pointer"
+			className="group relative flex flex-col overflow-hidden rounded-lg bg-surface-raised ring-1 ring-line-subtle cursor-pointer"
 		>
 			<div className="relative aspect-square bg-surface-raised">
 				{t.hollow ? (
@@ -275,6 +295,15 @@ function Tile({
 				) : null}
 				{t.paramCell ? <ParamBadge paramCell={t.paramCell} /> : null}
 			</div>
+			<span
+				className="flex items-center gap-1.5 border-t border-line-subtle px-2 font-mono text-[10.5px] text-fg-secondary"
+				style={{ height: CAPTION }}
+			>
+				<span className="min-w-0 truncate">{compactVertexConfig(t.family)}</span>
+				{/* A k bucket often holds one configuration many times over, so the key's tail is what tells
+				    two neighbours apart; the full key and config stay in the title. */}
+				<span className="ml-auto shrink-0 text-[11px] text-fg-muted">{keyTail(t.canonicalKey)}</span>
+			</span>
 			{/* The selection ring lives on its own overlay, not on the button: both an inset ring
 			    (a box-shadow) and a negatively-offset outline paint UNDER the button's children in
 			    Chromium, and the thumbnail fills the cell edge to edge — it swallowed the ring whole.
@@ -283,9 +312,12 @@ function Tile({
 				data-ring
 				aria-hidden="true"
 				className={cn(
-					"pointer-events-none absolute inset-0 z-10",
-					// fg (not a fixed black) keeps the selection visible in both themes.
-					selected ? "ring-2 ring-inset ring-fg" : "group-hover:ring-2 group-hover:ring-inset group-hover:ring-line-strong",
+					"pointer-events-none absolute inset-0 z-10 rounded-lg",
+					// Selected: a 1.5px ink edge with a 2px panel-colour gap inside it, so the ring separates
+					// from the preview without shouting over it.
+					selected
+						? "shadow-[inset_0_0_0_1.5px_var(--color-text-primary),inset_0_0_0_3.5px_var(--color-surface-raised)]"
+						: "group-hover:ring-1 group-hover:ring-inset group-hover:ring-line-strong",
 				)}
 			/>
 		</button>
@@ -312,7 +344,7 @@ function ParamBadge({ paramCell }: { paramCell: ParametricCellData }) {
 			}
 			// min-w-4 + px-1 keeps the single-glyph badge the square it has always been and lets the
 			// two-glyph one grow sideways instead of squeezing the pair into 16px.
-			className="absolute top-1 left-1 inline-flex h-4 min-w-4 items-center justify-center gap-0.5 px-1 text-[10px] font-bold leading-none bg-fg text-fg-inverse"
+			className="absolute top-1.5 left-1.5 inline-flex h-4 min-w-4 items-center justify-center gap-0.5 rounded px-1 text-[10px] font-semibold leading-none bg-fg/85 text-fg-inverse"
 		>
 			{glyphs.join(" ")}
 		</span>

@@ -43,9 +43,9 @@ export function Toggle({
 				if (value !== v && !disabled) onChange(v);
 			}}
 			className={cn(
-				"rounded-[5px] text-sm font-medium transition-colors duration-150 focus:outline-none focus-visible:ring-1 focus-visible:ring-line-focus/60",
+				"ta-tab text-[13px] font-medium transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
 				padding,
-				value === v ? "bg-accent-subtle text-fg shadow-sm" : "text-fg-secondary hover:text-fg",
+				value === v ? "text-fg" : "text-fg-muted hover:text-fg",
 				disabled ? "cursor-not-allowed" : "cursor-pointer",
 			)}
 		>
@@ -56,13 +56,13 @@ export function Toggle({
 	return (
 		<div className={cn("grid w-full gap-1.5", disabled ? "opacity-50" : "")}>
 			{label ? (
-				<label htmlFor={id} className="text-sm font-medium leading-none text-fg-secondary">
+				<label htmlFor={id} className="ta-label">
 					{label}
 				</label>
 			) : null}
 			<div
 				role="radiogroup"
-				className="grid w-full grid-cols-2 gap-1 rounded-md border border-line bg-surface-overlay/40 p-1"
+				className="ta-seg grid w-full grid-cols-2"
 			>
 				{segment(leftValue)}
 				{segment(rightValue)}

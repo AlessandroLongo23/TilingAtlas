@@ -30,7 +30,7 @@ export function PageSidebar({ children, scrollable = true, collapsed = false }: 
 						// overflow-x-hidden explicitly: with only overflow-y set, overflow-x computes to auto, and any
 						// invisible overflow (e.g. a transformed slider part) would give the sidebar a phantom
 						// horizontal scroll. A sidebar never scrolls sideways.
-						scrollable ? "overflow-y-auto overflow-x-hidden scrollbar-hide" : "overflow-hidden",
+						scrollable ? "ta-scroll-fade overflow-y-auto overflow-x-hidden scrollbar-hide pb-6" : "overflow-hidden",
 					)}
 				>
 					{children}

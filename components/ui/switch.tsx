@@ -41,14 +41,13 @@ export function Switch({
 				if (!e.defaultPrevented) onCheckedChange?.(!checked);
 			}}
 			className={cn(
-				// Squared w/b design system: a rectangle, no radii. ON is a solid fg track carrying a
-				// surface-coloured square knob (pure inversion); OFF an outlined track with a muted knob.
-				"group relative border focus:outline-none focus-visible:ring-1 focus-visible:ring-fg focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
+				// A rounded track, accent when ON, sunken grey when OFF, carrying a round white knob.
+				"group relative rounded-full border focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
 				"transition-colors duration-[var(--duration-fast)] ease-[var(--ease-out)]",
 				TRACK[size],
-				checked ? "bg-fg border-fg" : "bg-transparent border-line-strong",
+				checked ? "bg-accent border-accent" : "bg-surface-sunken border-line",
 				disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer",
-				!disabled && !checked ? "hover:border-fg" : "",
+				!disabled && !checked ? "hover:border-line-strong" : "",
 				classes,
 			)}
 		>
@@ -72,11 +71,10 @@ export function Switch({
 				    backwards out of the track. */}
 				<span
 					className={cn(
-						"block h-[var(--sw-thumb)] w-[var(--sw-thumb)] shrink-0",
+						"block h-[var(--sw-thumb)] w-[var(--sw-thumb)] shrink-0 rounded-full bg-white shadow-[0_1px_2px_oklch(0_0_0/0.2)]",
 						"transition-[scale,background-color] duration-[var(--duration-fast)] ease-[var(--ease-out)] motion-reduce:transition-none",
-						checked ? "origin-right bg-surface" : "origin-left bg-fg-muted",
+						checked ? "origin-right" : "origin-left",
 						disabled ? "" : "group-active:scale-x-110 motion-reduce:group-active:scale-x-100",
-						!disabled && !checked ? "group-hover:bg-fg" : "",
 					)}
 				/>
 			</span>

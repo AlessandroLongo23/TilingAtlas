@@ -20,6 +20,7 @@ import {
 	type HomeBox,
 } from "@/lib/hooks/useAperiodicView";
 import { Slider } from "@/components/ui/slider";
+import { FullscreenToggle } from "@/components/fullscreen-toggle";
 import { AperiodicSidebar, Section, Segmented } from "./_controls";
 import { Details, strokePxAt, STROKE_CSS, STROKE_RGBA, STROKE_WIDTH, ViewFooter } from "./_view-chrome";
 
@@ -321,7 +322,7 @@ export function SubRosaView({ header }: { header: React.ReactNode }) {
 			<AperiodicSidebar header={header}>
 				<Section label="Symmetry">
 					<Segmented
-						cols={4}
+						cols={SUPPORTED_SYMMETRIES.length}
 						options={SUPPORTED_SYMMETRIES.map((s) => ({ v: String(s), label: `${2 * s}` }))}
 						value={String(N)}
 						onChange={(v) => {
@@ -336,12 +337,14 @@ export function SubRosaView({ header }: { header: React.ReactNode }) {
 					<Segmented
 						options={[
 							{ v: "single", label: "Single tile" },
-							{ v: "star", label: `Star`, sub: `${2 * N}-fold` },
+							{ v: "star", label: "Star", title: `${2 * N}-fold star of thin rhombs` },
 						]}
 						value={seed}
 						onChange={(v) => setSeed(v as Seed)}
 					/>
-					{seed === "single" && (
+				</Section>
+				{seed === "single" && (
+					<Section label="Rhomb">
 						<Segmented
 							cols={Math.min(angles.length, 3)}
 							options={angles.map((a) => ({
@@ -351,8 +354,8 @@ export function SubRosaView({ header }: { header: React.ReactNode }) {
 							value={String(effProtoX)}
 							onChange={(v) => setProtoX(Number(v))}
 						/>
-					)}
-				</Section>
+					</Section>
+				)}
 
 				<Section label="Iteration">
 					<Slider
@@ -363,11 +366,11 @@ export function SubRosaView({ header }: { header: React.ReactNode }) {
 						min={0}
 						max={maxDepth}
 						step={1}
+						format={(v) => `${v} · ${tiles.length.toLocaleString()} tiles`}
 					/>
-					<div className="flex justify-between text-[11px] text-fg-muted">
-						<span>{tiles.length.toLocaleString()} tiles</span>
-						{effDepth === maxDepth && maxDepth < DEPTH_CEILING && <span>budget limit</span>}
-					</div>
+					{effDepth === maxDepth && maxDepth < DEPTH_CEILING && (
+						<span className="text-[11px] text-fg-muted">Deepest level within the tile budget</span>
+					)}
 				</Section>
 
 				<ViewFooter view={view} strokeWidth={strokeWidth} onStrokeWidth={setStrokeWidth} />
@@ -382,11 +385,12 @@ export function SubRosaView({ header }: { header: React.ReactNode }) {
 							["Edge word Σ", rule.sigma.join(" ")],
 						]}
 					/>
-					<div className="flex flex-col gap-3">
-						{rule.prototiles.map((p) => (
-							<RuleDiagram key={p.x} rule={rule} x={p.x} />
-						))}
-					</div>
+				</Section>
+
+				<Section label="Substitution rule">
+					{rule.prototiles.map((p) => (
+						<RuleDiagram key={p.x} rule={rule} x={p.x} />
+					))}
 				</Section>
 			</AperiodicSidebar>
 
@@ -397,6 +401,7 @@ export function SubRosaView({ header }: { header: React.ReactNode }) {
 					className="w-full h-full block cursor-grab active:cursor-grabbing touch-none"
 					{...view.handlers}
 				/>
+				<FullscreenToggle />
 			</div>
 		</div>
 	);
@@ -417,9 +422,11 @@ function RuleDiagram({ rule, x }: { rule: SubRosaRule; x: number }) {
 	const tx = (v: Vector) => [pad + s * (v.x - minx), H - pad - s * (v.y - miny)] as const;
 	return (
 		<div>
-			<div className="text-[11px] text-fg-muted mb-1">
-				{Math.round((proto.x * 180) / rule.n)}°/{Math.round(((rule.n - proto.x) * 180) / rule.n)}° →{" "}
-				{proto.children.length} tiles
+			<div className="flex justify-between text-xs mb-1.5">
+				<span className="text-fg-muted">
+					{Math.round((proto.x * 180) / rule.n)}°/{Math.round(((rule.n - proto.x) * 180) / rule.n)}° rhomb
+				</span>
+				<span className="font-mono tabular-nums text-fg">{proto.children.length} tiles</span>
 			</div>
 			<svg width={W} height={H} className="w-full rounded-control border border-line-subtle bg-surface-overlay">
 				{proto.children.map((c, i) => {

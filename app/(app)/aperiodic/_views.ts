@@ -1,6 +1,5 @@
 // The /aperiodic shelf's index. Adding a construction — Wang tiles, another substitution out of the
-// encyclopedia — is an entry here plus a component; the client renders whatever this lists, and the
-// sidebar groups by `group` in the order the groups first appear.
+// encyclopedia — is an entry here plus a component; the client renders whatever this lists, in order.
 
 export type AperiodicViewId =
 	| "subrosa"
@@ -13,7 +12,7 @@ export type AperiodicViewId =
 	| "half-hex-3"
 	| "multigrid";
 
-/** How the tiling is built — the taxonomy the sidebar groups by. */
+/** How the tiling is built; shown in the title block and each switcher cell's tooltip. */
 export type ConstructionGroup = "Substitution" | "Projection";
 
 export interface AperiodicViewDef {
@@ -89,14 +88,3 @@ const IDS = new Set<string>(APERIODIC_VIEWS.map((v) => v.id));
 export const DEFAULT_VIEW: AperiodicViewId = "subrosa";
 
 export const isViewId = (s: string | null): s is AperiodicViewId => s !== null && IDS.has(s);
-
-/** The groups in the order they first appear above, each with its views. */
-export function groupedViews(): { group: ConstructionGroup; views: AperiodicViewDef[] }[] {
-	const out: { group: ConstructionGroup; views: AperiodicViewDef[] }[] = [];
-	for (const v of APERIODIC_VIEWS) {
-		let g = out.find((x) => x.group === v.group);
-		if (!g) out.push((g = { group: v.group, views: [] }));
-		g.views.push(v);
-	}
-	return out;
-}

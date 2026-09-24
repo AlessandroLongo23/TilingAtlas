@@ -1174,7 +1174,7 @@ export function Canvas({
 			</div>
 
 			{showSymmetryInfo ? (
-				<div className="absolute top-4 right-16 z-20 flex flex-col items-end gap-2 rounded-lg bg-surface-overlay/90 px-3 py-2 text-right">
+				<div className="absolute top-4 right-4 z-20 flex flex-col items-end gap-2 rounded-xl bg-surface-raised/95 px-3 py-2 text-right shadow-sm ring-1 ring-line-subtle">
 					<div className="flex flex-col items-end gap-1">
 						<span className="text-sm font-bold leading-none text-fg">
 							Group <span className="font-mono">{symmetryData.group}</span>

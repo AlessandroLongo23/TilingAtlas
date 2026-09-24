@@ -46,11 +46,11 @@ export function Modal({
 	return (
 		<Dialog.Root open={isOpen} onOpenChange={onOpenChange}>
 			<Dialog.Portal>
-				<Dialog.Overlay className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+				<Dialog.Overlay className="fixed inset-0 z-50 bg-black/35 backdrop-blur-[2px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
 				<Dialog.Content
 					className={cn(
 						"fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2",
-						"bg-surface-overlay border border-line rounded-overlay shadow-xl w-full",
+						"bg-surface-raised ring-1 ring-line-subtle rounded-overlay shadow-xl w-full",
 						widthClass,
 						"data-[state=open]:animate-in data-[state=closed]:animate-out",
 					)}
@@ -59,12 +59,12 @@ export function Modal({
 						<Dialog.Description className="sr-only">{description}</Dialog.Description>
 					) : null}
 					{showHeader ? (
-						<div className="flex items-center justify-between p-4 border-b border-line">
-							<Dialog.Title className="text-lg font-medium text-fg">{title}</Dialog.Title>
+						<div className="flex items-center justify-between px-5 py-4 border-b border-line-subtle">
+							<Dialog.Title className="text-base font-semibold tracking-tight text-fg">{title}</Dialog.Title>
 							<div className="flex items-center gap-2">
 								{header}
 								<Dialog.Close
-									className="p-1 rounded-md hover:bg-surface-overlay/70 transition-all text-fg-secondary hover:text-fg"
+									className="p-1 rounded-md hover:bg-surface-overlay transition-colors text-fg-muted hover:text-fg"
 									aria-label="Close modal"
 								>
 									<X size={18} />

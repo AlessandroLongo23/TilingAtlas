@@ -76,12 +76,12 @@ describe("OptionsTab — the controls each spherical surface offers", () => {
 		render(<OptionsTab selected={star} />);
 		// No Islamic path on that canvas, and its fifteen parameter controls came with the checkbox.
 		expect(offered("Islamic")).toBe(false);
-		expect(offered("Islamic Angle")).toBe(false);
+		expect(offered("Islamic angle")).toBe(false);
 		// The rigid Islamic bars and everything that shapes them are the tiling sphere's alone.
 		expect(offered("Rigid lines")).toBe(false);
 		expect(offered("Section")).toBe(false);
 		// Never read outside the flat and disk renderers.
-		expect(offered("Show Polygon Points")).toBe(false);
+		expect(offered("Polygon points")).toBe(false);
 		expect(offered("Symmetry elements")).toBe(false);
 		// A star polyhedron draws every edge it has, so the faint base-grid overlay would retrace them.
 		expect(offered("Grid")).toBe(false);

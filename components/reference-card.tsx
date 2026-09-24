@@ -55,9 +55,13 @@ interface ReferenceCardProps {
 // strictly stronger claim than "reproduced" (matches published counts) or "candidate" (unestablished).
 const CERT_STYLE: Record<Certification, { label: string; cls: string }> = {
 	proven: { label: "Proven", cls: "border-fg bg-fg text-fg-inverse" },
-	reproduced: { label: "Reproduced", cls: "border-line-strong bg-surface-raised text-fg-muted" },
-	candidate: { label: "Candidate", cls: "border-dashed border-line-strong bg-transparent text-fg-muted" },
+	reproduced: { label: "Reproduced", cls: "border-transparent bg-surface-sunken text-fg-secondary" },
+	candidate: { label: "Candidate", cls: "border-dashed border-line-strong bg-surface-raised/90 text-fg-secondary" },
 };
+
+// The card's metadata chip: a small mono tag laid over the thumbnail's top-left corner, so the text
+// area under the image carries only the id and one meta line.
+const CHIP = "inline-flex items-center rounded bg-surface-raised/90 px-1.5 py-[3px] font-mono text-[10px] font-medium uppercase leading-none tracking-wide text-fg-secondary shadow-sm";
 
 export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceCardProps) {
 	// The variant pager. rawIdx is clamped, not reset, when a filter shrinks the group under the same
@@ -206,6 +210,101 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 				) : (
 					<TilingThumbnail translationalCell={tiling.renderCell} pxPerEdge={22} />
 				)}
+				<div className="absolute top-1.5 left-1.5 flex max-w-[calc(100%-2.75rem)] flex-wrap items-center gap-1 empty:hidden">
+					{tiling.certification ? (
+						<span
+							className={cn(
+								"inline-flex items-center rounded border px-1.5 py-[2px] font-mono text-[10px] font-medium uppercase leading-none tracking-wide shadow-sm",
+								CERT_STYLE[tiling.certification].cls,
+							)}
+							title={`Completeness: ${tiling.certification}`}
+						>
+							{CERT_STYLE[tiling.certification].label}
+						</span>
+					) : null}
+					{/* No class chip: the class line below already names it (Convex irregular, Isotoxal, Mixed
+					    each used to appear twice on one card). Only what the class line does not say gets a chip. */}
+					{isConvex ? (
+						<span
+							className={CHIP}
+							title={
+								tiling.decomposableOnly
+									? "every composite tile dissects into regular polygons"
+									: "uses a non-decomposable composite tile"
+							}
+						>
+							{tiling.decomposableOnly ? "decomposable" : "not decomposable"}
+						</span>
+					) : null}
+					{isIsotoxal && tiling.offGrid ? (
+						<span
+							className={CHIP}
+							title="Uses an isotoxal tile not expressible on the ζ₁₂ grid — a tiling the 30°-grid enumeration could not reach"
+						>
+							off-grid
+						</span>
+					) : null}
+					{/* Freedraw kind chips: what the faces ARE. A strip or an unbounded sheet is the whole point
+					    of the class — these are not tiles in the Grünbaum & Shephard sense — so they get a
+					    badge instead of being buried in the sub-line. */}
+					{isFreedraw && freedrawStats ? (
+						<>
+							{freedrawStats.strips > 0 ? (
+								<span
+									className={CHIP}
+									title="Contains a tile that is an infinite strip"
+								>
+									strip
+								</span>
+							) : null}
+							{freedrawStats.unbounded > 0 ? (
+								<span
+									className={CHIP}
+									title="Contains a tile unbounded in both directions"
+								>
+									∞
+								</span>
+							) : null}
+							{freedrawStats.withHoles > 0 ? (
+								<span
+									className={CHIP}
+									title="Contains a polyomino with holes"
+								>
+									holes
+								</span>
+							) : null}
+						</>
+					) : null}
+					{tiling.preview ? (
+						<span className={cn(CHIP, "border border-dashed border-line-strong")} title="from a still-running solve — partial">
+							preview
+						</span>
+					) : null}
+					{dof >= 2 ? (
+						<span
+							className={cn(CHIP, "gap-0.5")}
+							title={`${dof}-parameter family — ${glyphs.join(", ")} vary independently (${dof} sliders in Play)`}
+						>
+							{glyphs.join(" ")}
+						</span>
+					) : dof === 1 ? (
+						<span
+							className={CHIP}
+							title={`one-parameter family — ${glyphs[0]} slider in Play`}
+						>
+							{glyphs[0]}
+						</span>
+					) : null}
+					{folds.map((n) => (
+						<span
+							key={n}
+							className={CHIP}
+							title={`${n}-pointed star polygon`}
+						>
+							{n}★
+						</span>
+					))}
+				</div>
 				{/* The screenshot path renders the polygon cell — freedraw's is a throwaway, so it is excluded
 				    along with the two non-Euclidean renderers. */}
 				{SCREENSHOT_BUTTONS_ENABLED && !tiling.developed && !tiling.spherical && !isFreedraw && !tiling.colors && !tiling.hypEdges && !tiling.hollow ? (
@@ -220,131 +319,7 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 					</button>
 				) : null}
 			</div>
-			<div className="flex flex-col px-2.5 py-2 gap-1.5 cursor-default">
-				<div className="flex flex-wrap items-center gap-1">
-					{tiling.certification ? (
-						<span
-							className={cn(
-								"inline-flex items-center border px-1.5 py-0.5 text-[10px] font-medium",
-								CERT_STYLE[tiling.certification].cls,
-							)}
-							title={`Completeness: ${tiling.certification}`}
-						>
-							{CERT_STYLE[tiling.certification].label}
-						</span>
-					) : null}
-					{isConvex ? (
-						<>
-							<span
-								className="inline-flex items-center border border-line bg-transparent px-1.5 py-0.5 text-[10px] font-medium text-fg-muted"
-								title={tiling.note ?? "Tiling built from convex-irregular unit-edge tiles (exact ℤ[ζ₂₄] distinct-count dedup)"}
-							>
-								Convex irregular
-							</span>
-							<span
-								className={cn(
-									"inline-flex items-center border px-1.5 py-0.5 text-[10px] font-medium",
-									tiling.decomposableOnly
-										? "border-line bg-transparent text-fg-secondary"
-										: "border-dashed border-line-strong bg-transparent text-fg-muted",
-								)}
-								title={
-									tiling.decomposableOnly
-										? "every composite tile dissects into regular polygons"
-										: "uses a non-decomposable composite tile"
-								}
-							>
-								{tiling.decomposableOnly ? "decomposable" : "non-decomp"}
-							</span>
-						</>
-					) : null}
-					{isIsotoxal ? (
-						<>
-							<span
-								className="inline-flex items-center border border-line bg-transparent px-1.5 py-0.5 text-[10px] font-medium text-fg-muted"
-								title={tiling.note ?? "Tiling using a convex isotoxal tile (two alternating angles, ζ₂₄ grid)"}
-							>
-								Isotoxal
-							</span>
-							{tiling.offGrid ? (
-								<span
-									className="inline-flex items-center border border-line bg-transparent px-1.5 py-0.5 text-[10px] font-medium text-fg-muted"
-									title="Uses an isotoxal tile not expressible on the ζ₁₂ grid — a tiling the 30°-grid enumeration could not reach"
-								>
-									off-grid
-								</span>
-							) : null}
-						</>
-					) : null}
-					{isMixed ? (
-						<span
-							className="inline-flex items-center border border-line bg-transparent px-1.5 py-0.5 text-[10px] font-medium text-fg-muted"
-							title={tiling.note ?? "Convex isotoxal tile AND a concave star tile in one tiling (area-certified)"}
-						>
-							Mixed
-						</span>
-					) : null}
-					{/* Freedraw kind chips: what the faces ARE. A strip or an unbounded sheet is the whole point
-					    of the class — these are not tiles in the Grünbaum & Shephard sense — so they get a
-					    badge instead of being buried in the sub-line. */}
-					{isFreedraw && freedrawStats ? (
-						<>
-							{freedrawStats.strips > 0 ? (
-								<span
-									className="inline-flex items-center border border-line bg-transparent px-1.5 py-0.5 text-[10px] font-medium text-fg-muted"
-									title="Contains a tile that is an infinite strip"
-								>
-									strip
-								</span>
-							) : null}
-							{freedrawStats.unbounded > 0 ? (
-								<span
-									className="inline-flex items-center border border-line bg-transparent px-1.5 py-0.5 text-[10px] font-medium text-fg-muted"
-									title="Contains a tile unbounded in both directions"
-								>
-									∞
-								</span>
-							) : null}
-							{freedrawStats.withHoles > 0 ? (
-								<span
-									className="inline-flex items-center border border-line bg-transparent px-1.5 py-0.5 text-[10px] font-medium text-fg-muted"
-									title="Contains a polyomino with holes"
-								>
-									holes
-								</span>
-							) : null}
-						</>
-					) : null}
-					{tiling.preview ? (
-						<span className="inline-flex items-center border border-dashed border-line-strong bg-transparent px-1.5 py-0.5 text-[10px] font-medium text-fg-muted" title="from a still-running solve — partial">
-							preview
-						</span>
-					) : null}
-					{dof >= 2 ? (
-						<span
-							className="inline-flex items-center gap-0.5 border border-line bg-transparent px-1.5 py-0.5 text-[10px] font-medium text-fg-muted"
-							title={`${dof}-parameter family — ${glyphs.join(", ")} vary independently (${dof} sliders in Play)`}
-						>
-							{glyphs.join(" ")}
-						</span>
-					) : dof === 1 ? (
-						<span
-							className="inline-flex items-center border border-line bg-transparent px-1.5 py-0.5 text-[10px] font-medium text-fg-muted"
-							title={`one-parameter family — ${glyphs[0]} slider in Play`}
-						>
-							{glyphs[0]}
-						</span>
-					) : null}
-					{folds.map((n) => (
-						<span
-							key={n}
-							className="inline-flex items-center border border-line bg-transparent px-1.5 py-0.5 text-[10px] font-medium text-fg-muted"
-							title={`${n}-pointed star polygon`}
-						>
-							{n}★
-						</span>
-					))}
-				</div>
+			<div className="flex flex-col gap-1 px-3 py-2.5 cursor-default">
 				{isHyperbolic ? (
 					// User-facing face: the vertex configuration is the headline, geometry the muted sub-line.
 					// Everything technical (valence, edge length ℓ, engine provenance, Poincaré-disk model, the
@@ -363,58 +338,19 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 							{pager}
 						</div>
 					</>
-				) : isFreedraw ? (
-					// Freedraw: the face composition is the headline (there is no vertex configuration to name it
-					// by), and k is spelled out as grid-point orbits — the same axis as everywhere else, a
-					// different quantity. See ReferenceTiling.freedraw.
+				) : isFreedraw || tiling.colors || tiling.schwarz || tiling.hypEdges || tiling.sphericalFreedraw || tiling.sphEdges || tiling.hypPoly || tiling.sphPoly || tiling.sphStar ? (
+					// Decorated shelves: no vertex configuration names these, so the family (face composition,
+					// board, colour census) is the headline and the k line says what k counts here. Planar
+					// freedraw counts grid-point orbits (freedrawKNoun), a colouring counts coloured vertex
+					// classes, and off the plane Marek's solvers count vertex orbits of the decorated tiling.
+					// The discoverer is on hover, like every other card.
 					<>
-						<p className="text-[10px] text-fg-muted truncate" title={`discovered by ${tiling.discoverer}`}>
-							{tiling.discoverer}
-						</p>
-						<p className="text-xs text-fg-secondary font-mono leading-tight" title={tiling.family}>
+						<p className="break-words text-xs font-medium font-mono leading-snug text-fg" title={`${tiling.family} · discovered by ${tiling.discoverer}`}>
 							{tiling.family}
 						</p>
-						<p
-							className="text-[10px] text-fg-muted leading-tight"
-							title="what k counts on this grid — see freedrawKNoun"
-						>
-							k={tiling.k} {freedrawKNoun(gridOf(tiling.freedraw!))}
-						</p>
-						<p className="text-[10px] text-fg-disabled font-mono truncate" title={tiling.id}>
-							{tiling.id}
-						</p>
-					</>
-				) : tiling.schwarz || tiling.hypEdges || tiling.sphericalFreedraw || tiling.sphEdges || tiling.hypPoly || tiling.sphPoly || tiling.sphStar ? (
-					// The CURVED edge shelves. Same object as planar freedraw, but off the plane there is no grid
-					// of points to count: Marek's spherical and hyperbolic solvers count VERTEX orbits of the
-					// decorated tiling, so the k line has to say that and not "grid points". The family line
-					// already names the board and what the tiles are.
-					<>
-						<p className="text-[10px] text-fg-muted truncate" title={`discovered by ${tiling.discoverer}`}>
-							{tiling.discoverer}
-						</p>
-						<p className="text-xs text-fg-secondary font-mono leading-tight" title={tiling.family}>
-							{tiling.family}
-						</p>
-						<p className="text-[10px] text-fg-muted leading-tight" title="vertex orbits of the decorated tiling">
-							k={tiling.k} vertex orbits
-						</p>
-						<p className="text-[10px] text-fg-disabled font-mono truncate" title={tiling.id}>
-							{tiling.id}
-						</p>
-					</>
-				) : tiling.colors ? (
-					// Colors: the color census is the headline (every vertex is 4.4.4.4 — the coloring is the
-					// identity), and k is spelled out as colored vertex classes. See ReferenceTiling.colors.
-					<>
-						<p className="text-[10px] text-fg-muted truncate" title={`discovered by ${tiling.discoverer}`}>
-							{tiling.discoverer}
-						</p>
-						<p className="text-xs text-fg-secondary font-mono leading-tight" title={tiling.family}>
-							{tiling.family}
-						</p>
-						<p className="text-[10px] text-fg-muted leading-tight" title="vertex classes under color-preserving symmetry">
-							k={tiling.k} colored vertices
+						<p className="truncate text-xs text-fg-muted leading-tight">
+							k={tiling.k}{" "}
+							{isFreedraw ? freedrawKNoun(gridOf(tiling.freedraw!)) : tiling.colors ? "colored vertices" : "vertex orbits"}
 						</p>
 						<p className="text-[10px] text-fg-disabled font-mono truncate" title={tiling.id}>
 							{tiling.id}
@@ -422,10 +358,12 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 					</>
 				) : (
 					<>
-						<p className="text-[10px] text-fg-muted truncate" title={`discovered by ${tiling.discoverer}`}>
-							{tiling.discoverer}
+						{/* The id is what tells two cards on one shelf apart, so it gets the full width; the
+						    discoverer is on hover. */}
+						<p className="truncate font-mono text-[13px] font-medium leading-snug text-fg" title={`${tiling.id} · discovered by ${tiling.discoverer}`}>
+							{tiling.id}
 						</p>
-						<p className="text-xs text-fg-secondary font-mono leading-tight" title={`{${tiling.family}}`}>
+						<p className="truncate text-xs text-fg-muted leading-tight" title={tiling.note ?? `{${tiling.family}}`}>
 							{/* The class long label names the shelf; where a class holds more than one PALETTE, the
 							    palette is what the card should say — "Multiple edge lengths" is true of both tile
 							    sets in that class and tells the reader nothing about the tiling in front of them. */}
@@ -446,9 +384,6 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 								{tiling.wallpaperGroup ? <span className="text-fg-muted">{tiling.wallpaperGroup}</span> : null}
 							</p>
 						) : null}
-						<p className="text-[10px] text-fg-disabled font-mono truncate" title={tiling.id}>
-							{tiling.id}
-						</p>
 					</>
 				)}
 			</div>

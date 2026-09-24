@@ -41,7 +41,7 @@ export function PentagonEdgesControls() {
 	const angles = solved.ok ? solved.board.angles : null;
 
 	return (
-		<div className="absolute bottom-3 left-3 z-20 flex flex-col gap-1 rounded-md bg-surface-overlay/95 p-3 text-xs backdrop-blur">
+		<div className="absolute bottom-3 left-3 z-20 flex flex-col gap-1 ta-float p-3 text-xs">
 			{SLIDERS.map((s) => (
 				<label key={s.key} className="flex items-center gap-2">
 					<span className="w-14 text-fg-secondary">{s.label}</span>

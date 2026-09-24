@@ -17,13 +17,13 @@ export function SectionHeading({
 	return (
 		<h3
 			className={cn(
-				"text-xs uppercase tracking-wider text-fg-secondary font-medium flex items-center gap-1.5",
+				"ta-label flex items-center gap-1.5",
 				className,
 			)}
 		>
 			<span>{children}</span>
 			{count != null ? (
-				<span className="text-accent bg-accent-subtle rounded-pill px-1.5 py-0.5 text-xs font-medium">
+				<span className="text-fg-secondary bg-surface-overlay px-1.5 py-0.5 tabular-nums">
 					{count}
 				</span>
 			) : null}

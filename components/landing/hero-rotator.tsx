@@ -397,8 +397,8 @@ export function HeroRotator({ specimens }: HeroRotatorProps) {
 				<canvas ref={canvasRef} className="w-full h-full block" />
 			</div>
 			{specimen ? (
-				<div className="absolute bottom-3 right-3 z-10 flex items-center gap-2.5 text-[11px] font-mono bg-surface/75 backdrop-blur-sm border border-line rounded-md px-2.5 py-1.5 text-fg-secondary">
-					<span className="max-w-[38vw] sm:max-w-none truncate">
+				<div className="absolute bottom-3 right-3 z-10 flex max-w-[calc(100%-1.5rem)] items-center gap-2.5 text-[11px] font-mono ta-float px-2.5 py-1.5 text-fg-secondary">
+					<span className="min-w-0 truncate">
 						{specimen.id} <span className="hidden sm:inline">· {specimen.label} </span>· k&nbsp;=&nbsp;{specimen.k}
 					</span>
 					<button
@@ -408,7 +408,7 @@ export function HeroRotator({ specimens }: HeroRotatorProps) {
 						}}
 						title="Show another tiling"
 						aria-label="Show another tiling"
-						className="inline-flex items-center gap-1 text-fg-muted hover:text-fg transition-colors"
+						className="shrink-0 inline-flex items-center gap-1 text-fg-muted hover:text-fg transition-colors"
 					>
 						<Shuffle size={12} aria-hidden="true" />
 						<span>shuffle</span>

@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
 import { DEFAULT_FILL_AMOUNT } from "@/lib/render/tilePalette";
 import { useSearchParams } from "next/navigation";
-import { Camera, Check, Link2, Maximize, Minimize } from "lucide-react";
+import { Camera, Check, ChevronLeft, ChevronRight, Link2, Maximize, Minimize, PenTool, Shuffle } from "lucide-react";
+import { FloatingToolbar, ToolbarButton, ToolbarDivider, ToolbarReveal } from "@/components/ui/floating-toolbar";
 import { Canvas } from "@/components/canvas";
 import { InversiveCanvas } from "@/components/inversive-canvas";
 import { HyperbolicDevelopedCanvas } from "@/components/hyperbolic-developed-canvas";
@@ -18,7 +19,7 @@ import { SquaringInset } from "@/components/squaring/squaring-inset";
 import { SquaringOverlay } from "@/components/squaring/squaring-overlay";
 import { useStudio } from "@/lib/stores/studio";
 import { PaletteStrip } from "@/components/studio/palette-strip";
-import { StudioBar } from "@/components/studio/studio-bar";
+import { StudioHistory, StudioPeriod, StudioTools, useStudioKeys } from "@/components/studio/studio-bar";
 import { StudioCanvas } from "@/components/studio/studio-canvas";
 import { blendedSquaring, exactSquaring, squaringAvailability, squaringCell } from "@/lib/squaring/playSquaring";
 import { truchetPattern as buildTruchetPattern } from "@/lib/render/truchetTiling";
@@ -29,7 +30,6 @@ import { SphSchwarzCanvas } from "@/components/freedraw/sph-schwarz-canvas";
 import { SphPolyCanvas } from "@/components/freedraw/sph-poly-canvas";
 import { SphStarCanvas } from "@/components/freedraw/sph-star-canvas";
 import { Sidebar } from "@/components/sidebar";
-import { Tooltip } from "@/components/ui/tooltip";
 import { useConfiguration, type ConfigurationState } from "@/stores/configuration";
 import { isChiralTiling, reflectRenderCell } from "@/lib/services/chirality";
 import { DEFAULT_BUBBLE_EDGE_STYLE } from "@/lib/bubble/edges";
@@ -1421,6 +1421,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// toggle takes, and for the same two reasons (no lattice off the plane, and a curved tile would be
 	// silently straightened).
 	const canEditTiling = surface === "flat" && !hasCurvedTiles(selected);
+	useStudioKeys(canEditTiling);
 	// Wallpaper mode needs SymmetryData, which `analyzeSymmetry` declines for a star tiling (no
 	// wallpaper group) and for curved tiles. With none there is no point group to carry an edit through,
 	// so the mode says why instead of quietly behaving like Lattice.
@@ -1610,9 +1611,6 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					loadingTiers={loadingTiers}
 					selected={selected}
 					onSelect={setSelected}
-					onRandom={selectRandom}
-					onPrev={onPrev}
-					onNext={onNext}
 					geometry={geometry}
 					geometryList={geometryList}
 					geometryCounts={geometryCounts}
@@ -1807,15 +1805,9 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				    reads the live camera and takes no pointer input, so it cannot move the picture.
 				    Not under the lens: this layer projects affinely, so straight grid lines and centred type
 				    would sit where the squares USED to be, next to a picture that has been bent away. */}
-				{/* The editor's chrome, as SIBLINGS of the canvas and not children of it: a floating panel
-				    inside the canvas element would sit inside the element that captures every pointer event,
-				    so every click on a tool would also be a click on a tile.
-				    The cell INSPECTOR is deliberately not mounted (AL, 2026-09-21): the readout was noise
-				    next to the picture. `StudioInspector` stays in the tree for when a refusal needs
-				    somewhere to be read.
-				    The bar is mounted UNCONDITIONALLY: it renders nothing while the editor is down, and it
-				    owns the E key that opens it, which a bar mounted only while open could never hear. */}
-				<StudioBar wallpaperDisabledReason={wallpaperDisabledReason} canEdit={canEditTiling} />
+				{/* The editor's controls live in the canvas toolbar below, not in a bar of their own. The cell
+				    INSPECTOR is deliberately not mounted (AL, 2026-09-21): the readout was noise next to the
+				    picture. `StudioInspector` stays in the tree for when a refusal needs somewhere to be read. */}
 				{studioActive ? <PaletteStrip /> : null}
 				{!lensActive ? <SquaringOverlay selected={selected ?? null} /> : null}
 				{/* The family's own sliders: a squaring has no free angle to flex, and the panel is driving the
@@ -1826,51 +1818,63 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				    the sliders have to survive that swap. Their values live in the store for the same reason. */}
 				{selected?.pentEdges ? <PentagonEdgesControls /> : null}
 				{selected?.ihEdges ? <IsohedralEdgesControls ih={selected.ihEdges.ih} /> : null}
-				{/* Fullscreen toggle: collapses the header + sidebar. Stays visible while immersive so it can
-				    exit. Keeps the top-right corner; the symmetry-info badge insets itself to the left of this
-				    control column (canvas.tsx), so they never overlap however tall the badge grows. */}
-				<Tooltip
-					label={immersive ? "Exit fullscreen" : "Fullscreen canvas"}
-					shortcut={immersive ? "F or Esc" : "F"}
-					side="left"
-					delay={0}
-				>
-					<button
-						type="button"
-						onClick={() => useImmersive.getState().toggle()}
-						aria-label={immersive ? "Exit fullscreen" : "Enter fullscreen"}
-						aria-pressed={immersive}
-						className={cn(
-							"absolute top-4 right-4 z-30 flex items-center justify-center rounded-lg p-2 text-fg-muted bg-surface-overlay/80 backdrop-blur-sm border border-line hover:text-fg hover:border-line-strong transition-colors",
-						)}
-					>
-						{immersive ? <Minimize size={16} /> : <Maximize size={16} />}
-					</button>
-				</Tooltip>
-				{/* Share: copies a link carrying every view option plus the selected tiling — the URL the
-				    mirror effect keeps live. Second slot in the same top-right control column; the
-				    symmetry-info badge insets itself left of that column (canvas.tsx `right-16`), so they
-				    never overlap however tall the badge grows. */}
-				<Tooltip label={shared ? "Link copied" : "Copy link to this view"} side="left" delay={0}>
-					<button
-						type="button"
-						onClick={copyLink}
-						aria-label="Copy link to this view"
-						className={cn(
-							"absolute top-16 right-4 z-30 flex items-center justify-center rounded-lg p-2 text-fg-muted bg-surface-overlay/80 backdrop-blur-sm border border-line hover:text-fg hover:border-line-strong transition-colors",
-						)}
-					>
+				{/* The canvas toolbar. Browsing: stepping through the catalogue, then Edit and the view-level
+				    actions. Editing (AL, 2026-09-24): the editor's history takes the stepping slot (stepping
+				    away mid-edit is blocked anyway, R and the arrows are ignored there), its tools and period
+				    mode join the bar, and link, export and fullscreen stay. Up while immersive too, since it
+				    carries the way out. */}
+				<FloatingToolbar>
+					{/* The groups that swap with the mode slide open and shut (ToolbarReveal), so the bar
+					    grows into the editor and back out of it instead of jumping. */}
+					<ToolbarReveal show={studioActive}>
+						<StudioHistory />
+					</ToolbarReveal>
+					<ToolbarReveal show={!studioActive}>
+						<ToolbarButton label="Previous tiling" shortcut="←" onClick={onPrev} disabled={geometryList.length < 2}>
+							<ChevronLeft size={16} />
+						</ToolbarButton>
+						<ToolbarButton label="Random tiling" shortcut="R" primary onClick={selectRandom} disabled={geometryList.length < 2}>
+							<Shuffle size={14} />
+							Random
+						</ToolbarButton>
+						<ToolbarButton label="Next tiling" shortcut="→" onClick={onNext} disabled={geometryList.length < 2}>
+							<ChevronRight size={16} />
+						</ToolbarButton>
+					</ToolbarReveal>
+					<ToolbarDivider />
+					<ToolbarReveal show={studioActive}>
+						<StudioTools />
+						<ToolbarDivider />
+						<StudioPeriod wallpaperDisabledReason={wallpaperDisabledReason} />
+						<ToolbarDivider />
+					</ToolbarReveal>
+					{/* Offered on a flat tiling with straight edges only: the editor folds every edit onto a
+					    translation lattice, which the curved geometries lack, and it would straighten a curved
+					    tile's edges. */}
+					{canEditTiling ? (
+						<ToolbarButton
+							label={studioActive ? "Leave the editor" : "Edit this tiling"}
+							shortcut={studioActive ? "Esc" : "E"}
+							aria-pressed={studioActive}
+							onClick={() => useConfiguration.getState().set({ studioActive: !studioActive })}
+							className="w-auto gap-1.5 px-2.5"
+						>
+							<PenTool size={15} />
+							{studioActive ? "Done" : "Edit"}
+						</ToolbarButton>
+					) : null}
+					{canEditTiling ? <ToolbarDivider /> : null}
+					{/* Copies a link carrying every view option plus the selected tiling (the URL the mirror
+					    effect keeps live). */}
+					<ToolbarButton label={shared ? "Link copied" : "Copy link to this view"} onClick={copyLink}>
 						{shared ? <Check size={16} className="text-success" /> : <Link2 size={16} />}
-					</button>
-				</Tooltip>
-				{/* Export image: opens the dialog, which drives the capture (one frame at the chosen size, read
-				    back inside the render loop — lib/render/capture.ts). Third slot in the same top-right
-				    control column, below Share. Absent, not disabled, on the shelves whose canvas host has not
-				    been wired for readback yet — a hidden button beats one that returns a blank PNG. */}
-				{canCaptureImage(selected) ? (
-					<Tooltip label="Export image" side="left" delay={0}>
-						<button
-							type="button"
+					</ToolbarButton>
+					{/* Export image opens the dialog, which drives the capture (lib/render/capture.ts). Absent,
+					    not disabled, on the shelves whose canvas host has not been wired for readback yet: a
+					    hidden button beats one that returns a blank PNG. */}
+					{canCaptureImage(selected) ? (
+						<ToolbarButton
+							label="Export image"
 							onClick={() =>
 								useExportImage.getState().open({
 									rulestring: selected?.canonicalKey ?? useConfiguration.getState().selectedTiling.rulestring,
@@ -1884,15 +1888,19 @@ export function PlayClient({ tilings }: PlayClientProps) {
 									paramCell: paramCell ?? null,
 								})
 							}
-							aria-label="Export image"
-							className={cn(
-								"absolute top-28 right-4 z-30 flex items-center justify-center rounded-lg p-2 text-fg-muted bg-surface-overlay/80 backdrop-blur-sm border border-line hover:text-fg hover:border-line-strong transition-colors",
-							)}
 						>
 							<Camera size={16} />
-						</button>
-					</Tooltip>
-				) : null}
+						</ToolbarButton>
+					) : null}
+					<ToolbarButton
+						label={immersive ? "Exit fullscreen" : "Fullscreen canvas"}
+						shortcut={immersive ? "F or Esc" : "F"}
+						onClick={() => useImmersive.getState().toggle()}
+						aria-pressed={immersive}
+					>
+						{immersive ? <Minimize size={16} /> : <Maximize size={16} />}
+					</ToolbarButton>
+				</FloatingToolbar>
 			</div>
 		</div>
 	);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type KeyboardEvent } from "react";
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 interface PaginationProps {
@@ -9,6 +9,8 @@ interface PaginationProps {
 	pageSize?: number;
 	currentPage: number;
 	onPageChange: (page: number) => void;
+	/** Show the "1–25 of N" range at the left. Off where the page already states its count. */
+	showRange?: boolean;
 }
 
 export function Pagination({
@@ -16,6 +18,7 @@ export function Pagination({
 	pageSize = 24,
 	currentPage,
 	onPageChange,
+	showRange = true,
 }: PaginationProps) {
 	const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
 
@@ -79,67 +82,70 @@ export function Pagination({
 		// Without a positioned ancestor the label's containing block is the document, so it sits at its
 		// static offset deep inside a scroll pane and stretches <html> that far — a phantom scroll region
 		// of empty space below the content. Owning it here means no caller has to remember the `relative`.
-		<div className="relative flex items-center justify-between gap-4 select-none">
-			<span className="text-xs text-fg-muted tabular-nums whitespace-nowrap">
-				{startItem}–{endItem} of {totalItems}
-			</span>
-			{/* One joined wall strip: every element is a cell separated by hairlines, with the
-			    ta-wall-cell radius drawing the little intersection stars between them. */}
-			<div className="ta-wall inline-flex items-stretch gap-px p-px">
-				<PageBtn onClick={() => goto(1)} disabled={currentPage <= 1} aria-label="First page">
-					<ChevronsLeft size={14} />
-				</PageBtn>
-				<PageBtn onClick={() => goto(currentPage - 1)} disabled={currentPage <= 1} aria-label="Previous page">
-					<ChevronLeft size={14} />
-				</PageBtn>
-				<label htmlFor="pagination-page-input" className="sr-only">Page number</label>
-				<input
-					id="pagination-page-input"
-					type="number"
-					min={1}
-					max={totalPages}
-					className="ta-wall-cell w-10 h-7 px-1 bg-surface text-fg text-xs font-medium tabular-nums text-center hover:bg-surface-raised focus:outline-none focus:bg-surface-raised transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-					value={focused ? inputValue : currentPage}
-					onFocus={() => {
-						setFocused(true);
-						setInputValue(String(currentPage));
-					}}
-					onBlur={() => {
-						submitPage();
-						setFocused(false);
-					}}
-					onChange={(e) => setInputValue(e.currentTarget.value)}
-					onKeyDown={handleKeyDown}
-					aria-label="Current page"
-				/>
-				<span className="ta-wall-cell flex items-center h-7 px-2 bg-surface text-fg-muted text-xs whitespace-nowrap">
-					of {totalPages}
+		<div className="@container relative flex items-center justify-between gap-4 select-none">
+			{showRange ? (
+				<span className="hidden @lg:inline text-[13px] text-fg-muted tabular-nums whitespace-nowrap">
+					{startItem.toLocaleString("en-US")}–{endItem.toLocaleString("en-US")} of {totalItems.toLocaleString("en-US")}
 				</span>
-				{visiblePages.map((p, i) =>
-					p === null ? (
-						<span key={`ellipsis-${i}`} className="ta-wall-cell flex items-center justify-center w-5 h-7 bg-surface text-fg-disabled text-xs pointer-events-none">…</span>
-					) : (
-						<button
-							key={p}
-							onClick={() => goto(p)}
-							aria-current={currentPage === p ? "page" : undefined}
-							className={cn(
-								"ta-wall-cell flex items-center justify-center min-w-7 h-7 px-1 text-xs font-medium tabular-nums transition-colors cursor-pointer",
-								currentPage === p
-									? "bg-fg text-fg-inverse hover:bg-fg"
-									: "bg-surface text-fg-muted hover:bg-surface-raised hover:text-fg-secondary",
-							)}
-						>
-							{p}
-						</button>
-					),
-				)}
-				<PageBtn onClick={() => goto(currentPage + 1)} disabled={currentPage >= totalPages} aria-label="Next page">
-					<ChevronRight size={14} />
-				</PageBtn>
-				<PageBtn onClick={() => goto(totalPages)} disabled={currentPage >= totalPages} aria-label="Last page">
-					<ChevronsRight size={14} />
-				</PageBtn>
+			) : (
+				<span />
+			)}
+			<div className="flex items-center gap-3">
+				{/* Jump to any page: the strip below only ever shows seven. Sized off the pagination's own
+				    width (container query), so a narrow host keeps the strip and drops this first. */}
+				<span className="hidden @2xl:flex items-center gap-1.5 text-[13px] text-fg-muted whitespace-nowrap">
+					<label htmlFor="pagination-page-input" className="sr-only">Page number</label>
+					Page
+					<input
+						id="pagination-page-input"
+						type="number"
+						min={1}
+						max={totalPages}
+						className="h-8 w-12 rounded-control border border-line bg-surface-raised px-1 text-center text-[13px] font-medium text-fg tabular-nums shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+						value={focused ? inputValue : currentPage}
+						onFocus={() => {
+							setFocused(true);
+							setInputValue(String(currentPage));
+						}}
+						onBlur={() => {
+							submitPage();
+							setFocused(false);
+						}}
+						onChange={(e) => setInputValue(e.currentTarget.value)}
+						onKeyDown={handleKeyDown}
+						aria-label="Current page"
+					/>
+					of {totalPages.toLocaleString("en-US")}
+				</span>
+				{/* The page strip is the app's segmented control (.ta-seg): the current page is the raised pill. */}
+				<nav aria-label="Pagination" className="ta-seg flex items-center">
+					<PageBtn onClick={() => goto(currentPage - 1)} disabled={currentPage <= 1} aria-label="Previous page">
+						<ChevronLeft size={15} />
+					</PageBtn>
+					{visiblePages.map((p, i) =>
+						p === null ? (
+							<span key={`ellipsis-${i}`} className="flex h-7 w-5 items-center justify-center text-xs font-medium text-fg-muted tabular-nums pointer-events-none">…</span>
+						) : (
+							<button
+								key={p}
+								type="button"
+								onClick={() => goto(p)}
+								aria-current={currentPage === p ? "page" : undefined}
+								aria-pressed={currentPage === p}
+								className={cn(
+									"ta-tab flex h-7 min-w-7 items-center justify-center px-1.5 text-xs font-medium tabular-nums cursor-pointer transition-colors",
+									"focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
+									currentPage === p ? "text-fg" : "text-fg-muted hover:text-fg",
+								)}
+							>
+								{p.toLocaleString("en-US")}
+							</button>
+						),
+					)}
+					<PageBtn onClick={() => goto(currentPage + 1)} disabled={currentPage >= totalPages} aria-label="Next page">
+						<ChevronRight size={15} />
+					</PageBtn>
+				</nav>
 			</div>
 		</div>
 	);
@@ -148,8 +154,9 @@ export function Pagination({
 function PageBtn({ children, ...rest }: React.ComponentProps<"button">) {
 	return (
 		<button
+			type="button"
 			{...rest}
-			className="ta-wall-cell flex items-center justify-center w-7 h-7 bg-surface text-fg-muted hover:bg-surface-raised hover:text-fg-secondary cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+			className="ta-tab flex h-7 w-7 items-center justify-center text-fg-muted hover:text-fg cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
 		>
 			{children}
 		</button>

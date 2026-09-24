@@ -54,7 +54,7 @@ export function PieChart() {
 	};
 
 	return (
-		<div className="w-full h-64 bg-surface-overlay/60 backdrop-blur-sm rounded-lg overflow-hidden border border-line shadow-lg">
+		<div className="w-full h-64 ta-float overflow-hidden">
 			<div className="px-4 py-2 text-xs font-medium text-fg-secondary flex justify-between items-center border-b border-line">
 				<div className="flex items-center gap-2">
 					{currentPath.length > 0 ? (

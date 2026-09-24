@@ -7,18 +7,21 @@
   --palette-white: oklch(1 0 0);
   --palette-black: oklch(0 0 0);
 
-  /* Neutral — slight cool cast (H ≈ 250) */
-  --palette-neutral-50:  oklch(0.985 0.002 250);
-  --palette-neutral-100: oklch(0.965 0.003 250);
-  --palette-neutral-200: oklch(0.925 0.004 250);
-  --palette-neutral-300: oklch(0.865 0.005 250);
-  --palette-neutral-400: oklch(0.705 0.008 250);
-  --palette-neutral-500: oklch(0.555 0.010 250);
-  --palette-neutral-600: oklch(0.445 0.010 250);
-  --palette-neutral-700: oklch(0.345 0.008 250);
-  --palette-neutral-800: oklch(0.245 0.006 250);
-  --palette-neutral-900: oklch(0.175 0.005 250);
-  --palette-neutral-950: oklch(0.125 0.004 250);
+  /* Neutral — a warm, nearly achromatic grey (H ≈ 90). The "Instrument" system (2026-09-24):
+     #fafaf9 page, white panels, #f1f1ef tracks, #ececea hairlines, #111214 ink. */
+  --palette-neutral-50:  oklch(0.985 0.001 90);
+  --palette-neutral-100: oklch(0.962 0.002 90);
+  --palette-neutral-150: oklch(0.945 0.002 90);
+  --palette-neutral-200: oklch(0.928 0.003 90);
+  --palette-neutral-300: oklch(0.885 0.004 90);
+  --palette-neutral-400: oklch(0.72 0.006 270);
+  --palette-neutral-500: oklch(0.56 0.008 270);
+  --palette-neutral-600: oklch(0.44 0.008 270);
+  --palette-neutral-700: oklch(0.33 0.008 270);
+  --palette-neutral-800: oklch(0.235 0.006 270);
+  --palette-neutral-850: oklch(0.2 0.005 270);
+  --palette-neutral-900: oklch(0.17 0.005 270);
+  --palette-neutral-950: oklch(0.135 0.004 270);
 
   /* Green — brand accent (H ≈ 150) */
   --palette-green-50:  oklch(0.970 0.030 150);
@@ -91,8 +94,8 @@
   /* ─────────── Typography ─────────── */
   /* Font family primitives — bound to next/font vars set on <html>.
      Fallbacks used if next/font has not yet loaded. */
-  --font-family-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-family-mono: var(--font-jetbrains-mono), ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-family-sans: var(--font-geist), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-family-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
   --font-size-xs:   0.75rem;   /* 12 */
   --font-size-sm:   0.875rem;  /* 14 */
@@ -117,15 +120,13 @@
   --font-weight-bold:     700;
 
   /* ─────────── Radius ───────────
-     Squared design system (2026-07-22): every radius is 0. The scale's names survive so call
-     sites and semantic aliases keep compiling; only the values changed. --radius-full stays for
-     the few functional circles (spinners, the hue wheel) that opt in deliberately. */
+     Rounded again (2026-09-24, the "Instrument" system), after the squared one of 2026-07-22. */
   --radius-none: 0;
-  --radius-xs:   0;
-  --radius-sm:   0;
-  --radius-md:   0;
-  --radius-lg:   0;
-  --radius-xl:   0;
+  --radius-xs:   3px;
+  --radius-sm:   4px;
+  --radius-md:   6px;
+  --radius-lg:   8px;
+  --radius-xl:   12px;
   --radius-full: 9999px;
 
   /* ─────────── Motion ─────────── */

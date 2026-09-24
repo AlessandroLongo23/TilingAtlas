@@ -40,7 +40,7 @@ export function SquaringInset({ selected }: { selected: CatalogueTiling | null }
 	const claimable = !current.approx;
 
 	return (
-		<div className="pointer-events-auto absolute left-4 top-16 z-20 w-52 overflow-hidden rounded-lg border border-line bg-surface-overlay/90 shadow-lg backdrop-blur-sm">
+		<div className="pointer-events-auto absolute left-4 top-16 z-20 w-52 overflow-hidden ta-float">
 			<div className="flex items-center justify-between gap-2 border-b border-line px-2.5 py-1.5">
 				<div className="min-w-0">
 					<p className="truncate text-[10px] leading-none text-fg">Squared from</p>

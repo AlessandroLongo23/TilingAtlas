@@ -32,9 +32,9 @@ export function CheckboxBox({ id, checked, onCheckedChange, disabled = false, si
 				onChange={(e) => onCheckedChange(e.target.checked)}
 				disabled={disabled}
 				className={cn(
-					"peer appearance-none border border-line-strong bg-transparent cursor-pointer",
-					"checked:bg-fg checked:border-fg",
-					"focus:outline-none focus-visible:ring-1 focus-visible:ring-fg focus-visible:ring-offset-1 focus-visible:ring-offset-surface",
+					"peer appearance-none rounded-[4px] border border-line-strong bg-surface-raised shadow-sm cursor-pointer",
+					"checked:bg-accent checked:border-accent",
+					"focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
 					"disabled:cursor-not-allowed disabled:opacity-50 transition-colors",
 					BOX_SIZE[size].box,
 				)}
@@ -42,7 +42,7 @@ export function CheckboxBox({ id, checked, onCheckedChange, disabled = false, si
 			<Check
 				strokeWidth={3}
 				className={cn(
-					"absolute inset-0 m-auto text-fg-inverse opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none",
+					"absolute inset-0 m-auto text-accent-contrast opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none",
 					BOX_SIZE[size].check,
 				)}
 			/>
@@ -93,14 +93,15 @@ export function Checkbox({ id, label, checked, onCheckedChange, disabled = false
 				<CheckboxBox id={id} checked={checked} onCheckedChange={onCheckedChange} disabled={disabled} />
 				{label ? (
 					<span className="flex items-center gap-1.5 min-w-0">
-						<label className={cn("text-sm font-medium text-fg-secondary truncate", disabled ? "cursor-not-allowed" : "cursor-pointer")}>
+						<label className={cn("text-[13px] text-fg truncate", disabled ? "cursor-not-allowed" : "cursor-pointer")}>
 							{label}
 						</label>
 						{hint}
 					</span>
 				) : null}
 			</div>
-			{shortcut ? <Kbd>{shortcut}</Kbd> : null}
+			{/* A row without a key still reserves the column, so the keycaps down a list stay aligned. */}
+			{shortcut ? <Kbd>{shortcut}</Kbd> : <span aria-hidden className="w-[18px] shrink-0" />}
 		</div>
 	);
 }

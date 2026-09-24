@@ -39,7 +39,7 @@ const DERIVATION_NOTE: Record<"searched" | "constructed" | "tabulated", string> 
 };
 
 function SectionTitle({ children }: { children: ReactNode }) {
-	return <h4 className="text-xs font-medium text-fg-muted uppercase tracking-wider">{children}</h4>;
+	return <h4 className="ta-label">{children}</h4>;
 }
 
 /**
@@ -141,21 +141,20 @@ export function TilingInfo({ spec, vcs = [] }: TilingInfoProps) {
 			onMouseEnter={() => setIsHovered(true)}
 			onMouseLeave={() => setIsHovered(false)}
 		>
-			{/* Sits over the tiling canvas — the secondary variant needs an opaque fill, not its transparent
-			    one; primary brings its own. */}
+			{/* Pinned is a state, not an action, so it reads as a pressed button, not an accent one. */}
 			<Button
-				variant={isPinned ? "primary" : "secondary"}
+				variant="secondary"
 				size="icon"
 				icon={Info}
 				aria-label={isPinned ? "Unpin tiling information" : "Pin tiling information"}
 				aria-pressed={isPinned}
 				aria-expanded={open}
 				onClick={() => setIsPinned((p) => !p)}
-				classes={isPinned ? "shadow-sm" : "bg-surface-raised hover:bg-surface-raised shadow-sm"}
+				classes={isPinned ? "bg-surface-sunken text-fg" : ""}
 			/>
 
 			{open && spec ? (
-				<div className="absolute left-0 top-10 z-50 min-w-56 max-w-[340px] rounded-lg border border-line bg-surface-overlay/95 p-3 shadow-xl backdrop-blur-sm">
+				<div className="absolute left-0 top-10 z-50 min-w-56 max-w-[340px] ta-float p-3">
 					<div className="flex flex-col gap-3">
 						{/* Header: Schläfli / vertex-config label + geometry (+ solid name for spherical) */}
 						<div className="flex flex-col gap-0.5">

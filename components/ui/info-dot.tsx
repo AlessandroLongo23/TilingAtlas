@@ -32,9 +32,9 @@ export function InfoDot({
 					type="button"
 					aria-label={label}
 					className={cn(
-						"inline-flex shrink-0 cursor-help text-fg-muted opacity-50 transition-[color,opacity]",
+						"inline-flex shrink-0 cursor-help text-fg-muted transition-colors",
 						"hover:opacity-100 hover:text-fg focus-visible:opacity-100 focus-visible:text-fg",
-						"focus:outline-none focus-visible:ring-1 focus-visible:ring-fg",
+						"rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
 					)}
 				>
 					<InfoIcon className="h-3.5 w-3.5" strokeWidth={1.75} />

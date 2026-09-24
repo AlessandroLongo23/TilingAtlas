@@ -38,7 +38,7 @@ export function AngleFilterBlock({
 	return (
 		<div className="flex flex-col gap-3">
 			<div className="flex items-center justify-between">
-				<span className="text-xs uppercase text-fg-muted font-medium tracking-wider">Angle Modulo</span>
+				<span className="ta-label">Angle Modulo</span>
 			</div>
 			<Checkbox id="angleEnabled" label="Enable angle filter" checked={enabled} onCheckedChange={onEnabledChange} />
 			<div className="relative">
@@ -50,7 +50,7 @@ export function AngleFilterBlock({
 					disabled={!enabled}
 					min={1}
 					max={180}
-					className="w-full h-9 rounded-md border border-line bg-surface-overlay/90 px-3 py-2 text-sm text-fg placeholder:text-fg-disabled focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-line-focus/40 focus-visible:border-line-focus transition-all disabled:opacity-40 disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+					className="w-full h-9 rounded-md border border-line bg-surface-raised shadow-sm px-3 py-2 text-sm text-fg placeholder:text-fg-disabled focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:border-accent transition-all disabled:opacity-40 disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
 				/>
 				<span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-fg-muted pointer-events-none">deg</span>
 			</div>

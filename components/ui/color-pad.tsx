@@ -85,7 +85,7 @@ export function ColorPad({ value, onChange }: ColorPadProps) {
 	};
 
 	return (
-		<div className="bg-surface-raised/80 rounded-lg shadow-lg overflow-hidden min-w-[120px] select-none touch-none">
+		<div className="bg-surface-raised/95 rounded-xl shadow-lg ring-1 ring-line-subtle overflow-hidden min-w-[120px] select-none touch-none">
 			<div className="flex items-center justify-between px-3 py-2 bg-surface-overlay/90 border-b border-line-subtle">
 				<span className="text-fg text-sm font-medium">Color Palette</span>
 			</div>

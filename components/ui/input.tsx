@@ -118,7 +118,7 @@ export function Input({
 				<label
 					htmlFor={id}
 					className={cn(
-						align === "center" ? "text-lg font-bold" : "text-sm font-medium",
+						align === "center" ? "text-lg font-bold" : "text-[13px] font-medium",
 						"leading-none text-fg-secondary",
 					)}
 				>
@@ -137,7 +137,7 @@ export function Input({
 					step={step}
 					disabled={disabled}
 					className={cn(
-						"flex w-full rounded-control border border-line-strong bg-surface-overlay/90 py-2 text-fg ring-offset-surface-raised file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-fg-muted focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-line-focus/40 focus-visible:border-line-focus focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
+						"flex w-full rounded-control border border-line bg-surface-raised py-2 text-fg shadow-sm file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-fg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:border-accent disabled:cursor-not-allowed disabled:opacity-50 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
 						SIZE_CLASSES[size],
 						align === "center" && "text-center",
 					)}

@@ -63,7 +63,7 @@ export function FullscreenToggle({ className }: { className?: string }) {
 				aria-label={immersive ? "Exit fullscreen" : "Enter fullscreen"}
 				aria-pressed={immersive}
 				className={cn(
-					"absolute top-4 right-4 z-30 flex items-center justify-center rounded-lg p-2 text-fg-muted bg-surface-overlay/80 backdrop-blur-sm border border-line hover:text-fg hover:border-line-strong transition-colors",
+					"absolute top-4 right-4 z-30 flex items-center justify-center ta-float p-2 text-fg-secondary hover:text-fg transition-colors",
 					className,
 				)}
 			>

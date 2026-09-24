@@ -4,8 +4,6 @@ import { useEffect } from "react";
 import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { BookOpen, Grid3x3, Library, Palette, Pentagon, PenLine, Play, Shapes, Waves } from "lucide-react"; // History icon commented out with its nav link below
-import { HatMonotile } from "@/components/icons/hat-monotile";
 import { DiscordIcon } from "@/components/icons/discord";
 import { cn } from "@/lib/utils/cn";
 import { useImmersive } from "@/stores/immersive";
@@ -17,17 +15,17 @@ import { DISCORD_INVITE } from "@/lib/constants";
 import { ThemeToggle } from "./ThemeToggle";
 
 const LINKS = [
-	{ href: "/theory", label: "Theory", icon: BookOpen }, // Prototiles + vertex configs live under here now (Elements)
-	{ href: "/library", label: "Library", icon: Library },
-	{ href: "/play", label: "Play", icon: Play },
-	{ href: "/parquet", label: "Parquet", icon: Waves },
-	{ href: "/freedraw", label: "Freedraw", icon: PenLine },
-	{ href: "/colors", label: "Colors", icon: Palette },
-	{ href: "/aperiodic", label: "Aperiodic", icon: HatMonotile }, // Sub Rosa, Penrose, hat, Multigrid — switched in its sidebar
-	{ href: "/isohedral", label: "Isohedral", icon: Shapes }, // Grünbaum & Shephard IH1–IH93, parameterized via Tactile
-	{ href: "/pentagons", label: "Pentagons", icon: Pentagon }, // Kershner's 15 convex-pentagon families, closed by Rao 2017
-	{ href: "/automata", label: "Automata", icon: Grid3x3 }, // Life-like CA over the catalogue; the tenth link, so its key is 0
-	// { href: "/history", label: "History", icon: History }, // hidden from header (route still exists)
+	{ href: "/theory", label: "Theory" }, // Prototiles + vertex configs live under here now (Elements)
+	{ href: "/library", label: "Library" },
+	{ href: "/play", label: "Play" },
+	{ href: "/parquet", label: "Parquet" },
+	{ href: "/freedraw", label: "Freedraw" },
+	{ href: "/colors", label: "Colors" },
+	{ href: "/aperiodic", label: "Aperiodic" }, // Sub Rosa, Penrose, hat, Multigrid — switched in its sidebar
+	{ href: "/isohedral", label: "Isohedral" }, // Grünbaum & Shephard IH1–IH93, parameterized via Tactile
+	{ href: "/pentagons", label: "Pentagons" }, // Kershner's 15 convex-pentagon families, closed by Rao 2017
+	{ href: "/automata", label: "Automata" }, // Life-like CA over the catalogue; the tenth link, so its key is 0
+	// { href: "/history", label: "History" }, // hidden from header (route still exists)
 ];
 
 /** The keycap for the i-th link: 1–9, then 0 for a tenth. Beyond ten there is no key. */
@@ -66,10 +64,14 @@ export function Nav() {
 				immersive ? "h-0 opacity-0 pointer-events-none border-b-0" : "h-12 border-b border-line-subtle",
 			)}
 		>
-			<Link href="/" className="flex shrink-0 items-baseline gap-1.5 mr-4">
-				<span className="text-accent font-bold text-lg leading-none whitespace-nowrap">The Tiling Atlas</span>
+			<Link href="/" className="flex shrink-0 items-center gap-2 mr-4">
+				{/* The mark: one hexagon in the tile palette's own hexagon colour (tileFill(polygonHue(6))). */}
+				<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" className="shrink-0">
+					<polygon points="9,1.2 15.8,5.1 15.8,12.9 9,16.8 2.2,12.9 2.2,5.1" fill="#b2daa1" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+				</svg>
+				<span className="text-fg font-semibold tracking-[-0.01em] text-[15px] leading-none whitespace-nowrap">The Tiling Atlas</span>
 				{/* The release the build is cut at; the same number the footer and the updates modal show. */}
-				<span className="text-fg-muted text-[10px] leading-none tabular-nums">v{CURRENT_VERSION}</span>
+				<span className="font-mono text-fg-muted text-[10.5px] leading-none tabular-nums">v{CURRENT_VERSION}</span>
 			</Link>
 
 			<div className="h-5 border-l border-line-subtle mr-3" />
@@ -80,7 +82,6 @@ export function Nav() {
 			<div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto scrollbar-hide">
 				{LINKS.map((link, i) => {
 					const isActive = pathname === link.href || pathname.startsWith(link.href + "/");
-					const Icon = link.icon;
 					return (
 						<Link
 							key={link.href}
@@ -88,27 +89,25 @@ export function Nav() {
 							title={`${link.label} (${navKey(i)})`}
 							className={cn(
 								"group flex shrink-0 items-center gap-1.5 px-2.5 py-1.5 rounded-control transition-colors",
-								isActive
-									? "text-accent bg-accent-subtle"
-									: "text-fg-muted hover:text-fg hover:bg-surface-overlay",
+								// Text only, and the active link in ink, not accent: the accent marks actions.
+								isActive ? "text-fg bg-surface-overlay" : "text-fg-muted hover:text-fg hover:bg-surface-overlay",
 							)}
 						>
-							<Icon size={16} strokeWidth={isActive ? 2 : 1.5} />
-							<span className="text-xs font-medium whitespace-nowrap">{link.label}</span>
+							<span className="text-[13px] font-medium whitespace-nowrap">{link.label}</span>
 							<Kbd className="hidden 2xl:inline-flex">{navKey(i)}</Kbd>
 						</Link>
 					);
 				})}
 			</div>
 
-			<div className="flex items-center gap-2">
+			<div className="flex items-center gap-0.5">
 				<Tooltip label="Join the Discord" side="left" delay={0}>
 					<a
 						href={DISCORD_INVITE}
 						target="_blank"
 						rel="noreferrer"
 						aria-label="Join the Tiling Atlas Discord"
-						className="flex items-center justify-center w-8 h-8 rounded-control border border-line text-fg-muted hover:text-fg hover:bg-surface-overlay transition-colors focus:outline-none"
+						className="flex items-center justify-center w-8 h-8 rounded-control text-fg-muted hover:text-fg hover:bg-surface-overlay transition-colors focus:outline-none"
 					>
 						<DiscordIcon size={15} />
 					</a>

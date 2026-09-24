@@ -57,6 +57,8 @@ import {
 import { SubRosaGL } from "@/lib/render/subrosaGL";
 import { drawPolygons, polygonFillHue, type RawPolygon } from "@/lib/utils/renderTiling";
 import { Slider } from "@/components/ui/slider";
+import { Button } from "@/components/ui/button";
+import { FullscreenToggle } from "@/components/fullscreen-toggle";
 import { AperiodicSidebar, Section, Segmented } from "./_controls";
 import { Details, strokePxAt, STROKE_CSS, STROKE_RGBA, STROKE_WIDTH, ViewFooter } from "./_view-chrome";
 
@@ -318,7 +320,7 @@ function RulePanel({ caption, pieces }: { caption: string; pieces: RawPolygon[] 
 	const ox = (W - s * bw) / 2, oy = (H - s * bh) / 2;
 	return (
 		<div>
-			<div className="text-[11px] text-fg-muted mb-1">{caption}</div>
+			<div className="text-xs text-fg-muted mb-1.5">{caption}</div>
 			<svg width={W} height={H} className="w-full rounded-control border border-line-subtle bg-surface-overlay">
 				{pieces.map((p, i) => (
 					<polygon
@@ -491,11 +493,11 @@ export function PatchView({ id, header }: { id: keyof typeof PATCHES; header: Re
 						min={def.level.min}
 						max={def.level.max}
 						step={1}
+						format={(v) => `${v} · ${polys.length.toLocaleString()} tiles`}
 					/>
-					<div className="flex justify-between text-[11px] text-fg-muted">
-						<span>{polys.length.toLocaleString()} tiles</span>
-						{effLevel === def.level.max && <span>budget limit</span>}
-					</div>
+					{effLevel === def.level.max && (
+						<span className="text-[11px] text-fg-muted">Deepest level within the tile budget</span>
+					)}
 					<Segmented
 						options={[
 							{ v: "fit", label: "Fit patch", sub: "reframe on level" },
@@ -510,13 +512,9 @@ export function PatchView({ id, header }: { id: keyof typeof PATCHES; header: Re
 					<Section label="Dissection">
 						<Segmented options={def.modes} value={pick} onChange={setPick} cols={3} />
 						{pick === "mix" && (
-							<button
-								type="button"
-								onClick={() => setSeed((n) => n + 1)}
-								className="ta-tab ta-wall-cell w-full cursor-pointer px-2 py-2 text-xs text-fg-muted transition-colors hover:text-fg focus:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-fg"
-							>
+							<Button variant="secondary" size="sm" onClick={() => setSeed((n) => n + 1)}>
 								New sample · seed {seed}
-							</button>
+							</Button>
 						)}
 					</Section>
 				)}
@@ -525,14 +523,15 @@ export function PatchView({ id, header }: { id: keyof typeof PATCHES; header: Re
 
 				<Section label="Details">
 					<Details rows={def.facts(effLevel, polys.length)} />
-					{ruleFigure && (
-						<div className="flex flex-col gap-3">
-							{ruleFigure.map((panel) => (
-								<RulePanel key={panel.caption} caption={panel.caption} pieces={panel.pieces} />
-							))}
-						</div>
-					)}
 				</Section>
+
+				{ruleFigure && (
+					<Section label="Substitution rule">
+						{ruleFigure.map((panel) => (
+							<RulePanel key={panel.caption} caption={panel.caption} pieces={panel.pieces} />
+						))}
+					</Section>
+				)}
 			</AperiodicSidebar>
 
 			<div className="flex-1 min-h-0 relative">
@@ -541,6 +540,7 @@ export function PatchView({ id, header }: { id: keyof typeof PATCHES; header: Re
 					className="w-full h-full block cursor-grab active:cursor-grabbing touch-none"
 					{...view.handlers}
 				/>
+				<FullscreenToggle />
 			</div>
 		</div>
 	);

@@ -1,20 +1,22 @@
 "use client";
 
-import { Play } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { IcoFreedrawCanvas } from "@/components/freedraw/ico-freedraw-canvas";
 import {
+	CATALOGUE_GRID,
+	CatalogueCard,
+	DetailPane,
 	type FreedrawGeometry,
 	GeometryGroup,
 	ToggleCell,
+	ToggleRow,
 	WallBar,
 	WallColumn,
 	WallGroup,
 	WallSubLabel,
 } from "@/components/freedraw/filter-wall";
 import { SphereFreedrawThumbnail } from "@/components/freedraw/sphere-freedraw-thumbnail";
-import { Button } from "@/components/ui/button";
 import { OptionWall } from "@/components/ui/option-wall";
 import { Pagination } from "@/components/ui/pagination";
 import { useGridArrowNav } from "@/lib/hooks/useGridArrowNav";
@@ -30,7 +32,6 @@ import {
 	type SchwarzBoard,
 	type SphSchwarzShard,
 } from "@/lib/freedraw/schwarz";
-import { cn } from "@/lib/utils/cn";
 import { decodeAtlas, decodeShard } from "@/lib/services/atlasCodec";
 
 // The spherical arm of /freedraw — Marek Čtrnáct's freedraw on the Platonic solids, laid out like the
@@ -118,7 +119,6 @@ export function SphericalFreedraw({
 	// pattern as the planar arm, which keeps every setState in an async callback and off the effect body.
 	const [loadTick, setLoadTick] = useState(0);
 
-	const hostRef = useRef<HTMLDivElement | null>(null);
 	const gridRef = useRef<HTMLDivElement | null>(null);
 
 	// Fetch the selected solid+k slice on demand; an already-cached file needs no fetch. setState only ever
@@ -231,18 +231,13 @@ export function SphericalFreedraw({
 	return (
 		<div className="flex flex-1 min-w-0 flex-col min-h-0">
 			<header className="shrink-0 border-b border-line-subtle">
-				<WallBar
-					top={
-						<span className="tabular-nums text-text-muted">
-							{patterns === null ? "loading…" : `${total.toLocaleString()} at k = ${k}`}
-						</span>
-					}
-				>
+				<WallBar count={patterns === null ? "loading…" : `${total.toLocaleString()} at k = ${k}`}>
 					<WallColumn>
 						<GeometryGroup value={geometry} onChange={onGeometryChange} />
 						<WallGroup title="k" note="orbits">
 							<OptionWall
-								columns={4}
+								columns={kList.length}
+								fill={false}
 								options={kList.map((kk) => ({ value: kk, label: String(kk) }))}
 								selected={k}
 								onChange={(v) => {
@@ -270,12 +265,15 @@ export function SphericalFreedraw({
 						</WallGroup>
 					</WallColumn>
 
-					{/* How the interactive preview is drawn — the thumbnails stay flat facets regardless. */}
+					{/* How the interactive preview is drawn; the thumbnails stay flat facets regardless. */}
 					<WallColumn>
 						<WallGroup title="Display">
 							<OptionWall columns={2} options={MODE_OPTIONS} selected={mode} onChange={(v) => setMode(v)} />
-							<WallSubLabel>Overlays</WallSubLabel>
-							<ToggleCell label="Grid" shortcut="G" on={showGrid} onClick={() => setShowGrid(!showGrid)} />
+						</WallGroup>
+						<WallGroup title="Overlays">
+							<ToggleRow>
+								<ToggleCell label="Grid" shortcut="G" on={showGrid} onClick={() => setShowGrid(!showGrid)} />
+							</ToggleRow>
 						</WallGroup>
 					</WallColumn>
 				</WallBar>
@@ -283,41 +281,26 @@ export function SphericalFreedraw({
 
 			<div className="flex-1 min-h-0 flex">
 				<div className="flex-1 min-w-0 overflow-y-auto p-4">
-					{patterns === null && <div className="p-8 text-text-muted">Loading the {solid.label} catalogue…</div>}
-					<div ref={gridRef} className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(116px,1fr))]">
+					{patterns === null && <div className="p-8 text-fg-muted">Loading the {solid.label} catalogue…</div>}
+					<div ref={gridRef} className={CATALOGUE_GRID}>
 						{pageRows.map((entry) => (
-							<button
+							<CatalogueCard
 								key={entry.pattern.id}
-								type="button"
-								data-selected={selected?.pattern.id === entry.pattern.id ? "" : undefined}
+								selected={selected?.pattern.id === entry.pattern.id}
 								onClick={() => setSelectedId(entry.pattern.id)}
-								className={cn(
-									"rounded-md overflow-hidden border text-left transition-colors",
-									selected?.pattern.id === entry.pattern.id
-										? "border-accent ring-1 ring-accent"
-										: "border-line-subtle hover:border-border-strong",
-								)}
+								title={entry.pattern.id}
+								subtitle={`${entry.pattern.nTiles} tile${entry.pattern.nTiles === 1 ? "" : "s"} · ${entry.pattern.achiral ? "achiral" : "chiral"}`}
 							>
-								<div className="aspect-square">
-									<SphereFreedrawThumbnail
-										pattern={entry.pattern}
-										solidId={solidId}
-										vertices={entry.vertices}
-										allEdges={entry.allEdges}
-										mode={mode}
-										showGrid={showGrid}
-										size={232}
-									/>
-								</div>
-								<div className="px-1.5 py-1 text-[11px] leading-tight text-text-muted">
-									<div className="font-mono text-text-secondary">{entry.pattern.id}</div>
-									<div>
-										{entry.pattern.nTiles} tile{entry.pattern.nTiles === 1 ? "" : "s"}
-										{" · "}
-										{entry.pattern.achiral ? "achiral" : "chiral"}
-									</div>
-								</div>
-							</button>
+								<SphereFreedrawThumbnail
+									pattern={entry.pattern}
+									solidId={solidId}
+									vertices={entry.vertices}
+									allEdges={entry.allEdges}
+									mode={mode}
+									showGrid={showGrid}
+									size={232}
+								/>
+							</CatalogueCard>
 						))}
 					</div>
 					{total > PAGE_SIZE && (
@@ -333,8 +316,9 @@ export function SphericalFreedraw({
 				</div>
 
 				{selected && (
-					<aside className="w-[380px] shrink-0 border-l border-line-subtle flex flex-col min-h-0">
-						<div ref={hostRef} className="relative aspect-square border-b border-line-subtle overflow-hidden bg-bg-subtle">
+					<DetailPane
+						previewClassName="bg-bg-subtle"
+						preview={
 							<IcoFreedrawCanvas
 								key={`${solidId}-${selected.pattern.id}`}
 								pattern={selected.pattern}
@@ -344,31 +328,18 @@ export function SphericalFreedraw({
 								showGrid={showGrid}
 								solidId={solidId}
 							/>
-						</div>
-						<div className="p-4 overflow-y-auto text-sm space-y-3">
-							<div>
-								<div className="font-mono font-semibold text-text-primary">{selected.pattern.id}</div>
-								<div className="text-text-muted text-xs">drag to rotate, wheel to zoom</div>
-							</div>
-							{playHref && (
-								<Button href={playHref} variant="secondary" size="sm" icon={Play} label="Open in play" fullWidth />
-							)}
-							<dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
-								<dt className="text-text-muted">{solid.board ? "board" : "solid"}</dt>
-								<dd className="text-text-secondary">
-									{solid.label} {solid.badge}
-								</dd>
-								<dt className="text-text-muted">vertex orbits</dt>
-								<dd className="text-text-secondary">k = {selected.pattern.k}</dd>
-								<dt className="text-text-muted">drawn edges</dt>
-								<dd className="text-text-secondary">{selected.pattern.nDrawn}</dd>
-								<dt className="text-text-muted">tiles</dt>
-								<dd className="text-text-secondary">{selected.pattern.nTiles}</dd>
-								<dt className="text-text-muted">symmetry</dt>
-								<dd className="text-text-secondary">{selected.pattern.achiral ? "achiral" : "chiral"}</dd>
-							</dl>
-						</div>
-					</aside>
+						}
+						title={selected.pattern.id}
+						hint="drag to rotate, wheel to zoom"
+						playHref={playHref}
+						meta={[
+							[solid.board ? "board" : "solid", `${solid.label} ${solid.badge}`],
+							["vertex orbits", `k = ${selected.pattern.k}`],
+							["drawn edges", selected.pattern.nDrawn],
+							["tiles", selected.pattern.nTiles],
+							["symmetry", selected.pattern.achiral ? "achiral" : "chiral"],
+						]}
+					/>
 				)}
 			</div>
 		</div>

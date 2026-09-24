@@ -1,19 +1,11 @@
-import { cn } from "@/lib/utils/cn";
+import { Check } from "lucide-react";
 
-// Completeness as first-class metadata (spec P5): every collection wears its enumeration status.
-// The vocabulary is fixed — proven / complete-so-far / open frontier / infinite family / finite.
+// Completeness as first-class metadata (spec P5): every collection wears its enumeration status as a
+// chip floated over its media. The vocabulary is fixed: proven / complete-so-far / open frontier /
+// infinite family / finite. One chip for every tone; a proven result earns a check glyph, not a
+// louder chip.
 
 export type CompletenessTone = "proven" | "complete" | "open" | "infinite" | "finite";
-
-// Monochrome grammar: enumeration strength is carried by ink weight, not hue —
-// proven inverts, complete outlines in full ink, open is dashed, infinite/finite stay quiet.
-const TONE_CLASS: Record<CompletenessTone, string> = {
-	proven: "bg-fg text-fg-inverse border border-fg",
-	complete: "border border-fg text-fg",
-	open: "border border-dashed border-line-strong text-fg-secondary",
-	infinite: "border border-line text-fg-muted",
-	finite: "border border-line text-fg-muted",
-};
 
 interface CompletenessBadgeProps {
 	tone: CompletenessTone;
@@ -22,12 +14,8 @@ interface CompletenessBadgeProps {
 
 export function CompletenessBadge({ tone, label }: CompletenessBadgeProps) {
 	return (
-		<span
-			className={cn(
-				"shrink-0 text-[10px] leading-none px-1.5 py-1 whitespace-nowrap",
-				TONE_CLASS[tone],
-			)}
-		>
+		<span className="inline-flex h-5 items-center gap-1 rounded-control bg-surface-raised/95 ring-1 ring-line-subtle font-mono text-[11px] leading-none text-fg-secondary px-1.5 whitespace-nowrap">
+			{tone === "proven" ? <Check aria-hidden="true" strokeWidth={2.5} className="w-3 h-3 -ml-0.5" /> : null}
 			{label}
 		</span>
 	);

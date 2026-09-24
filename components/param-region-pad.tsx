@@ -217,7 +217,7 @@ export const ParamRegionPad = memo(function ParamRegionPad({ paramCell }: { para
 		<div className="flex items-center gap-3">
 			{/* Fixed width, tabular figures: the number's own width must not change as it is dragged, or the
 			    panel (centred with -translate-x-1/2) shifts under the cursor and the drag fights itself. */}
-			<div className="flex w-[9rem] shrink-0 flex-col gap-1 text-xs font-medium text-accent">
+			<div className="flex w-[9rem] shrink-0 flex-col gap-1 text-xs font-medium text-fg">
 				{params.map((p, j) => (
 					<span key={j} className="flex items-baseline gap-1">
 						<span className="w-2">{GREEK[j]}</span>

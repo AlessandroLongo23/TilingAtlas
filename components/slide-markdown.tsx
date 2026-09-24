@@ -127,7 +127,7 @@ export function SlideMarkdown({ content, components, compact = false, layout = "
 							"[&_blockquote_p]:leading-[1.35] [&_blockquote_p]:max-w-[38ch]",
 							// Code
 							"[&_code]:font-mono [&_code]:text-[0.85em] [&_code]:bg-surface-overlay",
-							"[&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-accent",
+							"[&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-fg",
 							"[&_pre]:bg-surface-overlay/50 [&_pre]:p-4 [&_pre]:rounded-lg [&_pre]:overflow-x-auto",
 							"[&_pre]:mb-[0.85em] [&_pre]:border [&_pre]:border-line",
 							"[&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-fg-secondary",

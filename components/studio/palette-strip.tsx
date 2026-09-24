@@ -47,7 +47,7 @@ export function PaletteStrip() {
 	if (tool !== "paint") return null;
 
 	return (
-		<div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 rounded-lg p-2 bg-surface-overlay/80 backdrop-blur-sm border border-line">
+		<div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 ta-float p-2">
 			{/* The slot row. Its LENGTH comes from STUDIO_PALETTE and its colours through slotFill, which
 			    falls back per slot, so a palette left short by an older session still shows ten buttons. */}
 			<div className="flex items-center gap-1">

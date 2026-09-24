@@ -17,12 +17,13 @@ const toPoints = (poly: ReadonlyArray<readonly [number, number]>) =>
 
 // A window into the middle of the patch, not the patch's own extent: the outer tiles of a finite
 // lattice patch make a jagged silhouette, and what the card is showing is a tiling, not a shape. The
-// radius is large enough that the window is filled at every corner.
+// radius is large enough that the window is filled at every corner, including the extra width that
+// `slice` uncovers on a wide card (radius 3 left the corners bare there).
 //
 // The window is sized to put ~5 tiles across (a tile is ~2 units wide). Two and a half, which a 5.4
 // window gave, read as a piece of decoration; the shared edge between neighbours is the whole point
 // of an isohedral type and it takes several tiles to see it.
-const PATCH_RADIUS = 3;
+const PATCH_RADIUS = 4;
 const WINDOW: readonly [number, number] = [9.6, 7.8];
 
 /** The hexagon's ramp hue, cycled by the same three offsets lib/isohedral/build.ts applies. */

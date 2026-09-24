@@ -86,27 +86,25 @@ export function MarkdownRenderer({
 		<div
 			ref={containerRef}
 			className={cn(
-				"w-full h-full overflow-y-auto bg-surface-raised scrollbar-hide",
+				"w-full h-full overflow-y-auto bg-surface scrollbar-hide",
 				"markdown-content",
 			)}
 		>
-			<div className="max-w-4xl mx-auto px-6 md:px-10 py-6 md:py-8">
+			<div className="mx-auto max-w-[728px] px-6 py-6 text-base leading-[1.65] md:py-10">
 				<article
 					className={cn(
-						// Headings. h1 is the article title, once, at the top: it had no rule at all, so it
-						// inherited body type and every page's title rendered SMALLER and lighter than its own
-						// section headings. It carries no border (the h2 rule owns that) and no top margin.
-						"[&_h1]:text-5xl [&_h1]:font-bold [&_h1]:tracking-tight [&_h1]:text-fg [&_h1]:mt-0 [&_h1]:mb-8 [&_h1]:text-balance",
-						"[&_h2]:text-4xl [&_h2]:font-bold [&_h2]:text-fg [&_h2]:mb-10 [&_h2]:mt-24 [&_h2]:pb-4 [&_h2]:border-b [&_h2]:border-line-focus [&_h2]:cursor-pointer",
-						"[&_h3]:text-2xl [&_h3]:font-semibold [&_h3]:text-fg [&_h3]:mb-4 [&_h3]:mt-16 [&_h3]:cursor-pointer",
-						"[&_h4]:text-xl [&_h4]:font-medium [&_h4]:text-fg [&_h4]:mb-3 [&_h4]:mt-8 [&_h4]:cursor-pointer",
+						// Headings. h1 is the article title, once, at the top. Sections are separated by space alone.
+						"[&_h1]:text-[36px] [&_h1]:leading-tight [&_h1]:font-[650] [&_h1]:tracking-[-0.02em] [&_h1]:text-fg [&_h1]:mt-0 [&_h1]:mb-4 [&_h1]:text-balance",
+						"[&_h2]:text-2xl [&_h2]:leading-snug [&_h2]:font-semibold [&_h2]:tracking-[-0.01em] [&_h2]:text-fg [&_h2]:mt-12 [&_h2]:mb-3 [&_h2]:cursor-pointer",
+						"[&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-fg [&_h3]:mb-2 [&_h3]:mt-8 [&_h3]:cursor-pointer",
+						"[&_h4]:text-base [&_h4]:font-semibold [&_h4]:text-fg [&_h4]:mb-2 [&_h4]:mt-6 [&_h4]:cursor-pointer",
 						// Body
-						"[&_p]:text-fg-muted [&_p]:mb-6",
-						"[&_ul]:list-disc [&_ul]:ml-6 [&_ul]:mb-6 [&_ul]:text-fg-secondary",
-						"[&_ol]:list-decimal [&_ol]:ml-6 [&_ol]:mb-6 [&_ol]:text-fg-secondary",
+						"[&_p]:text-fg-secondary [&_p]:mb-4 [&_h1+p]:mb-6",
+						"[&_ul]:list-disc [&_ul]:ml-6 [&_ul]:mb-4 [&_ul]:text-fg-secondary",
+						"[&_ol]:list-decimal [&_ol]:ml-6 [&_ol]:mb-4 [&_ol]:text-fg-secondary",
 						"[&_li]:mb-2",
 						"[&_blockquote]:border-l-4 [&_blockquote]:border-line-focus [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-fg-muted [&_blockquote]:my-4",
-						"[&_code]:font-mono [&_code]:text-sm [&_code]:bg-surface-overlay [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-accent",
+						"[&_code]:font-mono [&_code]:text-sm [&_code]:bg-surface-overlay [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-fg",
 						"[&_pre]:bg-surface-overlay/50 [&_pre]:p-4 [&_pre]:rounded-md [&_pre]:overflow-x-auto [&_pre]:mb-6 [&_pre]:border [&_pre]:border-line",
 						"[&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-fg-secondary",
 						"[&_a]:text-accent hover:[&_a]:text-accent [&_a]:underline",
@@ -118,7 +116,7 @@ export function MarkdownRenderer({
 						"[&_td]:p-2 [&_td]:border [&_td]:border-line [&_td]:text-fg-secondary [&_td]:text-center [&_td]:align-middle",
 						"[&_tr:nth-child(odd)]:bg-surface-overlay/30 [&_tr:nth-child(even)]:bg-surface-overlay/10",
 						// KaTeX
-						"[&_.katex]:text-fg-secondary [&_.katex-display]:overflow-x-auto [&_.katex-display]:my-6 [&_.katex-display]:px-2",
+						"[&_.katex]:text-[0.92em] [&_.katex]:leading-none [&_.katex]:text-fg-secondary [&_.katex-display]:overflow-x-auto [&_.katex-display]:my-6 [&_.katex-display]:px-2",
 					)}
 				>
 					<ReactMarkdown

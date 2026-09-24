@@ -31,8 +31,9 @@ export function TheoryRing({ tilings }: TheoryRingProps) {
 							</div>
 						);
 					})}
-					<div className="absolute inset-0 flex items-center justify-center">
-						<span className="text-[10px] font-mono text-fg-muted">the 11</span>
+					<div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
+						<span className="text-3xl font-semibold tracking-tight text-fg tabular-nums leading-none">11</span>
+						<span className="ta-label">uniform</span>
 					</div>
 				</div>
 			</div>

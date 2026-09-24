@@ -5,10 +5,10 @@ import { cn } from "@/lib/utils/cn";
 // run console and the gallery share one primitive (design-system: reuse over copy-paste).
 export type BadgeTone = "neutral" | "accent" | "info" | "success" | "warn" | "danger";
 
-// Monochrome design system: every tone but danger resolves to neutral ink (the tokens themselves
-// are monochrome now); tones survive as semantic call-site vocabulary.
+// Status tones other than danger and accent resolve to neutral ink in the token layer; the tone names
+// survive as semantic call-site vocabulary.
 const TONE: Record<BadgeTone, string> = {
-	neutral: "text-fg-muted bg-surface-overlay/50",
+	neutral: "text-fg-secondary bg-surface-sunken",
 	accent: "text-accent bg-accent-subtle",
 	info: "text-info bg-info-subtle",
 	success: "text-success bg-success-subtle",
@@ -28,7 +28,7 @@ export function Badge({ tone = "neutral", mono = false, pill = false, className,
 	return (
 		<span
 			className={cn(
-				"inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium leading-none",
+				"inline-flex items-center rounded px-1.5 py-[3px] text-[10.5px] font-medium leading-none",
 				mono && "font-mono tabular-nums",
 				TONE[tone],
 				className,

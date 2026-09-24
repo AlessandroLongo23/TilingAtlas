@@ -290,7 +290,7 @@ export function IsohedralClient() {
 				label: t.label,
 				// A marked type's badge is its induced tile group, which is the marks-per-tile count and the
 				// one fact that says why it needs marks at all. Not dimmed any more: it draws.
-				sub: t.gs ? t.gs.tileGroup : t.numParams > 0 ? `${t.numParams}p` : "fixed",
+				sub: t.gs ? t.gs.tileGroup : `${t.numParams}p`,
 				dim: false,
 				title: t.gs
 					? `${t.label} · marked · ${t.gs.laves} · tile group ${t.gs.tileGroup} (${t.gs.tileGroupOrder} mark${t.gs.tileGroupOrder === 1 ? "" : "s"} per tile) · ${t.gs.wallpaper} · ${t.numAspects} aspect${t.numAspects === 1 ? "" : "s"}`
@@ -300,40 +300,46 @@ export function IsohedralClient() {
 	);
 
 	const header = (
-		<div className="ta-wall-cell bg-surface-chrome px-3 py-2.5 flex flex-col gap-1">
-			<span className="text-xs font-mono text-fg-secondary">
-				{info.label} ·{" "}
+		<div className="flex flex-col gap-1">
+			<h2 className="text-[15px] font-semibold leading-tight text-fg">
+				{info.label}
+				{info.gs ? <span className="font-normal text-fg-muted"> marked</span> : null}
+			</h2>
+			<span className="text-xs font-mono text-fg-muted truncate">
 				{info.gs
-					? `marked · ${info.gs.wallpaper}`
-					: `${info.numParams} parameter${info.numParams === 1 ? "" : "s"}`}
-			</span>
-			<span className="text-[10px] font-mono text-fg-disabled truncate">
-				{info.gs
-					? `${info.gs.laves} · ${info.gs.tileGroup} · ${info.numAspects} aspect${info.numAspects === 1 ? "" : "s"}`
-					: `${info.numVertices} vertices · ${info.numAspects} aspect${info.numAspects === 1 ? "" : "s"} · ${info.edgeShapes.join("")}`}
+					? `${info.gs.wallpaper} · ${info.gs.laves} · ${info.gs.tileGroup} · ${info.numAspects} aspect${info.numAspects === 1 ? "" : "s"}`
+					: `${info.numVertices} vertices · ${info.numAspects} aspect${info.numAspects === 1 ? "" : "s"} · `}
+				{info.gs ? null : (
+					<span
+						className="cursor-help underline decoration-dotted underline-offset-2"
+						title={info.edgeShapes.map((k, i) => `${String.fromCharCode(97 + i)} · ${k}: ${EDGE_KIND_NOTE[k]}`).join("\n")}
+					>
+						{info.edgeShapes.join("")}
+					</span>
+				)}
 			</span>
 		</div>
 	);
 
+	// Above the edge sliders, like /pentagons: the picture names the edges, and it has to be visible
+	// while you drag one. The vertex parameters come first because they have to fit the fold.
+	const prototile = cell ? (
+		<Section label="Prototile">
+			<PrototileInspector info={info} cell={cell} />
+		</Section>
+	) : null;
+
+	const filterRow = (label: string, values: readonly string[], value: string, onChange: (v: string) => void) => (
+		<div className="grid grid-cols-[4.5rem_1fr] items-center gap-2">
+			<span className="text-xs text-fg-muted">{label}</span>
+			<Segmented cols={5} options={values.map((f) => ({ v: f, label: f }))} value={value} onChange={onChange} />
+		</div>
+	);
 	const filters = (
-		<>
-			<Section label="Parameters" flush>
-				<Segmented
-					cols={5}
-					options={PARAM_FILTERS.map((f) => ({ v: f, label: f }))}
-					value={paramFilter}
-					onChange={setParamFilter}
-				/>
-			</Section>
-			<Section label="Tiling vertices" flush>
-				<Segmented
-					cols={5}
-					options={VERTEX_FILTERS.map((f) => ({ v: f, label: f }))}
-					value={vertexFilter}
-					onChange={setVertexFilter}
-				/>
-			</Section>
-		</>
+		<Section label="Filter">
+			{filterRow("Parameters", PARAM_FILTERS, paramFilter, setParamFilter)}
+			{filterRow("Vertices", VERTEX_FILTERS, vertexFilter, setVertexFilter)}
+		</Section>
 	);
 
 	/**
@@ -390,29 +396,25 @@ export function IsohedralClient() {
 				collapsed={immersive}
 				header={header}
 				filters={filters}
+				typeCount={visible.length}
+				totalCount={ISOHEDRAL_TYPES.length}
 				types={
 					typeOptions.length > 0 ? (
-						<Segmented cols={4} options={typeOptions} value={String(ih)} onChange={(v) => selectType(Number(v))} />
+						<Segmented cols={4} fill={false} options={typeOptions} value={String(ih)} onChange={(v) => selectType(Number(v))} />
 					) : (
-						// Its own inset: the region around it is unpadded so the grid can reach the edges.
-						<p className="px-3 py-2 text-xs text-fg-muted">No type matches both filters.</p>
+						<p className="text-xs text-fg-muted">No type matches both filters.</p>
 					)
 				}
 			>
-				{/* Above the sliders, like /pentagons: the picture is what makes an edge slider mean
-				    anything, and it has to be visible while you drag one. */}
-				{cell ? (
-					<Section label="Prototile">
-						<PrototileInspector info={info} cell={cell} />
-					</Section>
-				) : null}
-
 				{info.gs ? (
-					<MarkedControls info={info} params={params} setParams={setParams} />
+					<>
+						{prototile}
+						<MarkedControls info={info} params={params} setParams={setParams} />
+					</>
 				) : (
 					<>
 						{info.numParams > 0 ? (
-							<Section label="Tiling vertices">
+							<Section label={`Parameters · ${info.numParams}`}>
 								{params.map((p, i) => (
 									<Slider
 										key={i}
@@ -432,13 +434,15 @@ export function IsohedralClient() {
 								))}
 							</Section>
 						) : (
-							<Section label="Tiling vertices">
+							<Section label="Parameters · 0">
 								<p className="text-xs text-fg-muted">
 									Fixed. This type constrains its vertices completely, so the tile has no freedom
 									beyond its edges.
 								</p>
 							</Section>
 						)}
+
+						{prototile}
 
 						<Section label="Edges">
 							{info.edgeShapes.map((kind, i) => (
@@ -463,7 +467,7 @@ export function IsohedralClient() {
 									format={(v) => (kind === "I" ? "straight" : v.toFixed(2))}
 								/>
 							))}
-							<div className="grid grid-cols-2 gap-px ta-wall ta-wall-dense">
+							<div className="grid grid-cols-2 ta-seg">
 								<button
 									type="button"
 									onClick={() => setEdges(randomEdgeStates(info.edgeShapes))}

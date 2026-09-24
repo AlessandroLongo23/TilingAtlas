@@ -10,7 +10,7 @@ import { NavHeader } from "./nav-header";
 import { CatalogueTab } from "./catalogue-tab";
 import { OptionsTab } from "./options-tab";
 
-// The /play sidebar composition: a persistent nav header (metadata + prev/random/next) over a
+// The /play sidebar composition: a persistent header naming the tiling on the canvas, over a
 // Catalogue/Options tab pair. Both panels stay mounted (keepMounted) so switching tabs never rebuilds
 // the catalogue's thumbnail canvases, and each keeps its own scroll position. Geometry is the
 // catalogue's top-level split, owned by the parent (it scopes random/step too) and threaded through.
@@ -20,9 +20,6 @@ interface TilingsTabProps {
 	unloaded?: UnloadedTier[];
 	onLoadTier?: (t: UnloadedTier) => void;
 	loadingTiers?: ReadonlySet<string>;
-	onRandom?: () => void;
-	onPrev?: () => void;
-	onNext?: () => void;
 	geometry: Geometry;
 	/** The active (geometry, decoration) cell — feeds the catalogue list and the nav count. */
 	geometryList: CatalogueTiling[];
@@ -47,9 +44,6 @@ export function TilingsTab({
 	unloaded,
 	onLoadTier,
 	loadingTiers,
-	onRandom,
-	onPrev,
-	onNext,
 	geometry,
 	geometryList,
 	geometryCounts,
@@ -81,13 +75,12 @@ export function TilingsTab({
 		return () => window.removeEventListener("keydown", onKey);
 	}, []);
 	return (
-		// The sidebar is one wall: this container paints the line colour and every row below is an
-		// opaque cell, so the 1px gaps between them are the only rules in the panel — and where a
-		// vertical gap crosses a horizontal one, four rounded corners open the little diamond.
-		<div className="ta-wall ta-wall-dense h-full flex flex-col gap-px">
-			<NavHeader selected={selected} count={geometryList.length} onRandom={onRandom} onPrev={onPrev} onNext={onNext} />
+		<div className="h-full flex flex-col">
+			<div className="px-3.5 pt-3.5 pb-3">
+				<NavHeader selected={selected} />
+			</div>
 			<div className="flex-1 min-h-0">
-				<Tabs value={tab} onValueChange={setTab} tabs={TABS} shortcuts={TAB_SHORTCUTS} keepMounted>
+				<Tabs value={tab} onValueChange={setTab} tabs={TABS} shortcuts={TAB_SHORTCUTS} keepMounted listClassName="mx-3.5 mb-3">
 					{(t) =>
 						t === "Catalogue" ? (
 							<CatalogueTab

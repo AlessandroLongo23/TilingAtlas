@@ -32,11 +32,10 @@ export function PentagonSidebar({
 		<PageSidebar scrollable={false} collapsed={collapsed}>
 			<div className="ta-wall ta-wall-dense h-full flex flex-col gap-px">
 				{header}
-				{/* Unpadded: the grid is a wall of cells like the header above it, so it runs edge to edge
-				    and its gaps are the panel's rules. Padding here would float it inside a chrome margin. */}
-				<div className="bg-surface-chrome shrink-0">{types}</div>
-				<div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hide bg-surface-chrome">
-					<div className="p-3 flex flex-col gap-3">{children}</div>
+				{/* Inside the panel gutter, on the shared segmented track like every other choice. */}
+				<div className="bg-surface-chrome shrink-0 px-3.5 py-3">{types}</div>
+				<div className="ta-scroll-fade flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hide bg-surface-chrome">
+					<div className="px-3.5 pt-3 pb-8 flex flex-col gap-4">{children}</div>
 				</div>
 			</div>
 		</PageSidebar>

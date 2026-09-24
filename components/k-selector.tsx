@@ -56,7 +56,7 @@ export function KSelector({
 						className={cn(
 							"px-3 py-1.5 text-xs font-medium transition-colors border-r border-line last:border-r-0",
 							mode === tab
-								? "bg-accent-subtle text-accent"
+								? "bg-surface-overlay text-fg"
 								: "text-fg-muted hover:text-fg-secondary hover:bg-surface-overlay",
 						)}
 					>
@@ -76,7 +76,7 @@ export function KSelector({
 						aria-label="maximum k"
 					/>
 					<span className="text-sm text-fg-secondary">
-						k = 1 … <span className="text-accent font-semibold">{uptoK}</span>
+						k = 1 … <span className="text-fg font-semibold">{uptoK}</span>
 					</span>
 				</div>
 			) : (
@@ -90,7 +90,7 @@ export function KSelector({
 								className={cn(
 									"w-8 h-8 rounded-md text-sm font-medium transition-colors border",
 									selected
-										? "bg-accent-subtle text-accent border-line-focus"
+										? "bg-surface-overlay text-fg border-line-focus"
 										: "bg-surface-overlay text-fg-muted border-line hover:border-line-strong",
 								)}
 							>

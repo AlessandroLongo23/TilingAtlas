@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useMemo } from "react";
-import { ArrowLeftRight, PenTool } from "lucide-react";
+import { ArrowLeftRight } from "lucide-react";
 import { deformApplies, useConfiguration } from "@/stores/configuration";
 import { hasSphereView } from "@/lib/tilings/sph-inscribed";
 import { solidHasStarFace } from "@/lib/render/sphericalGeometry";
@@ -16,6 +16,7 @@ import { Slider } from "@/components/ui/slider";
 import { Kbd } from "@/components/ui/kbd";
 import { HueRing } from "@/components/ui/hue-ring";
 import { HankinPad } from "@/components/ui/hankin-pad";
+import { wrapHue } from "@/lib/render/hueRing";
 import { Reveal } from "@/components/ui/reveal";
 import { Toggle } from "@/components/ui/toggle";
 import { WIRINGS } from "@/lib/freedraw/arcs";
@@ -63,24 +64,18 @@ function RotationSlider({
 		<Slider
 			id="rotation"
 			label="Rotation"
-			hint={
-				<span className="inline-flex items-center gap-1 text-[10px] text-fg-muted whitespace-nowrap">
-					{gesture === "shift-scroll" ? (
-						<>
-							<Kbd>Shift</Kbd>
-							<span>+ scroll</span>
-						</>
-					) : (
-						<span>scroll</span>
-					)}
-				</span>
-			}
 			value={value}
 			onChange={onChange}
 			min={0}
 			max={360}
 			step={1}
-			unit="°"
+			// The gesture reads as a quiet caption before the value, so the label keeps the row's left edge.
+			format={(v) => (
+				<>
+					<span className="mr-2 text-[11px] text-fg-muted">{gesture === "shift-scroll" ? "Shift + scroll" : "scroll"}</span>
+					{v}°
+				</>
+			)}
 		/>
 	);
 }
@@ -267,6 +262,13 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 			circlePacking: cfg.circlePacking,
 			showSymmetryElements: cfg.showSymmetryElements,
 		}) && (isFlat || lensApplies);
+	// The toggles below the sliders fall into three labelled groups; a label shows only when its group has
+	// at least one control for this surface.
+	const pointsShown = !isSpherical && !isFreedraw && !isSphericalFreedraw && !isAnyColors;
+	const overlaysShown = pointsShown || (isFlat && sourceControls);
+	const styleShown =
+		(isFlat && sourceControls) || !!selected?.sphBubble || islamicAvailable || surface === "flat" || starFillApplies;
+	const viewShown = isFlat || isAnySpherical || lensApplies || deformShown;
 
 	// One picker per tile color — shared by every colored view (Euclidean grid, hyperbolic disk, spherical
 	// solid): a hue ring plus the two swatches no hue reaches (cream + its near-black complement).
@@ -328,51 +330,17 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 	);
 
 	return (
-		// Opaque: the sidebar wall's line colour lives on an ancestor, and a transparent panel would
-		// show it through every gap in this tab's own padding.
-		<div className="h-full overflow-y-auto bg-surface-chrome" data-sidebar-scroll>
+		<div
+			// Checkbox rows read one step lighter than the section's slider labels, so the toggles stop outweighing them.
+			className="ta-scroll-fade h-full overflow-y-auto border-t border-line-subtle bg-surface-chrome pb-6 [&_[role=checkbox]_label]:text-[13px] [&_[role=checkbox]_label]:font-normal [&_[role=checkbox]_label]:text-fg"
+			data-sidebar-scroll
+		>
 			{/* Every render/view toggle lives in this one flat section — the old collapsed "Advanced options"
 			    split is gone, and the "View options" heading with it (the tab already carries that label). */}
 			<div className="flex flex-col gap-2">
-				<div className="p-3 space-y-2">
-					{/* THE EDITOR, first in the panel because it is a MODE and not one more view toggle: it takes
-					    the canvas over (canvas.tsx skips the flat layer while `studioActive`), so the controls
-					    that decorate that canvas sit below it, past the divider.
-
-					    Offered on a flat tiling with straight edges only, which is the same gate the symmetry
-					    overlays take further down, for two hard reasons: the editor folds every edit onto a
-					    TRANSLATION LATTICE, which the hyperbolic and spherical records do not have, and it
-					    straightens a curved tile's edges, which would quietly damage a bubble tiling.
-
-					    `surface === "flat"` and not `isFlat`: hollow2d is in that predicate for historical
-					    reasons (see the ⚑ note beside it) and the hollow shelf paints its own canvas, so there
-					    is nothing there for the editor to take over. */}
-					{surface === "flat" && sourceControls && !curvedTiles ? (
-						<>
-							<Button
-								variant="primary"
-								size="lg"
-								fullWidth
-								icon={PenTool}
-								onClick={() => setCfg({ studioActive: !cfg.studioActive })}
-								aria-pressed={cfg.studioActive}
-								label={
-									<span className="flex flex-1 items-center justify-between gap-2">
-										<span>{cfg.studioActive ? "Leave the editor" : "Edit this tiling"}</span>
-										{/* The keycap's own tokens are tuned for a panel background; on the solid
-										    primary fill they vanish, so it borrows the inverse ink here. */}
-										<Kbd className="border-fg-inverse/30 bg-transparent text-fg-inverse/80">E</Kbd>
-									</span>
-								}
-							/>
-							<p className="text-[11px] leading-snug text-fg-muted">
-								{cfg.studioActive
-									? "The tools are along the bottom of the canvas. Esc leaves."
-									: "Merge, cut, move, decorate, recolour. Every edit repeats across the whole plane."}
-							</p>
-							<div className="border-t border-line pt-1" />
-						</>
-					) : null}
+				<div className="px-3.5 py-3 space-y-2">
+					{/* The editor is not here: it is a MODE of the canvas, entered from the canvas toolbar's Edit
+					    button (or E), and this tab is about how the tiling is shown. */}
 					{/* Freedraw: the whole control set for the 2D grid view. Fill colours each unit CELL by the
 					    face it belongs to (there are no tiles to fill); the scaffold shows the grid edges that
 					    are NOT drawn; orbits dots the grid points by their symmetry orbit, which is what the
@@ -621,7 +589,15 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 					    colorings stay out — their colours are palette slots, and the pickers below are the
 					    control for those. */}
 					{!isFreedraw && !isColors && !isHyperbolicColors && !isSphColors ? (
-						<HueRing label="Hue shift" value={cfg.hueOffset} onChange={(v) => setCfg({ hueOffset: v })} />
+						// A compact ring on a slider-height row, its degrees in the same mono readout column as
+						// Fill and Line stroke; the ring's own centre label is too small to read at this size.
+						<div className="flex items-center justify-between gap-3">
+							<span className="text-[13px] font-medium text-fg-secondary">Hue shift</span>
+							<div className="flex items-center gap-2.5 [&_text]:hidden">
+								<HueRing size={32} value={cfg.hueOffset} onChange={(v) => setCfg({ hueOffset: v })} />
+								<span className="w-8 text-right font-mono text-xs tabular-nums text-fg">{wrapHue(Math.round(cfg.hueOffset))}°</span>
+							</div>
+						</div>
 					) : null}
 					{/* Flat-view rotation. Hidden in spherical — that view rotates by quaternion (the
 					    ArcballControls trackball), so this angle slider has no effect there. Freedraw and colors
@@ -642,14 +618,15 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							onCheckedChange={(v) => setCfg({ lengthSizeHue: v })}
 						/>
 					) : null}
+					{overlaysShown ? <p className="ta-label pt-3">Overlays</p> : null}
 					{/* Vertex dots, drawn by the flat p5/WebGL layer and by the disk shader. ⚑ `isSpherical` joined
 					    the exclusions on 2026-08-21: components/spherical-canvas.tsx never reads
 					    `showPolygonPoints`, so the checkbox had been offered over the tiling sphere doing
 					    nothing at all. */}
-					{!isSpherical && !isFreedraw && !isSphericalFreedraw && !isColors && !isHyperbolicColors && !isSphColors ? (
+					{pointsShown ? (
 						<Checkbox
 							id="showPolygonPoints"
-							label="Show Polygon Points"
+							label="Polygon points"
 							shortcut="P"
 							checked={cfg.showPolygonPoints}
 							onCheckedChange={(v) => setCfg({ showPolygonPoints: v })}
@@ -667,13 +644,39 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 					{isFlat && sourceControls ? (
 						<Checkbox
 							id="showVertexOrbits"
-							label="Show Vertex Orbits"
+							label="Vertex orbits"
 							shortcut="O"
 							checked={cfg.showVertexOrbits}
 							disabled={!selected?.exactSource}
 							onCheckedChange={(v) => setCfg({ showVertexOrbits: v })}
 						/>
 					) : null}
+					{/* Symmetry elements + fundamental domain are wallpaper-group overlays drawn by the flat p5
+					    path, which is skipped in hyperbolic (canvas.tsx) — hide them there.
+					    Hidden for CURVED tiles too, and for the same reason star tilings have no
+					    `wallpaperGroup`: WallpaperSymmetry needs exact convex-tile intersection, and a bitten
+					    bubble tile is non-convex (NOTES §9.4 — exact segment intersection is the unbuilt
+					    prerequisite). With no symmetry data the overlay drew a flat wash over the whole canvas
+					    instead of nothing, which read as a broken tiling. Showing neither beats showing that. */}
+					{isFlat && sourceControls && !curvedTiles ? (
+						<>
+							<Checkbox
+								id="showSymmetryElements"
+								label="Symmetry elements"
+								shortcut="S"
+								checked={cfg.showSymmetryElements}
+								onCheckedChange={(v) => setCfg({ showSymmetryElements: v })}
+							/>
+							<Checkbox
+								id="showFundamentalDomain"
+								label="Fundamental domain"
+								shortcut="D"
+								checked={cfg.showFundamentalDomain}
+								onCheckedChange={(v) => setCfg({ showFundamentalDomain: v })}
+							/>
+						</>
+					) : null}
+					{styleShown ? <p className="ta-label pt-3">Style</p> : null}
 					{/* TRUCHET. A tiling carries no edge state, so every edge counts as connected and the only
 					    freedom left is which of a tile's c! drawings it takes — 24 for a square, 2 for a
 					    triangle, 720 for a hexagon (lib/render/truchetTiling.ts). Shuffling draws each tile
@@ -795,54 +798,6 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							) : null}
 						</div>
 					) : null}
-					{/* Mirror view. A chiral tiling and its mirror image are ONE catalogue entry — the A068599
-					    convention the whole atlas counts in, and the reason the Archimedean tilings are eleven
-					    and not twelve (3.3.3.3.6 is chiral and counted once). Merging is right for counting and
-					    lossy for looking, so the second hand lives here as a view. Chirality is exact, read off
-					    the wallpaper group: the five groups with no orientation-reversing isometry (p1, p2, p3,
-					    p4, p6) are the chiral ones. HIDDEN when the tiling is known ACHIRAL (AL 2026-08-08):
-					    its mirror is congruent to itself, so a flip there is a control that visibly does
-					    nothing. Only the regular family carries a group, so elsewhere chirality is UNKNOWN and
-					    the toggle stays — unknown is not achiral, and suppressing it would hide a real second
-					    hand on the star, composite and period-p shelves. */}
-					{isFlat && sourceControls && isChiralTiling(selected ?? { wallpaperGroup: undefined }) !== false ? (
-						<Checkbox
-							id="mirrorFlip"
-							label={
-								isChiralTiling(selected ?? { wallpaperGroup: undefined }) === true
-									? "Mirror view (chiral)"
-									: "Mirror view"
-							}
-							shortcut="M"
-							checked={cfg.mirrorFlip}
-							onCheckedChange={(v) => setCfg({ mirrorFlip: v })}
-						/>
-					) : null}
-					{/* Radial wave on a tiling change (lib/utils/tilingTransition.ts). Ignored — the swap stays
-					    instant — under Islamic / symmetry-elements / inversive, whose draw paths have no
-					    per-tile scale, and under prefers-reduced-motion. Hidden in hyperbolic: the WebGL disk
-					    renderer swaps instantly and has no per-tile scale to animate. */}
-					{isFlat ? (
-						<Checkbox
-							id="tilingTransition"
-							label="Transition animation"
-							shortcut="T"
-							checked={cfg.tilingTransition}
-							onCheckedChange={(v) => setCfg({ tilingTransition: v })}
-						/>
-					) : null}
-					{/* Circle Packing is hidden for now (AL directive 2026-07-19) — the render path (canvas.tsx)
-					    and the `circlePacking` config field are kept, just no UI entry point. Its old `C`
-					    shortcut now switches to the Catalogue tab. Restore by un-commenting this block. */}
-					{/* {cfg.isTilingRegularOnly ? (
-						<Checkbox
-							id="circlePacking"
-							label="Circle Packing"
-							shortcut="C"
-							checked={cfg.circlePacking}
-							onCheckedChange={(v) => setCfg({ circlePacking: v })}
-						/>
-					) : null} */}
 					{isIslamicClass && islamicAvailable && !cfg.isIslamic ? (
 						<button
 							type="button"
@@ -959,7 +914,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 								<div className="space-y-2">
 									<Slider
 										id="islamicWeaveWidth"
-										label="Strap Width"
+										label="Strap width"
 										value={cfg.islamicBandWidth}
 										onChange={(v) => setCfg({ islamicBandWidth: v })}
 										min={0.05}
@@ -968,7 +923,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 									/>
 									<Slider
 										id="islamicWeaveBorderWidth"
-										label="Border Width"
+										label="Border width"
 										value={cfg.islamicOutlineWidth}
 										onChange={(v) => setCfg({ islamicOutlineWidth: v })}
 										min={0}
@@ -1076,7 +1031,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 								<div className="space-y-2">
 									<Slider
 										id="islamicBandWidth"
-										label="Band Width"
+										label="Band width"
 										value={cfg.islamicBandWidth}
 										onChange={(v) => setCfg({ islamicBandWidth: v })}
 										min={0.05}
@@ -1089,7 +1044,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 									{!isHyperbolic ? (
 										<Slider
 											id="islamicOutlineWidth"
-											label="Border Width"
+											label="Border width"
 											value={cfg.islamicOutlineWidth}
 											onChange={(v) => setCfg({ islamicOutlineWidth: v })}
 											min={0}
@@ -1103,7 +1058,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 									<Reveal show={cfg.islamicStyle !== "outline"}>
 										<Checkbox
 											id="islamicChirality"
-											label="Flip Weave"
+											label="Flip weave"
 											checked={cfg.islamicChirality}
 											onCheckedChange={(v) => setCfg({ islamicChirality: v })}
 										/>
@@ -1140,7 +1095,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							{!isHyperbolic ? (
 							<Slider
 								id="islamicIntersectionCount"
-								label="Ray Stops At"
+								label="Ray stops at"
 								value={cfg.islamicIntersectionCount}
 								onChange={(v) => setCfg({ islamicIntersectionCount: v })}
 								min={1}
@@ -1151,7 +1106,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							{!isSpherical && !isHyperbolic ? (
 							<Checkbox
 								id="islamicAnimate"
-								label="Animate Grid"
+								label="Animate grid"
 								checked={cfg.islamicAnimate}
 								onCheckedChange={(v) => setCfg({ islamicAnimate: v })}
 							/>
@@ -1164,31 +1119,77 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 					    decoration — the result is a different tiling in a different plane, so it draws in a
 					    floating panel and leaves every control here describing the tiling on the canvas. */}
 					<SquaringControls selected={selected} />
-					{/* Symmetry elements + fundamental domain are wallpaper-group overlays drawn by the flat p5
-					    path, which is skipped in hyperbolic (canvas.tsx) — hide them there.
-					    Hidden for CURVED tiles too, and for the same reason star tilings have no
-					    `wallpaperGroup`: WallpaperSymmetry needs exact convex-tile intersection, and a bitten
-					    bubble tile is non-convex (NOTES §9.4 — exact segment intersection is the unbuilt
-					    prerequisite). With no symmetry data the overlay drew a flat wash over the whole canvas
-					    instead of nothing, which read as a broken tiling. Showing neither beats showing that. */}
-					{isFlat && sourceControls && !curvedTiles ? (
-						<>
-							<Checkbox
-								id="showSymmetryElements"
-								label="Symmetry elements"
-								shortcut="S"
-								checked={cfg.showSymmetryElements}
-								onCheckedChange={(v) => setCfg({ showSymmetryElements: v })}
-							/>
-							<Checkbox
-								id="showFundamentalDomain"
-								label="Fundamental domain"
-								shortcut="D"
-								checked={cfg.showFundamentalDomain}
-								onCheckedChange={(v) => setCfg({ showFundamentalDomain: v })}
-							/>
-						</>
+					{/* MODULO 2, and OUTSIDE the spherical block on purpose: the rule belongs to the star tile, not
+					    to the canvas drawing it, and the hollow shelf is 2D. A star face is a branched cover of
+					    its own middle — a pentagram covers its core twice, and mod 2 that is zero, so the core
+					    goes empty and the crossings read as a checkerboard. Suggested by polytopologist on
+					    Discord (2026-08-31), who glazes his ceramic star polyhedra this way. Off by default (the
+					    nonzero silhouette is the classical plate), and offered only where a self-crossing face is
+					    actually drawn. */}
+					{starFillApplies ? (
+						<Checkbox
+							id="star-mod2"
+							label="Modulo 2 fill"
+							checked={cfg.starMod2}
+							onCheckedChange={(v) => setCfg({ starMod2: v })}
+							hint={
+								<InfoDot>
+									A star face covers part of itself more than once. Modulo 2, a region covered an even
+									number of times is empty — so a pentagram becomes five points around a hollow pentagon,
+									and the edge crossings read as a checkerboard.
+								</InfoDot>
+							}
+						/>
 					) : null}
+					{viewShown ? <p className="ta-label pt-3">View</p> : null}
+					{/* Mirror view. A chiral tiling and its mirror image are ONE catalogue entry — the A068599
+					    convention the whole atlas counts in, and the reason the Archimedean tilings are eleven
+					    and not twelve (3.3.3.3.6 is chiral and counted once). Merging is right for counting and
+					    lossy for looking, so the second hand lives here as a view. Chirality is exact, read off
+					    the wallpaper group: the five groups with no orientation-reversing isometry (p1, p2, p3,
+					    p4, p6) are the chiral ones. HIDDEN when the tiling is known ACHIRAL (AL 2026-08-08):
+					    its mirror is congruent to itself, so a flip there is a control that visibly does
+					    nothing. Only the regular family carries a group, so elsewhere chirality is UNKNOWN and
+					    the toggle stays — unknown is not achiral, and suppressing it would hide a real second
+					    hand on the star, composite and period-p shelves. */}
+					{isFlat && sourceControls && isChiralTiling(selected ?? { wallpaperGroup: undefined }) !== false ? (
+						<Checkbox
+							id="mirrorFlip"
+							label={
+								isChiralTiling(selected ?? { wallpaperGroup: undefined }) === true
+									? "Mirror view (chiral)"
+									: "Mirror view"
+							}
+							shortcut="M"
+							checked={cfg.mirrorFlip}
+							onCheckedChange={(v) => setCfg({ mirrorFlip: v })}
+						/>
+					) : null}
+					{/* Radial wave on a tiling change (lib/utils/tilingTransition.ts). Ignored — the swap stays
+					    instant — under Islamic / symmetry-elements / inversive, whose draw paths have no
+					    per-tile scale, and under prefers-reduced-motion. Hidden in hyperbolic: the WebGL disk
+					    renderer swaps instantly and has no per-tile scale to animate. */}
+					{isFlat ? (
+						<Checkbox
+							id="tilingTransition"
+							label="Transition animation"
+							shortcut="T"
+							checked={cfg.tilingTransition}
+							onCheckedChange={(v) => setCfg({ tilingTransition: v })}
+						/>
+					) : null}
+					{/* Circle Packing is hidden for now (AL directive 2026-07-19) — the render path (canvas.tsx)
+					    and the `circlePacking` config field are kept, just no UI entry point. Its old `C`
+					    shortcut now switches to the Catalogue tab. Restore by un-commenting this block. */}
+					{/* {cfg.isTilingRegularOnly ? (
+						<Checkbox
+							id="circlePacking"
+							label="Circle Packing"
+							shortcut="C"
+							checked={cfg.circlePacking}
+							onCheckedChange={(v) => setCfg({ circlePacking: v })}
+						/>
+					) : null} */}
 					{/* ONE block for every spherical shelf. It used to be two, one for the tiling sphere and one
 					    for the ico-freedraw canvases, and they had drifted: the same sphere/solid choice was a
 					    checkbox in one and a pair of buttons in the other, "Studio look" was written out twice so
@@ -1331,28 +1332,6 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 								reachable). Scroll to zoom.
 							</p>
 						</div>
-					) : null}
-					{/* MODULO 2, and OUTSIDE the spherical block on purpose: the rule belongs to the star tile, not
-					    to the canvas drawing it, and the hollow shelf is 2D. A star face is a branched cover of
-					    its own middle — a pentagram covers its core twice, and mod 2 that is zero, so the core
-					    goes empty and the crossings read as a checkerboard. Suggested by polytopologist on
-					    Discord (2026-08-31), who glazes his ceramic star polyhedra this way. Off by default (the
-					    nonzero silhouette is the classical plate), and offered only where a self-crossing face is
-					    actually drawn. */}
-					{starFillApplies ? (
-						<Checkbox
-							id="star-mod2"
-							label="Modulo 2 fill"
-							checked={cfg.starMod2}
-							onCheckedChange={(v) => setCfg({ starMod2: v })}
-							hint={
-								<InfoDot>
-									A star face covers part of itself more than once. Modulo 2, a region covered an even
-									number of times is empty — so a pentagram becomes five points around a hollow pentagon,
-									and the edge crossings read as a checkerboard.
-								</InfoDot>
-							}
-						/>
 					) : null}
 					{lensApplies ? (
 						<Checkbox

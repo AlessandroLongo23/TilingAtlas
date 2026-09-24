@@ -2,6 +2,8 @@
 
 import { ScrollText } from "lucide-react";
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils/cn";
 import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useUpdates } from "@/stores/updates";
@@ -43,6 +45,7 @@ export function UpdatesButton() {
 	// undefined until init() has run on the client; rendering the dot before then would differ from
 	// the server markup and flash on every hydration.
 	const unseen = lastSeen === undefined ? 0 : unseenSince(lastSeen).length;
+	const onUpdates = usePathname() === "/updates";
 
 	return (
 		<Tooltip label="What's new" shortcut="Shift + U" side="left" delay={0}>
@@ -50,7 +53,12 @@ export function UpdatesButton() {
 				type="button"
 				onClick={open}
 				aria-label={unseen > 0 ? `What's new (${unseen} unread)` : "What's new"}
-				className="relative flex items-center justify-center w-8 h-8 rounded-control border border-line text-fg-muted hover:text-fg hover:bg-surface-overlay transition-colors focus:outline-none cursor-pointer"
+				aria-current={onUpdates ? "page" : undefined}
+				className={cn(
+					"relative flex items-center justify-center w-8 h-8 rounded-control hover:text-fg hover:bg-surface-overlay transition-colors focus:outline-none cursor-pointer",
+					// Lit like an active nav link while the changelog page itself is open.
+					onUpdates ? "bg-surface-overlay text-fg" : "text-fg-muted",
+				)}
 			>
 				<ScrollText size={16} strokeWidth={1.75} />
 				{unseen > 0 ? (

@@ -1,8 +1,7 @@
 "use client";
 
 // The /automata sidebar. Same construction as /play's: an info zone pinned at the top that survives tab
-// switches, then horizontal tabs, all laid out as a "wall" — the container paints the line colour and
-// every row is an opaque cell, so the 1px gaps between them are the only rules in the panel.
+// switches, then the inset tab strip over one scrolling panel per tab.
 //
 // The transport is deliberately NOT here. It floats over the canvas (components/automata/automata-transport
 // .tsx), because it is the one control you use while watching rather than while configuring.
@@ -12,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { InfoDot } from "@/components/ui/info-dot";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
+import { OptionWall } from "@/components/ui/option-wall";
 import { Tabs } from "@/components/ui/tabs";
 import { AutomataInfo } from "@/components/automata/automata-info";
 import { CatalogueListPanel } from "@/components/sidebar/catalogue-list-panel";
@@ -43,9 +43,6 @@ interface AutomataSidebarProps {
 	loading: boolean;
 	/** Which surfaces this tiling can actually be glued into — the flipped ones need a glide. */
 	available: Set<TopologyId>;
-	onRandom?: () => void;
-	onPrev?: () => void;
-	onNext?: () => void;
 }
 
 const SEMANTICS: { id: RuleSemantics; label: string; blurb: string }[] = [
@@ -88,50 +85,10 @@ const EMBEDDING_NOTE: Record<TopologyId, string> = {
 		"The Klein bottle does not fit in three dimensions at all: every closed surface in ℝ³ is orientable. Both shapes below are therefore immersions, and both pass through themselves. The crossing is an artefact of the drawing — no cell there is adjacent to the one it appears to touch.",
 };
 
-/**
- * A row of mutually exclusive cells, styled off the same .ta-tab fills the real tab strip uses.
- *
- * The group sits on its own patch of wall (`ta-wall` + `gap-px`), which is what makes the UNSELECTED
- * cells visible: .ta-tab's idle fill is the panel colour, so without a line-coloured background behind
- * the gaps the inactive options simply disappear into the panel and the control reads as one lone button.
- */
-function Segmented<T extends string>({
-	value,
-	options,
-	onChange,
-}: {
-	value: T;
-	options: { id: T; label: string }[];
-	onChange: (v: T) => void;
-}) {
-	return (
-		<div
-			className="ta-wall ta-wall-dense grid gap-px rounded-control p-px"
-			style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
-		>
-			{options.map((o) => (
-				<button
-					key={o.id}
-					type="button"
-					aria-pressed={value === o.id}
-					onClick={() => onChange(o.id)}
-					className={cn(
-						"ta-tab ta-wall-cell px-2 py-1.5 text-[11px] transition-colors cursor-pointer",
-						"text-fg-muted hover:text-fg-secondary aria-pressed:text-fg aria-pressed:font-medium",
-						"focus:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-fg",
-					)}
-				>
-					{o.label}
-				</button>
-			))}
-		</div>
-	);
-}
-
 /** A tab body: its own scroll container, so each tab keeps its place independently. */
 function Panel({ children }: { children: React.ReactNode }) {
 	return (
-		<div className="h-full overflow-y-auto overflow-x-hidden bg-surface-chrome p-3 space-y-3" data-sidebar-scroll>
+		<div className="h-full overflow-y-auto overflow-x-hidden px-4 py-3 space-y-4" data-sidebar-scroll>
 			{children}
 		</div>
 	);
@@ -155,9 +112,6 @@ export function AutomataSidebar({
 	plan,
 	loading,
 	available,
-	onRandom,
-	onPrev,
-	onNext,
 }: AutomataSidebarProps) {
 	const cfg = useAutomata();
 	const [tab, setTab] = useState(TABS[0]);
@@ -183,22 +137,18 @@ export function AutomataSidebar({
 	const degreeSummary = [...new Set(report.degrees)].sort((a, b) => a - b).join(" / ");
 
 	return (
-		<div className="ta-wall ta-wall-dense h-full flex flex-col gap-px">
+		<div className="h-full flex flex-col">
 			<AutomataInfo
 				selected={selected}
-				count={tilings.length}
 				report={report}
 				plan={plan}
-				onRandom={onRandom}
-				onPrev={onPrev}
-				onNext={onNext}
 			/>
 			<div className="flex-1 min-h-0">
 				{/* Three tabs, not four: the view switches configure the board, so they moved in with it and left
 				    a tab holding nothing but a key list — and every key it listed is now printed on the control
 				    it drives (keycaps here, titles on the transport and the nav header, gestures on the
 				    transport's dot). Keycaps on the triggers, as on /play's Catalogue / View options pair. */}
-				<Tabs value={tab} onValueChange={setTab} tabs={TABS} shortcuts={TAB_SHORTCUTS} keepMounted>
+				<Tabs value={tab} onValueChange={setTab} tabs={TABS} shortcuts={TAB_SHORTCUTS} keepMounted listClassName="mx-3.5 mb-1">
 					{(t) =>
 						t === "Tiling" ? (
 							// The /play picker itself, not a copy: tilings nested by polygon class then by k, each
@@ -206,7 +156,7 @@ export function AutomataSidebar({
 							// catalogue's families are machine-generated ids, and a tiling is recognised by its
 							// picture. `isolate` pins the sticky headers' z-index contest inside this scroller so
 							// they can never rise over the transport bar next door.
-							<div className="isolate h-full overflow-y-auto bg-surface-chrome" data-sidebar-scroll>
+							<div className="isolate h-full overflow-y-auto px-2 ta-scroll-fade pb-6" data-sidebar-scroll>
 								{loading && (
 									<p className="p-3 text-[11px] text-fg-muted leading-relaxed">Loading the catalogue…</p>
 								)}
@@ -240,12 +190,13 @@ export function AutomataSidebar({
 									>
 										Neighbourhood
 									</GroupLabel>
-									<Segmented
-										value={cfg.neighborhood}
+									<OptionWall
+										columns={2}
+										selected={cfg.neighborhood}
 										onChange={(v) => cfg.set("neighborhood", v)}
 										options={[
-											{ id: "edge" as const, label: "Shared edge" },
-											{ id: "moore" as const, label: "Edge or corner" },
+											{ value: "edge" as const, label: "Shared edge" },
+											{ value: "moore" as const, label: "Edge or corner" },
 										]}
 									/>
 								</div>
@@ -277,10 +228,11 @@ export function AutomataSidebar({
 									>
 										Counting
 									</GroupLabel>
-									<Segmented
-										value={cfg.semantics}
+									<OptionWall
+										columns={3}
+										selected={cfg.semantics}
 										onChange={(v) => cfg.set("semantics", v)}
-										options={SEMANTICS.map((s) => ({ id: s.id, label: s.label }))}
+										options={SEMANTICS.map((s) => ({ value: s.id, label: s.label }))}
 									/>
 								</div>
 
@@ -301,7 +253,7 @@ export function AutomataSidebar({
 								<div className="space-y-2 pt-1">
 									{RULE_GROUPS.map((group) => (
 										<div key={group.label} className="space-y-1">
-											<span className="text-[10px] uppercase tracking-wider text-fg-muted">{group.label}</span>
+											<span className="ta-label">{group.label}</span>
 											<div className="space-y-0.5">
 												{group.rules.map((r) => (
 													<button
@@ -312,7 +264,7 @@ export function AutomataSidebar({
 														className={cn(
 															"w-full text-left px-2 py-1 rounded-control text-[11px] transition-colors cursor-pointer",
 															cfg.rule === r.rule
-																? "bg-accent-subtle text-accent"
+																? "bg-surface-overlay text-fg"
 																: "text-fg-muted hover:text-fg hover:bg-surface-overlay",
 														)}
 													>
@@ -348,30 +300,20 @@ export function AutomataSidebar({
 									    acting freely, so it is a 2D Euclidean space form, and there are five. The projective
 									    plane is the one people expect and cannot have — a closed flat surface has Euler
 									    characteristic 0, and χ(ℝP²) = 1. */}
-									<div className="ta-wall ta-wall-dense grid grid-cols-1 gap-px rounded-control p-px">
-										{TOPOLOGIES.map((topo) => {
+									<OptionWall
+										columns={1}
+										selected={cfg.topology}
+										onChange={(v) => cfg.set("topology", v)}
+										options={TOPOLOGIES.map((topo) => {
 											const ok = available.has(topo.id);
-											return (
-												<button
-													key={topo.id}
-													type="button"
-													disabled={!ok}
-													aria-pressed={cfg.topology === topo.id}
-													onClick={() => cfg.set("topology", topo.id)}
-													title={ok ? topo.label : `${topo.label} needs a glide reflection this tiling does not have`}
-													className={cn(
-														"ta-tab ta-wall-cell flex items-center justify-between gap-2 px-2 py-1.5 text-[11px] transition-colors cursor-pointer",
-														"text-fg-muted hover:text-fg-secondary aria-pressed:text-fg aria-pressed:font-medium",
-														!ok && "opacity-40 cursor-not-allowed pointer-events-none",
-														"focus:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-fg",
-													)}
-												>
-													<span>{topo.label}</span>
-													{!ok && <span className="text-[10px]">needs a glide</span>}
-												</button>
-											);
+											return {
+												value: topo.id,
+												disabled: !ok,
+												title: ok ? topo.label : `${topo.label} needs a glide reflection this tiling does not have`,
+												label: ok ? topo.label : `${topo.label} · needs a glide`,
+											};
 										})}
-									</div>
+									/>
 								</div>
 
 								{topologyDef(cfg.topology).i !== "open" && (
@@ -395,12 +337,13 @@ export function AutomataSidebar({
 								{cfg.topology !== "plane" && (
 									<div className="space-y-1.5">
 										<GroupLabel info={EMBEDDING_NOTE[cfg.topology]}>Draw it as</GroupLabel>
-										<Segmented
-											value={cfg.view}
+										<OptionWall
+											columns={2}
+											selected={cfg.view}
 											onChange={(v) => cfg.set("view", v)}
 											options={[
-												{ id: "plane" as const, label: "Flat" },
-												{ id: "surface3d" as const, label: SURFACE_LABEL[cfg.topology] },
+												{ value: "plane" as const, label: "Flat" },
+												{ value: "surface3d" as const, label: SURFACE_LABEL[cfg.topology] },
 											]}
 										/>
 									</div>
@@ -432,12 +375,13 @@ export function AutomataSidebar({
 										>
 											Klein shape
 										</GroupLabel>
-										<Segmented
-											value={cfg.kleinShape}
+										<OptionWall
+											columns={2}
+											selected={cfg.kleinShape}
 											onChange={(v) => cfg.set("kleinShape", v)}
 											options={[
-												{ id: "bottle" as const, label: "Bottle" },
-												{ id: "bagel" as const, label: "Bagel" },
+												{ value: "bottle" as const, label: "Bottle" },
+												{ value: "bagel" as const, label: "Bagel" },
 											]}
 										/>
 									</div>
@@ -457,7 +401,7 @@ export function AutomataSidebar({
 								{/* What gets drawn on the board, appearance and annotation together. The two overlays describe
 								    the quotient, so they only exist once a direction is glued: on the plane the group is trivial,
 								    there is no domain to repeat and no seam to draw. */}
-								<div className="pt-1 space-y-3 border-t border-line">
+								<div className="pt-4 space-y-3 border-t border-line-subtle">
 									<Checkbox
 										id="automata-edges"
 										label="Tile outlines"

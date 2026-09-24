@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Download, Grid3x3, Palette } from "lucide-react";
 import { ParquetStrip } from "@/components/parquet-strip";
 import { Slider } from "@/components/ui/slider";
-import { ButtonGroup } from "@/components/ui/button-group";
-import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
+import { OptionWall } from "@/components/ui/option-wall";
+import { InfoDot } from "@/components/ui/info-dot";
+import { FloatingToolbar, ToolbarButton, ToolbarDivider } from "@/components/ui/floating-toolbar";
 import { VelocityPad } from "@/components/ui/velocity-pad";
 import { MODE_PATCH, useParquet } from "@/lib/stores/parquet";
 import type { EdgeProfile, Pt } from "@/lib/render/parquetStrip";
@@ -59,6 +60,31 @@ const MAX_DRIFT = 0.25;
 
 const isMoving = (v: Vec2) => v.x !== 0 || v.y !== 0;
 const fmtDrift = (v: number) => `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(2)}`;
+
+/** A sidebar row: a field label in the Slider's own type (with an optional info dot and a right-hand
+ *  slot) over its control. Mono caps are kept for the group headings above the rows. */
+function Row({ label, info, right, children }: { label: ReactNode; info?: ReactNode; right?: ReactNode; children: ReactNode }) {
+  return (
+    <div className="grid gap-2">
+      <div className="flex items-center gap-1.5">
+        <span className="text-[13px] font-medium text-fg-secondary">{label}</span>
+        {info && <InfoDot>{info}</InfoDot>}
+        {right && <span className="ml-auto">{right}</span>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+/** A titled group of rows; every group after the first gets a hairline above it. */
+function Group({ title, first, children }: { title: string; first?: boolean; children: ReactNode }) {
+  return (
+    <section className={`grid gap-4 ${first ? "" : "border-t border-line-subtle pt-5"}`}>
+      <h2 className="ta-label font-semibold text-fg!">{title}</h2>
+      {children}
+    </section>
+  );
+}
 
 function downloadSvg(svg: string, name: string) {
   const blob = new Blob([svg], { type: "image/svg+xml" });
@@ -222,15 +248,19 @@ export function ParquetClient() {
     });
   }, [colour, instance, field]);
 
+  // Every option row is one segmented track, a cell per option, so all rows share the sidebar's edge.
+  const wall = <T,>(options: { value: T; label: string }[], selected: T, onChange: (v: T) => void) => (
+    <OptionWall<T> options={options} columns={options.length} selected={selected} onChange={onChange} />
+  );
+
   const presetGroup = (
     label: string,
     value: ParquetPresetId,
     onChange: (v: ParquetPresetId) => void,
   ) => (
-    <div className="grid gap-2" key={label}>
-      <span className="text-sm font-medium text-fg-secondary">{label}</span>
-      <ButtonGroup<ParquetPresetId> options={PRESET_OPTIONS} selected={value} onChange={onChange} />
-    </div>
+    <Row label={label} key={label}>
+      {wall(PRESET_OPTIONS, value, onChange)}
+    </Row>
   );
 
   const driftControl = (
@@ -238,23 +268,19 @@ export function ParquetClient() {
     hint: string,
     value: Vec2,
     onChange: (v: Vec2) => void,
-    axisLabel: string,
-  ) => (
-    <div className="grid gap-2">
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="text-sm font-medium text-fg-secondary">{label}</span>
-        {isMoving(value) && (
-          <button
-            type="button"
-            className="text-xs text-fg-muted hover:text-fg underline underline-offset-2"
-            onClick={() => onChange({ x: 0, y: 0 })}
-          >
-            stop
-          </button>
-        )}
-      </div>
-      <p className="text-xs text-fg-muted leading-relaxed">{hint}</p>
-      {twoD ? (
+  ) => {
+    const stop = isMoving(value) && (
+      <button
+        type="button"
+        className="text-xs text-fg-muted hover:text-fg underline underline-offset-2"
+        onClick={() => onChange({ x: 0, y: 0 })}
+      >
+        stop
+      </button>
+    );
+    // In 1D the slider carries the label and readout itself, so the row does not repeat it.
+    return twoD ? (
+      <Row label={label} info={hint} right={stop}>
         <VelocityPad
           value={value}
           onChange={onChange}
@@ -265,165 +291,133 @@ export function ParquetClient() {
           ariaLabel={`${label}: drag to hold a direction and speed`}
           formatValue={(v) => `x ${v.x.toFixed(2)}, y ${v.y.toFixed(2)}`}
         />
-      ) : (
-        <Slider
-          label={axisLabel}
-          min={-MAX_DRIFT}
-          max={MAX_DRIFT}
-          step={0.01}
-          value={value.x}
-          onChange={(v) => onChange({ x: v, y: 0 })}
-          format={(v) => (v === 0 ? "still" : `${fmtDrift(v)} w/s`)}
-        />
-      )}
-    </div>
-  );
+      </Row>
+    ) : (
+      <Slider
+        label={label}
+        hint={<><InfoDot>{hint}</InfoDot>{stop}</>}
+        min={-MAX_DRIFT}
+        max={MAX_DRIFT}
+        step={0.01}
+        value={value.x}
+        onChange={(v) => onChange({ x: v, y: 0 })}
+        format={(v) => (v === 0 ? "still" : `${fmtDrift(v)} w/s`)}
+      />
+    );
+  };
 
   return (
     <div className="flex-1 min-h-0 flex flex-col md:flex-row">
       {/* Controls */}
-      <aside className="md:w-80 shrink-0 border-b md:border-b-0 md:border-r border-line-subtle bg-surface-chrome p-4 flex flex-col gap-5 overflow-y-auto">
-        <div>
-          <h1 className="text-lg font-bold text-fg">Parquet deformation</h1>
-          <p className="text-xs text-fg-muted mt-1 leading-relaxed">
-            A tiling whose edges evolve across the plane, driven by a field D. Every intermediate
-            shape still tiles.
-          </p>
-        </div>
+      <aside className="md:w-80 shrink-0 border-b md:border-b-0 md:border-r border-line-subtle bg-surface-chrome px-4 pt-4 pb-10 flex flex-col gap-6 overflow-y-auto ta-scroll-fade">
+        <header>
+          <h1 className="text-[15px] font-semibold text-fg">Parquet deformation</h1>
+          <p className="text-xs text-fg-muted mt-0.5">Edges evolve across the plane, yet every shape tiles.</p>
+        </header>
 
-        <div className="grid gap-2">
-          <span className="text-sm font-medium text-fg-secondary">Deformation</span>
-          <ButtonGroup<ParquetMode>
-            options={MODE_OPTIONS}
-            selected={mode}
-            onChange={(v) => set({ mode: v, ...MODE_PATCH[v] })}
-          />
-          <p className="text-xs text-fg-muted leading-relaxed">
-            {twoD
-              ? "D varies in both directions: a shape per corner of the patch, bilinearly blended."
-              : "D varies along the strip: one shape at each end."}
-          </p>
-        </div>
+        <Group title="Shape" first>
+          <Row
+            label="Deformation"
+            info={
+              twoD
+                ? "D varies in both directions: a shape per corner of the patch, bilinearly blended."
+                : "D varies along the strip: one shape at each end."
+            }
+          >
+            {wall(MODE_OPTIONS, mode, (v) => set({ mode: v, ...MODE_PATCH[v] }))}
+          </Row>
 
-        <div className="grid gap-2">
-          <span className="text-sm font-medium text-fg-secondary">Tiling</span>
-          <ButtonGroup<TilingId>
-            options={TILING_OPTIONS}
-            selected={tiling}
-            onChange={(v) => set({ tiling: v })}
-          />
-        </div>
+          <Row label="Tiling">{wall(TILING_OPTIONS, tiling, (v) => set({ tiling: v }))}</Row>
 
-        <div className="grid gap-2">
-          <span className="text-sm font-medium text-fg-secondary">D field</span>
-          <ButtonGroup<FieldKind>
-            options={FIELD_OPTIONS}
-            selected={fieldKind}
-            onChange={(v) => set({ fieldKind: v })}
-          />
-          <p className="text-xs text-fg-muted leading-relaxed">
-            {noise
-              ? `Perlin noise in ${twoD ? "3D (x, y, time)" : "2D (x, time)"} — the evolution wanders instead of running end to end.`
-              : "An analytic profile: ramp, tent or sine."}
-          </p>
-        </div>
+          <Row
+            label="Deformation field"
+            info={
+              noise
+                ? `Perlin noise in ${twoD ? "3D (x, y, time)" : "2D (x, time)"}: the evolution wanders instead of running end to end.`
+                : "An analytic profile: ramp, tent or sine."
+            }
+          >
+            {wall(FIELD_OPTIONS, fieldKind, (v) => set({ fieldKind: v }))}
+          </Row>
 
-        {/* Keyframe shapes: four corners for the 2-D bilinear patch, two otherwise. */}
-        {corners
-          ? CORNER_KEYS.map((k, i) =>
-              presetGroup(CORNER_LABELS[k], cornerPresets[i], (v) => {
-                const next = [...cornerPresets] as typeof cornerPresets;
-                next[i] = v;
-                set({ cornerPresets: next });
-              }),
-            )
-          : [
-              presetGroup(noise ? "Shape A" : "From edge (left)", fromPreset, (v) =>
-                set({ fromPreset: v }),
-              ),
-              presetGroup(noise ? "Shape B" : "To edge (right)", toPreset, (v) =>
-                set({ toPreset: v }),
-              ),
-            ]}
+          {/* Keyframe shapes: four corners for the 2-D bilinear patch, two otherwise. */}
+          {corners
+            ? CORNER_KEYS.map((k, i) =>
+                presetGroup(CORNER_LABELS[k], cornerPresets[i], (v) => {
+                  const next = [...cornerPresets] as typeof cornerPresets;
+                  next[i] = v;
+                  set({ cornerPresets: next });
+                }),
+              )
+            : [
+                presetGroup(noise ? "Shape A" : "From edge (left)", fromPreset, (v) =>
+                  set({ fromPreset: v }),
+                ),
+                presetGroup(noise ? "Shape B" : "To edge (right)", toPreset, (v) =>
+                  set({ toPreset: v }),
+                ),
+              ]}
 
-        {noise ? (
-          <div className="grid gap-4">
-            <Slider
-              label="Noise scale"
-              min={0.5}
-              max={12}
-              step={0.5}
-              value={noiseFrequency}
-              onChange={(v) => set({ noiseFrequency: v })}
-              format={(v) => `${v} across`}
-            />
-            <Slider
-              label="Contrast"
-              min={0.5}
-              max={4}
-              step={0.1}
-              value={noiseContrast}
-              onChange={(v) => set({ noiseContrast: v })}
-              format={(v) => v.toFixed(1)}
-            />
-            <Slider
-              label="Evolve"
-              min={0}
-              max={1}
-              step={0.02}
-              value={noiseSpeed}
-              onChange={(v) => set({ noiseSpeed: v })}
-              format={(v) => (v === 0 ? "frozen" : v.toFixed(2))}
-            />
-            <Slider
-              label="Seed"
-              min={1}
-              max={99}
-              step={1}
-              value={noiseSeed}
-              onChange={(v) => set({ noiseSeed: v })}
-            />
-          </div>
-        ) : (
-          <div className="grid gap-4">
-            <div className="grid gap-2">
-              <span className="text-sm font-medium text-fg-secondary">
-                {twoD ? "D along x" : "D(x) profile"}
-              </span>
-              <ButtonGroup<DProfileId>
-                options={D_OPTIONS}
-                selected={dProfile}
-                onChange={(v) => set({ dProfile: v })}
+          {noise ? (
+            <div className="grid gap-4">
+              <Slider
+                label="Noise scale"
+                min={0.5}
+                max={12}
+                step={0.5}
+                value={noiseFrequency}
+                onChange={(v) => set({ noiseFrequency: v })}
+                format={(v) => `${v} across`}
+              />
+              <Slider
+                label="Contrast"
+                min={0.5}
+                max={4}
+                step={0.1}
+                value={noiseContrast}
+                onChange={(v) => set({ noiseContrast: v })}
+                format={(v) => v.toFixed(1)}
+              />
+              <Slider
+                label="Evolve"
+                min={0}
+                max={1}
+                step={0.02}
+                value={noiseSpeed}
+                onChange={(v) => set({ noiseSpeed: v })}
+                format={(v) => (v === 0 ? "frozen" : v.toFixed(2))}
+              />
+              <Slider
+                label="Seed"
+                min={1}
+                max={99}
+                step={1}
+                value={noiseSeed}
+                onChange={(v) => set({ noiseSeed: v })}
               />
             </div>
-            {twoD && (
-              <div className="grid gap-2">
-                <span className="text-sm font-medium text-fg-secondary">D along y</span>
-                <ButtonGroup<DProfileId>
-                  options={D_OPTIONS}
-                  selected={dProfileY}
-                  onChange={(v) => set({ dProfileY: v })}
-                />
-              </div>
-            )}
-          </div>
-        )}
+          ) : (
+            <>
+              <Row label={twoD ? "Profile along x" : "Profile curve"}>
+                {wall(D_OPTIONS, dProfile, (v) => set({ dProfile: v }))}
+              </Row>
+              {twoD && <Row label="Profile along y">{wall(D_OPTIONS, dProfileY, (v) => set({ dProfileY: v }))}</Row>}
+            </>
+          )}
+        </Group>
 
-        <div className="grid gap-4 border-t border-line-subtle pt-4">
-          <span className="text-sm font-semibold text-fg">Motion</span>
+        <Group title="Motion">
           {driftControl(
             "Grid drift",
             "The tiles travel; the field stays nailed to the plane. Each tile re-reads D as it moves, so it changes shape while it slides.",
             gridDrift,
             (v) => set({ gridDrift: v }),
-            "Along the strip",
           )}
           {driftControl(
             "Field drift",
             "The tiles stay put; the field slides over them. The evolution flows across fixed tiles like a wave.",
             fieldDrift,
             (v) => set({ fieldDrift: v }),
-            "Along the strip",
           )}
           {!noise && !D_PROFILE_META[dProfile].periodic && isMoving(fieldDrift) && (
             <p className="text-xs text-fg-muted leading-relaxed">
@@ -431,9 +425,9 @@ export function ParquetClient() {
               once and then holds. Pick a periodic D(x) to loop forever.
             </p>
           )}
-        </div>
+        </Group>
 
-        <div className="grid gap-4 border-t border-line-subtle pt-4">
+        <Group title={twoD ? "Patch" : "Strip"}>
           <Slider
             label="Amount"
             unit="%"
@@ -445,32 +439,11 @@ export function ParquetClient() {
           />
           <Slider label="Columns" min={2} max={60} step={1} value={cols} onChange={(v) => set({ cols: v })} />
           <Slider label="Rows" min={1} max={20} step={1} value={rows} onChange={(v) => set({ rows: v })} />
-        </div>
-
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-fg-secondary">Colour</span>
-          <Switch checked={colour} onCheckedChange={(v) => set({ colour: v })} />
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-fg-secondary">Show base tiling</span>
-          <Switch checked={showGuides} onCheckedChange={(v) => set({ showGuides: v })} />
-        </div>
-
-        <Button
-          variant="secondary"
-          onClick={() =>
-            downloadSvg(
-              parquetToSvgString(tileOutlines, guideOutlines),
-              `parquet-${mode}-${tiling}-${fieldKind}.svg`,
-            )
-          }
-        >
-          Export SVG
-        </Button>
+        </Group>
       </aside>
 
-      {/* Patch */}
-      <main className="flex-1 min-h-0 flex items-center justify-center bg-surface-raised p-6 overflow-auto text-fg">
+      {/* Patch, with the view-level actions (colour, base tiling, export) parked over it. */}
+      <main className="relative flex-1 min-h-0 flex items-center justify-center bg-surface-raised px-10 pt-10 pb-20 overflow-auto text-fg">
         <ParquetStrip
           tileOutlines={tileOutlines}
           guideOutlines={guideOutlines}
@@ -479,6 +452,36 @@ export function ParquetClient() {
           clip={margin > 0}
           className="w-full h-full"
         />
+        <FloatingToolbar>
+          <ToolbarButton
+            label={colour ? "Colour off" : "Colour by field"}
+            aria-pressed={colour}
+            onClick={() => set({ colour: !colour })}
+          >
+            <Palette size={16} />
+          </ToolbarButton>
+          <ToolbarButton
+            label={showGuides ? "Hide base tiling" : "Show base tiling"}
+            aria-pressed={showGuides}
+            onClick={() => set({ showGuides: !showGuides })}
+          >
+            <Grid3x3 size={16} />
+          </ToolbarButton>
+          <ToolbarDivider />
+          <ToolbarButton
+            label="Export SVG"
+            primary
+            onClick={() =>
+              downloadSvg(
+                parquetToSvgString(tileOutlines, guideOutlines),
+                `parquet-${mode}-${tiling}-${fieldKind}.svg`,
+              )
+            }
+          >
+            <Download size={14} />
+            Export SVG
+          </ToolbarButton>
+        </FloatingToolbar>
       </main>
     </div>
   );

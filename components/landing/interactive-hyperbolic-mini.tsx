@@ -172,7 +172,10 @@ export function InteractiveHyperbolicMini({ patchId, patch }: { patchId: string;
 			{inView ? (
 				// diskPadPx 0: nothing floats over this canvas, so the rim goes to the cell edge.
 				<HyperbolicDevelopedCanvas patchId={patchId} data={patch} input={inputRef} diskPadPx={0} />
-			) : null}
+			) : (
+				// Out of view: the disk's silhouette as a quiet skeleton on the sunken plate.
+				<div aria-hidden="true" className="absolute inset-0 m-auto h-full aspect-square rounded-full bg-surface-overlay" />
+			)}
 		</div>
 	);
 }

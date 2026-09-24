@@ -22,21 +22,24 @@ import { useId } from "react";
 import type { IsohedralCell } from "@/lib/isohedral/build";
 import type { IsohedralTypeInfo } from "@/lib/isohedral/catalogue";
 import type { TactilePoint } from "@/lib/isohedral/vendor/tactile";
+import { tileFill } from "@/lib/render/tilePalette";
 
 const BOX = 132;
-const PAD = 20;
+const PAD = 12;
 
 /**
- * Drawn width, in CSS px.
+ * Drawn size, in CSS px: a 112px ringed panel less its 8px padding and hairline.
  *
  * Capped, unlike /pentagons' full-width version, because this sidebar has already spent its height on
  * two filter rows and a scrolling 93-entry grid. A full-width drawing here pushed the very sliders it
  * explains below the fold, which is the failure the shelf's two-region split exists to prevent.
  */
-const WIDTH_PX = 168;
+const SIZE_PX = 94;
+/** Edge letters render at 11px whatever the viewBox scale. */
+const LABEL_FONT = (11 * BOX) / SIZE_PX;
 
 /** Label offset from the edge, and the symmetry marks' half-length, in viewBox units. */
-const LABEL_PUSH = 10;
+const LABEL_PUSH = 11;
 const MARK = 4;
 
 export function PrototileInspector({
@@ -132,95 +135,101 @@ export function PrototileInspector({
 
 	return (
 		<div className="flex flex-col gap-2">
-			<svg
-				viewBox={`0 0 ${BOX} ${BOX}`}
-				className="mx-auto h-auto w-full"
-				style={{ maxWidth: WIDTH_PX }}
-				role="img"
-				aria-labelledby={`${uid}-title`}
-			>
-				<title id={`${uid}-title`}>
-					{`${info.label} prototile: ${info.numVertices} tiling vertices, edge word ${info.edgeWord}`}
-				</title>
+			<div className="rounded-surface border border-line-subtle p-2">
+				<svg
+					viewBox={`0 0 ${BOX} ${BOX}`}
+					className="mx-auto block overflow-visible"
+					width={SIZE_PX}
+					height={SIZE_PX}
+					role="img"
+					aria-labelledby={`${uid}-title`}
+				>
+					<title id={`${uid}-title`}>
+						{`${info.label} prototile: ${info.numVertices} tiling vertices, edge word ${info.edgeWord}`}
+					</title>
 
-				{/* The combinatorial polygon. Drawn first, so at zero bulge the solid outline covers it
-				    exactly and no second line appears. */}
-				<polygon
-					points={path(corners)}
-					fill="none"
-					className="stroke-fg-disabled"
-					strokeWidth={0.75}
-					strokeDasharray="2 2"
-				/>
+					{/* The combinatorial polygon. Drawn first, so at zero bulge the solid outline covers it
+					    exactly and no second line appears. */}
+					<polygon
+						points={path(corners)}
+						fill="none"
+						className="stroke-fg-disabled"
+						strokeWidth={0.75}
+						strokeDasharray="2 2"
+					/>
 
-				<polygon
-					points={path(outline)}
-					className="fill-accent-subtle stroke-fg-secondary"
-					strokeWidth={1.25}
-					strokeLinejoin="round"
-				/>
+					{/* Filled and stroked like the first tile on the canvas, black in both themes, so the drawing
+					    and the tiling agree. */}
+					<polygon
+						points={path(outline)}
+						fill={tileFill(cell.polygons[0]?.hue ?? 0)}
+						stroke="#000"
+						strokeWidth={1.25}
+						strokeLinejoin="round"
+					/>
 
-				{/* Each edge's symmetry element, where it acts. J is unconstrained and gets none; I is
-				    visibly straight already. */}
-				{marks.map(({ e, mid, arm }, i) =>
-					e.kind === "S" ? (
-						// The 2-fold centre the edge turns about. An S curve is antisymmetric about it, so this
-						// point sits on the chord however hard the edge bows.
-						<circle
-							key={`m${i}`}
-							cx={mid.x}
-							cy={mid.y}
-							r={2}
-							fill="none"
-							className="stroke-fg-muted"
-							strokeWidth={0.9}
-						/>
-					) : e.kind === "U" ? (
-						// The perpendicular bisector the edge mirrors across, where it crosses. Solid, with
-						// dashes kept for the chords, because that is the standard reading: a solid line is a
-						// mirror, a dashed one is construction.
-						//
-						// Centred on the DRAWN edge, not on the chord. Anchoring it to the chord and stretching
-						// it out to reach the curve pointed the wrong way on every inward bow — IH18 drew three
-						// spokes hanging outside a concave edge, touching nothing.
-						<line
-							key={`m${i}`}
-							x1={mid.x - arm.x}
-							y1={mid.y - arm.y}
-							x2={mid.x + arm.x}
-							y2={mid.y + arm.y}
-							className="stroke-fg-muted"
-							strokeWidth={0.9}
-						/>
-					) : null,
-				)}
+					{/* Each edge's symmetry element, where it acts. J is unconstrained and gets none; I is
+					    visibly straight already. */}
+					{marks.map(({ e, mid, arm }, i) =>
+						e.kind === "S" ? (
+							// The 2-fold centre the edge turns about. An S curve is antisymmetric about it, so this
+							// point sits on the chord however hard the edge bows.
+							<circle
+								key={`m${i}`}
+								cx={mid.x}
+								cy={mid.y}
+								r={2}
+								fill="none"
+								className="stroke-fg-muted"
+								strokeWidth={0.9}
+							/>
+						) : e.kind === "U" ? (
+							// The perpendicular bisector the edge mirrors across, where it crosses. Solid, with
+							// dashes kept for the chords, because that is the standard reading: a solid line is a
+							// mirror, a dashed one is construction.
+							//
+							// Centred on the DRAWN edge, not on the chord. Anchoring it to the chord and stretching
+							// it out to reach the curve pointed the wrong way on every inward bow — IH18 drew three
+							// spokes hanging outside a concave edge, touching nothing.
+							<line
+								key={`m${i}`}
+								x1={mid.x - arm.x}
+								y1={mid.y - arm.y}
+								x2={mid.x + arm.x}
+								y2={mid.y + arm.y}
+								className="stroke-fg-muted"
+								strokeWidth={0.9}
+							/>
+						) : null,
+					)}
 
-				{/* The tiling vertices. Unlabelled on purpose: the sliders above are PARAMETERS, and a
-				    parameter is an affine coefficient that can move several vertices at once, so naming a
-				    dot after a slider would be a lie. */}
-				{corners.map((p, i) => (
-					<circle key={`v${i}`} cx={p.x} cy={p.y} r={1.6} className="fill-fg-secondary" />
-				))}
+					{/* The tiling vertices. Unlabelled on purpose: the sliders above are PARAMETERS, and a
+					    parameter is an affine coefficient that can move several vertices at once, so naming a
+					    dot after a slider would be a lie. */}
+					{corners.map((p, i) => (
+						<circle key={`v${i}`} cx={p.x} cy={p.y} r={1.6} fill="#000" />
+					))}
 
-				{/* Which curve draws which edge. Same convention as `edgeWord` and the info panel:
-				    uppercase means the shared curve runs backwards along this edge. */}
-				{marks.map(({ e, label }, i) => {
-					const letter = String.fromCharCode(97 + e.id);
-					return (
-						<text
-							key={`l${i}`}
-							x={label.x}
-							y={label.y}
-							textAnchor="middle"
-							dominantBaseline="middle"
-							className="fill-fg"
-							style={{ fontSize: 9, fontWeight: 600 }}
-						>
-							{e.rev ? letter.toUpperCase() : letter}
-						</text>
-					);
-				})}
-			</svg>
+					{/* Which curve draws which edge. Same convention as `edgeWord` and the info panel:
+					    uppercase means the shared curve runs backwards along this edge. */}
+					{marks.map(({ e, label }, i) => {
+						const letter = String.fromCharCode(97 + e.id);
+						return (
+							<text
+								key={`l${i}`}
+								x={label.x}
+								y={label.y}
+								textAnchor="middle"
+								dominantBaseline="middle"
+								className="fill-fg-muted font-mono"
+								style={{ fontSize: LABEL_FONT }}
+							>
+								{e.rev ? letter.toUpperCase() : letter}
+							</text>
+						);
+					})}
+				</svg>
+			</div>
 
 			{cell.degenerate ? (
 				<p className="text-[11px] text-fg-muted">

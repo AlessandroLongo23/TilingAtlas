@@ -33,13 +33,13 @@ type ButtonAsLink = CommonProps &
 export type ButtonProps = ButtonAsButton | ButtonAsLink;
 
 // Squared w/b design system: no radii, no accent colour. Hierarchy is carried by ink alone —
-// primary is solid fg with inverse text, secondary an outline, ghost bare text. Danger keeps its
+// primary is the solid accent, secondary an outline, ghost bare text. Danger keeps its
 // semantic red (it signals destruction, not brand).
 const VARIANT_CLASSES: Record<Variant, string> = {
 	primary:
-		"bg-fg text-fg-inverse border border-fg hover:bg-fg/85 active:bg-fg/75",
+		"bg-accent text-accent-contrast border border-accent shadow-sm hover:bg-accent-hover active:bg-accent-active",
 	secondary:
-		"bg-transparent text-fg-secondary hover:text-fg border border-line-strong hover:border-fg",
+		"bg-surface-raised text-fg border border-line shadow-sm hover:bg-surface-overlay",
 	ghost:
 		"bg-transparent hover:bg-surface-overlay/70 text-fg-muted hover:text-fg border border-transparent",
 	danger:
@@ -47,8 +47,8 @@ const VARIANT_CLASSES: Record<Variant, string> = {
 };
 
 const SIZE_CLASSES: Record<Size, string> = {
-	sm: "h-8 px-3 text-xs gap-1.5",
-	md: "h-10 px-4 text-sm gap-2",
+	sm: "h-8 px-3 text-[13px] gap-1.5",
+	md: "h-9 px-3.5 text-sm gap-2",
 	lg: "h-12 px-6 text-base gap-2.5",
 	icon: "h-8 w-8",
 };
@@ -61,7 +61,7 @@ const ICON_SIZE: Record<Size, string> = {
 };
 
 const BASE =
-	"inline-flex items-center justify-center font-medium transition-colors duration-150 focus:outline-none focus-visible:ring-1 focus-visible:ring-fg focus-visible:ring-offset-2 focus-visible:ring-offset-surface";
+	"inline-flex items-center justify-center rounded-control font-medium transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50";
 
 function isLinkProps(p: ButtonProps): p is ButtonAsLink {
 	return "href" in p && p.href !== undefined;

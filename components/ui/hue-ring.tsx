@@ -60,8 +60,8 @@ export function HueRing({ value, onChange, label, size = VIEW }: HueRingProps) {
 		<div className="grid w-full gap-2">
 			{label ? (
 				<div className="flex flex-row justify-between items-center">
-					<span className="text-sm font-medium text-fg-secondary">{label}</span>
-					<span className="text-xs text-accent font-medium">{hue}°</span>
+					<span className="text-[13px] font-medium text-fg-secondary">{label}</span>
+					<span className="font-mono text-xs text-fg tabular-nums">{hue}°</span>
 				</div>
 			) : null}
 			<svg
@@ -69,7 +69,7 @@ export function HueRing({ value, onChange, label, size = VIEW }: HueRingProps) {
 				width={size}
 				height={size}
 				viewBox={`0 0 ${VIEW} ${VIEW}`}
-				className="mx-auto touch-none cursor-pointer select-none focus:outline-none focus-visible:ring-1 focus-visible:ring-line-focus/40 rounded-full"
+				className="mx-auto touch-none cursor-pointer select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 rounded-full"
 				role="slider"
 				tabIndex={0}
 				aria-label={label ?? "Hue offset"}

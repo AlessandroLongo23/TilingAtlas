@@ -20,11 +20,10 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils/cn";
 
 /**
- * A labelled control group, matching the Options tab's `text-[11px] text-fg-muted` caption.
+ * A labelled control group, captioned with the shared `.ta-label` (globals.css).
  *
- * `flush` is for a group whose region has no padding of its own, so a grid of wall cells inside it
- * reaches both panel edges: the caption takes the indent the region would have given it, and the
- * control below keeps the full width.
+ * `flush` is for a group whose region has no padding of its own: the group then brings the panel
+ * gutter itself, caption and control alike.
  */
 export function Section({
 	label,
@@ -36,8 +35,8 @@ export function Section({
 	children: ReactNode;
 }) {
 	return (
-		<div className="flex flex-col gap-2">
-			<span className={cn("text-[11px] text-fg-muted", flush && "px-3")}>{label}</span>
+		<div className={cn("flex flex-col gap-2", flush && "px-3.5")}>
+			<span className="ta-label">{label}</span>
 			{children}
 		</div>
 	);
@@ -46,11 +45,11 @@ export function Section({
 /** The facts block a shelf sidebar ends on: a definition list, no prose. */
 export function Details({ rows }: { rows: [string, ReactNode][] }) {
 	return (
-		<dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
+		<dl className="grid grid-cols-[6rem_1fr] gap-x-3 gap-y-1.5 text-xs">
 			{rows.map(([k, v]) => (
 				<div key={k} className="contents">
 					<dt className="text-fg-muted">{k}</dt>
-					<dd className="text-fg-secondary tabular-nums">{v}</dd>
+					<dd className="font-mono text-fg tabular-nums">{v}</dd>
 				</div>
 			))}
 		</dl>
@@ -74,30 +73,29 @@ export interface SegmentedOption {
 }
 
 /**
- * Segmented choice as wall cells. `cols` sets the grid width so a long option set wraps to further
- * rows instead of shrinking; the isohedral type grid runs to ninety-three.
- *
- * The wrapper repaints the wall colour because these sit INSIDE the padded panel, where the ancestor
- * wall is masked by the panel's own opaque background; without it the gaps would read as panel, not as
- * rules.
+ * Segmented choice on the shared track (.ta-seg). `cols` sets the grid width so a long option set wraps
+ * to further rows instead of shrinking; the isohedral type grid runs to ninety-three. A short last row
+ * either stretches to the full width (`fill`, the default, right for words) or keeps the column grid
+ * (`fill={false}`, right for numbers and codes, which should line up in columns).
  */
 export function Segmented({
 	options,
 	value,
 	onChange,
 	cols = 2,
+	fill = true,
 }: {
 	options: SegmentedOption[];
 	value: string;
 	onChange: (v: string) => void;
 	cols?: number;
+	fill?: boolean;
 }) {
+	const r = fill ? options.length % cols || cols : cols;
+	const lastRow = options.length - (options.length % cols || cols);
 	return (
-		<div
-			className="ta-wall ta-wall-dense grid gap-px"
-			style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
-		>
-			{options.map((o) => {
+		<div className="ta-seg grid" style={{ gridTemplateColumns: `repeat(${cols * r}, minmax(0, 1fr))` }}>
+			{options.map((o, i) => {
 				const active = value === o.v;
 				return (
 					<button
@@ -107,35 +105,22 @@ export function Segmented({
 						aria-pressed={active}
 						title={o.title}
 						onClick={() => onChange(o.v)}
+						style={{ gridColumn: `span ${fill && i >= lastRow ? cols : r}` }}
 						className={cn(
-							"ta-tab ta-wall-cell flex cursor-pointer flex-col items-center justify-center px-1 py-1.5 transition-colors",
-							"focus:outline-none focus-visible:relative focus-visible:z-10 focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-fg",
-							active ? "text-fg" : "text-fg-muted hover:text-fg-secondary",
+							"ta-tab flex min-h-7 cursor-pointer flex-col items-center justify-center px-1 py-1 transition-colors",
+							"focus:outline-none focus-visible:relative focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-accent/50",
+							active ? "text-fg" : "text-fg-muted hover:text-fg",
 							o.dim && !active && "text-fg-disabled hover:text-fg-muted",
 							o.disabled && "opacity-50 cursor-not-allowed pointer-events-none",
 						)}
 					>
-						<span className="text-xs font-medium leading-tight text-center text-balance">
-							{o.label}
-						</span>
+						<span className="text-xs font-medium leading-tight text-center text-balance">{o.label}</span>
 						{o.sub ? (
-							<span
-								className={cn(
-									"text-[10px] leading-tight tabular-nums",
-									active ? "text-fg-secondary" : "text-fg-muted",
-								)}
-							>
-								{o.sub}
-							</span>
+							<span className="font-mono text-[11px] leading-tight tabular-nums text-fg-muted">{o.sub}</span>
 						) : null}
 					</button>
 				);
 			})}
-			{/* Pad the last row. An empty grid area shows the container's wall colour, which reads as a grey
-			    block sitting in the control, not as blank space. */}
-			{Array.from({ length: (cols - (options.length % cols)) % cols }, (_, i) => (
-				<div key={`pad-${i}`} className="ta-wall-cell bg-surface-chrome" aria-hidden />
-			))}
 		</div>
 	);
 }

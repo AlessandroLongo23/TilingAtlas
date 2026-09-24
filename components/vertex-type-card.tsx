@@ -18,7 +18,7 @@ export function VertexTypeCard({ id, name, isSelected, onToggle }: VertexTypeCar
 			className={cn(
 				"w-full h-full group flex flex-col items-center justify-between border rounded-lg overflow-hidden transition-all",
 				isSelected
-					? "border-line-focus bg-accent-subtle"
+					? "border-line-focus bg-surface-overlay"
 					: "border-line bg-surface-overlay/50 hover:border-line-strong hover:bg-surface-overlay/80",
 			)}
 		>
@@ -26,7 +26,7 @@ export function VertexTypeCard({ id, name, isSelected, onToggle }: VertexTypeCar
 				<div
 					className={cn(
 						"absolute top-1 left-1 z-10 px-2 py-1 rounded-md font-medium text-sm backdrop-blur-sm",
-						isSelected ? "bg-black/60 text-accent" : "bg-black/50 text-fg",
+						isSelected ? "bg-black/60 text-white" : "bg-black/50 text-fg",
 					)}
 				>
 					{name}

@@ -9,7 +9,6 @@ import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import { COLOR_SUB, FAMILY_LABEL, SUB_LABEL, shortSubLabel } from "@/lib/services/shelfLabels";
 import { kNounOf } from "@/lib/services/shelfRegistry";
 import { tierKey, type UnloadedTier } from "@/lib/services/atlasManifest";
-import { Badge } from "@/components/ui/badge";
 import { TileGrid } from "./tile-grid";
 
 // The /play picker: tilings nested by polygon class (regular / star / convex / isotoxal) then by k, each a
@@ -29,25 +28,20 @@ interface CatalogueListPanelProps {
 
 // Row height for both header levels; the nested one parks one hairline below the outer one so an open
 // path reads as an indented tree pinned to the top of the scrollport.
-const ROW_H = 36;
+const ROW_H = 32;
 const NESTED_TOP = ROW_H + 1;
 // The collapse-all strip pins above the whole header stack, so every sticky row starts one strip
 // further down.
-const TOOLBAR_H = 28;
+const TOOLBAR_H = 32;
 
-// Indent guides. A row at depth d draws one hairline per ancestor level, so a nested row can be
-// traced back to the heading that owns it: indentation alone gave four levels of 16px steps and no
-// way to see, at a glance, which heading a "k = 2" belongs to. x follows the pl- steps below (12px,
-// then 16px a level), parked 11px to the left of the child's own text.
-const RAIL_X = (level: number) => 17 + level * 16;
-
-// Ink ranks the levels the way the rails group them: a class heading is the heaviest thing in the
-// wall, its members lighter, the leaves lighter again.
+// Ink ranks the levels: a class heading is the heaviest thing in the list, its members lighter. The
+// chevron leads each row, so the 16px indent steps line every level's chevron up under its parent's
+// label (the rails that used to draw this are gone with the wall, 2026-09-24).
 const DEPTH_TEXT: Record<0 | 1 | 2 | 3, string> = {
-	0: "text-xs font-semibold text-fg",
-	1: "text-xs font-medium text-fg-secondary",
-	2: "text-[11px] font-medium text-fg-secondary",
-	3: "text-[11px] font-normal text-fg-secondary",
+	0: "text-[13px] font-semibold text-fg",
+	1: "text-[13px] font-medium text-fg-secondary",
+	2: "text-[12.5px] text-fg-secondary",
+	3: "text-[12.5px] text-fg-secondary",
 };
 
 // A board on the base hyperbolic shelf ("hyt-…") earns the configuration level only when the level
@@ -501,29 +495,32 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({
 	};
 
 	return (
-		// The list is a wall: rows stacked edge to edge, the 1px gaps between them the only rules.
-		<div ref={listRef} className="ta-wall flex flex-col gap-px">
+		<div ref={listRef} className="flex flex-col gap-px">
 			{/* One way out of a deep tree. There is deliberately no expand-all counterpart: opening every
 			    node would mount a TileGrid for every tiling on the shelf at once — six figures of them on
 			    the euclidean one — which is not a control, it is a way to hang the tab. It pins ABOVE the
 			    header stack, which is why every sticky row below starts at TOOLBAR_H. */}
-			<button
-				type="button"
-				onClick={() => toggleAll(false)}
-				disabled={openCount === 0}
-				className={cn(
-					"ta-sticky-rule bg-surface-chrome sticky top-0 z-50 flex items-center gap-1.5 px-3 text-left",
-					"text-[11px] font-medium text-fg-muted cursor-pointer",
-					"hover:bg-surface-sunken hover:text-fg dark:hover:bg-surface-overlay transition-colors",
-					"focus:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-fg",
-					"disabled:pointer-events-none disabled:opacity-40",
-				)}
+			<div
+				className="ta-sticky-rule bg-surface-chrome sticky top-0 z-50 flex items-center justify-between pl-2 pr-[17px]"
 				style={{ height: TOOLBAR_H }}
 			>
-				<ChevronsDownUp size={12} className="shrink-0" aria-hidden />
-				Collapse all
-				{openCount > 0 ? <span className="ml-auto tabular-nums">{openCount} open</span> : null}
-			</button>
+				<span className="ta-label">Catalogue</span>
+				<button
+					type="button"
+					onClick={() => toggleAll(false)}
+					disabled={openCount === 0}
+					className={cn(
+						"flex items-center gap-1.5 rounded-control text-xs text-fg-muted cursor-pointer",
+						"hover:text-fg transition-colors",
+						"focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
+						"disabled:pointer-events-none disabled:opacity-40",
+					)}
+				>
+					<ChevronsDownUp size={12} className="shrink-0" aria-hidden />
+					Collapse all
+					{openCount > 0 ? <span className="font-mono text-[11px] tabular-nums">· {openCount}</span> : null}
+				</button>
+			</div>
 			{byClass.map((g) => {
 				if (single) return <Fragment key={g.cls}>{subSections(g, 0)}</Fragment>;
 				const id = `c:${g.cls}`;
@@ -570,56 +567,48 @@ function TreeRow({
 			aria-expanded={pending ? undefined : open}
 			aria-busy={pending === "loading" || undefined}
 			className={cn(
-				// ta-sticky-rule (globals.css): a pinned row paints its own hairlines, since the wall's
-				// gaps have scrolling tiles behind them while it is stuck.
-				"ta-sticky-rule bg-surface-chrome sticky flex items-center gap-2 pr-3 text-left cursor-pointer",
-				"hover:bg-surface-sunken dark:hover:bg-surface-overlay transition-colors",
-				"focus:outline-none focus-visible:relative focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-fg",
+				// ta-sticky-rule (globals.css): a pinned row paints its own 1px gaps, so tiles scrolling
+				// behind a stuck row never show through them. The row itself stays opaque chrome edge to edge; the grey sits on the inner span, inset
+				// to the tile wall's own left edge (scroller padding + the wall's outer lane and hairline).
+				"group ta-sticky-rule sticky flex bg-surface-chrome px-[9px] text-left cursor-pointer",
+				"focus:outline-none focus-visible:relative focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/50",
 				// Every level sits ABOVE a tile's z-10 selection/hover ring (tile-grid.tsx): the ring and
 				// these headers share one stacking context, so a header at the ring's own z-10 only tied it
 				// and — later in DOM order — the ring won, bleeding its outline up over the pinned k-row. Keep
 				// the depth order (class over grid over k) but start it past 10. The scroller isolates this
 				// context (catalogue-tab.tsx), so these values never reach the canvas overlay buttons.
-				depth === 0 ? "pl-3 z-40" : depth === 1 ? "pl-7 z-30" : depth === 2 ? "pl-11 z-20" : "pl-[3.75rem] z-[15]",
+				depth === 0 ? "z-40" : depth === 1 ? "z-30" : depth === 2 ? "z-20" : "z-[15]",
 			)}
 			style={{ height: ROW_H, top: TOOLBAR_H + NESTED_TOP * depth }}
 		>
-			{/* One rail per ancestor level. Absolute inside the row, which `sticky` already positions —
-			    the wall's 1px gaps between rows carry the same line colour, so the rails read as
-			    continuous even though each row paints only its own slice. */}
-			{Array.from({ length: depth }, (_, i) => (
-				<span
-					key={i}
-					aria-hidden
-					className="pointer-events-none absolute inset-y-0 w-px bg-line"
-					style={{ left: RAIL_X(i) }}
-				/>
-			))}
-			<span className={cn("min-w-0 flex-1 truncate", DEPTH_TEXT[depth])}>{label}</span>
-			{/* The count reads as a chip parked against the chevron, not as a number glued to the label:
-			    the labels vary in length, so an inline count landed at a different x on every row. */}
-			<Badge className="shrink-0 rounded-full bg-fg/10 tabular-nums text-fg-secondary">
-				{count}
-			</Badge>
-			{pending ? (
-				// A download glyph, not a chevron: this row fetches, it does not unfold. The count beside
-				// it is the manifest's, so it is honest before anything has been loaded.
-				<Download
-					size={13}
-					className={cn("shrink-0", pending === "loading" ? "text-fg animate-pulse" : "text-fg-muted")}
-				/>
-			) : (
-				// ONE glyph that turns, not two that swap: a swap remounts the element and lands the new
-				// arrow with no travel, which is what made opening a folder feel like a jump cut.
-				<ChevronRight
-					size={13}
-					className={cn(
-						"text-fg-muted shrink-0 transition-transform duration-[var(--duration-base)] ease-[var(--ease-out)]",
-						"motion-reduce:transition-none",
-						open && "rotate-90",
-					)}
-				/>
-			)}
+			<span
+				className={cn(
+					"flex min-w-0 flex-1 items-center gap-1.5 rounded-control pr-2 transition-colors group-hover:bg-surface-overlay",
+					depth === 0 ? "pl-2" : depth === 1 ? "pl-6" : depth === 2 ? "pl-10" : "pl-14",
+				)}
+			>
+				{pending ? (
+					// A download glyph, not a chevron: this row fetches, it does not unfold. The count beside
+					// it is the manifest's, so it is honest before anything has been loaded.
+					<Download
+						size={14}
+						className={cn("shrink-0", pending === "loading" ? "text-fg animate-pulse" : "text-fg-muted")}
+					/>
+				) : (
+					// ONE glyph that turns, not two that swap: a swap remounts the element and lands the new
+					// arrow with no travel, which is what made opening a folder feel like a jump cut.
+					<ChevronRight
+						size={14}
+						className={cn(
+							"text-fg-muted shrink-0 transition-transform duration-[var(--duration-base)] ease-[var(--ease-out)]",
+							"motion-reduce:transition-none",
+							open && "rotate-90",
+						)}
+					/>
+				)}
+				<span className={cn("min-w-0 flex-1 truncate", DEPTH_TEXT[depth])}>{label}</span>
+				<span className="shrink-0 font-mono text-[11px] tabular-nums text-fg-muted">{count.toLocaleString("en-US")}</span>
+			</span>
 		</button>
 	);
 }

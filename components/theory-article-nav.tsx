@@ -13,14 +13,14 @@ export function TheoryArticleNav({ currentSlug }: { currentSlug: string }) {
 		<div className="px-2 pt-4">
 			<Link
 				href="/theory"
-				className="flex items-center gap-1.5 px-2 pb-2 text-[11px] font-medium uppercase tracking-wide text-fg-muted transition-colors hover:text-fg"
+				className="ta-label flex items-center gap-1.5 px-2 text-fg-muted transition-colors hover:text-fg"
 			>
 				<ArrowLeft size={12} />
 				Theory
 			</Link>
 			{THEORY_GROUPS.map((group) => (
-				<nav key={group.id} className="flex flex-col gap-0.5 pb-2 last:pb-0">
-					<span className="px-2 pb-0.5 text-[10px] font-medium uppercase tracking-wide text-fg-disabled">
+				<nav key={group.id} className="flex flex-col gap-0.5 pt-5">
+					<span className="ta-label px-2 pb-1 text-fg-muted">
 						{group.label}
 					</span>
 					{group.items.map((a) => {
@@ -31,9 +31,9 @@ export function TheoryArticleNav({ currentSlug }: { currentSlug: string }) {
 								href={`/theory/${a.slug}`}
 								aria-current={active ? "page" : undefined}
 								className={cn(
-									"rounded-control px-2 py-1.5 text-xs leading-snug transition-colors",
+									"rounded-control px-2 py-1.5 text-[13px] leading-snug transition-colors",
 									active
-										? "bg-accent-subtle font-medium text-accent"
+										? "bg-surface-overlay font-medium text-fg"
 										: "text-fg-secondary hover:bg-surface-overlay/60 hover:text-fg",
 								)}
 							>

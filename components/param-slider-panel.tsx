@@ -58,7 +58,7 @@ export function ParamSliderPanel({ paramCell }: { paramCell: ParametricCellData 
 	// pad instead (NOTES §103). Separable multi-parameter families keep the sliders: their region IS a box.
 	if (paramCell.regionVertices?.length && paramCell.params.length === 2) {
 		return (
-			<div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-stretch gap-4 rounded-lg border border-line bg-surface-overlay/80 px-4 py-2.5 backdrop-blur-sm shadow-lg">
+			<div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-20 flex items-stretch gap-4 rounded-xl bg-surface-raised/95 px-4 py-2.5 shadow-lg ring-1 ring-line-subtle backdrop-blur-sm">
 				<ParamRegionPad paramCell={paramCell} />
 				{/* The pad's axes now say what the pad is, so the sentence that used to sit here is gone. This
 				    chip stays because the gesture it names is otherwise invisible. */}
@@ -73,13 +73,13 @@ export function ParamSliderPanel({ paramCell }: { paramCell: ParametricCellData 
 	}
 
 	return (
-		<div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-stretch gap-4 rounded-lg border border-line bg-surface-overlay/80 px-4 py-2.5 backdrop-blur-sm shadow-lg">
+		<div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-20 flex items-stretch gap-4 rounded-xl bg-surface-raised/95 px-4 py-2.5 shadow-lg ring-1 ring-line-subtle backdrop-blur-sm">
 			<div className="flex flex-col justify-center gap-2">
 				{visible.map((p, j) => (
 					<div key={j} className="flex items-center gap-3">
 						{/* A LENGTH parameter is not an angle: it prints its own name and no degree sign,
 						    and two decimals, because the interesting members sit at ratios like 0.55. */}
-						<span className="text-xs font-medium text-accent whitespace-nowrap w-24">
+						<span className="text-xs font-medium text-fg whitespace-nowrap w-24">
 							{p.kind === "length"
 								? `${paramName(p, j)} = ${effAlphas[j].toFixed(2)}`
 								: `${paramName(p, j)} = ${effAlphas[j].toFixed(1)}\u00b0`}
@@ -147,11 +147,11 @@ export function ParamSliderPanel({ paramCell }: { paramCell: ParametricCellData 
 					<span className="inline-flex items-center gap-3 font-mono">
 						<span className="inline-flex items-center gap-1">
 							<span aria-hidden>↔</span>
-							<span className="text-accent">{paramName(paramCell.params[0], 0)}</span>
+							<span className="text-fg">{paramName(paramCell.params[0], 0)}</span>
 						</span>
 						<span className="inline-flex items-center gap-1">
 							<span aria-hidden>↕</span>
-							<span className="text-accent">{paramName(paramCell.params[1], 1)}</span>
+							<span className="text-fg">{paramName(paramCell.params[1], 1)}</span>
 						</span>
 					</span>
 				) : null}

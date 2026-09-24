@@ -119,7 +119,7 @@ export function PolygonPicker({
 				<span className="text-xs text-fg-muted">
 					Pool: <span className="text-fg-secondary">{polygonPool.length}</span> polygons
 				</span>
-				<span className="text-xs px-2 py-0.5 bg-accent-subtle text-accent border border-line-focus">
+				<span className="text-xs px-2 py-0.5 bg-surface-overlay text-fg border border-line-focus">
 					{selectedNames.length} selected
 				</span>
 			</div>
@@ -158,7 +158,7 @@ export function PolygonPicker({
 									className={cn(
 										"text-xs px-2 py-0.5 rounded transition-colors",
 										allSelected
-											? "text-accent hover:text-fg-muted"
+											? "text-fg hover:text-fg-muted"
 											: someSelected
 												? "text-fg hover:text-fg"
 												: "text-fg-muted hover:text-fg-secondary",
@@ -180,7 +180,7 @@ export function PolygonPicker({
 											className={cn(
 												"flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-mono transition-colors border",
 												checked
-													? "bg-accent-subtle border-line-focus text-accent"
+													? "bg-surface-overlay border-line-focus text-fg"
 													: "bg-surface-overlay/50 border-line text-fg-muted hover:border-line-strong hover:text-fg-secondary",
 											)}
 										>

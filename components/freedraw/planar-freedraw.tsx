@@ -1,13 +1,16 @@
 "use client";
 
-import { Play } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FreedrawCanvas } from "@/components/freedraw/freedraw-canvas";
 import {
+	CATALOGUE_GRID,
+	CatalogueCard,
+	DetailPane,
 	type FreedrawGeometry,
 	GeometryGroup,
 	ToggleCell,
+	ToggleRow,
 	TriMatrix,
 	type TriRow,
 	WallBar,
@@ -15,7 +18,6 @@ import {
 	WallGroup,
 	WallSubLabel,
 } from "@/components/freedraw/filter-wall";
-import { Button } from "@/components/ui/button";
 import { OptionWall } from "@/components/ui/option-wall";
 import { Pagination } from "@/components/ui/pagination";
 import { DEFAULT_TILE_RULE, WIRINGS, type Wiring } from "@/lib/freedraw/arcs";
@@ -43,9 +45,9 @@ import { FILL_MODES, type FillMode } from "@/lib/freedraw/render";
 import { useGridArrowNav } from "@/lib/hooks/useGridArrowNav";
 import { useKeyShortcuts } from "@/lib/hooks/useKeyShortcuts";
 import { serializePlayState } from "@/lib/services/playUrlState";
-import { cn } from "@/lib/utils/cn";
 import { readAtlas } from "@/lib/services/atlasCodec";
 
+// The four base grids, then the Schwarz and Archimedean boards: one selection, one wall of two rows.
 const GRID_OPTIONS: { value: FreedrawGrid; label: string }[] = [
 	{ value: "square", label: "Square" },
 	{ value: "triangle", label: "Triangle" },
@@ -105,7 +107,23 @@ const REGULARITY_OPTIONS: { value: FreedrawFilter["regularity"]; label: string }
 	{ value: "unit", label: "k-uniform" },
 ];
 
-const POLYGON_LABEL: Record<RegularKind, string> = { 3: "△ 3", 4: "▢ 4", 6: "⬡ 6", 8: "8-gon", 12: "12-gon" };
+// Each polygon row: the same 12px stroked regular n-gon in a fixed 16px column, then n.
+function PolygonLabel({ n }: { n: RegularKind }) {
+	const pts = Array.from({ length: n }, (_, i) => {
+		const a = ((i + (n === 4 ? 0.5 : n === 3 ? 0 : 0.5)) / n) * 2 * Math.PI - Math.PI / 2;
+		return `${(6 + 5.2 * Math.cos(a)).toFixed(2)},${(6.4 + 5.2 * Math.sin(a)).toFixed(2)}`;
+	}).join(" ");
+	return (
+		<span className="inline-flex items-center">
+			<span className="inline-flex w-4 shrink-0">
+				<svg width={12} height={12} viewBox="0 0 12 12" aria-hidden>
+					<polygon points={pts} fill="none" stroke="currentColor" strokeWidth={1.25} strokeLinejoin="round" />
+				</svg>
+			</span>
+			<span className="tabular-nums">{n}</span>
+		</span>
+	);
+}
 
 const FILL_OPTIONS = FILL_MODES.map(({ value, label }) => ({ value, label: label.toLowerCase() }));
 
@@ -428,30 +446,32 @@ export function PlanarFreedraw({
 		<div className="flex flex-1 min-w-0 flex-col min-h-0">
 			<header className="shrink-0 border-b border-line-subtle">
 				<WallBar
+					count={slice === null ? "loading…" : `${shown.length.toLocaleString()} / ${slice.length.toLocaleString()}`}
 					top={
-						<>
-							<span className="tabular-nums text-text-muted">
-								{slice === null ? "loading…" : `${shown.length.toLocaleString()} / ${slice.length.toLocaleString()}`}
-							</span>
-							{!isDefault && (
-								<button
-									type="button"
-									onClick={resetFilters}
-									className="text-text-muted underline underline-offset-2 hover:text-text-primary"
-								>
-									Reset filters
-								</button>
-							)}
-						</>
+						!isDefault && (
+							<button
+								type="button"
+								onClick={resetFilters}
+								className="text-fg-muted underline underline-offset-2 hover:text-fg"
+							>
+								Reset filters
+							</button>
+						)
 					}
 				>
 					<WallColumn>
 						<GeometryGroup value={geometry} onChange={onGeometryChange} />
 						<WallGroup title="Grid">
-							<OptionWall columns={3} options={GRID_OPTIONS} selected={filter.grid} onChange={switchGrid} />
+							<OptionWall columns={4} options={GRID_OPTIONS} selected={filter.grid} onChange={switchGrid} classes="[&>button]:whitespace-nowrap [&>button]:px-1" />
 						</WallGroup>
 						<WallGroup title="k" note="orbits">
-							<OptionWall columns={3} options={K_OPTIONS[filter.grid]} selected={filter.k} onChange={(k) => update({ k })} />
+							<OptionWall
+								columns={K_OPTIONS[filter.grid].length}
+								fill={false}
+								options={K_OPTIONS[filter.grid]}
+								selected={filter.k}
+								onChange={(k) => update({ k })}
+							/>
 						</WallGroup>
 					</WallColumn>
 
@@ -468,33 +488,33 @@ export function PlanarFreedraw({
 								)}
 							/>
 						</WallGroup>
-					</WallColumn>
-
-					{/* The size sub-filter on its own column: only the sizes actually present in the current grid +
-					    k slice (they are sparse and gappy — square k=4 runs 2..8 then 12..14 — so a fixed range
-					    would offer dead chips). Live only while the finite class is required; dimmed otherwise. The
-					    column is dropped entirely when the slice has no finite tiles to size. */}
-					{sizes.length > 0 && (
-						<WallColumn className={cn(!sizesEnabled && "opacity-40")}>
-							<WallGroup title="Tile size" note={sizesEnabled ? undefined : "needs finite: has"}>
-								<OptionWall
-									columns={2}
-									options={SIZE_MODE_OPTIONS}
-									selected={filter.sizeMode}
-									onChange={(sizeMode) => update({ sizeMode })}
-									classes={sizesEnabled ? undefined : "pointer-events-none"}
-								/>
-								<OptionWall
-									multi
-									columns={6}
-									options={sizes.map((n) => ({ value: n, label: String(n) }))}
-									selected={filter.sizes}
-									onChange={toggleSize}
-									classes={sizesEnabled ? undefined : "pointer-events-none"}
-								/>
+						{/* The size sub-filter: only the sizes present in the current grid + k slice (they are
+						    sparse and gappy, square k=4 runs 2..8 then 12..14, so a fixed range would offer dead
+						    chips). Live only while the finite class is required; otherwise the mode track sits
+						    disabled. Dropped entirely when the slice has no finite tiles to size. */}
+						{sizes.length > 0 && (
+							<WallGroup title="Tile size" note={sizesEnabled ? undefined : "set Finite to Has"}>
+								<fieldset disabled={!sizesEnabled} className="flex min-w-0 flex-col gap-2 disabled:opacity-50 [&:disabled_button]:cursor-not-allowed">
+									<OptionWall
+										columns={2}
+										options={SIZE_MODE_OPTIONS}
+										selected={filter.sizeMode}
+										onChange={(sizeMode) => update({ sizeMode })}
+									/>
+									{sizesEnabled && (
+										<OptionWall
+											multi
+											columns={6}
+											fill={false}
+											options={sizes.map((n) => ({ value: n, label: String(n) }))}
+											selected={filter.sizes}
+											onChange={toggleSize}
+										/>
+									)}
+								</fieldset>
 							</WallGroup>
-						</WallColumn>
-					)}
+						)}
+					</WallColumn>
 
 					{/* The regular-polygon filter, the bridge to the classical catalogue: "k-uniform" keeps only
 					    edge-to-edge tilings by regular polygons, and the per-polygon rows select a composition
@@ -512,7 +532,7 @@ export function PlanarFreedraw({
 								rows={REGULAR_KINDS.map(
 									(n): TriRow => ({
 										id: String(n),
-										label: POLYGON_LABEL[n],
+										label: <PolygonLabel n={n} />,
 										value: filter.polygons[n],
 										onChange: (v) => setPolygon(n, v),
 									}),
@@ -523,14 +543,14 @@ export function PlanarFreedraw({
 
 					<WallColumn>
 						<WallGroup title="Display">
-							<OptionWall columns={3} options={FILL_OPTIONS} selected={fillMode} onChange={setFillMode} />
+							<OptionWall columns={FILL_OPTIONS.length} options={FILL_OPTIONS} selected={fillMode} onChange={setFillMode} />
 							<WallSubLabel>Overlays</WallSubLabel>
-							<div className="grid grid-cols-4 gap-px">
+							<ToggleRow>
 								<ToggleCell label="Grid" shortcut="G" on={showScaffold} onClick={() => setShowScaffold(!showScaffold)} />
 								<ToggleCell label="Lattice" shortcut="P" on={showLattice} onClick={() => setShowLattice(!showLattice)} />
 								<ToggleCell label="Orbits" shortcut="O" on={showVertices} onClick={() => setShowVertices(!showVertices)} />
 								<ToggleCell label="Tiles" shortcut="A" on={showArcs} onClick={() => setShowArcs(!showArcs)} />
-							</div>
+							</ToggleRow>
 							{/* A tile with c connected edges has c! drawings; these three name the useful corners
 							    of that space. Meaningless until the tiles are up, and `twist` is ribbons-only. */}
 							{showArcs && (
@@ -538,12 +558,7 @@ export function PlanarFreedraw({
 									<WallSubLabel>Wiring</WallSubLabel>
 									<OptionWall columns={3} options={WIRING_OPTIONS} selected={arcWiring} onChange={setArcWiring} />
 									<WallSubLabel>Pairing</WallSubLabel>
-									<OptionWall
-										columns={2}
-										options={TWIST_OPTIONS}
-										selected={arcTwist}
-										onChange={setArcTwist}
-									/>
+									<OptionWall columns={2} options={TWIST_OPTIONS} selected={arcTwist} onChange={setArcTwist} />
 								</>
 							)}
 						</WallGroup>
@@ -553,34 +568,25 @@ export function PlanarFreedraw({
 
 			<div className="flex-1 min-h-0 flex">
 				<div className="flex-1 min-w-0 overflow-y-auto p-4">
-					{slice === null && <div className="p-8 text-text-muted">Loading the {filter.grid} catalogue…</div>}
-					<div ref={gridRef} className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(116px,1fr))]">
+					{slice === null && <div className="p-8 text-fg-muted">Loading the {filter.grid} catalogue…</div>}
+					<div ref={gridRef} className={CATALOGUE_GRID}>
 						{pageRows.map(({ pattern, stats }) => (
-							<button
+							<CatalogueCard
 								key={pattern.id}
-								type="button"
-								data-selected={selected?.pattern.id === pattern.id ? "" : undefined}
+								selected={selected?.pattern.id === pattern.id}
 								onClick={() => setSelectedId(pattern.id)}
-								className={cn(
-									"rounded-md overflow-hidden border text-left transition-colors",
-									selected?.pattern.id === pattern.id
-										? "border-accent ring-1 ring-accent"
-										: "border-line-subtle hover:border-border-strong",
-								)}
-							>
-								<div className="aspect-square">
-									<FreedrawCanvas pattern={pattern} style={thumbStyle} cells={7} />
-								</div>
-								<div className="px-1.5 py-1 text-[11px] leading-tight text-text-muted">
-									<div className="text-text-secondary">{pattern.id}</div>
-									<div>
+								title={pattern.id}
+								subtitle={
+									<>
 										{stats.faceOrbits} tile{stats.faceOrbits === 1 ? "" : "s"}
 										{stats.strips > 0 && " · strip"}
 										{stats.unbounded > 0 && " · ∞"}
 										{stats.withHoles > 0 && " · holes"}
-									</div>
-								</div>
-							</button>
+									</>
+								}
+							>
+								<FreedrawCanvas pattern={pattern} style={thumbStyle} cells={7} />
+							</CatalogueCard>
 						))}
 					</div>
 					{shown.length > PAGE_SIZE && (
@@ -596,62 +602,51 @@ export function PlanarFreedraw({
 				</div>
 
 				{selected && detail && (
-					<aside className="w-[380px] shrink-0 border-l border-line-subtle flex flex-col min-h-0">
-						<div className="aspect-square border-b border-line-subtle">
-							<FreedrawCanvas pattern={selected.pattern} style={style} cells={11} interactive />
+					<DetailPane
+						preview={<FreedrawCanvas pattern={selected.pattern} style={style} cells={11} interactive />}
+						title={selected.pattern.id}
+						hint="drag to pan, wheel to zoom, double-click to reset"
+						playHref={playHref}
+						meta={[
+							[freedrawKNoun(filter.grid), `k = ${selected.pattern.k}`],
+							[
+								"period lattice",
+								selected.pattern.patch ? (
+									// Combined grid: the true world-coordinate period basis, since the record's
+									// lattice-bits fields are 1x1 placeholders.
+									<>
+										T1 ({selected.pattern.patch.T1[0]}, {selected.pattern.patch.T1[1]}), T2 (
+										{selected.pattern.patch.T2[0]}, {selected.pattern.patch.T2[1]}) ·{" "}
+										{selected.pattern.patch.verts.length} vertices
+									</>
+								) : (
+									<>
+										({selected.pattern.a}, 0), ({selected.pattern.b}, {selected.pattern.d}) · index{" "}
+										{selected.pattern.a * selected.pattern.d}
+										{gridOf(selected.pattern) === "triangle" && " · basis at 60°"}
+									</>
+								),
+							],
+							["tile orbits", detail.faces.length],
+						]}
+					>
+						<div>
+							<div className="ta-label mb-1.5">tiles</div>
+							<ul className="space-y-1">
+								{detail.faces.map((f) => (
+									<li key={f.id} className="text-xs text-fg-secondary">
+										<span className="text-fg">{rankLabel(f.rank, detail.grid)}</span>
+										{f.rank === 0 && ` · ${f.cells} cell${f.cells === 1 ? "" : "s"}`}
+										{f.rank === 0 && f.holes > 0 && ` · ${f.holes} hole${f.holes === 1 ? "" : "s"}`}
+										{f.rank === 1 &&
+											f.period &&
+											` · ${f.cells} cell${f.cells === 1 ? "" : "s"} per period (${f.period[0]}, ${f.period[1]})`}
+										{f.rank === 2 && " in both directions"}
+									</li>
+								))}
+							</ul>
 						</div>
-						<div className="p-4 overflow-y-auto text-sm space-y-3">
-							<div>
-								<div className="font-semibold text-text-primary">{selected.pattern.id}</div>
-								<div className="text-text-muted text-xs">
-									drag to pan, wheel to zoom, double-click to reset
-								</div>
-							</div>
-							{playHref && (
-								<Button href={playHref} variant="secondary" size="sm" icon={Play} label="Open in play" fullWidth />
-							)}
-							<dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
-								<dt className="text-text-muted">{freedrawKNoun(filter.grid)}</dt>
-								<dd className="text-text-secondary">k = {selected.pattern.k}</dd>
-								<dt className="text-text-muted">period lattice</dt>
-								<dd className="text-text-secondary">
-									{selected.pattern.patch ? (
-										// Combined grid: the true world-coordinate period basis, since the record's
-										// lattice-bits fields are 1x1 placeholders.
-										<>
-											T1 ({selected.pattern.patch.T1[0]}, {selected.pattern.patch.T1[1]}), T2 (
-											{selected.pattern.patch.T2[0]}, {selected.pattern.patch.T2[1]}) ·{" "}
-											{selected.pattern.patch.verts.length} vertices
-										</>
-									) : (
-										<>
-											({selected.pattern.a}, 0), ({selected.pattern.b}, {selected.pattern.d}) · index{" "}
-											{selected.pattern.a * selected.pattern.d}
-											{gridOf(selected.pattern) === "triangle" && " · basis at 60°"}
-										</>
-									)}
-								</dd>
-								<dt className="text-text-muted">tile orbits</dt>
-								<dd className="text-text-secondary">{detail.faces.length}</dd>
-							</dl>
-							<div>
-								<div className="text-xs text-text-muted mb-1">tiles</div>
-								<ul className="space-y-1">
-									{detail.faces.map((f) => (
-										<li key={f.id} className="text-xs text-text-secondary">
-											<span className="text-text-primary">{rankLabel(f.rank, detail.grid)}</span>
-											{f.rank === 0 && ` · ${f.cells} cell${f.cells === 1 ? "" : "s"}`}
-											{f.rank === 0 && f.holes > 0 && ` · ${f.holes} hole${f.holes === 1 ? "" : "s"}`}
-											{f.rank === 1 &&
-												f.period &&
-												` · ${f.cells} cell${f.cells === 1 ? "" : "s"} per period (${f.period[0]}, ${f.period[1]})`}
-											{f.rank === 2 && " in both directions"}
-										</li>
-									))}
-								</ul>
-							</div>
-						</div>
-					</aside>
+					</DetailPane>
 				)}
 			</div>
 		</div>

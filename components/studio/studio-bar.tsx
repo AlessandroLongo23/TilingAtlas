@@ -14,24 +14,21 @@ import {
 	SquareDashed,
 	Undo2,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
-import { ToggleButton } from "@/components/ui/toggle-button";
+import { InfoDot } from "@/components/ui/info-dot";
+import { ToolbarButton } from "@/components/ui/floating-toolbar";
 import { Tooltip } from "@/components/ui/tooltip";
 import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
 import type { PeriodMode, StudioTool } from "@/lib/studio/types";
 import { useConfiguration } from "@/stores/configuration";
 import { canRedo, canReset, canUndo, useStudio } from "@/stores/studio";
 
-// The editor's tool strip, along the bottom of the /play canvas while `studioActive` is up.
+// The editor's controls. They are not a bar of their own: /play's canvas toolbar takes them in while
+// `studioActive` is up (AL, 2026-09-24), so editing ADDS to the toolbar and link, export and fullscreen
+// stay where they are. Three pieces, in the order the toolbar lays them out: history, tools, and what an
+// edit repeats under.
 //
-// Position and chrome are the canvas overlay's, not the sidebar's (components/fullscreen-toggle.tsx and
-// the /play top-right column carry the same classes), so turning the editor on reads as the same app
-// gaining a mode. It renders nothing when the editor is down, which is what lets the parent mount it
-// unconditionally and keep the mount from churning on every toggle.
-//
-// THE KEYMAP LIVES HERE. The keys ARE the tools: a tool added to the table below brings its key with it
-// and there is no second list to keep in step.
+// THE KEYMAP LIVES HERE (useStudioKeys). The keys ARE the tools: a tool added to the table below brings
+// its key with it and there is no second list to keep in step.
 
 const TOOLS: {
 	value: StudioTool;
@@ -62,41 +59,15 @@ const pickTool = (value: StudioTool) =>
 
 const setEditor = (on: boolean) => useConfiguration.getState().set({ studioActive: on });
 
-const WALLPAPER_HELP =
-	"Carries every edit through the point group as well, so the result keeps the tiling's symmetry.";
-
-interface StudioBarProps {
-	/**
-	 * Why `wallpaper` is unavailable here, or undefined when it is available. That mode needs
-	 * `SymmetryData`, which is null for star tilings and for curved tiles; with none, the option disables
-	 * itself and says why instead of repeating an edit through a point group nobody computed.
-	 */
-	wallpaperDisabledReason?: string;
-	/**
-	 * May this tiling be edited at all: the same gate the sidebar's entry button takes (flat surface,
-	 * straight edges). Passed in because the gate is a question about the SELECTED RECORD, which this
-	 * component has no business knowing; it is here only so `E` can open the editor from the keyboard.
-	 *
-	 * Omit it and `E` is not bound, leaving the parent free to own that key instead. The sidebar button
-	 * cannot own it: the Options tab is unmounted whenever the Catalogue tab is the one showing
-	 * (components/sidebar/tilings-tab.tsx), and a key that works only on one tab is worse than none.
-	 */
-	canEdit?: boolean;
-}
-
-export function StudioBar({ wallpaperDisabledReason, canEdit }: StudioBarProps) {
+/**
+ * The editor's keys: E opens it where `canEdit` holds, and while it is up Esc leaves, 1-6 pick a tool
+ * and Cmd/Ctrl+Z / Shift+Cmd/Ctrl+Z step the history.
+ *
+ * `canEdit` is the same gate the toolbar's Edit button takes (flat surface, straight edges), passed in
+ * because it is a question about the SELECTED RECORD, which this module has no business knowing.
+ */
+export function useStudioKeys(canEdit: boolean) {
 	const active = useConfiguration((s) => s.studioActive);
-	// One boolean per subscription. A pointer move inside the editor changes `cutPath` and the rejection
-	// dozens of times a second, and none of that reaches this component.
-	const tool = useStudio((s) => s.tool);
-	const periodMode = useStudio((s) => s.periodMode);
-	// The same field components/studio/studio-canvas.tsx draws off, so the button cannot disagree with
-	// the canvas about whether the cell is outlined.
-	const showLattice = useStudio((s) => s.showLattice);
-	const undoable = useStudio(canUndo);
-	const redoable = useStudio(canRedo);
-	const resettable = useStudio(canReset);
-
 	// 1-6 are the NAV's route shortcuts (components/nav.tsx pushes a route on each), so this listener runs
 	// in the CAPTURE phase and stops the event dead: while the editor is up those keys are the editor's.
 	// _play-client already does the same interception for P on the freedraw boards, and ThemeToggle for
@@ -106,7 +77,6 @@ export function StudioBar({ wallpaperDisabledReason, canEdit }: StudioBarProps) 
 		if (!active && !canEdit) return;
 		const onKey = (e: KeyboardEvent) => {
 			if (isTypingTarget(e)) return;
-			// Editor down: E is the one key it claims, and only where the sidebar offers the button.
 			if (!active) {
 				if ((e.key !== "e" && e.key !== "E") || e.metaKey || e.ctrlKey || e.altKey) return;
 				e.preventDefault();
@@ -142,115 +112,116 @@ export function StudioBar({ wallpaperDisabledReason, canEdit }: StudioBarProps) 
 		window.addEventListener("keydown", onKey, { capture: true });
 		return () => window.removeEventListener("keydown", onKey, { capture: true });
 	}, [active, canEdit]);
+}
 
-	if (!active) return null;
-
+/** Undo, redo, reset. Each is live exactly when the history has something for it to do. */
+export function StudioHistory() {
+	const undoable = useStudio(canUndo);
+	const redoable = useStudio(canRedo);
+	const resettable = useStudio(canReset);
 	return (
-		<div
-			// Along the BOTTOM, centred (AL, 2026-09-21). The left edge put it against the sidebar, where
-			// it read as more sidebar; the bottom is where a tool bar is looked for and it leaves the
-			// tiling unobstructed. The palette strip sits just above it when the paint tool is up.
-			className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1 rounded-lg p-2 bg-surface-overlay/80 backdrop-blur-sm border border-line"
-			role="toolbar"
-			aria-label="Editor tools"
-			aria-orientation="horizontal"
-		>
-			{TOOLS.map((t) => (
-				<Tooltip key={t.value} label={t.label} shortcut={t.key} side="top" delay={0}>
-					<ToggleButton
-						size="sm"
-						pressed={tool === t.value}
-						onPressedChange={() => pickTool(t.value)}
-						icon={t.icon}
-						aria-label={t.label}
-						classes="h-8 w-8 px-0"
-					/>
-				</Tooltip>
-			))}
-
-			<div className="mx-0.5 self-stretch border-l border-line" />
-
-			{/* History and the lattice overlay. Undo/Redo/Reset read their enabled state off the history
-			    selectors, so a button is live exactly when it has something to do. */}
-			<Tooltip label="Undo" shortcut="Cmd/Ctrl + Z" side="top" delay={0}>
-				<Button
-					variant="ghost"
-					size="icon"
-					icon={Undo2}
-					aria-label="Undo"
-					disabled={!undoable}
-					onClick={() => useStudio.getState().undo()}
-				/>
-			</Tooltip>
-			<Tooltip label="Redo" shortcut="Shift + Cmd/Ctrl + Z" side="top" delay={0}>
-				<Button
-					variant="ghost"
-					size="icon"
-					icon={Redo2}
-					aria-label="Redo"
-					disabled={!redoable}
-					onClick={() => useStudio.getState().redo()}
-				/>
-			</Tooltip>
-			<Tooltip label="Back to the catalogued tiling" side="top" delay={0}>
-				<Button
-					variant="ghost"
-					size="icon"
-					icon={RotateCcw}
-					aria-label="Reset the edit"
-					disabled={!resettable}
-					onClick={() => useStudio.getState().reset()}
-				/>
-			</Tooltip>
-			{/* One switch for both period overlays. Which one appears follows the mode below: the basis
-			    cell under Lattice, the group's axes, centres and fundamental domain under Wallpaper. */}
-			<Tooltip
-				label={periodMode === "wallpaper" ? "Show the group's structure" : "Show the period cell"}
-				side="top"
-				delay={0}
-			>
-				<ToggleButton
-					size="sm"
-					pressed={showLattice}
-					onPressedChange={(next) => useStudio.getState().set({ showLattice: next })}
-					icon={SquareDashed}
-					aria-label="Period overlay"
-					classes="h-8 w-8 px-0"
-				/>
-			</Tooltip>
-
-			<div className="mx-0.5 self-stretch border-l border-line" />
-
-			{/* What an edit repeats under. Side by side now that the strip runs horizontally. */}
-			<span className="px-1 text-[10px] uppercase tracking-wide text-fg-muted whitespace-nowrap">
-				Repeats under
-			</span>
-			<ButtonGroup
-				wrap={false}
-				gap="gap-1"
-				selected={periodMode}
-				onChange={(v: PeriodMode) => useStudio.getState().set({ periodMode: v })}
-				options={[
-					{
-						value: "lattice" as PeriodMode,
-						label: "Lattice",
-						classes: "whitespace-nowrap",
-						tooltip: "Folds every edit onto the translation lattice alone. Always available.",
-						tooltipSide: "top",
-					},
-					{
-						// The reason this mode is unavailable lives in the tooltip and nowhere else. Printed on
-						// the bar it was three lines of prose that doubled the strip's height; ButtonGroup keeps a
-						// tooltip-bearing disabled option hoverable so the reason is one hover away.
-						value: "wallpaper" as PeriodMode,
-						label: "Wallpaper group",
-						classes: "whitespace-nowrap",
-						disabled: !!wallpaperDisabledReason,
-						tooltip: wallpaperDisabledReason ?? WALLPAPER_HELP,
-						tooltipSide: "top",
-					},
-				]}
-			/>
-		</div>
+		<>
+			<ToolbarButton label="Undo" shortcut="Cmd/Ctrl + Z" disabled={!undoable} onClick={() => useStudio.getState().undo()}>
+				<Undo2 size={16} />
+			</ToolbarButton>
+			<ToolbarButton label="Redo" shortcut="Shift + Cmd/Ctrl + Z" disabled={!redoable} onClick={() => useStudio.getState().redo()}>
+				<Redo2 size={16} />
+			</ToolbarButton>
+			<ToolbarButton label="Back to the catalogued tiling" disabled={!resettable} onClick={() => useStudio.getState().reset()}>
+				<RotateCcw size={16} />
+			</ToolbarButton>
+		</>
 	);
 }
+
+/** The six tools, one pressed. */
+export function StudioTools() {
+	// One subscription: a pointer move inside the editor changes `cutPath` and the rejection dozens of
+	// times a second, and none of that reaches the toolbar.
+	const tool = useStudio((s) => s.tool);
+	return (
+		<>
+			{TOOLS.map((t) => (
+				<ToolbarButton key={t.value} label={t.label} shortcut={t.key} aria-pressed={tool === t.value} onClick={() => pickTool(t.value)}>
+					<t.icon className="h-4 w-4" />
+				</ToolbarButton>
+			))}
+		</>
+	);
+}
+
+const PERIOD_HELP = (
+	<>
+		<p>
+			<span className="font-medium text-fg">Lattice</span>{" "}repeats every edit under the translations alone. Always
+			available.
+		</p>
+		<p>
+			<span className="font-medium text-fg">Wallpaper group</span>{" "}carries it through the point group as well, so the
+			result keeps the tiling&rsquo;s symmetry.
+		</p>
+		<p>
+			<span className="font-medium text-fg">Period cell</span>{" "}shows what an edit repeats over: the basis cell under
+			Lattice, the group&rsquo;s axes, centres and fundamental domain under Wallpaper group.
+		</p>
+	</>
+);
+
+/**
+ * What an edit repeats under, and the overlay that shows it. `wallpaperDisabledReason` is set where the
+ * tiling has no computed wallpaper group (star tilings, curved tiles): that option then disables itself
+ * and its tooltip says why.
+ */
+export function StudioPeriod({ wallpaperDisabledReason }: { wallpaperDisabledReason?: string }) {
+	const periodMode = useStudio((s) => s.periodMode);
+	// The same field components/studio/studio-canvas.tsx draws off, so the button cannot disagree with
+	// the canvas about whether the cell is outlined.
+	const showLattice = useStudio((s) => s.showLattice);
+	const mode = (m: PeriodMode, label: string, disabledReason?: string) => {
+		const button = (
+			<button
+				type="button"
+				aria-pressed={periodMode === m}
+				aria-disabled={disabledReason ? true : undefined}
+				onClick={() => !disabledReason && useStudio.getState().set({ periodMode: m })}
+				className={
+					"ta-tab h-7 whitespace-nowrap px-2.5 text-[13px] font-medium transition-colors " +
+					(periodMode === m ? "text-fg" : disabledReason ? "cursor-not-allowed text-fg-disabled" : "text-fg-muted hover:text-fg")
+				}
+			>
+				{label}
+			</button>
+		);
+		// A disabled option keeps its hover, so the reason it is unavailable is one hover away.
+		return disabledReason ? (
+			<Tooltip label={disabledReason} side="top" delay={0}>
+				{button}
+			</Tooltip>
+		) : (
+			button
+		);
+	};
+	return (
+		<>
+			<div className="ta-seg flex">
+				{mode("lattice", "Lattice")}
+				{mode("wallpaper", "Wallpaper group", wallpaperDisabledReason)}
+			</div>
+			<ToolbarButton
+				label="Show the period cell"
+				aria-pressed={showLattice}
+				onClick={() => useStudio.getState().set({ showLattice: !showLattice })}
+				className="w-auto gap-1.5 px-2.5"
+			>
+				<SquareDashed size={15} />
+				Period cell
+			</ToolbarButton>
+			<span className="px-1">
+				<InfoDot side="top" label="What an edit repeats under">
+					{PERIOD_HELP}
+				</InfoDot>
+			</span>
+		</>
+	);
+}
+
