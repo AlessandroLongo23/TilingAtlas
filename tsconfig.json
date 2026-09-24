@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": false,
@@ -13,19 +17,45 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
-    "plugins": [{ "name": "next" }],
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
     "paths": {
-      "@/*": ["./*"],
-      "@/lib": ["./lib"],
-      "@/lib/*": ["./lib/*"],
-      "@/components": ["./components"],
-      "@/components/*": ["./components/*"],
-      "@/classes": ["./lib/classes"],
-      "@/classes/*": ["./lib/classes/*"],
-      "@/stores": ["./lib/stores"],
-      "@/stores/*": ["./lib/stores/*"],
-      "@/utils": ["./lib/utils"],
-      "@/utils/*": ["./lib/utils/*"]
+      "@/*": [
+        "./*"
+      ],
+      "@/lib": [
+        "./lib"
+      ],
+      "@/lib/*": [
+        "./lib/*"
+      ],
+      "@/components": [
+        "./components"
+      ],
+      "@/components/*": [
+        "./components/*"
+      ],
+      "@/classes": [
+        "./lib/classes"
+      ],
+      "@/classes/*": [
+        "./lib/classes/*"
+      ],
+      "@/stores": [
+        "./lib/stores"
+      ],
+      "@/stores/*": [
+        "./lib/stores/*"
+      ],
+      "@/utils": [
+        "./lib/utils"
+      ],
+      "@/utils/*": [
+        "./lib/utils/*"
+      ]
     }
   },
   "include": [
@@ -36,7 +66,11 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts",
     ".next-prod/types/**/*.ts",
-    ".next-prod/dev/types/**/*.ts"
+    ".next-prod/dev/types/**/*.ts",
+    ".next-studio/types/**/*.ts",
+    ".next-studio/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules"
+  ]
 }
