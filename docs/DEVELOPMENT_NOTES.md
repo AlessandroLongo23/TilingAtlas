@@ -17439,6 +17439,116 @@ Measured on the dev server, headed (scripts/measure-play-cells.mjs, 9 s settle):
 127 requests, 2.8 MB, 4.7 s blocking; Spherical x Tilings 192 requests, 0.9 MB, 2.2 s; 2.5 GB of heap
 after all nine cells in one page. No baseline from before the batch was taken.
 
+## 2026-09-21: the tiling editor (merge, cut, move, bow, recolour), and the two things the subagents proved wrong
+
+AL asked for an editor that starts from any catalogued tiling and, because a tiling ships as one
+fundamental cell plus a translation basis, propagates every edit across the plane by construction. His
+decisions, taken before any code: two period modes (Lattice and Wallpaper group), merge as a
+click-and-drag over the tiles the cursor crosses, both canvas models with a minimizable inspector,
+deform meaning the global 2x2 map plus free vertex drag (Escher bows being a "free shape" edge
+decoration and not a third deform), cuts point-to-point and snapped, bad edits BLOCKED and not
+flagged, and recolour under three scopes (Shape, Orientation, Tile). No persistence in the MVP.
+
+**Most of it already existed, written for Marek's edge-pattern shelves.** `FreedrawPatch` is exactly
+the right IR (T1/T2, verts, `[vi, vj, offX, offY, drawn]` edges, rings with lattice offsets, per-edge
+cubic bows, per-component finite/strip/unbounded ranks), and `edgePatchCore.ts` already merged faces
+across undrawn edges with an offset union-find carrying each face's lift, Euler-checked on the torus.
+So merge and cut are ONE BIT PER EDGE, and the periodic bookkeeping was done. That block was lifted to
+`lib/freedraw/topology.ts` (`OffsetDSU`, `spanRank`, `mergeFaces`, `holesOf`, `canonicalRing`,
+`ringKey`); `edgePatchCore.ts` went 828 -> 666 lines and `faces.ts` lost its duplicate `spanRank`.
+
+**The one real gap was edge identity.** `Polygon.neighbors` and `Polygon.edgeNeighbors` are declared,
+initialised to `[]`, and populated nowhere in the repo; `buildPeriodicAdjacency` knows two tiles are
+neighbours and throws away WHICH edges matched. `mergeFaces` returns the table (`half`, keyed by
+directed quotient half-edge) that answers it.
+
+**The fold is the part that could have been quietly wrong** and is checked against the shipped
+catalogue, not fixtures: 155 sampled records, 4,679 real faces, every directed half-edge answered by
+exactly one twin and V - E + F = 0 on the torus for all of them. `build` ALWAYS re-cuts the faces from
+the planar rotation system, even with an empty edit, so the walk is exercised by every tiling that
+opens and not only by edited ones; 20+ catalogue tilings come back face-for-face identical.
+
+⚑ **Two of my own specifications were wrong, and both were caught with a failing test.**
+
+1. A (length, signed turn) word can NEVER match a mirror pair. A reflection negates every turn and
+   reverses the corner order; reversing the word does the same two things, so a chiral tile and its
+   mirror cannot meet whatever you canonicalise over. The interior angle fixes it, because any
+   congruence preserves it and a reflection only reverses arrival order. This is why
+   `polyform_angle_word` emits angles and not turns, which I had read as presentation.
+2. `canDropEdge` must test the resulting RANK before the same-component case. On a torus, merging a
+   tile into its own translate leaves one component and an infinite tile: the 2x2 sweep comes out 3
+   allowed / 4 `infinite-tile` / 1 genuinely degenerate, and degenerate-first would report "changes
+   nothing" about the edit that makes the tile infinite.
+
+⚑ Also proved wrong: "a boundary half-edge is one whose reverse is absent or in another component"
+finds ZERO boundary half-edges for a tile with one cell per period, because such a tile borders its own
+translates and `buildHalfEdges` puts the reverse back on the same face. The component must be developed
+and the reverse tested against the LIFTED edge set.
+
+**Bows are safe by construction, and the bubble shelf's forbidden family does not apply.** A bow is
+stored once per QUOTIENT edge in that edge's chord frame, so both incident tiles draw the identical
+world curve and the tiling stays gap-free whatever the curve does. `lib/bubble/edges.ts` forbids
+profiles antisymmetric about the midpoint because on an edge PATTERN bump and bite carry the drawn bit;
+here there is no bit, so an S-curve is allowed. One bow on one edge of t1001 turns every hexagon in the
+plane into a rounded shape that still interlocks.
+
+**Two defects AL found on first use, both mine.** The view was a private `CardControls` converted to a
+world-centre-plus-scale, so the zoom jumped on the way in; it now reads and writes
+`configuration.controls` and projects through `worldToScreen`, the same pair the catalogue canvas's
+click-to-centre runs on, and eases nothing because p5's draw loop already eases those values. And the
+colours changed because the source polygon's `star` flag and `n` were dropped: a `{n/d}` ring carries
+2n points, so `starHue` was handed 8 where it needed 4 and every star tile came out blue. `srcAttrs`
+now carries `star`/`hue`/`n` per face keyed by canonical ring, so an untouched face is the catalogue's
+own colour and a cut face falls back to the side-count ramp, which is right.
+
+⚑ The first Wallpaper overlay was unreadable: `sym.axes` already describes the group's axes, so
+replicating each across every visible lattice copy redraws the same infinite line dozens of times.
+Axes are deduped by direction folded to a half turn plus signed distance from the origin, and capped.
+
+**Still owed.** Only PAINT carries the point-group orbit; merge and cut drop or add one quotient edge
+and so repeat under translations alone, and the hover preview deliberately narrows to the lattice set
+for those two tools instead of promising more than the edit delivers. Edge orbits under Wallpaper mode
+are the next piece. The cell inspector is built but unmounted (AL, on seeing it), which leaves a
+Wallpaper-mode vertex drag projected onto its site symmetry with nothing to explain why the handle does
+not follow the cursor. No persistence, per AL.
+
+**Fourth round of AL's feedback on the editor, and a tooltip bug it uncovered.**
+
+The two period overlays are now one switch and mutually exclusive: the basis cell under Lattice, the
+group's axes/centres/subdivision under Wallpaper. Drawing both put two readings of the same period on
+screen at once and neither read as authoritative.
+
+The basis cell is anchored with a CORNER on `SymmetryData.cellOrigin`, the fundamental domain's
+kaleidoscope point, so every lattice vertex lands on a rotation centre. Drawn off the patch origin it
+sat half a period away, with its corners between two triangles (AL: "shouldn't the lattice vertices be
+in the middle of the stars"). Measured on `ctrnact-star-k5-n0082` at one viewport: the anchored cell's
+three horizontal lines fall at y = 191/861/1531, all three in the group's mirror set
+(191/526/861/1196/1531), and each cuts through 426–594 px of star interior, while the half-period-off
+row at y = 526 touches zero. Before the anchor the rows were 278/948/1617: on no mirror at all.
+
+The Select tool no longer highlights the tile under the cursor. It is the pan tool and edits nothing, so
+the highlight promised an edit no click would make (verified: hovering under Select changes 0 px,
+under Merge 61,019).
+
+⚑ **Every tooltip over the /play canvas was painted UNDER the canvas, and had been all along.**
+`components/ui/tooltip.tsx` put `z-[var(--z-tooltip)]` (400) on Base UI's `Tooltip.Popup`, which Base UI
+gives `position: static` inside an absolutely positioned Positioner, and `z-index` does nothing on a
+static box, so the whole tooltip stacked at the Positioner's `z-auto` and lost to the canvas overlay's
+`z-10` wrapper. The popup was in the DOM, `opacity: 1`, correctly positioned, and invisible. The layer
+now sits on the Positioner. This was not editor-specific: it hit every tool tip on the strip and every
+tooltip anywhere over a z-layered surface.
+
+⚑ **A disabled `ButtonGroup` option's tooltip could never open.** The `disabled` attribute takes
+`pointer-events: none` with it and browsers dispatch no hover on a disabled control, so the tooltip
+explaining why an option is unavailable was unreachable, and that tooltip is usually the only place the
+reason is written. An option carrying both is now disabled softly: hoverable and focusable,
+`aria-disabled`, the same greyed look, and a press that does nothing (`ToggleButton` honours an explicit
+`aria-disabled` so the soft state still reaches assistive tech). This removes the paragraph of prose the
+editor bar printed beside the Wallpaper chip, which doubled the strip's height (AL). The same latent bug
+sits in `components/sidebar/options-tab.tsx:1235` (the Compound dual mode, whose tooltip explains the
+missing midsphere) and in `OptionWall`'s wallpaper-group chips; neither is touched here.
+
+
 **One constant for the tile palette, and the fill put on a slider.**
 
 AL asked what the saturation of the euclidean tiles was and said it could be higher. The answer had a
@@ -17534,3 +17644,24 @@ period mode survive the switch, being preferences and not edits.
 Also: a `wallpaper` period mode no longer survives onto a tiling with no computed group, where the chip
 would have read as pressed and disabled at once.
 
+**Review pass before the commit (2026-09-24): six defects, each reproduced in the running app.**
+
+1. A vertex drag was validated with its displacement counted twice. `clampVertexMove` wants
+   geometry plus a `moved` map, and the canvas handed it the BUILT patch (moves already baked in)
+   plus the doc's `moved`. A second drag on a moved vertex stopped short. The gesture now keeps the
+   committed build it started on and validates against it with an empty map.
+2. A cut vertex could not be dragged: the canvas wrote `moved[String(vi)]` and `build` reads a cut
+   vertex under its ref's JSON key. `BuildResult.moveKeys` now names every vertex's key (tested).
+3. E never opened the editor, because its binding lived in `StudioBar`, which was mounted only
+   while the editor was open. The bar is mounted always and renders nothing while closed.
+4. R and the arrow keys changed the tiling under the editor and so discarded the edit with no undo.
+   They are ignored while the editor is up; the catalogue list still switches on a click.
+5. A bow showed no preview until release: `draw` read the committed doc. It reads the gesture's
+   preview now, and `build` no longer computes `edgeCurves`, which no renderer read.
+6. After a tiling change the canvas built one pass of the OLD doc against the new cell (child
+   effects run before the parent's `openOn`). It now uses the doc only when the session's `cellId`
+   matches its own. Selecting a tiling the editor cannot handle also closes the editor.
+
+The sidebar hint still said the tools were "down the left edge"; they have been along the bottom
+since round three. /play no longer holds editor stats in its own state: only the unmounted inspector
+read them, and each commit re-rendered the page root for nothing.

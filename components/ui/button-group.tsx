@@ -65,17 +65,26 @@ export function ButtonGroup<T>(props: ButtonGroupProps<T>) {
 		<div className={cn("flex", wrap ? "flex-wrap" : "", gap, classes)}>
 			{options.map((opt) => {
 				const key = opt.key ?? String(opt.value);
+				// A DISABLED option that carries a tooltip is disabled softly. The `disabled` attribute takes
+				// `pointer-events: none` and browsers dispatch no hover on a disabled control at all, so the
+				// tooltip explaining why the option is unavailable could never open, and that tooltip is
+				// usually the only place the reason is written. Soft means: still hoverable and focusable,
+				// `aria-disabled` for assistive tech, the same greyed look, and a press that does nothing.
+				const soft = !!opt.disabled && opt.tooltip != null;
 				const button = (
 					<ToggleButton
 						key={key}
 						variant={variant}
 						size={size}
 						pressed={isPressed(opt.value)}
-						onPressedChange={() => props.onChange(opt.value)}
-						disabled={opt.disabled}
+						onPressedChange={() => {
+							if (!soft) props.onChange(opt.value);
+						}}
+						disabled={soft ? undefined : opt.disabled}
+						aria-disabled={opt.disabled}
 						icon={opt.icon}
 						label={opt.label}
-						classes={opt.classes}
+						classes={cn(soft ? "opacity-50 cursor-not-allowed" : "", opt.classes)}
 					/>
 				);
 				return opt.tooltip != null ? (

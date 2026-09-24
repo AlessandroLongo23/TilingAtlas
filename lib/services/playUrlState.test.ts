@@ -127,8 +127,9 @@ describe("playUrlState", () => {
 		const fields = Object.values(PLAY_PARAMS).map((s) => s.field);
 		expect(new Set(fields).size).toBe(fields.length);
 		// 62 until `sreal`/`sstu` went with the Realistic and Studio-look controls (2026-08-25); 61 since
-		// `bubedge` + `bubkoch` arrived with the bubble shelf's edge-profile picker (2026-08-27).
-		expect(Object.keys(PLAY_PARAMS)).toHaveLength(62);
+		// `bubedge` + `bubkoch` arrived with the bubble shelf's edge-profile picker (2026-08-27); 63 since
+		// `ed` arrived with the tiling editor (2026-09-21).
+		expect(Object.keys(PLAY_PARAMS)).toHaveLength(63);
 	});
 });
 

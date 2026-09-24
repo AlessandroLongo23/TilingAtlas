@@ -36,6 +36,15 @@ export interface RawPolygon {
 	 * closed, filled rings.
 	 */
 	open?: boolean;
+	/**
+	 * A resolved CSS fill, overriding `hue` and both ramps.
+	 *
+	 * The editor needs it because a painted tile's colour is a palette SLOT, and two of the slots
+	 * (`cream` and its near-black counterpart) are not points on the hue wheel at all: `cellFill`
+	 * resolves a `ColorChoice` per theme and hands back a string, which no hue field can carry. Absent
+	 * everywhere else, so every existing producer keeps the ramp it had.
+	 */
+	fill?: string;
 }
 
 export interface TranslationalCellData {
@@ -350,10 +359,16 @@ export function drawPolygons(
 			}
 			continue;
 		}
-		const hue = poly.hue ?? (poly.star ? starHue(poly.n, starApexAngleDeg(poly.vertices)) : polygonFillHue(poly.vertices));
-		// Negative hue = ink, the same sentinel FILL_FRAG and the PeriodicCell IR use. Nothing on the hue
-		// wheel can be dark at b=100.
-		ctx.fillStyle = hue < 0 ? INK_FILL : tileFill(hue + hueOffsetDeg, TILE_FILL_ALPHA);
+		if (poly.fill) {
+			// An explicitly resolved colour skips both ramps AND the hue offset: it is a chosen colour, and
+			// the Hue shift slider is there to rotate a derived one.
+			ctx.fillStyle = poly.fill;
+		} else {
+			const hue = poly.hue ?? (poly.star ? starHue(poly.n, starApexAngleDeg(poly.vertices)) : polygonFillHue(poly.vertices));
+			// Negative hue = ink, the same sentinel FILL_FRAG and the PeriodicCell IR use. Nothing on the hue
+			// wheel can be dark at b=100.
+			ctx.fillStyle = hue < 0 ? INK_FILL : tileFill(hue + hueOffsetDeg, TILE_FILL_ALPHA);
+		}
 		ctx.closePath();
 		ctx.fill();
 		if (outlinePx > 0) ctx.stroke();

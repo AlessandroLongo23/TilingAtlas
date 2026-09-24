@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useMemo } from "react";
-import { ArrowLeftRight } from "lucide-react";
+import { ArrowLeftRight, PenTool } from "lucide-react";
 import { deformApplies, useConfiguration } from "@/stores/configuration";
 import { hasSphereView } from "@/lib/tilings/sph-inscribed";
 import { solidHasStarFace } from "@/lib/render/sphericalGeometry";
@@ -334,6 +334,44 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 			    split is gone, and the "View options" heading with it (the tab already carries that label). */}
 			<div className="flex flex-col gap-2">
 				<div className="p-3 space-y-2">
+					{/* THE EDITOR, first in the panel because it is a MODE and not one more view toggle: it takes
+					    the canvas over (canvas.tsx skips the flat layer while `studioActive`), so the controls
+					    that decorate that canvas sit below it, past the divider.
+
+					    Offered on a flat tiling with straight edges only, which is the same gate the symmetry
+					    overlays take further down, for two hard reasons: the editor folds every edit onto a
+					    TRANSLATION LATTICE, which the hyperbolic and spherical records do not have, and it
+					    straightens a curved tile's edges, which would quietly damage a bubble tiling.
+
+					    `surface === "flat"` and not `isFlat`: hollow2d is in that predicate for historical
+					    reasons (see the ⚑ note beside it) and the hollow shelf paints its own canvas, so there
+					    is nothing there for the editor to take over. */}
+					{surface === "flat" && sourceControls && !curvedTiles ? (
+						<>
+							<Button
+								variant="primary"
+								size="lg"
+								fullWidth
+								icon={PenTool}
+								onClick={() => setCfg({ studioActive: !cfg.studioActive })}
+								aria-pressed={cfg.studioActive}
+								label={
+									<span className="flex flex-1 items-center justify-between gap-2">
+										<span>{cfg.studioActive ? "Leave the editor" : "Edit this tiling"}</span>
+										{/* The keycap's own tokens are tuned for a panel background; on the solid
+										    primary fill they vanish, so it borrows the inverse ink here. */}
+										<Kbd className="border-fg-inverse/30 bg-transparent text-fg-inverse/80">E</Kbd>
+									</span>
+								}
+							/>
+							<p className="text-[11px] leading-snug text-fg-muted">
+								{cfg.studioActive
+									? "The tools are along the bottom of the canvas. Esc leaves."
+									: "Merge, cut, move, decorate, recolour. Every edit repeats across the whole plane."}
+							</p>
+							<div className="border-t border-line pt-1" />
+						</>
+					) : null}
 					{/* Freedraw: the whole control set for the 2D grid view. Fill colours each unit CELL by the
 					    face it belongs to (there are no tiles to fill); the scaffold shows the grid edges that
 					    are NOT drawn; orbits dots the grid points by their symmetry orbit, which is what the

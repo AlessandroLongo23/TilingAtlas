@@ -176,9 +176,13 @@ function transitionsEnabled(cfg: ReturnType<typeof useConfiguration.getState>): 
 function isFlatShaderActive(cfg: {
 	euclideanShader: boolean; inversive: boolean; hyperbolic: boolean; spherical: boolean; freedraw: boolean; hollow?: boolean;
 	colors: boolean; truchetActive?: boolean; isIslamic: boolean; circlePacking: boolean; showSymmetryElements: boolean;
+	studioActive?: boolean;
 }): boolean {
 	return cfg.euclideanShader && !cfg.inversive && !cfg.hyperbolic && !cfg.spherical && !cfg.freedraw && !cfg.hollow &&
-		!cfg.colors && !cfg.truchetActive && !cfg.isIslamic && !cfg.circlePacking && !cfg.showSymmetryElements;
+		!cfg.colors && !cfg.truchetActive && !cfg.isIslamic && !cfg.circlePacking && !cfg.showSymmetryElements &&
+		// The editor draws the tiling it is editing, which is not the catalogued one. Two layers painting
+		// two different tilings is worse than either alone, so the shader stands down while it is up.
+		!cfg.studioActive;
 }
 
 // The predicate deciding which modes honour the view DEFORMATION lives in lib/stores/configuration.ts
@@ -656,8 +660,8 @@ export function Canvas({
 						rotation: cfg.rotation || 0,
 					},
 				});
-				// The hyperbolic / spherical / freedraw / colors (and inversive) views paint via their own overlay; skip the flat grid build.
-				if (!cfg.hyperbolic && !cfg.spherical && !cfg.freedraw && !cfg.colors && !cfg.hollow && !cfg.truchetActive) ensureTiling();
+				// The hyperbolic / spherical / freedraw / colors / editor (and inversive) views paint via their own overlay; skip the flat grid build.
+				if (!cfg.hyperbolic && !cfg.spherical && !cfg.freedraw && !cfg.colors && !cfg.hollow && !cfg.truchetActive && !cfg.studioActive) ensureTiling();
 			};
 
 			p5.draw = () => {
@@ -742,7 +746,8 @@ export function Canvas({
 				// as black figures, so the tiling drawn underneath is a second picture — and one that
 				// trails a frame behind on a drag, because the two layers ease on separate frame loops.
 				const skipFlat =
-					inversive || hyperbolic || spherical || cfg.freedraw || cfg.colors || cfg.hollow || cfg.truchetActive;
+					inversive || hyperbolic || spherical || cfg.freedraw || cfg.colors || cfg.hollow || cfg.truchetActive ||
+					cfg.studioActive;
 				if (!skipFlat) ensureTiling();
 				// A WebGL overlay now owns the frame, so ensureTiling — the only place that clears canvasError —
 				// no longer runs. Drop any stale error here so a transient flat-canvas error (e.g. the cold-load

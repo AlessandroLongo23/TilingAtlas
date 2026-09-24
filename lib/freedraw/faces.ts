@@ -27,6 +27,7 @@ import {
 	drawnNorth,
 	gridOf,
 } from "./pattern";
+import { spanRank } from "./topology";
 
 export interface FaceInfo {
 	/** Index into FaceAnalysis.faces; also the value stored in cellFace. */
@@ -67,20 +68,6 @@ const gcd2 = (a: number, b: number): number => {
 	while (b) [a, b] = [b, a % b];
 	return a;
 };
-
-/** Rank of the Q-span of a set of integer 2-vectors. Rational rank is enough to classify a face. */
-function spanRank(vs: [number, number][]): 0 | 1 | 2 {
-	let first: [number, number] | null = null;
-	for (const w of vs) {
-		if (w[0] === 0 && w[1] === 0) continue;
-		if (!first) {
-			first = w;
-			continue;
-		}
-		if (first[0] * w[1] - first[1] * w[0] !== 0) return 2;
-	}
-	return first ? 1 : 0;
-}
 
 /** Generator of a rank-1 subgroup of Z^2 given vectors known to be pairwise parallel. */
 function rank1Generator(vs: [number, number][]): [number, number] {

@@ -50,6 +50,11 @@ export const PLAY_PARAMS: Record<string, Spec> = {
 	trans: { field: "tilingTransition", kind: "bool" },
 	sym: { field: "showSymmetryElements", kind: "bool" },
 	dom: { field: "showFundamentalDomain", kind: "bool" },
+	// The editor: the MODE travels, the edit does not. A `StudioDoc` is five collections of topology keys
+	// (lib/studio/types.ts), so serializing one would put a second, unversioned encoding of a tiling in
+	// the query string, and a link carrying keys from a rebuilt patch would resolve against geometry that
+	// no longer matches. So `ed=1` opens the editor on the catalogued tiling, with an empty doc.
+	ed: { field: "studioActive", kind: "bool" },
 	hline: { field: "hyperbolicLineMode", kind: "enum", values: ["geometry", "constant"] },
 	// Bubble shelf: which edge profile the bump/bite decoration is drawn with. Values spelled out and
 	// not imported so the table stays the one readable place a link's vocabulary is defined; the enum

@@ -56,10 +56,20 @@ export function Tooltip({
 		<BaseTooltip.Root>
 			<BaseTooltip.Trigger delay={delay} render={children} />
 			<BaseTooltip.Portal>
-				<BaseTooltip.Positioner side={side} sideOffset={sideOffset}>
+				{/* THE Z-LAYER GOES ON THE POSITIONER. Base UI gives the Popup `position: static` inside an
+				    absolutely positioned Positioner, and `z-index` does nothing on a static box, so with the
+				    layer set on the Popup the whole tooltip stacked at the Positioner's own z-auto: over the
+				    /play canvas (a `z-10` wrapper) every tooltip was painted UNDER the canvas and could not be
+				    read at all, which is how the editor's tool tips and the reason a mode is unavailable went
+				    missing. */}
+				<BaseTooltip.Positioner
+					className="z-[var(--z-tooltip)]"
+					side={side}
+					sideOffset={sideOffset}
+				>
 					<BaseTooltip.Popup
 						className={cn(
-							"border border-line bg-surface-overlay text-fg rounded-md shadow-xl z-[var(--z-tooltip)]",
+							"border border-line bg-surface-overlay text-fg rounded-md shadow-xl",
 							"transition duration-150 ease-out motion-reduce:transition-none",
 							"data-[starting-style]:opacity-0 data-[ending-style]:opacity-0",
 							enterFrom,

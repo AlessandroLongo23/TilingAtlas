@@ -86,6 +86,11 @@ export interface ConfigurationState {
 	 *  sliders say; size-hue separates them and moves as the sliders move. Off = the fixed scheme. */
 	lengthSizeHue: boolean;
 	showConstructionPoints: boolean;
+	// Is the tiling EDITOR up. It lives here and not in lib/stores/studio.ts because it decides which
+	// renderer owns the canvas, and that question is answered by the gates in components/canvas.tsx and
+	// _play-client, which already read this store. Everything the editor does with the tiling — the doc,
+	// the history, the active tool — is in its own slice, so a pointer move does not re-render this one.
+	studioActive: boolean;
 	showWallpaperGroup: boolean;
 	showSymmetryElements: boolean;
 	showFundamentalDomain: boolean;
@@ -427,6 +432,7 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	showPolygonPoints: false,
 	lengthSizeHue: true,
 	showConstructionPoints: false,
+	studioActive: false,
 	showWallpaperGroup: false,
 	showSymmetryElements: false,
 	showFundamentalDomain: false,

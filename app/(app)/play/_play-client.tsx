@@ -16,6 +16,10 @@ import { FreedrawPlayCanvas } from "@/components/freedraw-play-canvas";
 import { TruchetOverlay } from "@/components/truchet-overlay";
 import { SquaringInset } from "@/components/squaring/squaring-inset";
 import { SquaringOverlay } from "@/components/squaring/squaring-overlay";
+import { useStudio } from "@/lib/stores/studio";
+import { PaletteStrip } from "@/components/studio/palette-strip";
+import { StudioBar } from "@/components/studio/studio-bar";
+import { StudioCanvas } from "@/components/studio/studio-canvas";
 import { blendedSquaring, exactSquaring, squaringAvailability, squaringCell } from "@/lib/squaring/playSquaring";
 import { truchetPattern as buildTruchetPattern } from "@/lib/render/truchetTiling";
 import { ColorsPlayCanvas } from "@/components/colors-play-canvas";
@@ -46,7 +50,7 @@ import {
 	type TierShelf,
 	type UnloadedTier,
 } from "@/lib/services/atlasManifest";
-import { canCaptureImage, isSphereSurface, lensAppliesTo, surfaceOf } from "@/lib/services/shelfRegistry";
+import { hasCurvedTiles, canCaptureImage, isSphereSurface, lensAppliesTo, surfaceOf } from "@/lib/services/shelfRegistry";
 import { useExportImage } from "@/stores/exportImage";
 import {
 	loadComposableAtlasShard,
@@ -1351,6 +1355,10 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				c.set({ fillAmount: c.fillAmount > 0 ? 0 : DEFAULT_FILL_AMOUNT });
 				return;
 			}
+			// R and the arrows change the selection, and a new cell starts a new edit session (see `openOn`
+			// below), so under the editor they would throw the whole edit away with no undo. The editor
+			// keeps them; the catalogue list still switches tiling on a deliberate click.
+			if (useConfiguration.getState().studioActive && (key === "r" || key === "arrowleft" || key === "arrowright")) return;
 			if (e.key === "r" || e.key === "R") {
 				e.preventDefault();
 				selectRandom();
@@ -1408,6 +1416,17 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	const sphericalFreedrawGrid = useConfiguration((s) => s.sphericalFreedrawGrid);
 	const sphStarEdges = useConfiguration((s) => s.sphStarEdges);
 	const starMod2 = useConfiguration((s) => s.starMod2);
+	const studioActive = useConfiguration((s) => s.studioActive);
+	// The editor needs a translation lattice and straight edges: the same gate the fundamental-domain
+	// toggle takes, and for the same two reasons (no lattice off the plane, and a curved tile would be
+	// silently straightened).
+	const canEditTiling = surface === "flat" && !hasCurvedTiles(selected);
+	// Wallpaper mode needs SymmetryData, which `analyzeSymmetry` declines for a star tiling (no
+	// wallpaper group) and for curved tiles. With none there is no point group to carry an edit through,
+	// so the mode says why instead of quietly behaving like Lattice.
+	const wallpaperDisabledReason = symmetryData
+		? undefined
+		: "This tiling has no computed wallpaper group, so an edit has no point group to repeat under.";
 	// The Tiles overlay and its knobs. On a plain tiling these drive the Truchet reading below; on a
 	// freedraw pattern the canvas reads them itself, which is why only the seed is consumed here.
 	const freedrawArcs = useConfiguration((s) => s.freedrawArcs);
@@ -1499,6 +1518,31 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	const drawCellId = squaringCellData
 		? `${selected?.canonicalKey ?? "sq"}#sq:${squaringClass[0]},${squaringClass[1]}${squaringMono ? ":m" : ""}`
 		: renderCellId;
+	// AN EDIT BELONGS TO THE CELL IT WAS MADE ON, so a new cell starts a new session. The doc names
+	// edges, rings and vertices by content key; those keys mean nothing on another tiling and can resolve
+	// onto an unrelated edge, which is a wrong answer that looks like a feature (AL, 2026-09-21). Keyed on
+	// `drawCellId`, so a mirror flip, a bubble restyle and a squaring count too: each renumbers the cell.
+	// Run unconditionally, NOT inside the editor, because switching tiling with the editor closed and then
+	// reopening it is the same bug by a longer route.
+	useEffect(() => {
+		useStudio.getState().openOn(drawCellId);
+	}, [drawCellId]);
+	// The editor has nothing to draw on a tiling it cannot edit (no lattice off the plane, curved tiles),
+	// so selecting one, or opening an `ed=1` link to one, closes it instead of leaving a blank canvas.
+	// Gated on `selected` so the load before the record arrives does not close a linked editor.
+	useEffect(() => {
+		if (selected && !canEditTiling && useConfiguration.getState().studioActive) {
+			useConfiguration.getState().set({ studioActive: false });
+		}
+	}, [selected, canEditTiling]);
+	// A period mode the tiling cannot support must not stay selected: the chip would read as pressed and
+	// disabled at once, and the build falls back to the lattice regardless.
+	useEffect(() => {
+		if (!symmetryData && useStudio.getState().periodMode === "wallpaper") {
+			useStudio.getState().set({ periodMode: "lattice" });
+		}
+	}, [symmetryData]);
+
 	// What the conformal lens draws: the selection reduced to the shared periodic-cell IR. One hook covers
 	// every Euclidean class, so the lens is no longer limited to the plain polygon-cell tilings.
 	// The Truchet reading of a PLAIN tiling: only built while the overlay is up and the selection is one
@@ -1598,7 +1642,21 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				    own pointer input via ArcballControls, so it sits on top and captures drag/wheel itself),
 				    the Poincaré disk for a hyperbolic tiling, else the inversive conformal view when toggled
 				    on. The flat p5 Canvas above stays mounted (blanked) as the input layer for the other two. */}
-				{lensActive ? (
+				{studioActive ? (
+					// THE EDITOR GOES FIRST, ahead of even the lens. It is not a decoration of the catalogued
+					// tiling, it is a different tiling: once an edge has been merged away or a vertex moved,
+					// nothing below this line is drawing the thing the user is working on. It owns its own
+					// pointer input, like freedraw and colors, because the flat canvas's pan drives a patch
+					// this one does not hold. p5 and the flat shader are blanked by `studioActive` in
+					// components/canvas.tsx, next to the gates every other exclusive canvas uses.
+					<div className="absolute inset-0 z-10">
+						<StudioCanvas
+							cell={drawCell}
+							cellId={drawCellId}
+							symmetryData={symmetryData}
+						/>
+					</div>
+				) : lensActive ? (
 					// The conformal lens owns the canvas whenever it is on and the selection is Euclidean. It used
 					// to sit at the BOTTOM of this chain, which is why every decoration below it silently lost the
 					// lens; each Euclidean class now has a periodic-cell representation, so the lens goes first.
@@ -1749,6 +1807,16 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				    reads the live camera and takes no pointer input, so it cannot move the picture.
 				    Not under the lens: this layer projects affinely, so straight grid lines and centred type
 				    would sit where the squares USED to be, next to a picture that has been bent away. */}
+				{/* The editor's chrome, as SIBLINGS of the canvas and not children of it: a floating panel
+				    inside the canvas element would sit inside the element that captures every pointer event,
+				    so every click on a tool would also be a click on a tile.
+				    The cell INSPECTOR is deliberately not mounted (AL, 2026-09-21): the readout was noise
+				    next to the picture. `StudioInspector` stays in the tree for when a refusal needs
+				    somewhere to be read.
+				    The bar is mounted UNCONDITIONALLY: it renders nothing while the editor is down, and it
+				    owns the E key that opens it, which a bar mounted only while open could never hear. */}
+				<StudioBar wallpaperDisabledReason={wallpaperDisabledReason} canEdit={canEditTiling} />
+				{studioActive ? <PaletteStrip /> : null}
 				{!lensActive ? <SquaringOverlay selected={selected ?? null} /> : null}
 				{/* The family's own sliders: a squaring has no free angle to flex, and the panel is driving the
 				    tiling in the corner rather than the one on the canvas while it is up. */}

@@ -28,6 +28,7 @@
 // counts from one number, each catching a different way of being wrong.
 
 import type { Curve4, FreedrawPatch } from "./pattern";
+import { mergeFaces, OffsetDSU } from "./topology";
 
 type Vec = [number, number];
 
@@ -151,77 +152,6 @@ export function ringArea(pts: { x: number; y: number }[]): number {
 		s += a.x * b.y - b.x * a.y;
 	}
 	return s / 2;
-}
-
-/** Union-find whose members carry an integer lattice offset relative to their root, and which records
- *  every offset mismatch it meets. Those mismatches generate the period subgroup of the component —
- *  the whole basis of telling a finite tile from a strip from a sheet. */
-class OffsetDSU {
-	private readonly parent: number[];
-	private readonly ox: number[];
-	private readonly oy: number[];
-	readonly periods: Vec[] = [];
-
-	constructor(n: number) {
-		this.parent = Array.from({ length: n }, (_, i) => i);
-		this.ox = new Array(n).fill(0);
-		this.oy = new Array(n).fill(0);
-	}
-
-	find(i: number): { root: number; x: number; y: number } {
-		let root = i;
-		let ax = 0;
-		let ay = 0;
-		while (this.parent[root] !== root) {
-			ax += this.ox[root];
-			ay += this.oy[root];
-			root = this.parent[root];
-		}
-		let cur = i;
-		let cx = ax;
-		let cy = ay;
-		while (this.parent[cur] !== cur) {
-			const p = this.parent[cur];
-			const px = this.ox[cur];
-			const py = this.oy[cur];
-			this.parent[cur] = root;
-			this.ox[cur] = cx;
-			this.oy[cur] = cy;
-			cx -= px;
-			cy -= py;
-			cur = p;
-		}
-		return { root, x: ax, y: ay };
-	}
-
-	/** Assert offset(j) - offset(i) = (dx, dy). */
-	union(i: number, j: number, dx: number, dy: number): void {
-		const a = this.find(i);
-		const b = this.find(j);
-		if (a.root === b.root) {
-			const mx = b.x - (a.x + dx);
-			const my = b.y - (a.y + dy);
-			if (mx !== 0 || my !== 0) this.periods.push([mx, my]);
-			return;
-		}
-		this.parent[b.root] = a.root;
-		this.ox[b.root] = a.x + dx - b.x;
-		this.oy[b.root] = a.y + dy - b.y;
-	}
-}
-
-/** 0 finite, 1 strip, 2 unbounded — the rank of the Q-span of a component's period vectors. */
-function spanRank(vs: Vec[]): 0 | 1 | 2 {
-	let first: Vec | null = null;
-	for (const w of vs) {
-		if (w[0] === 0 && w[1] === 0) continue;
-		if (!first) {
-			first = w;
-			continue;
-		}
-		if (cross(first, w) !== 0) return 2;
-	}
-	return first ? 1 : 0;
 }
 
 /** Edge midpoints of the develop, plus the subset inside the core: the evidence `isPeriod` weighs. */
@@ -678,71 +608,11 @@ function assemble(
 		return { patch: null, reason: `period holds ${wantE} edges but ${edges.length} were folded`, diag };
 
 	// --- tiles: faces merged across undrawn edges, carrying each face's lift ---
-	// Directed half-edge -> the faces carrying it, and where that face sits when the half-edge starts
-	// at its own class anchor. Two faces meet along every edge, which is how the merge finds them.
-	const half = new Map<string, { p: number; off: Vec }[]>();
-	for (let p = 0; p < polys.length; p++) {
-		const ring = polys[p];
-		for (let i = 0; i < ring.length; i++) {
-			const [va, ax, ay] = ring[i];
-			const [vb, bx, by] = ring[(i + 1) % ring.length];
-			const k = `${va},${vb},${bx - ax},${by - ay}`;
-			const list = half.get(k);
-			if (list) list.push({ p, off: [ax, ay] });
-			else half.set(k, [{ p, off: [ax, ay] }]);
-		}
-	}
-	const merge = new OffsetDSU(polys.length);
-	for (let p = 0; p < polys.length; p++) {
-		const ring = polys[p];
-		for (let i = 0; i < ring.length; i++) {
-			const [va, ax, ay] = ring[i];
-			const [vb, bx, by] = ring[(i + 1) % ring.length];
-			const d: Vec = [bx - ax, by - ay];
-			if (drawnOf.get(`${va},${vb},${d[0]},${d[1]}`) !== false) continue; // drawn, or unknown: a boundary
-			for (const m of half.get(`${vb},${va},${-d[0]},${-d[1]}`) ?? []) {
-				// The twin half-edge starts at vb, which sits at (bx, by) in p's frame and at m.off in the
-				// neighbour's own frame — so the neighbour is lifted by the difference.
-				merge.union(p, m.p, bx - m.off[0], by - m.off[1]);
-			}
-		}
-	}
-
-	const compOf = new Map<number, number>();
-	const polyComp: number[] = [];
-	const compLift: Vec[][] = [];
-	const compPeriods: Vec[][] = [];
-	for (let p = 0; p < polys.length; p++) {
-		const f = merge.find(p);
-		let c = compOf.get(f.root);
-		if (c === undefined) {
-			c = compLift.length;
-			compOf.set(f.root, c);
-			compLift.push([]);
-			compPeriods.push([]);
-		}
-		polyComp.push(c);
-		compLift[c].push([f.x, f.y]);
-	}
-	// Attribute each mismatch to its component by re-walking the undrawn adjacencies once more; the DSU
-	// records them globally, and a strip's period must not classify its neighbour.
-	for (let p = 0; p < polys.length; p++) {
-		const ring = polys[p];
-		const fp = merge.find(p);
-		for (let i = 0; i < ring.length; i++) {
-			const [va, ax, ay] = ring[i];
-			const [vb, bx, by] = ring[(i + 1) % ring.length];
-			const d: Vec = [bx - ax, by - ay];
-			if (drawnOf.get(`${va},${vb},${d[0]},${d[1]}`) !== false) continue;
-			for (const m of half.get(`${vb},${va},${-d[0]},${-d[1]}`) ?? []) {
-				const fq = merge.find(m.p);
-				if (fq.root !== fp.root) continue;
-				const mx = fq.x - (fp.x + bx - m.off[0]);
-				const my = fq.y - (fp.y + by - m.off[1]);
-				if (mx !== 0 || my !== 0) compPeriods[compOf.get(fp.root)!].push([mx, my]);
-			}
-		}
-	}
+	// The half-edge table, the offset union-find and the holonomy ranks all live in ./topology now, so
+	// the tiling editor runs the identical merge on an edited catalogue cell. `drawnOf` is read tri-state
+	// on purpose: only an explicit `false` merges, and an edge this fold never saw stays a boundary.
+	const merged = mergeFaces(polys, (k) => drawnOf.get(k));
+	const { polyComp, compRank, compCells, compHoles, stats } = merged;
 
 	// Ring arcs for the fill pass. A ring corner sits at verts[va] + (ax, ay)·T, and the arc leaving it
 	// is the oriented quotient edge to the next corner — looked up in the direction the RING travels,
@@ -766,17 +636,6 @@ function assemble(
 		}),
 	);
 
-	const compRank = compPeriods.map((ps) => spanRank(ps));
-	const compCells = compLift.map((l) => l.length);
-	const compHoles = compRank.map((r, c) => (r === 0 ? holesOf(polys, polyComp, compLift[c], c) : 0));
-
-	const stats = {
-		faceOrbits: compRank.length,
-		finite: compRank.filter((r) => r === 0).length,
-		strips: compRank.filter((r) => r === 1).length,
-		unbounded: compRank.filter((r) => r === 2).length,
-		withHoles: compHoles.filter((h) => h > 0).length,
-	};
 	diag.comps = compRank.length;
 
 	return {
@@ -799,30 +658,4 @@ function assemble(
 		reason: "",
 		diag,
 	};
-}
-
-/** Holes in a finite tile, as 1 - Euler characteristic of the assembled polyform. */
-function holesOf(
-	polys: [number, number, number][][],
-	polyComp: number[],
-	lifts: Vec[],
-	comp: number,
-): number {
-	const members: number[] = [];
-	for (let p = 0; p < polys.length; p++) if (polyComp[p] === comp) members.push(p);
-	const V = new Set<string>();
-	const E = new Set<string>();
-	for (let i = 0; i < members.length; i++) {
-		const ring = polys[members[i]];
-		const [lx, ly] = lifts[i];
-		for (let j = 0; j < ring.length; j++) {
-			const [va, ax, ay] = ring[j];
-			const [vb, bx, by] = ring[(j + 1) % ring.length];
-			V.add(`${va},${ax + lx},${ay + ly}`);
-			const a = `${va},${ax + lx},${ay + ly}`;
-			const b = `${vb},${bx + lx},${by + ly}`;
-			E.add(a < b ? `${a}|${b}` : `${b}|${a}`);
-		}
-	}
-	return 1 - (V.size - E.size + members.length);
 }

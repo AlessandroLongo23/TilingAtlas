@@ -52,6 +52,9 @@ export function ToggleButton({
 	children,
 	disabled,
 	onClick,
+	// Read off `rest` so a caller can say "disabled by intent" without the native attribute, which
+	// would take pointer-events with it and kill any tooltip explaining the refusal (see ButtonGroup).
+	"aria-disabled": ariaDisabled,
 	// Forwarded so consumers like the Base UI Tooltip trigger can anchor to the real <button>.
 	ref,
 	...rest
@@ -63,7 +66,7 @@ export function ToggleButton({
 			ref={ref}
 			aria-pressed={pressed}
 			disabled={disabled}
-			aria-disabled={disabled}
+			aria-disabled={ariaDisabled ?? disabled}
 			onClick={(e) => {
 				onClick?.(e);
 				if (!e.defaultPrevented) onPressedChange?.(!pressed);

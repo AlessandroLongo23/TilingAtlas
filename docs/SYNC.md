@@ -3015,3 +3015,11 @@ sphere) and v1.37.0 (every board, whole) written. The split found a check-star g
 8e4e344 (refreshed), tetromino tables that were the unpruned alphabet (regenerated to the Makefile
 default) and every a.b.c.d deep link opening the default tiling (fixed). ⚑ The shader edge reducer
 refuses high-k hyperbolic records and logs an error for each. NOTES 2026-09-06.
+
+## 2026-09-21 — a tiling editor on /play: six tools, and a merge engine that already existed — CC
+
+Merge, cut, move points, bow edges and recolour any catalogued Euclidean tiling; each edit is recorded
+against the quotient, so it lands on every copy across the plane. `FreedrawPatch` was already the right
+IR and `edgePatchCore`'s face merge already did the periodic half, so that block moved to
+`lib/freedraw/topology.ts` (828 -> 666 there, a duplicate `spanRank` gone), now with three callers.
+⚑ Two of my specs were wrong, both proved by test; merge and cut carry no point-group orbit yet. NOTES 2026-09-21.
