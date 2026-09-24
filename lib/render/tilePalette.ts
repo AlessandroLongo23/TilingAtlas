@@ -30,23 +30,24 @@
 //
 // Keep the arithmetic in this direction too. An earlier draft had the 0–1 form as the constant and the
 // percent form as `TILE_SAT * 100`, which put 55.00000000000001 into p5 fill() calls and CSS strings.
-// This way the DEFAULT is exact (0.8 · 60 = 48), which is what matters, because it is the number the
+// This way the DEFAULT is exact (1 · 48 = 48), which is what matters, because it is the number the
 // rest of the atlas is compared against. A dragged slider position still carries ordinary float noise
-// (0.03 · 60 = 1.7999999999999998) and that is harmless: p5 normalises its own arguments, and every CSS
+// (0.03 · 48 = 1.44 and its like) and that is harmless: p5 normalises its own arguments, and every CSS
 // colour this module builds goes through toFixed(1).
 //
-// The dial is a 0–1 AMOUNT, not a percentage, and 1 is FILL_MAX_SAT_PCT — 60, not 100. Two reasons the
-// top of it is not a fully saturated tile: past about 60 the fill stops separating from the near-black
-// tile stroke and from INK_FILL, and it closes on the tileLine pair (below) that the figure cards draw
-// beside a fill at HSL lightness 45. Capping the dial means every position on it is a usable tiling, so
-// there is no wrong end to drag to.
+// The dial is a 0–1 AMOUNT, not a percentage, and 1 is FILL_MAX_SAT_PCT — 48, not 100. The top of the
+// dial IS the default (AL, 2026-09-24): the old top of 60 read as too saturated, so the dial was
+// rescaled to end at the palette's own 48, and moving it only takes the tiles lighter. Past about 60
+// the fill would also stop separating from the near-black tile stroke and from INK_FILL, and close on
+// the tileLine pair (below). Capping the dial means every position on it is a usable tiling, so there is
+// no wrong end to drag to.
 export const FILL_AMOUNT_MIN = 0;
 export const FILL_AMOUNT_MAX = 1;
 export const FILL_AMOUNT_STEP = 0.01;
-export const FILL_MAX_SAT_PCT = 60;
+export const FILL_MAX_SAT_PCT = 48;
 
-/** Where the slider sits untouched (AL, 2026-09-21) — and so the whole atlas's default saturation. */
-export const DEFAULT_FILL_AMOUNT = 0.8;
+/** Where the slider sits untouched: its top (AL, 2026-09-24), and so the whole atlas's default saturation. */
+export const DEFAULT_FILL_AMOUNT = 1;
 
 /** The palette default: HSB saturation 48, HSL lightness 76. Derived, so it cannot disagree with the
  *  slider's resting position. */
@@ -122,9 +123,9 @@ export const TILE_HSL_LIGHT_PCT = tileHsl.l;
  * `hsbToHsla(h, 55, 62, 1)` at eleven of them.
  *
  * It does NOT move with the fill, which is the thing to watch: the fill sits at HSL lightness
- * 100 − 50·sat and this sits at 45, so the gap is 31 points at the default and 25 at the slider's top.
+ * 100 − 50·sat and this sits at 45, so the gap is 31 points at the default, which is also the slider's top.
  * Deepening the fill closes the gap from one side only, and the two would meet around saturation 110 —
- * which is one of the reasons FILL_MAX_SAT_PCT stops at 60. These cards are not under the Fill slider,
+ * one of the reasons FILL_MAX_SAT_PCT stays well below that. These cards are not under the Fill slider,
  * so only the default matters here.
  */
 export const TILE_LINE_SAT_PCT = 55;

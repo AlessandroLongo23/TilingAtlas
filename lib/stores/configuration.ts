@@ -70,7 +70,7 @@ export interface ConfigurationState {
 	 * How much colour the tiles carry, 0–1 — the /play sidebar's Fill slider, which replaced the
 	 * Polygon-fill checkbox this field used to be.
 	 *
-	 * It is an AMOUNT, not a saturation: `fillAmountToSatPct` maps it onto 0–FILL_MAX_SAT_PCT (60), so 1
+	 * It is an AMOUNT, not a saturation: `fillAmountToSatPct` maps it onto 0–FILL_MAX_SAT_PCT (48), so 1
 	 * is the deepest usable fill and not a fully saturated tile — see lib/render/tilePalette.ts for why
 	 * the dial stops there. The default is DEFAULT_FILL_AMOUNT, which is exactly the palette's own
 	 * saturation, so an untouched slider paints what every other surface in the atlas paints.
