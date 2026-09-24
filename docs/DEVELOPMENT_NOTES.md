@@ -17665,3 +17665,46 @@ would have read as pressed and disabled at once.
 The sidebar hint still said the tools were "down the left edge"; they have been along the bottom
 since round three. /play no longer holds editor stats in its own state: only the unmounted inspector
 read them, and each commit re-rendered the page root for nothing.
+
+## 2026-09-24: the Instrument redesign, an even tile palette, and the landing count that was sixty times short
+
+**Why.** AL judged the Firecrawl-derived look "not modern, polished, clean". A screenshot audit put
+most of the blame on the fit, not the execution: a restrained monochrome system with saturated
+multi-hue tilings filling most of the pixels, and a sidebar built as a "wall" (a line-coloured
+container, opaque grey cells, 1px gaps) that read as stacked slabs. Three directions were mocked on
+/play (printed catalogue, modern tool, dark canvas-first); AL chose the modern tool, "B · Instrument".
+
+**The palette (18c1b85b).** HSB at fixed S/V gives every hue the same numbers and a different look;
+the hexagon green glared, the 12-gon blue sank. `tilePalette.ts` now builds OKLCH at one lightness and
+chroma per fill amount, in TS and in GLSL from the same constants, with HSB primaries mapped onto
+their OKLCH hues so polygon identity survives. Two stale copies went with it: the spherical shader's
+own `sphHsb2rgb` and `periodicCell`'s `hsb2rgb(h, 0.4, 1)`, which had kept SVG export and the
+zoomed-out blend at the old saturation since 2026-09-21.
+
+**The count (369f7be0).** The landing page said "over 37000" for 2,344,403. `gen-landing-data.ts`
+counted only the eager shelves, and its list had fallen six shelves behind `loadReferenceAtlas`. It
+now counts eager + the shards /play preloads + every manifest tier. ⚑ Euclidean reads 123,669 there
+and 123,727 on /play; the 58 are rows /play adds beyond these files, not traced yet.
+
+**The system (58e02ade).** Geist, warm neutrals, radii back on, one ultramarine accent for actions
+only, and one class per job: `.ta-seg`/`.ta-tab` (every pick-one), `.ta-label`, `.ta-float`,
+`.ta-scroll-fade`. Two traps worth recording: `.ta-track` was already the range slider's class (the
+first segmented track collapsed to 14px), and the Turbopack dev server repeatedly served a stale
+globals.css after scripted edits (a real content change forces the rebuild). In dark mode the
+selected pill needed its own token: brightening `surface-raised` for it lit every card and canvas.
+
+**/play's toolbar.** Prev/Random/Next, link, export and fullscreen moved into one floating toolbar.
+AL then moved the editor there too: Edit ADDS to the bar (undo/redo/reset take the stepping slot,
+then tools, then Lattice / Wallpaper group, Period cell and an info tooltip), the groups slide via
+`ToolbarReveal`, and the sidebar's "Edit this tiling" button is gone. ⚑ The v1.38.0 release note still
+points at the old button; the next note should say where the editor went.
+
+**The review loop.** AL asked for per-page screenshot reviews to 8/10, three rounds at most. Scores
+went 5-6, then 6-7, then 6-7: no page reached 8. Fresh reviewers each round kept finding new nits and
+once contradicted each other (Library's k chips: round 2 asked for separate ink chips, round 3 marked
+them down as off-system). Lesson: screenshot scoring by fresh reviewers is a noisy target past about
+7; concrete bugs are better closed by checking the running app. ⚑ Still open from round 3: the Home
+hero sometimes shows a finite patch with stray dots; Freedraw's second Grid row and a disabled Tile
+size pill; sidebars on Aperiodic/Isohedral/Pentagons/Updates and the Colors detail pane clip at the
+bottom; Aperiodic outlines and the Isohedral prototile lose their outline in dark mode; Colors
+col-1-00007/-00008 show one colour in the "2 colors" slice (data or thumbnail, unknown).

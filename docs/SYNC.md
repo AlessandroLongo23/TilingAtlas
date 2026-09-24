@@ -3023,3 +3023,10 @@ against the quotient, so it lands on every copy across the plane. `FreedrawPatch
 IR and `edgePatchCore`'s face merge already did the periodic half, so that block moved to
 `lib/freedraw/topology.ts` (828 -> 666 there, a duplicate `spanRank` gone), now with three callers.
 ⚑ Two of my specs were wrong, both proved by test; merge and cut carry no point-group orbit yet. NOTES 2026-09-21.
+
+## 2026-09-24 — the Instrument redesign, an OKLCH tile palette, the true landing count — CC
+
+On branch `design/instrument`: an even OKLCH tile palette in every renderer (18c1b85b); the landing
+count fixed from "over 37000" to 2,344,403 (369f7be0); the modern-tool design system on every page,
+with /play's editor folded into one canvas toolbar (58e02ade). ⚑ Page reviews stalled at 6-7/10 after
+three rounds; the open bugs are listed in NOTES 2026-09-24.
