@@ -294,7 +294,7 @@ def main():
     if '--selftest' in sys.argv:
         selftest(); return
     w2 = 4  # width 2, doubled
-    logpath = ('/Users/alessandro/Desktop/University/Thesis/TilingAtlas/experiments/'
+    logpath = ('/Users/alessandro/Desktop/Personal/TilingAtlas/experiments/'
                'results/d1-slab-engine-width2-2026-07-10.log')
     lf = open(logpath, 'a')
     def log(m):

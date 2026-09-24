@@ -3,7 +3,7 @@
 # pre-optimization). k=1 is uncapped (deterministic → digests must match = byte-identical); k=2 uses a
 # 30 s/fill cap (capped seeds contribute equally to both, so the gain shows on terminating seeds).
 set -e
-cd /Users/alessandro/Desktop/University/Thesis/TilingAtlas
+cd /Users/alessandro/Desktop/Personal/TilingAtlas
 OUT=experiments/results/fill-profile-2026-07-08/total-gain.txt
 : > "$OUT"
 

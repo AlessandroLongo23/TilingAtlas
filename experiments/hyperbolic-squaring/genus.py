@@ -9,7 +9,7 @@ conditions, with no genus assumed anywhere. Hodge says it must be 2g = 2 - chi.
 """
 from fractions import Fraction as Fr
 import json, glob, os
-REPO = '/Users/alessandro/Desktop/University/Thesis/TilingAtlas'
+REPO = '/Users/alessandro/Desktop/Personal/TilingAtlas'
 
 def nullity(rows, n):
     M = [r[:] for r in rows]; piv = 0

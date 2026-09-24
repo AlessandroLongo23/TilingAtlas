@@ -4,7 +4,7 @@ and emit the catalogue entries. Identifies each record by (V, cyclic-vertex-conf
 import json, numpy as np, sys
 from collections import Counter
 
-ROOT = "/Users/alessandro/Desktop/University/Thesis/TilingAtlas"
+ROOT = "/Users/alessandro/Desktop/Personal/TilingAtlas"
 SRC = [f"{ROOT}/tests/fixtures/spherical-cells-k2.json",
        f"{ROOT}/tools/ctrnact-oracle/run-k8-spherical/cells-k3to8.json"]
 
