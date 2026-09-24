@@ -1,21 +1,45 @@
 // The tile palette: the one place the atlas decides what a tile fill looks like.
 //
-// Every filled tile in every geometry is ONE hue at ONE fill amount. Hue carries the polygon (polygonHue
-// / starHue / an identity hue); the amount belongs to the MEDIUM. That is why a hexagon is the same colour
-// on the play canvas, in a catalogue thumbnail, on a polyhedron, in the Poincaré disk and in an SVG
-// export. Every surface goes through `tileHueRgb01` (TS) or `tileFillAt` (GLSL), and both are built from
-// the constants below, so they cannot drift.
+// Every filled tile in every geometry is ONE hue at ONE saturation and value — HSB(h, sat, TILE_VAL).
+// Hue carries the polygon (polygonHue / starHue / an identity hue); saturation and value belong to the
+// MEDIUM. That is why a hexagon is the same colour on the play canvas, in a catalogue thumbnail, on a
+// polyhedron, in the Poincaré disk and in an SVG export. Both channels had been spelled out by hand at
+// about fifty call sites across p5, three.js, canvas2d, SVG and nine GLSL programs, which is how
+// lib/render/sphPoly.ts came to sit at 0.50/0.98 while every other shelf was at 0.40/1.00.
 //
-// The colour is OKLCH, not HSB (2026-09-24). HSB at a fixed S/V gives every hue the same NUMBERS but not
-// the same look: at the old S 48 / V 100 the hexagon's green glared and the 12-gon's blue sank. In OKLCH
-// every hue sits at one perceived lightness and one chroma, so no polygon shouts over another. The atlas's
-// hue numbers (polygonHue & co.) still mean what they did: HUE_ANCHORS maps each HSB primary onto its own
-// OKLCH hue, so a triangle stays red-ish, a hexagon green-ish and a dodecagon blue-ish.
+// Saturation is now the /play sidebar's Fill slider (`fillAmount`, 0–1), which replaced the old
+// Polygon-fill checkbox: 0 is that checkbox's off state — no fill at all, outline only — and every value
+// above it maps onto a real saturation through `fillAmountToSatPct`. TILE_SAT_PCT is where the slider
+// sits untouched, and the value every surface the slider does not reach (figures, the spherical shelves,
+// orbit dots) keeps using.
 //
-// The /play Fill slider (`fillAmount`, 0–1) still speaks in "saturation percent" for its callers
-// (`fillAmountToSatPct`, `satPct` arguments, `uTileSat`): 0 is outline only, FILL_MAX_SAT_PCT is the
-// top. `amount = satPct / FILL_MAX_SAT_PCT` then drives chroma up and lightness down together.
+// Read what the number actually does before changing it. With V pinned at 1.0 the fill is ALREADY fully
+// saturated in HSL terms — HSB(h, s, 1.0) ≡ HSL(h, 100%, 100·(1 − s/2)%) for every s — so saturation
+// moves lightness and nothing else. Raising it deepens the colour by darkening it, and the limit is
+// wherever the fill stops separating from the near-black tile stroke and INK_FILL
+// (lib/utils/renderTiling.ts). 40, 55 and 65 were compared on /play at the same tiling on 2026-09-21:
+// all three keep the stroke legible, and 65 is where yellow starts reading as amber.
+//
+// Caveat this parameterisation cannot fix: at a fixed HSB S/V, perceived colourfulness still varies a
+// lot with hue (yellow reads far lighter than blue). Evening that out means a perceptual space, OKLCH,
+// and a different ramp for polygonHue — a separate job, not a tweak to this constant.
 
+// THE SLIDER'S NUMBERS ARE THE CANONICAL ONES, and the palette's saturation is derived from them, so the
+// default can only ever be one value: what the surfaces the slider does not reach paint IS where the
+// slider sits untouched, by construction, not by two constants being kept in step by hand.
+//
+// Keep the arithmetic in this direction too. An earlier draft had the 0–1 form as the constant and the
+// percent form as `TILE_SAT * 100`, which put 55.00000000000001 into p5 fill() calls and CSS strings.
+// This way the DEFAULT is exact (0.8 · 60 = 48), which is what matters, because it is the number the
+// rest of the atlas is compared against. A dragged slider position still carries ordinary float noise
+// (0.03 · 60 = 1.7999999999999998) and that is harmless: p5 normalises its own arguments, and every CSS
+// colour this module builds goes through toFixed(1).
+//
+// The dial is a 0–1 AMOUNT, not a percentage, and 1 is FILL_MAX_SAT_PCT — 60, not 100. Two reasons the
+// top of it is not a fully saturated tile: past about 60 the fill stops separating from the near-black
+// tile stroke and from INK_FILL, and it closes on the tileLine pair (below) that the figure cards draw
+// beside a fill at HSL lightness 45. Capping the dial means every position on it is a usable tiling, so
+// there is no wrong end to drag to.
 export const FILL_AMOUNT_MIN = 0;
 export const FILL_AMOUNT_MAX = 1;
 export const FILL_AMOUNT_STEP = 0.01;
@@ -24,11 +48,14 @@ export const FILL_MAX_SAT_PCT = 60;
 /** Where the slider sits untouched (AL, 2026-09-21) — and so the whole atlas's default saturation. */
 export const DEFAULT_FILL_AMOUNT = 0.8;
 
-/** The palette default, in the slider's percent units (0.8 · 60 = 48). Derived, so it cannot disagree
- *  with the slider's resting position. */
+/** The palette default: HSB saturation 48, HSL lightness 76. Derived, so it cannot disagree with the
+ *  slider's resting position. */
 export const TILE_SAT_PCT = DEFAULT_FILL_AMOUNT * FILL_MAX_SAT_PCT;
-/** The same on the 0–1 scale the GLSL and three.js paths take. */
+export const TILE_VAL_PCT = 100;
+
+/** The same pair on the 0–1 scale the GLSL and three.js paths take. */
 export const TILE_SAT = TILE_SAT_PCT / 100;
+export const TILE_VAL = TILE_VAL_PCT / 100;
 
 /**
  * Slider amount → the saturation to paint with. 0 is the slider's OFF, and this maps it to 0, which is a
@@ -42,102 +69,72 @@ export function fillAmountToSatPct(amount: number): number {
 /** Wrap any angle in degrees onto [0, 360). */
 const wrap360 = (deg: number): number => ((deg % 360) + 360) % 360;
 
-// The OKLCH ramp. At amount a (0–1): lightness L_TOP − L_DROP·a, chroma C_TOP·a. The default (a = 0.8) is
-// L 0.845 / C 0.088, a light, evenly lit pastel that keeps a near-black stroke legible; the slider's top
-// is L 0.815 / C 0.11. A few blues at the top of the dial fall just outside sRGB and are clipped per
-// channel, which shifts them by a degree or two of hue and nothing worse.
-const L_TOP = 0.965;
-const L_DROP = 0.15;
-const C_TOP = 0.11;
-/** The outline beside a fill (`tileLine`): the same hue, dark enough to read as a line. */
-const LINE_L = 0.52;
-const LINE_C = 0.12;
-/** OKLCH hue of each HSB primary (red, yellow, green, cyan, blue, magenta, red again), 60° apart. */
-const HUE_ANCHORS = [29.2, 109.8, 142.5, 194.8, 264.1, 328.4, 389.2];
-
-/** Atlas hue (HSB degrees) → OKLCH hue in degrees, piecewise linear between the primaries. */
-function oklchHue(hueDeg: number): number {
-	const h = wrap360(hueDeg) / 60;
-	const i = Math.floor(h);
-	return HUE_ANCHORS[i] + (h - i) * (HUE_ANCHORS[i + 1] - HUE_ANCHORS[i]);
+/** HSB (0–360, 0–100, 0–100) → HSL, same units. The conversion is exact, not an approximation. */
+export function hsbToHsl(h: number, s: number, b: number): { h: number; s: number; l: number } {
+	const sf = s / 100;
+	const bf = b / 100;
+	const l = bf * (1 - sf / 2);
+	const sl = l === 0 || l === 1 ? 0 : (bf - l) / Math.min(l, 1 - l);
+	return { h, s: sl * 100, l: l * 100 };
 }
 
-/** OKLCH → display sRGB, each channel clipped to 0–1 (Björn Ottosson's matrices, 2020). */
-function oklchToRgb01(L: number, C: number, hDeg: number): [number, number, number] {
-	const a = C * Math.cos((hDeg * Math.PI) / 180);
-	const b = C * Math.sin((hDeg * Math.PI) / 180);
-	const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3;
-	const m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3;
-	const s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3;
-	const enc = (x: number) => {
-		const c = Math.max(0, Math.min(1, x));
-		return c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055;
-	};
-	return [
-		enc(4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s),
-		enc(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s),
-		enc(-0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s),
-	];
+/** HSB (0–360, 0–100, 0–100) + alpha → a CSS `hsla()` string. */
+export function hsbToHsla(h: number, s: number, b: number, a: number): string {
+	const hsl = hsbToHsl(h, s, b);
+	return `hsla(${h.toFixed(1)}, ${hsl.s.toFixed(1)}%, ${hsl.l.toFixed(1)}%, ${a})`;
 }
-
-/** The tile fill as RGB (each channel 0–1), for a WebGL/three.js uniform or a vertex colour. */
-export function tileHueRgb01(hueDeg: number, satPct: number = TILE_SAT_PCT): [number, number, number] {
-	const amt = Math.max(0, Math.min(1, satPct / FILL_MAX_SAT_PCT));
-	return oklchToRgb01(L_TOP - L_DROP * amt, C_TOP * amt, oklchHue(hueDeg));
-}
-
-const rgba = ([r, g, b]: [number, number, number], alpha: number): string =>
-	`rgba(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)}, ${alpha})`;
 
 /**
- * THE tile fill as a CSS colour: `hue` at the palette's fill amount. Anything that paints a tile, a
+ * THE tile fill as a CSS colour: `hue` at the palette's saturation. Anything that paints a tile, a
  * region fill, a legend swatch or a hue-ring segment goes through this, so none of them can drift.
  *
- * `satPct` is for the surfaces the /play Fill slider reaches; everything else takes the default. A caller
- * that can be at the slider's 0 must skip the fill entirely instead of painting `tileFill(h, a, 0)`,
- * which is near-white.
+ * `satPct` is for the surfaces the /play Fill slider reaches; everything else takes the default. It is
+ * a saturation, never the slider's 0: a caller that can be at 0 must skip the fill entirely instead of
+ * painting `tileFill(h, a, 0)`, which is white.
  */
 export function tileFill(hueDeg: number, alpha: number = 1, satPct: number = TILE_SAT_PCT): string {
-	// Memoised: the p5 paths call this once per tile per frame, and a canvas holds few distinct hues.
+	// Memoised: the p5 paths (Tiling.show, Polygon) call this once per tile per frame, and a canvas
+	// holds few distinct hues.
 	const key = `${hueDeg.toFixed(2)}|${alpha}|${satPct}`;
 	let css = fillCache.get(key);
 	if (css === undefined) {
 		if (fillCache.size > 4096) fillCache.clear();
-		fillCache.set(key, (css = rgba(tileHueRgb01(hueDeg, satPct), alpha)));
+		fillCache.set(key, (css = hsbToHsla(wrap360(hueDeg), satPct, TILE_VAL_PCT, alpha)));
 	}
 	return css;
 }
 const fillCache = new Map<string, string>();
 
 /**
- * The tile's own hue as a LINE beside its fill, for the figure cards on /theory and the pipeline
- * diagrams: same hue, much darker, a little more chroma, so an outline separates from its fill instead
- * of vibrating against it. Not under the Fill slider.
+ * The palette expressed in HSL, for the two aperiodic shaders that take saturation and lightness as
+ * uniforms instead of building a colour string (lib/render/subrosaGL.ts `sat`/`light`). Derived, never
+ * typed out: at the default saturation this is 100% / 76%, and it tracks the constant if that moves.
+ * These two boards are not under the Fill slider, so the default is the only value they need.
  */
-export function tileLine(hueDeg: number, alpha: number = 1): string {
-	return rgba(oklchToRgb01(LINE_L, LINE_C, oklchHue(hueDeg)), alpha);
-}
+const tileHsl = hsbToHsl(0, TILE_SAT_PCT, TILE_VAL_PCT);
+export const TILE_HSL_SAT_01 = tileHsl.s / 100;
+export const TILE_HSL_LIGHT_PCT = tileHsl.l;
 
 /**
- * The default fill in HSL terms, for the aperiodic patch views, whose shader takes one saturation and
- * one lightness as uniforms and builds hsl(h, s, l) itself (lib/render/subrosaGL.ts `sat`/`light`).
- * HSL cannot hold an even OKLCH ramp, so this is the triangle's fill read back as HSL: the right
- * lightness and roughly the right strength, applied to every hue.
+ * The tile's own hue as a LINE beside its fill: the same hue taken darker and a bit more saturated, so
+ * an outline separates from the fill it borders instead of vibrating against it. The figure cards on
+ * /theory and the pipeline diagrams all draw this pair, and it had been spelled out as a bare
+ * `hsbToHsla(h, 55, 62, 1)` at eleven of them.
+ *
+ * It does NOT move with the fill, which is the thing to watch: the fill sits at HSL lightness
+ * 100 − 50·sat and this sits at 45, so the gap is 31 points at the default and 25 at the slider's top.
+ * Deepening the fill closes the gap from one side only, and the two would meet around saturation 110 —
+ * which is one of the reasons FILL_MAX_SAT_PCT stops at 60. These cards are not under the Fill slider,
+ * so only the default matters here.
  */
-const [hr, hg, hb] = tileHueRgb01(0);
-const hMax = Math.max(hr, hg, hb);
-const hMin = Math.min(hr, hg, hb);
-export const TILE_HSL_LIGHT_PCT = ((hMax + hMin) / 2) * 100;
-export const TILE_HSL_SAT_01 = (hMax - hMin) / (1 - Math.abs(hMax + hMin - 1));
+export const TILE_LINE_SAT_PCT = 55;
+export const TILE_LINE_VAL_PCT = 62;
 
-/** HSB (0–360, 0–100, 0–100) + alpha → a CSS `hsla()` string. For diagram marks, NOT tile fills. */
-export function hsbToHsla(h: number, s: number, b: number, a: number): string {
-	const l = (b / 100) * (1 - s / 200);
-	const sl = l === 0 || l === 1 ? 0 : (b / 100 - l) / Math.min(l, 1 - l);
-	return `hsla(${h.toFixed(1)}, ${(sl * 100).toFixed(1)}%, ${(l * 100).toFixed(1)}%, ${a})`;
+export function tileLine(hueDeg: number, alpha: number = 1): string {
+	return hsbToHsla(wrap360(hueDeg), TILE_LINE_SAT_PCT, TILE_LINE_VAL_PCT, alpha);
 }
 
-/** HSB with hue in DEGREES, s and v in 0–1 → RGB, each channel 0–1. For non-tile colours (straps). */
+/** HSB with hue in DEGREES, s and v in 0–1 → RGB, each channel 0–1. */
 export function hsbDegToRgb01(hueDeg: number, s: number, v: number): [number, number, number] {
 	const h = wrap360(hueDeg) / 360;
 	const k = (o: number) => {
@@ -148,45 +145,43 @@ export function hsbDegToRgb01(hueDeg: number, s: number, v: number): [number, nu
 	return [m(k(0)), m(k(4)), m(k(2))];
 }
 
+/** The tile fill as RGB (each channel 0–1) — the `tileFill` colour for a WebGL/three.js uniform. */
+export function tileHueRgb01(hueDeg: number, satPct: number = TILE_SAT_PCT): [number, number, number] {
+	return hsbDegToRgb01(hueDeg, satPct / 100, TILE_VAL);
+}
+
 /** A GLSL float literal that always carries a decimal point (`1` is an int in GLSL and will not compile). */
 const glslFloat = (n: number): string => (Number.isInteger(n) ? n.toFixed(1) : String(n));
 
+export const TILE_SAT_GLSL = glslFloat(TILE_SAT);
+export const TILE_VAL_GLSL = glslFloat(TILE_VAL);
+
 /**
- * The palette as a GLSL chunk, the same arithmetic as `tileHueRgb01`: call `tileFill(hueDegrees)`, or
- * `tileFillAt(hueDegrees, sat)` where the /play Fill slider reaches the program (`sat` = satPct / 100).
+ * The palette as a GLSL chunk: paste it into a shader and call `tileFill(hueDegrees)`, or
+ * `tileFillAt(hueDegrees, sat)` where the /play Fill slider reaches the program.
  *
- * Interpolate it into the shader source (`${TILE_PALETTE_GLSL}`) instead of copying the conversion. A
- * shader INJECTED INTO A THREE.JS MATERIAL takes `tilePaletteGlsl("sph_")`, whose names are prefixed so
- * they cannot collide with three's own code (lib/render/sphericalTilingShader.ts).
+ * Interpolate it into the shader source (`${TILE_PALETTE_GLSL}`) instead of copying `hsb2rgb` again —
+ * eight programs had their own identical copy, each with the S/V pair written out beside it. A shader
+ * INJECTED INTO A THREE.JS MATERIAL takes `tilePaletteGlsl("sph_")`, whose names are prefixed so they
+ * cannot collide with three's own code (lib/render/sphericalTilingShader.ts).
  *
  * The slider arrives as a uniform the PROGRAM declares and sets, never as one declared here: a uniform
- * in this chunk would silently read 0 (a near-white fill) in any program that forgot to set it.
+ * in this chunk would silently read 0 — a white fill — in any of the nine programs that forgot to set
+ * it, and `tileFill`'s default keeps that failure impossible for the programs the slider never reaches.
  */
 export function tilePaletteGlsl(prefix = ""): string {
-	const f = glslFloat;
-	const pick = (off: number) =>
-		HUE_ANCHORS.slice(off, off + 6)
-			.map((v, i) => (i < 5 ? `i < ${f(i + 0.5)} ? ${f(v)} : ` : f(v)))
-			.join("");
 	return /* glsl */ `
-vec3 ${prefix}tileFillAt(float hueDeg, float sat) {
-	float h = mod(hueDeg, 360.0) / 60.0;
-	float i = floor(h);
-	float oh = radians(mix(${pick(0)}, ${pick(1)}, h - i));
-	float amt = clamp(sat / ${f(FILL_MAX_SAT_PCT / 100)}, 0.0, 1.0);
-	float L = ${f(L_TOP)} - ${f(L_DROP)} * amt;
-	float C = ${f(C_TOP)} * amt;
-	float A = C * cos(oh), B = C * sin(oh);
-	float l = pow(L + 0.3963377774 * A + 0.2158037573 * B, 3.0);
-	float m = pow(L - 0.1055613458 * A - 0.0638541728 * B, 3.0);
-	float s = pow(L - 0.0894841775 * A - 1.2914855480 * B, 3.0);
-	vec3 lin = clamp(vec3(
-		4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
-		-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
-		-0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s), 0.0, 1.0);
-	return mix(12.92 * lin, 1.055 * pow(lin, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, lin));
+vec3 ${prefix}hsb2rgb(float h, float s, float v) {
+	vec3 k = clamp(abs(mod(h * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
+	return v * mix(vec3(1.0), k, s);
 }
-vec3 ${prefix}tileFill(float hueDeg) { return ${prefix}tileFillAt(hueDeg, ${f(TILE_SAT)}); }`;
+// The tile fill at a hue in DEGREES (wraps, so a hue-ring offset can be added raw), at a given
+// saturation in 0..1 — the Fill slider's value for the boards it drives.
+vec3 ${prefix}tileFillAt(float hueDeg, float sat) {
+	return ${prefix}hsb2rgb(mod(hueDeg, 360.0) / 360.0, sat, ${TILE_VAL_GLSL});
+}
+// The same at the palette's default saturation, for the marks and boards the slider does not touch.
+vec3 ${prefix}tileFill(float hueDeg) { return ${prefix}tileFillAt(hueDeg, ${TILE_SAT_GLSL}); }`;
 }
 
 export const TILE_PALETTE_GLSL = tilePaletteGlsl();

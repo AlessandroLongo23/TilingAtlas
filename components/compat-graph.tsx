@@ -7,7 +7,8 @@ import { COMPAT_TILINGS } from "@/lib/defense/vcTilings";
 import { INK, SOFT } from "@/lib/render/figureGlyphs";
 import { orbitHue } from "@/lib/utils/orbitColors";
 import { figureFromWord } from "@/lib/render/vertexFigure";
-import { polygonFillHue, TILE_FILL_ALPHA, tileFill, tileLine, type TranslationalCellData } from "@/lib/utils/renderTiling";
+import { hsbToHsla, polygonFillHue, TILE_FILL_ALPHA, tileFill, type TranslationalCellData } from "@/lib/utils/renderTiling";
+import { TILE_SAT_PCT } from "@/lib/render/tilePalette";
 
 // The compatibility graph over the fifteen vertex configurations that appear in a tiling: an edge
 // joins two of them when they can sit at the two ends of one edge. The relation is the app's own
@@ -452,7 +453,7 @@ export function CompatGraph({ cells, overlayData }: CompatGraphProps) {
 	const orbitMark = useMemo(() => {
 		const word = tiling?.orbitWords?.[hoverOrbit];
 		if (!tiling || hoverOrbit < 0 || !word) return null;
-		return { word, colour: tileLine(orbitHue(hoverOrbit, tiling.k)) };
+		return { word, colour: hsbToHsla(orbitHue(hoverOrbit, tiling.k), TILE_SAT_PCT, 72, 1) };
 	}, [tiling, hoverOrbit]);
 	const lit = (word: string) =>
 		focus ? word === focus || near!.has(word) : !showingTiling || inTiling.has(word);

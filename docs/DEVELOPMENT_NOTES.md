@@ -17708,3 +17708,11 @@ hero sometimes shows a finite patch with stray dots; Freedraw's second Grid row 
 size pill; sidebars on Aperiodic/Isohedral/Pentagons/Updates and the Colors detail pane clip at the
 bottom; Aperiodic outlines and the Isohedral prototile lose their outline in dark mode; Colors
 col-1-00007/-00008 show one colour in the "2 colors" slice (data or thumbnail, unknown).
+
+**Correction, same day: the OKLCH palette is reverted.** AL had already tried an even perceptual
+palette and preferred the HSB one, so `tilePalette.ts` is back to HSB(h, 48, 100), pixel-identical on
+/play to before (hexagon (156, 255, 133) both times). Kept from 18c1b85b, because none of it is the
+colour model: every renderer still goes through `tileHueRgb01` / `tileFill` / `tilePaletteGlsl`
+(prefixed for the spherical shader), spherical scenes carry hues, and the two stale
+`hsb2rgb(h, 0.4, 1)` copies stay gone, so SVG export and the zoomed-out blend now paint at the canvas's
+48, not 40. The squaring diagram (38) and the compat-graph hover colour (value 72) are back to theirs.
