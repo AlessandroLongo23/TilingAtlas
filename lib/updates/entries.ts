@@ -73,9 +73,31 @@ export interface UpdateEntry {
 /** Newest first. tests/updates.test.ts asserts that ordering, and every id below. */
 export const UPDATES: UpdateEntry[] = [
 	{
+		version: "1.38.0",
+		date: "2026-09-24",
+		title: "A tiling editor on /play",
+		commit: "9f84cbc",
+		changes: [
+			{
+				kind: "feature",
+				text: "**Edit any flat tiling with straight edges** on /play: merge tiles, cut them, move their vertices, curve their edges and recolour them, and every edit repeats across the whole plane. Press E, or Edit this tiling in View options.",
+				href: "/play?tiling=composable-k3-000&ed=1",
+			},
+			{
+				kind: "changed",
+				text: "**Fill is a slider**, from outline only to full colour, where it was a checkbox. B still switches it off and back, and the default colour is a little stronger, saturation 40 → 48.",
+				href: "/play",
+			},
+			{
+				kind: "fix",
+				text: "**Tooltips over the canvas** can be read again. They were drawn underneath it, and a greyed-out option now says why it is unavailable.",
+			},
+		],
+	},
+	{
 		version: "1.37.0",
 		date: "2026-09-06",
-		title: "Every board, whole",
+		title: "271 complete hyperbolic boards",
 		commit: "a2f4fdf",
 		changes: [
 			{
@@ -116,7 +138,7 @@ export const UPDATES: UpdateEntry[] = [
 	{
 		version: "1.36.0",
 		date: "2026-09-06",
-		title: "Past the sphere",
+		title: "Genus solids on the spherical shelf",
 		commit: "62d3a0f",
 		changes: [
 			{
