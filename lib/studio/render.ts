@@ -279,7 +279,17 @@ function interiorEdges(patch: StudioPatch): Set<number> {
 		const a = patch.half.get(halfEdgeKey(vi, vj, dx, dy));
 		const b = patch.half.get(halfEdgeKey(vj, vi, -dx, -dy));
 		if (!a || !b || a.length === 0 || b.length === 0) continue;
-		if (patch.polyComp[a[0].p] === patch.polyComp[b[0].p]) out.add(i);
+		const fa = a[0].p;
+		const fb = b[0].p;
+		if (patch.polyComp[fa] !== patch.polyComp[fb]) continue;
+		// Same component is not enough: the face across the edge must be the copy the tile HOLDS, not
+		// another lattice translate of it. A hexagon borders six translates of itself, one component,
+		// and every one of those edges is a real boundary. The neighbour sits at a.off + d - b.off from
+		// this face (the step `mergeFaces` unions by); interior only when the tile's lifts agree.
+		const la = patch.polyLift[fa];
+		const lb = patch.polyLift[fb];
+		if (lb[0] - la[0] === a[0].off[0] + dx - b[0].off[0] && lb[1] - la[1] === a[0].off[1] + dy - b[0].off[1])
+			out.add(i);
 	}
 	return out;
 }

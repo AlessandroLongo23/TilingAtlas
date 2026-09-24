@@ -319,6 +319,7 @@ export function build(base: StudioPatch, doc: StudioDoc, _mode: PeriodMode): Bui
 			edges,
 			polys: rings as [number, number, number][][],
 			polyComp: merged.polyComp,
+			polyLift: merged.polyLift,
 			compRank: merged.compRank,
 			compCells: merged.compCells,
 			compHoles: merged.compHoles,

@@ -29,6 +29,7 @@ function studioPatch(
 		edges,
 		polys,
 		polyComp: bare.polyComp,
+		polyLift: bare.polyLift,
 		compRank: bare.compRank,
 		compCells: bare.compCells,
 		compHoles: bare.compHoles,

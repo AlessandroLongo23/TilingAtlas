@@ -50,6 +50,8 @@ export interface FaceMerge {
 	compHoles: number[];
 	/** One lift per member face, in the order the faces were visited. */
 	compLift: Lift[][];
+	/** Each face's lift inside its component, indexed by face: `compLift` keyed the other way. */
+	polyLift: Lift[];
 	/** The lift mismatches attributed to each component. They generate its period subgroup. */
 	compPeriods: Lift[][];
 	stats: {
@@ -251,6 +253,7 @@ export function mergeFaces(polys: readonly Ring[], drawnOf: DrawnLookup): FaceMe
 
 	const compOf = new Map<number, number>();
 	const polyComp: number[] = [];
+	const polyLift: Lift[] = [];
 	const compLift: Lift[][] = [];
 	const compPeriods: Lift[][] = [];
 	for (let p = 0; p < polys.length; p++) {
@@ -263,6 +266,7 @@ export function mergeFaces(polys: readonly Ring[], drawnOf: DrawnLookup): FaceMe
 			compPeriods.push([]);
 		}
 		polyComp.push(c);
+		polyLift.push([f.x, f.y]);
 		compLift[c].push([f.x, f.y]);
 	}
 	// Attribute each mismatch to its component by re-walking the undrawn adjacencies once more; the DSU
@@ -296,6 +300,7 @@ export function mergeFaces(polys: readonly Ring[], drawnOf: DrawnLookup): FaceMe
 		compCells,
 		compHoles,
 		compLift,
+		polyLift,
 		compPeriods,
 		stats: {
 			faceOrbits: compRank.length,

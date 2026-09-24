@@ -54,6 +54,7 @@ const patchOf = (
 		edges: [...edge.values()],
 		polys,
 		polyComp: m.polyComp,
+		polyLift: m.polyLift,
 		compRank: m.compRank,
 		compCells: m.compCells,
 		compHoles: m.compHoles,

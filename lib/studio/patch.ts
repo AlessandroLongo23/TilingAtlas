@@ -261,6 +261,7 @@ export function tilingToPatch(cell: TranslationalCellData | null): PatchFailure 
 			edges,
 			polys: rings as [number, number, number][][],
 			polyComp: merged.polyComp,
+			polyLift: merged.polyLift,
 			compRank: merged.compRank,
 			compCells: merged.compCells,
 			compHoles: merged.compHoles,

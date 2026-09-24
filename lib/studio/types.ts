@@ -157,6 +157,8 @@ export const isEmptyDoc = (d: StudioDoc): boolean =>
  * topology the tools need and the renderer ignores.
  */
 export interface StudioPatch extends FreedrawPatch {
+	/** Each face's lift inside its tile (`FaceMerge.polyLift`): which COPY of a face the tile holds. */
+	polyLift: Lift[];
 	/** Directed half-edge -> the faces carrying it. The edge identity the app never had. */
 	half: Map<string, HalfEdgeSite[]>;
 	/** Incident `(face, cornerIdx)` per vertex, so grabbing a vertex finds every ring to revalidate. */
