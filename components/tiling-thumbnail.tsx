@@ -94,9 +94,12 @@ export function TilingThumbnail({
 		if (!translationalCell && !encodedTiling && !rawPolygons) return;
 
 		let disposed = false;
-		let observed = false;
+		// A draw sitting in the queue, and the size of the last draw that landed ("" until one does).
+		let queued = false;
+		let drawnAt = "";
 
 		const draw = () => {
+			queued = false;
 			if (disposed) return;
 			const ctx = canvas.getContext("2d");
 			if (!ctx) return;
@@ -145,6 +148,7 @@ export function TilingThumbnail({
 					prev && prev.px === edgePx && prev.boxW === W ? prev : { px: edgePx, boxW: W },
 				);
 				setDrawn(true);
+				drawnAt = `${W}x${H}`;
 			} catch (e) {
 				console.warn("TilingThumbnail render error:", e);
 				setHasError(true);
@@ -157,22 +161,25 @@ export function TilingThumbnail({
 		// cancelJob can orphan an earlier pending job, which is harmless — draw() no-ops once disposed.
 		let cancelJob: (() => void) | null = null;
 		const queueDraw = () => {
+			queued = true;
 			cancelJob = enqueueThumbnailRender(draw);
 		};
 
 		const ro = new ResizeObserver(() => {
-			// ResizeObserver delivers an initial callback the moment we observe. That first one is the
-			// size we already drew at, so skip it — otherwise every card would draw twice on mount.
-			if (!observed) {
-				observed = true;
-				return;
-			}
+			// ResizeObserver delivers an initial callback the moment we observe, while the first draw is
+			// still queued: that draw measures the canvas itself, so a second one would only repeat it. The
+			// same goes for a size already drawn at. But a draw that found no size (a card remounted while
+			// its grid was collapsed) drew nothing, and the resize that gives it one must draw.
+			const r = canvas.getBoundingClientRect();
+			if (queued || `${Math.floor(r.width)}x${Math.floor(r.height)}` === drawnAt) return;
 			queueDraw();
 		});
 
 		const io = new IntersectionObserver(
 			(entries) => {
-				if (!entries[0].isIntersecting) return;
+				// One batch can hold several records for the canvas (hidden, then shown, when its grid
+				// re-lays out in one go); the last one is the current state.
+				if (!entries[entries.length - 1].isIntersecting) return;
 				queueDraw();
 				ro.observe(canvas);
 				io.disconnect();

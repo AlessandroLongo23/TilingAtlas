@@ -13,12 +13,6 @@ import { PageSidebar } from "@/components/page-sidebar";
 
 export { Section, Details, Segmented, type SegmentedOption } from "@/components/shelf";
 
-/**
- * The type grid's scroll box, snapped to whole rows: four rows of chips at the Segmented pitch (35.5px
- * chip + 2px gap) plus the track's 3px inset, so the box never ends halfway through a row. Four, not
- * six: at a 900px window six pushed the parameter sliders off the bottom.
- */
-const TYPE_BOX_PX = 3 + 4 * 37.5;
 const SHADOW = "pointer-events-none absolute inset-x-0 h-2 from-black/10 dark:from-black/50 to-transparent";
 
 export function IsohedralSidebar({
@@ -39,7 +33,7 @@ export function IsohedralSidebar({
 	typeCount: number;
 	/** The unfiltered total, so a narrowed grid reads "12 of 93". */
 	totalCount: number;
-	/** The 93-entry grid. Capped and scrolled on its own. */
+	/** The 93-entry grid. Capped and scrolled on its own (on a desktop). */
 	types: ReactNode;
 	/** Parameters, edge curvature, view, details. */
 	children: ReactNode;
@@ -62,8 +56,8 @@ export function IsohedralSidebar({
 		<PageSidebar scrollable={false} collapsed={collapsed} mobile="dock" title="Isohedral" peek={peek}>
 			{/* One 14px gutter for every region; a full-bleed hairline and 16px between them. On a phone
 			    the four regions scroll as one column: pinned, they would fill a half-height sheet before
-			    the controls got a row. The type box keeps its own cap there, re-cut to four of the phone's
-			    taller chips (38.75px a row), so the parameters still sit one short scroll below the grid. */}
+			    the controls got a row. The type grid flows in that column too, uncapped: a box scrolling
+			    inside the scrolling sheet traps a flick and clips its chips. */}
 			<div className="h-full flex flex-col bg-surface-chrome divide-y divide-line-subtle max-md:overflow-y-auto max-md:overflow-x-hidden max-md:overscroll-contain">
 				{/* The phone's peek row carries the identity line, so the sheet does not repeat it. */}
 				<div className="shrink-0 px-3.5 py-4 max-md:hidden">{header}</div>
@@ -76,13 +70,14 @@ export function IsohedralSidebar({
 						</span>
 					</div>
 					{/* Capped, not proportional: a proportional split would shrink the controls to nothing on a
-					    short window. Overlay scrollbars draw nothing at rest, so an 8px inner shadow marks
+					    short window. The cap is snapped to whole rows: four rows of chips at the Segmented pitch
+					    (35.5px chip + 2px gap) plus the track's 3px inset, 153px, so the box never ends halfway
+					    through a row. Four, not six: at a 900px window six pushed the sliders off the bottom. Overlay scrollbars draw nothing at rest, so an 8px inner shadow marks
 					    whichever edge has more rows past it. The negative margin parks a classic scrollbar in
 					    the gutter, so the grid lines up with the filters either way. */}
 					<div className="relative">
 						<div
-							className="-mr-2.5 pr-2.5 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-line-strong max-md:max-h-[156px]! max-md:overscroll-contain"
-							style={{ maxHeight: TYPE_BOX_PX }}
+							className="-mr-2.5 pr-2.5 max-h-[153px] overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-line-strong max-md:max-h-none max-md:overflow-visible"
 							ref={boxRef}
 							onScroll={measure}
 						>

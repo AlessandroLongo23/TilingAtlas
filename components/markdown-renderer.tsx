@@ -121,6 +121,8 @@ export function MarkdownRenderer({
 						"[&_h2]:text-2xl [&_h2]:leading-snug [&_h2]:font-semibold [&_h2]:tracking-[-0.01em] [&_h2]:text-fg [&_h2]:mt-12 [&_h2]:mb-3 [&_h2]:cursor-pointer",
 						"[&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-fg [&_h3]:mb-2 [&_h3]:mt-8 [&_h3]:cursor-pointer",
 						"[&_h4]:text-base [&_h4]:font-semibold [&_h4]:text-fg [&_h4]:mb-2 [&_h4]:mt-6 [&_h4]:cursor-pointer",
+						// Phone: a jump from the Contents sheet lands a heading clear of the reading-progress line.
+						"max-md:[&_:is(h2,h3,h4)]:scroll-mt-4",
 						// Body
 						"[&_p]:text-fg-secondary [&_p]:mb-4 [&_h1+p]:mb-6",
 						"[&_ul]:list-disc [&_ul]:ml-6 [&_ul]:mb-4 [&_ul]:text-fg-secondary",

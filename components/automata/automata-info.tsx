@@ -7,12 +7,15 @@
 // this page the vertex configuration decides every tile's neighbour count, so the atlas's compressed
 // family ("4" for the square grid) is the wrong title.
 
+import { useState } from "react";
+import { ChevronDown } from "lucide-react";
 import type { BoardPlan } from "@/lib/automata/board";
 import { UNIFORM_BY_ID } from "@/lib/automata/uniformTilings";
 import type { EngineReport } from "@/lib/automata/useAutomatonEngine";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import { NavHeader } from "@/components/sidebar/nav-header";
 import { topologyDef } from "@/lib/automata/topology";
+import { cn } from "@/lib/utils/cn";
 
 interface AutomataInfoProps {
 	selected: CatalogueTiling | null;
@@ -53,6 +56,9 @@ export function AutomataInfo({ selected, report, plan }: AutomataInfoProps) {
 
 	const degrees = [...new Set(report.degrees)].sort((a, b) => a - b);
 	const extinct = report.population === 0 && report.generation > 0;
+	// Phone only: the stats fold behind a row of their own. The peek row already shows Gen and Alive, and
+	// open, the eight cells left a half-height sheet a sliver of tab body.
+	const [statsOpen, setStatsOpen] = useState(false);
 
 	// On a phone the dock's peek row already carries the title (and Gen / Alive), so the zone drops the
 	// title line and tightens: at half height it shares the sheet with the tab strip and a tab body.
@@ -65,7 +71,21 @@ export function AutomataInfo({ selected, report, plan }: AutomataInfoProps) {
 
 			<div>
 				<span className="ta-label max-md:hidden">Stats</span>
-				<dl className="mt-1.5 grid grid-cols-2 gap-x-6 border-y border-line-subtle py-1 [&>div:nth-child(even)]:border-l [&>div:nth-child(even)]:border-line-subtle [&>div:nth-child(even)]:pl-3">
+				<button
+					type="button"
+					aria-expanded={statsOpen}
+					onClick={() => setStatsOpen((o) => !o)}
+					className="hidden h-11 w-full items-center justify-between border-t border-line-subtle text-sm text-fg-secondary max-md:flex"
+				>
+					Stats
+					<ChevronDown size={16} className={cn("text-fg-muted transition-transform", statsOpen && "rotate-180")} />
+				</button>
+				<dl
+					className={cn(
+						"mt-1.5 grid grid-cols-2 gap-x-6 border-y border-line-subtle py-1 [&>div:nth-child(even)]:border-l [&>div:nth-child(even)]:border-line-subtle [&>div:nth-child(even)]:pl-3",
+						!statsOpen && "max-md:hidden",
+					)}
+				>
 					<Stat label="Gen" value={report.generation.toLocaleString()} />
 					<Stat label="Alive" value={report.population.toLocaleString()} />
 					<Stat

@@ -1214,9 +1214,9 @@ export function Canvas({
 			</div>
 
 			{showSymmetryInfo ? (
-				// On a phone the corner belongs to the reset and fullscreen buttons, so the badge sits under
-				// them, smaller, with 44px diagrams.
-				<div className="absolute top-4 right-4 z-20 flex flex-col items-end gap-2 rounded-xl bg-surface-raised/95 px-3 py-2 text-right shadow-sm ring-1 ring-line-subtle max-md:top-16 max-md:right-3 max-md:gap-1.5 max-md:px-2 max-md:py-1.5">
+				// On a phone the corner belongs to CornerControls (12px in, 44px buttons), so the badge sits
+				// 8px under them, smaller, with 44px diagrams.
+				<div className="absolute top-4 right-4 z-20 flex flex-col items-end gap-2 rounded-xl bg-surface-raised/95 px-3 py-2 text-right shadow-sm ring-1 ring-line-subtle max-md:top-[calc(--spacing(3)+--spacing(11)+--spacing(2))] max-md:right-3 max-md:gap-1.5 max-md:px-2 max-md:py-1.5">
 					<div className="flex flex-col items-end gap-1">
 						<span className="text-sm font-bold leading-none text-fg">
 							Group <span className="font-mono">{symmetryData.group}</span>

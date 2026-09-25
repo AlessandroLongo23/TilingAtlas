@@ -20,7 +20,7 @@ import {
 	type HomeBox,
 } from "@/lib/hooks/useAperiodicView";
 import { Slider } from "@/components/ui/slider";
-import { FullscreenToggle } from "@/components/fullscreen-toggle";
+import { CornerControls } from "@/components/ui/corner-controls";
 import { AperiodicSidebar, Section, Segmented } from "./_controls";
 import { Details, strokePxAt, STROKE_CSS, STROKE_RGBA, STROKE_WIDTH, ViewFooter } from "./_view-chrome";
 
@@ -318,7 +318,10 @@ export function SubRosaView({ header }: { header: React.ReactNode }) {
 	const areaFactor = rule.scaling * rule.scaling;
 
 	return (
-		<div className="flex-1 min-h-0 flex">
+		<div className="relative flex-1 min-h-0 flex">
+			{/* The canvas's top-right corner (this box's, the sidebar being on the left), first in the DOM so
+			    it is read before the sheet. */}
+			<CornerControls />
 			<AperiodicSidebar header={header}>
 				<Section label="Symmetry">
 					<Segmented
@@ -401,7 +404,6 @@ export function SubRosaView({ header }: { header: React.ReactNode }) {
 					className="w-full h-full block cursor-grab active:cursor-grabbing touch-none"
 					{...view.handlers}
 				/>
-				<FullscreenToggle />
 			</div>
 		</div>
 	);

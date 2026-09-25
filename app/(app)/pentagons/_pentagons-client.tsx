@@ -28,10 +28,11 @@ import { RangeInput } from "@/components/ui/range-input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Reveal } from "@/components/ui/reveal";
 import { TilingInfo } from "@/components/tiling-info";
+import { PeekTitle, showPickOnCanvas } from "@/components/dock-peek";
 import { InversiveCanvas } from "@/components/inversive-canvas";
 import { InversiveControls, useInversiveShortcut } from "@/components/inversive-controls";
-import { FullscreenToggle, useImmersiveShortcuts } from "@/components/fullscreen-toggle";
-import { ResetViewButton } from "@/components/reset-view-button";
+import { useImmersiveShortcuts } from "@/components/fullscreen-toggle";
+import { CornerControls } from "@/components/ui/corner-controls";
 import { useConfiguration } from "@/stores/configuration";
 import { useImmersive } from "@/stores/immersive";
 import type { TilingSpec } from "@/lib/services/tilingSpec";
@@ -259,12 +260,10 @@ export function PentagonsClient() {
 
 	const peek = (
 		<>
-			<div className="flex min-w-0 flex-1 flex-col">
-				<span className="truncate text-[15px] font-semibold leading-tight text-fg">{type.label}</span>
-				<span className="truncate text-xs text-fg-muted">
-					{type.discovered} · {type.dof === 0 ? "rigid" : `${type.dof} degree${type.dof === 1 ? "" : "s"} of freedom`}
-				</span>
-			</div>
+			<PeekTitle
+				title={type.label}
+				sub={`${type.discovered} · ${type.dof === 0 ? "rigid" : `${type.dof} degree${type.dof === 1 ? "" : "s"} of freedom`}`}
+			/>
 			<Button variant="ghost" size="icon" icon={ChevronLeft} aria-label="Previous type" onClick={() => stepType(-1)} />
 			<Button variant="ghost" size="icon" icon={ChevronRight} aria-label="Next type" onClick={() => stepType(1)} />
 		</>
@@ -313,19 +312,28 @@ export function PentagonsClient() {
 	);
 
 	return (
-		<div className="flex-1 min-h-0 flex">
+		<div className="relative flex-1 min-h-0 flex">
+			{/* The canvas's top-right corner (this box's, the sidebar being on the left), first in the DOM so
+			    it is read before the sheet: fullscreen, the only control that stays put while immersive (it
+			    is the way back), and on a phone the reset beside it. */}
+			<CornerControls />
 			<PentagonSidebar
 				collapsed={immersive}
 				header={header}
 				peek={peek}
 				types={
 					<Section label="Family">
-						<Segmented
-							cols={GRID_COLS}
-							options={typeOptions}
-							value={String(id)}
-							onChange={(v) => selectType(Number(v))}
-						/>
+						<div data-type-grid>
+							<Segmented
+								cols={GRID_COLS}
+								options={typeOptions}
+								value={String(id)}
+								onChange={(v) => {
+									selectType(Number(v));
+									showPickOnCanvas('[data-type-grid] [aria-pressed="true"]');
+								}}
+							/>
+						</div>
 					</Section>
 				}
 			>
@@ -443,10 +451,6 @@ export function PentagonsClient() {
 				<div className="absolute top-4 left-4 z-20 max-md:top-3 max-md:left-3">
 					<TilingInfo spec={spec} />
 				</div>
-				{/* Opposite corner, and the only control that stays put while immersive — it is the way back. */}
-				<FullscreenToggle />
-				{/* The phone's right-click: beside the fullscreen button, phone only. */}
-				<ResetViewButton className="absolute top-3 right-16" />
 			</div>
 		</div>
 	);

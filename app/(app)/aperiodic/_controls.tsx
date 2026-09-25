@@ -9,9 +9,8 @@
 //
 // On a phone the column is a dock sheet. Its peek row (the view name, and the switcher behind it)
 // comes from the page through AperiodicPeek, since each view renders this shell itself and the page is
-// the one that knows which view is up. The pinned header stops being pinned there: at half height a
-// 190px switcher over its own scroll region would leave the controls a sliver, so the header and the
-// controls scroll together as one column.
+// the one that knows which view is up. The peek row says everything the pinned header does, so the
+// header is dropped there and the sheet opens straight on this view's controls.
 
 import { createContext, useContext, type ReactNode } from "react";
 import { PageSidebar } from "@/components/page-sidebar";
@@ -33,7 +32,7 @@ export function AperiodicSidebar({ header, children }: { header: ReactNode; chil
 	return (
 		<PageSidebar scrollable={false} collapsed={immersive} mobile="dock" title="Aperiodic" peek={peek ?? undefined}>
 			<div className="h-full flex flex-col max-md:overflow-y-auto max-md:overflow-x-hidden max-md:overscroll-contain">
-				<div className="shrink-0 px-3.5 pt-4 pb-5 flex flex-col gap-4 border-b border-line-subtle max-md:pt-1">{header}</div>
+				<div className="shrink-0 px-3.5 pt-4 pb-5 flex flex-col gap-4 border-b border-line-subtle max-md:hidden">{header}</div>
 				<div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hide ta-scroll-fade max-md:flex-none max-md:overflow-visible">
 					<div className="px-3.5 pt-5 pb-10 flex flex-col gap-6">{children}</div>
 				</div>

@@ -176,7 +176,7 @@ export function TilingInfo({ spec, vcs = [] }: TilingInfoProps) {
 				onClick={() => setIsPinned(true)}
 				aria-label="Tiling information"
 				aria-haspopup="dialog"
-				className="hidden size-11 items-center justify-center ta-float text-fg-secondary transition-colors hover:text-fg max-md:flex"
+				className="hidden size-11 touch-pan-x touch-pan-y items-center justify-center ta-float text-fg-secondary transition-colors hover:text-fg max-md:flex"
 			>
 				<Info size={18} />
 			</button>

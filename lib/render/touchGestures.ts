@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type RefObject } from "react";
+import { tidyDeg, unrotateScreen } from "@/lib/render/viewControls";
 
 // Fingers on the atlas' canvases. Every live canvas already pans with a single pointer (Pointer Events,
 // or p5's mouse model on /play), and that path is left exactly as it is: one finger IS a mouse drag.
@@ -261,6 +262,49 @@ export function useTouchGestures(ref: RefObject<Element | null>, handlers: Touch
 		[],
 	);
 	return touch;
+}
+
+/**
+ * useTouchGestures for a 2-D card view that turns (FreedrawCanvas, ColorsCanvas): two fingers pinch,
+ * pan and twist, a tap is the hover a finger lacks, a double-tap is the double-click refit. The view's
+ * offset lives in the upright frame, inside the turn, so the midpoints go through the view angle (the
+ * old one for where the fingers were, the new one for where they are) before `zoom` puts the world point
+ * under `from` under `to` at `scale` times the zoom. A twist only where Shift+wheel turns the view (an
+ * owner of the angle): it turns the live angle, and the owner hears the result once, when the fingers lift.
+ */
+export function useCardViewGestures(
+	ref: RefObject<Element | null>,
+	v: {
+		/** Live view angle in degrees, and a turn of it by some degrees (a twist). */
+		angle: () => number;
+		turn: (deg: number) => void;
+		/** The owner's committed angle, and its setter (none: the view does not turn). */
+		rotation: number;
+		onRotationChange?: (deg: number) => void;
+		/** Put the world point under `from` under `to`, zoomed by `scale`; both upright, in centred px. */
+		zoom: (from: Pt, to: Pt, scale: number) => void;
+		/** A second finger landed: drop the one-finger drag and the hover. */
+		cancel: () => void;
+		tap: (x: number, y: number) => void;
+		doubleTap: () => void;
+	} | null,
+): TouchGestures {
+	return useTouchGestures(ref, v && {
+		pinchStart: v.cancel,
+		pinch: ({ from, to, scale, rotate }) => {
+			const spin = v.onRotationChange ? rotate : 0;
+			const before = (v.angle() * Math.PI) / 180;
+			v.zoom(unrotateScreen(from.x, from.y, before), unrotateScreen(to.x, to.y, before + spin), scale);
+			v.turn((spin * 180) / Math.PI);
+			v.cancel();
+		},
+		pinchEnd: () => {
+			const live = tidyDeg(v.angle());
+			if (live !== tidyDeg(v.rotation)) v.onRotationChange?.(live);
+		},
+		tap: v.tap,
+		doubleTap: v.doubleTap,
+	});
 }
 
 // The phone layout puts a visible Reset button over every canvas, since a touch screen has no right

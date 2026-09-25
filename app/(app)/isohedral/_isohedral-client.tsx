@@ -38,6 +38,7 @@ import { useParametricTilingCanvas } from "@/lib/hooks/useParametricTilingCanvas
 import { tilingPeriodicCell } from "@/lib/render/periodic/tilings";
 import { Button } from "@/components/ui/button";
 import { InfoDot } from "@/components/ui/info-dot";
+import { PeekTitle, showPickOnCanvas } from "@/components/dock-peek";
 import { Kbd } from "@/components/ui/kbd";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -45,8 +46,8 @@ import { Reveal } from "@/components/ui/reveal";
 import { TilingInfo } from "@/components/tiling-info";
 import { InversiveCanvas, MAX_VERTS_PER_PRIM } from "@/components/inversive-canvas";
 import { InversiveControls, useInversiveShortcut } from "@/components/inversive-controls";
-import { FullscreenToggle, useImmersiveShortcuts } from "@/components/fullscreen-toggle";
-import { ResetViewButton } from "@/components/reset-view-button";
+import { useImmersiveShortcuts } from "@/components/fullscreen-toggle";
+import { CornerControls } from "@/components/ui/corner-controls";
 import { useConfiguration } from "@/stores/configuration";
 import { useImmersive } from "@/stores/immersive";
 import type { TilingSpec } from "@/lib/services/tilingSpec";
@@ -336,15 +337,8 @@ export function IsohedralClient() {
 	};
 	const peek = (
 		<>
-			<div className="flex min-w-0 flex-1 flex-col">
-				<span className="truncate text-[15px] font-semibold leading-tight text-fg">{title}</span>
-				<span className="truncate font-mono text-xs text-fg-muted">
-					{facts}
-					{info.gs ? null : info.edgeShapes.join("")}
-				</span>
-			</div>
-			{/* The desktop explains the edge letters on hover; a finger gets the same notes on a tap. A row
-			    item of its own, so no line of text sits over its 44px halo. */}
+			<PeekTitle title={title} sub={info.gs ? facts : facts + info.edgeShapes.join("")} mono />
+			{/* The desktop explains the edge letters on hover; a finger gets the same notes on a tap. */}
 			{info.gs ? null : (
 				<InfoDot side="top" label="What the edge letters mean">
 					{edgeNotes.map((n) => (
@@ -437,7 +431,18 @@ export function IsohedralClient() {
 				totalCount={ISOHEDRAL_TYPES.length}
 				types={
 					typeOptions.length > 0 ? (
-						<Segmented cols={4} fill={false} options={typeOptions} value={String(ih)} onChange={(v) => selectType(Number(v))} />
+						<div data-type-grid>
+							<Segmented
+								cols={4}
+								fill={false}
+								options={typeOptions}
+								value={String(ih)}
+								onChange={(v) => {
+									selectType(Number(v));
+									showPickOnCanvas('[data-type-grid] [aria-pressed="true"]');
+								}}
+							/>
+						</div>
 					) : (
 						<p className="text-xs text-fg-muted">No type matches both filters.</p>
 					)
@@ -591,12 +596,12 @@ export function IsohedralClient() {
 				<div className="absolute top-4 left-4 z-20 max-md:top-3 max-md:left-3">
 					<TilingInfo spec={spec} />
 				</div>
-				{/* Opposite corner, and the only control that stays put while immersive — it is the way back.
-				    Shown on a marked type too: those twelve replace the canvas with prose, which reads better
-				    across the full window as well. */}
-				<FullscreenToggle />
-				{/* The phone's right-click: beside the fullscreen button, phone only. */}
-				<ResetViewButton className="absolute top-3 right-16" />
+				{/* Opposite corner: fullscreen, the only control that stays put while immersive (it is the way
+				    back), and on a phone the reset beside it. Shown on a marked type too: those twelve replace
+				    the canvas with prose, which reads better across the full window as well. Here and not first
+				    in the page box, as on the other explorers: a positioned page box shifts the sidebar's
+				    dotted underline on the desktop by a subpixel. */}
+				<CornerControls />
 			</div>
 		</div>
 	);

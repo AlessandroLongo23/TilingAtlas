@@ -234,8 +234,10 @@ export function TileGrid({ items, selectedKey, onSelect, revealKey, width }: Til
 						) : null}
 						<div className="grid gap-px" style={lanes}>
 							<div className="ta-wall-cell bg-surface-chrome" />
+							{/* Keyed by the tiling, not the column: when the column count changes (a phone crossing
+							    768px) a column index would hand a mounted thumbnail a different tiling. */}
 							{columns.map((c) => (
-								<Fragment key={c}>
+								<Fragment key={items[r * cols + c]?.canonicalKey ?? `empty-${c}`}>
 									<Tile t={items[r * cols + c]} selectedKey={selectedKey} onSelect={onSelect} />
 									<div className="ta-wall-cell bg-surface-chrome" />
 								</Fragment>

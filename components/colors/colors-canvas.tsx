@@ -15,11 +15,10 @@ import {
 	accumulateDetents,
 	ROTATE_SNAP_DEG,
 	unrotateScreen,
-	tidyDeg,
 	wheelDeltaPx,
 	wrap360,
 } from "@/lib/render/viewControls";
-import { onViewReset, useTouchGestures } from "@/lib/render/touchGestures";
+import { onViewReset, useCardViewGestures } from "@/lib/render/touchGestures";
 import { cn } from "@/lib/utils/cn";
 
 // The colored-tiling canvas: FreedrawCanvas's shell (DPR-aware backing store, drag pan, wheel zoom
@@ -137,31 +136,25 @@ export function ColorsCanvas({
 
 	const drag = useRef<{ x: number; y: number } | null>(null);
 
-	// Fingers, as on FreedrawCanvas: two pinch, pan and twist, a tap lights the orbit under it, a
-	// double-tap is the double-click refit. The world point under the old midpoint (read through the old
-	// angle) is put under the new midpoint (through the new one) at the new scale; the twist turns the
-	// live angle and the owner hears the result once, when the fingers lift.
-	const touch = useTouchGestures(canvasRef, interactive ? {
-		pinchStart: () => {
-			drag.current = null;
+	// Fingers, as on FreedrawCanvas (lib/render/touchGestures.ts useCardViewGestures).
+	const touch = useCardViewGestures(canvasRef, interactive ? {
+		angle: () => rotRef.current,
+		turn: (deg) => {
+			rotRef.current += deg;
 		},
-		pinch: ({ from, to, scale, rotate }) => {
-			const spin = onRotationChange ? rotate : 0;
-			const before = radNow();
-			const p0 = unrotateScreen(from.x, from.y, before);
-			const p1 = unrotateScreen(to.x, to.y, before + spin);
+		rotation,
+		onRotationChange,
+		zoom: (p0, p1, scale) =>
 			setView((v) => {
 				if (!v) return v;
 				const next = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, v.scale * scale));
 				const wx = v.cx + p0.x / v.scale;
 				const wy = v.cy - p0.y / v.scale;
 				return { ...v, scale: next, cx: wx - p1.x / next, cy: wy + p1.y / next };
-			});
-			rotRef.current += (spin * 180) / Math.PI;
+			}),
+		cancel: () => {
+			drag.current = null;
 			hoverRef.current = null;
-		},
-		pinchEnd: () => {
-			if (tidyDeg(rotRef.current) !== tidyDeg(rotation)) onRotationChange?.(tidyDeg(rotRef.current));
 		},
 		tap: (x, y) => hoverAt(x, y),
 		doubleTap: () => refit(),

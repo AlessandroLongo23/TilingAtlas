@@ -23,7 +23,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RangeInput } from "@/components/ui/range-input";
-import { FullscreenToggle } from "@/components/fullscreen-toggle";
+import { CornerControls } from "@/components/ui/corner-controls";
 import { AperiodicSidebar, Section, Segmented } from "./_controls";
 import { Details, strokePxAt, STROKE_CSS, STROKE_RGBA, STROKE_WIDTH, ViewFooter } from "./_view-chrome";
 
@@ -401,7 +401,11 @@ export function MultigridView({ header }: { header: React.ReactNode }) {
 	const protoCount = Math.floor(n / 2);
 
 	return (
-		<div className="flex-1 min-h-0 flex">
+		<div className="relative flex-1 min-h-0 flex">
+			{/* The top-right corner of both panels together (this box's, the sidebar being on the left), which
+			    is the tiling panel's corner side by side and the upper (multigrid) panel's corner stacked on a
+			    phone. First in the DOM so it is read before the sheet. */}
+			<CornerControls />
 			<AperiodicSidebar header={header}>
 				<Section label="Symmetry">
 					<Segmented
@@ -478,9 +482,7 @@ export function MultigridView({ header }: { header: React.ReactNode }) {
 				</Section>
 			</AperiodicSidebar>
 
-			{/* `relative` for the FullscreenToggle: the top-right corner of both panels together, which is the
-			    tiling panel's corner side by side and the upper (multigrid) panel's corner stacked on a phone. */}
-			<div className="relative flex-1 min-h-0 flex flex-col md:flex-row">
+			<div className="flex-1 min-h-0 flex flex-col md:flex-row">
 				{split && (
 					<div className="relative flex-1 min-h-0 border-b md:border-b-0 md:border-r border-line-subtle">
 						<canvas
@@ -501,7 +503,6 @@ export function MultigridView({ header }: { header: React.ReactNode }) {
 					<canvas ref={tilingOverlayRef} className="absolute inset-0 w-full h-full pointer-events-none" />
 					<PanelTag>dual tiling</PanelTag>
 				</div>
-				<FullscreenToggle />
 			</div>
 		</div>
 	);

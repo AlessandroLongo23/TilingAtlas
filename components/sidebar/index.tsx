@@ -4,8 +4,7 @@ import { memo, useCallback } from "react";
 import { ChevronLeft, ChevronRight, Shuffle } from "lucide-react";
 import { PageSidebar } from "@/components/page-sidebar";
 import { Button } from "@/components/ui/button";
-import { useIsPhone } from "@/lib/hooks/useIsPhone";
-import { useMobileSheet } from "@/stores/mobileSheet";
+import { showPickOnCanvas } from "@/components/dock-peek";
 import type { Geometry, Decoration } from "@/lib/services/referenceAtlas";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import type { UnloadedTier } from "@/lib/services/atlasManifest";
@@ -66,26 +65,13 @@ export const Sidebar = memo(function Sidebar({
 	canStep = true,
 }: SidebarProps) {
 	const stepDisabled = geometryList.length < 2;
-	const isPhone = useIsPhone();
-	// A pick made with the sheet at full would change a canvas the sheet is covering, so on a phone it
-	// drops the sheet to half: the new tiling shows above, and the list stays open below for the next
-	// pick. Once the sheet has settled, the tile that was tapped is brought back into the shorter view.
+	// On a phone a pick at full snap drops the sheet to half and brings the tapped tile back into view.
 	const pick = useCallback(
 		(t: CatalogueTiling) => {
 			onSelect?.(t);
-			const sheet = useMobileSheet.getState();
-			if (!isPhone || sheet.snap !== "full") return;
-			sheet.setSnap("half");
-			// By hand, not scrollIntoView, which would also scroll the sheet's clipped ancestors.
-			window.setTimeout(() => {
-				const tile = document.querySelector(`aside [data-tiling-key="${CSS.escape(t.canonicalKey)}"]`);
-				const scroller = tile?.closest("[data-sidebar-scroll]");
-				if (!tile || !scroller) return;
-				const below = tile.getBoundingClientRect().bottom - scroller.getBoundingClientRect().bottom + 8;
-				if (below > 0) scroller.scrollBy({ top: below, behavior: "smooth" });
-			}, 400);
+			showPickOnCanvas(`aside [data-tiling-key="${CSS.escape(t.canonicalKey)}"]`);
 		},
-		[onSelect, isPhone],
+		[onSelect],
 	);
 	// The phone dock's header row: the sidebar's own header (what is on the canvas), which the tabs hide
 	// on a phone since this row stays in view at every snap, and the three ways to step off it.

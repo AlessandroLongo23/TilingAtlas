@@ -20,6 +20,9 @@ import {
 // handful of tiles) and "the tilings" (the Library). Each card fans a config's tiles around the vertex so
 // the counts become something you can scroll. Only realizable (non-overlapping) figures are shipped.
 const PAGE_SIZE = 24;
+// The dark accent is a fill colour, 3.4:1 as text on the dark panel. On a phone, accent text in the dark
+// theme takes the same hue lifted past 4.5:1.
+const ACCENT_TEXT = "max-md:dark:text-[oklch(from_var(--color-accent)_0.72_c_h)]";
 const KIND_LABEL: Record<TileKind, { label: string; cls: string }> = {
 	regular: { label: "regular", cls: "text-fg-secondary" },
 	"convex-isotoxal": { label: "convex isotoxal", cls: "text-fg-muted" },
@@ -108,7 +111,7 @@ export function ConfigsClient() {
 											}`}
 										>
 											<span
-												className={`text-xs font-medium max-md:text-sm ${active ? "text-accent" : "text-fg-secondary"}`}
+												className={`text-xs font-medium max-md:text-sm ${active ? `text-accent ${ACCENT_TEXT}` : "text-fg-secondary"}`}
 											>
 												{p.label}
 											</span>
@@ -140,7 +143,7 @@ export function ConfigsClient() {
 					{data ? (
 						<span className="text-xs px-2 py-0.5 bg-surface-overlay border border-line text-fg-muted font-mono">
 							{data.counts.tiles} tiles · {data.counts.classes} corners ·{" "}
-							<span className="text-accent">{data.counts.configs.toLocaleString()} configs</span>
+							<span className={`text-accent ${ACCENT_TEXT}`}>{data.counts.configs.toLocaleString()} configs</span>
 						</span>
 					) : null}
 				</div>

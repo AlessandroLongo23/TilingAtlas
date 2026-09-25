@@ -6,9 +6,9 @@ import { automataTitle } from "@/components/automata/automata-info";
 import { AutomataSidebar } from "@/components/automata/automata-sidebar";
 import { AutomataTransport } from "@/components/automata/automata-transport";
 import { SurfaceView } from "@/components/automata/surface-view";
-import { FullscreenToggle } from "@/components/fullscreen-toggle";
+import { PeekTitle, showPickOnCanvas } from "@/components/dock-peek";
 import { PageSidebar } from "@/components/page-sidebar";
-import { ResetViewButton } from "@/components/reset-view-button";
+import { CornerControls } from "@/components/ui/corner-controls";
 import { useAutomatonEngine } from "@/lib/automata/useAutomatonEngine";
 import { buildPeriodicAdjacency } from "@/lib/automata/adjacency";
 import { planBoard } from "@/lib/automata/board";
@@ -106,8 +106,8 @@ export function AutomataClient() {
 		const eng = engineRef.current;
 		if (!eng) return;
 		const population = eng.population / eng.coverFactor;
-		if (population === published.population) return;
-		setPainted({ base: published, population, density: eng.population / eng.cellCapacity });
+		// Back to the published number (a cell flipped twice) clears the overlay, or it would stick.
+		setPainted(population === published.population ? null : { base: published, population, density: eng.population / eng.cellCapacity });
 	}, [engineRef, published]);
 	const report = useMemo(
 		() => (painted?.base === published ? { ...published, population: painted.population, density: painted.density } : published),
@@ -129,7 +129,14 @@ export function AutomataClient() {
 
 	// Stable identity: CatalogueListPanel is memoized, and this is one of the three props it compares.
 	// An inline arrow here would re-render the whole thumbnail tree on every generation.
-	const onSelect = useCallback((t: CatalogueTiling) => setKey("tilingId", t.canonicalKey), [setKey]);
+	// On a phone a pick at full snap drops the sheet to half, so the board it changed comes into view.
+	const onSelect = useCallback(
+		(t: CatalogueTiling) => {
+			setKey("tilingId", t.canonicalKey);
+			showPickOnCanvas(`aside [data-tiling-key="${CSS.escape(t.canonicalKey)}"]`);
+		},
+		[setKey],
+	);
 
 	const step = useCallback(
 		(delta: number) => {
@@ -188,20 +195,20 @@ export function AutomataClient() {
 
 	// The phone's peek row: what is on the board and how it is doing, readable over a running board.
 	const peek = (
-		<div className="flex min-w-0 flex-1 flex-col">
-			<span className="truncate text-[15px] font-semibold leading-tight text-fg">
-				{selected ? (automataTitle(selected) ?? compactVertexConfig(selected.family)) : "Automata"}
-			</span>
-			<span className="truncate font-mono text-xs tabular-nums text-fg-muted">
-				Gen {report.generation.toLocaleString()} · {report.population.toLocaleString()} alive
-				{report.population === 0 && report.generation > 0 ? " · extinct" : ""}
-			</span>
-		</div>
+		<PeekTitle
+			title={selected ? (automataTitle(selected) ?? compactVertexConfig(selected.family)) : "Automata"}
+			sub={`Gen ${report.generation.toLocaleString()} · ${report.population.toLocaleString()} alive${report.population === 0 && report.generation > 0 ? " · extinct" : ""}`}
+			mono
+		/>
 	);
 
 	return (
-		<div className="flex-1 min-h-0 flex overflow-hidden">
-			<PageSidebar scrollable={false} mobile="dock" title="Automata" peek={peek}>
+		<div className="relative flex-1 min-h-0 flex overflow-hidden">
+			{/* The phone's corner pair, as on the other explorers: the way home (for the flat board and the 3D
+			    surface alike) beside fullscreen. The board's corner is this box's; first in the DOM so it is
+			    read before the sheet. */}
+			<CornerControls fullscreen="phone" />
+			<PageSidebar scrollable={false} mobile="dock" title="Automata" peek={peek} halfHeight="60dvh">
 				<AutomataSidebar
 					tilings={tilings}
 					selected={selected}
@@ -231,10 +238,6 @@ export function AutomataClient() {
 					onPaint={setPaint}
 					paintAvailable={!show3D}
 				/>
-				{/* The phone's corner pair, as on the other explorers: the way home (for the flat board and
-				    the 3D surface alike) beside fullscreen. */}
-				<ResetViewButton className="absolute top-3 right-16" />
-				<FullscreenToggle className="md:hidden" />
 				{!cell && !loading && (
 					<div className="absolute inset-0 grid place-items-center pointer-events-none">
 						<p className="text-sm text-fg-muted">Pick a tiling to start.</p>

@@ -676,7 +676,7 @@ function Folder({
 					<ChevronRight size={11} />
 				</motion.span>
 				{category}
-				<span className="font-mono normal-case text-fg-muted/70">{count}</span>
+				<span className="font-mono normal-case text-fg-muted/70 max-md:text-fg-muted">{count}</span>
 			</button>
 			<AnimatePresence initial={false}>
 				{open ? (

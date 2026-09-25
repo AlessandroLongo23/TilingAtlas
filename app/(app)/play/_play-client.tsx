@@ -36,8 +36,7 @@ import { DEFAULT_BUBBLE_EDGE_STYLE } from "@/lib/bubble/edges";
 import { bubbleRenderCell, isBubbleId } from "@/lib/bubble/pattern";
 import { useImmersive } from "@/stores/immersive";
 import { useIsPhone } from "@/lib/hooks/useIsPhone";
-import { ResetViewButton } from "@/components/reset-view-button";
-import { FullscreenToggle } from "@/components/fullscreen-toggle";
+import { CornerControls } from "@/components/ui/corner-controls";
 import { cn } from "@/lib/utils/cn";
 import { useInversiveCell } from "@/lib/hooks/useInversiveCell";
 import { useCatalogueSelection } from "@/lib/hooks/useCatalogueSelection";
@@ -53,7 +52,7 @@ import {
 	type TierShelf,
 	type UnloadedTier,
 } from "@/lib/services/atlasManifest";
-import { hasCurvedTiles, canCaptureImage, isSphereSurface, lensAppliesTo, surfaceOf } from "@/lib/services/shelfRegistry";
+import { hasCurvedTiles, canCaptureImage, isDiskSurface, isSphereSurface, lensAppliesTo, surfaceOf } from "@/lib/services/shelfRegistry";
 import { useExportImage } from "@/stores/exportImage";
 import {
 	loadComposableAtlasShard,
@@ -1621,7 +1620,11 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	);
 
 	return (
-		<div className="flex-1 flex min-h-0 overflow-hidden">
+		<div className="relative flex-1 flex min-h-0 overflow-hidden">
+			{/* The phone's top-right corner, the same on every canvas page: reset view (a touch screen has no
+			    right button), then fullscreen, which the desktop keeps in the toolbar. The canvas's corner is
+			    this box's; first in the DOM so it is read before the sheet. */}
+			<CornerControls fullscreen="phone" />
 			{/* Immersive mode collapses this wrapper's width to 0 (the sidebar stays mounted, just clipped),
 			    which lets the canvas-wrap grow; the canvas resizes to fill via its ResizeObserver. */}
 			<div
@@ -1670,155 +1673,166 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				{/* Exactly one WebGL overlay at a time: the three.js sphere for a spherical tiling (it owns its
 				    own pointer input via ArcballControls, so it sits on top and captures drag/wheel itself),
 				    the Poincaré disk for a hyperbolic tiling, else the inversive conformal view when toggled
-				    on. The flat p5 Canvas above stays mounted (blanked) as the input layer for the other two. */}
-				{showEdits ? (
-					// THE EDITOR GOES FIRST, ahead of even the lens. It is not a decoration of the catalogued
-					// tiling, it is a different tiling: once an edge has been merged away or a vertex moved,
-					// nothing below this line is drawing the thing the user is working on. It owns its own
-					// pointer input, like freedraw and colors, because the flat canvas's pan drives a patch
-					// this one does not hold. p5 and the flat shader are blanked by `studioActive` in
-					// components/canvas.tsx, next to the gates every other exclusive canvas uses.
-					<div className="absolute inset-0 z-10">
-						<StudioCanvas
-							cell={drawCell}
-							cellId={drawCellId}
-							symmetryData={symmetryData}
-							readOnly={!studioActive}
+				    on. The flat p5 Canvas above stays mounted (blanked) as the input layer for the other two.
+				    On a phone a disk or a sphere, drawn in the middle of its box, gets a box that ends at the dock
+				    sheet's top (at most the half snap, so the full snap does not squeeze it): at half the sheet
+				    would otherwise cover its centre. Elsewhere, and on a desktop, the wrapper is no box at all. */}
+				<div
+					className={cn(
+						"contents",
+						(isDiskSurface(surface) || isSphereSurface(surface)) &&
+							"max-md:absolute max-md:inset-x-0 max-md:top-0 max-md:bottom-[min(var(--sheet-offset,0px),60dvh)] max-md:block",
+					)}
+				>
+					{showEdits ? (
+						// THE EDITOR GOES FIRST, ahead of even the lens. It is not a decoration of the catalogued
+						// tiling, it is a different tiling: once an edge has been merged away or a vertex moved,
+						// nothing below this line is drawing the thing the user is working on. It owns its own
+						// pointer input, like freedraw and colors, because the flat canvas's pan drives a patch
+						// this one does not hold. p5 and the flat shader are blanked by `studioActive` in
+						// components/canvas.tsx, next to the gates every other exclusive canvas uses.
+						<div className="absolute inset-0 z-10">
+							<StudioCanvas
+								cell={drawCell}
+								cellId={drawCellId}
+								symmetryData={symmetryData}
+								readOnly={!studioActive}
+							/>
+						</div>
+					) : lensActive ? (
+						// The conformal lens owns the canvas whenever it is on and the selection is Euclidean. It used
+						// to sit at the BOTTOM of this chain, which is why every decoration below it silently lost the
+						// lens; each Euclidean class now has a periodic-cell representation, so the lens goes first.
+						// paramCell goes null under the squaring for the same reason it does on the flat canvas: the
+						// squared torus has no free angle to flex, and the family this record belongs to is not what
+						// the lens is holding.
+						<InversiveCanvas
+							cell={inversiveCell}
+							cellId={inversiveCellId}
+							paramCell={squaringActive ? null : paramCell ?? null}
 						/>
-					</div>
-				) : lensActive ? (
-					// The conformal lens owns the canvas whenever it is on and the selection is Euclidean. It used
-					// to sit at the BOTTOM of this chain, which is why every decoration below it silently lost the
-					// lens; each Euclidean class now has a periodic-cell representation, so the lens goes first.
-					// paramCell goes null under the squaring for the same reason it does on the flat canvas: the
-					// squared torus has no free angle to flex, and the family this record belongs to is not what
-					// the lens is holding.
-					<InversiveCanvas
-						cell={inversiveCell}
-						cellId={inversiveCellId}
-						paramCell={squaringActive ? null : paramCell ?? null}
-					/>
-				) : selected?.hollow ? (
-					// Hollow tiling: self-intersecting {n/d} star polygons whose faces overlap by construction,
-					// so there is no polygon cell for the flat canvas to draw. Strokes each closed face path and
-					// fills translucently with the nonzero winding rule, so the overlaps accumulate and the
-					// density structure shows. Owns its pan/zoom, like freedraw and colors.
-					<div className="absolute inset-0 z-10">
-						<HollowCanvas patchId={selected.hollow.patch} mod2={starMod2} />
-					</div>
-				) : selected?.schwarz ? (
-					// Schwarz board: Čtrnáct's freedraw on the board cut by a (p,q,r) reflection group. The one
-					// shelf that spans two geometries, so it dispatches on its own: a spherical board is finite
-					// and draws on the three.js sphere (same canvas as the Platonic freedraw), a hyperbolic one
-					// re-develops in the disk through the same per-pixel reducer as every other hyperbolic shelf.
-					selected.schwarz.geometry === "spherical" ? (
+					) : selected?.hollow ? (
+						// Hollow tiling: self-intersecting {n/d} star polygons whose faces overlap by construction,
+						// so there is no polygon cell for the flat canvas to draw. Strokes each closed face path and
+						// fills translucently with the nonzero winding rule, so the overlaps accumulate and the
+						// density structure shows. Owns its pan/zoom, like freedraw and colors.
+						<div className="absolute inset-0 z-10">
+							<HollowCanvas patchId={selected.hollow.patch} mod2={starMod2} />
+						</div>
+					) : selected?.schwarz ? (
+						// Schwarz board: Čtrnáct's freedraw on the board cut by a (p,q,r) reflection group. The one
+						// shelf that spans two geometries, so it dispatches on its own: a spherical board is finite
+						// and draws on the three.js sphere (same canvas as the Platonic freedraw), a hyperbolic one
+						// re-develops in the disk through the same per-pixel reducer as every other hyperbolic shelf.
+						selected.schwarz.geometry === "spherical" ? (
+							<SphSchwarzCanvas
+								pattern={selected.schwarz}
+								mode={sphericalShape}
+								showGrid={sphericalFreedrawGrid}
+							/>
+						) : (
+							<HyperbolicEdgesCanvas pattern={hypSchwarzMeta(selected.schwarz)} />
+						)
+					) : selected?.pentEdges ? (
+						// Edge system on a PARAMETRIC pentagon. The record carries no geometry at all, so this canvas
+						// solves the Kershner type 1 board at the store's parameter point, recovers the period lattice
+						// from the develop, and hands the result to the SAME freedraw renderer every other Euclidean
+						// edge system uses — so it pans, zooms and fills like them, off the same store fields. The
+						// lens above draws the same period through the same adapter.
+						// Owns its own layer like freedraw, colors and hollow do: the flat p5 canvas stays mounted
+						// underneath as the input surface, so a plain child would render behind it.
+						// Opaque: the flat p5 canvas stays mounted underneath as the input surface, so without a
+						// background its tiling shows straight through this one.
+						<div className="absolute inset-0 z-10 bg-surface">
+							<PentagonEdgesCanvas pattern={selected.pentEdges} />
+						</div>
+					) : selected?.ihEdges ? (
+						// Edge system on a PARAMETRIC ISOHEDRAL tile — the same story as the pentagon above, with
+						// the board coming from Tactile instead of a bespoke closure solver, so the shelf reaches
+						// any of the 93 types. Same renderer, same store fields, same opaque layer over the p5
+						// input surface.
+						<div className="absolute inset-0 z-10 bg-surface">
+							<IsohedralEdgesCanvas pattern={selected.ihEdges} />
+						</div>
+					) : selected?.sphEdges ? (
+						// Uniform-polyhedron edge system: the same object as a spherical Schwarz board on a prism /
+						// antiprism / truncated tetrahedron / cuboctahedron / J27, so it draws through the very same
+						// three.js canvas. Those boards mix face sizes, which the adapter never assumed away.
 						<SphSchwarzCanvas
-							pattern={selected.schwarz}
+							pattern={selected.sphEdges}
 							mode={sphericalShape}
 							showGrid={sphericalFreedrawGrid}
 						/>
-					) : (
-						<HyperbolicEdgesCanvas pattern={hypSchwarzMeta(selected.schwarz)} />
-					)
-				) : selected?.pentEdges ? (
-					// Edge system on a PARAMETRIC pentagon. The record carries no geometry at all, so this canvas
-					// solves the Kershner type 1 board at the store's parameter point, recovers the period lattice
-					// from the develop, and hands the result to the SAME freedraw renderer every other Euclidean
-					// edge system uses — so it pans, zooms and fills like them, off the same store fields. The
-					// lens above draws the same period through the same adapter.
-					// Owns its own layer like freedraw, colors and hollow do: the flat p5 canvas stays mounted
-					// underneath as the input surface, so a plain child would render behind it.
-					// Opaque: the flat p5 canvas stays mounted underneath as the input surface, so without a
-					// background its tiling shows straight through this one.
-					<div className="absolute inset-0 z-10 bg-surface">
-						<PentagonEdgesCanvas pattern={selected.pentEdges} />
-					</div>
-				) : selected?.ihEdges ? (
-					// Edge system on a PARAMETRIC ISOHEDRAL tile — the same story as the pentagon above, with
-					// the board coming from Tactile instead of a bespoke closure solver, so the shelf reaches
-					// any of the 93 types. Same renderer, same store fields, same opaque layer over the p5
-					// input surface.
-					<div className="absolute inset-0 z-10 bg-surface">
-						<IsohedralEdgesCanvas pattern={selected.ihEdges} />
-					</div>
-				) : selected?.sphEdges ? (
-					// Uniform-polyhedron edge system: the same object as a spherical Schwarz board on a prism /
-					// antiprism / truncated tetrahedron / cuboctahedron / J27, so it draws through the very same
-					// three.js canvas. Those boards mix face sizes, which the adapter never assumed away.
-					<SphSchwarzCanvas
-						pattern={selected.sphEdges}
-						mode={sphericalShape}
-						showGrid={sphericalFreedrawGrid}
-					/>
-				) : selected?.sphPoly ? (
-					// A 3.4.n.4 tiling on the sphere: its own solid, faces filled by polygon size, every edge a
-					// boundary. Same three.js canvas as every other spherical Čtrnáct shelf.
-					<SphPolyCanvas pattern={selected.sphPoly} mode={sphericalShape} showGrid={sphericalFreedrawGrid} />
-				) : selected?.sphStar ? (
-					// A STAR polyhedron. Same three.js canvas again, and it follows `sphericalShape`
-					// like the shelves above it — but sphere mode means something different here. Its faces
-					// overlap on the circumsphere by construction, that being what density means, so there is
-					// no spherical tiling to draw; the sphere view draws the COVERING instead, shading each
-					// direction by how many sheets lie over it (lib/render/sphStar.ts, sph-star-canvas.tsx).
-					<SphStarCanvas
-						pattern={selected.sphStar}
-						mode={sphericalShape}
-						showGrid={sphericalFreedrawGrid}
-						edges={sphStarEdges}
-						mod2={starMod2}
-					/>
-				) : selected?.hypPoly ? (
-					// 3.4.n.4 tiling by regular polygons: not a decoration, so every edge is a real boundary and
-					// each face is filled by its POLYGON SIZE. That is the colored-tiling render exactly, so it
-					// uses that canvas with the size index standing in for the colour index.
-					<HyperbolicColorsCanvas pattern={hypPolyMeta(selected.hypPoly)} />
-				) : selected?.sphBubble ? (
-					// A spherical bubble tiling: the same three.js canvas, drawing MESHED tiles instead of the
-					// procedural face classification. It carries no polyhedron view — a bubble tile's sides are
-					// curved, so there is no flat-faced solid to fall back to.
-					<SphericalCanvas solidId={selected.sphBubble.solid} bubbleBites={selected.sphBubble.bites} />
-				) : isSpherical && selected?.spherical ? (
-					<SphericalCanvas solidId={selected.spherical.solid} />
-				) : selected?.sphericalFreedraw ? (
-					// Spherical freedraw: a drawn edge subset of a Platonic solid, on its own three.js canvas with
-					// ArcballControls (drag to rotate, wheel to zoom) — the same self-contained renderer the
-					// /freedraw spherical arm uses. Mode (polyhedron/sphere) and grid come from the View options tab,
-					// the same two controls the /freedraw arm carries; it owns its own pointer input.
-					<IcoFreedrawCanvas
-						pattern={selected.sphericalFreedraw.pattern}
-						solidId={selected.sphericalFreedraw.solid}
-						mode={sphericalShape}
-						showGrid={sphericalFreedrawGrid}
-					/>
-				) : selected?.freedraw ? (
-					// Freedraw pattern: drawn grid edges + cells coloured by face, on its own 2D canvas. It owns
-					// its pan/zoom (the flat canvas has no cell here to pan), so it sits on top and takes the input.
-					<FreedrawPlayCanvas pattern={selected.freedraw} />
+					) : selected?.sphPoly ? (
+						// A 3.4.n.4 tiling on the sphere: its own solid, faces filled by polygon size, every edge a
+						// boundary. Same three.js canvas as every other spherical Čtrnáct shelf.
+						<SphPolyCanvas pattern={selected.sphPoly} mode={sphericalShape} showGrid={sphericalFreedrawGrid} />
+					) : selected?.sphStar ? (
+						// A STAR polyhedron. Same three.js canvas again, and it follows `sphericalShape`
+						// like the shelves above it — but sphere mode means something different here. Its faces
+						// overlap on the circumsphere by construction, that being what density means, so there is
+						// no spherical tiling to draw; the sphere view draws the COVERING instead, shading each
+						// direction by how many sheets lie over it (lib/render/sphStar.ts, sph-star-canvas.tsx).
+						<SphStarCanvas
+							pattern={selected.sphStar}
+							mode={sphericalShape}
+							showGrid={sphericalFreedrawGrid}
+							edges={sphStarEdges}
+							mod2={starMod2}
+						/>
+					) : selected?.hypPoly ? (
+						// 3.4.n.4 tiling by regular polygons: not a decoration, so every edge is a real boundary and
+						// each face is filled by its POLYGON SIZE. That is the colored-tiling render exactly, so it
+						// uses that canvas with the size index standing in for the colour index.
+						<HyperbolicColorsCanvas pattern={hypPolyMeta(selected.hypPoly)} />
+					) : selected?.sphBubble ? (
+						// A spherical bubble tiling: the same three.js canvas, drawing MESHED tiles instead of the
+						// procedural face classification. It carries no polyhedron view — a bubble tile's sides are
+						// curved, so there is no flat-faced solid to fall back to.
+						<SphericalCanvas solidId={selected.sphBubble.solid} bubbleBites={selected.sphBubble.bites} />
+					) : isSpherical && selected?.spherical ? (
+						<SphericalCanvas solidId={selected.spherical.solid} />
+					) : selected?.sphericalFreedraw ? (
+						// Spherical freedraw: a drawn edge subset of a Platonic solid, on its own three.js canvas with
+						// ArcballControls (drag to rotate, wheel to zoom) — the same self-contained renderer the
+						// /freedraw spherical arm uses. Mode (polyhedron/sphere) and grid come from the View options tab,
+						// the same two controls the /freedraw arm carries; it owns its own pointer input.
+						<IcoFreedrawCanvas
+							pattern={selected.sphericalFreedraw.pattern}
+							solidId={selected.sphericalFreedraw.solid}
+							mode={sphericalShape}
+							showGrid={sphericalFreedrawGrid}
+						/>
+					) : selected?.freedraw ? (
+						// Freedraw pattern: drawn grid edges + cells coloured by face, on its own 2D canvas. It owns
+						// its pan/zoom (the flat canvas has no cell here to pan), so it sits on top and takes the input.
+						<FreedrawPlayCanvas pattern={selected.freedraw} />
 
-				) : selected?.colors ? (
-					// Colored square tiling: the color field with tile edges, on its own 2D canvas — same
-					// contract as freedraw (no polygon cell, owns its pan/zoom).
-					<ColorsPlayCanvas pattern={selected.colors} />
-				) : selected?.sphColors ? (
-					// Spherical colored tiling: an n-coloring of a Platonic solid on its own three.js canvas with
-					// ArcballControls, the exact sibling of the ico-freedraw sphere. Mode (polyhedron/sphere) comes
-					// from the View options tab; it owns its own pointer input.
-					<SphericalColorsCanvas pattern={selected.sphColors.pattern} mode={sphericalShape} />
-				) : selected?.hypColors ? (
-					// Hyperbolic colored tiling: an n-coloring of a {p,q} tiling, the per-pixel disk shader in colors
-					// mode — fills to the rim, infinite drift-free pan, GPU, exactly like the edge systems.
-					<HyperbolicColorsCanvas pattern={selected.hypColors} />
-				) : selected?.hypEdges ? (
-					// Hyperbolic edge system: Čtrnáct's freedraw in H². Re-develops the darts under the view and
-					// draws the merged-tile fill + drawn/scaffold strokes, with the same store-driven pan as the
-					// developed tiling. Always 2D (the edge field is not baked for the per-pixel renderer).
-					<HyperbolicEdgesCanvas pattern={selected.hypEdges} />
-				) : selected?.developed ? (
-					// Engine-developed tiling: explicit Poincaré geometry from the Čtrnáct SU(1,1) developer,
-					// drawn as geodesic polygons with the same store-driven pan. Handles the arbitrary
-					// regular-faced tilings the (2,p,q) fold shader cannot.
-					<HyperbolicDevelopedCanvas patchId={selected.developed.patch} />
-				) : null}
+					) : selected?.colors ? (
+						// Colored square tiling: the color field with tile edges, on its own 2D canvas — same
+						// contract as freedraw (no polygon cell, owns its pan/zoom).
+						<ColorsPlayCanvas pattern={selected.colors} />
+					) : selected?.sphColors ? (
+						// Spherical colored tiling: an n-coloring of a Platonic solid on its own three.js canvas with
+						// ArcballControls, the exact sibling of the ico-freedraw sphere. Mode (polyhedron/sphere) comes
+						// from the View options tab; it owns its own pointer input.
+						<SphericalColorsCanvas pattern={selected.sphColors.pattern} mode={sphericalShape} />
+					) : selected?.hypColors ? (
+						// Hyperbolic colored tiling: an n-coloring of a {p,q} tiling, the per-pixel disk shader in colors
+						// mode — fills to the rim, infinite drift-free pan, GPU, exactly like the edge systems.
+						<HyperbolicColorsCanvas pattern={selected.hypColors} />
+					) : selected?.hypEdges ? (
+						// Hyperbolic edge system: Čtrnáct's freedraw in H². Re-develops the darts under the view and
+						// draws the merged-tile fill + drawn/scaffold strokes, with the same store-driven pan as the
+						// developed tiling. Always 2D (the edge field is not baked for the per-pixel renderer).
+						<HyperbolicEdgesCanvas pattern={selected.hypEdges} />
+					) : selected?.developed ? (
+						// Engine-developed tiling: explicit Poincaré geometry from the Čtrnáct SU(1,1) developer,
+						// drawn as geodesic polygons with the same store-driven pan. Handles the arbitrary
+						// regular-faced tilings the (2,p,q) fold shader cannot.
+						<HyperbolicDevelopedCanvas patchId={selected.developed.patch} />
+					) : null}
+				</div>
 				{/* Truchet figures over a PLAIN tiling. Deliberately OUTSIDE the exclusive canvas chain above:
 				    it is an overlay, not a renderer, so the flat canvas keeps drawing the tiling and keeps
 				    owning the pointer. It reads the same `controls` the flat uniforms come from, so toggling
@@ -1841,12 +1855,6 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				    INSPECTOR is deliberately not mounted (AL, 2026-09-21): the readout was noise next to the
 				    picture. `StudioInspector` stays in the tree for when a refusal needs somewhere to be read. */}
 				{!lensActive ? <SquaringOverlay selected={selected ?? null} /> : null}
-				{/* The phone's top-right corner, the same on every canvas page: reset view (a touch screen has no
-				    right button), then fullscreen, which the desktop keeps in the toolbar below. */}
-				<div className="absolute right-3 top-3 z-30 hidden gap-2 max-md:flex">
-					<ResetViewButton />
-					<FullscreenToggle className="static" />
-				</div>
 				{/* The panels that float at the bottom of the canvas. On the desktop each keeps its own spot and
 				    this wrapper is display:contents. On a phone they would pile onto each other and onto the
 				    toolbar, so they stack in one tray above the toolbar that scrolls past 40dvh and folds away.

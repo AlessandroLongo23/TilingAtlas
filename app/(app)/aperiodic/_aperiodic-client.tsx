@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import { useImmersiveShortcuts } from "@/components/fullscreen-toggle";
-import { ResetViewButton } from "@/components/reset-view-button";
+import { PeekTitle } from "@/components/dock-peek";
+import { useMobileSheet } from "@/stores/mobileSheet";
 import { cn } from "@/lib/utils/cn";
 import { AperiodicPeek, Section, Segmented } from "./_controls";
 import { SubRosaView } from "./_subrosa-view";
@@ -38,25 +39,33 @@ export function AperiodicClient() {
 	}, [view]);
 
 	useImmersiveShortcuts();
+
+	// A pick at full snap drops the sheet to half, as on the other dock pages. The new view mounts its own
+	// sidebar, which starts at peek, so the drop waits a task for that mount (run twice under StrictMode).
+	const pickedAtFull = useRef(false);
+	useEffect(() => {
+		if (!pickedAtFull.current) return;
+		pickedAtFull.current = false;
+		const t = window.setTimeout(() => useMobileSheet.getState().setSnap("half"));
+		return () => window.clearTimeout(t);
+	}, [view]);
 	const active = APERIODIC_VIEWS.find((v) => v.id === view) ?? APERIODIC_VIEWS[0];
 
 	// The phone's peek row: the view's name and line as plain text, which is where a thumb grabs the
-	// sheet, and a compact View button at the right. The button is a native select under a pill: a tap
-	// opens the system picker with all nine at once, which a 64px row could never lay out as buttons.
-	// The title block in the sheet would then say the same thing twice, so on a phone it is left to
-	// screen readers.
+	// sheet, and a compact Construction button at the right. The button is a native select under a pill:
+	// a tap opens the system picker with all nine at once, which a 64px row could never lay out as
+	// buttons. It stays live at every snap, so on a phone it replaces the sheet's title block and
+	// Construction grid, which would say the same things again just below it.
 	const peek = (
 		<>
-			<div className="flex min-w-0 flex-1 flex-col">
-				<span className="truncate text-[15px] font-semibold leading-tight text-fg">{active.label}</span>
-				<span className="truncate text-xs text-fg-muted">
-					{active.group} · {active.blurb}
-				</span>
-			</div>
+			<PeekTitle title={active.label} sub={`${active.group} · ${active.blurb}`} />
 			<div className="relative shrink-0">
 				<select
 					value={view}
-					onChange={(e) => setView(e.target.value as AperiodicViewId)}
+					onChange={(e) => {
+						pickedAtFull.current = useMobileSheet.getState().snap === "full";
+						setView(e.target.value as AperiodicViewId);
+					}}
 					aria-label="Construction"
 					className="peer absolute inset-0 size-full cursor-pointer opacity-0"
 				>
@@ -70,7 +79,7 @@ export function AperiodicClient() {
 					aria-hidden
 					className="pointer-events-none flex h-11 items-center gap-1.5 rounded-full border border-line bg-surface-raised pl-4 pr-3 text-sm font-medium text-fg shadow-sm peer-focus-visible:ring-2 peer-focus-visible:ring-accent/50"
 				>
-					View
+					Construction
 					<ChevronDown size={16} className="text-fg-muted" />
 				</span>
 			</div>
@@ -79,7 +88,7 @@ export function AperiodicClient() {
 
 	const header = (
 		<>
-			<div className="flex flex-col gap-1 max-md:sr-only">
+			<div className="flex flex-col gap-1">
 				<h1 className="text-[15px] font-semibold leading-tight text-fg">{active.label}</h1>
 				<p className="text-xs text-fg-muted truncate" title={active.blurb}>
 					{active.group} · {active.blurb}
@@ -98,16 +107,13 @@ export function AperiodicClient() {
 
 	return (
 		<AperiodicPeek.Provider value={peek}>
-			{/* The box every view fills; `relative` only so the phone's Reset button can sit in the top
-			    corner of the canvas area, beside the FullscreenToggle each view puts there. On a phone the
-			    sidebar is a fixed sheet, so this box's corner is the canvas's corner.
-			    The multigrid is two panels stacked on a phone, and a sheet over the lower one would leave
+			{/* The box every view fills. The multigrid is two panels stacked on a phone, and a sheet over the lower one would leave
 			    the duality with one side hidden, so there the box stops at the top of the sheet: at half
 			    height both panels share what is left. Capped at half the screen, so the full snap (which
 			    covers the canvas anyway) does not squeeze the panels to nothing. */}
 			<div
 				className={cn(
-					"relative flex-1 min-h-0 flex",
+					"flex-1 min-h-0 flex",
 					view === "multigrid" && "max-md:pb-[min(var(--sheet-offset,0px),50dvh)]",
 				)}
 			>
@@ -118,7 +124,6 @@ export function AperiodicClient() {
 				) : (
 					<PatchView id={view} header={header} />
 				)}
-				<ResetViewButton className="absolute top-3 right-16" />
 			</div>
 		</AperiodicPeek.Provider>
 	);

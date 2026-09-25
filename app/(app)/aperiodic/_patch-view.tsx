@@ -58,7 +58,7 @@ import { SubRosaGL } from "@/lib/render/subrosaGL";
 import { drawPolygons, polygonFillHue, type RawPolygon } from "@/lib/utils/renderTiling";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
-import { FullscreenToggle } from "@/components/fullscreen-toggle";
+import { CornerControls } from "@/components/ui/corner-controls";
 import { AperiodicSidebar, Section, Segmented } from "./_controls";
 import { Details, strokePxAt, STROKE_CSS, STROKE_RGBA, STROKE_WIDTH, ViewFooter } from "./_view-chrome";
 
@@ -482,7 +482,10 @@ export function PatchView({ id, header }: { id: keyof typeof PATCHES; header: Re
 	}, [strokeWidth, requestDraw]);
 
 	return (
-		<div className="flex-1 min-h-0 flex">
+		<div className="relative flex-1 min-h-0 flex">
+			{/* The canvas's top-right corner (this box's, the sidebar being on the left), first in the DOM so
+			    it is read before the sheet. */}
+			<CornerControls />
 			<AperiodicSidebar header={header}>
 				<Section label="Construction">
 					<Slider
@@ -540,7 +543,6 @@ export function PatchView({ id, header }: { id: keyof typeof PATCHES; header: Re
 					className="w-full h-full block cursor-grab active:cursor-grabbing touch-none"
 					{...view.handlers}
 				/>
-				<FullscreenToggle />
 			</div>
 		</div>
 	);

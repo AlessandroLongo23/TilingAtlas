@@ -19,13 +19,12 @@ import {
 	ROTATE_SNAP_DEG,
 	stepCardControls,
 	unrotateScreen,
-	tidyDeg,
 	wheelDeltaPx,
 	wrap360,
 	zoomAtPoint,
 	type CardControls,
 } from "@/lib/render/viewControls";
-import { onViewReset, useTouchGestures } from "@/lib/render/touchGestures";
+import { onViewReset, useCardViewGestures } from "@/lib/render/touchGestures";
 import { cn } from "@/lib/utils/cn";
 
 // Zoom bounds are deliberately NOT the ones in lib/render/viewControls.ts. There a world unit is a
@@ -225,30 +224,22 @@ export function FreedrawCanvas({
 	// Pan. Pointer capture keeps the drag alive when the cursor leaves the canvas.
 	const drag = useRef<{ x: number; y: number } | null>(null);
 
-	// Fingers (lib/render/touchGestures.ts): two pinch, pan and twist, a double-tap is the double-click
-	// refit, and a tap is the hover a finger lacks (it grows the orbit's dots under it). The midpoints go
-	// through the view rotation (the old angle for where the fingers were, the new one for where they
-	// are), because this view's offset lives in the upright frame, inside the turn. A twist only where
-	// Shift+wheel turns the view (someone owns the angle); it turns the live angle and the owner hears
-	// the result once, when the fingers lift.
-	const touch = useTouchGestures(canvasRef, interactive ? {
-		pinchStart: () => {
-			drag.current = null;
+	// Fingers (lib/render/touchGestures.ts useCardViewGestures): pinch, pan and twist, a tap grows the
+	// orbit's dots under it, a double-tap is the double-click refit.
+	const touch = useCardViewGestures(canvasRef, interactive ? {
+		angle: () => rotRef.current,
+		turn: (deg) => {
+			rotRef.current += deg;
 		},
-		pinch: ({ from, to, scale, rotate }) => {
-			const spin = onRotationChange ? rotate : 0;
-			const before = radNow();
-			pinchOffsetView(
-				controlsRef.current,
-				{ from: unrotateScreen(from.x, from.y, before), to: unrotateScreen(to.x, to.y, before + spin), scale },
-				ZOOM_BOUNDS,
-			);
-			rotRef.current += (spin * 180) / Math.PI;
-			hoverRef.current = null;
+		rotation,
+		onRotationChange,
+		zoom: (from, to, scale) => {
+			pinchOffsetView(controlsRef.current, { from, to, scale }, ZOOM_BOUNDS);
 			dirtyRef.current = true;
 		},
-		pinchEnd: () => {
-			if (tidyDeg(rotRef.current) !== tidyDeg(rotation)) onRotationChange?.(tidyDeg(rotRef.current));
+		cancel: () => {
+			drag.current = null;
+			hoverRef.current = null;
 		},
 		tap: (x, y) => hoverAt(x, y),
 		doubleTap: () => refit(),
