@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { relaxStep } from "@/lib/squaring/tutte";
 import type { PipelineRecord } from "@/lib/squaring/shelf";
-import { FigureControls } from "./stage-board";
+import { EdgeHitLine, FIGURE_BUTTON, FigureControls } from "./stage-board";
 import { edgeKey, project, voltageColor, ratio } from "./stage-shared";
 
 // Stage 2: the graph pulled flat by springs, which is Tutte's 1963 method.
@@ -139,9 +139,12 @@ export function TutteSprings({ record, size = SIZE, hovered, onHover, onPickBatt
 					const isHovered = key === hovered;
 					const p = at(a);
 					const q = at(b);
+					const pick = () => {
+						if (!isBattery) onPickBattery?.([Math.min(a, b), Math.max(a, b)]);
+					};
 					return (
+						<g key={key}>
 						<line
-							key={key}
 							x1={p.x}
 							y1={p.y}
 							x2={q.x}
@@ -154,11 +157,11 @@ export function TutteSprings({ record, size = SIZE, hovered, onHover, onPickBatt
 							strokeDasharray={isBattery ? "7 4" : undefined}
 							strokeLinecap="round"
 							onPointerEnter={() => onHover(key)}
-							onClick={() => {
-								if (!isBattery) onPickBattery?.([Math.min(a, b), Math.max(a, b)]);
-							}}
+							onClick={pick}
 							style={{ cursor: isBattery ? "default" : "pointer" }}
 						/>
+						<EdgeHitLine p={p} q={q} onEnter={() => onHover(key)} onPick={pick} />
+						</g>
 					);
 				})}
 				{record.vertices.map((_, i) => {
@@ -178,16 +181,18 @@ export function TutteSprings({ record, size = SIZE, hovered, onHover, onPickBatt
 				})}
 			</svg>
 			<FigureControls>
-				<span className="truncate font-mono text-[10px] leading-tight text-fg-muted">
-					{settled
-						? `settled · ${drift !== null && drift < 0.01 ? "matches the direct solve" : "relaxed"} · click an edge`
-						: "springs relaxing…"}
+				<span className="truncate font-mono text-[10px] leading-tight text-fg-muted max-md:whitespace-normal max-md:text-xs">
+					{settled ? (
+						<>
+							settled · {drift !== null && drift < 0.01 ? "matches the direct solve" : "relaxed"} ·{" "}
+							<span className="max-md:hidden">click</span>
+							<span className="md:hidden">tap</span> an edge
+						</>
+					) : (
+						"springs relaxing…"
+					)}
 				</span>
-				<button
-					type="button"
-					onClick={reset}
-					className="shrink-0 border border-line px-2 py-0.5 text-[10px] text-fg-muted transition-colors hover:text-fg"
-				>
+				<button type="button" onClick={reset} className={FIGURE_BUTTON}>
 					replay
 				</button>
 			</FigureControls>

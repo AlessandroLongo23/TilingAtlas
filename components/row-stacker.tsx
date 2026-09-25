@@ -168,42 +168,42 @@ export function RowStacker() {
 			    just be margin. Height-driven so the slide, not the text column, decides the size. */}
 			<div ref={hostRef} className="relative aspect-square h-[42vh] rounded-2xl border border-line bg-surface-base">
 				<canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
-				<div className="absolute left-3 top-2 font-mono text-[11px] text-fg-muted">
+				<div className="absolute left-3 top-2 font-mono text-[11px] text-fg-muted max-md:text-xs">
 					{rows.length ? rows.join(" ") : "—"}
 				</div>
 			</div>
 
-			<div className="flex flex-wrap items-center justify-center gap-2 text-xs">
+			<div className="flex flex-wrap items-center justify-center gap-2 text-xs max-md:text-sm">
 				<button
 					type="button"
 					onClick={() => add("S")}
 					disabled={full}
-					className="rounded-md border border-line px-3 py-1 text-fg-secondary transition-colors hover:border-line-strong hover:text-fg disabled:opacity-40"
+					className="rounded-md border border-line px-3 py-1 text-fg-secondary transition-colors hover:border-line-strong hover:text-fg disabled:opacity-40 max-md:min-h-11"
 				>
-					add a square row <span className="text-fg-disabled">1</span>
+					add a square row <span className="text-fg-disabled max-md:hidden">1</span>
 				</button>
 				<button
 					type="button"
 					onClick={() => add("T")}
 					disabled={full}
-					className="rounded-md border border-line px-3 py-1 text-fg-secondary transition-colors hover:border-line-strong hover:text-fg disabled:opacity-40"
+					className="rounded-md border border-line px-3 py-1 text-fg-secondary transition-colors hover:border-line-strong hover:text-fg disabled:opacity-40 max-md:min-h-11"
 				>
-					add a triangle row <span className="text-fg-disabled">2</span>
+					add a triangle row <span className="text-fg-disabled max-md:hidden">2</span>
 				</button>
 				<button
 					type="button"
 					onClick={undo}
 					disabled={n === 0}
-					className="rounded-md border border-line px-2 py-1 text-fg-muted transition-colors hover:border-line-strong hover:text-fg disabled:opacity-40"
+					className="rounded-md border border-line px-2 py-1 text-fg-muted transition-colors hover:border-line-strong hover:text-fg disabled:opacity-40 max-md:min-h-11 max-md:px-3"
 				>
 					undo
 				</button>
 				<button
 					type="button"
 					onClick={reset}
-					className="rounded-md border border-line px-2 py-1 text-fg-muted transition-colors hover:border-line-strong hover:text-fg"
+					className="rounded-md border border-line px-2 py-1 text-fg-muted transition-colors hover:border-line-strong hover:text-fg max-md:min-h-11 max-md:px-3"
 				>
-					reset <span className="text-fg-disabled">0</span>
+					reset <span className="text-fg-disabled max-md:hidden">0</span>
 				</button>
 			</div>
 

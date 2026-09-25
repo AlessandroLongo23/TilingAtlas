@@ -75,7 +75,7 @@ function SpeciesCard({
 			<div className="flex items-baseline justify-between gap-1 px-1.5 py-1">
 				<span
 					className={cn(
-						"truncate text-[11px] font-medium leading-none",
+						"truncate text-[11px] font-medium leading-none max-md:text-xs",
 						selected ? "text-fg" : "text-fg-secondary",
 					)}
 				>
@@ -120,13 +120,16 @@ export function PolygonFilterModal({
 	}, [available]);
 
 	// One fixed track width everywhere so every row lines up, whatever its length. auto-fill would
-	// re-flow each row to its own count and leave the sections visibly misaligned.
-	const grid = { gridTemplateColumns: "repeat(auto-fill, 92px)" } as const;
+	// re-flow each row to its own count and leave the sections visibly misaligned. A phone gets three
+	// equal columns instead, which is the same alignment at the width it has.
+	const grid = "grid gap-2 [grid-template-columns:repeat(auto-fill,92px)] max-md:[grid-template-columns:repeat(3,minmax(0,1fr))]";
 
 	return (
-		<Modal isOpen={isOpen} onOpenChange={onOpenChange} title="Filter by polygon" size="lg">
+		// On a phone the sheet takes the full 92dvh; the Modal body scrolls and the footer below sticks to
+		// its bottom edge, so Done is always in reach.
+		<Modal isOpen={isOpen} onOpenChange={onOpenChange} title="Filter by polygon" maxWidth="max-w-4xl max-md:h-[92dvh]">
 			{/* Modal renders children unpadded — every caller supplies its own inset. */}
-			<div className="flex max-h-[68vh] flex-col gap-4 overflow-y-auto p-4">
+			<div className="flex max-h-[68vh] flex-col gap-4 overflow-y-auto p-4 max-md:max-h-none max-md:overflow-visible">
 				<div className="flex flex-col gap-1.5">
 					<OptionWall
 						columns={3}
@@ -144,7 +147,7 @@ export function PolygonFilterModal({
 						<h4 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-fg-muted">
 							Regular polygons
 						</h4>
-						<div className="grid gap-2" style={grid}>
+						<div className={grid}>
 							{regular.map((key) => (
 								<SpeciesCard
 									key={key}
@@ -169,7 +172,7 @@ export function PolygonFilterModal({
 						{starRows.map(([fold, keys]) => (
 							<div key={fold} className="flex flex-col gap-1.5">
 								<span className="text-[10px] font-medium tabular-nums text-fg-disabled">{fold}★</span>
-								<div className="grid gap-2" style={grid}>
+								<div className={grid}>
 									{keys.map((key) => (
 										<SpeciesCard
 											key={key}
@@ -186,7 +189,7 @@ export function PolygonFilterModal({
 				) : null}
 			</div>
 
-			<div className="flex items-center justify-between gap-3 border-t border-line px-4 py-3">
+			<div className="flex items-center justify-between gap-3 border-t border-line px-4 py-3 max-md:sticky max-md:bottom-0 max-md:bg-surface-raised">
 				<span className="text-xs text-fg-muted">
 					{selected.length === 0 ? (
 						"No polygons selected — the facet is off"
@@ -204,14 +207,14 @@ export function PolygonFilterModal({
 						type="button"
 						onClick={onClear}
 						disabled={selected.length === 0}
-						className="px-2.5 py-1.5 text-xs text-fg-muted hover:text-fg disabled:cursor-not-allowed disabled:opacity-40"
+						className="px-2.5 py-1.5 text-xs text-fg-muted hover:text-fg disabled:cursor-not-allowed disabled:opacity-40 max-md:min-h-11 max-md:text-sm"
 					>
 						Clear
 					</button>
 					<button
 						type="button"
 						onClick={() => onOpenChange(false)}
-						className="border border-line-strong bg-surface-raised px-3 py-1.5 text-xs font-medium text-fg hover:bg-surface-overlay"
+						className="border border-line-strong bg-surface-raised px-3 py-1.5 text-xs font-medium text-fg hover:bg-surface-overlay max-md:min-h-11 max-md:px-5 max-md:text-sm"
 					>
 						Done
 					</button>

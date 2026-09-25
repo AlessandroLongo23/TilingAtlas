@@ -85,7 +85,7 @@ export function GalleryPanel({ runId, initial }: { runId: string; initial: Found
 						type="button"
 						onClick={() => setSort(k)}
 						className={cn(
-							"px-2 py-0.5 rounded transition-colors",
+							"px-2 py-0.5 rounded transition-colors max-md:min-h-11 max-md:px-3 max-md:text-xs",
 							sort === k ? "bg-accent-subtle text-accent" : "text-fg-muted hover:text-fg hover:bg-surface-overlay/50",
 						)}
 					>

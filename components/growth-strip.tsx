@@ -215,14 +215,14 @@ export function GrowthStrip({ src = "/defense/growth-k3.json" }: { src?: string 
 				))}
 			</div>
 
-			<div className="flex items-center gap-2 text-xs">
+			<div className="flex items-center gap-2 text-xs max-md:flex-wrap max-md:justify-center max-md:text-sm">
 				{active ? (
 					<>
 						<button
 							type="button"
 							onClick={() => cycle(-1)}
 							aria-label="previous placement"
-							className="rounded-md border border-line px-2 py-1 text-fg-muted transition-colors hover:border-line-strong hover:text-fg"
+							className="rounded-md border border-line px-2 py-1 text-fg-muted transition-colors hover:border-line-strong hover:text-fg max-md:min-h-11 max-md:min-w-11"
 						>
 							‹
 						</button>
@@ -233,14 +233,14 @@ export function GrowthStrip({ src = "/defense/growth-k3.json" }: { src?: string 
 							type="button"
 							onClick={() => cycle(1)}
 							aria-label="next placement"
-							className="rounded-md border border-line px-2 py-1 text-fg-muted transition-colors hover:border-line-strong hover:text-fg"
+							className="rounded-md border border-line px-2 py-1 text-fg-muted transition-colors hover:border-line-strong hover:text-fg max-md:min-h-11 max-md:min-w-11"
 						>
 							›
 						</button>
 						<button
 							type="button"
 							onClick={confirm}
-							className="ml-1 rounded-md border border-accent bg-accent/10 px-3 py-1 font-medium text-accent transition-colors hover:bg-accent/20"
+							className="ml-1 rounded-md border border-accent bg-accent/10 px-3 py-1 font-medium text-accent transition-colors hover:bg-accent/20 max-md:min-h-11"
 						>
 							stamp it
 						</button>
@@ -251,13 +251,17 @@ export function GrowthStrip({ src = "/defense/growth-k3.json" }: { src?: string 
 				<button
 					type="button"
 					onClick={reset}
-					className="ml-3 rounded-md border border-line px-2 py-1 text-fg-muted transition-colors hover:border-line-strong hover:text-fg"
+					className="ml-3 rounded-md border border-line px-2 py-1 text-fg-muted transition-colors hover:border-line-strong hover:text-fg max-md:ml-1 max-md:min-h-11"
 				>
 					reset
 				</button>
 			</div>
-			<p className="m-0 text-[11px] text-fg-disabled">
-				<kbd>,</kbd> <kbd>.</kbd> cycle · <kbd>Enter</kbd> stamps · the ringed vertex is the one the search takes next
+			<p className="m-0 text-[11px] text-fg-disabled max-md:text-center max-md:text-xs max-md:text-fg-muted">
+				{/* Whole-line variants: a span boundary mid-line nudges the desktop glyphs after it. */}
+				<span className="max-md:hidden">
+					<kbd>,</kbd> <kbd>.</kbd> cycle · <kbd>Enter</kbd> stamps · the ringed vertex is the one the search takes next
+				</span>
+				<span className="md:hidden">‹ › cycle · stamp it places it · the ringed vertex is the one the search takes next</span>
 			</p>
 		</div>
 	);

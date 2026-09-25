@@ -90,7 +90,7 @@ export function RunsHistoryTable({ initialRuns }: { initialRuns: RunRow[] }) {
 	}, [anyRunning]);
 
 	return (
-		<div className="p-6">
+		<div className="p-6 max-md:p-4">
 			<div className="mb-4 flex items-center gap-2">
 				<Radio size={16} className="text-accent" />
 				<h1 className="text-base font-semibold text-fg">Run history</h1>

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
+import { PHONE_QUERY } from "@/lib/hooks/useIsPhone";
 import { cn } from "@/lib/utils/cn";
 import { orbitColor } from "@/lib/utils/orbitColors";
 import { drawPolygons, type RawPolygon } from "@/lib/utils/renderTiling";
@@ -215,7 +216,9 @@ function SeedCard({
 		if (!onPick || !open) return;
 		const r = e.currentTarget.getBoundingClientRect();
 		const px = e.clientX - r.left, py = e.clientY - r.top;
-		let best = -1, bestD = PICK_R;
+		// A fingertip covers the 14px a cursor needs several times over; a phone takes the nearest open
+		// vertex within about half a fingertip.
+		let best = -1, bestD = window.matchMedia(PHONE_QUERY).matches ? 24 : PICK_R;
 		hits.current.forEach((d) => {
 			const dist = Math.hypot(d.sx - px, d.sy - py);
 			if (dist < bestD) {
@@ -402,18 +405,19 @@ export function SeedStrip({ src = "/defense/seed-build.json" }: { src?: string }
 				))}
 			</div>
 
-			<div className="flex h-[1.9em] items-center gap-2 text-[clamp(0.62rem,0.95vh+0.26vw,0.92rem)]">
+			<div className="flex h-[1.9em] items-center gap-2 text-[clamp(0.62rem,0.95vh+0.26vw,0.92rem)] max-md:h-auto max-md:min-h-11 max-md:flex-wrap max-md:justify-center max-md:text-sm">
 				{!state ? (
 					<button
 						type="button"
 						onClick={reset}
-						className="border border-line bg-surface-overlay/40 px-[0.8em] py-[0.15em] text-fg-secondary transition-colors hover:border-line-strong hover:text-fg"
+						className="border border-line bg-surface-overlay/40 px-[0.8em] py-[0.15em] text-fg-secondary transition-colors hover:border-line-strong hover:text-fg max-md:min-h-11"
 					>
 						start again
 					</button>
 				) : !picked || !total ? (
 					<span className="text-fg-muted">
-						click an open vertex — {state.filter((o) => o.candidates.length).length} of them can take a
+						<span className="max-md:hidden">click</span>
+						<span className="md:hidden">tap</span> an open vertex — {state.filter((o) => o.candidates.length).length} of them can take a
 						configuration
 					</span>
 				) : (
@@ -422,7 +426,7 @@ export function SeedStrip({ src = "/defense/seed-build.json" }: { src?: string }
 							type="button"
 							onClick={() => cycle(-1)}
 							aria-label="previous placement"
-							className="border border-line px-2 py-[0.15em] text-fg-muted transition-colors hover:border-line-strong hover:text-fg"
+							className="border border-line px-2 py-[0.15em] text-fg-muted transition-colors hover:border-line-strong hover:text-fg max-md:min-h-11 max-md:min-w-11"
 						>
 							‹
 						</button>
@@ -434,17 +438,17 @@ export function SeedStrip({ src = "/defense/seed-build.json" }: { src?: string }
 							type="button"
 							onClick={() => cycle(1)}
 							aria-label="next placement"
-							className="border border-line px-2 py-[0.15em] text-fg-muted transition-colors hover:border-line-strong hover:text-fg"
+							className="border border-line px-2 py-[0.15em] text-fg-muted transition-colors hover:border-line-strong hover:text-fg max-md:min-h-11 max-md:min-w-11"
 						>
 							›
 						</button>
 						<button
 							type="button"
 							onClick={confirm}
-							className="ml-1 flex items-center gap-[0.5em] border border-line bg-surface-overlay/40 px-[0.8em] py-[0.15em] text-fg-secondary transition-colors hover:border-line-strong hover:text-fg"
+							className="ml-1 flex items-center gap-[0.5em] border border-line bg-surface-overlay/40 px-[0.8em] py-[0.15em] text-fg-secondary transition-colors hover:border-line-strong hover:text-fg max-md:min-h-11"
 						>
 							place it
-							<kbd className="border border-line px-[0.35em] font-mono text-[0.85em] text-fg-muted">
+							<kbd className="border border-line px-[0.35em] font-mono text-[0.85em] text-fg-muted max-md:hidden">
 								↵
 							</kbd>
 						</button>

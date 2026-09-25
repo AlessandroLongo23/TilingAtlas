@@ -170,7 +170,7 @@ export function RunView({
 
 	return (
 		<div className="flex-1 min-h-0 overflow-y-auto">
-			<div className="mx-auto max-w-5xl px-6 py-6 flex flex-col gap-5">
+			<div className="mx-auto max-w-5xl px-6 py-6 flex flex-col gap-5 max-md:px-4">
 				{/* ── header ─────────────────────────────────────────────────────── */}
 				<header className="rounded-xl border border-line bg-surface-overlay/30 px-5 py-4 flex items-start gap-4">
 					<FlaskConical size={20} className="text-accent mt-0.5 shrink-0" />

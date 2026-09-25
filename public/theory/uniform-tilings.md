@@ -1,6 +1,6 @@
 # The eleven uniform tilings
 
-Every preview on this page is live: click a card to activate it, then drag to pan, scroll to zoom, hold Shift and scroll to rotate, and right-click to reset the view. Press Esc or click elsewhere when you are done. The corner buttons expand a card in place or open the tiling in the Play view with the full set of overlays and controls.
+<desktop-only>Every preview on this page is live: click a card to activate it, then drag to pan, scroll to zoom, hold Shift and scroll to rotate, and right-click to reset the view. Press Esc or click elsewhere when you are done. The corner buttons expand a card in place or open the tiling in the Play view with the full set of overlays and controls.</desktop-only><phone-only>Every preview on this page is live: tap a card to activate it, then drag to pan, pinch to zoom, twist two fingers to rotate, and double-tap to reset the view; its Layers button turns on the orbit, symmetry and domain overlays. Tap Done when you are finished, and the page scrolls again. The corner buttons expand a card in place or open the tiling in the Play view with the full set of overlays and controls.</phone-only>
 
 ## Tilings, vertices, and notation
 

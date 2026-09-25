@@ -13,7 +13,7 @@ export function TheoryArticleNav({ currentSlug }: { currentSlug: string }) {
 		<div className="px-2 pt-4">
 			<Link
 				href="/theory"
-				className="ta-label flex items-center gap-1.5 px-2 text-fg-muted transition-colors hover:text-fg"
+				className="ta-label flex items-center gap-1.5 px-2 text-fg-muted transition-colors hover:text-fg max-md:min-h-11"
 			>
 				<ArrowLeft size={12} />
 				Theory
@@ -31,7 +31,7 @@ export function TheoryArticleNav({ currentSlug }: { currentSlug: string }) {
 								href={`/theory/${a.slug}`}
 								aria-current={active ? "page" : undefined}
 								className={cn(
-									"rounded-control px-2 py-1.5 text-[13px] leading-snug transition-colors",
+									"rounded-control px-2 py-1.5 text-[13px] leading-snug transition-colors max-md:flex max-md:min-h-11 max-md:items-center max-md:text-[15px]",
 									active
 										? "bg-surface-overlay font-medium text-fg"
 										: "text-fg-secondary hover:bg-surface-overlay/60 hover:text-fg",

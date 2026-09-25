@@ -618,10 +618,10 @@ export function CompatGraph({ cells, overlayData }: CompatGraphProps) {
 					<button
 						type="button"
 						onClick={nextTiling}
-						className="flex items-center gap-[0.5em] border border-line bg-surface-overlay/40 px-[0.9em] py-[0.3em] text-[clamp(0.68rem,1.05vh+0.29vw,1.05rem)] text-fg-secondary transition-colors hover:border-line-strong hover:text-fg"
+						className="flex items-center gap-[0.5em] border border-line bg-surface-overlay/40 px-[0.9em] py-[0.3em] text-[clamp(0.68rem,1.05vh+0.29vw,1.05rem)] text-fg-secondary transition-colors hover:border-line-strong hover:text-fg max-md:min-h-11 max-md:text-sm"
 					>
 						another tiling
-						<kbd className="border border-line px-[0.4em] font-mono text-[0.85em] text-fg-muted">
+						<kbd className="border border-line px-[0.4em] font-mono text-[0.85em] text-fg-muted max-md:hidden">
 							R
 						</kbd>
 					</button>

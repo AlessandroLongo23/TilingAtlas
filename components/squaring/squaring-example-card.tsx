@@ -6,6 +6,7 @@ import { ArrowUpRight } from "lucide-react";
 import type { PipelineRecord } from "@/lib/squaring/shelf";
 import { PolyhedronWire } from "./polyhedron-wire";
 import { SquaringFigure } from "./squaring-figure";
+import { useTapHover } from "./stage-board";
 
 // An article figure that shows both ends of the correspondence at once: the solid on the left, the
 // rectangle it produces on the right, and a hover that links them.
@@ -25,7 +26,9 @@ interface SquaringExampleCardProps {
 }
 
 export function SquaringExampleCard({ record, caption }: SquaringExampleCardProps) {
-	const [hovered, setHovered] = useState<string | null>(null);
+	// On a phone a tapped tile stays lit with its edge (a finger lifting is not the pointer leaving).
+	const [hovered, setHoverKey] = useState<string | null>(null);
+	const setHovered = useTapHover(setHoverKey);
 	const s = record.squaring;
 
 	return (
@@ -49,18 +52,18 @@ export function SquaringExampleCard({ record, caption }: SquaringExampleCardProp
 						<span className="font-mono text-[11px] leading-tight text-fg-muted">
 							{s.width} x {s.height} · order {s.order}
 						</span>
-						<span className="font-mono text-[10px] leading-tight text-fg-muted">
+						<span className="font-mono text-[10px] leading-tight text-fg-muted max-md:text-xs">
 							{s.perfect ? "perfect" : `${s.distinct} sizes`} · {s.simple ? "simple" : "compound"}
 						</span>
 						<Link
 							href={`/theory/perfect-rectangles/pipeline?solid=${encodeURIComponent(record.id)}`}
-							className="mt-0.5 flex w-fit items-center gap-1 border border-line px-2 py-1 text-[10px] text-fg-muted transition-colors hover:border-accent hover:text-fg"
+							className="mt-0.5 flex w-fit items-center gap-1 border border-line px-2 py-1 text-[10px] text-fg-muted transition-colors hover:border-accent hover:text-fg max-md:min-h-11 max-md:px-3 max-md:text-[13px]"
 						>
 							All four stages <ArrowUpRight size={11} />
 						</Link>
 					</div>
 				</div>
-				{caption ? <span className="text-[11px] leading-snug text-fg-muted">{caption}</span> : null}
+				{caption ? <span className="text-[11px] leading-snug text-fg-muted max-md:text-[13px]">{caption}</span> : null}
 			</figcaption>
 		</figure>
 	);

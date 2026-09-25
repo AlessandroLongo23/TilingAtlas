@@ -1,10 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import { Shapes, X } from "lucide-react";
 import { PageSidebar } from "@/components/page-sidebar";
 import { TheoryArticleNav } from "@/components/theory-article-nav";
 import { ButtonGroup } from "@/components/ui/button-group";
+import { Button } from "@/components/ui/button";
+import { useMobileSheet } from "@/stores/mobileSheet";
 import { PrototileCard } from "@/components/prototile-card";
 import { allPrototiles, FAMILY_LABELS, type TileFamily } from "@/lib/tiles/prototiles";
 
@@ -14,8 +16,9 @@ import { allPrototiles, FAMILY_LABELS, type TileFamily } from "@/lib/tiles/proto
 // off-grid members stay reachable. Display-only float geometry.
 type FamilyFilter = TileFamily | "all";
 
-const FAMILY_OPTIONS: { value: FamilyFilter; label: string }[] = [
-	{ value: "all", label: "All" },
+const FAMILY_OPTIONS: { value: FamilyFilter; label: string; classes?: string }[] = [
+	// "All" is the one short label in the row; on a phone it keeps a finger-wide cell.
+	{ value: "all", label: "All", classes: "max-md:min-w-11" },
 	{ value: "regular", label: FAMILY_LABELS.regular },
 	{ value: "scaled", label: FAMILY_LABELS.scaled },
 	{ value: "polyomino", label: FAMILY_LABELS.polyomino },
@@ -41,19 +44,37 @@ export function TilesClient() {
 	const tiles = useMemo(() => (family === "all" ? all : all.filter((t) => t.family === family)), [all, family]);
 
 	const showGrid = family === "all" || family === "isotoxal" || family === "isotoxalFull";
-	const gridStyle = { gridTemplateColumns: `repeat(${columns}, 1fr)` };
+	// Through a variable so a phone can hold the grid at two columns whatever the setting says.
+	const gridStyle = { "--cols": columns } as CSSProperties;
 
 	return (
 		<div className="flex flex-1 min-h-0 overflow-hidden">
-			<PageSidebar scrollable={false}>
+			<PageSidebar
+				scrollable={false}
+				mobile="modal"
+				mobileLabel="Filters"
+				mobileBadge={family !== "all" ? 1 : 0}
+				mobileFooter={
+					<div className="flex items-center gap-2">
+						{family !== "all" ? <Button variant="ghost" icon={X} label="Clear" onClick={() => setFamily("all")} /> : null}
+						<Button
+							variant="primary"
+							classes="flex-1"
+							label={`Show ${tiles.length} shapes`}
+							onClick={() => useMobileSheet.getState().setOpen(false)}
+						/>
+					</div>
+				}
+			>
 				{/* Same two-part sidebar as a theory article: the library switcher pinned on top, the page's
-				    own controls scrolling under it. */}
-				<div className="flex h-full min-h-0 flex-col">
-					<div className="shrink-0 border-b border-line-subtle pb-2">
+				    own controls scrolling under it. On a phone the sheet is one scroll, filters first. */}
+				<div className="flex h-full min-h-0 flex-col max-md:overflow-y-auto max-md:overscroll-contain">
+					<div className="shrink-0 border-b border-line-subtle pb-2 max-md:order-2 max-md:border-b-0 max-md:border-t max-md:pb-6">
 						<TheoryArticleNav currentSlug="tiles" />
 					</div>
-					<div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide">
-						<div className="flex items-center justify-between px-3 pt-3">
+					<div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide max-md:order-1 max-md:flex-none max-md:overflow-visible">
+						{/* The sheet's title says Filters and its footer carries Clear. */}
+						<div className="flex items-center justify-between px-3 pt-3 max-md:hidden">
 							<span className="text-xs font-medium text-fg-muted uppercase tracking-wider">Filters</span>
 							{family !== "all" ? (
 								<button
@@ -77,14 +98,15 @@ export function TilesClient() {
 										Isotoxal angle grid
 									</h3>
 									<ButtonGroup variant="chip" options={GRID_OPTIONS} selected={isoGrid} onChange={setIsoGrid} />
-									<p className="text-[11px] text-fg-disabled leading-relaxed">
+									<p className="text-[11px] text-fg-disabled leading-relaxed max-md:text-[13px] max-md:text-fg-muted">
 										15° adds the off-grid members (regular octagon, 105°/135° hexagon) the 30° grid
 										can’t express. Only affects the isotoxal family.
 									</p>
 								</section>
 							) : null}
 
-							<section className="flex flex-col gap-2 border-t border-line-subtle pt-3">
+							{/* A phone always shows two columns, so there is nothing for this to set there. */}
+							<section className="flex flex-col gap-2 border-t border-line-subtle pt-3 max-md:hidden">
 								<h3 className="text-xs font-medium text-fg-muted uppercase tracking-wider">Columns</h3>
 								<ButtonGroup variant="chip" options={COLUMN_OPTIONS} selected={columns} onChange={setColumns} />
 							</section>
@@ -93,7 +115,7 @@ export function TilesClient() {
 				</div>
 			</PageSidebar>
 
-			<main className="relative flex-1 overflow-y-auto p-5">
+			<main className="relative flex-1 overflow-y-auto p-5 max-md:px-4 max-md:pb-24">
 				<div className="flex items-center gap-3 mb-1">
 					<Shapes size={18} className="text-accent" />
 					<h1 className="text-base font-semibold text-fg">Prototiles</h1>
@@ -101,7 +123,7 @@ export function TilesClient() {
 						{tiles.length} shapes
 					</span>
 				</div>
-				<p className="text-xs text-fg-muted max-w-3xl mb-5 leading-relaxed">
+				<p className="text-xs text-fg-muted max-w-3xl mb-5 leading-relaxed max-md:text-[13px]">
 					The individual tile shapes behind the tilings — regular, convex-irregular, star and isotoxal. Star and
 					isotoxal are the two branches of one construction (n points of angle α alternating with β,
 					α + β = 360 − 360/n): reflex β makes a star, convex β makes an isotoxal tile. The <span className="text-fg-secondary">Isotoxal
@@ -109,7 +131,10 @@ export function TilesClient() {
 					walked from convex through β = 180° into a reflex-vertex star. Display-only.
 				</p>
 
-				<div className="grid gap-3" style={gridStyle}>
+				<div
+					className="grid gap-3 [grid-template-columns:repeat(var(--cols),1fr)] max-md:[grid-template-columns:repeat(2,minmax(0,1fr))]"
+					style={gridStyle}
+				>
 					{tiles.map((tile) => (
 						<PrototileCard key={tile.id} tile={tile} />
 					))}

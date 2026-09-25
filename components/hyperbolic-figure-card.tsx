@@ -35,14 +35,14 @@ export function HyperbolicFigureCard({ patchId, patch, caption, label }: Hyperbo
 				<Link
 					href={`/play?source=reference&tiling=${encodeURIComponent(patchId)}`}
 					aria-label={`Open ${patch.config} in Play`}
-					className="absolute right-2 top-2 flex items-center gap-1 border border-line bg-surface-overlay/85 px-2 py-1 text-[10px] text-fg-muted opacity-0 transition-opacity hover:text-fg focus-visible:opacity-100 group-hover:opacity-100 [figure:hover_&]:opacity-100"
+					className="absolute right-2 top-2 flex items-center gap-1 border border-line bg-surface-overlay/85 px-2 py-1 text-[10px] text-fg-muted opacity-0 transition-opacity hover:text-fg focus-visible:opacity-100 group-hover:opacity-100 [figure:hover_&]:opacity-100 max-md:min-h-11 max-md:px-3 max-md:text-xs max-md:opacity-100"
 				>
 					Open in Play <ArrowUpRight size={11} />
 				</Link>
 			</div>
 			<figcaption className="flex flex-col gap-1 border-t border-line px-3 py-2.5">
 				{label ? <span className="font-mono text-xs text-fg">{label}</span> : null}
-				{caption ? <span className="text-[11px] leading-snug text-fg-muted">{caption}</span> : null}
+				{caption ? <span className="text-[11px] leading-snug text-fg-muted max-md:text-[13px]">{caption}</span> : null}
 			</figcaption>
 		</figure>
 	);

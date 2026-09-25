@@ -128,12 +128,38 @@ export function UpdatesClient({
 					</div>
 				</nav>
 
-				<div className="min-w-0 py-12">
-					<header className="mb-10 flex flex-col gap-3">
+				<div className="min-w-0 py-12 max-md:py-6">
+					{/* Phone: the release index is a select pinned to the top of the scroller, following the
+					    release being read like the lg-only index does. */}
+					{entries.length > 0 ? (
+						<div className="sticky top-0 z-20 -mx-4 mb-4 border-b border-line-subtle bg-surface/95 px-4 py-2 backdrop-blur md:hidden">
+							<label className="flex items-center gap-3 text-xs text-fg-muted">
+								<span className="shrink-0">Jump to release</span>
+								<select
+									value={active}
+									onChange={(e) => jumpTo(e.target.value)}
+									className="h-11 min-w-0 flex-1 rounded-control border border-line bg-surface-raised px-2 text-fg"
+								>
+									{months.map((group) => (
+										<optgroup key={group.month} label={group.month}>
+											{group.items.map((entry) => (
+												<option key={entry.version} value={entry.version}>
+													v{entry.version} · {entry.title}
+												</option>
+											))}
+										</optgroup>
+									))}
+								</select>
+							</label>
+						</div>
+					) : null}
+					<header className="mb-10 flex flex-col gap-3 max-md:mb-8">
 						<h1 className="text-[28px] font-semibold leading-tight tracking-[-0.01em] text-fg">Updates</h1>
 						<p className="text-[15px] leading-[1.6] text-fg-secondary">
 							What has changed in the Atlas, newest first. New tilings are shown as they arrived;
-							drag to pan, scroll to zoom, or open any of them where it lives.
+							<span className="max-md:hidden"> drag to pan, scroll to zoom,</span>
+							<span className="md:hidden"> tap one to explore it (drag to pan, pinch to zoom),</span> or open any of
+							them where it lives.
 						</p>
 						{entries.length > 0 ? (
 							<p className="font-mono text-xs text-fg-muted">
@@ -160,13 +186,13 @@ export function UpdatesClient({
 									key={entry.version}
 									id={releaseDomId(entry.version)}
 									data-version={entry.version}
-									className="flex flex-col gap-6 py-12 first:pt-0"
+									className="flex flex-col gap-6 py-12 first:pt-0 max-md:scroll-mt-16 max-md:py-10"
 								>
 									<div className="flex flex-col gap-1.5">
 										<h2 className="text-lg font-semibold tracking-[-0.01em] text-fg">{entry.title}</h2>
 										<div className="flex items-center gap-2 font-mono text-xs text-fg-muted">
 											<span>v{entry.version} · {formatDate(entry.date)}</span>
-											<Badge mono className="bg-transparent ring-1 ring-line ring-inset">{BUMP_LABEL[kind]}</Badge>
+											<Badge mono className="bg-transparent ring-1 ring-line ring-inset max-md:text-xs">{BUMP_LABEL[kind]}</Badge>
 										</div>
 									</div>
 
@@ -223,7 +249,7 @@ export function UpdatesClient({
 																		<Link
 																			key={id}
 																			href={previewHref(id)}
-																			className="inline-flex items-center gap-1 rounded-control px-2 py-1 text-xs font-mono border border-line text-fg-secondary hover:text-fg hover:border-line-strong transition-colors"
+																			className="inline-flex items-center gap-1 rounded-control px-2 py-1 text-xs font-mono border border-line text-fg-secondary hover:text-fg hover:border-line-strong transition-colors max-md:min-h-11 max-md:px-3"
 																		>
 																			{previewLabel(id)}
 																			<ArrowRight size={12} aria-hidden="true" className="shrink-0" />

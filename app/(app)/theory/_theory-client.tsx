@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LayoutGroup, motion, useReducedMotion } from "motion/react";
+import { List } from "lucide-react";
 import type { Components } from "react-markdown";
 import { PageSidebar } from "@/components/page-sidebar";
 import { TheorySidebar, type TheorySection } from "@/components/theory-sidebar";
@@ -12,6 +13,7 @@ import { HyperbolicFigureCard } from "@/components/hyperbolic-figure-card";
 import { SquaringExampleCard } from "@/components/squaring/squaring-example-card";
 import type { PipelineRecord } from "@/lib/squaring/shelf";
 import { PreviewOverlayScope } from "@/lib/hooks/usePreviewOverlays";
+import { useMobileSheet } from "@/stores/mobileSheet";
 import { orbitsFor } from "@/lib/defense/orbitCache";
 import { symmetryFor } from "@/lib/services/symmetryCache";
 import type { ExactCellSource } from "@/lib/services/cellCodecService";
@@ -110,6 +112,19 @@ export function TheoryClient({ content, sections, cells, sources, patches, squar
 	const [activeSection, setActiveSection] = useState("");
 	const progressRef = useRef<HTMLDivElement | null>(null);
 
+	// A contents entry picked from the phone's Contents sheet closes the sheet and scrolls there itself:
+	// picking the same entry twice leaves `targetSection` unchanged, which would otherwise do nothing
+	// the second time. On desktop the sheet is never open and this is plain setTargetSection.
+	const selectSection = useCallback((id: string) => {
+		setTargetSection(id);
+		const sheet = useMobileSheet.getState();
+		if (!sheet.open) return;
+		sheet.setOpen(false);
+		document
+			.querySelector<HTMLElement>(`.markdown-content #${CSS.escape(id)}`)
+			?.scrollIntoView({ behavior: "smooth", block: "start" });
+	}, []);
+
 	const handleScroll = useCallback((scroller: HTMLDivElement) => {
 		const bar = progressRef.current;
 		if (!bar) return;
@@ -186,17 +201,18 @@ export function TheoryClient({ content, sections, cells, sources, patches, squar
 		// on the page, and a focused card answers for itself.
 		<PreviewOverlayScope>
 			<div className="flex h-full min-h-0 w-full overflow-hidden">
-			<PageSidebar scrollable={false}>
-				<div className="flex h-full min-h-0 flex-col">
-					<div className="shrink-0 pb-2 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:scrollbar-hide">
+			<PageSidebar scrollable={false} mobile="modal" mobileLabel="Contents" mobileIcon={List}>
+				{/* Phone: the sheet is one scroll, this article's contents first and the other pages under them. */}
+				<div className="flex h-full min-h-0 flex-col max-md:overflow-y-auto max-md:overscroll-contain">
+					<div className="shrink-0 pb-2 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:scrollbar-hide max-md:order-2 max-md:border-t max-md:border-line-subtle max-md:pb-6">
 						<TheoryArticleNav currentSlug={currentSlug} />
 					</div>
 					{/* Below xl the page contents share the left column; from xl up they move to the right rail. */}
-					<div className="min-h-0 flex-1 border-t border-line-subtle xl:hidden">
+					<div className="min-h-0 flex-1 border-t border-line-subtle xl:hidden max-md:order-1 max-md:flex-none max-md:border-t-0">
 						<TheorySidebar
 							sections={sections}
 							activeSection={activeSection}
-							onSectionSelect={setTargetSection}
+							onSectionSelect={selectSection}
 						/>
 					</div>
 				</div>
@@ -230,7 +246,7 @@ export function TheoryClient({ content, sections, cells, sources, patches, squar
 				<TheorySidebar
 					sections={sections}
 					activeSection={activeSection}
-					onSectionSelect={setTargetSection}
+					onSectionSelect={selectSection}
 				/>
 			</aside>
 			</div>

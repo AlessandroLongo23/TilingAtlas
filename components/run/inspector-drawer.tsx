@@ -44,7 +44,7 @@ function CopyButton({ text }: { text: string }) {
 					() => {},
 				);
 			}}
-			className="shrink-0 p-1 rounded text-fg-muted hover:text-fg hover:bg-surface-overlay/60 transition-colors"
+			className="shrink-0 p-1 rounded text-fg-muted hover:text-fg hover:bg-surface-overlay/60 transition-colors max-md:flex max-md:size-11 max-md:items-center max-md:justify-center"
 			title="Copy"
 		>
 			{copied ? <Check size={13} className="text-success" /> : <Copy size={13} />}
@@ -130,7 +130,7 @@ export function InspectorDrawer({ tiling, onClose }: { tiling: FoundTiling | nul
 								ref={closeRef}
 								type="button"
 								onClick={onClose}
-								className="p-1 rounded-md text-fg-secondary hover:text-fg hover:bg-surface-overlay/70 transition-colors"
+								className="p-1 rounded-md text-fg-secondary hover:text-fg hover:bg-surface-overlay/70 transition-colors max-md:flex max-md:size-11 max-md:items-center max-md:justify-center"
 								title="Close (Esc)"
 							>
 								<X size={16} />

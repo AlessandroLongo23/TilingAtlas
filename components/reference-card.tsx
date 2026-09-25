@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Camera, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { useIsPhone } from "@/lib/hooks/useIsPhone";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
 import { HyperbolicDevelopedThumbnail } from "@/components/hyperbolic-developed-thumbnail";
 import { HyperbolicEdgesThumbnail } from "@/components/hyperbolic-edges-thumbnail";
@@ -17,6 +18,7 @@ import { SphPolyThumbnail } from "@/components/freedraw/sph-poly-thumbnail";
 import { SphStarThumbnail } from "@/components/freedraw/sph-star-thumbnail";
 import { hypSchwarzMeta } from "@/lib/freedraw/schwarz";
 import { hypPolyMeta } from "@/lib/tilings/hyp-poly";
+import { InfoDot } from "@/components/ui/info-dot";
 import { PentagonEdgesThumbnail } from "@/components/pentagon-edges-thumbnail";
 import { IsohedralEdgesThumbnail } from "@/components/isohedral-edges-thumbnail";
 import { renderTilingToDataUrl } from "@/lib/utils/renderTiling";
@@ -61,12 +63,29 @@ const CERT_STYLE: Record<Certification, { label: string; cls: string }> = {
 
 // The card's metadata chip: a small mono tag laid over the thumbnail's top-left corner, so the text
 // area under the image carries only the id and one meta line.
+// A phone card is half the screen wide, so a long id loses its end, and the end is what differs:
+// every card on the composable shelf would read "composable-k1-0…". There the id keeps its last
+// characters and gives up the middle instead ("compo…-k1-000"), cut at a separator where one is near
+// the end. Desktop renders the plain id.
+const ID_TAIL = 8;
+function PhoneId({ id, className, title }: { id: string; className: string; title?: string }) {
+	const sep = Math.max(...["-", "_"].map((c) => id.lastIndexOf(c, id.length - 6)));
+	const cut = sep > 0 && id.length - sep <= 12 ? sep : Math.max(0, id.length - ID_TAIL);
+	return (
+		<p className={cn("hidden min-w-0 max-md:flex", className)} title={title}>
+			<span className="truncate">{id.slice(0, cut)}</span>
+			<span className="shrink-0">{id.slice(cut)}</span>
+		</p>
+	);
+}
+
 const CHIP = "inline-flex items-center rounded bg-surface-raised/90 px-1.5 py-[3px] font-mono text-[10px] font-medium uppercase leading-none tracking-wide text-fg-secondary shadow-sm";
 
 export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceCardProps) {
 	// The variant pager. rawIdx is clamped, not reset, when a filter shrinks the group under the same
 	// card key — the shelf remounts the card (new key) only when the group's identity changes.
 	const [rawIdx, setRawIdx] = useState(0);
+	const isPhone = useIsPhone();
 	const members = group && group.length > 1 ? group : null;
 	const idx = members ? Math.min(rawIdx, members.length - 1) : 0;
 	const tiling = members ? members[idx] : baseTiling;
@@ -125,17 +144,41 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 		});
 	};
 
+	// What the card says only in hover titles (the discoverer above all), gathered for the phone's info
+	// button: a finger has no hover. Desktop keeps the titles and never renders the button.
+	const phoneNotes = [
+		tiling.discoverer ? `Discovered by ${tiling.discoverer}` : null,
+		tiling.certification ? `Completeness: ${tiling.certification}` : null,
+		isConvex
+			? tiling.decomposableOnly
+				? "Decomposable: every composite tile dissects into regular polygons"
+				: "Not decomposable: uses a non-decomposable composite tile"
+			: null,
+		isIsotoxal && tiling.offGrid ? "Off-grid: uses an isotoxal tile not expressible on the ζ₁₂ grid" : null,
+		tiling.preview ? "Preview: from a still-running solve, partial" : null,
+		dof > 0 ? `${dof}-parameter family: ${glyphs.join(", ")} (${dof === 1 ? "a slider" : "sliders"} in Play)` : null,
+		folds.length ? `Star polygons: ${folds.map((n) => `${n}-pointed`).join(", ")}` : null,
+		classLabel
+			? `${tiling.m} distinct vertex configuration(s)${partitionKey ? `, multiplicities ${tiling.partition?.join("·")}` : ""}`
+			: null,
+		tiling.wallpaperGroup ? `Wallpaper group ${tiling.wallpaperGroup} (${tiling.latticeShape})` : null,
+		tiling.note ?? null,
+	].filter((n): n is string => !!n);
+
 	// ‹ n/N › — position within the group's CURRENT members (a narrowing filter can drop variants, so
 	// this is the browse position; the sub-line's "v of V" stays the tiling's global variant identity).
 	const pager = members ? (
-		<span className="flex shrink-0 items-center gap-0.5 text-[10px] tabular-nums text-fg-muted">
+		<span className="flex shrink-0 items-center gap-0.5 text-[10px] tabular-nums text-fg-muted max-md:-my-3 max-md:-mr-3 max-md:gap-0 max-md:text-xs">
 			<button
 				type="button"
 				aria-label="Previous variant"
-				className="cursor-pointer p-0.5 transition-colors hover:text-fg"
-				onClick={() => setRawIdx((idx - 1 + members.length) % members.length)}
+				className="cursor-pointer p-0.5 transition-colors hover:text-fg max-md:flex max-md:size-11 max-md:items-center max-md:justify-center"
+				onClick={(e) => {
+					e.stopPropagation();
+					setRawIdx((idx - 1 + members.length) % members.length);
+				}}
 			>
-				<ChevronLeft size={12} />
+				<ChevronLeft size={12} className="max-md:size-4" />
 			</button>
 			<span>
 				{idx + 1}/{members.length}
@@ -143,10 +186,13 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 			<button
 				type="button"
 				aria-label="Next variant"
-				className="cursor-pointer p-0.5 transition-colors hover:text-fg"
-				onClick={() => setRawIdx((idx + 1) % members.length)}
+				className="cursor-pointer p-0.5 transition-colors hover:text-fg max-md:flex max-md:size-11 max-md:items-center max-md:justify-center"
+				onClick={(e) => {
+					e.stopPropagation();
+					setRawIdx((idx + 1) % members.length);
+				}}
 			>
-				<ChevronRight size={12} />
+				<ChevronRight size={12} className="max-md:size-4" />
 			</button>
 		</span>
 	) : null;
@@ -313,13 +359,27 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 						onClick={handleScreenshot}
 						title="Screenshot"
 						aria-label="Take screenshot"
-						className="absolute top-1.5 right-1.5 p-1.5 rounded-md bg-surface-overlay/80 border border-line-strong text-fg-muted hover:text-fg hover:bg-surface-overlay opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+						className="absolute top-1.5 right-1.5 p-1.5 rounded-md bg-surface-overlay/80 border border-line-strong text-fg-muted hover:text-fg hover:bg-surface-overlay opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity max-md:opacity-100"
 					>
 						<Camera size={13} />
 					</button>
 				) : null}
 			</div>
-			<div className="flex flex-col gap-1 px-3 py-2.5 cursor-default">
+			{/* On a phone the whole card is one target: a finger that lands on the name expects the tiling,
+			    and a dead half-card reads as broken. The info dot and the variant pager keep their own taps. */}
+			<div
+				className="relative flex flex-col gap-1 px-3 py-2.5 cursor-default max-md:pr-8"
+				onClick={isPhone && onClick ? () => onClick(tiling) : undefined}
+			>
+				{phoneNotes.length ? (
+					<span className="absolute right-2.5 top-3 md:hidden" onClick={(e) => e.stopPropagation()}>
+						<InfoDot side="top" label="About this tiling">
+							{phoneNotes.map((n) => (
+								<p key={n}>{n}</p>
+							))}
+						</InfoDot>
+					</span>
+				) : null}
 				{isHyperbolic ? (
 					// User-facing face: the vertex configuration is the headline, geometry the muted sub-line.
 					// Everything technical (valence, edge length ℓ, engine provenance, Poincaré-disk model, the
@@ -352,17 +412,19 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 							k={tiling.k}{" "}
 							{isFreedraw ? freedrawKNoun(gridOf(tiling.freedraw!)) : tiling.colors ? "colored vertices" : "vertex orbits"}
 						</p>
-						<p className="text-[10px] text-fg-disabled font-mono truncate" title={tiling.id}>
+						<p className="text-[10px] text-fg-disabled font-mono truncate max-md:hidden" title={tiling.id}>
 							{tiling.id}
 						</p>
+						<PhoneId id={tiling.id} title={tiling.id} className="text-xs font-mono text-fg-muted" />
 					</>
 				) : (
 					<>
 						{/* The id is what tells two cards on one shelf apart, so it gets the full width; the
 						    discoverer is on hover. */}
-						<p className="truncate font-mono text-[13px] font-medium leading-snug text-fg" title={`${tiling.id} · discovered by ${tiling.discoverer}`}>
+						<p className="truncate font-mono text-[13px] font-medium leading-snug text-fg max-md:hidden" title={`${tiling.id} · discovered by ${tiling.discoverer}`}>
 							{tiling.id}
 						</p>
+						<PhoneId id={tiling.id} className="font-mono text-[13px] font-medium leading-snug text-fg" />
 						<p className="truncate text-xs text-fg-muted leading-tight" title={tiling.note ?? `{${tiling.family}}`}>
 							{/* The class long label names the shelf; where a class holds more than one PALETTE, the
 							    palette is what the card should say — "Multiple edge lengths" is true of both tile

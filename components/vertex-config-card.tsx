@@ -97,7 +97,7 @@ export function VertexConfigCard({ config, unitsAcross }: { config: VertexConfig
 					onClick={handleScreenshot}
 					title="Screenshot"
 					aria-label="Take screenshot"
-					className="absolute top-1.5 right-1.5 p-1.5 rounded-md bg-surface-overlay/80 border border-line-strong text-fg-muted hover:text-fg hover:bg-surface-overlay opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+					className="absolute top-1.5 right-1.5 p-1.5 rounded-md bg-surface-overlay/80 border border-line-strong text-fg-muted hover:text-fg hover:bg-surface-overlay opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity max-md:opacity-100"
 				>
 					<Camera size={13} />
 				</button>

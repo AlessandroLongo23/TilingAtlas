@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { PipelineRecord } from "@/lib/squaring/shelf";
-import { FigureControls } from "./stage-board";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { EdgeHitLine, FIGURE_BUTTON, FigureControls } from "./stage-board";
 import { edgeKey, project, voltageColor, ratio } from "./stage-shared";
 
 // Stage 1: the solid itself, as a rotatable wireframe.
@@ -47,6 +48,14 @@ export function PolyhedronWire({ record, size = SIZE, hovered, onHover, onPickBa
 	// A rotate-drag ends with a pointerup over some edge, which would otherwise read as a click on it.
 	// Only a press that never moved counts as picking an edge.
 	const moved = useRef(false);
+	// How far a press may wander and still count as a click: a finger jitters more than a mouse.
+	const slop = useRef(2);
+	// A phone gives vertical swipes to the page, so the solid's tilt, the drag's up-down half, gets two
+	// buttons there. A step of about 17 degrees, inside the same limits the drag keeps.
+	const tilt = (d: number) => {
+		setSpinning(false);
+		setPitch((p) => Math.max(-1.4, Math.min(1.4, p + d * 0.3)));
+	};
 
 	useEffect(() => {
 		if (!spinning) return;
@@ -81,10 +90,13 @@ export function PolyhedronWire({ record, size = SIZE, hovered, onHover, onPickBa
 		<div className="flex h-full min-h-0 w-full flex-col gap-2">
 			<svg
 				viewBox={`0 0 ${size} ${size}`}
-				className="min-h-0 w-full flex-1 cursor-grab touch-none select-none active:cursor-grabbing"
+				// Phone: vertical swipes scroll the page (the figure is most of a screen wide), sideways drags
+				// still turn the solid.
+				className="min-h-0 w-full flex-1 cursor-grab touch-none select-none active:cursor-grabbing max-md:touch-pan-y"
 				onPointerDown={(e) => {
 					drag.current = { x: e.clientX, y: e.clientY };
 					moved.current = false;
+					slop.current = e.pointerType === "mouse" ? 2 : 8;
 					setSpinning(false);
 					(e.target as Element).setPointerCapture?.(e.pointerId);
 				}}
@@ -92,12 +104,15 @@ export function PolyhedronWire({ record, size = SIZE, hovered, onHover, onPickBa
 					if (!drag.current) return;
 					const dx = e.clientX - drag.current.x;
 					const dy = e.clientY - drag.current.y;
-					if (Math.abs(dx) + Math.abs(dy) > 2) moved.current = true;
+					if (Math.abs(dx) + Math.abs(dy) > slop.current) moved.current = true;
 					setYaw((y) => y + dx * 0.01);
 					setPitch((p) => Math.max(-1.4, Math.min(1.4, p + dy * 0.01)));
 					drag.current = { x: e.clientX, y: e.clientY };
 				}}
 				onPointerUp={() => {
+					drag.current = null;
+				}}
+				onPointerCancel={() => {
 					drag.current = null;
 				}}
 				onPointerLeave={() => {
@@ -115,9 +130,12 @@ export function PolyhedronWire({ record, size = SIZE, hovered, onHover, onPickBa
 					const q = at(b);
 					// Depth runs about -1..1 on the unit sphere; map it to a visibility weight.
 					const front = (depth + 1) / 2;
+					const pick = () => {
+						if (!moved.current && !isBattery) onPickBattery?.([Math.min(a, b), Math.max(a, b)]);
+					};
 					return (
+						<g key={key}>
 						<line
-							key={key}
 							x1={p.x}
 							y1={p.y}
 							x2={q.x}
@@ -134,11 +152,11 @@ export function PolyhedronWire({ record, size = SIZE, hovered, onHover, onPickBa
 							strokeDasharray={isBattery ? "7 4" : undefined}
 							strokeLinecap="round"
 							onPointerEnter={() => onHover(key)}
-							onClick={() => {
-								if (!moved.current && !isBattery) onPickBattery?.([Math.min(a, b), Math.max(a, b)]);
-							}}
+							onClick={pick}
 							style={{ cursor: isBattery ? "default" : "pointer" }}
 						/>
+						<EdgeHitLine p={p} q={q} width={18 * (size / SIZE)} onEnter={() => onHover(key)} onPick={pick} />
+						</g>
 					);
 				})}
 				{record.vertices.map((_, i) => {
@@ -160,14 +178,19 @@ export function PolyhedronWire({ record, size = SIZE, hovered, onHover, onPickBa
 			</svg>
 			{compact ? null : (
 				<FigureControls>
-					<span className="truncate font-mono text-[10px] text-fg-muted">
-						drag to rotate · click an edge to make it the battery
+					<span className="truncate font-mono text-[10px] text-fg-muted max-md:whitespace-normal max-md:text-xs">
+						<span className="max-md:hidden">drag to rotate · click an edge to make it the battery</span>
+						<span className="md:hidden">drag sideways to turn, tilt with the arrows · tap an edge to inspect it</span>
 					</span>
-					<button
-						type="button"
-						onClick={() => setSpinning((s) => !s)}
-						className="border border-line px-2 py-0.5 text-[10px] text-fg-muted transition-colors hover:text-fg"
-					>
+					<span className="hidden shrink-0 max-md:flex">
+						<button type="button" onClick={() => tilt(-1)} aria-label="Tilt the solid up" className="flex size-11 items-center justify-center text-fg-muted hover:text-fg">
+							<ChevronUp size={18} />
+						</button>
+						<button type="button" onClick={() => tilt(1)} aria-label="Tilt the solid down" className="flex size-11 items-center justify-center text-fg-muted hover:text-fg">
+							<ChevronDown size={18} />
+						</button>
+					</span>
+					<button type="button" onClick={() => setSpinning((s) => !s)} className={FIGURE_BUTTON}>
 						{spinning ? "pause" : "spin"}
 					</button>
 				</FigureControls>

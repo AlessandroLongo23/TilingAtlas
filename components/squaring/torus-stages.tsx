@@ -18,8 +18,9 @@ import { TorusTilingFigure } from "./torus-tiling-figure";
 import { SquaresSmithDiagram } from "./smith-diagram-squares";
 import { SquaredTorusFigure } from "./squared-torus-figure";
 import { SqDomainFigure } from "./sq-domain-figure";
-import { RailPanel, StageBoard } from "./stage-board";
+import { Fact, InspectBar, RailPanel, StageBoard, useTapHover } from "./stage-board";
 import { num, torusFills } from "./torus-shared";
+import { RangeInput } from "@/components/ui/range-input";
 
 // One periodic tiling becoming one squared torus, in the same four stages as the polyhedron page.
 //
@@ -50,7 +51,8 @@ export function TorusStages({ entry }: { entry: TorusIndexEntry }) {
 	const [, bumpAfterFetch] = useState(0);
 	const [error, setError] = useState<string | null>(null);
 	const [cls, setCls] = useState<[number, number]>(entry.bestClass);
-	const [hovered, setHovered] = useState<number | null>(null);
+	const [hovered, setHoverKey] = useState<number | null>(null);
+	const setHovered = useTapHover(setHoverKey);
 	const record = cached;
 
 	useEffect(() => {
@@ -151,16 +153,20 @@ export function TorusStages({ entry }: { entry: TorusIndexEntry }) {
 
 	const squaring = solved?.squaring ?? null;
 
-	if (squaring === null)
-		return (
-			<p className="border border-line bg-surface-overlay/30 p-4 text-sm text-fg-muted">
-				No squaring at ({cls[0]}, {cls[1]}): {solved?.failure ?? "the class is degenerate"}. The zero class has no
-				harmonic form, and classes where the form vanishes on an edge drop to a lower genus.
-			</p>
-		);
-
+	// A degenerate class (the zero class, or one where the form vanishes on an edge) has no squaring, but
+	// the rail stays: the steppers reach (0, 0), and a message that replaced the whole board took the
+	// reset button with it, leaving no way back short of picking another tiling.
 	return (
+		<>
 		<StageBoard
+			empty={
+				squaring === null ? (
+					<p className="border border-line bg-surface-overlay/30 p-4 text-sm text-fg-muted">
+						No squaring at ({cls[0]}, {cls[1]}): {solved?.failure ?? "the class is degenerate"}. The zero class has
+						no harmonic form, and classes where the form vanishes on an edge drop to a lower genus.
+					</p>
+				) : undefined
+			}
 			control={
 				<RailPanel
 						label="control"
@@ -178,7 +184,7 @@ export function TorusStages({ entry }: { entry: TorusIndexEntry }) {
 							<button
 								type="button"
 								onClick={() => setCls(entry.bestClass)}
-								className="border border-line px-1.5 py-0.5 text-[10px] text-fg-muted transition-colors hover:text-fg"
+								className="border border-line px-1.5 py-0.5 text-[10px] text-fg-muted transition-colors hover:text-fg max-md:min-h-11 max-md:px-3 max-md:text-xs"
 							>
 								reset
 							</button>
@@ -186,7 +192,7 @@ export function TorusStages({ entry }: { entry: TorusIndexEntry }) {
 						{/* Always rendered, at a fixed height. Showing it only off the lattice made the panel
 						    grow and shrink under the cursor mid-drag, which moved the disk out from under the
 						    pointer: the control fought the hand holding it. */}
-						<p className="mt-1 h-3 overflow-hidden whitespace-nowrap font-mono text-[9px] leading-3 text-fg-muted">
+						<p className="mt-1 h-3 overflow-hidden whitespace-nowrap font-mono text-[9px] leading-3 text-fg-muted max-md:h-4 max-md:text-xs max-md:leading-4">
 							{exact ? "exact class · integer sides" : "off the integer lattice · sides irrational"}
 						</p>
 						{domains ? (
@@ -205,7 +211,7 @@ export function TorusStages({ entry }: { entry: TorusIndexEntry }) {
 										fills={fills}
 									/>
 								</div>
-								<p className="h-8 overflow-hidden text-[10px] leading-snug text-fg-muted">
+								<p className="h-8 overflow-hidden text-[10px] leading-snug text-fg-muted max-md:h-auto max-md:min-h-8 max-md:text-xs">
 									{litWall >= 0 ? (
 										<>
 											The {domains.walls[litWall].edges.length === 1 ? "square" : "squares"} lit in the stages
@@ -218,11 +224,12 @@ export function TorusStages({ entry }: { entry: TorusIndexEntry }) {
 								</p>
 							</>
 						) : null}
-						<div className="mt-1 flex flex-wrap items-end gap-4">
+						<div className="mt-1 flex flex-wrap items-end gap-4 max-md:gap-2">
 							<Stepper label="m" value={step[0]} min={-LIMIT} max={LIMIT} onChange={(v) => setCls([v, step[1]])} />
 							<Stepper label="n" value={step[1]} min={-LIMIT} max={LIMIT} onChange={(v) => setCls([step[0], v])} />
 						</div>
-						<dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 border-t border-line pt-2.5 font-mono text-[10px]">
+						{squaring ? (
+						<dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 border-t border-line pt-2.5 font-mono text-[10px] max-md:text-xs">
 							<Fact label="order" value={String(squaring.order)} />
 							<Fact
 								label="distinct sizes"
@@ -245,9 +252,10 @@ export function TorusStages({ entry }: { entry: TorusIndexEntry }) {
 							<Fact label="quotient" value={`V ${map.V} · E ${map.E} · F ${map.F}`} />
 							<Fact label="torus area" value={`${squaring.approx ? "≈ " : ""}${squaring.covolume}`} />
 						</dl>
+						) : null}
 				</RailPanel>
 			}
-			stages={[
+			stages={squaring === null ? [] : [
 				{
 					...STAGES[0],
 					node: (
@@ -285,6 +293,15 @@ export function TorusStages({ entry }: { entry: TorusIndexEntry }) {
 				},
 			]}
 		/>
+		{hovered !== null && squaring ? (
+			<InspectBar onClear={() => setHoverKey(null)}>
+				<span className="truncate">
+					<span className="font-mono">edge {hovered}</span>
+					<span className="text-fg-muted"> · lit in every stage{litWall >= 0 ? " and on the dial" : ""}</span>
+				</span>
+			</InspectBar>
+		) : null}
+		</>
 	);
 }
 
@@ -302,32 +319,32 @@ function Stepper({
 	onChange: (v: number) => void;
 }) {
 	return (
-		<div className="flex flex-col gap-1">
-			<span className="text-[9px] uppercase tracking-wide text-fg-muted">{label}</span>
+		<div className="flex flex-col gap-1 max-md:w-full">
+			<span className="text-[9px] uppercase tracking-wide text-fg-muted max-md:text-xs">{label}</span>
 			<div className="flex items-center gap-2">
 				<button
 					type="button"
 					aria-label={`decrease ${label}`}
 					onClick={() => onChange(Math.max(min, value - 1))}
-					className="h-5 w-5 border border-line text-[11px] leading-none text-fg-muted transition-colors hover:text-fg"
+					className="h-5 w-5 border border-line text-[11px] leading-none text-fg-muted transition-colors hover:text-fg max-md:size-11 max-md:text-base"
 				>
 					−
 				</button>
-				<input
-					type="range"
+				<RangeInput
 					min={min}
 					max={max}
 					step={1}
 					value={value}
-					onChange={(e) => onChange(Number(e.target.value))}
-					className="w-16 accent-fg"
+					onChange={onChange}
+					native="w-16 accent-fg max-md:h-11 max-md:min-w-0 max-md:flex-1"
+					className="min-w-0 flex-1"
 					aria-label={label}
 				/>
 				<button
 					type="button"
 					aria-label={`increase ${label}`}
 					onClick={() => onChange(Math.min(max, value + 1))}
-					className="h-5 w-5 border border-line text-[11px] leading-none text-fg-muted transition-colors hover:text-fg"
+					className="h-5 w-5 border border-line text-[11px] leading-none text-fg-muted transition-colors hover:text-fg max-md:size-11 max-md:text-base"
 				>
 					+
 				</button>
@@ -336,11 +353,3 @@ function Stepper({
 	);
 }
 
-function Fact({ label, value }: { label: string; value: string }) {
-	return (
-		<div className="flex flex-col">
-			<dt className="text-[9px] uppercase tracking-wide text-fg-muted">{label}</dt>
-			<dd className="break-all text-fg">{value}</dd>
-		</div>
-	);
-}

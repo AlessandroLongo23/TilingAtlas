@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Check, Library, Link2, Loader2, X } from "lucide-react";
+import { Check, Library, Link2, Loader2, SlidersHorizontal, X } from "lucide-react";
 import { PageSidebar } from "@/components/page-sidebar";
+import { SheetBadge } from "@/components/ui/bottom-sheet";
 import { IntervalSlider } from "@/components/ui/interval-slider";
 import { OptionWall } from "@/components/ui/option-wall";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,8 @@ import { Pagination } from "@/components/ui/pagination";
 import { RangeInput } from "@/components/ui/range-input";
 import { Switch } from "@/components/ui/switch";
 import { ReferenceCard } from "@/components/reference-card";
+import { useMobileSheet } from "@/stores/mobileSheet";
+import { PHONE_QUERY } from "@/lib/hooks/useIsPhone";
 import { cn } from "@/lib/utils/cn";
 import type { ColorsGrid } from "@/lib/colors/pattern";
 import type { SphStarKind } from "@/lib/tilings/sph-star";
@@ -556,7 +559,7 @@ function RowList<T extends string>({
 					title={o.label}
 					className={cn(
 						o.label.length > 18 && "col-span-2",
-						"ta-tab h-7 cursor-pointer truncate px-2 text-left text-[13px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
+						"ta-tab h-7 cursor-pointer truncate px-2 text-left text-[13px] transition-colors max-md:h-11 max-md:text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
 						selected === o.value ? "font-medium text-fg" : "text-fg-secondary hover:text-fg",
 					)}
 				>
@@ -587,7 +590,7 @@ function ChipRow<T extends string | number>({
 					aria-pressed={isOn(o.value)}
 					onClick={() => onChange(o.value)}
 					className={cn(
-						"h-7 min-w-8 cursor-pointer rounded-control border px-2 text-xs font-medium tabular-nums transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
+						"h-7 min-w-8 cursor-pointer rounded-control border px-2 text-xs font-medium tabular-nums transition-colors max-md:h-11 max-md:min-w-11 max-md:text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
 						isOn(o.value)
 							? "border-fg bg-fg text-fg-inverse"
 							: "border-line-subtle text-fg-secondary hover:border-line-strong hover:text-fg",
@@ -658,6 +661,8 @@ function FilterGroup({
 			<h3 className="ta-label px-3.5 pt-4 pb-2" title={note}>
 				{title}
 				{summary ? <span className={cn(META, "ml-1.5 normal-case tracking-normal")}>{summary}</span> : null}
+				{/* A finger has no hover, so on a phone the gloss is printed after the heading instead. */}
+				{note ? <span className={cn(META, "ml-1.5 normal-case tracking-normal md:hidden")}>· {note}</span> : null}
 			</h3>
 			<div className="flex flex-col gap-2 px-3.5">{children}</div>
 		</section>
@@ -679,6 +684,17 @@ export function ReferenceShelf() {
 	const [currentPage, setCurrentPage] = useState(initialView.page);
 	const [groupVariants, setGroupVariants] = useState(initialView.groupVariants);
 	const [copied, setCopied] = useState(false);
+	// Phone only: whether the header's Filters button is on screen (the floating pill stands in when not).
+	const mainRef = useRef<HTMLElement | null>(null);
+	const headerTriggerRef = useRef<HTMLButtonElement | null>(null);
+	const [headerTriggerVisible, setHeaderTriggerVisible] = useState(true);
+	useEffect(() => {
+		const el = headerTriggerRef.current;
+		if (!el) return;
+		const io = new IntersectionObserver(([e]) => setHeaderTriggerVisible(e.isIntersecting), { root: mainRef.current });
+		io.observe(el);
+		return () => io.disconnect();
+	}, []);
 	const copyResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const [loadedShards, setLoadedShards] = useState<Set<number>>(new Set());
 	const [loadingShards, setLoadingShards] = useState<Set<number>>(new Set());
@@ -2057,13 +2073,51 @@ export function ReferenceShelf() {
 		[displayGroups, currentPage, pageSize],
 	);
 
-	const gridStyle = { gridTemplateColumns: `repeat(${gridColumns}, 1fr)` };
+	// The column count rides in a variable so a phone can overrule it from CSS: two columns there
+	// whatever `cols` says, while the URL keeps the desktop choice untouched.
+	const gridStyle = { "--cols": gridColumns } as CSSProperties;
+	const clearFilters = () => setFilters({ geometry: "euclidean" });
+	const resultCount = filtered.length;
+	// "Show N results" closes the phone sheet onto page 1 of the new result set, from its top.
+	const showResults = () => {
+		useMobileSheet.getState().setOpen(false);
+		mainRef.current?.scrollTo({ top: 0 });
+	};
+	// The pager sits under the grid, so on a phone, where a page of cards is several screens tall, a new
+	// page would open at its own bottom. There it starts from the top; a desktop keeps its scroll as before.
+	const changePage = (page: number) => {
+		setCurrentPage(page);
+		if (window.matchMedia(PHONE_QUERY).matches) mainRef.current?.scrollTo({ top: 0 });
+	};
 
 	return (
 		<div className="flex flex-1 min-h-0 overflow-hidden">
-			<PageSidebar>
+			<PageSidebar
+				mobile="modal"
+				mobileLabel="Filters"
+				mobileBadge={activeFilterCount}
+				mobileTrigger={!headerTriggerVisible}
+				mobileFooter={
+					<div className="flex items-center gap-2">
+						{activeFilterCount > 0 ? (
+							<Button variant="ghost" icon={X} label={`Clear (${activeFilterCount})`} onClick={clearFilters} />
+						) : null}
+						<Button
+							variant="primary"
+							classes="flex-1"
+							onClick={showResults}
+							label={
+								tilings === null
+									? "Show results"
+									: `Show ${resultCount.toLocaleString("en-US")} result${resultCount === 1 ? "" : "s"}`
+							}
+						/>
+					</div>
+				}
+			>
 				<div className="flex flex-col gap-px pb-12 text-sm">
-					<div className="flex h-11 items-center justify-between px-3.5">
+					{/* On a phone the sheet's own title says "Filters" and its footer carries Clear. */}
+					<div className="flex h-11 items-center justify-between px-3.5 max-md:hidden">
 						<span className="text-[13px] font-semibold text-fg">Filters</span>
 						{activeFilterCount > 0 ? (
 							<button
@@ -2079,7 +2133,7 @@ export function ReferenceShelf() {
 						value={filters.query ?? ""}
 						onChange={(e) => setFilters({ ...filters, query: e.target.value })}
 						placeholder="Search id or family…"
-						className="mx-3.5 h-8 rounded-control border border-line bg-surface-raised px-2.5 text-[13px] text-fg shadow-sm placeholder:text-fg-muted focus:outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/40"
+						className="mx-3.5 h-8 max-md:mt-3 max-md:h-11 rounded-control border border-line bg-surface-raised px-2.5 text-[13px] text-fg shadow-sm placeholder:text-fg-muted focus:outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/40"
 					/>
 
 					<FilterGroup title="Geometry" summary={isEuclidean ? null : GEOMETRY_LABEL[geometry]}>
@@ -2549,7 +2603,7 @@ export function ReferenceShelf() {
 								<button
 									type="button"
 									onClick={clearPolygons}
-									className="ta-tab ta-wall-cell min-h-8 px-3 py-1.5 text-left text-[11px] text-fg-muted hover:text-fg"
+									className="ta-tab ta-wall-cell min-h-8 px-3 py-1.5 text-left text-[11px] text-fg-muted hover:text-fg max-md:text-[13px]"
 								>
 									Clear polygon selection
 								</button>
@@ -2675,9 +2729,9 @@ export function ReferenceShelf() {
 			{/* `relative` makes this scroll pane the containing block for the Pagination's absolutely-
 			    positioned sr-only <label>; without it the label anchors to <html> and stretches the
 			    document ~1000px below the app shell (a phantom black scroll region). */}
-			<main className="relative flex-1 overflow-y-auto p-5">
-				<div className="mb-4 flex min-h-10 flex-wrap items-center gap-x-4 gap-y-2">
-					<h1 className="flex items-baseline gap-2 text-lg font-semibold tracking-tight text-fg">
+			<main ref={mainRef} className="relative flex-1 overflow-y-auto p-5 max-md:px-4 max-md:pb-24">
+				<div className="mb-4 flex min-h-10 flex-wrap items-center gap-x-4 gap-y-2 max-md:gap-y-3">
+					<h1 className="flex items-baseline gap-2 text-lg font-semibold tracking-tight text-fg max-md:w-full max-md:flex-wrap max-md:gap-y-0">
 						Tiling Library
 						<span className="font-mono text-xs font-normal tracking-normal text-fg-muted tabular-nums">
 							{filtered.length.toLocaleString("en-US")} tilings
@@ -2698,7 +2752,19 @@ export function ReferenceShelf() {
 						</span>
 					) : null}
 
-					<div className="ml-auto flex items-center gap-4">
+					<div className="ml-auto flex items-center gap-4 max-md:ml-0 max-md:w-full max-md:flex-wrap max-md:gap-2">
+						{/* The phone's way into the filter sheet. While it is on screen the floating pill stays
+						    away; once it scrolls off, the pill takes over. */}
+						<button
+							ref={headerTriggerRef}
+							type="button"
+							onClick={() => useMobileSheet.getState().setOpen(true)}
+							className="hidden h-11 items-center gap-2 rounded-control bg-fg px-4 text-sm font-medium text-fg-inverse max-md:inline-flex"
+						>
+							<SlidersHorizontal size={16} aria-hidden />
+							Filters
+							<SheetBadge count={activeFilterCount} />
+						</button>
 						{/* Group-variants toggle — hyperbolic only, where one vertex configuration carries up to
 						    hundreds of tilings; the card then pages through them in place. */}
 						{geometry === "hyperbolic" ? (
@@ -2718,9 +2784,12 @@ export function ReferenceShelf() {
 							onClick={copyLink}
 							title="Copy a link to this filtered view"
 							icon={copied ? Check : Link2}
-							label={copied ? "Copied" : "Copy link"}
+							aria-label={copied ? "Copied" : "Copy link"}
+							classes="max-md:min-w-11"
+							label={<span className="max-md:sr-only">{copied ? "Copied" : "Copy link"}</span>}
 						/>
-						<label className="flex items-center gap-2 text-xs text-fg-muted">
+						{/* A phone always shows two columns, so the slider has nothing to set there. */}
+						<label className="flex items-center gap-2 text-xs text-fg-muted max-md:hidden">
 							Columns
 							<RangeInput
 								min={COLUMN_PRESETS[0]}
@@ -2736,15 +2805,15 @@ export function ReferenceShelf() {
 						<div
 							role="group"
 							aria-label="Items per page"
-							className="flex items-center gap-2 text-xs text-fg-muted"
+							className="flex items-center gap-2 text-xs text-fg-muted max-md:ml-auto"
 						>
-							<span>Per page</span>
+							<span className="max-[419px]:sr-only">Per page</span>
 							<OptionWall
 								columns={PAGE_SIZE_OPTIONS.length}
 								options={PAGE_SIZE_OPTIONS.map((n) => ({ value: n, label: n }))}
 								selected={pageSize}
 								onChange={setPageSize}
-								classes="w-28 tabular-nums"
+								classes="w-28 tabular-nums max-md:w-32"
 							/>
 						</div>
 					</div>
@@ -2765,7 +2834,7 @@ export function ReferenceShelf() {
 						<Library size={40} className="text-fg-disabled mb-4" />
 						<p className="text-fg-muted font-medium">No tilings match the current filters.</p>
 						{activeFilterCount > 0 ? (
-							<button onClick={() => setFilters({ geometry: "euclidean" })} className="text-accent hover:underline text-sm mt-1">
+							<button onClick={clearFilters} className="text-accent hover:underline text-sm mt-1 max-md:min-h-11">
 								Clear filters
 							</button>
 						) : null}
@@ -2773,7 +2842,10 @@ export function ReferenceShelf() {
 				) : (
 					<>
 						{/* One pager, under the grid: the header count already gives the total. */}
-						<div className="ta-lanes grid !gap-3" style={gridStyle}>
+						<div
+							className="ta-lanes grid !gap-3 [grid-template-columns:repeat(var(--cols),1fr)] max-md:[grid-template-columns:repeat(2,minmax(0,1fr))]"
+							style={gridStyle}
+						>
 							{paginated.map((g) => (
 								<ReferenceCard
 									key={g.key}
@@ -2788,7 +2860,7 @@ export function ReferenceShelf() {
 								totalItems={displayGroups.length}
 								pageSize={pageSize}
 								currentPage={currentPage}
-								onPageChange={setCurrentPage}
+								onPageChange={changePage}
 							/>
 						</div>
 					</>

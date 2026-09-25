@@ -33,13 +33,14 @@ export default function TheoryIndexPage() {
 									className="group flex flex-col rounded-surface bg-surface-raised p-5 ring-1 ring-line-subtle transition-shadow hover:ring-line"
 								>
 									<div className="flex items-center justify-between gap-2">
-										<h3 className="truncate text-base font-semibold leading-snug text-fg" title={a.title}>{a.title}</h3>
+										<h3 className="truncate text-base font-semibold leading-snug text-fg max-md:whitespace-normal" title={a.title}>{a.title}</h3>
 										<ArrowRight
 											size={16}
 											className="shrink-0 text-fg-muted opacity-60 transition group-hover:translate-x-0.5 group-hover:text-accent group-hover:opacity-100"
 										/>
 									</div>
-									<p className="mt-2 line-clamp-2 text-sm leading-relaxed text-fg-muted">{a.blurb}</p>
+									{/* One column on a phone, so the whole blurb fits; the clamp only evens out the desktop pairs. */}
+									<p className="mt-2 line-clamp-2 text-sm leading-relaxed text-fg-muted max-md:line-clamp-none">{a.blurb}</p>
 								</Link>
 							))}
 						</div>

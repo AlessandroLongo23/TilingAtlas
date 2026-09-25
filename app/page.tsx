@@ -3,6 +3,7 @@ import { loadLandingData } from "@/lib/services/landingData";
 import { HeroRotator } from "@/components/landing/hero-rotator";
 import { HeroSpecimenProvider } from "@/components/landing/hero-specimen";
 import { LandingButtons } from "@/components/landing/landing-buttons";
+import { LandingPhoneNav } from "@/components/landing/landing-phone-nav";
 import { CollectionCard } from "@/components/landing/collection-card";
 import { CompletenessBadge } from "@/components/landing/completeness-badge";
 import { LibraryMosaic } from "@/components/landing/library-mosaic";
@@ -37,6 +38,7 @@ export default async function HomePage() {
 
 	return (
 		<main className="flex-1 bg-surface text-fg">
+			<LandingPhoneNav />
 			{/* One column; sections are separated by 64px of space, not by rules. The grid below sits on
 			    the same text edge as the headings. */}
 			<div className="mx-auto max-w-7xl px-6 md:px-12">
@@ -46,7 +48,7 @@ export default async function HomePage() {
 				<HeroSpecimenProvider initialId={data.heroPool[0]?.id ?? null}>
 					<div className="flex flex-col lg:pt-10">
 						<p className="ta-label">
-							<Link href="/library" className="hover:text-fg transition-colors">
+							<Link href="/library" className="hover:text-fg transition-colors max-md:inline-flex max-md:min-h-11 max-md:items-center">
 								{fmt(counts.total)} tilings
 							</Link>
 						</p>
@@ -73,7 +75,7 @@ export default async function HomePage() {
 					<Link
 						key={hash}
 						href={`/theory/uniform-tilings#${hash}`}
-						className="inline-flex h-7 items-center px-2.5 rounded-control text-fg hover:bg-surface-overlay hover:text-accent transition-colors"
+						className="inline-flex h-7 items-center px-2.5 rounded-control text-fg hover:bg-surface-overlay hover:text-accent transition-colors max-md:h-11 max-md:text-sm"
 					>
 						{label}
 					</Link>
@@ -89,7 +91,7 @@ export default async function HomePage() {
 			<section className="mt-10">
 				<p className="ta-label">Nine collections</p>
 				<h2 className="mt-2 mb-6 text-[28px] leading-tight font-semibold tracking-[-0.02em]">The collections</h2>
-				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 auto-rows-[24rem] sm:auto-rows-[22rem] lg:auto-rows-[23rem] gap-4">
+				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 auto-rows-[24rem] sm:auto-rows-[22rem] lg:auto-rows-[23rem] gap-4 max-sm:auto-rows-[21rem]">
 					{/* The four live cells (Play, Hyperbolic, Spherical, Aperiodic) render real canvases
 					    instead of baked stills, so their media takes the drag and the caption below carries
 					    the link — see CollectionCard's `interactive`. */}
@@ -206,7 +208,7 @@ export default async function HomePage() {
 							timeZone: "UTC",
 						})}{" "}
 						· v{CURRENT_VERSION} —{" "}
-						<Link href="/updates" className="text-accent hover:underline">
+						<Link href="/updates" className="text-accent hover:underline max-md:inline-flex max-md:min-h-11 max-md:items-center">
 							what&rsquo;s new
 						</Link>
 					</p>
@@ -219,7 +221,7 @@ export default async function HomePage() {
 						href={DISCORD_INVITE}
 						target="_blank"
 						rel="noreferrer"
-						className="mt-1 inline-flex w-fit items-center gap-1.5 text-fg-secondary hover:text-fg transition-colors"
+						className="mt-1 inline-flex w-fit items-center gap-1.5 text-fg-secondary hover:text-fg transition-colors max-md:min-h-11 max-md:text-sm"
 					>
 						<DiscordIcon size={14} />
 						Join the Discord

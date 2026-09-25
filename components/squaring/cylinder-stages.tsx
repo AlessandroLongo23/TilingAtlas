@@ -5,7 +5,8 @@ import { cylinderShardUrl, type CylinderIndexEntry, type CylinderRecord } from "
 import { HyperbolicBallFigure } from "./hyperbolic-ball-figure";
 import { CylinderCircuit } from "./cylinder-circuit";
 import { SquaredCylinderFigure } from "./squared-cylinder-figure";
-import { RailPanel, StageBoard } from "./stage-board";
+import { Fact, InspectBar, RailPanel, StageBoard, useTapHover } from "./stage-board";
+import { RangeInput } from "@/components/ui/range-input";
 
 // One hyperbolic tiling becoming one squared cylinder, in the same four stages as the other two.
 //
@@ -30,7 +31,8 @@ export function CylinderStages({ entry }: { entry: CylinderIndexEntry }) {
 	const [, bumpAfterFetch] = useState(0);
 	const [error, setError] = useState<"stale" | "failed" | null>(null);
 	const [radius, setRadius] = useState<number>(entry.radii[entry.radii.length - 1]);
-	const [hovered, setHovered] = useState<number | null>(null);
+	const [hovered, setHoverKey] = useState<number | null>(null);
+	const setHovered = useTapHover(setHoverKey);
 	const record = cached;
 
 	useEffect(() => {
@@ -97,6 +99,7 @@ export function CylinderStages({ entry }: { entry: CylinderIndexEntry }) {
 	const hyperbolic = entry.geometry === "hyperbolic";
 
 	return (
+		<>
 		<StageBoard
 			control={
 				<RailPanel label="control" title="The ball radius" hint="Grow the ball and watch the circumference settle.">
@@ -112,17 +115,17 @@ export function CylinderStages({ entry }: { entry: CylinderIndexEntry }) {
 								) : null}
 							</p>
 						</div>
-						<input
-							type="range"
+						<RangeInput
 							min={entry.radii[0]}
 							max={entry.radii[entry.radii.length - 1]}
 							step={1}
 							value={layer.radius}
-							onChange={(e) => setRadius(Number(e.target.value))}
-							className="mt-2 w-full accent-fg"
+							onChange={setRadius}
+							native="mt-2 w-full accent-fg max-md:h-11"
+							className="mt-2 w-full"
 							aria-label="ball radius"
 						/>
-						<dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 border-t border-line pt-2.5 font-mono text-[10px]">
+						<dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 border-t border-line pt-2.5 font-mono text-[10px] max-md:text-xs">
 							<Fact label="squares" value={String(layer.squares.length)} />
 							<Fact label="walk" value={hyperbolic ? "transient" : "recurrent"} />
 							<Fact label="ball" value={`V ${layer.counts.vertices} · E ${layer.counts.edges}`} />
@@ -170,14 +173,15 @@ export function CylinderStages({ entry }: { entry: CylinderIndexEntry }) {
 				},
 			]}
 		/>
+		{hovered !== null ? (
+			<InspectBar onClear={() => setHoverKey(null)}>
+				<span className="truncate">
+					<span className="font-mono">edge {hovered}</span>
+					<span className="text-fg-muted"> · lit in every stage</span>
+				</span>
+			</InspectBar>
+		) : null}
+		</>
 	);
 }
 
-function Fact({ label, value }: { label: string; value: string }) {
-	return (
-		<div className="flex flex-col">
-			<dt className="text-[9px] uppercase tracking-wide text-fg-muted">{label}</dt>
-			<dd className="break-all text-fg">{value}</dd>
-		</div>
-	);
-}

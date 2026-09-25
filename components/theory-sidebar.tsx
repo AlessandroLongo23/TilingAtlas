@@ -50,12 +50,13 @@ export function TheorySidebar({
 
 	return (
 		<div className="h-full flex flex-col">
-			<div className="px-4 pt-5 pb-1">
+			{/* The phone sheet's own title already says Contents. */}
+			<div className="px-4 pt-5 pb-1 max-md:hidden">
 				<h3 className="ta-label text-fg-muted">
 					Contents
 				</h3>
 			</div>
-			<div className="flex-1 overflow-y-auto px-2 pb-4">
+			<div className="flex-1 overflow-y-auto px-2 pb-4 max-md:pt-2">
 				{isLoading ? (
 					<div className="px-3 py-2 text-xs text-fg-muted">Loading…</div>
 				) : error ? (
@@ -118,10 +119,10 @@ function SectionItem({
 					type="button"
 					onClick={() => (showToggle ? onToggle(section.id) : undefined)}
 					className={cn(
-						"flex items-center justify-center shrink-0 w-5 h-7 text-fg-muted hover:text-fg transition-colors",
+						"flex items-center justify-center shrink-0 w-5 h-7 text-fg-muted hover:text-fg transition-colors max-md:h-11 max-md:w-11",
 						!showToggle && "invisible",
 					)}
-					aria-label={isOpen ? "Collapse" : "Expand"}
+					aria-label={`${isOpen ? "Collapse" : "Expand"} ${section.title}`}
 					tabIndex={showToggle ? 0 : -1}
 				>
 					<ChevronRight
@@ -133,7 +134,7 @@ function SectionItem({
 					type="button"
 					onClick={() => onSelect(section.id)}
 					className={cn(
-						"flex-1 min-w-0 text-left py-1.5 pr-2 text-[13px] leading-snug wrap-break-word transition-colors",
+						"flex-1 min-w-0 text-left py-1.5 pr-2 text-[13px] leading-snug wrap-break-word transition-colors max-md:min-h-11 max-md:py-2.5 max-md:text-[15px]",
 						depth === 0 ? "font-medium" : "font-normal",
 						isActive ? "text-fg font-medium" : "text-fg-secondary group-hover:text-fg",
 					)}

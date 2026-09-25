@@ -60,7 +60,7 @@ export function PrototileCard({ tile }: { tile: Prototile }) {
 						onClick={handleScreenshot}
 						title="Screenshot"
 						aria-label="Take screenshot"
-						className="absolute top-1.5 right-1.5 p-1.5 rounded-md bg-surface-overlay/80 border border-line-strong text-fg-muted hover:text-fg hover:bg-surface-overlay opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+						className="absolute top-1.5 right-1.5 p-1.5 rounded-md bg-surface-overlay/80 border border-line-strong text-fg-muted hover:text-fg hover:bg-surface-overlay opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity max-md:opacity-100"
 					>
 						<Camera size={13} />
 					</button>
@@ -68,13 +68,13 @@ export function PrototileCard({ tile }: { tile: Prototile }) {
 			</div>
 			<div className="flex flex-col px-2.5 py-2 gap-1.5">
 				<div className="flex flex-wrap items-center gap-1">
-					<span className="inline-flex items-center border border-line-strong bg-surface-raised px-1.5 py-0.5 text-[10px] font-medium text-fg-muted">
+					<span className="inline-flex items-center border border-line-strong bg-surface-raised px-1.5 py-0.5 text-[10px] font-medium max-md:text-xs text-fg-muted">
 						{FAMILY_LABELS[tile.family]}
 					</span>
 					{tile.badges.map((b) => (
 						<span
 							key={b}
-							className={`inline-flex items-center border px-1.5 py-0.5 text-[10px] font-medium ${
+							className={`inline-flex items-center border px-1.5 py-0.5 text-[10px] font-medium max-md:text-xs ${
 								BADGE_STYLE[b] ?? "border-line-strong bg-surface-raised text-fg-muted"
 							}`}
 						>
@@ -85,7 +85,7 @@ export function PrototileCard({ tile }: { tile: Prototile }) {
 				<p className="text-xs text-fg-secondary font-mono leading-tight" title={tile.name}>
 					{tile.name}
 				</p>
-				<p className="text-[10px] text-fg-disabled font-mono leading-tight">{tile.sideCount} sides</p>
+				<p className="text-[10px] text-fg-disabled font-mono leading-tight max-md:text-xs max-md:text-fg-muted">{tile.sideCount} sides</p>
 			</div>
 		</div>
 	);

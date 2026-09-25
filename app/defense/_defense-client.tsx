@@ -2,6 +2,7 @@
 
 import { Children, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Components } from "react-markdown";
+import { ChevronLeft, ChevronRight, LayoutGrid } from "lucide-react";
 import { SlideMarkdown, type SlideLayout } from "@/components/slide-markdown";
 import { InteractiveTilingPreviewCard } from "@/components/interactive-tiling-preview-card";
 import { PatchCard } from "@/components/patch-card";
@@ -401,6 +402,27 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 		window.addEventListener("keydown", onKey);
 		return () => window.removeEventListener("keydown", onKey);
 	}, [advance, retreat, go, overview, lastIndex]);
+
+	// A phone has no arrow keys: a horizontal swipe on the slide moves it, unless it starts on something
+	// that takes its own drag (a live card, a figure, a control).
+	const swipe = useRef<{ x: number; y: number } | null>(null);
+	const onTouchStart = (e: React.TouchEvent) => {
+		const t = e.target as Element;
+		swipe.current =
+			e.touches.length === 1 && !t.closest("canvas, svg, [role=application], button, a, input")
+				? { x: e.touches[0].clientX, y: e.touches[0].clientY }
+				: null;
+	};
+	const onTouchEnd = (e: React.TouchEvent) => {
+		const start = swipe.current;
+		swipe.current = null;
+		if (!start || overview) return;
+		const dx = e.changedTouches[0].clientX - start.x;
+		const dy = e.changedTouches[0].clientY - start.y;
+		if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+		if (dx < 0) advance();
+		else retreat();
+	};
 
 	// The exact-cell inputs the three overlays need, for whichever card is asking. Orbits are cheap
 	// enough to have already been computed; the wallpaper analysis is exact cyclotomic arithmetic, so
@@ -843,7 +865,11 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 		// and the reset key clears them on the way to the next one — an overlay is something you turn on
 		// to make a point, and finding it still on three slides later is a surprise mid-talk.
 		<PreviewOverlayScope resetKey={index}>
-			<main className="relative h-screen w-full overflow-hidden bg-surface-raised">
+			<main
+				className="relative h-screen w-full overflow-hidden bg-surface-raised max-md:h-dvh"
+				onTouchStart={onTouchStart}
+				onTouchEnd={onTouchEnd}
+			>
 				{overview ? (
 					<div className="h-full w-full overflow-y-auto p-6">
 						<h2 className="mb-4 text-sm font-semibold tracking-wide text-fg-muted uppercase">
@@ -893,7 +919,7 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 						    it has no heading to anchor, so it stays centred and sized to its content. */}
 						<div
 							className={cn(
-								"flex min-h-0 flex-1 justify-center px-[6vw] py-[5vh]",
+								"flex min-h-0 flex-1 justify-center px-[6vw] py-[5vh] max-md:px-4 max-md:py-4",
 								isCoverSlide ? "items-center" : "items-stretch",
 							)}
 						>
@@ -918,12 +944,41 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 							</div>
 						</div>
 
-						<div className="flex shrink-0 items-center justify-between px-[6vw] py-3 text-xs text-fg-muted">
+						<div className="flex shrink-0 items-center justify-between px-[6vw] py-3 text-xs text-fg-muted max-md:gap-2 max-md:px-3 max-md:py-1 max-md:pb-[max(0.25rem,env(safe-area-inset-bottom))]">
 							<span className="tabular-nums">
 								{current.number} / {slides.length}
 							</span>
-							<span className="hidden sm:inline">
+							<span className="hidden sm:inline max-md:hidden">
 								&larr; &rarr; move &middot; Esc overview &middot; o/s/d/p overlays
+							</span>
+							{/* The keyboard's moves, on screen for a phone: previous, the overview, next. */}
+							<span className="flex items-center gap-1 md:hidden">
+								<button
+									type="button"
+									onClick={retreat}
+									disabled={index === 0}
+									aria-label="Previous slide"
+									className="flex size-11 items-center justify-center rounded-control text-fg disabled:opacity-30"
+								>
+									<ChevronLeft size={20} />
+								</button>
+								<button
+									type="button"
+									onClick={() => setOverview(true)}
+									aria-label="All slides"
+									className="flex size-11 items-center justify-center rounded-control text-fg"
+								>
+									<LayoutGrid size={18} />
+								</button>
+								<button
+									type="button"
+									onClick={advance}
+									disabled={index === lastIndex}
+									aria-label="Next slide"
+									className="flex size-11 items-center justify-center rounded-control text-fg disabled:opacity-30"
+								>
+									<ChevronRight size={20} />
+								</button>
 							</span>
 							<span
 								className={cn(

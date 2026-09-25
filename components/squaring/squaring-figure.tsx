@@ -94,7 +94,8 @@ export function SquaringFigure({ record, size = 1000, hovered, onHover, onPickBa
 			<FigureCaption>
 				{record.width} x {record.height} · order {record.order} ·{" "}
 				{record.perfect ? "every tile a different size" : `${record.distinct} sizes across ${record.order} tiles`}
-				{onPickBattery ? " · click a tile for its edge" : ""}
+				{onPickBattery ? <span className="max-md:hidden"> · click a tile for its edge</span> : null}
+				{onPickBattery ? <span className="md:hidden"> · tap a tile for its edge</span> : null}
 			</FigureCaption>
 		</div>
 	);

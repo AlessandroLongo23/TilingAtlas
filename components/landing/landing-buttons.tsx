@@ -11,9 +11,10 @@ import { playHref, useHeroSpecimenId } from "./hero-specimen";
 export function LandingButtons() {
 	const specimenId = useHeroSpecimenId();
 	return (
-		<div className="flex flex-wrap gap-3">
-			<Button href={playHref(specimenId)} variant="primary" size="md" icon={Play} label="Start exploring" />
-			<Button href="/library" variant="secondary" size="md" icon={Library} label="Browse the library" />
+		// A phone stacks them at full width: two thumb-sized targets, not two chips side by side.
+		<div className="flex flex-wrap gap-3 max-md:flex-col">
+			<Button href={playHref(specimenId)} variant="primary" size="md" icon={Play} label="Start exploring" classes="max-md:w-full" />
+			<Button href="/library" variant="secondary" size="md" icon={Library} label="Browse the library" classes="max-md:w-full" />
 		</div>
 	);
 }

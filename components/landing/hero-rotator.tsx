@@ -408,7 +408,7 @@ export function HeroRotator({ specimens }: HeroRotatorProps) {
 						}}
 						title="Show another tiling"
 						aria-label="Show another tiling"
-						className="shrink-0 inline-flex items-center gap-1 text-fg-muted hover:text-fg transition-colors"
+						className="shrink-0 inline-flex items-center gap-1 text-fg-muted hover:text-fg transition-colors max-md:-my-3 max-md:-mr-2 max-md:min-h-11 max-md:px-2"
 					>
 						<Shuffle size={12} aria-hidden="true" />
 						<span>shuffle</span>
