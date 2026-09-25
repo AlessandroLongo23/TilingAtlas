@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
+import { LayerHistory } from "@/lib/hooks/useModalLayer";
 import "./globals.css";
 import "katex/dist/katex.min.css";
 
@@ -47,6 +48,8 @@ export default function RootLayout({
           would otherwise run under the notch. env() is 0 everywhere else, so nothing else moves. */}
       <body className="min-h-full flex flex-col pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
         {children}
+        {/* Loads the phone sheets' Back handling on every route, ahead of the router (useModalLayer). */}
+        <LayerHistory />
         <Analytics />
       </body>
     </html>

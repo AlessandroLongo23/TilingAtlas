@@ -8,11 +8,14 @@ import { useIsPhone } from "./useIsPhone";
 //
 // Back: opening a layer pushes a history entry with the page's own URL; Back pops it, and the popstate
 // closes the top layer instead of leaving the page. A layer closed any other way (its X, Esc, the
-// backdrop, a swipe) takes its entry back off with history.go(-n). Both pops are caught before Next's
-// router sees them (a capture listener on window runs first and stops the event), and the entry left
-// on top is rewritten with the URL the page was showing, since a page may have rewritten its query
-// (filters, the selected tiling) while the sheet was up. History work is batched to the next task, so
-// React's StrictMode mount, unmount and remount of an effect nets to nothing.
+// backdrop, a swipe) takes its entry back off with history.go(-n). Both pops are stopped before Next's
+// router sees them, and the entry left on top is rewritten with the URL the page was showing, since a
+// page may have rewritten its query (filters, the selected tiling) while the sheet was up. History work
+// is batched to the next task, so React's StrictMode mount, unmount and remount of an effect nets to
+// nothing.
+//
+// A navigation from inside a layer (a link, "Open in play") replaces the top layer's entry, so Back from
+// the new page returns to the old one in one press and Forward comes back.
 
 interface Layer {
 	onClose: () => void;
@@ -29,6 +32,12 @@ let pushedPath = "";
 let ownPops = 0;
 /** The current entry's state and URL, kept up to date through the history methods (see `track`). */
 let live: { state: unknown; url: string } | null = null;
+/**
+ * Marked entries a navigation left behind (the layers under the one it left from), on this path up to
+ * this depth. Forward from the page steps over those onto the page the navigation went to. Any other
+ * marked entry ahead of the page is one a closed sheet left, with nothing worth stepping onto.
+ */
+let stranded: { path: string; depth: number } | null = null;
 let syncTimer: ReturnType<typeof setTimeout> | null = null;
 let installed = false;
 let locks = 0;
@@ -47,6 +56,17 @@ function track() {
 	live = { state: history.state, url: location.href };
 }
 
+const pathOf = (url: string | URL) => new URL(url, location.href).pathname;
+
+/** A navigation left from inside the layers: they close, and their entries are no longer ours. */
+function leaveLayers() {
+	stranded = pushed > 1 ? { path: pushedPath, depth: pushed - 1 } : null;
+	pushed = 0;
+	const closing = stack.slice().reverse();
+	// Out of the history call, which Next makes while it commits the new page.
+	setTimeout(() => closing.forEach((l) => stack.includes(l) && l.onClose()), 0);
+}
+
 function install() {
 	if (installed) return;
 	installed = true;
@@ -56,53 +76,78 @@ function install() {
 	const push = history.pushState;
 	const replace = history.replaceState;
 	history.pushState = function (this: History, state, unused, url) {
-		push.call(this, state, unused, url);
+		// A push with a URL while layers hold entries is a navigation from inside them: it takes the top
+		// layer's entry, where a push would stack the new page on entries that only close a sheet.
+		if (pushed > 0 && url != null) {
+			replace.call(this, state, unused, url);
+			leaveLayers();
+		} else push.call(this, state, unused, url);
 		track();
 	};
 	history.replaceState = function (this: History, state, unused, url) {
+		if (pushed > 0 && url != null && pathOf(url) !== pushedPath) leaveLayers();
 		replace.call(this, pushed > 0 ? withDepth(state, pushed) : state, unused, url);
 		track();
 	};
 	track();
-	// A link followed from inside a layer navigates: the layers close with the page, and their entries
-	// are left in place for the navigation to stack on (a leftover one is stepped over on the way back,
-	// below). Popping them here would race the router's own push.
-	document.addEventListener(
-		"click",
-		(e) => {
-			if (pushed === 0 || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-			const a = (e.target as Element | null)?.closest?.("a[href]");
-			if (a instanceof HTMLAnchorElement && a.target !== "_blank" && a.origin === location.origin && a.href !== location.href)
-				pushed = 0;
-		},
-		{ capture: true },
-	);
-	window.addEventListener(
-		"popstate",
-		(e) => {
-			if (ownPops > 0) {
-				ownPops--;
-				e.stopImmediatePropagation();
-				restore(pushed);
-				return;
-			}
-			const mark = typeof e.state?.[MARK] === "number" ? (e.state[MARK] as number) : null;
-			if (pushed > 0 && location.pathname === pushedPath) {
-				// Back with a layer open: close as many layers as entries were popped (one, unless the
-				// entry we landed on says otherwise; a page's replaceState can wipe the mark).
-				e.stopImmediatePropagation();
-				const depth = Math.max(0, Math.min(mark ?? pushed - 1, pushed - 1));
-				const closing = stack.slice(depth).reverse();
-				pushed = depth;
-				restore(depth);
-				for (const layer of closing) layer.onClose();
-				return;
-			}
-			// A leftover entry from a layer that was closed by navigating away: step over it.
-			if (pushed === 0 && mark) history.go(-mark);
-		},
-		{ capture: true },
-	);
+}
+
+/**
+ * Ours has to run before Next's router, to stop it from also handling a pop that only closes a sheet (it
+ * would render the page again, from the entry's older URL). Two things see to that: the listener is a
+ * capture listener, which WebKit and Firefox run before the bubble listener the router adds, and the
+ * module is loaded by the root layout (LayerHistory), so on every route it registers before the router
+ * hydrates, which is what Chromium, running listeners on window in the order added, needs. A hot reload
+ * swaps the handler, never adds a second listener.
+ */
+function onPopState(e: PopStateEvent) {
+	if (!installed) return;
+	if (ownPops > 0) {
+		ownPops--;
+		e.stopImmediatePropagation();
+		restore(pushed);
+		return;
+	}
+	const mark = typeof e.state?.[MARK] === "number" ? (e.state[MARK] as number) : null;
+	if (pushed > 0 && location.pathname === pushedPath) {
+		// Back with a layer open: close as many layers as entries were popped (one, unless the entry we
+		// landed on says otherwise; a page's replaceState can wipe the mark).
+		e.stopImmediatePropagation();
+		const depth = Math.max(0, Math.min(mark ?? pushed - 1, pushed - 1));
+		const closing = stack.slice(depth).reverse();
+		pushed = depth;
+		restore(depth);
+		for (const layer of closing) layer.onClose();
+		return;
+	}
+	if (pushed === 0 && mark) {
+		// A marked entry with no layer open. Arriving from elsewhere (Back from the page a navigation
+		// went to): step back over it to the page it belongs to, and let the router render that landing.
+		// Arriving from its own page (Forward): on towards the new page if a navigation stranded it,
+		// otherwise it is one a closed sheet left, so return to the page silently and Forward does
+		// nothing, where stepping on would leave nothing ahead and the next Back dead.
+		e.stopImmediatePropagation();
+		const fromPage = live !== null && pathOf(live.url) === location.pathname;
+		if (!fromPage) history.go(-mark);
+		else if (stranded?.path === location.pathname && mark <= stranded.depth) history.go(1);
+		else {
+			ownPops++;
+			history.go(-mark);
+		}
+		return;
+	}
+	track();
+}
+
+if (typeof window !== "undefined") {
+	const w = window as Window & { __taLayerPop?: (e: PopStateEvent) => void };
+	if (!w.__taLayerPop) window.addEventListener("popstate", (e) => w.__taLayerPop?.(e), { capture: true });
+	w.__taLayerPop = onPopState;
+}
+
+/** Rendered by the root layout only to load this module, and with it the listener, on every route. */
+export function LayerHistory() {
+	return null;
 }
 
 /** Rewrite the entry we landed on with the URL and state the page was showing. */
@@ -117,7 +162,11 @@ function sync() {
 	if (pushed > 0 && location.pathname !== pushedPath) pushed = 0;
 	const want = stack.length;
 	if (want > pushed) {
-		if (pushed === 0) pushedPath = location.pathname;
+		if (pushed === 0) {
+			pushedPath = location.pathname;
+			// The push drops every entry ahead, stranded ones included.
+			stranded = null;
+		}
 		while (pushed < want) history.pushState(withDepth(history.state, ++pushed), "");
 	} else if (want < pushed) {
 		const n = pushed - want;
