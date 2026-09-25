@@ -117,7 +117,9 @@ export interface StudioOverlay {
 	notice: string | null;
 }
 
-const OK_STROKE = (dark: boolean) => (dark ? "rgba(235,235,240,0.92)" : "rgba(20,20,26,0.92)");
+// Black in both themes, as on the catalogue canvas: its light stroke is only for unfilled tiles in dark
+// mode, and the editor always fills.
+const OK_STROKE = "#000";
 const HOVER_FILL = "rgba(255,196,64,0.28)";
 const HANDLE = "rgba(255,196,64,0.95)";
 const CUT_INK = "rgba(228,72,72,0.95)";
@@ -438,7 +440,7 @@ export function drawStudio(
 		// edges around it. Rounding also closes the hairline gap where a split edge's two halves meet.
 		ctx.lineCap = "round";
 		ctx.lineJoin = "round";
-		ctx.strokeStyle = OK_STROKE(style.dark);
+		ctx.strokeStyle = OK_STROKE;
 		ctx.beginPath();
 		for (const cell of copies) {
 			for (let e = 0; e < patch.edges.length; e++) {

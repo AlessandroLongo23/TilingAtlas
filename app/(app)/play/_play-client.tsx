@@ -17,7 +17,7 @@ import { FreedrawPlayCanvas } from "@/components/freedraw-play-canvas";
 import { TruchetOverlay } from "@/components/truchet-overlay";
 import { SquaringInset } from "@/components/squaring/squaring-inset";
 import { SquaringOverlay } from "@/components/squaring/squaring-overlay";
-import { useStudio } from "@/lib/stores/studio";
+import { canReset, useStudio } from "@/lib/stores/studio";
 import { PaletteStrip } from "@/components/studio/palette-strip";
 import { StudioHistory, StudioPeriod, StudioTools, useStudioKeys } from "@/components/studio/studio-bar";
 import { StudioCanvas } from "@/components/studio/studio-canvas";
@@ -1420,6 +1420,10 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	const sphStarEdges = useConfiguration((s) => s.sphStarEdges);
 	const starMod2 = useConfiguration((s) => s.starMod2);
 	const studioActive = useConfiguration((s) => s.studioActive);
+	// Leaving the editor keeps the edited tiling on the canvas; Revert (or another tiling) drops it. The
+	// session only ever holds edits for the current cell, so this cannot show one tiling's edits on another.
+	const edited = useStudio(canReset);
+	const showEdits = studioActive || edited;
 	// The editor needs a translation lattice and straight edges: the same gate the fundamental-domain
 	// toggle takes, and for the same two reasons (no lattice off the plane, and a curved tile would be
 	// silently straightened).
@@ -1667,7 +1671,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				    own pointer input via ArcballControls, so it sits on top and captures drag/wheel itself),
 				    the Poincaré disk for a hyperbolic tiling, else the inversive conformal view when toggled
 				    on. The flat p5 Canvas above stays mounted (blanked) as the input layer for the other two. */}
-				{studioActive ? (
+				{showEdits ? (
 					// THE EDITOR GOES FIRST, ahead of even the lens. It is not a decoration of the catalogued
 					// tiling, it is a different tiling: once an edge has been merged away or a vertex moved,
 					// nothing below this line is drawing the thing the user is working on. It owns its own
@@ -1679,6 +1683,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 							cell={drawCell}
 							cellId={drawCellId}
 							symmetryData={symmetryData}
+							readOnly={!studioActive}
 						/>
 					</div>
 				) : lensActive ? (
@@ -1941,16 +1946,19 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					    tile's edges. */}
 					{canEditTiling ? (
 						<ToolbarButton
-							label={studioActive ? "Leave the editor" : "Edit this tiling"}
+							label={studioActive ? "Close the editor (edits stay)" : "Edit this tiling"}
 							shortcut={studioActive ? "Esc" : "E"}
 							aria-pressed={studioActive}
 							onClick={() => useConfiguration.getState().set({ studioActive: !studioActive })}
 							className="w-auto gap-1.5 px-2.5 max-md:w-auto"
 						>
 							<PenTool size={15} className="max-md:hidden" />
-							{studioActive ? "Done" : "Edit"}
+							{studioActive ? "Close" : "Edit"}
 						</ToolbarButton>
 					) : null}
+					<ToolbarReveal show={!studioActive && edited}>
+						<StudioHistory parts="reset" />
+					</ToolbarReveal>
 					{canEditTiling ? <ToolbarDivider /> : null}
 					{/* Copies a link carrying every view option plus the selected tiling (the URL the mirror
 					    effect keeps live). */}

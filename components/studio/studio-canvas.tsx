@@ -104,6 +104,8 @@ interface Props {
 	symmetryData?: SymmetryData | null;
 	/** Reported upward so the inspector can show it without re-deriving the patch. */
 	onStats?: (s: StudioStats | null) => void;
+	/** The editor is closed but the tiling carries edits: draw them, pan and zoom, and edit nothing. */
+	readOnly?: boolean;
 }
 
 export interface StudioStats {
@@ -119,7 +121,7 @@ export interface StudioStats {
 	failure?: string;
 }
 
-export function StudioCanvas({ cell, cellId, symmetryData, onStats }: Props) {
+export function StudioCanvas({ cell, cellId, symmetryData, onStats, readOnly = false }: Props) {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const boxRef = useRef({ w: 0, h: 0 });
 	const dirtyRef = useRef(false);
@@ -128,7 +130,9 @@ export function StudioCanvas({ cell, cellId, symmetryData, onStats }: Props) {
 	const scrollAccumRef = useRef(0);
 	const dark = useIsDark();
 
-	const tool = useStudio((s) => s.tool);
+	// Read-only is the Select tool, which pans and edits nothing, with the editing overlays off.
+	const storeTool = useStudio((s) => s.tool);
+	const tool = readOnly ? "select" : storeTool;
 	// The session's doc, but only once the session is ON this cell. The parent re-opens the session in
 	// its own effect, which runs after this component's, so for one pass after a tiling change the store
 	// still holds the old tiling's doc; applied here its index-keyed moves would land on unrelated
@@ -140,7 +144,7 @@ export function StudioCanvas({ cell, cellId, symmetryData, onStats }: Props) {
 	const paintScope = useStudio((s) => s.paintScope);
 	const slot = useStudio((s) => s.slot);
 	const palette = useStudio((s) => s.palette);
-	const showLattice = useStudio((s) => s.showLattice);
+	const showLattice = useStudio((s) => s.showLattice) && !readOnly;
 	const rejection = useStudio((s) => s.rejection);
 
 	const rotation = useConfiguration((s) => s.rotation);
@@ -305,7 +309,7 @@ export function StudioCanvas({ cell, cellId, symmetryData, onStats }: Props) {
 			periodMode,
 			symmetry: symmetryData ?? null,
 		};
-		const cut = useStudio.getState().cutPath;
+		const cut = readOnly ? [] : useStudio.getState().cutPath;
 		const overlay: StudioOverlay = {
 			tool,
 			points: pointsRef.current,
@@ -318,10 +322,10 @@ export function StudioCanvas({ cell, cellId, symmetryData, onStats }: Props) {
 				.filter((p): p is Pt => p !== null),
 			cursor: cursorRef.current,
 			snap: snapRef.current,
-			notice: useStudio.getState().rejection?.message ?? null,
+			notice: readOnly ? null : (useStudio.getState().rejection?.message ?? null),
 		};
 		drawStudio(ctx, cw, ch, built.patch, view, style, overlay);
-	}, [dark, doc, hueOffset, lineWidth, palette, paintScope, periodMode, showLattice, symmetryData, tool]);
+	}, [dark, doc, hueOffset, lineWidth, palette, paintScope, periodMode, readOnly, showLattice, symmetryData, tool]);
 
 	useEffect(() => {
 		drawRef.current = draw;
