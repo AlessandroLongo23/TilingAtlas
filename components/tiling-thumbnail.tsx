@@ -219,7 +219,7 @@ export function TilingThumbnail({
 					className="absolute bottom-1.5 right-2 flex flex-col items-center text-fg-muted ta-fade-in pointer-events-none select-none"
 					style={{ width: unit.px }}
 				>
-					<span className="text-[9px] font-mono leading-none mb-[3px]">1</span>
+					<span className="text-[9px] max-md:text-xs font-mono leading-none mb-[3px]">1</span>
 					{/* End serifs turn a bare rule into a ruler: they mark where the unit starts and stops. */}
 					<span className="relative w-full h-[5px]">
 						<span className="absolute inset-x-0 top-1/2 border-t border-current" />

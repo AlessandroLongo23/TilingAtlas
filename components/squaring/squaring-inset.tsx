@@ -39,12 +39,14 @@ export function SquaringInset({ selected }: { selected: CatalogueTiling | null }
 	// whether these numbers are integers. Sizes are counted and perfection claimed only when it is off.
 	const claimable = !current.approx;
 
+	// A phone keeps the panel to a third of the screen, so the squared torus it stands beside is still
+	// the picture; the close button grows to a finger's size inside the same header.
 	return (
-		<div className="pointer-events-auto absolute left-4 top-16 z-20 w-52 overflow-hidden ta-float">
+		<div className="pointer-events-auto absolute left-4 top-16 z-20 w-52 overflow-hidden ta-float max-md:w-36">
 			<div className="flex items-center justify-between gap-2 border-b border-line px-2.5 py-1.5">
 				<div className="min-w-0">
-					<p className="truncate text-[10px] leading-none text-fg">Squared from</p>
-					<p className="mt-1 truncate font-mono text-[9px] leading-none text-fg-muted">
+					<p className="truncate text-[10px] leading-none text-fg max-md:text-xs">Squared from</p>
+					<p className="mt-1 truncate font-mono text-[9px] leading-none text-fg-muted max-md:text-[11px]">
 						{selected?.canonicalKey ?? "this tiling"}
 					</p>
 				</div>
@@ -52,7 +54,7 @@ export function SquaringInset({ selected }: { selected: CatalogueTiling | null }
 					type="button"
 					onClick={() => useConfiguration.getState().set({ squaring: false })}
 					aria-label="Turn the squared torus off and go back to the tiling"
-					className="shrink-0 text-fg-muted transition-colors hover:text-fg"
+					className="shrink-0 text-fg-muted transition-colors hover:text-fg max-md:-my-2 max-md:-mr-2.5 max-md:flex max-md:size-11 max-md:items-center max-md:justify-center"
 				>
 					<X className="h-3.5 w-3.5" strokeWidth={1.75} />
 				</button>
@@ -66,7 +68,7 @@ export function SquaringInset({ selected }: { selected: CatalogueTiling | null }
 				<TilingThumbnail translationalCell={selected?.renderCell ?? null} periodsAcross={2} />
 			</div>
 
-			<div className="space-y-0.5 border-t border-line px-2.5 py-1.5 font-mono text-[9px] leading-snug text-fg-muted">
+			<div className="space-y-0.5 border-t border-line px-2.5 py-1.5 font-mono text-[9px] leading-snug text-fg-muted max-md:text-[11px]">
 				<p>
 					class{" "}
 					<span className="text-fg">

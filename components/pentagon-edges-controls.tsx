@@ -2,6 +2,7 @@
 
 import { useCallback } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { RangeInput } from "@/components/ui/range-input";
 import { solveEdgeBoard, type PentEdgeParams } from "@/lib/pentagon/edge-board";
 import { useConfiguration } from "@/stores/configuration";
 
@@ -40,18 +41,20 @@ export function PentagonEdgesControls() {
 	const solved = solveEdgeBoard(params);
 	const angles = solved.ok ? solved.board.angles : null;
 
+	// On a phone this card is one of the panels in /play's bottom tray, so it gives up its corner.
 	return (
-		<div className="absolute bottom-3 left-3 z-20 flex flex-col gap-1 ta-float p-3 text-xs">
+		<div className="absolute bottom-3 left-3 z-20 flex flex-col gap-1 ta-float p-3 text-xs max-md:static max-md:shrink-0 max-md:gap-0 max-md:text-[13px]">
 			{SLIDERS.map((s) => (
-				<label key={s.key} className="flex items-center gap-2">
+				<label key={s.key} className="flex items-center gap-2 max-md:gap-3">
 					<span className="w-14 text-fg-secondary">{s.label}</span>
-					<input
-						type="range"
+					<RangeInput
+						native="max-md:h-11 max-md:min-w-0 max-md:flex-1"
+						className="min-w-0 flex-1"
 						min={s.min}
 						max={s.max}
 						step={s.step}
 						value={params[s.key]}
-						onChange={(e) => setParam(s.key, Number(e.target.value))}
+						onChange={(v) => setParam(s.key, v)}
 					/>
 					<span className="w-12 text-right font-mono text-fg">
 						{s.key === "t" ? params.t.toFixed(2) : params[s.key].toFixed(s.key === "b" ? 2 : 1)}

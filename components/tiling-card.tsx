@@ -52,16 +52,16 @@ export function TilingCard({ tiling, density = "comfortable", onClick }: TilingC
 		? "text-[10px] text-fg-secondary font-mono leading-tight truncate"
 		: "text-xs text-fg-secondary font-mono leading-tight break-all";
 	const badgeClass = isCompact
-		? "text-[8px] px-1 py-0.5 rounded bg-surface-overlay/50 text-fg-muted"
+		? "text-[8px] max-md:text-xs px-1 py-0.5 rounded bg-surface-overlay/50 text-fg-muted"
 		: "text-[10px] px-1.5 py-0.5 rounded bg-surface-overlay/50 text-fg-muted";
 	const badgeInfoClass = isCompact
-		? "text-[8px] px-1 py-0.5 rounded text-info bg-info-subtle"
+		? "text-[8px] max-md:text-xs px-1 py-0.5 rounded text-info bg-info-subtle"
 		: "text-[10px] px-1.5 py-0.5 rounded text-info bg-info-subtle";
 	const badgeRegClass = isCompact
-		? "text-[8px] px-1 py-0.5 rounded text-success bg-success-subtle"
+		? "text-[8px] max-md:text-xs px-1 py-0.5 rounded text-success bg-success-subtle"
 		: "text-[10px] px-1.5 py-0.5 rounded text-success bg-success-subtle";
 	const badgeStarClass = isCompact
-		? "text-[8px] px-1 py-0.5 rounded text-warning bg-warning-subtle"
+		? "text-[8px] max-md:text-xs px-1 py-0.5 rounded text-warning bg-warning-subtle"
 		: "text-[10px] px-1.5 py-0.5 rounded text-warning bg-warning-subtle";
 
 	const pxPerEdge = isCompact ? 16 : 22;
@@ -121,7 +121,7 @@ export function TilingCard({ tiling, density = "comfortable", onClick }: TilingC
 						onClick={handleScreenshot}
 						title="Screenshot"
 						aria-label="Take screenshot"
-						className="absolute top-1.5 right-1.5 p-1.5 rounded-md bg-surface-overlay/80 border border-line-strong text-fg-muted hover:text-fg hover:bg-surface-overlay opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+						className="absolute top-1.5 right-1.5 p-1.5 rounded-md bg-surface-overlay/80 border border-line-strong text-fg-muted hover:text-fg hover:bg-surface-overlay opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity max-md:opacity-100"
 					>
 						<Camera size={13} />
 					</button>

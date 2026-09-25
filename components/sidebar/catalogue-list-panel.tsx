@@ -26,13 +26,16 @@ interface CatalogueListPanelProps {
 // Initial expand state: EVERY row starts collapsed, nested ones included (class `c:…`, grid `s:…`,
 // k `k:…`), so the picker opens as a short list of headings and each level is unrolled by hand.
 
-// Row height for both header levels; the nested one parks one hairline below the outer one so an open
-// path reads as an indented tree pinned to the top of the scrollport.
-const ROW_H = 32;
-const NESTED_TOP = ROW_H + 1;
-// The collapse-all strip pins above the whole header stack, so every sticky row starts one strip
-// further down.
-const TOOLBAR_H = 32;
+// Row height for every header level, and the height of the collapse-all strip the sticky stack starts
+// under, as CSS variables on the list (TREE_VARS): each level parks one row plus a hairline below its
+// parent, so an open path reads as an indented tree pinned to the top of the scrollport. A phone's rows
+// are a finger tall, and its strip scrolls away with the filters above it (catalogue-tab.tsx), so there
+// the stack starts at the very top.
+const TREE_VARS = "[--tree-row:32px] [--tree-bar:32px] max-md:[--tree-row:44px] max-md:[--tree-bar:0px]";
+const treeRowStyle = (depth: number) => ({
+	height: "var(--tree-row)",
+	top: `calc(var(--tree-bar) + (var(--tree-row) + 1px) * ${depth})`,
+});
 
 // Ink ranks the levels: a class heading is the heaviest thing in the list, its members lighter. The
 // chevron leads each row, so the 16px indent steps line every level's chevron up under its parent's
@@ -495,14 +498,19 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({
 	};
 
 	return (
-		<div ref={listRef} className="flex flex-col gap-px">
+		<div ref={listRef} className={cn("flex flex-col gap-px", TREE_VARS)}>
 			{/* One way out of a deep tree. There is deliberately no expand-all counterpart: opening every
 			    node would mount a TileGrid for every tiling on the shelf at once — six figures of them on
 			    the euclidean one — which is not a control, it is a way to hang the tab. It pins ABOVE the
-			    header stack, which is why every sticky row below starts at TOOLBAR_H. */}
+			    header stack, which is why every sticky row below starts at --tree-bar. */}
 			<div
-				className="ta-sticky-rule bg-surface-chrome sticky top-0 z-50 flex items-center justify-between pl-2 pr-[17px]"
-				style={{ height: TOOLBAR_H }}
+				// A phone drops the strip while nothing is open: the tab already says Catalogue, and the row is
+				// worth more to the half-open sheet than a disabled button.
+				className={cn(
+					"ta-sticky-rule bg-surface-chrome sticky top-0 z-50 flex items-center justify-between pl-2 pr-[17px] max-md:static",
+					openCount === 0 && "max-md:hidden",
+				)}
+				style={{ height: "var(--tree-row)" }}
 			>
 				<span className="ta-label">Catalogue</span>
 				<button
@@ -510,7 +518,7 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({
 					onClick={() => toggleAll(false)}
 					disabled={openCount === 0}
 					className={cn(
-						"flex items-center gap-1.5 rounded-control text-xs text-fg-muted cursor-pointer",
+						"flex items-center gap-1.5 rounded-control text-xs text-fg-muted cursor-pointer max-md:h-11",
 						"hover:text-fg transition-colors",
 						"focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
 						"disabled:pointer-events-none disabled:opacity-40",
@@ -579,7 +587,7 @@ function TreeRow({
 				// context (catalogue-tab.tsx), so these values never reach the canvas overlay buttons.
 				depth === 0 ? "z-40" : depth === 1 ? "z-30" : depth === 2 ? "z-20" : "z-[15]",
 			)}
-			style={{ height: ROW_H, top: TOOLBAR_H + NESTED_TOP * depth }}
+			style={treeRowStyle(depth)}
 		>
 			<span
 				className={cn(
@@ -606,8 +614,8 @@ function TreeRow({
 						)}
 					/>
 				)}
-				<span className={cn("min-w-0 flex-1 truncate", DEPTH_TEXT[depth])}>{label}</span>
-				<span className="shrink-0 font-mono text-[11px] tabular-nums text-fg-muted">{count.toLocaleString("en-US")}</span>
+				<span className={cn("min-w-0 flex-1 truncate max-md:text-[15px]", DEPTH_TEXT[depth])}>{label}</span>
+				<span className="shrink-0 font-mono text-[11px] tabular-nums text-fg-muted max-md:text-xs">{count.toLocaleString("en-US")}</span>
 			</span>
 		</button>
 	);

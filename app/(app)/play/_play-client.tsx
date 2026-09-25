@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
 import { DEFAULT_FILL_AMOUNT } from "@/lib/render/tilePalette";
 import { useSearchParams } from "next/navigation";
-import { Camera, Check, ChevronLeft, ChevronRight, Link2, Maximize, Minimize, PenTool, Shuffle } from "lucide-react";
+import { Camera, Check, ChevronDown, ChevronLeft, ChevronRight, Link2, Maximize, Minimize, PenTool, Shuffle } from "lucide-react";
 import { FloatingToolbar, ToolbarButton, ToolbarDivider, ToolbarReveal } from "@/components/ui/floating-toolbar";
 import { Canvas } from "@/components/canvas";
 import { InversiveCanvas } from "@/components/inversive-canvas";
@@ -35,6 +35,9 @@ import { isChiralTiling, reflectRenderCell } from "@/lib/services/chirality";
 import { DEFAULT_BUBBLE_EDGE_STYLE } from "@/lib/bubble/edges";
 import { bubbleRenderCell, isBubbleId } from "@/lib/bubble/pattern";
 import { useImmersive } from "@/stores/immersive";
+import { useIsPhone } from "@/lib/hooks/useIsPhone";
+import { ResetViewButton } from "@/components/reset-view-button";
+import { FullscreenToggle } from "@/components/fullscreen-toggle";
 import { cn } from "@/lib/utils/cn";
 import { useInversiveCell } from "@/lib/hooks/useInversiveCell";
 import { useCatalogueSelection } from "@/lib/hooks/useCatalogueSelection";
@@ -123,7 +126,7 @@ import { PentagonEdgesControls } from "@/components/pentagon-edges-controls";
 import { IsohedralEdgesControls } from "@/components/isohedral-edges-controls";
 import { hypColorsLazyShardsForK } from "@/lib/colors/hyp-colors";
 import { sphColorsLazyShardsForK, SPH_COLORS_SOLIDS } from "@/lib/colors/sph-colors";
-import { resolveAlphaDegs } from "@/lib/utils/paramCell";
+import { paramGlyphs, resolveAlphaDegs } from "@/lib/utils/paramCell";
 import { parsePlayState, serializePlayState } from "@/lib/services/playUrlState";
 import { useFamilyAlphas } from "@/stores/familyAlphas";
 import { ParamSliderPanel } from "@/components/param-slider-panel";
@@ -1591,6 +1594,24 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	const lensActive = inversive && !!inversiveCell && lensAppliesTo(selected);
 	// Colorings, edge patterns and hollow carry a throwaway translational cell; tell the input layer so
 	// click-to-centre doesn't hit-test geometry that isn't on screen.
+	// The phone tray (the bottom panels in the JSX): what it holds names its fold-away button, and null
+	// means it holds nothing, so no tray is drawn at all. The editor's tools open with the editor; a
+	// family's sliders wait behind the button, which names their glyphs (the same ones the catalogue
+	// badge carries) so the canvas is not half covered the moment a family is picked.
+	const isPhone = useIsPhone();
+	const [toolsOpen, setToolsOpen] = useState(true);
+	const [slidersOpen, setSlidersOpen] = useState(false);
+	const showParamPanel = !!paramCell && !squaringActive;
+	const glyphs = showParamPanel && paramCell ? paramGlyphs(paramCell) : [];
+	const trayLabel = studioActive
+		? "Tools"
+		: showParamPanel
+			? "Parameters"
+			: selected?.pentEdges || selected?.ihEdges
+				? "Shape"
+				: null;
+	const trayOpen = studioActive ? toolsOpen : slidersOpen;
+	const setTrayOpen = studioActive ? setToolsOpen : setSlidersOpen;
 	const cellHasTiles = !(
 		selected?.colors || selected?.freedraw || selected?.hollow || selected?.pentEdges || selected?.ihEdges
 	);
@@ -1603,6 +1624,8 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				className={cn(
 					"h-full shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out",
 					immersive ? "w-0" : "w-80",
+					// On a phone the sidebar is a position:fixed dock sheet that escapes this clip; the canvas gets the width.
+					"max-md:w-0",
 				)}
 			>
 				<Sidebar
@@ -1620,6 +1643,10 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					decorationCounts={decorationCounts}
 					decorationPending={{ edges: !decorLoaded.edges, colorings: !decorLoaded.colorings }}
 					onDecorationChange={onDecorationChange}
+					onPrev={onPrev}
+					onRandom={selectRandom}
+					onNext={onNext}
+					canStep={!studioActive}
 				/>
 			</div>
 			<div ref={canvasHostRef} className="flex-1 min-w-0 relative">
@@ -1808,16 +1835,70 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				{/* The editor's controls live in the canvas toolbar below, not in a bar of their own. The cell
 				    INSPECTOR is deliberately not mounted (AL, 2026-09-21): the readout was noise next to the
 				    picture. `StudioInspector` stays in the tree for when a refusal needs somewhere to be read. */}
-				{studioActive ? <PaletteStrip /> : null}
 				{!lensActive ? <SquaringOverlay selected={selected ?? null} /> : null}
-				{/* The family's own sliders: a squaring has no free angle to flex, and the panel is driving the
-				    tiling in the corner rather than the one on the canvas while it is up. */}
-				{paramCell && !squaringActive ? <ParamSliderPanel paramCell={paramCell} /> : null}
-				{/* The pentagon family's shape controls sit OUTSIDE the exclusive canvas chain above, because
-				    the family is still what is being drawn when the conformal lens replaces the flat view —
-				    the sliders have to survive that swap. Their values live in the store for the same reason. */}
-				{selected?.pentEdges ? <PentagonEdgesControls /> : null}
-				{selected?.ihEdges ? <IsohedralEdgesControls ih={selected.ihEdges.ih} /> : null}
+				{/* The phone's top-right corner, the same on every canvas page: reset view (a touch screen has no
+				    right button), then fullscreen, which the desktop keeps in the toolbar below. */}
+				<div className="absolute right-3 top-3 z-30 hidden gap-2 max-md:flex">
+					<ResetViewButton />
+					<FullscreenToggle className="static" />
+				</div>
+				{/* The panels that float at the bottom of the canvas. On the desktop each keeps its own spot and
+				    this wrapper is display:contents. On a phone they would pile onto each other and onto the
+				    toolbar, so they stack in one tray above the toolbar that scrolls past 40dvh and folds away.
+				    The tray's box lets touches through to the canvas: a pinch that lands in a gap between its
+				    parts would otherwise zoom the page. Its button and its panels take their own. */}
+				<div
+					className={cn(
+						"contents",
+						trayLabel &&
+							"max-md:pointer-events-none max-md:absolute max-md:inset-x-2 max-md:bottom-[calc(max(var(--sheet-offset,0px),env(safe-area-inset-bottom))+64px)] max-md:z-30 max-md:flex max-md:flex-col max-md:items-stretch max-md:gap-2 max-md:transition-[bottom] max-md:duration-300",
+					)}
+				>
+					{trayLabel ? (
+						<button
+							type="button"
+							onClick={() => setTrayOpen((o) => !o)}
+							aria-expanded={trayOpen}
+							className="hidden h-11 items-center gap-1.5 self-end rounded-full bg-surface-raised/95 px-4 text-[13px] font-medium text-fg-secondary shadow-sm ring-1 ring-line-subtle backdrop-blur-sm max-md:pointer-events-auto max-md:flex"
+						>
+							{trayOpen ? `Hide ${trayLabel.toLowerCase()}` : trayLabel}
+							{!trayOpen && glyphs.length ? (
+								<span className="font-mono text-fg">{glyphs.length > 3 ? `(${glyphs.length})` : glyphs.join(" ")}</span>
+							) : null}
+							<ChevronDown size={16} aria-hidden className={cn("transition-transform", !trayOpen && "rotate-180")} />
+						</button>
+					) : null}
+					<div
+						className={cn(
+							"contents",
+							trayLabel &&
+								// The bottom padding is where the fade lands once the tray is scrolled to its end, so the
+								// last slider is never the thing that fades. (ta-scroll-fade is inert on the desktop, where
+								// this box is display:contents and draws nothing to mask.)
+								"ta-scroll-fade max-md:pointer-events-auto max-md:touch-pan-y max-md:flex max-md:max-h-[min(40dvh,calc(100dvh_-_var(--topbar-h,48px)_-_max(var(--sheet-offset,0px),env(safe-area-inset-bottom))_-_150px))] max-md:flex-col max-md:gap-2 max-md:overflow-y-auto max-md:overscroll-contain max-md:pb-6",
+							!trayOpen && "max-md:hidden",
+						)}
+					>
+						{/* The editor's tools ride in the toolbar on the desktop. A phone toolbar cannot hold them
+						    beside the history and the way out, so they get a row of their own here. */}
+						{studioActive && isPhone ? (
+							<div role="toolbar" aria-label="Editor tools" className="ta-float flex shrink-0 flex-wrap items-center gap-0.5 p-1">
+								<StudioHistory parts="reset" />
+								<StudioTools />
+								<StudioPeriod wallpaperDisabledReason={wallpaperDisabledReason} />
+							</div>
+						) : null}
+						{studioActive ? <PaletteStrip /> : null}
+						{/* The family's own sliders: a squaring has no free angle to flex, and the panel is driving
+						    the tiling in the corner rather than the one on the canvas while it is up. */}
+						{showParamPanel && paramCell ? <ParamSliderPanel paramCell={paramCell} /> : null}
+						{/* The pentagon family's shape controls sit OUTSIDE the exclusive canvas chain above, because
+						    the family is still what is being drawn when the conformal lens replaces the flat view —
+						    the sliders have to survive that swap. Their values live in the store for the same reason. */}
+						{selected?.pentEdges ? <PentagonEdgesControls /> : null}
+						{selected?.ihEdges ? <IsohedralEdgesControls ih={selected.ihEdges.ih} /> : null}
+					</div>
+				</div>
 				{/* The canvas toolbar. Browsing: stepping through the catalogue, then Edit and the view-level
 				    actions. Editing (AL, 2026-09-24): the editor's history takes the stepping slot (stepping
 				    away mid-edit is blocked anyway, R and the arrows are ignored there), its tools and period
@@ -1827,22 +1908,29 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					{/* The groups that swap with the mode slide open and shut (ToolbarReveal), so the bar
 					    grows into the editor and back out of it instead of jumping. */}
 					<ToolbarReveal show={studioActive}>
-						<StudioHistory />
+						<StudioHistory parts={isPhone ? "undo-redo" : "all"} />
 					</ToolbarReveal>
-					<ToolbarReveal show={!studioActive}>
-						<ToolbarButton label="Previous tiling" shortcut="←" onClick={onPrev} disabled={geometryList.length < 2}>
-							<ChevronLeft size={16} />
-						</ToolbarButton>
-						<ToolbarButton label="Random tiling" shortcut="R" primary onClick={selectRandom} disabled={geometryList.length < 2}>
-							<Shuffle size={14} />
-							Random
-						</ToolbarButton>
-						<ToolbarButton label="Next tiling" shortcut="→" onClick={onNext} disabled={geometryList.length < 2}>
-							<ChevronRight size={16} />
-						</ToolbarButton>
-					</ToolbarReveal>
-					<ToolbarDivider />
-					<ToolbarReveal show={studioActive}>
+					{/* On a phone the dock's peek row carries the stepping, so the toolbar drops it, except in
+					    immersive mode, which hides the dock. */}
+					<span className={cn("contents", !immersive && "max-md:hidden")}>
+						<ToolbarReveal show={!studioActive}>
+							<ToolbarButton label="Previous tiling" shortcut="←" onClick={onPrev} disabled={geometryList.length < 2}>
+								<ChevronLeft size={16} />
+							</ToolbarButton>
+							{/* Icon-only on a phone (the word stays for screen readers), so immersive's full row fits. */}
+							<ToolbarButton label="Random tiling" shortcut="R" primary onClick={selectRandom} disabled={geometryList.length < 2} className="max-md:w-11 max-md:px-0">
+								<Shuffle size={14} />
+								<span className="max-md:sr-only">Random</span>
+							</ToolbarButton>
+							<ToolbarButton label="Next tiling" shortcut="→" onClick={onNext} disabled={geometryList.length < 2}>
+								<ChevronRight size={16} />
+							</ToolbarButton>
+						</ToolbarReveal>
+					</span>
+					<span className={cn("contents", !studioActive && !immersive && "max-md:hidden")}>
+						<ToolbarDivider />
+					</span>
+					<ToolbarReveal show={studioActive && !isPhone}>
 						<StudioTools />
 						<ToolbarDivider />
 						<StudioPeriod wallpaperDisabledReason={wallpaperDisabledReason} />
@@ -1857,9 +1945,9 @@ export function PlayClient({ tilings }: PlayClientProps) {
 							shortcut={studioActive ? "Esc" : "E"}
 							aria-pressed={studioActive}
 							onClick={() => useConfiguration.getState().set({ studioActive: !studioActive })}
-							className="w-auto gap-1.5 px-2.5"
+							className="w-auto gap-1.5 px-2.5 max-md:w-auto"
 						>
-							<PenTool size={15} />
+							<PenTool size={15} className="max-md:hidden" />
 							{studioActive ? "Done" : "Edit"}
 						</ToolbarButton>
 					) : null}
@@ -1897,6 +1985,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 						shortcut={immersive ? "F or Esc" : "F"}
 						onClick={() => useImmersive.getState().toggle()}
 						aria-pressed={immersive}
+						className="max-md:hidden"
 					>
 						{immersive ? <Minimize size={16} /> : <Maximize size={16} />}
 					</ToolbarButton>

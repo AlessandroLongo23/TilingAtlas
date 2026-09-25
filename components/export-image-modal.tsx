@@ -447,7 +447,8 @@ export function ExportImageModal() {
 									selected={scaleChip}
 									onChange={(n) => setScaleChip(n)}
 								/>
-								<div className="w-24">
+								{/* A phone's steppers are 44px wide, so the field widens to keep four digits clear of them. */}
+								<div className="w-24 max-md:w-32">
 									<Input
 										type="number"
 										value={longEdge}
@@ -486,7 +487,9 @@ export function ExportImageModal() {
 					</p>
 				) : null}
 
-				<div className="mt-5 pt-4 border-t border-line flex flex-col sm:flex-row sm:items-center gap-3">
+				{/* On a phone the dialog is a bottom sheet whose body scrolls, so this bar sticks to its foot:
+				    Download stays in reach under a preview that fills most of the screen. */}
+				<div className="mt-5 pt-4 border-t border-line flex flex-col sm:flex-row sm:items-center gap-3 max-md:sticky max-md:bottom-0 max-md:z-10 max-md:-mx-4 max-md:-mb-4 max-md:bg-surface-raised max-md:px-4 max-md:pb-4">
 					<div className="flex items-center gap-3">
 						<ButtonGroup
 							options={[

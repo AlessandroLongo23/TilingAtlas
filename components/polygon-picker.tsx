@@ -184,7 +184,7 @@ export function PolygonPicker({
 													: "bg-surface-overlay/50 border-line text-fg-muted hover:border-line-strong hover:text-fg-secondary",
 											)}
 										>
-											<span className={cn("text-[9px] px-1 py-0.5 rounded", TAG_COLOR[type])}>
+											<span className={cn("text-[9px] max-md:text-xs px-1 py-0.5 rounded", TAG_COLOR[type])}>
 												{TAG_LABEL[type]}
 											</span>
 											{name}

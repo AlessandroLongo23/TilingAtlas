@@ -14,14 +14,17 @@ import { cn } from "@/lib/utils/cn";
 // Only up while the paint tool is selected. It is the widest piece of editor chrome and it means nothing
 // under the other five tools, so it comes and goes with them instead of sitting there greyed out.
 //
-// Bottom-centre, stacked just above the tool strip.
+// Bottom-centre, stacked just above the tool strip. On a phone it is a card in /play's bottom tray and
+// wraps: the ten slots as two rows of five, then the colour editor, then the scope chips.
 //
 // The scope chips take their labels and their glosses from PAINT_SCOPES, never their own copy: those
 // strings are shared constants precisely so the editor and the freedraw fill chips cannot drift on what
 // "shape" and "orientation" mean.
 
 /** Swatch geometry, so the slot buttons and the two fixed ones line up without repeating the classes. */
-const SWATCH = "h-7 w-7 rounded border transition-colors";
+// A phone's swatches are 40px, 36px under 380px wide so the slots, the ring and the two fixed colours
+// still share one row there.
+const SWATCH = "h-7 w-7 rounded border transition-colors max-md:h-10 max-md:w-10 max-[380px]:h-9 max-[380px]:w-9";
 
 export function PaletteStrip() {
 	const tool = useStudio((s) => s.tool);
@@ -47,10 +50,10 @@ export function PaletteStrip() {
 	if (tool !== "paint") return null;
 
 	return (
-		<div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 ta-float p-2">
+		<div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 ta-float p-2 max-md:static max-md:shrink-0 max-md:translate-x-0 max-md:flex-wrap max-md:justify-center">
 			{/* The slot row. Its LENGTH comes from STUDIO_PALETTE and its colours through slotFill, which
 			    falls back per slot, so a palette left short by an older session still shows ten buttons. */}
-			<div className="flex items-center gap-1">
+			<div className="flex items-center gap-1 max-md:grid max-md:grid-cols-5 max-md:gap-1.5">
 				{STUDIO_PALETTE.map((_, i) => (
 					<button
 						key={i}
@@ -68,16 +71,21 @@ export function PaletteStrip() {
 				))}
 			</div>
 
-			<div className="self-stretch border-l border-line" />
+			<div className="self-stretch border-l border-line max-md:hidden" />
 
 			<ButtonGroup
 				wrap={false}
+				classes="max-md:order-last max-md:w-full max-md:justify-center"
 				selected={scope}
 				onChange={(v: PaintScope) => useStudio.getState().set({ paintScope: v })}
 				options={PAINT_SCOPES.map((s) => ({ value: s.value, label: s.label, tooltip: s.help }))}
 			/>
+			{/* The chips' glosses are hover tooltips on the desktop; a phone prints the chosen one under them. */}
+			<p className="hidden w-full text-center text-xs leading-snug text-fg-muted max-md:order-last max-md:block">
+				{PAINT_SCOPES.find((s) => s.value === scope)?.help}
+			</p>
 
-			<div className="self-stretch border-l border-line" />
+			<div className="self-stretch border-l border-line max-md:hidden" />
 
 			{/* The active slot's colour. The ring covers every hue; cream and its near-black complement are
 			    the two choices no hue reaches, so they stay as their own buttons. Both are drawn in the LIGHT
@@ -96,7 +104,7 @@ export function PaletteStrip() {
 						onClick={() => writeSlot(s)}
 						className={cn(
 							SWATCH,
-							"h-[26px]",
+							"h-[26px] max-md:h-10 max-[380px]:h-9",
 							palette[slot] === s ? "border-fg ring-1 ring-fg" : "border-line hover:border-line-strong",
 						)}
 						style={{ background: cellFill(s, false) }}

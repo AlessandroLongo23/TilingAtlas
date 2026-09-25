@@ -50,7 +50,8 @@ const ringFallbackHue = (i: number): number => {
 // whichever block is showing. Only one instance is ever mounted at a time, which is what keeps the shared
 // `id` (and its label's htmlFor) unique. `gesture` is the canvas move that also drives the value: the flat
 // and 2D views zoom on a bare scroll and spin on Shift+scroll, while the hyperbolic disk has no zoom, so a
-// bare scroll rotates it.
+// bare scroll rotates it. A phone has neither: two fingers twist every one of these views, which is what
+// its caption says instead.
 function RotationSlider({
 	value,
 	onChange,
@@ -72,7 +73,8 @@ function RotationSlider({
 			// The gesture reads as a quiet caption before the value, so the label keeps the row's left edge.
 			format={(v) => (
 				<>
-					<span className="mr-2 text-[11px] text-fg-muted">{gesture === "shift-scroll" ? "Shift + scroll" : "scroll"}</span>
+					<span className="mr-2 text-[11px] text-fg-muted max-md:hidden">{gesture === "shift-scroll" ? "Shift + scroll" : "scroll"}</span>
+					<span className="mr-2 hidden text-xs text-fg-muted max-md:inline">two-finger twist</span>
 					{v}°
 				</>
 			)}
@@ -292,7 +294,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 											[next[i - 1], next[i]] = [pal[i], pal[i - 1]];
 										})
 									}
-									className="flex h-6 w-6 cursor-pointer items-center justify-center rounded border border-line text-fg-muted transition-colors hover:border-line-strong hover:text-fg focus:outline-none focus-visible:ring-1 focus-visible:ring-fg"
+									className="flex h-6 w-6 max-md:h-11 max-md:w-9 cursor-pointer items-center justify-center rounded border border-line text-fg-muted transition-colors hover:border-line-strong hover:text-fg focus:outline-none focus-visible:ring-1 focus-visible:ring-fg"
 								>
 									<ArrowLeftRight size={13} />
 								</button>
@@ -315,8 +317,8 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 										onClick={() => setChoice(s)}
 										className={
 											choice === s
-												? "h-6 rounded border border-fg ring-1 ring-fg"
-												: "h-6 rounded border border-line hover:border-line-strong"
+												? "h-6 max-md:h-10 rounded border border-fg ring-1 ring-fg"
+												: "h-6 max-md:h-10 rounded border border-line hover:border-line-strong"
 										}
 										style={{ background: cellFill(s, false) }}
 									/>
@@ -450,7 +452,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 								onCheckedChange={(v) => setCfg({ freedrawVertices: v })}
 							/>
 							<Reveal show={cfg.freedrawVertices}>
-								<p className="pl-7 text-[11px] text-fg-muted leading-relaxed">
+								<p className="pl-7 text-[11px] text-fg-muted leading-relaxed max-md:hidden">
 									Hover a dot to grow every grid point in its orbit.
 								</p>
 							</Reveal>
@@ -493,7 +495,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 								onCheckedChange={(v) => setCfg({ colorsVertices: v })}
 							/>
 							<Reveal show={cfg.colorsVertices}>
-								<p className="pl-7 text-[11px] text-fg-muted leading-relaxed">
+								<p className="pl-7 text-[11px] text-fg-muted leading-relaxed max-md:hidden">
 									Hover a dot to grow every vertex in its orbit.
 								</p>
 							</Reveal>
@@ -506,8 +508,13 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 						<div className="space-y-2">
 							{palettePickers}
 							{isHyperbolicColors ? (
-								<p className="text-[11px] text-fg-muted leading-relaxed">
-									Drag to pan, scroll to zoom, shift-scroll to spin, double-click to reset the view.
+								<p className="text-[11px] text-fg-muted leading-relaxed max-md:text-xs">
+									<span className="max-md:hidden">
+										Drag to pan, scroll to zoom, shift-scroll to spin, double-click to reset the view.
+									</span>
+									<span className="hidden max-md:inline">
+										Drag to pan, twist two fingers to spin, double-tap to reset the view.
+									</span>
 								</p>
 							) : null}
 						</div>
@@ -1329,7 +1336,8 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							    controls and not wedged between two of them (AL, 2026-08-25). */}
 							<p className="text-[11px] text-fg-muted leading-relaxed">
 								Drag to rotate the solid freely in any direction (no poles, so every symmetry is
-								reachable). Scroll to zoom.
+								reachable). <span className="max-md:hidden">Scroll to zoom.</span>
+								<span className="hidden max-md:inline">Pinch to zoom.</span>
 							</p>
 						</div>
 					) : null}

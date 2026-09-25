@@ -28,6 +28,10 @@ function foldFraction(p: ParametricCellData["params"][number]): number | null {
 	return (c - lo) / (hi - lo);
 }
 
+// On a phone the panel is one card in /play's bottom tray (app/(app)/play/_play-client.tsx), so it drops
+// its own floating position and takes the tray's width.
+const PHONE_CARD = "max-md:static max-md:shrink-0 max-md:translate-x-0 max-md:justify-center max-md:px-3";
+
 // The free-angle slider overlay for a parametric tiling family. Deliberately a small leaf that
 // subscribes ONLY to `familyAlphas`: dragging writes the new tuple back to the store, which re-renders
 // just this panel (a row or two) — never the page or the canvas. The canvas draw loops read the same
@@ -58,11 +62,11 @@ export function ParamSliderPanel({ paramCell }: { paramCell: ParametricCellData 
 	// pad instead (NOTES §103). Separable multi-parameter families keep the sliders: their region IS a box.
 	if (paramCell.regionVertices?.length && paramCell.params.length === 2) {
 		return (
-			<div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-20 flex items-stretch gap-4 rounded-xl bg-surface-raised/95 px-4 py-2.5 shadow-lg ring-1 ring-line-subtle backdrop-blur-sm">
+			<div className={`absolute bottom-16 left-1/2 -translate-x-1/2 z-20 flex items-stretch gap-4 rounded-xl bg-surface-raised/95 px-4 py-2.5 shadow-lg ring-1 ring-line-subtle backdrop-blur-sm ${PHONE_CARD}`}>
 				<ParamRegionPad paramCell={paramCell} />
 				{/* The pad's axes now say what the pad is, so the sentence that used to sit here is gone. This
 				    chip stays because the gesture it names is otherwise invisible. */}
-				<div className="flex flex-col justify-center gap-1 border-l border-line/60 pl-4 text-[10px] text-fg-muted">
+				<div className="flex flex-col justify-center gap-1 border-l border-line/60 pl-4 text-[10px] text-fg-muted max-md:hidden">
 					<span className="inline-flex items-center gap-1.5 whitespace-nowrap">
 						<Kbd>{metaKey}</Kbd>
 						<span>+ move mouse to deform</span>
@@ -73,13 +77,13 @@ export function ParamSliderPanel({ paramCell }: { paramCell: ParametricCellData 
 	}
 
 	return (
-		<div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-20 flex items-stretch gap-4 rounded-xl bg-surface-raised/95 px-4 py-2.5 shadow-lg ring-1 ring-line-subtle backdrop-blur-sm">
-			<div className="flex flex-col justify-center gap-2">
+		<div className={`absolute bottom-16 left-1/2 -translate-x-1/2 z-20 flex items-stretch gap-4 rounded-xl bg-surface-raised/95 px-4 py-2.5 shadow-lg ring-1 ring-line-subtle backdrop-blur-sm ${PHONE_CARD}`}>
+			<div className="flex flex-col justify-center gap-2 max-md:min-w-0 max-md:flex-1">
 				{visible.map((p, j) => (
-					<div key={j} className="flex items-center gap-3">
+					<div key={j} className="flex items-center gap-3 max-md:flex-wrap max-md:gap-x-3 max-md:gap-y-0">
 						{/* A LENGTH parameter is not an angle: it prints its own name and no degree sign,
 						    and two decimals, because the interesting members sit at ratios like 0.55. */}
-						<span className="text-xs font-medium text-fg whitespace-nowrap w-24">
+						<span className="text-xs font-medium text-fg whitespace-nowrap w-24 max-md:w-auto max-md:text-[13px]">
 							{p.kind === "length"
 								? `${paramName(p, j)} = ${effAlphas[j].toFixed(2)}`
 								: `${paramName(p, j)} = ${effAlphas[j].toFixed(1)}\u00b0`}
@@ -87,18 +91,18 @@ export function ParamSliderPanel({ paramCell }: { paramCell: ParametricCellData 
 						{/* An intrinsic parameter IS a corner of the tiling, so the row says which one. A
 						    palette parameter has no such answer and the slot stays empty. */}
 						{p.dart != null && p.tile ? (
-							<span className="text-[10px] text-fg-muted whitespace-nowrap w-28 truncate" title={p.tile}>
+							<span className="text-[10px] text-fg-muted whitespace-nowrap w-28 truncate max-md:w-auto max-md:min-w-0 max-md:flex-1 max-md:text-xs" title={p.tile}>
 								{p.tile}
 							</span>
 						) : null}
-						<div className="relative w-56">
+						<div className="relative w-56 max-md:order-last max-md:w-full">
 							<RangeInput
 								min={p.alphaRangeDegOpen[0]}
 								max={p.alphaRangeDegOpen[1]}
 								step={p.kind === "length" ? LENGTH_STEP : ALPHA_STEP_DEG}
 								value={effAlphas[j]}
 								onChange={(v) => setAlphaAt(j, v)}
-								className="w-56"
+								className="w-56 max-md:w-full"
 								aria-label={p.kind === "length"
 									? `family edge length ${paramName(p, j)}`
 									: `family angle ${paramGlyph(p, j).label}${p.tile ? ` (${p.tile})` : ""} in degrees`}
@@ -115,7 +119,7 @@ export function ParamSliderPanel({ paramCell }: { paramCell: ParametricCellData 
 								/>
 							) : null}
 						</div>
-						<span className="text-[10px] text-fg-muted whitespace-nowrap font-mono">
+						<span className="text-[10px] text-fg-muted whitespace-nowrap font-mono max-md:ml-auto max-md:text-xs">
 							{p.kind === "length"
 								? `(${p.alphaRangeDegOpen[0].toFixed(2)}, ${p.alphaRangeDegOpen[1].toFixed(2)})`
 								: `(${p.alphaRangeDegOpen[0].toFixed(0)}\u00b0, ${p.alphaRangeDegOpen[1].toFixed(0)}\u00b0)`}
@@ -126,7 +130,7 @@ export function ParamSliderPanel({ paramCell }: { paramCell: ParametricCellData 
 					<button
 						type="button"
 						onClick={() => setExpanded((v) => !v)}
-						className="self-start text-[10px] text-fg-muted underline underline-offset-2 hover:text-accent"
+						className="self-start text-[10px] text-fg-muted underline underline-offset-2 hover:text-accent max-md:min-h-11 max-md:text-xs"
 					>
 						{expanded
 							? `show ${VISIBLE_ROWS} of ${paramCell.params.length}`
@@ -138,7 +142,7 @@ export function ParamSliderPanel({ paramCell }: { paramCell: ParametricCellData 
 			</div>
 			{/* Discoverability hint for the Command-scrub gesture, kept beside the sliders (not below) so the
 			    panel stays short. The axis→angle mapping is coloured to match each slider's label. */}
-			<div className="flex flex-col justify-center gap-1 border-l border-line/60 pl-4 text-[10px] text-fg-muted">
+			<div className="flex flex-col justify-center gap-1 border-l border-line/60 pl-4 text-[10px] text-fg-muted max-md:hidden">
 				<span className="inline-flex items-center gap-1.5 whitespace-nowrap">
 					<Kbd>{metaKey}</Kbd>
 					<span>+ move mouse to deform</span>

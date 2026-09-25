@@ -114,22 +114,33 @@ export function useStudioKeys(canEdit: boolean) {
 	}, [active, canEdit]);
 }
 
-/** Undo, redo, reset. Each is live exactly when the history has something for it to do. */
-export function StudioHistory() {
+/**
+ * Undo, redo, reset. Each is live exactly when the history has something for it to do.
+ *
+ * `parts` splits them for a phone, whose toolbar holds undo and redo beside the way out but not the
+ * reset as well; that one moves to the row of tools.
+ */
+export function StudioHistory({ parts = "all" }: { parts?: "all" | "undo-redo" | "reset" }) {
 	const undoable = useStudio(canUndo);
 	const redoable = useStudio(canRedo);
 	const resettable = useStudio(canReset);
 	return (
 		<>
-			<ToolbarButton label="Undo" shortcut="Cmd/Ctrl + Z" disabled={!undoable} onClick={() => useStudio.getState().undo()}>
-				<Undo2 size={16} />
-			</ToolbarButton>
-			<ToolbarButton label="Redo" shortcut="Shift + Cmd/Ctrl + Z" disabled={!redoable} onClick={() => useStudio.getState().redo()}>
-				<Redo2 size={16} />
-			</ToolbarButton>
-			<ToolbarButton label="Back to the catalogued tiling" disabled={!resettable} onClick={() => useStudio.getState().reset()}>
-				<RotateCcw size={16} />
-			</ToolbarButton>
+			{parts !== "reset" ? (
+				<>
+					<ToolbarButton label="Undo" shortcut="Cmd/Ctrl + Z" disabled={!undoable} onClick={() => useStudio.getState().undo()}>
+						<Undo2 size={16} />
+					</ToolbarButton>
+					<ToolbarButton label="Redo" shortcut="Shift + Cmd/Ctrl + Z" disabled={!redoable} onClick={() => useStudio.getState().redo()}>
+						<Redo2 size={16} />
+					</ToolbarButton>
+				</>
+			) : null}
+			{parts !== "undo-redo" ? (
+				<ToolbarButton label="Back to the catalogued tiling" disabled={!resettable} onClick={() => useStudio.getState().reset()}>
+					<RotateCcw size={16} />
+				</ToolbarButton>
+			) : null}
 		</>
 	);
 }
@@ -192,9 +203,10 @@ export function StudioPeriod({ wallpaperDisabledReason }: { wallpaperDisabledRea
 				{label}
 			</button>
 		);
-		// A disabled option keeps its hover, so the reason it is unavailable is one hover away.
+		// A disabled option keeps its hover, so the reason it is unavailable is one hover away (one tap on a
+		// phone, where the tap has nothing else to do).
 		return disabledReason ? (
-			<Tooltip label={disabledReason} side="top" delay={0}>
+			<Tooltip label={disabledReason} side="top" delay={0} tapToOpen>
 				{button}
 			</Tooltip>
 		) : (
@@ -211,7 +223,7 @@ export function StudioPeriod({ wallpaperDisabledReason }: { wallpaperDisabledRea
 				label="Show the period cell"
 				aria-pressed={showLattice}
 				onClick={() => useStudio.getState().set({ showLattice: !showLattice })}
-				className="w-auto gap-1.5 px-2.5"
+				className="w-auto gap-1.5 px-2.5 max-md:w-auto"
 			>
 				<SquareDashed size={15} />
 				Period cell

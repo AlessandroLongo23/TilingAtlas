@@ -9,6 +9,9 @@ import { compactVertexConfig } from "@/lib/services/referenceAtlas";
 import { TILING_LEVEL_LABEL, TILING_LEVEL_NOTE } from "@/lib/tilings/tiling-level";
 import { VertexConfigurationThumbnail } from "./vertex-configuration-thumbnail";
 import { Button } from "./ui/button";
+import { Modal } from "./ui/modal";
+import { useIsPhone } from "@/lib/hooks/useIsPhone";
+import { cn } from "@/lib/utils/cn";
 
 interface TilingInfoProps {
 	spec: TilingSpec | null;
@@ -64,19 +67,30 @@ function Row({
 	title?: string;
 }) {
 	const valueClass = muted ? "text-sm italic text-fg-muted/60" : "text-sm font-medium text-fg";
+	// A phone has no hover, so the gloss a title would carry is printed under the row there.
+	const gloss = title ? <p className="hidden text-xs leading-snug text-fg-muted max-md:block">{title}</p> : null;
 	if (stack) {
 		return (
 			<div className="flex flex-col gap-0.5" title={title}>
 				<span className="text-sm text-fg-secondary">{label}</span>
 				<span className={valueClass}>{value}</span>
+				{gloss}
 			</div>
 		);
 	}
-	return (
+	const row = (
 		<div className="flex items-center justify-between gap-4" title={title}>
 			<span className="text-sm text-fg-secondary">{label}</span>
 			<span className={valueClass}>{value}</span>
 		</div>
+	);
+	return gloss ? (
+		<div className="flex flex-col gap-0.5">
+			{row}
+			{gloss}
+		</div>
+	) : (
+		row
 	);
 }
 
@@ -132,13 +146,16 @@ export function TilingInfo({ spec, vcs = [] }: TilingInfoProps) {
 	// under them was impossible. Pinned, the button takes the solid variant, so it reads as held down.
 	const [isPinned, setIsPinned] = useState(false);
 	const open = !!spec && (isPinned || isHovered);
+	// On a phone the card is a bottom sheet (the shared Modal), not a 340px popover over the canvas, and
+	// hover does not open it: a tap reports a mouseenter too, which would leave it stuck open.
+	const isPhone = useIsPhone();
 
 	return (
 		<div
 			className="relative"
 			role="group"
 			aria-label="Tiling information"
-			onMouseEnter={() => setIsHovered(true)}
+			onMouseEnter={() => !isPhone && setIsHovered(true)}
 			onMouseLeave={() => setIsHovered(false)}
 		>
 			{/* Pinned is a state, not an action, so it reads as a pressed button, not an accent one. */}
@@ -150,298 +167,326 @@ export function TilingInfo({ spec, vcs = [] }: TilingInfoProps) {
 				aria-pressed={isPinned}
 				aria-expanded={open}
 				onClick={() => setIsPinned((p) => !p)}
-				classes={isPinned ? "bg-surface-sunken text-fg" : ""}
+				classes={cn(isPinned && "bg-surface-sunken text-fg", "max-md:hidden")}
 			/>
+			{/* A phone's canvas corners hold one set of buttons in one material (ResetViewButton's). This is
+			    the info one, and it opens the sheet below. */}
+			<button
+				type="button"
+				onClick={() => setIsPinned(true)}
+				aria-label="Tiling information"
+				aria-haspopup="dialog"
+				className="hidden size-11 items-center justify-center ta-float text-fg-secondary transition-colors hover:text-fg max-md:flex"
+			>
+				<Info size={18} />
+			</button>
 
-			{open && spec ? (
+			{isPhone ? (
+				<Modal
+					isOpen={isPinned && !!spec}
+					onOpenChange={setIsPinned}
+					title="Tiling information"
+					description="What is known about the tiling on the canvas: its symmetry, tiles and orbits."
+					size="sm"
+				>
+					{spec ? <div className="p-4 pb-6">{body(spec)}</div> : null}
+				</Modal>
+			) : open && spec ? (
 				<div className="absolute left-0 top-10 z-50 min-w-56 max-w-[340px] ta-float p-3">
-					<div className="flex flex-col gap-3">
-						{/* Header: Schläfli / vertex-config label + geometry (+ solid name for spherical) */}
-						<div className="flex flex-col gap-0.5">
-							{/* ⚑ The spherical header WRAPS instead of truncating, and drops the geometry chip. The
-							    name leads here (AL, 2026-08-20) and these names are long: on one truncating line
-							    "great truncated icosidodecahedron (U68)" is cut to "great truncated icosidode…", which
-							    is the half a reader came for. The chip is redundant on top of that, since /play is
-							    browsed one geometry at a time and the sidebar already says which. */}
-							<div className="flex min-w-0 items-baseline justify-between gap-3">
-								<span
-									className={`min-w-0 font-mono text-sm font-semibold text-fg ${
-										spec.geometry === "spherical" ? "break-words" : "truncate"
-									}`}
-									title={spec.label}
-								>
-									{compactVertexConfig(spec.label)}
-								</span>
-								{spec.geometry === "spherical" ? null : (
-									<span className="shrink-0 text-xs text-fg-muted">{GEOMETRY_LABEL[spec.geometry]}</span>
-								)}
-							</div>
-							{/* The second line carries what separates this record from its neighbours on the board:
-							    the density for a star polyhedron, {p,q} for a Platonic solid, the tile and symmetry
-							    order for a half-tile board. Empty where there is nothing more to say, and then the
-							    line is dropped instead of printing a blank one. */}
-							{spec.geometry === "spherical" && spec.detail ? (
-								<span className="text-xs text-fg-secondary">{spec.detail}</span>
-							) : spec.geometry === "hyperbolic" ? (
-								<span className="text-xs text-fg-secondary">Poincaré disk</span>
-							) : spec.geometry === "euclidean" && spec.freedraw ? (
-								<span className="text-xs text-fg-secondary">Freedraw edge pattern</span>
-							) : null}
-						</div>
-
-						{/* Symmetry — Euclidean */}
-						{spec.geometry === "euclidean" && (spec.wallpaperGroup || spec.latticeShape) ? (
-							<div className="flex flex-col gap-1.5 border-t border-line pt-3">
-								<SectionTitle>Symmetry</SectionTitle>
-								{spec.wallpaperGroup ? (
-									<Row
-										label="Group"
-										value={
-											<span className="font-mono">
-												<span>{spec.wallpaperGroup}</span>
-												{spec.orbifold ? <span className="ml-1.5 text-fg-muted">{spec.orbifold}</span> : null}
-											</span>
-										}
-									/>
-								) : null}
-								{spec.latticeShape ? (
-									<Row label="Lattice" value={<span className="capitalize">{spec.latticeShape}</span>} />
-								) : null}
-							</div>
-						) : null}
-
-						{/* Tiles — Freedraw. The faces of the drawn edge set, which are NOT tiles in the Grünbaum
-						    & Shephard sense: a face may be an infinite strip or a sheet unbounded in both
-						    directions, so the breakdown by kind is the whole story here. */}
-						{spec.geometry === "euclidean" && spec.freedraw ? (
-							<div className="flex flex-col gap-1.5 border-t border-line pt-3">
-								<SectionTitle>Tiles</SectionTitle>
-								{spec.freedraw.finite > 0 ? <Row label="Finite polyominoes" value={spec.freedraw.finite} /> : null}
-								{spec.freedraw.strips > 0 ? <Row label="Infinite strips" value={spec.freedraw.strips} /> : null}
-								{spec.freedraw.unbounded > 0 ? <Row label="Unbounded sheets" value={spec.freedraw.unbounded} /> : null}
-								{spec.freedraw.withHoles > 0 ? <Row label="With holes" value={spec.freedraw.withHoles} /> : null}
-								{/* Hermite normal form: generated by (a,0) and (b,d). Kept on one nowrap line — the pair
-								    split across two lines mid-tuple, which read as four separate numbers. */}
-								<Row
-									label="Period lattice"
-									value={
-										<span className="font-mono whitespace-nowrap">
-											({spec.freedraw.lattice.a},0) ({spec.freedraw.lattice.b},{spec.freedraw.lattice.d})
-										</span>
-									}
-								/>
-								<Row label="Lattice index" value={spec.freedraw.lattice.a * spec.freedraw.lattice.d} />
-							</div>
-						) : null}
-
-						{/* Tiles — Colored squares: the color census of one period plus the folded colored
-						    vertex figures, the certificate's own vocabulary for this class. */}
-						{spec.geometry === "euclidean" && spec.colors ? (
-							<div className="flex flex-col gap-1.5 border-t border-line pt-3">
-								<SectionTitle>Coloring</SectionTitle>
-								<Row
-									label="Grid"
-									value={
-										spec.colors.grid === "square"
-											? "squares"
-											: spec.colors.grid === "triangle"
-												? "triangles"
-												: "triangles + squares"
-									}
-								/>
-								{spec.colors.census.map((n, i) => (
-									<Row key={i} label={`${colorLetter(i)} cells / period`} value={n} />
-								))}
-								<Row
-									label="Period lattice"
-									value={
-										<span className="font-mono whitespace-nowrap">
-											{spec.colors.patch
-												? `T1 (${spec.colors.patch.T1[0]}, ${spec.colors.patch.T1[1]}), T2 (${spec.colors.patch.T2[0]}, ${spec.colors.patch.T2[1]})`
-												: `(${spec.colors.lattice.a},0) (${spec.colors.lattice.b},${spec.colors.lattice.d})`}
-										</span>
-									}
-								/>
-								<Row label="Cells / period" value={spec.colors.cells} />
-								{spec.colors.vcs.map((vc, i) => (
-									<Row
-										key={i}
-										label={i === 0 ? "Vertex figures" : ""}
-										value={<span className="font-mono whitespace-nowrap">{vc}</span>}
-									/>
-								))}
-							</div>
-						) : null}
-
-						{/* Tiles — Hyperbolic (always; the honest tile/edge facts moved off the card) */}
-						{spec.geometry === "hyperbolic" ? (
-							<div className="flex flex-col gap-1.5 border-t border-line pt-3">
-								<SectionTitle>Tiles</SectionTitle>
-								{spec.schlafli ? (
-									<Row
-										label="Schläfli"
-										value={<span className="font-mono">{`{${spec.schlafli[0]},${spec.schlafli[1]}}`}</span>}
-									/>
-								) : null}
-								{spec.faces.length > 0 ? (
-									<Row label="Face sizes" value={<span className="font-mono">{`{${spec.faces.join(",")}}`}</span>} />
-								) : null}
-								{spec.valence > 0 ? <Row label="Valence (d)" value={spec.valence} /> : null}
-								{spec.edge != null ? (
-									<Row label="Edge length ℓ" value={<span className="font-mono">{spec.edge.toFixed(3)}</span>} />
-								) : null}
-							</div>
-						) : null}
-
-						{/* Symmetry — Hyperbolic: ONLY for regular {p,q}. Non-regular configs get no Coxeter row (we
-						    do not invert the vertex config into a Wythoff symbol). */}
-						{spec.geometry === "hyperbolic" && spec.coxeter ? (
-							<div className="flex flex-col gap-1.5 border-t border-line pt-3">
-								<SectionTitle>Symmetry</SectionTitle>
-								<Row
-									label="Coxeter"
-									value={
-										<span className="font-mono">
-											<span>{spec.coxeter}</span>
-											{spec.orbifold ? <span className="ml-1.5 text-fg-muted">{spec.orbifold}</span> : null}
-										</span>
-									}
-								/>
-							</div>
-						) : null}
-
-						{/* Symmetry — Spherical (Platonic only) */}
-						{spec.geometry === "spherical" && spec.pointGroup ? (
-							<div className="flex flex-col gap-1.5 border-t border-line pt-3">
-								<SectionTitle>Symmetry</SectionTitle>
-								<Row
-									label="Point group"
-									value={
-										<span className="font-mono">
-											<span>{spec.pointGroup}</span>
-											{spec.orbifold ? <span className="ml-1.5 text-fg-muted">{spec.orbifold}</span> : null}
-										</span>
-									}
-								/>
-							</div>
-						) : null}
-
-						{/* Counts — Spherical (Platonic only) */}
-						{spec.geometry === "spherical" && spec.counts ? (
-							<div className="flex flex-col gap-1.5 border-t border-line pt-3">
-								<SectionTitle>Counts (V − E + F = 2)</SectionTitle>
-								<Row label="Vertices" value={spec.counts.V} />
-								<Row label="Edges" value={spec.counts.E} />
-								<Row label="Faces" value={spec.counts.F} />
-							</div>
-						) : null}
-
-						{/* How this repo got the record — NOT who first described the solid, which is the
-						    discoverer line. A reader comparing "62 of the 92 Johnson solids" against the
-						    literature needs to know that twelve of them were built by gyrating a parent
-						    rather than found by the engine. Measured per solid; see
-						    tools/ctrnact-oracle/annotate_derivation.py. */}
-						{spec.geometry === "spherical" && spec.derivation ? (
-							<div className="flex flex-col gap-1.5 border-t border-line pt-3">
-								<SectionTitle>Derivation</SectionTitle>
-								<Row label="Method" value={DERIVATION_LABEL[spec.derivation]} />
-								<p className="text-[11px] leading-snug text-fg-muted">
-									{DERIVATION_NOTE[spec.derivation]}
-								</p>
-							</div>
-						) : null}
-
-						{/* Parameterization — /isohedral. The tiling vertices, aspects and edge symmetries ARE
-						    the type here; a vertex configuration would say nothing, since the tile is a free
-						    shape. See lib/isohedral/catalogue.ts for where each number comes from. */}
-						{spec.geometry === "euclidean" && spec.isohedral ? (
-							<div className="flex flex-col gap-1.5 border-t border-line pt-3">
-								<SectionTitle>Parameterization</SectionTitle>
-								{spec.isohedral.marked ? (
-									<Row label="Status" value="needs interior markings" muted />
-								) : (
-									<>
-										<Row label="Parameters" value={spec.isohedral.numParams} />
-										<Row label="Tiling vertices" value={spec.isohedral.numVertices} />
-										<Row label="Aspects" value={spec.isohedral.numAspects} />
-										<Row
-											label="Edge shapes"
-											value={<span className="font-mono">{spec.isohedral.edgeShapes.join(" ")}</span>}
-										/>
-										<Row
-											label="Edge word"
-											value={<span className="font-mono">{spec.isohedral.edgeWord}</span>}
-										/>
-										<Row label="Colours" value={spec.isohedral.numColours} />
-										<Row label="Unit cell" value={`${spec.isohedral.tilesPerCell} tiles, instanced`} />
-										{spec.isohedral.degenerate ? (
-											<Row label="Prototile" value="self-overlapping" muted />
-										) : null}
-									</>
-								)}
-							</div>
-						) : null}
-
-						{/* Family — /pentagons. Kershner's fifteen types: who found each and when is half the
-						    subject, so it leads. Angles and sides are the solved pentagon, not the sliders. */}
-						{spec.geometry === "euclidean" && spec.pentagon ? (
-							<div className="flex flex-col gap-1.5 border-t border-line pt-3">
-								<SectionTitle>Family</SectionTitle>
-								<Row label="Discovered" value={spec.pentagon.discovered} />
-								<Row label="Freedom" value={spec.pentagon.dof === 0 ? "rigid" : spec.pentagon.dof} />
-								<Row label="Tiles per unit" value={spec.pentagon.tilesPerUnit} />
-								<Row stack label="Wallpaper groups" value={<span className="font-mono">{spec.pentagon.groups}</span>} />
-								{spec.pentagon.angles ? (
-									<Row
-										stack
-										label="Angles"
-										value={
-											<span className="font-mono">{spec.pentagon.angles.map((a) => a.toFixed(2)).join(", ")}</span>
-										}
-									/>
-								) : null}
-								{spec.pentagon.sides ? (
-									<Row
-										stack
-										label="Sides"
-										value={
-											<span className="font-mono">{spec.pentagon.sides.map((s) => s.toFixed(4)).join(", ")}</span>
-										}
-									/>
-								) : null}
-								{spec.pentagon.status ? <Row label="Status" value={spec.pentagon.status} muted /> : null}
-							</div>
-						) : null}
-
-						{/* Orbits — every geometry that knows any of them */}
-						{hasOrbitFacts(spec) ? (
-							<div className="border-t border-line pt-3">
-								<OrbitSection spec={spec} />
-							</div>
-						) : null}
-
-						{/* Vertex-configuration thumbnails — Euclidean only */}
-						{spec.geometry === "euclidean" && vcs.length > 0 ? (
-							<div className="border-t border-line pt-3">
-								<SectionTitle>Vertex configurations</SectionTitle>
-								<div className="mt-2 flex flex-wrap gap-3">
-									{vcs.map(({ vc, occurrences }, i) => (
-										<div key={vc.name + i} className="w-24 shrink-0">
-											<VertexConfigurationThumbnail
-												vc={vc}
-												size={96}
-												showName
-												showOccurrences
-												occurrences={occurrences}
-											/>
-										</div>
-									))}
-								</div>
-							</div>
-						) : null}
-					</div>
+					{body(spec)}
 				</div>
 			) : null}
 		</div>
 	);
+
+	// The card's content, the same in the desktop popover and the phone sheet.
+	function body(spec: TilingSpec) {
+		return (
+			<div className="flex flex-col gap-3">
+				{/* Header: Schläfli / vertex-config label + geometry (+ solid name for spherical) */}
+				<div className="flex flex-col gap-0.5">
+					{/* ⚑ The spherical header WRAPS instead of truncating, and drops the geometry chip. The
+					    name leads here (AL, 2026-08-20) and these names are long: on one truncating line
+					    "great truncated icosidodecahedron (U68)" is cut to "great truncated icosidode…", which
+					    is the half a reader came for. The chip is redundant on top of that, since /play is
+					    browsed one geometry at a time and the sidebar already says which. */}
+					<div className="flex min-w-0 items-baseline justify-between gap-3">
+						<span
+							className={`min-w-0 font-mono text-sm font-semibold text-fg ${
+								spec.geometry === "spherical" ? "break-words" : "truncate max-md:whitespace-normal max-md:break-all"
+							}`}
+							title={spec.label}
+						>
+							{compactVertexConfig(spec.label)}
+						</span>
+						{spec.geometry === "spherical" ? null : (
+							<span className="shrink-0 text-xs text-fg-muted">{GEOMETRY_LABEL[spec.geometry]}</span>
+						)}
+					</div>
+					{/* The second line carries what separates this record from its neighbours on the board:
+					    the density for a star polyhedron, {p,q} for a Platonic solid, the tile and symmetry
+					    order for a half-tile board. Empty where there is nothing more to say, and then the
+					    line is dropped instead of printing a blank one. */}
+					{spec.geometry === "spherical" && spec.detail ? (
+						<span className="text-xs text-fg-secondary">{spec.detail}</span>
+					) : spec.geometry === "hyperbolic" ? (
+						<span className="text-xs text-fg-secondary">Poincaré disk</span>
+					) : spec.geometry === "euclidean" && spec.freedraw ? (
+						<span className="text-xs text-fg-secondary">Freedraw edge pattern</span>
+					) : null}
+				</div>
+
+				{/* Symmetry — Euclidean */}
+				{spec.geometry === "euclidean" && (spec.wallpaperGroup || spec.latticeShape) ? (
+					<div className="flex flex-col gap-1.5 border-t border-line pt-3">
+						<SectionTitle>Symmetry</SectionTitle>
+						{spec.wallpaperGroup ? (
+							<Row
+								label="Group"
+								value={
+									<span className="font-mono">
+										<span>{spec.wallpaperGroup}</span>
+										{spec.orbifold ? <span className="ml-1.5 text-fg-muted">{spec.orbifold}</span> : null}
+									</span>
+								}
+							/>
+						) : null}
+						{spec.latticeShape ? (
+							<Row label="Lattice" value={<span className="capitalize">{spec.latticeShape}</span>} />
+						) : null}
+					</div>
+				) : null}
+
+				{/* Tiles — Freedraw. The faces of the drawn edge set, which are NOT tiles in the Grünbaum
+				    & Shephard sense: a face may be an infinite strip or a sheet unbounded in both
+				    directions, so the breakdown by kind is the whole story here. */}
+				{spec.geometry === "euclidean" && spec.freedraw ? (
+					<div className="flex flex-col gap-1.5 border-t border-line pt-3">
+						<SectionTitle>Tiles</SectionTitle>
+						{spec.freedraw.finite > 0 ? <Row label="Finite polyominoes" value={spec.freedraw.finite} /> : null}
+						{spec.freedraw.strips > 0 ? <Row label="Infinite strips" value={spec.freedraw.strips} /> : null}
+						{spec.freedraw.unbounded > 0 ? <Row label="Unbounded sheets" value={spec.freedraw.unbounded} /> : null}
+						{spec.freedraw.withHoles > 0 ? <Row label="With holes" value={spec.freedraw.withHoles} /> : null}
+						{/* Hermite normal form: generated by (a,0) and (b,d). Kept on one nowrap line — the pair
+						    split across two lines mid-tuple, which read as four separate numbers. */}
+						<Row
+							label="Period lattice"
+							value={
+								<span className="font-mono whitespace-nowrap">
+									({spec.freedraw.lattice.a},0) ({spec.freedraw.lattice.b},{spec.freedraw.lattice.d})
+								</span>
+							}
+						/>
+						<Row label="Lattice index" value={spec.freedraw.lattice.a * spec.freedraw.lattice.d} />
+					</div>
+				) : null}
+
+				{/* Tiles — Colored squares: the color census of one period plus the folded colored
+				    vertex figures, the certificate's own vocabulary for this class. */}
+				{spec.geometry === "euclidean" && spec.colors ? (
+					<div className="flex flex-col gap-1.5 border-t border-line pt-3">
+						<SectionTitle>Coloring</SectionTitle>
+						<Row
+							label="Grid"
+							value={
+								spec.colors.grid === "square"
+									? "squares"
+									: spec.colors.grid === "triangle"
+										? "triangles"
+										: "triangles + squares"
+							}
+						/>
+						{spec.colors.census.map((n, i) => (
+							<Row key={i} label={`${colorLetter(i)} cells / period`} value={n} />
+						))}
+						<Row
+							label="Period lattice"
+							value={
+								<span className="font-mono whitespace-nowrap">
+									{spec.colors.patch
+										? `T1 (${spec.colors.patch.T1[0]}, ${spec.colors.patch.T1[1]}), T2 (${spec.colors.patch.T2[0]}, ${spec.colors.patch.T2[1]})`
+										: `(${spec.colors.lattice.a},0) (${spec.colors.lattice.b},${spec.colors.lattice.d})`}
+								</span>
+							}
+						/>
+						<Row label="Cells / period" value={spec.colors.cells} />
+						{spec.colors.vcs.map((vc, i) => (
+							<Row
+								key={i}
+								label={i === 0 ? "Vertex figures" : ""}
+								value={<span className="font-mono whitespace-nowrap">{vc}</span>}
+							/>
+						))}
+					</div>
+				) : null}
+
+				{/* Tiles — Hyperbolic (always; the honest tile/edge facts moved off the card) */}
+				{spec.geometry === "hyperbolic" ? (
+					<div className="flex flex-col gap-1.5 border-t border-line pt-3">
+						<SectionTitle>Tiles</SectionTitle>
+						{spec.schlafli ? (
+							<Row
+								label="Schläfli"
+								value={<span className="font-mono">{`{${spec.schlafli[0]},${spec.schlafli[1]}}`}</span>}
+							/>
+						) : null}
+						{spec.faces.length > 0 ? (
+							<Row label="Face sizes" value={<span className="font-mono">{`{${spec.faces.join(",")}}`}</span>} />
+						) : null}
+						{spec.valence > 0 ? <Row label="Valence (d)" value={spec.valence} /> : null}
+						{spec.edge != null ? (
+							<Row label="Edge length ℓ" value={<span className="font-mono">{spec.edge.toFixed(3)}</span>} />
+						) : null}
+					</div>
+				) : null}
+
+				{/* Symmetry — Hyperbolic: ONLY for regular {p,q}. Non-regular configs get no Coxeter row (we
+				    do not invert the vertex config into a Wythoff symbol). */}
+				{spec.geometry === "hyperbolic" && spec.coxeter ? (
+					<div className="flex flex-col gap-1.5 border-t border-line pt-3">
+						<SectionTitle>Symmetry</SectionTitle>
+						<Row
+							label="Coxeter"
+							value={
+								<span className="font-mono">
+									<span>{spec.coxeter}</span>
+									{spec.orbifold ? <span className="ml-1.5 text-fg-muted">{spec.orbifold}</span> : null}
+								</span>
+							}
+						/>
+					</div>
+				) : null}
+
+				{/* Symmetry — Spherical (Platonic only) */}
+				{spec.geometry === "spherical" && spec.pointGroup ? (
+					<div className="flex flex-col gap-1.5 border-t border-line pt-3">
+						<SectionTitle>Symmetry</SectionTitle>
+						<Row
+							label="Point group"
+							value={
+								<span className="font-mono">
+									<span>{spec.pointGroup}</span>
+									{spec.orbifold ? <span className="ml-1.5 text-fg-muted">{spec.orbifold}</span> : null}
+								</span>
+							}
+						/>
+					</div>
+				) : null}
+
+				{/* Counts — Spherical (Platonic only) */}
+				{spec.geometry === "spherical" && spec.counts ? (
+					<div className="flex flex-col gap-1.5 border-t border-line pt-3">
+						<SectionTitle>Counts (V − E + F = 2)</SectionTitle>
+						<Row label="Vertices" value={spec.counts.V} />
+						<Row label="Edges" value={spec.counts.E} />
+						<Row label="Faces" value={spec.counts.F} />
+					</div>
+				) : null}
+
+				{/* How this repo got the record — NOT who first described the solid, which is the
+				    discoverer line. A reader comparing "62 of the 92 Johnson solids" against the
+				    literature needs to know that twelve of them were built by gyrating a parent
+				    rather than found by the engine. Measured per solid; see
+				    tools/ctrnact-oracle/annotate_derivation.py. */}
+				{spec.geometry === "spherical" && spec.derivation ? (
+					<div className="flex flex-col gap-1.5 border-t border-line pt-3">
+						<SectionTitle>Derivation</SectionTitle>
+						<Row label="Method" value={DERIVATION_LABEL[spec.derivation]} />
+						<p className="text-[11px] leading-snug text-fg-muted">
+							{DERIVATION_NOTE[spec.derivation]}
+						</p>
+					</div>
+				) : null}
+
+				{/* Parameterization — /isohedral. The tiling vertices, aspects and edge symmetries ARE
+				    the type here; a vertex configuration would say nothing, since the tile is a free
+				    shape. See lib/isohedral/catalogue.ts for where each number comes from. */}
+				{spec.geometry === "euclidean" && spec.isohedral ? (
+					<div className="flex flex-col gap-1.5 border-t border-line pt-3">
+						<SectionTitle>Parameterization</SectionTitle>
+						{spec.isohedral.marked ? (
+							<Row label="Status" value="needs interior markings" muted />
+						) : (
+							<>
+								<Row label="Parameters" value={spec.isohedral.numParams} />
+								<Row label="Tiling vertices" value={spec.isohedral.numVertices} />
+								<Row label="Aspects" value={spec.isohedral.numAspects} />
+								<Row
+									label="Edge shapes"
+									value={<span className="font-mono">{spec.isohedral.edgeShapes.join(" ")}</span>}
+								/>
+								<Row
+									label="Edge word"
+									value={<span className="font-mono">{spec.isohedral.edgeWord}</span>}
+								/>
+								<Row label="Colours" value={spec.isohedral.numColours} />
+								<Row label="Unit cell" value={`${spec.isohedral.tilesPerCell} tiles, instanced`} />
+								{spec.isohedral.degenerate ? (
+									<Row label="Prototile" value="self-overlapping" muted />
+								) : null}
+							</>
+						)}
+					</div>
+				) : null}
+
+				{/* Family — /pentagons. Kershner's fifteen types: who found each and when is half the
+				    subject, so it leads. Angles and sides are the solved pentagon, not the sliders. */}
+				{spec.geometry === "euclidean" && spec.pentagon ? (
+					<div className="flex flex-col gap-1.5 border-t border-line pt-3">
+						<SectionTitle>Family</SectionTitle>
+						<Row label="Discovered" value={spec.pentagon.discovered} />
+						<Row label="Freedom" value={spec.pentagon.dof === 0 ? "rigid" : spec.pentagon.dof} />
+						<Row label="Tiles per unit" value={spec.pentagon.tilesPerUnit} />
+						<Row stack label="Wallpaper groups" value={<span className="font-mono">{spec.pentagon.groups}</span>} />
+						{spec.pentagon.angles ? (
+							<Row
+								stack
+								label="Angles"
+								value={
+									<span className="font-mono">{spec.pentagon.angles.map((a) => a.toFixed(2)).join(", ")}</span>
+								}
+							/>
+						) : null}
+						{spec.pentagon.sides ? (
+							<Row
+								stack
+								label="Sides"
+								value={
+									<span className="font-mono">{spec.pentagon.sides.map((s) => s.toFixed(4)).join(", ")}</span>
+								}
+							/>
+						) : null}
+						{spec.pentagon.status ? <Row label="Status" value={spec.pentagon.status} muted /> : null}
+					</div>
+				) : null}
+
+				{/* Orbits — every geometry that knows any of them */}
+				{hasOrbitFacts(spec) ? (
+					<div className="border-t border-line pt-3">
+						<OrbitSection spec={spec} />
+					</div>
+				) : null}
+
+				{/* Vertex-configuration thumbnails — Euclidean only */}
+				{spec.geometry === "euclidean" && vcs.length > 0 ? (
+					<div className="border-t border-line pt-3">
+						<SectionTitle>Vertex configurations</SectionTitle>
+						<div className="mt-2 flex flex-wrap gap-3">
+							{vcs.map(({ vc, occurrences }, i) => (
+								<div key={vc.name + i} className="w-24 shrink-0">
+									<VertexConfigurationThumbnail
+										vc={vc}
+										size={96}
+										showName
+										showOccurrences
+										occurrences={occurrences}
+									/>
+								</div>
+							))}
+						</div>
+					</div>
+				) : null}
+			</div>
+		);
+	}
 }

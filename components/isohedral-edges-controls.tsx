@@ -2,6 +2,7 @@
 
 import { useCallback } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { RangeInput } from "@/components/ui/range-input";
 import { BULGE } from "@/lib/isohedral/build";
 import { ISOHEDRAL_TYPES } from "@/lib/isohedral/catalogue";
 import { IH_EDGE_BOARD_BY_IH, solveIhBoardFor } from "@/lib/isohedral/edge-board";
@@ -62,24 +63,26 @@ export function IsohedralEdgesControls({ ih }: { ih: number }) {
 		!info ||
 		spec.slots.every((n, i) => n > 1 || info.edgeShapes[i] === "S" || info.edgeShapes[i] === "I");
 
+	// On a phone this card is one of the panels in /play's bottom tray, so it gives up its corner.
 	return (
-		<div className="absolute bottom-3 left-3 z-20 flex flex-col gap-1 ta-float p-3 text-xs">
+		<div className="absolute bottom-3 left-3 z-20 flex flex-col gap-1 ta-float p-3 text-xs max-md:static max-md:shrink-0 max-md:gap-0 max-md:text-[13px]">
 			<div className="flex items-center justify-between gap-4 pb-1">
 				<span className="font-mono text-fg-secondary">{info?.label ?? `IH${ih}`}</span>
-				<button type="button" onClick={reset} className="text-fg-muted underline hover:text-fg">
+				<button type="button" onClick={reset} className="text-fg-muted underline hover:text-fg max-md:min-h-11 max-md:px-2">
 					reset
 				</button>
 			</div>
 			{params.map((p, i) => (
-				<label key={i} className="flex items-center gap-2">
+				<label key={i} className="flex items-center gap-2 max-md:gap-3">
 					<span className="w-14 text-fg-secondary">v{i}</span>
-					<input
-						type="range"
+					<RangeInput
+						native="max-md:h-11 max-md:min-w-0 max-md:flex-1"
+						className="min-w-0 flex-1"
 						min={MIN}
 						max={MAX}
 						step={STEP}
 						value={p}
-						onChange={(e) => setParam(i, Number(e.target.value))}
+						onChange={(v) => setParam(i, v)}
 					/>
 					<span className="w-12 text-right font-mono text-fg">{p.toFixed(3)}</span>
 				</label>
@@ -94,15 +97,16 @@ export function IsohedralEdgesControls({ ih }: { ih: number }) {
 			    equals its own reverse. IH10's single class is a J edge with one slot, so a bow there would
 			    be mirrored on half the edges — better to withhold the slider than to draw that. */}
 			{(bowable ? bulge : []).map((v, i) => (
-				<label key={`bulge-${i}`} className="flex items-center gap-2">
+				<label key={`bulge-${i}`} className="flex items-center gap-2 max-md:gap-3">
 					<span className="w-14 text-fg-secondary">bow {String.fromCharCode(97 + i)}</span>
-					<input
-						type="range"
+					<RangeInput
+						native="max-md:h-11 max-md:min-w-0 max-md:flex-1"
+						className="min-w-0 flex-1"
 						min={BULGE.min}
 						max={BULGE.max}
 						step={BULGE.step}
 						value={v}
-						onChange={(e) => setBulge(i, Number(e.target.value))}
+						onChange={(b) => setBulge(i, b)}
 					/>
 					<span className="w-12 text-right font-mono text-fg">{v.toFixed(2)}</span>
 				</label>

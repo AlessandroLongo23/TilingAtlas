@@ -24,7 +24,8 @@ export function LatticeTooltip({ lattice }: { lattice: LatticeShape }) {
 	const { src, note } = LATTICE_DIAGRAMS[lattice];
 	return (
 		<div className="flex w-fit flex-col gap-2">
-			<div className="flex items-baseline gap-1.5">
+			{/* A phone's popover is as wide as the diagram, so the gloss drops under the name. */}
+			<div className="flex items-baseline gap-1.5 max-md:flex-col max-md:gap-0.5">
 				<span className="font-medium capitalize text-fg">{lattice}</span>
 				<span className="text-xs text-fg-muted">{note}</span>
 			</div>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { useIsPhone } from "@/lib/hooks/useIsPhone";
 import { cn } from "@/lib/utils/cn";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
 import { HyperbolicDevelopedThumbnail } from "@/components/hyperbolic-developed-thumbnail";
@@ -24,7 +25,8 @@ import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import { paramGlyphs, type ParametricCellData } from "@/lib/utils/paramCell";
 import { compactVertexConfig } from "@/lib/services/referenceAtlas";
 
-// The /play picker's tile wall for one k-bucket: two columns of thumbnails on the wall grid, with a
+// The /play picker's tile wall for one k-bucket: two columns of thumbnails (three on a phone, where the
+// sheet is short and a wide column would leave room for barely one row) on the wall grid, with a
 // GUTTER lane between them — a strip of panel colour a few px wide whose two edges are hairlines.
 // Where the vertical lane crosses a horizontal one the four rounded corners open a diamond at each
 // of the four corners of the little square they enclose. A single hairline (what the landing wall
@@ -33,8 +35,10 @@ import { compactVertexConfig } from "@/lib/services/referenceAtlas";
 // VIRTUALISED. A class like Regular polygons holds 2,720 tilings; mounting them all put >4,000 live
 // canvases in the DOM, at which point Chromium stopped delivering IntersectionObserver records
 // altogether and NOTHING painted (small buckets were fine — the failure was purely one of scale).
-// Only the rows near the viewport are mounted; everything above and below is one flat spacer cell.
+// Only the rows near the viewport are mounted; everything above and below is one flat spacer cell. A
+// scrollport clipped out of sight (a phone's sheet resting at peek) mounts none at all.
 const COLS = 2;
+const PHONE_COLS = 3;
 const GUTTER = 10;
 // Every tile carries a one-line caption under its square preview; part of the row pitch.
 const CAPTION = 24;
@@ -85,14 +89,18 @@ function pulse(el: HTMLElement) {
 export function TileGrid({ items, selectedKey, onSelect, revealKey, width }: TileGridProps) {
 	const hostRef = useRef<HTMLDivElement | null>(null);
 	const [range, setRange] = useState({ start: 0, end: 0 });
+	// Whether any of the scrollport is on screen. A phone's sheet at peek clips it away entirely, and then
+	// no row is mounted: the thumbnails wait for the sheet to open instead of drawing behind it.
+	const [shown, setShown] = useState(true);
+	const cols = useIsPhone() ? PHONE_COLS : COLS;
 
 	// Column width drives everything: tiles are square, so it is also the row height. A row is
-	// COLS tiles, COLS+1 lanes, and a hairline between each of those.
-	const cell = width > 0 ? (width - (COLS + 1) * GUTTER - (2 * COLS)) / COLS : 0;
+	// `cols` tiles, cols + 1 lanes, and a hairline between each of those.
+	const cell = width > 0 ? (width - (cols + 1) * GUTTER - (2 * cols)) / cols : 0;
 	// Row pitch: one tile row (preview + caption), the two 1px gaps around the gutter row, and the
 	// gutter row itself.
 	const stride = cell + CAPTION + GUTTER + 2;
-	const rows = Math.ceil(items.length / COLS);
+	const rows = Math.ceil(items.length / cols);
 
 	const recompute = useCallback(() => {
 		const el = hostRef.current;
@@ -100,6 +108,7 @@ export function TileGrid({ items, selectedKey, onSelect, revealKey, width }: Til
 		const scroller = el.closest<HTMLElement>("[data-sidebar-scroll]");
 		const next = (() => {
 			if (!scroller) return { start: 0, end: rows };
+			if (!shown) return { start: 0, end: 0 };
 			// Offset of this grid's top within the scrollport, in scrollport coordinates.
 			const top = el.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
 			return {
@@ -108,7 +117,7 @@ export function TileGrid({ items, selectedKey, onSelect, revealKey, width }: Til
 			};
 		})();
 		setRange((prev) => (prev.start === next.start && prev.end === next.end ? prev : next));
-	}, [cell, stride, rows]);
+	}, [cell, stride, rows, shown]);
 
 	// No dep array on purpose: a sibling section expanding or collapsing moves this grid without
 	// resizing it and without firing a scroll, and the only signal for that is the re-render itself.
@@ -117,15 +126,26 @@ export function TileGrid({ items, selectedKey, onSelect, revealKey, width }: Til
 		recompute();
 	});
 
+	// The scrollport's own size, not the window's: a phone's sheet changes snap without a resize event.
 	useEffect(() => {
 		const scroller = hostRef.current?.closest<HTMLElement>("[data-sidebar-scroll]");
-		scroller?.addEventListener("scroll", recompute, { passive: true });
-		window.addEventListener("resize", recompute);
+		if (!scroller) return;
+		scroller.addEventListener("scroll", recompute, { passive: true });
+		const ro = new ResizeObserver(recompute);
+		ro.observe(scroller);
 		return () => {
-			scroller?.removeEventListener("scroll", recompute);
-			window.removeEventListener("resize", recompute);
+			scroller.removeEventListener("scroll", recompute);
+			ro.disconnect();
 		};
 	}, [recompute]);
+	// Visibility through every clipping ancestor, which the scrollport's own size does not report.
+	useEffect(() => {
+		const scroller = hostRef.current?.closest<HTMLElement>("[data-sidebar-scroll]");
+		if (!scroller) return;
+		const io = new IntersectionObserver(([e]) => setShown(e.isIntersecting));
+		io.observe(scroller);
+		return () => io.disconnect();
+	}, []);
 
 	// Reveal on selection change — R, the arrows, a deep link. Two paths, because the target row may
 	// not be mounted: if the tile is on screen it is scrolled to as an element (short, smooth); if it
@@ -135,8 +155,8 @@ export function TileGrid({ items, selectedKey, onSelect, revealKey, width }: Til
 	// Metrics through a ref, so the effect below keys on the SELECTION alone. Keyed on cell/stride
 	// too, it would tear down mid-retry every time the width settled — which is exactly when the
 	// retry is needed.
-	const metrics = useRef({ cell, stride });
-	metrics.current = { cell, stride };
+	const metrics = useRef({ cell, stride, cols });
+	metrics.current = { cell, stride, cols };
 	useEffect(() => {
 		if (!revealKey) return;
 		const idx = items.findIndex((t) => t.canonicalKey === revealKey);
@@ -145,14 +165,14 @@ export function TileGrid({ items, selectedKey, onSelect, revealKey, width }: Til
 		const scroller = el?.closest<HTMLElement>("[data-sidebar-scroll]");
 		if (!el || !scroller) return;
 		const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-		const row = Math.floor(idx / COLS);
 		const selector = `[data-tiling-key="${CSS.escape(revealKey)}"]`;
 		const inset = revealInset(el);
 
 		let timer = 0;
 		let tries = 0;
 		const step = () => {
-			const { stride: rowStride, cell: cellSize } = metrics.current;
+			const { stride: rowStride, cell: cellSize, cols: perRow } = metrics.current;
+			const row = Math.floor(idx / perRow);
 			const btn = el.querySelector<HTMLElement>(selector);
 			if (btn) {
 				const b = btn.getBoundingClientRect();
@@ -182,7 +202,8 @@ export function TileGrid({ items, selectedKey, onSelect, revealKey, width }: Til
 
 	// Lane, tile, lane, tile, lane — the outer lanes frame the wall the same way the middle one
 	// separates the columns, so no preview ever runs into the edge of the panel.
-	const lanes = { gridTemplateColumns: `${GUTTER}px 1fr ${GUTTER}px 1fr ${GUTTER}px` };
+	const lanes = { gridTemplateColumns: `${GUTTER}px ${`1fr ${GUTTER}px `.repeat(cols).trim()}` };
+	const columns = Array.from({ length: cols }, (_, c) => c);
 	const visible: number[] = [];
 	for (let r = range.start; r < range.end; r++) visible.push(r);
 
@@ -203,18 +224,22 @@ export function TileGrid({ items, selectedKey, onSelect, revealKey, width }: Til
 								    would otherwise round into a dot, and its curve would swallow the diamonds its
 								    rounded neighbours open at each of the four corners. */}
 								<div className="bg-surface-chrome" />
-								<div className="ta-wall-cell bg-surface-chrome" />
-								<div className="bg-surface-chrome" />
-								<div className="ta-wall-cell bg-surface-chrome" />
-								<div className="bg-surface-chrome" />
+								{columns.map((c) => (
+									<Fragment key={c}>
+										<div className="ta-wall-cell bg-surface-chrome" />
+										<div className="bg-surface-chrome" />
+									</Fragment>
+								))}
 							</div>
 						) : null}
 						<div className="grid gap-px" style={lanes}>
 							<div className="ta-wall-cell bg-surface-chrome" />
-							<Tile t={items[r * COLS]} selectedKey={selectedKey} onSelect={onSelect} />
-							<div className="ta-wall-cell bg-surface-chrome" />
-							<Tile t={items[r * COLS + 1]} selectedKey={selectedKey} onSelect={onSelect} />
-							<div className="ta-wall-cell bg-surface-chrome" />
+							{columns.map((c) => (
+								<Fragment key={c}>
+									<Tile t={items[r * cols + c]} selectedKey={selectedKey} onSelect={onSelect} />
+									<div className="ta-wall-cell bg-surface-chrome" />
+								</Fragment>
+							))}
 						</div>
 					</div>
 				))}
@@ -242,7 +267,8 @@ function Tile({
 			type="button"
 			onClick={() => onSelect?.(t)}
 			title={`${t.canonicalKey} · {${t.family}}`}
-			className="group relative flex flex-col overflow-hidden rounded-lg bg-surface-raised ring-1 ring-line-subtle cursor-pointer"
+			// A finger gets the press it cannot hover: the tile sinks a little while it is held.
+			className="group relative flex flex-col overflow-hidden rounded-lg bg-surface-raised ring-1 ring-line-subtle cursor-pointer max-md:transition-transform max-md:active:scale-[0.96]"
 		>
 			<div className="relative aspect-square bg-surface-raised">
 				{t.hollow ? (
@@ -296,13 +322,13 @@ function Tile({
 				{t.paramCell ? <ParamBadge paramCell={t.paramCell} /> : null}
 			</div>
 			<span
-				className="flex items-center gap-1.5 border-t border-line-subtle px-2 font-mono text-[10.5px] text-fg-secondary"
+				className="flex items-center gap-1.5 border-t border-line-subtle px-2 font-mono text-[10.5px] text-fg-secondary max-md:text-xs"
 				style={{ height: CAPTION }}
 			>
 				<span className="min-w-0 truncate">{compactVertexConfig(t.family)}</span>
 				{/* A k bucket often holds one configuration many times over, so the key's tail is what tells
 				    two neighbours apart; the full key and config stay in the title. */}
-				<span className="ml-auto shrink-0 text-[11px] text-fg-muted">{keyTail(t.canonicalKey)}</span>
+				<span className="ml-auto shrink-0 text-[11px] text-fg-muted max-md:text-xs">{keyTail(t.canonicalKey)}</span>
 			</span>
 			{/* The selection ring lives on its own overlay, not on the button: both an inset ring
 			    (a box-shadow) and a negatively-offset outline paint UNDER the button's children in

@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import {
 	GEOMETRY_ORDER,
@@ -99,9 +100,42 @@ export function CatalogueTab({
 			})}
 		</div>
 	);
+	// The same two choices on a phone: one row of two native pickers at the top of the list, which
+	// scrolls away with it, so the half-open sheet is left to the tree and its thumbnails. The select is
+	// invisible over a two-line face (name over value), so the tap opens the system picker.
+	const picker = <T extends string>(
+		name: string,
+		order: readonly T[],
+		label: Record<T, string>,
+		value: T,
+		counts: Record<T, number>,
+		onChange: (v: T) => void,
+		pending?: Partial<Record<T, boolean>>,
+	) => (
+		<label className="relative flex h-12 min-w-0 flex-col justify-center rounded-control bg-surface-sunken pl-3 pr-8 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent/50">
+			<span className="text-xs leading-tight text-fg-muted">{name}</span>
+			<span className="truncate text-[15px] font-medium leading-tight text-fg">
+				{label[value]} <span className="font-mono text-xs text-fg-muted">{pending?.[value] ? "" : compactCount(counts[value])}</span>
+			</span>
+			<ChevronDown size={16} aria-hidden className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-fg-muted" />
+			<select
+				value={value}
+				aria-label={name}
+				onChange={(e) => onChange(e.target.value as T)}
+				className="absolute inset-0 cursor-pointer appearance-none opacity-0"
+			>
+				{order.map((v) => (
+					<option key={v} value={v} disabled={counts[v] === 0 && !pending?.[v]}>
+						{label[v]}
+						{pending?.[v] ? "" : ` · ${compactCount(counts[v])}`}
+					</option>
+				))}
+			</select>
+		</label>
+	);
 	return (
 		<div className="h-full flex flex-col">
-			<div className="flex flex-col gap-1.5 border-y border-line-subtle px-3.5 py-3">
+			<div className="flex flex-col gap-1.5 border-y border-line-subtle px-3.5 py-3 max-md:hidden">
 			{/* The SAME segmented control as the Catalogue/Options tabs above (.ta-seg / .ta-tab):
 			    geometry is a second row of tabs, so it shouldn't speak a second language. */}
 			<span className="ta-label">Geometry</span>
@@ -115,7 +149,11 @@ export function CatalogueTab({
 			{/* `isolate` pins the sticky headers' z-index
 			    contest (catalogue-list-panel.tsx) inside this scroller, so raising them above the tile
 			    ring can never reach the canvas overlay buttons next door. */}
-			<div className="ta-scroll-fade isolate flex-1 overflow-y-auto overflow-x-hidden bg-surface-chrome px-1.5 pb-6" data-sidebar-scroll>
+			<div className="ta-scroll-fade isolate flex-1 overflow-y-auto overflow-x-hidden bg-surface-chrome px-1.5 pb-6 max-md:border-t max-md:border-line-subtle" data-sidebar-scroll>
+				<div className="hidden grid-cols-2 gap-2 px-2 pb-1 pt-2 max-md:grid">
+					{picker("Geometry", GEOMETRY_ORDER, GEOMETRY_LABEL, geometry, geometryCounts, onGeometryChange, geometryPending)}
+					{picker("Decoration", DECORATION_ORDER, DECORATION_LABEL, decoration, decorationCounts, onDecorationChange, decorationPending)}
+				</div>
 				<CatalogueListPanel
 					items={items}
 					selectedKey={selectedKey}
