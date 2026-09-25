@@ -20,7 +20,7 @@ export interface OptionWallItem<T> {
 	/** React key — defaults to `String(value)`, override when values aren't primitive. */
 	key?: Key;
 	title?: string;
-	/** Rich tooltip shown on hover/focus. Omit for none. */
+	/** Rich tooltip shown on hover/focus, and on a touch screen by a press held on the cell. Omit for none. */
 	tooltip?: ReactNode;
 	tooltipSide?: "top" | "right" | "bottom" | "left";
 	tooltipDelay?: number;
@@ -83,7 +83,9 @@ export function OptionWall<T>(props: SingleProps<T> | MultiProps<T>) {
 					</button>
 				);
 				return opt.tooltip != null ? (
-					<Tooltip key={key} content={opt.tooltip} side={opt.tooltipSide ?? "top"} delay={opt.tooltipDelay}>
+					// A tap on a cell selects it; a press held on it explains it (a tap that also popped the card
+					// covered the options below, and it stayed up until the next tap).
+					<Tooltip key={key} content={opt.tooltip} side={opt.tooltipSide ?? "top"} delay={opt.tooltipDelay} tapToOpen="hold">
 						{button}
 					</Tooltip>
 				) : (

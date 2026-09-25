@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, ChevronLeft, ChevronRight, Play, RotateCcw, SlidersHorizontal } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Play } from "lucide-react";
 import {
 	Fragment,
 	useEffect,
@@ -10,8 +10,9 @@ import {
 	type ReactNode,
 	type Ref,
 } from "react";
-import { SHEET_PANEL, SheetBackdrop, SheetBadge, SheetFooter, SheetHeader, useSheet } from "@/components/ui/bottom-sheet";
+import { SHEET_PANEL, SheetBackdrop, SheetFooter, SheetHeader, SheetTrigger, useSheet } from "@/components/ui/bottom-sheet";
 import { Button } from "@/components/ui/button";
+import { ResetViewButton } from "@/components/reset-view-button";
 import { OptionWall } from "@/components/ui/option-wall";
 import type { Tri } from "@/lib/freedraw/filter";
 import { scrollParent } from "@/lib/hooks/useGridArrowNav";
@@ -83,17 +84,14 @@ export function WallBar({
 					/>
 				</button>
 				<div className="ml-auto flex items-center gap-3 max-md:hidden">{top}</div>
-				<button
-					type="button"
+				<SheetTrigger
+					label="Filters"
+					count={active}
 					onClick={() => setSheet(true)}
-					aria-expanded={sheet}
-					aria-controls={bodyId}
-					className="ml-auto hidden h-11 shrink-0 items-center gap-2 rounded-full border border-line bg-surface-raised px-4 text-sm font-medium text-fg shadow-sm max-md:flex"
-				>
-					<SlidersHorizontal size={16} aria-hidden />
-					Filters
-					<SheetBadge count={active} />
-				</button>
+					expanded={sheet}
+					controls={bodyId}
+					className="ml-auto"
+				/>
 			</div>
 			{sheetOpen && <SheetBackdrop onClose={closeSheet} />}
 			<div
@@ -445,16 +443,7 @@ export function DetailPane({
 						<span className="max-md:hidden">{hint}</span>
 						<span className="md:hidden">{touchHint}</span>
 					</div>
-					{onResetView && (
-						<button
-							type="button"
-							onClick={onResetView}
-							aria-label="Reset view"
-							className="absolute right-2 top-2 z-20 hidden size-11 items-center justify-center rounded-full bg-surface/95 text-fg-secondary shadow-sm ring-1 ring-line-subtle max-md:flex"
-						>
-							<RotateCcw size={18} />
-						</button>
-					)}
+					{onResetView && <ResetViewButton onClick={onResetView} className="absolute right-3 top-3 z-20" />}
 				</div>
 				<div>
 					<div className="font-mono text-base font-semibold text-fg">{title}</div>

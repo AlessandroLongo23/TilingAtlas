@@ -19,9 +19,10 @@ interface TooltipProps {
 	/**
 	 * Open on a finger tap (tap toggles, a tap elsewhere closes). Default: on for rich `content`, which
 	 * is information a touch user needs (an InfoDot's explanation, why an option is unavailable); off
-	 * for a plain `label`, which only names a button whose tap already does something.
+	 * for a plain `label`, which only names a button whose tap already does something. `"hold"`: the tap
+	 * stays the trigger's own (an option cell selects) and a press held for half a second opens it.
 	 */
-	tapToOpen?: boolean;
+	tapToOpen?: boolean | "hold";
 	children: ReactElement;
 }
 
@@ -47,6 +48,17 @@ export function Tooltip({
 	const openAtPress = useRef(false);
 	const pressType = useRef("");
 	const tap = tapToOpen ?? content != null;
+	// "hold": the timer that opens it, and whether it did (the click that ends that press is swallowed).
+	const hold = useRef<{ timer: ReturnType<typeof setTimeout> | null; x: number; y: number; fired: boolean }>({
+		timer: null,
+		x: 0,
+		y: 0,
+		fired: false,
+	});
+	const endHold = () => {
+		if (hold.current.timer) clearTimeout(hold.current.timer);
+		hold.current.timer = null;
+	};
 
 	// Nothing to show → render the trigger untouched.
 	if (content == null && !label) return children;
@@ -67,11 +79,36 @@ export function Tooltip({
 				onPointerDown={(e) => {
 					openAtPress.current = open;
 					pressType.current = e.pointerType;
+					hold.current.fired = false;
+					if (tap !== "hold" || e.pointerType !== "touch") return;
+					endHold();
+					hold.current.x = e.clientX;
+					hold.current.y = e.clientY;
+					hold.current.timer = setTimeout(() => {
+						hold.current.timer = null;
+						hold.current.fired = true;
+						setOpen(true);
+					}, 500);
+				}}
+				onPointerMove={(e) => {
+					// A finger that travels is scrolling, not holding.
+					if (hold.current.timer && Math.hypot(e.clientX - hold.current.x, e.clientY - hold.current.y) > 8) endHold();
+				}}
+				onPointerUp={endHold}
+				onPointerCancel={endHold}
+				onContextMenu={(e) => {
+					if (hold.current.fired || hold.current.timer) e.preventDefault();
+				}}
+				onClickCapture={(e) => {
+					if (!hold.current.fired) return;
+					hold.current.fired = false;
+					e.preventDefault();
+					e.stopPropagation();
 				}}
 				onClick={(e) => {
 					// The press type comes from pointerdown: not every browser reports it on the click itself.
 					// Mouse clicks keep Base UI's own close-on-click; keyboard clicks (detail 0) are left alone.
-					if (!tap || e.detail === 0) return;
+					if (tap !== true || e.detail === 0) return;
 					if (pressType.current === "touch" || pressType.current === "pen") setOpen(!openAtPress.current);
 				}}
 			/>

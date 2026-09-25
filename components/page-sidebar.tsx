@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
-import { SlidersHorizontal, type LucideIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { useIsPhone } from "@/lib/hooks/useIsPhone";
 import { useImmersive } from "@/stores/immersive";
@@ -9,10 +9,10 @@ import { useMobileSheet, type SheetSnap } from "@/stores/mobileSheet";
 import {
 	SHEET_PANEL,
 	SheetBackdrop,
-	SheetBadge,
 	SheetFooter,
 	SheetGrabHandle,
 	SheetHeader,
+	SheetTrigger,
 	snapCss,
 	useDockSheet,
 	useSheet,
@@ -73,7 +73,7 @@ export function PageSidebar({
 	defaultSnap = "peek",
 	halfHeight,
 	mobileLabel,
-	mobileIcon: PillIcon = SlidersHorizontal,
+	mobileIcon,
 	mobileBadge,
 	mobileFooter,
 	mobileTrigger = true,
@@ -83,6 +83,7 @@ export function PageSidebar({
 	const storeSnap = useMobileSheet((s) => s.snap);
 	const open = useMobileSheet((s) => s.open);
 	const asideRef = useRef<HTMLElement>(null);
+	const contentRef = useRef<HTMLDivElement>(null);
 	const dock = mobile === "dock";
 	const label = mobileLabel ?? title ?? (dock ? "Controls" : "Options");
 
@@ -106,6 +107,7 @@ export function PageSidebar({
 		onSnap: (s) => useMobileSheet.getState().setSnap(s),
 		onTap: () => useMobileSheet.getState().toggleSnap(),
 		half: halfHeight,
+		content: contentRef,
 	});
 
 	const close = () => useMobileSheet.getState().setOpen(false);
@@ -126,15 +128,13 @@ export function PageSidebar({
 		>
 			{sheet.active ? <SheetBackdrop onClose={close} /> : null}
 			{!dock && mobileTrigger && !open && !collapsed ? (
-				<button
-					type="button"
+				<SheetTrigger
+					floating
+					label={label}
+					icon={mobileIcon}
+					count={mobileBadge}
 					onClick={() => useMobileSheet.getState().setOpen(true)}
-					className="fixed bottom-[calc(env(safe-area-inset-bottom)+16px)] left-1/2 z-40 hidden h-11 -translate-x-1/2 items-center gap-2 rounded-full bg-fg px-5 text-sm font-medium text-fg-inverse shadow-lg max-md:flex"
-				>
-					<PillIcon size={16} aria-hidden />
-					{label}
-					<SheetBadge count={mobileBadge} />
-				</button>
+				/>
 			) : null}
 			<aside
 				ref={asideRef}
@@ -166,6 +166,7 @@ export function PageSidebar({
 					<SheetHeader title={label} onClose={close} closeLabel={`Close ${label}`} swipe={sheet.swipe} />
 				)}
 				<div
+					ref={contentRef}
 					inert={buried}
 					className={cn(
 						"flex-1",

@@ -2,7 +2,7 @@
 
 import * as Dialog from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
-import { useRef, type ReactNode } from "react";
+import { useLayoutEffect, useRef, type ReactNode } from "react";
 import { cn } from "@/lib/utils/cn";
 import { useLayerEntry } from "@/lib/hooks/useModalLayer";
 import { SheetGrabBar, useSwipeDismiss } from "./bottom-sheet";
@@ -54,12 +54,26 @@ export function Modal({
 	const close = () => onOpenChange(false);
 	useLayerEntry(isOpen, close);
 	const swipe = useSwipeDismiss(contentRef, close);
+	// Where focus was when the modal opened, so closing can put it back. Radix returns focus to its own
+	// Dialog.Trigger, and this modal is opened from outside (a toolbar button, a store), so without this
+	// focus fell to <body>. A layout effect runs before Radix moves focus into the portal.
+	const opener = useRef<HTMLElement | null>(null);
+	useLayoutEffect(() => {
+		if (isOpen) opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+	}, [isOpen]);
 	return (
 		<Dialog.Root open={isOpen} onOpenChange={onOpenChange}>
 			<Dialog.Portal>
 				<Dialog.Overlay className="fixed inset-0 z-50 bg-black/35 backdrop-blur-[2px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 ta-backdrop-in" />
 				<Dialog.Content
 					ref={contentRef}
+					onCloseAutoFocus={(e) => {
+						const el = opener.current;
+						if (el?.isConnected && el !== document.body) {
+							e.preventDefault();
+							el.focus({ preventScroll: true });
+						}
+					}}
 					className={cn(
 						"fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2",
 						"bg-surface-raised ring-1 ring-line-subtle rounded-overlay shadow-xl w-full",

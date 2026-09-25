@@ -10,7 +10,7 @@ import { Tooltip } from "./tooltip";
 //
 // On a phone it rides above the dock sheet (`--sheet-offset`, published by the sheet; the home-indicator
 // inset when there is none), never wider than the screen less 16px a side, and scrolls sideways with
-// snap when its buttons do not fit.
+// snap when its buttons do not fit. A pinch that starts on it does not zoom the page.
 
 export function FloatingToolbar({ children, className }: { children: ReactNode; className?: string }) {
 	return (
@@ -18,7 +18,9 @@ export function FloatingToolbar({ children, className }: { children: ReactNode; 
 			role="toolbar"
 			className={cn(
 				"absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-0.5 rounded-xl bg-surface-raised/95 p-1 shadow-lg ring-1 ring-line-subtle backdrop-blur-sm",
-				"max-md:bottom-[calc(max(var(--sheet-offset,0px),env(safe-area-inset-bottom))+12px)] max-md:max-w-[calc(100%-32px)] max-md:overflow-x-auto max-md:snap-x scrollbar-hide max-md:transition-[bottom] max-md:duration-300",
+				"max-md:bottom-[calc(max(var(--sheet-offset,0px),env(safe-area-inset-bottom))+12px)] max-md:max-w-[calc(100%-32px)] max-md:overflow-x-auto max-md:snap-x scrollbar-hide max-md:transition-[bottom] max-md:duration-300 max-md:motion-reduce:transition-none",
+				// It scrolls sideways; a pinch that starts on it must not zoom the whole page.
+				"max-md:touch-pan-x max-md:touch-pan-y",
 				className,
 			)}
 		>

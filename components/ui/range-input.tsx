@@ -85,7 +85,8 @@ export function RangeInput({
 			<input
 				id={id}
 				type="range"
-				className={native}
+				// Hidden on a phone, where this is only the server render: the track replaces it on hydration.
+				className={cn(native, "max-md:invisible")}
 				value={value}
 				onChange={onInput}
 				min={min}

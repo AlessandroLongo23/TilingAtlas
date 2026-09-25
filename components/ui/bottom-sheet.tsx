@@ -7,9 +7,10 @@ import {
 	useRef,
 	type PointerEvent as ReactPointerEvent,
 	type ReactNode,
+	type Ref,
 	type RefObject,
 } from "react";
-import { X } from "lucide-react";
+import { SlidersHorizontal, X, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { isPhoneNow, useIsPhone } from "@/lib/hooks/useIsPhone";
 import { useModalLayer } from "@/lib/hooks/useModalLayer";
@@ -39,10 +40,24 @@ const SETTLE_EASE = "cubic-bezier(0.2, 0.8, 0.2, 1)";
 /**
  * Pull a sheet by its header to dismiss it: down for a bottom sheet, right for the side menu. Past 96px,
  * or flicked, it closes; short of that it springs back. The sheet follows the finger through an inline
- * transform that is cleared once it settles. Spread the returned handlers on the header.
+ * transform that is cleared once it settles. Spread the returned handlers on the header, or with
+ * `anywhere` on the whole sheet (the menu): there a drag starts on any control too, once the finger has
+ * clearly gone along the axis, and a move across it is left to the content's own scroll.
  */
-export function useSwipeDismiss(ref: RefObject<HTMLElement | null>, onClose: () => void, axis: "down" | "right" = "down") {
+export function useSwipeDismiss(
+	ref: RefObject<HTMLElement | null>,
+	onClose: () => void,
+	axis: "down" | "right" = "down",
+	anywhere = false,
+) {
 	const drag = useRef<{ id: number; x: number; y: number; t: number; d: number; moved: boolean } | null>(null);
+	const settle = useRef<ReturnType<typeof setTimeout> | null>(null);
+	useEffect(
+		() => () => {
+			if (settle.current) clearTimeout(settle.current);
+		},
+		[],
+	);
 	const move = (el: HTMLElement, px: string) => {
 		el.style.transform = axis === "down" ? `translateY(${px})` : `translateX(${px})`;
 	};
@@ -58,8 +73,9 @@ export function useSwipeDismiss(ref: RefObject<HTMLElement | null>, onClose: () 
 		el.style.transition = reduce ? "none" : `transform 200ms ${SETTLE_EASE}`;
 		if (close) move(el, "100%");
 		else el.style.transform = "";
-		setTimeout(
+		settle.current = setTimeout(
 			() => {
+				settle.current = null;
 				if (close) onClose();
 				requestAnimationFrame(() => {
 					el.style.transition = "";
@@ -71,17 +87,29 @@ export function useSwipeDismiss(ref: RefObject<HTMLElement | null>, onClose: () 
 	};
 	return {
 		onPointerDown: (e: ReactPointerEvent<HTMLElement>) => {
-			if (!isPhoneNow() || (e.pointerType === "mouse" && e.button !== 0) || !grabsHeader(e.target)) return;
-			e.currentTarget.setPointerCapture(e.pointerId);
+			if (!isPhoneNow() || (e.pointerType === "mouse" && e.button !== 0)) return;
+			const onHeader = grabsHeader(e.target);
+			if (!onHeader && !anywhere) return;
+			if (onHeader) e.currentTarget.setPointerCapture(e.pointerId);
 			drag.current = { id: e.pointerId, x: e.clientX, y: e.clientY, t: e.timeStamp, d: 0, moved: false };
 		},
 		onPointerMove: (e: ReactPointerEvent<HTMLElement>) => {
 			const d = drag.current;
 			const el = ref.current;
 			if (!d || !el || d.id !== e.pointerId) return;
-			d.d = Math.max(0, axis === "down" ? e.clientY - d.y : e.clientX - d.x);
-			if (!d.moved && d.d < TAP_SLOP) return;
-			d.moved = true;
+			const along = axis === "down" ? e.clientY - d.y : e.clientX - d.x;
+			d.d = Math.max(0, along);
+			if (!d.moved) {
+				const across = Math.abs(axis === "down" ? e.clientX - d.x : e.clientY - d.y);
+				if (across > TAP_SLOP && across > Math.abs(along)) {
+					drag.current = null;
+					return;
+				}
+				if (d.d < TAP_SLOP) return;
+				d.moved = true;
+				// Captured now at the latest, so the release lands here and not as a click on a row.
+				e.currentTarget.setPointerCapture(e.pointerId);
+			}
 			el.style.transition = "none";
 			move(el, `${d.d}px`);
 		},
@@ -94,7 +122,8 @@ export type SwipeHandlers = ReturnType<typeof useSwipeDismiss>;
 
 /**
  * A modal sheet's behaviour in one call: the layer (focus trap, Esc, Back, scroll lock) while it is
- * open on a phone, swipe to dismiss, and the dialog attributes to spread on the sheet element.
+ * open on a phone, swipe to dismiss (from anywhere on a side panel), and the dialog attributes to
+ * spread on the sheet element.
  */
 export function useSheet(
 	ref: RefObject<HTMLElement | null>,
@@ -103,9 +132,17 @@ export function useSheet(
 	label: string,
 	axis: "down" | "right" = "down",
 ) {
-	const active = useIsPhone() && open;
+	const isPhone = useIsPhone();
+	const active = isPhone && open;
 	useModalLayer(ref, active, onClose);
-	const swipe = useSwipeDismiss(ref, onClose, axis);
+	const swipe = useSwipeDismiss(ref, onClose, axis, axis === "right");
+	// Crossing to a desktop width (a phone turned to landscape) closes the sheet for good, so it is not
+	// waiting, with a new history entry, when the width comes back.
+	const wasPhone = useRef(isPhone);
+	useEffect(() => {
+		if (wasPhone.current && !isPhone && open) onClose();
+		wasPhone.current = isPhone;
+	});
 	const dialogProps = active
 		? ({ role: "dialog", "aria-modal": true, "aria-label": label, tabIndex: -1 } as const)
 		: ({} as const);
@@ -128,7 +165,7 @@ export function SheetGrabBar({ className }: { className?: string }) {
 }
 
 /** The 44px close button every sheet header ends with. */
-export function SheetCloseButton({ onClick, label }: { onClick: () => void; label: string }) {
+function SheetCloseButton({ onClick, label }: { onClick: () => void; label: string }) {
 	return (
 		<button
 			type="button"
@@ -157,7 +194,8 @@ export function SheetHeader({
 	title: ReactNode;
 	onClose: () => void;
 	closeLabel: string;
-	swipe: SwipeHandlers;
+	/** The drag handlers; left off when the whole sheet carries them (the menu). */
+	swipe?: SwipeHandlers;
 	/** Off for the side menu, which slides sideways. */
 	grabBar?: boolean;
 	children?: ReactNode;
@@ -193,13 +231,57 @@ export function SheetFooter({ children, className }: { children: ReactNode; clas
 	);
 }
 
-/** The count on a sheet's trigger button (active filters). Nothing when zero. */
-export function SheetBadge({ count }: { count?: number }) {
-	return count ? (
-		<span className="min-w-5 rounded-full bg-accent px-1.5 text-center text-xs tabular-nums leading-5 text-accent-contrast">
-			{count}
-		</span>
-	) : null;
+/**
+ * The one button that opens a phone sheet ("Filters 3", "Contents"): a dark 44px pill with an icon, the
+ * sheet's name and a count (active filters; nothing at 0). It sits in the page header where there is
+ * one; `floating` pins it bottom centre, for a page with no header or once the header has scrolled away.
+ * Phone only.
+ */
+export function SheetTrigger({
+	label,
+	icon: Icon = SlidersHorizontal,
+	count,
+	onClick,
+	floating = false,
+	expanded,
+	controls,
+	ref,
+	className,
+}: {
+	label: string;
+	icon?: LucideIcon;
+	count?: number;
+	onClick: () => void;
+	floating?: boolean;
+	/** The sheet's open state and id, when the sheet is an element on the page (aria-expanded/controls). */
+	expanded?: boolean;
+	controls?: string;
+	ref?: Ref<HTMLButtonElement>;
+	className?: string;
+}) {
+	return (
+		<button
+			ref={ref}
+			type="button"
+			onClick={onClick}
+			aria-haspopup="dialog"
+			aria-expanded={expanded}
+			aria-controls={controls}
+			className={cn(
+				"hidden h-11 shrink-0 items-center gap-2 rounded-full bg-fg px-4 text-sm font-medium text-fg-inverse max-md:inline-flex",
+				floating && "fixed bottom-[calc(env(safe-area-inset-bottom)+16px)] left-1/2 z-40 -translate-x-1/2 px-5 shadow-lg",
+				className,
+			)}
+		>
+			<Icon size={16} aria-hidden />
+			{label}
+			{count ? (
+				<span className="min-w-5 rounded-full bg-accent px-1.5 text-center text-xs tabular-nums leading-5 text-accent-contrast">
+					{count}
+				</span>
+			) : null}
+		</button>
+	);
 }
 
 // ── The dock sheet ──────────────────────────────────────────────────────────────────────────────────
@@ -218,7 +300,7 @@ export function SheetBadge({ count }: { count?: number }) {
 export type SheetTarget = SheetSnap | "hidden";
 
 /** The dock header: a 20px grab strip over a 44px peek row, with 4px under it. */
-export const PEEK_PX = 68;
+const PEEK_PX = 68;
 
 /** Resting height of each snap, as CSS. Also used to measure the snaps in px during a gesture. */
 const SNAP_CSS: Record<SheetTarget, string> = {
@@ -263,9 +345,14 @@ interface DockSheetOptions {
 	onTap: () => void;
 	/** The half snap's height as CSS, when the page wants other than 50dvh. */
 	half?: string;
+	/** The scrolling content under the header: a pull down on it at its top moves the sheet. */
+	content?: RefObject<HTMLElement | null>;
 }
 
-export function useDockSheet(ref: RefObject<HTMLElement | null>, { enabled, target, onSnap, onTap, half }: DockSheetOptions) {
+export function useDockSheet(
+	ref: RefObject<HTMLElement | null>,
+	{ enabled, target, onSnap, onTap, half, content }: DockSheetOptions,
+) {
 	// Visible height in px the sheet is at, or heading to.
 	const visibleRef = useRef(0);
 	// The target the sheet is at or heading to; null before the first measure.
@@ -368,11 +455,10 @@ export function useDockSheet(ref: RefObject<HTMLElement | null>, { enabled, targ
 		[],
 	);
 
-	const onPointerDown = (e: ReactPointerEvent<HTMLElement>) => {
+	// The drag, fed by the header's pointer events and by a pull on the content (below).
+	const begin = (id: number, y: number, t: number) => {
 		const el = ref.current;
-		if (!enabled || !el || target === "hidden") return;
-		if (e.pointerType === "mouse" && e.button !== 0) return;
-		if (!grabsHeader(e.target)) return;
+		if (!el) return false;
 		if (settleTimer.current) {
 			clearTimeout(settleTimer.current);
 			settleTimer.current = null;
@@ -382,35 +468,28 @@ export function useDockSheet(ref: RefObject<HTMLElement | null>, { enabled, targ
 		el.style.transition = "none";
 		el.style.height = `${full}px`;
 		el.style.transform = `translateY(${full - visible}px)`;
-		e.currentTarget.setPointerCapture(e.pointerId);
-		dragRef.current = {
-			id: e.pointerId,
-			startY: e.clientY,
-			startVisible: visible,
-			full,
-			moved: false,
-			samples: [{ y: e.clientY, t: e.timeStamp }],
-		};
+		dragRef.current = { id, startY: y, startVisible: visible, full, moved: false, samples: [{ y, t }] };
+		return true;
 	};
 
-	const onPointerMove = (e: ReactPointerEvent<HTMLElement>) => {
+	const follow = (id: number, y: number, t: number) => {
 		const drag = dragRef.current;
 		const el = ref.current;
-		if (!drag || !el || drag.id !== e.pointerId) return;
-		const dy = e.clientY - drag.startY;
+		if (!drag || !el || drag.id !== id) return;
+		const dy = y - drag.startY;
 		if (!drag.moved && Math.abs(dy) < TAP_SLOP) return;
 		drag.moved = true;
 		const visible = Math.min(drag.full, Math.max(0, drag.startVisible - dy));
 		el.style.transform = `translateY(${drag.full - visible}px)`;
-		drag.samples.push({ y: e.clientY, t: e.timeStamp });
+		drag.samples.push({ y, t });
 		// Velocity from the last ~100ms only, so a drag that paused before release does not fling.
-		while (drag.samples.length > 2 && e.timeStamp - drag.samples[0].t > 100) drag.samples.shift();
+		while (drag.samples.length > 2 && t - drag.samples[0].t > 100) drag.samples.shift();
 	};
 
-	const release = (e: ReactPointerEvent<HTMLElement>, cancelled: boolean) => {
+	const release = (id: number, cancelled: boolean) => {
 		const drag = dragRef.current;
 		const el = ref.current;
-		if (!drag || !el || drag.id !== e.pointerId) return;
+		if (!drag || !el || drag.id !== id) return;
 		dragRef.current = null;
 		if (!drag.moved) {
 			// A tap: put the sheet back as it was, then let the page decide what a tap means.
@@ -429,14 +508,84 @@ export function useDockSheet(ref: RefObject<HTMLElement | null>, { enabled, targ
 		onSnap(snap);
 	};
 
+	// Pulling down on the content while it is scrolled to the top moves the sheet, as on iOS: the pull
+	// takes over only once the finger has gone down past the tap slop with nothing under it scrolled, so
+	// every other touch scrolls the content as before. Touch events, because a pan that the content's
+	// touch-action allows ends the pointer stream (pointercancel) before a drag could be seen.
+	const pull = useRef({ begin, follow, release });
+	useEffect(() => {
+		pull.current = { begin, follow, release };
+	});
+	useEffect(() => {
+		const box = content?.current;
+		if (!enabled || !box) return;
+		let start: { id: number; y: number } | null = null;
+		let taken = -1;
+		const onStart = (e: TouchEvent) => {
+			const t = e.touches[0];
+			start = e.touches.length === 1 && !dragRef.current && pullable(e.target, box) ? { id: t.identifier, y: t.clientY } : null;
+		};
+		const onMove = (e: TouchEvent) => {
+			const t = Array.from(e.changedTouches).find((c) => c.identifier === (start?.id ?? taken));
+			if (!t) return;
+			if (start) {
+				const dy = t.clientY - start.y;
+				if (Math.abs(dy) < TAP_SLOP) return;
+				const s = start;
+				start = null;
+				if (dy < 0 || scrolledDown(e.target, box) || !e.cancelable || !pull.current.begin(s.id, s.y, e.timeStamp)) return;
+				taken = s.id;
+			}
+			if (taken !== t.identifier) return;
+			e.preventDefault();
+			pull.current.follow(taken, t.clientY, e.timeStamp);
+		};
+		const onEnd = (e: TouchEvent) => {
+			start = null;
+			if (taken < 0 || !Array.from(e.changedTouches).some((c) => c.identifier === taken)) return;
+			pull.current.release(taken, e.type === "touchcancel");
+			taken = -1;
+		};
+		box.addEventListener("touchstart", onStart, { passive: true });
+		box.addEventListener("touchmove", onMove, { passive: false });
+		box.addEventListener("touchend", onEnd);
+		box.addEventListener("touchcancel", onEnd);
+		return () => {
+			box.removeEventListener("touchstart", onStart);
+			box.removeEventListener("touchmove", onMove);
+			box.removeEventListener("touchend", onEnd);
+			box.removeEventListener("touchcancel", onEnd);
+		};
+	}, [enabled, content]);
+
 	return {
 		headerProps: {
-			onPointerDown,
-			onPointerMove,
-			onPointerUp: (e: ReactPointerEvent<HTMLElement>) => release(e, false),
-			onPointerCancel: (e: ReactPointerEvent<HTMLElement>) => release(e, true),
+			onPointerDown: (e: ReactPointerEvent<HTMLElement>) => {
+				if (!enabled || target === "hidden") return;
+				if (e.pointerType === "mouse" && e.button !== 0) return;
+				if (!grabsHeader(e.target)) return;
+				if (begin(e.pointerId, e.clientY, e.timeStamp)) e.currentTarget.setPointerCapture(e.pointerId);
+			},
+			onPointerMove: (e: ReactPointerEvent<HTMLElement>) => follow(e.pointerId, e.clientY, e.timeStamp),
+			onPointerUp: (e: ReactPointerEvent<HTMLElement>) => release(e.pointerId, false),
+			onPointerCancel: (e: ReactPointerEvent<HTMLElement>) => release(e.pointerId, true),
 		},
 	};
+}
+
+/** Every box from `t` up to `box` lets a vertical pan through (a pad or a canvas that takes its own drags does not). */
+function pullable(t: EventTarget | null, box: HTMLElement) {
+	for (let el = t as HTMLElement | null; el && el !== box.parentElement; el = el.parentElement) {
+		const ta = getComputedStyle(el).touchAction;
+		if (ta !== "auto" && ta !== "manipulation" && !ta.includes("pan-y")) return false;
+	}
+	return true;
+}
+
+/** Some box from `t` up to `box` is scrolled away from its top, so a pull down scrolls it. */
+function scrolledDown(t: EventTarget | null, box: HTMLElement) {
+	for (let el = t as HTMLElement | null; el && el !== box.parentElement; el = el.parentElement) if (el.scrollTop > 0) return true;
+	return false;
 }
 
 /**

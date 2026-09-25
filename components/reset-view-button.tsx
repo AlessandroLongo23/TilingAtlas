@@ -12,16 +12,19 @@ import { LocateFixed } from "lucide-react";
 import { requestViewReset } from "@/lib/render/touchGestures";
 import { cn } from "@/lib/utils/cn";
 
-/** Positioned by the caller (absolute or fixed); styled as FullscreenToggle's twin, 44px, phone only. */
-export function ResetViewButton({ className }: { className?: string }) {
+/**
+ * Positioned by the caller (absolute or fixed); styled as FullscreenToggle's twin, 44px, phone only.
+ * `onClick` replaces the broadcast for a view that is not listening (a wall's detail preview).
+ */
+export function ResetViewButton({ className, onClick = requestViewReset }: { className?: string; onClick?: () => void }) {
 	return (
 		<button
 			type="button"
-			onClick={requestViewReset}
+			onClick={onClick}
 			aria-label="Reset view"
 			title="Reset view"
 			className={cn(
-				"z-30 hidden size-11 items-center justify-center ta-float text-fg-secondary transition-colors hover:text-fg max-md:flex",
+				"z-30 hidden size-11 items-center justify-center ta-float text-fg-secondary transition-colors hover:text-fg max-md:flex max-md:touch-pan-x max-md:touch-pan-y",
 				className,
 			)}
 		>

@@ -33,8 +33,9 @@ export function InfoDot({
 					aria-label={label}
 					className={cn(
 						"inline-flex shrink-0 cursor-help text-fg-muted transition-colors",
-						// A 14px dot is too small to tap; on a phone an invisible halo makes the target 44px.
-						"max-md:relative max-md:before:absolute max-md:before:-inset-[15px] max-md:before:content-['']",
+						// A 14px dot is too small to tap: on a phone the button is a 44px box around it, and it takes
+						// that room in the row, so it never lies over a neighbour's target or under one.
+						"max-md:size-11 max-md:items-center max-md:justify-center max-md:rounded-control",
 						"hover:opacity-100 hover:text-fg focus-visible:opacity-100 focus-visible:text-fg",
 						"rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
 					)}

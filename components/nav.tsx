@@ -89,7 +89,8 @@ export function Nav() {
 				immersive
 					? "h-0 opacity-0 pointer-events-none border-b-0"
 					: // On a phone the bar sits under the status bar (viewport-fit=cover), so it grows by that inset.
-						"h-12 border-b border-line-subtle max-md:h-[var(--topbar-h)] max-md:pt-[env(safe-area-inset-top)] max-md:pr-1",
+						// A pinch that starts on the phone bar would zoom the whole page, chrome and all.
+						"h-12 border-b border-line-subtle max-md:h-[var(--topbar-h)] max-md:pt-[env(safe-area-inset-top)] max-md:pr-1 max-md:touch-pan-x max-md:touch-pan-y",
 			)}
 		>
 			{/* Phone bar: the mark, where you are, and the menu that holds everything else. */}
@@ -166,8 +167,9 @@ export function Nav() {
 /**
  * The phone menu: a full-height panel from the right edge with every section, then the pieces the
  * desktop bar carries as icons (what's new, Discord, theme) and the version. Portalled to <body> so the
- * bar's clipping and its immersive fade never reach it. Its links replace the history entry the open
- * menu holds (lib/hooks/useModalLayer.ts), so Back from the new page returns to the one it was opened on.
+ * bar's clipping and its immersive fade never reach it. A link followed from it takes the history entry
+ * the open menu holds (lib/hooks/useModalLayer.ts), so Back from the new page returns to the one it was
+ * opened on.
  */
 function PhoneMenu({ pathname, onClose }: { pathname: string; onClose: () => void }) {
 	const panelRef = useRef<HTMLDivElement>(null);
@@ -178,21 +180,27 @@ function PhoneMenu({ pathname, onClose }: { pathname: string; onClose: () => voi
 	return createPortal(
 		<div className="fixed inset-0 z-[60] md:hidden">
 			<SheetBackdrop onClose={onClose} className="z-0" />
+			{/* A swipe to the right anywhere on the panel closes it. touch-pan-y, on the scroller too (where
+			    the browser decides), leaves sideways moves to the swipe. */}
 			<div
 				ref={panelRef}
 				{...dialogProps}
-				className="ta-panel-in absolute inset-y-0 right-0 flex w-[min(340px,88vw)] flex-col bg-surface-chrome shadow-xl focus:outline-none pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
+				{...swipe}
+				className="ta-panel-in absolute inset-y-0 right-0 flex w-[min(340px,88vw)] flex-col bg-surface-chrome shadow-xl focus:outline-none pt-[env(safe-area-inset-top)]"
 			>
 				<SheetHeader
 					title="The Tiling Atlas"
 					onClose={onClose}
 					closeLabel="Close menu"
-					swipe={swipe}
 					grabBar={false}
 					className="h-12 pr-1 [&_h2]:text-[15px]"
 				/>
-				<nav aria-label="Sections" className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-2">
-					<Link href="/" replace onClick={onClose} className={cn(row, "text-[15px] font-medium text-fg")}>
+				{/* The version scrolls with the rows, so on a short screen it never covers the last one. */}
+				<nav
+					aria-label="Sections"
+					className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain px-2 pt-2 pb-[env(safe-area-inset-bottom)]"
+				>
+					<Link href="/" onClick={onClose} className={cn(row, "text-[15px] font-medium text-fg")}>
 						<Mark />
 						Home
 					</Link>
@@ -203,7 +211,6 @@ function PhoneMenu({ pathname, onClose }: { pathname: string; onClose: () => voi
 							<Link
 								key={link.href}
 								href={link.href}
-								replace
 								onClick={onClose}
 								aria-current={active ? "page" : undefined}
 								className={cn(row, "flex-col items-start justify-center gap-0", active && "bg-surface-overlay")}
@@ -225,10 +232,10 @@ function PhoneMenu({ pathname, onClose }: { pathname: string; onClose: () => voi
 						Join the Discord
 					</a>
 					<ThemeToggle variant="row" />
+					<p className="mt-2 border-t border-line-subtle px-3 py-3 font-mono text-xs tabular-nums text-fg-muted">
+						v{CURRENT_VERSION}
+					</p>
 				</nav>
-				<p className="shrink-0 border-t border-line-subtle px-5 py-3 font-mono text-xs tabular-nums text-fg-muted">
-					v{CURRENT_VERSION}
-				</p>
 			</div>
 		</div>,
 		document.body,

@@ -13,10 +13,6 @@
 @import "./styles/tokens/derived.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
-/* Touch on a phone. A (hover: none) query alone also matches touch tablets, which keep the desktop
-   layout (docs/mobile/DESIGN.md), so a layout change for fingers goes behind this, never behind a bare
-   [@media(hover:none)]. */
-@custom-variant touch-phone (@media (hover: none) and (max-width: 767.98px));
 
 /* Tailwind v4 — map utilities to semantic tokens.
    `inline` keeps references to CSS vars at runtime so `.dark` flips

@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Check, Library, Link2, Loader2, SlidersHorizontal, X } from "lucide-react";
+import { Check, Library, Link2, Loader2, X } from "lucide-react";
 import { PageSidebar } from "@/components/page-sidebar";
-import { SheetBadge } from "@/components/ui/bottom-sheet";
+import { SheetTrigger } from "@/components/ui/bottom-sheet";
 import { IntervalSlider } from "@/components/ui/interval-slider";
 import { OptionWall } from "@/components/ui/option-wall";
 import { Button } from "@/components/ui/button";
@@ -2424,7 +2424,7 @@ export function ReferenceShelf() {
 						{/* Maximal (M = k) is a Krötenheerdt property of Euclidean uniform tilings — no meaning off
 						    the plane, and none in the other two segments, whose k isn't a vertex-orbit count. */}
 						{isEuclidean && inTilings ? (
-							<label className="flex h-7 cursor-pointer items-center justify-between text-xs text-fg-secondary">
+							<label className="flex h-7 cursor-pointer items-center justify-between text-xs text-fg-secondary max-md:h-11 max-md:text-sm">
 								Maximal (M = k)
 								<Switch size="sm" checked={!!filters.maximalOnly} onCheckedChange={toggleMaximal} />
 							</label>
@@ -2755,16 +2755,12 @@ export function ReferenceShelf() {
 					<div className="ml-auto flex items-center gap-4 max-md:ml-0 max-md:w-full max-md:flex-wrap max-md:gap-2">
 						{/* The phone's way into the filter sheet. While it is on screen the floating pill stays
 						    away; once it scrolls off, the pill takes over. */}
-						<button
+						<SheetTrigger
 							ref={headerTriggerRef}
-							type="button"
+							label="Filters"
+							count={activeFilterCount}
 							onClick={() => useMobileSheet.getState().setOpen(true)}
-							className="hidden h-11 items-center gap-2 rounded-control bg-fg px-4 text-sm font-medium text-fg-inverse max-md:inline-flex"
-						>
-							<SlidersHorizontal size={16} aria-hidden />
-							Filters
-							<SheetBadge count={activeFilterCount} />
-						</button>
+						/>
 						{/* Group-variants toggle — hyperbolic only, where one vertex configuration carries up to
 						    hundreds of tilings; the card then pages through them in place. */}
 						{geometry === "hyperbolic" ? (

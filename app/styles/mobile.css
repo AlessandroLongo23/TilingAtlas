@@ -24,6 +24,12 @@
     --color-text-muted: var(--palette-neutral-400);
     --color-text-disabled: oklch(0.62 0.008 270);
   }
+  /* White on the dark theme's accent fill (primary buttons, Run, Show N results) is 4.43:1; one step
+     darker makes it 4.7:1. Set on the filled element only, where its border and ring follow: accent
+     TEXT on a dark surface needs the lighter value, and a darker token would cost it contrast. */
+  .dark .bg-accent {
+    --color-accent: oklch(0.565 0.19 264);
+  }
 
   /* Segmented cells: 40px inside a 3px-padded track makes the group 46px, over the 44px touch floor. */
   .ta-tab {
@@ -31,11 +37,21 @@
   }
 
   /* A 12px floor for chrome text: section labels, and the 10 to 11px arbitrary sizes the desktop uses
-     for captions, chips and counts. One rule here, so no call site has to remember a max-md: bump. An
-     element that sets its own phone size (a max-md:text-* class) keeps it, and SVG text is left alone:
-     figure labels are sized to their drawing. */
+     for captions, chips and counts. One rule here, so no call site has to remember a max-md: bump. SVG
+     text is left alone: figure labels are sized to their drawing.
+     An element that sets its own phone SIZE keeps it. This file is unlayered, so it beats every Tailwind
+     utility and cannot defer to a max-md:text-* size by order; the opt-out has to read the class list.
+     It names the size utilities only (the scale steps and the arbitrary text-[...]), so a colour such as
+     max-md:text-fg-muted still gets the floor. */
   .ta-label,
-  :is(.text-\[10px\], .text-\[10\.5px\], .text-\[11px\]):not([class*="max-md:text-"]):not(svg *) {
+  :is(.text-\[10px\], .text-\[10\.5px\], .text-\[11px\]):not(
+      [class*="max-md:text-["],
+      [class*="max-md:text-xs"],
+      [class*="max-md:text-sm"],
+      [class*="max-md:text-base"],
+      [class*="max-md:text-lg"],
+      svg *
+    ) {
     font-size: 12px;
   }
 
