@@ -23,9 +23,10 @@ const SHAPE: Record<Variant, string> = {
 	pill: "",
 };
 
+// 44px tall on a phone, the touch floor.
 const SIZE_CLASSES: Record<Size, string> = {
-	sm: "h-7 px-2.5 text-xs gap-1.5",
-	md: "h-9 px-3 text-sm gap-2",
+	sm: "h-7 px-2.5 text-xs gap-1.5 max-md:min-h-11",
+	md: "h-9 px-3 text-sm gap-2 max-md:min-h-11",
 };
 
 const ICON_SIZE: Record<Size, string> = {

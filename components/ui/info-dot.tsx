@@ -26,13 +26,15 @@ export function InfoDot({
 			<Tooltip
 				side={side}
 				delay={120}
-				content={<div className="space-y-1.5 text-[11px] leading-relaxed text-fg-secondary">{children}</div>}
+				content={<div className="space-y-1.5 text-[11px] leading-relaxed text-fg-secondary max-md:text-[13px]">{children}</div>}
 			>
 				<button
 					type="button"
 					aria-label={label}
 					className={cn(
 						"inline-flex shrink-0 cursor-help text-fg-muted transition-colors",
+						// A 14px dot is too small to tap; on a phone an invisible halo makes the target 44px.
+						"max-md:relative max-md:before:absolute max-md:before:-inset-[15px] max-md:before:content-['']",
 						"hover:opacity-100 hover:text-fg focus-visible:opacity-100 focus-visible:text-fg",
 						"rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
 					)}

@@ -47,11 +47,11 @@ export function SearchInput({
 					value={local}
 					onChange={handleInput}
 					placeholder={placeholder}
-					className="w-full h-9 rounded-md border border-line bg-surface-raised shadow-sm pl-9 pr-8 py-2 text-sm text-fg placeholder:text-fg-disabled focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:border-accent transition-all"
+					className="w-full h-9 max-md:h-11 rounded-md border border-line bg-surface-raised shadow-sm pl-9 pr-8 py-2 text-sm text-fg placeholder:text-fg-disabled focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:border-accent transition-all"
 				/>
 				{local ? (
 					<button
-						className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded text-fg-muted hover:text-fg-secondary hover:bg-surface-overlay/50 transition-colors cursor-pointer"
+						className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 max-md:right-0 max-md:p-3 rounded text-fg-muted hover:text-fg-secondary hover:bg-surface-overlay/50 transition-colors cursor-pointer"
 						onClick={clear}
 						aria-label="Clear search"
 					>

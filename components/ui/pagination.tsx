@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, type KeyboardEvent } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { useIsPhone } from "@/lib/hooks/useIsPhone";
 
 interface PaginationProps {
 	totalItems: number;
@@ -31,21 +32,24 @@ export function Pagination({
 		onPageChange(Math.max(1, Math.min(totalPages, page)));
 	};
 
+	// Seven slots, or five on a phone: first, last, the current page with a neighbour each side (none on
+	// a phone), and gaps. Five 40px cells, two gaps and the arrows fit a 360px screen.
+	const maxVisible = useIsPhone() ? 5 : 7;
 	const visiblePages = useMemo(() => {
 		const pages: (number | null)[] = [];
-		const maxVisible = 7;
+		const side = (maxVisible - 5) / 2;
 		if (totalPages <= maxVisible) {
 			for (let i = 1; i <= totalPages; i++) pages.push(i);
 			return pages;
 		}
 		pages.push(1);
-		let start = Math.max(2, currentPage - 1);
-		let end = Math.min(totalPages - 1, currentPage + 1);
+		let start = Math.max(2, currentPage - side);
+		let end = Math.min(totalPages - 1, currentPage + side);
 		if (currentPage <= 3) {
 			start = 2;
-			end = Math.min(5, totalPages - 1);
+			end = Math.min(maxVisible - 2, totalPages - 1);
 		} else if (currentPage >= totalPages - 2) {
-			start = Math.max(2, totalPages - 4);
+			start = Math.max(2, totalPages - (maxVisible - 3));
 			end = totalPages - 1;
 		}
 		if (start > 2) pages.push(null);
@@ -53,7 +57,7 @@ export function Pagination({
 		if (end < totalPages - 1) pages.push(null);
 		pages.push(totalPages);
 		return pages;
-	}, [currentPage, totalPages]);
+	}, [currentPage, totalPages, maxVisible]);
 
 	const startItem = (currentPage - 1) * pageSize + 1;
 	const endItem = Math.min(currentPage * pageSize, totalItems);
@@ -82,7 +86,9 @@ export function Pagination({
 		// Without a positioned ancestor the label's containing block is the document, so it sits at its
 		// static offset deep inside a scroll pane and stretches <html> that far — a phantom scroll region
 		// of empty space below the content. Owning it here means no caller has to remember the `relative`.
-		<div className="@container relative flex items-center justify-between gap-4 select-none">
+		// On a phone the strip is the row's only visible part, so it centres across the full width, whatever
+		// the parent does (a size container has no width of its own inside a centring flex).
+		<div className="@container relative flex items-center justify-between gap-4 select-none max-md:w-full max-md:justify-center">
 			{showRange ? (
 				<span className="hidden @lg:inline text-[13px] text-fg-muted tabular-nums whitespace-nowrap">
 					{startItem.toLocaleString("en-US")}–{endItem.toLocaleString("en-US")} of {totalItems.toLocaleString("en-US")}
@@ -133,7 +139,7 @@ export function Pagination({
 								aria-current={currentPage === p ? "page" : undefined}
 								aria-pressed={currentPage === p}
 								className={cn(
-									"ta-tab flex h-7 min-w-7 items-center justify-center px-1.5 text-xs font-medium tabular-nums cursor-pointer transition-colors",
+									"ta-tab flex h-7 min-w-7 items-center justify-center px-1.5 text-xs font-medium tabular-nums cursor-pointer transition-colors max-md:min-w-10",
 									"focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
 									currentPage === p ? "text-fg" : "text-fg-muted hover:text-fg",
 								)}
@@ -156,7 +162,7 @@ function PageBtn({ children, ...rest }: React.ComponentProps<"button">) {
 		<button
 			type="button"
 			{...rest}
-			className="ta-tab flex h-7 w-7 items-center justify-center text-fg-muted hover:text-fg cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+			className="ta-tab flex h-7 w-7 max-md:w-10 items-center justify-center text-fg-muted hover:text-fg cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
 		>
 			{children}
 		</button>

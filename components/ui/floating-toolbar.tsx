@@ -7,6 +7,10 @@ import { Tooltip } from "./tooltip";
 
 // The floating toolbar a tool page parks over its canvas (bottom centre): one white pill holding the
 // page's canvas-level actions, so they read as one control and not as a column of loose squares.
+//
+// On a phone it rides above the dock sheet (`--sheet-offset`, published by the sheet; the home-indicator
+// inset when there is none), never wider than the screen less 16px a side, and scrolls sideways with
+// snap when its buttons do not fit.
 
 export function FloatingToolbar({ children, className }: { children: ReactNode; className?: string }) {
 	return (
@@ -14,6 +18,7 @@ export function FloatingToolbar({ children, className }: { children: ReactNode; 
 			role="toolbar"
 			className={cn(
 				"absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-0.5 rounded-xl bg-surface-raised/95 p-1 shadow-lg ring-1 ring-line-subtle backdrop-blur-sm",
+				"max-md:bottom-[calc(max(var(--sheet-offset,0px),env(safe-area-inset-bottom))+12px)] max-md:max-w-[calc(100%-32px)] max-md:overflow-x-auto max-md:snap-x scrollbar-hide max-md:transition-[bottom] max-md:duration-300",
 				className,
 			)}
 		>
@@ -48,7 +53,7 @@ export function ToolbarReveal({ show, children }: { show: boolean; children: Rea
 }
 
 export function ToolbarDivider() {
-	return <span aria-hidden="true" className="mx-1 h-5 w-px bg-line-subtle" />;
+	return <span aria-hidden="true" className="mx-1 h-5 w-px bg-line-subtle max-md:shrink-0" />;
 }
 
 interface ToolbarButtonProps extends Omit<ComponentProps<"button">, "children"> {
@@ -68,10 +73,11 @@ export function ToolbarButton({ label, shortcut, primary, className, children, .
 				aria-label={primary ? undefined : label}
 				className={cn(
 					"flex h-8 items-center justify-center gap-2 whitespace-nowrap rounded-lg text-[13px] font-medium transition-colors",
+					"max-md:h-11 max-md:shrink-0 max-md:snap-start",
 					"focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:pointer-events-none disabled:opacity-40",
 					primary
 						? "bg-accent px-3 text-accent-contrast hover:bg-accent-hover"
-						: "w-8 text-fg-secondary hover:bg-surface-overlay hover:text-fg aria-pressed:bg-surface-sunken aria-pressed:text-fg",
+						: "w-8 max-md:min-w-11 text-fg-secondary hover:bg-surface-overlay hover:text-fg aria-pressed:bg-surface-sunken aria-pressed:text-fg",
 					className,
 				)}
 				{...rest}

@@ -1,0 +1,121 @@
+/* The phone layer (docs/mobile/DESIGN.md). Everything below 768px lives here or behind Tailwind's
+   `max-md:` variant; desktop never matches a rule in this file except the :root variable, which
+   nothing reads above 768px.
+
+   globals.css imports this file last, after every component class, so an override here beats the
+   plain `.ta-*` rule it follows at equal specificity, and (being unlayered) beats any Tailwind
+   utility. */
+
+:root {
+  /* The phone top bar: 48px of bar under the status-bar inset (viewport-fit=cover draws under it). A
+     full-height dock sheet stops here. */
+  --topbar-h: calc(48px + env(safe-area-inset-top));
+}
+
+@media (max-width: 767.98px) {
+  /* Muted and faint text at 4.5:1 on every surface a phone shows them on (the sunken segmented track
+     included). Desktop keeps its own, lighter values. */
+  :root {
+    --color-text-muted: oklch(0.5 0.008 270);
+    --color-text-disabled: oklch(0.54 0.006 270);
+  }
+  /* Dark muted text already clears 6.6:1; restated because the :root rule above would reach it. */
+  .dark {
+    --color-text-muted: var(--palette-neutral-400);
+    --color-text-disabled: oklch(0.62 0.008 270);
+  }
+
+  /* Segmented cells: 40px inside a 3px-padded track makes the group 46px, over the 44px touch floor. */
+  .ta-tab {
+    min-height: 40px;
+  }
+
+  /* A 12px floor for chrome text: section labels, and the 10 to 11px arbitrary sizes the desktop uses
+     for captions, chips and counts. One rule here, so no call site has to remember a max-md: bump. An
+     element that sets its own phone size (a max-md:text-* class) keeps it, and SVG text is left alone:
+     figure labels are sized to their drawing. */
+  .ta-label,
+  :is(.text-\[10px\], .text-\[10\.5px\], .text-\[11px\]):not([class*="max-md:text-"]):not(svg *) {
+    font-size: 12px;
+  }
+
+  /* Sliders: a 24px thumb on a 44px-tall hit strip. Every width that encodes the thumb (the travel
+     box, the native thumb the transparent input measures with) moves together, so the drawn thumb
+     still sits exactly where the native value lands. IntervalSlider reads the thumb's width from the
+     DOM for the same reason.
+     Touch: a vertical swipe that starts on a slider scrolls the sheet (pan-y) and leaves the value
+     alone. The native input takes no presses here; RangeInput's track moves the value only once a
+     finger has gone sideways, or on a tap (components/ui/range-input.tsx). */
+  .ta-track {
+    height: 44px;
+    touch-action: pan-y;
+  }
+  .ta-track-input {
+    pointer-events: none;
+  }
+  .ta-track-travel {
+    width: 24px;
+    transform: translateX(calc(var(--f, 0) * (100cqi - 24px)));
+  }
+  .ta-track-thumb {
+    width: 24px;
+    height: 24px;
+    margin-top: -12px;
+  }
+  .ta-track-input::-webkit-slider-thumb {
+    width: 24px;
+    height: 24px;
+  }
+  .ta-track-input::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+  }
+  .ta-ival {
+    touch-action: pan-y;
+  }
+
+  /* iOS Safari zooms the whole page into any focused field whose text is under 16px, and does not
+     zoom back out. 16px on phone keeps the layout still when a search box or number field is tapped. */
+  input:not([type="range"]):not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  /* Modal sheets rise from the bottom edge; their backdrop fades in under them. */
+  .ta-sheet-in {
+    animation: ta-sheet-in 280ms var(--ease-out);
+  }
+  .ta-backdrop-in {
+    animation: ta-fade-in 200ms var(--ease-out);
+  }
+  /* The phone menu slides in from the right edge. */
+  .ta-panel-in {
+    animation: ta-panel-in 260ms var(--ease-out);
+  }
+}
+
+@keyframes ta-sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes ta-panel-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 767.98px) and (prefers-reduced-motion: reduce) {
+  .ta-sheet-in,
+  .ta-backdrop-in,
+  .ta-panel-in {
+    animation: none;
+  }
+}

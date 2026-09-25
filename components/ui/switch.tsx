@@ -43,6 +43,8 @@ export function Switch({
 			className={cn(
 				// A rounded track, accent when ON, sunken grey when OFF, carrying a round white knob.
 				"group relative rounded-full border focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
+				// On a phone an invisible halo takes the hit area to 44px without changing the drawn track.
+				"max-md:before:absolute max-md:before:-inset-x-1 max-md:before:-inset-y-3 max-md:before:content-['']",
 				"transition-colors duration-[var(--duration-fast)] ease-[var(--ease-out)]",
 				TRACK[size],
 				checked ? "bg-accent border-accent" : "bg-surface-sunken border-line",

@@ -13,6 +13,10 @@
 @import "./styles/tokens/derived.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
+/* Touch on a phone. A (hover: none) query alone also matches touch tablets, which keep the desktop
+   layout (docs/mobile/DESIGN.md), so a layout change for fingers goes behind this, never behind a bare
+   [@media(hover:none)]. */
+@custom-variant touch-phone (@media (hover: none) and (max-width: 767.98px));
 
 /* Tailwind v4 — map utilities to semantic tokens.
    `inline` keeps references to CSS vars at runtime so `.dark` flips
@@ -278,91 +282,6 @@ body {
   opacity: 0.45;
 }
 
-/* The native range input, where a component still uses one: the same look as .ta-track (accent
-   fill via the --fill custom property set inline by the component, a round white thumb).
-   .ta-range-overlay is the stacked dual-thumb variant: the input is invisible and click-through
-   except for its thumb (the track is drawn by the component underneath). */
-.ta-range {
-  appearance: none;
-  -webkit-appearance: none;
-  width: 100%;
-  height: 14px;
-  background: transparent;
-  cursor: pointer;
-}
-.ta-range::-webkit-slider-runnable-track {
-  height: 4px;
-  border-radius: 9999px;
-  background: linear-gradient(
-    to right,
-    var(--color-text-primary) var(--fill, 0%),
-    var(--color-surface-sunken) var(--fill, 0%)
-  );
-}
-.ta-range::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 12px;
-  height: 12px;
-  margin-top: -4px;
-  background: var(--palette-white);
-  border: none;
-  border-radius: 9999px;
-  box-shadow:
-    0 0 0 1px var(--color-border-strong),
-    0 1px 3px oklch(0 0 0 / 0.18);
-}
-.ta-range::-moz-range-track {
-  height: 2px;
-  background: var(--color-border-default);
-}
-.ta-range::-moz-range-progress {
-  height: 4px;
-  border-radius: 9999px;
-  background: var(--color-text-primary);
-}
-.ta-range::-moz-range-thumb {
-  width: 12px;
-  height: 12px;
-  background: var(--color-text-primary);
-  border: none;
-  border-radius: 0;
-}
-.ta-range:focus-visible {
-  outline: none;
-}
-.ta-range:focus-visible::-webkit-slider-thumb {
-  outline: 1px solid var(--color-text-primary);
-  outline-offset: 3px;
-}
-.ta-range:focus-visible::-moz-range-thumb {
-  outline: 1px solid var(--color-text-primary);
-  outline-offset: 3px;
-}
-.ta-range:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
-}
-
-.ta-range-overlay {
-  pointer-events: none;
-}
-.ta-range-overlay::-webkit-slider-runnable-track {
-  background: none;
-}
-.ta-range-overlay::-moz-range-track {
-  background: none;
-}
-.ta-range-overlay::-moz-range-progress {
-  background: none;
-}
-.ta-range-overlay::-webkit-slider-thumb {
-  pointer-events: auto;
-}
-.ta-range-overlay::-moz-range-thumb {
-  pointer-events: auto;
-}
-
 /* Walls, retired (2026-09-24). The squared system built each panel as a "wall": a container painted
    in the line colour, opaque cells, 1px gaps as the only rules. The Instrument system replaces it
    with white panels separated by space and single rules. The classes stay on their call sites as
@@ -599,3 +518,8 @@ body {
 .slide-spread > :is(div, figure, p:has(img)) + :is(div, figure, p:has(img)) {
   margin-top: 0;
 }
+
+/* The phone layer: rules for viewports under 768px (docs/mobile/DESIGN.md). Imported last, so each of
+   its overrides follows the rule it adjusts and wins at equal specificity. Tailwind inlines the file
+   here (an @import after other rules is fine for it). */
+@import "./styles/mobile.css";

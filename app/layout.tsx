@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
@@ -22,6 +22,14 @@ export const metadata: Metadata = {
     "A catalogue of tilings of the plane, the sphere, and the hyperbolic plane.",
 };
 
+// viewport-fit=cover lets the phone layout reach under the notch and the home indicator; the top bar,
+// sheets and floating chrome pad themselves with env(safe-area-inset-*). Desktop browsers ignore it.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
@@ -35,7 +43,9 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />
       </head>
-      <body className="min-h-full flex flex-col">
+      {/* Side insets: a phone turned to landscape is wider than 768px and gets the desktop layout, which
+          would otherwise run under the notch. env() is 0 everywhere else, so nothing else moves. */}
+      <body className="min-h-full flex flex-col pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
         {children}
         <Analytics />
       </body>

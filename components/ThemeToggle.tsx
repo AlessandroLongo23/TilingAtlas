@@ -1,7 +1,7 @@
 "use client";
 
 import { Moon, Sun } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
 import { Tooltip } from "@/components/ui/tooltip";
 
@@ -15,29 +15,39 @@ function applyTheme(theme: Theme) {
 	setTimeout(() => root.classList.remove("disable-transitions"), 100);
 }
 
-export function ThemeToggle() {
-	const [theme, setTheme] = useState<Theme>("dark");
+// The theme is the `.dark` class on <html> (set before paint by the script in app/layout.tsx), so that
+// class is the store: every toggle on the page (the header icon, the phone menu's row) reads it and
+// stays in step with the others without sharing React state.
+function subscribeTheme(onChange: () => void) {
+	const mo = new MutationObserver(onChange);
+	mo.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+	return () => mo.disconnect();
+}
+const readTheme = (): Theme => (document.documentElement.classList.contains("dark") ? "dark" : "light");
+
+/**
+ * `icon` is the header button and owns the app-wide pieces (Shift+T, following the OS). `row` is the
+ * phone menu's labelled row; it adds no listeners, so mounting both never flips the theme twice.
+ */
+export function ThemeToggle({ variant = "icon" }: { variant?: "icon" | "row" }) {
+	const theme = useSyncExternalStore(subscribeTheme, readTheme, () => "dark" as Theme);
+	const owner = variant === "icon";
 
 	useEffect(() => {
-		setTheme(document.documentElement.classList.contains("dark") ? "dark" : "light");
-
+		if (!owner) return;
 		const media = window.matchMedia("(prefers-color-scheme: dark)");
 		const onChange = (e: MediaQueryListEvent) => {
 			if (localStorage.getItem("theme")) return;
-			const next: Theme = e.matches ? "dark" : "light";
-			applyTheme(next);
-			setTheme(next);
+			applyTheme(e.matches ? "dark" : "light");
 		};
 		media.addEventListener("change", onChange);
 		return () => media.removeEventListener("change", onChange);
-	}, []);
+	}, [owner]);
 
 	// Read the current theme from the DOM (source of truth) and not the `theme` state, so this stays
 	// stable ([] deps) and the keydown listener below never fires on a stale closure.
 	const toggle = useCallback(() => {
-		const next: Theme = document.documentElement.classList.contains("dark") ? "light" : "dark";
-		applyTheme(next);
-		setTheme(next);
+		applyTheme(readTheme() === "dark" ? "light" : "dark");
 	}, []);
 
 	// Shift+T toggles the theme from anywhere. Plain "t" is already taken on /play (tiling transition),
@@ -45,6 +55,7 @@ export function ThemeToggle() {
 	// stopImmediatePropagation for Shift+T only — that way Shift+T flips the theme without also tripping
 	// the /play transition toggle, while plain "t" there is left untouched.
 	useEffect(() => {
+		if (!owner) return;
 		const onKey = (e: KeyboardEvent) => {
 			if (e.key !== "T" || !e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) return;
 			if (isTypingTarget(e)) return;
@@ -54,7 +65,22 @@ export function ThemeToggle() {
 		};
 		window.addEventListener("keydown", onKey, { capture: true });
 		return () => window.removeEventListener("keydown", onKey, { capture: true });
-	}, [toggle]);
+	}, [toggle, owner]);
+
+	if (!owner) {
+		return (
+			<button
+				type="button"
+				onClick={toggle}
+				aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+				className="flex h-12 w-full items-center gap-3 rounded-control px-3 text-left text-[15px] text-fg hover:bg-surface-overlay"
+			>
+				{theme === "dark" ? <Moon size={18} strokeWidth={1.75} /> : <Sun size={18} strokeWidth={1.75} />}
+				<span className="flex-1">Theme</span>
+				<span className="text-[13px] text-fg-muted">{theme === "dark" ? "Dark" : "Light"}</span>
+			</button>
+		);
+	}
 
 	return (
 		<Tooltip label="Toggle theme" shortcut="Shift + T" side="left" delay={0}>

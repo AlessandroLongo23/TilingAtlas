@@ -39,7 +39,7 @@ export function MultiSelect({
 				<div className="flex items-center justify-between">
 					<span className="ta-label">{label}</span>
 					<button
-						className="text-xs text-fg-muted hover:text-fg transition-colors px-1.5 py-0.5 rounded hover:bg-surface-overlay cursor-pointer"
+						className="text-xs text-fg-muted hover:text-fg transition-colors px-1.5 py-0.5 rounded hover:bg-surface-overlay cursor-pointer max-md:min-h-11 max-md:px-3 max-md:text-[13px]"
 						onClick={() => (allSelected ? deselectAll() : selectAll())}
 					>
 						{allSelected ? "Clear" : "All"}
@@ -52,7 +52,7 @@ export function MultiSelect({
 						key={option.id}
 						onClick={() => toggle(option.id)}
 						className={cn(
-							"h-7 rounded-control px-2.5 text-xs font-medium transition-colors border select-none cursor-pointer",
+							"h-7 rounded-control px-2.5 text-xs font-medium transition-colors border select-none cursor-pointer max-md:min-h-11 max-md:px-3.5 max-md:text-[13px]",
 							selected.includes(option.id)
 								? "bg-surface-raised text-fg border-line-strong shadow-sm"
 								: "bg-transparent text-fg-muted border-line hover:bg-surface-overlay hover:text-fg",

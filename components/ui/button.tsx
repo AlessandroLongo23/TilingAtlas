@@ -46,11 +46,12 @@ const VARIANT_CLASSES: Record<Variant, string> = {
 		"bg-danger-subtle hover:bg-danger text-danger hover:text-fg-inverse border border-danger/40",
 };
 
+// On a phone every size reaches the 44px touch floor (min-h wins over h); lg is already there.
 const SIZE_CLASSES: Record<Size, string> = {
-	sm: "h-8 px-3 text-[13px] gap-1.5",
-	md: "h-9 px-3.5 text-sm gap-2",
+	sm: "h-8 px-3 text-[13px] gap-1.5 max-md:min-h-11",
+	md: "h-9 px-3.5 text-sm gap-2 max-md:min-h-11",
 	lg: "h-12 px-6 text-base gap-2.5",
-	icon: "h-8 w-8",
+	icon: "h-8 w-8 max-md:min-h-11 max-md:min-w-11",
 };
 
 const ICON_SIZE: Record<Size, string> = {

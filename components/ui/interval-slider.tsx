@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react";
+import { useLayoutEffect, useRef, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react";
 import { cn } from "@/lib/utils/cn";
 
 // The dual-thumb sibling of <RangeInput>: same .ta-track anatomy (rounded track, 12px round thumbs),
@@ -46,6 +46,20 @@ export function quantize(f: number, min: number, max: number, step: number): num
  *  Big enough to swallow press jitter, small enough that any intentional drag decides instantly. */
 const DIRECTION_THRESHOLD_PX = 3;
 
+/** How far a finger moves before a press on a track counts as a drag. Sideways, it moves the value;
+ *  up or down, it is the start of a scroll and the value is left alone. */
+export const TOUCH_SLOP_PX = 8;
+
+/** The value under clientX on a .ta-track: thumb centres travel [t/2, width - t/2] for a thumb t px
+ *  wide, the same mapping the native control uses. t is read off the drawn thumb, 12px on a desktop and
+ *  24px on a phone (app/styles/mobile.css). */
+export function trackValueAt(track: HTMLElement, clientX: number, min: number, max: number, step: number): number {
+	const rect = track.getBoundingClientRect();
+	const t = track.querySelector<HTMLElement>(".ta-track-thumb")?.offsetWidth || 12;
+	if (rect.width <= t) return min;
+	return quantize((clientX - rect.left - t / 2) / (rect.width - t), min, max, step);
+}
+
 interface IntervalSliderProps {
 	value: [number, number];
 	onChange: (value: [number, number]) => void;
@@ -73,38 +87,61 @@ export function IntervalSlider({
 	const trackRef = useRef<HTMLSpanElement>(null);
 	// Latest committed value, so pointermoves that race a re-render never clamp against a stale bound.
 	const valueRef = useRef(value);
-	valueRef.current = value;
-	const dragRef = useRef<{ pointerId: number; bound: IntervalBound; startX: number } | null>(null);
+	useLayoutEffect(() => {
+		valueRef.current = value;
+	});
+	// `armed` is false while a finger's press is still undecided between a drag and a scroll.
+	const dragRef = useRef<{ pointerId: number; bound: IntervalBound; startX: number; startY: number; armed: boolean } | null>(
+		null,
+	);
 
 	const span = max - min;
 	const fLo = span > 0 ? (lo - min) / span : 0;
 	const fHi = span > 0 ? (hi - min) / span : 0;
 
-	// Same mapping the native control uses: thumb centres travel [6px, width-6px] (the 12px thumb).
-	const valueAt = (clientX: number): number => {
-		const rect = trackRef.current?.getBoundingClientRect();
-		if (!rect || rect.width <= 12) return min;
-		return quantize((clientX - rect.left - 6) / (rect.width - 12), min, max, step);
-	};
+	const valueAt = (clientX: number): number =>
+		trackRef.current ? trackValueAt(trackRef.current, clientX, min, max, step) : min;
 
 	const emit = (next: [number, number]) => {
 		const [curLo, curHi] = valueRef.current;
 		if (next[0] !== curLo || next[1] !== curHi) onChange(next);
 	};
 
+	// Pick the bound a press at clientX engages and jump it there.
+	const engage = (drag: NonNullable<typeof dragRef.current>, clientX: number) => {
+		const v = valueAt(clientX);
+		const [curLo, curHi] = valueRef.current;
+		drag.bound = chooseBound(v, curLo, curHi);
+		if (drag.bound !== "pending") emit(applyBound(drag.bound, v, [curLo, curHi]));
+	};
+
+	// A mouse or pen engages on press. A finger waits for TOUCH_SLOP_PX of sideways movement (moving up
+	// or down first lets the sheet scroll, touch-action: pan-y on a phone) or engages on a plain tap.
 	const handlePointerDown = (e: PointerEvent<HTMLSpanElement>) => {
 		if (disabled || e.button !== 0) return;
-		const v = valueAt(e.clientX);
-		const [curLo, curHi] = valueRef.current;
-		const bound = chooseBound(v, curLo, curHi);
-		dragRef.current = { pointerId: e.pointerId, bound, startX: e.clientX };
+		const armed = e.pointerType !== "touch";
+		const drag = { pointerId: e.pointerId, bound: "pending" as IntervalBound, startX: e.clientX, startY: e.clientY, armed };
+		dragRef.current = drag;
+		if (!armed) return;
 		e.currentTarget.setPointerCapture(e.pointerId);
-		if (bound !== "pending") emit(applyBound(bound, v, [curLo, curHi]));
+		engage(drag, e.clientX);
 	};
 
 	const handlePointerMove = (e: PointerEvent<HTMLSpanElement>) => {
 		const drag = dragRef.current;
 		if (!drag || drag.pointerId !== e.pointerId) return;
+		if (!drag.armed) {
+			const dx = Math.abs(e.clientX - drag.startX);
+			const dy = Math.abs(e.clientY - drag.startY);
+			if (dx < TOUCH_SLOP_PX && dy < TOUCH_SLOP_PX) return;
+			if (dy >= dx) {
+				dragRef.current = null;
+				return;
+			}
+			drag.armed = true;
+			e.currentTarget.setPointerCapture(e.pointerId);
+			engage(drag, drag.startX);
+		}
 		if (drag.bound === "pending") {
 			const dx = e.clientX - drag.startX;
 			if (Math.abs(dx) < DIRECTION_THRESHOLD_PX) return;
@@ -114,7 +151,11 @@ export function IntervalSlider({
 	};
 
 	const handlePointerEnd = (e: PointerEvent<HTMLSpanElement>) => {
-		if (dragRef.current?.pointerId === e.pointerId) dragRef.current = null;
+		const drag = dragRef.current;
+		if (drag?.pointerId !== e.pointerId) return;
+		dragRef.current = null;
+		// A finger that lifted without moving: a tap, which jumps the nearest bound like a click.
+		if (!drag.armed && e.type === "pointerup") engage(drag, drag.startX);
 	};
 
 	const handleThumbKey = (bound: "lo" | "hi") => (e: KeyboardEvent<HTMLSpanElement>) => {

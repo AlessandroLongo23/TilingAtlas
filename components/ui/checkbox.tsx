@@ -15,6 +15,9 @@ interface CheckboxBoxProps {
 	onCheckedChange: (checked: boolean) => void;
 	disabled?: boolean;
 	size?: "sm" | "md";
+	/** Drawing only: the row around it is the control (Checkbox), so the input takes no focus, no name
+	 *  and no presses of its own. */
+	decorative?: boolean;
 }
 
 const BOX_SIZE: Record<NonNullable<CheckboxBoxProps["size"]>, { box: string; check: string }> = {
@@ -22,7 +25,7 @@ const BOX_SIZE: Record<NonNullable<CheckboxBoxProps["size"]>, { box: string; che
 	md: { box: "h-4 w-4", check: "w-3 h-3" },
 };
 
-export function CheckboxBox({ id, checked, onCheckedChange, disabled = false, size = "md" }: CheckboxBoxProps) {
+export function CheckboxBox({ id, checked, onCheckedChange, disabled = false, size = "md", decorative = false }: CheckboxBoxProps) {
 	return (
 		<div className="relative flex items-center">
 			<input
@@ -31,7 +34,9 @@ export function CheckboxBox({ id, checked, onCheckedChange, disabled = false, si
 				checked={checked}
 				onChange={(e) => onCheckedChange(e.target.checked)}
 				disabled={disabled}
+				{...(decorative ? { tabIndex: -1, "aria-hidden": true } : {})}
 				className={cn(
+					decorative && "pointer-events-none",
 					"peer appearance-none rounded-[4px] border border-line-strong bg-surface-raised shadow-sm cursor-pointer",
 					"checked:bg-accent checked:border-accent",
 					"focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
@@ -78,7 +83,10 @@ export function Checkbox({ id, label, checked, onCheckedChange, disabled = false
 			aria-checked={checked}
 			aria-disabled={disabled}
 			className={cn(
-				"flex items-center justify-between gap-3",
+				// On a phone the whole row is the target, at least 44px tall. The row is the one control (the box
+				// inside is drawing only), so it carries the focus ring.
+				"flex items-center justify-between gap-3 rounded-control max-md:min-h-11",
+				"focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
 				disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer",
 			)}
 			onClick={toggle}
@@ -90,7 +98,7 @@ export function Checkbox({ id, label, checked, onCheckedChange, disabled = false
 			}}
 		>
 			<div className="flex items-center space-x-3 min-w-0">
-				<CheckboxBox id={id} checked={checked} onCheckedChange={onCheckedChange} disabled={disabled} />
+				<CheckboxBox id={id} checked={checked} onCheckedChange={onCheckedChange} disabled={disabled} decorative />
 				{label ? (
 					<span className="flex items-center gap-1.5 min-w-0">
 						<label className={cn("text-[13px] text-fg truncate", disabled ? "cursor-not-allowed" : "cursor-pointer")}>
@@ -100,8 +108,9 @@ export function Checkbox({ id, label, checked, onCheckedChange, disabled = false
 					</span>
 				) : null}
 			</div>
-			{/* A row without a key still reserves the column, so the keycaps down a list stay aligned. */}
-			{shortcut ? <Kbd>{shortcut}</Kbd> : <span aria-hidden className="w-[18px] shrink-0" />}
+			{/* A row without a key still reserves the column, so the keycaps down a list stay aligned. A phone
+			    shows no keycaps, so it reserves nothing. */}
+			{shortcut ? <Kbd>{shortcut}</Kbd> : <span aria-hidden className="w-[18px] shrink-0 max-md:hidden" />}
 		</div>
 	);
 }

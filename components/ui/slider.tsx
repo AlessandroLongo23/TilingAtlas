@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 
 import { RangeInput } from "./range-input";
 
@@ -35,12 +35,15 @@ export function Slider({
 	unit = "",
 	format,
 }: SliderProps) {
+	// The label names the input through htmlFor, so the input always needs an id.
+	const autoId = useId();
+	const inputId = id ?? autoId;
 	return (
 		<div className="grid w-full gap-2">
 			{label ? (
 				<div className="flex flex-row justify-between items-center gap-2">
 					<div className="flex items-center gap-1.5 min-w-0">
-						<label htmlFor={id} className="text-[13px] font-medium text-fg-secondary">
+						<label htmlFor={inputId} className="text-[13px] font-medium text-fg-secondary">
 							{label}
 						</label>
 						{hint}
@@ -51,7 +54,7 @@ export function Slider({
 				</div>
 			) : null}
 			<RangeInput
-				id={id}
+				id={inputId}
 				value={value}
 				onChange={onChange}
 				min={min}

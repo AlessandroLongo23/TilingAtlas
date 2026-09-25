@@ -7,7 +7,9 @@ import { LegacyTilingStoreBootstrap } from "./_bootstrap";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
 	return (
-		<div className="h-screen bg-surface-raised text-fg flex flex-col overflow-hidden">
+		// h-screen is 100vh, which on a phone browser is the height with its toolbar hidden, so anything
+		// pinned to the bottom sat under the toolbar; dvh tracks the visible height instead.
+		<div className="h-screen max-md:h-dvh bg-surface-raised text-fg flex flex-col overflow-hidden">
 			<LegacyTilingStoreBootstrap />
 			<Nav />
 			<div className="flex-1 min-h-0 flex">{children}</div>

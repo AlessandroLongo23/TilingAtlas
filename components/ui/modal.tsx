@@ -2,8 +2,10 @@
 
 import * as Dialog from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import { cn } from "@/lib/utils/cn";
+import { useLayerEntry } from "@/lib/hooks/useModalLayer";
+import { SheetGrabBar, useSwipeDismiss } from "./bottom-sheet";
 
 type ModalSize = "sm" | "md" | "lg" | "xl" | "full";
 
@@ -28,6 +30,8 @@ interface ModalProps {
 	description?: string;
 	showHeader?: boolean;
 	header?: ReactNode;
+	/** Optional action bar under the body. On a phone the body scrolls and this stays pinned in view. */
+	footer?: ReactNode;
 	children: ReactNode;
 }
 
@@ -40,31 +44,48 @@ export function Modal({
 	description,
 	showHeader = true,
 	header,
+	footer,
 	children,
 }: ModalProps) {
 	const widthClass = maxWidth ?? SIZE_CLASSES[size];
+	// Phone: a sheet among the others, so Back closes it and a pull down on its header dismisses it.
+	// Radix keeps its own focus trap and Esc; the layer stack only has to know it is on top.
+	const contentRef = useRef<HTMLDivElement>(null);
+	const close = () => onOpenChange(false);
+	useLayerEntry(isOpen, close);
+	const swipe = useSwipeDismiss(contentRef, close);
 	return (
 		<Dialog.Root open={isOpen} onOpenChange={onOpenChange}>
 			<Dialog.Portal>
-				<Dialog.Overlay className="fixed inset-0 z-50 bg-black/35 backdrop-blur-[2px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+				<Dialog.Overlay className="fixed inset-0 z-50 bg-black/35 backdrop-blur-[2px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 ta-backdrop-in" />
 				<Dialog.Content
+					ref={contentRef}
 					className={cn(
 						"fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2",
 						"bg-surface-raised ring-1 ring-line-subtle rounded-overlay shadow-xl w-full",
 						widthClass,
 						"data-[state=open]:animate-in data-[state=closed]:animate-out",
+						// Phone: a bottom sheet. Full width, square bottom corners on the screen edge, at most
+						// 92dvh tall with the body scrolling, clear of the home indicator.
+						"max-md:inset-x-0 max-md:bottom-0 max-md:top-auto max-md:translate-x-0 max-md:translate-y-0",
+						"max-md:max-w-none max-md:rounded-b-none max-md:rounded-t-2xl max-md:max-h-[92dvh] max-md:flex max-md:flex-col",
+						"max-md:pb-[env(safe-area-inset-bottom)] ta-sheet-in",
 					)}
 				>
 					{description ? (
 						<Dialog.Description className="sr-only">{description}</Dialog.Description>
 					) : null}
 					{showHeader ? (
-						<div className="flex items-center justify-between px-5 py-4 border-b border-line-subtle">
+						<div
+							{...swipe}
+							className="flex items-center justify-between px-5 py-4 border-b border-line-subtle max-md:relative max-md:shrink-0 max-md:touch-none max-md:py-2 max-md:pr-2"
+						>
+							<SheetGrabBar />
 							<Dialog.Title className="text-base font-semibold tracking-tight text-fg">{title}</Dialog.Title>
 							<div className="flex items-center gap-2">
 								{header}
 								<Dialog.Close
-									className="p-1 rounded-md hover:bg-surface-overlay transition-colors text-fg-muted hover:text-fg"
+									className="p-1 rounded-md hover:bg-surface-overlay transition-colors text-fg-muted hover:text-fg max-md:flex max-md:size-11 max-md:items-center max-md:justify-center"
 									aria-label="Close modal"
 								>
 									<X size={18} />
@@ -72,7 +93,8 @@ export function Modal({
 							</div>
 						</div>
 					) : null}
-					<div>{children}</div>
+					<div className="max-md:min-h-0 max-md:flex-1 max-md:overflow-y-auto max-md:overscroll-contain">{children}</div>
+					{footer ? <div className="border-t border-line-subtle px-5 py-3 max-md:shrink-0">{footer}</div> : null}
 				</Dialog.Content>
 			</Dialog.Portal>
 		</Dialog.Root>

@@ -20,16 +20,17 @@ interface InputProps extends Omit<ComponentProps<"input">, "value" | "onChange" 
 	size?: InputSize;
 }
 
+// On a phone every field is 44px tall, so each of the two stacked steppers gets half of that.
 const SIZE_CLASSES: Record<InputSize, string> = {
-	sm: "h-8 px-2.5 text-xs",
-	md: "h-9 px-3 text-sm",
+	sm: "h-8 px-2.5 text-xs max-md:h-11",
+	md: "h-9 px-3 text-sm max-md:h-11",
 	lg: "h-11 px-4 text-base",
 };
 
 const STEPPER_HEIGHT: Record<InputSize, string> = {
-	sm: "h-[14px]",
-	md: "h-[18px]",
-	lg: "h-[22px]",
+	sm: "h-[14px] max-md:h-[21px]",
+	md: "h-[18px] max-md:h-[21px]",
+	lg: "h-[22px] max-md:h-[21px]",
 };
 
 const INITIAL_DELAY = 300;
@@ -76,6 +77,8 @@ export function Input({
 		emit(next);
 	};
 
+	// Pointer events, not mouse events, so press-and-hold repeats under a finger too; a mouse gets the
+	// same sequence it always did. A touch that drifts into a scroll ends in pointercancel, which stops.
 	const startInc = () => {
 		increment();
 		incTimer.current = setTimeout(() => {
@@ -146,10 +149,11 @@ export function Input({
 					<div className="absolute inset-y-0 right-0 flex flex-col border-l border-line-strong text-fg-secondary">
 						<button
 							type="button"
-							onMouseDown={startInc}
-							onMouseUp={stop}
-							onMouseLeave={stop}
-							className={cn("flex items-center justify-center w-8 cursor-pointer disabled:cursor-not-allowed hover:bg-surface-overlay/40 hover:text-fg border-b border-line-strong rounded-tr-md transition-colors", STEPPER_HEIGHT[size])}
+							onPointerDown={startInc}
+							onPointerUp={stop}
+							onPointerLeave={stop}
+							onPointerCancel={stop}
+							className={cn("flex items-center justify-center w-8 max-md:w-11 max-md:touch-manipulation max-md:select-none cursor-pointer disabled:cursor-not-allowed hover:bg-surface-overlay/40 hover:text-fg border-b border-line-strong rounded-tr-md transition-colors", STEPPER_HEIGHT[size])}
 							disabled={disabled || (max !== undefined && Number(internal) >= max)}
 							aria-label="Increment"
 						>
@@ -157,10 +161,11 @@ export function Input({
 						</button>
 						<button
 							type="button"
-							onMouseDown={startDec}
-							onMouseUp={stop}
-							onMouseLeave={stop}
-							className={cn("flex items-center justify-center w-8 cursor-pointer disabled:cursor-not-allowed hover:bg-surface-overlay/40 hover:text-fg rounded-br-md transition-colors", STEPPER_HEIGHT[size])}
+							onPointerDown={startDec}
+							onPointerUp={stop}
+							onPointerLeave={stop}
+							onPointerCancel={stop}
+							className={cn("flex items-center justify-center w-8 max-md:w-11 max-md:touch-manipulation max-md:select-none cursor-pointer disabled:cursor-not-allowed hover:bg-surface-overlay/40 hover:text-fg rounded-br-md transition-colors", STEPPER_HEIGHT[size])}
 							disabled={disabled || (min !== undefined && Number(internal) <= min)}
 							aria-label="Decrement"
 						>

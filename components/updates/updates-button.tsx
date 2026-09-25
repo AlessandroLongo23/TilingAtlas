@@ -21,7 +21,11 @@ import { unseenSince } from "@/lib/updates/unseen";
 // Shift+U, mirroring ThemeToggle's Shift+T, registered the same way (capture phase, skipping form
 // fields so it can't fire mid-typing).
 
-export function UpdatesButton() {
+/**
+ * `icon` is the header button and owns Shift+U. `row` is the phone menu's labelled row (no shortcut
+ * listener, so the key never opens the modal twice); `onOpen` lets the menu close itself first.
+ */
+export function UpdatesButton({ variant = "icon", onOpen }: { variant?: "icon" | "row"; onOpen?: () => void } = {}) {
 	const lastSeen = useUpdates((s) => s.lastSeen);
 	const init = useUpdates((s) => s.init);
 	const open = useUpdates((s) => s.open);
@@ -30,7 +34,9 @@ export function UpdatesButton() {
 		init();
 	}, [init]);
 
+	const owner = variant === "icon";
 	useEffect(() => {
+		if (!owner) return;
 		const onKey = (e: KeyboardEvent) => {
 			if (e.key !== "U" || !e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) return;
 			if (isTypingTarget(e)) return;
@@ -40,12 +46,31 @@ export function UpdatesButton() {
 		};
 		window.addEventListener("keydown", onKey, { capture: true });
 		return () => window.removeEventListener("keydown", onKey, { capture: true });
-	}, [open]);
+	}, [open, owner]);
 
 	// undefined until init() has run on the client; rendering the dot before then would differ from
 	// the server markup and flash on every hydration.
 	const unseen = lastSeen === undefined ? 0 : unseenSince(lastSeen).length;
 	const onUpdates = usePathname() === "/updates";
+
+	if (!owner) {
+		return (
+			<button
+				type="button"
+				onClick={() => {
+					onOpen?.();
+					open();
+				}}
+				className="flex h-12 w-full items-center gap-3 rounded-control px-3 text-left text-[15px] text-fg hover:bg-surface-overlay"
+			>
+				<ScrollText size={18} strokeWidth={1.75} />
+				<span className="flex-1">What&apos;s new</span>
+				{unseen > 0 ? (
+					<span className="rounded-full bg-accent px-2 text-xs leading-5 tabular-nums text-accent-contrast">{unseen} new</span>
+				) : null}
+			</button>
+		);
+	}
 
 	return (
 		<Tooltip label="What's new" shortcut="Shift + U" side="left" delay={0}>
