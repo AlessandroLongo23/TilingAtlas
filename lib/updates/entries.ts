@@ -73,6 +73,41 @@ export interface UpdateEntry {
 /** Newest first. tests/updates.test.ts asserts that ordering, and every id below. */
 export const UPDATES: UpdateEntry[] = [
 	{
+		version: "1.39.0",
+		date: "2026-09-25",
+		title: "A phone layout for every page",
+		commit: "0cf71ea8",
+		changes: [
+			{
+				kind: "feature",
+				text: "**Every page works on a phone.** The sidebar becomes a sheet you drag up from the bottom, the menu holds all ten sections, and every canvas pans with one finger, zooms with two, twists to rotate and goes home on a double tap.",
+				href: "/play",
+			},
+			{
+				kind: "changed",
+				text: "**The whole site has a new look**: Geist type, warm neutral panels, rounded controls, and one blue kept for actions and links.",
+				href: "/",
+			},
+			{
+				kind: "feature",
+				text: "**The Islamic construction is drawn on one edge**: drag a ray tip to set the angle and a root to slide it along the edge. A negative offset now splits each pair of rays.",
+				href: "/play?tiling=t1001&i=1",
+			},
+			{
+				kind: "fix",
+				text: "**The landing page counts the whole catalogue**, 2,344,403 tilings, where it said over 37,000.",
+			},
+			{
+				kind: "fix",
+				text: "**Hyperbolic polygon boards are named as polygon sets**, \"3,4,4,8\", so a board no longer reads as a vertex configuration, and each card lists its tiling's vertex figures.",
+			},
+			{
+				kind: "fix",
+				text: "**Entering the editor keeps every edge.** Edges between a tile and its own translate, every edge of the hexagonal tiling among them, no longer vanish.",
+			},
+		],
+	},
+	{
 		version: "1.38.0",
 		date: "2026-09-24",
 		title: "A tiling editor on /play",
