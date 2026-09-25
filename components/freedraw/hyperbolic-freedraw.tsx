@@ -2,12 +2,14 @@
 
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Vector } from "@/classes/Vector";
 import {
 	CATALOGUE_GRID,
 	CatalogueCard,
 	DetailPane,
 	type FreedrawGeometry,
 	GeometryGroup,
+	LIST_PANE,
 	ToggleCell,
 	ToggleRow,
 	WallBar,
@@ -20,7 +22,9 @@ import { HyperbolicEdgesThumbnail } from "@/components/hyperbolic-edges-thumbnai
 import { OptionWall } from "@/components/ui/option-wall";
 import { Pagination } from "@/components/ui/pagination";
 import { useGridArrowNav } from "@/lib/hooks/useGridArrowNav";
+import { useIsPhone } from "@/lib/hooks/useIsPhone";
 import { useKeyShortcuts } from "@/lib/hooks/useKeyShortcuts";
+import { useTouchGestures } from "@/lib/render/touchGestures";
 import { useConfiguration } from "@/stores/configuration";
 import {
 	hypSchwarzBoards,
@@ -54,6 +58,64 @@ const PAGE_SIZE = 240;
 
 const cache = new Map<string, HypSchwarzPattern[]>();
 
+const resetDisk = () => useConfiguration.setState({ hyperbolicResetView: true });
+
+// Phone only. The preview disk is an input-transparent overlay made for /play, where the canvas
+// underneath owns the gestures and writes the view into the global store for the disk to follow. This
+// page has no such canvas, so the disk could not move at all. On a phone this layer stands in for it:
+// one finger pans, two fingers pan and twist, a double-tap recentres. It writes the store fields /play's
+// canvas writes, and puts `controls` back as it found them on unmount, so /play never inherits the pan.
+function DiskGestures() {
+	const ref = useRef<HTMLDivElement>(null);
+	const drag = useRef<{ id: number; x: number; y: number } | null>(null);
+	const nudge = (dx: number, dy: number, deg = 0) => {
+		const c = useConfiguration.getState().controls;
+		useConfiguration.setState({
+			controls: {
+				...c,
+				offset: new Vector(c.offset.x + dx, c.offset.y + dy),
+				targetOffset: new Vector(c.targetOffset.x + dx, c.targetOffset.y + dy),
+				rotation: c.rotation + deg,
+			},
+		});
+	};
+	const touch = useTouchGestures(ref, {
+		pinchStart: () => {
+			drag.current = null;
+		},
+		pinch: ({ from, to, rotate }) => nudge(to.x - from.x, to.y - from.y, (-rotate * 180) / Math.PI),
+		doubleTap: resetDisk,
+	});
+	useEffect(() => {
+		const saved = useConfiguration.getState().controls;
+		return () => useConfiguration.setState({ controls: saved });
+	}, []);
+	const up = () => {
+		drag.current = null;
+	};
+	return (
+		<div
+			ref={ref}
+			className="absolute inset-0 z-10 touch-none"
+			onPointerDown={(e) => {
+				if (touch.pinching) return;
+				e.currentTarget.setPointerCapture(e.pointerId);
+				drag.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
+			}}
+			onPointerMove={(e) => {
+				if (touch.pinching) return;
+				const d = drag.current;
+				if (!d || d.id !== e.pointerId) return;
+				nudge(e.clientX - d.x, e.clientY - d.y);
+				d.x = e.clientX;
+				d.y = e.clientY;
+			}}
+			onPointerUp={up}
+			onPointerCancel={up}
+		/>
+	);
+}
+
 export function HyperbolicFreedraw({
 	geometry,
 	onGeometryChange,
@@ -84,6 +146,9 @@ export function HyperbolicFreedraw({
 	const setCfg = useConfiguration((s) => s.set);
 
 	const gridRef = useRef<HTMLDivElement | null>(null);
+	const isPhone = useIsPhone();
+	// Phone only: the detail sheet is up (a thumbnail tap opens it).
+	const [detailOpen, setDetailOpen] = useState(false);
 
 	// Fetch the selected board+k slice on demand; setState only ever fires in the async callback.
 	useEffect(() => {
@@ -132,10 +197,12 @@ export function HyperbolicFreedraw({
 		[patterns, pageRows, selectedId],
 	);
 
-	useGridArrowNav({
+	const selectedIndex = selected ? (patterns ?? []).findIndex((p) => p.id === selected.id) : -1;
+	const nav = useGridArrowNav({
 		gridRef,
 		count: patterns?.length ?? 0,
-		index: selected ? (patterns ?? []).findIndex((p) => p.id === selected.id) : -1,
+		index: selectedIndex,
+		page,
 		onMove: (next) => {
 			setSelectedId((patterns ?? [])[next].id);
 			setPage(Math.floor(next / PAGE_SIZE) + 1);
@@ -212,14 +279,17 @@ export function HyperbolicFreedraw({
 			</header>
 
 			<div className="flex-1 min-h-0 flex">
-				<div className="flex-1 min-w-0 overflow-y-auto p-4">
+				<div className={LIST_PANE}>
 					{patterns === null && <div className="p-8 text-fg-muted">Loading the {board.label} catalogue…</div>}
 					<div ref={gridRef} className={CATALOGUE_GRID}>
 						{pageRows.map((pattern) => (
 							<CatalogueCard
 								key={pattern.id}
 								selected={selected?.id === pattern.id}
-								onClick={() => setSelectedId(pattern.id)}
+								onClick={() => {
+									setSelectedId(pattern.id);
+									setDetailOpen(true);
+								}}
 								title={pattern.id}
 								subtitle={
 									<>
@@ -244,10 +314,22 @@ export function HyperbolicFreedraw({
 				{selected && (
 					<DetailPane
 						previewClassName="bg-bg-subtle"
-						preview={<HyperbolicEdgesCanvas key={selected.id} pattern={hypSchwarzMeta(selected)} />}
+						preview={
+							<>
+								{isPhone && <DiskGestures />}
+								<HyperbolicEdgesCanvas key={selected.id} pattern={hypSchwarzMeta(selected)} />
+							</>
+						}
 						title={selected.id}
 						hint="drag to pan the disk"
+						touchHint="drag to pan, twist to turn, double-tap to recentre"
 						playHref={playHref}
+						open={detailOpen}
+						onClose={() => setDetailOpen(false)}
+						index={selectedIndex}
+						count={patterns?.length ?? 0}
+						onStep={nav.step}
+						onResetView={resetDisk}
 						meta={[
 							["board", board.label],
 							["vertex orbits", `k = ${selected.k}`],

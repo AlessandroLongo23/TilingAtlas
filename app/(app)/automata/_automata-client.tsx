@@ -2,18 +2,23 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AutomataCanvas } from "@/components/automata/automata-canvas";
+import { automataTitle } from "@/components/automata/automata-info";
 import { AutomataSidebar } from "@/components/automata/automata-sidebar";
 import { AutomataTransport } from "@/components/automata/automata-transport";
 import { SurfaceView } from "@/components/automata/surface-view";
+import { FullscreenToggle } from "@/components/fullscreen-toggle";
 import { PageSidebar } from "@/components/page-sidebar";
+import { ResetViewButton } from "@/components/reset-view-button";
 import { useAutomatonEngine } from "@/lib/automata/useAutomatonEngine";
 import { buildPeriodicAdjacency } from "@/lib/automata/adjacency";
 import { planBoard } from "@/lib/automata/board";
 import { availableTopologies } from "@/lib/automata/topology";
 import { DEFAULT_TILING_ID } from "@/lib/automata/uniformTilings";
+import { useIsPhone } from "@/lib/hooks/useIsPhone";
 import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import {
+	compactVertexConfig,
 	compareCatalogueDisplayOrder,
 	decorationOf,
 	geometryOf,
@@ -21,6 +26,7 @@ import {
 	referenceToCatalogue,
 } from "@/lib/services/referenceAtlas";
 import { useAutomata } from "@/lib/stores/automata";
+import { useImmersive } from "@/stores/immersive";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 
 export function AutomataClient() {
@@ -35,6 +41,16 @@ export function AutomataClient() {
 	const toggleRunning = useAutomata((s) => s.toggleRunning);
 	const stepOnce = useAutomata((s) => s.stepOnce);
 	const reseed = useAutomata((s) => s.reseed);
+	// Phone paint mode (the transport's brush): a tap flips a tile, as Shift+click does on the desktop.
+	const isPhone = useIsPhone();
+	const [paint, setPaint] = useState(false);
+	// Phone fullscreen, as the other explorers have it: the dock sheet and the top bar step aside (both
+	// read the immersive store) and the board and its transport get the screen. The desktop keeps its
+	// layout and has no F shortcut here, so leaving the phone layout, or the page, ends it.
+	useEffect(() => {
+		if (!isPhone) useImmersive.getState().set(false);
+	}, [isPhone]);
+	useEffect(() => () => useImmersive.getState().set(false), []);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -79,7 +95,24 @@ export function AutomataClient() {
 	// Building it here is what keeps them from disagreeing about how many slots a cell has — on a Möbius
 	// or Klein board the adjacency is refined onto a sublattice and that number changes.
 	const plan = useMemo(() => planBoard(cell, topology, boardW, boardH), [cell, topology, boardW, boardH]);
-	const { engineRef, report } = useAutomatonEngine(plan);
+	const { engineRef, report: published } = useAutomatonEngine(plan);
+	// The engine publishes on a frame where it stepped or rebuilt, so a paused board that is painted
+	// (Shift+click, or the phone's brush) would go on reporting the population from before the paint.
+	// After a press on the board, read the population straight off the engine and lay it over the last
+	// report until the engine publishes a new one. The canvas paints in its own native listeners, which
+	// run before this bubbling React handler, so the count read here already includes the flip.
+	const [painted, setPainted] = useState<{ base: typeof published; population: number; density: number } | null>(null);
+	const readPopulation = useCallback(() => {
+		const eng = engineRef.current;
+		if (!eng) return;
+		const population = eng.population / eng.coverFactor;
+		if (population === published.population) return;
+		setPainted({ base: published, population, density: eng.population / eng.cellCapacity });
+	}, [engineRef, published]);
+	const report = useMemo(
+		() => (painted?.base === published ? { ...published, population: painted.population, density: painted.density } : published),
+		[painted, published],
+	);
 	// Everything but the plane is a surface worth turning over.
 	const show3D = view === "surface3d" && topology !== "plane" && plan != null;
 
@@ -153,9 +186,22 @@ export function AutomataClient() {
 		return () => window.removeEventListener("keydown", onKey);
 	}, [toggleRunning, stepOnce, reseed, onRandom, onPrev, onNext]);
 
+	// The phone's peek row: what is on the board and how it is doing, readable over a running board.
+	const peek = (
+		<div className="flex min-w-0 flex-1 flex-col">
+			<span className="truncate text-[15px] font-semibold leading-tight text-fg">
+				{selected ? (automataTitle(selected) ?? compactVertexConfig(selected.family)) : "Automata"}
+			</span>
+			<span className="truncate font-mono text-xs tabular-nums text-fg-muted">
+				Gen {report.generation.toLocaleString()} · {report.population.toLocaleString()} alive
+				{report.population === 0 && report.generation > 0 ? " · extinct" : ""}
+			</span>
+		</div>
+	);
+
 	return (
 		<div className="flex-1 min-h-0 flex overflow-hidden">
-			<PageSidebar scrollable={false}>
+			<PageSidebar scrollable={false} mobile="dock" title="Automata" peek={peek}>
 				<AutomataSidebar
 					tilings={tilings}
 					selected={selected}
@@ -166,13 +212,29 @@ export function AutomataClient() {
 					available={available}
 				/>
 			</PageSidebar>
-			<div className="flex-1 min-w-0 min-h-0 relative overflow-hidden bg-surface">
+			<div
+				className="flex-1 min-w-0 min-h-0 relative overflow-hidden bg-surface"
+				onPointerDown={readPopulation}
+				onPointerUp={readPopulation}
+			>
 				{show3D ? (
 					<SurfaceView plan={plan} engineRef={engineRef} />
 				) : (
-					<AutomataCanvas plan={plan} engineRef={engineRef} />
+					<AutomataCanvas plan={plan} engineRef={engineRef} paintOnTap={isPhone && paint} />
 				)}
-				<AutomataTransport disabled={!cell} onPrev={onPrev} onRandom={onRandom} onNext={onNext} />
+				<AutomataTransport
+					disabled={!cell}
+					onPrev={onPrev}
+					onRandom={onRandom}
+					onNext={onNext}
+					paint={paint}
+					onPaint={setPaint}
+					paintAvailable={!show3D}
+				/>
+				{/* The phone's corner pair, as on the other explorers: the way home (for the flat board and
+				    the 3D surface alike) beside fullscreen. */}
+				<ResetViewButton className="absolute top-3 right-16" />
+				<FullscreenToggle className="md:hidden" />
 				{!cell && !loading && (
 					<div className="absolute inset-0 grid place-items-center pointer-events-none">
 						<p className="text-sm text-fg-muted">Pick a tiling to start.</p>

@@ -97,7 +97,7 @@ function Panel({ children }: { children: React.ReactNode }) {
 /** The small caption over a control group, with its description on the info dot. */
 function GroupLabel({ children, info }: { children: React.ReactNode; info?: React.ReactNode }) {
 	return (
-		<span className="flex items-center gap-1.5 text-[11px] text-fg-muted">
+		<span className="flex items-center gap-1.5 text-[11px] text-fg-muted max-md:text-xs">
 			{children}
 			{info ? <InfoDot>{info}</InfoDot> : null}
 		</span>
@@ -158,7 +158,7 @@ export function AutomataSidebar({
 							// they can never rise over the transport bar next door.
 							<div className="isolate h-full overflow-y-auto px-2 ta-scroll-fade pb-6" data-sidebar-scroll>
 								{loading && (
-									<p className="p-3 text-[11px] text-fg-muted leading-relaxed">Loading the catalogue…</p>
+									<p className="p-3 text-[11px] text-fg-muted leading-relaxed max-md:text-xs">Loading the catalogue…</p>
 								)}
 								<CatalogueListPanel items={tilings} selectedKey={cfg.tilingId} onSelect={onSelect} />
 							</div>
@@ -262,7 +262,7 @@ export function AutomataSidebar({
 														onClick={() => cfg.set("rule", r.rule)}
 														title={r.description}
 														className={cn(
-															"w-full text-left px-2 py-1 rounded-control text-[11px] transition-colors cursor-pointer",
+															"w-full text-left px-2 py-1 rounded-control text-[11px] transition-colors cursor-pointer max-md:min-h-11 max-md:text-[13px]",
 															cfg.rule === r.rule
 																? "bg-surface-overlay text-fg"
 																: "text-fg-muted hover:text-fg hover:bg-surface-overlay",

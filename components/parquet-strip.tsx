@@ -16,6 +16,9 @@ interface ParquetStripProps {
    *  frame: `preserveAspectRatio="meet"` letterboxes the box inside the viewport, so without an
    *  explicit clip those off-patch tiles show in the letterbox bands. */
   clip?: boolean;
+  /** Turn the drawing a quarter clockwise, so a strip runs top to bottom: its left end at the top. The
+   *  phone's portrait frame fits a long strip far larger this way. The geometry is untouched. */
+  vertical?: boolean;
   className?: string;
 }
 
@@ -27,6 +30,7 @@ export function ParquetStrip({
   fills,
   viewBox,
   clip = false,
+  vertical = false,
   className,
 }: ParquetStripProps) {
   const model = useMemo(
@@ -35,10 +39,15 @@ export function ParquetStrip({
   );
   const clipId = useId();
   const box = (viewBox ?? model.viewBox).split(" ").map(Number);
+  // rotate(90) sends (x, y) to (-y, x), so the box [x, x+w] by [y, y+h] lands on [-(y+h), -y] by [x, x+w].
+  const [bx, by, bw, bh] = box;
+  const shown = vertical
+    ? `${-(by + bh)} ${bx} ${bh} ${bw}`
+    : (viewBox ?? model.viewBox);
 
   return (
     <svg
-      viewBox={viewBox ?? model.viewBox}
+      viewBox={shown}
       className={className}
       preserveAspectRatio="xMidYMid meet"
       strokeLinejoin="round"
@@ -51,18 +60,25 @@ export function ParquetStrip({
           </clipPath>
         </defs>
       )}
-      <g clipPath={clip ? `url(#${clipId})` : undefined}>
-        {model.guidePaths.length > 0 && (
-          <g stroke="currentColor" strokeWidth={0.015} fill="none" opacity={0.16}>
-            {model.guidePaths.map((d, i) => (
-              <path key={`g${i}`} d={d} />
+      <g transform={vertical ? "rotate(90)" : undefined}>
+        <g clipPath={clip ? `url(#${clipId})` : undefined}>
+          {model.guidePaths.length > 0 && (
+            <g
+              stroke="currentColor"
+              strokeWidth={0.015}
+              fill="none"
+              opacity={0.16}
+            >
+              {model.guidePaths.map((d, i) => (
+                <path key={`g${i}`} d={d} />
+              ))}
+            </g>
+          )}
+          <g stroke="currentColor" strokeWidth={0.02}>
+            {model.tilePaths.map((d, i) => (
+              <path key={i} d={d} fill={fills?.[i] ?? "none"} />
             ))}
           </g>
-        )}
-        <g stroke="currentColor" strokeWidth={0.02}>
-          {model.tilePaths.map((d, i) => (
-            <path key={i} d={d} fill={fills?.[i] ?? "none"} />
-          ))}
         </g>
       </g>
     </svg>

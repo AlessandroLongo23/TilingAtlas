@@ -9,6 +9,7 @@ import {
 	DetailPane,
 	type FreedrawGeometry,
 	GeometryGroup,
+	LIST_PANE,
 	ToggleCell,
 	ToggleRow,
 	WallBar,
@@ -120,6 +121,10 @@ export function SphericalFreedraw({
 	const [loadTick, setLoadTick] = useState(0);
 
 	const gridRef = useRef<HTMLDivElement | null>(null);
+	// Phone only: the detail sheet is up (a thumbnail tap opens it).
+	const [detailOpen, setDetailOpen] = useState(false);
+	// Bumped by the phone's reset button: the trackball has no home-view call, so the preview remounts.
+	const [resetN, setResetN] = useState(0);
 
 	// Fetch the selected solid+k slice on demand; an already-cached file needs no fetch. setState only ever
 	// fires in the async callback, never synchronously in the effect body.
@@ -186,10 +191,12 @@ export function SphericalFreedraw({
 
 	// Arrow keys walk the grid: ←/→ by one, ↑/↓ by a row. The index is into the whole solid+k slice, so
 	// stepping off a page pulls the next one in.
-	useGridArrowNav({
+	const selectedIndex = selected ? (patterns ?? []).findIndex((p) => p.pattern.id === selected.pattern.id) : -1;
+	const nav = useGridArrowNav({
 		gridRef,
 		count: patterns?.length ?? 0,
-		index: selected ? (patterns ?? []).findIndex((p) => p.pattern.id === selected.pattern.id) : -1,
+		index: selectedIndex,
+		page,
 		onMove: (next) => {
 			setSelectedId((patterns ?? [])[next].pattern.id);
 			setPage(Math.floor(next / PAGE_SIZE) + 1);
@@ -280,14 +287,17 @@ export function SphericalFreedraw({
 			</header>
 
 			<div className="flex-1 min-h-0 flex">
-				<div className="flex-1 min-w-0 overflow-y-auto p-4">
+				<div className={LIST_PANE}>
 					{patterns === null && <div className="p-8 text-fg-muted">Loading the {solid.label} catalogue…</div>}
 					<div ref={gridRef} className={CATALOGUE_GRID}>
 						{pageRows.map((entry) => (
 							<CatalogueCard
 								key={entry.pattern.id}
 								selected={selected?.pattern.id === entry.pattern.id}
-								onClick={() => setSelectedId(entry.pattern.id)}
+								onClick={() => {
+									setSelectedId(entry.pattern.id);
+									setDetailOpen(true);
+								}}
 								title={entry.pattern.id}
 								subtitle={`${entry.pattern.nTiles} tile${entry.pattern.nTiles === 1 ? "" : "s"} · ${entry.pattern.achiral ? "achiral" : "chiral"}`}
 							>
@@ -320,7 +330,7 @@ export function SphericalFreedraw({
 						previewClassName="bg-bg-subtle"
 						preview={
 							<IcoFreedrawCanvas
-								key={`${solidId}-${selected.pattern.id}`}
+								key={`${solidId}-${selected.pattern.id}-${resetN}`}
 								pattern={selected.pattern}
 								vertices={selected.vertices}
 								allEdges={selected.allEdges}
@@ -331,7 +341,14 @@ export function SphericalFreedraw({
 						}
 						title={selected.pattern.id}
 						hint="drag to rotate, wheel to zoom"
+						touchHint="drag to rotate, pinch to zoom"
 						playHref={playHref}
+						open={detailOpen}
+						onClose={() => setDetailOpen(false)}
+						index={selectedIndex}
+						count={patterns?.length ?? 0}
+						onStep={nav.step}
+						onResetView={() => setResetN((n) => n + 1)}
 						meta={[
 							[solid.board ? "board" : "solid", `${solid.label} ${solid.badge}`],
 							["vertex orbits", `k = ${selected.pattern.k}`],

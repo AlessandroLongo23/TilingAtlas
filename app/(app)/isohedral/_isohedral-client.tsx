@@ -32,10 +32,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Shuffle, RotateCcw } from "lucide-react";
+import { ChevronLeft, ChevronRight, Shuffle, RotateCcw } from "lucide-react";
 import type { AperiodicFrame } from "@/lib/hooks/useAperiodicView";
 import { useParametricTilingCanvas } from "@/lib/hooks/useParametricTilingCanvas";
 import { tilingPeriodicCell } from "@/lib/render/periodic/tilings";
+import { Button } from "@/components/ui/button";
+import { InfoDot } from "@/components/ui/info-dot";
 import { Kbd } from "@/components/ui/kbd";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -44,6 +46,7 @@ import { TilingInfo } from "@/components/tiling-info";
 import { InversiveCanvas, MAX_VERTS_PER_PRIM } from "@/components/inversive-canvas";
 import { InversiveControls, useInversiveShortcut } from "@/components/inversive-controls";
 import { FullscreenToggle, useImmersiveShortcuts } from "@/components/fullscreen-toggle";
+import { ResetViewButton } from "@/components/reset-view-button";
 import { useConfiguration } from "@/stores/configuration";
 import { useImmersive } from "@/stores/immersive";
 import type { TilingSpec } from "@/lib/services/tilingSpec";
@@ -299,26 +302,59 @@ export function IsohedralClient() {
 		[visible],
 	);
 
+	const title = (
+		<>
+			{info.label}
+			{info.gs ? <span className="font-normal text-fg-muted"> marked</span> : null}
+		</>
+	);
+	const facts = info.gs
+		? `${info.gs.wallpaper} · ${info.gs.laves} · ${info.gs.tileGroup} · ${info.numAspects} aspect${info.numAspects === 1 ? "" : "s"}`
+		: `${info.numVertices} vertices · ${info.numAspects} aspect${info.numAspects === 1 ? "" : "s"} · `;
+	const edgeNotes = info.edgeShapes.map((k, i) => `${String.fromCharCode(97 + i)} · ${k}: ${EDGE_KIND_NOTE[k]}`);
 	const header = (
 		<div className="flex flex-col gap-1">
-			<h2 className="text-[15px] font-semibold leading-tight text-fg">
-				{info.label}
-				{info.gs ? <span className="font-normal text-fg-muted"> marked</span> : null}
-			</h2>
+			<h2 className="text-[15px] font-semibold leading-tight text-fg">{title}</h2>
 			<span className="text-xs font-mono text-fg-muted truncate">
-				{info.gs
-					? `${info.gs.wallpaper} · ${info.gs.laves} · ${info.gs.tileGroup} · ${info.numAspects} aspect${info.numAspects === 1 ? "" : "s"}`
-					: `${info.numVertices} vertices · ${info.numAspects} aspect${info.numAspects === 1 ? "" : "s"} · `}
+				{facts}
 				{info.gs ? null : (
-					<span
-						className="cursor-help underline decoration-dotted underline-offset-2"
-						title={info.edgeShapes.map((k, i) => `${String.fromCharCode(97 + i)} · ${k}: ${EDGE_KIND_NOTE[k]}`).join("\n")}
-					>
+					<span className="cursor-help underline decoration-dotted underline-offset-2" title={edgeNotes.join("\n")}>
 						{info.edgeShapes.join("")}
 					</span>
 				)}
 			</span>
 		</div>
+	);
+
+	// Stepping through the grid from the phone's peek row, in the order the grid draws and within
+	// whatever the filters let through: the keyboard-free way to flick from one type to the next.
+	const stepType = (delta: number) => {
+		const list = visible.length > 0 ? visible : ISOHEDRAL_TYPES;
+		const i = list.findIndex((t) => t.ih === ih);
+		const at = i < 0 ? (delta > 0 ? 0 : list.length - 1) : (i + delta + list.length) % list.length;
+		selectType(list[at].ih);
+	};
+	const peek = (
+		<>
+			<div className="flex min-w-0 flex-1 flex-col">
+				<span className="truncate text-[15px] font-semibold leading-tight text-fg">{title}</span>
+				<span className="truncate font-mono text-xs text-fg-muted">
+					{facts}
+					{info.gs ? null : info.edgeShapes.join("")}
+				</span>
+			</div>
+			{/* The desktop explains the edge letters on hover; a finger gets the same notes on a tap. A row
+			    item of its own, so no line of text sits over its 44px halo. */}
+			{info.gs ? null : (
+				<InfoDot side="top" label="What the edge letters mean">
+					{edgeNotes.map((n) => (
+						<p key={n}>{n}</p>
+					))}
+				</InfoDot>
+			)}
+			<Button variant="ghost" size="icon" icon={ChevronLeft} aria-label="Previous type" onClick={() => stepType(-1)} />
+			<Button variant="ghost" size="icon" icon={ChevronRight} aria-label="Next type" onClick={() => stepType(1)} />
+		</>
 	);
 
 	// Above the edge sliders, like /pentagons: the picture names the edges, and it has to be visible
@@ -395,6 +431,7 @@ export function IsohedralClient() {
 			<IsohedralSidebar
 				collapsed={immersive}
 				header={header}
+				peek={peek}
 				filters={filters}
 				typeCount={visible.length}
 				totalCount={ISOHEDRAL_TYPES.length}
@@ -451,7 +488,7 @@ export function IsohedralClient() {
 									id={`ih-edge-${i}`}
 									label={`${String.fromCharCode(97 + i)} · ${kind}`}
 									hint={
-										<span className="text-[10px] text-fg-muted whitespace-nowrap">
+										<span className="text-[10px] text-fg-muted whitespace-nowrap max-md:text-xs">
 											{EDGE_KIND_NOTE[kind]}
 										</span>
 									}
@@ -497,9 +534,10 @@ export function IsohedralClient() {
 						id="ih-rotation"
 						label="Rotation"
 						hint={
-							<span className="inline-flex items-center gap-1 text-[10px] text-fg-muted whitespace-nowrap">
+							<span className="inline-flex items-center gap-1 text-[10px] text-fg-muted whitespace-nowrap max-md:text-xs">
 								<Kbd>Shift</Kbd>
-								<span>+ scroll</span>
+								<span className="max-md:hidden">+ scroll</span>
+								<span className="md:hidden">Twist two fingers</span>
 							</span>
 						}
 						value={view.rotationDeg}
@@ -550,13 +588,15 @@ export function IsohedralClient() {
 					<InversiveCanvas cell={lensCell} cellId={lensCellId} camera={lensCamera} />
 				) : null}
 				{/* Same corner, same component as /play's canvas. */}
-				<div className="absolute top-4 left-4 z-20">
+				<div className="absolute top-4 left-4 z-20 max-md:top-3 max-md:left-3">
 					<TilingInfo spec={spec} />
 				</div>
 				{/* Opposite corner, and the only control that stays put while immersive — it is the way back.
 				    Shown on a marked type too: those twelve replace the canvas with prose, which reads better
 				    across the full window as well. */}
 				<FullscreenToggle />
+				{/* The phone's right-click: beside the fullscreen button, phone only. */}
+				<ResetViewButton className="absolute top-3 right-16" />
 			</div>
 		</div>
 	);
@@ -604,7 +644,7 @@ function MarkedControls({
 					<dt className="text-fg-muted">Aspects</dt>
 					<dd className="font-mono text-fg-secondary tabular-nums">{info.numAspects}</dd>
 				</dl>
-				<p className="text-[10px] text-fg-disabled leading-relaxed">
+				<p className="text-[10px] text-fg-disabled leading-relaxed max-md:text-xs max-md:text-fg-muted">
 					Grünbaum &amp; Shephard 1977, Table 1, columns (2) to (5) and (8). The tile group order,
 					the aspect count and the group are recomputed from the drawn geometry and checked against
 					the table before this page builds.
@@ -623,7 +663,7 @@ function MarkedControls({
 					already separate the aspects — and an aspect is an orientation class, so tinting the marks
 					too would say the same thing twice in a channel that greyscale and colour blindness lose.
 				</p>
-				<p className="text-[10px] text-fg-disabled leading-relaxed">{MARKED_REASON} — Craig Kaplan</p>
+				<p className="text-[10px] text-fg-disabled leading-relaxed max-md:text-xs max-md:text-fg-muted">{MARKED_REASON} — Craig Kaplan</p>
 			</Section>
 
 			<Section label="Tile">

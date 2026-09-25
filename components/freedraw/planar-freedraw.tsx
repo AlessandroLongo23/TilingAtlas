@@ -9,6 +9,8 @@ import {
 	DetailPane,
 	type FreedrawGeometry,
 	GeometryGroup,
+	LIST_PANE,
+	PhoneNote,
 	ToggleCell,
 	ToggleRow,
 	TriMatrix,
@@ -44,6 +46,7 @@ import { classifyRegular, REGULAR_KINDS, type RegularKind } from "@/lib/freedraw
 import { FILL_MODES, type FillMode } from "@/lib/freedraw/render";
 import { useGridArrowNav } from "@/lib/hooks/useGridArrowNav";
 import { useKeyShortcuts } from "@/lib/hooks/useKeyShortcuts";
+import { requestViewReset } from "@/lib/render/touchGestures";
 import { serializePlayState } from "@/lib/services/playUrlState";
 import { readAtlas } from "@/lib/services/atlasCodec";
 
@@ -261,6 +264,8 @@ export function PlanarFreedraw({
 	const [arcWiring, setArcWiring] = useState<Wiring>(DEFAULT_TILE_RULE.wiring);
 	const [arcTwist, setArcTwist] = useState<0 | 1>(DEFAULT_TILE_RULE.twist);
 	const gridRef = useRef<HTMLDivElement | null>(null);
+	// Phone only: the detail sheet is up (a thumbnail tap opens it).
+	const [detailOpen, setDetailOpen] = useState(false);
 
 	// Fetch only the files the current grid+k needs, on demand. Switching grid or k triggers this; files
 	// already cached resolve instantly and re-tick so the slice recomputes.
@@ -349,10 +354,12 @@ export function PlanarFreedraw({
 
 	// Arrow keys walk the grid: ←/→ by one, ↑/↓ by a row. The index is into `shown` (the filtered list),
 	// not the visible page, so stepping off a page pulls the next one in.
-	useGridArrowNav({
+	const selectedIndex = selected ? shown.findIndex((r) => r.pattern.id === selected.pattern.id) : -1;
+	const nav = useGridArrowNav({
 		gridRef,
 		count: shown.length,
-		index: selected ? shown.findIndex((r) => r.pattern.id === selected.pattern.id) : -1,
+		index: selectedIndex,
+		page,
 		onMove: (next) => {
 			setSelectedId(shown[next].pattern.id);
 			setPage(Math.floor(next / PAGE_SIZE) + 1);
@@ -389,7 +396,7 @@ export function PlanarFreedraw({
 			selected.pattern.id,
 		);
 		return q ? `/play?${q}` : "/play";
-	}, [selected, fillMode, showScaffold, showLattice, showVertices]);
+	}, [selected, fillMode, showScaffold, showLattice, showVertices, showArcs, arcWiring, arcTwist]);
 
 	// Mirror the filter into the URL without navigating, so a reload restores the view and the address
 	// bar is the share link. replaceState keeps this off the Next router: no server round-trip, no
@@ -447,6 +454,7 @@ export function PlanarFreedraw({
 			<header className="shrink-0 border-b border-line-subtle">
 				<WallBar
 					count={slice === null ? "loading…" : `${shown.length.toLocaleString()} / ${slice.length.toLocaleString()}`}
+					active={[...new URLSearchParams(serializeFilter(filter)).keys()].filter((key) => key !== "g").length}
 					top={
 						!isDefault && (
 							<button
@@ -544,6 +552,7 @@ export function PlanarFreedraw({
 					<WallColumn>
 						<WallGroup title="Display">
 							<OptionWall columns={FILL_OPTIONS.length} options={FILL_OPTIONS} selected={fillMode} onChange={setFillMode} />
+							<PhoneNote>{FILL_MODES.find((m) => m.value === fillMode)?.help}</PhoneNote>
 							<WallSubLabel>Overlays</WallSubLabel>
 							<ToggleRow>
 								<ToggleCell label="Grid" shortcut="G" on={showScaffold} onClick={() => setShowScaffold(!showScaffold)} />
@@ -557,8 +566,10 @@ export function PlanarFreedraw({
 								<>
 									<WallSubLabel>Wiring</WallSubLabel>
 									<OptionWall columns={3} options={WIRING_OPTIONS} selected={arcWiring} onChange={setArcWiring} />
+									<PhoneNote>{WIRING_OPTIONS.find((o) => o.value === arcWiring)?.tooltip}</PhoneNote>
 									<WallSubLabel>Pairing</WallSubLabel>
 									<OptionWall columns={2} options={TWIST_OPTIONS} selected={arcTwist} onChange={setArcTwist} />
+									<PhoneNote>{TWIST_OPTIONS[arcTwist].tooltip}</PhoneNote>
 								</>
 							)}
 						</WallGroup>
@@ -567,14 +578,17 @@ export function PlanarFreedraw({
 			</header>
 
 			<div className="flex-1 min-h-0 flex">
-				<div className="flex-1 min-w-0 overflow-y-auto p-4">
+				<div className={LIST_PANE}>
 					{slice === null && <div className="p-8 text-fg-muted">Loading the {filter.grid} catalogue…</div>}
 					<div ref={gridRef} className={CATALOGUE_GRID}>
 						{pageRows.map(({ pattern, stats }) => (
 							<CatalogueCard
 								key={pattern.id}
 								selected={selected?.pattern.id === pattern.id}
-								onClick={() => setSelectedId(pattern.id)}
+								onClick={() => {
+									setSelectedId(pattern.id);
+									setDetailOpen(true);
+								}}
 								title={pattern.id}
 								subtitle={
 									<>
@@ -606,7 +620,14 @@ export function PlanarFreedraw({
 						preview={<FreedrawCanvas pattern={selected.pattern} style={style} cells={11} interactive />}
 						title={selected.pattern.id}
 						hint="drag to pan, wheel to zoom, double-click to reset"
+						touchHint="drag to pan, pinch to zoom, double-tap to reset"
 						playHref={playHref}
+						open={detailOpen}
+						onClose={() => setDetailOpen(false)}
+						index={selectedIndex}
+						count={shown.length}
+						onStep={nav.step}
+						onResetView={requestViewReset}
 						meta={[
 							[freedrawKNoun(filter.grid), `k = ${selected.pattern.k}`],
 							[

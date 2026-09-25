@@ -7,6 +7,7 @@ import {
 	CATALOGUE_GRID,
 	CatalogueCard,
 	DetailPane,
+	LIST_PANE,
 	ToggleCell,
 	ToggleRow,
 	WallBar,
@@ -26,6 +27,7 @@ import {
 import type { ColorsStyle } from "@/lib/colors/render";
 import { useGridArrowNav } from "@/lib/hooks/useGridArrowNav";
 import { useKeyShortcuts } from "@/lib/hooks/useKeyShortcuts";
+import { requestViewReset } from "@/lib/render/touchGestures";
 import { serializePlayState } from "@/lib/services/playUrlState";
 import { readAtlas } from "@/lib/services/atlasCodec";
 
@@ -99,6 +101,8 @@ export function ColorsClient() {
 	const [showLattice, setShowLattice] = useState(false);
 	const [showVertices, setShowVertices] = useState(false);
 	const gridRef = useRef<HTMLDivElement | null>(null);
+	// Phone only: the detail sheet is up (a thumbnail tap opens it).
+	const [detailOpen, setDetailOpen] = useState(false);
 
 	useEffect(() => {
 		let live = true;
@@ -145,10 +149,12 @@ export function ColorsClient() {
 
 	// Arrow keys walk the grid: ←/→ by one, ↑/↓ by a row. The index is into the whole filtered slice, so
 	// stepping off a page pulls the next one in; the page follows the selection.
-	useGridArrowNav({
+	const selectedIndex = selected ? (slice ?? []).findIndex((p) => p.id === selected.id) : -1;
+	const nav = useGridArrowNav({
 		gridRef,
 		count: slice?.length ?? 0,
-		index: selected ? (slice ?? []).findIndex((p) => p.id === selected.id) : -1,
+		index: selectedIndex,
+		page,
 		onMove: (next) => {
 			setSelectedId((slice ?? [])[next].id);
 			setPage(Math.floor(next / PAGE_SIZE) + 1);
@@ -229,14 +235,17 @@ export function ColorsClient() {
 			</header>
 
 			<div className="flex-1 min-h-0 flex">
-				<div className="flex-1 min-w-0 overflow-y-auto p-4">
+				<div className={LIST_PANE}>
 					{slice === null && <div className="p-8 text-fg-muted">Loading the colored-tiling catalogue…</div>}
 					<div ref={gridRef} className={CATALOGUE_GRID}>
 						{pageRows.map((p) => (
 							<CatalogueCard
 								key={p.id}
 								selected={selected?.id === p.id}
-								onClick={() => setSelectedId(p.id)}
+								onClick={() => {
+									setSelectedId(p.id);
+									setDetailOpen(true);
+								}}
 								title={p.id}
 								subtitle={`${p.tileOrbits} tile${p.tileOrbits === 1 ? "" : "s"} · ${p.edgeOrbits} edge${p.edgeOrbits === 1 ? "" : "s"}`}
 							>
@@ -262,7 +271,14 @@ export function ColorsClient() {
 						title={selected.id}
 						subtitle={`${GRID_OPTIONS.find((o) => o.value === colorsGridOf(selected))?.label} · ${colorCountOf(selected)} colors · k=${selected.k}`}
 						hint="drag to pan, wheel to zoom, double-click to reset"
+						touchHint="drag to pan, pinch to zoom, double-tap to reset"
 						playHref={playHref}
+						open={detailOpen}
+						onClose={() => setDetailOpen(false)}
+						index={selectedIndex}
+						count={slice?.length ?? 0}
+						onStep={nav.step}
+						onResetView={requestViewReset}
 						meta={[
 							["colored vertex classes", `k = ${selected.k}`],
 							["palette", `${colorCountOf(selected)} colors`],

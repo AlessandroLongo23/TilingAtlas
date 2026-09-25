@@ -20,7 +20,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
 import { useSearchParams } from "next/navigation";
-import { Lock, RotateCcw } from "lucide-react";
+import { ChevronLeft, ChevronRight, Lock, RotateCcw } from "lucide-react";
 import { useParametricTilingCanvas } from "@/lib/hooks/useParametricTilingCanvas";
 import { tilingPeriodicCell } from "@/lib/render/periodic/tilings";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,7 @@ import { TilingInfo } from "@/components/tiling-info";
 import { InversiveCanvas } from "@/components/inversive-canvas";
 import { InversiveControls, useInversiveShortcut } from "@/components/inversive-controls";
 import { FullscreenToggle, useImmersiveShortcuts } from "@/components/fullscreen-toggle";
+import { ResetViewButton } from "@/components/reset-view-button";
 import { useConfiguration } from "@/stores/configuration";
 import { useImmersive } from "@/stores/immersive";
 import type { TilingSpec } from "@/lib/services/tilingSpec";
@@ -112,6 +113,15 @@ export function PentagonsClient() {
 	useEffect(() => {
 		idRef.current = id;
 	});
+	// One step along the grid, wrapping: ←/→ here, and the phone peek row's chevrons.
+	const stepType = useCallback(
+		(delta: number) => {
+			const n = PENTAGON_TYPES.length;
+			const i = Math.max(0, PENTAGON_TYPES.findIndex((t) => t.id === idRef.current));
+			selectType(PENTAGON_TYPES[(i + delta + n) % n].id);
+		},
+		[selectType],
+	);
 	useEffect(() => {
 		const onKey = (e: KeyboardEvent) => {
 			if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -120,12 +130,12 @@ export function PentagonsClient() {
 			if (!step) return;
 			e.preventDefault();
 			const [dx, dy] = step;
-			const n = PENTAGON_TYPES.length;
-			const i = Math.max(0, PENTAGON_TYPES.findIndex((t) => t.id === idRef.current));
 			if (dx !== 0) {
-				selectType(PENTAGON_TYPES[(i + dx + n) % n].id);
+				stepType(dx);
 				return;
 			}
+			const n = PENTAGON_TYPES.length;
+			const i = Math.max(0, PENTAGON_TYPES.findIndex((t) => t.id === idRef.current));
 			// Walk the column, stepping over the empty slots a partial last row would leave (none at 15).
 			const rows = Math.ceil(n / GRID_COLS);
 			const col = i % GRID_COLS;
@@ -141,7 +151,7 @@ export function PentagonsClient() {
 		};
 		window.addEventListener("keydown", onKey);
 		return () => window.removeEventListener("keydown", onKey);
-	}, [selectType]);
+	}, [selectType, stepType]);
 
 	// Immersive (fullscreen-canvas) mode: collapses the header + sidebar so the tiling fills the window.
 	// F toggles it, Esc leaves it, and the hook restores the chrome when this page unmounts.
@@ -220,7 +230,7 @@ export function PentagonsClient() {
 				label: <span className="text-[13px] tabular-nums">{t.id}</span>,
 				// Sans at 11px so "1" never reads as "i"; a lock marks the rigid types.
 				sub: (
-					<span className="font-sans text-[11px]">
+					<span className="font-sans text-[11px] max-md:text-xs">
 						{t.dof === 0 ? <Lock size={10} className="inline" aria-label="rigid" /> : t.dof}
 					</span>
 				),
@@ -232,18 +242,32 @@ export function PentagonsClient() {
 
 	const header = (
 		<div className="ta-wall-cell bg-surface-chrome px-3.5 py-3 flex flex-col gap-1.5">
-			<span className="text-[15px] font-semibold text-fg">{type.label}</span>
+			{/* On a phone the dock's peek row already names the type. */}
+			<span className="text-[15px] font-semibold text-fg max-md:hidden">{type.label}</span>
 			<span className="text-xs text-fg-secondary">
 				{type.discovered} · {type.tilesPerUnit} tiles/unit
 			</span>
 			<span className="flex flex-wrap gap-1">
 				{type.groups.split(", ").map((g) => (
-					<span key={g} className="rounded-control bg-surface-sunken px-1.5 py-0.5 font-mono text-[11px] text-fg-secondary">
+					<span key={g} className="rounded-control bg-surface-sunken px-1.5 py-0.5 font-mono text-[11px] text-fg-secondary max-md:text-xs">
 						{g}
 					</span>
 				))}
 			</span>
 		</div>
+	);
+
+	const peek = (
+		<>
+			<div className="flex min-w-0 flex-1 flex-col">
+				<span className="truncate text-[15px] font-semibold leading-tight text-fg">{type.label}</span>
+				<span className="truncate text-xs text-fg-muted">
+					{type.discovered} · {type.dof === 0 ? "rigid" : `${type.dof} degree${type.dof === 1 ? "" : "s"} of freedom`}
+				</span>
+			</div>
+			<Button variant="ghost" size="icon" icon={ChevronLeft} aria-label="Previous type" onClick={() => stepType(-1)} />
+			<Button variant="ghost" size="icon" icon={ChevronRight} aria-label="Next type" onClick={() => stepType(1)} />
+		</>
 	);
 
 	/**
@@ -293,6 +317,7 @@ export function PentagonsClient() {
 			<PentagonSidebar
 				collapsed={immersive}
 				header={header}
+				peek={peek}
 				types={
 					<Section label="Family">
 						<Segmented
@@ -348,7 +373,7 @@ export function PentagonsClient() {
 						</div>
 						<Button variant="ghost" size="sm" icon={RotateCcw} label="Reset" onClick={resetShape} classes="border-line-subtle" />
 						{result.ok ? null : (
-							<p className="text-[11px] text-fg-muted">
+							<p className="text-[11px] text-fg-muted max-md:text-xs">
 								No pentagon here: {result.reason}. The tiling shown is the last valid one.
 							</p>
 						)}
@@ -415,17 +440,20 @@ export function PentagonsClient() {
 				    context for its life. */}
 				{lens ? <InversiveCanvas cell={lensCell} cellId={lensCellId} camera={lensCamera} /> : null}
 				{/* Same corner, same component as /play's canvas. */}
-				<div className="absolute top-4 left-4 z-20">
+				<div className="absolute top-4 left-4 z-20 max-md:top-3 max-md:left-3">
 					<TilingInfo spec={spec} />
 				</div>
 				{/* Opposite corner, and the only control that stays put while immersive — it is the way back. */}
 				<FullscreenToggle />
+				{/* The phone's right-click: beside the fullscreen button, phone only. */}
+				<ResetViewButton className="absolute top-3 right-16" />
 			</div>
 		</div>
 	);
 }
 
-/** One slider on a single 36px line: name, track, tabular value. Every slider in the panel uses it. */
+/** One slider on a single 36px line: name, track, tabular value. Every slider in the panel uses it.
+ *  44px on a phone, so the 44px touch strips of neighbouring sliders do not overlap. */
 function ParamRow({
 	id,
 	label,
@@ -444,7 +472,7 @@ function ParamRow({
 	format: (v: number) => string;
 }) {
 	return (
-		<div className="grid h-9 grid-cols-[3.75rem_1fr_3.5rem] items-center gap-3">
+		<div className="grid h-9 grid-cols-[3.75rem_1fr_3.5rem] items-center gap-3 max-md:h-11">
 			<label htmlFor={id} title={title} className="text-[13px] font-medium text-fg-secondary">
 				{label}
 			</label>

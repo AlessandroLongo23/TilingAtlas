@@ -29,6 +29,7 @@ export function IsohedralSidebar({
 	types,
 	children,
 	collapsed = false,
+	peek,
 }: {
 	/** The current type's identity line. */
 	header: ReactNode;
@@ -44,6 +45,8 @@ export function IsohedralSidebar({
 	children: ReactNode;
 	/** Immersive mode: slide the whole panel shut and give the canvas the window. */
 	collapsed?: boolean;
+	/** The phone dock sheet's peek row (the current type, and stepping through the grid). */
+	peek?: ReactNode;
 }) {
 	// Which edges of the type box have rows past them. Remeasured on scroll and whenever a filter
 	// changes how many rows there are.
@@ -56,15 +59,19 @@ export function IsohedralSidebar({
 	useEffect(measure, [measure, typeCount]);
 
 	return (
-		<PageSidebar scrollable={false} collapsed={collapsed}>
-			{/* One 14px gutter for every region; a full-bleed hairline and 16px between them. */}
-			<div className="h-full flex flex-col bg-surface-chrome divide-y divide-line-subtle">
-				<div className="shrink-0 px-3.5 py-4">{header}</div>
+		<PageSidebar scrollable={false} collapsed={collapsed} mobile="dock" title="Isohedral" peek={peek}>
+			{/* One 14px gutter for every region; a full-bleed hairline and 16px between them. On a phone
+			    the four regions scroll as one column: pinned, they would fill a half-height sheet before
+			    the controls got a row. The type box keeps its own cap there, re-cut to four of the phone's
+			    taller chips (38.75px a row), so the parameters still sit one short scroll below the grid. */}
+			<div className="h-full flex flex-col bg-surface-chrome divide-y divide-line-subtle max-md:overflow-y-auto max-md:overflow-x-hidden max-md:overscroll-contain">
+				{/* The phone's peek row carries the identity line, so the sheet does not repeat it. */}
+				<div className="shrink-0 px-3.5 py-4 max-md:hidden">{header}</div>
 				<div className="shrink-0 px-3.5 py-4">{filters}</div>
 				<div className="shrink-0 px-3.5 py-4 flex flex-col gap-2">
 					<div className="flex items-baseline justify-between">
 						<span className="ta-label">Type</span>
-						<span className="font-mono text-[11px] tabular-nums text-fg-muted">
+						<span className="font-mono text-[11px] tabular-nums text-fg-muted max-md:text-xs">
 							{typeCount === totalCount ? `${totalCount} types` : `${typeCount} of ${totalCount}`}
 						</span>
 					</div>
@@ -74,7 +81,7 @@ export function IsohedralSidebar({
 					    the gutter, so the grid lines up with the filters either way. */}
 					<div className="relative">
 						<div
-							className="-mr-2.5 pr-2.5 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-line-strong"
+							className="-mr-2.5 pr-2.5 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-line-strong max-md:max-h-[156px]! max-md:overscroll-contain"
 							style={{ maxHeight: TYPE_BOX_PX }}
 							ref={boxRef}
 							onScroll={measure}
@@ -85,7 +92,7 @@ export function IsohedralSidebar({
 						{more.down ? <div className={`${SHADOW} bottom-0 rounded-b-surface bg-gradient-to-t`} /> : null}
 					</div>
 				</div>
-				<div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hide ta-scroll-fade">
+				<div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hide ta-scroll-fade max-md:flex-none max-md:overflow-visible">
 					<div className="pb-10 divide-y divide-line-subtle [&>*]:px-3.5 [&>*]:py-4">{children}</div>
 				</div>
 			</div>

@@ -24,8 +24,8 @@ interface AutomataInfoProps {
 function Stat({ label, value, title }: { label: string; value: string; title?: string }) {
 	return (
 		<div className="flex h-[22px] min-w-0 items-center justify-between gap-2" title={title}>
-			<dt className="truncate text-[11px] text-fg-muted">{label}</dt>
-			<dd className="font-mono text-[11px] text-fg tabular-nums">{value}</dd>
+			<dt className="truncate text-[11px] text-fg-muted max-md:text-xs">{label}</dt>
+			<dd className="font-mono text-[11px] text-fg tabular-nums max-md:text-xs">{value}</dd>
 		</div>
 	);
 }
@@ -40,6 +40,12 @@ function widthLabel(w: number): string {
 	return Number.isInteger(w) ? String(w) : `${Math.floor(w)}½`;
 }
 
+/** The tiling's title on this page: its uniform name where it has one, else NavHeader's default. */
+export function automataTitle(selected: CatalogueTiling | null): string | undefined {
+	const named = selected ? UNIFORM_BY_ID.get(selected.canonicalKey) : undefined;
+	return named ? `${named.config} · ${named.name}` : undefined;
+}
+
 export function AutomataInfo({ selected, report, plan }: AutomataInfoProps) {
 	const def = topologyDef(plan?.topology ?? "plane");
 	const boardW = plan ? widthLabel(plan.domainW) : "—";
@@ -47,17 +53,18 @@ export function AutomataInfo({ selected, report, plan }: AutomataInfoProps) {
 
 	const degrees = [...new Set(report.degrees)].sort((a, b) => a - b);
 	const extinct = report.population === 0 && report.generation > 0;
-	const named = selected ? UNIFORM_BY_ID.get(selected.canonicalKey) : undefined;
 
+	// On a phone the dock's peek row already carries the title (and Gen / Alive), so the zone drops the
+	// title line and tightens: at half height it shares the sheet with the tab strip and a tab body.
 	return (
-		<div className="flex-shrink-0 space-y-5 p-4 pb-3">
+		<div className="flex-shrink-0 space-y-5 p-4 pb-3 max-md:space-y-3 max-md:pt-1">
 			{/* One step up from NavHeader's default so the title outranks the catalogue rows below it. */}
-			<div className="[&>div]:gap-1 [&>div>span:first-child]:text-base">
-				<NavHeader selected={selected} title={named ? `${named.config} · ${named.name}` : undefined} />
+			<div className="[&>div]:gap-1 [&>div>span:first-child]:text-base max-md:[&>div>span:first-child]:hidden">
+				<NavHeader selected={selected} title={automataTitle(selected)} />
 			</div>
 
 			<div>
-				<span className="ta-label">Stats</span>
+				<span className="ta-label max-md:hidden">Stats</span>
 				<dl className="mt-1.5 grid grid-cols-2 gap-x-6 border-y border-line-subtle py-1 [&>div:nth-child(even)]:border-l [&>div:nth-child(even)]:border-line-subtle [&>div:nth-child(even)]:pl-3">
 					<Stat label="Gen" value={report.generation.toLocaleString()} />
 					<Stat label="Alive" value={report.population.toLocaleString()} />
@@ -91,7 +98,7 @@ export function AutomataInfo({ selected, report, plan }: AutomataInfoProps) {
 					<Stat label="Rate" value={report.rate ? `${report.rate.toFixed(0)}/s` : "—"} />
 				</dl>
 				{extinct && (
-					<p className="mt-1.5 text-[11px] leading-relaxed text-fg-muted">
+					<p className="mt-1.5 text-[11px] leading-relaxed text-fg-muted max-md:text-xs">
 						Extinct. Try a new soup, or a rule that births on fewer neighbours.
 					</p>
 				)}

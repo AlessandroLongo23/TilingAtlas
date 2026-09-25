@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, type RefObject } from "react";
+import { useIsPhone } from "./useIsPhone";
 import { useKeyShortcuts } from "./useKeyShortcuts";
 
 /**
@@ -19,13 +20,22 @@ import { useKeyShortcuts } from "./useKeyShortcuts";
  * specified `repeat(...)` string, which would otherwise miscount as several tracks.
  *
  * Also keeps the selection on screen: after the index changes, the element marked `data-selected`
- * inside `gridRef` is scrolled into view with block "nearest", which is a no-op when it is already
- * fully visible (so clicking a thumbnail never jolts the list).
+ * inside `gridRef` is brought into its scroll pane by the least scroll that shows it whole (what
+ * `scrollIntoView({ block: "nearest" })` does), a no-op when it is already fully visible, so clicking a
+ * thumbnail never jolts the list. Only that pane scrolls: scrollIntoView also scrolls every ancestor,
+ * and when the card started below the fold it dragged the `overflow-hidden` app shell up with it, which
+ * is how the page opened shifted up on a phone.
+ *
+ * On a phone, a new `page` also scrolls that pane back to the top: the pagination sits under the grid,
+ * so without it a tap on "2" leaves the reader at the bottom of page 2.
+ *
+ * Returns `step(delta)`, the same clamped move the keys make, for on-screen previous / next buttons.
  */
 export function useGridArrowNav({
 	gridRef,
 	count,
 	index,
+	page,
 	onMove,
 }: {
 	gridRef: RefObject<HTMLElement | null>;
@@ -33,6 +43,8 @@ export function useGridArrowNav({
 	count: number;
 	/** The selection's position in that list, or -1 when there is none. */
 	index: number;
+	/** The page on show. */
+	page?: number;
 	onMove: (next: number) => void;
 }) {
 	const columns = () => {
@@ -57,9 +69,34 @@ export function useGridArrowNav({
 		arrowdown: () => move(columns()),
 	});
 
+	// Declared before the selection effect, so a step onto the previous page's last card still ends in view.
+	const isPhone = useIsPhone();
 	useEffect(() => {
-		gridRef.current?.querySelector("[data-selected]")?.scrollIntoView({ block: "nearest" });
+		const pane = isPhone && gridRef.current && scrollParent(gridRef.current);
+		if (pane) pane.scrollTop = 0;
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [page]);
+
+	useEffect(() => {
+		const card = gridRef.current?.querySelector("[data-selected]");
+		const pane = card && scrollParent(card);
+		if (!card || !pane) return;
+		const c = card.getBoundingClientRect();
+		const p = pane.getBoundingClientRect();
+		if (c.top < p.top) pane.scrollTop += c.top - p.top;
+		else if (c.bottom > p.bottom) pane.scrollTop += Math.min(c.bottom - p.bottom, c.top - p.top);
 		// gridRef is a stable ref object; re-running on index alone is the point.
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [index]);
+
+	return { step: move };
+}
+
+/** The nearest ancestor that scrolls vertically, or null. */
+export function scrollParent(el: Element): HTMLElement | null {
+	for (let p = el.parentElement; p; p = p.parentElement) {
+		const oy = getComputedStyle(p).overflowY;
+		if (oy === "auto" || oy === "scroll") return p;
+	}
+	return null;
 }
