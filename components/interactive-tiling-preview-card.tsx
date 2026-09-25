@@ -3,11 +3,12 @@
 import { useId, useMemo, useState } from "react";
 import Link from "next/link";
 import { motion, useReducedMotion } from "motion/react";
-import { Maximize, Minimize, ExternalLink, Play, X } from "lucide-react";
+import { Check, Layers, Maximize, Minimize, ExternalLink, Play, X } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { useCardActivation } from "@/lib/hooks/useCardActivation";
+import { CardDoneChip } from "@/components/card-done-chip";
 import { useFlatCellPreview } from "@/lib/hooks/useFlatCellPreview";
-import { useCardOverlays, type OverlayState } from "@/lib/hooks/usePreviewOverlays";
+import { useCardOverlays, type OverlayName, type OverlayState } from "@/lib/hooks/usePreviewOverlays";
 import { seedFromCell } from "@/lib/render/seedPatch";
 import type { SymmetryData } from "@/lib/classes/symmetry/types";
 import type { OrbitData } from "@/lib/services/orbitsFromExactSource";
@@ -123,11 +124,22 @@ export function InteractiveTilingPreviewCard({
 	className,
 }: InteractiveTilingPreviewCardProps) {
 	const [expanded, setExpanded] = useState(false);
-	const { active: focused, hostProps } = useCardActivation();
+	const { active: focused, hostProps, deactivate } = useCardActivation();
 	// Identity for the overlay scope's per-card exceptions. Per INSTANCE, not per tiling: a slide can
 	// show the same tiling twice, and toggling one of them must not toggle its twin.
 	const cardId = useId();
-	const { overlays, onOverlayKeyDown } = useCardOverlays(cardId, initialOverlays);
+	const { overlays, onOverlayKeyDown, toggle } = useCardOverlays(cardId, initialOverlays);
+	// Phone only: the o/s/d/p keys as a Layers menu on the live card, listing the overlays this card
+	// has data for.
+	const [layersOpen, setLayersOpen] = useState(false);
+	const layers = (
+		[
+			["orbits", "Vertex orbits", orbitData != null],
+			["symmetry", "Symmetry elements", symmetryData != null],
+			["fundamentalDomain", "Fundamental domain", symmetryData != null],
+			["polygonPoints", "Polygon points", true],
+		] as [OverlayName, string, boolean][]
+	).filter(([, , has]) => has);
 	// Focus still decides the ring; `live` decides who owns the input.
 	const live = interactive && (alwaysActive || focused);
 	// The seed is derived from the cell and the orbit partition, so it is recomputed only when either
@@ -235,6 +247,39 @@ export function InteractiveTilingPreviewCard({
 							WebGL2 unavailable — interactive preview disabled.
 						</div>
 					) : null}
+					{/* Touch only: the way out of a live card, since a phone has no Esc to hand the page back. */}
+					<CardDoneChip active={focused && interactive && !alwaysActive} onDone={deactivate} />
+					{live ? (
+						<div className="absolute bottom-2 left-2 z-10 hidden flex-col items-start gap-1.5 max-md:flex">
+							{layersOpen ? (
+								<div role="group" aria-label="Overlays" className="ta-float flex flex-col py-1">
+									{layers.map(([name, label]) => (
+										<button
+											key={name}
+											type="button"
+											aria-pressed={overlays[name]}
+											onPointerDown={stopDrag}
+											onClick={() => toggle(name)}
+											className="flex h-11 items-center gap-2 px-3 text-left text-sm text-fg"
+										>
+											<Check size={16} aria-hidden className={overlays[name] ? "" : "invisible"} />
+											{label}
+										</button>
+									))}
+								</div>
+							) : null}
+							<button
+								type="button"
+								aria-expanded={layersOpen}
+								onPointerDown={stopDrag}
+								onClick={() => setLayersOpen((v) => !v)}
+								className="ta-float flex h-11 items-center gap-1.5 px-3 text-sm font-medium text-fg"
+							>
+								<Layers size={16} aria-hidden />
+								Layers
+							</button>
+						</div>
+					) : null}
 					{/* Top-right button stack, /play overlay style: expand + open-in-play. Either can be
 					    switched off by the caller; with both off the stack renders nothing at all. While
 					    lifted it stays visible instead of waiting for a hover — the way out of a 90%
@@ -243,6 +288,8 @@ export function InteractiveTilingPreviewCard({
 						className={cn(
 							"absolute right-2 top-2 z-10 flex gap-1.5 transition-opacity focus-within:opacity-100 group-hover:opacity-100",
 							lifted ? "opacity-100" : "opacity-0",
+							// No hover on a phone, so the stack is simply always there, finger-sized.
+							"max-md:opacity-100",
 						)}
 					>
 						{showExpand && interactive ? (
@@ -253,7 +300,7 @@ export function InteractiveTilingPreviewCard({
 								title={expanded ? "Close" : "Expand"}
 								aria-label={expanded ? "Close the expanded preview" : "Expand preview"}
 								aria-pressed={expanded}
-								className="flex items-center justify-center ta-float p-2 text-fg-secondary transition-colors hover:text-fg"
+								className="flex items-center justify-center ta-float p-2 text-fg-secondary transition-colors hover:text-fg max-md:size-11"
 							>
 								{lifted ? <X size={14} /> : expanded ? <Minimize size={14} /> : <Maximize size={14} />}
 							</button>
@@ -264,7 +311,7 @@ export function InteractiveTilingPreviewCard({
 								onPointerDown={stopDrag}
 								title={openHref ? "Open" : "Open in Play"}
 								aria-label={openHref ? "Open this tiling on its page" : "Open this tiling in Play"}
-								className="flex items-center justify-center ta-float p-2 text-fg-secondary transition-colors hover:text-fg"
+								className="flex items-center justify-center ta-float p-2 text-fg-secondary transition-colors hover:text-fg max-md:size-11"
 							>
 								{openInPlayIcon === "play" ? (
 									<Play size={14} className="fill-current" />

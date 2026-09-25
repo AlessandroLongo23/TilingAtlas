@@ -8,6 +8,8 @@ import {
 	type HyperbolicViewInput,
 } from "@/components/hyperbolic-developed-canvas";
 import { useCardActivation } from "@/lib/hooks/useCardActivation";
+import { CardDoneChip } from "@/components/card-done-chip";
+import { useTouchGestures } from "@/lib/render/touchGestures";
 import { useInViewMount } from "@/lib/hooks/useInViewMount";
 import {
 	ROTATE_SNAP_DEG,
@@ -38,7 +40,7 @@ import type { CataloguePatch } from "@/lib/render/hyperbolicDevelopedDraw";
 const CLICK_DRAG_THRESHOLD_PX = 5;
 
 export function InteractiveHyperbolicMini({ patchId, patch }: { patchId: string; patch?: CataloguePatch }) {
-	const { active, activeRef, hostProps } = useCardActivation();
+	const { active, activeRef, hostProps, deactivate } = useCardActivation();
 	const { ref: mountRef, inView } = useInViewMount();
 	const hostRef = useRef<HTMLDivElement | null>(null);
 
@@ -112,6 +114,28 @@ export function InteractiveHyperbolicMini({ patchId, patch }: { patchId: string;
 		inputRef.current.resetSeq++;
 	};
 
+	// Fingers, as on /play's disk: two fingers pan by their midpoint and twist to turn the disk (it has
+	// no zoom, so the spread is ignored), and a double-tap is the right-click recentre.
+	const touch = useTouchGestures(hostRef, {
+		pinchStart: () => {
+			dragRef.current = null;
+		},
+		pinch: ({ from, to, rotate }) => {
+			if (!activeRef.current) return;
+			const c = controlsRef.current;
+			c.targetOffset.x += to.x - from.x;
+			c.targetOffset.y += to.y - from.y;
+			// Negated: the disk turns by +θ counter-clockwise (su11Rotation acts in its y-up frame), while
+			// a positive twist is clockwise on screen. The pattern follows the fingers this way round.
+			const deg = (-rotate * 180) / Math.PI;
+			c.rotation += deg;
+			c.targetRotation = wrap360(c.targetRotation + deg);
+		},
+		doubleTap: () => {
+			if (activeRef.current) resetView();
+		},
+	});
+
 	const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
 		if (e.button === 2) {
 			resetView();
@@ -120,12 +144,13 @@ export function InteractiveHyperbolicMini({ patchId, patch }: { patchId: string;
 		if (e.button !== 0) return;
 		// First click activates (via focus); it deliberately does NOT start a pan, so an activation
 		// click never jolts the view.
-		if (!activeRef.current) return;
+		if (!activeRef.current || touch.pinching) return;
 		dragRef.current = { id: e.pointerId, x: e.clientX, y: e.clientY, startX: e.clientX, startY: e.clientY };
 		e.currentTarget.setPointerCapture(e.pointerId);
 	};
 
 	const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+		if (touch.pinching) return;
 		const drag = dragRef.current;
 		if (!drag || drag.id !== e.pointerId) return;
 		const c = controlsRef.current;
@@ -139,6 +164,9 @@ export function InteractiveHyperbolicMini({ patchId, patch }: { patchId: string;
 		const drag = dragRef.current;
 		if (!drag || drag.id !== e.pointerId) return;
 		dragRef.current = null;
+		// A finger's tap is how a phone dismisses things and the first half of the double-tap reset, so
+		// on touch it does not fold (the /play disk makes the same exception); only a click does.
+		if (e.pointerType === "touch") return;
 		// A press that barely moved is a click: fold the tile under it to the disk centre, in the
 		// centred CSS px the canvas expects.
 		if (Math.hypot(e.clientX - drag.startX, e.clientY - drag.startY) >= CLICK_DRAG_THRESHOLD_PX) return;
@@ -176,6 +204,7 @@ export function InteractiveHyperbolicMini({ patchId, patch }: { patchId: string;
 				// Out of view: the disk's silhouette as a quiet skeleton on the sunken plate.
 				<div aria-hidden="true" className="absolute inset-0 m-auto h-full aspect-square rounded-full bg-surface-overlay" />
 			)}
+			<CardDoneChip active={active} onDone={deactivate} />
 		</div>
 	);
 }

@@ -23,6 +23,7 @@ import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPoi
 import {
 	accumulateDetents,
 	makeCardControls,
+	pinchCardControls,
 	resetCardControls,
 	ROTATE_SNAP_DEG,
 	stepCardControls,
@@ -31,6 +32,7 @@ import {
 	zoomAtPoint,
 	type CardControls,
 } from "@/lib/render/viewControls";
+import { onViewReset, useTouchGestures } from "@/lib/render/touchGestures";
 
 /** How far the wheel may travel either side of a view's fitted home zoom. */
 export const ZOOM_OUT_FACTOR = 8; // home / 8 — far enough to see a whole patch shrink to texture
@@ -103,6 +105,7 @@ export interface AperiodicView {
 		onPointerDown: (e: ReactPointerEvent<HTMLCanvasElement>) => void;
 		onPointerMove: (e: ReactPointerEvent<HTMLCanvasElement>) => void;
 		onPointerUp: (e: ReactPointerEvent<HTMLCanvasElement>) => void;
+		onPointerCancel: (e: ReactPointerEvent<HTMLCanvasElement>) => void;
 		onPointerLeave: (e: ReactPointerEvent<HTMLCanvasElement>) => void;
 		onContextMenu: (e: React.MouseEvent) => void;
 	};
@@ -140,7 +143,7 @@ export interface AperiodicView {
 	 * wheel's limits stay correct against the new patch.
 	 */
 	remeasure: () => void;
-	/** Ease back to home (what right-click does). */
+	/** Ease back to home (what right-click, a double-tap and requestViewReset do). */
 	resetView: () => void;
 	/** Ask for one more frame — theme flips, a toggled option, anything not driven by the controls. */
 	requestDraw: () => void;
@@ -383,6 +386,33 @@ export function useAperiodicView({
 		return () => cv.removeEventListener("wheel", onWheel);
 	}, [canvasEl, zoomBounds]);
 
+	// Fingers (lib/render/touchGestures.ts): two pinch, pan and twist, a double-tap goes home, and a tap
+	// does what hovering does for a mouse (the multigrid's rhombus/crossing link). Mouse events pass
+	// straight through.
+	const touch = useTouchGestures(canvasRef, {
+		pinchStart: () => {
+			dragRef.current = null;
+		},
+		pinch: (step) => {
+			if (!activeRef.current) return;
+			pinchCardControls(controlsRef.current, step, zoomBounds());
+			dirtyRef.current = true;
+		},
+		tap: (x, y) => {
+			if (activeRef.current) cbRef.current.onHover?.(x, y, frameRef.current);
+		},
+		doubleTap: () => {
+			if (activeRef.current) resetView();
+		},
+	});
+
+	// The phone's Reset button (requestViewReset) is right-click by other means.
+	useEffect(() => onViewReset(resetView), [resetView]);
+
+	const onPointerUp = (e: ReactPointerEvent<HTMLCanvasElement>) => {
+		if (dragRef.current?.id === e.pointerId) dragRef.current = null;
+	};
+
 	const handlers = {
 		onPointerDown: (e: ReactPointerEvent<HTMLCanvasElement>) => {
 			if (e.button === 2) {
@@ -392,11 +422,12 @@ export function useAperiodicView({
 			if (e.button !== 0) return;
 			// First click on an inactive surface activates it (via focus — see useCardActivation) and
 			// deliberately does NOT start a pan, so an activation click never jolts the view.
-			if (!activeRef.current) return;
+			if (!activeRef.current || touch.pinching) return;
 			dragRef.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
 			e.currentTarget.setPointerCapture(e.pointerId);
 		},
 		onPointerMove: (e: ReactPointerEvent<HTMLCanvasElement>) => {
+			if (touch.pinching) return;
 			const drag = dragRef.current;
 			if (drag && drag.id === e.pointerId) {
 				// The target follows the pointer 1:1 and the eased offset glides after it, as on /play.
@@ -410,16 +441,17 @@ export function useAperiodicView({
 				return;
 			}
 			const hover = cbRef.current.onHover;
-			if (!hover) return;
+			// A finger's hover is its tap (above); a dragging finger would only flicker the link.
+			if (!hover || e.pointerType === "touch") return;
 			const rect = e.currentTarget.getBoundingClientRect();
 			hover(e.clientX - rect.left, e.clientY - rect.top, frameRef.current);
 		},
-		onPointerUp: (e: ReactPointerEvent<HTMLCanvasElement>) => {
-			if (dragRef.current?.id === e.pointerId) dragRef.current = null;
-		},
-		onPointerLeave: () => {
+		onPointerUp,
+		onPointerCancel: onPointerUp,
+		onPointerLeave: (e: ReactPointerEvent<HTMLCanvasElement>) => {
 			dragRef.current = null;
-			cbRef.current.onHoverEnd?.();
+			// A finger "leaves" on every lift, which would clear what its tap just picked.
+			if (e.pointerType !== "touch") cbRef.current.onHoverEnd?.();
 		},
 		onContextMenu: (e: React.MouseEvent) => e.preventDefault(), // right-click resets, not a menu
 	};

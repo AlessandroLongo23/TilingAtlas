@@ -43,6 +43,14 @@ export const EASE_DAMP = 0.2;
 // path ever sees a 360° jump in its per-frame delta.
 export const wrap360 = (deg: number) => ((deg % 360) + 360) % 360;
 
+// A view angle for storing where people see it (the /play store's `rotation`, which the URL carries as
+// `rot`): folded into [0, 360) and rounded to a tenth of a degree. A two-finger twist produces angles
+// like 320.0000012, and a tenth is far below what anyone can see.
+export const tidyDeg = (deg: number) => {
+	const t = Math.round(wrap360(deg) * 10) / 10;
+	return t === 360 ? 0 : t; // rounding after the fold, so 20.4 stays 20.4 (not 380.4 % 360)
+};
+
 // Shortest signed angular distance (degrees) for a raw difference, mapped to [-180, 180); lets a live
 // angle take the short way round when the wrapped target jumps across the 0/360 seam.
 export const shortestDeltaDeg = (diff: number) => ((diff % 360) + 540) % 360 - 180;
@@ -84,6 +92,46 @@ export function zoomAtPoint(
 			y: targetOffset.y + mouse.y - (worldY * z + targetOffset.y),
 		},
 	};
+}
+
+// The wheel distance zoomAtPoint would need to scale by `scale`, so a pinch runs through the same
+// function (and the same clamp) the wheel does.
+export const pinchDeltaPx = (scale: number) =>
+	(-ZOOM_CARD_PX_PER_NOTCH * Math.log(scale)) / Math.log(ZOOM_CARD_FACTOR);
+
+// One two-finger step (lib/render/touchGestures.ts) on a view that keeps zoom and a centred pan
+// offset with live and target copies: CardControls, and /play's store `controls`. The world point
+// under the old midpoint lands under the new one, the zoom scales by the finger spread, and `spin`
+// radians turn the view about the fingers.
+//
+// Both copies move by the same amount, so an ease already in flight carries on from where it was
+// and the fingers never wait for it.
+//
+// `spin` is the turn the CALLER is about to add to its view angle. Those views' frame loops carry the
+// offset through every change of angle as a turn about the screen CENTRE (stepCardControls,
+// canvas.tsx's draw loop), which would swing the pattern out from under the fingers. So the offset
+// stored here is the one that lands in the right place once the loop has applied that turn:
+// Rot(-spin) of the wanted offset. Pass 0 for a view without that compensation, and pass the
+// midpoints already un-rotated for a view whose offset sits inside its rotation (the 2D canvases).
+export function pinchOffsetView(
+	v: { zoom: number; targetZoom: number; offset: { x: number; y: number }; targetOffset: { x: number; y: number } },
+	step: { from: { x: number; y: number }; to: { x: number; y: number }; scale: number },
+	bounds?: { min: number; max: number },
+	spin = 0,
+): void {
+	const { zoom } = zoomAtPoint(step.from, v.targetOffset, v.targetZoom, pinchDeltaPx(step.scale), bounds);
+	const k = v.targetZoom > 0 ? zoom / v.targetZoom : 1;
+	v.targetZoom = zoom;
+	v.zoom *= k;
+	const c = Math.cos(spin), s = Math.sin(spin);
+	// Unrotated target of the new midpoint: Rot(-spin)·to.
+	const tx = c * step.to.x + s * step.to.y;
+	const ty = -s * step.to.x + c * step.to.y;
+	for (const o of [v.offset, v.targetOffset]) {
+		// Wanted: to + k·Rot(spin)·(o - from). Stored: Rot(-spin) of that = Rot(-spin)·to + k·(o - from).
+		o.x = tx + k * (o.x - step.from.x);
+		o.y = ty + k * (o.y - step.from.y);
+	}
 }
 
 // Detent accumulator for wheel rotation. Feed it the normalized scroll px; it returns how many whole
@@ -185,6 +233,22 @@ export function stepCardControls(c: CardControls, pivotOffsetOnRotate = true): b
 		Math.abs(c.targetOffset.y - c.offset.y) > 1e-2 ||
 		c.rotation !== c.targetRotation
 	);
+}
+
+// A two-finger step on a CardControls: pan, pinch and twist together. The twist lands on the live angle
+// and the target alike (the fingers hold the pattern, there is nothing to ease toward), and it is not
+// snapped to ROTATE_SNAP_DEG: a hand turns continuously, and the next Shift+wheel detent steps on from
+// wherever it left the angle.
+export function pinchCardControls(
+	c: CardControls,
+	step: { from: { x: number; y: number }; to: { x: number; y: number }; scale: number; rotate: number },
+	bounds?: { min: number; max: number },
+): void {
+	pinchOffsetView(c, step, bounds, step.rotate);
+	const deg = (step.rotate * 180) / Math.PI;
+	c.rotation += deg;
+	c.targetRotation = wrap360(c.targetRotation + deg);
+	c.scrollAccum = 0;
 }
 
 // Snap a card back to its home view (right-click, as in /play — but to the card's own fitted zoom).

@@ -15,9 +15,11 @@ import {
 	accumulateDetents,
 	ROTATE_SNAP_DEG,
 	unrotateScreen,
+	tidyDeg,
 	wheelDeltaPx,
 	wrap360,
 } from "@/lib/render/viewControls";
+import { onViewReset, useTouchGestures } from "@/lib/render/touchGestures";
 import { cn } from "@/lib/utils/cn";
 
 // The colored-tiling canvas: FreedrawCanvas's shell (DPR-aware backing store, drag pan, wheel zoom
@@ -134,13 +136,44 @@ export function ColorsCanvas({
 	}, [animate, draw]);
 
 	const drag = useRef<{ x: number; y: number } | null>(null);
+
+	// Fingers, as on FreedrawCanvas: two pinch, pan and twist, a tap lights the orbit under it, a
+	// double-tap is the double-click refit. The world point under the old midpoint (read through the old
+	// angle) is put under the new midpoint (through the new one) at the new scale; the twist turns the
+	// live angle and the owner hears the result once, when the fingers lift.
+	const touch = useTouchGestures(canvasRef, interactive ? {
+		pinchStart: () => {
+			drag.current = null;
+		},
+		pinch: ({ from, to, scale, rotate }) => {
+			const spin = onRotationChange ? rotate : 0;
+			const before = radNow();
+			const p0 = unrotateScreen(from.x, from.y, before);
+			const p1 = unrotateScreen(to.x, to.y, before + spin);
+			setView((v) => {
+				if (!v) return v;
+				const next = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, v.scale * scale));
+				const wx = v.cx + p0.x / v.scale;
+				const wy = v.cy - p0.y / v.scale;
+				return { ...v, scale: next, cx: wx - p1.x / next, cy: wy + p1.y / next };
+			});
+			rotRef.current += (spin * 180) / Math.PI;
+			hoverRef.current = null;
+		},
+		pinchEnd: () => {
+			if (tidyDeg(rotRef.current) !== tidyDeg(rotation)) onRotationChange?.(tidyDeg(rotRef.current));
+		},
+		tap: (x, y) => hoverAt(x, y),
+		doubleTap: () => refit(),
+	} : null);
+
 	const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-		if (!interactive) return;
+		if (!interactive || touch.pinching) return;
 		e.currentTarget.setPointerCapture(e.pointerId);
 		drag.current = { x: e.clientX, y: e.clientY };
 	};
 	const onPointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-		if (!interactive) return;
+		if (!interactive || touch.pinching) return;
 		if (drag.current) {
 			// Undo the view rotation on the drag delta so the pattern follows the cursor at any angle.
 			const d = unrotateScreen(e.clientX - drag.current.x, e.clientY - drag.current.y, radNow());
@@ -149,14 +182,14 @@ export function ColorsCanvas({
 			setView((v) => (v ? { ...v, cx: v.cx - d.x / v.scale, cy: v.cy + d.y / v.scale } : v));
 			return;
 		}
+		const rect = e.currentTarget.getBoundingClientRect();
+		hoverAt(e.clientX - rect.left, e.clientY - rect.top);
+	};
+	// Screen (px from the canvas's corner) → world, with the view rotation undone.
+	const hoverAt = (x: number, y: number) => {
 		const v = view;
 		if (!v) return;
-		const rect = e.currentTarget.getBoundingClientRect();
-		const p = unrotateScreen(
-			e.clientX - rect.left - rect.width / 2,
-			e.clientY - rect.top - rect.height / 2,
-			radNow(),
-		);
+		const p = unrotateScreen(x - size.w / 2, y - size.h / 2, radNow());
 		hoverRef.current = { x: v.cx + p.x / v.scale, y: v.cy - p.y / v.scale };
 	};
 	const onPointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -164,8 +197,9 @@ export function ColorsCanvas({
 		e.currentTarget.releasePointerCapture(e.pointerId);
 		drag.current = null;
 	};
-	const onPointerLeave = () => {
-		hoverRef.current = null;
+	// A finger "leaves" on every lift, which would drop what its tap just lit.
+	const onPointerLeave = (e: React.PointerEvent<HTMLCanvasElement>) => {
+		if (e.pointerType !== "touch") hoverRef.current = null;
 	};
 
 	useEffect(() => {
@@ -210,6 +244,9 @@ export function ColorsCanvas({
 		setView(fitColorsView(size.w, size.h, cells));
 		onRotationChange?.(0);
 	};
+	// The phone's Reset button (requestViewReset) is the double-click by other means. Resubscribed per
+	// render, so it always runs this render's refit.
+	useEffect(() => (interactive ? onViewReset(refit) : undefined));
 
 	return (
 		<canvas
@@ -217,9 +254,10 @@ export function ColorsCanvas({
 			onPointerDown={onPointerDown}
 			onPointerMove={onPointerMove}
 			onPointerUp={onPointerUp}
+			onPointerCancel={onPointerUp}
 			onPointerLeave={onPointerLeave}
 			onDoubleClick={refit}
-			className={cn("block w-full h-full", interactive && "cursor-grab active:cursor-grabbing", classes)}
+			className={cn("block w-full h-full", interactive && "cursor-grab active:cursor-grabbing touch-none", classes)}
 		/>
 	);
 }

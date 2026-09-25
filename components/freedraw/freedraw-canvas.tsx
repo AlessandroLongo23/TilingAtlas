@@ -14,15 +14,18 @@ import { useEasedRotation } from "@/lib/hooks/useEasedRotation";
 import {
 	accumulateDetents,
 	makeCardControls,
+	pinchOffsetView,
 	resetCardControls,
 	ROTATE_SNAP_DEG,
 	stepCardControls,
 	unrotateScreen,
+	tidyDeg,
 	wheelDeltaPx,
 	wrap360,
 	zoomAtPoint,
 	type CardControls,
 } from "@/lib/render/viewControls";
+import { onViewReset, useTouchGestures } from "@/lib/render/touchGestures";
 import { cn } from "@/lib/utils/cn";
 
 // Zoom bounds are deliberately NOT the ones in lib/render/viewControls.ts. There a world unit is a
@@ -221,13 +224,43 @@ export function FreedrawCanvas({
 
 	// Pan. Pointer capture keeps the drag alive when the cursor leaves the canvas.
 	const drag = useRef<{ x: number; y: number } | null>(null);
+
+	// Fingers (lib/render/touchGestures.ts): two pinch, pan and twist, a double-tap is the double-click
+	// refit, and a tap is the hover a finger lacks (it grows the orbit's dots under it). The midpoints go
+	// through the view rotation (the old angle for where the fingers were, the new one for where they
+	// are), because this view's offset lives in the upright frame, inside the turn. A twist only where
+	// Shift+wheel turns the view (someone owns the angle); it turns the live angle and the owner hears
+	// the result once, when the fingers lift.
+	const touch = useTouchGestures(canvasRef, interactive ? {
+		pinchStart: () => {
+			drag.current = null;
+		},
+		pinch: ({ from, to, scale, rotate }) => {
+			const spin = onRotationChange ? rotate : 0;
+			const before = radNow();
+			pinchOffsetView(
+				controlsRef.current,
+				{ from: unrotateScreen(from.x, from.y, before), to: unrotateScreen(to.x, to.y, before + spin), scale },
+				ZOOM_BOUNDS,
+			);
+			rotRef.current += (spin * 180) / Math.PI;
+			hoverRef.current = null;
+			dirtyRef.current = true;
+		},
+		pinchEnd: () => {
+			if (tidyDeg(rotRef.current) !== tidyDeg(rotation)) onRotationChange?.(tidyDeg(rotRef.current));
+		},
+		tap: (x, y) => hoverAt(x, y),
+		doubleTap: () => refit(),
+	} : null);
+
 	const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-		if (!interactive) return;
+		if (!interactive || touch.pinching) return;
 		e.currentTarget.setPointerCapture(e.pointerId);
 		drag.current = { x: e.clientX, y: e.clientY };
 	};
 	const onPointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-		if (!interactive) return;
+		if (!interactive || touch.pinching) return;
 		if (drag.current) {
 			// Undo the view rotation on the drag delta, so the pattern follows the cursor at any angle.
 			const d = unrotateScreen(e.clientX - drag.current.x, e.clientY - drag.current.y, radNow());
@@ -244,16 +277,16 @@ export function FreedrawCanvas({
 			dirtyRef.current = true;
 			return;
 		}
-		// Screen → world, the inverse of the sx/sy the renderer draws with (y flips: world y grows upward),
-		// with the view rotation undone first.
-		const v = viewOf(controlsRef.current);
-		if (!(v.scale > 0)) return;
 		const rect = e.currentTarget.getBoundingClientRect();
-		const p = unrotateScreen(
-			e.clientX - rect.left - rect.width / 2,
-			e.clientY - rect.top - rect.height / 2,
-			radNow(),
-		);
+		hoverAt(e.clientX - rect.left, e.clientY - rect.top);
+	};
+	// Screen (px from the canvas's corner) → world, the inverse of the sx/sy the renderer draws with (y
+	// flips: world y grows upward), with the view rotation undone first.
+	const hoverAt = (x: number, y: number) => {
+		const v = viewOf(controlsRef.current);
+		const el = canvasRef.current;
+		if (!(v.scale > 0) || !el) return;
+		const p = unrotateScreen(x - el.clientWidth / 2, y - el.clientHeight / 2, radNow());
 		hoverRef.current = { x: v.cx + p.x / v.scale, y: v.cy - p.y / v.scale };
 	};
 	const onPointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -261,8 +294,9 @@ export function FreedrawCanvas({
 		e.currentTarget.releasePointerCapture(e.pointerId);
 		drag.current = null;
 	};
-	const onPointerLeave = () => {
-		hoverRef.current = null;
+	// A finger "leaves" on every lift, which would drop what its tap just lit.
+	const onPointerLeave = (e: React.PointerEvent<HTMLCanvasElement>) => {
+		if (e.pointerType !== "touch") hoverRef.current = null;
 	};
 
 	// Wheel zoom toward the cursor: keep the world point under the pointer fixed on screen. Shift+wheel
@@ -318,6 +352,9 @@ export function FreedrawCanvas({
 		dirtyRef.current = true;
 		onRotationChange?.(0);
 	};
+	// The phone's Reset button (requestViewReset) is the double-click by other means. Resubscribed per
+	// render, so it always runs this render's refit.
+	useEffect(() => (interactive ? onViewReset(refit) : undefined));
 
 	return (
 		<canvas
@@ -325,9 +362,10 @@ export function FreedrawCanvas({
 			onPointerDown={onPointerDown}
 			onPointerMove={onPointerMove}
 			onPointerUp={onPointerUp}
+			onPointerCancel={onPointerUp}
 			onPointerLeave={onPointerLeave}
 			onDoubleClick={refit}
-			className={cn("block w-full h-full", interactive && "cursor-grab active:cursor-grabbing", classes)}
+			className={cn("block w-full h-full", interactive && "cursor-grab active:cursor-grabbing touch-none", classes)}
 		/>
 	);
 }

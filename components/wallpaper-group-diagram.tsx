@@ -108,7 +108,8 @@ const DIAGRAM_BASE = "/wallpaper-groups/";
  * the library sidebar tooltip and the /play symmetry panel so both show the exact same images. `size` is
  * the per-diagram square in px (sidebar tooltip 104; the compact HUD panel passes a smaller value).
  */
-export function WallpaperGroupDiagrams({ group, size = 104 }: { group: WallpaperGroup; size?: number }) {
+/** `phoneSize` is the square on a phone, where the diagrams share a canvas corner (the /play badge). */
+export function WallpaperGroupDiagrams({ group, size = 104, phoneSize = size }: { group: WallpaperGroup; size?: number; phoneSize?: number }) {
 	const diagrams = diagramsForGroup(group);
 	// 4 or 5 diagrams read best as a block two or three wide; 1/2/3 sit in a single row.
 	const cols = diagrams.length >= 4 ? 3 : diagrams.length;
@@ -126,8 +127,8 @@ export function WallpaperGroupDiagrams({ group, size = 104 }: { group: Wallpaper
 							alt={`${group} cell diagram on a ${d.lattice} lattice`}
 							width={size}
 							height={size}
-							style={{ width: size, height: size }}
-							className="block object-contain"
+							style={{ "--size": `${size}px`, "--phone-size": `${phoneSize}px` } as CSSProperties}
+							className="block size-[var(--size)] object-contain max-md:size-[var(--phone-size)]"
 						/>
 					</span>
 					<figcaption className="text-[10px] text-fg-muted">{d.lattice}</figcaption>

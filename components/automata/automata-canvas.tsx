@@ -26,6 +26,7 @@ import { topologyDef } from "@/lib/automata/topology";
 import { syncCanvasSize } from "@/lib/render/canvasSize";
 import { ZOOM_MAX, ZOOM_MIN, ZOOM_RESET, ZOOM_WHEEL_FACTOR, wheelDeltaPx } from "@/lib/render/viewControls";
 import { useAutomata } from "@/lib/stores/automata";
+import { onViewReset, TouchGestures } from "@/lib/render/touchGestures";
 
 const MAX_VISIBLE_CELLS = 60_000;
 
@@ -34,9 +35,15 @@ interface AutomataCanvasProps {
 	plan: BoardPlan | null;
 	/** The shared board. Owned by useAutomatonEngine; this component only reads and draws it. */
 	engineRef: RefObject<AutomatonEngine | null>;
+	/**
+	 * A finger's tap toggles the cell under it, as Shift+click does. For the phone's Paint toggle: a
+	 * finger has no Shift. A drag still pans, so painting never costs the
+	 * reader the ability to move the board. Off by default, and nothing else changes while it is off.
+	 */
+	paintOnTap?: boolean;
 }
 
-export function AutomataCanvas({ plan, engineRef }: AutomataCanvasProps) {
+export function AutomataCanvas({ plan, engineRef, paintOnTap = false }: AutomataCanvasProps) {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	// A 2D canvas stacked over the WebGL one for the explanatory overlays (lattice, gluing arrows). They
 	// are a dozen dashed lines and four arrowheads; a second shader would be work for nothing.
@@ -64,10 +71,12 @@ export function AutomataCanvas({ plan, engineRef }: AutomataCanvasProps) {
 	const cfg = useAutomata();
 	const cfgRef = useRef(cfg);
 	const planRef = useRef(plan);
+	const paintOnTapRef = useRef(paintOnTap);
 	useEffect(() => {
 		cfgRef.current = cfg;
 		planRef.current = plan;
-	}, [cfg, plan]);
+		paintOnTapRef.current = paintOnTap;
+	}, [cfg, plan, paintOnTap]);
 
 	// ── GL setup ────────────────────────────────────────────────────────────────────────────────────
 	useEffect(() => {
@@ -144,8 +153,41 @@ export function AutomataCanvas({ plan, engineRef }: AutomataCanvasProps) {
 		const canvas = canvasRef.current;
 		if (!canvas) return;
 
+		// Home framing, the one a new board gets. The desktop has no gesture for it; a finger gets the
+		// double-tap and the phone's Reset button, since a pinch strays far more easily than the wheel.
+		const resetCam = () => {
+			camRef.current.zoom = ZOOM_RESET;
+			camRef.current.x = 0;
+			camRef.current.y = 0;
+		};
+		// Fingers (lib/render/touchGestures.ts): two pinch-zoom and pan about their midpoint, clamped to
+		// the wheel's range. No twist: the desktop has no rotate here either.
+		const touch = new TouchGestures(undefined, {
+			pinchStart: () => {
+				dragRef.current.active = false;
+			},
+			pinch: ({ from, to, scale }) => {
+				const cam = camRef.current;
+				const next = Math.max(ZOOM_MIN / 4, Math.min(ZOOM_MAX * 4, cam.zoom * scale));
+				const k = next / cam.zoom;
+				cam.x = to.x - k * (from.x - cam.x);
+				cam.y = to.y - k * (from.y - cam.y);
+				cam.zoom = next;
+			},
+			// In paint mode a tap flips a tile, so two quick taps are two flips, never a reset (the Reset
+			// button stays).
+			tap: (x, y) => {
+				if (paintOnTapRef.current) paintAt(x, y);
+			},
+			doubleTap: () => {
+				if (!paintOnTapRef.current) resetCam();
+			},
+		});
+		const offTouch = touch.attach(canvas);
+		const offReset = onViewReset(resetCam);
+
 		const onDown = (e: PointerEvent) => {
-			if (e.button === 1 || e.button === 2) return;
+			if (e.button === 1 || e.button === 2 || touch.pinching) return;
 			// Shift-click paints a cell instead of panning — the fastest way to poke a pattern.
 			if (e.shiftKey) {
 				paintAt(e.offsetX, e.offsetY);
@@ -155,6 +197,7 @@ export function AutomataCanvas({ plan, engineRef }: AutomataCanvasProps) {
 			canvas.setPointerCapture(e.pointerId);
 		};
 		const onMove = (e: PointerEvent) => {
+			if (touch.pinching) return;
 			const d = dragRef.current;
 			if (!d.active) return;
 			camRef.current.x += e.clientX - d.lastX;
@@ -228,6 +271,8 @@ export function AutomataCanvas({ plan, engineRef }: AutomataCanvasProps) {
 		canvas.addEventListener("pointercancel", onUp);
 		canvas.addEventListener("wheel", onWheel, { passive: false });
 		return () => {
+			offTouch();
+			offReset();
 			canvas.removeEventListener("pointerdown", onDown);
 			canvas.removeEventListener("pointermove", onMove);
 			canvas.removeEventListener("pointerup", onUp);

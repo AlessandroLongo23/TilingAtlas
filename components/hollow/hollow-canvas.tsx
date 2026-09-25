@@ -10,6 +10,7 @@ import {
 	type HollowStyle,
 	type HollowView,
 } from "@/lib/hollow/render";
+import { onViewReset, TouchGestures } from "@/lib/render/touchGestures";
 import { cn } from "@/lib/utils/cn";
 
 // The hollow-tiling renderer, sibling of FreedrawCanvas and HyperbolicDevelopedCanvas. A hollow
@@ -83,13 +84,41 @@ export function HollowCanvas({ patchId, style, interactive = true, className, mo
 		let lx = 0;
 		let ly = 0;
 		const repaint = () => force((n) => n + 1);
+		// Home: the fit a fresh patch gets. The desktop has no gesture for it (the wheel never strays
+		// far); a finger gets the double-tap and the phone's Reset button, since a pinch easily does.
+		const reset = () => {
+			viewRef.current = fitHollowView(patch, cv.clientWidth, cv.clientHeight);
+			repaint();
+		};
+		// Fingers (lib/render/touchGestures.ts): two pinch and pan about their midpoint. No twist, as
+		// this view has no rotation for Shift+wheel to turn either.
+		const touch = new TouchGestures(undefined, {
+			pinchStart: () => {
+				dragging = false;
+			},
+			pinch: ({ from, to, scale }) => {
+				const v = viewRef.current;
+				if (!v) return;
+				const wx = v.cx + from.x / v.zoom;
+				const wy = v.cy - from.y / v.zoom;
+				v.zoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, v.zoom * scale));
+				v.cx = wx - to.x / v.zoom;
+				v.cy = wy + to.y / v.zoom;
+				repaint();
+			},
+			doubleTap: reset,
+		});
+		const offTouch = touch.attach(cv);
+		const offReset = onViewReset(reset);
 		const onDown = (e: PointerEvent) => {
+			if (touch.pinching) return;
 			dragging = true;
 			lx = e.clientX;
 			ly = e.clientY;
 			cv.setPointerCapture(e.pointerId);
 		};
 		const onMove = (e: PointerEvent) => {
+			if (touch.pinching) return;
 			const v = viewRef.current;
 			if (!dragging || !v) return;
 			v.cx -= (e.clientX - lx) / v.zoom;
@@ -117,11 +146,15 @@ export function HollowCanvas({ patchId, style, interactive = true, className, mo
 		cv.addEventListener("pointerdown", onDown);
 		cv.addEventListener("pointermove", onMove);
 		cv.addEventListener("pointerup", onUp);
+		cv.addEventListener("pointercancel", onUp);
 		cv.addEventListener("wheel", onWheel, { passive: false });
 		return () => {
+			offTouch();
+			offReset();
 			cv.removeEventListener("pointerdown", onDown);
 			cv.removeEventListener("pointermove", onMove);
 			cv.removeEventListener("pointerup", onUp);
+			cv.removeEventListener("pointercancel", onUp);
 			cv.removeEventListener("wheel", onWheel);
 		};
 	}, [patch, interactive]);
@@ -147,7 +180,7 @@ export function HollowCanvas({ patchId, style, interactive = true, className, mo
 	return (
 		<canvas
 			ref={ref}
-			className={cn("h-full w-full", interactive && "cursor-grab active:cursor-grabbing", className)}
+			className={cn("h-full w-full", interactive && "cursor-grab active:cursor-grabbing touch-none", className)}
 			data-testid="hollow-canvas"
 		/>
 	);

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import { TILE_HSL_LIGHT_PCT, TILE_HSL_SAT_01 } from "@/lib/render/tilePalette";
 import { cn } from "@/lib/utils/cn";
 import { useCardActivation } from "@/lib/hooks/useCardActivation";
+import { CardDoneChip } from "@/components/card-done-chip";
 import { useInViewMount } from "@/lib/hooks/useInViewMount";
 import { useAperiodicView, type AperiodicFrame, type HomeBox } from "@/lib/hooks/useAperiodicView";
 import { hatPatch } from "@/lib/render/hatPatch";
@@ -99,7 +100,7 @@ export function InteractiveHatMini() {
 }
 
 function HatSurface() {
-	const { active, hostProps } = useCardActivation();
+	const { active, hostProps, deactivate } = useCardActivation();
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const glRef = useRef<SubRosaGL | null>(null);
 	const modeRef = useRef<"init" | "gl" | "2d">("init");
@@ -213,8 +214,9 @@ function HatSurface() {
 			aria-label="Interactive hat tiling — drag to pan, scroll to zoom"
 			{...hostProps}
 			// The canvas below carries the pointer handlers, so a click there would focus this host on its
-			// way up anyway; doing it explicitly keeps activation independent of pointer capture.
-			onPointerDown={(e) => e.currentTarget.focus()}
+			// way up anyway; doing it explicitly keeps activation independent of pointer capture. A finger
+			// activates on a completed tap instead (useCardActivation), or every scroll swipe would.
+			onPointerDown={(e) => e.pointerType !== "touch" && e.currentTarget.focus()}
 			className="absolute inset-0 select-none overflow-hidden outline-none"
 		>
 			<canvas
@@ -222,6 +224,7 @@ function HatSurface() {
 				className={cn("w-full h-full block", active ? "cursor-grab active:cursor-grabbing" : "cursor-pointer")}
 				{...view.handlers}
 			/>
+			<CardDoneChip active={active} onDone={deactivate} />
 		</div>
 	);
 }

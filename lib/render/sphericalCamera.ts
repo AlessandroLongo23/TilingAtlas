@@ -14,6 +14,7 @@
 // across the projection toggle and only the foreshortening changes.
 import * as THREE from "three";
 import { ArcballControls } from "three/examples/jsm/controls/ArcballControls.js";
+import { onViewReset, TouchGestures } from "@/lib/render/touchGestures";
 
 export type SphericalCamera = THREE.PerspectiveCamera | THREE.OrthographicCamera;
 
@@ -78,7 +79,30 @@ export function makeArcball(
 	// definition, so one assignment fixes it. (`_up0` is left alone: reset() pairs it with the
 	// constructor-time camera matrix, and that pair is consistent.)
 	(controls as unknown as { _upState: THREE.Vector3 })._upState.set(0, 1, 0);
+	attachArcballReset(controls, canvas);
 	return controls;
+}
+
+/**
+ * Give a trackball a way home on a touch screen: a double-tap, and the phone's Reset button
+ * (requestViewReset), both back to the view the controls were built with. ArcballControls already
+ * handles one finger (spin) and two (pinch dolly) itself; its own double-tap is `enableFocus`, a
+ * recentring jump that stays off. Mouse input is untouched, so the desktop keeps having no reset here.
+ *
+ * The listeners go when the controls are disposed, which every caller already does.
+ */
+function attachArcballReset(controls: ArcballControls, canvas: HTMLElement): void {
+	const reset = () => {
+		if (controls.enabled) controls.reset();
+	};
+	const offTouch = new TouchGestures(undefined, { doubleTap: reset }).attach(canvas);
+	const offReset = onViewReset(reset);
+	const dispose = controls.dispose.bind(controls);
+	controls.dispose = () => {
+		offReset();
+		offTouch();
+		dispose();
+	};
 }
 
 /** Re-fit either camera type to a viewport aspect (perspective: aspect; orthographic: the frustum). */

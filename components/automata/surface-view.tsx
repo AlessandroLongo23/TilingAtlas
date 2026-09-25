@@ -31,6 +31,7 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { ArcballControls } from "three/examples/jsm/controls/ArcballControls.js";
+import { onViewReset } from "@/lib/render/touchGestures";
 import type { BoardPlan } from "@/lib/automata/board";
 import { automataPalette, hsbToRgb, stateColor } from "@/lib/automata/colors";
 import type { AutomatonEngine } from "@/lib/automata/engine";
@@ -452,6 +453,9 @@ export function SurfaceView({ plan, engineRef }: SurfaceViewProps) {
 		const controls = new ArcballControls(camera, renderer.domElement, scene);
 		controls.enablePan = false;
 		controls.setGizmosVisible(false);
+		// The phone's Reset button (requestViewReset). Fingers need nothing more: ArcballControls spins on
+		// one, dollies on a pinch, and its own double-tap (enableFocus, on here) already recentres.
+		const offReset = onViewReset(() => controls.reset());
 
 		let raf = 0;
 		const draw = () => {
@@ -494,6 +498,7 @@ export function SurfaceView({ plan, engineRef }: SurfaceViewProps) {
 
 		return () => {
 			cancelAnimationFrame(raf);
+			offReset();
 			controls.dispose();
 			geom.dispose();
 			edgeGeom.dispose();

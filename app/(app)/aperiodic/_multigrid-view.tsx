@@ -478,7 +478,9 @@ export function MultigridView({ header }: { header: React.ReactNode }) {
 				</Section>
 			</AperiodicSidebar>
 
-			<div className="flex-1 min-h-0 flex flex-col md:flex-row">
+			{/* `relative` for the FullscreenToggle: the top-right corner of both panels together, which is the
+			    tiling panel's corner side by side and the upper (multigrid) panel's corner stacked on a phone. */}
+			<div className="relative flex-1 min-h-0 flex flex-col md:flex-row">
 				{split && (
 					<div className="relative flex-1 min-h-0 border-b md:border-b-0 md:border-r border-line-subtle">
 						<canvas
@@ -498,8 +500,8 @@ export function MultigridView({ header }: { header: React.ReactNode }) {
 					/>
 					<canvas ref={tilingOverlayRef} className="absolute inset-0 w-full h-full pointer-events-none" />
 					<PanelTag>dual tiling</PanelTag>
-					<FullscreenToggle />
 				</div>
+				<FullscreenToggle />
 			</div>
 		</div>
 	);

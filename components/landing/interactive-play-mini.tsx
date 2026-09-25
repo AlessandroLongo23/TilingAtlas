@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils/cn";
 import { useCardActivation } from "@/lib/hooks/useCardActivation";
+import { CardDoneChip } from "@/components/card-done-chip";
 import { useFlatCellPreview } from "@/lib/hooks/useFlatCellPreview";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 
@@ -15,7 +16,7 @@ import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 const HOME_ZOOM = 44;
 
 export function InteractivePlayMini({ cell }: { cell: TranslationalCellData }) {
-	const { active, hostProps } = useCardActivation();
+	const { active, hostProps, deactivate } = useCardActivation();
 	// homePeriods is unused while homeZoom is set; it is the fallback if that ever comes off.
 	const { hostRef, pointerProps } = useFlatCellPreview({ cell, homePeriods: 4, homeZoom: HOME_ZOOM, active });
 
@@ -30,6 +31,8 @@ export function InteractivePlayMini({ cell }: { cell: TranslationalCellData }) {
 				"absolute inset-0 select-none overflow-hidden outline-none",
 				active ? "cursor-grab" : "cursor-pointer",
 			)}
-		/>
+		>
+			<CardDoneChip active={active} onDone={deactivate} />
+		</div>
 	);
 }

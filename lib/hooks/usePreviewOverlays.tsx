@@ -137,6 +137,8 @@ export function useCardOverlays(
 ): {
 	overlays: OverlayState;
 	onOverlayKeyDown: (e: React.KeyboardEvent<HTMLElement>) => void;
+	/** Flip one overlay on this card, as its key does while the card holds focus. */
+	toggle: (name: OverlayName) => void;
 } {
 	const scope = useContext(ScopeContext);
 	// A card with no provider keeps its own exceptions, so a one-off preview outside any scope still
@@ -164,13 +166,8 @@ export function useCardOverlays(
 	const overlaysRef = useRef(overlays);
 	overlaysRef.current = overlays;
 
-	const onOverlayKeyDown = useCallback(
-		(e: React.KeyboardEvent<HTMLElement>) => {
-			if (e.metaKey || e.ctrlKey || e.altKey) return;
-			const name = OVERLAY_KEYS[e.key.toLowerCase() as keyof typeof OVERLAY_KEYS];
-			if (!name) return;
-			e.preventDefault();
-			e.stopPropagation();
+	const toggle = useCallback(
+		(name: OverlayName) => {
 			const showing = overlaysRef.current[name];
 			if (scope) scope.toggleOne(cardId, name, showing);
 			else setSolo((s) => ({ ...s, [name]: !showing }));
@@ -178,5 +175,17 @@ export function useCardOverlays(
 		[scope, cardId],
 	);
 
-	return { overlays, onOverlayKeyDown };
+	const onOverlayKeyDown = useCallback(
+		(e: React.KeyboardEvent<HTMLElement>) => {
+			if (e.metaKey || e.ctrlKey || e.altKey) return;
+			const name = OVERLAY_KEYS[e.key.toLowerCase() as keyof typeof OVERLAY_KEYS];
+			if (!name) return;
+			e.preventDefault();
+			e.stopPropagation();
+			toggle(name);
+		},
+		[toggle],
+	);
+
+	return { overlays, onOverlayKeyDown, toggle };
 }

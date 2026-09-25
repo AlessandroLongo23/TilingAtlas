@@ -46,6 +46,8 @@ import {
 	zoomAtPoint,
 } from "@/lib/render/viewControls";
 import { screenToWorld } from "@/lib/utils/canvasPick";
+import { onViewReset, useTouchGestures } from "@/lib/render/touchGestures";
+import { endPinchPlayView, pinchPlayView, resetPlayViewFully } from "@/lib/render/playView";
 import type { SymmetryData } from "@/lib/classes/symmetry/types";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 
@@ -353,9 +355,33 @@ export function StudioCanvas({ cell, cellId, symmetryData, onStats }: Props) {
 		| null
 	>(null);
 
+	// Fingers. Two pinch, pan and twist the shared /play view whatever the tool (a finger has no middle
+	// button to pan with), and a double-tap is the Select tool's double-click reset. A finger that might
+	// be the first of two must not edit anything yet, so with an editing tool the touch press is held in
+	// `pendingRef` and the tool only starts once that finger moves or lifts on its own.
+	const pendingRef = useRef<{ world: Pt; x: number; y: number } | null>(null);
+	const touch = useTouchGestures(canvasRef, {
+		pinchStart: () => cancelGesture(),
+		pinch: (step) => {
+			pinchPlayView(step);
+			dirtyRef.current = true;
+		},
+		pinchEnd: endPinchPlayView,
+		doubleTap: () => {
+			if (tool === "select") resetFully();
+		},
+	});
+
+	/** Start the held finger's tool gesture where it first touched down. */
+	const flushPending = (built: BuildResult) => {
+		const at = pendingRef.current;
+		pendingRef.current = null;
+		if (at) beginToolGesture(built, at.world);
+	};
+
 	const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
 		const built = builtRef.current;
-		if (!built) return;
+		if (!built || touch.pinching) return;
 		e.currentTarget.setPointerCapture(e.pointerId);
 		const panButton = e.button !== 0 || tool === "select";
 		if (panButton) {
@@ -364,10 +390,18 @@ export function StudioCanvas({ cell, cellId, symmetryData, onStats }: Props) {
 		}
 		const world = toWorld(e.clientX, e.clientY);
 		if (!world) return;
+		if (e.pointerType === "touch") {
+			pendingRef.current = { world, x: e.clientX, y: e.clientY };
+			return;
+		}
 		beginToolGesture(built, world);
 	};
 
 	const onPointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+		if (touch.pinching) return;
+		// A few px of travel settles it: one finger, dragging. (Less is the jitter of a finger at rest.)
+		const held = pendingRef.current;
+		if (held && builtRef.current && Math.hypot(e.clientX - held.x, e.clientY - held.y) > 8) flushPending(builtRef.current);
 		const g = gestureRef.current;
 		if (g?.kind === "pan") {
 			// Target AND live together, and in SCREEN px with no rotation undone: `controls.offset` is a
@@ -398,6 +432,9 @@ export function StudioCanvas({ cell, cellId, symmetryData, onStats }: Props) {
 
 	const onPointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
 		e.currentTarget.releasePointerCapture(e.pointerId);
+		// A finger that lifted without moving was a tap: the tool acts on it now.
+		if (pendingRef.current && builtRef.current && e.type !== "pointercancel") flushPending(builtRef.current);
+		pendingRef.current = null;
 		const g = gestureRef.current;
 		gestureRef.current = null;
 		if (!g || g.kind === "pan") return;
@@ -674,6 +711,23 @@ export function StudioCanvas({ cell, cellId, symmetryData, onStats }: Props) {
 		c.targetOffset.x = 0;
 		c.targetOffset.y = 0;
 		dirtyRef.current = true;
+	};
+	// A finger's reset is the whole view, the angle included; so is the phone's Reset button.
+	const resetFully = () => {
+		resetPlayViewFully();
+		dirtyRef.current = true;
+	};
+	useEffect(() => onViewReset(resetFully), []);
+	// A second finger turns whatever the first one started into a view gesture: its half-made edit is
+	// dropped (nothing was committed, so there is nothing to undo) and the patch redrawn as it was.
+	const cancelGesture = () => {
+		pendingRef.current = null;
+		const g = gestureRef.current;
+		gestureRef.current = null;
+		if (g && g.kind !== "pan" && previewRef.current) {
+			previewRef.current = null;
+			rebuild();
+		}
 	};
 
 	const cursor =

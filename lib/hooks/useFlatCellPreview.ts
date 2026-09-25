@@ -17,6 +17,7 @@ import {
 	accumulateDetents,
 	defaultZoomForCell,
 	makeCardControls,
+	pinchCardControls,
 	resetCardControls,
 	stepCardControls,
 	wheelDeltaPx,
@@ -25,6 +26,7 @@ import {
 	type CardControls,
 } from "@/lib/render/viewControls";
 import { parseBaseCell, type TranslationalCellData } from "@/lib/utils/renderTiling";
+import { useTouchGestures } from "@/lib/render/touchGestures";
 
 // A live Euclidean tiling patch on a host element: the /play flat shader view (lib/render/flatTilingGL.ts)
 // driven by the shared interaction math (lib/render/viewControls.ts) — drag pans, wheel zooms toward
@@ -104,7 +106,7 @@ export interface FlatCellPreview {
 		onPointerMove: (e: ReactPointerEvent<HTMLElement>) => void;
 		onPointerUp: (e: ReactPointerEvent<HTMLElement>) => void;
 		onPointerCancel: (e: ReactPointerEvent<HTMLElement>) => void;
-		onPointerLeave: () => void;
+		onPointerLeave: (e: ReactPointerEvent<HTMLElement>) => void;
 		onContextMenu: (e: { preventDefault: () => void }) => void;
 	};
 }
@@ -557,6 +559,25 @@ export function useFlatCellPreview({
 		resetCardControls(ctrl, homeZoomRef.current);
 	};
 
+	// Fingers: two pinch, pan and twist on a live card, a double-tap is the right-click reset, and a tap
+	// is the hover a finger does not have (it lights the orbit under it) (lib/render/touchGestures.ts).
+	const touch = useTouchGestures(hostRef, {
+		pinchStart: () => {
+			dragRef.current = null;
+		},
+		pinch: (step) => {
+			const ctrl = controlsRef.current;
+			if (ctrl && activeRef.current) pinchCardControls(ctrl, step);
+		},
+		tap: (x, y) => {
+			const host = hostRef.current;
+			if (host) hoverPxRef.current = { x: x - host.clientWidth / 2, y: y - host.clientHeight / 2 };
+		},
+		doubleTap: () => {
+			if (activeRef.current) resetView();
+		},
+	});
+
 	const onPointerDown = (e: ReactPointerEvent<HTMLElement>) => {
 		if (!interactiveRef.current) return;
 		if (e.button === 2) {
@@ -566,11 +587,9 @@ export function useFlatCellPreview({
 			return;
 		}
 		if (e.button !== 0) return;
-		if (!activeRef.current) {
-			// First click activates (via focus — see useCardActivation); it deliberately does NOT start a
-			// pan, so an activation click never jolts the view.
-			return;
-		}
+		// First click activates (via focus — see useCardActivation); it deliberately does NOT start a
+		// pan, so an activation click never jolts the view.
+		if (!activeRef.current || touch.pinching) return;
 		dragRef.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
 		(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
 	};
@@ -579,13 +598,16 @@ export function useFlatCellPreview({
 		// Orbit hover tracks the pointer whether or not the surface is active: hovering changes nothing
 		// but the highlight, so gating it behind a click would only make the card feel dead. It tracks on
 		// an INERT surface too — an inert card still shows its orbits, and a highlight that follows the
-		// pointer is not an input, it is a readout.
-		const rect = e.currentTarget.getBoundingClientRect();
-		hoverPxRef.current = {
-			x: e.clientX - rect.left - rect.width / 2,
-			y: e.clientY - rect.top - rect.height / 2,
-		};
+		// pointer is not an input, it is a readout. A finger's readout is its tap (above).
+		if (e.pointerType !== "touch") {
+			const rect = e.currentTarget.getBoundingClientRect();
+			hoverPxRef.current = {
+				x: e.clientX - rect.left - rect.width / 2,
+				y: e.clientY - rect.top - rect.height / 2,
+			};
+		}
 
+		if (touch.pinching) return;
 		const drag = dragRef.current;
 		if (!drag || drag.id !== e.pointerId) return;
 		const ctrl = controlsRef.current;
@@ -610,7 +632,8 @@ export function useFlatCellPreview({
 			onPointerMove,
 			onPointerUp,
 			onPointerCancel: onPointerUp,
-			onPointerLeave: () => { hoverPxRef.current = null; },
+			// A finger "leaves" on every lift; its tap readout stays until the next tap.
+			onPointerLeave: (e: ReactPointerEvent<HTMLElement>) => { if (e.pointerType !== "touch") hoverPxRef.current = null; },
 			// Right-click is the reset gesture, so the menu is suppressed where there is one to run. An
 			// inert surface has no reset, and swallowing the browser's menu there would take something
 			// away and give nothing back.

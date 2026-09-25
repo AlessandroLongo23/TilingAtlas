@@ -39,7 +39,6 @@ import {
 import {
 	ZOOM_MIN,
 	ZOOM_MAX,
-	ZOOM_RESET,
 	ZOOM_WHEEL_FACTOR,
 	ROTATE_SNAP_DEG,
 	ROTATE_PX_PER_STEP,
@@ -48,6 +47,8 @@ import {
 	shortestDeltaDeg,
 	wheelDeltaPx,
 } from "@/lib/render/viewControls";
+import { onViewReset, TouchGestures } from "@/lib/render/touchGestures";
+import { endPinchPlayView, pinchPlayView, playTwisting, resetPlayView, resetPlayViewFully } from "@/lib/render/playView";
 import { setIslamicNoiseWorldOffset } from "@/utils/islamicNoise";
 import { TilingInfo } from "./tiling-info";
 import type { TilingSpec } from "@/lib/services/tilingSpec";
@@ -305,6 +306,9 @@ export function Canvas({
 	useEffect(() => {
 		propsRef.current = { width, height, translationalCell, translationalCellId, paramCell, symmetryData, orbitData, cellHasTiles };
 	}, [width, height, translationalCell, translationalCellId, paramCell, symmetryData, orbitData, cellHasTiles]);
+
+	// The phone's Reset button broadcasts; this layer owns /play's shared view, so it answers.
+	useEffect(() => onViewReset(resetPlayViewFully), []);
 
 	// Clear the Command-scrub "move" cursor when Command is released (or the window blurs) without another
 	// mouse move to clear it in mouseMoved. Cosmetic: the scrub itself is driven entirely by mouseMoved.
@@ -642,9 +646,33 @@ export function Canvas({
 			// frames and has to put it back exactly, so record it rather than assuming 1.
 			let baseDensity = 1;
 
+			// Fingers on the input layer: two pinch-zoom, pan and twist, a double-tap resets. p5 sees every
+			// finger as the mouse and cannot tell them apart, so its pan stands down whenever two are down.
+			// A twist turns the view the way the Shift+wheel does (the disk: the way the bare wheel does).
+			const touch = new TouchGestures(undefined, {
+				pinchStart: () => {
+					grabRef.current = false;
+					pressPosRef.current = null;
+				},
+				pinch: pinchPlayView,
+				pinchEnd: endPinchPlayView,
+				doubleTap: resetPlayViewFully,
+			});
+			// Set by a touch press; tells the draw loop's pan that pmouse is stale this frame (see there).
+			let touchGrabFresh = false;
+
 			p5.setup = () => {
 				const { w, h } = hostBox();
 				p5.createCanvas(w, h);
+				// Listeners on the canvas itself run before p5's own, which sit on the window: by the time
+				// mousePressed sees a second finger, `touch.pinching` already says so. pointercancel is not
+				// one of p5's events at all, so a cancelled touch would otherwise leave the pan latched.
+				const el = p5.canvas as HTMLCanvasElement;
+				touch.attach(el);
+				el.addEventListener("pointercancel", () => {
+					grabRef.current = false;
+					pressPosRef.current = null;
+				});
 				baseDensity = p5.pixelDensity();
 				prevRef.current.width = w;
 				prevRef.current.height = h;
@@ -674,7 +702,8 @@ export function Canvas({
 				// notch. Snap once within a hair to stop perpetual micro-updates and keep the value bounded; the
 				// snap is a whole number of turns off the target, which is identity for the periodic consumers
 				// (overlays + pan-compensation use cos/sin of the per-frame delta).
-				{
+				// A two-finger twist holds the live angle itself and hands the store its result on release.
+				if (!playTwisting()) {
 					const dRot = shortestDeltaDeg((cfg.rotation || 0) - ctrl.rotation);
 					if (Math.abs(dRot) < 0.05) ctrl.rotation = cfg.rotation || 0;
 					else ctrl.rotation += dRot * ROTATE_DAMP;
@@ -905,9 +934,15 @@ export function Canvas({
 				}
 
 				if (grabRef.current) {
-					const mouse = new Vector(p5.mouseX, p5.mouseY);
-					const prevMouse = new Vector(p5.pmouseX, p5.pmouseY);
-					ctrl.targetOffset.add(Vector.sub(mouse, prevMouse));
+					// A finger lands wherever it likes, but pmouseX still holds where the LAST finger lifted,
+					// so the first frame of a touch pan would jump the view by the gap. Skip that one frame;
+					// from the next, pmouse is the press point. (A mouse arrives where it already was.)
+					if (touchGrabFresh) touchGrabFresh = false;
+					else {
+						const mouse = new Vector(p5.mouseX, p5.mouseY);
+						const prevMouse = new Vector(p5.pmouseX, p5.pmouseY);
+						ctrl.targetOffset.add(Vector.sub(mouse, prevMouse));
+					}
 				}
 
 				if (cfg.exportGraph && tiling) {
@@ -933,14 +968,19 @@ export function Canvas({
 				if (event?.button === 2) {
 					event.preventDefault();
 					event.stopPropagation();
-					ctrl.targetOffset.set(new Vector(0, 0));
-					useConfiguration.setState({ controls: { ...ctrl, targetZoom: Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, ZOOM_RESET)) } });
-					// Hyperbolic: also recentre the disk view (right-click resets, as in the flat view).
-					if (cfg.hyperbolic) useConfiguration.setState({ hyperbolicResetView: true });
+					// Hyperbolic: also recentres the disk view (right-click resets, as in the flat view).
+					resetPlayView();
 					return;
 				}
+				// The canvas's own touch listener (setup) saw this finger first. A second finger is a pinch,
+				// not a new pan.
+				if (touch.pinching) return;
 				grabRef.current = true;
-				pressPosRef.current = { x: p5.mouseX, y: p5.mouseY };
+				// A finger's tap does not centre: on a phone a tap is how you dismiss things, and it is the
+				// first half of the double-tap reset. The pan above is unaffected.
+				const isTouch = !!event && (event as PointerEvent).pointerType === "touch";
+				touchGrabFresh = isTouch;
+				pressPosRef.current = isTouch ? null : { x: p5.mouseX, y: p5.mouseY };
 			};
 
 			// Centre the view on the tile under the cursor, in both the flat and inversive views. Operates in
@@ -1165,16 +1205,18 @@ export function Canvas({
 			) : null}
 			<div
 				ref={containerRef}
-				className="relative z-[1] cursor-pointer"
+				className="relative z-[1] cursor-pointer touch-none"
 				role="application"
 				onContextMenu={(e) => e.preventDefault()}
 			/>
-			<div className="absolute top-4 left-4 z-20">
+			<div className="absolute top-4 left-4 z-20 max-md:top-3 max-md:left-3">
 				<TilingInfo spec={spec} vcs={vcs} />
 			</div>
 
 			{showSymmetryInfo ? (
-				<div className="absolute top-4 right-4 z-20 flex flex-col items-end gap-2 rounded-xl bg-surface-raised/95 px-3 py-2 text-right shadow-sm ring-1 ring-line-subtle">
+				// On a phone the corner belongs to the reset and fullscreen buttons, so the badge sits under
+				// them, smaller, with 44px diagrams.
+				<div className="absolute top-4 right-4 z-20 flex flex-col items-end gap-2 rounded-xl bg-surface-raised/95 px-3 py-2 text-right shadow-sm ring-1 ring-line-subtle max-md:top-16 max-md:right-3 max-md:gap-1.5 max-md:px-2 max-md:py-1.5">
 					<div className="flex flex-col items-end gap-1">
 						<span className="text-sm font-bold leading-none text-fg">
 							Group <span className="font-mono">{symmetryData.group}</span>
@@ -1186,7 +1228,7 @@ export function Canvas({
 					</div>
 					{/* The SAME Wikipedia cell diagram(s) the library sidebar shows, inline and always visible —
 					    no hover needed. Smaller square than the sidebar tooltip so the HUD stays compact. */}
-					<WallpaperGroupDiagrams group={symmetryData.group} size={84} />
+					<WallpaperGroupDiagrams group={symmetryData.group} size={84} phoneSize={44} />
 				</div>
 			) : null}
 
