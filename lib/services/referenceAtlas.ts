@@ -778,7 +778,21 @@ export function familyOfSub(sub: string): SubFamily | null {
 	return null;
 }
 
-export function subOf(t: {
+// A record's sub-axis never changes once referenceToCatalogue has built it, and /play asks for it over
+// the whole corpus every time a shelf lands (the sort, the loaded tiers, the tree's grouping): tens of
+// thousands of string walks per shelf on a hyperbolic open. Worked out once per record.
+const SUB_OF = new WeakMap<object, string>();
+
+export function subOf(t: Parameters<typeof subOfRecord>[0]): string {
+	let sub = SUB_OF.get(t);
+	if (sub === undefined) {
+		sub = subOfRecord(t);
+		SUB_OF.set(t, sub);
+	}
+	return sub;
+}
+
+function subOfRecord(t: {
 	source?: ReferenceTiling["source"];
 	/** The bubble shelf's lattice. A bare string and not the pattern, so the sub axis costs no geometry
 	 *  and never fires the lazy renderCell accessor. */
@@ -867,6 +881,7 @@ function ranks() {
 	return RANKS;
 }
 const rank = (m: Map<string, number>, key: string) => m.get(key) ?? m.size;
+const DISPLAY_RANKS = new WeakMap<object, [number, number, number]>();
 
 export function compareCatalogueDisplayOrder(a: CatalogueTiling, b: CatalogueTiling): number {
 	const r = ranks();
@@ -894,14 +909,15 @@ export function compareCatalogueDisplayOrder(a: CatalogueTiling, b: CatalogueTil
  */
 export function sortCatalogueForDisplay<T extends CatalogueTiling>(rows: readonly T[]): T[] {
 	const r = ranks();
-	const keyed = rows.map((t) => ({
-		t,
-		dec: rank(r.dec, decorationOf(t)),
-		cls: rank(r.cls, tileClassOf(t)),
-		sub: rank(r.sub, subOf(t)),
-		k: t.k,
-		key: t.canonicalKey,
-	}));
+	const keyed = rows.map((t) => {
+		// Once per record, not once per sort: /play re-sorts the whole corpus each time shelves land.
+		let ranked = DISPLAY_RANKS.get(t);
+		if (!ranked) {
+			ranked = [rank(r.dec, decorationOf(t)), rank(r.cls, tileClassOf(t)), rank(r.sub, subOf(t))];
+			DISPLAY_RANKS.set(t, ranked);
+		}
+		return { t, dec: ranked[0], cls: ranked[1], sub: ranked[2], k: t.k, key: t.canonicalKey };
+	});
 	keyed.sort((x, y) =>
 		x.dec - y.dec ||
 		x.cls - y.cls ||

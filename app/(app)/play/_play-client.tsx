@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
+import { useMainThreadSettled } from "@/lib/hooks/useMainThreadSettled";
 import { DEFAULT_FILL_AMOUNT } from "@/lib/render/tilePalette";
 import { useSearchParams } from "next/navigation";
 import { Camera, Check, ChevronDown, ChevronLeft, ChevronRight, Link2, Maximize, Minimize, PenTool, Shuffle } from "lucide-react";
@@ -216,6 +217,30 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// click). The Supabase certified catalogue is only a fallback while the atlas loads; it is
 	// currently empty (the certified/reference split was retired, the library is unified).
 	const [refList, setRefList] = useState<CatalogueTiling[] | null>(null);
+	// Every shelf lands through here. Shelves that arrive close together are appended in ONE update, in a
+	// transition: each update re-sorts and re-groups the whole corpus, and a hyperbolic open lands several
+	// shelves of tens of thousands of records, which used to lock the canvas against touch for seconds on
+	// a phone while the picture was already up.
+	const pendingRefs = useRef<CatalogueTiling[]>([]);
+	const appendRefs = useCallback((data: readonly ReferenceTiling[]) => {
+		if (data.length === 0) return;
+		const flush = pendingRefs.current.length === 0;
+		// A loop, not push(...data): a colourings shelf holds more records than a call takes arguments.
+		for (const r of data) pendingRefs.current.push(referenceToCatalogue(r));
+		if (!flush) return;
+		setTimeout(() => {
+			const add = pendingRefs.current;
+			pendingRefs.current = [];
+			startTransition(() =>
+				setRefList((prev) => {
+					const base = prev ?? [];
+					const have = new Set(base.map((t) => t.canonicalKey));
+					const fresh = add.filter((t) => !have.has(t.canonicalKey) && !!have.add(t.canonicalKey));
+					return fresh.length ? [...base, ...fresh] : base;
+				}),
+			);
+		}, 40);
+	}, []);
 
 	// ── Tiers that ship but are not loaded ───────────────────────────────────────────────────────────
 	//
@@ -238,15 +263,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	const loadTier = useCallback((tier: UnloadedTier) => {
 		setLoadingTiers((s) => new Set(s).add(tier.key));
 		TIER_LOADER[tier.shelf](tier)
-			.then((data) => {
-				const add = data.map(referenceToCatalogue);
-				setRefList((prev) => {
-					const base = prev ?? [];
-					const have = new Set(base.map((t) => t.canonicalKey));
-					const fresh = add.filter((t) => !have.has(t.canonicalKey));
-					return fresh.length ? [...base, ...fresh] : base;
-				});
-			})
+			.then(appendRefs)
 			// Drop the busy flag either way: a tier that failed has to be clickable again, and one that
 			// succeeded is about to disappear from `unloaded` on the next render anyway.
 			.finally(() => setLoadingTiers((s) => {
@@ -254,7 +271,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				next.delete(tier.key);
 				return next;
 			}));
-	}, []);
+	}, [appendRefs]);
 	useEffect(() => {
 		let alive = true;
 		loadReferenceAtlas()
@@ -288,19 +305,14 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			loader(k)
 				.then((data) => {
 					if (!alive || data.length === 0) return;
-					setRefList((prev) => {
-						const base = prev ?? [];
-						const have = new Set(base.map((t) => t.canonicalKey));
-						const add = data.map(referenceToCatalogue).filter((t) => !have.has(t.canonicalKey));
-						return add.length ? [...base, ...add] : base;
-					});
+					appendRefs(data);
 				})
 				.catch(() => {});
 		}
 		return () => {
 			alive = false;
 		};
-	}, []);
+	}, [appendRefs]);
 
 	// Composable k≥3 tilings live in lazy shards (public/reference-atlas-composable-k{k}.json), not the
 	// main atlas loadReferenceAtlas pulls. If we arrived directly at one (id "composable-k{n}-…", e.g. a
@@ -316,18 +328,13 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		loadComposableAtlasShard(k)
 			.then((data) => {
 				if (!alive || data.length === 0) return;
-				setRefList((prev) => {
-					const base = prev ?? [];
-					const have = new Set(base.map((t) => t.canonicalKey));
-					const add = data.map(referenceToCatalogue).filter((t) => !have.has(t.canonicalKey));
-					return add.length ? [...base, ...add] : base;
-				});
+				appendRefs(data);
 			})
 			.catch(() => {});
 		return () => {
 			alive = false;
 		};
-	}, [requestedKey]);
+	}, [requestedKey, appendRefs]);
 
 	// Period-p k≥3 tilings live in lazy shards (public/reference-atlas-period-k{k}.json). A direct arrival
 	// at one (id "period-family-k{n}-…") fetches that shard. Same shape as the two deep-links below.
@@ -340,18 +347,13 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		loadPeriodAtlasShard(k)
 			.then((data) => {
 				if (!alive || data.length === 0) return;
-				setRefList((prev) => {
-					const base = prev ?? [];
-					const have = new Set(base.map((t) => t.canonicalKey));
-					const add = data.map(referenceToCatalogue).filter((t) => !have.has(t.canonicalKey));
-					return add.length ? [...base, ...add] : base;
-				});
+				appendRefs(data);
 			})
 			.catch(() => {});
 		return () => {
 			alive = false;
 		};
-	}, [requestedKey]);
+	}, [requestedKey, appendRefs]);
 
 	// Isotoxal α-family k≥3 tilings live in lazy shards (public/reference-atlas-isotoxal-k{k}.json). A direct
 	// arrival at one (id "ctrnact-isotoxal-family-k{n}-…", a click from the /library isotoxal shelf) fetches
@@ -365,18 +367,13 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		loadIsotoxalAtlasShard(k)
 			.then((data) => {
 				if (!alive || data.length === 0) return;
-				setRefList((prev) => {
-					const base = prev ?? [];
-					const have = new Set(base.map((t) => t.canonicalKey));
-					const add = data.map(referenceToCatalogue).filter((t) => !have.has(t.canonicalKey));
-					return add.length ? [...base, ...add] : base;
-				});
+				appendRefs(data);
 			})
 			.catch(() => {});
 		return () => {
 			alive = false;
 		};
-	}, [requestedKey]);
+	}, [requestedKey, appendRefs]);
 
 	// MIXED and SCALED deep links. Both shelves grew lazy k tiers without a deep-link resolver here, so a
 	// /library card click on any of them landed on the default tiling (t1001): the id was simply absent
@@ -408,18 +405,13 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		hit.r.load(k)
 			.then((data) => {
 				if (!alive || data.length === 0) return;
-				setRefList((prev) => {
-					const base = prev ?? [];
-					const have = new Set(base.map((t) => t.canonicalKey));
-					const add = data.map(referenceToCatalogue).filter((t) => !have.has(t.canonicalKey));
-					return add.length ? [...base, ...add] : base;
-				});
+				appendRefs(data);
 			})
 			.catch(() => {});
 		return () => {
 			alive = false;
 		};
-	}, [requestedKey]);
+	}, [requestedKey, appendRefs]);
 
 	// Hexagonal-grid decorations run deeper than the atlas ships eagerly: edge systems to k=9 (ids
 	// "fdh-{k}-…") and 3-colorings to k=8 ("colh3-{k}-…"). A direct arrival at one of the lazy slices
@@ -435,18 +427,13 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		load(k)
 			.then((data) => {
 				if (!alive || data.length === 0) return;
-				setRefList((prev) => {
-					const base = prev ?? [];
-					const have = new Set(base.map((t) => t.canonicalKey));
-					const add = data.map(referenceToCatalogue).filter((t) => !have.has(t.canonicalKey));
-					return add.length ? [...base, ...add] : base;
-				});
+				appendRefs(data);
 			})
 			.catch(() => {});
 		return () => {
 			alive = false;
 		};
-	}, [requestedKey]);
+	}, [requestedKey, appendRefs]);
 
 	// Higher-k regular tilings (Čtrnáct, k≥8, id "ctrnact-{kk}_…") live in lazy per-k shards
 	// (public/reference-atlas-k{k}.json), not the base atlas. If we arrived directly at one (a click from
@@ -462,18 +449,13 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		loadReferenceAtlasShard(k)
 			.then((data) => {
 				if (!alive || data.length === 0) return;
-				setRefList((prev) => {
-					const base = prev ?? [];
-					const have = new Set(base.map((t) => t.canonicalKey));
-					const add = data.map(referenceToCatalogue).filter((t) => !have.has(t.canonicalKey));
-					return add.length ? [...base, ...add] : base;
-				});
+				appendRefs(data);
 			})
 			.catch(() => {});
 		return () => {
 			alive = false;
 		};
-	}, [requestedKey]);
+	}, [requestedKey, appendRefs]);
 
 	const working = refList ?? tilings;
 
@@ -494,6 +476,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// Tilings / Edge patterns / Colorings — see decorationOf. Default "tilings", which is where the initial
 	// Euclidean selection lands.
 	const [decoration, setDecoration] = useState<Decoration>("tilings");
+	const settled = useMainThreadSettled(geometry);
 
 	// Scoped to the ACTIVE cell, not the whole manifest: the tree draws these rows beside ones it built
 	// from `geometryList`, which is already filtered to (geometry, decoration), so an unscoped tier is a
@@ -687,18 +670,13 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		loadSphericalFreedrawAtlas()
 			.then((data) => {
 				if (!alive || data.length === 0) return;
-				setRefList((prev) => {
-					const base = prev ?? [];
-					const have = new Set(base.map((t) => t.canonicalKey));
-					const add = data.map(referenceToCatalogue).filter((t) => !have.has(t.canonicalKey));
-					return add.length ? [...base, ...add] : base;
-				});
+				appendRefs(data);
 			})
 			.catch(() => {});
 		return () => {
 			alive = false;
 		};
-	}, [geometry, requestedKey]);
+	}, [geometry, requestedKey, appendRefs]);
 
 	// Hyperbolic edge systems: same lazy pattern as spherical freedraw. The eager k ≤ 9 slice (~3.6 MB)
 	// loads once the Hyperbolic geometry is entered (or a deep-link to an "he…" key arrives); the dense
@@ -708,12 +686,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		let alive = true;
 		const merge = (data: Awaited<ReturnType<typeof loadHyperbolicEdgesAtlas>>) => {
 			if (!alive || data.length === 0) return;
-			setRefList((prev) => {
-				const base = prev ?? [];
-				const have = new Set(base.map((t) => t.canonicalKey));
-				const add = data.map(referenceToCatalogue).filter((t) => !have.has(t.canonicalKey));
-				return add.length ? [...base, ...add] : base;
-			});
+			appendRefs(data);
 		};
 		loadHyperbolicEdgesAtlas().then(merge).catch(() => {});
 		// A deep-link to a lazy-shard he… key (he667-13-…, he46-2-…) also needs its shard fetched so the key
@@ -725,7 +698,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		return () => {
 			alive = false;
 		};
-	}, [geometry, requestedKey]);
+	}, [geometry, requestedKey, appendRefs]);
 
 	// Schwarz boards — same lazy pattern again, but this shelf spans BOTH curved geometries, so the effect
 	// runs under either and pulls that geometry's boards. Record ids are "ss<board>-…" (spherical) and
@@ -738,12 +711,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		let alive = true;
 		const merge = (data: Awaited<ReturnType<typeof loadSphericalSchwarzAtlas>>) => {
 			if (!alive || data.length === 0) return;
-			setRefList((prev) => {
-				const base = prev ?? [];
-				const have = new Set(base.map((t) => t.canonicalKey));
-				const add = data.map(referenceToCatalogue).filter((t) => !have.has(t.canonicalKey));
-				return add.length ? [...base, ...add] : base;
-			});
+			appendRefs(data);
 		};
 		if (wantSph) loadSphericalSchwarzAtlas().then(merge).catch(() => {});
 		if (wantHyp) loadHyperbolicSchwarzAtlas().then(merge).catch(() => {});
@@ -758,7 +726,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		return () => {
 			alive = false;
 		};
-	}, [geometry, requestedKey]);
+	}, [geometry, requestedKey, appendRefs]);
 
 	// Uniform-polyhedron edge systems (prisms, antiprisms, truncated tetrahedron, cuboctahedron, J27) and
 	// the 3.4.n.4 hyperbolic tilings — the same lazy pattern once more, one shelf per curved geometry.
@@ -789,12 +757,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		let alive = true;
 		const merge = (data: Awaited<ReturnType<typeof loadSphericalEdgesAtlas>>) => {
 			if (!alive || data.length === 0) return;
-			setRefList((prev) => {
-				const base = prev ?? [];
-				const have = new Set(base.map((t) => t.canonicalKey));
-				const add = data.map(referenceToCatalogue).filter((t) => !have.has(t.canonicalKey));
-				return add.length ? [...base, ...add] : base;
-			});
+			appendRefs(data);
 		};
 		// These two take ~20 s to fetch and parse (78.5 MB of colourings alone), which is long enough for
 		// `requestedKey` to change under them when /play rewrites its own URL — and the shared `merge`
@@ -803,12 +766,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		// to trigger a merge. So these merge UNCONDITIONALLY: they are append-only and dedup by key.
 		const mergeAlways = (data: ReferenceTiling[]) => {
 			if (data.length === 0) return;
-			setRefList((prev) => {
-				const base = prev ?? [];
-				const have = new Set(base.map((t) => t.canonicalKey));
-				const add = data.map(referenceToCatalogue).filter((t) => !have.has(t.canonicalKey));
-				return add.length ? [...base, ...add] : base;
-			});
+			appendRefs(data);
 		};
 		if (wantSph) {
 			// The polyhedron EDGE systems are decoration "edges"; the polyhedra themselves are tilings.
@@ -891,7 +849,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		return () => {
 			alive = false;
 		};
-	}, [geometry, decoration, requestedKey]);
+	}, [geometry, decoration, requestedKey, appendRefs]);
 
 	// Colored tilings in H² and on S² — the same lazy pattern. The per-base/solid eager slices load once the
 	// matching geometry is entered (or a deep-link "hc…"/"sc…" key arrives); dense shards load per-k below.
@@ -900,12 +858,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		let alive = true;
 		const merge = (data: ReferenceTiling[]) => {
 			if (!alive || data.length === 0) return;
-			setRefList((prev) => {
-				const base = prev ?? [];
-				const have = new Set(base.map((t) => t.canonicalKey));
-				const add = data.map(referenceToCatalogue).filter((t) => !have.has(t.canonicalKey));
-				return add.length ? [...base, ...add] : base;
-			});
+			appendRefs(data);
 		};
 		loadHyperbolicColorsAtlas().then(merge).catch(() => {});
 		const m = requestedKey?.match(/^hc(\d+)-(\d+)-/);
@@ -915,19 +868,14 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		return () => {
 			alive = false;
 		};
-	}, [geometry, requestedKey]);
+	}, [geometry, requestedKey, appendRefs]);
 
 	useEffect(() => {
 		if (geometry !== "spherical" && !requestedKey?.startsWith("sc")) return;
 		let alive = true;
 		const merge = (data: ReferenceTiling[]) => {
 			if (!alive || data.length === 0) return;
-			setRefList((prev) => {
-				const base = prev ?? [];
-				const have = new Set(base.map((t) => t.canonicalKey));
-				const add = data.map(referenceToCatalogue).filter((t) => !have.has(t.canonicalKey));
-				return add.length ? [...base, ...add] : base;
-			});
+			appendRefs(data);
 		};
 		loadSphericalColorsAtlas().then(merge).catch(() => {});
 		const m = requestedKey?.match(/^sc([a-z]+)-(\d+)-/);
@@ -940,7 +888,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		return () => {
 			alive = false;
 		};
-	}, [geometry, requestedKey]);
+	}, [geometry, requestedKey, appendRefs]);
 
 	// Exact wallpaper-symmetry analysis of the selected tiling (fetched cell_codec → analyzeSymmetry),
 	// memoized per canonicalKey; drives the two canvas overlays. Null while loading / for tilings with
@@ -1656,7 +1604,16 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					canStep={!studioActive}
 				/>
 			</div>
-			<div ref={canvasHostRef} className="flex-1 min-w-0 relative">
+			{/* Faded until the page can answer a drag: entering a geometry draws its picture at once and lands
+			    that geometry's catalogue after it (Marek Čtrnáct: "you see the picture right away, but it takes
+			    time until it can be moved"). The canvases only, so the controls never look disabled. */}
+			<div
+				ref={canvasHostRef}
+				className={cn(
+					"flex-1 min-w-0 relative [&_canvas]:transition-[filter,opacity] [&_canvas]:duration-500 motion-reduce:[&_canvas]:transition-none",
+					!settled && "[&_canvas]:opacity-75 [&_canvas]:saturate-[.3]",
+				)}
+			>
 				{/* A squaring has no free angles to flex and no wallpaper group of the source's, so paramCell,
 				    symmetryData and orbitData all go null while it is up: each describes the tiling in the
 				    corner panel, not the one on the canvas. */}
