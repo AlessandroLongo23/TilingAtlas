@@ -19,6 +19,13 @@ name: Announce release on Discord
 on:
   push:
     branches: [master]
+  # By hand, for releases a push failed to announce: posts every release newer than `after`, oldest
+  # first, once the site serves the newest. `gh workflow run release-discord.yml -f after=1.38.0`.
+  workflow_dispatch:
+    inputs:
+      after:
+        description: "The last release Discord already has (MAJOR.MINOR.PATCH)"
+        required: true
 
 # One announcement at a time. Two releases pushed back to back would otherwise race on the poll and
 # could post out of order; never cancel a run in flight, since a cancelled one is a lost message.
@@ -52,8 +59,8 @@ jobs:
           BEFORE="${{ github.event.before }}"
           if [ -z "$NEW" ]; then echo "could not read a version from lib/updates/entries.ts" >&2; exit 1; fi
 
-          OLD=""
-          if [ "$BEFORE" != "0000000000000000000000000000000000000000" ]; then
+          OLD="${{ inputs.after }}"
+          if [ -z "$OLD" ] && [ -n "$BEFORE" ] && [ "$BEFORE" != "0000000000000000000000000000000000000000" ]; then
             git show "$BEFORE:lib/updates/entries.ts" > /tmp/before.ts 2>/dev/null || true
             [ -s /tmp/before.ts ] && OLD="$(newest /tmp/before.ts)" || true
           fi
@@ -82,7 +89,9 @@ jobs:
           # is headroom for a queued build, and timing out is better than announcing a release that
           # a visitor following the link cannot see yet.
           for i in $(seq 1 60); do
-            LIVE="$(curl -fsS --max-time 20 "$SITE/release.json" 2>/dev/null | jq -r '.version // empty' || true)"
+            # -L: the origin can move behind a redirect (tiling-atlas.vercel.app now 307s to
+            # the-tiling-atlas.vercel.app), and the redirect page is not JSON.
+            LIVE="$(curl -fsSL --max-time 20 "$SITE/release.json" 2>/dev/null | jq -r '.version // empty' || true)"
             if [ "$LIVE" = "$WANT" ]; then echo "v$WANT is live after $((i * 15))s."; exit 0; fi
             echo "serving ${LIVE:-nothing}, waiting for v$WANT ($i/60)"
             sleep 15

@@ -25,7 +25,7 @@ import { UPDATES, KIND_ORDER, KIND_LABEL, type Change, type UpdateEntry } from "
 import { compareVersions, releaseLevel } from "@/lib/updates/version";
 
 /** The site the links point at. Overridden by --site or SITE_URL; no trailing slash. */
-const DEFAULT_SITE = "https://tiling-atlas.vercel.app";
+const DEFAULT_SITE = "https://the-tiling-atlas.vercel.app";
 
 /** Discord's own ceilings. An embed description is 4096; stop well short and say so in the message. */
 const DESCRIPTION_MAX = 3800;
