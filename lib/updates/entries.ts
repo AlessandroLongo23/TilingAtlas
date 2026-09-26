@@ -73,6 +73,42 @@ export interface UpdateEntry {
 /** Newest first. tests/updates.test.ts asserts that ordering, and every id below. */
 export const UPDATES: UpdateEntry[] = [
 	{
+		version: "1.39.1",
+		date: "2026-09-26",
+		title: "Fixes to the phone layout",
+		commit: "2dc570f3",
+		changes: [
+			{
+				kind: "perf",
+				text: "**Hyperbolic tilings answer a drag almost at once** while their catalogue loads: the longest freeze on a phone-speed test drops from 2.7 s to 0.6 s. The picture stays faded until it can be moved, as Marek Čtrnáct suggested.",
+				href: "/play?tiling=hyp-6-6-7",
+			},
+			{
+				kind: "changed",
+				text: "**The a.b.c.d boards are called 4-valent boards** in the hyperbolic catalogue.",
+			},
+			{
+				kind: "fix",
+				text: "**Closing a filter sheet on a phone keeps the filters** on /library, /colors and /freedraw, so a copied link or a reload shows the filtered list where it showed everything. Back and Forward after a link out of a sheet now step one page at a time.",
+				href: "/library",
+			},
+			{
+				kind: "changed",
+				text: "**Opening the filters looks the same on every page**, and Reset view and Fullscreen sit together in the top right corner of every canvas.",
+			},
+			{
+				kind: "fix",
+				text: "**Picking a tiling on a phone lowers the sheet** to show the pick on the canvas, on /play, /isohedral, /pentagons, /automata and /aperiodic.",
+				href: "/play",
+			},
+			{
+				kind: "fix",
+				text: "**Leaving the editor keeps your edits on screen**: the canvas stays up for pan and zoom, a revert button beside Edit drops them, and the Done button now reads Close.",
+				href: "/play?tiling=composable-k3-000&ed=1",
+			},
+		],
+	},
+	{
 		version: "1.39.0",
 		date: "2026-09-25",
 		title: "A phone layout for every page",
