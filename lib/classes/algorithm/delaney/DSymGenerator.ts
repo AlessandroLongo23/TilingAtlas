@@ -388,3 +388,47 @@ export function generateCandidateSymbols(
     nodesUsed: maxNodes - budget.nodes,
   };
 }
+
+// ---------------------------------------------------------------------------
+// PART 3 — uniform tilings of ONE vertex figure, in any geometry
+// ---------------------------------------------------------------------------
+
+/**
+ * Every vertex-transitive tiling whose vertices all read `figure` (a cyclic word of face sizes, e.g.
+ * [3, 4, 7, 4]), as distinct minimal D-symbols. Geometry-blind: the figure alone fixes S/E/H, and a
+ * one-vertex-orbit symbol realizes by regular polygons exactly when its figure closes, so no curvature
+ * filter applies. Mirror images merge (plain canonical form), matching the atlas's chirality rule.
+ *
+ * The minimal symbol of a vertex-transitive tiling is the vertex's 2q flags modulo its stabilizer, so
+ * D-sets of size ≤ 2q with one {1,2}-orbit are exhaustive. The walk c, s2s1c, (s2s1)²c, … reads the
+ * faces around the vertex in order, mirrors included.
+ */
+export function uniformTilingsOfFigure(figure: readonly number[]): DSymbol[] {
+  const q = figure.length;
+  const P = [...new Set(figure)].sort((a, b) => a - b);
+  const want = new Set<string>();
+  for (const seq of [[...figure], [...figure].reverse()])
+    for (let i = 0; i < q; i++) want.add([...seq.slice(i), ...seq.slice(0, i)].join('.'));
+
+  const budget = { nodes: 200_000_000 };
+  const out = new Map<string, DSymbol>();
+  for (const [s0, s1, s2] of genDSets(2 * q, budget, makeFeasible(1, feasibleRs(P), feasibleRs([q])))) {
+    const n = s0.length;
+    if (rawComponents(s1, s2, n).length !== 1 || q % rawCycleLen(s1, s2, 0) !== 0) continue;
+    const o01 = rawComponents(s0, s1, n);
+    const m01opts = o01.map((orb) => P.filter((m) => m % rawCycleLen(s0, s1, orb[0]) === 0));
+    for (const m01a of cartesian(m01opts)) {
+      const m01 = new Array(n);
+      o01.forEach((orb, idx) => orb.forEach((c) => (m01[c] = m01a[idx])));
+      const read: number[] = [];
+      for (let c = 0, j = 0; j < q; j++, c = s2[s1[c]]) read.push(m01[c]);
+      if (!want.has(read.join('.'))) continue;
+      const sym = new DSymbol(s0, s1, s2, m01, new Array(n).fill(q));
+      if (!validate(sym).ok) continue;
+      const mi = minimalImage(sym);
+      out.set(mi.canonicalKey(), mi);
+    }
+  }
+  if (budget.nodes <= 0) throw new Error(`uniformTilingsOfFigure(${figure.join('.')}): DFS budget exhausted`);
+  return [...out.values()];
+}

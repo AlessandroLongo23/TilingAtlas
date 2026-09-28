@@ -459,19 +459,19 @@ export function hypPolyMeta(p: HypPolyPattern) {
 	return { id: p.id, config: p.family, edge: p.edge, darts: p.darts, colors: p.stats.sizes.length, certified: p.certified };
 }
 
-/** A vertex figure in its canonical cyclic order: the least of its rotations and reflections, so "4.8.4.3"
- *  and "3.4.8.4" read the same and mirror pairs merge (the shelf's chirality rule). */
-function canonicalFigure(fig: string): string {
-	const s = fig.split(".").map(Number);
-	let best = s;
-	for (const seq of [s, [...s].reverse()])
+/** A vertex figure in its canonical cyclic order: the least of its rotations and reflections, so [4,8,4,3]
+ *  and [3,4,8,4] read the same and mirror pairs merge (the shelf's chirality rule). */
+export function canonicalCycle(s: readonly number[]): number[] {
+	let best = [...s];
+	for (const seq of [[...s], [...s].reverse()])
 		for (let i = 0; i < seq.length; i++) {
 			const r = [...seq.slice(i), ...seq.slice(0, i)];
 			const d = r.findIndex((x, j) => x !== best[j]);
 			if (d >= 0 && r[d] < best[d]) best = r;
 		}
-	return best.join(".");
+	return best;
 }
+const canonicalFigure = (fig: string): string => canonicalCycle(fig.split(".").map(Number)).join(".");
 
 /** Card / search label: the distinct vertex figures of the tiling, e.g. "3.4.8.4" or "3.4.7.4 + 4.7.14".
  *  The polygon sizes alone cannot tell 3.4.8.4 from 3.8.4.8, and the board label is only the multiset,

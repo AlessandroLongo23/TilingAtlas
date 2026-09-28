@@ -17716,3 +17716,33 @@ colour model: every renderer still goes through `tileHueRgb01` / `tileFill` / `t
 (prefixed for the spherical shader), spherical scenes carry hues, and the two stale
 `hsb2rgb(h, 0.4, 1)` copies stay gone, so SVG export and the zoomed-out blend now paint at the canvas's
 48, not 40. The squaring diagram (38) and the compat-graph hover colour (value 72) are back to theirs.
+
+## 2026-09-28: the vertex figure lookup, and 29 truncated configs on the a.b.c.d shelf
+
+Marek asked for a 4-valent selection tool: type a figure, get its geometry, its uniform tilings, the
+lowest k on the shelf. It is `/theory/vertex` (Elements), logic in `lib/tilings/vertex-figure.ts`.
+
+**The uniform count is computed, not read off the shelf.** `uniformTilingsOfFigure` in
+`DSymGenerator.ts` reuses the published D-set enumeration at k = 1 with m12 = valence, m01 from the
+figure's sizes, and keeps a symbol when the walk c, s2s1c, … reads the figure back. No curvature filter:
+a one-orbit symbol realizes by regular polygons exactly when its figure closes. Checked against every
+k = 1 slice of the hyperbolic polygon shelf at valence ≤ 8: 225 (board, figure) pairs, 0 mismatches,
+including 3.6.6.6 = 3. Cost grows ~5× per valence (8: 0.5 s, 10: 7 s), so the page caps at 8.
+
+**Answer to "what are the solutions of a.b.c.d": the a.b.c.d boards hold only tilings whose every vertex
+has the board's multiset**, any cyclic order. Checked over all 1,177,806 records. The 3.4.n.4 and {3,n}
+boards hold every figure closing at their ℓ, so e.g. 3777 is the 3.7.7.7-only part of t7 (both k=2: 1).
+Board counts therefore mix cyclic orders, so the page scans shards on request for the lowest k at which
+the exact figure appears (at every vertex / at some vertex). 3.4.4.7: at some vertex from k = 5 on
+board 7, never at every vertex up to k = 40.
+
+**⚑ Fixed: 29 records shipped a truncated `config`.** A certificate lists one corner per site orbit, so
+a vertex whose stabilizer rotates it carried one period: 3.7.3.7 shipped as "3.7", {5,4} as "5". Every
+one is a k = 1 record on an a.a.b.b or a.a.a.a board; a closure check over all 2,191,775 records on the
+shelf found exactly these 29 and nothing else. `develop_ai1.py` now repeats the period until the figure
+closes; re-developing 3377 and 5555 from Marek's certificates reproduces the shipped darts with the full
+config. The 29 shards were patched in place (`config` only, verified field by field against HEAD).
+
+Not done: forbidden combinations (need the citation for "Arun's paper" from Marek); the sieve and a
+coverage registry; scaled-hybrid links (no such level exists yet). The drop records no per-board search
+range, so the page says "nothing in the corpus", never "proved empty".

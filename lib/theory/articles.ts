@@ -29,6 +29,11 @@ export const THEORY_ELEMENTS: TheoryArticle[] = [
 		title: "Vertex configurations",
 		blurb: "The configuration alphabet per palette: every realizable way the tiles fan around a single vertex, the layer between a palette and a tiling.",
 	},
+	{
+		slug: "vertex",
+		title: "Vertex figure lookup",
+		blurb: "Type a vertex figure such as 3.4.7.4 and get its geometry, its uniform tilings, and every board in the catalogue that carries it, with the lowest k found.",
+	},
 ];
 
 export const THEORY_ARTICLES: TheoryArticle[] = [

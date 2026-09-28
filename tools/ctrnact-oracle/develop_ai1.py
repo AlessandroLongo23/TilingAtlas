@@ -181,7 +181,13 @@ def develop_cert(cert, board, boundR=0.86):
             reasons.append(str(e))
             continue
         census = Counter(f["size"] for f in faces)
-        figures = [".".join(str(tile_size(c)) for c in t["figure"]) for t in cert["types"]]
+        # A certificate lists one corner per site orbit, so a vertex whose stabilizer rotates it carries
+        # one PERIOD of its figure: 3.7.3.7 arrives as 3.7, {5,4} as 5. Repeat it until it closes.
+        figures = []
+        for t in cert["types"]:
+            period = [tile_size(c) for c in t["figure"]]
+            reps = round(TWO_PI / sum(units[f"S{p}"] for p in period))
+            figures.append(".".join(str(p) for p in period * reps))
         return {
             "k": cert.get("k"),
             "base": board.id,
