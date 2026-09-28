@@ -3030,3 +3030,10 @@ On branch `design/instrument`: an even OKLCH tile palette in every renderer (18c
 count fixed from "over 37000" to 2,344,403 (369f7be0); the modern-tool design system on every page,
 with /play's editor folded into one canvas toolbar (58e02ade). ⚑ Page reviews stalled at 6-7/10 after
 three rounds; the open bugs are listed in NOTES 2026-09-24.
+
+## 2026-09-28 — vertex figure lookup; 29 truncated a.b.c.d configs fixed — CC
+
+`/theory/vertex` (ad1e11b5): geometry, computed uniform count (matches all 225 shipped k=1 pairs), the
+boards carrying a figure, and an on-request scan for the lowest k of the exact figure. a.b.c.d boards
+proved multiset-only. 29 k=1 configs shipped one period ("3.7"); developer and shards fixed.
+⚑ Needs Marek: the "Arun's paper" citation and per-board search ranges. NOTES 2026-09-28.
