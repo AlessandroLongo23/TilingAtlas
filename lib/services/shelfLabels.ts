@@ -100,6 +100,9 @@ export const FAMILY_LABEL: Record<string, string> = {
 	// solids, the 3.4.n.4 boards and the halved boards; non-convex is the star shelf alone.
 	"sph-convex": "Convex",
 	"sph-nonconvex": "Non-convex",
+	// The first heading here that is not about regular faces: vertex-transitive and face-transitive, with
+	// faces of any planar shape. See lib/render/nobleSolids.ts.
+	"sph-noble": "Noble",
 	"hyp-half": "Halved {p,q} faces",
 	pent: "Pentagon families",
 	ih: "Isohedral families",
@@ -215,6 +218,10 @@ const NAMED: Record<string, string> = {
 	// non-convex one, because the topology is what these ARE — every other solid in the atlas,
 	// star and non-convex included, is a map on a sphere.
 	"spt-solid": "Toroidal",
+	// The 146 of Hill's classification with the two fissary figures, and the two families that cannot be
+	// listed. Named for what the row holds, since "Noble" is already the heading above both.
+	"nbl-solid": "Noble polyhedra",
+	"nbf-solid": "Noble families",
 	// …and one row per genus above it. Written over a RANGE and not over the genera that happen to
 	// exist today: the search that produces these is still running, a genus with no records simply
 	// never draws a row, and the alternative is a code change every time the run finds a new one.

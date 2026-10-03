@@ -1,3 +1,5 @@
+import { NOBLE_FAMILY_DEFAULTS, type NobleFamilyParams } from "@/lib/render/nobleSolids";
+import type { FaceView } from "@/lib/render/sphericalGeometry";
 import { create } from "zustand";
 import { Vector } from "@/classes/Vector";
 import { BUBBLE_KOCH_LEVELS, DEFAULT_BUBBLE_EDGE_STYLE, type BubbleEdgeStyle } from "@/lib/bubble/edges";
@@ -359,6 +361,15 @@ export interface ConfigurationState {
 	// starFaceRings, which decomposes the odd-winding bands), and the Euclidean hollow tilings
 	// (lib/hollow/render.ts, where it is the canvas fill rule and nothing more).
 	starMod2: boolean;
+	// The parameters of the two infinite families of noble polyhedra (lib/render/nobleSolids.ts): a
+	// disphenoid's box, a stephanoid's n, its (p,q) and its height. One set for all three records, since
+	// only one is ever on screen, and read by the spherical canvas, which rebuilds the solid as they move.
+	nobleParams: NobleFamilyParams;
+	// How much of a polyhedron is FILLED: all of it, the faces round one vertex, or one face, with the
+	// rest left as wireframe; and which vertex CONFIGURATION (lib/render/sphericalGeometry.ts partialFill).
+	// Every flat-faced solid reads it: the reference, non-convex, genus, noble and star shelves.
+	solidFaceView: FaceView;
+	solidFacePick: number;
 
 	// Color params
 	colorParams: ColorParams;
@@ -535,6 +546,9 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	sphericalFreedrawGrid: false,
 	sphStarEdges: "all",
 	starMod2: false,
+	nobleParams: NOBLE_FAMILY_DEFAULTS,
+	solidFaceView: "all" as const,
+	solidFacePick: 0,
 
 	colorParams: { a: 180, b: 0 },
 

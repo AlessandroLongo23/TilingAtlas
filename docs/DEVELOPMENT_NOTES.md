@@ -17746,3 +17746,122 @@ config. The 29 shards were patched in place (`config` only, verified field by fi
 Not done: forbidden combinations (need the citation for "Arun's paper" from Marek); the sieve and a
 coverage registry; scaled-hybrid links (no such level exists yet). The drop records no per-board search
 range, so the page says "nothing in the corpus", never "proved empty".
+
+## 2026-10-02: the noble polyhedra, all of them, and a fill for faces that are not regular
+
+**What shipped.** A Noble heading under Spherical with 151 records: the 146 noble polyhedra of Connor
+Hill's classification (arXiv:2607.28711, 2026-07-30), the two fissary figures his repository models, and
+three parametric records for the infinite families (disphenoids, prismatic and antiprismatic
+stephanoids). AL's directive: the regular-faced remit in `docs/POLYHEDRON_COVERAGE.md` no longer bounds
+the atlas, and that document is amended.
+
+**No coordinates ship.** A noble polyhedron is one orbit of a point group, so a record is a group, a seed
+and one face: `lib/render/nobleData.ts` is 20 KB for 148 solids, against 688 KB of `.off` text in Hill's
+library. `lib/render/nobleSolids.ts` regenerates the vertices as the group applied to the seed and the
+faces as the group applied to the one face. The seed is Hill's parametrisation of each orbit type (his
+Table 1) evaluated at the roots of his minimal polynomials (Appendix B), re-solved to double precision
+by Newton. Each root ships beside its polynomial and `tests/noble-solids.test.ts` evaluates one at the
+other.
+
+**What is taken from Hill's models:** one index list per solid, saying which cycle of the orbit is a
+face. That is not derivable from the paper's tables. His repository is GPL-3.0 and none of its files is
+in this repo. `scripts/build-noble-shelf.ts` reads the models from a clone, regenerates each solid, and
+refuses a record unless the result matches his vertex for vertex (largest gap 1.0e-13) and face for face.
+Faces come out planar to 7e-15 of the circumradius.
+
+**⚑ A wrong record passed that check for twenty minutes.** The first version compared faces as vertex
+SETS. A mirror can carry a face onto the same vertices joined in a different order, so tI-5.6 and rD-5.7,
+which are chiral, were accepted under the full icosahedral group with half their faces replaced by mirror
+images. The edge-in-two-faces test caught it. Faces are compared as cycles now (`cycleKey`), in the
+runtime and in the build, and the group of all 146 then agrees with the symmetry column of the paper.
+
+**Four rows of the paper's Appendix A are wrong**, v1: D-2 printed {9,3} is {3,9}; D-7 printed {5,3} is
+{3,9}; rD-5.2 printed E 180, F 60 is E 120, F 30; tI-5.6 printed {5,5}, E 150 is {6,6}, E 180. Each
+contradicts its own dual row and the models. Asserted in the test, and worth sending to Hill.
+
+**The fill.** `starFaceRings` filled a regular {n/d} in closed form and nothing else; a concave isotoxal
+face took a separate centroid fan inside `flatSolidTriangles`. Both irregular cases now go through
+`lib/render/planarFill.ts`, which measures the region: cut the face plane into vertical slabs at every
+vertex and crossing, order the sides inside each slab, and read the winding number off a running sum.
+Every piece is convex, which is what the fan and the crease clipper already assume. The centroid-fan
+branch and its convexity helper are deleted from `sphericalGeometry.ts` (-31 lines there). Three things
+that were wrong on the way:
+
+* Newell's normal is the ring's vector area, and a stephanoid's crossed quadrilateral has none. The plane
+  normal is the largest corner cross product instead. `ringTurning` still uses Newell and returns noise
+  on such a face, which is why the mod-2 toggle is now gated on a measured winding for irregular faces.
+* Adjacent slabs share a cut line and not their corners on it, which leaves T-junctions. Corner heights
+  are snapped per cut and a cell with a neighbour's corner on its side is emitted as a centroid fan.
+* The crease clipper returned one interval per convex piece. A measured fill has dozens per face, so
+  touching intervals are merged; the existing star tests are unchanged by it.
+
+The fill is checked against the closed form on {5/2}, {7/2}, {7/3}, {9/4} under both rules, and on every
+noble solid by the fact that all faces of one must fill to the same area.
+
+**The families react.** `nobleParams` in the configuration store; the spherical canvas rebuilds the solid
+when it changes. Disphenoid: two box proportions. Stephanoid: n, a member slider over the admissible
+(p,q), and the height. Verified in a browser by moving the real n slider and reading the store back.
+
+**Not done.** D-F1 and D-F2 (no model exists). Names and discoverers (map to the Polytope Wiki by
+congruence). The family parameters are not in the /play URL, so a link opens the default member. No
+thumbnail check across all 148. No release entry.
+
+Sources and the audit script are in `experiments/noble-polyhedra/`.
+
+## 2026-10-02 (second): 35 noble faces were drawn as convex, and AL saw it; one vertex, one face, the face laid flat
+
+**⚑ The first cut shipped 35 of the 148 with the wrong fill, and I had looked at one of them and passed
+it.** `isConvexRing` tested that every corner turns the same way. So does a pentagram, and so does the
+"propeller" hexagon of D-3: what separates them from a convex polygon is that they go round twice. Those
+faces were called convex, skipped `planarFillRings`, and took the plain fan, which paints across the
+notches between the blades. AL, on D-3: "they should have holes and this doesn't". The regular stars
+never reach that test, so no existing shelf was touched and no existing test could see it. Mine could
+not either: "every face of a noble solid fills to the same area" passes when every face is wrong alike,
+and the 2D fill tests called `planarFillRings` directly, past the dispatch that was broken.
+
+Fixed: convex now also means once round in total (turning under 3 pi). Two tests added, one asserting
+the renderer's fill through `flatSolidTriangles` equals the measured fill on every noble solid, one on
+the pentagram and the propeller directly. The 35: d-3 tc-1-1 ti-1-2 ti-3-1 ti-4-2 ti-5-5 ti-5-7 rd-5-1
+rd-5-2 rd-7-1 sc-6-2 gc-1-1 gc-3-1 sd-2-1 sd-6-1 sd-9-1 sd-11-1 sd-13-1 sd-17-1 sd-20-1 sd-25-1 gd-2-1
+gd-7-1 gd-8-1 gd-11-1 gd-12-1 gd-14-1 gd-17-1 gd-19-1 gd-22-1 gd-25-1 gd-26-1 gd-27-1 gd-28-1 gd-32-1.
+The fill itself was right throughout: drawn flat beside the browser's own rasteriser, nonzero and
+even-odd, it matches on D-3, gD-19.1, tI-5.7 and ID-1.
+
+**Do the models give the same result? Yes.** `experiments/noble-polyhedra/compare-models.ts` puts each
+of Hill's 148 `.off` models through the same renderer geometry as the regenerated solid: vertices agree
+to 7e-15, faces as cycles exactly, filled area to 7e-9 (float32), crease ink to 2e-13. The crease figure
+is the UNION per line. The plain sum differed by 2.4% on D-4 and 0.7% on D-5, the two with coplanar
+faces, where one line carries several face pairs' creases and the overlap depends on face order; a first
+guess that the shared-edge cut was order-dependent was tested, changed nothing, and was reverted.
+
+**One vertex, one face.** A button group on the noble shelf fills only the faces round one vertex (each
+in its own hue) or one face, over the WHOLE solid's wireframe, which stays on the Line stroke slider (AL).
+`fillFaces` on `buildFlatSolid`: the fill and the creases come from the chosen faces, the edge bars from
+all of them. Offered here and nowhere else because on a noble polyhedron any vertex and any face stand
+for all.
+
+**The face in the info panel.** Drawn flat as an SVG with dots on its vertices, so a crossing with no dot
+reads as a crossing and not a corner; named (regular, convex, concave, self-intersecting); with the
+census and V - E + F, the point group, and a derivation line that says "regenerated" and not "classical
+coordinates". It follows the Modulo 2 toggle, and the sliders on a family.
+
+## 2026-10-02 (third): the partial fill is every solid's, by vertex configuration (AL)
+
+The one-vertex and one-face views were noble-only. They are now on every flat-faced solid: the reference,
+non-convex, genus, hemi, isotoxal and noble records through `spherical-canvas.tsx`, and the star shelf
+through `sph-star-canvas.tsx`, where `sphStarScene` takes the same face indices. Not on the decorations
+(edge boards, colourings, bubble tiles, halved boards) and not in the compound view. Three rules, all AL's:
+
+* **One face is offered only where the solid has one face shape** (`faceKindCount`: sides, side lengths
+  and corner distances). On a cuboctahedron no one face stands for the rest, so the option is absent.
+* **Where there is more than one vertex configuration there is a selector**, one chip per configuration.
+  `vertexConfigs` reads them off the geometry, faces round each vertex in order, up to rotation and
+  reflection. It is not k: two vertex orbits with one configuration are one chip. My first version was a
+  slider over every vertex, which made the user hunt for the second kind of corner.
+* **Compact notation**: 3⁶ and not 3.3.3.3.3.3, a star base bracketed, (5/2)⁵.
+
+`store.solidFaceView` / `solidFacePick` replace the noble-only field; `partialFill` in
+`sphericalGeometry.ts` replaces `nobleFaceIndices`. Choosing a part switches off the round sphere view
+and the Islamic overlay, as the dual toggle does. In the dual view the configurations are the dual's.
+Checked in a browser on the square pyramid (3².4 and 3⁴, no One face), the cuboctahedron, the cube and
+the small stellated dodecahedron.

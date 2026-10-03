@@ -178,7 +178,8 @@ export const SHELVES: Record<ShelfId, ShelfDef> = {
 			if (solid?.startsWith("hemi-")) return HEMI_STAR_FACED.has(solid) ? null : "hemipolyhedra";
 			// ⚑ "iso-" out for the same reason as "ncx-": a Johnson solid is CONVEX with regular faces,
 			// and a face with a 252° reflex dent is neither convex nor one of Johnson's. Bare orbit count.
-			if (solid?.startsWith("ncx-") || solid?.startsWith("tor-") || solid?.startsWith("iso-")
+			// "noble-" too: every noble polyhedron is k = 1, and "uniform" means regular FACES as well.
+			if (solid?.startsWith("ncx-") || solid?.startsWith("tor-") || solid?.startsWith("iso-") || solid?.startsWith("noble-")
 				|| /^gen\d+-/.test(solid ?? "")) return null;
 			return (t.k ?? 1) > 1 ? "Johnson" : "uniform";
 		},

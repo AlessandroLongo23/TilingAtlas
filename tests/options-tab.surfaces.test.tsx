@@ -60,6 +60,30 @@ describe("OptionsTab — the controls each spherical surface offers", () => {
 		expect(offered("Islamic")).toBe(false);
 	});
 
+	it("offers the partial fill on a solid: one vertex always, one face only where there is one face shape", () => {
+		// Read by components/spherical-canvas.tsx (partialFill -> buildFlatSolid's fillFaces).
+		const { unmount } = render(<OptionsTab selected={spherical} />);
+		expect(offered("All faces")).toBe(true);
+		expect(offered("One vertex")).toBe(true);
+		expect(offered("One face")).toBe(true); // a cube: six congruent squares
+		unmount();
+		// A cuboctahedron has triangles AND squares, so no one face stands for the rest.
+		render(<OptionsTab selected={stub({ spherical: { solid: "cuboctahedron" } as CatalogueTiling["spherical"] })} />);
+		expect(offered("One vertex")).toBe(true);
+		expect(offered("One face")).toBe(false);
+	});
+
+	it("names each vertex configuration of a solid that has several, in the compact notation", () => {
+		useConfiguration.setState({ solidFaceView: "vertex" });
+		const { unmount } = render(<OptionsTab selected={stub({ k: 2, spherical: { solid: "square-pyramid" } as CatalogueTiling["spherical"] })} />);
+		expect(offered("3².4")).toBe(true);
+		expect(offered("3⁴")).toBe(true);
+		unmount();
+		// One configuration, nothing to choose between.
+		render(<OptionsTab selected={spherical} />);
+		expect(offered("4³")).toBe(false);
+	});
+
 	it("gives the ico-freedraw canvas the same shared controls", () => {
 		render(<OptionsTab selected={star} />);
 		expect(offered("Sphere")).toBe(true);

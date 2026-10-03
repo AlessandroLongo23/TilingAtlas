@@ -7,6 +7,7 @@
 
 import { polyhedronAsStarPattern, ringTurning, sphStarScene, starFaceRings, type Crease } from "./sphStar";
 import type { Polyhedron, Vec3 } from "./platonicSolids";
+import { isConvexRing, isRegularRing, maxWinding } from "./planarFill";
 
 function normalize(a: Vec3): Vec3 {
 	const n = Math.hypot(a[0], a[1], a[2]) || 1;
@@ -199,59 +200,15 @@ export function coplanarFaceLayers(poly: Polyhedron, unit: readonly Vec3[]): num
 // `faceSizes[t]` is the source face's vertex count for triangle t, so the mesh builder can colour by
 // polygon size; `triLayers[t]` is its face's coplanar layer (see coplanarFaceLayers), which is 0 for
 // every triangle of every solid that has no two faces in one plane.
-/** Does this ring turn the same way at every corner? Concave faces need a different fan. */
-function isConvexRing(unit: Vec3[], f: number[]): boolean {
-	let nx = 0;
-	let ny = 0;
-	let nz = 0;
-	for (let i = 0; i < f.length; i++) {
-		const a = unit[f[i]];
-		const b = unit[f[(i + 1) % f.length]];
-		nx += (a[1] - b[1]) * (a[2] + b[2]);
-		ny += (a[2] - b[2]) * (a[0] + b[0]);
-		nz += (a[0] - b[0]) * (a[1] + b[1]);
-	}
-	for (let i = 0; i < f.length; i++) {
-		const p = unit[f[i]];
-		const q = unit[f[(i + 1) % f.length]];
-		const r = unit[f[(i + 2) % f.length]];
-		const ux = q[0] - p[0];
-		const uy = q[1] - p[1];
-		const uz = q[2] - p[2];
-		const vx = r[0] - q[0];
-		const vy = r[1] - q[1];
-		const vz = r[2] - q[2];
-		const turn = (uy * vz - uz * vy) * nx + (uz * vx - ux * vz) * ny + (ux * vy - uy * vx) * nz;
-		if (turn < -1e-9) return false;
-	}
-	return true;
-}
-
 export function flatSolidTriangles(poly: Polyhedron, radius = 1, mod2 = false): { positions: Float32Array; faceSizes: number[]; triLayers: number[]; triFace: number[] } {
 	// starFaceRings APPENDS the crossing-ring points it needs, so the scaled copy has to be extendable.
 	const unit: Vec3[] = [...solidFitScale(poly, radius)];
 	// One entry per source face: the convex rings that fill it. d = 1 gives back the face itself.
 	// `mod2` is the even-odd fill rule, which empties a pentagram's core; see starFaceRings.
-	const fill = poly.faces.map((f) => {
-		const d = ringTurning(unit, f);
-		if (d > 1) return starFaceRings(f, d, unit as never, mod2) as number[][];
-		// ⚑ A SIMPLE RING IS NOT NECESSARILY A CONVEX ONE. The isotoxal shelf's faces are 2n-gons that
-		// alternate a sharp point with a REFLEX dent: they never cross, so ringTurning reads 1 and the
-		// v0 fan claims them — and a v0 fan of a concave polygon paints straight over every dent, which
-		// turns a pentagram's outline into a blob. They are star-shaped about their own centre, so a fan
-		// from the CENTROID is exact: append it and emit one triangle per edge.
-		if (!isConvexRing(unit, f)) {
-			const c: Vec3 = [0, 0, 0];
-			for (const i of f) {
-				c[0] += unit[i][0] / f.length;
-				c[1] += unit[i][1] / f.length;
-				c[2] += unit[i][2] / f.length;
-			}
-			const ci = unit.push(c) - 1;
-			return f.map((v, k) => [ci, v, f[(k + 1) % f.length]]);
-		}
-		return [f];
-	});
+	// starFaceRings also takes the faces that are not stars at all: a simple CONCAVE ring (the isotoxal
+	// shelf's 2n-gons, which a v0 fan would paint straight over at every dent) and any irregular
+	// self-crossing one are measured by lib/render/planarFill.ts and come back as convex pieces too.
+	const fill = poly.faces.map((f) => starFaceRings(f, ringTurning(unit, f), unit as never, mod2) as number[][]);
 	const triCount = fill.reduce((sum, rings) => sum + rings.reduce((n, r) => n + r.length - 2, 0), 0);
 	const positions = new Float32Array(triCount * 9);
 	const faceSizes: number[] = new Array(triCount);
@@ -307,7 +264,10 @@ export function solidHasStarFace(poly: Polyhedron | null | undefined): boolean {
 	const cached = STAR_FACED.get(poly.id);
 	if (cached !== undefined) return cached;
 	const unit = solidFitScale(poly, 1);
-	const has = poly.faces.some((f) => ringTurning(unit, f) > 1);
+	// A regular face says so through its turning number. An irregular one is measured, because turning is
+	// taken about the ring's vector area and a crossed quadrilateral has none: every stephanoid face read
+	// as a star here and was offered a fill rule that cannot change it.
+	const has = poly.faces.some((f) => (isRegularRing(unit, f) ? ringTurning(unit, f) > 1 : !isConvexRing(unit, f) && maxWinding(f, unit) > 1));
 	STAR_FACED.set(poly.id, has);
 	return has;
 }
@@ -393,4 +353,121 @@ export function solidEdges(poly: Polyhedron): [number, number][] {
 		}
 	}
 	return edges;
+}
+
+export type FaceView = "all" | "vertex" | "face";
+type Faces = readonly (readonly number[])[];
+
+/** One distinct vertex configuration of a solid: its name, a vertex that has it, and how many do. */
+export interface VertexConfig {
+	/** Every face written out: "3.3.3.3.3.3". What the tests and the dedup key on. */
+	label: string;
+	/** The same, with each run of equal faces as a power: "3⁶", "3.4.3.4", "(5/2)⁵". What is shown. */
+	short: string;
+	vertex: number;
+	count: number;
+}
+
+/**
+ * The distinct VERTEX CONFIGURATIONS of a solid, read off its faces: at each vertex, the faces round it
+ * in order, each written as its size ("5", or "5/2" for a regular star), up to rotation and reflection.
+ *
+ * Read off the geometry and not off the record's `family`, because the dual has none, a noble
+ * polyhedron's is a Schlafli type, and this has to agree with what is on screen. It is NOT the vertex
+ * orbit count k: two orbits can carry the same configuration, and then they are one entry here.
+ */
+export function vertexConfigs(vertices: readonly Vec3[], faces: Faces): VertexConfig[] {
+	const verts = vertices as Vec3[];
+	const kind = faces.map((f) => {
+		const d = isRegularRing(verts, f) ? ringTurning(verts, f as number[]) : 1;
+		return d > 1 ? `${f.length}/${d}` : `${f.length}`;
+	});
+	const through = new Map<number, number[]>();
+	faces.forEach((f, i) => f.forEach((v) => (through.get(v) ?? through.set(v, []).get(v)!).push(i)));
+	const out = new Map<string, VertexConfig>();
+	for (const v of [...through.keys()].sort((p, q) => p - q)) {
+		const fs = through.get(v)!;
+		// Walk round the vertex: each face comes in along one edge at v and leaves along the other.
+		const arms = fs.map((i) => {
+			const f = faces[i];
+			const k = f.indexOf(v);
+			return [f[(k + f.length - 1) % f.length], f[(k + 1) % f.length]];
+		});
+		const order = [0];
+		let exit = arms[0][1];
+		while (order.length < fs.length) {
+			const j = arms.findIndex((arm, idx) => !order.includes(idx) && (arm[0] === exit || arm[1] === exit));
+			if (j < 0) break;
+			order.push(j);
+			exit = arms[j][0] === exit ? arms[j][1] : arms[j][0];
+		}
+		let label: string;
+		if (order.length === fs.length) {
+			const seq = order.map((j) => kind[fs[j]]);
+			const turns: string[] = [];
+			for (const s of [seq, [...seq].reverse()]) for (let r = 0; r < s.length; r++) turns.push([...s.slice(r), ...s.slice(0, r)].join("."));
+			label = turns.sort()[0];
+		} else {
+			// The faces do not close into one ring (a fissary vertex is two rings on one point).
+			label = fs.map((i) => kind[i]).sort().join(".");
+		}
+		const hit = out.get(label);
+		if (hit) hit.count++;
+		else out.set(label, { label, short: compactConfig(label), vertex: v, count: 1 });
+	}
+	return [...out.values()];
+}
+
+/**
+ * Runs of equal faces as powers, the atlas's usual notation (compactVertexConfig in referenceAtlas.ts,
+ * which this mirrors for a label that may hold a star: that one passes anything with a "/" through
+ * untouched, and a bare "5/2⁵" would read as five over thirty-two, so a star base is bracketed).
+ */
+function compactConfig(label: string): string {
+	const toks = label.split(".");
+	const out: string[] = [];
+	for (let i = 0; i < toks.length; ) {
+		let run = 1;
+		while (i + run < toks.length && toks[i + run] === toks[i]) run++;
+		const power = [...String(run)].map((d) => "⁰¹²³⁴⁵⁶⁷⁸⁹"[Number(d)]).join("");
+		out.push(run === 1 ? toks[i] : `${toks[i].includes("/") ? `(${toks[i]})` : toks[i]}${power}`);
+		i += run;
+	}
+	return out.join(".");
+}
+
+/** How many different face SHAPES the solid has: sides, side lengths and corner distances, to 1e-4. */
+export function faceKindCount(vertices: readonly Vec3[], faces: Faces): number {
+	let far = 0;
+	for (const v of vertices) far = Math.max(far, Math.hypot(v[0], v[1], v[2]));
+	const q = (x: number) => Math.round((x / (far || 1)) * 1e4);
+	const kinds = new Set<string>();
+	for (const f of faces) {
+		const c = [0, 0, 0];
+		for (const i of f) for (let k = 0; k < 3; k++) c[k] += vertices[i][k] / f.length;
+		const sides = f.map((a, k) => {
+			const b = f[(k + 1) % f.length];
+			return q(Math.hypot(vertices[a][0] - vertices[b][0], vertices[a][1] - vertices[b][1], vertices[a][2] - vertices[b][2]));
+		});
+		const radii = f.map((a) => q(Math.hypot(vertices[a][0] - c[0], vertices[a][1] - c[1], vertices[a][2] - c[2])));
+		kinds.add(`${f.length}|${sides.sort((x, y) => x - y)}|${radii.sort((x, y) => x - y)}`);
+	}
+	return kinds.size;
+}
+
+/**
+ * Which faces of a solid to FILL, the rest staying as wireframe: those round one vertex, or one face
+ * alone; null for all of them.
+ *
+ *   vertex   `pick` chooses among the solid's distinct vertex CONFIGURATIONS, and wraps, so a pick left
+ *            over from another solid is still a valid one. One vertex of that configuration is shown.
+ *   face     only where every face is the same shape, so the one shown stands for all. A solid with
+ *            two kinds of face has no "the face", and the request falls back to the whole solid.
+ */
+export function partialFill(vertices: readonly Vec3[], faces: Faces, view: FaceView, pick = 0): number[] | null {
+	if (view === "all" || !faces.length) return null;
+	if (view === "face") return faceKindCount(vertices, faces) === 1 ? [0] : null;
+	const configs = vertexConfigs(vertices, faces);
+	const v = configs[((pick % configs.length) + configs.length) % configs.length].vertex;
+	return faces.flatMap((f, i) => (f.includes(v) ? [i] : []));
 }

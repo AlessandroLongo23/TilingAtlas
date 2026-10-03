@@ -23,6 +23,7 @@
 // {n/d} face. That decides the shelf below, and hand-listing three ids in a routing function is exactly
 // how a shelf and its generator drift apart.
 import { HEMI_STAR_FACED } from "@/lib/render/hemiSolids";
+import { isNobleFamily } from "@/lib/render/nobleSolids";
 
 type V3 = readonly [number, number, number] | readonly number[];
 
@@ -220,6 +221,9 @@ export function sphericalSolidSub(solid: string): string {
 	// faces means vertex-transitive means uniform, so nothing but the uniform non-convex solids could
 	// ever have filled it. On the star side k = 1 already holds 52 records, which is why that row is
 	// NOT labelled "hemipolyhedra": three of its members are, and the other 52 are not.
+	// The noble polyhedra are their own heading, and the split under it is LISTED against PARAMETRIC:
+	// the 146 (and the two fissary figures) on one row, the infinite families on the other.
+	if (solid.startsWith("noble-")) return isNobleFamily(solid) ? "nbf-solid" : "nbl-solid";
 	if (solid.startsWith("hemi-")) return HEMI_STAR_FACED.has(solid) ? "sst" : "spn-solid";
 	if (solid.startsWith("tor-")) return "spt-solid";
 	const g = /^gen(\d+)-/.exec(solid);
@@ -255,6 +259,10 @@ export function hasSphereView(solid: string | undefined | null): boolean {
 	// contains the centre, so radial projection sends it to a great circle instead of a spherical
 	// polygon, and V - E + F is never 2 anyway. The view is withheld by id, not by the fit.
 	if (solid?.startsWith("hemi-")) return false;
+	// Every noble polyhedron HAS a circumsphere, since its vertices are one orbit of a point group, and
+	// the view is withheld anyway: the round view classifies a direction to the one face over it, and
+	// these faces cross themselves and each other, so most directions lie under several.
+	if (solid?.startsWith("noble-")) return false;
 	if (solid?.startsWith("ncx-")) return NCX_INSCRIBED.has(solid);
 	return !!solid && !SPH_NOT_INSCRIBED.has(solid);
 }

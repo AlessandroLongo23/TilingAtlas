@@ -228,7 +228,7 @@ export function boardFamiliesFor(
 			// The spherical shelf splits on CONVEXITY (AL, 2026-08-21) and both halves belong under tilings,
 			// not edges: every face boundary here is a real one. Non-convex is the star shelf, which is a
 			// tiling of the sphere in the covering sense — its faces wrap it `density` times.
-			spherical: ["sph-convex", "sph-nonconvex"],
+			spherical: ["sph-convex", "sph-nonconvex", "sph-noble"],
 		},
 		edges: {
 			// "bubble-grid" is the second Euclidean edge system, after freedraw's "grid": both decorate a

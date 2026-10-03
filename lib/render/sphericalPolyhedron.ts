@@ -49,6 +49,10 @@ export interface FlatSolidOptions {
 	faceOpacity?: number;
 	/** Per-pixel hidden-edge test for the bars; see lib/render/edgeOcclusion.ts. */
 	occlude?: EdgeOcclusionUniforms;
+	/** Fill only these faces, by index, and leave the rest as bare edges: the whole solid stays on screen
+	 *  as its wireframe with a part of it filled. Creases are then drawn among the filled faces only,
+	 *  since a crease is where two SURFACES meet and an unfilled face has none. Undefined fills all. */
+	fillFaces?: number[] | null;
 	/** Fill {n/d} faces modulo 2 (even-odd) instead of by nonzero winding: a pentagram's core is covered
 	 *  twice, so it empties and the crossings read as a checkerboard. Changes the facet geometry, so it
 	 *  rebuilds the solid; solids with no star face are unaffected. See lib/render/sphStar.ts. */
@@ -70,7 +74,9 @@ export function buildFlatSolid(poly: Polyhedron | null, opts: FlatSolidOptions =
 	if (!poly) return null;
 
 	// Faces: a non-indexed fan-triangle soup on the unit sphere, flat-shaded, one hue per source face.
-	const { positions, faceSizes, triLayers, triFace } = flatSolidTriangles(poly, SPHERE_RADIUS, opts.starMod2 ?? false);
+	// The filled part shares the solid's vertex list, so it is fitted by the same scale as the edges.
+	const filled: Polyhedron = opts.fillFaces ? { ...poly, faces: opts.fillFaces.map((i) => poly.faces[i]) } : poly;
+	const { positions, faceSizes, triLayers, triFace } = flatSolidTriangles(filled, SPHERE_RADIUS, opts.starMod2 ?? false);
 	// One base hue per triangle, by polygon size — unless the caller overrides per source face, which
 	// only the COMPOUND view does: two interpenetrating solids that both have squares are one colour
 	// under the size ramp, and then the figure reads as a single lumpy solid instead of as two.
@@ -168,7 +174,7 @@ export function buildFlatSolid(poly: Polyhedron | null, opts: FlatSolidOptions =
 
 	// Derived once and kept: finding the creases is a face-pair sweep, 54 ms on ncx-120-330-212-h, and the
 	// stroke slider must not pay it per frame.
-	const creaseList = edgeInk === "all" ? solidCreaseList(poly, SPHERE_RADIUS, opts.starMod2 ?? false) : [];
+	const creaseList = edgeInk === "all" ? solidCreaseList(filled, SPHERE_RADIUS, opts.starMod2 ?? false) : [];
 
 	// ALL the ink, as one capsule union: the polyhedron's own edges, and — while CREASES_AS_TUBES — the
 	// creases where its faces cut through one another. One skeleton means one set of joints, welded across

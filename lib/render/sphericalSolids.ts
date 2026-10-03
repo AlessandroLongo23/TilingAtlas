@@ -18,6 +18,7 @@ import { NONCONVEX_SOLIDS } from "./nonconvexSolids";
 import { GENUS_SOLIDS } from "./genusSolids";
 import { HEMI_SOLIDS } from "./hemiSolids";
 import { ISOTOXAL_SOLIDS } from "./isotoxalSolids";
+import { nobleSolid } from "./nobleSolids";
 
 export const SPHERICAL_SOLIDS: Polyhedron[] = [
 	...PLATONIC_SOLIDS,
@@ -32,7 +33,14 @@ export const SPHERICAL_SOLIDS: Polyhedron[] = [
 
 const BY_ID = new Map(SPHERICAL_SOLIDS.map((s) => [s.id, s]));
 
-/** The solid for a stable id ("tetrahedron", "cuboctahedron", …), or null if unknown. */
+/**
+ * The solid for a stable id ("tetrahedron", "cuboctahedron", …), or null if unknown.
+ *
+ * ⚑ The NOBLE polyhedra resolve here and are NOT in SPHERICAL_SOLIDS. That list is what every
+ * regular-faced invariant in the repo iterates, and a noble face is not regular; and a noble solid is
+ * not stored at all, it is regenerated from its point group on first request (lib/render/nobleSolids.ts).
+ * A parametric family resolves to its member at the default parameters.
+ */
 export function polyhedronForId(id: string): Polyhedron | null {
-	return BY_ID.get(id) ?? null;
+	return BY_ID.get(id) ?? (id.startsWith("noble-") ? nobleSolid(id) : null);
 }

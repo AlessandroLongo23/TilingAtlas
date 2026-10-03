@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Info } from "lucide-react";
 import type { VCWithOccurrences } from "@/classes/Tiling";
 import { colorLetter } from "@/lib/colors/pattern";
 import type { TilingSpec } from "@/lib/services/tilingSpec";
 import { compactVertexConfig } from "@/lib/services/referenceAtlas";
 import { TILING_LEVEL_LABEL, TILING_LEVEL_NOTE } from "@/lib/tilings/tiling-level";
+import { isNobleFamily, nobleFaceShape, nobleFamilySolid, nobleSolid } from "@/lib/render/nobleSolids";
+import { useConfiguration } from "@/stores/configuration";
 import { VertexConfigurationThumbnail } from "./vertex-configuration-thumbnail";
 import { Button } from "./ui/button";
 import { Modal } from "./ui/modal";
@@ -91,6 +93,53 @@ function Row({
 		</div>
 	) : (
 		row
+	);
+}
+
+/**
+ * The one face of a noble polyhedron, laid flat.
+ *
+ * Every face of the solid is this polygon, and on most of them it cannot be picked out of the solid by
+ * eye: it crosses itself and forty others cross it. Dots are the face's VERTICES; a point where two
+ * sides cross with no dot on it is not a corner of the polygon. Filled by the same rule the canvas is
+ * using, so the Modulo 2 toggle empties the same regions here as there. For a parametric family it is
+ * drawn from the live parameters and moves with the sliders.
+ */
+function NobleFace({ solid }: { solid: string }) {
+	const params = useConfiguration((s) => (isNobleFamily(solid) ? s.nobleParams : null));
+	const mod2 = useConfiguration((s) => s.starMod2);
+	const shape = useMemo(() => {
+		const p = params ? nobleFamilySolid(solid, params) : nobleSolid(solid);
+		return p ? nobleFaceShape(p) : null;
+	}, [solid, params]);
+	if (!shape) return null;
+	const xs = shape.points.map((p) => p[0]);
+	const ys = shape.points.map((p) => p[1]);
+	const [x0, y0] = [Math.min(...xs), Math.min(...ys)];
+	const span = Math.max(Math.max(...xs) - x0, Math.max(...ys) - y0) || 1;
+	const pad = span * 0.06;
+	const d = `${shape.points.map(([x, y], k) => `${k ? "L" : "M"}${x.toFixed(5)},${(-y).toFixed(5)}`).join("")}Z`;
+	return (
+		<div className="flex flex-col gap-1.5 border-t border-line pt-3">
+			<SectionTitle>Face</SectionTitle>
+			<svg
+				viewBox={`${x0 - pad} ${-Math.max(...ys) - pad} ${Math.max(...xs) - x0 + 2 * pad} ${Math.max(...ys) - y0 + 2 * pad}`}
+				className="mx-auto h-36 w-full text-fg"
+				role="img"
+				aria-label={`The face of this polyhedron: a ${shape.kind}`}
+			>
+				<path d={d} fill="currentColor" fillOpacity={0.16} fillRule={mod2 ? "evenodd" : "nonzero"} stroke="currentColor" strokeWidth={span * 0.012} strokeLinejoin="round" />
+				{shape.points.map(([x, y], k) => (
+					<circle key={k} cx={x} cy={-y} r={span * 0.022} fill="currentColor" />
+				))}
+			</svg>
+			<Row label="Shape" value={shape.kind} />
+			<Row label="Faces" value={shape.F} />
+			<Row label="Faces at a vertex" value={shape.perVertex} />
+			<Row label="Vertices" value={shape.V} />
+			<Row label="Edges" value={shape.E} />
+			<Row label="V − E + F" value={shape.V - shape.E + shape.F} />
+		</div>
 	);
 }
 
@@ -373,6 +422,9 @@ export function TilingInfo({ spec, vcs = [] }: TilingInfoProps) {
 					</div>
 				) : null}
 
+				{/* The face of a noble polyhedron, drawn flat, and the census that goes with it. */}
+				{spec.geometry === "spherical" && spec.noble ? <NobleFace solid={spec.noble} /> : null}
+
 				{/* Counts — Spherical (Platonic only) */}
 				{spec.geometry === "spherical" && spec.counts ? (
 					<div className="flex flex-col gap-1.5 border-t border-line pt-3">
@@ -391,9 +443,11 @@ export function TilingInfo({ spec, vcs = [] }: TilingInfoProps) {
 				{spec.geometry === "spherical" && spec.derivation ? (
 					<div className="flex flex-col gap-1.5 border-t border-line pt-3">
 						<SectionTitle>Derivation</SectionTitle>
-						<Row label="Method" value={DERIVATION_LABEL[spec.derivation]} />
+						<Row label="Method" value={spec.noble ? "Regenerated" : DERIVATION_LABEL[spec.derivation]} />
 						<p className="text-[11px] leading-snug text-fg-muted">
-							{DERIVATION_NOTE[spec.derivation]}
+							{spec.noble
+								? "Rebuilt here as one orbit of its point group, from the minimal polynomials of Hill's classification (arXiv:2607.28711) and one face; checked against his models, never the output of a search."
+								: DERIVATION_NOTE[spec.derivation]}
 						</p>
 					</div>
 				) : null}

@@ -15,6 +15,8 @@ import {
 	type SphericalCamera,
 } from "@/lib/render/sphericalCamera";
 import { polyhedronForId } from "@/lib/render/sphericalSolids";
+import { isNobleFamily, nobleFamilySolid } from "@/lib/render/nobleSolids";
+import { partialFill } from "@/lib/render/sphericalGeometry";
 import { dualCompound, polarDual } from "@/lib/render/dualSolid";
 import { polygonHue } from "@/lib/utils/renderTiling";
 import { measureBox } from "@/lib/render/canvasSize";
@@ -98,8 +100,15 @@ export function SphericalCanvas({ solidId, bubbleBites, interactive = true, fitF
 	// one the by-polygon-size ramp still reads, and the dual's half of the figure is put half a turn
 	// away on the hue ring. Without that a cuboctahedron and its rhombic dodecahedron are one colour,
 	// because the size ramp sees squares in both.
+	// A parametric noble family is drawn from the live parameters; every other id ignores them.
+	const nobleParams = useConfiguration((s) => (isNobleFamily(solidId) ? s.nobleParams : null));
+	// Any solid can be FILLED in part, one vertex's faces or one face, over its whole wireframe (see
+	// partialFill). It reads whatever is drawn, the solid or its dual; not the compound, which is two
+	// solids and has no one vertex figure, and not a bubble decoration, which has no flat faces.
+	const faceView = useConfiguration((s) => (s.solidDualMode === "compound" || bubbleBites ? "all" : s.solidFaceView));
+	const facePick = useConfiguration((s) => s.solidFacePick);
 	const { poly, dualFaceStart } = useMemo(() => {
-		const base = polyhedronForId(solidId);
+		const base = nobleParams ? nobleFamilySolid(solidId, nobleParams) : polyhedronForId(solidId);
 		if (!base || mode === "solid") return { poly: base, dualFaceStart: -1 };
 		if (mode === "compound") {
 			const c = dualCompound(base);
@@ -109,7 +118,7 @@ export function SphericalCanvas({ solidId, bubbleBites, interactive = true, fitF
 		}
 		const r = polarDual(base);
 		return { poly: "dual" in r ? r.dual : base, dualFaceStart: -1 };
-	}, [solidId, mode]);
+	}, [solidId, mode, nobleParams]);
 	const hostRef = useRef<HTMLDivElement | null>(null);
 	// The canvas element itself (created imperatively below) — the gate effect writes its touch-action,
 	// and the mount effect reads the gate without taking it as a dep (it must never rebuild the WebGL
@@ -340,7 +349,8 @@ export function SphericalCanvas({ solidId, bubbleBites, interactive = true, fitF
 		// (2026-08-21). The Options tab hides the toggle for the same records, so this is not overriding a
 		// control a visitor can see. lib/tilings/sph-inscribed.ts holds the list and the fit that derives it.
 		// ⚑ A bubble decoration overrides the shape toggle, it does not read it. See `bubbleBites`.
-		const flat = !bubbleBites && (cfg.sphericalPolyhedron || !hasSphereView(solidId));
+		// A partial fill is a view of the flat solid, so it takes the flat solid whatever the shape toggle says.
+		const flat = !bubbleBites && (cfg.sphericalPolyhedron || !hasSphereView(solidId) || faceView !== "all");
 		let content: Content | null = null;
 		if (bubbleBites) {
 			const bubble = buildBubbleSphere(poly, bubbleBites, {
@@ -364,7 +374,13 @@ export function SphericalCanvas({ solidId, bubbleBites, interactive = true, fitF
 			content = null;
 		} else if (flat) {
 			// The TRUE flat-faced solid instead of the round sphere: lit facets + dark edge tubes, same hue.
+			const fillFaces = poly ? partialFill(poly.vertices, poly.faces, faceView, facePick) : null;
+			// One colour per face round a vertex, but only where the size ramp would give them all the
+			// same one: on a Johnson vertex the triangle and the square already differ, and that
+			// difference is the vertex configuration.
+			const oneSize = !!poly && !!fillFaces && new Set(fillFaces.map((i) => poly.faces[i].length)).size === 1;
 			const solid = buildFlatSolid(poly, {
+				fillFaces,
 				hueOffset: cfg.hueOffset,
 				lineWidth: cfg.lineWidth,
 				dark,
@@ -376,7 +392,9 @@ export function SphericalCanvas({ solidId, bubbleBites, interactive = true, fitF
 				hueFor:
 					dualFaceStart >= 0
 						? (fi, n) => polygonHue(n) + (fi >= dualFaceStart ? 180 : 0)
-						: undefined,
+						: faceView === "vertex" && fillFaces && oneSize
+							? (fi, n) => polygonHue(n) + (360 * fi) / fillFaces.length
+							: undefined,
 			});
 			if (solid) {
 				applyStudioMaterials(solid.object);
@@ -412,7 +430,7 @@ export function SphericalCanvas({ solidId, bubbleBites, interactive = true, fitF
 		// answers that live through `setOpacity` below — re-deriving the creases of a 212-face solid on every
 		// frame of a slider drag is not something a drag can afford.
 		// starMod2 belongs here and not in the recolor pass: it changes which triangles exist.
-	}, [poly, solidId, isIslamic, polyhedron, bubbleBites, edgeStyle, kochLevel, starMod2]);
+	}, [poly, solidId, isIslamic, polyhedron, bubbleBites, edgeStyle, kochLevel, starMod2, faceView, facePick]);
 
 	// Face opacity, live. The hidden-edge test does not switch off below 1, it SOFTENS: a bar behind a face
 	// is worth 1 − opacity, so it is dropped behind a solid face and comes back as the face turns to glass.

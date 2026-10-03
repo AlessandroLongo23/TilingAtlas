@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
-import { faceCrossings, sheetCount, starFaceRings } from "@/lib/render/sphStar";
+import { faceCrossings, sheetCount, sphStarScene, starFaceRings } from "@/lib/render/sphStar";
+import { partialFill } from "@/lib/render/sphericalGeometry";
 import type { V3 } from "@/lib/render/icoFreedraw";
 import type { SphStarPattern } from "@/lib/tilings/sph-star";
 
@@ -371,6 +372,28 @@ describe("sheetCount", () => {
 		for (const f of readdirSync("public/spherical-star").filter((x) => x.endsWith(".json"))) {
 			const p: SphStarPattern = JSON.parse(readFileSync(`public/spherical-star/${f}`, "utf8"));
 			expect(sheetCount(p)).toBeGreaterThanOrEqual(meanSheets(p) - 1e-6);
+		}
+	});
+});
+
+describe("a partial fill on the star shelf", () => {
+	it("fills only the chosen faces and keeps every edge of the solid", () => {
+		for (const f of readdirSync("public/spherical-star").filter((n) => n.endsWith(".json"))) {
+			const p: SphStarPattern = JSON.parse(readFileSync(`public/spherical-star/${f}`, "utf8"));
+			const whole = sphStarScene(p);
+			const round = partialFill(p.vertices, p.faces, "vertex", 0)!;
+			const part = sphStarScene(p, false, round);
+			const one = sphStarScene(p, false, [0]);
+			// The wireframe is the solid's, whichever faces are filled.
+			expect(part.allEdges, f).toEqual(whole.allEdges);
+			expect(part.pattern.drawn, f).toEqual(whole.pattern.drawn);
+			const pieces = (s: typeof whole) => s.pattern.tiles.reduce((n, t) => n + t.length, 0);
+			expect(pieces(part), f).toBeLessThan(pieces(whole));
+			expect(pieces(one), f).toBeGreaterThan(0);
+			expect(pieces(one), f).toBeLessThanOrEqual(pieces(part));
+			// One face alone cuts through nothing; a crease needs two filled faces.
+			expect(one.crossings, f).toEqual([]);
+			expect(part.crossings.length, f).toBeLessThanOrEqual(whole.crossings.length);
 		}
 	});
 });

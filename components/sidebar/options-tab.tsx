@@ -4,9 +4,11 @@ import { Fragment, useMemo } from "react";
 import { ArrowLeftRight } from "lucide-react";
 import { deformApplies, useConfiguration } from "@/stores/configuration";
 import { hasSphereView } from "@/lib/tilings/sph-inscribed";
-import { solidHasStarFace } from "@/lib/render/sphericalGeometry";
+import { faceKindCount, solidHasStarFace, vertexConfigs } from "@/lib/render/sphericalGeometry";
+import type { Vec3 } from "@/lib/render/platonicSolids";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { polyhedronForId } from "@/lib/render/sphericalSolids";
+import { isNobleFamily, stephanoidChoices, stephanoidSymbol, STEPHANOID_MAX_N, type NobleFamily } from "@/lib/render/nobleSolids";
 import { dualIsIsohedral, midradius, polarDual } from "@/lib/render/dualSolid";
 import { isChiralTiling } from "@/lib/services/chirality";
 import { Button } from "@/components/ui/button";
@@ -201,6 +203,28 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 		// rendering a figure whose scale is arbitrary.
 		return { isohedral: dualIsIsohedral(base), hasMidsphere: midradius(base) !== null };
 	}, [selected?.spherical?.solid]);
+	// The parametric noble families: which one is selected, its live parameters, and how many (p,q) the
+	// current n admits, which is the range of the Member slider.
+	const nobleFamily = isNobleFamily(selected?.spherical?.solid) ? selected!.spherical!.solid as NobleFamily : null;
+	const noble = cfg.nobleParams;
+	const setNoble = (patch: Partial<typeof noble>) => setCfg({ nobleParams: { ...noble, ...patch } });
+	const nobleMembers = nobleFamily ? stephanoidChoices(nobleFamily === "noble-stephanoid-antiprismatic", noble.n).length : 0;
+	// What the partial fill can offer on the solid ON SCREEN: its distinct vertex configurations, and
+	// whether it has a single face shape. Null where the control does not apply: off the two flat-solid
+	// shelves, on a bubble decoration, and in the compound view, which is two solids. Read off the dual
+	// when the dual is what is drawn, since its vertex figures are not the solid's.
+	const faceViewInfo = useMemo(() => {
+		if (cfg.solidDualMode === "compound" || selected?.sphBubble) return null;
+		let shape: { vertices: readonly (readonly number[])[]; faces: number[][] } | null = selected?.sphStar ?? null;
+		if (!shape) {
+			const base = polyhedronForId(selected?.spherical?.solid ?? "");
+			const dual = base && cfg.solidDualMode === "dual" ? polarDual(base) : null;
+			shape = dual && "dual" in dual ? dual.dual : base;
+		}
+		if (!shape?.faces?.length) return null;
+		const vertices = shape.vertices as Vec3[];
+		return { configs: vertexConfigs(vertices, shape.faces), oneFace: faceKindCount(vertices, shape.faces) === 1 };
+	}, [selected, cfg.solidDualMode]);
 	const isHyperbolicDisk = isDiskSurface(surface);
 	// One picker per color of the SELECTED pattern (2 to 4 today), read off the record, not the
 	// palette — the store keeps a full-width palette so switching between a 2- and a 3-color tiling
@@ -1250,6 +1274,74 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 									}
 								/>
 							</Reveal>
+							{/* THE NOBLE FAMILIES. A disphenoid or a stephanoid is not a record, it is a point in a
+							    parameter space, and these sliders are that space: the canvas rebuilds the solid
+							    as they move. n is capped by the control and not by the mathematics. */}
+							{/* HOW MUCH of the solid is FILLED: all of it, the faces round one vertex, or one face.
+							    The rest stays as the wireframe, which the Line stroke slider still drives. Every
+							    flat-faced solid has it: the reference, non-convex, genus, noble and star shelves.
+							    Not the compound, which is two solids. Choosing a part switches to the flat solid,
+							    since a part of the round sphere is not a view of anything. */}
+							{faceViewInfo ? (
+								<>
+									<ButtonGroup
+										options={[
+											{ value: "all" as const, label: "All faces" },
+											{ value: "vertex" as const, label: "One vertex", tooltip: "Only the faces that meet at one vertex, over the wireframe of the solid: its vertex configuration." },
+											// ONE FACE only where there is one face SHAPE. On a solid with triangles and
+											// squares no single face stands for the rest, so the option is not there.
+											...(faceViewInfo.oneFace
+												? [{ value: "face" as const, label: "One face", tooltip: "A single face, where it sits in the wireframe of the solid. Every face of this solid is this shape." }]
+												: []),
+										]}
+										selected={cfg.solidFaceView === "face" && !faceViewInfo.oneFace ? "all" : cfg.solidFaceView}
+										onChange={(v) => setCfg({ solidFaceView: v, ...(v === "all" ? {} : { sphericalPolyhedron: true, isIslamic: false }) })}
+									/>
+									{/* WHICH vertex configuration, where the solid has more than one: a Johnson
+									    solid, or any other with several kinds of corner. Named by the faces round
+									    the vertex, with how many vertices carry it. */}
+									{cfg.solidFaceView === "vertex" && faceViewInfo.configs.length > 1 ? (
+										<ButtonGroup
+											options={faceViewInfo.configs.map((c, i) => ({
+												value: i,
+												label: <span className="font-mono">{c.short}</span>,
+												tooltip: `${c.count} ${c.count === 1 ? "vertex has" : "vertices have"} this configuration.`,
+											}))}
+											selected={cfg.solidFacePick % faceViewInfo.configs.length}
+											onChange={(v) => setCfg({ solidFacePick: v })}
+										/>
+									) : null}
+								</>
+							) : null}
+							{nobleFamily === "noble-disphenoid" ? (
+								<>
+									<Slider id="nobleBoxB" label="Box depth" value={noble.boxB} onChange={(v) => setNoble({ boxB: v })} min={0.2} max={3} step={0.01} />
+									<Slider id="nobleBoxC" label="Box height" value={noble.boxC} onChange={(v) => setNoble({ boxC: v })} min={0.2} max={3} step={0.01} />
+								</>
+							) : nobleFamily ? (
+								<>
+									<Slider
+										id="nobleN"
+										label="n"
+										value={noble.n}
+										onChange={(v) => setNoble({ n: v, member: 0 })}
+										min={nobleFamily === "noble-stephanoid-prismatic" ? 5 : 4}
+										max={STEPHANOID_MAX_N}
+										step={1}
+									/>
+									<Slider
+										id="nobleMember"
+										label="Member"
+										value={Math.min(noble.member, nobleMembers - 1)}
+										onChange={(v) => setNoble({ member: v })}
+										min={0}
+										max={Math.max(nobleMembers - 1, 0)}
+										step={1}
+										format={() => stephanoidSymbol(nobleFamily, noble) ?? "none"}
+									/>
+									<Slider id="nobleHeight" label="Height" value={noble.height} onChange={(v) => setNoble({ height: v })} min={0.1} max={4} step={0.01} />
+								</>
+							) : null}
 							{/* FACE OPACITY, every spherical shelf. This replaced a Fill/Wireframe toggle (AL,
 							    2026-08-25), which was this same choice with two values and no way to say anything
 							    between them: at 1 the solid is opaque, at 0 only the edge bars are left, and in

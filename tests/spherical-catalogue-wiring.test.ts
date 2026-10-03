@@ -10,6 +10,7 @@ import { PLATONIC_SOLIDS } from "@/lib/render/platonicSolids";
 import { ARCHIMEDEAN_SOLIDS } from "@/lib/render/archimedeanSolids";
 import { PRISM_ANTIPRISM_SOLIDS } from "@/lib/render/prismSolids";
 import { HEMI_SOLIDS } from "@/lib/render/hemiSolids";
+import { NOBLE_FAMILIES, NOBLE_IDS } from "@/lib/render/nobleSolids";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
 
 interface AtlasEntry {
@@ -29,9 +30,13 @@ const atlas = decodeAtlas<AtlasEntry>(
 describe("derivation — searched, constructed, or tabulated", () => {
 	// ⚑ The HEMIPOLYHEDRA are tabulated too (2026-08-25): their coordinates are closed-form, from the
 	// uniform-polyhedron literature, and no search of ours produced them.
-	const CLASSICAL = new Set(
-		[...PLATONIC_SOLIDS, ...ARCHIMEDEAN_SOLIDS, ...PRISM_ANTIPRISM_SOLIDS, ...HEMI_SOLIDS].map((s) => s.id),
-	);
+	// ⚑ And the NOBLE polyhedra (2026-10-02): closed-form in the strict sense, each vertex set the orbit
+	// of a point whose coordinates are roots of the minimal polynomials Hill's classification lists.
+	const CLASSICAL = new Set([
+		...[...PLATONIC_SOLIDS, ...ARCHIMEDEAN_SOLIDS, ...PRISM_ANTIPRISM_SOLIDS, ...HEMI_SOLIDS].map((s) => s.id),
+		...NOBLE_IDS,
+		...NOBLE_FAMILIES,
+	]);
 
 	it("every spherical record says how it was derived", () => {
 		const bare = atlas.filter((e) => e.spherical && !e.derivation).map((e) => e.id);

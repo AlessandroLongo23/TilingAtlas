@@ -3037,3 +3037,11 @@ three rounds; the open bugs are listed in NOTES 2026-09-24.
 boards carrying a figure, and an on-request scan for the lowest k of the exact figure. a.b.c.d boards
 proved multiset-only. 29 k=1 configs shipped one period ("3.7"); developer and shards fixed.
 ⚑ Needs Marek: the "Arun's paper" citation and per-board search ranges. NOTES 2026-09-28.
+
+## 2026-10-02 — the noble polyhedra: 146 + 2 fissary + the two infinite families — CC
+
+A Noble heading under Spherical (committed on `master` 2026-10-03). Hill's classification
+(arXiv:2607.28711) regenerated from point group, minimal-polynomial seed and one face: 20 KB, no
+coordinates, every solid checked against his models to 1e-13. New `planarFill.ts` fills irregular and
+self-crossing faces; disphenoids and stephanoids are parametric and move with sliders.
+⚑ Four typos in the paper's Appendix A; D-F1/D-F2 not shipped (no model); names owed. NOTES 2026-10-02.

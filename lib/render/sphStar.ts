@@ -39,6 +39,7 @@
 
 import type { IcoPattern, V3 } from "@/lib/render/icoFreedraw";
 import type { SphSchwarzScene } from "@/lib/render/sphSchwarz";
+import { isConvexRing, isRegularRing, planarFillRings } from "./planarFill";
 import type { SphStarPattern } from "@/lib/tilings/sph-star";
 import { polygonHue } from "@/lib/utils/renderTiling";
 
@@ -169,6 +170,10 @@ export function ringTurning(unit: V3[], f: number[]): number {
  */
 export function starFaceRings(face: number[], dRaw: number, verts: V3[], mod2 = false): number[][] {
 	const n = face.length;
+	// The ring formula below is a REGULAR star's. Anything else that is not simply convex — a concave
+	// outline, a crossed quadrilateral, the irregular self-intersecting faces of the noble polyhedra — is
+	// measured instead of derived; see lib/render/planarFill.ts.
+	if (!isRegularRing(verts, face)) return isConvexRing(verts, face) ? [face] : planarFillRings(face, verts, mod2);
 	// A backwards traversal encloses the same region, and the ring formula only holds for d < n/2.
 	const d = dRaw > n / 2 ? n - dRaw : dRaw;
 	if (d <= 1 || n < 5) return [face];
@@ -347,9 +352,9 @@ function minus(a: [number, number], b: [number, number]): [number, number][] {
 	return out;
 }
 
-/** Where the line P + t·u lies inside the filled region, as parameter intervals. One per convex ring;
- *  they are not merged, since overlapping tubes on the same line draw the same ink twice and nothing
- *  downstream cares. */
+/** Where the line P + t·u lies inside the filled region, as parameter intervals, one per stretch of
+ *  ink. Pieces that touch are merged: a measured fill (lib/render/planarFill.ts) cuts a face into dozens
+ *  of slivers, and left apart they would hand the tube builder a crease in as many fragments. */
 function clipToRings(rs: number[][], verts: V3[], P: V3, u: V3): [number, number][] {
 	const iv: [number, number][] = [];
 	for (const r of rs) {
@@ -378,7 +383,14 @@ function clipToRings(rs: number[][], verts: V3[], P: V3, u: V3): [number, number
 		}
 		if (ok && lo < hi - 1e-9) iv.push([lo, hi]);
 	}
-	return iv;
+	iv.sort((p, q) => p[0] - q[0]);
+	const out: [number, number][] = [];
+	for (const s of iv) {
+		const last = out[out.length - 1];
+		if (last && s[0] <= last[1] + 1e-7) last[1] = Math.max(last[1], s[1]);
+		else out.push(s);
+	}
+	return out;
 }
 
 /**
@@ -455,7 +467,10 @@ function raySpans(ring: number[], verts: V3[], u: V3): boolean {
  * vertices of the polyhedron and shipping them would misstate V. They are appended past the record's
  * own vertices so the edge list, which indexes only the real ones, stays valid.
  */
-export function sphStarScene(p: SphStarPattern, mod2 = false): SphSchwarzScene {
+export function sphStarScene(p: SphStarPattern, mod2 = false, fillFaces: readonly number[] | null = null): SphSchwarzScene {
+	// A partial fill (sphericalGeometry.partialFill): an unfilled face keeps its edges and loses its surface, so it
+	// contributes no tile and, having no rings, no crease either.
+	const fill = fillFaces ? new Set(fillFaces) : null;
 	const key = new Map<string, number>();
 	const tileHue: number[] = [];
 	for (const [n, d] of p.stats.types) {
@@ -470,7 +485,7 @@ export function sphStarScene(p: SphStarPattern, mod2 = false): SphSchwarzScene {
 	p.faces.forEach((face, fi) => {
 		const [n, d] = p.faceType[fi];
 		const t = key.get(`${n}/${d}`) ?? 0;
-		const fr = starFaceRings(face, d, verts, mod2);
+		const fr = fill && !fill.has(fi) ? [] : starFaceRings(face, d, verts, mod2);
 		rings.push(fr);
 		for (const ring of fr) tiles[t].push(ring);
 	});

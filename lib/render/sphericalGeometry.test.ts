@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { SPHERICAL_SOLIDS } from "./sphericalSolids";
-import { flatSolidTriangles, solidFitScale, straightEdges } from "./sphericalGeometry";
+import { faceKindCount, flatSolidTriangles, partialFill, solidFitScale, straightEdges, vertexConfigs } from "./sphericalGeometry";
 import { SPH_NOT_INSCRIBED } from "@/lib/tilings/sph-inscribed";
+import type { Vec3 } from "./platonicSolids";
 
 // THE RENDERER MUST NOT RESHAPE THE SOLID.
 //
@@ -84,6 +85,60 @@ describe("the drawn polyhedron", () => {
 			}
 			const spread = Math.max(...radii) - Math.min(...radii);
 			expect(spread, `${s.id} was inflated onto a sphere it does not have`).toBeGreaterThan(1e-3);
+		}
+	});
+});
+
+describe("the partial fill: one vertex configuration, or one face", () => {
+	const solid = (id: string) => SPHERICAL_SOLIDS.find((s) => s.id === id)!;
+	const configs = (id: string) => vertexConfigs(solid(id).vertices, solid(id).faces).map((c) => `${c.label} x${c.count}`);
+
+	it("reads the vertex configurations off the solid", () => {
+		expect(configs("cube")).toEqual(["4.4.4 x8"]);
+		expect(configs("cuboctahedron")).toEqual(["3.4.3.4 x12"]);
+		// The square pyramid: four base corners and the apex. One fixed vertex could only show one.
+		expect(new Set(configs("square-pyramid"))).toEqual(new Set(["3.3.4 x4", "3.3.3.3 x1"]));
+		// Order round the vertex is part of it: the rhombicuboctahedron's twin differs from it in
+		// nothing else, and neither is 3.4.4.4 reordered.
+		expect(configs("rhombicuboctahedron")).toEqual(["3.4.4.4 x24"]);
+	});
+
+	it("shows a configuration with its runs as powers, and brackets a star", () => {
+		const short = (id: string) => vertexConfigs(solid(id).vertices, solid(id).faces).map((c) => c.short);
+		expect(short("cube")).toEqual(["4³"]);
+		expect(short("icosahedron")).toEqual(["3⁵"]);
+		expect(short("cuboctahedron")).toEqual(["3.4.3.4"]);
+		expect(new Set(short("square-pyramid"))).toEqual(new Set(["3².4", "3⁴"]));
+		// Five pentagrams round a vertex: the power belongs to the whole {5/2}, not to its 2.
+		const star: Vec3[] = [];
+		const pent = [0, 1, 2, 3, 4].map((k) => [Math.cos((4 * Math.PI * k) / 5), Math.sin((4 * Math.PI * k) / 5), 0] as Vec3);
+		star.push(...pent, [0, 0, 1]);
+		// One pentagram and the five triangles over it: a pentagrammic pyramid.
+		const faces = [[0, 1, 2, 3, 4], ...[0, 1, 2, 3, 4].map((k) => [k, (k + 1) % 5, 5])];
+		expect(new Set(vertexConfigs(star, faces).map((c) => c.short))).toEqual(new Set(["3².5/2", "3⁵"]));
+	});
+
+	it("on EVERY solid, each configuration fills exactly the faces through one vertex", () => {
+		for (const p of SPHERICAL_SOLIDS) {
+			const list = vertexConfigs(p.vertices, p.faces);
+			expect(list.reduce((n, c) => n + c.count, 0), p.id).toBe(new Set(p.faces.flat()).size);
+			list.forEach((c, pick) => {
+				const round = partialFill(p.vertices, p.faces, "vertex", pick)!;
+				expect(round.every((i) => p.faces[i].includes(c.vertex)), `${p.id} ${c.label}`).toBe(true);
+				expect(round.length, `${p.id} ${c.label}`).toBe(p.faces.filter((f) => f.includes(c.vertex)).length);
+			});
+			// The pick wraps, so one left over from a solid with more configurations is still valid.
+			expect(partialFill(p.vertices, p.faces, "vertex", list.length), p.id).toEqual(partialFill(p.vertices, p.faces, "vertex", 0));
+			expect(partialFill(p.vertices, p.faces, "all"), p.id).toBeNull();
+		}
+	});
+
+	it("offers one face only where the solid has one face shape", () => {
+		expect(faceKindCount(solid("cube").vertices, solid("cube").faces)).toBe(1);
+		expect(partialFill(solid("cube").vertices, solid("cube").faces, "face")).toEqual([0]);
+		for (const id of ["cuboctahedron", "square-pyramid"]) {
+			expect(faceKindCount(solid(id).vertices, solid(id).faces), id).toBe(2);
+			expect(partialFill(solid(id).vertices, solid(id).faces, "face"), id).toBeNull();
 		}
 	});
 });

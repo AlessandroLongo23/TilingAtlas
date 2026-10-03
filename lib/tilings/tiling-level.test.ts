@@ -145,6 +145,14 @@ describe.skipIf(!anyShard)("the levels over every shipped curved shelf", () => {
 			expect(tilingLevel({ ...r, spherical: {} }), r.id).toBe("hybrid");
 		}
 		rows = rows.filter((r) => !isGenus(r.id));
+		// The NOBLE shelf (2026-10-02) is held out too, and for a different reason: the levels classify
+		// tilings by REGULAR polygons, and a noble face is not one. Its `family` is a Schlafli type,
+		// "{5,5}", which is not a vertex configuration, so each of its 151 records must come back with no
+		// level at all. Asserted, so a noble record can never be filed as "regular" by accident.
+		const noble = rows.filter((r) => r.id.startsWith("sph-noble-"));
+		expect(noble).toHaveLength(151);
+		for (const r of noble) expect(tilingLevel({ ...r, spherical: {} }), r.id).toBeNull();
+		rows = rows.filter((r) => !r.id.startsWith("sph-noble-"));
 		// -> 401 on 2026-08-25: the dodecagonal prism and antiprism from the isotoxal palette, and the
 		// nine hemipolyhedra.
 		// -> 407 on 2026-08-31 with the ISOTOXAL-STAR shelf, whose six records carry a face written

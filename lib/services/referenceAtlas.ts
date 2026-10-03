@@ -675,6 +675,11 @@ export const SUB_ORDER = [
 	// higher genera for the same reason.
 	"spt-solid",
 	...Array.from({ length: 23 }, (_, i) => `spg${i + 2}-solid`),
+	// The noble polyhedra: the listed ones, then the two infinite families drawn from their parameters.
+	// Their own family, because noble is neither convex nor non-convex: the Platonic solids and the
+	// disphenoids are on these rows beside faces that cross themselves three times.
+	"nbl-solid",
+	"nbf-solid",
 	// Parametric-pentagon edge systems: one sub per Kershner type. "pen-" namespaced.
 	...PENT_EDGE_BOARDS.map((b) => pentEdgeSubOfBoard(b)),
 	// Parametric-isohedral edge systems: one sub per isohedral type. "ih-" namespaced.
@@ -728,6 +733,7 @@ export type SubFamily =
 	// boards and the halved boards; under "non-convex", the star polyhedra alone.
 	| "sph-convex"
 	| "sph-nonconvex"
+	| "sph-noble"
 	| "hyp-half"
 	| "pent"
 	| "ih";
@@ -753,6 +759,7 @@ export function familyOfSub(sub: string): SubFamily | null {
 	if (sub.startsWith("spx-")) return "sph-convex";   // the reference solids
 	if (sub === "sst" || sub === "sis-solid" || sub === "spn-solid" || sub === "spt-solid") return "sph-nonconvex";
 	if (/^spg\d+-solid$/.test(sub)) return "sph-nonconvex";
+	if (sub === "nbl-solid" || sub === "nbf-solid") return "sph-noble";
 	// The base hyperbolic shelf: one family per valence, "hyt-v8". A regex and not a table, because the
 	// six families are the six valences the corpus contains and hypTilingFamilyOfSub is the one place
 	// that parses the id.

@@ -2,6 +2,7 @@
 // analysis, the live vertex-orbit count) into one geometry-tagged spec object for the /play info card.
 // No React, no side effects — the presenter (components/tiling-info.tsx) never re-decides which fields
 // apply. Geometry-specific facts (orbifold, spherical V/E/F, point group) are derived here from {p,q}.
+import { nobleSymmetry } from "@/lib/render/nobleSolids";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import type { SymmetryData } from "@/lib/classes/symmetry/types";
 import type { OrbitData } from "@/lib/services/orbitsFromExactSource";
@@ -166,6 +167,8 @@ export interface SphericalSpec extends BaseSpec {
 	/** How the shelf got this record — engine search, construction from a parent, or classical
 	 *  tabulation. Null off the reference-solid shelves, which make no such claim. */
 	derivation: "searched" | "constructed" | "tabulated" | null;
+	/** The solid id of a NOBLE polyhedron, whose one face shape the card draws; null for everything else. */
+	noble?: string | null;
 }
 
 export type TilingSpec = EuclideanSpec | HyperbolicSpec | SphericalSpec;
@@ -284,12 +287,16 @@ export function buildTilingSpec(
 		// The point group, the reflection orbifold and V/E/F are derived from a regular {p,q} and nothing
 		// else: a bare vertex configuration is a Wythoff inverse this does NOT perform.
 		const reg = selected.spherical?.p != null && selected.spherical?.q != null ? selected.spherical : null;
+		// A noble polyhedron carries its group in the record it is regenerated from.
+		const solid = selected.spherical?.solid ?? "";
+		const noble = solid.startsWith("noble-") ? nobleSymmetry(solid) : null;
 		return {
 			geometry: "spherical",
 			label: name,
 			detail,
-			pointGroup: reg ? platonicPointGroup(reg.p!, reg.q!) : null,
-			orbifold: reg ? reflectionOrbifold(reg.p!, reg.q!) : null,
+			noble: solid.startsWith("noble-") ? solid : null,
+			pointGroup: noble?.group ?? (reg ? platonicPointGroup(reg.p!, reg.q!) : null),
+			orbifold: noble?.orbifold ?? (reg ? reflectionOrbifold(reg.p!, reg.q!) : null),
 			counts: reg ? platonicCounts(reg.p!, reg.q!) : null,
 			derivation: selected.derivation ?? null,
 			...base,

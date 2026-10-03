@@ -3,6 +3,8 @@
 import { useMemo } from "react";
 import { IcoFreedrawCanvas } from "@/components/freedraw/ico-freedraw-canvas";
 import { sheetCount, sphStarScene } from "@/lib/render/sphStar";
+import { partialFill } from "@/lib/render/sphericalGeometry";
+import { useConfiguration } from "@/stores/configuration";
 import type { SphStarPattern } from "@/lib/tilings/sph-star";
 
 import type { IcoMode } from "@/lib/render/icoFreedraw";
@@ -41,13 +43,20 @@ export function SphStarCanvas({
 	 *  twice, so it goes empty and the crossings read as a checkerboard. See starFaceRings. */
 	mod2?: boolean;
 }) {
-	const scene = useMemo(() => sphStarScene(pattern, mod2), [pattern, mod2]);
+	// One vertex's faces, or one face, over the whole wireframe: the same store fields and the same
+	// indices as the reference solids (components/spherical-canvas.tsx).
+	const faceView = useConfiguration((s) => s.solidFaceView);
+	const facePick = useConfiguration((s) => s.solidFacePick);
+	const fillFaces = useMemo(() => partialFill(pattern.vertices, pattern.faces, faceView, facePick), [pattern, faceView, facePick]);
+	// A partial fill is a view of the flat-faced figure, whatever the shape toggle says.
+	const shown: IcoMode = fillFaces ? "polyhedron" : mode;
+	const scene = useMemo(() => sphStarScene(pattern, mod2, fillFaces), [pattern, mod2, fillFaces]);
 	// Only sphere mode reads it, and it costs a sample sweep over every face — so it is measured here on
 	// demand instead of inside the scene, which the thumbnails build too.
 	// The sphere view's ramp has to be scaled to the sheets the FILL draws, so it reads the same flag.
 	const sheets = useMemo(
-		() => (mode === "sphere" ? sheetCount(pattern, 1024, mod2) : undefined),
-		[pattern, mode, mod2],
+		() => (shown === "sphere" ? sheetCount(pattern, 1024, mod2) : undefined),
+		[pattern, shown, mod2],
 	);
 	return (
 		<IcoFreedrawCanvas
@@ -55,7 +64,7 @@ export function SphStarCanvas({
 			solidId={`sphstar-${pattern.id}`}
 			vertices={scene.vertices}
 			allEdges={scene.allEdges}
-			mode={mode}
+			mode={shown}
 			keepRadius
 			showGrid={showGrid}
 			crossings={scene.crossings}

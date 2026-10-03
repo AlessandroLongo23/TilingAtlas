@@ -9,6 +9,12 @@ the invariant every shelf's tests assert. It is also the line that splits this d
 polyhedra that satisfies it is a gap in a shelf we have. A class that does not is not a gap at all; it is
 a different atlas, needing its own invariant, its own generator and its own certification.
 
+**Amended 2026-10-02 (AL):** the predicate still defines every shelf below, and it no longer bounds the
+atlas. The noble polyhedra ship under their own heading with a different invariant, vertex-transitive and
+face-transitive with faces of any planar shape, and a different certification: a complete published
+classification (Hill, arXiv:2607.28711) whose every solid is regenerated here from a point group and
+checked against the author's models. See §1b. Everything in §4 is still out, for the reason given there.
+
 ---
 
 ## 1. Regular-faced classes the atlas already covers
@@ -33,6 +39,30 @@ completeness proof are for **convex** regular-faced solids, Zalgaller's own exte
 regular-faced polyhedra with conditional edges") is still convex, and Klitzing's survey puts non-convexity
 out of scope. Those 364 records are this repo's own contribution and there is nothing to check them
 against — which is exactly why they ship with a measured signature and no invented name.
+
+---
+
+## 1b. The noble polyhedra, complete
+
+| Class | Published | Atlas | Shelf |
+|---|---|---|---|
+| Noble polyhedra, non-prismatic | 146 (Hill 2026, complete) | **146** | Noble, k = 1 |
+| Fissary figures (duals of the four with coplanar faces) | 4 | **2** | Noble, k = 1, labelled as not counted |
+| Disphenoids | a continuum | **the family** | Noble families, two parameters |
+| Stephanoids PC(n,p,q) and AC(n,p,q) | infinite, each a continuum in height | **every (p,q) for n up to 30** | Noble families, three parameters |
+
+Nine of the 146 are the Platonic and Kepler-Poinsot solids, which the atlas already had; they appear here
+too, because the shelf states a theorem with a count in it and 137 would not be that count. The slider
+stops at n = 30 and the family does not.
+
+**Not shipped: D-F1 and D-F2**, the other two fissary figures. Hill's repository has no model of them, and
+their faces revisit a point, so they are not polyhedra under the definition every renderer here assumes.
+What is missing is a model and a face ring that can pass through one point twice; it is not a size
+decision.
+
+**Names are owed.** The shelf uses Hill's symbols. The Polytope Wiki names most of these and credits their
+discoverers (Hess, Brückner, Webb, Mikloweit, Klein), and it does not use his symbols, so the map has to
+be built by congruence against its models.
 
 ---
 
@@ -102,6 +132,10 @@ were measured as embedded. A Stewart toroid is by definition embedded. The quasi
 Toroidal, self-intersecting, and **noble** (isohedral and isogonal at once). Wikipedia does not state
 whether the faces are regular, which has to be settled before deciding whether they belong here at all.
 If they are, they sit beside the genus shelf.
+
+**Settled 2026-10-02: they are not regular, and they ship.** A stephanoid's face is a crossed
+quadrilateral with one mirror. They are one of the two infinite families of noble polyhedra and are on
+the Noble shelf as a parametric record (§1b), not beside the genus shelf.
 
 ### 3.3 [Non-convex deltahedra](https://en.wikipedia.org/wiki/Deltahedron)
 
