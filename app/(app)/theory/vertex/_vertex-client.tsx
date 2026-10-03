@@ -28,7 +28,7 @@ import {
 const EXAMPLES = ["3.4.7.4", "3.4.4.7", "3.6.6.6", "3.7.7.7", "4.4.10.10", "3.5.3.5"];
 
 const FAMILY_NAME: Record<BoardMatch["board"]["family"], string> = {
-	abcd: "a.b.c.d board",
+	abcd: "4-valent board",
 	ai1: "3.4.n.4 board",
 	ai2: "{3,n} board",
 };
@@ -142,7 +142,7 @@ function Report({ report }: { report: FigureReport }) {
 					boards.map((m) => <BoardCard key={`${word}-${m.board.id}`} m={m} word={word} />)
 				) : (
 					<p className="text-sm text-fg-muted">
-						No board in the hyperbolic catalogue carries this figure yet. The a.b.c.d boards cover 4-valent figures over
+						No board in the hyperbolic catalogue carries this figure yet. The 4-valent boards cover figures over
 						polygon sizes 3 to 11.
 					</p>
 				)
