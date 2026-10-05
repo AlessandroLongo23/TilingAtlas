@@ -85,7 +85,8 @@ class Board:
 
     def __init__(self, bid, label, l, sizes, prefix):
         self.id, self.label, self.l, self.sizes, self.prefix = bid, label, l, sizes, prefix
-        self.units = {f"S{p}": interior_angle(p, l) for p in sizes}
+        # Marek's letter is S on the 2023 builds and A on the hybrid ones; the size token is the same.
+        self.units = {f"{c}{'oo' if p == 0 else p}": interior_angle(p, l) for p in sizes for c in "SA"}
 
     @staticmethod
     def family(n):
@@ -105,6 +106,20 @@ class Board:
         if l is None:
             raise DevelopError(f"board {bid} ({'.'.join(map(str, sizes))}) is not hyperbolic")
         return Board(bid, ",".join(map(str, sizes)), l, sorted(set(sizes)), "hpq")
+
+    @staticmethod
+    def hybrid(bid, figure):
+        """One `hybrid_<edge>` board whose polygons all sit at the base edge. `figure` is ONE closing
+        vertex figure, 0 for an apeirogon; ℓ is solved from it and every other figure in the corpus is
+        then asserted to close at that ℓ by `vtable_variants_hyp`. The apeirogon sorts last, so the
+        finite polygons keep the colour indices they have on every other board."""
+        l = solve_edge_length(figure)
+        if l is None:
+            raise DevelopError(f"hybrid {bid}: {figure} is not hyperbolic")
+        sizes = sorted(set(figure), key=lambda p: (p == 0, p))
+        # Board id "y17627" for hybrid_1_7627, the way ai2's are "t7": the "y" keeps it clear of the
+        # other families' ids, and with prefix "hp" the shard stem and record ids come out as "hpy17627".
+        return Board("y" + bid.replace("_", ""), ".".join("∞" if p == 0 else str(p) for p in figure), l, sizes, "hp")
 
 
 def board_of(n):
@@ -173,7 +188,7 @@ def develop_cert(cert, board, boundR=0.86):
                 reasons.append("patch not regular: %r" % res)
                 continue
             face_of, faces = quotient_faces(block)
-            if any(f["size"] < 3 for f in faces):
+            if any(0 < f["size"] < 3 for f in faces):
                 reasons.append("degenerate face (digon) — this is not an edge system")
                 continue
             darts = emit_darts(block, face_of, faces, sizes)
@@ -186,8 +201,8 @@ def develop_cert(cert, board, boundR=0.86):
         figures = []
         for t in cert["types"]:
             period = [tile_size(c) for c in t["figure"]]
-            reps = round(TWO_PI / sum(units[f"S{p}"] for p in period))
-            figures.append(".".join(str(p) for p in period * reps))
+            reps = round(TWO_PI / sum(units[c] for c in t["figure"]))
+            figures.append(".".join("∞" if p == 0 else str(p) for p in period * reps))
         return {
             "k": cert.get("k"),
             "base": board.id,
@@ -308,7 +323,7 @@ def run(source, board, out_prefix, ks=None, report_path=None, budget=None, bound
     lines = [f"{board.label} develop ({board.id}) — tilings by regular {sizes} at one edge length",
              f"source          : {source}",
              f"forced edge len : l = {l:.12f}",
-             "angles          : " + ", ".join(f"{p}-gon {math.degrees(units[f'S{p}']):.4f}deg" for p in sizes),
+             "angles          : " + ", ".join(f"{p or '∞'}-gon {math.degrees(interior_angle(p, l)):.4f}deg" for p in sizes),
              f"certificates in : {n_certs}",
              f"developed       : {sum(len(v) for v in by_k.values())}",
              f"failed          : {sum(failures.values())}",
@@ -375,6 +390,8 @@ def main():
     ap.add_argument("source", nargs="?")
     ap.add_argument("--n", type=int, help="the 3.4.n.4 family parameter")
     ap.add_argument("--board", help="an abcdtest board id (e.g. 4568, 35bb) — the general a.b.c.d boards")
+    ap.add_argument("--hybrid", help="a hybrid board id (e.g. 1_7627); needs --figure")
+    ap.add_argument("--figure", help="one closing vertex figure for --hybrid, 0 = apeirogon (e.g. 0,0,4,4,4)")
     ap.add_argument("--out")
     ap.add_argument("--report")
     ap.add_argument("--ks")
@@ -388,10 +405,14 @@ def main():
         return
     if not args.source:
         ap.error("source is required unless --selftest")
-    if (args.n is None) == (args.board is None):
-        ap.error("give exactly one of --n (the 3.4.n.4 family) or --board (an a.b.c.d board id)")
+    if sum(x is not None for x in (args.n, args.board, args.hybrid)) != 1:
+        ap.error("give exactly one of --n (the 3.4.n.4 family), --board (an a.b.c.d id) or --hybrid")
     if args.n is not None:
         board = Board.family(args.n)
+    elif args.hybrid is not None:
+        if not args.figure:
+            ap.error("--hybrid needs --figure")
+        board = Board.hybrid(args.hybrid, [int(x) for x in args.figure.split(",")])
     else:
         # The certificates decide the alphabet; the id only names the board. See `figure_in`.
         fig = figure_in(args.source)

@@ -225,41 +225,6 @@ describe.skipIf(!anyShard)("shards", () => {
 		expect(hypPolyFamilyLabel(q("3488"))).toBe("3.8.4.8");
 		expect(hypPolyFamilyLabel({ ...r, config: "4.8.4.3 + 3.4.8.4 + 8.4.3.4" })).toBe("3.4.8.4");
 	});
-
-	// The offline per-pixel certification stamp (scripts/stamp-hyp-poly-certification.ts) is rolling out
-	// across the corpus and is INCOMPLETE by design: the stamp run is hours long, and a record with no flag
-	// reads as "untried", which is exactly the old behaviour (attempt the certificate, fall back on failure).
-	// So partial coverage is safe, and the shelf gets the saved main-thread time on whatever is stamped.
-	//
-	// What is NOT safe is a HALF-written shard. The stamper stamps every row of a shard and then writes the
-	// file once, so a shard is all-or-nothing; a partially stamped one means a write was interrupted, and
-	// that is the state worth failing on. `certified` must also never be anything but a boolean or absent.
-	it.runIf(anyShard)("has no half-stamped shard, and no non-boolean stamp", () => {
-		const halfStamped: string[] = [];
-		const badValue: string[] = [];
-		let stamped = 0;
-		let total = 0;
-		for (const b of HYP_POLY_BOARDS) {
-			for (const k of hypPolyBoardKs(b)) {
-				const rows = shardOf(b, k);
-				if (!rows?.length) continue;
-				for (const r of rows) if (r.certified !== undefined && typeof r.certified !== "boolean") badValue.push(r.id);
-				const n = rows.filter((r) => typeof r.certified === "boolean").length;
-				if (n !== 0 && n !== rows.length) halfStamped.push(`hp${b.id}-k${k} (${n}/${rows.length})`);
-				stamped += n;
-				total += rows.length;
-			}
-		}
-		expect(badValue.slice(0, 10)).toEqual([]);
-		expect(halfStamped, "a shard is written whole; a partial one means an interrupted write").toEqual([]);
-		// Coverage is reported, not asserted — resume with `node scripts/stamp-hyp-poly-parallel.mjs 8 --skip-stamped`.
-		console.info(`hyp-poly certification stamp coverage: ${stamped}/${total} records (${((stamped / total) * 100).toFixed(1)}%)`);
-	});
-
-	it.runIf(anyShard)("carries the stamp through hypPolyMeta, which is what the canvas reads", () => {
-		const r = shardOf(ai1[0], 1)![0];
-		expect(hypPolyMeta(r).certified).toBe(r.certified);
-	});
 });
 
 describe("the three ways a k can be absent", () => {

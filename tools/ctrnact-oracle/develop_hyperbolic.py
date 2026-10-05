@@ -39,8 +39,9 @@ TWO_PI = 2 * math.pi
 
 # ----------------------------------------------------------------------------- hyperbolic geometry
 def interior_angle(p, l):
-    """Interior angle of a regular p-gon of edge length l in H² (p=inf → apeirogon: cos(π/∞)=1)."""
-    r = math.cos(math.pi / p) / math.cosh(l / 2)
+    """Interior angle of a regular p-gon of edge length l in H². p = 0 is the apeirogon sentinel (the
+    same one `euclid_sum` reads): cos(π/∞) = 1, the polygon inscribed in a horocycle."""
+    r = (1.0 if p == 0 else math.cos(math.pi / p)) / math.cosh(l / 2)
     return 2 * math.asin(min(1.0, max(-1.0, r)))
 
 

@@ -724,6 +724,7 @@ export type SubFamily =
 	| "hyp-poly"
 	| "hyp-poly-t"
 	| "hyp-poly-q"
+	| "hyp-poly-y"
 	// The base hyperbolic shelf, one family per VALENCE — "hyt-v3" … "hyt-v8". A template member and not
 	// six literals: the valences are whatever the corpus holds, and HYP_TILING_VALENCES is the list.
 	| `hyt-v${number}`
@@ -756,6 +757,8 @@ export function familyOfSub(sub: string): SubFamily | null {
 	if (sub.startsWith("hpt-")) return "hyp-poly-t";
 	// The third family on that shelf: every 4-valent a.b.c.d that closes hyperbolically (`abcdtest`).
 	if (sub.startsWith("hpq-")) return "hyp-poly-q";
+	// The fourth: Marek's hybrid systems, several figures at one edge length, apeirogons included.
+	if (sub.startsWith("hpy-")) return "hyp-poly-y";
 	if (sub.startsWith("spx-")) return "sph-convex";   // the reference solids
 	if (sub === "sst" || sub === "sis-solid" || sub === "spn-solid" || sub === "spt-solid") return "sph-nonconvex";
 	if (/^spg\d+-solid$/.test(sub)) return "sph-nonconvex";

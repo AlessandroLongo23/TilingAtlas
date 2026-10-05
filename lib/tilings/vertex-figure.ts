@@ -101,6 +101,7 @@ export function describeFigure(input: readonly number[]): FigureReport {
 	const edge = closingEdge(figure);
 	const boards: BoardMatch[] = [];
 	for (const board of HYP_POLY_BOARDS) {
+		if (board.family === "hybrid") continue; // apeirogons: outside what a typed figure can name yet
 		const { fig, alphabet } = boardShape(board);
 		if (!figure.every((n) => alphabet.includes(n)) || Math.abs(closingEdge(fig) - edge) > 1e-9) continue;
 		const ks = Object.keys(board.counts).map(Number).sort((x, y) => x - y);

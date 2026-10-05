@@ -33,13 +33,15 @@ function boardOf(stem) {
 	if (m) return { id: `t${m[1]}`, family: "ai2", n: Number(m[1]) };
 	m = /^hp(\d+)$/.exec(stem);
 	if (m) return { id: m[1], family: "ai1", n: Number(m[1]) };
+	m = /^hp(y[0-9a-z]+)$/.exec(stem);
+	if (m) return { id: m[1], family: "hybrid" };
 	return null;
 }
 
 const byBoard = new Map();
 for (const dir of dirs) {
 	for (const f of fs.readdirSync(dir)) {
-		const m = /^(hp[qt]?[0-9ab]+)-k(\d+)\.json$/.exec(f);
+		const m = /^(hp(?:[qt]?[0-9ab]+|y[0-9a-z]+))-k(\d+)\.json$/.exec(f);
 		if (!m) continue;
 		const b = boardOf(m[1]);
 		if (!b) continue;
@@ -51,11 +53,11 @@ for (const dir of dirs) {
 
 const rows = [];
 let totalRecs = 0, totalRaw = 0, totalGz = 0;
-const order = { ai1: 0, ai2: 1, abcd: 2 };
+const order = { ai1: 0, ai2: 1, abcd: 2, hybrid: 3 };
 const keys = [...byBoard.keys()].sort((a, b) => {
 	const x = byBoard.get(a), y = byBoard.get(b);
 	if (order[x.family] !== order[y.family]) return order[x.family] - order[y.family];
-	return x.family === "abcd" ? x.id.localeCompare(y.id) : x.n - y.n;
+	return x.n === undefined ? x.id.localeCompare(y.id) : x.n - y.n;
 });
 
 for (const key of keys) {

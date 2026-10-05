@@ -31,6 +31,7 @@ const FAMILY_NAME: Record<BoardMatch["board"]["family"], string> = {
 	abcd: "4-valent board",
 	ai1: "3.4.n.4 board",
 	ai2: "{3,n} board",
+	hybrid: "hybrid board",
 };
 
 /** Euclidean corner-angle sum in degrees: 360 exactly for a flat figure. */

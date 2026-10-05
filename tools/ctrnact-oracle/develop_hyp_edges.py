@@ -128,8 +128,8 @@ def alphabet(config):
 
 
 def tile_size(letter):
-    """'A2' -> 2, 'A7' -> 7."""
-    return int(letter[1:])
+    """'A2' -> 2, 'A7' -> 7, 'Aoo' -> 0 (the apeirogon sentinel of develop_hyperbolic.interior_angle)."""
+    return 0 if letter[1:] == "oo" else int(letter[1:])
 
 
 # ------------------------------------------------------------------ vertex tables (the bridge)

@@ -40,8 +40,11 @@ export interface HypPolyBoard {
 	 *
 	 *  "abcd" is Marek's `abcdtest`: not a one-parameter family but every 4-valent vertex figure a.b.c.d
 	 *  over polygon sizes 3…11 that closes hyperbolically — 248 boards. Its alphabet is exactly its own
-	 *  digits, where ai1's is {3, 4, n, 2n}; `Board.abcd` in develop_ai1.py is the whole difference. */
-	family: "ai1" | "ai2" | "abcd";
+	 *  digits, where ai1's is {3, 4, n, 2n}; `Board.abcd` in develop_ai1.py is the whole difference.
+	 *
+	 *  "hybrid" is one of Marek's `hybrid_<edge>` systems: several vertex figures that close at one edge
+	 *  length, apeirogons among the polygons. The id is "y" plus the edge's digits ("y17627" = 1.7627). */
+	family: "ai1" | "ai2" | "abcd" | "hybrid";
 	/** k slices eager-loaded on entering the Hyperbolic geometry — the five lowest, all tiny. */
 	eagerKs: number[];
 	/** k slices fetched only when that k comes into view. */
@@ -80,14 +83,6 @@ export interface HypPolyPattern {
 	edge: number;
 	/** A chiral solution (from an `_o_` certificate); its mirror is implied, not listed. */
 	chiral?: boolean;
-	/**
-	 * Per-pixel renderability, stamped offline by scripts/stamp-hyp-poly-certification.ts. False means
-	 * buildDirichletDomain refuses this tiling (its deck orbit needs developing past the float64 safe rim,
-	 * Rdev > 10.6) and clients go straight to the 2D developed renderer instead of paying the doomed
-	 * attempt, which costs a median 210 ms and up to 1.2 s on the main thread. Capability metadata, not
-	 * catalog policy: the tiling is real and ships either way. Absent = untried → attempt it.
-	 */
-	certified?: boolean;
 	/** Reference-development face count — a size hint, not geometry. */
 	tiles: number;
 	/** The sole render input, re-developed under the view. */
@@ -389,6 +384,8 @@ export const HYP_POLY_BOARDS: HypPolyBoard[] = [
 	{ id: "99aa", n: 0, label: "9,9,10,10", family: "abcd", eagerKs: [], lazyKs: [1], dropped: [], counts: { 1: 1 } },
 	{ id: "9aaa", n: 0, label: "9,10,10,10", family: "abcd", eagerKs: [], lazyKs: [1], dropped: [], counts: { 1: 1 } },
 	{ id: "aaaa", n: 0, label: "10,10,10,10", family: "abcd", eagerKs: [], lazyKs: [1], dropped: [], counts: { 1: 1 } },
+	// Marek's hybrid systems. The label is the edge length the system is named for and its polygons.
+	{ id: "y17627", n: 0, label: "edge 1.7627 (4, ∞)", family: "hybrid", eagerKs: [], lazyKs: [1, 2, 3], dropped: [], counts: { 1: 8, 2: 260, 3: 11586 } },
 ];
 
 export const HYP_POLY_BOARD_BY_ID = new Map(HYP_POLY_BOARDS.map((b) => [b.id, b]));
@@ -438,14 +435,19 @@ export const hypPolyShardUrl = (n: string | number, k: number): string => {
  *  split by family so the tree can head the two separately ("3.4.n.4 boards" against "{3,n} boards")
  *  while `familyOfSub` stays a prefix test. One rule, two callers: a board and a record must never
  *  disagree about which row a tiling belongs to. */
-const SUB_PREFIX: Record<HypPolyBoard["family"], string> = { ai1: "hpo", ai2: "hpt", abcd: "hpq" };
+const SUB_PREFIX: Record<HypPolyBoard["family"], string> = { ai1: "hpo", ai2: "hpt", abcd: "hpq", hybrid: "hpy" };
 /** The board TABLE decides the prefix, not the shape of the id. With three families sharing the shelf
  *  there is no rule from "4568" to its family that would not be guessing at string lengths — ai1's ids
  *  are bare digits too — and the table already carries the answer. Falls back to the 3.4.n.4 prefix for
  *  an id the table does not know, which is what every caller did before the third family existed. */
 const subOfBoardId = (id: string): string => {
 	const fam = HYP_POLY_BOARD_BY_ID.get(id)?.family;
-	return `${fam ? SUB_PREFIX[fam] : "hpo"}-${fam === "ai2" ? id.slice(1) : id}`;
+	return `${fam ? SUB_PREFIX[fam] : "hpo"}-${fam === "ai2" || fam === "hybrid" ? id.slice(1) : id}`;
+};
+/** The inverse: the board a sub-axis key names, or undefined when the key is not a hyp-poly one. */
+export const hypPolyBoardOfSub = (sub: string | null | undefined): HypPolyBoard | undefined => {
+	const m = /^hp([otqy])-(.+)$/.exec(sub ?? "");
+	return m ? HYP_POLY_BOARD_BY_ID.get(m[1] === "t" || m[1] === "y" ? m[1] + m[2] : m[2]) : undefined;
 };
 export const hypPolySub = (p: HypPolyPattern): string => subOfBoardId(p.base);
 export const hypPolySubOfBoard = (b: HypPolyBoard): string => subOfBoardId(b.id);
@@ -454,9 +456,7 @@ export const hypPolySubOfBoard = (b: HypPolyBoard): string => subOfBoardId(b.id)
  *  board's alphabet size — this shelf fills a face by its POLYGON SIZE, so the palette needs one entry
  *  per size, and `darts.faceColor` is already the index into `stats.sizes`. */
 export function hypPolyMeta(p: HypPolyPattern) {
-	// `certified` has to come along: this object IS what the canvas and thumbnail see, so dropping it here
-	// would read as "untried" and put every hyp-poly tiling back on the doomed certification attempt.
-	return { id: p.id, config: p.family, edge: p.edge, darts: p.darts, colors: p.stats.sizes.length, certified: p.certified };
+	return { id: p.id, config: p.family, edge: p.edge, darts: p.darts, colors: p.stats.sizes.length };
 }
 
 /** A vertex figure in its canonical cyclic order: the least of its rotations and reflections, so [4,8,4,3]
@@ -471,7 +471,11 @@ export function canonicalCycle(s: readonly number[]): number[] {
 		}
 	return best;
 }
-const canonicalFigure = (fig: string): string => canonicalCycle(fig.split(".").map(Number)).join(".");
+/** "∞" is an apeirogon; it sorts after every finite polygon. */
+const canonicalFigure = (fig: string): string =>
+	canonicalCycle(fig.split(".").map((t) => (t === "∞" ? Infinity : Number(t))))
+		.map((n) => (n === Infinity ? "∞" : n))
+		.join(".");
 
 /** Card / search label: the distinct vertex figures of the tiling, e.g. "3.4.8.4" or "3.4.7.4 + 4.7.14".
  *  The polygon sizes alone cannot tell 3.4.8.4 from 3.8.4.8, and the board label is only the multiset,

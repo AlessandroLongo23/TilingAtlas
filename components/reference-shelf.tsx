@@ -23,7 +23,7 @@ import { hypColorsLazyShardsForK } from "@/lib/colors/hyp-colors";
 import { sphColorsLazyShardsForK } from "@/lib/colors/sph-colors";
 import { schwarzLazyShardsForK } from "@/lib/freedraw/schwarz";
 import { sphEdgesLazyShardsForK } from "@/lib/freedraw/sph-edges";
-import { HYP_POLY_BOARD_BY_ID, hypPolyLazyShardsForK } from "@/lib/tilings/hyp-poly";
+import { hypPolyBoardOfSub, hypPolyLazyShardsForK } from "@/lib/tilings/hyp-poly";
 import { hypHalfLazyShardsForK } from "@/lib/tilings/hyp-half";
 import { pentEdgeLazyShardsForK } from "@/lib/pentagon/edge-shelf";
 import { ihEdgeLazyShardsForK } from "@/lib/isohedral/edge-shelf";
@@ -1037,9 +1037,7 @@ export function ReferenceShelf() {
 			} else {
 				// Scoped to the selected board for the reason the hyperbolic EDGE bases are (see that effect):
 				// a k chip used to pull that k from every board at once, which is heap, not bytes.
-				const onlyPoly = filters.board?.startsWith("hpo-") || filters.board?.startsWith("hpq-")
-					? filters.board.slice(4)
-					: filters.board?.startsWith("hpt-") ? `t${filters.board.slice(4)}` : null;
+				const onlyPoly = hypPolyBoardOfSub(filters.board)?.id ?? null;
 				for (const b of hypPolyLazyShardsForK(k)) {
 					if (onlyPoly && b.id !== onlyPoly) continue;
 					const token = `hpo-${b.id}-${k}`;
@@ -1064,11 +1062,7 @@ export function ReferenceShelf() {
 		// ⚑ This covered `hpq-` only until 2026-09-01, and the asymmetry was visible on screen: clicking
 		// 3.4.7.4 in /library showed 10 tilings, its five eager slices, against 16,459 shipped. Found by
 		// walking the shelf by click instead of by URL. With a k also chosen, just that slice loads.
-		const polyBoard = filters.board?.startsWith("hpq-") || filters.board?.startsWith("hpo-")
-			? HYP_POLY_BOARD_BY_ID.get(filters.board.slice(4))
-			: filters.board?.startsWith("hpt-")
-				? HYP_POLY_BOARD_BY_ID.get(`t${filters.board.slice(4)}`)
-				: undefined;
+		const polyBoard = hypPolyBoardOfSub(filters.board);
 		if (polyBoard) {
 			for (const bk of polyBoard.lazyKs) {
 				if (k != null && bk !== k) continue;
