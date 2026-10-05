@@ -2,6 +2,7 @@
 // analysis, the live vertex-orbit count) into one geometry-tagged spec object for the /play info card.
 // No React, no side effects — the presenter (components/tiling-info.tsx) never re-decides which fields
 // apply. Geometry-specific facts (orbifold, spherical V/E/F, point group) are derived here from {p,q}.
+import { creditsOf, type Credit } from "@/lib/attribution";
 import { nobleSymmetry } from "@/lib/render/nobleSolids";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import type { SymmetryData } from "@/lib/classes/symmetry/types";
@@ -43,6 +44,9 @@ interface BaseSpec extends OrbitCounts {
 	 *  Euclidean catalogue, which ships no per-orbit vertex configurations and where the top rung would be
 	 *  vacuous anyway. It belongs beside k and m because it IS those two plus one more test. */
 	level: TilingLevel | null;
+	/** Who found it, who classified it, and where that is written (lib/attribution). Optional so a spec
+	 *  built outside the catalogue, which has no record to credit, need not carry an empty list. */
+	credits?: Credit[];
 }
 
 // Freedraw facts, present ONLY on a freedraw entry. It stays inside EuclideanSpec instead of becoming a
@@ -267,7 +271,8 @@ export function buildTilingSpec(
 	symmetryData: SymmetryData | null,
 	orbitData: OrbitData | null,
 ): TilingSpec {
-	const base: OrbitCounts & { level: TilingLevel | null } = {
+	const base: OrbitCounts & { level: TilingLevel | null; credits: Credit[] } = {
+		credits: creditsOf(selected),
 		k: orbitData?.k ?? selected.k ?? null,
 		m: selected.m ?? null,
 		partition: selected.partition ?? null,

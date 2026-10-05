@@ -24,6 +24,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { NOBLE_SEED, cycleKey, nobleId, nobleOrbit } from "../lib/render/nobleSolids";
 import type { NobleGroup } from "../lib/render/nobleData";
+import { creditsOf, leadCredit, nobleName } from "../lib/attribution";
 import type { Vec3 } from "../lib/render/platonicSolids";
 
 const args = process.argv.slice(2).filter((a) => !a.startsWith("--"));
@@ -251,6 +252,8 @@ ${built.map((b) => `\t["${b.symbol}", "${b.group}", [${b.face.join(", ")}]],`).j
 
 const GON: Record<number, string> = { 3: "triangles", 4: "quadrilaterals", 5: "pentagons", 6: "hexagons", 8: "octagons", 9: "enneagons", 12: "dodecagons" };
 const CLASSIFIED = `Classified by Connor Hill, ${PAPER} (2026)`;
+// The record's one `discoverer` string is the DISCOVERER where one is on record, since that is what the
+// /library facet filters on; the classification is the second credit, in lib/attribution, and on the card.
 const row = (solid: string, name: string, family: string, note: string) => ({
 	id: `sph-${solid}`,
 	source: "spherical",
@@ -258,7 +261,7 @@ const row = (solid: string, name: string, family: string, note: string) => ({
 	family,
 	spherical: { solid, name },
 	geometry: "spherical",
-	discoverer: CLASSIFIED,
+	discoverer: leadCredit(creditsOf({ spherical: { solid } })) ?? CLASSIFIED,
 	note,
 	renderCell: { b: [[1, 0], [0, 1]], i: [0, 0] },
 	derivation: "tabulated",
@@ -272,7 +275,9 @@ const made = built.map((b) => {
 	const what = b.fissary
 		? `Fissary figure ${b.symbol}: ${b.F} ${GON[b.p]}, ${b.E} edges, and ${b.V} points that each carry TWO coinciding vertices, so ${b.q} faces meet at every point. Hill does not count it among the 146: it is the dual of a noble polyhedron with coplanar faces, and it is a polyhedron only if coinciding vertices are allowed.`
 		: `Noble polyhedron ${b.symbol}${b.classic ? `, the ${b.classic.toLowerCase()}` : ""}: ${b.F} ${GON[b.p]}, ${b.V} vertices, ${b.E} edges, type {${b.p},${b.q}}, symmetry ${ORBIFOLD[b.group]}. Every vertex is equivalent to every other and every face to every other, which is what noble means; the edges need not be, and the faces need not be regular.${dual ? ` Its dual is ${dual}.` : ""} One of the 146 in Hill's classification.`;
-	return row(nobleId(b.symbol), b.classic ? `${b.classic} (${b.symbol})` : b.symbol, `{${b.p},${b.q}}`, `${what} ${where}`);
+	// The literature's name where it has one (scripts/build-noble-credits.ts), Hill's symbol always.
+	const known = nobleName(nobleId(b.symbol)) ?? b.classic;
+	return row(nobleId(b.symbol), known ? `${known} (${b.symbol})` : b.symbol, `{${b.p},${b.q}}`, `${what} ${where}`);
 });
 const FAMILY = "One of the two infinite families of noble polyhedra, and with the 146 listed ones the whole class (Hill, Corollary 4.15). It cannot be listed, so it is drawn from its parameters: move them in the Options tab.";
 made.push(

@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { TilingInfo } from "@/components/tiling-info";
 import type { TilingSpec } from "@/lib/services/tilingSpec";
+import { creditsOf } from "@/lib/attribution";
 
 const orbits = { k: 1, m: null, partition: null, edgeOrbits: null, faceOrbits: null, level: null };
 
@@ -36,8 +37,9 @@ describe("TilingInfo spec card", () => {
 		expect(screen.getByText("Vertices (k)")).toBeInTheDocument();
 		expect(screen.getByText("3 [5·1·1]")).toBeInTheDocument();
 		expect(screen.queryByText(/tiles in view/i)).not.toBeInTheDocument();
-		// edge/tile orbits flagged
-		expect(screen.getAllByText("not computed").length).toBe(2);
+		// edge/tile orbits flagged, once: one quiet line where there used to be a row each
+		expect(screen.getAllByText("not computed").length).toBe(1);
+		expect(screen.getByText("edge and tile")).toBeInTheDocument();
 	});
 
 	it("hyperbolic: shows Coxeter group + orbifold, no lattice", () => {
@@ -81,6 +83,28 @@ describe("TilingInfo spec card", () => {
 		hover();
 		expect(screen.getByText("Level")).toBeInTheDocument();
 		expect(screen.getByText("Hybrid")).toBeInTheDocument();
+	});
+
+	it("attribution: each credit with its role, its year, and links to the person and the source", () => {
+		const spec: TilingSpec = {
+			geometry: "spherical",
+			label: "Ditrigonal icosahedron (D-3)",
+			detail: "{6,6}",
+			pointGroup: "Ih",
+			orbifold: "*532",
+			counts: null,
+			derivation: "tabulated",
+			...orbits,
+			credits: creditsOf({ spherical: { solid: "noble-d-3" } }),
+		};
+		render(<TilingInfo spec={spec} />);
+		hover();
+		expect(screen.getByText("Discovered by")).toBeInTheDocument();
+		expect(screen.getByText("Classified by")).toBeInTheDocument();
+		expect(screen.getByRole("link", { name: "Edmund Hess" })).toHaveAttribute("href", "https://en.wikipedia.org/wiki/Edmund_Hess");
+		expect(screen.getByText("1877")).toBeInTheDocument();
+		expect(screen.getByRole("link", { name: "Connor Hill" })).toBeInTheDocument();
+		expect(screen.getByRole("link", { name: /arXiv:2607\.28711/ })).toHaveAttribute("href", "https://arxiv.org/abs/2607.28711");
 	});
 
 	it("spherical Platonic: shows point group and V/E/F", () => {
