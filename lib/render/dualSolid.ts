@@ -31,6 +31,7 @@
 // 30{4}, 60{3}, 60{3}, 60{4}, 120{3}, 60{5} — every one measuring a single face orbit. dual-solid.test.ts
 // asserts that, so a change to the operator that broke the Catalans could not ship quietly.
 
+import { ringNormal } from "./planarFill";
 import type { Polyhedron, Vec3 } from "./platonicSolids";
 
 const dot = (a: Vec3, b: Vec3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
@@ -63,6 +64,14 @@ export function facePlane(vertices: readonly Vec3[], ring: readonly number[]): {
 			n[2] + (a[0] - b[0]) * (a[1] + b[1]),
 		];
 	}
+	// ⚑ Newell's sum is the ring's vector AREA, and a ring can have none: a crossed quadrilateral or
+	// hexagon with a half-turn symmetry has lobes that cancel exactly. What came back then was the
+	// direction of rounding noise, and the "dual" of a noble polyhedron such as tI-1.1 had its vertices
+	// scattered from 0.02 to 1 of the radius. Where the area is negligible against the perimeter the
+	// plane is read off the sharpest corner instead; every face that has an area is untouched.
+	let perimeter = 0;
+	for (let i = 0; i < ring.length; i++) perimeter += len(sub(vertices[ring[i]], vertices[ring[(i + 1) % ring.length]]));
+	if (len(n) < 1e-6 * perimeter * perimeter) n = ringNormal(vertices as Vec3[], ring);
 	const u = unit(n);
 	return { n: u, d: dot(u, vertices[ring[0]]) };
 }

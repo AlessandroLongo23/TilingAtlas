@@ -15,6 +15,7 @@ import {
 	stephanoidChoices,
 } from "@/lib/render/nobleSolids";
 import { isConvexRing, planarFillRings, maxWinding } from "@/lib/render/planarFill";
+import { polarDual } from "@/lib/render/dualSolid";
 import { starFaceRings } from "@/lib/render/sphStar";
 import { faceKindCount, flatSolidTriangles, partialFill, vertexConfigs } from "@/lib/render/sphericalGeometry";
 import type { Polyhedron, Vec3 } from "@/lib/render/platonicSolids";
@@ -254,5 +255,30 @@ describe("reading a noble polyhedron: one vertex, one face, and the face laid fl
 			expect(p.schlafli[0] * shape.F, id).toBe(2 * shape.E);
 			expect(p.schlafli[1] * shape.V, id).toBe(2 * shape.E);
 		}
+	});
+});
+
+describe("the dual of a noble polyhedron", () => {
+	it("is itself inscribed, on all but the four whose faces share planes", () => {
+		// A noble polyhedron's dual is noble, so vertex-transitive, so on one sphere. Asserted because the
+		// reciprocal read each face's plane off its vector area, and 45-odd of these faces have none: the
+		// dual came out as scattered points and the Dual button drew it.
+		const refused: string[] = [];
+		for (const id of NOBLE_IDS) {
+			const d = polarDual(nobleSolid(id)!);
+			if (!("dual" in d)) {
+				refused.push(id.replace("noble-", ""));
+				continue;
+			}
+			const radii = d.dual.vertices.map((v) => len(v as Vec3));
+			expect((Math.max(...radii) - Math.min(...radii)) / Math.max(...radii), id).toBeLessThan(1e-9);
+			expect(d.dual.vertices, id).toHaveLength(nobleSolid(id)!.faces.length);
+		}
+		// Hill, Section 5.2: D-4, D-5, gD-19.1 and gD-28.1 have coplanar faces, so their duals have
+		// coinciding vertices. polarDual refuses the first two outright and returns the other two with the
+		// coincidence in them, which is the fissary figure the shelf ships as tI-F and rD-F. Either answer
+		// is defensible, so only the set a refusal may come from is asserted.
+		expect(refused).toEqual(expect.arrayContaining(["d-4", "d-5"]));
+		for (const r of refused) expect(["d-4", "d-5", "gd-19-1", "gd-28-1", "ti-f", "rd-f"]).toContain(r);
 	});
 });

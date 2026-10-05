@@ -41,7 +41,7 @@ const cross = (a: V3, b: V3): V3 => [
  * that is every face of every stephanoid. The sign here is whichever way the sharpest corner turns,
  * which is all a convexity test or a fill needs: both read the same under a flip.
  */
-function ringNormal(verts: readonly V3[], f: readonly number[]): V3 {
+export function ringNormal(verts: readonly V3[], f: readonly number[]): V3 {
 	let best: V3 = [0, 0, 0];
 	let len = 0;
 	for (let i = 0; i < f.length; i++) {
