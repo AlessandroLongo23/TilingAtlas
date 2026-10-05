@@ -111,6 +111,9 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 	// An engine-developed hyperbolic tiling renders in the Poincaré disk via the per-pixel shader, which
 	// honours the edge-width toggle below.
 	const isHyperbolic = surface === "disk";
+	// The Poincaré disk under the Islamic construction: the developed shelf and the hyp-poly shelf, whose
+	// canvas is the colourings' one. Both draw every style; neither has a ray-stop count or a grid to animate.
+	const islamicDisk = isHyperbolic || !!selected?.hypPoly;
 	// A spherical (Platonic {p,q}) tiling renders in the three.js sphere view, which owns its own
 	// rotate/zoom input — so the flat-canvas overlays (symmetry, orbits, transition, inversive) don't apply.
 	const isSpherical = surface === "sphere";
@@ -883,16 +886,6 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 												: "Filled cells + star lines (the underlying tiling is hidden). Wireframe drops the cells and draws the lines as rigid 3D bars."}
 									</p>
 								</>
-							) : isHyperbolic ? (
-								<>
-									{/* v1 of the developed-renderer construction: the PLAIN fill only. Interlace and
-									    checkerboard return once the baked field carries a weave parity (follow-ups in
-									    docs/superpowers/specs/2026-07-21-hyperbolic-islamic-plain-design.md). */}
-									<p className="text-[11px] text-fg-muted">
-										Filled star cells + geodesic construction lines (the underlying tiling is hidden).
-										Turn off Fill for just the star lines.
-									</p>
-								</>
 							) : (
 							<div className="grid grid-cols-2 gap-2">
 								{(
@@ -1056,9 +1049,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 									</div>
 								</div>
 							</Reveal>
-							{/* Strap-style knobs are flat-only — the hyperbolic developed renderer draws the plain
-							    fill exclusively in v1. */}
-							<Reveal show={!isSpherical && !isHyperbolic && (cfg.islamicStyle === "interlace" || cfg.islamicStyle === "outline" || cfg.islamicStyle === "emboss")}>
+							<Reveal show={!isSpherical && (cfg.islamicStyle === "interlace" || cfg.islamicStyle === "outline" || cfg.islamicStyle === "emboss")}>
 								<div className="space-y-2">
 									<Slider
 										id="islamicBandWidth"
@@ -1071,8 +1062,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 									/>
 									{/* Border Width is a ring grown outward from the band, on the SAME ruler as Band Width
 									    (a fraction of the median segment length) — not a pixel stroke, so it keeps its
-									    proportion to the band at any zoom. The disk reuses its line-stroke width. */}
-									{!isHyperbolic ? (
+									    proportion to the band at any zoom. */}
 										<Slider
 											id="islamicOutlineWidth"
 											label="Border width"
@@ -1082,7 +1072,6 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 											max={0.5}
 											step={0.05}
 										/>
-									) : null}
 									{/* Chirality seeds the over/under alternation, so it only means anything where there
 									    IS a weave. The outline style crosses its straps flat (weave off — buildBands
 									    never consults the over/under state), which makes this a dead control there. */}
@@ -1109,9 +1098,8 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 								</div>
 							</Reveal>
 							{/* A/B/C plain fill: star bodies keep their tile hue; B = side fields, C = the edge-centre
-							    diamonds (only visible once Edge Offset > 0). Hyperbolic always shows this (its only
-							    style is plain). */}
-							<Reveal show={!isSpherical && (isHyperbolic || cfg.islamicStyle === "plain")}>
+							    diamonds (only visible once Edge Offset > 0). */}
+							<Reveal show={!isSpherical && cfg.islamicStyle === "plain"}>
 								{/* Hue only — B/C are backgrounds in the tile palette (locked S/L), same ring as hue shift. */}
 								<div className="flex gap-3">
 									<div className="flex-1 min-w-0">
@@ -1123,7 +1111,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 								</div>
 							</Reveal>
 							{/* Ray-stops-at (intersection count) is first-contact only in the hyperbolic bake. */}
-							{!isHyperbolic ? (
+							{!islamicDisk ? (
 							<Slider
 								id="islamicIntersectionCount"
 								label="Ray stops at"
@@ -1134,7 +1122,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 								step={1}
 							/>
 							) : null}
-							{!isSpherical && !isHyperbolic ? (
+							{!isSpherical && !islamicDisk ? (
 							<Checkbox
 								id="islamicAnimate"
 								label="Animate grid"

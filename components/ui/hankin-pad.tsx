@@ -9,7 +9,7 @@ import { useRef, useState } from "react";
 // edge and the offset is a signed fraction of the half-edge. Positive roots each ray on the side OPPOSITE
 // its lean (an X crossing over the midpoint); negative roots it on its own side (the pair splits apart and
 // the edge between the roots is drawn, as it is in the tiling). A root drag passes through 0 continuously,
-// so one gesture reaches both. Arrows step ±1 (±10 with Shift) on the focused handle. Same SVG +
+// so one gesture reaches both, and snaps to 0 within 5 % of it. Arrows step ±1 (±10 with Shift) on the focused handle. Same SVG +
 // pointer-capture idiom as the hue ring.
 
 interface HankinPadProps {
@@ -27,6 +27,7 @@ const BASE_Y = 86; // edge line
 const HALF = 100; // half-edge length
 const RAY = 62; // drawn ray length
 const ARC_R = 20; // angle-marker radius
+const SNAP = 5; // offset % under which a root drag snaps to the midpoint
 
 type Handle = "tip" | "root";
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
@@ -73,7 +74,11 @@ export function HankinPad({ angle, offset, onAngleChange, onOffsetChange, label 
 		const drag = dragRef.current;
 		if (!drag) return;
 		if (drag.handle === "root") {
-			onOffsetChange(clamp(Math.round((drag.lean * (CX - p.x) * 100) / HALF), -100, 100));
+			// A drag within SNAP of the midpoint lands ON it: 0 is the classic single-contact construction
+			// and the one value worth returning to, and a pointer cannot find 1 % of a 240-unit pad. The
+			// arrow keys still step through the values in between.
+			const v = clamp(Math.round((drag.lean * (CX - p.x) * 100) / HALF), -100, 100);
+			onOffsetChange(Math.abs(v) < SNAP ? 0 : v);
 			return;
 		}
 		const dx = (p.x - rootX(drag.lean)) * drag.lean;

@@ -9,7 +9,7 @@ import { hasCurvedTiles, surfaceOf, type ShelfSurface } from "@/lib/services/she
 // their T-junctions as flat 180° corners (scripts/build-scaled-atlas.ts), so `halfways` already holds
 // one midpoint per unit sub-edge and the construction emits a ray-pair ("V") at each. Hyperbolic
 // tilings run the same construction with geodesic rays (Kaplan & Salesin 2004, absolute geometry),
-// baked over the Dirichlet domain by lib/render/hyperbolicIslamic.ts for the per-pixel renderer.
+// baked as one layer per polygon size by lib/render/hyperbolicIslamic.ts for the per-pixel renderer.
 // Kept as a function (not a constant) so a future class can opt out without touching call sites.
 //
 // ⚑ THE GATE IS THE SURFACE, NOT THE CLASS (AL, 2026-08-21). It used to read the record's `source` and
@@ -34,5 +34,8 @@ const ISLAMIC_SURFACES: ReadonlySet<ShelfSurface> = new Set<ShelfSurface>(["flat
 export function polygonClassSupportsIslamic(t: Parameters<typeof surfaceOf>[0]): boolean {
 	// Curved tiles are the one exclusion the surface alone does not catch: the construction reads
 	// per-edge inward normals, and a flattened arc presents dozens of them where the tile has one.
-	return ISLAMIC_SURFACES.has(surfaceOf(t)) && !hasCurvedTiles(t);
+	if (ISLAMIC_SURFACES.has(surfaceOf(t))) return !hasCurvedTiles(t);
+	// The hyp-poly shelf shares the colourings' canvas (surface diskColors), which draws the construction
+	// for it alone: its faces are tiles, apeirogons included.
+	return !!t?.hypPoly;
 }

@@ -33,7 +33,6 @@ describe("polygonClassSupportsIslamic — the renderers that draw the constructi
 	const dead: Array<[string, Partial<CatalogueTiling>]> = [
 		["star polyhedra (ico-freedraw canvas)", { sphStar: {} as CatalogueTiling["sphStar"] }],
 		["the 3.4.n.4 solids (same canvas)", { sphPoly: {} as CatalogueTiling["sphPoly"] }],
-		["the 3.4.n.4 hyperbolic tilings (colors shader)", { hypPoly: {} as CatalogueTiling["hypPoly"] }],
 		["hollow tilings (canvas.tsx blanks the flat layer)", { hollow: {} as CatalogueTiling["hollow"] }],
 	];
 	for (const [name, payload] of dead) {
@@ -41,6 +40,14 @@ describe("polygonClassSupportsIslamic — the renderers that draw the constructi
 			expect(polygonClassSupportsIslamic(stub(payload))).toBe(false);
 		});
 	}
+
+	// The hyp-poly shelf was on that list until 2026-10-05: its canvas (the colourings') had no Islamic
+	// path. It has one now, a layer per polygon size and one for the apeirogon, so the whole shelf is in.
+	it("admits the hyperbolic tilings by regular polygons, hybrid boards included", () => {
+		const hypPoly = (lvert: number[]) => ({ hypPoly: { darts: { lvert } } as CatalogueTiling["hypPoly"] });
+		expect(polygonClassSupportsIslamic(stub(hypPoly([3, 4, 17, 4])))).toBe(true);
+		expect(polygonClassSupportsIslamic(stub(hypPoly([4, 4, 0, 4, 0])))).toBe(true);
+	});
 
 	// Unchanged by the move, and for the same reason as before: the Hankin construction needs a tile with
 	// vertices, edge midpoints, a centroid and inward normals, and a freedraw face can be an infinite strip
