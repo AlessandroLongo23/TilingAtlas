@@ -1,44 +1,26 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { fillAmountToSatPct } from "@/lib/render/tilePalette";
 import type { RefObject } from "react";
 import { useConfiguration } from "@/stores/configuration";
-import {
-	su11Identity,
-	su11Mul,
-	su11Normalize,
-	su11Translation,
-	su11Rotation,
-	su11Apply,
-	su11ApplyInverse,
-	hypMidpoint,
-	type Su11,
-	type Complex,
-} from "@/lib/render/hyperbolic";
-import { loadDevelopedPatches, drawDevelopedPatch, type CataloguePatch, type DevelopedPatch } from "@/lib/render/hyperbolicDevelopedDraw";
+import { loadDevelopedPatches, drawDevelopedPatch, type CataloguePatch } from "@/lib/render/hyperbolicDevelopedDraw";
 import { FALLBACK_BOUND_R, FALLBACK_BUDGET, HyperbolicDeveloper } from "@/lib/render/hyperbolicDevelopClient";
-import { prepareShaderTiling, type ShaderTiling } from "@/lib/render/hyperbolicReduce";
-import { getIslamicField } from "@/lib/render/hyperbolicIslamic";
-import { su11Inverse } from "@/lib/render/hyperbolic";
+import { IslamicFeed } from "@/lib/render/hyperbolicIslamic";
+import { HypCamera } from "@/lib/render/hypCamera";
+import { buildWalk, type WalkTiling } from "@/lib/render/hyperbolicWalk";
 import { HyperbolicPerPixelRenderer } from "@/lib/render/hyperbolicPerPixelGL";
 import { syncCanvasSize } from "@/lib/render/canvasSize";
 import { captureOverride, offerFrame } from "@/lib/render/capture";
-import { islamicEdgeOffsetFrac, islamicNormalAngleFromSlider } from "@/utils/islamicNoise";
-import { tileHueRgb01 } from "@/lib/render/hueRing";
 
-// Interactive view of an engine-developed hyperbolic tiling. It reduces each PIXEL into the fundamental
-// domain with the exact deck generators from the develop (lib/render/hyperbolicReduce.ts) and colours it —
-// a per-pixel WebGL renderer that fills the WHOLE disk to the rim, with no symmetry-group reconstruction
-// (which made the old shader fragile) and no orbit swap. If WebGL2 is unavailable it falls back to the
-// explicit-polygon 2D renderer (robust but with a thin sub-pixel rim). The p5 canvas underneath captures
-// the pan gestures; this canvas is an input-transparent overlay.
+// Interactive view of an engine-developed hyperbolic tiling. Each PIXEL walks the quotient to its tile
+// (lib/render/hyperbolicWalk.ts) and is coloured there, so the WHOLE disk fills to the rim for every
+// record, with no symmetry-group reconstruction and nothing to bake but the Islamic construction's
+// per-polygon layers (hyperbolicIslamic.ts). If WebGL2 is unavailable it falls back to the explicit-polygon 2D renderer (robust but
+// with a thin sub-pixel rim). The p5 canvas underneath captures the pan gestures; this canvas is an
+// input-transparent overlay.
 
 const DISK_PAD_PX = 24; // /play's default gap from the canvas edge; see the diskPadPx prop
-const MAX_CENTER_R = 0.9995; // clamp only against numerical blow-up at the ideal boundary; panning is otherwise free
-const ISLAMIC_DRAG_RES = 256; // in-drag Islamic bake res — every slider notch lands the same frame
-const ISLAMIC_SETTLE_MS = 200; // stable angle re-bakes at full res after this quiet window
-
 /**
  * Per-instance view input, for an embedded disk that must NOT steer (or be steered by) the global
  * configuration store — the landing wall's Hyperbolic cell. Supply it and the loop reads pan,
@@ -87,37 +69,11 @@ export function HyperbolicDevelopedCanvas({ patchId, data, input, diskPadPx = DI
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const glRef = useRef<HyperbolicPerPixelRenderer | null>(null);
 	const ctx2dRef = useRef<CanvasRenderingContext2D | null>(null); // set only in the 2D fallback path
-	// Per-PATCH renderer choice, not just per-machine: a patch stamped `certified: false` (or whose
-	// reduction fails at runtime) draws through the 2D developed renderer. A canvas that has yielded a
-	// webgl2 context can never yield a 2d one, so flipping modes re-mounts the element via `key`.
-	const [use2d, setUse2d] = useState(false);
-	// Patches whose reduction failed AT RUNTIME (unstamped file, or a stamp gone stale). Without this
-	// memory the mode reconciliation reads `certified === undefined`, decides GL is wanted, flips back,
-	// fails again — an oscillation that leaves the canvas permanently blank (caught 2026-07-23).
-	const runtimeUncertified = useRef<Set<string>>(new Set());
-	const devRef = useRef<HyperbolicDeveloper | null>(null); // click-feature snapping + fallback draw
-	const readyRef = useRef(false); // shader tiling uploaded (perPixel) or developer ready (2D)
-	// (tile, residual) camera data: the certified side pairings fold the camera basepoint back into the
-	// Dirichlet domain whenever panning carries it out, so the view isometry stays a few units from the
-	// identity FOREVER — float32 uniforms never degrade and panning is unlimited.
-	const anchorRef = useRef<{ gens: Su11[]; r: number } | null>(null);
+	const devRef = useRef<HyperbolicDeveloper | null>(null); // the 2D fallback only
+	const camRef = useRef<{ id: string; cam: HypCamera } | null>(null);
+	const walkRef = useRef<WalkTiling | null>(null);
 	const metaRef = useRef<{ id: string; name: string; config: string; edge: number } | null>(null);
-	const stRef = useRef<ShaderTiling | null>(null); // the prepared reduction — the Islamic bake reuses it
-	const patchRef = useRef<CataloguePatch | null>(null);
-	// Islamic plain field bookkeeping. Every angle change bakes IMMEDIATELY at a coarse resolution
-	// (fast enough to land in the same frame — the develop is cached, only rays + arrangement + a
-	// 256² texel loop re-run), then the stable angle silently refines to full resolution. No throttle:
-	// the slider reads live at every notch.
-	const islamicKey = useRef<string | null>(null);
-	const islamicOk = useRef(false);
-	const islamicRes = useRef(0); // res of the uploaded field (coarse during a drag)
-	const islamicLastBake = useRef(0);
-	const islamic2dWarned = useRef(false);
-	const viewRef = useRef<Su11>(su11Identity());
-	const prevOffset = useRef<{ x: number; y: number } | null>(null);
-	const prevTargetOffset = useRef<{ x: number; y: number } | null>(null);
-	const prevRot = useRef<number | null>(null);
-	const centerAnim = useRef<Complex | null>(null);
+	const feedRef = useRef(new IslamicFeed());
 	// Local-input mode only: the last recentre / click sequence acted on (see HyperbolicViewInput).
 	const lastResetSeq = useRef(0);
 	const lastClickSeq = useRef(0);
@@ -127,19 +83,15 @@ export function HyperbolicDevelopedCanvas({ patchId, data, input, diskPadPx = DI
 	const padRef = useRef(diskPadPx);
 	padRef.current = diskPadPx;
 
-	// Acquire the drawing context (WebGL2 preferred; 2D when unavailable OR when the patch forces it).
 	useEffect(() => {
 		const canvas = canvasRef.current;
 		if (!canvas) return;
-		if (!use2d) {
-			const gl = canvas.getContext("webgl2", { alpha: true, antialias: false, premultipliedAlpha: true });
-			if (gl) {
-				try {
-					glRef.current = new HyperbolicPerPixelRenderer(gl);
-				} catch (e) {
-					console.warn("hyperbolic per-pixel renderer unavailable, falling back to 2D:", e);
-					glRef.current = null;
-				}
+		const gl = canvas.getContext("webgl2", { alpha: true, antialias: false, premultipliedAlpha: true });
+		if (gl) {
+			try {
+				glRef.current = new HyperbolicPerPixelRenderer(gl);
+			} catch (e) {
+				console.warn("hyperbolic per-pixel renderer unavailable, falling back to 2D:", e);
 			}
 		}
 		if (!glRef.current) ctx2dRef.current = canvas.getContext("2d");
@@ -148,60 +100,31 @@ export function HyperbolicDevelopedCanvas({ patchId, data, input, diskPadPx = DI
 			glRef.current = null;
 			ctx2dRef.current = null;
 		};
-	}, [use2d]);
+	}, []);
 
-	// Load the patch, build its developer, and (perPixel) upload its reduction generators + field.
-	// Re-runs when `use2d` flips: the flip re-mounts the canvas and re-acquires the context, and this
-	// effect then binds the patch to whichever renderer came up. Each patch settles in ≤1 extra pass —
-	// setUse2d is only called when the value actually changes.
+	// Load the patch and bind it: its walk table to the shader, or a developer to the 2D fallback. The
+	// camera belongs to the PATCH, so only a new id resets where the reader has panned to.
 	useEffect(() => {
 		let alive = true;
-		readyRef.current = false;
 		// A caller that supplied the record resolves immediately and never touches the network.
 		(data ? Promise.resolve({ [patchId]: data }) : loadDevelopedPatches()).then((map) => {
 			if (!alive) return;
 			const patch = map[patchId] ?? null;
-			const meta = patch ? { id: patch.id, name: patch.name, config: patch.config, edge: patch.edge } : null;
+			metaRef.current = null;
+			if (!patch?.darts) return;
+			const meta = { id: patch.id, name: patch.name, config: patch.config, edge: patch.edge };
 			metaRef.current = meta;
-			patchRef.current = patch;
-			stRef.current = null;
-			islamicKey.current = null;
-			islamicOk.current = false;
-			devRef.current = patch?.darts ? new HyperbolicDeveloper(patch.darts, patch.edge) : null;
-			viewRef.current = su11Identity();
-			prevOffset.current = null;
-			prevTargetOffset.current = null;
-			prevRot.current = null;
-			centerAnim.current = null;
-			anchorRef.current = null;
-			// Stamped un-certifiable → 2D. Stamped/unstamped certifiable while stuck in 2D mode (the
-			// PREVIOUS patch forced it) → back to GL. Either flip re-mounts the canvas and re-runs this.
-			const want2d = patch?.certified === false || runtimeUncertified.current.has(patchId);
-			if (patch?.darts && want2d !== use2d && !(ctx2dRef.current && !glRef.current && want2d)) {
-				setUse2d(want2d);
-				if (want2d) return; // context is still webgl2 this pass; the re-run binds 2D
-			}
-			if (patch?.darts && glRef.current && meta && !want2d) {
-				// Build the certified Dirichlet reduction (side pairings + total field) once, then upload.
-				const st = prepareShaderTiling(patch.darts, patch.edge, meta);
-				if (st) {
-					glRef.current.setTiling(st);
-					stRef.current = st;
-					anchorRef.current = { gens: st.domain.gens, r: Math.min(0.97, st.domain.rPEu + 0.05) };
-					readyRef.current = true;
-				} else {
-					// Certificate failed at runtime (loud in prepareShaderTiling) — remember it, then 2D.
-					runtimeUncertified.current.add(patchId);
-					setUse2d(true);
-				}
-			} else {
-				readyRef.current = !!patch?.darts;
-			}
+			const gl = glRef.current;
+			walkRef.current = gl ? buildWalk(patch.darts, patch.edge, { allDrawn: true }) : null;
+			if (gl && walkRef.current) gl.setWalk(walkRef.current);
+			if (camRef.current?.id === patchId) return;
+			devRef.current = gl ? null : new HyperbolicDeveloper(patch.darts, patch.edge);
+			camRef.current = { id: patchId, cam: new HypCamera(walkRef.current, devRef.current, meta) };
 		});
 		return () => {
 			alive = false;
 		};
-	}, [patchId, data, use2d]);
+	}, [patchId, data]);
 
 	useEffect(() => {
 		const canvas = canvasRef.current;
@@ -211,7 +134,8 @@ export function HyperbolicDevelopedCanvas({ patchId, data, input, diskPadPx = DI
 		const render = () => {
 			raf = requestAnimationFrame(render);
 			const meta = metaRef.current;
-			if (!meta || !readyRef.current) return;
+			const cam = camRef.current?.cam;
+			if (!meta || !cam) return;
 			// Measured every frame from the element itself, so the backing store tracks a transitioning layout
 			// exactly instead of trailing a React render behind it (lib/render/canvasSize.ts).
 			const { w, h, dpr } = syncCanvasSize(canvas);
@@ -237,172 +161,17 @@ export function HyperbolicDevelopedCanvas({ patchId, data, input, diskPadPx = DI
 			if (local?.click) lastClickSeq.current = local.click.seq;
 			const clickPx = local ? localClick : cfg.hyperbolicClick;
 
-			// dev-only pan diagnostics (window.__hypDebug), same spirit as the __stores hook
-			const dbgHost = window as unknown as { __hypDebug?: Record<string, unknown> };
-			const dbg: Record<string, unknown> =
-				process.env.NODE_ENV !== "production"
-					? (dbgHost.__hypDebug ??= { frames: 0, applied: 0, rejected: 0, folds: 0, view: null, center: null })
-					: {};
-			dbg.frames = ((dbg.frames as number) ?? 0) + 1;
+			cam.step({ offset, targetOffset, rotDeg, reset: !!wantReset, click: clickPx ?? null, Rcss });
+			if (!local && wantReset) useConfiguration.setState({ hyperbolicResetView: false });
+			if (!local && clickPx) useConfiguration.setState({ hyperbolicClick: null });
 
-			const clampApply = (next: Su11) => {
-				const c = su11ApplyInverse(next, { x: 0, y: 0 });
-				if (c.x * c.x + c.y * c.y <= MAX_CENTER_R * MAX_CENTER_R) {
-					viewRef.current = next;
-					dbg.applied = (dbg.applied as number) + 1;
-				} else {
-					dbg.rejected = (dbg.rejected as number) + 1;
-				}
-			};
-
-			if (wantReset) {
-				viewRef.current = su11Identity();
-				centerAnim.current = null;
-				prevOffset.current = { x: offset.x, y: offset.y };
-				prevTargetOffset.current = { x: targetOffset.x, y: targetOffset.y };
-				prevRot.current = rotDeg;
-				if (!local) useConfiguration.setState({ hyperbolicResetView: false });
-			} else {
-				if (prevOffset.current === null) prevOffset.current = { x: offset.x, y: offset.y };
-				if (prevTargetOffset.current === null) prevTargetOffset.current = { x: targetOffset.x, y: targetOffset.y };
-				if (prevRot.current === null) prevRot.current = rotDeg;
-				const dragging =
-					Math.hypot(targetOffset.x - prevTargetOffset.current.x, targetOffset.y - prevTargetOffset.current.y) > 1e-4;
-				prevTargetOffset.current = { x: targetOffset.x, y: targetOffset.y };
-				const dx = (offset.x - prevOffset.current.x) / Rcss;
-				// offsets are centred CSS px with y DOWN; the disk world is y UP (the shader maps
-				// gl_FragCoord y-up) — negate so dragging down moves the tiling down, not mirrored.
-				const dy = -(offset.y - prevOffset.current.y) / Rcss;
-				prevOffset.current = { x: offset.x, y: offset.y };
-				const dLen = Math.hypot(dx, dy);
-				if (dLen > 1e-5 && !(centerAnim.current && !dragging)) {
-					const sc = Math.min(dLen, 0.9) / dLen;
-					clampApply(su11Normalize(su11Mul(su11Translation({ x: dx * sc, y: dy * sc }), viewRef.current)));
-					if (dragging) centerAnim.current = null;
-				}
-				const dRot = ((rotDeg - prevRot.current) * Math.PI) / 180;
-				prevRot.current = rotDeg;
-				if (Math.abs(dRot) > 1e-6) {
-					viewRef.current = su11Normalize(su11Mul(su11Rotation(dRot), viewRef.current));
-				}
-			}
-
-			// Click-to-anchor: snap the click to the nearest tiling feature (developed on demand) and ease it
-			// to the disk centre.
-			if (clickPx) {
-				// click comes in centred CSS px, y down (canvas.tsx) — flip to the disk's y-up frame.
-				const clickDisk = { x: clickPx.x / Rcss, y: -clickPx.y / Rcss };
-				if (!local) useConfiguration.setState({ hyperbolicClick: null });
-				const dev = devRef.current;
-				if (dev && clickDisk.x * clickDisk.x + clickDisk.y * clickDisk.y < 0.998) {
-					const local = dev.develop(meta, viewRef.current, 0.75, 4000);
-					const world = su11ApplyInverse(viewRef.current, clickDisk);
-					let best: Complex | null = null;
-					let bd = Infinity;
-					const consider = (c: Complex) => {
-						const d = (c.x - world.x) ** 2 + (c.y - world.y) ** 2;
-						if (d < bd) {
-							bd = d;
-							best = c;
-						}
-					};
-					for (const f of local.faces) {
-						let cx = 0;
-						let cy = 0;
-						for (const idx of f) {
-							const v = local.vertices[idx];
-							consider({ x: v[0], y: v[1] });
-							cx += v[0];
-							cy += v[1];
-						}
-						consider({ x: cx / f.length, y: cy / f.length });
-						for (let i = 0; i < f.length; i++) {
-							const a = local.vertices[f[i]];
-							const b = local.vertices[f[(i + 1) % f.length]];
-							consider(hypMidpoint({ x: a[0], y: a[1] }, { x: b[0], y: b[1] }));
-						}
-					}
-					if (best) centerAnim.current = best;
-				}
-			}
-			if (centerAnim.current) {
-				const sp = su11Apply(viewRef.current, centerAnim.current);
-				if (Math.hypot(sp.x, sp.y) > 1e-3) {
-					clampApply(su11Normalize(su11Mul(su11Translation({ x: -sp.x * 0.2, y: -sp.y * 0.2 }), viewRef.current)));
-				} else {
-					centerAnim.current = null;
-				}
-			}
-
-			// Re-anchor: fold the camera basepoint back into the Dirichlet domain via the side pairings.
-			// V ← V·g⁻¹ renders the IDENTICAL image (the tiling is Γ-invariant) with a small view matrix,
-			// so unlimited panning never accumulates float error (the (tile, residual) camera).
-			const anchor = anchorRef.current;
-			if (anchor) {
-				let c = su11ApplyInverse(viewRef.current, { x: 0, y: 0 });
-				for (let i = 0; i < 64 && Math.hypot(c.x, c.y) > anchor.r; i++) {
-					let bestG: Su11 | null = null;
-					let bestC: Complex | null = null;
-					let bestR = Math.hypot(c.x, c.y) - 1e-12;
-					for (const g of anchor.gens) {
-						const q = su11Apply(g, c);
-						const qr = Math.hypot(q.x, q.y);
-						if (qr < bestR) {
-							bestR = qr;
-							bestG = g;
-							bestC = q;
-						}
-					}
-					if (!bestG || !bestC) break; // basepoint already in the closed domain
-					viewRef.current = su11Normalize(su11Mul(viewRef.current, su11Inverse(bestG)));
-					// keep the click-anchor target pointing at the same world feature under the new labels
-					if (centerAnim.current) centerAnim.current = su11Apply(bestG, centerAnim.current);
-					c = bestC;
-					dbg.folds = (dbg.folds as number) + 1;
-				}
-			}
-			dbg.view = { a: { ...viewRef.current.a }, b: { ...viewRef.current.b } };
-			dbg.center = su11ApplyInverse(viewRef.current, { x: 0, y: 0 });
-
-			const view = viewRef.current;
 			const dark = document.documentElement.classList.contains("dark");
 			const gl = glRef.current;
-			if (gl) {
-				// Islamic plain field: a NEW angle bakes right away at ISLAMIC_DRAG_RES (cached develop —
-				// the whole rebake is a few tens of ms, so each slider notch lands the frame it happens);
-				// once the angle sits still for ISLAMIC_SETTLE_MS the same field re-bakes at full
-				// resolution. Both bakes hit the per-(tiling, angle, res) cache on revisits.
-				let islamicActive = false;
-				if (cfg.isIslamic && stRef.current && patchRef.current?.darts) {
-					const offsetPct = Math.round(islamicEdgeOffsetFrac(cfg.islamicEdgeOffset) * 100);
-					const key = `${meta.id}|${Math.round(cfg.islamicAngle)}|${offsetPct}`;
-					const now = performance.now();
-					const fullRes = Math.min(stRef.current.field.res, 1024);
-					const bake = (res: number) => {
-						const field = getIslamicField(
-							stRef.current!,
-							patchRef.current!.darts!,
-							patchRef.current!.edge,
-							meta,
-							islamicNormalAngleFromSlider(cfg.islamicAngle),
-							offsetPct / 100,
-							{ fieldRes: res },
-						);
-						gl.setIslamicField(field);
-						islamicKey.current = key;
-						islamicOk.current = !!field;
-						islamicRes.current = res;
-						islamicLastBake.current = now;
-					};
-					if (islamicKey.current !== key) {
-						bake(Math.min(ISLAMIC_DRAG_RES, fullRes));
-					} else if (islamicOk.current && islamicRes.current < fullRes && now - islamicLastBake.current > ISLAMIC_SETTLE_MS) {
-						bake(fullRes);
-					}
-					islamicActive = islamicOk.current;
-				}
+			const walk = walkRef.current;
+			if (gl && walk) {
 				gl.draw({
-					view,
+					view: cam.view,
+					face: cam.face,
 					R: Rcss * dpr,
 					cx: bw / 2,
 					cy: bh / 2,
@@ -413,22 +182,16 @@ export function HyperbolicDevelopedCanvas({ patchId, data, input, diskPadPx = DI
 					hueOffset: cfg.hueOffset || 0,
 					strokePx: cfg.lineWidth <= 0 ? 0 : Math.max(cfg.lineWidth, 0.5) * dpr * 1.1, // 0 = no stroke
 					taper: cfg.hyperbolicLineMode !== "constant",
-					islamic: islamicActive,
-					islamicColB: tileHueRgb01(cfg.islamicFillHueB),
-					islamicColC: tileHueRgb01(cfg.islamicFillHueC),
+					...feedRef.current.frame(gl, cfg, meta.id, walk.sizes, meta.edge),
 				});
 			} else {
-				if (cfg.isIslamic && !islamic2dWarned.current) {
-					islamic2dWarned.current = true;
-					console.info("hyperbolic 2D fallback: the Islamic construction needs the WebGL2 per-pixel renderer");
-				}
-				// 2D fallback: explicit developed polygons (robust, thin sub-pixel rim).
+				// 2D fallback: explicit developed polygons (robust, thin sub-pixel rim). No Islamic here.
 				const ctx = ctx2dRef.current;
 				const dev = devRef.current;
 				if (!ctx || !dev) return;
-				const patch: DevelopedPatch = dev.develop(meta, view, FALLBACK_BOUND_R, FALLBACK_BUDGET);
+				const patch = dev.develop(meta, cam.view, FALLBACK_BOUND_R, FALLBACK_BUDGET);
 				ctx.clearRect(0, 0, bw, bh);
-				drawDevelopedPatch(ctx, patch, view, {
+				drawDevelopedPatch(ctx, patch, cam.view, {
 					R: Rcss * dpr,
 					cx: bw / 2,
 					cy: bh / 2,
@@ -450,13 +213,10 @@ export function HyperbolicDevelopedCanvas({ patchId, data, input, diskPadPx = DI
 		return () => {
 			cancelAnimationFrame(raf);
 		};
-	}, [use2d]);
+	}, []);
 
 	return (
 		<canvas
-			// A mode flip must yield a FRESH element: a canvas that has produced a webgl2 context can
-			// never produce a 2d one. The render loop re-binds through the same `use2d` dependency.
-			key={use2d ? "2d" : "gl"}
 			ref={canvasRef}
 			className="absolute inset-0 h-full w-full"
 			style={{ pointerEvents: "none", width: "100%", height: "100%" }}

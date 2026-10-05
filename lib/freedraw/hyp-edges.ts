@@ -40,9 +40,6 @@ export interface HypEdgesPattern {
 	edge: number;
 	/** A chiral solution (from an `_o_` certificate file); its mirror image is implied, not listed. */
 	chiral?: boolean;
-	/** Per-pixel renderability (shipped in the shards already). False = the Dirichlet certificate fails,
-	 *  so the client must go straight to the 2D developed renderer. Absent = untried → attempt it. */
-	certified?: boolean;
 	/** Reference-development tile count — a size hint, not geometry. */
 	tiles: number;
 	/** Quotient half-edge structure, the sole render input (re-developed under the view). */

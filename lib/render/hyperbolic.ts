@@ -173,3 +173,28 @@ export function hypMidpoint(u: Complex, v: Complex): Complex {
 export function tileHue(sides: number): number {
 	return (((sides * 47) % 360) + 360) % 360;
 }
+
+/** Hyperbolic edge distance → byte, for the baked Islamic layers (distances of interest are ≲ 0.5). */
+export const EDGE_SCALE = 510;
+
+/**
+ * Hyperbolic barycenter of a set of Poincaré-disk points: the Minkowski mean on the hyperboloid,
+ * normalised back to it. EQUIVARIANT under every isometry (isometries are linear on the hyperboloid),
+ * for ANY polygon shape — so the per-tile shade computed from it is identical no matter which
+ * fundamental copy of the tile a pixel folds into (no shading seams across the domain boundary).
+ */
+export function hypBarycenter(pts: [number, number][]): Complex {
+	let X = 0;
+	let Y = 0;
+	let T = 0;
+	for (const [x, y] of pts) {
+		const r2 = x * x + y * y;
+		const s = Math.max(1 - r2, 1e-12);
+		X += (2 * x) / s;
+		Y += (2 * y) / s;
+		T += (1 + r2) / s;
+	}
+	const n = Math.sqrt(Math.max(T * T - X * X - Y * Y, 1e-18));
+	const t = T / n;
+	return { x: X / n / (1 + t), y: Y / n / (1 + t) };
+}

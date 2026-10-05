@@ -18,8 +18,8 @@ import {
 	su11Apply,
 	su11ApplyInverse,
 	su11Identity,
+	su11Inverse,
 	su11Mul,
-	su11Normalize,
 	su11Rotation,
 	su11Translation,
 } from "@/lib/render/hyperbolic";
@@ -71,6 +71,22 @@ export interface DevelopedEdgePatch {
 
 const TOL = 1e-4; // position dedup grid (matches develop_hyperbolic.py)
 const ANGTOL = 1e-3; // heading dedup grid
+const POS_SPAN = 20003; // cells per axis of the position grid: |z| < 1, so round(z/TOL) is within ±10000
+const POS_CELLS = POS_SPAN * POS_SPAN;
+const ANG_CELLS = Math.round((2 * Math.PI) / ANGTOL);
+/** su11Normalize(su11Mul(m, n)) in one pass. The composed helpers allocate a dozen temporaries for the
+ *  same arithmetic, and this runs twice per developed instance. */
+function mulNorm(m: Su11, n: Su11): Su11 {
+	const ax = m.a.x * n.a.x - m.a.y * n.a.y + (m.b.x * n.b.x + m.b.y * n.b.y);
+	const ay = m.a.x * n.a.y + m.a.y * n.a.x + (m.b.y * n.b.x - m.b.x * n.b.y);
+	const bx = m.a.x * n.b.x - m.a.y * n.b.y + (m.b.x * n.a.x + m.b.y * n.a.y);
+	const by = m.a.x * n.b.y + m.a.y * n.b.x + (m.b.y * n.a.x - m.b.x * n.a.y);
+	const s = Math.sqrt(Math.max(ax * ax + ay * ay - (bx * bx + by * by), 1e-12));
+	return { a: { x: ax / s, y: ay / s }, b: { x: bx / s, y: by / s } };
+}
+
+/** The position grid cell of z as one integer. */
+const posKey = (z: Complex): number => (Math.round(z.x / TOL) + 10001) * POS_SPAN + Math.round(z.y / TOL) + 10001;
 
 /**
  * Screen radius the interactive 2D paths fill to, and the instance budget that governs the cost.
@@ -78,8 +94,8 @@ const ANGTOL = 1e-3; // heading dedup grid
  * `develop` only emits a face once EVERY one of its darts is developed, so the drawn region stops a
  * whole tile short of `boundR`, and the tiles lost at the frontier are the BIGGEST ones (a 34-gon needs
  * 34 developed darts plus their rn neighbours to close). That is why an under-budgeted fill shows large
- * round holes instead of a clean edge. Every tiling whose Dirichlet certificate fails draws through
- * here, which is 37% of a 92-tiling sample over ten hyp-poly boards, so this is the shelf's floor.
+ * round holes instead of a clean edge. (Since 2026-10-05 this path draws only where WebGL2 is
+ * missing; every record otherwise goes through the per-pixel walk, which has no frontier.)
  *
  * The bound is near 1 because large-tile boards need it: at 0.99 the 3.4.17.4 k=9 board covered only
  * 85.3% of the disk and was clean to r = 0.55. The budget then has to be big enough to REACH the bound,
@@ -96,7 +112,11 @@ const ANGTOL = 1e-3; // heading dedup grid
  * against 25 ms and 13 ms respectively for the OLD code at 12k.
  */
 export const FALLBACK_BOUND_R = 0.9995;
-export const FALLBACK_BUDGET = 30000;
+// 2026-10-05: 30000 -> 50000. The paragraph above priced a frame at the old develop and draw. With
+// tombstone pruning, integer keys and batched strokes a PANNING frame of that board at 50k costs 10.6 ms
+// at p90 in the browser, where 30k cost 13.7 ms before, so the budget buys rim coverage instead. 70000
+// fills further still and costs 13.5 ms at p90 with 22 ms at p99, which misses 60 fps too often.
+export const FALLBACK_BUDGET = 50000;
 
 /**
  * Instance budget for a static thumbnail bake, at the same FALLBACK_BOUND_R. Lower than the interactive
@@ -105,47 +125,20 @@ export const FALLBACK_BUDGET = 30000;
  * ~24 ms per card, which the one-job-per-frame thumbnailQueue absorbs. Below this the rim holes are
  * visible even at card size, which is what the grid used to show.
  */
-export const THUMB_BUDGET = 20000;
+// 2026-10-05: 20000 -> 35000. A from-scratch bake at 35k now costs 26 ms where 20k cost 29 ms (3.4.17.4
+// k=9, node), so a card fills further toward its rim for less than it used to pay.
+export const THUMB_BUDGET = 35000;
 
-/** Interior angle of a regular p-gon of edge length ℓ in H² (2·asin(cos(π/p)/cosh(ℓ/2))). */
-function interiorAngle(p: number, l: number): number {
-	const r = Math.cos(Math.PI / p) / Math.cosh(l / 2);
+/** Interior angle of a regular p-gon of edge length ℓ in H² (2·asin(cos(π/p)/cosh(ℓ/2))). p = 0 is the
+ *  APEIROGON (develop_hyperbolic.py's sentinel): cos(π/∞) = 1, the polygon inscribed in a horocycle. */
+export function interiorAngle(p: number, l: number): number {
+	const r = (p === 0 ? 1 : Math.cos(Math.PI / p)) / Math.cosh(l / 2);
 	return 2 * Math.asin(Math.min(1, Math.max(-1, r)));
 }
 
-/**
- * Circumradius bound over the faces of a tiling — the length scale every develop BOUND is quoted in
- * (the Dirichlet flood-fill margin, the bake patch radius). Twice this has to cover a face's diameter,
- * which is what makes "walk the geodesic 0 → vertex and you only cross tiles whose vertices stay within
- * R + 2·rMaxTile" true.
- *
- * On a regular board every face is a regular p-gon at the one forced length ℓ, so it is the largest
- * asinh(sinh(ℓ/2)/sin(π/p)) over the face sizes in `lvert`. A SCALENE board (a Schwarz (p,q,r) tile) has
- * three side lengths and the scalar ℓ its records carry is only the shortest, which UNDERSTATES the
- * margin; there the same formula is taken at the LONGEST class in `darts.elen`. For a triangle that is a
- * genuine bound: the diameter is the longest side c, and 2·asinh(sinh(c/2)/sin(π/3)) > c.
- *
- * Digons (p = 2 — the drawn-edge markers of the edge-pattern shelves) are degenerate, no proper face, and
- * are skipped; the margin is set by the real polygons around them.
- */
-export function maxTileRadius(darts: Darts, edge: number): number {
-	const l = darts.elen?.length ? Math.max(...darts.elen) : edge;
-	let r = 0;
-	for (const p of darts.lvert) {
-		if (p < 3) continue;
-		r = Math.max(r, Math.asinh(Math.sinh(l / 2) / Math.sin(Math.PI / p)));
-	}
-	return r;
-}
-
 /** Edge involution M = T(tanh(ℓ/2))·Rot(π): dart (vertex A, heading→B) ↦ glued dart (vertex B, →A). */
-function medge(l: number): Su11 {
+export function medge(l: number): Su11 {
 	return su11Mul(su11Translation({ x: Math.tanh(l / 2), y: 0 }), su11Rotation(Math.PI));
-}
-
-/** Möbius image of the origin under G (the developed vertex position): G·0 = b/ā. */
-function framePos(G: Su11): Complex {
-	return su11Apply(G, { x: 0, y: 0 });
 }
 
 /** Local heading of the frame at 0 = 2·arg(a). Keyed by (cos,sin) downstream so the ±2π seam never
@@ -204,33 +197,42 @@ export class HyperbolicDeveloper {
 	private H: number[] = []; // quotient dart
 	private G: Su11[] = []; // frame
 	private pos: Complex[] = []; // framePos(G) = G·0, cached: screenR and both dedup keys all want it
-	private KS: string[] = []; // this instance's instKey string, cached so prune copies instead of rebuilding
+	private KS: (number | string)[] = []; // this instance's dedup key, cached so prune copies instead of rebuilding
 	private vid: number[] = []; // vertex id
 	private rn: number[] = []; // developed rneig-neighbour instance (-1 = undeveloped)
 	private gl: number[] = []; // developed glue-neighbour instance (-1 = undeveloped)
 	private expanded: boolean[] = []; // both neighbours added
-	private instKey = new Map<string, number>();
+	// A pruned instance is a TOMBSTONE (H = −1) whose slot the next addInst reuses, and a vertex is freed
+	// when its last instance goes. Nothing is renumbered, so a prune costs what it drops and not the
+	// rebuild of both dedup maps, which was a third of a panning frame at n = 30k.
+	private live = 0;
+	private freeI: number[] = [];
+	private vref: number[] = []; // live instances per vertex
+	private freeV: number[] = [];
+	private instKey = new Map<number | string, number>();
 
 	// developed vertices
 	private verts: [number, number][] = [];
-	private vertKS: string[] = []; // this vertex's vertKey string, cached for the same reason as KS
-	private vertKey = new Map<string, number>();
+	private vertKS: number[] = []; // this vertex's vertKey, cached for the same reason as KS
+	private vertKey = new Map<number, number>();
 
-	private facesCache: number[][] | null = null; // global-vid rings; invalidated when the set grows
+	private facesCache: { faces: number[][]; vertices: [number, number][] } | null = null; // invalidated when the set changes
 	// developFaced's view-INDEPENDENT half (rings + per-face orbit/colour + the global-vid edge list), cached
 	// on the same lifetime as facesCache. develop() had a face cache and the faced paths did not, so the
 	// colours, edge-pattern and hyp-poly shelves re-traced all ~12k instances every frame even on a static
 	// view. `colors` is in the key because developEdges and developColors label faces differently.
-	private facedCache: { rings: number[][]; orbit: number[]; edges: [number, number, number][]; colors: boolean } | null = null;
+	private facedCache: {
+		rings: number[][];
+		orbit: number[];
+		edges: [number, number, number][];
+		vertices: [number, number][];
+		colors: boolean;
+	} | null = null;
 	private lastCenter: Complex | null = null; // world point at screen centre last frame (view-motion detector)
+	private lastFill = -1; // the (boundR, maxInsts) of that frame, as one number
 
-	/** deepDedup: conformally-scaled instance-dedup grid, sound at ANY develop depth. The default
-	 *  fixed 1e-4 Euclid grid falsely MERGES distinct instances near the rim (vertex spacing shrinks
-	 *  like (1−r²)) — fatal for the Dirichlet-certificate builder, which needs the orbit enumerated
-	 *  complete to hyperbolic radius ~9 (Euclid ~0.9995). The scaled grid's only failure direction is
-	 *  a rare duplicate at a cell-level boundary (extra work, never a lost instance). Kept opt-in so
-	 *  the rendering paths stay byte-identical with the Python developer. */
-	private readonly deepDedup: boolean;
+	/** Integer dedup keys: the default grid, on a tiling whose dart count leaves the key under 2^53. */
+	private readonly numericKeys: boolean;
 
 	// Edge-pattern shelf only: the merged-tile orbit per quotient dart (undefined for plain tilings). An
 	// edge's drawn/undrawn status is recovered from lvert alone — a dart's edge is a digon side iff the
@@ -248,14 +250,14 @@ export class HyperbolicDeveloper {
 	private readonly drawnOf?: number[];
 	private readonly medc = new Map<number, Su11>(); // edge involution per distinct length, memoised
 
-	constructor(darts: Darts, edgeLength: number, opts: { deepDedup?: boolean } = {}) {
+	constructor(darts: Darts, edgeLength: number) {
 		this.rneig = darts.rneig;
 		this.glue = darts.glue;
 		this.lvert = darts.lvert;
 		this.seed = darts.seed ?? 0;
 		this.l = edgeLength;
 		this.Med = medge(edgeLength);
-		this.deepDedup = opts.deepDedup ?? false;
+		this.numericKeys = darts.rneig.length * ANG_CELLS * POS_CELLS < Number.MAX_SAFE_INTEGER;
 		this.tileOrbit = darts.tileOrbit;
 		this.faceColor = darts.faceColor;
 		this.alphaOf = darts.alpha;
@@ -296,68 +298,132 @@ export class HyperbolicDeveloper {
 	}
 
 	private vidOf(z: Complex): number {
-		const key = `${Math.round(z.x / TOL)},${Math.round(z.y / TOL)}`;
+		const key = posKey(z);
 		let v = this.vertKey.get(key);
 		if (v === undefined) {
-			v = this.verts.length;
-			this.verts.push([z.x, z.y]);
-			this.vertKS.push(key);
+			v = this.freeV.pop() ?? this.verts.length;
+			this.verts[v] = [z.x, z.y];
+			this.vertKS[v] = key;
+			this.vref[v] = 0;
 			this.vertKey.set(key, v);
 		}
+		this.vref[v]++;
 		return v;
 	}
 
-	/** Instance dedup key for (dart h, position z, heading th). Default: fixed Euclid grid (matches
-	 *  develop_hyperbolic.py). deepDedup: grid cell ∝ the local conformal scale (1−r²)/2, quantized
-	 *  to powers of two so near-identical positions share a cell size; the level is in the key. */
-	private keyOf(h: number, z: Complex, th: number): string {
-		const ang = `${Math.round(Math.cos(th) / ANGTOL)},${Math.round(Math.sin(th) / ANGTOL)}`;
-		if (!this.deepDedup) {
-			return `${h},${Math.round(z.x / TOL)},${Math.round(z.y / TOL)},${ang}`;
+	/** Instance dedup key for (dart h, position z, heading th), on the fixed Euclid grid of
+	 *  develop_hyperbolic.py. */
+	private keyOf(h: number, z: Complex, th: number): number | string {
+		// The default grid packs into ONE exact integer: position (under 2^29), heading on a 1e-3 rad grid
+		// taken mod 2π so the seam never splits a dart (under 2^13), and the dart. Building this as a string
+		// was the largest single cost of a develop, in concatenation and in the garbage it left.
+		if (this.numericKeys) {
+			let q = Math.round(th / ANGTOL) % ANG_CELLS;
+			if (q < 0) q += ANG_CELLS;
+			return (h * ANG_CELLS + q) * POS_CELLS + posKey(z);
 		}
-		const r2 = z.x * z.x + z.y * z.y;
-		const level = Math.max(-60, Math.min(0, Math.round(Math.log2(Math.max(1e-18, (1 - r2) / 2)))));
-		const cell = 1e-3 * Math.pow(2, level);
-		return `${h},${level},${Math.round(z.x / cell)},${Math.round(z.y / cell)},${ang}`;
+		const ang = `${Math.round(Math.cos(th) / ANGTOL)},${Math.round(Math.sin(th) / ANGTOL)}`;
+		return `${h},${Math.round(z.x / TOL)},${Math.round(z.y / TOL)},${ang}`;
 	}
 
-	/** Add instance (dart h, frame G); returns [index, isNew]. Dedups on (h, pos, heading) like the Python. */
-	private addInst(h: number, G: Su11): [number, boolean] {
-		const z = framePos(G);
-		const th = frameHeading(G);
-		const key = this.keyOf(h, z, th);
+	/** Whether the last addInst made a new instance. A field, so the hot loop gets no tuple per call. */
+	private wasNew = false;
+
+	/** Add instance (dart h, frame G); returns its index and sets `wasNew`. Dedups on (h, pos, heading)
+	 *  like the Python. */
+	private addInst(h: number, G: Su11): number {
+		const d = G.a.x * G.a.x + G.a.y * G.a.y; // G·0 = b/ā
+		const z = { x: (G.b.x * G.a.x - G.b.y * G.a.y) / d, y: (G.b.y * G.a.x + G.b.x * G.a.y) / d };
+		const key = this.keyOf(h, z, frameHeading(G));
 		const found = this.instKey.get(key);
-		if (found !== undefined) return [found, false];
-		const idx = this.H.length;
+		this.wasNew = found === undefined;
+		if (found !== undefined) return found;
+		const idx = this.freeI.pop() ?? this.H.length;
 		this.instKey.set(key, idx);
-		this.H.push(h);
-		this.G.push(G);
-		this.pos.push(z);
-		this.KS.push(key);
-		this.vid.push(this.vidOf(z));
-		this.rn.push(-1);
-		this.gl.push(-1);
-		this.expanded.push(false);
-		return [idx, true];
+		this.H[idx] = h;
+		this.G[idx] = G;
+		this.pos[idx] = z;
+		this.KS[idx] = key;
+		this.vid[idx] = this.vidOf(z);
+		this.rn[idx] = -1;
+		this.gl[idx] = -1;
+		this.expanded[idx] = false;
+		this.live++;
+		return idx;
+	}
+
+	/** Rot(α(h)), the turn from dart h to the next at its vertex, built once per dart. */
+	private readonly turns: Su11[] = [];
+	private turn(h: number): Su11 {
+		return (this.turns[h] ??= su11Rotation(this.alpha(h)));
 	}
 
 	/** Screen radius of instance i under `view` (|view·pos|); a tile is on-screen when this is ≲ 1. */
 	private screenR(view: Su11, i: number): number {
-		const s = su11Apply(view, this.pos[i]);
-		return Math.hypot(s.x, s.y);
+		const { x, y } = this.pos[i];
+		const nr = view.a.x * x - view.a.y * y + view.b.x;
+		const ni = view.a.x * y + view.a.y * x + view.b.y;
+		const dr = view.b.x * x + view.b.y * y + view.a.x;
+		const di = view.b.x * y - view.b.y * x - view.a.y;
+		return Math.sqrt((nr * nr + ni * ni) / (dr * dr + di * di));
 	}
 
-	/** Exact SU(1,1) frames of the currently-developed instances that carry the SEED dart. Each is a genuine
-	 *  symmetry (deck transformation) of the whole tiling: it maps the seed flag to an equivalent flag, so
-	 *  it maps every tile to a same-orbit (same-size) tile. Instances on OTHER darts are different flags, not
-	 *  symmetries (e.g. the within-vertex-figure rotation of a non-regular vertex is not a symmetry), so they
-	 *  are excluded — using them as reducer generators would fold a point onto a different-orbit tile. These
-	 *  are the exact side-pairings the per-pixel reducer uses, with no reconstruction-by-tile-size. Populated
-	 *  by the last develop()/extend(); call develop() first. */
-	deckFrames(): Su11[] {
-		const out: Su11[] = [];
-		for (let i = 0; i < this.H.length; i++) if (this.H[i] === this.seed) out.push(this.G[i]);
-		return out;
+	/**
+	 * Keep the view near the world origin, which is what makes panning unbounded.
+	 *
+	 * The developed set lives in WORLD coordinates and its dedup grid is a fixed 1e-4, so once the view
+	 * centre drifts to world radius ~0.9995 (8 hyperbolic units, under five edges of a large-tile board)
+	 * distinct instances merge, the frontier stops growing and the tiling ends. A seed-dart frame g is a
+	 * symmetry of the tiling, so viewing through view·g shows the SAME picture with every world coordinate
+	 * moved by g⁻¹. Once the centre is two units out and a seed instance sits nearer it than the origin's, this returns
+	 * its frame and resets the developer; the caller replaces its view by view·g and maps any world point
+	 * it holds by g⁻¹. Returns null when the origin's is already the nearest.
+	 */
+	recenter(view: Su11): Su11 | null {
+		// Each recentre costs a full re-develop, so on a small-tile board it must not fire at every tile.
+		// World radius 0.75 is two hyperbolic units out, far inside where the grid starts to fail.
+		const c = su11ApplyInverse(view, { x: 0, y: 0 });
+		if (c.x * c.x + c.y * c.y < 0.75 * 0.75) return null;
+		const o = su11Apply(view, { x: 0, y: 0 });
+		let best = -1;
+		let bestR = Math.hypot(o.x, o.y) - 0.02; // hysteresis: two frames about equally near must not alternate
+		for (let i = 0; i < this.H.length; i++) {
+			if (this.H[i] !== this.seed) continue;
+			const r = this.screenR(view, i);
+			if (r < bestR) {
+				bestR = r;
+				best = i;
+			}
+		}
+		if (best < 0) return null;
+		const g = this.G[best];
+		this.rebase(g);
+		return g;
+	}
+
+	/** Move every frame by g⁻¹, keeping the developed set. The instances and their adjacency are the
+	 *  same; only coordinates and the keys derived from them change. Falls back to a reset if two frames
+	 *  land in one grid cell, which the new coordinates make rarer than the old ones did. */
+	private rebase(g: Su11): void {
+		const gi = su11Inverse(g);
+		const old = { H: this.H, G: this.G, rn: this.rn, gl: this.gl, expanded: this.expanded };
+		const at = new Int32Array(old.H.length).fill(-1);
+		this.reset();
+		for (let i = 0; i < old.H.length; i++) {
+			if (old.H[i] < 0) continue;
+			const idx = this.addInst(old.H[i], mulNorm(gi, old.G[i]));
+			if (!this.wasNew) {
+				this.reset();
+				return;
+			}
+			at[i] = idx;
+		}
+		for (let i = 0; i < old.H.length; i++) {
+			if (at[i] < 0) continue;
+			this.rn[at[i]] = old.rn[i] >= 0 ? at[old.rn[i]] : -1;
+			this.gl[at[i]] = old.gl[i] >= 0 ? at[old.gl[i]] : -1;
+			this.expanded[at[i]] = old.expanded[i];
+		}
 	}
 
 	reset(): void {
@@ -373,6 +439,10 @@ export class HyperbolicDeveloper {
 		this.verts = [];
 		this.vertKS = [];
 		this.vertKey.clear();
+		this.live = 0;
+		this.freeI = [];
+		this.vref = [];
+		this.freeV = [];
 		this.facesCache = null;
 		this.facedCache = null;
 		this.lastCenter = null;
@@ -386,7 +456,7 @@ export class HyperbolicDeveloper {
 	 *  tilings (e.g. {8,4}) have huge tiles whose vertices reach far past the centre, so `boundR` must be
 	 *  near 1 for them to fill; the cap keeps small-tile tilings from exploding at that radius. */
 	private extend(view: Su11, boundR: number, maxInsts: number): boolean {
-		if (this.H.length === 0) this.addInst(this.seed, su11Identity());
+		if (this.live === 0) this.addInst(this.seed, su11Identity());
 		// min-heap of (screenR, instance index) over the undeveloped frontier
 		const hr: number[] = [];
 		const hi: number[] = [];
@@ -421,7 +491,7 @@ export class HyperbolicDeveloper {
 			up(hr.length - 1);
 		};
 		for (let i = 0; i < this.H.length; i++) {
-			if (this.expanded[i]) continue;
+			if (this.H[i] < 0 || this.expanded[i]) continue;
 			const r = this.screenR(view, i);
 			if (r <= boundR + 0.02) push(r, i); // only the near-frontier can be expanded this frame
 		}
@@ -438,22 +508,22 @@ export class HyperbolicDeveloper {
 			if (hr.length) down(0);
 			if (this.expanded[i]) continue;
 			if (r0 > boundR) break; // nearest frontier is out of range → the ball is saturated
-			if (this.H.length >= maxInsts) {
+			if (this.live >= maxInsts) {
 				capped = true;
 				break; // cap: stop before the farther rim tiles
 			}
 			const h = this.H[i];
 			const G = this.G[i];
 			// rneig: turn to the next dart at this vertex (advance the frame by the interior angle)
-			const [ridx, rNew] = this.addInst(this.rneig[h], su11Normalize(su11Mul(G, su11Rotation(this.alpha(h)))));
+			const ridx = this.addInst(this.rneig[h], mulNorm(G, this.turn(h)));
 			this.rn[i] = ridx;
+			if (this.wasNew) push(this.screenR(view, ridx), ridx);
 			// glue: cross this dart's edge (advance by the edge involution)
-			const [gidx, gNew] = this.addInst(this.glue[h], su11Normalize(su11Mul(G, this.med(h))));
+			const gidx = this.addInst(this.glue[h], mulNorm(G, this.med(h)));
 			this.gl[i] = gidx;
+			if (this.wasNew) push(this.screenR(view, gidx), gidx);
 			this.expanded[i] = true;
 			grew = true;
-			if (rNew) push(this.screenR(view, ridx), ridx);
-			if (gNew) push(this.screenR(view, gidx), gidx);
 		}
 		if (grew) {
 			this.facesCache = null;
@@ -462,15 +532,8 @@ export class HyperbolicDeveloper {
 		return capped;
 	}
 
-	/** Frontier-expand until every instance within screen radius `boundR` (under `view`) is developed —
-	 *  no face tracing, no pruning. Builder entry point (Dirichlet orbit enumeration). Returns false when
-	 *  `maxInsts` capped the fill, in which case the caller MUST treat the enumeration as incomplete. */
-	extendTo(view: Su11, boundR: number, maxInsts: number): boolean {
-		return !this.extend(view, boundR, maxInsts);
-	}
-
 	instanceCount(): number {
-		return this.H.length;
+		return this.live;
 	}
 
 	/** Drop every instance whose screen position (under `view`) is beyond `keepR`, compacting the arrays
@@ -482,89 +545,51 @@ export class HyperbolicDeveloper {
 	 *  regrows; dropped regions re-develop identically (the develop is deterministic), so this never
 	 *  introduces a hole, only bounds memory. */
 	private prune(view: Su11, keepR: number, keepCount: number): void {
-		const n = this.H.length;
 		// Nothing can be dropped when the count bound is slack and the radius bound is outside the disk: `view`
-		// is an SU(1,1) isometry of the disk, so screenR < 1 for EVERY instance. That is the static-view case
-		// (develop passes keepCount = maxInsts unless the view moved), and skipping it here saves n su11Apply
-		// per frame. Exactly equivalent to running the body, which would keep all n and early-return below.
-		if (keepCount >= n && keepR >= 1) return;
-		const radii = new Float64Array(n);
-		for (let i = 0; i < n; i++) radii[i] = this.screenR(view, i);
+		// is an SU(1,1) isometry of the disk, so screenR < 1 for EVERY instance. That is the static-view case.
+		if (keepCount >= this.live && keepR >= 1) return;
+		const n = this.H.length;
+		const radii = new Float64Array(n).fill(Infinity);
+		for (let i = 0; i < n; i++) if (this.H[i] >= 0) radii[i] = this.screenR(view, i);
 		// keep instances that are BOTH on-screen (≤ keepR) AND among the keepCount nearest the centre; the
 		// count bound only tightens the radius when the fill is instance-capped (dense/near-rim tilings).
 		let eff = keepR;
-		if (keepCount < n) {
+		if (keepCount < this.live) {
 			const kth = nthSmallest(radii.slice(), keepCount - 1);
 			if (kth < eff) eff = kth;
 		}
-		const newIdx = new Int32Array(n).fill(-1);
-		const keep: number[] = [];
-		for (let i = 0; i < n && keep.length < keepCount; i++) {
-			if (radii[i] <= eff) {
-				newIdx[i] = keep.length;
-				keep.push(i);
+		let kept = 0;
+		let dropped = false;
+		for (let i = 0; i < n; i++) {
+			if (this.H[i] < 0) continue;
+			if (radii[i] <= eff && kept < keepCount) {
+				kept++;
+				continue;
+			}
+			dropped = true;
+			this.instKey.delete(this.KS[i]);
+			this.H[i] = -1;
+			this.expanded[i] = false;
+			this.freeI.push(i);
+			const v = this.vid[i];
+			if (--this.vref[v] === 0) {
+				this.vertKey.delete(this.vertKS[v]);
+				this.freeV.push(v);
 			}
 		}
-		if (keep.length === n) return; // nothing to drop
-
-		// Compact by COPYING the cached dedup keys: the old rebuild recomputed framePos, the heading atan2 and
-		// both key strings for every kept instance (~11 ms of prune's ~20 ms at n = 30k). Every key is a
-		// function of (dart, frame) alone, and compaction changes neither, so copying is equivalent. Vertices
-		// renumber through `vmap` for the same reason: equal old vids had equal keys, so they stay equal.
-		const H2: number[] = [];
-		const G2: Su11[] = [];
-		const pos2: Complex[] = [];
-		const KS2: string[] = [];
-		const vid2: number[] = [];
-		const rn2: number[] = [];
-		const gl2: number[] = [];
-		const exp2: boolean[] = [];
-		const verts2: [number, number][] = [];
-		const vertKS2: string[] = [];
-		const vmap = new Int32Array(this.verts.length).fill(-1);
-		this.instKey.clear();
-		this.vertKey.clear();
-		for (const oi of keep) {
-			const ni = H2.length;
-			H2.push(this.H[oi]);
-			G2.push(this.G[oi]);
-			pos2.push(this.pos[oi]);
-			const k = this.KS[oi];
-			KS2.push(k);
-			this.instKey.set(k, ni);
-			const ov = this.vid[oi];
-			let nv = vmap[ov];
-			if (nv < 0) {
-				nv = verts2.length;
-				vmap[ov] = nv;
-				verts2.push(this.verts[ov]);
-				const vk = this.vertKS[ov];
-				vertKS2.push(vk);
-				this.vertKey.set(vk, nv);
+		if (!dropped) return;
+		this.live = kept;
+		// A kept instance whose neighbour was dropped goes back on the frontier, so the region regrows.
+		for (let i = 0; i < n; i++) {
+			if (this.H[i] < 0) continue;
+			const r = this.rn[i];
+			const g = this.gl[i];
+			if ((r >= 0 && this.H[r] < 0) || (g >= 0 && this.H[g] < 0)) {
+				if (r >= 0 && this.H[r] < 0) this.rn[i] = -1;
+				if (g >= 0 && this.H[g] < 0) this.gl[i] = -1;
+				this.expanded[i] = false;
 			}
-			vid2.push(nv);
-			rn2.push(-1);
-			gl2.push(-1);
-			exp2.push(this.expanded[oi]);
 		}
-		for (let ni = 0; ni < keep.length; ni++) {
-			const oi = keep[ni];
-			const nrn = this.rn[oi] >= 0 ? newIdx[this.rn[oi]] : -1;
-			const ngl = this.gl[oi] >= 0 ? newIdx[this.gl[oi]] : -1;
-			rn2[ni] = nrn;
-			gl2[ni] = ngl;
-			if (exp2[ni] && (nrn < 0 || ngl < 0)) exp2[ni] = false; // neighbour dropped → let it regrow
-		}
-		this.H = H2;
-		this.G = G2;
-		this.pos = pos2;
-		this.KS = KS2;
-		this.vid = vid2;
-		this.rn = rn2;
-		this.gl = gl2;
-		this.expanded = exp2;
-		this.verts = verts2;
-		this.vertKS = vertKS2;
 		this.facesCache = null;
 		this.facedCache = null;
 	}
@@ -589,17 +614,21 @@ export class HyperbolicDeveloper {
 	 *
 	 * An OPEN ring is left unmarked: a later start may still close a face through those instances.
 	 */
+	private readonly walk = new Int32Array(64);
 	private traceRings(): number[][] {
 		const n = this.H.length;
 		const out: number[][] = [];
 		const visited = new Uint8Array(n);
+		// One scratch buffer for every walk, copied only when the ring closes: a capped fill has thousands
+		// of frontier starts that run off the developed region, and each used to leave an array behind.
+		const walk = this.walk;
 		for (let start = 0; start < n; start++) {
-			if (visited[start]) continue;
-			const ring: number[] = [];
+			if (visited[start] || this.H[start] < 0) continue;
+			let len = 0;
 			let idx = start;
 			let ok = false;
 			for (let step = 0; step < 64; step++) {
-				ring.push(idx);
+				walk[len++] = idx;
 				const r = this.rn[idx];
 				const nxt = r >= 0 ? this.gl[r] : -1;
 				if (nxt < 0) break; // face escapes the developed region (incomplete boundary face)
@@ -609,68 +638,115 @@ export class HyperbolicDeveloper {
 					break;
 				}
 			}
-			if (!ok || ring.length < 3) continue;
-			for (const i of ring) visited[i] = 1;
+			if (!ok || len < 3) continue;
+			const ring = new Array<number>(len);
+			for (let k = 0; k < len; k++) {
+				ring[k] = walk[k];
+				visited[walk[k]] = 1;
+			}
 			out.push(ring);
 		}
 		return out;
 	}
 
 	/** Trace closed faces over the developed instances, as global-vid rings. */
-	private traceFaces(): number[][] {
+	private traceFaces(): NonNullable<HyperbolicDeveloper["facesCache"]> {
 		if (this.facesCache) return this.facesCache;
-		const F = this.traceRings().map((ring) => ring.map((i) => this.vid[i]));
-		this.facesCache = F;
-		return F;
+		const faces = this.traceRings();
+		for (const ring of faces) for (let k = 0; k < ring.length; k++) ring[k] = this.vid[ring[k]];
+		const vertices = this.verts;
+		this.facesCache = { faces, vertices };
+		return this.facesCache;
 	}
 
 	/** developFaced's view-INDEPENDENT half: the closed rings as global-vid loops, each ring's orbit/colour
 	 *  index, and the deduped global-vid edge list with per-edge drawn flags. Cached on the instance set, so
 	 *  a static view pays the trace once instead of once per frame. */
-	private traceFaced(colors: boolean): { rings: number[][]; orbit: number[]; edges: [number, number, number][] } {
+	private traceFaced(colors: boolean): NonNullable<HyperbolicDeveloper["facedCache"]> {
 		if (this.facedCache && this.facedCache.colors === colors) return this.facedCache;
 		const rings: number[][] = [];
 		const orbit: number[] = [];
 		for (const ring of this.traceRings()) {
 			// ring[0] is the ring's lowest instance index; the orbit/colour is constant along a base face.
 			const h = this.H[ring[0]];
-			rings.push(ring.map((i) => this.vid[i]));
+			for (let k = 0; k < ring.length; k++) ring[k] = this.vid[ring[k]];
+			rings.push(ring);
 			orbit.push(colors ? (this.faceColor ? this.faceColor[h] : 0) : this.tileOrbit ? this.tileOrbit[h] : 0);
 		}
-		// Each instance's glue neighbour is the far end of its edge. Dedup by unordered global vid pair.
+		let vertices = this.verts;
+		// APEIROGONS never close, so traceRings cannot return them. Each comes back as a PAIR [vertex, ξ]
+		// with ξ the centre of its horocycle, which is all the draw needs to fill it (see the horodisk note
+		// in drawDevelopedEdgePatch). ξ is where the bisector of the interior angle leaves the disk: in
+		// instance i's frame the corner spans headings 0 to α, so it is G·e^{iα/2}. Every corner of one
+		// apeirogon lands on the same ξ, so one pair is kept per ξ. ξ is not an instance; the ideal points
+		// are appended after the developed vertices, in a copy, so a tiling with none hands out `verts`.
+		const idealSeen = new Set<number>();
+		const corners: number[] = []; // every apeirogon corner: its sides are edges of a filled face too
+		for (let i = 0; colors && i < this.H.length; i++) {
+			const h = this.H[i];
+			if (h < 0 || this.lvert[this.rneig[h]] !== 0) continue;
+			corners.push(this.vid[i]);
+			const half = this.alpha(h) / 2;
+			const z = su11Apply(this.G[i], { x: Math.cos(half), y: Math.sin(half) });
+			const key = posKey(z);
+			if (idealSeen.has(key)) continue;
+			idealSeen.add(key);
+			if (vertices === this.verts) vertices = this.verts.slice();
+			vertices.push([z.x, z.y]);
+			rings.push([this.vid[i], vertices.length - 1]);
+			orbit.push(this.faceColor ? this.faceColor[h] : 0);
+		}
+		// Each instance's glue neighbour is the far end of its edge. Dedup by unordered vertex pair, as one
+		// integer: the grid can hold one dart as two instances, so pairing by instance lists 37% of the
+		// edges twice (measured on 3.4.17.4, k = 9).
 		// Colors: every edge is a tile boundary (bold). Edges: drawn iff the dart's edge is a digon side.
+		// Only edges with both ends on a closed face, so nothing dangles past the filled region.
+		const onFace = new Uint8Array(vertices.length);
+		for (const ring of rings) for (const v of ring) onFace[v] = 1;
+		for (const v of corners) onFace[v] = 1;
 		const edges: [number, number, number][] = [];
-		const seenE = new Set<string>();
+		const seenE = new Set<number>();
 		for (let i = 0; i < this.H.length; i++) {
 			const g = this.gl[i];
-			if (g < 0) continue;
+			if (this.H[i] < 0 || g < 0) continue;
 			const a = this.vid[i];
 			const b = this.vid[g];
-			if (a === b) continue;
-			const key = a < b ? `${a},${b}` : `${b},${a}`;
+			if (a === b || !onFace[a] || !onFace[b]) continue;
+			const key = a < b ? a * 0x4000000 + b : b * 0x4000000 + a;
 			if (seenE.has(key)) continue;
 			seenE.add(key);
 			edges.push([a, b, colors ? 1 : this.isDrawn(this.H[i]) ? 1 : 0]);
 		}
-		this.facedCache = { rings, orbit, edges, colors };
+		this.facedCache = { rings, orbit, edges, vertices, colors };
 		return this.facedCache;
 	}
 
-	private faceVisible(view: Su11, ring: number[]): boolean {
-		let cx = 0;
-		let cy = 0;
-		for (const v of ring) {
-			const s = su11Apply(view, { x: this.verts[v][0], y: this.verts[v][1] });
-			if (Math.hypot(s.x, s.y) <= 1.03) return true;
-			cx += s.x;
-			cy += s.y;
+	/** Keep the working set equal to the visible disk and make it FOLLOW the view: drop what left the
+	 *  screen, and when the fill is instance-capped and the view moved, drop the farthest tiles to free
+	 *  budget for the leading edge. How many is set by how far it moved: a ball of the hyperbolic plane
+	 *  displaced by d keeps e^(−d) of itself, so that share plus a margin is what the leading edge needs.
+	 *  A fixed 15% re-developed 4,500 instances on every frame of the slowest drag. */
+	private follow(view: Su11, boundR: number, maxInsts: number): void {
+		const c = su11ApplyInverse(view, { x: 0, y: 0 });
+		const last = this.lastCenter;
+		// A view that only rotated, or did not move, needs nothing: every screen radius is unchanged.
+		const same = last !== null && last.x === c.x && last.y === c.y && this.lastFill === boundR * 1e7 + maxInsts;
+		if (same) return;
+		this.lastCenter = c;
+		this.lastFill = boundR * 1e7 + maxInsts;
+		let keep = maxInsts;
+		if (last && this.live >= maxInsts) {
+			const d = Math.acosh(1 + (2 * ((c.x - last.x) ** 2 + (c.y - last.y) ** 2)) / ((1 - c.x * c.x - c.y * c.y) * (1 - last.x * last.x - last.y * last.y)));
+			if (d > 1e-4) keep = Math.floor(maxInsts * Math.max(0.85, 1 - 1.15 * (1 - Math.exp(-d))));
 		}
-		return Math.hypot(cx / ring.length, cy / ring.length) <= 1.03; // large face straddling the disk
+		this.prune(view, Math.min(boundR + 0.05, 1.05), keep);
+		this.extend(view, boundR, maxInsts);
 	}
 
 	/**
-	 * Develop and return a COMPACT patch of the region visible under `view` (only the on-screen faces and
-	 * their vertices, re-indexed), ready to hand to drawDevelopedPatch with the same view.
+	 * Develop the region visible under `view` and return it, ready for drawDevelopedPatch with the same
+	 * view. The arrays are the developer's own, valid until the next develop call: the working set IS the
+	 * visible disk, so there is nothing to filter and nothing to copy on a frame where it did not change.
 	 * @param boundR  screen radius to fill to (≈0.99 fills close to the rim; highly symmetric large-tile
 	 *                tilings like {8,4} need it near 1 to fill, so keep it high and let maxInsts bound cost)
 	 * @param maxInsts hard cap on developed instances (keeps deep/near-rim fills bounded)
@@ -681,36 +757,8 @@ export class HyperbolicDeveloper {
 		boundR = 0.99,
 		maxInsts = 12000,
 	): DevelopedPatch {
-		// Each frame, keep the working set equal to the visible disk and make it FOLLOW the view: drop tiles
-		// that have left the screen (keepR just past the rim), so it never accumulates. When the fill is
-		// instance-capped (a dense tiling needs more than maxInsts to reach the rim) AND the view is moving,
-		// also drop the farthest tiles to free budget for the leading edge — without which a capped set
-		// freezes trailing-biased and holes open on the far side. The move-gate stops a capped-but-static
-		// view from thrashing (dropping and re-developing the same rim every frame).
-		const center = su11ApplyInverse(view, { x: 0, y: 0 });
-		const moved = this.lastCenter === null || Math.hypot(center.x - this.lastCenter.x, center.y - this.lastCenter.y) > 1e-4;
-		this.lastCenter = center;
-		const capped = this.H.length >= maxInsts;
-		this.prune(view, Math.min(boundR + 0.05, 1.05), moved && capped ? Math.floor(maxInsts * 0.85) : maxInsts);
-		this.extend(view, boundR, maxInsts);
-		const all = this.traceFaces();
-		const remap = new Map<number, number>();
-		const vertices: [number, number][] = [];
-		const faces: number[][] = [];
-		for (const ring of all) {
-			if (!this.faceVisible(view, ring)) continue;
-			faces.push(
-				ring.map((v) => {
-					let nv = remap.get(v);
-					if (nv === undefined) {
-						nv = vertices.length;
-						vertices.push(this.verts[v]);
-						remap.set(v, nv);
-					}
-					return nv;
-				}),
-			);
-		}
+		this.follow(view, boundR, maxInsts);
+		const { faces, vertices } = this.traceFaces();
 		return { id: meta.id, name: meta.name, config: meta.config, edge: meta.edge, vertices, faces, tiles: faces.length };
 	}
 
@@ -751,46 +799,8 @@ export class HyperbolicDeveloper {
 		maxInsts: number,
 		colors: boolean,
 	): DevelopedEdgePatch {
-		const center = su11ApplyInverse(view, { x: 0, y: 0 });
-		const moved = this.lastCenter === null || Math.hypot(center.x - this.lastCenter.x, center.y - this.lastCenter.y) > 1e-4;
-		this.lastCenter = center;
-		const capped = this.H.length >= maxInsts;
-		this.prune(view, Math.min(boundR + 0.05, 1.05), moved && capped ? Math.floor(maxInsts * 0.85) : maxInsts);
-		this.extend(view, boundR, maxInsts);
-
-		const remap = new Map<number, number>();
-		const vertices: [number, number][] = [];
-		const pushV = (v: number): number => {
-			let nv = remap.get(v);
-			if (nv === undefined) {
-				nv = vertices.length;
-				vertices.push(this.verts[v]);
-				remap.set(v, nv);
-			}
-			return nv;
-		};
-
-		// Faces: the cached rings (traced once per instance set), filtered to the visible ones and re-indexed
-		// under this view. Each ring's colour is the merged-tile orbit of its seed dart, or its colour index.
-		const { rings, orbit, edges: rawEdges } = this.traceFaced(colors);
-		const faces: number[][] = [];
-		const faceOrbit: number[] = [];
-		for (let f = 0; f < rings.length; f++) {
-			if (!this.faceVisible(view, rings[f])) continue;
-			faces.push(rings[f].map(pushV));
-			faceOrbit.push(orbit[f]);
-		}
-
-		// Edges: keep only those both of whose endpoints landed on a visible face (so nothing draws outside
-		// the shaded region), re-indexed into the compact vertex list.
-		const edges: [number, number, number][] = [];
-		for (const e of rawEdges) {
-			const na = remap.get(e[0]);
-			const nb = remap.get(e[1]);
-			if (na === undefined || nb === undefined) continue;
-			edges.push([na, nb, e[2]]);
-		}
-
-		return { id: meta.id, name: meta.name, config: meta.config, edge: meta.edge, vertices, faces, faceOrbit, edges, tiles: faces.length };
+		this.follow(view, boundR, maxInsts);
+		const { rings, orbit, edges, vertices } = this.traceFaced(colors);
+		return { id: meta.id, name: meta.name, config: meta.config, edge: meta.edge, vertices, faces: rings, faceOrbit: orbit, edges, tiles: rings.length };
 	}
 }

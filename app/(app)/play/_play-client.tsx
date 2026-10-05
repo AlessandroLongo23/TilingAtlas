@@ -12,6 +12,7 @@ import { InversiveCanvas } from "@/components/inversive-canvas";
 import { HyperbolicDevelopedCanvas } from "@/components/hyperbolic-developed-canvas";
 import { HyperbolicEdgesCanvas } from "@/components/hyperbolic-edges-canvas";
 import { HyperbolicColorsCanvas } from "@/components/hyperbolic-colors-canvas";
+import { HyperbolicJoystick } from "@/components/hyperbolic-joystick";
 import { SphericalCanvas } from "@/components/spherical-canvas";
 import { SphericalColorsCanvas } from "@/components/spherical-colors-canvas";
 import { FreedrawPlayCanvas } from "@/components/freedraw-play-canvas";
@@ -1741,7 +1742,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 						// 3.4.n.4 tiling by regular polygons: not a decoration, so every edge is a real boundary and
 						// each face is filled by its POLYGON SIZE. That is the colored-tiling render exactly, so it
 						// uses that canvas with the size index standing in for the colour index.
-						<HyperbolicColorsCanvas pattern={hypPolyMeta(selected.hypPoly)} />
+						<HyperbolicColorsCanvas pattern={hypPolyMeta(selected.hypPoly)} tiles />
 					) : selected?.sphBubble ? (
 						// A spherical bubble tiling: the same three.js canvas, drawing MESHED tiles instead of the
 						// procedural face classification. It carries no polyhedron view — a bubble tile's sides are
@@ -1803,6 +1804,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				    different Euclidean tiling derived from its quotient graph — which is exactly why it gets a
 				    frame of its own instead of the canvas. */}
 				<SquaringInset selected={selected ?? null} />
+				{isDiskSurface(surface) ? <HyperbolicJoystick /> : null}
 				{/* The sizes and the image lattice, on a 2-D layer over the tiles: the flat pipeline draws
 				    polygons and has neither type nor a cell outline. Same contract as the Truchet overlay — it
 				    reads the live camera and takes no pointer input, so it cannot move the picture.

@@ -2,23 +2,23 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { HyperbolicDeveloper, type Darts } from "@/lib/render/hyperbolicDevelopClient";
-import { prepareShaderTiling } from "@/lib/render/hyperbolicReduce";
 import {
 	KLEIN_SCALE,
 	islamicSegmentsForTile,
 	kleinToPoincare,
+	STRAP_RANGE,
+	islamicLayers,
+	islamicTileLayer,
 	poincareToKlein,
-	prepareIslamicField,
 } from "@/lib/render/hyperbolicIslamic";
-import { hypDist, hypMidpoint, su11Apply, type Complex, type Su11 } from "@/lib/render/hyperbolic";
+import { hypMidpoint, su11Apply, su11Mul, su11Rotation, su11Translation, type Complex, type Su11 } from "@/lib/render/hyperbolic";
+import { ISLAMIC_MARGIN, buildWalk, islamicWedgeBox } from "@/lib/render/hyperbolicWalk";
 import { islamicNormalAngleFromSlider } from "@/utils/islamicNoise";
 import type { DevelopedPatch } from "@/lib/render/hyperbolicDevelopedDraw";
 
-import { sampleAtlas } from "./hyperbolic-sample";
 
 interface ShippedPatch extends DevelopedPatch {
 	darts?: Darts;
-	certified?: boolean;
 }
 const atlas: ShippedPatch[] = JSON.parse(
 	readFileSync(join(__dirname, "..", "public", "hyperbolic-developed.json"), "utf8"),
@@ -31,14 +31,6 @@ const byId = (id: string) => {
 const metaOf = (p: ShippedPatch) => ({ id: p.id, name: p.name, config: p.config, edge: p.edge });
 
 const identity: Su11 = { a: { x: 1, y: 0 }, b: { x: 0, y: 0 } };
-
-/** The bake's develop bound (hyperbolicIslamic/hyperbolicReduce formula) — a reference patch must
- *  reach this deep or its segment pool misses tiles the bake sees. */
-function bakeBound(RD: number, darts: Darts, edge: number): number {
-	let rMaxTile = 0;
-	for (const p of darts.lvert) rMaxTile = Math.max(rMaxTile, Math.asinh(Math.sinh(edge / 2) / Math.sin(Math.PI / p)));
-	return Math.min(0.9995, Math.tanh((RD + 0.15 + 2 * rMaxTile + 0.2) / 2));
-}
 
 function facePolyP(patch: DevelopedPatch, fi: number): Complex[] {
 	return patch.faces[fi].map((i) => ({ x: patch.vertices[i][0], y: patch.vertices[i][1] }));
@@ -82,16 +74,16 @@ describe("hyperbolic Islamic plain (Klein-model Hankin construction)", () => {
 		}
 	});
 
-	it.each([0, 0.5])("tile segments are EQUIVARIANT under the tiling's own isometries (offset %s)", (frac) => {
+	it.each([0, 0.5])("tile segments are EQUIVARIANT under isometries (offset %s)", (frac) => {
 		const p = byId("hyp-3-6-4-6");
-		const st = prepareShaderTiling(p.darts as Darts, p.edge, metaOf(p), { fieldRes: 64 });
-		expect(st).not.toBeNull();
 		const dev = new HyperbolicDeveloper(p.darts as Darts, p.edge);
 		const patch = dev.develop(metaOf(p), identity, 0.8, 4000);
 		const theta = islamicNormalAngleFromSlider(45);
 		const poly = facePolyP(patch, 0);
 		const base = islamicSegmentsForTile(poly, theta, frac);
-		for (const g of st!.domain.gens.slice(0, 4)) {
+		// any isometry will do: the construction reads nothing but the tile
+		const isometries = [su11Rotation(0.7), su11Translation({ x: 0.3, y: -0.2 }), su11Mul(su11Translation({ x: -0.5, y: 0.1 }), su11Rotation(2.1))];
+		for (const g of isometries) {
 			const movedPoly = poly.map((v) => su11Apply(g, v));
 			const moved = islamicSegmentsForTile(movedPoly, theta, frac);
 			expect(moved.length).toBe(base.length);
@@ -173,222 +165,137 @@ describe("hyperbolic Islamic plain (Klein-model Hankin construction)", () => {
 		}
 	});
 
-	it.each(["hyp-8-8-8", "hyp-3-6-4-6", "hyp-k2-3-3-4-3-4-4__3-3-4-3-4-4"])(
-		"bakes a TOTAL plain field for %s (classes valid, no deep unresolved, centres are star bodies)",
-		(id) => {
-			const p = byId(id);
-			const st = prepareShaderTiling(p.darts as Darts, p.edge, metaOf(p), { fieldRes: 128 });
-			expect(st).not.toBeNull();
-			const err = vi.spyOn(console, "error").mockImplementation(() => {});
-			const theta = islamicNormalAngleFromSlider(45);
-			const field = prepareIslamicField(st!, p.darts as Darts, p.edge, metaOf(p), theta, 0, { fieldRes: 128 });
-			expect(field).not.toBeNull();
-			expect(err).not.toHaveBeenCalled(); // no deep-unresolved coverage bug
-			const { data, res, rTex } = field!;
-			expect(rTex).toBe(st!.field.rTex);
-			for (let o = 0; o < data.length; o += 4) {
-				expect(data[o]).toBeGreaterThanOrEqual(1);
-				expect(data[o]).toBeLessThanOrEqual(3);
-			}
-			// the texel at every in-square tile barycenter belongs to a star body (class A = 1)
-			const dev = new HyperbolicDeveloper(p.darts as Darts, p.edge);
-			const patch = dev.develop(metaOf(p), identity, bakeBound(st!.domain.RD, p.darts as Darts, p.edge), 100000);
-			let centres = 0;
-			for (const f of patch.faces) {
-				let X = 0;
-				let Y = 0;
-				let T = 0;
-				for (const vi_ of f) {
-					const [x, y] = patch.vertices[vi_];
-					const s = Math.max(1 - x * x - y * y, 1e-12);
-					X += (2 * x) / s;
-					Y += (2 * y) / s;
-					T += (1 + x * x + y * y) / s;
-				}
-				const nrm = Math.sqrt(Math.max(T * T - X * X - Y * Y, 1e-18));
-				const t = T / nrm;
-				const c = { x: X / nrm / (1 + t), y: Y / nrm / (1 + t) };
-				// keep centres safely inside the sampled square (the seed is vertex-anchored, so the
-				// nearest tile centres sit a full circumradius out — don't filter them away)
-				if (Math.hypot(c.x, c.y) > 0.95 * rTex) continue;
-				const i = Math.max(0, Math.min(res - 1, Math.floor(((c.x / rTex) * 0.5 + 0.5) * res)));
-				const j = Math.max(0, Math.min(res - 1, Math.floor(((c.y / rTex) * 0.5 + 0.5) * res)));
-				expect(data[(j * res + i) * 4], `${id}: tile centre not class A`).toBe(1);
-				centres++;
-			}
-			expect(centres).toBeGreaterThan(0);
-		},
-	);
-
-	it("the G channel equals the distance to the GLOBALLY nearest construction line (face-boundary shortcut is sound)", () => {
-		const p = byId("hyp-3-6-4-6");
-		const st = prepareShaderTiling(p.darts as Darts, p.edge, metaOf(p), { fieldRes: 192 });
-		expect(st).not.toBeNull();
-		const theta = islamicNormalAngleFromSlider(45);
-		const field = prepareIslamicField(st!, p.darts as Darts, p.edge, metaOf(p), theta, 0, { fieldRes: 192 });
-		expect(field).not.toBeNull();
-		const { data, res, rTex } = field!;
-		// independent brute force: pool ALL tiles' segments (to the bake's own develop depth — a
-		// shallower pool would MISS segments and overstate the distance), tessellate, min × conformal
-		const dev = new HyperbolicDeveloper(p.darts as Darts, p.edge);
-		const patch = dev.develop(metaOf(p), identity, bakeBound(st!.domain.RD, p.darts as Darts, p.edge), 400000);
-		const polys: [number, number][][] = [];
-		for (let fi = 0; fi < patch.faces.length; fi++) {
-			const poly = facePolyP(patch, fi);
-			for (const [a, b] of islamicSegmentsForTile(poly, theta)) {
-				const pa = kleinToPoincare({ x: a.x / KLEIN_SCALE, y: a.y / KLEIN_SCALE });
-				const pb = kleinToPoincare({ x: b.x / KLEIN_SCALE, y: b.y / KLEIN_SCALE });
-				// tessellate the geodesic chord by hyperbolic midpoint subdivision (8 pieces)
-				let pts: Complex[] = [pa, pb];
-				for (let d = 0; d < 3; d++) {
-					const next: Complex[] = [pts[0]];
-					for (let k = 0; k + 1 < pts.length; k++) {
-						next.push(hypMidpoint(pts[k], pts[k + 1]), pts[k + 1]);
-					}
-					pts = next;
-				}
-				polys.push(pts.map((q) => [q.x, q.y] as [number, number]));
-			}
-		}
-		let s = 777;
-		const rnd = () => ((s = (s * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
-		let checked = 0;
-		for (let n = 0; n < 400 && checked < 150; n++) {
-			const i = Math.floor(rnd() * res);
-			const j = Math.floor(rnd() * res);
-			const x = ((i + 0.5) / res) * 2 * rTex - rTex;
-			const y = ((j + 0.5) / res) * 2 * rTex - rTex;
-			if (x * x + y * y > (0.75 * rTex) ** 2) continue;
-			let dSq = Infinity;
-			for (const pts of polys) {
-				for (let k = 0; k + 1 < pts.length; k++) {
-					const [ax, ay] = pts[k];
-					const [bx, by] = pts[k + 1];
-					const dx = bx - ax;
-					const dy = by - ay;
-					const l2 = dx * dx + dy * dy;
-					let t = l2 > 0 ? ((x - ax) * dx + (y - ay) * dy) / l2 : 0;
-					t = Math.max(0, Math.min(1, t));
-					dSq = Math.min(dSq, (x - (ax + t * dx)) ** 2 + (y - (ay + t * dy)) ** 2);
-				}
-			}
-			const conf = 2 / Math.max(1 - (x * x + y * y), 1e-6);
-			const expected = Math.min(255, Math.sqrt(dSq) * conf * 510);
-			const got = data[(j * res + i) * 4 + 1];
-			if (expected > 240) continue; // both saturate — uninformative
-			expect(Math.abs(got - expected), `texel ${i},${j}`).toBeLessThan(12); // byte + tessellation slack
-			checked++;
-		}
-		expect(checked).toBeGreaterThan(80);
-	});
-
-	it("bakes a valid plain field for a sample of certifiable tilings (offsets 0 and 50 %)", { timeout: 300_000 }, () => {
-		// Was "EVERY shipped tiling" at 59; the shelf is thousands and the Islamic bake needs the
-		// certified reduction, so: seeded sample over stamped-certifiable patches (tests/hyperbolic-sample.ts).
-		const theta = islamicNormalAngleFromSlider(45);
-		const bad: string[] = [];
-		const err = vi.spyOn(console, "error").mockImplementation(() => {});
-		vi.spyOn(console, "warn").mockImplementation(() => {}); // clamped rays may warn on exotic tiles
-		for (const p of sampleAtlas(atlas.filter((x) => x.certified !== false), 30)) {
-			const st = prepareShaderTiling(p.darts as Darts, p.edge, metaOf(p), { fieldRes: 96 });
-			if (!st) {
-				bad.push(`${p.id}: certificate failed`);
-				continue;
-			}
-			for (const frac of [0, 0.5]) {
-				err.mockClear();
-				const field = prepareIslamicField(st, p.darts as Darts, p.edge, metaOf(p), theta, frac, { fieldRes: 96 });
-				if (!field) {
-					bad.push(`${p.id}@${frac}: bake returned null`);
-					continue;
-				}
-				if (err.mock.calls.length > 0) bad.push(`${p.id}@${frac}: ${String(err.mock.calls[0][0])}`);
-				for (let o = 0; o < field.data.length; o += 4) {
-					if (field.data[o] < 1 || field.data[o] > 3) {
-						bad.push(`${p.id}@${frac}: texel ${o / 4} class ${field.data[o]}`);
-						break;
-					}
-				}
-			}
-		}
-		expect(bad, bad.join("; ")).toEqual([]);
-	});
-
-	// ---- edge offset + the C class ------------------------------------------------------------------
-	const clsCounts = (f: { data: Uint8Array }): [number, number, number] => {
-		const c: [number, number, number] = [0, 0, 0];
-		for (let o = 0; o < f.data.length; o += 4) c[f.data[o] - 1]++;
-		return c;
+	// ---- the per-polygon layer (islamicTileLayer) ----------------------------------------------------
+	const EDGE = byId("hyp-3-6-4-6").edge;
+	const RES = 128;
+	/** The texel of a point of the p-gon's frame: turned and mirrored into the layer's wedge, as the shader does. */
+	const at = (p: number, q: Complex, res = RES) => {
+		const [X, Y] = islamicWedgeBox(p, EDGE);
+		const sector = (2 * Math.PI) / p;
+		const ang = Math.atan2(q.y, q.x);
+		const a = Math.abs(ang - Math.round(ang / sector) * sector);
+		const r = Math.hypot(q.x, q.y);
+		const tx = (u: number) => Math.max(0, Math.min(res - 1, Math.floor(((u + ISLAMIC_MARGIN) / (1 + ISLAMIC_MARGIN)) * res)));
+		return (tx((r * Math.sin(a)) / Y) * res + tx((r * Math.cos(a)) / X)) * 4;
 	};
-	const clsAgreement = (a: { data: Uint8Array }, b: { data: Uint8Array }): number => {
+	const classes = (layer: Uint8Array) => {
+		const n = [0, 0, 0, 0];
+		for (let o = 0; o < layer.length; o += 4) n[layer[o]]++;
+		return n;
+	};
+	const agreement = (a: Uint8Array, b: Uint8Array) => {
 		let same = 0;
-		for (let o = 0; o < a.data.length; o += 4) if (a.data[o] === b.data[o]) same++;
-		return same / (a.data.length / 4);
+		for (let o = 0; o < a.length; o += 4) if (a[o] === b[o]) same++;
+		return same / (a.length / 4);
 	};
 
-	it("edge offset opens the C diamonds; offset 0 has none", () => {
-		const p = byId("hyp-3-6-4-6");
-		const st = prepareShaderTiling(p.darts as Darts, p.edge, metaOf(p), { fieldRes: 160 });
-		const theta = islamicNormalAngleFromSlider(45);
-		const f0 = prepareIslamicField(st!, p.darts as Darts, p.edge, metaOf(p), theta, 0, { fieldRes: 160 })!;
-		const f4 = prepareIslamicField(st!, p.darts as Darts, p.edge, metaOf(p), theta, 0.4, { fieldRes: 160 })!;
-		const [, , c0] = clsCounts(f0);
-		const [a4, , c4] = clsCounts(f4);
-		expect(c0).toBe(0); // no contact gap at offset 0 — no C anywhere
-		expect(c4).toBeGreaterThan(0); // the diamonds are open
-		expect(a4).toBeGreaterThan(0); // star bodies survive the split
-	});
-
-	// AL's continuity requirement: the classification must not jump at the degenerate ends of either
-	// slider. Marker-based C makes these limits continuous by construction — verify per-texel.
-	it("colour continuity at the slider end stops (angle 89↔90, offset 95↔100, offset 0↔5)", () => {
-		const p = byId("hyp-3-6-4-6");
-		const st = prepareShaderTiling(p.darts as Darts, p.edge, metaOf(p), { fieldRes: 160 });
+	it.each([3, 4, 6, 7, 17])("bakes a total layer for the %s-gon, star body at the centre (offsets 0 and 50 %%)", (p) => {
 		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-		const bake = (slider: number, frac: number) =>
-			prepareIslamicField(st!, p.darts as Darts, p.edge, metaOf(p), islamicNormalAngleFromSlider(slider), frac, {
-				fieldRes: 160,
-			})!;
-		// angle 89 → 90 (rays collapse onto the apothems; the star bodies vanish smoothly)
-		const a89 = bake(89, 0);
-		const a90 = bake(90, 0);
-		expect(clsCounts(a89)[2]).toBe(0); // parity-C would light up HERE — geometric C must not
-		expect(clsCounts(a90)[2]).toBe(0);
-		expect(clsAgreement(a89, a90)).toBeGreaterThan(0.96);
-		// offset top end: the last notch must NOT snap (the 100 % vertex-coincidence is regularised —
-		// unclamped it flipped ~8 % of texels in that single percent); across 95 → 100 the classes
-		// drift only at the smooth geometric rate (~1.5 %/percent of legitimately moving boundaries).
-		const o95 = bake(45, 0.95);
-		const o99 = bake(45, 0.99);
-		const o100 = bake(45, 1);
-		expect(clsAgreement(o99, o100)).toBeGreaterThan(0.97);
-		expect(clsAgreement(o95, o100)).toBeGreaterThan(0.9);
-		// offset 0 → 5 % (the diamonds open from nothing)
-		const o0 = bake(45, 0);
-		const o5 = bake(45, 0.05);
-		expect(clsAgreement(o0, o5)).toBeGreaterThan(0.95);
+		for (const frac of [0, 0.5]) {
+			const layer = islamicTileLayer(p, EDGE, islamicNormalAngleFromSlider(45), frac, RES);
+			const n = classes(layer);
+			expect(n[0], "a texel with no class").toBe(0);
+			expect(layer[at(p, { x: 0, y: 0 })]).toBe(1);
+			expect(n[1]).toBeGreaterThan(0);
+			expect(n[2]).toBeGreaterThan(0);
+			// the diamonds exist exactly when the offset opens them
+			if (frac === 0) expect(n[3]).toBe(0);
+			else expect(n[3]).toBeGreaterThan(0);
+		}
 		warn.mockRestore();
 	});
 
-	it("the doubly degenerate corner (angle 90 + offset 100 %) still bakes a total, valid field", () => {
-		const p = byId("hyp-8-8-8");
-		const st = prepareShaderTiling(p.darts as Darts, p.edge, metaOf(p), { fieldRes: 128 });
-		const err = vi.spyOn(console, "error").mockImplementation(() => {});
-		vi.spyOn(console, "warn").mockImplementation(() => {});
-		const field = prepareIslamicField(
-			st!,
-			p.darts as Darts,
-			p.edge,
-			metaOf(p),
-			islamicNormalAngleFromSlider(90),
-			1,
-			{ fieldRes: 128 },
-		);
-		expect(field).not.toBeNull();
-		expect(err).not.toHaveBeenCalled();
-		for (let o = 0; o < field!.data.length; o += 4) {
-			expect(field!.data[o]).toBeGreaterThanOrEqual(1);
-			expect(field!.data[o]).toBeLessThanOrEqual(3);
+	it("the margin past the wedge mirrors it, so a tap across the axis reads the same face", () => {
+		const layer = islamicTileLayer(6, EDGE, islamicNormalAngleFromSlider(45), 0.4, RES);
+		const below = Math.floor((ISLAMIC_MARGIN / (1 + ISLAMIC_MARGIN)) * RES) - 1; // last row under the axis
+		for (let i = 8; i < RES; i += 8) {
+			const a = (below * RES + i) * 4;
+			const b = ((below + 1) * RES + i) * 4;
+			expect(layer[a]).toBe(layer[b]);
 		}
+	});
+
+	it("the line-distance channel is zero on a construction line and grows away from it", () => {
+		const p = 4;
+		const theta = islamicNormalAngleFromSlider(45);
+		const layer = islamicTileLayer(p, EDGE, theta, 0, RES);
+		const [rv] = islamicWedgeBox(p, EDGE);
+		const poly: Complex[] = Array.from({ length: p }, (_, i) => ({ x: rv * Math.cos(((2 * i - 1) * Math.PI) / p), y: rv * Math.sin(((2 * i - 1) * Math.PI) / p) }));
+		for (const [a, b] of islamicSegmentsForTile(poly, theta)) {
+			const mid = kleinToPoincare({ x: (a.x + b.x) / 2 / KLEIN_SCALE, y: (a.y + b.y) / 2 / KLEIN_SCALE });
+			expect(layer[at(p, mid) + 1]).toBeLessThan(30); // within a texel of the line
+		}
+		expect(layer[at(p, { x: 0, y: 0 }) + 1]).toBeGreaterThan(60);
+	});
+
+	it("colour continuity at the slider end stops (angle 89↔90, offset 95↔100, offset 0↔5)", () => {
+		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+		const bake = (slider: number, frac: number) => islamicTileLayer(6, EDGE, islamicNormalAngleFromSlider(slider), frac, RES);
+		const a89 = bake(89, 0);
+		const a90 = bake(90, 0);
+		expect(classes(a89)[3]).toBe(0);
+		expect(classes(a90)[3]).toBe(0);
+		// the star bodies are slivers along the apothems at 89 and gone at 90; in one wedge they are 5 % of it
+		expect(agreement(a89, a90)).toBeGreaterThan(0.93);
+		expect(agreement(bake(45, 0.99), bake(45, 1))).toBeGreaterThan(0.97);
+		expect(agreement(bake(45, 0.95), bake(45, 1))).toBeGreaterThan(0.9);
+		expect(agreement(bake(45, 0), bake(45, 0.05))).toBeGreaterThan(0.95);
+		warn.mockRestore();
+	});
+
+	it("the doubly degenerate corner (angle 90 + offset 100 %) still bakes a total layer", () => {
+		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+		for (const p of [3, 4, 6]) expect(classes(islamicTileLayer(p, EDGE, islamicNormalAngleFromSlider(90), 1, RES))[0]).toBe(0);
+		warn.mockRestore();
+	});
+
+	it("stacks one layer per polygon size of the tiling, in the walk table's order", () => {
+		const p = byId("hyp-3-6-4-6");
+		const walk = buildWalk(p.darts as Darts, p.edge, { allDrawn: true });
+		expect(walk.sizes).toEqual([3, 4, 6]);
+		const theta = islamicNormalAngleFromSlider(45);
+		const stack = islamicLayers(walk.sizes, p.edge, theta, 0, 64);
+		expect(stack.length).toBe(3 * 64 * 64 * 4);
+		expect(Array.from(stack.subarray(64 * 64 * 4, 64 * 64 * 4 + 64))).toEqual(Array.from(islamicTileLayer(4, p.edge, theta, 0, 64).subarray(0, 64)));
+	});
+
+	it("bakes the apeirogon's strip: star body up the cusp, side fields by the vertices, no empty texel", () => {
+		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+		const edge = 1.7627; // the hybrid board (4, ∞)
+		for (const frac of [0, 0.4]) {
+			const layer = islamicTileLayer(0, edge, islamicNormalAngleFromSlider(45), frac, RES);
+			const n = classes(layer);
+			expect(n[0]).toBe(0);
+			const texel = (u: number, v: number) => {
+				const tx = (c: number) => Math.floor(((c + ISLAMIC_MARGIN) / (1 + ISLAMIC_MARGIN)) * RES);
+				return layer[(tx(v) * RES + tx(u)) * 4];
+			};
+			expect(texel(0.5, 0.9)).toBe(1); // high in the cusp
+			expect(texel(0.02, 0.03)).toBe(2); // just above the vertex
+			if (frac > 0) expect(n[3]).toBeGreaterThan(0);
+			else expect(n[3]).toBe(0);
+		}
+		warn.mockRestore();
+	});
+
+	it("a strap layer is zero on its strands and flags a crossing only around an edge's midpoint", () => {
+		const p = 6;
+		const theta = islamicNormalAngleFromSlider(45);
+		const layer = islamicTileLayer(p, EDGE, theta, 0, RES, "strap");
+		const [rv] = islamicWedgeBox(p, EDGE);
+		const dist = (o: number) => [(((layer[o] & 127) << 8) | layer[o + 1]) / 32767, ((layer[o + 2] << 8) | layer[o + 3]) / 32767].map((d) => d * STRAP_RANGE);
+		const poly: Complex[] = Array.from({ length: p }, (_, i) => ({ x: rv * Math.cos(((2 * i - 1) * Math.PI) / p), y: rv * Math.sin(((2 * i - 1) * Math.PI) / p) }));
+		const segs = islamicSegmentsForTile(poly, theta);
+		// ray 0 leaves side 0's midpoint into the upper half of the wedge: the + strand there
+		const [a, b] = segs[0];
+		const along = (t: number) => kleinToPoincare({ x: (a.x + t * (b.x - a.x)) / KLEIN_SCALE, y: (a.y + t * (b.y - a.y)) / KLEIN_SCALE });
+		expect(dist(at(p, along(0.5)))[0]).toBeLessThan(0.03);
+		// by the midpoint the two rays of the side cross; by the ray's far end it has turned a corner
+		expect(layer[at(p, along(0.1))] & 128).toBe(128);
+		expect(layer[at(p, along(0.9))] & 128).toBe(0);
+		// at the midpoint both strands are at hand, and the centre is far from either
+		const root = dist(at(p, along(0.02)));
+		expect(Math.max(root[0], root[1])).toBeLessThan(0.08);
+		expect(Math.min(...dist(at(p, { x: 0, y: 0 })))).toBeGreaterThan(0.2);
 	});
 });

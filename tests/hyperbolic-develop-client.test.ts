@@ -166,33 +166,6 @@ describe("HyperbolicDeveloper (TS port of develop_patch)", () => {
 		expect(bad, `patches with interior holes: ${bad.join(", ")}`).toEqual([]);
 	});
 
-	it("deepDedup mode develops the same patch as the default at moderate depth", () => {
-		for (const id of ["hyp-3-6-4-6", "hyp-k2-3-4-6-6__3-6-4-6"]) {
-			const p = byId(id);
-			const meta = { id: p.id, name: p.name, config: p.config, edge: p.edge };
-			const a = new HyperbolicDeveloper(p.darts as Darts, p.edge).develop(meta, su11Identity(), 0.9, 20000);
-			const b = new HyperbolicDeveloper(p.darts as Darts, p.edge, { deepDedup: true }).develop(
-				meta, su11Identity(), 0.9, 20000,
-			);
-			expect(centralFaceSig(b.vertices, b.faces)).toBe(centralFaceSig(a.vertices, a.faces));
-			expect(b.faces.length).toBe(a.faces.length);
-		}
-	});
-
-	it("extendTo grows the instance set monotonically and reports uncapped fills", () => {
-		const p = byId("hyp-7-7-7");
-		const dev = new HyperbolicDeveloper(p.darts as Darts, p.edge, { deepDedup: true });
-		expect(dev.extendTo(su11Identity(), 0.8, 100000)).toBe(true);
-		const n1 = dev.instanceCount();
-		expect(n1).toBeGreaterThan(10);
-		expect(dev.extendTo(su11Identity(), 0.95, 100000)).toBe(true);
-		const n2 = dev.instanceCount();
-		expect(n2).toBeGreaterThan(n1);
-		// a tiny cap must be reported as capped
-		const dev2 = new HyperbolicDeveloper(p.darts as Darts, p.edge, { deepDedup: true });
-		expect(dev2.extendTo(su11Identity(), 0.99, 50)).toBe(false);
-	});
-
 	// prune picks its keep-radius with nthSmallest instead of sorting every instance radius. A wrong order
 	// statistic keeps the wrong tiles and opens holes, and no structural invariant would catch it, so pin it
 	// against a full sort over the shapes prune actually sees: heavy duplicates (co-radial orbits), constant
@@ -235,5 +208,81 @@ describe("HyperbolicDeveloper (TS port of develop_patch)", () => {
 				for (const v of f) expect(v).toBeLessThan(patch.vertices.length);
 			}
 		}
+	});
+});
+
+describe("apeirogon faces (lvert 0)", () => {
+	// hph1_7627-1-00003: the uniform ∞.∞.4.4.4, at the edge where an apeirogon's angle is 90° and a
+	// square's is 60°. Marek's hybrid_1_7627 corpus, developed by tools/ctrnact-oracle/develop_ai1.py.
+	const edge = 1.7627471740391059;
+	const darts = { rneig: [1, 2, 3, 4, 0], glue: [2, 1, 0, 4, 3], lvert: [4, 0, 0, 4, 4], faceColor: [1, 1, 0, 0, 0], seed: 0 };
+	const patch = new HyperbolicDeveloper(darts, edge).developColors(
+		{ id: "x", name: "x", config: "∞.∞.4.4.4", edge },
+		su11Identity(),
+		0.9,
+		4000,
+	);
+	const r2 = (v: number) => patch.vertices[v][0] ** 2 + patch.vertices[v][1] ** 2;
+	const pairs = patch.faces.filter((f) => f.length === 2);
+	/** Constant along a horocycle centred at the ideal point ξ: (1 − |z|²)/|z − ξ|². */
+	const bus = (v: number, xi: number) =>
+		(1 - r2(v)) / ((patch.vertices[v][0] - patch.vertices[xi][0]) ** 2 + (patch.vertices[v][1] - patch.vertices[xi][1]) ** 2);
+
+	it("returns each apeirogon once, as a vertex and an ideal point", () => {
+		expect(pairs.length).toBeGreaterThan(10);
+		for (const [v, xi] of pairs) {
+			expect(r2(v)).toBeLessThan(1 - 1e-6);
+			expect(r2(xi)).toBeCloseTo(1, 9);
+		}
+		expect(new Set(pairs.map(([, xi]) => xi)).size).toBe(pairs.length);
+		// the pair carries the apeirogon's colour index, and the squares carry the other
+		for (let i = 0; i < patch.faces.length; i++) expect(patch.faceOrbit[i]).toBe(patch.faces[i].length === 2 ? 1 : 0);
+	});
+
+	it("puts the ideal point at the centre of the horocycle through the apeirogon's vertices", () => {
+		// The central apeirogons have many developed corners; all of them must sit on the pair's horocycle.
+		const finite = patch.vertices.map((_, v) => v).filter((v) => r2(v) < 1 - 1e-6);
+		const onIt = pairs.map(([v, xi]) => finite.filter((u) => Math.abs(bus(u, xi) / bus(v, xi) - 1) < 1e-6).length);
+		expect(Math.max(...onIt)).toBeGreaterThan(6);
+		expect(Math.min(...onIt)).toBeGreaterThanOrEqual(1);
+	});
+});
+
+describe("recenter keeps the 2D path unbounded", () => {
+	// A board with no apeirogon: panning into an apeirogon's cusp legitimately leaves every vertex behind.
+	const rec = atlas.find((p) => p.darts && p.config === "6.6.7")!;
+	const meta = { id: "x", name: "x", config: "", edge: rec.edge };
+	const step = su11Translation({ x: Math.tanh(0.25), y: 0 }); // half a hyperbolic unit per frame
+	/** Per frame, the faces reaching the middle of the screen whose every side has length ℓ. Without
+	 *  recentring the sides go wrong from 6 units out, growth stops at 9 and the middle is empty at 12. */
+	const pan = (frames: number, recenter: boolean): number[] => {
+		const dev = new HyperbolicDeveloper(rec.darts!, rec.edge);
+		let view = su11Identity();
+		const seen: number[] = [];
+		for (let f = 0; f < frames; f++) {
+			const g = recenter ? dev.recenter(view) : null;
+			if (g) view = su11Normalize(su11Mul(view, g));
+			const p = dev.develop(meta, view, 0.95, 3000);
+			const at = (v: number) => ({ x: p.vertices[v][0], y: p.vertices[v][1] });
+			const v0 = view;
+			seen.push(
+				p.faces.filter(
+					(face) =>
+						face.some((v) => Math.hypot(...Object.values(su11Apply(v0, at(v)))) < 0.5) &&
+						face.every((v, i) => Math.abs(hypDist(at(v), at(face[(i + 1) % face.length])) - rec.edge) < 1e-3),
+				).length,
+			);
+			view = su11Normalize(su11Mul(step, view));
+		}
+		return seen;
+	};
+
+	it("without it the tiling ends within 20 hyperbolic units, which is the bug", () => {
+		expect(Math.min(...pan(40, false))).toBe(0);
+	});
+
+	it("with it the screen stays tiled over 200 units", () => {
+		const seen = pan(400, true);
+		expect(Math.min(...seen)).toBeGreaterThan(0.8 * Math.min(...seen.slice(0, 10)));
 	});
 });

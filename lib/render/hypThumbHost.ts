@@ -12,7 +12,6 @@
 // one host is not merely enough, it is what the comments already claimed.
 
 import { HyperbolicPerPixelRenderer } from "@/lib/render/hyperbolicPerPixelGL";
-import type { ShaderTiling } from "@/lib/render/hyperbolicReduce";
 
 let glCanvas: HTMLCanvasElement | null = null;
 // undefined = untried, null = unavailable (no WebGL2, or the program failed to build)
@@ -63,22 +62,3 @@ export function ensureDiskCanvas2d(size: number): CanvasRenderingContext2D | nul
 /** The bitmap the 2D fallback just drew. Separate from the context so a caller cannot bake into one
  *  surface and read another. */
 export const diskCanvas2dDataUrl = (): string | null => canvas2d?.toDataURL("image/png") ?? null;
-
-// One reduction field per (mode, tiling). The MODE belongs in the key: the same darts prepared with
-// `colors: true` and without give different fields, and the three shelves no longer have a cache each to
-// keep them apart. Null is cached too — a failed Dirichlet certificate costs a median 210 ms, and
-// re-deciding that per card is exactly what the cache exists to stop.
-const fields = new Map<string, ShaderTiling | null>();
-
-export function cachedShaderTiling(
-	mode: string,
-	id: string,
-	build: () => ShaderTiling | null,
-): ShaderTiling | null {
-	const key = `${mode}:${id}`;
-	const hit = fields.get(key);
-	if (hit !== undefined) return hit;
-	const built = build();
-	fields.set(key, built);
-	return built;
-}

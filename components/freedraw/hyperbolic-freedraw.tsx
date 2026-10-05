@@ -41,10 +41,9 @@ import {
 //
 // The board is the disk cut by the mirrors of a (p,q,r) group, so its tile is a triangle with three
 // different angles AND three different side lengths. Both render paths take the per-pixel shader, the
-// same one every other hyperbolic shelf uses: its Dirichlet reducer reads the side pairings off the
-// developer's own deck frames, which already carry the per-dart turns and lengths, so a scalene board
-// certifies exactly like a regular one (the single scalar it ever needed was the develop margin — see
-// maxTileRadius in lib/render/hyperbolicDevelopClient).
+// same one every other hyperbolic shelf uses: its walk table is built from the darts, which already
+// carry the per-dart turns and lengths, so a scalene board draws exactly like a regular one, its
+// triangles tested side by side (WALK_IRREGULAR in lib/render/hyperbolicWalk).
 //
 // The {p,q} edge systems (6.6.7, {7,3}, …) are a different catalogue and live on /library and /play; this
 // arm is the Schwarz boards only.
