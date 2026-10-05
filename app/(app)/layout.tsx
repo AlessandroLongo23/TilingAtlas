@@ -3,6 +3,7 @@ import { Nav } from "@/components/nav";
 import { ScreenshotPreviewModal } from "@/components/screenshot-preview-modal";
 import { ExportImageModal } from "@/components/export-image-modal";
 import { UpdatesGate } from "@/components/updates/updates-gate";
+import { PadCursor } from "@/components/pad-cursor";
 import { LegacyTilingStoreBootstrap } from "./_bootstrap";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
@@ -16,6 +17,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 			<ScreenshotPreviewModal />
 			<ExportImageModal />
 			<UpdatesGate />
+			<PadCursor />
 		</div>
 	);
 }

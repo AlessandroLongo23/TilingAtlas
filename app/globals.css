@@ -231,6 +231,12 @@ body {
   outline: 2px solid oklch(from var(--color-accent) l c h / 0.5);
   outline-offset: 2px;
 }
+/* A controller's D-pad moves real DOM focus (lib/hooks/useGamepad.ts), which :focus-visible does not
+   reliably follow, so with a pad in use every focused sidebar control is ringed. */
+html[data-pad] aside :focus {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
 .ta-track:has(.ta-track-input:disabled) {
   cursor: not-allowed;
   opacity: 0.45;

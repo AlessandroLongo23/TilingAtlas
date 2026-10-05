@@ -579,7 +579,7 @@ function TreeRow({
 				// behind a stuck row never show through them. The row itself stays opaque chrome edge to edge; the grey sits on the inner span, inset
 				// to the tile wall's own left edge (scroller padding + the wall's outer lane and hairline).
 				"group ta-sticky-rule sticky flex bg-surface-chrome px-[9px] text-left cursor-pointer",
-				"focus:outline-none focus-visible:relative focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/50",
+				"focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/50",
 				// Every level sits ABOVE a tile's z-10 selection/hover ring (tile-grid.tsx): the ring and
 				// these headers share one stacking context, so a header at the ring's own z-10 only tied it
 				// and — later in DOM order — the ring won, bleeding its outline up over the pinned k-row. Keep

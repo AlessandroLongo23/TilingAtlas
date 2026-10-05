@@ -15,6 +15,8 @@ import { UpdatesButton } from "@/components/updates/updates-button";
 import { CURRENT_VERSION } from "@/lib/updates/entries";
 import { DISCORD_INVITE } from "@/lib/constants";
 import { useIsPhone } from "@/lib/hooks/useIsPhone";
+import { useGamepad } from "@/lib/hooks/useGamepad";
+import { usePadGlyph } from "@/lib/stores/gamepad";
 import { SheetBackdrop, SheetHeader, useSheet } from "@/components/ui/bottom-sheet";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -82,6 +84,19 @@ export function Nav() {
 		return () => window.removeEventListener("keydown", onKey);
 	}, [router]);
 
+	// A controller's L1 / R1 step through the sections, wrapping at the ends. Each section is left at
+	// the address it was on and found there again: a bare /play is the default view, so without this
+	// one stray shoulder press would cost the tiling on the canvas.
+	const lastPath = useRef<Record<string, string>>({});
+	useGamepad((delta) => {
+		const i = LINKS.findIndex((l) => isActiveLink(location.pathname, l.href));
+		if (i >= 0) lastPath.current[LINKS[i].href] = location.pathname + location.search;
+		const next = LINKS[((i < 0 && delta < 0 ? 0 : i) + delta + LINKS.length) % LINKS.length];
+		router.push(lastPath.current[next.href] ?? next.href);
+	});
+	const padPrev = usePadGlyph("l1");
+	const padNext = usePadGlyph("r1");
+
 	return (
 		<nav
 			className={cn(
@@ -125,6 +140,7 @@ export function Nav() {
 			    thing to go (below 2xl) and the row scrolls sideways below that rather than sliding under
 			    the theme toggle — the nav clips its overflow, so an unscrollable row would just vanish. */}
 			<div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto scrollbar-hide max-md:hidden">
+				{padPrev ? <Kbd literal className="shrink-0">{padPrev}</Kbd> : null}
 				{LINKS.map((link, i) => {
 					const isActive = isActiveLink(pathname, link.href);
 					return (
@@ -143,6 +159,7 @@ export function Nav() {
 						</Link>
 					);
 				})}
+				{padNext ? <Kbd literal className="shrink-0">{padNext}</Kbd> : null}
 			</div>
 
 			<div className="flex items-center gap-0.5 max-md:hidden">

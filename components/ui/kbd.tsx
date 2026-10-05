@@ -1,9 +1,16 @@
+"use client";
+
 import type { ReactNode } from "react";
+import { usePadShortcut } from "@/lib/stores/gamepad";
 import { cn } from "@/lib/utils/cn";
 
 // A small keycap badge for showing a keyboard shortcut next to a control's label. Hidden on a phone,
-// which has no keys to press.
-export function Kbd({ children, className }: { children: ReactNode; className?: string }) {
+// which has no keys to press. With a controller in use it shows the button mapped to that shortcut, or
+// nothing where no button is.
+// `literal` shows the children as given on any device: a cap that already names a controller button.
+export function Kbd({ children, className, literal }: { children: ReactNode; className?: string; literal?: boolean }) {
+	const pad = usePadShortcut(!literal && typeof children === "string" ? children : undefined);
+	if (pad === null) return null;
 	return (
 		<kbd
 			className={cn(
@@ -11,7 +18,7 @@ export function Kbd({ children, className }: { children: ReactNode; className?: 
 				className,
 			)}
 		>
-			{children}
+			{pad ?? children}
 		</kbd>
 	);
 }

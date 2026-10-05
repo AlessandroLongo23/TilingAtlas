@@ -2,6 +2,7 @@
 
 import type { ComponentProps, ReactNode } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { useGamepadState, usePadShortcut } from "@/lib/stores/gamepad";
 import { cn } from "@/lib/utils/cn";
 import { Tooltip } from "./tooltip";
 
@@ -68,13 +69,16 @@ interface ToolbarButtonProps extends Omit<ComponentProps<"button">, "children"> 
 }
 
 export function ToolbarButton({ label, shortcut, primary, className, children, ...rest }: ToolbarButtonProps) {
+	// A controller has no hover to raise the tooltip with, so its button rides on the control itself.
+	const padGlyph = usePadShortcut(shortcut);
+	const padActive = useGamepadState((s) => !!s.family);
 	return (
 		<Tooltip label={label} shortcut={shortcut} side="top" delay={0}>
 			<button
 				type="button"
 				aria-label={primary ? undefined : label}
 				className={cn(
-					"flex h-8 items-center justify-center gap-2 whitespace-nowrap rounded-lg text-[13px] font-medium transition-colors",
+					"relative flex h-8 items-center justify-center gap-2 whitespace-nowrap rounded-lg text-[13px] font-medium transition-colors",
 					"max-md:h-11 max-md:shrink-0 max-md:snap-start",
 					"focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:pointer-events-none disabled:opacity-40",
 					primary
@@ -85,6 +89,11 @@ export function ToolbarButton({ label, shortcut, primary, className, children, .
 				{...rest}
 			>
 				{children}
+				{padActive && padGlyph ? (
+					<kbd className="pointer-events-none absolute -right-1 -top-2 rounded border border-line bg-surface-raised px-1 font-mono text-[11px] font-medium leading-[14px] text-fg-muted max-md:hidden">
+						{padGlyph}
+					</kbd>
+				) : null}
 			</button>
 		</Tooltip>
 	);

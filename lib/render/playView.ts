@@ -27,6 +27,28 @@ export function resetPlayView(opts?: { rotation?: boolean }): void {
 /** The finger's reset: a double-tap or the phone's Reset button (requestViewReset). */
 export const resetPlayViewFully = () => resetPlayView({ rotation: true });
 
+const PAN_MAX_SPEED = 0.9; // viewport half-heights (disk radii) per second at full deflection
+const PAN_EASE_S = 0.22; // time constant of the velocity's approach to the stick: the ramp up and the coast
+
+/**
+ * One frame of a held direction (the on-screen joystick, a controller's left stick): ease `vel` toward
+ * the stick and move the pan target by it, so the view ramps up, and coasts to a stop on release. The
+ * view travels WITH the stick, so the picture slides the other way. `stick` is a VelocityPad value
+ * (y up, unit magnitude at the rim), `R` the pan unit in CSS px. Returns false once at rest.
+ */
+export function drivePlayPan(vel: { x: number; y: number }, stick: { x: number; y: number }, dt: number, R: number): boolean {
+	const idle = stick.x === 0 && stick.y === 0;
+	if (idle && vel.x === 0 && vel.y === 0) return false;
+	const a = 1 - Math.exp(-dt / PAN_EASE_S);
+	vel.x += (stick.x * PAN_MAX_SPEED - vel.x) * a;
+	vel.y += (stick.y * PAN_MAX_SPEED - vel.y) * a;
+	const t = useConfiguration.getState().controls.targetOffset;
+	t.x -= vel.x * R * dt;
+	t.y += vel.y * R * dt;
+	if (idle && Math.hypot(vel.x, vel.y) < 1e-3) vel.x = vel.y = 0;
+	return true;
+}
+
 // A twist in progress. It turns the LIVE angle only (`controls.rotation`, a plain field every frame
 // reads), and the store's `rotation`, which half the sidebar re-renders on, gets the result once, when
 // the fingers lift. The draw loop eases the live angle toward the store's, so while this is set it

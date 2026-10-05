@@ -17,6 +17,7 @@
 // (updateMatrixState), so a drag started mid-spin picks up exactly where the coast left off.
 
 import * as THREE from "three";
+import { useGamepadState } from "@/lib/stores/gamepad";
 
 /** Seconds for the spin to decay to 1/e of its speed. Long enough that a flick keeps going for a good
  *  few seconds (a 2 rad/s launch is still visibly turning ~10 s later), short enough that it settles. */
@@ -30,6 +31,10 @@ const MAX_SPEED = 5;
  *  jittery frame, high enough that a drag that STOPS before the release launches nothing — the tracked
  *  velocity has already decayed toward zero by the time the pointer comes up, which is the whole point. */
 const SMOOTHING = 0.3;
+/** rad/s at full stick deflection: a whole turn in about three seconds. */
+const PAD_SPEED = 2;
+/** Seconds for the stick-driven turn to reach the stick, and to die away once it is released. */
+const PAD_EASE = 0.2;
 /** Longest frame we trust for a velocity estimate. A tab that was backgrounded, or a GC pause, hands us a
  *  huge dt whose delta is meaningless; treat it as a fresh start instead of dividing by it. */
 const MAX_SAMPLE_DT = 0.1;
@@ -87,6 +92,10 @@ export function createOrbitMomentum(getCamera: () => THREE.Camera | null, opts: 
 	let speed = 0;
 	let dragging = false;
 	let primed = false; // a first sample exists to difference against
+	// A controller's turn, as a world-space angular velocity (rad/s). Apart from the release momentum
+	// above: a stick let go stops within a moment, where a flicked globe keeps going.
+	const padVel = new THREE.Vector3();
+	const padWant = new THREE.Vector3();
 
 	const onPointerDown = () => {
 		dragging = true;
@@ -146,6 +155,30 @@ export function createOrbitMomentum(getCamera: () => THREE.Camera | null, opts: 
 			opts.onChange?.();
 		}
 
+		// 2b. A controller (lib/hooks/useGamepad.ts publishes its sticks). The usual free trackball: each
+		//     frame is one small rotation about axes fixed to the SCREEN, composed onto the last, so there
+		//     is no pole to lock on and the stick always means the same thing whichever way the solid
+		//     faces. The left stick orbits the camera the way it points (the surface slides the other way,
+		//     as the disk does under the same stick); the right stick turns the picture clockwise.
+		const pad = useGamepadState.getState();
+		const held = pad.stick.x !== 0 || pad.stick.y !== 0 || pad.twist !== 0;
+		if ((held || padVel.lengthSq() > 0) && dt > 0) {
+			if (held) speed = 0; // a hand on the stick stops a coasting globe, as a hand on the globe does
+			const z = _v1.copy(camera.position).sub(target).normalize();
+			const x = _v2.crossVectors(camera.up, z).normalize();
+			const y = _v3.crossVectors(z, x);
+			padWant.set(0, 0, 0).addScaledVector(y, pad.stick.x).addScaledVector(x, -pad.stick.y).addScaledVector(z, pad.twist).multiplyScalar(PAD_SPEED);
+			padVel.lerp(padWant, 1 - Math.exp(-dt / PAD_EASE));
+			const w = padVel.length();
+			if (!held && w < MIN_SPEED) padVel.set(0, 0, 0);
+			else {
+				step.setFromAxisAngle(padWant.copy(padVel).divideScalar(w), w * dt);
+				camera.position.sub(target).applyQuaternion(step).add(target);
+				camera.up.applyQuaternion(step).normalize();
+				opts.onChange?.();
+			}
+		}
+
 		// 3. Re-sample AFTER the coast, so the next frame's delta measures the user's drag and not our step.
 		basisQuat(camera, target, prev);
 		primed = true;
@@ -153,9 +186,10 @@ export function createOrbitMomentum(getCamera: () => THREE.Camera | null, opts: 
 
 	return {
 		frame,
-		spinning: () => speed > 0,
+		spinning: () => speed > 0 || padVel.lengthSq() > 0,
 		stop: () => {
 			speed = 0;
+			padVel.set(0, 0, 0);
 		},
 		dispose: () => {
 			opts.domElement.removeEventListener("pointerdown", onPointerDown);

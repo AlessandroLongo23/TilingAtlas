@@ -2,6 +2,7 @@
 
 import { useRef, useState, type ReactElement, type ReactNode } from "react";
 import { Tooltip as BaseTooltip } from "@base-ui/react/tooltip";
+import { usePadShortcut } from "@/lib/stores/gamepad";
 import { cn } from "@/lib/utils/cn";
 
 type Side = "top" | "right" | "bottom" | "left";
@@ -40,6 +41,7 @@ export function Tooltip({
 	tapToOpen,
 	children,
 }: TooltipProps) {
+	const keycap = usePadShortcut(shortcut);
 	// Controlled, so a touch tap can open it: Base UI opens tooltips on mouse hover and keyboard focus
 	// only, which leaves a finger with no way in. Every change Base UI asks for is mirrored straight back,
 	// so mouse and keyboard behave exactly as they did uncontrolled.
@@ -158,9 +160,9 @@ export function Tooltip({
 						) : (
 							<>
 								<span>{label}</span>
-								{shortcut ? (
+								{keycap ? (
 									<kbd className="rounded bg-fg-inverse/15 px-1.5 py-0.5 font-mono text-[10.5px] text-fg-inverse/75 max-md:hidden">
-										{shortcut}
+										{keycap}
 									</kbd>
 								) : null}
 							</>
