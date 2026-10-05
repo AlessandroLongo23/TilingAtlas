@@ -17865,3 +17865,452 @@ through `sph-star-canvas.tsx`, where `sphStarScene` takes the same face indices.
 and the Islamic overlay, as the dual toggle does. In the dual view the configurations are the dual's.
 Checked in a browser on the square pyramid (3².4 and 3⁴, no One face), the cuboctahedron, the cube and
 the small stellated dodecahedron.
+
+## 2026-10-03: apeirogons draw, and the first hybrid board is on the shelf
+
+**What shipped.** `hybrid_1_7627`, the smallest apeirogon corpus in Marek's 08-12 drop, as a fourth
+family on the hyperbolic polygon shelf: board `y17627`, 11,854 tilings (k=1: 8, k=2: 260, k=3: 11,586),
+11,854 of 11,854 certificates developed, 6.1 s, 226 KB gzipped. Report in
+`experiments/results/hybrid-1_7627.md`. Uncommitted on `master`.
+
+**The name is the edge length.** ℓ solved from ∞.∞.4.4.4 is 1.762747174, which is 2·acosh(√2): at that
+edge an apeirogon's angle is 90° and a square's is 60°, so ∞.∞.4.4.4, ∞.4.∞.4.4, 4^6 and ∞^4 all close.
+That settles the question in `docs/marek-drop-2026-08-12.md` about what `hybrid_x_yyyy` encodes.
+
+**The decoder needed three lines.** An apeirogon is size 0, the sentinel `euclid_sum` already read:
+`interior_angle(0, ℓ)` takes cos(π/∞) = 1, `tile_size("Aoo")` returns 0, and `Board.hybrid` solves ℓ
+from one figure given on the command line (`--hybrid 1_7627 --figure 0,0,4,4,4`). Every other figure in
+the corpus is then asserted to close at that ℓ by `vtable_variants_hyp`, as on the other boards. The
+quotient face of an apeirogon is a finite cycle like any other; only the developed face never closes.
+
+**The fill is Zeno's construction.** `traceRings` returns closed rings, so an apeirogon was a hole.
+`traceFaced` now adds, for every developed side of a size-0 face, a triangle whose third vertex is the
+centre of the horocycle: the point where the bisector of the interior angle leaves the disk, G·e^{iα/2}
+in the instance's frame. Ideal vertices carry negative ring ids and live beside `verts`, which prune
+rebuilds. The test checks the horocycle condition directly, (1 − |z|²)/|z − ξ|² equal at both ends of
+each side.
+
+**Two things the first screenshot showed.** The draw shades a face by its centroid, so an apeirogon
+came out as a fan of separately shaded slices; pieces with a vertex on the rim take one flat value now.
+And adjacent antialiased fills left hairlines, covered by a 1 px stroke in the fill colour.
+
+**Not done.**
+* Apeirogon records are stamped `certified: false` and draw through the 2D path only. The per-pixel
+  shader needs a fundamental domain, and `maxTileRadius` skips size 0, so nothing bounds one.
+* Small gaps remain at each ideal point near the rim, where the undeveloped sides would be.
+* Only base-edge polygons. The multiplier letters (`B` = twice the edge, and so on) that the other 18
+  hybrid systems and the scaled hybrids use are refused by `Board.hybrid`, which reads `A` and `S` only.
+* `/theory/vertex` skips hybrid boards, since a typed figure cannot name an apeirogon yet.
+* The finite polygons past 40 sides that the same construction was meant to help are untouched.
+
+## 2026-10-04: why a hyperbolic tiling "ended" after a short pan, and the fix
+
+AL's report, and Marek's of 10-03: on many hyperbolic tilings the picture breaks after a little
+panning and the view stops moving. It was the 2D path only, which is every record without a Dirichlet
+certificate (37% of a 92-tiling sample, and every apeirogon record).
+
+**Cause, measured on 6.6.7.** `HyperbolicDeveloper` keeps instances in WORLD coordinates and dedups
+them on a fixed 1e-4 grid. The certified path re-centres the view through the Dirichlet generators
+(`anchorRef`); the 2D path had no anchor, so the view centre walked outward in world coordinates. Faces
+with a wrong side length appear 6 hyperbolic units out, distinct instances merge and the frontier stops
+at 9, the middle of the screen is empty at 12. And `MAX_CENTER_R = 0.9995` refused any move past 8.3
+units from the start, which is the "cannot scroll any more". On a large-tile board 8 units is under
+five edges.
+
+**Fix.** `HyperbolicDeveloper.recenter(view)`: a seed-dart frame g is a symmetry of the tiling, so
+view·g shows the same picture with world coordinates moved by g⁻¹. Once the centre is two units out
+and a seed instance sits nearer it than the origin's, the developer resets and the canvas adopts
+view·g. Called from the 2D branch of the three canvases (developed, colours, edges). Over a 200-unit
+pan the central faces stay exact; the test asserts both the bug without it and the fix with it.
+Cost: one full re-develop per recentre, every two units of pan, worst frame 51 to 89 ms at the 30k
+budget on three shipped tilings (mean 7 to 23 ms). Rebasing the frames in place would remove the
+hitch and is not done.
+
+**Apeirogon cusps needed a second thing.** Panning into an apeirogon leaves every vertex behind, so
+no recentre applies, and the number of its sides in view grows like e^depth, past what gets developed:
+the fan of ideal triangles left a shard. The apeirogon lies inside the horodisk through its vertices,
+a Euclidean circle tangent to the rim, and the caps the circle adds belong to the neighbouring tiles.
+`drawDevelopedEdgePatch` paints one such circle per ideal point before the faces. The clamp is now
+0.998 (6.9 units from the nearest seed vertex), which keeps the origin inside the developed bound so
+the horocycle's own vertices are still there to define the circle. It binds only in a cusp.
+
+**Not done.** The horodisk underlay assumes all apeirogons adjacent across a side share a colour,
+true with one apeirogon size and false once `Boo` exists. Giant-domain boards (k = 40) can still sit
+several units from their nearest seed vertex, where the far side of the screen is past the grid.
+
+## 2026-10-05: the 2D hyperbolic path and the field bake, made cheap
+
+AL's ask: heavy hyperbolic tilings should pan smoothly, and any gain in quality should come from the
+gain in speed. Numbers and method in `experiments/results/hyperbolic-2d-performance-2026-10-05.md`.
+
+**Where a frame went.** Profiled in the browser on the production build, a panning frame of 3.4.17.4
+k=9 was 63 ms with the profiler attached and 13.7 ms without: develop and draw in about equal parts,
+with 2,773 fills and 13,992 strokes issued per frame.
+
+**The developer (`hyperbolicDevelopClient.ts`).**
+* Pruned instances are tombstones whose slots are reused, and a vertex is freed with its last instance.
+  Nothing is renumbered, so a prune no longer rebuilds both dedup maps.
+* Dedup keys are one integer where they were a concatenated string. The heading sits on a 1e-3 rad grid
+  mod 2π where it was a (cos, sin) pair; the golden-patch tests pass unchanged.
+* The share of the set dropped per frame follows the motion, 1.15·(1 − e^(−d)), where it was a fixed
+  15% (4,500 instances re-developed on every frame of the slowest drag).
+* `recenter` rebases the frames in place. The 51 to 89 ms hitch of the reset it replaced is gone.
+* A patch hands out the developer's own arrays. The per-frame visibility filter and vertex remap are
+  deleted: the working set is the visible disk already.
+* A frame whose view centre did not move skips the develop.
+
+**⚑ One thing that looked like a simplification and was wrong.** Listing each edge once as "the lower
+index of a glue pair" emitted 37% of the edges twice, because the grid can hold one dart as two
+instances. The dedup by vertex pair stays, as an integer.
+
+**The draw (`hyperbolicDevelopedDraw.ts`).** Shade and width depend on the radius alone, so subpaths are
+grouped into 128 radius levels per colour and each group is filled or stroked once: 71 fills and 114
+strokes for the board above. At 128 levels a fill steps by at most one 8-bit value. Faces in one group
+fill as one region, which removes the antialiasing seams between them. An apeirogon is now one pair
+[vertex, ideal point] and one circle, where yesterday's fan was a triangle per side. `orthoCircle`,
+`densify` and the object-returning `geodesicPts` are deleted from this file.
+
+**The budget.** With a panning frame at 7.4 ms (p90) for 30k instances, `FALLBACK_BUDGET` goes to
+50,000: 10.6 ms at p90 and a visibly fuller rim. 70,000 fills further and costs 22 ms at p99.
+
+**The bake (`hyperbolicReduce.ts`).** A certified record bakes a 2048² field on the main thread, and 70%
+of it was `pointInPoly` asked per texel against a grid cell's whole tile list. `rasterTiles` scan-converts
+each tile instead. Fields are byte-identical (SHA-1 over four records) and the bake is 2 to 3 times
+faster: 3.9 s to 1.2 s on 3.4.7.4 k=40.
+
+**Not done.**
+* No measurement at a real 60 Hz: the display was asleep and Chromium ran at 30 Hz. The uncapped
+  numbers say a panning frame fits; nobody has watched it.
+* The bake still blocks the main thread for 1 to 2.3 s. What is left is the Dirichlet domain (1.4 s on
+  3.4.7.4 k=20) and the per-texel edge distances. A worker, with the 2D path shown meanwhile, is the fix.
+* `extend` is still 6 ms of a capped panning frame and the face trace 4 ms; neither is incremental.
+* Thumbnails keep `THUMB_BUDGET` at 20,000.
+
+## 2026-10-05, second pass: the bake leaves the main thread, and the thumbnails with it
+
+AL's three remaining points: the bake blocking the main thread, the develop of capped tilings, the
+thumbnails. Tables in `experiments/results/hyperbolic-2d-performance-2026-10-05.md`.
+
+**The bake runs in a worker** (`hyperbolicBake.ts`, `hyperbolicBakeJob.ts`, `hyperbolicBake.worker.ts`).
+`bakedOrRequest` returns the tiling, `null` for a failed certificate, or `undefined` while the bake is
+in flight. A canvas draws through the 2D path meanwhile and flips to GL when the bake lands, keeping
+the view: the reset of view and developer is now tied to the pattern id, since the effect also re-runs
+on a context flip and on a landed bake. Opening 3.4.7.4 k=40 used to block for 2.1 and 2.3 s; no task
+over 80 ms remains. The three canvases lost their copies of the certify-or-fall-back block.
+
+**⚑ The freeze was mostly the thumbnails.** Every card in the sidebar ran its own Dirichlet attempt on
+the main thread, including doomed ones that develop 1.5 M instances before giving up. Moving only the
+canvas bake changed nothing measurable. Thumbnails now have their own worker lane (in order, where the
+canvas lane is newest-first), show the 2D bake at once and re-bake through the shader when their field
+lands. `cachedShaderTiling` and its unbounded map are deleted; the shared cache is bounded at 96 MB.
+
+**⚑ A worker that imports the module that creates it hangs the build.** `next build` sat at "Creating
+an optimized production build" for ten minutes with no output. The job lives in `hyperbolicBakeJob.ts`
+for that reason alone.
+
+**⚑ Two measurements that were wrong.** A probe that asked the canvas for a 2D context to see which
+kind it had gave it one, and so stopped it ever becoming GL. And `--disable-frame-rate-limit` produced
+a 2.9 s frame gap that does not exist at normal vsync.
+
+**The develop hot loop.** `mulNorm` fuses the product and its normalisation, the per-dart turn is built
+once, `addInst` returns an index and sets a flag where it returned a tuple, `screenR` is inline, and
+the face trace walks into one scratch buffer. 15.1 to 13.0 ms and 15.5 to 10.9 ms per panning frame at
+50k in node. At 120 Hz in the browser 3.4.17.4 k=9 holds 8.3 ms with 8 frames of 987 over 12 ms.
+
+**Thumbnails.** `THUMB_BUDGET` 20,000 to 35,000: a from-scratch bake at 35k costs 26 ms where 20k cost
+29 ms before.
+
+**Not done.**
+* `extend` is still 6 to 7.5 ms of a capped panning frame and the face trace 3.5 ms. Neither is
+  incremental, and that is where the remaining 8 slow frames per thousand come from, along with the
+  rebase on a recentre (the 50 ms maximum).
+* Unstamped records that cannot certify still cost a worker up to 2 s each before their card settles
+  on 2D. Stamping them (`scripts/stamp-hyp-poly-certification.ts`) is what removes that work.
+* A 2D thumbnail still bakes on the main thread, 26 ms a card.
+
+## 2026-10-05, third pass: every hyperbolic tiling is drawn by a walk, and the Dirichlet path is the Islamic one only
+
+AL's verdict on the second pass was that it was still not acceptable: `hp17-17-00193` and
+`hyp-5-6-6-8-7-8-6` showed missing polygons at the rim and stuttered. Both were on the 2D developed
+path because neither has a Dirichlet certificate. He set the terms: a load of one to three seconds is
+fine, a choppy tiling or a ragged rim is not, and the method has to be one that works for every record.
+
+**Why the two methods we had cannot be that method.** The Dirichlet reduction needs the deck orbit
+complete to twice the domain's circumradius, and that radius grows with the quotient's area. Measured:
+3.4.17.4 at k = 1 certifies with R_D = 1.40 in 30 ms; at k = 9 and k = 17 the develop passes hyperbolic
+radius 10.7 (Euclid 0.99996) and stops, with no certificate at any budget up to 6M instances; 4.10.20
+at k = 20 the same at 11.4. Had it certified, one 2048² field over a domain of that radius would hold
+a rim tile in two or three texels. The 2D developer has the opposite problem: its cost is the number of
+tiles on screen, which has no bound near the rim, so it draws under a budget and the budget is what
+left the holes. The first attempt at this request, completing open frontier faces from one corner
+(`openFaces`), filled the holes and doubled the frame (13 ms to 30 ms of develop on 3.4.17.4 k = 9).
+It is deleted.
+
+**The walk.** `lib/render/hyperbolicWalk.ts` turns the darts into a table: one row per quotient face,
+one slot per side, and in each slot the isometry from that face's frame to the frame of the face across
+the side. A pixel starts in the camera's face and, while it lies beyond a side, crosses it. No group,
+no certificate, no field, no budget; the table is built in under a millisecond from the darts alone.
+A regular face reads the side off the argument of the point, an apeirogon off Re z over its step in
+the half-plane with its ideal point at infinity (one period of slots, a parabolic shift first), an
+irregular face (the Schwarz boards' scalene triangles) tries each side. Digons get no row: a side that
+opens on one leads to the face behind it and is marked drawn. The distance to an edge is computed from
+the side's hyperboloid normal, so strokes are exact at every radius where the field sampled them.
+
+The shader is the old per-pixel one with a second locator (`uWalkOn`): both hand the same five values
+to the colouring code, so plain, edge-pattern and colouring modes are unchanged below that point.
+`draw({ face })` selects the walk; without `face` the pixel still reduces into the Dirichlet domain,
+which is now only the Islamic construction's path (its Hankin field is baked over that domain). The
+developed canvas bridges the two with `seedToFace`, one lift of the anchor face found breadth-first.
+
+**The camera.** `lib/render/hypCamera.ts` holds the pan, rotation, recentre and click-to-centre loop
+that the three canvases each carried a copy of. With a table it keeps (face, view from that face's
+frame) and re-anchors to the face under the screen centre every frame, so the view never grows; the
+developer's `recenter` remains for the 2D fallback, which now runs only where WebGL2 is missing.
+
+**Measured** (M-series, headed Chromium, 120 Hz, production build, 3000 x 1900 backing store; log in
+`experiments/results/hyperbolic-walk-2026-10-05.md`). Panning after the page has settled: p50 8.3 ms,
+p99 9.4 ms, 0 frames over 12 ms of about 750, on `hp17-17-00193`, `hyp-5-6-6-8-7-8-6` and an edge
+pattern. First disk frame 1.7 to 2.4 s after navigation on a cold page. The walk test compares every
+face the developer closes against the face the walk arrives at, on 3.4.17.4 k = 17, a 4-valent board
+and a hybrid board.
+
+Thumbnails draw through the walk too, so the thumbnail lane of the bake worker and the `certified`
+branching in the three thumbnail components are gone.
+
+⚑ In the first seconds after navigation there are still five or so main-thread tasks of 100 to 165 ms.
+They are page load (hydration, shard decode, the sidebar), not the renderer, and they are what the
+frames over 12 ms in an immediate pan are.
+⚑ `prepareEdgeShaderTiling`, the `certified` stamps on records and the two stamping scripts no longer
+affect what the app draws. Left in place this pass because tests and scripts import them.
+⚑ An edge pattern strokes a drawn edge from the two faces it borders. Where a drawn edge ends at a
+vertex, the faces that only touch that vertex do not draw its round cap.
+⚑ The walk stops after 96 steps; pixels past that take their last face's colour with no stroke. Only
+pixels within a few px of the rim get there.
+
+## 2026-10-05, fourth pass: the Islamic construction rides the walk, and the Dirichlet path is deleted
+
+AL noticed there was no Islamic switch on a hyp-poly tiling (`hp17-17-00340`) and said to start there,
+once the dead code was out. The two were one job: the construction was the last user of the Dirichlet
+reduction, so porting it is what let the whole path go.
+
+**Why it ports.** Every Hankin ray stops inside its own tile (`sExit` in `tileRays`), so a tile's motif
+depends on the tile's shape alone. A regular p-gon at edge ℓ has one motif whatever tiling it sits in,
+and the walk already hands the shader each pixel in its tile's own frame. The motif also has the
+polygon's dihedral symmetry. So `islamicTileLayer` bakes ONE WEDGE of the tile, from a side's midpoint
+to the next vertex, and the shader turns the pixel by its side's angle (the `j` the walk ended on) and
+mirrors it into the wedge. One layer per polygon size, stacked in a 2D array texture in the order of
+`WalkTiling.sizes`.
+
+The old bake pooled the rays of every tile in a patch and traced faces across tiles. Per tile, the
+tile's boundary closes the arrangement instead (cut at the ray roots, never stroked), which removes the
+wall-less case and its Voronoi fallback: every texel is in a bounded face. Classes are the same marker
+rule: A holds the centre, C an edge midpoint, B the rest, a face with both split per texel. What a face
+that spans several tiles is SHADED by had to change, since a per-tile bake cannot see its barycentre:
+A takes the tile centre, C the edge midpoint its diamond sits on, B the tile vertex its field
+surrounds. Those points are shared by the tiles that meet there, so the face still takes one shade.
+Pendant pruning treats a ray's root as anchored (the neighbour's ray leaves the same point).
+
+**Two bugs on the way.** The shading point was stored as a byte with 0 at 127.5, so the tile centre
+decoded 0.4 % off centre and each of the 2p turned copies of the wedge shaded the star body from a
+different point: a faint fan in every large polygon. 128 is now exactly 0. And where the motif does not
+close (a 34-gon at 45°) one face owns every line of the tile, 1,600 pieces tested per texel of a 5°
+wedge, 1.08 s for a 384² layer; lines are now cut to those within the distance channel's reach of the
+wedge (0.25 disk units), 70 ms.
+
+**Cost** (node, one layer): 96² in 10 to 15 ms, 384² in 36 to 70 ms. A drag bakes at 96², a still
+slider refines to 384² after 200 ms (`IslamicFeed`). A 384² wedge of a 17-gon is the sampling a
+full-tile texture of several thousand texels a side would give; the old field put a whole Dirichlet
+domain in 1024².
+
+**The switch.** `polygonClassSupportsIslamic` admits the hyp-poly shelf (its canvas is the colourings'
+one, drawn with `tiles`), except boards with apeirogons, which have no centre for a star. The star
+bodies keep the palette colour of their polygon size.
+
+**Deleted**: `hyperbolicDirichlet.ts`, `hyperbolicReduce.ts`, the bake worker (three files), the
+shader's reduction branch and its uniforms, `deepDedup`/`extendTo`/`deckFrames`/`maxTileRadius` in the
+developer, the `certified` field on four record types and its plumbing, five stamping scripts, four
+bake diagnostics, three test files. Across the working tree since the last commit: +1,404 / −4,000 in
+tracked files, plus 566 lines in three new ones. `certified` keys remain in the shipped shards as
+inert data; nothing reads them, and rewriting 700 shards to drop a key was not worth a release.
+
+⚑ An apeirogon or a scalene (Schwarz) tile has no layer and draws plain under the construction. The
+toggle is hidden on hybrid boards for that reason. A layer for the apeirogon needs the half-plane
+analogue of the wedge (one period of sides).
+⚑ On a hyperbolic selection with the construction on, `useInversiveCell` still runs the FLAT
+`islamicPeriodicCell` for a cell nothing draws, and warns about a pendant vertex at offset 40. Seen in
+the browser console while testing; not touched.
+⚑ `docs/NEXT.md`, `docs/OPEN_WORK.md` and `docs/STATUS.md` still tell the reader to re-run the
+stamping scripts after an emit. Those scripts are gone and the instruction is void.
+
+## 2026-10-05, fifth pass: every Islamic style in the disk, apeirogons included, and a snap on the split
+
+AL, after trying the fourth pass: no Islamic mode on the apeirogon boards; on hyp-poly the sidebar showed
+the flat construction's style buttons (interlace, outline, emboss, checkerboard) and only plain did
+anything; and the split offset was hard to bring back to 0.
+
+**The sidebar was the flat one.** `isHyperbolic` is `surface === "disk"` and the hyp-poly shelf is
+`diskColors`, so admitting it to the gate in the fourth pass put the FLAT control block over a canvas
+that drew plain only: five style buttons, a ray-stop count and an animate switch, four of them dead.
+`islamicDisk` now names the two disk shelves; both get every style and neither gets the two controls
+the bake has no meaning for.
+
+**Checkerboard** is the fill layer under two colours. On a crossing arrangement the faces two-colour,
+and the classes already say how: star bodies and edge diamonds on one side, side fields on the other.
+
+**The strap styles** (outline, interlace, emboss) get a second kind of layer, `strap`: per texel the
+distance to the nearest + strand and to the nearest − strand, 15 bits each, and a flag where they cross.
+The shader thresholds them into band and border, so band width, border width and the flip of the weave
+are uniforms and nothing rebakes. The weave needs no global assignment (the flat code propagates one
+across the pooled arrangement, `assignOverUnder`): rays 2i and 2i+1 of an edge are the only + and −
+strands that truly cross, at their shared root at offset 0 and at their own crossing on a positive
+offset; everywhere else a + ray meeting a − ray is one strand turning a corner. So + runs over at every
+crossing and a strand alternates by itself, and two tiles built the same way agree on their shared
+edge. A mirrored pixel (the wedge fold) reads the mirror image's strands, where + and − trade places.
+
+Three things went wrong on the way, each visible in a screenshot:
+- Storing (over, under) with "under = none" outside a crossing's neighbourhood made the pair switch
+  meaning from one texel to the next, and bilinear interpolation drew a hairline of border colour
+  across every strap there. Both distances are now stored everywhere, since they are continuous, and
+  only the flag switches, where the bands are apart.
+- A ray's band ended in a round cap at its root, and the neighbouring tile's did too, so every strap
+  pinched at every tile edge. Each ray is now measured as if it ran on behind its root.
+- Distances were disk distances scaled by the conformal factor at the texel, the first-order term. It
+  held near the middle of the disk and bent the straps of an apeirogon, whose strip runs to the rim.
+  `segDist` is the exact hyperbolic distance to a geodesic segment, on the hyperboloid; the fill layer
+  uses it too, and the polyline tessellation (`geodesicPts`, `distSq`) is gone.
+
+**Emboss** lights each border from the distance's gradient, taken from the layer and carried to the
+screen through the derivative of each conformal map on the way. `dFdx` was tried first and is noise
+wherever neighbouring pixels lie in different tiles. The step from shadow to highlight is soft: the
+flat construction's hard one flickered on a geodesic whose normal turns along the light.
+
+**The apeirogon** is a `TileShape` like the regular polygon: `sample(u, v)` maps the layer onto one
+fundamental region, and the bake is otherwise the same. Its region is the strip from a vertex to the
+next midpoint, with v = 1 − 1/Im z up the cusp, in the half-plane frame the walk already uses. The rays
+come from a finite run of sides (eight either way) closed by one chord whose own rays are dropped. The
+star body is the cusp, so its marker is a point above where the sampled side's rays end; when those run
+past the closing chord (rays near the normal) the marker is in no face, which is the right limit.
+
+**The snap.** A root drag on the Hankin pad lands on 0 within 5 % of the midpoint; the arrow keys
+still step through the values between.
+
+Bake cost, node, per polygon size: 4 to 19 ms at 96² (while dragging), 30 to 80 ms at 256² (settled;
+`FULL_RES` came down from 384, where a 34-gon's strap layer took 300 ms before `inReach` and 110 after).
+
+⚑ The settled bake of all sizes still runs in one frame: 150 to 250 ms on a tiling with four sizes.
+One size per frame, or the worker, would remove the hitch.
+⚑ At a split offset (negative) the strap styles draw flat: nothing crosses there by this rule. The flat
+construction weaves that family; whether it should here was not checked against it.
+⚑ The apeirogon's run of sides is finite. With rays within a few degrees of the normal they travel far
+enough to meet the dropped chord's rays, and the motif high in the cusp is then wrong.
+⚑ Scalene (Schwarz) tiles still have no layer.
+
+## 2026-10-05: attribution with roles and sources; the noble discoverers, joined by congruence
+
+**Why.** AL wants the atlas to give credit where it is due, Hill's classification being the case in hand.
+His proposal was a page per researcher with a photo, a biography and an email taken from the web. I
+argued against those three (a photo online is not free to republish, a public address is not consent to
+repost it, a biography written here about a living person goes wrong and stays wrong, and Hill is 17)
+and for the part that was missing: the atlas could not say who found what. Every noble record read
+"Classified by Connor Hill", which put his name on solids Hess found in 1877.
+
+**The model** (`lib/attribution/`). A credit is a role, a person, a year and a source. Roles are kept
+apart: "Discovered by", "Classified by", and "Credited to" for the legacy single string, a label that
+claims no role the string does not. A person is a name and one link they publish or a reference article;
+no photo, no email, no text about them. `creditsOf(record)` feeds an Attribution section in the info
+panel, which now shows on EVERY record that has a `discoverer`: until today that string was a hover
+title on a card and nowhere in /play.
+
+**The noble discoverers.** The Polytope Wiki's list (CC BY-SA 4.0) names each one and records
+discoverer and year, and does not use Hill's symbols. `scripts/build-noble-credits.ts` joins the two
+lists by congruence: each wiki article's own `.off` model is reduced to a similarity invariant and
+matched to the one atlas solid with the same invariant, which is first checked to separate all 148.
+
+* 136 matched by model, with no conflict and every edge ratio agreeing with the wiki's table.
+* 6 by table row, for the two fissary figures (edge ratio) and four articles with no model (convex hull
+  type, then the computed dual).
+* 4 as a set: rD-1.1, rD-8.1, rD-1.2, rD-8.2 fit four rows two ways round. All four rows say Mikloweit
+  2020, so the discoverer is recorded and the NAME is left out.
+* D-4 and D-5 are not in the wiki's list at all.
+
+**The check that makes it believable.** Hill's introduction counts the earlier discoveries: Hess 16,
+Brückner 10, Webb 1, the 2020 wave 33, Klein 2. The wiki's column, joined by geometry, gives exactly
+those five numbers, and leaves 75 to Hill. `tests/attribution.test.ts` asserts them. ⚑ The video and
+the press say 85 new; the paper's own prose and the wiki both give 75 of the 137 non-regular ones. I
+have not resolved that and the atlas states neither number.
+
+**Judgement calls, each written where it is made.** "Plasmath" on the wiki is credited as Connor Hill,
+on the ground that github.com/Plasmath is the repository his paper cites as his own. "Senkoquartz" stays
+a handle. sD-10.1 and sD-12.1 are credited to Ben Klein from the paper, which names him for exactly
+those two; the wiki records a handle there and the atlas does not equate the two. D-4 and D-5 go to Hill
+by elimination, with the note saying so.
+
+**⚑ Found on the way: the Dual view was wrong on about forty noble solids.** `dualSolid.facePlane` read
+a face's plane off Newell's sum, which is the ring's vector area, and a crossed face with a half-turn
+symmetry has none. The dual of tI-1.1 came out with vertices from 0.02 to 1 of the radius, and the
+Dual button drew it. It now falls back to the sharpest corner where the area is negligible; a test
+asserts every noble dual is inscribed. This is the same fact as the fill bug of 2026-10-02, in a second
+function, and I did not go looking for it then.
+
+**Not done.** A people page listing each person's solids (the data now supports it). Structured credits
+for the other shelves, whose `discoverer` strings mix people and software. Asking Hill, Marek, Kaplan and
+Myers what they want shown. The four unnamed solids.
+
+## 2026-10-05 (second): the info card, re-laid out and made to fit the window
+
+**AL:** the card was full of facts and hard to parse, and on a noble record it ran off the bottom of the
+screen with no way to reach the rest.
+
+**Three forms for three kinds of content**, so the eye learns the form and not the row. A solid's census
+is a strip of TILES under a "Counts" title (number large, name small). A property is a ROW, name left
+and quiet, value right and strong, bare numbers in the mono face. An account (what a derivation means,
+what a credit rests on) is small prose behind a disclosure, since it is read once. Sections are parted
+by space and a title; the rule between every pair of facts is gone. The order is fixed on every shelf:
+symmetry, shape, orbits, attribution, derivation.
+
+**It fits the window.** The heading is fixed and the body scrolls under it. The height is measured from
+the card's own top edge when it mounts and on resize, in a ref callback and not an effect, so it is right
+on the first frame. It leaves 16 px, or 88 where the page has a toolbar under the card's column, which
+is asked of the page with `elementsFromPoint` and not assumed. Wheel events stop at the card.
+
+**What changed in content, each a judgement.** The geometry moved from a tag beside the name to the
+subtitle, so the name has the full width and wraps balanced. "Edge orbits: not computed" and "Tile
+orbits: not computed", a row each on every card in the atlas, are one quiet line. Two credits that are
+one person, year and source are one line ("Discovered and classified by"). A legacy credit of the exact
+shape "Name (1966)" is set as a name and a year. Source labels were shortened so none is cut by an
+ellipsis.
+
+**How it was checked.** `scripts/info-panel-check.mjs` opens 31 records, one per shelf over the three
+geometries, pins the card, measures it and screenshots it; all 31 end inside the window with nothing
+overflowing sideways, at 1280x800 and at 1100x560, where the body scrolls and the card stops above the
+toolbar. Three rounds, each reviewed from the screenshots. ⚑ I could not view images in this session
+after the first round, so rounds two and three were read by a subagent and I acted on its reports; I did
+not see the final layout myself.
+
+**Seen in the screenshots and NOT layout, left alone:** the hemipolyhedra read "Level: Archimedean";
+the Penrose record reads k = 1; the hyperbolic edge shelf writes "3^5.4" where its siblings write
+superscripts; a colouring lists the vertex figure "(B6, C6, C6)Aa" twice. Each wants a look.
+
+## 2026-10-05 (third): people get links, and four of them a portrait
+
+**Links (AL: "Kepler or Johnson don't have links").** A legacy `discoverer` string is matched on its
+leading name against the people registry, so "Kepler (prisms & antiprisms)" and "Norman Johnson (1966)"
+link to their person and "Čtrnáct engine (penrose palette)" links to nobody, since it credits software.
+Added: Archimedes, Pythagoreans, Theaetetus, Norman Johnson, Krötenheerdt (German Wikipedia; there is no
+English article), Brian Galebach and Joseph Myers (their own pages). ⚑ Every link was opened and read
+first, and it mattered: en.wikipedia.org/wiki/Joseph_Myers exists and is a baseball pitcher born in 1882.
+Unlinked, by name only: Chavey, Marek Čtrnáct, Alessandro Longo. No page of theirs is verified here.
+
+**Portraits (AL: only where Wikimedia Commons has their image).** Four: Kepler, Poinsot, Hess, Johnson.
+A 20 px greyscale disc before the name, linking to its Commons file page, with author and licence as its
+tooltip (three are public domain; Johnson's photograph is CC BY-SA 3.0, Mark LeBlanc). The files are
+120 px copies in `public/people/`, cropped to the head, so a visitor's browser asks Wikimedia for nothing.
+
+⚑ "The article's lead image" is not "a picture of the person", and each was checked. Brückner's is one
+of his paper models. Krötenheerdt's is his grave. The Pythagoreans' is Raphael's Pythagoras. Archimedes
+has many pictures and none of him; Fetti's 1620 painting was tried and dropped, both for that reason and
+because a bowed head in shadow is a dark dot at 20 px. Theaetetus has none. Nobody living has one.
+
+Checked in the app on five records: each portrait loads, sits within 1 px of the name's centre line, and
+leaves the row height and the right edge alone. As before, the images themselves were read by a subagent
+and not by me; the crops went through three rounds on its reports.

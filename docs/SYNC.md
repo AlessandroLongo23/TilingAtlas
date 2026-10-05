@@ -3045,3 +3045,64 @@ A Noble heading under Spherical (committed on `master` 2026-10-03). Hill's class
 coordinates, every solid checked against his models to 1e-13. New `planarFill.ts` fills irregular and
 self-crossing faces; disphenoids and stephanoids are parametric and move with sliders.
 ⚑ Four typos in the paper's Appendix A; D-F1/D-F2 not shipped (no model); names owed. NOTES 2026-10-02.
+
+## 2026-10-03 — apeirogons draw; the first hybrid board (edge 1.7627) — CC
+
+Uncommitted on `master`. Size 0 is the apeirogon in both developers; each developed side fills as a
+triangle with its third vertex at the horocycle's centre. `hybrid_1_7627` ships as board `y17627`,
+11,854 tilings, 0 failures, under a new "Hybrid boards" heading. 2D path only (`certified: false`).
+⚑ Multiplier letters (edges of 2ℓ, 3ℓ) are still refused, which gates the other 18 hybrid systems.
+NOTES 2026-10-03.
+
+## 2026-10-04 — the 2D hyperbolic path pans without end — CC
+
+Uncommitted on `master`. The tiling "ending" after ~8 units of pan was the fixed 1e-4 world grid plus
+a clamp, on every record without a Dirichlet certificate. `HyperbolicDeveloper.recenter` moves the view
+by a seed-dart deck frame; apeirogon cusps get a horodisk underlay. Tested over 200 units.
+⚑ Each recentre re-develops, 51 to 89 ms worst frame. NOTES 2026-10-04.
+
+## 2026-10-05 — the 2D hyperbolic path at half the frame cost, the bake 2-3x faster — CC
+
+Uncommitted on `master`. Tombstone pruning, integer keys and motion-sized churn in the developer;
+fills and strokes batched by radius level in the draw (2,773 fills a frame to 71). Budget 30k to 50k.
+Field bake scan-converts tiles, byte-identical output, 3.9 s to 1.2 s on 3.4.7.4 k=40.
+⚑ Not seen at a real 60 Hz; the bake still blocks the main thread. NOTES 2026-10-05.
+
+## 2026-10-05 (second) — the field bake runs in a worker, thumbnails included — CC
+
+Uncommitted on `master`. `hyperbolicBake.ts`: canvases and thumbnails draw 2D at once and switch to GL
+when their bake lands. Opening 3.4.7.4 k=40 blocked for 2.3 s; no task over 80 ms now. At 120 Hz the
+heaviest 2D tiling pans at 8.3 ms with 8 frames of 987 over 12 ms. Thumbnail budget 20k to 35k.
+⚑ Uncertifiable records without a stamp still cost the worker up to 2 s each. NOTES 2026-10-05.
+
+## 2026-10-05 (third) — every hyperbolic tiling is drawn by a per-pixel walk — CC
+
+Uncommitted on `master`. `hyperbolicWalk.ts`: a table of side crossings built from the darts; the
+shader walks each pixel to its face. No certificate, no bake, no budget, so the records the Dirichlet
+path refused (3.4.17.4 from k = 9) fill to the rim like the rest, apeirogons and Schwarz boards included.
+One camera (`hypCamera.ts`) for the three canvases. 120 Hz pan: p99 9.4 ms, 0 frames over 12 ms.
+⚑ Dirichlet path kept for the Islamic construction only; dead bake code listed in NOTES 2026-10-05.
+
+## 2026-10-05 (fourth) — Islamic on the walk; the Dirichlet reduction is deleted — CC
+
+Uncommitted on `master`. The Hankin motif is tile-local, so it bakes as one wedge per polygon size
+(`islamicTileLayer`) and the shader folds each pixel into it. That freed `hyperbolicDirichlet.ts`,
+`hyperbolicReduce.ts`, the bake worker, the `certified` stamps and nine scripts: +1,404 / −4,000 since
+the last commit. The switch now shows on hyp-poly tilings (not on apeirogon boards).
+⚑ Apeirogons and Schwarz tiles draw plain under the construction. NOTES 2026-10-05, fourth pass.
+
+## 2026-10-05 (fifth) — every Islamic style in the disk, apeirogons included — CC
+
+Uncommitted on `master`. Checkerboard, outline, interlace and emboss on both disk shelves; a second
+layer kind holds the two strand distances and the weave is decided per tile (+ over − at an edge's
+own crossing). Apeirogons get a layer (the strip from a vertex to the next midpoint), so hybrid boards
+have the switch. Distances are exact (`segDist`). The Hankin pad snaps the split to 0 within 5 %.
+⚑ Settled bake is 150–250 ms in one frame; split offsets do not weave. NOTES 2026-10-05, fifth pass.
+
+## 2026-10-05 — attribution with roles and sources; noble discoverers joined by congruence — CC
+
+`lib/attribution/`: a credit is role + person + year + source, shown in the info panel on every record
+(uncommitted). The Polytope Wiki's discoverers are joined to Hill's symbols by congruence of the wiki's
+own models: 136 by model, 6 by table, 4 as a set, and the counts reproduce the paper's (Hess 16,
+Brückner 10, Webb 1, 2020 wave 33, Klein 2). ⚑ Fixed the Dual view on ~40 noble solids (zero-area faces).
+⚑ 85 vs 75 new solids unresolved. NOTES 2026-10-05.
