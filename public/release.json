@@ -1,6 +1,6 @@
 {
-  "version": "1.39.1",
-  "date": "2026-09-26",
-  "commit": "2dc570f3",
-  "title": "Fixes to the phone layout"
+  "version": "1.41.0",
+  "date": "2026-10-05",
+  "commit": "7a547f66",
+  "title": "Hybrid boards with apeirogons and a faster hyperbolic disk"
 }

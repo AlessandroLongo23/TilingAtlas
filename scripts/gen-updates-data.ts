@@ -169,6 +169,15 @@ async function main(): Promise<void> {
 		}
 	}
 
+	// Before the early return: a release with no previews still has to announce itself.
+	const live = UPDATES[0];
+	await writeFile(
+		RELEASE_OUT,
+		`${JSON.stringify({ version: live.version, date: live.date, commit: live.commit, title: live.title }, null, 2)}\n`,
+		"utf8",
+	);
+	console.log(`updates: release.json says v${live.version} (${live.title})`);
+
 	if (wanted.length === 0) {
 		await writeFile(OUT, "{}\n", "utf8");
 		console.log(`updates: no preview ids in the newest ${recent.length} releases → {}`);
@@ -200,14 +209,6 @@ async function main(): Promise<void> {
 	}
 
 	await writeFile(OUT, `${JSON.stringify(out)}\n`, "utf8");
-
-	const live = UPDATES[0];
-	await writeFile(
-		RELEASE_OUT,
-		`${JSON.stringify({ version: live.version, date: live.date, commit: live.commit, title: live.title }, null, 2)}\n`,
-		"utf8",
-	);
-	console.log(`updates: release.json says v${live.version} (${live.title})`);
 
 	const kb = Math.round(JSON.stringify(out).length / 1024);
 	console.log(

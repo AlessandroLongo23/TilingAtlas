@@ -73,6 +73,61 @@ export interface UpdateEntry {
 /** Newest first. tests/updates.test.ts asserts that ordering, and every id below. */
 export const UPDATES: UpdateEntry[] = [
 	{
+		version: "1.41.0",
+		date: "2026-10-05",
+		title: "Hybrid boards with apeirogons and a faster hyperbolic disk",
+		commit: "7a547f66",
+		changes: [
+			{
+				kind: "content",
+				text: "**The first hybrid board**: 11,854 hyperbolic tilings at edge 1.7627 that mix squares with apeirogons, polygons of infinitely many sides, for k = 1 to 3. The board is from Marek Čtrnáct.",
+				href: "/play?tiling=hpy17627-1-00004",
+			},
+			{
+				kind: "perf",
+				text: "**Every hyperbolic tiling fills the disk to the rim** and pans at the screen's full frame rate, however large. The ones that stuttered and lost polygons at the edge, 3.4.17.4 from k = 9 among them, now draw like the rest.",
+				href: "/play?tiling=hp17-17-00340",
+			},
+			{
+				kind: "feature",
+				text: "**The Islamic construction works on every hyperbolic polygon board**, apeirogons included, in all five styles: plain, checkerboard, outline, interlace and emboss. In the pad, the split snaps back to 0 near the midpoint.",
+				href: "/play?tiling=hp17-17-00340&i=1&istyle=interlace",
+			},
+			{
+				kind: "feature",
+				text: "**A joystick glides through the hyperbolic disk**, and a game controller drives the whole site: the left stick pans, the right stick turns, the D-pad walks the controls and L1 / R1 change section.",
+				href: "/play?tiling=hyp-6-6-7",
+			},
+			{
+				kind: "feature",
+				text: "**A vertex figure lookup**: type a figure such as 3.4.7.4 and get its geometry, its uniform tilings, and every board in the catalogue that carries it.",
+				href: "/theory/vertex",
+			},
+		],
+	},
+	{
+		version: "1.40.0",
+		date: "2026-10-05",
+		title: "Noble polyhedra and credits",
+		commit: "f1f48d97",
+		changes: [
+			{
+				kind: "content",
+				text: "**The noble polyhedra**: all 146 of Connor Hill's 2026 classification, with two fissary figures and the two infinite families, on the spherical shelf.",
+				href: "/play?tiling=sph-noble-ti-1-1",
+			},
+			{
+				kind: "feature",
+				text: "**Every record says who found it**: a role, a year and a source in the info card. The noble polyhedra name Hess, Brückner and the others who found them before the classification.",
+				href: "/play?tiling=sph-noble-ti-1-1",
+			},
+			{
+				kind: "fix",
+				text: "**The Dual view of about forty noble polyhedra** drew scattered points where it now draws the dual.",
+			},
+		],
+	},
+	{
 		version: "1.39.1",
 		date: "2026-09-26",
 		title: "Fixes to the phone layout",
