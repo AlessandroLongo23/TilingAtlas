@@ -3106,3 +3106,10 @@ have the switch. Distances are exact (`segDist`). The Hankin pad snaps the split
 own models: 136 by model, 6 by table, 4 as a set, and the counts reproduce the paper's (Hess 16,
 Brückner 10, Webb 1, 2020 wave 33, Klein 2). ⚑ Fixed the Dual view on ~40 noble solids (zero-area faces).
 ⚑ 85 vs 75 new solids unresolved. NOTES 2026-10-05.
+
+## 2026-10-06 — a float `mod` in the walk shader, the Firefox / Windows flooding Marek saw — CC
+
+Uncommitted on `master`. `int(mod(k, S))` can return S where a GPU divides by reciprocal; the walk then
+reads a slot past the row and the pixel never lands, so a face floods its neighbour with no edge.
+`imod` folds it back. Reproduced on the Mac only by forcing the division error, fixed under the same
+forcing. ⚑ Not confirmed on Marek's machine. NOTES 2026-10-06.

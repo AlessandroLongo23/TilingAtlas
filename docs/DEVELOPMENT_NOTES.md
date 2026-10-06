@@ -18314,3 +18314,25 @@ because a bowed head in shadow is a dark dot at 20 px. Theaetetus has none. Nobo
 Checked in the app on five records: each portrait loads, sits within 1 px of the name's centre line, and
 leaves the row height and the right edge alone. As before, the images themselves were read by a subagent
 and not by me; the crops went through three rounds on its reports.
+
+## 2026-10-06: faces flooding their neighbours on Firefox / Windows (Marek), a float `mod` in the walk shader
+
+**Report.** Marek, Firefox on Windows, 1920x1080 at 60 Hz, on `hpy17627-2-00013`: an apeirogon's blue
+floods the squares beside it, the edge between them is missing, and it flickers as the view moves. AL
+could not reproduce it on a Mac, in Zen or Chrome.
+
+**Cause, as far as it can be shown from here.** The walk picks a slot with `int(mod(k, S))`. GLSL's mod
+is `x - n * floor(x / n)`, and where the GPU divides by multiplying with a reciprocal, `x / n` at an exact
+multiple can land a hair under the whole number: floor is one short and mod returns `n`, the slot past
+the row. That slot is zeros, the isometry is the zero matrix, the pixel becomes NaN and never lands, so
+it keeps the last face's colour with no stroke. This record's apeirogon row has 3 slots, and 3 is the
+smallest count whose reciprocal is not exact. The flicker is the re-anchoring: which pixels pass through
+a failing column depends on the anchor face.
+
+**What was checked.** Forcing the error on the Mac (`floor(x / n - 1e-6)`) gives the same picture: blue
+over the squares, edges gone. With `imod`, which folds a result of `n` or a negative one back into the
+row, the forced error draws the tiling correctly. ⚑ Not confirmed on Marek's machine, which is the only
+place the real bug shows; the emulation proves the mechanism is sufficient, not that it is his.
+
+**Fix.** `imod` in `hyperbolicPerPixelGL.ts`, at the three slot lookups (apeirogon, regular, and the
+neighbour sides of the stroke). +7/−3.

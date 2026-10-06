@@ -56,6 +56,10 @@ vec2 su11(vec2 a, vec2 b, vec2 z) { return cdiv(cmul(a, z) + b, cmul(cconj(b), z
 
 ${TILE_PALETTE_GLSL}
 
+// x mod n as a slot index. GLSL's mod is x - n * floor(x / n), and a GPU whose division is a multiply
+// by a reciprocal can put x / n a hair under a whole number, which makes mod return n itself: one slot
+// past the row. Seen on Firefox on Windows as faces flooding their neighbours, on apeirogon rows of 3 sides.
+int imod(float x, float n) { int r = int(x - n * floor(x / n)), N = int(n); return r >= N ? r - N : r < 0 ? r + N : r; }
 // sinh of the signed distance from w past the geodesic of outward hyperboloid normal n (≤ 0 inside)
 float past(vec3 n, vec2 w) { float r2 = dot(w, w); return (2.0 * dot(n.xy, w) - n.z * (1.0 + r2)) / (1.0 - r2); }
 // the same for side k of an apeirogon, in the half-plane where its vertices are i + k·st
@@ -98,13 +102,13 @@ void main() {
 			float d = (1.0 - w.x) * (1.0 - w.x) + w.y * w.y;
 			vec2 z = vec2(-2.0 * w.y, 1.0 - dot(w, w)) / d;
 			kf = floor(z.x / hd.z);
-			j = int(mod(kf, hd.y));
+			j = imod(kf, hd.y);
 			s = pastHoro(z, kf, hd.z);
 			float t = (kf - float(j)) * hd.z; // bring side kf into the one period the row holds
 			pa = vec2(1.0, -0.5 * t);
 			pb = vec2(0.0, 0.5 * t);
 		} else if (hd.x == 0.0) {
-			j = int(mod(floor(atan(w.y, w.x) / 6.283185307179586 * hd.y + 0.5), hd.y));
+			j = imod(floor(atan(w.y, w.x) / 6.283185307179586 * hd.y + 0.5), hd.y);
 			s = past(texelFetch(uWalk, ivec2(4 + 3 * j, f), 0).xyz, w);
 		} else {
 			for (int i = 0; i < 16; i++) {
@@ -135,7 +139,7 @@ void main() {
 		vec2 z = vec2(-2.0 * w.y, 1.0 - dot(w, w)) / d0;
 		for (int e = -1; e <= 1; e++) {
 			if (S < 3 && hd.x != 1.0 && e != 0) continue;
-			int jj = hd.x == 1.0 ? int(mod(kf + float(e), hd.y)) : (j + e + S) % S;
+			int jj = hd.x == 1.0 ? imod(kf + float(e), hd.y) : (j + e + S) % S;
 			float sv = hd.x == 1.0
 				? pastHoro(z, kf + float(e), hd.z)
 				: past(texelFetch(uWalk, ivec2(4 + 3 * jj, f), 0).xyz, w);
