@@ -11,8 +11,8 @@ import { SectionHeading } from "@/components/ui/section-heading";
 import { Slider } from "@/components/ui/slider";
 import { useExportImage } from "@/stores/exportImage";
 import { useConfiguration } from "@/stores/configuration";
-import { captureFrame, MAX_CAPTURE_EDGE, playSurfaceColor } from "@/lib/render/capture";
-import { measureBox } from "@/lib/render/canvasSize";
+import { captureFrame, freezeView, MAX_CAPTURE_EDGE, playSurfaceColor } from "@/lib/render/capture";
+import { MAX_DPR, measureBox } from "@/lib/render/canvasSize";
 import { ZOOM_MAX, ZOOM_MIN } from "@/lib/render/viewControls";
 import { parseBaseCell } from "@/lib/utils/renderTiling";
 import { isIdentityDeform, wrapOffset } from "@/lib/render/flatView";
@@ -83,6 +83,8 @@ export function ExportImageModal() {
 	// and the sidebar is behind the dialog, so none of them can change while it is up.
 	const [svgBlockedBy, setSvgBlockedBy] = useState<string | null>(null);
 	const [preview, setPreview] = useState<string | null>(null);
+	// True once a still of the view sits over the live canvases. Every capture waits for it.
+	const [frozen, setFrozen] = useState(false);
 	const [busy, setBusy] = useState(false);
 	const [copied, setCopied] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -158,6 +160,26 @@ export function ExportImageModal() {
 		setCopied(false);
 	}, [isOpen]);
 
+	// The captures below borrow the live canvases, which are visible through the backdrop; a still of
+	// the view covers them for as long as the dialog is up (see freezeView).
+	useEffect(() => {
+		const host = target?.host;
+		if (!isOpen || !host) return;
+		let lift: (() => void) | null = null;
+		let gone = false;
+		const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
+		void freezeView(host, { ...hostBox, dpr }).then((l) => {
+			if (gone) return l();
+			lift = l;
+			setFrozen(true);
+		});
+		return () => {
+			gone = true;
+			lift?.();
+			setFrozen(false);
+		};
+	}, [isOpen, target, hostBox]);
+
 	// A multiplier chip is a rule, not a value: re-derive the px whenever the frame it multiplies changes.
 	useEffect(() => {
 		if (scaleChip == null) return;
@@ -214,7 +236,7 @@ export function ExportImageModal() {
 	// Debounced preview. Every dependency here is a setting the user can move, so a drag coalesces into
 	// one capture instead of one per frame.
 	useEffect(() => {
-		if (!isOpen) return;
+		if (!isOpen || !frozen) return;
 		const gen = ++genRef.current;
 		const timer = setTimeout(async () => {
 			const long = PREVIEW_LONG_EDGE;
@@ -233,7 +255,7 @@ export function ExportImageModal() {
 			}
 		}, PREVIEW_DEBOUNCE_MS);
 		return () => clearTimeout(timer);
-	}, [isOpen, frame, ratio, runCapture]);
+	}, [isOpen, frozen, frame, ratio, runCapture]);
 
 	const filename = `${sanitizeForStorage(target?.rulestring || "tiling")}-${out.w}x${out.h}`;
 

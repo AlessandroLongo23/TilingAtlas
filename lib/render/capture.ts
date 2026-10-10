@@ -110,6 +110,8 @@ export interface CaptureOptions {
 const MAX_SETTLE_FRAMES = 16;
 
 let inFlight = false;
+// The hosts whose frames made up the last composite. freezeView hides exactly these.
+let composited: HTMLCanvasElement[] = [];
 
 /**
  * Draw one frame of every live /play canvas at `req`'s size and composite them into a single canvas.
@@ -136,7 +138,8 @@ export async function captureFrame(
 		// export that ignores the settings, because that is exactly what it is. Bounded, so a host that
 		// never honours the override degrades to a scaled composite instead of hanging.
 		for (let i = settle + 1; !matched && i < MAX_SETTLE_FRAMES; i++) await nextFrame();
-		const layers = inDocumentOrder(offered)
+		composited = inDocumentOrder(offered);
+		const layers = composited
 			.map((el) => scratches.get(el))
 			.filter((s): s is HTMLCanvasElement => !!s && s.width > 0 && s.height > 0);
 		if (layers.length === 0) return null;
@@ -161,6 +164,42 @@ export async function captureFrame(
 		matched = false;
 		inFlight = false;
 	}
+}
+
+/**
+ * Lay a still of the view over `host` and return the function that lifts it.
+ *
+ * A capture draws on the LIVE canvases: for the frames a request lasts their backing stores hold the
+ * export's aspect, zoom and resolution, and the browser composites those frames into the on-screen box
+ * like any other. Behind the export dialog's translucent backdrop that is a stretched, blurred tiling
+ * flashing on every settings change. The still is one capture at the live size, where the request
+ * changes nothing a canvas was not already drawing, so taking it is itself invisible.
+ *
+ * Covering is not enough: the still is transparent wherever the view is (all of the Poincaré disk's
+ * margins), and the borrowed canvases show through there as a second, displaced disk. So the canvases
+ * the still was made from are hidden under it. `visibility` and not `display`: a hidden canvas keeps
+ * its box and its render loop, which is everything a capture needs from it.
+ *
+ * `live` must be the host's own box. z-index 15 is above every captured layer (the canvases stop at
+ * z-10) and below the chrome that shares the host (toolbar, joystick, panels, from z-20).
+ */
+export async function freezeView(host: HTMLElement, live: CaptureRequest): Promise<() => void> {
+	const still = await captureFrame(live);
+	if (!still) return () => {};
+	still.style.cssText = "position:absolute;inset:0;width:100%;height:100%;z-index:15;pointer-events:none";
+	still.dataset.captureFreeze = "";
+	host.appendChild(still);
+	const hidden = composited.map((el) => [el, el.style.visibility] as const);
+	for (const [el] of hidden) el.style.visibility = "hidden";
+	// Lifted only once no capture is running and the canvases have had a frame to return to their own
+	// size; any sooner shows the very frame the still is there to hide.
+	const lift = () =>
+		requestAnimationFrame(() => {
+			if (inFlight) return lift();
+			for (const [el, was] of hidden) el.style.visibility = was;
+			still.remove();
+		});
+	return lift;
 }
 
 /**
