@@ -26,6 +26,9 @@ export interface ExportImageTarget {
 	 * family at its default parameter while the screen shows another.
 	 */
 	paramCell: ParametricCellData | null;
+	/** The picture is the Poincaré disk, whose bounding box is a square: the dialog opens on 1:1, where
+	 *  "Screen" would pad the disk with empty margins on a landscape host. */
+	disk: boolean;
 }
 
 interface ExportImageState {

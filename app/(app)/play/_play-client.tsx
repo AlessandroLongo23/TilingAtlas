@@ -1949,6 +1949,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 									// lens gates on, and for the same reason.
 									cell: lensAppliesTo(selected) ? renderCell : null,
 									paramCell: paramCell ?? null,
+									disk: isDiskSurface(surface),
 								})
 							}
 						>

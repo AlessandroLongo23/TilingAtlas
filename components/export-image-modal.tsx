@@ -136,7 +136,7 @@ export function ExportImageModal() {
 	useEffect(() => {
 		if (!isOpen) return;
 		setZoom(useConfiguration.getState().controls.zoom);
-		setAspect("screen");
+		setAspect(useExportImage.getState().target?.disk ? "square" : "screen");
 		setScaleChip(2);
 		setOpaque(true);
 		setFormat("png");
