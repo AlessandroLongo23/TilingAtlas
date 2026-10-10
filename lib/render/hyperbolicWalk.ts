@@ -37,6 +37,7 @@ import {
 	su11Translation,
 } from "@/lib/render/hyperbolic";
 import { type Darts, interiorAngle, medge } from "@/lib/render/hyperbolicDevelopClient";
+import { bestCentre, dartSymmetry } from "@/lib/render/hyperbolicSymmetry";
 
 export const WALK_REGULAR = 0;
 export const WALK_APEIROGON = 1;
@@ -47,7 +48,8 @@ export interface WalkTiling {
 	data: Float64Array;
 	width: number;
 	height: number;
-	/** The face holding the seed dart's corner, and the map from seed-dart coordinates into its frame. */
+	/** The face the disk opens in, and the frame of the opening point (hyperbolicSymmetry.ts) in that
+	 *  face's frame: the inverse of `home` is the opening view. */
 	seedFace: number;
 	home: Su11;
 	/** Vertices of each face in its own frame, in slot order (side j runs verts[j] → verts[j+1]). */
@@ -227,8 +229,15 @@ export function buildWalk(darts: Darts, edge: number, opts: { allDrawn?: boolean
 			if (kind[f] !== WALK_APEIROGON) data.set(sideNormal(verts[f][s], verts[f][s + 1]), o + 8);
 		}
 	}
-	const seedFace = faceOf[seed];
-	return { data, width, height: F, seedFace, home: K[seedFace][0], verts, sizes };
+	// Open on the most symmetric point: a face's centre is the origin of its own frame, a vertex is a
+	// corner of the face in its wedge, an edge's midpoint lies half an edge along the dart from there.
+	const c = bestCentre(dartSymmetry(darts, edge).features);
+	let h = c.dart;
+	for (let i = 0; i < n && lvert[rneig[h]] === 2; i++) h = rneig[h]; // a digon's two sides are one segment
+	const seedFace = faceOf[h];
+	let home = c.kind === "F" ? su11Identity() : K[seedFace][posOf[h]];
+	if (c.kind === "E") home = mul(home, su11Translation({ x: Math.tanh((darts.elen ? darts.elen[h] : edge) / 4), y: 0 }));
+	return { data, width, height: F, seedFace, home, verts, sizes };
 }
 
 /** Where a point of face f's frame stands against the face: the side it faces, sinh of its signed

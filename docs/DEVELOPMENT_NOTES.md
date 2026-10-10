@@ -18336,3 +18336,37 @@ place the real bug shows; the emulation proves the mechanism is sufficient, not 
 
 **Fix.** `imod` in `hyperbolicPerPixelGL.ts`, at the three slot lookups (apeirogon, regular, and the
 neighbour sides of the stroke). +7/−3.
+
+## 2026-10-10: the hyperbolic disk opens on the tiling's most symmetric point
+
+AL's observation: a disk centred on the seed vertex hides the structure, and the centre of a tile
+usually shows it. Measured before changing anything (`experiments/hyperbolic/centre-symmetry.ts`, log in
+`experiments/results/hyp-centre-symmetry-2026-10-10.log`), over all 2,255,454 hyperbolic tilings: the
+seed vertex has a trivial stabiliser in 97.96%; a face centre attains the largest stabiliser in 94.79%,
+only an edge midpoint in 4.51%, only a vertex in 0.60% ({3,7}, {4,5}), and 587 tilings have no
+symmetric point.
+
+**Method.** `lib/render/hyperbolicSymmetry.ts`. A dart with an orientation is a flag; two flags of the
+universal cover are related by a symmetry exactly when the automaton on (dart, ±) with letters
+{rneig, glue} and the face size as output cannot tell them apart (Moore refinement). A feature's
+stabiliser order is the number of its flags equivalent to one of them, times the cone multiplicity where
+the quotient ring is shorter than the polygon. Darts only, 0.08 ms a record on average, 21 ms at worst,
+so it runs inside `buildWalk` and nothing is baked into the shards. Checked on 6.6.7 (D7, D3, D1), the
+snub 3.3.3.3.7 (C7, C3, C2, no mirrors) and {3,7}.
+
+**Rule (AL's choice, strict highest order).** Largest stabiliser over faces, vertices and edge
+midpoints; a tie goes to a face over a vertex over an edge, then to the larger face, then to the lower
+dart. So 5.8.8 opens on the pentagon (D5, order 10) and not the octagon (D4, order 8). The alternative
+on the table was "largest tile unless a smaller one has twice its order"; rejected.
+
+`buildWalk` sets `seedFace` and `home` from that feature, which the three canvases, the three
+thumbnails and the view reset all read, so no other file changed.
+
+⚑ Thumbnails of a large-tile board now look even more alike: every k = 14 card of 3.4.13.4 is one
+26-gon filling half the disk. They were near-identical before (same seed corner), but the centred tile
+leaves less room for the part that differs.
+⚑ Colourings count colour-preserving symmetries only; a symmetry that permutes colours is not seen.
+⚑ Apeirogons have no centre and are never chosen. The 2D fallback (no WebGL2) still opens on the seed
+vertex.
+⚑ The best face is unique up to symmetry in 63% of tilings; elsewhere the lowest dart decides, which is
+deterministic and otherwise arbitrary.

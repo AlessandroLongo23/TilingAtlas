@@ -54,7 +54,7 @@ export class HypCamera {
 		this.home();
 	}
 
-	/** The view a tiling opens on and a reset returns to: the seed vertex at the centre. */
+	/** The view a tiling opens on and a reset returns to: its most symmetric point at the centre. */
 	private home(): void {
 		this.face = this.walk?.seedFace ?? 0;
 		this.view = this.walk ? su11Inverse(this.walk.home) : su11Identity();
