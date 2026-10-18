@@ -74,8 +74,8 @@ export function polygonPeriodOf(vs: number[][]): number {
 // Exported so a shelf whose rows have no polygon reading can SAY so on the record, instead of
 // leaving the field unset and making the facet memos walk its geometry to find out. One frozen array
 // shared by every such row, which is the difference between a marker and 250k allocations.
-export const EMPTY_SPECIES: string[] = Object.freeze([]) as string[];
-export const EMPTY_PERIODS: number[] = Object.freeze([]) as number[];
+export const EMPTY_SPECIES = Object.freeze([] as string[]) as string[];
+export const EMPTY_PERIODS = Object.freeze([] as number[]) as number[];
 
 const periodCache = new Map<string, number[]>();
 

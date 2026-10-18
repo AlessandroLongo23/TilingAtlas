@@ -574,6 +574,7 @@ export function Canvas({
 						// grid to draw the collapse from, and mutating that would corrupt what the user is watching — and
 						// in debugView, where updateDebugStore publishes node references that must not change underneath.
 						const canReuse = !outgoingRef.current && !transitionRef.current && !cfg.debugView;
+						if (!tc) throw new Error("This tiling has no translational cell to draw.");
 						const t = buildTilingFromCell(tc, Ri, Rj, orbitData, canReuse ? tilingRef.current : null);
 						tilingRef.current = t;
 						gridStale = false;

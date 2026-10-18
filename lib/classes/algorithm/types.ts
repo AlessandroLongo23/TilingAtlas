@@ -39,12 +39,22 @@ export type SurroundingPolygon = { polygon: Polygon, prevDir: number, nextDir: n
  * under translationalCells/k=*\/m=*\/). Short-form keys (`p`, `b`, `v`) are
  * produced by the encoder; long-form keys are the in-memory equivalents.
  */
-export type CellVertex = [number, number] | { x: number; y: number };
+export type CellVertex = number[] | { x: number; y: number };
 
 export interface CellPolygonData {
     v?: CellVertex[];
     vertices?: CellVertex[];
     n?: number;
+    star?: boolean;
+    hue?: number;
+    open?: boolean;
+    /** A marking drawn INSIDE a tile, not a tile: it is painted, and left out of the edge statistics
+     *  so a handful of small marks cannot drag medianEdge down and zoom the card in on one tile. */
+    mark?: boolean;
+    /** Indices into `v` that are TRUE TILE CORNERS, when the ring's curved edges arrive flattened.
+     *  Additive: no other cell sets it, and every existing cell keeps the every-vertex-is-a-corner
+     *  reading byte for byte. See RawPolygon.corners for why every polygon consumer needs it. */
+    corners?: number[];
 }
 
 export interface TranslationalCellData {

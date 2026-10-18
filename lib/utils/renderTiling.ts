@@ -47,28 +47,9 @@ export interface RawPolygon {
 	fill?: string;
 }
 
-export interface TranslationalCellData {
-	p?: unknown[];
-	cellPolygons?: unknown[];
-	b?: number[][];
-	basis?: number[][];
-}
-
-interface CellPolyData {
-	v?: (number[] | { x: number; y: number })[];
-	vertices?: (number[] | { x: number; y: number })[];
-	n?: number;
-	star?: boolean;
-	hue?: number;
-	open?: boolean;
-	/** A marking drawn INSIDE a tile, not a tile: it is painted, and left out of the edge statistics
-	 *  so a handful of small marks cannot drag medianEdge down and zoom the card in on one tile. */
-	mark?: boolean;
-	/** Indices into `v` that are TRUE TILE CORNERS, when the ring's curved edges arrive flattened.
-	 *  Additive: no other cell sets it, and every existing cell keeps the every-vertex-is-a-corner
-	 *  reading byte for byte. See RawPolygon.corners for why every polygon consumer needs it. */
-	corners?: number[];
-}
+// One cell type for the solver and the renderers.
+import type { TranslationalCellData } from "@/lib/classes/algorithm/types";
+export type { TranslationalCellData };
 
 export interface BaseCell {
 	polys: RawPolygon[];
@@ -216,7 +197,7 @@ export const TILE_FILL_ALPHA = 1;
 export const INK_FILL = "rgb(13, 13, 18)";
 
 export function parseBaseCell(cell: TranslationalCellData): BaseCell | null {
-	const polyArray = (cell.p ?? cell.cellPolygons ?? []) as CellPolyData[];
+	const polyArray = cell.p ?? cell.cellPolygons ?? [];
 	const basisRaw = (cell.b ?? cell.basis ?? [[1, 0], [0, 1]]) as number[][];
 	const basis: [[number, number], [number, number]] = [
 		[basisRaw[0][0], basisRaw[0][1]],

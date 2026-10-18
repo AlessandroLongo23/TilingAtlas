@@ -36,18 +36,10 @@ export class TilingChecker {
             const shapesOnVertexNumbers: number[] = shapesOnVertex.map(shape => shape.n);
             const shapesOnVertexNumbersSorted: number[] = cycleToMinimumLexicographicalOrder(shapesOnVertexNumbers);
 
-            // if the vertex configuration is new, add it to the list
-            if (!vertexConfigurations.some(group => isEqualOrChiral(group.vc.polygons.map(p => p.n), shapesOnVertexNumbersSorted))) {
-                vertexConfigurations.push({
-                    vc: new VertexConfiguration(shapesOnVertex.map(shape => shape.clone())),
-                    occurrences: 1
-                });
-            } 
-            
-            // otherwise, increment the occurence count
-            else {
-                vertexConfigurations.find(group => isEqualOrChiral(group.vc.polygons.map(p => p.n), shapesOnVertexNumbersSorted)).occurrences++;
-            }
+            // count the vertex configuration, adding it if it is new
+            const known = vertexConfigurations.find(group => isEqualOrChiral(group.vc.polygons.map(p => p.n), shapesOnVertexNumbersSorted));
+            if (known) known.occurrences++;
+            else vertexConfigurations.push({ vc: new VertexConfiguration(shapesOnVertex.map(shape => shape.clone())), occurrences: 1 });
         }
 
         vertexConfigurations.sort((a, b) => compareVCNames(a.vc.polygons.map(p => p.getName()), b.vc.polygons.map(p => p.getName())));
@@ -63,13 +55,14 @@ export class TilingChecker {
 
     findTranslationalCellBasis(tiling: Tiling): void {
         // take the polygon closest to the origin
-        tiling.originPolygon = tiling.nodes.reduce((min, node) => node.centroid.mag() < min.centroid.mag() ? node : min);
+        const origin = tiling.nodes.reduce((min, node) => node.centroid.mag() < min.centroid.mag() ? node : min);
+        tiling.originPolygon = origin;
 
         // compute all vectors between polygons of the same type and with the same orientation  
         const samePolygonsTranslationVectors: Vector[] = tiling.nodes
-            .filter(polygon => polygon.n === tiling.originPolygon.n)
-            .filter(polygon => polygon.isTranslated(tiling.originPolygon))
-            .map(polygon => Vector.sub(polygon.centroid, tiling.originPolygon.centroid))
+            .filter(polygon => polygon.n === origin.n)
+            .filter(polygon => polygon.isTranslated(origin))
+            .map(polygon => Vector.sub(polygon.centroid, origin.centroid))
             .filter(vector => vector.mag() > tolerance)
             .sort((a, b) => a.mag() - b.mag());
 
@@ -104,6 +97,7 @@ export class TilingChecker {
         if (!v2) {
             // fallback: return v1 twice if no linearly independent vector found (degenerate case)
             tiling.translationalCellBasis = [v1, v1.copy()];
+            return;
         }
 
         tiling.translationalCellBasis = [v1, v2];

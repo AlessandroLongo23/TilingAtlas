@@ -54,13 +54,13 @@ describe("hyperbolic edge-length solver", () => {
 		]) {
 			const solved = solveEdgeLength(Array(q).fill(p)); // q p-gons around a vertex
 			expect(solved).not.toBeNull();
-			expect(solved as number).toBeCloseTo(regularEdgeLength(p, q), 9);
+			expect(solved as number).toBeCloseTo(regularEdgeLength(p, q)!, 9);
 		}
 	});
 
 	it("puts {3,8} and {8,4} at the same pool edge length ≈ 1.528570919", () => {
-		const l38 = regularEdgeLength(3, 8);
-		const l84 = regularEdgeLength(8, 4);
+		const l38 = regularEdgeLength(3, 8)!;
+		const l84 = regularEdgeLength(8, 4)!;
 		expect(l38).toBeCloseTo(1.528570919, 6);
 		expect(Math.abs(l38 - l84)).toBeLessThan(1e-9);
 	});
@@ -81,7 +81,7 @@ describe("hyperbolic edge-length solver", () => {
 		// shares that length. Necessary metric condition (combinatorial validity is the solver's job).
 		const l = solveEdgeLength([3, 3, 8, 8, 8]);
 		expect(l).not.toBeNull();
-		expect(l as number).toBeCloseTo(regularEdgeLength(3, 8), 6);
+		expect(l as number).toBeCloseTo(regularEdgeLength(3, 8)!, 6);
 	});
 });
 

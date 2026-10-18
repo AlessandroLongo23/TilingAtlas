@@ -18,7 +18,7 @@
 // A side's tag is class * 4 + reversed * 2 + farSide: where this tile sits on its class's curve, which
 // is drawn from the class representative's vertex towards the representative's tile.
 
-import type { TranslationalCellData } from "@/lib/utils/renderTiling";
+import type { CellPolygonData, TranslationalCellData } from "@/lib/classes/algorithm/types";
 
 export interface TegulaCell {
 	basis: number[][];
@@ -54,7 +54,7 @@ export function clampHandle(kind: string, x: number, y: number): [number, number
 
 /** The drawable cell: every tile's ring with its bent sides flattened, true corners marked. */
 export function bendTegula(t: TegulaCell, shape: number[][] = t.shape): TranslationalCellData {
-	const cellPolygons: unknown[] = t.polys.map(({ v, hue, sides }) => {
+	const cellPolygons: CellPolygonData[] = t.polys.map(({ v, hue, sides }) => {
 		const vertices: number[][] = [];
 		const corners: number[] = [];
 		for (let i = 0; i < v.length; i++) {

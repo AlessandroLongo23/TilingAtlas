@@ -110,7 +110,7 @@ function writeOut(recs: Map<string, Rec>): void {
 	fs.writeFileSync(OUT, JSON.stringify(arr, null, 2) + '\n');
 }
 
-const countOrbits = (cellPolys: Polygon[], u: Cyclotomic, v: Cyclotomic): number =>
+const countOrbits = (cellPolys: Polygon[], u: Cyclotomic, v: Cyclotomic): number | null =>
 	new KUniformityChecker().countVertexOrbits(cellPolys, u, v, { syms: 0, reps: 0, blockSize: 0, orbits: null });
 
 /** Build the 2-VC seed from one merge-search placement: the two shared vertices carry the two orbits. */

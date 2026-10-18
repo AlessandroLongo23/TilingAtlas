@@ -1,3 +1,4 @@
+import type P5 from "p5";
 import { type Polygon, Vector, type Gyration, type Reflection, type GlideReflection } from '@/classes';
 import { fillAmountToSatPct, tileFill } from "@/lib/render/tilePalette";
 import type { VertexConfiguration } from '@/classes/algorithm/VertexConfiguration';
@@ -56,7 +57,7 @@ export class Tiling {
     }
 
     show = (
-        ctx,
+        ctx: P5,
         showPolygonPoints: boolean,
         opacity: number = 1,
         circlePacking: boolean = false,
@@ -193,7 +194,7 @@ export class Tiling {
      *  each frame — caller-owned so the animation survives the grid rebuilds that reconstruct this
      *  Tiling (regrids, alpha ticks). Enlarged dots draw last, above their at-rest neighbours. */
     drawVertexOrbits = (
-        ctx,
+        ctx: P5,
         k: number,
         cull?: (c: Vector) => boolean,
         hover?: { x: number; y: number } | null,
@@ -270,7 +271,7 @@ export class Tiling {
      *  background, so at Edge Offset 0 it degrades to A + B. Then the construction lines as black cell
      *  borders. Cached per (node set, angle, offset, count); B/C are applied at draw time, so recolouring
      *  never rebuilds geometry (like the global hue offset). A static view just redraws the cache. */
-    drawIslamicStarFill = (ctx, opacity: number = 1): void => {
+    drawIslamicStarFill = (ctx: P5, opacity: number = 1): void => {
         const cfg = useConfiguration.getState();
         const theta = Math.min(Math.max(cfg.islamicAngle, 0), 90);
         const offset = islamicEdgeOffsetFrac(cfg.islamicEdgeOffset); // signed fraction of the half-edge
@@ -333,7 +334,7 @@ export class Tiling {
      *  Rendered as a world-space border ring, then the solid bodies over it — the same two passes and the
      *  same order as the GL path in strap-canvas.tsx, which this must match when islamicAnimate flips
      *  rendering back to p5. */
-    drawIslamicInterlace = (ctx, opacity: number = 1, weave: boolean = true, emboss: boolean = false): void => {
+    drawIslamicInterlace = (ctx: P5, opacity: number = 1, weave: boolean = true, emboss: boolean = false): void => {
         const cfg = useConfiguration.getState();
         const theta = Math.min(Math.max(cfg.islamicAngle, 0), 90);
         const offset = islamicEdgeOffsetFrac(cfg.islamicEdgeOffset);
@@ -408,7 +409,7 @@ export class Tiling {
      *  pooled segments and face extraction (so it respects the edge-offset / ray-stops sliders), a
      *  bipartite 2-colouring, then the construction lines as borders. Cached per (node set, angle,
      *  offset, count). */
-    drawIslamicCheckerboard = (ctx, opacity: number = 1): void => {
+    drawIslamicCheckerboard = (ctx: P5, opacity: number = 1): void => {
         const cfg = useConfiguration.getState();
         const theta = Math.min(Math.max(cfg.islamicAngle, 0), 90);
         const offset = islamicEdgeOffsetFrac(cfg.islamicEdgeOffset);
@@ -455,7 +456,7 @@ export class Tiling {
         }
     }
 
-    showGraph = (ctx): void => {
+    showGraph = (ctx: P5): void => {
         this.show(ctx, false, 0.5);
 
         const zoom = useConfiguration.getState().controls.zoom;
@@ -490,7 +491,7 @@ export class Tiling {
         ctx.pop();
     }
 
-    drawConstructionPoints = (ctx): void => {
+    drawConstructionPoints = (ctx: P5): void => {
         let uniqueCentroids: Vector[] = [];
         for (let anchorNode of this.anchorNodes)
             if (!uniqueCentroids.some(c => isWithinTolerance(c, anchorNode.centroid)))
@@ -549,7 +550,7 @@ export class Tiling {
             this.drawDualConnections(ctx, true);
     }
 
-    drawIslamicVertexRegions = (ctx, opacity: number = 1): void => {
+    drawIslamicVertexRegions = (ctx: P5, opacity: number = 1): void => {
         const cfg = useConfiguration.getState();
         const animate = cfg.islamicAnimate;
         const baseAngle = islamicTipsAngleFromSlider(cfg.islamicAngle);
@@ -638,7 +639,7 @@ export class Tiling {
         ctx.pop();
     }
 
-    drawDualConnections = (ctx, flipY = false): void => {
+    drawDualConnections = (ctx: P5, flipY = false): void => {
         const zoom = useConfiguration.getState().controls.zoom;
         ctx.push();
         ctx.strokeWeight(2 / zoom);
@@ -744,7 +745,7 @@ export class Tiling {
         return true;
     }
 
-    showNeighbors = (ctx, showPolygonPoints: boolean): void => {
+    showNeighbors = (ctx: P5, showPolygonPoints: boolean): void => {
         const lineWidthValue = useConfiguration.getState().lineWidth;
         if (lineWidthValue <= 0) {
             ctx.noStroke();
@@ -761,10 +762,10 @@ export class Tiling {
         
         for (let node of this.nodes) {
             if (node.containsPoint(mousePoint)) {
-                node.show(ctx, showPolygonPoints, ctx.color(0, 0, 100));
+                node.show(ctx, showPolygonPoints, 0);
 
                 for (let neighbor of node.neighbors) {
-                    neighbor.show(ctx, showPolygonPoints, ctx.color(240, 100, 100, 0.5));
+                    neighbor.show(ctx, showPolygonPoints, 240, 0.5);
                     ctx.line(
                         node.centroid.x,
                         node.centroid.y,
@@ -795,12 +796,12 @@ export class Tiling {
     }
 
     exportGraph = () => {
-        let graph = {
+        const graph: { n: number; edges: { source: number; target: number; type: string }[] } = {
             n: this.nodes.length,
             edges: []
         };
         
-        const nodeMap = new Map();
+        const nodeMap = new Map<Polygon, number>();
         this.nodes.forEach((node, index) => {
             nodeMap.set(node, index);
         });

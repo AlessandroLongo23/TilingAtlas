@@ -5,7 +5,7 @@ import { toDegrees } from '@/lib/utils/geometry';
 const PHI = (1 + Math.sqrt(5)) / 2;
 
 export class DualPolygon extends Polygon {
-    constructor(data) {
+    constructor(data: { centroid: Vector; vertices: Vector[]; halfways: Vector[] }) {
         super();
         this.centroid = data.centroid;
         this.vertices = data.vertices;

@@ -36,8 +36,8 @@ function polygonFromShort(enc: Record<string, unknown>): { type: string; n: numb
         type: (enc.t ?? enc.type) as string,
         n: (enc.n ?? 0) as number,
         vertices,
-        ...(enc.s && { sides: enc.s }),
-        ...(enc.a && { angles: enc.a }),
+        ...(enc.s ? { sides: enc.s } : {}),
+        ...(enc.a ? { angles: enc.a } : {}),
         ...(enc.d != null && { d: enc.d }),
         ...(enc.alpha != null && { alpha: enc.alpha }),
     };

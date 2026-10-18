@@ -127,19 +127,6 @@ function main() {
 
 	const additionalPolygons: PolygonSignature[] = [];
 
-	for (const p of additionalPolygons) {
-		if (parameters[p.type] === PolygonType.EQUILATERAL) {
-			for (let i = 1; i <= p.angles.length; i++) {
-				const cycledAngles = p.angles.slice(i).concat(p.angles.slice(0, i));
-				additionalPolygons.push(new PolygonSignature({
-					type: PolygonType.EQUILATERAL,
-					n: p.n,
-					angles: cycledAngles.map(a => toRadians(a))
-				}))
-			}
-		}
-	}
-
 	const log = new PipelineLogger();
 	log.log('Tiling generation pipeline\n' + '='.repeat(50));
 

@@ -165,7 +165,7 @@ export function TheoryClient({ content, sections, cells, sources, patches, squar
 			// of the same tiling is one click away in /play.
 			"hyperbolic-card": ({ patch, label, caption }: HyperbolicCardTagProps) => {
 				const record = patch ? patches?.[patch] : undefined;
-				if (!record) {
+				if (!patch || !record) {
 					return (
 						<div className="not-prose flex aspect-square items-center justify-center border border-line bg-surface-overlay/30 p-4 text-center text-xs text-fg-muted">
 							Unknown patch id: {patch ?? "(none)"}

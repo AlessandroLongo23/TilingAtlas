@@ -1,3 +1,4 @@
+import type P5 from "p5";
 import { useConfiguration } from "@/stores/configuration";
 import { fillAmountToSatPct, tileFill } from "@/lib/render/tilePalette";
 import { isWithinConvexHull, segmentsIntersect, getAngleAtVertex, isWithinTolerance } from '@/utils';
@@ -11,21 +12,22 @@ import { type Marker, tipPoint } from "@/utils/islamicArrangement";
 import { resolveRayStops, type RayCrossing } from "@/utils/islamicRayStops";
 
 export class Polygon {
+    // Fields marked `!` are set by whoever builds the polygon (RegularPolygon, the exact builders) before any read.
     n: number;
-    name: string;
+    name!: string;
     neighbors: Polygon[];
     edgeNeighbors: Polygon[];
-    nextState: number;
+    nextState!: number;
     hue: number;
-    vertices: Vector[];
-    halfways: Vector[];
-    centroid: Vector;
+    vertices!: Vector[];
+    halfways!: Vector[];
+    centroid!: Vector;
     angle: number;
-    anchor: Vector;
-    dir: Vector;
+    anchor!: Vector;
+    dir!: Vector;
     golNeighbors?: Polygon[];
     alive_neighbors: number;
-    interior_angle: number;
+    interior_angle!: number;
     sides: number[];
     angles: number[];
 
@@ -421,7 +423,7 @@ export class Polygon {
         return getAngleAtVertex(this.vertices, vertex);
     }
 
-    show = (ctx, showPolygonPoints, customColor = null, opacity = 0.80) => {
+    show = (ctx: P5, showPolygonPoints: boolean, customColor: number | null = null, opacity = 0.80) => {
         if (this.centroid.x < -ctx.width / 2 - 10 || this.centroid.y < -ctx.height / 2 - 10 || this.centroid.x > ctx.width / 2 + 10 || this.centroid.y > ctx.height / 2 + 10)
             return;
 
@@ -448,7 +450,7 @@ export class Polygon {
             this.showIslamicLines(ctx, opacity);
         } else {
             if (cfg.fillAmount > 0) {
-                ctx.fill(tileFill(customColor || this.hue, opacity, fillAmountToSatPct(cfg.fillAmount)));
+                ctx.fill(tileFill(customColor ?? this.hue, opacity, fillAmountToSatPct(cfg.fillAmount)));
             } else {
                 ctx.noFill();
             }
@@ -671,12 +673,12 @@ export class Polygon {
         return markers;
     }
 
-    private offScreen = (ctx): boolean =>
+    private offScreen = (ctx: P5): boolean =>
         this.centroid.x < -ctx.width / 2 - 10 || this.centroid.y < -ctx.height / 2 - 10 ||
         this.centroid.x > ctx.width / 2 + 10 || this.centroid.y > ctx.height / 2 + 10;
 
     /** Pass 1 of the Islamic line mode: the base tile drawn faint, so the construction lines dominate. */
-    showIslamicDimBase = (ctx, opacity: number = 0.80): void => {
+    showIslamicDimBase = (ctx: P5, opacity: number = 0.80): void => {
         if (this.offScreen(ctx)) return;
         const { controls, fillAmount } = useConfiguration.getState();
         ctx.push();
@@ -690,7 +692,7 @@ export class Polygon {
     }
 
     /** Pass 2 of the Islamic line mode: the Hankin ray construction as thick lines, no fill. */
-    showIslamicLines = (ctx, opacity: number = 1): void => {
+    showIslamicLines = (ctx: P5, opacity: number = 1): void => {
         if (this.offScreen(ctx) || !this.vertices || !this.halfways) return;
         const cfg = useConfiguration.getState();
         const zoom = cfg.controls.zoom;
@@ -707,7 +709,7 @@ export class Polygon {
         ctx.pop();
     }
 
-    showIslamicFilled = (ctx, opacity: number = 0.80, customColor: number | null = null) => {
+    showIslamicFilled = (ctx: P5, opacity: number = 0.80, customColor: number | null = null) => {
         const cfg = useConfiguration.getState();
         const baseAngle = islamicTipsAngleFromSlider(cfg.islamicAngle);
         let angle: number | number[] = baseAngle;

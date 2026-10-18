@@ -79,30 +79,27 @@ export class VertexConfiguration {
 
         for (const p of polygonsData) {
             let polygon: Polygon | null = null;
+            let m: RegExpMatchArray | null;
 
             if (p.match(regularPolygonRegex)) {
                 polygon = RegularPolygon.fromAnchorAndDir(parseInt(p), new Vector(0, 0), current_dir.copy());
-            } else if (p.match(regularStarRegex)) {
-                const regularStarMatch = p.match(regularStarRegex);
-                const [, n, d, suffix] = regularStarMatch;
+            } else if ((m = p.match(regularStarRegex))) {
+                const [, n, d, suffix] = m;
                 const startsWith = suffix === 'i' ? StarVertexTypes.INNER : StarVertexTypes.OUTER;
                 polygon = StarRegularPolygon.fromAnchorAndDir(parseInt(n), new Vector(0, 0), current_dir.copy(), parseInt(d), startsWith);
-            } else if (p.match(parametricStarRegex)) {
-                const parametricStarMatch = p.match(parametricStarRegex);
-                const [, n, value, suffix] = parametricStarMatch;
+            } else if ((m = p.match(parametricStarRegex))) {
+                const [, n, value, suffix] = m;
                 const startsWith = suffix === 'i' ? StarVertexTypes.INNER : StarVertexTypes.OUTER;
                 if (suffix) {
                     polygon = StarParametricPolygon.fromAnchorAndDir(parseInt(n), new Vector(0, 0), current_dir.copy(), toRadians(parseInt(value)), startsWith);
                 } else {
                     polygon = StarRegularPolygon.fromAnchorAndDir(parseInt(n), new Vector(0, 0), current_dir.copy(), parseInt(value), startsWith);
                 }
-            } else if (p.match(equilateralPolygonRegex)) {
-                const equilateralPolygonMatch = p.match(equilateralPolygonRegex);
-                const [, n, angles] = equilateralPolygonMatch;
+            } else if ((m = p.match(equilateralPolygonRegex))) {
+                const [, n, angles] = m;
                 polygon = EquilateralPolygon.fromAnchorAndDir(parseInt(n), new Vector(0, 0), current_dir.copy(), angles.split(';').map(a => toRadians(parseInt(a))));
-            } else if (p.match(genericPolygonRegex)) {
-                const genericPolygonMatch = p.match(genericPolygonRegex);
-                const [, n, sides, angles] = genericPolygonMatch;
+            } else if ((m = p.match(genericPolygonRegex))) {
+                const [, n, sides, angles] = m;
                 polygon = GenericPolygon.fromAnchorAndDir(parseInt(n), new Vector(0, 0), current_dir.copy(), sides.split(';').map(s => parseFloat(s)), angles.split(';').map(a => toRadians(parseInt(a))));
             }
 
@@ -132,10 +129,10 @@ export class VertexConfiguration {
                 polygon = RegularPolygon.fromAnchorAndDir(polygonData.n, new Vector(0, 0), dir);
                 break;
             case PolygonType.STAR_REGULAR:
-                polygon = StarRegularPolygon.fromAnchorAndDir(polygonData.n, new Vector(0, 0), dir, polygonData.d, polygonData.startsWith);
+                polygon = StarRegularPolygon.fromAnchorAndDir(polygonData.n, new Vector(0, 0), dir, polygonData.d!, polygonData.startsWith);
                 break;
             case PolygonType.STAR_PARAMETRIC:
-                polygon = StarParametricPolygon.fromAnchorAndDir(polygonData.n, new Vector(0, 0), dir, polygonData.alpha, polygonData.startsWith);
+                polygon = StarParametricPolygon.fromAnchorAndDir(polygonData.n, new Vector(0, 0), dir, polygonData.alpha!, polygonData.startsWith);
                 break;
             case PolygonType.EQUILATERAL:
                 polygon = EquilateralPolygon.fromAnchorAndDir(polygonData.n, new Vector(0, 0), dir, [...polygonData.angles]);
@@ -143,6 +140,8 @@ export class VertexConfiguration {
             case PolygonType.GENERIC:
                 polygon = GenericPolygon.fromAnchorAndDir(polygonData.n, new Vector(0, 0), dir, [...polygonData.sides], [...polygonData.angles]);
                 break;
+            default:
+                throw new Error(`No polygon builder for type ${polygonData.type}`);
         }
 
         return polygon;

@@ -30,9 +30,9 @@ export function IsohedralEdgesControls({ ih }: { ih: number }) {
 
 	const info = ISOHEDRAL_TYPES.find((t) => t.ih === ih);
 	// A stored vector of the wrong length belongs to another type; fall back to this one's defaults.
-	const params = stored?.length === info?.numParams ? stored : (info?.defaultParams ?? []);
+	const params = stored && stored.length === info?.numParams ? stored : (info?.defaultParams ?? []);
 	const bulge =
-		storedBulge?.length === info?.numEdgeShapes
+		storedBulge && storedBulge.length === info?.numEdgeShapes
 			? storedBulge
 			: (info?.edgeShapes.map(() => BULGE.def) ?? []);
 

@@ -7,10 +7,10 @@ export enum StarVertexTypes {
 }
 
 export class StarPolygon extends Polygon {
-    alpha: number;
-    beta: number;
-    innerRadius: number;
-    outerRadius: number;
+    alpha!: number;
+    beta!: number;
+    innerRadius!: number;
+    outerRadius!: number;
     startsWith: StarVertexTypes;
 
     constructor(n: number, startsWith: StarVertexTypes = StarVertexTypes.OUTER) {

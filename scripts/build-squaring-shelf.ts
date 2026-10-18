@@ -24,7 +24,7 @@ import { planarMapFromFaces, eulerCharacteristic, isThreeConnected, type PlanarM
 import { allSquarings } from "@/lib/squaring/smith";
 import { tiledArea, tilesExactly } from "@/lib/squaring/classify";
 import { buildPipelineRecord, toSquaringRecord } from "@/lib/squaring/pipeline";
-import { bestSquaring, type PipelineIndex, type PipelineIndexEntry, type PipelineRecord, type PolyhedronSquarings, type SquaringManifest, type SquaringRecord, type SquaringSummary } from "@/lib/squaring/shelf";
+import { bestSquaring, type PipelineIndex, type PipelineIndexEntry, type PipelineRecord, type PolyhedronSquarings, type SquaringManifest, type SquaringSummary } from "@/lib/squaring/shelf";
 
 const OUT_DIR = path.join(process.cwd(), "public", "squarings");
 const PIPELINE_DIR = path.join(OUT_DIR, "pipeline");
@@ -193,15 +193,14 @@ function main() {
 	const started = Date.now();
 
 	corpus.forEach((c, i) => {
-		const map: PlanarMap | null = planarMapFromFaces(c.faces, c.vertexCount);
-		if (!map) fail(`${c.id}: face rings do not form an oriented planar map`);
-		const chi = eulerCharacteristic(map as PlanarMap);
+		const map = planarMapFromFaces(c.faces, c.vertexCount) ?? fail(`${c.id}: face rings do not form an oriented planar map`);
+		const chi = eulerCharacteristic(map);
 		if (chi !== 2) fail(`${c.id}: Euler characteristic ${chi}, not 2 — no planar embedding, no Smith diagram`);
-		if (!isThreeConnected(map as PlanarMap)) {
+		if (!isThreeConnected(map)) {
 			fail(`${c.id}: skeleton is not 3-connected, so it is not a convex polyhedron's graph`);
 		}
 
-		const squarings = allSquarings(map as PlanarMap);
+		const squarings = allSquarings(map);
 		if (squarings.length === 0) fail(`${c.id}: produced no squarings at all`);
 
 		for (const s of squarings) {
@@ -214,8 +213,7 @@ function main() {
 		}
 
 		const records = squarings.map(toRecord);
-		const best = bestSquaring(records);
-		if (!best) fail(`${c.id}: no best squaring`);
+		const best = bestSquaring(records) ?? fail(`${c.id}: no best squaring`);
 
 		shards.push({
 			id: c.id,
@@ -235,20 +233,20 @@ function main() {
 			perfect: records.filter((r) => r.perfect).length,
 			simple: records.filter((r) => r.simple).length,
 			best: {
-				battery: (best as SquaringRecord).battery,
-				width: (best as SquaringRecord).width,
-				height: (best as SquaringRecord).height,
-				order: (best as SquaringRecord).order,
-				distinct: (best as SquaringRecord).distinct,
-				perfect: (best as SquaringRecord).perfect,
-				simple: (best as SquaringRecord).simple,
+				battery: best.battery,
+				width: best.width,
+				height: best.height,
+				order: best.order,
+				distinct: best.distinct,
+				perfect: best.perfect,
+				simple: best.simple,
 			},
 		});
 		totalSquarings += records.length;
 
 		const elapsed = (Date.now() - started) / 1000;
 		const eta = (elapsed / (i + 1)) * (corpus.length - i - 1);
-		const b = best as SquaringRecord;
+		const b = best;
 		console.log(
 			`[${String(i + 1).padStart(3)}/${corpus.length}] ${c.id.padEnd(24)} ` +
 				`V=${String(map.vertexCount).padStart(3)} E=${String(map.edges.length).padStart(3)} ` +

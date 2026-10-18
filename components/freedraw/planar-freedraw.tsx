@@ -39,7 +39,6 @@ import {
 	freedrawKNoun,
 	gridOf,
 	type FreedrawCatalogueGrid,
-	type FreedrawGrid,
 	type FreedrawPattern,
 } from "@/lib/freedraw/pattern";
 import { classifyRegular, REGULAR_KINDS, type RegularKind } from "@/lib/freedraw/regular";
@@ -51,7 +50,7 @@ import { serializePlayState } from "@/lib/services/playUrlState";
 import { readAtlas } from "@/lib/services/atlasCodec";
 
 // The four base grids, then the Schwarz and Archimedean boards: one selection, one wall of two rows.
-const GRID_OPTIONS: { value: FreedrawGrid; label: string }[] = [
+const GRID_OPTIONS: { value: FreedrawCatalogueGrid; label: string }[] = [
 	{ value: "square", label: "Square" },
 	{ value: "triangle", label: "Triangle" },
 	{ value: "hex", label: "Hexagon" },
@@ -220,7 +219,7 @@ const CATALOGUE: Record<FreedrawCatalogueGrid, { url: string; ks: number[]; heav
 
 /** The catalogue files needed to show a grid+k slice. k = 0 means every k for that grid, minus the
  *  `heavy` slices — "All" must not pull 80 MB of hexagonal tail; those load when their k is picked. */
-const filesFor = (grid: FreedrawGrid, k: number): string[] =>
+const filesFor = (grid: FreedrawCatalogueGrid, k: number): string[] =>
 	CATALOGUE[grid].filter((f) => (k === 0 ? !f.heavy : f.ks.includes(k))).map((f) => f.url);
 
 // url -> loaded patterns. Populated on demand and kept for the session so re-opening a slice is instant.
@@ -421,7 +420,7 @@ export function PlanarFreedraw({
 	// Switching grid resets k (the two catalogues stop at different k) and the size set (sizes are
 	// polyominoes on one grid and polyiamonds on the other, so a carried-over 12 would mean something
 	// else). The rank toggles are grid-independent and survive.
-	const switchGrid = (grid: FreedrawGrid) => {
+	const switchGrid = (grid: FreedrawCatalogueGrid) => {
 		update({ grid, k: 0, sizes: [] });
 		setSelectedId(null);
 	};

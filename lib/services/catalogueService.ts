@@ -4,6 +4,7 @@ import type { ExactCellSource } from "@/lib/services/cellCodecService";
 import type { ParametricCellData } from "@/lib/utils/paramCell";
 import type { TegulaCell } from "@/lib/tilings/tegula";
 import type { WallpaperGroup, LatticeShape } from "@/lib/classes/symmetry/types";
+import type { TranslationalCellData } from "@/lib/classes/algorithm/types";
 
 // The METHOD-AGNOSTIC read contract for /play + /library (FRONTEND_ROADMAP.md Phase 1). Whichever
 // method wrote found_tilings — torus today, orbifold later (DESIGN INTENT, gated on the Phase-1
@@ -20,7 +21,7 @@ export interface CatalogueTiling {
 	// and /library classify identically. Absent for Supabase certified rows — tileClassOf then falls back
 	// to family tokens (those rows are regular-family, so the fallback is correct).
 	source?: import("@/lib/services/referenceAtlas").ReferenceTiling["source"];
-	renderCell: unknown | null; // float TranslationalCellData (parseBaseCell-ready); null if unpopulated
+	renderCell: TranslationalCellData | null; // float, parseBaseCell-ready; null if unpopulated
 	certified: boolean;
 	runIds: string[]; // provenance: which runs found this tiling
 	// Inline exact cell for oracle tilings (Reference shelf), which have no Supabase cell_codec row.

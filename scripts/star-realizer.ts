@@ -162,7 +162,7 @@ class Patch {
 		const guard = new Set<number>();
 		while (cur !== undefined && byStart.has(cur) && !guard.has(cur)) {
 			guard.add(cur);
-			const c = byStart.get(cur)!;
+			const c: Corner = byStart.get(cur)!;
 			seq.push(c.str);
 			cur = (c.startDir + c.ang) % 24;
 		}

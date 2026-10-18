@@ -75,7 +75,7 @@ export type SquaringAvailability = { ok: true; support: SquaringSupport } | { ok
 
 /** Read a record's shipped cell into the shape buildTorusMap wants, or null if it holds no closed tiles. */
 function torusCellOf(t: CatalogueTiling): TorusCell | null {
-	const base = parseBaseCell(t.renderCell);
+	const base = t.renderCell && parseBaseCell(t.renderCell);
 	if (!base) return null;
 	const polygons: [number, number][][] = [];
 	for (const p of base.polys) {

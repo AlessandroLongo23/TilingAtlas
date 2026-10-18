@@ -1200,7 +1200,7 @@ const COLORING_SUB_STEM = /^(square|triangle|hex|ts)-\d+$/;
 // follows the grid: polyomino on squares, polyiamond on triangles, polyhex on hexagons, polyform on
 // the combined grid (where the cells are not all one shape, so no -omino word fits), polydrafter on
 // the Schwarz 236 board (a 30-60-90 triangle is a drafter).
-const FREEDRAW_FINITE_NOUN: Record<FreedrawCatalogueGrid, readonly [string, string]> = {
+const FREEDRAW_FINITE_NOUN: Record<FreedrawGrid, readonly [string, string]> = {
 	square: ["polyomino", "polyominoes"],
 	triangle: ["polyiamond", "polyiamonds"],
 	hex: ["polyhex", "polyhexes"],
@@ -1211,6 +1211,8 @@ const FREEDRAW_FINITE_NOUN: Record<FreedrawCatalogueGrid, readonly [string, stri
 	sch244: ["polyabolo", "polyaboloes"],
 	"4436": ["polyform", "polyforms"],
 	"488": ["polyform", "polyforms"],
+	pent: ["polyform", "polyforms"],
+	ih: ["polyform", "polyforms"],
 };
 export function freedrawFamilyLabel(s: FreedrawStats, grid: FreedrawGrid = "square"): string {
 	const noun = FREEDRAW_FINITE_NOUN[grid];
@@ -1688,7 +1690,7 @@ export function referenceToCatalogue(r: ReferenceTiling): CatalogueTiling {
 //
 // `renderCell` is a deliberate throwaway — every consumer that would draw it branches on `freedraw` first
 // (thumbnails, /play canvas), exactly as they branch on `developed`/`spherical`.
-const FREEDRAW_EMPTY_CELL = { cellPolygons: [], basis: [[1, 0], [0, 1]] } as unknown as TranslationalCellData;
+const FREEDRAW_EMPTY_CELL: TranslationalCellData = { cellPolygons: [], basis: [[1, 0], [0, 1]] };
 
 function freedrawToReference(p: FreedrawPattern): ReferenceTiling {
 	const stats = summarise(analyseFaces(p));

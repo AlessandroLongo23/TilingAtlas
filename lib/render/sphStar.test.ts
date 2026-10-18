@@ -393,7 +393,7 @@ describe("a partial fill on the star shelf", () => {
 			expect(pieces(one), f).toBeLessThanOrEqual(pieces(part));
 			// One face alone cuts through nothing; a crease needs two filled faces.
 			expect(one.crossings, f).toEqual([]);
-			expect(part.crossings.length, f).toBeLessThanOrEqual(whole.crossings.length);
+			expect(part.crossings?.length ?? 0, f).toBeLessThanOrEqual(whole.crossings?.length ?? 0);
 		}
 	});
 });

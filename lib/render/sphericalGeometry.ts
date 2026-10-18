@@ -305,7 +305,7 @@ export function solidCreaseList(poly: Polyhedron, radius = 1, mod2 = false): Cre
 	return sphStarScene(
 		polyhedronAsStarPattern({ id: poly.id, vertices: solidFitScale(poly, radius), faces: poly.faces }),
 		mod2,
-	).crossings;
+	).crossings ?? [];
 }
 
 /** The creases as straight 2-point segments, the same form `straightEdges` returns, ready for the same

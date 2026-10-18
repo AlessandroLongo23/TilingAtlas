@@ -1,8 +1,7 @@
 import { PolygonType, StarVertexTypes, Vector } from '@/classes';
 import { toDegrees } from '@/utils';
 
-export interface PolygonSignatureData {
-    type: PolygonType;
+interface SignatureFields {
     n: number;
     d?: number;
     alpha?: number;
@@ -10,6 +9,16 @@ export interface PolygonSignatureData {
     angles?: number[];
     sides?: number[];
 }
+
+/** A polygon's defining data, one variant per type, each requiring the fields its type is built from. */
+export type PolygonSignatureData = SignatureFields &
+    (
+        | { type: PolygonType.REGULAR }
+        | { type: PolygonType.STAR_REGULAR; d: number; startsWith: StarVertexTypes }
+        | { type: PolygonType.STAR_PARAMETRIC; alpha: number; startsWith: StarVertexTypes }
+        | { type: PolygonType.EQUILATERAL; angles: number[] }
+        | { type: PolygonType.GENERIC; sides: number[]; angles: number[] }
+    );
 
 export class PolygonSignature {
     type: PolygonType;
@@ -26,13 +35,13 @@ export class PolygonSignature {
     beta?: number;
     startsWith?: StarVertexTypes;
     
-    name?: string;
+    name: string;
 
     constructor(data: PolygonSignatureData) {
         this.type = data.type;
         this.n = data.n;
 
-        switch(this.type) {
+        switch (data.type) {
             case PolygonType.REGULAR:
                 this.sides = Array(this.n).fill(1);
                 this.angles = Array(this.n).fill(Math.PI * (this.n - 2) / this.n);

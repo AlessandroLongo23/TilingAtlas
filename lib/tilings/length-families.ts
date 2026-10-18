@@ -224,8 +224,7 @@ export function stripFamily(word: string): ParametricCellData {
 	const strips = [...word].map((c) => STRIPS[c]);
 	const m = strips.length;
 	// Parameter layout: every R strip's height, in strip order, then the m interface shifts.
-	const heightIdx = strips.map((s) => (s.kind === "R" ? 1 : 0));
-	const nH = heightIdx.reduce((a, b) => a + b, 0);
+	const nH = strips.filter((s) => s.kind === "R").length;
 	let seen = -1;
 	const hp = strips.map((s) => (s.kind === "R" ? ++seen : -1));
 

@@ -36,8 +36,9 @@ function nodeModules(): { fs: typeof FS; path: typeof Path } {
     // `eval` here is deliberate: it defeats bundlers' static require/import graph analysis so
     // this module stays safe to import from client-reachable code (see file header).
     const req = eval('require') as NodeRequire;
-    fsMod = req('node:fs');
-    pathMod = req('node:path');
+    fsMod = req('node:fs') as typeof FS;
+    pathMod = req('node:path') as typeof Path;
+    return { fs: fsMod, path: pathMod };
   }
   return { fs: fsMod, path: pathMod };
 }

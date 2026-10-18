@@ -366,7 +366,7 @@ export function PeriodFigure({ panel, dirs, size }: { panel?: string; dirs?: str
 							{/* The words go under the panel that draws them, not under the pair. Neither panel
 							    carries a caption: the numbered list above the figure already says which step
 							    each one is, and a line of grey text under a drawing is read by nobody. */}
-							{data ? (
+							{data && view ? (
 								// The size is INLINE and not a utility class: the deck styles slide paragraphs with
 							// its own responsive rule, and a selector beats a single class, so a `text-[…]`
 							// here silently does nothing. `w-0 min-w-full` keeps a long sum from widening the

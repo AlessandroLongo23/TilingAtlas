@@ -71,8 +71,8 @@ export function useAutomatonEngine(plan: BoardPlan | null) {
 	const rebuild = useCallback(
 		(preserve: boolean) => {
 			dirtyRef.current = true;
-			const adj = plan?.adj ?? null;
-			if (!adj) {
+			const adj = plan?.adj;
+			if (!plan || !adj) {
 				engineRef.current = null;
 				metaRef.current = { degrees: [], sides: [], slots: 0 };
 				statsRef.current = null;
