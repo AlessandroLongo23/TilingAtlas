@@ -4,10 +4,12 @@ import { CyclotomicRing } from "@/classes/Cyclotomic";
 import { loadCatalogueKeys } from "../../scripts/moduli-graph/catalogueKeys";
 import { assembleGraph } from "../../scripts/moduli-graph/graphAssembler";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
+import type { ParametricCellData } from "@/lib/utils/paramCell";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- these tests cast per-site below
-const atlas = decodeAtlas<any>(JSON.parse(readFileSync("public/reference-atlas-isotoxal.json", "utf8")));
-const fam = atlas.find((r: any) => r.id === "ctrnact-isotoxal-family-k1-06");
+const atlas = decodeAtlas<{ id: string; paramCell: ParametricCellData }>(
+	JSON.parse(readFileSync("public/reference-atlas-isotoxal.json", "utf8")),
+);
+const fam = atlas.find((r) => r.id === "ctrnact-isotoxal-family-k1-06")!;
 
 describe("golden bigon (3.3.4α)", () => {
 	it("assembles two nodes, two edges, H1 = 1", () => {

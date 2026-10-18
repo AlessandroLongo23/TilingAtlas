@@ -87,8 +87,10 @@ describe("HyperbolicDeveloper (TS port of develop_patch)", () => {
 			expect(d.glue.length).toBe(n);
 			expect(d.lvert.length).toBe(n);
 			// permutations index within range
-			for (const x of d.rneig) (expect(x).toBeGreaterThanOrEqual(0), expect(x).toBeLessThan(n));
-			for (const x of d.glue) (expect(x).toBeGreaterThanOrEqual(0), expect(x).toBeLessThan(n));
+			for (const x of [...d.rneig, ...d.glue]) {
+				expect(x).toBeGreaterThanOrEqual(0);
+				expect(x).toBeLessThan(n);
+			}
 			// glue is an involution
 			for (let i = 0; i < n; i++) expect(d.glue[d.glue[i]]).toBe(i);
 		}

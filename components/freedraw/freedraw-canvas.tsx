@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { analyseFaces } from "@/lib/freedraw/faces";
 import type { FreedrawPattern } from "@/lib/freedraw/pattern";
 import { DEFAULT_STYLE, drawFreedraw, fitView, type FreedrawStyle, type FreedrawView } from "@/lib/freedraw/render";
@@ -183,7 +183,9 @@ export function FreedrawCanvas({
 			orbitScalesRef.current,
 		);
 	}, [pattern, style, dark, analysis, radNow]);
-	drawRef.current = draw;
+	useLayoutEffect(() => {
+		drawRef.current = draw;
+	}, [draw]);
 
 	useEffect(() => {
 		draw();

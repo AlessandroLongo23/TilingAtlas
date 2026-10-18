@@ -34,12 +34,15 @@ export function ColorPad({ value, onChange }: ColorPadProps) {
 		y: map(value.b, MAX_B, MIN_B, 0, PAD),
 	}));
 
-	useEffect(() => {
+	// Follow a value changed from outside (adjusted during render).
+	const [prevValue, setPrevValue] = useState({ a: value.a, b: value.b });
+	if (prevValue.a !== value.a || prevValue.b !== value.b) {
+		setPrevValue({ a: value.a, b: value.b });
 		setPosition({
 			x: map(value.a, MIN_A, MAX_A, 0, PAD),
 			y: map(value.b, MAX_B, MIN_B, 0, PAD),
 		});
-	}, [value.a, value.b]);
+	}
 
 	const updateFromClient = useCallback(
 		(clientX: number, clientY: number) => {

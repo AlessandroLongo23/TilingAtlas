@@ -1,7 +1,5 @@
 /* Validate PeriodSolver over the full k seed set. Run: pnpm tsx scripts/probe-pipeline.ts [k] */
 import fs from "node:fs";
-import { VertexConfiguration } from "@/classes/algorithm/VertexConfiguration";
-import { SeedConfiguration } from "@/classes/algorithm/SeedConfiguration";
 import { PeriodSolver, type PeriodCell } from "@/classes/algorithm/PeriodSolver";
 import { TranslationalCellExtractor } from "@/classes/algorithm/TranslationalCellExtractor";
 import { dedupeByCongruence, dedupeByNKey } from "@/classes/algorithm/TilingCongruence";

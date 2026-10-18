@@ -20,11 +20,11 @@ export class StarPolygon extends Polygon {
 	}
 
 	calculateVerticesFromAnchorAndDir = (startsWith: StarVertexTypes = StarVertexTypes.OUTER) => {
-		let angles = [this.alpha, this.beta];
+		const angles = [this.alpha, this.beta];
 		if (startsWith === StarVertexTypes.INNER) angles.reverse();
 
 		this.vertices = [new Vector(this.anchor.x, this.anchor.y)];
-		let current_dir: Vector = this.dir.copy();
+		const current_dir: Vector = this.dir.copy();
 		for (let i = 1; i < this.n * 2; i++) {
 			const prev_vertex: Vector = this.vertices[this.vertices.length - 1];
 			this.vertices.push(Vector.add(prev_vertex.copy(), current_dir.copy()));

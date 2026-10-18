@@ -186,12 +186,7 @@ function tileRays(polyP: Complex[], center: Complex, theta: number, offsetFrac: 
  * (last covered crossing, else nearest forward crossing) and the loud no-partner warning are the flat
  * ones verbatim. Returns one [origin, endpoint] scaled-Klein segment per ray.
  */
-export function islamicSegmentsForTile(
-	polyP: Complex[],
-	theta: number,
-	offsetFrac = 0,
-	label = "tile",
-): [Complex, Complex][] {
+export function islamicSegmentsForTile(polyP: Complex[], theta: number, offsetFrac = 0): [Complex, Complex][] {
 	const center = hypBarycenter(polyP.map((p) => [p.x, p.y] as [number, number]));
 	const rays = tileRays(polyP, center, theta, offsetFrac);
 	const R = rays.length;
@@ -475,7 +470,7 @@ function tileSegments(
 	frac: number,
 ): { rays: [Complex, Complex][]; extra: [Complex, Complex][] } {
 	const n = shape.polyP.length;
-	const raw = islamicSegmentsForTile(shape.polyP, theta, frac, `${shape.real}-gon`);
+	const raw = islamicSegmentsForTile(shape.polyP, theta, frac);
 	return { rays: raw.slice(0, 2 * shape.real), extra: raw.slice(2 * n, 2 * n + shape.real) };
 }
 

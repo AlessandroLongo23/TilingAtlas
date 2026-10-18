@@ -16,9 +16,10 @@ let maxNum = 0n,
 	maxDen = 1n,
 	ops = 0n,
 	denGt1 = 0n;
-const sample = (c: any) => {
+const sample = (r: unknown) => {
+	const c = r as { num?: bigint[]; den: bigint } | null | undefined;
 	if (!c || !c.num) return;
-	for (const x of c.num as bigint[]) {
+	for (const x of c.num) {
 		const a = x < 0n ? -x : x;
 		if (a > maxNum) maxNum = a;
 	}
@@ -26,11 +27,11 @@ const sample = (c: any) => {
 	if (c.den > 1n) denGt1++;
 	ops++;
 };
-const proto = Cyclotomic.prototype as any;
+const proto = Cyclotomic.prototype as unknown as Record<string, (...args: unknown[]) => unknown>;
 for (const m of ["add", "sub", "neg", "mul", "mulZeta", "conj", "scaleRational", "normSquared"]) {
 	const orig = proto[m];
 	if (typeof orig !== "function") continue;
-	proto[m] = function (...args: any[]) {
+	proto[m] = function (this: Cyclotomic, ...args: unknown[]) {
 		const r = orig.apply(this, args);
 		sample(r);
 		return r;

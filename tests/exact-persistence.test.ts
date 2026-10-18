@@ -22,7 +22,7 @@ describe("exact persistence round-trips (no float drift)", () => {
 		const before = seed.polygons.map((p) => p.exactKey()).sort();
 
 		const compact = seed.encodeCompact(undefined, true);
-		const decoded = SeedConfiguration.decodeCompact(compact as any, undefined);
+		const decoded = SeedConfiguration.decodeCompact(compact, undefined);
 
 		const after = decoded.polygons.map((p) => p.exactKey()).sort();
 		expect(after).toEqual(before);

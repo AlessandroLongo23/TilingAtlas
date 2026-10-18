@@ -41,9 +41,6 @@ const on = (n: number, ...ids: number[]) => Array.from({ length: n }, (_, i) => 
 
 const dist = (a: Pt, b: Pt) => Math.hypot(a[0] - b[0], a[1] - b[1]);
 
-/** Walk a loop's vertices: its start plus every segment endpoint. */
-const points = (l: TileLoop): Pt[] => [l.start, ...l.segs.map((s) => s.to)];
-
 /** Sample a segment that starts at `from`. */
 const at = (from: Pt, s: Seg, t: number): Pt => {
 	if (s.kind === "line") return [from[0] + (s.to[0] - from[0]) * t, from[1] + (s.to[1] - from[1]) * t];
@@ -52,9 +49,6 @@ const at = (from: Pt, s: Seg, t: number): Pt => {
 	const ps = [from, s.c1, s.c2, s.to];
 	return [ps.reduce((a, p, i) => a + w[i] * p[0], 0), ps.reduce((a, p, i) => a + w[i] * p[1], 0)];
 };
-
-/** Every point on a tile's boundary loops, as one flat list. */
-const allPoints = (loops: TileLoop[]) => loops.flatMap(points);
 
 const ALL_WIRINGS: Wiring[] = ["ribbons", "junction", "caps"];
 

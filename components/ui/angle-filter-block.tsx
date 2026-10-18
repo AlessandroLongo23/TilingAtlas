@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useRef, useState, type ChangeEvent } from "react";
 import { Checkbox } from "./checkbox";
 
 interface AngleFilterBlockProps {
@@ -21,9 +21,12 @@ export function AngleFilterBlock({
 	const [inputValue, setInputValue] = useState<number | string>(angle);
 	const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-	useEffect(() => {
+	// Follow an angle changed from outside (adjusted during render).
+	const [prevAngle, setPrevAngle] = useState(angle);
+	if (prevAngle !== angle) {
+		setPrevAngle(angle);
 		if (angle !== Number(inputValue)) setInputValue(angle);
-	}, [angle]); // eslint-disable-line react-hooks/exhaustive-deps
+	}
 
 	const handleInput = (e: ChangeEvent<HTMLInputElement>) => {
 		const v = e.target.value;

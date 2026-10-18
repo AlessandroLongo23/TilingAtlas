@@ -69,11 +69,6 @@ for (const id of wanted) {
 	const m = sphereMapOf(p);
 	if (m.vertices - m.edges + m.faces !== 2) throw new Error(`${id}: V-E+F = ${m.vertices - m.edges + m.faces}`);
 	const aut = sphereAutomorphisms(m);
-	// vertexMap asserts the induced vertex permutation exists, for every automorphism it is asked for.
-	const rot = aut.filter((phi) => {
-		for (let d = 0; d < m.darts; d++) if (phi[m.next[d]] !== m.next[phi[d]]) return false;
-		return true;
-	});
 	const burnside = (g: Int32Array[]) => g.reduce((s, phi) => s + fixedDecorations(m, phi), 0n) / BigInt(g.length);
 	const all = burnside(aut);
 	total += all;

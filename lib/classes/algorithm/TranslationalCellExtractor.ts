@@ -70,7 +70,6 @@ export class TranslationalCellExtractor {
 	 */
 	canonicalPatchKey(polygons: Polygon[]): string {
 		if (polygons.length === 0) return "";
-		const N = polygons[0].exactVertices![0].ring.N;
 		// interior radius = half the patch extent from the origin (the core sits at the origin)
 		let maxMag = 0;
 		for (const p of polygons) maxMag = Math.max(maxMag, p.centroid.mag());

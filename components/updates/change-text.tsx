@@ -13,10 +13,8 @@ const BOLD = /\*\*([^*]+)\*\*/g;
 export function ChangeText({ text }: { text: string }) {
 	const parts: React.ReactNode[] = [];
 	let last = 0;
-	// A fresh lastIndex each call — the regex is module-level and /g is stateful.
-	BOLD.lastIndex = 0;
-	let m: RegExpExecArray | null;
-	while ((m = BOLD.exec(text)) !== null) {
+	// matchAll iterates a copy of the regex, so the module-level /g state is never touched.
+	for (const m of text.matchAll(BOLD)) {
 		if (m.index > last) parts.push(<Fragment key={parts.length}>{text.slice(last, m.index)}</Fragment>);
 		parts.push(
 			<strong key={parts.length} className="font-semibold text-fg">

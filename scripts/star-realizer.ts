@@ -212,7 +212,6 @@ type RealizeResult = {
 	note?: string;
 };
 
-const key = (z: Cyclotomic) => z.key();
 const dist = (z: Cyclotomic) => Math.hypot(z.toVector().x, z.toVector().y);
 
 /** Does the closed cyclic corner-sequence `seq` equal figure `fig` up to rotation + reflection? */
@@ -245,7 +244,6 @@ function orbitsPresent(tiles: Polygon[], orbits: string[], radius: number): bool
 		if (dist(z) > radius) continue;
 		const st = patch.vertexState(k);
 		if (!st || !st.closed) continue;
-		const seq = patch.cornersAt(k).map((c) => c.str);
 		// re-chain into cyclic order via startDir walk
 		const ordered = orderedCornerSeq(patch, k);
 		for (let i = 0; i < figs.length; i++) if (isCyclicMatch(ordered, figs[i])) present[i] = true;
@@ -271,19 +269,19 @@ function orderedCornerSeq(patch: Patch, k: string): string[] {
 
 /** Complete one vertex V: match its partial seq to a figure and seat the remaining corners. Tries each
  *  matching figure/orientation (DFS); mutates `patch` in place on success. Returns true if V closed. */
-function completeVertex(patch: Patch, Vk: string, Vz: Cyclotomic, figs: string[][], radius: number): boolean {
+function completeVertex(patch: Patch, Vk: string, Vz: Cyclotomic, figs: string[][], _radius: number): boolean {
 	const st = patch.vertexState(Vk);
 	if (!st) return false;
 	if (st.closed) return true;
 	let hi = st.hi;
-	let seq = st.seq.slice();
+	const seq = st.seq.slice();
 	// forced growth: repeatedly ask the figures for the next token; place it; stop at 2π.
 	let covered = st.covered;
 	const added: Polygon[] = [];
 	while (covered < 24) {
 		const cands = matchNext(seq, figs);
 		if (cands.length === 0) {
-			for (const t of added) patch.tiles.pop();
+			for (const _t of added) patch.tiles.pop();
 			return false;
 		} // dead end (can't roll back incidence cleanly → caller re-derives)
 		let placed = false;
@@ -346,7 +344,6 @@ function realize(fig: string, orbits: string[], radius = 3.2): RealizeResult {
 	// GROW: BFS-complete incomplete vertices nearest the origin until the target radius is covered.
 	const cap = 2000;
 	for (let iter = 0; iter < cap; iter++) {
-		const front = patch.frontierVertices().map((k) => ({ k, z: null as unknown as Cyclotomic }));
 		// resolve vertex points (recover a Cyclotomic per key from an incident tile)
 		const zByKey = new Map<string, Cyclotomic>();
 		for (const t of patch.tiles) for (const v of t.exactVertices!) if (!zByKey.has(v.key())) zByKey.set(v.key(), v);

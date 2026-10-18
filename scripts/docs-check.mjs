@@ -25,7 +25,6 @@ const tty = process.stdout.isTTY;
 const red = (s) => (tty ? `\x1b[31m${s}\x1b[0m` : s);
 const yel = (s) => (tty ? `\x1b[33m${s}\x1b[0m` : s);
 const grn = (s) => (tty ? `\x1b[32m${s}\x1b[0m` : s);
-const dim = (s) => (tty ? `\x1b[2m${s}\x1b[0m` : s);
 
 let errors = 0,
 	warns = 0;

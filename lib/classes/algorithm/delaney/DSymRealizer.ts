@@ -24,7 +24,7 @@ import { Cyclotomic, type CyclotomicRing } from "../../Cyclotomic";
 import type { Polygon } from "../../polygons/Polygon";
 import { RegularPolygon } from "../../polygons/RegularPolygon";
 import type { PeriodCell } from "../PeriodSolver";
-import { DSymbol, vertexOrbits, cycleLengthIJ } from "./DSymbol";
+import { DSymbol, vertexOrbits } from "./DSymbol";
 
 // ---------------------------------------------------------------------------
 // Step 1 — the angle gate (pure rational; REJECT names its component)
@@ -231,14 +231,6 @@ function isoBetween(base: Placement, target: Placement, N: number): Iso {
 	return g;
 }
 
-/** Rational 8-vector with a shared denominator (the coefficient space of ℚ(ζ_N)). */
-interface QVec {
-	num: bigint[];
-	den: bigint;
-}
-
-const qvecOf = (z: Cyclotomic): QVec => ({ num: z.num.slice(), den: z.den });
-
 function floorDiv(p: bigint, q: bigint): bigint {
 	// exact floor of p/q for q > 0
 	if (q < 0n) {
@@ -299,7 +291,7 @@ function bigAbsLt(a: bigint, b: bigint): boolean {
 function cosetKey(z: Cyclotomic, H: bigint[][], pivots: number[], dB: bigint): string {
 	// y = dB·z as a QVec
 	let num = z.num.map((c) => c * dB);
-	let den = z.den;
+	const den = z.den;
 	for (let r = 0; r < H.length; r++) {
 		const j = pivots[r];
 		// a = floor( (num[j]/den) / H[r][j] )

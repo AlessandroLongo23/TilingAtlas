@@ -17,7 +17,6 @@ import * as THREE from "three";
 import { tileHueRgb01 } from "@/lib/render/tilePalette";
 import { applyEdgeOcclusion, markEdgeOverlay, type EdgeOcclusionUniforms } from "./edgeOcclusion";
 import type { Crease } from "./sphStar";
-import { polygonHue } from "@/lib/utils/renderTiling";
 
 type V3 = [number, number, number];
 

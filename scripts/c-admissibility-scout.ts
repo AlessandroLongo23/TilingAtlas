@@ -21,6 +21,7 @@
  */
 import * as fs from "node:fs";
 import { PeriodSolver, defaultMaxCellPolys, applySeedMapInv } from "@/classes/algorithm/PeriodSolver";
+import type { PeriodSolverDiag } from "@/classes/algorithm/PeriodSolver";
 import { KUniformityChecker } from "@/classes/algorithm/KUniformityChecker";
 import { holohedry, areaKey, latticeKey } from "@/classes/algorithm/LatticeEnumerator";
 import { detSurd, tileAreaSurd, Surd } from "@/classes/algorithm/exact/Surd";
@@ -36,6 +37,15 @@ import {
 import { computeRing } from "@/classes/algorithm/PolygonsGenerator";
 import { setActiveRing, Cyclotomic, CyclotomicRing } from "@/classes/Cyclotomic";
 import type { Polygon } from "@/classes/polygons/Polygon";
+
+// The private PeriodSolver methods this scout mirrors (indexed access types reach private members).
+type PS = {
+	candidateLattices: PeriodSolver["candidateLattices"];
+	vcNameAt: PeriodSolver["vcNameAt"];
+	makeCtx: PeriodSolver["makeCtx"];
+	footprintArea: PeriodSolver["footprintArea"];
+	torusFill: PeriodSolver["torusFill"];
+};
 
 const k = 3;
 const ns = [3, 4, 6, 12];
@@ -162,7 +172,7 @@ const t0all = Date.now();
 for (let si = 0; si < picked.length; si++) {
 	const seed = firstByName.get(picked[si])!;
 	const solver = new PeriodSolver(k);
-	const S = solver as any;
+	const S = solver as unknown as PS;
 	log(`\n## Seed ${si + 1}/${picked.length}: ${seed.name}`);
 
 	if (seed.polygons.some((p: Polygon) => p.isStar)) {
@@ -243,7 +253,7 @@ for (let si = 0; si < picked.length; si++) {
 		const ctx = S.makeCtx(u, v, ring, allowed, polySizes, maxCellPolys, [], cl.allKeys, cl.areaKeys);
 		if (!ctx) continue;
 		ctx.gate = (r: Polygon[]) => checker.countVertexOrbits(r, u, v); // k=3 early gate, as solve()
-		const diag: Record<string, unknown> = {
+		const diag = {
 			candidateLattices: 0,
 			latticesTried: 0,
 			rawCells: 0,
@@ -265,7 +275,7 @@ for (let si = 0; si < picked.length; si++) {
 			starLadderTruncated: false,
 			blockIndexCapTruncated: 0,
 			timedOut: false,
-		};
+		} as PeriodSolverDiag;
 		const seedCores: Polygon[][] = [];
 		for (const m of seedMaps) {
 			const core = applySeedMapInv(corePolys, m, ring, ZERO);
@@ -291,7 +301,7 @@ for (let si = 0; si < picked.length; si++) {
 			const lk2 = latticeKey(basis[0], basis[1]);
 			perLatticeSolve.set(lk2, (perLatticeSolve.get(lk2) ?? 0) + 1);
 		},
-	} as any);
+	});
 	for (const r of rows) r.solveRaw = perLatticeSolve.get(r.lk) ?? 0;
 
 	// report

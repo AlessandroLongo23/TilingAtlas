@@ -573,30 +573,30 @@ export class Tiling {
 	};
 
 	drawConstructionPoints = (ctx: P5): void => {
-		let uniqueCentroids: Vector[] = [];
-		for (let anchorNode of this.anchorNodes)
+		const uniqueCentroids: Vector[] = [];
+		for (const anchorNode of this.anchorNodes)
 			if (!uniqueCentroids.some((c) => isWithinTolerance(c, anchorNode.centroid)))
 				uniqueCentroids.push(anchorNode.centroid);
 		let uniqueCentroidsSorted = sortPointsByAngleAndDistance(uniqueCentroids);
 		uniqueCentroidsSorted = uniqueCentroidsSorted.filter((centroid) => !isWithinTolerance(centroid, new Vector()));
 
-		let uniqueHalfways: Vector[] = [];
-		for (let anchorNode of this.anchorNodes)
-			for (let halfway of anchorNode.halfways)
+		const uniqueHalfways: Vector[] = [];
+		for (const anchorNode of this.anchorNodes)
+			for (const halfway of anchorNode.halfways)
 				if (!uniqueHalfways.some((h) => isWithinTolerance(h, halfway))) uniqueHalfways.push(halfway);
-		let uniqueHalfwaysSorted = sortPointsByAngleAndDistance(uniqueHalfways);
+		const uniqueHalfwaysSorted = sortPointsByAngleAndDistance(uniqueHalfways);
 
-		let uniqueVertices: Vector[] = [];
-		for (let anchorNode of this.anchorNodes)
-			for (let vertex of anchorNode.vertices)
+		const uniqueVertices: Vector[] = [];
+		for (const anchorNode of this.anchorNodes)
+			for (const vertex of anchorNode.vertices)
 				if (!uniqueVertices.some((v) => isWithinTolerance(v, vertex))) uniqueVertices.push(vertex);
-		let uniqueVerticesSorted = sortPointsByAngleAndDistance(uniqueVertices);
+		const uniqueVerticesSorted = sortPointsByAngleAndDistance(uniqueVertices);
 
-		let offset = new Vector(
+		const offset = new Vector(
 			6 / useConfiguration.getState().controls.zoom,
 			0 / useConfiguration.getState().controls.zoom,
 		);
-		let pointSize = 6 / useConfiguration.getState().controls.zoom;
+		const pointSize = 6 / useConfiguration.getState().controls.zoom;
 
 		ctx.scale(1, -1);
 		ctx.textSize(18 / useConfiguration.getState().controls.zoom);
@@ -605,22 +605,22 @@ export class Tiling {
 
 		ctx.strokeWeight(1 / useConfiguration.getState().controls.zoom);
 
-		for (let i in uniqueCentroidsSorted)
+		for (const i in uniqueCentroidsSorted)
 			ctx.ellipse(uniqueCentroidsSorted[i].x, -uniqueCentroidsSorted[i].y, pointSize);
 
-		for (let i in uniqueHalfwaysSorted) ctx.ellipse(uniqueHalfwaysSorted[i].x, -uniqueHalfwaysSorted[i].y, pointSize);
+		for (const i in uniqueHalfwaysSorted) ctx.ellipse(uniqueHalfwaysSorted[i].x, -uniqueHalfwaysSorted[i].y, pointSize);
 
-		for (let i in uniqueVerticesSorted) ctx.ellipse(uniqueVerticesSorted[i].x, -uniqueVerticesSorted[i].y, pointSize);
+		for (const i in uniqueVerticesSorted) ctx.ellipse(uniqueVerticesSorted[i].x, -uniqueVerticesSorted[i].y, pointSize);
 
 		ctx.strokeWeight(3 / useConfiguration.getState().controls.zoom);
 
-		for (let i in uniqueCentroidsSorted)
+		for (const i in uniqueCentroidsSorted)
 			ctx.text("c" + (i + 1), uniqueCentroidsSorted[i].x + offset.x, -uniqueCentroidsSorted[i].y + offset.y);
 
-		for (let i in uniqueHalfwaysSorted)
+		for (const i in uniqueHalfwaysSorted)
 			ctx.text("h" + (i + 1), uniqueHalfwaysSorted[i].x + offset.x, -uniqueHalfwaysSorted[i].y + offset.y);
 
-		for (let i in uniqueVerticesSorted)
+		for (const i in uniqueVerticesSorted)
 			ctx.text("v" + (i + 1), uniqueVerticesSorted[i].x + offset.x, -uniqueVerticesSorted[i].y + offset.y);
 
 		const showDualConnectionsValue = useConfiguration.getState().showDualConnections;
@@ -758,7 +758,7 @@ export class Tiling {
 	};
 
 	rotate = (origin: Vector, angle: number): void => {
-		for (let node of this.nodes) {
+		for (const node of this.nodes) {
 			node.rotate(origin, angle);
 		}
 	};
@@ -770,7 +770,7 @@ export class Tiling {
 	};
 
 	reflect = (axis: Vector, point: Vector): void => {
-		for (let node of this.nodes) {
+		for (const node of this.nodes) {
 			node.mirror(point, axis);
 		}
 	};
@@ -782,7 +782,7 @@ export class Tiling {
 	};
 
 	translate = (vector: Vector): void => {
-		for (let node of this.nodes) {
+		for (const node of this.nodes) {
 			node.translate(vector);
 		}
 	};
@@ -841,11 +841,11 @@ export class Tiling {
 		const mouseWorldY = (-ctx.mouseY + ctx.height / 2) / useConfiguration.getState().controls.zoom;
 		const mousePoint = new Vector(mouseWorldX, mouseWorldY);
 
-		for (let node of this.nodes) {
+		for (const node of this.nodes) {
 			if (node.containsPoint(mousePoint)) {
 				node.show(ctx, showPolygonPoints, 0);
 
-				for (let neighbor of node.neighbors) {
+				for (const neighbor of node.neighbors) {
 					neighbor.show(ctx, showPolygonPoints, 240, 0.5);
 					ctx.line(node.centroid.x, node.centroid.y, neighbor.centroid.x, neighbor.centroid.y);
 					ctx.ellipse(neighbor.centroid.x, neighbor.centroid.y, 1 / 5, 1 / 5);

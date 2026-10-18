@@ -6,7 +6,9 @@ import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
 
 const recs = (() => {
-	return decodeAtlas<any>(JSON.parse(fs.readFileSync("public/reference-atlas-scaled.json", "utf8")));
+	return decodeAtlas<{ renderCell: unknown }>(
+		JSON.parse(fs.readFileSync("public/reference-atlas-scaled.json", "utf8")),
+	);
 })();
 
 describe("the scaled shelf, read as Truchet", () => {

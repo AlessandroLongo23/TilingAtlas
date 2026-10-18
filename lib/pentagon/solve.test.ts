@@ -125,11 +125,9 @@ describe.each(PENTAGON_TYPES)("$label", (t) => {
 		// bounds from this measurement, so the assertion is that MOST of the range works, not all of it.
 		if (t.angleParams.length === 0) return;
 		let ok = 0;
-		let total = 0;
 		t.angleParams.forEach((p, i) => {
 			for (let v = p.min; v <= p.max; v += (p.max - p.min) / 20) {
 				const free = t.angleParams.map((q, j) => (j === i ? v : q.def));
-				total++;
 				if (solvePentagon(t, free).ok) ok++;
 			}
 		});

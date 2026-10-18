@@ -112,7 +112,7 @@ describe("CyclotomicRing / Cyclotomic — N=24", () => {
 		};
 		const square = verts(0);
 		// closes back to start
-		let p = square[3].add(zeta(0 + 18));
+		const p = square[3].add(zeta(0 + 18));
 		expect(p.equals(square[0])).toBe(true);
 
 		const squareKey = (vs: Cyclotomic[]) =>

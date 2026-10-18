@@ -1,17 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { fillAmountToSatPct } from "@/lib/render/tilePalette";
 import { resolveDeform, useConfiguration } from "@/stores/configuration";
 import { buildCellMesh } from "@/lib/render/buildCellMesh";
-import {
-	IDENTITY_DEFORM,
-	computeFillGrid,
-	fillGridInstances,
-	wrapOffset,
-	type LatticeExtent,
-	type Mat2,
-} from "@/lib/render/flatView";
+import { computeFillGrid, fillGridInstances, wrapOffset, type LatticeExtent } from "@/lib/render/flatView";
 import { compileShader } from "@/lib/render/flatTilingGL";
 import { syncCanvasSize } from "@/lib/render/canvasSize";
 import { captureOverride, offerFrame } from "@/lib/render/capture";
@@ -90,9 +83,11 @@ export function IslamicCanvas({ translationalCell, translationalCellId, paramCel
 	const meshRef = useRef<IslamicMesh | null>(null);
 
 	const cellRef = useRef<FlatCellData | null>(translationalCell);
-	cellRef.current = translationalCell;
 	const paramCellRef = useRef(paramCell);
-	paramCellRef.current = paramCell;
+	useLayoutEffect(() => {
+		cellRef.current = translationalCell;
+		paramCellRef.current = paramCell;
+	}, [translationalCell, paramCell]);
 	// Parametric family only: the cell evaluated at the current slider tuple, and the tuple's signature.
 	// Everything downstream (basis, patch, mesh) is derived from this, not the base cell.
 	const liveCellRef = useRef<FlatCellData | null>(null);
@@ -458,7 +453,6 @@ export function IslamicCanvas({ translationalCell, translationalCellId, paramCel
 			strokeProgRef.current = null;
 			meshRef.current = null;
 		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
 	return (

@@ -555,6 +555,7 @@ export function useFlatCellPreview({
 			host.removeEventListener("wheel", onWheel);
 			teardown();
 		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- mount-once WebGL/observer setup; resolveHomeZoom reads only refs
 	}, []);
 
 	// New cell (props change) → rebuild controls + mesh on the next frame with a fresh home zoom.

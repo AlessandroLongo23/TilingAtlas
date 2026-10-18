@@ -5,11 +5,12 @@ import { polyArea } from "../../scripts/moduli-graph/geometry";
 import { flattenKey } from "../../scripts/moduli-graph/flattenKey";
 import type { FloatTiling } from "../../scripts/moduli-graph/types";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
+import type { ParametricCellData } from "@/lib/utils/paramCell";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- these tests cast per-site below
-const atlas = decodeAtlas<any>(JSON.parse(readFileSync("public/reference-atlas-isotoxal.json", "utf8")));
-const recs = atlas as { id: string; paramCell: any }[];
-const pc = (id: string) => recs.find((r) => r.id === id)!.paramCell;
+const atlas = decodeAtlas<{ id: string; paramCell: ParametricCellData }>(
+	JSON.parse(readFileSync("public/reference-atlas-isotoxal.json", "utf8")),
+);
+const pc = (id: string) => atlas.find((r) => r.id === id)!.paramCell;
 
 const limit = (id: string, which: "lo" | "hi"): FloatTiling => {
 	const p = pc(id);

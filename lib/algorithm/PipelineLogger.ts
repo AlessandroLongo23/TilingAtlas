@@ -56,7 +56,7 @@ export class PipelineLogger {
 		process.stdout.write(msg + "\n");
 	}
 
-	clearLine(width = 80, lines = 1): void {
+	clearLine(_width = 80, lines = 1): void {
 		this.progressStartTime = null;
 		this.progressLastTotal = null;
 		this.lastProgressWasNested = false;

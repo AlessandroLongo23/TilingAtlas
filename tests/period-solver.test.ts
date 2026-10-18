@@ -241,7 +241,7 @@ describe("OP-1 prop:typeprune prep", () => {
 		const coreVertices = seed.vertexConfigurations.map((vc) => vc.computeSharedVertexExact());
 		const allowed = new Set<string>(
 			coreVertices.map((cv) =>
-				(solver as any).vcNameAt(
+				solver["vcNameAt"](
 					cv,
 					corePolys.filter((p) => p.vertexKeySet().has(cv.key())),
 				),
@@ -251,16 +251,16 @@ describe("OP-1 prop:typeprune prep", () => {
 			(a: number, b: number) => a - b,
 		);
 
-		const ctx = (solver as any).makeCtx(u, v, ring, allowed, polySizes, Number.MAX_SAFE_INTEGER);
+		const ctx = solver["makeCtx"](u, v, ring, allowed, polySizes, Number.MAX_SAFE_INTEGER);
 		expect(ctx).not.toBeNull();
 
 		// First call WITHOUT the out-param — must still return true (zero behavior change).
-		const withoutOut = solver.isCompleteTiling(cell.cellPolygons, ctx);
+		const withoutOut = solver.isCompleteTiling(cell.cellPolygons, ctx!);
 		expect(withoutOut).toBe(true);
 
 		// Second call WITH the out-param — must collect the full occurring VC-name set.
 		const occ = new Set<string>();
-		const withOut = solver.isCompleteTiling(cell.cellPolygons, ctx, occ);
+		const withOut = solver.isCompleteTiling(cell.cellPolygons, ctx!, occ);
 		expect(withOut).toBe(true);
 		// At k=1 every VC type that is allowed must occur (occurring = allowed for this fixture).
 		expect([...occ].sort()).toEqual([...allowed].sort());
@@ -415,7 +415,7 @@ describe("OP-3 stage 1 — oblique grid-orbit candidate reduction (lem:orbitdedu
 				VertexConfiguration.fromName("3,3,3,4,4"),
 			]);
 			const solver = new PeriodSolver(3);
-			const { lattices, orbitSkipped } = (solver as any).candidateLattices(seed) as {
+			const { lattices, orbitSkipped } = solver["candidateLattices"](seed) as {
 				lattices: {
 					basis: [InstanceType<typeof Cyclotomic>, InstanceType<typeof Cyclotomic>];
 					seedMaps: { rot: number; refl: boolean }[];
@@ -461,7 +461,7 @@ describe("OP-3 stage 1 — oblique grid-orbit candidate reduction (lem:orbitdedu
 			_testOnlyClearCandidateStageCaches();
 			const seed = new SeedConfiguration([VertexConfiguration.fromName("3,6,3,6")]);
 			const solver = new PeriodSolver(1);
-			const { lattices, orbitSkipped } = (solver as any).candidateLattices(seed) as {
+			const { lattices, orbitSkipped } = solver["candidateLattices"](seed) as {
 				lattices: { seedMaps: { rot: number; refl: boolean }[] }[];
 				orbitSkipped: number;
 			};

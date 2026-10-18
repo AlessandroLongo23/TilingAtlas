@@ -174,12 +174,11 @@ export class AlgorithmTilingGenerator {
 			const baseName = `seedConfigurations_${String(batchIndex).padStart(4, "0")}`;
 			const gzPath = `${folder}/${baseName}.json.gz`;
 			const jsonPath = `${folder}/${baseName}.json`;
-			let batch: (CompactSeedConfiguration | FullSeedConfiguration)[];
 			if (fs.existsSync(gzPath)) {
 				// zlib is Node-only; when .gz exists, caller must pass pre-loaded configs via generateTilings(,,, seedConfigs)
 				throw new Error("Compressed .json.gz batches require pre-loading. Use pipeline or pass seedConfigs.");
 			}
-			batch = JSON.parse(fs.readFileSync(jsonPath, "utf8"));
+			const batch: (CompactSeedConfiguration | FullSeedConfiguration)[] = JSON.parse(fs.readFileSync(jsonPath, "utf8"));
 			configs.push(...batch);
 		}
 

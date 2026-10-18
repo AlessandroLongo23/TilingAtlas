@@ -315,14 +315,14 @@ export function CompatGraph({ cells, overlayData }: CompatGraphProps) {
 	// The simulation state lives in a ref, and only the positions are copied into React state once a
 	// frame: it is one object mutated in place, exactly as VCNode was, and re-creating fifteen of them
 	// sixty times a second to satisfy immutability would be the tail wagging the dog.
-	const sim = useRef<Node[] | null>(null);
-	if (sim.current === null) {
+	const [init] = useState(() => {
 		const nodes = seed();
 		for (let i = 0; i < MAX_SETTLE_STEPS && step(nodes, edges) > ASLEEP; i++);
-		sim.current = nodes;
-	}
-	const view = useRef<Fit>(fitTransform(sim.current!));
-	const [positions, setPositions] = useState(() => placed(sim.current!, view.current));
+		return { nodes, fit: fitTransform(nodes) };
+	});
+	const sim = useRef<Node[]>(init.nodes);
+	const view = useRef<Fit>(init.fit);
+	const [positions, setPositions] = useState(() => placed(init.nodes, init.fit));
 	const [focus, setFocus] = useState<string | null>(null);
 	const [dragging, setDragging] = useState<number | null>(null);
 	/** Whether the pointer is anywhere over the graph, which is not the same as being over a node. */
@@ -338,7 +338,7 @@ export function CompatGraph({ cells, overlayData }: CompatGraphProps) {
 		let raf = 0;
 		const frame = () => {
 			if (running.current) {
-				const energy = step(sim.current!, edges);
+				const energy = step(sim.current, edges);
 				if (energy < ASLEEP) {
 					running.current = false;
 					// The fit was taken from the layout as it stood after the settle loop, and that loop
@@ -350,10 +350,10 @@ export function CompatGraph({ cells, overlayData }: CompatGraphProps) {
 					// mapping exists to avoid.
 					if (!refitted.current) {
 						refitted.current = true;
-						view.current = fitTransform(sim.current!);
+						view.current = fitTransform(sim.current);
 					}
 				}
-				setPositions(placed(sim.current!, view.current));
+				setPositions(placed(sim.current, view.current));
 			}
 			raf = requestAnimationFrame(frame);
 		};
@@ -392,7 +392,7 @@ export function CompatGraph({ cells, overlayData }: CompatGraphProps) {
 	const onMove = (e: React.PointerEvent) => {
 		if (dragging === null) return;
 		const [x, y] = toWorld(e);
-		const n = sim.current![dragging];
+		const n = sim.current[dragging];
 		n.x = x + grab.current[0];
 		n.y = y + grab.current[1];
 		wake();
@@ -400,7 +400,7 @@ export function CompatGraph({ cells, overlayData }: CompatGraphProps) {
 
 	const release = () => {
 		if (dragging === null) return;
-		sim.current![dragging].pinned = false;
+		sim.current[dragging].pinned = false;
 		setDragging(null);
 		wake();
 	};
@@ -417,7 +417,7 @@ export function CompatGraph({ cells, overlayData }: CompatGraphProps) {
 		// Never the same one twice: pressing R and watching nothing happen reads as a broken button.
 		setHoverOrbit(-1);
 		setShown((s) => (s + 1 + Math.floor(Math.random() * (pool.length - 1))) % pool.length);
-	}, [pool.length]);
+	}, [pool.length, setHoverOrbit]);
 	const tiling = pool.length ? pool[shown % pool.length] : null;
 
 	// R for another tiling. Bound while this slide is mounted and nowhere else, so it costs the deck
@@ -542,7 +542,7 @@ export function CompatGraph({ cells, overlayData }: CompatGraphProps) {
 							onPointerDown={(e) => {
 								(e.target as Element).releasePointerCapture?.(e.pointerId);
 								const [px, py] = toWorld(e);
-								const n = sim.current![i];
+								const n = sim.current[i];
 								grab.current = [n.x - px, n.y - py];
 								n.pinned = true;
 								setDragging(i);

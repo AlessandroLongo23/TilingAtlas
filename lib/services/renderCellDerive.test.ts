@@ -11,6 +11,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { CyclotomicRing, setActiveRing } from "@/classes/Cyclotomic";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
+import type { ExactCellSource } from "@/lib/services/cellCodecService";
+import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import {
 	hydrateRenderCells,
 	renderCellFromExactSource,
@@ -22,7 +24,8 @@ const ATLAS = path.join(process.cwd(), "public", "reference-atlas.json");
 const ring = CyclotomicRing.create(24);
 setActiveRing(ring);
 
-const records: any[] = fs.existsSync(ATLAS) ? decodeAtlas(JSON.parse(fs.readFileSync(ATLAS, "utf8"))) : [];
+type Rec = { id: string; renderCell?: TranslationalCellData; exactSource?: ExactCellSource };
+const records: Rec[] = fs.existsSync(ATLAS) ? decodeAtlas<Rec>(JSON.parse(fs.readFileSync(ATLAS, "utf8"))) : [];
 
 describe.skipIf(!records.length)("renderCell derivation over the shipped atlas", () => {
 	it("ships most of the atlas with no renderCell at all", () => {
@@ -45,7 +48,7 @@ describe.skipIf(!records.length)("renderCell derivation over the shipped atlas",
 					return null;
 				}
 			})();
-			expect(d === null || !reproducesRenderCell(t.renderCell, d as CellShape)).toBe(true);
+			expect(d === null || !reproducesRenderCell(t.renderCell as CellShape, d as CellShape)).toBe(true);
 		}
 	});
 
@@ -53,11 +56,11 @@ describe.skipIf(!records.length)("renderCell derivation over the shipped atlas",
 		const stripped = records.filter((t) => t.renderCell === undefined).slice(0, 40);
 		hydrateRenderCells(stripped);
 		for (const t of stripped) {
-			const cell = t.renderCell; // exactly what all 72 consumers do
+			const cell = t.renderCell as Required<CellShape> | undefined; // exactly what all 72 consumers do
 			expect(cell).toBeTruthy();
-			expect(cell.cellPolygons.length).toBeGreaterThan(0);
-			expect(cell.basis).toHaveLength(2);
-			for (const p of cell.cellPolygons) expect(p.vertices.length).toBeGreaterThanOrEqual(3);
+			expect(cell!.cellPolygons.length).toBeGreaterThan(0);
+			expect(cell!.basis).toHaveLength(2);
+			for (const p of cell!.cellPolygons) expect(p.vertices.length).toBeGreaterThanOrEqual(3);
 		}
 	});
 

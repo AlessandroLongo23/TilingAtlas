@@ -73,6 +73,18 @@ export interface CompactSeedConfigurationShort {
 	v: ({ i: number; p: CompactPos; r: number } | { n: string; p: CompactPos; r: number })[];
 }
 
+/** One VC entry of either compact format, read loosely: on-disk JSON may use long or short keys. */
+type CompactVCEntry = {
+	i?: number;
+	vcId?: number;
+	n?: string;
+	name?: string;
+	p?: CompactPos;
+	pos?: CompactPos;
+	r?: number;
+	rot?: number;
+};
+
 export interface FullSeedConfiguration {
 	name: string;
 	vcsCenters: { x: number; y: number }[];
@@ -132,7 +144,7 @@ export class SeedConfiguration {
 	 * Mutates the seed configuration in place.
 	 */
 	rotate = (origin: Vector, angle: number): void => {
-		for (let vc of this.vertexConfigurations) {
+		for (const vc of this.vertexConfigurations) {
 			vc.rotate(origin, angle);
 		}
 	};
@@ -150,7 +162,7 @@ export class SeedConfiguration {
 	 * Mutates the seed configuration in place.
 	 */
 	translate = (vector: Vector): void => {
-		for (let vc of this.vertexConfigurations) {
+		for (const vc of this.vertexConfigurations) {
 			vc.translate(vector);
 		}
 	};
@@ -168,7 +180,7 @@ export class SeedConfiguration {
 	 * Mutates the seed configuration in place.
 	 */
 	mirror = (point: Vector, dir: Vector): void => {
-		for (let vc of this.vertexConfigurations) {
+		for (const vc of this.vertexConfigurations) {
 			vc.mirror(point, dir);
 		}
 	};
@@ -188,7 +200,7 @@ export class SeedConfiguration {
 	 * Mutates the seed configuration in place.
 	 */
 	glide = (point: Vector, dir: Vector, delta: number): void => {
-		for (let vc of this.vertexConfigurations) {
+		for (const vc of this.vertexConfigurations) {
 			vc.glide(point, dir, delta);
 		}
 	};
@@ -339,7 +351,7 @@ export class SeedConfiguration {
 		vcLibrary?: string[],
 	): SeedConfiguration => {
 		const arr = "v" in data ? data.v : data.vcs;
-		const vcs: VertexConfiguration[] = arr.map((c: any) => {
+		const vcs: VertexConfiguration[] = arr.map((c: CompactVCEntry) => {
 			const name =
 				("i" in c || "vcId" in c) && vcLibrary
 					? vcLibrary[("i" in c ? c.i : c.vcId) as number]
@@ -353,8 +365,9 @@ export class SeedConfiguration {
 				vc.rotateZeta(Cyclotomic.ZERO(ring), rot as number);
 				vc.translateExact(Cyclotomic.decode(ring, pos as { n: string[]; d: string }));
 			} else {
-				vc.rotate(new Vector(0, 0), rot);
-				vc.translate(new Vector(pos[0], pos[1]));
+				const xy = pos as [number, number];
+				vc.rotate(new Vector(0, 0), rot as number);
+				vc.translate(new Vector(xy[0], xy[1]));
 			}
 			return vc;
 		});

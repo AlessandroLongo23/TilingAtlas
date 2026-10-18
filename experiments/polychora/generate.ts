@@ -138,7 +138,10 @@ specs.forEach((spec, i) => {
 	const radii = g.vertices.map((p) => Math.hypot(...p));
 	const R = Math.min(...radii);
 	const degree = new Int32Array(f[0]);
-	for (const [a, b] of g.edges) (degree[a]++, degree[b]++);
+	for (const [a, b] of g.edges) {
+		degree[a]++;
+		degree[b]++;
+	}
 	const kinds = cellKinds(g);
 	const checks: string[] = [];
 	const check = (label: string, ok: boolean) => checks.push(`${label} ${ok ? "ok" : "FAIL"}`);

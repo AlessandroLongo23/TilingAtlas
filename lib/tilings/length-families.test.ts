@@ -77,24 +77,21 @@ function assertTiles(cell: ReturnType<typeof evaluateParamCell>, label: string) 
 
 describe("parametric edge-length families", () => {
 	it("the rectangle grid tiles across its whole slider box", () => {
-		for (const A of [0.3, 0.7, 1, 1.9, 2.8])
-			for (const B of [0.25, 1, 2.5]) assertTiles(evaluateParamCell(RECT_GRID, [B]), `rect (width 1) B=${B}`);
+		for (const B of [0.25, 1, 2.5]) assertTiles(evaluateParamCell(RECT_GRID, [B]), `rect (width 1) B=${B}`);
 	});
 
 	it("the two-square tiling tiles for every size ratio, not just the default", () => {
-		for (const A of [0.5, 1, 1.7, 2.6])
-			for (const B of [0.25, 0.55, 1, 2.2])
-				assertTiles(evaluateParamCell(PYTHAGOREAN, [B]), `pythagorean (A = 1) B=${B}`);
+		for (const B of [0.25, 0.55, 1, 2.2])
+			assertTiles(evaluateParamCell(PYTHAGOREAN, [B]), `pythagorean (A = 1) B=${B}`);
 	});
 
 	it("the equiangular hexagon tiles for every (A, B, C), not just the regular member", () => {
 		// The claim the closure argument makes is that EVERY positive triple works, because opposite
 		// edge directions cancel identically. Swept on all three axes independently, including the
 		// strongly skewed corners of the box.
-		for (const A of [0.15, 1, 2.6])
-			for (const B of [0.15, 1, 2.6])
-				for (const C of [0.15, 1, 2.6])
-					assertTiles(evaluateParamCell(EQUIANGULAR_HEX, [B, C]), `hex (A = 1) B=${B} C=${C}`);
+		for (const B of [0.15, 1, 2.6])
+			for (const C of [0.15, 1, 2.6])
+				assertTiles(evaluateParamCell(EQUIANGULAR_HEX, [B, C]), `hex (A = 1) B=${B} C=${C}`);
 	});
 
 	it("the hexagon is regular exactly at B = C = 1, the unit side", () => {

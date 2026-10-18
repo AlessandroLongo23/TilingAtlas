@@ -96,7 +96,6 @@ export const BUBBLE_POLY_SUBS = new Set(["bub-rhombus"]);
 import {
 	hypEdgesBaseLabel,
 	hypEdgesFamilyLabel,
-	hypEdgesLazyShardsForK,
 	hypEdgesSub,
 	HYP_EDGES_BASES,
 	type HypEdgesPattern,

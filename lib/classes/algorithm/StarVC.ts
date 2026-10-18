@@ -23,7 +23,6 @@ import { exactPolygonsOverlap } from "./exact/exactOverlap";
 
 export const STAR_NS = [3, 4, 6, 8, 12] as const;
 const FULL_TURN_U = 24;
-const STRAIGHT_U = 12;
 
 /** Interior angle of a regular n-gon in π/12 units = (n−2)·12/n (integer for n | 24). */
 export function regInteriorU(n: number): number {

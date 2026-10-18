@@ -521,27 +521,26 @@ class MixedPatch {
 	 */
 	private *fillGap(V: Cyclotomic, vkey: string, start: number, len: number): Generator<Placed[]> {
 		const acc: Placed[] = [];
-		const self = this;
-		function* rec(dir: number, rem: number, lastKind: string): Generator<Placed[]> {
-			if (self.nodes > NODE_CAP) return;
+		function* rec(this: MixedPatch, dir: number, rem: number, lastKind: string): Generator<Placed[]> {
+			if (this.nodes > NODE_CAP) return;
 			if (rem === 0) {
 				const touched = new Set<string>();
 				for (const t of acc) for (const c of t.corners) touched.add(c.key);
-				if (!self.deadEnd(touched)) yield acc.slice();
+				if (!this.deadEnd(touched)) yield acc.slice();
 				return;
 			}
-			for (const c of self.order(rem, lastKind)) {
-				self.nodes++;
-				const t = self.make(c, V, vkey, dir);
-				if (!self.fits(t)) continue;
-				const edits = self.commit(t);
+			for (const c of this.order(rem, lastKind)) {
+				this.nodes++;
+				const t = this.make(c, V, vkey, dir);
+				if (!this.fits(t)) continue;
+				const edits = this.commit(t);
 				acc.push(t);
-				yield* rec((dir + c.width) % N, rem - c.width, c.kind);
+				yield* rec.call(this, (dir + c.width) % N, rem - c.width, c.kind);
 				acc.pop();
-				self.uncommit([t], edits);
+				this.uncommit([t], edits);
 			}
 		}
-		yield* rec(start, len, "none");
+		yield* rec.call(this, start, len, "none");
 	}
 
 	/** Next vertex to collapse: NARROWEST gap anywhere in the disk, ties broken by distance to the origin.

@@ -177,6 +177,7 @@ export function SphericalCanvas({
 		} catch (e) {
 			console.warn("SphericalCanvas: WebGL unavailable —", e);
 			if (canvas && canvas.parentNode) canvas.parentNode.removeChild(canvas);
+			// eslint-disable-next-line react-hooks/set-state-in-effect -- the WebGL failure is only known once the effect tries to create the context
 			setErrored(true);
 			return;
 		}
@@ -445,7 +446,19 @@ export function SphericalCanvas({
 		// answers that live through `setOpacity` below — re-deriving the creases of a 212-face solid on every
 		// frame of a slider drag is not something a drag can afford.
 		// starMod2 belongs here and not in the recolor pass: it changes which triangles exist.
-	}, [poly, solidId, isIslamic, polyhedron, bubbleBites, edgeStyle, kochLevel, starMod2, faceView, facePick]);
+	}, [
+		poly,
+		dualFaceStart,
+		solidId,
+		isIslamic,
+		polyhedron,
+		bubbleBites,
+		edgeStyle,
+		kochLevel,
+		starMod2,
+		faceView,
+		facePick,
+	]);
 
 	// Face opacity, live. The hidden-edge test does not switch off below 1, it SOFTENS: a bar behind a face
 	// is worth 1 − opacity, so it is dropped behind a solid face and comes back as the face turns to glass.

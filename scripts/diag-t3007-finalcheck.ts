@@ -13,7 +13,16 @@ const baseRing = computeRing(params);
 setActiveRing(baseRing.N === 24 ? baseRing : CyclotomicRing.create(24));
 
 const seedSet = ["3,12,12", "3,3,4,12", "3,4,6,4"];
-const builder = new SeedBuilder() as any;
+// SeedBuilder's private BFS members this diagnostic drives (indexed access types reach them).
+type SB = Pick<SeedBuilder, "computeAvailableVertices"> & {
+	expandNode: SeedBuilder["expandNode"];
+	canAnyVCFitAtVertex: SeedBuilder["canAnyVCFitAtVertex"];
+	getPolygonsAtVertex: SeedBuilder["getPolygonsAtVertex"];
+	getEmergingVCNameAtVertex: SeedBuilder["getEmergingVCNameAtVertex"];
+	isVCNameInSet: SeedBuilder["isVCNameInSet"];
+};
+type BFSNode = ReturnType<SB["expandNode"]>[number];
+const builder = new SeedBuilder() as unknown as SB;
 
 function makeInitialNode(name: string, set: string[]) {
 	const vc = VertexConfiguration.fromName(name);
@@ -34,7 +43,7 @@ function makeInitialNode(name: string, set: string[]) {
 
 const node0 = makeInitialNode(seedSet[0], seedSet);
 const layer1 = builder.expandNode(node0, seedSet);
-let layer2: any[] = [];
+const layer2: BFSNode[] = [];
 for (const node of layer1) layer2.push(...builder.expandNode(node, seedSet));
 console.log(`raw layer2: ${layer2.length} children (no dedup)`);
 
@@ -42,7 +51,7 @@ layer2.forEach((node, ci) => {
 	const names = node.seed.vertexConfigurations.map((v: VertexConfiguration) => v.name).join(";");
 	console.log(
 		`\n=== child ${ci}: ${names} — polygons: ${node.seed.polygons
-			.map((p: any) => p.getName())
+			.map((p) => p.getName())
 			.sort()
 			.join(",")}`,
 	);
@@ -50,7 +59,7 @@ layer2.forEach((node, ci) => {
 	let pass = true;
 	for (const { vertex, vertexExact, directions } of availableVertices) {
 		const polysAt = builder.getPolygonsAtVertex(vertex, node.seed.polygons);
-		const angleSum = polysAt.reduce((s: number, p: any) => s + p.getAngleAtVertex(vertex), 0);
+		const angleSum = polysAt.reduce((s: number, p) => s + p.getAngleAtVertex(vertex), 0);
 		const surrounded = isWithinAngularTolerance(angleSum, 2 * Math.PI);
 		if (surrounded) {
 			const emerging = builder.getEmergingVCNameAtVertex(vertex, polysAt);
@@ -67,7 +76,7 @@ layer2.forEach((node, ci) => {
 				pass = false;
 			}
 			console.log(
-				`  (${vertex.x.toFixed(3)},${vertex.y.toFixed(3)}) open angle=${((angleSum * 180) / Math.PI).toFixed(1)}° polysAt=${polysAt.map((p: any) => p.getName()).join("+") || "none"} fits=${fits}${fits ? "" : "   ← FAIL"}`,
+				`  (${vertex.x.toFixed(3)},${vertex.y.toFixed(3)}) open angle=${((angleSum * 180) / Math.PI).toFixed(1)}° polysAt=${polysAt.map((p) => p.getName()).join("+") || "none"} fits=${fits}${fits ? "" : "   ← FAIL"}`,
 			);
 		}
 	}

@@ -16,7 +16,7 @@ import {
 	anchorPoint,
 	type HyperbolicTilingGL,
 } from "@/lib/render/hyperbolicGroup";
-import { su11Translation, su11Apply, su11ApplyInverse, type Complex } from "@/lib/render/hyperbolic";
+import { su11Translation, su11Apply, type Complex } from "@/lib/render/hyperbolic";
 
 interface BakedPatch {
 	id: string;

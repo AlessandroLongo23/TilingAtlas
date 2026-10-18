@@ -1,6 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import {
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+	type CSSProperties,
+	type Dispatch,
+	type ReactNode,
+	type SetStateAction,
+} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Check, Library, Link2, Loader2, X } from "lucide-react";
 import { PageSidebar } from "@/components/page-sidebar";
@@ -15,9 +25,7 @@ import { ReferenceCard } from "@/components/reference-card";
 import { useMobileSheet } from "@/stores/mobileSheet";
 import { PHONE_QUERY } from "@/lib/hooks/useIsPhone";
 import { cn } from "@/lib/utils/cn";
-import type { ColorsGrid } from "@/lib/colors/pattern";
 import type { SphStarKind } from "@/lib/tilings/sph-star";
-import type { FreedrawCatalogueGrid, FreedrawGrid } from "@/lib/freedraw/pattern";
 import { HYP_EDGES_BASES, hypEdgesLazyShardsForK } from "@/lib/freedraw/hyp-edges";
 import { hypColorsLazyShardsForK } from "@/lib/colors/hyp-colors";
 import { sphColorsLazyShardsForK } from "@/lib/colors/sph-colors";
@@ -85,8 +93,6 @@ import {
 	GEOMETRY_LABEL,
 	DECORATION_ORDER,
 	DECORATION_LABEL,
-	TILE_CLASS_ORDER,
-	TILE_CLASS_LABEL,
 	COMPOSABLE_SHARD_KS as COMPOSABLE_HIGHER_K,
 	ISOTOXAL_SHARD_KS as ISOTOXAL_HIGHER_K,
 	PERIOD_SHARD_KS as PERIOD_HIGHER_K,
@@ -680,6 +686,31 @@ function FilterGroup({
 	);
 }
 
+/**
+ * Fetch each wanted best-effort shard once and merge it into the tilings. `inflight` dedupes runs that
+ * overlap a fetch; a failure is swallowed and still marks the k loaded, so it is never retried.
+ */
+function fetchShards(
+	want: readonly number[],
+	loaded: Set<number>,
+	inflight: Set<number>,
+	load: (k: number) => Promise<ReferenceTiling[]>,
+	setTilings: Dispatch<SetStateAction<ReferenceTiling[] | null>>,
+	setLoaded: Dispatch<SetStateAction<Set<number>>>,
+) {
+	for (const kk of want) {
+		if (loaded.has(kk) || inflight.has(kk)) continue;
+		inflight.add(kk);
+		load(kk)
+			.then((data) => setTilings((prev) => (prev ? [...prev, ...data] : data)))
+			.catch(() => {})
+			.finally(() => {
+				inflight.delete(kk);
+				setLoaded((s) => new Set(s).add(kk));
+			});
+	}
+}
+
 export function ReferenceShelf() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
@@ -712,23 +743,23 @@ export function ReferenceShelf() {
 	const [shardErrors, setShardErrors] = useState<Map<number, string>>(new Map());
 	// Dedicated isotoxal shard tracking — its k=3 collides with the convex-irregular k=3 in the shared sets.
 	const [isotoxalLoadedShards, setIsotoxalLoadedShards] = useState<Set<number>>(new Set());
-	const [isotoxalLoadingShards, setIsotoxalLoadingShards] = useState<Set<number>>(new Set());
+	const isotoxalInflight = useRef<Set<number>>(new Set());
 	// Period-p k≥3 needs its OWN shard state for the same reason isotoxal does: the sets are keyed by k
 	// alone, so a shared one would mark period k=3 loaded because convex-irregular k=3 already was.
 	const [periodLoadedShards, setPeriodLoadedShards] = useState<Set<number>>(new Set());
-	const [periodLoadingShards, setPeriodLoadingShards] = useState<Set<number>>(new Set());
+	const periodInflight = useRef<Set<number>>(new Set());
 	const [mixedLoadedShards, setMixedLoadedShards] = useState<Set<number>>(new Set());
-	const [mixedLoadingShards, setMixedLoadingShards] = useState<Set<number>>(new Set());
+	const mixedInflight = useRef<Set<number>>(new Set());
 	const [euHalfLoadedShards, setEuHalfLoadedShards] = useState<Set<number>>(new Set());
-	const [euHalfLoadingShards, setEuHalfLoadingShards] = useState<Set<number>>(new Set());
+	const euHalfInflight = useRef<Set<number>>(new Set());
 	const [tri45LoadedShards, setTri45LoadedShards] = useState<Set<number>>(new Set());
-	const [tri45LoadingShards, setTri45LoadingShards] = useState<Set<number>>(new Set());
+	const tri45Inflight = useRef<Set<number>>(new Set());
 	const [penroseLoadedShards, setPenroseLoadedShards] = useState<Set<number>>(new Set());
-	const [penroseLoadingShards, setPenroseLoadingShards] = useState<Set<number>>(new Set());
+	const penroseInflight = useRef<Set<number>>(new Set());
 	const [scaledLoadedShards, setScaledLoadedShards] = useState<Set<number>>(new Set());
-	const [scaledLoadingShards, setScaledLoadingShards] = useState<Set<number>>(new Set());
+	const scaledInflight = useRef<Set<number>>(new Set());
 	// k values whose Euclidean decoration shards have been requested (hexagonal edges/colorings tails).
-	const [decorLoadedShards, setDecorLoadedShards] = useState<Set<number>>(new Set());
+	const decorRequested = useRef<Set<number>>(new Set());
 
 	useEffect(() => {
 		let alive = true;
@@ -742,14 +773,16 @@ export function ReferenceShelf() {
 
 	// Reset to page 1 whenever filters or page size change — but skip the initial mount, so a shared or
 	// reloaded ?page=N link lands on page N instead of being clobbered back to 1.
-	const skipPageReset = useRef(true);
-	useEffect(() => {
-		if (skipPageReset.current) {
-			skipPageReset.current = false;
-			return;
-		}
+	// Adjusted during render: the initial state already matches, so the first render keeps its page.
+	const [pageResetKey, setPageResetKey] = useState({ filters, pageSize, groupVariants });
+	if (
+		pageResetKey.filters !== filters ||
+		pageResetKey.pageSize !== pageSize ||
+		pageResetKey.groupVariants !== groupVariants
+	) {
+		setPageResetKey({ filters, pageSize, groupVariants });
 		setCurrentPage(1);
-	}, [filters, pageSize, groupVariants]);
+	}
 
 	// Mirror the whole view into the URL without navigating — a reload restores it and "Copy link" hands
 	// a friend the exact same view. replaceState (not router.replace) keeps this off the Next router, so
@@ -793,6 +826,7 @@ export function ReferenceShelf() {
 		// how it surfaced. The bug is the unbounded test, not the new chips.
 		if (k == null || !HIGHER_K.includes(k)) return;
 		if (loadedShards.has(k) || loadingShards.has(k) || shardErrors.has(k)) return;
+		// eslint-disable-next-line react-hooks/set-state-in-effect -- the fetch starts here and the "loading k=…" line renders this set
 		setLoadingShards((s) => new Set(s).add(k));
 		loadReferenceAtlasShard(k)
 			.then((data) => {
@@ -807,7 +841,7 @@ export function ReferenceShelf() {
 					return n;
 				}),
 			);
-	}, [filters.kValue, loadedShards, loadingShards, shardErrors]);
+	}, [filters.geometry, filters.kValue, loadedShards, loadingShards, shardErrors]);
 
 	// Hyperbolic edge systems (freedraw class, hyperbolic geometry): lazy like the k≥8 shards, but off the
 	// plane. The eager k ≤ 9 slice loads once the Hyperbolic geometry is entered; the dense k = 12/13/14
@@ -1264,6 +1298,7 @@ export function ReferenceShelf() {
 		const want = k != null ? COMPOSABLE_HIGHER_K.filter((kk) => kk === k) : cls === "convex" ? COMPOSABLE_HIGHER_K : [];
 		for (const kk of want) {
 			if (loadedShards.has(kk) || loadingShards.has(kk) || shardErrors.has(kk)) continue;
+			// eslint-disable-next-line react-hooks/set-state-in-effect -- the fetch starts here and the "loading k=…" line renders this set
 			setLoadingShards((s) => new Set(s).add(kk));
 			loadComposableAtlasShard(kk)
 				.then((data) => {
@@ -1290,24 +1325,15 @@ export function ReferenceShelf() {
 		if (!tilings) return; // base atlas REPLACES; see the convex-irregular effect
 		const k = filters.kValue;
 		const want = k != null ? ISOTOXAL_HIGHER_K.filter((kk) => kk === k) : cls === "isotoxal" ? ISOTOXAL_HIGHER_K : [];
-		for (const kk of want) {
-			if (isotoxalLoadedShards.has(kk) || isotoxalLoadingShards.has(kk)) continue;
-			setIsotoxalLoadingShards((s) => new Set(s).add(kk));
-			loadIsotoxalAtlasShard(kk)
-				.then((data) => {
-					setTilings((prev) => (prev ? [...prev, ...data] : data));
-					setIsotoxalLoadedShards((s) => new Set(s).add(kk));
-				})
-				.catch(() => setIsotoxalLoadedShards((s) => new Set(s).add(kk))) // best-effort demo; swallow + mark done
-				.finally(() =>
-					setIsotoxalLoadingShards((s) => {
-						const n = new Set(s);
-						n.delete(kk);
-						return n;
-					}),
-				);
-		}
-	}, [filters.tileClass, filters.kValue, isotoxalLoadedShards, isotoxalLoadingShards, tilings]);
+		fetchShards(
+			want,
+			isotoxalLoadedShards,
+			isotoxalInflight.current,
+			loadIsotoxalAtlasShard,
+			setTilings,
+			setIsotoxalLoadedShards,
+		);
+	}, [filters.tileClass, filters.kValue, isotoxalLoadedShards, tilings]);
 
 	// Lazy period-p k≥3 shards — same shape as the isotoxal effect. These families come from the QUOTIENT
 	// search, so the tier exists at all only because the alphabet was quotiented by tile shape.
@@ -1317,24 +1343,15 @@ export function ReferenceShelf() {
 		if (!tilings) return; // base atlas REPLACES; see the convex-irregular effect
 		const k = filters.kValue;
 		const want = k != null ? PERIOD_HIGHER_K.filter((kk) => kk === k) : cls === "period" ? PERIOD_HIGHER_K : [];
-		for (const kk of want) {
-			if (periodLoadedShards.has(kk) || periodLoadingShards.has(kk)) continue;
-			setPeriodLoadingShards((s) => new Set(s).add(kk));
-			loadPeriodAtlasShard(kk)
-				.then((data) => {
-					setTilings((prev) => (prev ? [...prev, ...data] : data));
-					setPeriodLoadedShards((s) => new Set(s).add(kk));
-				})
-				.catch(() => setPeriodLoadedShards((s) => new Set(s).add(kk))) // best-effort demo; swallow + mark done
-				.finally(() =>
-					setPeriodLoadingShards((s) => {
-						const n = new Set(s);
-						n.delete(kk);
-						return n;
-					}),
-				);
-		}
-	}, [filters.tileClass, filters.kValue, periodLoadedShards, periodLoadingShards, tilings]);
+		fetchShards(
+			want,
+			periodLoadedShards,
+			periodInflight.current,
+			loadPeriodAtlasShard,
+			setTilings,
+			setPeriodLoadedShards,
+		);
+	}, [filters.tileClass, filters.kValue, periodLoadedShards, tilings]);
 
 	// Lazy MIXED k≥3 shards. Same shape again; these tiers arrived 2026-08-09 when the palette was finally
 	// run past k=2, and they are 15× the entries the shelf had, so they cannot ride the eager bundle.
@@ -1344,24 +1361,8 @@ export function ReferenceShelf() {
 		if (!tilings) return; // base atlas REPLACES; see the convex-irregular effect
 		const k = filters.kValue;
 		const want = k != null ? MIXED_HIGHER_K.filter((kk) => kk === k) : cls === "mixed" ? MIXED_HIGHER_K : [];
-		for (const kk of want) {
-			if (mixedLoadedShards.has(kk) || mixedLoadingShards.has(kk)) continue;
-			setMixedLoadingShards((s) => new Set(s).add(kk));
-			loadMixedAtlasShard(kk)
-				.then((data) => {
-					setTilings((prev) => (prev ? [...prev, ...data] : data));
-					setMixedLoadedShards((s) => new Set(s).add(kk));
-				})
-				.catch(() => setMixedLoadedShards((s) => new Set(s).add(kk)))
-				.finally(() =>
-					setMixedLoadingShards((s) => {
-						const n = new Set(s);
-						n.delete(kk);
-						return n;
-					}),
-				);
-		}
-	}, [filters.tileClass, filters.kValue, mixedLoadedShards, mixedLoadingShards, tilings]);
+		fetchShards(want, mixedLoadedShards, mixedInflight.current, loadMixedAtlasShard, setTilings, setMixedLoadedShards);
+	}, [filters.tileClass, filters.kValue, mixedLoadedShards, tilings]);
 
 	// Lazy 45-45-90 k≥3 shards. Same shape as mixed, and the whole tail is 7.4 MB, so picking the class
 	// with no k fetches both tiers rather than making the user click each chip to see the shelf at all.
@@ -1371,24 +1372,8 @@ export function ReferenceShelf() {
 		if (!tilings) return; // base atlas REPLACES; see the convex-irregular effect
 		const k = filters.kValue;
 		const want = k != null ? TRI45_HIGHER_K.filter((kk) => kk === k) : cls === "edgelen" ? TRI45_HIGHER_K : [];
-		for (const kk of want) {
-			if (tri45LoadedShards.has(kk) || tri45LoadingShards.has(kk)) continue;
-			setTri45LoadingShards((s) => new Set(s).add(kk));
-			loadTri45AtlasShard(kk)
-				.then((data) => {
-					setTilings((prev) => (prev ? [...prev, ...data] : data));
-					setTri45LoadedShards((s) => new Set(s).add(kk));
-				})
-				.catch(() => setTri45LoadedShards((s) => new Set(s).add(kk)))
-				.finally(() =>
-					setTri45LoadingShards((s) => {
-						const n = new Set(s);
-						n.delete(kk);
-						return n;
-					}),
-				);
-		}
-	}, [filters.tileClass, filters.kValue, tri45LoadedShards, tri45LoadingShards, tilings]);
+		fetchShards(want, tri45LoadedShards, tri45Inflight.current, loadTri45AtlasShard, setTilings, setTri45LoadedShards);
+	}, [filters.tileClass, filters.kValue, tri45LoadedShards, tilings]);
 
 	// Lazy EUCLIDEAN HALF-POLYGON k>=5 shards. Stricter than BOTH rules above: this tail is ten slices
 	// and 110 MB of JSON (the two deep ones are 46 and 37 MB, gzipping to about 1 each), so it is fetched
@@ -1401,22 +1386,15 @@ export function ReferenceShelf() {
 		if (!tilings) return; // base atlas REPLACES; see the convex-irregular effect
 		const k = filters.kValue;
 		if (k == null || !EUHALF_HIGHER_K.includes(k)) return;
-		if (euHalfLoadedShards.has(k) || euHalfLoadingShards.has(k)) return;
-		setEuHalfLoadingShards((sx) => new Set(sx).add(k));
-		loadEuHalfAtlasShard(k)
-			.then((data) => {
-				setTilings((prev) => (prev ? [...prev, ...data] : data));
-				setEuHalfLoadedShards((sx) => new Set(sx).add(k));
-			})
-			.catch(() => setEuHalfLoadedShards((sx) => new Set(sx).add(k)))
-			.finally(() =>
-				setEuHalfLoadingShards((sx) => {
-					const n = new Set(sx);
-					n.delete(k);
-					return n;
-				}),
-			);
-	}, [filters.tileClass, filters.kValue, euHalfLoadedShards, euHalfLoadingShards, tilings]);
+		fetchShards(
+			[k],
+			euHalfLoadedShards,
+			euHalfInflight.current,
+			loadEuHalfAtlasShard,
+			setTilings,
+			setEuHalfLoadedShards,
+		);
+	}, [filters.tileClass, filters.kValue, euHalfLoadedShards, tilings]);
 
 	// Lazy PENROSE k>=4 shards. Deliberately NOT the tri45 rule above: k=6 alone is 14.1 MB, so picking
 	// the class with no k must not pull the tail down. A shard is fetched when its own k chip is chosen,
@@ -1428,24 +1406,15 @@ export function ReferenceShelf() {
 		const k = filters.kValue;
 		const want =
 			k != null ? PENROSE_HIGHER_K.filter((kk) => kk === k) : filters.edgeBoard === "penrose" ? PENROSE_HIGHER_K : [];
-		for (const kk of want) {
-			if (penroseLoadedShards.has(kk) || penroseLoadingShards.has(kk)) continue;
-			setPenroseLoadingShards((s) => new Set(s).add(kk));
-			loadPenroseAtlasShard(kk)
-				.then((data) => {
-					setTilings((prev) => (prev ? [...prev, ...data] : data));
-					setPenroseLoadedShards((s) => new Set(s).add(kk));
-				})
-				.catch(() => setPenroseLoadedShards((s) => new Set(s).add(kk)))
-				.finally(() =>
-					setPenroseLoadingShards((s) => {
-						const n = new Set(s);
-						n.delete(kk);
-						return n;
-					}),
-				);
-		}
-	}, [filters.tileClass, filters.kValue, filters.edgeBoard, penroseLoadedShards, penroseLoadingShards, tilings]);
+		fetchShards(
+			want,
+			penroseLoadedShards,
+			penroseInflight.current,
+			loadPenroseAtlasShard,
+			setTilings,
+			setPenroseLoadedShards,
+		);
+	}, [filters.tileClass, filters.kValue, filters.edgeBoard, penroseLoadedShards, tilings]);
 
 	// Lazy SCALED k≥3 shards. Same shape once more. The sides-1-2 palette went k=4 → k=7 on 2026-08-12,
 	// which is where the bulk of this shelf now lives, so k≥3 cannot ride the eager bundle either.
@@ -1459,24 +1428,15 @@ export function ReferenceShelf() {
 		// Scaled class would have pulled the lot on one click. A shard here loads only when its own k
 		// chip is chosen, which is what the "k ≥ 3 loads on demand" note under the chips promises.
 		const want = k != null ? SCALED_HIGHER_K.filter((kk) => kk === k) : [];
-		for (const kk of want) {
-			if (scaledLoadedShards.has(kk) || scaledLoadingShards.has(kk)) continue;
-			setScaledLoadingShards((s) => new Set(s).add(kk));
-			loadScaledAtlasShard(kk)
-				.then((data) => {
-					setTilings((prev) => (prev ? [...prev, ...data] : data));
-					setScaledLoadedShards((s) => new Set(s).add(kk));
-				})
-				.catch(() => setScaledLoadedShards((s) => new Set(s).add(kk)))
-				.finally(() =>
-					setScaledLoadingShards((s) => {
-						const n = new Set(s);
-						n.delete(kk);
-						return n;
-					}),
-				);
-		}
-	}, [filters.tileClass, filters.kValue, scaledLoadedShards, scaledLoadingShards, tilings]);
+		fetchShards(
+			want,
+			scaledLoadedShards,
+			scaledInflight.current,
+			loadScaledAtlasShard,
+			setTilings,
+			setScaledLoadedShards,
+		);
+	}, [filters.tileClass, filters.kValue, scaledLoadedShards, tilings]);
 
 	// Lazy Euclidean DECORATION shards — the hexagonal grid's deep k slices (edges k>=7, colorings k>=6),
 	// the only freedraw/colors slices too big to ship eagerly. Fetch when that k chip is picked, under any
@@ -1484,15 +1444,15 @@ export function ReferenceShelf() {
 	// shard resolves to an empty merge inside the loader, and a failure just marks the k done.
 	useEffect(() => {
 		const k = filters.kValue;
-		if (k == null || !hasDecorationShardsForK(k) || decorLoadedShards.has(k)) return;
-		setDecorLoadedShards((sh) => new Set(sh).add(k));
+		if (k == null || !hasDecorationShardsForK(k) || decorRequested.current.has(k)) return;
+		decorRequested.current.add(k);
 		Promise.all([loadFreedrawShardsForK(k), loadColorsShardsForK(k)])
 			.then(([fd, col]) => {
 				const data = [...fd, ...col];
 				if (data.length) setTilings((prev) => (prev ? [...prev, ...data] : data));
 			})
 			.catch(() => {});
-	}, [filters.kValue, decorLoadedShards]);
+	}, [filters.kValue]);
 
 	// ── single-select setters (each clears the now-stale downstream selections) ──
 	const setKValue = (k: number | undefined) =>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useConfiguration } from "@/stores/configuration";
 import { polyhedronForId } from "@/lib/render/sphericalSolids";
 import { solidEdges } from "@/lib/render/sphericalGeometry";
 import { buildIcoFreedraw, type IcoMode, type IcoPattern } from "@/lib/render/icoFreedraw";

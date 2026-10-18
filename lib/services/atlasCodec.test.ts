@@ -97,7 +97,7 @@ describe("atlas container round trip", () => {
 
 	it("expands a packed cell back to the same polygons", () => {
 		const records = many(500);
-		const back = decodeAtlas<any>(encodeAtlas(records));
+		const back = decodeAtlas<(typeof records)[number]>(encodeAtlas(records));
 		expect(back[0].renderCell.cellPolygons).toEqual(records[0].renderCell.cellPolygons);
 		expect(back[0].renderCell.basis).toEqual(records[0].renderCell.basis);
 	});
@@ -126,7 +126,7 @@ describe("atlas container round trip", () => {
 				],
 			},
 		}));
-		const back = decodeAtlas<any>(encodeAtlas(records));
+		const back = decodeAtlas<(typeof records)[number]>(encodeAtlas(records));
 		expect(back[0].renderCell.cellPolygons[0]).toEqual(records[0].renderCell.cellPolygons[0]);
 		// Per-POLYGON key order survives, which is what the shape table controls. Cell-level order does
 		// not (the packed form is {b,i}), and it does not need to: `geom` quantises to 1e-9, so the
@@ -137,7 +137,7 @@ describe("atlas container round trip", () => {
 	});
 
 	it("expands lazily and caches, so a shelf costs only the cells it draws", () => {
-		const back = decodeAtlas<any>(encodeAtlas(many(500)));
+		const back = decodeAtlas<ReturnType<typeof many>[number]>(encodeAtlas(many(500)));
 		expect(Object.getOwnPropertyDescriptor(back[0], "renderCell")?.get).toBeDefined();
 		const a = back[0].renderCell;
 		expect(a).toBe(back[0].renderCell); // cached
@@ -145,7 +145,7 @@ describe("atlas container round trip", () => {
 	});
 
 	it("gives each polygon its own vertex arrays, never a shared table row", () => {
-		const back = decodeAtlas<any>(encodeAtlas(many(500)));
+		const back = decodeAtlas<ReturnType<typeof many>[number]>(encodeAtlas(many(500)));
 		const a = back[0].renderCell.cellPolygons[0].vertices;
 		const b = back[1].renderCell.cellPolygons[0].vertices;
 		expect(a).toEqual(b);
@@ -159,7 +159,7 @@ describe("atlas container round trip", () => {
 			const { renderCell, ...rest } = r;
 			return rest;
 		});
-		const back = decodeAtlas<any>(encodeAtlas(records));
+		const back = decodeAtlas<{ renderCell?: unknown }>(encodeAtlas(records));
 		expect(back[0].renderCell).toBeUndefined();
 	});
 
@@ -189,7 +189,7 @@ describe("atlas container round trip", () => {
 	});
 
 	it("hands out refs rows SHARED, which is the memory win", () => {
-		const back = decodeAtlas<any>(encodeAtlas(decorated(4000)));
+		const back = decodeAtlas<ReturnType<typeof decorated>[number]>(encodeAtlas(decorated(4000)));
 		expect(back[0].rneig).toBe(back[1].rneig);
 		expect(back[0].stats).toBe(back[4].stats); // same stats bucket (i % 4)
 		expect(back[0].stats).not.toBe(back[1].stats);
@@ -261,7 +261,7 @@ describe("atlas container round trip", () => {
 	});
 
 	it("gives each record a fresh patch object but shares the hoisted parts", () => {
-		const back = decodeAtlas<any>(encodeAtlas(patched(4000)));
+		const back = decodeAtlas<ReturnType<typeof patched>[number]>(encodeAtlas(patched(4000)));
 		expect(back[0].patch).not.toBe(back[1].patch); // fresh parent
 		expect(back[0].patch.verts).toBe(back[1].patch.verts); // shared part
 	});
@@ -338,7 +338,13 @@ describe("atlas container round trip", () => {
 	});
 
 	it("packs a wrapped shard and keeps the wrapper's own keys", () => {
-		const packed = encodeShard(shard(4000)) as any;
+		const packed = encodeShard(shard(4000)) as {
+			atlas: number;
+			board: string;
+			vertices: number[][];
+			refs: Record<string, unknown>;
+			patterns: { vorbit: unknown }[];
+		};
 		expect(packed.atlas).toBe(1);
 		expect(packed.board).toBe("664");
 		expect(packed.vertices).toEqual([[0, 0, 1]]);
@@ -348,7 +354,7 @@ describe("atlas container round trip", () => {
 
 	it("decodes a wrapped shard back to what the renderer saw before the format existed", () => {
 		const original = shard(4000);
-		const back = decodeShard(encodeShard(original) as any);
+		const back = decodeShard(encodeShard(original) as typeof original);
 		expect(back).toEqual(original);
 		// …and carries no table keys the hydrators would not recognise.
 		expect(Object.keys(back)).not.toContain("refs");
@@ -374,7 +380,7 @@ describe("atlas container round trip", () => {
 				polys: Array.from({ length: 20 }, (_, j) => pick(i, j)),
 			})),
 		};
-		const encoded = encodeShard(original) as any;
+		const encoded = encodeShard(original) as typeof original & { elems?: Record<string, unknown> };
 		expect(Object.keys(encoded.elems ?? {})).toContain("polys"); // the layer really fired
 		const back = decodeShard(encoded);
 		for (const table of ["atlas", "dict", "refs", "elems", "geom"]) {
@@ -399,7 +405,7 @@ describe("atlas container round trip", () => {
 		// Decode first: the shipped file is ITSELF packed, so re-encoding the raw container would be
 		// packing a container. This is the same idempotence the migration script relies on.
 		const records = decodeAtlas(JSON.parse(fs.readFileSync(file, "utf8")));
-		const back = decodeAtlas<any>(encodeAtlas(records));
+		const back = decodeAtlas(encodeAtlas(records));
 		expect(sameRecords(records, back)).toBeNull();
 	});
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { fillAmountToSatPct } from "@/lib/render/tilePalette";
 import type { RefObject } from "react";
 import { useConfiguration } from "@/stores/configuration";
@@ -79,9 +79,11 @@ export function HyperbolicDevelopedCanvas({ patchId, data, input, diskPadPx = DI
 	const lastClickSeq = useRef(0);
 	// Read in the rAF loop, which is created once — the prop itself may be a fresh ref object per render.
 	const inputRef = useRef<RefObject<HyperbolicViewInput | null> | undefined>(input);
-	inputRef.current = input;
 	const padRef = useRef(diskPadPx);
-	padRef.current = diskPadPx;
+	useLayoutEffect(() => {
+		inputRef.current = input;
+		padRef.current = diskPadPx;
+	}, [input, diskPadPx]);
 
 	useEffect(() => {
 		const canvas = canvasRef.current;

@@ -3,15 +3,6 @@ import { readFileSync, readdirSync } from "node:fs";
 import { polyhedronForId } from "@/lib/render/sphericalSolids";
 import { sphereMapOf } from "@/lib/bubble/sphere";
 
-/** Deterministic quasi-uniform directions — a Fibonacci sphere, so a failure reproduces exactly. */
-const directions = (n: number) =>
-	Array.from({ length: n }, (_, i) => {
-		const y = 1 - (2 * i + 1) / n;
-		const r = Math.sqrt(Math.max(0, 1 - y * y));
-		const t = Math.PI * (1 + Math.sqrt(5)) * i;
-		return [Math.cos(t) * r, y, Math.sin(t) * r] as [number, number, number];
-	});
-
 // THE gate on this shelf, and the exact analogue of the balance equation the Euclidean bubble boards
 // are checked against: every edge must carry a BUMP on one side and a BITE on the other. It fails
 // exactly when a decoration got the same state twice on one edge, which is the one way a bubble

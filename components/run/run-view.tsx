@@ -62,6 +62,7 @@ function CopyChip({ text, label = "copy" }: { text: string; label?: string }) {
 function useNow(enabled: boolean): number | null {
 	const [now, setNow] = useState<number | null>(null);
 	useEffect(() => {
+		// eslint-disable-next-line react-hooks/set-state-in-effect -- the clock must start after hydration, so the first reading lands in an effect
 		setNow(Date.now());
 		if (!enabled) return;
 		const t = setInterval(() => setNow(Date.now()), 1000);

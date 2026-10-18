@@ -7,7 +7,6 @@ import {
 	buildMultigrid,
 	multigridEdgeCheck,
 	MULTIGRID_SYMMETRIES,
-	type MgTile,
 } from "./engine";
 
 const rhArea = (c: { x: number; y: number }[]) =>

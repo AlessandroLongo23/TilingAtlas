@@ -293,11 +293,6 @@ function signs(mags: [number, number, number]): Vec3[] {
 	for (const x of opts(mags[0])) for (const y of opts(mags[1])) for (const z of opts(mags[2])) out.push([x, y, z]);
 	return out;
 }
-/** The 3 even (cyclic) permutations of a coordinate triple, expanded over all sign combinations. */
-function evenPermSigns(mags: [number, number, number]): Vec3[] {
-	const [a, b, c] = mags;
-	return [...signs([a, b, c]), ...signs([b, c, a]), ...signs([c, a, b])];
-}
 
 // Truncated cuboctahedron 4.6.8: all permutations of (±1, ±(1+√2), ±(1+2√2)), 48 vertices.
 function truncatedCuboctahedronVerts(): Vec3[] {

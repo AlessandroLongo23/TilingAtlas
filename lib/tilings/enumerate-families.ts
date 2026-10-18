@@ -287,7 +287,7 @@ export interface RealizedFamily {
 	signature: string;
 }
 
-function realize(rm: RawMap, pal: Palette): RealizedFamily | null {
+function realize(rm: RawMap, _pal: Palette): RealizedFamily | null {
 	const { types, alpha } = rm;
 	const base: number[] = [];
 	const owner: number[] = [];

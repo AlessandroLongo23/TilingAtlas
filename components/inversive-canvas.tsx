@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { fillAmountToSatPct, TILE_PALETTE_GLSL } from "@/lib/render/tilePalette";
 import { resolveDeform, useConfiguration } from "@/stores/configuration";
-import { IDENTITY_DEFORM, invertMat2, isIdentityDeform, mat2Singulars, type Mat2 } from "@/lib/render/flatView";
+import { IDENTITY_DEFORM, invertMat2, isIdentityDeform, mat2Singulars } from "@/lib/render/flatView";
 import {
 	MAX_BUCKET_ENTRIES,
 	PRIM_TEXELS,

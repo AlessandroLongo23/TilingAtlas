@@ -30,7 +30,7 @@ async function walk(dir) {
 	return files;
 }
 
-function rewriteContent(src, relPath) {
+function rewriteContent(src) {
 	let out = src;
 
 	// Rewrite path aliases
@@ -82,7 +82,7 @@ async function main() {
 	for (const src of files) {
 		const dst = dstPathFor(src);
 		const content = await fs.readFile(src, "utf8");
-		const { out, usesSvelteStore } = rewriteContent(content, src);
+		const { out, usesSvelteStore } = rewriteContent(content);
 		await fs.mkdir(path.dirname(dst), { recursive: true });
 		await fs.writeFile(dst, out);
 		copied++;

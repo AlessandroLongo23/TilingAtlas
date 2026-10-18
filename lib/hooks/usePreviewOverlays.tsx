@@ -64,10 +64,6 @@ const ScopeContext = createContext<OverlayScope | null>(null);
 export function PreviewOverlayScope({ children, resetKey }: { children: React.ReactNode; resetKey?: string | number }) {
 	const [shared, setShared] = useState<Partial<OverlayState>>({});
 	const [overrides, setOverrides] = useState<Record<string, Partial<OverlayState>>>({});
-	// Read inside the overrides updater, which must stay pure — a nested setState there would double
-	// the toggle under Strict Mode's double-invoked updaters.
-	const sharedRef = useRef(shared);
-	sharedRef.current = shared;
 
 	const reset = useCallback(() => {
 		setShared({});
@@ -82,16 +78,23 @@ export function PreviewOverlayScope({ children, resetKey }: { children: React.Re
 
 	// A card with no exception yet starts from whatever it is currently showing — the scope's value if
 	// a key has set one, else the card's own default — so the first press always changes the picture.
-	const toggleOne = useCallback((cardId: string, name: OverlayName, showing: boolean) => {
-		setOverrides((o) => {
-			const current = o[cardId]?.[name] ?? sharedRef.current[name] ?? showing;
-			return { ...o, [cardId]: { ...o[cardId], [name]: !current } };
-		});
-	}, []);
+	// `shared` is read from the closure, not a nested setState: the overrides updater must stay pure, or
+	// Strict Mode's double-invoked updaters would double the toggle.
+	const toggleOne = useCallback(
+		(cardId: string, name: OverlayName, showing: boolean) => {
+			setOverrides((o) => {
+				const current = o[cardId]?.[name] ?? shared[name] ?? showing;
+				return { ...o, [cardId]: { ...o[cardId], [name]: !current } };
+			});
+		},
+		[shared],
+	);
 
-	useEffect(() => {
+	const [prevResetKey, setPrevResetKey] = useState(resetKey);
+	if (resetKey !== prevResetKey) {
+		setPrevResetKey(resetKey);
 		reset();
-	}, [resetKey, reset]);
+	}
 
 	// The page-level key listener. It fires only when NO card holds focus — a focused card handles its
 	// own keys and stops the event before it reaches window (see useCardOverlays). Typing in a field

@@ -19,7 +19,7 @@
 import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { Cyclotomic, CyclotomicRing, setActiveRing } from "@/classes/Cyclotomic";
+import { CyclotomicRing, setActiveRing } from "@/classes/Cyclotomic";
 import type { PeriodCell } from "@/classes/algorithm/PeriodSolver";
 import { PeriodSolver } from "@/classes/algorithm/PeriodSolver";
 import { TranslationalCellExtractor } from "@/classes/algorithm/TranslationalCellExtractor";

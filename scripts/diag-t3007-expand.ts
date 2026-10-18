@@ -13,7 +13,13 @@ const baseRing = computeRing(params);
 setActiveRing(baseRing.N === 24 ? baseRing : CyclotomicRing.create(24));
 
 const seedSet = ["3,12,12", "3,3,4,12", "3,4,6,4"];
-const builder = new SeedBuilder() as any;
+// SeedBuilder's private BFS members this diagnostic drives (indexed access types reach them).
+type SB = Pick<SeedBuilder, "computeAvailableVertices"> & {
+	expandNode: SeedBuilder["expandNode"];
+	getCachedVC: SeedBuilder["getCachedVC"];
+	placeVCExact: SeedBuilder["placeVCExact"];
+};
+const builder = new SeedBuilder() as unknown as SB;
 
 function makeInitialNode(name: string, set: string[]) {
 	const vc = VertexConfiguration.fromName(name);
@@ -36,11 +42,11 @@ const node0 = makeInitialNode(seedSet[0], seedSet);
 const layer1 = builder.expandNode(node0, seedSet);
 console.log(`layer1: ${layer1.length} nodes`);
 
-layer1.forEach((node: any, ni: number) => {
+layer1.forEach((node, ni) => {
 	const names = node.seed.vertexConfigurations.map((v: VertexConfiguration) => v.name).join(";");
 	console.log(`\n=== layer1 node ${ni}: ${names}`);
 	console.log(
-		`  centers: ${node.placedVCs.map((p: any) => `(${p.center.x.toFixed(3)},${p.center.y.toFixed(3)})`).join(" ")}`,
+		`  centers: ${node.placedVCs.map((p) => `(${p.center.x.toFixed(3)},${p.center.y.toFixed(3)})`).join(" ")}`,
 	);
 	const { seed, placedVCs, remaining } = node;
 	const availableVertices = builder.computeAvailableVertices(placedVCs);

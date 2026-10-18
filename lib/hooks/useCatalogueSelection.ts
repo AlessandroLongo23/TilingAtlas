@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 
 // Selection state for the /play viewer. Seeds from the `?tiling=<canonicalKey>` URL param (how
@@ -18,18 +18,18 @@ export function useCatalogueSelection(sorted: CatalogueTiling[], requestedKey: s
 	// loaded yet (a lazy k≥8 / composable shard still fetching), we leave this null so the effect keeps
 	// retrying as `sorted` grows. Once satisfied, we never re-assert it against a later in-page pick
 	// (which changes `selected` but not the URL) — that divergence used to snap selection back.
-	const appliedKeyRef = useRef<string | null>(
+	const [appliedKey, setAppliedKey] = useState<string | null>(() =>
 		requestedKey && sorted.some((t) => t.canonicalKey === requestedKey) ? requestedKey : null,
 	);
 
-	useEffect(() => {
-		if (!requestedKey || requestedKey === appliedKeyRef.current) return;
+	// Adjusted during render: the guard settles after one pass, since a found key becomes `appliedKey`.
+	if (requestedKey && requestedKey !== appliedKey) {
 		const m = sorted.find((t) => t.canonicalKey === requestedKey);
 		if (m) {
-			appliedKeyRef.current = requestedKey;
+			setAppliedKey(requestedKey);
 			setSelected(m);
 		}
-	}, [requestedKey, sorted]);
+	}
 
 	return { selected, setSelected };
 }

@@ -71,6 +71,7 @@ export function SphericalColorsCanvas({ pattern, mode }: Props) {
 		} catch (e) {
 			console.warn("SphericalColorsCanvas: WebGL unavailable —", e);
 			if (canvas && canvas.parentNode) canvas.parentNode.removeChild(canvas);
+			// eslint-disable-next-line react-hooks/set-state-in-effect -- the WebGL failure is only known once the effect tries to create the context
 			setErrored(true);
 			return;
 		}

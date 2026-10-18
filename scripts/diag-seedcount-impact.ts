@@ -37,8 +37,8 @@ function build(k: number, legacy: boolean): { count: number; names: string[] } {
 	const seedSets = new SeedSetExtractor(graph).findSeedSets(k);
 	const builder = new SeedBuilder();
 	if (legacy) {
-		// restore the pre-fix behavior: name from the unsorted polygon list
-		(builder as any).getEmergingVCNameAtVertex = (vertex: Vector, polygons: Polygon[]): string | null => {
+		// restore the pre-fix behavior: name from the unsorted polygon list (bracket access reaches the private member)
+		builder["getEmergingVCNameAtVertex"] = (vertex: Vector, polygons: Polygon[]): string | null => {
 			if (polygons.length === 0) return null;
 			return new VertexConfiguration(polygons).getName();
 		};

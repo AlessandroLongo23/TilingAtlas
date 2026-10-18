@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils/cn";
@@ -29,18 +29,17 @@ export function TheorySidebar({
 }: TheorySidebarProps) {
 	const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
-	useEffect(() => {
-		if (sections.length > 0 && Object.keys(expanded).length === 0) {
-			const initial: Record<string, boolean> = {};
-			for (const s of sections) {
-				initial[s.id] = true;
-				s.subsections?.forEach((sub) => {
-					if (sub.id) initial[sub.id] = true;
-				});
-			}
-			setExpanded(initial);
+	// Everything starts open once the sections arrive (adjusted during render).
+	if (sections.length > 0 && Object.keys(expanded).length === 0) {
+		const initial: Record<string, boolean> = {};
+		for (const s of sections) {
+			initial[s.id] = true;
+			s.subsections?.forEach((sub) => {
+				if (sub.id) initial[sub.id] = true;
+			});
 		}
-	}, [sections, expanded]);
+		setExpanded(initial);
+	}
 
 	const toggle = (id: string) => {
 		setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));

@@ -43,7 +43,6 @@ import {
 	comparePolygonNames,
 	compareVertexConfigurationNames,
 	roundNumbersInJson,
-	toRadians,
 	getEffectiveUniqueCount,
 } from "@/utils";
 import { BATCH_SIZE } from "@/lib/constants";
@@ -435,7 +434,7 @@ function expandSeedsForK(paramsFolder: string, k: number, m: number | null, log:
 			expander.maxExpandMs = k >= 2 ? 90_000 : 0;
 			let processed = 0;
 			let expanded = 0;
-			let entropyWalls = 0;
+			const entropyWalls = 0;
 			let deadEnds = 0;
 			let cappedSeeds = 0;
 			const cappedNames: string[] = [];
@@ -458,7 +457,7 @@ function expandSeedsForK(paramsFolder: string, k: number, m: number | null, log:
 
 			if (totalToProcess === 0) return 0;
 
-			for (const { mDir, mVal } of mDirsToProcess) {
+			for (const { mVal } of mDirsToProcess) {
 				const { configs, vcLibrary } = loadSeedConfigBatches(paramsFolder, k, mVal);
 				const folderPath = `${typeBasePath(paramsFolder)}/expandedSeeds/k=${k}/m=${mVal}`;
 				if (!fs.existsSync(folderPath)) {
@@ -601,7 +600,7 @@ function extractTranslationalCellForK(paramsFolder: string, k: number, m: number
 			// the two chiral mirror forms of a snub tiling share a key → counted once.
 			const seenCanonical = new Set<string>();
 
-			for (const { mDir, mVal } of mDirsToProcess) {
+			for (const { mVal } of mDirsToProcess) {
 				const items = loadExpandedSeedsBatches(paramsFolder, k, mVal);
 				if (!byM.has(mVal)) byM.set(mVal, []);
 

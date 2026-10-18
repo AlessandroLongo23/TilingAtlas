@@ -14,8 +14,8 @@ export class TilingChecker {
 	findVertexConfigurations(tiling: Tiling) {
 		// O(N) spatial hash: unique vertices + polygons touching each vertex in one pass
 		const vertexMap = new Map<string, { point: Vector; polygons: Polygon[] }>();
-		for (let node of tiling.nodes) {
-			for (let vertex of node.vertices) {
+		for (const node of tiling.nodes) {
+			for (const vertex of node.vertices) {
 				const key = TilingChecker.getSpatialKey(vertex);
 				if (!vertexMap.has(key)) {
 					vertexMap.set(key, { point: vertex, polygons: [node] });
@@ -128,8 +128,8 @@ export class TilingChecker {
 		);
 
 		tiling.gyrations = [];
-		for (let point of points) {
-			for (let order of gyrationOrders) {
+		for (const point of points) {
+			for (const order of gyrationOrders) {
 				let isEquivalent = true;
 				for (let i = 1; i < order; i++) {
 					const rotatedTiling: Tiling = Tiling.rotate(tiling, point, (2 * Math.PI * i) / order);
@@ -166,7 +166,7 @@ export class TilingChecker {
 		}
 
 		tiling.reflections = [];
-		for (let candidate of candidates) {
+		for (const candidate of candidates) {
 			const reflectedTiling: Tiling = Tiling.reflect(tiling, candidate.axis, candidate.point);
 			if (tiling.isEquivalent(reflectedTiling)) {
 				tiling.reflections.push(candidate);
@@ -180,12 +180,12 @@ export class TilingChecker {
 
 	findUniquePoints(tiling: Tiling): Vector[] {
 		const pointMap = new Map<string, Vector>();
-		for (let node of tiling.nodes) {
-			for (let vertex of node.vertices) {
+		for (const node of tiling.nodes) {
+			for (const vertex of node.vertices) {
 				const key = TilingChecker.getSpatialKey(vertex);
 				if (!pointMap.has(key)) pointMap.set(key, vertex);
 			}
-			for (let halfway of node.halfways) {
+			for (const halfway of node.halfways) {
 				const key = TilingChecker.getSpatialKey(halfway);
 				if (!pointMap.has(key)) pointMap.set(key, halfway);
 			}
@@ -205,7 +205,7 @@ export class TilingChecker {
 		if (Math.abs(cross) < tolerance) return [];
 
 		const pointMap = new Map<string, Vector>();
-		for (let node of tiling.nodes) {
+		for (const node of tiling.nodes) {
 			for (const point of [...node.vertices, ...node.halfways, node.centroid]) {
 				const rel = Vector.sub(point, origin);
 				const a = Vector.cross(rel, v2) / cross;

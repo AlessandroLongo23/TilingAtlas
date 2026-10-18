@@ -35,7 +35,7 @@ export class EquilateralPolygon extends GenericPolygon {
 
 	calculateVerticesFromAnchorAndDir = () => {
 		this.vertices = [this.anchor.copy()];
-		let current_dir: Vector = this.dir.copy().normalize();
+		const current_dir: Vector = this.dir.copy().normalize();
 		for (let i = 1; i < this.n; i++) {
 			const prev_vertex = this.vertices[this.vertices.length - 1];
 			this.vertices.push(Vector.add(prev_vertex, current_dir));
@@ -73,7 +73,7 @@ export class EquilateralPolygon extends GenericPolygon {
 		return EquilateralPolygon.fromAnchorAndDir(this.n, anchor, dir, [...this.angles]);
 	};
 
-	encode = (): Object => {
+	encode = (): object => {
 		return {
 			type: PolygonType.EQUILATERAL,
 			n: this.n,

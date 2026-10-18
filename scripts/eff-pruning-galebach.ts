@@ -48,11 +48,6 @@ const dec = ([a, b, c, d]: number[]): Cyclotomic =>
 		.add(Cyclotomic.zeta(ring, 4).scaleRational(BigInt(c), 1n))
 		.add(Cyclotomic.zeta(ring, 6).scaleRational(BigInt(d), 1n));
 
-const coordKey = (v: Cyclotomic): string => {
-	if (v.den !== 1n) throw new Error(`galebach: non-integer vector (den=${v.den})`);
-	return v.num.map((b) => b.toString()).join(",");
-};
-
 // ---- build W(≤H): all-24-direction level-BFS, table-checked ----
 const ZETA: number[][] = [];
 for (let j = 0; j < 24; j++) ZETA.push(Cyclotomic.zeta(ring, j).num.map((b) => Number(b)));

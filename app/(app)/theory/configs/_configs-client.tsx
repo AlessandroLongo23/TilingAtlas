@@ -32,29 +32,34 @@ function kindsOf(polys: { kind: TileKind }[]): TileKind[] {
 
 export function ConfigsClient() {
 	const [paletteName, setPaletteName] = useState<string>(CONFIG_PALETTES[0].name);
-	const [data, setData] = useState<PaletteConfigs | null>(null);
-	const [loading, setLoading] = useState(false);
-	const [error, setError] = useState<string | null>(null);
+	// The last settled load, tagged with its palette: a different palette in flight reads as loading.
+	const [loaded, setLoaded] = useState<{ name: string; data: PaletteConfigs | null; error: string | null } | null>(
+		null,
+	);
 	const [page, setPage] = useState(1);
 	const [columns, setColumns] = useState(6);
 
 	useEffect(() => {
 		let alive = true;
-		setLoading(true);
-		setError(null);
-		setData(null);
 		loadPaletteConfigs(paletteName)
-			.then((d) => alive && setData(d))
-			.catch((e) => alive && setError(e instanceof Error ? e.message : String(e)))
-			.finally(() => alive && setLoading(false));
+			.then((d) => alive && setLoaded({ name: paletteName, data: d, error: null }))
+			.catch(
+				(e) => alive && setLoaded({ name: paletteName, data: null, error: e instanceof Error ? e.message : String(e) }),
+			);
 		return () => {
 			alive = false;
 		};
 	}, [paletteName]);
+	const current = loaded?.name === paletteName ? loaded : null;
+	const data = current?.data ?? null;
+	const error = current?.error ?? null;
+	const loading = !current;
 
-	useEffect(() => {
+	const selectPalette = (name: string) => {
+		if (name === paletteName) return;
+		setPaletteName(name);
 		setPage(1);
-	}, [paletteName]);
+	};
 
 	const pageConfigs = useMemo(() => {
 		if (!data) return [];
@@ -98,7 +103,7 @@ export function ConfigsClient() {
 									return (
 										<button
 											key={p.name}
-											onClick={() => setPaletteName(p.name)}
+											onClick={() => selectPalette(p.name)}
 											className={`flex flex-col items-start gap-0.5 rounded-md border px-2.5 py-2 text-left transition-colors max-md:min-h-11 max-md:py-2.5 ${
 												active
 													? "border-accent/40 bg-accent-subtle"

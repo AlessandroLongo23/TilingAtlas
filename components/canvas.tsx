@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { resolveDeform, useConfiguration } from "@/stores/configuration";
 import { useDebug, debugManager, updateDebugStore } from "@/stores/debug";
-import { useLegacyTilingStore } from "@/stores/legacyTilingStore";
 import { Vector } from "@/classes/Vector";
 import { Tiling } from "@/classes/Tiling";
 import { RegularPolygon } from "@/classes/polygons/RegularPolygon";
@@ -35,11 +34,8 @@ import {
 } from "@/lib/utils/canvasPick";
 import { useFamilyAlphas } from "@/stores/familyAlphas";
 import {
-	applyMat2,
-	isIdentityDeform,
 	latticeBasisFromCell,
 	latticeExtentFromBounds,
-	screenLatticeVectors,
 	computeFillRadii,
 	wrapOffset,
 	type LatticeExtent,

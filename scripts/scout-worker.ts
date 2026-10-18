@@ -75,7 +75,8 @@ rl.on("line", (line) => {
 	if (msg.stop) {
 		// process.exit() does NOT flush fs.WriteStream buffers — end() the census stream and exit in its flush callback.
 		// (No rl.close() here: it emits 'close' synchronously and the handler above would exit before the flush lands.)
-		censusStream ? censusStream.end(() => process.exit(0)) : process.exit(0);
+		if (censusStream) censusStream.end(() => process.exit(0));
+		else process.exit(0);
 		return;
 	}
 	if (typeof msg.idx !== "number") return;

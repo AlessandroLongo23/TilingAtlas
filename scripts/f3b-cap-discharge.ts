@@ -54,8 +54,7 @@
  */
 
 import fs from "node:fs";
-import path from "node:path";
-import { PeriodSolver, defaultMaxCellPolys } from "@/classes/algorithm/PeriodSolver";
+import { PeriodSolver } from "@/classes/algorithm/PeriodSolver";
 import { TranslationalCellExtractor } from "@/classes/algorithm/TranslationalCellExtractor";
 import { dedupeByCongruence } from "@/classes/algorithm/TilingCongruence";
 import {

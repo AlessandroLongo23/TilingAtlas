@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useIsDark } from "@/components/freedraw/freedraw-canvas";
 import type { ColorPattern } from "@/lib/colors/pattern";
 import {
@@ -78,9 +78,13 @@ export function ColorsCanvas({
 		return () => ro.disconnect();
 	}, []);
 
-	useEffect(() => {
+	// Refit when the pattern, the box or the zoom changes, adjusted during render.
+	const fitKey = `${pattern.id}|${size.w}|${size.h}|${cells}`;
+	const [fittedKey, setFittedKey] = useState<string | null>(null);
+	if (fittedKey !== fitKey) {
+		setFittedKey(fitKey);
 		if (size.w > 0 && size.h > 0) setView(fitColorsView(size.w, size.h, cells));
-	}, [pattern.id, size.w, size.h, cells]);
+	}
 
 	const draw = useCallback(() => {
 		const el = canvasRef.current;
@@ -108,7 +112,9 @@ export function ColorsCanvas({
 			orbitScalesRef.current,
 		);
 	}, [pattern, view, style, dark, radNow]);
-	drawRef.current = draw;
+	useLayoutEffect(() => {
+		drawRef.current = draw;
+	}, [draw]);
 
 	useEffect(() => {
 		draw();

@@ -125,7 +125,7 @@ const twoFanCore = ((): Polygon[] => {
 
 // --- allowed VC set + tile sizes, derived from the cell itself (the solver's own namer) ---
 const solver = new PeriodSolver(3);
-const allowed = new Set<string>(fullVertices.map(({ w, fan }) => (solver as any).vcNameAt(w, fan) as string));
+const allowed = new Set<string>(fullVertices.map(({ w, fan }) => solver["vcNameAt"](w, fan)));
 const polySizes = Array.from(new Set(oracleCell.cellPolygons.map((p) => p.n))).sort((a, b) => a - b);
 
 // --- the REAL orbit machinery: rep Λ plus a rotated and a reflected member ---
@@ -293,12 +293,12 @@ function runGate(m: { rot: number; refl: boolean }): {
 
 	// --- the two worlds' fills through the REAL torusFill ---
 	const [gu, gv] = gridImageBasis(U, V, m.rot, m.refl);
-	const ctxA = (solver as any).makeCtx(gu, gv, ring, allowed, polySizes, Number.MAX_SAFE_INTEGER);
-	const ctxB = (solver as any).makeCtx(U, V, ring, allowed, polySizes, Number.MAX_SAFE_INTEGER);
+	const ctxA = solver["makeCtx"](gu, gv, ring, allowed, polySizes, Number.MAX_SAFE_INTEGER);
+	const ctxB = solver["makeCtx"](U, V, ring, allowed, polySizes, Number.MAX_SAFE_INTEGER);
 	expect(ctxA).not.toBeNull();
 	expect(ctxB).not.toBeNull();
-	const rawA: Polygon[][] = (solver as any).torusFill(core, ctxA, () => false, freshDiag());
-	const rawB: Polygon[][] = (solver as any).torusFill(seedB, ctxB, () => false, freshDiag());
+	const rawA: Polygon[][] = solver["torusFill"](core, ctxA!, () => false, freshDiag());
+	const rawB: Polygon[][] = solver["torusFill"](seedB, ctxB!, () => false, freshDiag());
 
 	// BOTH non-empty — the gate is meaningless on empty fills (a broken seed yields nothing).
 	expect(rawA.length).toBeGreaterThan(0);

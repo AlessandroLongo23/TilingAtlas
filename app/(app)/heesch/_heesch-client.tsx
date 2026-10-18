@@ -183,6 +183,7 @@ export function HeeschClient() {
 		const i = Number(searchParams.get("shape"));
 		if (Number.isInteger(i) && i > 0)
 			pendingPick.current = { set: s && /^(named|[a-z]+\d+)$/.test(s) ? s : DEFAULT_SET, at: i };
+		// eslint-disable-next-line react-hooks/set-state-in-effect -- the URL is read after hydration on purpose: the page is force-static
 		if (s && /^(named|[a-z]+\d+)$/.test(s)) selectSet(s);
 	}, [searchParams, selectSet]);
 

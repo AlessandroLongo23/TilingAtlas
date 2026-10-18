@@ -1,5 +1,5 @@
 /* Probe 4: instrument SeedBuilder's BFS for [3,12,12;3,3,4,12;3,4,6,4] — which layer/check kills it.
- * Accesses private members via `as any` (diagnostic only).
+ * Accesses private members through the `SB` type (diagnostic only).
  *   pnpm tsx scripts/diag-t3007-bfs.ts
  */
 import { SeedBuilder, SeedConfiguration, VertexConfiguration, PolygonType, type GeneratorParameters } from "@/classes";
@@ -12,7 +12,15 @@ const baseRing = computeRing(params);
 setActiveRing(baseRing.N === 24 ? baseRing : CyclotomicRing.create(24));
 
 const seedSet = ["3,12,12", "3,3,4,12", "3,4,6,4"];
-const builder = new SeedBuilder() as any;
+// SeedBuilder's private BFS members this diagnostic drives (indexed access types reach them).
+type SB = Pick<SeedBuilder, "computeAvailableVertices"> & {
+	expandNode: SeedBuilder["expandNode"];
+	deduplicateLayer: SeedBuilder["deduplicateLayer"];
+	passesFinalVertexCheck: SeedBuilder["passesFinalVertexCheck"];
+	canAnyVCFitAtVertex: SeedBuilder["canAnyVCFitAtVertex"];
+};
+type BFSNode = ReturnType<SB["expandNode"]>[number];
+const builder = new SeedBuilder() as unknown as SB;
 
 function makeInitialNode(name: string, set: string[]) {
 	const vc = VertexConfiguration.fromName(name);
@@ -46,7 +54,7 @@ for (const [names, n] of summary) console.log(`   ${names} ×${n}`);
 const layer1d = builder.deduplicateLayer(layer1);
 console.log(`layer1 deduped: ${layer1d.length}`);
 
-let layer2: any[] = [];
+const layer2: BFSNode[] = [];
 for (const node of layer1d) layer2.push(...builder.expandNode(node, seedSet));
 console.log(`layer2 (place 3rd VC): ${layer2.length} children`);
 const summary2 = new Map<string, number>();

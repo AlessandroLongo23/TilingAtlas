@@ -12,7 +12,6 @@ import {
 	affMul,
 	childSets,
 	conjugateByExpansion,
-	makeRng,
 	sameAbelianisation,
 	inflate,
 	inflateCount,

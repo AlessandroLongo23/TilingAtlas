@@ -49,12 +49,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import {
-	PeriodSolver,
-	BLOCK_INDEX_CAP,
-	blockIndexRangeNeeded,
-	defaultMaxCellPolys,
-} from "@/classes/algorithm/PeriodSolver";
+import { PeriodSolver, BLOCK_INDEX_CAP, blockIndexRangeNeeded } from "@/classes/algorithm/PeriodSolver";
 import {
 	PolygonsGenerator,
 	VCGenerator,
@@ -125,9 +120,9 @@ type CandidateLattice = {
 	seedMaps: { rot: number; refl: boolean }[];
 };
 
-// We use `(solver as any).candidateLattices(seed)` — the private cache is keyed by vcSig so
-// most calls after the first are hits (< 1ms each).
-const solver = new PeriodSolver(k) as any;
+// We call the private `candidateLattices(seed)` through an indexed access type; its cache is keyed
+// by vcSig so most calls after the first are hits (< 1ms each).
+const solver = new PeriodSolver(k) as unknown as { candidateLattices: PeriodSolver["candidateLattices"] };
 
 // ---------------------------------------------------------------------------
 // Census loop

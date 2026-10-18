@@ -659,7 +659,6 @@ export class PeriodSolver {
 			return { cells: [], diag: emptyDiag() };
 		}
 		const ring = corePolys[0].exactVertices![0].ring;
-		const N = ring.N;
 
 		// Allowed vertex configurations (canonical, mirror-merged) and the polygon sizes in play.
 		const coreVertices: Cyclotomic[] = seed.vertexConfigurations.map((vc) => vc.computeSharedVertexExact());

@@ -319,7 +319,7 @@ describe("faceCrossings", () => {
 
 	it("draws each crease once, however many face pairs produce it", () => {
 		const p = prism();
-		const { verts, segs } = build(p);
+		const { segs } = build(p);
 		const q = (v: V3) => v.map((z) => z.toFixed(5)).join(",");
 		const keys = segs.map((c) => [q(c.a), q(c.b)].sort().join("|"));
 		expect(new Set(keys).size).toBe(keys.length);

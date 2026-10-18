@@ -4,7 +4,7 @@ import { getActiveRing } from "@/classes/Cyclotomic";
 import fs from "node:fs";
 import path from "node:path";
 
-const ring = getActiveRing();
+getActiveRing(); // initialises the default ring before reconstruction
 type T = { id: string; k: number; family: string; T1: number[]; T2: number[]; Seed: number[][] };
 const d = JSON.parse(fs.readFileSync(path.join(process.cwd(), "figures/data/ctrnact.json"), "utf8")) as {
 	tilings: T[];

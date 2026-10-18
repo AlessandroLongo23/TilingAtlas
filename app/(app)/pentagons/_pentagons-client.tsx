@@ -166,6 +166,7 @@ export function PentagonsClient() {
 		if (adopted.current) return;
 		adopted.current = true;
 		const fromUrl = parseType(searchParams.get("type"));
+		// eslint-disable-next-line react-hooks/set-state-in-effect -- the URL is read after hydration on purpose: the page is force-static
 		if (fromUrl !== DEFAULT_TYPE) selectType(fromUrl);
 	}, [searchParams, selectType]);
 
@@ -185,9 +186,9 @@ export function PentagonsClient() {
 	// Keep the last drawable cell on screen when a tuple has no pentagon. Dragging INTO the invalid
 	// region and being told why is how a reader learns where the family ends; blanking the canvas
 	// would just look like a bug.
-	const lastCellRef = useRef(result.ok ? result.cell : null);
-	if (result.ok) lastCellRef.current = result.cell;
-	const cell = result.ok ? result.cell : lastCellRef.current;
+	const [lastCell, setLastCell] = useState(result.ok ? result.cell : null);
+	if (result.ok && result.cell !== lastCell) setLastCell(result.cell);
+	const cell = result.ok ? result.cell : lastCell;
 
 	// The conformal lens: the same cell seen through a circle inversion, a Möbius map or Kaplan's spiral.
 	// Reads the cell through the shared periodic-cell IR, so the pentagons reach it with no renderer of

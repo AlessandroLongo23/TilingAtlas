@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { drivePlayPan } from "@/lib/render/playView";
 import { useGamepadState } from "@/lib/stores/gamepad";
 import { VelocityPad } from "@/components/ui/velocity-pad";
@@ -15,7 +15,9 @@ export function HyperbolicJoystick() {
 	const rootRef = useRef<HTMLDivElement>(null);
 	const [stick, setStick] = useState({ x: 0, y: 0 });
 	const stickRef = useRef(stick);
-	stickRef.current = stick;
+	useLayoutEffect(() => {
+		stickRef.current = stick;
+	}, [stick]);
 	const vel = useRef({ x: 0, y: 0 });
 	const held = stick.x !== 0 || stick.y !== 0;
 	const pad = useGamepadState((s) => s.family);

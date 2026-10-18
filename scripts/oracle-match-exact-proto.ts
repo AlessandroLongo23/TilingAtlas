@@ -58,7 +58,8 @@ for (const k of [1, 2, 3]) {
 		} else if (!isErr(flo) && !isErr(exa)) {
 			const cong = cellsCongruent(flo.cell, exa.cell, new Map());
 			verdict = cong ? "congruent" : "DISAGREE (not congruent)";
-			cong ? agree++ : disagree++;
+			if (cong) agree++;
+			else disagree++;
 		} else {
 			verdict = "unreachable";
 		}

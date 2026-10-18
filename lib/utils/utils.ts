@@ -1,14 +1,16 @@
 import { comparePolygonNames } from "./geometry";
 
-export const compareArrays = (a: any[], b: any[]): number => {
+export const compareArrays = (a: readonly (string | number)[], b: readonly (string | number)[]): number => {
 	if (a.length !== b.length) return a.length - b.length;
 
 	for (let i = 0; i < a.length; i++) {
-		if (a[i] !== b[i]) {
-			if (typeof a[i] === "string" && typeof b[i] === "string") {
-				return a[i].localeCompare(b[i]);
+		const x = a[i];
+		const y = b[i];
+		if (x !== y) {
+			if (typeof x === "string" && typeof y === "string") {
+				return x.localeCompare(y);
 			} else {
-				return a[i] - b[i];
+				return (x as number) - (y as number);
 			}
 		}
 	}
@@ -25,7 +27,7 @@ export const cyclicallyInclude = (a: string[], b: string[]): boolean => {
 export const cycleToMinimumLexicographicalOrder = (array: number[]): number[] => {
 	let min = array.slice(0);
 	for (let i = 0; i < array.length; i++) {
-		let rotated = array.slice(i).concat(array.slice(0, i));
+		const rotated = array.slice(i).concat(array.slice(0, i));
 		if (compareArrays(rotated, min) < 0) {
 			min = rotated;
 		}
@@ -43,13 +45,13 @@ export const isEqualOrChiral = (arrayA: number[], arrayB: number[]): boolean => 
 	if (arrayA.length !== arrayB.length) return false;
 
 	for (let i = 0; i < arrayA.length; i++) {
-		let rotated = arrayA.slice(i).concat(arrayA.slice(0, i));
+		const rotated = arrayA.slice(i).concat(arrayA.slice(0, i));
 		if (isEqual(rotated, arrayB)) return true;
 	}
 
-	let reversed = arrayA.slice().reverse();
+	const reversed = arrayA.slice().reverse();
 	for (let i = 0; i < arrayA.length; i++) {
-		let rotated = reversed.slice(i).concat(reversed.slice(0, i));
+		const rotated = reversed.slice(i).concat(reversed.slice(0, i));
 		if (isEqual(rotated, arrayB)) return true;
 	}
 

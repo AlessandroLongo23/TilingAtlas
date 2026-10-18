@@ -208,7 +208,6 @@ describe("computeFillRadii coverage guarantee", () => {
 
 	it("the pre-extent formula (ceil(maxA)+1) fails the displaced-cell case — the bug this fix removes", () => {
 		const c = cases[2];
-		const det = c.v1.x * c.v2.y - c.v2.x * c.v1.y;
 		const { e1, e2 } = screenLatticeVectors(c.v1, c.v2, c.zoom, c.rot);
 		const detM = e1.x * e2.y - e2.x * e1.y;
 		let maxA = 0,

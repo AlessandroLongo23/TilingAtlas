@@ -153,7 +153,7 @@ function squaringToCell(sq: TorusSquaring): TorusCell {
  * so this is the invariant a convergence question is asked in.
  */
 function modulus(basis: [[number, number], [number, number]]): { re: number; im: number } | null {
-	let [a, b] = [basis[0], basis[1]];
+	const [a, b] = [basis[0], basis[1]];
 	// τ = b/a in ℂ.
 	const den = a[0] * a[0] + a[1] * a[1];
 	if (!(den > 0)) return null;

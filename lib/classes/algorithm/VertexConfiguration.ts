@@ -85,8 +85,8 @@ export class VertexConfiguration {
 			return new VertexConfiguration(polygons, null, name);
 		}
 
-		let polygons: Polygon[] = [];
-		let current_dir: Vector = new Vector(1, 0);
+		const polygons: Polygon[] = [];
+		const current_dir: Vector = new Vector(1, 0);
 
 		for (const p of polygonsData) {
 			let polygon: Polygon | null = null;
@@ -211,7 +211,7 @@ export class VertexConfiguration {
 	};
 
 	addPolygon = (polygonData: PolygonSignature) => {
-		let newPolygon = this.generatePolygon(polygonData, this.current_dir.copy().normalize());
+		const newPolygon = this.generatePolygon(polygonData, this.current_dir.copy().normalize());
 		this.polygons.push(newPolygon);
 		this.angle += newPolygon.interior_angle;
 
@@ -287,7 +287,7 @@ export class VertexConfiguration {
 		}
 
 		let angle = 0;
-		for (let polygon of this.polygons) {
+		for (const polygon of this.polygons) {
 			angle += polygon.interior_angle;
 		}
 		return angle;
@@ -297,7 +297,7 @@ export class VertexConfiguration {
 		const polygonNames: string[] = this.polygons.map((p) => p.getName());
 		let minPolygonNames: string[] = polygonNames;
 		for (let i = 0; i < polygonNames.length; i++) {
-			let rotated = polygonNames.slice(i).concat(polygonNames.slice(0, i));
+			const rotated = polygonNames.slice(i).concat(polygonNames.slice(0, i));
 			if (compareVCNames(rotated, minPolygonNames) < 0) {
 				minPolygonNames = rotated;
 			}
@@ -377,7 +377,7 @@ export class VertexConfiguration {
 	rotate = (origin: Vector, angle: number): void => {
 		const shared = this.computeSharedVertex();
 		this.current_dir.rotate(angle);
-		for (let polygon of this.polygons) {
+		for (const polygon of this.polygons) {
 			polygon.rotate(origin, angle);
 		}
 		this.sharedVertex = shared.rotateAround(origin, angle);
@@ -390,7 +390,7 @@ export class VertexConfiguration {
 	};
 
 	translate = (vector: Vector): void => {
-		for (let polygon of this.polygons) {
+		for (const polygon of this.polygons) {
 			polygon.translate(vector);
 		}
 		this.sharedVertex = Vector.add(this.sharedVertex, vector);
@@ -403,7 +403,7 @@ export class VertexConfiguration {
 	};
 
 	mirror = (point: Vector, dir: Vector): void => {
-		for (let polygon of this.polygons) {
+		for (const polygon of this.polygons) {
 			polygon.mirror(point, dir);
 		}
 		this.sharedVertex = Vector.mirrorByPointAndDir(this.sharedVertex.copy(), point.copy(), dir.copy());
@@ -416,7 +416,7 @@ export class VertexConfiguration {
 	};
 
 	glide = (point: Vector, dir: Vector, delta: number): void => {
-		for (let polygon of this.polygons) {
+		for (const polygon of this.polygons) {
 			polygon.glide(point, dir, delta);
 		}
 		this.sharedVertex = Vector.add(this.sharedVertex, Vector.scale(dir, delta));
@@ -452,7 +452,7 @@ export class VertexConfiguration {
 		}
 
 		// find the polygon that has no previous polygon. If it doesn't exist, use the first polygon
-		let firstPolygon: SurroundingPolygon =
+		const firstPolygon: SurroundingPolygon =
 			surroundingPolygons.find((p) => {
 				const previousPolygon: SurroundingPolygon | undefined = surroundingPolygons.find((other) =>
 					isWithinAngularTolerance(other.nextDir, p.prevDir),

@@ -6,7 +6,7 @@ import type { FreedrawPattern } from "@/lib/freedraw/pattern";
 import { drawFreedraw, type FreedrawView } from "@/lib/freedraw/render";
 import { syncCanvasSize } from "@/lib/render/canvasSize";
 import { captureOverride, offerFrame } from "@/lib/render/capture";
-import { IDENTITY_DEFORM, type Mat2 } from "@/lib/render/flatView";
+import { type Mat2 } from "@/lib/render/flatView";
 import { resolveDeform, useConfiguration } from "@/stores/configuration";
 
 // The Truchet figures over a PLAIN tiling, as a true overlay.

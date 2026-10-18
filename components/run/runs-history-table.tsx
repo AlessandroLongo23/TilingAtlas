@@ -6,7 +6,6 @@ import { Radio } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import type { RunRow, RunParams } from "@/lib/services/runsService";
-import { cn } from "@/lib/utils/cn";
 
 const STATUS_TONE: Record<string, BadgeTone> = {
 	running: "warn",

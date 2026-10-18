@@ -1,16 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { resolveDeform, useConfiguration } from "@/stores/configuration";
 import { buildCellMesh } from "@/lib/render/buildCellMesh";
-import {
-	IDENTITY_DEFORM,
-	computeFillGrid,
-	fillGridInstances,
-	wrapOffset,
-	type LatticeExtent,
-	type Mat2,
-} from "@/lib/render/flatView";
+import { computeFillGrid, fillGridInstances, wrapOffset, type LatticeExtent } from "@/lib/render/flatView";
 import { compileShader } from "@/lib/render/flatTilingGL";
 import { fillAmountToSatPct, hsbDegToRgb01 } from "@/lib/render/tilePalette";
 import { syncCanvasSize } from "@/lib/render/canvasSize";
@@ -103,9 +96,11 @@ export function StrapCanvas({ translationalCell, translationalCellId, paramCell 
 	const meshRef = useRef<StrapMesh | null>(null);
 
 	const cellRef = useRef<FlatCellData | null>(translationalCell);
-	cellRef.current = translationalCell;
 	const paramCellRef = useRef(paramCell);
-	paramCellRef.current = paramCell;
+	useLayoutEffect(() => {
+		cellRef.current = translationalCell;
+		paramCellRef.current = paramCell;
+	}, [translationalCell, paramCell]);
 	// Parametric family only: the cell evaluated at the current slider tuple, and the tuple's signature.
 	// Everything downstream (basis, patch, bands) is derived from this, not the base cell.
 	const liveCellRef = useRef<FlatCellData | null>(null);
@@ -420,7 +415,6 @@ export function StrapCanvas({ translationalCell, translationalCellId, paramCell 
 			borderProgRef.current = null;
 			meshRef.current = null;
 		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
 	return (

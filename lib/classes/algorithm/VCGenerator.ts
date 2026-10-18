@@ -1,5 +1,5 @@
 import { PolygonSignature, PolygonType, VertexConfiguration } from "@/classes";
-import { comparePolygonNames, isWithinAngularTolerance, isWithinTolerance, toDegrees } from "@/utils";
+import { comparePolygonNames, isWithinAngularTolerance, isWithinTolerance } from "@/utils";
 import { tolerance } from "@/utils/tolerance";
 import { trace } from "./figureTrace";
 

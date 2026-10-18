@@ -71,7 +71,16 @@ export function TilingModalContent() {
 	const loading = useLegacyTilingStore((s) => s.loading);
 	const initialized = useLegacyTilingStore((s) => s.initialized);
 	const tilingRulesFn = useLegacyTilingStore((s) => s.tilingRules);
-	const activeRules = initialized ? (tilingRulesFn() as TilingGroup[]) : [];
+	// tilingRules() reads these four through get(); subscribing to them keys the memo on its real inputs.
+	const groups = useLegacyTilingStore((s) => s.groups);
+	const tilings = useLegacyTilingStore((s) => s.tilings);
+	const storageImageMap = useLegacyTilingStore((s) => s.storageImageMap);
+	const tilingsUpdatedAt = useLegacyTilingStore((s) => s.tilingsUpdatedAt);
+	const activeRules = useMemo(
+		() => (initialized ? (tilingRulesFn() as TilingGroup[]) : []),
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- the store fields are the inputs tilingRulesFn reads
+		[initialized, tilingRulesFn, groups, tilings, storageImageMap, tilingsUpdatedAt],
+	);
 	const setConfig = useConfiguration((s) => s.set);
 
 	const [showFilters, setShowFilters] = useState(true);

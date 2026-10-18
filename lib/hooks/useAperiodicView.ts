@@ -215,6 +215,7 @@ export function useAperiodicView({
 	 * a slider drag.
 	 */
 	const [canvasEl, setCanvasEl] = useState<HTMLCanvasElement | null>(null);
+	// eslint-disable-next-line react-hooks/exhaustive-deps -- dep-less on purpose, see above; the updater bails when the node is unchanged
 	useEffect(() => {
 		setCanvasEl((prev) => (prev === canvasRef.current ? prev : canvasRef.current));
 	});

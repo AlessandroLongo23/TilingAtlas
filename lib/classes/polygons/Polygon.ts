@@ -761,7 +761,7 @@ export class Polygon {
 		}
 	};
 
-	getName = (coordinate: Vector | null = null): string => {
+	getName = (_coordinate: Vector | null = null): string => {
 		throw new Error("Abstract method called");
 	};
 
@@ -813,11 +813,11 @@ export class Polygon {
 
 		if (!isWithinTolerance(this.centroid, other.centroid, tol)) return false;
 
-		for (let vertex of this.vertices) {
+		for (const vertex of this.vertices) {
 			if (!other.vertices.some((v) => isWithinTolerance(v, vertex, tol))) return false;
 		}
 
-		for (let halfway of this.halfways) {
+		for (const halfway of this.halfways) {
 			if (!other.halfways.some((h) => isWithinTolerance(h, halfway, tol))) return false;
 		}
 		return true;
@@ -838,7 +838,7 @@ export class Polygon {
 		throw new Error("Abstract method called");
 	};
 
-	encode = (): Object => {
+	encode = (): object => {
 		throw new Error("Abstract method called");
 	};
 }

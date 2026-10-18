@@ -1,7 +1,7 @@
 import { SeedConfiguration } from "./SeedConfiguration";
 import { VertexConfiguration } from "./VertexConfiguration";
 import { Vector } from "../Vector";
-import { Cyclotomic, getActiveRing, zetaIndexFromAngle } from "../Cyclotomic";
+import { Cyclotomic, zetaIndexFromAngle } from "../Cyclotomic";
 import type { Polygon } from "../polygons/Polygon";
 import { deduplicatePolygons, isWithinTolerance, isWithinAngularTolerance } from "@/utils";
 

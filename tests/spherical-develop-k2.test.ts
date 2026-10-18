@@ -79,7 +79,7 @@ function cyclicConfigHistogram(r: DevCell): Record<string, number> {
 		const p = r.vertices[i];
 		const nlen = Math.hypot(p[0], p[1], p[2]);
 		const n: Vec3 = [p[0] / nlen, p[1] / nlen, p[2] / nlen];
-		let a: Vec3 = Math.abs(n[0]) > 0.9 ? [0, 1, 0] : [1, 0, 0];
+		const a: Vec3 = Math.abs(n[0]) > 0.9 ? [0, 1, 0] : [1, 0, 0];
 		let e1: Vec3 = [
 			a[0] - (a[0] * n[0] + a[1] * n[1] + a[2] * n[2]) * n[0],
 			a[1] - (a[0] * n[0] + a[1] * n[1] + a[2] * n[2]) * n[1],

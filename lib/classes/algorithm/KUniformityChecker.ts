@@ -104,7 +104,6 @@ export class KUniformityChecker {
 		// Full turn (2π) in cornerAngleUnits' units of 2π/N — the one site a future N-generalization
 		// must revisit (asserted === 24 above until the rest of the gate is verified N-generic).
 		const FULL_TURN_UNITS = N;
-		const ZERO = Cyclotomic.ZERO(ring);
 
 		// --- Reconstruct a periodic block: replicate the cell over a (2R+1)² lattice window. ---
 		const R = 3;
@@ -211,7 +210,7 @@ export class KUniformityChecker {
 					// lattice preservation: M(u), M(v) ∈ ℤu+ℤv
 					const Mu = reflect ? u.conj().mulZeta(r) : u.mulZeta(r);
 					const Mv = reflect ? v.conj().mulZeta(r) : v.mulZeta(r);
-					if (!this.isLatticeCombo(Mu, u, v, ZERO) || !this.isLatticeCombo(Mv, u, v, ZERO)) continue;
+					if (!this.isLatticeCombo(Mu, u, v) || !this.isLatticeCombo(Mv, u, v)) continue;
 					// global verify: every interior polygon maps (mod lattice) onto an existing block tile
 					let ok = true;
 					for (const p of interior) {
@@ -252,7 +251,7 @@ export class KUniformityChecker {
 			if (tiles.size < 3) continue;
 			const vv = vertex.toVector();
 			if (Math.hypot(vv.x - cx, vv.y - cy) > vertR) continue;
-			if (reps.some((rp) => this.latticeEquiv(vertex, rp, u, v, ZERO))) continue;
+			if (reps.some((rp) => this.latticeEquiv(vertex, rp, u, v))) continue;
 			reps.push(vertex);
 		}
 		if (reps.length === 0) return null;
@@ -277,7 +276,7 @@ export class KUniformityChecker {
 				const gw = mapPoint(reps[i], g.reflect, g.r, g.T);
 				for (let j = 0; j < reps.length; j++) {
 					if (find(i) === find(j)) continue;
-					if (this.latticeEquiv(gw, reps[j], u, v, ZERO)) {
+					if (this.latticeEquiv(gw, reps[j], u, v)) {
 						union(i, j);
 						break;
 					}
@@ -303,7 +302,7 @@ export class KUniformityChecker {
 		}
 		const orbitOf = (q: Cyclotomic): number | null => {
 			for (let j = 0; j < reps.length; j++) {
-				if (this.latticeEquiv(q, reps[j], u, v, ZERO)) return repOrbit[j];
+				if (this.latticeEquiv(q, reps[j], u, v)) return repOrbit[j];
 			}
 			return null;
 		};
@@ -311,14 +310,14 @@ export class KUniformityChecker {
 	}
 
 	/** Exact test: a − b = m·u + n·v for integers m,n (m,n guessed from a float solve, verified exactly). */
-	private latticeEquiv(a: Cyclotomic, b: Cyclotomic, u: Cyclotomic, v: Cyclotomic, ZERO: Cyclotomic): boolean {
+	private latticeEquiv(a: Cyclotomic, b: Cyclotomic, u: Cyclotomic, v: Cyclotomic): boolean {
 		const diff = a.sub(b);
 		if (diff.isZero()) return true;
-		return this.isLatticeCombo(diff, u, v, ZERO);
+		return this.isLatticeCombo(diff, u, v);
 	}
 
 	/** Exact test: w = m·u + n·v for integers m,n. */
-	private isLatticeCombo(w: Cyclotomic, u: Cyclotomic, v: Cyclotomic, ZERO: Cyclotomic): boolean {
+	private isLatticeCombo(w: Cyclotomic, u: Cyclotomic, v: Cyclotomic): boolean {
 		if (w.isZero()) return true;
 		const d = w.toVector();
 		const a = u.toVector();

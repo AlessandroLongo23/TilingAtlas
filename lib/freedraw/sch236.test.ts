@@ -12,7 +12,6 @@ const load = (file: string): FreedrawPattern[] | null =>
 
 const k3 = load("sch236-solutions-k3.json");
 const k4 = load("sch236-solutions-k4.json");
-const byId = (ps: FreedrawPattern[] | null, id: string) => ps?.find((p) => p.id === id);
 
 describe("Schwarz (2,3,6) edge systems", () => {
 	it.skipIf(!k3 || !k4)("ships Marek's 2026-07-29 corrected run, and it starts at k=3", () => {

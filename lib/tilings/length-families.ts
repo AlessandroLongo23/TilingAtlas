@@ -17,7 +17,7 @@
 // that way. The two-square (Pythagorean) tiling is not: no single affine map can send both square
 // sizes to one, which is why its ratio is a real parameter and not a change of basis.
 
-import { evaluateParamCell, type ParametricCellData, type LenTerm } from "@/lib/utils/paramCell";
+import { type ParametricCellData, type LenTerm } from "@/lib/utils/paramCell";
 // k comes from the Python side (tools/ctrnact-oracle/vertex_orbits.py, via emit_length_meta.py) and is
 // no longer recomputed here. `lib/tilings/vertex-orbits.ts` was a re-implementation of that module and
 // disagreed with it on three families, so it is gone rather than kept as a second opinion.

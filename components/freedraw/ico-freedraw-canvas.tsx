@@ -120,6 +120,7 @@ export function IcoFreedrawCanvas({
 		} catch (e) {
 			console.warn("IcoFreedrawCanvas: WebGL unavailable —", e);
 			if (canvas && canvas.parentNode) canvas.parentNode.removeChild(canvas);
+			// eslint-disable-next-line react-hooks/set-state-in-effect -- the WebGL failure is only known once the effect tries to create the context
 			setErrored(true);
 			return;
 		}
@@ -289,7 +290,9 @@ export function IcoFreedrawCanvas({
 		// meshes and their materials in one pass and has no live setter, and the boards it serves are small.
 	}, [
 		pattern,
+		verts,
 		mode,
+		keepRadius,
 		showGrid,
 		solid,
 		solidEdgeList,

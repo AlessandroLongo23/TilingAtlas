@@ -42,7 +42,7 @@ function sections(text: string): { k: number; c: string; c2: string; body: strin
 
 function parseSection(k: number, c: string, c2: string, body: string): Row {
 	const r: Row = { k, c, c2 };
-	let pruned = body.match(/POOL PRUNED:\s*([\d,]+)\s*→\s*([\d,]+)\s*vectors\s*\(([\d.]+)% kept/);
+	const pruned = body.match(/POOL PRUNED:\s*([\d,]+)\s*→\s*([\d,]+)\s*vectors\s*\(([\d.]+)% kept/);
 	if (pruned) {
 		r.poolFull = num(pruned[1]);
 		r.poolKept = num(pruned[2]);

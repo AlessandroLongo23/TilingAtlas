@@ -61,12 +61,7 @@ export class StarParametricPolygon extends StarPolygon {
 	static fromVertices = (vertices: Vector[]): StarParametricPolygon => {
 		const angle1: number = Vector.angleBetween(vertices[0], vertices[1]);
 		const angle2: number = Vector.angleBetween(vertices[1], vertices[2]);
-		let alpha: number, beta: number;
-		if (angle1 > angle2) {
-			[alpha, beta] = [angle2, angle1];
-		} else {
-			[alpha, beta] = [angle1, angle2];
-		}
+		const alpha = angle1 > angle2 ? angle2 : angle1;
 
 		const startsWith = angle1 === alpha ? StarVertexTypes.OUTER : StarVertexTypes.INNER;
 		const anchor = vertices[0].copy();
@@ -80,7 +75,7 @@ export class StarParametricPolygon extends StarPolygon {
 		return StarParametricPolygon.fromAnchorAndDir(this.n, anchor, dir, this.alpha, this.startsWith);
 	};
 
-	encode = (): Object => {
+	encode = (): object => {
 		return {
 			type: PolygonType.STAR_PARAMETRIC,
 			n: this.n,

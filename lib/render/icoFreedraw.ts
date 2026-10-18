@@ -268,7 +268,7 @@ export function pushSphericalFace(
 		return;
 	}
 	// outward test on the flat polygon; if inward, reverse so sub-triangles wind outward
-	let fn = cross(sub(U[1], U[0]), sub(U[2], U[0]));
+	const fn = cross(sub(U[1], U[0]), sub(U[2], U[0]));
 	const flip = dot(fn, U[0]) < 0;
 	for (let i = 1; i < U.length - 1; i++) {
 		const a = U[0],

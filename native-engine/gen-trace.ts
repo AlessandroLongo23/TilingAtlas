@@ -18,11 +18,32 @@ import { Vector } from "@/classes/Vector";
 import { sdf, isWithinConvexHull, segmentsIntersect } from "@/utils/geometry";
 import { tolerance } from "@/utils/tolerance";
 import { PeriodSolver, vertexClassCount, latticeEquivExact, defaultMaxCellPolys } from "@/classes/algorithm/PeriodSolver";
+import type { FillCtx, PeriodCell, PeriodSolverDiag } from "@/classes/algorithm/PeriodSolver";
 import { KUniformityChecker } from "@/classes/algorithm/KUniformityChecker";
 import { VertexConfiguration } from "@/classes/algorithm/VertexConfiguration";
 import { SeedConfiguration } from "@/classes/algorithm/SeedConfiguration";
 import { PolygonsGenerator, VCGenerator, CompatibilityGraph, SeedSetExtractor, SeedBuilder, PolygonType } from "@/classes";
-import type { Polygon } from "@/classes";
+import type { Polygon, GeneratorParameters } from "@/classes";
+
+// The PeriodSolver methods this trace drives, private ones included (indexed access types reach them).
+type PS = Pick<PeriodSolver, "solve" | "isCompleteTiling"> & {
+  makeCtx: PeriodSolver["makeCtx"];
+  reducePolygon: PeriodSolver["reducePolygon"];
+  canonicalRep: PeriodSolver["canonicalRep"];
+  dedupModLattice: PeriodSolver["dedupModLattice"];
+  buildBlock: PeriodSolver["buildBlock"];
+  vcNameAt: PeriodSolver["vcNameAt"];
+  analyze: PeriodSolver["analyze"];
+  gapStartRay: PeriodSolver["gapStartRay"];
+  isPrimitive: PeriodSolver["isPrimitive"];
+  stateKey: PeriodSolver["stateKey"];
+  properOverlapWithBlock: PeriodSolver["properOverlapWithBlock"];
+  blockHasProperOverlap: PeriodSolver["blockHasProperOverlap"];
+  coreSelfOverlapsNearest: PeriodSolver["coreSelfOverlapsNearest"];
+  blockOverlapPeriodic: PeriodSolver["blockOverlapPeriodic"];
+  torusFill: PeriodSolver["torusFill"];
+};
+const newPS = (k: number) => new PeriodSolver(k) as unknown as PS;
 
 const ring = CyclotomicRing.create(24);
 setActiveRing(ring);
@@ -264,14 +285,14 @@ for (let iter = 0; iter < 400; iter++) {
 }
 
 // ---- lattice reduction & block geometry (PeriodSolver.reducePolygon / canonicalRep / dedupModLattice /
-//      buildBlock). Drives the REAL (private) methods via `as any`, on a real makeCtx, and compares the
+//      buildBlock). Drives the REAL (private) methods via `PS`, on a real makeCtx, and compares the
 //      exact keys. Exact identity on a float broadphase — all float primitives are already bit-pinned. ----
-const ps: any = new PeriodSolver(2);
+const ps = newPS(2);
 const RS = 0x1f; // record separator for key-set fields (absent from keys; not TAB/newline)
-const packCtx = (ctx: any) =>
+const packCtx = (ctx: FillCtx) =>
   `${encC(ctx.u)}~${encC(ctx.v)}~${f2h(ctx.uV.x)},${f2h(ctx.uV.y)}~${f2h(ctx.vV.x)},${f2h(ctx.vV.y)}~${f2h(ctx.det)}~${f2h(ctx.cellDiam)}~${f2h(ctx.maxCircum)}~${f2h(ctx.cellArea)}`;
 const polyEnc = (P: Polygon) =>
-  `${P.n}~${P.isStar ? 1 : 0}~${(P as any).alphaU ?? 0}~${P.exactVertices!.map(encC).join(";")}~${P.edgeDirs!.join(",")}`;
+  `${P.n}~${P.isStar ? 1 : 0}~${(P as Polygon & { alphaU?: number }).alphaU ?? 0}~${P.exactVertices!.map(encC).join(";")}~${P.edgeDirs!.join(",")}`;
 const sortedKeys = (ps2: Polygon[]) => ps2.map((p) => p.exactKey()).sort().join(String.fromCharCode(RS));
 // small integer-combo lattices in ℤ[ζ₂₄]; keep the ones makeCtx accepts (minLen≥0.9, non-degenerate).
 const zc = (k: number) => Cyclotomic.zeta(ring, ((k % 24) + 24) % 24);
@@ -284,7 +305,7 @@ for (let t = 0; t < 60 && LATTICES.length < 24; t++) {
 }
 const STARC: [number, number][] = [[3, 2], [4, 3], [6, 2], [12, 5]];
 for (const [u, v] of LATTICES) {
-  const ctx = ps.makeCtx(u, v, ring, new Set<string>(), [3, 4, 6, 12], 400, [], new Set<string>(), new Set<string>());
+  const ctx = ps.makeCtx(u, v, ring, new Set<string>(), [3, 4, 6, 12], 400, [], new Set<string>(), new Set<string>())!;
   const pc = packCtx(ctx);
   const Rabs = ctx.cellDiam + 8;
   // place polygons at random anchors (often outside the cell ⇒ reduction is non-trivial)
@@ -318,7 +339,7 @@ for (const [u, v] of LATTICES) {
 {
   const ZERO = new Cyclotomic(ring, Array.from({ length: 8 }, () => 0n), 1n);
   const bigU = zc(0).scaleRational(5n, 1n), bigV = zc(6).scaleRational(5n, 1n);
-  const ctx = ps.makeCtx(bigU, bigV, ring, new Set<string>(), [3, 4, 6, 12], 400, [], new Set<string>(), new Set<string>());
+  const ctx = ps.makeCtx(bigU, bigV, ring, new Set<string>(), [3, 4, 6, 12], 400, [], new Set<string>(), new Set<string>())!;
   if (ctx) {
     const pc = packCtx(ctx);
     const Rabs = ctx.cellDiam + 8;
@@ -357,11 +378,11 @@ for (let i = 0; i < 1500; i++) {
 
 // ---- block analysis (PeriodSolver.analyze + coveredIntervals / gapStartRay / vcRingNames /
 //      canonicalVCName). Compares the decision: contradiction / open (vertex key + gapStartRay d0 +
-//      sorted covered-interval multiset) / closed. Drives the REAL private methods via `as any`. ----
+//      sorted covered-interval multiset) / closed. Drives the REAL private methods via `PS`. ----
 const RSs = String.fromCharCode(0x1f);
 // harvested occurring VC set = exactly what analyze needs to not reject on VC grounds. vcNameAt gives
 // the canonical name (dihedral-invariant, so its atan2 sort matches vcRingNames' edge-dir sort).
-const harvestAllowed = (reps: Polygon[], ctx: any): Set<string> => {
+const harvestAllowed = (reps: Polygon[], ctx: FillCtx): Set<string> => {
   const block: Polygon[] = ps.buildBlock(reps, ctx, 5);
   const judgeR = ctx.cellDiam + 0.5, incR = judgeR + ctx.maxCircum + 0.01;
   const inc = new Map<string, { v: Cyclotomic; polys: Polygon[] }>();
@@ -377,24 +398,24 @@ const harvestAllowed = (reps: Polygon[], ctx: any): Set<string> => {
   }
   return out;
 };
-const encodeAnalyzeTS = (r: any, N: number): string => {
+const encodeAnalyzeTS = (r: ReturnType<PS["analyze"]>, N: number): string => {
   if (r.contradiction) return "C";
   if (r.openVertex) {
     const ivs = r.openVertex.intervals.slice()
-      .sort((a: any, b: any) => a.start - b.start || a.units - b.units || a.n - b.n)
-      .map((it: any) => `${it.start}:${it.units}:${it.n}`).join(",");
+      .sort((a, b) => a.start - b.start || a.units - b.units || a.n - b.n)
+      .map((it) => `${it.start}:${it.units}:${it.n}`).join(",");
     return `O~${r.openVertex.vertex.key()}~${ps.gapStartRay(r.openVertex.intervals, N)}~${ivs}`;
   }
   return "closed";
 };
-const analyzeCase = (reps: Polygon[], ctx: any, allowed: Set<string>) => {
+const analyzeCase = (reps: Polygon[], ctx: FillCtx, allowed: Set<string>) => {
   ctx.allowed = allowed;
   const enc = [...allowed].join(RSs);
   row("analyze", packCtx(ctx), enc, reps.map(polyEnc).join("|"), encodeAnalyzeTS(ps.analyze(reps, ctx), ctx.N));
 };
 // random reps (from the lattice loop's placements): allowed=∅ (contradiction/open) and harvested.
 for (const [u, v] of LATTICES) {
-  const ctx = ps.makeCtx(u, v, ring, new Set<string>(), [3, 4, 6, 12], 400, [], new Set<string>(), new Set<string>());
+  const ctx = ps.makeCtx(u, v, ring, new Set<string>(), [3, 4, 6, 12], 400, [], new Set<string>(), new Set<string>())!;
   const group: Polygon[] = [];
   for (let i = 0; i < 6; i++) {
     const P: Polygon = rnd() < 0.6
@@ -403,15 +424,15 @@ for (const [u, v] of LATTICES) {
     group.push(P);
   }
   const reps: Polygon[] = ps.dedupModLattice(group, ctx, new Map());
-  analyzeCase(reps, ps.makeCtx(u, v, ring, new Set<string>(), [3, 4, 6, 12], 400, [], new Set<string>(), new Set<string>()), new Set<string>());
-  analyzeCase(reps, ps.makeCtx(u, v, ring, new Set<string>(), [3, 4, 6, 12], 400, [], new Set<string>(), new Set<string>()), harvestAllowed(reps, ctx));
+  analyzeCase(reps, ps.makeCtx(u, v, ring, new Set<string>(), [3, 4, 6, 12], 400, [], new Set<string>(), new Set<string>())!, new Set<string>());
+  analyzeCase(reps, ps.makeCtx(u, v, ring, new Set<string>(), [3, 4, 6, 12], 400, [], new Set<string>(), new Set<string>())!, harvestAllowed(reps, ctx));
 }
 // hand-built valid regular cells: unit square (closed) and big-lattice square (open corners).
 {
   const ZERO = new Cyclotomic(ring, Array.from({ length: 8 }, () => 0n), 1n);
   const sq = (mult: bigint) => {
     const u = zc(0).scaleRational(mult, 1n), v = zc(6).scaleRational(mult, 1n);
-    const ctx = ps.makeCtx(u, v, ring, new Set(["4,4,4,4"]), [3, 4, 6, 12], 400, [], new Set<string>(), new Set<string>());
+    const ctx = ps.makeCtx(u, v, ring, new Set(["4,4,4,4"]), [3, 4, 6, 12], 400, [], new Set<string>(), new Set<string>())!;
     if (!ctx) return;
     const reps: Polygon[] = ps.dedupModLattice([RegularPolygon.fromAnchorAndDirExact(4, ZERO, 0)], ctx, new Map());
     analyzeCase(reps, ctx, new Set(["4,4,4,4"]));
@@ -421,17 +442,17 @@ for (const [u, v] of LATTICES) {
   // disallowed-VC contradiction: the unit-square tiling but with the wrong allowed set.
   {
     const u = zc(0), v = zc(6);
-    const ctx = ps.makeCtx(u, v, ring, new Set<string>(), [3, 4, 6, 12], 400, [], new Set<string>(), new Set<string>());
+    const ctx = ps.makeCtx(u, v, ring, new Set<string>(), [3, 4, 6, 12], 400, [], new Set<string>(), new Set<string>())!;
     if (ctx) {
       const reps: Polygon[] = ps.dedupModLattice([RegularPolygon.fromAnchorAndDirExact(4, ZERO, 0)], ctx, new Map());
       analyzeCase(reps, ctx, new Set<string>());                 // 4.4.4.4 vertex ∉ ∅ ⇒ contradiction
-      analyzeCase(reps, ps.makeCtx(u, v, ring, new Set<string>(), [3, 4, 6, 12], 400, [], new Set<string>(), new Set<string>()), new Set(["3,3,3,3,3,3"])); // wrong VC ⇒ contradiction
+      analyzeCase(reps, ps.makeCtx(u, v, ring, new Set<string>(), [3, 4, 6, 12], 400, [], new Set<string>(), new Set<string>())!, new Set(["3,3,3,3,3,3"])); // wrong VC ⇒ contradiction
     }
   }
   // over-full contradiction: five squares all cornered at the origin in a big lattice ⇒ Σ angle > 2π.
   {
     const u = zc(0).scaleRational(6n, 1n), v = zc(6).scaleRational(6n, 1n);
-    const ctx = ps.makeCtx(u, v, ring, new Set<string>(), [3, 4, 6, 12], 400, [], new Set<string>(), new Set<string>());
+    const ctx = ps.makeCtx(u, v, ring, new Set<string>(), [3, 4, 6, 12], 400, [], new Set<string>(), new Set<string>())!;
     if (ctx) {
       const group = [0, 1, 2, 3, 4].map((d) => RegularPolygon.fromAnchorAndDirExact(4, ZERO, d) as Polygon);
       const reps: Polygon[] = ps.dedupModLattice(group, ctx, new Map());
@@ -445,7 +466,7 @@ for (const [u, v] of LATTICES) {
 const checker = new KUniformityChecker();
 const ZERO0 = new Cyclotomic(ring, Array.from({ length: 8 }, () => 0n), 1n);
 const ONE0 = zc(0);
-const fakeDiag = () => ({ supercellRejected: 0, primitivityGuardMisses: 0, primitivityGuardAreaSuppressed: 0, starLadderTruncated: false } as any);
+const fakeDiag = () => ({ supercellRejected: 0, primitivityGuardMisses: 0, primitivityGuardAreaSuppressed: 0, starLadderTruncated: false }) as PeriodSolverDiag;
 // hand-built VALID regular cells: 4.4.4.4 (unit), 3^6 (rhombic 2-triangle), and a 2×2 square supercell.
 const validCells: { cell: Polygon[]; u: Cyclotomic; v: Cyclotomic; allowed: Set<string> }[] = [
   { cell: [RegularPolygon.fromAnchorAndDirExact(4, ZERO0, 0)], u: zc(0), v: zc(6), allowed: new Set(["4,4,4,4"]) },
@@ -453,7 +474,7 @@ const validCells: { cell: Polygon[]; u: Cyclotomic; v: Cyclotomic; allowed: Set<
   { cell: [0, 1].flatMap((a) => [0, 1].map((b) => RegularPolygon.fromAnchorAndDirExact(4, zc(0).scaleRational(BigInt(a), 1n).add(zc(6).scaleRational(BigInt(b), 1n)), 0))), u: zc(0).scaleRational(2n, 1n), v: zc(6).scaleRational(2n, 1n), allowed: new Set(["4,4,4,4"]) },
 ];
 for (const { cell, u, v, allowed } of validCells) {
-  const ctx = ps.makeCtx(u, v, ring, allowed, [3, 4, 6, 12], 400, [], new Set<string>(), new Set<string>());
+  const ctx = ps.makeCtx(u, v, ring, allowed, [3, 4, 6, 12], 400, [], new Set<string>(), new Set<string>())!;
   if (!ctx) continue;
   const reps: Polygon[] = ps.dedupModLattice(cell, ctx, new Map());
   const rl = reps.map(polyEnc).join("|");
@@ -465,7 +486,7 @@ for (const { cell, u, v, allowed } of validCells) {
 }
 // INVALID cells (self-overlapping random reps): certificate must reject; gate returns a count or null.
 for (const [u, v] of LATTICES) {
-  const ctx = ps.makeCtx(u, v, ring, new Set<string>(), [3, 4, 6, 12], 400, [], new Set<string>(), new Set<string>());
+  const ctx = ps.makeCtx(u, v, ring, new Set<string>(), [3, 4, 6, 12], 400, [], new Set<string>(), new Set<string>())!;
   const group: Polygon[] = [];
   for (let i = 0; i < 5; i++) group.push(RegularPolygon.fromAnchorAndDirExact(REG[ri(0, REG.length - 1)], randPoint(8), ri(0, 23)));
   const reps: Polygon[] = ps.dedupModLattice(group, ctx, new Map());
@@ -529,7 +550,7 @@ for (const [pu, pv] of [[zc(0), zc(0).scaleRational(2n, 1n)], [zc(0), zc(12)], [
 // [8] dedupModLattice COLLAPSE — a poly and its lattice translate must reduce to one class (0/24 random
 //     groups ever collapsed). [11] blockOverlapPeriodic FALLBACK — small Rabs forces the guard TRUE.
 for (const [u, v] of LATTICES.slice(0, 12)) {
-  const ctx = ps.makeCtx(u, v, ring, new Set<string>(), [3, 4, 6, 12], 400, [], new Set<string>(), new Set<string>());
+  const ctx = ps.makeCtx(u, v, ring, new Set<string>(), [3, 4, 6, 12], 400, [], new Set<string>(), new Set<string>())!;
   const P = RegularPolygon.fromAnchorAndDirExact(REG[ri(0, REG.length - 1)], randPoint(4), ri(0, 23));
   const Pu = P.clone().translateExact(u), Pv = P.clone().translateExact(v);
   const group = [P, Pu, Pv, RegularPolygon.fromAnchorAndDirExact(REG[ri(0, REG.length - 1)], randPoint(4), ri(0, 23))];
@@ -545,19 +566,19 @@ for (const [u, v] of LATTICES.slice(0, 12)) {
 //      single-vertex fan of it) through BOTH the TS torusFill and the native one, comparing the emitted
 //      cell SET. This exercises the DFS capstone on real geometry — closing the multi-orbit, hexagon,
 //      mixed-VC, star, and certificate-accept coverage gaps the 39-agent audit flagged. ----
-const packCtxFull = (ctx: any, k: number) =>
+const packCtxFull = (ctx: FillCtx, k: number) =>
   `${encC(ctx.u)}~${encC(ctx.v)}~${f2h(ctx.uV.x)},${f2h(ctx.uV.y)}~${f2h(ctx.vV.x)},${f2h(ctx.vV.y)}~${f2h(ctx.det)}~${f2h(ctx.cellDiam)}~${f2h(ctx.maxCircum)}~${f2h(ctx.cellArea)}~${encS(ctx.cellAreaSurd)}~${ctx.orbitFloor}~${ctx.maxCellPolys}~${k}~${ctx.polySizes.join(",")}`;
 const encodeCellsTS = (cells: Polygon[][]): string =>
   cells.map((cell) => cell.map((p) => p.exactKey()).sort().join(String.fromCharCode(0x1e))).sort().join(String.fromCharCode(0x1f));
-const mkDiag = (): any => ({ candidateLattices: 0, latticesTried: 0, rawCells: 0, emitted: 0, gateRejected: 0, earlyGateRejected: 0, fanLattices: 0, p0Skipped: 0, orbitSkipped: 0, p1Pruned: 0, p2Skipped: 0, vBelowKSkipped: 0, seedStateDedup: 0, obliqueCandidates: 0, obliqueTruncated: null, supercellRejected: 0, primitivityGuardMisses: 0, primitivityGuardAreaSuppressed: 0, starLadderTruncated: false, blockIndexCapTruncated: 0, timedOut: false });
+const mkDiag = () => ({ candidateLattices: 0, latticesTried: 0, rawCells: 0, emitted: 0, gateRejected: 0, earlyGateRejected: 0, fanLattices: 0, p0Skipped: 0, orbitSkipped: 0, p1Pruned: 0, p2Skipped: 0, vBelowKSkipped: 0, seedStateDedup: 0, obliqueCandidates: 0, obliqueTruncated: null, supercellRejected: 0, primitivityGuardMisses: 0, primitivityGuardAreaSuppressed: 0, starLadderTruncated: false, blockIndexCapTruncated: 0, timedOut: false }) as PeriodSolverDiag;
 // build a torusFill-ready ctx for a solved cell (allowed harvested from the cell; regular seeds ⇒ no stars)
-const ctxForCell = (cell: any, k: number) => {
+const ctxForCell = (cell: PeriodCell, k: number) => {
   const [u, v] = cell.basisExact;
   const cps: Polygon[] = cell.cellPolygons;
   const polySizes = [...new Set(cps.filter((p) => !p.isStar).map((p) => p.n))].sort((a, b) => a - b);
-  const ctx0 = ps.makeCtx(u, v, ring, new Set<string>(), polySizes, defaultMaxCellPolys(k), [], new Set<string>(), new Set<string>());
+  const ctx0 = ps.makeCtx(u, v, ring, new Set<string>(), polySizes, defaultMaxCellPolys(k), [], new Set<string>(), new Set<string>())!;
   const allowed = harvestAllowed(cps, ctx0);
-  const ctx = ps.makeCtx(u, v, ring, allowed, polySizes, defaultMaxCellPolys(k), [], new Set<string>(), new Set<string>());
+  const ctx = ps.makeCtx(u, v, ring, allowed, polySizes, defaultMaxCellPolys(k), [], new Set<string>(), new Set<string>())!;
   ctx.gate = (r: Polygon[]) => checker.countVertexOrbits(r, u, v);
   return { ctx, allowed, cps, u, v };
 };
@@ -565,8 +586,8 @@ const e2eSeeds: [string, number][] = [
   ["4,4,4,4", 1], ["3,3,3,3,3,3", 1], ["6,6,6", 1], ["3,6,3,6", 1], ["3,4,6,4", 1], ["3,3,3,3,6", 1], ["3,3,4,3,4", 1], ["4,6,12", 1],
 ];
 for (const [name, k] of e2eSeeds) {
-  let cells: any[] = [];
-  const psK: any = new PeriodSolver(k);   // torusFill reads this.k for the early gate — must match the seed's k
+  let cells: PeriodCell[] = [];
+  const psK = newPS(k);   // torusFill reads this.k for the early gate — must match the seed's k
   try { cells = psK.solve(new SeedConfiguration([VertexConfiguration.fromName(name)]), {}).cells; }
   catch { continue; }
   for (const cell of cells) {
@@ -588,17 +609,17 @@ for (const [name, k] of e2eSeeds) {
 // k=2: one real 2-uniform seed so the orbit gate's multi-orbit union-find actually RETURNS ≥2 (the
 // k=1 cells above only exercise the merge-to-1 path). 3.3.3.3.3.3 + 3.3.3.3.6 → cells with 2 orbits.
 try {
-  const params = { [PolygonType.REGULAR]: { ns: [3, 4, 6, 8, 12] } } as any;
+  const params = { [PolygonType.REGULAR]: { ns: [3, 4, 6, 8, 12] } } as GeneratorParameters;
   const pg = new PolygonsGenerator(params, []);
-  const vcs = (new VCGenerator(pg.polygons) as any).generateVertexConfigurations();
+  const vcs = new VCGenerator(pg.polygons).generateVertexConfigurations();
   const adj: Record<string, string[]> = {};
   for (const vc of vcs) adj[vc.name] = [];
   for (let i = 0; i < vcs.length; i++) for (let j = i + 1; j < vcs.length; j++)
     if (vcs[i].isCompatible(vcs[j])) { adj[vcs[i].name].push(vcs[j].name); adj[vcs[j].name].push(vcs[i].name); }
   const graph = CompatibilityGraph.fromAdjacencyList(adj, vcs);
-  const seedSets = (new SeedSetExtractor(graph) as any).findSeedSets(2);
-  const seeds2 = (new SeedBuilder() as any).buildSeeds(2, 1, { seedSetLoader: () => seedSets });
-  const ps2: any = new PeriodSolver(2);
+  const seedSets = new SeedSetExtractor(graph).findSeedSets(2);
+  const seeds2 = new SeedBuilder().buildSeeds(2, 1, { seedSetLoader: () => seedSets });
+  const ps2 = newPS(2);
   const { cells } = ps2.solve(seeds2[0], {});
   for (const cell of cells) {
     const { ctx, allowed, cps } = ctxForCell(cell, 2);

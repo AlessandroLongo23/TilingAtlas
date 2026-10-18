@@ -12,7 +12,27 @@ const eslintConfig = defineConfig([
 		"out/**",
 		"build/**",
 		"next-env.d.ts",
+		// Gitignored: Marek's chat vault, not part of the repo.
+		"marek-vault/**",
+		// Vendored as shipped.
+		"lib/isohedral/vendor/**",
 	]),
+	{
+		rules: {
+			// A leading underscore marks a binding kept on purpose: a callback's positional argument, the
+			// rest sibling that strips a key, a caught error nobody reads.
+			"@typescript-eslint/no-unused-vars": [
+				"warn",
+				{
+					argsIgnorePattern: "^_",
+					varsIgnorePattern: "^_",
+					caughtErrorsIgnorePattern: "^_",
+					destructuredArrayIgnorePattern: "^_",
+					ignoreRestSiblings: true,
+				},
+			],
+		},
+	},
 ]);
 
 export default eslintConfig;

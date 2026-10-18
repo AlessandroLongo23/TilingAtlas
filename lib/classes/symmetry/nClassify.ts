@@ -346,7 +346,6 @@ function allTopCentersOnMirror(
 }
 
 // ---- lattice shape (exact oblique test + float length/angle on the reduced basis, as the original) ----
-const detXY = (a: Vec, b: Vec): number => xOf(a) * yOf(b) - yOf(a) * xOf(b);
 // w = α·a + β·b for integers α,β (float solve + exact verify).
 function intCombo(w: Vec, a: Vec, b: Vec): boolean {
 	const ax = xOf(a),

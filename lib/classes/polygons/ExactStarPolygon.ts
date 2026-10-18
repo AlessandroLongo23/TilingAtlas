@@ -129,7 +129,7 @@ export class ExactStarPolygon extends Polygon {
 		return s;
 	};
 
-	encode = (): Object => {
+	encode = (): object => {
 		const base: Record<string, unknown> = {
 			type: PolygonType.STAR_REGULAR,
 			n: this.n,

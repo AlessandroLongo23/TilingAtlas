@@ -2,11 +2,12 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { verifyComplex } from "../../scripts/moduli-graph/verifyComplex";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
+import type { ParametricCellData } from "@/lib/utils/paramCell";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- these tests cast per-site below
-const atlas = decodeAtlas<any>(JSON.parse(readFileSync("public/reference-atlas-isotoxal.json", "utf8")));
-const recs = atlas as any[];
-const cluster = recs.filter((r) => r.k === 2 && r.source === "isotoxal" && r.paramCell?.params?.length === 2);
+const atlas = decodeAtlas<{ id: string; k: number; source: string; paramCell?: ParametricCellData }>(
+	JSON.parse(readFileSync("public/reference-atlas-isotoxal.json", "utf8")),
+);
+const cluster = atlas.filter((r) => r.k === 2 && r.source === "isotoxal" && r.paramCell?.params?.length === 2);
 
 describe("verifyComplex on the 24-family cluster", () => {
 	const r = verifyComplex(cluster);

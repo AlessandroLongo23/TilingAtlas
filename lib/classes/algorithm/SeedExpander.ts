@@ -485,7 +485,7 @@ export class SeedExpander {
 			const sorted = [...frontier].sort((a, b) => a.distance - b.distance);
 			const targetFrontier = sorted[0]!;
 
-			let _tv = now();
+			const _tv = now();
 			const validTransforms = this.findValidIsometries(
 				targetFrontier,
 				currentPatch,

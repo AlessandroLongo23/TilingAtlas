@@ -5,11 +5,10 @@ import {
 	Vector,
 	PolygonSignature,
 	VCGenerator,
-	EquilateralPolygon,
 	GenericPolygon,
 	CyclotomicRing,
 } from "@/classes";
-import { coprime, gcd, isWithinTolerance, segmentsIntersect, toRadians } from "@/utils";
+import { coprime, gcd, isWithinTolerance, segmentsIntersect } from "@/utils";
 import { tolerance } from "@/utils/tolerance";
 
 /** The explicit set of regular polygon orders for a run (honors `ns`, else 3..n_max). */
@@ -78,8 +77,8 @@ export class PolygonsGenerator {
 
 			for (let n = 3; n <= n_max; n++) {
 				for (let d = 2; d < Math.ceil(n / 2); d++) {
-					let a = Math.PI * (1 - (2 * d) / n);
-					let b = Math.PI * (1 + (2 * (d - 1)) / n);
+					const a = Math.PI * (1 - (2 * d) / n);
+					const b = Math.PI * (1 + (2 * (d - 1)) / n);
 					if (angle_par === null || (this.isMultiple(a, angle_par) && this.isMultiple(b, angle_par))) {
 						this.polygons.push(
 							new PolygonSignature({
@@ -114,13 +113,13 @@ export class PolygonsGenerator {
 						if (base_angle >= (Math.PI * (n - 2)) / n) continue;
 						if (!coprime(num, den)) continue;
 
-						let alpha = base_angle;
-						let d = (n / 2) * (1 - alpha / Math.PI);
+						const alpha = base_angle;
+						const d = (n / 2) * (1 - alpha / Math.PI);
 						if (this.isMultiple(d, 1)) {
 							continue;
 						}
 
-						let b = 2 * Math.PI * (1 - 1 / n) - alpha;
+						const b = 2 * Math.PI * (1 - 1 / n) - alpha;
 						if (this.isMultiple(b, base_angle)) {
 							this.polygons.push(
 								new PolygonSignature({
@@ -247,7 +246,7 @@ export class PolygonsGenerator {
 	}
 
 	isMultiple = (value: number, divisor: number): boolean => {
-		let rem = value % divisor;
+		const rem = value % divisor;
 		return Math.abs(rem) < tolerance || Math.abs(rem - divisor) < tolerance;
 	};
 

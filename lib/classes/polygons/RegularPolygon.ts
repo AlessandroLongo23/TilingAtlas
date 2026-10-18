@@ -38,7 +38,7 @@ export class RegularPolygon extends Polygon {
 	};
 
 	static fromCentroidAndAngle = (n: number, centroid: Vector, angle: number): RegularPolygon => {
-		let polygon: RegularPolygon = new RegularPolygon(n);
+		const polygon: RegularPolygon = new RegularPolygon(n);
 
 		polygon.centroid = centroid;
 		polygon.angle = angle;
@@ -84,7 +84,7 @@ export class RegularPolygon extends Polygon {
 	 */
 	calculateVerticesFromCentroidAndAngle = () => {
 		this.vertices = [];
-		let radius = 0.5 / Math.sin(Math.PI / this.n);
+		const radius = 0.5 / Math.sin(Math.PI / this.n);
 		for (let i = 0; i < this.n; i++) {
 			this.vertices.push(
 				new Vector(
@@ -101,7 +101,7 @@ export class RegularPolygon extends Polygon {
 	 */
 	calculateVerticesFromAnchorAndDir = () => {
 		this.vertices = [this.anchor.copy()];
-		let current_dir: Vector = this.dir.copy();
+		const current_dir: Vector = this.dir.copy();
 		for (let i = 1; i < this.n; i++) {
 			const prev_vertex = this.vertices[this.vertices.length - 1];
 			this.vertices.push(Vector.add(prev_vertex.copy(), current_dir.copy()));
@@ -140,7 +140,7 @@ export class RegularPolygon extends Polygon {
 		return RegularPolygon.fromAnchorAndDir(this.n, anchor, dir);
 	};
 
-	encode = (): Object => {
+	encode = (): object => {
 		const base: Record<string, unknown> = {
 			type: PolygonType.REGULAR,
 			n: this.n,

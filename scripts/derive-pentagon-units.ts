@@ -54,11 +54,6 @@ function log(line: string) {
 
 type Mat = [number, number, number, number, number, number]; // a b c / d e f
 
-const apply = (m: Mat, p: Point): Point => ({
-	x: m[0] * p.x + m[1] * p.y + m[2],
-	y: m[3] * p.x + m[4] * p.y + m[5],
-});
-
 const key = (p: Point) => `${Math.round(p.x * Q)},${Math.round(p.y * Q)}`;
 
 function centroid(pts: Point[]): Point {

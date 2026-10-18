@@ -6,10 +6,12 @@ import { extractTwoCell } from "./twoCellExtractor";
 import { nodeCanonicalKey } from "./nodeCanonicalKey";
 import { verifyComplex } from "./verifyComplex";
 import type { FloatTiling, NodeState } from "./types";
+import type { FamilyRecord } from "./graphAssembler";
 import { decodeAtlas } from "../atlas/encode.mjs";
 
 const atlas = decodeAtlas(JSON.parse(readFileSync("public/reference-atlas-isotoxal.json", "utf8")));
-const recs = (Array.isArray(atlas) ? atlas : atlas.records) as any[];
+type AtlasRecord = FamilyRecord & { k: number; source: string };
+const recs = (Array.isArray(atlas) ? atlas : atlas.records) as AtlasRecord[];
 const cluster = recs.filter((r) => r.k === 2 && r.source === "isotoxal" && r.paramCell?.params?.length === 2);
 
 const round = (x: number) => Math.round(x * 1e4) / 1e4;
@@ -40,7 +42,7 @@ const faces: { family: string; boundary: string[]; surface: string; genuine: boo
 
 // Surface classification per family from the verified report (generators are pillow PAIRS → map each
 // family in a generator to that generator's surface; families not in any generator get 'face').
-const report = verifyComplex(cluster as never[]);
+const report = verifyComplex(cluster);
 const famSurface = new Map<string, string>();
 for (const g of report.h2)
 	for (const fam of g.faces) famSurface.set(fam.replace("ctrnact-isotoxal-family-", ""), g.surface);
@@ -49,7 +51,7 @@ for (const g of report.h2)
 // point, not a tiling, and the certified homology drops it. So skip ⊥ nodes and any edge/face touching ⊥.
 for (const rec of cluster) {
 	const short = rec.id.replace("ctrnact-isotoxal-family-", "");
-	const face = extractTwoCell(rec.paramCell);
+	const face = extractTwoCell(rec.paramCell!);
 	const boundaryKeys: string[] = [];
 	let touchesDeg = false;
 	for (const be of face.boundary) {

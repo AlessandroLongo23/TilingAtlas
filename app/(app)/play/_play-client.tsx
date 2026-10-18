@@ -651,16 +651,15 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	//
 	// Skipping when `selected` is the same object leaves a deliberate switch alone; the effect below
 	// finishes it once that geometry's records land.
-	const lastSyncedSelection = useRef<CatalogueTiling | null>(null);
-	useEffect(() => {
-		if (!selected) return;
-		if (lastSyncedSelection.current === selected) return;
-		lastSyncedSelection.current = selected;
+	// Adjusted during render, so the toggles never commit out of step with a new selection.
+	const [lastSyncedSelection, setLastSyncedSelection] = useState<CatalogueTiling | null>(null);
+	if (selected && lastSyncedSelection !== selected) {
+		setLastSyncedSelection(selected);
 		const g = geometryOf(selected);
 		if (g !== geometry) setGeometry(g);
 		const d = decorationOf(selected);
 		if (d !== decoration) setDecoration(d);
-	}, [selected, geometry, decoration]);
+	}
 	// Finish a switch whose cell was empty when it was made. The toggles jump the selection themselves
 	// when they can; when the target shelf is still in flight there is nothing to jump to, so the canvas
 	// keeps showing the old tiling while the chips already read the new cell. As soon as the cell has
@@ -683,7 +682,6 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		}
 		if (!awaitingSwitch.current) return;
 		awaitingSwitch.current = false;
-		lastSyncedSelection.current = geometryList[0];
 		setSelected(geometryList[0]);
 	}, [geometryList, selected, geometry, decoration, setSelected]);
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useConfiguration } from "@/stores/configuration";
 import { polyhedronForId } from "@/lib/render/sphericalSolids";
 import { buildBubbleSphere } from "@/lib/render/sphBubble";
@@ -35,6 +35,11 @@ export function SphericalThumbnail({ solidId, bubbleBites, size = 256 }: Spheric
 	// identity on every render, so listing it as a dep tore the thumbnail down and rebuilt it forever and
 	// `onReady` never fired — every spherical bubble card sat on its skeleton, blank.
 	const bitesKey = bubbleBites ? bubbleBites.map((w) => w.join("")).join("|") : "";
+	// The effect reads the array through this ref; the key above says when it changed.
+	const bitesRef = useRef(bubbleBites);
+	useLayoutEffect(() => {
+		bitesRef.current = bubbleBites;
+	});
 	// Global hue ring: subscribed LIVE — every visible preview rebuilds per drag tick, matching the
 	// hyperbolic thumbnails' exact-colours choice.
 	const hueOffset = useConfiguration((s) => s.hueOffset);
@@ -59,6 +64,7 @@ export function SphericalThumbnail({ solidId, bubbleBites, size = 256 }: Spheric
 				// drawing the radial projection onto a sphere they do not have, which turns J31 into a green
 				// blob with a few slivers on it. Faces first, projection second — the interactive view still
 				// offers the sphere where it means something.
+				const bubbleBites = bitesRef.current;
 				if (bubbleBites) {
 					const cfg = useConfiguration.getState();
 					const bubble = buildBubbleSphere(poly, bubbleBites, {

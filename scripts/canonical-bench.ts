@@ -211,7 +211,7 @@ const UNI: [number, number, number, number][] = [
 
 function reencode(e: Entry): { T1: Vec; T2: Vec; Seed: Vec[] } {
 	const g = pick(G24);
-	let T1 = applyG(g, e.T1),
+	const T1 = applyG(g, e.T1),
 		T2 = applyG(g, e.T2);
 	const [a, b, c, d] = pick(UNI);
 	const nT1 = add(scaleV(T1, a), scaleV(T2, b));
@@ -229,7 +229,7 @@ function reconstruct(o: { T1: Vec; T2: Vec; Seed: Vec[] }): PeriodCell | null {
 console.log(`\n=============== N vs repo dedup on real ctrnact cells (k<=${KMAX}, dup x${DUP}) ===============\n`);
 const raw: Entry[] = JSON.parse(fs.readFileSync(path.resolve("figures/data/ctrnact.json"), "utf8"))
 	.tilings.filter((t: Entry) => t.k <= KMAX)
-	.map((t: any) => ({ id: t.id, k: t.k, T1: t.T1, T2: t.T2, Seed: t.Seed }));
+	.map((t: Entry) => ({ id: t.id, k: t.k, T1: t.T1, T2: t.T2, Seed: t.Seed }));
 
 const ext = new TranslationalCellExtractor();
 const fastKey = (c: PeriodCell) => ext.canonicalKey(c.cellPolygons);

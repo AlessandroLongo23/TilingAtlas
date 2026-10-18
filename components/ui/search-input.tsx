@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useRef, useState, type ChangeEvent } from "react";
 import { Search, X } from "lucide-react";
 
 interface SearchInputProps {
@@ -19,9 +19,12 @@ export function SearchInput({
 	const [local, setLocal] = useState(activeSearch);
 	const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-	useEffect(() => {
+	// A search cleared from outside clears the box too (adjusted during render).
+	const [prevActive, setPrevActive] = useState(activeSearch);
+	if (prevActive !== activeSearch) {
+		setPrevActive(activeSearch);
 		if (activeSearch === "") setLocal("");
-	}, [activeSearch]);
+	}
 
 	const handleInput = (e: ChangeEvent<HTMLInputElement>) => {
 		const v = e.target.value;

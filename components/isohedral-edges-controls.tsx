@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RangeInput } from "@/components/ui/range-input";
 import { BULGE } from "@/lib/isohedral/build";
@@ -30,11 +30,17 @@ export function IsohedralEdgesControls({ ih }: { ih: number }) {
 
 	const info = ISOHEDRAL_TYPES.find((t) => t.ih === ih);
 	// A stored vector of the wrong length belongs to another type; fall back to this one's defaults.
-	const params = stored && stored.length === info?.numParams ? stored : (info?.defaultParams ?? []);
-	const bulge =
-		storedBulge && storedBulge.length === info?.numEdgeShapes
-			? storedBulge
-			: (info?.edgeShapes.map(() => BULGE.def) ?? []);
+	const params = useMemo(
+		() => (stored && stored.length === info?.numParams ? stored : (info?.defaultParams ?? [])),
+		[stored, info],
+	);
+	const bulge = useMemo(
+		() =>
+			storedBulge && storedBulge.length === info?.numEdgeShapes
+				? storedBulge
+				: (info?.edgeShapes.map(() => BULGE.def) ?? []),
+		[storedBulge, info],
+	);
 
 	const setParam = useCallback(
 		(i: number, value: number) =>

@@ -7,7 +7,6 @@ import { TilingThumbnail } from "@/components/tiling-thumbnail";
 import { Slider } from "@/components/ui/slider";
 import { polygonHue, TILE_FILL_ALPHA, tileFill, type TranslationalCellData } from "@/lib/utils/renderTiling";
 import type { FoundTiling } from "@/lib/services/runsService";
-import { cn } from "@/lib/utils/cn";
 
 interface RenderCell {
 	cellPolygons?: { n: number; vertices: number[][] }[];
@@ -72,10 +71,13 @@ export function InspectorDrawer({ tiling, onClose }: { tiling: FoundTiling | nul
 	const closeRef = useRef<HTMLButtonElement | null>(null);
 	const [zoom, setZoom] = useState(40);
 
-	// reset zoom each time a different cell opens
-	useEffect(() => {
+	// reset zoom each time a different cell opens (adjusted during render, keyed on the canonical key)
+	const key = tiling?.canonical_key;
+	const [zoomKey, setZoomKey] = useState(key);
+	if (zoomKey !== key) {
+		setZoomKey(key);
 		if (tiling) setZoom(40);
-	}, [tiling?.canonical_key]);
+	}
 
 	// ESC to close, scroll-lock + initial focus while open
 	useEffect(() => {

@@ -14,7 +14,6 @@ import {
 	joinLattice,
 	isIntCombo,
 	gaussReduceExact,
-	latticeKey,
 	areaLadderFromTiles,
 } from "@/classes/algorithm/LatticeEnumerator";
 

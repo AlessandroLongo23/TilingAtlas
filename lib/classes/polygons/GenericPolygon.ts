@@ -44,7 +44,7 @@ export class GenericPolygon extends Polygon {
 
 	calculateVerticesFromAnchorAndDir = () => {
 		this.vertices = [this.anchor.copy()];
-		let current_dir: Vector = this.dir.copy().normalize();
+		const current_dir: Vector = this.dir.copy().normalize();
 		for (let i = 1; i < this.n; i++) {
 			const prev_vertex = this.vertices[this.vertices.length - 1];
 			this.vertices.push(Vector.add(prev_vertex.copy(), Vector.scale(current_dir, this.sides[i - 1])));
@@ -208,7 +208,7 @@ export class GenericPolygon extends Polygon {
 		return GenericPolygon.fromAnchorAndDir(this.n, anchor, dir, [...this.sides], [...this.angles]);
 	};
 
-	encode = (): Object => {
+	encode = (): object => {
 		return {
 			type: PolygonType.GENERIC,
 			n: this.n,

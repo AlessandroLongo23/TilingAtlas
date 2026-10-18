@@ -16,16 +16,18 @@ const cache = new Map<string, SymmetryData | null>();
 
 export function useSymmetryData(tiling: CatalogueTiling | null): SymmetryData | null {
 	const [data, setData] = useState<SymmetryData | null>(tiling ? (cache.get(tiling.canonicalKey) ?? null) : null);
+	// A new tiling that needs no fetch (none, or already cached) takes its value during render; an
+	// uncached one keeps the previous value until the effect below resolves it.
+	const [prevTiling, setPrevTiling] = useState(tiling);
+	if (tiling !== prevTiling) {
+		setPrevTiling(tiling);
+		if (!tiling) setData(null);
+		else if (cache.has(tiling.canonicalKey)) setData(cache.get(tiling.canonicalKey) ?? null);
+	}
 	useEffect(() => {
-		if (!tiling) {
-			setData(null);
-			return;
-		}
+		if (!tiling) return;
 		const key = tiling.canonicalKey;
-		if (cache.has(key)) {
-			setData(cache.get(key) ?? null);
-			return;
-		}
+		if (cache.has(key)) return;
 		let alive = true;
 		(async () => {
 			try {

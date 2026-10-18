@@ -6,7 +6,7 @@ import { Modal } from "@/components/ui/modal";
 import { OptionWall } from "@/components/ui/option-wall";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
 import { speciesPolygons } from "@/components/polygon-glyph";
-import { parseSpecies, speciesLabel, type PolygonMode } from "@/lib/services/polygonSpecies";
+import { parseSpecies, speciesLabel } from "@/lib/services/polygonSpecies";
 import type { PolygonMode as Mode } from "@/lib/services/referenceAtlas";
 import { cn } from "@/lib/utils/cn";
 

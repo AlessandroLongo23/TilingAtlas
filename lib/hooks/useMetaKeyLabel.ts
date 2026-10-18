@@ -1,18 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 // The label for the platform's ⌘/Meta key. The Command-scrub gesture binds to `event.metaKey`, which is
 // ⌘ on macOS, the Windows key on Windows, and Super elsewhere — so any hint must name the key the user
-// actually holds. Detection needs `navigator` (client-only), so we start from a stable "⌘" fallback that
-// matches the server render and correct it after mount, which keeps hydration warning-free.
+// actually holds. Detection needs `navigator` (client-only), so the server snapshot is a stable "⌘"
+// fallback and hydration corrects it to the client value without a warning.
+const noSubscribe = () => () => {};
+const clientLabel = () => {
+	const src = `${navigator.platform} ${navigator.userAgent}`;
+	if (/mac|iphone|ipad|ipod/i.test(src)) return "⌘";
+	if (/win/i.test(src)) return "Win";
+	return "Super";
+};
+const serverLabel = () => "⌘";
+
 export function useMetaKeyLabel(): string {
-	const [label, setLabel] = useState("⌘");
-	useEffect(() => {
-		const src = `${navigator.platform} ${navigator.userAgent}`;
-		if (/mac|iphone|ipad|ipod/i.test(src)) setLabel("⌘");
-		else if (/win/i.test(src)) setLabel("Win");
-		else setLabel("Super");
-	}, []);
-	return label;
+	return useSyncExternalStore(noSubscribe, clientLabel, serverLabel);
 }

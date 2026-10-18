@@ -24,7 +24,7 @@ interface BadgeProps {
 	children: ReactNode;
 }
 
-export function Badge({ tone = "neutral", mono = false, pill = false, className, children }: BadgeProps) {
+export function Badge({ tone = "neutral", mono = false, className, children }: BadgeProps) {
 	return (
 		<span
 			className={cn(

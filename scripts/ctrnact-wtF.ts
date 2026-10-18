@@ -42,7 +42,7 @@ for (const t of tilings) {
 		const w = Math.max(wt(u), wt(v));
 		out.push(`${t.id},${t.k},${w}`);
 		perKMax[t.k] = Math.max(perKMax[t.k] ?? 0, w);
-	} catch (e) {
+	} catch {
 		fail++;
 	}
 }

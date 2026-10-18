@@ -5,10 +5,9 @@
  *   (c) that reduction IS cellsCongruent to the 9-tile certified cell.
  *   pnpm tsx scripts/diag-k3-duplicate.ts
  */
-import { setActiveRing, CyclotomicRing, Cyclotomic } from "@/classes/Cyclotomic";
+import { setActiveRing, CyclotomicRing } from "@/classes/Cyclotomic";
 import { TranslationalCellExtractor } from "@/classes/algorithm/TranslationalCellExtractor";
 import { cellsCongruent, dedupeByCongruence } from "@/classes/algorithm/TilingCongruence";
-import { detSurd } from "@/classes/algorithm/exact/Surd";
 import type { PeriodCell } from "@/classes/algorithm/PeriodSolver";
 import type { Polygon } from "@/classes/polygons/Polygon";
 import { deserializeCell } from "./scoutCodec";

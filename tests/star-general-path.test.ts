@@ -8,7 +8,7 @@
  */
 const RUN_STAR_FILL = process.env.RUN_STAR_FILL === "1";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { CyclotomicRing, Cyclotomic, setActiveRing } from "@/classes/Cyclotomic";
+import { CyclotomicRing, setActiveRing } from "@/classes/Cyclotomic";
 import { PeriodSolver } from "@/classes/algorithm/PeriodSolver";
 import { KUniformityChecker } from "@/classes/algorithm/KUniformityChecker";
 import {

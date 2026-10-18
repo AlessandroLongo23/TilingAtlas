@@ -21,7 +21,7 @@ import * as THREE from "three";
 import { Vector } from "@/classes/Vector";
 import { pushEdge, type BubbleEdgeStyle } from "@/lib/bubble/edges";
 import type { BubbleGrid } from "@/lib/bubble/pattern";
-import { bubbleDepth, orientFaces, sphereMapOf } from "@/lib/bubble/sphere";
+import { orientFaces, sphereMapOf } from "@/lib/bubble/sphere";
 import { tileHueOf } from "@/lib/bubble/pattern";
 import { triangulateFillCell } from "./sphericalIslamicFill";
 import { edgeRadius } from "./sphericalPolyhedron";

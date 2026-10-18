@@ -10,7 +10,7 @@ import {
 	type SphEdgesShard,
 } from "./sph-edges";
 import { sphSchwarzScene } from "@/lib/render/sphSchwarz";
-import { decodeAtlas, decodeShard } from "@/lib/services/atlasCodec";
+import { decodeShard } from "@/lib/services/atlasCodec";
 
 // The uniform-polyhedron edge shelf's decode checks. As with the Schwarz shelf, the develop itself is
 // develop_sph_edges.py's business (it fails loudly); what is asserted here is what the SHIPPED data must

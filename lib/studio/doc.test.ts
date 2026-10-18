@@ -262,7 +262,6 @@ describe("cut", () => {
 
 	it("keeps a cut attached after the vertices move", () => {
 		const base = patchOf(fourSquares);
-		const ring = base.rings[0];
 		const cuts: StudioDoc["cuts"] = [[midRef(base, 0, 0, [0, 0]), midRef(base, 0, 2, [0, 0])]];
 		const before = build(base, doc({ cuts }), "lattice");
 		const after = build(base, doc({ cuts, moved: { "0": [0.11, -0.07] } }), "lattice");

@@ -239,9 +239,9 @@ outer: for (const { i, j } of asym) {
 					log(`\nVIOLATION DUMP (cell ${nm}, shift (${m},${n})):`);
 					log(`  u.key = ${u.key()}`);
 					log(`  v.key = ${v.key()}`);
-					log(`  poly n=${(p as any).n} name=${p.getName()}`);
+					log(`  poly n=${p.n} name=${p.getName()}`);
 					log(`  vertex keys: ${p.exactVertices!.map((x) => x.key()).join("  ")}`);
-					log(`  edgeDirs: ${JSON.stringify((p as any).edgeDirs)}`);
+					log(`  edgeDirs: ${JSON.stringify(p.edgeDirs)}`);
 					log(`  key(p)   = ${k0}`);
 					log(`  key(p+λ) = ${reducedClassKey(q, u, v)}`);
 					break outer;

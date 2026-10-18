@@ -110,7 +110,7 @@ function reencodeIso(e: Entry): { T1: Vec; T2: Vec; Seed: Vec[] } {
 		[2, 1, 1, 1],
 		[1, 0, -1, 1],
 	]);
-	let T1 = rotc(e.T1, j, f),
+	const T1 = rotc(e.T1, j, f),
 		T2 = rotc(e.T2, j, f);
 	const nT1 = add(scaleV(T1, uni[0]), scaleV(T2, uni[1]));
 	const nT2 = add(scaleV(T1, uni[2]), scaleV(T2, uni[3]));

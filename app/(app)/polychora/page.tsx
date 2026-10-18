@@ -32,19 +32,20 @@ export default function PolychoraBench() {
 	const spec = LIST.find((x) => x.id === id)!;
 	const geometry = useMemo(() => spec.build(), [spec]);
 	const f = [geometry.vertices.length, geometry.edges.length, geometry.faces.length, geometry.cells.length];
+	const edgeCount = f[1];
 	// The sliders scale a default that follows the polychoron: more film in the way, each one fainter.
 	const area = useMemo(() => filmArea(geometry), [geometry]);
 	const settings = useMemo(
 		() => ({
 			pole: s.pole,
 			opacity: s.opacity * clamp(5.3 / area, 0.003, 0.25),
-			edgeWidth: s.width * clamp(0.12 / Math.sqrt(f[1]), 0.0012, 0.012),
+			edgeWidth: s.width * clamp(0.12 / Math.sqrt(edgeCount), 0.0012, 0.012),
 			showFaces: s.showFaces,
 			showEdges: s.showEdges,
 			dark: s.dark,
 			spin: s.spin,
 		}),
-		[s, f[1], area],
+		[s, edgeCount, area],
 	);
 	const slider = (label: string, key: "pole" | "opacity" | "width", min: number, max: number) => (
 		<label className="flex flex-col gap-1">

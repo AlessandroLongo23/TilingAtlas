@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { PolygonType } from "@/classes/polygons/PolygonType";
 import type { GeneratorParameters } from "@/classes";
 import { generatePolygons } from "@/lib/algorithm/pipeline-core";
@@ -41,14 +41,12 @@ export function PolygonPicker({
 	generatorParameters,
 	onGeneratorParametersChange,
 }: PolygonPickerProps) {
-	const [polygonPool, setPolygonPool] = useState<{ name: string; type: string }[]>([]);
-
-	useEffect(() => {
+	const polygonPool = useMemo<{ name: string; type: string }[]>(() => {
 		try {
 			const { signatures } = generatePolygons(generatorParameters);
-			setPolygonPool(signatures.map((sig) => ({ name: sig.name ?? "", type: sig.type as string })));
+			return signatures.map((sig) => ({ name: sig.name ?? "", type: sig.type as string }));
 		} catch {
-			setPolygonPool([]);
+			return [];
 		}
 	}, [generatorParameters]);
 
