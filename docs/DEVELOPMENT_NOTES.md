@@ -18315,6 +18315,77 @@ Checked in the app on five records: each portrait loads, sits within 1 px of the
 leaves the row height and the right edge alone. As before, the images themselves were read by a subagent
 and not by me; the crops went through three rounds on its reports.
 
+## 2026-10-06: polychora, the first geometry of a 3D section
+
+AL decision: the uniform 4-polytopes become the first shelf of a 3D section, read as tilings of the
+3-sphere, starting from the sets with a completeness proof. The prompt was a Rust/WASM viewer by a third
+party (entropygames.net/math_art, 62 polychora as soap films); nothing of theirs is used, and their list
+is a sampler with holes, so it is not the catalogue.
+
+`lib/render/polychora.ts` generates the geometry and stores none of it. `wythoff(m, ring)` enumerates the
+reflection group of a linear Coxeter diagram as matrices with a right-multiplication table and reads
+every edge, face and cell off as a coset of a parabolic subgroup; a label 5/2 gives the ten regular
+stars, a label 2 the duoprisms. `convexHull4(verts)` rebuilds the whole lattice of a convex uniform
+polychoron from its vertices and serves the ones with no diagram (snub 24-cell, grand antiprism, prisms
+over the stored Platonic and Archimedean solids). Nothing in `tools/ctrnact-oracle/` is involved.
+
+Measured by `experiments/polychora/generate.ts` (log and contact sheet in `experiments/results/`,
+`polychora-*-2026-10-06`), 123 candidates in 3 s:
+
+- regular convex 6, regular star 10, all sixteen f-vectors as published;
+- the 60 ring patterns of A4, B4, F4, H4 hold 45 distinct polychora, 47 with the two exceptions, of
+  which 41 are not regular;
+- 18 polyhedral prisms, 17 new (the cubic prism is the tesseract), so 64 convex uniform and 74 in all;
+- duoprisms and antiprismatic prisms sampled to n = 8: {4}×{4} is the tesseract, the 3-gonal
+  antiprismatic prism is the octahedral prism.
+
+Checks: equal edges, a common circumsphere, constant vertex degree, χ = 0 on the convex ones, and on
+every Wythoff-built convex one the hull rebuild returns the same f-vector and the same cells by kind.
+
+⚑ A first run reported 49 cells on the truncated 24-cell. A visited-marker was shared between node
+subsets, so a coset could stop early and split in two. The hull rebuild caught it; χ alone would have too.
+
+⚑ χ = 0 is false for the stars (the icosahedral 120-cell has 120 − 720 + 1200 − 120 = 480), so they are
+checked against published f-vectors only, and no second construction confirms their cells yet. The
+experiment's cell labels cannot tell a great icosahedron from an icosahedron (both 12 vertices, 20
+triangles); the Schläfli symbol is the authority there.
+
+Open: coordinates are float64, not exact; the duplicates are measured by the experiment and the module
+still lists all candidates; there is no vitest gate; no renderer.
+
+## 2026-10-06 (second): the polychoron renderer and a temporary bench at /polychora
+
+`lib/render/polychoraGL.ts` draws a polychoron as a tiling of the 3-sphere. All of the 4D is in the
+vertex shader: a point of R^4, one mat4 (any rotation of 4-space), normalised onto the sphere, projected
+from a point at distance `uPole` on the w axis (1 is stereographic). Faces are subdivided flat on the
+CPU, n² pieces per fan triangle with n from the arc an edge spans, capped at 300k triangles; the push
+onto the sphere curves them. Edges are instanced ribbons along the great arc with a disc at each vertex.
+
+Transparency is by a commuting blend, because a 4D turn reorders hundreds of films every frame and the
+spherical shelf's triangle sort (`depthSort.ts`) cannot follow that. Dark ground: screen,
+`blendFunc(ONE_MINUS_DST_COLOR, ONE)`. Light ground: multiply, `blendFunc(ZERO, SRC_COLOR)`. Edges go
+first with depth, films are depth-tested and do not write depth. Raw WebGL2 for that reason, reusing
+`linkProgram` from `flatTilingGL.ts` (now exported) and the atlas hues (`faceHue`, `tileHueRgb01`).
+
+⚑ Plain additive blending was tried first and clipped to white on everything; screen is the same light
+with the overflow taken out, at no cost.
+
+⚑ Default opacity follows the total film area on the unit sphere (`filmArea`), not the face count. By
+count the star polychora washed out to white: a pentagram of {5/2,3,3} is many times a pentagon of
+{5,3,3}.
+
+Measured headed on the M5 (ANGLE Metal), 1300×820 at DPR 2, spinning: 8.3 ms median (the 120 Hz cap) on
+the 120-cell and on the omnitruncated 120-cell (14,400 vertices). The star polychora are bound by fill
+rate, about 50 ms at full resolution; the canvas drops its resolution by 3/4 steps after half a second
+of slow frames and settles near 25 ms. That is a mitigation, not a fix.
+
+`components/polychoron-canvas.tsx` holds the gestures (drag: the planes fixing w; shift-drag, right-drag
+and wheel: the planes through w; ctrl-wheel: zoom). `app/(app)/polychora/page.tsx` is a TEMPORARY bench
+with native inputs, not in the nav. `polychora()` in the geometry module is now the deduplicated list.
+
+Open: the films are flat-shaded by a screen-space normal with a rim term and nothing else (no cell
+colouring, no selection, no thickness); the bench is not a shelf.
+
 ## 2026-10-06: faces flooding their neighbours on Firefox / Windows (Marek), a float `mod` in the walk shader
 
 **Report.** Marek, Firefox on Windows, 1920x1080 at 60 Hz, on `hpy17627-2-00013`: an apeirogon's blue
@@ -18370,3 +18441,254 @@ leaves less room for the part that differs.
 vertex.
 ⚑ The best face is unique up to symmetry in 63% of tilings; elsewhere the lowest dart decides, which is
 deterministic and otherwise arbitrary.
+
+## 2026-10-12: the Tegula shelf is keyed by Tegula's own names, not by database row
+
+The 1,363 rows shipped on the 10th were `tegula-%07d` from the `.tdb` row id. Huson's "Delaney-Dress
+Names" (draft 1, 2026-08-18, `docs/tiling-identity.html` in `husonlab/tegula`) says that id is emission
+order: two of their databases hold the same 5,214,516 tilings and number 141,748 of the 141,785 symbols
+of size ≤ 14 differently. An atlas id built on it names a different tiling against a different file.
+
+Ids are now `tegula-<name>`, e.g. `tegula-DS07-3R55-E1RJ-G`: the canonical form (every chamber as seed,
+Gavrog's queue traversal, smallest protocol) packed in Crockford base 32. `ds_name` in
+`tools/ctrnact-oracle/develop_dsym.py` is written from the spec, since Tegula is GPL-3.0. The note text
+keeps the row number, labelled as a row of `euclidean-1-24`.
+
+**Checked against Tegula's Java.** `DSymbolCode.encode`, compiled from their source with jloda2, agrees
+with `ds_name` on all 1,363 shelf rows and on a 1-in-86 sample of the whole database (20,099 rows, every
+complexity to 24), and reproduces the document's worked example. The first port failed that check on 229
+shelf rows: the orbit walk for the m values stopped at the first already-seen chamber, which is wrong on
+orbits with a mirror. The regenerated shelf is identical to the old one in every field but `id` and
+`note` (1,363 of 1,363). Log: `experiments/results/tegula-develop-2026-10-12.log`.
+
+⚑ The name scheme is itself a draft "for discussion". If Huson changes the canonical form or the packing,
+these ids change with it; the Java cross-check above is the test to re-run.
+⚑ No frozen catalogue file is published yet (`catalog/` holds a README only, the data release has the
+three `.tdb.gz`), so the rows carry no catalogue number.
+⚑ "Not pseudo-convex" in the collapsed-row notes reads Tegula's `normal` column, and their
+`DSymbolAlgorithms.isNormal` is commented "mathematically incorrect and Olaf is working on a correct
+algorithm". Our collapse detection is independent of it; the attribution in the note is not.
+⚑ The database is not kept in the repo (630 MB): `gh release download data-v1 -R husonlab/tegula -p
+'euclidean-1-24.tdb.gz'`.
+
+## 2026-10-12 (second): REA and Ghidra read the boards out of Marek's five never-run solvers
+
+AL wanted to try REA (`morluto/rea`, npm `rea-agents` 6.4.0). Tegula was the wrong target, its source is
+public; Marek's `.exe` files are the right one. It works here with Ghidra as the engine.
+
+**Setup, all under the gitignored `materials/tools/`.** Ghidra 12.1.4 from its GitHub release (REA accepts
+12.1.x only); the release ships no macOS decompiler, so `cd support/gradle && ./gradlew buildNatives`
+(45 s, Xcode tools, JDK 21). `npm install --prefix materials/tools/rea rea-agents`. Then
+`GHIDRA_INSTALL_DIR=$PWD/materials/tools/ghidra_12.1.4_PUBLIC materials/tools/rea/node_modules/.bin/rea
+<command> <exe> --provider ghidra --format json`. `rea setup` was NOT run: it edits agent configuration
+and is interactive. Each CLI call re-analyses the binary, about 23 s for a 480 KB solver.
+
+**The three calls that matter.** `search <exe> 'Minimum number of vertices'` gives the prompt's address,
+`xrefs <exe> <address>` gives the one instruction that uses it, `decompile <exe> <that>` gives `main`.
+The board is inline data there: a vector of faces and a vector of vertex types, each a list of 32-bit
+entries `(label, 4)`, then the solver name and a call into `tilings::tiling_search::start`.
+
+| solver | faces | vertex types | edge from closure |
+|---|---|---|---|
+| `hybrid_2_9830` | 3, 4, 24-gon labelled 30 | 3⁵.4.30⁴, 3⁶.4⁶ | 2.98302 |
+| `hybrid_3_3086` | 4, 5, 6, 12 | 4⁵.12⁵, 4⁴.5.6.12⁴, 4³.5².6².12³, 4².5³.6³.12², 4.5⁴.6⁴.12, 5⁵.6⁵ | 3.30869 |
+| `ai3_1` | 3, 5 | 3¹⁰, 3⁵.5³, 5⁶ | 2.12255 |
+| `ai3_2` | 3, 6, 10 | 3¹⁰.6¹⁰, 3⁶.6⁹.10³, 3².6⁸.10⁶ | 4.30914 |
+| `ai3_3` | 3, 9, 15 | 3¹⁵.9¹⁵, 3¹¹.9¹⁴.15³, 3⁷.9¹³.15⁶, 3³.9¹².15⁹ | 5.23586 |
+
+The lists are multisets as written in `main`, not cyclic orders. Every vertex type of every board sums to
+360.0000° at the edge solved from its first type, with regular hyperbolic polygons. That settles the open
+question of 2026-08-12: `hybrid_x_yyyy` is the edge length x.yyyy (2.98302 and 3.30869 here).
+
+**⚑ `hybrid_2_9830`'s big tile is a 24-gon that the solver calls A30.** The face list has 24 corners, each
+labelled 30; in the other four boards label and corner count agree. Closure holds for n = 24 (360.0000°)
+and fails for n = 30 (360.67°). A k=1 run under Wine (1,094 solutions, 0.15 s,
+`experiments/results/hybrid_2_9830-first-run-2026-10-12.log`, output in `materials/runs/hybrid_2_9830/`)
+prints `A30` and file tags `A1e`, and its A30 face cycles take 1, 2, 3, 4, 6 or 8 steps: 4 and 8 divide
+24 and not 30. A decoder that reads the label as the size draws the wrong polygon. Ask Marek whether 30
+is a typo or a convention.
+
+Also in the strings: his source tree (`planar_tilings`: `halfedge.h`, `tiling.h`, `tiling_extender.h`,
+`face_types.h`, `cyclic_word_with_symmetries.h`, `covering_tiling.cpp`, `tiling_search.cpp`,
+`tiling_writer.cpp`), a built-in HTML/SVG writer, the label alphabet `SMLABCDEFG`, live asserts, and the
+same stdin contract as every `pt_*`. The last argument of `start` is 2 for the hybrids and 4 for `ai3`;
+unread.
+
+⚑ Not done: the search itself (`tiling_extender`, 1,820 functions, no symbols) is undecompiled, and the
+other four solvers are still unrun. None of the five has a decoder, so nothing here ships yet.
+
+## 2026-10-12 (third): Marek's engine reconstructed from the binaries, and a board reader for every solver
+
+AL asked to test the REA method on a couple of solvers. Write-up: `docs/marek-engine-reconstruction-2026-10-12.md`.
+
+**One engine.** `hybrid_2_9830`, `squares_edges` and `triangles_2_colors` each decompile to 1,003
+functions; the last two agree on 97% of 52,650 lines after masking addresses. A solver is `main` (a board)
+plus the engine, so "a couple of solvers" became one engine and 48 boards.
+
+**Method that worked.** REA's CLI re-analyses on every call (23 s). Its MCP server keeps one Ghidra session:
+25 s to open, milliseconds per query, 1,003 functions decompiled in 7 s. Asserts are left on in Marek's
+builds and carry file, line and expression, which names about 90 functions outright. Three agents then read
+the pseudocode with separate questions (search, deduplication, output). Two of them independently
+corrected my own first reading: the 0x48-byte record I had taken for the search state belongs to dead
+drawing code, and the search runs on a 0x20-byte record.
+
+**What was tested against something other than the decompiler.** Board data by closure at the solved edge
+length (five boards, 360.0000 degrees); the certificate grammar by regenerating 13,911 real records byte for
+byte (`materials/re/certificate_verify.py`); the missing-folder failure by running it; the 97% by diff.
+The search description is read, not run: two readings agree, nothing more.
+
+**`tools/ctrnact-oracle/marek_board.py`** (+204 lines, new) prints faces, vertex types, the multiset flag,
+the root-type count and the thread count of a solver from `main`'s pseudocode, with no run. 48 of 53
+distinct binaries read; the table is in the write-up.
+
+⚑ Three large Schwarz builds (236 twice, 237) are unread: Ghidra does not return their `main` in 500 s.
+⚑ The reader replays Ghidra's pseudocode with regular expressions. It was fitted to the shapes seen in
+these 48 and reports `UNREAD` on a shape it does not know; it will need a new case for a new build.
+⚑ Our port already has every step the reconstruction found, by a first comparison through `eu_solver.cpp`'s
+own comments. The one idea not in ours is his dynamic work splitting (hand the current subtree to the pool
+every 10 nodes while fewer than 64 tasks wait). Unmeasured.
+⚑ `materials/re/` holds the decompiled code and stays out of git: it is Marek's.
+
+## 2026-10-13: the Tegula types straight edges cannot draw, drawn through their edge midpoints
+
+The 144 collapsed rows at k ≤ 2 were not a weakness of the solver. In each of them two tiles meet along
+more than one edge, so they share vertices, and any drawing with straight edges gives one of them no area.
+At k ≤ 2 these are exactly the 144 rows Tegula does not flag `normal`; the same flag covers 872,864 of the
+1,728,488 Euclidean rows (50.5%), so this was the wall in front of half the catalogue. ⚑ The match with
+the flag is checked at k ≤ 2 only.
+
+**Fix (`bary` in `develop_dsym.py`).** The same equilibrium, on the barycentric subdivision: vertices,
+edge midpoints and face centres, one triangle per chamber. That triangulation is simplicial whenever the
+tiles are discs, so it has an equilibrium embedding. Unknowns are the three sides of each chamber; the
+rest of `realize` now reads edges through `half[c]` (vertex to midpoint), of which straight edges are the
+case where the two halves are opposite. A type is drawn this way only when the straight drawing reports
+`ok` false, so the other 1,219 keep straight skeletons. The unit that bends becomes the half edge, kind I
+or J, and the midpoints ship as corners, so `lib/tilings/tegula.ts` and the cell editor needed no change.
+
+**Result.** 1,363 of 1,363 drawn, 0 collapsed, every drawing with exactly its type's symmetry (7 marked, as
+before). Log `experiments/results/tegula-develop-2026-10-13.log`. Seen in /play on `tegula-DS05-2RAN-RMRR`.
+
+**`BARY_W = 0.1`**, the pull of an edge on its own midpoint. At 1 the tiles that share two edges are
+slivers; roundness (4πA/P²) of the thinnest tile, tenth percentile over the 144: 0.059 at 1, 0.126 at 0.25,
+0.149 at 0.1, 0.138 at 0.03. A look choice, AL's to change.
+
+⚑ 95 rows that were already clean changed bytes: same drawing, another reduced cell or orientation (92
+match on cell area, tile areas and side lengths to 1e-3; 3 differ in a last rounded digit). The refactor
+moved floating-point ties in the lattice reduction. Ids are unchanged.
+⚑ Some pairs are still thin (rows 303, 24703). Valid, not pretty.
+⚑ Speed: the midpoint system is 1.5 N2 unknowns against N2/4, and the run went from 72 s to about 250 s for
+1,363 rows, most of it in the 144. At that rate the non-normal half of the Euclidean set is the expensive
+half; measure before a full run.
+
+## 2026-10-13 (second): what Tegula's other two databases hold (measured, nothing built)
+
+`spherical-1-24.tdb`: 2,155,818 rows, complexity 1 to 24, 31 symmetry groups (`*532` and `*432` 609,506
+each, `*332` 305,292), 1,005,195 flagged normal (46.6%). `tilings-1-18.tdb`: 5,214,516 rows to complexity
+18, of which 5,046,158 hyperbolic (1,374 groups, 4,891,295 normal, 96.9%), 72,991 Euclidean and 95,367
+spherical. So the release is about 8.9 million types and more than half of it is hyperbolic. Fetch:
+`gh release download data-v1 -R husonlab/tegula`.
+
+`develop_dsym.py` cannot draw either: its placement step solves on a torus cover, which exists only at
+curvature zero. Tegula's own method (`core/funtiles`, Westphal 1990) works in all three geometries from
+the quotient: cut the orbifold to a fundamental polygon, put its boundary corners on a circle whose radius
+is the one root of an angle-defect equation, relax the interior, replicate by the group's generators.
+⚑ Not checked: whether the atlas's hyperbolic and spherical renderers can take a fundamental domain with
+arbitrary tile shapes. They were built for regular faces plus one irregular kind (`WALK_IRREGULAR`).
+
+## 2026-10-13 (third): one drawing method for the three geometries, from the quotient (core only)
+
+AL chose a single method over a spherical shortcut. It is in `develop_dsym.py` and nothing ships from it yet.
+
+**The method (`circle_pattern`).** Koebe-Andreev-Thurston: one circle per vertex and per tile, tangent along
+edges, crossing at right angles. Each chamber is a right triangle with legs r_V and r_F, the right angle at
+the edge's tangency point. Unknowns are one radius per vertex class and tile class of the symbol itself;
+equations are the corner sums round each vertex and tile; Newton solves them. No cover, no search, and
+the three geometries differ in one right-triangle formula. `chamber_steps` gives the isometry to each
+neighbour as a 3x3 matrix (plane w = 1, sphere, hyperboloid).
+
+**Checked at k ≤ 2** (hyperbolic to complexity 12):
+
+| geometry | flagged normal | pattern found | certificate |
+|---|---|---|---|
+| Euclidean | 1,219 | 1,219 | drawn through the existing `realize`, 1,219 with exactly the type's symmetry (8 marked) |
+| hyperbolic | 9,209 | 9,209 | every (s_i s_j)^m returns to its frame, worst defect 2.6e-9 |
+| spherical | 860 | 860 | each unfolds to the whole sphere, area 4π, Euler 2 |
+
+Not normal: 0 of 144 Euclidean and 0 of 171 hyperbolic have a pattern, so there "has a pattern" and Tegula's
+`normal` agree exactly. On the sphere 12 of 202 non-normal types do have one and unfold correctly (lunes:
+two antipodal vertices can be joined by several geodesics).
+
+**Where each geometry lands.** Euclidean: `realize(pattern=...)` lays the triangles on the torus cover and
+the rest of the pipeline is unchanged. Spherical: `develop_sphere` returns unit vertices and tile rings,
+which is what `SphPolyPattern` carries. Hyperbolic: the walk renderer already takes darts with a per-dart
+`alpha` and `elen` (`lib/render/hyperbolicWalk.ts`), which is this geometry on the quotient with no
+development at all.
+
+⚑ The shipped Euclidean shelf still uses the equilibrium drawing and regenerates byte-identical after this
+change. Switching it to the pattern geometry would change how all 1,219 look; AL's call.
+⚑ Types with no pattern (144 + 171 + 190 at these sizes) need the midpoint treatment in this method too.
+Planned as a symbol transformation (barycentric subdivision, 6n chambers), not built.
+⚑ The sphere's equations are not convex: 6 of 860 needed a second starting radius. Larger k may need more.
+⚑ No shelf emitter, no renderer run, no browser check for sphere or hyperbolic yet.
+
+## 2026-10-13 (fourth): the first Tegula types off the plane, 872 spherical ones at k ≤ 2
+
+`public/reference-atlas-tegula-sph.json` (3.2 MB, eager), built by the same `develop_dsym.py` run on
+`spherical-1-24.tdb`: `circle_pattern`, `develop_sphere`, then `sphere_record`, which writes the atlas's
+`SphPolyPattern` with tiles coloured by the type's own tile classes. Each row is certified twice in the
+script: its chambers cover the sphere once (area 4π) and the solid has Euler characteristic 2. Log
+`experiments/results/tegula-sphere-develop-2026-10-13.log`. Ids are `tegula-<name>` as on the plane.
+
+App side, `lib/services/referenceAtlas.ts` only: the Tegula slot now fetches both files, and `subOf` keeps
+these rows off the 3.4.n.4 board axis. Seen in the browser: /library lists 872 under Spherical ×
+Topological (tetrahedron, octahedron, icosahedron, cube, dodecahedron, cuboctahedron… as expected at k=1),
+/play opens the largest (240 vertices, a 4.6.20) correctly.
+
+**THE SHELF HAS A NAMED HOLE: 872 of 1,062.** The other 190 have no circle pattern (two tiles meet along
+more than one edge), exactly the rows Tegula does not flag normal minus the 12 lune types that do solve.
+They are not shipped because no drawing exists for them yet, not for size. The fix is the midpoint
+treatment for the quotient method (barycentric subdivision of the symbol), still unbuilt.
+
+⚑ The spherical renderer draws FLAT faces through the vertices. For a polyhedral type that is the right
+picture. For the 10 rows that carry edge points (an edge longer than 2 rad, or a two-cornered tile: lunes
+and near-hemispheres) it is a creased solid that does not read as the tiling. Seen on
+`tegula-DS03-1RN8-8`. Needs a curved-face view or a different treatment; not solved.
+⚑ No symmetry check runs on the sphere. The geometry is symmetric by construction (radii are constant on
+the symbol's orbits), but nothing measures whether the picture has MORE symmetry than the type, which is
+the check the plane shelf passes. Unlike the plane, there is no bend or mark here to remove a surplus.
+⚑ "Level" facet in /library files these rows as Regular / Archimedean / Hybrid from their `config`; not
+reviewed.
+
+## 2026-10-16: a polyomino Heesch census without SAT, 7 to 19 cells, on /heesch
+
+`tools/heesch/omino_census.cpp` classifies every hole-free n-omino and proves each verdict.
+`tools/heesch/omino_run.py` drives it in slices, then sends what is left to free_heesch. The census
+reproduces Anton Bakker's table exactly at every size from 7 to 19 cells, with two exceptions noted
+below (17-omino row: 37,932,265 H0, 827,035 tilers, 3,401,701 H1, 525 H2, 3 H3).
+
+- **H0.** Arc consistency on "which copy covers this halo cell" wipes out a domain. Both of its
+  questions, whether a copy overlaps the shape and whether two copies overlap, are bit lookups in the
+  difference sets S_j - S_i. Half of those tables are point reflections of the other half
+  (`rbit` plus row reversal). If consistency does not wipe out, an exhaustive corona search over the
+  live copies that finds no corona also proves H0.
+- **Tilers.** Proved two ways:
+  - an edge-closed isohedral corona whose group, reduced modulo its translations, covers the torus
+    exactly once;
+  - an exact cover of Z^2/L for every lattice L of index k n with k <= 8 (16 in `deep` mode), pruned
+    by the fact that two touching copies in any tiling stand in a live relative position.
+- **H1.** Consistency is run around each first-corona copy, with the shape and that copy as
+  obstacles, iterated to a fixpoint. If that leaves anything, each whole first corona is checked on
+  its own patch halo.
+- **What is left.** Under 1 shape in 100,000 (mostly H2) goes to free_heesch. Every H >= 2 patch it
+  finds is re-audited by `check_witness` in `build_data.py` before it ships.
+
+**The page ships counts plus the H >= 2 shapes.** /heesch lists the shapes with Hh >= 2 and their
+coronas for 12 to 19 cells, and shows the full census as counts on every size (`census` on the index).
+H0 and H1 shapes past 11 cells are counted, not drawn. There are tens of millions of them, and the
+engine keeps no patch for an H1 proof. That makes this a missing renderer input, not a size decision.
+
+⚑ Two tilers are unresolved, one 13-omino and one 17-omino. They are left out of every count, and the
+page says so. Neither the isohedral search nor torus searches with up to 19 copies per period tiled
+them. Anton counts both as tilers.
+⚑ Run in background mode (efficiency cores, at AL's request), the census is about 20x slower per
+shape: 19 cells took 11 h. 20 to 22 are running.

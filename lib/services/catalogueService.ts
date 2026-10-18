@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { RunRow, FoundTiling } from "@/lib/services/runsService";
 import type { ExactCellSource } from "@/lib/services/cellCodecService";
 import type { ParametricCellData } from "@/lib/utils/paramCell";
+import type { TegulaCell } from "@/lib/tilings/tegula";
 import type { WallpaperGroup, LatticeShape } from "@/lib/classes/symmetry/types";
 
 // The METHOD-AGNOSTIC read contract for /play + /library (FRONTEND_ROADMAP.md Phase 1). Whichever
@@ -28,6 +29,8 @@ export interface CatalogueTiling {
 	// One-parameter family entries (Reference shelf only): the proven parametric cell that drives
 	// the /play alpha slider (lib/utils/paramCell.ts). Certified catalogue tilings never carry this.
 	paramCell?: ParametricCellData;
+	/** Topological shelf only: skeleton and edge classes, for /play's cell editor (lib/tilings/tegula.ts). */
+	tegula?: TegulaCell;
 	/** Which halved-polygon board this row belongs to. Carried through referenceToCatalogue because
 	 *  /play derives its sub-family from it (subOf); without it every half-polygon row computed the
 	 *  sub "el-euh-" — absent from SUB_ORDER — and vanished from the /play tree while /library, which

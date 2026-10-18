@@ -68,6 +68,15 @@ export interface SphPolyPattern {
 	 * statement, not a rendering accident.
 	 */
 	fillGroup?: number[];
+	/**
+	 * Tegula's topological types only (tools/ctrnact-oracle/develop_dsym.py): what the cell editor needs
+	 * to bend the edges on the sphere, lib/tilings/tegula.ts `bendSphere`. `sides[f][i]` tags the side of
+	 * face f leaving its i-th ring point (class * 4 + reversed * 2 + far side, as on the plane shelf),
+	 * `kinds` has one letter per class, `centers[f]` is the point the bent tile is fanned from, `shape`
+	 * one default handle per class, `halves` that the ring points include the edges' tangency points
+	 * (a type with an edge too long for one arc). Shipped unbent.
+	 */
+	bend?: { sides: number[][]; kinds: string; centers: V3[]; shape: number[][]; halves?: boolean };
 	/** Every edge, as a vertex-index pair. */
 	edges: [number, number][];
 	/** Certificate vertex-orbit label per vertex. */

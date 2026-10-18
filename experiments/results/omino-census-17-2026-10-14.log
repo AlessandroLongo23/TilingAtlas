@@ -1,0 +1,62 @@
+[19:36:30] === 17-ominoes: 1024 parts on 10 processes, fallback free_heesch -L 4; work dir experiments/results/heesch/omino-v3/omino17
+[19:36:30] 0 parts already done, 1024 to go
+[19:36:39] part 20/1024  hole-free 565,626  H0 524,023  tilers 10,820  H1 30,780  undecided 3  ETA 8 min
+[19:36:58] part 40/1024  hole-free 1,594,056  H0 1,449,584  tilers 31,378  H1 113,075  undecided 19  ETA 12 min
+[19:37:09] part 60/1024  hole-free 2,254,337  H0 2,041,646  tilers 46,349  H1 166,314  undecided 28  ETA 10 min
+[19:37:16] part 80/1024  hole-free 2,828,665  H0 2,572,415  tilers 56,625  H1 199,595  undecided 30  ETA 9 min
+[19:37:27] part 100/1024  hole-free 3,640,131  H0 3,305,296  tilers 72,430  H1 262,363  undecided 42  ETA 9 min
+[19:37:31] part 120/1024  hole-free 4,384,158  H0 3,971,264  tilers 86,419  H1 326,427  undecided 48  ETA 8 min
+[19:37:39] part 140/1024  hole-free 4,903,275  H0 4,450,809  tilers 95,313  H1 357,099  undecided 54  ETA 7 min
+[19:37:49] part 160/1024  hole-free 5,684,586  H0 5,139,447  tilers 113,113  H1 431,965  undecided 61  ETA 7 min
+[19:38:01] part 180/1024  hole-free 6,604,931  H0 5,975,083  tilers 130,390  H1 499,378  undecided 80  ETA 7 min
+[19:38:06] part 200/1024  hole-free 7,378,744  H0 6,670,464  tilers 147,415  H1 560,759  undecided 106  ETA 7 min
+[19:38:14] part 220/1024  hole-free 8,021,611  H0 7,255,515  tilers 158,261  H1 607,717  undecided 118  ETA 6 min
+[19:38:24] part 240/1024  hole-free 8,924,699  H0 8,070,836  tilers 176,110  H1 677,623  undecided 130  ETA 6 min
+[19:38:33] part 260/1024  hole-free 9,697,267  H0 8,769,759  tilers 190,341  H1 737,032  undecided 135  ETA 6 min
+[19:38:37] part 280/1024  hole-free 10,122,847  H0 9,157,360  tilers 197,983  H1 767,361  undecided 143  ETA 6 min
+[19:38:42] part 300/1024  hole-free 10,724,678  H0 9,709,940  tilers 206,577  H1 808,013  undecided 148  ETA 5 min
+[19:38:55] part 320/1024  hole-free 11,580,759  H0 10,492,794  tilers 221,626  H1 866,183  undecided 156  ETA 5 min
+[19:39:12] part 340/1024  hole-free 12,367,946  H0 11,192,554  tilers 237,953  H1 937,265  undecided 174  ETA 5 min
+[19:39:33] part 360/1024  hole-free 13,881,443  H0 12,517,606  tilers 272,690  H1 1,090,952  undecided 195  ETA 6 min
+[19:39:44] part 380/1024  hole-free 14,722,237  H0 13,262,428  tilers 291,994  H1 1,167,613  undecided 202  ETA 5 min
+[19:39:50] part 400/1024  hole-free 15,384,412  H0 13,873,355  tilers 304,072  H1 1,206,776  undecided 209  ETA 5 min
+[19:39:58] part 420/1024  hole-free 16,153,101  H0 14,568,433  tilers 319,639  H1 1,264,813  undecided 216  ETA 5 min
+[19:40:10] part 440/1024  hole-free 16,996,097  H0 15,338,641  tilers 334,923  H1 1,322,310  undecided 223  ETA 5 min
+[19:40:23] part 460/1024  hole-free 17,912,223  H0 16,159,278  tilers 353,313  H1 1,399,396  undecided 236  ETA 5 min
+[19:40:40] part 480/1024  hole-free 18,871,114  H0 17,024,990  tilers 371,297  H1 1,474,579  undecided 248  ETA 5 min
+[19:40:47] part 500/1024  hole-free 19,859,670  H0 17,911,240  tilers 391,136  H1 1,557,037  undecided 257  ETA 4 min
+[19:40:56] part 520/1024  hole-free 20,546,982  H0 18,531,880  tilers 405,336  H1 1,609,494  undecided 272  ETA 4 min
+[19:41:06] part 540/1024  hole-free 21,471,766  H0 19,370,718  tilers 423,286  H1 1,677,477  undecided 285  ETA 4 min
+[19:41:19] part 560/1024  hole-free 22,187,249  H0 20,025,193  tilers 436,819  H1 1,724,946  undecided 291  ETA 4 min
+[19:41:30] part 580/1024  hole-free 23,071,088  H0 20,816,409  tilers 454,643  H1 1,799,733  undecided 303  ETA 4 min
+[19:41:38] part 600/1024  hole-free 23,803,237  H0 21,475,031  tilers 470,370  H1 1,857,513  undecided 323  ETA 4 min
+[19:42:08] part 620/1024  hole-free 24,940,464  H0 22,454,478  tilers 495,308  H1 1,990,329  undecided 349  ETA 4 min
+[19:42:33] part 640/1024  hole-free 26,307,111  H0 23,657,795  tilers 524,506  H1 2,124,425  undecided 385  ETA 4 min
+[19:42:47] part 660/1024  hole-free 27,377,782  H0 24,596,005  tilers 547,537  H1 2,233,841  undecided 399  ETA 3 min
+[19:43:08] part 680/1024  hole-free 28,910,364  H0 25,954,082  tilers 578,104  H1 2,377,753  undecided 425  ETA 3 min
+[19:59:32] part 700/1024  hole-free 29,955,803  H0 26,904,548  tilers 598,347  H1 2,452,468  undecided 440  ETA 11 min
+[21:44:17] part 720/1024  hole-free 30,937,506  H0 27,783,308  tilers 618,349  H1 2,535,399  undecided 450  ETA 54 min
+[22:45:19] part 740/1024  hole-free 31,550,865  H0 28,336,929  tilers 630,837  H1 2,582,641  undecided 458  ETA 72 min
+[22:57:57] part 760/1024  hole-free 32,312,804  H0 29,026,925  tilers 645,223  H1 2,640,191  undecided 465  ETA 70 min
+[23:07:48] part 780/1024  hole-free 33,163,271  H0 29,794,506  tilers 663,386  H1 2,704,901  undecided 478  ETA 66 min
+[23:28:59] part 800/1024  hole-free 33,844,063  H0 30,403,550  tilers 679,378  H1 2,760,643  undecided 492  ETA 65 min
+[23:29:10] part 820/1024  hole-free 34,476,423  H0 30,962,262  tilers 694,274  H1 2,819,389  undecided 498  ETA 58 min
+[23:29:32] part 840/1024  hole-free 35,412,436  H0 31,801,293  tilers 714,116  H1 2,896,517  undecided 510  ETA 51 min
+[23:29:46] part 860/1024  hole-free 36,448,377  H0 32,734,703  tilers 733,490  H1 2,979,665  undecided 519  ETA 44 min
+[23:30:02] part 880/1024  hole-free 37,408,355  H0 33,591,589  tilers 751,092  H1 3,065,148  undecided 526  ETA 38 min
+[23:30:10] part 900/1024  hole-free 38,147,671  H0 34,254,628  tilers 763,582  H1 3,128,922  undecided 539  ETA 32 min
+[23:30:18] part 920/1024  hole-free 38,869,317  H0 34,922,737  tilers 774,540  H1 3,171,497  undecided 543  ETA 26 min
+[23:30:26] part 940/1024  hole-free 39,574,052  H0 35,567,312  tilers 786,255  H1 3,219,937  undecided 548  ETA 21 min
+[23:30:35] part 960/1024  hole-free 40,205,639  H0 36,150,186  tilers 796,063  H1 3,258,838  undecided 552  ETA 16 min
+[23:30:41] part 980/1024  hole-free 40,806,383  H0 36,697,645  tilers 806,148  H1 3,302,032  undecided 558  ETA 11 min
+[23:30:50] part 1000/1024  hole-free 41,268,245  H0 37,120,526  tilers 814,065  H1 3,333,087  undecided 567  ETA 6 min
+[23:30:58] part 1020/1024  hole-free 41,930,844  H0 37,727,972  tilers 823,912  H1 3,378,390  undecided 570  ETA 55 s
+[23:31:01] part 1024/1024  hole-free 42,161,529  H0 37,932,265  tilers 827,032  H1 3,401,660  undecided 572  ETA 0 s
+[23:31:01] classified in 14071 s: fixed 400,795,844, free 50,107,909, holefree 42,161,529, h0 37,932,265, tilers 827,032, h1 3,401,660, undecided 572
+[23:31:01] fallback: 572 shapes in 10 streams
+[23:31:31] fallback 571/572  ETA 0 s
+[23:32:01] fallback 572/572  ETA 0 s
+[23:32:01] fallback done in 60 s: {'h1': 41, 'h2': 525, 'h3': 3}, capped 3
+[23:32:31] deep 3/3  ETA 0 s
+[23:32:31] deep pass done in 30 s: {'tilers': 2, 'capped': 1}
+[23:32:31] === 17-ominoes: {"n": 17, "free": 50107909, "hole_free": 42161529, "h0": 37932265, "tilers": 827034, "h1": 3401701, "capped": 1, "h2": 525, "h3": 3}

@@ -131,6 +131,9 @@ import { paramGlyphs, resolveAlphaDegs } from "@/lib/utils/paramCell";
 import { parsePlayState, serializePlayState } from "@/lib/services/playUrlState";
 import { useFamilyAlphas } from "@/stores/familyAlphas";
 import { ParamSliderPanel } from "@/components/param-slider-panel";
+import { TegulaCellEditor } from "@/components/tegula-cell-editor";
+import { bendSphere, bendTegula } from "@/lib/tilings/tegula";
+import { useTegulaShapes } from "@/stores/tegulaShapes";
 import { pickStratified } from "@/lib/utils/pickStratified";
 import { polygonClassSupportsIslamic } from "@/lib/utils/tilingLabel";
 import type { TranslationalCellData } from "@/classes/algorithm/types";
@@ -1468,7 +1471,16 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			exactSquaring(squaringSupport, squaringClass) ?? blendedSquaring(squaringSupport, squaringClass);
 		return sq ? squaringCell(squaringSupport, sq, squaringMono) : null;
 	}, [squaringActive, squaringSupport, squaringClass, squaringMono]);
-	const drawCell = squaringCellData ?? renderCell;
+	// Topological shelf: a shape the reader has dragged in the cell editor replaces the shipped bends.
+	// The id is untouched, so the camera stays where it is while the edges move.
+	const tegula = selected?.tegula;
+	const tegulaShape = useTegulaShapes((s) => (tegula && selected ? s.byId[selected.canonicalKey] : undefined));
+	const tegulaCell = useMemo(() => (tegula && tegulaShape ? bendTegula(tegula, tegulaShape) : null), [tegula, tegulaShape]);
+	// The same shelf on the sphere: the record is a solid, and the dragged shape bends its edges there.
+	const sphBend = selected?.sphPoly?.bend ? selected.sphPoly : undefined;
+	const sphShape = useTegulaShapes((s) => (sphBend && selected ? s.byId[selected.canonicalKey] : undefined));
+	const sphDrawn = useMemo(() => (sphBend ? bendSphere(sphBend, sphShape) : selected?.sphPoly), [sphBend, sphShape, selected?.sphPoly]);
+	const drawCell = squaringCellData ?? tegulaCell ?? renderCell;
 	// The class is in the id because the canvases cache parsed geometry by it: without it, moving the dial
 	// would leave the previous squaring on screen. Same reason the mirror flip suffixes it above.
 	const drawCellId = squaringCellData
@@ -1724,7 +1736,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					) : selected?.sphPoly ? (
 						// A 3.4.n.4 tiling on the sphere: its own solid, faces filled by polygon size, every edge a
 						// boundary. Same three.js canvas as every other spherical Čtrnáct shelf.
-						<SphPolyCanvas pattern={selected.sphPoly} mode={sphericalShape} showGrid={sphericalFreedrawGrid} />
+						<SphPolyCanvas pattern={sphDrawn ?? selected.sphPoly} mode={sphericalShape} showGrid={sphericalFreedrawGrid} />
 					) : selected?.sphStar ? (
 						// A STAR polyhedron. Same three.js canvas again, and it follows `sphericalShape`
 						// like the shelves above it — but sphere mode means something different here. Its faces
@@ -1864,6 +1876,8 @@ export function PlayClient({ tilings }: PlayClientProps) {
 						{/* The family's own sliders: a squaring has no free angle to flex, and the panel is driving
 						    the tiling in the corner rather than the one on the canvas while it is up. */}
 						{showParamPanel && paramCell ? <ParamSliderPanel paramCell={paramCell} /> : null}
+						{tegula && selected && !squaringActive ? <TegulaCellEditor id={selected.canonicalKey} cell={tegula} /> : null}
+						{sphBend && selected ? <TegulaCellEditor id={selected.canonicalKey} sphere={sphBend} /> : null}
 						{/* The pentagon family's shape controls sit OUTSIDE the exclusive canvas chain above, because
 						    the family is still what is being drawn when the conformal lens replaces the flat view —
 						    the sliders have to survive that swap. Their values live in the store for the same reason. */}

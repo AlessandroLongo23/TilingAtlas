@@ -1,0 +1,45 @@
+[19:13:27] === 7-hexes: 16 parts on 4 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/grids/hex7
+[19:13:27] 0 parts already done, 16 to go
+[19:13:27] part 1/16  hole-free 19  H0 0  tilers 18  H1 1  undecided 0  ETA 1 s
+[19:13:27] part 2/16  hole-free 34  H0 1  tilers 31  H1 2  undecided 0  ETA 1 s
+[19:13:27] part 3/16  hole-free 61  H0 1  tilers 57  H1 3  undecided 0  ETA 1 s
+[19:13:27] part 4/16  hole-free 81  H0 1  tilers 75  H1 4  undecided 1  ETA 2 s
+[19:13:29] part 5/16  hole-free 105  H0 2  tilers 96  H1 4  undecided 3  ETA 4 s
+[19:13:29] part 6/16  hole-free 123  H0 2  tilers 110  H1 6  undecided 5  ETA 4 s
+[19:13:30] part 7/16  hole-free 143  H0 2  tilers 128  H1 8  undecided 5  ETA 4 s
+[19:13:30] part 8/16  hole-free 156  H0 2  tilers 139  H1 8  undecided 7  ETA 3 s
+[19:13:30] part 9/16  hole-free 178  H0 4  tilers 157  H1 10  undecided 7  ETA 2 s
+[19:13:30] part 10/16  hole-free 200  H0 4  tilers 179  H1 10  undecided 7  ETA 2 s
+[19:13:31] part 11/16  hole-free 219  H0 4  tilers 194  H1 12  undecided 9  ETA 2 s
+[19:13:31] part 12/16  hole-free 251  H0 4  tilers 223  H1 14  undecided 10  ETA 1 s
+[19:13:31] part 13/16  hole-free 264  H0 4  tilers 235  H1 14  undecided 11  ETA 1 s
+[19:13:31] part 14/16  hole-free 285  H0 4  tilers 255  H1 14  undecided 12  ETA 1 s
+[19:13:32] part 15/16  hole-free 311  H0 4  tilers 277  H1 16  undecided 14  ETA 0 s
+[19:13:33] part 16/16  hole-free 331  H0 4  tilers 294  H1 18  undecided 15  ETA 0 s
+[19:13:33] classified in 6 s: fixed 3,652, free 333, holefree 331, h0 4, tilers 294, h1 18, undecided 15
+[19:13:33] fallback: 15 shapes in 4 streams
+[19:14:03] fallback 13/15  ETA 5 s
+[19:14:33] fallback 14/15  ETA 4 s
+[19:15:03] fallback 15/15  ETA 0 s
+[19:15:03] fallback done in 90 s: {'h2': 12, 'h3': 2, 'h1': 1}, capped 0
+[19:15:03] === 7-hexes: {"n": 7, "free": 333, "hole_free": 331, "h0": 4, "tilers": 294, "h1": 19, "capped": 0, "h2": 12, "h3": 2}
+[19:16:47] === 7-hexes: 16 parts on 4 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/grids/hex7
+[19:16:47] 0 parts already done, 16 to go
+[19:16:47] part 1/16  hole-free 19  H0 0  tilers 18  H1 1  undecided 0  ETA 0 s
+[19:16:47] part 2/16  hole-free 34  H0 1  tilers 31  H1 2  undecided 0  ETA 0 s
+[19:16:47] part 3/16  hole-free 61  H0 1  tilers 57  H1 3  undecided 0  ETA 0 s
+[19:16:47] part 4/16  hole-free 81  H0 1  tilers 75  H1 4  undecided 1  ETA 0 s
+[19:16:47] part 5/16  hole-free 105  H0 2  tilers 96  H1 4  undecided 3  ETA 1 s
+[19:16:47] part 6/16  hole-free 123  H0 2  tilers 110  H1 6  undecided 5  ETA 1 s
+[19:16:47] part 7/16  hole-free 143  H0 2  tilers 128  H1 8  undecided 5  ETA 1 s
+[19:16:47] part 8/16  hole-free 156  H0 2  tilers 139  H1 8  undecided 7  ETA 0 s
+[19:16:47] part 9/16  hole-free 178  H0 4  tilers 157  H1 10  undecided 7  ETA 0 s
+[19:16:47] part 10/16  hole-free 200  H0 4  tilers 179  H1 10  undecided 7  ETA 0 s
+[19:16:47] part 11/16  hole-free 219  H0 4  tilers 194  H1 12  undecided 9  ETA 0 s
+[19:16:47] part 12/16  hole-free 251  H0 4  tilers 223  H1 14  undecided 10  ETA 0 s
+[19:16:47] part 13/16  hole-free 264  H0 4  tilers 235  H1 14  undecided 11  ETA 0 s
+[19:16:47] part 14/16  hole-free 285  H0 4  tilers 255  H1 14  undecided 12  ETA 0 s
+[19:16:47] part 15/16  hole-free 311  H0 4  tilers 277  H1 16  undecided 14  ETA 0 s
+[19:16:48] part 16/16  hole-free 331  H0 4  tilers 294  H1 18  undecided 15  ETA 0 s
+[19:16:48] classified in 1 s: fixed 3,652, free 333, holefree 331, h0 4, tilers 294, h1 18, undecided 15
+[19:16:48] === 7-hex tilings: 294 certificates (0 from the fallback), census has 294 tilers

@@ -1,0 +1,38 @@
+Engine regular catalogue vs Tegula, 2026-10-10 16:42
+window: regular polygons, minimal D-symbol size <= 24
+
+[1/2] Tegula: maximal rows whose every vertex figure is regular-flat
+  313 rows, 313 distinct canonical forms
+
+[2/2] engine: pruned blocks k <= 10 -> minimal image
+  progress 2000/23395 (9%)  elapsed 2s  ETA 26s
+  progress 4000/23395 (17%)  elapsed 6s  ETA 28s
+  progress 6000/23395 (26%)  elapsed 10s  ETA 28s
+  progress 8000/23395 (34%)  elapsed 14s  ETA 27s
+  progress 10000/23395 (43%)  elapsed 19s  ETA 25s
+  progress 12000/23395 (51%)  elapsed 23s  ETA 22s
+  progress 14000/23395 (60%)  elapsed 27s  ETA 18s
+  progress 16000/23395 (68%)  elapsed 33s  ETA 15s
+  progress 18000/23395 (77%)  elapsed 38s  ETA 11s
+  progress 20000/23395 (85%)  elapsed 44s  ETA 7s
+  progress 22000/23395 (94%)  elapsed 50s  ETA 3s
+  23395 blocks in 55s, 0 invalid {}
+
+== result ==
+  in both      : 312
+  Tegula only  : 1
+  engine only  : 0   (4.8.8 is expected on the Tegula side: the engine palette is octagon-blind)
+    Tegula only: id=20 k=1 n=3 (4 8 8)
+
+== how far Tegula's window reaches into the engine's catalogue ==
+    k   engine     n<=24    share   min n  median   max n
+    1       10        10   100.0%       1       4      10
+    2       20        20   100.0%       5       9      22
+    3       61        58    95.1%       6      15      34
+    4      151       102    67.5%      11      22      42
+    5      332        79    23.8%      15      30      58
+    6      673        32     4.8%      18      36      70
+    7     1472        10     0.7%      21      44      82
+    8     2850         1     0.0%      24      51      94
+    9     5960         0     0.0%      27      58     102
+   10    11866         0     0.0%      30      64     118

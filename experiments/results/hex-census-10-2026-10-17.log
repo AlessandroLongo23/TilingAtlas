@@ -1,0 +1,90 @@
+[19:27:06] === 10-hexes: 16 parts on 4 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/grids/hex10
+[19:27:06] 0 parts already done, 16 to go
+[19:29:12] part 1/16  hole-free 1,803  H0 261  tilers 649  H1 843  undecided 50  ETA 31 min
+[19:29:19] part 2/16  hole-free 3,690  H0 580  tilers 1,296  H1 1,714  undecided 100  ETA 16 min
+[19:29:21] part 3/16  hole-free 5,641  H0 857  tilers 2,010  H1 2,629  undecided 145  ETA 10 min
+[19:29:25] part 4/16  hole-free 7,498  H0 1,149  tilers 2,679  H1 3,471  undecided 199  ETA 7 min
+[19:31:11] part 5/16  hole-free 9,381  H0 1,434  tilers 3,378  H1 4,318  undecided 251  ETA 9 min
+[19:31:17] part 6/16  hole-free 11,351  H0 1,682  tilers 4,154  H1 5,208  undecided 307  ETA 7 min
+[19:31:21] part 7/16  hole-free 13,273  H0 1,923  tilers 4,921  H1 6,073  undecided 356  ETA 5 min
+[19:31:39] part 8/16  hole-free 15,214  H0 2,199  tilers 5,652  H1 6,951  undecided 412  ETA 5 min
+[19:32:57] part 9/16  hole-free 17,064  H0 2,446  tilers 6,341  H1 7,825  undecided 452  ETA 5 min
+[19:33:07] part 10/16  hole-free 18,812  H0 2,692  tilers 7,043  H1 8,581  undecided 496  ETA 4 min
+[19:33:32] part 11/16  hole-free 20,559  H0 2,983  tilers 7,736  H1 9,299  undecided 541  ETA 3 min
+[19:33:36] part 12/16  hole-free 22,457  H0 3,250  tilers 8,429  H1 10,194  undecided 584  ETA 2 min
+[19:35:19] part 13/16  hole-free 24,416  H0 3,567  tilers 9,184  H1 11,036  undecided 629  ETA 2 min
+[19:35:45] part 14/16  hole-free 26,310  H0 3,840  tilers 9,911  H1 11,868  undecided 691  ETA 74 s
+[19:35:49] part 15/16  hole-free 28,217  H0 4,098  tilers 10,647  H1 12,732  undecided 740  ETA 35 s
+[19:36:04] part 16/16  hole-free 30,086  H0 4,332  tilers 11,323  H1 13,634  undecided 797  ETA 0 s
+[19:36:04] classified in 537 s: fixed 362,671, free 30,490, holefree 30,086, h0 4,332, tilers 11,323, h1 13,634, undecided 797
+[19:36:04] fallback: 797 shapes in 4 streams
+[19:36:34] fallback 23/797  ETA 17 min
+[19:37:04] fallback 53/797  ETA 14 min
+[19:37:34] fallback 81/797  ETA 13 min
+[19:38:04] fallback 98/797  ETA 14 min
+[19:38:34] fallback 119/797  ETA 14 min
+[19:39:04] fallback 150/797  ETA 13 min
+[19:39:34] fallback 177/797  ETA 12 min
+[19:40:04] fallback 203/797  ETA 12 min
+[19:40:35] fallback 233/797  ETA 11 min
+[19:41:05] fallback 262/797  ETA 10 min
+[19:41:35] fallback 288/797  ETA 10 min
+[19:42:05] fallback 319/797  ETA 9 min
+[19:42:35] fallback 345/797  ETA 9 min
+[19:43:05] fallback 370/797  ETA 8 min
+[19:43:35] fallback 405/797  ETA 7 min
+[19:44:05] fallback 429/797  ETA 7 min
+[19:44:35] fallback 453/797  ETA 6 min
+[19:45:05] fallback 488/797  ETA 6 min
+[19:45:36] fallback 509/797  ETA 5 min
+[19:46:06] fallback 515/797  ETA 5 min
+[19:46:36] fallback 532/797  ETA 5 min
+[19:47:06] fallback 550/797  ETA 5 min
+[19:47:36] fallback 568/797  ETA 5 min
+[19:48:06] fallback 596/797  ETA 4 min
+[19:48:36] fallback 620/797  ETA 4 min
+[19:49:06] fallback 645/797  ETA 3 min
+[19:49:36] fallback 667/797  ETA 3 min
+[19:50:06] fallback 691/797  ETA 2 min
+[19:50:37] fallback 706/797  ETA 2 min
+[19:51:07] fallback 730/797  ETA 83 s
+[19:51:37] fallback 745/797  ETA 65 s
+[19:52:07] fallback 747/797  ETA 64 s
+[19:52:37] fallback 755/797  ETA 55 s
+[19:53:07] fallback 768/797  ETA 39 s
+[19:53:37] fallback 778/797  ETA 26 s
+[19:54:07] fallback 786/797  ETA 15 s
+[19:54:37] fallback 791/797  ETA 8 s
+[19:55:07] fallback 797/797  ETA 0 s
+[19:55:08] fallback done in 1144 s: {'h2': 632, 'h1': 132, 'h3': 29, 'h4': 1}, capped 3
+[19:55:38] deep 0/3  ETA ?
+[19:56:08] deep 1/3  ETA 2 min
+[19:56:38] deep 1/3  ETA 3 min
+[19:57:08] deep 1/3  ETA 4 min
+[19:57:39] deep 1/3  ETA 5 min
+[19:58:09] deep 1/3  ETA 6 min
+[19:58:39] deep 1/3  ETA 7 min
+[19:59:09] deep 1/3  ETA 8 min
+[19:59:39] deep 1/3  ETA 9 min
+[20:00:09] deep 1/3  ETA 10 min
+[20:00:40] deep 1/3  ETA 11 min
+[20:01:10] deep 1/3  ETA 12 min
+[20:01:40] deep 2/3  ETA 3 min
+[20:02:10] deep 2/3  ETA 4 min
+[20:02:40] deep 2/3  ETA 4 min
+[20:03:11] deep 2/3  ETA 4 min
+[20:03:41] deep 2/3  ETA 4 min
+[20:04:11] deep 2/3  ETA 5 min
+[20:04:41] deep 2/3  ETA 5 min
+[20:05:11] deep 2/3  ETA 5 min
+[20:05:41] deep 2/3  ETA 5 min
+[20:06:11] deep 2/3  ETA 6 min
+[20:06:42] deep 2/3  ETA 6 min
+[20:07:12] deep 2/3  ETA 6 min
+[20:07:42] deep 2/3  ETA 6 min
+[20:08:12] deep 2/3  ETA 7 min
+[20:08:42] deep 2/3  ETA 7 min
+[20:09:12] deep 2/3  ETA 7 min
+[20:09:42] deep 3/3  ETA 0 s
+[20:09:42] deep pass done in 875 s: {'tilers': 3}
+[20:09:42] === 10-hexes: {"n": 10, "free": 30490, "hole_free": 30086, "h0": 4332, "tilers": 11326, "h1": 13766, "capped": 0, "h2": 632, "h3": 29, "h4": 1}

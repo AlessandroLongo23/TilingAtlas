@@ -232,7 +232,12 @@ export function useGamepad(onPage: (delta: number) => void): void {
 		let pressButton = -1; // the button holding the pointer's press down, or -1
 
 		const tick = (now: number) => {
-			const pad = navigator.getGamepads().find((p) => p?.connected && p.mapping === "standard");
+			// The pad that spoke last, not the first one listed: a controller that drops and rejoins can
+			// come back in a second slot while the browser still lists its old one as connected, frozen.
+			let pad: Gamepad | null = null;
+			for (const p of navigator.getGamepads()) {
+				if (p?.connected && p.mapping === "standard" && (!pad || p.timestamp > pad.timestamp)) pad = p;
+			}
 			if (!pad) {
 				// Gone, or only hidden: a browser can stop listing a pad while another app has the focus and
 				// list it again later with no `gamepadconnected`. So let go of whatever it was holding, and

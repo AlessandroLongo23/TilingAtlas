@@ -1,0 +1,29 @@
+[19:15:04] === 8-hexes: 16 parts on 4 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/grids/hex8
+[19:15:04] 0 parts already done, 16 to go
+[19:15:07] part 1/16  hole-free 57  H0 1  tilers 45  H1 8  undecided 3  ETA 58 s
+[19:15:10] part 2/16  hole-free 133  H0 3  tilers 99  H1 21  undecided 10  ETA 44 s
+[19:15:11] part 3/16  hole-free 211  H0 5  tilers 159  H1 32  undecided 15  ETA 30 s
+[19:15:14] part 4/16  hole-free 309  H0 6  tilers 227  H1 51  undecided 25  ETA 31 s
+[19:15:16] part 5/16  hole-free 433  H0 8  tilers 313  H1 79  undecided 33  ETA 27 s
+[19:15:17] part 6/16  hole-free 518  H0 9  tilers 378  H1 92  undecided 39  ETA 22 s
+[19:15:20] part 7/16  hole-free 608  H0 12  tilers 448  H1 102  undecided 46  ETA 21 s
+[19:15:22] part 8/16  hole-free 708  H0 13  tilers 526  H1 117  undecided 52  ETA 18 s
+[19:15:25] part 9/16  hole-free 793  H0 14  tilers 583  H1 137  undecided 59  ETA 17 s
+[19:15:26] part 10/16  hole-free 897  H0 15  tilers 668  H1 147  undecided 67  ETA 13 s
+[19:15:27] part 11/16  hole-free 974  H0 19  tilers 717  H1 162  undecided 76  ETA 11 s
+[19:15:28] part 12/16  hole-free 1,065  H0 23  tilers 785  H1 179  undecided 78  ETA 8 s
+[19:15:30] part 13/16  hole-free 1,165  H0 30  tilers 864  H1 188  undecided 83  ETA 6 s
+[19:15:33] part 14/16  hole-free 1,226  H0 31  tilers 903  H1 205  undecided 87  ETA 4 s
+[19:15:34] part 15/16  hole-free 1,322  H0 35  tilers 972  H1 223  undecided 92  ETA 2 s
+[19:15:37] part 16/16  hole-free 1,435  H0 37  tilers 1,053  H1 242  undecided 103  ETA 0 s
+[19:15:37] classified in 33 s: fixed 16,689, free 1,448, holefree 1,435, h0 37, tilers 1,053, h1 242, undecided 103
+[19:15:37] fallback: 103 shapes in 4 streams
+[19:16:07] fallback 37/103  ETA 54 s
+[19:16:37] fallback 63/103  ETA 38 s
+[19:17:07] fallback 80/103  ETA 26 s
+[19:17:37] fallback 102/103  ETA 1 s
+[19:18:07] fallback 103/103  ETA 0 s
+[19:18:07] fallback done in 150 s: {'h2': 84, 'h3': 7, 'h1': 11}, capped 1
+[19:18:37] deep 1/1  ETA 0 s
+[19:18:37] deep pass done in 30 s: {'tilers': 1}
+[19:18:37] === 8-hexes: {"n": 8, "free": 1448, "hole_free": 1435, "h0": 37, "tilers": 1054, "h1": 253, "capped": 0, "h2": 84, "h3": 7}

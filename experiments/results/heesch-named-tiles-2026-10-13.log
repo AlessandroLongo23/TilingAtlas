@@ -1,0 +1,13 @@
+[11:44:17] Lee Fryer-Davis 22-omino: Hc=4 Hh=4, 60-tile witness, 267 s wall (heesch-sat d12a527, M-series, 1 core)
+[11:44:17] saw ribbon W(3,3) 31 cells: started, -hh -show -maxlevel 6 (Bakker reports H=4: corona 4 in 101.7 s, corona 5 refuted in 366.2 s, lean encoding, 64-core)
+[11:47:23] saw ribbon W(3,3): exit 0 after 186 s; peak RSS bytes: 6081314816; result line: ~ 4 4 1
+Total: 1 shapes
+  0 unprocessed
+  0 with holes
+  0 inconclusive
+  1 non-tilers
+    1 with Hc = 4
+    1 with Hh = 4
+  0 tile isohedrally
+  0 tile anisohedrally
+  0 tile aperiodically

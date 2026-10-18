@@ -61,6 +61,9 @@ interface CellPolyData {
 	star?: boolean;
 	hue?: number;
 	open?: boolean;
+	/** A marking drawn INSIDE a tile, not a tile: it is painted, and left out of the edge statistics
+	 *  so a handful of small marks cannot drag medianEdge down and zoom the card in on one tile. */
+	mark?: boolean;
 	/** Indices into `v` that are TRUE TILE CORNERS, when the ring's curved edges arrive flattened.
 	 *  Additive: no other cell sets it, and every existing cell keeps the every-vertex-is-a-corner
 	 *  reading byte for byte. See RawPolygon.corners for why every polygon consumer needs it. */
@@ -238,7 +241,9 @@ export function parseBaseCell(cell: TranslationalCellData): BaseCell | null {
 		// Corner to corner where the ring declares its corners, segment to segment otherwise. The
 		// chord between two corners IS the tile's edge length, which is the quantity medianEdge is for.
 		const cs = poly.corners;
-		if (cs && cs.length >= 3) {
+		if (poly.mark) {
+			// counted for the bounding box above, never as an edge length
+		} else if (cs && cs.length >= 3) {
 			for (let i = 0; i < cs.length; i++) {
 				const a = verts[cs[i]];
 				const b = verts[cs[(i + 1) % cs.length]];

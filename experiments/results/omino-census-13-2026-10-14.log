@@ -1,0 +1,46 @@
+[19:22:54] === 13-ominoes: 10 parts on 10 processes, fallback free_heesch -L 4; work dir experiments/results/heesch/omino-v3/omino13
+[19:22:54] 0 parts already done, 10 to go
+[19:23:06] part 1/10  hole-free 20,325  H0 9,546  tilers 3,572  H1 7,187  undecided 20  ETA 2 min
+[19:23:07] part 2/10  hole-free 41,962  H0 19,888  tilers 7,273  H1 14,770  undecided 31  ETA 49 s
+[19:23:08] part 3/10  hole-free 63,207  H0 29,843  tilers 10,991  H1 22,324  undecided 49  ETA 31 s
+[19:23:08] part 4/10  hole-free 84,747  H0 39,884  tilers 14,716  H1 30,078  undecided 69  ETA 20 s
+[19:23:08] part 5/10  hole-free 107,039  H0 50,081  tilers 18,692  H1 38,174  undecided 92  ETA 14 s
+[19:23:08] part 6/10  hole-free 128,918  H0 60,245  tilers 22,682  H1 45,880  undecided 111  ETA 9 s
+[19:23:08] part 7/10  hole-free 150,440  H0 69,880  tilers 26,612  H1 53,811  undecided 137  ETA 6 s
+[19:23:09] part 8/10  hole-free 172,504  H0 79,845  tilers 30,669  H1 61,827  undecided 163  ETA 4 s
+[19:23:09] part 9/10  hole-free 194,449  H0 89,856  tilers 34,683  H1 69,720  undecided 190  ETA 2 s
+[19:23:11] part 10/10  hole-free 217,117  H0 100,180  tilers 38,668  H1 78,036  undecided 233  ETA 0 s
+[19:23:11] classified in 16 s: fixed 1,903,890, free 238,591, holefree 217,117, h0 100,180, tilers 38,668, h1 78,036, undecided 233
+[19:23:11] deep pass: 233 shapes in 10 streams
+[19:23:41] deep 68/233  ETA 73 s
+[19:24:11] deep 91/233  ETA 2 min
+[19:24:41] deep 106/233  ETA 2 min
+[19:25:11] deep 112/233  ETA 2 min
+[19:25:41] deep 113/233  ETA 3 min
+[19:26:11] deep 121/233  ETA 3 min
+[19:26:41] deep 138/233  ETA 2 min
+[19:27:11] deep 147/233  ETA 2 min
+[19:27:41] deep 148/233  ETA 3 min
+[19:28:11] deep 159/233  ETA 2 min
+[19:28:41] deep 171/233  ETA 2 min
+[19:29:11] deep 180/233  ETA 2 min
+[19:29:41] deep 186/233  ETA 2 min
+[19:30:11] deep 200/233  ETA 69 s
+[19:30:41] deep 200/233  ETA 74 s
+[19:31:11] deep 200/233  ETA 79 s
+[19:31:41] deep 201/233  ETA 81 s
+[19:32:11] deep 201/233  ETA 86 s
+[19:32:41] deep 201/233  ETA 2 min
+[19:33:18] === 13-ominoes: 10 parts on 10 processes, fallback free_heesch -L 4; work dir experiments/results/heesch/omino-v3/omino13
+[19:33:18] 10 parts already done, 0 to go
+[19:33:18] classified in 0 s: fixed 1,903,890, free 238,591, holefree 217,117, h0 100,180, tilers 38,668, h1 78,036, undecided 233
+[19:33:18] fallback: 233 shapes in 10 streams
+[19:33:48] fallback 233/233  ETA 0 s
+[19:33:48] fallback done in 30 s: {'h2': 219, 'h1': 12, 'h3': 1}, capped 1
+[19:34:18] deep 0/1  ETA ?
+[19:34:48] deep 0/1  ETA ?
+[19:35:18] deep 0/1  ETA ?
+[19:35:48] deep 0/1  ETA ?
+[19:36:18] deep 1/1  ETA 0 s
+[19:36:18] deep pass done in 150 s: {'capped': 1}
+[19:36:18] === 13-ominoes: {"n": 13, "free": 238591, "hole_free": 217117, "h0": 100180, "tilers": 38668, "h1": 78048, "capped": 1, "h2": 219, "h3": 1}

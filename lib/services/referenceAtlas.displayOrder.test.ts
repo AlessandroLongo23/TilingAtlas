@@ -140,6 +140,7 @@ describe("decorationOf", () => {
 		// The class is `edgelen` and the SOURCE is tri45: one class holds every palette whose tiles have
 		// edges of several lengths, and tri45 is one of its two boards.
 		edgelen: T({ canonicalKey: "t45", k: 1, source: "tri45" }),
+		topological: T({ canonicalKey: "tg", k: 1, source: "tegula" }),
 		polyomino: T({ canonicalKey: "p", k: 1, source: "polyomino" }),
 		islamic: T({ canonicalKey: "is", k: 1, source: "islamic" }),
 		freedraw: T({ canonicalKey: "fd", k: 1, source: "freedraw" }),

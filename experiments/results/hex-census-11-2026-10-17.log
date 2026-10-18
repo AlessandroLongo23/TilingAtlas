@@ -1,0 +1,152 @@
+[20:09:42] === 11-hexes: 16 parts on 4 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/grids/hex11
+[20:09:42] 0 parts already done, 16 to go
+[20:15:32] part 1/16  hole-free 8,513  H0 2,292  tilers 1,555  H1 4,552  undecided 114  ETA 87 min
+[20:15:51] part 2/16  hole-free 17,136  H0 4,579  tilers 3,116  H1 9,187  undecided 254  ETA 43 min
+[20:16:15] part 3/16  hole-free 26,000  H0 7,045  tilers 4,674  H1 13,877  undecided 404  ETA 28 min
+[20:16:39] part 4/16  hole-free 34,839  H0 9,422  tilers 6,252  H1 18,604  undecided 561  ETA 21 min
+[20:21:56] part 5/16  hole-free 43,817  H0 11,817  tilers 7,877  H1 23,410  undecided 713  ETA 27 min
+[20:22:10] part 6/16  hole-free 52,516  H0 14,172  tilers 9,350  H1 28,150  undecided 844  ETA 21 min
+[20:22:34] part 7/16  hole-free 61,407  H0 16,647  tilers 10,901  H1 32,873  undecided 986  ETA 17 min
+[20:22:35] part 8/16  hole-free 70,257  H0 19,166  tilers 12,485  H1 37,484  undecided 1,122  ETA 13 min
+[20:28:22] part 9/16  hole-free 79,120  H0 21,612  tilers 14,015  H1 42,234  undecided 1,259  ETA 15 min
+[20:28:54] part 10/16  hole-free 88,025  H0 24,122  tilers 15,542  H1 46,956  undecided 1,405  ETA 12 min
+[20:29:03] part 11/16  hole-free 96,721  H0 26,547  tilers 17,052  H1 51,543  undecided 1,579  ETA 9 min
+[20:29:10] part 12/16  hole-free 105,601  H0 28,883  tilers 18,605  H1 56,375  undecided 1,738  ETA 6 min
+[20:35:18] part 13/16  hole-free 114,425  H0 31,197  tilers 20,139  H1 61,207  undecided 1,882  ETA 6 min
+[20:35:31] part 14/16  hole-free 123,235  H0 33,635  tilers 21,584  H1 65,984  undecided 2,032  ETA 4 min
+[20:35:43] part 15/16  hole-free 132,154  H0 36,073  tilers 23,185  H1 70,728  undecided 2,168  ETA 2 min
+[20:36:16] part 16/16  hole-free 141,229  H0 38,621  tilers 24,779  H1 75,509  undecided 2,320  ETA 0 s
+[20:36:16] classified in 1594 s: fixed 1,716,033, free 143,552, holefree 141,229, h0 38,621, tilers 24,779, h1 75,509, undecided 2,320
+[20:36:16] fallback: 2,320 shapes in 4 streams
+[20:36:46] fallback 38/2,320  ETA 30 min
+[20:37:16] fallback 64/2,320  ETA 35 min
+[20:37:47] fallback 96/2,320  ETA 35 min
+[20:38:17] fallback 103/2,320  ETA 43 min
+[20:38:47] fallback 117/2,320  ETA 47 min
+[20:39:17] fallback 126/2,320  ETA 53 min
+[20:39:47] fallback 139/2,320  ETA 55 min
+[20:40:18] fallback 166/2,320  ETA 52 min
+[20:40:48] fallback 196/2,320  ETA 49 min
+[20:41:18] fallback 215/2,320  ETA 49 min
+[20:41:48] fallback 228/2,320  ETA 51 min
+[20:42:18] fallback 248/2,320  ETA 50 min
+[20:42:49] fallback 270/2,320  ETA 50 min
+[20:43:19] fallback 292/2,320  ETA 49 min
+[20:43:49] fallback 304/2,320  ETA 50 min
+[20:44:19] fallback 319/2,320  ETA 51 min
+[20:44:49] fallback 339/2,320  ETA 50 min
+[20:45:20] fallback 355/2,320  ETA 50 min
+[20:45:50] fallback 380/2,320  ETA 49 min
+[20:46:20] fallback 394/2,320  ETA 49 min
+[20:46:50] fallback 414/2,320  ETA 49 min
+[20:47:20] fallback 434/2,320  ETA 48 min
+[20:47:50] fallback 453/2,320  ETA 48 min
+[20:48:21] fallback 468/2,320  ETA 48 min
+[20:48:51] fallback 489/2,320  ETA 47 min
+[20:49:21] fallback 497/2,320  ETA 48 min
+[20:49:51] fallback 524/2,320  ETA 47 min
+[20:50:21] fallback 539/2,320  ETA 47 min
+[20:50:52] fallback 560/2,320  ETA 46 min
+[20:51:22] fallback 568/2,320  ETA 47 min
+[20:51:52] fallback 581/2,320  ETA 47 min
+[20:52:22] fallback 603/2,320  ETA 46 min
+[20:52:52] fallback 630/2,320  ETA 45 min
+[20:53:22] fallback 652/2,320  ETA 44 min
+[20:53:52] fallback 677/2,320  ETA 43 min
+[20:54:22] fallback 701/2,320  ETA 42 min
+[20:54:52] fallback 720/2,320  ETA 41 min
+[20:55:22] fallback 741/2,320  ETA 41 min
+[20:55:53] fallback 770/2,320  ETA 39 min
+[20:56:23] fallback 785/2,320  ETA 39 min
+[20:56:53] fallback 806/2,320  ETA 39 min
+[20:57:23] fallback 832/2,320  ETA 38 min
+[20:57:53] fallback 849/2,320  ETA 37 min
+[20:58:23] fallback 866/2,320  ETA 37 min
+[20:58:54] fallback 890/2,320  ETA 36 min
+[20:59:24] fallback 906/2,320  ETA 36 min
+[20:59:54] fallback 920/2,320  ETA 36 min
+[21:00:24] fallback 938/2,320  ETA 36 min
+[21:00:54] fallback 950/2,320  ETA 36 min
+[21:01:24] fallback 958/2,320  ETA 36 min
+[21:01:55] fallback 979/2,320  ETA 35 min
+[21:02:25] fallback 1,000/2,320  ETA 35 min
+[21:02:55] fallback 1,016/2,320  ETA 34 min
+[21:03:25] fallback 1,036/2,320  ETA 34 min
+[21:03:55] fallback 1,057/2,320  ETA 33 min
+[21:04:26] fallback 1,083/2,320  ETA 32 min
+[21:04:56] fallback 1,115/2,320  ETA 31 min
+[21:05:26] fallback 1,144/2,320  ETA 30 min
+[21:05:56] fallback 1,157/2,320  ETA 30 min
+[21:06:26] fallback 1,167/2,320  ETA 30 min
+[21:06:57] fallback 1,181/2,320  ETA 30 min
+[21:07:27] fallback 1,194/2,320  ETA 29 min
+[21:07:57] fallback 1,209/2,320  ETA 29 min
+[21:08:27] fallback 1,227/2,320  ETA 29 min
+[21:08:57] fallback 1,239/2,320  ETA 29 min
+[21:09:28] fallback 1,246/2,320  ETA 29 min
+[21:09:58] fallback 1,269/2,320  ETA 28 min
+[21:10:28] fallback 1,295/2,320  ETA 27 min
+[21:10:58] fallback 1,314/2,320  ETA 27 min
+[21:11:28] fallback 1,327/2,320  ETA 26 min
+[21:11:59] fallback 1,347/2,320  ETA 26 min
+[21:12:29] fallback 1,361/2,320  ETA 26 min
+[21:12:59] fallback 1,390/2,320  ETA 25 min
+[21:13:29] fallback 1,419/2,320  ETA 24 min
+[21:13:59] fallback 1,447/2,320  ETA 23 min
+[21:14:29] fallback 1,466/2,320  ETA 22 min
+[21:15:00] fallback 1,487/2,320  ETA 22 min
+[21:15:30] fallback 1,507/2,320  ETA 21 min
+[21:16:00] fallback 1,525/2,320  ETA 21 min
+[21:16:30] fallback 1,545/2,320  ETA 20 min
+[21:17:00] fallback 1,564/2,320  ETA 20 min
+[21:17:31] fallback 1,588/2,320  ETA 19 min
+[21:18:01] fallback 1,616/2,320  ETA 18 min
+[21:18:31] fallback 1,635/2,320  ETA 18 min
+[21:19:01] fallback 1,643/2,320  ETA 18 min
+[21:19:31] fallback 1,653/2,320  ETA 17 min
+[21:20:02] fallback 1,668/2,320  ETA 17 min
+[21:20:32] fallback 1,681/2,320  ETA 17 min
+[21:21:02] fallback 1,698/2,320  ETA 16 min
+[21:21:32] fallback 1,715/2,320  ETA 16 min
+[21:22:02] fallback 1,740/2,320  ETA 15 min
+[21:22:32] fallback 1,775/2,320  ETA 14 min
+[21:23:03] fallback 1,806/2,320  ETA 13 min
+[21:23:33] fallback 1,825/2,320  ETA 13 min
+[21:24:03] fallback 1,841/2,320  ETA 12 min
+[21:24:33] fallback 1,850/2,320  ETA 12 min
+[21:25:03] fallback 1,866/2,320  ETA 12 min
+[21:25:34] fallback 1,891/2,320  ETA 11 min
+[21:26:04] fallback 1,913/2,320  ETA 11 min
+[21:26:34] fallback 1,944/2,320  ETA 10 min
+[21:27:04] fallback 1,969/2,320  ETA 9 min
+[21:27:34] fallback 1,990/2,320  ETA 9 min
+[21:28:05] fallback 2,009/2,320  ETA 8 min
+[21:28:35] fallback 2,018/2,320  ETA 8 min
+[21:29:05] fallback 2,039/2,320  ETA 7 min
+[21:29:35] fallback 2,054/2,320  ETA 7 min
+[21:30:05] fallback 2,072/2,320  ETA 6 min
+[21:30:36] fallback 2,091/2,320  ETA 6 min
+[21:31:06] fallback 2,123/2,320  ETA 5 min
+[21:31:36] fallback 2,153/2,320  ETA 4 min
+[21:32:06] fallback 2,183/2,320  ETA 4 min
+[21:32:36] fallback 2,195/2,320  ETA 3 min
+[21:33:06] fallback 2,213/2,320  ETA 3 min
+[21:33:37] fallback 2,233/2,320  ETA 2 min
+[21:34:07] fallback 2,248/2,320  ETA 2 min
+[21:34:37] fallback 2,265/2,320  ETA 85 s
+[21:35:07] fallback 2,271/2,320  ETA 76 s
+[21:35:37] fallback 2,271/2,320  ETA 77 s
+[21:36:07] fallback 2,274/2,320  ETA 73 s
+[21:36:37] fallback 2,286/2,320  ETA 54 s
+[21:37:07] fallback 2,293/2,320  ETA 43 s
+[21:37:37] fallback 2,302/2,320  ETA 29 s
+[21:38:07] fallback 2,311/2,320  ETA 14 s
+[21:38:37] fallback 2,319/2,320  ETA 2 s
+[21:39:08] fallback 2,320/2,320  ETA 0 s
+[21:39:08] fallback done in 3772 s: {'h2': 1956, 'h3': 73, 'h1': 274, 'h4': 6}, capped 11
+[21:39:38] deep 5/11  ETA 36 s
+[21:40:09] deep 7/11  ETA 34 s
+[21:40:39] deep 9/11  ETA 20 s
+[21:41:09] deep 11/11  ETA 0 s
+[21:41:09] deep pass done in 120 s: {'tilers': 10, 'capped': 1}
+[21:41:09] === 11-hexes: {"n": 11, "free": 143552, "hole_free": 141229, "h0": 38621, "tilers": 24789, "h1": 75783, "capped": 1, "h2": 1956, "h3": 73, "h4": 6}

@@ -3113,3 +3113,21 @@ Uncommitted on `master`. `int(mod(k, S))` can return S where a GPU divides by re
 reads a slot past the row and the pixel never lands, so a face floods its neighbour with no edge.
 `imod` folds it back. Reproduced on the Mac only by forcing the division error, fixed under the same
 forcing. ⚑ Not confirmed on Marek's machine. NOTES 2026-10-06.
+
+## 2026-10-12 — Tegula ids re-keyed; Marek's engine read out of the binaries — CC
+Tegula shelf ids are now Tegula's canonical names (`tegula-DS07-…`), checked against their Java encoder on
+all 1,363 rows. REA + Ghidra set up under `materials/tools/`; all `pt_*.exe` are one engine plus a board in
+`main`. `tools/ctrnact-oracle/marek_board.py` reads 48 of 53 boards without running anything.
+`hybrid_2_9830`'s 24-gon is labelled 30: ask Marek. Uncommitted. NOTES 2026-10-12 (three sections),
+`docs/marek-engine-reconstruction-2026-10-12.md`.
+
+## 2026-10-13 — Tegula: collapsed types drawn; one method for three geometries; 872 spherical types — CC
+The 144 collapsed plane types draw through edge midpoints (1,363 of 1,363, symmetry exact). A quotient
+method (`circle_pattern`) solves all normal types at k ≤ 2 in the plane, the sphere and the hyperbolic
+plane. First spherical shelf: 872 of 1,062, in /library and /play; the 190 missing have no drawing yet.
+Hyperbolic not emitted. Uncommitted. NOTES 2026-10-13 (four sections).
+
+## 2026-10-16 — Polyomino Heesch census 7–19 cells, no SAT, on /heesch — CC
+`omino_census.cpp` + `omino_run.py` reproduce Anton Bakker's counts exactly from 7 to 19 cells (two
+tilers unresolved, flagged). /heesch shows the full census as counts per size and lists every
+H ≥ 2 shape with audited coronas; 20–22 running. Uncommitted. NOTES 2026-10-16.

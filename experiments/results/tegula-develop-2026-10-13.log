@@ -1,0 +1,6 @@
+develop_dsym: 1363 Euclidean symbols where vertices<=2, 2026-10-13 11:15
+  progress 500/1363 (37%)  elapsed 66s  ETA 114s
+  progress 1000/1363 (73%)  elapsed 152s  ETA 55s
+  progress 1363/1363 (100%)  elapsed 239s  ETA 0s
+drawn 1363 of 1363, 144 of them through edge midpoints; collapsed by (k, pseudo-convex) {}; failed 0 {}
+symmetry check on the 1363 clean drawings (7 of them marked): 1363 have exactly their type's symmetry, 0 do not []

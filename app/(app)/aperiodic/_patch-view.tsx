@@ -28,8 +28,7 @@
 //
 // Scale across constructions is matched by the DEFAULT LEVELS instead — see the `def` fields below.
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { TILE_HSL_LIGHT_PCT, TILE_HSL_SAT_01 } from "@/lib/render/tilePalette";
+import { useMemo, useState } from "react";
 import { HAT_LEVEL, hatPatch } from "@/lib/render/hatPatch";
 import { penrosePatch, penroseRuleFigure } from "@/lib/render/penrosePatch";
 import {
@@ -48,19 +47,13 @@ import {
 	SUBSTITUTION_MAX_LEVEL,
 	type Sample,
 } from "@/lib/render/substitutionPatch";
-import {
-	applyViewTransform,
-	useAperiodicView,
-	type AperiodicFrame,
-	type HomeBox,
-} from "@/lib/hooks/useAperiodicView";
-import { SubRosaGL } from "@/lib/render/subrosaGL";
-import { drawPolygons, polygonFillHue, type RawPolygon } from "@/lib/utils/renderTiling";
+import { PATCH_LIGHT, PATCH_SAT, patchHue as hueOf, usePatchCanvas } from "@/lib/hooks/usePatchCanvas";
+import type { RawPolygon } from "@/lib/utils/renderTiling";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { CornerControls } from "@/components/ui/corner-controls";
 import { AperiodicSidebar, Section, Segmented } from "./_controls";
-import { Details, strokePxAt, STROKE_CSS, STROKE_RGBA, STROKE_WIDTH, ViewFooter } from "./_view-chrome";
+import { Details, STROKE_WIDTH, ViewFooter } from "./_view-chrome";
 
 interface PatchDef {
 	title: string;
@@ -107,13 +100,6 @@ interface PatchDef {
 // For reference, these are 18× and 7× the levels the 2-D path could hold.
 const PENROSE_MAX_DEPTH = 11;
 const HAT_MAX_LEVEL = 6;
-
-// The shader's HSL saturation/lightness for the patch fills: the atlas' tile fill — used by drawPolygons
-// and so by every thumbnail and card — converted to HSL, since this path is handed saturation and
-// lightness as uniforms instead of a colour string. Keeping the GPU path on the SAME numbers is what
-// makes the move from the 2-D path invisible, so they are derived, not copied.
-const PATCH_SAT = TILE_HSL_SAT_01;
-const PATCH_LIGHT = TILE_HSL_LIGHT_PCT;
 
 /**
  * sqrt(mean tile area) — the characteristic size the default levels are matched on.
@@ -277,13 +263,6 @@ export const PATCH_DEFAULT_LEVELS = {
 	pinwheel: PATCHES.pinwheel.level.def,
 } as const;
 
-/**
- * The hue drawPolygons would pick, so the GPU and 2-D paths agree tile for tile: an explicit `hue`
- * when the builder set one (the hat marks its mirrored copies), otherwise the by-shape ramp. Neither
- * patch produces star tiles, so that branch of drawPolygons has no counterpart here.
- */
-const hueOf = (p: RawPolygon) => p.hue ?? polygonFillHue(p.vertices);
-
 /** Patches are deterministic and rebuilt on every level change, so keep each one that was asked for. */
 const cache = new Map<string, RawPolygon[]>();
 function patchAt(id: keyof typeof PATCHES, level: number, sample: Sample): RawPolygon[] {
@@ -358,10 +337,6 @@ export function PatchView({ id, header }: { id: keyof typeof PATCHES; header: Re
 	const [pick, setPick] = useState<string>("mix");
 	const [seed, setSeed] = useState(1);
 	const [strokeWidth, setStrokeWidth] = useState<number>(STROKE_WIDTH.def);
-	const canvasRef = useRef<HTMLCanvasElement>(null);
-	const glRef = useRef<SubRosaGL | null>(null);
-	const modeRef = useRef<"init" | "gl" | "2d">("init");
-	const uploadedRef = useRef<RawPolygon[] | null>(null);
 
 	const effLevel = Math.min(Math.max(level, def.level.min), def.level.max);
 	const sample: Sample = useMemo(
@@ -372,114 +347,9 @@ export function PatchView({ id, header }: { id: keyof typeof PATCHES; header: Re
 	// Level-independent: the rule is the rule at every level, so it is built once per construction.
 	const ruleFigure = useMemo(() => def.rule?.(), [def]);
 
-	// One rule at every level: fit the whole patch. Every position on the slider then behaves the same
-	// way, and moving it means "more tiling", never "and now the framing changes too".
-	const home = useCallback((): HomeBox | null => {
-		let minx = Infinity, miny = Infinity, maxx = -Infinity, maxy = -Infinity;
-		for (const p of polys)
-			for (const v of p.vertices) {
-				if (v.x < minx) minx = v.x;
-				if (v.x > maxx) maxx = v.x;
-				if (v.y < miny) miny = v.y;
-				if (v.y > maxy) maxy = v.y;
-			}
-		if (!Number.isFinite(minx)) return null;
-		return {
-			cx: (minx + maxx) / 2,
-			cy: (miny + maxy) / 2,
-			width: maxx - minx,
-			height: maxy - miny,
-		};
-	}, [polys]);
-
-	const draw = useCallback(
-		(f: AperiodicFrame) => {
-			const cv = canvasRef.current;
-			if (!cv) return;
-			const strokePx = strokePxAt(strokeWidth, f.zoom);
-
-			if (modeRef.current === "gl" && glRef.current) {
-				glRef.current.draw(
-					{
-						widthCss: f.w,
-						heightCss: f.h,
-						zoom: f.zoom,
-						offsetX: f.offsetX,
-						offsetY: f.offsetY,
-						rot: f.rot,
-						centreX: f.centreX,
-						centreY: f.centreY,
-						light: PATCH_LIGHT,
-						sat: PATCH_SAT,
-						strokePx,
-						strokeRGBA: STROKE_RGBA,
-					},
-					f.dpr,
-				);
-				return;
-			}
-
-			// 2-D fallback (no WebGL2 context): the same polygons, the same hues.
-			const ctx = cv.getContext("2d");
-			if (!ctx) return;
-			ctx.setTransform(f.dpr, 0, 0, f.dpr, 0, 0);
-			ctx.clearRect(0, 0, f.w, f.h);
-			ctx.save();
-			applyViewTransform(ctx, f);
-			ctx.lineJoin = "round";
-			drawPolygons(ctx, polys, f.zoom, 0, strokePx, STROKE_CSS);
-			ctx.restore();
-		},
-		[polys, strokeWidth],
-	);
-
-	const view = useAperiodicView({ canvasRef, home, draw });
-	const { refit, remeasure, requestDraw } = view;
-
-	// Create the renderer once: a canvas holds one context type for its life, so this decides the path.
-	// Declared BEFORE the upload effect so the renderer exists when the first upload runs (effects fire
-	// in declaration order, including Strict Mode's re-run) — the same ordering Sub Rosa relies on.
-	useEffect(() => {
-		const cv = canvasRef.current;
-		if (!cv) return;
-		const gl = cv.getContext("webgl2", { antialias: true, premultipliedAlpha: false, alpha: true });
-		if (gl) {
-			try {
-				glRef.current = new SubRosaGL(gl);
-				modeRef.current = "gl";
-			} catch {
-				modeRef.current = "2d";
-			}
-		} else {
-			modeRef.current = "2d";
-		}
-		uploadedRef.current = null;
-		return () => {
-			glRef.current?.dispose();
-			glRef.current = null;
-			uploadedRef.current = null;
-		};
-	}, []);
-
-	// Triangulate and upload on every level change, then reframe according to `framing`.
-	//
-	// A NEW SUBJECT always snaps home, whatever the toggle says: switching construction while "keep" is
-	// on would otherwise leave the reader pointed at wherever the last tiling happened to be, which for
-	// the pinwheel and the chair is not even the same quadrant. Only a level change is the toggle's.
-	const subjectRef = useRef<string | null>(null);
-	useEffect(() => {
-		if (modeRef.current === "gl" && glRef.current && uploadedRef.current !== polys) {
-			glRef.current.uploadPolygons(polys, hueOf);
-			uploadedRef.current = polys;
-		}
-		const newSubject = subjectRef.current !== id;
-		subjectRef.current = id;
-		if (newSubject || framing === "fit") refit();
-		else remeasure();
-	}, [polys, id, framing, refit, remeasure]);
-	useEffect(() => {
-		requestDraw();
-	}, [strokeWidth, requestDraw]);
+	// Home is one rule at every level, fit the whole patch, and a new construction always snaps to it;
+	// only a level change is the framing toggle's (lib/hooks/usePatchCanvas.ts).
+	const { canvasRef, view } = usePatchCanvas({ polys, strokeWidth, subject: id, keepView: framing === "keep" });
 
 	return (
 		<div className="relative flex-1 min-h-0 flex">

@@ -18,33 +18,9 @@ import { Slider } from "@/components/ui/slider";
 import type { AperiodicView } from "@/lib/hooks/useAperiodicView";
 import { Section } from "./_controls";
 
-/** Outline width in CSS px: the slider's range, and the width a view starts at. The default is
- *  /play's `lineWidth`, so "1.5 px" draws the same line on both pages. */
-export const STROKE_WIDTH = { min: 0, max: 3, step: 0.25, def: 1.5 } as const;
-
-/** Tile outline colour, as /play draws it: opaque black. It has to stay opaque: the outline pass
- *  (lib/render/subrosaGL.ts) draws one line per polygon side without deduplicating shared sides, so a
- *  semi-transparent stroke would come out darker on every interior edge than on the patch boundary. */
-export const STROKE_RGBA: [number, number, number, number] = [0, 0, 0, 1];
-export const STROKE_CSS = "#000";
-
-/** Most an outline may take of a tile edge. Beyond this the tiling reads as a grid of lines with
- *  colour in the gaps, which is what a 10,997-rhombus multigrid at 5 px a tile did at a flat 1.5 px. */
-const STROKE_MAX_FRACTION = 0.15;
-
-/**
- * The width to actually draw at this zoom, in CSS px. `zoom` is px per world unit, which in every
- * aperiodic view is px per tile edge.
- *
- * The slider's width is what a tile gets once it is big enough to carry it — from ~10 px an edge up.
- * Below that the line is capped to a fraction of the tile, and under ~2 px an edge it is dropped: at
- * that size neighbouring outlines are closer together than the line is wide, so every width paints
- * the same grey wash and the pattern is gone. Zooming in is what shows you the edges.
- */
-export function strokePxAt(width: number, zoom: number): number {
-	if (width <= 0 || zoom <= 2.2) return 0;
-	return Math.min(width, zoom * STROKE_MAX_FRACTION);
-}
+// The stroke rules live with the patch canvas (lib/hooks/usePatchCanvas.ts), which /heesch draws through too.
+export { strokePxAt, STROKE_CSS, STROKE_RGBA, STROKE_WIDTH } from "@/lib/hooks/usePatchCanvas";
+import { STROKE_WIDTH } from "@/lib/hooks/usePatchCanvas";
 
 export function ViewFooter({
 	view,

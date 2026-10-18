@@ -1,0 +1,18 @@
+[11:18:12] === 7-ominoes: 4 parts on 4 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/omino-v3/omino7
+[11:18:12] 0 parts already done, 4 to go
+[11:18:13] part 1/4  hole-free 25  H0 0  tilers 25  H1 0  undecided 0  ETA 0 s
+[11:18:13] part 2/4  hole-free 45  H0 0  tilers 45  H1 0  undecided 0  ETA 0 s
+[11:18:13] part 3/4  hole-free 85  H0 0  tilers 83  H1 2  undecided 0  ETA 0 s
+[11:18:13] part 4/4  hole-free 107  H0 0  tilers 104  H1 3  undecided 0  ETA 0 s
+[11:18:13] classified in 0 s: fixed 760, free 108, holefree 107, h0 0, tilers 104, h1 3, undecided 0
+[11:18:13] fallback: 0 shapes in 0 streams
+[11:18:13] fallback done in 0 s: {}, capped 0
+[11:18:13] === 7-ominoes: {"n": 7, "free": 108, "hole_free": 107, "h0": 0, "tilers": 104, "h1": 3, "capped": 0}
+[14:58:56] === 7-ominoes: 4 parts on 4 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/omino-v3/omino7
+[14:58:56] 0 parts already done, 4 to go
+[14:58:56] part 1/4  hole-free 25  H0 0  tilers 25  H1 0  undecided 0  ETA 0 s
+[14:58:56] part 2/4  hole-free 45  H0 0  tilers 45  H1 0  undecided 0  ETA 0 s
+[14:58:56] part 3/4  hole-free 85  H0 0  tilers 83  H1 2  undecided 0  ETA 0 s
+[14:58:56] part 4/4  hole-free 107  H0 0  tilers 104  H1 3  undecided 0  ETA 0 s
+[14:58:56] classified in 0 s: fixed 760, free 108, holefree 107, h0 0, tilers 104, h1 3, undecided 0
+[14:58:56] === 7-omino tilings: 104 certificates (0 from the fallback), census has 104 tilers

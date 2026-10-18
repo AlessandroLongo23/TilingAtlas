@@ -32,6 +32,7 @@ const LINKS = [
 	{ href: "/isohedral", label: "Isohedral", blurb: "The 93 isohedral types, reshaped live" }, // Grünbaum & Shephard IH1–IH93, parameterized via Tactile
 	{ href: "/pentagons", label: "Pentagons", blurb: "The 15 convex pentagons that tile the plane" }, // Kershner's 15 convex-pentagon families, closed by Rao 2017
 	{ href: "/automata", label: "Automata", blurb: "Game of Life and its relatives on tilings" }, // Life-like CA over the catalogue; the tenth link, so its key is 0
+	{ href: "/heesch", label: "Heesch", blurb: "Shapes that cannot tile, and how far they get" }, // non-tiling polyominoes by size with corona patches (heesch-sat); the eleventh link, so it has no key
 	// { href: "/history", label: "History" }, // hidden from header (route still exists)
 ];
 

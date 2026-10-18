@@ -1,0 +1,19 @@
+[11:18:43] === 9-ominoes: 4 parts on 4 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/omino-v3/omino9
+[11:18:43] 0 parts already done, 4 to go
+[11:18:44] part 1/4  hole-free 311  H0 10  tilers 263  H1 38  undecided 0  ETA 2 s
+[11:18:44] part 2/4  hole-free 614  H0 14  tilers 520  H1 80  undecided 0  ETA 1 s
+[11:18:44] part 3/4  hole-free 913  H0 27  tilers 769  H1 116  undecided 1  ETA 0 s
+[11:18:44] part 4/4  hole-free 1,248  H0 36  tilers 1,050  H1 157  undecided 5  ETA 0 s
+[11:18:44] classified in 1 s: fixed 9,910, free 1,285, holefree 1,248, h0 36, tilers 1,050, h1 157, undecided 5
+[11:18:44] fallback: 5 shapes in 4 streams
+[11:19:14] fallback 5/5  ETA 0 s
+[11:19:14] fallback done in 30 s: {'h2': 5}, capped 0
+[11:19:14] === 9-ominoes: {"n": 9, "free": 1285, "hole_free": 1248, "h0": 36, "tilers": 1050, "h1": 157, "capped": 0, "h2": 5}
+[14:58:57] === 9-ominoes: 4 parts on 4 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/omino-v3/omino9
+[14:58:57] 0 parts already done, 4 to go
+[14:58:57] part 1/4  hole-free 311  H0 10  tilers 263  H1 38  undecided 0  ETA 2 s
+[14:58:57] part 2/4  hole-free 614  H0 14  tilers 520  H1 80  undecided 0  ETA 1 s
+[14:58:58] part 3/4  hole-free 913  H0 27  tilers 769  H1 116  undecided 1  ETA 0 s
+[14:58:58] part 4/4  hole-free 1,248  H0 36  tilers 1,050  H1 157  undecided 5  ETA 0 s
+[14:58:58] classified in 1 s: fixed 9,910, free 1,285, holefree 1,248, h0 36, tilers 1,050, h1 157, undecided 5
+[14:58:58] === 9-omino tilings: 1,050 certificates (0 from the fallback), census has 1,050 tilers

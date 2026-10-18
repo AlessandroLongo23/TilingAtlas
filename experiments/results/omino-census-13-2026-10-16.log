@@ -1,0 +1,10 @@
+[15:00:16] === 13-ominoes: 6 parts on 6 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/omino-v3/omino13
+[15:00:16] 0 parts already done, 6 to go
+[15:01:57] part 1/6  hole-free 35,260  H0 16,295  tilers 6,282  H1 12,637  undecided 46  ETA 8 min
+[15:02:01] part 2/6  hole-free 70,545  H0 32,105  tilers 12,746  H1 25,614  undecided 80  ETA 3 min
+[15:02:02] part 3/6  hole-free 108,040  H0 49,833  tilers 19,362  H1 38,737  undecided 108  ETA 2 min
+[15:02:03] part 4/6  hole-free 145,375  H0 67,352  tilers 25,871  H1 52,004  undecided 148  ETA 53 s
+[15:02:06] part 5/6  hole-free 180,850  H0 83,601  tilers 32,056  H1 65,007  undecided 186  ETA 22 s
+[15:02:07] part 6/6  hole-free 217,117  H0 100,180  tilers 38,668  H1 78,036  undecided 233  ETA 0 s
+[15:02:07] classified in 111 s: fixed 1,903,890, free 238,591, holefree 217,117, h0 100,180, tilers 38,668, h1 78,036, undecided 233
+[15:02:07] === 13-omino tilings: 38,668 certificates (0 from the fallback), census has 38,668 tilers

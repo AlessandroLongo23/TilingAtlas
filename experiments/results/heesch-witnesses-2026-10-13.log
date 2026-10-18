@@ -1,0 +1,392 @@
+[12:18:13] 7-ominoes: 3 non-tilers to witness
+[12:18:14]   7-ominoes: 3/3, elapsed 1s, ETA 0s
+[12:18:14] 7-ominoes witnesses done in 1s: Total: 3 shapes 0 unprocessed 0 with holes 0 inconclusive 3 non-tilers 1 with Hc = 0 2 with Hc = 1 3 with Hh = 1 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[12:18:14] 8-ominoes: 20 non-tilers to witness
+[12:18:16]   8-ominoes: 20/20, elapsed 2s, ETA 0s
+[12:18:16] 8-ominoes witnesses done in 2s: Total: 20 shapes 0 unprocessed 0 with holes 0 inconclusive 20 non-tilers 6 with Hc = 0 14 with Hc = 1 19 with Hh = 1 1 with Hh = 2 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[12:18:16] 9-ominoes: 198 non-tilers to witness
+[12:18:41]   9-ominoes: 198/198, elapsed 25s, ETA 0s
+[12:18:41] 9-ominoes witnesses done in 25s: Total: 198 shapes 0 unprocessed 0 with holes 0 inconclusive 198 non-tilers 75 with Hc = 0 122 with Hc = 1 1 with Hc = 2 36 with Hh = 0 157 with Hh = 1 5 with Hh = 2 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[12:18:41] 10-ominoes: 1390 non-tilers to witness
+[12:19:01]   10-ominoes: 200/1390, elapsed 20s, ETA 119s
+[12:19:25]   10-ominoes: 400/1390, elapsed 44s, ETA 108s
+[12:19:53]   10-ominoes: 600/1390, elapsed 72s, ETA 94s
+[12:20:18]   10-ominoes: 800/1390, elapsed 97s, ETA 71s
+[12:20:47]   10-ominoes: 1000/1390, elapsed 126s, ETA 49s
+[12:21:02]   10-ominoes: 1200/1390, elapsed 141s, ETA 22s
+[12:21:12]   10-ominoes: 1390/1390, elapsed 151s, ETA 0s
+[12:21:12] 10-ominoes witnesses done in 151s: Total: 1390 shapes 0 unprocessed 0 with holes 0 inconclusive 1390 non-tilers 747 with Hc = 0 642 with Hc = 1 1 with Hc = 2 355 with Hh = 0 1020 with Hh = 1 15 with Hh = 2 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[12:59:41] 11-ominoes: 9474 non-tilers to witness
+[13:00:07]   11-ominoes: 200/9474, elapsed 26s, ETA 1205s
+[13:00:38]   11-ominoes: 400/9474, elapsed 57s, ETA 1293s
+[13:01:16]   11-ominoes: 600/9474, elapsed 95s, ETA 1405s
+[13:01:50]   11-ominoes: 800/9474, elapsed 129s, ETA 1398s
+[13:02:19]   11-ominoes: 1000/9474, elapsed 158s, ETA 1338s
+[13:02:35]   11-ominoes: 1200/9474, elapsed 174s, ETA 1199s
+[13:02:48]   11-ominoes: 1400/9474, elapsed 187s, ETA 1078s
+[13:03:02]   11-ominoes: 1600/9474, elapsed 201s, ETA 989s
+[13:03:17]   11-ominoes: 1800/9474, elapsed 216s, ETA 920s
+[13:03:38]   11-ominoes: 2000/9474, elapsed 237s, ETA 885s
+[13:03:58]   11-ominoes: 2200/9474, elapsed 257s, ETA 849s
+[13:04:10]   11-ominoes: 2400/9474, elapsed 269s, ETA 792s
+[13:04:35]   11-ominoes: 2600/9474, elapsed 294s, ETA 777s
+[13:04:55]   11-ominoes: 2800/9474, elapsed 314s, ETA 748s
+[13:05:10]   11-ominoes: 3000/9474, elapsed 329s, ETA 709s
+[13:05:28]   11-ominoes: 3200/9474, elapsed 347s, ETA 680s
+[13:05:46]   11-ominoes: 3400/9474, elapsed 365s, ETA 652s
+[13:06:00]   11-ominoes: 3600/9474, elapsed 379s, ETA 618s
+[13:06:25]   11-ominoes: 3800/9474, elapsed 404s, ETA 603s
+[13:06:46]   11-ominoes: 4000/9474, elapsed 425s, ETA 581s
+[13:07:10]   11-ominoes: 4200/9474, elapsed 449s, ETA 563s
+[13:07:36]   11-ominoes: 4400/9474, elapsed 475s, ETA 547s
+[13:08:14]   11-ominoes: 4600/9474, elapsed 513s, ETA 543s
+[13:08:51]   11-ominoes: 4800/9474, elapsed 550s, ETA 535s
+[13:09:10]   11-ominoes: 5000/9474, elapsed 569s, ETA 509s
+[13:09:23]   11-ominoes: 5200/9474, elapsed 582s, ETA 478s
+[13:09:41]   11-ominoes: 5400/9474, elapsed 600s, ETA 452s
+[13:09:56]   11-ominoes: 5600/9474, elapsed 615s, ETA 425s
+[13:10:12]   11-ominoes: 5800/9474, elapsed 631s, ETA 399s
+[13:10:30]   11-ominoes: 6000/9474, elapsed 649s, ETA 375s
+[13:10:42]   11-ominoes: 6200/9474, elapsed 661s, ETA 349s
+[13:10:55]   11-ominoes: 6400/9474, elapsed 674s, ETA 323s
+[13:11:14]   11-ominoes: 6600/9474, elapsed 693s, ETA 301s
+[13:11:32]   11-ominoes: 6800/9474, elapsed 711s, ETA 279s
+[13:11:49]   11-ominoes: 7000/9474, elapsed 728s, ETA 257s
+[13:12:02]   11-ominoes: 7200/9474, elapsed 741s, ETA 234s
+[13:12:14]   11-ominoes: 7400/9474, elapsed 753s, ETA 211s
+[13:12:27]   11-ominoes: 7600/9474, elapsed 766s, ETA 188s
+[13:12:40]   11-ominoes: 7800/9474, elapsed 779s, ETA 167s
+[13:12:51]   11-ominoes: 8000/9474, elapsed 790s, ETA 145s
+[13:13:12]   11-ominoes: 8200/9474, elapsed 811s, ETA 126s
+[13:13:24]   11-ominoes: 8400/9474, elapsed 823s, ETA 105s
+[13:13:43]   11-ominoes: 8600/9474, elapsed 842s, ETA 85s
+[13:13:49]   11-ominoes: 8800/9474, elapsed 848s, ETA 64s
+[13:13:56]   11-ominoes: 9000/9474, elapsed 855s, ETA 45s
+[13:14:05]   11-ominoes: 9200/9474, elapsed 864s, ETA 25s
+[13:14:11]   11-ominoes: 9400/9474, elapsed 870s, ETA 6s
+[13:14:13]   11-ominoes: 9474/9474, elapsed 872s, ETA 0s
+[13:14:13] 11-ominoes witnesses done in 872s: Total: 9474 shapes 0 unprocessed 0 with holes 0 inconclusive 9474 non-tilers 5807 with Hc = 0 3628 with Hc = 1 39 with Hc = 2 2820 with Hh = 0 6544 with Hh = 1 109 with Hh = 2 1 with Hh = 3 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:23:21] -iamond 7: classifying (no baseline yet)
+[14:23:21] -iamond 7: 0 non-tilers to witness
+[14:23:21] -iamond 7 witnesses done in 0s: Total: 0 shapes 0 unprocessed 0 with holes 0 inconclusive 0 non-tilers 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:23:21] -iamond 8: classifying (no baseline yet)
+[14:23:21] -iamond 8: 0 non-tilers to witness
+[14:23:21] -iamond 8 witnesses done in 0s: Total: 0 shapes 0 unprocessed 0 with holes 0 inconclusive 0 non-tilers 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:23:21] -iamond 9: classifying (no baseline yet)
+[14:23:21] -iamond 9: 0 non-tilers to witness
+[14:23:21] -iamond 9 witnesses done in 0s: Total: 0 shapes 0 unprocessed 0 with holes 0 inconclusive 0 non-tilers 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:23:21] -iamond 10: classifying (no baseline yet)
+[14:23:21] -iamond 10: 0 non-tilers to witness
+[14:23:21] -iamond 10 witnesses done in 0s: Total: 0 shapes 0 unprocessed 0 with holes 0 inconclusive 0 non-tilers 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:23:21] -hex 6: classifying (no baseline yet)
+[14:23:21] -hex 6: 0 non-tilers to witness
+[14:23:21] -hex 6 witnesses done in 0s: Total: 0 shapes 0 unprocessed 0 with holes 0 inconclusive 0 non-tilers 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:23:21] -hex 7: classifying (no baseline yet)
+[14:23:21] -hex 7: 0 non-tilers to witness
+[14:23:21] -hex 7 witnesses done in 0s: Total: 0 shapes 0 unprocessed 0 with holes 0 inconclusive 0 non-tilers 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:23:21] -iamond 11: classifying (no baseline yet)
+[14:23:21] -iamond 11: 0 non-tilers to witness
+[14:23:21] -iamond 11 witnesses done in 0s: Total: 0 shapes 0 unprocessed 0 with holes 0 inconclusive 0 non-tilers 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:23:21] -hex 8: classifying (no baseline yet)
+[14:23:21] -hex 8: 0 non-tilers to witness
+[14:23:21] -hex 8 witnesses done in 0s: Total: 0 shapes 0 unprocessed 0 with holes 0 inconclusive 0 non-tilers 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:23:21] -iamond 12: classifying (no baseline yet)
+[14:23:21] -iamond 12: 0 non-tilers to witness
+[14:23:21] -iamond 12 witnesses done in 0s: Total: 0 shapes 0 unprocessed 0 with holes 0 inconclusive 0 non-tilers 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:24:14] 7-iamond: classifying (no baseline yet)
+[14:24:15] 7-iamond: 1 non-tilers to witness
+[14:24:15]   7-iamond: 1/1, elapsed 0s, ETA 0s
+[14:24:15] 7-iamond witnesses done in 0s: Total: 1 shapes 0 unprocessed 0 with holes 0 inconclusive 1 non-tilers 1 with Hc = 1 1 with Hh = 1 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:24:15] 8-iamond: classifying (no baseline yet)
+[14:24:17] 8-iamond: 0 non-tilers to witness
+[14:24:17] 8-iamond witnesses done in 0s: Total: 0 shapes 0 unprocessed 0 with holes 0 inconclusive 0 non-tilers 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:24:17] 9-iamond: 20 non-tilers to witness
+[14:24:18]   9-iamond: 20/20, elapsed 1s, ETA 0s
+[14:24:19] 9-iamond witnesses done in 1s: Total: 20 shapes 0 unprocessed 0 with holes 0 inconclusive 20 non-tilers 11 with Hc = 0 9 with Hc = 1 7 with Hh = 0 13 with Hh = 1 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:24:19] 10-iamond: 102 non-tilers to witness
+[14:24:41]   10-iamond: 102/102, elapsed 22s, ETA 0s
+[14:24:41] 10-iamond witnesses done in 22s: Total: 102 shapes 0 unprocessed 0 with holes 0 inconclusive 102 non-tilers 44 with Hc = 0 55 with Hc = 1 3 with Hc = 2 33 with Hh = 0 59 with Hh = 1 10 with Hh = 2 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:24:41] 6-hex: 4 non-tilers to witness
+[14:24:47]   6-hex: 4/4, elapsed 6s, ETA 0s
+[14:24:47] 6-hex witnesses done in 6s: Total: 4 shapes 0 unprocessed 0 with holes 0 inconclusive 4 non-tilers 3 with Hc = 1 1 with Hc = 2 3 with Hh = 1 1 with Hh = 2 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:24:47] 7-hex: 37 non-tilers to witness
+[14:29:24]   7-hex: 37/37, elapsed 277s, ETA 0s
+[14:29:24] 7-hex witnesses done in 277s: Total: 37 shapes 0 unprocessed 0 with holes 0 inconclusive 37 non-tilers 5 with Hc = 0 25 with Hc = 1 6 with Hc = 2 1 with Hc = 3 4 with Hh = 0 19 with Hh = 1 12 with Hh = 2 2 with Hh = 3 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:29:24] 11-iamond: 594 non-tilers to witness
+[14:30:04]   11-iamond: 200/594, elapsed 40s, ETA 78s
+[14:30:47]   11-iamond: 400/594, elapsed 83s, ETA 40s
+[14:33:01]   11-iamond: 594/594, elapsed 217s, ETA 0s
+[14:33:01] 11-iamond witnesses done in 217s: Total: 594 shapes 0 unprocessed 0 with holes 0 inconclusive 594 non-tilers 236 with Hc = 0 346 with Hc = 1 11 with Hc = 2 1 with Hc = 3 117 with Hh = 0 446 with Hh = 1 30 with Hh = 2 1 with Hh = 3 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:33:01] 8-hex: 381 non-tilers to witness
+[14:41:30]   8-hex: 200/381, elapsed 509s, ETA 460s
+[14:49:34]   8-hex: 381/381, elapsed 993s, ETA 0s
+[14:49:34] 8-hex witnesses done in 993s: Total: 381 shapes 0 unprocessed 0 with holes 0 inconclusive 381 non-tilers 70 with Hc = 0 264 with Hc = 1 44 with Hc = 2 3 with Hc = 3 37 with Hh = 0 253 with Hh = 1 84 with Hh = 2 7 with Hh = 3 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:49:34] 12-iamond: classifying (no baseline yet)
+[14:52:41] 1-kite: classifying (no baseline yet)
+[14:52:41] 1-drafter: classifying (no baseline yet)
+[14:52:41] 1-trihex: classifying (no baseline yet)
+[14:52:41] 1-kite: 0 non-tilers to witness
+[14:52:41] 1-trihex: 2 non-tilers to witness
+[14:52:41] 1-drafter: 0 non-tilers to witness
+[14:52:41] 1-drafter witnesses done in 0s: Total: 0 shapes 0 unprocessed 0 with holes 0 inconclusive 0 non-tilers 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:52:41] 1-kite witnesses done in 0s: Total: 0 shapes 0 unprocessed 0 with holes 0 inconclusive 0 non-tilers 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:52:41]   1-trihex: 2/2, elapsed 0s, ETA 0s
+[14:52:41] 2-drafter: classifying (no baseline yet)
+[14:52:41] 2-kite: classifying (no baseline yet)
+[14:52:41] 1-trihex witnesses done in 0s: Total: 2 shapes 0 unprocessed 0 with holes 0 inconclusive 2 non-tilers 2 with Hc = 0 2 with Hh = 0 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:52:41] 2-trihex: classifying (no baseline yet)
+[14:52:41] 2-drafter: 0 non-tilers to witness
+[14:52:41] 2-kite: 1 non-tilers to witness
+[14:52:41] 2-drafter witnesses done in 0s: Total: 0 shapes 0 unprocessed 0 with holes 0 inconclusive 0 non-tilers 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:52:41] 3-drafter: classifying (no baseline yet)
+[14:52:41]   2-kite: 1/1, elapsed 0s, ETA 0s
+[14:52:41] 2-kite witnesses done in 0s: Total: 1 shapes 0 unprocessed 0 with holes 0 inconclusive 1 non-tilers 1 with Hc = 0 1 with Hh = 0 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:52:41] 3-drafter: 1 non-tilers to witness
+[14:52:41] 3-kite: classifying (no baseline yet)
+[14:52:41] 2-trihex: 1 non-tilers to witness
+[14:52:41]   3-drafter: 1/1, elapsed 0s, ETA 0s
+[14:52:41] 3-drafter witnesses done in 0s: Total: 1 shapes 0 unprocessed 0 with holes 0 inconclusive 1 non-tilers 1 with Hc = 0 1 with Hh = 0 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:52:41] 3-kite: 0 non-tilers to witness
+[14:52:41] 4-drafter: classifying (no baseline yet)
+[14:52:41]   2-trihex: 1/1, elapsed 0s, ETA 0s
+[14:52:41] 3-kite witnesses done in 0s: Total: 0 shapes 0 unprocessed 0 with holes 0 inconclusive 0 non-tilers 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:52:41] 2-trihex witnesses done in 0s: Total: 1 shapes 0 unprocessed 0 with holes 0 inconclusive 1 non-tilers 1 with Hc = 1 1 with Hh = 1 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:52:41] 4-kite: classifying (no baseline yet)
+[14:52:41] 3-trihex: classifying (no baseline yet)
+[14:52:41] 4-drafter: 4 non-tilers to witness
+[14:52:41] 3-trihex: 1 non-tilers to witness
+[14:52:41]   4-drafter: 4/4, elapsed 0s, ETA 0s
+[14:52:42]   3-trihex: 1/1, elapsed 1s, ETA 0s
+[14:52:42] 4-drafter witnesses done in 1s: Total: 4 shapes 0 unprocessed 0 with holes 0 inconclusive 4 non-tilers 4 with Hc = 0 4 with Hh = 0 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:52:42] 5-drafter: classifying (no baseline yet)
+[14:52:42] 3-trihex witnesses done in 1s: Total: 1 shapes 0 unprocessed 0 with holes 0 inconclusive 1 non-tilers 1 with Hc = 0 1 with Hh = 0 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:52:42] 4-trihex: classifying (no baseline yet)
+[14:52:42] 5-drafter: 14 non-tilers to witness
+[14:52:42] 4-trihex: 9 non-tilers to witness
+[14:52:42] 4-kite: 5 non-tilers to witness
+[14:52:42]   4-kite: 5/5, elapsed 0s, ETA 0s
+[14:52:42] 4-kite witnesses done in 0s: Total: 5 shapes 0 unprocessed 0 with holes 0 inconclusive 5 non-tilers 4 with Hc = 0 1 with Hc = 1 4 with Hh = 0 1 with Hh = 1 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:52:42] 5-kite: classifying (no baseline yet)
+[14:52:42]   5-drafter: 14/14, elapsed 0s, ETA 0s
+[14:52:42] 5-drafter witnesses done in 0s: Total: 14 shapes 0 unprocessed 0 with holes 0 inconclusive 14 non-tilers 10 with Hc = 0 3 with Hc = 1 1 with Hc = 2 10 with Hh = 0 3 with Hh = 1 1 with Hh = 2 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:52:42] 6-drafter: classifying (no baseline yet)
+[14:52:42]   4-trihex: 9/9, elapsed 0s, ETA 0s
+[14:52:42] 4-trihex witnesses done in 0s: Total: 9 shapes 0 unprocessed 0 with holes 0 inconclusive 9 non-tilers 5 with Hc = 0 4 with Hc = 1 4 with Hh = 0 5 with Hh = 1 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:52:42] 5-trihex: classifying (no baseline yet)
+[14:52:42] 6-drafter: 11 non-tilers to witness
+[14:52:42]   6-drafter: 11/11, elapsed 0s, ETA 0s
+[14:52:42] 6-drafter witnesses done in 0s: Total: 11 shapes 0 unprocessed 0 with holes 0 inconclusive 11 non-tilers 11 with Hc = 0 10 with Hh = 0 1 with Hh = 1 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:52:42] 7-drafter: classifying (no baseline yet)
+[14:52:42] 5-kite: 26 non-tilers to witness
+[14:52:43] 7-drafter: 71 non-tilers to witness
+[14:52:43]   7-drafter: 71/71, elapsed 0s, ETA 0s
+[14:52:43] 7-drafter witnesses done in 0s: Total: 71 shapes 0 unprocessed 0 with holes 0 inconclusive 71 non-tilers 64 with Hc = 0 5 with Hc = 1 2 with Hc = 2 63 with Hh = 0 6 with Hh = 1 2 with Hh = 2 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:52:43] 8-drafter: classifying (no baseline yet)
+[14:52:43]   5-kite: 26/26, elapsed 0s, ETA 0s
+[14:52:43] 5-kite witnesses done in 0s: Total: 26 shapes 0 unprocessed 0 with holes 0 inconclusive 26 non-tilers 12 with Hc = 0 14 with Hc = 1 10 with Hh = 0 16 with Hh = 1 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:52:43] 6-kite: classifying (no baseline yet)
+[14:52:43] 5-trihex: 29 non-tilers to witness
+[14:52:43] 6-kite: 13 non-tilers to witness
+[14:52:43]   6-kite: 13/13, elapsed 0s, ETA 0s
+[14:52:43] 6-kite witnesses done in 0s: Total: 13 shapes 0 unprocessed 0 with holes 0 inconclusive 13 non-tilers 12 with Hc = 0 1 with Hc = 1 10 with Hh = 0 3 with Hh = 1 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:52:43] 7-kite: classifying (no baseline yet)
+[14:52:44] 8-drafter: 146 non-tilers to witness
+[14:52:44]   8-drafter: 146/146, elapsed 0s, ETA 0s
+[14:52:44] 8-drafter witnesses done in 0s: Total: 146 shapes 0 unprocessed 0 with holes 0 inconclusive 146 non-tilers 138 with Hc = 0 8 with Hc = 1 134 with Hh = 0 12 with Hh = 1 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:52:44] 9-drafter: classifying (no baseline yet)
+[14:52:45]   5-trihex: 29/29, elapsed 2s, ETA 0s
+[14:52:45] 5-trihex witnesses done in 2s: Total: 29 shapes 0 unprocessed 0 with holes 0 inconclusive 29 non-tilers 15 with Hc = 0 13 with Hc = 1 1 with Hc = 2 12 with Hh = 0 13 with Hh = 1 4 with Hh = 2 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:52:45] 6-trihex: classifying (no baseline yet)
+[14:52:45] 6-trihex: 52 non-tilers to witness
+[14:52:46]   6-trihex: 52/52, elapsed 1s, ETA 0s
+[14:52:46] 6-trihex witnesses done in 1s: Total: 52 shapes 0 unprocessed 0 with holes 0 inconclusive 52 non-tilers 52 with Hc = 0 52 with Hh = 0 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:52:46] 7-trihex: classifying (no baseline yet)
+[14:52:46] 9-drafter: 373 non-tilers to witness
+[14:52:46]   9-drafter: 200/373, elapsed 0s, ETA 0s
+[14:52:47]   9-drafter: 373/373, elapsed 1s, ETA 0s
+[14:52:47] 9-drafter witnesses done in 1s: Total: 373 shapes 0 unprocessed 0 with holes 0 inconclusive 373 non-tilers 368 with Hc = 0 4 with Hc = 1 1 with Hc = 2 365 with Hh = 0 7 with Hh = 1 1 with Hh = 2 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:52:47] 10-drafter: classifying (no baseline yet)
+[14:52:47] 7-kite: 203 non-tilers to witness
+[14:52:49]   7-kite: 200/203, elapsed 2s, ETA 0s
+[14:52:49]   7-kite: 203/203, elapsed 2s, ETA 0s
+[14:52:49] 7-kite witnesses done in 2s: Total: 203 shapes 0 unprocessed 0 with holes 0 inconclusive 203 non-tilers 161 with Hc = 0 41 with Hc = 1 1 with Hc = 2 152 with Hh = 0 48 with Hh = 1 3 with Hh = 2 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:52:49] 8-kite: classifying (no baseline yet)
+[14:52:50] 7-trihex: 330 non-tilers to witness
+[14:52:51] 10-drafter: 926 non-tilers to witness
+[14:52:51]   10-drafter: 200/926, elapsed 0s, ETA 0s
+[14:52:51]   10-drafter: 400/926, elapsed 0s, ETA 0s
+[14:52:52]   10-drafter: 600/926, elapsed 1s, ETA 0s
+[14:52:53]   10-drafter: 800/926, elapsed 2s, ETA 0s
+[14:52:53]   10-drafter: 926/926, elapsed 2s, ETA 0s
+[14:52:53] 10-drafter witnesses done in 2s: Total: 926 shapes 0 unprocessed 0 with holes 0 inconclusive 926 non-tilers 888 with Hc = 0 37 with Hc = 1 1 with Hc = 2 882 with Hh = 0 42 with Hh = 1 2 with Hh = 2 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:52:53] 1-abolo: classifying (no baseline yet)
+[14:52:53] 1-abolo: 0 non-tilers to witness
+[14:52:53] 1-abolo witnesses done in 0s: Total: 0 shapes 0 unprocessed 0 with holes 0 inconclusive 0 non-tilers 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:52:53] 2-abolo: classifying (no baseline yet)
+[14:52:53] 2-abolo: 0 non-tilers to witness
+[14:52:53] 2-abolo witnesses done in 0s: Total: 0 shapes 0 unprocessed 0 with holes 0 inconclusive 0 non-tilers 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:52:53] 3-abolo: classifying (no baseline yet)
+[14:52:53] 3-abolo: 1 non-tilers to witness
+[14:52:53]   3-abolo: 1/1, elapsed 0s, ETA 0s
+[14:52:53] 3-abolo witnesses done in 0s: Total: 1 shapes 0 unprocessed 0 with holes 0 inconclusive 1 non-tilers 1 with Hc = 0 1 with Hh = 0 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:52:53] 4-abolo: classifying (no baseline yet)
+[14:52:53] 4-abolo: 0 non-tilers to witness
+[14:52:53] 4-abolo witnesses done in 0s: Total: 0 shapes 0 unprocessed 0 with holes 0 inconclusive 0 non-tilers 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:52:53] 5-abolo: classifying (no baseline yet)
+[14:52:53] 5-abolo: 3 non-tilers to witness
+[14:52:53]   5-abolo: 3/3, elapsed 0s, ETA 0s
+[14:52:53] 5-abolo witnesses done in 0s: Total: 3 shapes 0 unprocessed 0 with holes 0 inconclusive 3 non-tilers 3 with Hc = 0 3 with Hh = 0 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:52:53] 6-abolo: classifying (no baseline yet)
+[14:52:53]   7-trihex: 200/330, elapsed 3s, ETA 1s
+[14:52:53] 6-abolo: 6 non-tilers to witness
+[14:52:53]   6-abolo: 6/6, elapsed 0s, ETA 0s
+[14:52:53] 6-abolo witnesses done in 0s: Total: 6 shapes 0 unprocessed 0 with holes 0 inconclusive 6 non-tilers 6 with Hc = 0 6 with Hh = 0 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:52:53] 7-abolo: classifying (no baseline yet)
+[14:52:55]   7-trihex: 330/330, elapsed 5s, ETA 0s
+[14:52:55] 7-trihex witnesses done in 5s: Total: 330 shapes 0 unprocessed 0 with holes 0 inconclusive 330 non-tilers 276 with Hc = 0 53 with Hc = 1 1 with Hc = 2 229 with Hh = 0 99 with Hh = 1 2 with Hh = 2 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:52:55] 8-trihex: classifying (no baseline yet)
+[14:52:58] 7-abolo: 33 non-tilers to witness
+[14:52:58]   7-abolo: 33/33, elapsed 0s, ETA 0s
+[14:52:58] 7-abolo witnesses done in 0s: Total: 33 shapes 0 unprocessed 0 with holes 0 inconclusive 33 non-tilers 24 with Hc = 0 7 with Hc = 1 2 with Hc = 2 23 with Hh = 0 7 with Hh = 1 3 with Hh = 2 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:52:58] 8-abolo: classifying (no baseline yet)
+[14:52:58] 8-abolo: 33 non-tilers to witness
+[14:52:58] 8-kite: 805 non-tilers to witness
+[14:52:58]   8-abolo: 33/33, elapsed 0s, ETA 0s
+[14:52:58] 8-abolo witnesses done in 0s: Total: 33 shapes 0 unprocessed 0 with holes 0 inconclusive 33 non-tilers 33 with Hc = 0 33 with Hh = 0 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:52:58] 9-abolo: classifying (no baseline yet)
+[14:52:59]   8-kite: 200/805, elapsed 1s, ETA 3s
+[14:53:02]   8-kite: 400/805, elapsed 4s, ETA 4s
+[14:53:03]   8-kite: 600/805, elapsed 5s, ETA 1s
+[14:53:05]   8-kite: 800/805, elapsed 7s, ETA 0s
+[14:53:05]   8-kite: 805/805, elapsed 7s, ETA 0s
+[14:53:05] 8-kite witnesses done in 7s: Total: 805 shapes 0 unprocessed 0 with holes 0 inconclusive 805 non-tilers 692 with Hc = 0 108 with Hc = 1 5 with Hc = 2 628 with Hh = 0 168 with Hh = 1 9 with Hh = 2 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:53:05] 1-halfcairo: classifying (no baseline yet)
+[14:53:05] 1-halfcairo: 2 non-tilers to witness
+[14:53:05]   1-halfcairo: 2/2, elapsed 0s, ETA 0s
+[14:53:05] 1-halfcairo witnesses done in 0s: Total: 2 shapes 0 unprocessed 0 with holes 0 inconclusive 2 non-tilers 2 with Hc = 0 2 with Hh = 0 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:53:05] 2-halfcairo: classifying (no baseline yet)
+[14:53:05] 2-halfcairo: 2 non-tilers to witness
+[14:53:05]   2-halfcairo: 2/2, elapsed 0s, ETA 0s
+[14:53:05] 2-halfcairo witnesses done in 0s: Total: 2 shapes 0 unprocessed 0 with holes 0 inconclusive 2 non-tilers 2 with Hc = 0 2 with Hh = 0 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:53:05] 3-halfcairo: classifying (no baseline yet)
+[14:53:05] 3-halfcairo: 6 non-tilers to witness
+[14:53:05]   3-halfcairo: 6/6, elapsed 0s, ETA 0s
+[14:53:05] 3-halfcairo witnesses done in 0s: Total: 6 shapes 0 unprocessed 0 with holes 0 inconclusive 6 non-tilers 6 with Hc = 0 6 with Hh = 0 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:53:05] 4-halfcairo: classifying (no baseline yet)
+[14:53:05] 4-halfcairo: 7 non-tilers to witness
+[14:53:05]   4-halfcairo: 7/7, elapsed 0s, ETA 0s
+[14:53:05] 4-halfcairo witnesses done in 0s: Total: 7 shapes 0 unprocessed 0 with holes 0 inconclusive 7 non-tilers 7 with Hc = 0 7 with Hh = 0 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:53:05] 5-halfcairo: classifying (no baseline yet)
+[14:53:05] 5-halfcairo: 37 non-tilers to witness
+[14:53:05]   5-halfcairo: 37/37, elapsed 0s, ETA 0s
+[14:53:05] 5-halfcairo witnesses done in 0s: Total: 37 shapes 0 unprocessed 0 with holes 0 inconclusive 37 non-tilers 37 with Hc = 0 37 with Hh = 0 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:53:05] 6-halfcairo: classifying (no baseline yet)
+[14:53:06] 6-halfcairo: 90 non-tilers to witness
+[14:53:06]   6-halfcairo: 90/90, elapsed 0s, ETA 0s
+[14:53:06] 6-halfcairo witnesses done in 0s: Total: 90 shapes 0 unprocessed 0 with holes 0 inconclusive 90 non-tilers 89 with Hc = 0 1 with Hc = 1 89 with Hh = 0 1 with Hh = 1 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:53:06] 7-halfcairo: classifying (no baseline yet)
+[14:53:07] 7-halfcairo: 279 non-tilers to witness
+[14:53:07]   7-halfcairo: 200/279, elapsed 0s, ETA 0s
+[14:53:07]   7-halfcairo: 279/279, elapsed 0s, ETA 0s
+[14:53:07] 7-halfcairo witnesses done in 0s: Total: 279 shapes 0 unprocessed 0 with holes 0 inconclusive 279 non-tilers 279 with Hc = 0 278 with Hh = 0 1 with Hh = 1 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:53:07] 8-halfcairo: classifying (no baseline yet)
+[14:53:07] 9-abolo: 226 non-tilers to witness
+[14:53:08] 8-halfcairo: 593 non-tilers to witness
+[14:53:08]   8-halfcairo: 200/593, elapsed 0s, ETA 0s
+[14:53:08]   8-halfcairo: 400/593, elapsed 0s, ETA 0s
+[14:53:08]   8-halfcairo: 593/593, elapsed 0s, ETA 0s
+[14:53:08] 8-halfcairo witnesses done in 0s: Total: 593 shapes 0 unprocessed 0 with holes 0 inconclusive 593 non-tilers 593 with Hc = 0 592 with Hh = 0 1 with Hh = 1 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:53:09]   9-abolo: 200/226, elapsed 2s, ETA 0s
+[14:53:10]   9-abolo: 226/226, elapsed 3s, ETA 0s
+[14:53:10] 9-abolo witnesses done in 3s: Total: 226 shapes 0 unprocessed 0 with holes 0 inconclusive 226 non-tilers 195 with Hc = 0 29 with Hc = 1 2 with Hc = 2 188 with Hh = 0 34 with Hh = 1 4 with Hh = 2 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:53:10] 10-abolo: classifying (no baseline yet)
+[14:53:13] 10-abolo: 422 non-tilers to witness
+[14:53:14]   10-abolo: 200/422, elapsed 1s, ETA 1s
+[14:53:15]   10-abolo: 400/422, elapsed 2s, ETA 0s
+[14:53:15]   10-abolo: 422/422, elapsed 2s, ETA 0s
+[14:53:15] 10-abolo witnesses done in 2s: Total: 422 shapes 0 unprocessed 0 with holes 0 inconclusive 422 non-tilers 407 with Hc = 0 15 with Hc = 1 396 with Hh = 0 26 with Hh = 1 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:53:23] 8-trihex: 1167 non-tilers to witness
+[14:53:32]   8-trihex: 200/1167, elapsed 9s, ETA 43s
+[14:53:38]   8-trihex: 400/1167, elapsed 15s, ETA 28s
+[14:53:41]   8-trihex: 600/1167, elapsed 18s, ETA 17s
+[14:53:45]   8-trihex: 800/1167, elapsed 22s, ETA 10s
+[14:53:49]   8-trihex: 1000/1167, elapsed 26s, ETA 4s
+[14:53:52]   8-trihex: 1167/1167, elapsed 29s, ETA 0s
+[14:53:52] 8-trihex witnesses done in 29s: Total: 1167 shapes 0 unprocessed 0 with holes 0 inconclusive 1167 non-tilers 892 with Hc = 0 267 with Hc = 1 8 with Hc = 2 731 with Hh = 0 414 with Hh = 1 21 with Hh = 2 1 with Hh = 3 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:53:52] 1-octasquare: classifying (no baseline yet)
+[14:53:52] 1-octasquare: 2 non-tilers to witness
+[14:53:52]   1-octasquare: 2/2, elapsed 0s, ETA 0s
+[14:53:52] 1-octasquare witnesses done in 0s: Total: 2 shapes 0 unprocessed 0 with holes 0 inconclusive 2 non-tilers 2 with Hc = 0 2 with Hh = 0 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:53:52] 2-octasquare: classifying (no baseline yet)
+[14:53:52] 2-octasquare: 1 non-tilers to witness
+[14:53:52]   2-octasquare: 1/1, elapsed 0s, ETA 0s
+[14:53:52] 2-octasquare witnesses done in 0s: Total: 1 shapes 0 unprocessed 0 with holes 0 inconclusive 1 non-tilers 1 with Hc = 0 1 with Hh = 0 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:53:52] 3-octasquare: classifying (no baseline yet)
+[14:53:52] 3-octasquare: 7 non-tilers to witness
+[14:53:52]   3-octasquare: 7/7, elapsed 0s, ETA 0s
+[14:53:52] 3-octasquare witnesses done in 0s: Total: 7 shapes 0 unprocessed 0 with holes 0 inconclusive 7 non-tilers 4 with Hc = 0 3 with Hc = 1 4 with Hh = 0 2 with Hh = 1 1 with Hh = 2 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:53:52] 4-octasquare: classifying (no baseline yet)
+[14:53:52] 4-octasquare: 13 non-tilers to witness
+[14:53:52]   4-octasquare: 13/13, elapsed 0s, ETA 0s
+[14:53:52] 4-octasquare witnesses done in 0s: Total: 13 shapes 0 unprocessed 0 with holes 0 inconclusive 13 non-tilers 13 with Hc = 0 11 with Hh = 0 2 with Hh = 1 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:53:52] 5-octasquare: classifying (no baseline yet)
+[14:53:55] 5-octasquare: 90 non-tilers to witness
+[14:53:57]   5-octasquare: 90/90, elapsed 2s, ETA 0s
+[14:53:57] 5-octasquare witnesses done in 2s: Total: 90 shapes 0 unprocessed 0 with holes 0 inconclusive 90 non-tilers 65 with Hc = 0 25 with Hc = 1 54 with Hh = 0 32 with Hh = 1 4 with Hh = 2 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:53:57] 6-octasquare: classifying (no baseline yet)
+[14:53:59] 6-octasquare: 310 non-tilers to witness
+[14:54:00]   6-octasquare: 200/310, elapsed 1s, ETA 0s
+[14:54:00]   6-octasquare: 310/310, elapsed 1s, ETA 0s
+[14:54:00] 6-octasquare witnesses done in 1s: Total: 310 shapes 0 unprocessed 0 with holes 0 inconclusive 310 non-tilers 298 with Hc = 0 12 with Hc = 1 263 with Hh = 0 47 with Hh = 1 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:54:00] 7-octasquare: classifying (no baseline yet)
+[14:54:19] 7-octasquare: 1914 non-tilers to witness
+[14:54:23]   7-octasquare: 200/1914, elapsed 4s, ETA 34s
+[14:54:25]   7-octasquare: 400/1914, elapsed 6s, ETA 22s
+[14:54:27]   7-octasquare: 600/1914, elapsed 8s, ETA 17s
+[14:54:32]   7-octasquare: 800/1914, elapsed 13s, ETA 18s
+[14:54:34]   7-octasquare: 1000/1914, elapsed 15s, ETA 13s
+[14:54:35]   7-octasquare: 1200/1914, elapsed 16s, ETA 9s
+[14:54:38]   7-octasquare: 1400/1914, elapsed 19s, ETA 6s
+[14:54:38]   7-octasquare: 1600/1914, elapsed 19s, ETA 3s
+[14:54:38]   7-octasquare: 1800/1914, elapsed 19s, ETA 1s
+[14:54:38]   7-octasquare: 1914/1914, elapsed 19s, ETA 0s
+[14:54:38] 7-octasquare witnesses done in 19s: Total: 1914 shapes 0 unprocessed 0 with holes 0 inconclusive 1914 non-tilers 1662 with Hc = 0 246 with Hc = 1 6 with Hc = 2 1450 with Hh = 0 452 with Hh = 1 12 with Hh = 2 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:54:38] 1-bevelhex: classifying (no baseline yet)
+[14:54:39] 1-bevelhex: 3 non-tilers to witness
+[14:54:39]   1-bevelhex: 3/3, elapsed 0s, ETA 0s
+[14:54:39] 1-bevelhex witnesses done in 0s: Total: 3 shapes 0 unprocessed 0 with holes 0 inconclusive 3 non-tilers 3 with Hc = 0 3 with Hh = 0 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:54:39] 2-bevelhex: classifying (no baseline yet)
+[14:54:39] 2-bevelhex: 3 non-tilers to witness
+[14:54:39]   2-bevelhex: 3/3, elapsed 0s, ETA 0s
+[14:54:39] 2-bevelhex witnesses done in 0s: Total: 3 shapes 0 unprocessed 0 with holes 0 inconclusive 3 non-tilers 3 with Hc = 0 3 with Hh = 0 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:54:39] 3-bevelhex: classifying (no baseline yet)
+[14:54:39] 3-bevelhex: 14 non-tilers to witness
+[14:54:39]   3-bevelhex: 14/14, elapsed 0s, ETA 0s
+[14:54:39] 3-bevelhex witnesses done in 0s: Total: 14 shapes 0 unprocessed 0 with holes 0 inconclusive 14 non-tilers 13 with Hc = 0 1 with Hc = 1 13 with Hh = 0 1 with Hh = 1 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:54:39] 4-bevelhex: classifying (no baseline yet)
+[14:54:39] 4-bevelhex: 49 non-tilers to witness
+[14:54:39]   4-bevelhex: 49/49, elapsed 0s, ETA 0s
+[14:54:39] 4-bevelhex witnesses done in 0s: Total: 49 shapes 0 unprocessed 0 with holes 0 inconclusive 49 non-tilers 44 with Hc = 0 5 with Hc = 1 44 with Hh = 0 5 with Hh = 1 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:54:39] 5-bevelhex: classifying (no baseline yet)
+[14:54:40] 5-bevelhex: 255 non-tilers to witness
+[14:54:41]   5-bevelhex: 200/255, elapsed 1s, ETA 0s
+[14:54:41]   5-bevelhex: 255/255, elapsed 1s, ETA 0s
+[14:54:41] 5-bevelhex witnesses done in 1s: Total: 255 shapes 0 unprocessed 0 with holes 0 inconclusive 255 non-tilers 244 with Hc = 0 11 with Hc = 1 239 with Hh = 0 15 with Hh = 1 1 with Hh = 2 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:54:41] 6-bevelhex: classifying (no baseline yet)
+[14:54:43] 6-bevelhex: 1255 non-tilers to witness
+[14:54:44]   6-bevelhex: 200/1255, elapsed 1s, ETA 5s
+[14:54:44]   6-bevelhex: 400/1255, elapsed 1s, ETA 2s
+[14:54:44]   6-bevelhex: 600/1255, elapsed 1s, ETA 1s
+[14:54:44]   6-bevelhex: 800/1255, elapsed 1s, ETA 0s
+[14:54:44]   6-bevelhex: 1000/1255, elapsed 1s, ETA 0s
+[14:54:44]   6-bevelhex: 1200/1255, elapsed 1s, ETA 0s
+[14:54:44]   6-bevelhex: 1255/1255, elapsed 1s, ETA 0s
+[14:54:44] 6-bevelhex witnesses done in 1s: Total: 1255 shapes 0 unprocessed 0 with holes 0 inconclusive 1255 non-tilers 1252 with Hc = 0 3 with Hc = 1 1248 with Hh = 0 7 with Hh = 1 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 
+[14:56:56] 12-iamond: 1192 non-tilers to witness
+[14:57:12]   12-iamond: 200/1192, elapsed 16s, ETA 79s
+[14:57:33]   12-iamond: 400/1192, elapsed 37s, ETA 73s
+[14:57:52]   12-iamond: 600/1192, elapsed 56s, ETA 55s
+[14:58:04]   12-iamond: 800/1192, elapsed 68s, ETA 33s
+[14:58:34]   12-iamond: 1000/1192, elapsed 98s, ETA 18s
+[14:58:57]   12-iamond: 1192/1192, elapsed 121s, ETA 0s
+[14:58:57] 12-iamond witnesses done in 121s: Total: 1192 shapes 0 unprocessed 0 with holes 0 inconclusive 1192 non-tilers 826 with Hc = 0 364 with Hc = 1 1 with Hc = 2 1 with Hc = 3 495 with Hh = 0 692 with Hh = 1 4 with Hh = 2 1 with Hh = 3 0 tile isohedrally 0 tile anisohedrally 0 tile aperiodically 

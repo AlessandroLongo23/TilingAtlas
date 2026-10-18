@@ -1,0 +1,43 @@
+[19:12:55] === 6-hexes: 16 parts on 4 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/grids/hex6
+[19:12:55] 0 parts already done, 16 to go
+[19:12:56] part 1/16  hole-free 3  H0 0  tilers 3  H1 0  undecided 0  ETA 9 s
+[19:12:56] part 2/16  hole-free 9  H0 0  tilers 8  H1 1  undecided 0  ETA 4 s
+[19:12:56] part 3/16  hole-free 17  H0 0  tilers 16  H1 1  undecided 0  ETA 3 s
+[19:12:56] part 4/16  hole-free 23  H0 0  tilers 22  H1 1  undecided 0  ETA 2 s
+[19:12:56] part 5/16  hole-free 26  H0 0  tilers 25  H1 1  undecided 0  ETA 1 s
+[19:12:56] part 6/16  hole-free 28  H0 0  tilers 27  H1 1  undecided 0  ETA 1 s
+[19:12:56] part 7/16  hole-free 29  H0 0  tilers 28  H1 1  undecided 0  ETA 1 s
+[19:12:56] part 8/16  hole-free 34  H0 0  tilers 33  H1 1  undecided 0  ETA 1 s
+[19:12:56] part 9/16  hole-free 38  H0 0  tilers 37  H1 1  undecided 0  ETA 1 s
+[19:12:56] part 10/16  hole-free 44  H0 0  tilers 43  H1 1  undecided 0  ETA 0 s
+[19:12:56] part 11/16  hole-free 52  H0 0  tilers 51  H1 1  undecided 0  ETA 0 s
+[19:12:56] part 12/16  hole-free 54  H0 0  tilers 52  H1 2  undecided 0  ETA 0 s
+[19:12:56] part 13/16  hole-free 67  H0 0  tilers 64  H1 3  undecided 0  ETA 0 s
+[19:12:56] part 14/16  hole-free 69  H0 0  tilers 66  H1 3  undecided 0  ETA 0 s
+[19:12:56] part 15/16  hole-free 73  H0 0  tilers 70  H1 3  undecided 0  ETA 0 s
+[19:12:56] part 16/16  hole-free 81  H0 0  tilers 77  H1 3  undecided 1  ETA 0 s
+[19:12:56] classified in 1 s: fixed 814, free 82, holefree 81, h0 0, tilers 77, h1 3, undecided 1
+[19:12:56] fallback: 1 shapes in 1 streams
+[19:13:26] fallback 1/1  ETA 0 s
+[19:13:26] fallback done in 30 s: {'h2': 1}, capped 0
+[19:13:26] === 6-hexes: {"n": 6, "free": 82, "hole_free": 81, "h0": 0, "tilers": 77, "h1": 3, "capped": 0, "h2": 1}
+[19:16:48] === 6-hexes: 16 parts on 4 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/grids/hex6
+[19:16:48] 0 parts already done, 16 to go
+[19:16:48] part 1/16  hole-free 3  H0 0  tilers 3  H1 0  undecided 0  ETA 0 s
+[19:16:48] part 2/16  hole-free 11  H0 0  tilers 11  H1 0  undecided 0  ETA 0 s
+[19:16:48] part 3/16  hole-free 17  H0 0  tilers 16  H1 1  undecided 0  ETA 0 s
+[19:16:48] part 4/16  hole-free 23  H0 0  tilers 22  H1 1  undecided 0  ETA 0 s
+[19:16:48] part 5/16  hole-free 26  H0 0  tilers 25  H1 1  undecided 0  ETA 0 s
+[19:16:48] part 6/16  hole-free 28  H0 0  tilers 27  H1 1  undecided 0  ETA 0 s
+[19:16:48] part 7/16  hole-free 29  H0 0  tilers 28  H1 1  undecided 0  ETA 0 s
+[19:16:48] part 8/16  hole-free 34  H0 0  tilers 33  H1 1  undecided 0  ETA 0 s
+[19:16:48] part 9/16  hole-free 38  H0 0  tilers 37  H1 1  undecided 0  ETA 0 s
+[19:16:48] part 10/16  hole-free 51  H0 0  tilers 49  H1 2  undecided 0  ETA 0 s
+[19:16:48] part 11/16  hole-free 57  H0 0  tilers 55  H1 2  undecided 0  ETA 0 s
+[19:16:48] part 12/16  hole-free 59  H0 0  tilers 56  H1 3  undecided 0  ETA 0 s
+[19:16:48] part 13/16  hole-free 67  H0 0  tilers 64  H1 3  undecided 0  ETA 0 s
+[19:16:48] part 14/16  hole-free 69  H0 0  tilers 66  H1 3  undecided 0  ETA 0 s
+[19:16:48] part 15/16  hole-free 73  H0 0  tilers 70  H1 3  undecided 0  ETA 0 s
+[19:16:48] part 16/16  hole-free 81  H0 0  tilers 77  H1 3  undecided 1  ETA 0 s
+[19:16:48] classified in 0 s: fixed 814, free 82, holefree 81, h0 0, tilers 77, h1 3, undecided 1
+[19:16:48] === 6-hex tilings: 77 certificates (0 from the fallback), census has 77 tilers

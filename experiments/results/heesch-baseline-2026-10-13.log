@@ -1,0 +1,254 @@
+[11:39:32] heesch-sat baseline (isohedral/heesch-sat d12a527, CryptoMiniSat 5.17.0), flags: -isohedral -hh -maxlevel 5
+[11:39:33] === 9-omino: 1248 hole-free free shapes
+[11:39:42]   omino9: 250/1248 shapes, elapsed 9s, ETA 35s
+[11:40:25]   omino9: 500/1248 shapes, elapsed 52s, ETA 77s
+[11:40:49]   omino9: 750/1248 shapes, elapsed 76s, ETA 50s
+[11:41:18]   omino9: 1000/1248 shapes, elapsed 105s, ETA 26s
+[11:41:55]   omino9: 1248/1248 shapes, elapsed 142s, ETA 0s
+[11:41:55]   omino9 done in 142s. Summary:
+      Total: 1248 shapes
+        0 unprocessed
+        0 with holes
+        9 inconclusive
+        198 non-tilers
+          75 with Hc = 0
+          122 with Hc = 1
+          1 with Hc = 2
+          36 with Hh = 0
+          157 with Hh = 1
+          5 with Hh = 2
+        1041 tile isohedrally
+        0 tile anisohedrally
+        0 tile aperiodically
+[11:41:55] === 9-iamond: 159 hole-free free shapes
+[11:43:12]   iamond9: 159/159 shapes, elapsed 77s, ETA 0s
+[11:43:12]   iamond9 done in 77s. Summary:
+      Total: 159 shapes
+        0 unprocessed
+        0 with holes
+        6 inconclusive
+        20 non-tilers
+          11 with Hc = 0
+          9 with Hc = 1
+          7 with Hh = 0
+          13 with Hh = 1
+        133 tile isohedrally
+        0 tile anisohedrally
+        0 tile aperiodically
+[11:43:12] === 10-iamond: 444 hole-free free shapes
+[11:45:26]   iamond10: 250/444 shapes, elapsed 134s, ETA 103s
+[11:46:45]   iamond10: 444/444 shapes, elapsed 213s, ETA 0s
+[11:46:45]   iamond10 done in 213s. Summary:
+      Total: 444 shapes
+        0 unprocessed
+        0 with holes
+        26 inconclusive
+        102 non-tilers
+          44 with Hc = 0
+          55 with Hc = 1
+          3 with Hc = 2
+          33 with Hh = 0
+          59 with Hh = 1
+          10 with Hh = 2
+        316 tile isohedrally
+        0 tile anisohedrally
+        0 tile aperiodically
+[11:46:45] === 6-hex: 81 hole-free free shapes
+[11:47:43]   hex6: 81/81 shapes, elapsed 58s, ETA 0s
+[11:47:43]   hex6 done in 58s. Summary:
+      Total: 81 shapes
+        0 unprocessed
+        0 with holes
+        1 inconclusive
+        4 non-tilers
+          3 with Hc = 1
+          1 with Hc = 2
+          3 with Hh = 1
+          1 with Hh = 2
+        76 tile isohedrally
+        0 tile anisohedrally
+        0 tile aperiodically
+[11:47:43] === 7-hex: 331 hole-free free shapes
+[11:49:10]   hex7: 250/331 shapes, elapsed 87s, ETA 28s
+[11:50:51]   hex7: 331/331 shapes, elapsed 188s, ETA 0s
+[11:50:51]   hex7 done in 188s. Summary:
+      Total: 331 shapes
+        0 unprocessed
+        0 with holes
+        4 inconclusive
+        37 non-tilers
+          5 with Hc = 0
+          25 with Hc = 1
+          6 with Hc = 2
+          1 with Hc = 3
+          4 with Hh = 0
+          19 with Hh = 1
+          12 with Hh = 2
+          2 with Hh = 3
+        290 tile isohedrally
+        0 tile anisohedrally
+        0 tile aperiodically
+[11:50:51] === 10-omino: 4460 hole-free free shapes
+[11:51:02]   omino10: 250/4460 shapes, elapsed 11s, ETA 185s
+[11:51:10]   omino10: 500/4460 shapes, elapsed 19s, ETA 150s
+[11:51:27]   omino10: 750/4460 shapes, elapsed 36s, ETA 178s
+[11:52:46]   omino10: 1000/4460 shapes, elapsed 115s, ETA 397s
+[11:53:11]   omino10: 1250/4460 shapes, elapsed 140s, ETA 359s
+[11:53:33]   omino10: 1500/4460 shapes, elapsed 162s, ETA 319s
+[11:53:52]   omino10: 1750/4460 shapes, elapsed 181s, ETA 280s
+[11:54:05]   omino10: 2000/4460 shapes, elapsed 194s, ETA 238s
+[11:54:38]   omino10: 2250/4460 shapes, elapsed 227s, ETA 222s
+[11:54:54]   omino10: 2500/4460 shapes, elapsed 243s, ETA 190s
+[11:55:08]   omino10: 2750/4460 shapes, elapsed 257s, ETA 159s
+[11:55:40]   omino10: 3000/4460 shapes, elapsed 289s, ETA 140s
+[11:56:28]   omino10: 3250/4460 shapes, elapsed 337s, ETA 125s
+[11:56:46]   omino10: 3500/4460 shapes, elapsed 355s, ETA 97s
+[11:56:58]   omino10: 3750/4460 shapes, elapsed 367s, ETA 69s
+[11:57:24]   omino10: 4000/4460 shapes, elapsed 393s, ETA 45s
+[11:57:39]   omino10: 4250/4460 shapes, elapsed 408s, ETA 20s
+[11:57:50]   omino10: 4460/4460 shapes, elapsed 419s, ETA 0s
+[11:57:50]   omino10 done in 419s. Summary:
+      Total: 4460 shapes
+        0 unprocessed
+        0 with holes
+        44 inconclusive
+        1390 non-tilers
+          747 with Hc = 0
+          642 with Hc = 1
+          1 with Hc = 2
+          355 with Hh = 0
+          1020 with Hh = 1
+          15 with Hh = 2
+        3026 tile isohedrally
+        0 tile anisohedrally
+        0 tile aperiodically
+[11:57:50] === 11-iamond: 1161 hole-free free shapes
+[11:58:56]   iamond11: 250/1161 shapes, elapsed 66s, ETA 240s
+[12:00:09]   iamond11: 500/1161 shapes, elapsed 139s, ETA 183s
+[12:00:46]   iamond11: 750/1161 shapes, elapsed 176s, ETA 96s
+[12:03:12]   iamond11: 1000/1161 shapes, elapsed 322s, ETA 51s
+[12:03:42]   iamond11: 1161/1161 shapes, elapsed 352s, ETA 0s
+[12:03:42]   iamond11 done in 352s. Summary:
+      Total: 1161 shapes
+        0 unprocessed
+        0 with holes
+        53 inconclusive
+        594 non-tilers
+          236 with Hc = 0
+          346 with Hc = 1
+          11 with Hc = 2
+          1 with Hc = 3
+          117 with Hh = 0
+          446 with Hh = 1
+          30 with Hh = 2
+          1 with Hh = 3
+        514 tile isohedrally
+        0 tile anisohedrally
+        0 tile aperiodically
+[12:03:42] === 8-hex: 1435 hole-free free shapes
+[12:07:13]   hex8: 250/1435 shapes, elapsed 211s, ETA 1000s
+[12:15:07]   hex8: 500/1435 shapes, elapsed 685s, ETA 1280s
+[12:20:39]   hex8: 750/1435 shapes, elapsed 1017s, ETA 928s
+[12:25:10]   hex8: 1000/1435 shapes, elapsed 1288s, ETA 560s
+[12:32:12]   hex8: 1250/1435 shapes, elapsed 1710s, ETA 253s
+[12:33:00]   hex8: 1435/1435 shapes, elapsed 1758s, ETA 0s
+[12:33:00]   hex8 done in 1758s. Summary:
+      Total: 1435 shapes
+        0 unprocessed
+        0 with holes
+        36 inconclusive
+        381 non-tilers
+          70 with Hc = 0
+          264 with Hc = 1
+          44 with Hc = 2
+          3 with Hc = 3
+          37 with Hh = 0
+          253 with Hh = 1
+          84 with Hh = 2
+          7 with Hh = 3
+        1018 tile isohedrally
+        0 tile anisohedrally
+        0 tile aperiodically
+[12:33:00] === 11-omino: 16094 hole-free free shapes
+[12:33:21]   omino11: 250/16094 shapes, elapsed 21s, ETA 1330s
+[12:34:00]   omino11: 500/16094 shapes, elapsed 60s, ETA 1871s
+[12:34:17]   omino11: 750/16094 shapes, elapsed 77s, ETA 1575s
+[12:35:02]   omino11: 1000/16094 shapes, elapsed 122s, ETA 1841s
+[12:35:22]   omino11: 1250/16094 shapes, elapsed 142s, ETA 1686s
+[12:35:41]   omino11: 1500/16094 shapes, elapsed 161s, ETA 1566s
+[12:36:43]   omino11: 1750/16094 shapes, elapsed 223s, ETA 1827s
+[12:37:07]   omino11: 2000/16094 shapes, elapsed 247s, ETA 1740s
+[12:37:43]   omino11: 2250/16094 shapes, elapsed 283s, ETA 1741s
+[12:38:03]   omino11: 2500/16094 shapes, elapsed 303s, ETA 1647s
+[12:38:23]   omino11: 2750/16094 shapes, elapsed 323s, ETA 1567s
+[12:38:31]   omino11: 3000/16094 shapes, elapsed 331s, ETA 1444s
+[12:38:54]   omino11: 3250/16094 shapes, elapsed 354s, ETA 1399s
+[12:39:26]   omino11: 3500/16094 shapes, elapsed 386s, ETA 1388s
+[12:39:39]   omino11: 3750/16094 shapes, elapsed 399s, ETA 1313s
+[12:40:09]   omino11: 4000/16094 shapes, elapsed 429s, ETA 1297s
+[12:40:37]   omino11: 4250/16094 shapes, elapsed 457s, ETA 1273s
+[12:40:55]   omino11: 4500/16094 shapes, elapsed 475s, ETA 1223s
+[12:41:15]   omino11: 4750/16094 shapes, elapsed 495s, ETA 1182s
+[12:41:36]   omino11: 5000/16094 shapes, elapsed 516s, ETA 1144s
+[12:41:53]   omino11: 5250/16094 shapes, elapsed 533s, ETA 1100s
+[12:42:04]   omino11: 5500/16094 shapes, elapsed 544s, ETA 1047s
+[12:42:21]   omino11: 5750/16094 shapes, elapsed 561s, ETA 1009s
+[12:42:39]   omino11: 6000/16094 shapes, elapsed 579s, ETA 974s
+[12:43:12]   omino11: 6250/16094 shapes, elapsed 612s, ETA 963s
+[12:43:36]   omino11: 6500/16094 shapes, elapsed 636s, ETA 938s
+[12:44:08]   omino11: 6750/16094 shapes, elapsed 668s, ETA 924s
+[12:44:30]   omino11: 7000/16094 shapes, elapsed 689s, ETA 895s
+[12:45:10]   omino11: 7250/16094 shapes, elapsed 730s, ETA 890s
+[12:45:34]   omino11: 7500/16094 shapes, elapsed 754s, ETA 863s
+[12:46:08]   omino11: 7750/16094 shapes, elapsed 788s, ETA 848s
+[12:46:40]   omino11: 8000/16094 shapes, elapsed 820s, ETA 829s
+[12:47:42]   omino11: 8250/16094 shapes, elapsed 882s, ETA 838s
+[12:48:10]   omino11: 8500/16094 shapes, elapsed 910s, ETA 813s
+[12:49:09]   omino11: 8750/16094 shapes, elapsed 969s, ETA 813s
+[12:49:54]   omino11: 9000/16094 shapes, elapsed 1014s, ETA 799s
+[12:50:13]   omino11: 9250/16094 shapes, elapsed 1033s, ETA 764s
+[12:50:39]   omino11: 9500/16094 shapes, elapsed 1059s, ETA 735s
+[12:51:02]   omino11: 9750/16094 shapes, elapsed 1082s, ETA 704s
+[12:51:26]   omino11: 10000/16094 shapes, elapsed 1106s, ETA 673s
+[12:51:48]   omino11: 10250/16094 shapes, elapsed 1128s, ETA 643s
+[12:52:30]   omino11: 10500/16094 shapes, elapsed 1170s, ETA 623s
+[12:53:01]   omino11: 10750/16094 shapes, elapsed 1201s, ETA 597s
+[12:53:32]   omino11: 11000/16094 shapes, elapsed 1232s, ETA 570s
+[12:53:45]   omino11: 11250/16094 shapes, elapsed 1245s, ETA 536s
+[12:54:05]   omino11: 11500/16094 shapes, elapsed 1265s, ETA 505s
+[12:54:30]   omino11: 11750/16094 shapes, elapsed 1290s, ETA 476s
+[12:54:43]   omino11: 12000/16094 shapes, elapsed 1303s, ETA 444s
+[12:54:54]   omino11: 12250/16094 shapes, elapsed 1314s, ETA 412s
+[12:55:07]   omino11: 12500/16094 shapes, elapsed 1327s, ETA 381s
+[12:55:23]   omino11: 12750/16094 shapes, elapsed 1343s, ETA 352s
+[12:55:53]   omino11: 13000/16094 shapes, elapsed 1373s, ETA 326s
+[12:56:14]   omino11: 13250/16094 shapes, elapsed 1394s, ETA 299s
+[12:56:23]   omino11: 13500/16094 shapes, elapsed 1403s, ETA 269s
+[12:56:37]   omino11: 13750/16094 shapes, elapsed 1417s, ETA 241s
+[12:56:46]   omino11: 14000/16094 shapes, elapsed 1426s, ETA 213s
+[12:57:27]   omino11: 14250/16094 shapes, elapsed 1467s, ETA 189s
+[12:58:04]   omino11: 14500/16094 shapes, elapsed 1504s, ETA 165s
+[12:58:26]   omino11: 14750/16094 shapes, elapsed 1526s, ETA 139s
+[12:58:44]   omino11: 15000/16094 shapes, elapsed 1544s, ETA 112s
+[12:58:56]   omino11: 15250/16094 shapes, elapsed 1556s, ETA 86s
+[12:59:06]   omino11: 15500/16094 shapes, elapsed 1566s, ETA 60s
+[12:59:14]   omino11: 15750/16094 shapes, elapsed 1574s, ETA 34s
+[12:59:26]   omino11: 16000/16094 shapes, elapsed 1586s, ETA 9s
+[12:59:28]   omino11: 16094/16094 shapes, elapsed 1588s, ETA 0s
+[12:59:28]   omino11 done in 1588s. Summary:
+      Total: 16094 shapes
+        0 unprocessed
+        0 with holes
+        108 inconclusive
+        9474 non-tilers
+          5807 with Hc = 0
+          3628 with Hc = 1
+          39 with Hc = 2
+          2820 with Hh = 0
+          6544 with Hh = 1
+          109 with Hh = 2
+          1 with Hh = 3
+        6512 tile isohedrally
+        0 tile anisohedrally
+        0 tile aperiodically
+[12:59:28] ALL DONE

@@ -9,6 +9,7 @@ import {
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import { evaluateParamCell, type ParametricCellData } from "@/lib/utils/paramCell";
 import { LENGTH_FAMILIES } from "@/lib/tilings/length-families";
+import { bendTegula, type TegulaCell } from "@/lib/tilings/tegula";
 import type { HollowPattern } from "@/lib/hollow/pattern";
 // One alias table per shelf, each written by that shelf's builder, so two builders never clobber each
 // other's keys. Ids are globally unique across shelves (tests/atlas-id-unique.test.ts), so a flat merge is
@@ -225,13 +226,17 @@ export type PolygonMode = "all" | "any" | "only";
 
 export interface ReferenceTiling {
 	id: string; // "t4001" (galebach) | "myers-k1-star-03" (myers) | "ctrnact-07_..." (ctrnact)
-	source: "galebach" | "myers" | "ctrnact" | "ctrnact-star" | "composable" | "isotoxal" | "mixed" | "scaled" | "polyomino" | "islamic" | "freedraw" | "bubble" | "colors" | "hyperbolic" | "spherical" | "hollow" | "period" | "tri45" | "planigon" | "penrose" | "euhalf" | "lengthparam";
+	source: "galebach" | "myers" | "ctrnact" | "ctrnact-star" | "composable" | "isotoxal" | "mixed" | "scaled" | "polyomino" | "islamic" | "freedraw" | "bubble" | "colors" | "hyperbolic" | "spherical" | "hollow" | "period" | "tri45" | "planigon" | "penrose" | "euhalf" | "lengthparam" | "tegula";
 	/** Which half-polygon board an `euhalf` row belongs to ("hexv", "pent", "hexm", "sqmid"); absent
 	 *  elsewhere. The sub-axis needs it because the four boards share one source. */
 	euHalfBoard?: string;
 	k: number;
 	family: string; // distinct polygon-type label, e.g. "3.4.6.12"; star tiles marked "n*"
 	renderCell: TranslationalCellData; // float, parseBaseCell-ready (a throwaway cell for hyperbolic entries — never drawn)
+	/** Topological shelf only: the straight skeleton and its edge classes. The file ships no renderCell
+	 *  for these rows; the loader installs one that bends the skeleton on first draw, and /play's cell
+	 *  editor rebends it as the reader drags (lib/tilings/tegula.ts). */
+	tegula?: TegulaCell;
 	// Hollow shelf only: a tiling by SELF-INTERSECTING regular star polygons {n/d}, where the
 	// crossings are NOT vertices (Grünbaum-Miller-Shephard, Uniform Tilings with Hollow Tiles, 1981).
 	// A different tile from the concave isotoxal |n/d| the `star`/`isotoxal` shelves carry. Its faces
@@ -496,7 +501,7 @@ export const EUHALF_SHARD_KS = [5, 6, 7, 8, 9];
 // tileClass, the primary shelf axis: "convex" (convex-irregular) iff the tiling comes from the convex
 // unit-edge super-tile demo (source-driven — source "composable" — since it has no "*" token); else
 // "star" iff its family carries a star token ("n*"); "regular" otherwise. Matches polygonClassLabel.
-export type TileClass = "regular" | "star" | "hollow" | "convex" | "isotoxal" | "mixed" | "scaled" | "period" | "polyomino" | "islamic" | "freedraw" | "bubble" | "colors" | "hyperbolic" | "spherical" | "edgelen";
+export type TileClass = "regular" | "star" | "hollow" | "convex" | "isotoxal" | "mixed" | "scaled" | "period" | "polyomino" | "islamic" | "freedraw" | "bubble" | "colors" | "hyperbolic" | "spherical" | "edgelen" | "topological";
 // Bonner's design systems — the sub-facet axis for the Islamic class (docs/ISLAMIC_TILINGS.md). The
 // underlying tessellation's tile kit, independent of the strap-pattern family (acute/median/obtuse).
 /** The palettes inside the "Multiple edge lengths" class — its sub-facet axis, the way IslamicSystem
@@ -523,6 +528,7 @@ export function tileClassOf(t: { family: string; source?: ReferenceTiling["sourc
 	// sub-facet below, not a class of its own.
 	if (t.source === "tri45" || t.source === "planigon" || t.source === "penrose"
 		|| t.source === "euhalf" || t.source === "lengthparam") return "edgelen";
+	if (t.source === "tegula") return "topological";
 	if (t.source === "polyomino") return "polyomino";
 	if (t.source === "islamic") return "islamic";
 	if (t.source === "freedraw") return "freedraw";
@@ -536,7 +542,7 @@ export function tileClassOf(t: { family: string; source?: ReferenceTiling["sourc
 // Single source of truth for the tile-class axis, consumed by BOTH /library (filter chips) and /play
 // (catalogue groups). To add a class: one entry here + one tileClassOf branch + one bestEffort fetch in
 // loadReferenceAtlas — and it appears on both pages. No per-page class list to keep in sync.
-export const TILE_CLASS_ORDER: TileClass[] = ["regular", "star", "hollow", "convex", "isotoxal", "mixed", "scaled", "period", "edgelen", "polyomino", "islamic", "freedraw", "bubble", "colors", "hyperbolic", "spherical"];
+export const TILE_CLASS_ORDER: TileClass[] = ["regular", "star", "hollow", "convex", "isotoxal", "mixed", "scaled", "period", "edgelen", "topological", "polyomino", "islamic", "freedraw", "bubble", "colors", "hyperbolic", "spherical"];
 export const TILE_CLASS_LABEL: Record<TileClass, { short: string; long: string }> = {
 	regular: { short: "Regular", long: "Regular polygons" },
 	star: { short: "Star", long: "Star polygons" },
@@ -546,6 +552,9 @@ export const TILE_CLASS_LABEL: Record<TileClass, { short: string; long: string }
 	mixed: { short: "Mixed", long: "Mixed polygons" },
 	scaled: { short: "Scaled", long: "Scaled polygons" },
 	period: { short: "Period-p", long: "Period-p equilateral polygons" },
+	// Not a tile shape at all: every periodic tiling up to topology, k counting vertex classes as it does
+	// everywhere else. Drawn from Delaney-Dress symbols by tools/ctrnact-oracle/develop_dsym.py.
+	topological: { short: "Topological", long: "Topological types (Tegula)" },
 	// The first class whose tile has two edge LENGTHS. Everything above it is equilateral, because
 	// the alphabet could only say "unit edge" until edge types landed (2026-08-13).
 	edgelen: { short: "Different edge lengths", long: "Different edge lengths" },
@@ -842,6 +851,8 @@ function subOfRecord(t: {
 	if (t.schwarz) return schwarzSub(t.schwarz);
 	if (t.sphEdges) return sphEdgesSub(t.sphEdges);
 	if (t.hypPoly) return isHypHalf(t.hypPoly) ? hypHalfSub(t.hypPoly) : hypPolySub(t.hypPoly);
+	// A Tegula type on the sphere is a solid too, but it belongs to no 3.4.n.4 or half-tile board.
+	if (t.sphPoly?.base === "tegula") return "";
 	if (t.sphPoly) return isSphHalf(t.sphPoly) ? sphHalfSub(t.sphPoly) : sphPolySub(t.sphPoly);
 	if (t.sphStar) return sphStarSub();
 	if (t.sphericalFreedraw) return t.sphericalFreedraw.solid;
@@ -1624,6 +1635,7 @@ export function referenceToCatalogue(r: ReferenceTiling): CatalogueTiling {
 		runIds: [],
 		exactSource: r.exactSource,
 		paramCell: r.paramCell,
+		tegula: r.tegula,
 		euHalfBoard: r.euHalfBoard,
 		polyformOrder: r.polyformOrder,
 		schlafli: r.schlafli,
@@ -2826,6 +2838,15 @@ export async function loadReferenceAtlas(): Promise<ReferenceTiling[]> {
 		Promise.resolve([] as ReferenceTiling[]),
 		// Deferred with it: its only consumer is the hyperbolic edge-length merge below.
 		Promise.resolve([] as Array<{ id: string; edge?: number }>),
+		// One slot for both Tegula files: the destructuring below is positional. The spherical rows carry
+		// a whole solid (sphPoly) and draw on the three.js sphere, so their plane cell is the empty one.
+		Promise.all([bestEffort("/reference-atlas-tegula.json"), bestEffort("/reference-atlas-tegula-sph.json")]).then(
+			([plane, sphere]) => {
+				for (const r of plane) if (r.tegula) defineLazyRenderCell(r, (self) => bendTegula(self.tegula!));
+				for (const r of sphere) r.renderCell = FREEDRAW_EMPTY_CELL;
+				return [...plane, ...sphere];
+			},
+		),
 	])
 		// One name per Promise.all entry, IN ORDER, and the list below must spread every one of them.
 		// This has now gone wrong twice. `hollow` was missing once; `period` and `tri45` were missing
@@ -2835,7 +2856,7 @@ export async function loadReferenceAtlas(): Promise<ReferenceTiling[]> {
 		// forced edge length ℓ merged, because `devPatches` was holding the freedraw patterns.
 		//
 		// If you add a fetch above, add its name here AND to `data`. A missing name is silent.
-		.then(([base, composable, isotoxal, mixed, scaled, period, tri45, planigon, penrose, euhalf, polyomino, islamic, hyperbolic, spherical, hollow, freedraw, colors, devPatches]) => {
+		.then(([base, composable, isotoxal, mixed, scaled, period, tri45, planigon, penrose, euhalf, polyomino, islamic, hyperbolic, spherical, hollow, freedraw, colors, devPatches, tegula]) => {
 			// Merge the forced edge length ℓ onto each hyperbolic entry (keyed by developed.patch = patch id).
 			// Best-effort: a missing patch just leaves `edge` undefined, and the card omits the ℓ readout.
 			const edgeById = new Map<string, number | undefined>(
@@ -2846,7 +2867,7 @@ export async function loadReferenceAtlas(): Promise<ReferenceTiling[]> {
 				if (typeof e === "number") t.edge = e;
 			}
 			const data = [...base, ...composable, ...isotoxal, ...mixed, ...scaled, ...period, ...tri45,
-				...planigon, ...penrose, ...euhalf, ...polyomino, ...islamic, ...hollow, ...freedraw, ...colors, ...hyperbolic, ...spherical,
+				...planigon, ...penrose, ...euhalf, ...tegula, ...polyomino, ...islamic, ...hollow, ...freedraw, ...colors, ...hyperbolic, ...spherical,
 				// Appended here, NOT as a Promise.all slot: that destructuring is positional and the comment
 				// above records it silently dropping shelves twice. These rows need no fetch.
 				...lengthFamilyRows()];

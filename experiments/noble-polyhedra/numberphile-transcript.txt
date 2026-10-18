@@ -1,0 +1,683 @@
+[00:01] [music]
+[00:07] [music]
+[00:10] So, we've got some big news from the
+[00:12] world of polyhedra, which is that we now
+[00:16] have a complete classification of a
+[00:19] particular type of polyhedra called
+[00:21] noble polyhedra. Right? So whenever I'm
+[00:24] talking about polyhedra, I always start
+[00:26] with looking at a cube because a cube
+[00:30] captures basically the the main ideas of
+[00:32] the most symmetric type of polyhedra.
+[00:35] All its faces are identical. In fact,
+[00:38] they're interchangeable. You can get
+[00:40] from any face to any other by moving the
+[00:42] cube about. And exactly the same thing
+[00:44] goes for the edges and for the corners.
+[00:47] Might say the word vertices, which means
+[00:49] the same thing as corners in this case.
+[00:51] So those criteria capture most of what
+[00:52] we mean by a regular polyhedrin.
+[00:56] There's one other point of symmetry we
+[00:58] need which is that the faces themselves
+[01:01] are highly symmetric. So in this case
+[01:03] the faces are squares obviously but more
+[01:06] generally we want the faces to be
+[01:08] regular polygons. So let me just quickly
+[01:11] sketch a a square. I think we all know
+[01:14] what it looks like. But the key points
+[01:17] about a square is that it too has got
+[01:21] those symmetry properties. So the edges
+[01:23] are all equal length and the angles are
+[01:26] all equal. So in this case they're all
+[01:27] right angles and those four edges are
+[01:30] all equal. So that's what we mean by a
+[01:31] regular polygon. So those criteria I've
+[01:34] described so far describe what we mean
+[01:36] by a a regular polyhedrin.
+[01:40] And famously the ancient Greeks were
+[01:42] able to give a complete list of all
+[01:44] possible regular polyhedra known as the
+[01:47] platonic solids. There are five of them,
+[01:49] right? The cube, the ocahedron, the
+[01:51] tetrahedrin, the dodahedron, and the
+[01:53] iicosed.
+[01:55] >> So these are polyhedra that are made of
+[01:58] regular polygons as their building
+[02:01] blocks, their sides.
+[02:02] >> Yes. uh plus only each one only one type
+[02:05] of regular polygon and in such a way
+[02:08] that all the corners are identical and
+[02:09] all all the edges are identical and so
+[02:11] on. Okay, so there's definitely only
+[02:12] five. The ancient Greeks proved that and
+[02:14] then in the 17th century Johannes Kepler
+[02:17] discovered a sixth and he did that by
+[02:21] spotting a possible loophole in what we
+[02:24] mean by a regular polygon. Okay, so
+[02:27] remember what I said this square is a
+[02:28] regular polygon because all its sides of
+[02:30] equal length and all its angles are
+[02:32] equal. And what Kepler said is, okay,
+[02:34] what about this shape, a pentagram,
+[02:38] right? This has got five edges. They're
+[02:41] all equal length. All of these angles
+[02:44] here are equal. So what about that as a
+[02:46] regular polygon? And of course, at this
+[02:48] point, we have a choice. We can say,
+[02:50] well, we didn't want that. We didn't
+[02:51] want the edges to crash through each
+[02:52] other. We can just outlaw that. And if
+[02:54] you do that, then okay, you're you're
+[02:56] left with the original platonic solids.
+[02:58] What's more fun and what we're going to
+[02:59] do now is say, okay, let's run with
+[03:01] that. Let's allow the edges to crash
+[03:03] through each other and see what you get.
+[03:06] The shape that Kepler found was this one
+[03:09] here. So this is called the small
+[03:12] stellated docahedron. So an ordinary
+[03:14] dodcahedron is built from 12 pentagons.
+[03:18] This one here is built from 12
+[03:20] pentagrams. All 12 of them together make
+[03:22] up that shape. And he found another one
+[03:26] which is similar. This is also built
+[03:29] from 12 pentagrams. It's called the
+[03:30] greatated docahedron. The difference
+[03:32] here is that those pentagrams meet at
+[03:35] three per corner rather than five per
+[03:37] corner in. And then a little bit later
+[03:39] um Louisie Puanso came up with two other
+[03:42] shapes which if you're going to allow
+[03:44] these you have to allow his as well.
+[03:48] And this is one of them. is called the
+[03:49] great dodcahedron. And just like the
+[03:52] ordinary dodecahedron, it's made from 12
+[03:55] pentagons, but the difference here is
+[03:57] that you can see the pentagons cut
+[03:58] through each other. So, uh there is one
+[04:01] of the pentagons. So, there just is
+[04:03] configured differently so that the
+[04:04] pentagons cut through each other instead
+[04:06] of lying on the outside as they do in
+[04:07] the ordinary.
+[04:08] >> So, it's not just we're allowing sides
+[04:11] of the polygon to cut through
+[04:12] themselves. We're also allowing the
+[04:14] faces of the polyhedra to cut through
+[04:16] themselves.
+[04:16] >> Right? And if you're going to allow one,
+[04:18] it seems reasonable to allow the other.
+[04:19] So that's the world we're in. We're
+[04:21] allowing that for all of this. Yeah. So
+[04:23] that was uh one of Ponos. And then he
+[04:25] discovered one more which is the great
+[04:29] icosahedron. So the ordinary icosahedron
+[04:32] made from 20 equilateral triangles. This
+[04:34] is also made from 20 equilateral
+[04:36] triangles, but those equilateral
+[04:38] triangles cut through each other. So you
+[04:40] can see them there. So it's like a sort
+[04:42] of rewiring of the faces of an
+[04:45] icosahedron.
+[04:49] We're up to nine now, aren't we?
+[04:51] >> Yeah. That's now a um a complete list of
+[04:54] the regular polyhedra. Right. So, what
+[04:58] we're going to now move on to is to
+[04:59] discuss the noble polyhedra. So, the for
+[05:03] the noble polyhedra,
+[05:05] what do we need? We're going to hold on
+[05:08] to some of those criteria, but let
+[05:09] others go. So in particular, what we're
+[05:12] holding on to is we want every corner to
+[05:14] be identical to every other and we want
+[05:16] every face to be identical to every
+[05:18] other, but we don't require the edges to
+[05:21] be identical to each other. And we don't
+[05:23] require the faces to be regular
+[05:26] polygons. Okay, that's what makes a
+[05:29] noble polyhedrin. And there are rather
+[05:31] mysterious little species of polyhedra
+[05:33] that people started looking at in the
+[05:35] 19th century. So here's an example of uh
+[05:39] one. So this is well it's a sort of a
+[05:43] tetrahedrin. A tetrahedrin is made from
+[05:46] four triangles. This is also made from
+[05:48] four triangles. But usually your tetra
+[05:50] engine is made from equilateral
+[05:51] triangles. This is a sort of wonky
+[05:54] tetrahedrin. So this is not even even
+[05:56] made of an isoclesles triangles. But
+[05:57] nevertheless you can see it satisfies
+[05:59] the criteria for a noble poled because
+[06:01] every face is identical and indeed
+[06:04] interchangeable with every other. Every
+[06:06] corner is identical to every other. The
+[06:09] edges are not identical. That's pretty
+[06:10] obvious. And obviously the faces are not
+[06:13] regular polygons because this is not
+[06:15] equilateral triangles. So we don't care
+[06:17] about that.
+[06:17] >> Wonky.
+[06:18] >> A wonky. Well, a disphenoid tetrahedrin
+[06:21] is the term people use. But wonky, I
+[06:23] like better.
+[06:24] >> Okay. And are there an infinite number
+[06:26] of these or is that a very specific
+[06:27] triangle that allows you get away with
+[06:29] that?
+[06:29] >> No, there are infinitely many of these.
+[06:30] So in fact, you can do this with any
+[06:32] acute angle triangle. It's actually an
+[06:34] infinite family of noble polyhedra. Um
+[06:38] the noble polyhedra were discovered
+[06:40] investigated in the 19th century by
+[06:42] Edmund Hess and Max Brookner in
+[06:44] particular and they found a second
+[06:46] infinite class of noble polyhedra which
+[06:50] are maybe just a little bit more
+[06:52] interesting than the wonky. Um so what's
+[06:56] on the screen here is a um pentagonal
+[06:59] prism. So this is not a noble polyhedrin
+[07:02] because you can see that well some of
+[07:04] the faces are different from each other
+[07:05] but there's a process in this area
+[07:08] called faceting. And what faceting is is
+[07:12] where you basically fix all the corners.
+[07:15] So you keep them but then you
+[07:18] get rid of the original faces and edges
+[07:21] and rewire those corners to make a new
+[07:24] shape. And if you do that right,
+[07:26] starting with a pentagonal prism, you
+[07:29] can get a noble polyhedrin out of it.
+[07:31] And this is what you get. So this is a a
+[07:35] shape called a stephanoid.
+[07:38] So anyone whose name is Steven has
+[07:40] probably at some point looked up um what
+[07:42] the origins of that name are, and it
+[07:44] means crown in ancient Greeks. So this
+[07:47] is a crown polyhedrin. For fairly
+[07:49] obvious reasons, it looks like a a
+[07:51] crown. And you can actually see if you
+[07:54] look at it right, you can see that
+[07:56] pentagonal prism
+[07:58] sort of still lurking in there. So if
+[08:00] you we're looking at the top, so there's
+[08:02] the pentagon, the squares. So they've
+[08:05] all gone, but the corners are still
+[08:06] there. So we've got these new edges.
+[08:08] Okay. So it's not obvious here what the
+[08:10] faces are. The faces are shapes like
+[08:13] that,
+[08:14] >> butterflies.
+[08:15] >> So if we're allowing pentagrams, then
+[08:18] we're also allowing things like bow
+[08:20] ties. And there's infinitely many of
+[08:22] these stephenoids because you can start
+[08:24] with any prism. So there's nothing
+[08:26] special about a pentagonal prism here.
+[08:27] You could do it with um any other kind
+[08:30] of prism. And in fact, you can also do
+[08:32] it with an anti-prism. So this is a
+[08:35] pentagonal antiprism, meaning that
+[08:37] you've got your two pentagons, but this
+[08:40] time they're joined by a a ring of
+[08:43] equilateral triangles. And in in the
+[08:45] same way you can get a a faceting of
+[08:48] those which is another stephenoid,
+[08:50] another crown polyhedra. And again its
+[08:53] faces here are um these sort of
+[08:56] butterfly shaped or bow ties. So we've
+[08:58] got two infinite families now. We've got
+[08:59] the dysphonoid tetrahedra and we got the
+[09:01] stephenoids. So Hess and Brookner in the
+[09:04] 19th century also discovered a few
+[09:05] individual examples. So here's one
+[09:09] discovered by Edmund Hess. And initially
+[09:11] it looks like a dodoed but you can see
+[09:13] that the faces are sort of concave. Well
+[09:15] actually what you're not what you're
+[09:16] looking at here is not really the faces.
+[09:19] The faces are these triangles
+[09:22] >> which cut through each other.
+[09:24] >> So that's the that's the repeating face.
+[09:26] And that that that that other look that
+[09:28] we saw was almost just an artifact of
+[09:30] joining the triangles.
+[09:31] >> Exa Exactly. Right. Yeah. Yeah. Because
+[09:33] we're allowing the faces to cut through
+[09:35] each other. So when they do cut through
+[09:36] each other, you get these sort of um
+[09:38] yeah, these patterns which are sort of
+[09:40] slightly illusory, I guess. Yeah.
+[09:41] >> So if you bring back the if you color it
+[09:43] all in again. So those kind of little
+[09:45] triangles and depressions I'm seeing
+[09:47] there,
+[09:48] >> they're not the faces.
+[09:50] >> They're part of the faces.
+[09:51] >> They're part they're part of the faces,
+[09:52] but that's not the entire face we're
+[09:53] seeing there. That's just sort of a So
+[09:55] they don't have to be consistent.
+[09:57] >> No,
+[09:58] >> they look consistent.
+[09:59] >> As it happens in this one, they are. So
+[10:00] this this shape has got more symmetries
+[10:03] than noble polyhedra have to and in
+[10:06] particular this is a faceting of the
+[10:08] docahedron. You can you can see the
+[10:10] docedin but actually we've also kept the
+[10:12] edges of the docahedron
+[10:14] >> which you don't have to do in a fasting.
+[10:16] So it's it's a particularly um I guess a
+[10:18] particularly elegant
+[10:21] instance but that's right. So that we
+[10:23] can when you're looking at these noble
+[10:25] polyhedra is often very very hard to see
+[10:27] what the face really is because it's
+[10:29] sort of hidden in the inside. And in
+[10:31] this case it's these it's these
+[10:33] triangles here.
+[10:34] >> So that was one discovered by Hess. Um
+[10:38] >> Whoa.
+[10:39] >> Here's a nice one
+[10:40] >> that looks like Superman's [music] um
+[10:42] spaceship from the original Superman
+[10:44] movie. [laughter]
+[10:45] >> Um I haven't watched that recently
+[10:47] enough to to say whether maybe it is
+[10:49] that. Who knows? May maybe the director
+[10:51] was a fan of noble polyhedra. Um so this
+[10:54] this was an example discovered by
+[10:57] Brookner and actually Max Brookner he
+[11:00] made amazing paper models of all of a
+[11:03] lot of these shapes. Sadly they no
+[11:04] longer exist. I think they've
+[11:05] disintegrated in in in the century
+[11:07] that's gone by. You can see photographs
+[11:09] of the paper models he made of this.
+[11:11] This is has its origins actually in the
+[11:13] icosahedron. It's it's what's called a
+[11:15] stellation of the icoshedron. There are
+[11:17] many stellations of the iicoshedron.
+[11:18] This is the sort of ultimate stellation
+[11:20] of the icoshedron [music] but its faces
+[11:22] are these sort of nonograms like that
+[11:27] >> and 20 of them. So it's noble meaning
+[11:31] that all its faces are identical and all
+[11:34] its corners are identical.
+[11:36] >> You spoke about this chap making paper
+[11:38] models. This was obviously done a long
+[11:39] time ago. They weren't able to use
+[11:41] computers.
+[11:42] the process they would have used. Would
+[11:44] it have been like models and visual or
+[11:47] drawing or would it have been like logic
+[11:48] and numbers and formula that just told
+[11:51] them the things existed or what would
+[11:53] process would they have been using?
+[11:55] >> And there would have been a lot of
+[11:57] mathematical
+[11:59] um reasoning to find out exactly where
+[12:01] the where the corners and edges and the
+[12:03] lengths and the areas and all that sort
+[12:05] of stuff. So there would have been a lot
+[12:06] of um mathematical calculation going
+[12:08] into it. But actually the truth is I
+[12:10] don't think we really know how he did
+[12:12] it. We just see we see the final results
+[12:15] which are spectacular. But the full
+[12:18] process he went through I think is a
+[12:19] mystery. Yeah. Yeah. So let's see
+[12:20] another a couple more of Max Brookers.
+[12:24] So here's here's one. So again, you look
+[12:28] at this and I think it's almost
+[12:29] impossible to tell what the face is,
+[12:30] right?
+[12:31] >> We're starting to get some holes in
+[12:32] there too.
+[12:33] >> Yes, you do. You do get holes in them.
+[12:34] There's no rule against having holes in
+[12:36] them. Um, so that's what the face is.
+[12:39] Each face is uh one of those. It's an
+[12:42] irregular self-intersecting hexagon.
+[12:44] Another This is another Brookner's
+[12:47] where the faces
+[12:50] that a regular self- intersecting
+[12:54] pentagon. I know this goes against what
+[12:56] you told me at the start of the video,
+[12:58] but this is beginning to feel a little
+[12:59] bit like infinite. Like I I can't see
+[13:01] where this would stop or why this would
+[13:03] stop.
+[13:03] >> Right. Well, I mean, we just didn't
+[13:04] know. So actually at the point where um
+[13:07] Brookner stopped his work which is right
+[13:08] at the start of the 20th century
+[13:11] it was wide open just people didn't know
+[13:13] we we knew that there were these two
+[13:15] infinite families and we knew that there
+[13:17] are a smattering of increasingly
+[13:19] bizarrel looking individual examples and
+[13:22] it was left at that and in fact it was
+[13:24] uh left at that for over a hundred years
+[13:28] until Robert Webb who is someone we've
+[13:31] talked about on numfall before because
+[13:33] he is the guy who uh created this
+[13:36] wonderful software called Stellar which
+[13:37] is just the best thing for looking at
+[13:39] all these polyhedra but as well as
+[13:41] designing the software he's also made
+[13:42] some important polyhedral discoveries
+[13:45] and one of them was the first noble
+[13:46] polyhedron discovered for a century
+[13:48] which he found in 2008 so this is not
+[13:51] his shape this is a classic polyhedrron
+[13:54] called the snub cube is one of the
+[13:56] Archimedian solids so it's been known
+[13:58] for a long time but what Robert Webb did
+[14:01] was investigate facetings of the snub
+[14:05] cube. So remember what that means is you
+[14:06] keep all the corners but then rejig the
+[14:10] faces and the edges. And when he did
+[14:13] that he found this shape here which is a
+[14:16] a noble polyhedrin. It's a faceting of
+[14:19] the snub cube.
+[14:20] >> The snub cube wasn't noble.
+[14:22] >> The snub cube was not noble because it
+[14:24] had some square faces and some
+[14:26] triangular faces. For noble we need all
+[14:27] the faces to be identical.
+[14:29] >> But from a snub cube he made a noble.
+[14:32] >> Exactly. Yeah. And that's how a lot of
+[14:34] these noble polyhedra arise actually by
+[14:36] taking other polyhedra which are known
+[14:38] and then tinkering with them in some
+[14:40] way. Faceting being being one of the
+[14:42] main examples. Again, I think very hard
+[14:44] to see what the faces are here, but in
+[14:47] fact, they're these sort of goldfish
+[14:50] shapes.
+[14:53] >> Wow.
+[14:54] >> Sort regular self- intersecting
+[14:55] pentagons.
+[14:56] >> Wonder how he felt when he found a new
+[14:57] one. Like what must that feel like? Like
+[15:00] you must feel like a explorer or
+[15:01] something. Yeah, this is this is new
+[15:03] terrain. [music]
+[15:05] >> So I I mean I found a bunch of things
+[15:07] which were already known and I didn't
+[15:09] necessarily know every one that was
+[15:11] already known. So I didn't know which
+[15:13] would which weren't. But I did I I knew
+[15:15] there wasn't one based on the snub cube.
+[15:17] That's what this is.
+[15:19] >> Um so it's kind of Yeah. So I kind of I
+[15:21] saw it and I thought,
+[15:24] you know, whoa, is this something new?
+[15:26] because like I was kind of surprised no
+[15:28] one had found it before. I guess. Yeah.
+[15:32] So, it's kind of surprising that it was
+[15:34] just sitting there ready to go.
+[15:35] >> As far as I'm aware, it's just called a
+[15:37] noble faceted snub cube.
+[15:40] >> We got a we got to get that deserves a
+[15:42] better name.
+[15:42] >> I mean, so you could call uh we could
+[15:44] call it the the web polyhedron. And
+[15:47] there when we talked about the holy
+[15:49] monster in a previous video, there was a
+[15:51] thing called the web tooid. Um so, we
+[15:53] don't want to model it up with that. The
+[15:55] web noble fast and snub cube. It's not
+[15:57] very catchy, is it?
+[15:58] >> No,
+[15:59] >> I think we need to work on it.
+[16:00] >> Yeah. [laughter]
+[16:00] Back to the drawing board on that one.
+[16:03] >> It's kind of a bit of an ugly duckling
+[16:04] in a way. I think like it's
+[16:06] >> what the polyhedra itself.
+[16:07] >> Yeah, it looks a bit kind of random. Um
+[16:11] >> a
+[16:12] >> random and lumpy. [laughter]
+[16:13] >> The ugly duckling is also a very good
+[16:16] name.
+[16:16] >> Yeah. Well, we could call it that.
+[16:18] >> Okay. So Rob Webb's discovery here
+[16:20] spurred a new flurry of activity and um
+[16:24] various people um chipped in and made
+[16:27] some discoveries in the years between
+[16:29] 2008 and now and in fact some of them
+[16:33] used this very software to do it. So
+[16:36] this is amazing looking thing is a
+[16:39] discovery made by Olrich Miklovite in
+[16:41] 2020 and he actually discovered it using
+[16:44] this software stellar. So it's not just
+[16:46] good for for looking at the polyhedra.
+[16:48] You can actually you actually it's
+[16:49] pretty powerful and you can you can
+[16:51] discover a new polyhedra with it as he
+[16:54] did.
+[16:54] >> So we had an increasing list of
+[16:58] known examples.
+[17:00] >> I've got to see the face. I've got to
+[17:01] see
+[17:01] >> Oh yes, of course we got to see what the
+[17:02] face is. Yeah. Yeah.
+[17:03] >> What do you think it is?
+[17:05] >> I think it's going to be a like the
+[17:08] goldfish, but it's going to have
+[17:09] [snorts]
+[17:10] four pieces.
+[17:14] What was it?
+[17:16] So,
+[17:16] >> it looks like that is Oh. Oh, no.
+[17:18] There's six six pieces.
+[17:21] >> It's a kind of hexagon actually. It's
+[17:23] got six six faces, but it's not what you
+[17:25] usually think of as a hexagon.
+[17:26] >> Yeah. Yeah. Wow. Great.
+[17:28] >> So, a young mathematician in America um
+[17:30] aged just 17 called Connor Hill has
+[17:33] actually provided a full classification
+[17:35] of the noble polyhedra which means we
+[17:38] know the complete list now and we know
+[17:40] that there are those two infinite
+[17:42] families. So the dysphonoid tetrahedia
+[17:44] and all the stephenoids plus exactly 146
+[17:48] other examples of which he has now
+[17:52] enumerated all of them and 85 of them
+[17:54] are brand new not previously discovered.
+[17:56] So he's discovered 85 new noble
+[17:58] polyhedra which he's also shown that
+[18:01] completes the list. So we have a
+[18:02] complete understanding of noble
+[18:04] polyhedra which is seemed a long way off
+[18:06] for a while because these were very
+[18:07] mysterious polyhedra. So it's a
+[18:08] fantastic achievement. So, we've got
+[18:09] these two infinite families and these
+[18:12] ones like this, they aren't part of the
+[18:14] infinite family. Are these No,
+[18:15] >> these are like these these oneoffs. Yep.
+[18:18] >> We know there are 146
+[18:20] >> 146 one-offs. Yeah.
+[18:22] >> How is he able to How can you narrow
+[18:23] that down? How how could he how could he
+[18:25] nail it? Like,
+[18:26] >> so it's a it's a clever it's a clever
+[18:28] proof. And at time of writing, um he
+[18:31] hasn't uh he hasn't published the paper
+[18:33] yet, but he's he's working on it. And um
+[18:36] but I've talked to people in the field
+[18:38] and they're very very confident uh that
+[18:40] this this result is accurate and
+[18:41] actually he's been given a big uh
+[18:43] prestigious prize in America for for
+[18:45] this discovery. Very well deserved. The
+[18:47] key idea is where can the vertices be?
+[18:49] So he did some quite sophisticated
+[18:50] mathematics to determine what possible
+[18:54] um vertices a noble polyhedron could
+[18:57] have and then sort of crunching the
+[19:00] possibilities to just configure those in
+[19:02] in different ways. That's that's a very
+[19:04] rough overview. I've not I've not seen
+[19:05] the details, but that's
+[19:07] >> 17.
+[19:08] >> He was 17 when he did it. Isn't that
+[19:10] Isn't that incredible? He also told me
+[19:11] that he's a longtime number file fan, so
+[19:14] that's Oh, that's good to hear.
+[19:15] >> Excellent. Oh, well, maybe he will let
+[19:17] me speak to him and uh do an interview.
+[19:19] >> Definitely worth asking.
+[19:21] >> It feels like you're discovering
+[19:22] something like in a way it feels like
+[19:25] like these were always out there for
+[19:27] someone to to find and um like some of
+[19:30] them I do think are are pretty
+[19:31] beautiful.
+[19:32] >> Is he at university or what is it? He's
+[19:34] not even at university. He's um he's
+[19:35] completing his high school.
+[19:37] >> He's going to get in, isn't he?
+[19:38] >> You got to reckon. [laughter]
+[19:41] >> So So there is a picture of all of them.
+[19:42] Have they all been like And are they all
+[19:44] sitting in some register or index in
+[19:46] >> We've got them all on Stella here. So I
+[19:48] did ask him of the ones that he
+[19:51] discovered uh which he thinks are
+[19:52] particularly interesting or particularly
+[19:54] beautiful or notable. So he gave me a
+[19:56] couple of answers so we could look at uh
+[19:57] look at those maybe. This is the one he
+[20:00] reckons is the most beautiful. Um, so
+[20:03] this is a well I think it's technical
+[20:06] name is it's the first noble
+[20:08] kipiscocoidal hecatonoahedron.
+[20:11] >> Of course it is.
+[20:11] >> Of course it is obviously. Um,
+[20:14] so this has got 120 faces. Can you guess
+[20:19] what the faces are? [laughter]
+[20:22] >> No.
+[20:23] >> No, I don't think anyone can. Um,
+[20:26] actually they're relatively simple.
+[20:28] They're um they're irregular self-
+[20:31] intersecting pentagons.
+[20:33] 120 of those. One I thought was quite
+[20:36] interesting to look at was uh uh this
+[20:38] one here.
+[20:39] >> What a mess.
+[20:41] >> It looks sort of like a mess to start
+[20:42] with and then you can see all the
+[20:44] symmetry. So it's got rot lots of
+[20:45] rotational symmetry but no reflectional
+[20:47] symmetry. I think it's quite intriguing.
+[20:49] Um again we better have a look at what
+[20:51] the faces are because they're so so not
+[20:53] n not obvious. So that's again
+[20:56] self intersecting pentagons.
+[20:58] You told me 146
+[21:01] >> 146 individual examples. So that's
+[21:03] including the ones previously known um
+[21:06] the the web discovery the ones by
+[21:08] Brookner's paper models and so on.
+[21:10] >> Is there anything special about the
+[21:11] number 146 that it would land on that?
+[21:13] Does there like you know
+[21:15] >> I don't think there's any high level
+[21:16] explanation as why you would expect 146.
+[21:18] No, I don't even have a a good sense of
+[21:22] why you would expect there to be
+[21:24] finitely many. why there um why there
+[21:27] might not be a third infinite family.
+[21:29] But um I'm sure Connor will have an
+[21:31] answer to that, but I don't have one.
+[21:32] So, another one Connor picked out as
+[21:34] being uh very surprising is um this one.
+[21:39] The faces look like that.
+[21:42] >> He'd like that last one you showed me.
+[21:43] >> Yeah, a little bit. A little bit. I
+[21:45] mean, some of them have got quite
+[21:46] similar in in structure, but this one's
+[21:48] got a very unusual feature. So there's
+[21:50] this and one other like it which are
+[21:52] so-called fissery polyhedra. And what
+[21:56] fissery means is it's got essentially
+[21:58] two corners which exactly coincide. So
+[22:01] they're in one place. So if you look at
+[22:04] this corner up here, you can maybe see
+[22:07] that it's really sort of two corners.
+[22:09] It's got this corner for these faces
+[22:11] over there and that one up there. But
+[22:12] actually, so it's really two corners,
+[22:14] but those two corners happen to exactly
+[22:16] coincide in one place. So there is only
+[22:19] two of all the noble polyhedra which
+[22:21] have got this property of being
+[22:22] >> and how many of those special touchy
+[22:24] points do they have? Lots of them or
+[22:26] >> uh it's got
+[22:27] >> looks looks like a lot
+[22:28] >> in a noble polyhedrin all vertices are
+[22:30] identical. So they're all like that,
+[22:32] right? That's one of the
+[22:34] >> that's one of the defining properties of
+[22:35] the noble polyhedron.
+[22:36] >> So all the oh so all the vertices are
+[22:38] kissing like that.
+[22:39] >> All the exactly all the vertices are
+[22:40] kissing like that. So everything else
+[22:42] with a with a noble polyhedra when
+[22:44] they're self intersecting like this,
+[22:45] it's sometimes difficult to tell what
+[22:46] the vertices are, right? because you get
+[22:47] these other places where edges cross
+[22:49] through each other. So those don't count
+[22:50] as vertices. But yeah, all the vertices
+[22:53] are have these um yeah, kissing is a
+[22:55] great great word for it. They're all uh
+[22:57] all pairs of kissing vertices. Yeah.
+[22:59] >> And that's everything I had. But I mean
+[23:01] I do have the full list uh if you want
+[23:03] to just scan through. So there any
+[23:04] others you fancy looking at?
+[23:05] >> Oh, that's cute. Hey Pete, you
+[23:07] listening? Pete, [laughter]
+[23:08] let's do something clever at the end
+[23:10] with all of them. Hey, he's cursing me
+[23:12] right now. I bet he is.
+[23:12] >> I can hear him. [laughter]
+[23:15] >> Let's see them all. Right. Show them
+[23:16] all.
+[23:26] [music]
+[23:32] [music]
+[23:40] [music]
+[23:44] Whoops.
+[23:48] [music]
+[23:57] [music]
+[24:02] [music]
+[24:08] Heat. Heat.
+[24:16] [music]
+[24:22] [music]
+[24:36] Heat. Heat.
+[24:43] [music]
+[24:54] [music]
+[24:59] >> [music]
+[25:16] [music]
+[25:27] >> I think was sort of it's like related to
+[25:29] the the noble polyhedra. Um, I remember
+[25:32] that there was this one video you did um
+[25:34] on fair dice and like the different
+[25:36] possible fair dice that can exist in
+[25:38] threedimensional space and that like
+[25:40] that might have been like part of the
+[25:41] inspiration for me to just like learn
+[25:42] about polyhedra in the first place which
+[25:44] would be this is sort of a full circle
+[25:45] moment in that This.

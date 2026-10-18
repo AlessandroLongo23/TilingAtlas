@@ -296,7 +296,7 @@ export function compileShader(gl: WebGL2RenderingContext, type: number, src: str
 	return sh;
 }
 
-function linkProgram(gl: WebGL2RenderingContext, vertSrc: string, fragSrc: string): WebGLProgram | null {
+export function linkProgram(gl: WebGL2RenderingContext, vertSrc: string, fragSrc: string): WebGLProgram | null {
 	const vs = compileShader(gl, gl.VERTEX_SHADER, vertSrc);
 	const fs = compileShader(gl, gl.FRAGMENT_SHADER, fragSrc);
 	if (!vs || !fs) return null;
