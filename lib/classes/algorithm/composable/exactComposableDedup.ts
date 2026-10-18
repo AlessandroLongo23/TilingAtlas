@@ -107,8 +107,8 @@ function allShapesDistinct(cell: PeriodCell): boolean {
 	const keys = new Set<string>();
 	for (const p of cell.cellPolygons) {
 		const c = p.exactCentroid!;
-		const shape = p.exactVertices!
-			.map((v) => v.sub(c).key())
+		const shape = p
+			.exactVertices!.map((v) => v.sub(c).key())
 			.sort()
 			.join(",");
 		const k = `${p.getName()}|${shape}`;

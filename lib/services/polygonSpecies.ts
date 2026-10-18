@@ -23,7 +23,9 @@ export type { PolygonMode };
 /** Interior angle at vertex i of a closed polygon, in degrees. */
 function interiorAngleDeg(vs: number[][], i: number): number {
 	const n = vs.length;
-	const p = vs[(i - 1 + n) % n], c = vs[i], q = vs[(i + 1) % n];
+	const p = vs[(i - 1 + n) % n],
+		c = vs[i],
+		q = vs[(i + 1) % n];
 	const a = Math.atan2(p[1] - c[1], p[0] - c[0]);
 	const b = Math.atan2(q[1] - c[1], q[0] - c[0]);
 	const d = Math.abs(((b - a) * 180) / Math.PI) % 360;
@@ -176,7 +178,8 @@ export function parseSpecies(key: string): { n: number; star: boolean; alpha: nu
 
 /** Regular first by side count, then stars by fold and point angle — the picker's reading order. */
 export function speciesCompare(a: string, b: string): number {
-	const pa = parseSpecies(a), pb = parseSpecies(b);
+	const pa = parseSpecies(a),
+		pb = parseSpecies(b);
 	if (!pa || !pb) return a.localeCompare(b);
 	if (pa.star !== pb.star) return pa.star ? 1 : -1;
 	return pa.n - pb.n || (pa.alpha ?? 0) - (pb.alpha ?? 0);

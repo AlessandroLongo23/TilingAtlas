@@ -20,41 +20,41 @@
  *
  *   pnpm tsx scripts/enrich-reference-atlas.ts
  */
-import fs from 'node:fs';
-import path from 'node:path';
-import { CyclotomicRing, setActiveRing, type Cyclotomic } from '@/classes/Cyclotomic';
-import { reconstructOracleCell } from './oracle-match';
-import { serializeCell, deserializeCell } from '@/classes/algorithm/cellCodec';
-import { assignOrbits } from '../figures/tiling/orbits';
-import { seedFromPeriodCell } from '@/lib/services/cellCodecService';
-import { analyzeSymmetry } from '@/lib/classes/symmetry/WallpaperSymmetry';
-import type { PeriodCell } from '@/classes/algorithm/PeriodSolver';
-import type { LatticeShape, WallpaperGroup } from '@/lib/classes/symmetry/types';
+import fs from "node:fs";
+import path from "node:path";
+import { CyclotomicRing, setActiveRing, type Cyclotomic } from "@/classes/Cyclotomic";
+import { reconstructOracleCell } from "./oracle-match";
+import { serializeCell, deserializeCell } from "@/classes/algorithm/cellCodec";
+import { assignOrbits } from "../figures/tiling/orbits";
+import { seedFromPeriodCell } from "@/lib/services/cellCodecService";
+import { analyzeSymmetry } from "@/lib/classes/symmetry/WallpaperSymmetry";
+import type { PeriodCell } from "@/classes/algorithm/PeriodSolver";
+import type { LatticeShape, WallpaperGroup } from "@/lib/classes/symmetry/types";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
 
-const ATLAS_PATH = path.join(process.cwd(), 'public', 'reference-atlas.json');
-const CTRNACT_PATH = path.join(process.cwd(), 'figures', 'data', 'ctrnact.json');
-const STAR_DIR = path.join(process.cwd(), 'experiments', 'star-oracle');
-const LOG_PATH = path.join(process.cwd(), 'experiments', 'results', 'reference-atlas-enrich-2026-07-11.log');
+const ATLAS_PATH = path.join(process.cwd(), "public", "reference-atlas.json");
+const CTRNACT_PATH = path.join(process.cwd(), "figures", "data", "ctrnact.json");
+const STAR_DIR = path.join(process.cwd(), "experiments", "star-oracle");
+const LOG_PATH = path.join(process.cwd(), "experiments", "results", "reference-atlas-enrich-2026-07-11.log");
 
 const localRing = CyclotomicRing.create(24);
 setActiveRing(localRing);
 
 // ── logging (synchronous file + stderr, per the experiments logging rule) ──
 fs.mkdirSync(path.dirname(LOG_PATH), { recursive: true });
-const logStream = fs.createWriteStream(LOG_PATH, { flags: 'w' });
-function log(msg = ''): void {
-	logStream.write(msg + '\n');
+const logStream = fs.createWriteStream(LOG_PATH, { flags: "w" });
+function log(msg = ""): void {
+	logStream.write(msg + "\n");
 	console.error(msg);
 }
 
 type ExactSource =
-	| { kind: 'seed'; T1: number[]; T2: number[]; Seed: number[][] }
-	| { kind: 'cell'; cell: unknown }
-	| { kind: 'startiles'; exact: unknown };
+	| { kind: "seed"; T1: number[]; T2: number[]; Seed: number[][] }
+	| { kind: "cell"; cell: unknown }
+	| { kind: "startiles"; exact: unknown };
 interface AtlasEntry {
 	id: string;
-	source: 'galebach' | 'ctrnact' | 'ctrnact-star' | 'myers';
+	source: "galebach" | "ctrnact" | "ctrnact-star" | "myers";
 	k: number;
 	family: string;
 	exactSource?: ExactSource;
@@ -74,20 +74,20 @@ function classify(configKeys: string[]): { m: number; partition: number[] } {
 
 // ctrnact's own notation for the gate: "M" when M === k (all singletons), else "M (parts)".
 function ctrnactKey(m: number, partition: number[], k: number): string {
-	return m === k ? String(m) : `${m} (${partition.join('')})`;
+	return m === k ? String(m) : `${m} (${partition.join("")})`;
 }
 
 // Reconstruct the exact PeriodCell an entry stores, or null with a reason.
 function reconstructCell(e: AtlasEntry): { cell: PeriodCell } | { error: string } {
 	const src = e.exactSource;
-	if (!src) return { error: 'no exactSource' };
-	if (src.kind === 'seed') return reconstructOracleCell(e.id, { T1: src.T1, T2: src.T2, Seed: src.Seed });
+	if (!src) return { error: "no exactSource" };
+	if (src.kind === "seed") return reconstructOracleCell(e.id, { T1: src.T1, T2: src.T2, Seed: src.Seed });
 	// Star tilings gained an exactSource in 2026-08-07 (kind 'startiles') so the /play overlays can run.
 	// This enrichment stays regular-only on purpose: its m/partition path goes through assignOrbits and
 	// vertex-figure naming, which assume convex tiles. Skipping keeps behaviour identical to when stars
 	// had no exactSource at all. Extending it would give stars wallpaperGroup/latticeShape in the atlas
 	// (the library's group and lattice filters would then cover them) — worth doing, separately.
-	if (src.kind === 'startiles') return { error: 'star exactSource: enrichment is regular-only' };
+	if (src.kind === "startiles") return { error: "star exactSource: enrichment is regular-only" };
 	try {
 		return { cell: deserializeCell(localRing, src.cell as never) };
 	} catch (err) {
@@ -96,16 +96,17 @@ function reconstructCell(e: AtlasEntry): { cell: PeriodCell } | { error: string 
 }
 
 // ── source-data indexes (loaded once, shared across every target file) ──
-log('=== load source data ===');
+log("=== load source data ===");
 
 const ctrnactById = new Map<string, { vertexConfigs: number[][]; distinctTypePartition: string }>();
 {
-	const src = JSON.parse(fs.readFileSync(CTRNACT_PATH, 'utf8')).tilings as {
+	const src = JSON.parse(fs.readFileSync(CTRNACT_PATH, "utf8")).tilings as {
 		id: string;
 		vertexConfigs: number[][];
 		distinctTypePartition: string;
 	}[];
-	for (const r of src) ctrnactById.set(r.id, { vertexConfigs: r.vertexConfigs, distinctTypePartition: r.distinctTypePartition });
+	for (const r of src)
+		ctrnactById.set(r.id, { vertexConfigs: r.vertexConfigs, distinctTypePartition: r.distinctTypePartition });
 	log(`ctrnact.json: ${ctrnactById.size} records indexed`);
 }
 
@@ -114,24 +115,24 @@ const ctrnactById = new Map<string, { vertexConfigs: number[][]; distinctTypePar
 const starOrbitsById = new Map<string, string[]>();
 {
 	let files = 0;
-	for (const f of fs.readdirSync(STAR_DIR).filter((f) => f.endsWith('.cells.json'))) {
+	for (const f of fs.readdirSync(STAR_DIR).filter((f) => f.endsWith(".cells.json"))) {
 		let data: unknown;
 		try {
-			data = JSON.parse(fs.readFileSync(path.join(STAR_DIR, f), 'utf8'));
+			data = JSON.parse(fs.readFileSync(path.join(STAR_DIR, f), "utf8"));
 		} catch {
 			continue;
 		}
 		const arr: unknown[] = Array.isArray(data)
 			? data
-			: ((data as Record<string, unknown>).tilings as unknown[]) ??
+			: (((data as Record<string, unknown>).tilings as unknown[]) ??
 				((data as Record<string, unknown>).cells as unknown[]) ??
 				(Object.values(data as Record<string, unknown>).find(Array.isArray) as unknown[]) ??
-				[];
+				[]);
 		for (const rec of arr as { id?: string; orbits?: string[] }[]) {
 			if (rec.id && Array.isArray(rec.orbits) && rec.orbits.length && !starOrbitsById.has(rec.id)) {
 				starOrbitsById.set(
 					rec.id,
-					rec.orbits.map((s) => s.slice(0, s.lastIndexOf(')') + 1 || undefined)),
+					rec.orbits.map((s) => s.slice(0, s.lastIndexOf(")") + 1 || undefined)),
 				);
 			}
 		}
@@ -143,7 +144,7 @@ const starOrbitsById = new Map<string, string[]>();
 // ── per-file enrichment ── enrich one atlas file in place (base atlas, or a higher-k shard). All the
 // source indexes above are shared, so calling this for several files loads ctrnact.json/star cells once.
 function enrichFile(atlasPath: string): void {
-	const atlas = decodeAtlas<AtlasEntry>(JSON.parse(fs.readFileSync(atlasPath, 'utf8')));
+	const atlas = decodeAtlas<AtlasEntry>(JSON.parse(fs.readFileSync(atlasPath, "utf8")));
 	log(`\n=== classify ${path.relative(process.cwd(), atlasPath)} (${atlas.length} entries) ===`);
 	const t0 = Date.now();
 	const stat = {
@@ -156,32 +157,32 @@ function enrichFile(atlasPath: string): void {
 		mFail: [] as { id: string; reason: string }[],
 	};
 	const groupHist: Record<string, number> = {};
-	const regularCount = atlas.filter((e) => e.source === 'galebach' || e.source === 'ctrnact').length;
+	const regularCount = atlas.filter((e) => e.source === "galebach" || e.source === "ctrnact").length;
 	let regularDone = 0;
 
 	for (const e of atlas) {
-		const isRegular = e.source === 'galebach' || e.source === 'ctrnact';
+		const isRegular = e.source === "galebach" || e.source === "ctrnact";
 
 		// --- reconstruct once (regular only: needed for symmetry, and for galebach orbits) ---
 		let cell: PeriodCell | null = null;
 		if (isRegular) {
 			const rec = reconstructCell(e);
-			if ('cell' in rec) cell = rec.cell;
+			if ("cell" in rec) cell = rec.cell;
 			else stat.symFail.push({ id: e.id, error: `reconstruct: ${rec.error}` });
 		}
 		const cellRing = cell ? (cell.basisExact[0] as unknown as { ring: CyclotomicRing }).ring : null;
 
 		// --- m / partition ---
 		let classified: { m: number; partition: number[] } | null = null;
-		if (e.source === 'ctrnact') {
+		if (e.source === "ctrnact") {
 			const src = ctrnactById.get(e.id);
 			if (src) {
-				classified = classify(src.vertexConfigs.map((cfg) => cfg.join(',')));
+				classified = classify(src.vertexConfigs.map((cfg) => cfg.join(",")));
 				const computed = ctrnactKey(classified.m, classified.partition, e.k);
 				if (computed !== src.distinctTypePartition)
 					stat.gateMismatch.push({ id: e.id, src: src.distinctTypePartition, computed });
-			} else stat.mFail.push({ id: e.id, reason: 'not in ctrnact.json' });
-		} else if (e.source === 'galebach') {
+			} else stat.mFail.push({ id: e.id, reason: "not in ctrnact.json" });
+		} else if (e.source === "galebach") {
 			if (cell && cellRing) {
 				try {
 					setActiveRing(cellRing);
@@ -190,13 +191,13 @@ function enrichFile(atlasPath: string): void {
 				} catch (err) {
 					stat.mFail.push({ id: e.id, reason: `assignOrbits: ${err instanceof Error ? err.message : err}` });
 				}
-			} else stat.mFail.push({ id: e.id, reason: 'no cell' });
+			} else stat.mFail.push({ id: e.id, reason: "no cell" });
 		} else {
 			// star: per-orbit orbits[] if we have it; k=1 is trivially m=1
 			const orbits = starOrbitsById.get(e.id);
 			if (orbits) classified = classify(orbits);
 			else if (e.k === 1) classified = { m: 1, partition: [1] };
-			else stat.mFail.push({ id: e.id, reason: 'no star orbits + k>1' });
+			else stat.mFail.push({ id: e.id, reason: "no star orbits + k>1" });
 		}
 		if (classified) {
 			e.m = classified.m;
@@ -232,31 +233,40 @@ function enrichFile(atlasPath: string): void {
 			if (regularDone % 100 === 0) {
 				const elapsed = (Date.now() - t0) / 1000;
 				const eta = (elapsed / regularDone) * (regularCount - regularDone);
-				log(`  [${regularDone}/${regularCount}] regular classified — ${elapsed.toFixed(0)}s elapsed, ETA ${eta.toFixed(0)}s`);
+				log(
+					`  [${regularDone}/${regularCount}] regular classified — ${elapsed.toFixed(0)}s elapsed, ETA ${eta.toFixed(0)}s`,
+				);
 			}
 		}
 	}
 
 	// ── write back (same entries, same order, + new fields) ──
-	fs.writeFileSync(atlasPath, JSON.stringify(atlas) + '\n');
+	fs.writeFileSync(atlasPath, JSON.stringify(atlas) + "\n");
 
 	// ── report ──
-	log('\n--- summary ---');
+	log("\n--- summary ---");
 	log(`m/partition:  ${stat.mOk} classified, ${stat.mSkip} unclassified`);
 	log(`wallpaper:    ${stat.symOk} classified, ${stat.symSkip} skipped (stars, by design)`);
 	const mByK: Record<number, Record<number, number>> = {};
-	for (const e of atlas) if (e.m != null) ((mByK[e.k] ??= {})[e.m] = (mByK[e.k][e.m] ?? 0) + 1);
-	log('\nM distribution by k (k: {M: count}):');
-	for (const k of Object.keys(mByK).map(Number).sort((a, b) => a - b)) log(`  k=${k}: ${JSON.stringify(mByK[k])}`);
-	log('\nwallpaper-group histogram:');
+	for (const e of atlas) if (e.m != null) (mByK[e.k] ??= {})[e.m] = (mByK[e.k][e.m] ?? 0) + 1;
+	log("\nM distribution by k (k: {M: count}):");
+	for (const k of Object.keys(mByK)
+		.map(Number)
+		.sort((a, b) => a - b))
+		log(`  k=${k}: ${JSON.stringify(mByK[k])}`);
+	log("\nwallpaper-group histogram:");
 	for (const g of Object.keys(groupHist).sort()) log(`  ${g.padEnd(5)} ${groupHist[g]}`);
 
 	if (stat.gateMismatch.length) {
-		log(`\n⚑ CTRNACT PARTITION GATE: ${stat.gateMismatch.length} MISMATCH(es) — computed ≠ source distinctTypePartition:`);
+		log(
+			`\n⚑ CTRNACT PARTITION GATE: ${stat.gateMismatch.length} MISMATCH(es) — computed ≠ source distinctTypePartition:`,
+		);
 		for (const g of stat.gateMismatch.slice(0, 40)) log(`    ${g.id}: computed "${g.computed}" vs source "${g.src}"`);
 		process.exitCode = 1;
 	} else {
-		log(`\n✓ ctrnact partition gate: all ${atlas.filter((e) => e.source === 'ctrnact').length} entries agree with distinctTypePartition`);
+		log(
+			`\n✓ ctrnact partition gate: all ${atlas.filter((e) => e.source === "ctrnact").length} entries agree with distinctTypePartition`,
+		);
 	}
 	if (stat.mFail.length) {
 		log(`\n⚑ ${stat.mFail.length} tiling(s) with NO m/partition (characterization gap):`);

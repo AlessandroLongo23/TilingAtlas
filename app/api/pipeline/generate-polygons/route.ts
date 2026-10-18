@@ -25,10 +25,7 @@ function parseParameters(body: unknown): Record<string, { n_max: number; angle?:
 		if (!cfg?.enabled) continue;
 		const n_max = typeof cfg.n_max === "number" ? Math.max(3, Math.min(24, cfg.n_max)) : 12;
 		const entry: { n_max: number; angle?: number } = { n_max };
-		if (
-			(type === PolygonType.STAR_REGULAR || type === PolygonType.EQUILATERAL) &&
-			typeof cfg.angle === "number"
-		) {
+		if ((type === PolygonType.STAR_REGULAR || type === PolygonType.EQUILATERAL) && typeof cfg.angle === "number") {
 			entry.angle = toRadians(Math.max(1, Math.min(180, cfg.angle)));
 		}
 		if (type === PolygonType.EQUILATERAL && !entry.angle) entry.angle = toRadians(30);
@@ -59,9 +56,7 @@ export async function POST(request: Request) {
 
 		const supabase = createServiceRoleClient();
 		if (!supabase) {
-			return serviceUnavailable(
-				"SUPABASE_SERVICE_ROLE_KEY not configured. Add it to .env.local for pipeline uploads.",
-			);
+			return serviceUnavailable("SUPABASE_SERVICE_ROLE_KEY not configured. Add it to .env.local for pipeline uploads.");
 		}
 
 		const path = `${paramsFolder}/polygons.json`;

@@ -26,7 +26,13 @@ import { tileHueRgb01 } from "@/lib/render/hueRing";
 function shadeStroke(hex: string, dim: number): string {
 	if (dim >= 0.999) return hex;
 	const h = hex.slice(1);
-	const w = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+	const w =
+		h.length === 3
+			? h
+					.split("")
+					.map((c) => c + c)
+					.join("")
+			: h;
 	const n = Number.parseInt(w, 16);
 	const r = Math.round(((n >> 16) & 255) * dim);
 	const g = Math.round(((n >> 8) & 255) * dim);

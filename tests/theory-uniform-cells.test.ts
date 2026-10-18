@@ -10,14 +10,13 @@ import { hydrateRenderCells } from "@/lib/services/renderCellDerive";
 // app/(app)/theory/page.tsx). Guard the contract: all 11 ids present, every cell mesh-buildable,
 // and every markdown card tag resolves to one of them.
 
-const UNIFORM_IDS = [
-	"t1001", "t1002", "t1003", "t1004", "t1005", "t1006",
-	"t1007", "t1008", "t1009", "t1010", "t1011",
-];
+const UNIFORM_IDS = ["t1001", "t1002", "t1003", "t1004", "t1005", "t1006", "t1007", "t1008", "t1009", "t1010", "t1011"];
 
-const atlas = hydrateRenderCells(decodeAtlas<{ id: string; k: number; renderCell: TranslationalCellData }>(
-	JSON.parse(readFileSync(path.join(process.cwd(), "public", "reference-atlas.json"), "utf8")),
-));
+const atlas = hydrateRenderCells(
+	decodeAtlas<{ id: string; k: number; renderCell: TranslationalCellData }>(
+		JSON.parse(readFileSync(path.join(process.cwd(), "public", "reference-atlas.json"), "utf8")),
+	),
+);
 
 describe("theory page uniform-tiling cells", () => {
 	it("finds all 11 uniform tilings (k=1) in the reference atlas", () => {
@@ -40,10 +39,7 @@ describe("theory page uniform-tiling cells", () => {
 	});
 
 	it("every tiling-card tag in the theory markdown references a known uniform id", () => {
-		const md = readFileSync(
-			path.join(process.cwd(), "public", "theory", "uniform-tilings.md"),
-			"utf8",
-		);
+		const md = readFileSync(path.join(process.cwd(), "public", "theory", "uniform-tilings.md"), "utf8");
 		const refs = [...md.matchAll(/<tiling-card[^>]*\btiling="([^"]+)"/g)].map((m) => m[1]);
 		expect(refs.length).toBeGreaterThanOrEqual(11);
 		for (const id of refs) expect(UNIFORM_IDS, `markdown references ${id}`).toContain(id);

@@ -48,34 +48,19 @@ export function getTranslationalCellsManifestUrl(paramsFolder: string, k: number
 }
 
 /** Get public URL for seedConfigurations batch file */
-export function getSeedConfigurationsBatchUrl(
-	paramsFolder: string,
-	k: number,
-	m: number,
-	batchIndex: number
-): string {
+export function getSeedConfigurationsBatchUrl(paramsFolder: string, k: number, m: number, batchIndex: number): string {
 	const name = `seedConfigurations_${String(batchIndex).padStart(4, "0")}.json.gz`;
 	return `${SUPABASE_URL}/storage/v1/object/public/${PIPELINE_BUCKET}/${paramsFolder}/seedConfigurations/k=${k}/m=${m}/${name}`;
 }
 
 /** Get public URL for expandedSeeds batch file */
-export function getExpandedSeedsBatchUrl(
-	paramsFolder: string,
-	k: number,
-	m: number,
-	batchIndex: number
-): string {
+export function getExpandedSeedsBatchUrl(paramsFolder: string, k: number, m: number, batchIndex: number): string {
 	const name = `expandedSeeds_${String(batchIndex).padStart(4, "0")}.json.gz`;
 	return `${SUPABASE_URL}/storage/v1/object/public/${PIPELINE_BUCKET}/${paramsFolder}/expandedSeeds/k=${k}/m=${m}/${name}`;
 }
 
 /** Get public URL for translationalCells batch file */
-export function getTranslationalCellsBatchUrl(
-	paramsFolder: string,
-	k: number,
-	m: number,
-	batchIndex: number
-): string {
+export function getTranslationalCellsBatchUrl(paramsFolder: string, k: number, m: number, batchIndex: number): string {
 	const name = `translationalCells_${String(batchIndex).padStart(4, "0")}.json.gz`;
 	return `${SUPABASE_URL}/storage/v1/object/public/${PIPELINE_BUCKET}/${paramsFolder}/translationalCells/k=${k}/m=${m}/${name}`;
 }

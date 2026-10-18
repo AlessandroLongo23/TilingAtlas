@@ -3,10 +3,10 @@
  * for the exact-discriminator FALSE-branch test, and (b) sanity-check the classifier catalogue-wide.
  *   pnpm tsx scripts/classify-oracle-groups.ts
  */
-import { getActiveRing } from '@/classes/Cyclotomic';
-import { Cyclotomic } from '@/classes/Cyclotomic';
-import { analyzeSymmetry } from '@/lib/classes/symmetry/WallpaperSymmetry';
-import { loadOracle, reconstructOracleCell } from './oracle-match';
+import { getActiveRing } from "@/classes/Cyclotomic";
+import { Cyclotomic } from "@/classes/Cyclotomic";
+import { analyzeSymmetry } from "@/lib/classes/symmetry/WallpaperSymmetry";
+import { loadOracle, reconstructOracleCell } from "./oracle-match";
 
 const ring = getActiveRing();
 
@@ -22,7 +22,7 @@ for (const k of [1, 2]) {
 	const entries = Object.entries(oracle).filter(([key]) => new RegExp(`^t${k}\\d\\d\\d$`).test(key));
 	for (const [tCode, o] of entries) {
 		const rec = reconstructOracleCell(tCode, o);
-		if ('error' in rec) {
+		if ("error" in rec) {
 			console.log(`${tCode}: SKIP (${rec.error})`);
 			continue;
 		}
@@ -33,5 +33,5 @@ for (const k of [1, 2]) {
 		console.log(`${tCode}: ${d.group.padEnd(4)}  ${d.latticeShape}`);
 	}
 }
-console.log('\n=== group histogram ===');
-for (const g of Object.keys(groups).sort()) console.log(`${g.padEnd(5)} ${groups[g].length}  ${groups[g].join(' ')}`);
+console.log("\n=== group histogram ===");
+for (const g of Object.keys(groups).sort()) console.log(`${g.padEnd(5)} ${groups[g].length}  ${groups[g].join(" ")}`);

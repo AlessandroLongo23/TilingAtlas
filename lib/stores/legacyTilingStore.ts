@@ -114,12 +114,14 @@ async function fetchTilings(): Promise<LegacyTiling[]> {
 	if (!supabase) return [];
 	const { data, error } = await supabase
 		.from("legacy_tilings")
-		.select(`
+		.select(
+			`
 			*,
 			group:legacy_tiling_groups (
 				id, title, k, m, has_dual, is_concave
 			)
-		`)
+		`,
+		)
 		.order("original_id", { ascending: true });
 	if (error) {
 		console.error("Error fetching tilings:", error);
@@ -207,13 +209,27 @@ export const useLegacyTilingStore = create<LegacyTilingStoreState>()((set, get) 
 
 /** Back-compat alias — source exported `tilingStore` as the facade. */
 export const tilingStore = {
-	get groups() { return useLegacyTilingStore.getState().groups; },
-	get tilings() { return useLegacyTilingStore.getState().tilings; },
-	get loading() { return useLegacyTilingStore.getState().loading; },
-	get error() { return useLegacyTilingStore.getState().error; },
-	get initialized() { return useLegacyTilingStore.getState().initialized; },
-	get tilingsUpdatedAt() { return useLegacyTilingStore.getState().tilingsUpdatedAt; },
-	get tilingRules() { return useLegacyTilingStore.getState().tilingRules(); },
+	get groups() {
+		return useLegacyTilingStore.getState().groups;
+	},
+	get tilings() {
+		return useLegacyTilingStore.getState().tilings;
+	},
+	get loading() {
+		return useLegacyTilingStore.getState().loading;
+	},
+	get error() {
+		return useLegacyTilingStore.getState().error;
+	},
+	get initialized() {
+		return useLegacyTilingStore.getState().initialized;
+	},
+	get tilingsUpdatedAt() {
+		return useLegacyTilingStore.getState().tilingsUpdatedAt;
+	},
+	get tilingRules() {
+		return useLegacyTilingStore.getState().tilingRules();
+	},
 	initialize: () => useLegacyTilingStore.getState().initialize(),
 	refresh: () => useLegacyTilingStore.getState().refresh(),
 	getTilingByRulestring: (r: string) => useLegacyTilingStore.getState().getTilingByRulestring(r),

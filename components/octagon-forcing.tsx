@@ -43,7 +43,10 @@ const square = (c: Pt): Pt[] =>
 		return [c[0] + Math.cos(a) * SQ_R, c[1] + Math.sin(a) * SQ_R] as Pt;
 	});
 
-interface Tile { pts: Pt[]; n: number }
+interface Tile {
+	pts: Pt[];
+	n: number;
+}
 
 /** Octagons at (i, j)·S and squares at the half-offsets between them, out to `reach` steps. */
 function truncatedSquare(reach: number): Tile[] {
@@ -115,7 +118,9 @@ function drawVertex(api: Api) {
 	for (const [from, span] of WEDGES) {
 		const a = rad(from + span / 2);
 		text(V[0] + Math.cos(a) * 0.35, V[1] + Math.sin(a) * 0.35, `${span}°`, {
-			colour: "rgba(20,20,20,0.85)", size: 0.68, weight: 700,
+			colour: "rgba(20,20,20,0.85)",
+			size: 0.68,
+			weight: 700,
 		});
 	}
 	text(0, -1.62, "135° + 135° + 90° = 360°", { colour: SOFT, size: 0.66 });
@@ -125,8 +130,19 @@ function drawCorona(api: Api) {
 	// only what the vertex forced: an octagon across four of the eight edges, a square across the
 	// other four. The octagons sit on the axes and the squares on the diagonals, which is the
 	// alternation, drawn rather than asserted.
-	for (const c of [[S, 0], [0, S], [-S, 0], [0, -S]] as Pt[]) drawTile(api, { pts: octagon(c), n: 8 }, 0.62);
-	for (const c of [[S / 2, S / 2], [-S / 2, S / 2], [-S / 2, -S / 2], [S / 2, -S / 2]] as Pt[])
+	for (const c of [
+		[S, 0],
+		[0, S],
+		[-S, 0],
+		[0, -S],
+	] as Pt[])
+		drawTile(api, { pts: octagon(c), n: 8 }, 0.62);
+	for (const c of [
+		[S / 2, S / 2],
+		[-S / 2, S / 2],
+		[-S / 2, -S / 2],
+		[S / 2, -S / 2],
+	] as Pt[])
 		drawTile(api, { pts: square(c), n: 4 }, 0.88);
 	drawTile(api, { pts: octagon([0, 0]), n: 8 }, 0.95, 2.4);
 }

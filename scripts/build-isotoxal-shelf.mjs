@@ -43,7 +43,13 @@ const made = rows.map((r) => ({
 	geometry: "spherical",
 	discoverer: DISCOVERER,
 	note: note(r),
-	renderCell: { b: [[1, 0], [0, 1]], i: [0, 0] },
+	renderCell: {
+		b: [
+			[1, 0],
+			[0, 1],
+		],
+		i: [0, 0],
+	},
 	derivation: "searched",
 }));
 

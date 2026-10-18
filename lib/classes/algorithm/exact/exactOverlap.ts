@@ -17,8 +17,8 @@
  * Shared vertices / fully-shared antiparallel edges give boundary contact only ⇒ NOT flagged — exactly
  * the edge-to-edge adjacency the tiler relies on (e.g. an octagon corner seated in a star dent).
  */
-import { Cyclotomic } from '../../Cyclotomic';
-import { Surd, imSurd, reSurd, detSurd } from './Surd';
+import { Cyclotomic } from "../../Cyclotomic";
+import { Surd, imSurd, reSurd, detSurd } from "./Surd";
 
 /** sign of (b−a)×(c−a): +1 left turn, −1 right turn, 0 collinear. */
 export function orient2D(a: Cyclotomic, b: Cyclotomic, c: Cyclotomic): number {
@@ -42,9 +42,7 @@ function onSegmentColinear(a: Cyclotomic, b: Cyclotomic, p: Cyclotomic): boolean
 
 /** Do segments (a1,a2) and (b1,b2) cross in their interiors (strict — endpoints touching is NOT a
  *  proper cross)? The classic 4-orientation test with all four signs nonzero and strictly opposite. */
-export function segmentsProperlyCross(
-	a1: Cyclotomic, a2: Cyclotomic, b1: Cyclotomic, b2: Cyclotomic
-): boolean {
+export function segmentsProperlyCross(a1: Cyclotomic, a2: Cyclotomic, b1: Cyclotomic, b2: Cyclotomic): boolean {
 	const o1 = orient2D(a1, a2, b1);
 	const o2 = orient2D(a1, a2, b2);
 	const o3 = orient2D(b1, b2, a1);
@@ -55,9 +53,7 @@ export function segmentsProperlyCross(
 /** Collinear edges overlapping on a POSITIVE sub-segment with interiors on the SAME side (parallel
  *  directed edges). Antiparallel collinear overlap is the normal shared edge between two CCW tiles ⇒
  *  legal, returns false. The 1-D overlap length is compared exactly via the projection parameter. */
-export function collinearSameSideOverlap(
-	a1: Cyclotomic, a2: Cyclotomic, b1: Cyclotomic, b2: Cyclotomic
-): boolean {
+export function collinearSameSideOverlap(a1: Cyclotomic, a2: Cyclotomic, b1: Cyclotomic, b2: Cyclotomic): boolean {
 	if (orient2D(a1, a2, b1) !== 0 || orient2D(a1, a2, b2) !== 0) return false; // not collinear
 	const d = a2.sub(a1);
 	if (dotSign(d, b2.sub(b1)) <= 0) return false; // antiparallel (legal shared edge) or degenerate
@@ -76,15 +72,17 @@ export function collinearSameSideOverlap(
 /** Strict containment of `p` in the polygon `verts`: 'in' (strictly interior), 'on' (boundary), or
  *  'out'. Boundary first (collinear + on-segment), then an exact winding number (Sunday) using only
  *  imSign / orient2D — robust for NON-CONVEX polygons. */
-export function pointInPolygon(verts: Cyclotomic[], p: Cyclotomic): 'in' | 'on' | 'out' {
+export function pointInPolygon(verts: Cyclotomic[], p: Cyclotomic): "in" | "on" | "out" {
 	const L = verts.length;
 	for (let i = 0; i < L; i++) {
-		const a = verts[i], b = verts[(i + 1) % L];
-		if (orient2D(a, b, p) === 0 && onSegmentColinear(a, b, p)) return 'on';
+		const a = verts[i],
+			b = verts[(i + 1) % L];
+		if (orient2D(a, b, p) === 0 && onSegmentColinear(a, b, p)) return "on";
 	}
 	let wn = 0;
 	for (let i = 0; i < L; i++) {
-		const a = verts[i], b = verts[(i + 1) % L];
+		const a = verts[i],
+			b = verts[(i + 1) % L];
 		const sa = imSign(a, p); // sign(a.y − p.y)
 		const sb = imSign(b, p);
 		if (sa <= 0) {
@@ -93,33 +91,36 @@ export function pointInPolygon(verts: Cyclotomic[], p: Cyclotomic): 'in' | 'on' 
 			if (sb <= 0 && orient2D(a, b, p) < 0) wn--; // downward crossing, p right of edge
 		}
 	}
-	return wn !== 0 ? 'in' : 'out';
+	return wn !== 0 ? "in" : "out";
 }
 
 /** Exact proper-overlap test between two polygons given by their ℤ[ζ₂₄] vertices (any winding, simple
  *  or non-convex). True iff their interiors intersect in positive area. */
 export function exactPolygonsOverlap(A: Cyclotomic[], B: Cyclotomic[]): boolean {
-	const la = A.length, lb = B.length;
+	const la = A.length,
+		lb = B.length;
 	// (a)/(c) edge pairs: proper interior cross, or collinear same-side sub-segment overlap.
 	for (let i = 0; i < la; i++) {
-		const a1 = A[i], a2 = A[(i + 1) % la];
+		const a1 = A[i],
+			a2 = A[(i + 1) % la];
 		for (let j = 0; j < lb; j++) {
-			const b1 = B[j], b2 = B[(j + 1) % lb];
+			const b1 = B[j],
+				b2 = B[(j + 1) % lb];
 			if (segmentsProperlyCross(a1, a2, b1, b2)) return true;
 			if (collinearSameSideOverlap(a1, a2, b1, b2)) return true;
 		}
 	}
 	// (b) a vertex or edge-midpoint of one is STRICTLY interior to the other. Midpoints stay in the ring
 	// (·½) and catch an edge that passes through the other with both endpoints on/outside its boundary.
-	for (const v of A) if (pointInPolygon(B, v) === 'in') return true;
-	for (const v of B) if (pointInPolygon(A, v) === 'in') return true;
+	for (const v of A) if (pointInPolygon(B, v) === "in") return true;
+	for (const v of B) if (pointInPolygon(A, v) === "in") return true;
 	for (let i = 0; i < la; i++) {
 		const m = A[i].add(A[(i + 1) % la]).scaleRational(1n, 2n);
-		if (pointInPolygon(B, m) === 'in') return true;
+		if (pointInPolygon(B, m) === "in") return true;
 	}
 	for (let j = 0; j < lb; j++) {
 		const m = B[j].add(B[(j + 1) % lb]).scaleRational(1n, 2n);
-		if (pointInPolygon(A, m) === 'in') return true;
+		if (pointInPolygon(A, m) === "in") return true;
 	}
 	return false;
 }

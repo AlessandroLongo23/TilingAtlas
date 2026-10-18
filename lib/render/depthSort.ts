@@ -70,7 +70,10 @@ export function makeTriangleSorter(geom: THREE.BufferGeometry): TriangleSorter {
 			// View-space z of each centroid: the third row of the view matrix is all it takes, and it is the
 			// right key under both projections (an orthographic camera's z is the same linear depth).
 			const m = camera.matrixWorldInverse.elements;
-			const m2 = m[2], m6 = m[6], m10 = m[10], m14 = m[14];
+			const m2 = m[2],
+				m6 = m[6],
+				m10 = m[10],
+				m14 = m[14];
 			for (let t = 0; t < triCount; t++) depth[t] = m2 * cx[t] + m6 * cy[t] + m10 * cz[t] + m14;
 			for (const [first, count] of spans) {
 				for (let k = 0; k < count; k++) order[k] = first + k;

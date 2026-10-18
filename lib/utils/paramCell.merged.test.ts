@@ -1,7 +1,13 @@
 import { describe, it, expect } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
-import { clampToRegion, evaluateParamCell, nearestInRegionDeg, segmentAt, type ParametricCellData } from "@/lib/utils/paramCell";
+import {
+	clampToRegion,
+	evaluateParamCell,
+	nearestInRegionDeg,
+	segmentAt,
+	type ParametricCellData,
+} from "@/lib/utils/paramCell";
 import { resolveMergedFamilyKey } from "@/lib/services/referenceAtlas";
 import type { ReferenceTiling } from "@/lib/services/referenceAtlas";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
@@ -12,8 +18,12 @@ import { decodeAtlas } from "@/lib/services/atlasCodec";
 // happens to be where the first six arcs were found (§94); isotoxal added three more (§99).
 const SHELVES = [
 	{ name: "mixed", atlas: "public/reference-atlas-mixed.json", plan: "experiments/results/mixed-merge-plan.json" },
-	{ name: "isotoxal", atlas: "public/reference-atlas-isotoxal.json", plan: "experiments/results/isotoxal-merge-plan.json",
-	  shards: ["public/reference-atlas-isotoxal-k3.json", "public/reference-atlas-isotoxal-k4.json"] },
+	{
+		name: "isotoxal",
+		atlas: "public/reference-atlas-isotoxal.json",
+		plan: "experiments/results/isotoxal-merge-plan.json",
+		shards: ["public/reference-atlas-isotoxal-k3.json", "public/reference-atlas-isotoxal-k4.json"],
+	},
 ];
 // `read` serves BOTH shelf files and the merge/range plans, and a plan is a plain object that the
 // atlas decoder rightly rejects. So the decode happens at the shelf call site, not here.
@@ -107,7 +117,10 @@ describe("merge plan", () => {
 	it("ships a shelf that is either wholly unmerged or merged exactly per the plan", () => {
 		if (MERGED.length === 0) {
 			for (const m of PLAN.merges) {
-				expect(SHELF.some((t) => t.id === m.id), `${m.id} missing entirely`).toBe(true);
+				expect(
+					SHELF.some((t) => t.id === m.id),
+					`${m.id} missing entirely`,
+				).toBe(true);
 			}
 			return;
 		}
@@ -119,7 +132,6 @@ describe("merge plan", () => {
 });
 
 describe.skipIf(MERGED.length === 0)("merged families", () => {
-
 	// The property that makes the merge legal, and not a splice of two unrelated things: at the seam the
 	// two halves are the SAME tiling in the SAME pose. Without it the pattern jumps as the slider crosses.
 	it("agrees at the seam — same tiling, same pose, same lattice", () => {
@@ -131,7 +143,11 @@ describe.skipIf(MERGED.length === 0)("merged families", () => {
 			expect([...fracs(lower)].sort(), `${t.id} seam pose`).toEqual([...fracs(upper, lower.basis)].sort());
 			expect(sameLattice(lower.basis, upper.basis), `${t.id} seam lattice`).toBe(true);
 			expect(det(upper.basis), `${t.id} seam covolume`).toBeCloseTo(det(lower.basis), 9);
-			const areas = (c: EvalCell) => c.cellPolygons.map((p) => area(p.vertices)).sort((x, y) => x - y).map((n) => n.toFixed(6));
+			const areas = (c: EvalCell) =>
+				c.cellPolygons
+					.map((p) => area(p.vertices))
+					.sort((x, y) => x - y)
+					.map((n) => n.toFixed(6));
 			expect(areas(lower), `${t.id} seam tile areas`).toEqual(areas(upper));
 		}
 	});
@@ -204,8 +220,13 @@ describe.skipIf(MERGED.length === 0)("merged families", () => {
 // n-pointed star), not where the tiling stopped existing. These check that what now ships past those old
 // bounds is a real tiling, and that the shelf matches the plan that was measured.
 type RangePlan = {
-	ranges: { id: string; exported: [number, number]; range: [number, number]; gainDeg: number;
-	          fold: { centreDeg: number | null; kind: string } | null }[];
+	ranges: {
+		id: string;
+		exported: [number, number];
+		range: [number, number];
+		gainDeg: number;
+		fold: { centreDeg: number | null; kind: string } | null;
+	}[];
 };
 const RANGE_PLAN = (read("experiments/results/mixed-range-plan.json") as RangePlan).ranges;
 const WIDENED = RANGE_PLAN.filter((r) => r.gainDeg > 0.01);
@@ -224,10 +245,10 @@ describe("widened α ranges", () => {
 			if (t?.paramCell?.region?.length) continue; // now a coupled 2-parameter entry, not a 1-D range
 			if (!t) {
 				// gone from the shelf: only legitimate if the widening made it a duplicate of another entry
-					expect(
-						ALIASES[r.id] ?? COUPLED_ALIASES[r.id] ?? ABSORBED[r.id],
-						`${r.id} vanished without an alias`,
-					).toBeDefined();
+				expect(
+					ALIASES[r.id] ?? COUPLED_ALIASES[r.id] ?? ABSORBED[r.id],
+					`${r.id} vanished without an alias`,
+				).toBeDefined();
 				continue;
 			}
 			expect(t.alphaRange, `${r.id} range`).toEqual(r.range);
@@ -298,7 +319,9 @@ describe("widened α ranges", () => {
 // one family with two free-but-coupled angles, so the valid region is a polygon, not a box.
 type CoupledPlan = {
 	families: {
-		id: string; P: number; regionVertices: [number, number][];
+		id: string;
+		P: number;
+		regionVertices: [number, number][];
 		absorbs: { id: string; deltaUnits: number[]; alpha0Deg: number; axisUnits: number[] | null }[];
 	}[];
 };
@@ -385,7 +408,16 @@ describe.skipIf(COUPLED.length === 0)("coupled two-parameter families", () => {
 		for (const f of COUPLED) {
 			const pc = byId.get(f.id)!.paramCell!;
 			const centre = pc.params.map((p) => p.defaultAlphaDeg);
-			for (const [dx, dy] of [[1, 0], [0, 1], [-1, 0], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]]) {
+			for (const [dx, dy] of [
+				[1, 0],
+				[0, 1],
+				[-1, 0],
+				[0, -1],
+				[1, 1],
+				[-1, 1],
+				[1, -1],
+				[-1, -1],
+			]) {
 				const want = [centre[0] + dx * 900, centre[1] + dy * 900];
 				const got = nearestInRegionDeg(pc, want);
 				// legal: every species angle strictly inside its (0, limit)
@@ -424,8 +456,9 @@ describe.skipIf(COUPLED.length === 0)("coupled two-parameter families", () => {
 		expect(at.alphas!.map((v, k) => (v - pc.params[k].alpha0Deg) / 15)).toEqual(a.deltaUnits);
 		// one unit along its own former slider moves by exactly its axis
 		const step = resolveMergedFamilyKey({ tiling: a.id, alphas: [a.alpha0Deg + 15] });
-		expect(step.alphas!.map((v, k) => (v - pc.params[k].alpha0Deg) / 15))
-			.toEqual(a.deltaUnits.map((d, k) => d + a.axisUnits![k]));
+		expect(step.alphas!.map((v, k) => (v - pc.params[k].alpha0Deg) / 15)).toEqual(
+			a.deltaUnits.map((d, k) => d + a.axisUnits![k]),
+		);
 		// already-2-D state is left alone
 		const pair = { tiling: f.id, alphas: [pc.params[0].alpha0Deg, pc.params[1].alpha0Deg] };
 		expect(resolveMergedFamilyKey(pair)).toEqual(pair);

@@ -6,7 +6,7 @@
  * Safe chars: a-zA-Z0-9 _ - . , ( ) ! * & $ @ = ; + space
  */
 
-const ESCAPE_PREFIX = '_';
+const ESCAPE_PREFIX = "_";
 
 /** Characters that must be encoded for Supabase storage keys */
 const UNSAFE_PATTERN = /[\/\\^|?#\[\]{}"'<>:%~\x00-\x1f\x7f]/g;
@@ -17,13 +17,11 @@ const UNSAFE_PATTERN = /[\/\\^|?#\[\]{}"'<>:%~\x00-\x1f\x7f]/g;
  * Underscore itself is encoded as _5F_ to avoid collision.
  */
 export function sanitizeForStorage(str: string): string {
-    if (!str) return str;
-    return str
-        .replace(/_/g, '_5F_')
-        .replace(UNSAFE_PATTERN, (char) => {
-            const hex = char.charCodeAt(0).toString(16).toUpperCase().padStart(2, '0');
-            return `${ESCAPE_PREFIX}${hex}_`;
-        });
+	if (!str) return str;
+	return str.replace(/_/g, "_5F_").replace(UNSAFE_PATTERN, (char) => {
+		const hex = char.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0");
+		return `${ESCAPE_PREFIX}${hex}_`;
+	});
 }
 
 /**
@@ -31,8 +29,6 @@ export function sanitizeForStorage(str: string): string {
  * Decodes _XX_ sequences back to original characters.
  */
 export function restoreFromStorage(sanitized: string): string {
-    if (!sanitized) return sanitized;
-    return sanitized.replace(/_([0-9A-Fa-f]{2})_/g, (_, hex) =>
-        String.fromCharCode(parseInt(hex, 16))
-    );
+	if (!sanitized) return sanitized;
+	return sanitized.replace(/_([0-9A-Fa-f]{2})_/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
 }

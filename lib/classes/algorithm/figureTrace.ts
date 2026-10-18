@@ -14,17 +14,25 @@
  * resolves eagerly) and is only ever invoked when TRACE_FIGURES is set, which happens in Node
  * CLI/test contexts only (never in the browser — PUBLIC_*-only env vars reach the client bundle).
  */
-import type * as FS from 'node:fs';
-import type * as Path from 'node:path';
+import type * as FS from "node:fs";
+import type * as Path from "node:path";
 
-export type TraceStage = 'vc' | 'seed' | 'pool' | 'lattice' | 'torus';
+export type TraceStage = "vc" | "seed" | "pool" | "lattice" | "torus";
 
 /** Minimal shape the hooks pull float geometry from (Polygon satisfies it). */
-export interface PolyLike { n: number; isStar?: boolean; vertices: { x: number; y: number }[]; }
+export interface PolyLike {
+	n: number;
+	isStar?: boolean;
+	vertices: { x: number; y: number }[];
+}
 
 /** Reduce placed polygons to serializable {n, isStar, verts} — the renderable node payload. */
 export function polyDump(polys: PolyLike[]): { n: number; isStar: boolean; verts: [number, number][] }[] {
-  return polys.map((p) => ({ n: p.n, isStar: !!p.isStar, verts: p.vertices.map((v) => [v.x, v.y] as [number, number]) }));
+	return polys.map((p) => ({
+		n: p.n,
+		isStar: !!p.isStar,
+		verts: p.vertices.map((v) => [v.x, v.y] as [number, number]),
+	}));
 }
 
 let fsMod: typeof FS | null = null;
@@ -32,57 +40,62 @@ let pathMod: typeof Path | null = null;
 
 /** Lazily resolve the real Node `fs`/`path` modules — only ever called when TRACE_FIGURES is set. */
 function nodeModules(): { fs: typeof FS; path: typeof Path } {
-  if (!fsMod || !pathMod) {
-    // `eval` here is deliberate: it defeats bundlers' static require/import graph analysis so
-    // this module stays safe to import from client-reachable code (see file header).
-    const req = eval('require') as NodeRequire;
-    fsMod = req('node:fs') as typeof FS;
-    pathMod = req('node:path') as typeof Path;
-    return { fs: fsMod, path: pathMod };
-  }
-  return { fs: fsMod, path: pathMod };
+	if (!fsMod || !pathMod) {
+		// `eval` here is deliberate: it defeats bundlers' static require/import graph analysis so
+		// this module stays safe to import from client-reachable code (see file header).
+		const req = eval("require") as NodeRequire;
+		fsMod = req("node:fs") as typeof FS;
+		pathMod = req("node:path") as typeof Path;
+		return { fs: fsMod, path: pathMod };
+	}
+	return { fs: fsMod, path: pathMod };
 }
 
 class FigureTrace {
-  private dir: string | null;
-  private fds = new Map<TraceStage, number>();
-  private counters = new Map<TraceStage | 'fill', number>();
+	private dir: string | null;
+	private fds = new Map<TraceStage, number>();
+	private counters = new Map<TraceStage | "fill", number>();
 
-  constructor() {
-    const d = process.env.TRACE_FIGURES ?? null;
-    this.dir = d;
-    if (d) nodeModules().fs.mkdirSync(d, { recursive: true });
-  }
+	constructor() {
+		const d = process.env.TRACE_FIGURES ?? null;
+		this.dir = d;
+		if (d) nodeModules().fs.mkdirSync(d, { recursive: true });
+	}
 
-  get enabled(): boolean { return this.dir !== null; }
+	get enabled(): boolean {
+		return this.dir !== null;
+	}
 
-  /** Fresh monotonic id within a (stage) namespace. Only call when enabled. */
-  nextId(ns: TraceStage | 'fill'): number {
-    const c = (this.counters.get(ns) ?? 0) + 1;
-    this.counters.set(ns, c);
-    return c;
-  }
+	/** Fresh monotonic id within a (stage) namespace. Only call when enabled. */
+	nextId(ns: TraceStage | "fill"): number {
+		const c = (this.counters.get(ns) ?? 0) + 1;
+		this.counters.set(ns, c);
+		return c;
+	}
 
-  node(stage: TraceStage, event: Record<string, unknown>): void {
-    if (this.dir === null) return;
-    const { fs, path } = nodeModules();
-    let fd = this.fds.get(stage);
-    if (fd === undefined) { fd = fs.openSync(path.join(this.dir, `${stage}.jsonl`), 'a'); this.fds.set(stage, fd); }
-    fs.writeSync(fd, JSON.stringify(event) + '\n'); // writeSync is durable — no separate flush needed
-  }
+	node(stage: TraceStage, event: Record<string, unknown>): void {
+		if (this.dir === null) return;
+		const { fs, path } = nodeModules();
+		let fd = this.fds.get(stage);
+		if (fd === undefined) {
+			fd = fs.openSync(path.join(this.dir, `${stage}.jsonl`), "a");
+			this.fds.set(stage, fd);
+		}
+		fs.writeSync(fd, JSON.stringify(event) + "\n"); // writeSync is durable — no separate flush needed
+	}
 
-  /** TEST-ONLY: re-read TRACE_FIGURES (the singleton caches it at construction; production never calls this). */
-  _reconfigureFromEnv(): void {
-    if (this.fds.size > 0) {
-      const { fs } = nodeModules();
-      for (const fd of this.fds.values()) fs.closeSync(fd);
-    }
-    this.fds.clear();
-    this.counters.clear();
-    const d = process.env.TRACE_FIGURES ?? null;
-    this.dir = d;
-    if (d) nodeModules().fs.mkdirSync(d, { recursive: true });
-  }
+	/** TEST-ONLY: re-read TRACE_FIGURES (the singleton caches it at construction; production never calls this). */
+	_reconfigureFromEnv(): void {
+		if (this.fds.size > 0) {
+			const { fs } = nodeModules();
+			for (const fd of this.fds.values()) fs.closeSync(fd);
+		}
+		this.fds.clear();
+		this.counters.clear();
+		const d = process.env.TRACE_FIGURES ?? null;
+		this.dir = d;
+		if (d) nodeModules().fs.mkdirSync(d, { recursive: true });
+	}
 }
 
 export const trace = new FigureTrace();

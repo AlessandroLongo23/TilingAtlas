@@ -24,18 +24,68 @@ import { EMPTY_DOC, type PointRef, type StudioDoc, type StudioPatch } from "./ty
 
 const fourSquares: TranslationalCellData = {
 	p: [
-		{ v: [[0, 0], [1, 0], [1, 1], [0, 1]], n: 4 },
-		{ v: [[1, 0], [2, 0], [2, 1], [1, 1]], n: 4 },
-		{ v: [[0, 1], [1, 1], [1, 2], [0, 2]], n: 4 },
-		{ v: [[1, 1], [2, 1], [2, 2], [1, 2]], n: 4 },
+		{
+			v: [
+				[0, 0],
+				[1, 0],
+				[1, 1],
+				[0, 1],
+			],
+			n: 4,
+		},
+		{
+			v: [
+				[1, 0],
+				[2, 0],
+				[2, 1],
+				[1, 1],
+			],
+			n: 4,
+		},
+		{
+			v: [
+				[0, 1],
+				[1, 1],
+				[1, 2],
+				[0, 2],
+			],
+			n: 4,
+		},
+		{
+			v: [
+				[1, 1],
+				[2, 1],
+				[2, 2],
+				[1, 2],
+			],
+			n: 4,
+		},
 	],
-	b: [[2, 0], [0, 2]],
+	b: [
+		[2, 0],
+		[0, 2],
+	],
 };
 
 const H = Math.sqrt(3) / 2;
 const hexCell: TranslationalCellData = {
-	p: [{ v: [[1, 0], [0.5, H], [-0.5, H], [-1, 0], [-0.5, -H], [0.5, -H]], n: 6 }],
-	b: [[1.5, H], [0, 2 * H]],
+	p: [
+		{
+			v: [
+				[1, 0],
+				[0.5, H],
+				[-0.5, H],
+				[-1, 0],
+				[-0.5, -H],
+				[0.5, -H],
+			],
+			n: 6,
+		},
+	],
+	b: [
+		[1.5, H],
+		[0, 2 * H],
+	],
 };
 
 function patchOf(cell: TranslationalCellData): StudioPatch {
@@ -72,7 +122,6 @@ function cenRef(patch: StudioPatch, f: number, off: [number, number]): PointRef 
 	const ring = patch.rings[f];
 	return { kind: "centroid", ring: ring ? ringKey(ring) : "no-such-ring", off };
 }
-
 
 /** Every directed half-edge answered by exactly one twin, and Euler on the torus. */
 function checkClosed(patch: StudioPatch, label: string): void {
@@ -162,10 +211,12 @@ describe("cut", () => {
 		const r = build(
 			base,
 			doc({
-				cuts: [[
-					{ kind: "vertex", vi: ring[0][0], off: [ring[0][1], ring[0][2]] },
-					{ kind: "vertex", vi: ring[2][0], off: [ring[2][1], ring[2][2]] },
-				]],
+				cuts: [
+					[
+						{ kind: "vertex", vi: ring[0][0], off: [ring[0][1], ring[0][2]] },
+						{ kind: "vertex", vi: ring[2][0], off: [ring[2][1], ring[2][2]] },
+					],
+				],
 			}),
 			"lattice",
 		);
@@ -178,14 +229,7 @@ describe("cut", () => {
 
 	it("a midpoint-to-midpoint cut splits the edges it lands on as well as the face", () => {
 		const base = patchOf(fourSquares);
-		const r = build(
-			base,
-			doc({ cuts: [[
-				midRef(base, 0, 0, [0, 0]),
-				midRef(base, 0, 2, [0, 0]),
-			]] }),
-			"lattice",
-		);
+		const r = build(base, doc({ cuts: [[midRef(base, 0, 0, [0, 0]), midRef(base, 0, 2, [0, 0])]] }), "lattice");
 		expect(r.dropped).toEqual([]);
 		// Two edges split into two each (+2 edges) and one chord added (+1): E goes up by 3, V by 2,
 		// F by 1, so Euler still holds. checkClosed asserts exactly that.
@@ -200,11 +244,15 @@ describe("cut", () => {
 		const ring = base.rings[0];
 		const r = build(
 			base,
-			doc({ cuts: [[
-				{ kind: "vertex", vi: ring[0][0], off: [ring[0][1], ring[0][2]] },
-				cenRef(base, 0, [0, 0]),
-				{ kind: "vertex", vi: ring[3][0], off: [ring[3][1], ring[3][2]] },
-			]] }),
+			doc({
+				cuts: [
+					[
+						{ kind: "vertex", vi: ring[0][0], off: [ring[0][1], ring[0][2]] },
+						cenRef(base, 0, [0, 0]),
+						{ kind: "vertex", vi: ring[3][0], off: [ring[3][1], ring[3][2]] },
+					],
+				],
+			}),
 			"lattice",
 		);
 		expect(r.dropped).toEqual([]);
@@ -215,10 +263,7 @@ describe("cut", () => {
 	it("keeps a cut attached after the vertices move", () => {
 		const base = patchOf(fourSquares);
 		const ring = base.rings[0];
-		const cuts: StudioDoc["cuts"] = [[
-			midRef(base, 0, 0, [0, 0]),
-			midRef(base, 0, 2, [0, 0]),
-		]];
+		const cuts: StudioDoc["cuts"] = [[midRef(base, 0, 0, [0, 0]), midRef(base, 0, 2, [0, 0])]];
 		const before = build(base, doc({ cuts }), "lattice");
 		const after = build(base, doc({ cuts, moved: { "0": [0.11, -0.07] } }), "lattice");
 		// Same topology either way: a ref names what it comes from, so the cut follows the geometry.
@@ -248,11 +293,13 @@ describe("move", () => {
 		const base = patchOf(hexCell);
 		const ring = base.rings[0];
 		const cen = cenRef(base, 0, [0, 0]);
-		const cuts: StudioDoc["cuts"] = [[
-			{ kind: "vertex", vi: ring[0][0], off: [ring[0][1], ring[0][2]] },
-			cen,
-			{ kind: "vertex", vi: ring[3][0], off: [ring[3][1], ring[3][2]] },
-		]];
+		const cuts: StudioDoc["cuts"] = [
+			[
+				{ kind: "vertex", vi: ring[0][0], off: [ring[0][1], ring[0][2]] },
+				cen,
+				{ kind: "vertex", vi: ring[3][0], off: [ring[3][1], ring[3][2]] },
+			],
+		];
 		const r = build(base, doc({ cuts }), "lattice");
 		const vi = r.moveKeys.indexOf(JSON.stringify(cen));
 		expect(vi).toBe(base.verts.length);
@@ -286,9 +333,7 @@ describe("resolveRef", () => {
 
 const atlasPath = path.join(process.cwd(), "public", "reference-atlas.json");
 type Rec = { id: string; exactSource?: ExactCellSource };
-const atlas: Rec[] = fs.existsSync(atlasPath)
-	? decodeAtlas<Rec>(JSON.parse(fs.readFileSync(atlasPath, "utf8")))
-	: [];
+const atlas: Rec[] = fs.existsSync(atlasPath) ? decodeAtlas<Rec>(JSON.parse(fs.readFileSync(atlasPath, "utf8"))) : [];
 
 describe.skipIf(atlas.length === 0)("build on the shipped catalogue", () => {
 	const ring = CyclotomicRing.create(24);

@@ -26,13 +26,13 @@
  * r), so if a congruence exists it is found.
  */
 
-import type { Polygon } from '../polygons/Polygon';
-import { Cyclotomic } from '../Cyclotomic';
-import { Surd, detSurd } from './exact/Surd';
-import { sameLattice } from './LatticeEnumerator';
-import { TranslationalCellExtractor } from './TranslationalCellExtractor';
-import type { PeriodCell } from './PeriodSolver';
-import { nKeyOfCell } from './canonicalFormN';
+import type { Polygon } from "../polygons/Polygon";
+import { Cyclotomic } from "../Cyclotomic";
+import { Surd, detSurd } from "./exact/Surd";
+import { sameLattice } from "./LatticeEnumerator";
+import { TranslationalCellExtractor } from "./TranslationalCellExtractor";
+import type { PeriodCell } from "./PeriodSolver";
+import { nKeyOfCell } from "./canonicalFormN";
 
 /** Exact integer floor of a Surd: float guess, then exact `cmp` correction (each loop step moves
  *  monotonically toward the unique n with n ≤ s < n+1; cmp/sign are exact — CB-2). */
@@ -64,7 +64,7 @@ export function reducedClassKey(
 	u: Cyclotomic,
 	v: Cyclotomic,
 	memo?: Map<string, string>,
-	latKey?: string
+	latKey?: string,
 ): string {
 	// Pure function of (p geometry, Λ=(u,v)) ⇒ memoizable. Keyed by (p.exactKey, latKey) where latKey
 	// identifies the basis; the same class rep is the comparison target for many candidates in a bucket.
@@ -90,7 +90,10 @@ export function reducedClassKey(
 
 /** Multiset of polygon names (sorted) — a necessary congruence invariant and a cheap bucket key. */
 function nameMultiset(cell: Polygon[]): string {
-	return cell.map((p) => p.getName()).sort().join(',');
+	return cell
+		.map((p) => p.getName())
+		.sort()
+		.join(",");
 }
 
 /** Exact |det Λ| key (canonical Surd components) — a necessary congruence invariant and bucket key. */
@@ -111,7 +114,7 @@ export function tilingsCongruent(
 	cellB: Polygon[],
 	uB: Cyclotomic,
 	vB: Cyclotomic,
-	memo?: Map<string, string>
+	memo?: Map<string, string>,
 ): boolean {
 	if (cellA.length === 0 || cellB.length === 0) return false;
 	// --- cheap necessary rejects ---
@@ -138,7 +141,10 @@ export function tilingsCongruent(
 		(reflect ? z.conj().mulZeta(r) : z.mulZeta(r)).add(T);
 	const transformedKey = (p: Polygon, reflect: boolean, r: number, T: Cyclotomic): string => {
 		const c = mapPoint(p.exactCentroid!, reflect, r, T);
-		const vks = p.exactVertices!.map((vx) => mapPoint(vx, reflect, r, T).key()).sort().join(';');
+		const vks = p
+			.exactVertices!.map((vx) => mapPoint(vx, reflect, r, T).key())
+			.sort()
+			.join(";");
 		return `${p.getName()}:${c.key()}:${vks}`;
 	};
 
@@ -164,7 +170,7 @@ export function tilingsCongruent(
 					// conj(z)·ζ^{0+r}+T — both matching `mapPoint`/`transformedKey` above. (Passing r as
 					// axisK with rotK=0 dropped the rotation in the reflect=false branch, missing
 					// rotation-only congruences and over-counting oblique cells — DEVELOPMENT_NOTES §19.)
-					const gp = p.transformedRigid(ZERO, reflect, 0, r, T, 'full');
+					const gp = p.transformedRigid(ZERO, reflect, 0, r, T, "full");
 					mapped.add(reducedClassKey(gp, uB, vB, memo, latKeyB));
 				}
 				if (mapped.size === cellB.length && [...mapped].every((kk) => KB.has(kk))) return true;
@@ -177,9 +183,13 @@ export function tilingsCongruent(
 /** Convenience wrapper over `PeriodCell`s. */
 export function cellsCongruent(a: PeriodCell, b: PeriodCell, memo?: Map<string, string>): boolean {
 	return tilingsCongruent(
-		a.cellPolygons, a.basisExact[0], a.basisExact[1],
-		b.cellPolygons, b.basisExact[0], b.basisExact[1],
-		memo
+		a.cellPolygons,
+		a.basisExact[0],
+		a.basisExact[1],
+		b.cellPolygons,
+		b.basisExact[0],
+		b.basisExact[1],
+		memo,
 	);
 }
 
@@ -295,7 +305,7 @@ function reduceOnce(cell: PeriodCell): PeriodCell {
 export function assertEquivalencePartition(
 	classes: PeriodCell[][],
 	congruent: (a: PeriodCell, b: PeriodCell) => boolean,
-	bucketKey = ""
+	bucketKey = "",
 ): void {
 	const bug = (reason: string): never => {
 		const msg = `[congruence] ⚑ IMPLEMENTATION-BUG: merge relation is not an equivalence (${reason})${bucketKey ? ` in bucket ${bucketKey}` : ""}`;
@@ -312,7 +322,12 @@ export function assertEquivalencePartition(
 			const cji = congruent(members[j], members[i]); // ← the §19.6 root cause: argument-order asymmetry
 			if (cij !== cji) bug("symmetry: cong(a,b) ≠ cong(b,a)");
 			const same = classOf.get(members[i]) === classOf.get(members[j]);
-			if (cij !== same) bug(cij ? "intransitivity: a congruent pair landed in different classes (under-merge → inflation)" : "a non-congruent pair was merged (over-merge)");
+			if (cij !== same)
+				bug(
+					cij
+						? "intransitivity: a congruent pair landed in different classes (under-merge → inflation)"
+						: "a non-congruent pair was merged (over-merge)",
+				);
 		}
 	}
 }
@@ -337,7 +352,10 @@ export function congruencePartition(cells: PeriodCell[]): PeriodCell[][] {
 	for (const c of reducedCells) {
 		const bk = `${nameMultiset(c.cellPolygons)}@${detAbsKey(c.basisExact[0], c.basisExact[1])}`;
 		let classes = buckets.get(bk);
-		if (!classes) { classes = []; buckets.set(bk, classes); }
+		if (!classes) {
+			classes = [];
+			buckets.set(bk, classes);
+		}
 		const cls = classes.find((members) => cellsCongruent(c, members[0], rckMemo));
 		if (cls) cls.push(c);
 		else classes.push([c]);
@@ -377,9 +395,14 @@ export function dedupeByCongruence(cells: PeriodCell[], keyOf?: (c: PeriodCell) 
 	// class signature.
 	if (process.env.PS_MERGECHECK === "full" && keyOf) {
 		const classes2 = congruencePartition([...cells].reverse());
-		const sig = (cls: PeriodCell[][]) => cls.map((m) => m.map(keyOf).sort()[0]).sort().join("|");
+		const sig = (cls: PeriodCell[][]) =>
+			cls
+				.map((m) => m.map(keyOf).sort()[0])
+				.sort()
+				.join("|");
 		if (sig(classes) !== sig(classes2)) {
-			const msg = "[congruence] ⚑ IMPLEMENTATION-BUG: dedupe partition is ORDER-DEPENDENT (merge relation not transitive)";
+			const msg =
+				"[congruence] ⚑ IMPLEMENTATION-BUG: dedupe partition is ORDER-DEPENDENT (merge relation not transitive)";
 			console.error(msg);
 			throw new Error(msg);
 		}
@@ -423,7 +446,10 @@ export function dedupeByNKey(cells: PeriodCell[], keyOf?: (c: PeriodCell) => str
 	const nullCells: PeriodCell[] = [];
 	for (const c of cells) {
 		const nk = nKeyOfCell(c);
-		if (nk === null) { nullCells.push(c); continue; }
+		if (nk === null) {
+			nullCells.push(c);
+			continue;
+		}
 		const g = groups.get(nk);
 		if (g) g.push(c);
 		else groups.set(nk, [c]);

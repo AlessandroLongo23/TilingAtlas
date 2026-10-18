@@ -60,8 +60,7 @@ for (const k of [...byK.keys()].sort((a, b) => a - b)) {
 	const before = fs.existsSync(shardPath) ? mb(shardPath) : "0.0";
 	write(shardPath, merged);
 	console.log(
-		`  k=${k}: +${added.length} star entries -> ${merged.length} total ` +
-			`(${before} -> ${mb(shardPath)} MB)`,
+		`  k=${k}: +${added.length} star entries -> ${merged.length} total ` + `(${before} -> ${mb(shardPath)} MB)`,
 	);
 }
 

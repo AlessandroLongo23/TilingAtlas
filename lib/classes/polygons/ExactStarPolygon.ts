@@ -1,5 +1,5 @@
-import { Polygon, PolygonType } from '@/classes';
-import { Cyclotomic } from '../Cyclotomic';
+import { Polygon, PolygonType } from "@/classes";
+import { Cyclotomic } from "../Cyclotomic";
 
 /**
  * Exact non-convex isotoxal star tile in ℤ[ζ₂₄] — Myers's `n*_α` (n convex **points** at interior
@@ -48,12 +48,7 @@ export class ExactStarPolygon extends Polygon {
 	 * @param nPoints  number of star points (`n | 24`, `n ≥ 3`)
 	 * @param alphaU   point interior angle in π/12 units (`0 < α < 12·(n−2)/n`)
 	 */
-	static isotoxal = (
-		nPoints: number,
-		alphaU: number,
-		anchorExact: Cyclotomic,
-		dirIndex: number,
-	): ExactStarPolygon => {
+	static isotoxal = (nPoints: number, alphaU: number, anchorExact: Cyclotomic, dirIndex: number): ExactStarPolygon => {
 		const ring = anchorExact.ring;
 		const N = ring.N;
 		// Generalised from the N=24-only form on 2026-08-07 so the out-of-ring 9-fold (ZZ[zeta_18]) and

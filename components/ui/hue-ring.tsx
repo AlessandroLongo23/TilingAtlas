@@ -47,10 +47,7 @@ export function HueRing({ value, onChange, label, size = VIEW }: HueRingProps) {
 		const svg = svgRef.current;
 		if (!svg) return;
 		const rect = svg.getBoundingClientRect();
-		const deg = hueFromPointer(
-			e.clientX - (rect.left + rect.width / 2),
-			e.clientY - (rect.top + rect.height / 2),
-		);
+		const deg = hueFromPointer(e.clientX - (rect.left + rect.width / 2), e.clientY - (rect.top + rect.height / 2));
 		onChange(Math.round(deg) % 360);
 	};
 
@@ -59,7 +56,7 @@ export function HueRing({ value, onChange, label, size = VIEW }: HueRingProps) {
 	return (
 		<div className="grid w-full gap-2">
 			{label ? (
-				<div className="flex flex-row justify-between items-center">
+				<div className="flex flex-row items-center justify-between">
 					<span className="text-[13px] font-medium text-fg-secondary">{label}</span>
 					<span className="font-mono text-xs text-fg tabular-nums">{hue}°</span>
 				</div>
@@ -69,7 +66,7 @@ export function HueRing({ value, onChange, label, size = VIEW }: HueRingProps) {
 				width={size}
 				height={size}
 				viewBox={`0 0 ${VIEW} ${VIEW}`}
-				className="mx-auto touch-none cursor-pointer select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 rounded-full"
+				className="mx-auto cursor-pointer touch-none rounded-full select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
 				role="slider"
 				tabIndex={0}
 				aria-label={label ?? "Hue offset"}
@@ -96,9 +93,16 @@ export function HueRing({ value, onChange, label, size = VIEW }: HueRingProps) {
 				onDoubleClick={() => onChange(0)}
 				onKeyDown={(e) => {
 					const d = e.shiftKey ? 15 : 1;
-					if (e.key === "ArrowRight" || e.key === "ArrowUp") { e.preventDefault(); step(d); }
-					else if (e.key === "ArrowLeft" || e.key === "ArrowDown") { e.preventDefault(); step(-d); }
-					else if (e.key === "Home") { e.preventDefault(); onChange(0); }
+					if (e.key === "ArrowRight" || e.key === "ArrowUp") {
+						e.preventDefault();
+						step(d);
+					} else if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
+						e.preventDefault();
+						step(-d);
+					} else if (e.key === "Home") {
+						e.preventDefault();
+						onChange(0);
+					}
 				}}
 			>
 				{/* Rainbow track: 72 butt-capped arcs at the tile-fill S/L, slightly overlapped (no seams). */}
@@ -120,7 +124,7 @@ export function HueRing({ value, onChange, label, size = VIEW }: HueRingProps) {
 					y={C}
 					textAnchor="middle"
 					dominantBaseline="central"
-					className="fill-fg-secondary font-mono select-none pointer-events-none"
+					className="pointer-events-none fill-fg-secondary font-mono select-none"
 					fontSize={13}
 				>
 					{hue}°

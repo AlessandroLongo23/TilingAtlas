@@ -2,13 +2,16 @@ import { describe, expect, it } from "vitest";
 import { analyseFaces, classifyFaces, rankLabel, summarise } from "./faces";
 import { coset, degree, type FreedrawPattern } from "./pattern";
 
-const pat = (
-	a: number,
-	b: number,
-	d: number,
-	h: number[],
-	v: number[],
-): FreedrawPattern => ({ id: "t", k: 1, a, b, d, h, v, orbit: new Array(a * d).fill(0) });
+const pat = (a: number, b: number, d: number, h: number[], v: number[]): FreedrawPattern => ({
+	id: "t",
+	k: 1,
+	a,
+	b,
+	d,
+	h,
+	v,
+	orbit: new Array(a * d).fill(0),
+});
 
 /**
  * A pattern whose faces are exactly the cell groups `group` names: draw every edge whose two sides
@@ -186,9 +189,7 @@ describe("summarise", () => {
 		// A 3x3 period cut into single cells except one horizontal domino along the bottom. The period
 		// has to be 3 wide for that domino to stay finite: on a 2-wide one the pair meets itself around
 		// the torus and comes out a strip.
-		const s = summarise(
-			analyseFaces(fromGroups(3, 3, (x, y) => (y === 0 && x < 2 ? 0 : 1 + x + 3 * y))),
-		);
+		const s = summarise(analyseFaces(fromGroups(3, 3, (x, y) => (y === 0 && x < 2 ? 0 : 1 + x + 3 * y))));
 		expect(s.finite).toBe(8);
 		expect(s.sizes).toEqual([1, 1, 1, 1, 1, 1, 1, 2]);
 	});
@@ -213,14 +214,7 @@ describe("degree", () => {
 });
 
 // ── triangular grid ───────────────────────────────────────────────────────────────────────────────
-const tpat = (
-	a: number,
-	b: number,
-	d: number,
-	h: number[],
-	v: number[],
-	w: number[],
-): FreedrawPattern => ({
+const tpat = (a: number, b: number, d: number, h: number[], v: number[], w: number[]): FreedrawPattern => ({
 	id: "tt",
 	k: 1,
 	a,

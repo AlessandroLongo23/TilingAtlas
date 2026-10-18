@@ -284,15 +284,7 @@ export function squareTorus(
 		edge: i,
 	}));
 
-	const g =
-		gcdAll([
-			...raw.flatMap((r) => [r.x, r.y, r.side]),
-			...psi,
-			L[0][0],
-			L[0][1],
-			L[1][0],
-			L[1][1],
-		]) || 1n;
+	const g = gcdAll([...raw.flatMap((r) => [r.x, r.y, r.side]), ...psi, L[0][0], L[0][1], L[1][0], L[1][1]]) || 1n;
 	const squares = raw
 		.filter((r) => r.side !== 0n)
 		.map((r) => ({ x: (r.x / g).toString(), y: (r.y / g).toString(), side: (r.side / g).toString(), edge: r.edge }));

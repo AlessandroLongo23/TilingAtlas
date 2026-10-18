@@ -57,21 +57,17 @@ describe("pentagon catalogue", () => {
 	// conditions suggest. A mistranscribed constraint row shows up here first.
 	it("DOF equals the number of sliders", () => {
 		for (const t of PENTAGON_TYPES) {
-			expect(`${t.label}: ${t.dof}`).toBe(
-				`${t.label}: ${t.angleParams.length + t.sideParams.length}`,
-			);
+			expect(`${t.label}: ${t.dof}`).toBe(`${t.label}: ${t.angleParams.length + t.sideParams.length}`);
 		}
 	});
 
 	it("root-finds exactly the types whose side system is over-determined", () => {
-		const overDetermined = PENTAGON_TYPES.filter(
-			(t) => 2 + t.sideRows.length + t.sideParams.length === 5,
-		).map((t) => t.id);
+		const overDetermined = PENTAGON_TYPES.filter((t) => 2 + t.sideRows.length + t.sideParams.length === 5).map(
+			(t) => t.id,
+		);
 		expect(overDetermined).toEqual([6, 7, 8, 9, 14]);
 		for (const t of PENTAGON_TYPES) {
-			expect(`${t.label} pins: ${t.solveAngle !== null}`).toBe(
-				`${t.label} pins: ${overDetermined.includes(t.id)}`,
-			);
+			expect(`${t.label} pins: ${t.solveAngle !== null}`).toBe(`${t.label} pins: ${overDetermined.includes(t.id)}`);
 		}
 	});
 });

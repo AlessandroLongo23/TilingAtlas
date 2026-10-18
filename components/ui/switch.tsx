@@ -19,15 +19,7 @@ const TRACK: Record<Size, string> = {
 	md: "w-12 h-6 [--sw-thumb:16px]",
 };
 
-export function Switch({
-	checked,
-	onCheckedChange,
-	size = "md",
-	classes,
-	disabled,
-	onClick,
-	...rest
-}: SwitchProps) {
+export function Switch({ checked, onCheckedChange, size = "md", classes, disabled, onClick, ...rest }: SwitchProps) {
 	return (
 		<button
 			type="button"
@@ -47,8 +39,8 @@ export function Switch({
 				"max-md:before:absolute max-md:before:-inset-x-1 max-md:before:-inset-y-3 max-md:before:content-['']",
 				"transition-colors duration-[var(--duration-fast)] ease-[var(--ease-out)]",
 				TRACK[size],
-				checked ? "bg-accent border-accent" : "bg-surface-sunken border-line",
-				disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer",
+				checked ? "border-accent bg-accent" : "border-line bg-surface-sunken",
+				disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer",
 				!disabled && !checked ? "hover:border-line-strong" : "",
 				classes,
 			)}

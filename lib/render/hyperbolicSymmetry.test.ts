@@ -5,7 +5,9 @@ import type { Darts } from "@/lib/render/hyperbolicDevelopClient";
 import { bestCentre, dartSymmetry } from "@/lib/render/hyperbolicSymmetry";
 import { buildWalk, walkPoint } from "@/lib/render/hyperbolicWalk";
 
-const recs: { id: string; edge: number; darts: Darts }[] = JSON.parse(readFileSync("public/hyperbolic-developed.json", "utf8"));
+const recs: { id: string; edge: number; darts: Darts }[] = JSON.parse(
+	readFileSync("public/hyperbolic-developed.json", "utf8"),
+);
 const rec = (id: string) => recs.find((r) => r.id === id)!;
 const centre = (id: string) => {
 	const c = bestCentre(dartSymmetry(rec(id).darts, rec(id).edge).features);

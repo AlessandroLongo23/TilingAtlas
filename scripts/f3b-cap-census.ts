@@ -47,16 +47,26 @@
  * - cellDiam / cellArea expressions copied verbatim from makeCtx (the single canonical site).
  */
 
-import fs from 'node:fs';
-import path from 'node:path';
-import { PeriodSolver, BLOCK_INDEX_CAP, blockIndexRangeNeeded, defaultMaxCellPolys } from '@/classes/algorithm/PeriodSolver';
+import fs from "node:fs";
+import path from "node:path";
 import {
-	PolygonsGenerator, VCGenerator, CompatibilityGraph, SeedSetExtractor, SeedBuilder,
-	PolygonType, type GeneratorParameters,
-} from '@/classes';
-import { computeRing } from '@/classes/algorithm/PolygonsGenerator';
-import { setActiveRing, CyclotomicRing } from '@/classes/Cyclotomic';
-import { latticeKey } from '@/classes/algorithm/LatticeEnumerator';
+	PeriodSolver,
+	BLOCK_INDEX_CAP,
+	blockIndexRangeNeeded,
+	defaultMaxCellPolys,
+} from "@/classes/algorithm/PeriodSolver";
+import {
+	PolygonsGenerator,
+	VCGenerator,
+	CompatibilityGraph,
+	SeedSetExtractor,
+	SeedBuilder,
+	PolygonType,
+	type GeneratorParameters,
+} from "@/classes";
+import { computeRing } from "@/classes/algorithm/PolygonsGenerator";
+import { setActiveRing, CyclotomicRing } from "@/classes/Cyclotomic";
+import { latticeKey } from "@/classes/algorithm/LatticeEnumerator";
 
 // ---------------------------------------------------------------------------
 // Setup — identical to probe-pipeline.ts / scout-worker.ts
@@ -86,14 +96,14 @@ const useSeeds = seeds.filter((s) => new Set(s.vertexConfigurations.map((v) => v
 // ---------------------------------------------------------------------------
 // Log setup
 // ---------------------------------------------------------------------------
-const logDir = path.join(process.cwd(), 'experiments', 'results');
+const logDir = path.join(process.cwd(), "experiments", "results");
 fs.mkdirSync(logDir, { recursive: true });
-const logPath = path.join(logDir, 'f3b-cap-census-2026-06-11.log');
-const logStream = fs.createWriteStream(logPath, { flags: 'w' });
+const logPath = path.join(logDir, "f3b-cap-census-2026-06-11.log");
+const logStream = fs.createWriteStream(logPath, { flags: "w" });
 
 function log(line: string): void {
-	process.stdout.write(line + '\n');
-	logStream.write(line + '\n');
+	process.stdout.write(line + "\n");
+	logStream.write(line + "\n");
 }
 
 const ts0 = Date.now();
@@ -105,12 +115,15 @@ log(`  census measures the post-OP-3 representatives only — NOT a blanket per-
 log(`Seeds: ${useSeeds.length} (multi-VC filter applied)`);
 log(`Ring: N=24`);
 log(`Started: ${new Date().toISOString()}`);
-log('');
+log("");
 
 // ---------------------------------------------------------------------------
 // Access the private candidateLattices method
 // ---------------------------------------------------------------------------
-type CandidateLattice = { basis: [import('@/classes/Cyclotomic').Cyclotomic, import('@/classes/Cyclotomic').Cyclotomic]; seedMaps: { rot: number; refl: boolean }[] };
+type CandidateLattice = {
+	basis: [import("@/classes/Cyclotomic").Cyclotomic, import("@/classes/Cyclotomic").Cyclotomic];
+	seedMaps: { rot: number; refl: boolean }[];
+};
 
 // We use `(solver as any).candidateLattices(seed)` — the private cache is keyed by vcSig so
 // most calls after the first are hits (< 1ms each).
@@ -145,14 +158,17 @@ let postOP3Pairs = 0;
 for (let i = 0; i < useSeeds.length; i++) {
 	const seed = useSeeds[i];
 	const elapsed = ((Date.now() - ts0) / 1000).toFixed(1);
-	const eta = i > 0 ? ((Date.now() - ts0) / i * (useSeeds.length - i) / 1000).toFixed(0) : '?';
+	const eta = i > 0 ? ((((Date.now() - ts0) / i) * (useSeeds.length - i)) / 1000).toFixed(0) : "?";
 	process.stdout.write(`\r[${elapsed}s] seed ${i + 1}/${useSeeds.length} "${seed.name}"  eta ~${eta}s`);
 
 	// Access private candidateLattices — returns the post-OP-3 reduced list
 	const { lattices } = solver.candidateLattices(seed) as { lattices: CandidateLattice[] };
 
-	const affected: AffectedSeed['affectedReps'] = [];
-	for (const { basis: [u, v], seedMaps } of lattices) {
+	const affected: AffectedSeed["affectedReps"] = [];
+	for (const {
+		basis: [u, v],
+		seedMaps,
+	} of lattices) {
 		// Replicate makeCtx's cellDiam/cellArea expressions verbatim (PeriodSolver.ts makeCtx):
 		//   const uV = u.toVector();
 		//   const vV = v.toVector();
@@ -182,27 +198,29 @@ for (let i = 0; i < useSeeds.length; i++) {
 		affectedSeeds.push({ idx: i, name: seed.name, affectedReps: affected });
 	}
 }
-process.stdout.write('\n'); // clear progress line
+process.stdout.write("\n"); // clear progress line
 
 // ---------------------------------------------------------------------------
 // Report
 // ---------------------------------------------------------------------------
-log('');
-log('=== AFFECTED SEEDS (post-OP-3 representatives) ===');
-log('');
+log("");
+log("=== AFFECTED SEEDS (post-OP-3 representatives) ===");
+log("");
 
 for (const { idx, name, affectedReps } of affectedSeeds) {
 	log(`Seed ${idx} "${name}":`);
 	for (const { key, rangeNeeded, cellDiam, cellArea, orbitSize } of affectedReps) {
 		log(`  lattice: ${key}`);
-		log(`    rangeNeeded=${rangeNeeded}  cellDiam=${cellDiam.toFixed(4)}  cellArea=${cellArea.toFixed(4)}  orbitSize=${orbitSize}`);
+		log(
+			`    rangeNeeded=${rangeNeeded}  cellDiam=${cellDiam.toFixed(4)}  cellArea=${cellArea.toFixed(4)}  orbitSize=${orbitSize}`,
+		);
 	}
 }
 
 // Distinct lattice keys
-log('');
-log('=== DISTINCT AFFECTED LATTICES (across all seeds) ===');
-log('');
+log("");
+log("=== DISTINCT AFFECTED LATTICES (across all seeds) ===");
+log("");
 for (const [key, { rangeNeeded, cellDiam, cellArea }] of distinctAffectedKeys.entries()) {
 	log(`  ${key}`);
 	log(`    rangeNeeded=${rangeNeeded}  cellDiam=${cellDiam.toFixed(4)}  cellArea=${cellArea.toFixed(4)}`);
@@ -213,9 +231,9 @@ const maxRangeNeeded = Math.max(...[...distinctAffectedKeys.values()].map((v) =>
 // Proposed raised cap: 128 if max ≤ 128, else next power of 2 above max (safety margin).
 const proposedCap = maxRangeNeeded <= 128 ? 128 : Math.pow(2, Math.ceil(Math.log2(maxRangeNeeded + 1)));
 
-log('');
-log('=== SUMMARY ===');
-log('');
+log("");
+log("=== SUMMARY ===");
+log("");
 log(`  Total affected seeds (post-OP-3):           ${affectedSeeds.length}`);
 log(`  Total affected (seed,rep) pairs (post-OP-3): ${postOP3Pairs}`);
 log(`  Total affected (seed,lattice) pairs estimate (pre-OP-3, incl orbit members): ${preOP3Pairs}`);
@@ -224,20 +242,20 @@ log(`  Distinct affected lattice keys:              ${distinctAffectedKeys.size}
 log(`  Max range needed:                            ${maxRangeNeeded}`);
 log(`  Current BLOCK_INDEX_CAP:                     ${BLOCK_INDEX_CAP}`);
 log(`  Proposed raised cap (128 if max ≤ 128, else next pow2): ${proposedCap}`);
-log('');
-log('=== BASIS-DEPENDENCE VERDICT ===');
-log('');
-log('  cellArea = |det(u,v)| is G-invariant, but cellDiam = max(|u|,|v|) is NOT — it depends on the');
-log('  STORED BASIS, and candidateLattices stores bases as enumerated (not reduced). blockIndexRangeNeeded');
-log('  is therefore basis-dependent: a skew-basis orbit MEMBER can need range > cap while the orbit');
-log('  REPRESENTATIVE (a shorter basis of the same orbit) does not. This census enumerates post-OP-3');
-log('  representatives only, so its 0 result is the discharge verdict for the reduced enumeration —');
-log('  it is NOT a claim that every basis of every orbit clears the cap.');
-log('');
-log('=== DELTA ARITHMETIC (pre-OP-3 vs post-OP-3) ===');
-log('');
-log('  The sweep fired 76 banners = 4 distinct lattice keys × 19 seeds each.');
-log('  This census (post-OP-3) enumerates representatives only.');
+log("");
+log("=== BASIS-DEPENDENCE VERDICT ===");
+log("");
+log("  cellArea = |det(u,v)| is G-invariant, but cellDiam = max(|u|,|v|) is NOT — it depends on the");
+log("  STORED BASIS, and candidateLattices stores bases as enumerated (not reduced). blockIndexRangeNeeded");
+log("  is therefore basis-dependent: a skew-basis orbit MEMBER can need range > cap while the orbit");
+log("  REPRESENTATIVE (a shorter basis of the same orbit) does not. This census enumerates post-OP-3");
+log("  representatives only, so its 0 result is the discharge verdict for the reduced enumeration —");
+log("  it is NOT a claim that every basis of every orbit clears the cap.");
+log("");
+log("=== DELTA ARITHMETIC (pre-OP-3 vs post-OP-3) ===");
+log("");
+log("  The sweep fired 76 banners = 4 distinct lattice keys × 19 seeds each.");
+log("  This census (post-OP-3) enumerates representatives only.");
 log(`  If preOP3Pairs=${preOP3Pairs} matches 76, the orbit sizes account for the delta:`);
 if (preOP3Pairs === 76) {
 	log(`  ✓ Match: ${preOP3Pairs} = 76.  The orbit-member estimate is consistent with the sweep.`);
@@ -247,7 +265,7 @@ if (preOP3Pairs === 76) {
 	log(`    included orbit members that were later removed; or a different k=3 seed list).`);
 	log(`    The post-OP-3 count (${postOP3Pairs}) is definitive for the discharge re-run.`);
 }
-log('');
+log("");
 log(`Finished in ${((Date.now() - ts0) / 1000).toFixed(1)}s`);
 log(`Log: ${logPath}`);
 

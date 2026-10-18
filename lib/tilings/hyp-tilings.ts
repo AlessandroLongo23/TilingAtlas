@@ -329,5 +329,4 @@ export const hypTilingBoardLabel = (b: Pick<HypTilingBoard, "alphabet" | "valenc
 	b.alphabet.length === 1 ? `{${b.alphabet[0]},${b.valence}}` : b.alphabet.join(" · ");
 
 /** Tilings on a board, across k. */
-export const hypTilingBoardCount = (b: HypTilingBoard): number =>
-	Object.values(b.counts).reduce((s, n) => s + n, 0);
+export const hypTilingBoardCount = (b: HypTilingBoard): number => Object.values(b.counts).reduce((s, n) => s + n, 0);

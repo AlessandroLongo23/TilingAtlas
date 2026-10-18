@@ -79,7 +79,10 @@ function overlaps(A: Point[], B: Point[]): boolean {
 			const q = poly[(i + 1) % poly.length];
 			const nx = -(q.y - p.y);
 			const ny = q.x - p.x;
-			let aMin = Infinity, aMax = -Infinity, bMin = Infinity, bMax = -Infinity;
+			let aMin = Infinity,
+				aMax = -Infinity,
+				bMin = Infinity,
+				bMax = -Infinity;
 			for (const v of A) {
 				const d = nx * v.x + ny * v.y;
 				if (d < aMin) aMin = d;
@@ -225,7 +228,10 @@ function contribAt(pts: Point[], p: Point): number {
 
 /** Axis-aligned bounds, for rejecting far-apart tiles before running SAT on them. */
 function bboxOf(pts: Point[]): [number, number, number, number] {
-	let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+	let x0 = Infinity,
+		y0 = Infinity,
+		x1 = -Infinity,
+		y1 = -Infinity;
 	for (const p of pts) {
 		if (p.x < x0) x0 = p.x;
 		if (p.x > x1) x1 = p.x;
@@ -303,12 +309,9 @@ function grow(proto: Point[], target: number, nodeCap: number): SearchResult | n
 										const b = pts[(i + 1) % 5];
 										const ab = Math.hypot(b.x - a.x, b.y - a.y);
 										if (ab < EPS) continue;
-										const cr =
-											(b.x - a.x) * (best!.p.y - a.y) - (b.y - a.y) * (best!.p.x - a.x);
+										const cr = (b.x - a.x) * (best!.p.y - a.y) - (b.y - a.y) * (best!.p.x - a.x);
 										if (Math.abs(cr) / ab > 1e-6) continue;
-										const dt =
-											((best!.p.x - a.x) * (b.x - a.x) + (best!.p.y - a.y) * (b.y - a.y)) /
-											(ab * ab);
+										const dt = ((best!.p.x - a.x) * (b.x - a.x) + (best!.p.y - a.y) * (b.y - a.y)) / (ab * ab);
 										if (dt > 1e-6 && dt < 1 - 1e-6) onEdge = true;
 									}
 									if (!onEdge) continue;
@@ -348,8 +351,7 @@ function grow(proto: Point[], target: number, nodeCap: number): SearchResult | n
 				const known = table.get(k);
 				// A corner landing inside an existing edge is not in the table, so its base has to be
 				// summed over the placed tiles. Five points, so this stays cheap.
-				const base =
-					known?.covered ?? tiles.reduce((acc, t) => acc + contribAt(t.pts, q), 0);
+				const base = known?.covered ?? tiles.reduce((acc, t) => acc + contribAt(t.pts, q), 0);
 				affected.set(k, { p: q, base });
 			}
 			for (const [k, info] of table) {
@@ -390,8 +392,7 @@ function orientKey(proto: Point[], t: Placed): string {
 	const q1 = t.pts[1];
 	const a = Math.atan2(q1.y - q0.y, q1.x - q0.x) - Math.atan2(p1.y - p0.y, p1.x - p0.x);
 	const orient =
-		(t.pts[1].x - t.pts[0].x) * (t.pts[2].y - t.pts[1].y) -
-		(t.pts[1].y - t.pts[0].y) * (t.pts[2].x - t.pts[1].x);
+		(t.pts[1].x - t.pts[0].x) * (t.pts[2].y - t.pts[1].y) - (t.pts[1].y - t.pts[0].y) * (t.pts[2].x - t.pts[1].x);
 	return `${Math.round(Math.cos(a) * 1e4)},${Math.round(Math.sin(a) * 1e4)},${orient > 0 ? 1 : -1}`;
 }
 
@@ -461,12 +462,7 @@ export function verifyLattice(unit: Point[][], t1: Point, t2: Point): { ok: bool
 }
 
 /** Distinct-modulo-lattice representatives, taken nearest the origin so they form a cluster. */
-function unitFor(
-	tiles: Placed[],
-	t1: Point,
-	t2: Point,
-	want: number,
-): number[] | null {
+function unitFor(tiles: Placed[], t1: Point, t2: Point, want: number): number[] | null {
 	const det = t1.x * t2.y - t1.y * t2.x;
 	if (Math.abs(det) < EPS) return null;
 	const classOf = (p: Point) => {
@@ -548,10 +544,13 @@ function findLattices(proto: Point[], tiles: Placed[], protoArea: number): Latti
 		stats.verified++;
 		seenSize.add(unitSize);
 		out.push({
-			t1, t2,
+			t1,
+			t2,
 			r1: [ca.from, ca.to],
 			r2: [cb.from, cb.to],
-			unit, unitSize, areaError: v.areaError,
+			unit,
+			unitSize,
+			areaError: v.areaError,
 		});
 	}
 	lastStats = stats;
@@ -599,12 +598,7 @@ interface Derived {
  * seed along each lattice vector. Those two extra tiles are what let t1 and t2 be written as corner
  * differences, which is what keeps the lattice parametric instead of two frozen numbers.
  */
-function toAssembly(
-	tiles: Placed[],
-	unit: number[],
-	r1: [number, number],
-	r2: [number, number],
-): Assembly | null {
+function toAssembly(tiles: Placed[], unit: number[], r1: [number, number], r2: [number, number]): Assembly | null {
 	const need = new Set<number>([0, ...r1, ...r2, ...unit]);
 	for (;;) {
 		const before = need.size;
@@ -716,9 +710,7 @@ function main() {
 		const ms = Date.now() - t0;
 		if (d) {
 			const verdict = d.unitSize === d.expected ? "MATCH" : `MISMATCH (got ${d.unitSize})`;
-			log(
-				`  type ${t.id}: unit ${d.unitSize}, cell/protoArea error ${d.areaError.toExponential(2)} — ${verdict}`,
-			);
+			log(`  type ${t.id}: unit ${d.unitSize}, cell/protoArea error ${d.areaError.toExponential(2)} — ${verdict}`);
 			results.push(d);
 		}
 		const done = n + 1;
@@ -729,10 +721,22 @@ function main() {
 
 	log(`derived ${results.length}/${types.length}`);
 	log(
-		`matching published unit size: ${results.filter((r) => r.unitSize === r.expected).map((r) => r.id).join(", ") || "none"}`,
+		`matching published unit size: ${
+			results
+				.filter((r) => r.unitSize === r.expected)
+				.map((r) => r.id)
+				.join(", ") || "none"
+		}`,
 	);
 	log("");
-	log(`replaying at default: ${results.filter((r) => r.replaysAtDefault).map((r) => r.id).join(", ") || "none"}`);
+	log(
+		`replaying at default: ${
+			results
+				.filter((r) => r.replaysAtDefault)
+				.map((r) => r.id)
+				.join(", ") || "none"
+		}`,
+	);
 	log("");
 	log("--- ASSEMBLIES ---");
 	const out: Record<number, unknown> = {};

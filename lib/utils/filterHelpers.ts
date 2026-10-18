@@ -26,10 +26,7 @@ export type PolygonCompositionFilter = {
 };
 
 /** Check if a single polygon part (from VC name) passes the filter. */
-export function polygonPartPassesFilter(
-	part: string,
-	filter: PolygonCompositionFilter
-): boolean {
+export function polygonPartPassesFilter(part: string, filter: PolygonCompositionFilter): boolean {
 	const { categories, n_max, angle } = filter;
 
 	if (part.match(regularPolygonRegex)) {
@@ -67,7 +64,7 @@ export function polygonPartPassesFilter(
 		if (!categories.includes(PolygonType.EQUILATERAL)) return false;
 		const m = part.match(equilateralPolygonRegex)!;
 		const n = parseInt(m[1], 10);
-		const angles = m[2].split(';').map((a) => parseInt(a, 10));
+		const angles = m[2].split(";").map((a) => parseInt(a, 10));
 		if (n_max != null && n > n_max) return false;
 		if (angle != null && angles.some((a) => !isValidMultiple(a, angle))) return false;
 		return true;
@@ -76,7 +73,7 @@ export function polygonPartPassesFilter(
 		if (!categories.includes(PolygonType.GENERIC)) return false;
 		const m = part.match(genericPolygonRegex)!;
 		const n = parseInt(m[1], 10);
-		const angles = m[3].split(';').map((a) => parseInt(a, 10));
+		const angles = m[3].split(";").map((a) => parseInt(a, 10));
 		if (n_max != null && n > n_max) return false;
 		if (angle != null && angles.some((a) => !isValidMultiple(a, angle))) return false;
 		return true;
@@ -85,11 +82,8 @@ export function polygonPartPassesFilter(
 }
 
 /** Check if a VC passes the filter (every polygon in the VC must match). */
-export function vcPassesPolygonFilter(
-	vcName: string,
-	filter: PolygonCompositionFilter
-): boolean {
-	const parts = vcName.split(',');
+export function vcPassesPolygonFilter(vcName: string, filter: PolygonCompositionFilter): boolean {
+	const parts = vcName.split(",");
 	if (parts.length === 0) return false;
 	return parts.every((p) => polygonPartPassesFilter(p.trim(), filter));
 }
@@ -98,14 +92,14 @@ export function vcPassesPolygonFilter(
 export function getVCNamesFromSeedName(seedName: string): string[] {
 	const inner = seedName.slice(1, -1);
 	if (!inner) return [];
-	return inner.split(';').map((s) => s.trim()).filter(Boolean);
+	return inner
+		.split(";")
+		.map((s) => s.trim())
+		.filter(Boolean);
 }
 
 /** Check if a seed passes the filter (all VCs in the seed must pass). */
-export function seedPassesPolygonFilter(
-	seedName: string,
-	filter: PolygonCompositionFilter
-): boolean {
+export function seedPassesPolygonFilter(seedName: string, filter: PolygonCompositionFilter): boolean {
 	const vcNames = getVCNamesFromSeedName(seedName);
 	if (vcNames.length === 0) return false;
 	return vcNames.every((vc) => vcPassesPolygonFilter(vc, filter));

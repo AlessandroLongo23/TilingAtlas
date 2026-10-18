@@ -35,7 +35,10 @@ function overlaps(A: Point[], B: Point[]): boolean {
 			const q = poly[(i + 1) % poly.length];
 			const nx = -(q.y - p.y);
 			const ny = q.x - p.x;
-			let aMin = Infinity, aMax = -Infinity, bMin = Infinity, bMax = -Infinity;
+			let aMin = Infinity,
+				aMax = -Infinity,
+				bMin = Infinity,
+				bMax = -Infinity;
 			for (const v of A) {
 				const d = nx * v.x + ny * v.y;
 				if (d < aMin) aMin = d;
@@ -108,9 +111,7 @@ describe("assemblies", () => {
 			if (!hasAssembly(t.id)) continue;
 			const asm = ASSEMBLIES[t.id];
 			asm.glues.forEach((g, i) => {
-				expect(`${t.label} glue ${i} ref ${g.ref} < ${i + 1}`).toBe(
-					`${t.label} glue ${i} ref ${g.ref} < ${i + 1}`,
-				);
+				expect(`${t.label} glue ${i} ref ${g.ref} < ${i + 1}`).toBe(`${t.label} glue ${i} ref ${g.ref} < ${i + 1}`);
 				expect(g.ref).toBeLessThanOrEqual(i);
 				expect(g.ref).toBeGreaterThanOrEqual(0);
 			});
@@ -269,9 +270,7 @@ describe("scale normalisation", () => {
 			for (const free of sampleTuples(t.id)) {
 				const res = buildCell({ id: t.id, angles: free });
 				if (!res.ok) continue;
-				const det = Math.abs(
-					res.cell.v1[0] * res.cell.v2[1] - res.cell.v1[1] * res.cell.v2[0],
-				);
+				const det = Math.abs(res.cell.v1[0] * res.cell.v2[1] - res.cell.v1[1] * res.cell.v2[0]);
 				expect(det).toBeCloseTo(t.tilesPerUnit, 9);
 				seen.add(res.cell.home.width.toFixed(9));
 			}

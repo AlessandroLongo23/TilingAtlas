@@ -34,9 +34,17 @@ const add = (a: Vec, b: Vec): Vec => [a[0] + b[0], a[1] + b[1], a[2] + b[2], a[3
 const sub = (a: Vec, b: Vec): Vec => [a[0] - b[0], a[1] - b[1], a[2] - b[2], a[3] - b[3]];
 const isZero = (v: Vec): boolean => v[0] === 0 && v[1] === 0 && v[2] === 0 && v[3] === 0;
 const eqVec = (a: Vec, b: Vec): boolean => a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3];
-const mulwPow = (v: Vec, m: number): Vec => { let x = v; for (let i = 0; i < ((m % 12) + 12) % 12; i++) x = mulw(x); return x; };
-const addLC = (t: Vec, a: number, T1: Vec, b: number, T2: Vec): Vec =>
-	[t[0] + a * T1[0] + b * T2[0], t[1] + a * T1[1] + b * T2[1], t[2] + a * T1[2] + b * T2[2], t[3] + a * T1[3] + b * T2[3]];
+const mulwPow = (v: Vec, m: number): Vec => {
+	let x = v;
+	for (let i = 0; i < ((m % 12) + 12) % 12; i++) x = mulw(x);
+	return x;
+};
+const addLC = (t: Vec, a: number, T1: Vec, b: number, T2: Vec): Vec => [
+	t[0] + a * T1[0] + b * T2[0],
+	t[1] + a * T1[1] + b * T2[1],
+	t[2] + a * T1[2] + b * T2[2],
+	t[3] + a * T1[3] + b * T2[3],
+];
 
 // ℂ embedding (float, render/geometry only): ω = e^{iπ/6}. 1=(1,0), ω=(√3/2,½), ω²=(½,√3/2), ω³=(0,1).
 const S3 = Math.sqrt(3);
@@ -47,7 +55,12 @@ const yOf = (v: Vec): number => v[3] + v[1] / 2 + (v[2] * S3) / 2;
 // verify EXACTLY in ℤ[ω]. Coeffs ≤ ~210 and |det| ≥ 1 ⇒ float recovers the integers; the exact verify
 // makes a false positive impossible (a non-member fails the equality). O(1), replaces the dim-8 Cramer.
 function inLattice(T1: Vec, T2: Vec, w: Vec): boolean {
-	const ax = xOf(T1), ay = yOf(T1), bx = xOf(T2), by = yOf(T2), wx = xOf(w), wy = yOf(w);
+	const ax = xOf(T1),
+		ay = yOf(T1),
+		bx = xOf(T2),
+		by = yOf(T2),
+		wx = xOf(w),
+		wy = yOf(w);
 	const det = ax * by - ay * bx;
 	if (Math.abs(det) < 1e-9) return false;
 	const al = Math.round((wx * by - wy * bx) / det);
@@ -60,7 +73,11 @@ function preserves(T1: Vec, T2: Vec, seed: Vec[], g: (z: Vec) => Vec): boolean {
 	for (const v of seed) {
 		const gv = g(v);
 		let ok = false;
-		for (const w of seed) if (inLattice(T1, T2, sub(gv, w))) { ok = true; break; }
+		for (const w of seed)
+			if (inLattice(T1, T2, sub(gv, w))) {
+				ok = true;
+				break;
+			}
 		if (!ok) return false;
 	}
 	return true;
@@ -71,7 +88,12 @@ function preserves(T1: Vec, T2: Vec, seed: Vec[], g: (z: Vec) => Vec): boolean {
 const CRYST_ROT = [2, 3, 4, 6, 8, 9, 10]; // ω^m orders ∈ {6,4,3,2,3,4,6}; m=1,11 (order 12) not crystallographic
 const ALL_REF = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 const orderOfRot = (m: number): number => 12 / gcd(m, 12);
-function gcd(a: number, b: number): number { a = Math.abs(a); b = Math.abs(b); while (b) [a, b] = [b, a % b]; return a; }
+function gcd(a: number, b: number): number {
+	a = Math.abs(a);
+	b = Math.abs(b);
+	while (b) [a, b] = [b, a % b];
+	return a;
+}
 
 // --- star-stabilizer pruning (Fable's N): a candidate frame can be a symmetry only if it permutes the
 // vertex-star multiset onto itself. The star of a seed vertex s is the 12-bit set {k : s+ω^k is a vertex}
@@ -79,7 +101,15 @@ function gcd(a: number, b: number): number { a = Math.abs(a); b = Math.abs(b); w
 // sends bit k → m−k. So the star multiset must be invariant under that bit-permutation. ---
 const fdiv = (a: number, b: number) => Math.floor(a / b);
 const keyOf = (v: Vec) => `${v[0]},${v[1]},${v[2]},${v[3]}`;
-const WTAB: Vec[] = (() => { const w: Vec[] = []; let x: Vec = [1, 0, 0, 0]; for (let i = 0; i < 12; i++) { w.push(x); x = mulw(x); } return w; })();
+const WTAB: Vec[] = (() => {
+	const w: Vec[] = [];
+	let x: Vec = [1, 0, 0, 0];
+	for (let i = 0; i < 12; i++) {
+		w.push(x);
+		x = mulw(x);
+	}
+	return w;
+})();
 
 // HNF of the 2×4 lattice matrix → canonical basis of Λ (2 rows). Column-echelon integer reduction.
 function hnf2(rows: Vec[]): Vec[] {
@@ -91,14 +121,21 @@ function hnf2(rows: Vec[]): Vec[] {
 			if (nz.length <= 1) break;
 			nz.sort((a, b) => Math.abs(a[col]) - Math.abs(b[col]));
 			const p = nz[0];
-			for (let idx = 1; idx < nz.length; idx++) { const r = nz[idx]; const q = fdiv(r[col], p[col]); for (let i = 0; i < 4; i++) r[i] -= q * p[i]; }
+			for (let idx = 1; idx < nz.length; idx++) {
+				const r = nz[idx];
+				const q = fdiv(r[col], p[col]);
+				for (let i = 0; i < 4; i++) r[i] -= q * p[i];
+			}
 		}
 		const pi = mat.findIndex((r) => r[col] !== 0);
 		if (pi < 0) continue;
 		let piv = mat[pi];
 		mat.splice(pi, 1);
 		if (piv[col] < 0) piv = piv.map((x) => -x);
-		for (const b of basis) { const q = fdiv(b[col], piv[col]); for (let i = 0; i < 4; i++) b[i] -= q * piv[i]; }
+		for (const b of basis) {
+			const q = fdiv(b[col], piv[col]);
+			for (let i = 0; i < 4; i++) b[i] -= q * piv[i];
+		}
 		basis.push(piv);
 	}
 	return basis;
@@ -106,11 +143,19 @@ function hnf2(rows: Vec[]): Vec[] {
 // Canonical coset representative of v modulo the HNF basis.
 function repH(v: Vec, basis: Vec[]): Vec {
 	const x = v.slice();
-	for (const b of basis) { const c = b.findIndex((e) => e !== 0); const q = fdiv(x[c], b[c]); if (q) for (let i = 0; i < 4; i++) x[i] -= q * b[i]; }
+	for (const b of basis) {
+		const c = b.findIndex((e) => e !== 0);
+		const q = fdiv(x[c], b[c]);
+		if (q) for (let i = 0; i < 4; i++) x[i] -= q * b[i];
+	}
 	return x;
 }
 const rotBits = (w: number, m: number) => ((w << m) | (w >> (12 - m))) & 0xfff; // bit k → k+m
-function refBits(w: number, m: number): number { let r = 0; for (let k = 0; k < 12; k++) if (w & (1 << k)) r |= 1 << (((m - k) % 12) + 12) % 12; return r; } // bit k → m−k
+function refBits(w: number, m: number): number {
+	let r = 0;
+	for (let k = 0; k < 12; k++) if (w & (1 << k)) r |= 1 << ((((m - k) % 12) + 12) % 12);
+	return r;
+} // bit k → m−k
 
 // Prune rotation/reflection powers to the star-stabilizer. Returns the candidate lists to feed the
 // (unchanged) preserves()-based verification — a superset of the true symmetries, so results are identical.
@@ -156,7 +201,10 @@ function rotNMax(T1: Vec, T2: Vec, seed: Vec[], rotCand: number[]): number {
 		if (!rotPreservesLattice(T1, T2, m)) continue;
 		for (const w of seed) {
 			const t = sub(w, mulwPow(v0, m));
-			if (preserves(T1, T2, seed, (z) => add(mulwPow(z, m), t))) { nMax = Math.max(nMax, order); break; }
+			if (preserves(T1, T2, seed, (z) => add(mulwPow(z, m), t))) {
+				nMax = Math.max(nMax, order);
+				break;
+			}
 		}
 	}
 	return nMax;
@@ -166,7 +214,12 @@ function rotNMax(T1: Vec, T2: Vec, seed: Vec[], rotCand: number[]): number {
 // Ports analyzeSymmetry.reflections faithfully — per power m, dedup translation reps mod Λ, split
 // mirror(τ=0)/glide by the EXACT τ = ω^m·t̄ + t test, then drop a glide whose axis coincides (same m,
 // same perpendicular offset) with a mirror line. Offset bookkeeping is float, exactly as the original.
-function reflectionInventory(T1: Vec, T2: Vec, seed: Vec[], refCand: number[]): { hasMirror: boolean; hasGlide: boolean; mAngles: number } {
+function reflectionInventory(
+	T1: Vec,
+	T2: Vec,
+	seed: Vec[],
+	refCand: number[],
+): { hasMirror: boolean; hasGlide: boolean; mAngles: number } {
 	const v0 = seed[0];
 	type Line = { m: number; off: string; kind: "mirror" | "glide" };
 	const lines: Line[] = [];
@@ -182,7 +235,8 @@ function reflectionInventory(T1: Vec, T2: Vec, seed: Vec[], refCand: number[]): 
 		}
 		if (reps.length === 0) continue;
 		const phi = (m * Math.PI) / 12; // axis angle = m·15°
-		const cphi = Math.cos(phi), sphi = Math.sin(phi);
+		const cphi = Math.cos(phi),
+			sphi = Math.sin(phi);
 		for (const t0 of reps) {
 			for (let a = -5; a <= 5; a++) {
 				for (let b = -5; b <= 5; b++) {
@@ -208,7 +262,14 @@ function reflectionInventory(T1: Vec, T2: Vec, seed: Vec[], refCand: number[]): 
 
 // Exact p4m/p4g and p3m1/p31m split: does EVERY top-order rotation centre lie on a mirror? Direct port of
 // allTopCentersOnMirrorExact to ℤ[ω] int. Consulted only for nMax ∈ {3,4}. c = num/D, D = 1 − ω^{m*}.
-function allTopCentersOnMirror(T1: Vec, T2: Vec, seed: Vec[], nMax: number, rotCand: number[], refCand: number[]): boolean {
+function allTopCentersOnMirror(
+	T1: Vec,
+	T2: Vec,
+	seed: Vec[],
+	nMax: number,
+	rotCand: number[],
+	refCand: number[],
+): boolean {
 	const v0 = seed[0];
 	// one top-order power m* (the two crystallographic powers of an order share centres)
 	let mStar = -1;
@@ -218,14 +279,20 @@ function allTopCentersOnMirror(T1: Vec, T2: Vec, seed: Vec[], nMax: number, rotC
 		let sym = false;
 		for (const w of seed) {
 			const t = sub(w, mulwPow(v0, m));
-			if (preserves(T1, T2, seed, (z) => add(mulwPow(z, m), t))) { sym = true; break; }
+			if (preserves(T1, T2, seed, (z) => add(mulwPow(z, m), t))) {
+				sym = true;
+				break;
+			}
 		}
-		if (sym) { mStar = m; break; }
+		if (sym) {
+			mStar = m;
+			break;
+		}
 	}
 	if (mStar < 0) return false;
 	const ONE: Vec = [1, 0, 0, 0];
 	const D = sub(ONE, mulwPow(ONE, mStar)); // 1 − ω^{m*}
-	const Dc = sub(ONE, mulwPow(ONE, ((12 - mStar) % 12))); // conj(D) = 1 − ω^{−m*}
+	const Dc = sub(ONE, mulwPow(ONE, (12 - mStar) % 12)); // conj(D) = 1 − ω^{−m*}
 	const mul = (p: Vec, q: Vec): Vec => {
 		// ℤ[ω] multiply via ω-power expansion: p·q = Σ p_i ω^i q
 		let acc: Vec = [0, 0, 0, 0];
@@ -242,7 +309,8 @@ function allTopCentersOnMirror(T1: Vec, T2: Vec, seed: Vec[], nMax: number, rotC
 		repsT.push(t);
 	}
 	// (2) distinct top-order centre classes num = t + λ, deduped by the finer sublattice D·Λ
-	const DT1 = mul(D, T1), DT2 = mul(D, T2);
+	const DT1 = mul(D, T1),
+		DT2 = mul(D, T2);
 	const centerNums: Vec[] = [];
 	for (const t of repsT) {
 		for (let a = -2; a <= 2; a++) {
@@ -267,7 +335,8 @@ function allTopCentersOnMirror(T1: Vec, T2: Vec, seed: Vec[], nMax: number, rotC
 	if (refls.length === 0) return false;
 	// (4) exact Λ-periodic incidence: centre c=num/D on a mirror iff conj(D)·num − ω^m·D·num̄ − s0·D·conj(D) ∈ (D·conj(D))·Λ
 	const DDc = mul(D, Dc);
-	const DDcT1 = mul(DDc, T1), DDcT2 = mul(DDc, T2);
+	const DDcT1 = mul(DDc, T1),
+		DDcT2 = mul(DDc, T2);
 	return centerNums.every((num) =>
 		refls.some(({ m, s0 }) => {
 			const val = sub(sub(mul(Dc, num), mul(mulwPow(D, m), conj(num))), mul(s0, DDc));
@@ -280,10 +349,16 @@ function allTopCentersOnMirror(T1: Vec, T2: Vec, seed: Vec[], nMax: number, rotC
 const detXY = (a: Vec, b: Vec): number => xOf(a) * yOf(b) - yOf(a) * xOf(b);
 // w = α·a + β·b for integers α,β (float solve + exact verify).
 function intCombo(w: Vec, a: Vec, b: Vec): boolean {
-	const ax = xOf(a), ay = yOf(a), bx = xOf(b), by = yOf(b), wx = xOf(w), wy = yOf(w);
+	const ax = xOf(a),
+		ay = yOf(a),
+		bx = xOf(b),
+		by = yOf(b),
+		wx = xOf(w),
+		wy = yOf(w);
 	const det = ax * by - ay * bx;
 	if (Math.abs(det) < 1e-9) return false;
-	const al = Math.round((wx * by - wy * bx) / det), be = Math.round((ax * wy - ay * wx) / det);
+	const al = Math.round((wx * by - wy * bx) / det),
+		be = Math.round((ax * wy - ay * wx) / det);
 	return eqVec(addLC([0, 0, 0, 0], al, a, be, b), w);
 }
 // Same lattice ⟺ mutual integer containment (Surd-free; avoids the det-magnitude compare).
@@ -301,10 +376,14 @@ function isOblique(u: Vec, v: Vec): boolean {
 	return true;
 }
 function gaussReduce(a: Vec, b: Vec): [Vec, Vec] {
-	let u = a, v = b;
+	let u = a,
+		v = b;
 	const m2 = (c: Vec) => xOf(c) ** 2 + yOf(c) ** 2;
 	for (let it = 0; it < 64; it++) {
-		if (m2(u) > m2(v)) { [u, v] = [v, u]; continue; }
+		if (m2(u) > m2(v)) {
+			[u, v] = [v, u];
+			continue;
+		}
 		const uu = m2(u);
 		if (uu < 1e-12) break;
 		const dot = xOf(u) * xOf(v) + yOf(u) * yOf(v);
@@ -317,8 +396,12 @@ function gaussReduce(a: Vec, b: Vec): [Vec, Vec] {
 function classifyLattice(T1: Vec, T2: Vec): LatticeShape {
 	if (isOblique(T1, T2)) return "oblique";
 	const [ru, rv] = gaussReduce(T1, T2);
-	const ax = xOf(ru), ay = yOf(ru), bx = xOf(rv), by = yOf(rv);
-	const lu = Math.hypot(ax, ay), lv = Math.hypot(bx, by);
+	const ax = xOf(ru),
+		ay = yOf(ru),
+		bx = xOf(rv),
+		by = yOf(rv);
+	const lu = Math.hypot(ax, ay),
+		lv = Math.hypot(bx, by);
 	const ang = (Math.acos((ax * bx + ay * by) / (lu * lv)) * 180) / Math.PI;
 	const eqLen = Math.abs(lu - lv) < 1e-6;
 	const a90 = Math.abs(ang - 90) < 1e-6;
@@ -334,7 +417,14 @@ function classifyLattice(T1: Vec, T2: Vec): LatticeShape {
 // EXACT Bravais lattice (centered=rhombic ⇒ cm/cmm), not a float essential-glide test — see the
 // same note in WallpaperSymmetry.ts. hasGlide is only consulted where there is no mirror (pgg/pg), where
 // it is exact.
-function identifyGroup(nMax: number, hasMirror: boolean, hasGlide: boolean, mAngles: number, allTopOnMirror: boolean, isCentered: boolean): WallpaperGroup {
+function identifyGroup(
+	nMax: number,
+	hasMirror: boolean,
+	hasGlide: boolean,
+	mAngles: number,
+	allTopOnMirror: boolean,
+	isCentered: boolean,
+): WallpaperGroup {
 	switch (nMax) {
 		case 2:
 			if (!hasMirror) return hasGlide ? "pgg" : "p2";
@@ -359,7 +449,8 @@ export function nClassify(T1: Vec, T2: Vec, seed: Vec[], mode: NClassMode = "bli
 	const cand = mode === "star" ? starCandidates(T1, T2, seed) : { rot: CRYST_ROT, ref: ALL_REF };
 	const nMax = rotNMax(T1, T2, seed, cand.rot);
 	const { hasMirror, hasGlide, mAngles } = reflectionInventory(T1, T2, seed, cand.ref);
-	const allTopOnMirror = nMax === 3 || nMax === 4 ? allTopCentersOnMirror(T1, T2, seed, nMax, cand.rot, cand.ref) : false;
+	const allTopOnMirror =
+		nMax === 3 || nMax === 4 ? allTopCentersOnMirror(T1, T2, seed, nMax, cand.rot, cand.ref) : false;
 	const latticeShape = classifyLattice(T1, T2);
 	const group = identifyGroup(nMax, hasMirror, hasGlide, mAngles, allTopOnMirror, latticeShape === "rhombic");
 	return { latticeShape, group, orbifold: ORBIFOLD_SIGNATURE[group] };

@@ -68,7 +68,8 @@ const BASES: Base[] = [
 ];
 
 /** A base's available k values, ascending. */
-const kListOf = (b: Base): number[] => (b.board ? schwarzBoardKs(b.board) : icoSolidKs(SOLIDS.find((s) => s.id === b.id)!));
+const kListOf = (b: Base): number[] =>
+	b.board ? schwarzBoardKs(b.board) : icoSolidKs(SOLIDS.find((s) => s.id === b.id)!);
 
 /** One catalogue entry: the pattern the grid draws, plus the board geometry when it has its own. */
 interface Entry {
@@ -180,10 +181,7 @@ export function SphericalFreedraw({
 		window.history.replaceState(null, "", `${window.location.pathname}?${q.toString()}`);
 	}, [solidId, k]);
 
-	const pageRows = useMemo(
-		() => (patterns ?? []).slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
-		[patterns, page],
-	);
+	const pageRows = useMemo(() => (patterns ?? []).slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), [patterns, page]);
 	const selected = useMemo(
 		() => (patterns ?? []).find((p) => p.pattern.id === selectedId) ?? pageRows[0] ?? null,
 		[patterns, pageRows, selectedId],
@@ -236,7 +234,7 @@ export function SphericalFreedraw({
 	const kGaps = useMemo(() => (solid.board ? schwarzKGaps(solid.board) : []), [solid.board]);
 
 	return (
-		<div className="flex flex-1 min-w-0 flex-col min-h-0">
+		<div className="flex min-h-0 min-w-0 flex-1 flex-col">
 			<header className="shrink-0 border-b border-line-subtle">
 				<WallBar count={patterns === null ? "loading…" : `${total.toLocaleString()} at k = ${k}`}>
 					<WallColumn>
@@ -266,9 +264,7 @@ export function SphericalFreedraw({
 							/>
 							{/* k coverage is Marek's solve, not the board. A hole in it has to say so, or the list
 							    reads as "there are none at that k". */}
-							{kGaps.length ? (
-								<WallSubLabel>{`no k = ${kGaps.join(", ")} in this run`}</WallSubLabel>
-							) : null}
+							{kGaps.length ? <WallSubLabel>{`no k = ${kGaps.join(", ")} in this run`}</WallSubLabel> : null}
 						</WallGroup>
 					</WallColumn>
 
@@ -286,7 +282,7 @@ export function SphericalFreedraw({
 				</WallBar>
 			</header>
 
-			<div className="flex-1 min-h-0 flex">
+			<div className="flex min-h-0 flex-1">
 				<div className={LIST_PANE}>
 					{patterns === null && <div className="p-8 text-fg-muted">Loading the {solid.label} catalogue…</div>}
 					<div ref={gridRef} className={CATALOGUE_GRID}>
@@ -315,12 +311,7 @@ export function SphericalFreedraw({
 					</div>
 					{total > PAGE_SIZE && (
 						<div className="mt-4 flex justify-center">
-							<Pagination
-								totalItems={total}
-								pageSize={PAGE_SIZE}
-								currentPage={page}
-								onPageChange={setPage}
-							/>
+							<Pagination totalItems={total} pageSize={PAGE_SIZE} currentPage={page} onPageChange={setPage} />
 						</div>
 					)}
 				</div>

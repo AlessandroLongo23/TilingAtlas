@@ -49,7 +49,17 @@ export const CHAIR: SubstitutionRule = {
 	id: "chair",
 	factor: 2,
 	prototiles: [
-		{ name: "chair", outline: [[0, 0], [0, 2], [1, 2], [1, 1], [2, 1], [2, 0]] },
+		{
+			name: "chair",
+			outline: [
+				[0, 0],
+				[0, 2],
+				[1, 2],
+				[1, 1],
+				[2, 1],
+				[2, 0],
+			],
+		},
 	],
 	children: [
 		[
@@ -77,7 +87,16 @@ export const SPHINX: SubstitutionRule = {
 	id: "sphinx",
 	factor: 2,
 	prototiles: [
-		{ name: "sphinx", outline: [[0, 0], [1, R3], [3 / 2, R3 / 2], [5 / 2, R3 / 2], [3, 0]] },
+		{
+			name: "sphinx",
+			outline: [
+				[0, 0],
+				[1, R3],
+				[3 / 2, R3 / 2],
+				[5 / 2, R3 / 2],
+				[3, 0],
+			],
+		},
 	],
 	children: [
 		[
@@ -104,7 +123,15 @@ export const HALF_HEX: SubstitutionRule = {
 	id: "half-hex",
 	factor: 2,
 	prototiles: [
-		{ name: "half hexagon", outline: [[0, 0], [1 / 2, R3 / 2], [3 / 2, R3 / 2], [2, 0]] },
+		{
+			name: "half hexagon",
+			outline: [
+				[0, 0],
+				[1 / 2, R3 / 2],
+				[3 / 2, R3 / 2],
+				[2, 0],
+			],
+		},
 	],
 	children: [
 		[
@@ -148,7 +175,14 @@ export const PINWHEEL: SubstitutionRule = {
 	// Multiplication by 2 + i.
 	expansion: [2, -1, 1, 2],
 	prototiles: [
-		{ name: "pinwheel triangle", outline: [[0, 0], [2, 0], [0, 1]] },
+		{
+			name: "pinwheel triangle",
+			outline: [
+				[0, 0],
+				[2, 0],
+				[0, 1],
+			],
+		},
 	],
 	children: [
 		[

@@ -18,21 +18,58 @@ const sq = (x: number, y: number): number[][] => [
 ];
 
 // The unit-square tiling, four ways to write the same tiling:
-const squarePrimitive: CanonCell = { cellPolygons: [{ n: 4, vertices: sq(0, 0) }], basis: [[1, 0], [0, 1]] };
-const squareShearedBasis: CanonCell = { cellPolygons: [{ n: 4, vertices: sq(0, 0) }], basis: [[1, 0], [1, 1]] };
+const squarePrimitive: CanonCell = {
+	cellPolygons: [{ n: 4, vertices: sq(0, 0) }],
+	basis: [
+		[1, 0],
+		[0, 1],
+	],
+};
+const squareShearedBasis: CanonCell = {
+	cellPolygons: [{ n: 4, vertices: sq(0, 0) }],
+	basis: [
+		[1, 0],
+		[1, 1],
+	],
+};
 const squareSupercell2x: CanonCell = {
-	cellPolygons: [{ n: 4, vertices: sq(0, 0) }, { n: 4, vertices: sq(1, 0) }],
-	basis: [[2, 0], [0, 1]],
+	cellPolygons: [
+		{ n: 4, vertices: sq(0, 0) },
+		{ n: 4, vertices: sq(1, 0) },
+	],
+	basis: [
+		[2, 0],
+		[0, 1],
+	],
 };
 const squareSupercell2xTall: CanonCell = {
-	cellPolygons: [{ n: 4, vertices: sq(0, 0) }, { n: 4, vertices: sq(0, 1) }],
-	basis: [[1, 0], [0, 2]],
+	cellPolygons: [
+		{ n: 4, vertices: sq(0, 0) },
+		{ n: 4, vertices: sq(0, 1) },
+	],
+	basis: [
+		[1, 0],
+		[0, 2],
+	],
 };
 
 // A genuinely different tiling: 1x2 rectangles (dominoes), one per cell.
 const domino: CanonCell = {
-	cellPolygons: [{ n: 4, vertices: [[0, 0], [2, 0], [2, 1], [0, 1]] }],
-	basis: [[2, 0], [0, 1]],
+	cellPolygons: [
+		{
+			n: 4,
+			vertices: [
+				[0, 0],
+				[2, 0],
+				[2, 1],
+				[0, 1],
+			],
+		},
+	],
+	basis: [
+		[2, 0],
+		[0, 1],
+	],
 };
 
 describe("canonicalTilingKey — fundamental-domain invariance", () => {

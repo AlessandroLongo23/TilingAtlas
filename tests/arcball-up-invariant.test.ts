@@ -23,7 +23,7 @@ function rotatedCamera(): THREE.PerspectiveCamera {
 }
 
 const degreesBetween = (a: THREE.Quaternion, b: THREE.Quaternion) =>
-	(2 * Math.acos(Math.min(1, Math.abs(a.dot(b))))) * (180 / Math.PI);
+	2 * Math.acos(Math.min(1, Math.abs(a.dot(b)))) * (180 / Math.PI);
 
 describe("makeArcball", () => {
 	it("leaves a rotated camera's view untouched by a zero-angle drag", () => {

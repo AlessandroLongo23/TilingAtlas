@@ -31,9 +31,7 @@ describe("playUrlState", () => {
 				view[spec.field] = !def[spec.field];
 			} else if (spec.kind === "num") {
 				// A legal, in-range value that is not the default.
-				const mid = spec.int
-					? Math.round((spec.min + spec.max) / 2)
-					: (spec.min + spec.max) / 2;
+				const mid = spec.int ? Math.round((spec.min + spec.max) / 2) : (spec.min + spec.max) / 2;
 				view[spec.field] = mid === def[spec.field] ? spec.max : mid;
 			} else if (spec.kind === "palette") {
 				view[spec.field] = [40, "dark"];

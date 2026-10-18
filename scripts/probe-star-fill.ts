@@ -25,72 +25,100 @@
  * of each species ⇒ the C3 palette must CONSTRUCT one 3*@1. All single-star-type VCs have
  * cellStars ≤ fanStars (the first scan's --single-star heuristic excluded 4(i) — cap bias).
  */
-import { appendFileSync, mkdirSync } from 'node:fs';
-import { execSync } from 'node:child_process';
-import { PeriodSolver } from '@/classes/algorithm/PeriodSolver';
-import { enumerateStarVCs, dentRegularFillableVariants, buildStarVCSeed, type StarVC } from '@/classes/algorithm/StarVC';
-import { CyclotomicRing, Cyclotomic, setActiveRing } from '@/classes/Cyclotomic';
-import { RegularPolygon } from '@/classes/polygons/RegularPolygon';
-import { ExactStarPolygon } from '@/classes/polygons/ExactStarPolygon';
-import { detSurd } from '@/classes/algorithm/exact/Surd';
-import type { SeedConfigurationLike } from '@/classes/algorithm/SeedExpander';
+import { appendFileSync, mkdirSync } from "node:fs";
+import { execSync } from "node:child_process";
+import { PeriodSolver } from "@/classes/algorithm/PeriodSolver";
+import {
+	enumerateStarVCs,
+	dentRegularFillableVariants,
+	buildStarVCSeed,
+	type StarVC,
+} from "@/classes/algorithm/StarVC";
+import { CyclotomicRing, Cyclotomic, setActiveRing } from "@/classes/Cyclotomic";
+import { RegularPolygon } from "@/classes/polygons/RegularPolygon";
+import { ExactStarPolygon } from "@/classes/polygons/ExactStarPolygon";
+import { detSurd } from "@/classes/algorithm/exact/Surd";
+import type { SeedConfigurationLike } from "@/classes/algorithm/SeedExpander";
 
 const argv = process.argv.slice(2);
 const opt = (name: string, def: string): string => {
 	const i = argv.indexOf(name);
 	return i >= 0 && i + 1 < argv.length ? argv[i + 1] : def;
 };
-const limit = parseInt(opt('--limit', '0'), 10);
-const maxMs = parseInt(opt('--maxMs', '15000'), 10);
-const maxCorners = parseInt(opt('--max-corners', '6'), 10);
-const singleStar = !argv.includes('--all-star-types');
-const wantHits = parseInt(opt('--hits', '3'), 10);
-const vcFilter = opt('--vc', ''); // substring of the canonical VC name — analytic targeting
+const limit = parseInt(opt("--limit", "0"), 10);
+const maxMs = parseInt(opt("--maxMs", "15000"), 10);
+const maxCorners = parseInt(opt("--max-corners", "6"), 10);
+const singleStar = !argv.includes("--all-star-types");
+const wantHits = parseInt(opt("--hits", "3"), 10);
+const vcFilter = opt("--vc", ""); // substring of the canonical VC name — analytic targeting
 
-const sha = execSync('git rev-parse --short HEAD').toString().trim();
-mkdirSync('experiments/results', { recursive: true });
+const sha = execSync("git rev-parse --short HEAD").toString().trim();
+mkdirSync("experiments/results", { recursive: true });
 const LOG = `experiments/results/st9-fill-probe-${sha}-${new Date().toISOString().slice(0, 10)}.log`;
-const log = (s: string): void => { console.log(s); appendFileSync(LOG, s + '\n'); };
+const log = (s: string): void => {
+	console.log(s);
+	appendFileSync(LOG, s + "\n");
+};
 
 const ring = CyclotomicRing.create(24);
 setActiveRing(ring);
 const O = Cyclotomic.ZERO(ring);
 
 log(`=== ST-9 fill-requiring star probe (${new Date().toISOString()}) @ ${sha} ===`);
-log(`flags: limit=${limit || '∞'} maxMs=${maxMs} maxCorners=${maxCorners} singleStar=${singleStar} wantHits=${wantHits}`);
-log('⚑ PROBE, not a sweep: caps everywhere; results are existence evidence only, no completeness claim.');
-log('');
+log(
+	`flags: limit=${limit || "∞"} maxMs=${maxMs} maxCorners=${maxCorners} singleStar=${singleStar} wantHits=${wantHits}`,
+);
+log("⚑ PROBE, not a sweep: caps everywhere; results are existence evidence only, no completeness claim.");
+log("");
 
 // --- part 0: the work order's strict 4(j) sub-fan — CONFIRM the upstream allowed-VC rejection ---
 {
 	const oct = RegularPolygon.fromAnchorAndDirExact(8, O, 0); //      covers [0, 9]
 	const star = ExactStarPolygon.fourStarPi4(O, 9); //               point covers [9, 12]
 	const polygons = [oct, star];
-	const seed: SeedConfigurationLike = { polygons, vertexConfigurations: [{ computeSharedVertexExact: () => O, polygons }] };
+	const seed: SeedConfigurationLike = {
+		polygons,
+		vertexConfigurations: [{ computeSharedVertexExact: () => O, polygons }],
+	};
 	const t = Date.now();
 	const { cells, diag } = new PeriodSolver(1).solve(seed, { maxMs: 30000 });
-	log(`[part 0] strict 4(j) sub-fan {8, 4*p@3}: cells=${cells.length} lattices=${diag.candidateLattices} timedOut=${diag.timedOut} (${Date.now() - t}ms)`);
-	log(`         expected 0 — the declared vertex names the PARTIAL VC "4*p@3,8", the closed VC 4*p@3,8,4*p@3,8 is never allowed ⇒ every branch contradicts.`);
-	log('');
+	log(
+		`[part 0] strict 4(j) sub-fan {8, 4*p@3}: cells=${cells.length} lattices=${diag.candidateLattices} timedOut=${diag.timedOut} (${Date.now() - t}ms)`,
+	);
+	log(
+		`         expected 0 — the declared vertex names the PARTIAL VC "4*p@3,8", the closed VC 4*p@3,8,4*p@3,8 is never allowed ⇒ every branch contradicts.`,
+	);
+	log("");
 }
 
 // --- part 1: scan Fig-4 VC seeds for certified cells with MORE stars than the fan supplies ---
 let vcs: StarVC[] = enumerateStarVCs({ variants: dentRegularFillableVariants() });
 if (vcFilter) vcs = vcs.filter((v) => v.name.includes(vcFilter));
 if (singleStar && !vcFilter) {
-	vcs = vcs.filter((v) => new Set(v.tokens.filter((t) => t.kind !== 'reg').map((t) => `${t.n}@${(t as { alphaU: number }).alphaU}`)).size === 1);
+	vcs = vcs.filter(
+		(v) =>
+			new Set(v.tokens.filter((t) => t.kind !== "reg").map((t) => `${t.n}@${(t as { alphaU: number }).alphaU}`))
+				.size === 1,
+	);
 }
 vcs = vcs.filter((v) => v.tokens.length <= maxCorners);
 vcs.sort((a, b) => a.tokens.length - b.tokens.length || (a.name < b.name ? -1 : 1));
 if (limit > 0) vcs = vcs.slice(0, limit);
-log(`[part 1] scanning ${vcs.length} Fig-4 VCs (${vcFilter ? `vc-filter="${vcFilter}" (single-star/corner caps bypassed)` : `single-star=${singleStar}, ≤${maxCorners} corners`}), fill-requiring criterion: cellStars > fanStars`);
-if (process.env.POOL_STEPS_UP || process.env.POOL_LMAX_UP) log(`  pool widening active: POOL_STEPS_UP=${process.env.POOL_STEPS_UP ?? '—'} POOL_LMAX_UP=${process.env.POOL_LMAX_UP ?? '—'} (widen-only; superset pool)`);
+log(
+	`[part 1] scanning ${vcs.length} Fig-4 VCs (${vcFilter ? `vc-filter="${vcFilter}" (single-star/corner caps bypassed)` : `single-star=${singleStar}, ≤${maxCorners} corners`}), fill-requiring criterion: cellStars > fanStars`,
+);
+if (process.env.POOL_STEPS_UP || process.env.POOL_LMAX_UP)
+	log(
+		`  pool widening active: POOL_STEPS_UP=${process.env.POOL_STEPS_UP ?? "—"} POOL_LMAX_UP=${process.env.POOL_LMAX_UP ?? "—"} (widen-only; superset pool)`,
+	);
 
-let hits = 0, solved = 0, timeouts = 0;
+let hits = 0,
+	solved = 0,
+	timeouts = 0;
 const t0 = Date.now();
 for (let i = 0; i < vcs.length; i++) {
 	const vc = vcs[i];
-	const fanStars = vc.tokens.filter((t) => t.kind !== 'reg').length;
+	const fanStars = vc.tokens.filter((t) => t.kind !== "reg").length;
 	const seed = buildStarVCSeed(vc, ring);
 	const ts = Date.now();
 	const { cells, diag } = new PeriodSolver(1).solve(seed, { maxMs });
@@ -99,22 +127,36 @@ for (let i = 0; i < vcs.length; i++) {
 	if (diag.timedOut) timeouts++;
 	for (const c of cells) {
 		const cellStars = c.cellPolygons.filter((p) => p.isStar).length;
-		const comp = c.cellPolygons.map((p) => p.getName()).sort().join(',');
+		const comp = c.cellPolygons
+			.map((p) => p.getName())
+			.sort()
+			.join(",");
 		const det = detSurd(c.basisExact[0], c.basisExact[1]).abs();
 		if (cellStars > fanStars) {
 			hits++;
 			log(`  ★ FILL-REQUIRING HIT [VC ${i + 1}/${vcs.length}] ${vc.name}`);
-			log(`      fanStars=${fanStars} cellStars=${cellStars} |detΛ|=${det.toString()}≈${det.toFloat().toFixed(4)} tiles=${c.cellPolygons.length} comp={${comp}} (${ms}ms, timedOut=${diag.timedOut})`);
+			log(
+				`      fanStars=${fanStars} cellStars=${cellStars} |detΛ|=${det.toString()}≈${det.toFloat().toFixed(4)} tiles=${c.cellPolygons.length} comp={${comp}} (${ms}ms, timedOut=${diag.timedOut})`,
+			);
 		} else {
-			log(`  hit (fan-closing) [${i + 1}/${vcs.length}] ${vc.name} cellStars=${cellStars} fanStars=${fanStars} comp={${comp}} (${ms}ms)`);
+			log(
+				`  hit (fan-closing) [${i + 1}/${vcs.length}] ${vc.name} cellStars=${cellStars} fanStars=${fanStars} comp={${comp}} (${ms}ms)`,
+			);
 		}
 	}
 	if ((i + 1) % 10 === 0 || hits >= wantHits) {
 		const el = (Date.now() - t0) / 1000;
 		const eta = ((el / (i + 1)) * (vcs.length - i - 1)).toFixed(0);
-		log(`  …progress ${i + 1}/${vcs.length} (${el.toFixed(0)}s elapsed, ETA ${eta}s, ${hits} fill-hits, ${timeouts} timeouts)`);
+		log(
+			`  …progress ${i + 1}/${vcs.length} (${el.toFixed(0)}s elapsed, ETA ${eta}s, ${hits} fill-hits, ${timeouts} timeouts)`,
+		);
 	}
-	if (hits >= wantHits) { log(`  stopping: ${hits} fill-requiring hits found (--hits ${wantHits})`); break; }
+	if (hits >= wantHits) {
+		log(`  stopping: ${hits} fill-requiring hits found (--hits ${wantHits})`);
+		break;
+	}
 }
-log('');
-log(`=== DONE: ${hits} fill-requiring hit(s) over ${solved} VCs (${timeouts} timeouts) in ${((Date.now() - t0) / 1000).toFixed(0)}s ===`);
+log("");
+log(
+	`=== DONE: ${hits} fill-requiring hit(s) over ${solved} VCs (${timeouts} timeouts) in ${((Date.now() - t0) / 1000).toFixed(0)}s ===`,
+);

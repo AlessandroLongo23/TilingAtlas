@@ -52,9 +52,12 @@ cdp.on("Network.loadingFinished", (e) => {
 await page.addInitScript(() => {
 	window.__lt = [];
 	try {
-		new PerformanceObserver((l) => { for (const e of l.getEntries()) window.__lt.push({ start: e.startTime, dur: e.duration }); })
-			.observe({ type: "longtask", buffered: true });
-	} catch { /* no longtask support: the run still reports bytes and heap */ }
+		new PerformanceObserver((l) => {
+			for (const e of l.getEntries()) window.__lt.push({ start: e.startTime, dur: e.duration });
+		}).observe({ type: "longtask", buffered: true });
+	} catch {
+		/* no longtask support: the run still reports bytes and heap */
+	}
 });
 
 const t0 = Date.now();

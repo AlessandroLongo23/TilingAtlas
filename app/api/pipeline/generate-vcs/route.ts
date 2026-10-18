@@ -17,9 +17,7 @@ export async function POST(request: Request) {
 		const useStream = body?.stream === true;
 
 		if (!paramsFolder) {
-			return badRequest(
-				"paramsFolder is required and must contain only letters, digits, underscores, or hyphens",
-			);
+			return badRequest("paramsFolder is required and must contain only letters, digits, underscores, or hyphens");
 		}
 		if (polygonNames.length === 0) {
 			return badRequest("At least one polygon must be selected");

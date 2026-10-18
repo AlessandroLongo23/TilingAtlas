@@ -37,9 +37,7 @@ export function colorsPeriodicCell(p: ColorPattern, opts: ColorsCellOptions): Pe
 type StrokeSpec = Pick<PeriodicPrim, "strokeRgb" | "strokeAlpha">;
 
 /** Square and triangle grids: the colours are a per-coset bitmask, the geometry implicit in the grid. */
-function gridCell(
-	p: ColorPattern, rgb: [number, number, number][], stroke: StrokeSpec,
-): PeriodicCell | null {
+function gridCell(p: ColorPattern, rgb: [number, number, number][], stroke: StrokeSpec): PeriodicCell | null {
 	const tri = colorsGridOf(p) === "triangle";
 	const bx = tri ? 0.5 : 0;
 	const by = tri ? SQRT3_2 : 1;
@@ -84,9 +82,7 @@ function gridCell(
 }
 
 /** Combined ("ts") and hexagonal ("hex") grids: explicit per-period geometry, one ring per face. */
-function patchCell(
-	p: ColorPattern, rgb: [number, number, number][], stroke: StrokeSpec,
-): PeriodicCell | null {
+function patchCell(p: ColorPattern, rgb: [number, number, number][], stroke: StrokeSpec): PeriodicCell | null {
 	const patch = p.patch!;
 	const [t1x, t1y] = patch.T1;
 	const [t2x, t2y] = patch.T2;

@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-	inversionMap,
-	periodicCellToSvg,
-	spiralMapForward,
-	type PeriodicSvgOptions,
-} from "@/lib/render/periodicSvg";
+import { inversionMap, periodicCellToSvg, spiralMapForward, type PeriodicSvgOptions } from "@/lib/render/periodicSvg";
 import type { PeriodicCell } from "@/lib/render/periodicCell";
 
 // lib/render/periodicSvg.ts turns the periodic-cell IR into static SVG, and is what the error and 404
@@ -143,7 +138,11 @@ describe("the lenses", () => {
 	it("circle inversion is an involution, and undefined at its pole", () => {
 		const f = inversionMap(2);
 		expect(f(0, 0)).toBeNull();
-		for (const [x, y] of [[3, 1], [-0.5, 0.25], [0, 7]] as const) {
+		for (const [x, y] of [
+			[3, 1],
+			[-0.5, 0.25],
+			[0, 7],
+		] as const) {
 			const [px, py] = f(x, y)!;
 			const [qx, qy] = f(px, py)!;
 			expect(qx).toBeCloseTo(x, 9);
@@ -162,7 +161,11 @@ describe("the lenses", () => {
 		// wrong and the picture has a visible cut along the branch of the logarithm.
 		const seam: [number, number] = [3, 1.5];
 		const f = spiralMapForward(seam, 0.5, 1e9);
-		for (const [x, y] of [[0.4, -0.2], [-1.1, 2.3], [5, 5]] as const) {
+		for (const [x, y] of [
+			[0.4, -0.2],
+			[-1.1, 2.3],
+			[5, 5],
+		] as const) {
 			const a = f(x, y)!;
 			const b = f(x + seam[0], y + seam[1])!;
 			expect(b[0]).toBeCloseTo(a[0], 6);
@@ -199,24 +202,15 @@ describe("periodicCellToSvg — under a map", () => {
 	it("subdivides a big copy more than a small one, so only the visible curvature is paid for", () => {
 		// `detail` is output units per segment: raise it and every copy needs fewer segments, so the
 		// same picture comes out with strictly less path data.
-		const dense = periodicCellToSvg(
-			unitSquare(),
-			lensOpts({ map: inversionMap(2), minSize: 0.1, detail: 0.05 }),
-		)!;
-		const sparse = periodicCellToSvg(
-			unitSquare(),
-			lensOpts({ map: inversionMap(2), minSize: 0.1, detail: 2 }),
-		)!;
+		const dense = periodicCellToSvg(unitSquare(), lensOpts({ map: inversionMap(2), minSize: 0.1, detail: 0.05 }))!;
+		const sparse = periodicCellToSvg(unitSquare(), lensOpts({ map: inversionMap(2), minSize: 0.1, detail: 2 }))!;
 		expect(sparse.pieces).toBe(dense.pieces);
 		expect(sparse.paths[0].d.length).toBeLessThan(dense.paths[0].d.length);
 	});
 
 	it("scales a stroke with the map in cell space and leaves it alone in output space", () => {
 		const cell = unitSquare({ strokeRgb: [0, 0, 0] });
-		const inCell = periodicCellToSvg(
-			cell,
-			lensOpts({ map: inversionMap(2), minSize: 0.1, strokeWidth: 0.05 }),
-		)!;
+		const inCell = periodicCellToSvg(cell, lensOpts({ map: inversionMap(2), minSize: 0.1, strokeWidth: 0.05 }))!;
 		const inOutput = periodicCellToSvg(
 			cell,
 			lensOpts({ map: inversionMap(2), minSize: 0.1, strokeWidth: 0.05, strokeSpace: "output" }),

@@ -4,7 +4,10 @@ import { facesFromVertices } from "@/lib/render/polyhedronFaces";
 
 // A face is identified by its unordered vertex-index set (winding/rotation are irrelevant to identity).
 function faceKey(face: number[]): string {
-	return face.slice().sort((a, b) => a - b).join(",");
+	return face
+		.slice()
+		.sort((a, b) => a - b)
+		.join(",");
 }
 function faceKeySet(faces: number[][]): Set<string> {
 	return new Set(faces.map(faceKey));

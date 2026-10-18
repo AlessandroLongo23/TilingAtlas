@@ -25,13 +25,17 @@ interface TabsProps {
 	listClassName?: string;
 }
 
-export function Tabs({ value, onValueChange, tabs, children, keepMounted = false, shortcuts, listClassName }: TabsProps) {
+export function Tabs({
+	value,
+	onValueChange,
+	tabs,
+	children,
+	keepMounted = false,
+	shortcuts,
+	listClassName,
+}: TabsProps) {
 	return (
-		<RadixTabs.Root
-			value={value}
-			onValueChange={onValueChange}
-			className="w-full h-full flex flex-col"
-		>
+		<RadixTabs.Root value={value} onValueChange={onValueChange} className="flex h-full w-full flex-col">
 			<RadixTabs.List className={cn("ta-seg flex flex-shrink-0", listClassName)}>
 				{tabs.map((tab) => (
 					<RadixTabs.Trigger
@@ -42,7 +46,7 @@ export function Tabs({ value, onValueChange, tabs, children, keepMounted = false
 							// most of the way there on hover. Two earlier passes are worth not repeating — a 2px
 							// cap rule (reads as decoration, not state) and a solid ink fill (a black slab in the
 							// corner of the panel).
-							"ta-tab flex-1 px-3 py-1.5 text-[13px] font-medium text-center transition-colors cursor-pointer",
+							"ta-tab flex-1 cursor-pointer px-3 py-1.5 text-center text-[13px] font-medium transition-colors",
 							"text-fg-muted hover:text-fg-secondary data-[state=active]:text-fg",
 							"focus:outline-none focus-visible:relative focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-accent/50",
 						)}

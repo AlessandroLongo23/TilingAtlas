@@ -36,7 +36,12 @@ const PAN_EASE_S = 0.22; // time constant of the velocity's approach to the stic
  * view travels WITH the stick, so the picture slides the other way. `stick` is a VelocityPad value
  * (y up, unit magnitude at the rim), `R` the pan unit in CSS px. Returns false once at rest.
  */
-export function drivePlayPan(vel: { x: number; y: number }, stick: { x: number; y: number }, dt: number, R: number): boolean {
+export function drivePlayPan(
+	vel: { x: number; y: number },
+	stick: { x: number; y: number },
+	dt: number,
+	R: number,
+): boolean {
 	const idle = stick.x === 0 && stick.y === 0;
 	if (idle && vel.x === 0 && vel.y === 0) return false;
 	const a = 1 - Math.exp(-dt / PAN_EASE_S);

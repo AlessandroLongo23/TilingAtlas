@@ -15,20 +15,35 @@ import path from "node:path";
 
 const THESIS_CHAPTERS = "/Users/alessandro/Desktop/University/Thesis/thesis/chapters";
 
-const BANNED = ["hence", "thus", "indeed", "namely", "moreover", "furthermore",
-	"therefore", "nonetheless", "additionally"];
+const BANNED = [
+	"hence",
+	"thus",
+	"indeed",
+	"namely",
+	"moreover",
+	"furthermore",
+	"therefore",
+	"nonetheless",
+	"additionally",
+];
 
 function prose(raw) {
-	let t = raw.replace(/<!--[\s\S]*?-->/g, "");   // presenter notes
-	t = t.replace(/<[^>]+>/g, "");                  // html tags
+	let t = raw.replace(/<!--[\s\S]*?-->/g, ""); // presenter notes
+	t = t.replace(/<[^>]+>/g, ""); // html tags
 	t = t.replace(/\\[a-zA-Z]+\*?(\[[^\]]*\])?(\{[^}]*\})?/g, " "); // latex macros
-	t = t.replace(/\$[^$]*\$/g, " X ");             // math
-	t = t.split("\n").filter((l) => !/^\s*[|#%>]/.test(l)).join("\n");
+	t = t.replace(/\$[^$]*\$/g, " X "); // math
+	t = t
+		.split("\n")
+		.filter((l) => !/^\s*[|#%>]/.test(l))
+		.join("\n");
 	return t.replace(/\s+/g, " ").trim();
 }
 
 function sentences(p) {
-	return p.split(/(?<=[.!?])\s+/).map((s) => s.trim()).filter((s) => s.split(" ").length > 4);
+	return p
+		.split(/(?<=[.!?])\s+/)
+		.map((s) => s.trim())
+		.filter((s) => s.split(" ").length > 4);
 }
 
 /** ", and <short independent clause>" closing a sentence: the salesman construction. */
@@ -76,7 +91,7 @@ function report(label, raw, { verbose = true } = {}) {
 		console.log(`  colons ............... 1 in ${colonRate.toFixed(1)}  (target 1 in 5)`);
 		console.log(`  catchphrase tails .... ${tails.length} = ${pct.toFixed(1)}%  (thesis 3.6%)`);
 		console.log(`  median sentence ...... ${median} words  (target 25-28)`);
-		console.log(`  bold runs ............ ${(bold / words * 1000).toFixed(1)} /1k  (his register 0.3)`);
+		console.log(`  bold runs ............ ${((bold / words) * 1000).toFixed(1)} /1k  (his register 0.3)`);
 		if (tails.length) {
 			console.log("  offending tails:");
 			for (const t of tails) console.log(`    ...and ${t}`);

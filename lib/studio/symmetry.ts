@@ -191,10 +191,7 @@ export function siteSymmetry(
  * only its component along that mirror. On two or more mirrors the intersection is a point, so again
  * zero. This is not a restriction bolted on: it is what "the edit keeps the group" means for a drag.
  */
-export function projectToSite(
-	delta: Pt,
-	site: { rotation: number; mirrors: Pt[] },
-): Pt {
+export function projectToSite(delta: Pt, site: { rotation: number; mirrors: Pt[] }): Pt {
 	if (site.rotation > 1) return [0, 0];
 	if (site.mirrors.length === 0) return delta;
 	if (site.mirrors.length > 1) return [0, 0];

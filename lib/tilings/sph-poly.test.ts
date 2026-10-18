@@ -52,12 +52,18 @@ describe("spherical 3.4.n.4 board manifest", () => {
 		expect(SPH_POLY_BOARDS.map((b) => b.n)).toEqual([3, 4, 5]);
 		for (const b of SPH_POLY_BOARDS) {
 			expect(b.ks.length).toBeGreaterThan(0);
-			expect(Object.keys(b.counts).map(Number).sort((x, y) => x - y)).toEqual([...b.ks].sort((x, y) => x - y));
+			expect(
+				Object.keys(b.counts)
+					.map(Number)
+					.sort((x, y) => x - y),
+			).toEqual([...b.ks].sort((x, y) => x - y));
 		}
 	});
 
 	it("reports the family's own k holes", () => {
-		expect(sphPolyKGaps(SPH_POLY_BOARDS.find((b) => b.n === 5)!)).toEqual([2, 5, 6, 10, 11, 13, 15, 16, 18, 19, 20, 21, 22, 23, 24, 25, 26, 28]);
+		expect(sphPolyKGaps(SPH_POLY_BOARDS.find((b) => b.n === 5)!)).toEqual([
+			2, 5, 6, 10, 11, 13, 15, 16, 18, 19, 20, 21, 22, 23, 24, 25, 26, 28,
+		]);
 		expect(sphPolyKGaps(SPH_POLY_BOARDS.find((b) => b.n === 3)!)).toEqual([]);
 	});
 
@@ -68,8 +74,7 @@ describe("spherical 3.4.n.4 board manifest", () => {
 });
 
 describe.skipIf(!anyShard)("spherical 3.4.n.4 shards", () => {
-	const all = () =>
-		SPH_POLY_BOARDS.flatMap((b) => b.ks.flatMap((k) => shardOf(b, k) ?? []));
+	const all = () => SPH_POLY_BOARDS.flatMap((b) => b.ks.flatMap((k) => shardOf(b, k) ?? []));
 
 	it("matches the manifest: every listed (board, k) exists with the listed count", () => {
 		for (const b of SPH_POLY_BOARDS) {
@@ -103,7 +108,10 @@ describe.skipIf(!anyShard)("spherical 3.4.n.4 shards", () => {
 					for (const [u, w] of r.edges) {
 						const a = r.vertices[u];
 						const c = r.vertices[w];
-						expect(Math.acos(Math.min(1, Math.max(-1, a[0] * c[0] + a[1] * c[1] + a[2] * c[2])))).toBeCloseTo(r.edge, 6);
+						expect(Math.acos(Math.min(1, Math.max(-1, a[0] * c[0] + a[1] * c[1] + a[2] * c[2])))).toBeCloseTo(
+							r.edge,
+							6,
+						);
 					}
 					r.faces.forEach((ring, fi) => expect(ring.length).toBe(r.faceSize[fi]));
 					// Both closing figures hold at the shipped arc — the identity that puts 2n in the alphabet.
@@ -138,7 +146,11 @@ describe.skipIf(!anyShard)("spherical 3.4.n.4 shards", () => {
 
 	it("finds the three uniform solids of the family at k = 1", () => {
 		expect(shardOf(SPH_POLY_BOARDS[0], 1)![0].solid).toBe("cuboctahedron");
-		expect(shardOf(SPH_POLY_BOARDS[1], 1)!.map((r) => r.solid).sort()).toEqual(["octagonal prism", "rhombicuboctahedron"]);
+		expect(
+			shardOf(SPH_POLY_BOARDS[1], 1)!
+				.map((r) => r.solid)
+				.sort(),
+		).toEqual(["octagonal prism", "rhombicuboctahedron"]);
 		expect(shardOf(SPH_POLY_BOARDS[2], 1)![0].solid).toBe("rhombicosidodecahedron");
 	});
 

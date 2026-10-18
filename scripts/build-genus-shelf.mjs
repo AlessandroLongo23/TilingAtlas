@@ -72,30 +72,52 @@ const hemiMade = JSON.parse(fs.readFileSync(HEMI, "utf8")).map((r) => ({
 	geometry: "spherical",
 	discoverer: HEMI_DISCOVERER,
 	note: hemiNote(r),
-	renderCell: { b: [[1, 0], [0, 1]], i: [0, 0] },
+	renderCell: {
+		b: [
+			[1, 0],
+			[0, 1],
+		],
+		i: [0, 0],
+	},
 	derivation: "tabulated",
 }));
 
-const made = hemiMade.concat(rows.map((r) => ({
-	id: `sph-${r.id}`,
-	source: "spherical",
-	k: r.k,
-	family: r.vertexConfig,
-	spherical: { solid: r.id, name: r.census },
-	geometry: "spherical",
-	discoverer: DISCOVERER,
-	note: note(r),
-	renderCell: { b: [[1, 0], [0, 1]], i: [0, 0] },
-	derivation: "searched",
-})));
+const made = hemiMade.concat(
+	rows.map((r) => ({
+		id: `sph-${r.id}`,
+		source: "spherical",
+		k: r.k,
+		family: r.vertexConfig,
+		spherical: { solid: r.id, name: r.census },
+		geometry: "spherical",
+		discoverer: DISCOVERER,
+		note: note(r),
+		renderCell: {
+			b: [
+				[1, 0],
+				[0, 1],
+			],
+			i: [0, 0],
+		},
+		derivation: "searched",
+	})),
+);
 
 const byId = new Map(made.map((r) => [r.id, r]));
 const kept = [];
-let changed = 0, removed = 0;
+let changed = 0,
+	removed = 0;
 for (const rec of atlas.records) {
-	if (!isGenus(rec.id)) { kept.push(rec); continue; }
+	if (!isGenus(rec.id)) {
+		kept.push(rec);
+		continue;
+	}
 	const next = byId.get(rec.id);
-	if (!next) { removed++; console.log(`  ⚠ REMOVED ${rec.id}`); continue; }
+	if (!next) {
+		removed++;
+		console.log(`  ⚠ REMOVED ${rec.id}`);
+		continue;
+	}
 	// Merge, so a field this script does not own survives a rebuild.
 	const merged = { ...rec, ...next };
 	if (JSON.stringify(merged) !== JSON.stringify(rec)) changed++;
@@ -106,7 +128,10 @@ const added = [...byId.values()];
 const out = [...kept, ...added];
 console.log(`genus rows: ${atlas.records.filter((r) => isGenus(r.id)).length} shipped -> ${made.length} built`);
 console.log(`  added ${added.length}, changed ${changed}, removed ${removed}`);
-if (!write) { console.log("(dry run — pass --write)"); process.exit(0); }
+if (!write) {
+	console.log("(dry run — pass --write)");
+	process.exit(0);
+}
 atlas.records = out;
 fs.writeFileSync(ATLAS, JSON.stringify(atlas));
 console.log(`wrote public/reference-atlas-spherical.json — ${out.length} records`);

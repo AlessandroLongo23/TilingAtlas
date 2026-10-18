@@ -75,7 +75,7 @@ describe("isohedralTile (IH1)", () => {
 				const forward = tile[k * SAMPLES + i];
 				// Edge k+3 runs the other way, so sample i of edge k lands on sample SAMPLES−i of it —
 				// index 0 of edge k+3 being the corner v_{k+3}, which is edge k's LAST sample translated.
-				const back = tile[(((k + 3) * SAMPLES + (SAMPLES - i)) % tile.length + tile.length) % tile.length];
+				const back = tile[((((k + 3) * SAMPLES + (SAMPLES - i)) % tile.length) + tile.length) % tile.length];
 				expect(back[0]).toBeCloseTo(forward[0] + tx, 10);
 				expect(back[1]).toBeCloseTo(forward[1] + ty, 10);
 			}
@@ -112,7 +112,19 @@ describe("isohedralPatch (IH1)", () => {
 
 describe("fitViewBox", () => {
 	it("fits the polygons with margin", () => {
-		const vb = fitViewBox([[[0, 0], [2, 0], [2, 1], [0, 1]]], 0.1).split(" ").map(Number);
+		const vb = fitViewBox(
+			[
+				[
+					[0, 0],
+					[2, 0],
+					[2, 1],
+					[0, 1],
+				],
+			],
+			0.1,
+		)
+			.split(" ")
+			.map(Number);
 		expect(vb[0]).toBeCloseTo(-0.2);
 		expect(vb[1]).toBeCloseTo(-0.1);
 		expect(vb[2]).toBeCloseTo(2.4);

@@ -43,15 +43,13 @@ import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 
 const root = process.cwd();
 
-const readJson = async <T>(rel: string): Promise<T> =>
-	JSON.parse(await readFile(path.join(root, rel), "utf8")) as T;
+const readJson = async <T>(rel: string): Promise<T> => JSON.parse(await readFile(path.join(root, rel), "utf8")) as T;
 
 /** Same, for a packed shelf file: decodes the container (or passes a legacy bare array through). */
 const readShelf = async <T>(rel: string): Promise<T[]> =>
 	decodeAtlas<T>(JSON.parse(await readFile(path.join(root, rel), "utf8")));
 
-const uniform = (id: string): TranslationalCellData =>
-	UNIFORM_CELLS.find((c) => c.id === id)!.cell;
+const uniform = (id: string): TranslationalCellData => UNIFORM_CELLS.find((c) => c.id === id)!.cell;
 
 /**
  * One entry in the pool. `opts.view` is the crop in cell units — the SVG is drawn with
@@ -168,7 +166,6 @@ const POOL: SpecimenSpec[] = [
 
 	hollow("hollow-12_6-5_12-7", "hollow · 12.6/5.12/7", 5),
 	hollow("hollow-8_4-3_8-5", "hollow · 8.4/3.8/5", 5),
-
 ];
 
 async function build(spec: SpecimenSpec): Promise<PeriodicSvg> {
@@ -215,9 +212,7 @@ ${entries.join("\n")}
 `;
 
 	await writeFile(path.join(root, "lib/render/errorSpecimens.ts"), out, "utf8");
-	console.log(
-		`\nwrote lib/render/errorSpecimens.ts — ${POOL.length} specimens, ${(out.length / 1024).toFixed(1)} kB`,
-	);
+	console.log(`\nwrote lib/render/errorSpecimens.ts — ${POOL.length} specimens, ${(out.length / 1024).toFixed(1)} kB`);
 }
 
 main().catch((err) => {

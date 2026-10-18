@@ -39,7 +39,10 @@ const C = SIZE / 2;
 const R = 205;
 const RIM = 16;
 
-const pt = (a: number, r: number): [string, string] => [(C + r * Math.cos(a)).toFixed(2), (C - r * Math.sin(a)).toFixed(2)];
+const pt = (a: number, r: number): [string, string] => [
+	(C + r * Math.cos(a)).toFixed(2),
+	(C - r * Math.sin(a)).toFixed(2),
+];
 
 function wedgePath(from: number, to: number): string {
 	const A = pt(from, R);
@@ -49,7 +52,18 @@ function wedgePath(from: number, to: number): string {
 	return `M${C},${C} L${A[0]},${A[1]} A${R},${R} 0 ${large} 0 ${B[0]},${B[1]} Z`;
 }
 
-export function SqDomainFigure({ domains, sectors, cls, active, limit, onPick, onAngle, hovered, onHover, fills }: Props) {
+export function SqDomainFigure({
+	domains,
+	sectors,
+	cls,
+	active,
+	limit,
+	onPick,
+	onAngle,
+	hovered,
+	onHover,
+	fills,
+}: Props) {
 	const { wedges, wallOfEdge } = useMemo(() => {
 		const w = sectors.map((s, i) => ({
 			i,
@@ -158,8 +172,26 @@ export function SqDomainFigure({ domains, sectors, cls, active, limit, onPick, o
 			))}
 
 			{/* The two coordinate directions, so it is clear which way m and n run. */}
-			<line x1={C - R} y1={C} x2={C + R} y2={C} stroke="var(--color-fg-muted)" strokeWidth={1} strokeDasharray="3 5" opacity={0.5} />
-			<line x1={C} y1={C - R} x2={C} y2={C + R} stroke="var(--color-fg-muted)" strokeWidth={1} strokeDasharray="3 5" opacity={0.5} />
+			<line
+				x1={C - R}
+				y1={C}
+				x2={C + R}
+				y2={C}
+				stroke="var(--color-fg-muted)"
+				strokeWidth={1}
+				strokeDasharray="3 5"
+				opacity={0.5}
+			/>
+			<line
+				x1={C}
+				y1={C - R}
+				x2={C}
+				y2={C + R}
+				stroke="var(--color-fg-muted)"
+				strokeWidth={1}
+				strokeDasharray="3 5"
+				opacity={0.5}
+			/>
 
 			{/* Tie directions: two squares come out equal on each, so perfection means missing them all. */}
 			{domains.ties.map((t, i) => (

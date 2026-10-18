@@ -5,7 +5,18 @@ import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
 import { useMainThreadSettled } from "@/lib/hooks/useMainThreadSettled";
 import { DEFAULT_FILL_AMOUNT } from "@/lib/render/tilePalette";
 import { useSearchParams } from "next/navigation";
-import { Camera, Check, ChevronDown, ChevronLeft, ChevronRight, Link2, Maximize, Minimize, PenTool, Shuffle } from "lucide-react";
+import {
+	Camera,
+	Check,
+	ChevronDown,
+	ChevronLeft,
+	ChevronRight,
+	Link2,
+	Maximize,
+	Minimize,
+	PenTool,
+	Shuffle,
+} from "lucide-react";
 import { FloatingToolbar, ToolbarButton, ToolbarDivider, ToolbarReveal } from "@/components/ui/floating-toolbar";
 import { Canvas } from "@/components/canvas";
 import { InversiveCanvas } from "@/components/inversive-canvas";
@@ -54,7 +65,14 @@ import {
 	type TierShelf,
 	type UnloadedTier,
 } from "@/lib/services/atlasManifest";
-import { hasCurvedTiles, canCaptureImage, isDiskSurface, isSphereSurface, lensAppliesTo, surfaceOf } from "@/lib/services/shelfRegistry";
+import {
+	hasCurvedTiles,
+	canCaptureImage,
+	isDiskSurface,
+	isSphereSurface,
+	lensAppliesTo,
+	surfaceOf,
+} from "@/lib/services/shelfRegistry";
 import { useExportImage } from "@/stores/exportImage";
 import {
 	loadComposableAtlasShard,
@@ -264,18 +282,23 @@ export function PlayClient({ tilings }: PlayClientProps) {
 
 	// Keyed on (class, sub, k) because that is what the tree groups by, so a tier whose records
 	// arrived by another route (a deep link, an eager tier) cancels instead of drawing an empty twin.
-	const loadTier = useCallback((tier: UnloadedTier) => {
-		setLoadingTiers((s) => new Set(s).add(tier.key));
-		TIER_LOADER[tier.shelf](tier)
-			.then(appendRefs)
-			// Drop the busy flag either way: a tier that failed has to be clickable again, and one that
-			// succeeded is about to disappear from `unloaded` on the next render anyway.
-			.finally(() => setLoadingTiers((s) => {
-				const next = new Set(s);
-				next.delete(tier.key);
-				return next;
-			}));
-	}, [appendRefs]);
+	const loadTier = useCallback(
+		(tier: UnloadedTier) => {
+			setLoadingTiers((s) => new Set(s).add(tier.key));
+			TIER_LOADER[tier.shelf](tier)
+				.then(appendRefs)
+				// Drop the busy flag either way: a tier that failed has to be clickable again, and one that
+				// succeeded is about to disappear from `unloaded` on the next render anyway.
+				.finally(() =>
+					setLoadingTiers((s) => {
+						const next = new Set(s);
+						next.delete(tier.key);
+						return next;
+					}),
+				);
+		},
+		[appendRefs],
+	);
 	useEffect(() => {
 		let alive = true;
 		loadReferenceAtlas()
@@ -406,7 +429,8 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		const k = Number(hit.m[1]);
 		if (!hit.r.ks.includes(k)) return; // k≤2 rides the eager bundle; anything else has no shard
 		let alive = true;
-		hit.r.load(k)
+		hit.r
+			.load(k)
 			.then((data) => {
 				if (!alive || data.length === 0) return;
 				appendRefs(data);
@@ -692,12 +716,16 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			if (!alive || data.length === 0) return;
 			appendRefs(data);
 		};
-		loadHyperbolicEdgesAtlas().then(merge).catch(() => {});
+		loadHyperbolicEdgesAtlas()
+			.then(merge)
+			.catch(() => {});
 		// A deep-link to a lazy-shard he… key (he667-13-…, he46-2-…) also needs its shard fetched so the key
 		// resolves. Attempt only when that (base, k) is actually a lazy shard.
 		const m = requestedKey?.match(/^he(\d+)-(\d+)-/);
 		if (m && hypEdgesLazyShardsForK(Number(m[2])).some((s) => s.base === m[1])) {
-			loadHyperbolicEdgesShard(m[1], Number(m[2])).then(merge).catch(() => {});
+			loadHyperbolicEdgesShard(m[1], Number(m[2]))
+				.then(merge)
+				.catch(() => {});
 		}
 		return () => {
 			alive = false;
@@ -717,14 +745,22 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			if (!alive || data.length === 0) return;
 			appendRefs(data);
 		};
-		if (wantSph) loadSphericalSchwarzAtlas().then(merge).catch(() => {});
-		if (wantHyp) loadHyperbolicSchwarzAtlas().then(merge).catch(() => {});
+		if (wantSph)
+			loadSphericalSchwarzAtlas()
+				.then(merge)
+				.catch(() => {});
+		if (wantHyp)
+			loadHyperbolicSchwarzAtlas()
+				.then(merge)
+				.catch(() => {});
 		// A deep-link into a lazy shard needs that shard fetched or the key never resolves.
 		const m = requestedKey?.match(/^(?:ss|hs)(\d+)-(\d+)-/);
 		if (m) {
 			const geo = requestedKey!.startsWith("ss") ? "spherical" : "hyperbolic";
 			if (schwarzLazyShardsForK(geo, Number(m[2])).some((b) => b.id === m[1])) {
-				loadSchwarzShard(m[1], Number(m[2])).then(merge).catch(() => {});
+				loadSchwarzShard(m[1], Number(m[2]))
+					.then(merge)
+					.catch(() => {});
 			}
 		}
 		return () => {
@@ -743,17 +779,22 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		// and scaled shelves hit on 2026-08-13; this is the third time a new shelf has needed a line here.)
 		// "ss-" is the star polyhedra, which ride loadSphericalPolyAtlas with the halves. Fourth time —
 		// verified by deep-linking ss-12-30-12-d3-r20344 and watching it land on t1001.
-		const wantSph = geometry === "spherical" || !!requestedKey?.startsWith("xe") || !!requestedKey?.startsWith("sp")
-			|| !!requestedKey?.startsWith("ss-")
-			|| SPH_HALF_BOARDS.some((b) => requestedKey?.startsWith(`sh${b.id}-`));
+		const wantSph =
+			geometry === "spherical" ||
+			!!requestedKey?.startsWith("xe") ||
+			!!requestedKey?.startsWith("sp") ||
+			!!requestedKey?.startsWith("ss-") ||
+			SPH_HALF_BOARDS.some((b) => requestedKey?.startsWith(`sh${b.id}-`));
 		// "hh<board>-" is the half-tile boards; without this a /library click on one lands on the default
 		// tiling, exactly as the spherical halves did before their line above.
 		// "hyp-" is the BASE hyperbolic shelf, deferred 2026-08-17 (see loadHyperbolicBaseAtlas). Its ids
 		// are "hyp-6-6-7", which does NOT match the "hp" test below — without this line every deep link
 		// to a base hyperbolic tiling would silently land on t1001, the same failure the star shelf hit.
-		const wantHyp = geometry === "hyperbolic" || !!requestedKey?.startsWith("hp")
-			|| !!requestedKey?.startsWith("hyp-")
-			|| HYP_HALF_BOARDS.some((b) => requestedKey?.startsWith(`hh${b.id}-`));
+		const wantHyp =
+			geometry === "hyperbolic" ||
+			!!requestedKey?.startsWith("hp") ||
+			!!requestedKey?.startsWith("hyp-") ||
+			HYP_HALF_BOARDS.some((b) => requestedKey?.startsWith(`hh${b.id}-`));
 		// The pentagon edge shelf is EUCLIDEAN — a plane tiling — so it rides this effect's default
 		// geometry rather than one of the curved ones.
 		const wantEuc = geometry === "euclidean" || !!requestedKey?.startsWith("pe");
@@ -776,13 +817,24 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			// The polyhedron EDGE systems are decoration "edges"; the polyhedra themselves are tilings.
 			// Entering Spherical fetched both, and the Tilings chip cannot show one of the edge rows.
 			if (decoration === "edges" || requestedKey?.startsWith("xe")) {
-				loadSphericalEdgesAtlas().then(merge).catch(() => {});
+				loadSphericalEdgesAtlas()
+					.then(merge)
+					.catch(() => {});
 			}
-			loadSphericalPolyAtlas().then(merge).catch(() => {});
+			loadSphericalPolyAtlas()
+				.then(merge)
+				.catch(() => {});
 		}
 		if (wantHyp) {
-			loadHyperbolicBaseAtlas().then((d) => { mergeAlways(d); setHypLoaded(true); }).catch(() => {});
-			loadHyperbolicPolyAtlas().then(merge).catch(() => {});
+			loadHyperbolicBaseAtlas()
+				.then((d) => {
+					mergeAlways(d);
+					setHypLoaded(true);
+				})
+				.catch(() => {});
+			loadHyperbolicPolyAtlas()
+				.then(merge)
+				.catch(() => {});
 		}
 		// The DECORATION catalogues are the bulk of what /play used to parse at open: ~70 MB of colourings
 		// and ~25 MB of edge patterns, for chips the viewer had not clicked. Gated on the chip, plus the
@@ -793,23 +845,35 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		// a transition that otherwise issues one request.
 		if (wantEuc && (decoration === "edges" || requestedKey?.startsWith("fd"))) {
 			loadFreedrawDecorAtlas()
-				.then((d) => { mergeAlways(d); setDecorLoaded((s) => (s.edges ? s : { ...s, edges: true })); })
+				.then((d) => {
+					mergeAlways(d);
+					setDecorLoaded((s) => (s.edges ? s : { ...s, edges: true }));
+				})
 				.catch(() => {});
 		}
 		if (wantEuc && (decoration === "edges" || isBubbleId(requestedKey))) {
-			loadBubbleDecorAtlas().then(mergeAlways).catch(() => {});
+			loadBubbleDecorAtlas()
+				.then(mergeAlways)
+				.catch(() => {});
 		}
 		// The spherical bubble boards are the same shelf on the other surface. ⚑ Gated on the SPHERE plane
 		// or an "sb…" deep link — NOT on `!wantEuc`, which is true under Hyperbolic as well and, more to
 		// the point, false for a link arriving while the plane still reads Euclidean. That is how the first
 		// spherical link resolved to the atlas's default tiling instead of the record it named.
-		if ((geometry === "spherical" || requestedKey?.startsWith("sb"))
-			&& (decoration === "edges" || requestedKey?.startsWith("sb"))) {
-			loadSphBubbleAtlas().then(mergeAlways).catch(() => {});
+		if (
+			(geometry === "spherical" || requestedKey?.startsWith("sb")) &&
+			(decoration === "edges" || requestedKey?.startsWith("sb"))
+		) {
+			loadSphBubbleAtlas()
+				.then(mergeAlways)
+				.catch(() => {});
 		}
 		if (wantEuc && (decoration === "colorings" || requestedKey?.startsWith("col"))) {
 			loadColorsDecorAtlas()
-				.then((d) => { mergeAlways(d); setDecorLoaded((s) => (s.colorings ? s : { ...s, colorings: true })); })
+				.then((d) => {
+					mergeAlways(d);
+					setDecorLoaded((s) => (s.colorings ? s : { ...s, colorings: true }));
+				})
 				.catch(() => {});
 		}
 		// Same chip as freedraw and bubble above: these are decoration="edges" records (source
@@ -817,22 +881,32 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		// Euclidean open — 53 of the 80 JSON requests a default /play open made. Deep links still work:
 		// the id prefix opens the shelf the same way "fd" does for freedraw.
 		if (wantEuc && (decoration === "edges" || requestedKey?.startsWith("pe"))) {
-			loadPentagonEdgesAtlas().then(merge).catch(() => {});
+			loadPentagonEdgesAtlas()
+				.then(merge)
+				.catch(() => {});
 		}
 		if (wantEuc && (decoration === "edges" || requestedKey?.startsWith("ie"))) {
-			loadIsohedralEdgesAtlas().then(merge).catch(() => {});
+			loadIsohedralEdgesAtlas()
+				.then(merge)
+				.catch(() => {});
 		}
 		const pe = requestedKey?.match(/^pe(.+?)-(\d+)-/);
 		if (pe && pentEdgeLazyShardsForK(Number(pe[2])).some((b) => b.id === pe[1])) {
-			loadPentagonEdgesShard(pe[1], Number(pe[2])).then(merge).catch(() => {});
+			loadPentagonEdgesShard(pe[1], Number(pe[2]))
+				.then(merge)
+				.catch(() => {});
 		}
 		const ie = requestedKey?.match(/^ie(.+?)-(\d+)-/);
 		if (ie && ihEdgeLazyShardsForK(Number(ie[2])).some((b) => b.id === ie[1])) {
-			loadIsohedralEdgesShard(ie[1], Number(ie[2])).then(merge).catch(() => {});
+			loadIsohedralEdgesShard(ie[1], Number(ie[2]))
+				.then(merge)
+				.catch(() => {});
 		}
 		const xe = requestedKey?.match(/^xe(.+)-(\d+)-/);
 		if (xe && sphEdgesLazyShardsForK(Number(xe[2])).some((b) => b.id === xe[1])) {
-			loadSphericalEdgesShard(xe[1], Number(xe[2])).then(merge).catch(() => {});
+			loadSphericalEdgesShard(xe[1], Number(xe[2]))
+				.then(merge)
+				.catch(() => {});
 		}
 		// `hpt7-…` and `hpq4568-…` as well as `hp7-…`: the shelf carries three families, and only the ai1
 		// half is unprefixed. The stem after "hp" is the board id for ai1 and ai2 ("7", "t7"); the abcd
@@ -842,13 +916,17 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		// ?tiling=hpq4568-10-00001 and watching it open composable-k3-000.
 		const hp = requestedKey?.match(/^hp(q?)([a-z0-9]+)-(\d+)-/);
 		if (hp && hypPolyLazyShardsForK(Number(hp[3])).some((b) => b.id === hp[2])) {
-			loadHyperbolicPolyShard(hp[2], Number(hp[3])).then(merge).catch(() => {});
+			loadHyperbolicPolyShard(hp[2], Number(hp[3]))
+				.then(merge)
+				.catch(() => {});
 		}
 		// Half-tile boards: ids are "hh<board>-<k>-". Which k are lazy is the board's business, not a
 		// constant here — {4,5} k=4, {6,4} k=3 and 4, {4,6} k=2 and 3 today.
 		const hh = requestedKey?.match(/^hh(.+)-(\d+)-\d+$/);
 		if (hh && hypHalfLazyShardsForK(Number(hh[2])).some((b) => b.id === hh[1])) {
-			loadHyperbolicHalfShard(hh[1], Number(hh[2])).then(merge).catch(() => {});
+			loadHyperbolicHalfShard(hh[1], Number(hh[2]))
+				.then(merge)
+				.catch(() => {});
 		}
 		return () => {
 			alive = false;
@@ -864,10 +942,14 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			if (!alive || data.length === 0) return;
 			appendRefs(data);
 		};
-		loadHyperbolicColorsAtlas().then(merge).catch(() => {});
+		loadHyperbolicColorsAtlas()
+			.then(merge)
+			.catch(() => {});
 		const m = requestedKey?.match(/^hc(\d+)-(\d+)-/);
 		if (m && hypColorsLazyShardsForK(Number(m[2])).some((s) => s.base === m[1])) {
-			loadHyperbolicColorsShard(m[1], Number(m[2])).then(merge).catch(() => {});
+			loadHyperbolicColorsShard(m[1], Number(m[2]))
+				.then(merge)
+				.catch(() => {});
 		}
 		return () => {
 			alive = false;
@@ -881,12 +963,16 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			if (!alive || data.length === 0) return;
 			appendRefs(data);
 		};
-		loadSphericalColorsAtlas().then(merge).catch(() => {});
+		loadSphericalColorsAtlas()
+			.then(merge)
+			.catch(() => {});
 		const m = requestedKey?.match(/^sc([a-z]+)-(\d+)-/);
 		if (m) {
 			const solid = SPH_COLORS_SOLIDS.find((s) => s.id.startsWith(m![1]));
 			if (solid && sphColorsLazyShardsForK(Number(m[2])).some((s) => s.solid === solid.id)) {
-				loadSphericalColorsShard(solid.id, Number(m[2])).then(merge).catch(() => {});
+				loadSphericalColorsShard(solid.id, Number(m[2]))
+					.then(merge)
+					.catch(() => {});
 			}
 		}
 		return () => {
@@ -1182,7 +1268,12 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		(dir: -1 | 1) => {
 			if (geometryList.length === 0) return;
 			const idx = selected ? geometryList.findIndex((t) => t.canonicalKey === selected.canonicalKey) : -1;
-			const next = idx === -1 ? (dir === 1 ? 0 : geometryList.length - 1) : (idx + dir + geometryList.length) % geometryList.length;
+			const next =
+				idx === -1
+					? dir === 1
+						? 0
+						: geometryList.length - 1
+					: (idx + dir + geometryList.length) % geometryList.length;
 			setSelected(geometryList[next]);
 		},
 		[geometryList, selected, setSelected],
@@ -1274,7 +1365,10 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			}
 			// Spherical freedraw: one overlay, one key. G = the faint edge grid — the same letter the planar
 			// scaffold uses above, and the one both /freedraw arms bind.
-			if ((!!selected?.sphericalFreedraw || selected?.schwarz?.geometry === "spherical") && (e.key === "g" || e.key === "G")) {
+			if (
+				(!!selected?.sphericalFreedraw || selected?.schwarz?.geometry === "spherical") &&
+				(e.key === "g" || e.key === "G")
+			) {
 				e.preventDefault();
 				const c = useConfiguration.getState();
 				c.set({ sphericalFreedrawGrid: !c.sphericalFreedrawGrid });
@@ -1312,7 +1406,8 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			// R and the arrows change the selection, and a new cell starts a new edit session (see `openOn`
 			// below), so under the editor they would throw the whole edit away with no undo. The editor
 			// keeps them; the catalogue list still switches tiling on a deliberate click.
-			if (useConfiguration.getState().studioActive && (key === "r" || key === "arrowleft" || key === "arrowright")) return;
+			if (useConfiguration.getState().studioActive && (key === "r" || key === "arrowleft" || key === "arrowright"))
+				return;
 			if (e.key === "r" || e.key === "R") {
 				e.preventDefault();
 				selectRandom();
@@ -1351,7 +1446,11 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					(field === "circlePacking" && !c.isTilingRegularOnly) ||
 					(field === "isIslamic" && !!selected && !polygonClassSupportsIslamic(selected)) ||
 					(field === "showVertexOrbits" && !selected?.exactSource) ||
-					((field === "showSymmetryElements" || field === "showFundamentalDomain" || field === "tilingTransition" || field === "showVertexOrbits") && isHyperbolic);
+					((field === "showSymmetryElements" ||
+						field === "showFundamentalDomain" ||
+						field === "tilingTransition" ||
+						field === "showVertexOrbits") &&
+						isHyperbolic);
 				if (field && !blocked) {
 					e.preventDefault();
 					c.set({ [field]: !c[field] } as Partial<ConfigurationState>);
@@ -1433,7 +1532,8 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	const mirrorFlipCfg = useConfiguration((s) => s.mirrorFlip);
 	const mirrorFlip = mirrorFlipCfg && isChiralTiling(selected ?? { wallpaperGroup: undefined }) !== false;
 	const renderCell = useMemo(
-		() => (mirrorFlip && baseRenderCell ? (reflectRenderCell(baseRenderCell) as TranslationalCellData) : baseRenderCell),
+		() =>
+			mirrorFlip && baseRenderCell ? (reflectRenderCell(baseRenderCell) as TranslationalCellData) : baseRenderCell,
 		[mirrorFlip, baseRenderCell],
 	);
 	const renderCellId = selected?.canonicalKey
@@ -1467,19 +1567,24 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		if (!squaringActive || !squaringSupport) return null;
 		// The exact BigInt solve at an integral class, the float blend everywhere else. Both are real
 		// squared tori; only the exact one has integer sides, which is why only it may print them.
-		const sq =
-			exactSquaring(squaringSupport, squaringClass) ?? blendedSquaring(squaringSupport, squaringClass);
+		const sq = exactSquaring(squaringSupport, squaringClass) ?? blendedSquaring(squaringSupport, squaringClass);
 		return sq ? squaringCell(squaringSupport, sq, squaringMono) : null;
 	}, [squaringActive, squaringSupport, squaringClass, squaringMono]);
 	// Topological shelf: a shape the reader has dragged in the cell editor replaces the shipped bends.
 	// The id is untouched, so the camera stays where it is while the edges move.
 	const tegula = selected?.tegula;
 	const tegulaShape = useTegulaShapes((s) => (tegula && selected ? s.byId[selected.canonicalKey] : undefined));
-	const tegulaCell = useMemo(() => (tegula && tegulaShape ? bendTegula(tegula, tegulaShape) : null), [tegula, tegulaShape]);
+	const tegulaCell = useMemo(
+		() => (tegula && tegulaShape ? bendTegula(tegula, tegulaShape) : null),
+		[tegula, tegulaShape],
+	);
 	// The same shelf on the sphere: the record is a solid, and the dragged shape bends its edges there.
 	const sphBend = selected?.sphPoly?.bend ? selected.sphPoly : undefined;
 	const sphShape = useTegulaShapes((s) => (sphBend && selected ? s.byId[selected.canonicalKey] : undefined));
-	const sphDrawn = useMemo(() => (sphBend ? bendSphere(sphBend, sphShape) : selected?.sphPoly), [sphBend, sphShape, selected?.sphPoly]);
+	const sphDrawn = useMemo(
+		() => (sphBend ? bendSphere(sphBend, sphShape) : selected?.sphPoly),
+		[sphBend, sphShape, selected?.sphPoly],
+	);
 	const drawCell = squaringCellData ?? tegulaCell ?? renderCell;
 	// The class is in the id because the canvases cache parsed geometry by it: without it, moving the dial
 	// would leave the previous squaring on screen. Same reason the mirror flip suffixes it above.
@@ -1545,9 +1650,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		selected ?? null,
 		drawCell,
 		truchetPattern,
-		squaringActive
-			? { key: `sq:${squaringClass[0]},${squaringClass[1]}${squaringMono ? ":m" : ""}`, plain: true }
-			: {},
+		squaringActive ? { key: `sq:${squaringClass[0]},${squaringClass[1]}${squaringMono ? ":m" : ""}`, plain: true } : {},
 	);
 	// The lens is Euclidean-only: the hyperbolic and spherical shelves have no period lattice to reduce
 	// into, and each owns its own renderer below. Same predicate the Options tab uses to decide whether to
@@ -1577,11 +1680,15 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	const trayOpen = studioActive ? toolsOpen : slidersOpen;
 	const setTrayOpen = studioActive ? setToolsOpen : setSlidersOpen;
 	const cellHasTiles = !(
-		selected?.colors || selected?.freedraw || selected?.hollow || selected?.pentEdges || selected?.ihEdges
+		selected?.colors ||
+		selected?.freedraw ||
+		selected?.hollow ||
+		selected?.pentEdges ||
+		selected?.ihEdges
 	);
 
 	return (
-		<div className="relative flex-1 flex min-h-0 overflow-hidden">
+		<div className="relative flex min-h-0 flex-1 overflow-hidden">
 			{/* The phone's top-right corner, the same on every canvas page: reset view (a touch screen has no
 			    right button), then fullscreen, which the desktop keeps in the toolbar. The canvas's corner is
 			    this box's; first in the DOM so it is read before the sheet. */}
@@ -1623,7 +1730,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			<div
 				ref={canvasHostRef}
 				className={cn(
-					"flex-1 min-w-0 relative [&_canvas]:transition-[filter,opacity] [&_canvas]:duration-500 motion-reduce:[&_canvas]:transition-none",
+					"relative min-w-0 flex-1 [&_canvas]:transition-[filter,opacity] [&_canvas]:duration-500 motion-reduce:[&_canvas]:transition-none",
 					!settled && "[&_canvas]:opacity-75 [&_canvas]:saturate-[.3]",
 				)}
 			>
@@ -1633,7 +1740,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				<Canvas
 					translationalCell={drawCell}
 					translationalCellId={drawCellId}
-					paramCell={squaringActive ? null : paramCell ?? null}
+					paramCell={squaringActive ? null : (paramCell ?? null)}
 					symmetryData={squaringActive ? null : symmetryData}
 					orbitData={squaringActive ? null : orbitData}
 					spec={tilingSpec}
@@ -1662,12 +1769,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 						// this one does not hold. p5 and the flat shader are blanked by `studioActive` in
 						// components/canvas.tsx, next to the gates every other exclusive canvas uses.
 						<div className="absolute inset-0 z-10">
-							<StudioCanvas
-								cell={drawCell}
-								cellId={drawCellId}
-								symmetryData={symmetryData}
-								readOnly={!studioActive}
-							/>
+							<StudioCanvas cell={drawCell} cellId={drawCellId} symmetryData={symmetryData} readOnly={!studioActive} />
 						</div>
 					) : lensActive ? (
 						// The conformal lens owns the canvas whenever it is on and the selection is Euclidean. It used
@@ -1679,7 +1781,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 						<InversiveCanvas
 							cell={inversiveCell}
 							cellId={inversiveCellId}
-							paramCell={squaringActive ? null : paramCell ?? null}
+							paramCell={squaringActive ? null : (paramCell ?? null)}
 						/>
 					) : selected?.hollow ? (
 						// Hollow tiling: self-intersecting {n/d} star polygons whose faces overlap by construction,
@@ -1695,11 +1797,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 						// and draws on the three.js sphere (same canvas as the Platonic freedraw), a hyperbolic one
 						// re-develops in the disk through the same per-pixel reducer as every other hyperbolic shelf.
 						selected.schwarz.geometry === "spherical" ? (
-							<SphSchwarzCanvas
-								pattern={selected.schwarz}
-								mode={sphericalShape}
-								showGrid={sphericalFreedrawGrid}
-							/>
+							<SphSchwarzCanvas pattern={selected.schwarz} mode={sphericalShape} showGrid={sphericalFreedrawGrid} />
 						) : (
 							<HyperbolicEdgesCanvas pattern={hypSchwarzMeta(selected.schwarz)} />
 						)
@@ -1728,15 +1826,15 @@ export function PlayClient({ tilings }: PlayClientProps) {
 						// Uniform-polyhedron edge system: the same object as a spherical Schwarz board on a prism /
 						// antiprism / truncated tetrahedron / cuboctahedron / J27, so it draws through the very same
 						// three.js canvas. Those boards mix face sizes, which the adapter never assumed away.
-						<SphSchwarzCanvas
-							pattern={selected.sphEdges}
-							mode={sphericalShape}
-							showGrid={sphericalFreedrawGrid}
-						/>
+						<SphSchwarzCanvas pattern={selected.sphEdges} mode={sphericalShape} showGrid={sphericalFreedrawGrid} />
 					) : selected?.sphPoly ? (
 						// A 3.4.n.4 tiling on the sphere: its own solid, faces filled by polygon size, every edge a
 						// boundary. Same three.js canvas as every other spherical Čtrnáct shelf.
-						<SphPolyCanvas pattern={sphDrawn ?? selected.sphPoly} mode={sphericalShape} showGrid={sphericalFreedrawGrid} />
+						<SphPolyCanvas
+							pattern={sphDrawn ?? selected.sphPoly}
+							mode={sphericalShape}
+							showGrid={sphericalFreedrawGrid}
+						/>
 					) : selected?.sphStar ? (
 						// A STAR polyhedron. Same three.js canvas again, and it follows `sphericalShape`
 						// like the shelves above it — but sphere mode means something different here. Its faces
@@ -1777,7 +1875,6 @@ export function PlayClient({ tilings }: PlayClientProps) {
 						// Freedraw pattern: drawn grid edges + cells coloured by face, on its own 2D canvas. It owns
 						// its pan/zoom (the flat canvas has no cell here to pan), so it sits on top and takes the input.
 						<FreedrawPlayCanvas pattern={selected.freedraw} />
-
 					) : selected?.colors ? (
 						// Colored square tiling: the color field with tile edges, on its own 2D canvas — same
 						// contract as freedraw (no polygon cell, owns its pan/zoom).
@@ -1859,14 +1956,18 @@ export function PlayClient({ tilings }: PlayClientProps) {
 								// The bottom padding is where the fade lands once the tray is scrolled to its end, so the
 								// last slider is never the thing that fades. (ta-scroll-fade is inert on the desktop, where
 								// this box is display:contents and draws nothing to mask.)
-								"ta-scroll-fade max-md:pointer-events-auto max-md:touch-pan-y max-md:flex max-md:max-h-[min(40dvh,calc(100dvh_-_var(--topbar-h,48px)_-_max(var(--sheet-offset,0px),env(safe-area-inset-bottom))_-_150px))] max-md:flex-col max-md:gap-2 max-md:overflow-y-auto max-md:overscroll-contain max-md:pb-6",
+								"ta-scroll-fade max-md:pointer-events-auto max-md:flex max-md:max-h-[min(40dvh,calc(100dvh_-_var(--topbar-h,48px)_-_max(var(--sheet-offset,0px),env(safe-area-inset-bottom))_-_150px))] max-md:touch-pan-y max-md:flex-col max-md:gap-2 max-md:overflow-y-auto max-md:overscroll-contain max-md:pb-6",
 							!trayOpen && "max-md:hidden",
 						)}
 					>
 						{/* The editor's tools ride in the toolbar on the desktop. A phone toolbar cannot hold them
 						    beside the history and the way out, so they get a row of their own here. */}
 						{studioActive && isPhone ? (
-							<div role="toolbar" aria-label="Editor tools" className="ta-float flex shrink-0 flex-wrap items-center gap-0.5 p-1">
+							<div
+								role="toolbar"
+								aria-label="Editor tools"
+								className="ta-float flex shrink-0 flex-wrap items-center gap-0.5 p-1"
+							>
 								<StudioHistory parts="reset" />
 								<StudioTools />
 								<StudioPeriod wallpaperDisabledReason={wallpaperDisabledReason} />
@@ -1876,7 +1977,9 @@ export function PlayClient({ tilings }: PlayClientProps) {
 						{/* The family's own sliders: a squaring has no free angle to flex, and the panel is driving
 						    the tiling in the corner rather than the one on the canvas while it is up. */}
 						{showParamPanel && paramCell ? <ParamSliderPanel paramCell={paramCell} /> : null}
-						{tegula && selected && !squaringActive ? <TegulaCellEditor id={selected.canonicalKey} cell={tegula} /> : null}
+						{tegula && selected && !squaringActive ? (
+							<TegulaCellEditor id={selected.canonicalKey} cell={tegula} />
+						) : null}
 						{sphBend && selected ? <TegulaCellEditor id={selected.canonicalKey} sphere={sphBend} /> : null}
 						{/* The pentagon family's shape controls sit OUTSIDE the exclusive canvas chain above, because
 						    the family is still what is being drawn when the conformal lens replaces the flat view —
@@ -1904,7 +2007,14 @@ export function PlayClient({ tilings }: PlayClientProps) {
 								<ChevronLeft size={16} />
 							</ToolbarButton>
 							{/* Icon-only on a phone (the word stays for screen readers), so immersive's full row fits. */}
-							<ToolbarButton label="Random tiling" shortcut="R" primary onClick={selectRandom} disabled={geometryList.length < 2} className="max-md:w-11 max-md:px-0">
+							<ToolbarButton
+								label="Random tiling"
+								shortcut="R"
+								primary
+								onClick={selectRandom}
+								disabled={geometryList.length < 2}
+								className="max-md:w-11 max-md:px-0"
+							>
 								<Shuffle size={14} />
 								<span className="max-md:sr-only">Random</span>
 							</ToolbarButton>

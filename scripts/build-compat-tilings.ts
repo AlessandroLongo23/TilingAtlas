@@ -213,8 +213,7 @@ async function main() {
 			for (const [a, b] of read.pairs)
 				if (!NEIGHBOURS.get(a)!.has(b))
 					throw new Error(`${t.id} places ${a} next to ${b}, which the compatibility graph forbids`);
-			if (!connected(read))
-				throw new Error(`${t.id} uses ${read.words.join(" ")}, which is NOT connected`);
+			if (!connected(read)) throw new Error(`${t.id} uses ${read.words.join(" ")}, which is NOT connected`);
 			chosen.push({ id: t.id, k, read });
 			taken++;
 		}
@@ -257,7 +256,7 @@ ${chosen
 	for (const t of chosen)
 		console.log(
 			`  k=${t.k} ${t.id.padEnd(8)} ${t.read.words.length} vcs, ${t.read.pairs.length} of the ${
-				t.read.words.length * (t.read.words.length - 1) / 2
+				(t.read.words.length * (t.read.words.length - 1)) / 2
 			} pairs realized, ${t.read.orbitWords?.length ?? 0} orbits named`,
 		);
 }

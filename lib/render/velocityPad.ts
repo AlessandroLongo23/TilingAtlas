@@ -32,11 +32,7 @@ export function padPosition(dx: number, dy: number, radius: number): PadPos {
  * past the dead zone — fine control near the centre, PAD_MAX_RATE at the rim. Direction: pad right =
  * +dolly, pad up = +spin (screen y down → strip y up), i.e. the velocity version of the mouse drag.
  */
-export function padVelocity(
-	pos: PadPos,
-	radius: number,
-	maxRate: number = PAD_MAX_RATE,
-): { x: number; y: number } {
+export function padVelocity(pos: PadPos, radius: number, maxRate: number = PAD_MAX_RATE): { x: number; y: number } {
 	const len = Math.hypot(pos.x, pos.y);
 	if (len === 0) return { x: 0, y: 0 };
 	const rEff = Math.min((len / radius - PAD_DEAD_ZONE) / (1 - PAD_DEAD_ZONE), 1);

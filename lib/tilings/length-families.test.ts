@@ -1,7 +1,18 @@
 import { describe, it, expect } from "vitest";
 import { evaluateParamCell } from "@/lib/utils/paramCell";
 import { LENGTH_META } from "@/lib/tilings/length-meta.generated";
-import { LENGTH_FAMILIES, STRIP_FAMILIES, STACK_FAMILIES, RECT_GRID, PYTHAGOREAN, EQUIANGULAR_HEX, TRI_HEX_SHUTTER, HEX_ROTOR, TRI_THREE_SIZE, stripFamily } from "@/lib/tilings/length-families";
+import {
+	LENGTH_FAMILIES,
+	STRIP_FAMILIES,
+	STACK_FAMILIES,
+	RECT_GRID,
+	PYTHAGOREAN,
+	EQUIANGULAR_HEX,
+	TRI_HEX_SHUTTER,
+	HEX_ROTOR,
+	TRI_THREE_SIZE,
+	stripFamily,
+} from "@/lib/tilings/length-families";
 
 // A length family claims to tile the plane at EVERY point of its slider box, so testing the default
 // member proves almost nothing. These tests sample the box and, for each member, check the covering
@@ -14,7 +25,8 @@ type Pt = [number, number];
 function inPolygon(p: Pt, vs: Pt[]): boolean {
 	let hit = false;
 	for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
-		const [xi, yi] = vs[i], [xj, yj] = vs[j];
+		const [xi, yi] = vs[i],
+			[xj, yj] = vs[j];
 		if (yi > p[1] !== yj > p[1] && p[0] < ((xj - xi) * (p[1] - yi)) / (yj - yi) + xi) hit = !hit;
 	}
 	return hit;
@@ -27,7 +39,8 @@ function multiplicity(cell: ReturnType<typeof evaluateParamCell>, p: Pt, R: numb
 	let n = 0;
 	for (let i = -R; i <= R; i++)
 		for (let j = -R; j <= R; j++) {
-			const ox = i * t1[0] + j * t2[0], oy = i * t1[1] + j * t2[1];
+			const ox = i * t1[0] + j * t2[0],
+				oy = i * t1[1] + j * t2[1];
 			const q: Pt = [p[0] - ox, p[1] - oy];
 			for (const poly of polys) if (inPolygon(q, poly.v)) n++;
 		}
@@ -123,8 +136,9 @@ describe("parametric edge-length families", () => {
 				}
 				// RELATIVE, not nine decimal places: a family whose slider reaches 30 has a cell area in
 				// the thousands, where an absolute 1e-9 is below the float noise of summing the shoelace.
-				expect(Math.abs(area - det), `${fam.id} at [${at.map((x) => x.toFixed(3)).join(", ")}]`)
-					.toBeLessThan(1e-9 * Math.max(1, det));
+				expect(Math.abs(area - det), `${fam.id} at [${at.map((x) => x.toFixed(3)).join(", ")}]`).toBeLessThan(
+					1e-9 * Math.max(1, det),
+				);
 			}
 	});
 
@@ -133,8 +147,7 @@ describe("parametric edge-length families", () => {
 		for (const fam of LENGTH_FAMILIES) {
 			const def = fam.cell.params.map((p) => p.defaultAlphaDeg);
 			const live = evaluateParamCell(fam.cell, def);
-			const anchor = fam.cell.cellPolygons.map((p) =>
-				p.vertices.map((t) => [t[0][1], t[0][2]] as Pt));
+			const anchor = fam.cell.cellPolygons.map((p) => p.vertices.map((t) => [t[0][1], t[0][2]] as Pt));
 			const got = (live.cellPolygons as { v: Pt[] }[]).map((p) => p.v);
 			expect(got).toEqual(anchor);
 		}
@@ -148,8 +161,21 @@ describe("parametric edge-length families", () => {
 
 	it("enumerates 15 strip stacks up to four deep, with one slider per interface", () => {
 		expect(STRIP_FAMILIES.map((f) => f.id.replace("plen-strip-", "")).sort()).toEqual([
-			"s", "ss", "sss", "ssss", "ssst", "sst", "sstt", "st", "stst", "stt", "sttt",
-			"t", "tt", "ttt", "tttt",
+			"s",
+			"ss",
+			"sss",
+			"ssss",
+			"ssst",
+			"sst",
+			"sstt",
+			"st",
+			"stst",
+			"stt",
+			"sttt",
+			"t",
+			"tt",
+			"ttt",
+			"tttt",
 		]);
 		for (const f of STRIP_FAMILIES) {
 			const word = f.id.replace("plen-strip-", "");
@@ -177,15 +203,25 @@ describe("parametric edge-length families", () => {
 
 	it("the single-square stack at shift 1/2 is the half-offset brick, and at 0 the square grid", () => {
 		const brick = evaluateParamCell(stripFamily("S"), [0.5]);
-		expect(brick.basis as number[][]).toEqual([[1, 0], [0.5, 1]]);
+		expect(brick.basis as number[][]).toEqual([
+			[1, 0],
+			[0.5, 1],
+		]);
 		const grid = evaluateParamCell(stripFamily("S"), [0]);
-		expect(grid.basis as number[][]).toEqual([[1, 0], [0, 1]]);
+		expect(grid.basis as number[][]).toEqual([
+			[1, 0],
+			[0, 1],
+		]);
 	});
 
 	it("the square-then-triangle stack has the elongated triangular tiling inside it", () => {
 		// Word "ST": a square row then a triangle row. Cell area must be 1 + sqrt3/2 at every shift,
 		// which is the algebraic form of "the shift moves the strip but does not change what is in it".
-		for (const t of [[0, 0], [0.5, 0.5], [0.29, 0.83]]) {
+		for (const t of [
+			[0, 0],
+			[0.5, 0.5],
+			[0.29, 0.83],
+		]) {
 			const cell = evaluateParamCell(stripFamily("ST"), t);
 			const [t1, t2] = cell.basis as number[][];
 			expect(Math.abs(t1[0] * t2[1] - t1[1] * t2[0])).toBeCloseTo(1 + Math.sqrt(3) / 2, 9);
@@ -204,7 +240,13 @@ describe("parametric edge-length families", () => {
 	// ── RECTANGLE STACKS: where the edge lengths stop being 1 ────────────────────────────────────
 
 	it("rectangle stacks carry a height slider per rectangle row and a shift per interface", () => {
-		expect(STACK_FAMILIES.map((f) => f.id.replace("plen-strip-", "")).sort()).toEqual(["rr", "rrr", "rrt", "rt", "rtt"]);
+		expect(STACK_FAMILIES.map((f) => f.id.replace("plen-strip-", "")).sort()).toEqual([
+			"rr",
+			"rrr",
+			"rrt",
+			"rt",
+			"rtt",
+		]);
 		for (const f of STACK_FAMILIES) {
 			const w = f.id.replace("plen-strip-", "");
 			const nR = [...w].filter((c) => c === "r").length;
@@ -221,8 +263,7 @@ describe("parametric edge-length families", () => {
 		for (const fam of STACK_FAMILIES) {
 			const ps = fam.cell.params;
 			for (let pick = 0; pick < 4; pick++) {
-				const t = ps.map((p, j) =>
-					p.name.startsWith("Height") ? H[(pick + j) % H.length] : D[(pick + j) % D.length]);
+				const t = ps.map((p, j) => (p.name.startsWith("Height") ? H[(pick + j) % H.length] : D[(pick + j) % D.length]));
 				assertTiles(evaluateParamCell(fam.cell, t), `${fam.id} [${t.map((v) => v.toFixed(2))}]`);
 			}
 		}
@@ -271,8 +312,7 @@ describe("parametric edge-length families", () => {
 		const side = (v: Pt[], i: number) =>
 			Math.hypot(v[(i + 1) % v.length][0] - v[i][0], v[(i + 1) % v.length][1] - v[i][1]);
 		for (const p of polys)
-			for (let i = 0; i < p.v.length; i++)
-				expect(side(p.v, i), `n=${p.n}`).toBeCloseTo(p.n === 6 ? 0.37 : 1, 9);
+			for (let i = 0; i < p.v.length; i++) expect(side(p.v, i), `n=${p.n}`).toBeCloseTo(p.n === 6 ? 0.37 : 1, 9);
 	});
 
 	it("the shutter closes onto the triangular tiling and opens onto the trihexagonal", () => {
@@ -288,8 +328,7 @@ describe("parametric edge-length families", () => {
 	});
 
 	it("the rotor tiles at every gap size, and its ends are the hexagonal and trihexagonal tilings", () => {
-		for (const t of [0.05, 0.19, 0.5, 0.68, 0.91, 1])
-			assertTiles(evaluateParamCell(HEX_ROTOR, [t]), `rotor t=${t}`);
+		for (const t of [0.05, 0.19, 0.5, 0.68, 0.91, 1]) assertTiles(evaluateParamCell(HEX_ROTOR, [t]), `rotor t=${t}`);
 		for (const t of [0.05, 0.5, 1]) {
 			const [l1, l2] = evaluateParamCell(HEX_ROTOR, [t]).basis as number[][];
 			// |L|^2 = 3 + t^2 on both, and the cell is one unit hexagon plus two triangles of side t
@@ -298,7 +337,7 @@ describe("parametric edge-length families", () => {
 			expect(Math.abs(l1[0] * l2[1] - l1[1] * l2[0]), `t=${t}`).toBeCloseTo((Math.sqrt(3) / 2) * (3 + t * t), 9);
 		}
 		// hexagon stays at unit side throughout; the triangles are the ones that grow
-		const polys = (evaluateParamCell(HEX_ROTOR, [0.37]).cellPolygons as { n: number; v: Pt[] }[]);
+		const polys = evaluateParamCell(HEX_ROTOR, [0.37]).cellPolygons as { n: number; v: Pt[] }[];
 		expect(polys.map((p) => p.n)).toEqual([6, 3, 3]);
 		for (const p of polys)
 			for (let i = 0; i < p.v.length; i++) {
@@ -372,11 +411,15 @@ describe("parametric edge-length families", () => {
 			const vec = (c: number[]): number[] => {
 				const cell = evaluateParamCell(fam.cell, c);
 				const polys = (cell.cellPolygons as { v: Pt[] }[]) ?? [];
-				const keep = polys.map((poly) => poly.v.filter((_, i) => {
-					const n = poly.v.length;
-					const [px, py] = poly.v[(i + n - 1) % n], [qx, qy] = poly.v[i], [rx, ry] = poly.v[(i + 1) % n];
-					return Math.abs((qx - px) * (ry - qy) - (qy - py) * (rx - qx)) > 1e-9;
-				}));
+				const keep = polys.map((poly) =>
+					poly.v.filter((_, i) => {
+						const n = poly.v.length;
+						const [px, py] = poly.v[(i + n - 1) % n],
+							[qx, qy] = poly.v[i],
+							[rx, ry] = poly.v[(i + 1) % n];
+						return Math.abs((qx - px) * (ry - qy) - (qy - py) * (rx - qx)) > 1e-9;
+					}),
+				);
 				const anchor = keep[0][0];
 				const out: number[] = [];
 				for (const poly of keep) for (const [x, y] of poly) out.push(x - anchor[0], y - anchor[1]);
@@ -393,8 +436,13 @@ describe("parametric edge-length families", () => {
 			const m = cols.map((r) => r.slice());
 			let rank = 0;
 			for (let c = 0; c < (m[0]?.length ?? 0) && rank < m.length; c++) {
-				let piv = -1, best = 1e-6;
-				for (let i = rank; i < m.length; i++) if (Math.abs(m[i][c]) > best) { best = Math.abs(m[i][c]); piv = i; }
+				let piv = -1,
+					best = 1e-6;
+				for (let i = rank; i < m.length; i++)
+					if (Math.abs(m[i][c]) > best) {
+						best = Math.abs(m[i][c]);
+						piv = i;
+					}
 				if (piv < 0) continue;
 				[m[rank], m[piv]] = [m[piv], m[rank]];
 				for (let i = 0; i < m.length; i++)

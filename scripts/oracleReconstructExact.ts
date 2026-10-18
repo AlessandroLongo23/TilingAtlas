@@ -13,13 +13,13 @@
  * Every failure mode is loud (degenerate basis, incomplete tiling by area). Kept separate from the
  * certified script so the working path is untouched while we benchmark this one.
  */
-import { Cyclotomic, type CyclotomicRing } from '@/classes/Cyclotomic';
-import { RegularPolygon } from '@/classes/polygons/RegularPolygon';
-import { detSurd, polygonAreaSurd } from '@/classes/algorithm/exact/Surd';
-import { reducedClassKey } from '@/classes/algorithm/TilingCongruence';
-import { gaussReduceExact } from '@/classes/algorithm/LatticeEnumerator';
-import { getActiveRing } from '@/classes/Cyclotomic';
-import type { PeriodCell } from '@/classes/algorithm/PeriodSolver';
+import { Cyclotomic, type CyclotomicRing } from "@/classes/Cyclotomic";
+import { RegularPolygon } from "@/classes/polygons/RegularPolygon";
+import { detSurd, polygonAreaSurd } from "@/classes/algorithm/exact/Surd";
+import { reducedClassKey } from "@/classes/algorithm/TilingCongruence";
+import { gaussReduceExact } from "@/classes/algorithm/LatticeEnumerator";
+import { getActiveRing } from "@/classes/Cyclotomic";
+import type { PeriodCell } from "@/classes/algorithm/PeriodSolver";
 
 /**
  * A fully-surrounded vertex partitions its 2π into wedges; each wedge is one regular tile whose
@@ -64,7 +64,7 @@ export function reconstructOracleCellExact(
 	const ring = getActiveRing();
 	const u = dec(ring, o.T1);
 	const v = dec(ring, o.T2);
-	if (detSurd(u, v).isZero()) return { error: 'degenerate basis (det 0)' };
+	if (detSurd(u, v).isZero()) return { error: "degenerate basis (det 0)" };
 
 	// Reduce so lattice depth ≈ Euclidean depth (the oracle bases can be skewed); the lattice Λ is
 	// unchanged, so seeds ⊕ Λ and every face class are identical.

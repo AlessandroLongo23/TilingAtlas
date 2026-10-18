@@ -34,8 +34,7 @@ describe("exact placement building blocks", () => {
 		t.rotateZeta(ZERO, 12); // Î¶^12 = âˆ’1
 		const after = t.exactVertices!.map((v) => v.key());
 		// each vertex negated
-		const negBefore = RegularPolygon.fromAnchorAndDirExact(3, ZERO, 0)
-			.exactVertices!.map((v) => v.neg().key());
+		const negBefore = RegularPolygon.fromAnchorAndDirExact(3, ZERO, 0).exactVertices!.map((v) => v.neg().key());
 		expect(after.sort()).toEqual(negBefore.sort());
 		expect(after).not.toEqual(before);
 	});
@@ -72,4 +71,3 @@ describe("exact seed expansion (smoke)", () => {
 		expect(count).toBe(1);
 	});
 });
-

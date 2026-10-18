@@ -23,8 +23,8 @@
  *     maps i onto j (mod lattice). The number of classes is the true k.
  */
 
-import type { Polygon } from '../polygons/Polygon';
-import { Cyclotomic } from '../Cyclotomic';
+import type { Polygon } from "../polygons/Polygon";
+import { Cyclotomic } from "../Cyclotomic";
 
 const FLOAT_TOL = 1e-6;
 
@@ -58,7 +58,7 @@ export class KUniformityChecker {
 		cellPolygons: Polygon[],
 		u: Cyclotomic,
 		v: Cyclotomic,
-		diag?: { syms: number; reps: number; blockSize: number; orbits: number | null }
+		diag?: { syms: number; reps: number; blockSize: number; orbits: number | null },
 	): number | null {
 		const res = this.vertexOrbits(cellPolygons, u, v, diag);
 		return res ? res.orbits : null;
@@ -76,7 +76,7 @@ export class KUniformityChecker {
 		cellPolygons: Polygon[],
 		u: Cyclotomic,
 		v: Cyclotomic,
-		diag?: { syms: number; reps: number; blockSize: number; orbits: number | null }
+		diag?: { syms: number; reps: number; blockSize: number; orbits: number | null },
 	): VertexOrbitsResult | null {
 		if (cellPolygons.length === 0) return null;
 		if (!cellPolygons.every((p) => p.hasExact())) return null;
@@ -98,7 +98,7 @@ export class KUniformityChecker {
 		// Verified: N=24 orbit counts are unchanged, and the N=18/20 counts are gated by tests.
 		if (N !== 24 && N !== 18 && N !== 20) {
 			throw new Error(
-				`KUniformityChecker: validated for N∈{18,20,24} angle units; N=${N} unsupported — see review ST-5`
+				`KUniformityChecker: validated for N∈{18,20,24} angle units; N=${N} unsupported — see review ST-5`,
 			);
 		}
 		// Full turn (2π) in cornerAngleUnits' units of 2π/N — the one site a future N-generalization
@@ -126,9 +126,14 @@ export class KUniformityChecker {
 		const patch = block;
 
 		// Block centre (float, broadphase only): the average polygon centroid.
-		let cx = 0, cy = 0;
-		for (const p of patch) { cx += p.centroid.x; cy += p.centroid.y; }
-		cx /= patch.length; cy /= patch.length;
+		let cx = 0,
+			cy = 0;
+		for (const p of patch) {
+			cx += p.centroid.x;
+			cy += p.centroid.y;
+		}
+		cx /= patch.length;
+		cy /= patch.length;
 		const distC = (p: Polygon) => Math.hypot(p.centroid.x - cx, p.centroid.y - cy);
 
 		// Region sizes in CELL units (not block-extent fractions): the cell can be large/anisotropic,
@@ -161,7 +166,10 @@ export class KUniformityChecker {
 
 		const transformedKey = (p: Polygon, reflect: boolean, r: number, T: Cyclotomic): string => {
 			const c = mapPoint(p.exactCentroid!, reflect, r, T);
-			const vks = p.exactVertices!.map((vx) => mapPoint(vx, reflect, r, T).key()).sort().join(';');
+			const vks = p
+				.exactVertices!.map((vx) => mapPoint(vx, reflect, r, T).key())
+				.sort()
+				.join(";");
 			return `${p.getName()}:${c.key()}:${vks}`;
 		};
 
@@ -170,15 +178,16 @@ export class KUniformityChecker {
 		const reducedMappedKey = (p: Polygon, reflect: boolean, r: number, T: Cyclotomic): string => {
 			const gc = mapPoint(p.exactCentroid!, reflect, r, T);
 			const g = gc.toVector();
-			const dx = g.x - cx, dy = g.y - cy;
+			const dx = g.x - cx,
+				dy = g.y - cy;
 			const a = Math.round((dx * vV.y - dy * vV.x) / det);
 			const b = Math.round((uV.x * dy - uV.y * dx) / det);
 			const Tred = u.scaleRational(BigInt(-a), 1n).add(v.scaleRational(BigInt(-b), 1n));
 			const c = gc.add(Tred);
-			const vks = p.exactVertices!
-				.map((vx) => mapPoint(vx, reflect, r, T).add(Tred).key())
+			const vks = p
+				.exactVertices!.map((vx) => mapPoint(vx, reflect, r, T).add(Tred).key())
 				.sort()
-				.join(';');
+				.join(";");
 			return `${p.getName()}:${c.key()}:${vks}`;
 		};
 
@@ -206,7 +215,10 @@ export class KUniformityChecker {
 					// global verify: every interior polygon maps (mod lattice) onto an existing block tile
 					let ok = true;
 					for (const p of interior) {
-						if (!blockKeySet.has(reducedMappedKey(p, reflect, r, T))) { ok = false; break; }
+						if (!blockKeySet.has(reducedMappedKey(p, reflect, r, T))) {
+							ok = false;
+							break;
+						}
 					}
 					if (!ok) continue;
 					symSig.add(sig);
@@ -225,8 +237,10 @@ export class KUniformityChecker {
 				const uUnit = p.cornerAngleUnits(i); // corner-aware (reflex-safe); = angleUnits(p.n) for regular
 				const k = vx.key();
 				const e = incident.get(k);
-				if (e) { e.units += uUnit; e.tiles.add(pk); }
-				else incident.set(k, { vertex: vx, units: uUnit, tiles: new Set([pk]) });
+				if (e) {
+					e.units += uUnit;
+					e.tiles.add(pk);
+				} else incident.set(k, { vertex: vx, units: uUnit, tiles: new Set([pk]) });
 			});
 		}
 		const reps: Cyclotomic[] = [];
@@ -246,17 +260,27 @@ export class KUniformityChecker {
 		// Union-find over reps; rep i ~ rep j iff some symmetry maps i onto j (mod lattice).
 		const parent = reps.map((_, i) => i);
 		const find = (x: number): number => {
-			while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; }
+			while (parent[x] !== x) {
+				parent[x] = parent[parent[x]];
+				x = parent[x];
+			}
 			return x;
 		};
-		const union = (a: number, b: number) => { const ra = find(a), rb = find(b); if (ra !== rb) parent[ra] = rb; };
+		const union = (a: number, b: number) => {
+			const ra = find(a),
+				rb = find(b);
+			if (ra !== rb) parent[ra] = rb;
+		};
 
 		for (let i = 0; i < reps.length; i++) {
 			for (const g of syms) {
 				const gw = mapPoint(reps[i], g.reflect, g.r, g.T);
 				for (let j = 0; j < reps.length; j++) {
 					if (find(i) === find(j)) continue;
-					if (this.latticeEquiv(gw, reps[j], u, v, ZERO)) { union(i, j); break; }
+					if (this.latticeEquiv(gw, reps[j], u, v, ZERO)) {
+						union(i, j);
+						break;
+					}
 				}
 			}
 		}
@@ -271,7 +295,12 @@ export class KUniformityChecker {
 			repOrbit.push(rootIndex.get(root)!);
 		}
 		const orbits = rootIndex.size;
-		if (diag) { diag.syms = syms.length; diag.reps = reps.length; diag.blockSize = patch.length; diag.orbits = orbits; }
+		if (diag) {
+			diag.syms = syms.length;
+			diag.reps = reps.length;
+			diag.blockSize = patch.length;
+			diag.orbits = orbits;
+		}
 		const orbitOf = (q: Cyclotomic): number | null => {
 			for (let j = 0; j < reps.length; j++) {
 				if (this.latticeEquiv(q, reps[j], u, v, ZERO)) return repOrbit[j];

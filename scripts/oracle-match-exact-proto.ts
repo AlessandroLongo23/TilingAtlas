@@ -7,21 +7,21 @@
  *
  *   pnpm tsx scripts/oracle-match-exact-proto.ts
  */
-import fs from 'node:fs';
-import path from 'node:path';
-import { cellsCongruent } from '@/classes/algorithm/TilingCongruence';
-import { loadOracle, reconstructOracleCell } from './oracle-match';
-import { reconstructOracleCellExact } from './oracleReconstructExact';
+import fs from "node:fs";
+import path from "node:path";
+import { cellsCongruent } from "@/classes/algorithm/TilingCongruence";
+import { loadOracle, reconstructOracleCell } from "./oracle-match";
+import { reconstructOracleCellExact } from "./oracleReconstructExact";
 
-const DATE = '2026-07-08';
-const RESULTS = path.join(process.cwd(), 'experiments', 'results');
+const DATE = "2026-07-08";
+const RESULTS = path.join(process.cwd(), "experiments", "results");
 const LOG = path.join(RESULTS, `oracle-exact-recon-${DATE}.log`);
 const MD = path.join(RESULTS, `oracle-exact-recon-${DATE}.md`);
 
 fs.mkdirSync(RESULTS, { recursive: true });
 fs.writeFileSync(LOG, `# oracle exact-reconstruction benchmark — ${DATE}\n# started ${new Date().toISOString()}\n\n`);
 const log = (s: string): void => {
-	fs.appendFileSync(LOG, s + '\n');
+	fs.appendFileSync(LOG, s + "\n");
 	console.error(s);
 };
 
@@ -29,8 +29,8 @@ const oracle = loadOracle();
 const entriesFor = (k: number): [string, { T1: number[]; T2: number[]; Seed: number[][] }][] =>
 	Object.entries(oracle).filter(([key]) => new RegExp(`^t${k}\\d\\d\\d$`).test(key));
 
-type Rec = { cell: import('@/classes/algorithm/PeriodSolver').PeriodCell } | { error: string };
-const isErr = (r: Rec): r is { error: string } => 'error' in r;
+type Rec = { cell: import("@/classes/algorithm/PeriodSolver").PeriodCell } | { error: string };
+const isErr = (r: Rec): r is { error: string } => "error" in r;
 
 // ---- accuracy + robustness ----
 type Row = { tCode: string; verdict: string; floErr?: string; exaErr?: string };
@@ -50,17 +50,17 @@ for (const k of [1, 2, 3]) {
 		if (isErr(exa)) exaErrors.push(`${tCode}: ${exa.error}`);
 		let verdict: string;
 		if (isErr(flo) && isErr(exa)) {
-			verdict = 'both-error';
+			verdict = "both-error";
 			agree++;
 		} else if (isErr(flo) !== isErr(exa)) {
-			verdict = `DISAGREE (recon: flo ${isErr(flo) ? 'err' : 'ok'}, exa ${isErr(exa) ? 'err' : 'ok'})`;
+			verdict = `DISAGREE (recon: flo ${isErr(flo) ? "err" : "ok"}, exa ${isErr(exa) ? "err" : "ok"})`;
 			disagree++;
 		} else if (!isErr(flo) && !isErr(exa)) {
 			const cong = cellsCongruent(flo.cell, exa.cell, new Map());
-			verdict = cong ? 'congruent' : 'DISAGREE (not congruent)';
+			verdict = cong ? "congruent" : "DISAGREE (not congruent)";
 			cong ? agree++ : disagree++;
 		} else {
-			verdict = 'unreachable';
+			verdict = "unreachable";
 		}
 		rows.push({
 			tCode,
@@ -68,32 +68,47 @@ for (const k of [1, 2, 3]) {
 			floErr: isErr(flo) ? flo.error : undefined,
 			exaErr: isErr(exa) ? exa.error : undefined,
 		});
-		if (verdict.startsWith('DISAGREE')) log(`  ✗ ${tCode}: ${verdict}`);
+		if (verdict.startsWith("DISAGREE")) log(`  ✗ ${tCode}: ${verdict}`);
 		if ((i + 1) % 20 === 0) log(`  [${i + 1}/${entries.length}]`);
 	});
 }
 const total = rows.length;
 log(`\nACCURACY: ${agree}/${total} agree (congruent or both-error), ${disagree} disagree`);
 log(`ROBUSTNESS: float clean ${total - floErrors.length}/${total}, exact clean ${total - exaErrors.length}/${total}`);
-if (floErrors.length) log(`  float errors:\n    ${floErrors.join('\n    ')}`);
-if (exaErrors.length) log(`  exact errors:\n    ${exaErrors.join('\n    ')}`);
+if (floErrors.length) log(`  float errors:\n    ${floErrors.join("\n    ")}`);
+if (exaErrors.length) log(`  exact errors:\n    ${exaErrors.join("\n    ")}`);
 
 // ---- negative fixtures: malformed input MUST be rejected loudly by the exact method ----
 log(`\n--- negative fixtures (exact method must REJECT each) ---`);
-const t1001 = oracle['t1001'];
+const t1001 = oracle["t1001"];
 const negatives: { name: string; o: { T1: number[]; T2: number[]; Seed: number[][] } }[] = [
-	{ name: 'degenerate basis (T1=T2=0)', o: { T1: [0, 0, 0, 0], T2: [0, 0, 0, 0], Seed: [[0, 0, 0, 0]] } },
-	{ name: 'basis with T1 doubled (seeds cannot tile the enlarged cell)', o: { T1: t1001.T1.map((x) => x * 2), T2: t1001.T2, Seed: t1001.Seed } },
-	{ name: 'single stray seed, no basis structure', o: { T1: [1, 0, 0, 0], T2: [0, 0, 0, 1], Seed: [[0, 0, 0, 0], [5, 5, 5, 5]] } },
+	{ name: "degenerate basis (T1=T2=0)", o: { T1: [0, 0, 0, 0], T2: [0, 0, 0, 0], Seed: [[0, 0, 0, 0]] } },
+	{
+		name: "basis with T1 doubled (seeds cannot tile the enlarged cell)",
+		o: { T1: t1001.T1.map((x) => x * 2), T2: t1001.T2, Seed: t1001.Seed },
+	},
+	{
+		name: "single stray seed, no basis structure",
+		o: {
+			T1: [1, 0, 0, 0],
+			T2: [0, 0, 0, 1],
+			Seed: [
+				[0, 0, 0, 0],
+				[5, 5, 5, 5],
+			],
+		},
+	},
 ];
 let negOk = 0;
 for (const neg of negatives) {
-	const exa = reconstructOracleCellExact('negfix', neg.o);
+	const exa = reconstructOracleCellExact("negfix", neg.o);
 	const rejected = isErr(exa);
 	if (rejected) negOk++;
-	log(`  ${rejected ? '✓ rejected' : '✗ ACCEPTED (BAD)'}: ${neg.name}${rejected ? ` — ${exa.error}` : ''}`);
+	log(`  ${rejected ? "✓ rejected" : "✗ ACCEPTED (BAD)"}: ${neg.name}${rejected ? ` — ${exa.error}` : ""}`);
 }
-log(`NEGATIVE FIXTURES: ${negOk}/${negatives.length} rejected loudly (g=11→n=24 hole closed by the faceFromGap guard — unit-tested)`);
+log(
+	`NEGATIVE FIXTURES: ${negOk}/${negatives.length} rejected loudly (g=11→n=24 hole closed by the faceFromGap guard — unit-tested)`,
+);
 
 // ---- speed ----
 log(`\n--- speed (${5} repeats over all ${total} k≤3 entries) ---`);
@@ -112,8 +127,8 @@ log(`  exact:  ${exaMs.toFixed(1)} ms / full k≤3 pass  (${(exaMs / floMs).toFi
 // ---- report ----
 const rec =
 	agree === total && negOk === negatives.length
-		? 'The exact reconstruction is congruent to the float reconstruction for every k≤3 tiling, so it would produce a byte-identical oracle map (≅ is transitive). It also rejects all malformed fixtures. Per the plan decision it is NOT swapped into the certified path; it is available as a drop-in should the float rim/area heuristics ever cause trouble.'
-		: 'DIVERGENCE FOUND — see the disagree rows above; do not adopt until resolved.';
+		? "The exact reconstruction is congruent to the float reconstruction for every k≤3 tiling, so it would produce a byte-identical oracle map (≅ is transitive). It also rejects all malformed fixtures. Per the plan decision it is NOT swapped into the certified path; it is available as a drop-in should the float rim/area heuristics ever cause trouble."
+		: "DIVERGENCE FOUND — see the disagree rows above; do not adopt until resolved.";
 
 const md = `# Oracle reconstruction: exact cloud-probe vs float — benchmark (${DATE})
 
@@ -135,8 +150,8 @@ float heuristics). The certified script is unmodified.
 | Speed — float | ${floMs.toFixed(1)} ms / k≤3 pass |
 | Speed — exact | ${exaMs.toFixed(1)} ms / k≤3 pass (${(exaMs / floMs).toFixed(2)}× float) |
 
-${floErrors.length ? `Float reconstruction errors:\n\n${floErrors.map((e) => `- ${e}`).join('\n')}\n` : 'Float reconstruction errored on nothing.\n'}
-${exaErrors.length ? `Exact reconstruction errors:\n\n${exaErrors.map((e) => `- ${e}`).join('\n')}\n` : 'Exact reconstruction errored on nothing.\n'}
+${floErrors.length ? `Float reconstruction errors:\n\n${floErrors.map((e) => `- ${e}`).join("\n")}\n` : "Float reconstruction errored on nothing.\n"}
+${exaErrors.length ? `Exact reconstruction errors:\n\n${exaErrors.map((e) => `- ${e}`).join("\n")}\n` : "Exact reconstruction errored on nothing.\n"}
 
 ## Accuracy / robustness reading
 
@@ -161,4 +176,6 @@ _Generated by \`scripts/oracle-match-exact-proto.ts\`; raw progress log: \`${pat
 `;
 fs.writeFileSync(MD, md);
 log(`\n★ report written: ${path.relative(process.cwd(), MD)}`);
-log(`  recommendation: ${agree === total && negOk === negatives.length ? 'exact reproduces float exactly; keep current per plan' : 'DIVERGENCE — investigate'}`);
+log(
+	`  recommendation: ${agree === total && negOk === negatives.length ? "exact reproduces float exactly; keep current per plan" : "DIVERGENCE — investigate"}`,
+);

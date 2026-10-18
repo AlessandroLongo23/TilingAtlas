@@ -14,17 +14,14 @@ export default function TheoryIndexPage() {
 				<header className="mb-8">
 					<h1 className="text-2xl font-semibold text-fg">Theory</h1>
 					<p className="mt-1 max-w-[640px] text-sm text-fg-muted">
-						The pieces the atlas is built from, and the mathematics behind them: browsable
-						catalogues of the tiles and their vertex configurations, then background reading with
-						worked examples and interactive previews.
+						The pieces the atlas is built from, and the mathematics behind them: browsable catalogues of the tiles and
+						their vertex configurations, then background reading with worked examples and interactive previews.
 					</p>
 				</header>
 
 				{THEORY_GROUPS.map((group) => (
 					<section key={group.id} className="mb-10 last:mb-0">
-						<h2 className="ta-label mb-3 text-fg-muted">
-							{group.label}
-						</h2>
+						<h2 className="ta-label mb-3 text-fg-muted">{group.label}</h2>
 						<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 							{group.items.map((a) => (
 								<Link
@@ -33,14 +30,21 @@ export default function TheoryIndexPage() {
 									className="group flex flex-col rounded-surface bg-surface-raised p-5 ring-1 ring-line-subtle transition-shadow hover:ring-line"
 								>
 									<div className="flex items-center justify-between gap-2">
-										<h3 className="truncate text-base font-semibold leading-snug text-fg max-md:whitespace-normal" title={a.title}>{a.title}</h3>
+										<h3
+											className="truncate text-base leading-snug font-semibold text-fg max-md:whitespace-normal"
+											title={a.title}
+										>
+											{a.title}
+										</h3>
 										<ArrowRight
 											size={16}
 											className="shrink-0 text-fg-muted opacity-60 transition group-hover:translate-x-0.5 group-hover:text-accent group-hover:opacity-100"
 										/>
 									</div>
 									{/* One column on a phone, so the whole blurb fits; the clamp only evens out the desktop pairs. */}
-									<p className="mt-2 line-clamp-2 text-sm leading-relaxed text-fg-muted max-md:line-clamp-none">{a.blurb}</p>
+									<p className="mt-2 line-clamp-2 text-sm leading-relaxed text-fg-muted max-md:line-clamp-none">
+										{a.blurb}
+									</p>
 								</Link>
 							))}
 						</div>

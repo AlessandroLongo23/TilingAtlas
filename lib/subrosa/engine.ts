@@ -148,16 +148,25 @@ function deBruijnFill(ring: CyclotomicRing, n: number, dirs: number[]): Rhomb[] 
 		for (const k of A) evs.push({ k, o: 1 });
 		for (const k of B) evs.push({ k, o: -1 });
 		evs.sort((p, q) => p.k - q.k);
-		let run = 0, minRun = Infinity, minAt = 0;
+		let run = 0,
+			minRun = Infinity,
+			minAt = 0;
 		for (let i = 0; i < evs.length; i++) {
 			run += evs[i].o;
-			if (run < minRun) { minRun = run; minAt = i; }
+			if (run < minRun) {
+				minRun = run;
+				minAt = i;
+			}
 		}
 		const stack: number[] = [];
 		for (let t = 0; t < evs.length; t++) {
 			const e = evs[(minAt + 1 + t) % evs.length];
 			if (e.o === 1) stack.push(e.k);
-			else { const p = stack.pop()!; partner[p] = e.k; partner[e.k] = p; }
+			else {
+				const p = stack.pop()!;
+				partner[p] = e.k;
+				partner[e.k] = p;
+			}
 		}
 	}
 
@@ -178,14 +187,17 @@ function deBruijnFill(ring: CyclotomicRing, n: number, dirs: number[]): Rhomb[] 
 		strandOfEdge[e1] = id;
 	}
 
-	const inArc = (e0: number, e1: number, jj: number): boolean =>
-		e0 < e1 ? jj > e0 && jj < e1 : jj > e0 || jj < e1;
+	const inArc = (e0: number, e1: number, jj: number): boolean => (e0 < e1 ? jj > e0 && jj < e1 : jj > e0 || jj < e1);
 	const mid = (k: number): Vector => {
-		const p = fp[k], q = fp[(k + 1) % L];
+		const p = fp[k],
+			q = fp[(k + 1) % L];
 		return new Vector((p.x + q.x) / 2, (p.y + q.y) / 2);
 	};
 	const isectParam = (A: Vector, B: Vector, C: Vector, D: Vector): number => {
-		const rx = B.x - A.x, ry = B.y - A.y, sx = D.x - C.x, sy = D.y - C.y;
+		const rx = B.x - A.x,
+			ry = B.y - A.y,
+			sx = D.x - C.x,
+			sy = D.y - C.y;
 		const den = rx * sy - ry * sx;
 		if (Math.abs(den) < 1e-12) return 0;
 		return ((C.x - A.x) * sy - (C.y - A.y) * sx) / den;
@@ -194,7 +206,8 @@ function deBruijnFill(ring: CyclotomicRing, n: number, dirs: number[]): Rhomb[] 
 	const rh: Rhomb[] = [];
 	for (let sId = 0; sId < strands.length; sId++) {
 		const { e0, e1, a } = strands[sId];
-		const mS = mid(e0), mE = mid(e1);
+		const mS = mid(e0),
+			mE = mid(e1);
 		const crossings: { c: number; st: number; tparam: number }[] = [];
 		for (let step = 1; step < L; step++) {
 			const j = (e0 + step) % L;
@@ -205,7 +218,7 @@ function deBruijnFill(ring: CyclotomicRing, n: number, dirs: number[]): Rhomb[] 
 			if (inArc(e0, e1, oe)) continue; // both endpoints in arc ⇒ no crossing with s
 			// orient the crossing direction leftward of a (into the interior): rep in (a, a+M/2)
 			let c = dirs[j] % M;
-			const rel = ((c - a) % M + M) % M;
+			const rel = (((c - a) % M) + M) % M;
 			if (!(rel > 0 && rel < M / 2)) c = (c + M / 2) % M;
 			crossings.push({ c, st, tparam: isectParam(mS, mE, mid(other.e0), mid(other.e1)) });
 		}
@@ -242,12 +255,7 @@ function rng32(seed: number): () => number {
  * containment predicate only decides ear validity between well-separated exact points. Returns
  * null on a dead-end (no clippable ear before the region is exhausted).
  */
-function fillOnce(
-	ring: CyclotomicRing,
-	n: number,
-	dirs: number[],
-	pick: (ears: Ear[]) => Ear,
-): Rhomb[] | null {
+function fillOnce(ring: CyclotomicRing, n: number, dirs: number[], pick: (ears: Ear[]) => Ear): Rhomb[] | null {
 	const N = 4 * n;
 	const U: Pt[] = [];
 	for (let j = 0; j < N; j++) U.push(Cyclotomic.zeta(ring, j));
@@ -268,8 +276,7 @@ function fillOnce(
 		}
 		return v;
 	};
-	const edir = (i: number): number =>
-		dirOf.get(poly[(i + 1) % poly.length].sub(poly[i]).key())!;
+	const edir = (i: number): number => dirOf.get(poly[(i + 1) % poly.length].sub(poly[i]).key())!;
 
 	const rh: Rhomb[] = [];
 	let guard = 0;
@@ -294,7 +301,7 @@ function fillOnce(
 			const A = (B - 1 + m) % m;
 			const C = (B + 1) % m;
 			// convex (left) turn ⇒ index turn in (0, N/2); N/2 = 2n corresponds to a straight edge
-			const turn = ((edir(B) - edir(A)) % N + N) % N;
+			const turn = (((edir(B) - edir(A)) % N) + N) % N;
 			if (!(turn > 0 && turn < N / 2)) continue;
 			const Dv = poly[A].add(poly[C].sub(poly[B]));
 			const fa = fx(poly[A]);
@@ -341,11 +348,15 @@ export function fillSuperRhomb(ring: CyclotomicRing, n: number, dirs: number[]):
 	// target area = shoelace of the exact boundary (in float)
 	const U: Vector[] = [];
 	for (let j = 0; j < M; j++) U.push(Cyclotomic.zeta(ring, j).toVector());
-	let bx = 0, by = 0, target2 = 0;
+	let bx = 0,
+		by = 0,
+		target2 = 0;
 	for (let i = 0; i < dirs.length; i++) {
-		const nx = bx + U[dirs[i]].x, ny = by + U[dirs[i]].y;
+		const nx = bx + U[dirs[i]].x,
+			ny = by + U[dirs[i]].y;
 		target2 += bx * ny - nx * by;
-		bx = nx; by = ny;
+		bx = nx;
+		by = ny;
 	}
 	const target = Math.abs(target2) / 2;
 	const rhArea = (r: Rhomb): number => {

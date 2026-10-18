@@ -3,13 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { analyseFaces } from "@/lib/freedraw/faces";
 import type { FreedrawPattern } from "@/lib/freedraw/pattern";
-import {
-	DEFAULT_STYLE,
-	drawFreedraw,
-	fitView,
-	type FreedrawStyle,
-	type FreedrawView,
-} from "@/lib/freedraw/render";
+import { DEFAULT_STYLE, drawFreedraw, fitView, type FreedrawStyle, type FreedrawView } from "@/lib/freedraw/render";
 import { useEasedRotation } from "@/lib/hooks/useEasedRotation";
 import {
 	accumulateDetents,
@@ -226,24 +220,29 @@ export function FreedrawCanvas({
 
 	// Fingers (lib/render/touchGestures.ts useCardViewGestures): pinch, pan and twist, a tap grows the
 	// orbit's dots under it, a double-tap is the double-click refit.
-	const touch = useCardViewGestures(canvasRef, interactive ? {
-		angle: () => rotRef.current,
-		turn: (deg) => {
-			rotRef.current += deg;
-		},
-		rotation,
-		onRotationChange,
-		zoom: (from, to, scale) => {
-			pinchOffsetView(controlsRef.current, { from, to, scale }, ZOOM_BOUNDS);
-			dirtyRef.current = true;
-		},
-		cancel: () => {
-			drag.current = null;
-			hoverRef.current = null;
-		},
-		tap: (x, y) => hoverAt(x, y),
-		doubleTap: () => refit(),
-	} : null);
+	const touch = useCardViewGestures(
+		canvasRef,
+		interactive
+			? {
+					angle: () => rotRef.current,
+					turn: (deg) => {
+						rotRef.current += deg;
+					},
+					rotation,
+					onRotationChange,
+					zoom: (from, to, scale) => {
+						pinchOffsetView(controlsRef.current, { from, to, scale }, ZOOM_BOUNDS);
+						dirtyRef.current = true;
+					},
+					cancel: () => {
+						drag.current = null;
+						hoverRef.current = null;
+					},
+					tap: (x, y) => hoverAt(x, y),
+					doubleTap: () => refit(),
+				}
+			: null,
+	);
 
 	const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
 		if (!interactive || touch.pinching) return;
@@ -356,7 +355,7 @@ export function FreedrawCanvas({
 			onPointerCancel={onPointerUp}
 			onPointerLeave={onPointerLeave}
 			onDoubleClick={refit}
-			className={cn("block w-full h-full", interactive && "cursor-grab active:cursor-grabbing touch-none", classes)}
+			className={cn("block h-full w-full", interactive && "cursor-grab touch-none active:cursor-grabbing", classes)}
 		/>
 	);
 }

@@ -121,10 +121,7 @@ export function characteristicTileSize(polys: RawPolygon[]): number {
 	return Math.sqrt(total / polys.length);
 }
 
-const PATCHES: Record<
-	"penrose" | "hat" | "chair" | "sphinx" | "half-hex" | "pinwheel" | "half-hex-3",
-	PatchDef
-> = {
+const PATCHES: Record<"penrose" | "hat" | "chair" | "sphinx" | "half-hex" | "pinwheel" | "half-hex-3", PatchDef> = {
 	penrose: {
 		title: "Penrose",
 		level: { label: "Deflation depth", min: 1, max: PENROSE_MAX_DEPTH, def: 6 },
@@ -283,8 +280,13 @@ function patchAt(id: keyof typeof PATCHES, level: number, sample: Sample): RawPo
  * every tiling in the atlas counts up.
  */
 function RulePanel({ caption, pieces }: { caption: string; pieces: RawPolygon[] }) {
-	const W = 232, H = 96, pad = 6;
-	let minx = Infinity, miny = Infinity, maxx = -Infinity, maxy = -Infinity;
+	const W = 232,
+		H = 96,
+		pad = 6;
+	let minx = Infinity,
+		miny = Infinity,
+		maxx = -Infinity,
+		maxy = -Infinity;
 	for (const p of pieces)
 		for (const v of p.vertices) {
 			if (v.x < minx) minx = v.x;
@@ -293,20 +295,20 @@ function RulePanel({ caption, pieces }: { caption: string; pieces: RawPolygon[] 
 			if (v.y > maxy) maxy = v.y;
 		}
 	if (!Number.isFinite(minx)) return null;
-	const bw = maxx - minx || 1, bh = maxy - miny || 1;
+	const bw = maxx - minx || 1,
+		bh = maxy - miny || 1;
 	const s = Math.min((W - 2 * pad) / bw, (H - 2 * pad) / bh);
 	// Centre the drawing in the box, so panels of different aspect ratios sit on one axis.
-	const ox = (W - s * bw) / 2, oy = (H - s * bh) / 2;
+	const ox = (W - s * bw) / 2,
+		oy = (H - s * bh) / 2;
 	return (
 		<div>
-			<div className="text-xs text-fg-muted mb-1.5">{caption}</div>
+			<div className="mb-1.5 text-xs text-fg-muted">{caption}</div>
 			<svg width={W} height={H} className="w-full rounded-control border border-line-subtle bg-surface-overlay">
 				{pieces.map((p, i) => (
 					<polygon
 						key={i}
-						points={p.vertices
-							.map((v) => `${ox + s * (v.x - minx)},${H - oy - s * (v.y - miny)}`)
-							.join(" ")}
+						points={p.vertices.map((v) => `${ox + s * (v.x - minx)},${H - oy - s * (v.y - miny)}`).join(" ")}
 						fill={`hsl(${hueOf(p)} ${PATCH_SAT * 100}% ${PATCH_LIGHT}%)`}
 						stroke="rgba(0,0,0,0.55)"
 						strokeWidth={0.6}
@@ -339,10 +341,7 @@ export function PatchView({ id, header }: { id: keyof typeof PATCHES; header: Re
 	const [strokeWidth, setStrokeWidth] = useState<number>(STROKE_WIDTH.def);
 
 	const effLevel = Math.min(Math.max(level, def.level.min), def.level.max);
-	const sample: Sample = useMemo(
-		() => (pick === "mix" ? { pick: "mix", seed } : { pick: Number(pick) }),
-		[pick, seed],
-	);
+	const sample: Sample = useMemo(() => (pick === "mix" ? { pick: "mix", seed } : { pick: Number(pick) }), [pick, seed]);
 	const polys = useMemo(() => patchAt(id, effLevel, sample), [id, effLevel, sample]);
 	// Level-independent: the rule is the rule at every level, so it is built once per construction.
 	const ruleFigure = useMemo(() => def.rule?.(), [def]);
@@ -352,7 +351,7 @@ export function PatchView({ id, header }: { id: keyof typeof PATCHES; header: Re
 	const { canvasRef, view } = usePatchCanvas({ polys, strokeWidth, subject: id, keepView: framing === "keep" });
 
 	return (
-		<div className="relative flex-1 min-h-0 flex">
+		<div className="relative flex min-h-0 flex-1">
 			{/* The canvas's top-right corner (this box's, the sidebar being on the left), first in the DOM so
 			    it is read before the sheet. */}
 			<CornerControls />
@@ -407,10 +406,10 @@ export function PatchView({ id, header }: { id: keyof typeof PATCHES; header: Re
 				)}
 			</AperiodicSidebar>
 
-			<div className="flex-1 min-h-0 relative">
+			<div className="relative min-h-0 flex-1">
 				<canvas
 					ref={canvasRef}
-					className="w-full h-full block cursor-grab active:cursor-grabbing touch-none"
+					className="block h-full w-full cursor-grab touch-none active:cursor-grabbing"
 					{...view.handlers}
 				/>
 			</div>

@@ -19,7 +19,7 @@ import type { ReferenceTiling } from "@/lib/services/referenceAtlas";
 import { applyMergePlan } from "./merge-plan";
 import { applyRangePlan, rangeNote, type RangePlan } from "./range-plan";
 import { applyCoupledPlan } from "./coupled-plan";
-import { stringifyAtlas } from './atlas/encode.mjs';
+import { stringifyAtlas } from "./atlas/encode.mjs";
 
 interface FamilyRecord {
 	id: string;
@@ -136,7 +136,10 @@ function main(): void {
 			continue;
 		}
 		const paramCell: ParametricCellData = { params: r.params, cellPolygons: r.cellPolygons, basis: r.basis };
-		const renderCell = evaluateParamCell(paramCell, r.params.map((p) => p.defaultAlphaDeg)) as ReferenceTiling["renderCell"];
+		const renderCell = evaluateParamCell(
+			paramCell,
+			r.params.map((p) => p.defaultAlphaDeg),
+		) as ReferenceTiling["renderCell"];
 		out.push({
 			id: r.id,
 			source: "mixed",
@@ -185,21 +188,31 @@ function main(): void {
 	// operate on α-slider records, and these have no parameter at all.
 	if (fs.existsSync(CROSSING_PATH)) {
 		const cross = JSON.parse(fs.readFileSync(CROSSING_PATH, "utf8")) as {
-			k: number; tiles: string[]; areaOk: boolean; tileNames: string[];
+			k: number;
+			tiles: string[];
+			areaOk: boolean;
+			tileNames: string[];
 			renderCell: ReferenceTiling["renderCell"];
 		}[];
 		const SUB: Record<string, string> = { "1": "₁", "2": "₂", "3": "₃" };
 		const label = (tiles: string[]): string =>
-			[...tiles].sort().map((t) => {
-				const st = /^(\d+)\*(\d+)$/.exec(t);
-				if (st) return `${st[1]}*`;
-				const sc = /^(\d+)s(\d+)$/.exec(t);
-				if (sc) return `${sc[1]}${SUB[sc[2]] ?? sc[2]}`;
-				return t;
-			}).filter((v, i, a) => a.indexOf(v) === i).join(".");
+			[...tiles]
+				.sort()
+				.map((t) => {
+					const st = /^(\d+)\*(\d+)$/.exec(t);
+					if (st) return `${st[1]}*`;
+					const sc = /^(\d+)s(\d+)$/.exec(t);
+					if (sc) return `${sc[1]}${SUB[sc[2]] ?? sc[2]}`;
+					return t;
+				})
+				.filter((v, i, a) => a.indexOf(v) === i)
+				.join(".");
 		let n = 0;
 		for (const c of cross) {
-			if (!c.areaOk) { log(`  ⚑ crossing record k=${c.k} fails its area certificate — SKIPPED`); continue; }
+			if (!c.areaOk) {
+				log(`  ⚑ crossing record k=${c.k} fails its area certificate — SKIPPED`);
+				continue;
+			}
 			n++;
 			final.push({
 				id: `ctrnact-cross-star-scaled-k${c.k}-${String(n).padStart(2, "0")}`,
@@ -234,8 +247,17 @@ function main(): void {
 	fs.writeFileSync(OUT_PATH, stringifyAtlas(main_) + "\n");
 	for (const k of shardKs) {
 		const p = OUT_PATH.replace(/\.json$/, `-k${k}.json`);
-		fs.writeFileSync(p, JSON.stringify(final.filter((t) => t.k === k), null, 0) + "\n");
-		log(`  shard k=${k}: ${final.filter((t) => t.k === k).length} families → ${path.relative(ROOT, p)} (${(fs.statSync(p).size / 1024).toFixed(1)} KB)`);
+		fs.writeFileSync(
+			p,
+			JSON.stringify(
+				final.filter((t) => t.k === k),
+				null,
+				0,
+			) + "\n",
+		);
+		log(
+			`  shard k=${k}: ${final.filter((t) => t.k === k).length} families → ${path.relative(ROOT, p)} (${(fs.statSync(p).size / 1024).toFixed(1)} KB)`,
+		);
 	}
 	for (const f of fs.readdirSync(path.dirname(OUT_PATH))) {
 		const m = /^reference-atlas-mixed-k(\d+)\.json$/.exec(f);
@@ -250,13 +272,21 @@ function main(): void {
 	// (`--no-rename`): the mixed shelf has published deep links and `mergedFamilyAliases.json` resolves the
 	// pre-merge ones.
 	try {
-		const dedup = execFileSync("python3", [
-			path.join(ROOT, "scripts", "shelf-dedup.py"),
-			"--shelf", OUT_PATH,
-			"--log", path.join(ROOT, "experiments", "results", "mixed-shelf-dedup.log"),
-			"--json", path.join(ROOT, "experiments", "results", "mixed-shelf-dedup.json"),
-			"--no-rename", "--write",
-		], { encoding: "utf8" });
+		const dedup = execFileSync(
+			"python3",
+			[
+				path.join(ROOT, "scripts", "shelf-dedup.py"),
+				"--shelf",
+				OUT_PATH,
+				"--log",
+				path.join(ROOT, "experiments", "results", "mixed-shelf-dedup.log"),
+				"--json",
+				path.join(ROOT, "experiments", "results", "mixed-shelf-dedup.json"),
+				"--no-rename",
+				"--write",
+			],
+			{ encoding: "utf8" },
+		);
 		for (const line of dedup.trimEnd().split("\n").slice(-6)) log(`  ${line}`);
 	} catch (e) {
 		throw new Error(
@@ -265,9 +295,10 @@ function main(): void {
 		);
 	}
 	const sizeKB = (fs.statSync(OUT_PATH).size / 1024).toFixed(1);
-	log(`  wrote ${final.length} mixed families (${skipped} skipped) → ${path.relative(ROOT, OUT_PATH)} (${sizeKB} KB), elapsed ${((Date.now() - t0) / 1000).toFixed(2)}s`);
+	log(
+		`  wrote ${final.length} mixed families (${skipped} skipped) → ${path.relative(ROOT, OUT_PATH)} (${sizeKB} KB), elapsed ${((Date.now() - t0) / 1000).toFixed(2)}s`,
+	);
 	fs.writeFileSync(LOG_PATH, logLines.join("\n") + "\n");
 }
-
 
 main();

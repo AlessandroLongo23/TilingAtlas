@@ -31,27 +31,22 @@ export function SidebarSection({
 	children,
 }: SidebarSectionProps) {
 	return (
-		<div
-			className={cn(
-				"overflow-hidden",
-				flush ? "" : "border border-line-subtle rounded-surface",
-			)}
-		>
-			<div className="w-full flex items-center gap-2 px-3 py-2">
+		<div className={cn("overflow-hidden", flush ? "" : "rounded-surface border border-line-subtle")}>
+			<div className="flex w-full items-center gap-2 px-3 py-2">
 				<button
 					type="button"
 					onClick={() => onOpenChange(!open)}
 					aria-expanded={open}
-					className="flex-1 flex items-center justify-between gap-2 text-left max-md:min-h-11 cursor-pointer hover:text-fg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 rounded-sm"
+					className="flex flex-1 cursor-pointer items-center justify-between gap-2 rounded-sm text-left transition-colors hover:text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 max-md:min-h-11"
 				>
 					<span className="ta-label">
 						{title}
-						{summary ? <span className="ml-1.5 text-fg normal-case tracking-normal">{summary}</span> : null}
+						{summary ? <span className="ml-1.5 tracking-normal text-fg normal-case">{summary}</span> : null}
 					</span>
 					{open ? (
-						<ChevronDown size={13} className="text-fg-muted shrink-0" />
+						<ChevronDown size={13} className="shrink-0 text-fg-muted" />
 					) : (
-						<ChevronRight size={13} className="text-fg-muted shrink-0" />
+						<ChevronRight size={13} className="shrink-0 text-fg-muted" />
 					)}
 				</button>
 				{rightSlot ? <div className="shrink-0">{rightSlot}</div> : null}

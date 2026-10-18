@@ -67,7 +67,10 @@ export function vertexTypes(pal: Palette): number[][] {
 		if (sum === FULL) {
 			if (w.length < 3) return; // a vertex of valence < 3 is not a vertex of a tiling
 			const c = canon(w);
-			if (!seen.has(c)) { seen.add(c); out.push(c.split(".").map(Number)); }
+			if (!seen.has(c)) {
+				seen.add(c);
+				out.push(c.split(".").map(Number));
+			}
 			return;
 		}
 		if (w.length >= 6) return; // valence bound: the smallest corner is 60 degrees
@@ -152,7 +155,10 @@ function matchings(types: number[][], pal: Palette, out: RawMap[], cap: number):
 	let D = 0;
 	for (let i = 0; i < types.length; i++) {
 		base.push(D);
-		for (let j = 0; j < types[i].length; j++) { owner.push(i); slot.push(j); }
+		for (let j = 0; j < types[i].length; j++) {
+			owner.push(i);
+			slot.push(j);
+		}
 		D += types[i].length;
 	}
 	if (D % 2) return;
@@ -161,7 +167,11 @@ function matchings(types: number[][], pal: Palette, out: RawMap[], cap: number):
 	const rec = () => {
 		if (out.length >= cap) return;
 		let d0 = -1;
-		for (let d = 0; d < D; d++) if (m.alpha[d] < 0) { d0 = d; break; }
+		for (let d = 0; d < D; d++)
+			if (m.alpha[d] < 0) {
+				d0 = d;
+				break;
+			}
 		if (d0 < 0) {
 			// complete: collect faces and check genus
 			const faces: RawMap["faces"] = [];
@@ -175,22 +185,33 @@ function matchings(types: number[][], pal: Palette, out: RawMap[], cap: number):
 				if (n === null) return;
 				faces.push({ darts: w.darts, word: w.word, n });
 			}
-			const V = types.length, E = D / 2, F = faces.length;
+			const V = types.length,
+				E = D / 2,
+				F = faces.length;
 			if (V - E + F !== 0) return; // torus only
 			out.push({ types, alpha: m.alpha.slice(), V, E, F, faces });
 			return;
 		}
 		for (let d1 = d0 + 1; d1 < D; d1++) {
 			if (m.alpha[d1] >= 0) continue;
-			m.alpha[d0] = d1; m.alpha[d1] = d0;
+			m.alpha[d0] = d1;
+			m.alpha[d1] = d0;
 			let ok = true;
 			for (const s of [d0, d1]) {
 				const w = faceWalk(m, s);
-				if (w.closed) { if (faceTile(w.word, pal) === null) { ok = false; break; } }
-				else if (!prefixOk(w.word, pal)) { ok = false; break; }
+				if (w.closed) {
+					if (faceTile(w.word, pal) === null) {
+						ok = false;
+						break;
+					}
+				} else if (!prefixOk(w.word, pal)) {
+					ok = false;
+					break;
+				}
 			}
 			if (ok) rec();
-			m.alpha[d0] = -1; m.alpha[d1] = -1;
+			m.alpha[d0] = -1;
+			m.alpha[d1] = -1;
 			if (out.length >= cap) return;
 		}
 	};
@@ -200,7 +221,10 @@ function matchings(types: number[][], pal: Palette, out: RawMap[], cap: number):
 // ── STAGE 3: realization ────────────────────────────────────────────────────────────────────────
 
 export let lastReject = "";
-const rej = (why: string) => { lastReject = why; return null; };
+const rej = (why: string) => {
+	lastReject = why;
+	return null;
+};
 
 const dirVec = (u: number): [number, number] => [Math.cos((u * U * Math.PI) / 180), Math.sin((u * U * Math.PI) / 180)];
 
@@ -228,13 +252,17 @@ function rankAndKernel(rows: number[][], n: number): number[][] {
 	return free.map((fc) => {
 		const v = new Array(n).fill(0);
 		v[fc] = 1;
-		pivotOf.forEach((pc, ri) => { v[pc] = -m[ri][fc]; });
+		pivotOf.forEach((pc, ri) => {
+			v[pc] = -m[ri][fc];
+		});
 		return v;
 	});
 }
 
 export interface RealizedFamily {
-	V: number; E: number; F: number;
+	V: number;
+	E: number;
+	F: number;
 	/** Cone dimension including scale; the family has `dim - 1` essential parameters. */
 	dim: number;
 	tiles: number[]; // the n of each face
@@ -267,7 +295,10 @@ function realize(rm: RawMap, pal: Palette): RealizedFamily | null {
 	let D = 0;
 	for (let i = 0; i < types.length; i++) {
 		base.push(D);
-		for (let j = 0; j < types[i].length; j++) { owner.push(i); slot.push(j); }
+		for (let j = 0; j < types[i].length; j++) {
+			owner.push(i);
+			slot.push(j);
+		}
 		D += types[i].length;
 	}
 	// directions, forced by the angles up to one global choice
@@ -283,11 +314,12 @@ function realize(rm: RawMap, pal: Palette): RealizedFamily | null {
 	};
 	while (stack.length) {
 		const d = stack.pop()!;
-		const i = owner[d], L = types[i].length;
+		const i = owner[d],
+			L = types[i].length;
 		let acc = dir[d];
 		for (let s = 0; s < L; s++) {
 			const cur = base[i] + ((slot[d] + s) % L);
-				if (!setDir(cur, acc)) return rej("direction conflict at vertex");
+			if (!setDir(cur, acc)) return rej("direction conflict at vertex");
 			acc += types[i][(slot[d] + s) % L];
 		}
 		if (!setDir(alpha[d], dir[d] + FLAT)) return rej("direction conflict across edge");
@@ -295,12 +327,22 @@ function realize(rm: RawMap, pal: Palette): RealizedFamily | null {
 	// edge indices
 	const edgeOf = new Array<number>(D).fill(-1);
 	let E = 0;
-	for (let d = 0; d < D; d++) if (edgeOf[d] < 0) { edgeOf[d] = E; edgeOf[alpha[d]] = E; E++; }
+	for (let d = 0; d < D; d++)
+		if (edgeOf[d] < 0) {
+			edgeOf[d] = E;
+			edgeOf[alpha[d]] = E;
+			E++;
+		}
 
 	const rows: number[][] = [];
 	for (const f of rm.faces) {
-		const rx = new Array(E).fill(0), ry = new Array(E).fill(0);
-		for (const d of f.darts) { const [x, y] = dirVec(dir[d]); rx[edgeOf[d]] += x; ry[edgeOf[d]] += y; }
+		const rx = new Array(E).fill(0),
+			ry = new Array(E).fill(0);
+		for (const d of f.darts) {
+			const [x, y] = dirVec(dir[d]);
+			rx[edgeOf[d]] += x;
+			ry[edgeOf[d]] += y;
+		}
 		rows.push(rx, ry);
 		// a regular tile: every geometric SIDE equal, a side being a maximal run through flat corners
 		const sides: number[][] = [];
@@ -340,15 +382,22 @@ function realize(rm: RawMap, pal: Palette): RealizedFamily | null {
 	// the family on a sliver nobody wants to look at. The ratio is scale-free, so it stops where the
 	// tiling is most nearly equilateral, which is both a modest coordinate and the member the literature
 	// draws.
-	const round = (c: number[]) => { const L = lenAt(c); return Math.min(...L) / Math.max(...L); };
+	const round = (c: number[]) => {
+		const L = lenAt(c);
+		return Math.min(...L) / Math.max(...L);
+	};
 	let cr = new Array<number>(P).fill(0);
 	for (let step = 4; step > 1e-4; step /= 2)
 		for (let sweep = 0; sweep < 12; sweep++) {
 			let moved = false;
 			for (let i = 0; i < P; i++)
 				for (const d of [step, -step]) {
-					const t = cr.slice(); t[i] += d;
-					if (worst(t) > 1e-9 && round(t) > round(cr) + 1e-12) { cr = t; moved = true; }
+					const t = cr.slice();
+					t[i] += d;
+					if (worst(t) > 1e-9 && round(t) > round(cr) + 1e-12) {
+						cr = t;
+						moved = true;
+					}
 				}
 			if (!moved) break;
 		}
@@ -360,8 +409,12 @@ function realize(rm: RawMap, pal: Palette): RealizedFamily | null {
 				let moved = false;
 				for (let i = 0; i < P; i++)
 					for (const d of [step, -step]) {
-						const t = cr.slice(); t[i] += d;
-						if (worst(t) > worst(cr) + 1e-12) { cr = t; moved = true; }
+						const t = cr.slice();
+						t[i] += d;
+						if (worst(t) > worst(cr) + 1e-12) {
+							cr = t;
+							moved = true;
+						}
 					}
 				if (!moved) break;
 			}
@@ -380,8 +433,13 @@ function realize(rm: RawMap, pal: Palette): RealizedFamily | null {
 		return true;
 	};
 	if (!boxOk(1e-6)) return rej("positive cone is empty");
-	let rlo = 0, rhi = 64;
-	for (let it = 0; it < 60; it++) { const m = (rlo + rhi) / 2; if (boxOk(m)) rlo = m; else rhi = m; }
+	let rlo = 0,
+		rhi = 64;
+	for (let it = 0; it < 60; it++) {
+		const m = (rlo + rhi) / 2;
+		if (boxOk(m)) rlo = m;
+		else rhi = m;
+	}
 	const R = rlo * 0.98;
 	const H = R / 8;
 
@@ -409,11 +467,16 @@ function realize(rm: RawMap, pal: Palette): RealizedFamily | null {
 		for (const side of [0, 1] as const) {
 			const far = c0[i] + (side ? FAR : -FAR);
 			probe[i][side] = far;
-			if (boxOkAt()) { ranges[i][side] = far; continue; }
-			let good = ranges[i][side], bad = far;
+			if (boxOkAt()) {
+				ranges[i][side] = far;
+				continue;
+			}
+			let good = ranges[i][side],
+				bad = far;
 			for (let it = 0; it < 60; it++) {
 				probe[i][side] = (good + bad) / 2;
-				if (boxOkAt()) good = probe[i][side]; else bad = probe[i][side];
+				if (boxOkAt()) good = probe[i][side];
+				else bad = probe[i][side];
 			}
 			ranges[i][side] = c0[i] + (good - c0[i]) * 0.98;
 			probe[i][side] = ranges[i][side];
@@ -446,8 +509,11 @@ function realize(rm: RawMap, pal: Palette): RealizedFamily | null {
 				const p = pos[i]!;
 				const far: [number, number] = [p[0] + len[edgeOf[d]] * ux, p[1] + len[edgeOf[d]] * uy];
 				const j = owner[alpha[d]];
-				if (pos[j] === null) { pos[j] = far; placed.add(j); q.push(j); }
-				else lats.push([far[0] - pos[j]![0], far[1] - pos[j]![1]]);
+				if (pos[j] === null) {
+					pos[j] = far;
+					placed.add(j);
+					q.push(j);
+				} else lats.push([far[0] - pos[j]![0], far[1] - pos[j]![1]]);
 			}
 		}
 		if (placed.size !== types.length) return null;
@@ -463,22 +529,26 @@ function realize(rm: RawMap, pal: Palette): RealizedFamily | null {
 	// discrepancies at the two sample points and silently corrupt the affine fit.
 	const i1 = LA.lats.findIndex((v) => Math.hypot(v[0], v[1]) > 1e-6);
 	if (i1 < 0) return rej("no lattice vector");
-	const i2 = LA.lats.findIndex((v, i) =>
-		i !== i1 && Math.abs(LA.lats[i1][0] * v[1] - LA.lats[i1][1] * v[0]) > 1e-6);
+	const i2 = LA.lats.findIndex((v, i) => i !== i1 && Math.abs(LA.lats[i1][0] * v[1] - LA.lats[i1][1] * v[0]) > 1e-6);
 	if (i2 < 0) return rej("no second independent lattice vector");
 	// Gauss-reduce once, at t0, recording the integer steps; replay them at t0 + H so both layouts use
 	// the same basis.
 	const steps: ("swap" | number)[] = [];
-	let g1 = LA.lats[i1], g2 = LA.lats[i2];
+	let g1 = LA.lats[i1],
+		g2 = LA.lats[i2];
 	for (let it = 0; it < 60; it++) {
-		if (Math.hypot(g1[0], g1[1]) > Math.hypot(g2[0], g2[1])) { [g1, g2] = [g2, g1]; steps.push("swap"); }
+		if (Math.hypot(g1[0], g1[1]) > Math.hypot(g2[0], g2[1])) {
+			[g1, g2] = [g2, g1];
+			steps.push("swap");
+		}
 		const mu = Math.round((g1[0] * g2[0] + g1[1] * g2[1]) / (g1[0] ** 2 + g1[1] ** 2));
 		if (!mu) break;
 		g2 = [g2[0] - mu * g1[0], g2[1] - mu * g1[1]];
 		steps.push(mu);
 	}
 	const replay = (L: Layout): [[number, number], [number, number]] => {
-		let a: [number, number] = L.lats[i1], b: [number, number] = L.lats[i2];
+		let a: [number, number] = L.lats[i1],
+			b: [number, number] = L.lats[i2];
 		for (const st of steps) {
 			if (st === "swap") [a, b] = [b, a];
 			else b = [b[0] - st * a[0], b[1] - st * a[1]];
@@ -504,16 +574,17 @@ function realize(rm: RawMap, pal: Palette): RealizedFamily | null {
 	// corner of this tile, and emitting it makes the tile look like an n+f-gon. `lengthSystem` recovers
 	// T-junctions by finding vertices inside a side, so leaving them in would double-count them and
 	// report a square with two subdivided sides as a rigid hexagon.
-	const polyAt = (L: Layout, len: number[]) => rm.faces.map((f) => {
-		const v: [number, number][] = [];
-		let p: [number, number] = L.pos[owner[f.darts[0]]];
-		for (let i = 0; i < f.darts.length; i++) {
-			if (f.word[(i - 1 + f.word.length) % f.word.length] !== FLAT) v.push(p);
-			const [ux, uy] = dirVec(dir[f.darts[i]]);
-			p = [p[0] + len[edgeOf[f.darts[i]]] * ux, p[1] + len[edgeOf[f.darts[i]]] * uy];
-		}
-		return { n: f.n, v };
-	});
+	const polyAt = (L: Layout, len: number[]) =>
+		rm.faces.map((f) => {
+			const v: [number, number][] = [];
+			let p: [number, number] = L.pos[owner[f.darts[0]]];
+			for (let i = 0; i < f.darts.length; i++) {
+				if (f.word[(i - 1 + f.word.length) % f.word.length] !== FLAT) v.push(p);
+				const [ux, uy] = dirVec(dir[f.darts[i]]);
+				p = [p[0] + len[edgeOf[f.darts[i]]] * ux, p[1] + len[edgeOf[f.darts[i]]] * uy];
+			}
+			return { n: f.n, v };
+		});
 	const cellPolygons = polyAt(LA, lenAt(c0));
 	const polysD = LD.map((L, i) => polyAt(L!, lenAt(c0.map((v, j) => (j === i ? v + H : v)))));
 
@@ -541,23 +612,39 @@ function realize(rm: RawMap, pal: Palette): RealizedFamily | null {
 		return (w === 0 ? 0 : w).toFixed(5);
 	};
 	const key = (v: [number, number][]) => {
-		let cx = 0, cy = 0;
-		for (const q of v) { cx += q[0]; cy += q[1]; }
-		cx /= v.length; cy /= v.length;
-		const sh = v.map((q) => `${(Math.round((q[0] - cx) * 1e5) / 1e5).toFixed(5)}:${(Math.round((q[1] - cy) * 1e5) / 1e5).toFixed(5)}`).sort().join(";");
+		let cx = 0,
+			cy = 0;
+		for (const q of v) {
+			cx += q[0];
+			cy += q[1];
+		}
+		cx /= v.length;
+		cy /= v.length;
+		const sh = v
+			.map(
+				(q) =>
+					`${(Math.round((q[0] - cx) * 1e5) / 1e5).toFixed(5)}:${(Math.round((q[1] - cy) * 1e5) / 1e5).toFixed(5)}`,
+			)
+			.sort()
+			.join(";");
 		return `${sh}|${rr(inv2[0] * cx + inv2[1] * cy)},${rr(inv2[2] * cx + inv2[3] * cy)}`;
 	};
 	const keys = new Set(cellPolygons.map((p) => key(p.v)));
 	const cents = cellPolygons.map((p) => {
-		let cx = 0, cy = 0;
-		for (const q of p.v) { cx += q[0]; cy += q[1]; }
+		let cx = 0,
+			cy = 0;
+		for (const q of p.v) {
+			cx += q[0];
+			cy += q[1];
+		}
 		return [cx / p.v.length, cy / p.v.length] as [number, number];
 	});
 	for (const c1 of cents)
 		for (const c2 of cents) {
 			const t: [number, number] = [c2[0] - c1[0], c2[1] - c1[1]];
 			if (Math.hypot(t[0], t[1]) < 1e-9) continue;
-			const g0 = inv2[0] * t[0] + inv2[1] * t[1], gg1 = inv2[2] * t[0] + inv2[3] * t[1];
+			const g0 = inv2[0] * t[0] + inv2[1] * t[1],
+				gg1 = inv2[2] * t[0] + inv2[3] * t[1];
 			if (Math.abs(g0 - Math.round(g0)) < 1e-6 && Math.abs(gg1 - Math.round(gg1)) < 1e-6) continue;
 			if (cellPolygons.every((p) => keys.has(key(p.v.map((q) => [q[0] + t[0], q[1] + t[1]] as [number, number])))))
 				return rej("cell is not primitive");
@@ -565,17 +652,44 @@ function realize(rm: RawMap, pal: Palette): RealizedFamily | null {
 
 	const tiles = rm.faces.map((f) => f.n).sort((x, y) => x - y);
 	return {
-		V: rm.V, E: rm.E, F: rm.F, dim: ker.length, tiles, lengths: lenAt(c0),
-		cellPolygons, basis: [a1, a2],
-		ranges, c0, cone: ker,
+		V: rm.V,
+		E: rm.E,
+		F: rm.F,
+		dim: ker.length,
+		tiles,
+		lengths: lenAt(c0),
+		cellPolygons,
+		basis: [a1, a2],
+		ranges,
+		c0,
+		cone: ker,
 		affine: {
 			cellPolygons: cellPolygons.map((p, fi) => ({
-				n: p.n, v: p.v.map((q, vi) => affPt(q, polysD.map((pd) => pd[fi].v[vi]))),
+				n: p.n,
+				v: p.v.map((q, vi) =>
+					affPt(
+						q,
+						polysD.map((pd) => pd[fi].v[vi]),
+					),
+				),
 			})),
-			basis: [affPt(a1, bs.map((b) => b[0])), affPt(a2, bs.map((b) => b[1]))],
+			basis: [
+				affPt(
+					a1,
+					bs.map((b) => b[0]),
+				),
+				affPt(
+					a2,
+					bs.map((b) => b[1]),
+				),
+			],
 		},
-		signature: `${rm.V}|${rm.E}|${rm.F}|${ker.length}|${tiles.join(",")}|` +
-			rm.faces.map((f) => f.word.join("")).sort().join("/"),
+		signature:
+			`${rm.V}|${rm.E}|${rm.F}|${ker.length}|${tiles.join(",")}|` +
+			rm.faces
+				.map((f) => f.word.join(""))
+				.sort()
+				.join("/"),
 	};
 }
 
@@ -587,7 +701,9 @@ export function rawMapsFor(types: number[][], pal: Palette): RawMap[] {
 }
 
 /** Debug hook: realize one raw map, or null with no reason given. */
-export function realizeOne(rm: RawMap, pal: Palette) { return realize(rm, pal); }
+export function realizeOne(rm: RawMap, pal: Palette) {
+	return realize(rm, pal);
+}
 
 export interface EnumerateOptions {
 	/** Maximum vertices per translational period. A COMPLETENESS knob, not a speed dial. */

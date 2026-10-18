@@ -40,9 +40,12 @@ async function selectByPick(key) {
 		if (i >= 0) window.__play.select(window.__play.list[i]);
 		// moderate zoom so tiles are clearly visible for the compare
 		const s = window.__stores.configuration.getState();
-		s.controls.zoom = 55; s.controls.targetZoom = 55;
-		s.controls.offset.x = 0; s.controls.offset.y = 0;
-		s.controls.targetOffset.x = 0; s.controls.targetOffset.y = 0;
+		s.controls.zoom = 55;
+		s.controls.targetZoom = 55;
+		s.controls.offset.x = 0;
+		s.controls.offset.y = 0;
+		s.controls.targetOffset.x = 0;
+		s.controls.targetOffset.y = 0;
 	}, key);
 	await page.waitForTimeout(1600); // grid rebuild for the new tiling
 }
@@ -59,7 +62,13 @@ async function shot(label, extra) {
 	console.log("wrote", label, "off/on");
 }
 
-const base = { showPolygonPoints: false, showPolygonFill: true, isIslamic: false, circlePacking: false, showSymmetryElements: false };
+const base = {
+	showPolygonPoints: false,
+	showPolygonFill: true,
+	isIslamic: false,
+	circlePacking: false,
+	showSymmetryElements: false,
+};
 
 for (const key of ["star", "k3", "parametric", "regular"]) {
 	await selectByPick(key);

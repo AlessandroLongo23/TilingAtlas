@@ -381,9 +381,11 @@ function segsCross(a: TactilePoint, b: TactilePoint, c: TactilePoint, d: Tactile
 	const d2 = o(a, b, d);
 	const d3 = o(c, d, a);
 	const d4 = o(c, d, b);
-	return ((d1 > 0) !== (d2 > 0) || Math.abs(d1) < EPS || Math.abs(d2) < EPS) &&
-		((d3 > 0) !== (d4 > 0) || Math.abs(d3) < EPS || Math.abs(d4) < EPS) &&
-		Math.abs(d1) + Math.abs(d2) + Math.abs(d3) + Math.abs(d4) > EPS;
+	return (
+		(d1 > 0 !== d2 > 0 || Math.abs(d1) < EPS || Math.abs(d2) < EPS) &&
+		(d3 > 0 !== d4 > 0 || Math.abs(d3) < EPS || Math.abs(d4) < EPS) &&
+		Math.abs(d1) + Math.abs(d2) + Math.abs(d3) + Math.abs(d4) > EPS
+	);
 }
 
 /** Distance from p to the segment ab. */
@@ -397,12 +399,7 @@ function pointSegDist(p: TactilePoint, a: TactilePoint, b: TactilePoint): number
 
 function segSegDist(a: TactilePoint, b: TactilePoint, c: TactilePoint, d: TactilePoint): number {
 	if (segsCross(a, b, c, d)) return 0;
-	return Math.min(
-		pointSegDist(a, c, d),
-		pointSegDist(b, c, d),
-		pointSegDist(c, a, b),
-		pointSegDist(d, a, b),
-	);
+	return Math.min(pointSegDist(a, c, d), pointSegDist(b, c, d), pointSegDist(c, a, b), pointSegDist(d, a, b));
 }
 
 /** Closest approach between two open paths. Zero when they cross. */
@@ -456,8 +453,7 @@ function fitAt(tile: Poly, stabilizer: Iso[], plan: SeedPlan): { scale: number; 
 	// of the tile instead of confetti dropped on it.
 	const angle = (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI;
 	const frame = compose(translate(anchor.x, anchor.y), rotate(angle));
-	const at = (s: number): Poly[] =>
-		GLYPH.map((path) => path.map((p) => apply(frame, { x: p.x * s, y: p.y * s })));
+	const at = (s: number): Poly[] => GLYPH.map((path) => path.map((p) => apply(frame, { x: p.x * s, y: p.y * s })));
 
 	const inset = tile.map((p) => ({
 		x: c.x + (p.x - c.x) * SEED_INSET,
@@ -522,9 +518,7 @@ function placeSeed(tile: Poly, stabilizer: Iso[], plan: SeedPlan): Poly[] {
 		}),
 	);
 	const share = Math.sqrt(polyArea(tile) / Math.max(1, stabilizer.length));
-	return best.at(
-		Math.min(bestScale * SEED_SLACK, SEED_MAX_ARM * shortestEdge, SEED_AREA_SHARE * share),
-	);
+	return best.at(Math.min(bestScale * SEED_SLACK, SEED_MAX_ARM * shortestEdge, SEED_AREA_SHARE * share));
 }
 
 /* ------------------------------------------------------------------ the twelve */
@@ -596,12 +590,7 @@ const HEXAGON: Poly = Array.from({ length: 6 }, (_, k) => ({
  * vertices. 120° corners at the hexagon centre and at W1; 60° corners at W0 and W2, which are the
  * net's six-valent vertices.
  */
-const RHOMBUS: Poly = [
-	{ x: 0, y: 0 },
-	HEXAGON[0],
-	HEXAGON[1],
-	HEXAGON[2],
-];
+const RHOMBUS: Poly = [{ x: 0, y: 0 }, HEXAGON[0], HEXAGON[1], HEXAGON[2]];
 
 /** One tile of the [4.8^2] net: the unit square's south quarter, cut by both diagonals. */
 const TETRAKIS: Poly = [
@@ -1078,9 +1067,7 @@ export function classifyWallpaper(lat: Lattice, cosets: Iso[]): string {
 	}
 
 	const onSomeMirror = (cx: number, cy: number): boolean =>
-		mirrors.some(
-			(L) => Math.abs((cx - L.px) * Math.sin(L.angle) - (cy - L.py) * Math.cos(L.angle)) < 1e-6,
-		);
+		mirrors.some((L) => Math.abs((cx - L.px) * Math.sin(L.angle) - (cy - L.py) * Math.cos(L.angle)) < 1e-6);
 
 	const centreOf = (m: Iso): TactilePoint | null => {
 		// Solve (I - L) c = t for the rotation centre.

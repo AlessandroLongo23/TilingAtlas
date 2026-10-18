@@ -49,8 +49,7 @@ type Cell = ReferenceTiling["renderCell"];
 type Pt = number[] | { x: number; y: number };
 type Poly = { v?: Pt[]; vertices?: Pt[] } & Record<string, unknown>;
 
-const flipPt = (p: Pt): Pt =>
-	Array.isArray(p) ? [p[0], -p[1]] : { x: p.x, y: -p.y };
+const flipPt = (p: Pt): Pt => (Array.isArray(p) ? [p[0], -p[1]] : { x: p.x, y: -p.y });
 
 /**
  * The mirror image of a render cell: reflect in the x-axis (y → −y).

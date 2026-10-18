@@ -60,10 +60,7 @@ export function Toggle({
 					{label}
 				</label>
 			) : null}
-			<div
-				role="radiogroup"
-				className="ta-seg grid w-full grid-cols-2"
-			>
+			<div role="radiogroup" className="ta-seg grid w-full grid-cols-2">
 				{segment(leftValue)}
 				{segment(rightValue)}
 			</div>

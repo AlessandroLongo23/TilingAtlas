@@ -195,9 +195,7 @@ export function euHalfLazyShardsForK(k: number): EuHalfBoard[] {
 }
 
 /** Every k any board ships, ascending — the lazy fetch is per k across the whole shelf. */
-export const EU_HALF_LAZY_KS: number[] = [
-	...new Set(EU_HALF_BOARDS.flatMap((b) => b.lazyKs)),
-].sort((a, b) => a - b);
+export const EU_HALF_LAZY_KS: number[] = [...new Set(EU_HALF_BOARDS.flatMap((b) => b.lazyKs))].sort((a, b) => a - b);
 
 /** The k values missing between a board's lowest and highest shipped slice. Empty on all four. */
 export function euHalfKGaps(b: EuHalfBoard): number[] {

@@ -55,7 +55,8 @@ function edgeDistance(poly: readonly Pt[], [px, py]: Pt): number {
 	for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
 		const [xi, yi] = poly[i];
 		const [xj, yj] = poly[j];
-		const dx = xj - xi, dy = yj - yi;
+		const dx = xj - xi,
+			dy = yj - yi;
 		const len2 = dx * dx + dy * dy;
 		const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((px - xi) * dx + (py - yi) * dy) / len2));
 		best = Math.min(best, Math.hypot(px - (xi + t * dx), py - (yi + t * dy)));
@@ -74,46 +75,51 @@ describe.each(Object.entries(SUBSTITUTION_RULES))("%s substitution rule", (_id, 
 		const inflated: Pt[] = inflatedOutline(rule, t);
 
 		describe.each(childSets(rule, t).map((kids, i) => [i, kids] as const))("dissection %i", (_i, kids) => {
-		const rings = ringsOf(rule, kids);
+			const rings = ringsOf(rule, kids);
 
-		it("children's areas sum to the inflated prototile's", () => {
-			const parent = Math.abs(ringArea(inflated));
-			const kidArea = rings.reduce((s, r) => s + Math.abs(ringArea(r)), 0);
-			expect(kidArea).toBeCloseTo(parent, 9);
-			// λ² is the area factor, so the child count must match it for a one-prototile rule.
-			expect(parent).toBeCloseTo(Math.abs(ringArea(proto.outline)) * rule.factor ** 2, 9);
-		});
+			it("children's areas sum to the inflated prototile's", () => {
+				const parent = Math.abs(ringArea(inflated));
+				const kidArea = rings.reduce((s, r) => s + Math.abs(ringArea(r)), 0);
+				expect(kidArea).toBeCloseTo(parent, 9);
+				// λ² is the area factor, so the child count must match it for a one-prototile rule.
+				expect(parent).toBeCloseTo(Math.abs(ringArea(proto.outline)) * rule.factor ** 2, 9);
+			});
 
-		it("covers the inflated prototile exactly once, with no overlaps and no gaps", () => {
-			let minx = Infinity, miny = Infinity, maxx = -Infinity, maxy = -Infinity;
-			for (const [x, y] of inflated) {
-				minx = Math.min(minx, x); maxx = Math.max(maxx, x);
-				miny = Math.min(miny, y); maxy = Math.max(maxy, y);
-			}
-			// An off-lattice step, so samples miss the seams between children rather than landing on them.
-			const step = 0.0731;
-			let tested = 0;
-			for (let x = minx + step / 3; x < maxx; x += step) {
-				for (let y = miny + step / 7; y < maxy; y += step) {
-					const p: Pt = [x, y];
-					if (!inside(inflated, p)) continue;
-					if (edgeDistance(inflated, p) < 1e-6) continue;
-					if (rings.some((r) => edgeDistance(r, p) < 1e-6)) continue;
-					tested++;
-					expect(rings.filter((r) => inside(r, p)).length).toBe(1);
+			it("covers the inflated prototile exactly once, with no overlaps and no gaps", () => {
+				let minx = Infinity,
+					miny = Infinity,
+					maxx = -Infinity,
+					maxy = -Infinity;
+				for (const [x, y] of inflated) {
+					minx = Math.min(minx, x);
+					maxx = Math.max(maxx, x);
+					miny = Math.min(miny, y);
+					maxy = Math.max(maxy, y);
 				}
-			}
-			expect(tested).toBeGreaterThan(300);
-		});
+				// An off-lattice step, so samples miss the seams between children rather than landing on them.
+				const step = 0.0731;
+				let tested = 0;
+				for (let x = minx + step / 3; x < maxx; x += step) {
+					for (let y = miny + step / 7; y < maxy; y += step) {
+						const p: Pt = [x, y];
+						if (!inside(inflated, p)) continue;
+						if (edgeDistance(inflated, p) < 1e-6) continue;
+						if (rings.some((r) => edgeDistance(r, p) < 1e-6)) continue;
+						tested++;
+						expect(rings.filter((r) => inside(r, p)).length).toBe(1);
+					}
+				}
+				expect(tested).toBeGreaterThan(300);
+			});
 
-		it("places every child by a rigid motion (no scaling, no shear)", () => {
-			for (const c of kids) {
-				const [a, b, , d, e] = c.m;
-				expect(Math.hypot(a, d)).toBeCloseTo(1, 12);
-				expect(Math.hypot(b, e)).toBeCloseTo(1, 12);
-				expect(a * b + d * e).toBeCloseTo(0, 12);
-			}
-		});
+			it("places every child by a rigid motion (no scaling, no shear)", () => {
+				for (const c of kids) {
+					const [a, b, , d, e] = c.m;
+					expect(Math.hypot(a, d)).toBeCloseTo(1, 12);
+					expect(Math.hypot(b, e)).toBeCloseTo(1, 12);
+					expect(a * b + d * e).toBeCloseTo(0, 12);
+				}
+			});
 		});
 
 		it("keeps every variant compatible with the default dissection", () => {
@@ -207,11 +213,16 @@ describe("patch builders", () => {
 		// bounding box is 2 wide by 1 tall — so the aspect ratio pins the orientation at every level.
 		for (let n = 1; n <= 5; n++) {
 			const polys = pinwheelPatch(n);
-			let minx = Infinity, miny = Infinity, maxx = -Infinity, maxy = -Infinity;
+			let minx = Infinity,
+				miny = Infinity,
+				maxx = -Infinity,
+				maxy = -Infinity;
 			for (const p of polys)
 				for (const v of p.vertices) {
-					minx = Math.min(minx, v.x); maxx = Math.max(maxx, v.x);
-					miny = Math.min(miny, v.y); maxy = Math.max(maxy, v.y);
+					minx = Math.min(minx, v.x);
+					maxx = Math.max(maxx, v.x);
+					miny = Math.min(miny, v.y);
+					maxy = Math.max(maxy, v.y);
 				}
 			expect((maxx - minx) / (maxy - miny)).toBeCloseTo(2, 6);
 		}
@@ -226,10 +237,7 @@ describe("patch builders", () => {
 		panels.forEach((panel, i) => {
 			const apex = i === 0 ? Math.PI / 5 : (3 * Math.PI) / 5;
 			const parent = 0.5 * Math.sin(apex); // isosceles with two unit sides
-			const kids = panel.pieces.reduce(
-				(s, p) => s + Math.abs(ringArea(p.vertices.map((v) => [v.x, v.y] as const))),
-				0,
-			);
+			const kids = panel.pieces.reduce((s, p) => s + Math.abs(ringArea(p.vertices.map((v) => [v.x, v.y] as const))), 0);
 			expect(kids).toBeCloseTo(parent, 12);
 		});
 		expect(panels[0].pieces).toHaveLength(2);

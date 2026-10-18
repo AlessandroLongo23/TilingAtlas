@@ -92,8 +92,7 @@ export const useAutomata = create<AutomataState>((set) => ({
 	stepNonce: 0,
 
 	set: (key, value) => set({ [key]: value } as Partial<AutomataState>),
-	setPerShape: (sides, rule) =>
-		set((s) => ({ perShapeRules: { ...s.perShapeRules, [sides]: rule } })),
+	setPerShape: (sides, rule) => set((s) => ({ perShapeRules: { ...s.perShapeRules, [sides]: rule } })),
 	reseed: (seed) =>
 		set((s) => ({
 			seed: seed ?? Math.floor(Math.random() * 0x7fffffff),

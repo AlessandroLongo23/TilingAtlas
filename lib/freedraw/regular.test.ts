@@ -5,14 +5,28 @@ import type { FreedrawPattern } from "./pattern";
 import { classifyRegular } from "./regular";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
 
-const sq = (
-	a: number, b: number, d: number, h: number[], v: number[],
-): FreedrawPattern => ({ id: "t", k: 1, a, b, d, h, v, orbit: new Array(a * d).fill(0) });
+const sq = (a: number, b: number, d: number, h: number[], v: number[]): FreedrawPattern => ({
+	id: "t",
+	k: 1,
+	a,
+	b,
+	d,
+	h,
+	v,
+	orbit: new Array(a * d).fill(0),
+});
 
-const tri = (
-	a: number, b: number, d: number, h: number[], v: number[], w: number[],
-): FreedrawPattern => ({
-	id: "t", k: 1, a, b, d, h, v, w, grid: "triangle", orbit: new Array(a * d).fill(0),
+const tri = (a: number, b: number, d: number, h: number[], v: number[], w: number[]): FreedrawPattern => ({
+	id: "t",
+	k: 1,
+	a,
+	b,
+	d,
+	h,
+	v,
+	w,
+	grid: "triangle",
+	orbit: new Array(a * d).fill(0),
 });
 
 const info = (p: FreedrawPattern) => classifyRegular(p, analyseFaces(p));
@@ -36,7 +50,10 @@ describe("classifyRegular — mechanics", () => {
 
 	it("reads the fully dissected triangular grid as unit triangles", () => {
 		const r = info(tri(1, 0, 1, [1], [1], [1]));
-		expect(r.perFace).toEqual([{ n: 3, side: 1 }, { n: 3, side: 1 }]);
+		expect(r.perFace).toEqual([
+			{ n: 3, side: 1 },
+			{ n: 3, side: 1 },
+		]);
 		expect(r.allUnit).toBe(true);
 	});
 
@@ -71,9 +88,7 @@ describe("the combined-grid catalogue", () => {
 	it.skipIf(!k1)("finds the four 1-uniform triangle-square tilings at k=1", () => {
 		// The edge-to-edge {3,4} tilings: 3^6, 4^4, and the two arrangements of 3^3.4^2 / 3^2.4.3.4.
 		// (allRegular at k=1 is five — a side-2 dilation of 4^4 rides along, kept out by allUnit.)
-		const hits = (k1 as FreedrawPattern[]).filter(
-			(p) => info(p).allUnit && ["3", "4", "3,4"].includes(kindKey(p)),
-		);
+		const hits = (k1 as FreedrawPattern[]).filter((p) => info(p).allUnit && ["3", "4", "3,4"].includes(kindKey(p)));
 		expect(hits).toHaveLength(4);
 		expect(hits.map(kindKey).sort()).toEqual(["3", "3,4", "3,4", "4"]);
 	});

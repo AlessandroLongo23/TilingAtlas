@@ -186,7 +186,6 @@ export function coplanarFaceLayers(poly: Polyhedron, unit: readonly Vec3[]): num
 	});
 }
 
-
 // The TRUE flat facets of the solid (not the round sphere) as a non-indexed triangle soup — one fan per
 // face, ready to hand to a flat-shaded BufferGeometry.
 //
@@ -200,7 +199,11 @@ export function coplanarFaceLayers(poly: Polyhedron, unit: readonly Vec3[]): num
 // `faceSizes[t]` is the source face's vertex count for triangle t, so the mesh builder can colour by
 // polygon size; `triLayers[t]` is its face's coplanar layer (see coplanarFaceLayers), which is 0 for
 // every triangle of every solid that has no two faces in one plane.
-export function flatSolidTriangles(poly: Polyhedron, radius = 1, mod2 = false): { positions: Float32Array; faceSizes: number[]; triLayers: number[]; triFace: number[] } {
+export function flatSolidTriangles(
+	poly: Polyhedron,
+	radius = 1,
+	mod2 = false,
+): { positions: Float32Array; faceSizes: number[]; triLayers: number[]; triFace: number[] } {
 	// starFaceRings APPENDS the crossing-ring points it needs, so the scaled copy has to be extendable.
 	const unit: Vec3[] = [...solidFitScale(poly, radius)];
 	// One entry per source face: the convex rings that fill it. d = 1 gives back the face itself.
@@ -224,30 +227,36 @@ export function flatSolidTriangles(poly: Polyhedron, radius = 1, mod2 = false): 
 	for (let fi = 0; fi < poly.faces.length; fi++) {
 		const srcLen = poly.faces[fi].length;
 		for (const f of fill[fi]) {
-		const a = unit[f[0]];
-		for (let k = 1; k < f.length - 1; k++) {
-			let b = unit[f[k]];
-			let c = unit[f[k + 1]];
-			// Orient the triangle OUTWARD: the face vertex ring is not guaranteed CCW-outward (the cube's is
-			// inward), so (b−a)×(c−a) may point at the centre — which back-face-culls the facet and makes the
-			// solid look see-through. Swap b/c when the normal opposes the outward (radial) direction.
-			const nx = (b[1] - a[1]) * (c[2] - a[2]) - (b[2] - a[2]) * (c[1] - a[1]);
-			const ny = (b[2] - a[2]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[2] - a[2]);
-			const nz = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
-			if (nx * a[0] + ny * a[1] + nz * a[2] < 0) {
-				const tmp = b;
-				b = c;
-				c = tmp;
+			const a = unit[f[0]];
+			for (let k = 1; k < f.length - 1; k++) {
+				let b = unit[f[k]];
+				let c = unit[f[k + 1]];
+				// Orient the triangle OUTWARD: the face vertex ring is not guaranteed CCW-outward (the cube's is
+				// inward), so (b−a)×(c−a) may point at the centre — which back-face-culls the facet and makes the
+				// solid look see-through. Swap b/c when the normal opposes the outward (radial) direction.
+				const nx = (b[1] - a[1]) * (c[2] - a[2]) - (b[2] - a[2]) * (c[1] - a[1]);
+				const ny = (b[2] - a[2]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[2] - a[2]);
+				const nz = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+				if (nx * a[0] + ny * a[1] + nz * a[2] < 0) {
+					const tmp = b;
+					b = c;
+					c = tmp;
+				}
+				positions[p++] = a[0];
+				positions[p++] = a[1];
+				positions[p++] = a[2];
+				positions[p++] = b[0];
+				positions[p++] = b[1];
+				positions[p++] = b[2];
+				positions[p++] = c[0];
+				positions[p++] = c[1];
+				positions[p++] = c[2];
+				triLayers[t] = faceLayers[fi];
+				triFace[t] = fi;
+				// The SOURCE face's size, not the ring's: hue is per polygon, and a star face's fill rings
+				// are a core n-gon plus n triangles that must not colour as triangles.
+				faceSizes[t++] = srcLen;
 			}
-			positions[p++] = a[0]; positions[p++] = a[1]; positions[p++] = a[2];
-			positions[p++] = b[0]; positions[p++] = b[1]; positions[p++] = b[2];
-			positions[p++] = c[0]; positions[p++] = c[1]; positions[p++] = c[2];
-			triLayers[t] = faceLayers[fi];
-			triFace[t] = fi;
-			// The SOURCE face's size, not the ring's: hue is per polygon, and a star face's fill rings
-			// are a core n-gon plus n triangles that must not colour as triangles.
-			faceSizes[t++] = srcLen;
-		}
 		}
 	}
 	return { positions, faceSizes, triLayers, triFace };
@@ -267,7 +276,9 @@ export function solidHasStarFace(poly: Polyhedron | null | undefined): boolean {
 	// A regular face says so through its turning number. An irregular one is measured, because turning is
 	// taken about the ring's vector area and a crossed quadrilateral has none: every stephanoid face read
 	// as a star here and was offered a fill rule that cannot change it.
-	const has = poly.faces.some((f) => (isRegularRing(unit, f) ? ringTurning(unit, f) > 1 : !isConvexRing(unit, f) && maxWinding(f, unit) > 1));
+	const has = poly.faces.some((f) =>
+		isRegularRing(unit, f) ? ringTurning(unit, f) > 1 : !isConvexRing(unit, f) && maxWinding(f, unit) > 1,
+	);
 	STAR_FACED.set(poly.id, has);
 	return has;
 }
@@ -302,10 +313,12 @@ const STAR_FACED = new Map<string, boolean>();
 export function solidCreaseList(poly: Polyhedron, radius = 1, mod2 = false): Crease[] {
 	// `mod2` clips the creases to the even-odd region, so they stop at the ink the fill actually lays
 	// down instead of crossing the emptied core of a star face.
-	return sphStarScene(
-		polyhedronAsStarPattern({ id: poly.id, vertices: solidFitScale(poly, radius), faces: poly.faces }),
-		mod2,
-	).crossings ?? [];
+	return (
+		sphStarScene(
+			polyhedronAsStarPattern({ id: poly.id, vertices: solidFitScale(poly, radius), faces: poly.faces }),
+			mod2,
+		).crossings ?? []
+	);
 }
 
 /** The creases as straight 2-point segments, the same form `straightEdges` returns, ready for the same
@@ -316,8 +329,12 @@ export function creaseChords(creases: readonly Crease[], radius = 1, extend = 0)
 		const B: Vec3 = [b[0] * radius, b[1] * radius, b[2] * radius];
 		const d = normalize([B[0] - A[0], B[1] - A[1], B[2] - A[2]]);
 		return new Float32Array([
-			A[0] - d[0] * extend, A[1] - d[1] * extend, A[2] - d[2] * extend,
-			B[0] + d[0] * extend, B[1] + d[1] * extend, B[2] + d[2] * extend,
+			A[0] - d[0] * extend,
+			A[1] - d[1] * extend,
+			A[2] - d[2] * extend,
+			B[0] + d[0] * extend,
+			B[1] + d[1] * extend,
+			B[2] + d[2] * extend,
 		]);
 	});
 }
@@ -329,8 +346,12 @@ export function straightEdges(poly: Polyhedron, radius = 1, extend = 0): Float32
 		const B = unit[b];
 		const d = normalize([B[0] - A[0], B[1] - A[1], B[2] - A[2]]);
 		return new Float32Array([
-			A[0] - d[0] * extend, A[1] - d[1] * extend, A[2] - d[2] * extend,
-			B[0] + d[0] * extend, B[1] + d[1] * extend, B[2] + d[2] * extend,
+			A[0] - d[0] * extend,
+			A[1] - d[1] * extend,
+			A[2] - d[2] * extend,
+			B[0] + d[0] * extend,
+			B[1] + d[1] * extend,
+			B[2] + d[2] * extend,
 		]);
 	});
 }
@@ -405,11 +426,15 @@ export function vertexConfigs(vertices: readonly Vec3[], faces: Faces): VertexCo
 		if (order.length === fs.length) {
 			const seq = order.map((j) => kind[fs[j]]);
 			const turns: string[] = [];
-			for (const s of [seq, [...seq].reverse()]) for (let r = 0; r < s.length; r++) turns.push([...s.slice(r), ...s.slice(0, r)].join("."));
+			for (const s of [seq, [...seq].reverse()])
+				for (let r = 0; r < s.length; r++) turns.push([...s.slice(r), ...s.slice(0, r)].join("."));
 			label = turns.sort()[0];
 		} else {
 			// The faces do not close into one ring (a fissary vertex is two rings on one point).
-			label = fs.map((i) => kind[i]).sort().join(".");
+			label = fs
+				.map((i) => kind[i])
+				.sort()
+				.join(".");
 		}
 		const hit = out.get(label);
 		if (hit) hit.count++;
@@ -447,7 +472,9 @@ export function faceKindCount(vertices: readonly Vec3[], faces: Faces): number {
 		for (const i of f) for (let k = 0; k < 3; k++) c[k] += vertices[i][k] / f.length;
 		const sides = f.map((a, k) => {
 			const b = f[(k + 1) % f.length];
-			return q(Math.hypot(vertices[a][0] - vertices[b][0], vertices[a][1] - vertices[b][1], vertices[a][2] - vertices[b][2]));
+			return q(
+				Math.hypot(vertices[a][0] - vertices[b][0], vertices[a][1] - vertices[b][1], vertices[a][2] - vertices[b][2]),
+			);
 		});
 		const radii = f.map((a) => q(Math.hypot(vertices[a][0] - c[0], vertices[a][1] - c[1], vertices[a][2] - c[2])));
 		kinds.add(`${f.length}|${sides.sort((x, y) => x - y)}|${radii.sort((x, y) => x - y)}`);

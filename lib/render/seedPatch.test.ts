@@ -12,8 +12,21 @@ import { hydrateRenderCells } from "@/lib/services/renderCellDerive";
 
 /** The square tiling: one unit square per cell, so every vertex sits on an integer point. */
 const SQUARE_CELL: TranslationalCellData = {
-	p: [{ v: [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 1 }, { x: 0, y: 1 }], n: 4 }],
-	b: [[1, 0], [0, 1]],
+	p: [
+		{
+			v: [
+				{ x: 0, y: 0 },
+				{ x: 1, y: 0 },
+				{ x: 1, y: 1 },
+				{ x: 0, y: 1 },
+			],
+			n: 4,
+		},
+	],
+	b: [
+		[1, 0],
+		[0, 1],
+	],
 };
 
 /** A synthetic 2-orbit partition of the square tiling: colour the integer points like a chessboard. */
@@ -32,7 +45,10 @@ const vertexKeys = (cell: TranslationalCellData) => {
 describe("seedFromCell", () => {
 	it("returns a cell carrying the original basis", () => {
 		const seed = seedFromCell(SQUARE_CELL, CHESSBOARD)!;
-		expect(seed.b).toEqual([[1, 0], [0, 1]]);
+		expect(seed.b).toEqual([
+			[1, 0],
+			[0, 1],
+		]);
 	});
 
 	it("contains a vertex of every orbit", () => {
@@ -83,9 +99,11 @@ describe("seedFromCell", () => {
 });
 
 describe("seedFromCell on a real k=4 atlas tiling", () => {
-	const atlas = hydrateRenderCells(decodeAtlas<{ id: string; renderCell: TranslationalCellData; exactSource?: ExactCellSource }>(
-		JSON.parse(readFileSync(path.join(process.cwd(), "public", "reference-atlas.json"), "utf8")),
-	));
+	const atlas = hydrateRenderCells(
+		decodeAtlas<{ id: string; renderCell: TranslationalCellData; exactSource?: ExactCellSource }>(
+			JSON.parse(readFileSync(path.join(process.cwd(), "public", "reference-atlas.json"), "utf8")),
+		),
+	);
 	const t4001 = atlas.find((t) => t.id === "t4001")!;
 
 	setActiveRing(CyclotomicRing.create(24));
@@ -99,10 +117,11 @@ describe("seedFromCell on a real k=4 atlas tiling", () => {
 		const seed = seedFromCell(t4001.renderCell, orbits)!;
 		const base = parseBaseCell(seed)!;
 		const found = new Set<number>();
-		for (const p of base.polys) for (const v of p.vertices) {
-			const o = orbits.orbitAt(v.x, v.y);
-			if (o >= 0) found.add(o);
-		}
+		for (const p of base.polys)
+			for (const v of p.vertices) {
+				const o = orbits.orbitAt(v.x, v.y);
+				if (o >= 0) found.add(o);
+			}
 		expect([...found].sort()).toEqual([0, 1, 2, 3]);
 	});
 

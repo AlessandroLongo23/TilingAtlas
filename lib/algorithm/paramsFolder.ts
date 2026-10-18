@@ -20,7 +20,7 @@ import { toDegrees } from "@/utils";
  * Returns the sanitized string, or null if it looks malicious.
  */
 export function validateParamsFolder(value: unknown): string | null {
-	if (typeof value !== 'string' || value.length === 0 || value.length > 200) return null;
+	if (typeof value !== "string" || value.length === 0 || value.length > 200) return null;
 	if (!/^[a-z0-9_-]+$/.test(value)) return null;
 	return value;
 }
@@ -33,7 +33,7 @@ export function buildParamsFolderName(parameters: GeneratorParameters): string {
 	}
 	if (parameters[PolygonType.STAR_REGULAR]) {
 		const p = parameters[PolygonType.STAR_REGULAR]!;
-		const angleStr = p.angle !== undefined ? `_${Math.round(toDegrees(p.angle))}` : '';
+		const angleStr = p.angle !== undefined ? `_${Math.round(toDegrees(p.angle))}` : "";
 		parts.push(`star_reg_${p.n_max}${angleStr}`);
 	}
 	if (parameters[PolygonType.STAR_PARAMETRIC]) {
@@ -47,5 +47,5 @@ export function buildParamsFolderName(parameters: GeneratorParameters): string {
 		parts.push(`dual_${parameters[PolygonType.DUAL]!.n_max}`);
 	}
 
-	return parts.length > 0 ? parts.join('_') : 'default';
+	return parts.length > 0 ? parts.join("_") : "default";
 }

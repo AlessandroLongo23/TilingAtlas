@@ -10,7 +10,8 @@ type Pt = [number, number];
 function inPolygon(p: Pt, vs: Pt[]): boolean {
 	let hit = false;
 	for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
-		const [xi, yi] = vs[i], [xj, yj] = vs[j];
+		const [xi, yi] = vs[i],
+			[xj, yj] = vs[j];
 		if (yi > p[1] !== yj > p[1] && p[0] < ((xj - xi) * (p[1] - yi)) / (yj - yi) + xi) hit = !hit;
 	}
 	return hit;
@@ -39,8 +40,13 @@ describe("the oracle-free enumerator", () => {
 		expect(fams.every((f) => f.dim === 2)).toBe(true); // one essential parameter each
 		const sig = fams.map((f) => `${f.V}-${f.E}-${f.F}-${f.tiles.join(",")}`).sort();
 		expect(sig).toEqual([
-			"2-3-1-4", "2-4-2-3,3", "3-5-2-4,4", "3-5-2-4,4",
-			"3-6-3-3,3,3", "3-6-3-3,3,4", "3-7-4-3,3,3,3",
+			"2-3-1-4",
+			"2-4-2-3,3",
+			"3-5-2-4,4",
+			"3-5-2-4,4",
+			"3-6-3-3,3,3",
+			"3-6-3-3,3,4",
+			"3-7-4-3,3,3,3",
 		]);
 	});
 
@@ -48,11 +54,12 @@ describe("the oracle-free enumerator", () => {
 		// The check that gives the argument teeth: the search knows nothing about the literature or about
 		// length-families.ts, yet the offset squares (Wikipedia 1-2), the offset triangles (3) and the
 		// three size triangles (7) come out of it with the map counts those families measure.
-		const by = new Map(enumerateFamilies(PAL, { Vmax: 3 })
-			.map((f) => [`${f.V}-${f.E}-${f.F}-${f.tiles.join(",")}`, f]));
-		expect(by.get("2-3-1-4")).toBeDefined();      // plen-strip-s
-		expect(by.get("2-4-2-3,3")).toBeDefined();    // plen-strip-t
-		expect(by.get("3-6-3-3,3,3")).toBeDefined();  // plen-tri-three-size
+		const by = new Map(
+			enumerateFamilies(PAL, { Vmax: 3 }).map((f) => [`${f.V}-${f.E}-${f.F}-${f.tiles.join(",")}`, f]),
+		);
+		expect(by.get("2-3-1-4")).toBeDefined(); // plen-strip-s
+		expect(by.get("2-4-2-3,3")).toBeDefined(); // plen-strip-t
+		expect(by.get("3-6-3-3,3,3")).toBeDefined(); // plen-tri-three-size
 	});
 
 	it("every corner of every slider box is a real tiling, and the box is not loose", () => {
@@ -68,18 +75,24 @@ describe("the oracle-free enumerator", () => {
 			const P = f.c0.length;
 			expect(P, "a parametric family has at least one slider").toBeGreaterThan(0);
 			expect(minLen(f.c0), "interior").toBeGreaterThan(1e-9);
-			for (let mask = 0; mask < (1 << P); mask++) {
+			for (let mask = 0; mask < 1 << P; mask++) {
 				const c = f.c0.map((_, i) => f.ranges[i][(mask >> i) & 1]);
 				expect(minLen(c), `box corner ${mask}`).toBeGreaterThan(-1e-9);
 			}
-			expect(f.ranges.every((r, i) => r[0] < f.c0[i] && f.c0[i] < r[1]), "sample inside the box").toBe(true);
+			expect(
+				f.ranges.every((r, i) => r[0] < f.c0[i] && f.c0[i] < r[1]),
+				"sample inside the box",
+			).toBe(true);
 			// Not loose: push every end 5% further from the sample and some corner goes non-positive —
 			// unless every end sits at the FAR cap, which is what an unbounded direction looks like.
-			const CAP = 3.9;   // see FAR in realize(): an unbounded direction stops 4 past the sample
+			const CAP = 3.9; // see FAR in realize(): an unbounded direction stops 4 past the sample
 			const capped = f.ranges.every((r, i) => Math.abs(r[0] - f.c0[i]) > CAP && Math.abs(r[1] - f.c0[i]) > CAP);
 			if (!capped) {
-				const worst = Math.min(...Array.from({ length: 1 << P }, (_, mask) =>
-					minLen(f.c0.map((v, i) => v + (f.ranges[i][(mask >> i) & 1] - v) * 1.05))));
+				const worst = Math.min(
+					...Array.from({ length: 1 << P }, (_, mask) =>
+						minLen(f.c0.map((v, i) => v + (f.ranges[i][(mask >> i) & 1] - v) * 1.05)),
+					),
+				);
 				expect(worst, "the box is the largest one that fits").toBeLessThan(1e-6);
 			}
 			expect(f.lengths.every((l) => l > 1e-9)).toBe(true);
@@ -120,7 +133,9 @@ describe("the oracle-free enumerator", () => {
 		// the corresponding slice of the file is the same consistency guarantee at a fraction of the cost.
 		expect(ENUMERATION_SCOPE.Vmax).toBeGreaterThanOrEqual(3);
 		const fams = enumerateFamilies(PAL, { Vmax: 3 });
-		const got = ENUMERATED_FAMILIES.filter((f) => f.V <= 3).map((f) => `${f.V}-${f.E}-${f.F}`).sort();
+		const got = ENUMERATED_FAMILIES.filter((f) => f.V <= 3)
+			.map((f) => `${f.V}-${f.E}-${f.F}`)
+			.sort();
 		expect(got).toEqual(fams.map((f) => `${f.V}-${f.E}-${f.F}`).sort());
 	});
 });

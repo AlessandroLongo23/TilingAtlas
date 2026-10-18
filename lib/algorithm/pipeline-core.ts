@@ -17,7 +17,7 @@ import { buildParamsFolderName } from "@/lib/algorithm/paramsFolder";
 /** Generate polygons from parameters. Returns polygon signatures and sorted names. */
 export function generatePolygons(
 	parameters: GeneratorParameters,
-	additionalPolygons: PolygonSignature[] = []
+	additionalPolygons: PolygonSignature[] = [],
 ): { signatures: PolygonSignature[]; names: string[]; paramsFolder: string } {
 	const paramsFolder = buildParamsFolderName(parameters);
 	const polygonsGenerator = new PolygonsGenerator(parameters, additionalPolygons);

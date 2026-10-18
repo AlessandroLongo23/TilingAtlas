@@ -16,7 +16,15 @@ import {
 	prefersReducedMotion,
 	waveTileScale,
 } from "@/lib/utils/tilingTransition";
-import { LENGTH_STEP, evaluateParamCell, resolveAlphaDegsRaw, clampAlphaOnly, nearestInRegionDeg, renderAlphaDegs, type ParametricCellData } from "@/lib/utils/paramCell";
+import {
+	LENGTH_STEP,
+	evaluateParamCell,
+	resolveAlphaDegsRaw,
+	clampAlphaOnly,
+	nearestInRegionDeg,
+	renderAlphaDegs,
+	type ParametricCellData,
+} from "@/lib/utils/paramCell";
 import {
 	screenToWorld,
 	worldToScreen,
@@ -48,7 +56,13 @@ import {
 	wheelDeltaPx,
 } from "@/lib/render/viewControls";
 import { onViewReset, TouchGestures } from "@/lib/render/touchGestures";
-import { endPinchPlayView, pinchPlayView, playTwisting, resetPlayView, resetPlayViewFully } from "@/lib/render/playView";
+import {
+	endPinchPlayView,
+	pinchPlayView,
+	playTwisting,
+	resetPlayView,
+	resetPlayViewFully,
+} from "@/lib/render/playView";
 import { setIslamicNoiseWorldOffset } from "@/utils/islamicNoise";
 import { TilingInfo } from "./tiling-info";
 import type { TilingSpec } from "@/lib/services/tilingSpec";
@@ -123,12 +137,20 @@ const ALPHA_DAMP = 0.2;
 // tile. Lets the drawer skip the off-screen remainder of an oversized grid (e.g. the larger grid retained
 // mid zoom-in) instead of stroking every replicated copy every frame.
 function makeVisibilityCull(
-	maxRadius: number, zoom: number, rotation: number, offset: Vector, width: number, height: number,
+	maxRadius: number,
+	zoom: number,
+	rotation: number,
+	offset: Vector,
+	width: number,
+	height: number,
 ): (c: Vector) => boolean {
-	const cos = Math.cos(rotation), sin = Math.sin(rotation);
-	const ox = offset.x, oy = offset.y;
+	const cos = Math.cos(rotation),
+		sin = Math.sin(rotation);
+	const ox = offset.x,
+		oy = offset.y;
 	const pad = zoom * (maxRadius > 0 ? maxRadius : 2);
-	const limX = width / 2 + pad, limY = height / 2 + pad;
+	const limX = width / 2 + pad,
+		limY = height / 2 + pad;
 	return (c: Vector) => {
 		const sx = ox + zoom * (cos * c.x + sin * c.y);
 		const sy = oy + zoom * (sin * c.x - cos * c.y);
@@ -141,10 +163,18 @@ function makeVisibilityCull(
 // — so it stays uniform in every direction no matter how the view is panned, zoomed or rotated. Uses the
 // same world -> centered-screen map as makeVisibilityCull, so the two agree on where a tile is.
 function makeWaveScale(
-	phase: "in" | "out", p: number, zoom: number, rotation: number, offset: Vector, width: number, height: number,
+	phase: "in" | "out",
+	p: number,
+	zoom: number,
+	rotation: number,
+	offset: Vector,
+	width: number,
+	height: number,
 ): (c: Vector) => number {
-	const cos = Math.cos(rotation), sin = Math.sin(rotation);
-	const ox = offset.x, oy = offset.y;
+	const cos = Math.cos(rotation),
+		sin = Math.sin(rotation);
+	const ox = offset.x,
+		oy = offset.y;
 	// Normalise by the half-diagonal: the wavefront has swept every visible tile, corners included, at p=1.
 	const dmax = Math.max(1, Math.hypot(width / 2, height / 2));
 	return (c: Vector) => {
@@ -175,15 +205,35 @@ function transitionsEnabled(cfg: ReturnType<typeof useConfiguration.getState>): 
 // (islamic/circle-packing/symmetry) and the other two views keep the p5/analytic paths. One predicate so
 // the React mount gate and the per-frame skipFill decision can never drift.
 function isFlatShaderActive(cfg: {
-	euclideanShader: boolean; inversive: boolean; hyperbolic: boolean; spherical: boolean; freedraw: boolean; hollow?: boolean;
-	colors: boolean; truchetActive?: boolean; isIslamic: boolean; circlePacking: boolean; showSymmetryElements: boolean;
+	euclideanShader: boolean;
+	inversive: boolean;
+	hyperbolic: boolean;
+	spherical: boolean;
+	freedraw: boolean;
+	hollow?: boolean;
+	colors: boolean;
+	truchetActive?: boolean;
+	isIslamic: boolean;
+	circlePacking: boolean;
+	showSymmetryElements: boolean;
 	studioActive?: boolean;
 }): boolean {
-	return cfg.euclideanShader && !cfg.inversive && !cfg.hyperbolic && !cfg.spherical && !cfg.freedraw && !cfg.hollow &&
-		!cfg.colors && !cfg.truchetActive && !cfg.isIslamic && !cfg.circlePacking && !cfg.showSymmetryElements &&
+	return (
+		cfg.euclideanShader &&
+		!cfg.inversive &&
+		!cfg.hyperbolic &&
+		!cfg.spherical &&
+		!cfg.freedraw &&
+		!cfg.hollow &&
+		!cfg.colors &&
+		!cfg.truchetActive &&
+		!cfg.isIslamic &&
+		!cfg.circlePacking &&
+		!cfg.showSymmetryElements &&
 		// The editor draws the tiling it is editing, which is not the catalogued one. Two layers painting
 		// two different tilings is worse than either alone, so the shader stands down while it is up.
-		!cfg.studioActive;
+		!cfg.studioActive
+	);
 }
 
 // The predicate deciding which modes honour the view DEFORMATION lives in lib/stores/configuration.ts
@@ -195,33 +245,48 @@ function isFlatShaderActive(cfg: {
 // the per-frame skipFill, so p5 never double-paints. The strap styles are on the sibling StrapCanvas (see
 // isStrapShaderActive); only the animated motif and a rulestring tiling with no translational cell stay on p5.
 function isIslamicShaderActive(cfg: {
-	isIslamic: boolean; islamicAnimate: boolean; islamicStyle: string;
-	hyperbolic: boolean; spherical: boolean; inversive: boolean;
+	isIslamic: boolean;
+	islamicAnimate: boolean;
+	islamicStyle: string;
+	hyperbolic: boolean;
+	spherical: boolean;
+	inversive: boolean;
 }): boolean {
-	return cfg.isIslamic && !cfg.islamicAnimate
-		&& (cfg.islamicStyle === "plain" || cfg.islamicStyle === "checkerboard")
-		&& !cfg.hyperbolic && !cfg.spherical && !cfg.inversive;
+	return (
+		cfg.isIslamic &&
+		!cfg.islamicAnimate &&
+		(cfg.islamicStyle === "plain" || cfg.islamicStyle === "checkerboard") &&
+		!cfg.hyperbolic &&
+		!cfg.spherical &&
+		!cfg.inversive
+	);
 }
 
 // Euclidean Islamic INTERLACE / OUTLINE / EMBOSS straps render through the WebGL StrapCanvas
 // (components/strap-canvas.tsx). Same gate shape as isIslamicShaderActive, for the three strap styles; when
 // active p5 skips its own drawIslamicInterlace (via skipFill) so the two never double-paint.
 function isStrapShaderActive(cfg: {
-	isIslamic: boolean; islamicAnimate: boolean; islamicStyle: string;
-	hyperbolic: boolean; spherical: boolean; inversive: boolean;
+	isIslamic: boolean;
+	islamicAnimate: boolean;
+	islamicStyle: string;
+	hyperbolic: boolean;
+	spherical: boolean;
+	inversive: boolean;
 }): boolean {
-	return cfg.isIslamic && !cfg.islamicAnimate
-		&& (cfg.islamicStyle === "interlace" || cfg.islamicStyle === "outline" || cfg.islamicStyle === "emboss")
-		&& !cfg.hyperbolic && !cfg.spherical && !cfg.inversive;
+	return (
+		cfg.isIslamic &&
+		!cfg.islamicAnimate &&
+		(cfg.islamicStyle === "interlace" || cfg.islamicStyle === "outline" || cfg.islamicStyle === "emboss") &&
+		!cfg.hyperbolic &&
+		!cfg.spherical &&
+		!cfg.inversive
+	);
 }
 
 // A WebGL layer owns the tile fill this frame — the flat renderer, or one of the two Islamic ones with a
 // cell to build from. Single source for both the per-frame `skipFill` handed to Tiling.show and the α-tick
 // rebuild skip in ensureTiling, so "p5 paints no tile bodies" cannot come to mean two different things.
-function shaderOwnsFill(
-	cfg: ReturnType<typeof useConfiguration.getState>,
-	hasStaticCell: boolean,
-): boolean {
+function shaderOwnsFill(cfg: ReturnType<typeof useConfiguration.getState>, hasStaticCell: boolean): boolean {
 	return isFlatShaderActive(cfg) || ((isIslamicShaderActive(cfg) || isStrapShaderActive(cfg)) && hasStaticCell);
 }
 
@@ -302,9 +367,27 @@ export function Canvas({
 		extent: { aMin: 0, aMax: 0, bMin: 0, bMax: 0 },
 	});
 
-	const propsRef = useRef({ width, height, translationalCell, translationalCellId, paramCell, symmetryData, orbitData, cellHasTiles });
+	const propsRef = useRef({
+		width,
+		height,
+		translationalCell,
+		translationalCellId,
+		paramCell,
+		symmetryData,
+		orbitData,
+		cellHasTiles,
+	});
 	useEffect(() => {
-		propsRef.current = { width, height, translationalCell, translationalCellId, paramCell, symmetryData, orbitData, cellHasTiles };
+		propsRef.current = {
+			width,
+			height,
+			translationalCell,
+			translationalCellId,
+			paramCell,
+			symmetryData,
+			orbitData,
+			cellHasTiles,
+		};
 	}, [width, height, translationalCell, translationalCellId, paramCell, symmetryData, orbitData, cellHasTiles]);
 
 	// The phone's Reset button broadcasts; this layer owns /play's shared view, so it answers.
@@ -368,24 +451,43 @@ export function Canvas({
 	// Colors rides the same rule: its own 2D canvas, no polygon cell for the flat shader to build from.
 	const colorsSel = useConfiguration((s) => s.colors);
 	const euclideanShaderActive = isFlatShaderActive({
-		euclideanShader, inversive: inversiveSel, hyperbolic: hyperbolicSel, spherical: sphericalSel,
-		freedraw: freedrawSel, colors: colorsSel, hollow: hollowSel,
-		isIslamic: isIslamicSel, circlePacking: circlePackingSel, showSymmetryElements,
+		euclideanShader,
+		inversive: inversiveSel,
+		hyperbolic: hyperbolicSel,
+		spherical: sphericalSel,
+		freedraw: freedrawSel,
+		colors: colorsSel,
+		hollow: hollowSel,
+		isIslamic: isIslamicSel,
+		circlePacking: circlePackingSel,
+		showSymmetryElements,
 	});
 	// Islamic PLAIN fill → WebGL IslamicCanvas. Needs its own narrow subscriptions (style/animate) so a
 	// style switch re-renders this component to (un)mount the canvas, and a translational cell to build
 	// the patch from (rulestring tilings without one stay on p5). Mirrors the per-frame shaderFill gate.
 	const islamicStyleSel = useConfiguration((s) => s.islamicStyle);
 	const islamicAnimateSel = useConfiguration((s) => s.islamicAnimate);
-	const islamicShaderActive = !!translationalCell && isIslamicShaderActive({
-		isIslamic: isIslamicSel, islamicAnimate: islamicAnimateSel, islamicStyle: islamicStyleSel,
-		hyperbolic: hyperbolicSel, spherical: sphericalSel, inversive: inversiveSel,
-	});
+	const islamicShaderActive =
+		!!translationalCell &&
+		isIslamicShaderActive({
+			isIslamic: isIslamicSel,
+			islamicAnimate: islamicAnimateSel,
+			islamicStyle: islamicStyleSel,
+			hyperbolic: hyperbolicSel,
+			spherical: sphericalSel,
+			inversive: inversiveSel,
+		});
 	// Islamic strap styles (interlace/outline/emboss) → WebGL StrapCanvas. Same subscriptions; needs a cell.
-	const strapShaderActive = !!translationalCell && isStrapShaderActive({
-		isIslamic: isIslamicSel, islamicAnimate: islamicAnimateSel, islamicStyle: islamicStyleSel,
-		hyperbolic: hyperbolicSel, spherical: sphericalSel, inversive: inversiveSel,
-	});
+	const strapShaderActive =
+		!!translationalCell &&
+		isStrapShaderActive({
+			isIslamic: isIslamicSel,
+			islamicAnimate: islamicAnimateSel,
+			islamicStyle: islamicStyleSel,
+			hyperbolic: hyperbolicSel,
+			spherical: sphericalSel,
+			inversive: inversiveSel,
+		});
 
 	useP5(
 		containerRef,
@@ -421,7 +523,8 @@ export function Canvas({
 				// Viewport size for the fill radii: p5's own canvas, resized from the live host box at the top
 				// of draw. The width/height props lag a React render behind, which would undersize the grid
 				// mid-transition and flash empty corners.
-				const W = p5.width, H = p5.height;
+				const W = p5.width,
+					H = p5.height;
 				// No geometry yet (cold load before the first tiling resolves): blank, not crash, in
 				// buildTilingFromCell, which dereferences a null cell.
 				if (!staticCell && !pc) {
@@ -456,7 +559,8 @@ export function Canvas({
 				// content actually sits in lattice coordinates (see computeFillRadii). Use the most-zoomed-out
 				// point of any in-flight zoom ease (min of current/target) so the grid is never momentarily
 				// undersized during a zoom-out (which would flash black corners).
-				let Ri = prev.Ri, Rj = prev.Rj;
+				let Ri = prev.Ri,
+					Rj = prev.Rj;
 				if (tc) {
 					const { v1, v2, det } = latticeBasisFromCell(tc);
 					const cached = cellExtentRef.current;
@@ -468,7 +572,7 @@ export function Canvas({
 						cached.cell = tc;
 					}
 					const zoomForFill = Math.min(ctrl.zoom, ctrl.targetZoom);
-					const rot = (ctrl.rotation || 0) * Math.PI / 180;
+					const rot = ((ctrl.rotation || 0) * Math.PI) / 180;
 					// The deform enters here too. In the p5-owned modes resolveDeform is the identity, so nothing
 					// changes; under the flat shader this grid is not drawn but IS what click-to-centre and the
 					// orbit hover test against, and a shrinking deform puts more of the plane on screen than an
@@ -477,9 +581,7 @@ export function Canvas({
 				}
 
 				const ruleChanged =
-					!tc &&
-					(cfg.selectedTiling.rulestring !== prev.rulestring ||
-						cfg.parameter !== prev.parameter);
+					!tc && (cfg.selectedTiling.rulestring !== prev.rulestring || cfg.parameter !== prev.parameter);
 
 				// Rebuilding the replicated grid is the expensive per-frame spike (thousands of polygons,
 				// each recomputing centroid/halfways/angles/hue). A zoom-IN shrinks the needed radius
@@ -533,27 +635,29 @@ export function Canvas({
 				// current α AND the current radius.
 				const gridUnseen =
 					shaderOwnsFill(cfg, !!propsRef.current.translationalCell) &&
-					!cfg.circlePacking && !cfg.showSymmetryElements &&
-					!cfg.showConstructionPoints && !cfg.exportGraphButtonHover && !cfg.debugView;
+					!cfg.circlePacking &&
+					!cfg.showSymmetryElements &&
+					!cfg.showConstructionPoints &&
+					!cfg.exportGraphButtonHover &&
+					!cfg.debugView;
 				const skipAlphaRebuild =
 					!force &&
 					!!pc &&
 					!!tilingRef.current &&
 					gridUnseen &&
 					prev.translationalCellId !== tcId &&
-					!baseChanged && !orbitChanged;
+					!baseChanged &&
+					!orbitChanged;
 				if (skipAlphaRebuild) gridStale = true;
 
-				const cellChanged =
-					!!tc && !skipAlphaRebuild && (prev.translationalCellId !== tcId || grew || shrankAtRest);
+				const cellChanged = !!tc && !skipAlphaRebuild && (prev.translationalCellId !== tcId || grew || shrankAtRest);
 
 				// A NEW TILING was selected — as opposed to an α-slider tick or a zoom-driven regrid, which
 				// also change tcId/the grid but must never animate. Hand what is on screen to the outgoing
 				// slot and start the wave. If a collapse is already running, leave it be: that is the one the
 				// user can actually see, and only the (not yet shown) incoming grid is superseded.
 				if (baseChanged) {
-					const canAnimate =
-						prevBaseIdRef.current !== null && !!shownTiling && !!shownCell && transitionsEnabled(cfg);
+					const canAnimate = prevBaseIdRef.current !== null && !!shownTiling && !!shownCell && transitionsEnabled(cfg);
 					if (!canAnimate) {
 						transitionRef.current = null;
 						outgoingRef.current = null;
@@ -690,7 +794,16 @@ export function Canvas({
 					},
 				});
 				// The hyperbolic / spherical / freedraw / colors / editor (and inversive) views paint via their own overlay; skip the flat grid build.
-				if (!cfg.hyperbolic && !cfg.spherical && !cfg.freedraw && !cfg.colors && !cfg.hollow && !cfg.truchetActive && !cfg.studioActive) ensureTiling();
+				if (
+					!cfg.hyperbolic &&
+					!cfg.spherical &&
+					!cfg.freedraw &&
+					!cfg.colors &&
+					!cfg.hollow &&
+					!cfg.truchetActive &&
+					!cfg.studioActive
+				)
+					ensureTiling();
 			};
 
 			p5.draw = () => {
@@ -745,7 +858,11 @@ export function Canvas({
 				const box = cap ? { w: cap.w, h: cap.h } : hostBox();
 				const density = cap ? cap.dpr : baseDensity;
 				const { w, h } = box;
-				if (w > 0 && h > 0 && (w !== prevRef.current.width || h !== prevRef.current.height || p5.pixelDensity() !== density)) {
+				if (
+					w > 0 &&
+					h > 0 &&
+					(w !== prevRef.current.width || h !== prevRef.current.height || p5.pixelDensity() !== density)
+				) {
 					p5.pixelDensity(density);
 					p5.resizeCanvas(w, h);
 					prevRef.current.width = w;
@@ -776,7 +893,13 @@ export function Canvas({
 				// as black figures, so the tiling drawn underneath is a second picture — and one that
 				// trails a frame behind on a drag, because the two layers ease on separate frame loops.
 				const skipFlat =
-					inversive || hyperbolic || spherical || cfg.freedraw || cfg.colors || cfg.hollow || cfg.truchetActive ||
+					inversive ||
+					hyperbolic ||
+					spherical ||
+					cfg.freedraw ||
+					cfg.colors ||
+					cfg.hollow ||
+					cfg.truchetActive ||
 					cfg.studioActive;
 				if (!skipFlat) ensureTiling();
 				// A WebGL overlay now owns the frame, so ensureTiling — the only place that clears canvasError —
@@ -822,7 +945,7 @@ export function Canvas({
 					// copy count stays bounded; the wrap jump is a whole period -> invisible. Use the cell
 					// the grid was actually built from (the live alpha cell for a parametric family), so the
 					// wrap lattice matches the drawn geometry.
-					const rot = (ctrl.rotation || 0) * Math.PI / 180;
+					const rot = ((ctrl.rotation || 0) * Math.PI) / 180;
 					const tc = outgoing ? outgoing.cell : activeCellRef.current;
 
 					// Rotate about the screen centre, not the world origin: when the angle changes by Δθ,
@@ -837,8 +960,9 @@ export function Canvas({
 					const rotDeg = ctrl.rotation || 0;
 					const prevRotDeg = prevRotationRef.current;
 					if (!hyperbolic && prevRotDeg !== null && prevRotDeg !== rotDeg) {
-						const dTheta = rot - prevRotDeg * Math.PI / 180;
-						const cd = Math.cos(dTheta), sd = Math.sin(dTheta);
+						const dTheta = rot - (prevRotDeg * Math.PI) / 180;
+						const cd = Math.cos(dTheta),
+							sd = Math.sin(dTheta);
 						const rotateAboutCentre = (o: Vector) => {
 							const x = cd * o.x - sd * o.y;
 							const y = sd * o.x + cd * o.y;
@@ -853,82 +977,87 @@ export function Canvas({
 					// Everything below paints tiles onto the p5 canvas; a WebGL overlay owns painting in the
 					// inversive/hyperbolic modes, so skip it (the rotation compensation above still ran).
 					if (!skipFlat) {
-					let drawOffset = ctrl.offset;
-					if (tc) {
-						const { v1, v2, det } = latticeBasisFromCell(tc);
-						const wrapped = wrapOffset(ctrl.offset, v1, v2, det, ctrl.zoom, rot);
-						drawOffset = wrapped.draw;
-						// Keep the Islamic noise sampling in the true (unwrapped) world frame so the animated
-						// motif pans with the content instead of snapping back at each lattice wrap.
-						setIslamicNoiseWorldOffset(-wrapped.worldShiftX, -wrapped.worldShiftY);
-					} else {
-						setIslamicNoiseWorldOffset(0, 0);
-					}
+						let drawOffset = ctrl.offset;
+						if (tc) {
+							const { v1, v2, det } = latticeBasisFromCell(tc);
+							const wrapped = wrapOffset(ctrl.offset, v1, v2, det, ctrl.zoom, rot);
+							drawOffset = wrapped.draw;
+							// Keep the Islamic noise sampling in the true (unwrapped) world frame so the animated
+							// motif pans with the content instead of snapping back at each lattice wrap.
+							setIslamicNoiseWorldOffset(-wrapped.worldShiftX, -wrapped.worldShiftY);
+						} else {
+							setIslamicNoiseWorldOffset(0, 0);
+						}
 
-					p5.push();
-					p5.translate(p5.width / 2, p5.height / 2);
-					p5.translate(drawOffset.x, drawOffset.y);
-					p5.rotate(rot);
-					p5.scale(ctrl.zoom);
-					p5.scale(1, -1);
-					const sd = propsRef.current.symmetryData;
-					// Symmetry-elements view: draw tiles plain (no per-tile colour) so colour is reserved for the
-					// symmetry axes + rotation-centre glyphs drawn on top. Otherwise the normal coloured render.
-					const symmetryActive = !!sd && cfg.showSymmetryElements;
-					// Skip tiles outside the viewport. Only meaningful when the grid can exceed it (the
-					// translational-cell path with its retained-oversize grid); the rulestring path draws all.
-					const cull =
-						tc && tiling
-							? makeVisibilityCull(tiling.maxRadius ?? 0, ctrl.zoom, rot, drawOffset, p5.width, p5.height)
+						p5.push();
+						p5.translate(p5.width / 2, p5.height / 2);
+						p5.translate(drawOffset.x, drawOffset.y);
+						p5.rotate(rot);
+						p5.scale(ctrl.zoom);
+						p5.scale(1, -1);
+						const sd = propsRef.current.symmetryData;
+						// Symmetry-elements view: draw tiles plain (no per-tile colour) so colour is reserved for the
+						// symmetry axes + rotation-centre glyphs drawn on top. Otherwise the normal coloured render.
+						const symmetryActive = !!sd && cfg.showSymmetryElements;
+						// Skip tiles outside the viewport. Only meaningful when the grid can exceed it (the
+						// translational-cell path with its retained-oversize grid); the rulestring path draws all.
+						const cull =
+							tc && tiling
+								? makeVisibilityCull(tiling.maxRadius ?? 0, ctrl.zoom, rot, drawOffset, p5.width, p5.height)
+								: undefined;
+						// The wave rides on the same view transform, so it stays radial about the canvas centre under
+						// any pan/zoom/rotation.
+						const wave = wavePhase
+							? makeWaveScale(wavePhase, waveP, ctrl.zoom, rot, drawOffset, p5.width, p5.height)
 							: undefined;
-					// The wave rides on the same view transform, so it stays radial about the canvas centre under
-					// any pan/zoom/rotation.
-					const wave = wavePhase
-						? makeWaveScale(wavePhase, waveP, ctrl.zoom, rot, drawOffset, p5.width, p5.height)
-						: undefined;
-					// skipFill for show(): the flat WebGL renderer OR the Islamic WebGL canvas owns the fill.
-					// The Islamic gate keys on the SAME prop (translationalCell) the React mount does — not the
-					// transient active-cell ref — so p5 skips its plain fill exactly when IslamicCanvas is
-					// mounted (never leaving a blank), and a rulestring tiling with no cell stays on p5.
-					const shaderFill = shaderOwnsFill(cfg, !!propsRef.current.translationalCell);
-					// Mouse in world coords for the orbit-dot hover (grow the hovered orbit, Tiling.
-					// drawVertexOrbits). Inverts the SAME frame transform the dots are drawn with (wrapped
-					// drawOffset + eased zoom/rot), so the hit-test matches what's on screen. Null when the
-					// pointer is off the canvas or the overlay is off.
-					const overCanvas =
-						p5.mouseX >= 0 && p5.mouseX <= p5.width && p5.mouseY >= 0 && p5.mouseY <= p5.height;
-					const hoverWorld =
-						cfg.showVertexOrbits && overCanvas
-							? screenToWorld(p5.mouseX - p5.width / 2, p5.mouseY - p5.height / 2, drawOffset, ctrl.zoom, rot, resolveDeform(cfg))
-							: null;
-					// tiling is null in the cold-load window (no cell resolved yet) — ensureTiling sets it null and
-					// returns, and the cull above already guards on it. Draw nothing instead of dereferencing null.show().
-					// One pen per frame, wrapping the same p5 instance: the overlay code itself is shared
-					// with the preview cards' 2-D layer (lib/render/symmetryOverlay.ts).
-					const pen = p5Pen(p5);
-					if (tiling) {
-						if (symmetryActive) drawTilingPlain(pen, tiling, ctrl.zoom);
-						else drawTiling(cfg, tiling, cull, wave, shaderFill, hoverWorld);
-					}
-					// Shared by both overlays: the FD uses it to snap to the lattice copy nearest the view
-					// centre; the symmetry elements to replicate across the visible world rectangle.
-					const overlayView = {
-						zoom: ctrl.zoom,
-						rotation: rot,
-						offset: { x: drawOffset.x, y: drawOffset.y },
-						width: p5.width,
-						height: p5.height,
-						// The FD sits on top of the WebGL fill, so it has to be deformed with it. The symmetry
-						// elements below never see a non-identity matrix — showSymmetryElements is one of the
-						// modes deformApplies() excludes.
-						deform: resolveDeform(cfg),
-					};
-					if (sd && cfg.showFundamentalDomain) drawFundamentalDomain(pen, sd, overlayView);
-					if (symmetryActive) {
-						drawSymmetryElements(pen, sd, overlayView);
-					}
-					p5.pop();
-
+						// skipFill for show(): the flat WebGL renderer OR the Islamic WebGL canvas owns the fill.
+						// The Islamic gate keys on the SAME prop (translationalCell) the React mount does — not the
+						// transient active-cell ref — so p5 skips its plain fill exactly when IslamicCanvas is
+						// mounted (never leaving a blank), and a rulestring tiling with no cell stays on p5.
+						const shaderFill = shaderOwnsFill(cfg, !!propsRef.current.translationalCell);
+						// Mouse in world coords for the orbit-dot hover (grow the hovered orbit, Tiling.
+						// drawVertexOrbits). Inverts the SAME frame transform the dots are drawn with (wrapped
+						// drawOffset + eased zoom/rot), so the hit-test matches what's on screen. Null when the
+						// pointer is off the canvas or the overlay is off.
+						const overCanvas = p5.mouseX >= 0 && p5.mouseX <= p5.width && p5.mouseY >= 0 && p5.mouseY <= p5.height;
+						const hoverWorld =
+							cfg.showVertexOrbits && overCanvas
+								? screenToWorld(
+										p5.mouseX - p5.width / 2,
+										p5.mouseY - p5.height / 2,
+										drawOffset,
+										ctrl.zoom,
+										rot,
+										resolveDeform(cfg),
+									)
+								: null;
+						// tiling is null in the cold-load window (no cell resolved yet) — ensureTiling sets it null and
+						// returns, and the cull above already guards on it. Draw nothing instead of dereferencing null.show().
+						// One pen per frame, wrapping the same p5 instance: the overlay code itself is shared
+						// with the preview cards' 2-D layer (lib/render/symmetryOverlay.ts).
+						const pen = p5Pen(p5);
+						if (tiling) {
+							if (symmetryActive) drawTilingPlain(pen, tiling, ctrl.zoom);
+							else drawTiling(cfg, tiling, cull, wave, shaderFill, hoverWorld);
+						}
+						// Shared by both overlays: the FD uses it to snap to the lattice copy nearest the view
+						// centre; the symmetry elements to replicate across the visible world rectangle.
+						const overlayView = {
+							zoom: ctrl.zoom,
+							rotation: rot,
+							offset: { x: drawOffset.x, y: drawOffset.y },
+							width: p5.width,
+							height: p5.height,
+							// The FD sits on top of the WebGL fill, so it has to be deformed with it. The symmetry
+							// elements below never see a non-identity matrix — showSymmetryElements is one of the
+							// modes deformApplies() excludes.
+							deform: resolveDeform(cfg),
+						};
+						if (sd && cfg.showFundamentalDomain) drawFundamentalDomain(pen, sd, overlayView);
+						if (symmetryActive) {
+							drawSymmetryElements(pen, sd, overlayView);
+						}
+						p5.pop();
 					}
 				} catch (e) {
 					showCanvasError(e instanceof Error ? e.message : String(e));
@@ -1010,9 +1139,7 @@ export function Canvas({
 					// so tilingRef/activeCellRef can be stale after a selection or slider change made while inversive.
 					// Resolve the current cell fresh from the props and build a small local patch to hit-test against.
 					const { translationalCell: staticCell, paramCell: pc, cellHasTiles } = propsRef.current;
-					const cell = pc
-						? evaluateParamCell(pc, renderAlphas(pc))
-						: staticCell;
+					const cell = pc ? evaluateParamCell(pc, renderAlphas(pc)) : staticCell;
 					if (!cell) return;
 					const { v1, v2 } = latticeBasisFromCell(cell);
 
@@ -1181,7 +1308,7 @@ export function Canvas({
 	);
 
 	return (
-		<div ref={rootRef} className="relative h-full w-full bg-surface-base">
+		<div ref={rootRef} className="bg-surface-base relative h-full w-full">
 			{euclideanShaderActive ? (
 				<EuclideanCanvas
 					translationalCell={translationalCell as unknown as FlatCellData | null}
@@ -1219,13 +1346,11 @@ export function Canvas({
 				// 8px under them, smaller, with 44px diagrams.
 				<div className="absolute top-4 right-4 z-20 flex flex-col items-end gap-2 rounded-xl bg-surface-raised/95 px-3 py-2 text-right shadow-sm ring-1 ring-line-subtle max-md:top-[calc(--spacing(3)+--spacing(11)+--spacing(2))] max-md:right-3 max-md:gap-1.5 max-md:px-2 max-md:py-1.5">
 					<div className="flex flex-col items-end gap-1">
-						<span className="text-sm font-bold leading-none text-fg">
+						<span className="text-sm leading-none font-bold text-fg">
 							Group <span className="font-mono">{symmetryData.group}</span>
 							<span className="ml-1.5 font-mono font-normal text-fg-muted">{symmetryData.orbifold}</span>
 						</span>
-						<span className="text-xs capitalize leading-none text-fg-muted">
-							{symmetryData.latticeShape} lattice
-						</span>
+						<span className="text-xs leading-none text-fg-muted capitalize">{symmetryData.latticeShape} lattice</span>
 					</div>
 					{/* The SAME Wikipedia cell diagram(s) the library sidebar shows, inline and always visible —
 					    no hover needed. Smaller square than the sidebar tooltip so the HUD stays compact. */}
@@ -1234,15 +1359,15 @@ export function Canvas({
 			) : null}
 
 			{!translationalCell && isDualRule ? (
-				<div className="absolute bottom-4 right-4 z-20">
+				<div className="absolute right-4 bottom-4 z-20">
 					<ColorPad value={colorParams} onChange={(v) => setCfg({ colorParams: v })} />
 				</div>
 			) : null}
 
 			{showTilingRuleInput && !translationalCell ? (
-				<div className="absolute bottom-8 right-[50%] translate-x-[50%] z-20 w-80">
-					<div className="flex flex-col gap-3 bg-surface-overlay/90 rounded-lg p-2 pt-3 justify-center items-center w-full">
-						<label htmlFor="tilingRule" className="text-lg text-center font-bold leading-none text-fg">
+				<div className="absolute right-[50%] bottom-8 z-20 w-80 translate-x-[50%]">
+					<div className="flex w-full flex-col items-center justify-center gap-3 rounded-lg bg-surface-overlay/90 p-2 pt-3">
+						<label htmlFor="tilingRule" className="text-center text-lg leading-none font-bold text-fg">
 							Tiling Rule
 						</label>
 						<Input
@@ -1261,18 +1386,16 @@ export function Canvas({
 			) : null}
 
 			{canvasError ? (
-				<div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none text-center text-fg text-sm px-8">
+				<div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center px-8 text-center text-sm text-fg">
 					{canvasError}
 				</div>
 			) : null}
 
 			{debugEnabled ? (
-				<div className="absolute bottom-4 right-4 w-96 z-20">
+				<div className="absolute right-4 bottom-4 z-20 w-96">
 					<PieChart />
 					{debugPhases === 0 ? (
-						<div className="mt-2 p-3 bg-warning-subtle text-fg text-sm rounded-lg">
-							No timing data available.
-						</div>
+						<div className="mt-2 rounded-lg bg-warning-subtle p-3 text-sm text-fg">No timing data available.</div>
 					) : null}
 				</div>
 			) : null}

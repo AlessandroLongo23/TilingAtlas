@@ -3,8 +3,18 @@
 import { FigurePanel, type PanelSpec } from "@/components/figure-panel";
 import { type Box } from "@/lib/render/figureCanvas";
 import {
-	arc, arrowHead, DART, dot, GHOST, halo, INK, REJECT, segment, SOFT,
-	type Api, type Pt,
+	arc,
+	arrowHead,
+	DART,
+	dot,
+	GHOST,
+	halo,
+	INK,
+	REJECT,
+	segment,
+	SOFT,
+	type Api,
+	type Pt,
 } from "@/lib/render/figureGlyphs";
 import { polygonHue, tileFill, tileLine } from "@/lib/utils/renderTiling";
 
@@ -49,7 +59,9 @@ const MATCH = [2, 0, 3, 1];
 
 function drawElimination(api: Api) {
 	const { text } = api;
-	const x0 = -0.45, y0 = 0.44, step = 0.3;
+	const x0 = -0.45,
+		y0 = 0.44,
+		step = 0.3;
 	const cx = (j: number) => x0 + j * step;
 	const cy = (i: number) => y0 - i * step;
 
@@ -82,13 +94,17 @@ function drawElimination(api: Api) {
 
 function drawFrame(api: Api) {
 	const { ctx, s, text } = api;
-	const a: Pt = [-0.42, 0.02], b: Pt = [0.42, 0.02];
+	const a: Pt = [-0.42, 0.02],
+		b: Pt = [0.42, 0.02];
 
 	// The two faces in ONE hue at two values. A hexagon against a square invites the conclusion that
 	// the reflection fails because the tiles DIFFER, and B0 excludes it because it moves f, congruent
 	// or not; but one flat colour for both made them read as a single tile with a line through it,
 	// which is worse. Same hue, different value: two faces, and nothing about their shapes is claimed.
-	for (const [top, alpha] of [[true, 0.9], [false, 0.42]] as const) {
+	for (const [top, alpha] of [
+		[true, 0.9],
+		[false, 0.42],
+	] as const) {
 		ctx.fillStyle = face(alpha);
 		ctx.strokeStyle = edge(6);
 		ctx.lineWidth = 1.4 / s;
@@ -115,7 +131,8 @@ function drawFrame(api: Api) {
 	// The frame the flag carries: along the edge, and into the face. Lifted off the edge and off the
 	// face's own border — drawn ON them, the first vector repainted the edge's left third orange and
 	// the second hid inside the rectangle's outline.
-	const fy = a[1] + 0.06, fx = a[0] + 0.05;
+	const fy = a[1] + 0.06,
+		fx = a[0] + 0.05;
 	segment(api, [fx, fy], [fx + 0.22, fy], DART, 2.6);
 	arrowHead(api, [fx + 0.28, fy], 0, DART, 10);
 	segment(api, [fx, fy], [fx, fy + 0.2], DART, 2.6);

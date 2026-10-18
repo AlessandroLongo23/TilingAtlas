@@ -34,7 +34,8 @@ function edgeSet(faces: number[][]): Set<string> {
 	const E = new Set<string>();
 	for (const ring of faces) {
 		for (let i = 0; i < ring.length; i++) {
-			const a = ring[i], b = ring[(i + 1) % ring.length];
+			const a = ring[i],
+				b = ring[(i + 1) % ring.length];
 			E.add(a < b ? `${a}-${b}` : `${b}-${a}`);
 		}
 	}
@@ -64,9 +65,13 @@ function cyclicConfigHistogram(r: DevCell): Record<string, number> {
 	for (const face of r.faces) {
 		const c: Vec3 = [0, 0, 0];
 		for (const k of face) {
-			c[0] += r.vertices[k][0]; c[1] += r.vertices[k][1]; c[2] += r.vertices[k][2];
+			c[0] += r.vertices[k][0];
+			c[1] += r.vertices[k][1];
+			c[2] += r.vertices[k][2];
 		}
-		c[0] /= face.length; c[1] /= face.length; c[2] /= face.length;
+		c[0] /= face.length;
+		c[1] /= face.length;
+		c[2] /= face.length;
 		for (const v of face) inc[v].push({ size: face.length, c });
 	}
 	const hist: Record<string, number> = {};
@@ -75,16 +80,22 @@ function cyclicConfigHistogram(r: DevCell): Record<string, number> {
 		const nlen = Math.hypot(p[0], p[1], p[2]);
 		const n: Vec3 = [p[0] / nlen, p[1] / nlen, p[2] / nlen];
 		let a: Vec3 = Math.abs(n[0]) > 0.9 ? [0, 1, 0] : [1, 0, 0];
-		let e1: Vec3 = [a[0] - (a[0] * n[0] + a[1] * n[1] + a[2] * n[2]) * n[0],
+		let e1: Vec3 = [
+			a[0] - (a[0] * n[0] + a[1] * n[1] + a[2] * n[2]) * n[0],
 			a[1] - (a[0] * n[0] + a[1] * n[1] + a[2] * n[2]) * n[1],
-			a[2] - (a[0] * n[0] + a[1] * n[1] + a[2] * n[2]) * n[2]];
-		const e1n = Math.hypot(...e1) as number; e1 = [e1[0] / e1n, e1[1] / e1n, e1[2] / e1n];
+			a[2] - (a[0] * n[0] + a[1] * n[1] + a[2] * n[2]) * n[2],
+		];
+		const e1n = Math.hypot(...e1) as number;
+		e1 = [e1[0] / e1n, e1[1] / e1n, e1[2] / e1n];
 		const e2: Vec3 = [n[1] * e1[2] - n[2] * e1[1], n[2] * e1[0] - n[0] * e1[2], n[0] * e1[1] - n[1] * e1[0]];
 		const ordered = inc[i]
 			.map(({ size, c }) => {
 				const dproj = c[0] * n[0] + c[1] * n[1] + c[2] * n[2];
 				const d: Vec3 = [c[0] - dproj * n[0], c[1] - dproj * n[1], c[2] - dproj * n[2]];
-				return { size, ang: Math.atan2(d[0] * e2[0] + d[1] * e2[1] + d[2] * e2[2], d[0] * e1[0] + d[1] * e1[1] + d[2] * e1[2]) };
+				return {
+					size,
+					ang: Math.atan2(d[0] * e2[0] + d[1] * e2[1] + d[2] * e2[2], d[0] * e1[0] + d[1] * e1[1] + d[2] * e1[2]),
+				};
 			})
 			.sort((x, y) => x.ang - y.ang)
 			.map((o) => o.size);

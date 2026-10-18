@@ -27,11 +27,7 @@ type V3 = [number, number, number];
 
 const sub = (a: V3, b: V3): V3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 const dot = (a: V3, b: V3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-const cross = (a: V3, b: V3): V3 => [
-	a[1] * b[2] - a[2] * b[1],
-	a[2] * b[0] - a[0] * b[2],
-	a[0] * b[1] - a[1] * b[0],
-];
+const cross = (a: V3, b: V3): V3 => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 
 /**
  * A normal to the ring's plane: the largest cross product of two consecutive sides.
@@ -158,7 +154,8 @@ export function windingCells(xs: readonly number[], ys: readonly number[]): { cu
 			const by = ys[(i + 1) % n];
 			// A side lying ON a cut bounds nothing; one that stops short of either cut is not in this slab.
 			if (Math.abs(bx - ax) <= eps || Math.min(ax, bx) > x0 + eps || Math.max(ax, bx) < x1 - eps) continue;
-			const at = (x: number) => (Math.abs(x - ax) <= eps ? ay : Math.abs(x - bx) <= eps ? by : ay + ((by - ay) * (x - ax)) / (bx - ax));
+			const at = (x: number) =>
+				Math.abs(x - ax) <= eps ? ay : Math.abs(x - bx) <= eps ? by : ay + ((by - ay) * (x - ax)) / (bx - ax);
 			spans.push({ y0: at(x0), y1: at(x1), dir: bx > ax ? 1 : -1 });
 		}
 		spans.sort((p, q) => p.y0 + p.y1 - (q.y0 + q.y1));
@@ -168,7 +165,8 @@ export function windingCells(xs: readonly number[], ys: readonly number[]): { cu
 			const lo = spans[k];
 			const hi = spans[k + 1];
 			// Two sides on top of each other bound a cell of no height; the winding still steps across both.
-			if (w !== 0 && hi.y0 - lo.y0 + hi.y1 - lo.y1 > eps) cells.push({ s, a0: lo.y0, a1: lo.y1, b0: hi.y0, b1: hi.y1, w });
+			if (w !== 0 && hi.y0 - lo.y0 + hi.y1 - lo.y1 > eps)
+				cells.push({ s, a0: lo.y0, a1: lo.y1, b0: hi.y0, b1: hi.y1, w });
 		}
 	}
 	return { cuts, cells };
@@ -235,11 +233,12 @@ export function planarFillRings(face: number[], verts: V3[], mod2 = false): numb
 		if (idx === undefined) {
 			const x = cuts[s];
 			const y = heights[s][k];
-			idx = verts.push([
-				pl.c[0] + pl.ex[0] * x + pl.ey[0] * y,
-				pl.c[1] + pl.ex[1] * x + pl.ey[1] * y,
-				pl.c[2] + pl.ex[2] * x + pl.ey[2] * y,
-			]) - 1;
+			idx =
+				verts.push([
+					pl.c[0] + pl.ex[0] * x + pl.ey[0] * y,
+					pl.c[1] + pl.ex[1] * x + pl.ey[1] * y,
+					pl.c[2] + pl.ex[2] * x + pl.ey[2] * y,
+				]) - 1;
 			made.set(key, idx);
 		}
 		return idx;
@@ -277,12 +276,16 @@ export function planarFillRings(face: number[], verts: V3[], mod2 = false): numb
  * cross away from a vertex. What the info panel draws, so a reader can see the polygon the solid is made
  * of, which on a noble polyhedron is close to impossible to pick out of the solid itself.
  */
-export function faceOutline(face: readonly number[], verts: readonly V3[]): { xs: number[]; ys: number[]; crossed: boolean } | null {
+export function faceOutline(
+	face: readonly number[],
+	verts: readonly V3[],
+): { xs: number[]; ys: number[]; crossed: boolean } | null {
 	const pl = facePlane(face, verts);
 	if (!pl) return null;
 	const { xs, ys } = pl;
 	const n = xs.length;
-	const side = (ax: number, ay: number, bx: number, by: number, px: number, py: number) => (bx - ax) * (py - ay) - (by - ay) * (px - ax);
+	const side = (ax: number, ay: number, bx: number, by: number, px: number, py: number) =>
+		(bx - ax) * (py - ay) - (by - ay) * (px - ax);
 	let crossed = false;
 	for (let i = 0; i < n && !crossed; i++) {
 		for (let j = i + 2; j < n; j++) {

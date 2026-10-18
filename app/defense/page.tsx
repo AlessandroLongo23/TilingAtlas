@@ -32,9 +32,7 @@ async function loadTalk(): Promise<string> {
 // read: the regular catalogue, and the mixed one, which is where the star-polygon tilings live (the
 // "not every tile is regular" slide needs a counterexample the regular atlas cannot supply).
 // `exactSource` rides along because the orbit card recomputes the vertex partition from it.
-async function loadCells(
-	ids: string[],
-): Promise<{
+async function loadCells(ids: string[]): Promise<{
 	cells: Record<string, TranslationalCellData>;
 	sources: Record<string, ExactCellSource>;
 }> {
@@ -50,11 +48,13 @@ async function loadCells(
 	]) {
 		try {
 			const raw = await readFile(path.join(process.cwd(), "public", file), "utf8");
-			const atlas = hydrateRenderCells(decodeAtlas<{
-				id: string;
-				renderCell: TranslationalCellData;
-				exactSource?: ExactCellSource;
-			}>(JSON.parse(raw)));
+			const atlas = hydrateRenderCells(
+				decodeAtlas<{
+					id: string;
+					renderCell: TranslationalCellData;
+					exactSource?: ExactCellSource;
+				}>(JSON.parse(raw)),
+			);
 			for (const t of atlas) {
 				if (!wanted.has(t.id)) continue;
 				cells[t.id] = t.renderCell;

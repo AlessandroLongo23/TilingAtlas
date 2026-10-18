@@ -167,7 +167,12 @@ export function createOrbitMomentum(getCamera: () => THREE.Camera | null, opts: 
 			const z = _v1.copy(camera.position).sub(target).normalize();
 			const x = _v2.crossVectors(camera.up, z).normalize();
 			const y = _v3.crossVectors(z, x);
-			padWant.set(0, 0, 0).addScaledVector(y, pad.stick.x).addScaledVector(x, -pad.stick.y).addScaledVector(z, pad.twist).multiplyScalar(PAD_SPEED);
+			padWant
+				.set(0, 0, 0)
+				.addScaledVector(y, pad.stick.x)
+				.addScaledVector(x, -pad.stick.y)
+				.addScaledVector(z, pad.twist)
+				.multiplyScalar(PAD_SPEED);
 			padVel.lerp(padWant, 1 - Math.exp(-dt / PAD_EASE));
 			const w = padVel.length();
 			if (!held && w < MIN_SPEED) padVel.set(0, 0, 0);

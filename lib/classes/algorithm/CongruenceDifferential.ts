@@ -32,10 +32,10 @@
  * TilingCongruence.ts: divergence is the point.
  */
 
-import type { Polygon } from '../polygons/Polygon';
-import { Cyclotomic } from '../Cyclotomic';
-import { Surd, detSurd } from './exact/Surd';
-import type { PeriodCell } from './PeriodSolver';
+import type { Polygon } from "../polygons/Polygon";
+import { Cyclotomic } from "../Cyclotomic";
+import { Surd, detSurd } from "./exact/Surd";
+import type { PeriodCell } from "./PeriodSolver";
 
 /** Exact integer floor of a Surd: float guess, then exact `cmp` correction (terminates: each loop
  *  step moves monotonically toward the unique n with n ≤ s < n+1). */
@@ -71,27 +71,31 @@ function mapPt(z: Cyclotomic, reflect: boolean, r: number): Cyclotomic {
 
 /** Self-built polygon key (never Polygon.exactKey): name + centroid + sorted vertex keys. */
 function polyKey(name: string, centroid: Cyclotomic, verts: Cyclotomic[]): string {
-	return `${name}:${centroid.key()}:${verts.map((x) => x.key()).sort().join(';')}`;
+	return `${name}:${centroid.key()}:${verts
+		.map((x) => x.key())
+		.sort()
+		.join(";")}`;
 }
 
 /** Canonical lattice-class key: translate so the centroid's exact (α, β) lands in [0,1)² — the
  *  fundamental-domain representative. Members of one Λ-class differ by integer (α, β) shifts, so
  *  their floors cancel and the key is identical; exact arithmetic ⇒ no boundary rounding. */
-function reducedPolyKey(
-	name: string,
-	centroid: Cyclotomic,
-	verts: Cyclotomic[],
-	u: Cyclotomic,
-	v: Cyclotomic
-): string {
+function reducedPolyKey(name: string, centroid: Cyclotomic, verts: Cyclotomic[], u: Cyclotomic, v: Cyclotomic): string {
 	const [a, b] = coordsIn(centroid, u, v);
 	const t = u.scaleRational(-surdFloor(a), 1n).add(v.scaleRational(-surdFloor(b), 1n));
-	return polyKey(name, centroid.add(t), verts.map((x) => x.add(t)));
+	return polyKey(
+		name,
+		centroid.add(t),
+		verts.map((x) => x.add(t)),
+	);
 }
 
 /** Sorted name multiset — recomputed here, not imported. */
 function names(cell: Polygon[]): string {
-	return cell.map((p) => p.getName()).sort().join(',');
+	return cell
+		.map((p) => p.getName())
+		.sort()
+		.join(",");
 }
 
 /**
@@ -112,9 +116,7 @@ export function independentCellsCongruent(A: PeriodCell, B: PeriodCell): boolean
 	const N = cellA[0].exactVertices![0].ring.N;
 
 	// target B as the set of fundamental-domain class keys (one per lattice class)
-	const KB = new Set(
-		cellB.map((q) => reducedPolyKey(q.getName(), q.exactCentroid!, q.exactVertices!, uB, vB))
-	);
+	const KB = new Set(cellB.map((q) => reducedPolyKey(q.getName(), q.exactCentroid!, q.exactVertices!, uB, vB)));
 
 	// deterministic reference polygon in A (min self-built key)
 	const keyOfA = (p: Polygon) => polyKey(p.getName(), p.exactCentroid!, p.exactVertices!);
@@ -137,9 +139,7 @@ export function independentCellsCongruent(A: PeriodCell, B: PeriodCell): boolean
 				// whole cell: g(A) must equal B as fundamental-domain class-key sets
 				const mapped = new Set<string>();
 				for (const p of cellA) {
-					mapped.add(
-						reducedPolyKey(p.getName(), g(p.exactCentroid!), p.exactVertices!.map(g), uB, vB)
-					);
+					mapped.add(reducedPolyKey(p.getName(), g(p.exactCentroid!), p.exactVertices!.map(g), uB, vB));
 				}
 				if (mapped.size === cellB.length && [...mapped].every((k) => KB.has(k))) return true;
 			}
@@ -171,14 +171,12 @@ export type DifferentialReport = {
  */
 export function diffPartitionAgainstIndependent(
 	classes: PeriodCell[][],
-	onProgress?: (done: number, total: number) => void
+	onProgress?: (done: number, total: number) => void,
 ): DifferentialReport {
 	const mismatches: string[] = [];
 	let positives = 0;
 	let negatives = 0;
-	const total =
-		classes.reduce((s, cls) => s + (cls.length - 1), 0) +
-		(classes.length * (classes.length - 1)) / 2;
+	const total = classes.reduce((s, cls) => s + (cls.length - 1), 0) + (classes.length * (classes.length - 1)) / 2;
 	let done = 0;
 	const tick = () => {
 		done++;
@@ -190,7 +188,7 @@ export function diffPartitionAgainstIndependent(
 			positives++;
 			if (!independentCellsCongruent(cls[m], cls[0])) {
 				mismatches.push(
-					`class ${ci}: member ${m} NOT independently congruent to its representative (production over-merge?)`
+					`class ${ci}: member ${m} NOT independently congruent to its representative (production over-merge?)`,
 				);
 			}
 			tick();
@@ -201,7 +199,7 @@ export function diffPartitionAgainstIndependent(
 			negatives++;
 			if (independentCellsCongruent(classes[i][0], classes[j][0])) {
 				mismatches.push(
-					`classes ${i} and ${j}: representatives ARE independently congruent (production under-merge / inflation?)`
+					`classes ${i} and ${j}: representatives ARE independently congruent (production under-merge / inflation?)`,
 				);
 			}
 			tick();

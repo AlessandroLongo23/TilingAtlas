@@ -82,8 +82,12 @@ function Stats({ items }: { items: { label: string; value: ReactNode; title?: st
 	return (
 		<dl className="grid gap-1" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
 			{items.map((it) => (
-				<div key={it.label} title={it.title} className="flex flex-col items-center gap-0.5 rounded-md bg-surface-sunken px-1 py-1.5 text-center">
-					<dd className="font-mono text-sm font-semibold leading-none tabular-nums text-fg">{it.value}</dd>
+				<div
+					key={it.label}
+					title={it.title}
+					className="flex flex-col items-center gap-0.5 rounded-md bg-surface-sunken px-1 py-1.5 text-center"
+				>
+					<dd className="font-mono text-sm leading-none font-semibold text-fg tabular-nums">{it.value}</dd>
 					<dt className="text-[10.5px] leading-tight text-fg-muted">{it.label}</dt>
 				</div>
 			))}
@@ -115,7 +119,9 @@ function Row({
 	// A bare number or a count is set in the mono face with tabular figures on every row, so a column of
 	// values lines up and "3" under "0.334" does not change typeface halfway down a section.
 	const numeric = typeof value === "number" || (typeof value === "string" && /^[\d\s.,·\[\]—-]+$/.test(value));
-	const valueClass = muted ? "text-[13px] italic text-fg-muted/70" : `text-[13px] font-medium text-fg${numeric ? " font-mono tabular-nums" : ""}`;
+	const valueClass = muted
+		? "text-[13px] italic text-fg-muted/70"
+		: `text-[13px] font-medium text-fg${numeric ? " font-mono tabular-nums" : ""}`;
 	// A phone has no hover, so the gloss a title would carry is printed under the row there.
 	const gloss = title ? <p className="hidden text-xs leading-snug text-fg-muted max-md:block">{title}</p> : null;
 	if (stack) {
@@ -198,10 +204,22 @@ function CreditLine({ label, credit: c }: { label: string; credit: Credit }) {
 	// file page and its tooltip is its credit. Greyscale, because the four are two dark oils and two
 	// pale engravings, and in colour they read as two pairs instead of one set.
 	const portrait = c.who.image ? (
-		<a href={c.who.image.page} target="_blank" rel="noreferrer" title={c.who.image.credit} className="mr-1.5 inline-block shrink-0 align-middle">
+		<a
+			href={c.who.image.page}
+			target="_blank"
+			rel="noreferrer"
+			title={c.who.image.credit}
+			className="mr-1.5 inline-block shrink-0 align-middle"
+		>
 			{/* A 120px file from public/; next/image would add a loader round a picture drawn at 20px. */}
 			{/* eslint-disable-next-line @next/next/no-img-element */}
-			<img src={c.who.image.src} alt={`Portrait of ${c.who.name}`} width={20} height={20} className="size-5 rounded-full object-cover object-top ring-1 ring-line grayscale" />
+			<img
+				src={c.who.image.src}
+				alt={`Portrait of ${c.who.name}`}
+				width={20}
+				height={20}
+				className="size-5 rounded-full object-cover object-top ring-1 ring-line grayscale"
+			/>
 		</a>
 	) : null;
 	const who = (
@@ -214,19 +232,28 @@ function CreditLine({ label, credit: c }: { label: string; credit: Credit }) {
 			) : (
 				c.who.name
 			)}
-			{c.year ? <span className="ml-1.5 font-mono font-normal tabular-nums text-fg-muted">{c.year}</span> : null}
+			{c.year ? <span className="ml-1.5 font-mono font-normal text-fg-muted tabular-nums">{c.year}</span> : null}
 		</span>
 	);
 	return (
 		<div className="flex flex-col gap-0.5">
-			<div className={long ? "flex flex-col gap-0.5" : `flex justify-between gap-3 ${portrait ? "items-center" : "items-baseline"}`}>
-				<span className="shrink-0 whitespace-nowrap text-[13px] text-fg-secondary">{label}</span>
+			<div
+				className={
+					long ? "flex flex-col gap-0.5" : `flex justify-between gap-3 ${portrait ? "items-center" : "items-baseline"}`
+				}
+			>
+				<span className="shrink-0 text-[13px] whitespace-nowrap text-fg-secondary">{label}</span>
 				{who}
 			</div>
 			{c.source || c.note ? (
 				<div className="flex items-baseline justify-between gap-3 text-[11.5px] leading-snug text-fg-muted">
 					{c.note ? (
-						<button type="button" onClick={() => setBasis((o) => !o)} aria-expanded={basis} className="shrink-0 hover:text-fg-secondary">
+						<button
+							type="button"
+							onClick={() => setBasis((o) => !o)}
+							aria-expanded={basis}
+							className="shrink-0 hover:text-fg-secondary"
+						>
 							<span className={`mr-1 inline-block transition-transform ${basis ? "rotate-90" : ""}`}>›</span>
 							Basis
 						</button>
@@ -234,7 +261,13 @@ function CreditLine({ label, credit: c }: { label: string; credit: Credit }) {
 						<span />
 					)}
 					{c.source ? (
-						<a href={c.source.url} target="_blank" rel="noreferrer" title={c.source.label} className={`min-w-0 truncate ${link}`}>
+						<a
+							href={c.source.url}
+							target="_blank"
+							rel="noreferrer"
+							title={c.source.label}
+							className={`min-w-0 truncate ${link}`}
+						>
 							{c.source.label}
 						</a>
 					) : null}
@@ -282,13 +315,23 @@ function NobleFace({ solid }: { solid: string }) {
 					role="img"
 					aria-label={`The face of this polyhedron: a ${shape.kind}`}
 				>
-					<path d={d} fill="currentColor" fillOpacity={0.16} fillRule={mod2 ? "evenodd" : "nonzero"} stroke="currentColor" strokeWidth={span * 0.014} strokeLinejoin="round" />
+					<path
+						d={d}
+						fill="currentColor"
+						fillOpacity={0.16}
+						fillRule={mod2 ? "evenodd" : "nonzero"}
+						stroke="currentColor"
+						strokeWidth={span * 0.014}
+						strokeLinejoin="round"
+					/>
 					{shape.points.map(([x, y], k) => (
 						<circle key={k} cx={x} cy={-y} r={span * 0.026} fill="currentColor" />
 					))}
 				</svg>
 				<div className="flex min-w-0 flex-col gap-0.5">
-					<span className="break-words text-[13px] font-medium leading-snug text-fg first-letter:uppercase">{shape.kind}</span>
+					<span className="text-[13px] leading-snug font-medium break-words text-fg first-letter:uppercase">
+						{shape.kind}
+					</span>
 					<span className="text-[11.5px] leading-snug text-fg-muted">
 						{shape.F} of them, {shape.perVertex} at each vertex
 					</span>
@@ -303,7 +346,11 @@ function NobleFace({ solid }: { solid: string }) {
 					{ label: "Vertices", value: shape.V },
 					{ label: "Edges", value: shape.E },
 					{ label: "Faces", value: shape.F },
-					{ label: "V − E + F", value: shape.V - shape.E + shape.F, title: "The Euler characteristic of the surface: 2 for a sphere, 0 for a torus, lower as the genus rises." },
+					{
+						label: "V − E + F",
+						value: shape.V - shape.E + shape.F,
+						title: "The Euler characteristic of the surface: 2 for a sphere, 0 for a torus, lower as the genus rises.",
+					},
 				]}
 			/>
 		</Section>
@@ -345,7 +392,10 @@ function OrbitSection({ spec }: { spec: TilingSpec }) {
 	const missing = [spec.edgeOrbits == null ? "edge" : null, spec.faceOrbits == null ? "tile" : null].filter(Boolean);
 	return (
 		<Section title="Orbits">
-			<Row label={isFreedraw ? "Grid points (k)" : isColors ? "Colored vertices (k)" : "Vertices (k)"} value={spec.k ?? "—"} />
+			<Row
+				label={isFreedraw ? "Grid points (k)" : isColors ? "Colored vertices (k)" : "Vertices (k)"}
+				value={spec.k ?? "—"}
+			/>
 			{spec.m != null ? (
 				<Row label="VC types (m)" value={spec.partition ? `${spec.m} [${spec.partition.join("·")}]` : String(spec.m)} />
 			) : null}
@@ -358,7 +408,8 @@ function OrbitSection({ spec }: { spec: TilingSpec }) {
 			) : null}
 			{missing.length ? (
 				<p className="text-[11.5px] leading-snug text-fg-muted/80">
-					<span className="inline-block first-letter:uppercase">{missing.join(" and ")}</span> orbits: <span className="italic">not computed</span>
+					<span className="inline-block first-letter:uppercase">{missing.join(" and ")}</span> orbits:{" "}
+					<span className="italic">not computed</span>
 				</p>
 			) : null}
 		</Section>
@@ -389,7 +440,9 @@ export function TilingInfo({ spec, vcs = [] }: TilingInfoProps) {
 			// cautious figure does not hide its last line behind the fade.
 			const r = el.getBoundingClientRect();
 			// Optional call: a test DOM has no layout and no elementsFromPoint, and there the answer is "nothing".
-			const under = document.elementsFromPoint?.(r.left + r.width * 0.8, window.innerHeight - 44).find((x) => !el.contains(x));
+			const under = document
+				.elementsFromPoint?.(r.left + r.width * 0.8, window.innerHeight - 44)
+				.find((x) => !el.contains(x));
 			const clear = under?.closest("button, [role='toolbar'], .ta-float") ? 88 : 16;
 			el.style.maxHeight = `${Math.max(240, window.innerHeight - r.top - clear)}px`;
 		};
@@ -424,7 +477,7 @@ export function TilingInfo({ spec, vcs = [] }: TilingInfoProps) {
 				onClick={() => setIsPinned(true)}
 				aria-label="Tiling information"
 				aria-haspopup="dialog"
-				className="hidden size-11 touch-pan-x touch-pan-y items-center justify-center ta-float text-fg-secondary transition-colors hover:text-fg max-md:flex"
+				className="ta-float hidden size-11 touch-pan-x touch-pan-y items-center justify-center text-fg-secondary transition-colors hover:text-fg max-md:flex"
 			>
 				<Info size={18} />
 			</button>
@@ -451,10 +504,12 @@ export function TilingInfo({ spec, vcs = [] }: TilingInfoProps) {
 				<div
 					ref={fitToWindow}
 					onWheel={(e) => e.stopPropagation()}
-					className="absolute left-0 top-10 z-50 flex w-[320px] flex-col overflow-hidden ta-float"
+					className="ta-float absolute top-10 left-0 z-50 flex w-[320px] flex-col overflow-hidden"
 				>
-					<div className="border-b border-line-subtle px-3.5 pb-2.5 pt-3">{heading(spec)}</div>
-					<div className="ta-scroll-fade flex min-h-0 flex-col gap-4 overflow-y-auto overscroll-contain px-3.5 pb-7 pt-3">{body(spec)}</div>
+					<div className="border-b border-line-subtle px-3.5 pt-3 pb-2.5">{heading(spec)}</div>
+					<div className="ta-scroll-fade flex min-h-0 flex-col gap-4 overflow-y-auto overscroll-contain px-3.5 pt-3 pb-7">
+						{body(spec)}
+					</div>
 				</div>
 			) : null}
 		</div>
@@ -470,8 +525,10 @@ export function TilingInfo({ spec, vcs = [] }: TilingInfoProps) {
 				    is the half a reader came for. The chip is redundant on top of that, since /play is
 				    browsed one geometry at a time and the sidebar already says which. */}
 				<span
-					className={`min-w-0 font-mono text-[15px] font-semibold leading-snug text-fg ${
-						spec.geometry === "spherical" ? "break-words" : "line-clamp-2 text-balance break-words max-md:line-clamp-none max-md:break-all"
+					className={`min-w-0 font-mono text-[15px] leading-snug font-semibold text-fg ${
+						spec.geometry === "spherical"
+							? "break-words"
+							: "line-clamp-2 text-balance break-words max-md:line-clamp-none max-md:break-all"
 					}`}
 					title={spec.label}
 				>
@@ -482,7 +539,9 @@ export function TilingInfo({ spec, vcs = [] }: TilingInfoProps) {
 				    order for a half-tile board. Off the sphere it leads with the geometry, which used to be
 				    a tag beside the name and took a third of the name's width to say one word. */}
 				{spec.geometry === "spherical" ? (
-					spec.detail ? <span className="text-xs text-fg-secondary">{spec.detail}</span> : null
+					spec.detail ? (
+						<span className="text-xs text-fg-secondary">{spec.detail}</span>
+					) : null
 				) : (
 					<span className="text-xs text-fg-secondary">
 						<span>{GEOMETRY_LABEL[spec.geometry]}</span>
@@ -521,8 +580,12 @@ export function TilingInfo({ spec, vcs = [] }: TilingInfoProps) {
 				    config gets no Coxeter row, since the vertex config is not inverted into a Wythoff symbol. */}
 				{spec.geometry === "euclidean" && (spec.wallpaperGroup || spec.latticeShape) ? (
 					<Section title="Symmetry">
-						{spec.wallpaperGroup ? <Row label="Group" value={withOrbifold(spec.wallpaperGroup, spec.orbifold)} /> : null}
-						{spec.latticeShape ? <Row label="Lattice" value={<span className="capitalize">{spec.latticeShape}</span>} /> : null}
+						{spec.wallpaperGroup ? (
+							<Row label="Group" value={withOrbifold(spec.wallpaperGroup, spec.orbifold)} />
+						) : null}
+						{spec.latticeShape ? (
+							<Row label="Lattice" value={<span className="capitalize">{spec.latticeShape}</span>} />
+						) : null}
 					</Section>
 				) : null}
 				{spec.geometry === "hyperbolic" && spec.coxeter ? (
@@ -647,7 +710,11 @@ export function TilingInfo({ spec, vcs = [] }: TilingInfoProps) {
 								<Stats
 									items={[
 										{ label: "Parameters", value: spec.isohedral.numParams },
-										{ label: "Vertices", value: spec.isohedral.numVertices, title: "Tiling vertices of the prototile." },
+										{
+											label: "Vertices",
+											value: spec.isohedral.numVertices,
+											title: "Tiling vertices of the prototile.",
+										},
 										{ label: "Aspects", value: spec.isohedral.numAspects },
 										{ label: "Colours", value: spec.isohedral.numColours },
 									]}

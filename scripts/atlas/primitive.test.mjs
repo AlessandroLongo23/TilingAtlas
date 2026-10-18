@@ -5,7 +5,12 @@ import { describe, it, expect } from "vitest";
 import { isPrimitiveCell, dropCollinear } from "./primitive.mjs";
 
 const S3 = Math.sqrt(3);
-const sq = (x, y, s = 1) => [[x, y], [x + s, y], [x + s, y + s], [x, y + s]];
+const sq = (x, y, s = 1) => [
+	[x, y],
+	[x + s, y],
+	[x + s, y + s],
+	[x, y + s],
+];
 
 describe("isPrimitiveCell", () => {
 	it("calls a one-face cell primitive", () => {
@@ -70,23 +75,53 @@ describe("isPrimitiveCell", () => {
 	// polygons they then differ and the supercell survives. The tiling is geometric, so the corners
 	// come off first.
 	it("catches a supercell whose two faces carry different flat corners", () => {
-		const a = [[0, 0], [0.5, 0], [1, 0], [1, 1], [0, 1]];           // unit square, corner mid-bottom
-		const b = [[1, 0], [2, 0], [2, 1], [1.5, 1], [1, 1]];           // unit square, corner mid-top
+		const a = [
+			[0, 0],
+			[0.5, 0],
+			[1, 0],
+			[1, 1],
+			[0, 1],
+		]; // unit square, corner mid-bottom
+		const b = [
+			[1, 0],
+			[2, 0],
+			[2, 1],
+			[1.5, 1],
+			[1, 1],
+		]; // unit square, corner mid-top
 		expect(isPrimitiveCell([a, b], [2, 0], [0, 1])).toBe(false);
 	});
 
 	it("drops a flat corner and keeps a real one", () => {
-		expect(dropCollinear([[0, 0], [0.5, 0], [1, 0], [1, 1], [0, 1]])).toHaveLength(4);
+		expect(
+			dropCollinear([
+				[0, 0],
+				[0.5, 0],
+				[1, 0],
+				[1, 1],
+				[0, 1],
+			]),
+		).toHaveLength(4);
 		expect(dropCollinear(sq(0, 0))).toHaveLength(4);
 		// a 20x tile: the collinearity test has to scale, not use an absolute cross product
-		const big = [[0, 0], [10, 0], [20, 0], [20, 20], [0, 20]];
+		const big = [
+			[0, 0],
+			[10, 0],
+			[20, 0],
+			[20, 20],
+			[0, 20],
+		];
 		expect(dropCollinear(big)).toHaveLength(4);
 	});
 
 	it("requires a BIJECTION, not just that every face lands on some face", () => {
 		// Two different-shaped faces in a 2x1 cell: (1,0) maps the square onto the triangle's slot, so a
 		// membership-only test could pass it. Shapes differ, so it is primitive.
-		const tri = [[1, 0], [2, 0], [1, 1]];
+		const tri = [
+			[1, 0],
+			[2, 0],
+			[1, 1],
+		];
 		expect(isPrimitiveCell([sq(0, 0), tri], [2, 0], [0, 1])).toBe(true);
 	});
 

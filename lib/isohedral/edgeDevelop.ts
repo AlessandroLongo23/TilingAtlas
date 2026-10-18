@@ -17,13 +17,7 @@
 // certificate cell is twice that — 2k board vertices carrying only k distinct orbit labels — so the
 // certificate is not itself a fundamental domain for the translations, and the walk has to find them.
 
-import {
-	ihLetterAngle,
-	ihLetterCurve,
-	ihLetterLength,
-	type ChordCurve,
-	type SolvedIhBoard,
-} from "./edge-board";
+import { ihLetterAngle, ihLetterCurve, ihLetterLength, type ChordCurve, type SolvedIhBoard } from "./edge-board";
 
 /** A record exactly as it sits in public/isohedral-edges/ie<nn>-k<k>.json. */
 export interface IhEdgeRecord {
@@ -143,11 +137,7 @@ export class PointIndex {
  * h, vertex position, heading): `rneig` pivots about the shared vertex by the interior angle of the
  * corner crossed, `glue` walks the edge and turns around.
  */
-export function walkIhEdges(
-	rec: IhEdgeRecord,
-	board: SolvedIhBoard,
-	opts: IhWalkOptions = {},
-): IhWalk {
+export function walkIhEdges(rec: IhEdgeRecord, board: SolvedIhBoard, opts: IhWalkOptions = {}): IhWalk {
 	const shortest = Math.min(...board.classLengths);
 	const tol = shortest * POS_TOL_FRACTION;
 	const radius = opts.radius ?? 10 * board.period;

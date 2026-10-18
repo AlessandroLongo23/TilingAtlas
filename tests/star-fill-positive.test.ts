@@ -54,77 +54,92 @@ describe("ST-9 — productive star-fill (C3) positive coverage", () => {
 		const oct = RegularPolygon.fromAnchorAndDirExact(8, O, 0);
 		const star = ExactStarPolygon.fourStarPi4(O, 9);
 		const polygons = [oct, star];
-		const seed: SeedConfigurationLike = { polygons, vertexConfigurations: [{ computeSharedVertexExact: () => O, polygons }] };
+		const seed: SeedConfigurationLike = {
+			polygons,
+			vertexConfigurations: [{ computeSharedVertexExact: () => O, polygons }],
+		};
 		const { cells, diag } = new PeriodSolver(1).solve(seed, { maxMs: 60000 });
 		expect(diag.timedOut).toBe(false);
 		expect(cells.length).toBe(0); // the partial VC "4*p@3,8" is allowed; the true closed VC never is
 	}, 120_000);
 
-	describe.runIf(RUN_STAR_FILL)("Myers 4(i) 8.3*@1.8.6*@5 — the one fill-requiring in-ring Fig-4 tiling [HEAVY, RUN_STAR_FILL=1]", () => {
-		beforeAll(() => {
-			// widen-only pool override (NOTES §36): 4(i)'s period is outside the tuned pool — its
-			// hexagonal basis (ℓ ≈ 5.05, ℓ² ≈ 25.5) is off-grid (compactOffMax2=16 excludes it) and
-			// needs ~8 edge-steps (poolSteps=6 misses it). Measured minimal widening: steps 8 +
-			// Lmax 5.7 (⇒ caps 32.5); larger values (Lmax 8 ⇒ caps 64) OOM in gridAlignedCells.
-			// NOT a sweep knob — single-seed test opt-in; the env is restored below.
-			process.env.POOL_STEPS_UP = "8";
-			process.env.POOL_LMAX_UP = "5.7";
-		});
-		afterAll(() => {
-			delete process.env.POOL_STEPS_UP;
-			delete process.env.POOL_LMAX_UP;
-		});
+	describe.runIf(RUN_STAR_FILL)(
+		"Myers 4(i) 8.3*@1.8.6*@5 — the one fill-requiring in-ring Fig-4 tiling [HEAVY, RUN_STAR_FILL=1]",
+		() => {
+			beforeAll(() => {
+				// widen-only pool override (NOTES §36): 4(i)'s period is outside the tuned pool — its
+				// hexagonal basis (ℓ ≈ 5.05, ℓ² ≈ 25.5) is off-grid (compactOffMax2=16 excludes it) and
+				// needs ~8 edge-steps (poolSteps=6 misses it). Measured minimal widening: steps 8 +
+				// Lmax 5.7 (⇒ caps 32.5); larger values (Lmax 8 ⇒ caps 64) OOM in gridAlignedCells.
+				// NOT a sweep knob — single-seed test opt-in; the env is restored below.
+				process.env.POOL_STEPS_UP = "8";
+				process.env.POOL_LMAX_UP = "5.7";
+			});
+			afterAll(() => {
+				delete process.env.POOL_STEPS_UP;
+				delete process.env.POOL_LMAX_UP;
+			});
 
-		it("certifies 4(i) with a fill-CONSTRUCTED 3*@1: cell stars exceed what the seed fan supplies", () => {
-			const vc = enumerateStarVCs({ variants: dentRegularFillableVariants() }).find(
-				(v) => v.name === "3*p@1,8,6*p@5,8",
-			)!;
-			expect(vc).toBeDefined();
-			const fanStarsBySpecies = new Map<string, number>();
-			for (const t of vc.tokens) {
-				if (t.kind === "reg") continue;
-				const k = `${t.n}*@${(t as { alphaU: number }).alphaU}`;
-				fanStarsBySpecies.set(k, (fanStarsBySpecies.get(k) ?? 0) + 1);
-			}
-			expect(fanStarsBySpecies.get("3*@1")).toBe(1); // the fan supplies ONE 3-star…
+			it("certifies 4(i) with a fill-CONSTRUCTED 3*@1: cell stars exceed what the seed fan supplies", () => {
+				const vc = enumerateStarVCs({ variants: dentRegularFillableVariants() }).find(
+					(v) => v.name === "3*p@1,8,6*p@5,8",
+				)!;
+				expect(vc).toBeDefined();
+				const fanStarsBySpecies = new Map<string, number>();
+				for (const t of vc.tokens) {
+					if (t.kind === "reg") continue;
+					const k = `${t.n}*@${(t as { alphaU: number }).alphaU}`;
+					fanStarsBySpecies.set(k, (fanStarsBySpecies.get(k) ?? 0) + 1);
+				}
+				expect(fanStarsBySpecies.get("3*@1")).toBe(1); // the fan supplies ONE 3-star…
 
-			// HEAVY test: ~2-4 min idle (probe-measured 104 s under tsx), substantially more under
-			// machine load — the generous budget is deliberate (a timeout here is a flake, not a
-			// finding; cf. the known 5 s-timeout flakes under scout load).
-			const seed = buildStarVCSeed(vc, ring);
-			const { cells, diag } = new PeriodSolver(1).solve(seed, { maxMs: 1_200_000 });
-			expect(diag.timedOut).toBe(false);
-			expect(cells.length).toBeGreaterThanOrEqual(1);
+				// HEAVY test: ~2-4 min idle (probe-measured 104 s under tsx), substantially more under
+				// machine load — the generous budget is deliberate (a timeout here is a flake, not a
+				// finding; cf. the known 5 s-timeout flakes under scout load).
+				const seed = buildStarVCSeed(vc, ring);
+				const { cells, diag } = new PeriodSolver(1).solve(seed, { maxMs: 1_200_000 });
+				expect(diag.timedOut).toBe(false);
+				expect(cells.length).toBeGreaterThanOrEqual(1);
 
-			// …and the certified cell holds TWO 3-stars (+ one 6-star + three octagons): the second
-			// 3*@1 was CONSTRUCTED by the C3 star-seating fill branch. This line is the productive-
-			// star-fill coverage; it fails if the palette loop is disabled (mutation check, header).
-			const starKey = (p: { exactVertices?: unknown[] | null; cornerAngleUnits(i: number): number; n: number }): string => {
-				let min = Infinity;
-				for (let i = 0; i < (p.exactVertices?.length ?? 0); i++) min = Math.min(min, p.cornerAngleUnits(i));
-				return `${p.n}*@${min}`;
-			};
-			const cell = cells[0];
-			const cellStars = cell.cellPolygons.filter((p) => p.isStar);
-			const threeStars = cellStars.filter((p) => starKey(p) === "3*@1");
-			expect(threeStars.length).toBe(2); // > the fan's 1 ⇒ at least one is fill-constructed
-			expect(cellStars.filter((p) => starKey(p) === "6*@5").length).toBe(1);
-			expect(cell.cellPolygons.filter((p) => !p.isStar && p.n === 8).length).toBe(3);
-			expect(cell.cellPolygons.length).toBe(6);
-			// the probe-measured exact cell area: |det Λ| = 6 + 3√2 + 4√3 + 2√6 ≈ 22.0698
-			const det = Math.abs(
-				cell.basisExact[0].toVector().x * cell.basisExact[1].toVector().y -
-					cell.basisExact[0].toVector().y * cell.basisExact[1].toVector().x,
-			);
-			expect(det).toBeCloseTo(6 + 3 * Math.SQRT2 + 4 * Math.sqrt(3) + 2 * Math.sqrt(6), 9);
+				// …and the certified cell holds TWO 3-stars (+ one 6-star + three octagons): the second
+				// 3*@1 was CONSTRUCTED by the C3 star-seating fill branch. This line is the productive-
+				// star-fill coverage; it fails if the palette loop is disabled (mutation check, header).
+				const starKey = (p: {
+					exactVertices?: unknown[] | null;
+					cornerAngleUnits(i: number): number;
+					n: number;
+				}): string => {
+					let min = Infinity;
+					for (let i = 0; i < (p.exactVertices?.length ?? 0); i++) min = Math.min(min, p.cornerAngleUnits(i));
+					return `${p.n}*@${min}`;
+				};
+				const cell = cells[0];
+				const cellStars = cell.cellPolygons.filter((p) => p.isStar);
+				const threeStars = cellStars.filter((p) => starKey(p) === "3*@1");
+				expect(threeStars.length).toBe(2); // > the fan's 1 ⇒ at least one is fill-constructed
+				expect(cellStars.filter((p) => starKey(p) === "6*@5").length).toBe(1);
+				expect(cell.cellPolygons.filter((p) => !p.isStar && p.n === 8).length).toBe(3);
+				expect(cell.cellPolygons.length).toBe(6);
+				// the probe-measured exact cell area: |det Λ| = 6 + 3√2 + 4√3 + 2√6 ≈ 22.0698
+				const det = Math.abs(
+					cell.basisExact[0].toVector().x * cell.basisExact[1].toVector().y -
+						cell.basisExact[0].toVector().y * cell.basisExact[1].toVector().x,
+				);
+				expect(det).toBeCloseTo(6 + 3 * Math.SQRT2 + 4 * Math.sqrt(3) + 2 * Math.sqrt(6), 9);
 
-			// independent G1-G4 gate (same primitives-only gate 4(j)/4(p) got) + the k=1 orbit count
-			const g = independentCellGate(cell);
-			expect(g.pass).toBe(true);
-			expect(g.nStars).toBe(3);
-			const kdiag = { syms: 0, reps: 0, blockSize: 0, orbits: null as number | null };
-			const orbits = new KUniformityChecker().countVertexOrbits(cell.cellPolygons, cell.basisExact[0], cell.basisExact[1], kdiag);
-			expect(orbits).toBe(1); // 4(i) is 1-uniform
-		}, 1_500_000);
-	});
+				// independent G1-G4 gate (same primitives-only gate 4(j)/4(p) got) + the k=1 orbit count
+				const g = independentCellGate(cell);
+				expect(g.pass).toBe(true);
+				expect(g.nStars).toBe(3);
+				const kdiag = { syms: 0, reps: 0, blockSize: 0, orbits: null as number | null };
+				const orbits = new KUniformityChecker().countVertexOrbits(
+					cell.cellPolygons,
+					cell.basisExact[0],
+					cell.basisExact[1],
+					kdiag,
+				);
+				expect(orbits).toBe(1); // 4(i) is 1-uniform
+			}, 1_500_000);
+		},
+	);
 });

@@ -437,9 +437,32 @@ export class HyperbolicPerPixelRenderer {
 		}
 		this.prog = prog;
 		for (const n of [
-			"uCenter", "uR", "uView", "uBg", "uStroke", "uHueOffset", "uTileSat", "uStrokePx", "uShowFill", "uTaper",
-			"uIslamic", "uIslamicOn", "uIslamicStyle", "uBand", "uBorder", "uFlipWeave", "uColA", "uColB", "uColC",
-			"uEdgeMode", "uScaffold", "uStrokeSca", "uColorsMode", "uPalette", "uWalk", "uFace",
+			"uCenter",
+			"uR",
+			"uView",
+			"uBg",
+			"uStroke",
+			"uHueOffset",
+			"uTileSat",
+			"uStrokePx",
+			"uShowFill",
+			"uTaper",
+			"uIslamic",
+			"uIslamicOn",
+			"uIslamicStyle",
+			"uBand",
+			"uBorder",
+			"uFlipWeave",
+			"uColA",
+			"uColB",
+			"uColC",
+			"uEdgeMode",
+			"uScaffold",
+			"uStrokeSca",
+			"uColorsMode",
+			"uPalette",
+			"uWalk",
+			"uFace",
 		]) {
 			this.u[n] = gl.getUniformLocation(prog, n);
 		}

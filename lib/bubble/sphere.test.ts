@@ -19,8 +19,12 @@ const directions = (n: number) =>
 // generator that wrote them.
 
 const DIR = `${process.cwd()}/public/bubble-sphere`;
-const manifest = JSON.parse(readFileSync(`${DIR}/manifest.json`, "utf8")) as
-	{ solid: string; coverage: string; total: string; shards: string[] }[];
+const manifest = JSON.parse(readFileSync(`${DIR}/manifest.json`, "utf8")) as {
+	solid: string;
+	coverage: string;
+	total: string;
+	shards: string[];
+}[];
 
 describe("spherical bubble shelf", () => {
 	it("gives every edge one bump and one bite, on every shipped record", () => {
@@ -28,16 +32,22 @@ describe("spherical bubble shelf", () => {
 		for (const board of manifest) {
 			const m = sphereMapOf(polyhedronForId(board.solid)!);
 			for (const shard of board.shards) {
-				const rows = JSON.parse(readFileSync(`${DIR}/${shard}`, "utf8")) as
-					{ id: string; k: number; solid: string; bites: number[][] }[];
+				const rows = JSON.parse(readFileSync(`${DIR}/${shard}`, "utf8")) as {
+					id: string;
+					k: number;
+					solid: string;
+					bites: number[][];
+				}[];
 				for (const r of rows) {
 					records++;
 					expect(r.solid, r.id).toBe(board.solid);
-					expect(r.bites.map((w) => w.length), r.id).toEqual(m.faceSizes);
+					expect(
+						r.bites.map((w) => w.length),
+						r.id,
+					).toEqual(m.faceSizes);
 					// Walk every dart; its bite bit and its twin's must differ.
 					const flat: number[] = r.bites.flat();
-					for (let d = 0; d < m.darts; d++)
-						expect(flat[d] + flat[m.twin[d]], `${r.id} edge ${m.edgeOf[d]}`).toBe(1);
+					for (let d = 0; d < m.darts; d++) expect(flat[d] + flat[m.twin[d]], `${r.id} edge ${m.edgeOf[d]}`).toBe(1);
 				}
 			}
 		}
@@ -58,7 +68,9 @@ describe("spherical bubble shelf", () => {
 	});
 
 	it("names a shard for every file on disk, and a file for every shard", () => {
-		const onDisk = readdirSync(DIR).filter((f) => f.endsWith(".json") && f !== "manifest.json").sort();
+		const onDisk = readdirSync(DIR)
+			.filter((f) => f.endsWith(".json") && f !== "manifest.json")
+			.sort();
 		expect(manifest.flatMap((b) => b.shards).sort()).toEqual(onDisk);
 	});
 
@@ -83,18 +95,25 @@ describe("spherical bubble shelf", () => {
 				const rec = JSON.parse(readFileSync(`${DIR}/${board.shards[0]}`, "utf8"))[0] as { bites: number[][] };
 				const built = buildBubbleSphere(polyhedronForId(board.solid), rec.bites, { style, kochLevel: 2 })!;
 				// The FILL is the first child; the second is the outline, which has no area to measure.
-				const fill = built.object.children[0] as unknown as { geometry: { getAttribute: (n: string) => { array: Float32Array } } };
+				const fill = built.object.children[0] as unknown as {
+					geometry: { getAttribute: (n: string) => { array: Float32Array } };
+				};
 				const pos = fill.geometry.getAttribute("position").array;
 				let area = 0;
 				for (let i = 0; i < pos.length; i += 9) {
-					const ux = pos[i + 3] - pos[i], uy = pos[i + 4] - pos[i + 1], uz = pos[i + 5] - pos[i + 2];
-					const vx = pos[i + 6] - pos[i], vy = pos[i + 7] - pos[i + 1], vz = pos[i + 8] - pos[i + 2];
+					const ux = pos[i + 3] - pos[i],
+						uy = pos[i + 4] - pos[i + 1],
+						uz = pos[i + 5] - pos[i + 2];
+					const vx = pos[i + 6] - pos[i],
+						vy = pos[i + 7] - pos[i + 1],
+						vz = pos[i + 8] - pos[i + 2];
 					area += 0.5 * Math.hypot(uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx);
 				}
 				built.dispose();
 				// 2% is the chording of the barycentric subdivision, which under-reports a curved tile
 				// slightly; an overlap or a gap is an order of magnitude larger than that.
-				if (Math.abs(area - FULL) / FULL > 0.02) bad.push(`${style}/${board.solid} ${(100 * (area - FULL) / FULL).toFixed(1)}%`);
+				if (Math.abs(area - FULL) / FULL > 0.02)
+					bad.push(`${style}/${board.solid} ${((100 * (area - FULL)) / FULL).toFixed(1)}%`);
 			}
 		expect(bad).toEqual([]);
 	});

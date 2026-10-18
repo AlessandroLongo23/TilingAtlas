@@ -129,7 +129,8 @@ export function dartSymmetry(darts: Darts, edge: number): { seed: Feature; featu
 export function bestCentre(features: Feature[]): Feature {
 	const rank = { F: 2, V: 1, E: 0 };
 	return features.reduce((a, f) => {
-		const d = f.order - a.order || rank[f.kind] - rank[a.kind] || (f.kind === "F" ? f.size - a.size : 0) || a.dart - f.dart;
+		const d =
+			f.order - a.order || rank[f.kind] - rank[a.kind] || (f.kind === "F" ? f.size - a.size : 0) || a.dart - f.dart;
 		return d > 0 ? f : a;
 	});
 }

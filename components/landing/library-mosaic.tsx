@@ -10,7 +10,7 @@ interface LibraryMosaicProps {
 
 export function LibraryMosaic({ tilings }: LibraryMosaicProps) {
 	return (
-		<div className="grid grid-cols-3 grid-rows-3 gap-px w-full h-full bg-line-subtle">
+		<div className="grid h-full w-full grid-cols-3 grid-rows-3 gap-px bg-line-subtle">
 			{tilings.slice(0, 9).map((t) => (
 				<div key={t.id} title={t.label} className="relative overflow-hidden bg-surface-raised">
 					<div className="absolute inset-0">

@@ -30,7 +30,7 @@ import { exactComposableKeys, type ExactComposableCell } from "@/classes/algorit
 import { evaluateParamCell, type ParametricCellData } from "@/lib/utils/paramCell";
 import { applyRangePlan, applyRegionPlan, rangeNote, regionNote, type RangePlan } from "./range-plan";
 import type { ReferenceTiling } from "@/lib/services/referenceAtlas";
-import { stringifyAtlas } from './atlas/encode.mjs';
+import { stringifyAtlas } from "./atlas/encode.mjs";
 
 const ROOT = path.resolve(__dirname, "..");
 const IN_DIR = path.join(ROOT, "experiments", "period-oracle");
@@ -138,15 +138,23 @@ interface CellRecord {
 }
 /** A pinned (P=0) quotient solution: a real tiling with forced angles and therefore no parametric cell. */
 interface RigidRecord {
-	id: string; k: number; P: 0; vertype: string;
+	id: string;
+	k: number;
+	P: 0;
+	vertype: string;
 	renderCell: { cellPolygons: { n: number; star?: boolean; vertices: number[][] }[]; basis: number[][] };
 }
 
 /** A record from either family exporter — they share `emit_records`, so the shape is one shape. */
 interface QuotientRecord {
-	id: string; k: number; P: number; vertype: string;
-	params: ParametricCellData["params"]; cellPolygons: ParametricCellData["cellPolygons"];
-	basis: ParametricCellData["basis"]; region?: ParametricCellData["region"];
+	id: string;
+	k: number;
+	P: number;
+	vertype: string;
+	params: ParametricCellData["params"];
+	cellPolygons: ParametricCellData["cellPolygons"];
+	basis: ParametricCellData["basis"];
+	region?: ParametricCellData["region"];
 	regionVertices?: ParametricCellData["regionVertices"];
 }
 
@@ -288,11 +296,18 @@ function main(): void {
 	if (fs.existsSync(FAMILIES_PATH)) {
 		const fam = JSON.parse(fs.readFileSync(FAMILIES_PATH, "utf8")) as {
 			records: {
-				id: string; k: number; P: number; members: number; memberVertypes: string[];
+				id: string;
+				k: number;
+				P: number;
+				members: number;
+				memberVertypes: string[];
 				memberIds?: string[];
-				params: ParametricCellData["params"]; cellPolygons: ParametricCellData["cellPolygons"];
-				basis: ParametricCellData["basis"]; region?: ParametricCellData["region"];
-				regionVertices?: ParametricCellData["regionVertices"]; vertype: string;
+				params: ParametricCellData["params"];
+				cellPolygons: ParametricCellData["cellPolygons"];
+				basis: ParametricCellData["basis"];
+				region?: ParametricCellData["region"];
+				regionVertices?: ParametricCellData["regionVertices"];
+				vertype: string;
 			}[];
 		};
 		const noIds = fam.records.filter((r) => (r.memberIds?.length ?? 0) !== r.memberVertypes.length);
@@ -306,22 +321,32 @@ function main(): void {
 		}
 		for (const r of fam.records) {
 			const paramCell: ParametricCellData = {
-				params: r.params, cellPolygons: r.cellPolygons, basis: r.basis,
+				params: r.params,
+				cellPolygons: r.cellPolygons,
+				basis: r.basis,
 				...(r.region ? { region: r.region } : {}),
 				...(r.regionVertices ? { regionVertices: r.regionVertices } : {}),
 			};
 			let renderCell: PeriodTiling["renderCell"];
 			try {
-				renderCell = evaluateParamCell(paramCell, r.params.map((q) => q.defaultAlphaDeg)) as PeriodTiling["renderCell"];
+				renderCell = evaluateParamCell(
+					paramCell,
+					r.params.map((q) => q.defaultAlphaDeg),
+				) as PeriodTiling["renderCell"];
 			} catch (e) {
 				log(`  ⚑ ${r.id}: paramCell will not evaluate at its default — SKIPPED (${(e as Error).message})`);
 				continue;
 			}
 			for (const v of r.memberIds!) absorbed.add(v);
 			families.push({
-				id: r.id, source: "period", k: r.k, family: r.vertype, renderCell,
+				id: r.id,
+				source: "period",
+				k: r.k,
+				family: r.vertype,
+				renderCell,
 				snapshotId: r.memberIds![0],
-				discoverer: "Alessandro Longo", tilePeriod: 3,
+				discoverer: "Alessandro Longo",
+				tilePeriod: 3,
 				note: `${NOTE} Continuous ${r.P}-parameter family; absorbs ${r.members} fixed-angle snapshot(s).`,
 				alphaRange: r.params[0].alphaRangeDegOpen,
 				paramCell,
@@ -376,14 +401,23 @@ function main(): void {
 						`${path.relative(ROOT, dedup)} and it is missing. Run scripts/cross-tier-dedup.py.`,
 				);
 			}
-			const verdicts = JSON.parse(fs.readFileSync(dedup, "utf8")) as
-				{ id: string; verdict: string; match: string | null; ship: boolean }[];
+			const verdicts = JSON.parse(fs.readFileSync(dedup, "utf8")) as {
+				id: string;
+				verdict: string;
+				match: string | null;
+				ship: boolean;
+			}[];
 			quotientShip = new Set(verdicts.filter((v) => v.ship).map((v) => v.id));
 			const byVerdict = new Map<string, number>();
 			for (const v of verdicts) byVerdict.set(v.verdict, (byVerdict.get(v.verdict) ?? 0) + 1);
 			log("");
-			log(`  quotient dedup [${path.basename(qp)}]: ${quotientShip.size} of ${verdicts.length} ship — ` +
-				[...byVerdict].sort().map(([k, n]) => `${k}: ${n}`).join(", "));
+			log(
+				`  quotient dedup [${path.basename(qp)}]: ${quotientShip.size} of ${verdicts.length} ship — ` +
+					[...byVerdict]
+						.sort()
+						.map(([k, n]) => `${k}: ${n}`)
+						.join(", "),
+			);
 		}
 		const qf = JSON.parse(fs.readFileSync(qp, "utf8")) as { records: QuotientRecord[]; rigid?: RigidRecord[] };
 		let added = 0;
@@ -394,22 +428,33 @@ function main(): void {
 				continue;
 			}
 			const paramCell: ParametricCellData = {
-				params: r.params, cellPolygons: r.cellPolygons, basis: r.basis,
+				params: r.params,
+				cellPolygons: r.cellPolygons,
+				basis: r.basis,
 				...(r.region ? { region: r.region } : {}),
 				...(r.regionVertices ? { regionVertices: r.regionVertices } : {}),
 			};
 			let renderCell: PeriodTiling["renderCell"];
 			try {
-				renderCell = evaluateParamCell(paramCell, r.params.map((q) => q.defaultAlphaDeg)) as PeriodTiling["renderCell"];
+				renderCell = evaluateParamCell(
+					paramCell,
+					r.params.map((q) => q.defaultAlphaDeg),
+				) as PeriodTiling["renderCell"];
 			} catch (e) {
 				log(`  ⚑ ${r.id}: paramCell will not evaluate at its default — SKIPPED (${(e as Error).message})`);
 				continue;
 			}
 			families.push({
-				id: r.id, source: "period", k: r.k, family: r.vertype, renderCell,
+				id: r.id,
+				source: "period",
+				k: r.k,
+				family: r.vertype,
+				renderCell,
 				snapshotId: r.id,
-				discoverer: "Alessandro Longo", tilePeriod: 3,
-				note: `${NOTE} Continuous ${r.P}-parameter family, found by the period-QUOTIENT search: the ` +
+				discoverer: "Alessandro Longo",
+				tilePeriod: 3,
+				note:
+					`${NOTE} Continuous ${r.P}-parameter family, found by the period-QUOTIENT search: the ` +
 					"alphabet carries (shape, position) corners with no grid angle word, and these angles come " +
 					"from solving the tile/vertex linear system instead of from enumeration. Its k is measured " +
 					"from the developed cell at a generic parameter (vertex_orbits.py, which reproduces " +
@@ -424,7 +469,9 @@ function main(): void {
 			} as unknown as PeriodTiling);
 			added++;
 		}
-		log(`  quotient families [${path.basename(qp)}]: ${added} added (k≥${QUOTIENT_MIN_K}), ${skipped} skipped below k=${QUOTIENT_MIN_K}`);
+		log(
+			`  quotient families [${path.basename(qp)}]: ${added} added (k≥${QUOTIENT_MIN_K}), ${skipped} skipped below k=${QUOTIENT_MIN_K}`,
+		);
 
 		// PINNED tilings: the quotient search's 0-dimensional solutions. Real tilings that carry a plain
 		// cell and no slider — a P=0 family record would give the UI an empty parameter panel and a
@@ -443,11 +490,16 @@ function main(): void {
 		for (const r of qf.rigid ?? []) {
 			if (r.k < QUOTIENT_MIN_K || (quotientShip && !quotientShip.has(r.id))) continue;
 			families.push({
-				id: r.id, source: "period", k: r.k, family: r.vertype,
+				id: r.id,
+				source: "period",
+				k: r.k,
+				family: r.vertype,
 				renderCell: r.renderCell as PeriodTiling["renderCell"],
 				snapshotId: r.id,
-				discoverer: "Alessandro Longo", tilePeriod: 3,
-				note: `${NOTE} PINNED IN THIS PALETTE: the tile/vertex linear system has a single solution ` +
+				discoverer: "Alessandro Longo",
+				tilePeriod: 3,
+				note:
+					`${NOTE} PINNED IN THIS PALETTE: the tile/vertex linear system has a single solution ` +
 					"over this alphabet, so there is no slider — but the alphabet's regular tiles carry one " +
 					"corner class each and cannot deform, so a richer palette may well give this tiling a " +
 					"parameter. Found by the period-QUOTIENT search, angles solved rather than enumerated.",
@@ -472,7 +524,10 @@ function main(): void {
 		try {
 			const cells: ExactComposableCell[] = out.map((t) => ({
 				cellPolygons: t.renderCell.cellPolygons.map((cp) => ({
-					n: cp.n, name: cp.name!, exact: cp.exact!, star: cp.star,
+					n: cp.n,
+					name: cp.name!,
+					exact: cp.exact!,
+					star: cp.star,
 				})),
 				exactBasis: t.renderCell.exactBasis!,
 			}));
@@ -483,7 +538,11 @@ function main(): void {
 		}
 		const parent = families.map((_, i) => i);
 		const find = (i: number): number => (parent[i] === i ? i : (parent[i] = find(parent[i])));
-		const union = (a: number, b: number) => { const ra = find(a), rb = find(b); if (ra !== rb) parent[rb] = ra; };
+		const union = (a: number, b: number) => {
+			const ra = find(a),
+				rb = find(b);
+			if (ra !== rb) parent[rb] = ra;
+		};
 		// Keyed on (congruence, P). Sharing a tiling makes two families the same only at the same
 		// DIMENSION: a P=2 family that shares a snapshot with a P=3 one is a slice of it, not a copy of
 		// it, and unioning across P swallowed every 2-parameter family — including all three k=1 ones —
@@ -510,7 +569,8 @@ function main(): void {
 			// non-primitive representation of it. Taking the larger k relabelled every k=1 family as k=2
 			// and emptied the shelf's k=1 group.
 			idxs.sort((a, b) => {
-				const pa = families[a].paramCell?.params.length ?? 0, pb = families[b].paramCell?.params.length ?? 0;
+				const pa = families[a].paramCell?.params.length ?? 0,
+					pb = families[b].paramCell?.params.length ?? 0;
 				if (pa !== pb) return pb - pa;
 				if (families[a].k !== families[b].k) return families[a].k - families[b].k;
 				const ma = (families[a] as unknown as { members?: number }).members ?? 0;
@@ -520,7 +580,10 @@ function main(): void {
 			survivors.push(families[idxs[0]]);
 			merged += idxs.length - 1;
 		}
-		if (merged > 0) log(`  family merge (shared tiling, exact congruence): ${families.length} → ${survivors.length} (${merged} duplicates merged)`);
+		if (merged > 0)
+			log(
+				`  family merge (shared tiling, exact congruence): ${families.length} → ${survivors.length} (${merged} duplicates merged)`,
+			);
 		families.length = 0;
 		families.push(...survivors);
 	}
@@ -558,8 +621,10 @@ function main(): void {
 			t.k = tk;
 		}
 	}
-	log(`  relabel k → true vertex-orbit count: ${relabeled} of ${deduped.length} were chirally over-counted` +
-		(preMeasured ? ` (${preMeasured} skipped: k already measured by vertex_orbits.py)` : ""));
+	log(
+		`  relabel k → true vertex-orbit count: ${relabeled} of ${deduped.length} were chirally over-counted` +
+			(preMeasured ? ` (${preMeasured} skipped: k already measured by vertex_orbits.py)` : ""),
+	);
 
 	const byNewK = new Map<number, PeriodTiling[]>();
 	for (const t of [...deduped].sort((a, b) => a.id.localeCompare(b.id))) {
@@ -606,8 +671,18 @@ function main(): void {
 	const byK = new Map<number, number>();
 	for (const t of shipped) byK.set(t.k, (byK.get(t.k) ?? 0) + 1);
 	log("");
-	log(`  by k: ${[...byK].sort((a, b) => a[0] - b[0]).map(([k, n]) => `k=${k}: ${n}`).join(", ")}`);
-	log(`  by tile period: ${[...periodsSeen].sort((a, b) => a[0] - b[0]).map(([p, n]) => `p=${p}: ${n} (pre-dedup)`).join(", ")}`);
+	log(
+		`  by k: ${[...byK]
+			.sort((a, b) => a[0] - b[0])
+			.map(([k, n]) => `k=${k}: ${n}`)
+			.join(", ")}`,
+	);
+	log(
+		`  by tile period: ${[...periodsSeen]
+			.sort((a, b) => a[0] - b[0])
+			.map(([p, n]) => `p=${p}: ${n} (pre-dedup)`)
+			.join(", ")}`,
+	);
 	fs.writeFileSync(LOG_PATH, logLines.join("\n") + "\n");
 
 	// ── ONE APPEARANCE PER TILING ─────────────────────────────────────────────────────────────────────
@@ -623,13 +698,20 @@ function main(): void {
 	// survive. Running it here rather than by hand is the point — a producer added later cannot skip it.
 	log("");
 	try {
-		const out = execFileSync("python3", [
-			path.join(ROOT, "scripts", "shelf-dedup.py"),
-			"--shelf", OUT_PATH,
-			"--log", path.join(ROOT, "experiments", "results", "period-shelf-dedup.log"),
-			"--json", path.join(IN_DIR, "period-shelf-dedup.json"),
-			"--write",
-		], { encoding: "utf8" });
+		const out = execFileSync(
+			"python3",
+			[
+				path.join(ROOT, "scripts", "shelf-dedup.py"),
+				"--shelf",
+				OUT_PATH,
+				"--log",
+				path.join(ROOT, "experiments", "results", "period-shelf-dedup.log"),
+				"--json",
+				path.join(IN_DIR, "period-shelf-dedup.json"),
+				"--write",
+			],
+			{ encoding: "utf8" },
+		);
 		for (const line of out.trimEnd().split("\n").slice(-8)) log(`  ${line}`);
 	} catch (e) {
 		throw new Error(
@@ -653,18 +735,28 @@ function main(): void {
 	// exporter re-run without --attach.
 	log("");
 	if (!fs.existsSync(INTRINSIC_CELLS_PATH)) {
-		log(`  ⚑ no intrinsic cells at ${path.relative(ROOT, INTRINSIC_CELLS_PATH)} — the shelf ships with ` +
-			"palette-relative parameters, so entries that deform will read as rigid. Run " +
-			"tools/ctrnact-oracle/export_intrinsic_cells.py.");
+		log(
+			`  ⚑ no intrinsic cells at ${path.relative(ROOT, INTRINSIC_CELLS_PATH)} — the shelf ships with ` +
+				"palette-relative parameters, so entries that deform will read as rigid. Run " +
+				"tools/ctrnact-oracle/export_intrinsic_cells.py.",
+		);
 	} else {
 		try {
-			const out = execFileSync("python3", [
-				path.join(ROOT, "tools", "ctrnact-oracle", "export_intrinsic_cells.py"),
-				"--attach", "--write",
-				"--out", INTRINSIC_CELLS_PATH,
-				"--shelf", OUT_PATH,
-				"--log", path.join(ROOT, "experiments", "results", "period-intrinsic-attach.log"),
-			], { encoding: "utf8" });
+			const out = execFileSync(
+				"python3",
+				[
+					path.join(ROOT, "tools", "ctrnact-oracle", "export_intrinsic_cells.py"),
+					"--attach",
+					"--write",
+					"--out",
+					INTRINSIC_CELLS_PATH,
+					"--shelf",
+					OUT_PATH,
+					"--log",
+					path.join(ROOT, "experiments", "results", "period-intrinsic-attach.log"),
+				],
+				{ encoding: "utf8" },
+			);
 			for (const line of out.trimEnd().split("\n").slice(-6)) log(`  ${line}`);
 		} catch (e) {
 			throw new Error(

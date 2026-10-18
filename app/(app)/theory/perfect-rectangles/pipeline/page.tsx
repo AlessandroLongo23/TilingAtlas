@@ -48,8 +48,8 @@ export default async function PipelinePage() {
 		return (
 			<div className="flex h-full w-full items-center justify-center p-8">
 				<p className="max-w-md text-center text-sm text-fg-muted">
-					No pipeline data. Run <code className="font-mono">pnpm tsx scripts/build-squaring-shelf.ts</code> to
-					generate <code className="font-mono">public/squarings/pipeline/</code>.
+					No pipeline data. Run <code className="font-mono">pnpm tsx scripts/build-squaring-shelf.ts</code> to generate{" "}
+					<code className="font-mono">public/squarings/pipeline/</code>.
 				</p>
 			</div>
 		);

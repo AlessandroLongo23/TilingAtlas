@@ -330,8 +330,7 @@ export function buildTilingSpec(
 	// Euclidean. Prefer the live exact symmetry analysis; fall back to the build-computed fields; derive
 	// the orbifold from whichever group we have if the analysis didn't supply one.
 	const wallpaperGroup = symmetryData?.group ?? selected.wallpaperGroup ?? null;
-	const orbifold =
-		symmetryData?.orbifold ?? (wallpaperGroup ? ORBIFOLD_SIGNATURE[wallpaperGroup] : null);
+	const orbifold = symmetryData?.orbifold ?? (wallpaperGroup ? ORBIFOLD_SIGNATURE[wallpaperGroup] : null);
 	const latticeShape = symmetryData?.latticeShape ?? selected.latticeShape ?? null;
 	// Freedraw: the face analysis IS the tile data (there is no vertex configuration and no wallpaper
 	// classification), so `faceOrbits` gets a real value here instead of the flagged "not computed".

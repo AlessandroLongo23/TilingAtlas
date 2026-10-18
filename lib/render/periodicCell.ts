@@ -134,7 +134,10 @@ export function packPeriodicCell(cell: PeriodicCell | null): PackedCell | null {
 	if (!Number.isFinite(det) || Math.abs(det) < 1e-12) return null;
 
 	// world → lattice (a, b)
-	const m00 = v2y / det, m01 = -v2x / det, m10 = -v1y / det, m11 = v1x / det;
+	const m00 = v2y / det,
+		m01 = -v2x / det,
+		m10 = -v1y / det,
+		m11 = v1x / det;
 
 	const prims = cell.prims;
 	const primCount = prims.length;
@@ -155,7 +158,10 @@ export function packPeriodicCell(cell: PeriodicCell | null): PackedCell | null {
 	const avgParts = new Float32Array(primCount * 6);
 
 	let vi = 0;
-	let avgR = 0, avgG = 0, avgB = 0, avgW = 0;
+	let avgR = 0,
+		avgG = 0,
+		avgB = 0,
+		avgW = 0;
 
 	for (let p = 0; p < primCount; p++) {
 		const prim = prims[p];
@@ -165,15 +171,23 @@ export function packPeriodicCell(cell: PeriodicCell | null): PackedCell | null {
 		// A decoration may anchor its geometry anywhere in the plane, many lattice cells from the origin.
 		// Shift each prim by a whole lattice vector (a valid periodic copy) so its centroid lands in the
 		// fundamental parallelogram; the index below then only has to consider shifts near zero.
-		let cx = 0, cy = 0;
-		for (let i = 0; i < n; i++) { cx += prim.verts[2 * i]; cy += prim.verts[2 * i + 1]; }
-		cx /= n; cy /= n;
+		let cx = 0,
+			cy = 0;
+		for (let i = 0; i < n; i++) {
+			cx += prim.verts[2 * i];
+			cy += prim.verts[2 * i + 1];
+		}
+		cx /= n;
+		cy /= n;
 		const fa = Math.floor(m00 * cx + m01 * cy);
 		const fb = Math.floor(m10 * cx + m11 * cy);
 		const shx = fa * v1x + fb * v2x;
 		const shy = fa * v1y + fb * v2y;
 
-		let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+		let minX = Infinity,
+			minY = Infinity,
+			maxX = -Infinity,
+			maxY = -Infinity;
 		let area2 = 0;
 		for (let i = 0; i < n; i++) {
 			const x = prim.verts[2 * i] - shx;
@@ -240,9 +254,20 @@ export function packPeriodicCell(cell: PeriodicCell | null): PackedCell | null {
 		// Lattice bbox of the world bbox, widened by the widest stroke this prim can grow. The corner map
 		// is affine, so the lattice bbox is the box over the four mapped corners.
 		const mg = strokeAlpha > 0 ? STROKE_MARGIN_FRAC * cell.feature * Math.max(1, strokeScale) : 0;
-		const x0 = minX - mg, x1 = maxX + mg, y0 = minY - mg, y1 = maxY + mg;
-		let la0 = Infinity, la1 = -Infinity, lb0 = Infinity, lb1 = -Infinity;
-		for (const [cxx, cyy] of [[x0, y0], [x1, y0], [x0, y1], [x1, y1]] as const) {
+		const x0 = minX - mg,
+			x1 = maxX + mg,
+			y0 = minY - mg,
+			y1 = maxY + mg;
+		let la0 = Infinity,
+			la1 = -Infinity,
+			lb0 = Infinity,
+			lb1 = -Infinity;
+		for (const [cxx, cyy] of [
+			[x0, y0],
+			[x1, y0],
+			[x0, y1],
+			[x1, y1],
+		] as const) {
 			const a = m00 * cxx + m01 * cyy;
 			const b = m10 * cxx + m11 * cyy;
 			if (a < la0) la0 = a;
@@ -260,14 +285,13 @@ export function packPeriodicCell(cell: PeriodicCell | null): PackedCell | null {
 	// (a strip face, a long scaffold line) is registered in each, which is why G is capped and not
 	// scaled straight off primCount.
 	const grid = Math.max(1, Math.min(48, Math.round(Math.sqrt(primCount))));
-	const buckets: { p: number; di: number; dj: number; z: number }[][] = Array.from(
-		{ length: grid * grid },
-		() => [],
-	);
+	const buckets: { p: number; di: number; dj: number; z: number }[][] = Array.from({ length: grid * grid }, () => []);
 
 	for (let p = 0; p < primCount; p++) {
-		const la0 = laBox[p * 4], la1 = laBox[p * 4 + 1];
-		const lb0 = laBox[p * 4 + 2], lb1 = laBox[p * 4 + 3];
+		const la0 = laBox[p * 4],
+			la1 = laBox[p * 4 + 1];
+		const lb0 = laBox[p * 4 + 2],
+			lb1 = laBox[p * 4 + 3];
 		const z = prims[p].z ?? 0;
 		// The shader tests `q = w − (di·v1 + dj·v2)` against the prim, which is the same as testing w
 		// against the prim TRANSLATED BY +(di, dj). So the copies worth filing are those whose shifted box
@@ -279,11 +303,15 @@ export function packPeriodicCell(cell: PeriodicCell | null): PackedCell | null {
 		const dj1 = Math.ceil(1 - lb0 - 1e-9) - 1;
 		for (let dj = dj0; dj <= dj1; dj++) {
 			for (let di = di0; di <= di1; di++) {
-				const a0 = Math.max(0, la0 + di), a1 = Math.min(1 - 1e-9, la1 + di);
-				const b0 = Math.max(0, lb0 + dj), b1 = Math.min(1 - 1e-9, lb1 + dj);
+				const a0 = Math.max(0, la0 + di),
+					a1 = Math.min(1 - 1e-9, la1 + di);
+				const b0 = Math.max(0, lb0 + dj),
+					b1 = Math.min(1 - 1e-9, lb1 + dj);
 				if (a0 > a1 || b0 > b1) continue;
-				const bi0 = Math.floor(a0 * grid), bi1 = Math.floor(a1 * grid);
-				const bj0 = Math.floor(b0 * grid), bj1 = Math.floor(b1 * grid);
+				const bi0 = Math.floor(a0 * grid),
+					bi1 = Math.floor(a1 * grid);
+				const bj0 = Math.floor(b0 * grid),
+					bj1 = Math.floor(b1 * grid);
 				for (let bj = bj0; bj <= bj1; bj++) {
 					for (let bi = bi0; bi <= bi1; bi++) {
 						buckets[bj * grid + bi].push({ p, di, dj, z });
@@ -313,7 +341,7 @@ export function packPeriodicCell(cell: PeriodicCell | null): PackedCell | null {
 	if (dropped > 0) {
 		console.warn(
 			`periodicCell: bucket cap ${MAX_BUCKET_ENTRIES} exceeded (widest bucket wanted ${demand}); ` +
-			`dropped ${dropped} primitive copies — the render is incomplete.`,
+				`dropped ${dropped} primitive copies — the render is incomplete.`,
 		);
 	}
 
@@ -335,10 +363,19 @@ export function packPeriodicCell(cell: PeriodicCell | null): PackedCell | null {
 	}
 
 	return {
-		verts, vertsW, vertsH,
-		meta, metaW, metaH,
-		head, grid, list, listW, listH,
-		primCount, maxBucket,
+		verts,
+		vertsW,
+		vertsH,
+		meta,
+		metaW,
+		metaH,
+		head,
+		grid,
+		list,
+		listW,
+		listH,
+		primCount,
+		maxBucket,
 		minv: [m00, m01, m10, m11],
 		v1: [v1x, v1y],
 		v2: [v2x, v2y],
@@ -351,16 +388,17 @@ export function packPeriodicCell(cell: PeriodicCell | null): PackedCell | null {
 /** Area-weighted average fill under a global hue offset — the offset counterpart of `PackedCell.avg`.
  *  Only hue-driven prims move with the ring; literal-RGB fills (colorings, hollow, …) stay put. */
 export function averageCellFill(avgParts: Float32Array, hueOffsetDeg: number): [number, number, number] {
-	let r = 0, g = 0, b = 0, w = 0;
+	let r = 0,
+		g = 0,
+		b = 0,
+		w = 0;
 	for (let i = 0; i < avgParts.length; i += 6) {
 		const hue = avgParts[i];
 		const alpha = avgParts[i + 4];
 		const area = avgParts[i + 5];
 		const weight = area * alpha;
 		if (weight <= 0) continue;
-		const rgb = hue >= 0
-			? tileHueRgb01(hue + hueOffsetDeg)
-			: [avgParts[i + 1], avgParts[i + 2], avgParts[i + 3]];
+		const rgb = hue >= 0 ? tileHueRgb01(hue + hueOffsetDeg) : [avgParts[i + 1], avgParts[i + 2], avgParts[i + 3]];
 		r += rgb[0] * weight;
 		g += rgb[1] * weight;
 		b += rgb[2] * weight;

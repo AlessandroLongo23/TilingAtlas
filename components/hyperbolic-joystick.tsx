@@ -39,7 +39,7 @@ export function HyperbolicJoystick() {
 	useEffect(() => () => cancelAnimationFrame(raf.current), []);
 
 	return (
-		<div ref={rootRef} className="ta-float absolute bottom-4 right-4 z-20 p-1.5 max-md:hidden">
+		<div ref={rootRef} className="ta-float absolute right-4 bottom-4 z-20 p-1.5 max-md:hidden">
 			<VelocityPad
 				value={held ? stick : padStick}
 				onChange={setStick}

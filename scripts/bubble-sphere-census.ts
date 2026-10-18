@@ -22,19 +22,37 @@
 //
 //   pnpm tsx scripts/bubble-sphere-census.ts [solidId ...]
 import { polyhedronForId } from "@/lib/render/sphericalSolids";
-import {
-	byK, fixedDecorations, kDistribution, lowK, sphereAutomorphisms, sphereMapOf,
-} from "@/lib/bubble/sphere";
+import { byK, fixedDecorations, kDistribution, lowK, sphereAutomorphisms, sphereMapOf } from "@/lib/bubble/sphere";
 
 /** The 28 boards the spherical shelf ships at k=1: 5 Platonic, 13 Archimedean, 5 prisms, 5 antiprisms. */
 const BOARDS = [
-	"tetrahedron", "cube", "octahedron", "dodecahedron", "icosahedron",
-	"truncated-tetrahedron", "cuboctahedron", "truncated-cube", "truncated-octahedron",
-	"rhombicuboctahedron", "truncated-cuboctahedron", "snub-cube", "icosidodecahedron",
-	"truncated-dodecahedron", "truncated-icosahedron", "rhombicosidodecahedron",
-	"truncated-icosidodecahedron", "snub-dodecahedron",
-	"triangular-prism", "pentagonal-prism", "hexagonal-prism", "octagonal-prism", "decagonal-prism",
-	"square-antiprism", "pentagonal-antiprism", "hexagonal-antiprism", "octagonal-antiprism",
+	"tetrahedron",
+	"cube",
+	"octahedron",
+	"dodecahedron",
+	"icosahedron",
+	"truncated-tetrahedron",
+	"cuboctahedron",
+	"truncated-cube",
+	"truncated-octahedron",
+	"rhombicuboctahedron",
+	"truncated-cuboctahedron",
+	"snub-cube",
+	"icosidodecahedron",
+	"truncated-dodecahedron",
+	"truncated-icosahedron",
+	"rhombicosidodecahedron",
+	"truncated-icosidodecahedron",
+	"snub-dodecahedron",
+	"triangular-prism",
+	"pentagonal-prism",
+	"hexagonal-prism",
+	"octagonal-prism",
+	"decagonal-prism",
+	"square-antiprism",
+	"pentagonal-antiprism",
+	"hexagonal-antiprism",
+	"octagonal-antiprism",
 	"decagonal-antiprism",
 ];
 
@@ -44,7 +62,10 @@ const rows: string[][] = [];
 let total = 0n;
 for (const id of wanted) {
 	const p = polyhedronForId(id);
-	if (!p) { console.error(`unknown solid: ${id}`); continue; }
+	if (!p) {
+		console.error(`unknown solid: ${id}`);
+		continue;
+	}
 	const m = sphereMapOf(p);
 	if (m.vertices - m.edges + m.faces !== 2) throw new Error(`${id}: V-E+F = ${m.vertices - m.edges + m.faces}`);
 	const aut = sphereAutomorphisms(m);
@@ -53,13 +74,14 @@ for (const id of wanted) {
 		for (let d = 0; d < m.darts; d++) if (phi[m.next[d]] !== m.next[phi[d]]) return false;
 		return true;
 	});
-	const burnside = (g: Int32Array[]) =>
-		g.reduce((s, phi) => s + fixedDecorations(m, phi), 0n) / BigInt(g.length);
+	const burnside = (g: Int32Array[]) => g.reduce((s, phi) => s + fixedDecorations(m, phi), 0n) / BigInt(g.length);
 	const all = burnside(aut);
 	total += all;
 	const lowReps = lowK(m, aut, CUTOFF);
 	const low = lowReps && byK(lowReps);
-	process.stderr.write(`  ${id}: E=${m.edges} |Aut|=${aut.length} all=${all} low=${low ? [...low].map(([k, r]) => `k${k}:${r.length}`).join(" ") : "CAP"}\n`);
+	process.stderr.write(
+		`  ${id}: E=${m.edges} |Aut|=${aut.length} all=${all} low=${low ? [...low].map(([k, r]) => `k${k}:${r.length}`).join(" ") : "CAP"}\n`,
+	);
 	// Cross-check where full enumeration is affordable: the subgroup route and the brute-force route
 	// must agree on every k they both see, or one of them is wrong.
 	const bruteReps = kDistribution(m, aut);
@@ -69,15 +91,29 @@ for (const id of wanted) {
 		if (BigInt(sum) !== all) throw new Error(`${id}: enumeration ${sum} != Burnside ${all}`);
 		for (let k = 1; k <= CUTOFF; k++)
 			if ((brute.get(k)?.length ?? 0) !== (low.get(k)?.length ?? 0))
-				throw new Error(`${id}: k=${k} brute ${brute.get(k)?.length ?? 0} != subgroup route ${low.get(k)?.length ?? 0}`);
+				throw new Error(
+					`${id}: k=${k} brute ${brute.get(k)?.length ?? 0} != subgroup route ${low.get(k)?.length ?? 0}`,
+				);
 	}
-	rows.push([p.name ?? id, String(p.vertexConfig), String(m.edges), String(aut.length),
+	rows.push([
+		p.name ?? id,
+		String(p.vertexConfig),
+		String(m.edges),
+		String(aut.length),
 		all.toString(),
 		...Array.from({ length: CUTOFF }, (_, i) => (low ? String(low.get(i + 1)?.length ?? 0) : "?")),
-		brute ? "yes" : low ? "" : "CAP"]);
+		brute ? "yes" : low ? "" : "CAP",
+	]);
 }
-const head = ["solid", "vertex config", "E", "|Aut|", "all decorations",
-	...Array.from({ length: CUTOFF }, (_, i) => `k=${i + 1}`), "brute-checked"];
+const head = [
+	"solid",
+	"vertex config",
+	"E",
+	"|Aut|",
+	"all decorations",
+	...Array.from({ length: CUTOFF }, (_, i) => `k=${i + 1}`),
+	"brute-checked",
+];
 const w = head.map((h, i) => Math.max(h.length, ...rows.map((r) => r[i].length)));
 const line = (r: string[]) => r.map((c, i) => (i < 2 ? c.padEnd(w[i]) : c.padStart(w[i]))).join("  ");
 console.log(line(head));

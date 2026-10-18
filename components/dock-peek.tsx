@@ -13,7 +13,7 @@ import { useMobileSheet } from "@/stores/mobileSheet";
 export function PeekTitle({ title, sub, mono = false }: { title: ReactNode; sub: ReactNode; mono?: boolean }) {
 	return (
 		<div className="flex min-w-0 flex-1 flex-col">
-			<span className="truncate text-[15px] font-semibold leading-tight text-fg">{title}</span>
+			<span className="truncate text-[15px] leading-tight font-semibold text-fg">{title}</span>
 			<span className={cn("truncate text-xs text-fg-muted", mono && "font-mono tabular-nums")}>{sub}</span>
 		</div>
 	);

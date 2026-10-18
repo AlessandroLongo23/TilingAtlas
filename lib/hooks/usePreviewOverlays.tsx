@@ -61,13 +61,7 @@ const ScopeContext = createContext<OverlayScope | null>(null);
  * thing you turn on to make a point, and leaving them latched across a slide change would surprise
  * you mid-talk.
  */
-export function PreviewOverlayScope({
-	children,
-	resetKey,
-}: {
-	children: React.ReactNode;
-	resetKey?: string | number;
-}) {
+export function PreviewOverlayScope({ children, resetKey }: { children: React.ReactNode; resetKey?: string | number }) {
 	const [shared, setShared] = useState<Partial<OverlayState>>({});
 	const [overrides, setOverrides] = useState<Record<string, Partial<OverlayState>>>({});
 	// Read inside the overrides updater, which must stay pure — a nested setState there would double

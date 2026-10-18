@@ -37,7 +37,10 @@ function index(polys: RawPolygon[], cell: number) {
 	const buckets = new Map<string, Poly[]>();
 	const key = (i: number, j: number) => `${i},${j}`;
 	for (const p of polys) {
-		let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+		let minX = Infinity,
+			maxX = -Infinity,
+			minY = Infinity,
+			maxY = -Infinity;
 		for (const v of p.vertices) {
 			if (v.x < minX) minX = v.x;
 			if (v.x > maxX) maxX = v.x;
@@ -49,7 +52,8 @@ function index(polys: RawPolygon[], cell: number) {
 			for (let j = Math.floor(minY / cell); j <= Math.floor(maxY / cell); j++) {
 				const k = key(i, j);
 				const b = buckets.get(k);
-				if (b) b.push(q); else buckets.set(k, [q]);
+				if (b) b.push(q);
+				else buckets.set(k, [q]);
 			}
 		}
 	}
@@ -61,7 +65,8 @@ function index(polys: RawPolygon[], cell: number) {
 			let inside = false;
 			const n = p.v.length;
 			for (let i = 0, j = n - 1; i < n; j = i++) {
-				const a = p.v[i], c = p.v[j];
+				const a = p.v[i],
+					c = p.v[j];
 				if (a.y > y !== c.y > y && x < ((c.x - a.x) * (y - a.y)) / (c.y - a.y) + a.x) inside = !inside;
 			}
 			if (inside) return true;

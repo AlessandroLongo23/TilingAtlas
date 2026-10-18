@@ -109,9 +109,7 @@ export const PENTAGON_TYPES: PentagonType[] = [
 		groups: "p2, cmm, cm, pmg, pgg, p1",
 		tilesPerUnit: 2,
 		dof: 5,
-		constraints: [
-			{ text: "B + C = 180°", live: (a) => `${deg(a[1])} + ${deg(a[2])} = ${deg(a[1] + a[2])}°` },
-		],
+		constraints: [{ text: "B + C = 180°", live: (a) => `${deg(a[1])} + ${deg(a[2])} = ${deg(a[1] + a[2])}°` }],
 		angleParams: [
 			{ key: "A", kind: "angle", min: 70, max: 180, step: 0.1, def: 120 },
 			{ key: "B", kind: "angle", min: 22.7, max: 157.3, step: 0.1, def: 100 },

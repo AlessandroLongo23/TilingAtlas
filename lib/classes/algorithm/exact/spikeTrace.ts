@@ -6,12 +6,12 @@
  */
 const SEEN = new Map<string, string>();
 
-export function spikeBreak(site: string, assumption: string, wrong: string, ctx = ''): void {
-	if (process.env.SPIKE_TRACE !== '1') return;
+export function spikeBreak(site: string, assumption: string, wrong: string, ctx = ""): void {
+	if (process.env.SPIKE_TRACE !== "1") return;
 	if (SEEN.has(site)) return;
-	const line = `⚑BREAK ${site} | ${assumption} | ${wrong}${ctx ? ` | ${ctx}` : ''}`;
+	const line = `⚑BREAK ${site} | ${assumption} | ${wrong}${ctx ? ` | ${ctx}` : ""}`;
 	SEEN.set(site, line);
-	process.stderr.write(line + '\n');
+	process.stderr.write(line + "\n");
 }
 
 /** All distinct break lines logged so far (for a harness to print the aggregated list). */

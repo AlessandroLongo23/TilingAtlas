@@ -15,8 +15,12 @@ function meshArea(positions: number[]): number {
 	let total = 0;
 	for (let i = 0; i < positions.length; i += 9) {
 		const [ax, ay, az, bx, by, bz, cx, cy, cz] = positions.slice(i, i + 9);
-		const ux = bx - ax, uy = by - ay, uz = bz - az;
-		const vx = cx - ax, vy = cy - ay, vz = cz - az;
+		const ux = bx - ax,
+			uy = by - ay,
+			uz = bz - az;
+		const vx = cx - ax,
+			vy = cy - ay,
+			vz = cz - az;
 		total += 0.5 * Math.hypot(uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx);
 	}
 	return total;
@@ -35,7 +39,14 @@ const FULL_SPHERE = 4 * Math.PI;
 describe("spherical face meshing", () => {
 	it("covers the whole sphere for an ordinary solid", () => {
 		// Octahedron: eight faces, none anywhere near a great circle.
-		const V: V3[] = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]];
+		const V: V3[] = [
+			[1, 0, 0],
+			[-1, 0, 0],
+			[0, 1, 0],
+			[0, -1, 0],
+			[0, 0, 1],
+			[0, 0, -1],
+		];
 		const rings: V3[][] = [];
 		for (const x of [0, 1]) for (const y of [2, 3]) for (const z of [4, 5]) rings.push([V[x], V[y], V[z]]);
 		const area = meshArea(faceMesh(rings, V));
@@ -54,7 +65,10 @@ describe("spherical face meshing", () => {
 		const above: V3 = [0, 1, 0];
 		const below: V3 = [0, -1, 0];
 
-		for (const [others, sign] of [[[...hex, above], -1], [[...hex, below], +1]] as [V3[], number][]) {
+		for (const [others, sign] of [
+			[[...hex, above], -1],
+			[[...hex, below], +1],
+		] as [V3[], number][]) {
 			const positions = faceMesh([hex], others);
 			expect(meshArea(positions)).toBeGreaterThan(FULL_SPHERE * 0.4975);
 			expect(meshArea(positions)).toBeLessThanOrEqual(FULL_SPHERE * 0.5);

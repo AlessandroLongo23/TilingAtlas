@@ -11,41 +11,45 @@
  *
  *   pnpm tsx scripts/diag-cb4-asymmetry.ts
  */
-import fs from 'node:fs';
-import { setActiveRing, CyclotomicRing, Cyclotomic } from '@/classes/Cyclotomic';
-import { cellsCongruent, primitiveReducedCell } from '@/classes/algorithm/TilingCongruence';
-import { independentCellsCongruent } from '@/classes/algorithm/CongruenceDifferential';
-import { detSurd } from '@/classes/algorithm/exact/Surd';
-import { sameLattice } from '@/classes/algorithm/LatticeEnumerator';
-import type { PeriodCell } from '@/classes/algorithm/PeriodSolver';
-import type { Polygon } from '@/classes/polygons/Polygon';
-import { readResumeNdjson, deserializeCell } from './scoutCodec';
+import fs from "node:fs";
+import { setActiveRing, CyclotomicRing, Cyclotomic } from "@/classes/Cyclotomic";
+import { cellsCongruent, primitiveReducedCell } from "@/classes/algorithm/TilingCongruence";
+import { independentCellsCongruent } from "@/classes/algorithm/CongruenceDifferential";
+import { detSurd } from "@/classes/algorithm/exact/Surd";
+import { sameLattice } from "@/classes/algorithm/LatticeEnumerator";
+import type { PeriodCell } from "@/classes/algorithm/PeriodSolver";
+import type { Polygon } from "@/classes/polygons/Polygon";
+import { readResumeNdjson, deserializeCell } from "./scoutCodec";
 
-const LOG = `experiments/results/diag-cb4-asymmetry-${new Date().toISOString().slice(0, 16).replace(/[T:]/g, '-')}.log`;
+const LOG = `experiments/results/diag-cb4-asymmetry-${new Date().toISOString().slice(0, 16).replace(/[T:]/g, "-")}.log`;
 const lines: string[] = [];
 function log(s: string): void {
 	console.log(s);
 	lines.push(s);
-	fs.writeFileSync(LOG, lines.join('\n') + '\n');
+	fs.writeFileSync(LOG, lines.join("\n") + "\n");
 }
 
 const ring = CyclotomicRing.create(24);
 setActiveRing(ring);
 
-const { cells: raw } = readResumeNdjson('.scout-cache/k3_3.4.6.12_cap0.ndjson');
+const { cells: raw } = readResumeNdjson(".scout-cache/k3_3.4.6.12_cap0.ndjson");
 const cells = raw.map((sc) => deserializeCell(ring, sc)).map(primitiveReducedCell);
 log(`raw cells: ${raw.length}`);
 
-const nameMultiset = (cell: Polygon[]) => cell.map((p) => p.getName()).sort().join(',');
+const nameMultiset = (cell: Polygon[]) =>
+	cell
+		.map((p) => p.getName())
+		.sort()
+		.join(",");
 const detAbsKey = (u: Cyclotomic, v: Cyclotomic) => {
 	const d = detSurd(u, v).abs();
 	return `${d.P},${d.Q},${d.R},${d.S},${d.D}`;
 };
-const TARGET = '3,3,3,3,3,3,3,3,3,3,3,3,6,6@0,0,6,0,1';
+const TARGET = "3,3,3,3,3,3,3,3,3,3,3,3,6,6@0,0,6,0,1";
 const bucket = cells
 	.map((c, gi) => ({ c, gi }))
 	.filter(({ c }) => `${nameMultiset(c.cellPolygons)}@${detAbsKey(c.basisExact[0], c.basisExact[1])}` === TARGET);
-log(`bucket ${TARGET}: ${bucket.length} cells (global indices ${bucket.map((b) => b.gi).join(',')})`);
+log(`bucket ${TARGET}: ${bucket.length} cells (global indices ${bucket.map((b) => b.gi).join(",")})`);
 
 // --- (1) full ordered-pair matrix, fresh memo per call ---
 type Pair = { i: number; j: number; ab: boolean; ba: boolean };
@@ -103,7 +107,9 @@ function probeDirection(A: PeriodCell, B: PeriodCell, label: string): void {
 	const N = ring.N;
 	const ZERO = Cyclotomic.ZERO(ring);
 	const KB = new Set(cellB.map((q) => reducedClassKey(q, uB, vB)));
-	log(`  ${label}: |KB| = ${KB.size} (cell size ${cellB.length}${KB.size !== cellB.length ? ' ⚑ KB COLLAPSED — B reduction not injective' : ''})`);
+	log(
+		`  ${label}: |KB| = ${KB.size} (cell size ${cellB.length}${KB.size !== cellB.length ? " ⚑ KB COLLAPSED — B reduction not injective" : ""})`,
+	);
 	const P0 = cellA.reduce((m, p) => (p.exactKey() < m.exactKey() ? p : m));
 	const c0 = P0.exactCentroid!;
 	const p0Name = P0.getName();
@@ -111,7 +117,10 @@ function probeDirection(A: PeriodCell, B: PeriodCell, label: string): void {
 		(reflect ? z.conj().mulZeta(r) : z.mulZeta(r)).add(T);
 	const transformedKey = (p: Polygon, reflect: boolean, r: number, T: Cyclotomic): string => {
 		const c = mapPoint(p.exactCentroid!, reflect, r, T);
-		const vks = p.exactVertices!.map((vx) => mapPoint(vx, reflect, r, T).key()).sort().join(';');
+		const vks = p
+			.exactVertices!.map((vx) => mapPoint(vx, reflect, r, T).key())
+			.sort()
+			.join(";");
 		return `${p.getName()}:${c.key()}:${vks}`;
 	};
 	let pinPass = 0;
@@ -132,12 +141,12 @@ function probeDirection(A: PeriodCell, B: PeriodCell, label: string): void {
 				latPass++;
 				const mapped = new Set<string>();
 				for (const p of cellA) {
-					const gp = p.transformedRigid(ZERO, reflect, 0, r, T, 'full');
+					const gp = p.transformedRigid(ZERO, reflect, 0, r, T, "full");
 					mapped.add(reducedClassKey(gp, uB, vB));
 				}
 				const missing = [...mapped].filter((kk) => !KB.has(kk)).length;
 				log(
-					`  ${label}: candidate reflect=${reflect} r=${r} PIN+LAT pass — |mapped|=${mapped.size}, missing from KB: ${missing}${mapped.size === cellB.length && missing === 0 ? ' ✓ WOULD ACCEPT' : ''}`
+					`  ${label}: candidate reflect=${reflect} r=${r} PIN+LAT pass — |mapped|=${mapped.size}, missing from KB: ${missing}${mapped.size === cellB.length && missing === 0 ? " ✓ WOULD ACCEPT" : ""}`,
 				);
 			}
 		}
@@ -157,7 +166,7 @@ for (const { i, j } of asym) {
 		const w = x.toVector();
 		return `(${w.x.toFixed(4)},${w.y.toFixed(4)})`;
 	});
-	log(`  Λ_A = ${fa.join(' ')}, Λ_B = ${fb.join(' ')}`);
+	log(`  Λ_A = ${fa.join(" ")}, Λ_B = ${fb.join(" ")}`);
 
 	// --- (2) independent ground truth ---
 	const iab = independentCellsCongruent(A, B);
@@ -165,8 +174,8 @@ for (const { i, j } of asym) {
 	log(`  independent: A→B = ${iab}, B→A = ${iba}  (ground truth — exact, no float windows)`);
 
 	// --- (3) instrumented production loop, both directions ---
-	probeDirection(A, B, 'prod A→B');
-	probeDirection(B, A, 'prod B→A');
+	probeDirection(A, B, "prod A→B");
+	probeDirection(B, A, "prod B→A");
 
 	// --- (4) reducedClassKey class-invariance on both cells' own bases ---
 	for (const [name, cell] of [
@@ -195,18 +204,34 @@ for (const { i, j } of asym) {
 				if (reducedClassKey(q, u, v) !== k0) violations++;
 			}
 		}
-		log(`  reducedClassKey invariance on ${name}: ${violations} violations over ${cell.cellPolygons.length}×10 translates`);
+		log(
+			`  reducedClassKey invariance on ${name}: ${violations} violations over ${cell.cellPolygons.length}×10 translates`,
+		);
 	}
 }
-log('\ndone.');
+log("\ndone.");
 
 // --- (5) dump ONE concrete invariance violation, reconstructible in a unit test ---
 outer: for (const { i, j } of asym) {
-	for (const [nm, cell] of [[`A`, bucket[i].c], [`B`, bucket[j].c]] as [string, PeriodCell][]) {
+	for (const [nm, cell] of [
+		[`A`, bucket[i].c],
+		[`B`, bucket[j].c],
+	] as [string, PeriodCell][]) {
 		const [u, v] = cell.basisExact;
 		for (const p of cell.cellPolygons) {
 			const k0 = reducedClassKey(p, u, v);
-			for (const [m, n] of [[1,0],[0,1],[-1,0],[0,-1],[1,1],[-1,-1],[2,-1],[-2,1],[3,2],[-3,-2]]) {
+			for (const [m, n] of [
+				[1, 0],
+				[0, 1],
+				[-1, 0],
+				[0, -1],
+				[1, 1],
+				[-1, -1],
+				[2, -1],
+				[-2, 1],
+				[3, 2],
+				[-3, -2],
+			]) {
 				const T = u.scaleRational(BigInt(m), 1n).add(v.scaleRational(BigInt(n), 1n));
 				const q = p.clone();
 				q.translateExact(T);
@@ -215,7 +240,7 @@ outer: for (const { i, j } of asym) {
 					log(`  u.key = ${u.key()}`);
 					log(`  v.key = ${v.key()}`);
 					log(`  poly n=${(p as any).n} name=${p.getName()}`);
-					log(`  vertex keys: ${p.exactVertices!.map((x) => x.key()).join('  ')}`);
+					log(`  vertex keys: ${p.exactVertices!.map((x) => x.key()).join("  ")}`);
 					log(`  edgeDirs: ${JSON.stringify((p as any).edgeDirs)}`);
 					log(`  key(p)   = ${k0}`);
 					log(`  key(p+λ) = ${reducedClassKey(q, u, v)}`);
@@ -225,4 +250,4 @@ outer: for (const { i, j } of asym) {
 		}
 	}
 }
-log('dump done.');
+log("dump done.");

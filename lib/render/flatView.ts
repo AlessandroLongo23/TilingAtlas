@@ -59,7 +59,9 @@ export function isIdentityDeform(m: Mat2 | null | undefined): boolean {
  */
 export function mat2Singulars(m: Mat2): [number, number] {
 	const [a, b, c, d] = m;
-	const E = a * a + b * b, F = c * c + d * d, G = a * c + b * d;
+	const E = a * a + b * b,
+		F = c * c + d * d,
+		G = a * c + b * d;
 	const tr = E + F;
 	const disc = Math.sqrt(Math.max(0, (tr * tr) / 4 - (E * F - G * G)));
 	return [Math.sqrt(Math.max(0, tr / 2 + disc)), Math.sqrt(Math.max(0, tr / 2 - disc))];
@@ -78,7 +80,11 @@ export function deformBasis(v1: Vector, v2: Vector, deform?: Mat2): { v1: Vector
 // The lattice basis (two world-space translation vectors) of a translational cell, plus its
 // determinant. Single source of truth so fill-radius, wrap, and replication never disagree.
 export function latticeBasisFromCell(cellData: TranslationalCellData): { v1: Vector; v2: Vector; det: number } {
-	const basisRaw = cellData?.b ?? cellData?.basis ?? [[1, 0], [0, 1]];
+	const basisRaw = cellData?.b ??
+		cellData?.basis ?? [
+			[1, 0],
+			[0, 1],
+		];
 	const v1 = new Vector(basisRaw[0][0], basisRaw[0][1]);
 	const v2 = new Vector(basisRaw[1][0], basisRaw[1][1]);
 	return { v1, v2, det: v1.x * v2.y - v2.x * v1.y };
@@ -88,17 +94,30 @@ export function latticeBasisFromCell(cellData: TranslationalCellData): { v1: Vec
 // stored in raw world coordinates and are NOT reduced to hug their anchor — a cell can sit whole periods
 // away from the origin — so the fill radii must know where the content actually is. View-invariant
 // (rotation/zoom apply the same linear map to points and basis, so a,b are unchanged).
-export interface LatticeExtent { aMin: number; aMax: number; bMin: number; bMax: number }
+export interface LatticeExtent {
+	aMin: number;
+	aMax: number;
+	bMin: number;
+	bMax: number;
+}
 
 // Lattice extent from a world-space AABB (parseBaseCell already computes one). The world->lattice map is
 // linear, so its extremes over the box are attained at the four corners; the result bounds the extent of
 // every content vertex.
 export function latticeExtentFromBounds(
-	minX: number, maxX: number, minY: number, maxY: number,
-	v1: { x: number; y: number }, v2: { x: number; y: number }, det: number,
+	minX: number,
+	maxX: number,
+	minY: number,
+	maxY: number,
+	v1: { x: number; y: number },
+	v2: { x: number; y: number },
+	det: number,
 ): LatticeExtent {
 	if (Math.abs(det) < DEGENERATE_DET) return { aMin: 0, aMax: 0, bMin: 0, bMax: 0 };
-	let aMin = Infinity, aMax = -Infinity, bMin = Infinity, bMax = -Infinity;
+	let aMin = Infinity,
+		aMax = -Infinity,
+		bMin = Infinity,
+		bMax = -Infinity;
 	for (const x of [minX, maxX]) {
 		for (const y of [minY, maxY]) {
 			const a = (x * v2.y - y * v2.x) / det;
@@ -118,7 +137,8 @@ export function latticeExtentFromBounds(
 // rotated lattice still tiles/wraps seamlessly.
 export function screenLatticeVectors(v1: Vector, v2: Vector, zoom: number, rotation: number, deform?: Mat2) {
 	const d = deformBasis(v1, v2, deform);
-	const c = Math.cos(rotation), s = Math.sin(rotation);
+	const c = Math.cos(rotation),
+		s = Math.sin(rotation);
 	const e = (v: Vector) => ({ x: zoom * (c * v.x + s * v.y), y: zoom * (s * v.x - c * v.y) });
 	return { e1: e(d.v1), e2: e(d.v2) };
 }
@@ -134,8 +154,15 @@ export function screenLatticeVectors(v1: Vector, v2: Vector, zoom: number, rotat
 // the origin), which is exactly what left uncovered corner wedges on skewed/displaced cells. The +1 in
 // the clamp is safety: stroke quads overhang the fill AABB by half a screen stroke width, plus fp slop.
 export function computeFillRadii(
-	v1: Vector, v2: Vector, det: number, zoomForFill: number, width: number, height: number, rotation: number,
-	extent: LatticeExtent, deform?: Mat2,
+	v1: Vector,
+	v2: Vector,
+	det: number,
+	zoomForFill: number,
+	width: number,
+	height: number,
+	rotation: number,
+	extent: LatticeExtent,
+	deform?: Mat2,
 ): { Ri: number; Rj: number } {
 	// The DEFORMED cell is what has to cover the screen, so the degeneracy test is on det(D)*det — a
 	// near-singular D flattens the lattice however healthy the tiling's own basis is.
@@ -143,8 +170,10 @@ export function computeFillRadii(
 	if (Math.abs(dDet) < DEGENERATE_DET || zoomForFill <= 0) return { Ri: 6, Rj: 6 };
 	const { e1, e2 } = screenLatticeVectors(v1, v2, zoomForFill, rotation, deform);
 	const detM = e1.x * e2.y - e2.x * e1.y; // = zoomForFill^2 * det(D) * det (rotation-invariant)
-	let maxA = 0, maxB = 0;
-	const hw = width / 2, hh = height / 2;
+	let maxA = 0,
+		maxB = 0;
+	const hw = width / 2,
+		hh = height / 2;
 	for (const cx of [-hw, hw]) {
 		for (const cy of [-hh, hh]) {
 			const a = (cx * e2.y - cy * e2.x) / detM;
@@ -209,8 +238,15 @@ function emptyGrid(r: number): FillGrid {
  * clause is the whole difference from the rectangle, which takes b over the entire viewport regardless.
  */
 export function computeFillGrid(
-	v1: Vector, v2: Vector, det: number, zoomForFill: number, width: number, height: number, rotation: number,
-	extent: LatticeExtent, deform?: Mat2,
+	v1: Vector,
+	v2: Vector,
+	det: number,
+	zoomForFill: number,
+	width: number,
+	height: number,
+	rotation: number,
+	extent: LatticeExtent,
+	deform?: Mat2,
 ): FillGrid {
 	const dDet = det * (isIdentityDeform(deform) ? 1 : mat2Det(deform as Mat2));
 	if (Math.abs(dDet) < DEGENERATE_DET || zoomForFill <= 0) return emptyGrid(6);
@@ -219,14 +255,24 @@ export function computeFillGrid(
 	if (Math.abs(detM) < DEGENERATE_DET) return emptyGrid(6);
 
 	// The four screen corners in lattice coordinates, in perimeter order so consecutive pairs are edges.
-	const hw = width / 2, hh = height / 2;
+	const hw = width / 2,
+		hh = height / 2;
 	const corners: Array<[number, number]> = [];
-	for (const [cx, cy] of [[-hw, -hh], [hw, -hh], [hw, hh], [-hw, hh]] as Array<[number, number]>) {
+	for (const [cx, cy] of [
+		[-hw, -hh],
+		[hw, -hh],
+		[hw, hh],
+		[-hw, hh],
+	] as Array<[number, number]>) {
 		corners.push([(cx * e2.y - cy * e2.x) / detM, (-cx * e1.y + cy * e1.x) / detM]);
 	}
 
-	let aMinV = Infinity, aMaxV = -Infinity;
-	for (const [a] of corners) { if (a < aMinV) aMinV = a; if (a > aMaxV) aMaxV = a; }
+	let aMinV = Infinity,
+		aMaxV = -Infinity;
+	for (const [a] of corners) {
+		if (a < aMinV) aMinV = a;
+		if (a > aMaxV) aMaxV = a;
+	}
 
 	// Rows. The 0.5 is the wrap residual; +/-1 of slack matches computeFillRadii's own safety margin
 	// (stroke quads overhang the fill AABB by half a screen stroke width, plus fp slop).
@@ -242,11 +288,15 @@ export function computeFillGrid(
 		const stripLo = i + extent.aMin - 0.5;
 		const stripHi = i + extent.aMax + 0.5;
 		// Clip the parallelogram to the strip: take every corner inside it, plus every edge crossing.
-		let bLo = Infinity, bHi = -Infinity;
+		let bLo = Infinity,
+			bHi = -Infinity;
 		for (let k = 0; k < 4; k++) {
 			const [pa, pb] = corners[k];
 			const [qa, qb] = corners[(k + 1) % 4];
-			if (pa >= stripLo && pa <= stripHi) { if (pb < bLo) bLo = pb; if (pb > bHi) bHi = pb; }
+			if (pa >= stripLo && pa <= stripHi) {
+				if (pb < bLo) bLo = pb;
+				if (pb > bHi) bHi = pb;
+			}
 			for (const bound of [stripLo, stripHi]) {
 				if ((pa - bound) * (qa - bound) < 0) {
 					const b = pb + ((bound - pa) / (qa - pa)) * (qb - pb);
@@ -256,7 +306,11 @@ export function computeFillGrid(
 			}
 		}
 		const r = i - iLo;
-		if (bLo > bHi) { jLo[r] = 0; jHi[r] = -1; continue; } // row misses the viewport entirely
+		if (bLo > bHi) {
+			jLo[r] = 0;
+			jHi[r] = -1;
+			continue;
+		} // row misses the viewport entirely
 		const lo = Math.floor(bLo - 0.5 - extent.bMax) - 1;
 		const hi = Math.ceil(bHi + 0.5 - extent.bMin) + 1;
 		jLo[r] = lo;
@@ -269,11 +323,19 @@ export function computeFillGrid(
 	// Over budget: drop rows symmetrically from the outside until it fits. Rows are ordered by distance
 	// from the view centre only loosely, but the centre row is always the densest part of the band, so
 	// trimming the ends keeps what is on screen and sheds what is furthest out.
-	let lo = 0, hi = rows - 1, kept = count;
+	let lo = 0,
+		hi = rows - 1,
+		kept = count;
 	while (kept > MAX_FILL_INSTANCES && lo < hi) {
 		const loN = jHi[lo] - jLo[lo] + 1;
 		const hiN = jHi[hi] - jLo[hi] + 1;
-		if (loN <= hiN) { kept -= Math.max(0, loN); lo++; } else { kept -= Math.max(0, hiN); hi--; }
+		if (loN <= hiN) {
+			kept -= Math.max(0, loN);
+			lo++;
+		} else {
+			kept -= Math.max(0, hiN);
+			hi--;
+		}
 	}
 	return {
 		iLo: iLo + lo,
@@ -306,7 +368,13 @@ export function fillGridInstances(g: FillGrid): Float32Array {
 // WORLD lattice vector L = ra*v1 + rb*v2 that the wrap removed: the Islamic noise is non-periodic and
 // must be sampled at the true (unwrapped) position (world - L), or it snaps at every cell boundary.
 export function wrapOffset(
-	offset: Vector, v1: Vector, v2: Vector, det: number, zoom: number, rotation: number, deform?: Mat2,
+	offset: Vector,
+	v1: Vector,
+	v2: Vector,
+	det: number,
+	zoom: number,
+	rotation: number,
+	deform?: Mat2,
 ): { draw: Vector; worldShiftX: number; worldShiftY: number } {
 	const dDet = det * (isIdentityDeform(deform) ? 1 : mat2Det(deform as Mat2));
 	if (Math.abs(dDet) < DEGENERATE_DET || zoom <= 0) {
@@ -318,7 +386,8 @@ export function wrapOffset(
 	const detM = e1.x * e2.y - e2.x * e1.y;
 	const a = (offset.x * e2.y - offset.y * e2.x) / detM;
 	const b = (-offset.x * e1.y + offset.y * e1.x) / detM;
-	const ra = Math.round(a), rb = Math.round(b);
+	const ra = Math.round(a),
+		rb = Math.round(b);
 	return {
 		draw: new Vector(offset.x - ra * e1.x - rb * e2.x, offset.y - ra * e1.y - rb * e2.y),
 		worldShiftX: ra * v1.x + rb * v2.x,
@@ -346,8 +415,10 @@ export function flatWorldToClip(wx: number, wy: number, i: number, j: number, p:
 	// D is linear, so deforming the replicated point is the same as deforming the cell and the basis —
 	// which is exactly why the shader applies it once, here, and the instance grid needs no extra data.
 	const d = isIdentityDeform(p.deform) ? { x: rawX, y: rawY } : applyMat2(p.deform as Mat2, rawX, rawY);
-	const worldX = d.x, worldY = d.y;
-	const cos = Math.cos(p.rot), sin = Math.sin(p.rot);
+	const worldX = d.x,
+		worldY = d.y;
+	const cos = Math.cos(p.rot),
+		sin = Math.sin(p.rot);
 	const sx = p.offset.x + p.zoom * (cos * worldX + sin * worldY);
 	const sy = p.offset.y + p.zoom * (sin * worldX - cos * worldY);
 	return { sx, sy, clipX: sx / p.halfW, clipY: -sy / p.halfH };

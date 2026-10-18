@@ -82,10 +82,14 @@ export function useAutomatonEngine(plan: BoardPlan | null) {
 			const parsed = parseRule(c.rule);
 			const range = Math.max(1, c.range, parsed.range);
 			const nb = neighborhoodOf(adj, c.neighborhood, range);
-			const perShape = Object.fromEntries(
-				Object.entries(c.perShapeRules).map(([k, v]) => [Number(k), parseRule(v)]),
+			const perShape = Object.fromEntries(Object.entries(c.perShapeRules).map(([k, v]) => [Number(k), parseRule(v)]));
+			const table = buildRuleTable(
+				parsed,
+				nb.map((l) => l.length),
+				adj.sides,
+				c.semantics,
+				perShape,
 			);
-			const table = buildRuleTable(parsed, nb.map((l) => l.length), adj.sides, c.semantics, perShape);
 			metaRef.current = { degrees: nb.map((l) => l.length), sides: adj.sides, slots: adj.n };
 
 			// The board — periods and, on a non-orientable surface, the deck transformation whose invariance

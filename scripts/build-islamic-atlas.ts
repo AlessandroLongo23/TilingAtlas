@@ -12,12 +12,24 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { ReferenceTiling, IslamicSystem } from "@/lib/services/referenceAtlas";
-import { stringifyAtlas } from './atlas/encode.mjs';
+import { stringifyAtlas } from "./atlas/encode.mjs";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
 import {
-	assemble, validateTiling, regular, girih, center, rotate, polygonFromTurns, polygonHue,
-	parallelohexagonCell, parallelogramCell, area,
-	type Placement, type Basis, type RenderCell, type Pt,
+	assemble,
+	validateTiling,
+	regular,
+	girih,
+	center,
+	rotate,
+	polygonFromTurns,
+	polygonHue,
+	parallelohexagonCell,
+	parallelogramCell,
+	area,
+	type Placement,
+	type Basis,
+	type RenderCell,
+	type Pt,
 } from "./islamic/lib";
 
 const ROOT = process.cwd();
@@ -26,7 +38,10 @@ const LOG_PATH = path.join(ROOT, "experiments", "results", "islamic-atlas-build.
 const ATLAS_PATH = path.join(ROOT, "public", "reference-atlas.json");
 
 const logLines: string[] = [];
-function log(msg = ""): void { logLines.push(msg); console.log(msg); }
+function log(msg = ""): void {
+	logLines.push(msg);
+	console.log(msg);
+}
 
 const SQRT2 = Math.SQRT2;
 
@@ -53,7 +68,10 @@ function fourfold488(): RenderCell {
 		{ tile: oct, at: [0, 0], n: 8 },
 		{ tile: sq, at: [p / 2, p / 2], n: 4 },
 	];
-	const basis: Basis = [[p, 0], [0, p]];
+	const basis: Basis = [
+		[p, 0],
+		[0, p],
+	];
 	return assemble(placements, basis);
 }
 
@@ -97,47 +115,71 @@ function fourfoldB(): RenderCell {
 
 const SPECS: Spec[] = [
 	{
-		id: "isl-4a-488", system: "fourfold-a", family: "4.8.8", k: 1,
+		id: "isl-4a-488",
+		system: "fourfold-a",
+		family: "4.8.8",
+		k: 1,
 		name: "Octagon and square (eight-point star)",
-		note: "Fourfold system A base tessellation (4.8.8, the truncated-square / octagon-square grid). The " +
+		note:
+			"Fourfold system A base tessellation (4.8.8, the truncated-square / octagon-square grid). The " +
 			"acute strapwork on it is the classic eight-pointed khatam star. Bonner §3.1.3. Curated historical " +
 			"transcription; k descriptive, not a completeness claim.",
 		build: fourfold488,
 	},
 	{
-		id: "isl-5f-bobbin", system: "fivefold", family: "6", k: 1,
+		id: "isl-5f-bobbin",
+		system: "fivefold",
+		family: "6",
+		k: 1,
 		name: "Bobbin (elongated hexagon) tessellation",
-		note: "Fivefold system, the girih bobbin (shesh band) tiling — a parallelohexagon, so it tiles by " +
+		note:
+			"Fivefold system, the girih bobbin (shesh band) tiling — a parallelohexagon, so it tiles by " +
 			"translation. Its strapwork is a genuine 10-fold pattern. Bonner §3.1.5. Curated; k descriptive.",
 		build: fivefoldBobbin,
 	},
 	{
-		id: "isl-5f-rhombus", system: "fivefold", family: "4", k: 1,
+		id: "isl-5f-rhombus",
+		system: "fivefold",
+		family: "4",
+		k: 1,
 		name: "Wide rhombus (torange) tessellation",
-		note: "Fivefold system, the girih wide rhombus (torange, 72°/108°) as the repeat unit — Bonner's " +
+		note:
+			"Fivefold system, the girih wide rhombus (torange, 72°/108°) as the repeat unit — Bonner's " +
 			"'wide rhombic repeat' (§3.1.7). A parallelogram, so it tiles by translation. Curated; k descriptive.",
 		build: fivefoldRhombus,
 	},
 	{
-		id: "isl-5f-bowtie", system: "fivefold", family: "6", k: 1,
+		id: "isl-5f-bowtie",
+		system: "fivefold",
+		family: "6",
+		k: 1,
 		name: "Bowtie (concave hexagon) tessellation",
-		note: "Fivefold system, the girih bowtie (sormeh dan) — a non-convex parallelohexagon that tiles by " +
+		note:
+			"Fivefold system, the girih bowtie (sormeh dan) — a non-convex parallelohexagon that tiles by " +
 			"translation (interlocking hourglasses). The engine's girih enumeration confirms the bowtie tiles " +
 			"1-uniformly; this is one such arrangement. Curated; k descriptive.",
 		build: fivefoldBowtie,
 	},
 	{
-		id: "isl-7f-parallelohex", system: "sevenfold", family: "6", k: 1,
+		id: "isl-7f-parallelohex",
+		system: "sevenfold",
+		family: "6",
+		k: 1,
 		name: "Sevenfold parallelohexagon",
-		note: "Sevenfold system (rare; Bonner §3.1.14): a heptagon-grid parallelohexagon (angles multiples of " +
+		note:
+			"Sevenfold system (rare; Bonner §3.1.14): a heptagon-grid parallelohexagon (angles multiples of " +
 			"180/7). Tiles by translation; its strapwork carries 7- and 14-point motifs. Minimal representative " +
 			"of the sevenfold angular geometry. Curated; k descriptive.",
 		build: sevenfold,
 	},
 	{
-		id: "isl-4b-parallelohex", system: "fourfold-b", family: "6", k: 1,
+		id: "isl-4b-parallelohex",
+		system: "fourfold-b",
+		family: "6",
+		k: 1,
 		name: "Fourfold-B eightfold parallelohexagon",
-		note: "Fourfold system B (Bonner §3.1.4): the 8-fold system with a 22.5° angular signature (dual of " +
+		note:
+			"Fourfold system B (Bonner §3.1.4): the 8-fold system with a 22.5° angular signature (dual of " +
 			"4.8²). A 22.5°-grid parallelohexagon (angles 112.5°/135°), tiling by translation. Representative of " +
 			"the fourfold-B geometry. Curated; k descriptive.",
 		build: fourfoldB,
@@ -145,30 +187,46 @@ const SPECS: Spec[] = [
 	// regular-system entries reuse certified atlas cells (they ARE those tilings, re-framed under the
 	// Islamic polygonal technique). 12-fold and 6-fold stars come from these on median/obtuse openings.
 	{
-		id: "isl-reg-3.4.6.4", system: "regular", family: "3.4.6.4", k: 1,
+		id: "isl-reg-3.4.6.4",
+		system: "regular",
+		family: "3.4.6.4",
+		k: 1,
 		name: "Rhombitrihexagonal (3.4.6.4)",
-		note: "Regular-polygon system (Bonner §3.1.1): the 3.4.6.4 Archimedean grid, an underlying tessellation " +
+		note:
+			"Regular-polygon system (Bonner §3.1.1): the 3.4.6.4 Archimedean grid, an underlying tessellation " +
 			"for six- and twelve-point patterns. Same tiling as the certified atlas entry, re-framed.",
 		reuseId: "t1006",
 	},
 	{
-		id: "isl-reg-4.6.12", system: "regular", family: "4.6.12", k: 1,
+		id: "isl-reg-4.6.12",
+		system: "regular",
+		family: "4.6.12",
+		k: 1,
 		name: "Truncated trihexagonal (4.6.12)",
-		note: "Regular-polygon system (Bonner §3.1.1): the 4.6.12 grid, base for twelve-point star patterns. " +
+		note:
+			"Regular-polygon system (Bonner §3.1.1): the 4.6.12 grid, base for twelve-point star patterns. " +
 			"Same tiling as the certified atlas entry, re-framed.",
 		reuseId: "t1003",
 	},
 	{
-		id: "isl-reg-3.12.12", system: "regular", family: "3.12.12", k: 1,
+		id: "isl-reg-3.12.12",
+		system: "regular",
+		family: "3.12.12",
+		k: 1,
 		name: "Truncated hexagonal (3.12.12)",
-		note: "Regular-polygon system (Bonner §3.1.1): the 3.12.12 grid — dodecagons carry twelve-point stars. " +
+		note:
+			"Regular-polygon system (Bonner §3.1.1): the 3.12.12 grid — dodecagons carry twelve-point stars. " +
 			"Same tiling as the certified atlas entry, re-framed.",
 		reuseId: "t1004",
 	},
 	{
-		id: "isl-reg-3.6.3.6", system: "regular", family: "3.6.3.6", k: 1,
+		id: "isl-reg-3.6.3.6",
+		system: "regular",
+		family: "3.6.3.6",
+		k: 1,
 		name: "Trihexagonal (3.6.3.6)",
-		note: "Regular-polygon system (Bonner §3.1.1): the 3.6.3.6 (kagome) grid, base for six-point star " +
+		note:
+			"Regular-polygon system (Bonner §3.1.1): the 3.6.3.6 (kagome) grid, base for six-point star " +
 			"patterns. Same tiling as the certified atlas entry, re-framed.",
 		reuseId: "t1007",
 	},
@@ -182,9 +240,20 @@ const SPECS: Spec[] = [
 // developed to float geometry — genuinely new tilings the hand-curation could not reach (esp. decagonal).
 const DEVELOPED_PATH = path.join(ROOT, "experiments", "results", "girih-developed.cells.json");
 const GIRIH_N: Record<string, number> = {
-	"10": 10, "5": 5, "rhomb-4.6.4.6": 4, "bobbin-4.8.8.4.8.8": 6, "bowtie-4.4.12.4.4.12": 6,
+	"10": 10,
+	"5": 5,
+	"rhomb-4.6.4.6": 4,
+	"bobbin-4.8.8.4.8.8": 6,
+	"bowtie-4.4.12.4.4.12": 6,
 };
-interface DevRec { id: string; k: number; T1: number[]; T2: number[]; areaOk: boolean; faces: { tile: string; verts: number[][] }[] }
+interface DevRec {
+	id: string;
+	k: number;
+	T1: number[];
+	T2: number[];
+	areaOk: boolean;
+	faces: { tile: string; verts: number[][] }[];
+}
 
 // Congruence-invariant fingerprint of a translational tiling: (k, sorted multiset of tile areas, |detΛ|).
 // Rotation, reflection, and translation preserve all three, so two congruent tilings share it. Used to drop
@@ -192,12 +261,20 @@ interface DevRec { id: string; k: number; T1: number[]; T2: number[]; areaOk: bo
 // both the hand-authored fivefold set and the engine's k=1 output (that's the visible cross-set dup). Side
 // counts can't separate bobbin from bowtie (both n=6); tile AREA can, which is why the fingerprint uses it.
 function tilingFingerprint(k: number, tileVerts: Pt[][], b1: number[], b2: number[]): string {
-	const areas = tileVerts.map((v) => area(v)).sort((a, b) => a - b).map((a) => a.toFixed(3));
+	const areas = tileVerts
+		.map((v) => area(v))
+		.sort((a, b) => a - b)
+		.map((a) => a.toFixed(3));
 	const det = Math.abs(b1[0] * b2[1] - b1[1] * b2[0]).toFixed(3);
 	return `${k}|${areas.join(",")}|${det}`;
 }
 function cellFingerprint(k: number, cell: RenderCell): string {
-	return tilingFingerprint(k, cell.cellPolygons.map((p) => p.vertices), cell.basis[0], cell.basis[1]);
+	return tilingFingerprint(
+		k,
+		cell.cellPolygons.map((p) => p.vertices),
+		cell.basis[0],
+		cell.basis[1],
+	);
 }
 
 // A developed tiling is NON-PRIMITIVE (a supercell) if it has a tile-preserving translation FINER than its
@@ -210,11 +287,13 @@ function cellFingerprint(k: number, cell: RenderCell): string {
 function isNonPrimitive(faces: DevRec["faces"], T1: number[], T2: number[]): boolean {
 	const d = T1[0] * T2[1] - T1[1] * T2[0];
 	const frac = (x: number, y: number): [number, number] => {
-		const u = (x * T2[1] - y * T2[0]) / d, w = (T1[0] * y - T1[1] * x) / d;
+		const u = (x * T2[1] - y * T2[0]) / d,
+			w = (T1[0] * y - T1[1] * x) / d;
 		return [u - Math.floor(u + 1e-7), w - Math.floor(w + 1e-7)];
 	};
 	const cents = faces.map((f) => {
-		const vs = f.verts, n = vs.length;
+		const vs = f.verts,
+			n = vs.length;
 		return { cx: vs.reduce((s, v) => s + v[0], 0) / n, cy: vs.reduce((s, v) => s + v[1], 0) / n, t: f.tile };
 	});
 	const keyOf = (cx: number, cy: number, t: string) => {
@@ -224,7 +303,8 @@ function isNonPrimitive(faces: DevRec["faces"], T1: number[], T2: number[]): boo
 	const cset = new Set(cents.map((c) => keyOf(c.cx, c.cy, c.t)));
 	const a = cents[0];
 	for (const bb of cents) {
-		const vx = bb.cx - a.cx, vy = bb.cy - a.cy;
+		const vx = bb.cx - a.cx,
+			vy = bb.cy - a.cy;
 		if (Math.abs(vx) < 1e-6 && Math.abs(vy) < 1e-6) continue;
 		if (cents.every((c) => cset.has(keyOf(c.cx + vx, c.cy + vy, c.t)))) return true;
 	}
@@ -258,8 +338,16 @@ function developedGirihTilings(curatedFps: Set<string>): ReferenceTiling[] {
 	// Bonner citation); the engine keeps only what hand-curation didn't already ship.
 	let droppedCurated = 0;
 	const reps = repsAll.filter((r) => {
-		const fp = tilingFingerprint(r.k, r.faces.map((f) => f.verts as Pt[]), r.T1, r.T2);
-		if (curatedFps.has(fp)) { droppedCurated++; return false; }
+		const fp = tilingFingerprint(
+			r.k,
+			r.faces.map((f) => f.verts as Pt[]),
+			r.T1,
+			r.T2,
+		);
+		if (curatedFps.has(fp)) {
+			droppedCurated++;
+			return false;
+		}
 		return true;
 	});
 	const out: ReferenceTiling[] = [];
@@ -272,7 +360,10 @@ function developedGirihTilings(curatedFps: Set<string>): ReferenceTiling[] {
 		});
 		const cell: RenderCell = { cellPolygons, basis: [r.T1 as Pt, r.T2 as Pt] };
 		const v = validateTiling(cell, 1600);
-		if (!v.ok) { rejected++; continue; }
+		if (!v.ok) {
+			rejected++;
+			continue;
+		}
 		const sides = r.faces.map((f) => GIRIH_N[f.tile] ?? f.verts.length);
 		const family = [...new Set(sides)].sort((a, b) => a - b).join(".");
 		counters[r.k] = (counters[r.k] ?? 0) + 1;
@@ -284,13 +375,19 @@ function developedGirihTilings(curatedFps: Set<string>): ReferenceTiling[] {
 			renderCell: cell as ReferenceTiling["renderCell"],
 			islamicSystem: "fivefold",
 			discoverer: "Čtrnáct engine",
-			note: "Fivefold girih k-uniform tiling — enumerated by the Čtrnáct engine (girih palette, D=20) and " +
+			note:
+				"Fivefold girih k-uniform tiling — enumerated by the Čtrnáct engine (girih palette, D=20) and " +
 				"developed to float geometry (area-certified Σface=|detΛ|, coverage-verified). A combinatorial " +
 				"candidate developed for rendering, not exact-geometry certified. See docs/ISLAMIC_TILINGS.md.",
 		});
 	}
-	log(`  developed girih: ${out.length} distinct primitive tilings imported (${droppedNonPrim} non-primitive supercells dropped, ${droppedCurated} curated duplicates dropped, ${rejected} failed coverage; ${rawRecs.length} developed → ${recs.length} primitive → ${repsAll.length} reps → ${reps.length} non-curated → ${out.length})`);
-	for (const k of Object.keys(counters).map(Number).sort((a, b) => a - b)) log(`    k=${k}: ${counters[k]}`);
+	log(
+		`  developed girih: ${out.length} distinct primitive tilings imported (${droppedNonPrim} non-primitive supercells dropped, ${droppedCurated} curated duplicates dropped, ${rejected} failed coverage; ${rawRecs.length} developed → ${recs.length} primitive → ${repsAll.length} reps → ${reps.length} non-curated → ${out.length})`,
+	);
+	for (const k of Object.keys(counters)
+		.map(Number)
+		.sort((a, b) => a - b))
+		log(`    k=${k}: ${counters[k]}`);
 	return out;
 }
 
@@ -319,7 +416,11 @@ function main(): void {
 		let renderCell: ReferenceTiling["renderCell"];
 		if (spec.reuseId) {
 			const cell = reuse.get(spec.reuseId);
-			if (!cell) { log(`  ⚑ ${spec.id}: reuse cell ${spec.reuseId} not found — SKIPPED`); skipped++; continue; }
+			if (!cell) {
+				log(`  ⚑ ${spec.id}: reuse cell ${spec.reuseId} not found — SKIPPED`);
+				skipped++;
+				continue;
+			}
 			renderCell = cell;
 			log(`  ${spec.id}  ${spec.family}  (reused ${spec.reuseId})`);
 		} else if (spec.build) {
@@ -331,7 +432,9 @@ function main(): void {
 				continue;
 			}
 			renderCell = cell as ReferenceTiling["renderCell"];
-			log(`  ${spec.id}  ${spec.family}  Σarea=${v.areaSum.toFixed(4)} |detΛ|=${v.det.toFixed(4)} vconfigs=[${v.vertexConfigs.join(" ")}]`);
+			log(
+				`  ${spec.id}  ${spec.family}  Σarea=${v.areaSum.toFixed(4)} |detΛ|=${v.det.toFixed(4)} vconfigs=[${v.vertexConfigs.join(" ")}]`,
+			);
 		} else {
 			continue;
 		}
@@ -355,7 +458,9 @@ function main(): void {
 	fs.mkdirSync(path.dirname(OUT_PATH), { recursive: true });
 	fs.writeFileSync(OUT_PATH, stringifyAtlas(out) + "\n");
 	const sizeKB = (fs.statSync(OUT_PATH).size / 1024).toFixed(1);
-	log(`  wrote ${out.length} Islamic tilings (${skipped} skipped) → ${path.relative(ROOT, OUT_PATH)} (${sizeKB} KB), elapsed ${((Date.now() - t0) / 1000).toFixed(2)}s`);
+	log(
+		`  wrote ${out.length} Islamic tilings (${skipped} skipped) → ${path.relative(ROOT, OUT_PATH)} (${sizeKB} KB), elapsed ${((Date.now() - t0) / 1000).toFixed(2)}s`,
+	);
 	fs.mkdirSync(path.dirname(LOG_PATH), { recursive: true });
 	fs.writeFileSync(LOG_PATH, logLines.join("\n") + "\n");
 }

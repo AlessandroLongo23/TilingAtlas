@@ -99,9 +99,7 @@ describe("groupIntoGridOrbits: exact grid point-group orbit grouping (lem:orbitd
 		// No pure rotation reaches conj(Λ): a coincidence conj(Λ) = ζ^r·Λ would put the reflection
 		// ζ^{-r}∘conj in the stabilizer of Λ, forcing hol ≥ 4 — contradicting hol = 2 asserted above.
 		for (let rot = 0; rot < N; rot++) {
-			expect(
-				sameLattice(conj[0], conj[1], gridImage(OBL_U, rot, false), gridImage(OBL_V, rot, false))
-			).toBe(false);
+			expect(sameLattice(conj[0], conj[1], gridImage(OBL_U, rot, false), gridImage(OBL_V, rot, false))).toBe(false);
 		}
 		verifyMaps(groups, lattices);
 	});
@@ -112,8 +110,16 @@ describe("groupIntoGridOrbits: exact grid point-group orbit grouping (lem:orbitd
 		// Pinned here at the vector level, over the full group (all 2N elements).
 		const w = OBL_V; // a non-symmetric vector: no g fixes it except the identity
 		for (let rot = 0; rot < N; rot++) {
-			expect(gridImage(gridImage(w, rot, false), (N - rot) % N, false).sub(w).isZero()).toBe(true);
-			expect(gridImage(gridImage(w, rot, true), rot, true).sub(w).isZero()).toBe(true);
+			expect(
+				gridImage(gridImage(w, rot, false), (N - rot) % N, false)
+					.sub(w)
+					.isZero(),
+			).toBe(true);
+			expect(
+				gridImage(gridImage(w, rot, true), rot, true)
+					.sub(w)
+					.isZero(),
+			).toBe(true);
 		}
 	});
 
@@ -134,7 +140,12 @@ describe("groupIntoGridOrbits: exact grid point-group orbit grouping (lem:orbitd
 			verifyMaps(groups, lattices);
 			// map member indices back to base labels so partitions are comparable across shuffles
 			return groups
-				.map((g) => g.memberMaps.map((m) => perm[m.idx]).sort((a, b) => a - b).join(","))
+				.map((g) =>
+					g.memberMaps
+						.map((m) => perm[m.idx])
+						.sort((a, b) => a - b)
+						.join(","),
+				)
 				.sort();
 		};
 		const p1 = partitionOf(perm1);

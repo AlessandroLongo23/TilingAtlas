@@ -151,7 +151,13 @@ export function useSheet(
 
 /** The dimmed page under an open sheet; a tap on it closes the sheet. */
 export function SheetBackdrop({ onClose, className }: { onClose: () => void; className?: string }) {
-	return <div aria-hidden onClick={onClose} className={cn("ta-backdrop-in fixed inset-0 z-50 bg-black/35 md:hidden", className)} />;
+	return (
+		<div
+			aria-hidden
+			onClick={onClose}
+			className={cn("ta-backdrop-in fixed inset-0 z-50 bg-black/35 md:hidden", className)}
+		/>
+	);
 }
 
 /** The short bar that says "this drags". Decorative; the header around it takes the gesture. */
@@ -159,7 +165,10 @@ export function SheetGrabBar({ className }: { className?: string }) {
 	return (
 		<span
 			aria-hidden
-			className={cn("absolute left-1/2 top-1.5 h-1 w-9 -translate-x-1/2 rounded-full bg-line-strong md:hidden", className)}
+			className={cn(
+				"absolute top-1.5 left-1/2 h-1 w-9 -translate-x-1/2 rounded-full bg-line-strong md:hidden",
+				className,
+			)}
 		/>
 	);
 }
@@ -205,7 +214,7 @@ export function SheetHeader({
 		<div
 			{...swipe}
 			className={cn(
-				"relative flex h-14 shrink-0 touch-none select-none items-center gap-1 border-b border-line-subtle pl-4 pr-1.5 md:hidden",
+				"relative flex h-14 shrink-0 touch-none items-center gap-1 border-b border-line-subtle pr-1.5 pl-4 select-none md:hidden",
 				className,
 			)}
 		>
@@ -269,14 +278,15 @@ export function SheetTrigger({
 			aria-controls={controls}
 			className={cn(
 				"hidden h-11 shrink-0 items-center gap-2 rounded-full bg-fg px-4 text-sm font-medium text-fg-inverse max-md:inline-flex",
-				floating && "fixed bottom-[calc(env(safe-area-inset-bottom)+16px)] left-1/2 z-40 -translate-x-1/2 px-5 shadow-lg",
+				floating &&
+					"fixed bottom-[calc(env(safe-area-inset-bottom)+16px)] left-1/2 z-40 -translate-x-1/2 px-5 shadow-lg",
 				className,
 			)}
 		>
 			<Icon size={16} aria-hidden />
 			{label}
 			{count ? (
-				<span className="min-w-5 rounded-full bg-accent px-1.5 text-center text-xs tabular-nums leading-5 text-accent-contrast">
+				<span className="min-w-5 rounded-full bg-accent px-1.5 text-center text-xs leading-5 text-accent-contrast tabular-nums">
 					{count}
 				</span>
 			) : null}
@@ -503,7 +513,14 @@ export function useDockSheet(
 		const dt = last.t - first.t;
 		// Positive = growing (finger moving up).
 		const v = cancelled || dt <= 0 ? 0 : (first.y - last.y) / dt;
-		const snap = SNAPS[pickSnap(visible, v, SNAPS.map((s) => measure(snapCss(s, half))))];
+		const snap =
+			SNAPS[
+				pickSnap(
+					visible,
+					v,
+					SNAPS.map((s) => measure(snapCss(s, half))),
+				)
+			];
 		animateTo(snap);
 		onSnap(snap);
 	};
@@ -523,7 +540,10 @@ export function useDockSheet(
 		let taken = -1;
 		const onStart = (e: TouchEvent) => {
 			const t = e.touches[0];
-			start = e.touches.length === 1 && !dragRef.current && pullable(e.target, box) ? { id: t.identifier, y: t.clientY } : null;
+			start =
+				e.touches.length === 1 && !dragRef.current && pullable(e.target, box)
+					? { id: t.identifier, y: t.clientY }
+					: null;
 		};
 		const onMove = (e: TouchEvent) => {
 			const t = Array.from(e.changedTouches).find((c) => c.identifier === (start?.id ?? taken));
@@ -533,7 +553,8 @@ export function useDockSheet(
 				if (Math.abs(dy) < TAP_SLOP) return;
 				const s = start;
 				start = null;
-				if (dy < 0 || scrolledDown(e.target, box) || !e.cancelable || !pull.current.begin(s.id, s.y, e.timeStamp)) return;
+				if (dy < 0 || scrolledDown(e.target, box) || !e.cancelable || !pull.current.begin(s.id, s.y, e.timeStamp))
+					return;
 				taken = s.id;
 			}
 			if (taken !== t.identifier) return;
@@ -584,7 +605,8 @@ function pullable(t: EventTarget | null, box: HTMLElement) {
 
 /** Some box from `t` up to `box` is scrolled away from its top, so a pull down scrolls it. */
 function scrolledDown(t: EventTarget | null, box: HTMLElement) {
-	for (let el = t as HTMLElement | null; el && el !== box.parentElement; el = el.parentElement) if (el.scrollTop > 0) return true;
+	for (let el = t as HTMLElement | null; el && el !== box.parentElement; el = el.parentElement)
+		if (el.scrollTop > 0) return true;
 	return false;
 }
 
@@ -604,7 +626,8 @@ export function pickSnap(visible: number, v: number, snaps: number[]): number {
 	}
 	const projected = visible + v * 150;
 	let pick = 0;
-	for (let i = 1; i < snaps.length; i++) if (Math.abs(snaps[i] - projected) < Math.abs(snaps[pick] - projected)) pick = i;
+	for (let i = 1; i < snaps.length; i++)
+		if (Math.abs(snaps[i] - projected) < Math.abs(snaps[pick] - projected)) pick = i;
 	return pick;
 }
 
@@ -612,7 +635,15 @@ export function pickSnap(visible: number, v: number, snaps: number[]): number {
  * The dock's grab strip: a full-width, 20px button over the peek row, so a keyboard can open and close
  * the sheet and a finger always has somewhere to drag, whatever the page puts in the peek row.
  */
-export function SheetGrabHandle({ expanded, onToggle, label }: { expanded: boolean; onToggle: () => void; label: string }) {
+export function SheetGrabHandle({
+	expanded,
+	onToggle,
+	label,
+}: {
+	expanded: boolean;
+	onToggle: () => void;
+	label: string;
+}) {
 	return (
 		<button
 			type="button"

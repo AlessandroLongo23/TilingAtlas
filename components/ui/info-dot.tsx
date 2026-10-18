@@ -26,7 +26,9 @@ export function InfoDot({
 			<Tooltip
 				side={side}
 				delay={120}
-				content={<div className="space-y-1.5 text-[11px] leading-relaxed text-fg-secondary max-md:text-[13px]">{children}</div>}
+				content={
+					<div className="space-y-1.5 text-[11px] leading-relaxed text-fg-secondary max-md:text-[13px]">{children}</div>
+				}
 			>
 				<button
 					type="button"
@@ -36,7 +38,7 @@ export function InfoDot({
 						// A 14px dot is too small to tap: on a phone the button is a 44px box around it, and it takes
 						// that room in the row, so it never lies over a neighbour's target or under one.
 						"max-md:size-11 max-md:items-center max-md:justify-center max-md:rounded-control",
-						"hover:opacity-100 hover:text-fg focus-visible:opacity-100 focus-visible:text-fg",
+						"hover:text-fg hover:opacity-100 focus-visible:text-fg focus-visible:opacity-100",
 						"rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
 					)}
 				>

@@ -60,7 +60,10 @@ function overlaps(A: Point[], B: Point[]): boolean {
 			const q = poly[(i + 1) % poly.length];
 			const nx = -(q.y - p.y);
 			const ny = q.x - p.x;
-			let aMin = Infinity, aMax = -Infinity, bMin = Infinity, bMax = -Infinity;
+			let aMin = Infinity,
+				aMax = -Infinity,
+				bMin = Infinity,
+				bMax = -Infinity;
 			for (const v of A) {
 				const d = nx * v.x + ny * v.y;
 				if (d < aMin) aMin = d;
@@ -160,7 +163,11 @@ function main() {
 
 		t.angleParams.forEach((p, i) => {
 			const probe = (v: number) =>
-				works(t, d.angles.map((q, j) => (j === i ? v : q)), d.sides);
+				works(
+					t,
+					d.angles.map((q, j) => (j === i ? v : q)),
+					d.sides,
+				);
 			const iv = interval(p.def, ANGLE_DOMAIN[0], ANGLE_DOMAIN[1], 0.25, 1e-5, probe);
 			if (!iv) {
 				log(`  ${p.key}: default ${p.def} does NOT work — check the type record`);
@@ -178,7 +185,11 @@ function main() {
 
 		t.sideParams.forEach((p, i) => {
 			const probe = (v: number) =>
-				works(t, d.angles, d.sides.map((q, j) => (j === i ? v : q)));
+				works(
+					t,
+					d.angles,
+					d.sides.map((q, j) => (j === i ? v : q)),
+				);
 			const iv = interval(p.def, RATIO_DOMAIN[0], RATIO_DOMAIN[1], 0.01, 1e-6, probe);
 			if (!iv) {
 				log(`  ${p.key}: default ${p.def} does NOT work — check the type record`);

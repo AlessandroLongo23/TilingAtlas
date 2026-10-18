@@ -63,7 +63,7 @@ export function VertexClient() {
 	};
 
 	return (
-		<div className="flex flex-1 min-h-0 overflow-hidden">
+		<div className="flex min-h-0 flex-1 overflow-hidden">
 			<PageSidebar mobile="modal" mobileLabel="Theory">
 				<TheoryArticleNav currentSlug="vertex" />
 			</PageSidebar>
@@ -143,8 +143,8 @@ function Report({ report }: { report: FigureReport }) {
 					boards.map((m) => <BoardCard key={`${word}-${m.board.id}`} m={m} word={word} />)
 				) : (
 					<p className="text-sm text-fg-muted">
-						No board in the hyperbolic catalogue carries this figure yet. The 4-valent boards cover figures over
-						polygon sizes 3 to 11.
+						No board in the hyperbolic catalogue carries this figure yet. The 4-valent boards cover figures over polygon
+						sizes 3 to 11.
 					</p>
 				)
 			) : null}
@@ -154,7 +154,11 @@ function Report({ report }: { report: FigureReport }) {
 
 function BoardCard({ m, word }: { m: BoardMatch; word: string }) {
 	const { board, sub, alphabet, multisets, ks } = m;
-	const own = board.label.split(",").map(Number).sort((a, b) => a - b).join(".");
+	const own = board.label
+		.split(",")
+		.map(Number)
+		.sort((a, b) => a - b)
+		.join(".");
 	const others = board.family === "abcd" ? multisets.filter((s) => s !== own) : multisets;
 	const lowest = ks[0];
 	const empty = lowest === undefined ? [] : Array.from({ length: lowest - 1 }, (_, i) => i + 1);
@@ -221,7 +225,10 @@ interface Hit {
 	count: number;
 	first: string;
 }
-type Scan = { state: "idle" } | { state: "running"; k: number; pure?: Hit; used?: Hit } | { state: "done"; pure?: Hit; used?: Hit };
+type Scan =
+	| { state: "idle" }
+	| { state: "running"; k: number; pure?: Hit; used?: Hit }
+	| { state: "done"; pure?: Hit; used?: Hit };
 
 /** The board's counts mix cyclic orders (and, on the 3.4.n.4 and {3,n} boards, other figures), so the
  *  lowest k for THIS figure needs the records. Fetches the board's shards in ascending k, on request,
@@ -254,7 +261,9 @@ function FigureScan({ m, word }: { m: BoardMatch; word: string }) {
 				).
 			</>
 		) : (
-			<>{what}: none on this board up to k = {last}.</>
+			<>
+				{what}: none on this board up to k = {last}.
+			</>
 		);
 	if (scan.state === "idle")
 		return (
@@ -264,7 +273,11 @@ function FigureScan({ m, word }: { m: BoardMatch; word: string }) {
 		);
 	return (
 		<div className="flex flex-col gap-1 text-sm text-fg-secondary">
-			{scan.state === "running" ? <p className="text-fg-muted">Reading k = {scan.k} of {last}…</p> : null}
+			{scan.state === "running" ? (
+				<p className="text-fg-muted">
+					Reading k = {scan.k} of {last}…
+				</p>
+			) : null}
 			{scan.state === "done" || scan.pure ? <p>{line(scan.pure, `Every vertex ${word}`)}</p> : null}
 			{scan.state === "done" || scan.used ? <p>{line(scan.used, `${word} at some vertex`)}</p> : null}
 		</div>

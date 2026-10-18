@@ -15,7 +15,5 @@ export default async function RunPage({ params }: { params: Promise<{ runId: str
 		fetchFoundTilings(sb, runId),
 		fetchRunsByKFamily(sb, run.k, run.family, runId),
 	]);
-	return (
-		<RunView runId={runId} initialRun={run} initialSeeds={seeds} initialTilings={tilings} siblings={siblings} />
-	);
+	return <RunView runId={runId} initialRun={run} initialSeeds={seeds} initialTilings={tilings} siblings={siblings} />;
 }

@@ -48,20 +48,20 @@ export function CollectionCard({
 	// the title and arrow answer the pointer only where a click would actually go somewhere.
 	const caption = (
 		<>
-			<h3 className="h-5 text-base font-semibold text-fg tracking-tight transition-colors group-hover/link:text-accent">
+			<h3 className="h-5 text-base font-semibold tracking-tight text-fg transition-colors group-hover/link:text-accent">
 				{title}
 				<ArrowRight
 					aria-hidden="true"
-					className="ml-1 inline w-3 h-3 align-[-0.05em] opacity-50 transition-transform group-hover/link:translate-x-0.5 group-hover/link:opacity-100"
+					className="ml-1 inline h-3 w-3 align-[-0.05em] opacity-50 transition-transform group-hover/link:translate-x-0.5 group-hover/link:opacity-100"
 				/>
 			</h3>
-			<p className="text-xs font-mono text-fg-muted truncate">{subtitle}</p>
+			<p className="truncate font-mono text-xs text-fg-muted">{subtitle}</p>
 			{/* Exactly two lines, always: `line-clamp-2` caps it and `min-h-[2lh]` floors it. The
 			    text block is what the media height is left over from, so a description that wraps to one
 			    line on one card and three on its neighbour would hand them different-sized canvases
 			    on the same row. Keep descriptions inside two lines at the narrowest 1×1 column (lg, ~230px
 			    of text width) or the clamp will eat the tail. */}
-			<p className="text-[13px] text-fg-secondary leading-snug line-clamp-2 min-h-[2lh]">{description}</p>
+			<p className="line-clamp-2 min-h-[2lh] text-[13px] leading-snug text-fg-secondary">{description}</p>
 		</>
 	);
 
@@ -70,12 +70,12 @@ export function CollectionCard({
 			{/* The media takes whatever height the text block leaves, so a 2×1 card gets a wide letterbox
 			    at the same height as its 1×1 neighbours. Inset as a sunken plate: a canvas that has not
 			    mounted yet reads as a quiet empty plate, never a white hole. */}
-			<div className="relative flex-1 min-h-0 rounded-surface bg-surface-sunken overflow-hidden">
+			<div className="relative min-h-0 flex-1 overflow-hidden rounded-surface bg-surface-sunken">
 				<div
 					className={cn(
 						"absolute inset-0",
 						!interactive &&
-							"saturate-[0.88] opacity-95 transition-[filter,opacity] duration-300 group-hover:saturate-100 group-hover:opacity-100",
+							"opacity-95 saturate-[0.88] transition-[filter,opacity] duration-300 group-hover:opacity-100 group-hover:saturate-100",
 					)}
 				>
 					{children}

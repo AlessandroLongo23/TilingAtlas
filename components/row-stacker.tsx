@@ -29,7 +29,12 @@ const TRI_H = Math.sqrt(3) / 2;
 
 const sq = (x: number, y: number): RawPolygon => ({
 	n: 4,
-	vertices: [{ x, y }, { x: x + 1, y }, { x: x + 1, y: y + 1 }, { x, y: y + 1 }],
+	vertices: [
+		{ x, y },
+		{ x: x + 1, y },
+		{ x: x + 1, y: y + 1 },
+		{ x, y: y + 1 },
+	],
 });
 const tri = (a: [number, number], b: [number, number], c: [number, number]): RawPolygon => ({
 	n: 3,
@@ -97,16 +102,31 @@ export function RowStacker() {
 	// Registered once, reading the handlers through a ref — the same shape the growth strip settled on
 	// after the hover-flag bug there.
 	const keysRef = useRef({ add, undo, reset });
-	useEffect(() => { keysRef.current = { add, undo, reset }; }, [add, undo, reset]);
+	useEffect(() => {
+		keysRef.current = { add, undo, reset };
+	}, [add, undo, reset]);
 	useEffect(() => {
 		const onKey = (e: KeyboardEvent) => {
 			if (e.metaKey || e.ctrlKey || e.altKey) return;
 			if (isTypingTarget(e)) return;
 			const k = keysRef.current;
-			if (e.key === "1") { e.preventDefault(); e.stopPropagation(); k.add("S"); }
-			else if (e.key === "2") { e.preventDefault(); e.stopPropagation(); k.add("T"); }
-			else if (e.key === "Backspace") { e.preventDefault(); e.stopPropagation(); k.undo(); }
-			else if (e.key === "0") { e.preventDefault(); e.stopPropagation(); k.reset(); }
+			if (e.key === "1") {
+				e.preventDefault();
+				e.stopPropagation();
+				k.add("S");
+			} else if (e.key === "2") {
+				e.preventDefault();
+				e.stopPropagation();
+				k.add("T");
+			} else if (e.key === "Backspace") {
+				e.preventDefault();
+				e.stopPropagation();
+				k.undo();
+			} else if (e.key === "0") {
+				e.preventDefault();
+				e.stopPropagation();
+				k.reset();
+			}
 		};
 		window.addEventListener("keydown", onKey, true);
 		return () => window.removeEventListener("keydown", onKey, true);
@@ -115,15 +135,21 @@ export function RowStacker() {
 	const { base, above } = useMemo(() => buildStack(rows), [rows]);
 
 	useEffect(() => {
-		const host = hostRef.current, canvas = canvasRef.current;
+		const host = hostRef.current,
+			canvas = canvasRef.current;
 		if (!host || !canvas) return;
 
 		const paint = () => {
-			const w = host.clientWidth, h = host.clientHeight;
+			const w = host.clientWidth,
+				h = host.clientHeight;
 			if (w <= 0 || h <= 0) return;
 			const dpr = Math.min(window.devicePixelRatio || 1, 2);
-			const bw = Math.round(w * dpr), bh = Math.round(h * dpr);
-			if (canvas.width !== bw || canvas.height !== bh) { canvas.width = bw; canvas.height = bh; }
+			const bw = Math.round(w * dpr),
+				bh = Math.round(h * dpr);
+			if (canvas.width !== bw || canvas.height !== bh) {
+				canvas.width = bw;
+				canvas.height = bh;
+			}
 			const ctx = canvas.getContext("2d");
 			if (!ctx) return;
 			ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -135,9 +161,9 @@ export function RowStacker() {
 			const frameH = 1 + MAX_ROWS;
 			const s = 0.94 * Math.min(w / COLS, h / frameH);
 			ctx.scale(dpr, dpr);
-			ctx.translate(w / 2, h);           // origin at the bottom centre
-			ctx.scale(s, -s);                   // world y up
-			ctx.translate(-(COLS / 2), 0.3);    // the base row centred, a little clear of the edge
+			ctx.translate(w / 2, h); // origin at the bottom centre
+			ctx.scale(s, -s); // world y up
+			ctx.translate(-(COLS / 2), 0.3); // the base row centred, a little clear of the edge
 
 			ctx.save();
 			ctx.beginPath();
@@ -166,9 +192,9 @@ export function RowStacker() {
 		<div className="not-prose flex flex-col items-center gap-2">
 			{/* Square, because the drawn frame is COLS x (1 + MAX_ROWS) and both are 7 — a wider box would
 			    just be margin. Height-driven so the slide, not the text column, decides the size. */}
-			<div ref={hostRef} className="relative aspect-square h-[42vh] rounded-2xl border border-line bg-surface-base">
+			<div ref={hostRef} className="bg-surface-base relative aspect-square h-[42vh] rounded-2xl border border-line">
 				<canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
-				<div className="absolute left-3 top-2 font-mono text-[11px] text-fg-muted max-md:text-xs">
+				<div className="absolute top-2 left-3 font-mono text-[11px] text-fg-muted max-md:text-xs">
 					{rows.length ? rows.join(" ") : "—"}
 				</div>
 			</div>
@@ -209,7 +235,7 @@ export function RowStacker() {
 
 			<p className="m-0 text-center text-[clamp(0.7rem,1vh+0.3vw,0.95rem)] text-fg-secondary">
 				<span className="tabular-nums">{n}</span> row{n === 1 ? "" : "s"} ·{" "}
-				<span className="font-semibold tabular-nums text-fg">{continuations}</span> legal continuation
+				<span className="font-semibold text-fg tabular-nums">{continuations}</span> legal continuation
 				{continuations === 1 ? "" : "s"} of the same certified patch · emit-on-closure keeps{" "}
 				<span className="font-semibold text-fg">1</span>
 				<span className="block text-fg-muted">{describe(rows)}</span>

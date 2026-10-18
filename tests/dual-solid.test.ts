@@ -13,15 +13,23 @@ const dualOf = (id: string) => {
 const census = (p: Polyhedron) => {
 	const c = new Map<number, number>();
 	for (const f of p.faces) c.set(f.length, (c.get(f.length) ?? 0) + 1);
-	return [...c].sort((a, b) => a[0] - b[0]).map(([n, k]) => `${k}{${n}}`).join("+");
+	return [...c]
+		.sort((a, b) => a[0] - b[0])
+		.map(([n, k]) => `${k}{${n}}`)
+		.join("+");
 };
 
 describe("the polar reciprocal", () => {
 	// The Platonic duals are the operator's own self-check: they are each other, so any scaling or
 	// centring error shows up as the wrong face count immediately.
 	it("sends each Platonic solid to its partner", () => {
-		for (const [a, want] of [["tetrahedron", "4{3}"], ["cube", "8{3}"], ["octahedron", "6{4}"],
-			["dodecahedron", "20{3}"], ["icosahedron", "12{5}"]] as const) {
+		for (const [a, want] of [
+			["tetrahedron", "4{3}"],
+			["cube", "8{3}"],
+			["octahedron", "6{4}"],
+			["dodecahedron", "20{3}"],
+			["icosahedron", "12{5}"],
+		] as const) {
 			expect(census(dualOf(a)), a).toBe(want);
 		}
 	});
@@ -64,8 +72,10 @@ describe("the polar reciprocal", () => {
 				if (f.length < 3) continue;
 				const { n, d } = facePlane(V, f);
 				for (const i of f) {
-					expect(Math.abs(n[0] * V[i][0] + n[1] * V[i][1] + n[2] * V[i][2] - d),
-						`${s.id}: a dual face is not planar`).toBeLessThan(1e-6);
+					expect(
+						Math.abs(n[0] * V[i][0] + n[1] * V[i][1] + n[2] * V[i][2] - d),
+						`${s.id}: a dual face is not planar`,
+					).toBeLessThan(1e-6);
 				}
 			}
 			checked++;
@@ -81,8 +91,12 @@ describe("the polar reciprocal", () => {
 	// this can.
 	it("gives every dual face of a convex solid a convex ring, in order", () => {
 		const convex = SPHERICAL_SOLIDS.filter(
-			(s) => !s.id.startsWith("ncx-") && !s.id.startsWith("hemi-") && !s.id.startsWith("tor-")
-				&& !/^gen\d+-/.test(s.id) && !s.id.startsWith("iso-"),
+			(s) =>
+				!s.id.startsWith("ncx-") &&
+				!s.id.startsWith("hemi-") &&
+				!s.id.startsWith("tor-") &&
+				!/^gen\d+-/.test(s.id) &&
+				!s.id.startsWith("iso-"),
 		);
 		expect(convex.length).toBeGreaterThan(100);
 		for (const s of convex) {
@@ -92,17 +106,20 @@ describe("the polar reciprocal", () => {
 			for (const f of r.dual.faces) {
 				if (f.length < 4) continue; // a triangle is convex in any order
 				const { n } = facePlane(V, f);
-				let pos = 0, neg = 0;
+				let pos = 0,
+					neg = 0;
 				for (let i = 0; i < f.length; i++) {
-					const a = V[f[i]], b = V[f[(i + 1) % f.length]], c = V[f[(i + 2) % f.length]];
-					const u = [b[0]-a[0], b[1]-a[1], b[2]-a[2]] as Vec3;
-					const w = [c[0]-b[0], c[1]-b[1], c[2]-b[2]] as Vec3;
-					const t: Vec3 = [u[1]*w[2]-u[2]*w[1], u[2]*w[0]-u[0]*w[2], u[0]*w[1]-u[1]*w[0]];
-					const sgn = t[0]*n[0] + t[1]*n[1] + t[2]*n[2];
-					if (sgn > 1e-9) pos++; else if (sgn < -1e-9) neg++;
+					const a = V[f[i]],
+						b = V[f[(i + 1) % f.length]],
+						c = V[f[(i + 2) % f.length]];
+					const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]] as Vec3;
+					const w = [c[0] - b[0], c[1] - b[1], c[2] - b[2]] as Vec3;
+					const t: Vec3 = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]];
+					const sgn = t[0] * n[0] + t[1] * n[1] + t[2] * n[2];
+					if (sgn > 1e-9) pos++;
+					else if (sgn < -1e-9) neg++;
 				}
-				expect(pos === 0 || neg === 0,
-					`${s.id}: a dual face turns both ways — the ring order is crossed`).toBe(true);
+				expect(pos === 0 || neg === 0, `${s.id}: a dual face turns both ways — the ring order is crossed`).toBe(true);
 			}
 		}
 	});
@@ -115,8 +132,7 @@ describe("the polar reciprocal", () => {
 		for (const s of hemi) {
 			const r = polarDual(s);
 			expect("refusal" in r, `${s.id} should have no dual in R³`).toBe(true);
-			expect((r as { refusal: { facesThroughCentre: number } }).refusal.facesThroughCentre,
-				s.id).toBeGreaterThan(0);
+			expect((r as { refusal: { facesThroughCentre: number } }).refusal.facesThroughCentre, s.id).toBeGreaterThan(0);
 		}
 	});
 
@@ -141,7 +157,8 @@ describe("the polar reciprocal", () => {
 	// orders of magnitude that no single tolerance reads the point set correctly — that is why the view
 	// reports `vertexOrbits` of the SOLID and never `faceOrbits` of the dual.
 	it("gives a dual its solid's own isometry group, on all but a counted few", () => {
-		let checked = 0, disagree = 0;
+		let checked = 0,
+			disagree = 0;
 		for (const s of SPHERICAL_SOLIDS) {
 			const r = polarDual(s);
 			if (!("dual" in r)) continue;
@@ -158,7 +175,8 @@ describe("the polar reciprocal", () => {
 	// reciprocate to one point, so the dual has fewer vertices than the solid has faces and is not a
 	// polyhedron. Every one of these is on the non-convex shelf.
 	it("refuses a solid with coplanar faces, and counts them", () => {
-		let coplanar = 0, infinity = 0;
+		let coplanar = 0,
+			infinity = 0;
 		for (const s of SPHERICAL_SOLIDS) {
 			const r = polarDual(s);
 			if (!("refusal" in r)) continue;
@@ -175,7 +193,8 @@ describe("the polar reciprocal", () => {
 	// makes their edges cross. The classic dual compounds are exactly these: the stella octangula, the
 	// cube and octahedron, the dodecahedron and icosahedron.
 	it("builds a compound only where a midsphere exists, and it is both solids", () => {
-		let built = 0, hasDual = 0;
+		let built = 0,
+			hasDual = 0;
 		for (const s of SPHERICAL_SOLIDS) {
 			if ("dual" in polarDual(s)) hasDual++;
 			const c = dualCompound(s);

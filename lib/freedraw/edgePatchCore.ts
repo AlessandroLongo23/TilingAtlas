@@ -135,12 +135,7 @@ const flipChord = (c: Chord): Chord => [1 - c[2], -c[3], 1 - c[0], -c[1]];
 function chordToWorld(c: Chord, ax: number, ay: number, bx: number, by: number): Curve4 {
 	const dx = bx - ax;
 	const dy = by - ay;
-	return [
-		c[0] * dx - c[1] * dy,
-		c[0] * dy + c[1] * dx,
-		c[2] * dx - c[3] * dy,
-		c[2] * dy + c[3] * dx,
-	];
+	return [c[0] * dx - c[1] * dy, c[0] * dy + c[1] * dx, c[2] * dx - c[3] * dy, c[2] * dy + c[3] * dx];
 }
 
 /** Signed area of a ring, positive counter-clockwise. */
@@ -180,12 +175,7 @@ function sampleEdges(walk: DevelopedWalk, tol: number, coreR: number) {
  * permutes orbits is a symmetry of the tiling but not of the decoration the certificate describes, and
  * folding on it would merge two orbits into one colour.
  */
-function isPeriod(
-	walk: DevelopedWalk,
-	edges: ReturnType<typeof sampleEdges>,
-	v: Vec,
-	coreR: number,
-): boolean {
+function isPeriod(walk: DevelopedWalk, edges: ReturnType<typeof sampleEdges>, v: Vec, coreR: number): boolean {
 	const { all, inner, key } = edges;
 	if (inner.length < 8) return false;
 	let checked = 0;
@@ -287,12 +277,7 @@ function findLattice(
 
 /** Faces of the developed planar graph, as vertex rings, counter-clockwise. Only complete board tiles
  *  survive: `corners` corners, the tile's own area, and every corner well inside the developed disc. */
-function extractFaces(
-	walk: DevelopedWalk,
-	tileArea: number,
-	coreR: number,
-	corners: number,
-): number[][] {
+function extractFaces(walk: DevelopedWalk, tileArea: number, coreR: number, corners: number): number[][] {
 	const n = walk.vertices.length;
 	const adj: number[][] = Array.from({ length: n }, () => []);
 	for (const e of walk.edges) {
@@ -424,9 +409,7 @@ export function buildEdgePatch(
 		if (found)
 			need =
 				1.25 *
-				(knownCellArea !== null
-					? knownCellArea / found.shortest + found.shortest
-					: found.shortest * 4 + longest * 2);
+				(knownCellArea !== null ? knownCellArea / found.shortest + found.shortest : found.shortest * 4 + longest * 2);
 		reach = Math.max(reach * 1.4, need / 0.62);
 	}
 	return { ok: false, diag, reason: "period larger than the develop budget allows" };
@@ -488,8 +471,7 @@ function assemble(
 		const cur = anchor.get(r);
 		if (
 			cur === undefined ||
-			norm2([walk.vertices[i].x, walk.vertices[i].y]) <
-				norm2([walk.vertices[cur].x, walk.vertices[cur].y])
+			norm2([walk.vertices[i].x, walk.vertices[i].y]) < norm2([walk.vertices[cur].x, walk.vertices[cur].y])
 		)
 			anchor.set(r, i);
 	}
@@ -545,10 +527,8 @@ function assemble(
 	// faces means the core did not hold a whole period, too many means the basis is a sublattice, and
 	// the vertex count going with neither means the fold merged or split classes.
 	const diag = { verts: verts.length, faces: polys.length, edges: 0, comps: 0 };
-	if (polys.length === 0)
-		return { patch: null, reason: "no complete tile inside the developed patch", diag };
-	if (polys.length !== F)
-		return { patch: null, reason: `period holds ${F} tiles but ${polys.length} were cut`, diag };
+	if (polys.length === 0) return { patch: null, reason: "no complete tile inside the developed patch", diag };
+	if (polys.length !== F) return { patch: null, reason: `period holds ${F} tiles but ${polys.length} were cut`, diag };
 	if (verts.length !== wantV)
 		return {
 			patch: null,
@@ -596,9 +576,7 @@ function assemble(
 			chordOf.set(`${vj},${vi},${-dx},${-dy}`, flipChord(bow));
 			const A = verts[vi];
 			const B = verts[vj];
-			edgeCurves.push(
-				chordToWorld(bow, A[0], A[1], B[0] + dx * T1[0] + dy * T2[0], B[1] + dx * T1[1] + dy * T2[1]),
-			);
+			edgeCurves.push(chordToWorld(bow, A[0], A[1], B[0] + dx * T1[0] + dy * T2[0], B[1] + dx * T1[1] + dy * T2[1]));
 		} else {
 			edgeCurves.push(null);
 		}
@@ -626,13 +604,7 @@ function assemble(
 			const A = verts[va];
 			const B = verts[vb];
 			const d: Vec = [bx - ax, by - ay];
-			return chordToWorld(
-				bow,
-				A[0],
-				A[1],
-				B[0] + d[0] * T1[0] + d[1] * T2[0],
-				B[1] + d[0] * T1[1] + d[1] * T2[1],
-			);
+			return chordToWorld(bow, A[0], A[1], B[0] + d[0] * T1[0] + d[1] * T2[0], B[1] + d[0] * T1[1] + d[1] * T2[1]);
 		}),
 	);
 

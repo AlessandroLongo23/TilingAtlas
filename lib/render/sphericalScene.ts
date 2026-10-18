@@ -32,7 +32,11 @@ export interface Sphere {
 // Build the sphere for a solid (Platonic or Archimedean), drawing its tiling procedurally on the surface.
 // Returns null for a missing solid. Caller owns add/remove + dispose(). (The renderer arg is no longer
 // needed — kept for a stable signature with the callers — since there is no bake pass.)
-export function createSphere(_renderer: THREE.WebGLRenderer, poly: Polyhedron | null, opts: SurfaceOptions = {}): Sphere | null {
+export function createSphere(
+	_renderer: THREE.WebGLRenderer,
+	poly: Polyhedron | null,
+	opts: SurfaceOptions = {},
+): Sphere | null {
 	if (!poly) return null;
 
 	const geom = new THREE.SphereGeometry(SPHERE_RADIUS, SPHERE_WIDTH_SEGMENTS, SPHERE_HEIGHT_SEGMENTS);

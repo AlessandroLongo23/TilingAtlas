@@ -1,1 +1,1 @@
-export { nKeyOfSymbolDirect } from '@/classes/algorithm/canonicalFormN';
+export { nKeyOfSymbolDirect } from "@/classes/algorithm/canonicalFormN";

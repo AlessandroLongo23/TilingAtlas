@@ -17,10 +17,12 @@ export function HeeschSidebar({ header, peek, children }: { header: ReactNode; p
 	const immersive = useImmersive((s) => s.immersive);
 	return (
 		<PageSidebar scrollable={false} collapsed={immersive} mobile="dock" title="Heesch numbers" peek={peek}>
-			<div className="h-full flex flex-col max-md:overflow-y-auto max-md:overflow-x-hidden max-md:overscroll-contain">
-				<div className="shrink-0 px-3.5 pt-4 pb-5 flex flex-col gap-4 border-b border-line-subtle max-md:hidden">{header}</div>
-				<div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hide ta-scroll-fade max-md:flex-none max-md:overflow-visible">
-					<div className="px-3.5 pt-5 pb-10 flex flex-col gap-6">{children}</div>
+			<div className="flex h-full flex-col max-md:overflow-x-hidden max-md:overflow-y-auto max-md:overscroll-contain">
+				<div className="flex shrink-0 flex-col gap-4 border-b border-line-subtle px-3.5 pt-4 pb-5 max-md:hidden">
+					{header}
+				</div>
+				<div className="scrollbar-hide ta-scroll-fade min-h-0 flex-1 overflow-x-hidden overflow-y-auto max-md:flex-none max-md:overflow-visible">
+					<div className="flex flex-col gap-6 px-3.5 pt-5 pb-10">{children}</div>
 				</div>
 			</div>
 		</PageSidebar>

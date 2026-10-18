@@ -13,7 +13,12 @@ import { readAtlas, decodeAtlas } from "@/lib/services/atlasCodec";
 /** What the assertions below read off a record; the rest of the shape is decodeAtlas's business. */
 type Rec = { id: string; darts: unknown };
 const bodyOf = (buf: Buffer, url: string) =>
-	({ ok: true, url, arrayBuffer: async () => buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength), json: async () => JSON.parse(buf.toString("utf8")) }) as unknown as Response;
+	({
+		ok: true,
+		url,
+		arrayBuffer: async () => buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
+		json: async () => JSON.parse(buf.toString("utf8")),
+	}) as unknown as Response;
 
 describe("gzipped shards", () => {
 	// A shard that is stored PLAIN, so the three shapes below can be compared against one source. The

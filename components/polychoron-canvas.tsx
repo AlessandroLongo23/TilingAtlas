@@ -9,7 +9,15 @@ import type { Geometry4 } from "@/lib/render/polychora";
 
 export type PolychoronSettings = Omit<PolychoronView, "rot" | "zoom" | "resolution"> & { spin: boolean };
 
-export function PolychoronCanvas({ geometry, settings, className }: { geometry: Geometry4; settings: PolychoronSettings; className?: string }) {
+export function PolychoronCanvas({
+	geometry,
+	settings,
+	className,
+}: {
+	geometry: Geometry4;
+	settings: PolychoronSettings;
+	className?: string;
+}) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const live = useRef({
 		renderer: null as PolychoronRenderer | null,

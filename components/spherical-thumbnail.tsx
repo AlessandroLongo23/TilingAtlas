@@ -62,7 +62,11 @@ export function SphericalThumbnail({ solidId, bubbleBites, size = 256 }: Spheric
 				if (bubbleBites) {
 					const cfg = useConfiguration.getState();
 					const bubble = buildBubbleSphere(poly, bubbleBites, {
-						style: cfg.bubbleEdgeStyle, kochLevel: cfg.bubbleKochLevel, hueOffset, lineWidth, dark,
+						style: cfg.bubbleEdgeStyle,
+						kochLevel: cfg.bubbleKochLevel,
+						hueOffset,
+						lineWidth,
+						dark,
 					});
 					return bubble ? { object: bubble.object, dispose: bubble.dispose } : null;
 				}
@@ -78,21 +82,21 @@ export function SphericalThumbnail({ solidId, bubbleBites, size = 256 }: Spheric
 
 	if (failed) {
 		return (
-			<div className="w-full h-full flex items-center justify-center bg-surface-raised rounded text-fg-disabled text-[10px]">
+			<div className="flex h-full w-full items-center justify-center rounded bg-surface-raised text-[10px] text-fg-disabled">
 				sphere
 			</div>
 		);
 	}
 
 	return (
-		<div className="relative w-full h-full">
+		<div className="relative h-full w-full">
 			<ThumbnailSkeleton done={ready} />
 			<canvas
 				ref={canvasRef}
 				width={size}
 				height={size}
 				aria-label={`${solidId} spherical tiling`}
-				className={`relative w-full h-full rounded block object-cover${ready ? " ta-fade-in" : " opacity-0"}`}
+				className={`relative block h-full w-full rounded object-cover${ready ? "ta-fade-in" : "opacity-0"}`}
 			/>
 		</div>
 	);

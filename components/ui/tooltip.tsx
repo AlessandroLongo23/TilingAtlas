@@ -121,19 +121,15 @@ export function Tooltip({
 				    /play canvas (a `z-10` wrapper) every tooltip was painted UNDER the canvas and could not be
 				    read at all, which is how the editor's tool tips and the reason a mode is unavailable went
 				    missing. */}
-				<BaseTooltip.Positioner
-					className="z-[var(--z-tooltip)]"
-					side={side}
-					sideOffset={sideOffset}
-				>
+				<BaseTooltip.Positioner className="z-[var(--z-tooltip)]" side={side} sideOffset={sideOffset}>
 					<BaseTooltip.Popup
 						className={cn(
 							"transition duration-150 ease-out motion-reduce:transition-none",
-							"data-[starting-style]:opacity-0 data-[ending-style]:opacity-0",
+							"data-[ending-style]:opacity-0 data-[starting-style]:opacity-0",
 							enterFrom,
 							// A plain label is a small ink chip; rich content gets a white card.
 							content != null
-								? "rounded-lg bg-surface-raised text-fg shadow-lg ring-1 ring-line-subtle p-3 max-w-[min(90vw,26rem)]"
+								? "max-w-[min(90vw,26rem)] rounded-lg bg-surface-raised p-3 text-fg shadow-lg ring-1 ring-line-subtle"
 								: "flex items-center gap-2 rounded-md bg-fg px-2 py-1 text-xs font-medium text-fg-inverse shadow-md",
 						)}
 					>
@@ -142,7 +138,12 @@ export function Tooltip({
 						    data-side: one triangle pointing down (fill = popup bg, stroke = popup border; the open
 						    path leaves the base seamless), turned to face the trigger. */}
 						<BaseTooltip.Arrow className="h-2 w-3.5 data-[side=bottom]:top-[-7px] data-[side=left]:right-[-7px] data-[side=left]:h-3.5 data-[side=left]:w-2 data-[side=right]:left-[-7px] data-[side=right]:h-3.5 data-[side=right]:w-2 data-[side=top]:bottom-[-7px] [&[data-side=bottom]>svg]:rotate-180 [&[data-side=left]>svg]:-rotate-90 [&[data-side=right]>svg]:rotate-90">
-							<svg width={14} height={8} viewBox="0 0 14 8" className="absolute top-1/2 left-1/2 -translate-1/2 overflow-visible">
+							<svg
+								width={14}
+								height={8}
+								viewBox="0 0 14 8"
+								className="absolute top-1/2 left-1/2 -translate-1/2 overflow-visible"
+							>
 								<path
 									d="M1 0L7 7L13 0"
 									strokeWidth={1}

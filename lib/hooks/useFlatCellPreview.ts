@@ -192,8 +192,10 @@ export function useFlatCellPreview({
 		let centre = { x: (box.minX + box.maxX) / 2, y: (box.minY + box.maxY) / 2 };
 		for (let pass = 0; pass < 2; pass++) {
 			const t = fdSnapTranslateAt(centre, sd.cell, sd.cellOrigin);
-			box.minX = base.minX; box.maxX = base.maxX;
-			box.minY = base.minY; box.maxY = base.maxY;
+			box.minX = base.minX;
+			box.maxX = base.maxX;
+			box.minY = base.minY;
+			box.maxY = base.maxY;
 			for (const p of sd.cellPolygon) {
 				box.minX = Math.min(box.minX, p.x + t.x);
 				box.maxX = Math.max(box.maxX, p.x + t.x);
@@ -240,7 +242,8 @@ export function useFlatCellPreview({
 	 */
 	const centreShift = (centre: { x: number; y: number }, zoom: number, rotDeg: number) => {
 		const r = (rotDeg * Math.PI) / 180;
-		const c = Math.cos(r), s = Math.sin(r);
+		const c = Math.cos(r),
+			s = Math.sin(r);
 		return {
 			x: -zoom * (c * centre.x + s * centre.y),
 			y: -zoom * (s * centre.x - c * centre.y),
@@ -289,7 +292,8 @@ export function useFlatCellPreview({
 			const d = renderer.lastDraw;
 			if (!badge) {
 				badge = document.createElement("div");
-				badge.className = "absolute left-1 top-1 z-20 rounded bg-black/80 px-1.5 py-1 font-mono text-[10px] leading-tight text-lime-300";
+				badge.className =
+					"absolute left-1 top-1 z-20 rounded bg-black/80 px-1.5 py-1 font-mono text-[10px] leading-tight text-lime-300";
 				badge.style.whiteSpace = "pre";
 				host.prepend(badge);
 			}
@@ -323,13 +327,7 @@ export function useFlatCellPreview({
 		// `offset` is the UNWRAPPED pan while the renderer wraps its own by whole lattice vectors. That
 		// is not a mismatch: the tiling and its symmetry structure are both invariant under a lattice
 		// translation, so the two agree on screen.
-		const drawOverlays = (
-			w: number,
-			h: number,
-			dpr: number,
-			ctrl: CardControls,
-			offset: { x: number; y: number },
-		) => {
+		const drawOverlays = (w: number, h: number, dpr: number, ctrl: CardControls, offset: { x: number; y: number }) => {
 			const sd = symmetryRef.current;
 			const { fd, sym } = overlayFlagsRef.current;
 			const wanted = !!sd && (fd || sym);
@@ -349,8 +347,12 @@ export function useFlatCellPreview({
 				// Directly after the GL canvas: above the tiles, below every React-rendered control.
 				canvas?.after(overlay);
 			}
-			const bw = Math.round(w * dpr), bh = Math.round(h * dpr);
-			if (overlay.width !== bw || overlay.height !== bh) { overlay.width = bw; overlay.height = bh; }
+			const bw = Math.round(w * dpr),
+				bh = Math.round(h * dpr);
+			if (overlay.width !== bw || overlay.height !== bh) {
+				overlay.width = bw;
+				overlay.height = bh;
+			}
 			const ctx = overlay.getContext("2d");
 			if (!ctx || !sd) return;
 			ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -386,9 +388,7 @@ export function useFlatCellPreview({
 					v2: { x: mesh.v2[0], y: mesh.v2[1] },
 				};
 				const box = singleRef.current ? singleHomeBox() : null;
-				centreRef.current = box
-					? { x: (box.minX + box.maxX) / 2, y: (box.minY + box.maxY) / 2 }
-					: { x: 0, y: 0 };
+				centreRef.current = box ? { x: (box.minX + box.maxX) / 2, y: (box.minY + box.maxY) / 2 } : { x: 0, y: 0 };
 				homeZoomRef.current = resolveHomeZoom(basisRef.current, w, h);
 				framingRef.current = `${w}x${h}:${singleRef.current && overlayFlagsRef.current.fd ? "fd" : ""}`;
 				controlsRef.current = makeCardControls(homeZoomRef.current);
@@ -429,8 +429,12 @@ export function useFlatCellPreview({
 			}
 
 			const dpr = Math.min(window.devicePixelRatio || 1, 2);
-			const bw = Math.round(w * dpr), bh = Math.round(h * dpr);
-			if (canvas.width !== bw || canvas.height !== bh) { canvas.width = bw; canvas.height = bh; }
+			const bw = Math.round(w * dpr),
+				bh = Math.round(h * dpr);
+			if (canvas.width !== bw || canvas.height !== bh) {
+				canvas.width = bw;
+				canvas.height = bh;
+			}
 			gl.viewport(0, 0, bw, bh);
 
 			// The pan the shader sees: the user's, plus the shift that holds a single patch's own centre
@@ -483,7 +487,12 @@ export function useFlatCellPreview({
 				{ once: true },
 			);
 			const ctx = canvas.getContext("webgl2", { antialias: true, premultipliedAlpha: false, alpha: true });
-			if (!ctx) { broken = true; setFailed(true); teardown(); return; }
+			if (!ctx) {
+				broken = true;
+				setFailed(true);
+				teardown();
+				return;
+			}
 			gl = ctx;
 			try {
 				renderer = new FlatCellRenderer(ctx);
@@ -494,7 +503,12 @@ export function useFlatCellPreview({
 				return;
 			}
 			const mesh = buildCellMesh(cellRef.current);
-			if (!mesh) { broken = true; setFailed(true); teardown(); return; }
+			if (!mesh) {
+				broken = true;
+				setFailed(true);
+				teardown();
+				return;
+			}
 			renderer.uploadMesh(mesh);
 			uploadedOrbit = orbitDataRef.current;
 			renderer.uploadOrbitMesh(buildOrbitDotMesh(cellRef.current, uploadedOrbit));
@@ -633,11 +647,15 @@ export function useFlatCellPreview({
 			onPointerUp,
 			onPointerCancel: onPointerUp,
 			// A finger "leaves" on every lift; its tap readout stays until the next tap.
-			onPointerLeave: (e: ReactPointerEvent<HTMLElement>) => { if (e.pointerType !== "touch") hoverPxRef.current = null; },
+			onPointerLeave: (e: ReactPointerEvent<HTMLElement>) => {
+				if (e.pointerType !== "touch") hoverPxRef.current = null;
+			},
 			// Right-click is the reset gesture, so the menu is suppressed where there is one to run. An
 			// inert surface has no reset, and swallowing the browser's menu there would take something
 			// away and give nothing back.
-			onContextMenu: (e) => { if (interactiveRef.current) e.preventDefault(); },
+			onContextMenu: (e) => {
+				if (interactiveRef.current) e.preventDefault();
+			},
 		},
 	};
 }

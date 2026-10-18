@@ -62,11 +62,19 @@ describe("Exact RegularPolygon (boundary walk) parity", () => {
 		// every edge direction must resolve to a valid integer (unit edges preserved)
 		expect(exact.edgeDirs?.every((d) => d >= 0)).toBe(true);
 		// reflecting twice across the same axis is the identity (vertex set restored)
-		const key1 = exact.exactVertices!.map((v) => v.key()).sort().join("|");
+		const key1 = exact
+			.exactVertices!.map((v) => v.key())
+			.sort()
+			.join("|");
 		exact.mirrorZeta(ZERO, 0);
-		const key2 = exact.exactVertices!.map((v) => v.key()).sort().join("|");
+		const key2 = exact
+			.exactVertices!.map((v) => v.key())
+			.sort()
+			.join("|");
 		const original = RegularPolygon.fromAnchorAndDirExact(4, ZERO, 0)
-			.exactVertices!.map((v) => v.key()).sort().join("|");
+			.exactVertices!.map((v) => v.key())
+			.sort()
+			.join("|");
 		expect(key2).toBe(original);
 		expect(key1).not.toBe(original); // single reflection changed it
 	});
@@ -75,9 +83,7 @@ describe("Exact RegularPolygon (boundary walk) parity", () => {
 		const exact = RegularPolygon.fromAnchorAndDirExact(6, ZERO, 0);
 		const cl = exact.clone();
 		expect(cl.hasExact()).toBe(true);
-		expect(cl.exactVertices!.map((v) => v.key())).toEqual(
-			exact.exactVertices!.map((v) => v.key())
-		);
+		expect(cl.exactVertices!.map((v) => v.key())).toEqual(exact.exactVertices!.map((v) => v.key()));
 		expect(cl.edgeDirs).toEqual(exact.edgeDirs);
 	});
 });

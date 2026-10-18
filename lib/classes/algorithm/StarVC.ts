@@ -14,12 +14,12 @@
  *
  * Units: π/12 (= 2π/24). A full turn = 24. A straight angle = 12. See `docs/DEVELOPMENT_NOTES.md` §24.
  */
-import { Cyclotomic } from '../Cyclotomic';
-import { RegularPolygon } from '../polygons/RegularPolygon';
-import { ExactStarPolygon } from '../polygons/ExactStarPolygon';
-import type { Polygon } from '../polygons/Polygon';
-import type { SeedConfigurationLike } from './SeedExpander';
-import { exactPolygonsOverlap } from './exact/exactOverlap';
+import { Cyclotomic } from "../Cyclotomic";
+import { RegularPolygon } from "../polygons/RegularPolygon";
+import { ExactStarPolygon } from "../polygons/ExactStarPolygon";
+import type { Polygon } from "../polygons/Polygon";
+import type { SeedConfigurationLike } from "./SeedExpander";
+import { exactPolygonsOverlap } from "./exact/exactOverlap";
 
 export const STAR_NS = [3, 4, 6, 8, 12] as const;
 const FULL_TURN_U = 24;
@@ -59,16 +59,16 @@ export function dentRegularFillableVariants(): { n: number; alphaU: number }[] {
 }
 
 export type CornerTok =
-	| { kind: 'reg'; n: number; u: number } //                  regular n-gon corner, interior u
-	| { kind: 'pt'; n: number; alphaU: number; u: number } //   star POINT, interior α (= u)
-	| { kind: 'dent'; n: number; alphaU: number; u: number }; // star DENT, interior β (= u, reflex)
+	| { kind: "reg"; n: number; u: number } //                  regular n-gon corner, interior u
+	| { kind: "pt"; n: number; alphaU: number; u: number } //   star POINT, interior α (= u)
+	| { kind: "dent"; n: number; alphaU: number; u: number }; // star DENT, interior β (= u, reflex)
 
 export type StarVC = { tokens: CornerTok[]; name: string };
 
 /** Token string matching `Polygon.cornerToken` exactly, so a VC name here equals the solver's VC name. */
 export function tokenStr(t: CornerTok): string {
-	if (t.kind === 'reg') return String(t.n);
-	return `${t.n}*${t.kind === 'dent' ? 'd' : 'p'}@${t.u}`;
+	if (t.kind === "reg") return String(t.n);
+	return `${t.n}*${t.kind === "dent" ? "d" : "p"}@${t.u}`;
 }
 
 /** Rotation+reflection-canonical VC name — byte-identical to `PeriodSolver.canonicalVCName`. */
@@ -76,25 +76,25 @@ export function canonicalVCName(toks: string[]): string {
 	const rotMin = (a: string[]): string => {
 		let best: string | null = null;
 		for (let i = 0; i < a.length; i++) {
-			const r = a.slice(i).concat(a.slice(0, i)).join(',');
+			const r = a.slice(i).concat(a.slice(0, i)).join(",");
 			if (best === null || r < best) best = r;
 		}
-		return best ?? '';
+		return best ?? "";
 	};
 	const f = rotMin(toks);
 	const r = rotMin(toks.slice().reverse());
 	return f < r ? f : r;
 }
 
-const isPoint = (t: CornerTok): boolean => t.kind === 'pt';
-const isDent = (t: CornerTok): boolean => t.kind === 'dent';
+const isPoint = (t: CornerTok): boolean => t.kind === "pt";
+const isDent = (t: CornerTok): boolean => t.kind === "dent";
 
 /** True iff the VC carries at least one star corner (point or dent). A star TILING needs ≥1 star
  *  somewhere; at k=1 that forces every VC to be star-bearing (Myers prune iii), but at k≥2 a whole
  *  vertex orbit can be purely regular (the oracle's Fig 36/40/42/43 pins), so the "≥1 star" test
  *  moves from the VC to the seed-set. */
 export function isStarBearing(vc: StarVC): boolean {
-	return vc.tokens.some((t) => t.kind !== 'reg');
+	return vc.tokens.some((t) => t.kind !== "reg");
 }
 
 /**
@@ -104,22 +104,22 @@ export function isStarBearing(vc: StarVC): boolean {
  * matching and to extract the targeted star variants from the fig definitions.
  */
 export function starVCFromOrbitString(s: string): StarVC {
-	const tokens: CornerTok[] = s.split('.').map((tok): CornerTok => {
+	const tokens: CornerTok[] = s.split(".").map((tok): CornerTok => {
 		const mp = tok.match(/^(\d+)\*p@(\d+)$/);
 		if (mp) {
 			const n = Number(mp[1]);
 			const u = Number(mp[2]);
-			return { kind: 'pt', n, alphaU: u, u };
+			return { kind: "pt", n, alphaU: u, u };
 		}
 		const md = tok.match(/^(\d+)\*d@(\d+)$/);
 		if (md) {
 			const n = Number(md[1]);
 			const u = Number(md[2]); // dent interior (reflex) angle
-			return { kind: 'dent', n, alphaU: FULL_TURN_U - FULL_TURN_U / n - u, u };
+			return { kind: "dent", n, alphaU: FULL_TURN_U - FULL_TURN_U / n - u, u };
 		}
 		const n = Number(tok);
 		if (!Number.isInteger(n)) throw new Error(`starVCFromOrbitString: unparseable token "${tok}" in "${s}"`);
-		return { kind: 'reg', n, u: regInteriorU(n) };
+		return { kind: "reg", n, u: regInteriorU(n) };
 	});
 	return { tokens, name: canonicalVCName(tokens.map(tokenStr)) };
 }
@@ -147,12 +147,12 @@ export function enumerateStarVCs(
 	// SEED-SET, not each VC. Adds candidates only (each still certified downstream) — a superset, safe.
 	const requirePoint = !opts.includeStarFree;
 	const alphabet: CornerTok[] = [];
-	for (const n of STAR_NS) alphabet.push({ kind: 'reg', n, u: regInteriorU(n) });
-	for (const { n, alphaU } of variants) alphabet.push({ kind: 'pt', n, alphaU, u: alphaU });
+	for (const n of STAR_NS) alphabet.push({ kind: "reg", n, u: regInteriorU(n) });
+	for (const { n, alphaU } of variants) alphabet.push({ kind: "pt", n, alphaU, u: alphaU });
 	if (opts.includeDents) {
 		for (const { n, alphaU } of variants) {
 			const betaU = FULL_TURN_U - FULL_TURN_U / n - alphaU; // reflex dent, > 12
-			alphabet.push({ kind: 'dent', n, alphaU, u: betaU });
+			alphabet.push({ kind: "dent", n, alphaU, u: betaU });
 		}
 	}
 	// Stable order so "≥ first token" reproduces the canonical-min-rotation trick.
@@ -216,15 +216,15 @@ export function seatFan(tokens: CornerTok[], anchor: Cyclotomic, dir0: number): 
 	const polygons: Polygon[] = [];
 	let dir = ((dir0 % FULL_TURN_U) + FULL_TURN_U) % FULL_TURN_U;
 	for (const t of tokens) {
-		if (t.kind === 'reg') polygons.push(RegularPolygon.fromAnchorAndDirExact(t.n, anchor, dir));
-		else if (t.kind === 'pt') polygons.push(ExactStarPolygon.isotoxal(t.n, t.alphaU, anchor, dir));
+		if (t.kind === "reg") polygons.push(RegularPolygon.fromAnchorAndDirExact(t.n, anchor, dir));
+		else if (t.kind === "pt") polygons.push(ExactStarPolygon.isotoxal(t.n, t.alphaU, anchor, dir));
 		else polygons.push(ExactStarPolygon.isotoxalDentAt(t.n, t.alphaU, anchor, dir));
 		dir = (((dir + t.u) % FULL_TURN_U) + FULL_TURN_U) % FULL_TURN_U;
 	}
 	return polygons;
 }
 
-export function buildStarVCSeed(vc: StarVC, ring: Cyclotomic['ring']): SeedConfigurationLike {
+export function buildStarVCSeed(vc: StarVC, ring: Cyclotomic["ring"]): SeedConfigurationLike {
 	if (ring.N !== 24) throw new Error(`buildStarVCSeed: requires the N=24 ring (got ${ring.N})`);
 	const O = Cyclotomic.ZERO(ring);
 	const polygons = seatFan(vc.tokens, O, 0);
@@ -250,7 +250,7 @@ export type StarVCPairPlacement = { union: Polygon[]; anchorA: Cyclotomic; ancho
 export function placeStarVCPair(
 	vcA: StarVC,
 	vcB: StarVC,
-	ring: Cyclotomic['ring'],
+	ring: Cyclotomic["ring"],
 	maxSeeds: number,
 ): StarVCPairPlacement[] {
 	if (ring.N !== 24) throw new Error(`placeStarVCPair: requires the N=24 ring (got ${ring.N})`);
@@ -297,7 +297,7 @@ export function placeStarVCPair(
 		if (e === undefined) continue; // P not a unit vector (shouldn't happen for tile-edge neighbours)
 		const dPO = (e + FULL_TURN_U / 2) % FULL_TURN_U;
 		const dirs = new Set<number>();
-		for (const b of bBoundaries) dirs.add(((dPO - b) % FULL_TURN_U + FULL_TURN_U) % FULL_TURN_U);
+		for (const b of bBoundaries) dirs.add((((dPO - b) % FULL_TURN_U) + FULL_TURN_U) % FULL_TURN_U);
 		for (const dir0 of dirs) {
 			const B = seatFan(vcB.tokens, P, dir0);
 			// glued ⟺ B reproduces ≥1 whole A-tile (exact-key match); the rest of B are new tiles.

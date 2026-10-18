@@ -128,8 +128,10 @@ export function applyCoupledPlan(out: ReferenceTiling[], opts: ApplyCoupledOptio
 				survivorAlpha0Deg: f.params.map((p) => p.alpha0Deg),
 			};
 		}
-		log(`  ${f.id}  P=${f.P}  axes ${axes}  region ${f.regionVertices.length}-gon  `
-			+ `absorbs ${f.absorbs.map((a) => a.id.split("-").pop()).join(", ") || "(none)"}`);
+		log(
+			`  ${f.id}  P=${f.P}  axes ${axes}  region ${f.regionVertices.length}-gon  ` +
+				`absorbs ${f.absorbs.map((a) => a.id.split("-").pop()).join(", ") || "(none)"}`,
+		);
 	}
 	const kept = out.filter((t) => !absorbed.has(t.id));
 	fs.mkdirSync(path.dirname(aliasPath), { recursive: true });

@@ -22,10 +22,19 @@ const inPath = path.resolve(process.argv[2]);
 const outPath = process.argv[3] ? path.resolve(process.argv[3]) : null;
 const limit = process.argv[4] ? Number(process.argv[4]) : Infinity;
 const raw = JSON.parse(fs.readFileSync(inPath, "utf8"));
-const ds = { tilings: (Array.isArray(raw) ? raw : raw.tilings) as { id: string; k: number; T1?: number[]; T2?: number[]; Seed?: number[][] }[] };
+const ds = {
+	tilings: (Array.isArray(raw) ? raw : raw.tilings) as {
+		id: string;
+		k: number;
+		T1?: number[];
+		T2?: number[];
+		Seed?: number[][];
+	}[],
+};
 
 const rows = ["id,k,lattice,group,orbifold"];
-let n = 0, fail = 0;
+let n = 0,
+	fail = 0;
 const t0 = Date.now();
 for (const t of ds.tilings) {
 	if (n >= limit) break;
@@ -41,5 +50,7 @@ for (const t of ds.tilings) {
 	if (n % 500 === 0) console.error(`  …${n} classified (${((Date.now() - t0) / n).toFixed(1)} ms/tiling)`);
 }
 console.error(`classified ${n} tilings, ${fail} failed, in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
-if (outPath) { fs.writeFileSync(outPath, rows.join("\n") + "\n"); console.error(`→ ${outPath}`); }
-else console.log(rows.slice(0, 20).join("\n"));
+if (outPath) {
+	fs.writeFileSync(outPath, rows.join("\n") + "\n");
+	console.error(`→ ${outPath}`);
+} else console.log(rows.slice(0, 20).join("\n"));

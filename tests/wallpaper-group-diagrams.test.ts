@@ -22,9 +22,7 @@ describe("wallpaper group diagrams", () => {
 	});
 
 	it("references only bundled SVG files that exist on disk", () => {
-		const bad = WALLPAPER_DIAGRAMS.filter(
-			(d) => !d.src.endsWith(".svg") || !existsSync(resolve(PUBLIC_DIR, d.src)),
-		);
+		const bad = WALLPAPER_DIAGRAMS.filter((d) => !d.src.endsWith(".svg") || !existsSync(resolve(PUBLIC_DIR, d.src)));
 		expect(bad.map((d) => `${d.group}/${d.lattice} -> ${d.src || "(none)"}`)).toEqual([]);
 	});
 

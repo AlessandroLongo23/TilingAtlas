@@ -161,25 +161,81 @@ export const SCHWARZ_BOARDS: SchwarzBoard[] = [
 	//     ones. (2,2,3) is CORRECTED here (2,297 → 2,347, and the all-edges-drawn pattern it was missing
 	//     is back at ss223-2-00007); (2,2,4) is still rerunning.
 	// (2,3,3) and (2,4,4) are in neither bug and stand as shipped.
-	{ id: "223", pqr: [2, 2, 3], label: "(2,2,3)", geometry: "spherical", eagerKs: [2, 3, 4, 5, 6, 7, 8], lazyKs: [] , counts: { 2: 7, 3: 35, 4: 129, 5: 171, 6: 121, 7: 34, 8: 1850 } },
-	{ id: "224", pqr: [2, 2, 4], label: "(2,2,4)", geometry: "spherical", eagerKs: [2, 3, 4, 5, 6, 7, 9], lazyKs: [10] , counts: { 2: 10, 3: 52, 4: 52, 5: 780, 6: 1165, 7: 963, 9: 321, 10: 61914 } }, // k=10 is 61,914 tilings / 23 MB
+	{
+		id: "223",
+		pqr: [2, 2, 3],
+		label: "(2,2,3)",
+		geometry: "spherical",
+		eagerKs: [2, 3, 4, 5, 6, 7, 8],
+		lazyKs: [],
+		counts: { 2: 7, 3: 35, 4: 129, 5: 171, 6: 121, 7: 34, 8: 1850 },
+	},
+	{
+		id: "224",
+		pqr: [2, 2, 4],
+		label: "(2,2,4)",
+		geometry: "spherical",
+		eagerKs: [2, 3, 4, 5, 6, 7, 9],
+		lazyKs: [10],
+		counts: { 2: 10, 3: 52, 4: 52, 5: 780, 6: 1165, 7: 963, 9: 321, 10: 61914 },
+	}, // k=10 is 61,914 tilings / 23 MB
 	// (2,2,5), Marek's 2026-08-12 drop. Its two holes are NOT like the others on this shelf: his census
 	// counts a literal 0 at k=9 and k=10, so those slices are empty properties of the board, and the
 	// same census stops at k=11 without a MAX line, so the run itself is budget-capped there. Every
 	// shipped k reproduces the census exactly (21,642 certificates, 0 develop failures).
-	{ id: "225", pqr: [2, 2, 5], label: "(2,2,5)", geometry: "spherical", eagerKs: [2, 3, 4, 5], lazyKs: [6, 7, 8, 11] , counts: { 2: 7, 3: 4, 4: 244, 5: 98, 6: 4709, 7: 7372, 8: 6532, 11: 2676 } }, // k=6 1.8 MB, k=7 2.8 MB, k=8 2.5 MB, k=11 1.1 MB
-	{ id: "233", pqr: [2, 3, 3], label: "(2,3,3)", geometry: "spherical", eagerKs: [2, 3, 4, 5, 6], lazyKs: [7] , counts: { 2: 4, 3: 111, 4: 464, 5: 654, 6: 1966, 7: 45580 } }, // k=7 is 45,580 / 19 MB
+	{
+		id: "225",
+		pqr: [2, 2, 5],
+		label: "(2,2,5)",
+		geometry: "spherical",
+		eagerKs: [2, 3, 4, 5],
+		lazyKs: [6, 7, 8, 11],
+		counts: { 2: 7, 3: 4, 4: 244, 5: 98, 6: 4709, 7: 7372, 8: 6532, 11: 2676 },
+	}, // k=6 1.8 MB, k=7 2.8 MB, k=8 2.5 MB, k=11 1.1 MB
+	{
+		id: "233",
+		pqr: [2, 3, 3],
+		label: "(2,3,3)",
+		geometry: "spherical",
+		eagerKs: [2, 3, 4, 5, 6],
+		lazyKs: [7],
+		counts: { 2: 4, 3: 111, 4: 464, 5: 654, 6: 1966, 7: 45580 },
+	}, // k=7 is 45,580 / 19 MB
 	// (2,3,4) is Marek's CORRECTED solve of 2026-08-06, k=1..8 in one run — 90,470 certificates against
 	// the short solver's 5,974, and the shelf now stops at k=8 because the corrected run does. The old
 	// k=9/10/11 slices (86 / 1,603 / 3,529) were the F2-buggy solver's and were DROPPED, not kept as
 	// lower bounds: with k=8 at 62,095 a k=9 of 86 reads as a fact about the board and is not one. What
 	// the bug cost, per slice: 5 → 10, 2 → 13, 80 → 1,568, 81 → 2,181, 196 → 24,603, 392 → 62,095.
-	{ id: "234", pqr: [2, 3, 4], label: "(2,3,4)", geometry: "spherical", eagerKs: [3, 4, 5, 6], lazyKs: [7, 8] , counts: { 3: 10, 4: 13, 5: 1568, 6: 2181, 7: 24603, 8: 62095 } }, // k=7 is 24,603 / 13 MB, k=8 62,095 / 32 MB
-	{ id: "235", pqr: [2, 3, 5], label: "(2,3,5)", geometry: "spherical", eagerKs: [3, 5], lazyKs: [] , counts: { 3: 4, 5: 31 } },
+	{
+		id: "234",
+		pqr: [2, 3, 4],
+		label: "(2,3,4)",
+		geometry: "spherical",
+		eagerKs: [3, 4, 5, 6],
+		lazyKs: [7, 8],
+		counts: { 3: 10, 4: 13, 5: 1568, 6: 2181, 7: 24603, 8: 62095 },
+	}, // k=7 is 24,603 / 13 MB, k=8 62,095 / 32 MB
+	{
+		id: "235",
+		pqr: [2, 3, 5],
+		label: "(2,3,5)",
+		geometry: "spherical",
+		eagerKs: [3, 5],
+		lazyKs: [],
+		counts: { 3: 4, 5: 31 },
+	},
 	// Hyperbolic. Marek's runs here are short — these two are the small end of the hyperbolic Schwarz
 	// family, and (2,3,7) is the smallest hyperbolic triangle there is.
-	{ id: "237", pqr: [2, 3, 7], label: "(2,3,7)", geometry: "hyperbolic", eagerKs: [3], lazyKs: [] , counts: { 3: 4 } },
-	{ id: "245", pqr: [2, 4, 5], label: "(2,4,5)", geometry: "hyperbolic", eagerKs: [3, 4], lazyKs: [] , counts: { 3: 10, 4: 13 } },
+	{ id: "237", pqr: [2, 3, 7], label: "(2,3,7)", geometry: "hyperbolic", eagerKs: [3], lazyKs: [], counts: { 3: 4 } },
+	{
+		id: "245",
+		pqr: [2, 4, 5],
+		label: "(2,4,5)",
+		geometry: "hyperbolic",
+		eagerKs: [3, 4],
+		lazyKs: [],
+		counts: { 3: 10, 4: 13 },
+	},
 ];
 
 export const SCHWARZ_BOARD_BY_ID = new Map(SCHWARZ_BOARDS.map((b) => [b.id, b]));
@@ -217,11 +273,9 @@ export function schwarzLazyShardsForK(geometry: SchwarzGeometry, k: number): Sch
 
 /** The /play sub-axis key. "sps-" spherical Schwarz, "hys-" hyperbolic Schwarz — namespaced so neither
  *  can collide with a freedraw grid, a solid name, or the "hyp-"/"hyc-"/"spc-" families. */
-export const schwarzSubOfBoard = (b: SchwarzBoard): string =>
-	`${b.geometry === "spherical" ? "sps" : "hys"}-${b.id}`;
+export const schwarzSubOfBoard = (b: SchwarzBoard): string => `${b.geometry === "spherical" ? "sps" : "hys"}-${b.id}`;
 
-export const schwarzSub = (p: SchwarzPattern): string =>
-	`${p.geometry === "spherical" ? "sps" : "hys"}-${p.board}`;
+export const schwarzSub = (p: SchwarzPattern): string => `${p.geometry === "spherical" ? "sps" : "hys"}-${p.board}`;
 
 /** Display label for a board id, from SCHWARZ_BOARDS; falls back to the id in parentheses. */
 export function schwarzBoardLabel(boardId: string): string {

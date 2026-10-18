@@ -17,7 +17,13 @@ import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync } from "node
 import path from "node:path";
 import { buildTorusMap, halfTurn, type TorusCell, type TorusMap } from "@/lib/squaring/torusMap";
 import { squareTorus, torusClasses } from "@/lib/squaring/torusSquaring";
-import { TORUS_CATEGORIES, type TorusIndex, type TorusIndexEntry, type TorusRecord, type TorusThumb } from "@/lib/squaring/shelf";
+import {
+	TORUS_CATEGORIES,
+	type TorusIndex,
+	type TorusIndexEntry,
+	type TorusRecord,
+	type TorusThumb,
+} from "@/lib/squaring/shelf";
 
 const ROOT = process.cwd();
 const OUT = path.join(ROOT, "public", "squarings", "torus");
@@ -58,7 +64,11 @@ const S3 = Math.sqrt(3);
 const ring = (cx: number, cy: number, n: number, r: number, phase = 0): [number, number][] =>
 	Array.from(
 		{ length: n },
-		(_, i) => [cx + r * Math.cos(phase + (2 * Math.PI * i) / n), cy + r * Math.sin(phase + (2 * Math.PI * i) / n)] as [number, number],
+		(_, i) =>
+			[cx + r * Math.cos(phase + (2 * Math.PI * i) / n), cy + r * Math.sin(phase + (2 * Math.PI * i) / n)] as [
+				number,
+				number,
+			],
 	);
 
 // The uniform tilings are CONSTRUCTED here rather than pulled from the atlas, and that is a deliberate
@@ -178,17 +188,19 @@ function uniformCells(): { id: string; name: string; cell: TorusCell }[] {
 		{
 			id: "uniform-63",
 			name: "6³ · hexagonal",
-			cell: { polygons: [hex], basis: [[1.5, S3 / 2], [0, S3]] },
+			cell: {
+				polygons: [hex],
+				basis: [
+					[1.5, S3 / 2],
+					[0, S3],
+				],
+			},
 		},
 		{
 			id: "uniform-3636",
 			name: "3.6.3.6 · trihexagonal",
 			cell: {
-				polygons: [
-					hex,
-					[hex[0], [1.5, S3 / 2], hex[1]],
-					[hex[0], [1.5, -S3 / 2], hex[5]],
-				],
+				polygons: [hex, [hex[0], [1.5, S3 / 2], hex[1]], [hex[0], [1.5, -S3 / 2], hex[5]]],
 				basis: [
 					[2, 0],
 					[1, S3],

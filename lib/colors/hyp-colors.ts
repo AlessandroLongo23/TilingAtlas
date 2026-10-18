@@ -87,7 +87,14 @@ export const hypColorsSub = (p: HypColorsPattern): string => `hyc-${p.base}`;
 
 /** Card / search label: what the tiles are. The base face is a p-gon (from the Schläfli symbol), so
  *  "3-colored heptagons" / "2-colored triangles". */
-const POLY_NOUN: Record<number, string> = { 3: "triangles", 4: "squares", 5: "pentagons", 6: "hexagons", 7: "heptagons", 8: "octagons" };
+const POLY_NOUN: Record<number, string> = {
+	3: "triangles",
+	4: "squares",
+	5: "pentagons",
+	6: "hexagons",
+	7: "heptagons",
+	8: "octagons",
+};
 
 export function hypColorsFamilyLabel(p: HypColorsPattern): string {
 	const pgon = Number(p.config.replace(/[{}]/g, "").split(",")[0]);

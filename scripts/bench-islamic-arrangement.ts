@@ -10,7 +10,13 @@ import fs from "node:fs";
 import path from "node:path";
 import { Vector } from "@/classes/Vector";
 import { buildTilingFromCell } from "@/lib/render/buildPatchTiling";
-import { buildArrangement, extractFaces, colorFacesAbc, type Marker, type Segment } from "@/lib/utils/islamicArrangement";
+import {
+	buildArrangement,
+	extractFaces,
+	colorFacesAbc,
+	type Marker,
+	type Segment,
+} from "@/lib/utils/islamicArrangement";
 import { evaluateParamCell, resolveAlphaDegsRaw, type ParametricCellData } from "@/lib/utils/paramCell";
 import type { TranslationalCellData } from "@/classes/algorithm/types";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
@@ -67,9 +73,9 @@ for (const row of picked) {
 		// discard the first two reps (JIT warm-up)
 		if (r >= 2) {
 			patchMs += t1 - t0;
-			chainMs += (t1c - t1b) + (t2 - t1d) + (t1d - t1c);
+			chainMs += t1c - t1b + (t2 - t1d) + (t1d - t1c);
 			arrMs += t1c - t1b;
-			traceMs += (t1d - t1c) - (t1c - t1b);
+			traceMs += t1d - t1c - (t1c - t1b);
 			abcMs += t2 - t1d;
 		}
 		tiles = patch.nodes.length;
@@ -81,8 +87,8 @@ for (const row of picked) {
 	const c = chainMs / n;
 	console.log(
 		`${row.id.padEnd(38)}${String(tiles).padStart(5)}${String(segs).padStart(6)}${String(faces).padStart(7)}` +
-		`${p.toFixed(1).padStart(8)}ms${c.toFixed(1).padStart(14)}ms${(p + c).toFixed(1).padStart(8)}ms` +
-		`   [arrange ${(arrMs / n).toFixed(1)} · trace ${(traceMs / n).toFixed(1)} · abc ${(abcMs / n).toFixed(1)}]`,
+			`${p.toFixed(1).padStart(8)}ms${c.toFixed(1).padStart(14)}ms${(p + c).toFixed(1).padStart(8)}ms` +
+			`   [arrange ${(arrMs / n).toFixed(1)} · trace ${(traceMs / n).toFixed(1)} · abc ${(abcMs / n).toFixed(1)}]`,
 	);
 }
 // Keep the import used even when a build strips the type-only ones.

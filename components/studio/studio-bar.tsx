@@ -54,8 +54,7 @@ const TOOL_BY_KEY = new Map(TOOLS.map((t) => [t.key, t.value]));
  * it must not survive a tool change; the rejection describes the gesture the last tool refused, so under
  * the next tool it is a message about something the user can no longer do.
  */
-const pickTool = (value: StudioTool) =>
-	useStudio.getState().set({ tool: value, cutPath: [], rejection: null });
+const pickTool = (value: StudioTool) => useStudio.getState().set({ tool: value, cutPath: [], rejection: null });
 
 const setEditor = (on: boolean) => useConfiguration.getState().set({ studioActive: on });
 
@@ -128,16 +127,30 @@ export function StudioHistory({ parts = "all" }: { parts?: "all" | "undo-redo" |
 		<>
 			{parts !== "reset" ? (
 				<>
-					<ToolbarButton label="Undo" shortcut="Cmd/Ctrl + Z" disabled={!undoable} onClick={() => useStudio.getState().undo()}>
+					<ToolbarButton
+						label="Undo"
+						shortcut="Cmd/Ctrl + Z"
+						disabled={!undoable}
+						onClick={() => useStudio.getState().undo()}
+					>
 						<Undo2 size={16} />
 					</ToolbarButton>
-					<ToolbarButton label="Redo" shortcut="Shift + Cmd/Ctrl + Z" disabled={!redoable} onClick={() => useStudio.getState().redo()}>
+					<ToolbarButton
+						label="Redo"
+						shortcut="Shift + Cmd/Ctrl + Z"
+						disabled={!redoable}
+						onClick={() => useStudio.getState().redo()}
+					>
 						<Redo2 size={16} />
 					</ToolbarButton>
 				</>
 			) : null}
 			{parts !== "undo-redo" ? (
-				<ToolbarButton label="Back to the catalogued tiling" disabled={!resettable} onClick={() => useStudio.getState().reset()}>
+				<ToolbarButton
+					label="Back to the catalogued tiling"
+					disabled={!resettable}
+					onClick={() => useStudio.getState().reset()}
+				>
 					<RotateCcw size={16} />
 				</ToolbarButton>
 			) : null}
@@ -153,7 +166,13 @@ export function StudioTools() {
 	return (
 		<>
 			{TOOLS.map((t) => (
-				<ToolbarButton key={t.value} label={t.label} shortcut={t.key} aria-pressed={tool === t.value} onClick={() => pickTool(t.value)}>
+				<ToolbarButton
+					key={t.value}
+					label={t.label}
+					shortcut={t.key}
+					aria-pressed={tool === t.value}
+					onClick={() => pickTool(t.value)}
+				>
 					<t.icon className="h-4 w-4" />
 				</ToolbarButton>
 			))}
@@ -164,15 +183,15 @@ export function StudioTools() {
 const PERIOD_HELP = (
 	<>
 		<p>
-			<span className="font-medium text-fg">Lattice</span>{" "}repeats every edit under the translations alone. Always
+			<span className="font-medium text-fg">Lattice</span> repeats every edit under the translations alone. Always
 			available.
 		</p>
 		<p>
-			<span className="font-medium text-fg">Wallpaper group</span>{" "}carries it through the point group as well, so the
+			<span className="font-medium text-fg">Wallpaper group</span> carries it through the point group as well, so the
 			result keeps the tiling&rsquo;s symmetry.
 		</p>
 		<p>
-			<span className="font-medium text-fg">Period cell</span>{" "}shows what an edit repeats over: the basis cell under
+			<span className="font-medium text-fg">Period cell</span> shows what an edit repeats over: the basis cell under
 			Lattice, the group&rsquo;s axes, centres and fundamental domain under Wallpaper group.
 		</p>
 	</>
@@ -196,8 +215,12 @@ export function StudioPeriod({ wallpaperDisabledReason }: { wallpaperDisabledRea
 				aria-disabled={disabledReason ? true : undefined}
 				onClick={() => !disabledReason && useStudio.getState().set({ periodMode: m })}
 				className={
-					"ta-tab h-7 whitespace-nowrap px-2.5 text-[13px] font-medium transition-colors " +
-					(periodMode === m ? "text-fg" : disabledReason ? "cursor-not-allowed text-fg-disabled" : "text-fg-muted hover:text-fg")
+					"ta-tab h-7 px-2.5 text-[13px] font-medium whitespace-nowrap transition-colors " +
+					(periodMode === m
+						? "text-fg"
+						: disabledReason
+							? "cursor-not-allowed text-fg-disabled"
+							: "text-fg-muted hover:text-fg")
 				}
 			>
 				{label}
@@ -236,4 +259,3 @@ export function StudioPeriod({ wallpaperDisabledReason }: { wallpaperDisabledRea
 		</>
 	);
 }
-

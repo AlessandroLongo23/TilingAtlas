@@ -16,7 +16,8 @@ import { buildRegularPatch } from "@/lib/render/hyperbolicRegularPatch";
 import { hypDist, type Complex } from "@/lib/render/hyperbolic";
 
 const centroid = (verts: Complex[]): Complex => {
-	let x = 0, y = 0;
+	let x = 0,
+		y = 0;
 	for (const v of verts) {
 		x += v.x;
 		y += v.y;

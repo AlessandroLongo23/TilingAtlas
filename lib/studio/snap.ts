@@ -165,17 +165,13 @@ export function pointFaces(patch: StudioPatch, ref: PointRef): number[] {
 }
 
 /** The edge a midpoint ref names, in `patch`, or null when the rebuild no longer carries it. */
-export function refEdge(
-	patch: StudioPatch,
-	ref: PointRef,
-): { vi: number; vj: number; dx: number; dy: number } | null {
+export function refEdge(patch: StudioPatch, ref: PointRef): { vi: number; vj: number; dx: number; dy: number } | null {
 	if (ref.kind !== "midpoint") return null;
 	const i = patch.edgeKeys.indexOf(ref.edge);
 	if (i < 0) return null;
 	const [vi, vj, dx, dy] = patch.edges[i];
 	return { vi, vj, dx, dy };
 }
-
 
 /**
  * The construction point nearest a world position, with the lattice offset of the copy that was hit.
@@ -274,11 +270,7 @@ export function pickEdge(patch: StudioPatch, world: Pt, radius: number): EdgeHit
 }
 
 /** The vertex nearest a world position — the grab test for the move tool. */
-export function pickVertex(
-	patch: StudioPatch,
-	world: Pt,
-	radius: number,
-): { vi: number; off: Lift } | null {
+export function pickVertex(patch: StudioPatch, world: Pt, radius: number): { vi: number; off: Lift } | null {
 	const [t1x, t1y] = patch.T1;
 	const [t2x, t2y] = patch.T2;
 	let best: { vi: number; off: Lift } | null = null;

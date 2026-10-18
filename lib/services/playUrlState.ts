@@ -164,12 +164,10 @@ export function parsePlayState(sp: URLSearchParams): PlayUrlState {
 			config[spec.field] = parts.length && parts.every((p) => p !== null) ? parts : fallback;
 		} else if (spec.kind === "mat2") {
 			const parts = raw.split(",").map(Number);
-			config[spec.field] =
-				parts.length === 4 && isAdmissibleDeform(parts as unknown as Mat2) ? parts : fallback;
+			config[spec.field] = parts.length === 4 && isAdmissibleDeform(parts as unknown as Mat2) ? parts : fallback;
 		} else if (spec.kind === "class") {
 			const parts = raw.split(",").map(Number);
-			const good =
-				parts.length === 2 && parts.every((n) => Number.isFinite(n)) && !(parts[0] === 0 && parts[1] === 0);
+			const good = parts.length === 2 && parts.every((n) => Number.isFinite(n)) && !(parts[0] === 0 && parts[1] === 0);
 			config[spec.field] = good ? parts : fallback;
 		} else if (spec.kind === "num") {
 			const n = Number(raw);

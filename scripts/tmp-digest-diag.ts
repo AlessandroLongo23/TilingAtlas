@@ -13,16 +13,19 @@
  *      canonicalKey differs from the primitive-reduced representative dedupeByCongruence keeps? Those
  *      classes are exactly the ones carrying a non-primitive supercell encoding — the benign cause.
  */
-import { setActiveRing, CyclotomicRing } from '@/classes/Cyclotomic';
-import { computeRing } from '@/classes/algorithm/PolygonsGenerator';
-import { PolygonType, type GeneratorParameters } from '@/classes';
-import { TranslationalCellExtractor } from '@/classes/algorithm/TranslationalCellExtractor';
+import { setActiveRing, CyclotomicRing } from "@/classes/Cyclotomic";
+import { computeRing } from "@/classes/algorithm/PolygonsGenerator";
+import { PolygonType, type GeneratorParameters } from "@/classes";
+import { TranslationalCellExtractor } from "@/classes/algorithm/TranslationalCellExtractor";
 import {
-	dedupeByCongruence, dedupeByNKey, congruencePartition, primitiveReducedCell,
-} from '@/classes/algorithm/TilingCongruence';
-import { nKeyOfCell } from '@/classes/algorithm/canonicalFormN';
-import type { PeriodCell } from '@/classes/algorithm/PeriodSolver';
-import { readResumeNdjson, deserializeCell } from './scoutCodec';
+	dedupeByCongruence,
+	dedupeByNKey,
+	congruencePartition,
+	primitiveReducedCell,
+} from "@/classes/algorithm/TilingCongruence";
+import { nKeyOfCell } from "@/classes/algorithm/canonicalFormN";
+import type { PeriodCell } from "@/classes/algorithm/PeriodSolver";
+import { readResumeNdjson, deserializeCell } from "./scoutCodec";
 
 const params: GeneratorParameters = { [PolygonType.REGULAR]: { ns: [3, 4, 6, 12] } };
 const baseRing = computeRing(params);
@@ -30,7 +33,7 @@ const ring = baseRing.N === 24 ? baseRing : CyclotomicRing.create(24);
 setActiveRing(ring);
 const extractor = new TranslationalCellExtractor();
 
-const r = readResumeNdjson('.scout-cache/k3-proven-accepted-7f2f4160092c7ff3.ndjson');
+const r = readResumeNdjson(".scout-cache/k3-proven-accepted-7f2f4160092c7ff3.ndjson");
 const cells: PeriodCell[] = r.cells.map((sc) => deserializeCell(ring, sc));
 console.log(`artifact cells: ${cells.length}`);
 
@@ -40,7 +43,7 @@ const contentKey = (c: PeriodCell) => nKeyOfCell(primitiveReducedCell(c)) ?? `NU
 function digestOf(reps: PeriodCell[]): string {
 	const ids = reps.map(rawKey).sort();
 	let h = 5381n;
-	for (const ch of ids.join('|')) h = ((h * 33n) ^ BigInt(ch.codePointAt(0)!)) & 0xffffffffffffffffn;
+	for (const ch of ids.join("|")) h = ((h * 33n) ^ BigInt(ch.codePointAt(0)!)) & 0xffffffffffffffffn;
 	return h.toString(16);
 }
 
@@ -56,7 +59,7 @@ console.log(`non-primitive raw cells (nKey(c) ≠ nKey(reduce(c))): ${nonPrimiti
 
 // --- Q1: partition identity under the content key ---
 function blockSig(partition: PeriodCell[][]): string[] {
-	return partition.map((blk) => blk.map(contentKey).sort().join('~')).sort();
+	return partition.map((blk) => blk.map(contentKey).sort().join("~")).sort();
 }
 // N partition: group original cells by nKeyOfCell (the dedupeByNKey grouping)
 const nGroups = new Map<string, PeriodCell[]>();
@@ -67,9 +70,12 @@ for (const c of cells) {
 const nSig = blockSig([...nGroups.values()]);
 const congSig = blockSig(congruencePartition(cells));
 const same = nSig.length === congSig.length && nSig.every((s, i) => s === congSig[i]);
-console.log(`Q1 partition identity (content-key blocks): N=${nSig.length} cong=${congSig.length} → ${same ? 'IDENTICAL' : 'DIFFER'}`);
+console.log(
+	`Q1 partition identity (content-key blocks): N=${nSig.length} cong=${congSig.length} → ${same ? "IDENTICAL" : "DIFFER"}`,
+);
 if (!same) {
-	const cs = new Set(congSig), ns = new Set(nSig);
+	const cs = new Set(congSig),
+		ns = new Set(nSig);
 	for (const s of nSig) if (!cs.has(s)) console.log(`  N-only block: ${s.slice(0, 120)}`);
 	for (const s of congSig) if (!ns.has(s)) console.log(`  cong-only block: ${s.slice(0, 120)}`);
 }
@@ -85,17 +91,21 @@ for (const [ck, nrep] of nRepByContent) {
 		// nail the mechanism on each differing class: is the N-rep already primitive? does reducing it
 		// change its canonicalKey (⇒ canonicalKey is basis/representative-dependent, not congruence-invariant)?
 		const nReduced = primitiveReducedCell(nrep);
-		const nIsPrimitive = (nKeyOfCell(nrep) ?? 'x') === (nKeyOfCell(nReduced) ?? 'y');
+		const nIsPrimitive = (nKeyOfCell(nrep) ?? "x") === (nKeyOfCell(nReduced) ?? "y");
 		const reduceChangesKey = rawKey(nrep) !== rawKey(nReduced);
 		// how many raw members does this class have, and are the two reps the SAME congruence cell?
 		const classMembers = cells.filter((c) => contentKey(c) === ck);
 		console.log(`  class#${repDiffer} nKey=${ck.slice(0, 40)}… members=${classMembers.length}`);
 		console.log(`    N-rep    canonicalKey=${rawKey(nrep).slice(0, 70)}  primitive=${nIsPrimitive}`);
 		console.log(`    cong-rep canonicalKey=${rawKey(crep).slice(0, 70)}`);
-		console.log(`    reduce(N-rep) changes canonicalKey? ${reduceChangesKey}  →  reduce-rep=${rawKey(nReduced).slice(0, 70)}`);
+		console.log(
+			`    reduce(N-rep) changes canonicalKey? ${reduceChangesKey}  →  reduce-rep=${rawKey(nReduced).slice(0, 70)}`,
+		);
 		console.log(`    cong-rep == reduce(N-rep)? ${rawKey(crep) === rawKey(nReduced)}`);
 		const memberKeys = classMembers.map(rawKey).sort();
-		console.log(`    raw member canonicalKeys (${memberKeys.length}): ${memberKeys.map((k) => k.slice(0, 24)).join(' | ')}`);
+		console.log(
+			`    raw member canonicalKeys (${memberKeys.length}): ${memberKeys.map((k) => k.slice(0, 24)).join(" | ")}`,
+		);
 	}
 }
 console.log(`Q2 classes with differing representative raw-key: ${repDiffer}/${repsN.length}`);

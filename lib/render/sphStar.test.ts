@@ -20,7 +20,9 @@ import type { SphStarPattern } from "@/lib/tilings/sph-star";
 
 function polyArea(ring: number[], verts: V3[]): number {
 	// Planar polygon area in 3D via the vector area of a fan; the pieces are convex and coplanar.
-	let ax = 0, ay = 0, az = 0;
+	let ax = 0,
+		ay = 0,
+		az = 0;
 	for (let i = 0; i < ring.length; i++) {
 		const a = verts[ring[i]];
 		const b = verts[ring[(i + 1) % ring.length]];
@@ -33,11 +35,7 @@ function polyArea(ring: number[], verts: V3[]): number {
 
 /** n points of a regular n-gon of circumradius 1 in the z = 0 plane, in GEOMETRIC order. */
 function ngon(n: number): V3[] {
-	return Array.from({ length: n }, (_, k): V3 => [
-		Math.cos((2 * Math.PI * k) / n),
-		Math.sin((2 * Math.PI * k) / n),
-		0,
-	]);
+	return Array.from({ length: n }, (_, k): V3 => [Math.cos((2 * Math.PI * k) / n), Math.sin((2 * Math.PI * k) / n), 0]);
 }
 
 /** The traversal ring of {n/d}: v0, vd, v2d, … which is what a record stores. */
@@ -120,8 +118,18 @@ describe("starFaceRings", () => {
 		// The star face types the shelf carries, plus two retrograde forms. The pyramid family took the
 		// shelf well past {10/3} — a pyramid over {n/d} closes for every 2 < n/d < 4 — so the last three
 		// are its extremes: the largest n, the tightest winding, and one in between.
-		for (const [n, d] of [[5, 2], [7, 2], [7, 3], [8, 3], [10, 3], [8, 5], [12, 7],
-			[20, 9], [13, 6], [15, 4]] as [number, number][]) {
+		for (const [n, d] of [
+			[5, 2],
+			[7, 2],
+			[7, 3],
+			[8, 3],
+			[10, 3],
+			[8, 5],
+			[12, 7],
+			[20, 9],
+			[13, 6],
+			[15, 4],
+		] as [number, number][]) {
 			const verts = ngon(n);
 			const face = traversal(n, d);
 			const poly = face.map((i) => verts[i]);
@@ -176,8 +184,20 @@ describe("starFaceRings", () => {
 	});
 
 	it("agrees with the even-odd rule pointwise on every winding the shelf carries", () => {
-		for (const [n, d] of [[5, 2], [7, 2], [7, 3], [8, 3], [9, 4], [10, 3], [12, 5], [8, 5],
-			[12, 7], [20, 9], [13, 6], [15, 4]] as [number, number][]) {
+		for (const [n, d] of [
+			[5, 2],
+			[7, 2],
+			[7, 3],
+			[8, 3],
+			[9, 4],
+			[10, 3],
+			[12, 5],
+			[8, 5],
+			[12, 7],
+			[20, 9],
+			[13, 6],
+			[15, 4],
+		] as [number, number][]) {
 			const verts = ngon(n);
 			const face = traversal(n, d);
 			const poly = face.map((i) => verts[i]);
@@ -197,7 +217,11 @@ describe("starFaceRings", () => {
 	it("keeps the mod-2 pieces disjoint, so a translucent face does not darken where it is one sheet", () => {
 		// Area alone cannot see an overlap that a gap elsewhere pays for. Sum of piece areas has to be
 		// the area of the union, and the union is the even-odd region the test above already pinned.
-		for (const [n, d] of [[7, 3], [9, 4], [12, 5]] as [number, number][]) {
+		for (const [n, d] of [
+			[7, 3],
+			[9, 4],
+			[12, 5],
+		] as [number, number][]) {
 			const verts = ngon(n);
 			const rings = starFaceRings(traversal(n, d), d, verts, true);
 			const N = 400;
@@ -207,7 +231,15 @@ describe("starFaceRings", () => {
 					const px = -1 + (2 * (i + 0.5)) / N;
 					const py = -1 + (2 * (j + 0.5)) / N;
 					let cover = 0;
-					for (const r of rings) if (evenOdd(r.map((x) => verts[x]), px, py)) cover++;
+					for (const r of rings)
+						if (
+							evenOdd(
+								r.map((x) => verts[x]),
+								px,
+								py,
+							)
+						)
+							cover++;
 					if (cover > 1) over++;
 				}
 			}
@@ -218,7 +250,11 @@ describe("starFaceRings", () => {
 	it("leaves the nonzero decomposition untouched", () => {
 		// The flag is additive: with it off, ring for ring and appended point for appended point, the
 		// output is what it was before the mod-2 path existed.
-		for (const [n, d] of [[5, 2], [8, 3], [12, 5]] as [number, number][]) {
+		for (const [n, d] of [
+			[5, 2],
+			[8, 3],
+			[12, 5],
+		] as [number, number][]) {
 			const a = ngon(n);
 			const b = ngon(n);
 			expect(starFaceRings(traversal(n, d), d, a)).toEqual(starFaceRings(traversal(n, d), d, b, false));
@@ -243,8 +279,7 @@ describe("starFaceRings", () => {
 // Marek Čtrnáct, 2026-08-19: the pentagrammic prism's concave edges did not show. They are not edges,
 // so nothing drew them; `faceCrossings` is what does.
 describe("faceCrossings", () => {
-	const prism = (): SphStarPattern =>
-		JSON.parse(readFileSync("public/spherical-star/ss-10-15-7-d2.json", "utf8"));
+	const prism = (): SphStarPattern => JSON.parse(readFileSync("public/spherical-star/ss-10-15-7-d2.json", "utf8"));
 
 	const build = (p: SphStarPattern) => {
 		const verts = p.vertices.map((v) => [...v] as [number, number, number]);
@@ -308,8 +343,7 @@ describe("faceCrossings", () => {
 // Oosterom-Strackee, and it has to bound the sampled maximum from below everywhere and meet it exactly
 // wherever the covering is uniform.
 describe("sheetCount", () => {
-	const load = (id: string): SphStarPattern =>
-		JSON.parse(readFileSync(`public/spherical-star/${id}.json`, "utf8"));
+	const load = (id: string): SphStarPattern => JSON.parse(readFileSync(`public/spherical-star/${id}.json`, "utf8"));
 
 	const dot3 = (a: V3, b: V3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 	const cross3 = (a: V3, b: V3): V3 => [
@@ -332,10 +366,7 @@ describe("sheetCount", () => {
 				const u = ring.map((i) => unit3(verts[i]));
 				for (let k = 1; k < u.length - 1; k++) {
 					const [a, b, c] = [u[0], u[k], u[k + 1]];
-					total += 2 * Math.atan2(
-						Math.abs(dot3(a, cross3(b, c))),
-						1 + dot3(a, b) + dot3(b, c) + dot3(c, a),
-					);
+					total += 2 * Math.atan2(Math.abs(dot3(a, cross3(b, c))), 1 + dot3(a, b) + dot3(b, c) + dot3(c, a));
 				}
 			}
 		}

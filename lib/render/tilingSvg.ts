@@ -1,4 +1,11 @@
-import { expandToViewport, parseBaseCell, polygonFillHue, TILE_FILL_ALPHA, tileFill, type TranslationalCellData } from "@/lib/utils/renderTiling";
+import {
+	expandToViewport,
+	parseBaseCell,
+	polygonFillHue,
+	TILE_FILL_ALPHA,
+	tileFill,
+	type TranslationalCellData,
+} from "@/lib/utils/renderTiling";
 
 // Turns a translational cell into inline SVG, as the canvas path (renderTilingToContext) does for
 // thumbnails. Used where a tiling has to exist in the server-rendered HTML with no canvas and no

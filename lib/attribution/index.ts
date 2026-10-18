@@ -68,24 +68,39 @@ export const SOURCES = {
 	// Labels short enough to sit on one line of the info card beside a toggle: a citation cut off by an
 	// ellipsis is a citation nobody can read, and the link carries the rest.
 	hill2026: { label: "Hill 2026, arXiv:2607.28711", url: "https://arxiv.org/abs/2607.28711" },
-	polytopeWiki: { label: "Polytope Wiki, noble polyhedra", url: "https://polytope.miraheze.org/wiki/List_of_noble_polyhedra" },
+	polytopeWiki: {
+		label: "Polytope Wiki, noble polyhedra",
+		url: "https://polytope.miraheze.org/wiki/List_of_noble_polyhedra",
+	},
 } satisfies Record<string, Source>;
 
 export const PEOPLE = {
 	kepler: {
 		name: "Johannes Kepler",
 		url: "https://en.wikipedia.org/wiki/Johannes_Kepler",
-		image: { src: "/people/kepler.jpg", page: "https://commons.wikimedia.org/wiki/File:JKepler.jpg", credit: "Portrait by August Köhler, cropped. Public domain, via Wikimedia Commons." },
+		image: {
+			src: "/people/kepler.jpg",
+			page: "https://commons.wikimedia.org/wiki/File:JKepler.jpg",
+			credit: "Portrait by August Köhler, cropped. Public domain, via Wikimedia Commons.",
+		},
 	},
 	poinsot: {
 		name: "Louis Poinsot",
 		url: "https://en.wikipedia.org/wiki/Louis_Poinsot",
-		image: { src: "/people/poinsot.jpg", page: "https://commons.wikimedia.org/wiki/File:Pointsot2.jpg", credit: "Portrait by Julien-Léopold Boilly, cropped. Public domain, via Wikimedia Commons." },
+		image: {
+			src: "/people/poinsot.jpg",
+			page: "https://commons.wikimedia.org/wiki/File:Pointsot2.jpg",
+			credit: "Portrait by Julien-Léopold Boilly, cropped. Public domain, via Wikimedia Commons.",
+		},
 	},
 	hess: {
 		name: "Edmund Hess",
 		url: "https://en.wikipedia.org/wiki/Edmund_Hess",
-		image: { src: "/people/hess.jpg", page: "https://commons.wikimedia.org/wiki/File:Das_Fotoalbum_f%C3%BCr_Weierstra%C3%9F_030_(Edmund_Hess).jpg", credit: "Photograph by Moritz Paar, cropped. Public domain, via Wikimedia Commons." },
+		image: {
+			src: "/people/hess.jpg",
+			page: "https://commons.wikimedia.org/wiki/File:Das_Fotoalbum_f%C3%BCr_Weierstra%C3%9F_030_(Edmund_Hess).jpg",
+			credit: "Photograph by Moritz Paar, cropped. Public domain, via Wikimedia Commons.",
+		},
 	},
 	bruckner: { name: "Max Brückner", url: "https://en.wikipedia.org/wiki/Max_Br%C3%BCckner" },
 	webb: { name: "Robert Webb", url: "https://www.software3d.com/NobleSnub.php" },
@@ -98,7 +113,11 @@ export const PEOPLE = {
 	johnson: {
 		name: "Norman Johnson",
 		url: "https://en.wikipedia.org/wiki/Norman_Johnson_(mathematician)",
-		image: { src: "/people/johnson.jpg", page: "https://commons.wikimedia.org/wiki/File:Norman_Johnson_(mathematician).jpg", credit: "Photograph by Mark LeBlanc. CC BY-SA 3.0, via Wikimedia Commons." },
+		image: {
+			src: "/people/johnson.jpg",
+			page: "https://commons.wikimedia.org/wiki/File:Norman_Johnson_(mathematician).jpg",
+			credit: "Photograph by Mark LeBlanc. CC BY-SA 3.0, via Wikimedia Commons.",
+		},
 	},
 	// German Wikipedia: the English one has no article on him.
 	krotenheerdt: { name: "Krötenheerdt", url: "https://de.wikipedia.org/wiki/Otto_Kr%C3%B6tenheerdt" },
@@ -117,12 +136,17 @@ export const PEOPLE = {
 
 /** The Polytope Wiki's discoverer column, as written, to a person. Unlisted spellings stay as written. */
 const WIKI_PERSON: Record<string, Person> = {
-	Kepler: PEOPLE.kepler, "Johannes Kepler": PEOPLE.kepler,
-	Poinsot: PEOPLE.poinsot, "Louis Poinsot": PEOPLE.poinsot,
-	Hess: PEOPLE.hess, "Edmund Hess": PEOPLE.hess,
-	"Brückner": PEOPLE.bruckner, "Max Brückner": PEOPLE.bruckner,
+	Kepler: PEOPLE.kepler,
+	"Johannes Kepler": PEOPLE.kepler,
+	Poinsot: PEOPLE.poinsot,
+	"Louis Poinsot": PEOPLE.poinsot,
+	Hess: PEOPLE.hess,
+	"Edmund Hess": PEOPLE.hess,
+	Brückner: PEOPLE.bruckner,
+	"Max Brückner": PEOPLE.bruckner,
 	"Robert Webb": PEOPLE.webb,
-	Mikloweit: PEOPLE.mikloweit, "Ulrich Mikloweit": PEOPLE.mikloweit,
+	Mikloweit: PEOPLE.mikloweit,
+	"Ulrich Mikloweit": PEOPLE.mikloweit,
 	Senkoquartz: PEOPLE.senkoquartz,
 	// The wiki's handle for the account whose GitHub namesake Hill's paper cites as his repository.
 	Plasmath: PEOPLE.hill,
@@ -133,7 +157,13 @@ const symbolOf = (solid: string) => {
 	for (const c of NOBLE_CREDITS) if (`noble-${c[0].toLowerCase().replace(".", "-")}` === solid) return c[0];
 	return null;
 };
-const PLATONIC: Record<string, string> = { "T-1": "Pythagoreans", "C-1": "Pythagoreans", "D-1": "Pythagoreans", "O-1": "Theaetetus", "I-1": "Theaetetus" };
+const PLATONIC: Record<string, string> = {
+	"T-1": "Pythagoreans",
+	"C-1": "Pythagoreans",
+	"D-1": "Pythagoreans",
+	"O-1": "Theaetetus",
+	"I-1": "Theaetetus",
+};
 const CLASSIFIED: Credit = { role: "classified", who: PEOPLE.hill, year: 2026, source: SOURCES.hill2026 };
 
 /** The name the literature gives a noble polyhedron, or null where it has none on record. */
@@ -143,18 +173,42 @@ export function nobleName(solid: string): string | null {
 }
 
 function nobleCredits(solid: string): Credit[] {
-	if (solid === "noble-disphenoid") return [{ role: "credited", who: { name: "Traditional" } }, { ...CLASSIFIED, note: "The disphenoids are classical; the paper proves that they and the stephanoids are the only noble polyhedra with prismatic symmetry." }];
+	if (solid === "noble-disphenoid")
+		return [
+			{ role: "credited", who: { name: "Traditional" } },
+			{
+				...CLASSIFIED,
+				note: "The disphenoids are classical; the paper proves that they and the stephanoids are the only noble polyhedra with prismatic symmetry.",
+			},
+		];
 	if (solid.startsWith("noble-stephanoid-"))
 		return [
-			{ role: "discovered", who: PEOPLE.hess, source: SOURCES.hill2026, note: "As a family, in his papers of 1875 to 1877, by the account in Hill's introduction." },
-			{ ...CLASSIFIED, note: "Proves that the disphenoids and the stephanoids are the only noble polyhedra with prismatic symmetry." },
+			{
+				role: "discovered",
+				who: PEOPLE.hess,
+				source: SOURCES.hill2026,
+				note: "As a family, in his papers of 1875 to 1877, by the account in Hill's introduction.",
+			},
+			{
+				...CLASSIFIED,
+				note: "Proves that the disphenoids and the stephanoids are the only noble polyhedra with prismatic symmetry.",
+			},
 		];
 	const symbol = symbolOf(solid);
 	if (!symbol) {
 		// On the shelf and absent from the wiki's list: D-4 and D-5. The paper's own count of earlier
 		// discoveries (Hess 16, Brückner 10, Webb 1, the 2020 wave 33, Klein 2) is fully accounted for by
 		// other solids, which leaves these among the ones first listed in it.
-		return [{ role: "discovered", who: PEOPLE.hill, year: 2026, source: SOURCES.hill2026, note: "Not in the Polytope Wiki's list. Every earlier discovery the paper counts is accounted for by another solid, which leaves this one first listed there." }, CLASSIFIED];
+		return [
+			{
+				role: "discovered",
+				who: PEOPLE.hill,
+				year: 2026,
+				source: SOURCES.hill2026,
+				note: "Not in the Polytope Wiki's list. Every earlier discovery the paper counts is accounted for by another solid, which leaves this one first listed there.",
+			},
+			CLASSIFIED,
+		];
 	}
 	const [, , who, year] = BY_SYMBOL.get(symbol)!;
 	const fissary = symbol.endsWith("-F");
@@ -162,16 +216,41 @@ function nobleCredits(solid: string): Credit[] {
 	if (/Pokemonkey/.test(who)) {
 		// sD-10.1 and sD-12.1. The wiki records a handle; Hill's paper names the discoverer of exactly
 		// these two, and the paper is the citable source.
-		out.push({ role: "discovered", who: PEOPLE.klein, year: year ?? undefined, source: SOURCES.hill2026, note: "Found independently while the classification was being written, by the paper's account." });
+		out.push({
+			role: "discovered",
+			who: PEOPLE.klein,
+			year: year ?? undefined,
+			source: SOURCES.hill2026,
+			note: "Found independently while the classification was being written, by the paper's account.",
+		});
 	} else if (who) {
-		out.push({ role: "discovered", who: WIKI_PERSON[who] ?? { name: who }, year: year ?? undefined, source: SOURCES.polytopeWiki });
+		out.push({
+			role: "discovered",
+			who: WIKI_PERSON[who] ?? { name: who },
+			year: year ?? undefined,
+			source: SOURCES.polytopeWiki,
+		});
 	} else if (year) {
 		// Two rows give a year and no name. The 2020 discoveries were Mikloweit's and Senkoquartz's.
-		out.push({ role: "discovered", who: { name: "not recorded" }, year, source: SOURCES.polytopeWiki, note: "One of the 2020 discoveries, by Ulrich Mikloweit or Senkoquartz; the list does not say which." });
+		out.push({
+			role: "discovered",
+			who: { name: "not recorded" },
+			year,
+			source: SOURCES.polytopeWiki,
+			note: "One of the 2020 discoveries, by Ulrich Mikloweit or Senkoquartz; the list does not say which.",
+		});
 	}
 	// The five Platonic solids are credited as the atlas has always credited them, on its convex shelf.
-	else if (PLATONIC[symbol]) out.push({ role: "credited", who: legacyPerson(PLATONIC[symbol]) ?? { name: PLATONIC[symbol] } });
-	out.push(fissary ? { ...CLASSIFIED, note: "Described there as a fissary figure, outside the 146: a polyhedron only if coinciding vertices are allowed." } : CLASSIFIED);
+	else if (PLATONIC[symbol])
+		out.push({ role: "credited", who: legacyPerson(PLATONIC[symbol]) ?? { name: PLATONIC[symbol] } });
+	out.push(
+		fissary
+			? {
+					...CLASSIFIED,
+					note: "Described there as a fissary figure, outside the 146: a polyhedron only if coinciding vertices are allowed.",
+				}
+			: CLASSIFIED,
+	);
 	return out;
 }
 

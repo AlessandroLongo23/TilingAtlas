@@ -46,8 +46,9 @@ const DECORATIONS = ERROR_SPECIMENS.filter((s) => s.klass && s.klass !== "tiling
  * Deliberately not the first eight: the seed is grouped by class, so those would all be uniform
  * tilings. Spread evenly across it and the wall shows the range even on its very first frame.
  */
-const OPENING: ErrorSpecimen[] = Array.from({ length: SLOTS }, (_, i) =>
-	ERROR_SPECIMENS[Math.round((i * (ERROR_SPECIMENS.length - 1)) / (SLOTS - 1))],
+const OPENING: ErrorSpecimen[] = Array.from(
+	{ length: SLOTS },
+	(_, i) => ERROR_SPECIMENS[Math.round((i * (ERROR_SPECIMENS.length - 1)) / (SLOTS - 1))],
 );
 
 /** `n` distinct members of `pool`, uniformly at random — a partial Fisher–Yates over a copy of it. */
@@ -75,7 +76,10 @@ async function drawLive(signal: AbortSignal): Promise<ErrorSpecimen[]> {
 	const res = await fetch(HERO_INDEX_URL, { signal });
 	if (!res.ok) throw new Error(`hero index: HTTP ${res.status}`);
 	const ids = (await res.json()) as string[];
-	const wanted = sample(ids.filter((id) => !isExcludedHeroId(id)), LIVE_SLOTS);
+	const wanted = sample(
+		ids.filter((id) => !isExcludedHeroId(id)),
+		LIVE_SLOTS,
+	);
 
 	const live = await Promise.all(
 		wanted.map(async (id) => {
@@ -116,7 +120,7 @@ function TilingTile({ spec }: { spec: ErrorSpecimen }) {
 	return (
 		<Link
 			href={spec.href}
-			className="group relative block w-full h-full overflow-hidden"
+			className="group relative block h-full w-full overflow-hidden"
 			style={{ background: spec.background }}
 			aria-label={`Open ${spec.label} in Play`}
 		>
@@ -129,7 +133,7 @@ function TilingTile({ spec }: { spec: ErrorSpecimen }) {
 				// sliver spikes off the screen.
 				strokeLinejoin="round"
 				strokeLinecap="round"
-				className="absolute inset-0 w-full h-full saturate-[0.88] opacity-95 transition-[filter,opacity] duration-300 group-hover:saturate-100 group-hover:opacity-100"
+				className="absolute inset-0 h-full w-full opacity-95 saturate-[0.88] transition-[filter,opacity] duration-300 group-hover:opacity-100 group-hover:saturate-100"
 			>
 				{spec.paths.map((path, i) => (
 					<path
@@ -145,7 +149,7 @@ function TilingTile({ spec }: { spec: ErrorSpecimen }) {
 				))}
 			</svg>
 			{/* The specimen names itself on hover, in the caption style the hero uses. */}
-			<span className="absolute bottom-1.5 left-1.5 text-[10px] font-mono bg-surface/80 backdrop-blur-sm border border-line rounded px-1.5 py-0.5 text-fg-secondary opacity-0 group-hover:opacity-100 transition-opacity">
+			<span className="absolute bottom-1.5 left-1.5 rounded border border-line bg-surface/80 px-1.5 py-0.5 font-mono text-[10px] text-fg-secondary opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100">
 				{spec.label}
 			</span>
 		</Link>
@@ -196,10 +200,7 @@ export function ErrorScreen({ eyebrow, title, body, detail, actions }: ErrorScre
 		// at its min-content height, so a message row taller than its share pushed the wall past the
 		// viewport and the page scrolled. Out of the flex flow it is exactly one screen, and the message
 		// cell scrolls inside itself instead.
-		<main
-			className="h-screen overflow-hidden grid grid-cols-3 gap-px bg-line-subtle text-fg
-				grid-rows-[minmax(4rem,1fr)_auto_minmax(4rem,1fr)] sm:grid-rows-3"
-		>
+		<main className="grid h-screen grid-cols-3 grid-rows-[minmax(4rem,1fr)_auto_minmax(4rem,1fr)] gap-px overflow-hidden bg-line-subtle text-fg sm:grid-rows-3">
 			{top.map((spec, i) => (
 				<div key={`${spec.id}-${i}`} className={TOP_CELLS[i]}>
 					<TilingTile spec={spec} />
@@ -208,25 +209,23 @@ export function ErrorScreen({ eyebrow, title, body, detail, actions }: ErrorScre
 
 			{/* Row 2 — the message. Below sm it takes the whole row and the two flanking specimens drop
 			    out; explicit placement keeps it in the middle cell either way. */}
-			<div className="hidden sm:block col-start-1 row-start-2">
+			<div className="col-start-1 row-start-2 hidden sm:block">
 				<TilingTile spec={picked[3]} />
 			</div>
 			{/* overflow-y-auto: on sm+ this cell is a fixed third of the viewport, and error.message is
 			    whatever was thrown — a long one scrolls instead of spilling over its neighbours. */}
-			<div className="col-start-1 col-span-3 sm:col-start-2 sm:col-span-1 row-start-2 bg-surface flex flex-col justify-center p-6 md:p-8 overflow-y-auto">
-				<p className="text-[10px] uppercase tracking-wider text-fg-muted font-mono">{eyebrow}</p>
-				<h1 className="mt-2 text-2xl md:text-3xl font-semibold tracking-tight text-balance">
-					{title}
-				</h1>
-				<p className="mt-3 text-sm text-fg-secondary leading-relaxed">{body}</p>
+			<div className="col-span-3 col-start-1 row-start-2 flex flex-col justify-center overflow-y-auto bg-surface p-6 sm:col-span-1 sm:col-start-2 md:p-8">
+				<p className="font-mono text-[10px] tracking-wider text-fg-muted uppercase">{eyebrow}</p>
+				<h1 className="mt-2 text-2xl font-semibold tracking-tight text-balance md:text-3xl">{title}</h1>
+				<p className="mt-3 text-sm leading-relaxed text-fg-secondary">{body}</p>
 				{detail ? (
-					<div className="mt-4 border-l-2 border-line-strong pl-3 text-xs font-mono text-fg-secondary break-words">
+					<div className="mt-4 border-l-2 border-line-strong pl-3 font-mono text-xs break-words text-fg-secondary">
 						{detail}
 					</div>
 				) : null}
 				<div className="mt-6 flex flex-wrap gap-2">{actions}</div>
 			</div>
-			<div className="hidden sm:block col-start-3 row-start-2">
+			<div className="col-start-3 row-start-2 hidden sm:block">
 				<TilingTile spec={picked[4]} />
 			</div>
 

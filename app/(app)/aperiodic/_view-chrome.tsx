@@ -41,11 +41,11 @@ export function ViewFooter({
 				id="aperiodic-rotation"
 				label="Rotation"
 				hint={
-					<span className="inline-flex items-center gap-1 text-[10px] text-fg-muted whitespace-nowrap">
+					<span className="inline-flex items-center gap-1 text-[10px] whitespace-nowrap text-fg-muted">
 						<Kbd>Shift</Kbd>
 						{/* Kbd hides on a phone, which would leave "+ scroll" dangling; a finger twists. */}
 						<span className="max-md:hidden">+ scroll</span>
-						<span className="md:hidden max-md:text-xs">Twist two fingers</span>
+						<span className="max-md:text-xs md:hidden">Twist two fingers</span>
 					</span>
 				}
 				value={view.rotationDeg}

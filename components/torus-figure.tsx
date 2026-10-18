@@ -57,8 +57,10 @@ const sideStroke = (n: number) => tileLine(polygonHue(n));
 function clipHalf(poly: Pt[], keep: (p: Pt) => boolean, cut: (a: Pt, b: Pt) => Pt): Pt[] {
 	const out: Pt[] = [];
 	for (let i = 0; i < poly.length; i++) {
-		const a = poly[i], b = poly[(i + 1) % poly.length];
-		const ka = keep(a), kb = keep(b);
+		const a = poly[i],
+			b = poly[(i + 1) % poly.length];
+		const ka = keep(a),
+			kb = keep(b);
 		if (ka) out.push(a);
 		if (ka !== kb) out.push(cut(a, b));
 	}
@@ -69,17 +71,34 @@ function clipHalf(poly: Pt[], keep: (p: Pt) => boolean, cut: (a: Pt, b: Pt) => P
 function clipToUnitSquare(poly: Pt[]): Pt[] {
 	const lerp = (a: Pt, b: Pt, t: number): Pt => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
 	let p = poly;
-	p = clipHalf(p, (q) => q[0] >= 0, (a, b) => lerp(a, b, (0 - a[0]) / (b[0] - a[0])));
-	p = clipHalf(p, (q) => q[0] <= 1, (a, b) => lerp(a, b, (1 - a[0]) / (b[0] - a[0])));
-	p = clipHalf(p, (q) => q[1] >= 0, (a, b) => lerp(a, b, (0 - a[1]) / (b[1] - a[1])));
-	p = clipHalf(p, (q) => q[1] <= 1, (a, b) => lerp(a, b, (1 - a[1]) / (b[1] - a[1])));
+	p = clipHalf(
+		p,
+		(q) => q[0] >= 0,
+		(a, b) => lerp(a, b, (0 - a[0]) / (b[0] - a[0])),
+	);
+	p = clipHalf(
+		p,
+		(q) => q[0] <= 1,
+		(a, b) => lerp(a, b, (1 - a[0]) / (b[0] - a[0])),
+	);
+	p = clipHalf(
+		p,
+		(q) => q[1] >= 0,
+		(a, b) => lerp(a, b, (0 - a[1]) / (b[1] - a[1])),
+	);
+	p = clipHalf(
+		p,
+		(q) => q[1] <= 1,
+		(a, b) => lerp(a, b, (1 - a[1]) / (b[1] - a[1])),
+	);
 	return p;
 }
 
 const area = (poly: Pt[]) => {
 	let a = 0;
 	for (let i = 0; i < poly.length; i++) {
-		const [x1, y1] = poly[i], [x2, y2] = poly[(i + 1) % poly.length];
+		const [x1, y1] = poly[i],
+			[x2, y2] = poly[(i + 1) % poly.length];
 		a += x1 * y2 - x2 * y1;
 	}
 	return Math.abs(a) / 2;
@@ -89,7 +108,8 @@ const area = (poly: Pt[]) => {
 function contains(poly: Pt[], x: number, y: number): boolean {
 	let inside = false;
 	for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-		const [xi, yi] = poly[i], [xj, yj] = poly[j];
+		const [xi, yi] = poly[i],
+			[xj, yj] = poly[j];
 		if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
 	}
 	return inside;
@@ -106,17 +126,21 @@ const fillStroke = (ctx: CanvasRenderingContext2D, poly: Pt[]) => {
 
 /** `n` arrowheads along the edge P→Q, centred on its midpoint: the identification mark. */
 function chevrons(ctx: CanvasRenderingContext2D, p: Pt, q: Pt, n: number, s: number, colour: string) {
-	const dx = q[0] - p[0], dy = q[1] - p[1];
+	const dx = q[0] - p[0],
+		dy = q[1] - p[1];
 	const len = Math.hypot(dx, dy);
-	const ux = dx / len, uy = dy / len;
-	const size = 15 / s, gap = 12 / s;
+	const ux = dx / len,
+		uy = dy / len;
+	const size = 15 / s,
+		gap = 12 / s;
 	ctx.strokeStyle = colour;
 	ctx.lineWidth = 3 / s;
 	ctx.lineCap = "round";
 	ctx.lineJoin = "round";
 	for (let i = 0; i < n; i++) {
 		const t = len / 2 + (i - (n - 1) / 2) * gap;
-		const cx = p[0] + ux * t, cy = p[1] + uy * t;
+		const cx = p[0] + ux * t,
+			cy = p[1] + uy * t;
 		const a = Math.atan2(uy, ux);
 		ctx.beginPath();
 		ctx.moveTo(cx - size * Math.cos(a - 0.62), cy - size * Math.sin(a - 0.62));
@@ -128,13 +152,15 @@ function chevrons(ctx: CanvasRenderingContext2D, p: Pt, q: Pt, n: number, s: num
 
 /** Where the line `from + t·dir` enters and leaves the frame. Slab method; the box is axis-aligned. */
 function rayRange(from: Pt, dir: Pt, box: Box): [number, number] {
-	let lo = -Infinity, hi = Infinity;
+	let lo = -Infinity,
+		hi = Infinity;
 	for (const [o, d, min, max] of [
 		[from[0], dir[0], box.minX, box.maxX],
 		[from[1], dir[1], box.minY, box.maxY],
 	] as const) {
 		if (Math.abs(d) < 1e-12) continue;
-		const a = (min - o) / d, b = (max - o) / d;
+		const a = (min - o) / d,
+			b = (max - o) / d;
 		lo = Math.max(lo, Math.min(a, b));
 		hi = Math.min(hi, Math.max(a, b));
 	}
@@ -154,22 +180,30 @@ export function TorusFigure() {
 	const paintPlane = useRef<() => void>(() => {});
 	const paintTorus = useRef<() => void>(() => {});
 	/** What the plane panel last drew, in world coordinates, plus the inverse of its transform. */
-	const hit = useRef<{ polys: { w: Pt[]; idx: number; copy: number }[]; toWorld: (px: number, py: number) => Pt } | null>(null);
+	const hit = useRef<{
+		polys: { w: Pt[]; idx: number; copy: number }[];
+		toWorld: (px: number, py: number) => Pt;
+	} | null>(null);
 
 	useEffect(() => {
 		let alive = true;
 		fetch("/defense/period-figure.json")
 			.then((r) => r.json())
-			.then((d: FigureData) => { if (alive) setData(d); })
+			.then((d: FigureData) => {
+				if (alive) setData(d);
+			})
 			.catch(() => {});
-		return () => { alive = false; };
+		return () => {
+			alive = false;
+		};
 	}, []);
 
 	// Every translate of every cell polygon, in lattice coordinates, with the part of it that falls
 	// inside the cell. `copies` is what the plane panel draws, `pieces` what the torus panel draws.
 	const built = useMemo(() => {
 		if (!data) return null;
-		const [t1x, t1y] = data.t1.xy, [t2x, t2y] = data.t2.xy;
+		const [t1x, t1y] = data.t1.xy,
+			[t2x, t2y] = data.t2.xy;
 		const det = t1x * t2y - t1y * t2x;
 		const toAB = ([x, y]: Pt): Pt => [(x * t2y - y * t2x) / det, (-x * t1y + y * t1x) / det];
 
@@ -181,7 +215,10 @@ export function TorusFigure() {
 			for (let j = -12; j <= 12; j++) {
 				for (let k = 0; k < data.polys.length; k++) {
 					const ab = data.polys[k].v.map((v) => toAB([v[0] + i * t1x + j * t2x, v[1] + i * t1y + j * t2y]));
-					let lo0 = Infinity, hi0 = -Infinity, lo1 = Infinity, hi1 = -Infinity;
+					let lo0 = Infinity,
+						hi0 = -Infinity,
+						lo1 = Infinity,
+						hi1 = -Infinity;
 					for (const [a, b] of ab) {
 						if (a < lo0) lo0 = a;
 						if (a > hi0) hi0 = a;
@@ -207,11 +244,15 @@ export function TorusFigure() {
 			g.area += area(p.ab);
 			groups.set(p.idx, g);
 		}
-		let accent = -1, best = -1;
+		let accent = -1,
+			best = -1;
 		for (const [idx, g] of groups) {
 			if (g.count < 2) continue;
 			const score = (g.count === 2 ? 100 : 0) + g.area;
-			if (score > best) { best = score; accent = idx; }
+			if (score > best) {
+				best = score;
+				accent = idx;
+			}
 		}
 
 		return { copies, pieces, accent, t1: [t1x, t1y] as Pt, t2: [t2x, t2y] as Pt, sides: data.polys.map((p) => p.n) };
@@ -219,7 +260,8 @@ export function TorusFigure() {
 
 	// --- panel one: the plane, with one cell outlined on it ----------------------------------------
 	useEffect(() => {
-		const host = planeHost.current, canvas = planeCanvas.current;
+		const host = planeHost.current,
+			canvas = planeCanvas.current;
 		if (!host || !canvas || !built) return;
 		const { copies, accent, t1, t2, sides } = built;
 		const world = ([a, b]: Pt): Pt => [a * t1[0] + b * t2[0], a * t1[1] + b * t2[1]];
@@ -229,11 +271,24 @@ export function TorusFigure() {
 			// A square window in WORLD space, centred on the cell and sized off it, so the tiling reaches
 			// all four sides of the panel and the cell keeps a constant share of the frame whatever the
 			// lattice's skew.
-			const cellCorners = ([[0, 0], [1, 0], [1, 1], [0, 1]] as Pt[]).map(world);
-			const cxs = cellCorners.map((c) => c[0]), cys = cellCorners.map((c) => c[1]);
+			const cellCorners = (
+				[
+					[0, 0],
+					[1, 0],
+					[1, 1],
+					[0, 1],
+				] as Pt[]
+			).map(world);
+			const cxs = cellCorners.map((c) => c[0]),
+				cys = cellCorners.map((c) => c[1]);
 			const centre: Pt = [(Math.min(...cxs) + Math.max(...cxs)) / 2, (Math.min(...cys) + Math.max(...cys)) / 2];
 			const half = PLANE_ZOOM * Math.max(Math.max(...cxs) - Math.min(...cxs), Math.max(...cys) - Math.min(...cys));
-			const box: Box = { minX: centre[0] - half, maxX: centre[0] + half, minY: centre[1] - half, maxY: centre[1] + half };
+			const box: Box = {
+				minX: centre[0] - half,
+				maxX: centre[0] + half,
+				minY: centre[1] - half,
+				maxY: centre[1] + half,
+			};
 			const p = prepare(host, canvas, box, 0.99);
 			if (!p) return;
 			const { ctx, s, dpr } = p;
@@ -243,9 +298,14 @@ export function TorusFigure() {
 			ctx.lineWidth = 1 / s;
 			for (let c = 0; c < copies.length; c++) {
 				const w = copies[c].ab.map(world);
-				let mx = 0, my = 0;
-				for (const [x, y] of w) { mx += x; my += y; }
-				mx /= w.length; my /= w.length;
+				let mx = 0,
+					my = 0;
+				for (const [x, y] of w) {
+					mx += x;
+					my += y;
+				}
+				mx /= w.length;
+				my /= w.length;
 				if (Math.abs(mx - centre[0]) > half * 1.12 || Math.abs(my - centre[1]) > half * 1.12) continue;
 				drawn.push({ w, idx: copies[c].idx, copy: c });
 				// The hovered COPY only — in the plane these really are different tiles, and lighting every
@@ -275,13 +335,20 @@ export function TorusFigure() {
 			// the origin sit a shade stronger because they carry the labelled periods.
 			// The range comes from the frame's own corners in lattice coordinates, so it covers the panel
 			// exactly however the lattice is skewed.
-			const abCorners = ([[box.minX, box.minY], [box.maxX, box.minY], [box.maxX, box.maxY], [box.minX, box.maxY]] as Pt[])
-				.map(([x, y]): Pt => [(x * t2[1] - y * t2[0]) / detW, (-x * t1[1] + y * t1[0]) / detW]);
+			const abCorners = (
+				[
+					[box.minX, box.minY],
+					[box.maxX, box.minY],
+					[box.maxX, box.maxY],
+					[box.minX, box.maxY],
+				] as Pt[]
+			).map(([x, y]): Pt => [(x * t2[1] - y * t2[0]) / detW, (-x * t1[1] + y * t1[0]) / detW]);
 			const span = (i: 0 | 1) => {
 				const vs = abCorners.map((c) => c[i]);
 				return [Math.floor(Math.min(...vs)), Math.ceil(Math.max(...vs))] as const;
 			};
-			const [aLo, aHi] = span(0), [bLo, bHi] = span(1);
+			const [aLo, aHi] = span(0),
+				[bLo, bHi] = span(1);
 			ctx.setLineDash([7 / s, 6 / s]);
 			ctx.lineWidth = 1.6 / s;
 			// lines of constant b run along T1; lines of constant a run along T2
@@ -312,7 +379,10 @@ export function TorusFigure() {
 			ctx.closePath();
 			ctx.stroke();
 
-			for (const [to, c] of [[world([1, 0]), T1_COLOUR], [world([0, 1]), T2_COLOUR]] as const) {
+			for (const [to, c] of [
+				[world([1, 0]), T1_COLOUR],
+				[world([0, 1]), T2_COLOUR],
+			] as const) {
 				ctx.strokeStyle = c;
 				ctx.fillStyle = c;
 				ctx.lineWidth = 2.6 / s;
@@ -320,7 +390,8 @@ export function TorusFigure() {
 				ctx.moveTo(originW[0], originW[1]);
 				ctx.lineTo(to[0], to[1]);
 				ctx.stroke();
-				const ang = Math.atan2(to[1] - originW[1], to[0] - originW[0]), head = 13 / s;
+				const ang = Math.atan2(to[1] - originW[1], to[0] - originW[0]),
+					head = 13 / s;
 				ctx.beginPath();
 				ctx.moveTo(to[0], to[1]);
 				ctx.lineTo(to[0] - head * Math.cos(ang - 0.4), to[1] - head * Math.sin(ang - 0.4));
@@ -355,20 +426,32 @@ export function TorusFigure() {
 
 	// --- panel two: the same cell, with its edges identified ----------------------------------------
 	useEffect(() => {
-		const host = torusHost.current, canvas = torusCanvas.current;
+		const host = torusHost.current,
+			canvas = torusCanvas.current;
 		if (!host || !canvas || !built) return;
 		const { pieces, accent, t1, t2, sides } = built;
 		const world = ([a, b]: Pt): Pt => [a * t1[0] + b * t2[0], a * t1[1] + b * t2[1]];
 
 		const paint = () => {
-			const corners = ([[0, 0], [1, 0], [1, 1], [0, 1]] as Pt[]).map(world);
-			const xs = corners.map((c) => c[0]), ys = corners.map((c) => c[1]);
+			const corners = (
+				[
+					[0, 0],
+					[1, 0],
+					[1, 1],
+					[0, 1],
+				] as Pt[]
+			).map(world);
+			const xs = corners.map((c) => c[0]),
+				ys = corners.map((c) => c[1]);
 			const pad = 0.16 * Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys));
 			const p = prepare(
-				host, canvas,
+				host,
+				canvas,
 				{
-					minX: Math.min(...xs) - pad, maxX: Math.max(...xs) + pad,
-					minY: Math.min(...ys) - pad, maxY: Math.max(...ys) + pad,
+					minX: Math.min(...xs) - pad,
+					maxX: Math.max(...xs) + pad,
+					minY: Math.min(...ys) - pad,
+					maxY: Math.max(...ys) + pad,
 				},
 				0.96,
 			);
@@ -434,7 +517,10 @@ export function TorusFigure() {
 			const [wx, wy] = h.toWorld(e.clientX - r.left, e.clientY - r.top);
 			// Last drawn wins, matching what is on top where tiles share an edge.
 			for (let i = h.polys.length - 1; i >= 0; i--) {
-				if (contains(h.polys[i].w, wx, wy)) { set({ idx: h.polys[i].idx, copy: h.polys[i].copy }); return; }
+				if (contains(h.polys[i].w, wx, wy)) {
+					set({ idx: h.polys[i].idx, copy: h.polys[i].copy });
+					return;
+				}
 			}
 			set(null);
 		};
@@ -451,7 +537,7 @@ export function TorusFigure() {
 	return (
 		<div className="not-prose flex flex-wrap items-start justify-center gap-5">
 			<figure className="m-0 flex flex-col items-center gap-1">
-				<div ref={planeHost} className="relative aspect-square h-[46vh] rounded-2xl border border-line bg-surface-base">
+				<div ref={planeHost} className="bg-surface-base relative aspect-square h-[46vh] rounded-2xl border border-line">
 					<canvas ref={planeCanvas} className="absolute inset-0 h-full w-full" />
 				</div>
 				<figcaption className="text-center text-[clamp(0.65rem,0.9vh+0.25vw,0.9rem)] text-fg-muted">
@@ -459,7 +545,7 @@ export function TorusFigure() {
 				</figcaption>
 			</figure>
 			<figure className="m-0 flex flex-col items-center gap-1">
-				<div ref={torusHost} className="relative aspect-[4/3] h-[46vh] rounded-2xl border border-line bg-surface-base">
+				<div ref={torusHost} className="bg-surface-base relative aspect-[4/3] h-[46vh] rounded-2xl border border-line">
 					<canvas ref={torusCanvas} className="absolute inset-0 h-full w-full" />
 				</div>
 				<figcaption className="text-center text-[clamp(0.65rem,0.9vh+0.25vw,0.9rem)] text-fg-muted">

@@ -36,13 +36,7 @@ import { CornerControls } from "@/components/ui/corner-controls";
 import { useConfiguration } from "@/stores/configuration";
 import { useImmersive } from "@/stores/immersive";
 import type { TilingSpec } from "@/lib/services/tilingSpec";
-import {
-	DEFAULT_TYPE,
-	PENTAGON_TYPES,
-	defaultParams,
-	parseType,
-	pentagonType,
-} from "@/lib/pentagon/types";
+import { DEFAULT_TYPE, PENTAGON_TYPES, defaultParams, parseType, pentagonType } from "@/lib/pentagon/types";
 import { buildCell, hasAssembly } from "@/lib/pentagon/build";
 import { PentagonSidebar, Section, Segmented, type SegmentedOption } from "./_controls";
 import { PrototileInspector } from "./_prototile";
@@ -118,7 +112,10 @@ export function PentagonsClient() {
 	const stepType = useCallback(
 		(delta: number) => {
 			const n = PENTAGON_TYPES.length;
-			const i = Math.max(0, PENTAGON_TYPES.findIndex((t) => t.id === idRef.current));
+			const i = Math.max(
+				0,
+				PENTAGON_TYPES.findIndex((t) => t.id === idRef.current),
+			);
 			selectType(PENTAGON_TYPES[(i + delta + n) % n].id);
 		},
 		[selectType],
@@ -136,7 +133,10 @@ export function PentagonsClient() {
 				return;
 			}
 			const n = PENTAGON_TYPES.length;
-			const i = Math.max(0, PENTAGON_TYPES.findIndex((t) => t.id === idRef.current));
+			const i = Math.max(
+				0,
+				PENTAGON_TYPES.findIndex((t) => t.id === idRef.current),
+			);
 			// Walk the column, stepping over the empty slots a partial last row would leave (none at 15).
 			const rows = Math.ceil(n / GRID_COLS);
 			const col = i % GRID_COLS;
@@ -242,7 +242,7 @@ export function PentagonsClient() {
 	);
 
 	const header = (
-		<div className="ta-wall-cell bg-surface-chrome px-3.5 py-3 flex flex-col gap-1.5">
+		<div className="ta-wall-cell flex flex-col gap-1.5 bg-surface-chrome px-3.5 py-3">
 			{/* On a phone the dock's peek row already names the type. */}
 			<span className="text-[15px] font-semibold text-fg max-md:hidden">{type.label}</span>
 			<span className="text-xs text-fg-secondary">
@@ -250,7 +250,10 @@ export function PentagonsClient() {
 			</span>
 			<span className="flex flex-wrap gap-1">
 				{type.groups.split(", ").map((g) => (
-					<span key={g} className="rounded-control bg-surface-sunken px-1.5 py-0.5 font-mono text-[11px] text-fg-secondary max-md:text-xs">
+					<span
+						key={g}
+						className="rounded-control bg-surface-sunken px-1.5 py-0.5 font-mono text-[11px] text-fg-secondary max-md:text-xs"
+					>
 						{g}
 					</span>
 				))}
@@ -312,7 +315,7 @@ export function PentagonsClient() {
 	);
 
 	return (
-		<div className="relative flex-1 min-h-0 flex">
+		<div className="relative flex min-h-0 flex-1">
 			{/* The canvas's top-right corner (this box's, the sidebar being on the left), first in the DOM so
 			    it is read before the sheet: fullscreen, the only control that stays put while immersive (it
 			    is the way back), and on a phone the reset beside it. */}
@@ -379,7 +382,14 @@ export function PentagonsClient() {
 								/>
 							))}
 						</div>
-						<Button variant="ghost" size="sm" icon={RotateCcw} label="Reset" onClick={resetShape} classes="border-line-subtle" />
+						<Button
+							variant="ghost"
+							size="sm"
+							icon={RotateCcw}
+							label="Reset"
+							onClick={resetShape}
+							classes="border-line-subtle"
+						/>
 						{result.ok ? null : (
 							<p className="text-[11px] text-fg-muted max-md:text-xs">
 								No pentagon here: {result.reason}. The tiling shown is the last valid one.
@@ -434,13 +444,12 @@ export function PentagonsClient() {
 						</div>
 					</Reveal>
 				</Section>
-
 			</PentagonSidebar>
 
-			<div className="flex-1 min-h-0 relative">
+			<div className="relative min-h-0 flex-1">
 				<canvas
 					ref={canvasRef}
-					className="w-full h-full block cursor-grab active:cursor-grabbing touch-none"
+					className="block h-full w-full cursor-grab touch-none active:cursor-grabbing"
 					{...view.handlers}
 				/>
 				{/* The lens is a second canvas over the first, which stays mounted as the input layer —

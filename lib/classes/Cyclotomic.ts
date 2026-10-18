@@ -88,11 +88,7 @@ export function zetaIndexFromAngle(angle: number, N: number, tol = 1e-6): number
 	const kReal = angle / step;
 	const k = Math.round(kReal);
 	if (Math.abs(kReal - k) > tol / step) {
-		throw new Error(
-			`zetaIndexFromAngle: angle ${angle} is not a multiple of 2π/${N} (off-grid by ${
-				kReal - k
-			} steps)`
-		);
+		throw new Error(`zetaIndexFromAngle: angle ${angle} is not a multiple of 2π/${N} (off-grid by ${kReal - k} steps)`);
 	}
 	return ((k % N) + N) % N;
 }
@@ -151,9 +147,7 @@ export class CyclotomicRing {
 		const phiPoly = PHI_POLY[N];
 		const phi = PHI[N];
 		if (!phiPoly || phi === undefined) {
-			throw new Error(
-				`CyclotomicRing: N=${N} not supported yet (have ${Object.keys(PHI_POLY).join(", ")}).`
-			);
+			throw new Error(`CyclotomicRing: N=${N} not supported yet (have ${Object.keys(PHI_POLY).join(", ")}).`);
 		}
 		return new CyclotomicRing(N, phi, phiPoly);
 	}
@@ -234,7 +228,12 @@ export class Cyclotomic {
 	}
 
 	neg(): Cyclotomic {
-		return new Cyclotomic(this.ring, this.num.map((c) => -c), this.den, true);
+		return new Cyclotomic(
+			this.ring,
+			this.num.map((c) => -c),
+			this.den,
+			true,
+		);
 	}
 
 	/** Full multiply: convolve coefficients (degree ≤ 2φ−2), then reduce mod Φ_N. */
@@ -278,7 +277,12 @@ export class Cyclotomic {
 	/** Multiply by the rational p/q (centroids, midpoints). No field inversion involved. */
 	scaleRational(p: bigint, q: bigint): Cyclotomic {
 		if (q === 0n) throw new Error("Cyclotomic.scaleRational: zero denominator");
-		return new Cyclotomic(this.ring, this.num.map((c) => c * p), this.den * q, true);
+		return new Cyclotomic(
+			this.ring,
+			this.num.map((c) => c * p),
+			this.den * q,
+			true,
+		);
 	}
 
 	equals(o: Cyclotomic): boolean {
@@ -327,7 +331,12 @@ export class Cyclotomic {
 	}
 
 	static decode(ring: CyclotomicRing, enc: { n: string[]; d: string }): Cyclotomic {
-		return new Cyclotomic(ring, enc.n.map((s) => BigInt(s)), BigInt(enc.d), true);
+		return new Cyclotomic(
+			ring,
+			enc.n.map((s) => BigInt(s)),
+			BigInt(enc.d),
+			true,
+		);
 	}
 
 	static ZERO(ring: CyclotomicRing): Cyclotomic {

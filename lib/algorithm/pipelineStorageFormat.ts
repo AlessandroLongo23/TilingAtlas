@@ -32,9 +32,9 @@ export function polygonFromShort(enc: Record<string, unknown>): Polygon {
 	const v = enc.v as [number, number][] | undefined;
 	const vertices = v
 		? v.map((p) => new Vector(p[0], p[1]))
-		: (enc.vertices as { x: number; y: number }[])?.map((p) =>
-				Array.isArray(p) ? new Vector(p[0], p[1]) : new Vector(p.x, p.y)
-			) ?? [];
+		: ((enc.vertices as { x: number; y: number }[])?.map((p) =>
+				Array.isArray(p) ? new Vector(p[0], p[1]) : new Vector(p.x, p.y),
+			) ?? []);
 	const type = (enc.t ?? enc.type) as string;
 	switch (type) {
 		case PolygonType.REGULAR:

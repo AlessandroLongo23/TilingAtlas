@@ -76,7 +76,11 @@ export function buildFlatSolid(poly: Polyhedron | null, opts: FlatSolidOptions =
 	// Faces: a non-indexed fan-triangle soup on the unit sphere, flat-shaded, one hue per source face.
 	// The filled part shares the solid's vertex list, so it is fitted by the same scale as the edges.
 	const filled: Polyhedron = opts.fillFaces ? { ...poly, faces: opts.fillFaces.map((i) => poly.faces[i]) } : poly;
-	const { positions, faceSizes, triLayers, triFace } = flatSolidTriangles(filled, SPHERE_RADIUS, opts.starMod2 ?? false);
+	const { positions, faceSizes, triLayers, triFace } = flatSolidTriangles(
+		filled,
+		SPHERE_RADIUS,
+		opts.starMod2 ?? false,
+	);
 	// One base hue per triangle, by polygon size — unless the caller overrides per source face, which
 	// only the COMPOUND view does: two interpenetrating solids that both have squares are one colour
 	// under the size ramp, and then the figure reads as a single lumpy solid instead of as two.

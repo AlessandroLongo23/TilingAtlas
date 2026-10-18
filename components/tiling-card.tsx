@@ -5,11 +5,7 @@ import { Camera } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { compactSeedName, compactToHtml } from "@/lib/utils/compactSeedName";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
-import {
-	renderTilingToDataUrl,
-	type RawPolygon,
-	type TranslationalCellData,
-} from "@/lib/utils/renderTiling";
+import { renderTilingToDataUrl, type RawPolygon, type TranslationalCellData } from "@/lib/utils/renderTiling";
 import { useScreenshotPreview } from "@/stores/screenshotPreview";
 import { AlgorithmTiling } from "@/classes/algorithm/Tiling";
 import { sanitizeForStorage } from "@/lib/utils/storageKey";
@@ -26,12 +22,7 @@ interface TilingCardProps {
 export function resolveTilingLabel(tiling: CampaignTiling): string {
 	const encName = (tiling.encoded_tiling as { name?: string } | undefined)?.name;
 	const tcName = (tiling.translational_cell as { n?: string } | null)?.n;
-	return (
-		encName ??
-		tcName ??
-		tiling.polygon_names?.join(" + ") ??
-		`k=${tiling.k} m=${tiling.m}`
-	);
+	return encName ?? tcName ?? tiling.polygon_names?.join(" + ") ?? `k=${tiling.k} m=${tiling.m}`;
 }
 
 export function TilingCard({ tiling, density = "comfortable", onClick }: TilingCardProps) {
@@ -109,11 +100,9 @@ export function TilingCard({ tiling, density = "comfortable", onClick }: TilingC
 					<TilingThumbnail encodedTiling={tiling.encoded_tiling} pxPerEdge={pxPerEdge} />
 				) : tiling.image_url ? (
 					// eslint-disable-next-line @next/next/no-img-element
-					<img src={tiling.image_url} alt="tiling" className="w-full h-full object-cover" />
+					<img src={tiling.image_url} alt="tiling" className="h-full w-full object-cover" />
 				) : (
-					<div className="w-full h-full flex items-center justify-center text-fg-disabled text-xs">
-						k={tiling.k}
-					</div>
+					<div className="flex h-full w-full items-center justify-center text-xs text-fg-disabled">k={tiling.k}</div>
 				)}
 				{canScreenshot ? (
 					<button
@@ -121,24 +110,18 @@ export function TilingCard({ tiling, density = "comfortable", onClick }: TilingC
 						onClick={handleScreenshot}
 						title="Screenshot"
 						aria-label="Take screenshot"
-						className="absolute top-1.5 right-1.5 p-1.5 rounded-md bg-surface-overlay/80 border border-line-strong text-fg-muted hover:text-fg hover:bg-surface-overlay opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity max-md:opacity-100"
+						className="absolute top-1.5 right-1.5 rounded-md border border-line-strong bg-surface-overlay/80 p-1.5 text-fg-muted opacity-0 transition-opacity group-hover:opacity-100 hover:bg-surface-overlay hover:text-fg focus:opacity-100 max-md:opacity-100"
 					>
 						<Camera size={13} />
 					</button>
 				) : null}
 			</div>
 			<div className={cn("flex flex-col", padClass)}>
-				<p
-					className={nameClass}
-					title={label}
-					dangerouslySetInnerHTML={{ __html: compact }}
-				/>
+				<p className={nameClass} title={label} dangerouslySetInnerHTML={{ __html: compact }} />
 				<div className="flex flex-wrap gap-1">
 					{tiling.k != null ? <span className={badgeClass}>k={tiling.k}</span> : null}
 					{!isCompact && tiling.m != null ? <span className={badgeClass}>m={tiling.m}</span> : null}
-					{tiling.wallpaper_group ? (
-						<span className={badgeInfoClass}>{tiling.wallpaper_group}</span>
-					) : null}
+					{tiling.wallpaper_group ? <span className={badgeInfoClass}>{tiling.wallpaper_group}</span> : null}
 					{tiling.is_regular ? <span className={badgeRegClass}>reg</span> : null}
 					{tiling.is_star ? <span className={badgeStarClass}>star</span> : null}
 				</div>

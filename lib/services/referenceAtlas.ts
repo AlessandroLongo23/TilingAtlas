@@ -57,13 +57,33 @@ export const BUBBLE_GRID_SUBS = BUBBLE_GRID_ORDER.map((g) => `bub-${g}`);
 /** The 28 spherical bubble boards, in the order the k=1 spherical shelf already lists its solids:
  *  Platonic, Archimedean, prisms, antiprisms. */
 export const SPH_BUBBLE_SOLIDS = [
-	"tetrahedron", "cube", "octahedron", "dodecahedron", "icosahedron",
-	"truncated-tetrahedron", "cuboctahedron", "truncated-cube", "truncated-octahedron",
-	"rhombicuboctahedron", "truncated-cuboctahedron", "snub-cube", "icosidodecahedron",
-	"truncated-dodecahedron", "truncated-icosahedron", "rhombicosidodecahedron",
-	"truncated-icosidodecahedron", "snub-dodecahedron",
-	"triangular-prism", "pentagonal-prism", "hexagonal-prism", "octagonal-prism", "decagonal-prism",
-	"square-antiprism", "pentagonal-antiprism", "hexagonal-antiprism", "octagonal-antiprism",
+	"tetrahedron",
+	"cube",
+	"octahedron",
+	"dodecahedron",
+	"icosahedron",
+	"truncated-tetrahedron",
+	"cuboctahedron",
+	"truncated-cube",
+	"truncated-octahedron",
+	"rhombicuboctahedron",
+	"truncated-cuboctahedron",
+	"snub-cube",
+	"icosidodecahedron",
+	"truncated-dodecahedron",
+	"truncated-icosahedron",
+	"rhombicosidodecahedron",
+	"truncated-icosidodecahedron",
+	"snub-dodecahedron",
+	"triangular-prism",
+	"pentagonal-prism",
+	"hexagonal-prism",
+	"octagonal-prism",
+	"decagonal-prism",
+	"square-antiprism",
+	"pentagonal-antiprism",
+	"hexagonal-antiprism",
+	"octagonal-antiprism",
 	"decagonal-antiprism",
 ];
 export const SPH_BUBBLE_SUBS = SPH_BUBBLE_SOLIDS.map((s) => `sbub-${s}`);
@@ -98,12 +118,7 @@ import {
 	HYP_COLORS_BASES,
 	type HypColorsPattern,
 } from "@/lib/colors/hyp-colors";
-import {
-	sphColorsFamilyLabel,
-	sphColorsSub,
-	SPH_COLORS_SOLIDS,
-	type SphColorsPattern,
-} from "@/lib/colors/sph-colors";
+import { sphColorsFamilyLabel, sphColorsSub, SPH_COLORS_SOLIDS, type SphColorsPattern } from "@/lib/colors/sph-colors";
 import {
 	hydrateSphShard,
 	hypSchwarzBoards,
@@ -130,10 +145,7 @@ import {
 	type SphEdgesPattern,
 	type SphEdgesShard,
 } from "@/lib/freedraw/sph-edges";
-import {
-	sphPolySub,
-	type SphPolyPattern,
-} from "@/lib/tilings/sph-poly";
+import { sphPolySub, type SphPolyPattern } from "@/lib/tilings/sph-poly";
 import {
 	sphStarName,
 	sphStarShardUrl,
@@ -174,12 +186,7 @@ import {
 	hypHalfSubOfBoard,
 	isHypHalf,
 } from "@/lib/tilings/hyp-half";
-import {
-	HYP_TILING_BOARDS,
-	hypTilingFamilyOfSub,
-	hypTilingSub,
-	hypTilingSubOfBoard,
-} from "@/lib/tilings/hyp-tilings";
+import { HYP_TILING_BOARDS, hypTilingFamilyOfSub, hypTilingSub, hypTilingSubOfBoard } from "@/lib/tilings/hyp-tilings";
 import { tilingLevel, type TilingLevel } from "@/lib/tilings/tiling-level";
 import type { PentEdgeRecord } from "@/lib/pentagon/edgeDevelop";
 import {
@@ -226,7 +233,30 @@ export type PolygonMode = "all" | "any" | "only";
 
 export interface ReferenceTiling {
 	id: string; // "t4001" (galebach) | "myers-k1-star-03" (myers) | "ctrnact-07_..." (ctrnact)
-	source: "galebach" | "myers" | "ctrnact" | "ctrnact-star" | "composable" | "isotoxal" | "mixed" | "scaled" | "polyomino" | "islamic" | "freedraw" | "bubble" | "colors" | "hyperbolic" | "spherical" | "hollow" | "period" | "tri45" | "planigon" | "penrose" | "euhalf" | "lengthparam" | "tegula";
+	source:
+		| "galebach"
+		| "myers"
+		| "ctrnact"
+		| "ctrnact-star"
+		| "composable"
+		| "isotoxal"
+		| "mixed"
+		| "scaled"
+		| "polyomino"
+		| "islamic"
+		| "freedraw"
+		| "bubble"
+		| "colors"
+		| "hyperbolic"
+		| "spherical"
+		| "hollow"
+		| "period"
+		| "tri45"
+		| "planigon"
+		| "penrose"
+		| "euhalf"
+		| "lengthparam"
+		| "tegula";
 	/** Which half-polygon board an `euhalf` row belongs to ("hexv", "pent", "hexm", "sqmid"); absent
 	 *  elsewhere. The sub-axis needs it because the four boards share one source. */
 	euHalfBoard?: string;
@@ -501,7 +531,24 @@ export const EUHALF_SHARD_KS = [5, 6, 7, 8, 9];
 // tileClass, the primary shelf axis: "convex" (convex-irregular) iff the tiling comes from the convex
 // unit-edge super-tile demo (source-driven — source "composable" — since it has no "*" token); else
 // "star" iff its family carries a star token ("n*"); "regular" otherwise. Matches polygonClassLabel.
-export type TileClass = "regular" | "star" | "hollow" | "convex" | "isotoxal" | "mixed" | "scaled" | "period" | "polyomino" | "islamic" | "freedraw" | "bubble" | "colors" | "hyperbolic" | "spherical" | "edgelen" | "topological";
+export type TileClass =
+	| "regular"
+	| "star"
+	| "hollow"
+	| "convex"
+	| "isotoxal"
+	| "mixed"
+	| "scaled"
+	| "period"
+	| "polyomino"
+	| "islamic"
+	| "freedraw"
+	| "bubble"
+	| "colors"
+	| "hyperbolic"
+	| "spherical"
+	| "edgelen"
+	| "topological";
 // Bonner's design systems — the sub-facet axis for the Islamic class (docs/ISLAMIC_TILINGS.md). The
 // underlying tessellation's tile kit, independent of the strap-pattern family (acute/median/obtuse).
 /** The palettes inside the "Multiple edge lengths" class — its sub-facet axis, the way IslamicSystem
@@ -509,9 +556,23 @@ export type TileClass = "regular" | "star" | "hollow" | "convex" | "isotoxal" | 
  *  puts them in one class and what makes each of them need edge types. */
 /** One value per TILE SHAPE, not per source: the four halved-polygon boards share the source
  *  "euhalf" but are four different tiles, and a visitor picking a shape wants that shape. */
-export type EdgeBoard = "tri45" | "planigon" | "penrose"
-	| "euh-hexv" | "euh-pent" | "euh-hexm" | "euh-sqmid" | "euh-tri";
-export type IslamicSystem = "regular" | "fourfold-a" | "fourfold-b" | "fivefold" | "sevenfold" | "nonsystematic" | "dual-level";
+export type EdgeBoard =
+	| "tri45"
+	| "planigon"
+	| "penrose"
+	| "euh-hexv"
+	| "euh-pent"
+	| "euh-hexm"
+	| "euh-sqmid"
+	| "euh-tri";
+export type IslamicSystem =
+	| "regular"
+	| "fourfold-a"
+	| "fourfold-b"
+	| "fivefold"
+	| "sevenfold"
+	| "nonsystematic"
+	| "dual-level";
 // The ONE source-driven tile classifier, shared by /library and /play. Source wins when present;
 // source-less rows (the Supabase certified catalogue) fall back to family-string tokens — which
 // matches the legacy polygonClassLabel, so the two pages agree with or without a source.
@@ -526,8 +587,14 @@ export function tileClassOf(t: { family: string; source?: ReferenceTiling["sourc
 	if (t.source === "period") return "period";
 	// One class for every palette whose tiles have edges of SEVERAL lengths; which palette is the
 	// sub-facet below, not a class of its own.
-	if (t.source === "tri45" || t.source === "planigon" || t.source === "penrose"
-		|| t.source === "euhalf" || t.source === "lengthparam") return "edgelen";
+	if (
+		t.source === "tri45" ||
+		t.source === "planigon" ||
+		t.source === "penrose" ||
+		t.source === "euhalf" ||
+		t.source === "lengthparam"
+	)
+		return "edgelen";
 	if (t.source === "tegula") return "topological";
 	if (t.source === "polyomino") return "polyomino";
 	if (t.source === "islamic") return "islamic";
@@ -542,7 +609,25 @@ export function tileClassOf(t: { family: string; source?: ReferenceTiling["sourc
 // Single source of truth for the tile-class axis, consumed by BOTH /library (filter chips) and /play
 // (catalogue groups). To add a class: one entry here + one tileClassOf branch + one bestEffort fetch in
 // loadReferenceAtlas — and it appears on both pages. No per-page class list to keep in sync.
-export const TILE_CLASS_ORDER: TileClass[] = ["regular", "star", "hollow", "convex", "isotoxal", "mixed", "scaled", "period", "edgelen", "topological", "polyomino", "islamic", "freedraw", "bubble", "colors", "hyperbolic", "spherical"];
+export const TILE_CLASS_ORDER: TileClass[] = [
+	"regular",
+	"star",
+	"hollow",
+	"convex",
+	"isotoxal",
+	"mixed",
+	"scaled",
+	"period",
+	"edgelen",
+	"topological",
+	"polyomino",
+	"islamic",
+	"freedraw",
+	"bubble",
+	"colors",
+	"hyperbolic",
+	"spherical",
+];
 export const TILE_CLASS_LABEL: Record<TileClass, { short: string; long: string }> = {
 	regular: { short: "Regular", long: "Regular polygons" },
 	star: { short: "Star", long: "Star polygons" },
@@ -587,11 +672,21 @@ export const TILE_CLASS_LABEL: Record<TileClass, { short: string; long: string }
 // Order matters: SUB_ORDER must keep each sub-family in ONE contiguous run (tests/catalogue-sub-family),
 // and the two Schwarz boards are family "schwarz-eu" while every other board here is family "grid". So
 // the Archimedean pair goes with the grids, not after the Schwarz pair.
-const FREEDRAW_GRID_SUBS = ["square", "triangle", "hex", "ts", "4436", "488", "sch236", "sch244"] as const satisfies readonly FreedrawCatalogueGrid[];
+const FREEDRAW_GRID_SUBS = [
+	"square",
+	"triangle",
+	"hex",
+	"ts",
+	"4436",
+	"488",
+	"sch236",
+	"sch244",
+] as const satisfies readonly FreedrawCatalogueGrid[];
 // ...and this is what makes "fails to compile" true, not aspirational: `satisfies` alone would
 // accept a SHORT list. Leaving a grid out makes the Exclude non-never, so the assignment errors.
 type UnlistedGrid = Exclude<FreedrawCatalogueGrid, (typeof FREEDRAW_GRID_SUBS)[number]>;
-const _everyGridHasASubRow: UnlistedGrid extends never ? true : ["missing from FREEDRAW_GRID_SUBS", UnlistedGrid] = true;
+const _everyGridHasASubRow: UnlistedGrid extends never ? true : ["missing from FREEDRAW_GRID_SUBS", UnlistedGrid] =
+	true;
 void _everyGridHasASubRow;
 
 export const SUB_ORDER = [
@@ -760,7 +855,7 @@ export function familyOfSub(sub: string): SubFamily | null {
 	if (sub.startsWith("sps-") || sub.startsWith("hys-")) return "schwarz-board";
 	if (sub.startsWith("spe-")) return "sph-edges";
 	if (sub.startsWith("hph-")) return "hyp-half";
-	if (sub.startsWith("sph-")) return "sph-convex";   // the halved Platonic boards
+	if (sub.startsWith("sph-")) return "sph-convex"; // the halved Platonic boards
 	if (sub.startsWith("hpo-")) return "hyp-poly";
 	// One shelf, two one-parameter families: 3.4.n.4 under "hpo-", {3,n} under "hpt-".
 	if (sub.startsWith("hpt-")) return "hyp-poly-t";
@@ -768,7 +863,7 @@ export function familyOfSub(sub: string): SubFamily | null {
 	if (sub.startsWith("hpq-")) return "hyp-poly-q";
 	// The fourth: Marek's hybrid systems, several figures at one edge length, apeirogons included.
 	if (sub.startsWith("hpy-")) return "hyp-poly-y";
-	if (sub.startsWith("spx-")) return "sph-convex";   // the reference solids
+	if (sub.startsWith("spx-")) return "sph-convex"; // the reference solids
 	if (sub === "sst" || sub === "sis-solid" || sub === "spn-solid" || sub === "spt-solid") return "sph-nonconvex";
 	if (/^spg\d+-solid$/.test(sub)) return "sph-nonconvex";
 	if (sub === "nbl-solid" || sub === "nbf-solid") return "sph-noble";
@@ -939,12 +1034,10 @@ export function sortCatalogueForDisplay<T extends CatalogueTiling>(rows: readonl
 		}
 		return { t, dec: ranked[0], cls: ranked[1], sub: ranked[2], k: t.k, key: t.canonicalKey };
 	});
-	keyed.sort((x, y) =>
-		x.dec - y.dec ||
-		x.cls - y.cls ||
-		x.sub - y.sub ||
-		x.k - y.k ||
-		(x.key < y.key ? -1 : x.key > y.key ? 1 : 0));
+	keyed.sort(
+		(x, y) =>
+			x.dec - y.dec || x.cls - y.cls || x.sub - y.sub || x.k - y.k || (x.key < y.key ? -1 : x.key > y.key ? 1 : 0),
+	);
 	return keyed.map((e) => e.t);
 }
 
@@ -1033,7 +1126,16 @@ export function hyperbolicParams(
 }
 
 const SUPERSCRIPT_DIGIT: Record<string, string> = {
-	"0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴", "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹",
+	"0": "⁰",
+	"1": "¹",
+	"2": "²",
+	"3": "³",
+	"4": "⁴",
+	"5": "⁵",
+	"6": "⁶",
+	"7": "⁷",
+	"8": "⁸",
+	"9": "⁹",
 };
 
 // Compact vertex-config notation for display (the standard Grünbaum–Shephard superscript form): run-length
@@ -1252,7 +1354,8 @@ export function polygonTokensOf(t: Pick<ReferenceTiling, "family">): string[] {
 		if (tok) toks.add(tok);
 	}
 	return [...toks].sort((a, b) => {
-		const sa = a.endsWith("*"), sb = b.endsWith("*");
+		const sa = a.endsWith("*"),
+			sb = b.endsWith("*");
 		if (sa !== sb) return sa ? 1 : -1;
 		return parseInt(a, 10) - parseInt(b, 10);
 	});
@@ -1294,16 +1397,16 @@ export function resolveMergedFamilyKey(state: { tiling: string | null; alphas: n
 		const t = a != null && Number.isFinite(a) ? (a - coupled.fromAlpha0Deg) / 15 : 0;
 		return {
 			tiling: coupled.to,
-			alphas: coupled.survivorAlpha0Deg.map(
-				(a0, p) => a0 + 15 * (coupled.deltaUnits[p] + t * coupled.axisUnits[p]),
-			),
+			alphas: coupled.survivorAlpha0Deg.map((a0, p) => a0 + 15 * (coupled.deltaUnits[p] + t * coupled.axisUnits[p])),
 		};
 	}
 	const alias = state.tiling ? MERGED_FAMILY_ALIASES[state.tiling] : undefined;
 	if (alias) {
 		const a = state.alphas?.[0];
 		const alphas =
-			a != null && Number.isFinite(a) ? [alias.uOf.c + alias.uOf.m * a, ...(state.alphas ?? []).slice(1)] : state.alphas;
+			a != null && Number.isFinite(a)
+				? [alias.uOf.c + alias.uOf.m * a, ...(state.alphas ?? []).slice(1)]
+				: state.alphas;
 		return { tiling: alias.to, alphas };
 	}
 
@@ -1319,13 +1422,16 @@ export function resolveMergedFamilyKey(state: { tiling: string | null; alphas: n
 }
 
 type MergedAliasTable = Record<string, { to: string; uOf: { m: number; c: number } }>;
-type CoupledAliasTable = Record<string, {
-	to: string;
-	fromAlpha0Deg: number;
-	deltaUnits: number[];
-	axisUnits: number[];
-	survivorAlpha0Deg: number[];
-}>;
+type CoupledAliasTable = Record<
+	string,
+	{
+		to: string;
+		fromAlpha0Deg: number;
+		deltaUnits: number[];
+		axisUnits: number[];
+		survivorAlpha0Deg: number[];
+	}
+>;
 
 const COUPLED_FAMILY_ALIASES: CoupledAliasTable = COUPLED_ALIASES_MIXED as CoupledAliasTable;
 
@@ -1567,7 +1673,8 @@ export function matchesReferenceFilters(t: ReferenceTiling, f: ReferenceFilter):
 		if (f.isotoxalShape === "alpha" && p !== 1) return false;
 		if (f.isotoxalShape === "alpha-beta" && p !== 2) return false;
 	}
-	if (f.wallpaperGroups?.length && (t.wallpaperGroup == null || !f.wallpaperGroups.includes(t.wallpaperGroup))) return false;
+	if (f.wallpaperGroups?.length && (t.wallpaperGroup == null || !f.wallpaperGroups.includes(t.wallpaperGroup)))
+		return false;
 	if (f.latticeShapes?.length && (t.latticeShape == null || !f.latticeShapes.includes(t.latticeShape))) return false;
 	// Hyperbolic interval facets: an active one excludes everything outside the hyperbolic shelf (or
 	// missing the scalar) — same never-silently-pass ethos as M/partition above.
@@ -1584,7 +1691,8 @@ export function matchesReferenceFilters(t: ReferenceTiling, f: ReferenceFilter):
 		if (t.edge < f.hypEdge[0] - 1e-9 || t.edge > f.hypEdge[1] + 1e-9) return false;
 	}
 	if (f.discoverers?.length && !f.discoverers.includes(t.discoverer)) return false;
-	if (f.certifications?.length && (t.certification == null || !f.certifications.includes(t.certification))) return false;
+	if (f.certifications?.length && (t.certification == null || !f.certifications.includes(t.certification)))
+		return false;
 	if (f.polygonNames?.length) {
 		const mode = f.polygonMode ?? "all";
 		const has = (key: string) => tilingHasSpecies(t, key);
@@ -1690,7 +1798,13 @@ export function referenceToCatalogue(r: ReferenceTiling): CatalogueTiling {
 //
 // `renderCell` is a deliberate throwaway — every consumer that would draw it branches on `freedraw` first
 // (thumbnails, /play canvas), exactly as they branch on `developed`/`spherical`.
-const FREEDRAW_EMPTY_CELL: TranslationalCellData = { cellPolygons: [], basis: [[1, 0], [0, 1]] };
+const FREEDRAW_EMPTY_CELL: TranslationalCellData = {
+	cellPolygons: [],
+	basis: [
+		[1, 0],
+		[0, 1],
+	],
+};
 
 function freedrawToReference(p: FreedrawPattern): ReferenceTiling {
 	const stats = summarise(analyseFaces(p));
@@ -2493,7 +2607,10 @@ export function lengthFamilyRows(): ReferenceTiling[] {
 		geometry: "euclidean" as const,
 		discoverer: f.discoverer,
 		paramCell: f.cell,
-		renderCell: evaluateParamCell(f.cell, f.cell.params.map((p) => p.defaultAlphaDeg)),
+		renderCell: evaluateParamCell(
+			f.cell,
+			f.cell.params.map((p) => p.defaultAlphaDeg),
+		),
 		note: f.affineTrivial ? `Affinely the square grid — a slider demo, not a new tiling. ${f.note}` : f.note,
 	}));
 }
@@ -2561,25 +2678,27 @@ export async function loadSphericalPolyAtlas(): Promise<ReferenceTiling[]> {
 	// seven into records here. The HYPERBOLIC half of the family ("hpo-") is untouched: it is infinite,
 	// and nothing else in the catalogue holds it.
 	sphPolyInflight = Promise.all(
-		([] as Promise<ReferenceTiling[]>[]).concat(
-			SPH_HALF_BOARDS.flatMap((b) =>
-				b.ks.map((k) =>
-					fetch(sphHalfShardUrl(b.id, k))
-						.then((res) => (res.ok ? readAtlas<SphPolyPattern>(res) : []))
-						.catch(() => [] as SphPolyPattern[])
-						.then((recs) => recs.map(sphHalfToReference)),
+		([] as Promise<ReferenceTiling[]>[])
+			.concat(
+				SPH_HALF_BOARDS.flatMap((b) =>
+					b.ks.map((k) =>
+						fetch(sphHalfShardUrl(b.id, k))
+							.then((res) => (res.ok ? readAtlas<SphPolyPattern>(res) : []))
+							.catch(() => [] as SphPolyPattern[])
+							.then((recs) => recs.map(sphHalfToReference)),
+					),
+				),
+			)
+			.concat(
+				// One fetch per solid: this shelf has no shared board to index into (every record IS a different
+				// polyhedron) and the whole thing is ~460 kB across 83 files, so there is nothing to defer.
+				SPH_STAR_INDEX.map((e) =>
+					fetch(sphStarShardUrl(e.id))
+						.then((res) => (res.ok ? (res.json() as Promise<SphStarPattern>) : null))
+						.catch(() => null)
+						.then((rec) => (rec ? [sphStarToReference(rec)] : [])),
 				),
 			),
-		).concat(
-			// One fetch per solid: this shelf has no shared board to index into (every record IS a different
-			// polyhedron) and the whole thing is ~460 kB across 83 files, so there is nothing to defer.
-			SPH_STAR_INDEX.map((e) =>
-				fetch(sphStarShardUrl(e.id))
-					.then((res) => (res.ok ? (res.json() as Promise<SphStarPattern>) : null))
-					.catch(() => null)
-					.then((rec) => (rec ? [sphStarToReference(rec)] : [])),
-			),
-		),
 	)
 		.then((lists) => {
 			const data = lists.flat();
@@ -2643,14 +2762,22 @@ export async function loadFreedrawDecorAtlas(): Promise<ReferenceTiling[]> {
 	if (fdDecorCache) return fdDecorCache;
 	if (fdDecorInflight) return fdDecorInflight;
 	fdDecorInflight = Promise.all(
-			FREEDRAW_EAGER_FILES.map((url) =>
-				fetch(url)
-					.then((res) => (res.ok ? readAtlas<FreedrawPattern>(res) : []))
-					.catch(() => [] as FreedrawPattern[]),
-			),
-		).then((lists) => lists.flat().map(freedrawToReference))
-		.then((rows) => { fdDecorCache = rows; fdDecorInflight = null; return rows; })
-		.catch((err) => { fdDecorInflight = null; throw err; });
+		FREEDRAW_EAGER_FILES.map((url) =>
+			fetch(url)
+				.then((res) => (res.ok ? readAtlas<FreedrawPattern>(res) : []))
+				.catch(() => [] as FreedrawPattern[]),
+		),
+	)
+		.then((lists) => lists.flat().map(freedrawToReference))
+		.then((rows) => {
+			fdDecorCache = rows;
+			fdDecorInflight = null;
+			return rows;
+		})
+		.catch((err) => {
+			fdDecorInflight = null;
+			throw err;
+		});
 	return fdDecorInflight;
 }
 
@@ -2736,8 +2863,15 @@ export async function loadSphBubbleAtlas(): Promise<ReferenceTiling[]> {
 			),
 		)
 		.then((lists) => lists.flat())
-		.then((rows) => { sphBubCache = rows; sphBubInflight = null; return rows; })
-		.catch((err) => { sphBubInflight = null; throw err; });
+		.then((rows) => {
+			sphBubCache = rows;
+			sphBubInflight = null;
+			return rows;
+		})
+		.catch((err) => {
+			sphBubInflight = null;
+			throw err;
+		});
 	return sphBubInflight;
 }
 
@@ -2748,14 +2882,22 @@ export async function loadBubbleDecorAtlas(): Promise<ReferenceTiling[]> {
 	if (bubDecorCache) return bubDecorCache;
 	if (bubDecorInflight) return bubDecorInflight;
 	bubDecorInflight = Promise.all(
-			BUBBLE_FILES.map((url) =>
-				fetch(url)
-					.then((res) => (res.ok ? readAtlas<BubblePattern>(res) : []))
-					.catch(() => [] as BubblePattern[]),
-			),
-		).then((lists) => lists.flat().map(bubbleToReference))
-		.then((rows) => { bubDecorCache = rows; bubDecorInflight = null; return rows; })
-		.catch((err) => { bubDecorInflight = null; throw err; });
+		BUBBLE_FILES.map((url) =>
+			fetch(url)
+				.then((res) => (res.ok ? readAtlas<BubblePattern>(res) : []))
+				.catch(() => [] as BubblePattern[]),
+		),
+	)
+		.then((lists) => lists.flat().map(bubbleToReference))
+		.then((rows) => {
+			bubDecorCache = rows;
+			bubDecorInflight = null;
+			return rows;
+		})
+		.catch((err) => {
+			bubDecorInflight = null;
+			throw err;
+		});
 	return bubDecorInflight;
 }
 
@@ -2783,14 +2925,22 @@ export async function loadColorsDecorAtlas(): Promise<ReferenceTiling[]> {
 	if (colDecorCache) return colDecorCache;
 	if (colDecorInflight) return colDecorInflight;
 	colDecorInflight = Promise.all(
-			COLORS_CATALOGUES.flatMap((c) => c.ks.map((k) => `${c.prefix}${k}.json`)).map((url) =>
-				fetch(url)
-					.then((res) => (res.ok ? readAtlas<ColorPattern>(res) : []))
-					.catch(() => [] as ColorPattern[]),
-			),
-		).then((lists) => lists.flat().map(colorsToReference))
-		.then((rows) => { colDecorCache = rows; colDecorInflight = null; return rows; })
-		.catch((err) => { colDecorInflight = null; throw err; });
+		COLORS_CATALOGUES.flatMap((c) => c.ks.map((k) => `${c.prefix}${k}.json`)).map((url) =>
+			fetch(url)
+				.then((res) => (res.ok ? readAtlas<ColorPattern>(res) : []))
+				.catch(() => [] as ColorPattern[]),
+		),
+	)
+		.then((lists) => lists.flat().map(colorsToReference))
+		.then((rows) => {
+			colDecorCache = rows;
+			colDecorInflight = null;
+			return rows;
+		})
+		.catch((err) => {
+			colDecorInflight = null;
+			throw err;
+		});
 	return colDecorInflight;
 }
 
@@ -2858,25 +3008,65 @@ export async function loadReferenceAtlas(): Promise<ReferenceTiling[]> {
 		// forced edge length ℓ merged, because `devPatches` was holding the freedraw patterns.
 		//
 		// If you add a fetch above, add its name here AND to `data`. A missing name is silent.
-		.then(([base, composable, isotoxal, mixed, scaled, period, tri45, planigon, penrose, euhalf, polyomino, islamic, hyperbolic, spherical, hollow, freedraw, colors, devPatches, tegula]) => {
-			// Merge the forced edge length ℓ onto each hyperbolic entry (keyed by developed.patch = patch id).
-			// Best-effort: a missing patch just leaves `edge` undefined, and the card omits the ℓ readout.
-			const edgeById = new Map<string, number | undefined>(
-				(devPatches as Array<{ id: string; edge?: number }>).map((p) => [p.id, p.edge]),
-			);
-			for (const t of hyperbolic) {
-				const e = edgeById.get(t.developed?.patch ?? t.id);
-				if (typeof e === "number") t.edge = e;
-			}
-			const data = [...base, ...composable, ...isotoxal, ...mixed, ...scaled, ...period, ...tri45,
-				...planigon, ...penrose, ...euhalf, ...tegula, ...polyomino, ...islamic, ...hollow, ...freedraw, ...colors, ...hyperbolic, ...spherical,
-				// Appended here, NOT as a Promise.all slot: that destructuring is positional and the comment
-				// above records it silently dropping shelves twice. These rows need no fetch.
-				...lengthFamilyRows()];
-			cache = data;
-			inflight = null;
-			return data;
-		})
+		.then(
+			([
+				base,
+				composable,
+				isotoxal,
+				mixed,
+				scaled,
+				period,
+				tri45,
+				planigon,
+				penrose,
+				euhalf,
+				polyomino,
+				islamic,
+				hyperbolic,
+				spherical,
+				hollow,
+				freedraw,
+				colors,
+				devPatches,
+				tegula,
+			]) => {
+				// Merge the forced edge length ℓ onto each hyperbolic entry (keyed by developed.patch = patch id).
+				// Best-effort: a missing patch just leaves `edge` undefined, and the card omits the ℓ readout.
+				const edgeById = new Map<string, number | undefined>(
+					(devPatches as Array<{ id: string; edge?: number }>).map((p) => [p.id, p.edge]),
+				);
+				for (const t of hyperbolic) {
+					const e = edgeById.get(t.developed?.patch ?? t.id);
+					if (typeof e === "number") t.edge = e;
+				}
+				const data = [
+					...base,
+					...composable,
+					...isotoxal,
+					...mixed,
+					...scaled,
+					...period,
+					...tri45,
+					...planigon,
+					...penrose,
+					...euhalf,
+					...tegula,
+					...polyomino,
+					...islamic,
+					...hollow,
+					...freedraw,
+					...colors,
+					...hyperbolic,
+					...spherical,
+					// Appended here, NOT as a Promise.all slot: that destructuring is positional and the comment
+					// above records it silently dropping shelves twice. These rows need no fetch.
+					...lengthFamilyRows(),
+				];
+				cache = data;
+				inflight = null;
+				return data;
+			},
+		)
 		.catch((err) => {
 			inflight = null;
 			throw err;
@@ -2981,10 +3171,7 @@ export const loadEuHalfAtlasShard = (k: number): Promise<ReferenceTiling[]> => l
 const decorationShardCache = new Map<string, ReferenceTiling[]>();
 const decorationShardInflight = new Map<string, Promise<ReferenceTiling[]>>();
 
-function loadDecorationShard<T>(
-	url: string,
-	adapt: (p: T) => ReferenceTiling,
-): Promise<ReferenceTiling[]> {
+function loadDecorationShard<T>(url: string, adapt: (p: T) => ReferenceTiling): Promise<ReferenceTiling[]> {
 	const cached = decorationShardCache.get(url);
 	if (cached) return Promise.resolve(cached);
 	const existing = decorationShardInflight.get(url);
@@ -3013,9 +3200,7 @@ function loadDecorationShard<T>(
 export async function loadFreedrawShardsForK(k: number): Promise<ReferenceTiling[]> {
 	const shards = freedrawLazyShardsForK(k);
 	if (!shards.length) return [];
-	const lists = await Promise.all(
-		shards.map((s) => loadDecorationShard<FreedrawPattern>(s.url, freedrawToReference)),
-	);
+	const lists = await Promise.all(shards.map((s) => loadDecorationShard<FreedrawPattern>(s.url, freedrawToReference)));
 	return lists.flat();
 }
 

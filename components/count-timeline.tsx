@@ -150,7 +150,7 @@ function Portrait({ person }: { person: Person }) {
 			<div
 				role="img"
 				aria-label={`${person.given} ${person.family}`}
-				className="rounded-full bg-surface-overlay bg-cover bg-center grayscale ring-1 ring-line"
+				className="rounded-full bg-surface-overlay bg-cover bg-center ring-1 ring-line grayscale"
 				style={{
 					width: size,
 					height: size,
@@ -214,13 +214,10 @@ export function CountTimeline() {
 				))}
 			</div>
 
-			<div
-				className="grid pt-[0.6em]"
-				style={{ gridTemplateColumns: `repeat(${COLUMNS}, minmax(0, 1fr))` }}
-			>
+			<div className="grid pt-[0.6em]" style={{ gridTemplateColumns: `repeat(${COLUMNS}, minmax(0, 1fr))` }}>
 				{STOPS.map((stop) => (
 					<div key={stop.years} style={groupSpan(stop)} className="px-[0.7vw] text-center">
-						<div className="text-[clamp(0.78rem,1.2vh+0.35vw,1.2rem)] font-semibold tabular-nums text-fg">
+						<div className="text-[clamp(0.78rem,1.2vh+0.35vw,1.2rem)] font-semibold text-fg tabular-nums">
 							{stop.years}
 						</div>
 						{/* A brace over the entries that took more than one person. Without it the 2022 bar

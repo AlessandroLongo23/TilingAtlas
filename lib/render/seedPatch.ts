@@ -13,12 +13,7 @@
 // caller is responsible for asking the renderer for a single copy (FlatDrawParams.single) — a seed
 // laid out on its lattice would just be the tiling again.
 
-import {
-	expandToViewport,
-	parseBaseCell,
-	type RawPolygon,
-	type TranslationalCellData,
-} from "@/lib/utils/renderTiling";
+import { expandToViewport, parseBaseCell, type RawPolygon, type TranslationalCellData } from "@/lib/utils/renderTiling";
 import type { OrbitData } from "@/lib/services/orbitsFromExactSource";
 
 /**
@@ -33,8 +28,12 @@ export const SEED_WINDOW_RADIUS = 2;
 const key = (x: number, y: number) => `${Math.round(x * 1e4)},${Math.round(y * 1e4)}`;
 
 const centroidOf = (poly: RawPolygon) => {
-	let x = 0, y = 0;
-	for (const v of poly.vertices) { x += v.x; y += v.y; }
+	let x = 0,
+		y = 0;
+	for (const v of poly.vertices) {
+		x += v.x;
+		y += v.y;
+	}
 	return { x: x / poly.vertices.length, y: y / poly.vertices.length };
 };
 
@@ -50,7 +49,11 @@ function nearest(cands: readonly { x: number; y: number }[], ax: number, ay: num
 	let bestD = Infinity;
 	for (const p of cands) {
 		const d = (p.x - ax) ** 2 + (p.y - ay) ** 2;
-		if (d < bestD - 1e-9) { best = p; bestD = d; continue; }
+		if (d < bestD - 1e-9) {
+			best = p;
+			bestD = d;
+			continue;
+		}
 		if (d > bestD + 1e-9) continue;
 		if (p.x < best.x - 1e-9 || (Math.abs(p.x - best.x) <= 1e-9 && p.y < best.y)) best = p;
 	}
@@ -68,10 +71,7 @@ function nearest(cands: readonly { x: number; y: number }[], ax: number, ay: num
  * Returns null when the cell cannot be parsed or no vertex of the patch has an orbit (a tiling with no
  * usable exact source); the caller then draws the plain tiling.
  */
-export function seedFromCell(
-	cell: TranslationalCellData,
-	orbits: OrbitData,
-): TranslationalCellData | null {
+export function seedFromCell(cell: TranslationalCellData, orbits: OrbitData): TranslationalCellData | null {
 	const base = parseBaseCell(cell);
 	if (!base) return null;
 
@@ -104,7 +104,8 @@ export function seedFromCell(
 	if (byOrbit.size === 0) return null;
 
 	const reps: { x: number; y: number }[] = [];
-	let ax = cx, ay = cy;
+	let ax = cx,
+		ay = cy;
 	for (const id of [...byOrbit.keys()].sort((a, b) => a - b)) {
 		const rep = nearest(byOrbit.get(id)!, ax, ay);
 		reps.push(rep);
@@ -130,6 +131,9 @@ export function seedFromCell(
 	// `n`, `star` and `hue` ride along so the seed's tiles keep the colours they have in the atlas.
 	return {
 		p: seed.map((poly) => ({ v: poly.vertices, n: poly.n, star: poly.star, hue: poly.hue })),
-		b: [[v1x, v1y], [v2x, v2y]],
+		b: [
+			[v1x, v1y],
+			[v2x, v2y],
+		],
 	};
 }

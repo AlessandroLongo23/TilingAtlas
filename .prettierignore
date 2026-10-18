@@ -1,0 +1,31 @@
+# Not source: build output, data, experiments, the native tools.
+.next/
+node_modules/
+public/
+experiments/
+tools/
+native-engine/
+*.json
+*.md
+*.css
+pnpm-lock.yaml
+
+# Vendored.
+lib/isohedral/vendor/
+
+# Written by generator scripts; each says which one. Reformatting them would be undone on the next run.
+lib/defense/alphabet44.ts
+lib/defense/vcCompatibility.ts
+lib/defense/vcTilings.ts
+lib/render/errorSpecimens.ts
+lib/render/genusSolids.ts
+lib/render/hemiSolids.ts
+lib/render/isotoxalSolids.ts
+lib/render/nobleCredits.ts
+lib/render/nobleData.ts
+lib/render/nonconvexSolids.ts
+lib/render/uniformCells.ts
+lib/tilings/enumerated-families.generated.ts
+lib/tilings/length-meta.generated.ts
+lib/tilings/ncx-crossing.ts
+lib/tilings/tjunction-families.generated.ts

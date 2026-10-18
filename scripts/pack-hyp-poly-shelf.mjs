@@ -52,10 +52,13 @@ for (const dir of dirs) {
 }
 
 const rows = [];
-let totalRecs = 0, totalRaw = 0, totalGz = 0;
+let totalRecs = 0,
+	totalRaw = 0,
+	totalGz = 0;
 const order = { ai1: 0, ai2: 1, abcd: 2, hybrid: 3 };
 const keys = [...byBoard.keys()].sort((a, b) => {
-	const x = byBoard.get(a), y = byBoard.get(b);
+	const x = byBoard.get(a),
+		y = byBoard.get(b);
 	if (order[x.family] !== order[y.family]) return order[x.family] - order[y.family];
 	return x.n === undefined ? x.id.localeCompare(y.id) : x.n - y.n;
 });
@@ -79,7 +82,9 @@ for (const key of keys) {
 			fs.writeFileSync(path.join(OUT, `${b.stem}-k${s.k}.json.gz`), gz);
 		}
 	}
-	const ks = Object.keys(counts).map(Number).sort((x, y) => x - y);
+	const ks = Object.keys(counts)
+		.map(Number)
+		.sort((x, y) => x - y);
 	if (!ks.length) continue;
 	// EVERY SLICE IS LAZY and `dropped` is empty. Both are the policy, not an oversight: nothing we have
 	// is held back (CLAUDE.md), and the board chips are drawn from this table rather than from loaded
@@ -94,5 +99,5 @@ console.log(rows.join("\n"));
 console.log(
 	`\n${rows.length} boards, ${totalRecs.toLocaleString()} tilings, ` +
 		`${(totalRaw / 1e6).toFixed(0)} MB packed -> ${(totalGz / 1e6).toFixed(0)} MB gzipped ` +
-		`(${(totalGz / totalRaw * 100).toFixed(1)}%)${write ? "  [WRITTEN]" : "  [dry run]"}`,
+		`(${((totalGz / totalRaw) * 100).toFixed(1)}%)${write ? "  [WRITTEN]" : "  [dry run]"}`,
 );

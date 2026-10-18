@@ -190,7 +190,9 @@ export function buildWalk(darts: Darts, edge: number, opts: { allDrawn?: boolean
 		}
 	}
 
-	const sizes = [...new Set(rings.flatMap((ring, f) => (kind[f] === WALK_IRREGULAR ? [] : [lvert[rneig[ring[0]]]])))].sort((a, b) => a - b);
+	const sizes = [
+		...new Set(rings.flatMap((ring, f) => (kind[f] === WALK_IRREGULAR ? [] : [lvert[rneig[ring[0]]]]))),
+	].sort((a, b) => a - b);
 	const width = 2 + 3 * Math.max(...slots);
 	const data = new Float64Array(F * width * 4);
 	for (let f = 0; f < F; f++) {
@@ -199,7 +201,18 @@ export function buildWalk(darts: Darts, edge: number, opts: { allDrawn?: boolean
 		const S = slots[f];
 		const p = lvert[rneig[ring[0]]];
 		const layer = kind[f] === WALK_IRREGULAR ? -1 : sizes.indexOf(p);
-		data.set([kind[f], S, step[f], p, darts.faceColor ? darts.faceColor[ring[0]] : 0, layer, ...(layer < 0 || p === 0 ? [0, 0] : islamicWedgeBox(p, edge))], row);
+		data.set(
+			[
+				kind[f],
+				S,
+				step[f],
+				p,
+				darts.faceColor ? darts.faceColor[ring[0]] : 0,
+				layer,
+				...(layer < 0 || p === 0 ? [0, 0] : islamicWedgeBox(p, edge)),
+			],
+			row,
+		);
 		const Cinv = su11Inverse(K[f][0]); // K[f][0] = C·identity
 		for (let s = 0; s < S; s++) {
 			const i = side[f][s];
@@ -236,7 +249,8 @@ export function buildWalk(darts: Darts, edge: number, opts: { allDrawn?: boolean
 	for (let i = 0; i < n && lvert[rneig[h]] === 2; i++) h = rneig[h]; // a digon's two sides are one segment
 	const seedFace = faceOf[h];
 	let home = c.kind === "F" ? su11Identity() : K[seedFace][posOf[h]];
-	if (c.kind === "E") home = mul(home, su11Translation({ x: Math.tanh((darts.elen ? darts.elen[h] : edge) / 4), y: 0 }));
+	if (c.kind === "E")
+		home = mul(home, su11Translation({ x: Math.tanh((darts.elen ? darts.elen[h] : edge) / 4), y: 0 }));
 	return { data, width, height: F, seedFace, home, verts, sizes };
 }
 
@@ -282,7 +296,12 @@ function locate(t: WalkTiling, f: number, w: Complex): { j: number; s: number; p
  * Walk the point w of face f's frame to the face that contains it. Returns that face, the point in its
  * frame, the isometry W carrying the start frame onto it, and whether the walk arrived within `maxSteps`.
  */
-export function walkPoint(t: WalkTiling, f: number, w: Complex, maxSteps = 4096): { f: number; w: Complex; W: Su11; ok: boolean } {
+export function walkPoint(
+	t: WalkTiling,
+	f: number,
+	w: Complex,
+	maxSteps = 4096,
+): { f: number; w: Complex; W: Su11; ok: boolean } {
 	let W = su11Identity();
 	for (let it = 0; it < maxSteps; it++) {
 		const { j, s, pre } = locate(t, f, w);

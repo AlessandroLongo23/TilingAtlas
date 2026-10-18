@@ -19,7 +19,13 @@ import path from "node:path";
 const ROOT = path.resolve(import.meta.dirname, "..");
 const TS = path.join(ROOT, "lib", "render", "johnsonSolids.ts");
 const ATLAS = path.join(ROOT, "public", "reference-atlas-spherical.json");
-const RENDER_CELL = { b: [[1, 0], [0, 1]], i: [0, 0] };
+const RENDER_CELL = {
+	b: [
+		[1, 0],
+		[0, 1],
+	],
+	i: [0, 0],
+};
 
 const kArg = process.argv.indexOf("--k");
 const K = kArg > -1 ? Number(process.argv[kArg + 1]) : 4;
@@ -46,7 +52,10 @@ function solidsFromTs() {
 			V,
 			F: faces.length,
 			E: faces.reduce((a, b) => a + b, 0) / 2,
-			census: [...census.keys()].sort((a, b) => a - b).map((n) => `${census.get(n)}{${n}}`).join(", "),
+			census: [...census.keys()]
+				.sort((a, b) => a - b)
+				.map((n) => `${census.get(n)}{${n}}`)
+				.join(", "),
 			// The vertex configuration lists one word per ORBIT, so counting them counts k. It is the
 			// same number develop_euclid searched at, carried in the only field that already holds it.
 			k: vc.split(" + ").length,

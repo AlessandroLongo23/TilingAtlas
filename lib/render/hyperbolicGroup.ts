@@ -67,7 +67,8 @@ export interface HyperbolicTilingGL {
 }
 
 const eucCentroid = (pts: Complex[]): Complex => {
-	let x = 0, y = 0;
+	let x = 0,
+		y = 0;
 	for (const p of pts) {
 		x += p.x;
 		y += p.y;
@@ -141,7 +142,8 @@ function isSymmetry(
 	let confirmed = 0;
 	for (const f of corona) {
 		const gc = su11Apply(g, f.c);
-		let bestD = Infinity, bestSize = -1;
+		let bestD = Infinity,
+			bestSize = -1;
 		for (const c of cents) {
 			const dd = (c.x - gc.x) ** 2 + (c.y - gc.y) ** 2;
 			if (dd < bestD) {
@@ -204,7 +206,8 @@ export function buildTilingGL(
 	const patchR = Math.max(...verts.map(eucR));
 
 	// seed tile: the face whose centroid is nearest the origin
-	let seedFace = 0, seedD = Infinity;
+	let seedFace = 0,
+		seedD = Infinity;
 	faces.forEach((ring, fi) => {
 		const d = eucR(eucCentroid(ring.map((v) => verts[v])));
 		if (d < seedD) {
@@ -221,7 +224,8 @@ export function buildTilingGL(
 	// with them. Without this, {8,4}-style large tiles fall entirely outside fixed radii.
 	let scale = 0;
 	for (let i = 0; i < seed.length; i++)
-		for (let j = i + 1; j < seed.length; j++) scale = Math.max(scale, Math.hypot(seed[i].x - seed[j].x, seed[i].y - seed[j].y));
+		for (let j = i + 1; j < seed.length; j++)
+			scale = Math.max(scale, Math.hypot(seed[i].x - seed[j].x, seed[i].y - seed[j].y));
 	const genR = Math.min(0.97, Math.max(0.8, eucR(eucCentroid(seed)) + 3 * scale));
 
 	// validation corona: the seed tile + its EDGE-neighbours (faces sharing ≥2 vertices, i.e. an edge).
@@ -286,7 +290,14 @@ export function buildTilingGL(
 	for (const ring of faces) {
 		const pts = ring.map((v) => verts[v]);
 		const c = eucCentroid(pts);
-		const samples = [c, ...pts, ...pts.map((p, i) => ({ x: 0.5 * (p.x + pts[(i + 1) % pts.length].x), y: 0.5 * (p.y + pts[(i + 1) % pts.length].y) }))];
+		const samples = [
+			c,
+			...pts,
+			...pts.map((p, i) => ({
+				x: 0.5 * (p.x + pts[(i + 1) % pts.length].x),
+				y: 0.5 * (p.y + pts[(i + 1) % pts.length].y),
+			})),
+		];
 		if (!samples.some(inCell)) continue;
 		const edges: GeodesicConic[] = [];
 		for (let i = 0; i < pts.length; i++) {
@@ -330,13 +341,15 @@ export function reducePoint(gl: HyperbolicTilingGL, z0: Complex, maxIter = 128):
 	let z = z0;
 	const invDenO = 1 / Math.max(1 - (gl.basepoint.x ** 2 + gl.basepoint.y ** 2), 1e-9);
 	for (let iter = 0; iter < maxIter; iter++) {
-		const dz0x = z.x - gl.basepoint.x, dz0y = z.y - gl.basepoint.y;
+		const dz0x = z.x - gl.basepoint.x,
+			dz0y = z.y - gl.basepoint.y;
 		let bestF = (dz0x * dz0x + dz0y * dz0y) * invDenO;
 		let best = -1;
 		for (let j = 0; j < gl.generators.length; j++) {
 			const s = gl.generators[j].site;
 			const invDen = 1 / Math.max(1 - (s.x * s.x + s.y * s.y), 1e-9);
-			const dx = z.x - s.x, dy = z.y - s.y;
+			const dx = z.x - s.x,
+				dy = z.y - s.y;
 			const f = (dx * dx + dy * dy) * invDen;
 			if (f < bestF - 1e-9) {
 				bestF = f;
@@ -361,13 +374,15 @@ export function anchorPoint(gl: HyperbolicTilingGL, world: Complex, maxIter = 12
 	const o = gl.basepoint;
 	const invDenO = 1 / Math.max(1 - (o.x * o.x + o.y * o.y), 1e-9);
 	for (let iter = 0; iter < maxIter; iter++) {
-		const dz0x = z.x - o.x, dz0y = z.y - o.y;
+		const dz0x = z.x - o.x,
+			dz0y = z.y - o.y;
 		let bestF = (dz0x * dz0x + dz0y * dz0y) * invDenO;
 		let best = -1;
 		for (let j = 0; j < gl.generators.length; j++) {
 			const s = gl.generators[j].site;
 			const invDen = 1 / Math.max(1 - (s.x * s.x + s.y * s.y), 1e-9);
-			const dx = z.x - s.x, dy = z.y - s.y;
+			const dx = z.x - s.x,
+				dy = z.y - s.y;
 			const f = (dx * dx + dy * dy) * invDen;
 			if (f < bestF - 1e-9) {
 				bestF = f;
@@ -379,7 +394,8 @@ export function anchorPoint(gl: HyperbolicTilingGL, world: Complex, maxIter = 12
 		g = su11Normalize(su11Mul(gl.generators[best].gInv, g));
 	}
 	if (gl.features.length === 0) return world;
-	let bf = gl.features[0], bd = Infinity;
+	let bf = gl.features[0],
+		bd = Infinity;
 	for (const f of gl.features) {
 		const d = (f.x - z.x) ** 2 + (f.y - z.y) ** 2;
 		if (d < bd) {
@@ -398,13 +414,15 @@ export function rebaseView(gl: HyperbolicTilingGL, view: Su11, maxIter = 64): Su
 	const invDenO = 1 / Math.max(1 - (o.x * o.x + o.y * o.y), 1e-9);
 	for (let iter = 0; iter < maxIter; iter++) {
 		const w = su11ApplyInverse(v, { x: 0, y: 0 }); // world point at the screen centre
-		const dwx = w.x - o.x, dwy = w.y - o.y;
+		const dwx = w.x - o.x,
+			dwy = w.y - o.y;
 		let bestF = (dwx * dwx + dwy * dwy) * invDenO;
 		let best = -1;
 		for (let j = 0; j < gl.generators.length; j++) {
 			const s = gl.generators[j].site;
 			const invDen = 1 / Math.max(1 - (s.x * s.x + s.y * s.y), 1e-9);
-			const dx = w.x - s.x, dy = w.y - s.y;
+			const dx = w.x - s.x,
+				dy = w.y - s.y;
 			const f = (dx * dx + dy * dy) * invDen;
 			if (f < bestF - 1e-9) {
 				bestF = f;

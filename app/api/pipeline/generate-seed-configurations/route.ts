@@ -1,11 +1,6 @@
 import { NextResponse } from "next/server";
 import zlib from "node:zlib";
-import {
-	CompatibilityGraph,
-	VertexConfiguration,
-	SeedSetExtractor,
-	SeedBuilder,
-} from "@/classes";
+import { CompatibilityGraph, VertexConfiguration, SeedSetExtractor, SeedBuilder } from "@/classes";
 import { compareVertexConfigurationNames } from "@/lib/utils/geometry";
 import { roundNumbersInJson } from "@/lib/utils/utils";
 import { getEffectiveUniqueCount } from "@/lib/utils/vcChiral";
@@ -29,9 +24,7 @@ export async function POST(request: Request) {
 		const useStream = body?.stream === true;
 
 		if (!paramsFolder) {
-			return badRequest(
-				"paramsFolder is required and must contain only letters, digits, underscores, or hyphens",
-			);
+			return badRequest("paramsFolder is required and must contain only letters, digits, underscores, or hyphens");
 		}
 
 		const supabase = createServiceRoleClient();
@@ -71,11 +64,13 @@ export async function POST(request: Request) {
 			}
 		}
 
-		await supabase.storage.from(PIPELINE_BUCKET).upload(
-			`${paramsFolder}/compatibilityGraph.json`,
-			new Blob([JSON.stringify(adjacencyList, null, 4)], { type: "application/json" }),
-			{ contentType: "application/json", upsert: true },
-		);
+		await supabase.storage
+			.from(PIPELINE_BUCKET)
+			.upload(
+				`${paramsFolder}/compatibilityGraph.json`,
+				new Blob([JSON.stringify(adjacencyList, null, 4)], { type: "application/json" }),
+				{ contentType: "application/json", upsert: true },
+			);
 
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		const compatibilityGraph = (CompatibilityGraph as any).fromAdjacencyList(adjacencyList, vcInstances);
@@ -95,19 +90,23 @@ export async function POST(request: Request) {
 
 		for (const [k, byM] of seedSetsByK) {
 			for (const [m, sets] of byM) {
-				await supabase.storage.from(PIPELINE_BUCKET).upload(
-					`${paramsFolder}/seedSets/k=${k}/m=${m}.json`,
-					new Blob([JSON.stringify(sets, null, 4)], { type: "application/json" }),
-					{ contentType: "application/json", upsert: true },
-				);
+				await supabase.storage
+					.from(PIPELINE_BUCKET)
+					.upload(
+						`${paramsFolder}/seedSets/k=${k}/m=${m}.json`,
+						new Blob([JSON.stringify(sets, null, 4)], { type: "application/json" }),
+						{ contentType: "application/json", upsert: true },
+					);
 			}
 		}
 
-		await supabase.storage.from(PIPELINE_BUCKET).upload(
-			`${paramsFolder}/seedConfigurations/vcLibrary.json`,
-			new Blob([JSON.stringify(vcNames)], { type: "application/json" }),
-			{ contentType: "application/json", upsert: true },
-		);
+		await supabase.storage
+			.from(PIPELINE_BUCKET)
+			.upload(
+				`${paramsFolder}/seedConfigurations/vcLibrary.json`,
+				new Blob([JSON.stringify(vcNames)], { type: "application/json" }),
+				{ contentType: "application/json", upsert: true },
+			);
 
 		let totalSeeds = 0;
 		for (let k = 1; k <= MAX_K; k++) {
@@ -151,11 +150,12 @@ export async function POST(request: Request) {
 					total,
 					batchSize: BATCH_SIZE,
 				};
-				await supabase.storage.from(PIPELINE_BUCKET).upload(
-					`${folderPath}/manifest.json`,
-					new Blob([JSON.stringify(manifest)]),
-					{ contentType: "application/json", upsert: true },
-				);
+				await supabase.storage
+					.from(PIPELINE_BUCKET)
+					.upload(`${folderPath}/manifest.json`, new Blob([JSON.stringify(manifest)]), {
+						contentType: "application/json",
+						upsert: true,
+					});
 				totalSeeds += total;
 			}
 		}

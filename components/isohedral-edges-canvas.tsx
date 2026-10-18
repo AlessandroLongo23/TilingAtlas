@@ -17,16 +17,10 @@ import { useConfiguration } from "@/stores/configuration";
 export function IsohedralEdgesCanvas({ pattern }: { pattern: IhEdgeRecord }) {
 	const stored = useConfiguration((s) => s.ihEdgeParams);
 	const bulge = useConfiguration((s) => s.ihEdgeBulge);
-	const solved = useMemo(
-		() => solveIhBoardFor(pattern.ih, stored, bulge),
-		[pattern.ih, stored, bulge],
-	);
+	const solved = useMemo(() => solveIhBoardFor(pattern.ih, stored, bulge), [pattern.ih, stored, bulge]);
 	// The whole per-parameter cost lives here. Everything downstream — pan, zoom, spin, fill mode — reads
 	// this without touching the develop again.
-	const built = useMemo(
-		() => (solved.ok ? ihEdgePattern(pattern, solved.board) : null),
-		[pattern, solved],
-	);
+	const built = useMemo(() => (solved.ok ? ihEdgePattern(pattern, solved.board) : null), [pattern, solved]);
 
 	return (
 		<ParametricEdgesCanvas

@@ -14,10 +14,10 @@
  * `spike-star-4j-cell.ts` keeps its own inline copy on purpose — it is the recorded §23 evidence
  * artifact; this helper is byte-equivalent in logic (generalized cell input, no console output).
  */
-import type { PeriodCell } from '@/classes/algorithm/PeriodSolver';
-import { polygonAreaSurd, detSurd } from '@/classes/algorithm/exact/Surd';
-import { exactPolygonsOverlap } from '@/classes/algorithm/exact/exactOverlap';
-import type { Polygon } from '@/classes/polygons/Polygon';
+import type { PeriodCell } from "@/classes/algorithm/PeriodSolver";
+import { polygonAreaSurd, detSurd } from "@/classes/algorithm/exact/Surd";
+import { exactPolygonsOverlap } from "@/classes/algorithm/exact/exactOverlap";
+import type { Polygon } from "@/classes/polygons/Polygon";
 
 export type StarCellGateResult = {
 	pass: boolean;
@@ -38,7 +38,10 @@ export function independentCellGate(cell: PeriodCell): StarCellGateResult {
 	const tiles = cell.cellPolygons;
 
 	const nStars = tiles.filter((p) => p.isStar).length;
-	const composition = tiles.map((p) => p.getName()).sort().join(',');
+	const composition = tiles
+		.map((p) => p.getName())
+		.sort()
+		.join(",");
 
 	// G3 — exact area = |det Λ| (Surd equality)
 	let area = polygonAreaSurd(tiles[0].exactVertices!);
@@ -50,28 +53,52 @@ export function independentCellGate(cell: PeriodCell): StarCellGateResult {
 	const R = 2;
 	const block: Polygon[] = [];
 	const seenB = new Set<string>();
-	for (let mi = -R; mi <= R; mi++) for (let ni = -R; ni <= R; ni++) {
-		const t = u.scaleRational(BigInt(mi), 1n).add(v.scaleRational(BigInt(ni), 1n));
-		for (const cp of tiles) { const q = cp.clone(); q.translateExact(t); const k = q.exactKey(); if (!seenB.has(k)) { seenB.add(k); block.push(q); } }
-	}
+	for (let mi = -R; mi <= R; mi++)
+		for (let ni = -R; ni <= R; ni++) {
+			const t = u.scaleRational(BigInt(mi), 1n).add(v.scaleRational(BigInt(ni), 1n));
+			for (const cp of tiles) {
+				const q = cp.clone();
+				q.translateExact(t);
+				const k = q.exactKey();
+				if (!seenB.has(k)) {
+					seenB.add(k);
+					block.push(q);
+				}
+			}
+		}
 	const cellDiam = Math.max(Math.hypot(u.toVector().x, u.toVector().y), Math.hypot(v.toVector().x, v.toVector().y));
 
 	// G1 — no proper overlap among nearby tiles (exact B2)
-	const local = block.filter((p) => Math.hypot(p.exactCentroid!.toVector().x, p.exactCentroid!.toVector().y) <= 2 * cellDiam + 2);
+	const local = block.filter(
+		(p) => Math.hypot(p.exactCentroid!.toVector().x, p.exactCentroid!.toVector().y) <= 2 * cellDiam + 2,
+	);
 	let overlaps = 0;
-	for (let i = 0; i < local.length; i++) for (let j = i + 1; j < local.length; j++)
-		if (exactPolygonsOverlap(local[i].exactVertices!, local[j].exactVertices!)) overlaps++;
+	for (let i = 0; i < local.length; i++)
+		for (let j = i + 1; j < local.length; j++)
+			if (exactPolygonsOverlap(local[i].exactVertices!, local[j].exactVertices!)) overlaps++;
 
 	// G2 — every interior point sums to 2π and is well-typed (t≥3 real vertex, or t=2 dent-fill)
 	const inc = new Map<string, { units: number; tiles: Set<string>; vf: { x: number; y: number } }>();
-	for (const p of block) p.exactVertices!.forEach((vx, i) => {
-		const key = vx.key(); const e = inc.get(key); const a = p.cornerAngleUnits(i);
-		if (e) { e.units += a; e.tiles.add(p.exactKey()); } else inc.set(key, { units: a, tiles: new Set([p.exactKey()]), vf: vx.toVector() });
-	});
-	let dentFills = 0, realVerts = 0, badSum = 0, badT = 0;
+	for (const p of block)
+		p.exactVertices!.forEach((vx, i) => {
+			const key = vx.key();
+			const e = inc.get(key);
+			const a = p.cornerAngleUnits(i);
+			if (e) {
+				e.units += a;
+				e.tiles.add(p.exactKey());
+			} else inc.set(key, { units: a, tiles: new Set([p.exactKey()]), vf: vx.toVector() });
+		});
+	let dentFills = 0,
+		realVerts = 0,
+		badSum = 0,
+		badT = 0;
 	for (const { units, tiles: tset, vf } of inc.values()) {
 		if (Math.hypot(vf.x, vf.y) > cellDiam + 0.5) continue; // interior of one cell only
-		if (units !== 24) { badSum++; continue; }
+		if (units !== 24) {
+			badSum++;
+			continue;
+		}
 		if (tset.size >= 3) realVerts++;
 		else if (tset.size === 2) dentFills++;
 		else badT++;
@@ -79,9 +106,19 @@ export function independentCellGate(cell: PeriodCell): StarCellGateResult {
 
 	// G4 — edge-to-edge: every directed edge of a cell tile has its reverse among the block
 	const dir = new Set<string>();
-	for (const p of block) { const vs = p.exactVertices!; for (let i = 0; i < vs.length; i++) dir.add(`${vs[i].key()}->${vs[(i + 1) % vs.length].key()}`); }
+	for (const p of block) {
+		const vs = p.exactVertices!;
+		for (let i = 0; i < vs.length; i++) dir.add(`${vs[i].key()}->${vs[(i + 1) % vs.length].key()}`);
+	}
 	let unmatched = 0;
-	for (const p of tiles) { const vs = p.exactVertices!; for (let i = 0; i < vs.length; i++) { const a = vs[i].key(), b = vs[(i + 1) % vs.length].key(); if (!dir.has(`${b}->${a}`)) unmatched++; } }
+	for (const p of tiles) {
+		const vs = p.exactVertices!;
+		for (let i = 0; i < vs.length; i++) {
+			const a = vs[i].key(),
+				b = vs[(i + 1) % vs.length].key();
+			if (!dir.has(`${b}->${a}`)) unmatched++;
+		}
+	}
 
 	const pass = overlaps === 0 && badSum === 0 && badT === 0 && unmatched === 0 && areaExact;
 	return { pass, overlaps, badSum, badT, realVerts, dentFills, areaExact, unmatched, nStars, composition };

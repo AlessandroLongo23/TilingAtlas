@@ -64,7 +64,7 @@ export function Modal({
 	return (
 		<Dialog.Root open={isOpen} onOpenChange={onOpenChange}>
 			<Dialog.Portal>
-				<Dialog.Overlay className="fixed inset-0 z-50 bg-black/35 backdrop-blur-[2px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 ta-backdrop-in" />
+				<Dialog.Overlay className="data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 ta-backdrop-in fixed inset-0 z-50 bg-black/35 backdrop-blur-[2px]" />
 				<Dialog.Content
 					ref={contentRef}
 					onCloseAutoFocus={(e) => {
@@ -75,31 +75,29 @@ export function Modal({
 						}
 					}}
 					className={cn(
-						"fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2",
-						"bg-surface-raised ring-1 ring-line-subtle rounded-overlay shadow-xl w-full",
+						"fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2",
+						"w-full rounded-overlay bg-surface-raised shadow-xl ring-1 ring-line-subtle",
 						widthClass,
 						"data-[state=open]:animate-in data-[state=closed]:animate-out",
 						// Phone: a bottom sheet. Full width, square bottom corners on the screen edge, at most
 						// 92dvh tall with the body scrolling, clear of the home indicator.
-						"max-md:inset-x-0 max-md:bottom-0 max-md:top-auto max-md:translate-x-0 max-md:translate-y-0",
-						"max-md:max-w-none max-md:rounded-b-none max-md:rounded-t-2xl max-md:max-h-[92dvh] max-md:flex max-md:flex-col",
-						"max-md:pb-[env(safe-area-inset-bottom)] ta-sheet-in",
+						"max-md:inset-x-0 max-md:top-auto max-md:bottom-0 max-md:translate-x-0 max-md:translate-y-0",
+						"max-md:flex max-md:max-h-[92dvh] max-md:max-w-none max-md:flex-col max-md:rounded-t-2xl max-md:rounded-b-none",
+						"ta-sheet-in max-md:pb-[env(safe-area-inset-bottom)]",
 					)}
 				>
-					{description ? (
-						<Dialog.Description className="sr-only">{description}</Dialog.Description>
-					) : null}
+					{description ? <Dialog.Description className="sr-only">{description}</Dialog.Description> : null}
 					{showHeader ? (
 						<div
 							{...swipe}
-							className="flex items-center justify-between px-5 py-4 border-b border-line-subtle max-md:relative max-md:shrink-0 max-md:touch-none max-md:py-2 max-md:pr-2"
+							className="flex items-center justify-between border-b border-line-subtle px-5 py-4 max-md:relative max-md:shrink-0 max-md:touch-none max-md:py-2 max-md:pr-2"
 						>
 							<SheetGrabBar />
 							<Dialog.Title className="text-base font-semibold tracking-tight text-fg">{title}</Dialog.Title>
 							<div className="flex items-center gap-2">
 								{header}
 								<Dialog.Close
-									className="p-1 rounded-md hover:bg-surface-overlay transition-colors text-fg-muted hover:text-fg max-md:flex max-md:size-11 max-md:items-center max-md:justify-center"
+									className="rounded-md p-1 text-fg-muted transition-colors hover:bg-surface-overlay hover:text-fg max-md:flex max-md:size-11 max-md:items-center max-md:justify-center"
 									aria-label="Close modal"
 								>
 									<X size={18} />
@@ -107,7 +105,9 @@ export function Modal({
 							</div>
 						</div>
 					) : null}
-					<div className="max-md:min-h-0 max-md:flex-1 max-md:overflow-y-auto max-md:overscroll-contain">{children}</div>
+					<div className="max-md:min-h-0 max-md:flex-1 max-md:overflow-y-auto max-md:overscroll-contain">
+						{children}
+					</div>
 					{footer ? <div className="border-t border-line-subtle px-5 py-3 max-md:shrink-0">{footer}</div> : null}
 				</Dialog.Content>
 			</Dialog.Portal>

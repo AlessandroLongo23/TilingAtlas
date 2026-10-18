@@ -5,8 +5,8 @@
 
 /** True if two VC names are chiral-equivalent (same up to rotation/reversal). */
 export function vcNamesChiralMatch(a: string, b: string): boolean {
-	const arrA = a.split(',');
-	const arrB = b.split(',');
+	const arrA = a.split(",");
+	const arrB = b.split(",");
 	if (arrA.length !== arrB.length) return false;
 	const n = arrA.length;
 	for (let i = 0; i < n; i++) {
@@ -53,5 +53,5 @@ export function getEffectiveGrouping(vcNames: string[]): string {
 		counts.set(key, (counts.get(key) ?? 0) + 1);
 	}
 	const values = [...counts.values()].sort((a, b) => b - a);
-	return values.length ? values.join(':') : '';
+	return values.length ? values.join(":") : "";
 }

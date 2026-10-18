@@ -27,7 +27,7 @@ export interface OracleResult {
  */
 export async function querySearchOracle(
 	selectedPolygonNames: string[],
-	requestedKValues: number[]
+	requestedKValues: number[],
 ): Promise<OracleResult> {
 	if (!supabase || selectedPolygonNames.length === 0 || requestedKValues.length === 0) {
 		return { status: "Unknown" };

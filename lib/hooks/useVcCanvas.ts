@@ -14,10 +14,7 @@ interface VcCanvasOptions {
  * Shared VC → canvas renderer: sizes for device pixel ratio, draws via
  * drawVertexConfiguration, and re-renders on ResizeObserver events.
  */
-export function useVcCanvas(
-	vc: VertexConfiguration | null,
-	options: VcCanvasOptions = {},
-) {
+export function useVcCanvas(vc: VertexConfiguration | null, options: VcCanvasOptions = {}) {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const { backgroundColor = "rgba(24, 24, 27, 0.6)", padding = 16, fallbackSize = 200 } = options;
 

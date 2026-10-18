@@ -54,8 +54,7 @@ describe("loadLandingData (real atlas files)", () => {
 		);
 
 		// Hero pool + mosaic carry drawable cells.
-		const polysOf = (s: { cell: { p?: unknown[]; cellPolygons?: unknown[] } }) =>
-			s.cell.p ?? s.cell.cellPolygons ?? [];
+		const polysOf = (s: { cell: { p?: unknown[]; cellPolygons?: unknown[] } }) => s.cell.p ?? s.cell.cellPolygons ?? [];
 		expect(data.heroPool).toHaveLength(14);
 		expect(new Set(data.heroPool.map((t) => t.id)).size).toBe(14);
 		for (const h of data.heroPool) expect(polysOf(h).length).toBeGreaterThan(0);

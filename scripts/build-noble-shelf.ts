@@ -61,7 +61,12 @@ function polish(c: number[], x0: number): number {
 	return x;
 }
 
-interface Orbit { a: number; pa: string; b?: number; pb?: string }
+interface Orbit {
+	a: number;
+	pa: string;
+	b?: number;
+	pb?: string;
+}
 const orbits = new Map<string, Orbit>();
 const offs: string[] = [];
 for (const dof of fs.readdirSync(path.join(CLONE, "library"))) {
@@ -100,7 +105,11 @@ const ORBIFOLD: Record<NobleGroup, string> = { Td: "*332", O: "432", Oh: "*432",
 // ---- one model at a time ---------------------------------------------------------------------------
 
 function readOff(file: string): { vertices: Vec3[]; faces: number[][] } {
-	const lines = fs.readFileSync(file, "utf8").split("\n").map((l) => l.trim()).filter((l) => l && !l.startsWith("#"));
+	const lines = fs
+		.readFileSync(file, "utf8")
+		.split("\n")
+		.map((l) => l.trim())
+		.filter((l) => l && !l.startsWith("#"));
 	const [nv, nf] = lines[1].split(/\s+/).map(Number);
 	return {
 		vertices: lines.slice(2, 2 + nv).map((l) => l.split(/\s+/).map(Number) as Vec3),
@@ -118,7 +127,13 @@ function planarity(vertices: Vec3[], faces: number[][]): number {
 		const v = [c[0] - b[0], c[1] - b[1], c[2] - b[2]];
 		const n = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]];
 		const l = Math.hypot(n[0], n[1], n[2]);
-		for (const i of f) worst = Math.max(worst, Math.abs(((vertices[i][0] - a[0]) * n[0] + (vertices[i][1] - a[1]) * n[1] + (vertices[i][2] - a[2]) * n[2]) / l));
+		for (const i of f)
+			worst = Math.max(
+				worst,
+				Math.abs(
+					((vertices[i][0] - a[0]) * n[0] + (vertices[i][1] - a[1]) * n[1] + (vertices[i][2] - a[2]) * n[2]) / l,
+				),
+			);
 	}
 	return worst;
 }
@@ -133,7 +148,8 @@ function turning(vertices: Vec3[], f: number[]): number {
 		const [a, b, c] = [0, 1, 2].map((k) => vertices[f[(i + k) % f.length]]);
 		const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
 		const v = [c[0] - b[0], c[1] - b[1], c[2] - b[2]];
-		const s = (u[1] * v[2] - u[2] * v[1]) * n[0] + (u[2] * v[0] - u[0] * v[2]) * n[1] + (u[0] * v[1] - u[1] * v[0]) * n[2];
+		const s =
+			(u[1] * v[2] - u[2] * v[1]) * n[0] + (u[2] * v[0] - u[0] * v[2]) * n[1] + (u[0] * v[1] - u[1] * v[0]) * n[2];
 		turn += Math.atan2(s / Math.hypot(n[0], n[1], n[2]), u[0] * v[0] + u[1] * v[1] + u[2] * v[2]);
 	}
 	return Math.round(Math.abs(turn) / (2 * Math.PI));
@@ -147,21 +163,41 @@ const sortKey = (s: string) => {
 	return [TYPE_ORDER.indexOf(type), x === "F" ? 1e6 : Number(x), Number(y ?? 0)];
 };
 const symbols = offs.map((f) => path.basename(f, ".off"));
-const order = symbols.map((_, i) => i).sort((i, j) => {
-	const [a, b] = [sortKey(symbols[i]), sortKey(symbols[j])];
-	return a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
-});
+const order = symbols
+	.map((_, i) => i)
+	.sort((i, j) => {
+		const [a, b] = [sortKey(symbols[i]), sortKey(symbols[j])];
+		return a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
+	});
 
 // The nine regular polyhedra among the 146, read off the regenerated solid as {p,q}, V, the face's
 // turning number, and whether an edge is the SHORTEST distance between two vertices. The last is what
 // separates the icosahedron from the great icosahedron: same vertices, same twenty triangles' worth of
 // counts, and only one of them joins neighbours.
 const REGULAR: Record<string, string> = {
-	"3,3,4,1,1": "Tetrahedron", "3,4,6,1,1": "Octahedron", "4,3,8,1,1": "Cube", "3,5,12,1,1": "Icosahedron", "5,3,20,1,1": "Dodecahedron",
-	"5,5,12,2,0": "Small stellated dodecahedron", "5,5,12,1,1": "Great dodecahedron", "3,5,12,1,0": "Great icosahedron", "5,3,20,2,0": "Great stellated dodecahedron",
+	"3,3,4,1,1": "Tetrahedron",
+	"3,4,6,1,1": "Octahedron",
+	"4,3,8,1,1": "Cube",
+	"3,5,12,1,1": "Icosahedron",
+	"5,3,20,1,1": "Dodecahedron",
+	"5,5,12,2,0": "Small stellated dodecahedron",
+	"5,5,12,1,1": "Great dodecahedron",
+	"3,5,12,1,0": "Great icosahedron",
+	"5,3,20,2,0": "Great stellated dodecahedron",
 };
 
-interface Built { symbol: string; group: NobleGroup; face: number[]; V: number; E: number; F: number; p: number; q: number; classic: string | null; fissary: boolean }
+interface Built {
+	symbol: string;
+	group: NobleGroup;
+	face: number[];
+	V: number;
+	E: number;
+	F: number;
+	p: number;
+	q: number;
+	classic: string | null;
+	fissary: boolean;
+}
 const built: Built[] = [];
 let worstVertex = 0;
 let worstPlane = 0;
@@ -171,7 +207,8 @@ for (const i of order) {
 	const off = readOff(offs[i]);
 	const orbit = orbits.get(symbol.replace(/\.\d+$/, ""));
 	const seed = NOBLE_SEED[type](orbit?.a ?? 0, orbit?.b ?? 0);
-	const candidates: NobleGroup[] = type === "T" ? ["Td"] : /^(O|C|tO|tC|rC|sC|gC)$/.test(type) ? ["Oh", "O"] : ["Ih", "I"];
+	const candidates: NobleGroup[] =
+		type === "T" ? ["Td"] : /^(O|C|tO|tC|rC|sC|gC)$/.test(type) ? ["Oh", "O"] : ["Ih", "I"];
 	let done: Built | null = null;
 	for (const group of candidates) {
 		const probe = nobleOrbit(group, seed, [0, 1, 2]);
@@ -199,23 +236,45 @@ for (const i of order) {
 		const q = faces.filter((f) => f.includes(0)).length;
 		const edges = new Set(faces.flatMap((f) => f.map((a, k) => edgeKey(a, f[(k + 1) % f.length]))));
 		const t = turning(vertices, face);
-		const dist = (i: number, j: number) => Math.hypot(vertices[i][0] - vertices[j][0], vertices[i][1] - vertices[j][1], vertices[i][2] - vertices[j][2]);
+		const dist = (i: number, j: number) =>
+			Math.hypot(vertices[i][0] - vertices[j][0], vertices[i][1] - vertices[j][1], vertices[i][2] - vertices[j][2]);
 		const nearest = Math.min(...vertices.slice(1).map((_, k) => dist(0, k + 1)));
 		const short = dist(face[0], face[1]) < nearest * (1 + 1e-9) ? 1 : 0;
 		const classic = REGULAR[`${p},${q},${vertices.length},${t},${short}`] ?? null;
-		done = { symbol, group, face, V: vertices.length, E: edges.size, F: faces.length, p, q, classic, fissary: /-F$/.test(symbol) };
+		done = {
+			symbol,
+			group,
+			face,
+			V: vertices.length,
+			E: edges.size,
+			F: faces.length,
+			p,
+			q,
+			classic,
+			fissary: /-F$/.test(symbol),
+		};
 		break;
 	}
 	if (!done) throw new Error(`${symbol}: no point group regenerates his model`);
 	const said = paper.get(symbol)?.sym;
-	if (said && said !== ORBIFOLD[done.group]) console.log(`  ⚠ ${symbol}: the paper says ${said}, the model has ${ORBIFOLD[done.group]}`);
+	if (said && said !== ORBIFOLD[done.group])
+		console.log(`  ⚠ ${symbol}: the paper says ${said}, the model has ${ORBIFOLD[done.group]}`);
 	built.push(done);
 }
 
 const listed = built.filter((b) => !b.fissary);
-console.log(`${built.length} models regenerated: ${listed.length} noble polyhedra + ${built.length - listed.length} fissary`);
-console.log(`  classical among them: ${built.filter((b) => b.classic).map((b) => `${b.symbol} = ${b.classic}`).join(", ")}`);
-console.log(`  largest gap to his vertices ${worstVertex.toExponential(2)}, largest face non-planarity ${worstPlane.toExponential(2)} of the circumradius`);
+console.log(
+	`${built.length} models regenerated: ${listed.length} noble polyhedra + ${built.length - listed.length} fissary`,
+);
+console.log(
+	`  classical among them: ${built
+		.filter((b) => b.classic)
+		.map((b) => `${b.symbol} = ${b.classic}`)
+		.join(", ")}`,
+);
+console.log(
+	`  largest gap to his vertices ${worstVertex.toExponential(2)}, largest face non-planarity ${worstPlane.toExponential(2)} of the circumradius`,
+);
 const groups = new Map<string, number>();
 for (const b of built) groups.set(b.group, (groups.get(b.group) ?? 0) + 1);
 console.log(`  by group: ${[...groups].map(([g, n]) => `${g} ${n}`).join(", ")}`);
@@ -223,10 +282,12 @@ console.log(`  by group: ${[...groups].map(([g, n]) => `${g} ${n}`).join(", ")}`
 // ---- lib/render/nobleData.ts -----------------------------------------------------------------------
 
 const used = new Set(built.map((b) => b.symbol.replace(/\.\d+$/, "")));
-const orbitRows = [...orbits].filter(([k]) => used.has(k)).sort(([a], [b]) => {
-	const [x, y] = [sortKey(a), sortKey(b)];
-	return x[0] - y[0] || x[1] - y[1];
-});
+const orbitRows = [...orbits]
+	.filter(([k]) => used.has(k))
+	.sort(([a], [b]) => {
+		const [x, y] = [sortKey(a), sortKey(b)];
+		return x[0] - y[0] || x[1] - y[1];
+	});
 const data = `// GENERATED by scripts/build-noble-shelf.ts; do not hand-edit.
 //
 // NOBLE_ORBITS: the position of each one- or two-parameter orbit that carries a noble polyhedron, as
@@ -250,7 +311,15 @@ ${built.map((b) => `\t["${b.symbol}", "${b.group}", [${b.face.join(", ")}]],`).j
 
 // ---- atlas rows ------------------------------------------------------------------------------------
 
-const GON: Record<number, string> = { 3: "triangles", 4: "quadrilaterals", 5: "pentagons", 6: "hexagons", 8: "octagons", 9: "enneagons", 12: "dodecagons" };
+const GON: Record<number, string> = {
+	3: "triangles",
+	4: "quadrilaterals",
+	5: "pentagons",
+	6: "hexagons",
+	8: "octagons",
+	9: "enneagons",
+	12: "dodecagons",
+};
 const CLASSIFIED = `Classified by Connor Hill, ${PAPER} (2026)`;
 // The record's one `discoverer` string is the DISCOVERER where one is on record, since that is what the
 // /library facet filters on; the classification is the second credit, in lib/attribution, and on the card.
@@ -263,7 +332,13 @@ const row = (solid: string, name: string, family: string, note: string) => ({
 	geometry: "spherical",
 	discoverer: leadCredit(creditsOf({ spherical: { solid } })) ?? CLASSIFIED,
 	note,
-	renderCell: { b: [[1, 0], [0, 1]], i: [0, 0] },
+	renderCell: {
+		b: [
+			[1, 0],
+			[0, 1],
+		],
+		i: [0, 0],
+	},
 	derivation: "tabulated",
 });
 const made = built.map((b) => {
@@ -279,11 +354,27 @@ const made = built.map((b) => {
 	const known = nobleName(nobleId(b.symbol)) ?? b.classic;
 	return row(nobleId(b.symbol), known ? `${known} (${b.symbol})` : b.symbol, `{${b.p},${b.q}}`, `${what} ${where}`);
 });
-const FAMILY = "One of the two infinite families of noble polyhedra, and with the 146 listed ones the whole class (Hill, Corollary 4.15). It cannot be listed, so it is drawn from its parameters: move them in the Options tab.";
+const FAMILY =
+	"One of the two infinite families of noble polyhedra, and with the 146 listed ones the whole class (Hill, Corollary 4.15). It cannot be listed, so it is drawn from its parameters: move them in the Options tab.";
 made.push(
-	row("noble-disphenoid", "Disphenoids", "{3,3}", `The disphenoids: four congruent triangles, cut as alternate corners of a box. Every acute triangle gives one, so the family is a continuum in two parameters, the box's proportions; the cube gives the regular tetrahedron. These are the only convex noble polyhedra that are not regular. ${FAMILY}`),
-	row("noble-stephanoid-prismatic", "Prismatic stephanoids PC(n,p,q)", "{4,4}", `The prismatic stephanoids or crown polyhedra: 2n crossed quadrilaterals on the vertices of an n-gonal prism, generated by the face a1, b(1+q), a(1+p), b(1+p-q) for 2p - n < 2q < p < n. Each closes at V - E + F = 0. The height of the prism is free, so every PC(n,p,q) is itself a continuum. ${FAMILY}`),
-	row("noble-stephanoid-antiprismatic", "Antiprismatic stephanoids AC(n,p,q)", "{4,4}", `The antiprismatic stephanoids: 2n crossed quadrilaterals on the vertices of an n-gonal antiprism, generated by the face a1, a(1+q), a(1+2p), a(1+2p-q) for q odd and 2p - n < q < p < n. Each closes at V - E + F = 0. The height of the antiprism is free, so every AC(n,p,q) is itself a continuum. ${FAMILY}`),
+	row(
+		"noble-disphenoid",
+		"Disphenoids",
+		"{3,3}",
+		`The disphenoids: four congruent triangles, cut as alternate corners of a box. Every acute triangle gives one, so the family is a continuum in two parameters, the box's proportions; the cube gives the regular tetrahedron. These are the only convex noble polyhedra that are not regular. ${FAMILY}`,
+	),
+	row(
+		"noble-stephanoid-prismatic",
+		"Prismatic stephanoids PC(n,p,q)",
+		"{4,4}",
+		`The prismatic stephanoids or crown polyhedra: 2n crossed quadrilaterals on the vertices of an n-gonal prism, generated by the face a1, b(1+q), a(1+p), b(1+p-q) for 2p - n < 2q < p < n. Each closes at V - E + F = 0. The height of the prism is free, so every PC(n,p,q) is itself a continuum. ${FAMILY}`,
+	),
+	row(
+		"noble-stephanoid-antiprismatic",
+		"Antiprismatic stephanoids AC(n,p,q)",
+		"{4,4}",
+		`The antiprismatic stephanoids: 2n crossed quadrilaterals on the vertices of an n-gonal antiprism, generated by the face a1, a(1+q), a(1+2p), a(1+2p-q) for q odd and 2p - n < q < p < n. Each closes at V - E + F = 0. The height of the antiprism is free, so every AC(n,p,q) is itself a continuum. ${FAMILY}`,
+	),
 );
 
 const atlas = JSON.parse(fs.readFileSync(ATLAS, "utf8"));
@@ -293,9 +384,16 @@ const kept: { id: string }[] = [];
 let changed = 0;
 let removed = 0;
 for (const rec of atlas.records as { id: string }[]) {
-	if (!isNoble(rec.id)) { kept.push(rec); continue; }
+	if (!isNoble(rec.id)) {
+		kept.push(rec);
+		continue;
+	}
 	const next = byId.get(rec.id);
-	if (!next) { removed++; console.log(`  ⚠ REMOVED ${rec.id}`); continue; }
+	if (!next) {
+		removed++;
+		console.log(`  ⚠ REMOVED ${rec.id}`);
+		continue;
+	}
 	const merged = { ...rec, ...next };
 	if (JSON.stringify(merged) !== JSON.stringify(rec)) changed++;
 	kept.push(merged);
@@ -303,8 +401,13 @@ for (const rec of atlas.records as { id: string }[]) {
 }
 const added = [...byId.values()];
 console.log(`atlas rows: ${made.length} built; added ${added.length}, changed ${changed}, removed ${removed}`);
-if (!write) { console.log("(dry run: pass --write)"); process.exit(0); }
+if (!write) {
+	console.log("(dry run: pass --write)");
+	process.exit(0);
+}
 fs.writeFileSync(DATA, data);
 atlas.records = [...kept, ...added];
 fs.writeFileSync(ATLAS, JSON.stringify(atlas));
-console.log(`wrote lib/render/nobleData.ts and public/reference-atlas-spherical.json (${atlas.records.length} records)`);
+console.log(
+	`wrote lib/render/nobleData.ts and public/reference-atlas-spherical.json (${atlas.records.length} records)`,
+);

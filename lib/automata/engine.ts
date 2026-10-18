@@ -119,12 +119,7 @@ export class AutomatonEngine {
 	generation = 0;
 	population = 0;
 
-	constructor(
-		adj: PeriodicAdjacency,
-		neighbors: NeighborRef[][],
-		table: RuleTable,
-		opts: EngineOptions = {},
-	) {
+	constructor(adj: PeriodicAdjacency, neighbors: NeighborRef[][], table: RuleTable, opts: EngineOptions = {}) {
 		this.adj = adj;
 		this.n = adj.n;
 		this.table = table;

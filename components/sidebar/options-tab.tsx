@@ -8,7 +8,13 @@ import { faceKindCount, solidHasStarFace, vertexConfigs } from "@/lib/render/sph
 import type { Vec3 } from "@/lib/render/platonicSolids";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { polyhedronForId } from "@/lib/render/sphericalSolids";
-import { isNobleFamily, stephanoidChoices, stephanoidSymbol, STEPHANOID_MAX_N, type NobleFamily } from "@/lib/render/nobleSolids";
+import {
+	isNobleFamily,
+	stephanoidChoices,
+	stephanoidSymbol,
+	STEPHANOID_MAX_N,
+	type NobleFamily,
+} from "@/lib/render/nobleSolids";
 import { dualIsIsohedral, midradius, polarDual } from "@/lib/render/dualSolid";
 import { isChiralTiling } from "@/lib/services/chirality";
 import { Button } from "@/components/ui/button";
@@ -75,7 +81,9 @@ function RotationSlider({
 			// The gesture reads as a quiet caption before the value, so the label keeps the row's left edge.
 			format={(v) => (
 				<>
-					<span className="mr-2 text-[11px] text-fg-muted max-md:hidden">{gesture === "shift-scroll" ? "Shift + scroll" : "scroll"}</span>
+					<span className="mr-2 text-[11px] text-fg-muted max-md:hidden">
+						{gesture === "shift-scroll" ? "Shift + scroll" : "scroll"}
+					</span>
 					<span className="mr-2 hidden text-xs text-fg-muted max-md:inline">two-finger twist</span>
 					{v}°
 				</>
@@ -208,10 +216,12 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 	}, [selected?.spherical?.solid]);
 	// The parametric noble families: which one is selected, its live parameters, and how many (p,q) the
 	// current n admits, which is the range of the Member slider.
-	const nobleFamily = isNobleFamily(selected?.spherical?.solid) ? selected!.spherical!.solid as NobleFamily : null;
+	const nobleFamily = isNobleFamily(selected?.spherical?.solid) ? (selected!.spherical!.solid as NobleFamily) : null;
 	const noble = cfg.nobleParams;
 	const setNoble = (patch: Partial<typeof noble>) => setCfg({ nobleParams: { ...noble, ...patch } });
-	const nobleMembers = nobleFamily ? stephanoidChoices(nobleFamily === "noble-stephanoid-antiprismatic", noble.n).length : 0;
+	const nobleMembers = nobleFamily
+		? stephanoidChoices(nobleFamily === "noble-stephanoid-antiprismatic", noble.n).length
+		: 0;
 	// What the partial fill can offer on the solid ON SCREEN: its distinct vertex configurations, and
 	// whether it has a single face shape. Null where the control does not apply: off the two flat-solid
 	// shelves, on a bubble decoration, and in the compound view, which is two solids. Read off the dual
@@ -237,10 +247,10 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 	// pickers drive it exactly as they drive a coloring's colors.
 	const colorCount = selected?.colors
 		? colorCountOf(selected.colors)
-		: selected?.hypColors?.colors ??
+		: (selected?.hypColors?.colors ??
 			selected?.hypPoly?.stats.sizes.length ??
 			selected?.sphColors?.pattern.colors ??
-			2;
+			2);
 	// Every palette read goes through paletteFor, so a store array left short by an older `copal=` URL
 	// still fills the pickers; writes go back through the same dense array, keeping slots the current
 	// pattern does not use.
@@ -290,7 +300,8 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 			colors: isAnyColors,
 			circlePacking: cfg.circlePacking,
 			showSymmetryElements: cfg.showSymmetryElements,
-		}) && (isFlat || lensApplies);
+		}) &&
+		(isFlat || lensApplies);
 	// The toggles below the sliders fall into three labelled groups; a label shows only when its group has
 	// at least one control for this surface.
 	const pointsShown = !isSpherical && !isFreedraw && !isSphericalFreedraw && !isAnyColors;
@@ -321,13 +332,13 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 											[next[i - 1], next[i]] = [pal[i], pal[i - 1]];
 										})
 									}
-									className="flex h-6 w-6 max-md:h-11 max-md:w-9 cursor-pointer items-center justify-center rounded border border-line text-fg-muted transition-colors hover:border-line-strong hover:text-fg focus:outline-none focus-visible:ring-1 focus-visible:ring-fg"
+									className="flex h-6 w-6 cursor-pointer items-center justify-center rounded border border-line text-fg-muted transition-colors hover:border-line-strong hover:text-fg focus:outline-none focus-visible:ring-1 focus-visible:ring-fg max-md:h-11 max-md:w-9"
 								>
 									<ArrowLeftRight size={13} />
 								</button>
 							</div>
 						) : null}
-						<div className="flex-1 min-w-0 space-y-1.5">
+						<div className="min-w-0 flex-1 space-y-1.5">
 							<HueRing
 								label={colorCount > 2 ? name : `Color ${name}`}
 								size={colorCount > 2 ? 62 : 76}
@@ -344,8 +355,8 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 										onClick={() => setChoice(s)}
 										className={
 											choice === s
-												? "h-6 max-md:h-10 rounded border border-fg ring-1 ring-fg"
-												: "h-6 max-md:h-10 rounded border border-line hover:border-line-strong"
+												? "h-6 rounded border border-fg ring-1 ring-fg max-md:h-10"
+												: "h-6 rounded border border-line hover:border-line-strong max-md:h-10"
 										}
 										style={{ background: cellFill(s, false) }}
 									/>
@@ -367,7 +378,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 			{/* Every render/view toggle lives in this one flat section — the old collapsed "Advanced options"
 			    split is gone, and the "View options" heading with it (the tab already carries that label). */}
 			<div className="flex flex-col gap-2">
-				<div className="px-3.5 py-3 space-y-2">
+				<div className="space-y-2 px-3.5 py-3">
 					{/* The editor is not here: it is a MODE of the canvas, entered from the canvas toolbar's Edit
 					    button (or E), and this tab is about how the tiling is shown. */}
 					{/* Freedraw: the whole control set for the 2D grid view. Fill colours each unit CELL by the
@@ -392,7 +403,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 									</Button>
 								))}
 							</div>
-							<p className="text-[11px] text-fg-muted leading-relaxed">
+							<p className="text-[11px] leading-relaxed text-fg-muted">
 								{FILL_MODES.find((m) => m.value === cfg.freedrawFill)?.help}
 							</p>
 							{/* The shared Line stroke field, placed here so it sits with the fill. Here it multiplies
@@ -408,11 +419,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							/>
 							{/* The grid spins about the canvas centre, same field and same 5° detents as the flat
 							    view — placed here so it sits with the other controls this view actually has. */}
-							<RotationSlider
-								value={cfg.rotation}
-								onChange={(v) => setCfg({ rotation: v })}
-								gesture="shift-scroll"
-							/>
+							<RotationSlider value={cfg.rotation} onChange={(v) => setCfg({ rotation: v })} gesture="shift-scroll" />
 							<Checkbox
 								id="freedrawScaffold"
 								label="Grid"
@@ -430,7 +437,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 								onCheckedChange={(v) => setCfg({ freedrawArcs: v })}
 							/>
 							<Reveal show={cfg.freedrawArcs}>
-								<div className="pl-7 space-y-2">
+								<div className="space-y-2 pl-7">
 									<span className="text-[11px] text-fg-muted">Wiring</span>
 									{/* A tile with c connected edges has c! drawings — one per bijection on its ports.
 									    These three name the useful corners of that space. */}
@@ -447,7 +454,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 											</Button>
 										))}
 									</div>
-									<p className="text-[11px] text-fg-muted leading-relaxed">
+									<p className="text-[11px] leading-relaxed text-fg-muted">
 										{WIRINGS.find((r) => r.value === cfg.freedrawArcWiring)?.help}
 									</p>
 									<Checkbox
@@ -456,9 +463,9 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 										checked={cfg.freedrawArcTwist}
 										onCheckedChange={(v) => setCfg({ freedrawArcTwist: v })}
 									/>
-									<p className="text-[11px] text-fg-muted leading-relaxed">
-										Ribbons only. Four connected edges pair into two bands two ways, and no turn of the
-										tile carries one onto the other. This picks which.
+									<p className="text-[11px] leading-relaxed text-fg-muted">
+										Ribbons only. Four connected edges pair into two bands two ways, and no turn of the tile carries one
+										onto the other. This picks which.
 									</p>
 								</div>
 							</Reveal>
@@ -479,7 +486,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 								onCheckedChange={(v) => setCfg({ freedrawVertices: v })}
 							/>
 							<Reveal show={cfg.freedrawVertices}>
-								<p className="pl-7 text-[11px] text-fg-muted leading-relaxed max-md:hidden">
+								<p className="pl-7 text-[11px] leading-relaxed text-fg-muted max-md:hidden">
 									Hover a dot to grow every grid point in its orbit.
 								</p>
 							</Reveal>
@@ -495,11 +502,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							{palettePickers}
 							{/* The color field spins about the canvas centre, off the same store field as every
 							    other view. */}
-							<RotationSlider
-								value={cfg.rotation}
-								onChange={(v) => setCfg({ rotation: v })}
-								gesture="shift-scroll"
-							/>
+							<RotationSlider value={cfg.rotation} onChange={(v) => setCfg({ rotation: v })} gesture="shift-scroll" />
 							<Checkbox
 								id="colorsEdges"
 								label="Tile edges"
@@ -522,7 +525,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 								onCheckedChange={(v) => setCfg({ colorsVertices: v })}
 							/>
 							<Reveal show={cfg.colorsVertices}>
-								<p className="pl-7 text-[11px] text-fg-muted leading-relaxed max-md:hidden">
+								<p className="pl-7 text-[11px] leading-relaxed text-fg-muted max-md:hidden">
 									Hover a dot to grow every vertex in its orbit.
 								</p>
 							</Reveal>
@@ -535,7 +538,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 						<div className="space-y-2">
 							{palettePickers}
 							{isHyperbolicColors ? (
-								<p className="text-[11px] text-fg-muted leading-relaxed max-md:text-xs">
+								<p className="text-[11px] leading-relaxed text-fg-muted max-md:text-xs">
 									<span className="max-md:hidden">
 										Drag to pan, scroll to zoom, shift-scroll to spin, double-click to reset the view.
 									</span>
@@ -629,7 +632,9 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							<span className="text-[13px] font-medium text-fg-secondary">Hue shift</span>
 							<div className="flex items-center gap-2.5 [&_text]:hidden">
 								<HueRing size={32} value={cfg.hueOffset} onChange={(v) => setCfg({ hueOffset: v })} />
-								<span className="w-8 text-right font-mono text-xs tabular-nums text-fg">{wrapHue(Math.round(cfg.hueOffset))}°</span>
+								<span className="w-8 text-right font-mono text-xs text-fg tabular-nums">
+									{wrapHue(Math.round(cfg.hueOffset))}°
+								</span>
 							</div>
 						</div>
 					) : null}
@@ -726,7 +731,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 								onCheckedChange={(v) => setCfg({ freedrawArcs: v })}
 							/>
 							<Reveal show={cfg.freedrawArcs}>
-								<div className="pl-7 space-y-2">
+								<div className="space-y-2 pl-7">
 									{/* The figures are an OVERLAY: the tiling keeps drawing underneath, so Polygon fill
 									    and Line stroke above still say what the board looks like. This adds the faint
 									    tile-edge scaffold the freedraw browser has, for when both of those are off. */}
@@ -741,24 +746,17 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 										variant="secondary"
 										size="sm"
 										classes="w-full"
-										onClick={() =>
-											setCfg({ truchetSeed: 1 + Math.floor(Math.random() * 2147483646) })
-										}
+										onClick={() => setCfg({ truchetSeed: 1 + Math.floor(Math.random() * 2147483646) })}
 									>
 										{cfg.truchetSeed ? "Reshuffle" : "Shuffle the tiles"}
 									</Button>
 									{cfg.truchetSeed ? (
 										<>
-											<p className="text-[11px] text-fg-muted leading-relaxed">
-												Every tile drawn independently, seed {cfg.truchetSeed}. The link carries it, so
-												a pattern you like is reproducible.
+											<p className="text-[11px] leading-relaxed text-fg-muted">
+												Every tile drawn independently, seed {cfg.truchetSeed}. The link carries it, so a pattern you
+												like is reproducible.
 											</p>
-											<Button
-												variant="secondary"
-												size="sm"
-												classes="w-full"
-												onClick={() => setCfg({ truchetSeed: 0 })}
-											>
+											<Button variant="secondary" size="sm" classes="w-full" onClick={() => setCfg({ truchetSeed: 0 })}>
 												Back to one wiring
 											</Button>
 										</>
@@ -777,7 +775,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 													</Button>
 												))}
 											</div>
-											<p className="text-[11px] text-fg-muted leading-relaxed">
+											<p className="text-[11px] leading-relaxed text-fg-muted">
 												{WIRINGS.find((r) => r.value === cfg.freedrawArcWiring)?.help}
 											</p>
 										</>
@@ -812,7 +810,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 									</Button>
 								))}
 							</div>
-							<p className="text-[11px] text-fg-muted leading-relaxed">
+							<p className="text-[11px] leading-relaxed text-fg-muted">
 								{BUBBLE_EDGE_STYLES.find((r) => r.value === cfg.bubbleEdgeStyle)?.help}
 							</p>
 							{/* The two fractal profiles' one parameter. Neither reaches further as it climbs: the
@@ -836,7 +834,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 						<button
 							type="button"
 							onClick={() => setCfg({ isIslamic: true })}
-							className="w-full text-left rounded-md border border-line bg-surface-raised px-2.5 py-1.5 text-[11px] text-fg-muted hover:border-line-strong hover:text-fg transition-colors"
+							className="w-full rounded-md border border-line bg-surface-raised px-2.5 py-1.5 text-left text-[11px] text-fg-muted transition-colors hover:border-line-strong hover:text-fg"
 						>
 							This is an underlying Islamic tessellation. Turn on the{" "}
 							<span className="text-fg">Islamic construction</span> <Kbd>I</Kbd> to reveal the star pattern.
@@ -853,214 +851,244 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 					) : null}
 					{islamicAvailable ? (
 						<Reveal show={cfg.isIslamic}>
-						<div className="space-y-2 pl-7">
-							{isSpherical ? (
-								<>
+							<div className="space-y-2 pl-7">
+								{isSpherical ? (
+									<>
+										<div className="grid grid-cols-2 gap-2">
+											{(
+												[
+													["plain", "Plain"],
+													["checkerboard", "Checkerboard"],
+													["interlace", "Interlace"],
+													["outline", "Outline"],
+												] as const
+											).map(([val, label]) => {
+												// The sphere renders anything that isn't one of the three named styles as the A/B/C plain
+												// fill, so Plain stays lit for those (emboss has no spherical path).
+												const active =
+													val === "plain"
+														? cfg.islamicStyle !== "checkerboard" &&
+															cfg.islamicStyle !== "interlace" &&
+															cfg.islamicStyle !== "outline"
+														: cfg.islamicStyle === val;
+												return (
+													<Button
+														key={val}
+														variant={active ? "primary" : "secondary"}
+														size="sm"
+														classes="flex-1"
+														onClick={() => setCfg({ islamicStyle: val })}
+													>
+														{label}
+													</Button>
+												);
+											})}
+										</div>
+										<p className="text-[11px] text-fg-muted">
+											{cfg.islamicStyle === "interlace"
+												? "Over/under woven straps on the sphere surface. Wireframe leaves just the outlined straps; the angle slider sets the weave."
+												: cfg.islamicStyle === "outline"
+													? "The same straps crossed flat — the border survives only on the outside of the ribbon network, so the pattern reads as one silhouette."
+													: "Filled cells + star lines (the underlying tiling is hidden). Wireframe drops the cells and draws the lines as rigid 3D bars."}
+										</p>
+									</>
+								) : (
 									<div className="grid grid-cols-2 gap-2">
 										{(
 											[
 												["plain", "Plain"],
-												["checkerboard", "Checkerboard"],
 												["interlace", "Interlace"],
 												["outline", "Outline"],
+												["emboss", "Emboss"],
+												["checkerboard", "Checkerboard"],
 											] as const
-										).map(([val, label]) => {
-											// The sphere renders anything that isn't one of the three named styles as the A/B/C plain
-											// fill, so Plain stays lit for those (emboss has no spherical path).
-											const active =
-												val === "plain"
-													? cfg.islamicStyle !== "checkerboard" && cfg.islamicStyle !== "interlace" && cfg.islamicStyle !== "outline"
-													: cfg.islamicStyle === val;
-											return (
-												<Button key={val} variant={active ? "primary" : "secondary"} size="sm" classes="flex-1" onClick={() => setCfg({ islamicStyle: val })}>
-													{label}
-												</Button>
-											);
-										})}
+										).map(([val, label]) => (
+											<Button
+												key={val}
+												variant={cfg.islamicStyle === val ? "primary" : "secondary"}
+												size="sm"
+												classes="flex-1"
+												onClick={() => setCfg({ islamicStyle: val })}
+											>
+												{label}
+											</Button>
+										))}
 									</div>
-									<p className="text-[11px] text-fg-muted">
-										{cfg.islamicStyle === "interlace"
-											? "Over/under woven straps on the sphere surface. Wireframe leaves just the outlined straps; the angle slider sets the weave."
-											: cfg.islamicStyle === "outline"
-												? "The same straps crossed flat — the border survives only on the outside of the ribbon network, so the pattern reads as one silhouette."
-												: "Filled cells + star lines (the underlying tiling is hidden). Wireframe drops the cells and draws the lines as rigid 3D bars."}
-									</p>
-								</>
-							) : (
-							<div className="grid grid-cols-2 gap-2">
-								{(
-									[
-										["plain", "Plain"],
-										["interlace", "Interlace"],
-										["outline", "Outline"],
-										["emboss", "Emboss"],
-										["checkerboard", "Checkerboard"],
-									] as const
-								).map(([val, label]) => (
-									<Button
-										key={val}
-										variant={cfg.islamicStyle === val ? "primary" : "secondary"}
-										size="sm"
-										classes="flex-1"
-										onClick={() => setCfg({ islamicStyle: val })}
-									>
-										{label}
-									</Button>
-								))}
-							</div>
-							)}
-							{/* Angle + edge offset on one drawn edge. For interlace/outline these weave too: off-midpoint
+								)}
+								{/* Angle + edge offset on one drawn edge. For interlace/outline these weave too: off-midpoint
 							    contact (edge offset) is Bonner's two-point family, canonically interwoven. In hyperbolic
 							    the two roots slide by hyperbolic arc length along the edge geodesic. */}
-							<HankinPad
-								label="Islamic angle"
-								angle={cfg.islamicAngle}
-								offset={cfg.islamicEdgeOffset}
-								onAngleChange={(v) => setCfg({ islamicAngle: v })}
-								onOffsetChange={(v) => setCfg({ islamicEdgeOffset: v })}
-							/>
-							{/* Bonner's acute/median/obtuse families for the regular-polygon system, in this
+								<HankinPad
+									label="Islamic angle"
+									angle={cfg.islamicAngle}
+									offset={cfg.islamicEdgeOffset}
+									onAngleChange={(v) => setCfg({ islamicAngle: v })}
+									onOffsetChange={(v) => setCfg({ islamicEdgeOffset: v })}
+								/>
+								{/* Bonner's acute/median/obtuse families for the regular-polygon system, in this
 							    slider's from-normal convention (30 / 45 / 60). */}
-							<div className="flex gap-2">
-								<Button variant={cfg.islamicAngle === 30 ? "primary" : "secondary"} size="sm" classes="flex-1" onClick={() => setCfg({ islamicAngle: 30 })}>
-									Acute
-								</Button>
-								<Button variant={cfg.islamicAngle === 45 ? "primary" : "secondary"} size="sm" classes="flex-1" onClick={() => setCfg({ islamicAngle: 45 })}>
-									Median
-								</Button>
-								<Button variant={cfg.islamicAngle === 60 ? "primary" : "secondary"} size="sm" classes="flex-1" onClick={() => setCfg({ islamicAngle: 60 })}>
-									Obtuse
-								</Button>
-							</div>
-							{/* Both strap styles share the band + border geometry, in radians of arc through one factor —
-							    so a given Band/Border pair reads at the same proportion on the sphere as on the plane. */}
-							<Reveal show={isSpherical && (cfg.islamicStyle === "interlace" || cfg.islamicStyle === "outline")}>
-								<div className="space-y-2">
-									<Slider
-										id="islamicWeaveWidth"
-										label="Strap width"
-										value={cfg.islamicBandWidth}
-										onChange={(v) => setCfg({ islamicBandWidth: v })}
-										min={0.05}
-										max={0.6}
-										step={0.05}
-									/>
-									<Slider
-										id="islamicWeaveBorderWidth"
-										label="Border width"
-										value={cfg.islamicOutlineWidth}
-										onChange={(v) => setCfg({ islamicOutlineWidth: v })}
-										min={0}
-										max={0.5}
-										step={0.05}
-									/>
+								<div className="flex gap-2">
+									<Button
+										variant={cfg.islamicAngle === 30 ? "primary" : "secondary"}
+										size="sm"
+										classes="flex-1"
+										onClick={() => setCfg({ islamicAngle: 30 })}
+									>
+										Acute
+									</Button>
+									<Button
+										variant={cfg.islamicAngle === 45 ? "primary" : "secondary"}
+										size="sm"
+										classes="flex-1"
+										onClick={() => setCfg({ islamicAngle: 45 })}
+									>
+										Median
+									</Button>
+									<Button
+										variant={cfg.islamicAngle === 60 ? "primary" : "secondary"}
+										size="sm"
+										classes="flex-1"
+										onClick={() => setCfg({ islamicAngle: 60 })}
+									>
+										Obtuse
+									</Button>
 								</div>
-							</Reveal>
-							{/* RIGID construction lines: the star lines as real 3D bars instead of flat surface
+								{/* Both strap styles share the band + border geometry, in radians of arc through one factor —
+							    so a given Band/Border pair reads at the same proportion on the sphere as on the plane. */}
+								<Reveal show={isSpherical && (cfg.islamicStyle === "interlace" || cfg.islamicStyle === "outline")}>
+									<div className="space-y-2">
+										<Slider
+											id="islamicWeaveWidth"
+											label="Strap width"
+											value={cfg.islamicBandWidth}
+											onChange={(v) => setCfg({ islamicBandWidth: v })}
+											min={0.05}
+											max={0.6}
+											step={0.05}
+										/>
+										<Slider
+											id="islamicWeaveBorderWidth"
+											label="Border width"
+											value={cfg.islamicOutlineWidth}
+											onChange={(v) => setCfg({ islamicOutlineWidth: v })}
+											min={0}
+											max={0.5}
+											step={0.05}
+										/>
+									</div>
+								</Reveal>
+								{/* RIGID construction lines: the star lines as real 3D bars instead of flat surface
 							    ribbons, shaped by the Section / Thickness / Height / Bevel below. This used to ride
 							    on the spherical Fill/Wireframe toggle, so choosing rigid lines meant giving up the
 							    filled cells and vice versa — a coupling nobody chose and the toggle's removal
 							    (2026-08-25) had no reason to keep. */}
-							<Reveal show={isSpherical}>
-								<div className="space-y-2">
-									<Checkbox
-										id="islamicRigid"
-										label="Rigid lines"
-										checked={cfg.islamicRigid}
-										onCheckedChange={(v) => setCfg({ islamicRigid: v })}
-									/>
-									<Reveal show={cfg.islamicRigid}>
-										<div className="space-y-2 pl-7">
-											<span className="text-[11px] text-fg-muted">Section</span>
-											<div className="flex gap-2">
-												<Button
-													variant={cfg.islamicBarSection === "tube" ? "primary" : "secondary"}
-													size="sm"
-													classes="flex-1"
-													onClick={() => setCfg({ islamicBarSection: "tube" })}
-												>
-													Tube
-												</Button>
-												<Button
-													variant={cfg.islamicBarSection === "rect" ? "primary" : "secondary"}
-													size="sm"
-													classes="flex-1"
-													onClick={() => setCfg({ islamicBarSection: "rect" })}
-												>
-													Rectangle
-												</Button>
-											</div>
-											<Slider
-												id="islamicBarThickness"
-												label="Thickness"
-												value={cfg.islamicBarThickness}
-												onChange={(v) => setCfg({ islamicBarThickness: v })}
-												min={0.005}
-												max={0.15}
-												step={0.005}
-											/>
-											<Reveal show={cfg.islamicBarSection === "rect"}>
-												<div className="space-y-2">
-													<Slider
-														id="islamicBarHeight"
-														label="Height"
-														value={cfg.islamicBarHeight}
-														onChange={(v) => setCfg({ islamicBarHeight: v })}
-														min={0.005}
-														max={0.15}
-														step={0.005}
-													/>
-													<Slider
-														id="islamicBarBevel"
-														label="Bevel"
-														value={cfg.islamicBarBevel}
-														onChange={(v) => setCfg({ islamicBarBevel: v })}
-														min={0}
-														max={1}
-														step={0.05}
-													/>
+								<Reveal show={isSpherical}>
+									<div className="space-y-2">
+										<Checkbox
+											id="islamicRigid"
+											label="Rigid lines"
+											checked={cfg.islamicRigid}
+											onCheckedChange={(v) => setCfg({ islamicRigid: v })}
+										/>
+										<Reveal show={cfg.islamicRigid}>
+											<div className="space-y-2 pl-7">
+												<span className="text-[11px] text-fg-muted">Section</span>
+												<div className="flex gap-2">
+													<Button
+														variant={cfg.islamicBarSection === "tube" ? "primary" : "secondary"}
+														size="sm"
+														classes="flex-1"
+														onClick={() => setCfg({ islamicBarSection: "tube" })}
+													>
+														Tube
+													</Button>
+													<Button
+														variant={cfg.islamicBarSection === "rect" ? "primary" : "secondary"}
+														size="sm"
+														classes="flex-1"
+														onClick={() => setCfg({ islamicBarSection: "rect" })}
+													>
+														Rectangle
+													</Button>
 												</div>
-											</Reveal>
-										</div>
-									</Reveal>
-								</div>
-							</Reveal>
-							{/* Solid 3D ribbons (Interlace + Rigid): woven over/under relief, or flat coplanar bands. */}
-							<Reveal show={isSpherical && cfg.islamicStyle === "interlace" && cfg.islamicRigid}>
-								<div className="space-y-2">
-									<span className="text-[11px] text-fg-muted">Ribbons</span>
-									<div className="flex gap-2">
-										<Button
-											variant={!cfg.sphericalWeaveFlat ? "primary" : "secondary"}
-											size="sm"
-											classes="flex-1"
-											onClick={() => setCfg({ sphericalWeaveFlat: false })}
-										>
-											Woven
-										</Button>
-										<Button
-											variant={cfg.sphericalWeaveFlat ? "primary" : "secondary"}
-											size="sm"
-											classes="flex-1"
-											onClick={() => setCfg({ sphericalWeaveFlat: true })}
-										>
-											Flat
-										</Button>
+												<Slider
+													id="islamicBarThickness"
+													label="Thickness"
+													value={cfg.islamicBarThickness}
+													onChange={(v) => setCfg({ islamicBarThickness: v })}
+													min={0.005}
+													max={0.15}
+													step={0.005}
+												/>
+												<Reveal show={cfg.islamicBarSection === "rect"}>
+													<div className="space-y-2">
+														<Slider
+															id="islamicBarHeight"
+															label="Height"
+															value={cfg.islamicBarHeight}
+															onChange={(v) => setCfg({ islamicBarHeight: v })}
+															min={0.005}
+															max={0.15}
+															step={0.005}
+														/>
+														<Slider
+															id="islamicBarBevel"
+															label="Bevel"
+															value={cfg.islamicBarBevel}
+															onChange={(v) => setCfg({ islamicBarBevel: v })}
+															min={0}
+															max={1}
+															step={0.05}
+														/>
+													</div>
+												</Reveal>
+											</div>
+										</Reveal>
 									</div>
-								</div>
-							</Reveal>
-							<Reveal show={!isSpherical && (cfg.islamicStyle === "interlace" || cfg.islamicStyle === "outline" || cfg.islamicStyle === "emboss")}>
-								<div className="space-y-2">
-									<Slider
-										id="islamicBandWidth"
-										label="Band width"
-										value={cfg.islamicBandWidth}
-										onChange={(v) => setCfg({ islamicBandWidth: v })}
-										min={0.05}
-										max={0.5}
-										step={0.05}
-									/>
-									{/* Border Width is a ring grown outward from the band, on the SAME ruler as Band Width
+								</Reveal>
+								{/* Solid 3D ribbons (Interlace + Rigid): woven over/under relief, or flat coplanar bands. */}
+								<Reveal show={isSpherical && cfg.islamicStyle === "interlace" && cfg.islamicRigid}>
+									<div className="space-y-2">
+										<span className="text-[11px] text-fg-muted">Ribbons</span>
+										<div className="flex gap-2">
+											<Button
+												variant={!cfg.sphericalWeaveFlat ? "primary" : "secondary"}
+												size="sm"
+												classes="flex-1"
+												onClick={() => setCfg({ sphericalWeaveFlat: false })}
+											>
+												Woven
+											</Button>
+											<Button
+												variant={cfg.sphericalWeaveFlat ? "primary" : "secondary"}
+												size="sm"
+												classes="flex-1"
+												onClick={() => setCfg({ sphericalWeaveFlat: true })}
+											>
+												Flat
+											</Button>
+										</div>
+									</div>
+								</Reveal>
+								<Reveal
+									show={
+										!isSpherical &&
+										(cfg.islamicStyle === "interlace" ||
+											cfg.islamicStyle === "outline" ||
+											cfg.islamicStyle === "emboss")
+									}
+								>
+									<div className="space-y-2">
+										<Slider
+											id="islamicBandWidth"
+											label="Band width"
+											value={cfg.islamicBandWidth}
+											onChange={(v) => setCfg({ islamicBandWidth: v })}
+											min={0.05}
+											max={0.5}
+											step={0.05}
+										/>
+										{/* Border Width is a ring grown outward from the band, on the SAME ruler as Band Width
 									    (a fraction of the median segment length) — not a pixel stroke, so it keeps its
 									    proportion to the band at any zoom. */}
 										<Slider
@@ -1072,65 +1100,85 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 											max={0.5}
 											step={0.05}
 										/>
-									{/* Chirality seeds the over/under alternation, so it only means anything where there
+										{/* Chirality seeds the over/under alternation, so it only means anything where there
 									    IS a weave. The outline style crosses its straps flat (weave off — buildBands
 									    never consults the over/under state), which makes this a dead control there. */}
-									<Reveal show={cfg.islamicStyle !== "outline"}>
-										<Checkbox
-											id="islamicChirality"
-											label="Flip weave"
-											checked={cfg.islamicChirality}
-											onCheckedChange={(v) => setCfg({ islamicChirality: v })}
-										/>
-									</Reveal>
-								</div>
-							</Reveal>
-							<Reveal show={!isSpherical && cfg.islamicStyle === "checkerboard"}>
-								{/* Hue only — the two checker fields live in the tile palette (locked S/L), same ring
+										<Reveal show={cfg.islamicStyle !== "outline"}>
+											<Checkbox
+												id="islamicChirality"
+												label="Flip weave"
+												checked={cfg.islamicChirality}
+												onCheckedChange={(v) => setCfg({ islamicChirality: v })}
+											/>
+										</Reveal>
+									</div>
+								</Reveal>
+								<Reveal show={!isSpherical && cfg.islamicStyle === "checkerboard"}>
+									{/* Hue only — the two checker fields live in the tile palette (locked S/L), same ring
 								    control as the global hue shift. */}
-								<div className="flex gap-3">
-									<div className="flex-1 min-w-0">
-										<HueRing label="Field A" size={76} value={cfg.islamicCheckerHueA} onChange={(v) => setCfg({ islamicCheckerHueA: v })} />
+									<div className="flex gap-3">
+										<div className="min-w-0 flex-1">
+											<HueRing
+												label="Field A"
+												size={76}
+												value={cfg.islamicCheckerHueA}
+												onChange={(v) => setCfg({ islamicCheckerHueA: v })}
+											/>
+										</div>
+										<div className="min-w-0 flex-1">
+											<HueRing
+												label="Field B"
+												size={76}
+												value={cfg.islamicCheckerHueB}
+												onChange={(v) => setCfg({ islamicCheckerHueB: v })}
+											/>
+										</div>
 									</div>
-									<div className="flex-1 min-w-0">
-										<HueRing label="Field B" size={76} value={cfg.islamicCheckerHueB} onChange={(v) => setCfg({ islamicCheckerHueB: v })} />
-									</div>
-								</div>
-							</Reveal>
-							{/* A/B/C plain fill: star bodies keep their tile hue; B = side fields, C = the edge-centre
+								</Reveal>
+								{/* A/B/C plain fill: star bodies keep their tile hue; B = side fields, C = the edge-centre
 							    diamonds (only visible once Edge Offset > 0). */}
-							<Reveal show={!isSpherical && cfg.islamicStyle === "plain"}>
-								{/* Hue only — B/C are backgrounds in the tile palette (locked S/L), same ring as hue shift. */}
-								<div className="flex gap-3">
-									<div className="flex-1 min-w-0">
-										<HueRing label="Sides (B)" size={76} value={cfg.islamicFillHueB} onChange={(v) => setCfg({ islamicFillHueB: v })} />
+								<Reveal show={!isSpherical && cfg.islamicStyle === "plain"}>
+									{/* Hue only — B/C are backgrounds in the tile palette (locked S/L), same ring as hue shift. */}
+									<div className="flex gap-3">
+										<div className="min-w-0 flex-1">
+											<HueRing
+												label="Sides (B)"
+												size={76}
+												value={cfg.islamicFillHueB}
+												onChange={(v) => setCfg({ islamicFillHueB: v })}
+											/>
+										</div>
+										<div className="min-w-0 flex-1">
+											<HueRing
+												label="Diamond (C)"
+												size={76}
+												value={cfg.islamicFillHueC}
+												onChange={(v) => setCfg({ islamicFillHueC: v })}
+											/>
+										</div>
 									</div>
-									<div className="flex-1 min-w-0">
-										<HueRing label="Diamond (C)" size={76} value={cfg.islamicFillHueC} onChange={(v) => setCfg({ islamicFillHueC: v })} />
-									</div>
-								</div>
-							</Reveal>
-							{/* Ray-stops-at (intersection count) is first-contact only in the hyperbolic bake. */}
-							{!islamicDisk ? (
-							<Slider
-								id="islamicIntersectionCount"
-								label="Ray stops at"
-								value={cfg.islamicIntersectionCount}
-								onChange={(v) => setCfg({ islamicIntersectionCount: v })}
-								min={1}
-								max={3}
-								step={1}
-							/>
-							) : null}
-							{!isSpherical && !islamicDisk ? (
-							<Checkbox
-								id="islamicAnimate"
-								label="Animate grid"
-								checked={cfg.islamicAnimate}
-								onCheckedChange={(v) => setCfg({ islamicAnimate: v })}
-							/>
-							) : null}
-						</div>
+								</Reveal>
+								{/* Ray-stops-at (intersection count) is first-contact only in the hyperbolic bake. */}
+								{!islamicDisk ? (
+									<Slider
+										id="islamicIntersectionCount"
+										label="Ray stops at"
+										value={cfg.islamicIntersectionCount}
+										onChange={(v) => setCfg({ islamicIntersectionCount: v })}
+										min={1}
+										max={3}
+										step={1}
+									/>
+								) : null}
+								{!isSpherical && !islamicDisk ? (
+									<Checkbox
+										id="islamicAnimate"
+										label="Animate grid"
+										checked={cfg.islamicAnimate}
+										onCheckedChange={(v) => setCfg({ islamicAnimate: v })}
+									/>
+								) : null}
+							</div>
 						</Reveal>
 					) : null}
 					{/* The squared torus: the tiling's own quotient graph turned into a square tiling of a flat
@@ -1153,9 +1201,9 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							onCheckedChange={(v) => setCfg({ starMod2: v })}
 							hint={
 								<InfoDot>
-									A star face covers part of itself more than once. Modulo 2, a region covered an even
-									number of times is empty — so a pentagram becomes five points around a hollow pentagon,
-									and the edge crossings read as a checkerboard.
+									A star face covers part of itself more than once. Modulo 2, a region covered an even number of times
+									is empty — so a pentagram becomes five points around a hollow pentagon, and the edge crossings read as
+									a checkerboard.
 								</InfoDot>
 							}
 						/>
@@ -1258,7 +1306,10 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 									]}
 									selected={cfg.solidDualMode}
 									onChange={(v) =>
-										setCfg({ solidDualMode: v, ...(v === "solid" ? {} : { sphericalPolyhedron: true, isIslamic: false }) })
+										setCfg({
+											solidDualMode: v,
+											...(v === "solid" ? {} : { sphericalPolyhedron: true, isIslamic: false }),
+										})
 									}
 								/>
 							</Reveal>
@@ -1275,15 +1326,32 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 									<ButtonGroup
 										options={[
 											{ value: "all" as const, label: "All faces" },
-											{ value: "vertex" as const, label: "One vertex", tooltip: "Only the faces that meet at one vertex, over the wireframe of the solid: its vertex configuration." },
+											{
+												value: "vertex" as const,
+												label: "One vertex",
+												tooltip:
+													"Only the faces that meet at one vertex, over the wireframe of the solid: its vertex configuration.",
+											},
 											// ONE FACE only where there is one face SHAPE. On a solid with triangles and
 											// squares no single face stands for the rest, so the option is not there.
 											...(faceViewInfo.oneFace
-												? [{ value: "face" as const, label: "One face", tooltip: "A single face, where it sits in the wireframe of the solid. Every face of this solid is this shape." }]
+												? [
+														{
+															value: "face" as const,
+															label: "One face",
+															tooltip:
+																"A single face, where it sits in the wireframe of the solid. Every face of this solid is this shape.",
+														},
+													]
 												: []),
 										]}
 										selected={cfg.solidFaceView === "face" && !faceViewInfo.oneFace ? "all" : cfg.solidFaceView}
-										onChange={(v) => setCfg({ solidFaceView: v, ...(v === "all" ? {} : { sphericalPolyhedron: true, isIslamic: false }) })}
+										onChange={(v) =>
+											setCfg({
+												solidFaceView: v,
+												...(v === "all" ? {} : { sphericalPolyhedron: true, isIslamic: false }),
+											})
+										}
 									/>
 									{/* WHICH vertex configuration, where the solid has more than one: a Johnson
 									    solid, or any other with several kinds of corner. Named by the faces round
@@ -1303,8 +1371,24 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							) : null}
 							{nobleFamily === "noble-disphenoid" ? (
 								<>
-									<Slider id="nobleBoxB" label="Box depth" value={noble.boxB} onChange={(v) => setNoble({ boxB: v })} min={0.2} max={3} step={0.01} />
-									<Slider id="nobleBoxC" label="Box height" value={noble.boxC} onChange={(v) => setNoble({ boxC: v })} min={0.2} max={3} step={0.01} />
+									<Slider
+										id="nobleBoxB"
+										label="Box depth"
+										value={noble.boxB}
+										onChange={(v) => setNoble({ boxB: v })}
+										min={0.2}
+										max={3}
+										step={0.01}
+									/>
+									<Slider
+										id="nobleBoxC"
+										label="Box height"
+										value={noble.boxC}
+										onChange={(v) => setNoble({ boxC: v })}
+										min={0.2}
+										max={3}
+										step={0.01}
+									/>
 								</>
 							) : nobleFamily ? (
 								<>
@@ -1327,7 +1411,15 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 										step={1}
 										format={() => stephanoidSymbol(nobleFamily, noble) ?? "none"}
 									/>
-									<Slider id="nobleHeight" label="Height" value={noble.height} onChange={(v) => setNoble({ height: v })} min={0.1} max={4} step={0.01} />
+									<Slider
+										id="nobleHeight"
+										label="Height"
+										value={noble.height}
+										onChange={(v) => setNoble({ height: v })}
+										min={0.1}
+										max={4}
+										step={0.01}
+									/>
 								</>
 							) : null}
 							{/* FACE OPACITY, every spherical shelf. This replaced a Fill/Wireframe toggle (AL,
@@ -1374,9 +1466,9 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							    circumsphere, so the mode cannot draw a tiling the way it does for a convex solid, and
 							    a blue ball with arcs on it explains nothing on its own. */}
 							{isSphStar && shapeIsSphere ? (
-								<p className="text-[11px] text-fg-muted leading-relaxed">
-									Star faces overlap on the sphere, so there is no tiling to draw. Each direction is
-									shaded by how many faces lie over it: the sheets a ray from the centre crosses.
+								<p className="text-[11px] leading-relaxed text-fg-muted">
+									Star faces overlap on the sphere, so there is no tiling to draw. Each direction is shaded by how many
+									faces lie over it: the sheets a ray from the centre crosses.
 								</p>
 							) : null}
 							{/* Edge ink, in three steps. A star polyhedron carries two kinds of line and they answer
@@ -1389,16 +1481,18 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 									<span className="flex items-center gap-1 text-[11px] text-fg-muted">
 										Edges
 										<InfoDot>
-											True edges bound the faces. Crossings are where two faces pass through each other:
-											drawn the same way, but they bound no face, so V, E and F are unchanged by them.
+											True edges bound the faces. Crossings are where two faces pass through each other: drawn the same
+											way, but they bound no face, so V, E and F are unchanged by them.
 										</InfoDot>
 									</span>
 									<div className="flex gap-2">
-										{([
-											["none", "None"],
-											["true", "True"],
-											["all", "All"],
-										] as const).map(([value, label]) => (
+										{(
+											[
+												["none", "None"],
+												["true", "True"],
+												["all", "All"],
+											] as const
+										).map(([value, label]) => (
 											<Button
 												key={value}
 												variant={cfg.sphStarEdges === value ? "primary" : "secondary"}
@@ -1414,9 +1508,9 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							) : null}
 							{/* The gesture note, last: it explains the CANVAS, not a control, so it belongs after the
 							    controls and not wedged between two of them (AL, 2026-08-25). */}
-							<p className="text-[11px] text-fg-muted leading-relaxed">
-								Drag to rotate the solid freely in any direction (no poles, so every symmetry is
-								reachable). <span className="max-md:hidden">Scroll to zoom.</span>
+							<p className="text-[11px] leading-relaxed text-fg-muted">
+								Drag to rotate the solid freely in any direction (no poles, so every symmetry is reachable).{" "}
+								<span className="max-md:hidden">Scroll to zoom.</span>
 								<span className="hidden max-md:inline">Pinch to zoom.</span>
 							</p>
 						</div>

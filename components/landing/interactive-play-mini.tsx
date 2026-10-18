@@ -28,7 +28,7 @@ export function InteractivePlayMini({ cell }: { cell: TranslationalCellData }) {
 			{...hostProps}
 			{...pointerProps}
 			className={cn(
-				"absolute inset-0 select-none overflow-hidden outline-none",
+				"absolute inset-0 overflow-hidden outline-none select-none",
 				active ? "cursor-grab" : "cursor-pointer",
 			)}
 		>

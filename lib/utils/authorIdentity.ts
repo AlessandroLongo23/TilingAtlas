@@ -1,13 +1,13 @@
 /** Browser-only localStorage helpers for author attribution and campaign ownership. */
 
-const AUTHOR_KEY = 'tilingatlas.authorName';
-const CAMPAIGN_IDS_KEY = 'tilingatlas.campaignIds';
+const AUTHOR_KEY = "tilingatlas.authorName";
+const CAMPAIGN_IDS_KEY = "tilingatlas.campaignIds";
 
 export function getAuthorName(): string {
 	try {
-		return localStorage.getItem(AUTHOR_KEY) ?? '';
+		return localStorage.getItem(AUTHOR_KEY) ?? "";
 	} catch {
-		return '';
+		return "";
 	}
 }
 
@@ -21,7 +21,7 @@ export function setAuthorName(name: string): void {
 
 export function getOwnCampaignIds(): string[] {
 	try {
-		return JSON.parse(localStorage.getItem(CAMPAIGN_IDS_KEY) ?? '[]');
+		return JSON.parse(localStorage.getItem(CAMPAIGN_IDS_KEY) ?? "[]");
 	} catch {
 		return [];
 	}

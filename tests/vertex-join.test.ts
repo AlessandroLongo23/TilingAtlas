@@ -51,9 +51,7 @@ describe("joinFigures", () => {
 			const join = joinFigures(a, b)!;
 			const [p, q] = join.shared.map((i) => join.a[i]);
 			for (const tile of [p, q]) {
-				const on = join.ends.filter((e) =>
-					tile.vertices.some((v) => Math.hypot(v.x - e[0], v.y - e[1]) < 1e-6),
-				);
+				const on = join.ends.filter((e) => tile.vertices.some((v) => Math.hypot(v.x - e[0], v.y - e[1]) < 1e-6));
 				expect(on).toHaveLength(2);
 			}
 		}

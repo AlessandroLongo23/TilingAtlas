@@ -30,9 +30,7 @@ export const useSelectedVertexTypes = create<SelectedVertexTypesState>()((set) =
 	set: (selected) => set({ selected }),
 	toggle: (id) =>
 		set((s) => ({
-			selected: s.selected.includes(id)
-				? s.selected.filter((x) => x !== id)
-				: [...s.selected, id],
+			selected: s.selected.includes(id) ? s.selected.filter((x) => x !== id) : [...s.selected, id],
 		})),
 	clear: () => set({ selected: [] }),
 }));

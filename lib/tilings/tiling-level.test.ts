@@ -201,13 +201,7 @@ describe.skipIf(!anyShard)("the levels over every shipped curved shelf", () => {
 
 describe("the level order is the ladder", () => {
 	it("runs from least to most complex, with no duplicates", () => {
-		expect(TILING_LEVEL_ORDER).toEqual([
-			"regular",
-			"archimedean",
-			"pseudo-archimedean",
-			"combination",
-			"hybrid",
-		]);
+		expect(TILING_LEVEL_ORDER).toEqual(["regular", "archimedean", "pseudo-archimedean", "combination", "hybrid"]);
 		expect(new Set(TILING_LEVEL_ORDER).size).toBe(TILING_LEVEL_ORDER.length);
 	});
 });

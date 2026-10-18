@@ -42,8 +42,17 @@ for (const t of tilings) {
 		const w = Math.max(wt(u), wt(v));
 		out.push(`${t.id},${t.k},${w}`);
 		perKMax[t.k] = Math.max(perKMax[t.k] ?? 0, w);
-	} catch (e) { fail++; }
+	} catch (e) {
+		fail++;
+	}
 }
 fs.writeFileSync(path.resolve(process.argv[3]), out.join("\n") + "\n");
-console.error("per-k max weight (F-formula EXACT): " + Object.keys(perKMax).map(Number).sort((a, b) => a - b).map((k) => `${k}:${perKMax[k]}`).join("  "));
+console.error(
+	"per-k max weight (F-formula EXACT): " +
+		Object.keys(perKMax)
+			.map(Number)
+			.sort((a, b) => a - b)
+			.map((k) => `${k}:${perKMax[k]}`)
+			.join("  "),
+);
 console.error(`→ ${process.argv[3]} (${out.length - 1} rows, ${fail} failed)`);

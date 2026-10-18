@@ -71,7 +71,9 @@ export function CylinderCircuit({ layer, fills, hovered, onHover }: Props) {
 		return { lines: ls, dots: ds };
 	}, [layer]);
 
-	const order = lines.map((_, i) => i).sort((a, b) => Number(lines[a].edge === hovered) - Number(lines[b].edge === hovered));
+	const order = lines
+		.map((_, i) => i)
+		.sort((a, b) => Number(lines[a].edge === hovered) - Number(lines[b].edge === hovered));
 
 	return (
 		<svg

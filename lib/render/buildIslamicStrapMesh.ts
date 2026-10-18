@@ -16,26 +16,31 @@ import { latticeCellOf } from "@/lib/render/buildIslamicMesh";
 
 export interface StrapMesh {
 	// Strap bodies: fan of triangles, drawn in one solid colour (a fill uniform). No per-vertex colour.
-	fillVerts: Float32Array;   // 2 floats/vert
+	fillVerts: Float32Array; // 2 floats/vert
 	fillVertexCount: number;
 	// Strap borders: one WORLD-SPACE quad per outline segment, spanning the fill ring (a→b) to the outer
 	// ring (oa→ob), each vertex carrying a baked colour (dark warm for interlace/outline, or the emboss
 	// highlight/shadow chosen from the segment's normal vs the light). World-space, not a screen-px stroke,
 	// so the border keeps its proportion to the band at every zoom.
-	borderPos: Float32Array;   // 2 floats/vert
+	borderPos: Float32Array; // 2 floats/vert
 	borderColor: Float32Array; // 3 floats/vert
 	borderVertexCount: number;
 }
 
 function centroid(vs: readonly Vector[]): [number, number] {
-	let cx = 0, cy = 0;
-	for (const v of vs) { cx += v.x; cy += v.y; }
+	let cx = 0,
+		cy = 0;
+	for (const v of vs) {
+		cx += v.x;
+		cy += v.y;
+	}
 	return [cx / vs.length, cy / vs.length];
 }
 
 export function buildInstancedStrapMesh(
 	bands: Band[],
-	v1: readonly [number, number], v2: readonly [number, number],
+	v1: readonly [number, number],
+	v2: readonly [number, number],
 	borderColorOf: (seg: OutlineSeg) => readonly [number, number, number],
 ): StrapMesh {
 	// Keep the bands whose fill centroid reduces to the origin cell (their lattice copies are the shader's
@@ -56,9 +61,15 @@ export function buildInstancedStrapMesh(
 	for (const b of kept) {
 		const vs = b.fill;
 		for (let k = 1; k < vs.length - 1; k++) {
-			fillVerts[fi * 2] = vs[0].x; fillVerts[fi * 2 + 1] = vs[0].y; fi++;
-			fillVerts[fi * 2] = vs[k].x; fillVerts[fi * 2 + 1] = vs[k].y; fi++;
-			fillVerts[fi * 2] = vs[k + 1].x; fillVerts[fi * 2 + 1] = vs[k + 1].y; fi++;
+			fillVerts[fi * 2] = vs[0].x;
+			fillVerts[fi * 2 + 1] = vs[0].y;
+			fi++;
+			fillVerts[fi * 2] = vs[k].x;
+			fillVerts[fi * 2 + 1] = vs[k].y;
+			fi++;
+			fillVerts[fi * 2] = vs[k + 1].x;
+			fillVerts[fi * 2 + 1] = vs[k + 1].y;
+			fi++;
 		}
 	}
 
@@ -71,20 +82,30 @@ export function buildInstancedStrapMesh(
 	const borderColor = new Float32Array(segCount * 6 * 3);
 	let si = 0;
 	const push = (p: Vector, col: readonly [number, number, number]) => {
-		borderPos[si * 2] = p.x; borderPos[si * 2 + 1] = p.y;
-		borderColor[si * 3] = col[0]; borderColor[si * 3 + 1] = col[1]; borderColor[si * 3 + 2] = col[2];
+		borderPos[si * 2] = p.x;
+		borderPos[si * 2 + 1] = p.y;
+		borderColor[si * 3] = col[0];
+		borderColor[si * 3 + 1] = col[1];
+		borderColor[si * 3 + 2] = col[2];
 		si++;
 	};
 	for (const b of kept) {
 		for (const s of b.outline) {
 			const col = borderColorOf(s);
-			push(s.a, col); push(s.b, col); push(s.ob, col);
-			push(s.a, col); push(s.ob, col); push(s.oa, col);
+			push(s.a, col);
+			push(s.b, col);
+			push(s.ob, col);
+			push(s.a, col);
+			push(s.ob, col);
+			push(s.oa, col);
 		}
 	}
 
 	return {
-		fillVerts, fillVertexCount: fi,
-		borderPos, borderColor, borderVertexCount: si,
+		fillVerts,
+		fillVertexCount: fi,
+		borderPos,
+		borderColor,
+		borderVertexCount: si,
 	};
 }

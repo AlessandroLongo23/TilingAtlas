@@ -20,11 +20,39 @@ interface GamepadState {
 	touchpad: boolean;
 }
 
-export const useGamepadState = create<GamepadState>()(() => ({ family: null, stick: { x: 0, y: 0 }, twist: 0, cursor: null, touchpad: false }));
+export const useGamepadState = create<GamepadState>()(() => ({
+	family: null,
+	stick: { x: 0, y: 0 },
+	twist: 0,
+	cursor: null,
+	touchpad: false,
+}));
 
 const GLYPHS: Record<PadFamily, Record<PadButton, string>> = {
-	ps: { cross: "✕", circle: "○", square: "□", triangle: "△", l1: "L1", r1: "R1", l3: "L3", r3: "R3", left: "◀", right: "▶" },
-	xbox: { cross: "A", circle: "B", square: "X", triangle: "Y", l1: "LB", r1: "RB", l3: "LS", r3: "RS", left: "◀", right: "▶" },
+	ps: {
+		cross: "✕",
+		circle: "○",
+		square: "□",
+		triangle: "△",
+		l1: "L1",
+		r1: "R1",
+		l3: "L3",
+		r3: "R3",
+		left: "◀",
+		right: "▶",
+	},
+	xbox: {
+		cross: "A",
+		circle: "B",
+		square: "X",
+		triangle: "Y",
+		l1: "LB",
+		r1: "RB",
+		l3: "LS",
+		r3: "RS",
+		left: "◀",
+		right: "▶",
+	},
 };
 
 /** The button that does what each keyboard shortcut does, keyed by the string its keycap shows. Keep

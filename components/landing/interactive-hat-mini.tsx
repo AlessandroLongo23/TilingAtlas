@@ -73,7 +73,10 @@ const miniPatch = (): RawPolygon[] => (cachedPatch ??= hatPatch(HAT_MINI_LEVEL))
 
 /** The world point the home window centres on: the patch's bounding-box centre, well inside it. */
 function patchCentre(polys: RawPolygon[]): { x: number; y: number } {
-	let minx = Infinity, miny = Infinity, maxx = -Infinity, maxy = -Infinity;
+	let minx = Infinity,
+		miny = Infinity,
+		maxx = -Infinity,
+		maxy = -Infinity;
 	for (const p of polys)
 		for (const v of p.vertices) {
 			if (v.x < minx) minx = v.x;
@@ -217,11 +220,11 @@ function HatSurface() {
 			// way up anyway; doing it explicitly keeps activation independent of pointer capture. A finger
 			// activates on a completed tap instead (useCardActivation), or every scroll swipe would.
 			onPointerDown={(e) => e.pointerType !== "touch" && e.currentTarget.focus()}
-			className="absolute inset-0 select-none overflow-hidden outline-none"
+			className="absolute inset-0 overflow-hidden outline-none select-none"
 		>
 			<canvas
 				ref={canvasRef}
-				className={cn("w-full h-full block", active ? "cursor-grab active:cursor-grabbing" : "cursor-pointer")}
+				className={cn("block h-full w-full", active ? "cursor-grab active:cursor-grabbing" : "cursor-pointer")}
 				{...view.handlers}
 			/>
 			<CardDoneChip active={active} onDone={deactivate} />

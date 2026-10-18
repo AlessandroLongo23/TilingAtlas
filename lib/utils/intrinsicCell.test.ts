@@ -16,8 +16,13 @@ import { developIntrinsic, evaluateIntrinsic, type IntrinsicCellData } from "@/l
  * the midpoint is agreeing where the tiling's symmetry does the work.
  */
 type Case = { t: number[]; cellPolygons: { n: number; vertices: number[][] }[]; basis: number[][] };
-type Rec = { id: string; freeDarts: number[]; params: { defaultAlphaDeg: number }[];
-	intrinsic: IntrinsicCellData; cases: Case[] };
+type Rec = {
+	id: string;
+	freeDarts: number[];
+	params: { defaultAlphaDeg: number }[];
+	intrinsic: IntrinsicCellData;
+	cases: Case[];
+};
 const RECORDS = fixture as unknown as Rec[];
 
 /**
@@ -75,11 +80,15 @@ describe("intrinsic cells: TypeScript against the Python solver", () => {
 			}
 
 			it("develops the anchor from its own angles", () => {
-				const cell = evaluateIntrinsic(fresh(rec.intrinsic), rec.freeDarts,
-					rec.freeDarts.map((d) => rec.intrinsic.angles0[d]));
+				const cell = evaluateIntrinsic(
+					fresh(rec.intrinsic),
+					rec.freeDarts,
+					rec.freeDarts.map((d) => rec.intrinsic.angles0[d]),
+				);
 				expect(cell).not.toBeNull();
 				const anchor = rec.cases.find((c) =>
-					c.t.every((v, j) => Math.abs(v - rec.intrinsic.angles0[rec.freeDarts[j]]) < 1e-9));
+					c.t.every((v, j) => Math.abs(v - rec.intrinsic.angles0[rec.freeDarts[j]]) < 1e-9),
+				);
 				if (!anchor) return;
 				const polys = cell!.cellPolygons as { vertices: number[][] }[];
 				for (let f = 0; f < polys.length; f++) {
@@ -97,7 +106,8 @@ describe("intrinsic cells: TypeScript against the Python solver", () => {
 					for (const p of polys) {
 						let s = 0;
 						for (let i = 0; i < p.vertices.length; i++) {
-							const a = p.vertices[i], b = p.vertices[(i + 1) % p.vertices.length];
+							const a = p.vertices[i],
+								b = p.vertices[(i + 1) % p.vertices.length];
 							s += a[0] * b[1] - b[0] * a[1];
 						}
 						sum += Math.abs(s / 2);
@@ -110,11 +120,11 @@ describe("intrinsic cells: TypeScript against the Python solver", () => {
 			// Every edge is a unit edge; that is what makes these tiles equilateral, and it is the one
 			// invariant a wrong turning convention in `localFace` would break silently everywhere else.
 			it("keeps every edge at unit length", () => {
-				const cell = evaluateIntrinsic(fresh(rec.intrinsic), rec.freeDarts,
-					rec.cases[rec.cases.length - 1].t);
+				const cell = evaluateIntrinsic(fresh(rec.intrinsic), rec.freeDarts, rec.cases[rec.cases.length - 1].t);
 				for (const p of (cell!.cellPolygons ?? []) as { vertices: number[][] }[]) {
 					for (let i = 0; i < p.vertices.length; i++) {
-						const a = p.vertices[i], b = p.vertices[(i + 1) % p.vertices.length];
+						const a = p.vertices[i],
+							b = p.vertices[(i + 1) % p.vertices.length];
 						expect(Math.hypot(b[0] - a[0], b[1] - a[1])).toBeCloseTo(1, 9);
 					}
 				}

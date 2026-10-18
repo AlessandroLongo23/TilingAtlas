@@ -13,11 +13,18 @@ const inPath = path.resolve(process.argv[2]);
 const outPath = process.argv[3] ? path.resolve(process.argv[3]) : null;
 const limit = process.argv[4] ? Number(process.argv[4]) : Infinity;
 const raw = JSON.parse(fs.readFileSync(inPath, "utf8"));
-const tilings = (Array.isArray(raw) ? raw : raw.tilings) as { id: string; k: number; T1?: number[]; T2?: number[]; Seed?: number[][] }[];
+const tilings = (Array.isArray(raw) ? raw : raw.tilings) as {
+	id: string;
+	k: number;
+	T1?: number[];
+	T2?: number[];
+	Seed?: number[][];
+}[];
 
 const rows = ["id,k,lattice,group,orbifold"];
 const perK: Record<number, number> = {};
-let n = 0, fail = 0;
+let n = 0,
+	fail = 0;
 const t0 = Date.now();
 for (const t of tilings) {
 	if (n >= limit) break;
@@ -33,6 +40,15 @@ for (const t of tilings) {
 	n++;
 }
 console.error(`classified ${n} tilings, ${fail} failed, in ${((Date.now() - t0) / 1000).toFixed(2)}s`);
-console.error("per-k counts: " + Object.keys(perK).map(Number).sort((a, b) => a - b).map((k) => `${k}:${perK[k]}`).join("  "));
-if (outPath) { fs.writeFileSync(outPath, rows.join("\n") + "\n"); console.error(`→ ${outPath}`); }
-else console.log(rows.slice(0, 20).join("\n"));
+console.error(
+	"per-k counts: " +
+		Object.keys(perK)
+			.map(Number)
+			.sort((a, b) => a - b)
+			.map((k) => `${k}:${perK[k]}`)
+			.join("  "),
+);
+if (outPath) {
+	fs.writeFileSync(outPath, rows.join("\n") + "\n");
+	console.error(`→ ${outPath}`);
+} else console.log(rows.slice(0, 20).join("\n"));

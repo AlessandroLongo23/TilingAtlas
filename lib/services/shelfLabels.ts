@@ -25,17 +25,11 @@ import {
 	hypTilingSubOfBoard,
 	hypTilingValenceLabel,
 } from "@/lib/tilings/hyp-tilings";
-import {
-	polyformOrderLabel,
-	polyformSubOfBoard,
-	POLYFORM_BOARDS,
-	POLYFORM_FAMILY_LABEL,
-} from "@/lib/tilings/polyform";
+import { polyformOrderLabel, polyformSubOfBoard, POLYFORM_BOARDS, POLYFORM_FAMILY_LABEL } from "@/lib/tilings/polyform";
 
 /** "pseudo-rhombicuboctahedron (J37)" → "Pseudo-rhombicuboctahedron". The parenthetical is the Johnson
  *  number, which the card already carries and a 14-character sidebar chip cannot. */
-const solidName = (s: string): string =>
-	s.replace(/\s*\([^)]*\)\s*$/, "").replace(/^./, (c) => c.toUpperCase());
+const solidName = (s: string): string => s.replace(/\s*\([^)]*\)\s*$/, "").replace(/^./, (c) => c.toUpperCase());
 
 /**
  * A COLORING sub encodes two axes at once — "square-3" is the square grid, three colours — because a
@@ -79,8 +73,10 @@ export const FAMILY_LABEL: Record<string, string> = {
 	"sph-bubble": "Spherical solids",
 	// The polyform shelf: one heading per atomic tile, named for what the pieces are made of.
 	...Object.fromEntries(
-		(Object.keys(POLYFORM_FAMILY_LABEL) as (keyof typeof POLYFORM_FAMILY_LABEL)[])
-			.map((f) => [`pf-${f}`, POLYFORM_FAMILY_LABEL[f]]),
+		(Object.keys(POLYFORM_FAMILY_LABEL) as (keyof typeof POLYFORM_FAMILY_LABEL)[]).map((f) => [
+			`pf-${f}`,
+			POLYFORM_FAMILY_LABEL[f],
+		]),
 	),
 	"schwarz-eu": "Schwarz boards",
 	"schwarz-board": "Schwarz boards",
@@ -226,9 +222,7 @@ const NAMED: Record<string, string> = {
 	// …and one row per genus above it. Written over a RANGE and not over the genera that happen to
 	// exist today: the search that produces these is still running, a genus with no records simply
 	// never draws a row, and the alternative is a code change every time the run finds a new one.
-	...Object.fromEntries(
-		Array.from({ length: 23 }, (_, i) => [`spg${i + 2}-solid`, `Genus ${i + 2}`]),
-	),
+	...Object.fromEntries(Array.from({ length: 23 }, (_, i) => [`spg${i + 2}-solid`, `Genus ${i + 2}`])),
 	// The two hyperbolic-poly families are NOT here either: their boards carry a label, so "3.4.7.4
 	// tilings" and "{3,7} tilings" are derived below off HYP_POLY_BOARDS.
 	// Hyperbolic edge systems: one sub per base tiling.
@@ -287,10 +281,7 @@ export const SUB_LABEL: Record<string, string> = {
 	// The spherical bubble boards, named by their solid. Derived so a board cannot be added to the shelf
 	// and left unnamed in the tree.
 	...Object.fromEntries(
-		SPH_BUBBLE_SOLIDS.map((s) => [
-			`sbub-${s}`,
-			s.replace(/-/g, " ").replace(/^./, (c) => c.toUpperCase()),
-		]),
+		SPH_BUBBLE_SOLIDS.map((s) => [`sbub-${s}`, s.replace(/-/g, " ").replace(/^./, (c) => c.toUpperCase())]),
 	),
 	// The palettes under "Different edge lengths".
 	"el-tri45": "Triangles and squares",
@@ -304,9 +295,7 @@ export const SUB_LABEL: Record<string, string> = {
 	"el-euh-pent": "Half pentagon",
 	"el-euh-hexm": "Half hexagon (edge midpoints)",
 	"el-euh-sqmid": "Domino (half square)",
-	...Object.fromEntries(
-		PENT_EDGE_BOARDS.map((b) => [pentEdgeSubOfBoard(b), `Pentagon (Kershner ${b.type}) edges`]),
-	),
+	...Object.fromEntries(PENT_EDGE_BOARDS.map((b) => [pentEdgeSubOfBoard(b), `Pentagon (Kershner ${b.type}) edges`])),
 	...Object.fromEntries(IH_EDGE_BOARDS.map((b) => [ihEdgeSubOfBoard(b), `Isohedral ${b.label} edges`])),
 	// The three board-driven edge shelves, derived for the same reason: the 2026-08-12 drop added 21 subs
 	// across them in one afternoon and every one would have needed a second edit here. The tables already
@@ -355,19 +344,13 @@ export const SUB_SHORT_LABEL: Record<string, string> = {
 	...Object.fromEntries(SPH_EDGES_BOARDS.map((b) => [sphEdgesSubOfBoard(b), solidName(b.solid)])),
 	...Object.fromEntries(HYP_EDGES_BASES.map((b) => [`hyp-${b.id}`, b.label])),
 	...Object.fromEntries(HYP_POLY_BOARDS.map((b) => [hypPolySubOfBoard(b), b.label])),
-	...Object.fromEntries(
-		HYP_TILING_BOARDS.map((b) => [hypTilingSubOfBoard(b), hypTilingBoardLabel(b)]),
-	),
+	...Object.fromEntries(HYP_TILING_BOARDS.map((b) => [hypTilingSubOfBoard(b), hypTilingBoardLabel(b)])),
 	// Everything hand-named drops the family word in front and the shelf word behind, which is exactly the
 	// redundancy the heading already covers: "Schwarz (2,3,6) grid" → "(2,3,6)", "3.4.7.4 tilings" → "3.4.7.4".
 	...Object.fromEntries(
-		Object.entries(NAMED).map(([sub, label]) => [
-			sub,
-			label.replace(FAMILY_WORD, "").replace(SHELF_WORD, "") || label,
-		]),
+		Object.entries(NAMED).map(([sub, label]) => [sub, label.replace(FAMILY_WORD, "").replace(SHELF_WORD, "") || label]),
 	),
 };
 
 /** The row's name under its family heading, falling back to the standalone name and then the raw id. */
-export const shortSubLabel = (sub: string): string =>
-	SUB_SHORT_LABEL[sub] ?? SUB_LABEL[sub] ?? sub;
+export const shortSubLabel = (sub: string): string => SUB_SHORT_LABEL[sub] ?? SUB_LABEL[sub] ?? sub;

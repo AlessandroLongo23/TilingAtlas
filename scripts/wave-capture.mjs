@@ -34,9 +34,12 @@ async function settle(idx) {
 	await page.evaluate((i) => {
 		window.__play.select(window.__play.list[i]);
 		const s = window.__stores.configuration.getState();
-		s.controls.zoom = 55; s.controls.targetZoom = 55;
-		s.controls.offset.x = 0; s.controls.offset.y = 0;
-		s.controls.targetOffset.x = 0; s.controls.targetOffset.y = 0;
+		s.controls.zoom = 55;
+		s.controls.targetZoom = 55;
+		s.controls.offset.x = 0;
+		s.controls.offset.y = 0;
+		s.controls.targetOffset.x = 0;
+		s.controls.targetOffset.y = 0;
 	}, idx);
 	await page.waitForTimeout(1800);
 }

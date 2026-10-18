@@ -13,12 +13,7 @@ import {
 } from "@/lib/subrosa/engine";
 import { prototileAngles } from "@/lib/subrosa/sigma";
 import { SubRosaGL } from "@/lib/render/subrosaGL";
-import {
-	applyViewTransform,
-	useAperiodicView,
-	type AperiodicFrame,
-	type HomeBox,
-} from "@/lib/hooks/useAperiodicView";
+import { applyViewTransform, useAperiodicView, type AperiodicFrame, type HomeBox } from "@/lib/hooks/useAperiodicView";
 import { Slider } from "@/components/ui/slider";
 import { CornerControls } from "@/components/ui/corner-controls";
 import { AperiodicSidebar, Section, Segmented } from "./_controls";
@@ -68,7 +63,8 @@ function depthTileCounts(rule: SubRosaRule, seed: Seed, protoX: number, ceiling:
 		for (const c of p.children) M[idxOf.get(c.protoId)!][src]++;
 	});
 	let v = new Array<number>(K).fill(0);
-	if (seed === "star") v[idxOf.get(1) ?? 0] = 2 * rule.n; // star seed = 2n copies of the thin rhomb
+	if (seed === "star")
+		v[idxOf.get(1) ?? 0] = 2 * rule.n; // star seed = 2n copies of the thin rhomb
 	else v[idxOf.get(protoX) ?? 0] = 1;
 	const counts = [v.reduce((a, b) => a + b, 0)];
 	for (let d = 1; d <= ceiling; d++) {
@@ -95,7 +91,10 @@ function renderableDepth(counts: number[], budget: number): number {
 }
 
 function bounds(tiles: RenderTile[]) {
-	let minx = Infinity, miny = Infinity, maxx = -Infinity, maxy = -Infinity;
+	let minx = Infinity,
+		miny = Infinity,
+		maxx = -Infinity,
+		maxy = -Infinity;
 	for (const t of tiles)
 		for (const c of t.corners) {
 			if (c.x < minx) minx = c.x;
@@ -124,10 +123,7 @@ export function SubRosaView({ header }: { header: React.ReactNode }) {
 	);
 	const effDepth = Math.min(depth, maxDepth);
 
-	const tiles = useMemo(
-		() => (rule ? build(rule, seed, effProtoX, effDepth) : []),
-		[rule, seed, effProtoX, effDepth],
-	);
+	const tiles = useMemo(() => (rule ? build(rule, seed, effProtoX, effDepth) : []), [rule, seed, effProtoX, effDepth]);
 
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	// GPU renderer: WebGL2 batched draw (one drawArrays for the whole patch). Falls back to the 2D
@@ -153,8 +149,9 @@ export function SubRosaView({ header }: { header: React.ReactNode }) {
 		(f: AperiodicFrame) => {
 			const cv = canvasRef.current;
 			if (!cv) return;
-			const dark = document.documentElement.classList.contains("dark") ||
-				(document.documentElement.getAttribute("data-theme") === "dark");
+			const dark =
+				document.documentElement.classList.contains("dark") ||
+				document.documentElement.getAttribute("data-theme") === "dark";
 			const light = dark ? 62 : 66;
 			const strokePx = strokePxAt(strokeWidth, f.zoom);
 
@@ -305,11 +302,11 @@ export function SubRosaView({ header }: { header: React.ReactNode }) {
 	// buildRule returns null only if the Σ(n) fill fails — keep the switcher reachable if it ever does.
 	if (!rule) {
 		return (
-			<div className="flex-1 min-h-0 flex">
+			<div className="flex min-h-0 flex-1">
 				<AperiodicSidebar header={header}>
 					<p className="text-[11px] text-fg-muted">Sub Rosa engine failed to build for n={N}.</p>
 				</AperiodicSidebar>
-				<div className="flex-1 min-h-0" />
+				<div className="min-h-0 flex-1" />
 			</div>
 		);
 	}
@@ -318,7 +315,7 @@ export function SubRosaView({ header }: { header: React.ReactNode }) {
 	const areaFactor = rule.scaling * rule.scaling;
 
 	return (
-		<div className="relative flex-1 min-h-0 flex">
+		<div className="relative flex min-h-0 flex-1">
 			{/* The canvas's top-right corner (this box's, the sidebar being on the left), first in the DOM so
 			    it is read before the sheet. */}
 			<CornerControls />
@@ -398,10 +395,10 @@ export function SubRosaView({ header }: { header: React.ReactNode }) {
 			</AperiodicSidebar>
 
 			{/* canvas */}
-			<div className="flex-1 min-h-0 relative">
+			<div className="relative min-h-0 flex-1">
 				<canvas
 					ref={canvasRef}
-					className="w-full h-full block cursor-grab active:cursor-grabbing touch-none"
+					className="block h-full w-full cursor-grab touch-none active:cursor-grabbing"
 					{...view.handlers}
 				/>
 			</div>
@@ -412,28 +409,44 @@ export function SubRosaView({ header }: { header: React.ReactNode }) {
 // Small SVG of one prototile's dissection (unit rhomb → its children), the "see how it works" cue.
 function RuleDiagram({ rule, x }: { rule: SubRosaRule; x: number }) {
 	const proto = rule.prototiles.find((p) => p.x === x)!;
-	let minx = Infinity, miny = Infinity, maxx = -Infinity, maxy = -Infinity;
+	let minx = Infinity,
+		miny = Infinity,
+		maxx = -Infinity,
+		maxy = -Infinity;
 	for (const c of proto.children)
 		for (const v of c.corners) {
-			minx = Math.min(minx, v.x); maxx = Math.max(maxx, v.x);
-			miny = Math.min(miny, v.y); maxy = Math.max(maxy, v.y);
+			minx = Math.min(minx, v.x);
+			maxx = Math.max(maxx, v.x);
+			miny = Math.min(miny, v.y);
+			maxy = Math.max(maxy, v.y);
 		}
-	const W = 232, H = 90, pad = 6;
-	const bw = maxx - minx || 1, bh = maxy - miny || 1;
+	const W = 232,
+		H = 90,
+		pad = 6;
+	const bw = maxx - minx || 1,
+		bh = maxy - miny || 1;
 	const s = Math.min((W - 2 * pad) / bw, (H - 2 * pad) / bh);
 	const tx = (v: Vector) => [pad + s * (v.x - minx), H - pad - s * (v.y - miny)] as const;
 	return (
 		<div>
-			<div className="flex justify-between text-xs mb-1.5">
+			<div className="mb-1.5 flex justify-between text-xs">
 				<span className="text-fg-muted">
 					{Math.round((proto.x * 180) / rule.n)}°/{Math.round(((rule.n - proto.x) * 180) / rule.n)}° rhomb
 				</span>
-				<span className="font-mono tabular-nums text-fg">{proto.children.length} tiles</span>
+				<span className="font-mono text-fg tabular-nums">{proto.children.length} tiles</span>
 			</div>
 			<svg width={W} height={H} className="w-full rounded-control border border-line-subtle bg-surface-overlay">
 				{proto.children.map((c, i) => {
 					const pts = c.corners.map((v) => tx(v).join(",")).join(" ");
-					return <polygon key={i} points={pts} fill={`hsl(${HUE(c.protoId)} 55% 62%)`} stroke="rgba(0,0,0,0.35)" strokeWidth={0.4} />;
+					return (
+						<polygon
+							key={i}
+							points={pts}
+							fill={`hsl(${HUE(c.protoId)} 55% 62%)`}
+							stroke="rgba(0,0,0,0.35)"
+							strokeWidth={0.4}
+						/>
+					);
 				})}
 			</svg>
 		</div>

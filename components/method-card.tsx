@@ -193,9 +193,7 @@ function GrowthFigure() {
 			})}
 			{found.map((i) => {
 				const [x, y] = hexCentre(ring2[i]);
-				return (
-					<polygon key={`f-${i}`} points={hexPoints(x, y)} fill={TINT} stroke={INK} strokeWidth={1.5} />
-				);
+				return <polygon key={`f-${i}`} points={hexPoints(x, y)} fill={TINT} stroke={INK} strokeWidth={1.5} />;
 			})}
 			<polygon points={hexPoints(50, 50)} fill={TINT} stroke={INK} strokeWidth={1.8} />
 			{found.map((i) => {
@@ -257,9 +255,7 @@ function WallpaperFigure() {
 				rows.map((j) => {
 					const [x, y] = dot(i, j);
 					const inside = i === 0 && j === 0;
-					return (
-						<g key={`m-${i}-${j}`}>{motif(x + 9, y - 9, inside ? INK : MUTED, inside ? 1.5 : 1.1)}</g>
-					);
+					return <g key={`m-${i}-${j}`}>{motif(x + 9, y - 9, inside ? INK : MUTED, inside ? 1.5 : 1.1)}</g>;
 				}),
 			)}
 		</>
@@ -340,8 +336,7 @@ function DelaneyFigure() {
 		{ x0: 6, cx: 6 + S / 2 },
 		{ x0: 50, cx: 50 + S / 2 },
 	];
-	const chamber = (cx: number, ex: number, ey: number, vx: number, vy: number) =>
-		`${cx},${cy} ${ex},${ey} ${vx},${vy}`;
+	const chamber = (cx: number, ex: number, ey: number, vx: number, vy: number) => `${cx},${cy} ${ex},${ey} ${vx},${vy}`;
 	return (
 		<>
 			{tiles.map(({ x0, cx }, t) => (
@@ -469,11 +464,11 @@ export function MethodCard({ fig, name, note, accent, linked, frame }: MethodCar
 		// Captions sized off the CARD, not the viewport: the same strip is rendered at 190px on a slide
 		// and at 30px in the overview grid, and a viewport-relative clamp would set both to the same
 		// number, which is how a thumbnail ends up with three-line names beside a 30px drawing.
-		<figure className="@container not-prose m-0 flex min-w-0 flex-col">
+		<figure className="not-prose @container m-0 flex min-w-0 flex-col">
 			<div
 				className={cn(
 					"relative aspect-square w-full p-[6%]",
-					framed && ["border bg-surface-base", marked ? "border-accent" : "border-line"],
+					framed && ["bg-surface-base border", marked ? "border-accent" : "border-line"],
 				)}
 			>
 				{/* Anchored to the panel, not the card, so the arrow sits on the drawings' centre

@@ -93,7 +93,10 @@ export function resolveRayStops(xs: RayCrossing[][], nStop: number, cap: number[
 			if (c.t > stop[i] + eps) break; // only crossings on the drawn body matter
 			if (stop[c.j] >= c.tj - eps) {
 				covered++;
-				if (covered >= nStop) { target = c.t; break; }
+				if (covered >= nStop) {
+					target = c.t;
+					break;
+				}
 			}
 		}
 		if (!isFinite(target) || target >= stop[i] - eps) continue; // no overshoot beyond the N-th vertex
@@ -101,7 +104,10 @@ export function resolveRayStops(xs: RayCrossing[][], nStop: number, cap: number[
 		let strands = false;
 		for (const c of xs[i]) {
 			if (c.t <= target + eps || c.t > stop[i] + eps) continue; // not on the tail
-			if (Math.abs(stop[c.j] - c.tj) < strandEps) { strands = true; break; } // ray c.j terminates here on i
+			if (Math.abs(stop[c.j] - c.tj) < strandEps) {
+				strands = true;
+				break;
+			} // ray c.j terminates here on i
 		}
 		if (!strands) trimmed[i] = target;
 	}

@@ -137,7 +137,12 @@ function normalize(refs: NeighborRef[]): NeighborRef[] {
  * symmetric under (t, di, dj) → (t', -di, -dj), and both directions are recorded, so every slot's list is
  * complete on its own.
  */
-function pairUp(points: MarkedPoint[], basis: [[number, number], [number, number]], tol: number, n: number): NeighborRef[][] {
+function pairUp(
+	points: MarkedPoint[],
+	basis: [[number, number], [number, number]],
+	tol: number,
+	n: number,
+): NeighborRef[][] {
 	const acc: NeighborRef[][] = Array.from({ length: n }, () => []);
 	for (let i = 0; i < points.length; i++) {
 		const p = points[i];
@@ -218,11 +223,7 @@ export function buildPeriodicAdjacency(cell: TranslationalCellData | null): Peri
  * DFS the original TilingLife engine intended and never actually ran (its result was overwritten before
  * use, so every rule there ran on plain edge adjacency).
  */
-export function neighborhoodOf(
-	adj: PeriodicAdjacency,
-	kind: "edge" | "moore",
-	range = 1,
-): NeighborRef[][] {
+export function neighborhoodOf(adj: PeriodicAdjacency, kind: "edge" | "moore", range = 1): NeighborRef[][] {
 	const base = kind === "edge" ? adj.edge : adj.moore;
 	if (range <= 1) return base;
 

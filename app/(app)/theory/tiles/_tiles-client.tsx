@@ -48,7 +48,7 @@ export function TilesClient() {
 	const gridStyle = { "--cols": columns } as CSSProperties;
 
 	return (
-		<div className="flex flex-1 min-h-0 overflow-hidden">
+		<div className="flex min-h-0 flex-1 overflow-hidden">
 			<PageSidebar
 				scrollable={false}
 				mobile="modal"
@@ -56,7 +56,9 @@ export function TilesClient() {
 				mobileBadge={family !== "all" ? 1 : 0}
 				mobileFooter={
 					<div className="flex items-center gap-2">
-						{family !== "all" ? <Button variant="ghost" icon={X} label="Clear" onClick={() => setFamily("all")} /> : null}
+						{family !== "all" ? (
+							<Button variant="ghost" icon={X} label="Clear" onClick={() => setFamily("all")} />
+						) : null}
 						<Button
 							variant="primary"
 							classes="flex-1"
@@ -69,45 +71,43 @@ export function TilesClient() {
 				{/* Same two-part sidebar as a theory article: the library switcher pinned on top, the page's
 				    own controls scrolling under it. On a phone the sheet is one scroll, filters first. */}
 				<div className="flex h-full min-h-0 flex-col max-md:overflow-y-auto max-md:overscroll-contain">
-					<div className="shrink-0 border-b border-line-subtle pb-2 max-md:order-2 max-md:border-b-0 max-md:border-t max-md:pb-6">
+					<div className="shrink-0 border-b border-line-subtle pb-2 max-md:order-2 max-md:border-t max-md:border-b-0 max-md:pb-6">
 						<TheoryArticleNav currentSlug="tiles" />
 					</div>
-					<div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide max-md:order-1 max-md:flex-none max-md:overflow-visible">
+					<div className="scrollbar-hide min-h-0 flex-1 overflow-x-hidden overflow-y-auto max-md:order-1 max-md:flex-none max-md:overflow-visible">
 						{/* The sheet's title says Filters and its footer carries Clear. */}
 						<div className="flex items-center justify-between px-3 pt-3 max-md:hidden">
-							<span className="text-xs font-medium text-fg-muted uppercase tracking-wider">Filters</span>
+							<span className="text-xs font-medium tracking-wider text-fg-muted uppercase">Filters</span>
 							{family !== "all" ? (
 								<button
 									onClick={() => setFamily("all")}
-									className="flex items-center gap-1 text-xs text-fg-muted hover:text-danger transition-colors"
+									className="flex items-center gap-1 text-xs text-fg-muted transition-colors hover:text-danger"
 								>
 									<X size={11} /> Clear
 								</button>
 							) : null}
 						</div>
 
-						<div className="p-3 flex flex-col gap-4 text-sm">
+						<div className="flex flex-col gap-4 p-3 text-sm">
 							<section className="flex flex-col gap-2">
-								<h3 className="text-xs font-medium text-fg-muted uppercase tracking-wider">Tile class</h3>
+								<h3 className="text-xs font-medium tracking-wider text-fg-muted uppercase">Tile class</h3>
 								<ButtonGroup variant="chip" options={FAMILY_OPTIONS} selected={family} onChange={setFamily} />
 							</section>
 
 							{showGrid ? (
 								<section className="flex flex-col gap-2 border-t border-line-subtle pt-3">
-									<h3 className="text-xs font-medium text-fg-muted uppercase tracking-wider">
-										Isotoxal angle grid
-									</h3>
+									<h3 className="text-xs font-medium tracking-wider text-fg-muted uppercase">Isotoxal angle grid</h3>
 									<ButtonGroup variant="chip" options={GRID_OPTIONS} selected={isoGrid} onChange={setIsoGrid} />
-									<p className="text-[11px] text-fg-disabled leading-relaxed max-md:text-[13px] max-md:text-fg-muted">
-										15° adds the off-grid members (regular octagon, 105°/135° hexagon) the 30° grid
-										can’t express. Only affects the isotoxal family.
+									<p className="text-[11px] leading-relaxed text-fg-disabled max-md:text-[13px] max-md:text-fg-muted">
+										15° adds the off-grid members (regular octagon, 105°/135° hexagon) the 30° grid can’t express. Only
+										affects the isotoxal family.
 									</p>
 								</section>
 							) : null}
 
 							{/* A phone always shows two columns, so there is nothing for this to set there. */}
 							<section className="flex flex-col gap-2 border-t border-line-subtle pt-3 max-md:hidden">
-								<h3 className="text-xs font-medium text-fg-muted uppercase tracking-wider">Columns</h3>
+								<h3 className="text-xs font-medium tracking-wider text-fg-muted uppercase">Columns</h3>
 								<ButtonGroup variant="chip" options={COLUMN_OPTIONS} selected={columns} onChange={setColumns} />
 							</section>
 						</div>
@@ -116,23 +116,24 @@ export function TilesClient() {
 			</PageSidebar>
 
 			<main className="relative flex-1 overflow-y-auto p-5 max-md:px-4 max-md:pb-24">
-				<div className="flex items-center gap-3 mb-1">
+				<div className="mb-1 flex items-center gap-3">
 					<Shapes size={18} className="text-accent" />
 					<h1 className="text-base font-semibold text-fg">Prototiles</h1>
-					<span className="text-xs px-2 py-0.5 bg-surface-overlay border border-line text-fg-muted">
+					<span className="border border-line bg-surface-overlay px-2 py-0.5 text-xs text-fg-muted">
 						{tiles.length} shapes
 					</span>
 				</div>
-				<p className="text-xs text-fg-muted max-w-3xl mb-5 leading-relaxed max-md:text-[13px]">
+				<p className="mb-5 max-w-3xl text-xs leading-relaxed text-fg-muted max-md:text-[13px]">
 					The individual tile shapes behind the tilings — regular, convex-irregular, star and isotoxal. Star and
-					isotoxal are the two branches of one construction (n points of angle α alternating with β,
-					α + β = 360 − 360/n): reflex β makes a star, convex β makes an isotoxal tile. The <span className="text-fg-secondary">Isotoxal
-					(unified)</span> class shows both branches as one α-sorted continuum per side-count — the same 2n-gon
-					walked from convex through β = 180° into a reflex-vertex star. Display-only.
+					isotoxal are the two branches of one construction (n points of angle α alternating with β, α + β = 360 −
+					360/n): reflex β makes a star, convex β makes an isotoxal tile. The{" "}
+					<span className="text-fg-secondary">Isotoxal (unified)</span> class shows both branches as one α-sorted
+					continuum per side-count — the same 2n-gon walked from convex through β = 180° into a reflex-vertex star.
+					Display-only.
 				</p>
 
 				<div
-					className="grid gap-3 [grid-template-columns:repeat(var(--cols),1fr)] max-md:[grid-template-columns:repeat(2,minmax(0,1fr))]"
+					className="grid [grid-template-columns:repeat(var(--cols),1fr)] gap-3 max-md:[grid-template-columns:repeat(2,minmax(0,1fr))]"
 					style={gridStyle}
 				>
 					{tiles.map((tile) => (

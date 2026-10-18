@@ -22,7 +22,8 @@ export interface Pt {
  *  A degenerate deform has no inverse; the un-deformed point is returned rather than NaN, so a pick during
  *  a pathological drag misses instead of poisoning the caller's arithmetic. */
 export function screenToWorld(sx: number, sy: number, offset: Pt, zoom: number, rot: number, deform?: Mat2): Pt {
-	const cos = Math.cos(rot), sin = Math.sin(rot);
+	const cos = Math.cos(rot),
+		sin = Math.sin(rot);
 	const ux = (sx - offset.x) / zoom;
 	const uy = (sy - offset.y) / zoom;
 	const w = { x: cos * ux + sin * uy, y: sin * ux - cos * uy };
@@ -33,7 +34,8 @@ export function screenToWorld(sx: number, sy: number, offset: Pt, zoom: number, 
 
 /** World -> centred-screen px. Matches the canvas.tsx draw transform exactly. */
 export function worldToScreen(wx: number, wy: number, offset: Pt, zoom: number, rot: number, deform?: Mat2): Pt {
-	const cos = Math.cos(rot), sin = Math.sin(rot);
+	const cos = Math.cos(rot),
+		sin = Math.sin(rot);
 	const d = isIdentityDeform(deform) ? { x: wx, y: wy } : applyMat2(deform as Mat2, wx, wy);
 	return {
 		x: offset.x + zoom * (cos * d.x + sin * d.y),
@@ -48,9 +50,11 @@ export function rayCastContains(verts: readonly Pt[], px: number, py: number): b
 	let inside = false;
 	const n = verts.length;
 	for (let i = 0, j = n - 1; i < n; j = i++) {
-		const xi = verts[i].x, yi = verts[i].y;
-		const xj = verts[j].x, yj = verts[j].y;
-		if ((yi > py) !== (yj > py) && px < ((xj - xi) * (py - yi)) / (yj - yi) + xi) {
+		const xi = verts[i].x,
+			yi = verts[i].y;
+		const xj = verts[j].x,
+			yj = verts[j].y;
+		if (yi > py !== yj > py && px < ((xj - xi) * (py - yi)) / (yj - yi) + xi) {
 			inside = !inside;
 		}
 	}
@@ -99,7 +103,13 @@ export function lensInverse(s: Pt, lens: LensParams): Pt {
 // Full inverse for the inversive view: centred screen px -> world. Lens inverse, then the shared affine
 // inverse (screenToWorld operates on the lens output, not the raw pixel).
 export function inversiveScreenToWorld(
-	sx: number, sy: number, lens: LensParams, offset: Pt, zoom: number, rot: number, deform?: Mat2,
+	sx: number,
+	sy: number,
+	lens: LensParams,
+	offset: Pt,
+	zoom: number,
+	rot: number,
+	deform?: Mat2,
 ): Pt {
 	const v = lensInverse({ x: sx, y: sy }, lens);
 	return screenToWorld(v.x, v.y, offset, zoom, rot, deform);
@@ -115,7 +125,8 @@ export function reduceToOriginCell(world: Pt, v1: Pt, v2: Pt): Pt {
 	if (Math.abs(det) < 1e-9) return { x: world.x, y: world.y };
 	const a = (world.x * v2.y - world.y * v2.x) / det;
 	const b = (world.y * v1.x - world.x * v1.y) / det;
-	const fa = Math.floor(a), fb = Math.floor(b);
+	const fa = Math.floor(a),
+		fb = Math.floor(b);
 	return { x: world.x - fa * v1.x - fb * v2.x, y: world.y - fa * v1.y - fb * v2.y };
 }
 
@@ -139,12 +150,7 @@ export interface PickNode {
 // its centroid within maxRadius + radiusWorld of `c` (a tile's whole body lies inside the disk of radius
 // maxRadius about its centroid — true for convex AND star tiles, since the body is inside the convex hull
 // of its vertices and every vertex is within maxRadius). So one centroid-distance cull covers both cases.
-export function pickSnapTarget(
-	c: Pt,
-	nodes: readonly PickNode[],
-	maxRadius: number,
-	radiusWorld: number,
-): Pt | null {
+export function pickSnapTarget(c: Pt, nodes: readonly PickNode[], maxRadius: number, radiusWorld: number): Pt | null {
 	const reach = (maxRadius > 0 ? maxRadius : 2) + radiusWorld;
 	const reach2 = reach * reach;
 	let bestVert: Pt | null = null;
@@ -152,10 +158,12 @@ export function pickSnapTarget(
 	let containing: Pt | null = null;
 	for (const node of nodes) {
 		const cd = node.centroid;
-		const dcx = cd.x - c.x, dcy = cd.y - c.y;
+		const dcx = cd.x - c.x,
+			dcy = cd.y - c.y;
 		if (dcx * dcx + dcy * dcy > reach2) continue;
 		for (const v of node.vertices) {
-			const dx = v.x - c.x, dy = v.y - c.y;
+			const dx = v.x - c.x,
+				dy = v.y - c.y;
 			const d2 = dx * dx + dy * dy;
 			if (d2 < bestVertD2) {
 				bestVertD2 = d2;

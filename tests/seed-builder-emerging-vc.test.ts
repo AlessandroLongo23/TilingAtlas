@@ -10,18 +10,18 @@
  * produce Galebach t3007 = {3.12.12; 3.3.4.12; 3.4.6.4} — the k=3 catalogue missed the tiling
  * while the count stayed 61 by a canceling duplicate (§28.2).
  */
-import { describe, it, expect } from 'vitest';
-import { SeedBuilder, PolygonType, type GeneratorParameters } from '@/classes';
-import { computeRing } from '@/classes/algorithm/PolygonsGenerator';
-import { setActiveRing, CyclotomicRing } from '@/classes/Cyclotomic';
+import { describe, it, expect } from "vitest";
+import { SeedBuilder, PolygonType, type GeneratorParameters } from "@/classes";
+import { computeRing } from "@/classes/algorithm/PolygonsGenerator";
+import { setActiveRing, CyclotomicRing } from "@/classes/Cyclotomic";
 
 const params: GeneratorParameters = { [PolygonType.REGULAR]: { ns: [3, 4, 6, 12] } };
 const baseRing = computeRing(params);
 setActiveRing(baseRing.N === 24 ? baseRing : CyclotomicRing.create(24));
 
-describe('SeedBuilder — emerging-VC naming at surrounded vertices (t3007 regression)', () => {
-	it('builds a seed for the t3007 vertex-type set {3.12.12, 3.3.4.12, 3.4.6.4}', () => {
-		const seeds = new SeedBuilder().buildSeedsFromSet(['3,12,12', '3,3,4,12', '3,4,6,4']);
+describe("SeedBuilder — emerging-VC naming at surrounded vertices (t3007 regression)", () => {
+	it("builds a seed for the t3007 vertex-type set {3.12.12, 3.3.4.12, 3.4.6.4}", () => {
+		const seeds = new SeedBuilder().buildSeedsFromSet(["3,12,12", "3,3,4,12", "3,4,6,4"]);
 		expect(seeds.length).toBeGreaterThanOrEqual(1);
 		// every built seed must carry exactly the requested vertex-type multiset (up to mirror)
 		for (const s of seeds) {
@@ -29,13 +29,13 @@ describe('SeedBuilder — emerging-VC naming at surrounded vertices (t3007 regre
 		}
 	});
 
-	it('mirror-named variant of the same set also builds', () => {
-		const seeds = new SeedBuilder().buildSeedsFromSet(['3,12,12', '3,3,12,4', '3,4,6,4']);
+	it("mirror-named variant of the same set also builds", () => {
+		const seeds = new SeedBuilder().buildSeedsFromSet(["3,12,12", "3,3,12,4", "3,4,6,4"]);
 		expect(seeds.length).toBeGreaterThanOrEqual(1);
 	});
 
-	it('control: the separated-triangle variant {3.12.12, 3.4.3.12, 3.4.6.4} still builds', () => {
-		const seeds = new SeedBuilder().buildSeedsFromSet(['3,12,12', '3,4,3,12', '3,4,6,4']);
+	it("control: the separated-triangle variant {3.12.12, 3.4.3.12, 3.4.6.4} still builds", () => {
+		const seeds = new SeedBuilder().buildSeedsFromSet(["3,12,12", "3,4,3,12", "3,4,6,4"]);
 		expect(seeds.length).toBeGreaterThanOrEqual(1);
 	});
 });

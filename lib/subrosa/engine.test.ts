@@ -19,7 +19,8 @@ function edgeOveruse(tiles: RenderTile[]): number {
 	const cnt = new Map<string, number>();
 	for (const t of tiles)
 		for (let i = 0; i < 4; i++) {
-			const a = key(t.corners[i]), b = key(t.corners[(i + 1) % 4]);
+			const a = key(t.corners[i]),
+				b = key(t.corners[(i + 1) % 4]);
 			const k = a < b ? `${a}|${b}` : `${b}|${a}`;
 			cnt.set(k, (cnt.get(k) ?? 0) + 1);
 		}
@@ -95,8 +96,12 @@ describe("super-rhomb boundary word", () => {
 	it("closes exactly (Σ of unit vectors = 0)", () => {
 		for (const x of [1, 2]) {
 			const dirs = boundaryWord(5, x);
-			let sx = 0, sy = 0;
-			for (const d of dirs) { sx += Math.cos((d * Math.PI) / 10); sy += Math.sin((d * Math.PI) / 10); }
+			let sx = 0,
+				sy = 0;
+			for (const d of dirs) {
+				sx += Math.cos((d * Math.PI) / 10);
+				sy += Math.sin((d * Math.PI) / 10);
+			}
 			expect(Math.hypot(sx, sy)).toBeLessThan(1e-9);
 		}
 	});

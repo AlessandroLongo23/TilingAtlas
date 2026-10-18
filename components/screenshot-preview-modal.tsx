@@ -8,15 +8,7 @@ import { Modal } from "./ui/modal";
 import { Button } from "./ui/button";
 
 export function ScreenshotPreviewModal() {
-	const {
-		isOpen,
-		imageDataUrl,
-		filename,
-		rulestring,
-		groupId,
-		allowSupabaseUpload,
-		close,
-	} = useScreenshotPreview();
+	const { isOpen, imageDataUrl, filename, rulestring, groupId, allowSupabaseUpload, close } = useScreenshotPreview();
 
 	const [savingLocal, setSavingLocal] = useState(false);
 	const [savingSupabase, setSavingSupabase] = useState(false);
@@ -59,11 +51,15 @@ export function ScreenshotPreviewModal() {
 
 	return (
 		<Modal isOpen={isOpen} onOpenChange={handleOpenChange} title="Screenshot Preview" maxWidth="max-w-2xl">
-			<div className="p-4 space-y-4">
-				<div className="flex justify-center bg-surface-raised/60 rounded-lg p-4 border border-line min-h-[280px]">
+			<div className="space-y-4 p-4">
+				<div className="flex min-h-[280px] justify-center rounded-lg border border-line bg-surface-raised/60 p-4">
 					{imageDataUrl ? (
 						// eslint-disable-next-line @next/next/no-img-element
-						<img src={imageDataUrl} alt="Screenshot preview" className="max-w-full max-h-[320px] object-contain rounded-md" />
+						<img
+							src={imageDataUrl}
+							alt="Screenshot preview"
+							className="max-h-[320px] max-w-full rounded-md object-contain"
+						/>
 					) : (
 						<div className="flex items-center justify-center text-fg-muted">
 							<Loader2 size={32} className="animate-spin" />
@@ -72,12 +68,12 @@ export function ScreenshotPreviewModal() {
 				</div>
 
 				{supabaseError ? (
-					<p className="text-sm text-danger bg-danger-subtle border border-danger/30 rounded-md px-3 py-2">
+					<p className="rounded-md border border-danger/30 bg-danger-subtle px-3 py-2 text-sm text-danger">
 						{supabaseError}
 					</p>
 				) : null}
 
-				<div className="flex flex-col sm:flex-row gap-3 pt-2">
+				<div className="flex flex-col gap-3 pt-2 sm:flex-row">
 					<Button
 						variant="secondary"
 						size="lg"

@@ -73,7 +73,8 @@ function RotationMark({ r }: { r: number }) {
 	const size = 0.2;
 	if (r === 2) {
 		// The standard pointed oval, as two circular arcs meeting at the two points.
-		const a = size * 1.25, b = size * 0.62;
+		const a = size * 1.25,
+			b = size * 0.62;
 		return (
 			<>
 				<circle cx={0} cy={0} r={a * 1.05} fill="var(--color-surface-base, #fff)" />
@@ -104,13 +105,18 @@ function LetterCell({ letter }: { letter: AlphabetLetter }) {
 	return (
 		<figure className="m-0 flex flex-col items-center gap-[0.15rem]">
 			<div
-				className="relative overflow-hidden rounded-md border border-line bg-surface-base"
+				className="bg-surface-base relative overflow-hidden rounded-md border border-line"
 				style={{ width: "var(--cell)", height: "var(--cell)" }}
 			>
 				{geo && (
 					// y down in SVG, y up in the figure: one flip on the group, so the angles the generator
 					// emits are the angles drawn.
-					<svg viewBox={`${-VIEW} ${-VIEW} ${2 * VIEW} ${2 * VIEW}`} className="h-full w-full" role="img" aria-label={letter.symbol}>
+					<svg
+						viewBox={`${-VIEW} ${-VIEW} ${2 * VIEW} ${2 * VIEW}`}
+						className="h-full w-full"
+						role="img"
+						aria-label={letter.symbol}
+					>
 						{/* Clipped to a DISC, not to the cell. A 12-gon runs past the frame at cap scale, and a
 						    square clip is not invariant under a diagonal axis: the region on one side of the
 						    drawn mirror comes out a different SHAPE from the region on the other, in a figure
@@ -132,7 +138,8 @@ function LetterCell({ letter }: { letter: AlphabetLetter }) {
 							))}
 							{letter.axes.map((a) => {
 								const t = (a.deg * Math.PI) / 180;
-								const x = Math.cos(t) * REACH, y = Math.sin(t) * REACH;
+								const x = Math.cos(t) * REACH,
+									y = Math.sin(t) * REACH;
 								return (
 									<line
 										key={a.deg}
@@ -173,7 +180,6 @@ function groupLetters() {
 const BLOCKS = groupLetters();
 
 export function Alphabet44() {
-
 	return (
 		<div
 			className="not-prose flex w-full flex-col items-center gap-2"

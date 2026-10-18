@@ -115,7 +115,11 @@ export interface SphPolyPattern {
 export const SPH_POLY_BOARDS: SphPolyBoard[] = [
 	{ n: 3, ks: [1, 2], counts: { 1: 1, 2: 2 } },
 	{ n: 4, ks: [1, 2, 3], counts: { 1: 2, 2: 1, 3: 1 } },
-	{ n: 5, ks: [1, 3, 4, 7, 8, 9, 12, 14, 17, 27, 29], counts: { 1: 1, 3: 1, 4: 1, 7: 2, 8: 1, 9: 1, 12: 1, 14: 1, 17: 1, 27: 1, 29: 2 } },
+	{
+		n: 5,
+		ks: [1, 3, 4, 7, 8, 9, 12, 14, 17, 27, 29],
+		counts: { 1: 1, 3: 1, 4: 1, 7: 2, 8: 1, 9: 1, 12: 1, 14: 1, 17: 1, 27: 1, 29: 2 },
+	},
 ];
 
 export const SPH_POLY_BOARD_BY_ID = new Map(SPH_POLY_BOARDS.map((b) => [String(b.n), b]));

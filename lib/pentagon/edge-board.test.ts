@@ -20,8 +20,7 @@ import { decodeAtlas } from "@/lib/services/atlasCodec";
 const K2 = "public/pentagon-edges/pe1-k2.json";
 const K4 = "public/pentagon-edges/pe1-k4.json";
 const anyShard = existsSync(K2);
-const read = (p: string): PentEdgeRecord[] =>
-	decodeAtlas<PentEdgeRecord>(JSON.parse(readFileSync(p, "utf8")));
+const read = (p: string): PentEdgeRecord[] => decodeAtlas<PentEdgeRecord>(JSON.parse(readFileSync(p, "utf8")));
 
 const solved = (p: Partial<PentEdgeParams> = {}) => {
 	const r = solveEdgeBoard({ ...PENT_EDGE_DEFAULTS, ...p });
@@ -144,7 +143,10 @@ describe.skipIf(!anyShard)("developing a shipped record", () => {
 			const s = developPentEdges(rec, board, { radius: 6 });
 			const inc = new Map<number, number[]>();
 			for (const e of s.edges) {
-				for (const [p, q] of [[e.u, e.v], [e.v, e.u]] as const) {
+				for (const [p, q] of [
+					[e.u, e.v],
+					[e.v, e.u],
+				] as const) {
 					const th = Math.atan2(s.vertices[q].y - s.vertices[p].y, s.vertices[q].x - s.vertices[p].x);
 					const list = inc.get(p) ?? [];
 					list.push(th);
@@ -156,7 +158,7 @@ describe.skipIf(!anyShard)("developing a shipped record", () => {
 				const a = [...ths].sort((x, y) => x - y);
 				let total = 0;
 				for (let i = 0; i < a.length; i++) {
-					const gap = ((a[(i + 1) % a.length] - a[i] + 2 * Math.PI) % (2 * Math.PI)) || 2 * Math.PI;
+					const gap = (a[(i + 1) % a.length] - a[i] + 2 * Math.PI) % (2 * Math.PI) || 2 * Math.PI;
 					total += gap;
 					expect(Math.min(...corners.map((c) => Math.abs(gap - c)))).toBeLessThan(1e-5);
 				}

@@ -3,8 +3,19 @@
 import { FigurePanel, type PanelSpec } from "@/components/figure-panel";
 import { type Box } from "@/lib/render/figureCanvas";
 import {
-	ACCEPT, arrowHead, classMark, DART, dot, INK, rad, REJECT, segment, SOFT, twoFold,
-	type Api, type Pt,
+	ACCEPT,
+	arrowHead,
+	classMark,
+	DART,
+	dot,
+	INK,
+	rad,
+	REJECT,
+	segment,
+	SOFT,
+	twoFold,
+	type Api,
+	type Pt,
 } from "@/lib/render/figureGlyphs";
 
 // Obligation 3, in the two places it can go wrong.
@@ -37,8 +48,13 @@ function pairedHalfEdges(api: Api, a: Pt, b: Pt, colourB = INK) {
 	segment(api, a, m, DART, 3.4);
 	segment(api, m, b, colourB, 3.2);
 	const ang = Math.atan2(b[1] - a[1], b[0] - a[0]) + Math.PI / 2;
-	segment(api, [m[0] - Math.cos(ang) * 0.07, m[1] - Math.sin(ang) * 0.07],
-		[m[0] + Math.cos(ang) * 0.07, m[1] + Math.sin(ang) * 0.07], SOFT, 2);
+	segment(
+		api,
+		[m[0] - Math.cos(ang) * 0.07, m[1] - Math.sin(ang) * 0.07],
+		[m[0] + Math.cos(ang) * 0.07, m[1] + Math.sin(ang) * 0.07],
+		SOFT,
+		2,
+	);
 }
 
 /** A vertex, with two more half-edges out of it so it reads as a vertex and not as a line end. */
@@ -66,7 +82,8 @@ function drawDescent(api: Api) {
 
 	// Two rows, one per branch, drawn the same way so the only difference the eye finds is the one the
 	// argument is about: whether the vertex on the right was already there.
-	const L = -0.44, R = 0.44;
+	const L = -0.44,
+		R = 0.44;
 	const row = (y: number, isFresh: boolean, label: string) => {
 		hub(api, [L, y], 1);
 		hub(api, [R, y], -1);
@@ -95,7 +112,8 @@ const CLASS_OF: (0 | 1)[] = [0, 1, 0, 1];
 
 function drawTransversal(api: Api) {
 	const { text } = api;
-	const c: Pt = [0, 0.42], R = 0.34;
+	const c: Pt = [0, 0.42],
+		R = 0.34;
 	const at = (i: number): Pt => {
 		const a = rad(135 - 90 * i);
 		return [c[0] + Math.cos(a) * R, c[1] + Math.sin(a) * R];
@@ -123,7 +141,10 @@ function drawTransversal(api: Api) {
 		ctx.stroke();
 		kinds.forEach((k, i) => classMark(api, x - w / 2 + 0.13 + i * 0.15, -0.5, k, 5.4));
 		text(x - w / 2 + 0.13 + kinds.length * 0.15 + 0.02, -0.5, label, {
-			colour, size: 0.58, weight: 700, align: "left",
+			colour,
+			size: 0.58,
+			weight: 700,
+			align: "left",
 		});
 		text(x, -0.82, sub, { colour: SOFT, size: 0.54 });
 	};

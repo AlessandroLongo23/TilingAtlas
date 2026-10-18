@@ -6,23 +6,23 @@
  *
  * Run: pnpm tsx scripts/validate-oracle-symmetry.ts
  */
-import fs from 'node:fs';
-import path from 'node:path';
-import { CyclotomicRing, setActiveRing } from '@/classes/Cyclotomic';
-import { symmetryFromExactSource } from '@/lib/services/oracleSymmetry';
-import { WALLPAPER_GROUPS } from '@/lib/classes/symmetry/types';
-import { loadOracle } from './oracle-match';
+import fs from "node:fs";
+import path from "node:path";
+import { CyclotomicRing, setActiveRing } from "@/classes/Cyclotomic";
+import { symmetryFromExactSource } from "@/lib/services/oracleSymmetry";
+import { WALLPAPER_GROUPS } from "@/lib/classes/symmetry/types";
+import { loadOracle } from "./oracle-match";
 
 const ring = CyclotomicRing.create(24);
 setActiveRing(ring);
 const ROOT = process.cwd();
-const LOG = path.join(ROOT, 'experiments', 'results', `oracle-symmetry-validate-2026-07-09.log`);
+const LOG = path.join(ROOT, "experiments", "results", `oracle-symmetry-validate-2026-07-09.log`);
 const lines: string[] = [];
 const log = (m: string) => {
 	lines.push(m);
 	console.log(m);
 	fs.mkdirSync(path.dirname(LOG), { recursive: true });
-	fs.writeFileSync(LOG, lines.join('\n') + '\n');
+	fs.writeFileSync(LOG, lines.join("\n") + "\n");
 };
 
 type Seed = { id: string; T1: number[]; T2: number[]; Seed: number[][] };
@@ -31,7 +31,7 @@ function run(source: string, seeds: Seed[]) {
 	bySource[source] = { ok: 0, fail: 0, bad: [] };
 	const b = bySource[source];
 	seeds.forEach((s, i) => {
-		const d = symmetryFromExactSource(ring, s.id, { kind: 'seed', T1: s.T1, T2: s.T2, Seed: s.Seed });
+		const d = symmetryFromExactSource(ring, s.id, { kind: "seed", T1: s.T1, T2: s.T2, Seed: s.Seed });
 		if (d && WALLPAPER_GROUPS.includes(d.group)) b.ok++;
 		else {
 			b.fail++;
@@ -40,19 +40,19 @@ function run(source: string, seeds: Seed[]) {
 		if ((i + 1) % 200 === 0) log(`  ${source}: ${i + 1}/${seeds.length} (${b.fail} fail)`);
 	});
 	log(`=== ${source}: ${b.ok} ok, ${b.fail} FAIL ===`);
-	if (b.bad.length) log(`  first failures: ${b.bad.join(', ')}`);
+	if (b.bad.length) log(`  first failures: ${b.bad.join(", ")}`);
 }
 
 const gal: Seed[] = Object.entries(loadOracle())
-	.filter(([k]) => k !== 't1002') // 4.8.8: no {T1,T2,Seed}, carried as a serialized cell in the atlas
+	.filter(([k]) => k !== "t1002") // 4.8.8: no {T1,T2,Seed}, carried as a serialized cell in the atlas
 	.map(([id, o]) => ({ id, T1: o.T1, T2: o.T2, Seed: o.Seed }));
-run('galebach', gal);
+run("galebach", gal);
 
-const ctr = JSON.parse(fs.readFileSync(path.join(ROOT, 'figures', 'data', 'ctrnact.json'), 'utf8')) as {
+const ctr = JSON.parse(fs.readFileSync(path.join(ROOT, "figures", "data", "ctrnact.json"), "utf8")) as {
 	tilings: { id: string; T1?: number[]; T2?: number[]; Seed?: number[][] }[];
 };
 run(
-	'ctrnact',
+	"ctrnact",
 	ctr.tilings.filter((t) => t.T1 && t.T2 && t.Seed).map((t) => ({ id: t.id, T1: t.T1!, T2: t.T2!, Seed: t.Seed! })),
 );
 

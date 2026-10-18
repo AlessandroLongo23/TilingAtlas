@@ -105,11 +105,7 @@ function boundaryLoops(patch: StudioPatch, comp: number): Pt[][] {
 			const x = ox + lx;
 			const y = oy + ly;
 			const k = `${vi},${x},${y}`;
-			if (!pos.has(k))
-				pos.set(k, [
-					patch.verts[vi][0] + x * t1x + y * t2x,
-					patch.verts[vi][1] + x * t1y + y * t2y,
-				]);
+			if (!pos.has(k)) pos.set(k, [patch.verts[vi][0] + x * t1x + y * t2x, patch.verts[vi][1] + x * t1y + y * t2y]);
 			return k;
 		});
 		for (let i = 0; i < ring.length; i++) {
@@ -294,9 +290,7 @@ function loopKeys(loop: readonly Pt[], step: number): { shape: string; pose: str
 	// could disagree. The set cannot disagree: a translation leaves it alone, and a rotation shifts all
 	// of it. Keeping the set and not its minimum also matters: min{0°,10°} and min{350°,0°} are both 0°
 	// at two different orientations, while the sorted sets differ.
-	const heads = [...new Set(cands.filter((c) => cmpRot(c, best) === 0).map((c) => c.head))].sort(
-		(a, b) => a - b,
-	);
+	const heads = [...new Set(cands.filter((c) => cmpRot(c, best) === 0).map((c) => c.head))].sort((a, b) => a - b);
 	const shape = rotated(best.w, 2 * best.r).join(",");
 	return { shape, pose: `${shape}@${heads.join("/")}` };
 }
@@ -329,9 +323,7 @@ export function classify(patch: StudioPatch): ClassKeys {
 		// when there is no finite shape to compare. The `#` can never appear in a word, so the two key
 		// spaces cannot collide.
 		const self = `rank${patch.compRank[c]}#${c}`;
-		const keys = (patch.compRank[c] === 0 ? boundaryLoops(patch, c) : []).map((l) =>
-			loopKeys(l, step),
-		);
+		const keys = (patch.compRank[c] === 0 ? boundaryLoops(patch, c) : []).map((l) => loopKeys(l, step));
 		if (keys.length === 0 || keys.some((k) => k === null)) {
 			out.shape.push(self);
 			out.orientation.push(self);

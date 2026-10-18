@@ -69,10 +69,7 @@ export function ParametricEdgesCanvas({
 	// and the 93 isohedral types) get it from the same store fields as the fixed grids. Their tiles are
 	// not regular, so the arcs are cubics tangent to each edge's normal instead of circular — which is
 	// the part a neighbouring tile can see, and the only part that has to agree.
-	const arcRule = useMemo(
-		() => ({ wiring: arcWiring, twist: (arcTwist ? 1 : 0) as 0 | 1 }),
-		[arcWiring, arcTwist],
-	);
+	const arcRule = useMemo(() => ({ wiring: arcWiring, twist: (arcTwist ? 1 : 0) as 0 | 1 }), [arcWiring, arcTwist]);
 	const style = useMemo(
 		() => ({ fillMode, showScaffold, showVertices, showLattice, lineWidth, showArcs, arcRule }),
 		[fillMode, showScaffold, showVertices, showLattice, lineWidth, showArcs, arcRule],
@@ -109,13 +106,7 @@ const SIZE = 220;
  * Same renderer as the interactive view, one call instead of a canvas component — a gallery can hold
  * hundreds of these, and each one mounting its own resize observer and frame loop is a real cost.
  */
-export function ParametricEdgesThumbnail({
-	built,
-	label,
-}: {
-	built: BuiltShelfPattern | null;
-	label: string;
-}) {
+export function ParametricEdgesThumbnail({ built, label }: { built: BuiltShelfPattern | null; label: string }) {
 	const ref = useRef<HTMLCanvasElement>(null);
 
 	useEffect(() => {
@@ -141,7 +132,5 @@ export function ParametricEdgesThumbnail({
 		});
 	}, [built]);
 
-	return (
-		<canvas ref={ref} style={{ width: "100%", height: "100%", display: "block" }} aria-label={label} />
-	);
+	return <canvas ref={ref} style={{ width: "100%", height: "100%", display: "block" }} aria-label={label} />;
 }

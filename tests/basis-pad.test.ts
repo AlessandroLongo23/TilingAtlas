@@ -26,7 +26,8 @@ describe("matrix <-> the two vectors the pad draws", () => {
 
 	// The pad's determinant readout and the renderers' degeneracy guards must be the same number.
 	it("the parallelogram the vectors span is the matrix determinant", () => {
-		const red = { x: 1.3, y: -0.2 }, blue = { x: 0.5, y: 0.9 };
+		const red = { x: 1.3, y: -0.2 },
+			blue = { x: 0.5, y: 0.9 };
 		expect(cross(red, blue)).toBeCloseTo(mat2Det(deformFromVectors(red, blue)), 12);
 	});
 });

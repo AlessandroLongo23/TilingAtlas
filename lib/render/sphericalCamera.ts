@@ -142,7 +142,7 @@ export function swapProjection(args: {
 	minDistance?: number;
 }): { camera: SphericalCamera; controls: ArcballControls } | null {
 	const { orthographic, prev, renderer, scene, host, fit } = args;
-	if ((prev instanceof THREE.OrthographicCamera) === orthographic) return null;
+	if (prev instanceof THREE.OrthographicCamera === orthographic) return null;
 	const aspect = host.clientWidth > 0 && host.clientHeight > 0 ? host.clientWidth / host.clientHeight : 1;
 	const camera = makeSphericalCamera(orthographic, aspect, orthoHalfHeightFor(fit));
 	camera.position.copy(prev.position);

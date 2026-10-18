@@ -79,11 +79,11 @@ export function orientFaces(faces: number[][]): number[][] {
 			const u = f[(i + 1) % f.length];
 			const k = v < u ? key(v, u) : key(u, v);
 			(at.get(k) ?? at.set(k, []).get(k)!).push(fi);
-		}));
+		}),
+	);
 	const out = faces.map((f) => [...f]);
 	const done = new Uint8Array(faces.length);
-	const reads = (f: number[], a: number, b: number) =>
-		f.some((v, i) => v === a && f[(i + 1) % f.length] === b);
+	const reads = (f: number[], a: number, b: number) => f.some((v, i) => v === a && f[(i + 1) % f.length] === b);
 	done[0] = 1;
 	const queue = [0];
 	while (queue.length) {
@@ -136,11 +136,24 @@ export function sphereMapOf(raw: Polyhedron): Map3 {
 	const firstDart: number[] = [];
 	let edges = 0;
 	for (let d = 0; d < tail.length; d++)
-		if (edgeOf[d] < 0) { edgeOf[d] = edges; edgeOf[twin[d]] = edges; firstDart.push(d); edges++; }
+		if (edgeOf[d] < 0) {
+			edgeOf[d] = edges;
+			edgeOf[twin[d]] = edges;
+			firstDart.push(d);
+			edges++;
+		}
 	return {
-		darts: tail.length, next: Int32Array.from(next), prev: Int32Array.from(prev), twin,
-		edgeOf, firstDartOf: Int32Array.from(firstDart), faceSizes: p.faces.map((f) => f.length),
-		edges, vertices: p.vertices.length, faces: p.faces.length, tailOf: Int32Array.from(tail),
+		darts: tail.length,
+		next: Int32Array.from(next),
+		prev: Int32Array.from(prev),
+		twin,
+		edgeOf,
+		firstDartOf: Int32Array.from(firstDart),
+		faceSizes: p.faces.map((f) => f.length),
+		edges,
+		vertices: p.vertices.length,
+		faces: p.faces.length,
+		tailOf: Int32Array.from(tail),
 	};
 }
 
@@ -176,7 +189,11 @@ export function orbitCount(m: Map3, gs: Int32Array[]): number {
 	const find = (x: number): number => (par[x] === x ? x : (par[x] = find(par[x])));
 	for (const g of gs) {
 		const v = vertexMap(m, g);
-		for (let x = 0; x < m.vertices; x++) { const a = find(x), b = find(v[x]); if (a !== b) par[a] = b; }
+		for (let x = 0; x < m.vertices; x++) {
+			const a = find(x),
+				b = find(v[x]);
+			if (a !== b) par[a] = b;
+		}
 	}
 	return new Set(par.map((_, i) => find(i))).size;
 }
@@ -198,8 +215,13 @@ export function sphereAutomorphisms(m: Map3): Int32Array[] {
 				] as const) {
 					const e = step[d];
 					const want = image[phi[d]];
-					if (phi[e] < 0) { phi[e] = want; stack.push(e); }
-					else if (phi[e] !== want) { ok = false; break; }
+					if (phi[e] < 0) {
+						phi[e] = want;
+						stack.push(e);
+					} else if (phi[e] !== want) {
+						ok = false;
+						break;
+					}
 				}
 			}
 			if (!ok || phi.some((v) => v < 0) || new Set(phi).size !== m.darts) continue;
@@ -216,7 +238,10 @@ export function fixedDecorations(m: Map3, phi: Int32Array): bigint {
 		if (seen[s]) continue;
 		cycles++;
 		const members = new Set<number>();
-		for (let d = s; !seen[d]; d = phi[d]) { seen[d] = 1; members.add(d); }
+		for (let d = s; !seen[d]; d = phi[d]) {
+			seen[d] = 1;
+			members.add(d);
+		}
 		// A cycle carrying an edge to itself with its sides swapped admits no fixed decoration.
 		for (const d of members) if (members.has(m.twin[d])) return 0n;
 	}
@@ -239,7 +264,11 @@ export function kDistribution(m: Map3, aut: Int32Array[]): { k: number; mask: bi
 	{
 		const seen = new Uint8Array(m.darts);
 		for (let d = 0; d < m.darts; d++)
-			if (!seen[d]) { seen[d] = seen[m.twin[d]] = 1; dartEdge[d] = dartEdge[m.twin[d]] = edgeDarts.length; edgeDarts.push([d, m.twin[d]]); }
+			if (!seen[d]) {
+				seen[d] = seen[m.twin[d]] = 1;
+				dartEdge[d] = dartEdge[m.twin[d]] = edgeDarts.length;
+				edgeDarts.push([d, m.twin[d]]);
+			}
 	}
 	const E = edgeDarts.length;
 	// A decoration is a bitmask: bit e says which of edge e's two darts owns the bump.
@@ -282,7 +311,11 @@ export function kDistribution(m: Map3, aut: Int32Array[]): { k: number; mask: bi
  * 120 symmetries, so its entire low-k slice is reachable while 99.999…% of the board never is.
  */
 export function lowK(m: Map3, aut: Int32Array[], cutoff: number): { k: number; mask: bigint }[] | null {
-	const mul = (a: Int32Array, b: Int32Array) => { const c = new Int32Array(m.darts); for (let i = 0; i < m.darts; i++) c[i] = a[b[i]]; return c; };
+	const mul = (a: Int32Array, b: Int32Array) => {
+		const c = new Int32Array(m.darts);
+		for (let i = 0; i < m.darts; i++) c[i] = a[b[i]];
+		return c;
+	};
 	// ⚑ An automorphism is PINNED BY TWO NUMBERS: where it sends dart 0, and where it sends dart 0's
 	// face-successor — that fixes the image dart and the chirality, and the propagation does the rest.
 	// So this is a complete key. Stringifying the whole permutation is also complete and costs 1.5 kB
@@ -299,16 +332,34 @@ export function lowK(m: Map3, aut: Int32Array[], cutoff: number): { k: number; m
 		const q = [id];
 		while (q.length) {
 			const x = q.pop()!;
-			for (const g of gens) { const y = mul(g, x); const k = key(y); if (!seen.has(k)) { seen.set(k, y); q.push(y); } }
+			for (const g of gens) {
+				const y = mul(g, x);
+				const k = key(y);
+				if (!seen.has(k)) {
+					seen.set(k, y);
+					q.push(y);
+				}
+			}
 		}
 		return [...seen.values()];
 	};
 	const subgroups = new Map<string, Int32Array[]>();
-	const add = (els: Int32Array[]) => { const k = els.map(key).sort((a, b) => a - b).join(","); if (!subgroups.has(k)) { subgroups.set(k, els); return true; } return false; };
+	const add = (els: Int32Array[]) => {
+		const k = els
+			.map(key)
+			.sort((a, b) => a - b)
+			.join(",");
+		if (!subgroups.has(k)) {
+			subgroups.set(k, els);
+			return true;
+		}
+		return false;
+	};
 	for (const g of aut) add(close([g]));
 	for (let grew = true; grew; ) {
 		grew = false;
-		for (const els of [...subgroups.values()]) for (const g of aut) if (!els.some((e) => key(e) === key(g))) if (add(close([...els, g]))) grew = true;
+		for (const els of [...subgroups.values()])
+			for (const g of aut) if (!els.some((e) => key(e) === key(g))) if (add(close([...els, g]))) grew = true;
 	}
 
 	/** Decorations fixed by a subgroup, as edge-choice bitmasks. Empty when an orbit flips an edge. */
@@ -320,14 +371,31 @@ export function lowK(m: Map3, aut: Int32Array[], cutoff: number): { k: number; m
 			const members: number[] = [];
 			const stack = [d];
 			orbit[d] = n;
-			while (stack.length) { const x = stack.pop()!; members.push(x); for (const g of els) { const y = g[x]; if (orbit[y] < 0) { orbit[y] = n; stack.push(y); } } }
+			while (stack.length) {
+				const x = stack.pop()!;
+				members.push(x);
+				for (const g of els) {
+					const y = g[x];
+					if (orbit[y] < 0) {
+						orbit[y] = n;
+						stack.push(y);
+					}
+				}
+			}
 			for (const x of members) if (orbit[m.twin[x]] === n) return null; // an orbit carrying an edge to its own other side
 			n++;
 		}
 		// Orbits pair under `twin`; one free binary choice per pair.
 		const pairs: [number, number][] = [];
 		const done = new Set<number>();
-		for (let d = 0; d < m.darts; d++) { const o = orbit[d], t = orbit[m.twin[d]]; if (done.has(o)) continue; done.add(o); done.add(t); pairs.push([o, t]); }
+		for (let d = 0; d < m.darts; d++) {
+			const o = orbit[d],
+				t = orbit[m.twin[d]];
+			if (done.has(o)) continue;
+			done.add(o);
+			done.add(t);
+			pairs.push([o, t]);
+		}
 		if (pairs.length > 22) return null; // 4M fixed decorations from one subgroup is not a low-k slice
 		const edgeDart: number[] = [];
 		for (let d = 0; d < m.darts; d++) if (edgeDart[m.edgeOf[d]] === undefined) edgeDart[m.edgeOf[d]] = d;
@@ -363,8 +431,15 @@ export function lowK(m: Map3, aut: Int32Array[], cutoff: number): { k: number; m
 	// Orbit the pool under Aut, and read each representative's true k off its stabiliser.
 	const edgeDarts: [number, number][] = [];
 	const dartEdge = new Int32Array(m.darts);
-	{ const seen = new Uint8Array(m.darts);
-	  for (let d = 0; d < m.darts; d++) if (!seen[d]) { seen[d] = seen[m.twin[d]] = 1; dartEdge[d] = dartEdge[m.twin[d]] = edgeDarts.length; edgeDarts.push([d, m.twin[d]]); } }
+	{
+		const seen = new Uint8Array(m.darts);
+		for (let d = 0; d < m.darts; d++)
+			if (!seen[d]) {
+				seen[d] = seen[m.twin[d]] = 1;
+				dartEdge[d] = dartEdge[m.twin[d]] = edgeDarts.length;
+				edgeDarts.push([d, m.twin[d]]);
+			}
+	}
 	const act = (mask: bigint, phi: Int32Array) => {
 		let out = 0n;
 		for (let e = 0; e < m.edges; e++) {
@@ -378,14 +453,16 @@ export function lowK(m: Map3, aut: Int32Array[], cutoff: number): { k: number; m
 	for (const x of pool) {
 		if (seen.has(x)) continue;
 		const stab: Int32Array[] = [];
-		for (const phi of aut) { const y = act(x, phi); seen.add(y); if (y === x) stab.push(phi); }
+		for (const phi of aut) {
+			const y = act(x, phi);
+			seen.add(y);
+			if (y === x) stab.push(phi);
+		}
 		const k = orbitCount(m, stab);
 		if (k <= cutoff) reps.push({ k, mask: x });
 	}
 	return reps;
 }
-
-
 
 /** Representatives bucketed by k — what the census reports and the shelf builder shards on. */
 export function byK(reps: { k: number; mask: bigint }[]): Map<number, { k: number; mask: bigint }[]> {
@@ -410,14 +487,14 @@ export function biteWords(m: Map3, mask: bigint): number[][] {
 		for (let i = 0; i < n; i++, d++) {
 			// The mask bit says which of the edge's two darts owns the BUMP; this face owns the bite
 			// exactly when the bump is on the other side.
-			const owner = ((mask >> BigInt(m.edgeOf[d])) & 1n) === 1n ? m.twin[m.firstDartOf[m.edgeOf[d]]] : m.firstDartOf[m.edgeOf[d]];
+			const owner =
+				((mask >> BigInt(m.edgeOf[d])) & 1n) === 1n ? m.twin[m.firstDartOf[m.edgeOf[d]]] : m.firstDartOf[m.edgeOf[d]];
 			word.push(owner === d ? 0 : 1);
 		}
 		out.push(word);
 	}
 	return out;
 }
-
 
 /**
  * How deep a bubble arc may go on THIS board, as the offset `t` fed to `edgeCircles`.
@@ -433,7 +510,10 @@ export function biteWords(m: Map3, mask: bigint): number[][] {
  * little more reads better on a sphere seen at an angle. `edgeCircles` takes the result as `depth`.
  */
 export function bubbleDepth(m: Map3, poly: Polyhedron, fraction = 0.16): number {
-	const unit = poly.vertices.map((v) => { const L = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0] / L, v[1] / L, v[2] / L] as const; });
+	const unit = poly.vertices.map((v) => {
+		const L = Math.hypot(v[0], v[1], v[2]) || 1;
+		return [v[0] / L, v[1] / L, v[2] / L] as const;
+	});
 	let minArc = Infinity;
 	for (let e = 0; e < m.edges; e++) {
 		const d = m.firstDartOf[e];
@@ -444,4 +524,3 @@ export function bubbleDepth(m: Map3, poly: Polyhedron, fraction = 0.16): number 
 	// `t` is compared against dot(dir, unit axis), so it is a sine of an angular offset, not the angle.
 	return Math.sin(minArc * fraction);
 }
-

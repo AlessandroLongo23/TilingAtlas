@@ -184,7 +184,8 @@ function mirrorThroughInterior(fd: Vec2[], axes: Axis[], scale: number): Axis | 
 	const eps = 1e-3 * scale;
 	for (const a of axes) {
 		if (a.kind !== "mirror") continue;
-		let pos = 0, neg = 0;
+		let pos = 0,
+			neg = 0;
 		for (const v of fd) {
 			const s = (v.x - a.p.x) * -a.d.y + (v.y - a.p.y) * a.d.x;
 			if (s > eps) pos++;

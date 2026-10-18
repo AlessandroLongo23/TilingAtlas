@@ -26,7 +26,7 @@
 export const R2_STAR_NS = [3, 4, 6, 8, 12] as const; // P3: inherited C7/ST-1 scope, NOT derived
 
 export type R2Variant = { n: number; alphaU: number };
-export type R2Stratum = 'fig4' | 'fig3eq1' | 'fig3le1';
+export type R2Stratum = "fig4" | "fig3eq1" | "fig3le1";
 /** dmax = 0 ⇔ the stratum admits no valid vertex for this alphabet (witness then []). */
 export type R2Cell = { dmax: number; witness: string[] };
 
@@ -47,21 +47,21 @@ export function r2DentRegVariants(): R2Variant[] {
 	return r2AllVariants().filter(({ n, alphaU }) => regs.has(24 / n + alphaU));
 }
 
-type ClassTok = { kind: 'reg' | 'pt' | 'dent'; u: number; rep: string };
+type ClassTok = { kind: "reg" | "pt" | "dent"; u: number; rep: string };
 
 /** Collapse an alphabet to (kind, u) classes, one representative label per class. */
 function classes(variants: R2Variant[], withDents: boolean): ClassTok[] {
 	const seen = new Map<string, ClassTok>();
-	const add = (kind: ClassTok['kind'], u: number, rep: string) => {
+	const add = (kind: ClassTok["kind"], u: number, rep: string) => {
 		const k = `${kind}@${u}`;
 		if (!seen.has(k)) seen.set(k, { kind, u, rep });
 	};
-	for (const n of R2_STAR_NS) add('reg', r2RegInteriorU(n), String(n));
-	for (const { n, alphaU } of variants) add('pt', alphaU, `${n}*p@${alphaU}`);
+	for (const n of R2_STAR_NS) add("reg", r2RegInteriorU(n), String(n));
+	for (const { n, alphaU } of variants) add("pt", alphaU, `${n}*p@${alphaU}`);
 	if (withDents) {
 		for (const { n, alphaU } of variants) {
 			const beta = 24 - 24 / n - alphaU;
-			add('dent', beta, `${n}*d@${beta}`);
+			add("dent", beta, `${n}*d@${beta}`);
 		}
 	}
 	return [...seen.values()].sort((a, b) => a.u - b.u || a.kind.localeCompare(b.kind));
@@ -74,7 +74,7 @@ function classes(variants: R2Variant[], withDents: boolean): ClassTok[] {
  * higher-t completion.
  */
 export function r2Dmax(variants: R2Variant[], stratum: R2Stratum): R2Cell {
-	const withDents = stratum !== 'fig4';
+	const withDents = stratum !== "fig4";
 	const alphabet = classes(variants, withDents);
 	let best: R2Cell = { dmax: 0, witness: [] };
 	const stack: ClassTok[] = [];
@@ -84,7 +84,7 @@ export function r2Dmax(variants: R2Variant[], stratum: R2Stratum): R2Cell {
 			const t = stack.length;
 			if (t < 3) return; //                                (b) t ≥ 3
 			if (pts > Math.floor(t / 2)) return; //              (d) P2 pigeonhole
-			if (stratum === 'fig3eq1' && dents !== 1) return; // stratum gate
+			if (stratum === "fig3eq1" && dents !== 1) return; // stratum gate
 			if (t > best.dmax) best = { dmax: t, witness: stack.map((c) => c.rep) };
 			return;
 		}
@@ -92,9 +92,9 @@ export function r2Dmax(variants: R2Variant[], stratum: R2Stratum): R2Cell {
 		for (let i = fromIdx; i < alphabet.length; i++) {
 			const c = alphabet[i];
 			if (sum + c.u > 24) continue;
-			if (c.kind === 'dent' && dents >= 1) continue; //    (c) P1: ≤ 1 dent
+			if (c.kind === "dent" && dents >= 1) continue; //    (c) P1: ≤ 1 dent
 			stack.push(c);
-			dfs(i, sum + c.u, pts + (c.kind === 'pt' ? 1 : 0), dents + (c.kind === 'dent' ? 1 : 0));
+			dfs(i, sum + c.u, pts + (c.kind === "pt" ? 1 : 0), dents + (c.kind === "dent" ? 1 : 0));
 			stack.pop();
 		}
 	};

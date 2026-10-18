@@ -193,9 +193,7 @@ export interface Rejection {
 
 /** Same `?: undefined` shape as `PatchFailure`, and for the same reason: `strict: false` does not
  *  narrow a boolean discriminant, so a guard alone will not make `code` and `message` readable. */
-export type Verdict =
-	| { ok: true; code?: undefined; message?: undefined }
-	| ({ ok: false } & Rejection);
+export type Verdict = { ok: true; code?: undefined; message?: undefined } | ({ ok: false } & Rejection);
 
 export const REJECT = (code: Rejection["code"], message: string): Verdict => ({
 	ok: false,

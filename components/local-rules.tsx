@@ -75,7 +75,9 @@ const RULES: { title: string; note: string; draw: (api: Api) => void }[] = [
 		note: "two half-edges make one edge, so one face above it — but its ends report a hexagon and a square",
 		draw: (api) => {
 			const { ctx, s, text } = api;
-			const y = 0.02, x0 = -0.95, x1 = 0.95;
+			const y = 0.02,
+				x0 = -0.95,
+				x1 = 0.95;
 			const band = (a: number, b: number, top: boolean, n: number) => {
 				ctx.fillStyle = fill(n);
 				ctx.strokeStyle = line(n);
@@ -120,7 +122,8 @@ const RULES: { title: string; note: string; draw: (api: Api) => void }[] = [
 		note: "the mirror fixes one half-edge and moves the other, and only like may join like",
 		draw: (api) => {
 			const { ctx, s, text } = api;
-			const cy = 0.2, r = 0.5;
+			const cy = 0.2,
+				r = 0.5;
 			const vertex = (cx: number, onAxis: boolean) => {
 				// Mirrors running along the edges leave one on the axis; mirrors running between them
 				// leave none, and the reflection carries that half-edge to a different one.
@@ -182,7 +185,9 @@ const RULES: { title: string; note: string; draw: (api: Api) => void }[] = [
 			const { ctx, s, text } = api;
 			// Unrolled: a walk that has over-run its tile cannot be drawn on that tile, and the search
 			// has no geometry here anyway. Each wedge is one corner the walk has consumed.
-			const n = 7, step = 0.26, y = 0.14;
+			const n = 7,
+				step = 0.26,
+				y = 0.14;
 			const x0 = -((n - 1) * step) / 2;
 			for (let i = 0; i < n; i++) {
 				const x = x0 + i * step;
@@ -212,7 +217,8 @@ const RULES: { title: string; note: string; draw: (api: Api) => void }[] = [
 				text(x, y - 0.26, String(i + 1), { colour: over ? REJECT : SOFT, size: 0.6, weight: over ? 700 : 400 });
 			}
 			// both ends of the walk still free: that is what "still open" means
-			const xa = x0 - 0.2, xb = x0 + (n - 1) * step + 0.2;
+			const xa = x0 - 0.2,
+				xb = x0 + (n - 1) * step + 0.2;
 			ctx.strokeStyle = INK;
 			ctx.lineWidth = 2.6 / s;
 			ctx.beginPath();
@@ -236,7 +242,8 @@ const RULES: { title: string; note: string; draw: (api: Api) => void }[] = [
 			// L % count == 0. Marks cut the boundary into count equal arcs, and they land on corners
 			// precisely in that case.
 			const one = (cx: number, count: number, ok: boolean) => {
-				const R = 0.48, cy = 0.28;
+				const R = 0.48,
+					cy = 0.28;
 				const v = Array.from({ length: 6 }, (_, i) => {
 					const a = Math.PI / 2 + (Math.PI * i) / 3;
 					return [cx + Math.cos(a) * R, cy + Math.sin(a) * R] as [number, number];
@@ -250,7 +257,8 @@ const RULES: { title: string; note: string; draw: (api: Api) => void }[] = [
 				ctx.stroke();
 				for (let i = 0; i < count; i++) {
 					const t = (6 * i) / count;
-					const j = Math.floor(t) % 6, f = t - Math.floor(t);
+					const j = Math.floor(t) % 6,
+						f = t - Math.floor(t);
 					const px = v[j][0] + (v[(j + 1) % 6][0] - v[j][0]) * f;
 					const py = v[j][1] + (v[(j + 1) % 6][1] - v[j][1]) * f;
 					const corner = f < 1e-9;
@@ -276,7 +284,8 @@ function RulePanel({ rule }: { rule: (typeof RULES)[number] }) {
 	const canvas = useRef<HTMLCanvasElement | null>(null);
 
 	const paint = useCallback(() => {
-		const h = host.current, c = canvas.current;
+		const h = host.current,
+			c = canvas.current;
 		if (!h || !c) return;
 		const p = prepare(h, c, { minX: -BOX, maxX: BOX, minY: -BOX * 0.8, maxY: BOX * 0.8 }, 0.98);
 		if (!p) return;
@@ -317,7 +326,7 @@ function RulePanel({ rule }: { rule: (typeof RULES)[number] }) {
 			<figcaption className="text-center text-[clamp(0.7rem,1vh+0.24vw,1rem)] font-medium text-fg">
 				{rule.title}
 			</figcaption>
-			<div ref={host} className="relative aspect-[5/4] w-full rounded-xl border border-line bg-surface-base">
+			<div ref={host} className="bg-surface-base relative aspect-[5/4] w-full rounded-xl border border-line">
 				<canvas ref={canvas} className="absolute inset-0 h-full w-full" />
 			</div>
 			<div className="text-center text-[clamp(0.56rem,0.78vh+0.15vw,0.76rem)] leading-snug text-fg-muted">

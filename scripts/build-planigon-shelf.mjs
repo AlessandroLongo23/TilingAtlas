@@ -16,31 +16,50 @@
 // and every vertex must see a full turn. That last one is not redundant with the other two — a cover
 // that wraps twice round a point has twice the area in twice the cell and passes both.
 
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import path from 'node:path';
-import { stringifyAtlas } from './atlas/encode.mjs';
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import path from "node:path";
+import { stringifyAtlas } from "./atlas/encode.mjs";
 
 const ARGS = process.argv.slice(2);
 if (!ARGS.length) {
-	console.error('usage: node scripts/build-planigon-shelf.mjs <cells.json>');
+	console.error("usage: node scripts/build-planigon-shelf.mjs <cells.json>");
 	process.exit(1);
 }
-const entries = JSON.parse(readFileSync(ARGS[0], 'utf8'));
-const OUT = path.join(process.cwd(), 'public', 'planigon');
-const PUB = path.join(process.cwd(), 'public');
+const entries = JSON.parse(readFileSync(ARGS[0], "utf8"));
+const OUT = path.join(process.cwd(), "public", "planigon");
+const PUB = path.join(process.cwd(), "public");
 
-const S2 = Math.SQRT2, S3 = Math.sqrt(3);
+const S2 = Math.SQRT2,
+	S3 = Math.sqrt(3);
 // The twelve edge lengths, as SUMS OF TWO APOTHEMS of unit-edge regular polygons — a(3) = sqrt3/6,
 // a(4) = 1/2, a(6) = sqrt3/2, a(8) = (sqrt2+1)/2, a(12) = (2+sqrt3)/2. The palette carries them
 // multiplied by 6 so they land in Z[sqrt2, sqrt3]; the developer divides that back out, so what
 // arrives here is the true size, 0.577 to 3.732.
-const A3 = S3 / 6, A4 = 0.5, A6 = S3 / 2, A8 = (S2 + 1) / 2, A12 = (2 + S3) / 2;
-const LENGTHS = [A3 + A3, A3 + A4, A3 + A6, A3 + A12, A4 + A4, A4 + A6, A4 + A8, A4 + A12, A6 + A6, A6 + A12, A8 + A8, A12 + A12];
+const A3 = S3 / 6,
+	A4 = 0.5,
+	A6 = S3 / 2,
+	A8 = (S2 + 1) / 2,
+	A12 = (2 + S3) / 2;
+const LENGTHS = [
+	A3 + A3,
+	A3 + A4,
+	A3 + A6,
+	A3 + A12,
+	A4 + A4,
+	A4 + A6,
+	A4 + A8,
+	A4 + A12,
+	A6 + A6,
+	A6 + A12,
+	A8 + A8,
+	A12 + A12,
+];
 const dist = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1]);
 const SHOELACE = (f) => {
 	let a2 = 0;
 	for (let t = 0; t < f.length; t++) {
-		const u = f[t], v = f[(t + 1) % f.length];
+		const u = f[t],
+			v = f[(t + 1) % f.length];
 		a2 += u[0] * v[1] - v[0] * u[1];
 	}
 	return Math.abs(a2 / 2);
@@ -56,7 +75,9 @@ const residue = (p, T1, T2) => {
 	return `${Math.round((a * T1[0] + b * T2[0]) * 1e4)},${Math.round((a * T1[1] + b * T2[1]) * 1e4)}`;
 };
 
-let worstShape = 0, worstArea = 0, worstAngle = 0;
+let worstShape = 0,
+	worstArea = 0,
+	worstAngle = 0;
 for (const e of entries) {
 	const cell = Math.abs(e.T1[0] * e.T2[1] - e.T1[1] * e.T2[0]);
 	let area = 0;
@@ -65,8 +86,13 @@ for (const e of entries) {
 		for (let t = 0; t < f.length; t++) {
 			const L = dist(f[t], f[(t + 1) % f.length]);
 			worstShape = Math.max(worstShape, Math.min(...LENGTHS.map((x) => Math.abs(L - x))));
-			const p = f[t], u = f[(t - 1 + f.length) % f.length], v = f[(t + 1) % f.length];
-			const ux = u[0] - p[0], uy = u[1] - p[1], vx = v[0] - p[0], vy = v[1] - p[1];
+			const p = f[t],
+				u = f[(t - 1 + f.length) % f.length],
+				v = f[(t + 1) % f.length];
+			const ux = u[0] - p[0],
+				uy = u[1] - p[1],
+				vx = v[0] - p[0],
+				vy = v[1] - p[1];
 			const th = Math.abs((Math.atan2(ux * vy - uy * vx, ux * vx + uy * vy) * 180) / Math.PI);
 			const key = residue(p, e.T1, e.T2);
 			ang.set(key, (ang.get(key) ?? 0) + th);
@@ -77,7 +103,9 @@ for (const e of entries) {
 	for (const total of ang.values()) worstAngle = Math.max(worstAngle, Math.abs(total - 360));
 }
 if (worstShape > 1e-6 || worstArea > 1e-6 || worstAngle > 0.5) {
-	console.error(`planigon: REFUSING to write — edge err ${worstShape.toExponential(2)}, area err ${worstArea.toExponential(2)}, worst vertex ${(360 + worstAngle).toFixed(1)}°`);
+	console.error(
+		`planigon: REFUSING to write — edge err ${worstShape.toExponential(2)}, area err ${worstArea.toExponential(2)}, worst vertex ${(360 + worstAngle).toFixed(1)}°`,
+	);
 	process.exit(2);
 }
 
@@ -86,7 +114,9 @@ if (worstShape > 1e-6 || worstArea > 1e-6 || worstAngle > 0.5) {
 // mirror, each re-anchored on a face near the origin and clipped to a window.
 const TRANSFORMS = [];
 for (let k = 0; k < 24; k++) {
-	const th = (k * Math.PI) / 12, c = Math.cos(th), sn = Math.sin(th);
+	const th = (k * Math.PI) / 12,
+		c = Math.cos(th),
+		sn = Math.sin(th);
 	for (const m of [1, -1]) TRANSFORMS.push(([x, y]) => [m * (c * x - sn * y), m * (sn * x + c * y)]);
 }
 // WINDOW SIZE IS NOT INHERITED. The window has to hold several tiles of the LARGEST planigon, whose
@@ -104,10 +134,12 @@ const fingerprint = (e) => {
 	const [[ax, ay], [bx, by]] = [e.T1, e.T2];
 	const reach = Math.ceil(RW / Math.max(1, Math.min(Math.hypot(ax, ay), Math.hypot(bx, by)))) + 2;
 	const raw = [];
-	for (let i = -reach; i <= reach; i++) for (let j = -reach; j <= reach; j++) {
-		const ox = i * ax + j * bx, oy = i * ay + j * by;
-		for (const f of e.faces) raw.push(f.map(([x, y]) => [x + ox, y + oy]));
-	}
+	for (let i = -reach; i <= reach; i++)
+		for (let j = -reach; j <= reach; j++) {
+			const ox = i * ax + j * bx,
+				oy = i * ay + j * by;
+			for (const f of e.faces) raw.push(f.map(([x, y]) => [x + ox, y + oy]));
+		}
 	let best = null;
 	for (const T of TRANSFORMS) {
 		const fs = raw.map((f) => {
@@ -118,7 +150,10 @@ const fingerprint = (e) => {
 			// from a kite of equal area — which is exactly the pair this palette has, P6.3.6.3 and
 			// P6.6.3.3, and it merged their two tilings into one. Sorted vertex offsets from the
 			// centroid separate them, and travel through the point-group transform with the face.
-			const off = t.map(([x, y]) => `${Math.round((x - cx) * Q)}:${Math.round((y - cy) * Q)}`).sort().join(";");
+			const off = t
+				.map(([x, y]) => `${Math.round((x - cx) * Q)}:${Math.round((y - cy) * Q)}`)
+				.sort()
+				.join(";");
 			return [cx, cy, off];
 		});
 		for (const [ax0, ay0] of fs.filter((q) => Math.hypot(q[0], q[1]) < ANCHOR_R)) {
@@ -127,7 +162,7 @@ const fingerprint = (e) => {
 				.filter(([cx, cy]) => Math.hypot(cx, cy) <= RW)
 				.map(([cx, cy, off]) => `${Math.round(cx * Q)},${Math.round(cy * Q)},${off}`)
 				.sort()
-				.join('|');
+				.join("|");
 			if (best === null || key < best) best = key;
 		}
 	}
@@ -137,7 +172,9 @@ const seen = new Map();
 for (const e of entries) {
 	const sig = fingerprint(e);
 	if (!sig) {
-		console.error(`planigon: REFUSING to write — ${e.id} produced no fingerprint (no face centroid within the anchor radius), which would drop it silently`);
+		console.error(
+			`planigon: REFUSING to write — ${e.id} produced no fingerprint (no face centroid within the anchor radius), which would drop it silently`,
+		);
 		process.exit(2);
 	}
 	if (!seen.has(sig)) seen.set(sig, e);
@@ -151,12 +188,17 @@ for (const e of distinct) {
 	byK.get(e.k).push(e);
 }
 mkdirSync(OUT, { recursive: true });
-const manifest = { board: 'planigon', tile: 'the 15 planigons', k: [] };
+const manifest = { board: "planigon", tile: "the 15 planigons", k: [] };
 const ref = [];
 for (const k of [...byK.keys()].sort((a, b) => a - b)) {
 	const rows = byK.get(k).map((e, i) => ({
-		id: `planigon-${k}-${String(i + 1).padStart(5, '0')}`,
-		k, T1: e.T1, T2: e.T2, seeds: e.seeds, faces: e.faces, stats: e.stats,
+		id: `planigon-${k}-${String(i + 1).padStart(5, "0")}`,
+		k,
+		T1: e.T1,
+		T2: e.T2,
+		seeds: e.seeds,
+		faces: e.faces,
+		stats: e.stats,
 	}));
 	writeFileSync(path.join(OUT, `planigon-k${k}.json`), JSON.stringify(rows));
 	manifest.k.push({ k, count: rows.length, file: `/planigon/planigon-k${k}.json` });
@@ -164,25 +206,27 @@ for (const k of [...byK.keys()].sort((a, b) => a - b)) {
 	byK.get(k).forEach((e, i) => {
 		const sizes = [...new Set(e.faces.map((f) => f.length))].sort((a, b) => a - b);
 		ref.push({
-			id: `planigon-k${k}-${String(i + 1).padStart(3, '0')}`,
-			source: 'planigon',
+			id: `planigon-k${k}-${String(i + 1).padStart(3, "0")}`,
+			source: "planigon",
 			k,
-			family: 'planigons (duals of the vertex configurations)',
+			family: "planigons (duals of the vertex configurations)",
 			renderCell: { cellPolygons: e.faces.map((f) => ({ n: f.length, vertices: f })), basis: [e.T1, e.T2] },
-			discoverer: 'Čtrnáct engine (planigon palette), 2026-08-14',
+			discoverer: "Čtrnáct engine (planigon palette), 2026-08-14",
 			note:
 				`Edge-to-edge tiling by PLANIGONS — the duals of the Euclidean vertex configurations — ` +
-				`${e.stats.tiles} tiles per period cell, faces of ${sizes.join(' and ')} sides. A planigon ` +
-				'is the polygon on the centroids of the regular polygons around one vertex: its angle at ' +
-				'the centroid of an n-gon is 2π/n, and its edge between the centroids of an n- and an ' +
+				`${e.stats.tiles} tiles per period cell, faces of ${sizes.join(" and ")} sides. A planigon ` +
+				"is the polygon on the centroids of the regular polygons around one vertex: its angle at " +
+				"the centroid of an n-gon is 2π/n, and its edge between the centroids of an n- and an " +
 				"n'-gon is the sum of their apothems. Fifteen vertex words admit a dual, and their edges " +
-				'take twelve different lengths in ℤ[√2, √3] — so only like lengths may glue, which is what ' +
-				'edge types are for. Developed exactly in ℤ[ζ₂₄]; the faces cover the period cell with no ' +
-				'gap and no overlap and every vertex sees a full turn.',
+				"take twelve different lengths in ℤ[√2, √3] — so only like lengths may glue, which is what " +
+				"edge types are for. Developed exactly in ℤ[ζ₂₄]; the faces cover the period cell with no " +
+				"gap and no overlap and every vertex sees a full turn.",
 		});
 	});
 }
-writeFileSync(path.join(OUT, 'manifest.json'), JSON.stringify(manifest, null, 2));
-writeFileSync(path.join(PUB, 'reference-atlas-planigon.json'), stringifyAtlas(ref));
+writeFileSync(path.join(OUT, "manifest.json"), JSON.stringify(manifest, null, 2));
+writeFileSync(path.join(PUB, "reference-atlas-planigon.json"), stringifyAtlas(ref));
 console.log(`  atlas shelf: ${ref.length} entries -> public/reference-atlas-planigon.json`);
-console.log(`planigon: ${distinct.length} distinct tilings, shape err ${worstShape.toExponential(2)}, area err ${worstArea.toExponential(2)}, angle err ${worstAngle.toExponential(2)}° — certified`);
+console.log(
+	`planigon: ${distinct.length} distinct tilings, shape err ${worstShape.toExponential(2)}, area err ${worstArea.toExponential(2)}, angle err ${worstAngle.toExponential(2)}° — certified`,
+);

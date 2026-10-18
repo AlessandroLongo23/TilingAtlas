@@ -3,7 +3,17 @@
 import { useCallback, useEffect, useRef } from "react";
 import { prepare, type Box } from "@/lib/render/figureCanvas";
 import {
-	arrowHead, DART, dot, drawWithText, halo, INK, SOFT, T1_COLOUR, T2_COLOUR, type Api, type Pt,
+	arrowHead,
+	DART,
+	dot,
+	drawWithText,
+	halo,
+	INK,
+	SOFT,
+	T1_COLOUR,
+	T2_COLOUR,
+	type Api,
+	type Pt,
 } from "@/lib/render/figureGlyphs";
 import { polygonHue, tileFill, tileLine } from "@/lib/utils/renderTiling";
 
@@ -69,7 +79,8 @@ function trihexagonal(reach: number): Poly[] {
 			out.push({ pts: v, n: 6, centre: c });
 			// one outward equilateral triangle per hexagon edge; each is shared by three hexagons
 			for (let k = 0; k < 6; k++) {
-				const a = v[k], b = v[(k + 1) % 6];
+				const a = v[k],
+					b = v[(k + 1) % 6];
 				const m = mid(a, b);
 				const d = Math.hypot(m[0] - c[0], m[1] - c[1]);
 				const apex: Pt = [m[0] + ((m[0] - c[0]) / d) * TRI_H, m[1] + ((m[1] - c[1]) / d) * TRI_H];
@@ -87,12 +98,18 @@ function trihexagonal(reach: number): Poly[] {
  * A chamber: the triangle (tile centre, edge midpoint, vertex). Its three sides are its three
  * neighbours — across [c,m] lies σ0, across [c,v] lies σ1, across [m,v] lies σ2.
  */
-interface Chamber { c: Pt; m: Pt; v: Pt; n: number }
+interface Chamber {
+	c: Pt;
+	m: Pt;
+	v: Pt;
+	n: number;
+}
 
 function chambersOf(tile: Poly): Chamber[] {
 	const out: Chamber[] = [];
 	for (let i = 0; i < tile.pts.length; i++) {
-		const a = tile.pts[i], b = tile.pts[(i + 1) % tile.pts.length];
+		const a = tile.pts[i],
+			b = tile.pts[(i + 1) % tile.pts.length];
 		const m = mid(a, b);
 		out.push({ c: tile.centre, m, v: a, n: tile.n });
 		out.push({ c: tile.centre, m, v: b, n: tile.n });
@@ -103,7 +120,9 @@ function chambersOf(tile: Poly): Chamber[] {
 const tri = (ch: Chamber): Pt[] => [ch.c, ch.m, ch.v];
 const centroid = (p: Pt[]): Pt => [(p[0][0] + p[1][0] + p[2][0]) / 3, (p[0][1] + p[1][1] + p[2][1]) / 3];
 
-const S0 = T1_COLOUR, S1 = T2_COLOUR, S2 = DART;
+const S0 = T1_COLOUR,
+	S1 = T2_COLOUR,
+	S2 = DART;
 
 const chamberFill = (n: number, a: number) => tileFill(polygonHue(n), a);
 const chamberLine = (n: number) => tileLine(polygonHue(n));
@@ -135,10 +154,14 @@ function drawChambers(api: Api) {
 	const sig0 = chs[pickIdx ^ 1];
 	const sig1 = chs.find((o) => o !== ch && key(o.v) === key(ch.v))!;
 	// σ2: the same vertex and edge, in the tile on the other side of that edge
-	const other = tiles.find((t) => t !== hex && t.pts.some((p, i) => {
-		const q = t.pts[(i + 1) % t.pts.length];
-		return key(mid(p, q)) === key(ch.m);
-	}))!;
+	const other = tiles.find(
+		(t) =>
+			t !== hex &&
+			t.pts.some((p, i) => {
+				const q = t.pts[(i + 1) % t.pts.length];
+				return key(mid(p, q)) === key(ch.m);
+			}),
+	)!;
 	const sig2 = chambersOf(other).find((o) => key(o.v) === key(ch.v) && key(o.m) === key(ch.m))!;
 
 	// Every tile, flat. The subdivision goes only on the two tiles in play: drawn over the whole
@@ -192,7 +215,11 @@ function drawChambers(api: Api) {
 	}
 
 	// the three corners of the chosen chamber, named as DSymbol.ts names them
-	const labels: [Pt, string, number][] = [[ch.v, "0", 0], [ch.m, "1", 1], [ch.c, "2", 2]];
+	const labels: [Pt, string, number][] = [
+		[ch.v, "0", 0],
+		[ch.m, "1", 1],
+		[ch.c, "2", 2],
+	];
 	for (const [p] of labels) dot(api, p[0], p[1], 4.6, "#fff");
 	const away = (p: Pt, by: number): Pt => {
 		const g = centroid(tri(ch));
@@ -205,7 +232,11 @@ function drawChambers(api: Api) {
 		text(at[0], at[1], name, { colour: INK, size: 0.78, weight: 700, mono: true });
 	}
 
-	for (const [nb, colour, name] of [[sig0, S0, "σ₀"], [sig1, S1, "σ₁"], [sig2, S2, "σ₂"]] as const) {
+	for (const [nb, colour, name] of [
+		[sig0, S0, "σ₀"],
+		[sig1, S1, "σ₁"],
+		[sig2, S2, "σ₂"],
+	] as const) {
 		const g = centroid(tri(nb));
 		halo(api, g[0], g[1], 13);
 		text(g[0], g[1], name, { colour, size: 0.82, weight: 700 });
@@ -269,7 +300,10 @@ function drawSymbol(api: Api) {
 		text(nd.at[0], nd.at[1], String(nd.m01), { colour: "rgba(20,20,20,0.85)", size: 0.86, weight: 700 });
 	}
 
-	for (const [x, side] of [[-1.02, 1], [1.02, 1]] as const) {
+	for (const [x, side] of [
+		[-1.02, 1],
+		[1.02, 1],
+	] as const) {
 		void side;
 		text(x, 0.68, "σ₀", { colour: S0, size: 0.78, weight: 700 });
 		text(x, -0.56, "σ₁", { colour: S1, size: 0.78, weight: 700 });
@@ -292,12 +326,23 @@ function drawSymbol(api: Api) {
 const SYMBOL_BOX: Box = { minX: -1.2, maxX: 1.2, minY: -1.05, maxY: 1.05 };
 const CHAMBER_BOX: Box = { minX: -1.62, maxX: 1.62, minY: -1.62, maxY: 1.62 };
 
-function Panel({ box, draw, caption, aspect }: { box: Box; draw: (api: Api) => void; caption: string; aspect: string }) {
+function Panel({
+	box,
+	draw,
+	caption,
+	aspect,
+}: {
+	box: Box;
+	draw: (api: Api) => void;
+	caption: string;
+	aspect: string;
+}) {
 	const host = useRef<HTMLDivElement | null>(null);
 	const canvas = useRef<HTMLCanvasElement | null>(null);
 
 	const paint = useCallback(() => {
-		const h = host.current, c = canvas.current;
+		const h = host.current,
+			c = canvas.current;
 		if (!h || !c) return;
 		const p = prepare(h, c, box, 0.98);
 		if (!p) return;
@@ -317,7 +362,7 @@ function Panel({ box, draw, caption, aspect }: { box: Box; draw: (api: Api) => v
 		<figure className="m-0 flex min-w-[14rem] flex-1 flex-col items-center gap-1">
 			<div
 				ref={host}
-				className="relative w-full overflow-hidden rounded-2xl border border-line bg-surface-base"
+				className="bg-surface-base relative w-full overflow-hidden rounded-2xl border border-line"
 				style={{ aspectRatio: aspect }}
 			>
 				<canvas ref={canvas} className="absolute inset-0 h-full w-full" />

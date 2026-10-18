@@ -81,7 +81,9 @@ interface AtlasContainer {
 }
 
 const isContainer = (raw: unknown): raw is AtlasContainer =>
-	!!raw && typeof raw === "object" && (raw as AtlasContainer).atlas === 1 &&
+	!!raw &&
+	typeof raw === "object" &&
+	(raw as AtlasContainer).atlas === 1 &&
 	Array.isArray((raw as AtlasContainer).records);
 
 const Q = (x: number) => {
@@ -175,8 +177,7 @@ function unpackRecords<T>(records: unknown[], tables: Tables): T[] {
 	if (!fields.length && !refFields.length && !elemFields.length && !geom) return records as T[];
 	const { top: topRefs, nested: nestedRefs } = groupRefPaths(refFields);
 	const { top: topElems, nested: nestedElems } = groupRefPaths(elemFields);
-	const unpackArray = (path: string, arr: unknown[]) =>
-		arr.map((i) => (typeof i === "number" ? elems[path][i] : i));
+	const unpackArray = (path: string, arr: unknown[]) => arr.map((i) => (typeof i === "number" ? elems[path][i] : i));
 
 	return records.map((r) => {
 		if (!r || typeof r !== "object") return r as T;

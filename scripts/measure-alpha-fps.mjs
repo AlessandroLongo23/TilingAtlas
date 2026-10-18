@@ -28,26 +28,42 @@ for (const c of CASES) {
 		const fa = window.__stores?.familyAlphas;
 		return !!fa && !!fa.getState;
 	});
-	if (!ok) { console.log(`${c.id}: no familyAlphas store — skipped`); continue; }
+	if (!ok) {
+		console.log(`${c.id}: no familyAlphas store — skipped`);
+		continue;
+	}
 
 	// Min zoom = the biggest replicated grid = the stress case for the per-tick rebuild. SHADER=0 forces
 	// the p5 fill path, which still rebuilds that grid every tick because it actually draws it.
-	await page.evaluate(({ z, shader, mode }) => {
-		const store = window.__stores.configuration;
-		const s = store.getState();
-		s.controls.zoom = z; s.controls.targetZoom = z;
-		// MODE=islamic / symmetry exercise the views where isFlatShaderActive is FALSE, i.e. where p5 is
-		// still in charge of some or all of the picture.
-		const extra = mode === "islamic" ? { isIslamic: true }
-			: mode === "interlace" ? { isIslamic: true, islamicStyle: "interlace" }
-			: mode === "symmetry" ? { showSymmetryElements: true } : {};
-		store.setState({ controls: { ...s.controls, zoom: z, targetZoom: z }, euclideanShader: shader, ...extra });
-	}, { z: Number(process.env.ZOOM || 20), shader: process.env.SHADER !== "0", mode: process.env.MODE || "" });
+	await page.evaluate(
+		({ z, shader, mode }) => {
+			const store = window.__stores.configuration;
+			const s = store.getState();
+			s.controls.zoom = z;
+			s.controls.targetZoom = z;
+			// MODE=islamic / symmetry exercise the views where isFlatShaderActive is FALSE, i.e. where p5 is
+			// still in charge of some or all of the picture.
+			const extra =
+				mode === "islamic"
+					? { isIslamic: true }
+					: mode === "interlace"
+						? { isIslamic: true, islamicStyle: "interlace" }
+						: mode === "symmetry"
+							? { showSymmetryElements: true }
+							: {};
+			store.setState({ controls: { ...s.controls, zoom: z, targetZoom: z }, euclideanShader: shader, ...extra });
+		},
+		{ z: Number(process.env.ZOOM || 20), shader: process.env.SHADER !== "0", mode: process.env.MODE || "" },
+	);
 	await page.waitForTimeout(2500);
 
 	const meta = await page.evaluate(() => {
 		const cfg = window.__stores.configuration.getState();
-		return { shader: cfg.euclideanShader, zoom: cfg.controls.zoom, alphas: window.__stores.familyAlphas.getState().values };
+		return {
+			shader: cfg.euclideanShader,
+			zoom: cfg.controls.zoom,
+			alphas: window.__stores.familyAlphas.getState().values,
+		};
 	});
 
 	const client = await page.context().newCDPSession(page);
@@ -56,40 +72,46 @@ for (const c of CASES) {
 	await client.send("Profiler.start");
 
 	// Sweep α (and β) continuously, one write per RAF, for ~4s.
-	const raf = await page.evaluate(() => new Promise((resolve) => {
-		const fa = window.__stores.familyAlphas;
-		const st = fa.getState();
-		const base = (st.values && st.values.slice()) || null;
-		const deltas = [];
-		let last = performance.now();
-		let n = 0; const warm = 20, total = 260;
-		const t0 = performance.now();
-		function frame(now) {
-			const d = now - last; last = now;
-			if (n >= warm) deltas.push(d);
-			// Sweep: ±6° sinusoid on every parameter, ~0.5 Hz — a realistic hand drag.
-			const t = (now - t0) / 1000;
-			const cur = fa.getState().values;
-			const seed = base || cur;
-			if (seed) fa.getState().set(seed.map((v, j) => v + 6 * Math.sin(2 * Math.PI * 0.5 * t + j)));
-			if (++n >= total) {
-				const s = deltas.slice().sort((a, b) => a - b);
-				const sum = s.reduce((a, b) => a + b, 0);
-				resolve({
-					frames: s.length,
-					avgMs: +(sum / s.length).toFixed(2),
-					medianMs: +s[Math.floor(s.length / 2)].toFixed(2),
-					p95Ms: +s[Math.floor(s.length * 0.95)].toFixed(2),
-					maxMs: +s[s.length - 1].toFixed(2),
-					over20: s.filter((x) => x > 20).length,
-				});
-				if (base) fa.getState().set(base);
-				return;
-			}
-			requestAnimationFrame(frame);
-		}
-		requestAnimationFrame(frame);
-	}));
+	const raf = await page.evaluate(
+		() =>
+			new Promise((resolve) => {
+				const fa = window.__stores.familyAlphas;
+				const st = fa.getState();
+				const base = (st.values && st.values.slice()) || null;
+				const deltas = [];
+				let last = performance.now();
+				let n = 0;
+				const warm = 20,
+					total = 260;
+				const t0 = performance.now();
+				function frame(now) {
+					const d = now - last;
+					last = now;
+					if (n >= warm) deltas.push(d);
+					// Sweep: ±6° sinusoid on every parameter, ~0.5 Hz — a realistic hand drag.
+					const t = (now - t0) / 1000;
+					const cur = fa.getState().values;
+					const seed = base || cur;
+					if (seed) fa.getState().set(seed.map((v, j) => v + 6 * Math.sin(2 * Math.PI * 0.5 * t + j)));
+					if (++n >= total) {
+						const s = deltas.slice().sort((a, b) => a - b);
+						const sum = s.reduce((a, b) => a + b, 0);
+						resolve({
+							frames: s.length,
+							avgMs: +(sum / s.length).toFixed(2),
+							medianMs: +s[Math.floor(s.length / 2)].toFixed(2),
+							p95Ms: +s[Math.floor(s.length * 0.95)].toFixed(2),
+							maxMs: +s[s.length - 1].toFixed(2),
+							over20: s.filter((x) => x > 20).length,
+						});
+						if (base) fa.getState().set(base);
+						return;
+					}
+					requestAnimationFrame(frame);
+				}
+				requestAnimationFrame(frame);
+			}),
+	);
 
 	const { profile } = await client.send("Profiler.stop");
 	await client.detach();
@@ -113,7 +135,10 @@ for (const c of CASES) {
 	// per sample so recursion cannot double-count.
 	const parent = new Map();
 	for (const n of profile.nodes) for (const c of n.children || []) parent.set(c, n.id);
-	const WATCH = (process.env.WATCH || "ensureTiling,buildTilingFromCell,evaluateParamCell,buildCellMesh,uploadMesh,parseBaseCell,computeFillRadii,draw,render,setState,jsxDEV,ParamRegionPad,ParamSliderPanel,show,measureBox").split(",");
+	const WATCH = (
+		process.env.WATCH ||
+		"ensureTiling,buildTilingFromCell,evaluateParamCell,buildCellMesh,uploadMesh,parseBaseCell,computeFillRadii,draw,render,setState,jsxDEV,ParamRegionPad,ParamSliderPanel,show,measureBox"
+	).split(",");
 	const incl = new Map();
 	for (const s of profile.samples) {
 		const seen = new Set();
@@ -122,14 +147,23 @@ for (const c of CASES) {
 			if (!n) break;
 			const fn = n.callFrame.functionName || "";
 			for (const w of WATCH) {
-				if (fn === w || fn.endsWith(`.${w}`)) { if (!seen.has(w)) { seen.add(w); incl.set(w, (incl.get(w) || 0) + 1); } }
+				if (fn === w || fn.endsWith(`.${w}`)) {
+					if (!seen.has(w)) {
+						seen.add(w);
+						incl.set(w, (incl.get(w) || 0) + 1);
+					}
+				}
 			}
 		}
 	}
 
 	console.log(`\n=== ${c.label} — ${c.id}`);
-	console.log(`   params=${JSON.stringify(meta.alphas)}  shader=${meta.shader} zoom=${meta.zoom?.toFixed?.(1)}${process.env.MODE ? `  mode=${process.env.MODE}` : ""}`);
-	console.log(`   RAF: avg ${raf.avgMs}ms  med ${raf.medianMs}  p95 ${raf.p95Ms}  max ${raf.maxMs}  frames>20ms ${raf.over20}/${raf.frames}`);
+	console.log(
+		`   params=${JSON.stringify(meta.alphas)}  shader=${meta.shader} zoom=${meta.zoom?.toFixed?.(1)}${process.env.MODE ? `  mode=${process.env.MODE}` : ""}`,
+	);
+	console.log(
+		`   RAF: avg ${raf.avgMs}ms  med ${raf.medianMs}  p95 ${raf.p95Ms}  max ${raf.maxMs}  frames>20ms ${raf.over20}/${raf.frames}`,
+	);
 	console.log(`   profile ${dur.toFixed(0)}ms, ${total} samples`);
 	for (const [k, v] of top) {
 		const pct = ((v / total) * 100).toFixed(1);
@@ -141,7 +175,9 @@ for (const c of CASES) {
 		console.log(`   inclusive (per frame over ${raf.frames + 20} frames):`);
 		for (const [k, v] of watched) {
 			const ms = v * (dur / total);
-			console.log(`     ${((v / total) * 100).toFixed(1).padStart(5)}%  ${ms.toFixed(0).padStart(5)}ms  ${(ms / (raf.frames + 20)).toFixed(2).padStart(6)}ms/frame  ${k}`);
+			console.log(
+				`     ${((v / total) * 100).toFixed(1).padStart(5)}%  ${ms.toFixed(0).padStart(5)}ms  ${(ms / (raf.frames + 20)).toFixed(2).padStart(6)}ms/frame  ${k}`,
+			);
 		}
 	}
 }

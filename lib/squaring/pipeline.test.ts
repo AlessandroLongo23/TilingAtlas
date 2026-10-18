@@ -78,9 +78,7 @@ describe("the pipeline set", () => {
 				expect(net.get(v) ?? 0n, `${e.id}: node ${v} leaks ${net.get(v)}`).toBe(0n);
 			}
 			// All the current the poles push in has to come back out, and its size is the rectangle's width.
-			expect(-(net.get(positive) ?? 0n), `${e.id}: current out of the + pole vs width`).toBe(
-				BigInt(r.squaring.width),
-			);
+			expect(-(net.get(positive) ?? 0n), `${e.id}: current out of the + pole vs width`).toBe(BigInt(r.squaring.width));
 			expect(net.get(negative) ?? 0n, `${e.id}: current into the − pole vs width`).toBe(BigInt(r.squaring.width));
 		}
 	});

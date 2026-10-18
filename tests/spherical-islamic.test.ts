@@ -151,13 +151,25 @@ function maxFaceDiameter(poly: Polyhedron): number {
 	for (const f of poly.faces)
 		for (let i = 0; i < f.length; i++)
 			for (let j = i + 1; j < f.length; j++)
-				d = Math.max(d, Math.acos(Math.min(1, Math.max(-1, unit[f[i]][0] * unit[f[j]][0] + unit[f[i]][1] * unit[f[j]][1] + unit[f[i]][2] * unit[f[j]][2]))));
+				d = Math.max(
+					d,
+					Math.acos(
+						Math.min(
+							1,
+							Math.max(
+								-1,
+								unit[f[i]][0] * unit[f[j]][0] + unit[f[i]][1] * unit[f[j]][1] + unit[f[i]][2] * unit[f[j]][2],
+							),
+						),
+					),
+				);
 	return d;
 }
 function maxRayArc(poly: Polyhedron, angleDeg: number): number {
 	const rays = sphericalIslamicRaySegments(poly, { angleRad: (angleDeg * Math.PI) / 180 });
 	let mx = 0;
-	for (const [O, E] of rays) mx = Math.max(mx, Math.acos(Math.min(1, Math.max(-1, O[0] * E[0] + O[1] * E[1] + O[2] * E[2]))));
+	for (const [O, E] of rays)
+		mx = Math.max(mx, Math.acos(Math.min(1, Math.max(-1, O[0] * E[0] + O[1] * E[1] + O[2] * E[2]))));
 	return mx;
 }
 

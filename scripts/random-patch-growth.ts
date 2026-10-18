@@ -17,11 +17,11 @@
  * slots). "Collapse" fills that gap with an ordered sequence of tiles whose slot-sums hit the gap
  * exactly. The one unfillable state is a 1-slot (30°) gap — that triggers backtracking.
  */
-import fs from 'node:fs';
-import path from 'node:path';
-import { setActiveRing, CyclotomicRing, Cyclotomic } from '@/classes/Cyclotomic';
-import { RegularPolygon } from '@/classes';
-import { polygonHue } from '@/utils/renderTiling';
+import fs from "node:fs";
+import path from "node:path";
+import { setActiveRing, CyclotomicRing, Cyclotomic } from "@/classes/Cyclotomic";
+import { RegularPolygon } from "@/classes";
+import { polygonHue } from "@/utils/renderTiling";
 
 const ring = CyclotomicRing.create(12);
 setActiveRing(ring);
@@ -35,8 +35,8 @@ const PART_TO_N: Record<number, number> = { 2: 3, 3: 4, 4: 6, 5: 12 };
 const PARTS = [2, 3, 4, 5]; // allowed slot-widths = the four tiles
 
 // Growth thresholds (completeness is irrelevant here — these just bound a nice disk).
-const RADIUS = 9;        // collapse only open vertices within this many edge-lengths of origin
-const TILE_CAP = 600;    // hard safety cap on tiles per patch
+const RADIUS = 9; // collapse only open vertices within this many edge-lengths of origin
+const TILE_CAP = 600; // hard safety cap on tiles per patch
 const STEP_CAP = 400_000; // hard safety cap on collapse/backtrack steps per patch
 const N_PATCHES = 10;
 
@@ -45,7 +45,8 @@ const N_PATCHES = 10;
 // ---------------------------------------------------------------------------------------------
 function mulberry32(a: number): () => number {
 	return () => {
-		a |= 0; a = (a + 0x6d2b79f5) | 0;
+		a |= 0;
+		a = (a + 0x6d2b79f5) | 0;
 		let t = Math.imul(a ^ (a >>> 15), 1 | a);
 		t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
 		return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
@@ -53,7 +54,10 @@ function mulberry32(a: number): () => number {
 }
 function shuffle<T>(arr: T[], rnd: () => number): T[] {
 	const a = arr.slice();
-	for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+	for (let i = a.length - 1; i > 0; i--) {
+		const j = Math.floor(rnd() * (i + 1));
+		[a[i], a[j]] = [a[j], a[i]];
+	}
 	return a;
 }
 
@@ -77,16 +81,37 @@ function compositions(g: number): number[][] {
 // ---------------------------------------------------------------------------------------------
 // A placed tile + the per-corner state of the growing patch.
 // ---------------------------------------------------------------------------------------------
-interface Placed { n: number; ev: Cyclotomic[]; edgeDirs: number[]; id: string; cell: string; cx: number; cy: number; fv: { x: number; y: number }[]; }
-interface VState { exact: Cyclotomic; x: number; y: number; r: number; slots: boolean[]; }
+interface Placed {
+	n: number;
+	ev: Cyclotomic[];
+	edgeDirs: number[];
+	id: string;
+	cell: string;
+	cx: number;
+	cy: number;
+	fv: { x: number; y: number }[];
+}
+interface VState {
+	exact: Cyclotomic;
+	x: number;
+	y: number;
+	r: number;
+	slots: boolean[];
+}
 
 function tilePlacement(n: number, anchor: Cyclotomic, dir0: number): Placed {
 	const poly = RegularPolygon.fromAnchorAndDirExact(n, anchor, dir0);
 	const ev = poly.exactVertices!;
 	const turn = TURN[n];
 	const edgeDirs = ev.map((_, i) => (((dir0 + i * turn) % N) + N) % N);
-	const fv = ev.map((v) => { const p = v.toVector(); return { x: p.x, y: p.y }; });
-	const id = ev.map((v) => v.key()).sort().join('|');
+	const fv = ev.map((v) => {
+		const p = v.toVector();
+		return { x: p.x, y: p.y };
+	});
+	const id = ev
+		.map((v) => v.key())
+		.sort()
+		.join("|");
 	const c = poly.centroid;
 	return { n, ev, edgeDirs, id, cell: `${Math.round(c.x)},${Math.round(c.y)}`, cx: c.x, cy: c.y, fv };
 }
@@ -98,12 +123,18 @@ class Patch {
 	grid = new Map<string, Placed[]>();
 	rnd: () => number;
 
-	constructor(seed: number) { this.rnd = mulberry32(seed); }
+	constructor(seed: number) {
+		this.rnd = mulberry32(seed);
+	}
 
 	private getVert(v: Cyclotomic): VState {
 		const k = v.key();
 		let s = this.verts.get(k);
-		if (!s) { const p = v.toVector(); s = { exact: v, x: p.x, y: p.y, r: Math.hypot(p.x, p.y), slots: new Array(N).fill(false) }; this.verts.set(k, s); }
+		if (!s) {
+			const p = v.toVector();
+			s = { exact: v, x: p.x, y: p.y, r: Math.hypot(p.x, p.y), slots: new Array(N).fill(false) };
+			this.verts.set(k, s);
+		}
 		return s;
 	}
 
@@ -121,12 +152,13 @@ class Patch {
 			}
 		}
 		// proximity body-overlap net (slot bookkeeping already blocks vertex-incident overlaps)
-		const [gx, gy] = t.cell.split(',').map(Number);
-		for (let dx = -2; dx <= 2; dx++) for (let dy = -2; dy <= 2; dy++) {
-			const near = this.grid.get(`${gx + dx},${gy + dy}`);
-			if (!near) continue;
-			for (const o of near) if (o.id !== t.id && this.overlaps(t, o)) return false;
-		}
+		const [gx, gy] = t.cell.split(",").map(Number);
+		for (let dx = -2; dx <= 2; dx++)
+			for (let dy = -2; dy <= 2; dy++) {
+				const near = this.grid.get(`${gx + dx},${gy + dy}`);
+				if (!near) continue;
+				for (const o of near) if (o.id !== t.id && this.overlaps(t, o)) return false;
+			}
 		return true;
 	}
 
@@ -140,44 +172,73 @@ class Patch {
 	}
 
 	private commit(t: Placed): { k: string; slot: number }[] {
-		this.placed.push(t); this.ids.add(t.id);
-		const cellArr = this.grid.get(t.cell) ?? []; cellArr.push(t); this.grid.set(t.cell, cellArr);
+		this.placed.push(t);
+		this.ids.add(t.id);
+		const cellArr = this.grid.get(t.cell) ?? [];
+		cellArr.push(t);
+		this.grid.set(t.cell, cellArr);
 		const edits: { k: string; slot: number }[] = [];
 		for (let i = 0; i < t.n; i++) {
 			const vs = this.getVert(t.ev[i]);
-			for (let s = 0; s < STEPS[t.n]; s++) { const slot = (t.edgeDirs[i] + s) % N; if (!vs.slots[slot]) { vs.slots[slot] = true; edits.push({ k: t.ev[i].key(), slot }); } }
+			for (let s = 0; s < STEPS[t.n]; s++) {
+				const slot = (t.edgeDirs[i] + s) % N;
+				if (!vs.slots[slot]) {
+					vs.slots[slot] = true;
+					edits.push({ k: t.ev[i].key(), slot });
+				}
+			}
 		}
 		return edits;
 	}
 
 	private uncommit(added: Placed[], edits: { k: string; slot: number }[]): void {
-		for (const e of edits) { const vs = this.verts.get(e.k); if (vs) vs.slots[e.slot] = false; }
+		for (const e of edits) {
+			const vs = this.verts.get(e.k);
+			if (vs) vs.slots[e.slot] = false;
+		}
 		for (const t of added) {
 			this.ids.delete(t.id);
-			const cellArr = this.grid.get(t.cell); if (cellArr) { const i = cellArr.indexOf(t); if (i >= 0) cellArr.splice(i, 1); }
+			const cellArr = this.grid.get(t.cell);
+			if (cellArr) {
+				const i = cellArr.indexOf(t);
+				if (i >= 0) cellArr.splice(i, 1);
+			}
 		}
 		this.placed.length -= added.length; // added tiles were appended contiguously at the end
-		for (const t of added) for (const v of t.ev) { const k = v.key(); const vs = this.verts.get(k); if (vs && vs.slots.every((b) => !b)) this.verts.delete(k); }
+		for (const t of added)
+			for (const v of t.ev) {
+				const k = v.key();
+				const vs = this.verts.get(k);
+				if (vs && vs.slots.every((b) => !b)) this.verts.delete(k);
+			}
 	}
 
 	/** The single gap of an open vertex: [start, len] where start-1 is filled and the run is empty.
 	 *  Returns null if the vertex is closed or has more than one gap (left for neighbours to reduce). */
 	private gapOf(vs: VState): { start: number; len: number } | null {
 		const s = vs.slots;
-		let empties = 0; for (const b of s) if (!b) empties++;
+		let empties = 0;
+		for (const b of s) if (!b) empties++;
 		if (empties === 0 || empties === N) return empties === N ? { start: 0, len: N } : null;
 		// count maximal empty runs; require exactly one
-		let runs = 0, start = -1;
-		for (let i = 0; i < N; i++) if (!s[i] && s[(i - 1 + N) % N]) { runs++; start = i; }
+		let runs = 0,
+			start = -1;
+		for (let i = 0; i < N; i++)
+			if (!s[i] && s[(i - 1 + N) % N]) {
+				runs++;
+				start = i;
+			}
 		if (runs !== 1) return null;
-		let len = 0; for (let i = 0; i < N && !s[(start + i) % N]; i++) len++;
+		let len = 0;
+		for (let i = 0; i < N && !s[(start + i) % N]; i++) len++;
 		return { start, len };
 	}
 
 	/** Any vertex with a 1-slot (30°) empty run is a permanent dead end. */
 	private hasUnfillable(keys: string[]): boolean {
 		for (const k of keys) {
-			const vs = this.verts.get(k); if (!vs) continue;
+			const vs = this.verts.get(k);
+			if (!vs) continue;
 			for (let i = 0; i < N; i++) if (!vs.slots[i] && vs.slots[(i - 1 + N) % N] && vs.slots[(i + 1) % N]) return true;
 		}
 		return false;
@@ -187,21 +248,31 @@ class Patch {
 	seed(): void {
 		const seeds = compositions(N);
 		const comp = seeds[Math.floor(this.rnd() * seeds.length)];
-		let dir = 0; const added: Placed[] = []; const edits: { k: string; slot: number }[] = [];
-		for (const part of comp) { const t = tilePlacement(PART_TO_N[part], ZERO, dir); added.push(t); edits.push(...this.commit(t)); dir = (dir + part) % N; }
+		let dir = 0;
+		const added: Placed[] = [];
+		const edits: { k: string; slot: number }[] = [];
+		for (const part of comp) {
+			const t = tilePlacement(PART_TO_N[part], ZERO, dir);
+			added.push(t);
+			edits.push(...this.commit(t));
+			dir = (dir + part) % N;
+		}
 		this.seedComp = comp;
 	}
 	seedComp: number[] = [];
 
 	/** Choose the open vertex to collapse: min entropy (fewest completions), tie-break nearest. */
-	private select(tried: Map<string, Set<string>>): { vs: VState; gap: { start: number; len: number }; ent: number } | null {
+	private select(
+		tried: Map<string, Set<string>>,
+	): { vs: VState; gap: { start: number; len: number }; ent: number } | null {
 		let best: { vs: VState; gap: { start: number; len: number }; ent: number } | null = null;
 		for (const vs of this.verts.values()) {
 			if (vs.r > RADIUS) continue;
-			const gap = this.gapOf(vs); if (!gap || gap.len < 2 || gap.len === N) continue;
+			const gap = this.gapOf(vs);
+			if (!gap || gap.len < 2 || gap.len === N) continue;
 			const comps = compositions(gap.len);
 			const t = tried.get(vs.exact.key());
-			const remaining = t ? comps.filter((c) => !t.has(c.join(','))).length : comps.length;
+			const remaining = t ? comps.filter((c) => !t.has(c.join(","))).length : comps.length;
 			if (remaining === 0) continue;
 			const ent = comps.length;
 			if (!best || ent < best.ent || (ent === best.ent && vs.r < best.vs.r)) best = { vs, gap, ent };
@@ -212,42 +283,91 @@ class Patch {
 	/** Grow until the disk is full or a cap trips. Returns per-patch stats. */
 	grow(): { tiles: number; steps: number; backtracks: number; capped: boolean } {
 		this.seed();
-		interface Frame { key: string; comp: number[]; added: Placed[]; edits: { k: string; slot: number }[]; }
+		interface Frame {
+			key: string;
+			comp: number[];
+			added: Placed[];
+			edits: { k: string; slot: number }[];
+		}
 		const stack: Frame[] = [];
 		const tried = new Map<string, Set<string>>();
-		const markTried = (key: string, comp: number[]) => { let s = tried.get(key); if (!s) { s = new Set(); tried.set(key, s); } s.add(comp.join(',')); };
-		let steps = 0, backtracks = 0, capped = false;
+		const markTried = (key: string, comp: number[]) => {
+			let s = tried.get(key);
+			if (!s) {
+				s = new Set();
+				tried.set(key, s);
+			}
+			s.add(comp.join(","));
+		};
+		let steps = 0,
+			backtracks = 0,
+			capped = false;
 
 		while (steps++ < STEP_CAP) {
-			if (this.placed.length >= TILE_CAP) { capped = true; break; }
+			if (this.placed.length >= TILE_CAP) {
+				capped = true;
+				break;
+			}
 			const sel = this.select(tried);
 			if (!sel) break; // disk full — nothing left to collapse within RADIUS
 			const key = sel.vs.exact.key();
 			const triedHere = tried.get(key) ?? new Set<string>();
-			const comps = shuffle(compositions(sel.gap.len).filter((c) => !triedHere.has(c.join(','))), this.rnd);
+			const comps = shuffle(
+				compositions(sel.gap.len).filter((c) => !triedHere.has(c.join(","))),
+				this.rnd,
+			);
 
 			let placed = false;
 			for (const comp of comps) {
 				// build the placement for this composition, filling the gap from its start slot
-				let dir = sel.gap.start; const tiles: Placed[] = []; const pending = new Map<string, Set<number>>(); let ok = true;
+				let dir = sel.gap.start;
+				const tiles: Placed[] = [];
+				const pending = new Map<string, Set<number>>();
+				let ok = true;
 				for (const part of comp) {
 					const t = tilePlacement(PART_TO_N[part], sel.vs.exact, dir);
-					if (!this.tileFits(t, pending)) { ok = false; break; }
-					for (let i = 0; i < t.n; i++) { const k = t.ev[i].key(); let ps = pending.get(k); if (!ps) { ps = new Set(); pending.set(k, ps); } for (let s = 0; s < STEPS[t.n]; s++) ps.add((t.edgeDirs[i] + s) % N); }
-					tiles.push(t); dir = (dir + part) % N;
+					if (!this.tileFits(t, pending)) {
+						ok = false;
+						break;
+					}
+					for (let i = 0; i < t.n; i++) {
+						const k = t.ev[i].key();
+						let ps = pending.get(k);
+						if (!ps) {
+							ps = new Set();
+							pending.set(k, ps);
+						}
+						for (let s = 0; s < STEPS[t.n]; s++) ps.add((t.edgeDirs[i] + s) % N);
+					}
+					tiles.push(t);
+					dir = (dir + part) % N;
 				}
-				if (!ok) { markTried(key, comp); continue; }
+				if (!ok) {
+					markTried(key, comp);
+					continue;
+				}
 				// commit, then reject if it created a 30° dead end at any touched vertex
-				const edits: { k: string; slot: number }[] = []; for (const t of tiles) edits.push(...this.commit(t));
-				const touched = new Set<string>(); for (const t of tiles) for (const v of t.ev) touched.add(v.key());
-				if (this.hasUnfillable([...touched])) { this.uncommit(tiles, edits); markTried(key, comp); continue; }
-				stack.push({ key, comp, added: tiles, edits }); placed = true; break;
+				const edits: { k: string; slot: number }[] = [];
+				for (const t of tiles) edits.push(...this.commit(t));
+				const touched = new Set<string>();
+				for (const t of tiles) for (const v of t.ev) touched.add(v.key());
+				if (this.hasUnfillable([...touched])) {
+					this.uncommit(tiles, edits);
+					markTried(key, comp);
+					continue;
+				}
+				stack.push({ key, comp, added: tiles, edits });
+				placed = true;
+				break;
 			}
 
 			if (placed) continue;
 			// dead end at this vertex → backtrack the previous collapse
 			if (stack.length === 0) break; // seed itself is stuck (extremely rare) — accept what we have
-			const fr = stack.pop()!; this.uncommit(fr.added, fr.edits); markTried(fr.key, fr.comp); backtracks++;
+			const fr = stack.pop()!;
+			this.uncommit(fr.added, fr.edits);
+			markTried(fr.key, fr.comp);
+			backtracks++;
 		}
 		return { tiles: this.placed.length, steps, backtracks, capped };
 	}
@@ -257,7 +377,12 @@ class Patch {
 	// -----------------------------------------------------------------------------------------
 	vcHistogram(): Map<number, number> {
 		const h = new Map<number, number>();
-		for (const vs of this.verts.values()) { if (vs.slots.every((b) => b)) { const deg = this.closedDegree(vs); h.set(deg, (h.get(deg) ?? 0) + 1); } }
+		for (const vs of this.verts.values()) {
+			if (vs.slots.every((b) => b)) {
+				const deg = this.closedDegree(vs);
+				h.set(deg, (h.get(deg) ?? 0) + 1);
+			}
+		}
 		return h;
 	}
 	private closedDegree(vs: VState): number {
@@ -268,28 +393,45 @@ class Patch {
 	}
 
 	svg(size: number): string {
-		let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-		for (const t of this.placed) for (const p of t.fv) { minX = Math.min(minX, p.x); minY = Math.min(minY, p.y); maxX = Math.max(maxX, p.x); maxY = Math.max(maxY, p.y); }
-		const w = maxX - minX, h = maxY - minY, pad = 0.5;
+		let minX = Infinity,
+			minY = Infinity,
+			maxX = -Infinity,
+			maxY = -Infinity;
+		for (const t of this.placed)
+			for (const p of t.fv) {
+				minX = Math.min(minX, p.x);
+				minY = Math.min(minY, p.y);
+				maxX = Math.max(maxX, p.x);
+				maxY = Math.max(maxY, p.y);
+			}
+		const w = maxX - minX,
+			h = maxY - minY,
+			pad = 0.5;
 		const scale = (size - 20) / (Math.max(w, h) + 2 * pad);
-		const ox = 10 - (minX - pad) * scale, oy = 10 - (minY - pad) * scale;
+		const ox = 10 - (minX - pad) * scale,
+			oy = 10 - (minY - pad) * scale;
 		const tx = (x: number) => (x * scale + ox).toFixed(2);
 		const ty = (y: number) => (size - (y * scale + oy)).toFixed(2); // flip Y for screen
-		const parts: string[] = [`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`, `<rect width="${size}" height="${size}" fill="#0d1117"/>`];
+		const parts: string[] = [
+			`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`,
+			`<rect width="${size}" height="${size}" fill="#0d1117"/>`,
+		];
 		for (const t of this.placed) {
 			const hue = polygonHue(t.n);
-			const pts = t.fv.map((p) => `${tx(p.x)},${ty(p.y)}`).join(' ');
-			parts.push(`<polygon points="${pts}" fill="hsl(${hue.toFixed(0)} 62% 58%)" stroke="#0d1117" stroke-width="0.9" stroke-linejoin="round"/>`);
+			const pts = t.fv.map((p) => `${tx(p.x)},${ty(p.y)}`).join(" ");
+			parts.push(
+				`<polygon points="${pts}" fill="hsl(${hue.toFixed(0)} 62% 58%)" stroke="#0d1117" stroke-width="0.9" stroke-linejoin="round"/>`,
+			);
 		}
-		parts.push('</svg>');
-		return parts.join('');
+		parts.push("</svg>");
+		return parts.join("");
 	}
 }
 
 // ---------------------------------------------------------------------------------------------
 // Drive: 10 patches → SVGs + gallery
 // ---------------------------------------------------------------------------------------------
-const OUT = path.join(process.cwd(), 'tmp-patches');
+const OUT = path.join(process.cwd(), "tmp-patches");
 fs.mkdirSync(OUT, { recursive: true });
 
 const cards: string[] = [];
@@ -300,12 +442,19 @@ for (let i = 0; i < N_PATCHES; i++) {
 	const t0 = Date.now();
 	const stats = patch.grow();
 	const svg = patch.svg(460);
-	const file = `patch-${String(i + 1).padStart(2, '0')}.svg`;
+	const file = `patch-${String(i + 1).padStart(2, "0")}.svg`;
 	fs.writeFileSync(path.join(OUT, file), svg);
-	const hist = [...patch.vcHistogram().entries()].sort((a, b) => a[0] - b[0]).map(([deg, c]) => `${deg}-valent×${c}`).join(', ');
-	const seedName = patch.seedComp.map((p) => PART_TO_N[p]).join('.');
-	console.log(`  patch ${String(i + 1).padStart(2, '0')}: seed 0x${seed.toString(16)} start-vertex ${seedName.padEnd(14)} → ${String(stats.tiles).padStart(3)} tiles, ${stats.backtracks} backtracks, ${((Date.now() - t0) / 1000).toFixed(2)}s${stats.capped ? ' [TILE CAP]' : ''}`);
-	cards.push(`<figure><div class="svg">${svg}</div><figcaption><b>Patch ${i + 1}</b> · ${stats.tiles} tiles · seed vertex ${seedName}<br><span class="dim">closed vertices: ${hist || '—'} · ${stats.backtracks} backtracks</span></figcaption></figure>`);
+	const hist = [...patch.vcHistogram().entries()]
+		.sort((a, b) => a[0] - b[0])
+		.map(([deg, c]) => `${deg}-valent×${c}`)
+		.join(", ");
+	const seedName = patch.seedComp.map((p) => PART_TO_N[p]).join(".");
+	console.log(
+		`  patch ${String(i + 1).padStart(2, "0")}: seed 0x${seed.toString(16)} start-vertex ${seedName.padEnd(14)} → ${String(stats.tiles).padStart(3)} tiles, ${stats.backtracks} backtracks, ${((Date.now() - t0) / 1000).toFixed(2)}s${stats.capped ? " [TILE CAP]" : ""}`,
+	);
+	cards.push(
+		`<figure><div class="svg">${svg}</div><figcaption><b>Patch ${i + 1}</b> · ${stats.tiles} tiles · seed vertex ${seedName}<br><span class="dim">closed vertices: ${hist || "—"} · ${stats.backtracks} backtracks</span></figcaption></figure>`,
+	);
 }
 
 const gallery = `<!doctype html><meta charset="utf8"><title>Random non-periodic patches</title>
@@ -322,6 +471,6 @@ const gallery = `<!doctype html><meta charset="utf8"><title>Random non-periodic 
 <p class="sub">Tiles {3,4,6,12}, exact ℤ[ζ₁₂] coordinates. Grown by wave-function collapse: min-entropy open
 vertex first, nearest-to-origin tie-break, backtracking on any 30° dead-end. These are <i>not</i> aperiodic —
 every local patch here also tiles periodically. Colour = polygon by the atlas hue ramp (green 3-gon → red 12-gon).</p>
-<div class="grid">${cards.join('\n')}</div>`;
-fs.writeFileSync(path.join(OUT, 'gallery.html'), gallery);
+<div class="grid">${cards.join("\n")}</div>`;
+fs.writeFileSync(path.join(OUT, "gallery.html"), gallery);
 console.log(`\nWrote ${N_PATCHES} SVGs + gallery.html to:\n  ${OUT}/gallery.html`);

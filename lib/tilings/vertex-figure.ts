@@ -18,7 +18,11 @@ export const MAX_VALENCE = 8;
 
 /** "3.4.7.4", "3 4 7 4" or "3,4,7,4" → [3, 4, 7, 4]; null unless every entry is an integer ≥ 3. */
 export function parseFigure(s: string): number[] | null {
-	const parts = s.trim().split(/[\s.,]+/).filter(Boolean).map(Number);
+	const parts = s
+		.trim()
+		.split(/[\s.,]+/)
+		.filter(Boolean)
+		.map(Number);
 	return parts.length && parts.every((n) => Number.isInteger(n) && n >= 3) ? parts : null;
 }
 
@@ -104,7 +108,9 @@ export function describeFigure(input: readonly number[]): FigureReport {
 		if (board.family === "hybrid") continue; // apeirogons: outside what a typed figure can name yet
 		const { fig, alphabet } = boardShape(board);
 		if (!figure.every((n) => alphabet.includes(n)) || Math.abs(closingEdge(fig) - edge) > 1e-9) continue;
-		const ks = Object.keys(board.counts).map(Number).sort((x, y) => x - y);
+		const ks = Object.keys(board.counts)
+			.map(Number)
+			.sort((x, y) => x - y);
 		boards.push({ board, sub: hypPolySubOfBoard(board), alphabet, multisets: closingMultisets(alphabet, edge), ks });
 	}
 	return { figure, geometry, uniform, edge, boards };

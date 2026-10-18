@@ -27,12 +27,12 @@ import { drawWithText, INK, SOFT, T1_COLOUR, DART, type Api, type Pt } from "@/l
 
 /** Table 1, δ = 1..24. `all` is the Total column; `euc` the # Euclidean column. */
 const ALL = [
-	12, 50, 36, 138, 82, 426, 369, 1265, 1339, 4198, 5270, 17574,
-	26101, 84925, 151179, 502626, 1014453, 3404473, 7511829, 25248330, 59077506, 198103996, 483649593, 1616414549,
+	12, 50, 36, 138, 82, 426, 369, 1265, 1339, 4198, 5270, 17574, 26101, 84925, 151179, 502626, 1014453, 3404473, 7511829,
+	25248330, 59077506, 198103996, 483649593, 1616414549,
 ];
 const EUC = [
-	3, 15, 8, 37, 15, 86, 64, 217, 185, 527, 506, 1573,
-	1575, 4227, 4528, 12078, 13105, 34242, 38470, 98076, 111145, 280574, 322102, 805130,
+	3, 15, 8, 37, 15, 86, 64, 217, 185, 527, 506, 1573, 1575, 4227, 4528, 12078, 13105, 34242, 38470, 98076, 111145,
+	280574, 322102, 805130,
 ];
 
 /** Where the published table ends, and how far the plot runs so k = 3 has somewhere to be. */
@@ -75,7 +75,11 @@ function marker({ ctx, s }: Api, p: Pt, colour: string, r = 4.2) {
 }
 
 const SUP = "⁰¹²³⁴⁵⁶⁷⁸⁹";
-const pow10 = (e: number) => `10${String(e).split("").map((c) => SUP[+c]).join("")}`;
+const pow10 = (e: number) =>
+	`10${String(e)
+		.split("")
+		.map((c) => SUP[+c])
+		.join("")}`;
 
 function draw(api: Api) {
 	const { ctx, s, text } = api;
@@ -106,7 +110,11 @@ function draw(api: Api) {
 	text(X_MAX / 2, -1.5, "δ, the size of the symbol", { colour: SOFT, size: 0.62 });
 
 	// The budget: 12k chambers at k uniform. Drawn before the data so the lines sit over it.
-	for (const [k, d] of [[1, 12], [2, 24], [3, 36]] as const) {
+	for (const [k, d] of [
+		[1, 12],
+		[2, 24],
+		[3, 36],
+	] as const) {
 		const reached = d <= LAST;
 		ctx.strokeStyle = reached ? "rgba(20,20,20,0.34)" : "hsl(2 70% 46% / 0.55)";
 		ctx.lineWidth = 1.6 / s;
@@ -117,7 +125,9 @@ function draw(api: Api) {
 		ctx.stroke();
 		ctx.setLineDash([]);
 		text(d, Y_MAX - 0.3, `k = ${k}`, {
-			colour: reached ? INK : "hsl(2 70% 46%)", size: 0.68, weight: 700,
+			colour: reached ? INK : "hsl(2 70% 46%)",
+			size: 0.68,
+			weight: 700,
 		});
 	}
 
@@ -135,7 +145,12 @@ function draw(api: Api) {
 	// where the eye already is. Identity is never colour alone, and the numbers wear ink, not the hue.
 	for (const sr of SERIES) {
 		const y = Math.log10(sr.data[LAST - 1]);
-		text(LAST + 0.9, y + 0.05, sr.data[LAST - 1].toLocaleString("en-US"), { colour: INK, size: 0.62, weight: 600, align: "left" });
+		text(LAST + 0.9, y + 0.05, sr.data[LAST - 1].toLocaleString("en-US"), {
+			colour: INK,
+			size: 0.62,
+			weight: 600,
+			align: "left",
+		});
 		text(LAST + 0.9, y - 0.75, sr.label, { colour: SOFT, size: 0.58, align: "left" });
 	}
 	text(31, 1.1, "never enumerated", { colour: "hsl(2 70% 46%)", size: 0.62, weight: 600 });
@@ -146,7 +161,8 @@ export function DsymGrowth() {
 	const canvas = useRef<HTMLCanvasElement | null>(null);
 
 	const paint = useCallback(() => {
-		const h = host.current, c = canvas.current;
+		const h = host.current,
+			c = canvas.current;
 		if (!h || !c) return;
 		// A little air on every side for the axis labels, which live outside the data box.
 		const p = prepare(h, c, { minX: -3.4, maxX: X_MAX + 2, minY: -2.2, maxY: Y_MAX + 0.8 }, 0.99);
@@ -164,8 +180,8 @@ export function DsymGrowth() {
 	}, [paint]);
 
 	return (
-		<figure className="not-prose mx-auto m-0 flex w-full max-w-[54rem] flex-col items-center gap-1.5">
-			<div ref={host} className="relative aspect-[10/3] w-full rounded-xl border border-line bg-surface-base">
+		<figure className="not-prose m-0 mx-auto flex w-full max-w-[54rem] flex-col items-center gap-1.5">
+			<div ref={host} className="bg-surface-base relative aspect-[10/3] w-full rounded-xl border border-line">
 				<canvas ref={canvas} className="absolute inset-0 h-full w-full" />
 			</div>
 			<figcaption className="text-center text-[clamp(0.56rem,0.78vh+0.15vw,0.78rem)] leading-snug text-fg-muted">

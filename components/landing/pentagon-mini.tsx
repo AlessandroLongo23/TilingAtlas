@@ -46,16 +46,23 @@ function latticeRange(
 		[box.x0 - pad, box.y0 + box.h + pad],
 		[box.x0 + box.w + pad, box.y0 + box.h + pad],
 	];
-	let aMin = Infinity, aMax = -Infinity, bMin = Infinity, bMax = -Infinity;
+	let aMin = Infinity,
+		aMax = -Infinity,
+		bMin = Infinity,
+		bMax = -Infinity;
 	for (const [x, y] of corners) {
 		const a = (x * v2[1] - y * v2[0]) / det;
 		const b = (v1[0] * y - v1[1] * x) / det;
-		aMin = Math.min(aMin, a); aMax = Math.max(aMax, a);
-		bMin = Math.min(bMin, b); bMax = Math.max(bMax, b);
+		aMin = Math.min(aMin, a);
+		aMax = Math.max(aMax, a);
+		bMin = Math.min(bMin, b);
+		bMax = Math.max(bMax, b);
 	}
 	return {
-		aMin: Math.floor(aMin), aMax: Math.ceil(aMax),
-		bMin: Math.floor(bMin), bMax: Math.ceil(bMax),
+		aMin: Math.floor(aMin),
+		aMax: Math.ceil(aMax),
+		bMin: Math.floor(bMin),
+		bMax: Math.ceil(bMax),
 	};
 }
 
@@ -80,9 +87,7 @@ export function PentagonMini() {
 	const y0 = cy - h / 2;
 
 	// How far a tile can sit from its copy's anchor, so `latticeRange` knows how wide to cast.
-	const reach = Math.max(
-		...polygons.flatMap((p) => p.vertices.map((v) => Math.hypot(v.x, v.y))),
-	);
+	const reach = Math.max(...polygons.flatMap((p) => p.vertices.map((v) => Math.hypot(v.x, v.y))));
 	const { aMin, aMax, bMin, bMax } = latticeRange(v1, v2, { x0, y0, w, h }, reach);
 
 	const tiles: { points: string; hue: number }[] = [];
@@ -106,11 +111,11 @@ export function PentagonMini() {
 	}
 
 	return (
-		<div className="w-full h-full">
+		<div className="h-full w-full">
 			<svg
 				viewBox={`${fmt(x0)} ${fmt(y0)} ${fmt(w)} ${fmt(h)}`}
 				preserveAspectRatio="xMidYMid slice"
-				className="w-full h-full"
+				className="h-full w-full"
 				aria-label="A patch of the Type 15 convex-pentagon tiling"
 			>
 				{tiles.map((t, i) => (

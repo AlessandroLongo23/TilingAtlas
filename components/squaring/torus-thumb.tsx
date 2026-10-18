@@ -31,9 +31,7 @@ export function TorusThumb({ thumb, size = 54 }: Props) {
 				const ox = i * a1[0] + j * a2[0];
 				const oy = i * a1[1] + j * a2[1];
 				for (const poly of thumb.polygons) {
-					out.push(
-						`M${poly.map((p) => `${(p[0] + ox).toFixed(3)},${(-p[1] - oy).toFixed(3)}`).join("L")}Z`,
-					);
+					out.push(`M${poly.map((p) => `${(p[0] + ox).toFixed(3)},${(-p[1] - oy).toFixed(3)}`).join("L")}Z`);
 					if (i === 0 && j === 0) {
 						for (const p of poly) {
 							minX = Math.min(minX, p[0]);

@@ -48,10 +48,7 @@ function matchesPolygon(rulestring: string, sides: number[], mode: FilterMode): 
 		}
 	}
 	if (mode === "exact") {
-		return (
-			!sides.some((s) => !polygonSides.includes(s)) &&
-			!polygonSides.some((s) => !sides.includes(s))
-		);
+		return !sides.some((s) => !polygonSides.includes(s)) && !polygonSides.some((s) => !sides.includes(s));
 	}
 	return !sides.some((s) => !polygonSides.includes(s));
 }
@@ -99,15 +96,9 @@ export function TilingModalContent() {
 			const typeId = group.id;
 			if (selectedTypes.length > 0 && !selectedTypes.includes(typeId)) continue;
 			for (const rule of group.rules) {
-				if (
-					selectedPolygons.length > 0 &&
-					!matchesPolygon(rule.rulestring, selectedPolygons, polygonFilterMode)
-				)
+				if (selectedPolygons.length > 0 && !matchesPolygon(rule.rulestring, selectedPolygons, polygonFilterMode))
 					continue;
-				if (
-					selectedVertexTypes.length > 0 &&
-					!containsVertexType(rule, selectedVertexTypes, vertexTypeFilterMode)
-				)
+				if (selectedVertexTypes.length > 0 && !containsVertexType(rule, selectedVertexTypes, vertexTypeFilterMode))
 					continue;
 
 				result.push({ ...rule, group: group.title, groupId: group.id });
@@ -164,11 +155,11 @@ export function TilingModalContent() {
 					onClick={() => setShowFilters((v) => !v)}
 					aria-label={showFilters ? "Hide filters" : "Show filters"}
 					title={showFilters ? "Hide filters" : "Show filters"}
-					className="p-1 rounded-md hover:bg-surface-overlay/70 transition-all text-fg-secondary hover:text-fg relative"
+					className="relative rounded-md p-1 text-fg-secondary transition-all hover:bg-surface-overlay/70 hover:text-fg"
 				>
 					<Filter size={18} className={showFilters ? "text-accent" : ""} />
 					{activeFiltersCount > 0 ? (
-						<span className="absolute -top-1 -right-1 bg-accent text-accent-contrast text-xs w-4 h-4 flex items-center justify-center">
+						<span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center bg-accent text-xs text-accent-contrast">
 							{activeFiltersCount}
 						</span>
 					) : null}
@@ -178,8 +169,8 @@ export function TilingModalContent() {
 			<div className="relative flex h-[80vh] overflow-hidden">
 				<div
 					className={cn(
-						"h-full transition-all duration-300 ease-in-out overflow-y-auto flex-shrink-0 bg-surface-raised/95",
-						showFilters ? "w-80 mr-4 opacity-100" : "w-0 mr-0 opacity-0 pointer-events-none",
+						"h-full flex-shrink-0 overflow-y-auto bg-surface-raised/95 transition-all duration-300 ease-in-out",
+						showFilters ? "mr-4 w-80 opacity-100" : "pointer-events-none mr-0 w-0 opacity-0",
 					)}
 				>
 					<TilingFilterBar
@@ -198,30 +189,24 @@ export function TilingModalContent() {
 					/>
 				</div>
 
-				<div className="h-full overflow-y-auto flex-grow p-4">
+				<div className="h-full flex-grow overflow-y-auto p-4">
 					{loading ? (
 						<div className="py-8 text-center text-fg-muted">
-							<Loader2 size={48} className="mx-auto mb-4 opacity-40 animate-spin" />
+							<Loader2 size={48} className="mx-auto mb-4 animate-spin opacity-40" />
 							<p>Loading tilings...</p>
 						</div>
 					) : filteredTilings.length === 0 ? (
 						<div className="py-8 text-center text-fg-muted">
 							<Grid size={48} className="mx-auto mb-4 opacity-40" />
 							<p>No tilings match your filters</p>
-							<Button
-								variant="secondary"
-								size="sm"
-								onClick={clearAll}
-								classes="mt-2"
-								label="Clear Filters"
-							/>
+							<Button variant="secondary" size="sm" onClick={clearAll} classes="mt-2" label="Clear Filters" />
 						</div>
 					) : (
 						<>
 							<div className="mb-4">
 								<p className="text-sm text-fg-muted">{filteredTilings.length} tilings found</p>
 							</div>
-							<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 pb-4">
+							<div className="grid grid-cols-1 gap-3 pb-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
 								{filteredTilings.map((tiling) => (
 									<LegacyTilingCard
 										key={`${tiling.groupId}-${tiling.rulestring}`}

@@ -444,14 +444,14 @@ export function AutomataCanvas({ plan, engineRef, paintOnTap = false }: Automata
 	}, [engineRef]);
 
 	return (
-		<div className="relative w-full h-full">
+		<div className="relative h-full w-full">
 			<canvas
 				ref={canvasRef}
-				className="w-full h-full block touch-none cursor-grab active:cursor-grabbing"
+				className="block h-full w-full cursor-grab touch-none active:cursor-grabbing"
 				onContextMenu={(e) => e.preventDefault()}
 			/>
 			{/* Pointer-transparent: every gesture belongs to the WebGL canvas underneath. */}
-			<canvas ref={overlayRef} className="absolute inset-0 w-full h-full block pointer-events-none" />
+			<canvas ref={overlayRef} className="pointer-events-none absolute inset-0 block h-full w-full" />
 		</div>
 	);
 }

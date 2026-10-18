@@ -39,7 +39,8 @@ function lenParam(name: string, def: number, lo: number, hi: number): Parametric
 
 /** Evaluate a length-linear coordinate at the family's default lengths — the anchor cell. */
 function atDefaults(terms: LenTerm[], def: number[]): [number, number] {
-	let x = 0, y = 0;
+	let x = 0,
+		y = 0;
 	for (const [j, re, im] of terms) {
 		const l = j < 0 ? 1 : def[j];
 		x += l * re;
@@ -83,10 +84,11 @@ function lengthFamily(
 // (Until 2026-08-18 four families here shipped that extra slider; `LENGTH_META.params` had recorded the
 // honest count all along and nothing read it.)
 const KONST = -1; // the constant-term index, see LenTerm
-const B = 0, C = 1;
+const B = 0,
+	C = 1;
 const O: LenTerm[] = [];
-const a: LenTerm[] = [[KONST, 1, 0]];    // the unit edge, to the right
-const b: LenTerm[] = [[B, 0, 1]];        // B upwards
+const a: LenTerm[] = [[KONST, 1, 0]]; // the unit edge, to the right
+const b: LenTerm[] = [[B, 0, 1]]; // B upwards
 const add = (...ts: LenTerm[][]): LenTerm[] => ts.flat();
 
 /** The 1×B rectangle grid. Affinely the square grid — a slider smoke test, not a new tiling. */
@@ -107,16 +109,23 @@ const Ay: LenTerm[] = [[KONST, 0, 1]];
 const By: LenTerm[] = [[B, 0, 1]];
 
 export const PYTHAGOREAN: ParametricCellData = lengthFamily(
-	[// The A-square is the unit, so the one slider IS the ratio. NOT called "small": B may exceed 1,
-		// which is the same tiling with the two roles swapped, and a size label would lie there.
-		lenParam("B", 0.55, 0.1, 3)],
 	[
-		{ n: 4, vertices: [O, A2, add(A2, Ay), Ay] },                          // the A-square at the origin
-		{ n: 4, vertices: [A2, add(A2, B2), add(A2, B2, By), add(A2, By)] },   // the B-square beside it
+		// The A-square is the unit, so the one slider IS the ratio. NOT called "small": B may exceed 1,
+		// which is the same tiling with the two roles swapped, and a size label would lie there.
+		lenParam("B", 0.55, 0.1, 3),
 	],
-	[add(A2, By), [[B, -1, 0], [KONST, 0, 1]]],                                // T1 = (1, B), T2 = (−B, 1)
+	[
+		{ n: 4, vertices: [O, A2, add(A2, Ay), Ay] }, // the A-square at the origin
+		{ n: 4, vertices: [A2, add(A2, B2), add(A2, B2, By), add(A2, By)] }, // the B-square beside it
+	],
+	[
+		add(A2, By),
+		[
+			[B, -1, 0],
+			[KONST, 0, 1],
+		],
+	], // T1 = (1, B), T2 = (−B, 1)
 );
-
 
 // ── EQUIANGULAR TILES ────────────────────────────────────────────────────────────────────────────
 // The tile kind the finiteness argument is built on: a fixed ANGLE WORD on the 2*pi/D grid with a
@@ -130,9 +139,9 @@ export const PYTHAGOREAN: ParametricCellData = lengthFamily(
 // parameters (equilateral triangles are rigid), which is why free lengths do nothing for the
 // triangular grid, and n = 4 gives 1 — the rectangle's aspect ratio.
 const S3 = Math.sqrt(3) / 2;
-const h0: LenTerm[] = [[KONST, 1, 0]];      // the unit side d0
-const h1: LenTerm[] = [[B, 0.5, S3]];       // b·d1
-const h2: LenTerm[] = [[C, -0.5, S3]];      // c·d2
+const h0: LenTerm[] = [[KONST, 1, 0]]; // the unit side d0
+const h1: LenTerm[] = [[B, 0.5, S3]]; // b·d1
+const h2: LenTerm[] = [[C, -0.5, S3]]; // c·d2
 
 export const EQUIANGULAR_HEX: ParametricCellData = lengthFamily(
 	[lenParam("B", 1, 0.1, 3), lenParam("C", 1, 0.1, 3)],
@@ -187,7 +196,17 @@ const OWN = (hp: number): LenTerm[] => [[hp, 0, 1]];
 const STRIP_S: Strip = {
 	kind: "S",
 	height: FLOOR1,
-	polys: [{ n: 4, v: [[0, ZERO], [1, ZERO], [1, FLOOR1], [0, FLOOR1]] }],
+	polys: [
+		{
+			n: 4,
+			v: [
+				[0, ZERO],
+				[1, ZERO],
+				[1, FLOOR1],
+				[0, FLOOR1],
+			],
+		},
+	],
 };
 
 const STRIP_T: Strip = {
@@ -196,8 +215,22 @@ const STRIP_T: Strip = {
 	// One up-triangle and one down-triangle: together the parallelogram spanned by (1,0) and (1/2, h),
 	// so the pair tiles the strip under the unit horizontal translation.
 	polys: [
-		{ n: 3, v: [[0, ZERO], [1, ZERO], [0.5, FLOOR_T]] },
-		{ n: 3, v: [[1, ZERO], [1.5, FLOOR_T], [0.5, FLOOR_T]] },
+		{
+			n: 3,
+			v: [
+				[0, ZERO],
+				[1, ZERO],
+				[0.5, FLOOR_T],
+			],
+		},
+		{
+			n: 3,
+			v: [
+				[1, ZERO],
+				[1.5, FLOOR_T],
+				[0.5, FLOOR_T],
+			],
+		},
 	],
 };
 
@@ -208,7 +241,17 @@ const STRIP_T: Strip = {
 const STRIP_R: Strip = {
 	kind: "R",
 	height: OWN,
-	polys: [{ n: 4, v: [[0, ZERO], [1, ZERO], [1, OWN], [0, OWN]] }],
+	polys: [
+		{
+			n: 4,
+			v: [
+				[0, ZERO],
+				[1, ZERO],
+				[1, OWN],
+				[0, OWN],
+			],
+		},
+	],
 };
 
 const STRIPS: Record<string, Strip> = { S: STRIP_S, T: STRIP_T, R: STRIP_R };
@@ -230,8 +273,7 @@ export function stripFamily(word: string): ParametricCellData {
 
 	// d_k is the shift ACROSS interface k. Strip k sits at cumulative shift s_k = d_1 + ... + d_k, so
 	// s_0 = 0 and the next period's floor is at s_m — the lattice vector's horizontal part.
-	const shiftTerms = (k: number): LenTerm[] =>
-		Array.from({ length: k }, (_, j) => [nH + j, 1, 0] as LenTerm);
+	const shiftTerms = (k: number): LenTerm[] => Array.from({ length: k }, (_, j) => [nH + j, 1, 0] as LenTerm);
 
 	const cellPolygons: { n: number; vertices: LenTerm[][] }[] = [];
 	let yBase: LenTerm[] = [];
@@ -240,9 +282,7 @@ export function stripFamily(word: string): ParametricCellData {
 		for (const poly of strips[k].polys)
 			cellPolygons.push({
 				n: poly.n,
-				vertices: poly.v.map(([px, yLocal]) => [
-					[KONST, px, 0] as LenTerm, ...s, ...yBase, ...yLocal(hp[k]),
-				]),
+				vertices: poly.v.map(([px, yLocal]) => [[KONST, px, 0] as LenTerm, ...s, ...yBase, ...yLocal(hp[k])]),
 			});
 		yBase = [...yBase, ...strips[k].height(hp[k])];
 	}
@@ -251,11 +291,13 @@ export function stripFamily(word: string): ParametricCellData {
 		...strips.flatMap((s, k) =>
 			s.kind === "R"
 				? [lenParam(nH === 1 ? "Height" : `Height ${hp[k] + 1}`, HEIGHT_DEFAULTS[hp[k] % 3], 0.15, 3)]
-				: []),
+				: [],
+		),
 		...Array.from({ length: m }, (_, k) =>
 			// The range is a full period; past it the pattern repeats, because a whole-period shift IS
 			// the lattice vector (1, 0).
-			lenParam(m === 1 ? "Shift" : `Shift ${k + 1}`, SHIFT_DEFAULTS[k % 4], 0, 1)),
+			lenParam(m === 1 ? "Shift" : `Shift ${k + 1}`, SHIFT_DEFAULTS[k % 4], 0, 1),
+		),
 	];
 
 	const basis: [LenTerm[], LenTerm[]] = [[[KONST, 1, 0]], [...shiftTerms(m), ...yBase]];
@@ -275,7 +317,10 @@ function stripWords(alphabet: string, minLen: number, maxLen: number): string[] 
 			for (const s of [w, [...w].reverse().join("")])
 				for (let r = 0; r < w.length; r++) variants.push(s.slice(r) + s.slice(0, r));
 			const canon = variants.sort()[0];
-			if (!seen.has(canon)) { seen.add(canon); out.push(canon); }
+			if (!seen.has(canon)) {
+				seen.add(canon);
+				out.push(canon);
+			}
 		}
 		if (w.length === maxLen) return;
 		for (const c of alphabet) grow(w + c);
@@ -309,15 +354,16 @@ export const STRIP_FAMILIES: LengthFamilyRow[] = stripWords("ST", 1, 4).map((w) 
 	stripRow(
 		w,
 		`Strips stacked ${names(w, " then ")}, repeating. Each of the ${w.length} interface` +
-		`${w.length > 1 ? "s is" : " is"} bounded by a straight line on both sides, so the strip above it slides ` +
-		`by any real amount and the tiling survives — one free parameter per interface, none removable by a ` +
-		`similarity (a shear would remove one but turns the squares into rhombi and the triangles scalene, ` +
-		`leaving the class). Every vertex on an interface is a T-junction: ` +
-		`${w.includes("S") ? "90 + 90 + 180 where two squares meet a straight edge" : "60 + 60 + 60 + 180 where three triangles do"}. ` +
-		`ALL EDGES ARE LENGTH 1 here — the sliders move strips, they do not resize tiles. The k quoted is the ` +
-		`GENERIC one, measured by computing the symmetry group at the default sliders; special settings ` +
-		`(all shifts equal, or all zero) gain extra symmetry and collapse orbits, so k drops there.`,
-	));
+			`${w.length > 1 ? "s is" : " is"} bounded by a straight line on both sides, so the strip above it slides ` +
+			`by any real amount and the tiling survives — one free parameter per interface, none removable by a ` +
+			`similarity (a shear would remove one but turns the squares into rhombi and the triangles scalene, ` +
+			`leaving the class). Every vertex on an interface is a T-junction: ` +
+			`${w.includes("S") ? "90 + 90 + 180 where two squares meet a straight edge" : "60 + 60 + 60 + 180 where three triangles do"}. ` +
+			`ALL EDGES ARE LENGTH 1 here — the sliders move strips, they do not resize tiles. The k quoted is the ` +
+			`GENERIC one, measured by computing the symmetry group at the default sliders; special settings ` +
+			`(all shifts equal, or all zero) gain extra symmetry and collapse orbits, so k drops there.`,
+	),
+);
 
 /** Stacks that include a RECTANGLE row, whose height is a genuine edge-length slider. This is where
  *  the length machinery is actually exercised: a pure square/triangle stack has every edge at 1, so
@@ -330,12 +376,13 @@ export const STACK_FAMILIES: LengthFamilyRow[] = stripWords("RT", 2, 3)
 		stripRow(
 			w,
 			`Strips stacked ${names(w, " then ")}, repeating, with ${[...w].filter((c) => c === "R").length} ` +
-			`independent height slider${[...w].filter((c) => c === "R").length > 1 ? "s" : ""} and ${w.length} shift ` +
-			`sliders. Unlike the all-unit square/triangle stacks, the edge lengths here are NOT all 1: each ` +
-			`rectangle row is 1 wide and h tall with h free, so the tiling carries real length parameters as well ` +
-			`as offsets. ${w.includes("T") ? "The triangles stay rigid at unit edge — an equilateral triangle has no length freedom, which is what makes the rectangle-to-triangle height ratio a genuine parameter and not a change of scale. " : "Only the ratio of the heights is essential; scaling them together is a change of scale. "}` +
-			`The k quoted is measured at the default sliders and is the generic value.`,
-		));
+				`independent height slider${[...w].filter((c) => c === "R").length > 1 ? "s" : ""} and ${w.length} shift ` +
+				`sliders. Unlike the all-unit square/triangle stacks, the edge lengths here are NOT all 1: each ` +
+				`rectangle row is 1 wide and h tall with h free, so the tiling carries real length parameters as well ` +
+				`as offsets. ${w.includes("T") ? "The triangles stay rigid at unit edge — an equilateral triangle has no length freedom, which is what makes the rectangle-to-triangle height ratio a genuine parameter and not a change of scale. " : "Only the ratio of the heights is essential; scaling them together is a change of scale. "}` +
+				`The k quoted is measured at the default sliders and is the generic value.`,
+		),
+	);
 
 // ── THE SHUTTER: unit triangles and a hexagon that opens ────────────────────────────────────────
 //
@@ -440,19 +487,54 @@ export const HEX_ROTOR: ParametricCellData = lengthFamily(
 //     L1 = c + b*zeta        L2 = e^{i120} * L1 = (-b - c/2, (sqrt3/2)c)
 // a triangular lattice by construction, with |L1|^2 = b^2 + bc + c^2. Cell area (sqrt3/2)(b^2+bc+c^2)
 // equals (sqrt3/4)((b+c)^2 + b^2 + c^2), the three triangles, identically.
-const Cp = 0;                                        // B is the unit; C is the one ratio that moves
+const Cp = 0; // B is the unit; C is the one ratio that moves
 
 export const TRI_THREE_SIZE: ParametricCellData = lengthFamily(
 	[lenParam("C", 0.6, 0.15, 3)],
 	[
 		// the big triangle, side 1 + C, pointing up
-		{ n: 3, vertices: [[], [[KONST, 1, 0], [Cp, 1, 0]], [[KONST, 0.5, H_TRI], [Cp, 0.5, H_TRI]]] },
+		{
+			n: 3,
+			vertices: [
+				[],
+				[
+					[KONST, 1, 0],
+					[Cp, 1, 0],
+				],
+				[
+					[KONST, 0.5, H_TRI],
+					[Cp, 0.5, H_TRI],
+				],
+			],
+		},
 		// the unit triangle on [0, 1], pointing down
 		{ n: 3, vertices: [[], [[KONST, 1, 0]], [[KONST, 0.5, -H_TRI]]] },
 		// the C-triangle on [1, 1 + C], pointing down
-		{ n: 3, vertices: [[[KONST, 1, 0]], [[KONST, 1, 0], [Cp, 1, 0]], [[KONST, 1, 0], [Cp, 0.5, -H_TRI]]] },
+		{
+			n: 3,
+			vertices: [
+				[[KONST, 1, 0]],
+				[
+					[KONST, 1, 0],
+					[Cp, 1, 0],
+				],
+				[
+					[KONST, 1, 0],
+					[Cp, 0.5, -H_TRI],
+				],
+			],
+		},
 	],
-	[[[Cp, 1, 0], [KONST, 0.5, H_TRI]], [[KONST, -1, 0], [Cp, -0.5, H_TRI]]],
+	[
+		[
+			[Cp, 1, 0],
+			[KONST, 0.5, H_TRI],
+		],
+		[
+			[KONST, -1, 0],
+			[Cp, -0.5, H_TRI],
+		],
+	],
 );
 
 // ── ENUMERATED — found by search, not authored ──────────────────────────────────────────────────
@@ -471,13 +553,15 @@ export const ENUM_FAMILIES: LengthFamilyRow[] = ENUMERATED_FAMILIES.map((f) => {
 	// Constant point first, then one derivative point per slider — read positionally, which is why the
 	// generator writes (x, y) pairs and not a transposed [[x0, dx], [y0, dy]] that either side could
 	// read the wrong way round without the types noticing.
-	const terms = (v: [number, number][]): LenTerm[] =>
-		v.map((q, i) => [i === 0 ? KONST : i - 1, q[0], q[1]] as LenTerm);
+	const terms = (v: [number, number][]): LenTerm[] => v.map((q, i) => [i === 0 ? KONST : i - 1, q[0], q[1]] as LenTerm);
 	const cellPolygons = f.cellPolygons.map((p) => ({ n: p.n, vertices: p.v.map(terms) }));
 	const basis: [LenTerm[], LenTerm[]] = [terms(f.basis[0]), terms(f.basis[1])];
 	const cell = lengthFamily(
 		f.ranges.map((r, i) => lenParam(f.ranges.length === 1 ? "t" : `t${i + 1}`, f.c0[i], r[0], r[1])),
-		cellPolygons, basis, true);
+		cellPolygons,
+		basis,
+		true,
+	);
 	const flats = f.words.reduce((a, w) => a + [...w].filter((c) => c === "6").length, 0);
 	return {
 		id: f.id,
@@ -502,8 +586,6 @@ export const ENUM_FAMILIES: LengthFamilyRow[] = ENUMERATED_FAMILIES.map((f) => {
 	};
 });
 
-
-
 // ── T-JUNCTION SHELVES, MADE PARAMETRIC ─────────────────────────────────────────────────────────
 //
 // Not new tilings and not a new search. This is the half-square split shelf the engine already
@@ -523,8 +605,7 @@ export const ENUM_FAMILIES: LengthFamilyRow[] = ENUMERATED_FAMILIES.map((f) => {
 // length system and keys each family by the canonical dart map of the smoothed tiling at a GENERIC
 // member, which is also where k is measured and where the card draws.
 export const TJUNCTION_ROWS: LengthFamilyRow[] = TJUNCTION_FAMILIES.map((f) => {
-	const params = Array.from({ length: f.d }, (_, i) =>
-		lenParam(`Edge ${i + 1}`, f.def[i], f.lo[i], f.hi[i]));
+	const params = Array.from({ length: f.d }, (_, i) => lenParam(`Edge ${i + 1}`, f.def[i], f.lo[i], f.hi[i]));
 	const cell = lengthFamily(
 		params,
 		f.cellPolygons.map((p) => ({ n: p.n, vertices: p.vertices as LenTerm[][] })),
@@ -654,7 +735,10 @@ export const LENGTH_FAMILIES: LengthFamilyRow[] = (() => {
 	const out: LengthFamilyRow[] = [];
 	for (const f of LENGTH_FAMILIES_ALL) {
 		const key = LENGTH_META[f.id]?.key;
-		if (key === undefined) { out.push(f); continue; }
+		if (key === undefined) {
+			out.push(f);
+			continue;
+		}
 		const first = byKey.get(key);
 		if (first) {
 			ABSORBED_BY[f.id] = first.id;
@@ -671,12 +755,16 @@ export const LENGTH_FAMILIES: LengthFamilyRow[] = (() => {
 		const also = absorbed.get(f.id) ?? [];
 		if (!also.length) return f;
 		const bucket = (i: string) =>
-			i.startsWith("plen-enum-") ? "the search"
-				: i.startsWith("plen-tj-") ? "the split-palette engine"
-					: i.startsWith("plen-strip-") ? "the strip construction"
+			i.startsWith("plen-enum-")
+				? "the search"
+				: i.startsWith("plen-tj-")
+					? "the split-palette engine"
+					: i.startsWith("plen-strip-")
+						? "the strip construction"
 						: "another hand-built row";
-		const groups = ["the search", "the split-palette engine", "the strip construction",
-			"another hand-built row"].map((who) => [who, also.filter((i) => bucket(i) === who)] as const);
+		const groups = ["the search", "the split-palette engine", "the strip construction", "another hand-built row"].map(
+			(who) => [who, also.filter((i) => bucket(i) === who)] as const,
+		);
 		const said = groups
 			.filter(([, ids]) => ids.length)
 			.map(([who, ids]) => `${who} found it ${ids.length === 1 ? "as" : `${ids.length} times, first as`} ${ids[0]}`)

@@ -98,11 +98,7 @@ const dot = (a: V3, b: V3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 const sub = (a: V3, b: V3): V3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 const add = (a: V3, b: V3): V3 => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
 const mul = (a: V3, s: number): V3 => [a[0] * s, a[1] * s, a[2] * s];
-const cross = (a: V3, b: V3): V3 => [
-	a[1] * b[2] - a[2] * b[1],
-	a[2] * b[0] - a[0] * b[2],
-	a[0] * b[1] - a[1] * b[0],
-];
+const cross = (a: V3, b: V3): V3 => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 function unit(a: V3): V3 {
 	const n = Math.hypot(a[0], a[1], a[2]) || 1;
 	return [a[0] / n, a[1] / n, a[2] / n];
@@ -190,9 +186,7 @@ export function starFaceRings(face: number[], dRaw: number, verts: V3[], mod2 = 
 	if (!Number.isFinite(R) || R < 1e-9) return [face];
 	// Geometric (angular) order of the vertices, which is NOT the traversal order the record stores.
 	const ang = (p: V3) => Math.atan2(dot(sub(p, c), ey), dot(sub(p, c), ex));
-	const geo = face
-		.map((idx, k) => ({ idx, a: (ang(pts[k]) + 2 * Math.PI) % (2 * Math.PI) }))
-		.sort((p, q) => p.a - q.a);
+	const geo = face.map((idx, k) => ({ idx, a: (ang(pts[k]) + 2 * Math.PI) % (2 * Math.PI) })).sort((p, q) => p.a - q.a);
 	const a0 = geo[0].a;
 	const at = (radius: number, theta: number): V3 =>
 		add(c, add(mul(ex, radius * Math.cos(theta)), mul(ey, radius * Math.sin(theta))));
@@ -467,7 +461,11 @@ function raySpans(ring: number[], verts: V3[], u: V3): boolean {
  * vertices of the polyhedron and shipping them would misstate V. They are appended past the record's
  * own vertices so the edge list, which indexes only the real ones, stays valid.
  */
-export function sphStarScene(p: SphStarPattern, mod2 = false, fillFaces: readonly number[] | null = null): SphSchwarzScene {
+export function sphStarScene(
+	p: SphStarPattern,
+	mod2 = false,
+	fillFaces: readonly number[] | null = null,
+): SphSchwarzScene {
 	// A partial fill (sphericalGeometry.partialFill): an unfilled face keeps its edges and loses its surface, so it
 	// contributes no tile and, having no rings, no crease either.
 	const fill = fillFaces ? new Set(fillFaces) : null;

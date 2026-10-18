@@ -24,7 +24,11 @@ export function buildTilingFromCell(
 	const ri = Math.max(1, Math.min(MAX_FILL_RADIUS, Ri || 1));
 	const rj = Math.max(1, Math.min(MAX_FILL_RADIUS, Rj || 1));
 	const polyArray = cellData.p ?? cellData.cellPolygons ?? [];
-	const basisRaw = cellData.b ?? cellData.basis ?? [[1, 0], [0, 1]];
+	const basisRaw = cellData.b ??
+		cellData.basis ?? [
+			[1, 0],
+			[0, 1],
+		];
 	const [v1x, v1y] = basisRaw[0];
 	const [v2x, v2y] = basisRaw[1];
 
@@ -47,16 +51,13 @@ export function buildTilingFromCell(
 	const basePolys: GenericPolygon[] = [];
 	for (const polyData of polyArray) {
 		const rawVerts = polyData.v ?? polyData.vertices ?? [];
-		const vertices = rawVerts.map((v) =>
-			Array.isArray(v) ? new Vector(v[0], v[1]) : new Vector(v.x, v.y),
-		);
+		const vertices = rawVerts.map((v) => (Array.isArray(v) ? new Vector(v[0], v[1]) : new Vector(v.x, v.y)));
 		if (vertices.length < 3) continue;
 		const poly = GenericPolygon.fromVertices(vertices);
 		// GenericPolygon colors by the regular log ramp; a star tile ({n}: n points, 2n vertices, or an
 		// explicit `star` flag) uses the original StarPolygon hue instead.
 		const nn = (polyData as { n?: number }).n ?? vertices.length;
-		const isStar =
-			(polyData as { star?: boolean }).star === true || (nn >= 3 && vertices.length === 2 * nn);
+		const isStar = (polyData as { star?: boolean }).star === true || (nn >= 3 && vertices.length === 2 * nn);
 		if (isStar) poly.hue = starHue(nn, starApexAngleDeg(vertices));
 		poly.isStar = isStar; // persist so the Islamic star-fill path can detect star tiles
 		basePolys.push(poly);
@@ -86,7 +87,10 @@ export function buildTilingFromCell(
 				dst.n !== src.n ||
 				dst.vertices.length !== src.vertices.length ||
 				dst.halfways.length !== src.halfways.length
-			) { target = null; break; }
+			) {
+				target = null;
+				break;
+			}
 		}
 	}
 

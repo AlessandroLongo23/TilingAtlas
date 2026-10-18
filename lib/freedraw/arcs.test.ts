@@ -367,7 +367,12 @@ describe("only the non-crossing wirings are drawings", () => {
 function segmentsCross(a: Pt, b: Pt, c: Pt, d: Pt): boolean {
 	const side = (p: Pt, q: Pt, r: Pt) => (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]);
 	const EPS = 1e-9;
-	for (const [p, q] of [[a, c], [a, d], [b, c], [b, d]] as [Pt, Pt][]) {
+	for (const [p, q] of [
+		[a, c],
+		[a, d],
+		[b, c],
+		[b, d],
+	] as [Pt, Pt][]) {
 		if (Math.hypot(p[0] - q[0], p[1] - q[1]) < 1e-7) return false; // they meet, they don't cross
 	}
 	const d1 = side(a, b, c);

@@ -98,14 +98,10 @@ export function VelocityPad({
 					width={size}
 					height={size}
 					viewBox={`0 0 ${size} ${size}`}
-					className="touch-none cursor-pointer select-none overflow-visible"
+					className="cursor-pointer touch-none overflow-visible select-none"
 					role="slider"
 					aria-label={ariaLabel}
-					aria-valuetext={
-						active
-							? (formatValue?.(value) ?? `${value.x.toFixed(2)}, ${value.y.toFixed(2)}`)
-							: "stopped"
-					}
+					aria-valuetext={active ? (formatValue?.(value) ?? `${value.x.toFixed(2)}, ${value.y.toFixed(2)}`) : "stopped"}
 					onPointerDown={(e) => {
 						e.preventDefault();
 						e.currentTarget.setPointerCapture(e.pointerId);
@@ -139,16 +135,26 @@ export function VelocityPad({
 					{/* The transition is on the resting knob only, so it eases home and never lags the pointer. */}
 					<g
 						style={{ transform: `translate(${pos.x}px, ${pos.y}px)` }}
-						className={cn(springBack && !active && "transition-transform duration-200 ease-out motion-reduce:transition-none")}
+						className={cn(
+							springBack && !active && "transition-transform duration-200 ease-out motion-reduce:transition-none",
+						)}
 					>
 						<circle
 							cx={C}
 							cy={C}
 							r={knobR}
-							className={springBack ? "fill-white stroke-line drop-shadow-sm" : active ? "fill-accent" : "fill-fg-muted"}
+							className={
+								springBack ? "fill-white stroke-line drop-shadow-sm" : active ? "fill-accent" : "fill-fg-muted"
+							}
 						/>
 						{knobLabel ? (
-							<text x={C} y={C} textAnchor="middle" dominantBaseline="central" className="pointer-events-none fill-neutral-500 font-mono text-[11px] font-medium">
+							<text
+								x={C}
+								y={C}
+								textAnchor="middle"
+								dominantBaseline="central"
+								className="pointer-events-none fill-neutral-500 font-mono text-[11px] font-medium"
+							>
 								{knobLabel}
 							</text>
 						) : null}

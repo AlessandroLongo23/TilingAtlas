@@ -12,7 +12,7 @@ interface TheoryRingProps {
 export function TheoryRing({ tilings }: TheoryRingProps) {
 	const n = tilings.length || 1;
 	return (
-		<div className="relative w-full h-full">
+		<div className="relative h-full w-full">
 			<div className="absolute inset-0 flex items-center justify-center">
 				<div className="relative aspect-square h-[92%]">
 					{tilings.map((t, i) => {
@@ -24,7 +24,7 @@ export function TheoryRing({ tilings }: TheoryRingProps) {
 							<div
 								key={t.id}
 								title={t.label}
-								className="absolute w-[24%] aspect-square overflow-hidden border border-line"
+								className="absolute aspect-square w-[24%] overflow-hidden border border-line"
 								style={{ left: `${cx}%`, top: `${cy}%`, transform: "translate(-50%, -50%)" }}
 							>
 								<TilingThumbnail translationalCell={t.cell} pxPerEdge={7} />
@@ -32,7 +32,7 @@ export function TheoryRing({ tilings }: TheoryRingProps) {
 						);
 					})}
 					<div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
-						<span className="text-3xl font-semibold tracking-tight text-fg tabular-nums leading-none">11</span>
+						<span className="text-3xl leading-none font-semibold tracking-tight text-fg tabular-nums">11</span>
 						<span className="ta-label">uniform</span>
 					</div>
 				</div>

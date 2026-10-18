@@ -19,7 +19,14 @@
 // its world differently (a Sub Rosa patch at depth 3 spans hundreds of edges, the hat's window
 // eighteen). Each view fits its own home zoom and the wheel range is taken relative to that.
 
-import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from "react";
+import {
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+	type PointerEvent as ReactPointerEvent,
+	type RefObject,
+} from "react";
 import {
 	accumulateDetents,
 	makeCardControls,
@@ -71,7 +78,8 @@ export function applyViewTransform(ctx: CanvasRenderingContext2D, f: AperiodicFr
 export function viewToWorld(f: AperiodicFrame, sx: number, sy: number): { x: number; y: number } {
 	const ux = (sx - f.w / 2 - f.offsetX) / f.zoom;
 	const uy = (sy - f.h / 2 - f.offsetY) / f.zoom;
-	const c = Math.cos(f.rot), s = Math.sin(f.rot);
+	const c = Math.cos(f.rot),
+		s = Math.sin(f.rot);
 	return { x: f.centreX + c * ux + s * uy, y: f.centreY + s * ux - c * uy };
 }
 
@@ -180,7 +188,15 @@ export function useAperiodicView({
 	const dragRef = useRef<{ id: number; x: number; y: number } | null>(null);
 	const dirtyRef = useRef(true);
 	const frameRef = useRef<AperiodicFrame>({
-		w: 0, h: 0, dpr: 1, zoom: 1, offsetX: 0, offsetY: 0, rot: 0, centreX: 0, centreY: 0,
+		w: 0,
+		h: 0,
+		dpr: 1,
+		zoom: 1,
+		offsetX: 0,
+		offsetY: 0,
+		rot: 0,
+		centreX: 0,
+		centreY: 0,
 	});
 	const [rotationDeg, setRotationDeg] = useState(0);
 
@@ -225,11 +241,13 @@ export function useAperiodicView({
 	const measureHome = useCallback((): boolean => {
 		const cv = canvasRef.current;
 		if (!cv) return false;
-		const w = cv.clientWidth, h = cv.clientHeight;
+		const w = cv.clientWidth,
+			h = cv.clientHeight;
 		if (w <= 0 || h <= 0) return false;
 		const box = cbRef.current.home();
 		if (!box) return false;
-		const bw = box.width || 1, bh = box.height || 1;
+		const bw = box.width || 1,
+			bh = box.height || 1;
 		homeZoomRef.current = fill * Math.min(w / bw, h / bh);
 		centreRef.current = { x: box.cx, y: box.cy };
 		return true;
@@ -314,18 +332,23 @@ export function useAperiodicView({
 			dirtyRef.current = false;
 
 			const dpr = window.devicePixelRatio || 1;
-			const w = cv.clientWidth, h = cv.clientHeight;
+			const w = cv.clientWidth,
+				h = cv.clientHeight;
 			if (w <= 0 || h <= 0) return;
 			if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) {
 				cv.width = Math.round(w * dpr);
 				cv.height = Math.round(h * dpr);
 			}
 			const f = frameRef.current;
-			f.w = w; f.h = h; f.dpr = dpr;
+			f.w = w;
+			f.h = h;
+			f.dpr = dpr;
 			f.zoom = c.zoom;
-			f.offsetX = c.offset.x; f.offsetY = c.offset.y;
+			f.offsetX = c.offset.x;
+			f.offsetY = c.offset.y;
 			f.rot = (c.rotation * Math.PI) / 180;
-			f.centreX = centreRef.current.x; f.centreY = centreRef.current.y;
+			f.centreX = centreRef.current.x;
+			f.centreY = centreRef.current.y;
 			cbRef.current.draw(f);
 
 			// Slider value + readout — round first so a spin re-renders React ~24 times, not every frame.

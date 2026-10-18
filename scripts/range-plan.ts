@@ -138,9 +138,10 @@ export function applyRangePlan(out: ReferenceTiling[], opts: ApplyRangeOptions):
 			p.foldKind = r.fold.kind;
 			folds++;
 		}
-		const grew = r.gainDeg > 0.01
-			? `(${r.exported[0]}, ${r.exported[1]}) → (${lo}, ${hi})  +${r.gainDeg.toFixed(2)}°`
-			: `(${lo}, ${hi}) unchanged`;
+		const grew =
+			r.gainDeg > 0.01
+				? `(${r.exported[0]}, ${r.exported[1]}) → (${lo}, ${hi})  +${r.gainDeg.toFixed(2)}°`
+				: `(${lo}, ${hi}) unchanged`;
 		const novel = r.offPalette.length ? `  off-palette: ${r.offPalette.join(" ")}` : "";
 		log(`  ${r.id}  ${grew}${r.fold?.centreDeg != null ? `  fold ${r.fold.kind} @ ${r.fold.centreDeg}°` : ""}${novel}`);
 	}
@@ -185,10 +186,14 @@ export function applyRegionPlan(out: ReferenceTiling[], plan: RangePlan, log: (m
 		}
 		// The measured axes must still contain each slider's own default, or the entry and the plan were
 		// built from different exports and widening would put the default outside its own domain.
-		const bad = pc.params.findIndex((p, j) => !(r.axes[j][0] <= p.defaultAlphaDeg && p.defaultAlphaDeg <= r.axes[j][1]));
+		const bad = pc.params.findIndex(
+			(p, j) => !(r.axes[j][0] <= p.defaultAlphaDeg && p.defaultAlphaDeg <= r.axes[j][1]),
+		);
 		if (bad >= 0) {
-			log(`  ⚑ ${r.id}: measured axis ${bad} (${r.axes[bad].join(", ")}) excludes default ` +
-				`α=${pc.params[bad].defaultAlphaDeg} — SKIPPED`);
+			log(
+				`  ⚑ ${r.id}: measured axis ${bad} (${r.axes[bad].join(", ")}) excludes default ` +
+					`α=${pc.params[bad].defaultAlphaDeg} — SKIPPED`,
+			);
 			continue;
 		}
 		pc.params.forEach((p, j) => {
@@ -198,11 +203,16 @@ export function applyRegionPlan(out: ReferenceTiling[], plan: RangePlan, log: (m
 		if (pc.region) for (const h of pc.region) h.limitUnits = r.limitUnits;
 		if (r.regionVertices?.length) pc.regionVertices = r.regionVertices;
 		t.alphaRange = [r.axes[0][0], r.axes[0][1]];
-		t.renderCell = evaluateParamCell(pc, pc.params.map((p) => p.defaultAlphaDeg)) as ReferenceTiling["renderCell"];
+		t.renderCell = evaluateParamCell(
+			pc,
+			pc.params.map((p) => p.defaultAlphaDeg),
+		) as ReferenceTiling["renderCell"];
 		widened++;
-		log(`  ${r.id}  P=${r.P}  axes ${JSON.stringify(r.exportedAxes)} → ${JSON.stringify(r.axes)}  ` +
-			`+${r.gainDeg.toFixed(2)}°  corner limit → ${(r.limitUnits * 15).toFixed(1)}°` +
-			(r.regionVertices ? `  region ${r.regionVertices.length} pts` : ""));
+		log(
+			`  ${r.id}  P=${r.P}  axes ${JSON.stringify(r.exportedAxes)} → ${JSON.stringify(r.axes)}  ` +
+				`+${r.gainDeg.toFixed(2)}°  corner limit → ${(r.limitUnits * 15).toFixed(1)}°` +
+				(r.regionVertices ? `  region ${r.regionVertices.length} pts` : ""),
+		);
 	}
 	log(`  widened ${widened} of ${regions.length} multi-parameter region(s)`);
 	return widened;
@@ -223,7 +233,7 @@ export function rangeNote(r: RangePlan["ranges"][number]): string {
 		`certificate and a direct covering test.` +
 		(r.offPalette.length
 			? ` No configuration in it sits on the search palette (missing ${r.offPalette.join(", ")}), so these ` +
-			  `tilings are not reachable as a separate family and were absent from the atlas.`
+				`tilings are not reachable as a separate family and were absent from the atlas.`
 			: "")
 	);
 }

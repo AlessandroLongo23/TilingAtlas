@@ -50,7 +50,7 @@ function CopyChip({ text, label = "copy" }: { text: string; label?: string }) {
 					() => {},
 				)
 			}
-			className="inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] text-fg-muted hover:text-fg hover:bg-surface-overlay/60 transition-colors"
+			className="inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] text-fg-muted transition-colors hover:bg-surface-overlay/60 hover:text-fg"
 		>
 			{copied ? <Check size={12} className="text-success" /> : <Copy size={12} />}
 			{copied ? "copied" : label}
@@ -91,8 +91,8 @@ function Panel({
 	className?: string;
 }) {
 	return (
-		<section className={cn("rounded-xl border border-line bg-surface-overlay/20 overflow-hidden", className)}>
-			<header className="flex items-center gap-2 px-4 py-2.5 border-b border-line-subtle">
+		<section className={cn("overflow-hidden rounded-xl border border-line bg-surface-overlay/20", className)}>
+			<header className="flex items-center gap-2 border-b border-line-subtle px-4 py-2.5">
 				<Icon size={15} className="text-fg-muted" />
 				<h2 className="text-sm font-medium text-fg">{title}</h2>
 				<div className="flex-1" />
@@ -107,7 +107,9 @@ function Stat({ label, value, tone }: { label: string; value: React.ReactNode; t
 	return (
 		<div className="rounded-lg border border-line-subtle bg-surface-raised/50 px-3 py-2.5">
 			<div className="text-[11px] text-fg-muted">{label}</div>
-			<div className={cn("text-lg font-mono tabular-nums", tone === "muted" ? "text-fg-muted" : "text-fg")}>{value}</div>
+			<div className={cn("font-mono text-lg tabular-nums", tone === "muted" ? "text-fg-muted" : "text-fg")}>
+				{value}
+			</div>
 		</div>
 	);
 }
@@ -169,29 +171,32 @@ export function RunView({
 			: null;
 
 	return (
-		<div className="flex-1 min-h-0 overflow-y-auto">
-			<div className="mx-auto max-w-5xl px-6 py-6 flex flex-col gap-5 max-md:px-4">
+		<div className="min-h-0 flex-1 overflow-y-auto">
+			<div className="mx-auto flex max-w-5xl flex-col gap-5 px-6 py-6 max-md:px-4">
 				{/* ── header ─────────────────────────────────────────────────────── */}
-				<header className="rounded-xl border border-line bg-surface-overlay/30 px-5 py-4 flex items-start gap-4">
-					<FlaskConical size={20} className="text-accent mt-0.5 shrink-0" />
+				<header className="flex items-start gap-4 rounded-xl border border-line bg-surface-overlay/30 px-5 py-4">
+					<FlaskConical size={20} className="mt-0.5 shrink-0 text-accent" />
 					<div className="min-w-0 flex-1">
-						<h1 className="text-lg font-semibold text-fg truncate">
+						<h1 className="truncate text-lg font-semibold text-fg">
 							k={run.k} · family {"{"}
 							{run.family}
 							{"}"} · {run.params.mode ?? "scout"} sweep
 						</h1>
-						<p className="mt-0.5 text-xs text-fg-muted font-mono truncate">
+						<p className="mt-0.5 truncate font-mono text-xs text-fg-muted">
 							run · commit {run.commit ?? "—"} · {run.params.workers ?? "?"} workers · maxMs=
 							{run.params.maxMs ?? "?"} · started {fmtClock(run.started_at)}
 						</p>
 					</div>
-					<div className="flex flex-col items-end gap-1.5 shrink-0">
-						<Badge tone={STATUS_TONE[run.status] ?? "neutral"} pill className="text-[11px] px-2 py-1">
+					<div className="flex shrink-0 flex-col items-end gap-1.5">
+						<Badge tone={STATUS_TONE[run.status] ?? "neutral"} pill className="px-2 py-1 text-[11px]">
 							{run.status}
 							{elapsedMs != null ? ` · ${fmtDuration(elapsedMs)}` : ""}
 						</Badge>
 						<span
-							className={cn("inline-flex items-center gap-1 text-[10px]", connected ? "text-success" : "text-fg-disabled")}
+							className={cn(
+								"inline-flex items-center gap-1 text-[10px]",
+								connected ? "text-success" : "text-fg-disabled",
+							)}
 							title={connected ? "Realtime connected" : "Connecting…"}
 						>
 							{connected ? <Wifi size={11} /> : <WifiOff size={11} />}
@@ -205,13 +210,14 @@ export function RunView({
 					icon={Cpu}
 					title="Seed queue"
 					right={
-						<span className="text-xs text-fg-muted font-mono tabular-nums">
-							<span className="text-fg">{done}</span> / {total} done · <span className="text-fg">{active.length}</span> active ·{" "}
-							{queued} queued · <span className={incompleteSeeds ? "text-danger" : "text-fg"}>{incompleteSeeds}</span> incomplete
+						<span className="font-mono text-xs text-fg-muted tabular-nums">
+							<span className="text-fg">{done}</span> / {total} done · <span className="text-fg">{active.length}</span>{" "}
+							active · {queued} queued ·{" "}
+							<span className={incompleteSeeds ? "text-danger" : "text-fg"}>{incompleteSeeds}</span> incomplete
 						</span>
 					}
 				>
-					<div className="h-2 bg-surface-overlay/60 overflow-hidden">
+					<div className="h-2 overflow-hidden bg-surface-overlay/60">
 						<div
 							className="h-full bg-fg transition-all duration-500 ease-out"
 							style={{ width: `${Math.min(100, Math.max(0, pct))}%` }}
@@ -219,21 +225,24 @@ export function RunView({
 					</div>
 
 					{active.length > 0 ? (
-						<div className="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+						<div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
 							{active
 								.sort((a, b) => (a.worker_id ?? 0) - (b.worker_id ?? 0))
 								.map((s) => {
 									const since = now != null ? fmtDuration(now - Date.parse(s.updated_at)) : "—";
 									return (
-										<div key={s.seed_idx} className="rounded-lg border border-line-subtle bg-surface-raised/50 px-3 py-2">
+										<div
+											key={s.seed_idx}
+											className="rounded-lg border border-line-subtle bg-surface-raised/50 px-3 py-2"
+										>
 											<div className="flex items-center justify-between text-[11px] text-fg-muted">
 												<span>worker {s.worker_id ?? "?"}</span>
 												<span className="font-mono tabular-nums">{since}</span>
 											</div>
-											<div className="mt-1 text-xs font-mono text-fg-secondary truncate" title={s.name ?? undefined}>
+											<div className="mt-1 truncate font-mono text-xs text-fg-secondary" title={s.name ?? undefined}>
 												{s.name ?? "—"}
 											</div>
-											<div className="text-[10px] font-mono text-fg-disabled">#{s.seed_idx}</div>
+											<div className="font-mono text-[10px] text-fg-disabled">#{s.seed_idx}</div>
 										</div>
 									);
 								})}
@@ -246,12 +255,12 @@ export function RunView({
 				</Panel>
 
 				{/* ── lower grid: gallery (M2) · diagnostics · certification ──────── */}
-				<div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+				<div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
 					<Panel
 						icon={LayoutGrid}
 						title="Found tilings"
 						className="lg:col-span-2"
-						right={<span className="text-xs text-fg-muted font-mono tabular-nums">{run.count ?? "—"} distinct</span>}
+						right={<span className="font-mono text-xs text-fg-muted tabular-nums">{run.count ?? "—"} distinct</span>}
 					>
 						<GalleryPanel runId={runId} initial={initialTilings} />
 					</Panel>
@@ -299,9 +308,7 @@ export function RunView({
 						<p
 							className={cn(
 								"mt-3 rounded-lg px-3 py-2 text-xs",
-								run.certified
-									? "bg-success-subtle text-success"
-									: "bg-warning-subtle text-warning",
+								run.certified ? "bg-success-subtle text-success" : "bg-warning-subtle text-warning",
 							)}
 						>
 							{run.certified
@@ -319,7 +326,7 @@ export function RunView({
 									<AlertTriangle size={13} />
 									Completeness hazards — a tiling may have been dropped
 								</div>
-								<ul className="mt-1.5 space-y-1 text-[11px] font-mono text-fg-secondary">
+								<ul className="mt-1.5 space-y-1 font-mono text-[11px] text-fg-secondary">
 									{timedOutSeeds.map((s) => (
 										<li key={`to-${s.seed_idx}`} className="truncate" title={s.name ?? undefined}>
 											⏱ seed #{s.seed_idx} timed out{s.name ? ` · ${s.name}` : ""}
@@ -341,7 +348,7 @@ export function RunView({
 						title="Digest history"
 						className="lg:col-span-2"
 						right={
-							<span className="text-xs text-fg-muted font-mono">
+							<span className="font-mono text-xs text-fg-muted">
 								k={run.k} · {"{"}
 								{run.family}
 								{"}"}
@@ -354,13 +361,13 @@ export function RunView({
 							<div className="overflow-x-auto">
 								<table className="w-full text-xs">
 									<thead>
-										<tr className="text-left text-[10px] uppercase tracking-wide text-fg-disabled">
-											<th className="font-normal py-1 pr-3">run</th>
-											<th className="font-normal py-1 pr-3">date</th>
-											<th className="font-normal py-1 pr-3">count</th>
-											<th className="font-normal py-1 pr-3">digest</th>
-											<th className="font-normal py-1 pr-3">vs this</th>
-											<th className="font-normal py-1">state</th>
+										<tr className="text-left text-[10px] tracking-wide text-fg-disabled uppercase">
+											<th className="py-1 pr-3 font-normal">run</th>
+											<th className="py-1 pr-3 font-normal">date</th>
+											<th className="py-1 pr-3 font-normal">count</th>
+											<th className="py-1 pr-3 font-normal">digest</th>
+											<th className="py-1 pr-3 font-normal">vs this</th>
+											<th className="py-1 font-normal">state</th>
 										</tr>
 									</thead>
 									<tbody className="font-mono tabular-nums">
@@ -374,16 +381,14 @@ export function RunView({
 											<td className="py-1.5">{run.certified ? "✓ cert" : run.incomplete ? "incompl." : "—"}</td>
 										</tr>
 										{siblings.map((s) => {
-											const cmp =
-												!s.digest || !run.digest
-													? null
-													: s.digest === run.digest
-														? "match"
-														: "differ";
+											const cmp = !s.digest || !run.digest ? null : s.digest === run.digest ? "match" : "differ";
 											return (
 												<tr key={s.id} className="border-t border-line-subtle">
 													<td className="py-1.5 pr-3">
-														<Link href={`/history/run/${s.id}`} className="text-fg-muted hover:text-accent transition-colors">
+														<Link
+															href={`/history/run/${s.id}`}
+															className="text-fg-muted transition-colors hover:text-accent"
+														>
 															{shortId(s.id)}
 														</Link>
 													</td>

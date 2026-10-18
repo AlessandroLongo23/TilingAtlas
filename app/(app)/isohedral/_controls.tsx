@@ -58,14 +58,14 @@ export function IsohedralSidebar({
 			    the four regions scroll as one column: pinned, they would fill a half-height sheet before
 			    the controls got a row. The type grid flows in that column too, uncapped: a box scrolling
 			    inside the scrolling sheet traps a flick and clips its chips. */}
-			<div className="h-full flex flex-col bg-surface-chrome divide-y divide-line-subtle max-md:overflow-y-auto max-md:overflow-x-hidden max-md:overscroll-contain">
+			<div className="flex h-full flex-col divide-y divide-line-subtle bg-surface-chrome max-md:overflow-x-hidden max-md:overflow-y-auto max-md:overscroll-contain">
 				{/* The phone's peek row carries the identity line, so the sheet does not repeat it. */}
 				<div className="shrink-0 px-3.5 py-4 max-md:hidden">{header}</div>
 				<div className="shrink-0 px-3.5 py-4">{filters}</div>
-				<div className="shrink-0 px-3.5 py-4 flex flex-col gap-2">
+				<div className="flex shrink-0 flex-col gap-2 px-3.5 py-4">
 					<div className="flex items-baseline justify-between">
 						<span className="ta-label">Type</span>
-						<span className="font-mono text-[11px] tabular-nums text-fg-muted max-md:text-xs">
+						<span className="font-mono text-[11px] text-fg-muted tabular-nums max-md:text-xs">
 							{typeCount === totalCount ? `${totalCount} types` : `${typeCount} of ${totalCount}`}
 						</span>
 					</div>
@@ -77,7 +77,7 @@ export function IsohedralSidebar({
 					    the gutter, so the grid lines up with the filters either way. */}
 					<div className="relative">
 						<div
-							className="-mr-2.5 pr-2.5 max-h-[153px] overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-line-strong max-md:max-h-none max-md:overflow-visible"
+							className="-mr-2.5 max-h-[153px] overflow-x-hidden overflow-y-auto pr-2.5 max-md:max-h-none max-md:overflow-visible [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-line-strong"
 							ref={boxRef}
 							onScroll={measure}
 						>
@@ -87,8 +87,8 @@ export function IsohedralSidebar({
 						{more.down ? <div className={`${SHADOW} bottom-0 rounded-b-surface bg-gradient-to-t`} /> : null}
 					</div>
 				</div>
-				<div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hide ta-scroll-fade max-md:flex-none max-md:overflow-visible">
-					<div className="pb-10 divide-y divide-line-subtle [&>*]:px-3.5 [&>*]:py-4">{children}</div>
+				<div className="scrollbar-hide ta-scroll-fade min-h-0 flex-1 overflow-x-hidden overflow-y-auto max-md:flex-none max-md:overflow-visible">
+					<div className="divide-y divide-line-subtle pb-10 [&>*]:px-3.5 [&>*]:py-4">{children}</div>
 				</div>
 			</div>
 		</PageSidebar>

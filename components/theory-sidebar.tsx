@@ -49,12 +49,10 @@ export function TheorySidebar({
 	const hasSubs = (s: TheorySection) => !!s.subsections && s.subsections.length > 0;
 
 	return (
-		<div className="h-full flex flex-col">
+		<div className="flex h-full flex-col">
 			{/* The phone sheet's own title already says Contents. */}
 			<div className="px-4 pt-5 pb-1 max-md:hidden">
-				<h3 className="ta-label text-fg-muted">
-					Contents
-				</h3>
+				<h3 className="ta-label text-fg-muted">Contents</h3>
 			</div>
 			<div className="flex-1 overflow-y-auto px-2 pb-4 max-md:pt-2">
 				{isLoading ? (
@@ -94,15 +92,7 @@ interface SectionItemProps {
 	hasSubs: (s: TheorySection) => boolean;
 }
 
-function SectionItem({
-	section,
-	depth,
-	activeSection,
-	expanded,
-	onToggle,
-	onSelect,
-	hasSubs,
-}: SectionItemProps) {
+function SectionItem({ section, depth, activeSection, expanded, onToggle, onSelect, hasSubs }: SectionItemProps) {
 	const isActive = activeSection === section.id;
 	const isOpen = !!expanded[section.id];
 	const showToggle = hasSubs(section);
@@ -119,24 +109,21 @@ function SectionItem({
 					type="button"
 					onClick={() => (showToggle ? onToggle(section.id) : undefined)}
 					className={cn(
-						"flex items-center justify-center shrink-0 w-5 h-7 text-fg-muted hover:text-fg transition-colors max-md:h-11 max-md:w-11",
+						"flex h-7 w-5 shrink-0 items-center justify-center text-fg-muted transition-colors hover:text-fg max-md:h-11 max-md:w-11",
 						!showToggle && "invisible",
 					)}
 					aria-label={`${isOpen ? "Collapse" : "Expand"} ${section.title}`}
 					tabIndex={showToggle ? 0 : -1}
 				>
-					<ChevronRight
-						size={12}
-						className={cn("transition-transform duration-150", isOpen && "rotate-90")}
-					/>
+					<ChevronRight size={12} className={cn("transition-transform duration-150", isOpen && "rotate-90")} />
 				</button>
 				<button
 					type="button"
 					onClick={() => onSelect(section.id)}
 					className={cn(
-						"flex-1 min-w-0 text-left py-1.5 pr-2 text-[13px] leading-snug wrap-break-word transition-colors max-md:min-h-11 max-md:py-2.5 max-md:text-[15px]",
+						"min-w-0 flex-1 py-1.5 pr-2 text-left text-[13px] leading-snug wrap-break-word transition-colors max-md:min-h-11 max-md:py-2.5 max-md:text-[15px]",
 						depth === 0 ? "font-medium" : "font-normal",
-						isActive ? "text-fg font-medium" : "text-fg-secondary group-hover:text-fg",
+						isActive ? "font-medium text-fg" : "text-fg-secondary group-hover:text-fg",
 					)}
 				>
 					{section.title}
@@ -152,7 +139,7 @@ function SectionItem({
 						transition={{ duration: 0.15 }}
 						className="overflow-hidden"
 					>
-						<div className="ml-2 mt-0.5 flex flex-col gap-0.5">
+						<div className="mt-0.5 ml-2 flex flex-col gap-0.5">
 							{section.subsections!.map((sub) => (
 								<SectionItem
 									key={sub.id}

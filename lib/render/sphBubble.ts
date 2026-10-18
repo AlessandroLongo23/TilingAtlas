@@ -162,23 +162,37 @@ function buildTubeGeometry(paths: THREE.Vector3[][], radius: number): THREE.Buff
 			const nx = RING_COS[i] * u.x + RING_SIN[i] * v.x;
 			const ny = RING_COS[i] * u.y + RING_SIN[i] * v.y;
 			const nz = RING_COS[i] * u.z + RING_SIN[i] * v.z;
-			nor[vi * 3] = nx; nor[vi * 3 + 1] = ny; nor[vi * 3 + 2] = nz;
-			pos[vi * 3] = c.x + radius * nx; pos[vi * 3 + 1] = c.y + radius * ny; pos[vi * 3 + 2] = c.z + radius * nz;
+			nor[vi * 3] = nx;
+			nor[vi * 3 + 1] = ny;
+			nor[vi * 3 + 2] = nz;
+			pos[vi * 3] = c.x + radius * nx;
+			pos[vi * 3 + 1] = c.y + radius * ny;
+			pos[vi * 3 + 2] = c.z + radius * nz;
 		}
 		return base;
 	};
 	const emitBand = (a: number, b: number) => {
 		for (let i = 0; i < RADIAL; i++) {
 			const j = (i + 1) % RADIAL;
-			idx[ii++] = a + i; idx[ii++] = b + i; idx[ii++] = b + j;
-			idx[ii++] = a + i; idx[ii++] = b + j; idx[ii++] = a + j;
+			idx[ii++] = a + i;
+			idx[ii++] = b + i;
+			idx[ii++] = b + j;
+			idx[ii++] = a + i;
+			idx[ii++] = b + j;
+			idx[ii++] = a + j;
 		}
 	};
 	const emitBall = (c: THREE.Vector3) => {
 		for (let i = 0; i < ballVerts; i++, vi++) {
-			const x = ball[i * 3], y = ball[i * 3 + 1], z = ball[i * 3 + 2];
-			nor[vi * 3] = x; nor[vi * 3 + 1] = y; nor[vi * 3 + 2] = z;
-			pos[vi * 3] = c.x + radius * x; pos[vi * 3 + 1] = c.y + radius * y; pos[vi * 3 + 2] = c.z + radius * z;
+			const x = ball[i * 3],
+				y = ball[i * 3 + 1],
+				z = ball[i * 3 + 2];
+			nor[vi * 3] = x;
+			nor[vi * 3 + 1] = y;
+			nor[vi * 3 + 2] = z;
+			pos[vi * 3] = c.x + radius * x;
+			pos[vi * 3 + 1] = c.y + radius * y;
+			pos[vi * 3 + 2] = c.z + radius * z;
 			idx[ii++] = vi;
 		}
 	};
@@ -212,7 +226,10 @@ function buildTubeGeometry(paths: THREE.Vector3[][], radius: number): THREE.Buff
 				const rr = emitRing(pts[i], uu, vv);
 				emitBand(prev, rr);
 				prev = rr;
-				if (s === n) { u = uu; v = vv; }
+				if (s === n) {
+					u = uu;
+					v = vv;
+				}
 			}
 		}
 		emitBall(pts[0]);
@@ -254,7 +271,10 @@ function densifyOnSphere(path: readonly V3[], maxStep = 0.035): THREE.Vector3[] 
 	return out;
 }
 
-const norm = (v: V3): V3 => { const L = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0] / L, v[1] / L, v[2] / L]; };
+const norm = (v: V3): V3 => {
+	const L = Math.hypot(v[0], v[1], v[2]) || 1;
+	return [v[0] / L, v[1] / L, v[2] / L];
+};
 const cross = (a: V3, b: V3): V3 => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 const dot = (a: V3, b: V3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 
@@ -272,7 +292,9 @@ export function sphereDepths(poly: Polyhedron): { cap: number; edgeArc: number }
 	for (const ring of faces) {
 		const c = norm(ring.reduce<V3>((a, i) => [a[0] + unit[i][0], a[1] + unit[i][1], a[2] + unit[i][2]], [0, 0, 0]));
 		const mid = norm([
-			unit[ring[0]][0] + unit[ring[1]][0], unit[ring[0]][1] + unit[ring[1]][1], unit[ring[0]][2] + unit[ring[1]][2],
+			unit[ring[0]][0] + unit[ring[1]][0],
+			unit[ring[0]][1] + unit[ring[1]][1],
+			unit[ring[0]][2] + unit[ring[1]][2],
 		]);
 		tightest = Math.min(tightest, Math.acos(Math.max(-1, Math.min(1, dot(c, mid)))));
 	}
@@ -352,25 +374,44 @@ export function buildBubbleSphere(
 
 	// One curve per EDGE, from the bump/bite the face owning its first dart carries.
 	const faceOfDart = new Int32Array(m.darts);
-	{ let d = 0; m.faceSizes.forEach((n, f) => { for (let i = 0; i < n; i++) faceOfDart[d++] = f; }); }
+	{
+		let d = 0;
+		m.faceSizes.forEach((n, f) => {
+			for (let i = 0; i < n; i++) faceOfDart[d++] = f;
+		});
+	}
 	const centres = faces.map((ring) =>
-		norm(ring.reduce<V3>((a, i) => [a[0] + unit[i][0], a[1] + unit[i][1], a[2] + unit[i][2]], [0, 0, 0])));
+		norm(ring.reduce<V3>((a, i) => [a[0] + unit[i][0], a[1] + unit[i][1], a[2] + unit[i][2]], [0, 0, 0])),
+	);
 	const curves: V3[][] = new Array(m.edges);
 	{
 		let d = 0;
 		const posInFace: number[] = new Array(m.darts);
-		m.faceSizes.forEach((n) => { for (let i = 0; i < n; i++) posInFace[d++] = i; });
+		m.faceSizes.forEach((n) => {
+			for (let i = 0; i < n; i++) posInFace[d++] = i;
+		});
 		for (let e = 0; e < m.edges; e++) {
 			const fd = m.firstDartOf[e];
 			const f = faceOfDart[fd];
 			const i = posInFace[fd];
 			const ring = faces[f];
-			curves[e] = edgeCurve(unit[ring[i]], unit[ring[(i + 1) % ring.length]], centres[f],
-				bites[f][i] === 0 ? bump : bite, lift);
+			curves[e] = edgeCurve(
+				unit[ring[i]],
+				unit[ring[(i + 1) % ring.length]],
+				centres[f],
+				bites[f][i] === 0 ? bump : bite,
+				lift,
+			);
 		}
 	}
 
-	interface Cell { tris: Array<[Vector, Vector, Vector]>; hue: number; C: V3; u: V3; v: V3 }
+	interface Cell {
+		tris: Array<[Vector, Vector, Vector]>;
+		hue: number;
+		C: V3;
+		u: V3;
+		v: V3;
+	}
 	const cells: Cell[] = [];
 	let baseTris = 0;
 	let maxArc = 0;
@@ -427,16 +468,31 @@ export function buildBubbleSphere(
 			]);
 			return [d[0] * radius, d[1] * radius, d[2] * radius];
 		};
-		const put = (p: V3) => { pos[vi * 3] = p[0]; pos[vi * 3 + 1] = p[1]; pos[vi * 3 + 2] = p[2]; hueOf[vi] = cell.hue; vi++; };
+		const put = (p: V3) => {
+			pos[vi * 3] = p[0];
+			pos[vi * 3 + 1] = p[1];
+			pos[vi * 3 + 2] = p[2];
+			hueOf[vi] = cell.hue;
+			vi++;
+		};
 		for (const [t0, t1, t2] of cell.tris) {
-			const ux = t1.x - t0.x, uy = t1.y - t0.y, wx = t2.x - t0.x, wy = t2.y - t0.y;
+			const ux = t1.x - t0.x,
+				uy = t1.y - t0.y,
+				wx = t2.x - t0.x,
+				wy = t2.y - t0.y;
 			for (let a = 0; a <= L; a++)
 				for (let b = 0; b <= L - a; b++)
 					grid[a][b] = to3(t0.x + (a / L) * ux + (b / L) * wx, t0.y + (a / L) * uy + (b / L) * wy);
 			for (let a = 0; a < L; a++)
 				for (let b = 0; b < L - a; b++) {
-					put(grid[a][b]); put(grid[a + 1][b]); put(grid[a][b + 1]);
-					if (b < L - a - 1) { put(grid[a + 1][b]); put(grid[a + 1][b + 1]); put(grid[a][b + 1]); }
+					put(grid[a][b]);
+					put(grid[a + 1][b]);
+					put(grid[a][b + 1]);
+					if (b < L - a - 1) {
+						put(grid[a + 1][b]);
+						put(grid[a + 1][b + 1]);
+						put(grid[a][b + 1]);
+					}
 				}
 		}
 	}
@@ -451,7 +507,9 @@ export function buildBubbleSphere(
 		for (let i = 0; i < vi; i++) {
 			const [r, g, b] = tileHueRgb01(hueOf[i] + hueOffset);
 			scratch.setRGB(r, g, b, THREE.SRGBColorSpace);
-			arr[i * 3] = scratch.r; arr[i * 3 + 1] = scratch.g; arr[i * 3 + 2] = scratch.b;
+			arr[i * 3] = scratch.r;
+			arr[i * 3 + 1] = scratch.g;
+			arr[i * 3 + 2] = scratch.b;
 		}
 		colorAttr.needsUpdate = true;
 	};
@@ -463,9 +521,13 @@ export function buildBubbleSphere(
 	{
 		const nor = new Float32Array(vi * 3);
 		for (let i = 0; i < vi; i++) {
-			const x = pos[i * 3], y = pos[i * 3 + 1], z = pos[i * 3 + 2];
+			const x = pos[i * 3],
+				y = pos[i * 3 + 1],
+				z = pos[i * 3 + 2];
 			const L = Math.hypot(x, y, z) || 1;
-			nor[i * 3] = x / L; nor[i * 3 + 1] = y / L; nor[i * 3 + 2] = z / L;
+			nor[i * 3] = x / L;
+			nor[i * 3 + 1] = y / L;
+			nor[i * 3 + 2] = z / L;
 		}
 		geom.setAttribute("normal", new THREE.BufferAttribute(nor, 3));
 	}
@@ -473,11 +535,16 @@ export function buildBubbleSphere(
 	// skipped silently: the surface came out unlit and flat, which is why AL said it did not feel
 	// three-dimensional even in perspective. Standard also gives the face opacity something to act on.
 	const material = new THREE.MeshStandardMaterial({
-		vertexColors: true, side: THREE.DoubleSide, roughness: 0.9, metalness: 0,
+		vertexColors: true,
+		side: THREE.DoubleSide,
+		roughness: 0.9,
+		metalness: 0,
 		// Pushed back in DEPTH only (see the stroke note above): the tube's centreline lies exactly on the
 		// tile boundary, so without this the two surfaces are tangent along the stroke's silhouette and
 		// z-fight there. Nothing moves in space, so the stroke stays centred on the boundary at every angle.
-		polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1,
+		polygonOffset: true,
+		polygonOffsetFactor: 1,
+		polygonOffsetUnits: 1,
 	});
 	const mesh = new THREE.Mesh(geom, material);
 	let opacity = Math.min(Math.max(opts.faceOpacity ?? 1, 0), 1);
@@ -505,12 +572,19 @@ export function buildBubbleSphere(
 	const tubeMesh = new THREE.Mesh(new THREE.BufferGeometry(), tubeMat);
 	const buildTubes = (w: number) => {
 		tubeMesh.geometry.dispose();
-		if (!(w > 0)) { tubeMesh.geometry = new THREE.BufferGeometry(); tubeMesh.visible = false; return; }
+		if (!(w > 0)) {
+			tubeMesh.geometry = new THREE.BufferGeometry();
+			tubeMesh.visible = false;
+			return;
+		}
 		tubeMesh.visible = true;
 		// The stroke follows the polyline VERTEX BY VERTEX. (An arc-length-parameterised curve, which is what
 		// `CurvePath` gives, samples between the vertices and shortcuts every corner — that is why the tube
 		// once traced a visibly different line from the fill it bounds.)
-		tubeMesh.geometry = buildTubeGeometry(strokePaths.map((p) => densifyOnSphere(p)), edgeRadius(w) * radius);
+		tubeMesh.geometry = buildTubeGeometry(
+			strokePaths.map((p) => densifyOnSphere(p)),
+			edgeRadius(w) * radius,
+		);
 	};
 	buildTubes(opts.lineWidth ?? 1);
 	const setLineWidth = (w: number, dark: boolean) => {
@@ -525,6 +599,11 @@ export function buildBubbleSphere(
 		recolor: applyColor,
 		setLineWidth,
 		setOpacity,
-		dispose: () => { geom.dispose(); material.dispose(); tubeMesh.geometry.dispose(); tubeMat.dispose(); },
+		dispose: () => {
+			geom.dispose();
+			material.dispose();
+			tubeMesh.geometry.dispose();
+			tubeMat.dispose();
+		},
 	};
 }

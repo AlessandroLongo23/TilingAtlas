@@ -16,27 +16,27 @@
  *
  *   pnpm tsx scripts/oracle-match.ts
  */
-import fs from 'node:fs';
-import path from 'node:path';
-import { CyclotomicRing, setActiveRing } from '@/classes/Cyclotomic';
-import { cellsCongruent } from '@/classes/algorithm/TilingCongruence';
-import type { PeriodCell } from '@/classes/algorithm/PeriodSolver';
+import fs from "node:fs";
+import path from "node:path";
+import { CyclotomicRing, setActiveRing } from "@/classes/Cyclotomic";
+import { cellsCongruent } from "@/classes/algorithm/TilingCongruence";
+import type { PeriodCell } from "@/classes/algorithm/PeriodSolver";
 import {
 	reconstructOracleCell as reconstructOracleCellWithRing,
 	type OracleSeed,
-} from '@/classes/algorithm/oracleCellReconstruct';
-import { deserializeCell } from './scoutCodec';
-import { loadSnapshot } from '../figures/snapshot';
+} from "@/classes/algorithm/oracleCellReconstruct";
+import { deserializeCell } from "./scoutCodec";
+import { loadSnapshot } from "../figures/snapshot";
 
 const ring = CyclotomicRing.create(24);
 setActiveRing(ring);
 
 // --- oracle decode (recipe from scripts/oracle-characterize.ts) ---
-const GALEBACH_PATH = path.join(process.cwd(), 'figures', 'data', 'galebach.json');
+const GALEBACH_PATH = path.join(process.cwd(), "figures", "data", "galebach.json");
 const raw = fs
-	.readFileSync(GALEBACH_PATH, 'utf8')
-	.replace(/^Galebach=/, '')
-	.replace(/,(\s*[}\]])/g, '$1');
+	.readFileSync(GALEBACH_PATH, "utf8")
+	.replace(/^Galebach=/, "")
+	.replace(/,(\s*[}\]])/g, "$1");
 const oracle: Record<string, { T1: number[]; T2: number[]; Seed: number[][] }> = JSON.parse(raw);
 
 export function loadOracle(): Record<string, { T1: number[]; T2: number[]; Seed: number[][] }> {
@@ -45,10 +45,7 @@ export function loadOracle(): Record<string, { T1: number[]; T2: number[]; Seed:
 
 // 2-arg wrapper preserving the pre-extraction API (module `ring`); the impl now lives in the
 // browser-safe module so the Play viewer can share it.
-export function reconstructOracleCell(
-	tCode: string,
-	o: OracleSeed
-): { cell: PeriodCell } | { error: string } {
+export function reconstructOracleCell(tCode: string, o: OracleSeed): { cell: PeriodCell } | { error: string } {
 	return reconstructOracleCellWithRing(ring, tCode, o);
 }
 
@@ -63,7 +60,7 @@ export function reconstructOracleCell(
  * (vertex figure recomputed exactly — figures/data/orbits.json).
  */
 const MANUAL_BY_VC: { tCode: string; k: number; vcMultiset: string }[] = [
-	{ tCode: 't1002', k: 1, vcMultiset: '4,8,8' },
+	{ tCode: "t1002", k: 1, vcMultiset: "4,8,8" },
 ];
 
 // --- main: reconstruct all oracle k≤3 entries, congruence-match against the snapshot ---
@@ -87,7 +84,7 @@ function main(): void {
 		console.error(`--- k=${k}: ${entries.length} oracle vs ${mine.length} certified ---`);
 		entries.forEach(([tCode, o], idx) => {
 			const rec = reconstructOracleCell(tCode, o);
-			if ('error' in rec) {
+			if ("error" in rec) {
 				skipped.push({ tCode, reason: rec.error });
 				console.error(`  ✗ ${tCode}: SKIP — ${rec.error}`);
 				return;
@@ -114,7 +111,7 @@ function main(): void {
 
 	// Manual assignments (residuals only; exact matches always win).
 	const orbitCache = JSON.parse(
-		fs.readFileSync(path.join(process.cwd(), 'figures', 'data', 'orbits.json'), 'utf8')
+		fs.readFileSync(path.join(process.cwd(), "figures", "data", "orbits.json"), "utf8"),
 	) as Record<string, { vcOfOrbit: string[] }>;
 	const manualApplied: { tCode: string; canonicalKey: string }[] = [];
 	for (const m of MANUAL_BY_VC) {
@@ -125,7 +122,7 @@ function main(): void {
 			(t) =>
 				t.k === m.k &&
 				!matched[t.canonicalKey] &&
-				orbitCache[t.canonicalKey]?.vcOfOrbit.slice().sort().join('|') === m.vcMultiset
+				orbitCache[t.canonicalKey]?.vcOfOrbit.slice().sort().join("|") === m.vcMultiset,
 		);
 		if (candidates.length !== 1) {
 			console.error(`  ✗ manual ${m.tCode}: expected exactly 1 residual candidate, got ${candidates.length}`);
@@ -134,14 +131,14 @@ function main(): void {
 		matched[candidates[0].canonicalKey] = m.tCode;
 		manualApplied.push({ tCode: m.tCode, canonicalKey: candidates[0].canonicalKey });
 		const i = skipped.findIndex((s) => s.tCode === m.tCode);
-		if (i >= 0) skipped[i].reason += ' → MANUALLY ASSIGNED by elimination (see script header)';
+		if (i >= 0) skipped[i].reason += " → MANUALLY ASSIGNED by elimination (see script header)";
 		console.error(`  ★ manual: ${m.tCode} → ${candidates[0].canonicalKey.slice(0, 30)}… (by elimination)`);
 	}
 
 	const unmatchedOurs = ours.filter((t) => !matched[t.canonicalKey]).map((t) => t.canonicalKey);
 	const out = {
 		generatedAt: new Date().toISOString(),
-		source: 'figures/data/galebach.json (pinned from chequesoto.info)',
+		source: "figures/data/galebach.json (pinned from chequesoto.info)",
 		matchedCount: Object.keys(matched).length,
 		matched,
 		manualApplied,
@@ -150,17 +147,17 @@ function main(): void {
 		ambiguous,
 		skipped,
 	};
-	const outPath = path.join(process.cwd(), 'figures', 'data', 'oracle-map.json');
-	fs.writeFileSync(outPath, JSON.stringify(out, null, 1) + '\n');
+	const outPath = path.join(process.cwd(), "figures", "data", "oracle-map.json");
+	fs.writeFileSync(outPath, JSON.stringify(out, null, 1) + "\n");
 	console.error(
 		`★ oracle map written: ${outPath} — matched ${out.matchedCount}/92, ` +
-			`oracle-unmatched ${unmatchedOracle.length}, skipped ${skipped.length}, ambiguous ${ambiguous.length}`
+			`oracle-unmatched ${unmatchedOracle.length}, skipped ${skipped.length}, ambiguous ${ambiguous.length}`,
 	);
 	if (unmatchedOracle.length + skipped.length + ambiguous.length > 0) {
-		console.error('⚑ residuals above need manual assignment or investigation — see oracle-map.json');
+		console.error("⚑ residuals above need manual assignment or investigation — see oracle-map.json");
 	}
 }
 
-if (process.argv[1] && path.basename(process.argv[1]) === 'oracle-match.ts') {
+if (process.argv[1] && path.basename(process.argv[1]) === "oracle-match.ts") {
 	main();
 }

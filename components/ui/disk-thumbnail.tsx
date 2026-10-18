@@ -82,7 +82,7 @@ export function DiskThumbnail<T>({ alt, prepare, bake, label }: DiskThumbnailPro
 
 	if (failed) {
 		return (
-			<div className="w-full h-full flex items-center justify-center bg-surface-raised rounded text-fg-disabled text-[10px]">
+			<div className="flex h-full w-full items-center justify-center rounded bg-surface-raised text-[10px] text-fg-disabled">
 				disk
 			</div>
 		);
@@ -91,15 +91,11 @@ export function DiskThumbnail<T>({ alt, prepare, bake, label }: DiskThumbnailPro
 	// The skeleton holds the slot until the bake lands, then the disk fades in over it. `url` is never
 	// reset once set, so a hue-ring drag swaps the image in place without flashing the skeleton back.
 	return (
-		<div ref={wrapRef} className="relative w-full h-full">
+		<div ref={wrapRef} className="relative h-full w-full">
 			<ThumbnailSkeleton done={url != null} />
 			{url ? (
 				// eslint-disable-next-line @next/next/no-img-element
-				<img
-					src={url}
-					alt={alt}
-					className="ta-fade-in relative w-full h-full rounded block object-cover"
-				/>
+				<img src={url} alt={alt} className="ta-fade-in relative block h-full w-full rounded object-cover" />
 			) : null}
 		</div>
 	);

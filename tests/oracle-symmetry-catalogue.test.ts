@@ -1,33 +1,33 @@
-import { describe, it, expect } from 'vitest';
-import { CyclotomicRing, setActiveRing } from '@/classes/Cyclotomic';
-import { symmetryFromExactSource } from '@/lib/services/oracleSymmetry';
-import { WALLPAPER_GROUPS, ORBIFOLD_SIGNATURE } from '@/lib/classes/symmetry/types';
-import { _polyAreaForTest } from '@/lib/classes/symmetry/WallpaperSymmetry';
-import { readFileSync } from 'node:fs';
-import path from 'node:path';
-import { loadOracle } from '../scripts/oracle-match';
+import { describe, it, expect } from "vitest";
+import { CyclotomicRing, setActiveRing } from "@/classes/Cyclotomic";
+import { symmetryFromExactSource } from "@/lib/services/oracleSymmetry";
+import { WALLPAPER_GROUPS, ORBIFOLD_SIGNATURE } from "@/lib/classes/symmetry/types";
+import { _polyAreaForTest } from "@/lib/classes/symmetry/WallpaperSymmetry";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { loadOracle } from "../scripts/oracle-match";
 
 // figures/data/ctrnact.json is ~60 MB; a static JSON `import` exceeds Vite's rust→napi string limit
 // and makes the whole file fail to collect (0 tests). Load it via fs at runtime — node parses it fine.
-const ctrnact = JSON.parse(readFileSync(path.join(process.cwd(), 'figures/data/ctrnact.json'), 'utf8'));
+const ctrnact = JSON.parse(readFileSync(path.join(process.cwd(), "figures/data/ctrnact.json"), "utf8"));
 
 // Fast guard for the browser reconstruction → analyze path: all galebach k=1 (minus t1002) + a slice of
 // ctrnact k=7 must classify to a valid group with an area-exact FD. The full 2722-entry gate is
 // scripts/validate-oracle-symmetry.ts (too slow for the default suite).
-describe('oracle symmetry — reconstruct + classify (sample)', () => {
+describe("oracle symmetry — reconstruct + classify (sample)", () => {
 	const ring = CyclotomicRing.create(24);
 	setActiveRing(ring);
 
 	const cases: { id: string; T1: number[]; T2: number[]; Seed: number[][] }[] = [];
 	for (const [tCode, o] of Object.entries(loadOracle())) {
-		if (/^t1\d\d\d$/.test(tCode) && tCode !== 't1002') cases.push({ id: tCode, ...o }); // t1002=4.8.8, no seed
+		if (/^t1\d\d\d$/.test(tCode) && tCode !== "t1002") cases.push({ id: tCode, ...o }); // t1002=4.8.8, no seed
 	}
 	const cj = (ctrnact as { tilings: { id: string; k: number; T1?: number[]; T2?: number[]; Seed?: number[][] }[] })
 		.tilings;
 	const k7 = cj.filter((x) => x.k === 7 && x.T1 && x.T2 && x.Seed);
 	// The reported tiling sits deep in file order (index 1438/1472 for k=7), so a plain slice(0, 25)
 	// never samples it — force it in alongside the first 24 so the guard assertion below is meaningful.
-	const REPORTED_ID = 'ctrnact-07_36-4j5_5b2-1';
+	const REPORTED_ID = "ctrnact-07_36-4j5_5b2-1";
 	const sample = k7.slice(0, 24);
 	const reported = k7.find((x) => x.id === REPORTED_ID);
 	if (reported && !sample.some((x) => x.id === REPORTED_ID)) sample.push(reported);
@@ -35,10 +35,10 @@ describe('oracle symmetry — reconstruct + classify (sample)', () => {
 		cases.push({ id: t.id, T1: t.T1!, T2: t.T2!, Seed: t.Seed! });
 	}
 
-	it('classifies every sampled oracle cell to one of the 17 groups with area(FD)=cell/|G|', () => {
-		expect(cases.some((c) => c.id === 'ctrnact-07_36-4j5_5b2-1')).toBe(true);
+	it("classifies every sampled oracle cell to one of the 17 groups with area(FD)=cell/|G|", () => {
+		expect(cases.some((c) => c.id === "ctrnact-07_36-4j5_5b2-1")).toBe(true);
 		for (const c of cases) {
-			const d = symmetryFromExactSource(ring, c.id, { kind: 'seed', T1: c.T1, T2: c.T2, Seed: c.Seed });
+			const d = symmetryFromExactSource(ring, c.id, { kind: "seed", T1: c.T1, T2: c.T2, Seed: c.Seed });
 			expect(d, `${c.id} reconstructs`).not.toBeNull();
 			expect(WALLPAPER_GROUPS, `${c.id} group`).toContain(d!.group);
 			expect(d!.orbifold).toBe(ORBIFOLD_SIGNATURE[d!.group]);

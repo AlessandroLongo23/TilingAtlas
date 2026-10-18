@@ -1,6 +1,13 @@
 import { describe, it, expect } from "vitest";
 import { PLATONIC_SOLIDS, polyhedronForSchlafli, type Polyhedron, type Vec3 } from "@/lib/render/platonicSolids";
-import { classifyFace, faceNormals, flatSolidTriangles, maxAdjacentNormalDot, solidEdges, straightEdges } from "@/lib/render/sphericalGeometry";
+import {
+	classifyFace,
+	faceNormals,
+	flatSolidTriangles,
+	maxAdjacentNormalDot,
+	solidEdges,
+	straightEdges,
+} from "@/lib/render/sphericalGeometry";
 
 // Expected combinatorics of the 5 Platonic solids: {p,q}, V, E, F. Euler: V − E + F = 2.
 const EXPECTED = [
@@ -186,7 +193,10 @@ describe.each(EXPECTED)("flat-solid facets for $id", (e) => {
 			const nl = norm(n);
 			expect(nl).toBeGreaterThan(1e-6); // non-degenerate triangle
 			// |cos angle| between the triangle normal and SOME face normal must be ~1 (parallel).
-			const best = normals.reduce((m, fn) => Math.max(m, Math.abs((n[0] * fn[0] + n[1] * fn[1] + n[2] * fn[2]) / nl)), 0);
+			const best = normals.reduce(
+				(m, fn) => Math.max(m, Math.abs((n[0] * fn[0] + n[1] * fn[1] + n[2] * fn[2]) / nl)),
+				0,
+			);
 			expect(best).toBeCloseTo(1, 6);
 		}
 	});
@@ -238,4 +248,3 @@ describe.each(EXPECTED)("straight edges for $id", (e) => {
 		}
 	});
 });
-

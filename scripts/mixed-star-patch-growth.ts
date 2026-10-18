@@ -40,15 +40,15 @@
  * Out:  <root>/tmp-mixed-star-patches/patch-XX.{svg,png} + gallery.html
  *       experiments/results/mixed-star-patches-<date>.log  (written as the run goes)
  */
-import fs from 'node:fs';
-import path from 'node:path';
-import { setActiveRing, CyclotomicRing, Cyclotomic } from '@/classes/Cyclotomic';
-import { RegularPolygon } from '@/classes';
-import { ExactStarPolygon } from '@/classes/polygons/ExactStarPolygon';
-import type { Polygon } from '@/classes/polygons/Polygon';
-import { exactPolygonsOverlap } from '@/classes/algorithm/exact/exactOverlap';
-import { regInteriorU } from '@/classes/algorithm/StarVC';
-import { polygonHue, starHue } from '@/utils/renderTiling';
+import fs from "node:fs";
+import path from "node:path";
+import { setActiveRing, CyclotomicRing, Cyclotomic } from "@/classes/Cyclotomic";
+import { RegularPolygon } from "@/classes";
+import { ExactStarPolygon } from "@/classes/polygons/ExactStarPolygon";
+import type { Polygon } from "@/classes/polygons/Polygon";
+import { exactPolygonsOverlap } from "@/classes/algorithm/exact/exactOverlap";
+import { regInteriorU } from "@/classes/algorithm/StarVC";
+import { polygonHue, starHue } from "@/utils/renderTiling";
 
 const ring = CyclotomicRing.create(24);
 setActiveRing(ring);
@@ -69,7 +69,12 @@ const LOOKAHEAD_MAX_GAP = 12; // 1-ply dead-end test runs on gaps up to this wid
 // the attempt loop restarts instead of repairing: at width 2 with cap 25_000 and 8 retries the outer
 // rings each became a deep search of their own and the yield at r = 16 fell to 1 in 24 attempts, nearly
 // all of them dying at r = 11 or r = 13.
-const STAGES = ((): number[] => { const s: number[] = []; for (let r = Math.min(5, RADIUS); r < RADIUS; r += r < 9 ? 2 : 1) s.push(r); s.push(RADIUS); return s; })();
+const STAGES = ((): number[] => {
+	const s: number[] = [];
+	for (let r = Math.min(5, RADIUS); r < RADIUS; r += r < 9 ? 2 : 1) s.push(r);
+	s.push(RADIUS);
+	return s;
+})();
 const STAGE_RETRIES = 14;
 const STAGE_BACKTRACK_CAP = 8_000; // per ring, per retry
 // An attempt is abandoned when it STOPS MAKING PROGRESS, not on a flat clock: under a 300s flat budget
@@ -105,53 +110,127 @@ const NEW_DECAY_RANGE: [number, number] = [18, 70]; // tiles; drawn per attempt
 // Sharding: the yield at r = 16 is ~15% and a failed attempt costs its whole budget, so a gallery is
 // produced by running several of these in parallel with disjoint seed bases and merging (see
 // scripts/merge-mixed-star-patches.ts). SHARD is also what keeps two parallel runs off each other's files.
-const SHARD = process.env.PATCH_SHARD ?? '';
+const SHARD = process.env.PATCH_SHARD ?? "";
 const SEED_BASE = Number(process.env.PATCH_SEED_BASE ?? 0x5a00);
-const OUT = path.join(process.cwd(), 'tmp-mixed-star-patches', SHARD ? `shard-${SHARD}` : '.');
-const LOG = path.join(process.cwd(), 'experiments', 'results', `mixed-star-patches-2026-08-12${SHARD ? '-' + SHARD : ''}.log`);
+const OUT = path.join(process.cwd(), "tmp-mixed-star-patches", SHARD ? `shard-${SHARD}` : ".");
+const LOG = path.join(
+	process.cwd(),
+	"experiments",
+	"results",
+	`mixed-star-patches-2026-08-12${SHARD ? "-" + SHARD : ""}.log`,
+);
 fs.mkdirSync(OUT, { recursive: true });
 fs.mkdirSync(path.dirname(LOG), { recursive: true });
-fs.writeFileSync(LOG, '');
-const say = (s: string): void => { console.log(s); fs.appendFileSync(LOG, s + '\n'); };
+fs.writeFileSync(LOG, "");
+const say = (s: string): void => {
+	console.log(s);
+	fs.appendFileSync(LOG, s + "\n");
+};
 
 // ---------------------------------------------------------------------------------------------
 // Alphabet, from the scan manifest.
 // ---------------------------------------------------------------------------------------------
-const MANIFEST = path.join(process.cwd(), 'experiments', 'star-oracle', 'inring-species-k1-9.json');
-if (!fs.existsSync(MANIFEST)) throw new Error(`missing ${path.relative(process.cwd(), MANIFEST)} — run: pnpm tsx scripts/star-species-scan.ts`);
-type SpeciesRow = { key: string; kind: 'regular' | 'star'; n: number; apexDeg: number; alphaU: number; tiles: number; kMin: number; kMax: number; inRing: boolean };
-const manifest = JSON.parse(fs.readFileSync(MANIFEST, 'utf8')) as { inRing: SpeciesRow[]; offRing: SpeciesRow[]; starEntriesScanned: number };
+const MANIFEST = path.join(process.cwd(), "experiments", "star-oracle", "inring-species-k1-9.json");
+if (!fs.existsSync(MANIFEST))
+	throw new Error(`missing ${path.relative(process.cwd(), MANIFEST)} — run: pnpm tsx scripts/star-species-scan.ts`);
+type SpeciesRow = {
+	key: string;
+	kind: "regular" | "star";
+	n: number;
+	apexDeg: number;
+	alphaU: number;
+	tiles: number;
+	kMin: number;
+	kMax: number;
+	inRing: boolean;
+};
+const manifest = JSON.parse(fs.readFileSync(MANIFEST, "utf8")) as {
+	inRing: SpeciesRow[];
+	offRing: SpeciesRow[];
+	starEntriesScanned: number;
+};
 
 /** One seatable corner: the tile species plus WHICH of its corners sits on the collapse vertex. */
-interface CornerSpec { tag: string; kind: 'reg' | 'pt' | 'dent'; n: number; alphaU: number; width: number; species: string; }
+interface CornerSpec {
+	tag: string;
+	kind: "reg" | "pt" | "dent";
+	n: number;
+	alphaU: number;
+	width: number;
+	species: string;
+}
 
 const CORNERS: CornerSpec[] = [];
 for (const r of manifest.inRing) {
-	if (r.kind === 'regular') {
-		CORNERS.push({ tag: `${r.n}`, kind: 'reg', n: r.n, alphaU: 0, width: regInteriorU(r.n), species: `${r.n}` });
+	if (r.kind === "regular") {
+		CORNERS.push({ tag: `${r.n}`, kind: "reg", n: r.n, alphaU: 0, width: regInteriorU(r.n), species: `${r.n}` });
 	} else {
 		const beta = N - N / r.n - r.alphaU; // reflex dent, from the closure identity
-		CORNERS.push({ tag: `${r.n}*p@${r.alphaU}`, kind: 'pt', n: r.n, alphaU: r.alphaU, width: r.alphaU, species: `${r.n}*${r.alphaU}` });
-		CORNERS.push({ tag: `${r.n}*d@${beta}`, kind: 'dent', n: r.n, alphaU: r.alphaU, width: beta, species: `${r.n}*${r.alphaU}` });
+		CORNERS.push({
+			tag: `${r.n}*p@${r.alphaU}`,
+			kind: "pt",
+			n: r.n,
+			alphaU: r.alphaU,
+			width: r.alphaU,
+			species: `${r.n}*${r.alphaU}`,
+		});
+		CORNERS.push({
+			tag: `${r.n}*d@${beta}`,
+			kind: "dent",
+			n: r.n,
+			alphaU: r.alphaU,
+			width: beta,
+			species: `${r.n}*${r.alphaU}`,
+		});
 	}
 }
-const STAR_SPECIES = [...new Set(CORNERS.filter((c) => c.kind !== 'reg').map((c) => c.species))];
-const SPECIES_LABEL = (s: string): string => (s.includes('*') ? `${s.split('*')[0]}*${Number(s.split('*')[1]) * 15}°` : s);
+const STAR_SPECIES = [...new Set(CORNERS.filter((c) => c.kind !== "reg").map((c) => c.species))];
+const SPECIES_LABEL = (s: string): string =>
+	s.includes("*") ? `${s.split("*")[0]}*${Number(s.split("*")[1]) * 15}°` : s;
 
 // Which gap widths are reachable as a sum of available corner widths. With a 15° star point in the
 // alphabet every width ≥ 1 is reachable, so this prune is inert here — kept because it costs nothing and
 // becomes load-bearing again the moment the alphabet is narrowed.
 const REACHABLE = new Array<boolean>(N + 1).fill(false);
 REACHABLE[0] = true;
-for (let g = 1; g <= N; g++) for (const c of CORNERS) if (c.width <= g && REACHABLE[g - c.width]) { REACHABLE[g] = true; break; }
+for (let g = 1; g <= N; g++)
+	for (const c of CORNERS)
+		if (c.width <= g && REACHABLE[g - c.width]) {
+			REACHABLE[g] = true;
+			break;
+		}
 
 // ---------------------------------------------------------------------------------------------
 function mulberry32(a: number): () => number {
-	return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+	return () => {
+		a |= 0;
+		a = (a + 0x6d2b79f5) | 0;
+		let t = Math.imul(a ^ (a >>> 15), 1 | a);
+		t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+		return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+	};
 }
 
-interface Placed { poly: Polygon; isStar: boolean; n: number; species: string; corners: { key: string; start: number; width: number }[]; id: string; cx: number; cy: number; br: number; num: number; box: [number, number, number, number]; fv: { x: number; y: number }[]; }
-interface VState { key: string; exact: Cyclotomic; r: number; slots: boolean[]; }
+interface Placed {
+	poly: Polygon;
+	isStar: boolean;
+	n: number;
+	species: string;
+	corners: { key: string; start: number; width: number }[];
+	id: string;
+	cx: number;
+	cy: number;
+	br: number;
+	num: number;
+	box: [number, number, number, number];
+	fv: { x: number; y: number }[];
+}
+interface VState {
+	key: string;
+	exact: Cyclotomic;
+	r: number;
+	slots: boolean[];
+}
 
 // Do two placed tiles properly overlap? A pure function of their geometry, so it is memoised: the DFS
 // re-tests the same candidate against the same neighbours on every backtrack, and a profile of the
@@ -167,7 +246,10 @@ const OVERLAP_MEMO_CAP = 4_000_000;
 const tileNum = new Map<string, number>(); // exactKey -> dense small int, assigned on first sight
 function numOf(id: string): number {
 	let n = tileNum.get(id);
-	if (n === undefined) { n = tileNum.size; tileNum.set(id, n); }
+	if (n === undefined) {
+		n = tileNum.size;
+		tileNum.set(id, n);
+	}
 	return n;
 }
 function overlaps(a: Placed, b: Placed): boolean {
@@ -175,13 +257,22 @@ function overlaps(a: Placed, b: Placed): boolean {
 	// Float AABB rejection. Sound with a margin: every coordinate here is an exact ring value evaluated to
 	// a double, and distinct lattice points are far more than 1e-9 apart, so boxes that miss by more than
 	// the margin cannot be a rounding artefact of touching tiles.
-	if (a.box[2] < b.box[0] - 1e-9 || b.box[2] < a.box[0] - 1e-9 || a.box[3] < b.box[1] - 1e-9 || b.box[3] < a.box[1] - 1e-9) return false;
-	const lo = Math.min(a.num, b.num), hi = Math.max(a.num, b.num);
+	if (
+		a.box[2] < b.box[0] - 1e-9 ||
+		b.box[2] < a.box[0] - 1e-9 ||
+		a.box[3] < b.box[1] - 1e-9 ||
+		b.box[3] < a.box[1] - 1e-9
+	)
+		return false;
+	const lo = Math.min(a.num, b.num),
+		hi = Math.max(a.num, b.num);
 	const key = lo * 0x2000000 + hi; // exact as a double while both stay under 2^25 distinct tiles
 	const hit = overlapMemo.get(key);
 	if (hit !== undefined) return hit;
 	const r = exactPolygonsOverlap(a.poly.exactVertices!, b.poly.exactVertices!);
-	if (overlapMemo.size >= OVERLAP_MEMO_CAP) { overlapMemo.clear(); }
+	if (overlapMemo.size >= OVERLAP_MEMO_CAP) {
+		overlapMemo.clear();
+	}
 	overlapMemo.set(key, r);
 	return r;
 }
@@ -213,8 +304,8 @@ class MixedPatch {
 	}
 
 	private place(c: CornerSpec, V: Cyclotomic, dir: number): Polygon {
-		if (c.kind === 'reg') return RegularPolygon.fromAnchorAndDirExact(c.n, V, dir);
-		if (c.kind === 'pt') return ExactStarPolygon.isotoxal(c.n, c.alphaU, V, dir);
+		if (c.kind === "reg") return RegularPolygon.fromAnchorAndDirExact(c.n, V, dir);
+		if (c.kind === "pt") return ExactStarPolygon.isotoxal(c.n, c.alphaU, V, dir);
 		return ExactStarPolygon.isotoxalDentAt(c.n, c.alphaU, V, dir);
 	}
 
@@ -232,71 +323,137 @@ class MixedPatch {
 		const ev = poly.exactVertices!;
 		const corners = ev.map((v, i) => ({ key: v.key(), start: poly.edgeDirs![i], width: poly.cornerAngleUnits(i) }));
 		const cen = poly.centroid;
-		const fv = ev.map((v) => { const p = v.toVector(); return { x: p.x, y: p.y }; });
-		let br = 0; for (const p of fv) br = Math.max(br, Math.hypot(p.x - cen.x, p.y - cen.y));
+		const fv = ev.map((v) => {
+			const p = v.toVector();
+			return { x: p.x, y: p.y };
+		});
+		let br = 0;
+		for (const p of fv) br = Math.max(br, Math.hypot(p.x - cen.x, p.y - cen.y));
 		const box: [number, number, number, number] = [Infinity, Infinity, -Infinity, -Infinity];
-		for (const p of fv) { box[0] = Math.min(box[0], p.x); box[1] = Math.min(box[1], p.y); box[2] = Math.max(box[2], p.x); box[3] = Math.max(box[3], p.y); }
+		for (const p of fv) {
+			box[0] = Math.min(box[0], p.x);
+			box[1] = Math.min(box[1], p.y);
+			box[2] = Math.max(box[2], p.x);
+			box[3] = Math.max(box[3], p.y);
+		}
 		const id = poly.exactKey();
-		const t: Placed = { poly, isStar: !!poly.isStar, n: poly.n, species: c.species, corners, id, num: numOf(id), cx: cen.x, cy: cen.y, br, box, fv };
+		const t: Placed = {
+			poly,
+			isStar: !!poly.isStar,
+			n: poly.n,
+			species: c.species,
+			corners,
+			id,
+			num: numOf(id),
+			cx: cen.x,
+			cy: cen.y,
+			br,
+			box,
+			fv,
+		};
 		this.tileCache.set(ck, t);
 		return t;
 	}
 
 	private getVert(key: string, exact: Cyclotomic): VState {
 		let s = this.verts.get(key);
-		if (!s) { const p = exact.toVector(); s = { key, exact, r: Math.hypot(p.x, p.y), slots: new Array(N).fill(false) }; this.verts.set(key, s); }
+		if (!s) {
+			const p = exact.toVector();
+			s = { key, exact, r: Math.hypot(p.x, p.y), slots: new Array(N).fill(false) };
+			this.verts.set(key, s);
+		}
 		return s;
 	}
 
-	private cellKey(cx: number, cy: number): string { return `${Math.floor(cx)},${Math.floor(cy)}`; }
+	private cellKey(cx: number, cy: number): string {
+		return `${Math.floor(cx)},${Math.floor(cy)}`;
+	}
 
 	/** Slot pre-check (no double-booked wedge at any corner) + EXACT non-convex overlap against every
 	 *  tile whose bounding disk can reach t. */
 	private fits(t: Placed): boolean {
 		if (this.ids.has(t.id)) return false;
-		for (const c of t.corners) { const ex = this.verts.get(c.key); if (!ex) continue; for (let s = 0; s < c.width; s++) if (ex.slots[(c.start + s) % N]) return false; }
-		const reach = t.br + this.maxBr + 1e-9;
-		const gx0 = Math.floor(t.cx - reach), gx1 = Math.floor(t.cx + reach);
-		const gy0 = Math.floor(t.cy - reach), gy1 = Math.floor(t.cy + reach);
-		for (let gx = gx0; gx <= gx1; gx++) for (let gy = gy0; gy <= gy1; gy++) {
-			const cell = this.grid.get(`${gx},${gy}`); if (!cell) continue;
-			for (const o of cell) { if (o.id !== t.id && overlaps(t, o)) return false; }
+		for (const c of t.corners) {
+			const ex = this.verts.get(c.key);
+			if (!ex) continue;
+			for (let s = 0; s < c.width; s++) if (ex.slots[(c.start + s) % N]) return false;
 		}
+		const reach = t.br + this.maxBr + 1e-9;
+		const gx0 = Math.floor(t.cx - reach),
+			gx1 = Math.floor(t.cx + reach);
+		const gy0 = Math.floor(t.cy - reach),
+			gy1 = Math.floor(t.cy + reach);
+		for (let gx = gx0; gx <= gx1; gx++)
+			for (let gy = gy0; gy <= gy1; gy++) {
+				const cell = this.grid.get(`${gx},${gy}`);
+				if (!cell) continue;
+				for (const o of cell) {
+					if (o.id !== t.id && overlaps(t, o)) return false;
+				}
+			}
 		return true;
 	}
 
 	private commit(t: Placed): { k: string; slot: number }[] {
-		this.placed.push(t); this.ids.add(t.id);
-		const ck = this.cellKey(t.cx, t.cy); const cell = this.grid.get(ck); if (cell) cell.push(t); else this.grid.set(ck, [t]);
+		this.placed.push(t);
+		this.ids.add(t.id);
+		const ck = this.cellKey(t.cx, t.cy);
+		const cell = this.grid.get(ck);
+		if (cell) cell.push(t);
+		else this.grid.set(ck, [t]);
 		if (t.br > this.maxBr) this.maxBr = t.br;
 		this.speciesCount.set(t.species, (this.speciesCount.get(t.species) ?? 0) + 1);
 		const edits: { k: string; slot: number }[] = [];
 		for (let i = 0; i < t.corners.length; i++) {
 			const c = t.corners[i];
 			const vs = this.getVert(c.key, t.poly.exactVertices![i]);
-			for (let s = 0; s < c.width; s++) { const slot = (c.start + s) % N; if (!vs.slots[slot]) { vs.slots[slot] = true; edits.push({ k: c.key, slot }); } }
+			for (let s = 0; s < c.width; s++) {
+				const slot = (c.start + s) % N;
+				if (!vs.slots[slot]) {
+					vs.slots[slot] = true;
+					edits.push({ k: c.key, slot });
+				}
+			}
 		}
 		return edits;
 	}
 
 	/** Exact inverse of `commit`, for tiles appended contiguously at the end (the DFS unwinds LIFO). */
 	private uncommit(added: Placed[], edits: { k: string; slot: number }[]): void {
-		for (const e of edits) { const vs = this.verts.get(e.k); if (vs) vs.slots[e.slot] = false; }
+		for (const e of edits) {
+			const vs = this.verts.get(e.k);
+			if (vs) vs.slots[e.slot] = false;
+		}
 		for (const t of added) {
 			this.ids.delete(t.id);
-			const cell = this.grid.get(this.cellKey(t.cx, t.cy)); if (cell) { const i = cell.indexOf(t); if (i >= 0) cell.splice(i, 1); }
+			const cell = this.grid.get(this.cellKey(t.cx, t.cy));
+			if (cell) {
+				const i = cell.indexOf(t);
+				if (i >= 0) cell.splice(i, 1);
+			}
 			const c = (this.speciesCount.get(t.species) ?? 1) - 1;
-			if (c <= 0) this.speciesCount.delete(t.species); else this.speciesCount.set(t.species, c);
+			if (c <= 0) this.speciesCount.delete(t.species);
+			else this.speciesCount.set(t.species, c);
 		}
 		this.placed.length -= added.length;
-		for (const t of added) for (const c of t.corners) { const vs = this.verts.get(c.key); if (vs && vs.slots.every((b) => !b)) this.verts.delete(c.key); }
+		for (const t of added)
+			for (const c of t.corners) {
+				const vs = this.verts.get(c.key);
+				if (vs && vs.slots.every((b) => !b)) this.verts.delete(c.key);
+			}
 	}
 
 	private gaps(slots: boolean[]): { start: number; len: number }[] {
 		const out: { start: number; len: number }[] = [];
-		let empty = 0; for (const b of slots) if (!b) empty++;
+		let empty = 0;
+		for (const b of slots) if (!b) empty++;
 		if (empty === 0 || empty === N) return out;
-		for (let i = 0; i < N; i++) if (!slots[i] && slots[(i - 1 + N) % N]) { let len = 0; for (let j = 0; j < N && !slots[(i + j) % N]; j++) len++; out.push({ start: i, len }); }
+		for (let i = 0; i < N; i++)
+			if (!slots[i] && slots[(i - 1 + N) % N]) {
+				let len = 0;
+				for (let j = 0; j < N && !slots[(i + j) % N]; j++) len++;
+				out.push({ start: i, len });
+			}
 		return out;
 	}
 
@@ -306,19 +463,20 @@ class MixedPatch {
 	 *  on that edge's far endpoint — two reflex angles at one vertex sum past 360°. (The exact overlap
 	 *  test rejects it anyway; this just stops the DFS from walking into it.) */
 	private order(rem: number, lastKind: string): CornerSpec[] {
-		const wNew = W_STAR_SEEN + (this.newBoost - W_STAR_SEEN) * Math.exp(-(this.placed.length - this.stageStart) / this.newDecay);
+		const wNew =
+			W_STAR_SEEN + (this.newBoost - W_STAR_SEEN) * Math.exp(-(this.placed.length - this.stageStart) / this.newDecay);
 		const out: { c: CornerSpec; k: number }[] = [];
 		for (const c of CORNERS) {
 			if (c.width > rem) continue;
 			if (!REACHABLE[rem - c.width]) continue;
-			if (lastKind === 'pt' && c.kind === 'pt') continue;
+			if (lastKind === "pt" && c.kind === "pt") continue;
 			// "New" means new to THIS RING, not to the patch. Judged against the whole patch, the boost is
 			// spent in the first ring and every ring after it grows whatever the core settled into: the
 			// first r = 16 patch came out 307 triangles, 45 4*30 and 39 8*75 with singletons of the rest,
 			// a near-periodic bulk. Per-ring novelty re-introduces species at each fresh frontier, which is
 			// the safe place to introduce them.
 			const usedHere = (this.speciesCount.get(c.species) ?? 0) > (this.stageCensus.get(c.species) ?? 0);
-			const w = c.kind === 'reg' ? W_REG : c.kind === 'dent' ? W_DENT : usedHere ? W_STAR_SEEN : wNew;
+			const w = c.kind === "reg" ? W_REG : c.kind === "dent" ? W_DENT : usedHere ? W_STAR_SEEN : wNew;
 			out.push({ c, k: Math.pow(this.rnd(), 1 / w) });
 		}
 		out.sort((a, b) => b.k - a.k);
@@ -383,7 +541,7 @@ class MixedPatch {
 				self.uncommit([t], edits);
 			}
 		}
-		yield* rec(start, len, 'none');
+		yield* rec(start, len, "none");
 	}
 
 	/** Next vertex to collapse: NARROWEST gap anywhere in the disk, ties broken by distance to the origin.
@@ -393,7 +551,7 @@ class MixedPatch {
 	 *  used) leaves slivers behind the frontier and thrashed on every r = 8 restart. Which vertex is
 	 *  chosen never affects the guarantee, only the cost of reaching it: the attempt succeeds only when
 	 *  EVERY in-radius vertex is closed. */
-	private pick(): { key: string; exact: Cyclotomic; gap: { start: number; len: number } } | 'done' {
+	private pick(): { key: string; exact: Cyclotomic; gap: { start: number; len: number } } | "done" {
 		let best: { key: string; exact: Cyclotomic; gap: { start: number; len: number }; r: number } | null = null;
 		for (const vs of this.verts.values()) {
 			if (vs.r > this.radius) continue; // outside the ring the frontier is allowed to stay ragged
@@ -401,9 +559,10 @@ class MixedPatch {
 			if (gs.length === 0) continue;
 			let g = gs[0];
 			for (const x of gs) if (x.len < g.len) g = x;
-			if (!best || g.len < best.gap.len || (g.len === best.gap.len && vs.r < best.r)) best = { key: vs.key, exact: vs.exact, gap: g, r: vs.r };
+			if (!best || g.len < best.gap.len || (g.len === best.gap.len && vs.r < best.r))
+				best = { key: vs.key, exact: vs.exact, gap: g, r: vs.r };
 		}
-		return best ?? 'done';
+		return best ?? "done";
 	}
 
 	/** Close every vertex inside the CURRENT `this.radius`, seeding the origin fan if the patch is empty.
@@ -422,15 +581,22 @@ class MixedPatch {
 		let steps = 0;
 		while (steps++ < STEP_CAP) {
 			if ((steps & 63) === 0 && Date.now() > deadline) return false;
-			if (this.placed.length >= TILE_CAP || this.nodes > NODE_CAP || this.backtracks - btStart > backtrackCap) return false;
+			if (this.placed.length >= TILE_CAP || this.nodes > NODE_CAP || this.backtracks - btStart > backtrackCap)
+				return false;
 			const p = this.pick();
-			if (p === 'done') return true;
+			if (p === "done") return true;
 			const gen = this.fillGap(p.exact, p.key, p.gap.start, p.gap.len);
-			if (!gen.next().done) { stack.push(gen); continue; }
+			if (!gen.next().done) {
+				stack.push(gen);
+				continue;
+			}
 			let recovered = false;
 			while (stack.length > 0) {
 				this.backtracks++;
-				if (!stack[stack.length - 1].next().done) { recovered = true; break; }
+				if (!stack[stack.length - 1].next().done) {
+					recovered = true;
+					break;
+				}
 				stack.pop(); // exhausted — it has un-committed everything it placed
 			}
 			if (!recovered) return false;
@@ -442,8 +608,12 @@ class MixedPatch {
 	 *  than unwinding abandoned generators, and it is the operation a failed stage needs: drop back to the
 	 *  last disk that closed and try the next ring again. */
 	private restore(core: Placed[]): void {
-		this.verts.clear(); this.ids.clear(); this.grid.clear(); this.speciesCount.clear();
-		this.placed.length = 0; this.maxBr = 0;
+		this.verts.clear();
+		this.ids.clear();
+		this.grid.clear();
+		this.speciesCount.clear();
+		this.placed.length = 0;
+		this.maxBr = 0;
 		for (const t of core) this.commit(t);
 	}
 
@@ -483,7 +653,10 @@ class MixedPatch {
 				retries[i] = 0;
 				this.rings[i] = { r: stages[i], tiles: this.placed.length };
 				this.rings.length = i + 1;
-				if (i > deepest) { deepest = i; lastProgress = Date.now(); }
+				if (i > deepest) {
+					deepest = i;
+					lastProgress = Date.now();
+				}
 				i++;
 				continue;
 			}
@@ -503,19 +676,29 @@ class MixedPatch {
 	 */
 	verify(): { overlaps: number; openInR: number; doubleBooked: number } {
 		let overlaps = 0;
-		for (let i = 0; i < this.placed.length; i++) for (let j = i + 1; j < this.placed.length; j++) {
-			const a = this.placed[i], b = this.placed[j];
-			if (Math.hypot(a.cx - b.cx, a.cy - b.cy) > a.br + b.br + 1e-9) continue; // disjoint disks
-			if (exactPolygonsOverlap(a.poly.exactVertices!, b.poly.exactVertices!)) overlaps++;
-		}
+		for (let i = 0; i < this.placed.length; i++)
+			for (let j = i + 1; j < this.placed.length; j++) {
+				const a = this.placed[i],
+					b = this.placed[j];
+				if (Math.hypot(a.cx - b.cx, a.cy - b.cy) > a.br + b.br + 1e-9) continue; // disjoint disks
+				if (exactPolygonsOverlap(a.poly.exactVertices!, b.poly.exactVertices!)) overlaps++;
+			}
 		const fresh = new Map<string, { r: number; s: boolean[] }>();
 		let doubleBooked = 0;
 		for (const t of this.placed) {
 			for (let i = 0; i < t.corners.length; i++) {
 				const c = t.corners[i];
 				let e = fresh.get(c.key);
-				if (!e) { const p = t.poly.exactVertices![i].toVector(); e = { r: Math.hypot(p.x, p.y), s: new Array<boolean>(N).fill(false) }; fresh.set(c.key, e); }
-				for (let k = 0; k < c.width; k++) { const slot = (c.start + k) % N; if (e.s[slot]) doubleBooked++; e.s[slot] = true; }
+				if (!e) {
+					const p = t.poly.exactVertices![i].toVector();
+					e = { r: Math.hypot(p.x, p.y), s: new Array<boolean>(N).fill(false) };
+					fresh.set(c.key, e);
+				}
+				for (let k = 0; k < c.width; k++) {
+					const slot = (c.start + k) % N;
+					if (e.s[slot]) doubleBooked++;
+					e.s[slot] = true;
+				}
 			}
 		}
 		let openInR = 0;
@@ -526,26 +709,49 @@ class MixedPatch {
 	/** Species → tile count, stars first by fold then point angle. */
 	census(): { species: string; count: number; isStar: boolean }[] {
 		return [...this.speciesCount.entries()]
-			.map(([species, count]) => ({ species, count, isStar: species.includes('*') }))
-			.sort((a, b) => (a.isStar === b.isStar ? Number(a.species.split('*')[0]) - Number(b.species.split('*')[0]) || Number(a.species.split('*')[1] ?? 0) - Number(b.species.split('*')[1] ?? 0) : a.isStar ? 1 : -1));
+			.map(([species, count]) => ({ species, count, isStar: species.includes("*") }))
+			.sort((a, b) =>
+				a.isStar === b.isStar
+					? Number(a.species.split("*")[0]) - Number(b.species.split("*")[0]) ||
+						Number(a.species.split("*")[1] ?? 0) - Number(b.species.split("*")[1] ?? 0)
+					: a.isStar
+						? 1
+						: -1,
+			);
 	}
 
 	svg(size: number): string {
-		let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-		for (const t of this.placed) for (const p of t.fv) { minX = Math.min(minX, p.x); minY = Math.min(minY, p.y); maxX = Math.max(maxX, p.x); maxY = Math.max(maxY, p.y); }
-		const w = maxX - minX, h = maxY - minY, pad = 0.6;
+		let minX = Infinity,
+			minY = Infinity,
+			maxX = -Infinity,
+			maxY = -Infinity;
+		for (const t of this.placed)
+			for (const p of t.fv) {
+				minX = Math.min(minX, p.x);
+				minY = Math.min(minY, p.y);
+				maxX = Math.max(maxX, p.x);
+				maxY = Math.max(maxY, p.y);
+			}
+		const w = maxX - minX,
+			h = maxY - minY,
+			pad = 0.6;
 		const scale = (size - 20) / (Math.max(w, h) + 2 * pad);
 		const ox = 10 - (minX - pad) * scale + (Math.max(w, h) - w) * scale * 0.5;
 		const oy = 10 - (minY - pad) * scale + (Math.max(w, h) - h) * scale * 0.5;
 		const tx = (x: number) => (x * scale + ox).toFixed(2);
 		const ty = (y: number) => (size - (y * scale + oy)).toFixed(2); // flip Y for screen
-		const parts = [`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`, `<rect width="${size}" height="${size}" fill="#0d1117"/>`];
+		const parts = [
+			`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`,
+			`<rect width="${size}" height="${size}" fill="#0d1117"/>`,
+		];
 		for (const t of this.placed) {
-			const pts = t.fv.map((p) => `${tx(p.x)},${ty(p.y)}`).join(' ');
-			parts.push(`<polygon points="${pts}" fill="${fillOf(t.species)}" stroke="#0d1117" stroke-width="0.8" stroke-linejoin="round"/>`);
+			const pts = t.fv.map((p) => `${tx(p.x)},${ty(p.y)}`).join(" ");
+			parts.push(
+				`<polygon points="${pts}" fill="${fillOf(t.species)}" stroke="#0d1117" stroke-width="0.8" stroke-linejoin="round"/>`,
+			);
 		}
-		parts.push('</svg>');
-		return parts.join('');
+		parts.push("</svg>");
+		return parts.join("");
 	}
 }
 
@@ -553,24 +759,36 @@ class MixedPatch {
  *  the same per-apex nudge the app uses, so two point angles of one fold separate — and drop in
  *  lightness with α, which pulls apart the pairs whose hue nudge clamps at the ±25° limit. */
 function fillOf(species: string): string {
-	if (!species.includes('*')) return `hsl(${polygonHue(Number(species)).toFixed(0)} 55% 55%)`;
-	const [nS, aS] = species.split('*');
-	const n = Number(nS), alphaU = Number(aS);
+	if (!species.includes("*")) return `hsl(${polygonHue(Number(species)).toFixed(0)} 55% 55%)`;
+	const [nS, aS] = species.split("*");
+	const n = Number(nS),
+		alphaU = Number(aS);
 	return `hsl(${starHue(n, alphaU * 15).toFixed(0)} 78% ${(68 - 2.2 * alphaU).toFixed(0)}%)`;
 }
 
 // ---------------------------------------------------------------------------------------------
 // Drive
 // ---------------------------------------------------------------------------------------------
-say(`mixed-star-patch-growth — target ${N_WANT} gap-free patches, close-radius ${RADIUS} (rings ${STAGES.join(" → ")})`);
-say(`alphabet: ${CORNERS.filter((c) => c.kind === 'reg').length} regular + ${STAR_SPECIES.length} star species (${CORNERS.length} seatable corners), from ${manifest.starEntriesScanned} catalogue entries k=1..9`);
-say(`  regular: ${manifest.inRing.filter((r) => r.kind === 'regular').map((r) => r.n).join(', ')}`);
+say(
+	`mixed-star-patch-growth — target ${N_WANT} gap-free patches, close-radius ${RADIUS} (rings ${STAGES.join(" → ")})`,
+);
+say(
+	`alphabet: ${CORNERS.filter((c) => c.kind === "reg").length} regular + ${STAR_SPECIES.length} star species (${CORNERS.length} seatable corners), from ${manifest.starEntriesScanned} catalogue entries k=1..9`,
+);
+say(
+	`  regular: ${manifest.inRing
+		.filter((r) => r.kind === "regular")
+		.map((r) => r.n)
+		.join(", ")}`,
+);
 for (const n of [3, 4, 6, 8, 12]) {
-	const s = manifest.inRing.filter((r) => r.kind === 'star' && r.n === n);
-	if (s.length) say(`  ${n}*: ${s.map((r) => `${r.apexDeg}°`).join(', ')}`);
+	const s = manifest.inRing.filter((r) => r.kind === "star" && r.n === n);
+	if (s.length) say(`  ${n}*: ${s.map((r) => `${r.apexDeg}°`).join(", ")}`);
 }
-say(`excluded (not expressible in ℤ[ζ₂₄]): ${manifest.offRing.map((r) => r.key).join(', ')} — 9-fold (20° grid) and 5-fold (18° grid) shelves`);
-say('');
+say(
+	`excluded (not expressible in ℤ[ζ₂₄]): ${manifest.offRing.map((r) => r.key).join(", ")} — 9-fold (20° grid) and 5-fold (18° grid) shelves`,
+);
+say("");
 
 const cards: string[] = [];
 const globalCensus = new Map<string, number>();
@@ -579,34 +797,69 @@ for (let a = 0; a < MAX_ATTEMPTS && made < N_WANT; a++) {
 	const seed = (SEED_BASE + a * 0x9e3779b1) | 0;
 	// Both memos are geometry-absolute, so keeping them across attempts is CORRECT but unbounded; a fresh
 	// attempt reuses almost none of the previous one. Clearing here is what keeps the process in heap.
-	overlapMemo.clear(); tileNum.clear();
+	overlapMemo.clear();
+	tileNum.clear();
 	const patch = new MixedPatch(seed);
 	const t0 = Date.now();
 	const ok = patch.attempt(t0 + ATTEMPT_BUDGET_MS, STAGES);
 	const secs = ((Date.now() - t0) / 1000).toFixed(1);
-	const reached = patch.rings.length ? `closed to r=${patch.rings[patch.rings.length - 1].r}` : 'closed nothing';
-	if (!ok) { say(`  attempt ${String(a + 1).padStart(2)}: ✗ ${reached} of ${RADIUS} (${patch.placed.length} tiles, ${patch.backtracks} backtracks, ${patch.nodes} nodes, ${secs}s)`); continue; }
+	const reached = patch.rings.length ? `closed to r=${patch.rings[patch.rings.length - 1].r}` : "closed nothing";
+	if (!ok) {
+		say(
+			`  attempt ${String(a + 1).padStart(2)}: ✗ ${reached} of ${RADIUS} (${patch.placed.length} tiles, ${patch.backtracks} backtracks, ${patch.nodes} nodes, ${secs}s)`,
+		);
+		continue;
+	}
 	const census = patch.census();
 	const starSpecies = census.filter((c) => c.isStar);
-	if (starSpecies.length < MIN_STAR_SPECIES) { say(`  attempt ${String(a + 1).padStart(2)}: ✗ only ${starSpecies.length} star species — rejected (want ≥ ${MIN_STAR_SPECIES})`); continue; }
+	if (starSpecies.length < MIN_STAR_SPECIES) {
+		say(
+			`  attempt ${String(a + 1).padStart(2)}: ✗ only ${starSpecies.length} star species — rejected (want ≥ ${MIN_STAR_SPECIES})`,
+		);
+		continue;
+	}
 	const audit = patch.verify();
-	if (audit.overlaps !== 0 || audit.openInR !== 0 || audit.doubleBooked !== 0) { say(`  attempt ${String(a + 1).padStart(2)}: ⚑ AUDIT FAIL — ${audit.overlaps} overlaps, ${audit.openInR} open in-radius vertices, ${audit.doubleBooked} double-booked slots — NOT emitted`); continue; }
+	if (audit.overlaps !== 0 || audit.openInR !== 0 || audit.doubleBooked !== 0) {
+		say(
+			`  attempt ${String(a + 1).padStart(2)}: ⚑ AUDIT FAIL — ${audit.overlaps} overlaps, ${audit.openInR} open in-radius vertices, ${audit.doubleBooked} double-booked slots — NOT emitted`,
+		);
+		continue;
+	}
 
 	made++;
 	const svg = patch.svg(560);
-	const stem = path.join(OUT, `patch-${String(made).padStart(2, '0')}`);
+	const stem = path.join(OUT, `patch-${String(made).padStart(2, "0")}`);
 	fs.writeFileSync(`${stem}.svg`, svg);
 	// Sidecar so the merge step can rebuild a gallery card without re-running the search.
-	fs.writeFileSync(`${stem}.json`, JSON.stringify({ seed, radius: RADIUS, tiles: patch.placed.length, stars: patch.placed.filter((t) => t.isStar).length, starSpecies: starSpecies.length, rings: patch.rings, census, audit, backtracks: patch.backtracks, seconds: Number(secs) }));
+	fs.writeFileSync(
+		`${stem}.json`,
+		JSON.stringify({
+			seed,
+			radius: RADIUS,
+			tiles: patch.placed.length,
+			stars: patch.placed.filter((t) => t.isStar).length,
+			starSpecies: starSpecies.length,
+			rings: patch.rings,
+			census,
+			audit,
+			backtracks: patch.backtracks,
+			seconds: Number(secs),
+		}),
+	);
 	const stars = patch.placed.filter((t) => t.isStar).length;
 	for (const c of census) globalCensus.set(c.species, (globalCensus.get(c.species) ?? 0) + c.count);
-	say(`  attempt ${String(a + 1).padStart(2)}: ✓ patch ${String(made).padStart(2, '0')} — ${String(patch.placed.length).padStart(4)} tiles (${stars} stars), ${starSpecies.length} star species, audit OK (0 overlaps, 0 holes, 0 double-booked slots), ${patch.backtracks} backtracks, ${secs}s`);
-	say(`             rings ${patch.rings.map((x) => `r${x.r}:${x.tiles}`).join(' → ')}`);
-	say(`             ${census.map((c) => `${SPECIES_LABEL(c.species)}×${c.count}`).join('  ')}`);
+	say(
+		`  attempt ${String(a + 1).padStart(2)}: ✓ patch ${String(made).padStart(2, "0")} — ${String(patch.placed.length).padStart(4)} tiles (${stars} stars), ${starSpecies.length} star species, audit OK (0 overlaps, 0 holes, 0 double-booked slots), ${patch.backtracks} backtracks, ${secs}s`,
+	);
+	say(`             rings ${patch.rings.map((x) => `r${x.r}:${x.tiles}`).join(" → ")}`);
+	say(`             ${census.map((c) => `${SPECIES_LABEL(c.species)}×${c.count}`).join("  ")}`);
 
 	const swatches = census
-		.map((c) => `<span class="sw"><i style="background:${fillOf(c.species)}"></i>${SPECIES_LABEL(c.species)}<b>${c.count}</b></span>`)
-		.join('');
+		.map(
+			(c) =>
+				`<span class="sw"><i style="background:${fillOf(c.species)}"></i>${SPECIES_LABEL(c.species)}<b>${c.count}</b></span>`,
+		)
+		.join("");
 	cards.push(
 		`<figure><div class="svg">${svg}</div><figcaption><b>Patch ${made}</b> · ${patch.placed.length} tiles · ` +
 			`${starSpecies.length} star species<br><span class="dim">gap-free to r=${RADIUS} · seed 0x${(seed >>> 0).toString(16)}</span>` +
@@ -615,15 +868,21 @@ for (let a = 0; a < MAX_ATTEMPTS && made < N_WANT; a++) {
 }
 
 const totalTiles = [...globalCensus.values()].reduce((s, n) => s + n, 0);
-say('');
+say("");
 say(`${made}/${N_WANT} gap-free patches, ${totalTiles} tiles total`);
 say(`species used across the gallery: ${globalCensus.size}/${manifest.inRing.length} of the alphabet`);
-const unused = manifest.inRing.map((r) => (r.kind === 'regular' ? `${r.n}` : `${r.n}*${r.alphaU}`)).filter((s) => !globalCensus.has(s));
-if (unused.length) say(`never placed: ${unused.map(SPECIES_LABEL).join(', ')}`);
+const unused = manifest.inRing
+	.map((r) => (r.kind === "regular" ? `${r.n}` : `${r.n}*${r.alphaU}`))
+	.filter((s) => !globalCensus.has(s));
+if (unused.length) say(`never placed: ${unused.map(SPECIES_LABEL).join(", ")}`);
 
 const legendAll = manifest.inRing
-	.map((r) => { const key = r.kind === 'regular' ? `${r.n}` : `${r.n}*${r.alphaU}`; const used = globalCensus.get(key) ?? 0; return `<span class="sw${used ? '' : ' off'}"><i style="background:${fillOf(key)}"></i>${SPECIES_LABEL(key)}<b>${used || '—'}</b></span>`; })
-	.join('');
+	.map((r) => {
+		const key = r.kind === "regular" ? `${r.n}` : `${r.n}*${r.alphaU}`;
+		const used = globalCensus.get(key) ?? 0;
+		return `<span class="sw${used ? "" : " off"}"><i style="background:${fillOf(key)}"></i>${SPECIES_LABEL(key)}<b>${used || "—"}</b></span>`;
+	})
+	.join("");
 
 const gallery = `<!doctype html><meta charset="utf8"><title>Mixed-species star patches</title>
 <style>
@@ -645,11 +904,11 @@ const gallery = `<!doctype html><meta charset="utf8"><title>Mixed-species star p
 <p class="sub">Grown by wave-function collapse + DFS backtracking in exact ℤ[ζ₂₄], sound non-convex overlap.
 Every vertex within radius ${RADIUS} is fully closed: no interior holes, no overlaps, both re-audited from
 scratch after growth. The alphabet is the ${manifest.inRing.length} species measured off the star catalogue's
-${manifest.starEntriesScanned.toLocaleString('en-US')} entries at k = 1..9 — the regulars {3,4,6,8,12} and 23 isotoxal stars — with no
+${manifest.starEntriesScanned.toLocaleString("en-US")} entries at k = 1..9 — the regulars {3,4,6,8,12} and 23 isotoxal stars — with no
 one-star-per-patch restriction. Not aperiodic: these are random finite patches, nothing is certified.</p>
 <div class="legend all">${legendAll}</div>
-<div class="grid">${cards.join('\n')}</div>`;
-fs.writeFileSync(path.join(OUT, 'gallery.html'), gallery);
+<div class="grid">${cards.join("\n")}</div>`;
+fs.writeFileSync(path.join(OUT, "gallery.html"), gallery);
 say(`\n→ ${OUT}/gallery.html`);
 
 // PNGs alongside the SVGs, matching what the two earlier patch dirs carry. sharp is NOT a declared
@@ -660,16 +919,19 @@ say(`\n→ ${OUT}/gallery.html`);
 // The specifier is held in a variable on purpose. `next build` type-checks scripts/ too, and a literal
 // import('sharp') is resolved at BUILD time, where a missing module is a type error and not a caught
 // exception: that failed the Vercel deploy of 240cf44. Runtime behaviour is unchanged.
-const SHARP_MODULE = 'sharp';
+const SHARP_MODULE = "sharp";
 void (async () => {
 	try {
 		const sharp = (await import(SHARP_MODULE)).default;
 		for (let i = 1; i <= made; i++) {
-			const stem = path.join(OUT, `patch-${String(i).padStart(2, '0')}`);
-			await sharp(Buffer.from(fs.readFileSync(`${stem}.svg`))).resize(1120).png().toFile(`${stem}.png`);
+			const stem = path.join(OUT, `patch-${String(i).padStart(2, "0")}`);
+			await sharp(Buffer.from(fs.readFileSync(`${stem}.svg`)))
+				.resize(1120)
+				.png()
+				.toFile(`${stem}.png`);
 		}
 		say(`rasterised ${made} PNGs at 1120px`);
 	} catch (e) {
-		say(`PNG step skipped (${(e as Error).message.split('\n')[0]}) — SVGs are unaffected`);
+		say(`PNG step skipped (${(e as Error).message.split("\n")[0]}) — SVGs are unaffected`);
 	}
 })();

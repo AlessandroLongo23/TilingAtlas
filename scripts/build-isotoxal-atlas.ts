@@ -23,7 +23,7 @@ import path from "node:path";
 import { evaluateParamCell, type ParametricCellData } from "@/lib/utils/paramCell";
 import type { ReferenceTiling } from "@/lib/services/referenceAtlas";
 import { applyMergePlan } from "./merge-plan";
-import { stringifyAtlas } from './atlas/encode.mjs';
+import { stringifyAtlas } from "./atlas/encode.mjs";
 
 interface FamilyRecord {
 	id: string;
@@ -80,7 +80,10 @@ function familyLabel(symbol: string): string {
 	// bare integer tokens delimited by ( , )
 	for (const t of symbol.matchAll(/[(,](\d+)[,)]/g)) regulars.push(parseInt(t[1], 10));
 	const regPart = regulars.sort((a, b) => a - b).join(".");
-	const isoPart = [...isoSides].sort((a, b) => a - b).map((n) => `${n}α`).join(".");
+	const isoPart = [...isoSides]
+		.sort((a, b) => a - b)
+		.map((n) => `${n}α`)
+		.join(".");
 	return [regPart, isoPart].filter(Boolean).join(".");
 }
 
@@ -108,7 +111,10 @@ function main(): void {
 			continue;
 		}
 		const paramCell: ParametricCellData = { params: r.params, cellPolygons: r.cellPolygons, basis: r.basis };
-		const renderCell = evaluateParamCell(paramCell, r.params.map((p) => p.defaultAlphaDeg)) as ReferenceTiling["renderCell"];
+		const renderCell = evaluateParamCell(
+			paramCell,
+			r.params.map((p) => p.defaultAlphaDeg),
+		) as ReferenceTiling["renderCell"];
 		const coupled = r.flexdim > r.P; // a further free angle exists but is held fixed (not independent)
 		out.push({
 			id: r.id,
@@ -161,7 +167,9 @@ function main(): void {
 			log(`  removed stale shard ${f}`);
 		}
 	}
-	log(`  total ${shipped.length} shipped of ${out.length} built (${skipped} check-failed), elapsed ${((Date.now() - t0) / 1000).toFixed(2)}s`);
+	log(
+		`  total ${shipped.length} shipped of ${out.length} built (${skipped} check-failed), elapsed ${((Date.now() - t0) / 1000).toFixed(2)}s`,
+	);
 	fs.writeFileSync(LOG_PATH, logLines.join("\n") + "\n");
 }
 

@@ -140,7 +140,7 @@ export function Input({
 					step={step}
 					disabled={disabled}
 					className={cn(
-						"flex w-full rounded-control border border-line bg-surface-raised py-2 text-fg shadow-sm file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-fg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:border-accent disabled:cursor-not-allowed disabled:opacity-50 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
+						"flex w-full [appearance:textfield] rounded-control border border-line bg-surface-raised py-2 text-fg shadow-sm transition-all file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-fg-muted focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
 						SIZE_CLASSES[size],
 						align === "center" && "text-center",
 					)}
@@ -153,11 +153,26 @@ export function Input({
 							onPointerUp={stop}
 							onPointerLeave={stop}
 							onPointerCancel={stop}
-							className={cn("flex items-center justify-center w-8 max-md:w-11 max-md:touch-manipulation max-md:select-none cursor-pointer disabled:cursor-not-allowed hover:bg-surface-overlay/40 hover:text-fg border-b border-line-strong rounded-tr-md transition-colors", STEPPER_HEIGHT[size])}
+							className={cn(
+								"flex w-8 cursor-pointer items-center justify-center rounded-tr-md border-b border-line-strong transition-colors hover:bg-surface-overlay/40 hover:text-fg disabled:cursor-not-allowed max-md:w-11 max-md:touch-manipulation max-md:select-none",
+								STEPPER_HEIGHT[size],
+							)}
 							disabled={disabled || (max !== undefined && Number(internal) >= max)}
 							aria-label="Increment"
 						>
-							<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6" /></svg>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								width="10"
+								height="10"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								strokeWidth="2"
+								strokeLinecap="round"
+								strokeLinejoin="round"
+							>
+								<path d="m18 15-6-6-6 6" />
+							</svg>
 						</button>
 						<button
 							type="button"
@@ -165,11 +180,26 @@ export function Input({
 							onPointerUp={stop}
 							onPointerLeave={stop}
 							onPointerCancel={stop}
-							className={cn("flex items-center justify-center w-8 max-md:w-11 max-md:touch-manipulation max-md:select-none cursor-pointer disabled:cursor-not-allowed hover:bg-surface-overlay/40 hover:text-fg rounded-br-md transition-colors", STEPPER_HEIGHT[size])}
+							className={cn(
+								"flex w-8 cursor-pointer items-center justify-center rounded-br-md transition-colors hover:bg-surface-overlay/40 hover:text-fg disabled:cursor-not-allowed max-md:w-11 max-md:touch-manipulation max-md:select-none",
+								STEPPER_HEIGHT[size],
+							)}
 							disabled={disabled || (min !== undefined && Number(internal) <= min)}
 							aria-label="Decrement"
 						>
-							<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								width="10"
+								height="10"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								strokeWidth="2"
+								strokeLinecap="round"
+								strokeLinejoin="round"
+							>
+								<path d="m6 9 6 6 6-6" />
+							</svg>
 						</button>
 					</div>
 				) : null}

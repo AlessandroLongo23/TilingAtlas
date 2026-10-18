@@ -140,7 +140,9 @@ function residual(sys: System, a: number[]): number[] {
 		out.push(s - 360);
 	}
 	for (const ds of sys.faces) {
-		let phi = 0, zr = 0, zi = 0;
+		let phi = 0,
+			zr = 0,
+			zi = 0;
 		for (const d of ds) {
 			zr += Math.cos(phi);
 			zi += Math.sin(phi);
@@ -149,7 +151,9 @@ function residual(sys: System, a: number[]): number[] {
 		out.push(zr, zi);
 	}
 	for (let f = 0; f < sys.faces.length; f++) {
-		const ds = sys.faces[f], q = sys.periods[f], L = ds.length;
+		const ds = sys.faces[f],
+			q = sys.periods[f],
+			L = ds.length;
 		if (q >= L) continue;
 		for (let j = 0; j < L; j++) out.push(a[ds[j]] - a[ds[(j + q) % L]]);
 	}
@@ -178,15 +182,18 @@ function jacobian(sys: System, a: number[], cols: number[]): number[][] {
 	// picks up −i·exp(i φ_j) for every j strictly after m. Accumulated backwards, that is one pass.
 	for (const ds of sys.faces) {
 		const L = ds.length;
-		const er = new Array<number>(L), ei = new Array<number>(L);
+		const er = new Array<number>(L),
+			ei = new Array<number>(L);
 		let phi = 0;
 		for (let j = 0; j < L; j++) {
 			er[j] = Math.cos(phi);
 			ei[j] = Math.sin(phi);
 			phi += (180 - a[ds[j]]) * D2R;
 		}
-		const gr = push(), gi = push();
-		let tr = 0, ti = 0;
+		const gr = push(),
+			gi = push();
+		let tr = 0,
+			ti = 0;
 		for (let m = L - 1; m >= 0; m--) {
 			// (tr + i·ti)·(−i)·D2R
 			if (at[ds[m]] >= 0) {
@@ -199,7 +206,9 @@ function jacobian(sys: System, a: number[], cols: number[]): number[][] {
 	}
 	// per FACE: the angle word keeps its period. Linear, one row per corner.
 	for (let f = 0; f < sys.faces.length; f++) {
-		const ds = sys.faces[f], q = sys.periods[f], L = ds.length;
+		const ds = sys.faces[f],
+			q = sys.periods[f],
+			L = ds.length;
 		if (q >= L) continue;
 		for (let j = 0; j < L; j++) {
 			const r = push();
@@ -221,7 +230,8 @@ function jacobian(sys: System, a: number[], cols: number[]): number[][] {
  * angles even though they take different routes there.
  */
 function solveDamped(A: number[][], b: number[], lambda = 1e-12): number[] | null {
-	const m = A.length, n = A[0]?.length ?? 0;
+	const m = A.length,
+		n = A[0]?.length ?? 0;
 	if (!n) return [];
 	const M: number[][] = Array.from({ length: n }, () => new Array<number>(n).fill(0));
 	const rhs = new Array<number>(n).fill(0);
@@ -334,7 +344,15 @@ export function chartAt(sys: System, t: number[], warm: number[], budget = 48): 
 	while (pending.length && spent < budget) {
 		const tt = pending[pending.length - 1];
 		spent++;
-		const got = newtonPinned(sys, tt, predict(sys, a, tt.map((v, i) => v - cur[i])));
+		const got = newtonPinned(
+			sys,
+			tt,
+			predict(
+				sys,
+				a,
+				tt.map((v, i) => v - cur[i]),
+			),
+		);
 		if (got) {
 			a = got;
 			cur = tt;
@@ -381,7 +399,8 @@ const add = (a: number[], b: number[]): number[] => [a[0] + b[0], a[1] + b[1]];
  * and both solvers do it identically, which is what keeps them comparable.
  */
 function reduceBasis(u0: number[], v0: number[]): [number[], number[]] | null {
-	let u = u0, v = v0;
+	let u = u0,
+		v = v0;
 	const len2 = (z: number[]): number => z[0] * z[0] + z[1] * z[1];
 	// Terminate on |v| ≥ |u| AFTER the subtraction, not on q = 0: in a lattice with hexagonal symmetry
 	// several vectors share a length and a q = 0 test cycles forever between them. Rounding is
@@ -395,7 +414,9 @@ function reduceBasis(u0: number[], v0: number[]): [number[], number[]] | null {
 		if (len2(v) >= n2 - 1e-12) {
 			return Math.abs(u[0] * v[1] - v[0] * u[1]) > 1e-12 ? [u, v] : null;
 		}
-		const t = u; u = v; v = t;
+		const t = u;
+		u = v;
+		v = t;
 	}
 	return null;
 }
@@ -409,8 +430,11 @@ export function developIntrinsic(ic: IntrinsicCellData, sys: System, angles: num
 	tr[0] = [0, 0];
 	// The shared edge is traversed the other way round the neighbour, so its two ends swap.
 	const glue = (d: number): { r: number[]; t: number[]; g: number } => {
-		const f = sys.faceOf[d], j = sys.posOf[d];
-		const a2 = ic.alpha[d], g = sys.faceOf[a2], j2 = sys.posOf[a2];
+		const f = sys.faceOf[d],
+			j = sys.posOf[d];
+		const a2 = ic.alpha[d],
+			g = sys.faceOf[a2],
+			j2 = sys.posOf[a2];
 		const p0 = add(mul(rot[f], local[f][j]), tr[f]);
 		const p1 = add(mul(rot[f], local[f][(j + 1) % local[f].length]), tr[f]);
 		const q0 = local[g][j2];
@@ -456,12 +480,16 @@ function areaCertificate(cell: TranslationalCellData): number {
 		let s = 0;
 		const v = p.vertices;
 		for (let i = 0; i < v.length; i++) {
-			const a = v[i], b = v[(i + 1) % v.length];
+			const a = v[i],
+				b = v[(i + 1) % v.length];
 			s += a[0] * b[1] - b[0] * a[1];
 		}
 		sum += Math.abs(s / 2);
 	}
-	const [[ux, uy], [vx, vy]] = (cell.basis ?? [[1, 0], [0, 1]]) as number[][];
+	const [[ux, uy], [vx, vy]] = (cell.basis ?? [
+		[1, 0],
+		[0, 1],
+	]) as number[][];
 	return Math.abs(sum - Math.abs(ux * vy - uy * vx));
 }
 

@@ -28,13 +28,7 @@ function getPolygonPoints(sides: number, radius: number, cx: number, cy: number)
 export function ShapeIcon({ sides = 3, size = 32, color }: ShapeIconProps) {
 	const fill = color ?? tileFill(getHue(sides), 0.8);
 	return (
-		<svg
-			width={size}
-			height={size}
-			viewBox={`0 0 ${size} ${size}`}
-			className="block"
-			aria-label="polygon"
-		>
+		<svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="block" aria-label="polygon">
 			<polygon points={getPolygonPoints(sides, size / 2 - 2, 16, 16)} fill={fill} />
 			<text
 				x="16"

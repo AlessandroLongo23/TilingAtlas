@@ -11,11 +11,18 @@ import {
 	islamicTileLayer,
 	poincareToKlein,
 } from "@/lib/render/hyperbolicIslamic";
-import { hypMidpoint, su11Apply, su11Mul, su11Rotation, su11Translation, type Complex, type Su11 } from "@/lib/render/hyperbolic";
+import {
+	hypMidpoint,
+	su11Apply,
+	su11Mul,
+	su11Rotation,
+	su11Translation,
+	type Complex,
+	type Su11,
+} from "@/lib/render/hyperbolic";
 import { ISLAMIC_MARGIN, buildWalk, islamicWedgeBox } from "@/lib/render/hyperbolicWalk";
 import { islamicNormalAngleFromSlider } from "@/utils/islamicNoise";
 import type { DevelopedPatch } from "@/lib/render/hyperbolicDevelopedDraw";
-
 
 interface ShippedPatch extends DevelopedPatch {
 	darts?: Darts;
@@ -53,7 +60,7 @@ afterEach(() => {
 describe("hyperbolic Islamic plain (Klein-model Hankin construction)", () => {
 	it("Klein <-> Poincaré round-trips, and geodesic midpoints are Klein-collinear", () => {
 		let s = 424242;
-		const rnd = () => ((s = (s * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+		const rnd = () => (s = (s * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
 		for (let n = 0; n < 200; n++) {
 			const r = 0.999 * Math.sqrt(rnd());
 			const th = 2 * Math.PI * rnd();
@@ -82,7 +89,11 @@ describe("hyperbolic Islamic plain (Klein-model Hankin construction)", () => {
 		const poly = facePolyP(patch, 0);
 		const base = islamicSegmentsForTile(poly, theta, frac);
 		// any isometry will do: the construction reads nothing but the tile
-		const isometries = [su11Rotation(0.7), su11Translation({ x: 0.3, y: -0.2 }), su11Mul(su11Translation({ x: -0.5, y: 0.1 }), su11Rotation(2.1))];
+		const isometries = [
+			su11Rotation(0.7),
+			su11Translation({ x: 0.3, y: -0.2 }),
+			su11Mul(su11Translation({ x: -0.5, y: 0.1 }), su11Rotation(2.1)),
+		];
 		for (const g of isometries) {
 			const movedPoly = poly.map((v) => su11Apply(g, v));
 			const moved = islamicSegmentsForTile(movedPoly, theta, frac);
@@ -175,7 +186,8 @@ describe("hyperbolic Islamic plain (Klein-model Hankin construction)", () => {
 		const ang = Math.atan2(q.y, q.x);
 		const a = Math.abs(ang - Math.round(ang / sector) * sector);
 		const r = Math.hypot(q.x, q.y);
-		const tx = (u: number) => Math.max(0, Math.min(res - 1, Math.floor(((u + ISLAMIC_MARGIN) / (1 + ISLAMIC_MARGIN)) * res)));
+		const tx = (u: number) =>
+			Math.max(0, Math.min(res - 1, Math.floor(((u + ISLAMIC_MARGIN) / (1 + ISLAMIC_MARGIN)) * res)));
 		return (tx((r * Math.sin(a)) / Y) * res + tx((r * Math.cos(a)) / X)) * 4;
 	};
 	const classes = (layer: Uint8Array) => {
@@ -189,21 +201,24 @@ describe("hyperbolic Islamic plain (Klein-model Hankin construction)", () => {
 		return same / (a.length / 4);
 	};
 
-	it.each([3, 4, 6, 7, 17])("bakes a total layer for the %s-gon, star body at the centre (offsets 0 and 50 %%)", (p) => {
-		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-		for (const frac of [0, 0.5]) {
-			const layer = islamicTileLayer(p, EDGE, islamicNormalAngleFromSlider(45), frac, RES);
-			const n = classes(layer);
-			expect(n[0], "a texel with no class").toBe(0);
-			expect(layer[at(p, { x: 0, y: 0 })]).toBe(1);
-			expect(n[1]).toBeGreaterThan(0);
-			expect(n[2]).toBeGreaterThan(0);
-			// the diamonds exist exactly when the offset opens them
-			if (frac === 0) expect(n[3]).toBe(0);
-			else expect(n[3]).toBeGreaterThan(0);
-		}
-		warn.mockRestore();
-	});
+	it.each([3, 4, 6, 7, 17])(
+		"bakes a total layer for the %s-gon, star body at the centre (offsets 0 and 50 %%)",
+		(p) => {
+			const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+			for (const frac of [0, 0.5]) {
+				const layer = islamicTileLayer(p, EDGE, islamicNormalAngleFromSlider(45), frac, RES);
+				const n = classes(layer);
+				expect(n[0], "a texel with no class").toBe(0);
+				expect(layer[at(p, { x: 0, y: 0 })]).toBe(1);
+				expect(n[1]).toBeGreaterThan(0);
+				expect(n[2]).toBeGreaterThan(0);
+				// the diamonds exist exactly when the offset opens them
+				if (frac === 0) expect(n[3]).toBe(0);
+				else expect(n[3]).toBeGreaterThan(0);
+			}
+			warn.mockRestore();
+		},
+	);
 
 	it("the margin past the wedge mirrors it, so a tap across the axis reads the same face", () => {
 		const layer = islamicTileLayer(6, EDGE, islamicNormalAngleFromSlider(45), 0.4, RES);
@@ -220,7 +235,10 @@ describe("hyperbolic Islamic plain (Klein-model Hankin construction)", () => {
 		const theta = islamicNormalAngleFromSlider(45);
 		const layer = islamicTileLayer(p, EDGE, theta, 0, RES);
 		const [rv] = islamicWedgeBox(p, EDGE);
-		const poly: Complex[] = Array.from({ length: p }, (_, i) => ({ x: rv * Math.cos(((2 * i - 1) * Math.PI) / p), y: rv * Math.sin(((2 * i - 1) * Math.PI) / p) }));
+		const poly: Complex[] = Array.from({ length: p }, (_, i) => ({
+			x: rv * Math.cos(((2 * i - 1) * Math.PI) / p),
+			y: rv * Math.sin(((2 * i - 1) * Math.PI) / p),
+		}));
 		for (const [a, b] of islamicSegmentsForTile(poly, theta)) {
 			const mid = kleinToPoincare({ x: (a.x + b.x) / 2 / KLEIN_SCALE, y: (a.y + b.y) / 2 / KLEIN_SCALE });
 			expect(layer[at(p, mid) + 1]).toBeLessThan(30); // within a texel of the line
@@ -230,7 +248,8 @@ describe("hyperbolic Islamic plain (Klein-model Hankin construction)", () => {
 
 	it("colour continuity at the slider end stops (angle 89↔90, offset 95↔100, offset 0↔5)", () => {
 		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-		const bake = (slider: number, frac: number) => islamicTileLayer(6, EDGE, islamicNormalAngleFromSlider(slider), frac, RES);
+		const bake = (slider: number, frac: number) =>
+			islamicTileLayer(6, EDGE, islamicNormalAngleFromSlider(slider), frac, RES);
 		const a89 = bake(89, 0);
 		const a90 = bake(90, 0);
 		expect(classes(a89)[3]).toBe(0);
@@ -245,7 +264,8 @@ describe("hyperbolic Islamic plain (Klein-model Hankin construction)", () => {
 
 	it("the doubly degenerate corner (angle 90 + offset 100 %) still bakes a total layer", () => {
 		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-		for (const p of [3, 4, 6]) expect(classes(islamicTileLayer(p, EDGE, islamicNormalAngleFromSlider(90), 1, RES))[0]).toBe(0);
+		for (const p of [3, 4, 6])
+			expect(classes(islamicTileLayer(p, EDGE, islamicNormalAngleFromSlider(90), 1, RES))[0]).toBe(0);
 		warn.mockRestore();
 	});
 
@@ -256,7 +276,9 @@ describe("hyperbolic Islamic plain (Klein-model Hankin construction)", () => {
 		const theta = islamicNormalAngleFromSlider(45);
 		const stack = islamicLayers(walk.sizes, p.edge, theta, 0, 64);
 		expect(stack.length).toBe(3 * 64 * 64 * 4);
-		expect(Array.from(stack.subarray(64 * 64 * 4, 64 * 64 * 4 + 64))).toEqual(Array.from(islamicTileLayer(4, p.edge, theta, 0, 64).subarray(0, 64)));
+		expect(Array.from(stack.subarray(64 * 64 * 4, 64 * 64 * 4 + 64))).toEqual(
+			Array.from(islamicTileLayer(4, p.edge, theta, 0, 64).subarray(0, 64)),
+		);
 	});
 
 	it("bakes the apeirogon's strip: star body up the cusp, side fields by the vertices, no empty texel", () => {
@@ -283,12 +305,19 @@ describe("hyperbolic Islamic plain (Klein-model Hankin construction)", () => {
 		const theta = islamicNormalAngleFromSlider(45);
 		const layer = islamicTileLayer(p, EDGE, theta, 0, RES, "strap");
 		const [rv] = islamicWedgeBox(p, EDGE);
-		const dist = (o: number) => [(((layer[o] & 127) << 8) | layer[o + 1]) / 32767, ((layer[o + 2] << 8) | layer[o + 3]) / 32767].map((d) => d * STRAP_RANGE);
-		const poly: Complex[] = Array.from({ length: p }, (_, i) => ({ x: rv * Math.cos(((2 * i - 1) * Math.PI) / p), y: rv * Math.sin(((2 * i - 1) * Math.PI) / p) }));
+		const dist = (o: number) =>
+			[(((layer[o] & 127) << 8) | layer[o + 1]) / 32767, ((layer[o + 2] << 8) | layer[o + 3]) / 32767].map(
+				(d) => d * STRAP_RANGE,
+			);
+		const poly: Complex[] = Array.from({ length: p }, (_, i) => ({
+			x: rv * Math.cos(((2 * i - 1) * Math.PI) / p),
+			y: rv * Math.sin(((2 * i - 1) * Math.PI) / p),
+		}));
 		const segs = islamicSegmentsForTile(poly, theta);
 		// ray 0 leaves side 0's midpoint into the upper half of the wedge: the + strand there
 		const [a, b] = segs[0];
-		const along = (t: number) => kleinToPoincare({ x: (a.x + t * (b.x - a.x)) / KLEIN_SCALE, y: (a.y + t * (b.y - a.y)) / KLEIN_SCALE });
+		const along = (t: number) =>
+			kleinToPoincare({ x: (a.x + t * (b.x - a.x)) / KLEIN_SCALE, y: (a.y + t * (b.y - a.y)) / KLEIN_SCALE });
 		expect(dist(at(p, along(0.5)))[0]).toBeLessThan(0.03);
 		// by the midpoint the two rays of the side cross; by the ray's far end it has turned a corner
 		expect(layer[at(p, along(0.1))] & 128).toBe(128);

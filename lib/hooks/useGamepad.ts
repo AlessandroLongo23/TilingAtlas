@@ -19,7 +19,24 @@ import { openTouchpad } from "@/lib/input/padTouch";
 // with it. The loop runs only while a pad is connected.
 
 // Standard-mapping button indices.
-const B = { cross: 0, circle: 1, square: 2, triangle: 3, l1: 4, r1: 5, l2: 6, r2: 7, share: 8, l3: 10, r3: 11, up: 12, down: 13, left: 14, right: 15, touchpad: 17 };
+const B = {
+	cross: 0,
+	circle: 1,
+	square: 2,
+	triangle: 3,
+	l1: 4,
+	r1: 5,
+	l2: 6,
+	r2: 7,
+	share: 8,
+	l3: 10,
+	r3: 11,
+	up: 12,
+	down: 13,
+	left: 14,
+	right: 15,
+	touchpad: 17,
+};
 /** Button → the key it presses. Keep in step with SHORTCUT_BUTTON in lib/stores/gamepad.ts. */
 const BUTTON_KEYS: [number, string][] = [
 	[B.square, "r"],
@@ -56,9 +73,17 @@ const inScope = (el: Element | null): el is HTMLElement => !!el && el !== docume
 function focusables(): HTMLElement[] {
 	const root = scope();
 	if (!root) return [];
-	const all = root.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), [tabindex="0"]');
+	const all = root.querySelectorAll<HTMLElement>(
+		'button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), [tabindex="0"]',
+	);
 	// Not Radix's tablist or tab panel: they take focus only to pass it on or to be scrolled by keys.
-	return [...all].filter((el) => el.tabIndex >= 0 && !/^tab(list|panel)$/.test(el.getAttribute("role") ?? "") && el.getClientRects().length > 0 && (el.checkVisibility?.({ visibilityProperty: true }) ?? true));
+	return [...all].filter(
+		(el) =>
+			el.tabIndex >= 0 &&
+			!/^tab(list|panel)$/.test(el.getAttribute("role") ?? "") &&
+			el.getClientRects().length > 0 &&
+			(el.checkVisibility?.({ visibilityProperty: true }) ?? true),
+	);
 }
 
 const focus = (el: HTMLElement | undefined) => {
@@ -72,14 +97,17 @@ const focus = (el: HTMLElement | undefined) => {
  *  direction counts as in line, so a full-width slider is the next row down from either column. */
 function neighbour(from: HTMLElement, dx: number, dy: number): HTMLElement | undefined {
 	const a = from.getBoundingClientRect();
-	const ax = a.left + a.width / 2, ay = a.top + a.height / 2;
+	const ax = a.left + a.width / 2,
+		ay = a.top + a.height / 2;
 	let best: HTMLElement | undefined;
 	let bestScore = Infinity;
 	for (const el of focusables()) {
 		if (el === from) continue;
 		const b = el.getBoundingClientRect();
 		const along = (b.left + b.width / 2 - ax) * dx + (b.top + b.height / 2 - ay) * dy;
-		const across = dy ? Math.max(0, b.left - a.right, a.left - b.right) : Math.max(0, b.top - a.bottom, a.top - b.bottom);
+		const across = dy
+			? Math.max(0, b.left - a.right, a.left - b.right)
+			: Math.max(0, b.top - a.bottom, a.top - b.bottom);
 		if (along < 4) continue;
 		const score = along + 3 * across;
 		if (score < bestScore) {
@@ -90,9 +118,11 @@ function neighbour(from: HTMLElement, dx: number, dy: number): HTMLElement | und
 	return best;
 }
 
-const isRange = (el: Element | null): el is HTMLInputElement => el instanceof HTMLInputElement && (el.type === "range" || el.type === "number");
+const isRange = (el: Element | null): el is HTMLInputElement =>
+	el instanceof HTMLInputElement && (el.type === "range" || el.type === "number");
 const rangeOf = (el: HTMLInputElement) => {
-	const min = Number(el.min || 0), max = Number(el.max || 100);
+	const min = Number(el.min || 0),
+		max = Number(el.max || 100);
 	return { min, max, step: Number(el.step) || (max - min) / 100 };
 };
 
@@ -154,7 +184,11 @@ function triangle(): void {
  *  panel, else the one mid-screen. */
 function scrollPane(cursor: { x: number; y: number } | null): Element | null {
 	const cur = document.activeElement;
-	const from = cursor ? document.elementFromPoint(cursor.x, cursor.y) : inScope(cur) ? cur : document.elementFromPoint(innerWidth / 2, innerHeight / 2);
+	const from = cursor
+		? document.elementFromPoint(cursor.x, cursor.y)
+		: inScope(cur)
+			? cur
+			: document.elementFromPoint(innerWidth / 2, innerHeight / 2);
 	let pane = from && scrollParent(from);
 	while (pane && pane.scrollHeight <= pane.clientHeight) pane = scrollParent(pane);
 	return pane ?? document.scrollingElement;
@@ -165,12 +199,15 @@ function scrollPane(cursor: { x: number; y: number } | null): Element | null {
 /** Move the pointer, turning pointer mode on if it was off (a finger on the touchpad does that). */
 function moveCursor(dx: number, dy: number): void {
 	const c = useGamepadState.getState().cursor ?? { x: innerWidth / 2, y: innerHeight / 2 };
-	useGamepadState.setState({ cursor: { x: Math.min(innerWidth - 1, Math.max(0, c.x + dx)), y: Math.min(innerHeight - 1, Math.max(0, c.y + dy)) } });
+	useGamepadState.setState({
+		cursor: { x: Math.min(innerWidth - 1, Math.max(0, c.x + dx)), y: Math.min(innerHeight - 1, Math.max(0, c.y + dy)) },
+	});
 }
 
 const onTouch = (dx: number, dy: number) => moveCursor(dx * TOUCH_GAIN, dy * TOUCH_GAIN);
 /** Ask for the touchpad. Must run inside a real click: the browser's device chooser needs one. */
-export const enableTouchpad = () => openTouchpad(onTouch, true).then((touchpad) => useGamepadState.setState({ touchpad }));
+export const enableTouchpad = () =>
+	openTouchpad(onTouch, true).then((touchpad) => useGamepadState.setState({ touchpad }));
 
 // A press is the events a mouse would send, aimed at whatever is under the pointer. A real mouse keeps
 // sending its moves to the pressed element until release; so does this, which is what lets a press
@@ -179,9 +216,22 @@ export const enableTouchpad = () => openTouchpad(onTouch, true).then((touchpad) 
 let pressed: { el: Element; x: number; y: number } | null = null;
 
 function send(el: Element, type: string, x: number, y: number, buttons: number): void {
-	const init = { bubbles: true, cancelable: true, composed: true, view: window, clientX: x, clientY: y, button: 0, buttons };
+	const init = {
+		bubbles: true,
+		cancelable: true,
+		composed: true,
+		view: window,
+		clientX: x,
+		clientY: y,
+		button: 0,
+		buttons,
+	};
 	// Pointer id 1 is the mouse's, so an element that captures the pointer on press does not throw.
-	el.dispatchEvent(type.startsWith("pointer") ? new PointerEvent(type, { ...init, pointerId: 1, pointerType: "mouse", isPrimary: true }) : new MouseEvent(type, init));
+	el.dispatchEvent(
+		type.startsWith("pointer")
+			? new PointerEvent(type, { ...init, pointerId: 1, pointerType: "mouse", isPrimary: true })
+			: new MouseEvent(type, init),
+	);
 }
 
 function pointerTo(x: number, y: number, down: boolean): void {
@@ -227,7 +277,8 @@ export function useGamepad(onPage: (delta: number) => void): void {
 		let held: boolean[] = [];
 		const repeatAt: Record<number, number> = {};
 		const pan = { x: 0, y: 0 };
-		let spin = 0, zoom = 0;
+		let spin = 0,
+			zoom = 0;
 		let twisting = false;
 		let pressButton = -1; // the button holding the pointer's press down, or -1
 
@@ -267,7 +318,8 @@ export function useGamepad(onPage: (delta: number) => void): void {
 				if (useGamepadState.getState().cursor) useGamepadState.setState({ cursor: null });
 				else moveCursor(0, 0);
 			}
-			if (useGamepadState.getState().cursor && (lever.x || lever.y)) moveCursor(lever.x * CURSOR_PX_S * dt, -lever.y * CURSOR_PX_S * dt);
+			if (useGamepadState.getState().cursor && (lever.x || lever.y))
+				moveCursor(lever.x * CURSOR_PX_S * dt, -lever.y * CURSOR_PX_S * dt);
 			const state = useGamepadState.getState();
 			const cursor = state.cursor;
 			const stick = cursor ? REST : lever;
@@ -298,7 +350,12 @@ export function useGamepad(onPage: (delta: number) => void): void {
 				const turning = Math.abs(spin) > 0.5;
 				if (turning || Math.abs(zoom) > 1e-3) {
 					const o = { x: 0, y: 0 };
-					pinchPlayView({ from: o, to: o, scale: Math.exp(zoom * dt), rotate: turning ? (spin * dt * Math.PI) / 180 : 0 });
+					pinchPlayView({
+						from: o,
+						to: o,
+						scale: Math.exp(zoom * dt),
+						rotate: turning ? (spin * dt * Math.PI) / 180 : 0,
+					});
 				}
 				if (twisting && !turning) endPinchPlayView();
 				twisting = turning;

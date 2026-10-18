@@ -169,15 +169,26 @@ describe("Phase-1 general star path — compatibility & seed-set derivation (GAT
 				const seed: SeedConfigurationLike = {
 					polygons: c.union,
 					vertexConfigurations: [
-						{ computeSharedVertexExact: () => c.anchorA, polygons: c.union.filter((p) => p.vertexKeySet().has(c.anchorA.key())) },
-						{ computeSharedVertexExact: () => c.anchorB, polygons: c.union.filter((p) => p.vertexKeySet().has(c.anchorB.key())) },
+						{
+							computeSharedVertexExact: () => c.anchorA,
+							polygons: c.union.filter((p) => p.vertexKeySet().has(c.anchorA.key())),
+						},
+						{
+							computeSharedVertexExact: () => c.anchorB,
+							polygons: c.union.filter((p) => p.vertexKeySet().has(c.anchorB.key())),
+						},
 					],
 				};
 				const { cells } = new PeriodSolver(2).solve(seed, { maxMs: 300_000 });
 				for (const cell of cells) {
 					const g = independentCellGate(cell);
 					if (!g.pass) continue;
-					const orbits = new KUniformityChecker().countVertexOrbits(cell.cellPolygons, cell.basisExact[0], cell.basisExact[1], { syms: 0, reps: 0, blockSize: 0, orbits: null });
+					const orbits = new KUniformityChecker().countVertexOrbits(
+						cell.cellPolygons,
+						cell.basisExact[0],
+						cell.basisExact[1],
+						{ syms: 0, reps: 0, blockSize: 0, orbits: null },
+					);
 					if (orbits !== 2) continue;
 					const det = Math.abs(
 						cell.basisExact[0].toVector().x * cell.basisExact[1].toVector().y -

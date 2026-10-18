@@ -50,7 +50,5 @@ export function previewHref(id: string): string {
 export function previewLabel(id: string): string {
 	const shelf = parseShelfPreviewId(id);
 	if (!shelf) return id;
-	return shelf.kind === "pentagon"
-		? `Pentagon type ${shelf.n}`
-		: `IH${String(shelf.n).padStart(2, "0")}`;
+	return shelf.kind === "pentagon" ? `Pentagon type ${shelf.n}` : `IH${String(shelf.n).padStart(2, "0")}`;
 }

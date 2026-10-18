@@ -1,6 +1,14 @@
 "use client";
 
-import { Fragment, memo, useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import {
+	Fragment,
+	memo,
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+	type PointerEvent as ReactPointerEvent,
+} from "react";
 import {
 	IDENTITY_VECTORS,
 	PAD_GRID,
@@ -44,11 +52,14 @@ const BLUE = "hsl(214 78% 56%)";
 
 /** The arrowhead as a filled triangle at the tip, pointing along the vector. Empty at zero length. */
 function head(tip: PadVec, origin: PadVec): string {
-	const dx = tip.x - origin.x, dy = tip.y - origin.y;
+	const dx = tip.x - origin.x,
+		dy = tip.y - origin.y;
 	const len = Math.hypot(dx, dy);
 	if (len < 1e-6) return "";
-	const ux = dx / len, uy = dy / len;
-	const bx = tip.x - ux * HEAD * 2, by = tip.y - uy * HEAD * 2;
+	const ux = dx / len,
+		uy = dy / len;
+	const bx = tip.x - ux * HEAD * 2,
+		by = tip.y - uy * HEAD * 2;
 	return `M ${tip.x} ${tip.y} L ${bx - uy * HEAD} ${by + ux * HEAD} L ${bx + uy * HEAD} ${by - ux * HEAD} Z`;
 }
 
@@ -98,10 +109,7 @@ export const BasisPad = memo(function BasisPad({ read, write: commit, subscribe,
 		L.redGrab?.setAttribute("cy", String(r.y));
 		L.blueGrab?.setAttribute("cx", String(b.x));
 		L.blueGrab?.setAttribute("cy", String(b.y));
-		L.cell?.setAttribute(
-			"points",
-			`${o.x},${o.y} ${r.x},${r.y} ${r.x + b.x - o.x},${r.y + b.y - o.y} ${b.x},${b.y}`,
-		);
+		L.cell?.setAttribute("points", `${o.x},${o.y} ${r.x},${r.y} ${r.x + b.x - o.x},${r.y + b.y - o.y} ${b.x},${b.y}`);
 		if (L.out) L.out.textContent = cross(red, blue).toFixed(2);
 	}, [read]);
 
@@ -127,11 +135,7 @@ export const BasisPad = memo(function BasisPad({ read, write: commit, subscribe,
 		if (!svg) return null;
 		const rect = svg.getBoundingClientRect();
 		// Laid out at exactly W×H CSS px, but honour any scaling anyway.
-		return padToWorld(
-			((e.clientX - rect.left) * W) / rect.width,
-			((e.clientY - rect.top) * H) / rect.height,
-			GEOM,
-		);
+		return padToWorld(((e.clientX - rect.left) * W) / rect.width, ((e.clientY - rect.top) * H) / rect.height, GEOM);
 	};
 
 	const grabFor = (which: "red" | "blue") => ({
@@ -153,8 +157,12 @@ export const BasisPad = memo(function BasisPad({ read, write: commit, subscribe,
 			const cur = vectorsFromDeform(read());
 			d.prev = d.which === "red" ? cur.red : cur.blue;
 		},
-		onPointerUp: () => { dragRef.current = null; },
-		onPointerCancel: () => { dragRef.current = null; },
+		onPointerUp: () => {
+			dragRef.current = null;
+		},
+		onPointerCancel: () => {
+			dragRef.current = null;
+		},
 	});
 
 	const nudge = (which: "red" | "blue", dx: number, dy: number, big: boolean) => {
@@ -180,7 +188,15 @@ export const BasisPad = memo(function BasisPad({ read, write: commit, subscribe,
 			<div className="flex flex-row items-center justify-between">
 				{label ? <span className="text-[13px] font-medium text-fg-secondary">{label}</span> : <span />}
 				<span className="font-mono text-xs text-fg">
-					det <span ref={(el) => { live.current.out = el; }} className="tabular-nums">1.00</span>
+					det{" "}
+					<span
+						ref={(el) => {
+							live.current.out = el;
+						}}
+						className="tabular-nums"
+					>
+						1.00
+					</span>
 				</span>
 			</div>
 			<svg
@@ -201,7 +217,10 @@ export const BasisPad = memo(function BasisPad({ read, write: commit, subscribe,
 					// Alt aims the keyboard at the blue vector; without it, red. Shift steps a whole 0.25 rule.
 					const which = e.altKey ? "blue" : "red";
 					const d: Record<string, [number, number]> = {
-						ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1],
+						ArrowLeft: [-1, 0],
+						ArrowRight: [1, 0],
+						ArrowUp: [0, 1],
+						ArrowDown: [0, -1],
 					};
 					if (d[e.key]) {
 						e.preventDefault();
@@ -222,7 +241,10 @@ export const BasisPad = memo(function BasisPad({ read, write: commit, subscribe,
 				</defs>
 				{/* No opaque plot ground — the pad sits on the sidebar's own surface, like the region pad. */}
 				<rect
-					x={M.l} y={M.t} width={PLOT} height={PLOT}
+					x={M.l}
+					y={M.t}
+					width={PLOT}
+					height={PLOT}
 					fill="none"
 					className={keyFocus ? "stroke-line-focus" : "stroke-line"}
 					strokeWidth={keyFocus ? 1.5 : 1}
@@ -230,26 +252,30 @@ export const BasisPad = memo(function BasisPad({ read, write: commit, subscribe,
 				/>
 				{/* The 0.25 rules, integers a shade heavier so the unit square stays readable among them. */}
 				<g className="stroke-fg-muted/15" strokeWidth={0.5} shapeRendering="crispEdges">
-					{rules.filter((t) => Math.abs(t - Math.round(t)) >= 1e-9).map((t) => {
-						const p = worldToPad({ x: t, y: t }, GEOM);
-						return (
-							<Fragment key={t}>
-								<line x1={p.x} y1={M.t} x2={p.x} y2={M.t + PLOT} />
-								<line x1={M.l} y1={p.y} x2={M.l + PLOT} y2={p.y} />
-							</Fragment>
-						);
-					})}
+					{rules
+						.filter((t) => Math.abs(t - Math.round(t)) >= 1e-9)
+						.map((t) => {
+							const p = worldToPad({ x: t, y: t }, GEOM);
+							return (
+								<Fragment key={t}>
+									<line x1={p.x} y1={M.t} x2={p.x} y2={M.t + PLOT} />
+									<line x1={M.l} y1={p.y} x2={M.l + PLOT} y2={p.y} />
+								</Fragment>
+							);
+						})}
 				</g>
 				<g className="stroke-fg-muted/35" strokeWidth={0.5} shapeRendering="crispEdges">
-					{rules.filter((t) => Math.abs(t - Math.round(t)) < 1e-9 && t !== 0).map((t) => {
-						const p = worldToPad({ x: t, y: t }, GEOM);
-						return (
-							<Fragment key={t}>
-								<line x1={p.x} y1={M.t} x2={p.x} y2={M.t + PLOT} />
-								<line x1={M.l} y1={p.y} x2={M.l + PLOT} y2={p.y} />
-							</Fragment>
-						);
-					})}
+					{rules
+						.filter((t) => Math.abs(t - Math.round(t)) < 1e-9 && t !== 0)
+						.map((t) => {
+							const p = worldToPad({ x: t, y: t }, GEOM);
+							return (
+								<Fragment key={t}>
+									<line x1={p.x} y1={M.t} x2={p.x} y2={M.t + PLOT} />
+									<line x1={M.l} y1={p.y} x2={M.l + PLOT} y2={p.y} />
+								</Fragment>
+							);
+						})}
 				</g>
 				<g className="stroke-fg-muted/60" strokeWidth={1} shapeRendering="crispEdges">
 					<line x1={M.l} y1={o.y} x2={M.l + PLOT} y2={o.y} />
@@ -259,7 +285,9 @@ export const BasisPad = memo(function BasisPad({ read, write: commit, subscribe,
 				{/* The image of the unit square. Its area IS the determinant, so the floor that stops a drag
 				    has a visible meaning instead of being a number that mysteriously refuses to move. */}
 				<polygon
-					ref={(el) => { live.current.cell = el; }}
+					ref={(el) => {
+						live.current.cell = el;
+					}}
 					points=""
 					className="fill-accent/15"
 					stroke="none"
@@ -267,19 +295,71 @@ export const BasisPad = memo(function BasisPad({ read, write: commit, subscribe,
 					clipPath="url(#basis-pad-clip)"
 				/>
 
-				<line ref={(el) => { live.current.red = el; }}
-					x1={o.x} y1={o.y} x2={r0.x} y2={r0.y} stroke={RED} strokeWidth={2} pointerEvents="none" />
-				<path ref={(el) => { live.current.redHead = el; }} d={head(r0, o)} fill={RED} pointerEvents="none" />
-				<line ref={(el) => { live.current.blue = el; }}
-					x1={o.x} y1={o.y} x2={b0.x} y2={b0.y} stroke={BLUE} strokeWidth={2} pointerEvents="none" />
-				<path ref={(el) => { live.current.blueHead = el; }} d={head(b0, o)} fill={BLUE} pointerEvents="none" />
+				<line
+					ref={(el) => {
+						live.current.red = el;
+					}}
+					x1={o.x}
+					y1={o.y}
+					x2={r0.x}
+					y2={r0.y}
+					stroke={RED}
+					strokeWidth={2}
+					pointerEvents="none"
+				/>
+				<path
+					ref={(el) => {
+						live.current.redHead = el;
+					}}
+					d={head(r0, o)}
+					fill={RED}
+					pointerEvents="none"
+				/>
+				<line
+					ref={(el) => {
+						live.current.blue = el;
+					}}
+					x1={o.x}
+					y1={o.y}
+					x2={b0.x}
+					y2={b0.y}
+					stroke={BLUE}
+					strokeWidth={2}
+					pointerEvents="none"
+				/>
+				<path
+					ref={(el) => {
+						live.current.blueHead = el;
+					}}
+					d={head(b0, o)}
+					fill={BLUE}
+					pointerEvents="none"
+				/>
 
 				{/* Grab targets, comfortably larger than the arrowheads they sit on. Blue is last so it wins
 				    where the two tips overlap. */}
-				<circle ref={(el) => { live.current.redGrab = el; }}
-					cx={r0.x} cy={r0.y} r={GRAB_R} fill="transparent" className="cursor-grab" {...grabFor("red")} />
-				<circle ref={(el) => { live.current.blueGrab = el; }}
-					cx={b0.x} cy={b0.y} r={GRAB_R} fill="transparent" className="cursor-grab" {...grabFor("blue")} />
+				<circle
+					ref={(el) => {
+						live.current.redGrab = el;
+					}}
+					cx={r0.x}
+					cy={r0.y}
+					r={GRAB_R}
+					fill="transparent"
+					className="cursor-grab"
+					{...grabFor("red")}
+				/>
+				<circle
+					ref={(el) => {
+						live.current.blueGrab = el;
+					}}
+					cx={b0.x}
+					cy={b0.y}
+					r={GRAB_R}
+					fill="transparent"
+					className="cursor-grab"
+					{...grabFor("blue")}
+				/>
 
 				{/* Short enough to sit inside the plot's own width — the svg is overflow-visible, so a longer
 				    caption spills into the controls beside it. */}

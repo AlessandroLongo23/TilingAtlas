@@ -141,18 +141,26 @@ export function PageSidebar({
 				{...(dock && isPhone ? { role: "region", "aria-label": label } : sheet.dialogProps)}
 				style={dock ? ({ "--sheet-h": snapCss(target, halfHeight) } as CSSProperties) : undefined}
 				className={cn(
-					"h-full w-80 shrink-0 flex flex-col bg-surface-chrome border-r border-line-subtle overflow-hidden",
-					"max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:w-full max-md:rounded-t-2xl max-md:border-r-0 max-md:overscroll-contain max-md:focus:outline-none",
+					"flex h-full w-80 shrink-0 flex-col overflow-hidden border-r border-line-subtle bg-surface-chrome",
+					"max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:w-full max-md:overscroll-contain max-md:rounded-t-2xl max-md:border-r-0 max-md:focus:outline-none",
 					dock
 						? cn(
 								"max-md:z-40 max-md:h-[var(--sheet-h)] max-md:pb-[env(safe-area-inset-bottom)] max-md:shadow-[0_-6px_24px_oklch(0_0_0/0.14)]",
 								target === "hidden" ? "max-md:border-t-0" : "max-md:border-t",
 							)
-						: cn(SHEET_PANEL, "max-md:h-auto", !mobileFooter && "max-md:pb-[env(safe-area-inset-bottom)]", open ? "ta-sheet-in" : "max-md:hidden"),
+						: cn(
+								SHEET_PANEL,
+								"max-md:h-auto",
+								!mobileFooter && "max-md:pb-[env(safe-area-inset-bottom)]",
+								open ? "ta-sheet-in" : "max-md:hidden",
+							),
 				)}
 			>
 				{dock ? (
-					<div {...headerProps} className="flex h-[68px] shrink-0 cursor-grab touch-none select-none flex-col pb-1 md:hidden">
+					<div
+						{...headerProps}
+						className="flex h-[68px] shrink-0 cursor-grab touch-none flex-col pb-1 select-none md:hidden"
+					>
 						<SheetGrabHandle
 							expanded={snap !== "peek"}
 							onToggle={() => useMobileSheet.getState().toggleSnap()}
@@ -173,7 +181,7 @@ export function PageSidebar({
 						// overflow-x-hidden explicitly: with only overflow-y set, overflow-x computes to auto, and any
 						// invisible overflow (e.g. a transformed slider part) would give the sidebar a phantom
 						// horizontal scroll. A sidebar never scrolls sideways.
-						scrollable ? "ta-scroll-fade overflow-y-auto overflow-x-hidden scrollbar-hide pb-6" : "overflow-hidden",
+						scrollable ? "ta-scroll-fade scrollbar-hide overflow-x-hidden overflow-y-auto pb-6" : "overflow-hidden",
 						"max-md:min-h-0",
 					)}
 				>

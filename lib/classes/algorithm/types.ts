@@ -1,38 +1,38 @@
-import { Polygon, PolygonType, Vector } from '@/classes';
+import { Polygon, PolygonType, Vector } from "@/classes";
 
 export interface GeneratorParameters {
-    [PolygonType.REGULAR]?: {
-        /** Upper bound for the contiguous range 3..n_max (legacy). Ignored if `ns` is set. */
-        n_max?: number;
-        /**
-         * Explicit set of regular polygon orders, e.g. [3,4,6,8,12] for the k-uniform gate.
-         * Required to avoid dragging non-tiling n (5,7,9,10,11) into the field order N.
-         */
-        ns?: number[];
-    },
-    [PolygonType.STAR_REGULAR]?: {
-        n_max: number;
-        angle?: number;
-    },
-    [PolygonType.STAR_PARAMETRIC]?: {
-        n_max: number;
-    },
-    [PolygonType.EQUILATERAL]?: {
-        n_max: number;
-        angle: number;
-    },
-    [PolygonType.DUAL]?: {
-        n_max: number;
-    },
+	[PolygonType.REGULAR]?: {
+		/** Upper bound for the contiguous range 3..n_max (legacy). Ignored if `ns` is set. */
+		n_max?: number;
+		/**
+		 * Explicit set of regular polygon orders, e.g. [3,4,6,8,12] for the k-uniform gate.
+		 * Required to avoid dragging non-tiling n (5,7,9,10,11) into the field order N.
+		 */
+		ns?: number[];
+	};
+	[PolygonType.STAR_REGULAR]?: {
+		n_max: number;
+		angle?: number;
+	};
+	[PolygonType.STAR_PARAMETRIC]?: {
+		n_max: number;
+	};
+	[PolygonType.EQUILATERAL]?: {
+		n_max: number;
+		angle: number;
+	};
+	[PolygonType.DUAL]?: {
+		n_max: number;
+	};
 }
 
 export type PartialConfiguration = {
-    name: string,
-    fullVertex: Vector
-    partialVertex: Vector,
-}
+	name: string;
+	fullVertex: Vector;
+	partialVertex: Vector;
+};
 
-export type SurroundingPolygon = { polygon: Polygon, prevDir: number, nextDir: number };
+export type SurroundingPolygon = { polygon: Polygon; prevDir: number; nextDir: number };
 
 /**
  * Translational-cell payload as stored in pipeline-output JSON (gzip-batched
@@ -42,24 +42,24 @@ export type SurroundingPolygon = { polygon: Polygon, prevDir: number, nextDir: n
 export type CellVertex = number[] | { x: number; y: number };
 
 export interface CellPolygonData {
-    v?: CellVertex[];
-    vertices?: CellVertex[];
-    n?: number;
-    star?: boolean;
-    hue?: number;
-    open?: boolean;
-    /** A marking drawn INSIDE a tile, not a tile: it is painted, and left out of the edge statistics
-     *  so a handful of small marks cannot drag medianEdge down and zoom the card in on one tile. */
-    mark?: boolean;
-    /** Indices into `v` that are TRUE TILE CORNERS, when the ring's curved edges arrive flattened.
-     *  Additive: no other cell sets it, and every existing cell keeps the every-vertex-is-a-corner
-     *  reading byte for byte. See RawPolygon.corners for why every polygon consumer needs it. */
-    corners?: number[];
+	v?: CellVertex[];
+	vertices?: CellVertex[];
+	n?: number;
+	star?: boolean;
+	hue?: number;
+	open?: boolean;
+	/** A marking drawn INSIDE a tile, not a tile: it is painted, and left out of the edge statistics
+	 *  so a handful of small marks cannot drag medianEdge down and zoom the card in on one tile. */
+	mark?: boolean;
+	/** Indices into `v` that are TRUE TILE CORNERS, when the ring's curved edges arrive flattened.
+	 *  Additive: no other cell sets it, and every existing cell keeps the every-vertex-is-a-corner
+	 *  reading byte for byte. See RawPolygon.corners for why every polygon consumer needs it. */
+	corners?: number[];
 }
 
 export interface TranslationalCellData {
-    p?: CellPolygonData[];
-    cellPolygons?: CellPolygonData[];
-    b?: number[][];
-    basis?: number[][];
+	p?: CellPolygonData[];
+	cellPolygons?: CellPolygonData[];
+	b?: number[][];
+	basis?: number[][];
 }

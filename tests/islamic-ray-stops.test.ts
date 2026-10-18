@@ -16,9 +16,15 @@ describe("resolveRayStops — growing-line (pass 1, trim off)", () => {
 		// Ray0 crosses Ray1 near (0-dist 1) but arrives before Ray1 (1-dist 2), so it passes through and stops
 		// only at Ray2 (0-dist 3), which passes through in turn (2-dist 1, ends later at Ray3). Classic overshoot.
 		const xs: RayCrossing[][] = [
-			[{ t: 1, j: 1, tj: 2 }, { t: 3, j: 2, tj: 1 }],
+			[
+				{ t: 1, j: 1, tj: 2 },
+				{ t: 3, j: 2, tj: 1 },
+			],
 			[{ t: 2, j: 0, tj: 1 }],
-			[{ t: 1, j: 0, tj: 3 }, { t: 3, j: 3, tj: 2 }],
+			[
+				{ t: 1, j: 0, tj: 3 },
+				{ t: 3, j: 3, tj: 2 },
+			],
 			[{ t: 2, j: 2, tj: 3 }],
 		];
 		expect(resolveRayStops(xs, 1, INF)).toEqual([3, 2, 3, 2]); // Ray0 overshoots to 3
@@ -28,9 +34,15 @@ describe("resolveRayStops — growing-line (pass 1, trim off)", () => {
 describe("resolveRayStops — conservative overshoot trim (pass 2, trim on)", () => {
 	it("trims an overshoot whose tail carries no other ray's endpoint", () => {
 		const xs: RayCrossing[][] = [
-			[{ t: 1, j: 1, tj: 2 }, { t: 3, j: 2, tj: 1 }],
+			[
+				{ t: 1, j: 1, tj: 2 },
+				{ t: 3, j: 2, tj: 1 },
+			],
 			[{ t: 2, j: 0, tj: 1 }],
-			[{ t: 1, j: 0, tj: 3 }, { t: 3, j: 3, tj: 2 }],
+			[
+				{ t: 1, j: 0, tj: 3 },
+				{ t: 3, j: 3, tj: 2 },
+			],
 			[{ t: 2, j: 2, tj: 3 }],
 		];
 		// Ray0 is pulled back from 3 to its real first crossing at 1 (Ray2 only passes through its tail).
@@ -41,7 +53,10 @@ describe("resolveRayStops — conservative overshoot trim (pass 2, trim on)", ()
 		// Here Ray2 TERMINATES on Ray0 at 0-dist 3 (its endpoint, 2-dist 3). Trimming Ray0 back to 1 would strand
 		// Ray2's endpoint in open space, so the overshoot is kept — gap-freeness beats a clean vertex.
 		const xs: RayCrossing[][] = [
-			[{ t: 1, j: 1, tj: 2 }, { t: 3, j: 2, tj: 3 }],
+			[
+				{ t: 1, j: 1, tj: 2 },
+				{ t: 3, j: 2, tj: 3 },
+			],
 			[{ t: 2, j: 0, tj: 1 }],
 			[{ t: 3, j: 0, tj: 3 }],
 		];

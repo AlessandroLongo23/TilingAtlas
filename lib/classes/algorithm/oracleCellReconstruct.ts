@@ -7,10 +7,10 @@
  *   vertices (seed ⊕ lattice window) → unit edges (float broadphase, EXACT normSquared()==1) → faces
  *   (directed-edge tracing) → one face per lattice class → RegularPolygon.fromAnchorAndDirExact → cell.
  */
-import { Cyclotomic, type CyclotomicRing } from '@/classes/Cyclotomic';
-import { RegularPolygon } from '@/classes/polygons/RegularPolygon';
-import { detSurd } from '@/classes/algorithm/exact/Surd';
-import type { PeriodCell } from '@/classes/algorithm/PeriodSolver';
+import { Cyclotomic, type CyclotomicRing } from "@/classes/Cyclotomic";
+import { RegularPolygon } from "@/classes/polygons/RegularPolygon";
+import { detSurd } from "@/classes/algorithm/exact/Surd";
+import type { PeriodCell } from "@/classes/algorithm/PeriodSolver";
 
 /** Decode an oracle [a,b,c,d] vertex into a Cyclotomic on `ring`. */
 export function decodeGalebachVertex(ring: CyclotomicRing, [a, b, c, d]: number[]): Cyclotomic {
@@ -31,13 +31,13 @@ export type OracleSeed = { T1: number[]; T2: number[]; Seed: number[][] };
 export function reconstructOracleCell(
 	ring: CyclotomicRing,
 	tCode: string,
-	o: OracleSeed
+	o: OracleSeed,
 ): { cell: PeriodCell } | { error: string } {
 	const oneC = Cyclotomic.ONE(ring);
 	const dec = (abcd: number[]) => decodeGalebachVertex(ring, abcd);
 	const u = dec(o.T1);
 	const v = dec(o.T2);
-	if (detSurd(u, v).isZero()) return { error: 'degenerate basis (det 0)' };
+	if (detSurd(u, v).isZero()) return { error: "degenerate basis (det 0)" };
 	const uV = u.toVector();
 	const vV = v.toVector();
 	const det = uV.x * vV.y - uV.y * vV.x;
@@ -183,7 +183,7 @@ export function reconstructOracleCell(
 			const rel = cycle
 				.map((p) => p.sub(w).key())
 				.sort()
-				.join(';');
+				.join(";");
 			if (bestKey === null || rel < bestKey) {
 				bestKey = rel;
 				bestAnchor = w;

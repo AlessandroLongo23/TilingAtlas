@@ -134,7 +134,8 @@ export function placePolygonOnEdge(a: Complex, b: Complex, sides: number, avoid:
 
 /** Euclidean centroid of Poincaré points (a stable dedup/anchor key, not the hyperbolic centre). */
 function eucCentroid(verts: Complex[]): Complex {
-	let x = 0, y = 0;
+	let x = 0,
+		y = 0;
 	for (const v of verts) {
 		x += v.x;
 		y += v.y;

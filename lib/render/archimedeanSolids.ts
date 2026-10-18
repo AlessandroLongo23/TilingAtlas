@@ -208,7 +208,10 @@ function vertexConfigOf(vertices: Vec3[], faces: number[][]): string {
 			let c: Vec3 = [0, 0, 0];
 			for (const i of f) c = add(c, vertices[i]);
 			const d = normalize(c);
-			return { n: f.length, angle: Math.atan2(d[0] * t2[0] + d[1] * t2[1] + d[2] * t2[2], d[0] * t1[0] + d[1] * t1[1] + d[2] * t1[2]) };
+			return {
+				n: f.length,
+				angle: Math.atan2(d[0] * t2[0] + d[1] * t2[1] + d[2] * t2[2], d[0] * t1[0] + d[1] * t1[1] + d[2] * t1[2]),
+			};
 		})
 		.sort((a, b) => a.angle - b.angle);
 	return incident.map((x) => x.n).join(".");
@@ -354,7 +357,7 @@ function snubCubeVerts(): Vec3[] {
 			for (const sy of opt(perm[1]))
 				for (const sz of opt(perm[2])) {
 					const minus = (sx < 0 ? 1 : 0) + (sy < 0 ? 1 : 0) + (sz < 0 ? 1 : 0);
-					if (minus % 2 === 0 === wantEvenMinus) out.push([sx, sy, sz]);
+					if ((minus % 2 === 0) === wantEvenMinus) out.push([sx, sy, sz]);
 				}
 	};
 	for (const p of even) emit(p, true);

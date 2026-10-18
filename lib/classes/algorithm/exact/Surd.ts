@@ -116,7 +116,7 @@ export class Surd {
 			this.Q * o.D + o.Q * this.D,
 			this.R * o.D + o.R * this.D,
 			this.S * o.D + o.S * this.D,
-			this.D * o.D
+			this.D * o.D,
 		);
 	}
 	sub(o: Surd): Surd {
@@ -146,8 +146,7 @@ export class Surd {
 		const y23 = new Surd(this.P, -this.Q, -this.R, this.S, this.D); // both
 		const m = y2.mul(y3).mul(y23);
 		const norm = this.mul(m); // = ∏ conjugates: rational
-		if (norm.Q !== 0n || norm.R !== 0n || norm.S !== 0n)
-			throw new Error("Surd.inverse: norm not rational (bug)");
+		if (norm.Q !== 0n || norm.R !== 0n || norm.S !== 0n) throw new Error("Surd.inverse: norm not rational (bug)");
 		return m.scaleRational(norm.D, norm.P);
 	}
 	div(o: Surd): Surd {
@@ -155,9 +154,7 @@ export class Surd {
 	}
 
 	equals(o: Surd): boolean {
-		return (
-			this.P === o.P && this.Q === o.Q && this.R === o.R && this.S === o.S && this.D === o.D
-		);
+		return this.P === o.P && this.Q === o.Q && this.R === o.R && this.S === o.S && this.D === o.D;
 	}
 	isZero(): boolean {
 		return this.P === 0n && this.Q === 0n && this.R === 0n && this.S === 0n;
@@ -219,10 +216,7 @@ export class Surd {
 	/** Float value — debug / broadphase only, never a decision. */
 	toFloat(): number {
 		return (
-			(Number(this.P) +
-				Number(this.Q) * Math.SQRT2 +
-				Number(this.R) * Math.sqrt(3) +
-				Number(this.S) * Math.sqrt(6)) /
+			(Number(this.P) + Number(this.Q) * Math.SQRT2 + Number(this.R) * Math.sqrt(3) + Number(this.S) * Math.sqrt(6)) /
 			Number(this.D)
 		);
 	}
@@ -266,7 +260,7 @@ export function imSurd(c: Cyclotomic): Surd {
 		-b[1] + 2n * b[3] + b[5] + b[7], // √2
 		2n * b[4], // √3
 		b[1] + b[5] + b[7], // √6
-		4n * c.den
+		4n * c.den,
 	);
 }
 
@@ -282,7 +276,7 @@ export function reSurd(c: Cyclotomic): Surd {
 		b[1] + 2n * b[3] - b[5] + b[7], // √2
 		2n * b[2], // √3
 		b[1] + b[5] - b[7], // √6
-		4n * c.den
+		4n * c.den,
 	);
 }
 

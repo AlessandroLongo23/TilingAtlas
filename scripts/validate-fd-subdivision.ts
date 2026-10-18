@@ -21,26 +21,34 @@ import type { Vec2 } from "@/lib/classes/symmetry/types";
 
 const ring = CyclotomicRing.create(24);
 setActiveRing(ring);
-const catalogue = JSON.parse(
-	fs.readFileSync(path.join(process.cwd(), "figures/data/catalogue-k1-3.json"), "utf8"),
-) as { tilings: { canonicalKey: string; cellCodec: SerializedCell | null }[] };
+const catalogue = JSON.parse(fs.readFileSync(path.join(process.cwd(), "figures/data/catalogue-k1-3.json"), "utf8")) as {
+	tilings: { canonicalKey: string; cellCodec: SerializedCell | null }[];
+};
 const tilings = catalogue.tilings.filter((t) => t.cellCodec);
 
 const area = (p: Vec2[]) => {
 	let s = 0;
-	for (let i = 0; i < p.length; i++) { const a = p[i], b = p[(i + 1) % p.length]; s += a.x * b.y - a.y * b.x; }
+	for (let i = 0; i < p.length; i++) {
+		const a = p[i],
+			b = p[(i + 1) % p.length];
+		s += a.x * b.y - a.y * b.x;
+	}
 	return Math.abs(s) / 2;
 };
 // point-in-polygon (ray cast) — the drawn cell is a general polygon (WS cell / rhombus), not a parallelogram
 function inPoly(c: Vec2, poly: Vec2[]): boolean {
 	let inside = false;
 	for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-		const a = poly[i], b = poly[j];
-		if ((a.y > c.y) !== (b.y > c.y) && c.x < ((b.x - a.x) * (c.y - a.y)) / (b.y - a.y) + a.x) inside = !inside;
+		const a = poly[i],
+			b = poly[j];
+		if (a.y > c.y !== b.y > c.y && c.x < ((b.x - a.x) * (c.y - a.y)) / (b.y - a.y) + a.x) inside = !inside;
 	}
 	return inside;
 }
-const centroid = (p: Vec2[]): Vec2 => ({ x: p.reduce((s, q) => s + q.x, 0) / p.length, y: p.reduce((s, q) => s + q.y, 0) / p.length });
+const centroid = (p: Vec2[]): Vec2 => ({
+	x: p.reduce((s, q) => s + q.x, 0) / p.length,
+	y: p.reduce((s, q) => s + q.y, 0) / p.length,
+});
 
 type Row = { n: number; fdIn: number; full: number; fallback: number; rhombic: number; bad: string[] };
 const byGroup: Record<string, Row> = {};
@@ -63,7 +71,10 @@ for (const t of tilings) {
 	const fallback = d.subdivision.length === 1 && d.pointGroupOrder > 1;
 	const subdivOK = full || fallback;
 	// cm/cmm should draw a rhombus (4 equal edges); measure the cellPolygon edges.
-	const edges = d.cellPolygon.map((p, i) => { const q = d.cellPolygon[(i + 1) % d.cellPolygon.length]; return Math.hypot(p.x - q.x, p.y - q.y); });
+	const edges = d.cellPolygon.map((p, i) => {
+		const q = d.cellPolygon[(i + 1) % d.cellPolygon.length];
+		return Math.hypot(p.x - q.x, p.y - q.y);
+	});
 	const rhombic = d.cellPolygon.length === 4 && Math.max(...edges) - Math.min(...edges) < 1e-6;
 
 	const r = byGroup[d.group] ?? (byGroup[d.group] = { n: 0, fdIn: 0, full: 0, fallback: 0, rhombic: 0, bad: [] });
@@ -77,7 +88,8 @@ for (const t of tilings) {
 }
 
 console.log("group   n   fd-in-cell  tiles-cell   fallback  cell=rhombus  issues");
-let fdFail = 0, subFail = 0;
+let fdFail = 0,
+	subFail = 0;
 for (const [g, r] of Object.entries(byGroup).sort()) {
 	fdFail += r.n - r.fdIn;
 	subFail += r.n - (r.full + r.fallback);
@@ -89,5 +101,7 @@ console.log(`\nFD-outside-cell failures: ${fdFail}  (must be 0)`);
 console.log(`subdivision-invalid failures: ${subFail}  (must be 0; area-exact tiling or fallback both count as valid)`);
 const fullTotal = Object.values(byGroup).reduce((a, r) => a + r.full, 0);
 const fbTotal = Object.values(byGroup).reduce((a, r) => a + r.fallback, 0);
-console.log(`area-exact subdivisions: ${fullTotal}/${tilings.length}   [fd] fallbacks: ${fbTotal}/${tilings.length}  (cm/cmm draw a rhombus)`);
+console.log(
+	`area-exact subdivisions: ${fullTotal}/${tilings.length}   [fd] fallbacks: ${fbTotal}/${tilings.length}  (cm/cmm draw a rhombus)`,
+);
 if (fdFail > 0 || subFail > 0) process.exitCode = 1;

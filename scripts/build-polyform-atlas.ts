@@ -53,7 +53,12 @@ const conj = (u: V4): V4 => [u[0] + u[2], u[1], -u[2], -u[1] - u[3]]; // complex
 function makeSyms(withReflections: boolean): Array<(u: V4) => V4> {
 	const out: Array<(u: V4) => V4> = [];
 	for (let refl = 0; refl < (withReflections ? 2 : 1); refl++)
-		for (let r = 0; r < 12; r++) out.push((u: V4) => { let x = refl ? conj(u) : u; for (let i = 0; i < r; i++) x = mulZeta(x); return x; });
+		for (let r = 0; r < 12; r++)
+			out.push((u: V4) => {
+				let x = refl ? conj(u) : u;
+				for (let i = 0; i < r; i++) x = mulZeta(x);
+				return x;
+			});
 	return out;
 }
 const SYMS_ROT = makeSyms(false);
@@ -104,7 +109,8 @@ function lessThan(a: Row[], b: Row[]): boolean {
 function canonKey(c: Cell, syms: Array<(u: V4) => V4>, pieceIdx: Map<string, number>): string {
 	let M = 1;
 	for (const f of c.faces) M = lcm(M, f.verts.length);
-	const T1 = smul(c.T1 as V4, M), T2 = smul(c.T2 as V4, M);
+	const T1 = smul(c.T1 as V4, M),
+		T2 = smul(c.T2 as V4, M);
 	const base = c.faces.map((f) => {
 		let s: V4 = [0, 0, 0, 0];
 		for (const p of f.verts) s = add(s, p as V4);
@@ -114,25 +120,37 @@ function canonKey(c: Cell, syms: Array<(u: V4) => V4>, pieceIdx: Map<string, num
 	// so the argmin is the same on every presentation; ties go to the lowest palette index.
 	const cnt = new Map<number, number>();
 	for (const b of base) cnt.set(b.fp, (cnt.get(b.fp) ?? 0) + 1);
-	let rare = -1, rc = Infinity;
-	for (const [k, v] of [...cnt].sort((x, y) => x[0] - y[0])) if (v < rc) { rc = v; rare = k; }
+	let rare = -1,
+		rc = Infinity;
+	for (const [k, v] of [...cnt].sort((x, y) => x[0] - y[0]))
+		if (v < rc) {
+			rc = v;
+			rare = k;
+		}
 
 	// One anchor per face of the fundamental domain carrying that piece, each taken at its translate
 	// nearest the origin so the patch around it is inside the gather.
-	const t1 = [toX(T1) / M, toY(T1) / M], t2 = [toX(T2) / M, toY(T2) / M];
+	const t1 = [toX(T1) / M, toY(T1) / M],
+		t2 = [toX(T2) / M, toY(T2) / M];
 	const det = t1[0] * t2[1] - t1[1] * t2[0];
 	const anchors: V4[] = [];
 	let rMax = 0;
 	for (const b of base) {
 		if (b.fp !== rare) continue;
-		const px = toX(b.P) / M, py = toY(b.P) / M;
-		const mc = (-px * t2[1] + py * t2[0]) / det, nc = (-t1[0] * py + t1[1] * px) / det;
-		let bestP: V4 | null = null, bestN = Infinity;
+		const px = toX(b.P) / M,
+			py = toY(b.P) / M;
+		const mc = (-px * t2[1] + py * t2[0]) / det,
+			nc = (-t1[0] * py + t1[1] * px) / det;
+		let bestP: V4 | null = null,
+			bestN = Infinity;
 		for (let m = Math.floor(mc) - 1; m <= Math.floor(mc) + 2; m++)
 			for (let n = Math.floor(nc) - 1; n <= Math.floor(nc) + 2; n++) {
 				const P = add(b.P, add(smul(T1, m), smul(T2, n)));
 				const d = (toX(P) / M) ** 2 + (toY(P) / M) ** 2;
-				if (d < bestN) { bestN = d; bestP = P; }
+				if (d < bestN) {
+					bestN = d;
+					bestP = P;
+				}
 			}
 		anchors.push(bestP!);
 		rMax = Math.max(rMax, Math.sqrt(bestN));
@@ -140,17 +158,19 @@ function canonKey(c: Cell, syms: Array<(u: V4) => V4>, pieceIdx: Map<string, num
 
 	// A point past (furthest anchor + window) cannot enter any candidate key, so that is the gather.
 	const R_GATHER = rMax + R_WINDOW;
-	const minT = Math.min(Math.hypot(...t1 as [number, number]), Math.hypot(...t2 as [number, number]));
+	const minT = Math.min(Math.hypot(...(t1 as [number, number])), Math.hypot(...(t2 as [number, number])));
 	const K = Math.ceil((R_GATHER + 8) / Math.max(minT, 0.4)) + 2;
 	const pts: Array<{ fp: number; P: V4 }> = [];
-	for (let m = -K; m <= K; m++) for (let n = -K; n <= K; n++) {
-		const off = add(smul(T1, m), smul(T2, n));
-		for (const b of base) {
-			const P = add(b.P, off);
-			const x = toX(P) / M, y = toY(P) / M;
-			if (x * x + y * y <= R_GATHER * R_GATHER) pts.push({ fp: b.fp, P });
+	for (let m = -K; m <= K; m++)
+		for (let n = -K; n <= K; n++) {
+			const off = add(smul(T1, m), smul(T2, n));
+			for (const b of base) {
+				const P = add(b.P, off);
+				const x = toX(P) / M,
+					y = toY(P) / M;
+				if (x * x + y * y <= R_GATHER * R_GATHER) pts.push({ fp: b.fp, P });
+			}
 		}
-	}
 	// g is linear, so g(P − A) = g(P) − g(A): rotate the patch ONCE per symmetry instead of once per
 	// (anchor, symmetry, point). And |g(P − A)| = |P − A|, so which points fall in the window depends on
 	// the anchor alone — the mask is shared by all twelve.
@@ -160,11 +180,13 @@ function canonKey(c: Cell, syms: Array<(u: V4) => V4>, pieceIdx: Map<string, num
 		const inWin: number[] = [];
 		for (let i = 0; i < pts.length; i++) {
 			const d = sub(pts[i].P, A);
-			const x = toX(d) / M, y = toY(d) / M;
+			const x = toX(d) / M,
+				y = toY(d) / M;
 			if (x * x + y * y <= R_WINDOW * R_WINDOW) inWin.push(i);
 		}
 		for (let s = 0; s < syms.length; s++) {
-			const R = rot[s], gA = syms[s](A);
+			const R = rot[s],
+				gA = syms[s](A);
 			const rel: Row[] = inWin.map((i) => {
 				const Q = sub(R[i], gA);
 				return [Q[0], Q[1], Q[2], Q[3], pts[i].fp] as Row;
@@ -185,7 +207,9 @@ function hueTable(b: PolyformBoard): Record<string, number> {
 	if (b.id === "tetromino") return TETRIS_HUE;
 	const spec = JSON.parse(fs.readFileSync(palettePath(b), "utf8")) as { tiles: { name: string }[] };
 	const out: Record<string, number> = {};
-	spec.tiles.forEach((t, i) => { out[t.name] = Math.round((20 + (360 * i) / spec.tiles.length) % 360); });
+	spec.tiles.forEach((t, i) => {
+		out[t.name] = Math.round((20 + (360 * i) / spec.tiles.length) % 360);
+	});
 	return out;
 }
 
@@ -229,7 +253,9 @@ const OUT = path.join(ROOT, "public", "reference-atlas-polyomino.json");
 const LOG = path.join(ROOT, "experiments", "results", "polyform-atlas-build.log");
 
 function note(b: PolyformBoard, pieces: string[]): string {
-	const cell = { polyomino: "unit squares", polyiamond: "unit equilateral triangles", polyhex: "unit hexagons" }[b.family];
+	const cell = { polyomino: "unit squares", polyiamond: "unit equilateral triangles", polyhex: "unit hexagons" }[
+		b.family
+	];
 	return (
 		`k-uniform tilings by the ${b.pieces} one-sided ${b.label.toLowerCase()} (${pieces.join(" ")}; ${b.free} free, ` +
 		`counting a shape and its mirror once). Each piece is a union of ${b.order} ${cell}, modeled as a degenerate ` +
@@ -247,7 +273,10 @@ function note(b: PolyformBoard, pieces: string[]): string {
 }
 
 const logLines: string[] = [];
-const log = (m = ""): void => { logLines.push(m); console.log(m); };
+const log = (m = ""): void => {
+	logLines.push(m);
+	console.log(m);
+};
 
 // ⚑ MIRROR CLOSURE, and why the shelf cannot do without it. The protoset of every board is ONE-SIDED —
 // closed under reflection, S with Z and J with L — so the set of tilings is closed under reflection too,
@@ -257,7 +286,15 @@ const log = (m = ""): void => { logLines.push(m); console.log(m); };
 // tile-multiset classes were asymmetric, mono-Z present 19 times and mono-S never. So the closure is
 // taken HERE, exactly, by conjugating the ℤ[ζ₁₂] coordinates and swapping each piece for its twin. A
 // mirror whose key is already present adds nothing, which is what keeps an achiral tiling single.
-const ZK: V4[] = (() => { const z: V4[] = []; let v: V4 = [1, 0, 0, 0]; for (let i = 0; i < 12; i++) { z.push(v); v = mulZeta(v); } return z; })();
+const ZK: V4[] = (() => {
+	const z: V4[] = [];
+	let v: V4 = [1, 0, 0, 0];
+	for (let i = 0; i < 12; i++) {
+		z.push(v);
+		v = mulZeta(v);
+	}
+	return z;
+})();
 const dirIdx = (d: V4): number => ZK.findIndex((z) => z[0] === d[0] && z[1] === d[1] && z[2] === d[2] && z[3] === d[3]);
 /** A tile's shape as a cyclic TURN word — rotation-invariant, and a reflection reverses it. */
 function turnWord(verts: number[][]): number[] {
@@ -328,7 +365,8 @@ function buildBoard(b: PolyformBoard): ReferenceTiling[] {
 		return [];
 	}
 	const cells: Cell[] = srcs.flatMap((p, i) =>
-		(JSON.parse(fs.readFileSync(p, "utf8")) as Cell[]).map((c) => (i ? { ...c, id: `x${i}-${c.id}` } : c)));
+		(JSON.parse(fs.readFileSync(p, "utf8")) as Cell[]).map((c) => (i ? { ...c, id: `x${i}-${c.id}` } : c)),
+	);
 	const hue = hueTable(b);
 	const pieces = Object.keys(hue);
 	const pieceIdx = new Map(pieces.map((n, i) => [n, i]));
@@ -342,7 +380,8 @@ function buildBoard(b: PolyformBoard): ReferenceTiling[] {
 	type Cand = { tiling: ReferenceTiling; cell: Cell; key: string; mkey: string; area: number; k: number };
 	let skipped = 0;
 	const toCand = (c: Cell): Cand | null => {
-		const u = dec(RING, c.T1), v = dec(RING, c.T2);
+		const u = dec(RING, c.T1),
+			v = dec(RING, c.T2);
 		const cellArea = detSurd(u, v).abs();
 		let sum = polygonAreaSurd(c.faces[0].verts.map((p) => dec(RING, p)));
 		for (let i = 1; i < c.faces.length; i++) sum = sum.add(polygonAreaSurd(c.faces[i].verts.map((p) => dec(RING, p))));
@@ -351,10 +390,14 @@ function buildBoard(b: PolyformBoard): ReferenceTiling[] {
 			skipped++;
 			return null;
 		}
-		const uv = u.toVector(), vv = v.toVector();
+		const uv = u.toVector(),
+			vv = v.toVector();
 		const cellPolygons = c.faces.map((f) => ({
 			n: f.verts.length,
-			vertices: f.verts.map((p) => { const w = dec(RING, p).toVector(); return [w.x, w.y]; }),
+			vertices: f.verts.map((p) => {
+				const w = dec(RING, p).toVector();
+				return [w.x, w.y];
+			}),
 			hue: hue[f.tile] ?? 0, // per-piece identity colour (side count can't tell polyforms apart)
 		}));
 		return {
@@ -369,7 +412,13 @@ function buildBoard(b: PolyformBoard): ReferenceTiling[] {
 				k: c.k,
 				family: familyLabel(c.faces, pieces),
 				polyformOrder: b.id,
-				renderCell: { cellPolygons, basis: [[uv.x, uv.y], [vv.x, vv.y]] } as ReferenceTiling["renderCell"],
+				renderCell: {
+					cellPolygons,
+					basis: [
+						[uv.x, uv.y],
+						[vv.x, vv.y],
+					],
+				} as ReferenceTiling["renderCell"],
 				discoverer: "Alessandro Longo",
 				certification: "candidate",
 				note: NOTE,
@@ -398,7 +447,10 @@ function buildBoard(b: PolyformBoard): ReferenceTiling[] {
 	for (const c of cands) keep(c);
 	let conflicts = 0;
 	for (const ks of kSeen.values()) if (ks.size > 1) conflicts++;
-	if (conflicts) log(`  ⚑ ${b.id}: ${conflicts} geometries arrived at more than one k (supercell presentations) — filed at the lowest`);
+	if (conflicts)
+		log(
+			`  ⚑ ${b.id}: ${conflicts} geometries arrived at more than one k (supercell presentations) — filed at the lowest`,
+		);
 	// Reference figure: how many tilings there would be under the A068599 mirror-merge convention this
 	// shelf departs from. A second canonical key over 24 symmetries instead of 12, so it triples the
 	// build — opt in with --mirror-report when the number is wanted.
@@ -417,18 +469,24 @@ function buildBoard(b: PolyformBoard): ReferenceTiling[] {
 		if (!byKey.has(cand.key)) added++;
 		keep(cand);
 	}
-	if (added) log(`  ⚑ ${b.id}: mirror closure ADDED ${added} reflections the engine did not emit (see the note in this file)`);
+	if (added)
+		log(`  ⚑ ${b.id}: mirror closure ADDED ${added} reflections the engine did not emit (see the note in this file)`);
 
 	const out = [...byKey.values()].map((c) => c.tiling);
 	out.sort((a, b2) => a.k - b2.k || a.family.localeCompare(b2.family) || a.id.localeCompare(b2.id));
-	const rawByK = new Map<number, number>(), distByK = new Map<number, number>();
+	const rawByK = new Map<number, number>(),
+		distByK = new Map<number, number>();
 	for (const c of cands) rawByK.set(c.k, (rawByK.get(c.k) ?? 0) + 1);
 	for (const c of out) distByK.set(c.k, (distByK.get(c.k) ?? 0) + 1);
-	const perK = [...distByK.keys()].sort((x, y) => x - y)
-		.map((k) => `k=${k}: ${rawByK.get(k) ?? 0}→${distByK.get(k) ?? 0}`).join("  ");
-	log(`  ${b.label.padEnd(12)} ${String(cands.length).padStart(5)} raw → ${String(out.length).padStart(5)} distinct ` +
-		`(${mirrorMerged === null ? "mirror-merged not computed" : `mirror-merged would be ${mirrorMerged}`}` +
-		`${skipped ? `; ${skipped} area-cert SKIPPED` : ""})   ${perK}`);
+	const perK = [...distByK.keys()]
+		.sort((x, y) => x - y)
+		.map((k) => `k=${k}: ${rawByK.get(k) ?? 0}→${distByK.get(k) ?? 0}`)
+		.join("  ");
+	log(
+		`  ${b.label.padEnd(12)} ${String(cands.length).padStart(5)} raw → ${String(out.length).padStart(5)} distinct ` +
+			`(${mirrorMerged === null ? "mirror-merged not computed" : `mirror-merged would be ${mirrorMerged}`}` +
+			`${skipped ? `; ${skipped} area-cert SKIPPED` : ""})   ${perK}`,
+	);
 	if (skipped > 0) process.exitCode = 1;
 	return out;
 }
@@ -442,12 +500,19 @@ function main(): void {
 	for (const b of boards) all.push(...buildBoard(b));
 
 	const order = new Map(POLYFORM_BOARDS.map((b, i) => [b.id, i]));
-	all.sort((a, b) => (order.get(a.polyformOrder!)! - order.get(b.polyformOrder!)!) || a.k - b.k
-		|| a.family.localeCompare(b.family) || a.id.localeCompare(b.id));
+	all.sort(
+		(a, b) =>
+			order.get(a.polyformOrder!)! - order.get(b.polyformOrder!)! ||
+			a.k - b.k ||
+			a.family.localeCompare(b.family) ||
+			a.id.localeCompare(b.id),
+	);
 	fs.mkdirSync(path.dirname(OUT), { recursive: true });
 	fs.writeFileSync(OUT, stringifyAtlas(all) + "\n");
 	const kb = (fs.statSync(OUT).size / 1024).toFixed(1);
-	log(`  TOTAL ${all.length} tilings → ${path.relative(ROOT, OUT)} (${kb} KB), ${((Date.now() - t0) / 1000).toFixed(1)}s`);
+	log(
+		`  TOTAL ${all.length} tilings → ${path.relative(ROOT, OUT)} (${kb} KB), ${((Date.now() - t0) / 1000).toFixed(1)}s`,
+	);
 	fs.mkdirSync(path.dirname(LOG), { recursive: true });
 	fs.writeFileSync(LOG, logLines.join("\n") + "\n");
 }

@@ -13,8 +13,8 @@
  * 12-direction lattice (octagon-bearing cells, fractional coordinates, unexpected shape); callers fall
  * back to the necessary-invariant bucket for those, so this can never break the pipeline.
  */
-import type { Cyclotomic } from '@/classes/Cyclotomic';
-import type { PeriodCell } from '@/classes/algorithm/PeriodSolver';
+import type { Cyclotomic } from "@/classes/Cyclotomic";
+import type { PeriodCell } from "@/classes/algorithm/PeriodSolver";
 
 type Vec = number[]; // [a0,a1,a2,a3] over the Z-basis {1, omega, omega^2, omega^3}
 
@@ -23,11 +23,17 @@ const conj = (v: Vec): Vec => [v[0] + v[2], v[1], -v[2], -v[1] - v[3]];
 const add = (a: Vec, b: Vec): Vec => [a[0] + b[0], a[1] + b[1], a[2] + b[2], a[3] + b[3]];
 const sub = (a: Vec, b: Vec): Vec => [a[0] - b[0], a[1] - b[1], a[2] - b[2], a[3] - b[3]];
 const fdiv = (a: number, b: number) => Math.floor(a / b);
-const key = (v: Vec) => v.join(',');
+const key = (v: Vec) => v.join(",");
 const cmpVec = (a: Vec, b: Vec) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2] || a[3] - b[3];
 
 const W: Vec[] = [];
-{ let w: Vec = [1, 0, 0, 0]; for (let i = 0; i < 12; i++) { W.push(w); w = mulw(w); } }
+{
+	let w: Vec = [1, 0, 0, 0];
+	for (let i = 0; i < 12; i++) {
+		W.push(w);
+		w = mulw(w);
+	}
+}
 
 type Gm = { f: boolean; j: number };
 const buildG = (reflect: boolean): Gm[] => {
@@ -37,7 +43,11 @@ const buildG = (reflect: boolean): Gm[] => {
 };
 const G_FULL = buildG(true); // D₁₂ — reflection-inclusive (existing behaviour)
 const G_ROT = buildG(false); // C₁₂ — rotation-only (chirality-sensitive)
-const applyG = (g: Gm, v: Vec): Vec => { let x = g.f ? conj(v) : v; for (let i = 0; i < g.j; i++) x = mulw(x); return x; };
+const applyG = (g: Gm, v: Vec): Vec => {
+	let x = g.f ? conj(v) : v;
+	for (let i = 0; i < g.j; i++) x = mulw(x);
+	return x;
+};
 const sigma = (g: Gm, k: number) => (g.f ? (((g.j - k) % 12) + 12) % 12 : (g.j + k) % 12);
 const word = (ks: number[]) => ks.reduce((acc, k) => acc | (1 << (11 - k)), 0);
 
@@ -61,7 +71,10 @@ function hnf(rows: Vec[]): Vec[] {
 		let piv = mat[pivIdx];
 		mat.splice(pivIdx, 1);
 		if (piv[col] < 0) piv = piv.map((x) => -x);
-		for (const b of basis) { const q = fdiv(b[col], piv[col]); for (let i = 0; i < 4; i++) b[i] -= q * piv[i]; }
+		for (const b of basis) {
+			const q = fdiv(b[col], piv[col]);
+			for (let i = 0; i < 4; i++) b[i] -= q * piv[i];
+		}
 		basis.push(piv);
 	}
 	return basis;
@@ -93,9 +106,9 @@ function maximize(H: Vec[], S0: Vec[]): [Vec[], Vec[]] {
 		if (S.every((x) => Sset.has(key(rep(add(x, t), H))))) ts.push(rep(t, H));
 	}
 	const H2 = hnf([...H, ...ts]);
-	if (H2.length !== 2) throw new Error('N: lattice maximization raised rank');
+	if (H2.length !== 2) throw new Error("N: lattice maximization raised rank");
 	const S2 = uniqSort(S.map((s) => rep(s, H2)));
-	if (S.length % S2.length !== 0) throw new Error('N: seed index mismatch');
+	if (S.length % S2.length !== 0) throw new Error("N: seed index mismatch");
 	return [H2, S2];
 }
 
@@ -115,12 +128,18 @@ const cmpArr = (a: number[], b: number[]) => {
 	for (let i = 0; i < n; i++) if (a[i] !== b[i]) return a[i] - b[i];
 	return a.length - b.length;
 };
-const cmpMat = (a: Vec[], b: Vec[]) => { for (let i = 0; i < a.length; i++) { const c = cmpVec(a[i], b[i]); if (c) return c; } return 0; };
+const cmpMat = (a: Vec[], b: Vec[]) => {
+	for (let i = 0; i < a.length; i++) {
+		const c = cmpVec(a[i], b[i]);
+		if (c) return c;
+	}
+	return 0;
+};
 
 /** The canonical matrix (Definition N of the note): rows = HNF lattice basis then sorted seed reps. */
 function canonicalMatrix(symbol: Vec[], G: Gm[]): Vec[] {
 	let H = hnf([symbol[0].slice(), symbol[1].slice()]);
-	if (H.length !== 2) throw new Error('N: degenerate lattice');
+	if (H.length !== 2) throw new Error("N: degenerate lattice");
 	let S = uniqSort(symbol.slice(2).map((s) => rep(s.slice(), H)));
 	[H, S] = maximize(H, S);
 	const st = stars(H, S);
@@ -145,9 +164,9 @@ function canonicalMatrix(symbol: Vec[], G: Gm[]): Vec[] {
 
 /** Z[zeta24] encode ({n: 8 ints, d}) -> Z[omega]=Z[zeta12] (even positions); odd positions must vanish. */
 function encToVec(enc: { n: string[]; d: string }): Vec {
-	if (enc.d !== '1') throw new Error('N: non-unit denominator');
+	if (enc.d !== "1") throw new Error("N: non-unit denominator");
 	const c = enc.n.map(Number);
-	if (c[1] || c[3] || c[5] || c[7]) throw new Error('N: octagon (odd zeta24 position)');
+	if (c[1] || c[3] || c[5] || c[7]) throw new Error("N: octagon (odd zeta24 position)");
 	return [c[0], c[2], c[4], c[6]];
 }
 
@@ -160,7 +179,12 @@ function encToVec(enc: { n: string[]; d: string }): Vec {
 export function nKeyOfSymbol(rows: Vec[]): string | null {
 	try {
 		if (rows.length < 3) return null;
-		return JSON.stringify(canonicalMatrix(rows.map((r) => r.slice()), G_FULL));
+		return JSON.stringify(
+			canonicalMatrix(
+				rows.map((r) => r.slice()),
+				G_FULL,
+			),
+		);
 	} catch {
 		return null;
 	}
@@ -170,7 +194,12 @@ export function nKeyOfSymbol(rows: Vec[]): string | null {
 export function nKeyOfSymbolDirect(rows: Vec[]): string | null {
 	try {
 		if (rows.length < 3) return null;
-		return JSON.stringify(canonicalMatrix(rows.map((r) => r.slice()), G_ROT));
+		return JSON.stringify(
+			canonicalMatrix(
+				rows.map((r) => r.slice()),
+				G_ROT,
+			),
+		);
 	} catch {
 		return null;
 	}

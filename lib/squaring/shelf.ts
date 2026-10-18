@@ -60,7 +60,15 @@ export interface SquaringSummary {
 	perfect: number;
 	simple: number;
 	/** The richest one, by distinct sizes then by order — the card the article shows. */
-	best: { battery: [number, number]; width: string; height: string; order: number; distinct: number; perfect: boolean; simple: boolean };
+	best: {
+		battery: [number, number];
+		width: string;
+		height: string;
+		order: number;
+		distinct: number;
+		perfect: boolean;
+		simple: boolean;
+	};
 }
 
 export interface SquaringManifest {

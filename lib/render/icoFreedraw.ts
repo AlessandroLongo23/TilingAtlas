@@ -93,8 +93,12 @@ export function straightArc(u: V3, v: V3, radius: number, extend = 0): Float32Ar
 	const b: V3 = [v[0] * radius, v[1] * radius, v[2] * radius];
 	const d = nrm([b[0] - a[0], b[1] - a[1], b[2] - a[2]]);
 	return new Float32Array([
-		a[0] - d[0] * extend, a[1] - d[1] * extend, a[2] - d[2] * extend,
-		b[0] + d[0] * extend, b[1] + d[1] * extend, b[2] + d[2] * extend,
+		a[0] - d[0] * extend,
+		a[1] - d[1] * extend,
+		a[2] - d[2] * extend,
+		b[0] + d[0] * extend,
+		b[1] + d[1] * extend,
+		b[2] + d[2] * extend,
 	]);
 }
 
@@ -137,7 +141,7 @@ export interface IcoOptions {
 // The colour a fully covered direction reaches in the density fill; the page background is the other end
 // of the ramp. Mid-luminance on purpose: the edge arcs stay black ink, and against a target any darker
 // they would disappear exactly where the covering is deepest.
-const DENSITY_INK_LIGHT: V3 = [0.30, 0.42, 0.72];
+const DENSITY_INK_LIGHT: V3 = [0.3, 0.42, 0.72];
 const DENSITY_INK_DARK: V3 = [0.55, 0.68, 1.0];
 
 // Subdivision order for the curved spherical patches (sphere mode). N² sub-triangles per fan triangle.
@@ -148,10 +152,21 @@ const SPHERE_SUBDIV = 22;
 
 // One spherical sub-patch of the triangle (A,B,C): a barycentric grid pushed onto the sphere, SMOOTH
 // (radial) per-vertex normals so the patches shade as one continuous surface.
-function pushSphericalTri(positions: number[], normals: number[], colors: number[], A: V3, B: V3, C: V3, radius: number, col: V3) {
+function pushSphericalTri(
+	positions: number[],
+	normals: number[],
+	colors: number[],
+	A: V3,
+	B: V3,
+	C: V3,
+	radius: number,
+	col: V3,
+) {
 	const M = SPHERE_SUBDIV;
 	const dir = (i: number, j: number): V3 => {
-		const u = i / M, v = j / M, w = 1 - u - v;
+		const u = i / M,
+			v = j / M,
+			w = 1 - u - v;
 		return nrm([A[0] * w + B[0] * u + C[0] * v, A[1] * w + B[1] * u + C[1] * v, A[2] * w + B[2] * u + C[2] * v]);
 	};
 	const emit = (d: V3) => {
@@ -161,8 +176,14 @@ function pushSphericalTri(positions: number[], normals: number[], colors: number
 	};
 	for (let i = 0; i < M; i++) {
 		for (let j = 0; j < M - i; j++) {
-			emit(dir(i, j)); emit(dir(i + 1, j)); emit(dir(i, j + 1));
-			if (i + j < M - 1) { emit(dir(i + 1, j)); emit(dir(i + 1, j + 1)); emit(dir(i, j + 1)); }
+			emit(dir(i, j));
+			emit(dir(i + 1, j));
+			emit(dir(i, j + 1));
+			if (i + j < M - 1) {
+				emit(dir(i + 1, j));
+				emit(dir(i + 1, j + 1));
+				emit(dir(i, j + 1));
+			}
 		}
 	}
 }
@@ -170,7 +191,14 @@ function pushSphericalTri(positions: number[], normals: number[], colors: number
 // A flat polygon face (any ring length), fan-triangulated with the polygon's single OUTWARD plane
 // normal. Winding is irrelevant: the material is DoubleSide and every vertex carries this explicit
 // normal, so the facet shades flat and correctly regardless of ring orientation.
-export function pushFlatFace(positions: number[], normals: number[], colors: number[], ring: V3[], radius: number, col: V3) {
+export function pushFlatFace(
+	positions: number[],
+	normals: number[],
+	colors: number[],
+	ring: V3[],
+	radius: number,
+	col: V3,
+) {
 	const P = ring.map((v) => [v[0] * radius, v[1] * radius, v[2] * radius] as V3);
 	let n = nrm(cross(sub(P[1], P[0]), sub(P[2], P[0])));
 	// The ring's own winding is what produced `n`, so when `n` points inward the fix is to reverse the
@@ -222,19 +250,30 @@ function hemispherePole(U: V3[], solidVerts?: V3[]): V3 {
 // so the whole face collapses to a curve and renders as a hole (sp3-2-00001, the triangular cupola,
 // whose hexagonal base has circumradius π/2 — the one such face in the spherical corpus). Fanning from
 // the pole instead gives one non-degenerate patch per ring EDGE, which is the hemisphere.
-export function pushSphericalFace(positions: number[], normals: number[], colors: number[], ring: V3[], radius: number, col: V3, solidVerts?: V3[]) {
+export function pushSphericalFace(
+	positions: number[],
+	normals: number[],
+	colors: number[],
+	ring: V3[],
+	radius: number,
+	col: V3,
+	solidVerts?: V3[],
+) {
 	const U = ring.map(nrm);
 	const sum = U.reduce<V3>((a, u) => [a[0] + u[0], a[1] + u[1], a[2] + u[2]], [0, 0, 0]);
 	if (Math.hypot(sum[0], sum[1], sum[2]) < 1e-9) {
 		const p = hemispherePole(U, solidVerts);
-		for (let i = 0; i < U.length; i++) pushSphericalTri(positions, normals, colors, p, U[i], U[(i + 1) % U.length], radius, col);
+		for (let i = 0; i < U.length; i++)
+			pushSphericalTri(positions, normals, colors, p, U[i], U[(i + 1) % U.length], radius, col);
 		return;
 	}
 	// outward test on the flat polygon; if inward, reverse so sub-triangles wind outward
 	let fn = cross(sub(U[1], U[0]), sub(U[2], U[0]));
 	const flip = dot(fn, U[0]) < 0;
 	for (let i = 1; i < U.length - 1; i++) {
-		const a = U[0], b = flip ? U[i + 1] : U[i], c = flip ? U[i] : U[i + 1];
+		const a = U[0],
+			b = flip ? U[i + 1] : U[i],
+			c = flip ? U[i] : U[i + 1];
 		pushSphericalTri(positions, normals, colors, a, b, c, radius, col);
 	}
 }
@@ -395,7 +434,13 @@ export function buildIcoFreedraw(pattern: IcoPattern, rawVertices: V3[], opts: I
 		const gridThick = thickness * 0.28;
 		const gridColor: [number, number, number] = dark ? [0.5, 0.5, 0.56] : [0.5, 0.5, 0.55];
 		const gridArcs = (extend: number) => opts.allEdges!.map(([i, j]) => edgeArc(i, j, radius, extend));
-		const grid = buildTubeSkeleton(gridArcs, 0, { section: "tube", thickness: gridThick, color: gridColor, occlude: opts.occlude, joints: true });
+		const grid = buildTubeSkeleton(gridArcs, 0, {
+			section: "tube",
+			thickness: gridThick,
+			color: gridColor,
+			occlude: opts.occlude,
+			joints: true,
+		});
 		grid.object.traverse((o) => {
 			const mat = (o as THREE.Mesh).material as THREE.Material | undefined;
 			if (mat) {
@@ -437,7 +482,13 @@ export function buildIcoFreedraw(pattern: IcoPattern, rawVertices: V3[], opts: I
 			...(drawEdges ? pattern.drawn.map(([i, j]) => edgeArc(i, j, radius, extend)) : []),
 			...creaseChords(tubeCreases, radius, extend),
 		];
-		const tubes: Wireframe = buildTubeSkeleton(arcsFor, 0, { section: "tube", thickness, color: edgeColor, occlude: opts.occlude, joints: true });
+		const tubes: Wireframe = buildTubeSkeleton(arcsFor, 0, {
+			section: "tube",
+			thickness,
+			color: edgeColor,
+			occlude: opts.occlude,
+			joints: true,
+		});
 		overFill(tubes.object);
 		group.add(tubes.object);
 		disposers.push(() => tubes.dispose());

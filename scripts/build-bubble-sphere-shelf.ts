@@ -23,18 +23,34 @@ const OUT = `${process.cwd()}/public/bubble-sphere`;
 
 /** id prefix per board — short, stable, and unique across the atlas. */
 const BOARDS: [string, string][] = [
-	["tetrahedron", "sbtet"], ["cube", "sbcub"], ["octahedron", "sboct"],
-	["dodecahedron", "sbdod"], ["icosahedron", "sbico"],
-	["truncated-tetrahedron", "sbttet"], ["cuboctahedron", "sbco"], ["truncated-cube", "sbtcub"],
-	["truncated-octahedron", "sbtoct"], ["rhombicuboctahedron", "sbrco"],
-	["truncated-cuboctahedron", "sbtco"], ["snub-cube", "sbscub"], ["icosidodecahedron", "sbid"],
-	["truncated-dodecahedron", "sbtdod"], ["truncated-icosahedron", "sbtico"],
-	["rhombicosidodecahedron", "sbrid"], ["truncated-icosidodecahedron", "sbtid"],
+	["tetrahedron", "sbtet"],
+	["cube", "sbcub"],
+	["octahedron", "sboct"],
+	["dodecahedron", "sbdod"],
+	["icosahedron", "sbico"],
+	["truncated-tetrahedron", "sbttet"],
+	["cuboctahedron", "sbco"],
+	["truncated-cube", "sbtcub"],
+	["truncated-octahedron", "sbtoct"],
+	["rhombicuboctahedron", "sbrco"],
+	["truncated-cuboctahedron", "sbtco"],
+	["snub-cube", "sbscub"],
+	["icosidodecahedron", "sbid"],
+	["truncated-dodecahedron", "sbtdod"],
+	["truncated-icosahedron", "sbtico"],
+	["rhombicosidodecahedron", "sbrid"],
+	["truncated-icosidodecahedron", "sbtid"],
 	["snub-dodecahedron", "sbsdod"],
-	["triangular-prism", "sbp3"], ["pentagonal-prism", "sbp5"], ["hexagonal-prism", "sbp6"],
-	["octagonal-prism", "sbp8"], ["decagonal-prism", "sbp10"],
-	["square-antiprism", "sba4"], ["pentagonal-antiprism", "sba5"], ["hexagonal-antiprism", "sba6"],
-	["octagonal-antiprism", "sba8"], ["decagonal-antiprism", "sba10"],
+	["triangular-prism", "sbp3"],
+	["pentagonal-prism", "sbp5"],
+	["hexagonal-prism", "sbp6"],
+	["octagonal-prism", "sbp8"],
+	["decagonal-prism", "sbp10"],
+	["square-antiprism", "sba4"],
+	["pentagonal-antiprism", "sba5"],
+	["hexagonal-antiprism", "sba6"],
+	["octagonal-antiprism", "sba8"],
+	["decagonal-antiprism", "sba10"],
 ];
 
 mkdirSync(OUT, { recursive: true });
@@ -46,18 +62,22 @@ for (const [solid, prefix] of BOARDS) {
 	const m = sphereMapOf(poly);
 	const aut = sphereAutomorphisms(m);
 	// Burnside for the total — the number that decides whether this board can ship complete at all.
-	const total = aut.reduce((s, phi) => {
-		const seen = new Uint8Array(m.darts);
-		let cycles = 0;
-		for (let a = 0; a < m.darts; a++) {
-			if (seen[a]) continue;
-			cycles++;
-			const members = new Set<number>();
-			for (let d = a; !seen[d]; d = phi[d]) { seen[d] = 1; members.add(d); }
-			for (const d of members) if (members.has(m.twin[d])) return s;
-		}
-		return s + (1n << BigInt(cycles / 2));
-	}, 0n) / BigInt(aut.length);
+	const total =
+		aut.reduce((s, phi) => {
+			const seen = new Uint8Array(m.darts);
+			let cycles = 0;
+			for (let a = 0; a < m.darts; a++) {
+				if (seen[a]) continue;
+				cycles++;
+				const members = new Set<number>();
+				for (let d = a; !seen[d]; d = phi[d]) {
+					seen[d] = 1;
+					members.add(d);
+				}
+				for (const d of members) if (members.has(m.twin[d])) return s;
+			}
+			return s + (1n << BigInt(cycles / 2));
+		}, 0n) / BigInt(aut.length);
 
 	const complete = total <= BigInt(COMPLETE_UNDER);
 	const reps = complete ? kDistribution(m, aut) : lowK(m, aut, KMAX);
@@ -67,7 +87,12 @@ for (const [solid, prefix] of BOARDS) {
 	const shards: string[] = [];
 	for (const [k, group] of [...byK(reps)].sort((a, b) => a[0] - b[0])) {
 		const recs = group
-			.map((r, i) => ({ id: `${prefix}-${k}-${String(i + 1).padStart(5, "0")}`, k, solid, bites: biteWords(m, r.mask) }))
+			.map((r, i) => ({
+				id: `${prefix}-${k}-${String(i + 1).padStart(5, "0")}`,
+				k,
+				solid,
+				bites: biteWords(m, r.mask),
+			}))
 			.sort((a, b) => a.id.localeCompare(b.id));
 		const name = `${prefix}-k${k}.json`;
 		writeFileSync(`${OUT}/${name}`, JSON.stringify(recs));
@@ -75,7 +100,9 @@ for (const [solid, prefix] of BOARDS) {
 		rows += recs.length;
 	}
 	manifest.push({ solid, coverage: complete ? "complete" : `k<=${KMAX}`, total: total.toString(), shards });
-	console.log(`${solid.padEnd(28)} ${complete ? "complete" : `k<=${KMAX}`.padEnd(8)}  total ${total.toString().padStart(12)}  shipped ${String(reps.length).padStart(6)}  ${shards.length} shard(s)`);
+	console.log(
+		`${solid.padEnd(28)} ${complete ? "complete" : `k<=${KMAX}`.padEnd(8)}  total ${total.toString().padStart(12)}  shipped ${String(reps.length).padStart(6)}  ${shards.length} shard(s)`,
+	);
 }
 writeFileSync(`${OUT}/manifest.json`, JSON.stringify(manifest, null, 1));
 console.log(`\n${rows} records across ${manifest.length} boards -> ${OUT}`);

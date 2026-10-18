@@ -108,7 +108,11 @@ describe("SU(1,1) view isometries", () => {
 
 	it("apply/applyInverse round-trip and stay in the disk", () => {
 		let m = su11Identity();
-		for (const d of [{ x: 0.1, y: 0 }, { x: 0, y: 0.1 }, { x: -0.05, y: 0.08 }]) {
+		for (const d of [
+			{ x: 0.1, y: 0 },
+			{ x: 0, y: 0.1 },
+			{ x: -0.05, y: 0.08 },
+		]) {
 			m = su11Mul(su11Translation(d), m);
 		}
 		m = su11Normalize(m);
@@ -150,8 +154,14 @@ describe("hypDist + hypMidpoint (Poincaré metric)", () => {
 
 	it("hypMidpoint is equidistant from both endpoints (half the total)", () => {
 		for (const [u, v] of [
-			[{ x: 0, y: 0 }, { x: 0.6, y: 0 }],
-			[{ x: 0.2, y: -0.1 }, { x: -0.4, y: 0.35 }],
+			[
+				{ x: 0, y: 0 },
+				{ x: 0.6, y: 0 },
+			],
+			[
+				{ x: 0.2, y: -0.1 },
+				{ x: -0.4, y: 0.35 },
+			],
 		] as Array<[Complex, Complex]>) {
 			const m = hypMidpoint(u, v);
 			const full = hypDist(u, v);
@@ -163,7 +173,8 @@ describe("hypDist + hypMidpoint (Poincaré metric)", () => {
 
 describe("geodesic kernel", () => {
 	it("geodesicThroughPoints: both points lie on the conic (c0(|z|²+1)+c1 x+c2 y = 0)", () => {
-		const a: Complex = { x: 0.3, y: 0.1 }, b: Complex = { x: -0.2, y: 0.4 };
+		const a: Complex = { x: 0.3, y: 0.1 },
+			b: Complex = { x: -0.2, y: 0.4 };
 		const g = geodesicThroughPoints(a, b);
 		const on = (z: Complex) => g.c0 * (z.x * z.x + z.y * z.y + 1) + g.c1 * z.x + g.c2 * z.y;
 		expect(Math.abs(on(a))).toBeLessThan(1e-9);
@@ -171,14 +182,16 @@ describe("geodesic kernel", () => {
 	});
 
 	it("geodesicTangentAt is a unit vector pointing toward the target", () => {
-		const p: Complex = { x: 0.1, y: -0.2 }, toward: Complex = { x: 0.5, y: 0.3 };
+		const p: Complex = { x: 0.1, y: -0.2 },
+			toward: Complex = { x: 0.5, y: 0.3 };
 		const t = geodesicTangentAt(p, toward);
 		expect(near(Math.hypot(t.x, t.y), 1)).toBe(true);
 		expect((toward.x - p.x) * t.x + (toward.y - p.y) * t.y).toBeGreaterThan(0);
 	});
 
 	it("geodesicMove steps the requested hyperbolic distance, and a full step lands on the target", () => {
-		const from: Complex = { x: 0.1, y: 0.05 }, toward: Complex = { x: -0.3, y: 0.4 };
+		const from: Complex = { x: 0.1, y: 0.05 },
+			toward: Complex = { x: -0.3, y: 0.4 };
 		const half = geodesicMove(from, toward, 0.5);
 		expect(near(hypDist(from, half), 0.5, 1e-9)).toBe(true);
 		const full = geodesicMove(from, toward, hypDist(from, toward));

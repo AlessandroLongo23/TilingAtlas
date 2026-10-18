@@ -21,10 +21,7 @@ export type ExactCellSource =
 // One-row exact fetch. The catalogue read (catalogueService) omits cell_codec (heavy); the Play viewer
 // pulls it only for the selected tiling. Returns null if the row/codec is absent — the viewer then
 // simply shows no overlay (e.g. reference-mode tilings that have no cell_codec yet).
-export async function fetchCellCodec(
-	sb: SupabaseClient,
-	canonicalKey: string,
-): Promise<SerializedCell | null> {
+export async function fetchCellCodec(sb: SupabaseClient, canonicalKey: string): Promise<SerializedCell | null> {
 	const { data, error } = await sb
 		.from("found_tilings")
 		.select("cell_codec")

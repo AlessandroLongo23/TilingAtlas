@@ -87,56 +87,56 @@ export function SlideMarkdown({ content, components, compact = false, layout = "
 				"slide-markdown w-full",
 				layout !== "flow" && "flex h-full flex-col",
 				layout === "spread" && "slide-spread",
-				layout === "pinned" && "[&>*:nth-child(2)]:mt-auto [&>*:last-child]:mb-auto",
+				layout === "pinned" && "[&>*:last-child]:mb-auto [&>*:nth-child(2)]:mt-auto",
 				compact
 					? [
-							"[&_h1]:text-[0.95rem] [&_h1]:font-bold [&_h1]:leading-tight [&_h1]:mb-1",
-							"[&_h2]:text-[0.8rem] [&_h2]:font-semibold [&_h2]:mb-1",
-							"[&_h3]:text-[0.7rem] [&_h3]:font-semibold [&_h3]:mb-1",
-							"[&_p]:text-[0.6rem] [&_p]:leading-snug [&_p]:mb-1 [&_p]:text-fg-muted",
-							"[&_ul]:text-[0.6rem] [&_ol]:text-[0.6rem] [&_li]:mb-0.5",
+							"[&_h1]:mb-1 [&_h1]:text-[0.95rem] [&_h1]:leading-tight [&_h1]:font-bold",
+							"[&_h2]:mb-1 [&_h2]:text-[0.8rem] [&_h2]:font-semibold",
+							"[&_h3]:mb-1 [&_h3]:text-[0.7rem] [&_h3]:font-semibold",
+							"[&_p]:mb-1 [&_p]:text-[0.6rem] [&_p]:leading-snug [&_p]:text-fg-muted",
+							"[&_li]:mb-0.5 [&_ol]:text-[0.6rem] [&_ul]:text-[0.6rem]",
 							"[&_table]:text-[0.5rem]",
 							"[&_img]:max-h-16",
 						]
 					: [
 							// Headings
 							"[&_h1]:text-[clamp(2rem,4.4vh+1.4vw,4.25rem)] [&_h1]:font-bold [&_h1]:tracking-tight",
-							"[&_h1]:text-fg [&_h1]:leading-[1.08] [&_h1]:mb-[0.5em] [&_h1]:text-balance",
+							"[&_h1]:mb-[0.5em] [&_h1]:leading-[1.08] [&_h1]:text-balance [&_h1]:text-fg",
 							"[&_h2]:text-[clamp(1.4rem,2.8vh+0.9vw,2.6rem)] [&_h2]:font-bold [&_h2]:tracking-tight",
-							"[&_h2]:text-fg [&_h2]:leading-[1.15] [&_h2]:mb-[0.6em] [&_h2]:text-balance",
+							"[&_h2]:mb-[0.6em] [&_h2]:leading-[1.15] [&_h2]:text-balance [&_h2]:text-fg",
 							"[&_h3]:text-[clamp(1.05rem,1.7vh+0.6vw,1.6rem)] [&_h3]:font-semibold [&_h3]:text-fg",
-							"[&_h3]:mb-[0.5em] [&_h3]:mt-[1em]",
+							"[&_h3]:mt-[1em] [&_h3]:mb-[0.5em]",
 							// Body. No measure cap: a slide is read at a distance in two or three lines, so the
 							// usual 60-character limit only forces a line the column had room for. The pull quote
 							// below keeps its cap, since that one is meant to sit narrow.
 							"[&_p]:text-[clamp(0.95rem,1.5vh+0.45vw,1.5rem)] [&_p]:leading-[1.5]",
-							"[&_p]:text-fg-secondary [&_p]:mb-[0.85em]",
-							"[&_strong]:text-fg [&_strong]:font-semibold",
+							"[&_p]:mb-[0.85em] [&_p]:text-fg-secondary",
+							"[&_strong]:font-semibold [&_strong]:text-fg",
 							"[&_em]:italic",
 							// Lists: the workhorse of a slide, so they get the same size as body text
-							"[&_ul]:list-disc [&_ul]:ml-[1.1em] [&_ul]:mb-[0.85em]",
-							"[&_ol]:list-decimal [&_ol]:ml-[1.2em] [&_ol]:mb-[0.85em]",
+							"[&_ul]:mb-[0.85em] [&_ul]:ml-[1.1em] [&_ul]:list-disc",
+							"[&_ol]:mb-[0.85em] [&_ol]:ml-[1.2em] [&_ol]:list-decimal",
 							"[&_li]:text-[clamp(0.95rem,1.5vh+0.45vw,1.5rem)] [&_li]:leading-[1.45]",
-							"[&_li]:text-fg-secondary [&_li]:mb-[0.4em]",
+							"[&_li]:mb-[0.4em] [&_li]:text-fg-secondary",
 							"[&_li_strong]:text-fg",
 							"[&_li::marker]:text-fg-muted",
 							// Quotes carry the memorable lines, so they read larger, not smaller
 							"[&_blockquote]:border-l-2 [&_blockquote]:border-accent [&_blockquote]:pl-[0.8em]",
 							"[&_blockquote]:my-[0.9em] [&_blockquote]:not-italic",
 							"[&_blockquote_p]:text-[clamp(1.1rem,2vh+0.6vw,1.85rem)] [&_blockquote_p]:text-fg",
-							"[&_blockquote_p]:leading-[1.35] [&_blockquote_p]:max-w-[38ch]",
+							"[&_blockquote_p]:max-w-[38ch] [&_blockquote_p]:leading-[1.35]",
 							// Code
-							"[&_code]:font-mono [&_code]:text-[0.85em] [&_code]:bg-surface-overlay",
-							"[&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-fg",
-							"[&_pre]:bg-surface-overlay/50 [&_pre]:p-4 [&_pre]:rounded-lg [&_pre]:overflow-x-auto",
+							"[&_code]:bg-surface-overlay [&_code]:font-mono [&_code]:text-[0.85em]",
+							"[&_code]:rounded [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-fg",
+							"[&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:bg-surface-overlay/50 [&_pre]:p-4",
 							"[&_pre]:mb-[0.85em] [&_pre]:border [&_pre]:border-line",
 							"[&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-fg-secondary",
 							// Tables: counts, obligations, timings
-							"[&_table]:w-full [&_table]:border-collapse [&_table]:my-[0.8em]",
+							"[&_table]:my-[0.8em] [&_table]:w-full [&_table]:border-collapse",
 							"[&_table]:text-[clamp(0.75rem,1.15vh+0.35vw,1.05rem)]",
-							"[&_th]:bg-surface-overlay [&_th]:text-left [&_th]:px-3 [&_th]:py-1.5",
-							"[&_th]:text-fg [&_th]:font-semibold [&_th]:border [&_th]:border-line",
-							"[&_td]:px-3 [&_td]:py-1.5 [&_td]:border [&_td]:border-line [&_td]:text-fg-secondary",
+							"[&_th]:bg-surface-overlay [&_th]:px-3 [&_th]:py-1.5 [&_th]:text-left",
+							"[&_th]:border [&_th]:border-line [&_th]:font-semibold [&_th]:text-fg",
+							"[&_td]:border [&_td]:border-line [&_td]:px-3 [&_td]:py-1.5 [&_td]:text-fg-secondary",
 							"[&_tr:nth-child(even)]:bg-surface-overlay/20",
 							// Figures
 							// Figures come from the thesis TikZ on white; the white plate keeps them legible if

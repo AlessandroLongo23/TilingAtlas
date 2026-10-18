@@ -12,9 +12,7 @@ export async function GET() {
 	const { data, error } = await supabase.storage.from(PIPELINE_BUCKET).list("", { limit: 500 });
 	if (error) return serviceUnavailable(`Storage list failed: ${error.message}`);
 
-	const folders = (data ?? [])
-		.filter((f) => f.name && !f.name.startsWith("."))
-		.map((f) => f.name);
+	const folders = (data ?? []).filter((f) => f.name && !f.name.startsWith(".")).map((f) => f.name);
 
 	return NextResponse.json({ folders });
 }

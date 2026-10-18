@@ -67,7 +67,7 @@ function SpeciesCard({
 			<div className="relative aspect-square bg-surface-raised">
 				<TilingThumbnail polygons={polygons} fit={0.66} />
 				{selected ? (
-					<span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-fg text-bg">
+					<span className="text-bg absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-fg">
 						<Check size={11} strokeWidth={3.5} />
 					</span>
 				) : null}
@@ -75,15 +75,13 @@ function SpeciesCard({
 			<div className="flex items-baseline justify-between gap-1 px-1.5 py-1">
 				<span
 					className={cn(
-						"truncate text-[11px] font-medium leading-none max-md:text-xs",
+						"truncate text-[11px] leading-none font-medium max-md:text-xs",
 						selected ? "text-fg" : "text-fg-secondary",
 					)}
 				>
 					{speciesLabel(species)}
 				</span>
-				<span className="shrink-0 text-[10px] leading-none tabular-nums text-fg-muted">
-					{count.toLocaleString()}
-				</span>
+				<span className="shrink-0 text-[10px] leading-none text-fg-muted tabular-nums">{count.toLocaleString()}</span>
 			</div>
 		</button>
 	);
@@ -122,7 +120,8 @@ export function PolygonFilterModal({
 	// One fixed track width everywhere so every row lines up, whatever its length. auto-fill would
 	// re-flow each row to its own count and leave the sections visibly misaligned. A phone gets three
 	// equal columns instead, which is the same alignment at the width it has.
-	const grid = "grid gap-2 [grid-template-columns:repeat(auto-fill,92px)] max-md:[grid-template-columns:repeat(3,minmax(0,1fr))]";
+	const grid =
+		"grid gap-2 [grid-template-columns:repeat(auto-fill,92px)] max-md:[grid-template-columns:repeat(3,minmax(0,1fr))]";
 
 	return (
 		// On a phone the sheet takes the full 92dvh; the Modal body scrolls and the footer below sticks to
@@ -137,16 +136,12 @@ export function PolygonFilterModal({
 						selected={mode}
 						onChange={onModeChange}
 					/>
-					<p className="text-[11px] leading-snug text-fg-muted">
-						{MODE_OPTIONS.find((o) => o.value === mode)?.note}
-					</p>
+					<p className="text-[11px] leading-snug text-fg-muted">{MODE_OPTIONS.find((o) => o.value === mode)?.note}</p>
 				</div>
 
 				{regular.length ? (
 					<section className="flex flex-col gap-2">
-						<h4 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-fg-muted">
-							Regular polygons
-						</h4>
+						<h4 className="text-[11px] font-semibold tracking-[0.08em] text-fg-muted uppercase">Regular polygons</h4>
 						<div className={grid}>
 							{regular.map((key) => (
 								<SpeciesCard
@@ -163,15 +158,15 @@ export function PolygonFilterModal({
 
 				{starRows.length ? (
 					<section className="flex flex-col gap-3">
-						<h4 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-fg-muted">
+						<h4 className="text-[11px] font-semibold tracking-[0.08em] text-fg-muted uppercase">
 							Star polygons
-							<span className="ml-1.5 font-normal normal-case tracking-normal text-fg-disabled">
+							<span className="ml-1.5 font-normal tracking-normal text-fg-disabled normal-case">
 								by fold, each at every point angle in the atlas
 							</span>
 						</h4>
 						{starRows.map(([fold, keys]) => (
 							<div key={fold} className="flex flex-col gap-1.5">
-								<span className="text-[10px] font-medium tabular-nums text-fg-disabled">{fold}★</span>
+								<span className="text-[10px] font-medium text-fg-disabled tabular-nums">{fold}★</span>
 								<div className={grid}>
 									{keys.map((key) => (
 										<SpeciesCard
@@ -195,10 +190,8 @@ export function PolygonFilterModal({
 						"No polygons selected — the facet is off"
 					) : (
 						<>
-							<span className="font-medium tabular-nums text-fg-secondary">
-								{matchCount.toLocaleString()}
-							</span>{" "}
-							tiling{matchCount === 1 ? "" : "s"} match {selected.length} selected
+							<span className="font-medium text-fg-secondary tabular-nums">{matchCount.toLocaleString()}</span> tiling
+							{matchCount === 1 ? "" : "s"} match {selected.length} selected
 						</>
 					)}
 				</span>

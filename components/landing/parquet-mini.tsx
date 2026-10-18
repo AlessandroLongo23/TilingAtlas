@@ -61,10 +61,7 @@ export function ParquetMini() {
 
 	const instance = useMemo(() => TILINGS.square.build(COLS, ROWS), []);
 
-	const tileOutlines: Pt[][] = useMemo(
-		() => outlinesAt(instance, phase),
-		[instance, phase],
-	);
+	const tileOutlines: Pt[][] = useMemo(() => outlinesAt(instance, phase), [instance, phase]);
 
 	// Fitting the box to the frame on screen would make the strip breathe: tiles swing past the
 	// strip's edges as the wave travels, the box follows, and the element's height follows the box —
@@ -83,12 +80,8 @@ export function ParquetMini() {
 	// h-full, not h-auto: with the box fixed the aspect no longer moves, and a height that comes from
 	// the container, not the drawing, can't feed back into layout at all.
 	return (
-		<div ref={hostRef} className="w-full h-full flex items-center px-3">
-			<ParquetStrip
-				tileOutlines={tileOutlines}
-				viewBox={viewBox}
-				className="w-full h-full text-fg-secondary"
-			/>
+		<div ref={hostRef} className="flex h-full w-full items-center px-3">
+			<ParquetStrip tileOutlines={tileOutlines} viewBox={viewBox} className="h-full w-full text-fg-secondary" />
 		</div>
 	);
 }

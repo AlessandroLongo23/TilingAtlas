@@ -10,8 +10,8 @@
  * Groups consecutive same numbers; uses exponent only when count > 1.
  */
 export function compactVcName(vcName: string): string {
-	const parts = vcName.split(',');
-	if (parts.length === 0) return '';
+	const parts = vcName.split(",");
+	if (parts.length === 0) return "";
 
 	const groups: { value: string; count: number }[] = [];
 	for (const p of parts) {
@@ -24,9 +24,7 @@ export function compactVcName(vcName: string): string {
 		}
 	}
 
-	return groups
-		.map(({ value, count }) => (count > 1 ? `${value}^${count}` : value))
-		.join('.');
+	return groups.map(({ value, count }) => (count > 1 ? `${value}^${count}` : value)).join(".");
 }
 
 /**
@@ -38,7 +36,7 @@ export function compactSeedName(seedName: string): string {
 	const inner = seedName.slice(1, -1);
 	if (!inner) return seedName;
 
-	const vcNames = inner.split(';');
+	const vcNames = inner.split(";");
 	const compactVcs = vcNames.map((vc) => compactVcName(vc));
 
 	// Group all VCs with the same name (order doesn't matter)
@@ -52,13 +50,13 @@ export function compactSeedName(seedName: string): string {
 
 	const parts = sorted.map(([vc, count]) => {
 		if (count > 1) {
-			const wrapped = vc.includes('.') || vc.includes('^') ? `(${vc})` : vc;
+			const wrapped = vc.includes(".") || vc.includes("^") ? `(${vc})` : vc;
 			return `${wrapped}^${count}`;
 		}
 		return vc;
 	});
 
-	return `[${parts.join(';')}]`;
+	return `[${parts.join(";")}]`;
 }
 
 /**
@@ -67,9 +65,9 @@ export function compactSeedName(seedName: string): string {
  */
 export function compactToHtml(compact: string): string {
 	// Replace number^number (inner exponents)
-	let html = compact.replace(/(\d+)\^(\d+)/g, '$1<sup>$2</sup>');
+	let html = compact.replace(/(\d+)\^(\d+)/g, "$1<sup>$2</sup>");
 	// Replace )^number (VC grouping exponents)
-	html = html.replace(/\)\^(\d+)/g, ')<sup>$1</sup>');
+	html = html.replace(/\)\^(\d+)/g, ")<sup>$1</sup>");
 	return html;
 }
 
@@ -80,20 +78,25 @@ export function compactToHtml(compact: string): string {
  */
 export function normalizeSeedForSearch(seedName: string): string {
 	const inner = seedName.slice(1, -1);
-	if (!inner) return '';
-	const vcNames = inner.split(';');
+	if (!inner) return "";
+	const vcNames = inner.split(";");
 	return vcNames
-		.map((vc) => vc.split(/[,.\s]+/).filter(Boolean).join(''))
+		.map((vc) =>
+			vc
+				.split(/[,.\s]+/)
+				.filter(Boolean)
+				.join(""),
+		)
 		.filter(Boolean)
-		.join(';');
+		.join(";");
 }
 
 /**
  * Expands a compact VC expression to digit sequence: "3^3.4^2" → "33344"
  */
 function expandCompactVc(expr: string): string {
-	const parts = expr.split('.');
-	let result = '';
+	const parts = expr.split(".");
+	let result = "";
 	for (const p of parts) {
 		const m = p.match(/^(\d+)\^(\d+)$/);
 		if (m) {
@@ -134,14 +137,14 @@ function expandSearchPart(part: string): string[] {
  * Returns canonical form "vc1;vc2;vc3" or null if empty/invalid
  */
 export function normalizeSearchQuery(query: string): string | null {
-	const s = query.replace(/\s/g, '');
+	const s = query.replace(/\s/g, "");
 	if (!s) return null;
 
 	// Strip optional outer brackets
-	const inner = s.startsWith('[') && s.endsWith(']') ? s.slice(1, -1) : s;
+	const inner = s.startsWith("[") && s.endsWith("]") ? s.slice(1, -1) : s;
 	if (!inner) return null;
 
-	const parts = inner.split(';');
+	const parts = inner.split(";");
 	const vcs: string[] = [];
 
 	for (const part of parts) {
@@ -151,12 +154,15 @@ export function normalizeSearchQuery(query: string): string | null {
 			vcs.push(...expanded);
 		} else {
 			// Extended notation: digits and commas/dots
-			const digits = part.split(/[,.\s]+/).filter(Boolean).join('');
+			const digits = part
+				.split(/[,.\s]+/)
+				.filter(Boolean)
+				.join("");
 			if (digits) vcs.push(digits);
 		}
 	}
 
-	return vcs.length > 0 ? vcs.join(';') : null;
+	return vcs.length > 0 ? vcs.join(";") : null;
 }
 
 /**

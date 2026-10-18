@@ -61,9 +61,7 @@ for (let i = 0; i < vcs.length; i++)
 const graph = CompatibilityGraph.fromAdjacencyList(adj, vcs);
 // Three DISTINCT configurations: the slide is about k orbits, so k different vertices should be
 // visible, and a set that repeats one makes a duller picture and a weaker point.
-const seedSets = new SeedSetExtractor(graph)
-	.findSeedSets(K)
-	.filter((s) => new Set(s).size === K);
+const seedSets = new SeedSetExtractor(graph).findSeedSets(K).filter((s) => new Set(s).size === K);
 
 const round = (n: number) => Math.round(n * 1e6) / 1e6;
 const encode = (polys: Polygon[]) =>
@@ -128,8 +126,7 @@ function advance(seed: SeedConfiguration, placed: Placed[], remaining: string[],
 	};
 }
 
-const strip = (open: ReturnType<typeof encodeState>) =>
-	open.map(({ at, candidates }) => ({ at, candidates }));
+const strip = (open: ReturnType<typeof encodeState>) => open.map(({ at, candidates }) => ({ at, candidates }));
 
 /**
  * The whole tree the widget can walk, to depth k-1, branching on BOTH choices the viewer makes: which
@@ -183,7 +180,9 @@ if (flag("--list")) {
 	rows.sort((a, b) => Math.min(...b.counts) - Math.min(...a.counts));
 	console.log(`${rows.length} usable seed sets of ${seedSets.length}\n`);
 	for (const r of rows.slice(0, 20))
-		console.log(`#${String(r.i).padStart(3)} ${r.counts[0]} vertices, ${r.counts[1]} placements, then >= ${r.counts[2]}  ${r.set.join(" ")}`);
+		console.log(
+			`#${String(r.i).padStart(3)} ${r.counts[0]} vertices, ${r.counts[1]} placements, then >= ${r.counts[2]}  ${r.set.join(" ")}`,
+		);
 	process.exit(0);
 }
 

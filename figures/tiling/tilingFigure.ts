@@ -9,10 +9,10 @@
  * byOrbit draws near-neutral tiles + a colored marker per tiling vertex (deduped across the
  * adjacent polygons sharing it; orbit ids agree by lattice invariance — checked loudly).
  */
-import type { FigureIR, FigureElement, Rect } from '../ir/types';
-import { tileStyleRef, type ColorStrategy } from '../style/palette';
-import type { CellModel } from './cellModel';
-import { replicate } from './patch';
+import type { FigureIR, FigureElement, Rect } from "../ir/types";
+import { tileStyleRef, type ColorStrategy } from "../style/palette";
+import type { CellModel } from "./cellModel";
+import { replicate } from "./patch";
 
 export type TilingFigureOptions = {
 	strategy: ColorStrategy;
@@ -83,7 +83,8 @@ export function tilingFigure(model: CellModel, opts: TilingFigureOptions): Built
 	// Parallelogram anchor: SNAPPED to the nearest actual tiling vertex (so the lattice — the Λ-orbit
 	// of that vertex — coincides with construction points). The highlight is one parallelogram's
 	// worth of tiles, the pedagogically honest "this region's worth repeats".
-	const anchorTarget = anatomy?.anchorTarget ??
+	const anchorTarget =
+		anatomy?.anchorTarget ??
 		(transition
 			? { x: cx + 0.05 * side, y: cy - (bu.y + bv.y) / 2 }
 			: { x: cx - (bu.x + bv.x) / 2, y: cy - (bu.y + bv.y) / 2 });
@@ -143,14 +144,14 @@ export function tilingFigure(model: CellModel, opts: TilingFigureOptions): Built
 		for (const p of placed) {
 			const base = tileStyleRef(opts.strategy, p.n);
 			const s = fillStrengthOf(p);
-			elements.push({ kind: 'poly', verts: p.verts, styleRef: s >= 100 ? base : `${base}@f${s}` });
+			elements.push({ kind: "poly", verts: p.verts, styleRef: s >= 100 ? base : `${base}@f${s}` });
 		}
 	} else {
 		const ordered = anatomy ? [...placed].sort((a, b) => strengthOf(a) - strengthOf(b)) : placed;
 		for (const p of ordered) {
 			const base = tileStyleRef(opts.strategy, p.n);
 			const s = strengthOf(p);
-			elements.push({ kind: 'poly', verts: p.verts, styleRef: s >= 100 ? base : `${base}@${s}` });
+			elements.push({ kind: "poly", verts: p.verts, styleRef: s >= 100 ? base : `${base}@${s}` });
 		}
 	}
 
@@ -166,7 +167,7 @@ export function tilingFigure(model: CellModel, opts: TilingFigureOptions): Built
 					if (q.x < window.minX || q.x > window.maxX || q.y < window.minY || q.y > window.maxY) continue;
 					// transition mode: the lattice annotation lives in the wireframe half
 					if (transition && q.x < cx) continue;
-					elements.push({ kind: 'marker', at: q, styleRef: 'lattice' });
+					elements.push({ kind: "marker", at: q, styleRef: "lattice" });
 				}
 			}
 		}
@@ -174,16 +175,16 @@ export function tilingFigure(model: CellModel, opts: TilingFigureOptions): Built
 			const ou = { x: o.x + u.x, y: o.y + u.y };
 			const ov = { x: o.x + v.x, y: o.y + v.y };
 			const ouv = { x: o.x + u.x + v.x, y: o.y + u.y + v.y };
-			elements.push({ kind: 'polyline', verts: [o, ou, ouv, ov], closed: true, styleRef: 'basis@55' });
-			elements.push({ kind: 'arrow', from: o, to: ou, styleRef: 'basis' });
-			elements.push({ kind: 'arrow', from: o, to: ov, styleRef: 'basis' });
+			elements.push({ kind: "polyline", verts: [o, ou, ouv, ov], closed: true, styleRef: "basis@55" });
+			elements.push({ kind: "arrow", from: o, to: ou, styleRef: "basis" });
+			elements.push({ kind: "arrow", from: o, to: ov, styleRef: "basis" });
 			// labels at arrow MIDPOINTS, offset along the outward normal — the tips carry lattice
 			// dots, so radial-out labels collide there
 			const pcx = o.x + (u.x + v.x) / 2;
 			const pcy = o.y + (u.y + v.y) / 2;
 			for (const [tip, tex] of [
-				[ou, '$\\vec u$'],
-				[ov, '$\\vec v$'],
+				[ou, "$\\vec u$"],
+				[ov, "$\\vec v$"],
 			] as const) {
 				const dx = tip.x - o.x;
 				const dy = tip.y - o.y;
@@ -198,19 +199,19 @@ export function tilingFigure(model: CellModel, opts: TilingFigureOptions): Built
 					ny = -ny;
 				}
 				elements.push({
-					kind: 'text',
+					kind: "text",
 					at: { x: midX + 0.5 * nx, y: midY + 0.5 * ny },
 					tex,
-					styleRef: 'label:basis',
+					styleRef: "label:basis",
 				});
 			}
 			for (const q of [o, ou, ov, ouv]) {
-				elements.push({ kind: 'marker', at: q, styleRef: 'lattice' });
+				elements.push({ kind: "marker", at: q, styleRef: "lattice" });
 			}
 		}
 	}
 
-	const markers = opts.markers ?? opts.strategy === 'byOrbit';
+	const markers = opts.markers ?? opts.strategy === "byOrbit";
 	if (markers) {
 		// One marker per distinct vertex position; adjacent polygons sharing a vertex must agree on
 		// its orbit (lattice invariance) — disagreement means corrupted orbit data, fail loudly.
@@ -227,7 +228,7 @@ export function tilingFigure(model: CellModel, opts: TilingFigureOptions): Built
 				const prev = seen.get(key);
 				if (prev === undefined) {
 					seen.set(key, orbit);
-					elements.push({ kind: 'marker', at: vt, styleRef: `orbit:${orbit}` });
+					elements.push({ kind: "marker", at: vt, styleRef: `orbit:${orbit}` });
 				} else if (prev !== orbit) {
 					throw new Error(`tilingFigure: orbit disagreement at ${key} (${prev} vs ${orbit})`);
 				}

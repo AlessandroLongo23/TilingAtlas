@@ -168,10 +168,7 @@ export function defaultEdgeStates(edgeShapes: EdgeKind[]): EdgeShapeState[] {
  * The normalisation is exact: `base` times `amount` reproduces the control points drawn here, so
  * Randomize's result is what you see and the slider then starts from it.
  */
-export function randomEdgeStates(
-	edgeShapes: EdgeKind[],
-	rnd: () => number = Math.random,
-): EdgeShapeState[] {
+export function randomEdgeStates(edgeShapes: EdgeKind[], rnd: () => number = Math.random): EdgeShapeState[] {
 	return edgeShapes.map((kind) => {
 		if (kind === "I") return { kind, base: null, amount: 0 };
 
@@ -208,11 +205,7 @@ export function randomEdgeStates(
 }
 
 /** Set one edge's amplitude, leaving its shape and every other edge alone. */
-export function setEdgeAmount(
-	states: EdgeShapeState[],
-	index: number,
-	amount: number,
-): EdgeShapeState[] {
+export function setEdgeAmount(states: EdgeShapeState[], index: number, amount: number): EdgeShapeState[] {
 	return states.map((s, i) => (i === index ? { ...s, amount } : s));
 }
 
@@ -316,12 +309,7 @@ export function prototileOutline(
 			const q = verts[(idx + 1) % nv];
 			const n =
 				opts.pxPerWorld && opts.pxPerWorld > 0
-					? segmentsForEdge(
-							curve!,
-							Math.hypot(q.x - p.x, q.y - p.y) * opts.pxPerWorld,
-							opts.tolPx,
-							opts.maxSegments,
-						)
+					? segmentsForEdge(curve!, Math.hypot(q.x - p.x, q.y - p.y) * opts.pxPerWorld, opts.tolPx, opts.maxSegments)
 					: fixed;
 			flattenCubicOpen(seg as unknown as Cubic, n, out);
 		}
@@ -375,10 +363,7 @@ export function prototileEdges(tiling: IsohedralTiling, curves: EdgeCurves): Pro
 			to,
 			mid: flat
 				? { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 }
-				: cubicAt(
-						[mul(edge.T, P0), mul(edge.T, curve.a), mul(edge.T, curve.b), mul(edge.T, P1)] as Cubic,
-						0.5,
-					),
+				: cubicAt([mul(edge.T, P0), mul(edge.T, curve.a), mul(edge.T, curve.b), mul(edge.T, P1)] as Cubic, 0.5),
 		});
 		idx++;
 	}
@@ -397,12 +382,7 @@ function transformOutline(T: TactileMatrix, outline: TactilePoint[]): TactilePoi
 	return out;
 }
 
-function segmentsCross(
-	p1: TactilePoint,
-	p2: TactilePoint,
-	p3: TactilePoint,
-	p4: TactilePoint,
-): boolean {
+function segmentsCross(p1: TactilePoint, p2: TactilePoint, p3: TactilePoint, p4: TactilePoint): boolean {
 	const d = (p2.x - p1.x) * (p4.y - p3.y) - (p2.y - p1.y) * (p4.x - p3.x);
 	if (Math.abs(d) < 1e-12) return false; // parallel or degenerate: not a transversal crossing
 	const t = ((p3.x - p1.x) * (p4.y - p3.y) - (p3.y - p1.y) * (p4.x - p3.x)) / d;

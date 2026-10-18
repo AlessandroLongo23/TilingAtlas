@@ -1,10 +1,6 @@
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import type { CataloguePatch } from "@/lib/render/hyperbolicDevelopedDraw";
-import {
-	type ReferenceTiling,
-	compactVertexConfig,
-	geometryOf,
-} from "@/lib/services/referenceAtlas";
+import { type ReferenceTiling, compactVertexConfig, geometryOf } from "@/lib/services/referenceAtlas";
 
 // Pure landing-page logic, shared by the runtime loader (landingData.ts) and the build-time
 // generator (scripts/gen-landing-data.ts). Deliberately imports NEITHER node:fs NOR the generated
@@ -106,9 +102,7 @@ function isDrawable(cell: TranslationalCellData | undefined): boolean {
 /** Every Euclidean tiling with a non-empty render cell — the full set the hero banner may show and
  *  the source both for the baked seed pool and the on-demand per-cell hero files. */
 export function drawableEuclidean(atlas: ReferenceTiling[]): ReferenceTiling[] {
-	return atlas.filter(
-		(t) => geometryOf(t) === "euclidean" && t.renderCell && isDrawable(t.renderCell),
-	);
+	return atlas.filter((t) => geometryOf(t) === "euclidean" && t.renderCell && isDrawable(t.renderCell));
 }
 
 /** Deterministic PRNG so the committed pool is stable across rebuilds (only the atlas changing it). */
@@ -136,14 +130,9 @@ const HYP_POOL_SEED = 0x3c6ef372;
 
 /** Build the runtime payload from the full atlas — counts over every geometry, a capped drawable
  *  Euclidean pool, the fixed uniform/play/thumbnail picks. Pure; used by the build-time generator. */
-export function buildLandingPayload(
-	atlas: ReferenceTiling[],
-	poolSize: number = POOL_SIZE,
-): LandingPayload {
+export function buildLandingPayload(atlas: ReferenceTiling[], poolSize: number = POOL_SIZE): LandingPayload {
 	const euclideanDrawable = drawableEuclidean(atlas);
-	const euclideanPool = pickDistinct(euclideanDrawable, poolSize, mulberry32(POOL_SEED)).map(
-		toSpecimen,
-	);
+	const euclideanPool = pickDistinct(euclideanDrawable, poolSize, mulberry32(POOL_SEED)).map(toSpecimen);
 
 	const eleven = pickUniformEleven(atlas);
 	// 4.6.12 (t1003) is the Play card's fallback patch — big dodecagons read well at card size. The

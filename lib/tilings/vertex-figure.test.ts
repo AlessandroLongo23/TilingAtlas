@@ -22,9 +22,22 @@ describe("vertex-figure", () => {
 	// tilings, the Archimedean solids and antiprisms, and the odd-face obstruction (a triangle flanked by
 	// two different faces forces an odd cycle of alternation).
 	it.each([
-		["3.4.6.4", 1], ["3.6.3.6", 1], ["4.4.4.4", 1], ["3.3.3.4.4", 1], ["3.3.4.3.4", 1], ["3.3.3.3.6", 1],
-		["3.12.12", 1], ["4.6.12", 1], ["3.3.6.6", 0], ["3.4.4.6", 0], ["3.3.4.12", 0],
-		["3.4.3.4", 1], ["3.4.4.4", 1], ["3.3.3.7", 1], ["3.4.3.5", 0], ["3.4.4.7", 0],
+		["3.4.6.4", 1],
+		["3.6.3.6", 1],
+		["4.4.4.4", 1],
+		["3.3.3.4.4", 1],
+		["3.3.4.3.4", 1],
+		["3.3.3.3.6", 1],
+		["3.12.12", 1],
+		["4.6.12", 1],
+		["3.3.6.6", 0],
+		["3.4.4.6", 0],
+		["3.3.4.12", 0],
+		["3.4.3.4", 1],
+		["3.4.4.4", 1],
+		["3.3.3.7", 1],
+		["3.4.3.5", 0],
+		["3.4.4.7", 0],
 	])("%s has %i uniform tiling(s)", (s, n) => {
 		expect(describeFigure(fig(s)).uniform).toBe(n);
 	});
@@ -37,7 +50,10 @@ describe("vertex-figure", () => {
 	});
 
 	it("finds every board that closes the figure, whatever the cyclic order", () => {
-		const ids = (s: string) => describeFigure(fig(s)).boards.map((m) => m.board.id).sort();
+		const ids = (s: string) =>
+			describeFigure(fig(s))
+				.boards.map((m) => m.board.id)
+				.sort();
 		expect(ids("3.4.7.4")).toEqual(["3447", "7"]);
 		expect(ids("3.4.4.7")).toEqual(["3447", "7"]);
 		// 4.7.14 closes at the 3.4.7.4 edge (α3 + α4 = α14), so it lands on the ai1 board only.

@@ -218,7 +218,7 @@ export function SphericalColorsCanvas({ pattern, mode }: Props) {
 	if (errored) {
 		return (
 			<div className="absolute inset-0 z-10 flex items-center justify-center">
-				<p className="text-sm text-fg-muted max-w-xs text-center">
+				<p className="max-w-xs text-center text-sm text-fg-muted">
 					3D view unavailable — the browser ran out of WebGL contexts. Reload to free them.
 				</p>
 			</div>

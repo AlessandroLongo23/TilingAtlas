@@ -77,7 +77,7 @@ function TilingStrip({ ids, cells }: { ids: string[]; cells: CellMap }) {
 						<Link
 							key={id}
 							href={href}
-							className="inline-flex items-center gap-1 px-2 py-1 text-xs font-mono border border-line text-fg-secondary hover:text-fg hover:border-line-strong transition-colors"
+							className="inline-flex items-center gap-1 border border-line px-2 py-1 font-mono text-xs text-fg-secondary transition-colors hover:border-line-strong hover:text-fg"
 						>
 							{previewLabel(id)}
 							<ArrowRight size={12} aria-hidden="true" className="shrink-0" />
@@ -89,7 +89,7 @@ function TilingStrip({ ids, cells }: { ids: string[]; cells: CellMap }) {
 						key={id}
 						href={href}
 						title={`Open ${entry.label}`}
-						className="block w-20 h-20 border border-line hover:border-accent transition-colors overflow-hidden"
+						className="block h-20 w-20 overflow-hidden border border-line transition-colors hover:border-accent"
 					>
 						{/* Small pxPerEdge on purpose: at 80px a card needs several repeats to read as a
 						    tiling, not as a crop of one tile. A shelf cell is scaled by its lattice
@@ -135,27 +135,27 @@ export function UpdatesModal({ isOpen, onClose, entries }: UpdatesModalProps) {
 			size="md"
 			title="What's new"
 			header={
-				<span className="text-xs font-mono text-fg-muted mr-2">
+				<span className="mr-2 font-mono text-xs text-fg-muted">
 					{range} · {count}
 				</span>
 			}
 		>
-			<div className="max-h-[65vh] overflow-y-auto p-4 flex flex-col gap-5">
+			<div className="flex max-h-[65vh] flex-col gap-5 overflow-y-auto p-4">
 				{KIND_ORDER.filter((kind) => byKind.has(kind)).map((kind) => (
 					<section key={kind} className="flex flex-col gap-2">
-						<h3 className="text-[11px] uppercase tracking-wider text-fg-muted">{KIND_LABEL[kind]}</h3>
+						<h3 className="text-[11px] tracking-wider text-fg-muted uppercase">{KIND_LABEL[kind]}</h3>
 						<ul className="flex flex-col gap-3">
 							{(byKind.get(kind) ?? []).map((change, i) => (
-								<li key={i} className="text-sm text-fg-secondary leading-relaxed">
+								<li key={i} className="text-sm leading-relaxed text-fg-secondary">
 									{change.href ? (
-										<Link href={change.href} className="hover:text-fg transition-colors">
+										<Link href={change.href} className="transition-colors hover:text-fg">
 											<ChangeText text={change.text} />
 										</Link>
 									) : (
 										<ChangeText text={change.text} />
 									)}
 									{change.items?.length ? (
-										<ul className="mt-1.5 flex flex-col gap-1 list-disc pl-5 marker:text-fg-muted">
+										<ul className="mt-1.5 flex list-disc flex-col gap-1 pl-5 marker:text-fg-muted">
 											{change.items.map((item, j) => (
 												<li key={j}>
 													<ChangeText text={item} />
@@ -170,7 +170,7 @@ export function UpdatesModal({ isOpen, onClose, entries }: UpdatesModalProps) {
 					</section>
 				))}
 			</div>
-			<div className="border-t border-line p-3 flex items-center justify-between gap-3">
+			<div className="flex items-center justify-between gap-3 border-t border-line p-3">
 				<span className="text-xs text-fg-muted">
 					{newest.date} · v{newest.version}
 				</span>

@@ -209,10 +209,7 @@ export function IsohedralClient() {
 	// test and the edge distance are computed against a broken outline. A hexagon at the flattener's own
 	// ceiling wants 6 x 128 = 768, so the budget is split across the tile's sides instead. The flat
 	// renderer has no such limit (it triangulates), so this applies only while the lens owns the canvas.
-	const lensSegmentCap = Math.max(
-		4,
-		Math.floor((MAX_VERTS_PER_PRIM - 8) / Math.max(3, info.numVertices)),
-	);
+	const lensSegmentCap = Math.max(4, Math.floor((MAX_VERTS_PER_PRIM - 8) / Math.max(3, info.numVertices)));
 	const cell = useMemo(
 		() =>
 			info.marked
@@ -241,7 +238,9 @@ export function IsohedralClient() {
 		() =>
 			lensCell
 				? `IH${ih}:${tessZoom}:${params.join(",")}:${edges
-						.map((e) => `${e.kind}${e.amount}${e.base ? `@${e.base.a.x},${e.base.a.y},${e.base.b.x},${e.base.b.y}` : ""}`)
+						.map(
+							(e) => `${e.kind}${e.amount}${e.base ? `@${e.base.a.x},${e.base.a.y},${e.base.b.x},${e.base.b.y}` : ""}`,
+						)
 						.join("|")}`
 				: null,
 		[lensCell, ih, tessZoom, params, edges],
@@ -249,13 +248,16 @@ export function IsohedralClient() {
 
 	// Re-tessellate when the zoom crosses a power of two. The ref is what keeps this off the hot path:
 	// without it every frame of a drag would call setState with the value it already holds.
-	const onFrame = useCallback((f: AperiodicFrame) => {
-		const q = tessellationZoom(f.zoom * lensMagnification(f, lensActive && lensMode !== "spiral", lensRadiusFrac));
-		if (q !== tessZoomRef.current) {
-			tessZoomRef.current = q;
-			setTessZoom(q);
-		}
-	}, [lensActive, lensMode, lensRadiusFrac]);
+	const onFrame = useCallback(
+		(f: AperiodicFrame) => {
+			const q = tessellationZoom(f.zoom * lensMagnification(f, lensActive && lensMode !== "spiral", lensRadiusFrac));
+			if (q !== tessZoomRef.current) {
+				tessZoomRef.current = q;
+				setTessZoom(q);
+			}
+		},
+		[lensActive, lensMode, lensRadiusFrac],
+	);
 
 	/**
 	 * What counts as "a different thing to look at", as opposed to the same thing deformed.
@@ -280,10 +282,7 @@ export function IsohedralClient() {
 	});
 
 	const visible = useMemo(
-		() =>
-			ISOHEDRAL_TYPES.filter(
-				(t) => matchesParamFilter(t, paramFilter) && matchesVertexFilter(t, vertexFilter),
-			),
+		() => ISOHEDRAL_TYPES.filter((t) => matchesParamFilter(t, paramFilter) && matchesVertexFilter(t, vertexFilter)),
 		[paramFilter, vertexFilter],
 	);
 
@@ -315,8 +314,8 @@ export function IsohedralClient() {
 	const edgeNotes = info.edgeShapes.map((k, i) => `${String.fromCharCode(97 + i)} · ${k}: ${EDGE_KIND_NOTE[k]}`);
 	const header = (
 		<div className="flex flex-col gap-1">
-			<h2 className="text-[15px] font-semibold leading-tight text-fg">{title}</h2>
-			<span className="text-xs font-mono text-fg-muted truncate">
+			<h2 className="text-[15px] leading-tight font-semibold text-fg">{title}</h2>
+			<span className="truncate font-mono text-xs text-fg-muted">
 				{facts}
 				{info.gs ? null : (
 					<span className="cursor-help underline decoration-dotted underline-offset-2" title={edgeNotes.join("\n")}>
@@ -421,7 +420,7 @@ export function IsohedralClient() {
 	);
 
 	return (
-		<div className="flex-1 min-h-0 flex">
+		<div className="flex min-h-0 flex-1">
 			<IsohedralSidebar
 				collapsed={immersive}
 				header={header}
@@ -463,9 +462,7 @@ export function IsohedralClient() {
 										id={`ih-param-${i}`}
 										label={`v${i}`}
 										value={p}
-										onChange={(v) =>
-											setParams((prev) => prev.map((old, j) => (j === i ? v : old)))
-										}
+										onChange={(v) => setParams((prev) => prev.map((old, j) => (j === i ? v : old)))}
 										// Tactile ships defaults but no ranges; [0, 2] is what the reference editor
 										// at isohedral.ca uses for every parameter of every type.
 										min={0}
@@ -478,8 +475,7 @@ export function IsohedralClient() {
 						) : (
 							<Section label="Parameters · 0">
 								<p className="text-xs text-fg-muted">
-									Fixed. This type constrains its vertices completely, so the tile has no freedom
-									beyond its edges.
+									Fixed. This type constrains its vertices completely, so the tile has no freedom beyond its edges.
 								</p>
 							</Section>
 						)}
@@ -493,7 +489,7 @@ export function IsohedralClient() {
 									id={`ih-edge-${i}`}
 									label={`${String.fromCharCode(97 + i)} · ${kind}`}
 									hint={
-										<span className="text-[10px] text-fg-muted whitespace-nowrap max-md:text-xs">
+										<span className="text-[10px] whitespace-nowrap text-fg-muted max-md:text-xs">
 											{EDGE_KIND_NOTE[kind]}
 										</span>
 									}
@@ -509,11 +505,11 @@ export function IsohedralClient() {
 									format={(v) => (kind === "I" ? "straight" : v.toFixed(2))}
 								/>
 							))}
-							<div className="grid grid-cols-2 ta-seg">
+							<div className="ta-seg grid grid-cols-2">
 								<button
 									type="button"
 									onClick={() => setEdges(randomEdgeStates(info.edgeShapes))}
-									className="ta-tab ta-wall-cell flex cursor-pointer items-center justify-center gap-1.5 px-2 py-1.5 text-xs text-fg-muted hover:text-fg transition-colors focus:outline-none focus-visible:relative focus-visible:z-10 focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-fg"
+									className="ta-tab ta-wall-cell flex cursor-pointer items-center justify-center gap-1.5 px-2 py-1.5 text-xs text-fg-muted transition-colors hover:text-fg focus:outline-none focus-visible:relative focus-visible:z-10 focus-visible:ring-1 focus-visible:ring-fg focus-visible:ring-inset"
 								>
 									<Shuffle size={12} />
 									Randomize
@@ -521,7 +517,7 @@ export function IsohedralClient() {
 								<button
 									type="button"
 									onClick={resetShape}
-									className="ta-tab ta-wall-cell flex cursor-pointer items-center justify-center gap-1.5 px-2 py-1.5 text-xs text-fg-muted hover:text-fg transition-colors focus:outline-none focus-visible:relative focus-visible:z-10 focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-fg"
+									className="ta-tab ta-wall-cell flex cursor-pointer items-center justify-center gap-1.5 px-2 py-1.5 text-xs text-fg-muted transition-colors hover:text-fg focus:outline-none focus-visible:relative focus-visible:z-10 focus-visible:ring-1 focus-visible:ring-fg focus-visible:ring-inset"
 								>
 									<RotateCcw size={12} />
 									Reset
@@ -539,7 +535,7 @@ export function IsohedralClient() {
 						id="ih-rotation"
 						label="Rotation"
 						hint={
-							<span className="inline-flex items-center gap-1 text-[10px] text-fg-muted whitespace-nowrap max-md:text-xs">
+							<span className="inline-flex items-center gap-1 text-[10px] whitespace-nowrap text-fg-muted max-md:text-xs">
 								<Kbd>Shift</Kbd>
 								<span className="max-md:hidden">+ scroll</span>
 								<span className="md:hidden">Twist two fingers</span>
@@ -580,18 +576,16 @@ export function IsohedralClient() {
 				</Section>
 			</IsohedralSidebar>
 
-			<div className="flex-1 min-h-0 relative">
+			<div className="relative min-h-0 flex-1">
 				<canvas
 					ref={canvasRef}
-					className="w-full h-full block cursor-grab active:cursor-grabbing touch-none"
+					className="block h-full w-full cursor-grab touch-none active:cursor-grabbing"
 					{...view.handlers}
 				/>
 				{/* The lens is a second canvas over the first, which stays mounted as the input layer —
 				    the same arrangement /play uses, and for the same reason: a canvas holds one WebGL
 				    context for its life. */}
-				{lensActive ? (
-					<InversiveCanvas cell={lensCell} cellId={lensCellId} camera={lensCamera} />
-				) : null}
+				{lensActive ? <InversiveCanvas cell={lensCell} cellId={lensCellId} camera={lensCamera} /> : null}
 				{/* Same corner, same component as /play's canvas. */}
 				<div className="absolute top-4 left-4 z-20 max-md:top-3 max-md:left-3">
 					<TilingInfo spec={spec} />
@@ -649,26 +643,27 @@ function MarkedControls({
 					<dt className="text-fg-muted">Aspects</dt>
 					<dd className="font-mono text-fg-secondary tabular-nums">{info.numAspects}</dd>
 				</dl>
-				<p className="text-[10px] text-fg-disabled leading-relaxed max-md:text-xs max-md:text-fg-muted">
-					Grünbaum &amp; Shephard 1977, Table 1, columns (2) to (5) and (8). The tile group order,
-					the aspect count and the group are recomputed from the drawn geometry and checked against
-					the table before this page builds.
+				<p className="text-[10px] leading-relaxed text-fg-disabled max-md:text-xs max-md:text-fg-muted">
+					Grünbaum &amp; Shephard 1977, Table 1, columns (2) to (5) and (8). The tile group order, the aspect count and
+					the group are recomputed from the drawn geometry and checked against the table before this page builds.
 				</p>
 			</Section>
 
 			<Section label="Marks">
-				<p className="text-xs text-fg-secondary leading-relaxed">
+				<p className="text-xs leading-relaxed text-fg-secondary">
 					{marks === 1
 						? "One mark per tile. This is one of only three types whose induced tile group is trivial, so a single asymmetric motif is the whole decoration."
 						: `${marks} marks per tile, one for each element of ${gs.tileGroup}. The mark itself is asymmetric; the rosette is its orbit under the tile group, and that orbit is what has exactly the symmetry the incidence symbol asks for.`}
 				</p>
-				<p className="text-xs text-fg-secondary leading-relaxed">
-					The mark is flat ink, and it carries both facts in its shape: which way it points is the
-					rotation, which way it is handed is the reflection. Colour is left to the tile tints, which
-					already separate the aspects — and an aspect is an orientation class, so tinting the marks
-					too would say the same thing twice in a channel that greyscale and colour blindness lose.
+				<p className="text-xs leading-relaxed text-fg-secondary">
+					The mark is flat ink, and it carries both facts in its shape: which way it points is the rotation, which way
+					it is handed is the reflection. Colour is left to the tile tints, which already separate the aspects — and an
+					aspect is an orientation class, so tinting the marks too would say the same thing twice in a channel that
+					greyscale and colour blindness lose.
 				</p>
-				<p className="text-[10px] text-fg-disabled leading-relaxed max-md:text-xs max-md:text-fg-muted">{MARKED_REASON} — Craig Kaplan</p>
+				<p className="text-[10px] leading-relaxed text-fg-disabled max-md:text-xs max-md:text-fg-muted">
+					{MARKED_REASON} — Craig Kaplan
+				</p>
 			</Section>
 
 			<Section label="Tile">
@@ -685,8 +680,8 @@ function MarkedControls({
 					/>
 				) : (
 					<p className="text-xs text-fg-muted">
-						Rigid. Every edge is on a mirror, which fixes the tile up to similarity; only the
-						rectangles keep a free ratio.
+						Rigid. Every edge is on a mirror, which fixes the tile up to similarity; only the rectangles keep a free
+						ratio.
 					</p>
 				)}
 			</Section>

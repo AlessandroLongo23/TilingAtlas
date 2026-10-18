@@ -11,11 +11,11 @@ export type PointObj = { x: number; y: number };
 export type PointArr = [number, number];
 
 export function isPointObj(p: unknown): p is PointObj {
-	return p != null && typeof p === 'object' && 'x' in p && 'y' in p;
+	return p != null && typeof p === "object" && "x" in p && "y" in p;
 }
 
 export function isPointArr(p: unknown): p is PointArr {
-	return Array.isArray(p) && p.length === 2 && typeof p[0] === 'number' && typeof p[1] === 'number';
+	return Array.isArray(p) && p.length === 2 && typeof p[0] === "number" && typeof p[1] === "number";
 }
 
 export function toPoint(p: PointObj | PointArr): PointObj {

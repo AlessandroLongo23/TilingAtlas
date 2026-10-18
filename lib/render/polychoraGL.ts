@@ -139,7 +139,8 @@ export function buildPolychoronMesh(g: Geometry4, budget = 300_000) {
 	};
 	for (const f of g.faces) {
 		let chord = Infinity;
-		for (let i = 0; i < f.length; i++) for (let j = i + 1; j < f.length; j++) chord = Math.min(chord, dist4(U[f[i]], U[f[j]]));
+		for (let i = 0; i < f.length; i++)
+			for (let j = i + 1; j < f.length; j++) chord = Math.min(chord, dist4(U[f[i]], U[f[j]]));
 		const star = dist4(U[f[0]], U[f[1]]) > chord * (1 + 1e-6);
 		const col = tileHueRgb01(faceHue(f.length, star ? 2 : 1), FILM_SAT_PCT);
 		if (f.length === 3) cut(U[f[0]], U[f[1]], U[f[2]], col);
@@ -168,8 +169,11 @@ export function filmArea(g: Geometry4): number {
 	for (const f of g.faces) {
 		const c = [0, 1, 2, 3].map((k) => f.reduce((s, v) => s + g.vertices[v][k], 0) / f.length);
 		f.forEach((v, i) => {
-			const a = g.vertices[v].map((x, k) => (x - c[k]) / R), b = g.vertices[f[(i + 1) % f.length]].map((x, k) => (x - c[k]) / R);
-			const aa = a.reduce((s, x) => s + x * x, 0), bb = b.reduce((s, x) => s + x * x, 0), ab = a.reduce((s, x, k) => s + x * b[k], 0);
+			const a = g.vertices[v].map((x, k) => (x - c[k]) / R),
+				b = g.vertices[f[(i + 1) % f.length]].map((x, k) => (x - c[k]) / R);
+			const aa = a.reduce((s, x) => s + x * x, 0),
+				bb = b.reduce((s, x) => s + x * x, 0),
+				ab = a.reduce((s, x, k) => s + x * b[k], 0);
 			area += Math.sqrt(Math.max(0, aa * bb - ab * ab)) / 2;
 		});
 	}
@@ -193,9 +197,11 @@ export interface PolychoronView {
 
 /** Turn a row-major 4×4 rotation in the plane of axes i and j, applied after what it already holds. */
 export function rotatePlane(M: Float32Array, i: number, j: number, angle: number) {
-	const c = Math.cos(angle), s = Math.sin(angle);
+	const c = Math.cos(angle),
+		s = Math.sin(angle);
 	for (let k = 0; k < 4; k++) {
-		const a = M[4 * i + k], b = M[4 * j + k];
+		const a = M[4 * i + k],
+			b = M[4 * j + k];
 		M[4 * i + k] = c * a - s * b;
 		M[4 * j + k] = s * a + c * b;
 	}
@@ -221,7 +227,12 @@ export class PolychoronRenderer {
 	private faceVao: WebGLVertexArrayObject;
 	private edgeVao: WebGLVertexArrayObject;
 	private capVao: WebGLVertexArrayObject;
-	private buffers = { faces: null as WebGLBuffer | null, edges: null as WebGLBuffer | null, strip: null as WebGLBuffer | null, vertices: null as WebGLBuffer | null };
+	private buffers = {
+		faces: null as WebGLBuffer | null,
+		edges: null as WebGLBuffer | null,
+		strip: null as WebGLBuffer | null,
+		vertices: null as WebGLBuffer | null,
+	};
 	private counts = { faceVerts: 0, edges: 0, stripVerts: 0, vertices: 0 };
 
 	constructor(canvas: HTMLCanvasElement) {
@@ -241,7 +252,14 @@ export class PolychoronRenderer {
 	setGeometry(g: Geometry4) {
 		const { gl } = this;
 		const mesh = buildPolychoronMesh(g);
-		const attrib = (prog: WebGLProgram, name: string, size: number, stride: number, offset: number, perInstance = false) => {
+		const attrib = (
+			prog: WebGLProgram,
+			name: string,
+			size: number,
+			stride: number,
+			offset: number,
+			perInstance = false,
+		) => {
 			const loc = gl.getAttribLocation(prog, name);
 			gl.enableVertexAttribArray(loc);
 			gl.vertexAttribPointer(loc, size, gl.FLOAT, false, stride * 4, offset * 4);
@@ -271,14 +289,20 @@ export class PolychoronRenderer {
 		attrib(this.edge, "aA", 4, 4, 0, true);
 		attrib(this.edge, "aB", 4, 4, 0, true);
 		gl.bindVertexArray(null);
-		this.counts = { faceVerts: mesh.faces.length / 7, edges: g.edges.length, stripVerts: 2 * (mesh.segments + 1), vertices: g.vertices.length };
+		this.counts = {
+			faceVerts: mesh.faces.length / 7,
+			edges: g.edges.length,
+			stripVerts: 2 * (mesh.segments + 1),
+			vertices: g.vertices.length,
+		};
 	}
 
 	draw(v: PolychoronView) {
 		const { gl } = this;
 		const canvas = gl.canvas as HTMLCanvasElement;
 		const dpr = Math.min(window.devicePixelRatio || 1, 2) * v.resolution;
-		const w = Math.round(canvas.clientWidth * dpr), h = Math.round(canvas.clientHeight * dpr);
+		const w = Math.round(canvas.clientWidth * dpr),
+			h = Math.round(canvas.clientHeight * dpr);
 		if (canvas.width !== w || canvas.height !== h) {
 			canvas.width = w;
 			canvas.height = h;
@@ -289,9 +313,30 @@ export class PolychoronRenderer {
 		gl.depthMask(true);
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 		// The projected sphere has radius 1; the camera sits where it just fits at zoom 1.
-		const half = Math.PI / 12, dist = 1.2 / Math.sin(half) / v.zoom, near = 0.05, far = dist + 4;
-		const fy = (1 / Math.tan(half)) * Math.min(1, w / h), fx = (fy * h) / w;
-		const proj = [fx, 0, 0, 0, 0, fy, 0, 0, 0, 0, (far + near) / (near - far), (2 * far * near) / (near - far), 0, 0, -1, 0];
+		const half = Math.PI / 12,
+			dist = 1.2 / Math.sin(half) / v.zoom,
+			near = 0.05,
+			far = dist + 4;
+		const fy = (1 / Math.tan(half)) * Math.min(1, w / h),
+			fx = (fy * h) / w;
+		const proj = [
+			fx,
+			0,
+			0,
+			0,
+			0,
+			fy,
+			0,
+			0,
+			0,
+			0,
+			(far + near) / (near - far),
+			(2 * far * near) / (near - far),
+			0,
+			0,
+			-1,
+			0,
+		];
 		const common = (prog: WebGLProgram) => {
 			gl.useProgram(prog);
 			gl.uniformMatrix4fv(gl.getUniformLocation(prog, "uRot"), true, v.rot as Float32Array);

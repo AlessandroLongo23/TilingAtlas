@@ -44,7 +44,10 @@ export type StarExactCell = {
 };
 
 const cyc = (ring: CyclotomicRing, v: number[]): Cyclotomic =>
-	new Cyclotomic(ring, v.map((c) => BigInt(c)));
+	new Cyclotomic(
+		ring,
+		v.map((c) => BigInt(c)),
+	);
 
 /**
  * Rebuild the exact polygons and basis on the ring the record names. Returns null if the caller's ring

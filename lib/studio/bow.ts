@@ -62,8 +62,7 @@ export const BOW_PRESETS: { id: string; label: string; help: string; chord: Curv
 	},
 ];
 
-export const bowPreset = (id: string): Curve4 | null =>
-	BOW_PRESETS.find((p) => p.id === id)?.chord ?? null;
+export const bowPreset = (id: string): Curve4 | null => BOW_PRESETS.find((p) => p.id === id)?.chord ?? null;
 
 /** The chord of a decoration, or null when the edge is straight and the draw can skip it. */
 export function chordOf(dec: EdgeDecoration | undefined): Curve4 | null {
@@ -103,10 +102,7 @@ export function arcInterior(a: Pt, b: Pt, chord: Curve4, segments = ARC_SEGMENTS
 		const w1 = 3 * u * u * t;
 		const w2 = 3 * u * t * t;
 		const w3 = t * t * t;
-		out.push([
-			w0 * a[0] + w1 * p1[0] + w2 * p2[0] + w3 * b[0],
-			w0 * a[1] + w1 * p1[1] + w2 * p2[1] + w3 * b[1],
-		]);
+		out.push([w0 * a[0] + w1 * p1[0] + w2 * p2[0] + w3 * b[0], w0 * a[1] + w1 * p1[1] + w2 * p2[1] + w3 * b[1]]);
 	}
 	return out;
 }

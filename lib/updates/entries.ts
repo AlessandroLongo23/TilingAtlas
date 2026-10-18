@@ -190,7 +190,7 @@ export const UPDATES: UpdateEntry[] = [
 			},
 			{
 				kind: "fix",
-				text: "**Hyperbolic polygon boards are named as polygon sets**, \"3,4,4,8\", so a board no longer reads as a vertex configuration, and each card lists its tiling's vertex figures.",
+				text: '**Hyperbolic polygon boards are named as polygon sets**, "3,4,4,8", so a board no longer reads as a vertex configuration, and each card lists its tiling\'s vertex figures.',
 			},
 			{
 				kind: "fix",
@@ -280,7 +280,12 @@ export const UPDATES: UpdateEntry[] = [
 			{
 				kind: "feature",
 				text: "**Nine polyform boards** replace the polyomino shelf, dominoes to tetrominoes, diamonds to tetriamonds and dihexes to tetrahexes, and 27 tilings become 2,047.",
-				tilings: ["dom-ctrnact-01_i-2aa_4aa-1", "tia-ctrnact-01_c-2aa_4ng-1", "teh-ctrnact-01_i-2aa_2ab_2ad_3ap-1", "tet-ctrnact-01_t-2ex_2fj_4clyx-1"],
+				tilings: [
+					"dom-ctrnact-01_i-2aa_4aa-1",
+					"tia-ctrnact-01_c-2aa_4ng-1",
+					"teh-ctrnact-01_i-2aa_2ab_2ad_3ap-1",
+					"tet-ctrnact-01_t-2ex_2fj_4clyx-1",
+				],
 			},
 			{
 				kind: "feature",
@@ -646,7 +651,9 @@ export const UPDATES: UpdateEntry[] = [
 			{
 				kind: "content",
 				text: "**Four spherical half-tile boards**: the octahedron, cube, icosahedron and dodecahedron faces cut by an altitude or a diagonal.",
-				items: ["16 tilings in total. The sphere runs out of angle budget quickly, so the count is small and complete."],
+				items: [
+					"16 tilings in total. The sphere runs out of angle budget quickly, so the count is small and complete.",
+				],
 				href: "/library",
 			},
 		],
@@ -805,9 +812,7 @@ export const UPDATES: UpdateEntry[] = [
 			{
 				kind: "content",
 				text: "**12,788 new star tilings** take the shelf from 172 to 12,960, with the ceiling now at k = 9.",
-				items: [
-					"235 at k = 4, 436 at k = 5, 897 at k = 6, 1,728 at k = 7, 3,364 at k = 8, 6,123 at k = 9.",
-				],
+				items: ["235 at k = 4, 436 at k = 5, 897 at k = 6, 1,728 at k = 7, 3,364 at k = 8, 6,123 at k = 9."],
 				href: "/library",
 				tilings: [
 					"ctrnact-star-k4-n001",
@@ -921,9 +926,7 @@ export const UPDATES: UpdateEntry[] = [
 			{
 				kind: "content",
 				text: "**Six more isohedral families**: IH05 to IH10, 33,238 edge systems on hexagons you reshape with the sliders.",
-				items: [
-					"IH10 is the regular hexagon, whose one edge class leaves nothing to dial.",
-				],
+				items: ["IH10 is the regular hexagon, whose one edge class leaves nothing to dial."],
 				href: "/library",
 			},
 			{
@@ -974,9 +977,7 @@ export const UPDATES: UpdateEntry[] = [
 			{
 				kind: "content",
 				text: "**Sixteen spherical edge boards** arrive with 309,061 edge systems, from the triangular prism to the snub cube.",
-				items: [
-					"The snub cube is the first chiral board on the shelf.",
-				],
+				items: ["The snub cube is the first chiral board on the shelf."],
 				href: "/library?geo=spherical",
 			},
 			{
@@ -1062,12 +1063,7 @@ export const UPDATES: UpdateEntry[] = [
 			{
 				kind: "content",
 				text: "**Four Schwarz boards** were re-derived from Marek Čtrnáct's corrected solvers.",
-				items: [
-					"(2,3,6): 43 → 462 tilings",
-					"(2,4,5): 7 → 23",
-					"(2,2,3): 2,297 → 2,347",
-					"(2,2,4): 65,257, unchanged",
-				],
+				items: ["(2,3,6): 43 → 462 tilings", "(2,4,5): 7 → 23", "(2,2,3): 2,297 → 2,347", "(2,2,4): 65,257, unchanged"],
 				href: "/freedraw",
 			},
 			{

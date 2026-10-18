@@ -15,9 +15,7 @@ import { ringOrderOf } from "@/lib/services/starExactCell";
 const cache = new Map<string, SymmetryData | null>();
 
 export function useSymmetryData(tiling: CatalogueTiling | null): SymmetryData | null {
-	const [data, setData] = useState<SymmetryData | null>(
-		tiling ? cache.get(tiling.canonicalKey) ?? null : null,
-	);
+	const [data, setData] = useState<SymmetryData | null>(tiling ? (cache.get(tiling.canonicalKey) ?? null) : null);
 	useEffect(() => {
 		if (!tiling) {
 			setData(null);

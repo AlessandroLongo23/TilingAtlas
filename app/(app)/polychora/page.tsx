@@ -20,7 +20,15 @@ const clamp = (x: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, x
 
 export default function PolychoraBench() {
 	const [id, setId] = useState("120-cell");
-	const [s, setS] = useState({ pole: 1.5, opacity: 1, width: 1, showFaces: true, showEdges: true, dark: true, spin: true });
+	const [s, setS] = useState({
+		pole: 1.5,
+		opacity: 1,
+		width: 1,
+		showFaces: true,
+		showEdges: true,
+		dark: true,
+		spin: true,
+	});
 	const spec = LIST.find((x) => x.id === id)!;
 	const geometry = useMemo(() => spec.build(), [spec]);
 	const f = [geometry.vertices.length, geometry.edges.length, geometry.faces.length, geometry.cells.length];
@@ -44,7 +52,14 @@ export default function PolychoraBench() {
 				<span>{label}</span>
 				<span className="font-mono text-fg-muted">{s[key].toFixed(2)}</span>
 			</span>
-			<input type="range" min={min} max={max} step={0.01} value={s[key]} onChange={(e) => setS({ ...s, [key]: +e.target.value })} />
+			<input
+				type="range"
+				min={min}
+				max={max}
+				step={0.01}
+				value={s[key]}
+				onChange={(e) => setS({ ...s, [key]: +e.target.value })}
+			/>
 		</label>
 	);
 	const toggle = (label: string, key: "showFaces" | "showEdges" | "dark" | "spin") => (
@@ -54,8 +69,8 @@ export default function PolychoraBench() {
 		</label>
 	);
 	return (
-		<div className="flex-1 min-w-0 flex">
-			<aside className="w-72 shrink-0 overflow-y-auto border-r border-border p-4 text-xs flex flex-col gap-4">
+		<div className="flex min-w-0 flex-1">
+			<aside className="border-border flex w-72 shrink-0 flex-col gap-4 overflow-y-auto border-r p-4 text-xs">
 				<div>
 					<div className="text-sm font-semibold">{spec.name}</div>
 					<div className="font-mono text-fg-muted">{spec.symbol}</div>
@@ -63,7 +78,12 @@ export default function PolychoraBench() {
 						V {f[0]} · E {f[1]} · F {f[2]} · C {f[3]}
 					</div>
 				</div>
-				<select className="w-full bg-surface text-fg border border-border rounded p-1" size={18} value={id} onChange={(e) => setId(e.target.value)}>
+				<select
+					className="border-border w-full rounded border bg-surface p-1 text-fg"
+					size={18}
+					value={id}
+					onChange={(e) => setId(e.target.value)}
+				>
 					{SETS.map(([set, label]) => (
 						<optgroup key={set} label={label}>
 							{LIST.filter((x) => x.set === set).map((x) => (
@@ -83,13 +103,13 @@ export default function PolychoraBench() {
 					{toggle("Dark ground", "dark")}
 					{toggle("Spin", "spin")}
 				</div>
-				<p className="text-fg-muted leading-relaxed">
-					Drag to orbit. Shift-drag or right-drag to turn through the fourth axis. Scroll to turn in the z–w plane; pinch or
-					ctrl-scroll to zoom.
+				<p className="leading-relaxed text-fg-muted">
+					Drag to orbit. Shift-drag or right-drag to turn through the fourth axis. Scroll to turn in the z–w plane;
+					pinch or ctrl-scroll to zoom.
 				</p>
 			</aside>
-			<div className="flex-1 min-w-0 relative">
-				<PolychoronCanvas geometry={geometry} settings={settings} className="absolute inset-0 w-full h-full" />
+			<div className="relative min-w-0 flex-1">
+				<PolychoronCanvas geometry={geometry} settings={settings} className="absolute inset-0 h-full w-full" />
 			</div>
 		</div>
 	);

@@ -54,8 +54,11 @@ function residual(cell: Cell): number {
 function allSimple(cell: Cell): boolean {
 	const cross = (p: number[], q: number[], r: number[], s: number[]): boolean => {
 		const d = (a: number[], b: number[], c: number[]) => (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
-		const d1 = d(p, q, r), d2 = d(p, q, s), d3 = d(r, s, p), d4 = d(r, s, q);
-		return ((d1 > 0) !== (d2 > 0)) && ((d3 > 0) !== (d4 > 0));
+		const d1 = d(p, q, r),
+			d2 = d(p, q, s),
+			d3 = d(r, s, p),
+			d4 = d(r, s, q);
+		return d1 > 0 !== d2 > 0 && d3 > 0 !== d4 > 0;
 	};
 	for (const poly of cell.cellPolygons) {
 		const v = poly.vertices as number[][];
@@ -86,13 +89,22 @@ function inPoly(px: number, py: number, v: number[][]): boolean {
 function coveredExactlyOnce(cell: Cell): boolean {
 	const [b0, b1] = cell.basis as [[number, number], [number, number]];
 	// origin: centroid of all tile vertices, so the sampled domain sits amid the tiles
-	let cx = 0, cy = 0, cnt = 0;
-	for (const p of cell.cellPolygons) for (const [x, y] of p.vertices) { cx += x; cy += y; cnt++; }
-	cx /= cnt; cy /= cnt;
+	let cx = 0,
+		cy = 0,
+		cnt = 0;
+	for (const p of cell.cellPolygons)
+		for (const [x, y] of p.vertices) {
+			cx += x;
+			cy += y;
+			cnt++;
+		}
+	cx /= cnt;
+	cy /= cnt;
 	const M = 7;
 	for (let si = 0; si < M; si++)
 		for (let ti = 0; ti < M; ti++) {
-			const s = (si + 0.5) / M, t = (ti + 0.5) / M;
+			const s = (si + 0.5) / M,
+				t = (ti + 0.5) / M;
 			const px = cx + s * b0[0] + t * b1[0];
 			const py = cy + s * b0[1] + t * b1[1];
 			let cover = 0;
@@ -100,8 +112,7 @@ function coveredExactlyOnce(cell: Cell): boolean {
 				for (let j = -2; j <= 2; j++) {
 					const dx = i * b0[0] + j * b1[0];
 					const dy = i * b0[1] + j * b1[1];
-					for (const poly of cell.cellPolygons)
-						if (inPoly(px - dx, py - dy, poly.vertices as number[][])) cover++;
+					for (const poly of cell.cellPolygons) if (inPoly(px - dx, py - dy, poly.vertices as number[][])) cover++;
 				}
 			if (cover !== 1) return false;
 		}
@@ -156,7 +167,11 @@ function main(): void {
 	for (const f of files) {
 		const p = path.join(ROOT, f);
 		if (!fs.existsSync(p)) continue;
-		for (const t of JSON.parse(fs.readFileSync(p, "utf8")) as { id: string; k: number; paramCell?: ParametricCellData }[])
+		for (const t of JSON.parse(fs.readFileSync(p, "utf8")) as {
+			id: string;
+			k: number;
+			paramCell?: ParametricCellData;
+		}[])
 			if (t.paramCell && t.k <= MAX_K) recs.push({ id: t.id, k: t.k, paramCell: t.paramCell });
 	}
 	const rows: Row[] = [];

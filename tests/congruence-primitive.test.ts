@@ -8,11 +8,11 @@
  * primitive-reduces every input cell (exactly verified) before bucketing; already-primitive cells
  * pass through UNCHANGED so existing k≤2 digests stay byte-identical.
  */
-import { describe, it, expect } from 'vitest';
-import { Cyclotomic, CyclotomicRing, setActiveRing } from '@/classes/Cyclotomic';
-import { RegularPolygon } from '@/classes/polygons/RegularPolygon';
-import { dedupeByCongruence, primitiveReducedCell } from '@/classes/algorithm/TilingCongruence';
-import type { PeriodCell } from '@/classes/algorithm/PeriodSolver';
+import { describe, it, expect } from "vitest";
+import { Cyclotomic, CyclotomicRing, setActiveRing } from "@/classes/Cyclotomic";
+import { RegularPolygon } from "@/classes/polygons/RegularPolygon";
+import { dedupeByCongruence, primitiveReducedCell } from "@/classes/algorithm/TilingCongruence";
+import type { PeriodCell } from "@/classes/algorithm/PeriodSolver";
 
 const ring = CyclotomicRing.create(24);
 setActiveRing(ring);
@@ -38,32 +38,29 @@ function nonPrimSquareCell(): PeriodCell {
 	};
 }
 
-describe('primitiveReducedCell', () => {
-	it('reduces an index-2 supercell encoding to the primitive cell', () => {
+describe("primitiveReducedCell", () => {
+	it("reduces an index-2 supercell encoding to the primitive cell", () => {
 		const reduced = primitiveReducedCell(nonPrimSquareCell());
 		expect(reduced.cellPolygons).toHaveLength(1);
 	});
 
-	it('returns an already-primitive cell UNCHANGED (same object — digest byte-identity)', () => {
+	it("returns an already-primitive cell UNCHANGED (same object — digest byte-identity)", () => {
 		const prim = primSquareCell();
 		expect(primitiveReducedCell(prim)).toBe(prim);
 	});
 });
 
-describe('dedupeByCongruence — non-primitive encodings merge with their primitive twin', () => {
-	it('merges the index-2 supercell with the primitive cell (the §28.2 duplicate)', () => {
+describe("dedupeByCongruence — non-primitive encodings merge with their primitive twin", () => {
+	it("merges the index-2 supercell with the primitive cell (the §28.2 duplicate)", () => {
 		const reps = dedupeByCongruence([primSquareCell(), nonPrimSquareCell()]);
 		expect(reps).toHaveLength(1);
 		expect(reps[0].cellPolygons).toHaveLength(1);
 	});
 
-	it('keeps genuinely distinct tilings separate', () => {
+	it("keeps genuinely distinct tilings separate", () => {
 		const tri: PeriodCell = {
 			// triangle tiling 3.3.3.3.3.3: up+down triangle, Λ = (1, ζ⁴)
-			cellPolygons: [
-				RegularPolygon.fromAnchorAndDirExact(3, ZERO, 0),
-				RegularPolygon.fromAnchorAndDirExact(3, ONE, 8),
-			],
+			cellPolygons: [RegularPolygon.fromAnchorAndDirExact(3, ZERO, 0), RegularPolygon.fromAnchorAndDirExact(3, ONE, 8)],
 			basisExact: [ONE, Cyclotomic.zeta(ring, 4)],
 		};
 		const reps = dedupeByCongruence([primSquareCell(), tri]);

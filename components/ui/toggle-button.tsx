@@ -73,12 +73,12 @@ export function ToggleButton({
 				if (!e.defaultPrevented) onPressedChange?.(!pressed);
 			}}
 			className={cn(
-				"inline-flex items-center justify-center rounded-control font-medium border transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
+				"inline-flex items-center justify-center rounded-control border font-medium transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
 				SHAPE[variant],
 				SIZE_CLASSES[size],
 				pressed ? STATE_CLASSES.on : STATE_CLASSES.off,
 				fullWidth ? "w-full" : "",
-				disabled ? "opacity-50 cursor-not-allowed pointer-events-none" : "cursor-pointer",
+				disabled ? "pointer-events-none cursor-not-allowed opacity-50" : "cursor-pointer",
 				classes,
 			)}
 		>

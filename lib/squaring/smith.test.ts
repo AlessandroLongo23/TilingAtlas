@@ -52,7 +52,9 @@ function spanningTrees(map: PlanarMap): bigint {
  * Deliberately a separate implementation from the encoder's — a round trip through shared code proves
  * nothing.
  */
-function decodeBouwkamp(code: string): { width: bigint; height: bigint; squares: { x: bigint; y: bigint; side: bigint }[] } | null {
+function decodeBouwkamp(
+	code: string,
+): { width: bigint; height: bigint; squares: { x: bigint; y: bigint; side: bigint }[] } | null {
 	const head = code.match(/^(\d+)\s+(\d+)\s+(\d+)\s/);
 	if (!head) return null;
 	const width = BigInt(head[2]);
@@ -159,7 +161,14 @@ describe("squared rectangles from polyhedra", () => {
 		// Coverage on the compressed grid, where 0 is a gap and 2 an overlap — the same reading the
 		// tiling coverage tests use. Run over every squaring of the small solids; the shipped shelf is
 		// checked separately below, subsampled, because the order-119 grids cost seconds each.
-		for (const id of ["tetrahedron", "cube", "octahedron", "cuboctahedron", "truncated-tetrahedron", "metabidiminished-icosahedron"]) {
+		for (const id of [
+			"tetrahedron",
+			"cube",
+			"octahedron",
+			"cuboctahedron",
+			"truncated-tetrahedron",
+			"metabidiminished-icosahedron",
+		]) {
 			const map = mapOf(id);
 			for (const s of allSquarings(map)) {
 				expect(tiledArea(s), `${id} battery ${s.battery}: tile area != w*h`).toBe(s.width * s.height);
@@ -233,7 +242,13 @@ describe("squared rectangles from polyhedra", () => {
 		// The notation stores side lengths only; the positions are recovered by replaying the skyline
 		// greedy. If the encoder emitted in any other order the string would still look like a Bouwkamp
 		// code and decode to something else, so this is the test that the notation is really ours.
-		for (const id of ["cube", "cuboctahedron", "truncated-tetrahedron", "metabidiminished-icosahedron", "pentagonal-antiprism"]) {
+		for (const id of [
+			"cube",
+			"cuboctahedron",
+			"truncated-tetrahedron",
+			"metabidiminished-icosahedron",
+			"pentagonal-antiprism",
+		]) {
 			const map = mapOf(id);
 			for (const s of allSquarings(map)) {
 				const code = bouwkampCode(s);
@@ -243,7 +258,10 @@ describe("squared rectangles from polyhedra", () => {
 					.map((q) => `${q.x},${q.y},${q.side}`)
 					.sort()
 					.join(" ");
-				const want = s.squares.map((q) => `${q.x},${q.y},${q.side}`).sort().join(" ");
+				const want = s.squares
+					.map((q) => `${q.x},${q.y},${q.side}`)
+					.sort()
+					.join(" ");
 				expect(got, `${id} battery ${s.battery}: ${code}`).toBe(want);
 				expect((back as NonNullable<typeof back>).width, `${id}: decoded width`).toBe(s.width);
 				expect((back as NonNullable<typeof back>).height, `${id}: decoded height`).toBe(s.height);

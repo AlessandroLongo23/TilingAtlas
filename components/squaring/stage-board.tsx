@@ -35,7 +35,7 @@ export function StageBoard({
 }) {
 	return (
 		<div className="flex flex-col gap-4 lg:min-h-0 lg:flex-1 lg:flex-row">
-			<aside className="flex w-full shrink-0 flex-col gap-4 lg:w-[20rem] lg:min-h-0 lg:overflow-y-auto lg:pr-1">
+			<aside className="flex w-full shrink-0 flex-col gap-4 lg:min-h-0 lg:w-[20rem] lg:overflow-y-auto lg:pr-1">
 				{control}
 			</aside>
 			{empty ? <div className="lg:min-h-0 lg:flex-1">{empty}</div> : null}
@@ -49,7 +49,10 @@ export function StageBoard({
 							{/* One line, clipped, with the full text on hover: the blurbs are worth having and not
 							    worth two rows of a height budget that the figures need. A phone stacks the stages
 							    and has no hover, so there the blurb wraps in full. */}
-							<p className="mt-0.5 truncate text-[10px] leading-snug text-fg-muted max-md:overflow-visible max-md:whitespace-normal max-md:text-xs" title={s.blurb}>
+							<p
+								className="mt-0.5 truncate text-[10px] leading-snug text-fg-muted max-md:overflow-visible max-md:text-xs max-md:whitespace-normal"
+								title={s.blurb}
+							>
 								{s.blurb}
 							</p>
 						</header>
@@ -62,7 +65,17 @@ export function StageBoard({
 }
 
 /** A panel in the control rail, matching the stage cells' frame. */
-export function RailPanel({ label, title, hint, children }: { label: string; title: string; hint?: string; children: ReactNode }) {
+export function RailPanel({
+	label,
+	title,
+	hint,
+	children,
+}: {
+	label: string;
+	title: string;
+	hint?: string;
+	children: ReactNode;
+}) {
 	return (
 		<section className="flex shrink-0 flex-col border border-line bg-surface-raised">
 			<header className="border-b border-line px-2.5 py-1.5">
@@ -142,7 +155,7 @@ export function EdgeHitLine({
 export function Fact({ label, value, wide = false }: { label: string; value: string; wide?: boolean }) {
 	return (
 		<div className={wide ? "flex flex-col max-md:col-span-2" : "flex flex-col"}>
-			<dt className="text-[9px] uppercase tracking-wide text-fg-muted max-md:text-xs">{label}</dt>
+			<dt className="text-[9px] tracking-wide text-fg-muted uppercase max-md:text-xs">{label}</dt>
 			<dd className="break-all text-fg">{value}</dd>
 		</div>
 	);
@@ -175,7 +188,7 @@ export function useTapHover<K>(set: (key: K | null) => void): (key: K | null) =>
  */
 export function InspectBar({ children, onClear }: { children: ReactNode; onClear: () => void }) {
 	return (
-		<div className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+72px)] z-30 flex items-center gap-2 rounded-xl border border-line bg-surface-raised py-1 pl-3.5 pr-1 shadow-lg md:hidden">
+		<div className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+72px)] z-30 flex items-center gap-2 rounded-xl border border-line bg-surface-raised py-1 pr-1 pl-3.5 shadow-lg md:hidden">
 			<div className="flex min-w-0 flex-1 items-center gap-2 text-sm text-fg">{children}</div>
 			<button
 				type="button"

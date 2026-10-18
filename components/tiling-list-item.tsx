@@ -12,23 +12,17 @@ interface TilingListItemProps {
 	onScreenshot?: (e: MouseEvent<HTMLButtonElement>) => void;
 }
 
-export function TilingListItem({
-	id,
-	name,
-	polygonCount,
-	thumbnail,
-	onScreenshot,
-}: TilingListItemProps) {
+export function TilingListItem({ id, name, polygonCount, thumbnail, onScreenshot }: TilingListItemProps) {
 	return (
-		<div className="flex items-center gap-3 px-3 py-2 rounded-md border border-line bg-surface-overlay/30 hover:border-line-strong transition-colors">
-			<div className="shrink-0 w-16 h-16 rounded overflow-hidden border border-line bg-surface-raised">
+		<div className="flex items-center gap-3 rounded-md border border-line bg-surface-overlay/30 px-3 py-2 transition-colors hover:border-line-strong">
+			<div className="h-16 w-16 shrink-0 overflow-hidden rounded border border-line bg-surface-raised">
 				{thumbnail ?? (
-					<div className="w-full h-full flex items-center justify-center text-fg-disabled text-[10px]">—</div>
+					<div className="flex h-full w-full items-center justify-center text-[10px] text-fg-disabled">—</div>
 				)}
 			</div>
-			<span className="text-xs text-fg-muted tabular-nums shrink-0 w-6 text-right">{id}</span>
+			<span className="w-6 shrink-0 text-right text-xs text-fg-muted tabular-nums">{id}</span>
 			<span
-				className="truncate font-mono text-sm text-fg-secondary flex-1 min-w-0"
+				className="min-w-0 flex-1 truncate font-mono text-sm text-fg-secondary"
 				title={name}
 				dangerouslySetInnerHTML={{ __html: compactToHtml(compactSeedName(name || "")) }}
 			/>
@@ -39,7 +33,7 @@ export function TilingListItem({
 					onClick={onScreenshot}
 					title="Screenshot"
 					aria-label="Take screenshot"
-					className="p-1.5 rounded-md bg-surface-overlay/90 border border-line-strong text-fg-muted hover:text-fg hover:bg-surface-overlay/90 shrink-0"
+					className="shrink-0 rounded-md border border-line-strong bg-surface-overlay/90 p-1.5 text-fg-muted hover:bg-surface-overlay/90 hover:text-fg"
 				>
 					<Camera size={14} />
 				</button>

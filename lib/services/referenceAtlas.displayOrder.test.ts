@@ -32,14 +32,7 @@ describe("compareCatalogueDisplayOrder", () => {
 		const star2 = T({ canonicalKey: "s2", k: 2, family: "5*2" });
 		const convex1 = T({ canonicalKey: "c1", k: 1, family: "cx4" });
 		// Shuffled input; (k, key) sorting would interleave (c1, r1, s1, r2a, r2b, s2).
-		expect(keys([star2, reg2b, convex1, reg1, star1, reg2a])).toEqual([
-			"r1",
-			"r2a",
-			"r2b",
-			"s1",
-			"s2",
-			"c1",
-		]);
+		expect(keys([star2, reg2b, convex1, reg1, star1, reg2a])).toEqual(["r1", "r2a", "r2b", "s1", "s2", "c1"]);
 	});
 
 	// Within one class the order is k ascending, then canonicalKey — matching the sidebar's within-k order.

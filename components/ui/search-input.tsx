@@ -41,17 +41,17 @@ export function SearchInput({
 		<div className="flex flex-col gap-2">
 			<span className="ta-label">Search</span>
 			<div className="relative">
-				<Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted pointer-events-none" />
+				<Search size={14} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-fg-muted" />
 				<input
 					type="text"
 					value={local}
 					onChange={handleInput}
 					placeholder={placeholder}
-					className="w-full h-9 max-md:h-11 rounded-md border border-line bg-surface-raised shadow-sm pl-9 pr-8 py-2 text-sm text-fg placeholder:text-fg-disabled focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:border-accent transition-all"
+					className="h-9 w-full rounded-md border border-line bg-surface-raised py-2 pr-8 pl-9 text-sm text-fg shadow-sm transition-all placeholder:text-fg-disabled focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:outline-none max-md:h-11"
 				/>
 				{local ? (
 					<button
-						className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 max-md:right-0 max-md:p-3 rounded text-fg-muted hover:text-fg-secondary hover:bg-surface-overlay/50 transition-colors cursor-pointer"
+						className="absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer rounded p-0.5 text-fg-muted transition-colors hover:bg-surface-overlay/50 hover:text-fg-secondary max-md:right-0 max-md:p-3"
 						onClick={clear}
 						aria-label="Clear search"
 					>

@@ -10,16 +10,16 @@
  *
  *   pnpm tsx --env-file=.env scripts/export-figure-snapshot.ts
  */
-import fs from 'node:fs';
-import path from 'node:path';
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import type { SerializedCell } from './scoutCodec';
-import { EXPECTED_COUNTS, type FigureSnapshot, type SnapshotTiling } from '../figures/snapshot';
+import fs from "node:fs";
+import path from "node:path";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import type { SerializedCell } from "./scoutCodec";
+import { EXPECTED_COUNTS, type FigureSnapshot, type SnapshotTiling } from "../figures/snapshot";
 
 const KNOWN_TARGETS: Record<number, string> = {
-	1: '6f9ca9cf2d16c75f',
-	2: 'f3e2e0517191362c',
-	3: '99919f42a7b58e76', // re-certified 2026-06-10 post t3007-fix (NOTES §29/§31); old eb34499d5fba3457 was per-tiling defective
+	1: "6f9ca9cf2d16c75f",
+	2: "f3e2e0517191362c",
+	3: "99919f42a7b58e76", // re-certified 2026-06-10 post t3007-fix (NOTES §29/§31); old eb34499d5fba3457 was per-tiling defective
 };
 
 type RunRow = { id: string; k: number; family: string; certified: boolean; digest: string | null };
@@ -32,9 +32,9 @@ async function fetchAllFound(sb: SupabaseClient<any, any, any, any, any>): Promi
 	const PAGE = 500;
 	for (let from = 0; ; from += PAGE) {
 		const { data, error } = await sb
-			.from('found_tilings')
-			.select('run_id,canonical_key,cell_codec')
-			.order('first_seen_at', { ascending: true })
+			.from("found_tilings")
+			.select("run_id,canonical_key,cell_codec")
+			.order("first_seen_at", { ascending: true })
 			.range(from, from + PAGE - 1);
 		if (error) throw new Error(`found_tilings page ${from}: ${error.message}`);
 		out.push(...((data ?? []) as FoundRow[]));
@@ -47,14 +47,12 @@ async function main(): Promise<void> {
 	const url = process.env.PUBLIC_SUPABASE_URL;
 	const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 	if (!url || !key) {
-		console.error('missing PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY (use --env-file=.env)');
+		console.error("missing PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY (use --env-file=.env)");
 		process.exit(1);
 	}
 	const sb = createClient(url, key, { auth: { persistSession: false } });
 
-	const { data: runsData, error: runsErr } = await sb
-		.from('runs')
-		.select('id,k,family,certified,digest');
+	const { data: runsData, error: runsErr } = await sb.from("runs").select("id,k,family,certified,digest");
 	if (runsErr) throw new Error(`runs: ${runsErr.message}`);
 	const runs = (runsData ?? []) as RunRow[];
 	const certifiedRuns = new Map(runs.filter((r) => r.certified).map((r) => [r.id, r]));
@@ -95,9 +93,7 @@ async function main(): Promise<void> {
 		}
 	}
 
-	const tilings = Array.from(byKey.values()).sort(
-		(a, b) => a.k - b.k || a.canonicalKey.localeCompare(b.canonicalKey)
-	);
+	const tilings = Array.from(byKey.values()).sort((a, b) => a.k - b.k || a.canonicalKey.localeCompare(b.canonicalKey));
 
 	// --- Hard gates: counts, digests, exact payloads. ---
 	const failures: string[] = [];
@@ -116,27 +112,29 @@ async function main(): Promise<void> {
 	if (missingCodec.length > 0) {
 		failures.push(
 			`${missingCodec.length} tilings lack cell_codec (run scripts/backfill or investigate): ` +
-				missingCodec.slice(0, 5).map((t) => t.canonicalKey).join(', ')
+				missingCodec
+					.slice(0, 5)
+					.map((t) => t.canonicalKey)
+					.join(", "),
 		);
 	}
 	if (failures.length > 0) {
-		console.error('✗ snapshot REFUSED — figure data must be provably the certified catalogue:');
-		for (const f of failures) console.error('  ✗ ' + f);
+		console.error("✗ snapshot REFUSED — figure data must be provably the certified catalogue:");
+		for (const f of failures) console.error("  ✗ " + f);
 		process.exit(1);
 	}
 
 	const snapshot: FigureSnapshot = {
 		exportedAt: new Date().toISOString(),
-		source: 'found_tilings (certified runs only)',
+		source: "found_tilings (certified runs only)",
 		digests: KNOWN_TARGETS,
 		counts,
 		tilings,
 	};
-	const outPath = path.join(process.cwd(), 'figures', 'data', 'catalogue-k1-3.json');
-	fs.writeFileSync(outPath, JSON.stringify(snapshot, null, 1) + '\n');
+	const outPath = path.join(process.cwd(), "figures", "data", "catalogue-k1-3.json");
+	fs.writeFileSync(outPath, JSON.stringify(snapshot, null, 1) + "\n");
 	console.error(
-		`★ snapshot written: ${outPath}  (${tilings.length} tilings: ` +
-			`k1=${counts[1]} k2=${counts[2]} k3=${counts[3]})`
+		`★ snapshot written: ${outPath}  (${tilings.length} tilings: ` + `k1=${counts[1]} k2=${counts[2]} k3=${counts[3]})`,
 	);
 }
 

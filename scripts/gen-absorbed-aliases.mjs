@@ -36,7 +36,7 @@ const SHELVES = ["mixed", "period", "isotoxal", "composable"];
 
 const entriesOf = (file) => {
 	const d = JSON.parse(fs.readFileSync(file, "utf8"));
-	return Array.isArray(d) ? d : (d.tilings || Object.values(d).find(Array.isArray) || []);
+	return Array.isArray(d) ? d : d.tilings || Object.values(d).find(Array.isArray) || [];
 };
 
 const map = {};

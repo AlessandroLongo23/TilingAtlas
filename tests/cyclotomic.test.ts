@@ -35,10 +35,20 @@ describe("CyclotomicRing / Cyclotomic — N=24", () => {
 			const c = randEl(seed * 17 + 3);
 			// additive comm + assoc
 			expect(a.add(b).equals(b.add(a))).toBe(true);
-			expect(a.add(b).add(c).equals(a.add(b.add(c)))).toBe(true);
+			expect(
+				a
+					.add(b)
+					.add(c)
+					.equals(a.add(b.add(c))),
+			).toBe(true);
 			// multiplicative comm + assoc
 			expect(a.mul(b).equals(b.mul(a))).toBe(true);
-			expect(a.mul(b).mul(c).equals(a.mul(b.mul(c)))).toBe(true);
+			expect(
+				a
+					.mul(b)
+					.mul(c)
+					.equals(a.mul(b.mul(c))),
+			).toBe(true);
 			// distributivity
 			expect(a.mul(b.add(c)).equals(a.mul(b).add(a.mul(c)))).toBe(true);
 			// negation
@@ -66,8 +76,16 @@ describe("CyclotomicRing / Cyclotomic — N=24", () => {
 	it("mulZeta is rotation: ζ^k · ζ^m = ζ^{k+m}", () => {
 		for (let k = 0; k < 24; k++) {
 			for (let m = 0; m < 24; m++) {
-				expect(zeta(k).mul(zeta(m)).equals(zeta(k + m))).toBe(true);
-				expect(zeta(k).mulZeta(m).equals(zeta(k + m))).toBe(true);
+				expect(
+					zeta(k)
+						.mul(zeta(m))
+						.equals(zeta(k + m)),
+				).toBe(true);
+				expect(
+					zeta(k)
+						.mulZeta(m)
+						.equals(zeta(k + m)),
+				).toBe(true);
 			}
 		}
 	});

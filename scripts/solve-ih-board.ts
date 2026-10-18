@@ -29,12 +29,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { makeTiling, prototileEdges, straightCurves } from "@/lib/isohedral/build";
 import { ISOHEDRAL_TYPES } from "@/lib/isohedral/catalogue";
-import {
-	IH_EDGE_BOARDS,
-	IH_EDGE_BOARD_BY_IH,
-	solveIhBoard,
-	type IhEdgeBoardSpec,
-} from "@/lib/isohedral/edge-board";
+import { IH_EDGE_BOARDS, IH_EDGE_BOARD_BY_IH, solveIhBoard, type IhEdgeBoardSpec } from "@/lib/isohedral/edge-board";
 import type { IhEdgeRecord } from "@/lib/isohedral/edgeDevelop";
 import { buildIhEdgePatch } from "@/lib/isohedral/edgePatch";
 
@@ -122,7 +117,10 @@ function genericPoint(ih: number, numParams: number) {
 		const ang = V.map((p, i) => {
 			const a = V[(i + V.length - 1) % V.length];
 			const b = V[(i + 1) % V.length];
-			const ux = a.x - p.x, uy = a.y - p.y, vx = b.x - p.x, vy = b.y - p.y;
+			const ux = a.x - p.x,
+				uy = a.y - p.y,
+				vx = b.x - p.x,
+				vy = b.y - p.y;
 			let t2 = Math.atan2(-(ux * vy - uy * vx), ux * vx + uy * vy);
 			if (t2 <= 0) t2 += 2 * Math.PI;
 			return (t2 * 180) / Math.PI;
@@ -218,7 +216,11 @@ const used = new Array(L).fill(false);
 		if (used[i]) continue;
 		const allowed = sig(i);
 		let ok = true;
-		for (const c of follows.get(letters[k])!) if (!allowed.has(c)) { ok = false; break; }
+		for (const c of follows.get(letters[k])!)
+			if (!allowed.has(c)) {
+				ok = false;
+				break;
+			}
 		if (!ok) continue;
 		used[i] = true;
 		perm[k] = i;
@@ -274,9 +276,7 @@ if (shardDir) {
 			// the correct one: more aspects means more tiles per translation cell, so the smallest patch
 			// that closes is bigger. Sized for headroom instead — eight candidates times a dozen records
 			// is cheap even when every one of them runs to the cap.
-			const ok =
-				solved.ok &&
-				recs.every((r) => buildIhEdgePatch(r, solved.board, { attempts: 3, budget: 200_000 }).ok);
+			const ok = solved.ok && recs.every((r) => buildIhEdgePatch(r, solved.board, { attempts: 3, budget: 200_000 }).ok);
 			console.log(`     ${corners.join("")}  develops: ${ok ? "yes" : "no"}`);
 			if (ok) kept.push(corners);
 		}
@@ -287,8 +287,7 @@ if (shardDir) {
 
 /** Marek numbers corners around the boundary, so the letters should read A, B, C… cyclically. What
  *  survives the develop test is generally a MIRROR PAIR, since no corpus can see handedness. */
-const inBoundaryOrder = (c: string[]) =>
-	c.some((_, r) => letters.every((letter, i) => c[(r + i) % n] === letter));
+const inBoundaryOrder = (c: string[]) => c.some((_, r) => letters.every((letter, i) => c[(r + i) % n] === letter));
 const preferred = live.filter(inBoundaryOrder);
 for (const c of live) console.log(`     ${c.join("")}${inBoundaryOrder(c) ? "   <- boundary order" : ""}`);
 
@@ -300,7 +299,10 @@ if (preferred.length === 0) {
 // More than one is not a failure: they differ by a symmetry the board actually has (IH01's boundary
 // word repeats with period 3, so calling its first corner A or D is the same board relabelled). Any is
 // correct, so take the lexicographically smallest and say the choice was free.
-const corners = preferred.map((c) => c.join("")).sort()[0].split("");
+const corners = preferred
+	.map((c) => c.join(""))
+	.sort()[0]
+	.split("");
 if (preferred.length > 1)
 	console.log(
 		`\n  ${preferred.length} read in boundary order and differ only by a symmetry of the board` +

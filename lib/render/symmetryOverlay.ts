@@ -44,9 +44,12 @@ export function drawTilingPlain(pen: Pen, tiling: { nodes: { vertices: Vec2[] }[
 // last, because it is applied first — the lattice snap below counts whole UNdeformed lattice vectors.
 function worldUnderCentre(view: OverlayView): Vec2 {
 	const { zoom, rotation: rot, offset } = view;
-	const c = Math.cos(rot), s = Math.sin(rot);
-	const px = -offset.x, py = -offset.y;
-	const rx = c * px + s * py, ry = -s * px + c * py;
+	const c = Math.cos(rot),
+		s = Math.sin(rot);
+	const px = -offset.x,
+		py = -offset.y;
+	const rx = c * px + s * py,
+		ry = -s * px + c * py;
 	const w = { x: rx / zoom, y: -ry / zoom };
 	if (isIdentityDeform(view.deform)) return w;
 	const inv = invertMat2(view.deform as Mat2);
@@ -70,7 +73,8 @@ export function fdSnapTranslateAt(world: Vec2, cell: [Vec2, Vec2], anchor: Vec2)
 	const det = c1.x * c2.y - c1.y * c2.x;
 	if (Math.abs(det) < 1e-12) return { x: 0, y: 0 };
 	const w = world;
-	const dx = w.x - anchor.x, dy = w.y - anchor.y;
+	const dx = w.x - anchor.x,
+		dy = w.y - anchor.y;
 	const m = Math.round((dx * c2.y - dy * c2.x) / det);
 	const n = Math.round((-dx * c1.y + dy * c1.x) / det);
 	return { x: m * c1.x + n * c2.x, y: m * c1.y + n * c2.y };
@@ -142,9 +146,18 @@ function drawCenterGlyph(pen: Pen, z: Vec2, order: number, zoom: number) {
 	pen.stroke(0, 0, 15);
 	pen.strokeWeight(1);
 	pen.fill(st.h, st.s, st.b);
-	if (order === 2) pen.polygon([{ x: 0, y: r }, { x: 0.62 * r, y: 0 }, { x: 0, y: -r }, { x: -0.62 * r, y: 0 }]); // diamond
-	else if (order === 3) ngon(pen, 3, r, Math.PI / 2); // triangle, point up
-	else if (order === 4) ngon(pen, 4, r * 0.92, Math.PI / 4); // square, flat sides
+	if (order === 2)
+		pen.polygon([
+			{ x: 0, y: r },
+			{ x: 0.62 * r, y: 0 },
+			{ x: 0, y: -r },
+			{ x: -0.62 * r, y: 0 },
+		]);
+	// diamond
+	else if (order === 3)
+		ngon(pen, 3, r, Math.PI / 2); // triangle, point up
+	else if (order === 4)
+		ngon(pen, 4, r * 0.92, Math.PI / 4); // square, flat sides
 	else ngon(pen, 6, r, Math.PI / 2); // hexagon, point up
 	pen.pop();
 }
@@ -153,16 +166,25 @@ function drawCenterGlyph(pen: Pen, z: Vec2, order: number, zoom: number) {
 //   screen = (W/2+offx, H/2+offy) + Rot(rot)·(zoom·wx, −zoom·wy).
 function visibleWorldBounds(view: OverlayView): { minX: number; minY: number; maxX: number; maxY: number } {
 	const { zoom, rotation: rot, offset, width: W, height: H } = view;
-	const c = Math.cos(rot), s = Math.sin(rot);
-	let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+	const c = Math.cos(rot),
+		s = Math.sin(rot);
+	let minX = Infinity,
+		minY = Infinity,
+		maxX = -Infinity,
+		maxY = -Infinity;
 	for (const sx of [0, W]) {
 		for (const sy of [0, H]) {
-			const px = sx - (W / 2 + offset.x), py = sy - (H / 2 + offset.y);
+			const px = sx - (W / 2 + offset.x),
+				py = sy - (H / 2 + offset.y);
 			// Rot(−rot)·p, then /zoom and undo the y-flip
-			const rx = c * px + s * py, ry = -s * px + c * py;
-			const wx = rx / zoom, wy = -ry / zoom;
-			if (wx < minX) minX = wx; if (wx > maxX) maxX = wx;
-			if (wy < minY) minY = wy; if (wy > maxY) maxY = wy;
+			const rx = c * px + s * py,
+				ry = -s * px + c * py;
+			const wx = rx / zoom,
+				wy = -ry / zoom;
+			if (wx < minX) minX = wx;
+			if (wx > maxX) maxX = wx;
+			if (wy < minY) minY = wy;
+			if (wy > maxY) maxY = wy;
 		}
 	}
 	return { minX, minY, maxX, maxY };
@@ -173,18 +195,26 @@ const MAX_REPL = 80; // per-axis cap on lattice replication (backstop against a 
 // Integer lattice window {m,n} such that `p0 + m·c1 + n·c2` covers the visible AABB (+1 cell margin).
 function latticeWindow(
 	bounds: { minX: number; minY: number; maxX: number; maxY: number },
-	c1: Vec2, c2: Vec2, p0: Vec2,
+	c1: Vec2,
+	c2: Vec2,
+	p0: Vec2,
 ): { mMin: number; mMax: number; nMin: number; nMax: number } {
 	const det = c1.x * c2.y - c1.y * c2.x;
 	if (Math.abs(det) < 1e-12) return { mMin: 0, mMax: 0, nMin: 0, nMax: 0 };
-	let mMin = Infinity, mMax = -Infinity, nMin = Infinity, nMax = -Infinity;
+	let mMin = Infinity,
+		mMax = -Infinity,
+		nMin = Infinity,
+		nMax = -Infinity;
 	for (const cx of [bounds.minX, bounds.maxX]) {
 		for (const cy of [bounds.minY, bounds.maxY]) {
-			const dx = cx - p0.x, dy = cy - p0.y;
+			const dx = cx - p0.x,
+				dy = cy - p0.y;
 			const m = (dx * c2.y - dy * c2.x) / det;
 			const n = (-dx * c1.y + dy * c1.x) / det;
-			mMin = Math.min(mMin, m); mMax = Math.max(mMax, m);
-			nMin = Math.min(nMin, n); nMax = Math.max(nMax, n);
+			mMin = Math.min(mMin, m);
+			mMax = Math.max(mMax, m);
+			nMin = Math.min(nMin, n);
+			nMax = Math.max(nMax, n);
 		}
 	}
 	const clampLo = (x: number) => Math.max(-MAX_REPL, Math.floor(x) - 1);
@@ -195,7 +225,14 @@ function latticeWindow(
 // Mirror axes solid crimson, glide axes dashed royal-blue, each replicated to fill the viewport. Every
 // line runs through its (translated) point along its direction, spanning the whole AABB. Stroke weight
 // and dash length scale by 1/zoom to stay ~constant in pixels. Deduped by (angle, perpendicular offset).
-function drawAxes(pen: Pen, axes: Axis[], c1: Vec2, c2: Vec2, view: OverlayView, bounds: ReturnType<typeof visibleWorldBounds>) {
+function drawAxes(
+	pen: Pen,
+	axes: Axis[],
+	c1: Vec2,
+	c2: Vec2,
+	view: OverlayView,
+	bounds: ReturnType<typeof visibleWorldBounds>,
+) {
 	const L = 2 * Math.hypot(bounds.maxX - bounds.minX, bounds.maxY - bounds.minY) + 4;
 	const seen = new Set<string>();
 	const zoom = view.zoom;

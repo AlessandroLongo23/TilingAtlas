@@ -403,7 +403,11 @@ export function buildCreaseRibbons(
 				p[2] + cols[k].s * thickness * t[2],
 			];
 			const nAt = (k: number): V3 =>
-				nrm([cols[k].c * n[0] + cols[k].s * t[0], cols[k].c * n[1] + cols[k].s * t[1], cols[k].c * n[2] + cols[k].s * t[2]]);
+				nrm([
+					cols[k].c * n[0] + cols[k].s * t[0],
+					cols[k].c * n[1] + cols[k].s * t[1],
+					cols[k].c * n[2] + cols[k].s * t[2],
+				]);
 			for (let k = 0; k < CREASE_COLUMNS - 1; k++) {
 				const quad: [V3, V3, V3][] = [
 					[at(a, k), nAt(k), a],

@@ -40,7 +40,10 @@ function edgeSet(faces: number[][]): Set<string> {
 }
 
 function faceMultiset(faces: number[][]): string {
-	return faces.map((f) => f.length).sort((x, y) => x - y).join(",");
+	return faces
+		.map((f) => f.length)
+		.sort((x, y) => x - y)
+		.join(",");
 }
 
 // (V, E, F, face-size multiset) — a complete invariant key across these 28 uniform solids.
@@ -55,20 +58,12 @@ function keyOfPolyhedron(p: Polyhedron): string {
 // Closed-form invariants for the prism/antiprism slice the palette emits (the atlas has none).
 function prismKey(n: number): string {
 	// V=2n, faces = 2 n-gons + n squares, E=3n
-	const fm = [
-		...Array(n).fill(4),
-		n,
-		n,
-	].sort((x, y) => x - y).join(",");
+	const fm = [...Array(n).fill(4), n, n].sort((x, y) => x - y).join(",");
 	return invariantKey(2 * n, 3 * n, n + 2, fm);
 }
 function antiprismKey(n: number): string {
 	// V=2n, faces = 2 n-gons + 2n triangles, E=4n
-	const fm = [
-		...Array(2 * n).fill(3),
-		n,
-		n,
-	].sort((x, y) => x - y).join(",");
+	const fm = [...Array(2 * n).fill(3), n, n].sort((x, y) => x - y).join(",");
 	return invariantKey(2 * n, 4 * n, 2 * n + 2, fm);
 }
 
@@ -89,9 +84,13 @@ function dist(a: Vec3, b: Vec3): number {
 function planarity(pts: Vec3[]): number {
 	const c: Vec3 = [0, 0, 0];
 	for (const p of pts) {
-		c[0] += p[0]; c[1] += p[1]; c[2] += p[2];
+		c[0] += p[0];
+		c[1] += p[1];
+		c[2] += p[2];
 	}
-	c[0] /= pts.length; c[1] /= pts.length; c[2] /= pts.length;
+	c[0] /= pts.length;
+	c[1] /= pts.length;
+	c[2] /= pts.length;
 	// Newell's method for a robust polygon normal
 	const n: Vec3 = [0, 0, 0];
 	for (let i = 0; i < pts.length; i++) {
@@ -102,7 +101,9 @@ function planarity(pts: Vec3[]): number {
 		n[2] += (p[0] - q[0]) * (p[1] + q[1]);
 	}
 	const len = Math.hypot(n[0], n[1], n[2]) || 1;
-	n[0] /= len; n[1] /= len; n[2] /= len;
+	n[0] /= len;
+	n[1] /= len;
+	n[2] /= len;
 	let worst = 0;
 	for (const p of pts) {
 		worst = Math.max(worst, Math.abs((p[0] - c[0]) * n[0] + (p[1] - c[1]) * n[1] + (p[2] - c[2]) * n[2]));

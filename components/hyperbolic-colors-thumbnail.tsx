@@ -62,7 +62,12 @@ function renderThumb2d(pattern: HypColorsThumbInput, size: number, opts: ThumbOp
 	if (!ctx) return null;
 	const dark = document.documentElement.classList.contains("dark");
 	const meta = { id: pattern.id, name: pattern.id, config: pattern.config, edge: pattern.edge };
-	const drawn = new HyperbolicDeveloper(pattern.darts, pattern.edge).developColors(meta, su11Identity(), FALLBACK_BOUND_R, THUMB_BUDGET);
+	const drawn = new HyperbolicDeveloper(pattern.darts, pattern.edge).developColors(
+		meta,
+		su11Identity(),
+		FALLBACK_BOUND_R,
+		THUMB_BUDGET,
+	);
 	drawDevelopedEdgePatch(ctx, drawn, su11Identity(), {
 		R: size / 2 - 4,
 		cx: size / 2,

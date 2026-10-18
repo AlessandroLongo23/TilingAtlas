@@ -50,8 +50,7 @@ type MultiProps<T> = CommonProps<T> & {
 
 export function OptionWall<T>(props: SingleProps<T> | MultiProps<T>) {
 	const { options, columns, classes, fill = true } = props;
-	const isPressed = (value: T): boolean =>
-		props.multi ? props.selected.includes(value) : props.selected === value;
+	const isPressed = (value: T): boolean => (props.multi ? props.selected.includes(value) : props.selected === value);
 	const r = fill ? options.length % columns || columns : 1;
 	const lastRow = fill ? options.length - r : options.length;
 
@@ -73,7 +72,7 @@ export function OptionWall<T>(props: SingleProps<T> | MultiProps<T>) {
 						onClick={() => props.onChange(opt.value)}
 						style={{ gridColumn: `span ${i < lastRow ? r : columns}` }}
 						className={cn(
-							"ta-tab flex min-h-7 items-center justify-center px-1.5 py-1 text-center text-xs font-medium leading-tight transition-colors",
+							"ta-tab flex min-h-7 items-center justify-center px-1.5 py-1 text-center text-xs leading-tight font-medium transition-colors",
 							"focus:outline-none focus-visible:relative focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-accent/50",
 							isPressed(opt.value) ? "text-fg" : "text-fg-muted hover:text-fg-secondary",
 							opt.disabled ? "cursor-not-allowed opacity-40" : "cursor-pointer",
@@ -85,7 +84,13 @@ export function OptionWall<T>(props: SingleProps<T> | MultiProps<T>) {
 				return opt.tooltip != null ? (
 					// A tap on a cell selects it; a press held on it explains it (a tap that also popped the card
 					// covered the options below, and it stayed up until the next tap).
-					<Tooltip key={key} content={opt.tooltip} side={opt.tooltipSide ?? "top"} delay={opt.tooltipDelay} tapToOpen="hold">
+					<Tooltip
+						key={key}
+						content={opt.tooltip}
+						side={opt.tooltipSide ?? "top"}
+						delay={opt.tooltipDelay}
+						tapToOpen="hold"
+					>
 						{button}
 					</Tooltip>
 				) : (

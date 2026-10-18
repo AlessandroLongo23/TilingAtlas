@@ -56,13 +56,13 @@ export function p5Pen(p5: P5): Pen {
 
 /** HSB 0..360 / 0..100 / 0..100 → CSS rgba(). Not `hsl()`: HSB and HSL disagree above 50% lightness. */
 function hsba(h: number, s: number, b: number, a: number): string {
-	const S = s / 100, V = b / 100;
+	const S = s / 100,
+		V = b / 100;
 	const c = V * S;
 	const hp = (((h % 360) + 360) % 360) / 60;
 	const x = c * (1 - Math.abs((hp % 2) - 1));
 	const [r1, g1, b1] =
-		hp < 1 ? [c, x, 0] : hp < 2 ? [x, c, 0] : hp < 3 ? [0, c, x]
-		: hp < 4 ? [0, x, c] : hp < 5 ? [x, 0, c] : [c, 0, x];
+		hp < 1 ? [c, x, 0] : hp < 2 ? [x, c, 0] : hp < 3 ? [0, c, x] : hp < 4 ? [0, x, c] : hp < 5 ? [x, 0, c] : [c, 0, x];
 	const m = V - c;
 	const to255 = (v: number) => Math.round((v + m) * 255);
 	return `rgba(${to255(r1)}, ${to255(g1)}, ${to255(b1)}, ${a})`;

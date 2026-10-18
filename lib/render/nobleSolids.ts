@@ -92,7 +92,17 @@ const C5: M3 = (() => {
 	const c = Math.cos((2 * Math.PI) / 5);
 	const s = Math.sin((2 * Math.PI) / 5);
 	const t = 1 - c;
-	return [t * x * x + c, t * x * y - s * z, t * x * z + s * y, t * x * y + s * z, t * y * y + c, t * y * z - s * x, t * x * z - s * y, t * y * z + s * x, t * z * z + c];
+	return [
+		t * x * x + c,
+		t * x * y - s * z,
+		t * x * z + s * y,
+		t * x * y + s * z,
+		t * y * y + c,
+		t * y * z - s * x,
+		t * x * z - s * y,
+		t * y * z + s * x,
+		t * z * z + c,
+	];
 })();
 
 const GENERATORS: Record<NobleGroup, M3[]> = {
@@ -129,7 +139,11 @@ export function cycleKey(f: readonly number[]): string {
  * The orbit of `seed`, each point once, in group order; and the orbit of `face` under the same group,
  * each face once. `face` indexes the vertex list this returns.
  */
-export function nobleOrbit(group: NobleGroup, seed: Vec3, face: readonly number[]): { vertices: Vec3[]; faces: number[][] } {
+export function nobleOrbit(
+	group: NobleGroup,
+	seed: Vec3,
+	face: readonly number[],
+): { vertices: Vec3[]; faces: number[][] } {
 	const G = nobleGroup(group);
 	const scale = 1e6 / Math.hypot(seed[0], seed[1], seed[2]);
 	const key = (v: Vec3) => `${Math.round(v[0] * scale)},${Math.round(v[1] * scale)},${Math.round(v[2] * scale)}`;
@@ -207,8 +221,13 @@ export function nobleSolid(id: string): Polyhedron | null {
 // height. So they ship as functions, and the sliders in the Options tab are their parameters.
 
 export type NobleFamily = "noble-disphenoid" | "noble-stephanoid-prismatic" | "noble-stephanoid-antiprismatic";
-export const NOBLE_FAMILIES: NobleFamily[] = ["noble-disphenoid", "noble-stephanoid-prismatic", "noble-stephanoid-antiprismatic"];
-export const isNobleFamily = (id: string | null | undefined): id is NobleFamily => NOBLE_FAMILIES.includes(id as NobleFamily);
+export const NOBLE_FAMILIES: NobleFamily[] = [
+	"noble-disphenoid",
+	"noble-stephanoid-prismatic",
+	"noble-stephanoid-antiprismatic",
+];
+export const isNobleFamily = (id: string | null | undefined): id is NobleFamily =>
+	NOBLE_FAMILIES.includes(id as NobleFamily);
 
 export interface NobleFamilyParams {
 	/** Disphenoid: the box it is cut from is 1 x boxB x boxC. Both 1 is the regular tetrahedron. */
@@ -256,7 +275,22 @@ export function nobleFamilySolid(id: string, params: NobleFamilyParams): Polyhed
 	if (id === "noble-disphenoid") {
 		// Alternate corners of a box: four congruent triangles, acute for every box.
 		const { boxB: b, boxC: c } = params;
-		return solid(id, "Disphenoid", [[1, b, c], [1, -b, -c], [-1, b, -c], [-1, -b, c]], [[0, 1, 2], [0, 3, 1], [0, 2, 3], [1, 3, 2]]);
+		return solid(
+			id,
+			"Disphenoid",
+			[
+				[1, b, c],
+				[1, -b, -c],
+				[-1, b, -c],
+				[-1, -b, c],
+			],
+			[
+				[0, 1, 2],
+				[0, 3, 1],
+				[0, 2, 3],
+				[1, 3, 2],
+			],
+		);
 	}
 	if (!isNobleFamily(id)) return null;
 	const anti = id === "noble-stephanoid-antiprismatic";
@@ -296,7 +330,15 @@ export function nobleSymmetry(id: string): { group: NobleGroup; orbifold: string
 	return rec ? { group: rec[1], orbifold: ORBIFOLD[rec[1]] } : null;
 }
 
-const GON: Record<number, string> = { 3: "triangle", 4: "quadrilateral", 5: "pentagon", 6: "hexagon", 8: "octagon", 9: "enneagon", 12: "dodecagon" };
+const GON: Record<number, string> = {
+	3: "triangle",
+	4: "quadrilateral",
+	5: "pentagon",
+	6: "hexagon",
+	8: "octagon",
+	9: "enneagon",
+	12: "dodecagon",
+};
 /** The one face shape of a noble polyhedron, flat, with the words for it and the solid's census. */
 export function nobleFaceShape(p: Polyhedron) {
 	const face = p.faces[0];
@@ -310,5 +352,12 @@ export function nobleFaceShape(p: Polyhedron) {
 			? `${regular ? "regular " : face.length === 3 ? "" : "convex "}${gon}`
 			: `concave ${gon}`;
 	const edges = new Set(p.faces.flatMap((f) => f.map((a, k) => cycleKey([a, f[(k + 1) % f.length]]))));
-	return { points: flat.xs.map((x, k) => [x, flat.ys[k]] as [number, number]), kind, V: p.vertices.length, E: edges.size, F: p.faces.length, perVertex: p.schlafli[1] };
+	return {
+		points: flat.xs.map((x, k) => [x, flat.ys[k]] as [number, number]),
+		kind,
+		V: p.vertices.length,
+		E: edges.size,
+		F: p.faces.length,
+		perVertex: p.schlafli[1],
+	};
 }

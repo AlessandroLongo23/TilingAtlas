@@ -10,11 +10,31 @@ import type { TranslationalCellData } from "@/classes/algorithm/types";
 
 // A unit-square fundamental cell (one square, integer lattice) → the squares tiling, edges shared.
 const SQUARE_CELL = {
-	p: [{ v: [[0, 0], [1, 0], [1, 1], [0, 1]], n: 4 }],
-	b: [[1, 0], [0, 1]],
+	p: [
+		{
+			v: [
+				[0, 0],
+				[1, 0],
+				[1, 1],
+				[0, 1],
+			],
+			n: 4,
+		},
+	],
+	b: [
+		[1, 0],
+		[0, 1],
+	],
 } as unknown as TranslationalCellData;
 
-function pipeline(cell: TranslationalCellData, ri: number, rj: number, thetaDeg: number, offset: number, count: number) {
+function pipeline(
+	cell: TranslationalCellData,
+	ri: number,
+	rj: number,
+	thetaDeg: number,
+	offset: number,
+	count: number,
+) {
 	const patch = buildTilingFromCell(cell, ri, rj);
 	const angle = (thetaDeg * Math.PI) / 180;
 	const segments: Segment[] = [];
@@ -53,8 +73,10 @@ describe("WebGL Islamic pipeline (buildTilingFromCell → mesh)", () => {
 	});
 
 	it("does not throw across the family/offset ranges the sliders expose", () => {
-		for (const deg of [0, 30, 45, 60, 90]) for (const off of [0, 0.3, 0.6]) for (const cnt of [1, 2]) {
-			expect(() => pipeline(SQUARE_CELL, 1, 1, deg, off, cnt)).not.toThrow();
-		}
+		for (const deg of [0, 30, 45, 60, 90])
+			for (const off of [0, 0.3, 0.6])
+				for (const cnt of [1, 2]) {
+					expect(() => pipeline(SQUARE_CELL, 1, 1, deg, off, cnt)).not.toThrow();
+				}
 	});
 });

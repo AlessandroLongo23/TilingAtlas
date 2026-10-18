@@ -46,28 +46,28 @@
  * the lib bug without being weakened: every A-cell must still be EXACTLY verified congruent to
  * some B-cell, and vice versa).
  */
-import { describe, it, expect } from 'vitest';
-import { Cyclotomic } from '@/classes/Cyclotomic';
-import type { Polygon } from '@/classes/polygons/Polygon';
+import { describe, it, expect } from "vitest";
+import { Cyclotomic } from "@/classes/Cyclotomic";
+import type { Polygon } from "@/classes/polygons/Polygon";
 import {
 	PeriodSolver,
 	applySeedMapInv,
 	type PeriodCell,
 	type PeriodSolverDiag,
-} from '@/classes/algorithm/PeriodSolver';
+} from "@/classes/algorithm/PeriodSolver";
 import {
 	gridImage,
 	gridImageBasis,
 	groupIntoGridOrbits,
 	sameLattice,
 	holohedry,
-} from '@/classes/algorithm/LatticeEnumerator';
-import { cellsCongruent } from '@/classes/algorithm/TilingCongruence';
-import { loadOracle, reconstructOracleCell } from '../scripts/oracle-match';
+} from "@/classes/algorithm/LatticeEnumerator";
+import { cellsCongruent } from "@/classes/algorithm/TilingCongruence";
+import { loadOracle, reconstructOracleCell } from "../scripts/oracle-match";
 
 // --- fixture: t3046, reconstructed FIRST (fixes the ring) ---
-const rec = reconstructOracleCell('t3046', loadOracle()['t3046']);
-if ('error' in rec) throw new Error(`t3046 oracle reconstruction failed: ${rec.error}`);
+const rec = reconstructOracleCell("t3046", loadOracle()["t3046"]);
+if ("error" in rec) throw new Error(`t3046 oracle reconstruction failed: ${rec.error}`);
 const oracleCell = rec.cell;
 const [U, V] = oracleCell.basisExact;
 const ring = U.ring;
@@ -120,14 +120,12 @@ const twoFanCore = ((): Polygon[] => {
 		}
 		return merged;
 	}
-	throw new Error('t3046 fixture: no adjacent full-vertex fan found');
+	throw new Error("t3046 fixture: no adjacent full-vertex fan found");
 })();
 
 // --- allowed VC set + tile sizes, derived from the cell itself (the solver's own namer) ---
 const solver = new PeriodSolver(3);
-const allowed = new Set<string>(
-	fullVertices.map(({ w, fan }) => (solver as any).vcNameAt(w, fan) as string)
-);
+const allowed = new Set<string>(fullVertices.map(({ w, fan }) => (solver as any).vcNameAt(w, fan) as string));
 const polySizes = Array.from(new Set(oracleCell.cellPolygons.map((p) => p.n))).sort((a, b) => a - b);
 
 // --- the REAL orbit machinery: rep Λ plus a rotated and a reflected member ---
@@ -135,19 +133,33 @@ const polySizes = Array.from(new Set(oracleCell.cellPolygons.map((p) => p.n))).s
 // {±1} (rot 0 and rot 12, no reflections), so `groupIntoGridOrbits` must record EXACTLY
 // {rot:3, refl:false} and {rot:5, refl:true} (lexicographically smallest (rot, refl) — the
 // helper's documented contract): a rotation-only control AND the det g = −1 map under test.
-const memberBases: [Cyclotomic, Cyclotomic][] = [
-	[U, V],
-	gridImageBasis(U, V, 3, false),
-	gridImageBasis(U, V, 5, true),
-];
+const memberBases: [Cyclotomic, Cyclotomic][] = [[U, V], gridImageBasis(U, V, 3, false), gridImageBasis(U, V, 5, true)];
 const groups = groupIntoGridOrbits(memberBases, N);
 
 const freshDiag = (): PeriodSolverDiag => ({
-	candidateLattices: 0, latticesTried: 0, rawCells: 0, emitted: 0, gateRejected: 0, earlyGateRejected: 0,
-	fanLattices: 0, p0Skipped: 0, cSkipped: 0, orbitSkipped: 0, p1Pruned: 0, p3Pruned: 0, p2Skipped: 0,
-	vBelowKSkipped: 0, seedStateDedup: 0, obliqueCandidates: 0, obliqueTruncated: null,
-	supercellRejected: 0, primitivityGuardMisses: 0, primitivityGuardAreaSuppressed: 0,
-	starLadderTruncated: false, blockIndexCapTruncated: 0, timedOut: false,
+	candidateLattices: 0,
+	latticesTried: 0,
+	rawCells: 0,
+	emitted: 0,
+	gateRejected: 0,
+	earlyGateRejected: 0,
+	fanLattices: 0,
+	p0Skipped: 0,
+	cSkipped: 0,
+	orbitSkipped: 0,
+	p1Pruned: 0,
+	p3Pruned: 0,
+	p2Skipped: 0,
+	vBelowKSkipped: 0,
+	seedStateDedup: 0,
+	obliqueCandidates: 0,
+	obliqueTruncated: null,
+	supercellRejected: 0,
+	primitivityGuardMisses: 0,
+	primitivityGuardAreaSuppressed: 0,
+	starLadderTruncated: false,
+	blockIndexCapTruncated: 0,
+	timedOut: false,
 });
 
 /** Exact `w ≡ 0 (mod ⟨u,v⟩)` test, robust to Math.round ties: float-Cramer guesses the integers,
@@ -200,7 +212,7 @@ function exactCongruenceWitness(A: PeriodCell, B: PeriodCell): boolean {
 				const T = anchor.exactCentroid!.sub(gP0c);
 				const used = new Set<number>();
 				const ok = A.cellPolygons.every((p) => {
-					const gp = p.transformedRigid(ZERO, refl, refl ? rot : 0, refl ? 0 : rot, T, 'full');
+					const gp = p.transformedRigid(ZERO, refl, refl ? rot : 0, refl ? 0 : rot, T, "full");
 					for (let qi = 0; qi < B.cellPolygons.length; qi++) {
 						if (used.has(qi)) continue;
 						const q = B.cellPolygons[qi];
@@ -240,7 +252,7 @@ function runGate(m: { rot: number; refl: boolean }): {
 
 	// Forward g (gridImage semantics: refl ⇒ z ↦ conj(z)·ζ^rot, else z ↦ z·ζ^rot) as a polygon map.
 	const gPoly = (p: Polygon): Polygon =>
-		p.transformedRigid(ZERO, m.refl, m.refl ? m.rot : 0, m.refl ? 0 : m.rot, ZERO, 'full');
+		p.transformedRigid(ZERO, m.refl, m.refl ? m.rot : 0, m.refl ? 0 : m.rot, ZERO, "full");
 	// solve()'s g⁻¹ seeding — the PRODUCTION helper itself (`applySeedMapInv`, the expression used
 	// by solve()'s per-map loop): refl ⇒ g⁻¹ = g (involution), else g⁻¹ = ζ^{(N−rot) mod N}.
 	const mapCore = (ps: Polygon[]): Polygon[] => applySeedMapInv(ps, m, ring, ZERO);
@@ -267,8 +279,16 @@ function runGate(m: { rot: number; refl: boolean }): {
 		}
 	}
 	// g⁻¹∘g = id on the fan (exact polygon identity — pins the inversion end-to-end)
-	expect(seedB.map((p) => p.exactKey()).sort().join('|')).toBe(
-		fan.map((p) => p.exactKey()).sort().join('|')
+	expect(
+		seedB
+			.map((p) => p.exactKey())
+			.sort()
+			.join("|"),
+	).toBe(
+		fan
+			.map((p) => p.exactKey())
+			.sort()
+			.join("|"),
 	);
 
 	// --- the two worlds' fills through the REAL torusFill ---
@@ -299,8 +319,8 @@ function runGate(m: { rot: number; refl: boolean }): {
 	return { fillA, fillB };
 }
 
-describe('OP-3 reflective seeding acceptance gate (t3046 true-oblique fixture, AL amendment)', () => {
-	it('fixture sanity: Λ is genuinely oblique, the fan is a real full-vertex core, the orbit maps are as recorded', () => {
+describe("OP-3 reflective seeding acceptance gate (t3046 true-oblique fixture, AL amendment)", () => {
+	it("fixture sanity: Λ is genuinely oblique, the fan is a real full-vertex core, the orbit maps are as recorded", () => {
 		expect(holohedry(U, V)).toBe(2); // true-oblique — ASSERTED, never assumed
 		expect(oracleCell.cellPolygons.length).toBe(7); // 6 triangles + 1 hexagon
 		expect(fullVertices.length).toBeGreaterThan(0);
@@ -322,14 +342,18 @@ describe('OP-3 reflective seeding acceptance gate (t3046 true-oblique fixture, A
 		}
 	});
 
-	it('GATE (det g = −1): refl:true map — gΛ-with-core vs Λ-with-g⁻¹(core), non-empty exact-congruence bijection', { timeout: 180000 }, () => {
-		const m = groups[0].memberMaps.find((mm) => mm.refl)!;
-		expect(m).toBeDefined();
-		expect(m.rot).not.toBe(0); // exercises reflection WITH a nontrivial rotation part
-		runGate(m);
-	});
+	it(
+		"GATE (det g = −1): refl:true map — gΛ-with-core vs Λ-with-g⁻¹(core), non-empty exact-congruence bijection",
+		{ timeout: 180000 },
+		() => {
+			const m = groups[0].memberMaps.find((mm) => mm.refl)!;
+			expect(m).toBeDefined();
+			expect(m.rot).not.toBe(0); // exercises reflection WITH a nontrivial rotation part
+			runGate(m);
+		},
+	);
 
-	it('control (det g = +1): rotation-only map — same bijection through the same path', { timeout: 180000 }, () => {
+	it("control (det g = +1): rotation-only map — same bijection through the same path", { timeout: 180000 }, () => {
 		const m = groups[0].memberMaps.find((mm) => !mm.refl && mm.rot !== 0)!;
 		expect(m).toBeDefined();
 		runGate(m);

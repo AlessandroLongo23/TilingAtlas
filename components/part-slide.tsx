@@ -67,9 +67,7 @@ export function PartSlide({ part, children, onSelect }: PartSlideProps) {
 									// One rail width for every row, so the titles line up whatever numeral
 									// sits beside them and the backup row's empty rail still indents.
 									"w-[min(7cqw,3.4rem)]",
-									here
-										? "text-[min(4cqw,2.1rem)] text-accent"
-										: "text-[min(2.9cqw,1.5rem)] text-fg-muted opacity-70",
+									here ? "text-[min(4cqw,2.1rem)] text-accent" : "text-[min(2.9cqw,1.5rem)] text-fg-muted opacity-70",
 								)}
 							>
 								{p.numeral}
@@ -91,9 +89,7 @@ export function PartSlide({ part, children, onSelect }: PartSlideProps) {
 									}
 									className={cn(
 										"block leading-tight font-bold tracking-tight text-balance",
-										here
-											? "text-[min(5.4cqw,3rem)] text-accent"
-											: "text-[min(3.2cqw,1.7rem)] text-fg-muted",
+										here ? "text-[min(5.4cqw,3rem)] text-accent" : "text-[min(3.2cqw,1.7rem)] text-fg-muted",
 										// Nothing marks these as clickable at rest: five underlined titles would be
 										// five pieces of chrome on a slide meant to carry one word. The hover is for
 										// the presenter, who is the only one in the room holding a pointer.

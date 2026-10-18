@@ -46,7 +46,12 @@ describe("the scaled shelf, read as Truchet", () => {
 			patch.polys.forEach((ring, i) => {
 				const corners = ring.map(([vi]) => patch.verts[vi] as readonly [number, number]);
 				const w = patch.wirings![i];
-				const loops = tileFigure(corners, corners.map(() => true), undefined, w);
+				const loops = tileFigure(
+					corners,
+					corners.map(() => true),
+					undefined,
+					w,
+				);
 				expect(wiringCrosses(w)).toBe(false);
 				expect(figureSelfIntersects(loops)).toBe(false);
 				expect(figureEscapes(corners, loops)).toBe(false);

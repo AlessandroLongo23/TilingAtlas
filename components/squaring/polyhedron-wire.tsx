@@ -39,7 +39,14 @@ interface PolyhedronWireProps {
 
 const SIZE = 340;
 
-export function PolyhedronWire({ record, size = SIZE, hovered, onHover, onPickBattery, compact = false }: PolyhedronWireProps) {
+export function PolyhedronWire({
+	record,
+	size = SIZE,
+	hovered,
+	onHover,
+	onPickBattery,
+	compact = false,
+}: PolyhedronWireProps) {
 	const [yaw, setYaw] = useState(0.6);
 	const [pitch, setPitch] = useState(0.35);
 	const [spinning, setSpinning] = useState(true);
@@ -135,27 +142,21 @@ export function PolyhedronWire({ record, size = SIZE, hovered, onHover, onPickBa
 					};
 					return (
 						<g key={key}>
-						<line
-							x1={p.x}
-							y1={p.y}
-							x2={q.x}
-							y2={q.y}
-							stroke={
-								isBattery
-									? "var(--color-accent)"
-									: isHovered
-										? "var(--color-fg)"
-										: "var(--color-fg-muted)"
-							}
-							strokeOpacity={isBattery || isHovered ? 1 : 0.25 + front * 0.55}
-							strokeWidth={isBattery ? 4 : isHovered ? 3.5 : 1 + front * 1.4}
-							strokeDasharray={isBattery ? "7 4" : undefined}
-							strokeLinecap="round"
-							onPointerEnter={() => onHover(key)}
-							onClick={pick}
-							style={{ cursor: isBattery ? "default" : "pointer" }}
-						/>
-						<EdgeHitLine p={p} q={q} width={18 * (size / SIZE)} onEnter={() => onHover(key)} onPick={pick} />
+							<line
+								x1={p.x}
+								y1={p.y}
+								x2={q.x}
+								y2={q.y}
+								stroke={isBattery ? "var(--color-accent)" : isHovered ? "var(--color-fg)" : "var(--color-fg-muted)"}
+								strokeOpacity={isBattery || isHovered ? 1 : 0.25 + front * 0.55}
+								strokeWidth={isBattery ? 4 : isHovered ? 3.5 : 1 + front * 1.4}
+								strokeDasharray={isBattery ? "7 4" : undefined}
+								strokeLinecap="round"
+								onPointerEnter={() => onHover(key)}
+								onClick={pick}
+								style={{ cursor: isBattery ? "default" : "pointer" }}
+							/>
+							<EdgeHitLine p={p} q={q} width={18 * (size / SIZE)} onEnter={() => onHover(key)} onPick={pick} />
 						</g>
 					);
 				})}
@@ -178,15 +179,25 @@ export function PolyhedronWire({ record, size = SIZE, hovered, onHover, onPickBa
 			</svg>
 			{compact ? null : (
 				<FigureControls>
-					<span className="truncate font-mono text-[10px] text-fg-muted max-md:whitespace-normal max-md:text-xs">
+					<span className="truncate font-mono text-[10px] text-fg-muted max-md:text-xs max-md:whitespace-normal">
 						<span className="max-md:hidden">drag to rotate · click an edge to make it the battery</span>
 						<span className="md:hidden">drag sideways to turn, tilt with the arrows · tap an edge to inspect it</span>
 					</span>
 					<span className="hidden shrink-0 max-md:flex">
-						<button type="button" onClick={() => tilt(-1)} aria-label="Tilt the solid up" className="flex size-11 items-center justify-center text-fg-muted hover:text-fg">
+						<button
+							type="button"
+							onClick={() => tilt(-1)}
+							aria-label="Tilt the solid up"
+							className="flex size-11 items-center justify-center text-fg-muted hover:text-fg"
+						>
 							<ChevronUp size={18} />
 						</button>
-						<button type="button" onClick={() => tilt(1)} aria-label="Tilt the solid down" className="flex size-11 items-center justify-center text-fg-muted hover:text-fg">
+						<button
+							type="button"
+							onClick={() => tilt(1)}
+							aria-label="Tilt the solid down"
+							className="flex size-11 items-center justify-center text-fg-muted hover:text-fg"
+						>
 							<ChevronDown size={18} />
 						</button>
 					</span>

@@ -28,7 +28,7 @@ export function Badge({ tone = "neutral", mono = false, pill = false, className,
 	return (
 		<span
 			className={cn(
-				"inline-flex items-center rounded px-1.5 py-[3px] text-[10.5px] font-medium leading-none",
+				"inline-flex items-center rounded px-1.5 py-[3px] text-[10.5px] leading-none font-medium",
 				mono && "font-mono tabular-nums",
 				TONE[tone],
 				className,

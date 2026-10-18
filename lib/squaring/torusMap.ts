@@ -251,9 +251,7 @@ export function buildTorusMap(cell: TorusCell): { ok: true; map: TorusMap } | { 
 		for (const i of group) {
 			if (twin[i] !== -1) continue;
 			const d = darts[i].dir;
-			const j = group.find(
-				(k) => k !== i && twin[k] === -1 && darts[k].dir[0] === -d[0] && darts[k].dir[1] === -d[1],
-			);
+			const j = group.find((k) => k !== i && twin[k] === -1 && darts[k].dir[0] === -d[0] && darts[k].dir[1] === -d[1]);
 			if (j === undefined) {
 				return {
 					ok: false,
@@ -291,7 +289,22 @@ export function buildTorusMap(cell: TorusCell): { ok: true; map: TorusMap } | { 
 	}
 	return {
 		ok: true,
-		map: { basis: cell.basis, vertices, polygons: expanded, faces, darts, twin, edgeOf, signOf, edges, V, E, F, chi, tjunctions },
+		map: {
+			basis: cell.basis,
+			vertices,
+			polygons: expanded,
+			faces,
+			darts,
+			twin,
+			edgeOf,
+			signOf,
+			edges,
+			V,
+			E,
+			F,
+			chi,
+			tjunctions,
+		},
 	};
 }
 

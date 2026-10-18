@@ -50,7 +50,15 @@ export function TorusTilingFigure({ map, squaring, mode, hovered, onHover, onPic
 				}
 			}
 		}
-		return { patch: p, project: proj, fills: f, sides: s, maxSide: Math.max(...s, 1), potAt: at, potRange: [lo, hi] as const };
+		return {
+			patch: p,
+			project: proj,
+			fills: f,
+			sides: s,
+			maxSide: Math.max(...s, 1),
+			potAt: at,
+			potRange: [lo, hi] as const,
+		};
 	}, [map, squaring, radius]);
 
 	const cell = patch.cell.map(project);
@@ -83,7 +91,12 @@ export function TorusTilingFigure({ map, squaring, mode, hovered, onHover, onPic
 				const isHovered = s.edge === hovered;
 				const w = flow ? 2 + 16 * (sides[s.edge] / maxSide) : 2.5;
 				return (
-					<g key={`s${i}`} onPointerEnter={() => onHover(s.edge)} onClick={() => onPick?.(s.edge)} style={{ cursor: onPick ? "pointer" : "default" }}>
+					<g
+						key={`s${i}`}
+						onPointerEnter={() => onHover(s.edge)}
+						onClick={() => onPick?.(s.edge)}
+						style={{ cursor: onPick ? "pointer" : "default" }}
+					>
 						{/* A fat invisible line so a 2px edge is still easy to point at. */}
 						<line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke="transparent" strokeWidth={14} />
 						<line

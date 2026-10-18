@@ -3,11 +3,15 @@ import { evaluateParamCell } from "@/lib/utils/paramCell";
 import { TJUNCTION_ROWS } from "@/lib/tilings/length-families";
 
 type Pt = [number, number];
-const inPoly = (p: Pt, vs: Pt[]) => { let h = false;
+const inPoly = (p: Pt, vs: Pt[]) => {
+	let h = false;
 	for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
-		const [xi, yi] = vs[i], [xj, yj] = vs[j];
+		const [xi, yi] = vs[i],
+			[xj, yj] = vs[j];
 		if (yi > p[1] !== yj > p[1] && p[0] < ((xj - xi) * (p[1] - yi)) / (yj - yi) + xi) h = !h;
-	} return h; };
+	}
+	return h;
+};
 
 describe("T-junction families are real tilings across their whole slider box", () => {
 	it("covers every sample exactly once, at the box corners and centre", () => {
@@ -37,10 +41,11 @@ describe("T-junction families are real tilings across their whole slider box", (
 				for (let s = 1; s <= 6; s++) {
 					const p: Pt = [((s * Math.SQRT2) % 1) * span - span / 2, ((s * Math.E) % 1) * span - span / 2];
 					let n = 0;
-					for (let i = -R; i <= R; i++) for (let j = -R; j <= R; j++) {
-						const q: Pt = [p[0] - i * t1[0] - j * t2[0], p[1] - i * t1[1] - j * t2[1]];
-						for (const poly of polys) if (inPoly(q, poly.v)) n++;
-					}
+					for (let i = -R; i <= R; i++)
+						for (let j = -R; j <= R; j++) {
+							const q: Pt = [p[0] - i * t1[0] - j * t2[0], p[1] - i * t1[1] - j * t2[1]];
+							for (const poly of polys) if (inPoly(q, poly.v)) n++;
+						}
 					expect(n, `${row.id} t=[${t.map((x) => x.toFixed(2))}]`).toBe(1);
 				}
 			}
@@ -70,8 +75,7 @@ describe("T-junction families are real tilings across their whole slider box", (
 			const centre = r.cell.params.map((p) => (p.alphaRangeDegOpen[0] + p.alphaRangeDegOpen[1]) / 2);
 			const off = Math.max(...def.map((v, i) => Math.abs(v - centre[i])));
 			expect(off, `${r.id} defaults sit at the developed member`).toBeGreaterThan(1e-6);
-			expect(new Set(def.map((v) => v.toFixed(6))).size, `${r.id} defaults are not distinct`)
-				.toBe(def.length);
+			expect(new Set(def.map((v) => v.toFixed(6))).size, `${r.id} defaults are not distinct`).toBe(def.length);
 		}
 	});
 });

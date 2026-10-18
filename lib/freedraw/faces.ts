@@ -389,7 +389,7 @@ function quotient(f: FaceInfo): { tag: string; fold: (x: number, y: number) => s
 		tag: `2.${p},${q},${s}`,
 		fold: (x, y) => {
 			const j = ((y % s) + s) % s;
-			return `${((((x - ((y - j) / s) * q) % p) + p) % p)}.${j}`;
+			return `${(((x - ((y - j) / s) * q) % p) + p) % p}.${j}`;
 		},
 	};
 }
@@ -404,7 +404,10 @@ function poseKey(f: FaceInfo): string {
 	const { tag, fold } = quotient(f);
 	let best: string | null = null;
 	for (const [ex, ey] of f.lifts) {
-		const key = `${tag}|${f.lifts.map(([x, y]) => fold(x - ex, y - ey)).sort().join(" ")}`;
+		const key = `${tag}|${f.lifts
+			.map(([x, y]) => fold(x - ex, y - ey))
+			.sort()
+			.join(" ")}`;
 		if (best === null || key < best) best = key;
 	}
 	return best ?? tag;
@@ -569,7 +572,16 @@ export function componentLifts(patch: FreedrawPatch, comp: number): Map<number, 
 			const [va, ax, ay] = ring[i];
 			const [vb, bx, by] = ring[(i + 1) % ring.length];
 			if (drawn.get(`${va},${vb},${bx - ax},${by - ay}`)) continue;
-			const [offU, offV] = va < vb ? [[ax, ay], [bx, by]] : [[bx, by], [ax, ay]];
+			const [offU, offV] =
+				va < vb
+					? [
+							[ax, ay],
+							[bx, by],
+						]
+					: [
+							[bx, by],
+							[ax, ay],
+						];
 			const o = offU as [number, number];
 			const ov = offV as [number, number];
 			out.push({ key: `${Math.min(va, vb)},${Math.max(va, vb)},${ov[0] - o[0]},${ov[1] - o[1]}`, offU: o });

@@ -111,11 +111,24 @@ export function HyperbolicEdgesCanvas({ pattern }: Props) {
 			const dev = devRef.current;
 			const hueOffset = cfg.hueOffset || 0;
 			if (gl) {
-				gl.draw({ ...shared, view: cam.view, face: cam.face, canvasH: bh, hueOffset, edgeMode: true, scaffold: cfg.freedrawScaffold });
+				gl.draw({
+					...shared,
+					view: cam.view,
+					face: cam.face,
+					canvasH: bh,
+					hueOffset,
+					edgeMode: true,
+					scaffold: cfg.freedrawScaffold,
+				});
 			} else if (ctx && dev) {
 				const patch = dev.developEdges(meta, cam.view, FALLBACK_BOUND_R, FALLBACK_BUDGET);
 				ctx.clearRect(0, 0, bw, bh);
-				drawDevelopedEdgePatch(ctx, patch, cam.view, { ...shared, frame: false, showScaffold: cfg.freedrawScaffold, hueOffset });
+				drawDevelopedEdgePatch(ctx, patch, cam.view, {
+					...shared,
+					frame: false,
+					showScaffold: cfg.freedrawScaffold,
+					hueOffset,
+				});
 			}
 
 			// Export: snapshot this layer while the frame is still in the drawing buffer. The context has no

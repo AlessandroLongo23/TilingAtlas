@@ -3,17 +3,32 @@ import { buildCellMesh } from "@/lib/render/buildCellMesh";
 import { polygonFillHue, starApexAngleDeg, starHue } from "@/lib/utils/renderTiling";
 
 // A unit square centred at the origin, CCW, in a unit-square lattice.
-const squareVerts = [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]];
-const cell = { p: [{ v: squareVerts, n: 4 }], b: [[1, 0], [0, 1]] };
+const squareVerts = [
+	[-0.5, -0.5],
+	[0.5, -0.5],
+	[0.5, 0.5],
+	[-0.5, 0.5],
+];
+const cell = {
+	p: [{ v: squareVerts, n: 4 }],
+	b: [
+		[1, 0],
+		[0, 1],
+	],
+};
 
 // A 4-point star ({4|α}): 8 vertices alternating outer tips (radius 1) and inner valleys (radius 0.5),
 // deterministic concrete coordinates. n = point count = 4, vertices.length = 8.
 const c = 0.3535533906; // 0.5 * cos(45°) — the inner-valley coordinate
 const starVerts = [
-	[1, 0], [c, c],
-	[0, 1], [-c, c],
-	[-1, 0], [-c, -c],
-	[0, -1], [c, -c],
+	[1, 0],
+	[c, c],
+	[0, 1],
+	[-c, c],
+	[-1, 0],
+	[-c, -c],
+	[0, -1],
+	[c, -c],
 ];
 
 describe("buildCellMesh", () => {
@@ -40,7 +55,13 @@ describe("buildCellMesh", () => {
 
 	it("centroid is the vertex-average (fan apex), including for a displaced tile", () => {
 		// Square shifted so its vertex-average is (2, 0): every centroid entry must read (2, 0).
-		const shifted = { p: [{ v: squareVerts.map(([x, y]) => [x + 2, y]), n: 4 }], b: [[1, 0], [0, 1]] };
+		const shifted = {
+			p: [{ v: squareVerts.map(([x, y]) => [x + 2, y]), n: 4 }],
+			b: [
+				[1, 0],
+				[0, 1],
+			],
+		};
 		const mesh = buildCellMesh(shifted)!;
 		for (let i = 0; i < mesh.fillCentroid.length; i += 2) {
 			expect(mesh.fillCentroid[i]).toBeCloseTo(2, 12);
@@ -60,14 +81,26 @@ describe("buildCellMesh", () => {
 	});
 
 	it("honours an explicit hue override over the regular ramp", () => {
-		const override = { p: [{ v: squareVerts, n: 4, hue: 123 }], b: [[1, 0], [0, 1]] };
+		const override = {
+			p: [{ v: squareVerts, n: 4, hue: 123 }],
+			b: [
+				[1, 0],
+				[0, 1],
+			],
+		};
 		const mesh = buildCellMesh(override)!;
 		expect(mesh.fillHue.length).toBe(mesh.fillVertexCount);
 		for (const h of mesh.fillHue) expect(h).toBe(123);
 	});
 
 	it("uses the star hue for star tiles", () => {
-		const starCell = { p: [{ v: starVerts, n: 4, star: true }], b: [[3, 0], [0, 3]] };
+		const starCell = {
+			p: [{ v: starVerts, n: 4, star: true }],
+			b: [
+				[3, 0],
+				[0, 3],
+			],
+		};
 		const mesh = buildCellMesh(starCell)!;
 		const xy = starVerts.map(([x, y]) => ({ x, y }));
 		const expected = starHue(4, starApexAngleDeg(xy));
@@ -93,7 +126,10 @@ describe("buildCellMesh", () => {
 	it("extent tracks content displaced from the anchor (the corner-wedge case)", () => {
 		const displaced = {
 			p: [{ v: squareVerts.map(([x, y]) => [x + 2, y + 1]), n: 4 }],
-			b: [[1, 0], [0, 1]],
+			b: [
+				[1, 0],
+				[0, 1],
+			],
 		};
 		const mesh = buildCellMesh(displaced)!;
 		expect(mesh.extent.aMin).toBeCloseTo(1.5, 12);
@@ -103,8 +139,24 @@ describe("buildCellMesh", () => {
 	});
 
 	it("returns null for an empty / degenerate cell", () => {
-		expect(buildCellMesh({ p: [], b: [[1, 0], [0, 1]] })).toBeNull();
-		expect(buildCellMesh({ p: [{ v: squareVerts, n: 4 }], b: [[1, 0], [2, 0]] })).toBeNull(); // det 0
+		expect(
+			buildCellMesh({
+				p: [],
+				b: [
+					[1, 0],
+					[0, 1],
+				],
+			}),
+		).toBeNull();
+		expect(
+			buildCellMesh({
+				p: [{ v: squareVerts, n: 4 }],
+				b: [
+					[1, 0],
+					[2, 0],
+				],
+			}),
+		).toBeNull(); // det 0
 	});
 });
 
@@ -122,7 +174,7 @@ describe("buildCellMesh stroke geometry", () => {
 		const mesh = buildCellMesh(cell)!;
 		// Edge (-0.5,-0.5)->(0.5,-0.5): left normal (0,1); verts [a,a,b,b,a,b].
 		expect(Array.from(mesh.strokePos.slice(0, 12))).toEqual([
-			-0.5, -0.5,  -0.5, -0.5,  0.5, -0.5,  0.5, -0.5,  -0.5, -0.5,  0.5, -0.5,
+			-0.5, -0.5, -0.5, -0.5, 0.5, -0.5, 0.5, -0.5, -0.5, -0.5, 0.5, -0.5,
 		]);
 		// `+ 0` canonicalises signed zero: nx = -dy/len is -0 for this horizontal edge (dy=0), identical to
 		// +0 in the shader. A real left-normal sign error would flip ny to -1 and still fail here.
@@ -157,8 +209,6 @@ describe("buildCellMesh point geometry", () => {
 
 	it("each disk quad's corners are the unit [-1,1] quad (2 triangles)", () => {
 		const mesh = buildCellMesh(cell)!;
-		expect(Array.from(mesh.pointCorner.slice(0, 12))).toEqual([
-			-1, -1,  1, -1,  1, 1,  -1, -1,  1, 1,  -1, 1,
-		]);
+		expect(Array.from(mesh.pointCorner.slice(0, 12))).toEqual([-1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1]);
 	});
 });

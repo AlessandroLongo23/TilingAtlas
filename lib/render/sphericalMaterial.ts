@@ -7,7 +7,13 @@
 
 import * as THREE from "three";
 import type { Polyhedron } from "./platonicSolids";
-import { buildFaceUniforms, EDGE_ANGLE_PER_STROKE, MAX_FACES, TILING_GLSL_CORE, TILING_GLSL_EDGE } from "./sphericalTilingShader";
+import {
+	buildFaceUniforms,
+	EDGE_ANGLE_PER_STROKE,
+	MAX_FACES,
+	TILING_GLSL_CORE,
+	TILING_GLSL_EDGE,
+} from "./sphericalTilingShader";
 import { LOOK } from "./sphericalLook";
 
 export interface SphereMaterialOptions {
@@ -141,7 +147,7 @@ export function createSphereMaterial(opts: SphereMaterialOptions): SphereMateria
 		uSphEdgeWidth: { value: Math.max(0, opts.lineWidth ?? 1) * EDGE_ANGLE_PER_STROKE },
 		// Raw normalised RGB (NOT a THREE.Color, which would linearise) — this is the display value written
 		// straight out; see the FRAG note.
-		uSphLineColor: { value: (opts.dark ?? true ? DARK_LINE : LIGHT_LINE).clone() },
+		uSphLineColor: { value: ((opts.dark ?? true) ? DARK_LINE : LIGHT_LINE).clone() },
 	};
 
 	const material = new THREE.RawShaderMaterial({

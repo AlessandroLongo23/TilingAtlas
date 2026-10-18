@@ -70,7 +70,7 @@ function getClient(client?: SupabaseClient): SupabaseClient {
 
 export async function createCampaign(
 	config: NewCampaign,
-	client?: SupabaseClient
+	client?: SupabaseClient,
 ): Promise<{ id: string } | { error: string }> {
 	const sb = getClient(client);
 
@@ -98,17 +98,10 @@ export async function createCampaign(
 	return { id: data.id };
 }
 
-export async function findCampaignByHash(
-	hash: string,
-	client?: SupabaseClient
-): Promise<Campaign | null> {
+export async function findCampaignByHash(hash: string, client?: SupabaseClient): Promise<Campaign | null> {
 	const sb = getClient(client);
 
-	const { data, error } = await sb
-		.from("search_campaigns")
-		.select("*")
-		.eq("unique_hash", hash)
-		.maybeSingle();
+	const { data, error } = await sb.from("search_campaigns").select("*").eq("unique_hash", hash).maybeSingle();
 
 	if (error) {
 		console.error("findCampaignByHash error:", error);
@@ -122,7 +115,7 @@ export async function updateCampaignStatus(
 	id: string,
 	status: "running" | "completed" | "failed",
 	completedAt?: Date,
-	client?: SupabaseClient
+	client?: SupabaseClient,
 ): Promise<void> {
 	const sb = getClient(client);
 
@@ -131,44 +124,27 @@ export async function updateCampaignStatus(
 		update.completed_at = completedAt.toISOString();
 	}
 
-	const { error } = await sb
-		.from("search_campaigns")
-		.update(update)
-		.eq("id", id);
+	const { error } = await sb.from("search_campaigns").update(update).eq("id", id);
 
 	if (error) {
 		console.error("updateCampaignStatus error:", error);
 	}
 }
 
-export async function updateCompletedSteps(
-	id: string,
-	steps: string[],
-	client?: SupabaseClient
-): Promise<void> {
+export async function updateCompletedSteps(id: string, steps: string[], client?: SupabaseClient): Promise<void> {
 	const sb = getClient(client);
 
-	const { error } = await sb
-		.from("search_campaigns")
-		.update({ completed_steps: steps })
-		.eq("id", id);
+	const { error } = await sb.from("search_campaigns").update({ completed_steps: steps }).eq("id", id);
 
 	if (error) {
 		console.error("updateCompletedSteps error:", error);
 	}
 }
 
-export async function updateCampaignTilingCount(
-	id: string,
-	count: number,
-	client?: SupabaseClient
-): Promise<void> {
+export async function updateCampaignTilingCount(id: string, count: number, client?: SupabaseClient): Promise<void> {
 	const sb = getClient(client);
 
-	const { error } = await sb
-		.from("search_campaigns")
-		.update({ tiling_count: count })
-		.eq("id", id);
+	const { error } = await sb.from("search_campaigns").update({ tiling_count: count }).eq("id", id);
 
 	if (error) {
 		console.error("updateCampaignTilingCount error:", error);
@@ -178,10 +154,7 @@ export async function updateCampaignTilingCount(
 export async function fetchCampaigns(client?: SupabaseClient): Promise<Campaign[]> {
 	const sb = getClient(client);
 
-	const { data, error } = await sb
-		.from("search_campaigns")
-		.select("*")
-		.order("created_at", { ascending: false });
+	const { data, error } = await sb.from("search_campaigns").select("*").order("created_at", { ascending: false });
 
 	if (error) {
 		console.error("fetchCampaigns error:", error);
@@ -194,7 +167,7 @@ export async function fetchCampaigns(client?: SupabaseClient): Promise<Campaign[
 export async function fetchCampaignsPage(
 	limit: number,
 	offset: number,
-	client?: SupabaseClient
+	client?: SupabaseClient,
 ): Promise<{ campaigns: Campaign[]; total: number }> {
 	const sb = getClient(client);
 
@@ -232,7 +205,7 @@ export interface CampaignTiling {
 
 export async function insertTilings(
 	tilings: NewTiling[],
-	client?: SupabaseClient
+	client?: SupabaseClient,
 ): Promise<{ inserted: number; error?: string }> {
 	if (tilings.length === 0) return { inserted: 0 };
 
@@ -255,10 +228,7 @@ export async function insertTilings(
 	return { inserted };
 }
 
-export async function fetchTilingsForCampaign(
-	campaignId: string,
-	client?: SupabaseClient
-): Promise<CampaignTiling[]> {
+export async function fetchTilingsForCampaign(campaignId: string, client?: SupabaseClient): Promise<CampaignTiling[]> {
 	const sb = getClient(client);
 
 	const { data, error } = await sb
@@ -284,7 +254,7 @@ export async function fetchAllTilings(
 		exhaustiveOnly?: boolean;
 		requireCell?: boolean;
 	} = {},
-	client?: SupabaseClient
+	client?: SupabaseClient,
 ): Promise<CampaignTiling[]> {
 	const sb = getClient(client);
 
@@ -331,9 +301,7 @@ export async function fetchAllTilings(
  * table. Two cheap queries: COUNT(*) then a one-row range at a random offset.
  * Used by the landing page background, which only needs one cell.
  */
-export async function fetchRandomTilingCell(
-	client?: SupabaseClient
-): Promise<TranslationalCellData | null> {
+export async function fetchRandomTilingCell(client?: SupabaseClient): Promise<TranslationalCellData | null> {
 	const sb = getClient(client);
 
 	const { count, error: countError } = await sb

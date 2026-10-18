@@ -82,9 +82,30 @@ export const Sidebar = memo(function Sidebar({
 			</div>
 			{canStep ? (
 				<div className="flex shrink-0 items-center gap-1">
-					<Button variant="ghost" size="icon" icon={ChevronLeft} aria-label="Previous tiling" onClick={onPrev} disabled={stepDisabled} />
-					<Button variant="primary" size="icon" icon={Shuffle} aria-label="Random tiling" onClick={onRandom} disabled={stepDisabled} />
-					<Button variant="ghost" size="icon" icon={ChevronRight} aria-label="Next tiling" onClick={onNext} disabled={stepDisabled} />
+					<Button
+						variant="ghost"
+						size="icon"
+						icon={ChevronLeft}
+						aria-label="Previous tiling"
+						onClick={onPrev}
+						disabled={stepDisabled}
+					/>
+					<Button
+						variant="primary"
+						size="icon"
+						icon={Shuffle}
+						aria-label="Random tiling"
+						onClick={onRandom}
+						disabled={stepDisabled}
+					/>
+					<Button
+						variant="ghost"
+						size="icon"
+						icon={ChevronRight}
+						aria-label="Next tiling"
+						onClick={onNext}
+						disabled={stepDisabled}
+					/>
 				</div>
 			) : null}
 		</>

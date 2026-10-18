@@ -175,8 +175,15 @@ export interface LevelSource {
  *  polygons in a curved geometry. */
 export function levelConfigsOf(t: LevelSource): string[] | null {
 	if (
-		t.hypEdges || t.sphEdges || t.hypColors || t.sphColors ||
-		t.freedraw || t.colors || t.schwarz || t.sphericalFreedraw || t.hollow
+		t.hypEdges ||
+		t.sphEdges ||
+		t.hypColors ||
+		t.sphColors ||
+		t.freedraw ||
+		t.colors ||
+		t.schwarz ||
+		t.sphericalFreedraw ||
+		t.hollow
 	) {
 		return null;
 	}

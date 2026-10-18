@@ -29,7 +29,10 @@ const sub = (a: V, b: V): V => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 const cross = (a: V, b: V): V => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 const dot = (a: V, b: V) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 const norm = (a: V) => Math.hypot(a[0], a[1], a[2]);
-const unit = (a: V): V => { const n = norm(a) || 1; return [a[0] / n, a[1] / n, a[2] / n]; };
+const unit = (a: V): V => {
+	const n = norm(a) || 1;
+	return [a[0] / n, a[1] / n, a[2] / n];
+};
 
 // Coordinates ship to nine decimals, so a real margin is ~1e-1 and a designed coincidence ~1e-11.
 // Anything under this counts as ON the boundary, which is a touch and not a piercing.
@@ -174,4 +177,6 @@ export const ncxSelfIntersects = (solid: string | undefined): boolean =>
 `;
 writeFileSync("lib/tilings/ncx-crossing.ts", out);
 console.log(`wrote lib/tilings/ncx-crossing.ts — ${crossing.length} self-intersecting, ${embedded.length} embedded`);
-console.log(`the generator had ${[...said.values()].filter(Boolean).length}; the measurement added ${added.length}: ${added.join(", ")}`);
+console.log(
+	`the generator had ${[...said.values()].filter(Boolean).length}; the measurement added ${added.length}: ${added.join(", ")}`,
+);

@@ -89,7 +89,12 @@ type Content =
 	| { kind: "solid"; solid: FlatSolid }
 	| { kind: "bubble"; bubble: BubbleSphere };
 
-export function SphericalCanvas({ solidId, bubbleBites, interactive = true, fitFraction = DEFAULT_FIT_FRACTION }: SphericalCanvasProps) {
+export function SphericalCanvas({
+	solidId,
+	bubbleBites,
+	interactive = true,
+	fitFraction = DEFAULT_FIT_FRACTION,
+}: SphericalCanvasProps) {
 	// THE DUAL IS A VIEW, not another record: when the toggle is on, the canvas draws the polar
 	// reciprocal computed here (lib/render/dualSolid.ts) and nothing else in the pipeline changes —
 	// same mesh builder, same edge bars, same opacity slider. Where the reciprocal does not exist
@@ -112,9 +117,7 @@ export function SphericalCanvas({ solidId, bubbleBites, interactive = true, fitF
 		if (!base || mode === "solid") return { poly: base, dualFaceStart: -1 };
 		if (mode === "compound") {
 			const c = dualCompound(base);
-			return "compound" in c
-				? { poly: c.compound, dualFaceStart: c.dualFaceStart }
-				: { poly: base, dualFaceStart: -1 };
+			return "compound" in c ? { poly: c.compound, dualFaceStart: c.dualFaceStart } : { poly: base, dualFaceStart: -1 };
 		}
 		const r = polarDual(base);
 		return { poly: "dual" in r ? r.dual : base, dualFaceStart: -1 };
@@ -196,7 +199,11 @@ export function SphericalCanvas({ solidId, bubbleBites, interactive = true, fitF
 		// (effect below) recreates them as a fresh pair; reading refs keeps the rendered camera and the
 		// controlled camera the same instance, so dragging always follows the pointer.
 		const aspect0 = host.clientWidth > 0 && host.clientHeight > 0 ? host.clientWidth / host.clientHeight : 1;
-		const camera = makeSphericalCamera(useConfiguration.getState().sphericalOrthographic, aspect0, orthoHalfHeightFor(fitRef.current));
+		const camera = makeSphericalCamera(
+			useConfiguration.getState().sphericalOrthographic,
+			aspect0,
+			orthoHalfHeightFor(fitRef.current),
+		);
 		// A three-quarter start so the solid reads as 3D on first paint (before the user rotates).
 		camera.position.set(1.35, 1.05, 2.6).setLength(cameraDistanceFor(fitRef.current));
 		camera.lookAt(0, 0, 0);
@@ -212,7 +219,15 @@ export function SphericalCanvas({ solidId, bubbleBites, interactive = true, fitF
 				const ctl = controlsRef.current as unknown as { _tbRadius?: number; radiusFactor?: number } | null;
 				const dist = c ? Math.hypot(c.position.x, c.position.y, c.position.z) : 0;
 				return c
-					? { type: c.type, pos: c.position.toArray(), up: c.up.toArray(), quat: c.quaternion.toArray(), dist, tbRadius: ctl?._tbRadius, radiusFactor: ctl?.radiusFactor }
+					? {
+							type: c.type,
+							pos: c.position.toArray(),
+							up: c.up.toArray(),
+							quat: c.quaternion.toArray(),
+							dist,
+							tbRadius: ctl?._tbRadius,
+							radiusFactor: ctl?.radiusFactor,
+						}
 					: null;
 			};
 		}
@@ -254,7 +269,7 @@ export function SphericalCanvas({ solidId, bubbleBites, interactive = true, fitF
 			// take the faces' depth for the hidden-edge test (lib/render/edgeOcclusion.ts).
 			if (cam) {
 				const c = contentRef.current;
-			if (c?.kind === "solid") c.solid.depthSort(cam);
+				if (c?.kind === "solid") c.solid.depthSort(cam);
 				occlusionRef.current?.capture(renderer, scene, cam);
 			}
 			if (cam) renderer.render(scene, cam);
@@ -468,8 +483,10 @@ export function SphericalCanvas({ solidId, bubbleBites, interactive = true, fitF
 		if (c) {
 			// The bubble surface has no stroke of its own — its tiles ARE the drawing — so only the hue
 			// ring reaches it, and it takes that as a vertex-colour rewrite with no rebuild.
-			if (c.kind === "bubble") { c.bubble.recolor(hueOffset); c.bubble.setLineWidth(lineWidth, dark); }
-			else if (c.kind === "sphere") c.sphere.recolor({ hueOffset, lineWidth, dark });
+			if (c.kind === "bubble") {
+				c.bubble.recolor(hueOffset);
+				c.bubble.setLineWidth(lineWidth, dark);
+			} else if (c.kind === "sphere") c.sphere.recolor({ hueOffset, lineWidth, dark });
 			else c.solid.recolor({ hueOffset, lineWidth, dark });
 		}
 		// The Islamic overlay + cell fill live in their own refs (independent of the base content) — recolour too.
@@ -525,7 +542,20 @@ export function SphericalCanvas({ solidId, bubbleBites, interactive = true, fitF
 			islamicRef.current = pattern;
 		}
 		return clear;
-	}, [poly, isIslamic, isStrapStyle, islamicAngle, islamicEdgeOffset, islamicIntersectionCount, lineWidth, islamicRigid, section, thickness, wireHeight, bevel]);
+	}, [
+		poly,
+		isIslamic,
+		isStrapStyle,
+		islamicAngle,
+		islamicEdgeOffset,
+		islamicIntersectionCount,
+		lineWidth,
+		islamicRigid,
+		section,
+		thickness,
+		wireHeight,
+		bevel,
+	]);
 
 	// Islamic cell fill: the regions the star lines cut, coloured by cell shape and laid on the sphere just
 	// under the lines. Rigid OFF ⇒ filled cells + flat ribbon lines; Rigid ON ⇒ the hollow just-lines look,
@@ -599,12 +629,25 @@ export function SphericalCanvas({ solidId, bubbleBites, interactive = true, fitF
 			fillRef.current = fill;
 		}
 		return clear;
-	}, [poly, isIslamic, islamicFill, islamicStyle, isStrapStyle, islamicAngle, islamicEdgeOffset, islamicIntersectionCount, islamicBandWidth, islamicOutlineWidth, islamicRigid, weaveFlat]);
+	}, [
+		poly,
+		isIslamic,
+		islamicFill,
+		islamicStyle,
+		isStrapStyle,
+		islamicAngle,
+		islamicEdgeOffset,
+		islamicIntersectionCount,
+		islamicBandWidth,
+		islamicOutlineWidth,
+		islamicRigid,
+		weaveFlat,
+	]);
 
 	if (errored) {
 		return (
 			<div className="absolute inset-0 z-10 flex items-center justify-center">
-				<p className="text-sm text-fg-muted max-w-xs text-center">
+				<p className="max-w-xs text-center text-sm text-fg-muted">
 					3D view unavailable — the browser ran out of WebGL contexts. Reload the page to free them.
 				</p>
 			</div>

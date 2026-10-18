@@ -23,27 +23,12 @@ import { type ColorChoice, cellFill } from "@/lib/colors/render";
  * third in `DEFAULT_PALETTE`: the palette leans on the blue-to-orange axis, which survives it, and
  * carries a single green (95) instead of a green and a red pair that would collapse into each other.
  */
-export const STUDIO_PALETTE: readonly ColorChoice[] = [
-	"cream",
-	215,
-	15,
-	"dark",
-	45,
-	190,
-	265,
-	340,
-	95,
-	30,
-];
+export const STUDIO_PALETTE: readonly ColorChoice[] = ["cream", 215, 15, "dark", 45, 190, 265, 340, 95, 30];
 
 /** A slot's CSS colour in the current theme. Thin, but it keeps `cellFill` from being imported into
  *  every component that needs a swatch. */
-export const slotFill = (
-	palette: readonly ColorChoice[],
-	slot: number,
-	dark: boolean,
-	alpha = 1,
-): string => cellFill(palette[slot] ?? STUDIO_PALETTE[slot % STUDIO_PALETTE.length], dark, alpha);
+export const slotFill = (palette: readonly ColorChoice[], slot: number, dark: boolean, alpha = 1): string =>
+	cellFill(palette[slot] ?? STUDIO_PALETTE[slot % STUDIO_PALETTE.length], dark, alpha);
 
 /** Where a slot sits on the hue wheel, for the ring editor. The two named specials have no hue, so the
  *  ring shows a neutral position and the swatch buttons carry the actual choice. */

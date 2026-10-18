@@ -4,7 +4,14 @@ import { useEffect, useRef } from "react";
 import { fillAmountToSatPct } from "@/lib/render/tilePalette";
 import { resolveDeform, useConfiguration } from "@/stores/configuration";
 import { buildCellMesh } from "@/lib/render/buildCellMesh";
-import { IDENTITY_DEFORM, computeFillGrid, fillGridInstances, wrapOffset, type LatticeExtent, type Mat2 } from "@/lib/render/flatView";
+import {
+	IDENTITY_DEFORM,
+	computeFillGrid,
+	fillGridInstances,
+	wrapOffset,
+	type LatticeExtent,
+	type Mat2,
+} from "@/lib/render/flatView";
 import { compileShader } from "@/lib/render/flatTilingGL";
 import { syncCanvasSize } from "@/lib/render/canvasSize";
 import { captureOverride, offerFrame } from "@/lib/render/capture";
@@ -43,7 +50,12 @@ interface IslamicCanvasProps {
 	paramCell?: ParametricCellData | null;
 }
 
-interface CellMeta { v1: Vector; v2: Vector; det: number; extent: LatticeExtent }
+interface CellMeta {
+	v1: Vector;
+	v2: Vector;
+	det: number;
+	extent: LatticeExtent;
+}
 
 // Fixed build patch radius (cells each way around the origin) for the arrangement. Big enough that every
 // face/segment whose centre lands in the origin cell is fully formed (bounded by real segments, not the
@@ -103,13 +115,19 @@ export function IslamicCanvas({ translationalCell, translationalCellId, paramCel
 	// updates at ~50Hz instead of trying (and failing) at 120Hz, while a cheap family still tracks every
 	// frame — no fixed number to tune, and it degrades gracefully on slower hardware. Measured: rebuilding
 	// it every tick put a k=2 star family at 35ms/frame with the arrangement alone costing ~10ms.
-	const alphaGateRef = useRef<{ last: number; cost: number; startedAt: number | null }>({ last: 0, cost: 0, startedAt: null });
+	const alphaGateRef = useRef<{ last: number; cost: number; startedAt: number | null }>({
+		last: 0,
+		cost: 0,
+		startedAt: null,
+	});
 	// Instance grid over the visible lattice range; rebuilt only when the radius changes (like EuclideanCanvas).
 	const instRef = useRef<{ key: string; count: number }>({ key: "", count: 0 });
 
 	useEffect(() => {
 		const cm = translationalCell ? buildCellMesh(translationalCell) : null;
-		metaRef.current = cm ? { v1: new Vector(cm.v1[0], cm.v1[1]), v2: new Vector(cm.v2[0], cm.v2[1]), det: cm.det, extent: cm.extent } : null;
+		metaRef.current = cm
+			? { v1: new Vector(cm.v1[0], cm.v1[1]), v2: new Vector(cm.v2[0], cm.v2[1]), det: cm.det, extent: cm.extent }
+			: null;
 		patchBuiltRef.current = false; // new cell → rebuild patch, then mesh
 		meshSigRef.current = null;
 		instRef.current = { key: "", count: 0 };
@@ -121,7 +139,10 @@ export function IslamicCanvas({ translationalCell, translationalCellId, paramCel
 		const canvas = canvasRef.current;
 		if (!canvas) return;
 		const gl = canvas.getContext("webgl2", { antialias: true, premultipliedAlpha: false, alpha: true });
-		if (!gl) { console.error("islamic view: WebGL2 unavailable"); return; }
+		if (!gl) {
+			console.error("islamic view: WebGL2 unavailable");
+			return;
+		}
 		glRef.current = gl;
 
 		const link = (vertSrc: string, fragSrc: string): WebGLProgram | null => {
@@ -129,9 +150,15 @@ export function IslamicCanvas({ translationalCell, translationalCellId, paramCel
 			const fs = compileShader(gl, gl.FRAGMENT_SHADER, fragSrc);
 			if (!vs || !fs) return null;
 			const p = gl.createProgram();
-			gl.attachShader(p, vs); gl.attachShader(p, fs); gl.linkProgram(p);
-			gl.deleteShader(vs); gl.deleteShader(fs);
-			if (!gl.getProgramParameter(p, gl.LINK_STATUS)) { console.error("islamic link failed:", gl.getProgramInfoLog(p)); return null; }
+			gl.attachShader(p, vs);
+			gl.attachShader(p, fs);
+			gl.linkProgram(p);
+			gl.deleteShader(vs);
+			gl.deleteShader(fs);
+			if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
+				console.error("islamic link failed:", gl.getProgramInfoLog(p));
+				return null;
+			}
 			return p;
 		};
 		const fillProg = link(ISLAMIC_FILL_VERT, ISLAMIC_FILL_FRAG);
@@ -140,9 +167,37 @@ export function IslamicCanvas({ translationalCell, translationalCellId, paramCel
 		fillProgRef.current = fillProg;
 		strokeProgRef.current = strokeProg;
 
-		for (const n of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uDeform", "uHalf", "uHueOffset", "uTileSat", "uColorA", "uColorB", "uColorC", "uMode", "uOpacity"]) fillU.current[n] = gl.getUniformLocation(fillProg, n);
+		for (const n of [
+			"uOffset",
+			"uZoom",
+			"uRot",
+			"uV1",
+			"uV2",
+			"uDeform",
+			"uHalf",
+			"uHueOffset",
+			"uTileSat",
+			"uColorA",
+			"uColorB",
+			"uColorC",
+			"uMode",
+			"uOpacity",
+		])
+			fillU.current[n] = gl.getUniformLocation(fillProg, n);
 		for (const n of ["aPos", "aHue", "aClass", "aInst"]) fillA.current[n] = gl.getAttribLocation(fillProg, n);
-		for (const n of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uDeform", "uHalf", "uHalfStrokePx", "uStroke", "uOpacity"]) strokeU.current[n] = gl.getUniformLocation(strokeProg, n);
+		for (const n of [
+			"uOffset",
+			"uZoom",
+			"uRot",
+			"uV1",
+			"uV2",
+			"uDeform",
+			"uHalf",
+			"uHalfStrokePx",
+			"uStroke",
+			"uOpacity",
+		])
+			strokeU.current[n] = gl.getUniformLocation(strokeProg, n);
 		for (const n of ["aPos", "aNorm", "aSide", "aInst"]) strokeA.current[n] = gl.getAttribLocation(strokeProg, n);
 
 		fillPosRef.current = gl.createBuffer();
@@ -154,12 +209,18 @@ export function IslamicCanvas({ translationalCell, translationalCellId, paramCel
 		instBufRef.current = gl.createBuffer();
 
 		const upload = (mesh: IslamicMesh) => {
-			gl.bindBuffer(gl.ARRAY_BUFFER, fillPosRef.current); gl.bufferData(gl.ARRAY_BUFFER, mesh.fillVerts, gl.STATIC_DRAW);
-			gl.bindBuffer(gl.ARRAY_BUFFER, fillHueRef.current); gl.bufferData(gl.ARRAY_BUFFER, mesh.fillHue, gl.STATIC_DRAW);
-			gl.bindBuffer(gl.ARRAY_BUFFER, fillClassRef.current); gl.bufferData(gl.ARRAY_BUFFER, mesh.fillClass, gl.STATIC_DRAW);
-			gl.bindBuffer(gl.ARRAY_BUFFER, strokePosRef.current); gl.bufferData(gl.ARRAY_BUFFER, mesh.strokePos, gl.STATIC_DRAW);
-			gl.bindBuffer(gl.ARRAY_BUFFER, strokeNormRef.current); gl.bufferData(gl.ARRAY_BUFFER, mesh.strokeNorm, gl.STATIC_DRAW);
-			gl.bindBuffer(gl.ARRAY_BUFFER, strokeSideRef.current); gl.bufferData(gl.ARRAY_BUFFER, mesh.strokeSide, gl.STATIC_DRAW);
+			gl.bindBuffer(gl.ARRAY_BUFFER, fillPosRef.current);
+			gl.bufferData(gl.ARRAY_BUFFER, mesh.fillVerts, gl.STATIC_DRAW);
+			gl.bindBuffer(gl.ARRAY_BUFFER, fillHueRef.current);
+			gl.bufferData(gl.ARRAY_BUFFER, mesh.fillHue, gl.STATIC_DRAW);
+			gl.bindBuffer(gl.ARRAY_BUFFER, fillClassRef.current);
+			gl.bufferData(gl.ARRAY_BUFFER, mesh.fillClass, gl.STATIC_DRAW);
+			gl.bindBuffer(gl.ARRAY_BUFFER, strokePosRef.current);
+			gl.bufferData(gl.ARRAY_BUFFER, mesh.strokePos, gl.STATIC_DRAW);
+			gl.bindBuffer(gl.ARRAY_BUFFER, strokeNormRef.current);
+			gl.bufferData(gl.ARRAY_BUFFER, mesh.strokeNorm, gl.STATIC_DRAW);
+			gl.bindBuffer(gl.ARRAY_BUFFER, strokeSideRef.current);
+			gl.bufferData(gl.ARRAY_BUFFER, mesh.strokeSide, gl.STATIC_DRAW);
 			meshRef.current = mesh;
 		};
 
@@ -191,7 +252,13 @@ export function IslamicCanvas({ translationalCell, translationalCellId, paramCel
 					const live = evaluateParamCell(pc, alphas) as unknown as FlatCellData;
 					liveCellRef.current = live;
 					const cm = buildCellMesh(live);
-					if (cm) metaRef.current = { v1: new Vector(cm.v1[0], cm.v1[1]), v2: new Vector(cm.v2[0], cm.v2[1]), det: cm.det, extent: cm.extent };
+					if (cm)
+						metaRef.current = {
+							v1: new Vector(cm.v1[0], cm.v1[1]),
+							v2: new Vector(cm.v2[0], cm.v2[1]),
+							det: cm.det,
+							extent: cm.extent,
+						};
 					patchBuiltRef.current = false;
 					meshSigRef.current = null;
 					instRef.current = { key: "", count: 0 };
@@ -218,7 +285,13 @@ export function IslamicCanvas({ translationalCell, translationalCellId, paramCel
 				patchBuiltRef.current = true;
 				// Reuses the previous patch's polygon objects when the shape is unchanged — an α drag rebuilds
 				// this every time the gate opens, and the patch is the one part of the chain that allocates.
-				patchRef.current = buildTilingFromCell(cell as unknown as AlgoCellData, PATCH_MARGIN, PATCH_MARGIN, null, patchRef.current);
+				patchRef.current = buildTilingFromCell(
+					cell as unknown as AlgoCellData,
+					PATCH_MARGIN,
+					PATCH_MARGIN,
+					null,
+					patchRef.current,
+				);
 				meshSigRef.current = null; // new nodes → mesh must rebuild
 			}
 			// Layer 2: the origin-cell A/B/C mesh, keyed on the slider geometry. Throttled so a continuous
@@ -231,7 +304,17 @@ export function IslamicCanvas({ translationalCell, translationalCellId, paramCel
 				if (structural || now - lastRebuildRef.current >= MESH_REBUILD_THROTTLE_MS) {
 					lastRebuildRef.current = now;
 					meshSigRef.current = meshSig;
-					upload(buildMeshFromPatch(patchRef.current, style, islamicNormalAngleFromSlider(theta), offset, count, meta.v1, meta.v2));
+					upload(
+						buildMeshFromPatch(
+							patchRef.current,
+							style,
+							islamicNormalAngleFromSlider(theta),
+							offset,
+							count,
+							meta.v1,
+							meta.v2,
+						),
+					);
 					// The mesh is the tail of the α chain, so this is where its true cost is known — cell evaluation
 					// and patch build happened earlier in the SAME frame, which is why the gate times from `startedAt`.
 					const gate = alphaGateRef.current;
@@ -257,8 +340,10 @@ export function IslamicCanvas({ translationalCell, translationalCellId, paramCel
 			// belongs — as extra CONTENT extent, which is what "faces reach past their own cell" means —
 			// so the span computation accounts for it exactly instead of padding both axes blindly.
 			const reach: LatticeExtent = {
-				aMin: meta.extent.aMin - INSTANCE_MARGIN, aMax: meta.extent.aMax + INSTANCE_MARGIN,
-				bMin: meta.extent.bMin - INSTANCE_MARGIN, bMax: meta.extent.bMax + INSTANCE_MARGIN,
+				aMin: meta.extent.aMin - INSTANCE_MARGIN,
+				aMax: meta.extent.aMax + INSTANCE_MARGIN,
+				bMin: meta.extent.bMin - INSTANCE_MARGIN,
+				bMax: meta.extent.bMax + INSTANCE_MARGIN,
 			};
 			const grid = computeFillGrid(meta.v1, meta.v2, meta.det, ctrl.zoom, w, h, rot, reach, dfm);
 			const gridKey = `${grid.iLo}:${grid.iHi}:${grid.count}`;
@@ -277,11 +362,24 @@ export function IslamicCanvas({ translationalCell, translationalCellId, paramCel
 
 			// Fill pass. No VAOs: rebind every attribute (incl. the shared instance buffer) before each draw.
 			g.useProgram(fillProgRef.current);
-			const FA = fillA.current, FU = fillU.current;
-			g.bindBuffer(g.ARRAY_BUFFER, fillPosRef.current); g.enableVertexAttribArray(FA.aPos); g.vertexAttribPointer(FA.aPos, 2, g.FLOAT, false, 0, 0); g.vertexAttribDivisor(FA.aPos, 0);
-			g.bindBuffer(g.ARRAY_BUFFER, fillHueRef.current); g.enableVertexAttribArray(FA.aHue); g.vertexAttribPointer(FA.aHue, 1, g.FLOAT, false, 0, 0); g.vertexAttribDivisor(FA.aHue, 0);
-			g.bindBuffer(g.ARRAY_BUFFER, fillClassRef.current); g.enableVertexAttribArray(FA.aClass); g.vertexAttribPointer(FA.aClass, 1, g.FLOAT, false, 0, 0); g.vertexAttribDivisor(FA.aClass, 0);
-			g.bindBuffer(g.ARRAY_BUFFER, instBufRef.current); g.enableVertexAttribArray(FA.aInst); g.vertexAttribPointer(FA.aInst, 2, g.FLOAT, false, 0, 0); g.vertexAttribDivisor(FA.aInst, 1);
+			const FA = fillA.current,
+				FU = fillU.current;
+			g.bindBuffer(g.ARRAY_BUFFER, fillPosRef.current);
+			g.enableVertexAttribArray(FA.aPos);
+			g.vertexAttribPointer(FA.aPos, 2, g.FLOAT, false, 0, 0);
+			g.vertexAttribDivisor(FA.aPos, 0);
+			g.bindBuffer(g.ARRAY_BUFFER, fillHueRef.current);
+			g.enableVertexAttribArray(FA.aHue);
+			g.vertexAttribPointer(FA.aHue, 1, g.FLOAT, false, 0, 0);
+			g.vertexAttribDivisor(FA.aHue, 0);
+			g.bindBuffer(g.ARRAY_BUFFER, fillClassRef.current);
+			g.enableVertexAttribArray(FA.aClass);
+			g.vertexAttribPointer(FA.aClass, 1, g.FLOAT, false, 0, 0);
+			g.vertexAttribDivisor(FA.aClass, 0);
+			g.bindBuffer(g.ARRAY_BUFFER, instBufRef.current);
+			g.enableVertexAttribArray(FA.aInst);
+			g.vertexAttribPointer(FA.aInst, 2, g.FLOAT, false, 0, 0);
+			g.vertexAttribDivisor(FA.aInst, 1);
 			g.uniform2f(FU.uOffset, draw.x, draw.y);
 			g.uniform1f(FU.uZoom, ctrl.zoom);
 			g.uniform1f(FU.uRot, rot);
@@ -312,11 +410,24 @@ export function IslamicCanvas({ translationalCell, translationalCellId, paramCel
 			// Stroke pass: the black construction lines, constant CSS px like the p5 border.
 			if (cfg.lineWidth > 0 && mesh.strokeVertexCount > 0) {
 				g.useProgram(strokeProgRef.current);
-				const SA = strokeA.current, SU = strokeU.current;
-				g.bindBuffer(g.ARRAY_BUFFER, strokePosRef.current); g.enableVertexAttribArray(SA.aPos); g.vertexAttribPointer(SA.aPos, 2, g.FLOAT, false, 0, 0); g.vertexAttribDivisor(SA.aPos, 0);
-				g.bindBuffer(g.ARRAY_BUFFER, strokeNormRef.current); g.enableVertexAttribArray(SA.aNorm); g.vertexAttribPointer(SA.aNorm, 2, g.FLOAT, false, 0, 0); g.vertexAttribDivisor(SA.aNorm, 0);
-				g.bindBuffer(g.ARRAY_BUFFER, strokeSideRef.current); g.enableVertexAttribArray(SA.aSide); g.vertexAttribPointer(SA.aSide, 1, g.FLOAT, false, 0, 0); g.vertexAttribDivisor(SA.aSide, 0);
-				g.bindBuffer(g.ARRAY_BUFFER, instBufRef.current); g.enableVertexAttribArray(SA.aInst); g.vertexAttribPointer(SA.aInst, 2, g.FLOAT, false, 0, 0); g.vertexAttribDivisor(SA.aInst, 1);
+				const SA = strokeA.current,
+					SU = strokeU.current;
+				g.bindBuffer(g.ARRAY_BUFFER, strokePosRef.current);
+				g.enableVertexAttribArray(SA.aPos);
+				g.vertexAttribPointer(SA.aPos, 2, g.FLOAT, false, 0, 0);
+				g.vertexAttribDivisor(SA.aPos, 0);
+				g.bindBuffer(g.ARRAY_BUFFER, strokeNormRef.current);
+				g.enableVertexAttribArray(SA.aNorm);
+				g.vertexAttribPointer(SA.aNorm, 2, g.FLOAT, false, 0, 0);
+				g.vertexAttribDivisor(SA.aNorm, 0);
+				g.bindBuffer(g.ARRAY_BUFFER, strokeSideRef.current);
+				g.enableVertexAttribArray(SA.aSide);
+				g.vertexAttribPointer(SA.aSide, 1, g.FLOAT, false, 0, 0);
+				g.vertexAttribDivisor(SA.aSide, 0);
+				g.bindBuffer(g.ARRAY_BUFFER, instBufRef.current);
+				g.enableVertexAttribArray(SA.aInst);
+				g.vertexAttribPointer(SA.aInst, 2, g.FLOAT, false, 0, 0);
+				g.vertexAttribDivisor(SA.aInst, 1);
 				g.uniform2f(SU.uOffset, draw.x, draw.y);
 				g.uniform1f(SU.uZoom, ctrl.zoom);
 				g.uniform1f(SU.uRot, rot);
@@ -340,8 +451,12 @@ export function IslamicCanvas({ translationalCell, translationalCellId, paramCel
 			cancelAnimationFrame(raf);
 			gl.deleteProgram(fillProg);
 			gl.deleteProgram(strokeProg);
-			for (const b of [fillPosRef, fillHueRef, fillClassRef, strokePosRef, strokeNormRef, strokeSideRef, instBufRef]) if (b.current) gl.deleteBuffer(b.current);
-			glRef.current = null; fillProgRef.current = null; strokeProgRef.current = null; meshRef.current = null;
+			for (const b of [fillPosRef, fillHueRef, fillClassRef, strokePosRef, strokeNormRef, strokeSideRef, instBufRef])
+				if (b.current) gl.deleteBuffer(b.current);
+			glRef.current = null;
+			fillProgRef.current = null;
+			strokeProgRef.current = null;
+			meshRef.current = null;
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
@@ -360,8 +475,13 @@ export function IslamicCanvas({ translationalCell, translationalCellId, paramCel
 // Tiling.drawIslamicStarFill's pooling exactly (same clamps, same splitCrossings rule) so the shader fill is
 // the same geometry the p5 path drew. The patch is prebuilt/cached by the caller.
 function buildMeshFromPatch(
-	patch: ReturnType<typeof buildTilingFromCell>, style: "plain" | "checkerboard",
-	angle: number, offset: number, count: number, v1: Vector, v2: Vector,
+	patch: ReturnType<typeof buildTilingFromCell>,
+	style: "plain" | "checkerboard",
+	angle: number,
+	offset: number,
+	count: number,
+	v1: Vector,
+	v2: Vector,
 ): IslamicMesh {
 	const segments: Segment[] = [];
 	const markers: Marker[] = [];

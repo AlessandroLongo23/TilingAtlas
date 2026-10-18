@@ -253,13 +253,7 @@ function constructMetatiles(patch: Extract<Geom, { kind: "meta" }>): Quad {
 	const newP = meta([p72, padd(p72, psub(bps1, llc)), bps1, llc]);
 	for (const ch of [7, 2, 3, 4, 28]) addChild(newP, patch.children[ch].T, patch.children[ch].geom);
 
-	const newF = meta([
-		bps2,
-		evalChild(patch, 24, 2),
-		evalChild(patch, 25, 0),
-		p252,
-		padd(p252, psub(llc, bps1)),
-	]);
+	const newF = meta([bps2, evalChild(patch, 24, 2), evalChild(patch, 25, 0), p252, padd(p252, psub(llc, bps1))]);
 	for (const ch of [21, 20, 22, 23, 24, 25]) addChild(newF, patch.children[ch].T, patch.children[ch].geom);
 
 	const aaa = hOutline[2];

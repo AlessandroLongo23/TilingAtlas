@@ -10,8 +10,10 @@ import { assertEquivalencePartition } from "@/classes/algorithm/TilingCongruence
 import type { PeriodCell } from "@/classes/algorithm/PeriodSolver";
 
 // identity-only stand-ins (the predicate decides congruence; the partition checker only uses identity)
-const cell = (id: string) => ({ id } as unknown as PeriodCell);
-const a = cell("a"), b = cell("b"), c = cell("c");
+const cell = (id: string) => ({ id }) as unknown as PeriodCell;
+const a = cell("a"),
+	b = cell("b"),
+	c = cell("c");
 const inSet = (x: PeriodCell, ...s: PeriodCell[]) => s.includes(x);
 
 describe("assertEquivalencePartition", () => {

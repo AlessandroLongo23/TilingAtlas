@@ -31,7 +31,8 @@ const EXPECT: Record<string, [number, number, number, number, boolean]> = {
 function edges(faces: number[][]) {
 	const c = new Map<string, number>();
 	for (const f of faces) {
-		for (let i = 0; i < f.length; i++) c.set(key(f[i], f[(i + 1) % f.length]), (c.get(key(f[i], f[(i + 1) % f.length])) ?? 0) + 1);
+		for (let i = 0; i < f.length; i++)
+			c.set(key(f[i], f[(i + 1) % f.length]), (c.get(key(f[i], f[(i + 1) % f.length])) ?? 0) + 1);
 	}
 	return c;
 }
@@ -51,14 +52,17 @@ function orientable(faces: number[][]) {
 		const i = stack.pop() as number;
 		const ring = flip.get(i) === -1 ? [...faces[i]].reverse() : faces[i];
 		for (let j = 0; j < ring.length; j++) {
-			const a = ring[j], b = ring[(j + 1) % ring.length];
+			const a = ring[j],
+				b = ring[(j + 1) % ring.length];
 			const fwd = dart.get(`${a}>${b}`) ?? [];
 			for (const n of [...fwd, ...(dart.get(`${b}>${a}`) ?? [])]) {
 				if (n === i) continue;
 				const want = fwd.includes(n) ? -1 : 1;
 				const seen = flip.get(n);
-				if (seen === undefined) { flip.set(n, want); stack.push(n); }
-				else if (seen !== want) return false;
+				if (seen === undefined) {
+					flip.set(n, want);
+					stack.push(n);
+				} else if (seen !== want) return false;
 			}
 		}
 	}
@@ -94,7 +98,8 @@ describe("the hemipolyhedra", () => {
 			for (const f of s.faces) {
 				// Planar: every vertex of the ring on the plane of its first three.
 				const [p, q, r] = [V[f[0]], V[f[1]], V[f[2]]];
-				const u = [q[0] - p[0], q[1] - p[1], q[2] - p[2]], w = [r[0] - p[0], r[1] - p[1], r[2] - p[2]];
+				const u = [q[0] - p[0], q[1] - p[1], q[2] - p[2]],
+					w = [r[0] - p[0], r[1] - p[1], r[2] - p[2]];
 				const n = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]];
 				const L = Math.hypot(...(n as [number, number, number]));
 				for (const i of f) {
@@ -109,17 +114,23 @@ describe("the hemipolyhedra", () => {
 	// coordinates are rounded to nine decimals, which puts an exactly-central plane up to ~1e-9 off.
 	it("has HEMI faces — a face plane through the centre — which is the whole class", () => {
 		const HEMI_COUNT: Record<string, number> = {
-			"hemi-tetrahemihexahedron": 3, "hemi-octahemioctahedron": 4, "hemi-cubohemioctahedron": 4,
-			"hemi-small-icosihemidodecahedron": 6, "hemi-small-dodecahemidodecahedron": 6,
-			"hemi-small-dodecahemicosahedron": 10, "hemi-great-dodecahemicosahedron": 10,
-			"hemi-great-icosihemidodecahedron": 6, "hemi-great-dodecahemidodecahedron": 6,
+			"hemi-tetrahemihexahedron": 3,
+			"hemi-octahemioctahedron": 4,
+			"hemi-cubohemioctahedron": 4,
+			"hemi-small-icosihemidodecahedron": 6,
+			"hemi-small-dodecahemidodecahedron": 6,
+			"hemi-small-dodecahemicosahedron": 10,
+			"hemi-great-dodecahemicosahedron": 10,
+			"hemi-great-icosihemidodecahedron": 6,
+			"hemi-great-dodecahemidodecahedron": 6,
 		};
 		for (const s of HEMI_SOLIDS) {
 			const V = s.vertices as V3[];
 			let through = 0;
 			for (const f of s.faces) {
 				const [p, q, r] = [V[f[0]], V[f[1]], V[f[2]]];
-				const u = [q[0] - p[0], q[1] - p[1], q[2] - p[2]], w = [r[0] - p[0], r[1] - p[1], r[2] - p[2]];
+				const u = [q[0] - p[0], q[1] - p[1], q[2] - p[2]],
+					w = [r[0] - p[0], r[1] - p[1], r[2] - p[2]];
 				const n = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]];
 				const L = Math.hypot(...(n as [number, number, number]));
 				if (Math.abs((p[0] * n[0] + p[1] * n[1] + p[2] * n[2]) / L) < 1e-7) through++;
@@ -137,7 +148,13 @@ describe("the hemipolyhedra", () => {
 			// ...and is still refused, because a hemi face projects to a great circle, not a polygon.
 			expect(hasSphereView(s.id), `${s.id}: offered a sphere view`).toBe(false);
 			// One orbit, read off the face census at each vertex: same multiset of face sizes everywhere.
-			const at = V.map((_, i) => s.faces.filter((f) => f.includes(i)).map((f) => f.length).sort().join("."));
+			const at = V.map((_, i) =>
+				s.faces
+					.filter((f) => f.includes(i))
+					.map((f) => f.length)
+					.sort()
+					.join("."),
+			);
 			expect(new Set(at).size, `${s.id}: ${new Set(at).size} vertex types`).toBe(1);
 		}
 	});

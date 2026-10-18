@@ -7,10 +7,10 @@
  * Soundness was never at risk (keys are exact geometry; distinct classes can never collide) — the
  * defect was completeness of the merge, the same axis as §19.6.
  */
-import { describe, it, expect } from 'vitest';
-import { Cyclotomic, CyclotomicRing, setActiveRing } from '@/classes/Cyclotomic';
-import { RegularPolygon } from '@/classes/polygons/RegularPolygon';
-import { reducedClassKey, tilingsCongruent } from '@/classes/algorithm/TilingCongruence';
+import { describe, it, expect } from "vitest";
+import { Cyclotomic, CyclotomicRing, setActiveRing } from "@/classes/Cyclotomic";
+import { RegularPolygon } from "@/classes/polygons/RegularPolygon";
+import { reducedClassKey, tilingsCongruent } from "@/classes/algorithm/TilingCongruence";
 
 const ring = CyclotomicRing.create(24);
 setActiveRing(ring);
@@ -24,8 +24,8 @@ const v = Q(-3n, 1n).add(z(16).scaleRational(3n, 1n));
 
 const lat = (m: bigint, n: bigint) => u.scaleRational(m, 1n).add(v.scaleRational(n, 1n));
 
-describe('reducedClassKey class-invariance (§35)', () => {
-	it('REGRESSION: the exact violating instance the CB-4 guard caught on the k=3 artifact', () => {
+describe("reducedClassKey class-invariance (§35)", () => {
+	it("REGRESSION: the exact violating instance the CB-4 guard caught on the k=3 artifact", () => {
 		// Extracted verbatim from the artifact (diag-cb4-asymmetry dump): basis u = 2ζ⁴,
 		// v = −6 + 3ζ⁴; triangle anchored at −1−5ζ⁴ with edge dirs (0,8,16); shift λ = v.
 		// The float-window reduction returned different keys for p and p+λ.
@@ -38,7 +38,7 @@ describe('reducedClassKey class-invariance (§35)', () => {
 		expect(reducedClassKey(shifted, u2, v2)).toBe(reducedClassKey(tri, u2, v2));
 	});
 
-	it('returns the identical key for every lattice translate of a polygon', () => {
+	it("returns the identical key for every lattice translate of a polygon", () => {
 		// several anchors spread across the cell, both tile shapes of the offending bucket
 		const polys = [
 			RegularPolygon.fromAnchorAndDirExact(3, Cyclotomic.ZERO(ring), 0),
@@ -47,8 +47,18 @@ describe('reducedClassKey class-invariance (§35)', () => {
 			RegularPolygon.fromAnchorAndDirExact(3, Q(-2n, 1n).add(z(16)), 11),
 		];
 		const shifts: [bigint, bigint][] = [
-			[1n, 0n], [0n, 1n], [-1n, 0n], [0n, -1n], [1n, 1n], [-1n, -1n],
-			[2n, -1n], [-2n, 1n], [3n, 2n], [-3n, -2n], [5n, 3n], [-5n, -3n],
+			[1n, 0n],
+			[0n, 1n],
+			[-1n, 0n],
+			[0n, -1n],
+			[1n, 1n],
+			[-1n, -1n],
+			[2n, -1n],
+			[-2n, 1n],
+			[3n, 2n],
+			[-3n, -2n],
+			[5n, 3n],
+			[-5n, -3n],
 		];
 		for (const p of polys) {
 			const k0 = reducedClassKey(p, u, v);
@@ -60,7 +70,7 @@ describe('reducedClassKey class-invariance (§35)', () => {
 		}
 	});
 
-	it('tilingsCongruent is symmetric when the same tiling is encoded with different per-tile translates', () => {
+	it("tilingsCongruent is symmetric when the same tiling is encoded with different per-tile translates", () => {
 		// Same tiling, same Λ — but cell B stores its second tile at a different lattice translate.
 		// The cell-set verification must reduce both encodings to the same class keys; a
 		// non-canonical reduction makes this fail in one direction (the §35 asymmetry mechanism).

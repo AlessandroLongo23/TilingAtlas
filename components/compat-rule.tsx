@@ -36,7 +36,10 @@ function Attempt({ a, b }: { a: string; b: string }) {
 	if (!join) return null;
 
 	const all = [...join.a, ...join.b];
-	let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+	let minX = Infinity,
+		minY = Infinity,
+		maxX = -Infinity,
+		maxY = -Infinity;
 	for (const p of all)
 		for (const v of p.vertices) {
 			if (v.x < minX) minX = v.x;
@@ -123,29 +126,19 @@ function Attempt({ a, b }: { a: string; b: string }) {
 				{ x: ax, y: ay, colour: FIRST },
 				{ x: bx, y: by, colour: SECOND },
 			].map((end, k) => (
-				<circle
-					key={k}
-					cx={tx(end.x)}
-					cy={ty(end.y)}
-					r={0.105}
-					fill={end.colour}
-					stroke="#fff"
-					strokeWidth={0.03}
-				/>
+				<circle key={k} cx={tx(end.x)} cy={ty(end.y)} r={0.105} fill={end.colour} stroke="#fff" strokeWidth={0.03} />
 			))}
 		</svg>
 	);
 }
 
-const chip =
-	"border px-[0.5em] py-[0.1em] font-mono text-[clamp(0.62rem,1vh+0.26vw,1.05rem)] transition-colors";
+const chip = "border px-[0.5em] py-[0.1em] font-mono text-[clamp(0.62rem,1vh+0.26vw,1.05rem)] transition-colors";
 
 /** The ordered pairs each configuration offers, with the ones that answer each other picked out. */
 function PairTest({ a, b }: { a: string; b: string }) {
 	const pa = edgePairs(a);
 	const pb = edgePairs(b);
-	const has = (list: [number, number][], p: number, q: number) =>
-		list.some(([u, v]) => u === p && v === q);
+	const has = (list: [number, number][], p: number, q: number) => list.some(([u, v]) => u === p && v === q);
 	const rows = [
 		{ word: a, colour: FIRST, pairs: pa, lit: pa.map(([p, q]) => has(pb, q, p)) },
 		{ word: b, colour: SECOND, pairs: pb, lit: pb.map(([p, q]) => has(pa, q, p)) },
@@ -190,7 +183,11 @@ function Case({ a, b }: { a: string; b: string }) {
 			{w}
 		</span>
 	);
-	const pair = (p: number, q: number) => <span className="font-mono font-semibold text-fg">{p}|{q}</span>;
+	const pair = (p: number, q: number) => (
+		<span className="font-mono font-semibold text-fg">
+			{p}|{q}
+		</span>
+	);
 	return (
 		<figure className="m-0 flex min-w-0 flex-col items-center gap-[0.9em]">
 			<div className="w-[min(42vh,100%)]">
@@ -208,8 +205,8 @@ function Case({ a, b }: { a: string; b: string }) {
 					</>
 				) : (
 					<>
-						nothing {word(b, SECOND)} offers is the reverse of anything {word(a, FIRST)} does, so
-						the two never share an edge and the tiles collide
+						nothing {word(b, SECOND)} offers is the reverse of anything {word(a, FIRST)} does, so the two never share an
+						edge and the tiles collide
 					</>
 				)}
 			</figcaption>

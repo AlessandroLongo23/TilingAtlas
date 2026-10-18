@@ -39,12 +39,19 @@ function netPatch(type: MarkedType, param: number): Poly[] {
 	const R = 4;
 
 	const push = (poly: Poly) => out.push(poly);
-	const shift = (poly: Poly, dx: number, dy: number) =>
-		poly.map((p) => ({ x: p.x + dx, y: p.y + dy }));
+	const shift = (poly: Poly, dx: number, dy: number) => poly.map((p) => ({ x: p.x + dx, y: p.y + dy }));
 
 	if (type.net === "triangular") {
-		const up: Poly = [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 0.5, y: SQ3 / 2 }];
-		const down: Poly = [{ x: 1, y: 0 }, { x: 1.5, y: SQ3 / 2 }, { x: 0.5, y: SQ3 / 2 }];
+		const up: Poly = [
+			{ x: 0, y: 0 },
+			{ x: 1, y: 0 },
+			{ x: 0.5, y: SQ3 / 2 },
+		];
+		const down: Poly = [
+			{ x: 1, y: 0 },
+			{ x: 1.5, y: SQ3 / 2 },
+			{ x: 0.5, y: SQ3 / 2 },
+		];
 		for (let i = -R; i <= R; ++i)
 			for (let j = -R; j <= R; ++j) {
 				const dx = i + j * 0.5;
@@ -68,13 +75,7 @@ function netPatch(type: MarkedType, param: number): Poly[] {
 					push(shift(hex, dx, dy));
 				} else {
 					for (const k of [0, 2, 4]) {
-						push(
-							shift(
-								[{ x: 0, y: 0 }, hex[k], hex[(k + 1) % 6], hex[(k + 2) % 6]],
-								dx,
-								dy,
-							),
-						);
+						push(shift([{ x: 0, y: 0 }, hex[k], hex[(k + 1) % 6], hex[(k + 2) % 6]], dx, dy));
 					}
 				}
 			}
@@ -95,13 +96,28 @@ function netPatch(type: MarkedType, param: number): Poly[] {
 
 	// tetrakis: the unit square cut by both diagonals.
 	const quarters: Poly[] = [
-		[{ x: 0.5, y: 0.5 }, { x: 0, y: 0 }, { x: 1, y: 0 }],
-		[{ x: 0.5, y: 0.5 }, { x: 1, y: 0 }, { x: 1, y: 1 }],
-		[{ x: 0.5, y: 0.5 }, { x: 1, y: 1 }, { x: 0, y: 1 }],
-		[{ x: 0.5, y: 0.5 }, { x: 0, y: 1 }, { x: 0, y: 0 }],
+		[
+			{ x: 0.5, y: 0.5 },
+			{ x: 0, y: 0 },
+			{ x: 1, y: 0 },
+		],
+		[
+			{ x: 0.5, y: 0.5 },
+			{ x: 1, y: 0 },
+			{ x: 1, y: 1 },
+		],
+		[
+			{ x: 0.5, y: 0.5 },
+			{ x: 1, y: 1 },
+			{ x: 0, y: 1 },
+		],
+		[
+			{ x: 0.5, y: 0.5 },
+			{ x: 0, y: 1 },
+			{ x: 0, y: 0 },
+		],
 	];
-	for (let i = -R; i <= R; ++i)
-		for (let j = -R; j <= R; ++j) for (const qd of quarters) push(shift(qd, i, j));
+	for (let i = -R; i <= R; ++i) for (let j = -R; j <= R; ++j) for (const qd of quarters) push(shift(qd, i, j));
 	return out;
 }
 
@@ -217,9 +233,7 @@ describe("the twelve marked isohedral types", () => {
 				expect(cell).not.toBeNull();
 				// One ring per tile, then one open path per stroke of every mark.
 				const strokesPerMark = group.glyphs[0].paths.length;
-				expect(cell!.polygons.length).toBe(
-					type.aspects + strokesPerMark * type.tileGroupOrder * type.aspects,
-				);
+				expect(cell!.polygons.length).toBe(type.aspects + strokesPerMark * type.tileGroupOrder * type.aspects);
 				expect(cell!.stabilizerOrder).toBe(type.tileGroupOrder);
 				expect(cell!.period).toBeGreaterThan(0);
 			});

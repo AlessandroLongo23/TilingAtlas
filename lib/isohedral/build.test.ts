@@ -1,12 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-	ISOHEDRAL_TYPES,
-	MARKED_TYPES,
-	MAX_IH,
-	isohedralType,
-	parseIh,
-	DEFAULT_IH,
-} from "./catalogue";
+import { ISOHEDRAL_TYPES, MARKED_TYPES, MAX_IH, isohedralType, parseIh, DEFAULT_IH } from "./catalogue";
 import {
 	BULGE,
 	buildCell,
@@ -33,9 +26,7 @@ const available = ISOHEDRAL_TYPES.filter((t) => t.available);
 describe("the catalogue covers all 93 types and is honest about the twelve", () => {
 	it("has one entry per IH number, in order", () => {
 		expect(ISOHEDRAL_TYPES).toHaveLength(MAX_IH);
-		expect(ISOHEDRAL_TYPES.map((t) => t.ih)).toEqual(
-			Array.from({ length: MAX_IH }, (_, i) => i + 1),
-		);
+		expect(ISOHEDRAL_TYPES.map((t) => t.ih)).toEqual(Array.from({ length: MAX_IH }, (_, i) => i + 1));
 	});
 
 	it("flags exactly the twelve marked types, and they are the expected ones", () => {
@@ -215,8 +206,7 @@ describe("the edge curvature model respects each edge's symmetry", () => {
 				if (s.kind === "I") continue;
 				signs.add(Math.sign(s.amount));
 				// The template holds shape only: its dominant control point is +1, never -1.
-				const lead =
-					Math.abs(s.base!.a.y) >= Math.abs(s.base!.b.y) ? s.base!.a.y : s.base!.b.y;
+				const lead = Math.abs(s.base!.a.y) >= Math.abs(s.base!.b.y) ? s.base!.a.y : s.base!.b.y;
 				expect(lead, `${t.label} ${s.kind}`).toBeCloseTo(1, 12);
 			}
 		}
@@ -234,8 +224,7 @@ describe("the edge curvature model respects each edge's symmetry", () => {
 		const rnd = seeded(7);
 		for (const t of available) {
 			const states = randomEdgeStates(t.edgeShapes, rnd);
-			const cellOf = (s: typeof states) =>
-				buildCell({ ih: t.ih, params: t.defaultParams, curves: curvesOf(s) })!;
+			const cellOf = (s: typeof states) => buildCell({ ih: t.ih, params: t.defaultParams, curves: curvesOf(s) })!;
 
 			const before = cellOf(states);
 
@@ -279,8 +268,7 @@ describe("the edge curvature model respects each edge's symmetry", () => {
 		const rnd = seeded(11);
 		const t = isohedralType(4)!;
 		const states = randomEdgeStates(t.edgeShapes, rnd);
-		const cellOf = (s: typeof states) =>
-			buildCell({ ih: 4, params: t.defaultParams, curves: curvesOf(s) })!;
+		const cellOf = (s: typeof states) => buildCell({ ih: 4, params: t.defaultParams, curves: curvesOf(s) })!;
 		const before = cellOf(states);
 
 		let s = states;
@@ -369,8 +357,7 @@ describe("named boundary edges", () => {
 		for (const t of available) {
 			const tiling = new IsohedralTiling(t.ih);
 			for (const e of prototileEdges(tiling, straightCurves(t.edgeShapes))) {
-				expect(Math.hypot(e.mid.x - (e.from.x + e.to.x) / 2, e.mid.y - (e.from.y + e.to.y) / 2)).
-					toBeLessThan(1e-9);
+				expect(Math.hypot(e.mid.x - (e.from.x + e.to.x) / 2, e.mid.y - (e.from.y + e.to.y) / 2)).toBeLessThan(1e-9);
 			}
 		}
 	});
@@ -383,9 +370,7 @@ describe("named boundary edges", () => {
 	it("keeps an S edge's midpoint on its chord, and moves a bowed U or J edge's off it", () => {
 		for (const t of available) {
 			const tiling = new IsohedralTiling(t.ih);
-			const curves = curvesOf(
-				t.edgeShapes.map((kind) => ({ kind, base: canonicalBase(kind), amount: BULGE.max })),
-			);
+			const curves = curvesOf(t.edgeShapes.map((kind) => ({ kind, base: canonicalBase(kind), amount: BULGE.max })));
 			for (const e of prototileEdges(tiling, curves)) {
 				const chord = { x: (e.from.x + e.to.x) / 2, y: (e.from.y + e.to.y) / 2 };
 				const off = Math.hypot(e.mid.x - chord.x, e.mid.y - chord.y);
@@ -428,14 +413,16 @@ describe("adaptive edge flattening", () => {
 		for (let i = 0; i < n; ++i) {
 			const p = cubic(c, i / n);
 			const q = cubic(c, (i + 1) / n);
-			const dx = q.x - p.x, dy = q.y - p.y;
+			const dx = q.x - p.x,
+				dy = q.y - p.y;
 			const len2 = dx * dx + dy * dy || 1;
 			for (let s = 1; s < 32; ++s) {
 				const t = (i + s / 32) / n;
 				const m = cubic(c, t);
 				// Distance from the curve point to the segment's line.
 				const u = ((m.x - p.x) * dx + (m.y - p.y) * dy) / len2;
-				const px = p.x + u * dx, py = p.y + u * dy;
+				const px = p.x + u * dx,
+					py = p.y + u * dy;
 				worst = Math.max(worst, Math.hypot(m.x - px, m.y - py));
 			}
 		}
@@ -598,7 +585,6 @@ describe("buildCell", () => {
 				expect(tiling.getColour(1, 2, asp), t.label).toBe(tiling.getColour(1 + nc, 2 + nc, asp));
 				expect(tiling.getColour(-1, 4, asp), t.label).toBe(tiling.getColour(-1 + nc, 4 - nc, asp));
 			}
-
 		}
 	});
 

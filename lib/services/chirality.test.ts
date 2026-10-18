@@ -29,15 +29,34 @@ describe("isChiralTiling", () => {
 
 describe("reflectRenderCell", () => {
 	const cell = {
-		cellPolygons: [{ n: 3, vertices: [[0, 0], [1, 0], [0.5, 0.866]] }],
-		basis: [[1, 0], [0.5, 0.866]],
+		cellPolygons: [
+			{
+				n: 3,
+				vertices: [
+					[0, 0],
+					[1, 0],
+					[0.5, 0.866],
+				],
+			},
+		],
+		basis: [
+			[1, 0],
+			[0.5, 0.866],
+		],
 	};
 	const verts = (c: typeof cell) => (c.cellPolygons[0] as { vertices: number[][] }).vertices;
 
 	it("negates y on every vertex and basis vector", () => {
 		const r = reflectRenderCell(cell);
-		expect(verts(r as typeof cell)).toEqual([[0, -0], [1, -0], [0.5, -0.866]]);
-		expect(r.basis).toEqual([[1, -0], [0.5, -0.866]]);
+		expect(verts(r as typeof cell)).toEqual([
+			[0, -0],
+			[1, -0],
+			[0.5, -0.866],
+		]);
+		expect(r.basis).toEqual([
+			[1, -0],
+			[0.5, -0.866],
+		]);
 	});
 
 	it("is an involution", () => {

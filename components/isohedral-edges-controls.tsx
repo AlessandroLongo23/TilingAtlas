@@ -46,29 +46,25 @@ export function IsohedralEdgesControls({ ih }: { ih: number }) {
 			useConfiguration.getState().set({ ihEdgeBulge: bulge.map((p, j) => (j === i ? value : p)) }),
 		[bulge],
 	);
-	const reset = useCallback(
-		() => useConfiguration.getState().set({ ihEdgeParams: null, ihEdgeBulge: null }),
-		[],
-	);
-	const setScaffold = useCallback(
-		(v: boolean) => useConfiguration.getState().set({ freedrawScaffold: v }),
-		[],
-	);
+	const reset = useCallback(() => useConfiguration.getState().set({ ihEdgeParams: null, ihEdgeBulge: null }), []);
+	const setScaffold = useCallback((v: boolean) => useConfiguration.getState().set({ freedrawScaffold: v }), []);
 
 	const solved = solveIhBoardFor(ih, stored, storedBulge);
 	// Whether this board can carry a bow at all: every one-slot class must be its own reverse.
 	const spec = IH_EDGE_BOARD_BY_IH.get(ih);
 	const bowable =
-		!spec ||
-		!info ||
-		spec.slots.every((n, i) => n > 1 || info.edgeShapes[i] === "S" || info.edgeShapes[i] === "I");
+		!spec || !info || spec.slots.every((n, i) => n > 1 || info.edgeShapes[i] === "S" || info.edgeShapes[i] === "I");
 
 	// On a phone this card is one of the panels in /play's bottom tray, so it gives up its corner.
 	return (
-		<div className="absolute bottom-3 left-3 z-20 flex flex-col gap-1 ta-float p-3 text-xs max-md:static max-md:shrink-0 max-md:gap-0 max-md:text-[13px]">
+		<div className="ta-float absolute bottom-3 left-3 z-20 flex flex-col gap-1 p-3 text-xs max-md:static max-md:shrink-0 max-md:gap-0 max-md:text-[13px]">
 			<div className="flex items-center justify-between gap-4 pb-1">
 				<span className="font-mono text-fg-secondary">{info?.label ?? `IH${ih}`}</span>
-				<button type="button" onClick={reset} className="text-fg-muted underline hover:text-fg max-md:min-h-11 max-md:px-2">
+				<button
+					type="button"
+					onClick={reset}
+					className="text-fg-muted underline hover:text-fg max-md:min-h-11 max-md:px-2"
+				>
 					reset
 				</button>
 			</div>
@@ -115,9 +111,7 @@ export function IsohedralEdgesControls({ ih }: { ih: number }) {
 				// The three edge-class lengths are what the certificate's digon letters name, so reporting
 				// them makes the link between the sliders and the record legible while you drag.
 				<span className="pt-1 font-mono text-fg-muted">
-					{solved.board.spec.classes
-						.map((c, i) => `${c} = ${solved.board.classLengths[i].toFixed(2)}`)
-						.join(" · ")}
+					{solved.board.spec.classes.map((c, i) => `${c} = ${solved.board.classLengths[i].toFixed(2)}`).join(" · ")}
 				</span>
 			) : (
 				<span className="pt-1 text-danger">

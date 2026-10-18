@@ -53,7 +53,7 @@ export const tidyDeg = (deg: number) => {
 
 // Shortest signed angular distance (degrees) for a raw difference, mapped to [-180, 180); lets a live
 // angle take the short way round when the wrapped target jumps across the 0/360 seam.
-export const shortestDeltaDeg = (diff: number) => ((diff % 360) + 540) % 360 - 180;
+export const shortestDeltaDeg = (diff: number) => (((diff % 360) + 540) % 360) - 180;
 
 // Normalize a wheel event's deltaY to approximate pixels so sensitivity matches across a pixel-mode
 // trackpad and a line/page-mode mouse wheel. deltaMode: 0 = pixel, 1 = line (~16px), 2 = page.
@@ -83,7 +83,8 @@ export function zoomAtPoint(
 	const worldX = (mouse.x - targetOffset.x) / targetZoom;
 	const worldY = (mouse.y - targetOffset.y) / targetZoom;
 	const scale = Math.pow(ZOOM_CARD_FACTOR, -deltaPx / ZOOM_CARD_PX_PER_NOTCH);
-	const lo = bounds?.min ?? ZOOM_MIN, hi = bounds?.max ?? ZOOM_MAX;
+	const lo = bounds?.min ?? ZOOM_MIN,
+		hi = bounds?.max ?? ZOOM_MAX;
 	const z = Math.max(lo, Math.min(hi, targetZoom * scale));
 	return {
 		zoom: z,
@@ -96,8 +97,7 @@ export function zoomAtPoint(
 
 // The wheel distance zoomAtPoint would need to scale by `scale`, so a pinch runs through the same
 // function (and the same clamp) the wheel does.
-export const pinchDeltaPx = (scale: number) =>
-	(-ZOOM_CARD_PX_PER_NOTCH * Math.log(scale)) / Math.log(ZOOM_CARD_FACTOR);
+export const pinchDeltaPx = (scale: number) => (-ZOOM_CARD_PX_PER_NOTCH * Math.log(scale)) / Math.log(ZOOM_CARD_FACTOR);
 
 // One two-finger step (lib/render/touchGestures.ts) on a view that keeps zoom and a centred pan
 // offset with live and target copies: CardControls, and /play's store `controls`. The world point
@@ -123,7 +123,8 @@ export function pinchOffsetView(
 	const k = v.targetZoom > 0 ? zoom / v.targetZoom : 1;
 	v.targetZoom = zoom;
 	v.zoom *= k;
-	const c = Math.cos(spin), s = Math.sin(spin);
+	const c = Math.cos(spin),
+		s = Math.sin(spin);
 	// Unrotated target of the new midpoint: Rot(-spin)·to.
 	const tx = c * step.to.x + s * step.to.y;
 	const ty = -s * step.to.x + c * step.to.y;
@@ -158,7 +159,8 @@ export function accumulateDetents(accum: number, deltaPx: number): { steps: numb
 // applies as uRot, so a given angle means the same turn in every renderer.
 export function unrotateScreen(x: number, y: number, rad: number): { x: number; y: number } {
 	if (!rad) return { x, y };
-	const c = Math.cos(rad), s = Math.sin(rad);
+	const c = Math.cos(rad),
+		s = Math.sin(rad);
 	return { x: c * x + s * y, y: c * y - s * x };
 }
 
@@ -166,7 +168,8 @@ export function unrotateScreen(x: number, y: number, rad: number): { x: number; 
 // applying the same rotation to the offset holds the world point under the viewport centre fixed
 // there, so the pattern spins around the middle of the screen no matter how it's been panned.
 export function rotateOffsetAboutCentre(o: { x: number; y: number }, dTheta: number): void {
-	const cd = Math.cos(dTheta), sd = Math.sin(dTheta);
+	const cd = Math.cos(dTheta),
+		sd = Math.sin(dTheta);
 	const x = cd * o.x - sd * o.y;
 	const y = sd * o.x + cd * o.y;
 	o.x = x;

@@ -31,10 +31,26 @@ import { RangeInput } from "@/components/ui/range-input";
 // is genuinely continuous. There is no list of batteries to precompute.
 
 const STAGES = [
-	{ n: 1, title: "The periodic tiling", blurb: "Dashed: one translation cell. Gluing its opposite sides makes the torus." },
-	{ n: 2, title: "The harmonic flow", blurb: "Potential on the vertices, current as thickness. It climbs across the cell instead of repeating." },
-	{ n: 3, title: "The Smith diagram", blurb: "Height is potential; each wire is one square. Nothing terminates, because there are no poles." },
-	{ n: 4, title: "The squared torus", blurb: "Every wire becomes a square. The dashed parallelogram is one fundamental domain." },
+	{
+		n: 1,
+		title: "The periodic tiling",
+		blurb: "Dashed: one translation cell. Gluing its opposite sides makes the torus.",
+	},
+	{
+		n: 2,
+		title: "The harmonic flow",
+		blurb: "Potential on the vertices, current as thickness. It climbs across the cell instead of repeating.",
+	},
+	{
+		n: 3,
+		title: "The Smith diagram",
+		blurb: "Height is potential; each wire is one square. Nothing terminates, because there are no poles.",
+	},
+	{
+		n: 4,
+		title: "The squared torus",
+		blurb: "Every wire becomes a square. The dashed parallelogram is one fundamental domain.",
+	},
 ];
 
 /** Largest |m| and n the steppers offer, matching the sweep in scripts/build-torus-shelf.ts. */
@@ -129,8 +145,8 @@ export function TorusStages({ entry }: { entry: TorusIndexEntry }) {
 				{error === "stale" ? (
 					<>
 						<p>
-							This page is holding an older list of tilings: <span className="font-mono text-fg">{entry.id}</span>{" "}
-							is no longer in the shelf. The shelf was rebuilt after the page loaded.
+							This page is holding an older list of tilings: <span className="font-mono text-fg">{entry.id}</span> is no
+							longer in the shelf. The shelf was rebuilt after the page loaded.
 						</p>
 						<button
 							type="button"
@@ -142,9 +158,8 @@ export function TorusStages({ entry }: { entry: TorusIndexEntry }) {
 					</>
 				) : (
 					<p>
-						Could not load <span className="font-mono text-fg">{entry.id}</span>. The request failed; the shelf may
-						not have been built. Run{" "}
-						<code className="font-mono">pnpm tsx scripts/build-torus-shelf.ts</code>.
+						Could not load <span className="font-mono text-fg">{entry.id}</span>. The request failed; the shelf may not
+						have been built. Run <code className="font-mono">pnpm tsx scripts/build-torus-shelf.ts</code>.
 					</p>
 				)}
 			</div>
@@ -158,17 +173,17 @@ export function TorusStages({ entry }: { entry: TorusIndexEntry }) {
 	// reset button with it, leaving no way back short of picking another tiling.
 	return (
 		<>
-		<StageBoard
-			empty={
-				squaring === null ? (
-					<p className="border border-line bg-surface-overlay/30 p-4 text-sm text-fg-muted">
-						No squaring at ({cls[0]}, {cls[1]}): {solved?.failure ?? "the class is degenerate"}. The zero class has
-						no harmonic form, and classes where the form vanishes on an edge drop to a lower genus.
-					</p>
-				) : undefined
-			}
-			control={
-				<RailPanel
+			<StageBoard
+				empty={
+					squaring === null ? (
+						<p className="border border-line bg-surface-overlay/30 p-4 text-sm text-fg-muted">
+							No squaring at ({cls[0]}, {cls[1]}): {solved?.failure ?? "the class is degenerate"}. The zero class has no
+							harmonic form, and classes where the form vanishes on an edge drop to a lower genus.
+						</p>
+					) : undefined
+				}
+				control={
+					<RailPanel
 						label="control"
 						title="The homology class"
 						hint="Drag the ray; it sticks to the exact classes. Each diameter kills one square."
@@ -179,7 +194,9 @@ export function TorusStages({ entry }: { entry: TorusIndexEntry }) {
 									({cls[0]}, {cls[1]})
 								</p>
 							) : (
-								<p className="font-mono text-base leading-none text-fg">{(((raw * 180) / Math.PI + 360) % 360).toFixed(2)}°</p>
+								<p className="font-mono text-base leading-none text-fg">
+									{(((raw * 180) / Math.PI + 360) % 360).toFixed(2)}°
+								</p>
 							)}
 							<button
 								type="button"
@@ -192,7 +209,7 @@ export function TorusStages({ entry }: { entry: TorusIndexEntry }) {
 						{/* Always rendered, at a fixed height. Showing it only off the lattice made the panel
 						    grow and shrink under the cursor mid-drag, which moved the disk out from under the
 						    pointer: the control fought the hand holding it. */}
-						<p className="mt-1 h-3 overflow-hidden whitespace-nowrap font-mono text-[9px] leading-3 text-fg-muted max-md:h-4 max-md:text-xs max-md:leading-4">
+						<p className="mt-1 h-3 overflow-hidden font-mono text-[9px] leading-3 whitespace-nowrap text-fg-muted max-md:h-4 max-md:text-xs max-md:leading-4">
 							{exact ? "exact class · integer sides" : "off the integer lattice · sides irrational"}
 						</p>
 						{domains ? (
@@ -214,9 +231,8 @@ export function TorusStages({ entry }: { entry: TorusIndexEntry }) {
 								<p className="h-8 overflow-hidden text-[10px] leading-snug text-fg-muted max-md:h-auto max-md:min-h-8 max-md:text-xs">
 									{litWall >= 0 ? (
 										<>
-											The {domains.walls[litWall].edges.length === 1 ? "square" : "squares"} lit in the stages
-											shrink{domains.walls[litWall].edges.length === 1 ? "s" : ""} to nothing on the highlighted
-											diameter.
+											The {domains.walls[litWall].edges.length === 1 ? "square" : "squares"} lit in the stages shrink
+											{domains.walls[litWall].edges.length === 1 ? "s" : ""} to nothing on the highlighted diameter.
 										</>
 									) : (
 										<>Diameters: one square dies. Rim ticks: two squares tie, so perfection is off every tick.</>
@@ -229,78 +245,99 @@ export function TorusStages({ entry }: { entry: TorusIndexEntry }) {
 							<Stepper label="n" value={step[1]} min={-LIMIT} max={LIMIT} onChange={(v) => setCls([step[0], v])} />
 						</div>
 						{squaring ? (
-						<dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 border-t border-line pt-2.5 font-mono text-[10px] max-md:text-xs">
-							<Fact label="order" value={String(squaring.order)} />
-							<Fact
-								label="distinct sizes"
-								value={
-									squaring.approx
-										? "not certified"
-										: `${squaring.distinct}${squaring.perfect ? " (perfect)" : ""}`
-								}
-							/>
-							{domains ? (
+							<dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 border-t border-line pt-2.5 font-mono text-[10px] max-md:text-xs">
+								<Fact label="order" value={String(squaring.order)} />
 								<Fact
-									label="this class"
-									value={active < 0 ? "on a wall" : `sector ${active + 1} of ${sectors.length}`}
+									label="distinct sizes"
+									value={
+										squaring.approx ? "not certified" : `${squaring.distinct}${squaring.perfect ? " (perfect)" : ""}`
+									}
 								/>
-							) : null}
-							{domains ? <Fact label="walls · ties" value={`${domains.walls.length} · ${domains.ties.length}`} /> : null}
-							{domains && domains.locked.length > 0 ? (
-								<Fact label="locked pairs" value={String(domains.locked.length)} />
-							) : null}
-							<Fact label="quotient" value={`V ${map.V} · E ${map.E} · F ${map.F}`} />
-							<Fact label="torus area" value={`${squaring.approx ? "≈ " : ""}${squaring.covolume}`} />
-						</dl>
+								{domains ? (
+									<Fact
+										label="this class"
+										value={active < 0 ? "on a wall" : `sector ${active + 1} of ${sectors.length}`}
+									/>
+								) : null}
+								{domains ? (
+									<Fact label="walls · ties" value={`${domains.walls.length} · ${domains.ties.length}`} />
+								) : null}
+								{domains && domains.locked.length > 0 ? (
+									<Fact label="locked pairs" value={String(domains.locked.length)} />
+								) : null}
+								<Fact label="quotient" value={`V ${map.V} · E ${map.E} · F ${map.F}`} />
+								<Fact label="torus area" value={`${squaring.approx ? "≈ " : ""}${squaring.covolume}`} />
+							</dl>
 						) : null}
-				</RailPanel>
-			}
-			stages={squaring === null ? [] : [
-				{
-					...STAGES[0],
-					node: (
-						<TorusTilingFigure map={map} squaring={squaring} mode="plain" hovered={hovered} onHover={setHovered} />
-					),
-				},
-				{
-					...STAGES[1],
-					node: (
-						<TorusTilingFigure map={map} squaring={squaring} mode="flow" hovered={hovered} onHover={setHovered} />
-					),
-				},
-				{
-					...STAGES[2],
-					node: (
-						<SquaresSmithDiagram
-							squares={squaring.squares.map((q) => ({ x: num(q.x), y: num(q.y), side: num(q.side), edge: q.edge }))}
-							fills={fills}
-							hovered={hovered}
-							onHover={setHovered}
-						/>
-					),
-				},
-				{
-					...STAGES[3],
-					node: (
-						<SquaredTorusFigure
-							squaring={squaring}
-							hovered={hovered}
-							onHover={setHovered}
-							edges={map.E}
-							labels={!squaring.approx}
-						/>
-					),
-				},
-			]}
-		/>
-		{hovered !== null && squaring ? (
-			<InspectBar onClear={() => setHoverKey(null)}>
-				<span className="truncate">
-					<span className="font-mono">edge {hovered}</span>
-					<span className="text-fg-muted"> · lit in every stage{litWall >= 0 ? " and on the dial" : ""}</span>
-				</span>
-			</InspectBar>
-		) : null}
+					</RailPanel>
+				}
+				stages={
+					squaring === null
+						? []
+						: [
+								{
+									...STAGES[0],
+									node: (
+										<TorusTilingFigure
+											map={map}
+											squaring={squaring}
+											mode="plain"
+											hovered={hovered}
+											onHover={setHovered}
+										/>
+									),
+								},
+								{
+									...STAGES[1],
+									node: (
+										<TorusTilingFigure
+											map={map}
+											squaring={squaring}
+											mode="flow"
+											hovered={hovered}
+											onHover={setHovered}
+										/>
+									),
+								},
+								{
+									...STAGES[2],
+									node: (
+										<SquaresSmithDiagram
+											squares={squaring.squares.map((q) => ({
+												x: num(q.x),
+												y: num(q.y),
+												side: num(q.side),
+												edge: q.edge,
+											}))}
+											fills={fills}
+											hovered={hovered}
+											onHover={setHovered}
+										/>
+									),
+								},
+								{
+									...STAGES[3],
+									node: (
+										<SquaredTorusFigure
+											squaring={squaring}
+											hovered={hovered}
+											onHover={setHovered}
+											edges={map.E}
+											labels={!squaring.approx}
+										/>
+									),
+								},
+							]
+				}
+			/>
+			{hovered !== null && squaring ? (
+				<InspectBar onClear={() => setHoverKey(null)}>
+					<span className="truncate">
+						<span className="font-mono">edge {hovered}</span>
+						<span className="text-fg-muted"> · lit in every stage{litWall >= 0 ? " and on the dial" : ""}</span>
+					</span>
+				</InspectBar>
+			) : null}
 		</>
 	);
 }
@@ -320,7 +357,7 @@ function Stepper({
 }) {
 	return (
 		<div className="flex flex-col gap-1 max-md:w-full">
-			<span className="text-[9px] uppercase tracking-wide text-fg-muted max-md:text-xs">{label}</span>
+			<span className="text-[9px] tracking-wide text-fg-muted uppercase max-md:text-xs">{label}</span>
 			<div className="flex items-center gap-2">
 				<button
 					type="button"
@@ -352,4 +389,3 @@ function Stepper({
 		</div>
 	);
 }
-

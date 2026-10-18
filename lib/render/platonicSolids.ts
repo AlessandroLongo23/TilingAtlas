@@ -205,7 +205,14 @@ function dualPolyhedron(
 		return incident.map((x) => x.fi);
 	});
 
-	return { id: meta.id, schlafli: meta.schlafli, vertexConfig: meta.vertexConfig, name: meta.name, vertices: dualVerts, faces };
+	return {
+		id: meta.id,
+		schlafli: meta.schlafli,
+		vertexConfig: meta.vertexConfig,
+		name: meta.name,
+		vertices: dualVerts,
+		faces,
+	};
 }
 
 const DODECAHEDRON: Polyhedron = dualPolyhedron(ICOSAHEDRON, {

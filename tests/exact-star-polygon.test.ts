@@ -42,9 +42,7 @@ describe("ExactStarPolygon 4*_{π/4} (C7 spike B1)", () => {
 	it("cornerToken tags point/dent and stays disjoint from the square's bare '4'", () => {
 		const s = ExactStarPolygon.fourStarPi4(ZERO, 0);
 		const toks = s.exactVertices!.map((_, i) => s.cornerToken(i));
-		expect(toks).toEqual([
-			"4*p@3", "4*d@15", "4*p@3", "4*d@15", "4*p@3", "4*d@15", "4*p@3", "4*d@15",
-		]);
+		expect(toks).toEqual(["4*p@3", "4*d@15", "4*p@3", "4*d@15", "4*p@3", "4*d@15", "4*p@3", "4*d@15"]);
 		expect(toks).not.toContain("4");
 	});
 

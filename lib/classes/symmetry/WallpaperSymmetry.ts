@@ -23,7 +23,9 @@ const blcm = (a: bigint, b: bigint) => (a === 0n || b === 0n ? 0n : (a / bgcd(a,
 function inLattice(T1: Cyclotomic, T2: Cyclotomic, w: Cyclotomic): boolean {
 	const D = blcm(blcm(T1.den, T2.den), w.den);
 	const col = (z: Cyclotomic) => z.num.map((c) => (c * D) / z.den); // length-φ integer vector
-	const A = col(T1), B = col(T2), W = col(w);
+	const A = col(T1),
+		B = col(T2),
+		W = col(w);
 	const dim = A.length;
 	for (let i = 0; i < dim; i++) {
 		for (let j = i + 1; j < dim; j++) {
@@ -32,7 +34,8 @@ function inLattice(T1: Cyclotomic, T2: Cyclotomic, w: Cyclotomic): boolean {
 			const aNum = W[i] * B[j] - W[j] * B[i];
 			const bNum = A[i] * W[j] - A[j] * W[i];
 			if (aNum % det !== 0n || bNum % det !== 0n) return false; // non-integer ⇒ not in Λ
-			const a = aNum / det, b = bNum / det;
+			const a = aNum / det,
+				b = bNum / det;
 			for (let r = 0; r < dim; r++) if (a * A[r] + b * B[r] !== W[r]) return false; // consistency
 			return true;
 		}
@@ -48,12 +51,7 @@ const applyRef = (j: number, t: Cyclotomic, z: Cyclotomic) => z.conj().mulZeta(j
 
 // g preserves the tiling iff every seed vertex maps into (seed + Λ): g(v) ≡ some seed w (mod Λ).
 // This is THE decisive test — exact, congruence-closed (mod the translation lattice), no tolerance.
-function preserves(
-	T1: Cyclotomic,
-	T2: Cyclotomic,
-	seed: Cyclotomic[],
-	g: (z: Cyclotomic) => Cyclotomic,
-): boolean {
+function preserves(T1: Cyclotomic, T2: Cyclotomic, seed: Cyclotomic[], g: (z: Cyclotomic) => Cyclotomic): boolean {
 	for (const v of seed) {
 		const gv = g(v);
 		if (!seed.some((w) => inLattice(T1, T2, gv.sub(w)))) return false;
@@ -102,12 +100,8 @@ function rotations(T1: Cyclotomic, T2: Cyclotomic, seed: Cyclotomic[]): Detected
 	}
 	return out;
 }
-export const _rotationsForTest = (
-	_ring: CyclotomicRing,
-	T1: Cyclotomic,
-	T2: Cyclotomic,
-	seed: Cyclotomic[],
-) => rotations(T1, T2, seed);
+export const _rotationsForTest = (_ring: CyclotomicRing, T1: Cyclotomic, T2: Cyclotomic, seed: Cyclotomic[]) =>
+	rotations(T1, T2, seed);
 
 const CENTER_TOL = 0.02; // frac-coordinate dedup tolerance (spec §8.5)
 
@@ -132,12 +126,7 @@ function fracInCell(p: Vec2, r1: Vec2, r2: Vec2): { fa: number; fb: number } {
 // detected order-n rotation z↦ωz+t, composing with every lattice translation T_λ yields a rotation of
 // the same order about (t+λ)/(1−ω); enumerating λ over a small Λ window and reducing mod Λ recovers all
 // center orbits of that order (Λ/(1−ω) has index |1−ω|² over Λ, e.g. 2 four-fold orbits for a square).
-function rotationCenters(
-	ring: CyclotomicRing,
-	r1: Vec2,
-	r2: Vec2,
-	rots: DetectedRotation[],
-): Center[] {
+function rotationCenters(ring: CyclotomicRing, r1: Vec2, r2: Vec2, rots: DetectedRotation[]): Center[] {
 	const K = Math.round(1 / CENTER_TOL);
 	const byKey = new Map<string, Center>();
 	for (const rot of rots) {
@@ -166,12 +155,7 @@ function rotationCenters(
 // Λ-translates. Each translate is its OWN line: it is a MIRROR iff τ = ω·t̄ + t = 0 exactly, else a
 // GLIDE (g² = translation by τ ≠ 0). This exact τ test replaces the prototype's float on-line-period
 // trick and cannot mislabel a centered-lattice glide as a mirror (spec §8.1/§8.2).
-function reflections(
-	ring: CyclotomicRing,
-	T1: Cyclotomic,
-	T2: Cyclotomic,
-	seed: Cyclotomic[],
-): Axis[] {
+function reflections(ring: CyclotomicRing, T1: Cyclotomic, T2: Cyclotomic, seed: Cyclotomic[]): Axis[] {
 	type Line = { j: number; offKey: string; kind: "mirror" | "glide"; p: Vec2; d: Vec2 };
 	const lines: Line[] = [];
 	const seen = new Set<string>();
@@ -188,7 +172,8 @@ function reflections(
 		}
 		if (reps.length === 0) continue;
 		const phi = (j * Math.PI) / 24; // axis angle
-		const cphi = Math.cos(phi), sphi = Math.sin(phi);
+		const cphi = Math.cos(phi),
+			sphi = Math.sin(phi);
 		const dir = { x: cphi, y: sphi };
 		const nrm = { x: -sphi, y: cphi };
 		for (const t0 of reps) {
@@ -241,8 +226,10 @@ function isOblique(ring: CyclotomicRing, u: Cyclotomic, v: Cyclotomic): boolean 
 function classifyLattice(ring: CyclotomicRing, u: Cyclotomic, v: Cyclotomic): LatticeShape {
 	if (isOblique(ring, u, v)) return "oblique";
 	const [ru, rv] = gaussReduceExact(u, v);
-	const a = ru.toVector(), b = rv.toVector();
-	const lu = Math.hypot(a.x, a.y), lv = Math.hypot(b.x, b.y);
+	const a = ru.toVector(),
+		b = rv.toVector();
+	const lu = Math.hypot(a.x, a.y),
+		lv = Math.hypot(b.x, b.y);
 	const ang = (Math.acos((a.x * b.x + a.y * b.y) / (lu * lv)) * 180) / Math.PI;
 	const eqLen = Math.abs(lu - lv) < 1e-6;
 	const a90 = Math.abs(ang - 90) < 1e-6;
@@ -255,15 +242,30 @@ function classifyLattice(ring: CyclotomicRing, u: Cyclotomic, v: Cyclotomic): La
 }
 
 const POINT_GROUP_ORDER: Record<WallpaperGroup, number> = {
-	p1: 1, p2: 2, pm: 2, pg: 2, cm: 2, pmm: 4, pmg: 4, pgg: 4, cmm: 4,
-	p4: 4, p4m: 8, p4g: 8, p3: 3, p3m1: 6, p31m: 6, p6: 6, p6m: 12,
+	p1: 1,
+	p2: 2,
+	pm: 2,
+	pg: 2,
+	cm: 2,
+	pmm: 4,
+	pmg: 4,
+	pgg: 4,
+	cmm: 4,
+	p4: 4,
+	p4m: 8,
+	p4g: 8,
+	p3: 3,
+	p3m1: 6,
+	p31m: 6,
+	p6: 6,
+	p6m: 12,
 };
 
 function mirrorAngleCount(axes: Axis[]): number {
 	const s = new Set<number>();
 	for (const a of axes) {
 		if (a.kind !== "mirror") continue;
-		const deg = (((Math.atan2(a.d.y, a.d.x) * 180) / Math.PI) % 180 + 180) % 180;
+		const deg = ((((Math.atan2(a.d.y, a.d.x) * 180) / Math.PI) % 180) + 180) % 180;
 		s.add(Math.round(deg));
 	}
 	return s.size;
@@ -277,12 +279,7 @@ function mirrorAngleCount(axes: Axis[]): number {
 // h(z)=ζ^m·z̄ + s has τ = ζ^m·s̄ + s = 0; c lies on its axis iff h(c)=c, and clearing the D·conj(D)
 // denominator gives ζ^m·num̄·D + s·D·conj(D) = num·conj(D) — a pure equality, no division/inversion/
 // tolerance. Only consulted for nMax∈{3,4}; returns false otherwise (identifyGroup ignores it there).
-function allTopCentersOnMirrorExact(
-	ring: CyclotomicRing,
-	T1: Cyclotomic,
-	T2: Cyclotomic,
-	seed: Cyclotomic[],
-): boolean {
+function allTopCentersOnMirrorExact(ring: CyclotomicRing, T1: Cyclotomic, T2: Cyclotomic, seed: Cyclotomic[]): boolean {
 	const rots = rotations(T1, T2, seed);
 	if (rots.length === 0) return false;
 	const nMax = Math.max(...rots.map((r) => r.order));
@@ -302,7 +299,8 @@ function allTopCentersOnMirrorExact(
 
 	// (2) all distinct top-order centre classes as numerators num = t + λ (λ over a small Λ window),
 	//     deduped by the finer sublattice D·Λ (Λ/(D·Λ) has index |D|² — e.g. 2 four-fold centres/cell).
-	const DT1 = D.mul(T1), DT2 = D.mul(T2);
+	const DT1 = D.mul(T1),
+		DT2 = D.mul(T2);
 	const centerNums: Cyclotomic[] = [];
 	for (const t of repsT) {
 		for (let a = -2; a <= 2; a++) {
@@ -331,7 +329,8 @@ function allTopCentersOnMirrorExact(
 	// axis (glides have none). c fixed by (j, s0+λ) ⟺ λ = c − ζ^j·c̄ − s0 ∈ Λ; clearing the D·conj(D)
 	// denominator, (conj(D)·num − ζ^j·D·num̄ − s0·D·conj(D)) ∈ (D·conj(D))·Λ. Pure ℤ[ζ₂₄], no division.
 	const DDc = D.mul(Dc);
-	const DDcT1 = DDc.mul(T1), DDcT2 = DDc.mul(T2);
+	const DDcT1 = DDc.mul(T1),
+		DDcT2 = DDc.mul(T2);
 	return centerNums.every((num) => {
 		return refls.some(({ j, s0 }) => {
 			// conj(D)·num − ζ^j·D·num̄ − s0·D·conj(D)
@@ -379,7 +378,8 @@ function identifyGroup(
 function polyArea(pts: Vec2[]): number {
 	let a = 0;
 	for (let i = 0; i < pts.length; i++) {
-		const p = pts[i], q = pts[(i + 1) % pts.length];
+		const p = pts[i],
+			q = pts[(i + 1) % pts.length];
 		a += p.x * q.y - q.x * p.y;
 	}
 	return Math.abs(a) / 2;
@@ -407,7 +407,8 @@ function clipHalfPlane(poly: Vec2[], linePt: Vec2, normal: Vec2): Vec2[] {
 	const out: Vec2[] = [];
 	const n = poly.length;
 	for (let i = 0; i < n; i++) {
-		const a = poly[i], b = poly[(i + 1) % n];
+		const a = poly[i],
+			b = poly[(i + 1) % n];
 		const da = (a.x - linePt.x) * normal.x + (a.y - linePt.y) * normal.y;
 		const db = (b.x - linePt.x) * normal.x + (b.y - linePt.y) * normal.y;
 		if (da >= -1e-9) out.push(a);
@@ -427,7 +428,13 @@ const scaleAdd = (o: Vec2, u: Vec2, s: number, v?: Vec2, s2 = 0): Vec2 => ({
 // Correct-area fallback FD: a parallelogram that is 1/|G| of the cell (a valid fundamental domain for
 // any group; used when the mirror chamber can't be cut). Factor split a·b = |G|.
 const FRAC: Record<number, [number, number]> = {
-	1: [1, 1], 2: [2, 1], 3: [3, 1], 4: [2, 2], 6: [3, 2], 8: [4, 2], 12: [4, 3],
+	1: [1, 1],
+	2: [2, 1],
+	3: [3, 1],
+	4: [2, 2],
+	6: [3, 2],
+	8: [4, 2],
+	12: [4, 3],
 };
 function fractionParallelogram(c0: Vec2, r1: Vec2, r2: Vec2, order: number): Vec2[] {
 	const [a, b] = FRAC[order] ?? [1, 1];
@@ -507,10 +514,13 @@ const isoApply = (e: Iso, p: Vec2): Vec2 => ({
 	x: e.m[0] * p.x + e.m[1] * p.y + e.t.x,
 	y: e.m[2] * p.x + e.m[3] * p.y + e.t.y,
 });
-const isoCompose = (a: Iso, b: Iso): Iso => ({ // a ∘ b
+const isoCompose = (a: Iso, b: Iso): Iso => ({
+	// a ∘ b
 	m: [
-		a.m[0] * b.m[0] + a.m[1] * b.m[2], a.m[0] * b.m[1] + a.m[1] * b.m[3],
-		a.m[2] * b.m[0] + a.m[3] * b.m[2], a.m[2] * b.m[1] + a.m[3] * b.m[3],
+		a.m[0] * b.m[0] + a.m[1] * b.m[2],
+		a.m[0] * b.m[1] + a.m[1] * b.m[3],
+		a.m[2] * b.m[0] + a.m[3] * b.m[2],
+		a.m[2] * b.m[1] + a.m[3] * b.m[3],
 	],
 	t: isoApply(a, b.t),
 });
@@ -559,8 +569,10 @@ function closeCosets(gens: Iso[], c1: Vec2, c2: Vec2, cap: number): Iso[] {
 	};
 	const key = (e: Iso) =>
 		e.m.map((v) => (Math.abs(v) < 1e-9 ? 0 : v).toFixed(4)).join(",") +
-		"|" + wrap((e.t.x * c2.y - e.t.y * c2.x) / det).toFixed(4) +
-		"," + wrap((-e.t.x * c1.y + e.t.y * c1.x) / det).toFixed(4);
+		"|" +
+		wrap((e.t.x * c2.y - e.t.y * c2.x) / det).toFixed(4) +
+		"," +
+		wrap((-e.t.x * c1.y + e.t.y * c1.x) / det).toFixed(4);
 	// Keep the representative's translation in the home cell. A coset can be discovered through an axis
 	// that sits a dozen cells out (`reflections` walks a ±5 window from a seed vertex), and an element
 	// carrying that offset maps the fundamental domain miles away — far enough that the retiling window
@@ -598,8 +610,9 @@ function groupCosets(centers: Center[], axes: Axis[], c1: Vec2, c2: Vec2, order:
 function pointInPolygon(p: Vec2, poly: Vec2[]): boolean {
 	let inside = false;
 	for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-		const a = poly[i], b = poly[j];
-		if ((a.y > p.y) !== (b.y > p.y) && p.x < ((b.x - a.x) * (p.y - a.y)) / (b.y - a.y) + a.x) inside = !inside;
+		const a = poly[i],
+			b = poly[j];
+		if (a.y > p.y !== b.y > p.y && p.x < ((b.x - a.x) * (p.y - a.y)) / (b.y - a.y) + a.x) inside = !inside;
 	}
 	return inside;
 }
@@ -616,7 +629,8 @@ function isChamber(face: Vec2[], cosets: Iso[], c1: Vec2, c2: Vec2): boolean {
 	// Does SOME lattice translate of q land in `face`? Centred on the translate nearest the face: the
 	// coset representative can come from an axis many cells out, so a fixed window around q would miss it.
 	const lands = (q: Vec2): boolean => {
-		const dx = cx - q.x, dy = cy - q.y;
+		const dx = cx - q.x,
+			dy = cy - q.y;
 		const m0 = Math.round((dx * c2.y - dy * c2.x) / det);
 		const n0 = Math.round((-dx * c1.y + dy * c1.x) / det);
 		for (let m = m0 - 1; m <= m0 + 1; m++) {
@@ -658,7 +672,8 @@ function perpMirrorFD(mirrors: Axis[], r1: Vec2, r2: Vec2, target: number): { fd
 				}
 			}
 			if (!p0) continue;
-			const P1 = onLinePeriod(dirs[i].d, r1, r2), P2 = onLinePeriod(dirs[j].d, r1, r2);
+			const P1 = onLinePeriod(dirs[i].d, r1, r2),
+				P2 = onLinePeriod(dirs[j].d, r1, r2);
 			if (!Number.isFinite(P1) || !Number.isFinite(P2)) continue;
 			const A = { x: p0.x + 0.5 * P1 * dirs[i].d.x, y: p0.y + 0.5 * P1 * dirs[i].d.y };
 			const B = { x: p0.x + 0.5 * P2 * dirs[j].d.x, y: p0.y + 0.5 * P2 * dirs[j].d.y };
@@ -668,7 +683,8 @@ function perpMirrorFD(mirrors: Axis[], r1: Vec2, r2: Vec2, target: number): { fd
 		}
 	}
 	if (!best) return null;
-	if (Math.abs(best.rectArea - target) < 0.02 * target) return { fd: [best.p0, best.A, best.C, best.B], anchor: best.p0 }; // pmm rectangle
+	if (Math.abs(best.rectArea - target) < 0.02 * target)
+		return { fd: [best.p0, best.A, best.C, best.B], anchor: best.p0 }; // pmm rectangle
 	if (Math.abs(best.rectArea - 2 * target) < 0.04 * target) return { fd: [best.p0, best.A, best.B], anchor: best.p0 }; // cmm triangle
 	return null;
 }
@@ -681,7 +697,7 @@ function completeMirrors(mirrors: Axis[], r1: Vec2, r2: Vec2): Axis[] {
 	const R = 2.6 * (Math.hypot(r1.x, r1.y) + Math.hypot(r2.x, r2.y));
 	const groups = new Map<number, { d: Vec2; offs: number[] }>();
 	for (const m of mirrors) {
-		const jIdx = Math.round(((((Math.atan2(m.d.y, m.d.x) * 180) / Math.PI) % 180 + 180) % 180) / 7.5) % 24;
+		const jIdx = Math.round((((((Math.atan2(m.d.y, m.d.x) * 180) / Math.PI) % 180) + 180) % 180) / 7.5) % 24;
 		const off = m.p.x * -m.d.y + m.p.y * m.d.x; // signed perpendicular offset from origin
 		const g = groups.get(jIdx) ?? { d: m.d, offs: [] };
 		g.offs.push(off);
@@ -715,7 +731,8 @@ const segOnMirror = (p: Vec2, q: Vec2, mirrors: Axis[], eps: number): boolean =>
 // strictly on both sides.
 function noMirrorThroughInterior(tri: Vec2[], mirrors: Axis[], eps: number): boolean {
 	for (const m of mirrors) {
-		let pos = 0, neg = 0;
+		let pos = 0,
+			neg = 0;
 		for (const v of tri) {
 			const s = (v.x - m.p.x) * -m.d.y + (v.y - m.p.y) * m.d.x;
 			if (s > eps) pos++;
@@ -746,9 +763,11 @@ function noCenterInsideMirrorEdge(
 		}
 	}
 	for (let i = 0; i < 3; i++) {
-		const P = tri[i], Q = tri[(i + 1) % 3];
+		const P = tri[i],
+			Q = tri[(i + 1) % 3];
 		if (!segOnMirror(P, Q, mirrors, eps)) continue; // only mirror edges must be bare
-		const ex = Q.x - P.x, ey = Q.y - P.y;
+		const ex = Q.x - P.x,
+			ey = Q.y - P.y;
 		const len2 = ex * ex + ey * ey;
 		if (len2 < 1e-12) continue;
 		for (const z of pts) {
@@ -788,7 +807,8 @@ function reflectionTriangle(
 	cand.sort((p, q) => Math.hypot(p.x - c0.x, p.y - c0.y) - Math.hypot(q.x - c0.x, q.y - c0.y));
 	for (let i = 0; i < cand.length; i++) {
 		for (let j = i + 1; j < cand.length; j++) {
-			const A = cand[i], B = cand[j];
+			const A = cand[i],
+				B = cand[j];
 			if (Math.abs(triArea(c0, A, B) - target) > 0.02 * Math.max(1e-9, target)) continue;
 			if (!segOnMirror(c0, A, mirrors, eps) || !segOnMirror(c0, B, mirrors, eps)) continue; // legs on mirrors
 			if (!noMirrorThroughInterior([c0, A, B], mirrors, eps)) continue;
@@ -898,8 +918,10 @@ function buildFD(
 function wignerSeitzCell(c1: Vec2, c2: Vec2, anchor: Vec2): Vec2[] {
 	const R = 4 * (Math.hypot(c1.x, c1.y) + Math.hypot(c2.x, c2.y));
 	let poly: Vec2[] = [
-		{ x: anchor.x - R, y: anchor.y - R }, { x: anchor.x + R, y: anchor.y - R },
-		{ x: anchor.x + R, y: anchor.y + R }, { x: anchor.x - R, y: anchor.y + R },
+		{ x: anchor.x - R, y: anchor.y - R },
+		{ x: anchor.x + R, y: anchor.y - R },
+		{ x: anchor.x + R, y: anchor.y + R },
+		{ x: anchor.x - R, y: anchor.y + R },
 	];
 	for (let i = -2; i <= 2; i++)
 		for (let j = -2; j <= 2; j++) {
@@ -916,15 +938,23 @@ function wignerSeitzCell(c1: Vec2, c2: Vec2, anchor: Vec2): Vec2[] {
 function rhombusCellCentered(axes: Axis[], c1: Vec2, c2: Vec2, anchor: Vec2): Vec2[] | null {
 	const mirror = axes.find((a) => a.kind === "mirror");
 	if (!mirror) return null;
-	const dA = mirror.d, dB = { x: -mirror.d.y, y: mirror.d.x };
-	const PA = onLinePeriod(dA, c1, c2), PB = onLinePeriod(dB, c1, c2);
+	const dA = mirror.d,
+		dB = { x: -mirror.d.y, y: mirror.d.x };
+	const PA = onLinePeriod(dA, c1, c2),
+		PB = onLinePeriod(dB, c1, c2);
 	if (!Number.isFinite(PA) || !Number.isFinite(PB)) return null;
 	const r1 = { x: (dA.x * PA + dB.x * PB) / 2, y: (dA.y * PA + dB.y * PB) / 2 };
 	const r2 = { x: (dA.x * PA - dB.x * PB) / 2, y: (dA.y * PA - dB.y * PB) / 2 };
-	const det0 = Math.abs(c1.x * c2.y - c1.y * c2.x), det1 = Math.abs(r1.x * r2.y - r1.y * r2.x);
+	const det0 = Math.abs(c1.x * c2.y - c1.y * c2.x),
+		det1 = Math.abs(r1.x * r2.y - r1.y * r2.x);
 	if (det1 < 1e-9 || Math.abs(det0 - det1) > 1e-6 * det0) return null;
 	const o = { x: anchor.x - (r1.x + r2.x) / 2, y: anchor.y - (r1.y + r2.y) / 2 };
-	return [o, { x: o.x + r1.x, y: o.y + r1.y }, { x: o.x + r1.x + r2.x, y: o.y + r1.y + r2.y }, { x: o.x + r2.x, y: o.y + r2.y }];
+	return [
+		o,
+		{ x: o.x + r1.x, y: o.y + r1.y },
+		{ x: o.x + r1.x + r2.x, y: o.y + r1.y + r2.y },
+		{ x: o.x + r2.x, y: o.y + r2.y },
+	];
 }
 
 // Distinct mirror-line directions (deg mod 180) whose line passes through `z`.
@@ -945,9 +975,12 @@ function cutByLines(cell: Vec2[], anchor: Vec2, dirs: Vec2[]): Vec2[][] {
 		const n = { x: -d.y, y: d.x };
 		const next: Vec2[][] = [];
 		for (const f of faces) {
-			const pos = clipHalfPlane(f, anchor, n), neg = clipHalfPlane(f, anchor, { x: -n.x, y: -n.y });
-			if (polyArea(pos) > 1e-7 && polyArea(neg) > 1e-7) { next.push(pos); next.push(neg); }
-			else next.push(f);
+			const pos = clipHalfPlane(f, anchor, n),
+				neg = clipHalfPlane(f, anchor, { x: -n.x, y: -n.y });
+			if (polyArea(pos) > 1e-7 && polyArea(neg) > 1e-7) {
+				next.push(pos);
+				next.push(neg);
+			} else next.push(f);
 		}
 		faces = next;
 	}
@@ -959,7 +992,8 @@ function cutByLines(cell: Vec2[], anchor: Vec2, dirs: Vec2[]): Vec2[][] {
 function cutIntoWedges(cell: Vec2[], anchor: Vec2, order: number, base: number): Vec2[][] {
 	const faces: Vec2[][] = [];
 	for (let k = 0; k < order; k++) {
-		const a0 = base + (k * 2 * Math.PI) / order, a1 = base + ((k + 1) * 2 * Math.PI) / order;
+		const a0 = base + (k * 2 * Math.PI) / order,
+			a1 = base + ((k + 1) * 2 * Math.PI) / order;
 		let f = clipHalfPlane(cell, anchor, { x: -Math.sin(a0), y: Math.cos(a0) }); // CCW of ray a0
 		f = clipHalfPlane(f, anchor, { x: Math.sin(a1), y: -Math.cos(a1) }); // CW of ray a1
 		faces.push(f);
@@ -972,8 +1006,10 @@ function onCenter(p: Vec2, centers: Center[], c1: Vec2, c2: Vec2): boolean {
 	const det = c1.x * c2.y - c1.y * c2.x;
 	if (Math.abs(det) < 1e-12) return false;
 	return centers.some((c) => {
-		const dx = p.x - c.z.x, dy = p.y - c.z.y;
-		const a = (dx * c2.y - dy * c2.x) / det, b = (-dx * c1.y + dy * c1.x) / det;
+		const dx = p.x - c.z.x,
+			dy = p.y - c.z.y;
+		const a = (dx * c2.y - dy * c2.x) / det,
+			b = (-dx * c1.y + dy * c1.x) / det;
 		return Math.abs(a - Math.round(a)) < 1e-6 && Math.abs(b - Math.round(b)) < 1e-6;
 	});
 }
@@ -1027,11 +1063,16 @@ function cornerParallelogram(anchor: Vec2, c1: Vec2, c2: Vec2): Vec2[] {
 // Clip `poly` to the convex parallelogram `cell` (Sutherland–Hodgman against each edge, inward normal).
 function clipToConvexCell(poly: Vec2[], cell: Vec2[]): Vec2[] {
 	let signed = 0;
-	for (let i = 0; i < cell.length; i++) { const a = cell[i], b = cell[(i + 1) % cell.length]; signed += a.x * b.y - b.x * a.y; }
+	for (let i = 0; i < cell.length; i++) {
+		const a = cell[i],
+			b = cell[(i + 1) % cell.length];
+		signed += a.x * b.y - b.x * a.y;
+	}
 	const cc = signed >= 0 ? cell : [...cell].reverse(); // ensure CCW so inward normal is +90° of the edge
 	let cur = poly;
 	for (let i = 0; i < cc.length && cur.length; i++) {
-		const a = cc[i], b = cc[(i + 1) % cc.length];
+		const a = cc[i],
+			b = cc[(i + 1) % cc.length];
 		cur = clipHalfPlane(cur, a, { x: -(b.y - a.y), y: b.x - a.x });
 	}
 	return cur;
@@ -1046,7 +1087,10 @@ function retileIntoCell(faces: Vec2[][], cell: Vec2[], c1: Vec2, c2: Vec2): Vec2
 		for (let m = -2; m <= 2; m++)
 			for (let n = -2; n <= 2; n++) {
 				const t = { x: m * c1.x + n * c2.x, y: m * c1.y + n * c2.y };
-				const clipped = clipToConvexCell(f.map((p) => ({ x: p.x + t.x, y: p.y + t.y })), cell);
+				const clipped = clipToConvexCell(
+					f.map((p) => ({ x: p.x + t.x, y: p.y + t.y })),
+					cell,
+				);
 				if (polyArea(clipped) > 1e-7) pieces.push(clipped);
 			}
 	return pieces;
@@ -1083,7 +1127,10 @@ function buildSubdivision(
 	let bestKey = -1;
 	for (const c of centers) {
 		const k = c.order * 100 + mirrorAnglesThrough(axes, c.z).length;
-		if (k > bestKey) { bestKey = k; anchor = c.z; }
+		if (k > bestKey) {
+			bestKey = k;
+			anchor = c.z;
+		}
 	}
 	// The rotation-free groups (p1, pm, pg, cm) have no centre to anchor on, and the origin need not
 	// lie on an axis — which left cm's rhombus split by a horizontal line through the origin instead of
@@ -1095,7 +1142,10 @@ function buildSubdivision(
 	const cellArea = Math.abs(c1.x * c2.y - c1.y * c2.x);
 	const target = cellArea / Math.max(1, order);
 	const cosets = groupCosets(centers, axes, c1, c2, order);
-	const finish = (cellPolygon: Vec2[], faces: Vec2[][]): { anchor: Vec2; cellPolygon: Vec2[]; faces: Vec2[][]; ok: boolean } => {
+	const finish = (
+		cellPolygon: Vec2[],
+		faces: Vec2[][],
+	): { anchor: Vec2; cellPolygon: Vec2[]; faces: Vec2[][]; ok: boolean } => {
 		// emphasise a WHOLE chamber (area ≈ target) by ordering it first
 		faces.sort((a, b) => Math.abs(polyArea(a) - target) - Math.abs(polyArea(b) - target));
 		const totArea = faces.reduce((s, f) => s + polyArea(f), 0);
@@ -1115,7 +1165,10 @@ function buildSubdivision(
 		if (rhombus) {
 			const md = mirrorAnglesThrough(axes, anchor);
 			const dirs = md.map((deg) => ({ x: Math.cos((deg * Math.PI) / 180), y: Math.sin((deg * Math.PI) / 180) }));
-			const faces = 2 * md.length === order ? cutByLines(rhombus, anchor, dirs) : cutIntoWedges(rhombus, anchor, order, dirs.length ? Math.atan2(dirs[0].y, dirs[0].x) : 0);
+			const faces =
+				2 * md.length === order
+					? cutByLines(rhombus, anchor, dirs)
+					: cutIntoWedges(rhombus, anchor, order, dirs.length ? Math.atan2(dirs[0].y, dirs[0].x) : 0);
 			return finish(rhombus, faces);
 		}
 	}
@@ -1139,7 +1192,8 @@ function buildSubdivision(
 		if (corner) {
 			const centreAnchor = anchor;
 			anchor = corner;
-			const h1 = { x: c1.x / 2, y: c1.y / 2 }, h2 = { x: c2.x / 2, y: c2.y / 2 };
+			const h1 = { x: c1.x / 2, y: c1.y / 2 },
+				h2 = { x: c2.x / 2, y: c2.y / 2 };
 			const faces: Vec2[][] = [];
 			for (let i = 0; i < 2; i++) {
 				for (let j = 0; j < 2; j++) {
@@ -1165,7 +1219,9 @@ function buildSubdivision(
 		const dir = axis ? axis.d : c1;
 		const centre = { x: anchor.x + 0.5 * (c1.x + c2.x), y: anchor.y + 0.5 * (c1.y + c2.y) };
 		const nrm = { x: -dir.y, y: dir.x };
-		const faces = [clipHalfPlane(cell, centre, nrm), clipHalfPlane(cell, centre, { x: -nrm.x, y: -nrm.y })].filter((f) => polyArea(f) > 1e-7);
+		const faces = [clipHalfPlane(cell, centre, nrm), clipHalfPlane(cell, centre, { x: -nrm.x, y: -nrm.y })].filter(
+			(f) => polyArea(f) > 1e-7,
+		);
 		return finish(cell, faces);
 	}
 
@@ -1187,7 +1243,8 @@ function buildSubdivision(
 	if (cosets) {
 		const det = c1.x * c2.y - c1.y * c2.x;
 		const latticeCoords = (p: Vec2, o: Vec2) => {
-			const dx = p.x - o.x, dy = p.y - o.y;
+			const dx = p.x - o.x,
+				dy = p.y - o.y;
 			return { a: (dx * c2.y - dy * c2.x) / det, b: (-dx * c1.y + dy * c1.x) / det };
 		};
 		// The corner of the primitive cell that holds `chamber` whole: its own lattice-coordinate corner.
@@ -1196,10 +1253,12 @@ function buildSubdivision(
 		// copies coming from the group and not from a cut aligned to the cell edges. Epsilon outward so a
 		// chamber spanning exactly one period (p3's rhombus does) counts as inside along both edges.
 		const shellCorner = (chamber: { fd: Vec2[]; anchor: Vec2 }): Vec2 => {
-			let a0 = Infinity, b0 = Infinity;
+			let a0 = Infinity,
+				b0 = Infinity;
 			for (const p of chamber.fd) {
 				const { a, b } = latticeCoords(p, chamber.anchor);
-				a0 = Math.min(a0, a); b0 = Math.min(b0, b);
+				a0 = Math.min(a0, a);
+				b0 = Math.min(b0, b);
 			}
 			return scaleAdd(chamber.anchor, c1, a0 - 1e-9, c2, b0 - 1e-9);
 		};
@@ -1210,8 +1269,8 @@ function buildSubdivision(
 		const cands = wedges
 			.filter((w) => Math.abs(polyArea(w) - target) < 1e-6 * target && isChamber(w, cosets, c1, c2))
 			.map((w) => ({ fd: w, anchor }))
-			.sort((x, y) =>
-				Number(onCenter(shellCorner(y), centers, c1, c2)) - Number(onCenter(shellCorner(x), centers, c1, c2)),
+			.sort(
+				(x, y) => Number(onCenter(shellCorner(y), centers, c1, c2)) - Number(onCenter(shellCorner(x), centers, c1, c2)),
 			);
 		cands.push(buildFD(group, order, centers, axes, c1, c2));
 
@@ -1251,7 +1310,14 @@ export function analyzeSymmetry(
 	// tolerance) — the group label is a stored characterization attribute, held to the same exactness
 	// standard as k and lattice shape. The float centres/axes above remain, for RENDERING only.
 	const allTopOnMirror = allTopCentersOnMirrorExact(ring, T1, T2, seed);
-	const group = identifyGroup(nMax, hasMirror, hasGlide, mirrorAngleCount(axes), allTopOnMirror, latticeShape === "rhombic");
+	const group = identifyGroup(
+		nMax,
+		hasMirror,
+		hasGlide,
+		mirrorAngleCount(axes),
+		allTopOnMirror,
+		latticeShape === "rhombic",
+	);
 	const pointGroupOrder = POINT_GROUP_ORDER[group];
 	const sub = buildSubdivision(group, pointGroupOrder, centers, axes, c1, c2);
 	// The cell (cut into `order` FD copies) tiles exactly for every certified group; on the rare self-check

@@ -13,10 +13,19 @@ const RESULTS = path.join(process.cwd(), "experiments", "results");
 const CERT = { 1: "6f9ca9cf2d16c75f", 2: "f3e2e0517191362c", 3: "11ee1b1d582811d1" } as Record<number, string>;
 
 type Row = {
-	k: number; c: string; c2: string;
-	poolFull?: number; poolKept?: number; poolPct?: number;
-	pairs?: string; distinct?: number; fills?: number;
-	digest?: string; count?: number; bijection?: string; wallSec?: number;
+	k: number;
+	c: string;
+	c2: string;
+	poolFull?: number;
+	poolKept?: number;
+	poolPct?: number;
+	pairs?: string;
+	distinct?: number;
+	fills?: number;
+	digest?: string;
+	count?: number;
+	bijection?: string;
+	wallSec?: number;
 };
 
 const num = (s: string) => Number(s.replace(/,/g, ""));
@@ -34,17 +43,32 @@ function sections(text: string): { k: number; c: string; c2: string; body: strin
 function parseSection(k: number, c: string, c2: string, body: string): Row {
 	const r: Row = { k, c, c2 };
 	let pruned = body.match(/POOL PRUNED:\s*([\d,]+)\s*→\s*([\d,]+)\s*vectors\s*\(([\d.]+)% kept/);
-	if (pruned) { r.poolFull = num(pruned[1]); r.poolKept = num(pruned[2]); r.poolPct = Number(pruned[3]); }
-	else {
+	if (pruned) {
+		r.poolFull = num(pruned[1]);
+		r.poolKept = num(pruned[2]);
+		r.poolPct = Number(pruned[3]);
+	} else {
 		const full = body.match(/W\(\d+\) enumerated:\s*([\d,]+)\s*nonzero/);
-		if (full) { r.poolFull = num(full[1]); r.poolKept = num(full[1]); r.poolPct = 100; }
+		if (full) {
+			r.poolFull = num(full[1]);
+			r.poolKept = num(full[1]);
+			r.poolPct = 100;
+		}
 	}
-	const pair = body.match(/PAIR stage (?:done|⚑ ABORTED)[^\n]*examined\s*(\S+)\s*pairs[^\n]*DISTINCT lattices\s*([\d,]+)/);
-	if (pair) { r.pairs = pair[1]; r.distinct = num(pair[2]); }
+	const pair = body.match(
+		/PAIR stage (?:done|⚑ ABORTED)[^\n]*examined\s*(\S+)\s*pairs[^\n]*DISTINCT lattices\s*([\d,]+)/,
+	);
+	if (pair) {
+		r.pairs = pair[1];
+		r.distinct = num(pair[2]);
+	}
 	const fill = body.match(/FILL stage (?:done|⚑ ABORTED)[^\n]*?:\s*([\d,]+)\s*fills/);
 	if (fill) r.fills = num(fill[1]);
 	const dig = body.match(/COMPOSITION digest=([0-9a-f]+)\s*count=(\d+)/);
-	if (dig) { r.digest = dig[1]; r.count = Number(dig[2]); }
+	if (dig) {
+		r.digest = dig[1];
+		r.count = Number(dig[2]);
+	}
 	if (/BIJECTION PASSED/.test(body)) r.bijection = "PASS";
 	else if (/NOT a bijection/.test(body)) r.bijection = "FAIL";
 	// wall-clock: the driver stamps "finished in Xs/Xmin"
@@ -59,8 +83,9 @@ const rows: Row[] = [];
 for (const f of files) {
 	const text = fs.readFileSync(path.join(RESULTS, f), "utf8");
 	const secs = sections(text);
-	if (secs.length > 0) { for (const s of secs) rows.push(parseSection(s.k, s.c, s.c2, s.body)); }
-	else {
+	if (secs.length > 0) {
+		for (const s of secs) rows.push(parseSection(s.k, s.c, s.c2, s.body));
+	} else {
 		// baseline log (no ▂ markers) — one run; infer k + c=∞ from header
 		const km = text.match(/k=(\d+)\s+BASELINE|phase=k(\d+)/);
 		const k = km ? Number(km[1] ?? km[2]) : 0;
@@ -78,8 +103,10 @@ lines.push("| k | c | pool kept | pool % | distinct lattices | fills | digest | 
 lines.push("|---|---|-----------|--------|-------------------|-------|--------|-------|--------------|------|");
 for (const r of rows) {
 	const cl = CLABEL[r.c] ?? r.c;
-	const dmatch = r.digest ? (r.digest === CERT[r.k] ? "✓ MATCH" : "✗ CHANGED") : (r.k >= 2 ? "n/a (no fills)" : "—");
-	lines.push(`| ${r.k} | ${cl} | ${r.poolKept?.toLocaleString() ?? "—"} | ${r.poolPct?.toFixed(2) ?? "—"}% | ${r.distinct?.toLocaleString() ?? "—"} | ${r.fills?.toLocaleString() ?? "—"} | ${r.digest ?? "—"} | ${r.count ?? "—"} | ${dmatch} | ${r.wallSec ? (r.wallSec < 120 ? r.wallSec.toFixed(0) + "s" : (r.wallSec / 60).toFixed(1) + "min") : "—"} |`);
+	const dmatch = r.digest ? (r.digest === CERT[r.k] ? "✓ MATCH" : "✗ CHANGED") : r.k >= 2 ? "n/a (no fills)" : "—";
+	lines.push(
+		`| ${r.k} | ${cl} | ${r.poolKept?.toLocaleString() ?? "—"} | ${r.poolPct?.toFixed(2) ?? "—"}% | ${r.distinct?.toLocaleString() ?? "—"} | ${r.fills?.toLocaleString() ?? "—"} | ${r.digest ?? "—"} | ${r.count ?? "—"} | ${dmatch} | ${r.wallSec ? (r.wallSec < 120 ? r.wallSec.toFixed(0) + "s" : (r.wallSec / 60).toFixed(1) + "min") : "—"} |`,
+	);
 }
 // per-k reduction summary (kept% and distinct-reduction vs the ∞ row)
 lines.push("");
@@ -88,13 +115,17 @@ for (const k of [1, 2, 3]) {
 	const base = rows.find((r) => r.k === k && (r.c === "∞" || r.c === "inf"));
 	const kr = rows.filter((r) => r.k === k && r !== base);
 	if (!base?.distinct) continue;
-	lines.push(`\n**k=${k}** (baseline: pool ${base.poolKept?.toLocaleString()}, distinct ${base.distinct.toLocaleString()}${base.fills ? ", fills " + base.fills.toLocaleString() : ""})`);
+	lines.push(
+		`\n**k=${k}** (baseline: pool ${base.poolKept?.toLocaleString()}, distinct ${base.distinct.toLocaleString()}${base.fills ? ", fills " + base.fills.toLocaleString() : ""})`,
+	);
 	for (const r of kr) {
 		const cl = CLABEL[r.c] ?? r.c;
 		const poolRed = r.poolKept ? (base.poolKept! / r.poolKept).toFixed(2) : "—";
 		const distRed = r.distinct ? (base.distinct / r.distinct).toFixed(2) : "—";
 		const fillRed = r.fills && base.fills ? (base.fills / r.fills).toFixed(2) : "—";
-		lines.push(`- c=${cl}: pool ${poolRed}× → distinct ${distRed}× → fills ${fillRed}×  ${r.digest && r.digest !== CERT[k] ? "  ⚑ DIGEST CHANGED (tiling dropped)" : ""}`);
+		lines.push(
+			`- c=${cl}: pool ${poolRed}× → distinct ${distRed}× → fills ${fillRed}×  ${r.digest && r.digest !== CERT[k] ? "  ⚑ DIGEST CHANGED (tiling dropped)" : ""}`,
+		);
 	}
 }
 

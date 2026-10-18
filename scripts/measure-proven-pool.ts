@@ -34,9 +34,9 @@
  * Standalone: zero imports from lib/, zero pipeline integration, modifies no existing file.
  */
 
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import * as os from 'node:os';
+import * as fs from "node:fs";
+import * as path from "node:path";
+import * as os from "node:os";
 
 // ---------------------------------------------------------------------------------------------
 // Constants — k = 1
@@ -60,18 +60,18 @@ const SEEN_LIMIT = 1.5e8;
 // ---------------------------------------------------------------------------------------------
 // Logging — synchronous, mirrored to stdout
 // ---------------------------------------------------------------------------------------------
-const LOG_DIR = path.join(process.cwd(), 'experiments', 'results');
-const LOG_FILE = path.join(LOG_DIR, 'dg1-proven-pool-k1.log');
+const LOG_DIR = path.join(process.cwd(), "experiments", "results");
+const LOG_FILE = path.join(LOG_DIR, "dg1-proven-pool-k1.log");
 fs.mkdirSync(LOG_DIR, { recursive: true });
 
 function log(line: string): void {
-	fs.appendFileSync(LOG_FILE, line + '\n');
+	fs.appendFileSync(LOG_FILE, line + "\n");
 	console.log(line);
 }
 
-const fmtInt = (n: number): string => Math.round(n).toLocaleString('en-US');
+const fmtInt = (n: number): string => Math.round(n).toLocaleString("en-US");
 const fmtSci = (n: number): string => n.toExponential(2);
-const gb = (bytes: number): string => (bytes / 1024 ** 3).toFixed(2) + 'GB';
+const gb = (bytes: number): string => (bytes / 1024 ** 3).toFixed(2) + "GB";
 let peakRss = 0;
 const rssNow = (): number => {
 	const r = process.memoryUsage().rss;
@@ -80,12 +80,12 @@ const rssNow = (): number => {
 };
 
 function fmtDur(sec: number): string {
-	if (!isFinite(sec)) return 'inf';
-	if (sec < 120) return sec.toFixed(1) + 's';
-	if (sec < 7200) return (sec / 60).toFixed(1) + 'min';
-	if (sec < 48 * 3600) return (sec / 3600).toFixed(1) + 'h';
-	if (sec < 365 * 86400) return (sec / 86400).toFixed(1) + 'd';
-	return (sec / (365 * 86400)).toFixed(1) + 'y';
+	if (!isFinite(sec)) return "inf";
+	if (sec < 120) return sec.toFixed(1) + "s";
+	if (sec < 7200) return (sec / 60).toFixed(1) + "min";
+	if (sec < 48 * 3600) return (sec / 3600).toFixed(1) + "h";
+	if (sec < 365 * 86400) return (sec / 86400).toFixed(1) + "d";
+	return (sec / (365 * 86400)).toFixed(1) + "y";
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -143,7 +143,7 @@ function sanityChecks(): void {
 	// algebraic identity: 1 + zeta^8 = zeta^4
 	for (let i = 0; i < PHI; i++) {
 		const lhs = ZETA[0 * PHI + i] + ZETA[8 * PHI + i];
-		if (lhs !== ZETA[4 * PHI + i]) throw new Error('SANITY FAIL: 1 + zeta^8 != zeta^4');
+		if (lhs !== ZETA[4 * PHI + i]) throw new Error("SANITY FAIL: 1 + zeta^8 != zeta^4");
 	}
 }
 
@@ -212,7 +212,7 @@ class FrontierStore {
  *  d_t = ln(r_t) / ln(t/(t-1)) (polynomial model new(t) ~ c*t^d), then project new(j) for j > t. */
 function projectRemaining(
 	newPerLevel: number[],
-	lastLevel: number
+	lastLevel: number,
 ): { dHat: number; projNew: number[]; projTotal: number } {
 	const ds: number[] = [];
 	for (let t = lastLevel; t >= 2 && ds.length < 3; t--) {
@@ -248,30 +248,44 @@ function main(): void {
 	const t0 = Date.now();
 	const binomCap = binom(S + N, N); // C(47,24)
 
-	fs.writeFileSync(LOG_FILE, ''); // fresh log for this run
+	fs.writeFileSync(LOG_FILE, ""); // fresh log for this run
 	log(`# DG-1 proven-pool measurement — k=${K}, s=${S} (thm:weight / cor:box, correctness.tex:407-459)`);
-	log(`# date: ${new Date().toISOString()}   machine: ${os.platform()} ${os.arch()}, ${os.cpus().length} cores, ${(os.totalmem() / 1024 ** 3).toFixed(0)} GB RAM, node ${process.version}`);
-	log(`# basis: Z[zeta_24] = 8 int coords over 1,z,...,z^7; Phi_24(x) = x^8 - x^4 + 1 => z^8 = z^4 - 1; sanity zeta^12 = -1 PASSED, float cross-check 24/24 PASSED (<=1e-9)`);
-	log(`# bounds: a_max = 3(2+sqrt3) = ${A_MAX.toFixed(6)}; |det| <= 24k*a_max = ${DET_MAX.toFixed(4)}; |v| <= (2/sqrt3)*24k*a_max = ${V_BOUND.toFixed(4)} (NEVER binds at s=23: weight 23 => |w| <= 23)`);
-	log(`# |u| <= sqrt((2/sqrt3)*24k*a_max) = ${U_BOUND.toFixed(4)} — u-eligible subset REPORTED per level (cumulative, nonzero), float, NO pruning on it during BFS`);
-	log(`# pruning during BFS: NONE (no proven-sound prune applies at k=1; see header of scripts/measure-proven-pool.ts)`);
+	log(
+		`# date: ${new Date().toISOString()}   machine: ${os.platform()} ${os.arch()}, ${os.cpus().length} cores, ${(os.totalmem() / 1024 ** 3).toFixed(0)} GB RAM, node ${process.version}`,
+	);
+	log(
+		`# basis: Z[zeta_24] = 8 int coords over 1,z,...,z^7; Phi_24(x) = x^8 - x^4 + 1 => z^8 = z^4 - 1; sanity zeta^12 = -1 PASSED, float cross-check 24/24 PASSED (<=1e-9)`,
+	);
+	log(
+		`# bounds: a_max = 3(2+sqrt3) = ${A_MAX.toFixed(6)}; |det| <= 24k*a_max = ${DET_MAX.toFixed(4)}; |v| <= (2/sqrt3)*24k*a_max = ${V_BOUND.toFixed(4)} (NEVER binds at s=23: weight 23 => |w| <= 23)`,
+	);
+	log(
+		`# |u| <= sqrt((2/sqrt3)*24k*a_max) = ${U_BOUND.toFixed(4)} — u-eligible subset REPORTED per level (cumulative, nonzero), float, NO pruning on it during BFS`,
+	);
+	log(
+		`# pruning during BFS: NONE (no proven-sound prune applies at k=1; see header of scripts/measure-proven-pool.ts)`,
+	);
 	log(`# budgets (loud abort): RSS > 6 GiB | elapsed > 25 min | |seen| > 1.5e8`);
-	log(`# cor:box(iv) multiset cap C(${S + N},${N}) = ${binomCap.toLocaleString('en-US')} (~${Number(binomCap).toExponential(2)}) — an upper bound on |W(23)|, not the distinct count`);
+	log(
+		`# cor:box(iv) multiset cap C(${S + N},${N}) = ${binomCap.toLocaleString("en-US")} (~${Number(binomCap).toExponential(2)}) — an upper bound on |W(23)|, not the distinct count`,
+	);
 	log(`# seen-set: open-addressing, 2^28 slots * 8 B = ${gb(SLOTS * 8)} preallocated`);
 	log(`#`);
 
 	// Level 0: {0}
 	let frontier = new FrontierStore();
 	frontier.push(0, 0, 0, 0, 0, 0, 0, 0);
-	insert(128 << 24 | 128 << 16 | 128 << 8 | 128, 128 << 24 | 128 << 16 | 128 << 8 | 128); // packed zero
+	insert((128 << 24) | (128 << 16) | (128 << 8) | 128, (128 << 24) | (128 << 16) | (128 << 8) | 128); // packed zero
 	let cumulative = 1;
 	let uEligCum = 0; // 0 is excluded (a generator is nonzero; cor:box(iii) gives |u| >= 1)
 	const newPerLevel: number[] = [1]; // newPerLevel[t] = #{v : wt(v) = t}
 	const levelMs: number[] = [0];
-	log(`level 0: +1 distinct (the zero element), cumulative 1, u-eligible(<=17.6): 0, growth n/a, elapsed 0.0s, RSS ${gb(rssNow())}, ETA-to-23: n/a`);
+	log(
+		`level 0: +1 distinct (the zero element), cumulative 1, u-eligible(<=17.6): 0, growth n/a, elapsed 0.0s, RSS ${gb(rssNow())}, ETA-to-23: n/a`,
+	);
 
 	let aborted = false;
-	let abortReason = '';
+	let abortReason = "";
 	let lastCompletedLevel = 0;
 	let partialNewAtAbort = 0;
 	let abortLevel = -1;
@@ -293,19 +307,32 @@ function main(): void {
 			const entries = Math.min(CHUNK_ENTRIES, frontierTotal - ci * CHUNK_ENTRIES);
 			for (let e = 0; e < entries; e++) {
 				const o = e * PHI;
-				const c0 = chunk[o], c1 = chunk[o + 1], c2 = chunk[o + 2], c3 = chunk[o + 3];
-				const c4 = chunk[o + 4], c5 = chunk[o + 5], c6 = chunk[o + 6], c7 = chunk[o + 7];
+				const c0 = chunk[o],
+					c1 = chunk[o + 1],
+					c2 = chunk[o + 2],
+					c3 = chunk[o + 3];
+				const c4 = chunk[o + 4],
+					c5 = chunk[o + 5],
+					c6 = chunk[o + 6],
+					c7 = chunk[o + 7];
 				for (let j = 0; j < N; j++) {
 					const zb = j * PHI;
-					const d0 = c0 + ZETA[zb], d1 = c1 + ZETA[zb + 1], d2 = c2 + ZETA[zb + 2], d3 = c3 + ZETA[zb + 3];
-					const d4 = c4 + ZETA[zb + 4], d5 = c5 + ZETA[zb + 5], d6 = c6 + ZETA[zb + 6], d7 = c7 + ZETA[zb + 7];
+					const d0 = c0 + ZETA[zb],
+						d1 = c1 + ZETA[zb + 1],
+						d2 = c2 + ZETA[zb + 2],
+						d3 = c3 + ZETA[zb + 3];
+					const d4 = c4 + ZETA[zb + 4],
+						d5 = c5 + ZETA[zb + 5],
+						d6 = c6 + ZETA[zb + 6],
+						d7 = c7 + ZETA[zb + 7];
 					const hi = (((d0 + 128) << 24) | ((d1 + 128) << 16) | ((d2 + 128) << 8) | (d3 + 128)) >>> 0;
 					const lo = (((d4 + 128) << 24) | ((d5 + 128) << 16) | ((d6 + 128) << 8) | (d7 + 128)) >>> 0;
 					if (insert(hi, lo)) {
 						next.push(d0, d1, d2, d3, d4, d5, d6, d7);
 						newCount++;
 						// float length, REPORTING ONLY (u-eligibility); new values at t >= 1 are nonzero
-						const x = d0 + d1 * COS[1] + d2 * COS[2] + d3 * COS[3] + d4 * COS[4] + d5 * COS[5] + d6 * COS[6] + d7 * COS[7];
+						const x =
+							d0 + d1 * COS[1] + d2 * COS[2] + d3 * COS[3] + d4 * COS[4] + d5 * COS[5] + d6 * COS[6] + d7 * COS[7];
 						const y = d1 * SIN[1] + d2 * SIN[2] + d3 * SIN[3] + d4 * SIN[4] + d5 * SIN[5] + d6 * SIN[6] + d7 * SIN[7];
 						if (x * x + y * y <= U_BOUND2) uEligNew++;
 					}
@@ -316,19 +343,30 @@ function main(): void {
 					// budget checks (cheap, every ~4.2M attempts)
 					const elapsed = Date.now() - t0;
 					const rss = rssNow();
-					if (rss > RSS_LIMIT) { aborted = true; abortReason = `RSS ${gb(rss)} > 6 GiB`; }
-					else if (elapsed > TIME_LIMIT_MS) { aborted = true; abortReason = `elapsed ${fmtDur(elapsed / 1000)} > 25 min`; }
-					else if (seenCount > SEEN_LIMIT) { aborted = true; abortReason = `|seen| ${fmtInt(seenCount)} > 1.5e8`; }
+					if (rss > RSS_LIMIT) {
+						aborted = true;
+						abortReason = `RSS ${gb(rss)} > 6 GiB`;
+					} else if (elapsed > TIME_LIMIT_MS) {
+						aborted = true;
+						abortReason = `elapsed ${fmtDur(elapsed / 1000)} > 25 min`;
+					} else if (seenCount > SEEN_LIMIT) {
+						aborted = true;
+						abortReason = `|seen| ${fmtInt(seenCount)} > 1.5e8`;
+					}
 					if (aborted) {
 						abortLevel = t;
 						partialNewAtAbort = newCount;
 						lastCompletedLevel = t - 1;
-						log(`ABORT during level ${t} (${((processed / frontierTotal) * 100).toFixed(1)}% of frontier expanded): ${abortReason}`);
+						log(
+							`ABORT during level ${t} (${((processed / frontierTotal) * 100).toFixed(1)}% of frontier expanded): ${abortReason}`,
+						);
 						break levels;
 					}
 					if (Date.now() - lastProgressLog > 20_000) {
 						lastProgressLog = Date.now();
-						log(`  ... level ${t} in progress: ${((processed / frontierTotal) * 100).toFixed(1)}% of frontier, +${fmtInt(newCount)} new so far, |seen| ${fmtInt(seenCount)}, elapsed ${fmtDur(elapsed / 1000)}, RSS ${gb(rss)}`);
+						log(
+							`  ... level ${t} in progress: ${((processed / frontierTotal) * 100).toFixed(1)}% of frontier, +${fmtInt(newCount)} new so far, |seen| ${fmtInt(seenCount)}, elapsed ${fmtDur(elapsed / 1000)}, RSS ${gb(rss)}`,
+						);
 					}
 				}
 			}
@@ -345,7 +383,7 @@ function main(): void {
 		const rss = rssNow();
 
 		// ETA-to-23 from the last growth ratio (constant-ratio projection) + values/s of this level
-		let eta = 'n/a';
+		let eta = "n/a";
 		if (t < S && !isNaN(growth) && newCount > 0 && ms > 0) {
 			let remaining = 0;
 			let proj = newCount;
@@ -356,18 +394,27 @@ function main(): void {
 			const perSec = newCount / (ms / 1000);
 			eta = `~${fmtSci(remaining)} more values, ~${fmtDur(remaining / perSec)} (from last growth ratio x${growth.toFixed(2)})`;
 		} else if (t === S) {
-			eta = 'done';
+			eta = "done";
 		}
-		log(`level ${t}: +${fmtInt(newCount)} distinct, cumulative ${fmtInt(cumulative)}, u-eligible(<=17.6): ${fmtInt(uEligCum)}, growth x${isNaN(growth) ? 'n/a' : growth.toFixed(2)}, elapsed ${elapsedS.toFixed(1)}s, RSS ${gb(rss)}, ETA-to-23: ${eta}`);
+		log(
+			`level ${t}: +${fmtInt(newCount)} distinct, cumulative ${fmtInt(cumulative)}, u-eligible(<=17.6): ${fmtInt(uEligCum)}, growth x${isNaN(growth) ? "n/a" : growth.toFixed(2)}, elapsed ${elapsedS.toFixed(1)}s, RSS ${gb(rss)}, ETA-to-23: ${eta}`,
+		);
 
 		lastCompletedLevel = t;
 		frontier = next;
 
 		// between-level budget check
 		const elapsed = Date.now() - t0;
-		if (rss > RSS_LIMIT) { aborted = true; abortReason = `RSS ${gb(rss)} > 6 GiB`; }
-		else if (elapsed > TIME_LIMIT_MS) { aborted = true; abortReason = `elapsed ${fmtDur(elapsed / 1000)} > 25 min`; }
-		else if (seenCount > SEEN_LIMIT) { aborted = true; abortReason = `|seen| ${fmtInt(seenCount)} > 1.5e8`; }
+		if (rss > RSS_LIMIT) {
+			aborted = true;
+			abortReason = `RSS ${gb(rss)} > 6 GiB`;
+		} else if (elapsed > TIME_LIMIT_MS) {
+			aborted = true;
+			abortReason = `elapsed ${fmtDur(elapsed / 1000)} > 25 min`;
+		} else if (seenCount > SEEN_LIMIT) {
+			aborted = true;
+			abortReason = `|seen| ${fmtInt(seenCount)} > 1.5e8`;
+		}
 		if (aborted) {
 			abortLevel = t + 1;
 			partialNewAtAbort = 0;
@@ -382,55 +429,85 @@ function main(): void {
 	const totalS = (Date.now() - t0) / 1000;
 	log(`#`);
 	rssNow();
-	log(`# ---- run finished: ${aborted ? 'BUDGET ABORT' : 'COMPLETE'} after ${fmtDur(totalS)}, peak RSS (sampled) ${gb(peakRss)} ----`);
+	log(
+		`# ---- run finished: ${aborted ? "BUDGET ABORT" : "COMPLETE"} after ${fmtDur(totalS)}, peak RSS (sampled) ${gb(peakRss)} ----`,
+	);
 
 	if (!aborted) {
 		const pairBound = uEligCum * cumulative;
 		log(`COMPLETE: |W(23)| = ${fmtInt(cumulative)} distinct values`);
 		log(`u-eligible subset (0 < |w| <= ${U_BOUND.toFixed(4)}, float): ${fmtInt(uEligCum)}`);
-		log(`PAIR-STAGE naive independent-pair upper bound: u-eligible x |W(23)| = ${fmtInt(uEligCum)} x ${fmtInt(cumulative)} = ${fmtSci(pairBound)} pairs (not enumerated)`);
+		log(
+			`PAIR-STAGE naive independent-pair upper bound: u-eligible x |W(23)| = ${fmtInt(uEligCum)} x ${fmtInt(cumulative)} = ${fmtSci(pairBound)} pairs (not enumerated)`,
+		);
 		log(`#`);
 		log(`# ==== DECISION INPUT FOR DG-1 ====`);
 		log(`# k=1 value enumeration: COMPLETE within budget (${fmtDur(totalS)}, peak RSS ${gb(peakRss)}).`);
-		log(`# |W(23)| = ${fmtInt(cumulative)}; u-eligible = ${fmtInt(uEligCum)}; naive pair bound = ${fmtSci(pairBound)}.`);
+		log(
+			`# |W(23)| = ${fmtInt(cumulative)}; u-eligible = ${fmtInt(uEligCum)}; naive pair bound = ${fmtSci(pairBound)}.`,
+		);
 		const pairsPerDay8c = 8 * 86400 * 1e6; // assumption: ~1e6 exact pair-validations/s/core
 		const pairDays = pairBound / pairsPerDay8c;
-		log(`# Pair stage at an assumed ~1e6 exact pair-checks/s/core on 8 cores: ~${fmtDur(pairDays * 86400)} (${fmtSci(pairBound)} pairs / ${fmtSci(pairsPerDay8c)} per day).`);
-		log(`# Implied DG-1 verdict: value enumeration FEASIBLE at k=1; pair stage ${pairDays <= 3 ? 'FEASIBLE (days on 8 cores)' : 'INFEASIBLE without further proven filters (TH-10 territory)'} under the naive bound.`);
+		log(
+			`# Pair stage at an assumed ~1e6 exact pair-checks/s/core on 8 cores: ~${fmtDur(pairDays * 86400)} (${fmtSci(pairBound)} pairs / ${fmtSci(pairsPerDay8c)} per day).`,
+		);
+		log(
+			`# Implied DG-1 verdict: value enumeration FEASIBLE at k=1; pair stage ${pairDays <= 3 ? "FEASIBLE (days on 8 cores)" : "INFEASIBLE without further proven filters (TH-10 territory)"} under the naive bound.`,
+		);
 	} else {
 		log(`ABORTED AT BUDGET — proven pool NOT enumerated to s=23`);
 		log(`reason: ${abortReason}`);
-		log(`last completed level: ${lastCompletedLevel}  (abort happened ${partialNewAtAbort > 0 ? `during level ${abortLevel}, +${fmtInt(partialNewAtAbort)} partial new values found there (not counted below)` : `before level ${abortLevel}`})`);
-		log(`cumulative |W(${lastCompletedLevel})| = ${fmtInt(cumulative)} distinct values; u-eligible(<=17.6) = ${fmtInt(uEligCum)}`);
+		log(
+			`last completed level: ${lastCompletedLevel}  (abort happened ${partialNewAtAbort > 0 ? `during level ${abortLevel}, +${fmtInt(partialNewAtAbort)} partial new values found there (not counted below)` : `before level ${abortLevel}`})`,
+		);
+		log(
+			`cumulative |W(${lastCompletedLevel})| = ${fmtInt(cumulative)} distinct values; u-eligible(<=17.6) = ${fmtInt(uEligCum)}`,
+		);
 		const ratios: string[] = [];
 		for (let t = Math.max(2, lastCompletedLevel - 4); t <= lastCompletedLevel; t++) {
 			if (newPerLevel[t - 1] > 0) ratios.push(`r(${t})=${(newPerLevel[t] / newPerLevel[t - 1]).toFixed(3)}`);
 		}
-		log(`last growth ratios: ${ratios.join(', ')}`);
+		log(`last growth ratios: ${ratios.join(", ")}`);
 
 		const { dHat, projTotal } = projectRemaining(newPerLevel, lastCompletedLevel);
 		const projW23 = cumulative + projTotal;
 		log(`#`);
 		log(`# ---- honest extrapolation (polynomial fit new(t) ~ c*t^d on the last 3 growth ratios) ----`);
 		log(`# fitted growth exponent d = ${dHat.toFixed(2)} (rank-8 lattice predicts frontier ~ t^7)`);
-		log(`# projected |W(23)| ~ ${fmtSci(projW23)} distinct values (cumulative ${fmtSci(cumulative)} + projected ${fmtSci(projTotal)} for levels ${lastCompletedLevel + 1}..23)`);
+		log(
+			`# projected |W(23)| ~ ${fmtSci(projW23)} distinct values (cumulative ${fmtSci(cumulative)} + projected ${fmtSci(projTotal)} for levels ${lastCompletedLevel + 1}..23)`,
+		);
 		log(`# cor:box(iv) cap for reference: C(47,24) ~ ${Number(binomCap).toExponential(2)}`);
 		const lastMs = levelMs[lastCompletedLevel] ?? 0;
 		const lastNew = newPerLevel[lastCompletedLevel] ?? 0;
 		const perSec = lastMs > 0 && lastNew > 0 ? lastNew / (lastMs / 1000) : NaN;
 		const projTimeS = perSec > 0 ? projTotal / perSec : NaN;
 		const projMem = projW23 * 8 * (1 / 0.7) + projW23 * 8; // hash slots at 0.7 load + final-frontier coords
-		log(`# projected cost to finish enumeration at the measured rate (${isNaN(perSec) ? 'n/a' : fmtSci(perSec)} values/s, single core): ~${fmtDur(projTimeS)}; memory for the seen-set alone: ~${gb(projMem)}`);
-		log(`# u-eligible note: every value of weight <= 17 has |w| <= 17 < ${U_BOUND.toFixed(2)} (triangle inequality), so the u-eligible subset tracks |W(t)| up to level 17 — the |u| filter does NOT tame the pool at k=1.`);
+		log(
+			`# projected cost to finish enumeration at the measured rate (${isNaN(perSec) ? "n/a" : fmtSci(perSec)} values/s, single core): ~${fmtDur(projTimeS)}; memory for the seen-set alone: ~${gb(projMem)}`,
+		);
+		log(
+			`# u-eligible note: every value of weight <= 17 has |w| <= 17 < ${U_BOUND.toFixed(2)} (triangle inequality), so the u-eligible subset tracks |W(t)| up to level 17 — the |u| filter does NOT tame the pool at k=1.`,
+		);
 		const pairLower = uEligCum * projW23;
 		log(`# PAIR-STAGE lower bound (observed u-eligible x projected |W(23)|): >= ${fmtSci(pairLower)} naive pairs.`);
 		log(`#`);
 		log(`# ==== DECISION INPUT FOR DG-1 ====`);
-		log(`# k=1, s=23, proven configuration (cor:box, no unproven filters): NOT enumerable within 6 GiB / 25 min / 1.5e8 values.`);
-		log(`# Reached level ${lastCompletedLevel}/23 with |W(${lastCompletedLevel})| = ${fmtInt(cumulative)}; projected |W(23)| ~ ${fmtSci(projW23)} (fit d=${dHat.toFixed(2)}).`);
-		log(`# The proven in-search prunes available at k=1 prune NOTHING (|v|~310 never binds; |u| must not prune the BFS).`);
-		log(`# Implied DG-1 table verdict: k=1 proven-pool enumeration INFEASIBLE at this scale => per the decision table, the honest rewrite (TX-1 option b) is mandatory and TH-10 (tighter weight bound) is the route back.`);
-		log(`# (Caveat: this measures the VALUE enumeration of W(23) itself. Any feasible proven path needs a filter with a proof that cuts BEFORE materializing W(23) — the registry pattern applies.)`);
+		log(
+			`# k=1, s=23, proven configuration (cor:box, no unproven filters): NOT enumerable within 6 GiB / 25 min / 1.5e8 values.`,
+		);
+		log(
+			`# Reached level ${lastCompletedLevel}/23 with |W(${lastCompletedLevel})| = ${fmtInt(cumulative)}; projected |W(23)| ~ ${fmtSci(projW23)} (fit d=${dHat.toFixed(2)}).`,
+		);
+		log(
+			`# The proven in-search prunes available at k=1 prune NOTHING (|v|~310 never binds; |u| must not prune the BFS).`,
+		);
+		log(
+			`# Implied DG-1 table verdict: k=1 proven-pool enumeration INFEASIBLE at this scale => per the decision table, the honest rewrite (TX-1 option b) is mandatory and TH-10 (tighter weight bound) is the route back.`,
+		);
+		log(
+			`# (Caveat: this measures the VALUE enumeration of W(23) itself. Any feasible proven path needs a filter with a proof that cuts BEFORE materializing W(23) — the registry pattern applies.)`,
+		);
 	}
 
 	log(`# log file: ${LOG_FILE}`);

@@ -4,9 +4,7 @@ import { PolygonType } from "@/classes/polygons/PolygonType";
 
 describe("computeOrder / regularOrders", () => {
 	it("explicit ns is honored and sorted", () => {
-		expect(regularOrders({ [PolygonType.REGULAR]: { ns: [12, 3, 8, 4, 6] } })).toEqual([
-			3, 4, 6, 8, 12,
-		]);
+		expect(regularOrders({ [PolygonType.REGULAR]: { ns: [12, 3, 8, 4, 6] } })).toEqual([3, 4, 6, 8, 12]);
 	});
 
 	it("falls back to contiguous 3..n_max", () => {

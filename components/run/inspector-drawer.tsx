@@ -44,7 +44,7 @@ function CopyButton({ text }: { text: string }) {
 					() => {},
 				);
 			}}
-			className="shrink-0 p-1 rounded text-fg-muted hover:text-fg hover:bg-surface-overlay/60 transition-colors max-md:flex max-md:size-11 max-md:items-center max-md:justify-center"
+			className="shrink-0 rounded p-1 text-fg-muted transition-colors hover:bg-surface-overlay/60 hover:text-fg max-md:flex max-md:size-11 max-md:items-center max-md:justify-center"
 			title="Copy"
 		>
 			{copied ? <Check size={13} className="text-success" /> : <Copy size={13} />}
@@ -55,7 +55,7 @@ function CopyButton({ text }: { text: string }) {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
 	return (
 		<div className="rounded-lg border border-line-subtle bg-surface-raised/50 px-3 py-2">
-			<div className="text-[10px] uppercase tracking-wide text-fg-disabled">{label}</div>
+			<div className="text-[10px] tracking-wide text-fg-disabled uppercase">{label}</div>
 			<div className="mt-0.5 text-sm text-fg">{children}</div>
 		</div>
 	);
@@ -116,33 +116,33 @@ export function InspectorDrawer({ tiling, onClose }: { tiling: FoundTiling | nul
 						onClick={onClose}
 					/>
 					<motion.aside
-						className="relative h-full w-full max-w-md bg-surface-overlay border-l border-line shadow-xl flex flex-col"
+						className="relative flex h-full w-full max-w-md flex-col border-l border-line bg-surface-overlay shadow-xl"
 						initial={{ x: "100%" }}
 						animate={{ x: 0 }}
 						exit={{ x: "100%" }}
 						transition={{ type: "tween", duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
 					>
-						<header className="flex items-center gap-2 px-4 py-3 border-b border-line-subtle shrink-0">
+						<header className="flex shrink-0 items-center gap-2 border-b border-line-subtle px-4 py-3">
 							<h2 className="text-sm font-medium text-fg">Inspector</h2>
-							<span className="text-xs text-fg-muted font-mono">· seed #{tiling.seed_idx ?? "?"}</span>
+							<span className="font-mono text-xs text-fg-muted">· seed #{tiling.seed_idx ?? "?"}</span>
 							<div className="flex-1" />
 							<button
 								ref={closeRef}
 								type="button"
 								onClick={onClose}
-								className="p-1 rounded-md text-fg-secondary hover:text-fg hover:bg-surface-overlay/70 transition-colors max-md:flex max-md:size-11 max-md:items-center max-md:justify-center"
+								className="rounded-md p-1 text-fg-secondary transition-colors hover:bg-surface-overlay/70 hover:text-fg max-md:flex max-md:size-11 max-md:items-center max-md:justify-center"
 								title="Close (Esc)"
 							>
 								<X size={16} />
 							</button>
 						</header>
 
-						<div className="flex-1 min-h-0 overflow-y-auto p-4 flex flex-col gap-4">
-							<div className="aspect-square w-full rounded-lg border border-line bg-surface-raised overflow-hidden">
+						<div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4">
+							<div className="aspect-square w-full overflow-hidden rounded-lg border border-line bg-surface-raised">
 								{rc ? (
 									<TilingThumbnail translationalCell={rc as TranslationalCellData} pxPerEdge={zoom} />
 								) : (
-									<div className="w-full h-full flex items-center justify-center text-fg-disabled text-xs">
+									<div className="flex h-full w-full items-center justify-center text-xs text-fg-disabled">
 										no render mirror
 									</div>
 								)}
@@ -155,12 +155,12 @@ export function InspectorDrawer({ tiling, onClose }: { tiling: FoundTiling | nul
 								<Field label="polygons / cell">{totalPolys}</Field>
 								<Field label="seed">#{tiling.seed_idx ?? "?"}</Field>
 								<Field label="first seen">
-									<span className="font-mono tabular-nums text-xs">{fmtClock(tiling.first_seen_at)}</span>
+									<span className="font-mono text-xs tabular-nums">{fmtClock(tiling.first_seen_at)}</span>
 								</Field>
 							</div>
 
 							<div>
-								<div className="text-[10px] uppercase tracking-wide text-fg-disabled mb-1.5">composition</div>
+								<div className="mb-1.5 text-[10px] tracking-wide text-fg-disabled uppercase">composition</div>
 								<div className="flex flex-wrap gap-1.5">
 									{comp.length === 0 ? (
 										<span className="text-xs text-fg-disabled">—</span>
@@ -168,7 +168,7 @@ export function InspectorDrawer({ tiling, onClose }: { tiling: FoundTiling | nul
 										comp.map((c) => (
 											<span
 												key={c.n}
-												className="inline-flex items-center gap-1.5 rounded-control border border-line-subtle bg-surface-raised/60 pl-1.5 pr-2 py-1 text-xs"
+												className="inline-flex items-center gap-1.5 rounded-control border border-line-subtle bg-surface-raised/60 py-1 pr-2 pl-1.5 text-xs"
 											>
 												<span
 													className="inline-block size-3 rounded-[3px] border border-black/30"
@@ -183,18 +183,18 @@ export function InspectorDrawer({ tiling, onClose }: { tiling: FoundTiling | nul
 							</div>
 
 							<div>
-								<div className="text-[10px] uppercase tracking-wide text-fg-disabled mb-1.5">canonical key</div>
+								<div className="mb-1.5 text-[10px] tracking-wide text-fg-disabled uppercase">canonical key</div>
 								<div className="flex items-center gap-1.5 rounded-lg border border-line-subtle bg-surface-raised/50 px-3 py-2">
-									<code className="flex-1 min-w-0 break-all font-mono text-[11px] text-fg-secondary">
+									<code className="min-w-0 flex-1 font-mono text-[11px] break-all text-fg-secondary">
 										{tiling.canonical_key}
 									</code>
 									<CopyButton text={tiling.canonical_key} />
 								</div>
 							</div>
 
-							<p className="text-[10px] text-fg-disabled leading-relaxed">
-								Display-only view of the float render mirror. The exact cell (cell_codec) and the certified digest
-								live on the local scout — the site never produces them.
+							<p className="text-[10px] leading-relaxed text-fg-disabled">
+								Display-only view of the float render mirror. The exact cell (cell_codec) and the certified digest live
+								on the local scout — the site never produces them.
 							</p>
 						</div>
 					</motion.aside>

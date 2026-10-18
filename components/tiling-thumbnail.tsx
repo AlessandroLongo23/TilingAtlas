@@ -53,12 +53,7 @@ interface TilingThumbnailProps {
  * what makes the request land: ask for a scale, divide the median back out. Null when the cell has
  * no usable basis, which sends the caller back to its own pxPerEdge.
  */
-function latticePxPerEdge(
-	cell: TranslationalCellData,
-	W: number,
-	H: number,
-	periodsAcross: number,
-): number | null {
+function latticePxPerEdge(cell: TranslationalCellData, W: number, H: number, periodsAcross: number): number | null {
 	const base = parseBaseCell(cell);
 	if (!base?.basis || base.basis.length < 2) return null;
 	const [v1, v2] = base.basis;
@@ -131,9 +126,9 @@ export function TilingThumbnail({
 				const edgePx =
 					fit != null && polys?.length
 						? fitPxPerEdge(polys, W, H, fit)
-						: (periodsAcross != null && translationalCell
+						: ((periodsAcross != null && translationalCell
 								? latticePxPerEdge(translationalCell, W, H, periodsAcross)
-								: null) ?? pxPerEdge;
+								: null) ?? pxPerEdge);
 				renderTilingToContext(ctx, W, H, {
 					translationalCell,
 					polygons: polys,
@@ -144,9 +139,7 @@ export function TilingThumbnail({
 					// with no redraw (the draw effect has no theme dependency, so it wouldn't rerun).
 					background: null,
 				});
-				setUnit((prev) =>
-					prev && prev.px === edgePx && prev.boxW === W ? prev : { px: edgePx, boxW: W },
-				);
+				setUnit((prev) => (prev && prev.px === edgePx && prev.boxW === W ? prev : { px: edgePx, boxW: W }));
 				setDrawn(true);
 				drawnAt = `${W}x${H}`;
 			} catch (e) {
@@ -198,7 +191,7 @@ export function TilingThumbnail({
 
 	if (hasError) {
 		return (
-			<div className="w-full h-full flex items-center justify-center bg-surface-raised rounded text-fg-disabled text-[10px]">
+			<div className="flex h-full w-full items-center justify-center rounded bg-surface-raised text-[10px] text-fg-disabled">
 				err
 			</div>
 		);
@@ -214,24 +207,24 @@ export function TilingThumbnail({
 	// so it cannot be conditionally rendered. It is held transparent until the first draw lands and the
 	// skeleton shows through from behind.
 	return (
-		<div className="relative w-full h-full">
+		<div className="relative h-full w-full">
 			<ThumbnailSkeleton done={drawn} />
 			<canvas
 				ref={canvasRef}
-				className={cn("relative w-full h-full rounded block", drawn ? "ta-fade-in" : "opacity-0")}
+				className={cn("relative block h-full w-full rounded", drawn ? "ta-fade-in" : "opacity-0")}
 			/>
 			{showBar ? (
 				<div
 					aria-hidden
-					className="absolute bottom-1.5 right-2 flex flex-col items-center text-fg-muted ta-fade-in pointer-events-none select-none"
+					className="ta-fade-in pointer-events-none absolute right-2 bottom-1.5 flex flex-col items-center text-fg-muted select-none"
 					style={{ width: unit.px }}
 				>
-					<span className="text-[9px] max-md:text-xs font-mono leading-none mb-[3px]">1</span>
+					<span className="mb-[3px] font-mono text-[9px] leading-none max-md:text-xs">1</span>
 					{/* End serifs turn a bare rule into a ruler: they mark where the unit starts and stops. */}
-					<span className="relative w-full h-[5px]">
+					<span className="relative h-[5px] w-full">
 						<span className="absolute inset-x-0 top-1/2 border-t border-current" />
-						<span className="absolute left-0 inset-y-0 border-l border-current" />
-						<span className="absolute right-0 inset-y-0 border-r border-current" />
+						<span className="absolute inset-y-0 left-0 border-l border-current" />
+						<span className="absolute inset-y-0 right-0 border-r border-current" />
 					</span>
 				</div>
 			) : null}

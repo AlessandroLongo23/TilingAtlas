@@ -16,7 +16,7 @@
 import { readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { decodeAtlas } from './atlas/encode.mjs';
+import { decodeAtlas } from "./atlas/encode.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const src = decodeAtlas(JSON.parse(readFileSync(join(ROOT, "public", "reference-atlas-hyperbolic.json"), "utf8")));

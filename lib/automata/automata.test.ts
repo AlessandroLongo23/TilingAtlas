@@ -15,8 +15,21 @@ import { availableTopologies, findFlip } from "@/lib/automata/topology";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 
 const SQUARE: TranslationalCellData = {
-	cellPolygons: [{ n: 4, vertices: [[0, 0], [1, 0], [1, 1], [0, 1]] }],
-	basis: [[1, 0], [0, 1]],
+	cellPolygons: [
+		{
+			n: 4,
+			vertices: [
+				[0, 0],
+				[1, 0],
+				[1, 1],
+				[0, 1],
+			],
+		},
+	],
+	basis: [
+		[1, 0],
+		[0, 1],
+	],
 };
 
 const S3 = Math.sqrt(3);
@@ -26,21 +39,45 @@ const HEX: TranslationalCellData = {
 		{
 			n: 6,
 			vertices: [
-				[1, 0], [0.5, S3 / 2], [-0.5, S3 / 2],
-				[-1, 0], [-0.5, -S3 / 2], [0.5, -S3 / 2],
+				[1, 0],
+				[0.5, S3 / 2],
+				[-0.5, S3 / 2],
+				[-1, 0],
+				[-0.5, -S3 / 2],
+				[0.5, -S3 / 2],
 			],
 		},
 	],
-	basis: [[1.5, S3 / 2], [0, S3]],
+	basis: [
+		[1.5, S3 / 2],
+		[0, S3],
+	],
 };
 
 /** Two triangles (up and down) per rhombic cell — the 3.3.3.3.3.3 tiling, k=1 with n=2 slots. */
 const TRIANGLE: TranslationalCellData = {
 	cellPolygons: [
-		{ n: 3, vertices: [[0, 0], [1, 0], [0.5, S3 / 2]] },
-		{ n: 3, vertices: [[1, 0], [1.5, S3 / 2], [0.5, S3 / 2]] },
+		{
+			n: 3,
+			vertices: [
+				[0, 0],
+				[1, 0],
+				[0.5, S3 / 2],
+			],
+		},
+		{
+			n: 3,
+			vertices: [
+				[1, 0],
+				[1.5, S3 / 2],
+				[0.5, S3 / 2],
+			],
+		},
 	],
-	basis: [[1, 0], [0.5, S3 / 2]],
+	basis: [
+		[1, 0],
+		[0.5, S3 / 2],
+	],
 };
 
 function conwayEngine(mode: "plane" | "torus" = "plane", size = 16) {
@@ -48,13 +85,24 @@ function conwayEngine(mode: "plane" | "torus" = "plane", size = 16) {
 	if (!adj) throw new Error("square cell failed to parse");
 	const nb = neighborhoodOf(adj, "moore", 1);
 	const rule = parseRule("B3/S23");
-	const table = buildRuleTable(rule, nb.map((l) => l.length), adj.sides, "absolute");
+	const table = buildRuleTable(
+		rule,
+		nb.map((l) => l.length),
+		adj.sides,
+		"absolute",
+	);
 	const wrap = mode === "torus" ? size : null;
 	return new AutomatonEngine(adj, nb, table, { wrapI: wrap, wrapJ: wrap });
 }
 
 /** The canonical glider, as (x, y) offsets from its corner. */
-const GLIDER: [number, number][] = [[1, 0], [2, 1], [0, 2], [1, 2], [2, 2]];
+const GLIDER: [number, number][] = [
+	[1, 0],
+	[2, 1],
+	[0, 2],
+	[1, 2],
+	[2, 2],
+];
 
 function placeGlider(eng: AutomatonEngine, ox: number, oy: number) {
 	for (const [x, y] of GLIDER) eng.setCell(ox + x, oy + y, 0, 1);
@@ -159,13 +207,10 @@ describe("rule semantics on mixed degrees", () => {
 	});
 
 	it("perShape gives each side count its own automaton", () => {
-		const t = buildRuleTable(
-			parseRule("B3/S23"),
-			[3, 6],
-			[3, 6],
-			"perShape",
-			{ 3: parseRule("B1/S1"), 6: parseRule("B2/S34") },
-		);
+		const t = buildRuleTable(parseRule("B3/S23"), [3, 6], [3, 6], "perShape", {
+			3: parseRule("B1/S1"),
+			6: parseRule("B2/S34"),
+		});
 		expect(t.birth[0][1]).toBe(1);
 		expect(t.birth[0][3]).toBe(0);
 		expect(t.birth[1][2]).toBe(1);
@@ -182,16 +227,24 @@ describe("Conway's Life on the square tiling", () => {
 		for (let i = 0; i < 4; i++) eng.step();
 		expect(eng.population).toBe(5);
 		const moved = liveSet(eng, -4, -4, 12, 12);
-		const shifted = start.map((s) => {
-			const [x, y] = s.split(",").map(Number);
-			return `${x + 1},${y + 1}`;
-		}).sort();
+		const shifted = start
+			.map((s) => {
+				const [x, y] = s.split(",").map(Number);
+				return `${x + 1},${y + 1}`;
+			})
+			.sort();
 		expect(moved).toEqual(shifted);
 	});
 
 	it("holds a block still forever", () => {
 		const eng = conwayEngine();
-		for (const [x, y] of [[0, 0], [1, 0], [0, 1], [1, 1]]) eng.setCell(x, y, 0, 1);
+		for (const [x, y] of [
+			[0, 0],
+			[1, 0],
+			[0, 1],
+			[1, 1],
+		])
+			eng.setCell(x, y, 0, 1);
 		for (let i = 0; i < 20; i++) eng.step();
 		expect(eng.population).toBe(4);
 		expect(liveSet(eng, -3, -3, 4, 4)).toEqual(["0,0", "0,1", "1,0", "1,1"]);
@@ -199,7 +252,12 @@ describe("Conway's Life on the square tiling", () => {
 
 	it("blinks a blinker with period 2", () => {
 		const eng = conwayEngine();
-		for (const [x, y] of [[0, 0], [1, 0], [2, 0]]) eng.setCell(x, y, 0, 1);
+		for (const [x, y] of [
+			[0, 0],
+			[1, 0],
+			[2, 0],
+		])
+			eng.setCell(x, y, 0, 1);
 		eng.step();
 		expect(liveSet(eng, -3, -3, 5, 5)).toEqual(["1,-1", "1,0", "1,1"]);
 		eng.step();
@@ -210,7 +268,14 @@ describe("Conway's Life on the square tiling", () => {
 		// The standard methuselah: 1103 generations, then 116 cells. If the board were bounded anywhere
 		// this number would come out low, so it doubles as the proof that the plane really is unbounded.
 		const eng = conwayEngine();
-		for (const [x, y] of [[1, 0], [2, 0], [0, 1], [1, 1], [1, 2]]) eng.setCell(x, y, 0, 1);
+		for (const [x, y] of [
+			[1, 0],
+			[2, 0],
+			[0, 1],
+			[1, 1],
+			[1, 2],
+		])
+			eng.setCell(x, y, 0, 1);
 		for (let i = 0; i < 1103; i++) eng.step();
 		expect(eng.population).toBe(116);
 	});
@@ -269,7 +334,12 @@ describe("Generations", () => {
 		const adj = buildPeriodicAdjacency(SQUARE)!;
 		const nb = neighborhoodOf(adj, "moore", 1);
 		const rule = parseRule("B2/S/G4"); // nothing survives; a live cell must decay 1 -> 2 -> 3 -> 0
-		const table = buildRuleTable(rule, nb.map((l) => l.length), adj.sides, "absolute");
+		const table = buildRuleTable(
+			rule,
+			nb.map((l) => l.length),
+			adj.sides,
+			"absolute",
+		);
 		const eng = new AutomatonEngine(adj, nb, table, {});
 		eng.setCell(0, 0, 0, 1);
 		eng.step();
@@ -325,18 +395,66 @@ describe("sampleRegion", () => {
 // the flip out.
 const PINWHEEL: TranslationalCellData = {
 	cellPolygons: [
-		{ n: 4, vertices: [[0, 0], [1 / 3, 0], [0.5, 0.5], [0, 2 / 3]] },
-		{ n: 4, vertices: [[1 / 3, 0], [1, 0], [1, 1 / 3], [0.5, 0.5]] },
-		{ n: 4, vertices: [[0.5, 0.5], [1, 1 / 3], [1, 1], [2 / 3, 1]] },
-		{ n: 4, vertices: [[0, 2 / 3], [0.5, 0.5], [2 / 3, 1], [0, 1]] },
+		{
+			n: 4,
+			vertices: [
+				[0, 0],
+				[1 / 3, 0],
+				[0.5, 0.5],
+				[0, 2 / 3],
+			],
+		},
+		{
+			n: 4,
+			vertices: [
+				[1 / 3, 0],
+				[1, 0],
+				[1, 1 / 3],
+				[0.5, 0.5],
+			],
+		},
+		{
+			n: 4,
+			vertices: [
+				[0.5, 0.5],
+				[1, 1 / 3],
+				[1, 1],
+				[2 / 3, 1],
+			],
+		},
+		{
+			n: 4,
+			vertices: [
+				[0, 2 / 3],
+				[0.5, 0.5],
+				[2 / 3, 1],
+				[0, 1],
+			],
+		},
 	],
-	basis: [[1, 0], [0, 1]],
+	basis: [
+		[1, 0],
+		[0, 1],
+	],
 };
 
 /** A generic oblique cell: one parallelogram, no symmetry of any kind. */
 const OBLIQUE: TranslationalCellData = {
-	cellPolygons: [{ n: 4, vertices: [[0, 0], [1, 0], [1.3, 1], [0.3, 1]] }],
-	basis: [[1, 0], [0.3, 1]],
+	cellPolygons: [
+		{
+			n: 4,
+			vertices: [
+				[0, 0],
+				[1, 0],
+				[1.3, 1],
+				[0.3, 1],
+			],
+		},
+	],
+	basis: [
+		[1, 0],
+		[0.3, 1],
+	],
 };
 
 describe("gluing a flipped seam", () => {
@@ -361,12 +479,7 @@ describe("gluing a flipped seam", () => {
 			// M² = I, or the seam would not close after two crossings. Column-major throughout:
 			// M = [[m0, m2], [m1, m3]].
 			const [m0, m1, m2, m3] = f!.m;
-			expect([
-				m0 * m0 + m2 * m1,
-				m1 * m0 + m3 * m1,
-				m0 * m2 + m2 * m3,
-				m1 * m2 + m3 * m3,
-			]).toEqual([1, 0, 0, 1]);
+			expect([m0 * m0 + m2 * m1, m1 * m0 + m3 * m1, m0 * m2 + m2 * m3, m1 * m2 + m3 * m3]).toEqual([1, 0, 0, 1]);
 		}
 	});
 
@@ -394,7 +507,12 @@ describe("the cylinder", () => {
 	it("wraps one axis and lets the other grow", () => {
 		const adj = buildPeriodicAdjacency(SQUARE)!;
 		const nb = neighborhoodOf(adj, "moore", 1);
-		const table = buildRuleTable(parseRule("B3/S23"), nb.map((l) => l.length), adj.sides, "absolute");
+		const table = buildRuleTable(
+			parseRule("B3/S23"),
+			nb.map((l) => l.length),
+			adj.sides,
+			"absolute",
+		);
 		const eng = new AutomatonEngine(adj, nb, table, { wrapI: 12, wrapJ: null });
 		expect(eng.wrapSize).toEqual([12, null]);
 		expect(eng.closed).toBe(false);
@@ -408,7 +526,6 @@ describe("the cylinder", () => {
 		expect(live).toHaveLength(5);
 	});
 });
-
 
 // ── The two non-orientable boards ──────────────────────────────────────────────────────────────────
 //
@@ -433,7 +550,12 @@ function planFor(cell: TranslationalCellData, topology: "mobius" | "klein" | "to
 
 function engineFor(plan: BoardPlan, rule = "B3/S23") {
 	const nb = neighborhoodOf(plan.adj, "moore", 1);
-	const table = buildRuleTable(parseRule(rule), nb.map((l) => l.length), plan.adj.sides, "absolute");
+	const table = buildRuleTable(
+		parseRule(rule),
+		nb.map((l) => l.length),
+		plan.adj.sides,
+		"absolute",
+	);
 	return new AutomatonEngine(plan.adj, nb, table, {
 		wrapI: plan.wrapI,
 		wrapJ: plan.wrapJ,
@@ -496,11 +618,7 @@ describe("the refined flip", () => {
 	it("maps neighbours to neighbours — ι is a graph automorphism", () => {
 		for (const cell of [SQUARE, HEX, TRIANGLE]) {
 			const rf = refinedFlip(buildPeriodicAdjacency(cell)!)!;
-			const F = (a: number, b: number, s: number): [number, number, number] => [
-				a + rf.P[s],
-				rf.Q[s] - b,
-				rf.sigma[s],
-			];
+			const F = (a: number, b: number, s: number): [number, number, number] => [a + rf.P[s], rf.Q[s] - b, rf.sigma[s]];
 			for (let s = 0; s < rf.adj.n; s++) {
 				const [a0, b0] = F(0, 0, s);
 				const image = new Set(rf.adj.moore[rf.sigma[s]].map((r) => `${r.t}|${r.di}|${r.dj}`));
@@ -614,7 +732,10 @@ describe("the Möbius band and the Klein bottle", () => {
 
 			const nbrs = new Map<number, number[]>();
 			for (const [key, r] of reps) {
-				nbrs.set(key, plan.adj.moore[r.t].map((ref) => canon(r.i + ref.di, r.j + ref.dj, ref.t).key));
+				nbrs.set(
+					key,
+					plan.adj.moore[r.t].map((ref) => canon(r.i + ref.di, r.j + ref.dj, ref.t).key),
+				);
 			}
 
 			const eng = engineFor(plan);
@@ -631,9 +752,7 @@ describe("the Möbius band and the Klein bottle", () => {
 					next.set(key, cur === 1 ? (live === 2 || live === 3 ? 1 : 0) : live === 3 ? 1 : 0);
 				}
 				eng.step();
-				const fromEngine = [...reps]
-					.map(([key, r]) => `${key}:${eng.getCell(r.i, r.j, r.t)}`)
-					.join(" ");
+				const fromEngine = [...reps].map(([key, r]) => `${key}:${eng.getCell(r.i, r.j, r.t)}`).join(" ");
 				const fromQuotient = [...next].map(([key, v]) => `${key}:${v}`).join(" ");
 				expect(fromEngine, `generation ${g + 1} on ${plan.adj.n}-slot cell`).toBe(fromQuotient);
 				state = next;

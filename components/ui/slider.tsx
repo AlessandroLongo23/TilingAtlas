@@ -41,27 +41,19 @@ export function Slider({
 	return (
 		<div className="grid w-full gap-2">
 			{label ? (
-				<div className="flex flex-row justify-between items-center gap-2">
-					<div className="flex items-center gap-1.5 min-w-0">
+				<div className="flex flex-row items-center justify-between gap-2">
+					<div className="flex min-w-0 items-center gap-1.5">
 						<label htmlFor={inputId} className="text-[13px] font-medium text-fg-secondary">
 							{label}
 						</label>
 						{hint}
 					</div>
-					<span className="font-mono text-xs text-fg tabular-nums whitespace-nowrap">
+					<span className="font-mono text-xs whitespace-nowrap text-fg tabular-nums">
 						{format ? format(value) : withUnit(value, unit)}
 					</span>
 				</div>
 			) : null}
-			<RangeInput
-				id={inputId}
-				value={value}
-				onChange={onChange}
-				min={min}
-				max={max}
-				step={step}
-				disabled={disabled}
-			/>
+			<RangeInput id={inputId} value={value} onChange={onChange} min={min} max={max} step={step} disabled={disabled} />
 		</div>
 	);
 }

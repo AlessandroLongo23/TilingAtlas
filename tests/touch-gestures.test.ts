@@ -13,7 +13,8 @@ const toScreen = (c: ReturnType<typeof makeCardControls>, w: { x: number; y: num
 };
 const toWorld = (c: ReturnType<typeof makeCardControls>, s: { x: number; y: number }) => {
 	const r = (c.rotation * Math.PI) / 180;
-	const x = (s.x - c.offset.x) / c.zoom, y = (s.y - c.offset.y) / c.zoom;
+	const x = (s.x - c.offset.x) / c.zoom,
+		y = (s.y - c.offset.y) / c.zoom;
 	return { x: Math.cos(r) * x + Math.sin(r) * y, y: -Math.sin(r) * x + Math.cos(r) * y };
 };
 
@@ -38,7 +39,12 @@ const el = { getBoundingClientRect: () => ({ left: 0, top: 0, width: 200, height
 // A clock the events carry as timeStamp, 20 ms per event unless a test moves it.
 let clock = 0;
 const ev = (pointerId: number, clientX: number, clientY: number, type = "pointermove", pointerType = "touch") => ({
-	pointerId, pointerType, clientX, clientY, type, timeStamp: (clock += 20),
+	pointerId,
+	pointerType,
+	clientX,
+	clientY,
+	type,
+	timeStamp: (clock += 20),
 });
 
 describe("TouchGestures", () => {
@@ -86,7 +92,8 @@ describe("TouchGestures", () => {
 		t.down(ev(2, 140, 100, "pointerdown"));
 		// Spread 80 → 160 with 8° of drift, in 8 steps.
 		for (let i = 1; i <= 8; i++) {
-			const a = ((i * Math.PI) / 180), d = 40 + 5 * i;
+			const a = (i * Math.PI) / 180,
+				d = 40 + 5 * i;
 			t.move(ev(1, 100 - d * Math.cos(a), 100 - d * Math.sin(a)));
 			t.move(ev(2, 100 + d * Math.cos(a), 100 + d * Math.sin(a)));
 		}

@@ -55,7 +55,7 @@ export interface TruchetOptions {
 
 /** xorshift32 — a seeded stream, so "the same seed gives the same pattern" is a real guarantee. */
 function rng(seed: number): () => number {
-	let s = (seed | 0) || 0x9e3779b9;
+	let s = seed | 0 || 0x9e3779b9;
 	return () => {
 		s ^= s << 13;
 		s ^= s >>> 17;
@@ -112,10 +112,7 @@ function drawWiring(corners: readonly Pt[], next: () => number): number[] {
  * every edge would be listed twice — the scaffold would stroke it twice, and, worse, an edge found
  * under one tile's indices would not be found under the other's.
  */
-export function truchetPattern(
-	cell: TranslationalCellData | null,
-	opts: TruchetOptions,
-): FreedrawPattern | null {
+export function truchetPattern(cell: TranslationalCellData | null, opts: TruchetOptions): FreedrawPattern | null {
 	if (!cell) return null;
 	const base = parseBaseCell(cell);
 	if (!base || base.polys.length === 0) return null;
@@ -154,9 +151,7 @@ export function truchetPattern(
 				const corners = poly.vertices.map((p): Pt => [p.x + dx, p.y + dy]);
 				const ring = corners.map((c): [number, number, number] => [vertexAt(c[0], c[1]), 0, 0]);
 				polys.push(ring);
-				wirings.push(
-					opts.rule ? wiringPermutation(ring.length, opts.rule) : drawWiring(corners, next),
-				);
+				wirings.push(opts.rule ? wiringPermutation(ring.length, opts.rule) : drawWiring(corners, next));
 				for (let i = 0; i < ring.length; i++) {
 					const a = ring[i][0];
 					const b = ring[(i + 1) % ring.length][0];
@@ -211,5 +206,3 @@ export const truchetCells = (cell: TranslationalCellData | null): number => {
 	const base = cell ? parseBaseCell(cell) : null;
 	return Math.max(1, (base?.medianEdge ?? 1) * 14);
 };
-
-

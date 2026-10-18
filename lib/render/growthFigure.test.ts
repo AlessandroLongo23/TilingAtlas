@@ -7,7 +7,10 @@ import { describe, expect, it } from "vitest";
 // that changed its shape — or picked a seed that dead-ends — would break the demo in front of a room
 // with nothing else to catch it.
 
-interface FigPoly { n: number; v: [number, number][] }
+interface FigPoly {
+	n: number;
+	v: [number, number][];
+}
 interface FigState {
 	frontier: [number, number][];
 	target: [number, number] | null;

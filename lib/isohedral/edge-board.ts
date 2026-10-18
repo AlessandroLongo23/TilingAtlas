@@ -17,14 +17,7 @@
 // So corner letters map to Tactile's vertex indices in order and edge classes map to its edge ids in
 // order. `checkBoardAgreesWithTactile` asserts exactly that, per build, rather than trusting it.
 
-import {
-	buildCell,
-	curvesOf,
-	defaultEdgeStates,
-	makeTiling,
-	straightCurves,
-	type EdgeCurves,
-} from "./build";
+import { buildCell, curvesOf, defaultEdgeStates, makeTiling, straightCurves, type EdgeCurves } from "./build";
 import { ISOHEDRAL_TYPES } from "./catalogue";
 import { EdgeShape, mul } from "./vendor/tactile";
 
@@ -368,10 +361,7 @@ function extractClassCurves(
 /** Tactile's edge ids around the tile must be the board's classes in order, each class appearing as
  *  many times as the board says. Cheap, and it is the only thing standing between a Tactile version
  *  bump and a silently mislabelled shelf. */
-export function checkBoardAgreesWithTactile(
-	spec: IhEdgeBoardSpec,
-	edgeIds: number[],
-): boolean {
+export function checkBoardAgreesWithTactile(spec: IhEdgeBoardSpec, edgeIds: number[]): boolean {
 	if (edgeIds.length !== spec.sides.length) return false;
 	for (let i = 0; i < edgeIds.length; i++) {
 		if (spec.classes[edgeIds[i]] !== spec.sides[i][1]) return false;
@@ -399,7 +389,12 @@ export function solveIhBoard(ih: number, params?: number[], curves?: EdgeCurves)
 	});
 	if (!cell?.tilingVertices) return { ok: false, error: "build-failed" };
 	if (cell.degenerate) return { ok: false, error: "degenerate" };
-	if (!checkBoardAgreesWithTactile(spec, cell.edges.map((e) => e.id))) {
+	if (
+		!checkBoardAgreesWithTactile(
+			spec,
+			cell.edges.map((e) => e.id),
+		)
+	) {
 		return { ok: false, error: "tactile-mismatch" };
 	}
 
@@ -493,8 +488,7 @@ export function ihLetterLength(letter: string, board: SolvedIhBoard): number {
  * — which is exactly the direction the edge is being crossed. That is the bit a bowed edge needs, and
  * the reason curvature works at all without tracking which tile or which aspect placed the edge.
  */
-export const ihLetterSlot = (letter: string): 0 | 1 =>
-	letter.charCodeAt(letter.length - 1) % 2 === 0 ? 0 : 1;
+export const ihLetterSlot = (letter: string): 0 | 1 => (letter.charCodeAt(letter.length - 1) % 2 === 0 ? 0 : 1);
 
 /**
  * The curve a dart crosses, oriented along that dart's own direction of travel.

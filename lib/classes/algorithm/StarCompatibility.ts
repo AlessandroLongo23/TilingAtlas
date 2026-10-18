@@ -17,8 +17,8 @@
  * edge can only DROP a candidate seed-set, never admit a wrong one — a completeness gap to log, not a
  * soundness break.
  */
-import type { Cyclotomic } from '../Cyclotomic';
-import { placeStarVCPair, type StarVC } from './StarVC';
+import type { Cyclotomic } from "../Cyclotomic";
+import { placeStarVCPair, type StarVC } from "./StarVC";
 
 export type StarCompatibility = {
 	/** All distinct VC names, sorted — the graph's node set. */
@@ -35,10 +35,7 @@ export type StarCompatibility = {
  * emitted: `starSeedSets` never forms `{a,a}` (matching `SeedSetExtractor`), and no in-ring target fig
  * has two identical orbits.
  */
-export function generateStarVCCompatibility(
-	vcs: StarVC[],
-	ring: Cyclotomic['ring'],
-): StarCompatibility {
+export function generateStarVCCompatibility(vcs: StarVC[], ring: Cyclotomic["ring"]): StarCompatibility {
 	const byName = new Map<string, StarVC>();
 	for (const vc of vcs) if (!byName.has(vc.name)) byName.set(vc.name, vc);
 	const vcNames = [...byName.keys()].sort();
@@ -50,8 +47,7 @@ export function generateStarVCCompatibility(
 		for (let j = i + 1; j < vcNames.length; j++) {
 			const a = byName.get(vcNames[i])!;
 			const b = byName.get(vcNames[j])!;
-			const compatible =
-				placeStarVCPair(a, b, ring, 1).length > 0 || placeStarVCPair(b, a, ring, 1).length > 0;
+			const compatible = placeStarVCPair(a, b, ring, 1).length > 0 || placeStarVCPair(b, a, ring, 1).length > 0;
 			if (compatible) {
 				adjacencyList[vcNames[i]].push(vcNames[j]);
 				adjacencyList[vcNames[j]].push(vcNames[i]);
@@ -91,13 +87,17 @@ export function starSeedSets(compat: StarCompatibility, k: number): string[][] {
 	const indexOf = new Map<string, number>();
 	vcNames.forEach((n, i) => indexOf.set(n, i));
 	const graph = new Map<number, number[]>();
-	for (const n of vcNames) graph.set(indexOf.get(n)!, adjacencyList[n].map((m) => indexOf.get(m)!));
+	for (const n of vcNames)
+		graph.set(
+			indexOf.get(n)!,
+			adjacencyList[n].map((m) => indexOf.get(m)!),
+		);
 
 	const subgraphs = new Set<string>();
 	const validSubgraphs: number[][] = [];
 
 	const findSubgraphs = (currentSubset: number[], neighbors: Set<number>) => {
-		const key = [...currentSubset].sort((a, b) => a - b).join(',');
+		const key = [...currentSubset].sort((a, b) => a - b).join(",");
 		if (subgraphs.has(key)) return;
 		subgraphs.add(key);
 		validSubgraphs.push([...currentSubset]);
@@ -116,7 +116,7 @@ export function starSeedSets(compat: StarCompatibility, k: number): string[][] {
 	const seen = new Set<string>();
 	const emit = (indices: number[]) => {
 		const names = indices.map((i) => vcNames[i]).sort();
-		const dedupKey = names.join('|');
+		const dedupKey = names.join("|");
 		if (seen.has(dedupKey)) return;
 		seen.add(dedupKey);
 		seedSets.push(names);

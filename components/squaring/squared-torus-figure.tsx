@@ -110,12 +110,14 @@ export function SquaredTorusFigure({
 		const half = Math.max(cx1 - cx0, cy1 - cy0) * 0.85;
 		const proj = viewFit({ minX: cx - half, maxX: cx + half, minY: cy - half, maxY: cy + half }, SIZE, 10);
 		const centreOfRing = [(L[0][0] + L[1][0]) / 2, (L[0][1] + L[1][1]) / 2];
-		const corners: [number, number][] = ([
-			[0, 0],
-			[L[0][0], L[0][1]],
-			[L[0][0] + L[1][0], L[0][1] + L[1][1]],
-			[L[1][0], L[1][1]],
-		] as [number, number][]).map((p) => [p[0] - centreOfRing[0] + cx, p[1] - centreOfRing[1] + cy]);
+		const corners: [number, number][] = (
+			[
+				[0, 0],
+				[L[0][0], L[0][1]],
+				[L[0][0] + L[1][0], L[0][1] + L[1][1]],
+				[L[1][0], L[1][1]],
+			] as [number, number][]
+		).map((p) => [p[0] - centreOfRing[0] + cx, p[1] - centreOfRing[1] + cy]);
 		return { copies: out, project: proj, fills: fillsOverride ?? torusFills(squaring, edges), ring: corners.map(proj) };
 	}, [squaring, edges, fillsOverride, reach]);
 
@@ -124,7 +126,9 @@ export function SquaredTorusFigure({
 
 	// SVG paints in document order and a highlight stroke straddles a shared edge, so the hovered tiles
 	// must come last or their outlines get half-swallowed by whichever neighbour is drawn after them.
-	const order = copies.map((_, i) => i).sort((a, b) => Number(copies[a].edge === hovered) - Number(copies[b].edge === hovered));
+	const order = copies
+		.map((_, i) => i)
+		.sort((a, b) => Number(copies[a].edge === hovered) - Number(copies[b].edge === hovered));
 
 	return (
 		<div className="flex h-full min-h-0 w-full flex-col gap-2">
@@ -190,16 +194,16 @@ export function SquaredTorusFigure({
 				) : null}
 			</svg>
 			{caption ? (
-			<FigureCaption>
-				torus area {squaring.approx ? "≈ " : ""}
-				{squaring.covolume} · order {squaring.order}
-				{squaring.approx
-					? ""
-					: squaring.perfect
-						? " · every tile a different size"
-						: ` · ${squaring.distinct} sizes across ${squaring.order} tiles`}
-				{onPick ? " · dashed outline is one fundamental domain" : ""}
-			</FigureCaption>
+				<FigureCaption>
+					torus area {squaring.approx ? "≈ " : ""}
+					{squaring.covolume} · order {squaring.order}
+					{squaring.approx
+						? ""
+						: squaring.perfect
+							? " · every tile a different size"
+							: ` · ${squaring.distinct} sizes across ${squaring.order} tiles`}
+					{onPick ? " · dashed outline is one fundamental domain" : ""}
+				</FigureCaption>
 			) : null}
 		</div>
 	);

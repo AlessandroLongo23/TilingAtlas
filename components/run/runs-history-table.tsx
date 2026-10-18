@@ -19,8 +19,10 @@ function fmtDuration(startedIso: string, finishedIso: string | null, now: number
 	const start = new Date(startedIso).getTime();
 	const end = finishedIso ? new Date(finishedIso).getTime() : now;
 	let s = Math.max(0, Math.round((end - start) / 1000));
-	const h = Math.floor(s / 3600); s -= h * 3600;
-	const m = Math.floor(s / 60); s -= m * 60;
+	const h = Math.floor(s / 3600);
+	s -= h * 3600;
+	const m = Math.floor(s / 60);
+	s -= m * 60;
 	if (h > 0) return `${h}h ${m}m`;
 	if (m > 0) return `${m}m ${s}s`;
 	return `${s}s`;
@@ -94,9 +96,7 @@ export function RunsHistoryTable({ initialRuns }: { initialRuns: RunRow[] }) {
 			<div className="mb-4 flex items-center gap-2">
 				<Radio size={16} className="text-accent" />
 				<h1 className="text-base font-semibold text-fg">Run history</h1>
-				<span className="bg-surface-overlay px-2 py-0.5 text-xs tabular-nums text-fg-muted">
-					{runs.length}
-				</span>
+				<span className="bg-surface-overlay px-2 py-0.5 text-xs text-fg-muted tabular-nums">{runs.length}</span>
 			</div>
 
 			{runs.length === 0 ? (
@@ -122,38 +122,61 @@ export function RunsHistoryTable({ initialRuns }: { initialRuns: RunRow[] }) {
 						</thead>
 						<tbody>
 							{runs.map((run) => (
-								<tr key={run.id} className="group border-b border-line-subtle last:border-0 hover:bg-surface-overlay/30">
+								<tr
+									key={run.id}
+									className="group border-b border-line-subtle last:border-0 hover:bg-surface-overlay/30"
+								>
 									<td className="px-3 py-2">
 										<Link href={`/history/run/${run.id}`} className="flex flex-wrap items-center gap-1">
 											<Badge tone={STATUS_TONE[run.status] ?? "neutral"} pill>
 												{run.status}
 											</Badge>
-											{run.certified ? <Badge tone="success" pill>certified</Badge> : null}
-											{run.incomplete ? <Badge tone="warn" pill>incomplete</Badge> : null}
+											{run.certified ? (
+												<Badge tone="success" pill>
+													certified
+												</Badge>
+											) : null}
+											{run.incomplete ? (
+												<Badge tone="warn" pill>
+													incomplete
+												</Badge>
+											) : null}
 											{run.timeouts > 0 ? (
-												<Badge tone="danger" pill>{run.timeouts} timeout{run.timeouts === 1 ? "" : "s"}</Badge>
+												<Badge tone="danger" pill>
+													{run.timeouts} timeout{run.timeouts === 1 ? "" : "s"}
+												</Badge>
 											) : null}
 										</Link>
 									</td>
-									<td className="px-3 py-2 tabular-nums text-fg">
-										<Link href={`/history/run/${run.id}`} className="block">{run.k}</Link>
+									<td className="px-3 py-2 text-fg tabular-nums">
+										<Link href={`/history/run/${run.id}`} className="block">
+											{run.k}
+										</Link>
 									</td>
 									<td className="px-3 py-2 font-mono text-xs text-fg-secondary">
-										<Link href={`/history/run/${run.id}`} className="block">{run.family}</Link>
+										<Link href={`/history/run/${run.id}`} className="block">
+											{run.family}
+										</Link>
 									</td>
 									<td className="px-3 py-2 whitespace-nowrap text-fg-muted">
-										<Link href={`/history/run/${run.id}`} className="block">{fmtStarted(run.started_at)}</Link>
+										<Link href={`/history/run/${run.id}`} className="block">
+											{fmtStarted(run.started_at)}
+										</Link>
 									</td>
-									<td className="px-3 py-2 whitespace-nowrap tabular-nums text-fg-secondary">
+									<td className="px-3 py-2 whitespace-nowrap text-fg-secondary tabular-nums">
 										<Link href={`/history/run/${run.id}`} className="block">
 											{fmtDuration(run.started_at, run.finished_at, now)}
 										</Link>
 									</td>
-									<td className="px-3 py-2 tabular-nums text-fg">
-										<Link href={`/history/run/${run.id}`} className="block">{run.count ?? "—"}</Link>
+									<td className="px-3 py-2 text-fg tabular-nums">
+										<Link href={`/history/run/${run.id}`} className="block">
+											{run.count ?? "—"}
+										</Link>
 									</td>
 									<td className="px-3 py-2 whitespace-nowrap text-fg-muted">
-										<Link href={`/history/run/${run.id}`} className="block">{fmtBudget(run.params)}</Link>
+										<Link href={`/history/run/${run.id}`} className="block">
+											{fmtBudget(run.params)}
+										</Link>
 									</td>
 									<td className="px-3 py-2">
 										<Link href={`/history/run/${run.id}`} className="block font-mono text-xs text-fg-disabled">

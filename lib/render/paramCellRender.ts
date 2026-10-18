@@ -14,10 +14,7 @@ import type { TranslationalCellData } from "@/classes/algorithm/types";
  * would have pulled the whole flat WebGL renderer into the app-shell bundle, since the export dialog is
  * mounted in the layout and therefore ships on every route.
  */
-export function evalWithHue(
-	pc: ParametricCellData,
-	alphas: number | number[],
-): TranslationalCellData {
+export function evalWithHue(pc: ParametricCellData, alphas: number | number[]): TranslationalCellData {
 	const cell = evaluateParamCell(pc, alphas);
 	if (!pc.lengths || useConfiguration.getState().lengthSizeHue) return cell;
 	return {

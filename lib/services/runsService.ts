@@ -66,11 +66,7 @@ export interface RunSeedRow {
 }
 
 export async function fetchRecentRuns(sb: SupabaseClient, limit = 20): Promise<RunRow[]> {
-	const { data, error } = await sb
-		.from("runs")
-		.select("*")
-		.order("started_at", { ascending: false })
-		.limit(limit);
+	const { data, error } = await sb.from("runs").select("*").order("started_at", { ascending: false }).limit(limit);
 	if (error) {
 		console.error("fetchRecentRuns:", error.message);
 		return [];

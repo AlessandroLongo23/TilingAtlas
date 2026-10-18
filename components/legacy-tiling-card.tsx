@@ -25,14 +25,7 @@ function formatCrNotation(cr: string) {
 	return cr.replace(/\^(\d+)/g, "<sup>$1</sup>").replace(/_(\d+)/g, "<sub>$1</sub>");
 }
 
-export function LegacyTilingCard({
-	name,
-	cr,
-	rulestring,
-	imageUrl,
-	dualImageUrl,
-	onClick,
-}: LegacyTilingCardProps) {
+export function LegacyTilingCard({ name, cr, rulestring, imageUrl, dualImageUrl, onClick }: LegacyTilingCardProps) {
 	const isDual = rulestring.includes("*");
 	const imageSrc = isDual && dualImageUrl ? dualImageUrl : imageUrl;
 	const formattedCr = useMemo(() => formatCrNotation(cr), [cr]);
@@ -40,34 +33,29 @@ export function LegacyTilingCard({
 	return (
 		<button
 			onClick={() => onClick({ name, cr, rulestring })}
-			className="w-full p-3 border border-line bg-surface-overlay/40 hover:bg-surface-overlay/60 transition-all rounded-lg mb-2 text-left group cursor-pointer"
+			className="group mb-2 w-full cursor-pointer rounded-lg border border-line bg-surface-overlay/40 p-3 text-left transition-all hover:bg-surface-overlay/60"
 		>
 			<div className="flex flex-col gap-2">
-				<span className="text-sm font-medium mb-1 text-fg group-hover:text-fg truncate">
-					{capitalize(name)}
-				</span>
-				<div className="relative w-full aspect-square bg-surface-overlay/30 rounded-md flex items-center justify-center overflow-hidden border border-line group-hover:border-line-focus">
+				<span className="mb-1 truncate text-sm font-medium text-fg group-hover:text-fg">{capitalize(name)}</span>
+				<div className="relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-md border border-line bg-surface-overlay/30 group-hover:border-line-focus">
 					{imageSrc ? (
 						// eslint-disable-next-line @next/next/no-img-element
 						<img
 							src={imageSrc}
 							alt={name}
-							className="w-full h-full object-cover rounded-md group-hover:scale-105 transition-transform duration-300"
+							className="h-full w-full rounded-md object-cover transition-transform duration-300 group-hover:scale-105"
 						/>
 					) : null}
 					{isDual ? (
 						<div className="absolute top-0 right-1">
-							<span className="text-xs font-medium text-fg group-hover:text-fg bg-surface-overlay px-2 py-[2px]">
+							<span className="bg-surface-overlay px-2 py-[2px] text-xs font-medium text-fg group-hover:text-fg">
 								Dual
 							</span>
 						</div>
 					) : null}
 				</div>
 				{cr ? (
-					<span
-						className="text-xs text-fg-muted"
-						dangerouslySetInnerHTML={{ __html: `C&R: ${formattedCr}` }}
-					/>
+					<span className="text-xs text-fg-muted" dangerouslySetInnerHTML={{ __html: `C&R: ${formattedCr}` }} />
 				) : null}
 			</div>
 		</button>

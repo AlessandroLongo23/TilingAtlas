@@ -72,7 +72,9 @@ async function loadAtlas(): Promise<ReferenceTiling[]> {
 	const parts = await Promise.all(
 		EAGER_ATLAS_FILES.map(async (name, i) => {
 			try {
-				return hydrateRenderCells(decodeAtlas<ReferenceTiling>(JSON.parse(await readFile(path.join(dir, name), "utf8"))));
+				return hydrateRenderCells(
+					decodeAtlas<ReferenceTiling>(JSON.parse(await readFile(path.join(dir, name), "utf8"))),
+				);
 			} catch (e) {
 				if (i === 0) throw e;
 				return [] as ReferenceTiling[];

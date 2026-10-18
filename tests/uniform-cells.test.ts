@@ -11,9 +11,11 @@ import { hydrateRenderCells } from "@/lib/services/renderCellDerive";
 // real specimens with no server to ask (see scripts/extract-uniform-cells.mjs). A copy can rot, so
 // this pins it to its source: rebake the atlas without rerunning the script and this fails.
 
-const atlas = hydrateRenderCells(decodeAtlas<ReferenceTiling>(
-	JSON.parse(readFileSync(path.join(process.cwd(), "public/reference-atlas.json"), "utf8")),
-));
+const atlas = hydrateRenderCells(
+	decodeAtlas<ReferenceTiling>(
+		JSON.parse(readFileSync(path.join(process.cwd(), "public/reference-atlas.json"), "utf8")),
+	),
+);
 
 const eleven = atlas
 	.filter((t) => t.source === "galebach" && t.k === 1 && !t.family.includes("*"))

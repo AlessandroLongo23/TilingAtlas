@@ -22,9 +22,7 @@ const ATLAS = path.join(process.cwd(), "public", "reference-atlas.json");
 const ring = CyclotomicRing.create(24);
 setActiveRing(ring);
 
-const records: any[] = fs.existsSync(ATLAS)
-	? decodeAtlas(JSON.parse(fs.readFileSync(ATLAS, "utf8")))
-	: [];
+const records: any[] = fs.existsSync(ATLAS) ? decodeAtlas(JSON.parse(fs.readFileSync(ATLAS, "utf8"))) : [];
 
 describe.skipIf(!records.length)("renderCell derivation over the shipped atlas", () => {
 	it("ships most of the atlas with no renderCell at all", () => {

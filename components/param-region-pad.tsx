@@ -82,12 +82,15 @@ export const ParamRegionPad = memo(function ParamRegionPad({ paramCell }: { para
 	// δ-unit extent of the region, and the single (isotropic) px-per-unit scale that fits it in PLOT².
 	const xs = verts.map((p) => p[0]);
 	const ys = verts.map((p) => p[1]);
-	const minX = Math.min(...xs), maxX = Math.max(...xs);
-	const minY = Math.min(...ys), maxY = Math.max(...ys);
+	const minX = Math.min(...xs),
+		maxX = Math.max(...xs);
+	const minY = Math.min(...ys),
+		maxY = Math.max(...ys);
 	const spanX = Math.max(maxX - minX, 1e-6);
 	const spanY = Math.max(maxY - minY, 1e-6);
 	const s = Math.min(PLOT / spanX, PLOT / spanY);
-	const drawW = spanX * s, drawH = spanY * s;
+	const drawW = spanX * s,
+		drawH = spanY * s;
 	const ox = M.l + (PLOT - drawW) / 2;
 	const oyBottom = M.t + (PLOT + drawH) / 2;
 
@@ -97,10 +100,7 @@ export const ParamRegionPad = memo(function ParamRegionPad({ paramCell }: { para
 		(a[0] - params[0].alpha0Deg) / 15,
 		(a[1] - params[1].alpha0Deg) / 15,
 	];
-	const toAlpha = (u: number, v: number): number[] => [
-		params[0].alpha0Deg + u * 15,
-		params[1].alpha0Deg + v * 15,
-	];
+	const toAlpha = (u: number, v: number): number[] => [params[0].alpha0Deg + u * 15, params[1].alpha0Deg + v * 15];
 
 	// Each axis's absolute-angle span, for the tick labels and the end caps.
 	const spanDeg: [number, number][] = [
@@ -129,7 +129,8 @@ export const ParamRegionPad = memo(function ParamRegionPad({ paramCell }: { para
 	);
 
 	const [ux, uy] = toUnits(alphas);
-	const hx = px(ux), hy = py(uy);
+	const hx = px(ux),
+		hy = py(uy);
 	const poly = verts.map(([x, y]) => `${px(x)},${py(y)}`).join(" ");
 
 	// The moving parts, addressed directly. `paint` is the single writer — the drag, the arrow keys and the
@@ -222,9 +223,13 @@ export const ParamRegionPad = memo(function ParamRegionPad({ paramCell }: { para
 					<span key={j} className="flex items-baseline gap-1">
 						<span className="w-2">{GREEK[j]}</span>
 						<span
-							ref={(el) => { live.current.out[j] = el; }}
+							ref={(el) => {
+								live.current.out[j] = el;
+							}}
 							className="w-[3.4rem] text-right tabular-nums"
-						>{alphas[j].toFixed(1)}°</span>
+						>
+							{alphas[j].toFixed(1)}°
+						</span>
 						<span className="truncate text-[10px] font-normal text-fg-muted">{p.tile ?? ""}</span>
 					</span>
 				))}
@@ -242,7 +247,10 @@ export const ParamRegionPad = memo(function ParamRegionPad({ paramCell }: { para
 				aria-label={`two-angle region for ${params.map((p) => p.tile ?? "?").join(" and ")}; arrow keys adjust`}
 				onKeyDown={(e) => {
 					const map: Record<string, [number, number]> = {
-						ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowDown: [0, -1], ArrowUp: [0, 1],
+						ArrowLeft: [-1, 0],
+						ArrowRight: [1, 0],
+						ArrowDown: [0, -1],
+						ArrowUp: [0, 1],
 					};
 					const d = map[e.key];
 					if (!d) return;
@@ -267,29 +275,45 @@ export const ParamRegionPad = memo(function ParamRegionPad({ paramCell }: { para
 				    always. A position can then be read off the axis, not only out of the numeric readout. */}
 				<g className="stroke-fg-muted/50" strokeWidth={1} shapeRendering="crispEdges">
 					{ticksX.map((a) => (
-						<line key={`tx${a}`}
-							x1={px(uOfDeg(a, 0))} y1={oyBottom + 5} x2={px(uOfDeg(a, 0))} y2={oyBottom + 8} />
+						<line key={`tx${a}`} x1={px(uOfDeg(a, 0))} y1={oyBottom + 5} x2={px(uOfDeg(a, 0))} y2={oyBottom + 8} />
 					))}
 					{ticksY.map((a) => (
-						<line key={`ty${a}`}
-							x1={ox - 8} y1={py(uOfDeg(a, 1))} x2={ox - 5} y2={py(uOfDeg(a, 1))} />
+						<line key={`ty${a}`} x1={ox - 8} y1={py(uOfDeg(a, 1))} x2={ox - 5} y2={py(uOfDeg(a, 1))} />
 					))}
 				</g>
 				<g className="fill-fg-muted tabular-nums" style={{ fontSize: 8 }}>
 					{labelsX.map((l, i) => (
-						<text key={`lx${i}`} x={l.p} y={H - 3} textAnchor="middle"
-							className={l.end ? "fill-fg-secondary" : undefined}>{l.t}</text>
+						<text
+							key={`lx${i}`}
+							x={l.p}
+							y={H - 3}
+							textAnchor="middle"
+							className={l.end ? "fill-fg-secondary" : undefined}
+						>
+							{l.t}
+						</text>
 					))}
 					{labelsY.map((l, i) => (
-						<text key={`ly${i}`} x={ox - 10} y={l.p + 3} textAnchor="end"
-							className={l.end ? "fill-fg-secondary" : undefined}>{l.t}</text>
+						<text
+							key={`ly${i}`}
+							x={ox - 10}
+							y={l.p + 3}
+							textAnchor="end"
+							className={l.end ? "fill-fg-secondary" : undefined}
+						>
+							{l.t}
+						</text>
 					))}
 				</g>
 
 				{/* Which axis is which angle. */}
 				<g className="fill-accent" style={{ fontSize: 9 }}>
-					<text x={ox + drawW + 4} y={oyBottom + 2}>{GREEK[0]}</text>
-					<text x={ox - 5} y={oyBottom - drawH - 5} textAnchor="middle">{GREEK[1]}</text>
+					<text x={ox + drawW + 4} y={oyBottom + 2}>
+						{GREEK[0]}
+					</text>
+					<text x={ox - 5} y={oyBottom - drawH - 5} textAnchor="middle">
+						{GREEK[1]}
+					</text>
 				</g>
 
 				{/* 30° grid, clipped to the region: a ruler for how far a drag has actually travelled. */}
@@ -313,7 +337,7 @@ export const ParamRegionPad = memo(function ParamRegionPad({ paramCell }: { para
 
 				{/* Corners of the region: where an edge changes slope, i.e. where one tile hits zero angle and
 				    a different constraint takes over. Hover for the pair. */}
-				<g className="fill-accent/70 pointer-events-none">
+				<g className="pointer-events-none fill-accent/70">
 					{verts.map(([x, y], i) => (
 						<circle key={i} cx={px(x)} cy={py(y)} r={1.8}>
 							<title>
@@ -326,18 +350,46 @@ export const ParamRegionPad = memo(function ParamRegionPad({ paramCell }: { para
 
 				{/* Where we are, read against the axes. */}
 				<g className="pointer-events-none stroke-accent/45" strokeWidth={1} strokeDasharray="2 2">
-					<line ref={(el) => { live.current.gx = el; }} x1={ox - 5} y1={hy} x2={hx} y2={hy} />
-					<line ref={(el) => { live.current.gy = el; }} x1={hx} y1={oyBottom + 5} x2={hx} y2={hy} />
+					<line
+						ref={(el) => {
+							live.current.gx = el;
+						}}
+						x1={ox - 5}
+						y1={hy}
+						x2={hx}
+						y2={hy}
+					/>
+					<line
+						ref={(el) => {
+							live.current.gy = el;
+						}}
+						x1={hx}
+						y1={oyBottom + 5}
+						x2={hx}
+						y2={hy}
+					/>
 				</g>
 				<circle
-					ref={(el) => { live.current.dot = el; }}
-					cx={hx} cy={hy} r={4} className="pointer-events-none fill-accent"
+					ref={(el) => {
+						live.current.dot = el;
+					}}
+					cx={hx}
+					cy={hy}
+					r={4}
+					className="pointer-events-none fill-accent"
 				/>
 				{/* Slightly larger transparent target so the handle is still grabbable when it sits on an edge,
 				    where the visible dot is half outside the polygon and would miss its hit area. */}
 				<circle
-					ref={(el) => { live.current.grab = el; }}
-					cx={hx} cy={hy} r={7} fill="transparent" className="cursor-crosshair" {...grab}
+					ref={(el) => {
+						live.current.grab = el;
+					}}
+					cx={hx}
+					cy={hy}
+					r={7}
+					fill="transparent"
+					className="cursor-crosshair"
+					{...grab}
 				/>
 			</svg>
 		</div>

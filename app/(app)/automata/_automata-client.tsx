@@ -84,10 +84,7 @@ export function AutomataClient() {
 		if (wanted) setKey("tilingId", wanted.canonicalKey);
 	}, [tilings, tilingId, setKey]);
 
-	const selected = useMemo(
-		() => tilings.find((t) => t.canonicalKey === tilingId) ?? null,
-		[tilings, tilingId],
-	);
+	const selected = useMemo(() => tilings.find((t) => t.canonicalKey === tilingId) ?? null, [tilings, tilingId]);
 
 	const cell = (selected?.renderCell as TranslationalCellData | undefined) ?? null;
 
@@ -107,10 +104,17 @@ export function AutomataClient() {
 		if (!eng) return;
 		const population = eng.population / eng.coverFactor;
 		// Back to the published number (a cell flipped twice) clears the overlay, or it would stick.
-		setPainted(population === published.population ? null : { base: published, population, density: eng.population / eng.cellCapacity });
+		setPainted(
+			population === published.population
+				? null
+				: { base: published, population, density: eng.population / eng.cellCapacity },
+		);
 	}, [engineRef, published]);
 	const report = useMemo(
-		() => (painted?.base === published ? { ...published, population: painted.population, density: painted.density } : published),
+		() =>
+			painted?.base === published
+				? { ...published, population: painted.population, density: painted.density }
+				: published,
 		[painted, published],
 	);
 	// Everything but the plane is a surface worth turning over.
@@ -203,7 +207,7 @@ export function AutomataClient() {
 	);
 
 	return (
-		<div className="relative flex-1 min-h-0 flex overflow-hidden">
+		<div className="relative flex min-h-0 flex-1 overflow-hidden">
 			{/* The phone's corner pair, as on the other explorers: the way home (for the flat board and the 3D
 			    surface alike) beside fullscreen. The board's corner is this box's; first in the DOM so it is
 			    read before the sheet. */}
@@ -220,7 +224,7 @@ export function AutomataClient() {
 				/>
 			</PageSidebar>
 			<div
-				className="flex-1 min-w-0 min-h-0 relative overflow-hidden bg-surface"
+				className="relative min-h-0 min-w-0 flex-1 overflow-hidden bg-surface"
 				onPointerDown={readPopulation}
 				onPointerUp={readPopulation}
 			>
@@ -239,7 +243,7 @@ export function AutomataClient() {
 					paintAvailable={!show3D}
 				/>
 				{!cell && !loading && (
-					<div className="absolute inset-0 grid place-items-center pointer-events-none">
+					<div className="pointer-events-none absolute inset-0 grid place-items-center">
 						<p className="text-sm text-fg-muted">Pick a tiling to start.</p>
 					</div>
 				)}

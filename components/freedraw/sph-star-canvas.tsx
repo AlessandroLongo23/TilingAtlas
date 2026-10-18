@@ -47,7 +47,10 @@ export function SphStarCanvas({
 	// indices as the reference solids (components/spherical-canvas.tsx).
 	const faceView = useConfiguration((s) => s.solidFaceView);
 	const facePick = useConfiguration((s) => s.solidFacePick);
-	const fillFaces = useMemo(() => partialFill(pattern.vertices, pattern.faces, faceView, facePick), [pattern, faceView, facePick]);
+	const fillFaces = useMemo(
+		() => partialFill(pattern.vertices, pattern.faces, faceView, facePick),
+		[pattern, faceView, facePick],
+	);
 	// A partial fill is a view of the flat-faced figure, whatever the shape toggle says.
 	const shown: IcoMode = fillFaces ? "polyhedron" : mode;
 	const scene = useMemo(() => sphStarScene(pattern, mod2, fillFaces), [pattern, mod2, fillFaces]);

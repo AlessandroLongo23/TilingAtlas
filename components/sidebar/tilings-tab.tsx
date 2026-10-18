@@ -75,13 +75,20 @@ export function TilingsTab({
 		return () => window.removeEventListener("keydown", onKey);
 	}, []);
 	return (
-		<div className="h-full flex flex-col">
+		<div className="flex h-full flex-col">
 			{/* On a phone the dock's peek row is this header, in view at every snap. */}
 			<div className="px-3.5 pt-3.5 pb-3 max-md:hidden">
 				<NavHeader selected={selected} />
 			</div>
-			<div className="flex-1 min-h-0">
-				<Tabs value={tab} onValueChange={setTab} tabs={TABS} shortcuts={TAB_SHORTCUTS} keepMounted listClassName="mx-3.5 mb-3 max-md:mb-2">
+			<div className="min-h-0 flex-1">
+				<Tabs
+					value={tab}
+					onValueChange={setTab}
+					tabs={TABS}
+					shortcuts={TAB_SHORTCUTS}
+					keepMounted
+					listClassName="mx-3.5 mb-3 max-md:mb-2"
+				>
 					{(t) =>
 						t === "Catalogue" ? (
 							<CatalogueTab

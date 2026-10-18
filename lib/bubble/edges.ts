@@ -46,12 +46,36 @@ export type BubbleEdgeStyle = "shallow" | "arc" | "koch" | "crenel" | "dovetail"
 
 /** The picker's contents: order, label, and the one-line gloss under it. */
 export const BUBBLE_EDGE_STYLES: { value: BubbleEdgeStyle; label: string; help: string }[] = [
-	{ value: "shallow", label: "Shallow", help: "A 30° arc. The faintest bulge that still reads as a bump at thumbnail size." },
-	{ value: "arc", label: "Arc", help: "A 60° circular arc — the profile the catalogue is drawn in, and on the triangular substrate the deepest one a tile admits." },
-	{ value: "koch", label: "Koch", help: "The Koch generator: the middle third of the edge replaced by a bump, then the same done to every segment it leaves behind. At level 1 it is a plain chevron, and the one profile that survives a 40-pixel thumbnail." },
-	{ value: "crenel", label: "Squared Koch", help: "The quadratic Koch generator: the middle third of the edge replaced by three sides of a rectangle, then the same done to every segment it leaves behind. At level 1 it is a plain crenel, which turns every bubble tile into a polyomino on a refined grid — the same tiling readable as a polyform. Rougher than the triangular Koch: dimension 1.465 against 1.262." },
-	{ value: "dovetail", label: "Dovetail", help: "A trapezoidal tab widening outward, the woodworking joint: interlocking like the jigsaw knob, but straight-sided." },
-	{ value: "jigsaw", label: "Jigsaw tab", help: "Neck and round head — the puzzle trade's tab and blank. The deepest profile here, and the only one whose head overhangs its own neck." },
+	{
+		value: "shallow",
+		label: "Shallow",
+		help: "A 30° arc. The faintest bulge that still reads as a bump at thumbnail size.",
+	},
+	{
+		value: "arc",
+		label: "Arc",
+		help: "A 60° circular arc — the profile the catalogue is drawn in, and on the triangular substrate the deepest one a tile admits.",
+	},
+	{
+		value: "koch",
+		label: "Koch",
+		help: "The Koch generator: the middle third of the edge replaced by a bump, then the same done to every segment it leaves behind. At level 1 it is a plain chevron, and the one profile that survives a 40-pixel thumbnail.",
+	},
+	{
+		value: "crenel",
+		label: "Squared Koch",
+		help: "The quadratic Koch generator: the middle third of the edge replaced by three sides of a rectangle, then the same done to every segment it leaves behind. At level 1 it is a plain crenel, which turns every bubble tile into a polyomino on a refined grid — the same tiling readable as a polyform. Rougher than the triangular Koch: dimension 1.465 against 1.262.",
+	},
+	{
+		value: "dovetail",
+		label: "Dovetail",
+		help: "A trapezoidal tab widening outward, the woodworking joint: interlocking like the jigsaw knob, but straight-sided.",
+	},
+	{
+		value: "jigsaw",
+		label: "Jigsaw tab",
+		help: "Neck and round head — the puzzle trade's tab and blank. The deepest profile here, and the only one whose head overhangs its own neck.",
+	},
 ];
 
 export const BUBBLE_EDGE_STYLE_VALUES = BUBBLE_EDGE_STYLES.map((s) => s.value);
@@ -241,8 +265,14 @@ const kochGenerator = (apex: number): Pt[] => [pt(0, 0), pt(1 / 3, 0), pt(1 / 2,
  * h(1-t) = -h(t): it is antisymmetric, bite = bump, and the edge stops carrying the bit it exists to
  * show. Same death as the ogee — see the forbidden family at the top of this file.
  */
-const squaredGenerator = (h: number): Pt[] =>
-	[pt(0, 0), pt(1 / 3, 0), pt(1 / 3, h), pt(2 / 3, h), pt(2 / 3, 0), pt(1, 0)];
+const squaredGenerator = (h: number): Pt[] => [
+	pt(0, 0),
+	pt(1 / 3, 0),
+	pt(1 / 3, h),
+	pt(2 / 3, h),
+	pt(2 / 3, 0),
+	pt(1, 0),
+];
 
 /** 1 + 1/3 + … + 3^(1-level): what one unit of squared-Koch tab height adds up to at this level. */
 function thirdsSum(level: number): number {
@@ -300,7 +330,9 @@ function bite(style: BubbleEdgeStyle, grid: BubbleGrid, level: number): Pt[] {
 	const key = `${style}:${boardCornerAngle(grid)}:${level}`;
 	const hit = biteCache.get(key);
 	if (hit) return hit;
-	const prof = bump(style, grid, level).map(({ x, y }) => pt(1 - x, -y)).reverse();
+	const prof = bump(style, grid, level)
+		.map(({ x, y }) => pt(1 - x, -y))
+		.reverse();
 	biteCache.set(key, prof);
 	return prof;
 }

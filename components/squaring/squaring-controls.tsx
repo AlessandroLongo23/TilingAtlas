@@ -8,7 +8,13 @@ import { InfoDot } from "@/components/ui/info-dot";
 import { Reveal } from "@/components/ui/reveal";
 import { surfaceOf } from "@/lib/services/shelfRegistry";
 import { classAngle, snapClass, sqSectorAt } from "@/lib/squaring/torusSqDomains";
-import { bestClass, blendedSquaring, CLASS_LIMIT, REFUSAL_TEXT, squaringAvailability } from "@/lib/squaring/playSquaring";
+import {
+	bestClass,
+	blendedSquaring,
+	CLASS_LIMIT,
+	REFUSAL_TEXT,
+	squaringAvailability,
+} from "@/lib/squaring/playSquaring";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import { SqDomainFigure } from "./sq-domain-figure";
 import { torusFills } from "./torus-shared";
@@ -64,13 +70,13 @@ export function SquaringControls({ selected }: { selected: CatalogueTiling | nul
 						{support ? (
 							<>
 								<p>
-									Glue the translation cell&apos;s opposite sides and the tiling becomes a graph on a torus. A
-									harmonic form on it turns every edge into a square, and the squares tile a flat torus —
-									another Euclidean tiling, drawn in the panel over the canvas.
+									Glue the translation cell&apos;s opposite sides and the tiling becomes a graph on a torus. A harmonic
+									form on it turns every edge into a square, and the squares tile a flat torus — another Euclidean
+									tiling, drawn in the panel over the canvas.
 								</p>
 								<p>
-									The construction reads the quotient graph and never the geometry, so flexing a
-									parametric family leaves it where it is.
+									The construction reads the quotient graph and never the geometry, so flexing a parametric family
+									leaves it where it is.
 								</p>
 							</>
 						) : (
@@ -86,13 +92,9 @@ export function SquaringControls({ selected }: { selected: CatalogueTiling | nul
 							<span className="font-mono text-[11px] leading-none text-fg">
 								{Number.isInteger(cls[0]) && Number.isInteger(cls[1])
 									? `(${cls[0]}, ${cls[1]})`
-									: `${((((Math.atan2(cls[1], cls[0]) * 180) / Math.PI) + 360) % 360).toFixed(1)}°`}
+									: `${(((Math.atan2(cls[1], cls[0]) * 180) / Math.PI + 360) % 360).toFixed(1)}°`}
 							</span>
-							<Button
-								variant="secondary"
-								size="sm"
-								onClick={() => setCfg({ squaringClass: bestClass(support) })}
-							>
+							<Button variant="secondary" size="sm" onClick={() => setCfg({ squaringClass: bestClass(support) })}>
 								Richest
 							</Button>
 						</div>
@@ -109,9 +111,7 @@ export function SquaringControls({ selected }: { selected: CatalogueTiling | nul
 							onPick={(c) => setCfg({ squaringClass: c })}
 							onAngle={(a) =>
 								setCfg({
-									squaringClass: cfg.squaringSnap
-										? snapClass(a, CLASS_LIMIT).cls
-										: [Math.cos(a), Math.sin(a)],
+									squaringClass: cfg.squaringSnap ? snapClass(a, CLASS_LIMIT).cls : [Math.cos(a), Math.sin(a)],
 								})
 							}
 							hovered={hovered}
@@ -120,9 +120,13 @@ export function SquaringControls({ selected }: { selected: CatalogueTiling | nul
 						/>
 						{support.domains.locked.length > 0 ? (
 							<p className="text-[10px] leading-snug text-fg-muted">
-								{support.domains.locked.length === 1 ? "One pair of squares is" : `${support.domains.locked.length} pairs of squares are`}{" "}
+								{support.domains.locked.length === 1
+									? "One pair of squares is"
+									: `${support.domains.locked.length} pairs of squares are`}{" "}
 								forced to the same size at every class, so no direction gives a perfect squaring.
-								{support.halfTurn ? " A half-turn acts on this quotient, and a half-turn is −1 on H¹ at every class at once, which is what locks them." : ""}
+								{support.halfTurn
+									? " A half-turn acts on this quotient, and a half-turn is −1 on H¹ at every class at once, which is what locks them."
+									: ""}
 							</p>
 						) : null}
 						<Checkbox
@@ -133,9 +137,9 @@ export function SquaringControls({ selected }: { selected: CatalogueTiling | nul
 							hint={
 								<InfoDot label="What snapping does">
 									<p>
-										The class lives in H¹(T;ℝ), so every direction is a real squared torus. Only the
-										integral ones have integer sides a solve can compare, which is why they are the only
-										ones that print their numbers or claim to be perfect.
+										The class lives in H¹(T;ℝ), so every direction is a real squared torus. Only the integral ones have
+										integer sides a solve can compare, which is why they are the only ones that print their numbers or
+										claim to be perfect.
 									</p>
 								</InfoDot>
 							}
@@ -148,8 +152,8 @@ export function SquaringControls({ selected }: { selected: CatalogueTiling | nul
 							hint={
 								<InfoDot label="What sizes shows">
 									<p>
-										Each square&apos;s side, printed where it fits. Off the integer lattice the sides are
-										irrational and nothing is printed whatever this says.
+										Each square&apos;s side, printed where it fits. Off the integer lattice the sides are irrational and
+										nothing is printed whatever this says.
 									</p>
 								</InfoDot>
 							}
@@ -162,9 +166,9 @@ export function SquaringControls({ selected }: { selected: CatalogueTiling | nul
 							hint={
 								<InfoDot label="What monochrome does">
 									<p>
-										The colour ramp is keyed on SIZE, so two tiles the same size are the same colour and
-										a squaring that looks perfect but is not gives itself away as a repeated hue. Turn it
-										off to read the sizes from the drawing alone.
+										The colour ramp is keyed on SIZE, so two tiles the same size are the same colour and a squaring that
+										looks perfect but is not gives itself away as a repeated hue. Turn it off to read the sizes from the
+										drawing alone.
 									</p>
 								</InfoDot>
 							}

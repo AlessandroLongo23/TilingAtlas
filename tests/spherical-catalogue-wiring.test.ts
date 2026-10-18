@@ -53,9 +53,7 @@ describe("derivation — searched, constructed, or tabulated", () => {
 		// engine derived it. Both are the same error and this catches either.
 		for (const e of atlas) {
 			if (!e.spherical) continue;
-			expect(e.derivation === "tabulated", `${e.id} (${e.spherical.solid})`).toBe(
-				CLASSICAL.has(e.spherical.solid),
-			);
+			expect(e.derivation === "tabulated", `${e.id} (${e.spherical.solid})`).toBe(CLASSICAL.has(e.spherical.solid));
 		}
 	});
 

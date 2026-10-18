@@ -25,7 +25,14 @@ const BOX_SIZE: Record<NonNullable<CheckboxBoxProps["size"]>, { box: string; che
 	md: { box: "h-4 w-4", check: "w-3 h-3" },
 };
 
-export function CheckboxBox({ id, checked, onCheckedChange, disabled = false, size = "md", decorative = false }: CheckboxBoxProps) {
+export function CheckboxBox({
+	id,
+	checked,
+	onCheckedChange,
+	disabled = false,
+	size = "md",
+	decorative = false,
+}: CheckboxBoxProps) {
 	return (
 		<div className="relative flex items-center">
 			<input
@@ -37,17 +44,17 @@ export function CheckboxBox({ id, checked, onCheckedChange, disabled = false, si
 				{...(decorative ? { tabIndex: -1, "aria-hidden": true } : {})}
 				className={cn(
 					decorative && "pointer-events-none",
-					"peer appearance-none rounded-[4px] border border-line-strong bg-surface-raised shadow-sm cursor-pointer",
-					"checked:bg-accent checked:border-accent",
+					"peer cursor-pointer appearance-none rounded-[4px] border border-line-strong bg-surface-raised shadow-sm",
+					"checked:border-accent checked:bg-accent",
 					"focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
-					"disabled:cursor-not-allowed disabled:opacity-50 transition-colors",
+					"transition-colors disabled:cursor-not-allowed disabled:opacity-50",
 					BOX_SIZE[size].box,
 				)}
 			/>
 			<Check
 				strokeWidth={3}
 				className={cn(
-					"absolute inset-0 m-auto text-accent-contrast opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none",
+					"pointer-events-none absolute inset-0 m-auto text-accent-contrast opacity-0 transition-opacity peer-checked:opacity-100",
 					BOX_SIZE[size].check,
 				)}
 			/>
@@ -87,7 +94,7 @@ export function Checkbox({ id, label, checked, onCheckedChange, disabled = false
 				// inside is drawing only), so it carries the focus ring.
 				"flex items-center justify-between gap-3 rounded-control max-md:min-h-11",
 				"focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
-				disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer",
+				disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer",
 			)}
 			onClick={toggle}
 			onKeyDown={(e) => {
@@ -97,11 +104,11 @@ export function Checkbox({ id, label, checked, onCheckedChange, disabled = false
 				}
 			}}
 		>
-			<div className="flex items-center space-x-3 min-w-0">
+			<div className="flex min-w-0 items-center space-x-3">
 				<CheckboxBox id={id} checked={checked} onCheckedChange={onCheckedChange} disabled={disabled} decorative />
 				{label ? (
-					<span className="flex items-center gap-1.5 min-w-0">
-						<label className={cn("text-[13px] text-fg truncate", disabled ? "cursor-not-allowed" : "cursor-pointer")}>
+					<span className="flex min-w-0 items-center gap-1.5">
+						<label className={cn("truncate text-[13px] text-fg", disabled ? "cursor-not-allowed" : "cursor-pointer")}>
 							{label}
 						</label>
 						{hint}

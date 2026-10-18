@@ -21,8 +21,7 @@ import { cn } from "@/lib/utils/cn";
 
 /** The gloss the paint scopes already carry, so the inspector's class rows and the palette strip's scope
  *  chips cannot end up describing the same word differently. */
-const scopeHelp = (value: PaintScope): string | undefined =>
-	PAINT_SCOPES.find((s) => s.value === value)?.help;
+const scopeHelp = (value: PaintScope): string | undefined => PAINT_SCOPES.find((s) => s.value === value)?.help;
 
 const RANKS_HELP =
 	"What a merged piece is: bounded, a strip repeating in one direction, or spread over the plane. A strip or an unbounded piece is not a tile, which is why the merge tool refuses the drag that would make one.";
@@ -31,7 +30,7 @@ function Row({ label, value, title }: { label: string; value: ReactNode; title?:
 	return (
 		<div className="flex items-baseline justify-between gap-3" title={title}>
 			<span className="text-fg-secondary">{label}</span>
-			<span className="font-mono tabular-nums text-fg">{value}</span>
+			<span className="font-mono text-fg tabular-nums">{value}</span>
 		</div>
 	);
 }
@@ -90,7 +89,7 @@ export function StudioInspector({
 	}
 
 	return (
-		<div className="absolute bottom-3 left-3 z-20 flex w-60 flex-col gap-1 ta-float p-3 text-xs">
+		<div className="ta-float absolute bottom-3 left-3 z-20 flex w-60 flex-col gap-1 p-3 text-xs">
 			<div className="flex items-center justify-between gap-4 pb-1">
 				<span className="font-mono text-fg-secondary">Cell</span>
 				<button
@@ -116,16 +115,16 @@ export function StudioInspector({
 			    into an explanation. */}
 			{grabbedSiteSymmetry ? (
 				<p className="leading-snug text-fg-secondary">
-					Site symmetry <span className="font-mono text-fg">{grabbedSiteSymmetry}</span>: this vertex
-					sits on a symmetry element, so it only moves where that element allows. On a mirror it slides
-					along the mirror; on a rotation centre it cannot move at all.
+					Site symmetry <span className="font-mono text-fg">{grabbedSiteSymmetry}</span>: this vertex sits on a symmetry
+					element, so it only moves where that element allows. On a mirror it slides along the mirror; on a rotation
+					centre it cannot move at all.
 				</p>
 			) : null}
 
 			{cutLabels?.length ? (
 				<p className="leading-snug text-fg-secondary">
-					Cut <span className="font-mono text-fg">{cutLabels.join(" → ")}</span>. It commits once both
-					ends sit on the boundary of one face.
+					Cut <span className="font-mono text-fg">{cutLabels.join(" → ")}</span>. It commits once both ends sit on the
+					boundary of one face.
 				</p>
 			) : null}
 
@@ -135,7 +134,7 @@ export function StudioInspector({
 			<Row label="Edges" value={edgeCount} />
 
 			<div className="flex flex-col gap-1 border-t border-line pt-1.5" title={RANKS_HELP}>
-				<span className="text-[10px] uppercase tracking-wide text-fg-muted">Ranks</span>
+				<span className="text-[10px] tracking-wide text-fg-muted uppercase">Ranks</span>
 				<Row label="Finite" value={ranks.finite} />
 				<Row label="Strips" value={ranks.strips} />
 				<Row label="Unbounded" value={ranks.unbounded} />

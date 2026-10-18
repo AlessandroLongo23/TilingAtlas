@@ -56,28 +56,19 @@ export function TilingFilterBar({
 		dual: true,
 		vertexTypes: true,
 	});
-	const setOpen = (key: SectionKey) => (open: boolean) =>
-		setExpanded((prev) => ({ ...prev, [key]: open }));
+	const setOpen = (key: SectionKey) => (open: boolean) => setExpanded((prev) => ({ ...prev, [key]: open }));
 
 	const toggleType = (id: string) => {
-		onSelectedTypesChange(
-			selectedTypes.includes(id)
-				? selectedTypes.filter((t) => t !== id)
-				: [...selectedTypes, id],
-		);
+		onSelectedTypesChange(selectedTypes.includes(id) ? selectedTypes.filter((t) => t !== id) : [...selectedTypes, id]);
 	};
 	const togglePolygon = (p: number) => {
 		onSelectedPolygonsChange(
-			selectedPolygons.includes(p)
-				? selectedPolygons.filter((x) => x !== p)
-				: [...selectedPolygons, p],
+			selectedPolygons.includes(p) ? selectedPolygons.filter((x) => x !== p) : [...selectedPolygons, p],
 		);
 	};
 	const toggleVertexType = (id: string) => {
 		onSelectedVertexTypesChange(
-			selectedVertexTypes.includes(id)
-				? selectedVertexTypes.filter((v) => v !== id)
-				: [...selectedVertexTypes, id],
+			selectedVertexTypes.includes(id) ? selectedVertexTypes.filter((v) => v !== id) : [...selectedVertexTypes, id],
 		);
 	};
 
@@ -151,7 +142,7 @@ export function TilingFilterBar({
 				>
 					<div className="grid grid-cols-2 gap-2">
 						{vertexTypes.map((vt) => (
-							<div key={vt.id} className="w-full aspect-square">
+							<div key={vt.id} className="aspect-square w-full">
 								<VertexTypeCard
 									id={vt.id}
 									name={vt.name}
@@ -169,23 +160,13 @@ export function TilingFilterBar({
 					open={expanded.dual}
 					onOpenChange={setOpen("dual")}
 				>
-					<div className="flex justify-between items-center px-1">
+					<div className="flex items-center justify-between px-1">
 						<div className="text-sm text-fg-secondary">Show Dual Tilings</div>
-						<Switch
-							checked={showDual}
-							onCheckedChange={onShowDualChange}
-							aria-label="Toggle dual tilings"
-						/>
+						<Switch checked={showDual} onCheckedChange={onShowDualChange} aria-label="Toggle dual tilings" />
 					</div>
 				</SidebarSection>
 
-				<Button
-					variant="secondary"
-					size="md"
-					onClick={clearFilters}
-					classes="mt-2"
-					label="Clear Filters"
-				/>
+				<Button variant="secondary" size="md" onClick={clearFilters} classes="mt-2" label="Clear Filters" />
 			</div>
 		</div>
 	);

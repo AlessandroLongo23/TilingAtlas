@@ -107,41 +107,38 @@ export function MarkdownRenderer({
 	return (
 		<div
 			ref={containerRef}
-			className={cn(
-				"w-full h-full overflow-y-auto bg-surface scrollbar-hide",
-				"markdown-content",
-			)}
+			className={cn("scrollbar-hide h-full w-full overflow-y-auto bg-surface", "markdown-content")}
 		>
 			{/* Phone: a 20px gutter and room under the last paragraph for the floating Contents pill. */}
-			<div className="mx-auto max-w-[728px] px-6 py-6 text-base leading-[1.65] md:py-10 max-md:px-5 max-md:pb-28">
+			<div className="mx-auto max-w-[728px] px-6 py-6 text-base leading-[1.65] max-md:px-5 max-md:pb-28 md:py-10">
 				<article
 					className={cn(
 						// Headings. h1 is the article title, once, at the top. Sections are separated by space alone.
-						"[&_h1]:text-[36px] max-md:[&_h1]:text-[30px] [&_h1]:leading-tight [&_h1]:font-[650] [&_h1]:tracking-[-0.02em] [&_h1]:text-fg [&_h1]:mt-0 [&_h1]:mb-4 [&_h1]:text-balance",
-						"[&_h2]:text-2xl [&_h2]:leading-snug [&_h2]:font-semibold [&_h2]:tracking-[-0.01em] [&_h2]:text-fg [&_h2]:mt-12 [&_h2]:mb-3 [&_h2]:cursor-pointer",
-						"[&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-fg [&_h3]:mb-2 [&_h3]:mt-8 [&_h3]:cursor-pointer",
-						"[&_h4]:text-base [&_h4]:font-semibold [&_h4]:text-fg [&_h4]:mb-2 [&_h4]:mt-6 [&_h4]:cursor-pointer",
+						"[&_h1]:mt-0 [&_h1]:mb-4 [&_h1]:text-[36px] [&_h1]:leading-tight [&_h1]:font-[650] [&_h1]:tracking-[-0.02em] [&_h1]:text-balance [&_h1]:text-fg max-md:[&_h1]:text-[30px]",
+						"[&_h2]:mt-12 [&_h2]:mb-3 [&_h2]:cursor-pointer [&_h2]:text-2xl [&_h2]:leading-snug [&_h2]:font-semibold [&_h2]:tracking-[-0.01em] [&_h2]:text-fg",
+						"[&_h3]:mt-8 [&_h3]:mb-2 [&_h3]:cursor-pointer [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-fg",
+						"[&_h4]:mt-6 [&_h4]:mb-2 [&_h4]:cursor-pointer [&_h4]:text-base [&_h4]:font-semibold [&_h4]:text-fg",
 						// Phone: a jump from the Contents sheet lands a heading clear of the reading-progress line.
 						"max-md:[&_:is(h2,h3,h4)]:scroll-mt-4",
 						// Body
-						"[&_p]:text-fg-secondary [&_p]:mb-4 [&_h1+p]:mb-6",
-						"[&_ul]:list-disc [&_ul]:ml-6 [&_ul]:mb-4 [&_ul]:text-fg-secondary",
-						"[&_ol]:list-decimal [&_ol]:ml-6 [&_ol]:mb-4 [&_ol]:text-fg-secondary",
+						"[&_h1+p]:mb-6 [&_p]:mb-4 [&_p]:text-fg-secondary",
+						"[&_ul]:mb-4 [&_ul]:ml-6 [&_ul]:list-disc [&_ul]:text-fg-secondary",
+						"[&_ol]:mb-4 [&_ol]:ml-6 [&_ol]:list-decimal [&_ol]:text-fg-secondary",
 						"[&_li]:mb-2",
-						"[&_blockquote]:border-l-4 [&_blockquote]:border-line-focus [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-fg-muted [&_blockquote]:my-4",
-						"[&_code]:font-mono [&_code]:text-sm [&_code]:bg-surface-overlay [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-fg",
-						"[&_pre]:bg-surface-overlay/50 [&_pre]:p-4 [&_pre]:rounded-md [&_pre]:overflow-x-auto [&_pre]:mb-6 [&_pre]:border [&_pre]:border-line",
+						"[&_blockquote]:my-4 [&_blockquote]:border-l-4 [&_blockquote]:border-line-focus [&_blockquote]:pl-4 [&_blockquote]:text-fg-muted [&_blockquote]:italic",
+						"[&_code]:rounded [&_code]:bg-surface-overlay [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-sm [&_code]:text-fg",
+						"[&_pre]:mb-6 [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:border [&_pre]:border-line [&_pre]:bg-surface-overlay/50 [&_pre]:p-4",
 						"[&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-fg-secondary",
-						"[&_a]:text-accent hover:[&_a]:text-accent [&_a]:underline",
+						"[&_a]:text-accent [&_a]:underline hover:[&_a]:text-accent",
 						"[&_hr]:my-8 [&_hr]:border-line",
-						"[&_img]:mt-4 [&_img]:rounded-lg [&_img]:overflow-hidden [&_img]:border [&_img]:border-line [&_img]:bg-surface-overlay/30 [&_img]:max-w-full [&_img]:h-auto [&_img]:mx-auto [&_img]:block [&_img]:w-1/3 max-md:[&_img]:w-full",
+						"[&_img]:mx-auto [&_img]:mt-4 [&_img]:block [&_img]:h-auto [&_img]:w-1/3 [&_img]:max-w-full [&_img]:overflow-hidden [&_img]:rounded-lg [&_img]:border [&_img]:border-line [&_img]:bg-surface-overlay/30 max-md:[&_img]:w-full",
 						// Tables
-						"[&_table]:w-full [&_table]:border-collapse [&_table]:mb-6 max-md:[&_table]:mb-0 max-md:[&_table]:text-[15px] [&_table]:bg-surface-overlay/20",
-						"[&_th]:bg-surface-overlay [&_th]:text-left [&_th]:p-2 [&_th]:text-fg-secondary [&_th]:border [&_th]:border-line",
-						"[&_td]:p-2 [&_td]:border [&_td]:border-line [&_td]:text-fg-secondary [&_td]:text-center [&_td]:align-middle",
-						"[&_tr:nth-child(odd)]:bg-surface-overlay/30 [&_tr:nth-child(even)]:bg-surface-overlay/10",
+						"[&_table]:mb-6 [&_table]:w-full [&_table]:border-collapse [&_table]:bg-surface-overlay/20 max-md:[&_table]:mb-0 max-md:[&_table]:text-[15px]",
+						"[&_th]:border [&_th]:border-line [&_th]:bg-surface-overlay [&_th]:p-2 [&_th]:text-left [&_th]:text-fg-secondary",
+						"[&_td]:border [&_td]:border-line [&_td]:p-2 [&_td]:text-center [&_td]:align-middle [&_td]:text-fg-secondary",
+						"[&_tr:nth-child(even)]:bg-surface-overlay/10 [&_tr:nth-child(odd)]:bg-surface-overlay/30",
 						// KaTeX
-						"[&_.katex]:text-[0.92em] [&_.katex]:leading-none [&_.katex]:text-fg-secondary [&_.katex-display]:overflow-x-auto [&_.katex-display]:my-6 [&_.katex-display]:px-2 max-md:[&_.katex-display]:overflow-y-hidden max-md:[&_.katex-display]:py-1",
+						"[&_.katex]:text-[0.92em] [&_.katex]:leading-none [&_.katex]:text-fg-secondary [&_.katex-display]:my-6 [&_.katex-display]:overflow-x-auto [&_.katex-display]:px-2 max-md:[&_.katex-display]:overflow-y-hidden max-md:[&_.katex-display]:py-1",
 					)}
 				>
 					<ReactMarkdown

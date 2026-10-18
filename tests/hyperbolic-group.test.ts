@@ -16,12 +16,7 @@ import {
 	anchorPoint,
 	type HyperbolicTilingGL,
 } from "@/lib/render/hyperbolicGroup";
-import {
-	su11Translation,
-	su11Apply,
-	su11ApplyInverse,
-	type Complex,
-} from "@/lib/render/hyperbolic";
+import { su11Translation, su11Apply, su11ApplyInverse, type Complex } from "@/lib/render/hyperbolic";
 
 interface BakedPatch {
 	id: string;
@@ -43,7 +38,8 @@ const byId = (id: string) => {
 };
 const toPts = (p: BakedPatch): Complex[] => p.vertices.map(([x, y]) => ({ x, y }));
 const centroid = (ring: number[], V: Complex[]): Complex => {
-	let x = 0, y = 0;
+	let x = 0,
+		y = 0;
 	for (const i of ring) {
 		x += V[i].x;
 		y += V[i].y;

@@ -90,7 +90,8 @@ export function buildMultigrid(p: MultigridParams, maxTiles = 200_000): { tiles:
 	const e = directions(n);
 	// vertexPos(K): the ONE canonical position map, fixed loop order ⇒ shared corners bit-identical.
 	const vertexPos = (K: number[]): Vector => {
-		let x = 0, y = 0;
+		let x = 0,
+			y = 0;
 		for (let m = 0; m < n; m++) {
 			x += K[m] * e[m].x;
 			y += K[m] * e[m].y;
@@ -105,8 +106,10 @@ export function buildMultigrid(p: MultigridParams, maxTiles = 200_000): { tiles:
 	for (let i = 0; i < n && !capped; i++) {
 		for (let j = i + 1; j < n && !capped; j++) {
 			const det = e[i].x * e[j].y - e[j].x * e[i].y; // = sin(π(j−i)/n) ≠ 0
-			const aLo = Math.ceil(g[i] - R), aHi = Math.floor(g[i] + R);
-			const bLo = Math.ceil(g[j] - R), bHi = Math.floor(g[j] + R);
+			const aLo = Math.ceil(g[i] - R),
+				aHi = Math.floor(g[i] + R);
+			const bLo = Math.ceil(g[j] - R),
+				bHi = Math.floor(g[j] + R);
 			const proto = Math.min(j - i, n - (j - i));
 			for (let a = aLo; a <= aHi && !capped; a++) {
 				const ai = a - g[i]; // z·eᵢ on line (i,a)
@@ -166,7 +169,8 @@ export function multigridEdgeCheck(tiles: MgTile[]): MgEdgeReport {
 	const use = new Map<string, number>();
 	for (const t of tiles)
 		for (let k = 0; k < 4; k++) {
-			const a = t.vkeys[k], b = t.vkeys[(k + 1) % 4];
+			const a = t.vkeys[k],
+				b = t.vkeys[(k + 1) % 4];
 			const edge = a < b ? `${a}|${b}` : `${b}|${a}`;
 			use.set(edge, (use.get(edge) ?? 0) + 1);
 		}

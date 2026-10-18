@@ -74,7 +74,10 @@ describe("exactPolygonsOverlap — convex", () => {
 	});
 	it("agrees with float Polygon.intersects on a batch of convex pairs", () => {
 		const polys = [
-			square(0, 0), square(1, 0), square(1, 1), square(5, 5),
+			square(0, 0),
+			square(1, 0),
+			square(1, 1),
+			square(5, 5),
 			RegularPolygon.fromAnchorAndDirExact(3, ZERO, 0),
 			RegularPolygon.fromAnchorAndDirExact(6, pt(0, 0), 0),
 		];

@@ -53,7 +53,7 @@ export interface CellMesh {
 	// Stroke: each polygon edge -> a quad (2 triangles, 6 verts). Each stroke vert carries the edge-point
 	// world position (strokePos), the world-space unit normal of the edge (strokeNorm), and a side flag
 	// (strokeSide, +1 / -1) telling the vertex shader which way to push by half the screen stroke width.
-	strokePos: Float32Array;  // 2 floats/vert
+	strokePos: Float32Array; // 2 floats/vert
 	strokeNorm: Float32Array; // 2 floats/vert
 	strokeSide: Float32Array; // 1 float/vert
 	strokeCentroid: Float32Array; // 2 floats/vert — same tile fan apex as fillCentroid, for the wave
@@ -63,9 +63,9 @@ export interface CellMesh {
 	// (pointCorner — the SDF disk + border are computed from it in the fragment shader), and the point's
 	// RGB colour (pointColor: centroid red, halfway green, vertex blue, matching Tiling.show). Instanced by
 	// the same lattice grid as the fill.
-	pointPos: Float32Array;    // 2 floats/vert
+	pointPos: Float32Array; // 2 floats/vert
 	pointCorner: Float32Array; // 2 floats/vert
-	pointColor: Float32Array;  // 3 floats/vert
+	pointColor: Float32Array; // 3 floats/vert
 	pointVertexCount: number;
 	v1: [number, number];
 	v2: [number, number];
@@ -90,9 +90,14 @@ export function buildCellMesh(cell: TranslationalCellData | null): CellMesh | nu
 	let triCount = 0;
 	for (const poly of base.polys) {
 		const vs = poly.vertices;
-		let cx = 0, cy = 0;
-		for (const v of vs) { cx += v.x; cy += v.y; }
-		cx /= vs.length; cy /= vs.length;
+		let cx = 0,
+			cy = 0;
+		for (const v of vs) {
+			cx += v.x;
+			cy += v.y;
+		}
+		cx /= vs.length;
+		cy /= vs.length;
 		centroids.push([cx, cy]);
 		const fan = kernelHoldsCentroid(vs, cx, cy);
 		fanned.push(fan);
@@ -114,14 +119,20 @@ export function buildCellMesh(cell: TranslationalCellData | null): CellMesh | nu
 		// Every vertex carries the polygon's centroid so the wave shader can scale the whole triangle about
 		// it. That is the tile's centre, not the triangle's apex, so it stays right under ear clipping too.
 		const push = (x: number, y: number) => {
-			fillVerts[vi * 2] = x; fillVerts[vi * 2 + 1] = y; fillHue[vi] = hue;
-			fillCentroid[vi * 2] = cx; fillCentroid[vi * 2 + 1] = cy; vi++;
+			fillVerts[vi * 2] = x;
+			fillVerts[vi * 2 + 1] = y;
+			fillHue[vi] = hue;
+			fillCentroid[vi * 2] = cx;
+			fillCentroid[vi * 2 + 1] = cy;
+			vi++;
 		};
 		if (fanned[pi]) {
 			for (let k = 0; k < vs.length; k++) {
 				const a = vs[k];
 				const b = vs[(k + 1) % vs.length];
-				push(cx, cy); push(a.x, a.y); push(b.x, b.y); // triangle (centroid, a, b)
+				push(cx, cy);
+				push(a.x, a.y);
+				push(b.x, b.y); // triangle (centroid, a, b)
 			}
 			return;
 		}
@@ -142,25 +153,36 @@ export function buildCellMesh(cell: TranslationalCellData | null): CellMesh | nu
 	const strokeSide = new Float32Array(sTri * 6);
 	const strokeCentroid = new Float32Array(sTri * 6 * 2);
 	let si = 0;
-	let scx = 0, scy = 0; // the current polygon's fan apex, set per poly below
+	let scx = 0,
+		scy = 0; // the current polygon's fan apex, set per poly below
 	const pushStroke = (px: number, py: number, nx: number, ny: number, side: number) => {
-		strokePos[si * 2] = px; strokePos[si * 2 + 1] = py;
-		strokeNorm[si * 2] = nx; strokeNorm[si * 2 + 1] = ny;
+		strokePos[si * 2] = px;
+		strokePos[si * 2 + 1] = py;
+		strokeNorm[si * 2] = nx;
+		strokeNorm[si * 2 + 1] = ny;
 		strokeSide[si] = side;
-		strokeCentroid[si * 2] = scx; strokeCentroid[si * 2 + 1] = scy;
+		strokeCentroid[si * 2] = scx;
+		strokeCentroid[si * 2 + 1] = scy;
 		si++;
 	};
 	for (const poly of base.polys) {
 		const vs = poly.vertices;
-		scx = 0; scy = 0;
-		for (const v of vs) { scx += v.x; scy += v.y; }
-		scx /= vs.length; scy /= vs.length;
+		scx = 0;
+		scy = 0;
+		for (const v of vs) {
+			scx += v.x;
+			scy += v.y;
+		}
+		scx /= vs.length;
+		scy /= vs.length;
 		for (let k = 0; k < vs.length; k++) {
 			const a = vs[k];
 			const b = vs[(k + 1) % vs.length];
-			const dx = b.x - a.x, dy = b.y - a.y;
+			const dx = b.x - a.x,
+				dy = b.y - a.y;
 			const len = Math.hypot(dx, dy) || 1;
-			const nx = -dy / len, ny = dx / len; // left normal of the edge direction (world space)
+			const nx = -dy / len,
+				ny = dx / len; // left normal of the edge direction (world space)
 			// Two triangles over { a-, a+, b-, b+ }: (a-, a+, b-) and (b-, a+, b+).
 			pushStroke(a.x, a.y, nx, ny, -1);
 			pushStroke(a.x, a.y, nx, ny, +1);
@@ -174,7 +196,14 @@ export function buildCellMesh(cell: TranslationalCellData | null): CellMesh | nu
 	// Point disks: centroid + edge-midpoints (halfways) + vertices, each a 6-vert quad for a screen-
 	// constant dot. Shared vertices/halfways between adjacent polygons are emitted per polygon (harmless
 	// overdraw — the disks are opaque and identical), mirroring Tiling.show's per-node loop.
-	const QUAD: readonly [number, number][] = [[-1, -1], [1, -1], [1, 1], [-1, -1], [1, 1], [-1, 1]];
+	const QUAD: readonly [number, number][] = [
+		[-1, -1],
+		[1, -1],
+		[1, 1],
+		[-1, -1],
+		[1, 1],
+		[-1, 1],
+	];
 	// A ring that declares `corners` is a flattened curve: its CORNERS are the tile's vertices and the
 	// segment ends between them are not, so both the blue vertex dots and the green halfways count
 	// corners, not subdivisions. Without this a bubble tile drew a dot on every flattening point.
@@ -188,17 +217,26 @@ export function buildCellMesh(cell: TranslationalCellData | null): CellMesh | nu
 	let ptv = 0;
 	const pushPoint = (px: number, py: number, r: number, g: number, b: number) => {
 		for (const [qx, qy] of QUAD) {
-			pointPos[ptv * 2] = px; pointPos[ptv * 2 + 1] = py;
-			pointCorner[ptv * 2] = qx; pointCorner[ptv * 2 + 1] = qy;
-			pointColor[ptv * 3] = r; pointColor[ptv * 3 + 1] = g; pointColor[ptv * 3 + 2] = b;
+			pointPos[ptv * 2] = px;
+			pointPos[ptv * 2 + 1] = py;
+			pointCorner[ptv * 2] = qx;
+			pointCorner[ptv * 2 + 1] = qy;
+			pointColor[ptv * 3] = r;
+			pointColor[ptv * 3 + 1] = g;
+			pointColor[ptv * 3 + 2] = b;
 			ptv++;
 		}
 	};
 	for (const poly of base.polys) {
 		const vs = poly.vertices;
-		let cx = 0, cy = 0;
-		for (const v of vs) { cx += v.x; cy += v.y; }
-		cx /= vs.length; cy /= vs.length;
+		let cx = 0,
+			cy = 0;
+		for (const v of vs) {
+			cx += v.x;
+			cy += v.y;
+		}
+		cx /= vs.length;
+		cy /= vs.length;
 		pushPoint(cx, cy, 1, 0, 0); // centroid: red
 		const cs = poly.corners && poly.corners.length >= 3 ? poly.corners : null;
 		if (cs) {
@@ -214,7 +252,8 @@ export function buildCellMesh(cell: TranslationalCellData | null): CellMesh | nu
 			for (const i of cs) pushPoint(vs[i].x, vs[i].y, 0, 0, 1);
 		} else {
 			for (let k = 0; k < vs.length; k++) {
-				const a = vs[k], b = vs[(k + 1) % vs.length];
+				const a = vs[k],
+					b = vs[(k + 1) % vs.length];
 				pushPoint((a.x + b.x) / 2, (a.y + b.y) / 2, 0, 1, 0); // halfway (edge midpoint): green
 			}
 			for (const v of vs) pushPoint(v.x, v.y, 0, 0, 1); // vertex: blue
@@ -239,8 +278,13 @@ export function buildCellMesh(cell: TranslationalCellData | null): CellMesh | nu
 		v2: [v2x, v2y],
 		det,
 		extent: latticeExtentFromBounds(
-			base.minX, base.maxX, base.minY, base.maxY,
-			{ x: v1x, y: v1y }, { x: v2x, y: v2y }, det,
+			base.minX,
+			base.maxX,
+			base.minY,
+			base.maxY,
+			{ x: v1x, y: v1y },
+			{ x: v2x, y: v2y },
+			det,
 		),
 	};
 }

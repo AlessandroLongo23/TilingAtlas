@@ -1,14 +1,14 @@
-import { describe, it, expect } from 'vitest';
-import { VertexConfiguration } from '@/classes/algorithm/VertexConfiguration';
-import { SeedConfiguration } from '@/classes/algorithm/SeedConfiguration';
-import { SeedExpander } from '@/classes/algorithm/SeedExpander';
-import { TranslationalCellExtractor } from '@/classes/algorithm/TranslationalCellExtractor';
-import { KUniformityChecker } from '@/classes/algorithm/KUniformityChecker';
-import { countVertexOrbitsFast } from '@/classes/algorithm/KUniformityFast';
-import { setActiveRing, CyclotomicRing, getActiveRing, type Cyclotomic } from '@/classes/Cyclotomic';
-import { deserializeCell } from '@/classes/algorithm/cellCodec';
-import { loadSnapshot } from '../figures/snapshot';
-import type { Polygon } from '@/classes/polygons/Polygon';
+import { describe, it, expect } from "vitest";
+import { VertexConfiguration } from "@/classes/algorithm/VertexConfiguration";
+import { SeedConfiguration } from "@/classes/algorithm/SeedConfiguration";
+import { SeedExpander } from "@/classes/algorithm/SeedExpander";
+import { TranslationalCellExtractor } from "@/classes/algorithm/TranslationalCellExtractor";
+import { KUniformityChecker } from "@/classes/algorithm/KUniformityChecker";
+import { countVertexOrbitsFast } from "@/classes/algorithm/KUniformityFast";
+import { setActiveRing, CyclotomicRing, getActiveRing, type Cyclotomic } from "@/classes/Cyclotomic";
+import { deserializeCell } from "@/classes/algorithm/cellCodec";
+import { loadSnapshot } from "../figures/snapshot";
+import type { Polygon } from "@/classes/polygons/Polygon";
 
 setActiveRing(CyclotomicRing.create(24));
 
@@ -27,11 +27,20 @@ function cellForVC(name: string): { cell: Polygon[]; u: Cyclotomic; v: Cyclotomi
 // The 11 Archimedean (regular 1-uniform) tilings — diverse symmetry groups incl. the chiral snub
 // (rotation-only) and the octagon (odd-power ζ₂₄). Each has exactly 1 vertex orbit (k=1, ground truth).
 const ONE_UNIFORM = [
-	'4,4,4,4', '3,3,3,3,3,3', '6,6,6', '3,3,3,3,6', '3,3,3,4,4', '3,3,4,3,4',
-	'3,4,6,4', '3,6,3,6', '3,12,12', '4,6,12', '4,8,8',
+	"4,4,4,4",
+	"3,3,3,3,3,3",
+	"6,6,6",
+	"3,3,3,3,6",
+	"3,3,3,4,4",
+	"3,3,4,3,4",
+	"3,4,6,4",
+	"3,6,3,6",
+	"3,12,12",
+	"4,6,12",
+	"4,8,8",
 ];
 
-describe('countVertexOrbitsFast == exact gate on the 11 one-uniform tilings (ground truth = 1 orbit)', () => {
+describe("countVertexOrbitsFast == exact gate on the 11 one-uniform tilings (ground truth = 1 orbit)", () => {
 	for (const name of ONE_UNIFORM) {
 		it(`${name} → 1 orbit (fast === gate === 1)`, { timeout: 30000 }, () => {
 			const { cell, u, v } = cellForVC(name);
@@ -44,8 +53,8 @@ describe('countVertexOrbitsFast == exact gate on the 11 one-uniform tilings (gro
 	}
 });
 
-describe('countVertexOrbitsFast === exact gate === true k over the full certified catalogue', () => {
-	it('every certified k=1/2/3 tiling: fast orbit count matches k and the gate', { timeout: 120000 }, () => {
+describe("countVertexOrbitsFast === exact gate === true k over the full certified catalogue", () => {
+	it("every certified k=1/2/3 tiling: fast orbit count matches k and the gate", { timeout: 120000 }, () => {
 		const snap = loadSnapshot();
 		const ring = getActiveRing();
 		const checker = new KUniformityChecker();

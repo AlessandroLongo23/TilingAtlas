@@ -50,8 +50,15 @@ describe("board manifest", () => {
 		expect(new Set(HYP_HALF_BOARDS.map(hypHalfSubOfBoard)).size).toBe(HYP_HALF_BOARDS.length);
 		for (const b of HYP_HALF_BOARDS) {
 			expect(shipped(b).length, b.id).toBeGreaterThan(0);
-			expect(b.eagerKs.filter((k) => b.lazyKs.includes(k)), b.id).toEqual([]);
-			expect(Object.keys(b.counts).map(Number).sort((x, y) => x - y)).toEqual(shipped(b));
+			expect(
+				b.eagerKs.filter((k) => b.lazyKs.includes(k)),
+				b.id,
+			).toEqual([]);
+			expect(
+				Object.keys(b.counts)
+					.map(Number)
+					.sort((x, y) => x - y),
+			).toEqual(shipped(b));
 		}
 	});
 
@@ -86,8 +93,10 @@ describe("board manifest", () => {
 		expect(lazy).toEqual(["45-half@4", "46-half@2", "46-half@3", "64-half@3", "64-half@4"]);
 		for (const b of HYP_HALF_BOARDS) {
 			for (let k = 1; k <= b.enumeratedTo; k++) {
-				expect(hypHalfLazyShardsForK(k).some((x) => x.id === b.id), `${b.id} k=${k}`)
-					.toBe(b.lazyKs.includes(k));
+				expect(
+					hypHalfLazyShardsForK(k).some((x) => x.id === b.id),
+					`${b.id} k=${k}`,
+				).toBe(b.lazyKs.includes(k));
 			}
 		}
 	});
@@ -95,8 +104,9 @@ describe("board manifest", () => {
 	it("names {4,6} k=4 as the only thing enumerated and left off", () => {
 		// Roughly 400,000 tilings. Everything else on the shelf is either shipped or provably absent, and
 		// this test is what stops that quietly ceasing to be true.
-		expect(HYP_HALF_BOARDS.filter((b) => b.dropped.length > 0).map((b) => `${b.id} k=${b.dropped}`))
-			.toEqual(["46-half k=4"]);
+		expect(HYP_HALF_BOARDS.filter((b) => b.dropped.length > 0).map((b) => `${b.id} k=${b.dropped}`)).toEqual([
+			"46-half k=4",
+		]);
 	});
 });
 
@@ -218,9 +228,18 @@ describe.skipIf(!anyShard)("shards", () => {
 					const say = (why: string) => bad.push(`${r.id}: ${why}`);
 					if (new Set(rneig).size !== n) say("rneig is not a permutation");
 					for (let h = 0; h < n; h++) {
-						if (glue[glue[h]] !== h) { say("glue is not an involution"); break; }
-						if (Math.abs(elen![h] - elen![glue[h]]) > 1e-12) { say("an edge disagrees with its partner"); break; }
-						if (drawn![h] !== 1) { say("an edge is not drawn"); break; } // every edge is a real boundary
+						if (glue[glue[h]] !== h) {
+							say("glue is not an involution");
+							break;
+						}
+						if (Math.abs(elen![h] - elen![glue[h]]) > 1e-12) {
+							say("an edge disagrees with its partner");
+							break;
+						}
+						if (drawn![h] !== 1) {
+							say("an edge is not drawn");
+							break;
+						} // every edge is a real boundary
 					}
 					const seen = new Set<number>();
 					let orbits = 0;
@@ -255,10 +274,16 @@ describe.skipIf(!anyShard)("shards", () => {
 					// 1e-7, not 1e-9: `angles` is display metadata rounded to six decimal places, and
 					// {3,7}'s 180/7 = 25.714286 is 5e-9 rad away from the value the darts carry. The darts
 					// are the exact ones; it is the board's own label that is rounded.
-					expect(angles.some((x) => Math.abs(x - a) < 1e-7), `${r.id}: stray angle ${a}`).toBe(true);
+					expect(
+						angles.some((x) => Math.abs(x - a) < 1e-7),
+						`${r.id}: stray angle ${a}`,
+					).toBe(true);
 				}
 				for (const l of r.darts.elen!) {
-					expect(b.sides.some((x) => Math.abs(x - l) < 1e-8), `${r.id}: stray length ${l}`).toBe(true);
+					expect(
+						b.sides.some((x) => Math.abs(x - l) < 1e-8),
+						`${r.id}: stray length ${l}`,
+					).toBe(true);
 				}
 				// `edge` is the develop-radius margin's input, so it must be the LONGEST class, not the
 				// scalar a regular board would carry.

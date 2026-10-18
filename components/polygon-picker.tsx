@@ -46,9 +46,7 @@ export function PolygonPicker({
 	useEffect(() => {
 		try {
 			const { signatures } = generatePolygons(generatorParameters);
-			setPolygonPool(
-				signatures.map((sig) => ({ name: sig.name ?? "", type: sig.type as string })),
-			);
+			setPolygonPool(signatures.map((sig) => ({ name: sig.name ?? "", type: sig.type as string })));
 		} catch {
 			setPolygonPool([]);
 		}
@@ -119,7 +117,7 @@ export function PolygonPicker({
 				<span className="text-xs text-fg-muted">
 					Pool: <span className="text-fg-secondary">{polygonPool.length}</span> polygons
 				</span>
-				<span className="text-xs px-2 py-0.5 bg-surface-overlay text-fg border border-line-focus">
+				<span className="border border-line-focus bg-surface-overlay px-2 py-0.5 text-xs text-fg">
 					{selectedNames.length} selected
 				</span>
 			</div>
@@ -131,24 +129,20 @@ export function PolygonPicker({
 				const someSelected = names.some((n) => selectedNames.includes(n));
 
 				return (
-					<div key={type} className="border border-line rounded-lg overflow-hidden">
-						<div className="flex items-center gap-2 px-3 py-2 bg-surface-overlay/50">
-							<CheckboxBox
-								size="sm"
-								checked={enabled}
-								onCheckedChange={() => toggleCategoryEnabled(type)}
-							/>
-							<span className="text-xs font-medium text-fg-secondary flex-1">{label}</span>
+					<div key={type} className="overflow-hidden rounded-lg border border-line">
+						<div className="flex items-center gap-2 bg-surface-overlay/50 px-3 py-2">
+							<CheckboxBox size="sm" checked={enabled} onCheckedChange={() => toggleCategoryEnabled(type)} />
+							<span className="flex-1 text-xs font-medium text-fg-secondary">{label}</span>
 							{enabled ? (
 								<div className="flex items-center gap-1.5">
-									<span className="text-fg-muted text-xs">n ≤</span>
+									<span className="text-xs text-fg-muted">n ≤</span>
 									<input
 										type="number"
 										min={N_MAX_RANGE.min}
 										max={N_MAX_RANGE.max}
 										value={getNMax(type)}
 										onChange={(e) => setNMax(type, parseInt(e.target.value) || N_MAX_RANGE.default)}
-										className="w-10 text-xs text-center bg-surface-overlay border border-line rounded px-1 py-0.5 text-fg-secondary"
+										className="w-10 rounded border border-line bg-surface-overlay px-1 py-0.5 text-center text-xs text-fg-secondary"
 									/>
 								</div>
 							) : null}
@@ -156,7 +150,7 @@ export function PolygonPicker({
 								<button
 									onClick={() => toggleCategory(type)}
 									className={cn(
-										"text-xs px-2 py-0.5 rounded transition-colors",
+										"rounded px-2 py-0.5 text-xs transition-colors",
 										allSelected
 											? "text-fg hover:text-fg-muted"
 											: someSelected
@@ -170,7 +164,7 @@ export function PolygonPicker({
 						</div>
 
 						{enabled && names.length > 0 ? (
-							<div className="flex flex-wrap gap-1 p-2 bg-surface-raised/30">
+							<div className="flex flex-wrap gap-1 bg-surface-raised/30 p-2">
 								{names.map((name) => {
 									const checked = selectedNames.includes(name);
 									return (
@@ -178,13 +172,13 @@ export function PolygonPicker({
 											key={name}
 											onClick={() => toggleName(name)}
 											className={cn(
-												"flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-mono transition-colors border",
+												"flex items-center gap-1 rounded-md border px-2 py-0.5 font-mono text-xs transition-colors",
 												checked
-													? "bg-surface-overlay border-line-focus text-fg"
-													: "bg-surface-overlay/50 border-line text-fg-muted hover:border-line-strong hover:text-fg-secondary",
+													? "border-line-focus bg-surface-overlay text-fg"
+													: "border-line bg-surface-overlay/50 text-fg-muted hover:border-line-strong hover:text-fg-secondary",
 											)}
 										>
-											<span className={cn("text-[9px] max-md:text-xs px-1 py-0.5 rounded", TAG_COLOR[type])}>
+											<span className={cn("rounded px-1 py-0.5 text-[9px] max-md:text-xs", TAG_COLOR[type])}>
 												{TAG_LABEL[type]}
 											</span>
 											{name}
@@ -193,9 +187,7 @@ export function PolygonPicker({
 								})}
 							</div>
 						) : enabled ? (
-							<p className="px-3 py-2 text-xs text-fg-disabled italic">
-								No polygons generated with these parameters
-							</p>
+							<p className="px-3 py-2 text-xs text-fg-disabled italic">No polygons generated with these parameters</p>
 						) : null}
 					</div>
 				);

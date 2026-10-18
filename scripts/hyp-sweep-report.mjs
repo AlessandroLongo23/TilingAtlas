@@ -76,7 +76,20 @@ for (const p of PS)
 	}
 const facets = VS.map((v) => ({ v, series: pairs.filter((s) => s.v === v) })).filter((f) => f.series.length);
 
-const payload = { KS, PS, VS, CAP, data, facets: facets.map((f) => ({ v: f.v, series: f.series.map((s) => ({ p: s.p, pts: s.pts.map((d) => ({ k: d.k, total: d.total, exact: d.exact, secs: d.secs })) })) })) };
+const payload = {
+	KS,
+	PS,
+	VS,
+	CAP,
+	data,
+	facets: facets.map((f) => ({
+		v: f.v,
+		series: f.series.map((s) => ({
+			p: s.p,
+			pts: s.pts.map((d) => ({ k: d.k, total: d.total, exact: d.exact, secs: d.secs })),
+		})),
+	})),
+};
 
 const fmt = (n) => (n == null ? "—" : n.toLocaleString("en-US"));
 const nowStamp = new Date().toISOString().slice(0, 10);
@@ -204,11 +217,11 @@ a { color: inherit; }
       <div class="stat"><b>${fmt(done.length)}</b><span>enumerated to completion</span></div>
       <div class="stat"><b>${fmt(censored.length)}</b><span>censored at the ${Math.round(CAP)}s cap — no count, not zero</span></div>
       ${frontier
-			.map(
-				(f) =>
-					`<div class="stat"><b>${fmt(f.best?.total ?? 0)}</b><span>largest complete box at k ≤ ${f.k} · p ${f.best?.p}, v ${f.best?.v}</span></div>`,
-			)
-			.join("\n      ")}
+				.map(
+					(f) =>
+						`<div class="stat"><b>${fmt(f.best?.total ?? 0)}</b><span>largest complete box at k ≤ ${f.k} · p ${f.best?.p}, v ${f.best?.v}</span></div>`,
+				)
+				.join("\n      ")}
     </div>
   </header>
 

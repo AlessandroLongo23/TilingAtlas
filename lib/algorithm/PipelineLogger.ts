@@ -4,11 +4,11 @@
  */
 
 function progressBar(current: number, total: number, width = 30): string {
-	if (total <= 0) return '[' + '='.repeat(width) + ']';
+	if (total <= 0) return "[" + "=".repeat(width) + "]";
 	const pct = Math.min(1, Math.max(0, current / total));
 	const filled = Math.round(width * pct);
 	const empty = Math.max(0, width - filled);
-	return '[' + '='.repeat(filled) + ' '.repeat(empty) + `] ${(pct * 100).toFixed(1)}%`;
+	return "[" + "=".repeat(filled) + " ".repeat(empty) + `] ${(pct * 100).toFixed(1)}%`;
 }
 
 function formatRate(rate: number): string {
@@ -41,7 +41,7 @@ export type PhaseProgressCallback = (
 	current: number,
 	total: number,
 	extra?: string,
-	outer?: OuterProgress
+	outer?: OuterProgress,
 ) => void;
 
 export class PipelineLogger {
@@ -53,7 +53,7 @@ export class PipelineLogger {
 	constructor() {}
 
 	log(msg: string): void {
-		process.stdout.write(msg + '\n');
+		process.stdout.write(msg + "\n");
 	}
 
 	clearLine(width = 80, lines = 1): void {
@@ -61,13 +61,13 @@ export class PipelineLogger {
 		this.progressLastTotal = null;
 		this.lastProgressWasNested = false;
 		if (lines === 1) {
-			process.stdout.write('\r\x1b[2K');
+			process.stdout.write("\r\x1b[2K");
 		} else {
-			process.stdout.write('\x1b[' + lines + 'A\x1b[2K');
+			process.stdout.write("\x1b[" + lines + "A\x1b[2K");
 			for (let i = 1; i < lines; i++) {
-				process.stdout.write('\n\x1b[2K');
+				process.stdout.write("\n\x1b[2K");
 			}
-			process.stdout.write('\r');
+			process.stdout.write("\r");
 		}
 	}
 
@@ -83,7 +83,7 @@ export class PipelineLogger {
 
 			this.log(`  ✓ ${name}: ${timeStr}`);
 			onComplete?.(result);
-			this.log('');
+			this.log("");
 			return result;
 		} catch (e) {
 			const end = performance.now();
@@ -103,8 +103,8 @@ export class PipelineLogger {
 		const hours = Math.floor(totalSeconds / 3600);
 		const fracMs = ms % 1000;
 
-		const pad2 = (n: number) => String(n).padStart(2, '0');
-		const pad3 = (n: number) => String(n).padStart(3, '0');
+		const pad2 = (n: number) => String(n).padStart(2, "0");
+		const pad3 = (n: number) => String(n).padStart(3, "0");
 
 		const msPart = `.${pad3(fracMs)}`;
 		const suffix = ` (${ms}ms)`;
@@ -123,11 +123,11 @@ export class PipelineLogger {
 		const elapsedSec = (performance.now() - this.progressStartTime) / 1000;
 		const rate = elapsedSec >= 0.05 && current > 0 ? current / elapsedSec : 0;
 		const etaSec = rate > 0 && current < total ? (total - current) / rate : 0;
-		const rateStr = rate > 0 ? ` ${formatRate(rate)}` : '';
-		const etaStr = etaSec > 0 ? ` ${formatEta(etaSec)}` : '';
-		const extraStr = extra !== undefined ? ` ${extra}` : '';
+		const rateStr = rate > 0 ? ` ${formatRate(rate)}` : "";
+		const etaStr = etaSec > 0 ? ` ${formatEta(etaSec)}` : "";
+		const extraStr = extra !== undefined ? ` ${extra}` : "";
 		process.stdout.write(
-			`\r  ${label}: ${progressBar(current, total)} ${current}/${total}${rateStr}${etaStr}${extraStr}   `
+			`\r  ${label}: ${progressBar(current, total)} ${current}/${total}${rateStr}${etaStr}${extraStr}   `,
 		);
 	}
 
@@ -144,7 +144,7 @@ export class PipelineLogger {
 		innerLabel: string,
 		innerCurrent: number,
 		innerTotal: number,
-		extra?: string
+		extra?: string,
 	): void {
 		if (outerTotal !== this.progressLastTotal || this.progressStartTime === null) {
 			this.progressStartTime = performance.now();
@@ -153,9 +153,9 @@ export class PipelineLogger {
 		const elapsedSec = (performance.now() - this.progressStartTime) / 1000;
 		const rate = elapsedSec >= 0.05 && outerCurrent > 0 ? outerCurrent / elapsedSec : 0;
 		const etaSec = rate > 0 && outerCurrent < outerTotal ? (outerTotal - outerCurrent) / rate : 0;
-		const rateStr = rate > 0 ? ` ${formatRate(rate)}` : '';
-		const etaStr = etaSec > 0 ? ` ${formatEta(etaSec)}` : '';
-		const extraStr = extra !== undefined ? ` ${extra}` : '';
+		const rateStr = rate > 0 ? ` ${formatRate(rate)}` : "";
+		const etaStr = etaSec > 0 ? ` ${formatEta(etaSec)}` : "";
+		const extraStr = extra !== undefined ? ` ${extra}` : "";
 
 		const line1 = `  ${outerLabel}: ${progressBar(outerCurrent, outerTotal)} ${outerCurrent}/${outerTotal}${rateStr}${etaStr}${extraStr}`;
 		const line2 =
@@ -164,26 +164,18 @@ export class PipelineLogger {
 				: `  ${innerLabel}: (computing...)`;
 
 		if (this.lastProgressWasNested) {
-			process.stdout.write('\x1b[2A');
+			process.stdout.write("\x1b[2A");
 		}
-		process.stdout.write('\r\x1b[2K' + line1 + '\n\r\x1b[2K' + line2 + '  ');
+		process.stdout.write("\r\x1b[2K" + line1 + "\n\r\x1b[2K" + line2 + "  ");
 		this.lastProgressWasNested = true;
 	}
 
 	progressForPhases(phaseLabels: Record<string, string>): PhaseProgressCallback {
 		return (phase, current, total, extra, outer) => {
 			const label = phaseLabels[phase] ?? phase;
-			if (outer && phase === 'generators') {
-				const outerLabel = phaseLabels['seed'] ?? 'Seeds';
-				this.progressNested(
-					outerLabel,
-					outer.current,
-					outer.total,
-					label,
-					current,
-					total,
-					extra
-				);
+			if (outer && phase === "generators") {
+				const outerLabel = phaseLabels["seed"] ?? "Seeds";
+				this.progressNested(outerLabel, outer.current, outer.total, label, current, total, extra);
 			} else {
 				this.lastProgressWasNested = false;
 				this.progress(label, current, total, extra);
@@ -191,12 +183,7 @@ export class PipelineLogger {
 		};
 	}
 
-	mapWithProgress<T, R>(
-		items: T[],
-		label: string,
-		fn: (item: T, index: number) => R,
-		updateInterval = 1
-	): R[] {
+	mapWithProgress<T, R>(items: T[], label: string, fn: (item: T, index: number) => R, updateInterval = 1): R[] {
 		const total = items.length;
 		const results: R[] = [];
 		for (let i = 0; i < total; i++) {
@@ -209,12 +196,7 @@ export class PipelineLogger {
 		return results;
 	}
 
-	withProgress<T>(
-		label: string,
-		total: number,
-		fn: (report: (current: number) => void) => T,
-		updateInterval = 1
-	): T {
+	withProgress<T>(label: string, total: number, fn: (report: (current: number) => void) => T, updateInterval = 1): T {
 		let lastReported = 0;
 		const report = (current: number) => {
 			if (updateInterval <= 1 || current - lastReported >= updateInterval || current === total) {

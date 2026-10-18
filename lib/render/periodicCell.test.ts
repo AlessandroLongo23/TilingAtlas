@@ -13,9 +13,11 @@ function inside(vs: number[], px: number, py: number): boolean {
 	let hit = false;
 	const n = vs.length >> 1;
 	for (let i = 0, j = n - 1; i < n; j = i++) {
-		const xi = vs[2 * i], yi = vs[2 * i + 1];
-		const xj = vs[2 * j], yj = vs[2 * j + 1];
-		if ((yi > py) !== (yj > py) && px < ((xj - xi) * (py - yi)) / (yj - yi) + xi) hit = !hit;
+		const xi = vs[2 * i],
+			yi = vs[2 * i + 1];
+		const xj = vs[2 * j],
+			yj = vs[2 * j + 1];
+		if (yi > py !== yj > py && px < ((xj - xi) * (py - yi)) / (yj - yi) + xi) hit = !hit;
 	}
 	return hit;
 }
@@ -96,7 +98,8 @@ function squareGridCell(n: number, anchor = 0): PeriodicCell {
 	const prims = [];
 	for (let y = 0; y < n; y++) {
 		for (let x = 0; x < n; x++) {
-			const ax = x + anchor, ay = y + anchor;
+			const ax = x + anchor,
+				ay = y + anchor;
 			prims.push({
 				verts: [ax, ay, ax + 1, ay, ax + 1, ay + 1, ax, ay + 1],
 				fillRgb: [x / n, y / n, 0.5] as [number, number, number],
@@ -117,7 +120,8 @@ function straddlingGridCell(n: number): PeriodicCell {
 	const prims = [];
 	for (let y = 0; y < n; y++) {
 		for (let x = 0; x < n; x++) {
-			const ax = x + 0.5, ay = y + 0.5;
+			const ax = x + 0.5,
+				ay = y + 0.5;
 			prims.push({
 				verts: [ax, ay, ax + 1, ay, ax + 1, ay + 1, ax, ay + 1],
 				fillRgb: [x / n, y / n, 0.5] as [number, number, number],
@@ -141,15 +145,20 @@ function rhombicCell(): PeriodicCell {
 	// centroid normalisation has real work to do.
 	for (let j = 0; j < 3; j++) {
 		for (let i = 0; i < 3; i++) {
-			const s = i / 3, t = j / 3;
+			const s = i / 3,
+				t = j / 3;
 			const ox = s * v1[0] + t * v2[0] + 7 * v1[0];
 			const oy = s * v1[1] + t * v2[1] + 7 * v1[1];
 			prims.push({
 				verts: [
-					ox, oy,
-					ox + v1[0] / 3, oy + v1[1] / 3,
-					ox + v1[0] / 3 + v2[0] / 3, oy + v1[1] / 3 + v2[1] / 3,
-					ox + v2[0] / 3, oy + v2[1] / 3,
+					ox,
+					oy,
+					ox + v1[0] / 3,
+					oy + v1[1] / 3,
+					ox + v1[0] / 3 + v2[0] / 3,
+					oy + v1[1] / 3 + v2[1] / 3,
+					ox + v2[0] / 3,
+					oy + v2[1] / 3,
 				],
 				fillRgb: [s, t, 0.4] as [number, number, number],
 				z: j * 3 + i,
@@ -165,7 +174,8 @@ function shearedTriangleCell(): PeriodicCell {
 	const prims = [];
 	for (let y = 0; y < 3; y++) {
 		for (let x = 0; x < 3; x++) {
-			const ox = x + 0.5 * y, oy = s * y;
+			const ox = x + 0.5 * y,
+				oy = s * y;
 			prims.push({
 				verts: [ox, oy, ox + 1, oy, ox + 0.5, oy + s],
 				fillRgb: [0.2, 0.6, 0.9] as [number, number, number],
@@ -235,7 +245,8 @@ describe("packPeriodicCell", () => {
 		let uncovered = 0;
 		for (let j = 0; j < N; j++) {
 			for (let i = 0; i < N; i++) {
-				const a = (i + 0.5) / N, b = (j + 0.5) / N;
+				const a = (i + 0.5) / N,
+					b = (j + 0.5) / N;
 				const wx = a * packed.v1[0] + b * packed.v2[0];
 				const wy = a * packed.v1[1] + b * packed.v2[1];
 				if (lookupViaBucket(packed, wx, wy).length === 0) uncovered++;
@@ -271,8 +282,7 @@ describe("packPeriodicCell", () => {
 	});
 
 	it("rejects a degenerate lattice instead of emitting a divide-by-zero index", () => {
-		expect(packPeriodicCell({ v1: [1, 0], v2: [2, 0], prims: [{ verts: [0, 0, 1, 0, 1, 1] }], feature: 1 }))
-			.toBeNull();
+		expect(packPeriodicCell({ v1: [1, 0], v2: [2, 0], prims: [{ verts: [0, 0, 1, 0, 1, 1] }], feature: 1 })).toBeNull();
 		expect(packPeriodicCell({ v1: [1, 0], v2: [0, 1], prims: [], feature: 1 })).toBeNull();
 	});
 });

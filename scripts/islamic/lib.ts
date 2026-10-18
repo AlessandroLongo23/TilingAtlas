@@ -49,9 +49,12 @@ export const girih = {
 
 // ── affine helpers ──────────────────────────────────────────────────────────────────────────────────────
 export function rotate(pts: Pt[], deg: number, about: Pt = [0, 0]): Pt[] {
-	const a = deg * DEG, c = Math.cos(a), s = Math.sin(a);
+	const a = deg * DEG,
+		c = Math.cos(a),
+		s = Math.sin(a);
 	return pts.map(([x, y]) => {
-		const dx = x - about[0], dy = y - about[1];
+		const dx = x - about[0],
+			dy = y - about[1];
 		return [about[0] + dx * c - dy * s, about[1] + dx * s + dy * c] as Pt;
 	});
 }
@@ -59,8 +62,12 @@ export function translate(pts: Pt[], dx: number, dy: number): Pt[] {
 	return pts.map(([x, y]) => [x + dx, y + dy] as Pt);
 }
 export function centroid(pts: Pt[]): Pt {
-	let x = 0, y = 0;
-	for (const [px, py] of pts) { x += px; y += py; }
+	let x = 0,
+		y = 0;
+	for (const [px, py] of pts) {
+		x += px;
+		y += py;
+	}
 	return [x / pts.length, y / pts.length];
 }
 // Recenter a prototile on its centroid, so placements specify the tile CENTRE (convenient for lattices).
@@ -71,7 +78,8 @@ export function center(pts: Pt[]): Pt[] {
 export function signedArea(pts: Pt[]): number {
 	let a = 0;
 	for (let i = 0; i < pts.length; i++) {
-		const [x1, y1] = pts[i], [x2, y2] = pts[(i + 1) % pts.length];
+		const [x1, y1] = pts[i],
+			[x2, y2] = pts[(i + 1) % pts.length];
 		a += x1 * y2 - x2 * y1;
 	}
 	return a / 2;
@@ -83,7 +91,8 @@ export function pointInPolygon(pt: Pt, poly: Pt[]): boolean {
 	const [px, py] = pt;
 	let inside = false;
 	for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-		const [xi, yi] = poly[i], [xj, yj] = poly[j];
+		const [xi, yi] = poly[i],
+			[xj, yj] = poly[j];
 		const intersect = yi > py !== yj > py && px < ((xj - xi) * (py - yi)) / (yj - yi) + xi;
 		if (intersect) inside = !inside;
 	}
@@ -105,8 +114,15 @@ export function polygonHue(n: number): number {
 	return ((Math.log(n) - Math.log(3)) / (Math.log(30) - Math.log(3))) * 360;
 }
 
-export interface CellPoly { vertices: Pt[]; n: number; hue: number }
-export interface RenderCell { cellPolygons: CellPoly[]; basis: number[][] }
+export interface CellPoly {
+	vertices: Pt[];
+	n: number;
+	hue: number;
+}
+export interface RenderCell {
+	cellPolygons: CellPoly[];
+	basis: number[][];
+}
 
 export function place(p: Placement): CellPoly {
 	let v = p.tile;
@@ -174,7 +190,10 @@ export function validateTiling(cell: RenderCell, samples = 4000, eps = 1e-6): Va
 	const areaSum = polys.reduce((s, p) => s + area(p), 0);
 	const areaError = Math.abs(areaSum - D);
 	const messages: string[] = [];
-	if (areaError > 1e-4) messages.push(`area mismatch: Σtile=${areaSum.toFixed(6)} vs |detΛ|=${D.toFixed(6)} (Δ=${areaError.toExponential(2)})`);
+	if (areaError > 1e-4)
+		messages.push(
+			`area mismatch: Σtile=${areaSum.toFixed(6)} vs |detΛ|=${D.toFixed(6)} (Δ=${areaError.toExponential(2)})`,
+		);
 
 	// stratified sampling over the unit parallelogram [0,1)² mapped by the basis. A fixed irrational jitter
 	// keeps sample points off the tile edges (points exactly on an edge read as 0 under a strict ray-cast
@@ -189,26 +208,43 @@ export function validateTiling(cell: RenderCell, samples = 4000, eps = 1e-6): Va
 	const R = Math.min(6, Math.ceil(maxExtent / minVec) + 2);
 	const L: Pt[] = [];
 	for (let i = -R; i <= R; i++) for (let j = -R; j <= R; j++) L.push([i * b0[0] + j * b1[0], i * b0[1] + j * b1[1]]);
-	const jx = 0.123456789, jy = 0.077215665; // fixed irrational offsets within one sub-cell
-	let coverageChecked = 0, coverageBad = 0;
+	const jx = 0.123456789,
+		jy = 0.077215665; // fixed irrational offsets within one sub-cell
+	let coverageChecked = 0,
+		coverageBad = 0;
 	for (let a = 0; a < side; a++) {
 		for (let b = 0; b < side; b++) {
-			const u = (a + jx) / side, w = (b + jy) / side;
-			const px = u * b0[0] + w * b1[0], py = u * b0[1] + w * b1[1];
+			const u = (a + jx) / side,
+				w = (b + jy) / side;
+			const px = u * b0[0] + w * b1[0],
+				py = u * b0[1] + w * b1[1];
 			let cover = 0;
 			for (const poly of polys) {
 				for (const [lx, ly] of L) {
-					if (pointInPolygon([px - lx, py - ly], poly)) { cover++; break; }
+					if (pointInPolygon([px - lx, py - ly], poly)) {
+						cover++;
+						break;
+					}
 				}
 			}
 			coverageChecked++;
 			if (cover !== 1) coverageBad++;
 		}
 	}
-	if (coverageBad > 0) messages.push(`coverage: ${coverageBad}/${coverageChecked} sample points not covered exactly once`);
+	if (coverageBad > 0)
+		messages.push(`coverage: ${coverageBad}/${coverageChecked} sample points not covered exactly once`);
 
 	const ok = areaError <= 1e-4 && coverageBad === 0;
-	return { ok, areaSum, det: D, areaError, coverageChecked, coverageBad, vertexConfigs: vertexConfigsOf(cell, eps), messages };
+	return {
+		ok,
+		areaSum,
+		det: D,
+		areaError,
+		coverageChecked,
+		coverageBad,
+		vertexConfigs: vertexConfigsOf(cell, eps),
+		messages,
+	};
 }
 
 // Distinct vertex figures in the fundamental domain: cluster all tile-corner points (mod the lattice) that
@@ -237,7 +273,13 @@ function vertexConfigsOf(cell: RenderCell, eps = 1e-6): string[] {
 	}
 	const configs = new Set<string>();
 	for (const sides of buckets.values()) {
-		if (sides.length >= 3) configs.add(sides.slice().sort((a, b) => a - b).join("."));
+		if (sides.length >= 3)
+			configs.add(
+				sides
+					.slice()
+					.sort((a, b) => a - b)
+					.join("."),
+			);
 	}
 	return [...configs].sort();
 }

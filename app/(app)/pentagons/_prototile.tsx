@@ -42,7 +42,10 @@ export function PrototileInspector({
 	const uid = useId();
 
 	// Fit the pentagon into the box, flipping y so the drawing matches the canvas' orientation.
-	let minx = Infinity, miny = Infinity, maxx = -Infinity, maxy = -Infinity;
+	let minx = Infinity,
+		miny = Infinity,
+		maxx = -Infinity,
+		maxy = -Infinity;
 	for (const p of corners) {
 		if (p.x < minx) minx = p.x;
 		if (p.x > maxx) maxx = p.x;

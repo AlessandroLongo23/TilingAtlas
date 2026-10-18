@@ -178,7 +178,7 @@ export function diskLayout(ball: HyperbolicBall, faces: number[][]): (Complex | 
  */
 export function affordableRadius(q: number, budget = 260): number {
 	let r = 1;
-    for (;;) {
+	for (;;) {
 		const probe = buildBall(q, r + 1);
 		if (probe.vertexCount > budget) return r;
 		r += 1;

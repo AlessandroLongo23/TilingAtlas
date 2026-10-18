@@ -67,7 +67,10 @@ describe("attribution of the noble polyhedra", () => {
 	});
 
 	it("shows a portrait only where one of the person is on Commons, bundled and credited", () => {
-		const withImage = Object.entries(PEOPLE).filter(([, p]) => (p as Person).image).map(([k]) => k).sort();
+		const withImage = Object.entries(PEOPLE)
+			.filter(([, p]) => (p as Person).image)
+			.map(([k]) => k)
+			.sort();
 		// Not Brückner (the lead image is a model), not Krötenheerdt (his grave), not the Pythagoreans
 		// (Raphael's Pythagoras), not Archimedes (every picture of him is invented), not Theaetetus
 		// (none exists), and nobody living.
@@ -83,7 +86,8 @@ describe("attribution of the noble polyhedra", () => {
 	});
 
 	it("links a person only to a page, never to an address", () => {
-		for (const p of Object.values(PEOPLE) as { name: string; url?: string }[]) if (p.url) expect(p.url).toMatch(/^https:\/\//);
+		for (const p of Object.values(PEOPLE) as { name: string; url?: string }[])
+			if (p.url) expect(p.url).toMatch(/^https:\/\//);
 	});
 });
 
@@ -91,7 +95,9 @@ describe("attribution everywhere else", () => {
 	it("shows the legacy discoverer under a label that claims no role", () => {
 		expect(creditsOf({ discoverer: "Chavey" })).toEqual([{ role: "credited", who: { name: "Chavey" } }]);
 		expect(creditsOf({ discoverer: "Čtrnáct engine (penrose palette), 2026-08-14" })[0].role).toBe("credited");
-		expect(creditsOf({ discoverer: "Norman Johnson (1966)" })).toEqual([{ role: "credited", who: PEOPLE.johnson, year: 1966 }]);
+		expect(creditsOf({ discoverer: "Norman Johnson (1966)" })).toEqual([
+			{ role: "credited", who: PEOPLE.johnson, year: 1966 },
+		]);
 		// A year inside a sentence is part of the sentence.
 		expect(creditsOf({ discoverer: "Kepler (prisms & antiprisms)" })[0].who.name).toBe("Kepler (prisms & antiprisms)");
 	});

@@ -23,7 +23,8 @@ export interface SpiralSimilarity {
 }
 
 function gcd(a: number, b: number): number {
-	a = Math.abs(a); b = Math.abs(b);
+	a = Math.abs(a);
+	b = Math.abs(b);
 	while (b !== 0) [a, b] = [b, a % b];
 	return a;
 }
@@ -34,19 +35,22 @@ function gcd(a: number, b: number): number {
  * Degenerate guards: a = b = 0, or a seam of ~zero length (collinear basis), falls back to (1, 0)
  * so the shader never sees a singular map.
  */
-export function spiralSimilarity(
-	a: number,
-	b: number,
-	v1: [number, number],
-	v2: [number, number],
-): SpiralSimilarity {
+export function spiralSimilarity(a: number, b: number, v1: [number, number], v2: [number, number]): SpiralSimilarity {
 	let ai = Math.round(a);
 	let bi = Math.round(b);
-	if (ai === 0 && bi === 0) { ai = 1; bi = 0; }
+	if (ai === 0 && bi === 0) {
+		ai = 1;
+		bi = 0;
+	}
 
 	let sx = ai * v1[0] + bi * v2[0];
 	let sy = ai * v1[1] + bi * v2[1];
-	if (sx * sx + sy * sy < 1e-18) { ai = 1; bi = 0; sx = v1[0]; sy = v1[1]; }
+	if (sx * sx + sy * sy < 1e-18) {
+		ai = 1;
+		bi = 0;
+		sx = v1[0];
+		sy = v1[1];
+	}
 
 	// K = S/(2πi) = −i·S/(2π) = (S.y, −S.x)/(2π). Then cmul(K, (0, 2π)) = i·K·2π = S — the seam closure.
 	return {

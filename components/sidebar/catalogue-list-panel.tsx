@@ -3,7 +3,16 @@
 import { Fragment, memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ChevronRight, ChevronsDownUp, Download } from "lucide-react";
 import { useExpandableGroups } from "@/lib/hooks/useExpandableGroups";
-import { compactVertexConfig, tileClassOf, TILE_CLASS_ORDER, TILE_CLASS_LABEL, SUB_ORDER, subOf, familyOfSub, type TileClass } from "@/lib/services/referenceAtlas";
+import {
+	compactVertexConfig,
+	tileClassOf,
+	TILE_CLASS_ORDER,
+	TILE_CLASS_LABEL,
+	SUB_ORDER,
+	subOf,
+	familyOfSub,
+	type TileClass,
+} from "@/lib/services/referenceAtlas";
 import { cn } from "@/lib/utils/cn";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import { COLOR_SUB, FAMILY_LABEL, SUB_LABEL, shortSubLabel } from "@/lib/services/shelfLabels";
@@ -191,7 +200,7 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({
 
 	// The node ids (class + grid + k) that hold the selected tiling — used to auto-open its sections.
 	const selectedTile = useMemo(
-		() => (selectedKey ? items.find((t) => t.canonicalKey === selectedKey) ?? null : null),
+		() => (selectedKey ? (items.find((t) => t.canonicalKey === selectedKey) ?? null) : null),
 		[items, selectedKey],
 	);
 	const selectedClassId = selectedTile ? `c:${tileClassOf(selectedTile)}` : null;
@@ -208,9 +217,7 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({
 				return stem ? `g:${tileClassOf(selectedTile)}:${stem}` : null;
 			})()
 		: null;
-	const selectedKId = selectedTile
-		? `k:${tileClassOf(selectedTile)}:${subOf(selectedTile)}:${selectedTile.k}`
-		: null;
+	const selectedKId = selectedTile ? `k:${tileClassOf(selectedTile)}:${subOf(selectedTile)}:${selectedTile.k}` : null;
 	// The configuration row, where a board splits by one (see configSections). It stands INSTEAD of the k
 	// row, so both ids go into the reveal below and whichever the tree rendered is the one that opens.
 	const selectedConfigId = selectedTile
@@ -299,13 +306,7 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({
 				// The wrapper is what bounds the sticky header: pinned while its own bucket is on screen,
 				// pushed off by the next one. Transparent, so the wall's line colour still fills its gaps.
 				<div key={id} className="flex flex-col gap-px">
-					<TreeRow
-						label={kLabel}
-						count={kk.list.length}
-						open={open}
-						depth={depth}
-						onToggle={() => toggle(id)}
-					/>
+					<TreeRow label={kLabel} count={kk.list.length} open={open} depth={depth} onToggle={() => toggle(id)} />
 					{open ? (
 						<TileGrid
 							items={kk.list}
@@ -345,7 +346,12 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({
 		return [...m.entries()].sort((a, b) => b[1].length - a[1].length || (a[0] < b[0] ? -1 : 1));
 	};
 
-	const configSections = (cls: TileClass, sub: string, ks: { k: number; list: CatalogueTiling[] }[], depth: 0 | 1 | 2 | 3) =>
+	const configSections = (
+		cls: TileClass,
+		sub: string,
+		ks: { k: number; list: CatalogueTiling[] }[],
+		depth: 0 | 1 | 2 | 3,
+	) =>
 		configGroups(ks).map(([family, list]) => {
 			const id = `cfg:${cls}:${sub}:${family}`;
 			const open = expanded[id];
@@ -476,13 +482,12 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({
 		if (named.length < 1 || (g.families.length < 2 && baseDepth > 0))
 			return subRows(g, g.subs, baseDepth, named[0]?.family ?? null);
 		return g.families.map((f) => {
-			if (f.family === null && !spineGetsRow)
-				return <Fragment key="_none">{subRows(g, f.subs, baseDepth)}</Fragment>;
+			if (f.family === null && !spineGetsRow) return <Fragment key="_none">{subRows(g, f.subs, baseDepth)}</Fragment>;
 			const id = f.family === null ? `f:${g.cls}:_spine` : `f:${g.cls}:${f.family}`;
 			return (
 				<div key={id} className="flex flex-col gap-px">
 					<TreeRow
-						label={f.family === null ? TILE_CLASS_LABEL[g.cls].long : FAMILY_LABEL[f.family] ?? f.family}
+						label={f.family === null ? TILE_CLASS_LABEL[g.cls].long : (FAMILY_LABEL[f.family] ?? f.family)}
 						count={f.count}
 						open={expanded[id]}
 						depth={baseDepth}
@@ -507,7 +512,7 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({
 				// A phone drops the strip while nothing is open: the tab already says Catalogue, and the row is
 				// worth more to the half-open sheet than a disabled button.
 				className={cn(
-					"ta-sticky-rule bg-surface-chrome sticky top-0 z-50 flex items-center justify-between pl-2 pr-[17px] max-md:static",
+					"ta-sticky-rule sticky top-0 z-50 flex items-center justify-between bg-surface-chrome pr-[17px] pl-2 max-md:static",
 					openCount === 0 && "max-md:hidden",
 				)}
 				style={{ height: "var(--tree-row)" }}
@@ -518,8 +523,8 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({
 					onClick={() => toggleAll(false)}
 					disabled={openCount === 0}
 					className={cn(
-						"flex items-center gap-1.5 rounded-control text-xs text-fg-muted cursor-pointer max-md:h-11",
-						"hover:text-fg transition-colors",
+						"flex cursor-pointer items-center gap-1.5 rounded-control text-xs text-fg-muted max-md:h-11",
+						"transition-colors hover:text-fg",
 						"focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
 						"disabled:pointer-events-none disabled:opacity-40",
 					)}
@@ -578,8 +583,8 @@ function TreeRow({
 				// ta-sticky-rule (globals.css): a pinned row paints its own 1px gaps, so tiles scrolling
 				// behind a stuck row never show through them. The row itself stays opaque chrome edge to edge; the grey sits on the inner span, inset
 				// to the tile wall's own left edge (scroller padding + the wall's outer lane and hairline).
-				"group ta-sticky-rule sticky flex bg-surface-chrome px-[9px] text-left cursor-pointer",
-				"focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/50",
+				"group ta-sticky-rule sticky flex cursor-pointer bg-surface-chrome px-[9px] text-left",
+				"focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-inset",
 				// Every level sits ABOVE a tile's z-10 selection/hover ring (tile-grid.tsx): the ring and
 				// these headers share one stacking context, so a header at the ring's own z-10 only tied it
 				// and — later in DOM order — the ring won, bleeding its outline up over the pinned k-row. Keep
@@ -600,7 +605,7 @@ function TreeRow({
 					// it is the manifest's, so it is honest before anything has been loaded.
 					<Download
 						size={14}
-						className={cn("shrink-0", pending === "loading" ? "text-fg animate-pulse" : "text-fg-muted")}
+						className={cn("shrink-0", pending === "loading" ? "animate-pulse text-fg" : "text-fg-muted")}
 					/>
 				) : (
 					// ONE glyph that turns, not two that swap: a swap remounts the element and lands the new
@@ -608,14 +613,16 @@ function TreeRow({
 					<ChevronRight
 						size={14}
 						className={cn(
-							"text-fg-muted shrink-0 transition-transform duration-[var(--duration-base)] ease-[var(--ease-out)]",
+							"shrink-0 text-fg-muted transition-transform duration-[var(--duration-base)] ease-[var(--ease-out)]",
 							"motion-reduce:transition-none",
 							open && "rotate-90",
 						)}
 					/>
 				)}
 				<span className={cn("min-w-0 flex-1 truncate max-md:text-[15px]", DEPTH_TEXT[depth])}>{label}</span>
-				<span className="shrink-0 font-mono text-[11px] tabular-nums text-fg-muted max-md:text-xs">{count.toLocaleString("en-US")}</span>
+				<span className="shrink-0 font-mono text-[11px] text-fg-muted tabular-nums max-md:text-xs">
+					{count.toLocaleString("en-US")}
+				</span>
 			</span>
 		</button>
 	);

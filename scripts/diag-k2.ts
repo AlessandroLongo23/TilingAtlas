@@ -18,14 +18,14 @@ import {
 	SeedExpander,
 	TranslationalCellExtractor,
 	setActiveRing,
-} from '@/classes';
-import { computeRing } from '@/classes/algorithm/PolygonsGenerator';
+} from "@/classes";
+import { computeRing } from "@/classes/algorithm/PolygonsGenerator";
 
 const thresholdArg = process.argv[2] ? parseInt(process.argv[2], 10) : null;
 const seedLimit = process.argv[3] ? parseInt(process.argv[3], 10) : 3;
 const runSeconds = process.argv[4] ? parseInt(process.argv[4], 10) : 20;
 // canon mode: 'none' (true frame rate), 'interior' (canonicalPatchKey), 'full' (sound canonicalKey)
-const canonMode = process.argv[5] ?? 'none';
+const canonMode = process.argv[5] ?? "none";
 
 const parameters: GeneratorParameters = {
 	[PolygonType.REGULAR]: { ns: [3, 4, 6, 8, 12] },
@@ -35,7 +35,7 @@ function main() {
 	setActiveRing(computeRing(parameters));
 	const K = 2;
 
-	process.stderr.write('[diag] building polygons / VCs / compat graph …\n');
+	process.stderr.write("[diag] building polygons / VCs / compat graph …\n");
 	const polygonsGenerator = new PolygonsGenerator(parameters, []);
 	const vcGen = new VCGenerator(polygonsGenerator.polygons);
 	const vcs = vcGen.generateVertexConfigurations();
@@ -63,9 +63,7 @@ function main() {
 	process.stderr.write(`[diag] k=${K}: ${seedConfigs.length} seed configurations\n`);
 
 	// only multi-VC seeds (effective m≥2) are the slow ones
-	const multi = seedConfigs.filter(
-		(sc) => new Set(sc.vertexConfigurations.map((vc) => vc.name)).size >= 2
-	);
+	const multi = seedConfigs.filter((sc) => new Set(sc.vertexConfigurations.map((vc) => vc.name)).size >= 2);
 	process.stderr.write(`[diag] ${multi.length} seeds with ≥2 distinct VCs; running first ${seedLimit}\n`);
 
 	const cellExtractor = new TranslationalCellExtractor();
@@ -76,15 +74,14 @@ function main() {
 		if (thresholdArg != null) expander.threshold = thresholdArg;
 		expander.debug = true;
 		expander.debugMaxMs = runSeconds * 1000; // self-abort (DFS is synchronous)
-		if (canonMode === 'interior') {
+		if (canonMode === "interior") {
 			expander.canonicalKeyFn = (polys) => cellExtractor.canonicalPatchKey(polys);
-		} else if (canonMode === 'full') {
+		} else if (canonMode === "full") {
 			expander.canonicalKeyFn = (polys) => cellExtractor.canonicalKey(polys);
 		} // 'none' → leave undefined for true frame rate
 
 		process.stderr.write(
-			`\n[diag] ===== seed #${i} "${seed.name}" threshold=${expander.threshold} ` +
-			`(cap ~${runSeconds}s) =====\n`
+			`\n[diag] ===== seed #${i} "${seed.name}" threshold=${expander.threshold} ` + `(cap ~${runSeconds}s) =====\n`,
 		);
 
 		let count = 0;
@@ -96,7 +93,7 @@ function main() {
 		process.stderr.write(`[diag] seed #${i} returned: ${count} leaves\n`);
 	}
 
-	process.stderr.write('\n[diag] done.\n');
+	process.stderr.write("\n[diag] done.\n");
 }
 
 main();

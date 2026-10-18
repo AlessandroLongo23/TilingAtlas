@@ -4,5 +4,5 @@ import { ParquetClient } from "./_parquet-client";
 export const dynamic = "force-static";
 
 export default function ParquetPage() {
-  return <ParquetClient />;
+	return <ParquetClient />;
 }

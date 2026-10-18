@@ -55,9 +55,8 @@ export function ihEdgePattern(rec: IhEdgeRecord, board: SolvedIhBoard): IhShelfP
 		// The tile's linear size, from the cell area it divides — so the clamp below is in tiles and does
 		// not drift when a slider changes the tile's scale.
 		const tile = Math.sqrt(
-			Math.abs(
-				built.patch.T1[0] * built.patch.T2[1] - built.patch.T1[1] * built.patch.T2[0],
-			) / built.patch.polys.length,
+			Math.abs(built.patch.T1[0] * built.patch.T2[1] - built.patch.T1[1] * built.patch.T2[0]) /
+				built.patch.polys.length,
 		);
 		out = {
 			pattern: {

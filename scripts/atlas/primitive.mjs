@@ -54,8 +54,12 @@ const TOL = 1e-6;
 const CELL = 1e-3;
 
 const centroidOf = (f) => {
-	let x = 0, y = 0;
-	for (const p of f) { x += p[0]; y += p[1]; }
+	let x = 0,
+		y = 0;
+	for (const p of f) {
+		x += p[0];
+		y += p[1];
+	}
 	return [x / f.length, y / f.length];
 };
 
@@ -65,8 +69,13 @@ const centroidOf = (f) => {
 export const dropCollinear = (f) => {
 	const out = [];
 	for (let t = 0; t < f.length; t++) {
-		const p = f[(t - 1 + f.length) % f.length], c = f[t], n = f[(t + 1) % f.length];
-		const ax = c[0] - p[0], ay = c[1] - p[1], bx = n[0] - p[0], by = n[1] - p[1];
+		const p = f[(t - 1 + f.length) % f.length],
+			c = f[t],
+			n = f[(t + 1) % f.length];
+		const ax = c[0] - p[0],
+			ay = c[1] - p[1],
+			bx = n[0] - p[0],
+			by = n[1] - p[1];
 		const scale = Math.hypot(ax, ay) * Math.hypot(bx, by);
 		if (scale < 1e-12 || Math.abs(ax * by - ay * bx) / scale > 1e-9) out.push(c);
 	}
@@ -100,16 +109,17 @@ const samePointSet = (a, b, tol) => {
 export function isPrimitiveCell(faces, T1, T2, tol = TOL) {
 	const F = faces.map(dropCollinear);
 	const n = F.length;
-	if (n < 2) return true;                       // one face per cell cannot hide a finer lattice
+	if (n < 2) return true; // one face per cell cannot hide a finer lattice
 
 	const det = T1[0] * T2[1] - T1[1] * T2[0];
-	if (Math.abs(det) < tol) return true;         // degenerate basis: not ours to judge
+	if (Math.abs(det) < tol) return true; // degenerate basis: not ours to judge
 	// Distance from a vector to the NEAREST lattice point. This is the tolerance-safe replacement for
 	// "is the rounded residue equal to the rounded origin".
 	const latticeDist = (v) => {
 		const a = (v[0] * T2[1] - v[1] * T2[0]) / det;
 		const b = (T1[0] * v[1] - T1[1] * v[0]) / det;
-		const fa = a - Math.round(a), fb = b - Math.round(b);
+		const fa = a - Math.round(a),
+			fb = b - Math.round(b);
 		let best = Infinity;
 		for (let i = -1; i <= 1; i++) {
 			for (let j = -1; j <= 1; j++) {
@@ -139,7 +149,8 @@ export function isPrimitiveCell(faces, T1, T2, tol = TOL) {
 	const fold = (p) => {
 		const a = (p[0] * T2[1] - p[1] * T2[0]) / det;
 		const b = (T1[0] * p[1] - T1[1] * p[0]) / det;
-		const fa = a - Math.floor(a), fb = b - Math.floor(b);
+		const fa = a - Math.floor(a),
+			fb = b - Math.floor(b);
 		return [fa * T1[0] + fb * T2[0], fa * T1[1] + fb * T2[1]];
 	};
 	const folded = cent.map(fold);
@@ -151,7 +162,8 @@ export function isPrimitiveCell(faces, T1, T2, tol = TOL) {
 	}
 	const near = (p) => {
 		const q = fold(p);
-		const bx = Math.floor(q[0] / CELL), by = Math.floor(q[1] / CELL);
+		const bx = Math.floor(q[0] / CELL),
+			by = Math.floor(q[1] / CELL);
 		const out = [];
 		for (let i = -1; i <= 1; i++) {
 			for (let j = -1; j <= 1; j++) {
@@ -163,9 +175,9 @@ export function isPrimitiveCell(faces, T1, T2, tol = TOL) {
 	};
 
 	for (let j = 1; j < n; j++) {
-		if (shape[j] !== shape[0]) continue;                       // a translation cannot change shape
+		if (shape[j] !== shape[0]) continue; // a translation cannot change shape
 		const t = [cent[j][0] - cent[0][0], cent[j][1] - cent[0][1]];
-		if (latticeDist(t) < tol) continue;                        // t ∈ L: not a new symmetry
+		if (latticeDist(t) < tol) continue; // t ∈ L: not a new symmetry
 		const used = new Array(n).fill(false);
 		let all = true;
 		for (let i = 0; i < n && all; i++) {
@@ -173,9 +185,13 @@ export function isPrimitiveCell(faces, T1, T2, tol = TOL) {
 			let hit = -1;
 			for (const g of near(img)) {
 				if (used[g] || shape[g] !== shape[i]) continue;
-				if (latticeDist([img[0] - cent[g][0], img[1] - cent[g][1]]) < tol) { hit = g; break; }
+				if (latticeDist([img[0] - cent[g][0], img[1] - cent[g][1]]) < tol) {
+					hit = g;
+					break;
+				}
 			}
-			if (hit < 0) all = false; else used[hit] = true;       // bijection, enforced
+			if (hit < 0) all = false;
+			else used[hit] = true; // bijection, enforced
 		}
 		if (all) return false;
 	}

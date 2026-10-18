@@ -33,23 +33,17 @@ export function ExperimentSidebar({
 	showFilters = false,
 }: ExperimentSidebarProps) {
 	const [open, setOpen] = useState({ grid: true, k: true, m: true });
-	const setSection = (key: keyof typeof open) => (v: boolean) =>
-		setOpen((prev) => ({ ...prev, [key]: v }));
+	const setSection = (key: keyof typeof open) => (v: boolean) => setOpen((prev) => ({ ...prev, [key]: v }));
 
 	return (
 		<aside
 			className={cn(
-				"h-full shrink-0 flex flex-col bg-surface-overlay/50 border-r border-line-subtle overflow-hidden transition-all duration-200",
+				"flex h-full shrink-0 flex-col overflow-hidden border-r border-line-subtle bg-surface-overlay/50 transition-all duration-200",
 				visible ? "w-56" : "w-0 border-r-0",
 			)}
 		>
-			<div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2 min-w-[14rem]">
-				<SidebarSection
-					title="Grid columns"
-					summary={gridColumns}
-					open={open.grid}
-					onOpenChange={setSection("grid")}
-				>
+			<div className="flex min-w-[14rem] flex-1 flex-col gap-2 overflow-y-auto p-4">
+				<SidebarSection title="Grid columns" summary={gridColumns} open={open.grid} onOpenChange={setSection("grid")}>
 					<ButtonGroup
 						options={COLUMN_PRESETS.map((c) => ({ value: c, label: c, classes: "w-9" }))}
 						selected={gridColumns}
@@ -108,11 +102,7 @@ function NullableFilter({
 
 	return (
 		<SidebarSection title={title} summary={value ?? null} open={open} onOpenChange={onOpenChange}>
-			<ButtonGroup
-				options={items}
-				selected={selected}
-				onChange={(v) => onChange(v === ALL ? null : v)}
-			/>
+			<ButtonGroup options={items} selected={selected} onChange={(v) => onChange(v === ALL ? null : v)} />
 		</SidebarSection>
 	);
 }

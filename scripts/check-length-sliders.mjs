@@ -37,15 +37,22 @@ await page.waitForTimeout(3500);
 
 // A family with more than four parameters folds the rest away; open them so every one is reachable.
 const more = page.locator("div.absolute.bottom-4 button", { hasText: /more (parameter|corner)/ });
-if (await more.count()) { await more.first().click(); await page.waitForTimeout(600); }
+if (await more.count()) {
+	await more.first().click();
+	await page.waitForTimeout(600);
+}
 
 let sliders = await page.$$(PANEL);
 console.log(`${id}: ${sliders.length} slider(s)`);
-if (!sliders.length) { console.error("FAIL: no length sliders on the panel"); await browser.close(); process.exit(1); }
+if (!sliders.length) {
+	console.error("FAIL: no length sliders on the panel");
+	await browser.close();
+	process.exit(1);
+}
 
 /** Set a range input the way a drag does: native setter + an input event React listens to. */
 async function setSlider(i, value) {
-	sliders = await page.$$(PANEL);   // re-query: a redraw can replace the nodes
+	sliders = await page.$$(PANEL); // re-query: a redraw can replace the nodes
 	await sliders[i].evaluate((el, v) => {
 		const set = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
 		set.call(el, String(v));
@@ -67,8 +74,12 @@ const shot = async (name) => {
 	const buf = await (await mainCanvas()).screenshot({ path: `${out}/slider-${name}.png` });
 	return createHash("sha1").update(buf).digest("hex").slice(0, 12);
 };
-const label = async () => (await page.$$eval("div.absolute.bottom-4 span.text-accent",
-	(ns) => ns.map((n) => n.textContent?.trim()).filter((t) => t?.includes("=")))).join("  |  ");
+const label = async () =>
+	(
+		await page.$$eval("div.absolute.bottom-4 span.text-accent", (ns) =>
+			ns.map((n) => n.textContent?.trim()).filter((t) => t?.includes("=")),
+		)
+	).join("  |  ");
 
 const bounds = await page.$$eval(PANEL, (ns) => ns.map((n) => [Number(n.min), Number(n.max)]));
 const home = bounds.map(([lo, hi]) => lo + (hi - lo) * 0.5);
@@ -84,14 +95,16 @@ for (let i = 0; i < bounds.length; i++) {
 		await setSlider(i, v);
 		seen.add(await shot(`p${i}-${v.toFixed(3)}`));
 	}
-	await setSlider(i, home[i]);            // put it back so the next slider is tested alone
+	await setSlider(i, home[i]); // put it back so the next slider is tested alone
 	console.log(`  slider ${String(i + 1).padStart(2)}    ${seen.size > 1 ? "moves the tiling" : "CHANGES NOTHING"}`);
 	if (seen.size === 1) dead.push(i + 1);
 }
 
 if (dead.length) {
-	console.error(`FAIL: ${dead.length} of ${bounds.length} sliders change nothing (${dead.join(", ")}) — ` +
-		`the family has fewer degrees of freedom than it offers`);
+	console.error(
+		`FAIL: ${dead.length} of ${bounds.length} sliders change nothing (${dead.join(", ")}) — ` +
+			`the family has fewer degrees of freedom than it offers`,
+	);
 	await browser.close();
 	process.exit(1);
 }

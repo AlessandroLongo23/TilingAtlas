@@ -125,9 +125,7 @@ function primitivePeriodArea(cell: CanonCell): { period: number; area: number } 
 	for (const c of cands) {
 		const [ta, tb] = c.split(",").map(Number);
 		if (ta === 0 && tb === 0) continue;
-		const shifted = new Set(
-			tiles.map((t) => `${(fi(t.a) + ta) % SCALE},${(fi(t.b) + tb) % SCALE},${t.desc}`),
-		);
+		const shifted = new Set(tiles.map((t) => `${(fi(t.a) + ta) % SCALE},${(fi(t.b) + tb) % SCALE},${t.desc}`));
 		if (shifted.size === S.size && [...shifted].every((x) => S.has(x))) periods.push([ta, tb]);
 	}
 	const gens: [number, number][] = [[SCALE, 0], [0, SCALE], ...periods];
@@ -321,8 +319,7 @@ export function trueVertexOrbitCount(cell: CanonCell, engineK: number): number {
 			const [nx, ny] = t.verts[(k + 1) % m];
 			const vk = `${Math.round(bx * 1000)},${Math.round(by * 1000)}`;
 			const d =
-				((ax - bx) * (nx - bx) + (ay - by) * (ny - by)) /
-				(Math.hypot(ax - bx, ay - by) * Math.hypot(nx - bx, ny - by));
+				((ax - bx) * (nx - bx) + (ay - by) * (ny - by)) / (Math.hypot(ax - bx, ay - by) * Math.hypot(nx - bx, ny - by));
 			const angle = Math.round((Math.acos(Math.max(-1, Math.min(1, d))) * 180) / Math.PI);
 			const theta = Math.atan2((ay + ny) / 2 - by, (ax + nx) / 2 - bx);
 			(inc.get(vk) ?? inc.set(vk, []).get(vk)!).push({ shape: t.shape, angle, theta });

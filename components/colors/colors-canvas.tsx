@@ -11,13 +11,7 @@ import {
 	fitColorsView,
 } from "@/lib/colors/render";
 import { useEasedRotation } from "@/lib/hooks/useEasedRotation";
-import {
-	accumulateDetents,
-	ROTATE_SNAP_DEG,
-	unrotateScreen,
-	wheelDeltaPx,
-	wrap360,
-} from "@/lib/render/viewControls";
+import { accumulateDetents, ROTATE_SNAP_DEG, unrotateScreen, wheelDeltaPx, wrap360 } from "@/lib/render/viewControls";
 import { onViewReset, useCardViewGestures } from "@/lib/render/touchGestures";
 import { cn } from "@/lib/utils/cn";
 
@@ -137,28 +131,33 @@ export function ColorsCanvas({
 	const drag = useRef<{ x: number; y: number } | null>(null);
 
 	// Fingers, as on FreedrawCanvas (lib/render/touchGestures.ts useCardViewGestures).
-	const touch = useCardViewGestures(canvasRef, interactive ? {
-		angle: () => rotRef.current,
-		turn: (deg) => {
-			rotRef.current += deg;
-		},
-		rotation,
-		onRotationChange,
-		zoom: (p0, p1, scale) =>
-			setView((v) => {
-				if (!v) return v;
-				const next = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, v.scale * scale));
-				const wx = v.cx + p0.x / v.scale;
-				const wy = v.cy - p0.y / v.scale;
-				return { ...v, scale: next, cx: wx - p1.x / next, cy: wy + p1.y / next };
-			}),
-		cancel: () => {
-			drag.current = null;
-			hoverRef.current = null;
-		},
-		tap: (x, y) => hoverAt(x, y),
-		doubleTap: () => refit(),
-	} : null);
+	const touch = useCardViewGestures(
+		canvasRef,
+		interactive
+			? {
+					angle: () => rotRef.current,
+					turn: (deg) => {
+						rotRef.current += deg;
+					},
+					rotation,
+					onRotationChange,
+					zoom: (p0, p1, scale) =>
+						setView((v) => {
+							if (!v) return v;
+							const next = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, v.scale * scale));
+							const wx = v.cx + p0.x / v.scale;
+							const wy = v.cy - p0.y / v.scale;
+							return { ...v, scale: next, cx: wx - p1.x / next, cy: wy + p1.y / next };
+						}),
+					cancel: () => {
+						drag.current = null;
+						hoverRef.current = null;
+					},
+					tap: (x, y) => hoverAt(x, y),
+					doubleTap: () => refit(),
+				}
+			: null,
+	);
 
 	const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
 		if (!interactive || touch.pinching) return;
@@ -216,10 +215,7 @@ export function ColorsCanvas({
 			setView((v) => {
 				if (!v) return v;
 				const delta = wheelDeltaPx(e);
-				const next = Math.max(
-					ZOOM_MIN,
-					Math.min(ZOOM_MAX, delta > 0 ? v.scale / ZOOM_STEP : v.scale * ZOOM_STEP),
-				);
+				const next = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, delta > 0 ? v.scale / ZOOM_STEP : v.scale * ZOOM_STEP));
 				if (next === v.scale) return v;
 				const wx = v.cx + px / v.scale;
 				const wy = v.cy - py / v.scale;
@@ -250,7 +246,7 @@ export function ColorsCanvas({
 			onPointerCancel={onPointerUp}
 			onPointerLeave={onPointerLeave}
 			onDoubleClick={refit}
-			className={cn("block w-full h-full", interactive && "cursor-grab active:cursor-grabbing touch-none", classes)}
+			className={cn("block h-full w-full", interactive && "cursor-grab touch-none active:cursor-grabbing", classes)}
 		/>
 	);
 }

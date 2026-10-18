@@ -14,8 +14,8 @@ interface CompletenessBadgeProps {
 
 export function CompletenessBadge({ tone, label }: CompletenessBadgeProps) {
 	return (
-		<span className="inline-flex h-5 items-center gap-1 rounded-control bg-surface-raised/95 ring-1 ring-line-subtle font-mono text-[11px] leading-none text-fg-secondary px-1.5 whitespace-nowrap">
-			{tone === "proven" ? <Check aria-hidden="true" strokeWidth={2.5} className="w-3 h-3 -ml-0.5" /> : null}
+		<span className="inline-flex h-5 items-center gap-1 rounded-control bg-surface-raised/95 px-1.5 font-mono text-[11px] leading-none whitespace-nowrap text-fg-secondary ring-1 ring-line-subtle">
+			{tone === "proven" ? <Check aria-hidden="true" strokeWidth={2.5} className="-ml-0.5 h-3 w-3" /> : null}
 			{label}
 		</span>
 	);

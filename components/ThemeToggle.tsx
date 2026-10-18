@@ -88,16 +88,16 @@ export function ThemeToggle({ variant = "icon" }: { variant?: "icon" | "row" }) 
 				type="button"
 				onClick={toggle}
 				aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-				className="relative flex items-center justify-center w-8 h-8 rounded-control text-fg-muted hover:text-fg hover:bg-surface-overlay transition-colors focus:outline-none cursor-pointer"
+				className="relative flex h-8 w-8 cursor-pointer items-center justify-center rounded-control text-fg-muted transition-colors hover:bg-surface-overlay hover:text-fg focus:outline-none"
 			>
-				<span className="relative w-4 h-4 block">
+				<span className="relative block h-4 w-4">
 					<Sun
 						strokeWidth={1.75}
-						className="absolute inset-0 w-4 h-4 rotate-0 scale-100 transition-all duration-500 dark:-rotate-90 dark:scale-0"
+						className="absolute inset-0 h-4 w-4 scale-100 rotate-0 transition-all duration-500 dark:scale-0 dark:-rotate-90"
 					/>
 					<Moon
 						strokeWidth={1.75}
-						className="absolute inset-0 w-4 h-4 rotate-90 scale-0 transition-all duration-500 dark:rotate-0 dark:scale-100"
+						className="absolute inset-0 h-4 w-4 scale-0 rotate-90 transition-all duration-500 dark:scale-100 dark:rotate-0"
 					/>
 				</span>
 			</button>

@@ -12,23 +12,17 @@ import type { RunRow, RunSeedRow } from "@/lib/services/runsService";
  */
 export function useLiveRun(runId: string, initialRun: RunRow, initialSeeds: RunSeedRow[]) {
 	const [run, setRun] = useState<RunRow>(initialRun);
-	const [seeds, setSeeds] = useState<Map<number, RunSeedRow>>(
-		() => new Map(initialSeeds.map((s) => [s.seed_idx, s])),
-	);
+	const [seeds, setSeeds] = useState<Map<number, RunSeedRow>>(() => new Map(initialSeeds.map((s) => [s.seed_idx, s])));
 	const [connected, setConnected] = useState(false);
 
 	useEffect(() => {
 		const client = createClient();
 		const channel = client
 			.channel(`run-${runId}`)
-			.on(
-				"postgres_changes",
-				{ event: "*", schema: "public", table: "runs", filter: `id=eq.${runId}` },
-				(payload) => {
-					const row = payload.new as Partial<RunRow>;
-					if (row && typeof row.id === "string") setRun(row as RunRow);
-				},
-			)
+			.on("postgres_changes", { event: "*", schema: "public", table: "runs", filter: `id=eq.${runId}` }, (payload) => {
+				const row = payload.new as Partial<RunRow>;
+				if (row && typeof row.id === "string") setRun(row as RunRow);
+			})
 			.on(
 				"postgres_changes",
 				{ event: "*", schema: "public", table: "run_seeds", filter: `run_id=eq.${runId}` },

@@ -20,7 +20,13 @@ export interface IcoSolidCfg {
 
 export const ICO_SOLIDS: IcoSolidCfg[] = [
 	{ id: "tetrahedron", label: "tetra", name: "Tetrahedron", schlafli: "{3,3}", counts: { 1: 3, 2: 2 } },
-	{ id: "octahedron", label: "octa", name: "Octahedron", schlafli: "{3,4}", counts: { 1: 5, 2: 8, 3: 15, 4: 12, 5: 2, 6: 7 } },
+	{
+		id: "octahedron",
+		label: "octa",
+		name: "Octahedron",
+		schlafli: "{3,4}",
+		counts: { 1: 5, 2: 8, 3: 15, 4: 12, 5: 2, 6: 7 },
+	},
 	{ id: "cube", label: "cube", name: "Cube", schlafli: "{4,3}", counts: { 1: 4, 2: 5, 3: 4, 4: 3, 6: 1 } },
 	{
 		id: "dodecahedron",
@@ -40,6 +46,8 @@ export const ICO_SOLIDS: IcoSolidCfg[] = [
 
 /** A solid's available k values, ascending. */
 export const icoSolidKs = (s: IcoSolidCfg): number[] =>
-	Object.keys(s.counts).map(Number).sort((a, b) => a - b);
+	Object.keys(s.counts)
+		.map(Number)
+		.sort((a, b) => a - b);
 
 export const ICO_SOLID_BY_ID = new Map(ICO_SOLIDS.map((s) => [s.id, s]));

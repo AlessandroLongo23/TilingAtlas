@@ -50,22 +50,33 @@ export function mirrorParams(p: number, q: number): MirrorParams {
 // A geodesic is stored as c0·(|z|²+1) + c1·x + c2·y = 0. This ONE form covers both circles orthogonal to
 // the unit circle (c0 ≠ 0) and diameters through the origin (c0 = 0), so callers never special-case the
 // two. Builders are cross products in the (|z|²+1, x, y) coordinate.
-export interface Geodesic { c0: number; c1: number; c2: number; }
+export interface Geodesic {
+	c0: number;
+	c1: number;
+	c2: number;
+}
 
 /** Geodesic through two disk points (cross product of their rows). */
 export function geodesicThroughPoints(a: Complex, b: Complex): Geodesic {
-	const ra = a.x * a.x + a.y * a.y + 1, rb = b.x * b.x + b.y * b.y + 1;
+	const ra = a.x * a.x + a.y * a.y + 1,
+		rb = b.x * b.x + b.y * b.y + 1;
 	return { c0: a.x * b.y - a.y * b.x, c1: a.y * rb - ra * b.y, c2: ra * b.x - a.x * rb };
 }
 
 /** Unit tangent at `p` of the geodesic p→toward (perpendicular to the conic gradient, oriented toward `toward`). */
 export function geodesicTangentAt(p: Complex, toward: Complex): Complex {
 	const g = geodesicThroughPoints(p, toward);
-	const gx = 2 * g.c0 * p.x + g.c1, gy = 2 * g.c0 * p.y + g.c2; // gradient at p
-	let tx = -gy, ty = gx;
+	const gx = 2 * g.c0 * p.x + g.c1,
+		gy = 2 * g.c0 * p.y + g.c2; // gradient at p
+	let tx = -gy,
+		ty = gx;
 	const l = Math.hypot(tx, ty) || 1;
-	tx /= l; ty /= l;
-	if ((toward.x - p.x) * tx + (toward.y - p.y) * ty < 0) { tx = -tx; ty = -ty; }
+	tx /= l;
+	ty /= l;
+	if ((toward.x - p.x) * tx + (toward.y - p.y) * ty < 0) {
+		tx = -tx;
+		ty = -ty;
+	}
 	return { x: tx, y: ty };
 }
 
@@ -151,7 +162,8 @@ export function su11Inverse(m: Su11): Su11 {
 
 /** Hyperbolic distance between two Poincaré-disk points. */
 export function hypDist(u: Complex, v: Complex): number {
-	const dx = u.x - v.x, dy = u.y - v.y;
+	const dx = u.x - v.x,
+		dy = u.y - v.y;
 	const num = dx * dx + dy * dy;
 	const du = 1 - (u.x * u.x + u.y * u.y);
 	const dv = 1 - (v.x * v.x + v.y * v.y);

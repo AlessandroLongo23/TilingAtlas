@@ -141,12 +141,7 @@ function projector(width: number, height: number, view: StudioView) {
  * still gets drawn. Under a deform the corners are un-deformed first, because the instance grid lives
  * in undeformed world space where the lattice is still a lattice.
  */
-export function visibleCopies(
-	width: number,
-	height: number,
-	view: StudioView,
-	patch: StudioPatch,
-): Lift[] {
+export function visibleCopies(width: number, height: number, view: StudioView, patch: StudioPatch): Lift[] {
 	const [t1x, t1y] = patch.T1;
 	const [t2x, t2y] = patch.T2;
 	const det = t1x * t2y - t1y * t2x;
@@ -255,10 +250,7 @@ function shapeHue(patch: StudioPatch, comp: number): number | null {
 	const hit = byComp.get(comp);
 	if (hit !== undefined) return hit;
 	const outline = componentOutline(patch, comp);
-	const out =
-		outline && outline.length >= 3
-			? polygonFillHue(outline.map((p) => ({ x: p[0], y: p[1] })))
-			: null;
+	const out = outline && outline.length >= 3 ? polygonFillHue(outline.map((p) => ({ x: p[0], y: p[1] }))) : null;
 	byComp.set(comp, out);
 	return out;
 }
@@ -382,9 +374,7 @@ function drawMergedTiles(
 		ctx.beginPath();
 		for (const cell of copies) {
 			for (const f of faces) {
-				const pts = curved
-					? faceOutline(patch, f, cell, style.bows).pts
-					: faceRing(patch, f, cell);
+				const pts = curved ? faceOutline(patch, f, cell, style.bows).pts : faceRing(patch, f, cell);
 				if (pts.length < 3) continue;
 				ctx.moveTo(pts[0][0], pts[0][1]);
 				for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
@@ -485,9 +475,7 @@ export function drawStudio(
 		// EVERY copy the edit would touch, not just the one under the cursor. An edit is recorded against
 		// the quotient, so it lands on every lattice translate at once; showing one of them would promise
 		// something narrower than what the click does. AL asked for the preview to say what will change.
-		const affected = overlay.affected.size > 0
-			? overlay.affected
-			: new Set([patch.polyComp[overlay.hoverFace.face]]);
+		const affected = overlay.affected.size > 0 ? overlay.affected : new Set([patch.polyComp[overlay.hoverFace.face]]);
 		ctx.fillStyle = HOVER_FILL;
 		ctx.beginPath();
 		for (const cell of copies) {
@@ -661,7 +649,10 @@ function drawGroupStructure(
 	// Axes: one stroke per DISTINCT line, across the whole visible extent, because a mirror does not
 	// stop at a cell boundary and drawing it as a segment would misread the group. Every anchor lies in
 	// the copy grid, so the grid's own diameter reaches past the far edge from any of them.
-	let iLo = Infinity, iHi = -Infinity, jLo = Infinity, jHi = -Infinity;
+	let iLo = Infinity,
+		iHi = -Infinity,
+		jLo = Infinity,
+		jHi = -Infinity;
 	for (const [i, j] of copies) {
 		if (i < iLo) iLo = i;
 		if (i > iHi) iHi = i;
@@ -810,13 +801,7 @@ function drawSnapTarget(
 }
 
 /** A refusal, beside the cursor: a rounded plate with the reason on it, clamped to stay on canvas. */
-function drawNotice(
-	ctx: CanvasRenderingContext2D,
-	text: string,
-	at: Pt,
-	width: number,
-	dark: boolean,
-): void {
+function drawNotice(ctx: CanvasRenderingContext2D, text: string, at: Pt, width: number, dark: boolean): void {
 	ctx.save();
 	ctx.font = "500 12px ui-sans-serif, system-ui, sans-serif";
 	ctx.textBaseline = "middle";
@@ -847,11 +832,7 @@ function drawNotice(
 
 /** The cut being drawn: the committed points solid, the segment to the cursor dashed, because that
  *  last leg is a proposal and has not been accepted by `canExtendCut` yet. */
-function drawCutPath(
-	ctx: CanvasRenderingContext2D,
-	overlay: StudioOverlay,
-	P: (x: number, y: number) => Pt,
-): void {
+function drawCutPath(ctx: CanvasRenderingContext2D, overlay: StudioOverlay, P: (x: number, y: number) => Pt): void {
 	ctx.save();
 	ctx.strokeStyle = CUT_INK;
 	ctx.lineWidth = 2;

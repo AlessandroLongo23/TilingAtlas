@@ -81,7 +81,10 @@ export function usePatchCanvas({
 	const uploadedRef = useRef<RawPolygon[] | null>(null);
 
 	const home = useCallback((): HomeBox | null => {
-		let minx = Infinity, miny = Infinity, maxx = -Infinity, maxy = -Infinity;
+		let minx = Infinity,
+			miny = Infinity,
+			maxx = -Infinity,
+			maxy = -Infinity;
 		for (const p of polys)
 			for (const v of p.vertices) {
 				if (v.x < minx) minx = v.x;

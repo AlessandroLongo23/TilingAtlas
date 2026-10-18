@@ -41,7 +41,11 @@ const S3 = Math.sqrt(3);
 const ring = (cx: number, cy: number, n: number, r: number, phase = 0): [number, number][] =>
 	Array.from(
 		{ length: n },
-		(_, i) => [cx + r * Math.cos(phase + (2 * Math.PI * i) / n), cy + r * Math.sin(phase + (2 * Math.PI * i) / n)] as [number, number],
+		(_, i) =>
+			[cx + r * Math.cos(phase + (2 * Math.PI * i) / n), cy + r * Math.sin(phase + (2 * Math.PI * i) / n)] as [
+				number,
+				number,
+			],
 	);
 
 /** The seeds: the small uniform tilings, where every step is affordable and the answer is checkable. */
@@ -52,31 +56,70 @@ function seeds(): { id: string; cell: TorusCell }[] {
 	return [
 		{
 			id: "4.4.4.4 square",
-			cell: { polygons: [[[0, 0], [1, 0], [1, 1], [0, 1]]], basis: [[1, 0], [0, 1]] },
+			cell: {
+				polygons: [
+					[
+						[0, 0],
+						[1, 0],
+						[1, 1],
+						[0, 1],
+					],
+				],
+				basis: [
+					[1, 0],
+					[0, 1],
+				],
+			},
 		},
 		{
 			id: "3^6 triangular",
 			cell: {
 				polygons: [
-					[[0, 0], [1, 0], [0.5, S3 / 2]],
-					[[1, 0], [1.5, S3 / 2], [0.5, S3 / 2]],
+					[
+						[0, 0],
+						[1, 0],
+						[0.5, S3 / 2],
+					],
+					[
+						[1, 0],
+						[1.5, S3 / 2],
+						[0.5, S3 / 2],
+					],
 				],
-				basis: [[1, 0], [0.5, S3 / 2]],
+				basis: [
+					[1, 0],
+					[0.5, S3 / 2],
+				],
 			},
 		},
-		{ id: "6^3 hexagonal", cell: { polygons: [hex], basis: [[1.5, S3 / 2], [0, S3]] } },
+		{
+			id: "6^3 hexagonal",
+			cell: {
+				polygons: [hex],
+				basis: [
+					[1.5, S3 / 2],
+					[0, S3],
+				],
+			},
+		},
 		{
 			id: "3.6.3.6 trihexagonal",
 			cell: {
 				polygons: [hex, [hex[0], [1.5, S3 / 2], hex[1]], [hex[0], [1.5, -S3 / 2], hex[5]]],
-				basis: [[2, 0], [1, S3]],
+				basis: [
+					[2, 0],
+					[1, S3],
+				],
 			},
 		},
 		{
 			id: "4.8.8 truncated square",
 			cell: {
 				polygons: [ring(0, 0, 8, R8, Math.PI / 8), ring(t8 / 2, t8 / 2, 4, Math.SQRT2 / 2, 0)],
-				basis: [[t8, 0], [0, t8]],
+				basis: [
+					[t8, 0],
+					[0, t8],
+				],
 			},
 		},
 	];
@@ -280,7 +323,9 @@ function main(): void {
 		const es = run.steps.map((s) => s.E);
 		const ratios = es.slice(1).map((e, i) => (e / es[i]).toFixed(2));
 		const taus = run.steps.map((s) => (s.tau ? `${s.tau.re.toFixed(3)}+${s.tau.im.toFixed(3)}i` : "-"));
-		log(`- **${run.seed}** (${run.rule}): E = ${es.join(" -> ")}; ratios ${ratios.join(", ") || "-"}; tau ${taus.join(" -> ")}. Stopped: ${run.stopped}`);
+		log(
+			`- **${run.seed}** (${run.rule}): E = ${es.join(" -> ")}; ratios ${ratios.join(", ") || "-"}; tau ${taus.join(" -> ")}. Stopped: ${run.stopped}`,
+		);
 	}
 	log("");
 	log(`Raw: \`${path.relative(process.cwd(), JSON_OUT)}\``);

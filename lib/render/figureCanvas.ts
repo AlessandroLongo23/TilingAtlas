@@ -25,11 +25,16 @@ export interface Prepared {
  * `fill` is how much of the shorter side the content takes.
  */
 export function prepare(host: HTMLElement, canvas: HTMLCanvasElement, box: Box, fill: number): Prepared | null {
-	const w = host.clientWidth, h = host.clientHeight;
+	const w = host.clientWidth,
+		h = host.clientHeight;
 	if (w <= 0 || h <= 0) return null;
 	const dpr = Math.min(window.devicePixelRatio || 1, 2);
-	const bw = Math.round(w * dpr), bh = Math.round(h * dpr);
-	if (canvas.width !== bw || canvas.height !== bh) { canvas.width = bw; canvas.height = bh; }
+	const bw = Math.round(w * dpr),
+		bh = Math.round(h * dpr);
+	if (canvas.width !== bw || canvas.height !== bh) {
+		canvas.width = bw;
+		canvas.height = bh;
+	}
 	const ctx = canvas.getContext("2d");
 	if (!ctx) return null;
 	ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -47,7 +52,10 @@ export function prepare(host: HTMLElement, canvas: HTMLCanvasElement, box: Box, 
  * drawing if the drawing itself might reset the context — a shared draw helper that flushes its own
  * text does exactly that, and a mapper captured afterwards would be reading the identity.
  */
-export function captureScreenMap(ctx: CanvasRenderingContext2D, dpr: number): (x: number, y: number) => [number, number] {
+export function captureScreenMap(
+	ctx: CanvasRenderingContext2D,
+	dpr: number,
+): (x: number, y: number) => [number, number] {
 	const m = ctx.getTransform();
 	return (x, y) => [(m.a * x + m.c * y + m.e) / dpr, (m.b * x + m.d * y + m.f) / dpr];
 }

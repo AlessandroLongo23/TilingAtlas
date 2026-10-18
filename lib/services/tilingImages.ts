@@ -26,12 +26,10 @@ function extractPathFromSupabaseUrl(url: string): string {
 
 async function ensureFolderExists(sanitizedGroupId: string): Promise<void> {
 	if (!supabase) return;
-	await supabase.storage
-		.from(BUCKET)
-		.upload(`${sanitizedGroupId}/.keep`, new Blob([]), {
-			contentType: "application/octet-stream",
-			upsert: true,
-		});
+	await supabase.storage.from(BUCKET).upload(`${sanitizedGroupId}/.keep`, new Blob([]), {
+		contentType: "application/octet-stream",
+		upsert: true,
+	});
 }
 
 export async function dataUrlToWebPBlob(dataUrl: string): Promise<Blob> {
@@ -47,11 +45,7 @@ export async function dataUrlToWebPBlob(dataUrl: string): Promise<Blob> {
 				return;
 			}
 			ctx.drawImage(img, 0, 0);
-			canvas.toBlob(
-				(blob) => (blob ? resolve(blob) : reject(new Error("toBlob failed"))),
-				"image/webp",
-				0.9,
-			);
+			canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("toBlob failed"))), "image/webp", 0.9);
 		};
 		img.onerror = () => reject(new Error("Failed to load image"));
 		img.src = dataUrl;

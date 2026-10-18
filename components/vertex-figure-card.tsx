@@ -49,7 +49,7 @@ export function VertexFigureCard({ word, tiles = true }: VertexFigureCardProps) 
 		<figure className={cn("not-prose m-0 mx-auto w-full", !tiles && "opacity-70")}>
 			<div
 				className={cn(
-					"relative aspect-square w-full overflow-hidden rounded-xl bg-surface-base",
+					"bg-surface-base relative aspect-square w-full overflow-hidden rounded-xl",
 					tiles ? "border border-line" : "border border-dashed border-line-strong",
 				)}
 			>

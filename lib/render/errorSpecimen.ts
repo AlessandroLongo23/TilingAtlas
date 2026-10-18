@@ -1,10 +1,5 @@
 import { tilingPeriodicCell } from "@/lib/render/periodic/tilings";
-import {
-	inversionMap,
-	periodicCellToSvg,
-	spiralMapForward,
-	type PeriodicSvgOptions,
-} from "@/lib/render/periodicSvg";
+import { inversionMap, periodicCellToSvg, spiralMapForward, type PeriodicSvgOptions } from "@/lib/render/periodicSvg";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 
 // What the error and 404 walls draw, and how a tiling becomes one.
@@ -206,11 +201,7 @@ function hrefFor(id: string, presentation: Presentation, arms: number): string {
 }
 
 /** A live pick as a drawable specimen, or `null` if its cell is degenerate — a caller keeps its seed. */
-export function liveSpecimen(
-	entry: HeroCell,
-	presentation: Presentation,
-	rand: () => number,
-): ErrorSpecimen | null {
+export function liveSpecimen(entry: HeroCell, presentation: Presentation, rand: () => number): ErrorSpecimen | null {
 	const cell = tilingPeriodicCell(entry.cell);
 	if (!cell) return null;
 	const opts = optionsFor(presentation, cell.v1, cell.v2, cell.feature, rand);

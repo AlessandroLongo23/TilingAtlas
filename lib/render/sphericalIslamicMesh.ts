@@ -95,7 +95,11 @@ function addCap(pos: number[], nor: number[], idx: number[], p: V3, radius: numb
 		const a = (k / segs) * 2 * Math.PI;
 		const du = Math.cos(a) * radius;
 		const dv = Math.sin(a) * radius;
-		pos.push(p[0] * LIFT + u[0] * du + v[0] * dv, p[1] * LIFT + u[1] * du + v[1] * dv, p[2] * LIFT + u[2] * du + v[2] * dv);
+		pos.push(
+			p[0] * LIFT + u[0] * du + v[0] * dv,
+			p[1] * LIFT + u[1] * du + v[1] * dv,
+			p[2] * LIFT + u[2] * du + v[2] * dv,
+		);
 		nor.push(r[0], r[1], r[2]);
 	}
 	for (let k = 0; k < segs; k++) idx.push(c, c + 1 + k, c + 2 + k);
@@ -122,11 +126,13 @@ export function buildIslamicPattern(poly: Polyhedron | null, opts: IslamicPatter
 		// a stub out the far side of the crossed bar — the overshoot artefact. So the bars butt exactly at the
 		// crossings and connect there.
 		const baseHue = polygonHue(poly.faces[0].length);
-		const wf = buildTubeSkeleton(
-			() => sphericalIslamicArcs(poly, { ...islamicOpts, radius: 1 }),
-			baseHue,
-			{ section: opts.section, thickness: opts.thickness, height: opts.height, bevel: opts.bevel, hueOffset: opts.hueOffset },
-		);
+		const wf = buildTubeSkeleton(() => sphericalIslamicArcs(poly, { ...islamicOpts, radius: 1 }), baseHue, {
+			section: opts.section,
+			thickness: opts.thickness,
+			height: opts.height,
+			bevel: opts.bevel,
+			hueOffset: opts.hueOffset,
+		});
 		return {
 			object: wf.object,
 			setColor: (hueOffset) => wf.setColor(hueOffset),

@@ -25,15 +25,7 @@ import { cn } from "@/lib/utils/cn";
  * `flush` is for a group whose region has no padding of its own: the group then brings the panel
  * gutter itself, caption and control alike.
  */
-export function Section({
-	label,
-	flush = false,
-	children,
-}: {
-	label: string;
-	flush?: boolean;
-	children: ReactNode;
-}) {
+export function Section({ label, flush = false, children }: { label: string; flush?: boolean; children: ReactNode }) {
 	return (
 		<div className={cn("flex flex-col gap-2", flush && "px-3.5")}>
 			<span className="ta-label">{label}</span>
@@ -111,12 +103,12 @@ export function Segmented({
 							"focus:outline-none focus-visible:relative focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-accent/50",
 							active ? "text-fg" : "text-fg-muted hover:text-fg",
 							o.dim && !active && "text-fg-disabled hover:text-fg-muted",
-							o.disabled && "opacity-50 cursor-not-allowed pointer-events-none",
+							o.disabled && "pointer-events-none cursor-not-allowed opacity-50",
 						)}
 					>
-						<span className="text-xs font-medium leading-tight text-center text-balance">{o.label}</span>
+						<span className="text-center text-xs leading-tight font-medium text-balance">{o.label}</span>
 						{o.sub ? (
-							<span className="font-mono text-[11px] leading-tight tabular-nums text-fg-muted">{o.sub}</span>
+							<span className="font-mono text-[11px] leading-tight text-fg-muted tabular-nums">{o.sub}</span>
 						) : null}
 					</button>
 				);

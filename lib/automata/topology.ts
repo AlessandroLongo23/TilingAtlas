@@ -94,8 +94,7 @@ export const TOPOLOGIES: TopologyDef[] = [
 	},
 ];
 
-export const topologyDef = (id: TopologyId): TopologyDef =>
-	TOPOLOGIES.find((t) => t.id === id) ?? TOPOLOGIES[0];
+export const topologyDef = (id: TopologyId): TopologyDef => TOPOLOGIES.find((t) => t.id === id) ?? TOPOLOGIES[0];
 
 // ── Does the tiling admit the glide a flipped seam needs? ─────────────────────────────────────────
 
@@ -154,10 +153,7 @@ export function findFlip(adj: PeriodicAdjacency, axis: 0 | 1): FlipAction | null
 	const det = v1x * v2y - v2x * v1y;
 	if (Math.abs(det) < EPS) return null;
 
-	const toLat = (x: number, y: number): [number, number] => [
-		(x * v2y - y * v2x) / det,
-		(-x * v1y + y * v1x) / det,
-	];
+	const toLat = (x: number, y: number): [number, number] => [(x * v2y - y * v2x) / det, (-x * v1y + y * v1x) / det];
 	const toWorld = (a: number, b: number): [number, number] => [a * v1x + b * v2x, a * v1y + b * v2y];
 
 	// Euclidean reflection across the line spanned by the seam direction. Always an isometry, which the

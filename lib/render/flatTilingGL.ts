@@ -10,12 +10,7 @@ import { TILE_PALETTE_GLSL, TILE_SAT_PCT } from "@/lib/render/tilePalette";
 import type { CellMesh } from "@/lib/render/buildCellMesh";
 import type { OrbitDotMesh } from "@/lib/render/buildOrbitDotMesh";
 import { IDENTITY_DEFORM, computeFillGrid, fillGridInstances, wrapOffset, type Mat2 } from "@/lib/render/flatView";
-import {
-	ORBIT_DOT_RADIUS_PX,
-	hoveredOrbitAt,
-	screenToWorld,
-	stepOrbitScales,
-} from "@/lib/render/orbitHover";
+import { ORBIT_DOT_RADIUS_PX, hoveredOrbitAt, screenToWorld, stepOrbitScales } from "@/lib/render/orbitHover";
 
 // Selection-transition wave (M2), shared by the fill and stroke vertex shaders. A transcription of
 // waveTileScale + WAVE_MIN_SCALE in lib/utils/tilingTransition.ts — KEEP THE TWO IN STEP. `phase` is +1
@@ -432,19 +427,58 @@ export class FlatCellRenderer {
 		// renderer did that euclidean-canvas.tsx's pipeline does not. Some drivers tolerate it; others
 		// drop the draw, which showed up as strokeless (flat-filled) theory cards on Apple/ANGLE Metal
 		// while /play — which binds aCentroid in both passes — rendered correctly on the same GPU.
-		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uDeform", "uHalf", "uHueOffset", "uTileSat", "uWavePhase", "uWaveP", "uFillDim", "uDimTarget"]) {
+		for (const name of [
+			"uOffset",
+			"uZoom",
+			"uRot",
+			"uV1",
+			"uV2",
+			"uDeform",
+			"uHalf",
+			"uHueOffset",
+			"uTileSat",
+			"uWavePhase",
+			"uWaveP",
+			"uFillDim",
+			"uDimTarget",
+		]) {
 			this.fillU[name] = gl.getUniformLocation(fillProg, name);
 		}
 		for (const name of ["aPos", "aHue", "aInst", "aCentroid"]) {
 			this.fillA[name] = gl.getAttribLocation(fillProg, name);
 		}
-		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uDeform", "uHalf", "uHalfStrokePx", "uStroke", "uWavePhase", "uWaveP", "uStrokeDim", "uDimTarget"]) {
+		for (const name of [
+			"uOffset",
+			"uZoom",
+			"uRot",
+			"uV1",
+			"uV2",
+			"uDeform",
+			"uHalf",
+			"uHalfStrokePx",
+			"uStroke",
+			"uWavePhase",
+			"uWaveP",
+			"uStrokeDim",
+			"uDimTarget",
+		]) {
 			this.strokeU[name] = gl.getUniformLocation(strokeProg, name);
 		}
 		for (const name of ["aPos", "aNorm", "aSide", "aInst", "aCentroid"]) {
 			this.strokeA[name] = gl.getAttribLocation(strokeProg, name);
 		}
-		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uDeform", "uHalf", "uRadiusPx", "uK", "uOrbitScale"]) {
+		for (const name of [
+			"uOffset",
+			"uZoom",
+			"uRot",
+			"uV1",
+			"uV2",
+			"uDeform",
+			"uHalf",
+			"uRadiusPx",
+			"uK",
+			"uOrbitScale",
+		]) {
 			this.orbitU[name] = gl.getUniformLocation(orbitProg, name);
 		}
 		for (const name of ["aPos", "aCorner", "aOrbit", "aInst"]) {
@@ -578,7 +612,8 @@ export class FlatCellRenderer {
 		// every frame — the two programs' attribute locations aren't guaranteed disjoint.
 		if (p.showFill) {
 			gl.useProgram(this.fillProg);
-			const A = this.fillA, U = this.fillU;
+			const A = this.fillA,
+				U = this.fillU;
 			gl.bindBuffer(gl.ARRAY_BUFFER, this.posBuf);
 			gl.enableVertexAttribArray(A.aPos);
 			gl.vertexAttribPointer(A.aPos, 2, gl.FLOAT, false, 0, 0);
@@ -615,7 +650,8 @@ export class FlatCellRenderer {
 			gl.enable(gl.BLEND);
 			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 			gl.useProgram(this.strokeProg);
-			const A = this.strokeA, U = this.strokeU;
+			const A = this.strokeA,
+				U = this.strokeU;
 			gl.bindBuffer(gl.ARRAY_BUFFER, this.strokePosBuf);
 			gl.enableVertexAttribArray(A.aPos);
 			gl.vertexAttribPointer(A.aPos, 2, gl.FLOAT, false, 0, 0);
@@ -660,7 +696,12 @@ export class FlatCellRenderer {
 				strokePx: p.lineWidth,
 			};
 		} else {
-			this.lastDraw = { fillVerts: p.showFill ? mesh.fillVertexCount : 0, strokeVerts: 0, instances: this.inst.count, strokePx: p.lineWidth };
+			this.lastDraw = {
+				fillVerts: p.showFill ? mesh.fillVertexCount : 0,
+				strokeVerts: 0,
+				instances: this.inst.count,
+				strokePx: p.lineWidth,
+			};
 		}
 
 		// Polygon points (/play's `p`): a disk on every centroid, halfway and vertex, over the tiles and
@@ -670,7 +711,8 @@ export class FlatCellRenderer {
 			gl.enable(gl.BLEND);
 			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 			gl.useProgram(this.pointsProg);
-			const A = this.pointsA, U = this.pointsU;
+			const A = this.pointsA,
+				U = this.pointsU;
 			gl.bindBuffer(gl.ARRAY_BUFFER, this.pointsPosBuf);
 			gl.enableVertexAttribArray(A.aPos);
 			gl.vertexAttribPointer(A.aPos, 2, gl.FLOAT, false, 0, 0);
@@ -723,7 +765,8 @@ export class FlatCellRenderer {
 			gl.enable(gl.BLEND);
 			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 			gl.useProgram(this.orbitProg);
-			const A = this.orbitA, U = this.orbitU;
+			const A = this.orbitA,
+				U = this.orbitU;
 			gl.bindBuffer(gl.ARRAY_BUFFER, this.orbitPosBuf);
 			gl.enableVertexAttribArray(A.aPos);
 			gl.vertexAttribPointer(A.aPos, 2, gl.FLOAT, false, 0, 0);

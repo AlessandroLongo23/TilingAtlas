@@ -49,9 +49,15 @@
 // from the develop and checked, never taken from the record (lib/isohedral/edgePatch.ts).
 /** The boards the shipped freedraw CATALOGUE covers: one browser, one filter, one set of shards. */
 export type FreedrawCatalogueGrid =
-	| "square" | "triangle" | "ts" | "hex" | "sch236" | "sch244"
+	| "square"
+	| "triangle"
+	| "ts"
+	| "hex"
+	| "sch236"
+	| "sch244"
 	/** The two ARCHIMEDEAN boards: 3.4.6.4 and 4.8.8, both patch grids (see below). */
-	| "4436" | "488";
+	| "4436"
+	| "488";
 /** Every board a pattern can decorate. Wider than the catalogue: the two parametric boards are their own
  *  shelves (`pen-1`, `ih-1`), reached from the Edge patterns tab and not from the freedraw browser, so
  *  they must not appear in that browser's grid pickers — which is what the two types keep apart. */
@@ -149,9 +155,7 @@ export const gridOf = (p: FreedrawPattern): FreedrawGrid => p.grid ?? "square";
  *  ordinary vertex-orbit count — the same quantity the spherical and hyperbolic Schwarz shelves use,
  *  which is why the three read as one family. */
 export const freedrawKNoun = (grid: FreedrawGrid): string =>
-	grid === "sch236" || grid === "sch244" || grid === "pent" || grid === "ih"
-		? "vertex orbits"
-		: "grid-point orbits";
+	grid === "sch236" || grid === "sch244" || grid === "pent" || grid === "ih" ? "vertex orbits" : "grid-point orbits";
 
 /**
  * The shipped edge-system catalogues. `eager` loads with the atlas; `lazyKs` are the dense tails,
@@ -230,7 +234,7 @@ export const cosetCount = (p: Pick<FreedrawPattern, "a" | "d">) => p.a * p.d;
 export function coset(p: Pick<FreedrawPattern, "a" | "b" | "d">, x: number, y: number): number {
 	const q = Math.floor(y / p.d);
 	const j = y - q * p.d;
-	const i = ((x - q * p.b) % p.a + p.a) % p.a;
+	const i = (((x - q * p.b) % p.a) + p.a) % p.a;
 	return j * p.a + i;
 }
 
@@ -241,8 +245,7 @@ export const drawnEast = (p: FreedrawPattern, x: number, y: number) => p.h[coset
 export const drawnNorth = (p: FreedrawPattern, x: number, y: number) => p.v[coset(p, x, y)] === 1;
 
 /** Triangle grid only: is the diagonal edge from (x, y) to (x+1, y-1) drawn? */
-export const drawnDiag = (p: FreedrawPattern, x: number, y: number) =>
-	(p.w ?? [])[coset(p, x, y)] === 1;
+export const drawnDiag = (p: FreedrawPattern, x: number, y: number) => (p.w ?? [])[coset(p, x, y)] === 1;
 
 /**
  * Number of drawn edges at grid point (x, y) — never exactly 1 by construction. On the square grid

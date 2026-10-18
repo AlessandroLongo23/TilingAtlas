@@ -29,8 +29,7 @@ const hypShard = (b: SchwarzBoard, k: number): HypSchwarzPattern[] | null => {
 };
 
 /** Triangles in the whole (p,q,r) sphere = the order of the reflection group, 4 / (1/p+1/q+1/r−1). */
-const triangleCount = (b: SchwarzBoard) =>
-	Math.round(4 / (b.pqr.reduce((s, n) => s + 1 / n, 0) - 1));
+const triangleCount = (b: SchwarzBoard) => Math.round(4 / (b.pqr.reduce((s, n) => s + 1 / n, 0) - 1));
 
 const anySphShard = existsSync("public/schwarz-sph/s234-k3.json");
 const anyHypShard = existsSync("public/schwarz-hyp/h237-k3.json");
@@ -53,7 +52,11 @@ describe("Schwarz board manifest", () => {
 
 	it("counts every k it lists, and lists every k it counts", () => {
 		for (const b of SCHWARZ_BOARDS) {
-			expect(schwarzBoardKs(b)).toEqual(Object.keys(b.counts).map(Number).sort((x, y) => x - y));
+			expect(schwarzBoardKs(b)).toEqual(
+				Object.keys(b.counts)
+					.map(Number)
+					.sort((x, y) => x - y),
+			);
 			expect(b.eagerKs.filter((k) => b.lazyKs.includes(k))).toHaveLength(0);
 		}
 	});
@@ -196,6 +199,11 @@ describe.skipIf(!anyHypShard)("hyperbolic Schwarz shards", () => {
 		// S2–S7 merges round an S3 vertex, the {3,7} triangle (6); drawing both leaves the two triangles
 		// across an S3–S7 edge, the quasiregular rhombus (2).
 		const recs = hypShard(hypSchwarzBoards().find((b) => b.id === "237")!, 3)!;
-		expect(recs.map((r) => r.stats.sizes).flat().sort((a, c) => a - c)).toEqual([-1, 2, 6, 14]);
+		expect(
+			recs
+				.map((r) => r.stats.sizes)
+				.flat()
+				.sort((a, c) => a - c),
+		).toEqual([-1, 2, 6, 14]);
 	});
 });

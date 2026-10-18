@@ -7,7 +7,13 @@ import { COMPAT_TILINGS } from "@/lib/defense/vcTilings";
 import { INK, SOFT } from "@/lib/render/figureGlyphs";
 import { orbitHue } from "@/lib/utils/orbitColors";
 import { figureFromWord } from "@/lib/render/vertexFigure";
-import { hsbToHsla, polygonFillHue, TILE_FILL_ALPHA, tileFill, type TranslationalCellData } from "@/lib/utils/renderTiling";
+import {
+	hsbToHsla,
+	polygonFillHue,
+	TILE_FILL_ALPHA,
+	tileFill,
+	type TranslationalCellData,
+} from "@/lib/utils/renderTiling";
 import { TILE_SAT_PCT } from "@/lib/render/tilePalette";
 
 // The compatibility graph over the fifteen vertex configurations that appear in a tiling: an edge
@@ -139,8 +145,10 @@ function step(nodes: Node[], edges: [number, number][]): number {
 	}
 	for (let i = 0; i < nodes.length; i++) {
 		for (let j = i + 1; j < nodes.length; j++) {
-			const a = nodes[i], b = nodes[j];
-			let dx = b.x - a.x, dy = b.y - a.y;
+			const a = nodes[i],
+				b = nodes[j];
+			let dx = b.x - a.x,
+				dy = b.y - a.y;
 			let d = Math.hypot(dx, dy);
 			// Two nodes exactly on top of each other have no direction to separate along; nudge them
 			// apart along a fixed axis rather than dividing by zero.
@@ -149,7 +157,8 @@ function step(nodes: Node[], edges: [number, number][]): number {
 				dy = 0;
 				d = 1e-3;
 			}
-			const ux = dx / d, uy = dy / d;
+			const ux = dx / d,
+				uy = dy / d;
 			// Hard floor on the distance used for repulsion: at d -> 0 an inverse square is unbounded
 			// and one frame of that throws a node off the slide.
 			let f = REPULSION / Math.max(d, (a.clear + b.clear) * 0.3) ** 2;
@@ -168,11 +177,14 @@ function step(nodes: Node[], edges: [number, number][]): number {
 		}
 	}
 	for (const [i, j] of edges) {
-		const a = nodes[i], b = nodes[j];
-		const dx = b.x - a.x, dy = b.y - a.y;
+		const a = nodes[i],
+			b = nodes[j];
+		const dx = b.x - a.x,
+			dy = b.y - a.y;
 		const d = Math.hypot(dx, dy) || 1e-6;
 		const f = SPRING * (d - REST_LENGTH);
-		const ux = dx / d, uy = dy / d;
+		const ux = dx / d,
+			uy = dy / d;
 		a.fx += ux * f;
 		a.fy += uy * f;
 		b.fx -= ux * f;
@@ -225,7 +237,10 @@ function fitTransform(nodes: Node[]): Fit {
 	const PAD_TOP = R_MAX + 1;
 	// Room for the label, which hangs below the plate.
 	const PAD_BOTTOM = R_MAX + 5;
-	let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+	let x0 = Infinity,
+		y0 = Infinity,
+		x1 = -Infinity,
+		y1 = -Infinity;
 	for (const n of nodes) {
 		if (n.x < x0) x0 = n.x;
 		if (n.x > x1) x1 = n.x;
@@ -242,14 +257,16 @@ function fitTransform(nodes: Node[]): Fit {
 	};
 }
 
-const placed = (nodes: Node[], t: Fit): [number, number][] =>
-	nodes.map((n) => [n.x * t.s + t.ox, n.y * t.s + t.oy]);
+const placed = (nodes: Node[], t: Fit): [number, number][] => nodes.map((n) => [n.x * t.s + t.ox, n.y * t.s + t.oy]);
 
 /** One configuration's tiles, fitted into a plate of radius `r`, in the /configs hues. */
 function tilesOf(word: string, r: number) {
 	const polys = figureFromWord(word);
 	if (!polys) return [];
-	let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+	let minX = Infinity,
+		minY = Infinity,
+		maxX = -Infinity,
+		maxY = -Infinity;
 	for (const p of polys)
 		for (const v of p.vertices) {
 			if (v.x < minX) minX = v.x;
@@ -455,12 +472,9 @@ export function CompatGraph({ cells, overlayData }: CompatGraphProps) {
 		if (!tiling || hoverOrbit < 0 || !word) return null;
 		return { word, colour: hsbToHsla(orbitHue(hoverOrbit, tiling.k), TILE_SAT_PCT, 72, 1) };
 	}, [tiling, hoverOrbit]);
-	const lit = (word: string) =>
-		focus ? word === focus || near!.has(word) : !showingTiling || inTiling.has(word);
+	const lit = (word: string) => (focus ? word === focus || near!.has(word) : !showingTiling || inTiling.has(word));
 	const litEdge = (a: string, b: string) =>
-		focus
-			? a === focus || b === focus
-			: !showingTiling || tilingPairs.has(a < b ? `${a}|${b}` : `${b}|${a}`);
+		focus ? a === focus || b === focus : !showingTiling || tilingPairs.has(a < b ? `${a}|${b}` : `${b}|${a}`);
 
 	return (
 		// The figure takes whatever the heading and the prose leave, and each half letterboxes into
@@ -468,10 +482,7 @@ export function CompatGraph({ cells, overlayData }: CompatGraphProps) {
 		// whatever the window. `marginBlock` inline because the spread layout centres figures with
 		// `margin: auto`, which outranks a utility class and would eat the free space before
 		// flex-grow could have it.
-		<figure
-			style={{ marginBlock: 0 }}
-			className="not-prose m-0 flex min-h-0 w-full flex-1 items-stretch gap-[2vw]"
-		>
+		<figure style={{ marginBlock: 0 }} className="not-prose m-0 flex min-h-0 w-full flex-1 items-stretch gap-[2vw]">
 			<svg
 				ref={svgRef}
 				viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
@@ -621,13 +632,10 @@ export function CompatGraph({ cells, overlayData }: CompatGraphProps) {
 						className="flex items-center gap-[0.5em] border border-line bg-surface-overlay/40 px-[0.9em] py-[0.3em] text-[clamp(0.68rem,1.05vh+0.29vw,1.05rem)] text-fg-secondary transition-colors hover:border-line-strong hover:text-fg max-md:min-h-11 max-md:text-sm"
 					>
 						another tiling
-						<kbd className="border border-line px-[0.4em] font-mono text-[0.85em] text-fg-muted max-md:hidden">
-							R
-						</kbd>
+						<kbd className="border border-line px-[0.4em] font-mono text-[0.85em] text-fg-muted max-md:hidden">R</kbd>
 					</button>
 					<span className="text-center text-[clamp(0.62rem,0.95vh+0.26vw,0.92rem)] text-fg-muted">
-						k = {tiling.k}, {tiling.words.length}{" "}
-						{tiling.words.length === 1 ? "configuration" : "configurations"}
+						k = {tiling.k}, {tiling.words.length} {tiling.words.length === 1 ? "configuration" : "configurations"}
 					</span>
 				</div>
 			)}

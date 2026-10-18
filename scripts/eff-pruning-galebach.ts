@@ -33,7 +33,10 @@ const LOG_DIR = path.join(process.cwd(), "experiments", "results");
 const dateTag = new Date().toISOString().slice(0, 10);
 const LOG_FILE = path.join(LOG_DIR, `eff-pruning-galebach-${dateTag}.log`);
 fs.writeFileSync(LOG_FILE, "");
-const log = (s = "") => { fs.appendFileSync(LOG_FILE, s + "\n"); console.log(s); };
+const log = (s = "") => {
+	fs.appendFileSync(LOG_FILE, s + "\n");
+	console.log(s);
+};
 
 const EXPECTED_W: Record<number, number> = { 1: 25, 2: 289, 3: 2089, 4: 10825, 5: 43777, 6: 146521, 7: 423169 };
 const H = 7; // MIM covers wt ≤ 2H = 14 (galebach reduced bases reach wt 14 — join-necessity 2026-07-04)
@@ -69,12 +72,15 @@ function buildWH(): { list: WVec[]; map: Map<string, number> } {
 				for (let i = 0; i < ring.phi; i++) d[i] = c[i] + ZETA[j][i];
 				const k = d.join(",");
 				if (seen.has(k)) continue;
-				seen.add(k); next.push(d);
-				map.set(k, t); list.push({ coords: d, wt: t });
+				seen.add(k);
+				next.push(d);
+				map.set(k, t);
+				list.push({ coords: d, wt: t });
 			}
 		}
 		cumulative += next.length;
-		if (EXPECTED_W[t] !== undefined && cumulative !== EXPECTED_W[t]) throw new Error(`|W(${t})|=${cumulative} ≠ ${EXPECTED_W[t]}`);
+		if (EXPECTED_W[t] !== undefined && cumulative !== EXPECTED_W[t])
+			throw new Error(`|W(${t})|=${cumulative} ≠ ${EXPECTED_W[t]}`);
 		frontier = next;
 	}
 	list.sort((a, b) => a.wt - b.wt); // ascending wt → early-break in the MIM min
@@ -103,28 +109,53 @@ function wtMIM(v: Cyclotomic): number {
 
 // ---- exact helpers (mirror eff-pruning-ratios) ----
 const lenSq = (v: Cyclotomic): Surd => reSurd(v.normSquared());
-const surdF = (s: Surd) => (Number(s.P) + Number(s.Q) * Math.SQRT2 + Number(s.R) * Math.sqrt(3) + Number(s.S) * Math.sqrt(6)) / Number(s.D);
+const surdF = (s: Surd) =>
+	(Number(s.P) + Number(s.Q) * Math.SQRT2 + Number(s.R) * Math.sqrt(3) + Number(s.S) * Math.sqrt(6)) / Number(s.D);
 const reqC2 = (wt: number, vSq: Surd) => Surd.rational(BigInt(wt) * BigInt(wt)).div(vSq);
 const maxSurd = (a: Surd, b: Surd) => (a.cmp(b) >= 0 ? a : b);
 
 // ---- sweep the oracle ----
-log("██ EFFICIENCY-PRUNING — EXP B extension: EXACT ratios over Galebach k≤6 (⚑ OCTAGON-BLIND ℤ[ζ₁₂] reference) " + new Date().toISOString());
+log(
+	"██ EFFICIENCY-PRUNING — EXP B extension: EXACT ratios over Galebach k≤6 (⚑ OCTAGON-BLIND ℤ[ζ₁₂] reference) " +
+		new Date().toISOString(),
+);
 log("proxy claim to correct: max reduced-basis ratio ≈ 1.2957 @ t6268 (k=6), computed with a FLOAT weight.");
 log("");
 const oracle = loadOracle();
-type GRow = { id: string; k: number; reqC2: Surd; reqC: number; wtU: number; wtV: number; ratioU: number; ratioV: number };
+type GRow = {
+	id: string;
+	k: number;
+	reqC2: Surd;
+	reqC: number;
+	wtU: number;
+	wtV: number;
+	ratioU: number;
+	ratioV: number;
+};
 const rows: GRow[] = [];
-let processed = 0, failed = 0;
+let processed = 0,
+	failed = 0;
 const kMax: Record<number, GRow | undefined> = {};
 for (const [tCode, o] of Object.entries(oracle)) {
 	const k = Number(tCode[1]);
 	if (!(k >= 1 && k <= 6)) continue;
 	try {
 		const [u, v] = gaussReduceExact(dec(o.T1), dec(o.T2));
-		const wtU = wtMIM(u), wtV = wtMIM(v);
-		const uSq = lenSq(u), vSq = lenSq(v);
+		const wtU = wtMIM(u),
+			wtV = wtMIM(v);
+		const uSq = lenSq(u),
+			vSq = lenSq(v);
 		const rc2 = maxSurd(reqC2(wtU, uSq), reqC2(wtV, vSq));
-		const row: GRow = { id: tCode, k, reqC2: rc2, reqC: Math.sqrt(surdF(rc2)), wtU, wtV, ratioU: wtU / Math.sqrt(surdF(uSq)), ratioV: wtV / Math.sqrt(surdF(vSq)) };
+		const row: GRow = {
+			id: tCode,
+			k,
+			reqC2: rc2,
+			reqC: Math.sqrt(surdF(rc2)),
+			wtU,
+			wtV,
+			ratioU: wtU / Math.sqrt(surdF(uSq)),
+			ratioV: wtV / Math.sqrt(surdF(vSq)),
+		};
 		rows.push(row);
 		if (!kMax[k] || row.reqC2.cmp(kMax[k]!.reqC2) > 0) kMax[k] = row;
 		processed++;
@@ -141,17 +172,37 @@ for (const k of [1, 2, 3, 4, 5, 6]) {
 	const r = kMax[k];
 	if (!r) continue;
 	if (!overall || r.reqC2.cmp(overall.reqC2) > 0) overall = r;
-	log(`  k=${k}: max ratio ${r.reqC.toFixed(4)}  ← ${r.id}  (wt u=${r.wtU} v=${r.wtV}, ratio u=${r.ratioU.toFixed(4)} v=${r.ratioV.toFixed(4)})  ${r.reqC2.cmp(Surd.rational(2n, 1n)) <= 0 ? "≤√2" : "⚑ >√2"}`);
+	log(
+		`  k=${k}: max ratio ${r.reqC.toFixed(4)}  ← ${r.id}  (wt u=${r.wtU} v=${r.wtV}, ratio u=${r.ratioU.toFixed(4)} v=${r.ratioV.toFixed(4)})  ${r.reqC2.cmp(Surd.rational(2n, 1n)) <= 0 ? "≤√2" : "⚑ >√2"}`,
+	);
 }
 if (overall) {
 	log("");
-	log(`OVERALL (Galebach k≤6, EXACT wt, octagon-blind): max ratio ${overall.reqC.toFixed(4)}  ← ${overall.id}  exact c² = (${overall.reqC2.P}+${overall.reqC2.Q}√2+${overall.reqC2.R}√3+${overall.reqC2.S}√6)/${overall.reqC2.D}`);
-	log(`  proxy said 1.2957 @ t6268 (float wt). Exact vs proxy: ${overall.reqC > 1.2957 ? "HIGHER" : overall.reqC < 1.2957 ? "LOWER" : "equal"} — √2 (1.4142) margin: ${(Math.SQRT2 - overall.reqC).toFixed(4)}`);
-	log(`  ⚑ this is a ζ₁₂ LOWER BOUND: an octagon tiling at k≥4 (absent here) could exceed it. Octagon-complete sup is available only at certified k≤3 = 1.2426 (eff-pruning-ratios).`);
+	log(
+		`OVERALL (Galebach k≤6, EXACT wt, octagon-blind): max ratio ${overall.reqC.toFixed(4)}  ← ${overall.id}  exact c² = (${overall.reqC2.P}+${overall.reqC2.Q}√2+${overall.reqC2.R}√3+${overall.reqC2.S}√6)/${overall.reqC2.D}`,
+	);
+	log(
+		`  proxy said 1.2957 @ t6268 (float wt). Exact vs proxy: ${overall.reqC > 1.2957 ? "HIGHER" : overall.reqC < 1.2957 ? "LOWER" : "equal"} — √2 (1.4142) margin: ${(Math.SQRT2 - overall.reqC).toFixed(4)}`,
+	);
+	log(
+		`  ⚑ this is a ζ₁₂ LOWER BOUND: an octagon tiling at k≥4 (absent here) could exceed it. Octagon-complete sup is available only at certified k≤3 = 1.2426 (eff-pruning-ratios).`,
+	);
 }
 // CSV
 const csv = ["id,k,wt_u,ratio_u,wt_v,ratio_v,required_c,required_c2"];
-for (const r of [...rows].sort((a, b) => a.k - b.k || b.reqC2.cmp(a.reqC2))) csv.push([r.id, r.k, r.wtU, r.ratioU.toFixed(6), r.wtV, r.ratioV.toFixed(6), r.reqC.toFixed(6), surdF(r.reqC2).toFixed(6)].join(","));
+for (const r of [...rows].sort((a, b) => a.k - b.k || b.reqC2.cmp(a.reqC2)))
+	csv.push(
+		[
+			r.id,
+			r.k,
+			r.wtU,
+			r.ratioU.toFixed(6),
+			r.wtV,
+			r.ratioV.toFixed(6),
+			r.reqC.toFixed(6),
+			surdF(r.reqC2).toFixed(6),
+		].join(","),
+	);
 fs.writeFileSync(path.join(LOG_DIR, `eff-pruning-galebach-${dateTag}.csv`), csv.join("\n") + "\n");
 log("");
 log(`per-tiling CSV → experiments/results/eff-pruning-galebach-${dateTag}.csv (${rows.length} rows)`);

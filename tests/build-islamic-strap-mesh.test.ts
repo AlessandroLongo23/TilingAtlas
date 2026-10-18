@@ -4,28 +4,34 @@ import { buildInstancedStrapMesh } from "@/lib/render/buildIslamicStrapMesh";
 import type { Band } from "@/lib/utils/islamicInterlace";
 
 const quad = (cx: number, cy: number, r: number): Vector[] => [
-	new Vector(cx - r, cy - r), new Vector(cx + r, cy - r), new Vector(cx + r, cy + r), new Vector(cx - r, cy + r),
+	new Vector(cx - r, cy - r),
+	new Vector(cx + r, cy - r),
+	new Vector(cx + r, cy + r),
+	new Vector(cx - r, cy + r),
 ];
 // An outline segment plus its outer-ring partner, offset by `d` along the segment's outward normal.
-const seg = (ax: number, ay: number, bx: number, by: number, nx: number, ny: number, d = 0.05) =>
-	({
-		a: new Vector(ax, ay), b: new Vector(bx, by),
-		oa: new Vector(ax + nx * d, ay + ny * d), ob: new Vector(bx + nx * d, by + ny * d),
-		n: new Vector(nx, ny),
-	});
+const seg = (ax: number, ay: number, bx: number, by: number, nx: number, ny: number, d = 0.05) => ({
+	a: new Vector(ax, ay),
+	b: new Vector(bx, by),
+	oa: new Vector(ax + nx * d, ay + ny * d),
+	ob: new Vector(bx + nx * d, by + ny * d),
+	n: new Vector(nx, ny),
+});
 
 describe("buildInstancedStrapMesh", () => {
 	// A 3×3 grid of unit-cell strap bands (fill quad + one border segment each). Only the origin-cell
 	// representative must survive; its lattice copies are the shader's instances.
-	const v1: [number, number] = [1, 0], v2: [number, number] = [0, 1];
+	const v1: [number, number] = [1, 0],
+		v2: [number, number] = [0, 1];
 	const bands: Band[] = [];
-	for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) {
-		bands.push({ fill: quad(i, j, 0.3), outline: [seg(i - 0.1, j, i + 0.1, j, 0, 1)] });
-	}
+	for (let i = -1; i <= 1; i++)
+		for (let j = -1; j <= 1; j++) {
+			bands.push({ fill: quad(i, j, 0.3), outline: [seg(i - 0.1, j, i + 0.1, j, 0, 1)] });
+		}
 
 	it("keeps only the origin-cell band; a quad fans to 2 triangles (6 fill verts)", () => {
 		const m = buildInstancedStrapMesh(bands, v1, v2, () => [0.5, 0.5, 0.5]);
-		expect(m.fillVertexCount).toBe(6);   // one quad → 2 tris (not 9 × 6)
+		expect(m.fillVertexCount).toBe(6); // one quad → 2 tris (not 9 × 6)
 		expect(m.borderVertexCount).toBe(6); // one segment → one fill-ring-to-outer-ring quad
 	});
 
@@ -41,14 +47,17 @@ describe("buildInstancedStrapMesh", () => {
 	it("chooses the colour from each segment (emboss highlight vs shadow)", () => {
 		// One band with two segments whose normals face opposite the light; colour by n·light sign.
 		const light = { x: -0.6, y: 0.8 };
-		const two: Band[] = [{
-			fill: quad(0, 0, 0.3),
-			outline: [seg(-0.1, 0, 0.1, 0, -1, 1), seg(-0.1, 0, 0.1, 0, 1, -1)],
-		}];
-		const colOf = (s: { n: Vector }) => (s.n.x * light.x + s.n.y * light.y > 0 ? [1, 1, 1] as const : [0, 0, 0] as const);
+		const two: Band[] = [
+			{
+				fill: quad(0, 0, 0.3),
+				outline: [seg(-0.1, 0, 0.1, 0, -1, 1), seg(-0.1, 0, 0.1, 0, 1, -1)],
+			},
+		];
+		const colOf = (s: { n: Vector }) =>
+			s.n.x * light.x + s.n.y * light.y > 0 ? ([1, 1, 1] as const) : ([0, 0, 0] as const);
 		const m = buildInstancedStrapMesh(two, v1, v2, colOf);
 		// First segment normal (-1,1)·(-0.6,0.8) = 0.6+0.8 > 0 → white; second (1,-1) → black.
-		expect(m.borderColor[0]).toBe(1);        // first seg, first vertex
-		expect(m.borderColor[6 * 3]).toBe(0);    // second seg starts at vertex 6
+		expect(m.borderColor[0]).toBe(1); // first seg, first vertex
+		expect(m.borderColor[6 * 3]).toBe(0); // second seg starts at vertex 6
 	});
 });

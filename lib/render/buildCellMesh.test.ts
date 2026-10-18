@@ -40,7 +40,10 @@ function meshArea(mesh: NonNullable<ReturnType<typeof buildCellMesh>>): number {
 const SQ3 = Math.sqrt(3) / 2;
 const cell = (vertices: number[][]) => ({
 	cellPolygons: [{ n: vertices.length, vertices }],
-	basis: [[2, 0], [0, 2]],
+	basis: [
+		[2, 0],
+		[0, 2],
+	],
 });
 
 describe("buildCellMesh fill triangulation", () => {
@@ -54,7 +57,13 @@ describe("buildCellMesh fill triangulation", () => {
 	it("covers a CONCAVE tile exactly — the fan would over-paint it", () => {
 		// A chevron: the vertex at index 3 is pushed inside, making that corner reflex. The centroid sits
 		// outside the notch, so the fan folds two triangles over the outline.
-		const chev = [[0, 0], [2, 0], [2, 1], [1, 0.25], [0, 1]];
+		const chev = [
+			[0, 0],
+			[2, 0],
+			[2, 1],
+			[1, 0.25],
+			[0, 1],
+		];
 		const mesh = buildCellMesh(cell(chev))!;
 		expect(mesh.fillVertexCount).toBe((5 - 2) * 3); // ear clipping: n − 2 triangles
 		expect(meshArea(mesh)).toBeCloseTo(area(chev), 6);
@@ -73,7 +82,11 @@ describe("buildCellMesh fill triangulation", () => {
 	});
 
 	it("gives every fill vertex its own tile's centroid, so the wave scales fill and stroke together", () => {
-		const tri = [[0, 0], [1, 0], [0.5, SQ3]];
+		const tri = [
+			[0, 0],
+			[1, 0],
+			[0.5, SQ3],
+		];
 		const mesh = buildCellMesh(cell(tri))!;
 		const cx = (0 + 1 + 0.5) / 3;
 		const cy = (0 + 0 + SQ3) / 3;

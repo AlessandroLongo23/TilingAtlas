@@ -52,13 +52,16 @@ export function GalleryPanel({ runId, initial }: { runId: string; initial: Found
 
 	// "new" tracks the actually-newest cell (max first_seen_at), independent of the display sort.
 	const newestKey = useMemo(
-		() => tilings.reduce<FoundTiling | null>((m, t) => (!m || t.first_seen_at > m.first_seen_at ? t : m), null)?.canonical_key,
+		() =>
+			tilings.reduce<FoundTiling | null>((m, t) => (!m || t.first_seen_at > m.first_seen_at ? t : m), null)
+				?.canonical_key,
 		[tilings],
 	);
 
 	const sorted = useMemo(() => {
 		const arr = [...tilings];
-		if (sort === "seed") arr.sort((a, b) => (a.seed_idx ?? 0) - (b.seed_idx ?? 0) || a.canonical_key.localeCompare(b.canonical_key));
+		if (sort === "seed")
+			arr.sort((a, b) => (a.seed_idx ?? 0) - (b.seed_idx ?? 0) || a.canonical_key.localeCompare(b.canonical_key));
 		else if (sort === "found") arr.sort((a, b) => a.first_seen_at.localeCompare(b.first_seen_at));
 		else arr.sort((a, b) => polyCount(a) - polyCount(b) || (a.seed_idx ?? 0) - (b.seed_idx ?? 0));
 		return arr;
@@ -66,10 +69,7 @@ export function GalleryPanel({ runId, initial }: { runId: string; initial: Found
 
 	// Resolve the open cell from the live list by key, so refetches keep it in sync (and it closes
 	// itself if the row ever disappears).
-	const selected = useMemo(
-		() => tilings.find((t) => t.canonical_key === selectedKey) ?? null,
-		[tilings, selectedKey],
-	);
+	const selected = useMemo(() => tilings.find((t) => t.canonical_key === selectedKey) ?? null, [tilings, selectedKey]);
 
 	if (tilings.length === 0) {
 		return <div className="py-10 text-center text-sm text-fg-disabled">No cells mirrored yet.</div>;
@@ -77,16 +77,16 @@ export function GalleryPanel({ runId, initial }: { runId: string; initial: Found
 
 	return (
 		<div>
-			<div className="flex items-center justify-end gap-1 mb-3 text-[11px]">
-				<span className="text-fg-disabled mr-1">sort</span>
+			<div className="mb-3 flex items-center justify-end gap-1 text-[11px]">
+				<span className="mr-1 text-fg-disabled">sort</span>
 				{(Object.keys(SORTS) as SortKey[]).map((k) => (
 					<button
 						key={k}
 						type="button"
 						onClick={() => setSort(k)}
 						className={cn(
-							"px-2 py-0.5 rounded transition-colors max-md:min-h-11 max-md:px-3 max-md:text-xs",
-							sort === k ? "bg-accent-subtle text-accent" : "text-fg-muted hover:text-fg hover:bg-surface-overlay/50",
+							"rounded px-2 py-0.5 transition-colors max-md:min-h-11 max-md:px-3 max-md:text-xs",
+							sort === k ? "bg-accent-subtle text-accent" : "text-fg-muted hover:bg-surface-overlay/50 hover:text-fg",
 						)}
 					>
 						{SORTS[k]}
@@ -94,7 +94,7 @@ export function GalleryPanel({ runId, initial }: { runId: string; initial: Found
 				))}
 			</div>
 
-			<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+			<div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
 				<AnimatePresence initial={false}>
 					{sorted.map((t) => (
 						<motion.div
@@ -112,19 +112,19 @@ export function GalleryPanel({ runId, initial }: { runId: string; initial: Found
 									setSelectedKey(t.canonical_key);
 								}
 							}}
-							className="group cursor-pointer rounded-lg border border-line bg-surface-overlay/30 overflow-hidden transition-colors hover:border-accent/60 focus:outline-none focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent/40"
+							className="group cursor-pointer overflow-hidden rounded-lg border border-line bg-surface-overlay/30 transition-colors hover:border-accent/60 focus:outline-none focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent/40"
 						>
 							<div className="aspect-square bg-surface-raised">
 								{t.render_cell ? (
 									<TilingThumbnail translationalCell={t.render_cell as TranslationalCellData} pxPerEdge={18} />
 								) : (
-									<div className="w-full h-full flex items-center justify-center text-fg-disabled text-[10px]">
+									<div className="flex h-full w-full items-center justify-center text-[10px] text-fg-disabled">
 										k={t.k}
 									</div>
 								)}
 							</div>
-							<div className="px-2 py-1.5 flex items-center justify-between gap-1">
-								<span className="text-[10px] font-mono text-fg-muted truncate">seed #{t.seed_idx ?? "?"}</span>
+							<div className="flex items-center justify-between gap-1 px-2 py-1.5">
+								<span className="truncate font-mono text-[10px] text-fg-muted">seed #{t.seed_idx ?? "?"}</span>
 								{t.canonical_key === newestKey ? <Badge tone="accent">new</Badge> : null}
 							</div>
 						</motion.div>

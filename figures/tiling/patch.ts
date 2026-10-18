@@ -4,8 +4,8 @@
  * Emits every lattice copy of the cell whose bbox intersects the window; since the cell copies
  * tile the plane, their union covers the window fully — the hard trim is the emitters' clip.
  */
-import type { Rect, V2 } from '../ir/types';
-import type { CellModel, CellPoly } from './cellModel';
+import type { Rect, V2 } from "../ir/types";
+import type { CellModel, CellPoly } from "./cellModel";
 
 export type PlacedPoly = CellPoly & {
 	cellIndex: number;

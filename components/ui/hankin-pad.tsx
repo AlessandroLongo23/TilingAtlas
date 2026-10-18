@@ -88,7 +88,8 @@ export function HankinPad({ angle, offset, onAngleChange, onOffsetChange, label 
 
 	const keyStep = (handle: Handle) => (e: React.KeyboardEvent) => {
 		const step = e.shiftKey ? 10 : 1;
-		const delta = e.key === "ArrowRight" || e.key === "ArrowUp" ? step : e.key === "ArrowLeft" || e.key === "ArrowDown" ? -step : 0;
+		const delta =
+			e.key === "ArrowRight" || e.key === "ArrowUp" ? step : e.key === "ArrowLeft" || e.key === "ArrowDown" ? -step : 0;
 		if (!delta) return;
 		e.preventDefault();
 		if (handle === "tip") onAngleChange(clamp(theta + delta, 0, 90));
@@ -100,9 +101,9 @@ export function HankinPad({ angle, offset, onAngleChange, onOffsetChange, label 
 	return (
 		<div className="grid w-full gap-2">
 			{label ? (
-				<div className="flex flex-row justify-between items-center gap-2">
+				<div className="flex flex-row items-center justify-between gap-2">
 					<span className="text-[13px] font-medium text-fg-secondary">{label}</span>
-					<span className="font-mono text-xs text-fg tabular-nums whitespace-nowrap">
+					<span className="font-mono text-xs whitespace-nowrap text-fg tabular-nums">
 						{theta}° · {off === 0 ? "0%" : `${off > 0 ? "cross" : "split"} ${Math.abs(off)}%`}
 					</span>
 				</div>
@@ -110,7 +111,7 @@ export function HankinPad({ angle, offset, onAngleChange, onOffsetChange, label 
 			<svg
 				ref={svgRef}
 				viewBox={`0 0 ${W} ${H}`}
-				className="w-full h-auto touch-none cursor-pointer select-none rounded-surface bg-surface-sunken ring-1 ring-line-subtle"
+				className="h-auto w-full cursor-pointer touch-none rounded-surface bg-surface-sunken ring-1 ring-line-subtle select-none"
 				onPointerDown={(e) => {
 					e.preventDefault();
 					e.currentTarget.setPointerCapture(e.pointerId);
@@ -119,7 +120,10 @@ export function HankinPad({ angle, offset, onAngleChange, onOffsetChange, label 
 					const p = toView(e);
 					let best = { handle: "tip" as Handle, lean: 1, dist: Infinity };
 					for (const r of rays) {
-						for (const [handle, x, y] of [["tip", r.tx, r.ty], ["root", r.rx, BASE_Y]] as const) {
+						for (const [handle, x, y] of [
+							["tip", r.tx, r.ty],
+							["root", r.rx, BASE_Y],
+						] as const) {
 							const dist = Math.hypot(p.x - x, p.y - y);
 							if (dist < best.dist) best = { handle, lean: r.lean, dist };
 						}
@@ -146,22 +150,60 @@ export function HankinPad({ angle, offset, onAngleChange, onOffsetChange, label 
 				))}
 				{/* Split: the edge between the roots is part of the pattern, so it draws like a ray. */}
 				{off < 0 ? (
-					<line x1={rays[1].rx} y1={BASE_Y} x2={rays[0].rx} y2={BASE_Y} className="stroke-fg" strokeWidth={1.5} strokeLinecap="round" />
+					<line
+						x1={rays[1].rx}
+						y1={BASE_Y}
+						x2={rays[0].rx}
+						y2={BASE_Y}
+						className="stroke-fg"
+						strokeWidth={1.5}
+						strokeLinecap="round"
+					/>
 				) : null}
 				{rays.map((r) => (
 					<g key={r.lean}>
-						<line x1={r.rx} y1={BASE_Y} x2={r.rx} y2={10} className="stroke-line" strokeWidth={1} strokeDasharray="2 3" />
+						<line
+							x1={r.rx}
+							y1={BASE_Y}
+							x2={r.rx}
+							y2={10}
+							className="stroke-line"
+							strokeWidth={1}
+							strokeDasharray="2 3"
+						/>
 						<path d={r.arc} fill="none" className="stroke-fg-muted" strokeWidth={1} />
 						{stacked ? null : (
-							<text x={r.lx} y={r.ly} textAnchor="middle" dominantBaseline="central" fontSize={11} className="fill-fg-secondary font-mono pointer-events-none">
+							<text
+								x={r.lx}
+								y={r.ly}
+								textAnchor="middle"
+								dominantBaseline="central"
+								fontSize={11}
+								className="pointer-events-none fill-fg-secondary font-mono"
+							>
 								{theta}°
 							</text>
 						)}
-						<line x1={r.rx} y1={BASE_Y} x2={r.tx} y2={r.ty} className="stroke-fg" strokeWidth={1.5} strokeLinecap="round" />
+						<line
+							x1={r.rx}
+							y1={BASE_Y}
+							x2={r.tx}
+							y2={r.ty}
+							className="stroke-fg"
+							strokeWidth={1.5}
+							strokeLinecap="round"
+						/>
 					</g>
 				))}
 				{stacked ? (
-					<text x={CX} y={BASE_Y + 11} textAnchor="middle" dominantBaseline="central" fontSize={11} className="fill-fg-secondary font-mono pointer-events-none">
+					<text
+						x={CX}
+						y={BASE_Y + 11}
+						textAnchor="middle"
+						dominantBaseline="central"
+						fontSize={11}
+						className="pointer-events-none fill-fg-secondary font-mono"
+					>
 						{theta}°
 					</text>
 				) : null}
@@ -183,7 +225,8 @@ export function HankinPad({ angle, offset, onAngleChange, onOffsetChange, label 
 										"aria-valuemin": -100,
 										"aria-valuemax": 100,
 										"aria-valuenow": off,
-										"aria-valuetext": off === 0 ? "midpoint" : `${off > 0 ? "cross" : "split"} ${Math.abs(off)} percent`,
+										"aria-valuetext":
+											off === 0 ? "midpoint" : `${off > 0 ? "cross" : "split"} ${Math.abs(off)} percent`,
 										onKeyDown: keyStep("root"),
 										onFocus: () => setActive("root"),
 										onBlur: () => setActive(null),

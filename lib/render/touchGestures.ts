@@ -134,7 +134,12 @@ export class TouchGestures {
 		};
 		const move = (e: Event) => this.move(e as PointerEvent);
 		const up = (e: Event) => this.up(e as PointerEvent);
-		const events = [["pointerdown", down], ["pointermove", move], ["pointerup", up], ["pointercancel", up]] as const;
+		const events = [
+			["pointerdown", down],
+			["pointermove", move],
+			["pointerup", up],
+			["pointercancel", up],
+		] as const;
 		for (const [type, fn] of events) el.addEventListener(type, fn);
 		return () => {
 			for (const [type, fn] of events) el.removeEventListener(type, fn);
@@ -179,15 +184,18 @@ export class TouchGestures {
 			this.pts.set(e.pointerId, next);
 			return true;
 		}
-		const a0 = this.pts.get(ids[0])!, b0 = this.pts.get(ids[1])!;
+		const a0 = this.pts.get(ids[0])!,
+			b0 = this.pts.get(ids[1])!;
 		this.pts.set(e.pointerId, next);
-		const a1 = this.pts.get(ids[0])!, b1 = this.pts.get(ids[1])!;
+		const a1 = this.pts.get(ids[0])!,
+			b1 = this.pts.get(ids[1])!;
 		const d0 = Math.hypot(b0.x - a0.x, b0.y - a0.y);
 		const d1 = Math.hypot(b1.x - a1.x, b1.y - a1.y);
 		const el = this.el();
 		if (!el || d0 < 1 || d1 < 1) return true;
 		const r = el.getBoundingClientRect();
-		const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+		const cx = r.left + r.width / 2,
+			cy = r.top + r.height / 2;
 		let rotate = Math.atan2(b1.y - a1.y, b1.x - a1.x) - Math.atan2(b0.y - a0.y, b0.x - a0.x);
 		if (rotate > Math.PI) rotate -= 2 * Math.PI;
 		else if (rotate < -Math.PI) rotate += 2 * Math.PI;
@@ -227,7 +235,11 @@ export class TouchGestures {
 		const r = this.el()?.getBoundingClientRect();
 		if (r) this.handlers?.tap?.(press.x - r.left, press.y - r.top);
 		const last = this.lastTap;
-		if (last && press.t - last.t < DOUBLE_TAP_MS && Math.hypot(press.x - last.x, press.y - last.y) < DOUBLE_TAP_SLOP_PX) {
+		if (
+			last &&
+			press.t - last.t < DOUBLE_TAP_MS &&
+			Math.hypot(press.x - last.x, press.y - last.y) < DOUBLE_TAP_SLOP_PX
+		) {
 			this.lastTap = null;
 			this.handlers?.doubleTap?.();
 		} else {
@@ -289,22 +301,25 @@ export function useCardViewGestures(
 		doubleTap: () => void;
 	} | null,
 ): TouchGestures {
-	return useTouchGestures(ref, v && {
-		pinchStart: v.cancel,
-		pinch: ({ from, to, scale, rotate }) => {
-			const spin = v.onRotationChange ? rotate : 0;
-			const before = (v.angle() * Math.PI) / 180;
-			v.zoom(unrotateScreen(from.x, from.y, before), unrotateScreen(to.x, to.y, before + spin), scale);
-			v.turn((spin * 180) / Math.PI);
-			v.cancel();
+	return useTouchGestures(
+		ref,
+		v && {
+			pinchStart: v.cancel,
+			pinch: ({ from, to, scale, rotate }) => {
+				const spin = v.onRotationChange ? rotate : 0;
+				const before = (v.angle() * Math.PI) / 180;
+				v.zoom(unrotateScreen(from.x, from.y, before), unrotateScreen(to.x, to.y, before + spin), scale);
+				v.turn((spin * 180) / Math.PI);
+				v.cancel();
+			},
+			pinchEnd: () => {
+				const live = tidyDeg(v.angle());
+				if (live !== tidyDeg(v.rotation)) v.onRotationChange?.(live);
+			},
+			tap: v.tap,
+			doubleTap: v.doubleTap,
 		},
-		pinchEnd: () => {
-			const live = tidyDeg(v.angle());
-			if (live !== tidyDeg(v.rotation)) v.onRotationChange?.(live);
-		},
-		tap: v.tap,
-		doubleTap: v.doubleTap,
-	});
+	);
 }
 
 // The phone layout puts a visible Reset button over every canvas, since a touch screen has no right

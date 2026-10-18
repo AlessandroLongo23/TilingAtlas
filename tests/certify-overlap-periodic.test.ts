@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { PeriodSolver } from '@/classes/algorithm/PeriodSolver';
-import { deserializeCell } from '@/classes/algorithm/cellCodec';
-import { setActiveRing, CyclotomicRing, getActiveRing } from '@/classes/Cyclotomic';
-import { loadSnapshot } from '../figures/snapshot';
+import { describe, it, expect, beforeEach } from "vitest";
+import { PeriodSolver } from "@/classes/algorithm/PeriodSolver";
+import { deserializeCell } from "@/classes/algorithm/cellCodec";
+import { setActiveRing, CyclotomicRing, getActiveRing } from "@/classes/Cyclotomic";
+import { loadSnapshot } from "../figures/snapshot";
 
 // The active ring is a global singleton; other suites in the full `pnpm test` run mutate it, so pin it
 // to N=24 before EVERY test (not just at module load) — otherwise a certified cell gets rebuilt in the
@@ -13,30 +13,36 @@ beforeEach(() => setActiveRing(CyclotomicRing.create(24)));
 // byte-identically to the old blockHasProperOverlap (all-pairs, O(block²)). Both are exercised via
 // PeriodSolver._testOnlyBlockOverlap, which builds the certificate block and runs each check.
 
-describe('blockOverlapPeriodic === blockHasProperOverlap on the certified k≤3 catalogue (no overlaps)', () => {
-	it('every certified cell: both checks agree and report NO overlap (valid tilings are gap-free & disjoint)', { timeout: 120000 }, () => {
-		const snap = loadSnapshot();
-		const ring = getActiveRing();
-		const solver = new PeriodSolver(1);
-		const mismatches: string[] = [];
-		let n = 0;
-		for (const t of snap.tilings) {
-			if (![1, 2, 3].includes(t.k)) continue;
-			const cell = deserializeCell(ring, t.cellCodec);
-			const [u, v] = cell.basisExact;
-			const r = solver._testOnlyBlockOverlap(cell.cellPolygons, u, v);
-			if (!r) continue; // degenerate basis (shouldn't happen for a certified cell)
-			n++;
-			if (r.old !== r.periodic) mismatches.push(`k=${t.k} ${t.canonicalKey.slice(0, 24)}: old=${r.old} periodic=${r.periodic}`);
-			if (r.old !== false) mismatches.push(`k=${t.k} ${t.canonicalKey.slice(0, 24)}: certified cell reported OVERLAP (old=${r.old})`);
-		}
-		expect(n).toBeGreaterThanOrEqual(92); // 11 + 20 + 61
-		expect(mismatches).toEqual([]);
-	});
+describe("blockOverlapPeriodic === blockHasProperOverlap on the certified k≤3 catalogue (no overlaps)", () => {
+	it(
+		"every certified cell: both checks agree and report NO overlap (valid tilings are gap-free & disjoint)",
+		{ timeout: 120000 },
+		() => {
+			const snap = loadSnapshot();
+			const ring = getActiveRing();
+			const solver = new PeriodSolver(1);
+			const mismatches: string[] = [];
+			let n = 0;
+			for (const t of snap.tilings) {
+				if (![1, 2, 3].includes(t.k)) continue;
+				const cell = deserializeCell(ring, t.cellCodec);
+				const [u, v] = cell.basisExact;
+				const r = solver._testOnlyBlockOverlap(cell.cellPolygons, u, v);
+				if (!r) continue; // degenerate basis (shouldn't happen for a certified cell)
+				n++;
+				if (r.old !== r.periodic)
+					mismatches.push(`k=${t.k} ${t.canonicalKey.slice(0, 24)}: old=${r.old} periodic=${r.periodic}`);
+				if (r.old !== false)
+					mismatches.push(`k=${t.k} ${t.canonicalKey.slice(0, 24)}: certified cell reported OVERLAP (old=${r.old})`);
+			}
+			expect(n).toBeGreaterThanOrEqual(92); // 11 + 20 + 61
+			expect(mismatches).toEqual([]);
+		},
+	);
 });
 
-describe('blockOverlapPeriodic === blockHasProperOverlap on constructed OVERLAPPING cells (both must fire)', () => {
-	it('injecting a quarter-lattice-shifted duplicate makes BOTH checks report overlap', { timeout: 120000 }, () => {
+describe("blockOverlapPeriodic === blockHasProperOverlap on constructed OVERLAPPING cells (both must fire)", () => {
+	it("injecting a quarter-lattice-shifted duplicate makes BOTH checks report overlap", { timeout: 120000 }, () => {
 		const snap = loadSnapshot();
 		const ring = getActiveRing();
 		const solver = new PeriodSolver(1);

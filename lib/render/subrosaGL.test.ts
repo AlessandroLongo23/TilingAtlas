@@ -16,17 +16,23 @@ describe("packOutlineEdges", () => {
 		expect(buf).not.toBeNull();
 		expect(buf.length).toBe(3 * 4);
 		expect(Array.from(buf)).toEqual([
-			0, 1, 0, 0, // closing side: v2 → v0
-			0, 0, 1, 0,
-			1, 0, 0, 1,
+			0,
+			1,
+			0,
+			0, // closing side: v2 → v0
+			0,
+			0,
+			1,
+			0,
+			1,
+			0,
+			0,
+			1,
 		]);
 	});
 
 	it("packs polygons back to back, n sides for an n-gon", () => {
-		const polys = [
-			{ vertices: ring([0, 0], [1, 0], [1, 1], [0, 1]) },
-			{ vertices: ring([2, 0], [3, 0], [2, 1]) },
-		];
+		const polys = [{ vertices: ring([0, 0], [1, 0], [1, 1], [0, 1]) }, { vertices: ring([2, 0], [3, 0], [2, 1]) }];
 		const buf = packOutlineEdges(polys, (p) => p.vertices)!;
 		expect(buf.length / 4).toBe(4 + 3);
 		// The second polygon starts where the first ends, unshifted.

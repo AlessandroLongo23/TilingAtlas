@@ -9,8 +9,8 @@ import { tileFill } from "@/lib/render/tilePalette";
 /** Hue in degrees for orbit `id` of `k` total orbits, spread equidistantly. Ids are taken mod k
  *  (0..k-1), so an out-of-range or negative id folds back into range. */
 export function orbitHue(id: number, k: number): number {
-  const n = Math.max(1, k);
-  return ((((id % n) + n) % n) * 360) / n;
+	const n = Math.max(1, k);
+	return ((((id % n) + n) % n) * 360) / n;
 }
 
 /** CSS colour for orbit `id` of `k`: its hue in the tile palette. */

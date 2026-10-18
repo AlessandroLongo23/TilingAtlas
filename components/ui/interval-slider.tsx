@@ -91,9 +91,13 @@ export function IntervalSlider({
 		valueRef.current = value;
 	});
 	// `armed` is false while a finger's press is still undecided between a drag and a scroll.
-	const dragRef = useRef<{ pointerId: number; bound: IntervalBound; startX: number; startY: number; armed: boolean } | null>(
-		null,
-	);
+	const dragRef = useRef<{
+		pointerId: number;
+		bound: IntervalBound;
+		startX: number;
+		startY: number;
+		armed: boolean;
+	} | null>(null);
 
 	const span = max - min;
 	const fLo = span > 0 ? (lo - min) / span : 0;
@@ -120,7 +124,13 @@ export function IntervalSlider({
 	const handlePointerDown = (e: PointerEvent<HTMLSpanElement>) => {
 		if (disabled || e.button !== 0) return;
 		const armed = e.pointerType !== "touch";
-		const drag = { pointerId: e.pointerId, bound: "pending" as IntervalBound, startX: e.clientX, startY: e.clientY, armed };
+		const drag = {
+			pointerId: e.pointerId,
+			bound: "pending" as IntervalBound,
+			startX: e.clientX,
+			startY: e.clientY,
+			armed,
+		};
 		dragRef.current = drag;
 		if (!armed) return;
 		e.currentTarget.setPointerCapture(e.pointerId);

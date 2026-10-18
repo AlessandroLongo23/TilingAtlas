@@ -64,9 +64,7 @@ describe("the (valence, alphabet) board axis", () => {
 			const sub = hypTilingSubOfBoard(b);
 			expect(order.has(sub), sub).toBe(true);
 			expect(familyOfSub(sub)).toBe(`hyt-v${b.valence}`);
-			expect(SUB_LABEL[sub], sub).toBe(
-				`${hypTilingBoardLabel(b)}, ${hypTilingValenceLabel(b.valence)}`,
-			);
+			expect(SUB_LABEL[sub], sub).toBe(`${hypTilingBoardLabel(b)}, ${hypTilingValenceLabel(b.valence)}`);
 		}
 	});
 });
@@ -106,16 +104,13 @@ describe.skipIf(!shipped.length)("the table against the shipped atlas", () => {
 	it("keeps the biggest board honest: nothing bigger than the manifest's largest cell", () => {
 		// The shelf's whole problem was two rows of 12,168 and 16,285. The board level has to actually
 		// divide that, and this is the number to watch when a new hyperbolic corpus lands.
-		const biggest = HYP_TILING_BOARDS.reduce((m, b) =>
-			hypTilingBoardCount(b) > hypTilingBoardCount(m) ? b : m,
-		);
+		const biggest = HYP_TILING_BOARDS.reduce((m, b) => (hypTilingBoardCount(b) > hypTilingBoardCount(m) ? b : m));
 		expect(biggest.id).toBe("v8-3-4");
 		expect(hypTilingBoardCount(biggest)).toBe(5692);
 		// …and under it, the configuration level takes the largest cell to 876.
 		const perConfig = new Map<string, number>();
 		for (const r of shipped)
-			if (hypTilingSub(r.family) === "hyt-v8-3-4")
-				perConfig.set(r.family, (perConfig.get(r.family) ?? 0) + 1);
+			if (hypTilingSub(r.family) === "hyt-v8-3-4") perConfig.set(r.family, (perConfig.get(r.family) ?? 0) + 1);
 		expect(Math.max(...perConfig.values())).toBe(876);
 	});
 });

@@ -19,7 +19,7 @@ export function FloatingToolbar({ children, className }: { children: ReactNode; 
 			role="toolbar"
 			className={cn(
 				"absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-0.5 rounded-xl bg-surface-raised/95 p-1 shadow-lg ring-1 ring-line-subtle backdrop-blur-sm",
-				"max-md:bottom-[calc(max(var(--sheet-offset,0px),env(safe-area-inset-bottom))+12px)] max-md:max-w-[calc(100%-32px)] max-md:overflow-x-auto max-md:snap-x scrollbar-hide max-md:transition-[bottom] max-md:duration-300 max-md:motion-reduce:transition-none",
+				"scrollbar-hide max-md:bottom-[calc(max(var(--sheet-offset,0px),env(safe-area-inset-bottom))+12px)] max-md:max-w-[calc(100%-32px)] max-md:snap-x max-md:overflow-x-auto max-md:transition-[bottom] max-md:duration-300 max-md:motion-reduce:transition-none",
 				// It scrolls sideways; a pinch that starts on it must not zoom the whole page.
 				"max-md:touch-pan-x max-md:touch-pan-y",
 				className,
@@ -78,19 +78,19 @@ export function ToolbarButton({ label, shortcut, primary, className, children, .
 				type="button"
 				aria-label={primary ? undefined : label}
 				className={cn(
-					"relative flex h-8 items-center justify-center gap-2 whitespace-nowrap rounded-lg text-[13px] font-medium transition-colors",
+					"relative flex h-8 items-center justify-center gap-2 rounded-lg text-[13px] font-medium whitespace-nowrap transition-colors",
 					"max-md:h-11 max-md:shrink-0 max-md:snap-start",
 					"focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:pointer-events-none disabled:opacity-40",
 					primary
 						? "bg-accent px-3 text-accent-contrast hover:bg-accent-hover"
-						: "w-8 max-md:min-w-11 text-fg-secondary hover:bg-surface-overlay hover:text-fg aria-pressed:bg-surface-sunken aria-pressed:text-fg",
+						: "w-8 text-fg-secondary hover:bg-surface-overlay hover:text-fg aria-pressed:bg-surface-sunken aria-pressed:text-fg max-md:min-w-11",
 					className,
 				)}
 				{...rest}
 			>
 				{children}
 				{padActive && padGlyph ? (
-					<kbd className="pointer-events-none absolute -right-1 -top-2 rounded border border-line bg-surface-raised px-1 font-mono text-[11px] font-medium leading-[14px] text-fg-muted max-md:hidden">
+					<kbd className="pointer-events-none absolute -top-2 -right-1 rounded border border-line bg-surface-raised px-1 font-mono text-[11px] leading-[14px] font-medium text-fg-muted max-md:hidden">
 						{padGlyph}
 					</kbd>
 				) : null}

@@ -1,13 +1,17 @@
-import { tilingSignature, vertexConfigs, configAngleSum } from './tilingSignature';
-import { flattenKey, flattenLabel } from './flattenKey';
-import type { CatalogueIndex } from './catalogueKeys';
-import type { NodeState, ResolvedNode } from './types';
+import { tilingSignature, vertexConfigs, configAngleSum } from "./tilingSignature";
+import { flattenKey, flattenLabel } from "./flattenKey";
+import type { CatalogueIndex } from "./catalogueKeys";
+import type { NodeState, ResolvedNode } from "./types";
 
 // The ⊥ non-tiling node: reached ONLY by a zero-area collapse, where every tile shrinks to nothing and
 // no tiling remains. This is the one true non-tiling limit; the flattening limits below are genuine
 // tilings and do NOT come here.
 const DEGENERATE: ResolvedNode = {
-  key: 'degenerate:⊥', label: '⊥ non-tiling', chirality: 'achiral', resolved: false, kind: 'degenerate',
+	key: "degenerate:⊥",
+	label: "⊥ non-tiling",
+	chirality: "achiral",
+	resolved: false,
+	kind: "degenerate",
 };
 
 /**
@@ -21,27 +25,33 @@ const DEGENERATE: ResolvedNode = {
  *  - anything else (non-regular, non-empty) cannot be identified → ⊥.
  */
 export function resolveNode(state: NodeState, idx: CatalogueIndex): ResolvedNode {
-  if (state.tiling.polys.length === 0) return DEGENERATE;
+	if (state.tiling.polys.length === 0) return DEGENERATE;
 
-  const cfgs = vertexConfigs(state.tiling);
-  const valid = cfgs.length > 0 && cfgs.every((c) => Math.abs(configAngleSum(c) - 360) < 1);
+	const cfgs = vertexConfigs(state.tiling);
+	const valid = cfgs.length > 0 && cfgs.every((c) => Math.abs(configAngleSum(c) - 360) < 1);
 
-  if (state.regular && valid) {
-    const sig = tilingSignature(state.tiling);
-    const matches = idx.bySignature.get(sig) ?? [];
-    if (matches.length === 1) {
-      const e = matches[0];
-      const chirality = e.directKey === e.mirrorKey ? 'achiral' : 'R'; // handedness refinement deferred
-      return { key: e.directKey, label: e.id, chirality, resolved: true, kind: 'uniform' };
-    }
-    // a genuine edge-to-edge tiling the catalogue does not contain (excluded octagon) or ambiguous sig
-    return { key: `uncat:${sig}`, label: sig, chirality: 'achiral', resolved: false, kind: 'uncatalogued' };
-  }
+	if (state.regular && valid) {
+		const sig = tilingSignature(state.tiling);
+		const matches = idx.bySignature.get(sig) ?? [];
+		if (matches.length === 1) {
+			const e = matches[0];
+			const chirality = e.directKey === e.mirrorKey ? "achiral" : "R"; // handedness refinement deferred
+			return { key: e.directKey, label: e.id, chirality, resolved: true, kind: "uniform" };
+		}
+		// a genuine edge-to-edge tiling the catalogue does not contain (excluded octagon) or ambiguous sig
+		return { key: `uncat:${sig}`, label: sig, chirality: "achiral", resolved: false, kind: "uncatalogued" };
+	}
 
-  if (state.regular) {
-    // regular tiles, no valid vertex figure ⇒ a non-edge-to-edge flattening limit: a real tiling
-    return { key: `flat:${flattenKey(state.tiling)}`, label: flattenLabel(state.tiling), chirality: 'achiral', resolved: false, kind: 'flattened' };
-  }
+	if (state.regular) {
+		// regular tiles, no valid vertex figure ⇒ a non-edge-to-edge flattening limit: a real tiling
+		return {
+			key: `flat:${flattenKey(state.tiling)}`,
+			label: flattenLabel(state.tiling),
+			chirality: "achiral",
+			resolved: false,
+			kind: "flattened",
+		};
+	}
 
-  return DEGENERATE;
+	return DEGENERATE;
 }

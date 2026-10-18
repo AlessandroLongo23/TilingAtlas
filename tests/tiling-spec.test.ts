@@ -109,7 +109,13 @@ describe("buildTilingSpec", () => {
 			sphStar: {
 				config: "3.10.5/2.10",
 				density: 4,
-				stats: { types: [[3, 1, 20], [5, 2, 12], [10, 1, 12]] },
+				stats: {
+					types: [
+						[3, 1, 20],
+						[5, 2, 12],
+						[10, 1, 12],
+					],
+				},
 			} as unknown as CatalogueTiling["sphStar"],
 		};
 		const spec = buildTilingSpec(t, null, null);
@@ -137,7 +143,11 @@ describe("buildTilingSpec", () => {
 
 	it("V/E/F for the other four Platonic solids", () => {
 		const mk = (p: number, q: number, solid: string): CatalogueTiling => ({
-			...base, canonicalKey: solid, k: 1, family: "x", spherical: { p, q, solid },
+			...base,
+			canonicalKey: solid,
+			k: 1,
+			family: "x",
+			spherical: { p, q, solid },
 		});
 		const cube = buildTilingSpec(mk(4, 3, "cube"), null, null);
 		const octa = buildTilingSpec(mk(3, 4, "octahedron"), null, null);

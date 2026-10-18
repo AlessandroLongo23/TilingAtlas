@@ -10,10 +10,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 	return (
 		// h-screen is 100vh, which on a phone browser is the height with its toolbar hidden, so anything
 		// pinned to the bottom sat under the toolbar; dvh tracks the visible height instead.
-		<div className="h-screen max-md:h-dvh bg-surface-raised text-fg flex flex-col overflow-hidden">
+		<div className="flex h-screen flex-col overflow-hidden bg-surface-raised text-fg max-md:h-dvh">
 			<LegacyTilingStoreBootstrap />
 			<Nav />
-			<div className="flex-1 min-h-0 flex">{children}</div>
+			<div className="flex min-h-0 flex-1">{children}</div>
 			<ScreenshotPreviewModal />
 			<ExportImageModal />
 			<UpdatesGate />

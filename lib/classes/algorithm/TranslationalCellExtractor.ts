@@ -9,10 +9,10 @@
  * representative per lattice class.
  */
 
-import { Vector } from '../Vector';
-import type { Polygon } from '../polygons/Polygon';
-import { Cyclotomic } from '../Cyclotomic';
-import { Tiling } from '../Tiling';
+import { Vector } from "../Vector";
+import type { Polygon } from "../polygons/Polygon";
+import { Cyclotomic } from "../Cyclotomic";
+import { Tiling } from "../Tiling";
 
 const tolerance = 1e-6;
 
@@ -69,7 +69,7 @@ export class TranslationalCellExtractor {
 	 * forms) collapse to one key. Exact throughout.
 	 */
 	canonicalPatchKey(polygons: Polygon[]): string {
-		if (polygons.length === 0) return '';
+		if (polygons.length === 0) return "";
 		const N = polygons[0].exactVertices![0].ring.N;
 		// interior radius = half the patch extent from the origin (the core sits at the origin)
 		let maxMag = 0;
@@ -87,7 +87,7 @@ export class TranslationalCellExtractor {
 	 * expansions) collapse to one key. Exact throughout — used to dedup tilings up to symmetry.
 	 */
 	canonicalKey(cellPolygons: Polygon[]): string {
-		if (cellPolygons.length === 0) return '';
+		if (cellPolygons.length === 0) return "";
 		const N = cellPolygons[0].exactVertices![0].ring.N;
 		let best: string | null = null;
 		for (const reflect of [false, true]) {
@@ -97,17 +97,26 @@ export class TranslationalCellExtractor {
 					verts: p.exactVertices!.map((v) => (reflect ? v.conj() : v).mulZeta(k)),
 				}));
 				let anchor: Cyclotomic | null = null;
-				let anchorKey = '';
+				let anchorKey = "";
 				for (const t of transformed) {
 					for (const v of t.verts) {
 						const kk = v.key();
-						if (anchor === null || kk < anchorKey) { anchor = v; anchorKey = kk; }
+						if (anchor === null || kk < anchorKey) {
+							anchor = v;
+							anchorKey = kk;
+						}
 					}
 				}
 				const fps = transformed
-					.map((t) => `${t.name}:${t.verts.map((v) => v.sub(anchor!).key()).sort().join(';')}`)
+					.map(
+						(t) =>
+							`${t.name}:${t.verts
+								.map((v) => v.sub(anchor!).key())
+								.sort()
+								.join(";")}`,
+					)
 					.sort()
-					.join('|');
+					.join("|");
 				if (best === null || fps < best) best = fps;
 			}
 		}
@@ -130,11 +139,7 @@ export class TranslationalCellExtractor {
 
 	/** Float broadphase: guess integers m,n with diff ≈ m·u + n·v via Cramer's rule on the
 	 *  float embedding. Returns rounded integers (verified exactly by the caller) or null. */
-	private solveIntegerCombo(
-		diff: Cyclotomic,
-		u: Cyclotomic,
-		v: Cyclotomic
-	): [number, number] | null {
+	private solveIntegerCombo(diff: Cyclotomic, u: Cyclotomic, v: Cyclotomic): [number, number] | null {
 		const d = diff.toVector();
 		const a = u.toVector();
 		const b = v.toVector();
@@ -151,7 +156,7 @@ export class TranslationalCellExtractor {
 
 	private findOriginExact(polygons: Polygon[]): Polygon {
 		return polygons.reduce((min, p) =>
-			p.exactCentroid!.toVector().mag() < min.exactCentroid!.toVector().mag() ? p : min
+			p.exactCentroid!.toVector().mag() < min.exactCentroid!.toVector().mag() ? p : min,
 		);
 	}
 
@@ -251,17 +256,22 @@ export class TranslationalCellExtractor {
 	}
 
 	private bbox(p: Polygon): { minX: number; maxX: number; minY: number; maxY: number } {
-		let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+		let minX = Infinity,
+			maxX = -Infinity,
+			minY = Infinity,
+			maxY = -Infinity;
 		for (const v of p.vertices) {
-			minX = Math.min(minX, v.x); maxX = Math.max(maxX, v.x);
-			minY = Math.min(minY, v.y); maxY = Math.max(maxY, v.y);
+			minX = Math.min(minX, v.x);
+			maxX = Math.max(maxX, v.x);
+			minY = Math.min(minY, v.y);
+			maxY = Math.max(maxY, v.y);
 		}
 		return { minX, maxX, minY, maxY };
 	}
 
 	private bboxOverlap(
 		a: { minX: number; maxX: number; minY: number; maxY: number },
-		b: { minX: number; maxX: number; minY: number; maxY: number }
+		b: { minX: number; maxX: number; minY: number; maxY: number },
 	): boolean {
 		const m = 1e-9;
 		return !(a.maxX < b.minX - m || b.maxX < a.minX - m || a.maxY < b.minY - m || b.maxY < a.minY - m);
@@ -271,9 +281,7 @@ export class TranslationalCellExtractor {
 	private extractFloat(polygons: Polygon[]): TranslationalCellResult | null {
 		const tiling = new Tiling();
 		tiling.nodes = polygons;
-		const originPolygon = tiling.nodes.reduce((min, node) =>
-			node.centroid.mag() < min.centroid.mag() ? node : min
-		);
+		const originPolygon = tiling.nodes.reduce((min, node) => (node.centroid.mag() < min.centroid.mag() ? node : min));
 		const basis = this.findBasisFloat(tiling, originPolygon);
 		if (!basis) return null;
 		const [v1, v2] = basis;

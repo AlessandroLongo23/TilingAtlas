@@ -62,9 +62,7 @@ export async function POST(request: Request) {
 		const useStream = body?.stream === true;
 
 		if (!paramsFolder) {
-			return badRequest(
-				"paramsFolder is required and must contain only letters, digits, underscores, or hyphens",
-			);
+			return badRequest("paramsFolder is required and must contain only letters, digits, underscores, or hyphens");
 		}
 
 		const supabase = createServiceRoleClient();
@@ -74,9 +72,7 @@ export async function POST(request: Request) {
 
 		const { configs, vcLibrary } = await loadSeedConfigBatches(supabase, paramsFolder, k, m);
 		if (configs.length === 0) {
-			return badRequest(
-				`No seed configurations found for k=${k}/m=${m}. Run Generate Seed Configurations first.`,
-			);
+			return badRequest(`No seed configurations found for k=${k}/m=${m}. Run Generate Seed Configurations first.`);
 		}
 
 		const expander = new SeedExpander(k);
@@ -117,11 +113,13 @@ export async function POST(request: Request) {
 				const batchIndex = Math.floor(i / BATCH_SIZE);
 				const batchData = items.slice(i, i + BATCH_SIZE);
 				const compressed = zlib.gzipSync(JSON.stringify(batchData), { level: 9 });
-				await supabase.storage.from(PIPELINE_BUCKET).upload(
-					`${folderPath}/expandedSeeds_${String(batchIndex).padStart(4, "0")}.json.gz`,
-					new Blob([compressed]),
-					{ contentType: "application/gzip", upsert: true },
-				);
+				await supabase.storage
+					.from(PIPELINE_BUCKET)
+					.upload(
+						`${folderPath}/expandedSeeds_${String(batchIndex).padStart(4, "0")}.json.gz`,
+						new Blob([compressed]),
+						{ contentType: "application/gzip", upsert: true },
+					);
 			}
 			if (items.length > 0) {
 				const manifest = {
@@ -131,11 +129,12 @@ export async function POST(request: Request) {
 					total: items.length,
 					batchSize: BATCH_SIZE,
 				};
-				await supabase.storage.from(PIPELINE_BUCKET).upload(
-					`${folderPath}/manifest.json`,
-					new Blob([JSON.stringify(manifest)]),
-					{ contentType: "application/json", upsert: true },
-				);
+				await supabase.storage
+					.from(PIPELINE_BUCKET)
+					.upload(`${folderPath}/manifest.json`, new Blob([JSON.stringify(manifest)]), {
+						contentType: "application/json",
+						upsert: true,
+					});
 			}
 		};
 
@@ -154,8 +153,9 @@ export async function POST(request: Request) {
 						await uploadBatches(items);
 						streamLine(controller, {
 							progress: 100,
-							message: `Expanded ${items.length} seeds`
-								+ (cappedNames.length ? ` (⚠ ${cappedNames.length} capped, INCOMPLETE)` : ''),
+							message:
+								`Expanded ${items.length} seeds` +
+								(cappedNames.length ? ` (⚠ ${cappedNames.length} capped, INCOMPLETE)` : ""),
 							done: true,
 							paramsFolder,
 							k,
@@ -177,8 +177,12 @@ export async function POST(request: Request) {
 		const items = await processAll();
 		await uploadBatches(items);
 		return NextResponse.json({
-			paramsFolder, k, m, expandedCount: items.length,
-			cappedSeeds: cappedNames.length, cappedNames,
+			paramsFolder,
+			k,
+			m,
+			expandedCount: items.length,
+			cappedSeeds: cappedNames.length,
+			cappedNames,
 		});
 	} catch (err) {
 		console.error("expand-seeds error:", err);

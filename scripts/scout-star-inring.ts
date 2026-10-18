@@ -43,14 +43,18 @@
  * Increment-3 dent-aware bound, TA-owed). The Fig-4-subclass completeness reading requires the full
  * unscoped run with zero timeouts AND a zero truncation summary.
  */
-import { PeriodSolver, type PeriodCell } from '@/classes/algorithm/PeriodSolver';
-import { TranslationalCellExtractor } from '@/classes/algorithm/TranslationalCellExtractor';
-import { dedupeByCongruence } from '@/classes/algorithm/TilingCongruence';
+import { PeriodSolver, type PeriodCell } from "@/classes/algorithm/PeriodSolver";
+import { TranslationalCellExtractor } from "@/classes/algorithm/TranslationalCellExtractor";
+import { dedupeByCongruence } from "@/classes/algorithm/TilingCongruence";
 import {
-	enumerateStarVCs, dentRegularFillableVariants, inRingStarVariants, buildStarVCSeed, type StarVC,
-} from '@/classes/algorithm/StarVC';
-import { CyclotomicRing, setActiveRing } from '@/classes/Cyclotomic';
-import type { Polygon } from '@/classes/polygons/Polygon';
+	enumerateStarVCs,
+	dentRegularFillableVariants,
+	inRingStarVariants,
+	buildStarVCSeed,
+	type StarVC,
+} from "@/classes/algorithm/StarVC";
+import { CyclotomicRing, setActiveRing } from "@/classes/Cyclotomic";
+import type { Polygon } from "@/classes/polygons/Polygon";
 
 const argv = process.argv.slice(2);
 const flag = (name: string): boolean => argv.includes(name);
@@ -62,12 +66,12 @@ const opt = (name: string, def: string): string => {
 const ring = CyclotomicRing.create(24);
 setActiveRing(ring);
 
-const variantSet = opt('--variants', 'dentreg') === 'all' ? inRingStarVariants() : dentRegularFillableVariants();
-const includeDents = flag('--dents');
-const singleStar = flag('--single-star');
-const maxCorners = parseInt(opt('--max-corners', '999'), 10);
-const limit = parseInt(opt('--limit', '0'), 10); // 0 = no limit
-const maxMs = parseInt(opt('--maxMs', '30000'), 10);
+const variantSet = opt("--variants", "dentreg") === "all" ? inRingStarVariants() : dentRegularFillableVariants();
+const includeDents = flag("--dents");
+const singleStar = flag("--single-star");
+const maxCorners = parseInt(opt("--max-corners", "999"), 10);
+const limit = parseInt(opt("--limit", "0"), 10); // 0 = no limit
+const maxMs = parseInt(opt("--maxMs", "30000"), 10);
 
 const starKey = (p: Polygon): string => {
 	let min = Infinity;
@@ -80,8 +84,8 @@ const starKey = (p: Polygon): string => {
 // summary, any Fig-4 miss is a hard fail. 6*@6 occurs only in Fig-3(f), whose dent-at-vertex VCs exist
 // only under --dents — which now also seats dents in the fill (star fill-reach lemma F5), so Fig-3 is
 // generated, not point-only-dropped.
-const FIG4_ORACLE = new Set(['3*@1', '3*@2', '4*@2', '4*@3', '4*@4', '6*@2', '6*@4', '6*@5', '8*@1', '12*@2']);
-const FIG3_BEST_EFFORT = new Set(['6*@6']); // Fig-3(f) only
+const FIG4_ORACLE = new Set(["3*@1", "3*@2", "4*@2", "4*@3", "4*@4", "6*@2", "6*@4", "6*@5", "8*@1", "12*@2"]);
+const FIG3_BEST_EFFORT = new Set(["6*@6"]); // Fig-3(f) only
 
 // --- ST-2: per-cause INCOMPLETE-REGION aggregation -------------------------------------------------
 // The solver's stderr flags stay authoritative, but at star scale the per-call lines flood (the
@@ -90,7 +94,7 @@ const FIG3_BEST_EFFORT = new Set(['6*@6']); // Fig-3(f) only
 const trunc = new Map<string, { lines: number; skips: number }>();
 const realStderrWrite = process.stderr.write.bind(process.stderr);
 process.stderr.write = ((chunk: string | Uint8Array, ...rest: never[]) => {
-	const s = typeof chunk === 'string' ? chunk : Buffer.from(chunk).toString();
+	const s = typeof chunk === "string" ? chunk : Buffer.from(chunk).toString();
 	const m = /INCOMPLETE-REGION \(([^)]+)\):\s*(\d+)?/.exec(s);
 	if (m) {
 		const e = trunc.get(m[1]) ?? { lines: 0, skips: 0 };
@@ -106,7 +110,11 @@ process.stderr.write = ((chunk: string | Uint8Array, ...rest: never[]) => {
 let vcs: StarVC[] = enumerateStarVCs({ variants: variantSet, includeDents });
 const totalEnum = vcs.length;
 if (singleStar) {
-	vcs = vcs.filter((v) => new Set(v.tokens.filter((t) => t.kind !== 'reg').map((t) => `${t.n}@${(t as { alphaU: number }).alphaU}`)).size === 1);
+	vcs = vcs.filter(
+		(v) =>
+			new Set(v.tokens.filter((t) => t.kind !== "reg").map((t) => `${t.n}@${(t as { alphaU: number }).alphaU}`))
+				.size === 1,
+	);
 }
 vcs = vcs.filter((v) => v.tokens.length <= maxCorners);
 // simple-first: fewer corners (smaller cells solve faster + are the canonical in-ring tilings)
@@ -114,11 +122,15 @@ vcs.sort((a, b) => a.tokens.length - b.tokens.length || (a.name < b.name ? -1 : 
 const scoped = vcs.length;
 if (limit > 0) vcs = vcs.slice(0, limit);
 
-console.log('=== C7 in-ring star scout ===');
-console.log(`variants=${opt('--variants', 'dentreg')}(${variantSet.length}) dents=${includeDents} singleStar=${singleStar} maxCorners=${maxCorners} maxMs=${maxMs} limit=${limit || '∞'}`);
-console.log(includeDents
-	? 'SCOPE: Myers Fig-4 in-ring point-at-vertex subclass (13, HARD) + Fig-3 dent-at-vertex (dent-seating ON, star fill-reach lemma F5 — Fig-3 GENERATED by fill). Caveats: single-regular-corner dent filter (§24.6), t=2 gear contact still out of scope, completeness still pending the unscoped sweep + Increment-3 bound'
-	: 'SCOPE: Myers Fig-4 in-ring point-at-vertex subclass (13 tilings) ONLY — Fig-3 out of scope (dent VCs not enumerated; 6*@6 not expected)');
+console.log("=== C7 in-ring star scout ===");
+console.log(
+	`variants=${opt("--variants", "dentreg")}(${variantSet.length}) dents=${includeDents} singleStar=${singleStar} maxCorners=${maxCorners} maxMs=${maxMs} limit=${limit || "∞"}`,
+);
+console.log(
+	includeDents
+		? "SCOPE: Myers Fig-4 in-ring point-at-vertex subclass (13, HARD) + Fig-3 dent-at-vertex (dent-seating ON, star fill-reach lemma F5 — Fig-3 GENERATED by fill). Caveats: single-regular-corner dent filter (§24.6), t=2 gear contact still out of scope, completeness still pending the unscoped sweep + Increment-3 bound"
+		: "SCOPE: Myers Fig-4 in-ring point-at-vertex subclass (13 tilings) ONLY — Fig-3 out of scope (dent VCs not enumerated; 6*@6 not expected)",
+);
 console.log(`VCs: enumerated=${totalEnum} scoped=${scoped} solving=${vcs.length}`);
 const caps: string[] = [];
 if (singleStar) caps.push(`single-star-type (${totalEnum}→ heuristic, may miss multi-star-type VCs)`);
@@ -126,15 +138,19 @@ if (maxCorners < 999) caps.push(`max-corners ${maxCorners}`);
 if (limit > 0) caps.push(`limit ${limit}`);
 caps.push(`per-seed timeout ${maxMs}ms`);
 const capsActive = singleStar || maxCorners < 999 || limit > 0;
-console.log(`⚑ ACTIVE CAPS (each can drop an in-ring tiling): ${caps.join('; ')}`);
-if (opt('--variants', 'dentreg') !== 'all') console.log(`variant filter: dent-reg ${variantSet.length}/32 — SOUND superset of the oracle, not a cap (StarVC §24.6)`);
-console.log('');
+console.log(`⚑ ACTIVE CAPS (each can drop an in-ring tiling): ${caps.join("; ")}`);
+if (opt("--variants", "dentreg") !== "all")
+	console.log(
+		`variant filter: dent-reg ${variantSet.length}/32 — SOUND superset of the oracle, not a cap (StarVC §24.6)`,
+	);
+console.log("");
 
 // --- solve ---
 const extractor = new TranslationalCellExtractor();
 const allCells: PeriodCell[] = [];
 const variantHits = new Set<string>();
-let timeouts = 0, nonzero = 0;
+let timeouts = 0,
+	nonzero = 0;
 const t0 = Date.now();
 for (let i = 0; i < vcs.length; i++) {
 	const vc = vcs[i];
@@ -142,62 +158,92 @@ for (let i = 0; i < vcs.length; i++) {
 	const ts = Date.now();
 	const { cells, diag } = new PeriodSolver(1).solve(seed, { maxMs, includeDents }); // includeDents = --dents (F5: seat dents in the fill)
 	const ms = Date.now() - ts;
-	if (diag.timedOut) { timeouts++; console.log(`  ⚑ TIMEOUT (${ms}ms, lat=${diag.candidateLattices}) — ${vc.name}  [possible DROP]`); }
+	if (diag.timedOut) {
+		timeouts++;
+		console.log(`  ⚑ TIMEOUT (${ms}ms, lat=${diag.candidateLattices}) — ${vc.name}  [possible DROP]`);
+	}
 	if (cells.length > 0) {
 		nonzero++;
 		for (const c of cells) {
 			allCells.push(c);
 			for (const p of c.cellPolygons) if (p.isStar) variantHits.add(starKey(p));
 		}
-		const comp = cells.map((c) => `{${c.cellPolygons.map((p) => p.getName()).sort().join(',')}}`).join(' ');
-		console.log(`  HIT [${i + 1}/${vcs.length}] ${ms.toString().padStart(6)}ms  ${cells.length} cell(s)  ${vc.name}  ${comp}`);
+		const comp = cells
+			.map(
+				(c) =>
+					`{${c.cellPolygons
+						.map((p) => p.getName())
+						.sort()
+						.join(",")}}`,
+			)
+			.join(" ");
+		console.log(
+			`  HIT [${i + 1}/${vcs.length}] ${ms.toString().padStart(6)}ms  ${cells.length} cell(s)  ${vc.name}  ${comp}`,
+		);
 	}
-	if ((i + 1) % 25 === 0) console.log(`  …progress ${i + 1}/${vcs.length}  (${((Date.now() - t0) / 1000).toFixed(0)}s, ${nonzero} hits, ${timeouts} timeouts)`);
+	if ((i + 1) % 25 === 0)
+		console.log(
+			`  …progress ${i + 1}/${vcs.length}  (${((Date.now() - t0) / 1000).toFixed(0)}s, ${nonzero} hits, ${timeouts} timeouts)`,
+		);
 }
 
 // --- dedupe + report ---
 const reps = dedupeByCongruence(allCells, (c) => extractor.canonicalKey(c.cellPolygons));
-console.log('');
+console.log("");
 console.log(`=== RESULT (${((Date.now() - t0) / 1000).toFixed(1)}s) ===`);
-console.log(`distinct k=1 star tilings (congruence): ${reps.length}  (from ${allCells.length} raw cells, ${nonzero} productive VCs)`);
-console.log(`timeouts: ${timeouts}${timeouts > 0 ? '  ⚑ possible drops — re-run uncapped' : ''}`);
+console.log(
+	`distinct k=1 star tilings (congruence): ${reps.length}  (from ${allCells.length} raw cells, ${nonzero} productive VCs)`,
+);
+console.log(`timeouts: ${timeouts}${timeouts > 0 ? "  ⚑ possible drops — re-run uncapped" : ""}`);
 
 const hits = [...variantHits].sort();
-console.log(`\nstar variants RECOVERED (${hits.length}): ${hits.join(', ')}`);
+console.log(`\nstar variants RECOVERED (${hits.length}): ${hits.join(", ")}`);
 const fig4Missing = [...FIG4_ORACLE].filter((v) => !variantHits.has(v)).sort();
 if (fig4Missing.length === 0) {
 	console.log(`Fig-4 hard oracle: all ${FIG4_ORACLE.size} variants recovered  ✓`);
 } else if (capsActive || timeouts > 0 || trunc.size > 0) {
-	console.log(`⚑ Fig-4 hard oracle NOT recovered (${fig4Missing.length}): ${fig4Missing.join(', ')} — caps/timeouts/truncations active, may be drops; NOT decisive.`);
-	console.log(`  (known: 4(i) 8.3*@1.8.6*@5 is MEASURED outside the tuned pool — off-grid ℓ≈5.05, ~8 edge-steps — so 3*@1/6*@5 misses are EXPECTED under the tuned regime; NOTES §36. The tuned-pool ceiling is 12/13.)`);
+	console.log(
+		`⚑ Fig-4 hard oracle NOT recovered (${fig4Missing.length}): ${fig4Missing.join(", ")} — caps/timeouts/truncations active, may be drops; NOT decisive.`,
+	);
+	console.log(
+		`  (known: 4(i) 8.3*@1.8.6*@5 is MEASURED outside the tuned pool — off-grid ℓ≈5.05, ~8 edge-steps — so 3*@1/6*@5 misses are EXPECTED under the tuned regime; NOTES §36. The tuned-pool ceiling is 12/13.)`,
+	);
 } else {
-	console.log(`⚑⚑ HARD FAIL (Fig-4 in-ring miss on an unscoped, truncation-free run): ${fig4Missing.join(', ')}`);
+	console.log(`⚑⚑ HARD FAIL (Fig-4 in-ring miss on an unscoped, truncation-free run): ${fig4Missing.join(", ")}`);
 }
 if (includeDents) {
 	const fig3Missing = [...FIG3_BEST_EFFORT].filter((v) => !variantHits.has(v)).sort();
-	console.log(fig3Missing.length === 0
-		? 'Fig-3 dent-at-vertex (6*@6, Fig-3(f)): recovered  ✓ (dent-seating fill, star fill-reach lemma F5)'
-		: `⚑ Fig-3 dent-at-vertex NOT recovered: ${fig3Missing.join(', ')} — dent-seating is ON (F5) so this is now MEANINGFUL; rule out caps/timeouts/the §24.6 single-regular-corner variant filter before reading it as a miss`);
+	console.log(
+		fig3Missing.length === 0
+			? "Fig-3 dent-at-vertex (6*@6, Fig-3(f)): recovered  ✓ (dent-seating fill, star fill-reach lemma F5)"
+			: `⚑ Fig-3 dent-at-vertex NOT recovered: ${fig3Missing.join(", ")} — dent-seating is ON (F5) so this is now MEANINGFUL; rule out caps/timeouts/the §24.6 single-regular-corner variant filter before reading it as a miss`,
+	);
 } else {
-	console.log('Fig-3: out of scope for this config (6*@6 not expected — dent VCs require --dents)');
+	console.log("Fig-3: out of scope for this config (6*@6 not expected — dent VCs require --dents)");
 }
 const extra = hits.filter((v) => !FIG4_ORACLE.has(v) && !FIG3_BEST_EFFORT.has(v));
-console.log(`recovered BEYOND oracle (${extra.length}): ${extra.join(', ') || '—'}  ${extra.length ? '(logged finding — Myers is hand-made / extras are candidates)' : ''}`);
+console.log(
+	`recovered BEYOND oracle (${extra.length}): ${extra.join(", ") || "—"}  ${extra.length ? "(logged finding — Myers is hand-made / extras are candidates)" : ""}`,
+);
 
 // --- ST-2 truncation summary (per cause; §22.3 doctrine: nonzero ⇒ no completeness reading) ---
-console.log('\n⚑ TRUNCATION SUMMARY (INCOMPLETE-REGION, aggregated per cause):');
+console.log("\n⚑ TRUNCATION SUMMARY (INCOMPLETE-REGION, aggregated per cause):");
 if (trunc.size === 0) {
-	console.log('  none fired  ✓');
+	console.log("  none fired  ✓");
 } else {
 	for (const [cause, e] of [...trunc.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1))) {
-		console.log(`  ${cause}: ${e.lines} occurrence(s), Σ skipped = ${e.skips || '(unparsed, see first verbatim line above)'}`);
+		console.log(
+			`  ${cause}: ${e.lines} occurrence(s), Σ skipped = ${e.skips || "(unparsed, see first verbatim line above)"}`,
+		);
 	}
-	console.log('  ⚑ any nonzero cause above disqualifies a completeness reading of this run (NOTES §22.3)');
+	console.log("  ⚑ any nonzero cause above disqualifies a completeness reading of this run (NOTES §22.3)");
 }
-console.log(`\nverdict vocabulary: recovered tilings are at most CERTIFIED-CORRECT; this run makes NO certified-complete claim${capsActive || timeouts > 0 || trunc.size > 0 ? ' (caps/timeouts/truncations active)' : ' for anything beyond the Fig-4 in-ring subclass'}.`);
+console.log(
+	`\nverdict vocabulary: recovered tilings are at most CERTIFIED-CORRECT; this run makes NO certified-complete claim${capsActive || timeouts > 0 || trunc.size > 0 ? " (caps/timeouts/truncations active)" : " for anything beyond the Fig-4 in-ring subclass"}.`,
+);
 
 // per-tiling digest (deterministic)
 const ids = reps.map((c) => extractor.canonicalKey(c.cellPolygons)).sort();
 let h = 5381n;
-for (const ch of ids.join('|')) h = ((h * 33n) ^ BigInt(ch.codePointAt(0)!)) & 0xffffffffffffffffn;
+for (const ch of ids.join("|")) h = ((h * 33n) ^ BigInt(ch.codePointAt(0)!)) & 0xffffffffffffffffn;
 console.log(`\nCOMPOSITION digest=${h.toString(16)} count=${reps.length}`);

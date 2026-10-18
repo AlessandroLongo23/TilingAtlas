@@ -20,9 +20,7 @@ const K_OPTIONS = Array.from({ length: K_MAX }, (_, i) => i + 1);
 
 /** Derived kValues for the current mode — callers can reuse this helper. */
 export function kValuesFor(mode: KMode, uptoK: number, specificKValues: number[]): number[] {
-	return mode === "upto"
-		? K_OPTIONS.slice(0, uptoK)
-		: [...specificKValues].sort((a, b) => a - b);
+	return mode === "upto" ? K_OPTIONS.slice(0, uptoK) : [...specificKValues].sort((a, b) => a - b);
 }
 
 export function KSelector({
@@ -33,10 +31,7 @@ export function KSelector({
 	specificKValues,
 	onSpecificKValuesChange,
 }: KSelectorProps) {
-	const kValues = useMemo(
-		() => kValuesFor(mode, uptoK, specificKValues),
-		[mode, uptoK, specificKValues],
-	);
+	const kValues = useMemo(() => kValuesFor(mode, uptoK, specificKValues), [mode, uptoK, specificKValues]);
 
 	const toggleSpecificK = (k: number) => {
 		if (specificKValues.includes(k)) {
@@ -48,16 +43,16 @@ export function KSelector({
 
 	return (
 		<div className="flex flex-col gap-3">
-			<div className="flex rounded-lg overflow-hidden border border-line w-fit">
+			<div className="flex w-fit overflow-hidden rounded-lg border border-line">
 				{(["upto", "specific"] as const).map((tab) => (
 					<button
 						key={tab}
 						onClick={() => onModeChange(tab)}
 						className={cn(
-							"px-3 py-1.5 text-xs font-medium transition-colors border-r border-line last:border-r-0",
+							"border-r border-line px-3 py-1.5 text-xs font-medium transition-colors last:border-r-0",
 							mode === tab
 								? "bg-surface-overlay text-fg"
-								: "text-fg-muted hover:text-fg-secondary hover:bg-surface-overlay",
+								: "text-fg-muted hover:bg-surface-overlay hover:text-fg-secondary",
 						)}
 					>
 						{tab === "upto" ? "Up to k" : "Specific"}
@@ -76,7 +71,7 @@ export function KSelector({
 						aria-label="maximum k"
 					/>
 					<span className="text-sm text-fg-secondary">
-						k = 1 … <span className="text-fg font-semibold">{uptoK}</span>
+						k = 1 … <span className="font-semibold text-fg">{uptoK}</span>
 					</span>
 				</div>
 			) : (
@@ -88,10 +83,10 @@ export function KSelector({
 								key={k}
 								onClick={() => toggleSpecificK(k)}
 								className={cn(
-									"w-8 h-8 rounded-md text-sm font-medium transition-colors border",
+									"h-8 w-8 rounded-md border text-sm font-medium transition-colors",
 									selected
-										? "bg-surface-overlay text-fg border-line-focus"
-										: "bg-surface-overlay text-fg-muted border-line hover:border-line-strong",
+										? "border-line-focus bg-surface-overlay text-fg"
+										: "border-line bg-surface-overlay text-fg-muted hover:border-line-strong",
 								)}
 							>
 								{k}

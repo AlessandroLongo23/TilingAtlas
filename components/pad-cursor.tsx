@@ -25,16 +25,34 @@ export function PadCursor() {
 	if (!on) return null;
 	return (
 		<>
-			<svg ref={ref} width="20" height="24" viewBox="0 0 20 24" aria-hidden="true" className="pointer-events-none fixed left-0 top-0 z-[1000] drop-shadow-md">
-				<path d="M1 1 L1 19 L6 14.5 L9.5 22.5 L12.5 21.2 L9 13.3 L16 13.3 Z" fill="white" stroke="black" strokeWidth="1.2" strokeLinejoin="round" />
+			<svg
+				ref={ref}
+				width="20"
+				height="24"
+				viewBox="0 0 20 24"
+				aria-hidden="true"
+				className="pointer-events-none fixed top-0 left-0 z-[1000] drop-shadow-md"
+			>
+				<path
+					d="M1 1 L1 19 L6 14.5 L9.5 22.5 L12.5 21.2 L9 13.3 L16 13.3 Z"
+					fill="white"
+					stroke="black"
+					strokeWidth="1.2"
+					strokeLinejoin="round"
+				/>
 			</svg>
-			<div className="ta-float pointer-events-none fixed left-1/2 top-14 z-[999] flex -translate-x-1/2 items-center gap-3 px-3 py-1.5 text-[12px] text-fg-secondary">
+			<div className="ta-float pointer-events-none fixed top-14 left-1/2 z-[999] flex -translate-x-1/2 items-center gap-3 px-3 py-1.5 text-[12px] text-fg-secondary">
 				<span>
-					Pointer · <span className="font-mono text-fg">{click}</span> click · <span className="font-mono text-fg">{exit}</span> exit
+					Pointer · <span className="font-mono text-fg">{click}</span> click ·{" "}
+					<span className="font-mono text-fg">{exit}</span> exit
 				</span>
 				{canAsk ? (
 					// A real mouse click: the browser's device chooser will not open for a synthetic one.
-					<button type="button" onClick={enableTouchpad} className="pointer-events-auto rounded-control bg-accent px-2 py-0.5 font-medium text-accent-contrast hover:bg-accent-hover">
+					<button
+						type="button"
+						onClick={enableTouchpad}
+						className="pointer-events-auto rounded-control bg-accent px-2 py-0.5 font-medium text-accent-contrast hover:bg-accent-hover"
+					>
 						Use the touchpad
 					</button>
 				) : null}

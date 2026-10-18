@@ -25,18 +25,18 @@
 // every planigon and every 45-45-90 tile is convex. Here each face is oriented counter-clockwise first
 // and the angle taken in [0, 360), so a reflex corner counts as reflex.
 
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import path from 'node:path';
-import { stringifyAtlas } from './atlas/encode.mjs';
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import path from "node:path";
+import { stringifyAtlas } from "./atlas/encode.mjs";
 
 const ARGS = process.argv.slice(2);
 if (!ARGS.length) {
-	console.error('usage: node scripts/build-penrose-shelf.mjs <cells.json>');
+	console.error("usage: node scripts/build-penrose-shelf.mjs <cells.json>");
 	process.exit(1);
 }
-const entries = JSON.parse(readFileSync(ARGS[0], 'utf8'));
-const OUT = path.join(process.cwd(), 'public', 'penrose');
-const PUB = path.join(process.cwd(), 'public');
+const entries = JSON.parse(readFileSync(ARGS[0], "utf8"));
+const OUT = path.join(process.cwd(), "public", "penrose");
+const PUB = path.join(process.cwd(), "public");
 
 const PHI = (1 + Math.sqrt(5)) / 2;
 const LENGTHS = [1, PHI];
@@ -58,7 +58,8 @@ const dist = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1]);
 const shoelace = (f) => {
 	let a2 = 0;
 	for (let t = 0; t < f.length; t++) {
-		const u = f[t], v = f[(t + 1) % f.length];
+		const u = f[t],
+			v = f[(t + 1) % f.length];
 		a2 += u[0] * v[1] - v[0] * u[1];
 	}
 	return a2 / 2;
@@ -67,11 +68,18 @@ const shoelace = (f) => {
 // reflex corner reads above 180 instead of folding back under it.
 const profile = (face) => {
 	const f = shoelace(face) < 0 ? [...face].reverse() : face;
-	const n = f.length, angles = [], edges = [];
+	const n = f.length,
+		angles = [],
+		edges = [];
 	for (let t = 0; t < n; t++) {
-		const p = f[t], u = f[(t - 1 + n) % n], v = f[(t + 1) % n];
+		const p = f[t],
+			u = f[(t - 1 + n) % n],
+			v = f[(t + 1) % n];
 		edges.push(dist(p, v));
-		const vx = v[0] - p[0], vy = v[1] - p[1], ux = u[0] - p[0], uy = u[1] - p[1];
+		const vx = v[0] - p[0],
+			vy = v[1] - p[1],
+			ux = u[0] - p[0],
+			uy = u[1] - p[1];
 		let th = (Math.atan2(vx * uy - vy * ux, vx * ux + vy * uy) * 180) / Math.PI;
 		if (th < 0) th += 360;
 		angles.push(th);
@@ -93,7 +101,9 @@ const matches = (prof, tile) =>
 	Math.max(...prof.angles.map((a, i) => Math.abs(a - tile.angles[i]))) < 1e-4 &&
 	Math.max(...prof.edges.map((e, i) => Math.abs(e - tile.edges[i]))) < 1e-6;
 
-let worstShape = 0, worstArea = 0, worstAngle = 0;
+let worstShape = 0,
+	worstArea = 0,
+	worstAngle = 0;
 const shapes = { kite: 0, dart: 0 };
 const strays = [];
 for (const e of entries) {
@@ -110,8 +120,13 @@ for (const e of entries) {
 		const src = shoelace(f) < 0 ? [...f].reverse() : f;
 		const n = src.length;
 		for (let i = 0; i < n; i++) {
-			const p = src[i], u = src[(i - 1 + n) % n], v = src[(i + 1) % n];
-			const vx = v[0] - p[0], vy = v[1] - p[1], ux = u[0] - p[0], uy = u[1] - p[1];
+			const p = src[i],
+				u = src[(i - 1 + n) % n],
+				v = src[(i + 1) % n];
+			const vx = v[0] - p[0],
+				vy = v[1] - p[1],
+				ux = u[0] - p[0],
+				uy = u[1] - p[1];
 			let th = (Math.atan2(vx * uy - vy * ux, vx * ux + vy * uy) * 180) / Math.PI;
 			if (th < 0) th += 360;
 			const key = residue(p, e.T1, e.T2);
@@ -123,8 +138,11 @@ for (const e of entries) {
 	for (const total of ang.values()) worstAngle = Math.max(worstAngle, Math.abs(total - 360));
 }
 if (strays.length || worstShape > 1e-6 || worstArea > 1e-6 || worstAngle > 0.5) {
-	console.error(`penrose: REFUSING to write — ${strays.length} face(s) neither kite nor dart, edge err ${worstShape.toExponential(2)}, area err ${worstArea.toExponential(2)}, worst vertex ${(360 + worstAngle).toFixed(1)}°`);
-	for (const s of strays.slice(0, 5)) console.error(`  ${s.id}: angles ${s.angles.map((a) => a.toFixed(1))} edges ${s.edges.map((x) => x.toFixed(4))}`);
+	console.error(
+		`penrose: REFUSING to write — ${strays.length} face(s) neither kite nor dart, edge err ${worstShape.toExponential(2)}, area err ${worstArea.toExponential(2)}, worst vertex ${(360 + worstAngle).toFixed(1)}°`,
+	);
+	for (const s of strays.slice(0, 5))
+		console.error(`  ${s.id}: angles ${s.angles.map((a) => a.toFixed(1))} edges ${s.edges.map((x) => x.toFixed(4))}`);
 	process.exit(2);
 }
 
@@ -150,8 +168,16 @@ if (strays.length || worstShape > 1e-6 || worstArea > 1e-6 || worstAngle > 0.5) 
 const TRANSFORMS = [];
 for (const mir of [false, true]) {
 	for (let r = 0; r < 10; r++) {
-		const th = (r * Math.PI) / 5, c = Math.cos(th), sn = Math.sin(th);
-		TRANSFORMS.push({ mir, f: ([x, y]) => { const a = mir ? -x : x; return [c * a - sn * y, sn * a + c * y]; } });
+		const th = (r * Math.PI) / 5,
+			c = Math.cos(th),
+			sn = Math.sin(th);
+		TRANSFORMS.push({
+			mir,
+			f: ([x, y]) => {
+				const a = mir ? -x : x;
+				return [c * a - sn * y, sn * a + c * y];
+			},
+		});
 	}
 }
 const ROT_ONLY = TRANSFORMS.filter((t) => !t.mir);
@@ -164,31 +190,47 @@ const frac = (p, T1, T2) => {
 	const det = T1[0] * T2[1] - T1[1] * T2[0];
 	return [(p[0] * T2[1] - p[1] * T2[0]) / det, (T1[0] * p[1] - T1[1] * p[0]) / det];
 };
-const wrap = (t) => { const w = t - Math.round(t); return Math.abs(w) < TOL ? 0 : w; };
+const wrap = (t) => {
+	const w = t - Math.round(t);
+	return Math.abs(w) < TOL ? 0 : w;
+};
 const modDist = (p, q, T1, T2) => {
 	const [fa, fb] = frac([p[0] - q[0], p[1] - q[1]], T1, T2);
 	let best = Infinity;
-	for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) {
-		const a = fa - Math.round(fa) + i, b = fb - Math.round(fb) + j;
-		best = Math.min(best, Math.hypot(a * T1[0] + b * T2[0], a * T1[1] + b * T2[1]));
-	}
+	for (let i = -1; i <= 1; i++)
+		for (let j = -1; j <= 1; j++) {
+			const a = fa - Math.round(fa) + i,
+				b = fb - Math.round(fb) + j;
+			best = Math.min(best, Math.hypot(a * T1[0] + b * T2[0], a * T1[1] + b * T2[1]));
+		}
 	return best;
 };
 
 const signature = (e) => {
-	const cs = e.faces.map(centroid), ks = e.faces.map(kindOf);
+	const cs = e.faces.map(centroid),
+		ks = e.faces.map(kindOf);
 	const latt = [];
-	for (let i = -2; i <= 2; i++) for (let j = -2; j <= 2; j++) {
-		if (!i && !j) continue;
-		latt.push(Math.round(Math.hypot(i * e.T1[0] + j * e.T2[0], i * e.T1[1] + j * e.T2[1]) * 1e6));
-	}
+	for (let i = -2; i <= 2; i++)
+		for (let j = -2; j <= 2; j++) {
+			if (!i && !j) continue;
+			latt.push(Math.round(Math.hypot(i * e.T1[0] + j * e.T2[0], i * e.T1[1] + j * e.T2[1]) * 1e6));
+		}
 	const pairs = [];
-	for (let i = 0; i < cs.length; i++) for (let j = i + 1; j < cs.length; j++) {
-		pairs.push(`${Math.min(ks[i], ks[j])}${Math.max(ks[i], ks[j])}:${Math.round(modDist(cs[i], cs[j], e.T1, e.T2) * 1e6)}`);
-	}
+	for (let i = 0; i < cs.length; i++)
+		for (let j = i + 1; j < cs.length; j++) {
+			pairs.push(
+				`${Math.min(ks[i], ks[j])}${Math.max(ks[i], ks[j])}:${Math.round(modDist(cs[i], cs[j], e.T1, e.T2) * 1e6)}`,
+			);
+		}
 	const area = Math.abs(e.T1[0] * e.T2[1] - e.T1[1] * e.T2[0]);
-	return [e.k, e.faces.length, ks.filter((x) => !x).length, Math.round(area * 1e6),
-		latt.sort((a, b) => a - b).join(','), pairs.sort().join(',')].join('|');
+	return [
+		e.k,
+		e.faces.length,
+		ks.filter((x) => !x).length,
+		Math.round(area * 1e6),
+		latt.sort((a, b) => a - b).join(","),
+		pairs.sort().join(","),
+	].join("|");
 };
 
 // The oriented shape of a face: its vertex offsets from its own centre. Kite and dart have the same
@@ -216,10 +258,11 @@ const sameShape = (a, b) => {
 // Tile centres in fractional coordinates of ONE basis — always the target's. Reading A's centres in
 // A's own transformed basis instead would be wrong: the two bases differ by a unimodular change even
 // when they span the same lattice, so the fractions would not be comparable.
-const markers = (e, T, b1, b2) => e.faces.map((f) => {
-	const t = T ? f.map(T.f) : f;
-	return { fr: frac(centroid(t), b1, b2), shape: shapeOf(t) };
-});
+const markers = (e, T, b1, b2) =>
+	e.faces.map((f) => {
+		const t = T ? f.map(T.f) : f;
+		return { fr: frac(centroid(t), b1, b2), shape: shapeOf(t) };
+	});
 
 const congruent = (A, B, transforms) => {
 	const mb = markers(B, null, B.T1, B.T2);
@@ -227,7 +270,8 @@ const congruent = (A, B, transforms) => {
 		// Does this map carry A's period lattice onto B's? Both images must be integer combinations of
 		// B's basis, and the integer matrix must be unimodular — same lattice, not merely a sublattice.
 		const [p, q] = [T.f(A.T1), T.f(A.T2)].map((v) => frac(v, B.T1, B.T2));
-		const ip = p.map(Math.round), iq = q.map(Math.round);
+		const ip = p.map(Math.round),
+			iq = q.map(Math.round);
 		if (Math.abs(p[0] - ip[0]) > TOL || Math.abs(p[1] - ip[1]) > TOL) continue;
 		if (Math.abs(q[0] - iq[0]) > TOL || Math.abs(q[1] - iq[1]) > TOL) continue;
 		if (Math.abs(Math.abs(ip[0] * iq[1] - ip[1] * iq[0]) - 1) > TOL) continue;
@@ -237,14 +281,22 @@ const congruent = (A, B, transforms) => {
 			const used = new Array(mb.length).fill(false);
 			let all = true;
 			for (const m of ma) {
-				const fa = m.fr[0] + da[0], fb = m.fr[1] + da[1];
+				const fa = m.fr[0] + da[0],
+					fb = m.fr[1] + da[1];
 				let hit = -1;
 				for (let i = 0; i < mb.length && hit < 0; i++) {
 					if (used[i]) continue;
-					if (Math.abs(wrap(fa - mb[i].fr[0])) < 1e-5 && Math.abs(wrap(fb - mb[i].fr[1])) < 1e-5
-						&& sameShape(m.shape, mb[i].shape)) hit = i;
+					if (
+						Math.abs(wrap(fa - mb[i].fr[0])) < 1e-5 &&
+						Math.abs(wrap(fb - mb[i].fr[1])) < 1e-5 &&
+						sameShape(m.shape, mb[i].shape)
+					)
+						hit = i;
 				}
-				if (hit < 0) { all = false; break; }
+				if (hit < 0) {
+					all = false;
+					break;
+				}
 				used[hit] = true;
 			}
 			if (all) return true;
@@ -277,7 +329,8 @@ const reduce = (transforms) => {
 // a multiple of 36 degrees, optionally reflected, and shifted by a vector that is NOT in its lattice,
 // and must come back congruent to itself; entries at different k must not.
 {
-	let pos = 0, neg = 0;
+	let pos = 0,
+		neg = 0;
 	for (let i = 0; i < entries.length; i += Math.max(1, Math.floor(entries.length / 40))) {
 		const e = entries[i];
 		const T = TRANSFORMS[(i * 7) % TRANSFORMS.length];
@@ -285,18 +338,24 @@ const reduce = (transforms) => {
 		const shift = ([x, y]) => [x + t[0], y + t[1]];
 		const clone = { k: e.k, T1: T.f(e.T1), T2: T.f(e.T2), faces: e.faces.map((f) => f.map(T.f).map(shift)) };
 		if (!congruent(clone, e, TRANSFORMS)) {
-			console.error(`penrose: REFUSING to write — congruence test failed to recognise ${e.id} rotated/reflected/translated onto itself. The dedup oracle is broken, so "0 duplicates" would mean nothing.`);
+			console.error(
+				`penrose: REFUSING to write — congruence test failed to recognise ${e.id} rotated/reflected/translated onto itself. The dedup oracle is broken, so "0 duplicates" would mean nothing.`,
+			);
 			process.exit(2);
 		}
 		pos++;
 		const other = entries.find((o) => o.k !== e.k && o.faces.length !== e.faces.length);
 		if (other && congruent(other, e, TRANSFORMS)) {
-			console.error(`penrose: REFUSING to write — congruence test called ${other.id} (k=${other.k}) congruent to ${e.id} (k=${e.k}).`);
+			console.error(
+				`penrose: REFUSING to write — congruence test called ${other.id} (k=${other.k}) congruent to ${e.id} (k=${e.k}).`,
+			);
 			process.exit(2);
 		}
 		if (other) neg++;
 	}
-	console.log(`  congruence oracle self-check: ${pos} transformed copies recognised, ${neg} non-congruent pairs rejected`);
+	console.log(
+		`  congruence oracle self-check: ${pos} transformed copies recognised, ${neg} non-congruent pairs rejected`,
+	);
 }
 
 const rot = reduce(ROT_ONLY);
@@ -304,7 +363,9 @@ const full = reduce(TRANSFORMS);
 const distinct = full.keep.sort((a, b) => a.k - b.k);
 console.log(`  faces: ${shapes.kite} kites, ${shapes.dart} darts, 0 anything else`);
 console.log(`  invariant buckets: ${full.buckets} (largest ${full.biggest} entries)`);
-console.log(`  dedupe by congruence: ${entries.length} solver solutions -> ${rot.keep.length} up to rotation -> ${distinct.length} distinct up to rotation AND reflection`);
+console.log(
+	`  dedupe by congruence: ${entries.length} solver solutions -> ${rot.keep.length} up to rotation -> ${distinct.length} distinct up to rotation AND reflection`,
+);
 
 const byK = new Map();
 for (const e of distinct) {
@@ -312,55 +373,67 @@ for (const e of distinct) {
 	byK.get(e.k).push(e);
 }
 mkdirSync(OUT, { recursive: true });
-const manifest = { board: 'penrose', tile: 'Penrose kite and dart', k: [] };
+const manifest = { board: "penrose", tile: "Penrose kite and dart", k: [] };
 const ref = [];
 for (const k of [...byK.keys()].sort((a, b) => a - b)) {
 	const rows = byK.get(k).map((e, i) => ({
-		id: `penrose-${k}-${String(i + 1).padStart(5, '0')}`,
-		k, T1: e.T1, T2: e.T2, seeds: e.seeds, faces: e.faces, stats: e.stats,
+		id: `penrose-${k}-${String(i + 1).padStart(5, "0")}`,
+		k,
+		T1: e.T1,
+		T2: e.T2,
+		seeds: e.seeds,
+		faces: e.faces,
+		stats: e.stats,
 	}));
 	writeFileSync(path.join(OUT, `penrose-k${k}.json`), stringifyAtlas(rows));
 	manifest.k.push({ k, count: rows.length, file: `/penrose/penrose-k${k}.json` });
 	console.log(`  k=${k}: ${rows.length} tilings -> public/penrose/penrose-k${k}.json`);
 	byK.get(k).forEach((e, i) => {
 		const isKite = e.faces.map((f) => matches(profile(f), KITE));
-		const kites = isKite.filter(Boolean).length, darts = isKite.length - kites;
-		const mix = kites && darts ? `${kites} kite${kites > 1 ? 's' : ''} and ${darts} dart${darts > 1 ? 's' : ''}`
-			: kites ? `${kites} kite${kites > 1 ? 's' : ''} and no darts` : `${darts} dart${darts > 1 ? 's' : ''} and no kites`;
+		const kites = isKite.filter(Boolean).length,
+			darts = isKite.length - kites;
+		const mix =
+			kites && darts
+				? `${kites} kite${kites > 1 ? "s" : ""} and ${darts} dart${darts > 1 ? "s" : ""}`
+				: kites
+					? `${kites} kite${kites > 1 ? "s" : ""} and no darts`
+					: `${darts} dart${darts > 1 ? "s" : ""} and no kites`;
 		ref.push({
-			id: `penrose-k${k}-${String(i + 1).padStart(3, '0')}`,
-			source: 'penrose',
+			id: `penrose-k${k}-${String(i + 1).padStart(3, "0")}`,
+			source: "penrose",
 			k,
-			family: 'Penrose kite and dart (no matching rules)',
+			family: "Penrose kite and dart (no matching rules)",
 			renderCell: {
 				cellPolygons: e.faces.map((f, q) => ({ n: f.length, vertices: f, hue: isKite[q] ? KITE_HUE : DART_HUE })),
 				basis: [e.T1, e.T2],
 			},
-			discoverer: 'Čtrnáct engine (penrose palette), 2026-08-14',
+			discoverer: "Čtrnáct engine (penrose palette), 2026-08-14",
 			note:
 				`Edge-to-edge PERIODIC tiling by Penrose's kite and dart — ${mix} per period cell. Both tiles ` +
-				'are built from the Robinson triangles: the kite is two acute golden triangles (36-72-72, ' +
-				'sides 1 : φ : φ) glued along a long side, the dart two obtuse ones (108-36-36, sides ' +
-				'φ : 1 : 1) glued along a short side. So every angle is a multiple of 36° and every edge is ' +
-				'1 or φ, and the palette develops exactly in ℤ[ζ₁₀], where φ = 2cos 36° = ζ + ζ⁻¹. The ' +
-				'arrows Penrose decorates these edges with are what force aperiodicity, and they are not ' +
-				'edge types — an arrow is directed, edge types glue like to like — so this is the ' +
-				'complementary catalogue: what the two shapes admit when only their lengths must match. ' +
-				'Certified here: every face is exactly a kite or a dart, the faces cover the period cell ' +
-				'with no gap and no overlap, and every vertex sees a full turn with the dart’s 216° notch ' +
-				'counted as reflex.',
+				"are built from the Robinson triangles: the kite is two acute golden triangles (36-72-72, " +
+				"sides 1 : φ : φ) glued along a long side, the dart two obtuse ones (108-36-36, sides " +
+				"φ : 1 : 1) glued along a short side. So every angle is a multiple of 36° and every edge is " +
+				"1 or φ, and the palette develops exactly in ℤ[ζ₁₀], where φ = 2cos 36° = ζ + ζ⁻¹. The " +
+				"arrows Penrose decorates these edges with are what force aperiodicity, and they are not " +
+				"edge types — an arrow is directed, edge types glue like to like — so this is the " +
+				"complementary catalogue: what the two shapes admit when only their lengths must match. " +
+				"Certified here: every face is exactly a kite or a dart, the faces cover the period cell " +
+				"with no gap and no overlap, and every vertex sees a full turn with the dart’s 216° notch " +
+				"counted as reflex.",
 		});
 	});
 }
-writeFileSync(path.join(OUT, 'manifest.json'), JSON.stringify(manifest, null, 2));
+writeFileSync(path.join(OUT, "manifest.json"), JSON.stringify(manifest, null, 2));
 // k<=3 eager, deeper tiers as lazy shards — the split the mixed, scaled, period and tri45 shelves all
 // use. The whole shelf as one eager file is 18.7 MB on every page load; the eager tier is ~0.5 MB.
 const eager = ref.filter((r) => r.k <= 3);
-writeFileSync(path.join(PUB, 'reference-atlas-penrose.json'), stringifyAtlas(eager));
+writeFileSync(path.join(PUB, "reference-atlas-penrose.json"), stringifyAtlas(eager));
 console.log(`  atlas shelf: ${eager.length} entries (k<=3, eager) -> public/reference-atlas-penrose.json`);
 for (const k of [...new Set(ref.filter((r) => r.k > 3).map((r) => r.k))].sort((a, b) => a - b)) {
 	const rows = ref.filter((r) => r.k === k);
 	writeFileSync(path.join(PUB, `reference-atlas-penrose-k${k}.json`), stringifyAtlas(rows));
 	console.log(`               ${rows.length} entries -> public/reference-atlas-penrose-k${k}.json (lazy)`);
 }
-console.log(`penrose: ${distinct.length} distinct tilings, shape err ${worstShape.toExponential(2)}, area err ${worstArea.toExponential(2)}, angle err ${worstAngle.toExponential(2)}° — certified`);
+console.log(
+	`penrose: ${distinct.length} distinct tilings, shape err ${worstShape.toExponential(2)}, area err ${worstArea.toExponential(2)}, angle err ${worstAngle.toExponential(2)}° — certified`,
+);

@@ -122,68 +122,71 @@ export function useParametricTilingCanvas({
 	// renderer instances out to whatever the canvas' aspect turns out to be.
 	const home = useCallback((): HomeBox | null => cell?.home ?? null, [cell]);
 
-	const draw = useCallback((f: AperiodicFrame) => {
-		const cv = canvasRef.current;
-		if (!cv) return;
-		onFrameRef.current?.(f);
+	const draw = useCallback(
+		(f: AperiodicFrame) => {
+			const cv = canvasRef.current;
+			if (!cv) return;
+			onFrameRef.current?.(f);
 
-		// The lens owns the picture: leave the canvas empty under it instead of paying for a flat pass
-		// nothing will see.
-		if (lensRef.current) {
-			const ctx2 = glContextRef.current;
-			if (ctx2) {
-				ctx2.viewport(0, 0, cv.width, cv.height);
-				ctx2.clearColor(0, 0, 0, 0);
-				ctx2.clear(ctx2.COLOR_BUFFER_BIT);
-			} else {
-				cv.getContext("2d")?.clearRect(0, 0, cv.width, cv.height);
+			// The lens owns the picture: leave the canvas empty under it instead of paying for a flat pass
+			// nothing will see.
+			if (lensRef.current) {
+				const ctx2 = glContextRef.current;
+				if (ctx2) {
+					ctx2.viewport(0, 0, cv.width, cv.height);
+					ctx2.clearColor(0, 0, 0, 0);
+					ctx2.clear(ctx2.COLOR_BUFFER_BIT);
+				} else {
+					cv.getContext("2d")?.clearRect(0, 0, cv.width, cv.height);
+				}
+				return;
 			}
-			return;
-		}
 
-		if (modeRef.current === "gl" && glRef.current && glContextRef.current) {
-			// FlatCellRenderer leaves backing-size and viewport to the caller. useAperiodicView has
-			// already resized the backing store to w*dpr, so the viewport just follows it.
-			glContextRef.current.viewport(0, 0, cv.width, cv.height);
-			glRef.current.draw({
-				width: f.w,
-				height: f.h,
-				// The hook's frame and flatWorldToClip share a convention (centred CSS px, y down,
-				// rotation after the y flip) so the offset passes straight through. That holds because
-				// home is centred on the origin, making f.centreX/Y zero.
-				offset: { x: f.offsetX, y: f.offsetY },
-				zoom: f.zoom,
-				rotationDeg: (f.rot * 180) / Math.PI,
-				lineWidth: strokeRef.current,
-				showFill: true,
-				strokeRGB: strokeRgb,
-			});
-			return;
-		}
+			if (modeRef.current === "gl" && glRef.current && glContextRef.current) {
+				// FlatCellRenderer leaves backing-size and viewport to the caller. useAperiodicView has
+				// already resized the backing store to w*dpr, so the viewport just follows it.
+				glContextRef.current.viewport(0, 0, cv.width, cv.height);
+				glRef.current.draw({
+					width: f.w,
+					height: f.h,
+					// The hook's frame and flatWorldToClip share a convention (centred CSS px, y down,
+					// rotation after the y flip) so the offset passes straight through. That holds because
+					// home is centred on the origin, making f.centreX/Y zero.
+					offset: { x: f.offsetX, y: f.offsetY },
+					zoom: f.zoom,
+					rotationDeg: (f.rot * 180) / Math.PI,
+					lineWidth: strokeRef.current,
+					showFill: true,
+					strokeRGB: strokeRgb,
+				});
+				return;
+			}
 
-		const ctx = cv.getContext("2d");
-		if (!ctx) return;
-		ctx.setTransform(f.dpr, 0, 0, f.dpr, 0, 0);
-		ctx.clearRect(0, 0, f.w, f.h);
-		ctx.save();
-		applyViewTransform(ctx, f);
-		ctx.lineJoin = "round";
-		if (fallbackBase && f.zoom > 0) {
-			// Walk the same lattice on the CPU, out to the visible world rect. The √2 covers rotation.
-			const halfW = ((f.w / f.zoom) * Math.SQRT2) / 2;
-			const halfH = ((f.h / f.zoom) * Math.SQRT2) / 2;
-			const world = expandToViewport(
-				fallbackBase,
-				f.centreX - f.offsetX / f.zoom,
-				f.centreY + f.offsetY / f.zoom,
-				halfW,
-				halfH,
-				fallbackMaxRadius,
-			);
-			drawPolygons(ctx, world, f.zoom, 0, strokeRef.current, strokeCss);
-		}
-		ctx.restore();
-	}, [canvasRef, fallbackBase, strokeRgb, strokeCss, fallbackMaxRadius]);
+			const ctx = cv.getContext("2d");
+			if (!ctx) return;
+			ctx.setTransform(f.dpr, 0, 0, f.dpr, 0, 0);
+			ctx.clearRect(0, 0, f.w, f.h);
+			ctx.save();
+			applyViewTransform(ctx, f);
+			ctx.lineJoin = "round";
+			if (fallbackBase && f.zoom > 0) {
+				// Walk the same lattice on the CPU, out to the visible world rect. The √2 covers rotation.
+				const halfW = ((f.w / f.zoom) * Math.SQRT2) / 2;
+				const halfH = ((f.h / f.zoom) * Math.SQRT2) / 2;
+				const world = expandToViewport(
+					fallbackBase,
+					f.centreX - f.offsetX / f.zoom,
+					f.centreY + f.offsetY / f.zoom,
+					halfW,
+					halfH,
+					fallbackMaxRadius,
+				);
+				drawPolygons(ctx, world, f.zoom, 0, strokeRef.current, strokeCss);
+			}
+			ctx.restore();
+		},
+		[canvasRef, fallbackBase, strokeRgb, strokeCss, fallbackMaxRadius],
+	);
 
 	// fill: 1, not the hook's 0.86 default. There is no patch boundary to keep clear of the canvas
 	// edges — the tiling runs off all four of them — so a margin would only mean less tiling.
@@ -214,7 +217,7 @@ export function useParametricTilingCanvas({
 			glRef.current = null;
 			glContextRef.current = null;
 			uploadedRef.current = null;
-			};
+		};
 	}, [canvasRef, mounted]);
 
 	useEffect(() => {

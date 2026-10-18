@@ -54,12 +54,12 @@ export function PieChart() {
 	};
 
 	return (
-		<div className="w-full h-64 ta-float overflow-hidden">
-			<div className="px-4 py-2 text-xs font-medium text-fg-secondary flex justify-between items-center border-b border-line">
+		<div className="ta-float h-64 w-full overflow-hidden">
+			<div className="flex items-center justify-between border-b border-line px-4 py-2 text-xs font-medium text-fg-secondary">
 				<div className="flex items-center gap-2">
 					{currentPath.length > 0 ? (
-						<button className="text-fg-muted hover:text-fg flex items-center gap-1" onClick={navigateBack}>
-							<ArrowLeft aria-hidden="true" className="w-3.5 h-3.5" />
+						<button className="flex items-center gap-1 text-fg-muted hover:text-fg" onClick={navigateBack}>
+							<ArrowLeft aria-hidden="true" className="h-3.5 w-3.5" />
 							<span>Back</span>
 						</button>
 					) : (
@@ -69,14 +69,14 @@ export function PieChart() {
 					)}
 					{currentPath.length > 0 ? (
 						<>
-							<span className="text-fg-muted mx-1">›</span>
+							<span className="mx-1 text-fg-muted">›</span>
 							<div className="flex items-center">
 								{breadcrumbs.map((crumb, i) => (
 									<span key={crumb.label + i} className="flex items-center">
 										<button className="text-info hover:text-info" onClick={() => navigateTo(crumb.path)}>
 											{crumb.label}
 										</button>
-										{i < breadcrumbs.length - 1 ? <span className="text-fg-muted mx-1">›</span> : null}
+										{i < breadcrumbs.length - 1 ? <span className="mx-1 text-fg-muted">›</span> : null}
 									</span>
 								))}
 							</div>
@@ -84,14 +84,27 @@ export function PieChart() {
 					) : null}
 				</div>
 			</div>
-			<div className="p-2 h-[calc(100%-32px)]">
+			<div className="h-[calc(100%-32px)] p-2">
 				<canvas ref={canvasRef} />
 			</div>
 		</div>
 	);
 }
 
-function createChart(el: HTMLCanvasElement, data: { phases: { label: string; value: number; directTime: number; totalTime: number; percentage: number; hasChildren: boolean }[]; totalTime: number }) {
+function createChart(
+	el: HTMLCanvasElement,
+	data: {
+		phases: {
+			label: string;
+			value: number;
+			directTime: number;
+			totalTime: number;
+			percentage: number;
+			hasChildren: boolean;
+		}[];
+		totalTime: number;
+	},
+) {
 	const labels = data.phases.map((p) => p.label);
 	const values = data.phases.map((p) => p.value);
 	const colors = data.phases.map((p, i) =>
@@ -117,7 +130,12 @@ function createChart(el: HTMLCanvasElement, data: { phases: { label: string; val
 			maintainAspectRatio: false,
 			layout: { padding: 10 },
 			onClick: (event, elements, chart) => {
-				const active = chart.getElementsAtEventForMode(event as unknown as Event, "nearest", { intersect: true }, false);
+				const active = chart.getElementsAtEventForMode(
+					event as unknown as Event,
+					"nearest",
+					{ intersect: true },
+					false,
+				);
 				if (active.length === 0) return;
 				const i = active[0].index;
 				const phase = data.phases[i];

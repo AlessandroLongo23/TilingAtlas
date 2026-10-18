@@ -21,11 +21,19 @@ const records = (): CylinderRecord[] =>
 // entries that grow to the spanning-tree count, so {3,12} at r=3 is not a bigger case, it is a
 // different order of problem: it ran for three and a half minutes before this list existed.
 const AFFORDABLE: [number, number][] = [
-	[6, 1], [6, 2], [6, 3], [6, 4],
-	[7, 1], [7, 2], [7, 3],
-	[8, 1], [8, 2],
-	[9, 1], [9, 2],
-	[12, 1], [12, 2],
+	[6, 1],
+	[6, 2],
+	[6, 3],
+	[6, 4],
+	[7, 1],
+	[7, 2],
+	[7, 3],
+	[8, 1],
+	[8, 2],
+	[9, 1],
+	[9, 2],
+	[12, 1],
+	[12, 2],
 ];
 const VERTEX_BUDGET = 120;
 

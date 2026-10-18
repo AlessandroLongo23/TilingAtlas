@@ -68,7 +68,9 @@ export async function openTouchpad(onMove: (dx: number, dy: number) => void, ask
 	const api = hid();
 	if (!api) return false;
 	try {
-		const devices = (ask ? await api.requestDevice({ filters: [{ vendorId: SONY }] }) : await api.getDevices()).filter((d) => d.vendorId === SONY);
+		const devices = (ask ? await api.requestDevice({ filters: [{ vendorId: SONY }] }) : await api.getDevices()).filter(
+			(d) => d.vendorId === SONY,
+		);
 		for (const d of devices) {
 			if (!d.opened) await d.open();
 			listen(d, onMove);

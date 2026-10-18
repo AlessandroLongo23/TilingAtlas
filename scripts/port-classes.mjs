@@ -50,14 +50,8 @@ function rewriteContent(src, relPath) {
 	out = out.replace(/from\s+(['"])([^'"]+?)\.svelte(['"])/g, "from $1$2$3");
 
 	// Fix tolerance imports
-	out = out.replace(
-		/from\s+(['"])@\/lib\/stores\/constants(['"])/g,
-		"from $1@/utils/tolerance$2",
-	);
-	out = out.replace(
-		/from\s+(['"])@\/utils\/geoTolerance(['"])/g,
-		"from $1@/utils/tolerance$2",
-	);
+	out = out.replace(/from\s+(['"])@\/lib\/stores\/constants(['"])/g, "from $1@/utils/tolerance$2");
+	out = out.replace(/from\s+(['"])@\/utils\/geoTolerance(['"])/g, "from $1@/utils/tolerance$2");
 
 	// Flag svelte/store usage
 	const usesSvelteStore = /from\s+['"]svelte\/store['"]/.test(out);

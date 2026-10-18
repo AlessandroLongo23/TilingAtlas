@@ -440,12 +440,16 @@ const toP = (v: { x: number; y: number }): Complex => kleinToPoincare({ x: v.x /
  *  stays out of reach is never the answer, and on a 34-gon that is all but a handful of its 68 rays. */
 function inReach(seg: HypSeg, lifted: number[][], res: number, reach: number): boolean {
 	const step = Math.max(1, Math.floor(res / 12));
-	for (let j = 0; j < res; j += step) for (let i = 0; i < res; i += step) if (segDist(lifted[j * res + i], seg) < reach + 0.5) return true;
+	for (let j = 0; j < res; j += step)
+		for (let i = 0; i < res; i += step) if (segDist(lifted[j * res + i], seg) < reach + 0.5) return true;
 	return false;
 }
 
 /** The layer's sample points, row by row, and the scaled-Klein box that holds them. */
-function samples(shape: TileShape, res: number): { pts: Complex[]; kBox: { x0: number; x1: number; y0: number; y1: number } } {
+function samples(
+	shape: TileShape,
+	res: number,
+): { pts: Complex[]; kBox: { x0: number; x1: number; y0: number; y1: number } } {
 	const span = 1 + ISLAMIC_MARGIN;
 	const pts: Complex[] = [];
 	const kBox = { x0: Infinity, x1: -Infinity, y0: Infinity, y1: -Infinity };
@@ -465,7 +469,11 @@ function samples(shape: TileShape, res: number): { pts: Complex[]; kBox: { x0: n
 
 /** The tile's own rays: islamicSegmentsForTile without those of a closing chord. Rays 2i and 2i+1 leave
  *  edge i; at a split offset one more segment per edge follows them. */
-function tileSegments(shape: TileShape, theta: number, frac: number): { rays: [Complex, Complex][]; extra: [Complex, Complex][] } {
+function tileSegments(
+	shape: TileShape,
+	theta: number,
+	frac: number,
+): { rays: [Complex, Complex][]; extra: [Complex, Complex][] } {
 	const n = shape.polyP.length;
 	const raw = islamicSegmentsForTile(shape.polyP, theta, frac, `${shape.real}-gon`);
 	return { rays: raw.slice(0, 2 * shape.real), extra: raw.slice(2 * n, 2 * n + shape.real) };
@@ -491,7 +499,10 @@ function fillLayer(shape: TileShape, angleFromNormalRad: number, frac: number, r
 	// Prune dangling chains back to the last junction (a ray with no covered crossing runs to the tile
 	// boundary and would make the face trace non-simple). A ray's ROOT is not a free end: the
 	// neighbouring tile's ray leaves the same point.
-	const arr = buildArrangement(raw.map(([a, b]) => [new Vector(a.x, a.y), new Vector(b.x, b.y)] as Segment), frac !== 0);
+	const arr = buildArrangement(
+		raw.map(([a, b]) => [new Vector(a.x, a.y), new Vector(b.x, b.y)] as Segment),
+		frac !== 0,
+	);
 	const roots = rays.map(([o]) => new Vector(o.x, o.y)); // rays 2i, 2i+1 leave edge i
 	const anchored = new Set(roots.map(keyOf));
 	const deg = new Array<number>(arr.pts.length).fill(0);
@@ -600,7 +611,8 @@ function fillLayer(shape: TileShape, angleFromNormalRad: number, frac: number, r
 	};
 	// 128 is exactly 0: the tile centre must decode to the centre, or each of the 2p turned copies of the
 	// wedge shades its star body from a slightly different point and the body shows as a fan.
-	const q8 = (v: number) => (shape.anchorScale ? Math.max(1, Math.min(255, Math.round((v / shape.anchorScale) * 127) + 128)) : 128);
+	const q8 = (v: number) =>
+		shape.anchorScale ? Math.max(1, Math.min(255, Math.round((v / shape.anchorScale) * 127) + 128)) : 128;
 	const data = new Uint8Array(res * res * 4);
 	pts.forEach((q, t) => {
 		const K = toK(q);
@@ -655,7 +667,8 @@ function strapLayer(shape: TileShape, angleFromNormalRad: number, frac: number, 
 	// crosses the edge straight, mitred where an offset makes it turn there.
 	const strands = rays.map(([a, b]) => {
 		let back = 4;
-		while (back > 1e-3 && Math.hypot(a.x - back * (b.x - a.x), a.y - back * (b.y - a.y)) > 0.995 * KLEIN_SCALE) back /= 2;
+		while (back > 1e-3 && Math.hypot(a.x - back * (b.x - a.x), a.y - back * (b.y - a.y)) > 0.995 * KLEIN_SCALE)
+			back /= 2;
 		const seg = hypSeg(toP({ x: a.x - back * (b.x - a.x), y: a.y - back * (b.y - a.y) }), toP(b));
 		return inReach(seg, lifted, res, 1) ? seg : null; // a band and its border are well under one unit
 	});
@@ -789,7 +802,17 @@ export class IslamicFeed {
 		id: string,
 		sizes: number[],
 		edge: number,
-	): Pick<PerPixelDrawParams, "islamic" | "islamicStyle" | "islamicColA" | "islamicColB" | "islamicColC" | "strapBand" | "strapBorder" | "flipWeave"> {
+	): Pick<
+		PerPixelDrawParams,
+		| "islamic"
+		| "islamicStyle"
+		| "islamicColA"
+		| "islamicColB"
+		| "islamicColC"
+		| "strapBand"
+		| "strapBorder"
+		| "flipWeave"
+	> {
 		if (!cfg.isIslamic || !sizes.length) return { islamic: false };
 		const style = cfg.islamicStyle;
 		const strap = style === "outline" || style === "interlace" || style === "emboss";
@@ -814,7 +837,8 @@ export class IslamicFeed {
 			islamicColB: tileHueRgb01(checker ? cfg.islamicCheckerHueB : cfg.islamicFillHueB),
 			islamicColC: tileHueRgb01(cfg.islamicFillHueC),
 			strapBand: (cfg.islamicBandWidth * ruler) / 2,
-			strapBorder: (style === "emboss" ? Math.max(cfg.islamicOutlineWidth, EMBOSS_MIN_BORDER) : cfg.islamicOutlineWidth) * ruler,
+			strapBorder:
+				(style === "emboss" ? Math.max(cfg.islamicOutlineWidth, EMBOSS_MIN_BORDER) : cfg.islamicOutlineWidth) * ruler,
 			flipWeave: cfg.islamicChirality,
 		};
 	}

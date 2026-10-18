@@ -41,36 +41,31 @@ export function PipelineProgressDialog() {
 						animate={{ opacity: 1, scale: 1, y: 0 }}
 						exit={{ opacity: 0, scale: 0.95, y: -8 }}
 						transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-						className="relative bg-surface-overlay border border-line rounded-xl shadow-2xl max-w-md w-full overflow-hidden"
+						className="relative w-full max-w-md overflow-hidden rounded-xl border border-line bg-surface-overlay shadow-2xl"
 					>
-						<div className="flex items-center justify-between px-5 py-4 border-b border-line">
+						<div className="flex items-center justify-between border-b border-line px-5 py-4">
 							<div className="flex items-center gap-3">
 								{progress === 100 && canClose ? (
-									<CheckCircle2 size={22} className="text-accent shrink-0" />
+									<CheckCircle2 size={22} className="shrink-0 text-accent" />
 								) : (
-									<Loader2 size={22} className="text-accent animate-spin shrink-0" />
+									<Loader2 size={22} className="shrink-0 animate-spin text-accent" />
 								)}
 								<h2 id="progress-dialog-title" className="text-lg font-medium text-fg">
 									{title}
 								</h2>
 							</div>
-							{canClose ? (
-								<Button
-									variant="ghost"
-									size="icon"
-									icon={X}
-									aria-label="Close"
-									onClick={close}
-								/>
-							) : null}
+							{canClose ? <Button variant="ghost" size="icon" icon={X} aria-label="Close" onClick={close} /> : null}
 						</div>
 
-						<div className="px-5 py-5 space-y-4">
-							<p id="progress-dialog-message" className="text-sm text-fg-secondary font-mono leading-relaxed min-h-[2.5rem]">
+						<div className="space-y-4 px-5 py-5">
+							<p
+								id="progress-dialog-message"
+								className="min-h-[2.5rem] font-mono text-sm leading-relaxed text-fg-secondary"
+							>
 								{message || "Starting…"}
 							</p>
 
-							<div className="h-2 bg-surface-overlay/60 overflow-hidden">
+							<div className="h-2 overflow-hidden bg-surface-overlay/60">
 								{progress !== null ? (
 									<div
 										className="h-full bg-fg transition-all duration-300 ease-out"
@@ -79,7 +74,11 @@ export function PipelineProgressDialog() {
 								) : (
 									<div
 										className="h-full bg-fg"
-										style={{ width: "40%", marginLeft: "-20%", animation: "progressIndeterminate 1.5s ease-in-out infinite" }}
+										style={{
+											width: "40%",
+											marginLeft: "-20%",
+											animation: "progressIndeterminate 1.5s ease-in-out infinite",
+										}}
 									/>
 								)}
 							</div>

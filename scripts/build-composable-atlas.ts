@@ -35,7 +35,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { trueVertexOrbitCount } from "@/classes/algorithm/composable/canonicalTilingKey";
 import { exactComposableKeys, type ExactComposableCell } from "@/classes/algorithm/composable/exactComposableDedup";
-import { stringifyAtlas } from './atlas/encode.mjs';
+import { stringifyAtlas } from "./atlas/encode.mjs";
 
 // The 7 composite convex tiles that dissect into regular polygons (the decomposable palette).
 const DECOMPOSABLE = new Set([
@@ -119,8 +119,7 @@ const INPUTS: { k: number; files: string[] }[] = [
 	},
 ];
 
-const NOTE =
-	"Tilings using composite convex tiles; distinct-tiling counts are exact (ℤ[ζ₂₄] congruence dedup).";
+const NOTE = "Tilings using composite convex tiles; distinct-tiling counts are exact (ℤ[ζ₂₄] congruence dedup).";
 
 const logLines: string[] = [];
 function log(msg = ""): void {
@@ -135,7 +134,7 @@ function readRecords(file: string): CellRecord[] {
 		return [];
 	}
 	const parsed = JSON.parse(fs.readFileSync(p, "utf8")) as CellFile | CellRecord[];
-	return Array.isArray(parsed) ? parsed : parsed.records ?? [];
+	return Array.isArray(parsed) ? parsed : (parsed.records ?? []);
 }
 
 // First candidate file that exists on disk (preference order), or null if none are present yet.
@@ -203,7 +202,12 @@ function dedupeComposable(out: ComposableTiling[]): ComposableTiling[] {
 		survivors.push(out[idxs[0]]);
 		if (idxs.length > 1) {
 			merged += idxs.length - 1;
-			mergeLog.push(`    ${out[idxs[0]].id}  ⇐  ${idxs.slice(1).map((i) => out[i].id).join(", ")}`);
+			mergeLog.push(
+				`    ${out[idxs[0]].id}  ⇐  ${idxs
+					.slice(1)
+					.map((i) => out[i].id)
+					.join(", ")}`,
+			);
 		}
 	}
 	survivors.sort((a, b) => a.id.localeCompare(b.id)); // stable original order (IDs kept, gaps allowed)
@@ -261,7 +265,9 @@ function main(): void {
 	}
 
 	if (unknownCx.size > 0) {
-		log(`  ⚑ WARNING: cx tiles not in either known palette — treated as non-decomposable: ${[...unknownCx].join(", ")}`);
+		log(
+			`  ⚑ WARNING: cx tiles not in either known palette — treated as non-decomposable: ${[...unknownCx].join(", ")}`,
+		);
 	}
 
 	// Dedup: the raw counts above are pre-dedup (one row per source representation). Collapse

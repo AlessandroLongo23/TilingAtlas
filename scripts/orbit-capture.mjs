@@ -27,9 +27,12 @@ const picked = await page.evaluate(() => {
 	window.__stores.configuration.setState({ showVertexOrbits: true, isIslamic: false });
 	window.__play.select(src[0]);
 	const s = window.__stores.configuration.getState();
-	s.controls.zoom = 70; s.controls.targetZoom = 70;
-	s.controls.offset.x = 0; s.controls.offset.y = 0;
-	s.controls.targetOffset.x = 0; s.controls.targetOffset.y = 0;
+	s.controls.zoom = 70;
+	s.controls.targetZoom = 70;
+	s.controls.offset.x = 0;
+	s.controls.offset.y = 0;
+	s.controls.targetOffset.x = 0;
+	s.controls.targetOffset.y = 0;
 	return { key: src[0].canonicalKey, k: src[0].k };
 });
 console.log("picked", picked.key, "k =", picked.k);
@@ -46,7 +49,14 @@ await shot("orbit-p5", false);
 await shot("orbit-gpu", true);
 
 // Hover: sweep the mouse across the canvas centre so it lands on a dot, then let the grow ease settle.
-for (const [x, y] of [[930, 470], [929, 469], [930, 471]]) { await page.mouse.move(x, y); await page.waitForTimeout(120); }
+for (const [x, y] of [
+	[930, 470],
+	[929, 469],
+	[930, 471],
+]) {
+	await page.mouse.move(x, y);
+	await page.waitForTimeout(120);
+}
 await page.waitForTimeout(500);
 await page.screenshot({ path: `${OUT}/orbit-hover.png`, clip: CLIP });
 console.log("wrote orbit-hover");

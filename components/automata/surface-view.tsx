@@ -93,8 +93,7 @@ function kleinBottle(u: number, v: number): THREE.Vector3 {
 	const cu5 = cu4 * cu;
 	const cu6 = cu4 * cu2;
 	const cu7 = cu6 * cu;
-	const x =
-		-(2 / 15) * cu * (3 * cv - 30 * su + 90 * cu4 * su - 60 * cu6 * su + 5 * cu * cv * su);
+	const x = -(2 / 15) * cu * (3 * cv - 30 * su + 90 * cu4 * su - 60 * cu6 * su + 5 * cu * cv * su);
 	const y =
 		-(1 / 15) *
 		su *
@@ -167,11 +166,7 @@ function makeEmbed(
 		const cu = Math.cos(u / 2);
 		const su = Math.sin(u / 2);
 		const rad = R_MAJOR + rho * (cu * Math.sin(v) - su * Math.sin(2 * v));
-		return new THREE.Vector3(
-			rad * Math.cos(u),
-			rho * (su * Math.sin(v) + cu * Math.sin(2 * v)),
-			rad * Math.sin(u),
-		);
+		return new THREE.Vector3(rad * Math.cos(u), rho * (su * Math.sin(v) + cu * Math.sin(2 * v)), rad * Math.sin(u));
 	};
 }
 
@@ -193,10 +188,7 @@ function buildSurfaceMesh(plan: BoardPlan | null, displayH: number, kleinShape: 
 	const [[v1x, v1y], [v2x, v2y]] = adj.basis;
 	const det = v1x * v2y - v2x * v1y;
 	if (Math.abs(det) < 1e-9) return null;
-	const toLattice = (x: number, y: number): [number, number] => [
-		(x * v2y - y * v2x) / det,
-		(-x * v1y + y * v1x) / det,
-	];
+	const toLattice = (x: number, y: number): [number, number] => [(x * v2y - y * v2x) / det, (-x * v1y + y * v1x) / det];
 
 	const def = topologyDef(plan.topology);
 	const flipped = plan.involution != null;
@@ -224,7 +216,8 @@ function buildSurfaceMesh(plan: BoardPlan | null, displayH: number, kleinShape: 
 	// Band half-width from 2ρ / 2πR = aspect. Capped well below R: a band much wider than that folds
 	// through itself, and a Möbius strip that intersects is a worse picture than a squashed one.
 	else if (plan.topology === "mobius") rho = Math.min(0.5, Math.max(0.1, Math.PI * R_MAJOR * aspect));
-	else if (plan.topology === "klein") rho = Math.min(0.48, Math.max(0.1, (2 * Math.PI * R_MAJOR * aspect) / LEMNISCATE));
+	else if (plan.topology === "klein")
+		rho = Math.min(0.48, Math.max(0.1, (2 * Math.PI * R_MAJOR * aspect) / LEMNISCATE));
 
 	const embed = makeEmbed(plan.topology, periodA, spanB, axis, rho, kleinShape);
 
@@ -507,5 +500,5 @@ export function SurfaceView({ plan, engineRef }: SurfaceViewProps) {
 		};
 	}, [plan, storeH, kleinShape, engineRef]);
 
-	return <canvas ref={canvasRef} className="w-full h-full block touch-none" />;
+	return <canvas ref={canvasRef} className="block h-full w-full touch-none" />;
 }

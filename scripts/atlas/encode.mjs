@@ -46,7 +46,10 @@ function buildDict(records) {
 			if (v === undefined) continue;
 			// The invariant: strings only. One non-string present anywhere disqualifies the field,
 			// because a mixed column would put real numbers next to indices.
-			if (typeof v !== "string") { values.length = 0; break; }
+			if (typeof v !== "string") {
+				values.length = 0;
+				break;
+			}
 			values.push(v);
 		}
 		if (!values.length) continue;
@@ -396,10 +399,8 @@ export function sameRecords(before, after, tol = 1e-9) {
 		if (!ca) continue;
 		for (let i = 0; i < 2; i++)
 			for (let j = 0; j < 2; j++)
-				if (Math.abs(ca.basis[i][j] - cb.basis[i][j]) > tol)
-					return `record ${r} (${a?.id}): basis[${i}][${j}]`;
-		if (ca.cellPolygons.length !== cb.cellPolygons.length)
-			return `record ${r} (${a?.id}): polygon count`;
+				if (Math.abs(ca.basis[i][j] - cb.basis[i][j]) > tol) return `record ${r} (${a?.id}): basis[${i}][${j}]`;
+		if (ca.cellPolygons.length !== cb.cellPolygons.length) return `record ${r} (${a?.id}): polygon count`;
 		for (let p = 0; p < ca.cellPolygons.length; p++) {
 			const pa = ca.cellPolygons[p];
 			const pb = cb.cellPolygons[p];

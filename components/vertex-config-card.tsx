@@ -3,7 +3,14 @@
 import { useMemo } from "react";
 import { Camera } from "lucide-react";
 import type { VertexConfig } from "@/lib/configs/vertexConfigs";
-import { polygonFillHue, renderFigureToDataUrl, starApexAngleDeg, starHue, TILE_FILL_ALPHA, tileFill } from "@/lib/utils/renderTiling";
+import {
+	polygonFillHue,
+	renderFigureToDataUrl,
+	starApexAngleDeg,
+	starHue,
+	TILE_FILL_ALPHA,
+	tileFill,
+} from "@/lib/utils/renderTiling";
 import { SCREENSHOT_BUTTONS_ENABLED } from "@/lib/utils/featureFlags";
 import { useScreenshotPreview } from "@/stores/screenshotPreview";
 
@@ -23,7 +30,10 @@ const PAD = 8;
  */
 export function VertexConfigCard({ config, unitsAcross }: { config: VertexConfig; unitsAcross?: number }) {
 	const { polys, dot } = useMemo(() => {
-		let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+		let minX = Infinity,
+			minY = Infinity,
+			maxX = -Infinity,
+			maxY = -Infinity;
 		for (const p of config.polys)
 			for (const [x, y] of p.verts) {
 				if (x < minX) minX = x;
@@ -78,7 +88,7 @@ export function VertexConfigCard({ config, unitsAcross }: { config: VertexConfig
 
 	return (
 		<>
-			<svg viewBox={`0 0 ${VIEW} ${VIEW}`} className="w-full h-full block" preserveAspectRatio="xMidYMid meet">
+			<svg viewBox={`0 0 ${VIEW} ${VIEW}`} className="block h-full w-full" preserveAspectRatio="xMidYMid meet">
 				{polys.map((p, i) => (
 					<polygon
 						key={i}
@@ -97,7 +107,7 @@ export function VertexConfigCard({ config, unitsAcross }: { config: VertexConfig
 					onClick={handleScreenshot}
 					title="Screenshot"
 					aria-label="Take screenshot"
-					className="absolute top-1.5 right-1.5 p-1.5 rounded-md bg-surface-overlay/80 border border-line-strong text-fg-muted hover:text-fg hover:bg-surface-overlay opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity max-md:opacity-100"
+					className="absolute top-1.5 right-1.5 rounded-md border border-line-strong bg-surface-overlay/80 p-1.5 text-fg-muted opacity-0 transition-opacity group-hover:opacity-100 hover:bg-surface-overlay hover:text-fg focus:opacity-100 max-md:opacity-100"
 				>
 					<Camera size={13} />
 				</button>

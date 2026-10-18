@@ -22,7 +22,8 @@ export function FigurePanel({ panel, aspect = "4/3" }: { panel: PanelSpec; aspec
 	const canvas = useRef<HTMLCanvasElement | null>(null);
 
 	const paint = useCallback(() => {
-		const h = host.current, c = canvas.current;
+		const h = host.current,
+			c = canvas.current;
 		if (!h || !c) return;
 		const p = prepare(h, c, panel.box, 0.97);
 		if (!p) return;
@@ -43,13 +44,13 @@ export function FigurePanel({ panel, aspect = "4/3" }: { panel: PanelSpec; aspec
 	return (
 		<figure className="m-0 flex min-w-[10rem] flex-1 flex-col gap-1.5">
 			<figcaption
-				className={`text-center text-[clamp(0.7rem,1vh+0.24vw,1rem)] font-medium text-fg${panel.mono ? " font-mono" : ""}`}
+				className={`text-center text-[clamp(0.7rem,1vh+0.24vw,1rem)] font-medium text-fg${panel.mono ? "font-mono" : ""}`}
 			>
 				{panel.title}
 			</figcaption>
 			<div
 				ref={host}
-				className="relative w-full overflow-hidden rounded-xl border border-line bg-surface-base"
+				className="bg-surface-base relative w-full overflow-hidden rounded-xl border border-line"
 				style={{ aspectRatio: aspect }}
 			>
 				<canvas ref={canvas} className="absolute inset-0 h-full w-full" />

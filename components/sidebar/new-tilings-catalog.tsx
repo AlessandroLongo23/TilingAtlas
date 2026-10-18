@@ -27,10 +27,10 @@ export function NewTilingsCatalog({ items, onSelect }: NewTilingsCatalogProps) {
 
 	return (
 		<div className="flex flex-col gap-2">
-			<div className="sticky top-0 z-10 p-3 bg-surface-overlay">
+			<div className="sticky top-0 z-10 bg-surface-overlay p-3">
 				<SectionHeading count={items.length}>Tiling Patterns</SectionHeading>
 			</div>
-			<div className="p-3 flex flex-col gap-2">
+			<div className="flex flex-col gap-2 p-3">
 				{grouped.map(([group, list]) => (
 					<SidebarSection
 						key={group}
@@ -43,12 +43,7 @@ export function NewTilingsCatalog({ items, onSelect }: NewTilingsCatalogProps) {
 					>
 						<div className="grid grid-cols-2 gap-2 pt-2">
 							{list.map((tiling) => (
-								<TilingCard
-									key={tiling.id}
-									tiling={tiling}
-									density="compact"
-									onClick={onSelect}
-								/>
+								<TilingCard key={tiling.id} tiling={tiling} density="compact" onClick={onSelect} />
 							))}
 						</div>
 					</SidebarSection>

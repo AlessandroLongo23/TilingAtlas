@@ -9,15 +9,8 @@ export const runtime = "nodejs";
 
 type KmEntry = { k: number; m: number; total: number };
 
-async function discoverKm(
-	supabase: SupabaseClient,
-	folder: string,
-	prefix: string,
-	out: KmEntry[],
-): Promise<void> {
-	const { data: kDirs } = await supabase.storage
-		.from(PIPELINE_BUCKET)
-		.list(`${folder}/${prefix}`);
+async function discoverKm(supabase: SupabaseClient, folder: string, prefix: string, out: KmEntry[]): Promise<void> {
+	const { data: kDirs } = await supabase.storage.from(PIPELINE_BUCKET).list(`${folder}/${prefix}`);
 	if (!kDirs?.length) return;
 
 	for (const kDir of kDirs) {
@@ -25,9 +18,7 @@ async function discoverKm(
 		const k = parseInt(kDir.name.replace("k=", ""), 10);
 		if (Number.isNaN(k)) continue;
 
-		const { data: mDirs } = await supabase.storage
-			.from(PIPELINE_BUCKET)
-			.list(`${folder}/${prefix}/${kDir.name}`);
+		const { data: mDirs } = await supabase.storage.from(PIPELINE_BUCKET).list(`${folder}/${prefix}/${kDir.name}`);
 		if (!mDirs?.length) continue;
 
 		for (const mDir of mDirs) {
@@ -36,9 +27,7 @@ async function discoverKm(
 			if (Number.isNaN(m)) continue;
 
 			const manifestPath = `${folder}/${prefix}/${kDir.name}/${mDir.name}/manifest.json`;
-			const { data: manifestBlob } = await supabase.storage
-				.from(PIPELINE_BUCKET)
-				.download(manifestPath);
+			const { data: manifestBlob } = await supabase.storage.from(PIPELINE_BUCKET).download(manifestPath);
 			if (!manifestBlob) continue;
 			try {
 				const manifest = JSON.parse(await manifestBlob.text());
@@ -54,9 +43,7 @@ export async function GET(request: Request) {
 	const url = new URL(request.url);
 	const folder = validateParamsFolder(url.searchParams.get("folder"));
 	if (!folder) {
-		return badRequest(
-			"folder query param required and must contain only letters, digits, underscores, or hyphens",
-		);
+		return badRequest("folder query param required and must contain only letters, digits, underscores, or hyphens");
 	}
 
 	const supabase = createServiceRoleClient();

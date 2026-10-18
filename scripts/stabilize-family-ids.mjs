@@ -34,7 +34,9 @@ const outPath = arg("out");
 const provenance = arg("provenance", "unlabelled export");
 const dryRun = process.argv.includes("--dry-run");
 if (!shippedPath || !exportPath || !outPath) {
-	console.error("usage: --shipped <cells.json> --export <cells.json> --out <cells.json> [--provenance <s>] [--dry-run]");
+	console.error(
+		"usage: --shipped <cells.json> --export <cells.json> --out <cells.json> [--provenance <s>] [--dry-run]",
+	);
 	process.exit(2);
 }
 
@@ -76,7 +78,9 @@ console.log(`  matched by familySymbol: ${shipped.records.length - lost.length}`
 console.log(`  NEW: ${appended.length}`);
 for (const r of appended) {
 	const p = r.params[0];
-	console.log(`    ${r.id}  ← ${r.exportedId}  seed=${r.primarySpecies}  α∈(${p.alphaRangeDegOpen[0]}°,${p.alphaRangeDegOpen[1]}°) @${p.defaultAlphaDeg}°  ${r.areaChecks}`);
+	console.log(
+		`    ${r.id}  ← ${r.exportedId}  seed=${r.primarySpecies}  α∈(${p.alphaRangeDegOpen[0]}°,${p.alphaRangeDegOpen[1]}°) @${p.defaultAlphaDeg}°  ${r.areaChecks}`,
+	);
 }
 if (lost.length) {
 	console.log(`  ⚑ REGRESSION — ${lost.length} shipped famil(y/ies) absent from the new export (kept anyway):`);
@@ -92,7 +96,10 @@ if (unverified.length) {
 const out = {
 	_meta: {
 		...shipped._meta,
-		spliced: [...(shipped._meta?.spliced ?? []), { provenance, added: appended.length, ids: appended.map((r) => r.id) }],
+		spliced: [
+			...(shipped._meta?.spliced ?? []),
+			{ provenance, added: appended.length, ids: appended.map((r) => r.id) },
+		],
 	},
 	records: [...shipped.records, ...appended],
 };

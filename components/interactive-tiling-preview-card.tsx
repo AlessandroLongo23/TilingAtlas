@@ -230,7 +230,7 @@ export function InteractiveTilingPreviewCard({
 						hostProps.onKeyDown(e);
 					}}
 					className={cn(
-						"group select-none overflow-hidden rounded-2xl border bg-surface-base outline-none",
+						"group bg-surface-base overflow-hidden rounded-2xl border outline-none select-none",
 						lifted ? "fixed inset-[5vh_5vw] z-50 shadow-2xl" : "absolute inset-0",
 						// An inert card takes the default cursor: neither grab (nothing to drag) nor pointer
 						// (nothing happens on click).
@@ -286,7 +286,7 @@ export function InteractiveTilingPreviewCard({
 					    overlay must not be something you have to go hunting for. */}
 					<div
 						className={cn(
-							"absolute right-2 top-2 z-10 flex gap-1.5 transition-opacity focus-within:opacity-100 group-hover:opacity-100",
+							"absolute top-2 right-2 z-10 flex gap-1.5 transition-opacity group-hover:opacity-100 focus-within:opacity-100",
 							lifted ? "opacity-100" : "opacity-0",
 							// No hover on a phone, so the stack is simply always there, finger-sized.
 							"max-md:opacity-100",
@@ -300,7 +300,7 @@ export function InteractiveTilingPreviewCard({
 								title={expanded ? "Close" : "Expand"}
 								aria-label={expanded ? "Close the expanded preview" : "Expand preview"}
 								aria-pressed={expanded}
-								className="flex items-center justify-center ta-float p-2 text-fg-secondary transition-colors hover:text-fg max-md:size-11"
+								className="ta-float flex items-center justify-center p-2 text-fg-secondary transition-colors hover:text-fg max-md:size-11"
 							>
 								{lifted ? <X size={14} /> : expanded ? <Minimize size={14} /> : <Maximize size={14} />}
 							</button>
@@ -311,13 +311,9 @@ export function InteractiveTilingPreviewCard({
 								onPointerDown={stopDrag}
 								title={openHref ? "Open" : "Open in Play"}
 								aria-label={openHref ? "Open this tiling on its page" : "Open this tiling in Play"}
-								className="flex items-center justify-center ta-float p-2 text-fg-secondary transition-colors hover:text-fg max-md:size-11"
+								className="ta-float flex items-center justify-center p-2 text-fg-secondary transition-colors hover:text-fg max-md:size-11"
 							>
-								{openInPlayIcon === "play" ? (
-									<Play size={14} className="fill-current" />
-								) : (
-									<ExternalLink size={14} />
-								)}
+								{openInPlayIcon === "play" ? <Play size={14} className="fill-current" /> : <ExternalLink size={14} />}
 							</Link>
 						) : null}
 					</div>

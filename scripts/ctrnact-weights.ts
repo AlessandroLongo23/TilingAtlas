@@ -83,11 +83,14 @@ function buildWH(): { list: WVec[]; map: Map<number, number> } {
 			}
 		}
 		cumulative += next.length;
-		if (EXPECTED_W[t] !== undefined && cumulative !== EXPECTED_W[t]) throw new Error(`|W(${t})|=${cumulative} ≠ ${EXPECTED_W[t]} (BFS wrong)`);
+		if (EXPECTED_W[t] !== undefined && cumulative !== EXPECTED_W[t])
+			throw new Error(`|W(${t})|=${cumulative} ≠ ${EXPECTED_W[t]} (BFS wrong)`);
 		frontier = next;
 	}
 	list.sort((a, b) => a.wt - b.wt);
-	log(`W(≤${H}) built: ${cumulative.toLocaleString("en-US")} vectors (incl. 0), table-checked ≤7; MIM covers wt ≤ ${2 * H}`);
+	log(
+		`W(≤${H}) built: ${cumulative.toLocaleString("en-US")} vectors (incl. 0), table-checked ≤7; MIM covers wt ≤ ${2 * H}`,
+	);
 	return { list, map };
 }
 const { list: WH, map: WHmap } = buildWH();
@@ -133,8 +136,12 @@ function wtUpper(v: Cyclotomic): number {
 // float is used ONLY for the heuristic ordering, positions stay exact (integer coords). Memoized.
 const OMEGA = Array.from({ length: PHI }, (_, i) => [Math.cos((Math.PI * i) / 12), Math.sin((Math.PI * i) / 12)]);
 function normF(c: number[]): number {
-	let re = 0, im = 0;
-	for (let i = 0; i < PHI; i++) { re += c[i] * OMEGA[i][0]; im += c[i] * OMEGA[i][1]; }
+	let re = 0,
+		im = 0;
+	for (let i = 0; i < PHI; i++) {
+		re += c[i] * OMEGA[i][0];
+		im += c[i] * OMEGA[i][1];
+	}
 	return Math.sqrt(re * re + im * im);
 }
 const deepCache = new Map<number, number>();
@@ -146,16 +153,47 @@ function wtExactDeep(v: Cyclotomic): number | null {
 	if (cached !== undefined) return cached;
 	let best = wtUpper(v); // finite upper bound (prunes)
 	// simple binary min-heap on f = g + h
-	const hf: number[] = [], hg: number[] = [], hc: number[][] = [];
+	const hf: number[] = [],
+		hg: number[] = [],
+		hc: number[][] = [];
 	const push = (f: number, g: number, c: number[]) => {
-		hf.push(f); hg.push(g); hc.push(c);
+		hf.push(f);
+		hg.push(g);
+		hc.push(c);
 		let i = hf.length - 1;
-		while (i > 0) { const p = (i - 1) >> 1; if (hf[p] <= hf[i]) break; [hf[p], hf[i]] = [hf[i], hf[p]]; [hg[p], hg[i]] = [hg[i], hg[p]]; [hc[p], hc[i]] = [hc[i], hc[p]]; i = p; }
+		while (i > 0) {
+			const p = (i - 1) >> 1;
+			if (hf[p] <= hf[i]) break;
+			[hf[p], hf[i]] = [hf[i], hf[p]];
+			[hg[p], hg[i]] = [hg[i], hg[p]];
+			[hc[p], hc[i]] = [hc[i], hc[p]];
+			i = p;
+		}
 	};
 	const pop = () => {
-		const f = hf[0], g = hg[0], c = hc[0], n = hf.length - 1;
-		hf[0] = hf[n]; hg[0] = hg[n]; hc[0] = hc[n]; hf.pop(); hg.pop(); hc.pop();
-		let i = 0; while (true) { let s = i; const l = 2 * i + 1, r = 2 * i + 2; if (l < n && hf[l] < hf[s]) s = l; if (r < n && hf[r] < hf[s]) s = r; if (s === i) break; [hf[s], hf[i]] = [hf[i], hf[s]]; [hg[s], hg[i]] = [hg[i], hg[s]]; [hc[s], hc[i]] = [hc[i], hc[s]]; i = s; }
+		const f = hf[0],
+			g = hg[0],
+			c = hc[0],
+			n = hf.length - 1;
+		hf[0] = hf[n];
+		hg[0] = hg[n];
+		hc[0] = hc[n];
+		hf.pop();
+		hg.pop();
+		hc.pop();
+		let i = 0;
+		while (true) {
+			let s = i;
+			const l = 2 * i + 1,
+				r = 2 * i + 2;
+			if (l < n && hf[l] < hf[s]) s = l;
+			if (r < n && hf[r] < hf[s]) s = r;
+			if (s === i) break;
+			[hf[s], hf[i]] = [hf[i], hf[s]];
+			[hg[s], hg[i]] = [hg[i], hg[s]];
+			[hc[s], hc[i]] = [hc[i], hc[s]];
+			i = s;
+		}
 		return { f, g, c };
 	};
 	const gseen = new Map<number, number>([[startKey, 0]]);
@@ -168,16 +206,25 @@ function wtExactDeep(v: Cyclotomic): number | null {
 		for (let j = 0; j < 24; j++) {
 			const nc = new Array<number>(PHI);
 			let zero = true;
-			for (let i = 0; i < PHI; i++) { nc[i] = c[i] - ZETA[j][i]; if (nc[i] !== 0) zero = false; }
+			for (let i = 0; i < PHI; i++) {
+				nc[i] = c[i] - ZETA[j][i];
+				if (nc[i] !== 0) zero = false;
+			}
 			const ng = g + 1;
-			if (zero) { if (ng < best) best = ng; continue; }
+			if (zero) {
+				if (ng < best) best = ng;
+				continue;
+			}
 			const nk = pack(nc);
 			const hb = WHmap.get(nk); // reached the W(≤H) ball ⇒ complete exactly
 			if (hb !== undefined && ng + hb < best) best = ng + hb;
 			const h = normF(nc);
 			if (ng + h >= best) continue; // prune
 			const prev = gseen.get(nk);
-			if (prev === undefined || ng < prev) { gseen.set(nk, ng); push(ng + Math.floor(h), ng, nc); }
+			if (prev === undefined || ng < prev) {
+				gseen.set(nk, ng);
+				push(ng + Math.floor(h), ng, nc);
+			}
 		}
 	}
 	deepCache.set(startKey, best);
@@ -199,33 +246,69 @@ function wtOf(v: Cyclotomic): [number, boolean] {
 }
 
 const lenSq = (v: Cyclotomic): Surd => reSurd(v.normSquared());
-const surdF = (s: Surd): number => (Number(s.P) + Number(s.Q) * Math.SQRT2 + Number(s.R) * Math.sqrt(3) + Number(s.S) * Math.sqrt(6)) / Number(s.D);
+const surdF = (s: Surd): number =>
+	(Number(s.P) + Number(s.Q) * Math.SQRT2 + Number(s.R) * Math.sqrt(3) + Number(s.S) * Math.sqrt(6)) / Number(s.D);
 const reqC2 = (wt: number, vSq: Surd): Surd => Surd.rational(BigInt(wt) * BigInt(wt)).div(vSq);
 const maxSurd = (a: Surd, b: Surd): Surd => (a.cmp(b) >= 0 ? a : b);
 
 // ---- sweep the reproduced catalogue ----
-log("██ Čtrnáct reference — EXACT reduced-basis weight/(w/v) ratios, k=1..8 (⚑ octagon-blind ζ₁₂ reference) " + new Date().toISOString());
+log(
+	"██ Čtrnáct reference — EXACT reduced-basis weight/(w/v) ratios, k=1..8 (⚑ octagon-blind ζ₁₂ reference) " +
+		new Date().toISOString(),
+);
 log("metric r = max(wt(u)/|u|, wt(v)/|v|) over the gauss-reduced period basis; same as eff-pruning-{ratios,galebach}.");
 log("");
 
-type Row = { id: string; k: number; family: string; reqC2: Surd; reqC: number; wtU: number; wtV: number; ratioU: number; ratioV: number; exact: boolean };
-const dsPath = process.argv[2] ? path.resolve(process.argv[2]) : path.join(process.cwd(), "figures", "data", "ctrnact.json");
+type Row = {
+	id: string;
+	k: number;
+	family: string;
+	reqC2: Surd;
+	reqC: number;
+	wtU: number;
+	wtV: number;
+	ratioU: number;
+	ratioV: number;
+	exact: boolean;
+};
+const dsPath = process.argv[2]
+	? path.resolve(process.argv[2])
+	: path.join(process.cwd(), "figures", "data", "ctrnact.json");
 const ds = JSON.parse(fs.readFileSync(dsPath, "utf8")) as {
 	tilings: { id: string; k: number; family: string; T1?: number[]; T2?: number[] }[];
 };
 const rows: Row[] = [];
 const kMax: Record<number, Row | undefined> = {}; // rigorous sup: EXACT rows only
-let processed = 0, noGeom = 0, failed = 0, approx = 0;
+let processed = 0,
+	noGeom = 0,
+	failed = 0,
+	approx = 0;
 for (const t of ds.tilings) {
-	if (!t.T1 || !t.T2) { noGeom++; continue; }
+	if (!t.T1 || !t.T2) {
+		noGeom++;
+		continue;
+	}
 	try {
 		const [u, v] = gaussReduceExact(dec(t.T1), dec(t.T2));
-		const [wtU, exU] = wtOf(u), [wtV, exV] = wtOf(v);
+		const [wtU, exU] = wtOf(u),
+			[wtV, exV] = wtOf(v);
 		const exact = exU && exV;
 		if (!exact) approx++;
-		const uSq = lenSq(u), vSq = lenSq(v);
+		const uSq = lenSq(u),
+			vSq = lenSq(v);
 		const rc2 = maxSurd(reqC2(wtU, uSq), reqC2(wtV, vSq));
-		const row: Row = { id: t.id, k: t.k, family: t.family, reqC2: rc2, reqC: Math.sqrt(surdF(rc2)), wtU, wtV, ratioU: wtU / Math.sqrt(surdF(uSq)), ratioV: wtV / Math.sqrt(surdF(vSq)), exact };
+		const row: Row = {
+			id: t.id,
+			k: t.k,
+			family: t.family,
+			reqC2: rc2,
+			reqC: Math.sqrt(surdF(rc2)),
+			wtU,
+			wtV,
+			ratioU: wtU / Math.sqrt(surdF(uSq)),
+			ratioV: wtV / Math.sqrt(surdF(vSq)),
+			exact,
+		};
 		rows.push(row);
 		if (exact && (!kMax[t.k] || row.reqC2.cmp(kMax[t.k]!.reqC2) > 0)) kMax[t.k] = row;
 		processed++;
@@ -248,16 +331,25 @@ for (let k = 1; k <= 9; k++) {
 }
 if (overall) {
 	log("");
-	log(`OVERALL (k≤8, EXACT wt, octagon-blind ζ₁₂): max ratio ${overall.reqC.toFixed(4)}  ← ${overall.id} (k=${overall.k}, ${overall.family})`);
-	log(`  exact c² = (${overall.reqC2.P}+${overall.reqC2.Q}√2+${overall.reqC2.R}√3+${overall.reqC2.S}√6)/${overall.reqC2.D}  ${overall.reqC2.cmp(Surd.rational(2n, 1n)) <= 0 ? "≤ √2 ✓" : "⚑ EXCEEDS √2"}`);
-	log("  ⚑ ζ₁₂ LOWER BOUND: an octagon tiling (absent from Čtrnáct's alphabet) could exceed it — same caveat as eff-pruning-galebach.");
+	log(
+		`OVERALL (k≤8, EXACT wt, octagon-blind ζ₁₂): max ratio ${overall.reqC.toFixed(4)}  ← ${overall.id} (k=${overall.k}, ${overall.family})`,
+	);
+	log(
+		`  exact c² = (${overall.reqC2.P}+${overall.reqC2.Q}√2+${overall.reqC2.R}√3+${overall.reqC2.S}√6)/${overall.reqC2.D}  ${overall.reqC2.cmp(Surd.rational(2n, 1n)) <= 0 ? "≤ √2 ✓" : "⚑ EXCEEDS √2"}`,
+	);
+	log(
+		"  ⚑ ζ₁₂ LOWER BOUND: an octagon tiling (absent from Čtrnáct's alphabet) could exceed it — same caveat as eff-pruning-galebach.",
+	);
 }
 // The `approx` rows use a greedy UPPER BOUND on wt (long striped k=7/8 periods, wt > 2H=16). Verify each
 // stays below the exact sup — if so, they cannot be the true max and the sup above is complete.
 if (overall) {
 	const supC2 = overall.reqC2;
 	const overCap = rows.filter((r) => !r.exact && r.reqC2.cmp(supC2) > 0);
-	if (approx > 0) log(`\n${approx} tilings used a greedy wt UPPER BOUND (wt > 16, long periods); all ${approx} have ratio (upper bound) ≤ sup: ${overCap.length === 0 ? "✓ sup complete" : `⚑ ${overCap.length} EXCEED — re-check with a deeper MIM`}`);
+	if (approx > 0)
+		log(
+			`\n${approx} tilings used a greedy wt UPPER BOUND (wt > 16, long periods); all ${approx} have ratio (upper bound) ≤ sup: ${overCap.length === 0 ? "✓ sup complete" : `⚑ ${overCap.length} EXCEED — re-check with a deeper MIM`}`,
+		);
 }
 log("");
 log(`processed ${processed} tilings (${approx} via greedy upper bound), ${noGeom} without geometry, ${failed} failed.`);
@@ -265,7 +357,20 @@ log(`processed ${processed} tilings (${approx} via greedy upper bound), ${noGeom
 // per-tiling CSV (bounds data). exact=0 ⇒ wt is a greedy upper bound (ratio is an upper bound too).
 const csv = ["id,k,family,wt_u,ratio_u,wt_v,ratio_v,required_c,required_c2,exact"];
 for (const r of [...rows].sort((a, b) => a.k - b.k || b.reqC2.cmp(a.reqC2)))
-	csv.push([r.id, r.k, r.family, r.wtU, r.ratioU.toFixed(6), r.wtV, r.ratioV.toFixed(6), r.reqC.toFixed(6), surdF(r.reqC2).toFixed(6), r.exact ? 1 : 0].join(","));
+	csv.push(
+		[
+			r.id,
+			r.k,
+			r.family,
+			r.wtU,
+			r.ratioU.toFixed(6),
+			r.wtV,
+			r.ratioV.toFixed(6),
+			r.reqC.toFixed(6),
+			surdF(r.reqC2).toFixed(6),
+			r.exact ? 1 : 0,
+		].join(","),
+	);
 const csvPath = path.join(LOG_DIR, `ctrnact-weights-${dateTag}.csv`);
 fs.writeFileSync(csvPath, csv.join("\n") + "\n");
 log(`per-tiling CSV → ${path.relative(process.cwd(), csvPath)} (${rows.length} rows)`);

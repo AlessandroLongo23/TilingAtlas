@@ -184,9 +184,7 @@ function useCardCap(rows: number) {
 			for (let sib = el.previousElementSibling; sib; sib = sib.previousElementSibling) {
 				const s = getComputedStyle(sib);
 				above +=
-					sib.getBoundingClientRect().height +
-					(parseFloat(s.marginTop) || 0) +
-					(parseFloat(s.marginBottom) || 0);
+					sib.getBoundingClientRect().height + (parseFloat(s.marginTop) || 0) + (parseFloat(s.marginBottom) || 0);
 			}
 			const available = usable - above - framePad;
 			setCap(Math.max(48, Math.floor(available / rows) - CARD_CAPTION_PX));
@@ -246,13 +244,16 @@ const VC_SPLIT_COLS: Record<"yes" | "no", number> = { yes: 5, no: 2 };
  */
 function VcSplit({ yes, no }: { yes?: string; no?: string }) {
 	const lists = {
-		yes: (yes ?? "").split(",").map((w) => w.trim()).filter(Boolean),
-		no: (no ?? "").split(",").map((w) => w.trim()).filter(Boolean),
+		yes: (yes ?? "")
+			.split(",")
+			.map((w) => w.trim())
+			.filter(Boolean),
+		no: (no ?? "")
+			.split(",")
+			.map((w) => w.trim())
+			.filter(Boolean),
 	};
-	const rows = Math.max(
-		1,
-		...(["yes", "no"] as const).map((k) => Math.ceil(lists[k].length / VC_SPLIT_COLS[k])),
-	);
+	const rows = Math.max(1, ...(["yes", "no"] as const).map((k) => Math.ceil(lists[k].length / VC_SPLIT_COLS[k])));
 	const { ref, perCard } = useCardCap(rows);
 
 	// A card's side is the smaller of what the height leaves and what the width leaves — and unlike
@@ -783,7 +784,7 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 					className={cn(
 						"grid grid-cols-1 gap-8 [&_figure]:mx-auto",
 						String(top) === "yes" ? "items-start" : "items-center",
-						wide ? "md:grid-cols-[1fr_auto]" : "[&_figure]:max-w-[38vh] md:grid-cols-2",
+						wide ? "md:grid-cols-[1fr_auto]" : "md:grid-cols-2 [&_figure]:max-w-[38vh]",
 					)}
 				>
 					{children}
@@ -837,10 +838,8 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 			<main className="flex h-screen w-full items-center justify-center bg-surface-raised p-8">
 				<p className="max-w-md text-center text-sm text-fg-muted">
 					No talk content found. Author the deck at{" "}
-					<code className="rounded bg-surface-overlay px-1.5 py-0.5 text-accent">
-						public/defense/talk.md
-					</code>
-					, separating slides with a <code className="text-accent">---</code> fence.
+					<code className="rounded bg-surface-overlay px-1.5 py-0.5 text-accent">public/defense/talk.md</code>,
+					separating slides with a <code className="text-accent">---</code> fence.
 				</p>
 			</main>
 		);
@@ -872,9 +871,7 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 			>
 				{overview ? (
 					<div className="h-full w-full overflow-y-auto p-6">
-						<h2 className="mb-4 text-sm font-semibold tracking-wide text-fg-muted uppercase">
-							Overview
-						</h2>
+						<h2 className="mb-4 text-sm font-semibold tracking-wide text-fg-muted uppercase">Overview</h2>
 						<div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
 							{slides.map((s) => (
 								<button
@@ -948,7 +945,7 @@ export function DefenseClient({ slides, cells, sources }: DefenseClientProps) {
 							<span className="tabular-nums">
 								{current.number} / {slides.length}
 							</span>
-							<span className="hidden sm:inline max-md:hidden">
+							<span className="hidden max-md:hidden sm:inline">
 								&larr; &rarr; move &middot; Esc overview &middot; o/s/d/p overlays
 							</span>
 							{/* The keyboard's moves, on screen for a phone: previous, the overview, next. */}

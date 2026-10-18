@@ -6,17 +6,25 @@ import { type Complex, mirrorParams, tileHue } from "@/lib/render/hyperbolic";
 
 /** Hyperbolic centroid of Poincaré points via the Klein average (affine in Klein), mapped back to Poincaré. */
 function hypCentroid(pts: Complex[]): Complex {
-	let kx = 0, ky = 0;
+	let kx = 0,
+		ky = 0;
 	for (const z of pts) {
 		const s = 2 / (1 + z.x * z.x + z.y * z.y);
-		kx += s * z.x; ky += s * z.y;
+		kx += s * z.x;
+		ky += s * z.y;
 	}
-	kx /= pts.length; ky /= pts.length;
+	kx /= pts.length;
+	ky /= pts.length;
 	const d = 1 + Math.sqrt(Math.max(1 - (kx * kx + ky * ky), 0));
 	return { x: kx / d, y: ky / d };
 }
 
-export interface HypTile { verts: Complex[]; centroid: Complex; hue: number; sides: number }
+export interface HypTile {
+	verts: Complex[];
+	centroid: Complex;
+	hue: number;
+	sides: number;
+}
 
 /** Reflect a disk point across the geodesic through disk points `a`,`b` (circle ⟂ the unit circle, or a
  *  diameter when a,b,O are collinear). Used to grow the tiling patch tile-by-tile across shared edges. */
@@ -28,13 +36,15 @@ function reflectAcrossGeodesic(z: Complex, a: Complex, b: Complex): Complex {
 	if (Math.abs(det) < 1e-12) {
 		// Diameter through the origin at angle atan2: reflect across that line.
 		const ang = Math.atan2(b.y - a.y, b.x - a.x);
-		const c = Math.cos(2 * ang), s = Math.sin(2 * ang);
+		const c = Math.cos(2 * ang),
+			s = Math.sin(2 * ang);
 		return { x: c * z.x + s * z.y, y: s * z.x - c * z.y };
 	}
 	const cx = (ka * b.y - kb * a.y) / det;
 	const cy = (kb * a.x - ka * b.x) / det;
 	const r2 = cx * cx + cy * cy - 1;
-	const dx = z.x - cx, dy = z.y - cy;
+	const dx = z.x - cx,
+		dy = z.y - cy;
 	const dd = dx * dx + dy * dy || 1e-18;
 	const k = r2 / dd;
 	return { x: cx + k * dx, y: cy + k * dy };
@@ -66,7 +76,8 @@ export function buildRegularPatch(p: number, q: number, layers: number): HypTile
 		for (const tile of frontier) {
 			const n = tile.verts.length;
 			for (let i = 0; i < n; i++) {
-				const a = tile.verts[i], b = tile.verts[(i + 1) % n];
+				const a = tile.verts[i],
+					b = tile.verts[(i + 1) % n];
 				const reflected = tile.verts.map((v) => reflectAcrossGeodesic(v, a, b));
 				const t = mk(reflected);
 				if (Math.hypot(t.centroid.x, t.centroid.y) >= 0.9999) continue; // ran off the disk

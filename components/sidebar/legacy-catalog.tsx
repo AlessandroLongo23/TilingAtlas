@@ -27,10 +27,7 @@ export function LegacyCatalog() {
 	const containerRef = useRef<HTMLDivElement | null>(null);
 	const [currentVisible, setCurrentVisible] = useState("");
 
-	const { expanded, toggle, toggleAll, allExpanded } = useExpandableGroups(
-		tilingRules,
-		(g) => g.title,
-	);
+	const { expanded, toggle, toggleAll, allExpanded } = useExpandableGroups(tilingRules, (g) => g.title);
 
 	useEffect(() => {
 		const root = containerRef.current;
@@ -64,15 +61,13 @@ export function LegacyCatalog() {
 	};
 
 	const scrollToGroup = (title: string) => {
-		const el = containerRef.current?.querySelector<HTMLElement>(
-			`.tiling-group[data-group-title="${title}"]`,
-		);
+		const el = containerRef.current?.querySelector<HTMLElement>(`.tiling-group[data-group-title="${title}"]`);
 		el?.scrollIntoView({ behavior: "smooth", block: "start" });
 	};
 
 	return (
-		<div className="flex flex-col gap-2 h-full">
-			<div className="sticky top-0 z-10 p-3 bg-surface-overlay">
+		<div className="flex h-full flex-col gap-2">
+			<div className="sticky top-0 z-10 bg-surface-overlay p-3">
 				<div className="flex items-center justify-between">
 					<SectionHeading count={storeLoading ? null : totalRules} loading={storeLoading}>
 						Tiling Patterns
@@ -97,35 +92,27 @@ export function LegacyCatalog() {
 					</div>
 				</div>
 				{currentVisible ? (
-					<div className="mt-2 flex items-center justify-between text-xs text-fg px-2 py-1 rounded-control border border-line bg-surface-overlay/30">
+					<div className="mt-2 flex items-center justify-between rounded-control border border-line bg-surface-overlay/30 px-2 py-1 text-xs text-fg">
 						<button
-							className="truncate flex-grow text-left hover:text-fg cursor-pointer"
+							className="flex-grow cursor-pointer truncate text-left hover:text-fg"
 							onClick={() => scrollToGroup(currentVisible)}
 						>
 							{currentVisible}
 						</button>
 						<button
-							className="ml-1.5 p-0.5 rounded-sm hover:bg-surface-overlay/70 text-fg-secondary hover:text-fg cursor-pointer"
+							className="ml-1.5 cursor-pointer rounded-sm p-0.5 text-fg-secondary hover:bg-surface-overlay/70 hover:text-fg"
 							onClick={() => toggle(currentVisible)}
 							aria-label={expanded[currentVisible] ? "Collapse group" : "Expand group"}
 						>
-							{expanded[currentVisible] ? (
-								<ChevronsDownUp size={12} />
-							) : (
-								<ChevronsUpDown size={12} />
-							)}
+							{expanded[currentVisible] ? <ChevronsDownUp size={12} /> : <ChevronsUpDown size={12} />}
 						</button>
 					</div>
 				) : null}
 			</div>
 
-			<div ref={containerRef} className="flex-1 overflow-y-auto p-3 flex flex-col gap-2">
+			<div ref={containerRef} className="flex flex-1 flex-col gap-2 overflow-y-auto p-3">
 				{tilingRules.map((group) => (
-					<div
-						key={group.title}
-						className="tiling-group"
-						data-group-title={group.title}
-					>
+					<div key={group.title} className="tiling-group" data-group-title={group.title}>
 						<SidebarSection
 							flush
 							padded={false}

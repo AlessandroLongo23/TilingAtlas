@@ -15,7 +15,8 @@ interface Props {
 }
 
 export function BallThumb({ thumb, size = 54 }: Props) {
-	const at = (p: [number, number]) => `${(size / 2 + p[0] * size * 0.5).toFixed(2)},${(size / 2 - p[1] * size * 0.5).toFixed(2)}`;
+	const at = (p: [number, number]) =>
+		`${(size / 2 + p[0] * size * 0.5).toFixed(2)},${(size / 2 - p[1] * size * 0.5).toFixed(2)}`;
 	return (
 		<div className="shrink-0" style={{ width: size, height: size }}>
 			<svg viewBox={`0 0 ${size} ${size}`} width={size} height={size} aria-hidden>

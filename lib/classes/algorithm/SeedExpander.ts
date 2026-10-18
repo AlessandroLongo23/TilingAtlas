@@ -11,9 +11,9 @@
  * test (`isEquivalent`).
  */
 
-import type { Polygon } from '../polygons/Polygon';
-import { Cyclotomic } from '../Cyclotomic';
-import { deduplicatePolygons } from '@/utils';
+import type { Polygon } from "../polygons/Polygon";
+import { Cyclotomic } from "../Cyclotomic";
+import { deduplicatePolygons } from "@/utils";
 
 const POLYGON_BUCKET_GRID_SIDE_LENGTH = 1;
 const POLYGON_SEARCH_RADIUS = 3;
@@ -25,10 +25,10 @@ const canonicalVCName = (ns: string[]): string => {
 	const rotMin = (a: string[]): string => {
 		let best: string | null = null;
 		for (let i = 0; i < a.length; i++) {
-			const r = a.slice(i).concat(a.slice(0, i)).join(',');
+			const r = a.slice(i).concat(a.slice(0, i)).join(",");
 			if (best === null || r < best) best = r;
 		}
-		return best ?? '';
+		return best ?? "";
 	};
 	const f = rotMin(ns);
 	const r = rotMin(ns.slice().reverse());
@@ -79,7 +79,18 @@ export class SeedExpander {
 	 *  here bounds a pathological hard seed without losing the short translation vectors. */
 	maxExpandNodes = 0;
 	lastExpandCapped = false;
-	static _fviTimers: { cand: number; build: number; orbit: number; footprint: number; align: number; collision: number; xform: number; collide: number; collCand: number; intersectCalls: number } | null = null;
+	static _fviTimers: {
+		cand: number;
+		build: number;
+		orbit: number;
+		footprint: number;
+		align: number;
+		collision: number;
+		xform: number;
+		collide: number;
+		collCand: number;
+		intersectCalls: number;
+	} | null = null;
 	debugHbFrames = 2000; // print a tape line every N popped frames
 	debugMaxMs = 20000; // self-abort the DFS after this many ms (0 = no cap)
 	/** Injected symmetry-invariant canonical patch key (TranslationalCellExtractor.canonicalPatchKey)
@@ -112,13 +123,8 @@ export class SeedExpander {
 		this.threshold = 6 * k;
 	}
 
-	expand = (
-		seed: SeedConfigurationLike,
-		onLeaf?: (patch: Polygon[]) => void
-	): Polygon[][] | number => {
-		const coreVertices: Cyclotomic[] = seed.vertexConfigurations.map((vc) =>
-			vc.computeSharedVertexExact()
-		);
+	expand = (seed: SeedConfigurationLike, onLeaf?: (patch: Polygon[]) => void): Polygon[][] | number => {
+		const coreVertices: Cyclotomic[] = seed.vertexConfigurations.map((vc) => vc.computeSharedVertexExact());
 		const originalPolygons: Polygon[] = seed.polygons;
 
 		const collapsedVertices: CollapsedVertex[] = coreVertices.map((v, idx) => ({
@@ -138,7 +144,7 @@ export class SeedExpander {
 		// k-uniform tiling for this seed has EVERY vertex with one of these VCs, so the expansion may
 		// prune any branch that completes a vertex with a VC outside this set (plan §5 Step 3b — sound).
 		const allowedVCNames = new Set<string>(
-			coreVertices.map((cv, i) => this.computeVCNameAtVertex(cv, coreLocalData[i]!.polys))
+			coreVertices.map((cv, i) => this.computeVCNameAtVertex(cv, coreLocalData[i]!.polys)),
 		);
 
 		const seenKeys = new Set<string>();
@@ -156,7 +162,7 @@ export class SeedExpander {
 			expandedSeeds,
 			seenKeys,
 			onLeaf,
-			streamCount
+			streamCount,
 		);
 
 		if (onLeaf) return streamCount.value;
@@ -191,7 +197,12 @@ export class SeedExpander {
 	): {
 		frontier: FrontierVertex[];
 		target: FrontierVertex | null;
-		candidates: { transform: RigidIsometry; anchorIdx: number; transformedPatch: Polygon[]; collapsed: CollapsedVertex[] }[];
+		candidates: {
+			transform: RigidIsometry;
+			anchorIdx: number;
+			transformedPatch: Polygon[];
+			collapsed: CollapsedVertex[];
+		}[];
 		prunedByVC: number;
 	} => {
 		const originalPolygons = seed.polygons;
@@ -223,10 +234,18 @@ export class SeedExpander {
 		);
 
 		let prunedByVC = 0;
-		const candidates: { transform: RigidIsometry; anchorIdx: number; transformedPatch: Polygon[]; collapsed: CollapsedVertex[] }[] = [];
+		const candidates: {
+			transform: RigidIsometry;
+			anchorIdx: number;
+			transformedPatch: Polygon[];
+			collapsed: CollapsedVertex[];
+		}[] = [];
 		for (const c of raw) {
 			const merged = deduplicatePolygons([...patch, ...c.transformedPatch]);
-			if (this.hasDisallowedSurroundedVertex(merged, allowedVCNames)) { prunedByVC++; continue; }
+			if (this.hasDisallowedSurroundedVertex(merged, allowedVCNames)) {
+				prunedByVC++;
+				continue;
+			}
 			candidates.push({
 				...c,
 				collapsed: this.addCollapsedFromTransform(c.transform, coreVertices, collapsed),
@@ -238,7 +257,7 @@ export class SeedExpander {
 	/** The private isometry application, exposed for the stamp-mode diagnostics (they need to build a
 	 *  transform's image themselves to see what it hits). Read-only: nothing here feeds the search. */
 	applyIsometryPublic = (polys: Polygon[], T: RigidIsometry): Polygon[] =>
-		this.applyIsometryToPolygons(polys, T, 'full');
+		this.applyIsometryToPolygons(polys, T, "full");
 
 	/** Apply one candidate, exactly as the DFS does when it pushes the child frame. */
 	figureMerge = (
@@ -258,7 +277,7 @@ export class SeedExpander {
 	private expandedSeedKey = (polygons: Polygon[]): string => {
 		const entries = polygons.map((p) => p.exactKey());
 		entries.sort();
-		return entries.join('|');
+		return entries.join("|");
 	};
 
 	/** Full DFS-state key for intermediate-state memoization: the absolute patch (sorted exact
@@ -275,24 +294,33 @@ export class SeedExpander {
 		const pk = patch.map((p) => p.exactKey()).sort();
 		const ck = collapsed.map((c) => `${c.vertex.key()}:${c.orbitId}`).sort();
 		// two cyrb53 accumulators (distinct seeds) folded over both token lists → 106-bit key
-		let h1a = 0xdeadbeef, h2a = 0x41c6ce57; // fold A
-		let h1b = 0x9e3779b9, h2b = 0x85ebca6b; // fold B (different seeds)
+		let h1a = 0xdeadbeef,
+			h2a = 0x41c6ce57; // fold A
+		let h1b = 0x9e3779b9,
+			h2b = 0x85ebca6b; // fold B (different seeds)
 		const fold = (s: string) => {
 			for (let i = 0; i < s.length; i++) {
 				const ch = s.charCodeAt(i);
-				h1a = Math.imul(h1a ^ ch, 2654435761); h2a = Math.imul(h2a ^ ch, 1597334677);
-				h1b = Math.imul(h1b ^ ch, 2246822519); h2b = Math.imul(h2b ^ ch, 3266489917);
+				h1a = Math.imul(h1a ^ ch, 2654435761);
+				h2a = Math.imul(h2a ^ ch, 1597334677);
+				h1b = Math.imul(h1b ^ ch, 2246822519);
+				h2b = Math.imul(h2b ^ ch, 3266489917);
 			}
 			// token separator (so ["ab","c"] ≠ ["a","bc"])
-			h1a = Math.imul(h1a ^ 1, 2654435761); h2a = Math.imul(h2a ^ 1, 1597334677);
-			h1b = Math.imul(h1b ^ 1, 2246822519); h2b = Math.imul(h2b ^ 1, 3266489917);
+			h1a = Math.imul(h1a ^ 1, 2654435761);
+			h2a = Math.imul(h2a ^ 1, 1597334677);
+			h1b = Math.imul(h1b ^ 1, 2246822519);
+			h2b = Math.imul(h2b ^ 1, 3266489917);
 		};
 		for (const s of pk) fold(s);
-		fold(' '); // list separator
+		fold(" "); // list separator
 		for (const s of ck) fold(s);
-		h1a = Math.imul(h1a ^ (h1a >>> 16), 2246822507); h1a ^= Math.imul(h2a ^ (h2a >>> 13), 3266489909);
-		h2a = Math.imul(h2a ^ (h2a >>> 16), 2246822507); h2a ^= Math.imul(h1a ^ (h1a >>> 13), 3266489909);
-		h1b = Math.imul(h1b ^ (h1b >>> 16), 2246822507); h1b ^= Math.imul(h2b ^ (h2b >>> 13), 3266489909);
+		h1a = Math.imul(h1a ^ (h1a >>> 16), 2246822507);
+		h1a ^= Math.imul(h2a ^ (h2a >>> 13), 3266489909);
+		h2a = Math.imul(h2a ^ (h2a >>> 16), 2246822507);
+		h2a ^= Math.imul(h1a ^ (h1a >>> 13), 3266489909);
+		h1b = Math.imul(h1b ^ (h1b >>> 16), 2246822507);
+		h1b ^= Math.imul(h2b ^ (h2b >>> 13), 3266489909);
 		const a = 4294967296 * (2097151 & h2a) + (h1a >>> 0);
 		return `${a.toString(36)}:${(h1b >>> 0).toString(36)}`;
 	};
@@ -308,7 +336,7 @@ export class SeedExpander {
 		expandedSeeds: Polygon[][],
 		seenKeys: Set<string>,
 		onLeaf: ((patch: Polygon[]) => void) | undefined,
-		streamCount: { value: number }
+		streamCount: { value: number },
 	): void => {
 		type Frame = { patch: Polygon[]; collapsed: CollapsedVertex[] };
 		const stack: Frame[] = [{ patch: initialPatch, collapsed: initialCollapsed }];
@@ -335,16 +363,21 @@ export class SeedExpander {
 		let totalBranch = 0;
 		const distinctAbs = new Set<string>();
 		const distinctCanon = new Set<string>();
-		let curPhase = 'init';
+		let curPhase = "init";
 		let maxBits = 0;
 		let lastPatch: Polygon[] = initialPatch;
 		const bitLen = (n: bigint) => (n < 0n ? -n : n).toString(2).length;
 		const sampleBits = (patch: Polygon[]) => {
 			let b = 0;
-			for (const p of patch) for (const v of p.exactVertices ?? []) {
-				for (const c of v.num) { const l = bitLen(c); if (l > b) b = l; }
-				const d = bitLen(v.den); if (d > b) b = d;
-			}
+			for (const p of patch)
+				for (const v of p.exactVertices ?? []) {
+					for (const c of v.num) {
+						const l = bitLen(c);
+						if (l > b) b = l;
+					}
+					const d = bitLen(v.den);
+					if (d > b) b = d;
+				}
 			return b;
 		};
 		const startMs = this.debug ? Date.now() : 0;
@@ -356,18 +389,29 @@ export class SeedExpander {
 			maxBits = Math.max(maxBits, sampleBits(lastPatch));
 			process.stderr.write(
 				`[${tag}] frames=${framesPopped} pruned=${prunedDisallowed} leaves=${leavesEmitted} stack=${stack.length} ` +
-				`phase=${curPhase} branchMax=${maxBranch} avgBranch=${(totalBranch / Math.max(1, framesPopped)).toFixed(2)} ` +
-				`distinctAbs=${distinctAbs.size} distinctCanon=${distinctCanon.size} ` +
-				`lastPatchSize=${lastPatch.length} maxBits=${maxBits} ` +
-				`ms=${Date.now() - startMs} | hash=${t.hash} dist=${t.dist} frontier=${t.frontier} valid=${t.valid} merge=${t.merge}` +
-				(SeedExpander._fviTimers
-					? ` || fvi: cand=${SeedExpander._fviTimers.cand} build=${SeedExpander._fviTimers.build} orbit=${SeedExpander._fviTimers.orbit} footprint=${SeedExpander._fviTimers.footprint} align=${SeedExpander._fviTimers.align} collision=${SeedExpander._fviTimers.collision} [xform=${SeedExpander._fviTimers.xform} collide=${SeedExpander._fviTimers.collide} collCand=${SeedExpander._fviTimers.collCand} intersects=${SeedExpander._fviTimers.intersectCalls}]`
-					: '') +
-				`\n`
+					`phase=${curPhase} branchMax=${maxBranch} avgBranch=${(totalBranch / Math.max(1, framesPopped)).toFixed(2)} ` +
+					`distinctAbs=${distinctAbs.size} distinctCanon=${distinctCanon.size} ` +
+					`lastPatchSize=${lastPatch.length} maxBits=${maxBits} ` +
+					`ms=${Date.now() - startMs} | hash=${t.hash} dist=${t.dist} frontier=${t.frontier} valid=${t.valid} merge=${t.merge}` +
+					(SeedExpander._fviTimers
+						? ` || fvi: cand=${SeedExpander._fviTimers.cand} build=${SeedExpander._fviTimers.build} orbit=${SeedExpander._fviTimers.orbit} footprint=${SeedExpander._fviTimers.footprint} align=${SeedExpander._fviTimers.align} collision=${SeedExpander._fviTimers.collision} [xform=${SeedExpander._fviTimers.xform} collide=${SeedExpander._fviTimers.collide} collCand=${SeedExpander._fviTimers.collCand} intersects=${SeedExpander._fviTimers.intersectCalls}]`
+						: "") +
+					`\n`,
 			);
 		};
 		if (this.debug) {
-			SeedExpander._fviTimers = { cand: 0, build: 0, orbit: 0, footprint: 0, align: 0, collision: 0, xform: 0, collide: 0, collCand: 0, intersectCalls: 0 };
+			SeedExpander._fviTimers = {
+				cand: 0,
+				build: 0,
+				orbit: 0,
+				footprint: 0,
+				align: 0,
+				collision: 0,
+				xform: 0,
+				collide: 0,
+				collCand: 0,
+				intersectCalls: 0,
+			};
 		}
 
 		while (stack.length > 0) {
@@ -402,35 +446,39 @@ export class SeedExpander {
 			if (this.debug) {
 				framesPopped++;
 				lastPatch = currentPatch;
-				curPhase = 'frontier';
+				curPhase = "frontier";
 				distinctAbs.add(this.expandedSeedKey(currentPatch));
 				if (this.canonicalKeyFn) {
-					try { distinctCanon.add(this.canonicalKeyFn(currentPatch)); } catch { /* partial patch may not canonicalize */ }
+					try {
+						distinctCanon.add(this.canonicalKeyFn(currentPatch));
+					} catch {
+						/* partial patch may not canonicalize */
+					}
 				}
-				if (framesPopped % this.debugHbFrames === 0) emitTape('hb');
+				if (framesPopped % this.debugHbFrames === 0) emitTape("hb");
 			}
 
 			let _t0 = now();
 			const patchSpatialHash = this.buildSpatialHash(currentPatch);
-			if (this.debug) { t.hash += now() - _t0; _t0 = now(); }
+			if (this.debug) {
+				t.hash += now() - _t0;
+				_t0 = now();
+			}
 
 			const vertexDistances = this.computeDistancesToCore(currentPatch, coreVertices);
-			if (this.debug) { t.dist += now() - _t0; _t0 = now(); }
+			if (this.debug) {
+				t.dist += now() - _t0;
+				_t0 = now();
+			}
 			const frontier = this.computeFrontier(currentPatch, collapsedVertices, vertexDistances);
-			if (this.debug) { t.frontier += now() - _t0; }
-			const minDist =
-				frontier.length > 0 ? Math.min(...frontier.map((f) => f.distance)) : Infinity;
+			if (this.debug) {
+				t.frontier += now() - _t0;
+			}
+			const minDist = frontier.length > 0 ? Math.min(...frontier.map((f) => f.distance)) : Infinity;
 
 			if (frontier.length === 0 || minDist >= this.threshold) {
 				if (this.debug) leavesEmitted++;
-				this.emitLeafIfUnique(
-					currentPatch,
-					vertexDistances,
-					expandedSeeds,
-					seenKeys,
-					onLeaf,
-					streamCount
-				);
+				this.emitLeafIfUnique(currentPatch, vertexDistances, expandedSeeds, seenKeys, onLeaf, streamCount);
 				continue;
 			}
 
@@ -446,12 +494,14 @@ export class SeedExpander {
 				originalPolygons,
 				coreLocalData,
 				coreCentroids,
-				patchSpatialHash
+				patchSpatialHash,
 			);
-			if (this.debug) { t.valid += now() - _tv; }
+			if (this.debug) {
+				t.valid += now() - _tv;
+			}
 
 			if (this.debug) {
-				curPhase = 'branch';
+				curPhase = "branch";
 				if (validTransforms.length > maxBranch) maxBranch = validTransforms.length;
 				totalBranch += validTransforms.length;
 			}
@@ -462,18 +512,16 @@ export class SeedExpander {
 			for (let i = validTransforms.length - 1; i >= 0; i--) {
 				const { transform, transformedPatch } = validTransforms[i]!;
 				const mergedPatch = deduplicatePolygons([...currentPatch, ...transformedPatch]);
-				const newCollapsed = this.addCollapsedFromTransform(
-					transform,
-					coreVertices,
-					collapsedVertices
-				);
+				const newCollapsed = this.addCollapsedFromTransform(transform, coreVertices, collapsedVertices);
 				stack.push({ patch: mergedPatch, collapsed: newCollapsed });
 			}
-			if (this.debug) { t.merge += now() - _tm; }
+			if (this.debug) {
+				t.merge += now() - _tm;
+			}
 		}
 
 		if (this.debug) {
-			emitTape(aborted ? 'ABORTED' : 'done');
+			emitTape(aborted ? "ABORTED" : "done");
 		}
 	};
 
@@ -499,8 +547,10 @@ export class SeedExpander {
 				const u = p.cornerAngleUnits(i); // corner-aware (reflex-safe); = angleUnits(p.n) for regular
 				const k = vx.key();
 				const e = inc.get(k);
-				if (e) { e.units += u; e.polys.push(p); }
-				else inc.set(k, { units: u, polys: [p], v: vx });
+				if (e) {
+					e.units += u;
+					e.polys.push(p);
+				} else inc.set(k, { units: u, polys: [p], v: vx });
 			});
 		}
 		for (const { units, polys, v } of inc.values()) {
@@ -521,7 +571,7 @@ export class SeedExpander {
 		expandedSeeds: Polygon[][],
 		seenKeys: Set<string>,
 		onLeaf: ((patch: Polygon[]) => void) | undefined,
-		streamCount: { value: number }
+		streamCount: { value: number },
 	): void => {
 		const trimmed = this.trimToThreshold(currentPatch, vertexDistances);
 		const key = this.expandedSeedKey(trimmed);
@@ -536,10 +586,7 @@ export class SeedExpander {
 	};
 
 	/** Trim patch to polygons with a vertex within threshold graph-distance of a core vertex. */
-	private trimToThreshold = (
-		patch: Polygon[],
-		vertexDistances: Map<string, number>
-	): Polygon[] => {
+	private trimToThreshold = (patch: Polygon[], vertexDistances: Map<string, number>): Polygon[] => {
 		const withinThreshold = new Set<string>();
 		for (const [key, d] of vertexDistances) {
 			if (d <= this.threshold) withinThreshold.add(key);
@@ -550,7 +597,7 @@ export class SeedExpander {
 	private addCollapsedFromTransform = (
 		transform: RigidIsometry,
 		coreVertices: Cyclotomic[],
-		existing: CollapsedVertex[]
+		existing: CollapsedVertex[],
 	): CollapsedVertex[] => {
 		const result = [...existing];
 		for (let i = 0; i < coreVertices.length; i++) {
@@ -564,10 +611,7 @@ export class SeedExpander {
 	};
 
 	/** BFS from all core vertices over the exact vertex-adjacency graph. Keyed by exact key. */
-	private computeDistancesToCore = (
-		polygons: Polygon[],
-		coreVertices: Cyclotomic[]
-	): Map<string, number> => {
+	private computeDistancesToCore = (polygons: Polygon[], coreVertices: Cyclotomic[]): Map<string, number> => {
 		const adj = this.buildVertexAdjacency(polygons);
 		const distances = new Map<string, number>();
 		const queue: { v: Cyclotomic; d: number }[] = [];
@@ -626,7 +670,7 @@ export class SeedExpander {
 	private computeFrontier = (
 		polygons: Polygon[],
 		collapsedVertices: CollapsedVertex[],
-		vertexDistances: Map<string, number>
+		vertexDistances: Map<string, number>,
 	): FrontierVertex[] => {
 		const collapsedSet = new Set(collapsedVertices.map((c) => c.vertex.key()));
 		const frontierMap = new Map<string, FrontierVertex>();
@@ -639,7 +683,10 @@ export class SeedExpander {
 			for (let i = 0; i < verts.length; i++) {
 				const vk = verts[i].key();
 				let list = incidence.get(vk);
-				if (!list) { list = []; incidence.set(vk, list); }
+				if (!list) {
+					list = [];
+					incidence.set(vk, list);
+				}
 				list.push({ poly, idx: i });
 			}
 		}
@@ -660,7 +707,10 @@ export class SeedExpander {
 				const dirPrev = poly.edgeDirs![(idx - 1 + len) % len];
 				const dirNext = (poly.edgeDirs![idx] + N / 2) % N;
 
-				for (const [v, dir] of [[prev, dirPrev], [next, dirNext]] as [Cyclotomic, number][]) {
+				for (const [v, dir] of [
+					[prev, dirPrev],
+					[next, dirNext],
+				] as [Cyclotomic, number][]) {
 					const key = v.key();
 					if (collapsedSet.has(key)) continue;
 					const dist = vertexDistances.get(key);
@@ -688,7 +738,7 @@ export class SeedExpander {
 		originalPolygons: Polygon[],
 		coreLocalData: { edges: EdgeInfo[]; polys: Polygon[] }[],
 		coreCentroids: Cyclotomic[],
-		patchSpatialHash: Map<string, Polygon[]>
+		patchSpatialHash: Map<string, Polygon[]>,
 	): { transform: RigidIsometry; anchorIdx: number; transformedPatch: Polygon[] }[] => {
 		const targetVertex = targetFrontier.vertex;
 		const targetKey = targetVertex.key();
@@ -711,13 +761,9 @@ export class SeedExpander {
 		// placements that are genuinely distinct. That is what lost the snub — its 5-tile seed is
 		// mirror-symmetric, so a reflection and a rotation share a seed-footprint, the reflection was kept,
 		// and applied to the (chiral) 8-tile patch it collides while the rotation would not have.
-		const footprintCentroids =
-			this.stampMode === "patch" ? currentPatch.map((p) => p.exactCentroid!) : coreCentroids;
+		const footprintCentroids = this.stampMode === "patch" ? currentPatch.map((p) => p.exactCentroid!) : coreCentroids;
 		const validTransforms: { transform: RigidIsometry; anchorIdx: number; transformedPatch: Polygon[] }[] = [];
-		const existingBboxCache = new Map<
-			Polygon,
-			{ minX: number; maxX: number; minY: number; maxY: number }
-		>();
+		const existingBboxCache = new Map<Polygon, { minX: number; maxX: number; minY: number; maxY: number }>();
 
 		const dbg = SeedExpander._fviTimers;
 		const dnow = () => (dbg ? Date.now() : 0);
@@ -733,9 +779,15 @@ export class SeedExpander {
 				const coreNames = new Set<string>(corePolys.map((p) => p.getName()));
 				let coverable = true;
 				for (const nm of existingNamesAtTarget) {
-					if (!coreNames.has(nm)) { coverable = false; break; }
+					if (!coreNames.has(nm)) {
+						coverable = false;
+						break;
+					}
 				}
-				if (!coverable) { this.candidateProbe?.({ stage: "namePrefilter", anchorIdx: idx }); continue; }
+				if (!coverable) {
+					this.candidateProbe?.({ stage: "namePrefilter", anchorIdx: idx });
+					continue;
+				}
 			}
 
 			for (const boundaryEdge of boundaryEdgesAtTarget) {
@@ -748,9 +800,12 @@ export class SeedExpander {
 							seedEdge.direction,
 							targetVertex,
 							boundaryEdge.direction,
-							reflect
+							reflect,
 						);
-						if (dbg) { dbg.build += dnow() - _s; _s = dnow(); }
+						if (dbg) {
+							dbg.build += dnow() - _s;
+							_s = dnow();
+						}
 
 						// Orbit integrity: transformed cores must not conflict with existing orbits
 						let orbitMismatch = false;
@@ -763,26 +818,56 @@ export class SeedExpander {
 								break;
 							}
 						}
-						if (dbg) { dbg.orbit += dnow() - _s; _s = dnow(); }
+						if (dbg) {
+							dbg.orbit += dnow() - _s;
+							_s = dnow();
+						}
 						if (orbitMismatch) {
-							this.candidateProbe?.({ stage: "orbit", anchorIdx: idx, seedDir: seedEdge.direction, boundaryDir: boundaryEdge.direction, reflect, rotK: T.rotK });
+							this.candidateProbe?.({
+								stage: "orbit",
+								anchorIdx: idx,
+								seedDir: seedEdge.direction,
+								boundaryDir: boundaryEdge.direction,
+								reflect,
+								rotK: T.rotK,
+							});
 							continue;
 						}
 
 						const footprint = this.getIsometryFootprint(T, footprintCentroids);
-						if (dbg) { dbg.footprint += dnow() - _s; _s = dnow(); }
+						if (dbg) {
+							dbg.footprint += dnow() - _s;
+							_s = dnow();
+						}
 						if (seenFootprints.has(footprint)) {
-							this.candidateProbe?.({ stage: "footprintDup", anchorIdx: idx, seedDir: seedEdge.direction, boundaryDir: boundaryEdge.direction, reflect, rotK: T.rotK });
+							this.candidateProbe?.({
+								stage: "footprintDup",
+								anchorIdx: idx,
+								seedDir: seedEdge.direction,
+								boundaryDir: boundaryEdge.direction,
+								reflect,
+								rotK: T.rotK,
+							});
 							continue;
 						}
 						seenFootprints.add(footprint);
 
 						// Alignment is a pure exact-key test — transform exact-only (no float trig).
-						const transformedCorePolys = this.applyIsometryToPolygons(corePolys, T, 'exact');
+						const transformedCorePolys = this.applyIsometryToPolygons(corePolys, T, "exact");
 						const aligned = this.passesAlignmentCheck(transformedCorePolys, existingPolysAtTarget);
-						if (dbg) { dbg.align += dnow() - _s; _s = dnow(); }
+						if (dbg) {
+							dbg.align += dnow() - _s;
+							_s = dnow();
+						}
 						if (!aligned) {
-							this.candidateProbe?.({ stage: "align", anchorIdx: idx, seedDir: seedEdge.direction, boundaryDir: boundaryEdge.direction, reflect, rotK: T.rotK });
+							this.candidateProbe?.({
+								stage: "align",
+								anchorIdx: idx,
+								seedDir: seedEdge.direction,
+								boundaryDir: boundaryEdge.direction,
+								reflect,
+								rotK: T.rotK,
+							});
 							continue;
 						}
 
@@ -798,11 +883,33 @@ export class SeedExpander {
 						// pruning; and O(patch) per candidate, not O(seed), which is the open cost
 						// question. See scripts/diag-stamp-mode.ts.
 						const stampSource = this.stampMode === "patch" ? currentPatch : originalPolygons;
-						const transformedFullPatch = this.applyIsometryToPolygons(stampSource, T, 'full');
-						if (dbg) { const e = dnow() - _s; dbg.xform += e; dbg.collision += e; dbg.collCand++; _s = dnow(); }
-						const collided = this.hasFatalCollision(transformedFullPatch, patchSpatialHash, existingBboxCache, patchKeySet);
-						if (dbg) { const e = dnow() - _s; dbg.collide += e; dbg.collision += e; }
-						this.candidateProbe?.({ stage: collided ? "collision" : "accepted", anchorIdx: idx, seedDir: seedEdge.direction, boundaryDir: boundaryEdge.direction, reflect, rotK: T.rotK });
+						const transformedFullPatch = this.applyIsometryToPolygons(stampSource, T, "full");
+						if (dbg) {
+							const e = dnow() - _s;
+							dbg.xform += e;
+							dbg.collision += e;
+							dbg.collCand++;
+							_s = dnow();
+						}
+						const collided = this.hasFatalCollision(
+							transformedFullPatch,
+							patchSpatialHash,
+							existingBboxCache,
+							patchKeySet,
+						);
+						if (dbg) {
+							const e = dnow() - _s;
+							dbg.collide += e;
+							dbg.collision += e;
+						}
+						this.candidateProbe?.({
+							stage: collided ? "collision" : "accepted",
+							anchorIdx: idx,
+							seedDir: seedEdge.direction,
+							boundaryDir: boundaryEdge.direction,
+							reflect,
+							rotK: T.rotK,
+						});
 						if (!collided) {
 							validTransforms.push({ transform: T, anchorIdx: idx, transformedPatch: transformedFullPatch });
 						}
@@ -870,7 +977,7 @@ export class SeedExpander {
 		seedEdgeDir: number,
 		openVertex: Cyclotomic,
 		patchEdgeDir: number,
-		reflect: boolean
+		reflect: boolean,
 	): RigidIsometry => {
 		const N = coreCenter.ring.N;
 		let rotK: number;
@@ -881,7 +988,7 @@ export class SeedExpander {
 		}
 		rotK = ((rotK % N) + N) % N;
 		// Reflection axis line at angle (seedEdgeDir + N/4) steps ⇒ z ↦ ζ^{2·(seedEdgeDir)+N/2}·conj(z)
-		const axisK = ((2 * seedEdgeDir + N / 2) % N + N) % N;
+		const axisK = (((2 * seedEdgeDir + N / 2) % N) + N) % N;
 		return {
 			origin: coreCenter,
 			rotK,
@@ -894,11 +1001,15 @@ export class SeedExpander {
 	/** Fused single-pass rigid transform (mode 'full' = float-bearing for collision/patch; mode
 	 *  'exact' = exact-only for the alignment test). Replaces the old clone+mirror+rotate+translate
 	 *  chain that rebuilt the float cache up to 4× per polygon. */
-	private applyIsometryToPolygon = (p: Polygon, T: RigidIsometry, mode: 'exact' | 'full' = 'full'): Polygon => {
+	private applyIsometryToPolygon = (p: Polygon, T: RigidIsometry, mode: "exact" | "full" = "full"): Polygon => {
 		return p.transformedRigid(T.origin, T.reflect, T.axisK, T.rotK, T.translation, mode);
 	};
 
-	private applyIsometryToPolygons = (polygons: Polygon[], T: RigidIsometry, mode: 'exact' | 'full' = 'full'): Polygon[] => {
+	private applyIsometryToPolygons = (
+		polygons: Polygon[],
+		T: RigidIsometry,
+		mode: "exact" | "full" = "full",
+	): Polygon[] => {
 		return polygons.map((p) => this.applyIsometryToPolygon(p, T, mode));
 	};
 
@@ -910,7 +1021,10 @@ export class SeedExpander {
 	};
 
 	private getPolygonBbox = (p: Polygon): { minX: number; maxX: number; minY: number; maxY: number } => {
-		let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+		let minX = Infinity,
+			maxX = -Infinity,
+			minY = Infinity,
+			maxY = -Infinity;
 		for (const v of p.vertices) {
 			minX = Math.min(minX, v.x);
 			maxX = Math.max(maxX, v.x);
@@ -922,7 +1036,7 @@ export class SeedExpander {
 
 	private bboxesOverlap = (
 		a: { minX: number; maxX: number; minY: number; maxY: number },
-		b: { minX: number; maxX: number; minY: number; maxY: number }
+		b: { minX: number; maxX: number; minY: number; maxY: number },
 	): boolean => {
 		// generous margin so the broadphase never false-negatives a true coincidence
 		const m = 1e-6;
@@ -933,7 +1047,7 @@ export class SeedExpander {
 		transformedPolygons: Polygon[],
 		spatialHash: Map<string, Polygon[]>,
 		existingBboxCache?: Map<Polygon, { minX: number; maxX: number; minY: number; maxY: number }>,
-		patchKeySet?: Set<string>
+		patchKeySet?: Set<string>,
 	): boolean => {
 		const bboxCache = existingBboxCache ?? new Map();
 		for (const tp of transformedPolygons) {
@@ -954,10 +1068,7 @@ export class SeedExpander {
 		return false;
 	};
 
-	private passesAlignmentCheck = (
-		transformed: Polygon[],
-		existingPolysAtOpen: Polygon[]
-	): boolean => {
+	private passesAlignmentCheck = (transformed: Polygon[], existingPolysAtOpen: Polygon[]): boolean => {
 		for (const existing of existingPolysAtOpen) {
 			if (!transformed.some((tp) => tp.isEquivalent(existing))) return false;
 		}
@@ -967,7 +1078,7 @@ export class SeedExpander {
 	private getIsometryFootprint = (T: RigidIsometry, centroids: Cyclotomic[]): string => {
 		const coords = centroids.map((c) => this.applyIsometryToPoint(c, T).key());
 		coords.sort();
-		return coords.join('|');
+		return coords.join("|");
 	};
 }
 

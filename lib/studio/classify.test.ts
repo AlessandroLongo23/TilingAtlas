@@ -104,10 +104,8 @@ const ominoes = (pieces: readonly Cell[][], turnDeg = 0): StudioPatch => {
 	const undrawn: string[] = [];
 	for (const [k, pi] of owner) {
 		const [x, y] = k.split(",").map(Number);
-		if (owner.get(`${x + 1},${y}`) === pi)
-			undrawn.push(canonicalEdge(at(x + 1, y), at(x + 1, y + 1), 0, 0).key);
-		if (owner.get(`${x},${y + 1}`) === pi)
-			undrawn.push(canonicalEdge(at(x, y + 1), at(x + 1, y + 1), 0, 0).key);
+		if (owner.get(`${x + 1},${y}`) === pi) undrawn.push(canonicalEdge(at(x + 1, y), at(x + 1, y + 1), 0, 0).key);
+		if (owner.get(`${x},${y + 1}`) === pi) undrawn.push(canonicalEdge(at(x, y + 1), at(x + 1, y + 1), 0, 0).key);
 	}
 	const span = Math.max(...raw.flat().map(Math.abs)) + 2;
 	const a = (turnDeg * Math.PI) / 180;
@@ -185,12 +183,7 @@ describe("classify: the shape scope", () => {
 	});
 
 	it("separates a square from an equilateral triangle", () => {
-		const p = patchOf(
-			[...rect(0, 0, 1, 1), [3, 0], [4, 0], [3.5, Math.sqrt(3) / 2]],
-			ringsOf(4, 3),
-			[10, 0],
-			[0, 10],
-		);
+		const p = patchOf([...rect(0, 0, 1, 1), [3, 0], [4, 0], [3.5, Math.sqrt(3) / 2]], ringsOf(4, 3), [10, 0], [0, 10]);
 		const k = classify(p);
 		expect(k.shape[0]).not.toBe(k.shape[1]);
 		expect(k.orientation[0]).not.toBe(k.orientation[1]);
@@ -248,12 +241,7 @@ describe("classify: the cases the geometry makes awkward", () => {
 	it("reads through a collinear midpoint on a ring", () => {
 		// Two unit squares, the second carrying an extra vertex at the middle of its bottom edge. A
 		// subdivision point is not a corner: left in the word, the two would read as different shapes.
-		const p = patchOf(
-			[...rect(0, 0, 1, 1), [3, 0], [3.5, 0], [4, 0], [4, 1], [3, 1]],
-			ringsOf(4, 5),
-			[10, 0],
-			[0, 10],
-		);
+		const p = patchOf([...rect(0, 0, 1, 1), [3, 0], [3.5, 0], [4, 0], [4, 1], [3, 1]], ringsOf(4, 5), [10, 0], [0, 10]);
 		const k = classify(p);
 		expect(k.shape[0]).toBe(k.shape[1]);
 		expect(k.orientation[0]).toBe(k.orientation[1]);
@@ -350,9 +338,10 @@ describe("classify: the reason this module exists", () => {
 		// only 12 rotations in 30° steps, so it calls these two different shapes; the word does not care
 		// what angle the tile sits at, because neither a length nor a turn moves under a rotation.
 		const a = (17 * Math.PI) / 180;
-		const spun = rect(0, 0, 1, 1).map(
-			([x, y]): [number, number] => [5 + x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y * Math.cos(a)],
-		);
+		const spun = rect(0, 0, 1, 1).map(([x, y]): [number, number] => [
+			5 + x * Math.cos(a) - y * Math.sin(a),
+			x * Math.sin(a) + y * Math.cos(a),
+		]);
 		const k = classify(patchOf([...rect(0, 0, 1, 1), ...spun], ringsOf(4, 4), [20, 0], [0, 20]));
 		expect(k.shape[0]).toBe(k.shape[1]);
 		expect(k.orientation[0]).not.toBe(k.orientation[1]);
@@ -366,9 +355,7 @@ describe("classify: the reason this module exists", () => {
 			[0, 1],
 		];
 		expect(classify(ominoes([piece], 17)).shape[0]).toBe(classify(ominoes([piece])).shape[0]);
-		expect(classify(ominoes([piece], 17)).orientation[0]).not.toBe(
-			classify(ominoes([piece])).orientation[0],
-		);
+		expect(classify(ominoes([piece], 17)).orientation[0]).not.toBe(classify(ominoes([piece])).orientation[0]);
 	});
 });
 
@@ -380,9 +367,7 @@ describe("keyFor", () => {
 		// The TILE key is the component's representative RING, not its index. Component ids are numbered
 		// in face order, so one cut anywhere renumbers them and a colour keyed on an index would jump to
 		// a different tile. What the key has to guarantee is only that it separates components.
-		expect(new Set(p.rings.map((_, f) => keyFor(k, p, f, "tile"))).size).toBe(
-			new Set(p.polyComp).size,
-		);
+		expect(new Set(p.rings.map((_, f) => keyFor(k, p, f, "tile"))).size).toBe(new Set(p.polyComp).size);
 		expect(keyFor(k, p, 0, "shape")).toBe(keyFor(k, p, 3, "shape"));
 		expect(keyFor(k, p, 0, "orientation")).toBe(keyFor(k, p, 3, "orientation"));
 		expect(keyFor(k, p, 0, "tile")).not.toBe(keyFor(k, p, 3, "tile"));

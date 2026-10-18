@@ -33,17 +33,14 @@ export function PentagonEdgesControls() {
 			useConfiguration.getState().set({ pentParams: { ...useConfiguration.getState().pentParams, [key]: value } }),
 		[],
 	);
-	const setScaffold = useCallback(
-		(v: boolean) => useConfiguration.getState().set({ freedrawScaffold: v }),
-		[],
-	);
+	const setScaffold = useCallback((v: boolean) => useConfiguration.getState().set({ freedrawScaffold: v }), []);
 
 	const solved = solveEdgeBoard(params);
 	const angles = solved.ok ? solved.board.angles : null;
 
 	// On a phone this card is one of the panels in /play's bottom tray, so it gives up its corner.
 	return (
-		<div className="absolute bottom-3 left-3 z-20 flex flex-col gap-1 ta-float p-3 text-xs max-md:static max-md:shrink-0 max-md:gap-0 max-md:text-[13px]">
+		<div className="ta-float absolute bottom-3 left-3 z-20 flex flex-col gap-1 p-3 text-xs max-md:static max-md:shrink-0 max-md:gap-0 max-md:text-[13px]">
 			{SLIDERS.map((s) => (
 				<label key={s.key} className="flex items-center gap-2 max-md:gap-3">
 					<span className="w-14 text-fg-secondary">{s.label}</span>

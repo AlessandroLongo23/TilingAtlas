@@ -56,9 +56,7 @@ export async function POST(request: Request) {
 		const useStream = body?.stream === true;
 
 		if (!paramsFolder) {
-			return badRequest(
-				"paramsFolder is required and must contain only letters, digits, underscores, or hyphens",
-			);
+			return badRequest("paramsFolder is required and must contain only letters, digits, underscores, or hyphens");
 		}
 
 		const supabase = createServiceRoleClient();
@@ -112,7 +110,10 @@ export async function POST(request: Request) {
 				cells.push({
 					n: item.n ?? "",
 					p: roundNumbersInJson(encodedCell) as Record<string, unknown>[],
-					b: [[v1.x, v1.y], [v2.x, v2.y]],
+					b: [
+						[v1.x, v1.y],
+						[v2.x, v2.y],
+					],
 					o: [result.origin.x, result.origin.y],
 				});
 			}
@@ -124,11 +125,13 @@ export async function POST(request: Request) {
 				const batchIndex = Math.floor(i / BATCH_SIZE);
 				const batchData = cells.slice(i, i + BATCH_SIZE);
 				const compressed = zlib.gzipSync(JSON.stringify(batchData), { level: 9 });
-				await supabase.storage.from(PIPELINE_BUCKET).upload(
-					`${folderPath}/translationalCells_${String(batchIndex).padStart(4, "0")}.json.gz`,
-					new Blob([compressed]),
-					{ contentType: "application/gzip", upsert: true },
-				);
+				await supabase.storage
+					.from(PIPELINE_BUCKET)
+					.upload(
+						`${folderPath}/translationalCells_${String(batchIndex).padStart(4, "0")}.json.gz`,
+						new Blob([compressed]),
+						{ contentType: "application/gzip", upsert: true },
+					);
 			}
 			if (cells.length > 0) {
 				const manifest = {
@@ -138,11 +141,12 @@ export async function POST(request: Request) {
 					total: cells.length,
 					batchSize: BATCH_SIZE,
 				};
-				await supabase.storage.from(PIPELINE_BUCKET).upload(
-					`${folderPath}/manifest.json`,
-					new Blob([JSON.stringify(manifest)]),
-					{ contentType: "application/json", upsert: true },
-				);
+				await supabase.storage
+					.from(PIPELINE_BUCKET)
+					.upload(`${folderPath}/manifest.json`, new Blob([JSON.stringify(manifest)]), {
+						contentType: "application/json",
+						upsert: true,
+					});
 			}
 		};
 

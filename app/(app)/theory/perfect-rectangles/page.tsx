@@ -30,9 +30,7 @@ async function loadTheoryMarkdown(): Promise<string> {
  * drift apart. Adding a card to the article is a markdown edit and nothing else.
  */
 function embeddedSolids(markdown: string): string[] {
-	return [...markdown.matchAll(/<squaring-card\b[^>]*>/g)].flatMap(
-		(m) => m[0].match(/\bsolid="([^"]+)"/)?.[1] ?? [],
-	);
+	return [...markdown.matchAll(/<squaring-card\b[^>]*>/g)].flatMap((m) => m[0].match(/\bsolid="([^"]+)"/)?.[1] ?? []);
 }
 
 /**

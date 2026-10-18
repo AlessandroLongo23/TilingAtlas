@@ -124,7 +124,10 @@ describe("one taxonomy behind both surfaces", () => {
 		expect(matchesReferenceFilters(colored, { board: "square" })).toBe(true);
 		const stems = boardFamiliesFor("euclidean", "colorings").flatMap((f) => f.boards.map((b) => b.sub));
 		expect(stems).toContain("square");
-		expect(stems.some((s) => /-\d+$/.test(s)), `combined subs leaked in: ${stems.join(", ")}`).toBe(false);
+		expect(
+			stems.some((s) => /-\d+$/.test(s)),
+			`combined subs leaked in: ${stems.join(", ")}`,
+		).toBe(false);
 		// The palette size survives as its own axis, read off the subs instead of hand-typed.
 		expect(COLORS_COUNT_ORDER).toContain(3);
 	});
@@ -154,9 +157,7 @@ describe("one taxonomy behind both surfaces", () => {
 		for (const fam of BOARD_FAMILIES)
 			for (const b of fam.boards) {
 				expect(b.label, `${b.sub} has no short label`).toBeTruthy();
-				expect(b.label, `${b.sub} kept a shelf word`).not.toMatch(
-					/\s(grid|edges|colored|tilings|solids|board)$/i,
-				);
+				expect(b.label, `${b.sub} kept a shelf word`).not.toMatch(/\s(grid|edges|colored|tilings|solids|board)$/i);
 			}
 	});
 

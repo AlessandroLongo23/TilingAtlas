@@ -85,7 +85,10 @@ describe("buildSphericalInterlace — the border ring is offset outward by `bord
 			for (const band of bands) {
 				// The two long sides only (index 0 and 1) — a tip cap also slides along the strap axis.
 				for (const seg of band.outline.slice(0, 2)) {
-					for (const [inner, outer] of [[seg.a, seg.oa], [seg.b, seg.ob]] as const) {
+					for (const [inner, outer] of [
+						[seg.a, seg.oa],
+						[seg.b, seg.ob],
+					] as const) {
 						const gap = arc(inner, outer);
 						expect(gap).toBeGreaterThanOrEqual(butt - 1e-9);
 						expect(gap).toBeLessThan(border * 4);
@@ -137,10 +140,17 @@ describe("buildSphericalInterlace — the weave is consistent (bipartite, not de
 // rays stay contained: at the default construction every crossing sits at a shared endpoint and the weave is
 // clean with nothing to split. midArcCrossings() below counts exactly the escaping crossings — it must be 0.
 const dot3 = (a: Vec3, b: Vec3): number => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-const cross3 = (a: Vec3, b: Vec3): Vec3 => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const cross3 = (a: Vec3, b: Vec3): Vec3 => [
+	a[1] * b[2] - a[2] * b[1],
+	a[2] * b[0] - a[0] * b[2],
+	a[0] * b[1] - a[1] * b[0],
+];
 const sub3 = (a: Vec3, b: Vec3): Vec3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 const scale3 = (a: Vec3, s: number): Vec3 => [a[0] * s, a[1] * s, a[2] * s];
-const norm3 = (a: Vec3): Vec3 => { const n = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / n, a[1] / n, a[2] / n]; };
+const norm3 = (a: Vec3): Vec3 => {
+	const n = Math.hypot(a[0], a[1], a[2]) || 1;
+	return [a[0] / n, a[1] / n, a[2] / n];
+};
 const clamp3 = (x: number): number => Math.min(1, Math.max(-1, x));
 
 // Transversal crossings between drawn construction rays that share NO endpoint — the un-woven crossings that
@@ -157,7 +167,11 @@ function midArcCrossings(rays: Array<[Vec3, Vec3]>): Vec3[] {
 	for (let i = 0; i < N; i++) {
 		for (let j = i + 1; j < N; j++) {
 			let shares = false;
-			for (const k of ends[i]) if (ends[j].has(k)) { shares = true; break; }
+			for (const k of ends[i])
+				if (ends[j].has(k)) {
+					shares = true;
+					break;
+				}
 			if (shares) continue;
 			const line = cross3(pn[i], pn[j]);
 			if (Math.hypot(line[0], line[1], line[2]) < 1e-9) continue;

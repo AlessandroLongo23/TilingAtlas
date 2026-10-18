@@ -38,8 +38,7 @@ const OUT = "lib/defense/alphabet44.ts";
 // ---------------------------------------------------------------- the table
 
 /** symbol, label[], lneig[], rneig[], mirro[], lvert[], ferkval, code */
-const ENTRY =
-	/vertexdef\{"([^"]+)",\{([^}]*)\},\{([^}]*)\},\{([^}]*)\},\{([^}]*)\},\{([^}]*)\},(\d+),"([^"]+)"\}/g;
+const ENTRY = /vertexdef\{"([^"]+)",\{([^}]*)\},\{([^}]*)\},\{([^}]*)\},\{([^}]*)\},\{([^}]*)\},(\d+),"([^"]+)"\}/g;
 
 const ints = (s) => s.split(",").map((t) => Number(t.trim()));
 const strs = (s) => s.split(",").map((t) => t.trim().replace(/^"|"$/g, ""));
@@ -118,7 +117,10 @@ function subgroups(els, m) {
 			for (const g of members) {
 				const h = compose(f, g, m);
 				const at = idx.get(key(h));
-				if (at === undefined || !(mask & (1 << at))) { closed = false; break; }
+				if (at === undefined || !(mask & (1 << at))) {
+					closed = false;
+					break;
+				}
 			}
 			if (!closed) break;
 		}
@@ -179,7 +181,9 @@ function foldArrays(c, H, labels) {
 		slot.set(o, p);
 	}
 	const at = (i, b) => slot.get(owner.get(dartName(i, b)));
-	const rneig = [], mirro = [], lvert = [];
+	const rneig = [],
+		mirro = [],
+		lvert = [];
 	for (const name of labels) {
 		const [i, b] = parseDart(name);
 		rneig.push(b ? at(mod(i - 1, m), 1) : at(mod(i + 1, m), 0));
@@ -240,7 +244,9 @@ function siteSymmetry(entry) {
 			const deg = mod(theta[e.p] / 2, 180);
 			// An axis through a stub leaves that half-edge fixed, and its stubs are the mu-fixed ones
 			// of the fold (D1b(i)); an axis between stubs bisects a corner instead.
-			const onStub = stubAngles.some((t) => Math.abs(mod(t - deg, 180)) < 1e-9 || Math.abs(mod(t - deg, 180) - 180) < 1e-9);
+			const onStub = stubAngles.some(
+				(t) => Math.abs(mod(t - deg, 180)) < 1e-9 || Math.abs(mod(t - deg, 180) - 180) < 1e-9,
+			);
 			return { deg: Number(deg.toFixed(6)), onStub };
 		})
 		.sort((a, b) => a.deg - b.deg);
@@ -324,8 +330,7 @@ for (const [w, seen] of byWord) {
 }
 if (classes !== 44) throw new Error(`subgroup classes total ${classes}, expected 44`);
 
-const shape = (r) =>
-	r.rot > 1 && r.axes.length ? "both" : r.rot > 1 ? "rotation" : r.axes.length ? "mirror" : "none";
+const shape = (r) => (r.rot > 1 && r.axes.length ? "both" : r.rot > 1 ? "rotation" : r.axes.length ? "mirror" : "none");
 
 console.log(`44 letters over ${byWord.size} configurations, all certificates pass.`);
 for (const r of rows) {

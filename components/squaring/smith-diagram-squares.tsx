@@ -79,7 +79,9 @@ export function SquaresSmithDiagram({ squares, fills, hovered, onHover, caps = f
 		return { nodes: nodeList, wires: w, project: proj };
 	}, [squares]);
 
-	const order = wires.map((_, i) => i).sort((a, b) => Number(wires[a].edge === hovered) - Number(wires[b].edge === hovered));
+	const order = wires
+		.map((_, i) => i)
+		.sort((a, b) => Number(wires[a].edge === hovered) - Number(wires[b].edge === hovered));
 
 	return (
 		<svg

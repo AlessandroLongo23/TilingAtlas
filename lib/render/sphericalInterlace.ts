@@ -202,14 +202,27 @@ interface Corners {
 // `hw` is the ring being built — `h` for the fill boundary, `h + border` for the outer edge of the border
 // ring — so the whole corner construction runs twice per edge-end and the quad between the two rings IS the
 // border, exactly as in the flat buildBands.
-function cornersAt(verts: WVertex[], vi: number, ei: number, end: 0 | 1, h: number, hw: number, square: boolean): Corners {
+function cornersAt(
+	verts: WVertex[],
+	vi: number,
+	ei: number,
+	end: 0 | 1,
+	h: number,
+	hw: number,
+	square: boolean,
+): Corners {
 	const vt = verts[vi];
 	const ends = vt.ends;
 	const deg = ends.length;
 	const k = ends.findIndex((x) => x.edge === ei && x.end === end);
 	const me = ends[k];
 	const dir2 = (a: number): Vector => new Vector(Math.cos(a), Math.sin(a));
-	const map = (p: Vector): V3 => norm3([vt.pos[0] + p.x * vt.u[0] + p.y * vt.v[0], vt.pos[1] + p.x * vt.u[1] + p.y * vt.v[1], vt.pos[2] + p.x * vt.u[2] + p.y * vt.v[2]]);
+	const map = (p: Vector): V3 =>
+		norm3([
+			vt.pos[0] + p.x * vt.u[0] + p.y * vt.v[0],
+			vt.pos[1] + p.x * vt.u[1] + p.y * vt.v[1],
+			vt.pos[2] + p.x * vt.u[2] + p.y * vt.v[2],
+		]);
 
 	const meDir = dir2(me.angle);
 	const nMe = leftNormal(meDir);
@@ -248,7 +261,10 @@ function levelForEnd(verts: WVertex[], e: WEdge, vi: number, end: 0 | 1): number
 
 // Build the whole weave: pool the rays into one global spherical graph, assign the over/under, offset every
 // edge into a band. `degenerate` (odd-degree vertex or clash) tells the caller to fall back to flat straps.
-export function buildSphericalInterlace(poly: Polyhedron, opts: SphInterlaceOptions): { bands: SphBand[]; degenerate: boolean } {
+export function buildSphericalInterlace(
+	poly: Polyhedron,
+	opts: SphInterlaceOptions,
+): { bands: SphBand[]; degenerate: boolean } {
 	const raw = sphericalIslamicRaySegments(poly, opts);
 	// Off-midpoint contact (offset > 0) or pass-through rays (count > 1) put the real weave crossings mid-arc,
 	// so split there to surface them as 4-valent vertices — same rule as the fill's splitCrossings. At the

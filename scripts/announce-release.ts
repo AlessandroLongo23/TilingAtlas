@@ -147,7 +147,9 @@ export function buildPayload(entry: UpdateEntry, base: string): unknown {
 export function pendingReleases(updates: readonly UpdateEntry[], after: string | null): UpdateEntry[] {
 	if (!updates.length) return [];
 	if (after === null) return [updates[0]];
-	return updates.filter((u) => compareVersions(u.version, after) > 0).sort((a, b) => compareVersions(a.version, b.version));
+	return updates
+		.filter((u) => compareVersions(u.version, after) > 0)
+		.sort((a, b) => compareVersions(a.version, b.version));
 }
 
 /**

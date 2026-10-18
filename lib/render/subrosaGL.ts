@@ -347,7 +347,17 @@ export class SubRosaGL {
 		const prog = link(gl, LINE_VERT, LINE_FRAG);
 		if (!prog) return; // wireframe fallback; the fill pass is unaffected
 		this.lineProg = prog;
-		for (const name of ["uZoom", "uOffset", "uRot", "uCentre", "uHalf", "uExtend", "uHalfWidth", "uFeather", "uStroke"]) {
+		for (const name of [
+			"uZoom",
+			"uOffset",
+			"uRot",
+			"uCentre",
+			"uHalf",
+			"uExtend",
+			"uHalfWidth",
+			"uFeather",
+			"uStroke",
+		]) {
 			this.ul[name] = gl.getUniformLocation(prog, name);
 		}
 		const aQuad = gl.getAttribLocation(prog, "aQuad");
@@ -395,7 +405,9 @@ export class SubRosaGL {
 		const pos = new Float32Array(n * 12); // 6 verts × 2
 		const hue = new Float32Array(n * 6);
 		const edge = new Uint8Array(n * 18); // 6 verts × 3, normalized (255 → 1.0)
-		let pi = 0, hi = 0, ei = 0;
+		let pi = 0,
+			hi = 0,
+			ei = 0;
 		for (const t of tiles) {
 			const c = t.corners;
 			const h = hueOf(t.protoId);
@@ -403,14 +415,20 @@ export class SubRosaGL {
 			const triA = [c[0], c[1], c[2]];
 			const triB = [c[0], c[2], c[3 % c.length]];
 			for (let k = 0; k < 3; k++) {
-				pos[pi++] = triA[k].x; pos[pi++] = triA[k].y;
+				pos[pi++] = triA[k].x;
+				pos[pi++] = triA[k].y;
 				hue[hi++] = h;
-				edge[ei++] = EDGE_A[k][0] * 255; edge[ei++] = EDGE_A[k][1] * 255; edge[ei++] = EDGE_A[k][2] * 255;
+				edge[ei++] = EDGE_A[k][0] * 255;
+				edge[ei++] = EDGE_A[k][1] * 255;
+				edge[ei++] = EDGE_A[k][2] * 255;
 			}
 			for (let k = 0; k < 3; k++) {
-				pos[pi++] = triB[k].x; pos[pi++] = triB[k].y;
+				pos[pi++] = triB[k].x;
+				pos[pi++] = triB[k].y;
 				hue[hi++] = h;
-				edge[ei++] = EDGE_B[k][0] * 255; edge[ei++] = EDGE_B[k][1] * 255; edge[ei++] = EDGE_B[k][2] * 255;
+				edge[ei++] = EDGE_B[k][0] * 255;
+				edge[ei++] = EDGE_B[k][1] * 255;
+				edge[ei++] = EDGE_B[k][2] * 255;
 			}
 		}
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.posBuf);
@@ -443,7 +461,9 @@ export class SubRosaGL {
 		const pos = new Float32Array(verts * 2);
 		const hue = new Float32Array(verts);
 		const edge = new Uint8Array(verts * 3);
-		let pi = 0, hi = 0, ei = 0;
+		let pi = 0,
+			hi = 0,
+			ei = 0;
 
 		polys.forEach((poly, pIdx) => {
 			const v = poly.vertices;
@@ -452,7 +472,9 @@ export class SubRosaGL {
 			const h = hueOf(poly, pIdx);
 			const idx = triangulate(v);
 			for (let t = 0; t < idx.length; t += 3) {
-				const ia = idx[t], ib = idx[t + 1], ic = idx[t + 2];
+				const ia = idx[t],
+					ib = idx[t + 1],
+					ic = idx[t + 2];
 				const mask = edgeMask(ia, ib, ic, n);
 				const tri = [v[ia], v[ib], v[ic]];
 				for (let k = 0; k < 3; k++) {

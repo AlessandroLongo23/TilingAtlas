@@ -152,7 +152,7 @@ export const HYP_HALF_BOARDS: HypHalfBoard[] = [
 		// The long side is EXACTLY the {4,6} board's, to 1e-15: cosh R = cot(pi/p)cot(pi/q) is symmetric
 		// in p and q, so a dual pair shares a circumradius and both cuts are 2R. Nothing else about the
 		// two tiles matches. (The same is quietly true of {4,5} and {5,4}, whose 1.684964163 is 2R too.)
-		sides: [1.316957897, 2.292431670],
+		sides: [1.316957897, 2.29243167],
 		eagerKs: [2],
 		lazyKs: [3, 4],
 		counts: { 2: 24, 3: 509, 4: 763 },
@@ -167,7 +167,7 @@ export const HYP_HALF_BOARDS: HypHalfBoard[] = [
 		// instead of five. The one board here with tilings at k=1.
 		cut: "the {4,6} square, cut by a diagonal",
 		angles: [60, 30, 30],
-		sides: [1.762747174, 2.292431670],
+		sides: [1.762747174, 2.29243167],
 		eagerKs: [1],
 		// k=2 is 1.1 MB and k=3 is 51 MB of JSON — which gzips to 1.0 MB, so the wire is not the cost;
 		// parsing 15,443 quotients on the main thread is, and that is what laziness is buying here.

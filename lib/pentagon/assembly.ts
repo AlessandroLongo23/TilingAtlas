@@ -122,10 +122,7 @@ export function placeTile(proto: Point[], refPts: Point[], g: Glue): Point[] | n
 }
 
 /** Replay an assembly: the unit's tiles, and the two lattice vectors, for this pentagon. */
-export function assembleUnit(
-	proto: Point[],
-	asm: Assembly,
-): { unit: Point[][]; t1: Point; t2: Point } | null {
+export function assembleUnit(proto: Point[], asm: Assembly): { unit: Point[][]; t1: Point; t2: Point } | null {
 	const tiles: Point[][] = [proto];
 	for (const g of asm.glues) {
 		const ref = tiles[g.ref];

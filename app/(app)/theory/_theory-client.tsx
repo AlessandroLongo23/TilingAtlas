@@ -107,7 +107,15 @@ function AnimatedCardGrid({ cols, children }: { cols?: string; children?: React.
 	);
 }
 
-export function TheoryClient({ content, sections, cells, sources, patches, squarings, currentSlug }: TheoryClientProps) {
+export function TheoryClient({
+	content,
+	sections,
+	cells,
+	sources,
+	patches,
+	squarings,
+	currentSlug,
+}: TheoryClientProps) {
 	const [targetSection, setTargetSection] = useState("");
 	const [activeSection, setActiveSection] = useState("");
 	const progressRef = useRef<HTMLDivElement | null>(null);
@@ -201,54 +209,46 @@ export function TheoryClient({ content, sections, cells, sources, patches, squar
 		// on the page, and a focused card answers for itself.
 		<PreviewOverlayScope>
 			<div className="flex h-full min-h-0 w-full overflow-hidden">
-			<PageSidebar scrollable={false} mobile="modal" mobileLabel="Contents" mobileIcon={List}>
-				{/* Phone: the sheet is one scroll, this article's contents first and the other pages under them. */}
-				<div className="flex h-full min-h-0 flex-col max-md:overflow-y-auto max-md:overscroll-contain">
-					<div className="shrink-0 pb-2 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:scrollbar-hide max-md:order-2 max-md:border-t max-md:border-line-subtle max-md:pb-6">
-						<TheoryArticleNav currentSlug={currentSlug} />
+				<PageSidebar scrollable={false} mobile="modal" mobileLabel="Contents" mobileIcon={List}>
+					{/* Phone: the sheet is one scroll, this article's contents first and the other pages under them. */}
+					<div className="flex h-full min-h-0 flex-col max-md:overflow-y-auto max-md:overscroll-contain">
+						<div className="xl:scrollbar-hide shrink-0 pb-2 max-md:order-2 max-md:border-t max-md:border-line-subtle max-md:pb-6 xl:min-h-0 xl:flex-1 xl:overflow-y-auto">
+							<TheoryArticleNav currentSlug={currentSlug} />
+						</div>
+						{/* Below xl the page contents share the left column; from xl up they move to the right rail. */}
+						<div className="min-h-0 flex-1 border-t border-line-subtle max-md:order-1 max-md:flex-none max-md:border-t-0 xl:hidden">
+							<TheorySidebar sections={sections} activeSection={activeSection} onSectionSelect={selectSection} />
+						</div>
 					</div>
-					{/* Below xl the page contents share the left column; from xl up they move to the right rail. */}
-					<div className="min-h-0 flex-1 border-t border-line-subtle xl:hidden max-md:order-1 max-md:flex-none max-md:border-t-0">
-						<TheorySidebar
-							sections={sections}
-							activeSection={activeSection}
-							onSectionSelect={selectSection}
+				</PageSidebar>
+
+				<div className="flex w-full min-w-0 flex-col overflow-hidden bg-surface">
+					<div className="h-0.5 w-full shrink-0 bg-transparent">
+						<div
+							ref={progressRef}
+							className="h-full origin-left bg-accent"
+							style={{ transform: "scaleX(0)", width: "100%" }}
 						/>
 					</div>
+
+					{content ? (
+						<MarkdownRenderer
+							content={content}
+							targetSection={targetSection}
+							onSectionActive={setActiveSection}
+							onScroll={handleScroll}
+							components={components}
+						/>
+					) : (
+						<div className="flex w-full items-center justify-center p-8">
+							<p className="text-fg-muted">No content available.</p>
+						</div>
+					)}
 				</div>
-			</PageSidebar>
 
-			<div className="flex w-full min-w-0 flex-col overflow-hidden bg-surface">
-				<div className="h-0.5 w-full bg-transparent shrink-0">
-					<div
-						ref={progressRef}
-						className="h-full bg-accent origin-left"
-						style={{ transform: "scaleX(0)", width: "100%" }}
-					/>
-				</div>
-
-				{content ? (
-					<MarkdownRenderer
-						content={content}
-						targetSection={targetSection}
-						onSectionActive={setActiveSection}
-						onScroll={handleScroll}
-						components={components}
-					/>
-				) : (
-					<div className="w-full flex items-center justify-center p-8">
-						<p className="text-fg-muted">No content available.</p>
-					</div>
-				)}
-			</div>
-
-			<aside className="hidden h-full w-60 shrink-0 bg-surface pt-8 xl:block">
-				<TheorySidebar
-					sections={sections}
-					activeSection={activeSection}
-					onSectionSelect={selectSection}
-				/>
-			</aside>
+				<aside className="hidden h-full w-60 shrink-0 bg-surface pt-8 xl:block">
+					<TheorySidebar sections={sections} activeSection={activeSection} onSectionSelect={selectSection} />
+				</aside>
 			</div>
 		</PreviewOverlayScope>
 	);

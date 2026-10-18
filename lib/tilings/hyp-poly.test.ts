@@ -50,7 +50,11 @@ describe("board manifest", () => {
 		for (const b of HYP_POLY_BOARDS) {
 			expect(hypPolyBoardKs(b).length).toBeGreaterThan(0);
 			expect(b.eagerKs.filter((k) => b.lazyKs.includes(k))).toEqual([]);
-			expect(Object.keys(b.counts).map(Number).sort((x, y) => x - y)).toEqual(hypPolyBoardKs(b));
+			expect(
+				Object.keys(b.counts)
+					.map(Number)
+					.sort((x, y) => x - y),
+			).toEqual(hypPolyBoardKs(b));
 		}
 	});
 
@@ -63,7 +67,10 @@ describe("board manifest", () => {
 		// `Board.abcd` enforces in the developer (solve_edge_length answers only for negative defect), and
 		// it is the one that keeps the 17 spherical and Euclidean ids in Marek's drop off this shelf.
 		for (const b of abcd) {
-			const sum = b.label.split(",").map(Number).reduce((t, p) => t + Math.PI * (p - 2) / p, 0);
+			const sum = b.label
+				.split(",")
+				.map(Number)
+				.reduce((t, p) => t + (Math.PI * (p - 2)) / p, 0);
 			expect(sum, `${b.id} (${b.label})`).toBeGreaterThan(2 * Math.PI + 1e-9);
 		}
 	});

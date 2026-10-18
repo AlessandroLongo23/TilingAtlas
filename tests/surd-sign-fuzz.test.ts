@@ -69,11 +69,7 @@ function randSigned(rng: () => number, bits: number): bigint {
 }
 
 /** Pell-style units: (a+b√k)·(x+y√k) with the fundamental unit, conjugate residual a−b√k tiny. */
-function pellResiduals(
-	fund: [bigint, bigint],
-	k: bigint,
-	maxN: number
-): { a: bigint; b: bigint; n: number }[] {
+function pellResiduals(fund: [bigint, bigint], k: bigint, maxN: number): { a: bigint; b: bigint; n: number }[] {
 	const out: { a: bigint; b: bigint; n: number }[] = [];
 	let [a, b] = fund;
 	for (let n = 1; n <= maxN; n++) {
@@ -88,15 +84,11 @@ function checkOne(s: Surd, label: string): number {
 	const expected = oracleSign(s);
 	const got = s.sign();
 	if (got !== expected) {
-		throw new Error(
-			`sign mismatch [${label}]: sign()=${got} signExact=${expected} for ${s.toString()}`
-		);
+		throw new Error(`sign mismatch [${label}]: sign()=${got} signExact=${expected} for ${s.toString()}`);
 	}
 	const accepted = filterFloatSign(s);
 	if (accepted !== null && accepted !== expected) {
-		throw new Error(
-			`UNSOUND FILTER [${label}]: filter accepted ${accepted}, exact ${expected} for ${s.toString()}`
-		);
+		throw new Error(`UNSOUND FILTER [${label}]: filter accepted ${accepted}, exact ${expected} for ${s.toString()}`);
 	}
 	return accepted !== null ? 1 : 0;
 }
@@ -120,7 +112,7 @@ describe("Surd.sign fuzz: float-filtered sign must equal signExact everywhere", 
 				randSigned(rng, hb),
 				randSigned(rng, hb),
 				randSigned(rng, hb),
-				randMagnitude(rng, hd) + 1n // D > 0
+				randMagnitude(rng, hd) + 1n, // D > 0
 			);
 			accepted += checkOne(s, `random#${i} h=${hb}`);
 		}
@@ -182,7 +174,7 @@ describe("Surd.sign fuzz: float-filtered sign must equal signExact everywhere", 
 				randSigned(rng, 80),
 				randSigned(rng, 80),
 				randSigned(rng, 80),
-				randMagnitude(rng, 40) + 1n
+				randMagnitude(rng, 40) + 1n,
 			);
 			expect(x.sub(x).sign()).toBe(0); // exact cancellation ⇒ isZero path
 			const d = x.sub(x.add(tiny)); // exactly −tiny: well-conditioned but |value| ≪ 1e-6
@@ -200,7 +192,7 @@ describe("Surd.sign fuzz: float-filtered sign must equal signExact everywhere", 
 				randSigned(rng, 80) * HUGE,
 				randSigned(rng, 80) * HUGE,
 				randSigned(rng, 80) * HUGE,
-				randMagnitude(rng, 40) + 1n
+				randMagnitude(rng, 40) + 1n,
 			);
 			if (s.isZero()) continue;
 			checkOne(s, `huge#${i}`);

@@ -22,19 +22,69 @@ import type { StudioPatch } from "./types";
 
 const fourSquares: TranslationalCellData = {
 	p: [
-		{ v: [[0, 0], [1, 0], [1, 1], [0, 1]], n: 4 },
-		{ v: [[1, 0], [2, 0], [2, 1], [1, 1]], n: 4 },
-		{ v: [[0, 1], [1, 1], [1, 2], [0, 2]], n: 4 },
-		{ v: [[1, 1], [2, 1], [2, 2], [1, 2]], n: 4 },
+		{
+			v: [
+				[0, 0],
+				[1, 0],
+				[1, 1],
+				[0, 1],
+			],
+			n: 4,
+		},
+		{
+			v: [
+				[1, 0],
+				[2, 0],
+				[2, 1],
+				[1, 1],
+			],
+			n: 4,
+		},
+		{
+			v: [
+				[0, 1],
+				[1, 1],
+				[1, 2],
+				[0, 2],
+			],
+			n: 4,
+		},
+		{
+			v: [
+				[1, 1],
+				[2, 1],
+				[2, 2],
+				[1, 2],
+			],
+			n: 4,
+		},
 	],
-	b: [[2, 0], [0, 2]],
+	b: [
+		[2, 0],
+		[0, 2],
+	],
 };
 
 /** A skewed cell, so nothing here can pass by accident on axis-aligned geometry. */
 const H = Math.sqrt(3) / 2;
 const hexCell: TranslationalCellData = {
-	p: [{ v: [[1, 0], [0.5, H], [-0.5, H], [-1, 0], [-0.5, -H], [0.5, -H]], n: 6 }],
-	b: [[1.5, H], [0, 2 * H]],
+	p: [
+		{
+			v: [
+				[1, 0],
+				[0.5, H],
+				[-0.5, H],
+				[-1, 0],
+				[-0.5, -H],
+				[0.5, -H],
+			],
+			n: 6,
+		},
+	],
+	b: [
+		[1.5, H],
+		[0, 2 * H],
+	],
 };
 
 function patchOf(cell: TranslationalCellData): StudioPatch {

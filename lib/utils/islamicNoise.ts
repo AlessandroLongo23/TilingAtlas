@@ -1,17 +1,17 @@
-import type { Vector } from '@/classes';
+import type { Vector } from "@/classes";
 
 export const ISLAMIC_NOISE = {
-    spatialScale: 0.05,
-    timeScale: 0.005,
-    stretch: 2,
-    shapeExponent: 0.55,
+	spatialScale: 0.05,
+	timeScale: 0.005,
+	stretch: 2,
+	shapeExponent: 0.55,
 };
 
 const shape = (n: number): number => {
-    const y = (n - 0.5) * ISLAMIC_NOISE.stretch + 0.5;
-    const d = 2 * (y - 0.5);
-    const curved = 0.5 + 0.5 * Math.sign(d) * Math.pow(Math.abs(d), ISLAMIC_NOISE.shapeExponent);
-    return Math.min(1, Math.max(0, curved));
+	const y = (n - 0.5) * ISLAMIC_NOISE.stretch + 0.5;
+	const d = 2 * (y - 0.5);
+	const curved = 0.5 + 0.5 * Math.sign(d) * Math.pow(Math.abs(d), ISLAMIC_NOISE.shapeExponent);
+	return Math.min(1, Math.max(0, curved));
 };
 
 // World-space offset added to noise sample coordinates so the animated motif tracks panning.
@@ -22,21 +22,27 @@ const shape = (n: number): number => {
 let noiseWorldOffsetX = 0;
 let noiseWorldOffsetY = 0;
 export const setIslamicNoiseWorldOffset = (x: number, y: number): void => {
-    noiseWorldOffsetX = x;
-    noiseWorldOffsetY = y;
+	noiseWorldOffsetX = x;
+	noiseWorldOffsetY = y;
 };
 
-export const islamicAngleAt = (ctx: { noise: (x: number, y: number, z: number) => number; frameCount: number }, p: Vector): number => {
-    const raw = ctx.noise(
-        (p.x + noiseWorldOffsetX) * ISLAMIC_NOISE.spatialScale + 1000,
-        (p.y + noiseWorldOffsetY) * ISLAMIC_NOISE.spatialScale + 1000,
-        ctx.frameCount * ISLAMIC_NOISE.timeScale,
-    );
-    return shape(raw) * Math.PI;
+export const islamicAngleAt = (
+	ctx: { noise: (x: number, y: number, z: number) => number; frameCount: number },
+	p: Vector,
+): number => {
+	const raw = ctx.noise(
+		(p.x + noiseWorldOffsetX) * ISLAMIC_NOISE.spatialScale + 1000,
+		(p.y + noiseWorldOffsetY) * ISLAMIC_NOISE.spatialScale + 1000,
+		ctx.frameCount * ISLAMIC_NOISE.timeScale,
+	);
+	return shape(raw) * Math.PI;
 };
 
-export const islamicAnglesForHalfways = (ctx: { noise: (x: number, y: number, z: number) => number; frameCount: number }, halfways: Vector[]): number[] => {
-    return halfways.map(h => islamicAngleAt(ctx, h));
+export const islamicAnglesForHalfways = (
+	ctx: { noise: (x: number, y: number, z: number) => number; frameCount: number },
+	halfways: Vector[],
+): number[] => {
+	return halfways.map((h) => islamicAngleAt(ctx, h));
 };
 
 // Regular-tiling "Islamic Angle" slider → the contact angle `a` that calculateIslamicTips consumes.
@@ -47,7 +53,7 @@ export const islamicAnglesForHalfways = (ctx: { noise: (x: number, y: number, z:
 // polygon vertex and a=0 on the centroid, hence a = π − 2·slider. This spans the FULL original↔dual range;
 // the old `a = slider` mapping only reached a ∈ [0, π/2] (dual → mid-star), never the original tiling.
 export const islamicTipsAngleFromSlider = (sliderDeg: number): number =>
-    (180 - 2 * Math.min(Math.max(sliderDeg, 0), 90)) * Math.PI / 180;
+	((180 - 2 * Math.min(Math.max(sliderDeg, 0), 90)) * Math.PI) / 180;
 
 // Same slider, for the OTHER construction family: calculateIslamicSegments / constructTileStraps take the
 // ray angle measured FROM THE INWARD NORMAL, not the tip full-angle. The slider is measured from the EDGE
@@ -57,7 +63,7 @@ export const islamicTipsAngleFromSlider = (sliderDeg: number): number =>
 // so they agreed with the tips/fold/spherical paths only at 45° and inverted at the endpoints. Single
 // source of truth — every from-normal consumer routes through here.
 export const islamicNormalAngleFromSlider = (sliderDeg: number): number =>
-    (90 - Math.min(Math.max(sliderDeg, 0), 90)) * Math.PI / 180;
+	((90 - Math.min(Math.max(sliderDeg, 0), 90)) * Math.PI) / 180;
 
 // The edge-offset slider (store %, signed) as a fraction of the half-edge. Positive CROSSES: each ray roots
 // on the side opposite its lean, so the pair meets just over the midpoint. Negative SPLITS: each ray roots on

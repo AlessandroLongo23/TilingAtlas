@@ -113,7 +113,8 @@ describe("the symmetric preset is 2n-fold symmetric about the origin", () => {
 		expect(inner.length).toBeGreaterThan(50);
 		const members = [...member.values()];
 		const near = (x: number, y: number) => members.some((p) => Math.hypot(p.x - x, p.y - y) < 1e-6);
-		const c = Math.cos(Math.PI / 5), s = Math.sin(Math.PI / 5);
+		const c = Math.cos(Math.PI / 5),
+			s = Math.sin(Math.PI / 5);
 		let matched = 0;
 		for (const v of inner) {
 			if (near(c * v.x - s * v.y, s * v.x + c * v.y)) matched++;

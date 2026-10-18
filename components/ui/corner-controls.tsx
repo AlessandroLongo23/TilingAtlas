@@ -26,7 +26,7 @@ export function CornerControls({
 	return (
 		<div
 			className={cn(
-				"absolute right-4 top-4 z-30 flex gap-2 max-md:right-3 max-md:top-3 max-md:touch-pan-x max-md:touch-pan-y",
+				"absolute top-4 right-4 z-30 flex gap-2 max-md:top-3 max-md:right-3 max-md:touch-pan-x max-md:touch-pan-y",
 				fullscreen !== true && "md:hidden",
 				className,
 			)}

@@ -27,7 +27,10 @@ const FALLBACK: AutomataPalette = {
 function readRgb(name: string, fallback: Rgb): Rgb {
 	if (typeof window === "undefined") return fallback;
 	const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-	const parts = raw.split(/[\s,]+/).map(Number).filter((v) => Number.isFinite(v));
+	const parts = raw
+		.split(/[\s,]+/)
+		.map(Number)
+		.filter((v) => Number.isFinite(v));
 	if (parts.length < 3) return fallback;
 	const [r, g, b] = parts;
 	// Accept both 0–1 and 0–255 authoring.

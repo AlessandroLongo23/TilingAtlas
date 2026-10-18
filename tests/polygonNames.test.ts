@@ -1,9 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-	extractDataFromPolygonName,
-	comparePolygonNames,
-	compareVertexConfigurationNames,
-} from "@/utils/geometry";
+import { extractDataFromPolygonName, comparePolygonNames, compareVertexConfigurationNames } from "@/utils/geometry";
 import { PolygonType } from "@/classes/polygons/PolygonType";
 
 describe("extractDataFromPolygonName", () => {
@@ -37,7 +33,7 @@ describe("comparePolygonNames", () => {
 describe("compareVertexConfigurationNames", () => {
 	it("splits on comma and sorts part-by-part", () => {
 		const a = "3,3,3,3,3,3"; // 3^6
-		const b = "3,3,3,3,6";    // 3^4.6
+		const b = "3,3,3,3,6"; // 3^4.6
 		expect(compareVertexConfigurationNames(a, b)).toBeLessThan(0);
 	});
 });

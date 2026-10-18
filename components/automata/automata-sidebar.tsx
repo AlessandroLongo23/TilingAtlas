@@ -54,7 +54,8 @@ const SEMANTICS: { id: RuleSemantics; label: string; blurb: string }[] = [
 	{
 		id: "normalized",
 		label: "Normalized",
-		blurb: "Counts are rescaled to the busiest tile's degree, so a triangle and a hexagon read the same rule at the same fill fraction.",
+		blurb:
+			"Counts are rescaled to the busiest tile's degree, so a triangle and a hexagon read the same rule at the same fill fraction.",
 	},
 	{
 		id: "perShape",
@@ -88,7 +89,7 @@ const EMBEDDING_NOTE: Record<TopologyId, string> = {
 /** A tab body: its own scroll container, so each tab keeps its place independently. */
 function Panel({ children }: { children: React.ReactNode }) {
 	return (
-		<div className="h-full overflow-y-auto overflow-x-hidden px-4 py-3 space-y-4" data-sidebar-scroll>
+		<div className="h-full space-y-4 overflow-x-hidden overflow-y-auto px-4 py-3" data-sidebar-scroll>
 			{children}
 		</div>
 	);
@@ -137,18 +138,21 @@ export function AutomataSidebar({
 	const degreeSummary = [...new Set(report.degrees)].sort((a, b) => a - b).join(" / ");
 
 	return (
-		<div className="h-full flex flex-col">
-			<AutomataInfo
-				selected={selected}
-				report={report}
-				plan={plan}
-			/>
-			<div className="flex-1 min-h-0">
+		<div className="flex h-full flex-col">
+			<AutomataInfo selected={selected} report={report} plan={plan} />
+			<div className="min-h-0 flex-1">
 				{/* Three tabs, not four: the view switches configure the board, so they moved in with it and left
 				    a tab holding nothing but a key list — and every key it listed is now printed on the control
 				    it drives (keycaps here, titles on the transport and the nav header, gestures on the
 				    transport's dot). Keycaps on the triggers, as on /play's Catalogue / View options pair. */}
-				<Tabs value={tab} onValueChange={setTab} tabs={TABS} shortcuts={TAB_SHORTCUTS} keepMounted listClassName="mx-3.5 mb-1">
+				<Tabs
+					value={tab}
+					onValueChange={setTab}
+					tabs={TABS}
+					shortcuts={TAB_SHORTCUTS}
+					keepMounted
+					listClassName="mx-3.5 mb-1"
+				>
 					{(t) =>
 						t === "Tiling" ? (
 							// The /play picker itself, not a copy: tilings nested by polygon class then by k, each
@@ -156,9 +160,9 @@ export function AutomataSidebar({
 							// catalogue's families are machine-generated ids, and a tiling is recognised by its
 							// picture. `isolate` pins the sticky headers' z-index contest inside this scroller so
 							// they can never rise over the transport bar next door.
-							<div className="isolate h-full overflow-y-auto px-2 ta-scroll-fade pb-6" data-sidebar-scroll>
+							<div className="ta-scroll-fade isolate h-full overflow-y-auto px-2 pb-6" data-sidebar-scroll>
 								{loading && (
-									<p className="p-3 text-[11px] text-fg-muted leading-relaxed max-md:text-xs">Loading the catalogue…</p>
+									<p className="p-3 text-[11px] leading-relaxed text-fg-muted max-md:text-xs">Loading the catalogue…</p>
 								)}
 								<CatalogueListPanel items={tilings} selectedKey={cfg.tilingId} onSelect={onSelect} />
 							</div>
@@ -177,8 +181,8 @@ export function AutomataSidebar({
 										info={
 											<>
 												<p>
-													Which tiles count as adjacent: only those sharing a whole edge, or every tile that
-													touches at an edge or a corner.
+													Which tiles count as adjacent: only those sharing a whole edge, or every tile that touches at
+													an edge or a corner.
 												</p>
 												<p>
 													{degreeSummary
@@ -237,7 +241,7 @@ export function AutomataSidebar({
 								</div>
 
 								{cfg.semantics === "perShape" && (
-									<div className="space-y-1.5 pl-2 border-l border-line">
+									<div className="space-y-1.5 border-l border-line pl-2">
 										{shapeSides.map((sides) => (
 											<Input
 												key={sides}
@@ -262,10 +266,10 @@ export function AutomataSidebar({
 														onClick={() => cfg.set("rule", r.rule)}
 														title={r.description}
 														className={cn(
-															"w-full text-left px-2 py-1 rounded-control text-[11px] transition-colors cursor-pointer max-md:min-h-11 max-md:text-[13px]",
+															"w-full cursor-pointer rounded-control px-2 py-1 text-left text-[11px] transition-colors max-md:min-h-11 max-md:text-[13px]",
 															cfg.rule === r.rule
 																? "bg-surface-overlay text-fg"
-																: "text-fg-muted hover:text-fg hover:bg-surface-overlay",
+																: "text-fg-muted hover:bg-surface-overlay hover:text-fg",
 														)}
 													>
 														<span className="font-medium">{r.name}</span>
@@ -286,9 +290,9 @@ export function AutomataSidebar({
 												<p>{topologyDef(cfg.topology).blurb}</p>
 												{missingFlip && (
 													<p>
-														The Möbius band and Klein bottle fold their seam through a glide reflection, and
-														this tiling has none — it is chiral. Gluing it anyway would join tiles whose edges
-														do not meet, so those two boards do not exist here.
+														The Möbius band and Klein bottle fold their seam through a glide reflection, and this tiling
+														has none — it is chiral. Gluing it anyway would join tiles whose edges do not meet, so those
+														two boards do not exist here.
 													</p>
 												)}
 											</>
@@ -317,10 +321,24 @@ export function AutomataSidebar({
 								</div>
 
 								{topologyDef(cfg.topology).i !== "open" && (
-									<Slider label="Period along v₁" value={cfg.boardW} onChange={(v) => cfg.set("boardW", v)} min={3} max={64} step={1} />
+									<Slider
+										label="Period along v₁"
+										value={cfg.boardW}
+										onChange={(v) => cfg.set("boardW", v)}
+										min={3}
+										max={64}
+										step={1}
+									/>
 								)}
 								{topologyDef(cfg.topology).j !== "open" && (
-									<Slider label="Period along v₂" value={cfg.boardH} onChange={(v) => cfg.set("boardH", v)} min={3} max={64} step={1} />
+									<Slider
+										label="Period along v₂"
+										value={cfg.boardH}
+										onChange={(v) => cfg.set("boardH", v)}
+										min={3}
+										max={64}
+										step={1}
+									/>
 								)}
 								{(topologyDef(cfg.topology).i === "open" || topologyDef(cfg.topology).j === "open") && (
 									<Slider
@@ -355,20 +373,20 @@ export function AutomataSidebar({
 											info={
 												<>
 													<p>
-														Neither is more correct: the Klein bottle does not embed in three dimensions, so
-														both are immersions that pass through themselves. This is a choice between being
-														recognisable and being readable.
+														Neither is more correct: the Klein bottle does not embed in three dimensions, so both are
+														immersions that pass through themselves. This is a choice between being recognisable and
+														being readable.
 													</p>
 													<p>
-														The BOTTLE is the shape everyone knows. Its proportions are fixed, so it cannot be
-														stretched to the board&rsquo;s: it is several times longer than it is round, and a
-														square-ish board draws tiles as long stripes. Many more cells along v₁ than along
-														v₂ fixes that. The neck also runs inside the body, so those cells are hidden.
+														The BOTTLE is the shape everyone knows. Its proportions are fixed, so it cannot be stretched
+														to the board&rsquo;s: it is several times longer than it is round, and a square-ish board
+														draws tiles as long stripes. Many more cells along v₁ than along v₂ fixes that. The neck
+														also runs inside the body, so those cells are hidden.
 													</p>
 													<p>
-														The BAGEL (the figure-8 immersion) sweeps a figure-eight cross-section round a
-														circle with a half turn. Its tube is near enough uniform that it takes the
-														board&rsquo;s aspect ratio and every cell stays visible.
+														The BAGEL (the figure-8 immersion) sweeps a figure-eight cross-section round a circle with a
+														half turn. Its tube is near enough uniform that it takes the board&rsquo;s aspect ratio and
+														every cell stays visible.
 													</p>
 												</>
 											}
@@ -389,7 +407,12 @@ export function AutomataSidebar({
 
 								<Slider
 									label="Soup density"
-									hint={<InfoDot>The fraction of tiles alive in the starting soup. Seed {cfg.seed} — the soup is reproducible from it.</InfoDot>}
+									hint={
+										<InfoDot>
+											The fraction of tiles alive in the starting soup. Seed {cfg.seed} — the soup is reproducible from
+											it.
+										</InfoDot>
+									}
 									value={cfg.density}
 									onChange={(v) => cfg.set("density", v)}
 									min={0.02}
@@ -401,7 +424,7 @@ export function AutomataSidebar({
 								{/* What gets drawn on the board, appearance and annotation together. The two overlays describe
 								    the quotient, so they only exist once a direction is glued: on the plane the group is trivial,
 								    there is no domain to repeat and no seam to draw. */}
-								<div className="pt-4 space-y-3 border-t border-line-subtle">
+								<div className="space-y-3 border-t border-line-subtle pt-4">
 									<Checkbox
 										id="automata-edges"
 										label="Tile outlines"
@@ -409,8 +432,8 @@ export function AutomataSidebar({
 										onCheckedChange={(v) => cfg.set("showEdges", v)}
 										hint={
 											<InfoDot>
-												Strokes every tile&rsquo;s boundary. With it off, adjacent live cells merge into one block
-												of colour and only the automaton&rsquo;s pattern is visible, not the tiling under it.
+												Strokes every tile&rsquo;s boundary. With it off, adjacent live cells merge into one block of
+												colour and only the automaton&rsquo;s pattern is visible, not the tiling under it.
 											</InfoDot>
 										}
 									/>
@@ -421,8 +444,8 @@ export function AutomataSidebar({
 										onCheckedChange={(v) => cfg.set("tintDead", v)}
 										hint={
 											<InfoDot>
-												With the tint on, dead cells keep the tiling&rsquo;s own colouring, muted — so the geometry
-												the automaton runs on stays readable when the board is mostly empty.
+												With the tint on, dead cells keep the tiling&rsquo;s own colouring, muted — so the geometry the
+												automaton runs on stays readable when the board is mostly empty.
 											</InfoDot>
 										}
 									/>
@@ -437,8 +460,8 @@ export function AutomataSidebar({
 													<InfoDot>
 														Dashed copies of the board itself, the lattice this surface quotients by — not the
 														tiling&rsquo;s own cell. The torus glues both directions, so its lattice draws
-														parallelograms {cfg.boardW}×{cfg.boardH} cells across; the cylinder and the Möbius
-														band glue one, so theirs is a single family of parallel lines.
+														parallelograms {cfg.boardW}×{cfg.boardH} cells across; the cylinder and the Möbius band glue
+														one, so theirs is a single family of parallel lines.
 													</InfoDot>
 												}
 											/>
@@ -449,10 +472,10 @@ export function AutomataSidebar({
 												onCheckedChange={(v) => cfg.set("showSeams", v)}
 												hint={
 													<InfoDot>
-														The board&rsquo;s boundary. Red marks the identification that translates along v₁, blue
-														the one along v₂. Arrows the same way round means glued by translation; arrows
-														opposed means the flip — which is the entire visual difference between a torus and a
-														Klein bottle. A dashed edge is a real boundary, glued to nothing.
+														The board&rsquo;s boundary. Red marks the identification that translates along v₁, blue the
+														one along v₂. Arrows the same way round means glued by translation; arrows opposed means the
+														flip — which is the entire visual difference between a torus and a Klein bottle. A dashed
+														edge is a real boundary, glued to nothing.
 													</InfoDot>
 												}
 											/>

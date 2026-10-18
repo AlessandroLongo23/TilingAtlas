@@ -28,10 +28,7 @@ type Rec = {
 
 const load = (k: number): Rec[] =>
 	JSON.parse(
-		fs.readFileSync(
-			path.join(process.cwd(), "experiments", "star-oracle", `ctrnact-star-k${k}.cells.json`),
-			"utf8",
-		),
+		fs.readFileSync(path.join(process.cwd(), "experiments", "star-oracle", `ctrnact-star-k${k}.cells.json`), "utf8"),
 	).records;
 
 describe("star tilings carry an exact cell the overlays can use", () => {
@@ -56,13 +53,21 @@ describe("star tilings carry an exact cell the overlays can use", () => {
 				// against different geometry than the tiling on screen).
 				expect(built!.cellPolygons.length).toBe(r.renderCell.cellPolygons.length);
 				const key = (pts: [number, number][]) =>
-					pts.map(([x, y]) => `${Math.round(x * 1e6)},${Math.round(y * 1e6)}`).sort().join("|");
+					pts
+						.map(([x, y]) => `${Math.round(x * 1e6)},${Math.round(y * 1e6)}`)
+						.sort()
+						.join("|");
 				const fromExact = built!.cellPolygons
-					.map((p) => key(p.exactVertices!.map((v) => { const q = v.toVector(); return [q.x, q.y]; })))
+					.map((p) =>
+						key(
+							p.exactVertices!.map((v) => {
+								const q = v.toVector();
+								return [q.x, q.y];
+							}),
+						),
+					)
 					.sort();
-				const fromFloat = r.renderCell.cellPolygons
-					.map((p) => key(p.vertices as [number, number][]))
-					.sort();
+				const fromFloat = r.renderCell.cellPolygons.map((p) => key(p.vertices as [number, number][])).sort();
 				expect(fromExact, `${r.id}: exact rebuild != rendered cell`).toEqual(fromFloat);
 			}
 		}
@@ -83,11 +88,7 @@ describe("star tilings carry an exact cell the overlays can use", () => {
 		setActiveRing(ring);
 		for (const r of load(1)) {
 			const built = starCellFromExact(ring, r.exactCell!)!;
-			const res = new KUniformityChecker().vertexOrbits(
-				built.cellPolygons,
-				built.basisExact[0],
-				built.basisExact[1],
-			);
+			const res = new KUniformityChecker().vertexOrbits(built.cellPolygons, built.basisExact[0], built.basisExact[1]);
 			expect(res, `${r.id}: vertexOrbits returned null`).not.toBeNull();
 			expect(res!.orbits).toBeGreaterThan(0);
 			// Orbits count SURROUNDED vertices, which includes the valence-2 dent-fill vertices that do
@@ -113,7 +114,11 @@ describe("out-of-ring star tilings (D=18, D=20)", () => {
 		).records;
 
 	it("carries an exact cell tagged with its own ring", () => {
-		for (const [tag, k, d] of [["9fold", 1, 18], ["9fold", 9, 18], ["5fold", 1, 20]] as const) {
+		for (const [tag, k, d] of [
+			["9fold", 1, 18],
+			["9fold", 9, 18],
+			["5fold", 1, 20],
+		] as const) {
 			const recs = loadRing(tag, k);
 			expect(recs.length).toBeGreaterThan(0);
 			for (const r of recs) {
@@ -124,17 +129,31 @@ describe("out-of-ring star tilings (D=18, D=20)", () => {
 	});
 
 	it("rebuilds exactly, and refuses to build on the wrong ring", () => {
-		for (const [tag, k, d] of [["9fold", 1, 18], ["9fold", 9, 18], ["5fold", 1, 20]] as const) {
+		for (const [tag, k, d] of [
+			["9fold", 1, 18],
+			["9fold", 9, 18],
+			["5fold", 1, 20],
+		] as const) {
 			const ring = CyclotomicRing.create(d);
 			setActiveRing(ring);
 			for (const r of loadRing(tag, k)) {
 				const built = starCellFromExact(ring, r.exactCell!);
 				expect(built, `${r.id}: rejected on its own ring`).not.toBeNull();
 				const key = (pts: [number, number][]) =>
-					pts.map(([x, y]) => `${Math.round(x * 1e6)},${Math.round(y * 1e6)}`).sort().join("|");
+					pts
+						.map(([x, y]) => `${Math.round(x * 1e6)},${Math.round(y * 1e6)}`)
+						.sort()
+						.join("|");
 				expect(
 					built!.cellPolygons
-						.map((p) => key(p.exactVertices!.map((v) => { const q = v.toVector(); return [q.x, q.y]; })))
+						.map((p) =>
+							key(
+								p.exactVertices!.map((v) => {
+									const q = v.toVector();
+									return [q.x, q.y];
+								}),
+							),
+						)
 						.sort(),
 					`${r.id}: exact rebuild != rendered cell`,
 				).toEqual(r.renderCell.cellPolygons.map((p) => key(p.vertices as [number, number][])).sort());
@@ -148,7 +167,10 @@ describe("out-of-ring star tilings (D=18, D=20)", () => {
 	});
 
 	it("BOTH overlays run on the out-of-ring shelves", () => {
-		for (const [tag, k, d] of [["9fold", 1, 18], ["5fold", 1, 20]] as const) {
+		for (const [tag, k, d] of [
+			["9fold", 1, 18],
+			["5fold", 1, 20],
+		] as const) {
 			const ring = CyclotomicRing.create(d);
 			setActiveRing(ring);
 			for (const r of loadRing(tag, k)) {
@@ -162,14 +184,16 @@ describe("out-of-ring star tilings (D=18, D=20)", () => {
 	});
 
 	it("the ORBIT overlay runs on the out-of-ring shelves", () => {
-		for (const [tag, k, d] of [["9fold", 1, 18], ["9fold", 9, 18], ["5fold", 1, 20]] as const) {
+		for (const [tag, k, d] of [
+			["9fold", 1, 18],
+			["9fold", 9, 18],
+			["5fold", 1, 20],
+		] as const) {
 			const ring = CyclotomicRing.create(d);
 			setActiveRing(ring);
 			for (const r of loadRing(tag, k)) {
 				const built = starCellFromExact(ring, r.exactCell!)!;
-				const res = new KUniformityChecker().vertexOrbits(
-					built.cellPolygons, built.basisExact[0], built.basisExact[1],
-				);
+				const res = new KUniformityChecker().vertexOrbits(built.cellPolygons, built.basisExact[0], built.basisExact[1]);
 				expect(res, `${r.id}: vertexOrbits null`).not.toBeNull();
 				expect(res!.orbits).toBeGreaterThan(0);
 			}

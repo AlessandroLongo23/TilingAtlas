@@ -54,10 +54,28 @@ export interface PolyformBoard {
 export const POLYFORM_BOARDS: PolyformBoard[] = [
 	{ id: "domino", family: "polyomino", order: 2, pieces: 1, free: 1, maxK: 4, label: "Dominoes", idPrefix: "dom" },
 	{ id: "tromino", family: "polyomino", order: 3, pieces: 2, free: 2, maxK: 3, label: "Trominoes", idPrefix: "tro" },
-	{ id: "tetromino", family: "polyomino", order: 4, pieces: 7, free: 5, maxK: 2, label: "Tetrominoes", idPrefix: "tet" },
+	{
+		id: "tetromino",
+		family: "polyomino",
+		order: 4,
+		pieces: 7,
+		free: 5,
+		maxK: 2,
+		label: "Tetrominoes",
+		idPrefix: "tet",
+	},
 	{ id: "diamond", family: "polyiamond", order: 2, pieces: 1, free: 1, maxK: 5, label: "Diamonds", idPrefix: "dia" },
 	{ id: "triamond", family: "polyiamond", order: 3, pieces: 1, free: 1, maxK: 4, label: "Triamonds", idPrefix: "tra" },
-	{ id: "tetriamond", family: "polyiamond", order: 4, pieces: 4, free: 3, maxK: 2, label: "Tetriamonds", idPrefix: "tia" },
+	{
+		id: "tetriamond",
+		family: "polyiamond",
+		order: 4,
+		pieces: 4,
+		free: 3,
+		maxK: 2,
+		label: "Tetriamonds",
+		idPrefix: "tia",
+	},
 	{ id: "dihex", family: "polyhex", order: 2, pieces: 1, free: 1, maxK: 5, label: "Dihexes", idPrefix: "dih" },
 	{ id: "trihex", family: "polyhex", order: 3, pieces: 3, free: 3, maxK: 3, label: "Trihexes", idPrefix: "trh" },
 	{ id: "tetrahex", family: "polyhex", order: 4, pieces: 10, free: 7, maxK: 2, label: "Tetrahexes", idPrefix: "teh" },
@@ -89,10 +107,8 @@ export const POLYFORM_FAMILY_LABEL: Record<PolyformFamily, string> = {
 export const POLYFORM_FAMILIES: PolyformFamily[] = [...new Set(POLYFORM_BOARDS.map((b) => b.family))];
 
 /** The heading names the atomic tile; a chip standing under it does not need to. */
-export const polyformFamilyShort = (f: PolyformFamily): string =>
-	POLYFORM_FAMILY_LABEL[f].replace(/\s*\(.*\)$/, "");
+export const polyformFamilyShort = (f: PolyformFamily): string => POLYFORM_FAMILY_LABEL[f].replace(/\s*\(.*\)$/, "");
 
 /** The board's name UNDER its form heading, where the axis that is left to name is n: "n = 3 ·
  *  triamonds". The traditional word stays, because it is what the pieces are called everywhere else. */
-export const polyformOrderLabel = (b: PolyformBoard): string =>
-	`n = ${b.order} · ${b.label.toLowerCase()}`;
+export const polyformOrderLabel = (b: PolyformBoard): string => `n = ${b.order} · ${b.label.toLowerCase()}`;

@@ -7,11 +7,7 @@
 // Three layers, in paint order: cell fills, the scaffold (every grid edge, faint), the drawn edges on top.
 
 import { DEFAULT_TILE_RULE, type TileLoop, type TileRule } from "@/lib/freedraw/arcs";
-import {
-	classifyFaces,
-	classifyPatchFaces,
-	type FaceAnalysis,
-} from "@/lib/freedraw/faces";
+import { classifyFaces, classifyPatchFaces, type FaceAnalysis } from "@/lib/freedraw/faces";
 import { coset, gridOf, type Curve4, type FreedrawPattern } from "@/lib/freedraw/pattern";
 import { gridCellArcs, patchTileArcs } from "@/lib/freedraw/patternArcs";
 import type { FillMode } from "@/lib/freedraw/render";
@@ -22,16 +18,14 @@ import { hslToRgb } from "./color";
 const SQRT3_2 = Math.sqrt(3) / 2;
 
 /** Golden-angle hue walk — the RGB twin of `orbitColour` in lib/freedraw/render.ts. */
-const orbitRgb = (i: number, dark: boolean) =>
-	hslToRgb((34 + i * 137.508) % 360, 46, dark ? 36 : 74);
+const orbitRgb = (i: number, dark: boolean) => hslToRgb((34 + i * 137.508) % 360, 46, dark ? 36 : 74);
 
 /** Finite / strip / unbounded as three fixed hues — the RGB twin of `rankColour`. */
 const rankRgb = (rank: 0 | 1 | 2, dark: boolean) =>
 	hslToRgb(rank === 0 ? 150 : rank === 1 ? 40 : 265, 55, dark ? 32 : 76);
 
 const scaffoldRgb = (dark: boolean): [number, number, number] => (dark ? [1, 1, 1] : [0, 0, 0]);
-const drawnRgb = (dark: boolean): [number, number, number] =>
-	dark ? [0.949, 0.957, 0.973] : [0.063, 0.075, 0.094]; // #f2f4f8 / #101318
+const drawnRgb = (dark: boolean): [number, number, number] => (dark ? [0.949, 0.957, 0.973] : [0.063, 0.075, 0.094]); // #f2f4f8 / #101318
 
 const SCAFFOLD_ALPHA = 0.13;
 /** Stroke weights relative to the global "Line stroke" slider. The drawn edges have to out-read the
@@ -123,8 +117,7 @@ function gridCell(p: FreedrawPattern, opts: EdgesCellOptions): PeriodicCell | nu
 	const wy = (y: number) => -by * y;
 
 	const { analysis } = opts;
-	const classes =
-		opts.fillMode === "shape" || opts.fillMode === "pose" ? classifyFaces(analysis) : null;
+	const classes = opts.fillMode === "shape" || opts.fillMode === "pose" ? classifyFaces(analysis) : null;
 	const faceRgb = analysis.faces.map((f) =>
 		opts.fillMode === "rank"
 			? rankRgb(f.rank, opts.dark)
@@ -132,8 +125,7 @@ function gridCell(p: FreedrawPattern, opts: EdgesCellOptions): PeriodicCell | nu
 	);
 
 	const prims: PeriodicPrim[] = [];
-	const fillOf = (cellIdx: number) =>
-		opts.fillMode === "none" ? undefined : faceRgb[analysis.cellFace[cellIdx]];
+	const fillOf = (cellIdx: number) => (opts.fillMode === "none" ? undefined : faceRgb[analysis.cellFace[cellIdx]]);
 
 	for (let y = 0; y < p.d; y++) {
 		for (let x = 0; x < p.a; x++) {
@@ -144,13 +136,15 @@ function gridCell(p: FreedrawPattern, opts: EdgesCellOptions): PeriodicCell | nu
 				if (up) {
 					prims.push({
 						verts: [wx(x, y), wy(y), wx(x + 1, y), wy(y), wx(x, y + 1), wy(y + 1)],
-						fillRgb: up, z: Z_FILL,
+						fillRgb: up,
+						z: Z_FILL,
 					});
 				}
 				if (down) {
 					prims.push({
 						verts: [wx(x + 1, y), wy(y), wx(x, y + 1), wy(y + 1), wx(x + 1, y + 1), wy(y + 1)],
-						fillRgb: down, z: Z_FILL,
+						fillRgb: down,
+						z: Z_FILL,
 					});
 				}
 			} else {
@@ -158,7 +152,8 @@ function gridCell(p: FreedrawPattern, opts: EdgesCellOptions): PeriodicCell | nu
 				if (f) {
 					prims.push({
 						verts: [wx(x, y), wy(y), wx(x + 1, y), wy(y), wx(x + 1, y + 1), wy(y + 1), wx(x, y + 1), wy(y + 1)],
-						fillRgb: f, z: Z_FILL,
+						fillRgb: f,
+						z: Z_FILL,
 					});
 				}
 			}
@@ -171,16 +166,24 @@ function gridCell(p: FreedrawPattern, opts: EdgesCellOptions): PeriodicCell | nu
 				const verts = [wx(x0, y0), wy(y0), wx(x1, y1), wy(y1)];
 				if (opts.showScaffold) {
 					prims.push({
-						verts, open: true, strokeRgb: scaffoldRgb(opts.dark), strokeAlpha: SCAFFOLD_ALPHA,
-						strokeScale: SCAFFOLD_SCALE, z: Z_SCAFFOLD,
+						verts,
+						open: true,
+						strokeRgb: scaffoldRgb(opts.dark),
+						strokeAlpha: SCAFFOLD_ALPHA,
+						strokeScale: SCAFFOLD_SCALE,
+						z: Z_SCAFFOLD,
 					});
 				}
 				// No edge strokes in arc mode — see drawFreedraw: a faint ghost of them reads as the grid
 				// scaffold, which is a separate toggle, so it left lines the Grid checkbox did not control.
 				if (drawn && !opts.showArcs) {
 					prims.push({
-						verts: [...verts], open: true, strokeRgb: drawnRgb(opts.dark), strokeAlpha: 1,
-						strokeScale: DRAWN_SCALE, z: Z_DRAWN,
+						verts: [...verts],
+						open: true,
+						strokeRgb: drawnRgb(opts.dark),
+						strokeAlpha: 1,
+						strokeScale: DRAWN_SCALE,
+						z: Z_DRAWN,
 					});
 				}
 			};
@@ -252,11 +255,7 @@ function patchCell(p: FreedrawPattern, opts: EdgesCellOptions): PeriodicCell | n
 	 * curve has to be re-derived. Null (every board but the parametric isohedral types) emits the start
 	 * point alone, which is exactly the straight-edge behaviour this replaced.
 	 */
-	const arc = (
-		curve: Curve4 | null | undefined,
-		sx: number, sy: number, ex: number, ey: number,
-		out: number[],
-	) => {
+	const arc = (curve: Curve4 | null | undefined, sx: number, sy: number, ex: number, ey: number, out: number[]) => {
 		if (!curve) {
 			out.push(sx, sy);
 			return;
@@ -275,8 +274,7 @@ function patchCell(p: FreedrawPattern, opts: EdgesCellOptions): PeriodicCell | n
 		}
 	};
 
-	const classes =
-		opts.fillMode === "shape" || opts.fillMode === "pose" ? classifyPatchFaces(patch) : null;
+	const classes = opts.fillMode === "shape" || opts.fillMode === "pose" ? classifyPatchFaces(patch) : null;
 	const compRgb = patch.compRank.map((r, i) =>
 		opts.fillMode === "rank"
 			? rankRgb(r, opts.dark)
@@ -306,8 +304,10 @@ function patchCell(p: FreedrawPattern, opts: EdgesCellOptions): PeriodicCell | n
 
 	for (let ei = 0; ei < patch.edges.length; ei++) {
 		const [vi, vj, ox, oy, drawn] = patch.edges[ei];
-		const sx = vx(vi, 0, 0), sy = vy(vi, 0, 0);
-		const ex = vx(vj, ox, oy), ey = vy(vj, ox, oy);
+		const sx = vx(vi, 0, 0),
+			sy = vy(vi, 0, 0);
+		const ex = vx(vj, ox, oy),
+			ey = vy(vj, ox, oy);
 		edgeLens.push(Math.hypot(ex - sx, ey - sy));
 		// An open polyline keeps its endpoint — there is no next arc to supply it.
 		const verts: number[] = [];
@@ -316,14 +316,22 @@ function patchCell(p: FreedrawPattern, opts: EdgesCellOptions): PeriodicCell | n
 		// Every edge in arc mode: nothing strokes the drawn ones there, and on a Truchet board they all are.
 		if (opts.showScaffold && (drawn !== 1 || opts.showArcs)) {
 			prims.push({
-				verts, open: true, strokeRgb: scaffoldRgb(opts.dark), strokeAlpha: SCAFFOLD_ALPHA,
-				strokeScale: SCAFFOLD_SCALE, z: Z_SCAFFOLD,
+				verts,
+				open: true,
+				strokeRgb: scaffoldRgb(opts.dark),
+				strokeAlpha: SCAFFOLD_ALPHA,
+				strokeScale: SCAFFOLD_SCALE,
+				z: Z_SCAFFOLD,
 			});
 		}
 		if (drawn === 1 && !opts.showArcs) {
 			prims.push({
-				verts: [...verts], open: true, strokeRgb: drawnRgb(opts.dark), strokeAlpha: 1,
-				strokeScale: DRAWN_SCALE, z: Z_DRAWN,
+				verts: [...verts],
+				open: true,
+				strokeRgb: drawnRgb(opts.dark),
+				strokeAlpha: 1,
+				strokeScale: DRAWN_SCALE,
+				z: Z_DRAWN,
 			});
 		}
 	}

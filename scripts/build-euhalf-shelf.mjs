@@ -33,15 +33,15 @@
 //          the period lattice. This is the one that catches a tiling wrapping a point more than once,
 //          and shape and area BOTH pass on those — a fourfold cover has fourfold area inside a cell
 //          four times as large. Its absence shipped 23 non-tilings to the tri45 shelf on 2026-08-13.
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import path from 'node:path';
-import { stringifyAtlas } from './atlas/encode.mjs';
-import { isPrimitiveCell } from './atlas/primitive.mjs';
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import path from "node:path";
+import { stringifyAtlas } from "./atlas/encode.mjs";
+import { isPrimitiveCell } from "./atlas/primitive.mjs";
 
 const ROOT = process.cwd();
-const ORACLE = path.join(ROOT, 'tools', 'ctrnact-oracle');
-const OUT = path.join(ROOT, 'public', 'euhalf');
-const PUB = path.join(ROOT, 'public');
+const ORACLE = path.join(ROOT, "tools", "ctrnact-oracle");
+const OUT = path.join(ROOT, "public", "euhalf");
+const PUB = path.join(ROOT, "public");
 const TOL = 1e-6;
 const COT18 = 1 / Math.tan(Math.PI / 10);
 
@@ -50,63 +50,93 @@ const EAGER_MAX = 4;
 
 const BOARDS = [
 	{
-		id: 'hexv', label: '{6} halved by its long diagonal', cells: 'run-eu-half-hex-v-split-k6/eu-half-hex-v-split-cells.json',
-		D: 6, hue: 205, tile: '60-120-120-60 trapezoid',
-		angles: [60, 120, 120, 60], sides: [1, 1, 1, 2],
-		note: 'Half a regular hexagon, cut by the long diagonal from a vertex to the opposite vertex. Two of '
-			+ 'them glue along the long side to make a hexagon, so this board cannot be empty; what the '
-			+ 'catalogue counts is everything else the trapezoid does. Isosceles, so achiral, and the only '
-			+ 'board of the four whose two edge lengths are both rational (1 and 2).',
+		id: "hexv",
+		label: "{6} halved by its long diagonal",
+		cells: "run-eu-half-hex-v-split-k6/eu-half-hex-v-split-cells.json",
+		D: 6,
+		hue: 205,
+		tile: "60-120-120-60 trapezoid",
+		angles: [60, 120, 120, 60],
+		sides: [1, 1, 1, 2],
+		note:
+			"Half a regular hexagon, cut by the long diagonal from a vertex to the opposite vertex. Two of " +
+			"them glue along the long side to make a hexagon, so this board cannot be empty; what the " +
+			"catalogue counts is everything else the trapezoid does. Isosceles, so achiral, and the only " +
+			"board of the four whose two edge lengths are both rational (1 and 2).",
 	},
 	{
-		id: 'pent', label: '{5} halved by its mirror', cells: 'run-eu-half-pent-split-k9/eu-half-pent-split-cells.json',
-		D: 20, hue: 28, tile: '54-108-108-90 quadrilateral',
-		angles: [54, 108, 108, 90], sides: [1, 2, 2, COT18],
-		note: 'Half a regular pentagon, cut by its mirror from a vertex to the midpoint of the opposite edge. '
-			+ 'Five is odd, so this is the only cut a pentagon has. THE REGULAR PENTAGON DOES NOT TILE THE '
-			+ 'PLANE AND THIS HALF OF IT DOES, at k=1 and twice over — nothing obstructs the halves the way '
-			+ 'the whole tile is obstructed. Scalene and chiral, so the palette carries a mirror twin. Its '
-			+ 'long side is the pentagon’s height, R + apothem = cot 18° = √(5+2√5), which '
-			+ 'is an algebraic integer of ℤ[ζ₂₀] but none of the named surds — it is '
-			+ 'the chord sum 2cos 18° + 2cos 54°.',
+		id: "pent",
+		label: "{5} halved by its mirror",
+		cells: "run-eu-half-pent-split-k9/eu-half-pent-split-cells.json",
+		D: 20,
+		hue: 28,
+		tile: "54-108-108-90 quadrilateral",
+		angles: [54, 108, 108, 90],
+		sides: [1, 2, 2, COT18],
+		note:
+			"Half a regular pentagon, cut by its mirror from a vertex to the midpoint of the opposite edge. " +
+			"Five is odd, so this is the only cut a pentagon has. THE REGULAR PENTAGON DOES NOT TILE THE " +
+			"PLANE AND THIS HALF OF IT DOES, at k=1 and twice over — nothing obstructs the halves the way " +
+			"the whole tile is obstructed. Scalene and chiral, so the palette carries a mirror twin. Its " +
+			"long side is the pentagon’s height, R + apothem = cot 18° = √(5+2√5), which " +
+			"is an algebraic integer of ℤ[ζ₂₀] but none of the named surds — it is " +
+			"the chord sum 2cos 18° + 2cos 54°.",
 	},
 	{
-		id: 'hexm', label: '{6} halved between opposite edges', cells: 'run-eu-half-hex-m-split-k9/eu-half-hex-m-split-cells.json',
-		D: 12, hue: 140, tile: '90-120-120-120-90 pentagon',
-		angles: [90, 120, 120, 120, 90], sides: [1, 2, 2, 1, 2 * Math.sqrt(3)],
-		note: 'The hexagon’s other cut, joining the midpoints of two opposite edges, which makes a '
-			+ 'pentagon with two right angles. Its long side is the width across the hexagon, 2√3 at '
-			+ 'twice the hexagon’s own side. Its 2√3 side decomposes into nothing, but its two sides '
-			+ 'of length 2 are each two unit sides, so those can be met by a pair of neighbours; the single '
-			+ 'edge-to-edge tiling at k=2 is joined by a hundred more once they are.',
+		id: "hexm",
+		label: "{6} halved between opposite edges",
+		cells: "run-eu-half-hex-m-split-k9/eu-half-hex-m-split-cells.json",
+		D: 12,
+		hue: 140,
+		tile: "90-120-120-120-90 pentagon",
+		angles: [90, 120, 120, 120, 90],
+		sides: [1, 2, 2, 1, 2 * Math.sqrt(3)],
+		note:
+			"The hexagon’s other cut, joining the midpoints of two opposite edges, which makes a " +
+			"pentagon with two right angles. Its long side is the width across the hexagon, 2√3 at " +
+			"twice the hexagon’s own side. Its 2√3 side decomposes into nothing, but its two sides " +
+			"of length 2 are each two unit sides, so those can be met by a pair of neighbours; the single " +
+			"edge-to-edge tiling at k=2 is joined by a hundred more once they are.",
 	},
 	{
-		id: 'tri', label: '{3} halved by its mirror', cells: 'run-eu-half-tri-mirror-split-k5/eu-half-tri-mirror-split-cells.json',
+		id: "tri",
+		label: "{3} halved by its mirror",
+		cells: "run-eu-half-tri-mirror-split-k5/eu-half-tri-mirror-split-cells.json",
 		// NO cellsEdgeToEdge, deliberately. The other boards top up with the deeper edge-to-edge run, which
 		// leaves their upper k counting a SUBSET; AL, 2026-08-17: "otherwise we can't say that they are
 		// complete". So this board stops where the divided-edge search stops. k=6 is not reachable: the k=5
 		// solve alone took 21 minutes and k=6 was still growing past 18,386 raw solutions after 15.
-		D: 12, hue: 265, tile: '30-60-90 triangle',
-		angles: [30, 60, 90], sides: [2, 1, Math.sqrt(3)],
-		note: 'Half a regular triangle, cut by its mirror from a vertex to the midpoint of the opposite edge. '
-			+ 'Three is odd, so like the pentagon this is the only cut it has. Its hypotenuse is exactly TWO '
-			+ 'SHORT LEGS, the most divisible edge in the family, so it gains more from a divided edge than any '
-			+ 'other board here and gains even at k=1. It reached the atlas late because it was the one member '
-			+ 'with another home: the same triangle is P12.6.4 in the planigon palette, one tile among fifteen, '
-			+ 'where it has never been catalogued as a board in its own right.',
+		D: 12,
+		hue: 265,
+		tile: "30-60-90 triangle",
+		angles: [30, 60, 90],
+		sides: [2, 1, Math.sqrt(3)],
+		note:
+			"Half a regular triangle, cut by its mirror from a vertex to the midpoint of the opposite edge. " +
+			"Three is odd, so like the pentagon this is the only cut it has. Its hypotenuse is exactly TWO " +
+			"SHORT LEGS, the most divisible edge in the family, so it gains more from a divided edge than any " +
+			"other board here and gains even at k=1. It reached the atlas late because it was the one member " +
+			"with another home: the same triangle is P12.6.4 in the planigon palette, one tile among fifteen, " +
+			"where it has never been catalogued as a board in its own right.",
 	},
 	{
-		id: 'sqmid', label: '{4} halved between opposite edges', cells: 'run-eu-half-sq-mid-split-k6/eu-half-sq-mid-split-cells.json',
-		D: 4, hue: 320, tile: '1×2 rectangle (the domino)',
-		angles: [90, 90, 90, 90], sides: [1, 2, 1, 2],
-		note: 'The square’s midpoint cut is the DOMINO. Edge-to-edge it has exactly ONE tiling, provably: '
-			+ 'every corner is a right angle flanked by one long and one short side, so the four edges at a '
-			+ 'vertex alternate long/short; two edges separated by one other sit at 180° and are therefore '
-			+ 'collinear; so the long edges lie on one family of parallel lines and the short edges on the '
-			+ 'perpendicular family, which is the aligned grid and nothing else. That argument assumes every '
-			+ 'edge is matched whole, and a domino’s long side is two short sides, so it need not be: allow a '
-			+ 'long side to be met by two tiles and running bond, herringbone and basketweave all appear. They '
-			+ 'are the reason this board goes from one tiling to tens of thousands.',
+		id: "sqmid",
+		label: "{4} halved between opposite edges",
+		cells: "run-eu-half-sq-mid-split-k6/eu-half-sq-mid-split-cells.json",
+		D: 4,
+		hue: 320,
+		tile: "1×2 rectangle (the domino)",
+		angles: [90, 90, 90, 90],
+		sides: [1, 2, 1, 2],
+		note:
+			"The square’s midpoint cut is the DOMINO. Edge-to-edge it has exactly ONE tiling, provably: " +
+			"every corner is a right angle flanked by one long and one short side, so the four edges at a " +
+			"vertex alternate long/short; two edges separated by one other sit at 180° and are therefore " +
+			"collinear; so the long edges lie on one family of parallel lines and the short edges on the " +
+			"perpendicular family, which is the aligned grid and nothing else. That argument assumes every " +
+			"edge is matched whole, and a domino’s long side is two short sides, so it need not be: allow a " +
+			"long side to be met by two tiles and running bond, herringbone and basketweave all appear. They " +
+			"are the reason this board goes from one tiling to tens of thousands.",
 	},
 ];
 
@@ -119,7 +149,9 @@ const BOARDS = [
 const dropCollinear = (f) => {
 	const out = [];
 	for (let t = 0; t < f.length; t++) {
-		const p = f[(t - 1 + f.length) % f.length], c = f[t], n = f[(t + 1) % f.length];
+		const p = f[(t - 1 + f.length) % f.length],
+			c = f[t],
+			n = f[(t + 1) % f.length];
 		const cross = (c[0] - p[0]) * (n[1] - p[1]) - (c[1] - p[1]) * (n[0] - p[0]);
 		if (Math.abs(cross) > 1e-7) out.push(c);
 	}
@@ -135,8 +167,13 @@ const tJunctions = (faces, T1, T2, residueFn) => {
 	const seen = new Map();
 	for (const f of faces) {
 		for (let t = 0; t < f.length; t++) {
-			const p = f[t], u = f[(t - 1 + f.length) % f.length], v = f[(t + 1) % f.length];
-			const ux = u[0] - p[0], uy = u[1] - p[1], vx = v[0] - p[0], vy = v[1] - p[1];
+			const p = f[t],
+				u = f[(t - 1 + f.length) % f.length],
+				v = f[(t + 1) % f.length];
+			const ux = u[0] - p[0],
+				uy = u[1] - p[1],
+				vx = v[0] - p[0],
+				vy = v[1] - p[1];
 			const th = Math.abs((Math.atan2(ux * vy - uy * vx, ux * vx + uy * vy) * 180) / Math.PI);
 			const key = residueFn(p, T1, T2);
 			const rec = seen.get(key) ?? { corners: 0, flat: false };
@@ -154,15 +191,25 @@ const dist = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1]);
 const centroid = (f) => [f.reduce((u, q) => u + q[0], 0) / f.length, f.reduce((u, q) => u + q[1], 0) / f.length];
 const shoelace = (f) => {
 	let a2 = 0;
-	for (let t = 0; t < f.length; t++) { const u = f[t], v = f[(t + 1) % f.length]; a2 += u[0] * v[1] - v[0] * u[1]; }
+	for (let t = 0; t < f.length; t++) {
+		const u = f[t],
+			v = f[(t + 1) % f.length];
+		a2 += u[0] * v[1] - v[0] * u[1];
+	}
 	return Math.abs(a2 / 2);
 };
 const profile = (f) => {
-	const sides = [], angs = [];
+	const sides = [],
+		angs = [];
 	for (let t = 0; t < f.length; t++) {
-		const p = f[t], u = f[(t - 1 + f.length) % f.length], v = f[(t + 1) % f.length];
+		const p = f[t],
+			u = f[(t - 1 + f.length) % f.length],
+			v = f[(t + 1) % f.length];
 		sides.push(dist(p, v));
-		const ux = u[0] - p[0], uy = u[1] - p[1], vx = v[0] - p[0], vy = v[1] - p[1];
+		const ux = u[0] - p[0],
+			uy = u[1] - p[1],
+			vx = v[0] - p[0],
+			vy = v[1] - p[1];
 		angs.push(Math.abs((Math.atan2(ux * vy - uy * vx, ux * vx + uy * vy) * 180) / Math.PI));
 	}
 	return { sides: sides.sort((a, b) => a - b), angs: angs.sort((a, b) => a - b) };
@@ -171,7 +218,10 @@ const frac = (p, T1, T2) => {
 	const det = T1[0] * T2[1] - T1[1] * T2[0];
 	return [(p[0] * T2[1] - p[1] * T2[0]) / det, (T1[0] * p[1] - T1[1] * p[0]) / det];
 };
-const wrap = (t) => { const w = t - Math.round(t); return Math.abs(w) < TOL ? 0 : w; };
+const wrap = (t) => {
+	const w = t - Math.round(t);
+	return Math.abs(w) < TOL ? 0 : w;
+};
 // The VERTEX KEY for the angle certificate: a point reduced modulo the period lattice, keyed in
 // CARTESIAN coordinates. Lifted verbatim from build-tri45-shelf.mjs, and it has to be — my own version
 // keyed the FRACTIONAL coordinates through `wrap`, which put a vertex at fraction ~0 on either side of
@@ -189,10 +239,12 @@ const residue = (p, T1, T2) => {
 const modDist = (p, q, T1, T2) => {
 	const [fa, fb] = frac([p[0] - q[0], p[1] - q[1]], T1, T2);
 	let best = Infinity;
-	for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) {
-		const a = fa - Math.round(fa) + i, b = fb - Math.round(fb) + j;
-		best = Math.min(best, Math.hypot(a * T1[0] + b * T2[0], a * T1[1] + b * T2[1]));
-	}
+	for (let i = -1; i <= 1; i++)
+		for (let j = -1; j <= 1; j++) {
+			const a = fa - Math.round(fa) + i,
+				b = fb - Math.round(fb) + j;
+			best = Math.min(best, Math.hypot(a * T1[0] + b * T2[0], a * T1[1] + b * T2[1]));
+		}
 	return best;
 };
 const shapeOf = (verts) => {
@@ -213,7 +265,8 @@ const sameShape = (a, b) => {
 	});
 };
 
-let grandTotal = 0, grandRaw = 0;
+let grandTotal = 0,
+	grandRaw = 0;
 const manifest = {};
 const eager = [];
 const lazy = new Map();
@@ -229,7 +282,7 @@ for (const B of BOARDS) {
 	// So the top-up is gone and every k on every board here is a complete enumeration of that k. What it
 	// cost: 26,876 hexv records at k=7..13 and 486 pent records at k=10..14. The deeper unsplit runs are
 	// still on disk under tools/ctrnact-oracle/run-eu-half-*-k1*/ if they are ever wanted back.
-	const entries0 = JSON.parse(readFileSync(path.join(ORACLE, B.cells), 'utf8'));
+	const entries0 = JSON.parse(readFileSync(path.join(ORACLE, B.cells), "utf8"));
 	const entries = entries0.filter((e) => isPrimitiveCell(e.faces, e.T1, e.T2));
 	const supercells = entries0.length - entries.length;
 	if (supercells) console.log(`  ${B.id}: dropped ${supercells} supercell description(s) of ${entries0.length}`);
@@ -238,7 +291,9 @@ for (const B of BOARDS) {
 	const want = { sides: [...B.sides].sort((a, b) => a - b), angs: [...B.angles].sort((a, b) => a - b) };
 
 	// ---- certify -------------------------------------------------------------------------------
-	let worstShape = 0, worstArea = 0, worstAngle = 0;
+	let worstShape = 0,
+		worstArea = 0,
+		worstAngle = 0;
 	const strays = [];
 	for (const e of entries) {
 		const cell = Math.abs(e.T1[0] * e.T2[1] - e.T1[1] * e.T2[0]);
@@ -247,14 +302,26 @@ for (const B of BOARDS) {
 		for (const f of e.faces) {
 			// Shape is judged on the REAL tile, so the flat corners of a divided edge come off first.
 			const pr = profile(dropCollinear(f));
-			if (pr.sides.length !== want.sides.length) { strays.push(e.id); continue; }
+			if (pr.sides.length !== want.sides.length) {
+				strays.push(e.id);
+				continue;
+			}
 			for (let t = 0; t < pr.sides.length; t++) {
-				worstShape = Math.max(worstShape, Math.abs(pr.sides[t] - want.sides[t]), Math.abs(pr.angs[t] - want.angs[t]) / 90);
+				worstShape = Math.max(
+					worstShape,
+					Math.abs(pr.sides[t] - want.sides[t]),
+					Math.abs(pr.angs[t] - want.angs[t]) / 90,
+				);
 			}
 			area += shoelace(f);
 			for (let t = 0; t < f.length; t++) {
-				const p = f[t], u = f[(t - 1 + f.length) % f.length], v = f[(t + 1) % f.length];
-				const ux = u[0] - p[0], uy = u[1] - p[1], vx = v[0] - p[0], vy = v[1] - p[1];
+				const p = f[t],
+					u = f[(t - 1 + f.length) % f.length],
+					v = f[(t + 1) % f.length];
+				const ux = u[0] - p[0],
+					uy = u[1] - p[1],
+					vx = v[0] - p[0],
+					vy = v[1] - p[1];
 				const th = Math.abs((Math.atan2(ux * vy - uy * vx, ux * vx + uy * vy) * 180) / Math.PI);
 				const key = residue(p, e.T1, e.T2);
 				ang.set(key, (ang.get(key) ?? 0) + th);
@@ -264,9 +331,11 @@ for (const B of BOARDS) {
 		for (const total of ang.values()) worstAngle = Math.max(worstAngle, Math.abs(total - 360));
 	}
 	if (strays.length || worstShape > 1e-5 || worstArea > 1e-6 || worstAngle > 0.5) {
-		console.error(`euhalf/${B.id}: REFUSING to write — ${strays.length} stray face(s), shape err `
-			+ `${worstShape.toExponential(2)}, area err ${worstArea.toExponential(2)}, worst vertex `
-			+ `${(360 + worstAngle).toFixed(1)}°`);
+		console.error(
+			`euhalf/${B.id}: REFUSING to write — ${strays.length} stray face(s), shape err ` +
+				`${worstShape.toExponential(2)}, area err ${worstArea.toExponential(2)}, worst vertex ` +
+				`${(360 + worstAngle).toFixed(1)}°`,
+		);
 		process.exit(2);
 	}
 
@@ -277,20 +346,30 @@ for (const B of BOARDS) {
 	const TRANSFORMS = [];
 	for (const mir of [false, true]) {
 		for (let r = 0; r < B.D; r++) {
-			const th = (2 * Math.PI * r) / B.D, c = Math.cos(th), sn = Math.sin(th);
-			TRANSFORMS.push({ mir, f: ([x, y]) => { const a = mir ? -x : x; return [c * a - sn * y, sn * a + c * y]; } });
+			const th = (2 * Math.PI * r) / B.D,
+				c = Math.cos(th),
+				sn = Math.sin(th);
+			TRANSFORMS.push({
+				mir,
+				f: ([x, y]) => {
+					const a = mir ? -x : x;
+					return [c * a - sn * y, sn * a + c * y];
+				},
+			});
 		}
 	}
 	const ROT_ONLY = TRANSFORMS.filter((t) => !t.mir);
-	const markers = (e, T, b1, b2) => e.faces.map((f) => {
-		const t = T ? f.map(T.f) : f;
-		return { fr: frac(centroid(t), b1, b2), shape: shapeOf(t) };
-	});
+	const markers = (e, T, b1, b2) =>
+		e.faces.map((f) => {
+			const t = T ? f.map(T.f) : f;
+			return { fr: frac(centroid(t), b1, b2), shape: shapeOf(t) };
+		});
 	const congruent = (A, Bx, transforms) => {
 		const mb = markers(Bx, null, Bx.T1, Bx.T2);
 		for (const T of transforms) {
 			const [p, q] = [T.f(A.T1), T.f(A.T2)].map((v) => frac(v, Bx.T1, Bx.T2));
-			const ip = p.map(Math.round), iq = q.map(Math.round);
+			const ip = p.map(Math.round),
+				iq = q.map(Math.round);
 			if (Math.abs(p[0] - ip[0]) > TOL || Math.abs(p[1] - ip[1]) > TOL) continue;
 			if (Math.abs(q[0] - iq[0]) > TOL || Math.abs(q[1] - iq[1]) > TOL) continue;
 			if (Math.abs(Math.abs(ip[0] * iq[1] - ip[1] * iq[0]) - 1) > TOL) continue;
@@ -300,14 +379,22 @@ for (const B of BOARDS) {
 				const used = new Array(mb.length).fill(false);
 				let all = true;
 				for (const m of ma) {
-					const fa = m.fr[0] + da[0], fb = m.fr[1] + da[1];
+					const fa = m.fr[0] + da[0],
+						fb = m.fr[1] + da[1];
 					let hit = -1;
 					for (let i = 0; i < mb.length && hit < 0; i++) {
 						if (used[i]) continue;
-						if (Math.abs(wrap(fa - mb[i].fr[0])) < 1e-5 && Math.abs(wrap(fb - mb[i].fr[1])) < 1e-5
-							&& sameShape(m.shape, mb[i].shape)) hit = i;
+						if (
+							Math.abs(wrap(fa - mb[i].fr[0])) < 1e-5 &&
+							Math.abs(wrap(fb - mb[i].fr[1])) < 1e-5 &&
+							sameShape(m.shape, mb[i].shape)
+						)
+							hit = i;
 					}
-					if (hit < 0) { all = false; break; }
+					if (hit < 0) {
+						all = false;
+						break;
+					}
 					used[hit] = true;
 				}
 				if (all) return true;
@@ -318,17 +405,24 @@ for (const B of BOARDS) {
 	const signature = (e) => {
 		const cs = e.faces.map(centroid);
 		const latt = [];
-		for (let i = -2; i <= 2; i++) for (let j = -2; j <= 2; j++) {
-			if (!i && !j) continue;
-			latt.push(Math.round(Math.hypot(i * e.T1[0] + j * e.T2[0], i * e.T1[1] + j * e.T2[1]) * 1e6));
-		}
+		for (let i = -2; i <= 2; i++)
+			for (let j = -2; j <= 2; j++) {
+				if (!i && !j) continue;
+				latt.push(Math.round(Math.hypot(i * e.T1[0] + j * e.T2[0], i * e.T1[1] + j * e.T2[1]) * 1e6));
+			}
 		const pairs = [];
-		for (let i = 0; i < cs.length; i++) for (let j = i + 1; j < cs.length; j++) {
-			pairs.push(Math.round(modDist(cs[i], cs[j], e.T1, e.T2) * 1e6));
-		}
+		for (let i = 0; i < cs.length; i++)
+			for (let j = i + 1; j < cs.length; j++) {
+				pairs.push(Math.round(modDist(cs[i], cs[j], e.T1, e.T2) * 1e6));
+			}
 		const area = Math.abs(e.T1[0] * e.T2[1] - e.T1[1] * e.T2[0]);
-		return [e.k, e.faces.length, Math.round(area * 1e6), latt.sort((a, b) => a - b).join(','),
-			pairs.sort((a, b) => a - b).join(',')].join('|');
+		return [
+			e.k,
+			e.faces.length,
+			Math.round(area * 1e6),
+			latt.sort((a, b) => a - b).join(","),
+			pairs.sort((a, b) => a - b).join(","),
+		].join("|");
 	};
 	const reduce = (transforms) => {
 		const buckets = new Map();
@@ -370,9 +464,11 @@ for (const B of BOARDS) {
 
 	const rot = reduce(ROT_ONLY);
 	const distinct = reduce(TRANSFORMS).keep.sort((a, b) => a.k - b.k);
-	console.log(`  ${B.id}: ${entries.length} solver solutions -> ${rot.keep.length} up to rotation `
-		+ `-> ${distinct.length} distinct up to rotation AND reflection   `
-		+ `(shape ${worstShape.toExponential(1)}, area ${worstArea.toExponential(1)}, vertex ${(360 + worstAngle).toFixed(2)}°)`);
+	console.log(
+		`  ${B.id}: ${entries.length} solver solutions -> ${rot.keep.length} up to rotation ` +
+			`-> ${distinct.length} distinct up to rotation AND reflection   ` +
+			`(shape ${worstShape.toExponential(1)}, area ${worstArea.toExponential(1)}, vertex ${(360 + worstAngle).toFixed(2)}°)`,
+	);
 
 	const byK = new Map();
 	for (const e of distinct) {
@@ -384,8 +480,13 @@ for (const B of BOARDS) {
 	manifest[B.id] = { label: B.label, tile: B.tile, D: B.D, ks, counts: {} };
 	for (const k of ks) {
 		const rows = byK.get(k).map((e, i) => ({
-			id: `euh${B.id}-${k}-${String(i + 1).padStart(5, '0')}`,
-			k, T1: e.T1, T2: e.T2, seeds: e.seeds, faces: e.faces, stats: e.stats,
+			id: `euh${B.id}-${k}-${String(i + 1).padStart(5, "0")}`,
+			k,
+			T1: e.T1,
+			T2: e.T2,
+			seeds: e.seeds,
+			faces: e.faces,
+			stats: e.stats,
 		}));
 		// NO per-board shard is written. The sibling shelves write one and the app never reads it —
 		// `loadShelfShard` fetches `/reference-atlas-<shelf>-k<k>.json` and nothing else — so on a shelf
@@ -398,8 +499,8 @@ for (const B of BOARDS) {
 		const ref = byK.get(k).map((e, i) => {
 			const divided = tJunctions(e.faces, e.T1, e.T2, residue);
 			return {
-				id: `euh${B.id}-k${k}-${String(i + 1).padStart(4, '0')}`,
-				source: 'euhalf',
+				id: `euh${B.id}-k${k}-${String(i + 1).padStart(4, "0")}`,
+				source: "euhalf",
 				euHalfBoard: B.id,
 				k,
 				family: B.label,
@@ -412,17 +513,18 @@ for (const B of BOARDS) {
 				// agrees with the original edge-to-edge enumeration exactly on pent, hexm, sqmid and on hexv
 				// at k=1 and k=3, and reports 9 more than it should across hexv k=2 and k=4. Until that is
 				// run down, a positive count is a claim worth making and a zero is not.
-				note: `Periodic tiling by the ${B.tile}, `
-					+ `${e.faces.length} per period cell`
-					+ (divided
-						? `, with ${divided} T-junction${divided === 1 ? '' : 's'} per cell where one tile's edge `
-							+ 'is met by two neighbours instead of being matched whole. '
-						: '. ')
-					+ `${B.note} `
-					+ 'Certified here: every face is exactly the tile, the faces cover the period cell with no gap '
-					+ 'and no overlap, and every vertex sees a full turn. Every k this board lists is a COMPLETE '
-					+ 'enumeration with divided edges allowed; where the search could not reach, the shelf is '
-					+ 'silent instead of partial.',
+				note:
+					`Periodic tiling by the ${B.tile}, ` +
+					`${e.faces.length} per period cell` +
+					(divided
+						? `, with ${divided} T-junction${divided === 1 ? "" : "s"} per cell where one tile's edge ` +
+							"is met by two neighbours instead of being matched whole. "
+						: ". ") +
+					`${B.note} ` +
+					"Certified here: every face is exactly the tile, the faces cover the period cell with no gap " +
+					"and no overlap, and every vertex sees a full turn. Every k this board lists is a COMPLETE " +
+					"enumeration with divided edges allowed; where the search could not reach, the shelf is " +
+					"silent instead of partial.",
 			};
 		});
 		if (k <= EAGER_MAX) eager.push(...ref);
@@ -433,12 +535,12 @@ for (const B of BOARDS) {
 	}
 }
 
-writeFileSync(path.join(OUT, 'manifest.json'), JSON.stringify(manifest, null, 2));
-writeFileSync(path.join(PUB, 'reference-atlas-euhalf.json'), stringifyAtlas(eager));
+writeFileSync(path.join(OUT, "manifest.json"), JSON.stringify(manifest, null, 2));
+writeFileSync(path.join(PUB, "reference-atlas-euhalf.json"), stringifyAtlas(eager));
 console.log(`\n  ${grandRaw} solver solutions -> ${grandTotal} distinct tilings on the shelf`);
 console.log(`  atlas: ${eager.length} entries (k<=${EAGER_MAX}, eager) -> public/reference-atlas-euhalf.json`);
 for (const k of [...lazy.keys()].sort((a, b) => a - b)) {
 	writeFileSync(path.join(PUB, `reference-atlas-euhalf-k${k}.json`), stringifyAtlas(lazy.get(k)));
 	console.log(`         ${lazy.get(k).length} entries -> public/reference-atlas-euhalf-k${k}.json (lazy)`);
 }
-console.log(`  lazy k slices: [${[...lazy.keys()].sort((a, b) => a - b).join(', ')}]`);
+console.log(`  lazy k slices: [${[...lazy.keys()].sort((a, b) => a - b).join(", ")}]`);

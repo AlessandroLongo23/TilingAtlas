@@ -8,9 +8,9 @@
  * `exactVertices`/`exactCentroid`, hence identical `canonicalKey` and congruence class. The basis is two
  * `Cyclotomic` encodings. No floats cross the wire; merge stays exact.
  */
-import { Cyclotomic, type CyclotomicRing } from '@/classes/Cyclotomic';
-import { RegularPolygon } from '@/classes/polygons/RegularPolygon';
-import type { PeriodCell } from '@/classes/algorithm/PeriodSolver';
+import { Cyclotomic, type CyclotomicRing } from "@/classes/Cyclotomic";
+import { RegularPolygon } from "@/classes/polygons/RegularPolygon";
+import type { PeriodCell } from "@/classes/algorithm/PeriodSolver";
 
 export type EncCyc = { n: string[]; d: string };
 export type SerializedCell = {
@@ -24,8 +24,8 @@ export function serializeCell(cell: PeriodCell): SerializedCell {
 		// RegularPolygon.fromAnchorAndDirExact. A star tile (its reflex dents / extra boundary vertices)
 		// would be silently regularized into an n-gon, so refuse it loudly instead of losing geometry.
 		if ((p as { isStar?: boolean }).isStar === true)
-			throw new Error('cellCodec: star polygons are not representable by the regular-only {n,anchor,dir} codec');
-		if (!p.exactVertices || !p.edgeDirs) throw new Error('cellCodec: cell polygon lacks exact data');
+			throw new Error("cellCodec: star polygons are not representable by the regular-only {n,anchor,dir} codec");
+		if (!p.exactVertices || !p.edgeDirs) throw new Error("cellCodec: cell polygon lacks exact data");
 		return { n: p.n, a: p.exactVertices[0].encode(), d: p.edgeDirs[0] };
 	});
 	return { polys, basis: [cell.basisExact[0].encode(), cell.basisExact[1].encode()] };
@@ -33,7 +33,7 @@ export function serializeCell(cell: PeriodCell): SerializedCell {
 
 export function deserializeCell(ring: CyclotomicRing, sc: SerializedCell): PeriodCell {
 	const cellPolygons = sc.polys.map((pe) =>
-		RegularPolygon.fromAnchorAndDirExact(pe.n, Cyclotomic.decode(ring, pe.a), pe.d)
+		RegularPolygon.fromAnchorAndDirExact(pe.n, Cyclotomic.decode(ring, pe.a), pe.d),
 	);
 	return {
 		cellPolygons,

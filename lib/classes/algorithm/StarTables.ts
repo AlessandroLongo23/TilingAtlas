@@ -20,7 +20,7 @@ import {
 	regInteriorU,
 	canonicalVCName,
 	STAR_NS,
-} from './StarVC';
+} from "./StarVC";
 import {
 	r2AllVariants,
 	r2DentRegVariants,
@@ -30,9 +30,9 @@ import {
 	type R2Variant,
 	type R2Stratum,
 	type R2Cell,
-} from './StarDmaxRoute2';
+} from "./StarDmaxRoute2";
 
-export const STRATA: R2Stratum[] = ['fig4', 'fig3eq1', 'fig3le1'];
+export const STRATA: R2Stratum[] = ["fig4", "fig3eq1", "fig3le1"];
 
 const REG_US = [...STAR_NS].map(regInteriorU); // [4, 6, 8, 9, 10]
 
@@ -82,14 +82,14 @@ function dentNoPointMax(variants: R2Variant[]): number {
 
 /** Route 1 d_max: live enumerator (point-carrying VCs) + the computed point-free fold-backs. */
 export function route1Dmax(variants: R2Variant[], stratum: R2Stratum): number {
-	const withDents = stratum !== 'fig4';
+	const withDents = stratum !== "fig4";
 	let best = 0;
 	for (const vc of enumerateStarVCs({ variants, includeDents: withDents })) {
-		const dents = vc.tokens.filter((t) => t.kind === 'dent').length;
-		if (stratum === 'fig3eq1' && dents !== 1) continue;
+		const dents = vc.tokens.filter((t) => t.kind === "dent").length;
+		if (stratum === "fig3eq1" && dents !== 1) continue;
 		if (vc.tokens.length > best) best = vc.tokens.length;
 	}
-	if (stratum !== 'fig3eq1') best = Math.max(best, pureRegularMax()); // point-free, dent-free
+	if (stratum !== "fig3eq1") best = Math.max(best, pureRegularMax()); // point-free, dent-free
 	if (withDents) best = Math.max(best, dentNoPointMax(variants)); //    point-free, one dent
 	return best;
 }
@@ -110,24 +110,24 @@ export function computeDmaxRow(label: string, variants: R2Variant[]): DmaxRow {
 		const route1 = route1Dmax(variants, s);
 		cells[s] = { route1, route2, agree: route1 === route2.dmax };
 	}
-	const identityOk =
-		cells.fig3le1.route2.dmax === Math.max(cells.fig4.route2.dmax, cells.fig3eq1.route2.dmax);
+	const identityOk = cells.fig3le1.route2.dmax === Math.max(cells.fig4.route2.dmax, cells.fig3eq1.route2.dmax);
 	return { label, variants, cells, identityOk };
 }
 
 /** Row order: regular-only sanity, the 32 families, then the two (expensive) envelopes. */
 export function dmaxRowSpecs(): { label: string; variants: R2Variant[] }[] {
 	return [
-		{ label: 'regular-only', variants: [] },
+		{ label: "regular-only", variants: [] },
 		...r2AllVariants().map((v) => ({ label: `F(${v.n},${v.alphaU})`, variants: [v] })),
-		{ label: 'envelope-dentreg-19', variants: r2DentRegVariants() },
-		{ label: 'envelope-all-32', variants: r2AllVariants() },
+		{ label: "envelope-dentreg-19", variants: r2DentRegVariants() },
+		{ label: "envelope-all-32", variants: r2AllVariants() },
 	];
 }
 
-export function computeDmaxTable(
-	onRow?: (row: DmaxRow, i: number, total: number) => void,
-): { rows: DmaxRow[]; allChecksPass: boolean } {
+export function computeDmaxTable(onRow?: (row: DmaxRow, i: number, total: number) => void): {
+	rows: DmaxRow[];
+	allChecksPass: boolean;
+} {
 	const specs = dmaxRowSpecs();
 	const rows: DmaxRow[] = [];
 	let ok = true;
@@ -146,15 +146,20 @@ export function computeDmaxTable(
  * over a superset alphabet only ADDS VCs, so presence here ⇒ presence in the all-32 run.
  */
 export function degree7FalsifierPresent(): boolean {
-	const name = canonicalVCName(['8*p@1', '3', '3', '3', '3*p@3', '3', '3']);
-	const vcs = enumerateStarVCs({ variants: [{ n: 8, alphaU: 1 }, { n: 3, alphaU: 3 }] });
+	const name = canonicalVCName(["8*p@1", "3", "3", "3", "3*p@3", "3", "3"]);
+	const vcs = enumerateStarVCs({
+		variants: [
+			{ n: 8, alphaU: 1 },
+			{ n: 3, alphaU: 3 },
+		],
+	});
 	return vcs.some((v) => v.name === name);
 }
 
 // ───────────────────────────── TH-13 — γ-feasibility table ─────────────────────────────
 
-export type GearCls = 'regular' | 'point' | 'both' | 'none';
-export type DentFillVerdict = 'REGULAR-FILLABLE' | 'POINT-ONLY' | 'UNFILLABLE';
+export type GearCls = "regular" | "point" | "both" | "none";
+export type DentFillVerdict = "REGULAR-FILLABLE" | "POINT-ONLY" | "UNFILLABLE";
 export type DentFillRow = {
 	n: number;
 	alphaU: number;
@@ -172,7 +177,7 @@ export type DentFillRow = {
 function fillClass(gammaU: number): GearCls {
 	const reg = R2_STAR_NS.some((m) => r2RegInteriorU(m) === gammaU);
 	const pt = R2_STAR_NS.some((m) => gammaU > 0 && gammaU < r2RegInteriorU(m));
-	return reg && pt ? 'both' : reg ? 'regular' : pt ? 'point' : 'none';
+	return reg && pt ? "both" : reg ? "regular" : pt ? "point" : "none";
 }
 
 export function computeDentFillTable(): {
@@ -196,39 +201,61 @@ export function computeDentFillTable(): {
 			cls: fillClass(24 / filler.n + gammaU),
 		}));
 		const verdict: DentFillVerdict =
-			regularMatches.length > 0 ? 'REGULAR-FILLABLE'
-			: crossFamilyPointMatches.length > 0 ? 'POINT-ONLY'
-			: 'UNFILLABLE';
+			regularMatches.length > 0 ? "REGULAR-FILLABLE" : crossFamilyPointMatches.length > 0 ? "POINT-ONLY" : "UNFILLABLE";
 		return {
-			n, alphaU, betaU, gammaU, regularMatches,
+			n,
+			alphaU,
+			betaU,
+			gammaU,
+			regularMatches,
 			sameFamilyPointMatch: gammaU === alphaU,
-			crossFamilyPointMatches, dentMatches, gear, verdict,
+			crossFamilyPointMatches,
+			dentMatches,
+			gear,
+			verdict,
 		};
 	});
 
 	const counts: Record<DentFillVerdict, number> = {
-		'REGULAR-FILLABLE': 0, 'POINT-ONLY': 0, 'UNFILLABLE': 0,
+		"REGULAR-FILLABLE": 0,
+		"POINT-ONLY": 0,
+		UNFILLABLE: 0,
 	};
 	for (const r of rows) counts[r.verdict]++;
 
 	const crossCheckLog: string[] = [];
 	let crossChecksPass = true;
 	const check = (name: string, cond: boolean) => {
-		crossCheckLog.push(`${cond ? '✓' : '✗'} ${name}`);
+		crossCheckLog.push(`${cond ? "✓" : "✗"} ${name}`);
 		crossChecksPass = crossChecksPass && cond;
 	};
 	const key = (v: R2Variant) => `${v.n}*@${v.alphaU}`;
-	const regSet = rows.filter((r) => r.verdict === 'REGULAR-FILLABLE').map(key).sort().join(',');
-	const filterSet = dentRegularFillableVariants().map(key).sort().join(',');
-	check(`rows (${rows.length}) == inRingStarVariants().length (${inRingStarVariants().length})`,
-		rows.length === inRingStarVariants().length);
-	check(`REGULAR-FILLABLE count (${counts['REGULAR-FILLABLE']}) == dentRegularFillableVariants().length (${dentRegularFillableVariants().length})`,
-		counts['REGULAR-FILLABLE'] === dentRegularFillableVariants().length);
-	check('REGULAR-FILLABLE set == dentRegularFillableVariants() set', regSet === filterSet);
-	check('same-family point match impossible everywhere (γ = α + 24/n ≠ α)',
-		rows.every((r) => !r.sameFamilyPointMatch));
-	check('dent matches empty everywhere (γ < 12 < β′)', rows.every((r) => r.dentMatches.length === 0));
-	check('verdicts partition the 32',
-		counts['REGULAR-FILLABLE'] + counts['POINT-ONLY'] + counts['UNFILLABLE'] === rows.length);
+	const regSet = rows
+		.filter((r) => r.verdict === "REGULAR-FILLABLE")
+		.map(key)
+		.sort()
+		.join(",");
+	const filterSet = dentRegularFillableVariants().map(key).sort().join(",");
+	check(
+		`rows (${rows.length}) == inRingStarVariants().length (${inRingStarVariants().length})`,
+		rows.length === inRingStarVariants().length,
+	);
+	check(
+		`REGULAR-FILLABLE count (${counts["REGULAR-FILLABLE"]}) == dentRegularFillableVariants().length (${dentRegularFillableVariants().length})`,
+		counts["REGULAR-FILLABLE"] === dentRegularFillableVariants().length,
+	);
+	check("REGULAR-FILLABLE set == dentRegularFillableVariants() set", regSet === filterSet);
+	check(
+		"same-family point match impossible everywhere (γ = α + 24/n ≠ α)",
+		rows.every((r) => !r.sameFamilyPointMatch),
+	);
+	check(
+		"dent matches empty everywhere (γ < 12 < β′)",
+		rows.every((r) => r.dentMatches.length === 0),
+	);
+	check(
+		"verdicts partition the 32",
+		counts["REGULAR-FILLABLE"] + counts["POINT-ONLY"] + counts["UNFILLABLE"] === rows.length,
+	);
 	return { rows, counts, crossChecksPass, crossCheckLog };
 }

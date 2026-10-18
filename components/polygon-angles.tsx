@@ -71,7 +71,10 @@ function wedgePoints(s: Shape): Pt[] {
 }
 
 function Tile({ s }: { s: Shape }) {
-	let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+	let minX = Infinity,
+		minY = Infinity,
+		maxX = -Infinity,
+		maxY = -Infinity;
 	for (const [x, y] of s.pts) {
 		if (x < minX) minX = x;
 		if (x > maxX) maxX = x;
@@ -127,12 +130,8 @@ export function PolygonAngles() {
 							<Tile s={s} />
 						</div>
 						<div className="text-center leading-tight">
-							<div className="font-mono text-[clamp(0.7rem,1.05vh+0.3vw,1.1rem)] font-semibold text-fg">
-								{s.n}
-							</div>
-							<div className="text-[clamp(0.66rem,1vh+0.28vw,1.05rem)] text-fg-secondary">
-								{s.angle}&deg;
-							</div>
+							<div className="font-mono text-[clamp(0.7rem,1.05vh+0.3vw,1.1rem)] font-semibold text-fg">{s.n}</div>
+							<div className="text-[clamp(0.66rem,1vh+0.28vw,1.05rem)] text-fg-secondary">{s.angle}&deg;</div>
 						</div>
 					</div>
 				))}

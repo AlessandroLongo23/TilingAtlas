@@ -114,9 +114,7 @@ describe("matches — the size sub-filter", () => {
 
 describe("sizeOptions", () => {
 	it("lists the sizes present, ascending and deduplicated", () => {
-		expect(
-			sizeOptions([stats({ sizes: [4, 4, 1] }), stats({ sizes: [9, 4] }), stats()]),
-		).toEqual([1, 4, 9]);
+		expect(sizeOptions([stats({ sizes: [4, 4, 1] }), stats({ sizes: [9, 4] }), stats()])).toEqual([1, 4, 9]);
 	});
 });
 
@@ -127,10 +125,18 @@ describe("matches — the regular-polygon axes", () => {
 	const s = stats({ finite: 1, sizes: [1] });
 
 	it("requires and excludes individual polygons", () => {
-		expect(matches(s, filter({ polygons: { ...DEFAULT_FILTER.polygons, 6: "require" } }), reg([3, 6], true, true))).toBe(true);
-		expect(matches(s, filter({ polygons: { ...DEFAULT_FILTER.polygons, 6: "require" } }), reg([3, 4], true, true))).toBe(false);
-		expect(matches(s, filter({ polygons: { ...DEFAULT_FILTER.polygons, 4: "exclude" } }), reg([3, 6], true, true))).toBe(true);
-		expect(matches(s, filter({ polygons: { ...DEFAULT_FILTER.polygons, 4: "exclude" } }), reg([3, 4], true, true))).toBe(false);
+		expect(
+			matches(s, filter({ polygons: { ...DEFAULT_FILTER.polygons, 6: "require" } }), reg([3, 6], true, true)),
+		).toBe(true);
+		expect(
+			matches(s, filter({ polygons: { ...DEFAULT_FILTER.polygons, 6: "require" } }), reg([3, 4], true, true)),
+		).toBe(false);
+		expect(
+			matches(s, filter({ polygons: { ...DEFAULT_FILTER.polygons, 4: "exclude" } }), reg([3, 6], true, true)),
+		).toBe(true);
+		expect(
+			matches(s, filter({ polygons: { ...DEFAULT_FILTER.polygons, 4: "exclude" } }), reg([3, 4], true, true)),
+		).toBe(false);
 	});
 
 	it("gates on regularity", () => {
@@ -160,7 +166,11 @@ describe("URL codec", () => {
 			filter({ finite: "require", sizes: [4, 5, 12], sizeMode: "any" }),
 			filter({ grid: "triangle", k: 2, strip: "exclude", finite: "require", sizes: [6] }),
 			filter({ grid: "ts", regularity: "unit" }),
-			filter({ grid: "ts", regularity: "regular", polygons: { 3: "require", 4: "any", 6: "require", 8: "any", 12: "exclude" } }),
+			filter({
+				grid: "ts",
+				regularity: "regular",
+				polygons: { 3: "require", 4: "any", 6: "require", 8: "any", 12: "exclude" },
+			}),
 			filter({ grid: "ts", polygons: { 3: "exclude", 4: "require", 6: "any", 8: "any", 12: "require" } }),
 		];
 		for (const f of cases) expect(round(f)).toEqual(f);
@@ -171,9 +181,7 @@ describe("URL codec", () => {
 	});
 
 	it("falls back to the default on hostile input instead of injecting it", () => {
-		const f = parseFilter(
-			new URLSearchParams("g=hexagon&k=-2&u=maybe&s=x&sz=4,abc,0,-3,4&m=nonsense"),
-		);
+		const f = parseFilter(new URLSearchParams("g=hexagon&k=-2&u=maybe&s=x&sz=4,abc,0,-3,4&m=nonsense"));
 		expect(f.grid).toBe("square");
 		expect(f.k).toBe(0);
 		expect(f.unbounded).toBe("any");

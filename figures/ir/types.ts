@@ -11,12 +11,12 @@ export type V2 = { x: number; y: number };
 
 export type Rect = { minX: number; minY: number; maxX: number; maxY: number };
 
-export type PolyElement = { kind: 'poly'; verts: V2[]; styleRef: string };
-export type PolylineElement = { kind: 'polyline'; verts: V2[]; closed?: boolean; styleRef: string };
-export type MarkerElement = { kind: 'marker'; at: V2; styleRef: string };
-export type ArrowElement = { kind: 'arrow'; from: V2; to: V2; styleRef: string };
+export type PolyElement = { kind: "poly"; verts: V2[]; styleRef: string };
+export type PolylineElement = { kind: "polyline"; verts: V2[]; closed?: boolean; styleRef: string };
+export type MarkerElement = { kind: "marker"; at: V2; styleRef: string };
+export type ArrowElement = { kind: "arrow"; from: V2; to: V2; styleRef: string };
 /** `tex` is TikZ math-mode-capable text (e.g. "$\\zeta^5$"); the SVG preview renders it raw. */
-export type TextElement = { kind: 'text'; at: V2; tex: string; styleRef: string };
+export type TextElement = { kind: "text"; at: V2; tex: string; styleRef: string };
 
 export type FigureElement = PolyElement | PolylineElement | MarkerElement | ArrowElement | TextElement;
 

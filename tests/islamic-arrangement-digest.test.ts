@@ -50,9 +50,9 @@ const CASES = [
 
 // Recorded from the string-keyed implementation at 1f48db5, before the numeric-key rewrite.
 const EXPECTED: Record<string, string> = {
-	"ctrnact-mixed-family-k2-01|0|1|2": "9089ce7c:207071",  // 4200 segs → 3262 pts, 4200 edges, 981 faces, 981 coloured
-	"ctrnact-mixed-family-k2-01|0.2|2|2": "c042159b:762026",  // 4200 segs → 9586 pts, 14809 edges, 5229 faces, 5229 coloured
-	"ctrnact-mixed-family-k1-05|0.35|3|2": "8337abe0:185730",  // 1200 segs → 2598 pts, 3804 edges, 1213 faces, 1213 coloured
+	"ctrnact-mixed-family-k2-01|0|1|2": "9089ce7c:207071", // 4200 segs → 3262 pts, 4200 edges, 981 faces, 981 coloured
+	"ctrnact-mixed-family-k2-01|0.2|2|2": "c042159b:762026", // 4200 segs → 9586 pts, 14809 edges, 5229 faces, 5229 coloured
+	"ctrnact-mixed-family-k1-05|0.35|3|2": "8337abe0:185730", // 1200 segs → 2598 pts, 3804 edges, 1213 faces, 1213 coloured
 };
 
 function runCase(c: (typeof CASES)[number]): { key: string; digest: string; stats: string } | null {

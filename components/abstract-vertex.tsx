@@ -44,7 +44,11 @@ const INK = "rgba(20,20,20,0.88)";
 const GHOST = "rgba(20,20,20,0.3)";
 
 const SUB = "₀₁₂₃₄₅₆₇₈₉";
-const sub = (i: number) => String(i).split("").map((d) => SUB[+d]).join("");
+const sub = (i: number) =>
+	String(i)
+		.split("")
+		.map((d) => SUB[+d])
+		.join("");
 
 export function AbstractVertex({ word = "3.4.6.4" }: { word?: string }) {
 	const host = useRef<HTMLDivElement | null>(null);
@@ -67,7 +71,8 @@ export function AbstractVertex({ word = "3.4.6.4" }: { word?: string }) {
 	}, [word]);
 
 	const paint = useCallback(() => {
-		const h = host.current, c = canvas.current;
+		const h = host.current,
+			c = canvas.current;
 		if (!h || !c || !model) return;
 		const p = prepare(h, c, { minX: -1.26, maxX: 1.26, minY: -1.26, maxY: 1.26 }, 0.98);
 		if (!p) return;
@@ -92,7 +97,8 @@ export function AbstractVertex({ word = "3.4.6.4" }: { word?: string }) {
 
 		// The half-edges: solid to the midpoint, then the half that does not exist yet, dashed.
 		for (const d of model.dirs) {
-			const cx = Math.cos(d), cy = Math.sin(d);
+			const cx = Math.cos(d),
+				cy = Math.sin(d);
 			ctx.strokeStyle = GHOST;
 			ctx.lineWidth = 1.6 / s;
 			ctx.setLineDash([5 / s, 4 / s]);
@@ -165,7 +171,7 @@ export function AbstractVertex({ word = "3.4.6.4" }: { word?: string }) {
 
 	return (
 		<figure className="not-prose m-0 flex flex-col items-center gap-2">
-			<div ref={host} className="relative aspect-square h-[46vh] rounded-2xl border border-line bg-surface-base">
+			<div ref={host} className="bg-surface-base relative aspect-square h-[46vh] rounded-2xl border border-line">
 				<canvas ref={canvas} className="absolute inset-0 h-full w-full" />
 			</div>
 			<figcaption className="max-w-[36rem] text-center text-[clamp(0.6rem,0.85vh+0.2vw,0.86rem)] leading-snug text-fg-muted">
@@ -173,8 +179,8 @@ export function AbstractVertex({ word = "3.4.6.4" }: { word?: string }) {
 					{model.ns.join(".")}&nbsp;&nbsp;{model.units.join(" + ")} = {model.sum} = D
 				</span>
 				<br />
-				each half-edge stops at the middle of an edge; the dashed half belongs to a vertex the search has
-				not chosen yet, and no position or orientation is recorded anywhere
+				each half-edge stops at the middle of an edge; the dashed half belongs to a vertex the search has not chosen
+				yet, and no position or orientation is recorded anywhere
 			</figcaption>
 		</figure>
 	);

@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { BUBBLE_EDGE_STYLES, BUBBLE_KOCH_LEVELS, boardCornerAngle, hasLevels, pushEdge, type BubbleEdgeStyle } from "@/lib/bubble/edges";
+import {
+	BUBBLE_EDGE_STYLES,
+	BUBBLE_KOCH_LEVELS,
+	boardCornerAngle,
+	hasLevels,
+	pushEdge,
+	type BubbleEdgeStyle,
+} from "@/lib/bubble/edges";
 import { BUBBLE_GRID_ORDER, type BubbleGrid } from "@/lib/bubble/pattern";
 import type { Pt } from "@/lib/render/cubic";
 
@@ -20,7 +27,12 @@ const regular = (n: number): [number, number][] =>
 	});
 // Unit-sided 60° rhombus. Not a scaled square: its 60° corner is the binding one, which is why the
 // rhombic board shares the triangle's depth budget rather than the square's.
-const RHOMBUS: [number, number][] = [[0, 0], [1, 0], [1.5, Math.sqrt(3) / 2], [0.5, Math.sqrt(3) / 2]];
+const RHOMBUS: [number, number][] = [
+	[0, 0],
+	[1, 0],
+	[1.5, Math.sqrt(3) / 2],
+	[0.5, Math.sqrt(3) / 2],
+];
 
 /** The prototiles each board actually places — the shapes a profile has to survive on that board. */
 const TILES: Record<BubbleGrid, [number, number][][]> = {
@@ -69,34 +81,38 @@ describe("bubble edge profiles", () => {
 	// that its extent does not grow — this is what holds that arithmetic honest.
 	const LEVELS = (style: string) =>
 		hasLevels(style as BubbleEdgeStyle)
-			? Array.from({ length: BUBBLE_KOCH_LEVELS.max - BUBBLE_KOCH_LEVELS.min + 1 }, (_, i) => BUBBLE_KOCH_LEVELS.min + i)
+			? Array.from(
+					{ length: BUBBLE_KOCH_LEVELS.max - BUBBLE_KOCH_LEVELS.min + 1 },
+					(_, i) => BUBBLE_KOCH_LEVELS.min + i,
+				)
 			: [BUBBLE_KOCH_LEVELS.default];
 
 	for (const { value: style } of BUBBLE_EDGE_STYLES) {
 		it(`${style} keeps every tile on every board simple`, () => {
 			const broken: string[] = [];
 			for (const level of LEVELS(style))
-			for (const grid of BUBBLE_GRID_ORDER)
-				for (const pts of TILES[grid]) {
-					const n = pts.length;
-					for (let word = 0; word < 1 << n; word++) {
-						const ring: Pt[] = [];
-						// The prototiles above wind counter-clockwise, so the LEFT normal points into the tile:
-						// a set bit is a bump (outward = false) and a clear bit is a bite.
-						for (let i = 0; i < n; i++)
-							pushEdge(ring, pts[i], pts[(i + 1) % n], !((word >> i) & 1), style, grid, level);
-						if (!isSimple(ring)) broken.push(`${grid}/${n}-gon/${word.toString(2).padStart(n, "0")}/L${level}`);
-						// And simple with MARGIN. A profile that clears itself by a fraction of a percent passes
-						// the bare test and still renders as slivers — that is how the hexagonal board's uncapped
-						// depth got through the first time. Shrinking the SUBSTRATE 12% deepens every decoration
-						// by the same fraction of an edge, so this is the same tile asked for 12% more room.
-						const tight: Pt[] = [];
-						const small = pts.map(([x, y]) => [x * 0.88, y * 0.88] as [number, number]);
-						for (let i = 0; i < n; i++)
-							pushEdge(tight, small[i], small[(i + 1) % n], !((word >> i) & 1), style, grid, level);
-						if (!isSimple(tight)) broken.push(`${grid}/${n}-gon/${word.toString(2).padStart(n, "0")}/L${level}/margin`);
+				for (const grid of BUBBLE_GRID_ORDER)
+					for (const pts of TILES[grid]) {
+						const n = pts.length;
+						for (let word = 0; word < 1 << n; word++) {
+							const ring: Pt[] = [];
+							// The prototiles above wind counter-clockwise, so the LEFT normal points into the tile:
+							// a set bit is a bump (outward = false) and a clear bit is a bite.
+							for (let i = 0; i < n; i++)
+								pushEdge(ring, pts[i], pts[(i + 1) % n], !((word >> i) & 1), style, grid, level);
+							if (!isSimple(ring)) broken.push(`${grid}/${n}-gon/${word.toString(2).padStart(n, "0")}/L${level}`);
+							// And simple with MARGIN. A profile that clears itself by a fraction of a percent passes
+							// the bare test and still renders as slivers — that is how the hexagonal board's uncapped
+							// depth got through the first time. Shrinking the SUBSTRATE 12% deepens every decoration
+							// by the same fraction of an edge, so this is the same tile asked for 12% more room.
+							const tight: Pt[] = [];
+							const small = pts.map(([x, y]) => [x * 0.88, y * 0.88] as [number, number]);
+							for (let i = 0; i < n; i++)
+								pushEdge(tight, small[i], small[(i + 1) % n], !((word >> i) & 1), style, grid, level);
+							if (!isSimple(tight))
+								broken.push(`${grid}/${n}-gon/${word.toString(2).padStart(n, "0")}/L${level}/margin`);
+						}
 					}
-				}
 			expect(broken).toEqual([]);
 		});
 	}
@@ -122,7 +138,8 @@ describe("bubble edge profiles", () => {
 			const rev = [...back, { x: a[0], y: a[1] }].reverse();
 			const own = [...fwd, { x: b[0], y: b[1] }];
 			expect(rev).toHaveLength(own.length);
-			for (let i = 0; i < own.length; i++) expect(Math.hypot(own[i].x - rev[i].x, own[i].y - rev[i].y)).toBeLessThan(1e-12);
+			for (let i = 0; i < own.length; i++)
+				expect(Math.hypot(own[i].x - rev[i].x, own[i].y - rev[i].y)).toBeLessThan(1e-12);
 		}
 	});
 });

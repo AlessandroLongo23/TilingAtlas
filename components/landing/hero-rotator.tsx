@@ -55,7 +55,8 @@ interface Stage {
 }
 
 function centroidOf(poly: RawPolygon): { x: number; y: number } {
-	let x = 0, y = 0;
+	let x = 0,
+		y = 0;
 	for (const v of poly.vertices) {
 		x += v.x;
 		y += v.y;
@@ -65,7 +66,13 @@ function centroidOf(poly: RawPolygon): { x: number; y: number } {
 
 /** Build the stage for one specimen at the current viewport size: expanded polygons for the wave
  *  and a pre-rendered offscreen (viewport + wrap margin) for the steady drift. */
-function buildStage(cell: LandingSpecimen["cell"], W: number, H: number, dpr: number, background: string): Stage | null {
+function buildStage(
+	cell: LandingSpecimen["cell"],
+	W: number,
+	H: number,
+	dpr: number,
+	background: string,
+): Stage | null {
 	const base = parseBaseCell(cell);
 	if (!base) return null;
 	const scale = PX_PER_EDGE / base.medianEdge;
@@ -74,14 +81,7 @@ function buildStage(cell: LandingSpecimen["cell"], W: number, H: number, dpr: nu
 	const marginPx = Math.ceil(marginWorld * scale);
 	const cx = (base.minX + base.maxX) / 2;
 	const cy = (base.minY + base.maxY) / 2;
-	const polys = expandToViewport(
-		base,
-		cx,
-		cy,
-		W / (2 * scale) + marginWorld,
-		H / (2 * scale) + marginWorld,
-		200,
-	);
+	const polys = expandToViewport(base, cx, cy, W / (2 * scale) + marginWorld, H / (2 * scale) + marginWorld, 200);
 	if (polys.length === 0) return null;
 
 	const off = document.createElement("canvas");
@@ -133,11 +133,14 @@ export function HeroRotator({ specimens }: HeroRotatorProps) {
 		const reduced = prefersReducedMotion();
 		let disposed = false;
 		let raf = 0;
-		let W = 0, H = 0, dpr = 1;
+		let W = 0,
+			H = 0,
+			dpr = 1;
 		let background = "#fff";
 		let stage: Stage | null = null;
 		// Drift offset in world units, wrapped by the lattice each frame.
-		let ox = 0, oy = 0;
+		let ox = 0,
+			oy = 0;
 		let lastT = 0;
 		let nextRotateAt = 0;
 		let transition: { phase: "out" | "in"; start: number; target: LandingSpecimen } | null = null;
@@ -245,13 +248,7 @@ export function HeroRotator({ specimens }: HeroRotatorProps) {
 			const offW = W + 2 * stage.marginPx;
 			const offH = H + 2 * stage.marginPx;
 			// World offset (rx, ry) moves the pattern by (+rx·scale, −ry·scale) on screen (y flips).
-			ctx.drawImage(
-				stage.off,
-				-stage.marginPx + rx * stage.scale,
-				-stage.marginPx - ry * stage.scale,
-				offW,
-				offH,
-			);
+			ctx.drawImage(stage.off, -stage.marginPx + rx * stage.scale, -stage.marginPx - ry * stage.scale, offW, offH);
 		};
 
 		const drawWave = (phase: "out" | "in", p: number) => {
@@ -394,10 +391,10 @@ export function HeroRotator({ specimens }: HeroRotatorProps) {
 	return (
 		<>
 			<div ref={hostRef} aria-hidden="true" className="absolute inset-0 bg-surface">
-				<canvas ref={canvasRef} className="w-full h-full block" />
+				<canvas ref={canvasRef} className="block h-full w-full" />
 			</div>
 			{specimen ? (
-				<div className="absolute bottom-3 right-3 z-10 flex max-w-[calc(100%-1.5rem)] items-center gap-2.5 text-[11px] font-mono ta-float px-2.5 py-1.5 text-fg-secondary">
+				<div className="ta-float absolute right-3 bottom-3 z-10 flex max-w-[calc(100%-1.5rem)] items-center gap-2.5 px-2.5 py-1.5 font-mono text-[11px] text-fg-secondary">
 					<span className="min-w-0 truncate">
 						{specimen.id} <span className="hidden sm:inline">· {specimen.label} </span>· k&nbsp;=&nbsp;{specimen.k}
 					</span>
@@ -408,7 +405,7 @@ export function HeroRotator({ specimens }: HeroRotatorProps) {
 						}}
 						title="Show another tiling"
 						aria-label="Show another tiling"
-						className="shrink-0 inline-flex items-center gap-1 text-fg-muted hover:text-fg transition-colors max-md:-my-3 max-md:-mr-2 max-md:min-h-11 max-md:px-2"
+						className="inline-flex shrink-0 items-center gap-1 text-fg-muted transition-colors hover:text-fg max-md:-my-3 max-md:-mr-2 max-md:min-h-11 max-md:px-2"
 					>
 						<Shuffle size={12} aria-hidden="true" />
 						<span>shuffle</span>

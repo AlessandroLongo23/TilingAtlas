@@ -20,10 +20,22 @@ const F = (p: number, q: number): number => {
 	for (const t of [-p, 0, q]) b = Math.min(b, Math.abs(p + t) + Math.abs(q - t) + Math.abs(t));
 	return b;
 };
-const wt = (v: Cyclotomic): number => { const n = v.num.map(Number); return F(n[0], n[4]) + F(n[2], n[6]); };
+const wt = (v: Cyclotomic): number => {
+	const n = v.num.map(Number);
+	return F(n[0], n[4]) + F(n[2], n[6]);
+};
 const PHI = ring.phi;
 const OMEGA = Array.from({ length: PHI }, (_, i) => [Math.cos((Math.PI * i) / 12), Math.sin((Math.PI * i) / 12)]);
-const len = (v: Cyclotomic): number => { const n = v.num.map(Number); let re = 0, im = 0; for (let i = 0; i < PHI; i++) { re += n[i] * OMEGA[i][0]; im += n[i] * OMEGA[i][1]; } return Math.hypot(re, im); };
+const len = (v: Cyclotomic): number => {
+	const n = v.num.map(Number);
+	let re = 0,
+		im = 0;
+	for (let i = 0; i < PHI; i++) {
+		re += n[i] * OMEGA[i][0];
+		im += n[i] * OMEGA[i][1];
+	}
+	return Math.hypot(re, im);
+};
 
 type Best = { r: number; id: string; wtU: number; wtV: number };
 const kMax: Record<number, Best> = {};
@@ -33,14 +45,19 @@ for (const f of process.argv.slice(2)) {
 	for (const t of tilings) {
 		if (!t.T1 || !t.T2) continue;
 		const [u, v] = gaussReduceExact(dec(t.T1), dec(t.T2));
-		const wu = wt(u), wv = wt(v);
+		const wu = wt(u),
+			wv = wt(v);
 		const r = Math.max(wu / len(u), wv / len(v));
 		if (!kMax[t.k] || r > kMax[t.k].r) kMax[t.k] = { r, id: t.id, wtU: wu, wtV: wv };
 	}
 }
 const SQRT2 = Math.SQRT2;
 console.log("k   max ratio   holder                                      wt(u,v)   vs √2");
-for (const k of Object.keys(kMax).map(Number).sort((a, b) => a - b)) {
+for (const k of Object.keys(kMax)
+	.map(Number)
+	.sort((a, b) => a - b)) {
 	const b = kMax[k];
-	console.log(`${String(k).padStart(2)}  ${b.r.toFixed(4)}     ${b.id.padEnd(42)} (${b.wtU},${b.wtV})   ${b.r <= SQRT2 ? "≤√2 ✓" : "⚑ >√2"}`);
+	console.log(
+		`${String(k).padStart(2)}  ${b.r.toFixed(4)}     ${b.id.padEnd(42)} (${b.wtU},${b.wtV})   ${b.r <= SQRT2 ? "≤√2 ✓" : "⚑ >√2"}`,
+	);
 }

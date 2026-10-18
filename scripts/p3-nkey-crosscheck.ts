@@ -16,13 +16,13 @@
  * Usage: pnpm tsx scripts/p3-nkey-crosscheck.ts --pruned <cells.json> [--raw <cells.json>]
  *   cells.json format: [{id, k, T1: int[4], T2: int[4], Seed: int[4][]}, ...]
  */
-import { readFileSync } from 'node:fs';
-import { nKeyOfSymbol } from '../lib/classes/algorithm/canonicalFormN';
+import { readFileSync } from "node:fs";
+import { nKeyOfSymbol } from "../lib/classes/algorithm/canonicalFormN";
 
 type Cell = { id: string; k: number; T1: number[]; T2: number[]; Seed: number[][] };
 
 function keysByK(path: string): Map<number, Map<string, string[]>> {
-	const cells: Cell[] = JSON.parse(readFileSync(path, 'utf8'));
+	const cells: Cell[] = JSON.parse(readFileSync(path, "utf8"));
 	const by = new Map<number, Map<string, string[]>>();
 	for (const c of cells) {
 		const key = nKeyOfSymbol([c.T1, c.T2, ...c.Seed] as never);
@@ -36,8 +36,8 @@ function keysByK(path: string): Map<number, Map<string, string[]>> {
 }
 
 const args = process.argv.slice(2);
-const prunedPath = args[args.indexOf('--pruned') + 1];
-const rawIdx = args.indexOf('--raw');
+const prunedPath = args[args.indexOf("--pruned") + 1];
+const rawIdx = args.indexOf("--raw");
 const rawPath = rawIdx >= 0 ? args[rawIdx + 1] : null;
 
 let fail = 0;
@@ -53,7 +53,7 @@ for (const [k, m] of [...pruned.entries()].sort((a, b) => a[0] - b[0])) {
 	if (!ok) fail++;
 	console.log(
 		`k=${k}: pruned cells=${cells} distinct N-keys=${m.size} ` +
-			(ok ? 'NO-UNDER-MERGE PASS' : `FAIL: congruent pairs kept: ${JSON.stringify(dups.slice(0, 3))}`),
+			(ok ? "NO-UNDER-MERGE PASS" : `FAIL: congruent pairs kept: ${JSON.stringify(dups.slice(0, 3))}`),
 	);
 }
 
@@ -74,10 +74,10 @@ if (rawPath) {
 		console.log(
 			`k=${k}: raw cells=${rawCells} distinct raw N-keys=${rm.size} vs pruned ${pm.size} ` +
 				(ok
-					? 'NO-OVER-MERGE PASS (raw and pruned key sets identical)'
+					? "NO-OVER-MERGE PASS (raw and pruned key sets identical)"
 					: `FAIL: keys lost by pruner=${lost.length} keys with no raw witness=${ghost.length}`),
 		);
 	}
 }
-console.log(fail === 0 ? 'P3: ALL PASS' : `P3: ${fail} FAILURES`);
+console.log(fail === 0 ? "P3: ALL PASS" : `P3: ${fail} FAILURES`);
 process.exit(fail === 0 ? 0 : 1);

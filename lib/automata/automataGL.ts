@@ -124,8 +124,12 @@ export function buildAutomataMesh(adj: PeriodicAdjacency | null): AutomataMesh |
 			const ny = dx / len;
 			// Two triangles per edge; the vertex shader offsets by ±half the screen stroke width.
 			const quad: [{ x: number; y: number }, number][] = [
-				[a, 1], [a, -1], [b, 1],
-				[b, 1], [a, -1], [b, -1],
+				[a, 1],
+				[a, -1],
+				[b, 1],
+				[b, 1],
+				[a, -1],
+				[b, -1],
 			];
 			for (const [pt, side] of quad) {
 				strokePos.push(pt.x, pt.y);

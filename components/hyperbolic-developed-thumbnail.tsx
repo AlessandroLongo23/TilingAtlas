@@ -109,10 +109,7 @@ export function HyperbolicDevelopedThumbnail({ patch, size = 256, data }: Props)
 	// only the synchronous bake is paced (see lib/render/thumbnailQueue.ts). A caller that supplied `data`
 	// resolves immediately and never touches the network.
 	const prepare = useCallback(
-		() =>
-			(data ? Promise.resolve({ [patch]: data }) : loadDevelopedPatches()).then(
-				(map) => map[patch] ?? null,
-			),
+		() => (data ? Promise.resolve({ [patch]: data }) : loadDevelopedPatches()).then((map) => map[patch] ?? null),
 		[patch, data],
 	);
 	const bake = useCallback(

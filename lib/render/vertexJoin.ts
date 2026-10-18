@@ -58,7 +58,8 @@ function overlaps(p: RawPolygon, q: RawPolygon): boolean {
 			const ny = w.x - v[i].x;
 			const len = Math.hypot(nx, ny) || 1;
 			const project = (r: RawPolygon) => {
-				let lo = Infinity, hi = -Infinity;
+				let lo = Infinity,
+					hi = -Infinity;
 				for (const u of r.vertices) {
 					const t = (u.x * nx + u.y * ny) / len;
 					if (t < lo) lo = t;
@@ -75,7 +76,8 @@ function overlaps(p: RawPolygon, q: RawPolygon): boolean {
 }
 
 function transform(polys: RawPolygon[], rot: number, dx: number, dy: number): RawPolygon[] {
-	const c = Math.cos(rot), s = Math.sin(rot);
+	const c = Math.cos(rot),
+		s = Math.sin(rot);
 	return polys.map((p) => ({
 		n: p.n,
 		vertices: p.vertices.map((v) => ({ x: c * v.x - s * v.y + dx, y: s * v.x + c * v.y + dy })),
@@ -106,18 +108,22 @@ function intersectConvex(p: RawPolygon, q: RawPolygon): { x: number; y: number }
 	let out = anticlockwise(p);
 	const clip = anticlockwise(q);
 	for (let i = 0; i < clip.length && out.length; i++) {
-		const a = clip[i], b = clip[(i + 1) % clip.length];
+		const a = clip[i],
+			b = clip[(i + 1) % clip.length];
 		const side = (u: { x: number; y: number }) => (b.x - a.x) * (u.y - a.y) - (b.y - a.y) * (u.x - a.x);
 		const cut = (u: { x: number; y: number }, w: { x: number; y: number }) => {
-			const su = side(u), sw = side(w);
+			const su = side(u),
+				sw = side(w);
 			const t = su / (su - sw);
 			return { x: u.x + t * (w.x - u.x), y: u.y + t * (w.y - u.y) };
 		};
 		const input = out;
 		out = [];
 		for (let j = 0; j < input.length; j++) {
-			const cur = input[j], prev = input[(j - 1 + input.length) % input.length];
-			const inCur = side(cur) >= -EPS, inPrev = side(prev) >= -EPS;
+			const cur = input[j],
+				prev = input[(j - 1 + input.length) % input.length];
+			const inCur = side(cur) >= -EPS,
+				inPrev = side(prev) >= -EPS;
 			if (inCur) {
 				if (!inPrev) out.push(cut(prev, cur));
 				out.push(cur);
@@ -159,7 +165,8 @@ export function attemptJoin(wordA: string, wordB: string): JoinAttempt | null {
 	// Ray i leaves the vertex at the sum of the interior angles of tiles 0..i-1.
 	const rayAngle = (i: number) => nsA.slice(0, i).reduce((t, n) => t + Math.PI - TAU / n, 0);
 	const same = (u: RawPolygon, v: RawPolygon) => {
-		const [ux, uy] = centroid(u), [vx, vy] = centroid(v);
+		const [ux, uy] = centroid(u),
+			[vx, vy] = centroid(v);
 		return u.n === v.n && Math.hypot(ux - vx, uy - vy) < 1e-6;
 	};
 

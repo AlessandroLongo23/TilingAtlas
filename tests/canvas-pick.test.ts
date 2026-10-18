@@ -35,7 +35,11 @@ describe("screen<->world round-trip", () => {
 	];
 	for (const { offset, zoom, rot } of cases) {
 		it(`inverts for offset=${JSON.stringify(offset)} zoom=${zoom} rot=${rot.toFixed(2)}`, () => {
-			for (const w of [{ x: 1.5, y: -2.25 }, { x: 0, y: 0 }, { x: -3.7, y: 4.1 }]) {
+			for (const w of [
+				{ x: 1.5, y: -2.25 },
+				{ x: 0, y: 0 },
+				{ x: -3.7, y: 4.1 },
+			]) {
 				const s = worldToScreen(w.x, w.y, offset, zoom, rot);
 				const back = screenToWorld(s.x, s.y, offset, zoom, rot);
 				expect(back.x).toBeCloseTo(w.x, 9);
@@ -66,10 +70,14 @@ describe("rayCastContains (even-odd)", () => {
 		// A 4-point star: outer tips on the axes at r=2, inner (reflex) vertices on the diagonals at r=0.4.
 		const r = 0.4 / Math.SQRT2;
 		const star: PickNode["vertices"] = [
-			{ x: 2, y: 0 }, { x: r, y: r },
-			{ x: 0, y: 2 }, { x: -r, y: r },
-			{ x: -2, y: 0 }, { x: -r, y: -r },
-			{ x: 0, y: -2 }, { x: r, y: -r },
+			{ x: 2, y: 0 },
+			{ x: r, y: r },
+			{ x: 0, y: 2 },
+			{ x: -r, y: r },
+			{ x: -2, y: 0 },
+			{ x: -r, y: -r },
+			{ x: 0, y: -2 },
+			{ x: r, y: -r },
 		];
 		// A point out along the +x tip is inside; the same distance along the diagonal (a dent) is outside.
 		expect(rayCastContains(star, 1.0, 0)).toBe(true);
@@ -116,7 +124,11 @@ describe("reduceToOriginCell", () => {
 
 	it("lands the reduced point in the origin cell [0,1)^2 lattice coords", () => {
 		const det = v1.x * v2.y - v2.x * v1.y;
-		for (const w of [{ x: 3.7, y: -2.1 }, { x: -0.2, y: 5.9 }, { x: 100.3, y: -50.4 }]) {
+		for (const w of [
+			{ x: 3.7, y: -2.1 },
+			{ x: -0.2, y: 5.9 },
+			{ x: 100.3, y: -50.4 },
+		]) {
 			const q = reduceToOriginCell(w, v1, v2);
 			const a = (q.x * v2.y - q.y * v2.x) / det;
 			const b = (q.y * v1.x - q.x * v1.y) / det;
@@ -154,7 +166,9 @@ describe("inversive lens pick", () => {
 	});
 
 	it("inversiveScreenToWorld composes lens inverse then affine inverse", () => {
-		const zoom = 50, rot = Math.PI / 7, offset = { x: 12, y: -8 };
+		const zoom = 50,
+			rot = Math.PI / 7,
+			offset = { x: 12, y: -8 };
 		const s = { x: 60, y: 25 };
 		const v = lensInverse(s, mobius);
 		const expected = screenToWorld(v.x, v.y, offset, zoom, rot);
@@ -172,7 +186,11 @@ describe("inversive lens pick", () => {
 		{ zoom: 88, rot: (3 * Math.PI) / 4 },
 	]) {
 		it(`centring puts p at the affine origin v=0 (zoom=${zoom}, rot=${rot.toFixed(2)})`, () => {
-			for (const p of [{ x: 1.2, y: -0.8 }, { x: -2.5, y: 3.1 }, { x: 0.05, y: 0.05 }]) {
+			for (const p of [
+				{ x: 1.2, y: -0.8 },
+				{ x: -2.5, y: 3.1 },
+				{ x: 0.05, y: 0.05 },
+			]) {
 				const sp = worldToScreen(p.x, p.y, { x: 0, y: 0 }, zoom, rot);
 				const offset = { x: -sp.x, y: -sp.y };
 				const v = worldToScreen(p.x, p.y, offset, zoom, rot); // affine forward with the new offset

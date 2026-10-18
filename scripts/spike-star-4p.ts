@@ -11,14 +11,14 @@
  *
  * Run:  SPIKE_TRACE=1 pnpm tsx scripts/spike-star-4p.ts
  */
-import { Cyclotomic, CyclotomicRing, setActiveRing } from '@/classes/Cyclotomic';
-import { RegularPolygon } from '@/classes/polygons/RegularPolygon';
-import { ExactStarPolygon } from '@/classes/polygons/ExactStarPolygon';
-import { PeriodSolver } from '@/classes/algorithm/PeriodSolver';
-import { KUniformityChecker } from '@/classes/algorithm/KUniformityChecker';
-import type { SeedConfigurationLike } from '@/classes/algorithm/SeedExpander';
-import { spikeBreaksSeen } from '@/classes/algorithm/exact/spikeTrace';
-import { independentCellGate } from './_starCellGate';
+import { Cyclotomic, CyclotomicRing, setActiveRing } from "@/classes/Cyclotomic";
+import { RegularPolygon } from "@/classes/polygons/RegularPolygon";
+import { ExactStarPolygon } from "@/classes/polygons/ExactStarPolygon";
+import { PeriodSolver } from "@/classes/algorithm/PeriodSolver";
+import { KUniformityChecker } from "@/classes/algorithm/KUniformityChecker";
+import type { SeedConfigurationLike } from "@/classes/algorithm/SeedExpander";
+import { spikeBreaksSeen } from "@/classes/algorithm/exact/spikeTrace";
+import { independentCellGate } from "./_starCellGate";
 
 const ring = CyclotomicRing.create(24);
 setActiveRing(ring);
@@ -36,26 +36,35 @@ const seed: SeedConfigurationLike = {
 	vertexConfigurations: [{ computeSharedVertexExact: () => O, polygons }],
 };
 
-console.log('C7 Increment-2 C3 — REAL solve of Myers 4(p) 4.6.4*_{π/6}.6 (FILL-needing)');
-console.log(`  seed tiles: ${polygons.map((p) => p.getName()).join(', ')}`);
-console.log(`  star α=${star.alphaU} β=${star.betaU}  corner angles: [${star.exactVertices!.map((_, i) => star.cornerAngleUnits(i)).join(',')}]`);
+console.log("C7 Increment-2 C3 — REAL solve of Myers 4(p) 4.6.4*_{π/6}.6 (FILL-needing)");
+console.log(`  seed tiles: ${polygons.map((p) => p.getName()).join(", ")}`);
+console.log(
+	`  star α=${star.alphaU} β=${star.betaU}  corner angles: [${star.exactVertices!.map((_, i) => star.cornerAngleUnits(i)).join(",")}]`,
+);
 
 let raw = 0;
 const t0 = Date.now();
 const { cells, diag } = new PeriodSolver(1).solve(seed, {
 	maxMs: 60000,
-	onRawCell: () => { raw++; },
+	onRawCell: () => {
+		raw++;
+	},
 });
 const ms = Date.now() - t0;
 
-console.log('\n--- result ---');
-console.log(`  candidateLattices=${diag.candidateLattices} latticesTried=${diag.latticesTried} rawCells=${diag.rawCells} emitted=${diag.emitted} gateRejected=${diag.gateRejected} p1Pruned=${diag.p1Pruned} timedOut=${diag.timedOut} ${ms}ms`);
+console.log("\n--- result ---");
+console.log(
+	`  candidateLattices=${diag.candidateLattices} latticesTried=${diag.latticesTried} rawCells=${diag.rawCells} emitted=${diag.emitted} gateRejected=${diag.gateRejected} p1Pruned=${diag.p1Pruned} timedOut=${diag.timedOut} ${ms}ms`,
+);
 console.log(`  certified k=1 cells emitted: ${cells.length}  (raw torus closures seen: ${raw})`);
 
 for (const c of cells) {
 	const star = c.cellPolygons.filter((p) => p.isStar).length;
 	const reg = c.cellPolygons.filter((p) => !p.isStar);
-	const names = c.cellPolygons.map((p) => p.getName()).sort().join(', ');
+	const names = c.cellPolygons
+		.map((p) => p.getName())
+		.sort()
+		.join(", ");
 	console.log(`  cell: ${c.cellPolygons.length} tiles (${star} star, ${reg.length} regular) → {${names}}`);
 }
 
@@ -66,11 +75,13 @@ for (const c of cells) {
 // result or over-generating. Productive star-fill (a star built during fill ending up in a certified
 // cell) is exercised+validated per-tiling in the in-ring Run, not here.
 if (cells.length === 0) {
-	console.log('  VERDICT: 0 cells — UNEXPECTED regression (4(p) should certify from its fan).');
+	console.log("  VERDICT: 0 cells — UNEXPECTED regression (4(p) should certify from its fan).");
 } else if (cells.some((c) => c.cellPolygons.some((p) => p.isStar))) {
-	console.log('  VERDICT: 4(p) CERTIFIED-CORRECT k=1 with a star in the cell (from the seed fan; C3 fill ran without breaking it).');
+	console.log(
+		"  VERDICT: 4(p) CERTIFIED-CORRECT k=1 with a star in the cell (from the seed fan; C3 fill ran without breaking it).",
+	);
 } else {
-	console.log('  VERDICT: cells emitted but NONE contain a star — investigate (star lost?).');
+	console.log("  VERDICT: cells emitted but NONE contain a star — investigate (star lost?).");
 }
 
 // ST-9 step 3 — the independent G1-G4 gate (the one 4(j) got in Harness 2, `spike-star-4j-cell.ts`),
@@ -78,20 +89,27 @@ if (cells.length === 0) {
 // from the independently unit-tested primitives before the post-fill orbit count is trusted.
 if (cells.length > 0) {
 	const g = independentCellGate(cells[0]);
-	console.log('\n--- ST-9: independent G1-G4 gate on the 4(p) cell ---');
+	console.log("\n--- ST-9: independent G1-G4 gate on the 4(p) cell ---");
 	console.log(`  composition: {${g.composition}}, stars=${g.nStars}`);
 	console.log(`  G1 no proper overlap (exact B2):              ${g.overlaps === 0}  (${g.overlaps} overlapping pairs)`);
-	console.log(`  G2 interior vertices all 2π & well-typed:     ${g.badSum === 0 && g.badT === 0}  (${g.realVerts} ≥3-tile, ${g.dentFills} dent-fills; badSum=${g.badSum} badT=${g.badT})`);
+	console.log(
+		`  G2 interior vertices all 2π & well-typed:     ${g.badSum === 0 && g.badT === 0}  (${g.realVerts} ≥3-tile, ${g.dentFills} dent-fills; badSum=${g.badSum} badT=${g.badT})`,
+	);
 	console.log(`  G3 exact area = |det Λ| (Surd):                ${g.areaExact}`);
 	console.log(`  G4 edge-to-edge (every edge reverse-matched): ${g.unmatched === 0}  (${g.unmatched} unmatched)`);
 	console.log(`  => cell independently VALID: ${g.pass}`);
 	if (g.pass) {
 		const kdiag = { syms: 0, reps: 0, blockSize: 0, orbits: null as number | null };
-		const orbits = new KUniformityChecker().countVertexOrbits(cells[0].cellPolygons, cells[0].basisExact[0], cells[0].basisExact[1], kdiag);
+		const orbits = new KUniformityChecker().countVertexOrbits(
+			cells[0].cellPolygons,
+			cells[0].basisExact[0],
+			cells[0].basisExact[1],
+			kdiag,
+		);
 		console.log(`  post-gate validator (now trusted): vertex orbits = ${orbits}  (k target 1)`);
 	}
 }
 
 const breaks = spikeBreaksSeen();
 console.log(`\n--- break list (${breaks.length}) ---`);
-for (const b of breaks) console.log('  ' + b);
+for (const b of breaks) console.log("  " + b);

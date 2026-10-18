@@ -49,17 +49,9 @@ type MultiProps<T> = CommonProps<T> & {
 export type ButtonGroupProps<T> = SingleProps<T> | MultiProps<T>;
 
 export function ButtonGroup<T>(props: ButtonGroupProps<T>) {
-	const {
-		options,
-		variant = "chip",
-		size = "sm",
-		gap = "gap-1.5",
-		classes,
-		wrap = true,
-	} = props;
+	const { options, variant = "chip", size = "sm", gap = "gap-1.5", classes, wrap = true } = props;
 
-	const isPressed = (value: T): boolean =>
-		props.multi ? props.selected.includes(value) : props.selected === value;
+	const isPressed = (value: T): boolean => (props.multi ? props.selected.includes(value) : props.selected === value);
 
 	return (
 		<div className={cn("flex", wrap ? "flex-wrap" : "", gap, classes)}>
@@ -88,12 +80,7 @@ export function ButtonGroup<T>(props: ButtonGroupProps<T>) {
 					/>
 				);
 				return opt.tooltip != null ? (
-					<Tooltip
-						key={key}
-						content={opt.tooltip}
-						side={opt.tooltipSide ?? "top"}
-						delay={opt.tooltipDelay}
-					>
+					<Tooltip key={key} content={opt.tooltip} side={opt.tooltipSide ?? "top"} delay={opt.tooltipDelay}>
 						{button}
 					</Tooltip>
 				) : (

@@ -35,7 +35,13 @@ const KMAX = Math.max(...rows.map((r) => r.k));
 
 // The identity board. Spherical records are placed by their solid, not by a translation cell, so this is
 // the same two basis vectors for all of them; it exists because the reader expects the field.
-const RENDER_CELL = { b: [[1, 0], [0, 1]], i: [0, 0] };
+const RENDER_CELL = {
+	b: [
+		[1, 0],
+		[0, 1],
+	],
+	i: [0, 0],
+};
 
 /** The card text. One sentence of measurement, then why the solid has no name, because a reader landing
  *  on "20{3} + 2{5}" deserves to know that the blank is deliberate and not an omission. */

@@ -7,7 +7,11 @@ import { buildRegularPatch } from "@/lib/render/hyperbolicRegularPatch";
 const inDisk = (x: number, y: number, eps = 1e-6) => Math.hypot(x, y) < 1 - eps;
 
 describe("buildRegularPatch (hyperbolic {p,q} tiling patch)", () => {
-	for (const [p, q] of [[7, 3], [5, 4], [8, 3]] as Array<[number, number]>) {
+	for (const [p, q] of [
+		[7, 3],
+		[5, 4],
+		[8, 3],
+	] as Array<[number, number]>) {
 		it(`{${p},${q}}: central tile is a p-gon at the origin, all vertices in-disk`, () => {
 			const patch = buildRegularPatch(p, q, 0);
 			expect(patch.length).toBe(1);

@@ -44,7 +44,10 @@ function sumSin(n: number): number {
 const radiusFor = (n: number) => Math.sqrt(TARGET_TILES / (Math.PI * sumSin(n)));
 
 function bounds(tiles: MgTile[]) {
-	let minx = Infinity, miny = Infinity, maxx = -Infinity, maxy = -Infinity;
+	let minx = Infinity,
+		miny = Infinity,
+		maxx = -Infinity,
+		maxy = -Infinity;
 	for (const t of tiles)
 		for (const c of t.corners) {
 			if (c.x < minx) minx = c.x;
@@ -62,7 +65,8 @@ const isDark = () =>
 function pointInQuad(x: number, y: number, q: Vector[]): boolean {
 	let sign = 0;
 	for (let i = 0; i < 4; i++) {
-		const a = q[i], b = q[(i + 1) % 4];
+		const a = q[i],
+			b = q[(i + 1) % 4];
 		const cr = (b.x - a.x) * (y - a.y) - (b.y - a.y) * (x - a.x);
 		if (Math.abs(cr) < 1e-9) continue;
 		const s = cr > 0 ? 1 : -1;
@@ -96,7 +100,11 @@ export function MultigridView({ header }: { header: React.ReactNode }) {
 		});
 	const preset = (kind: "canonical" | "symmetric" | "random") =>
 		setOffsets(
-			kind === "symmetric" ? symmetricOffsets(n) : kind === "random" ? randomOffsets(n, seedRef.current++) : canonicalOffsets(n),
+			kind === "symmetric"
+				? symmetricOffsets(n)
+				: kind === "random"
+					? randomOffsets(n, seedRef.current++)
+					: canonicalOffsets(n),
 		);
 
 	// --- refs: two panels (tiling GL + grid 2D), each with a base and a highlight overlay ---------
@@ -260,16 +268,19 @@ export function MultigridView({ header }: { header: React.ReactNode }) {
 			ctx.clearRect(0, 0, f.w, f.h);
 			ctx.save();
 			applyViewTransform(ctx, f);
-			const R = radius, L = radius * 3;
+			const R = radius,
+				L = radius * 3;
 			ctx.lineWidth = 0.8 / f.zoom;
 			for (let j = 0; j < n; j++) {
 				const ev = e[j];
 				const perp = { x: -ev.y, y: ev.x };
-				const kLo = Math.ceil(offsets[j] - R), kHi = Math.floor(offsets[j] + R);
+				const kLo = Math.ceil(offsets[j] - R),
+					kHi = Math.floor(offsets[j] + R);
 				ctx.beginPath();
 				for (let k = kLo; k <= kHi; k++) {
 					const d = k - offsets[j];
-					const fx = d * ev.x, fy = d * ev.y;
+					const fx = d * ev.x,
+						fy = d * ev.y;
 					ctx.moveTo(fx - L * perp.x, fy - L * perp.y);
 					ctx.lineTo(fx + L * perp.x, fy + L * perp.y);
 				}
@@ -302,11 +313,17 @@ export function MultigridView({ header }: { header: React.ReactNode }) {
 	const pickGrid = useCallback(
 		(sx: number, sy: number, f: AperiodicFrame) => {
 			const w = viewToWorld(f, sx, sy);
-			let best = -1, bd = Infinity;
+			let best = -1,
+				bd = Infinity;
 			for (let t = 0; t < tiles.length; t++) {
 				const s = tiles[t].site;
-				const dx = s.x - w.x, dy = s.y - w.y, d = dx * dx + dy * dy;
-				if (d < bd) { bd = d; best = t; }
+				const dx = s.x - w.x,
+					dy = s.y - w.y,
+					d = dx * dx + dy * dy;
+				if (d < bd) {
+					bd = d;
+					best = t;
+				}
 			}
 			const tol = 12 / f.zoom; // 12 CSS px, whatever the zoom
 			setActive(bd < tol * tol ? best : -1);
@@ -401,7 +418,7 @@ export function MultigridView({ header }: { header: React.ReactNode }) {
 	const protoCount = Math.floor(n / 2);
 
 	return (
-		<div className="relative flex-1 min-h-0 flex">
+		<div className="relative flex min-h-0 flex-1">
 			{/* The top-right corner of both panels together (this box's, the sidebar being on the left), which
 			    is the tiling panel's corner side by side and the upper (multigrid) panel's corner stacked on a
 			    phone. First in the DOM so it is read before the sheet. */}
@@ -423,15 +440,15 @@ export function MultigridView({ header }: { header: React.ReactNode }) {
 					{offsets.map((g, j) => (
 						<div key={j} className="flex items-center gap-2">
 							<span
-								className="text-[11px] font-mono w-6 tabular-nums shrink-0"
+								className="w-6 shrink-0 font-mono text-[11px] tabular-nums"
 								style={{ color: `hsl(${famHue(j, n)} 55% 50%)` }}
 							>
 								γ{sub(j)}
 							</span>
-							<div className="flex-1 min-w-0">
+							<div className="min-w-0 flex-1">
 								<RangeInput min={0} max={1} step={0.001} value={g} onChange={(v) => setOffset(j, v)} />
 							</div>
-							<span className="text-[11px] font-mono text-fg-muted w-8 tabular-nums text-right shrink-0">
+							<span className="w-8 shrink-0 text-right font-mono text-[11px] text-fg-muted tabular-nums">
 								{g.toFixed(2)}
 							</span>
 						</div>
@@ -482,25 +499,25 @@ export function MultigridView({ header }: { header: React.ReactNode }) {
 				</Section>
 			</AperiodicSidebar>
 
-			<div className="flex-1 min-h-0 flex flex-col md:flex-row">
+			<div className="flex min-h-0 flex-1 flex-col md:flex-row">
 				{split && (
-					<div className="relative flex-1 min-h-0 border-b md:border-b-0 md:border-r border-line-subtle">
+					<div className="relative min-h-0 flex-1 border-b border-line-subtle md:border-r md:border-b-0">
 						<canvas
 							ref={gridCanvasRef}
-							className="w-full h-full block cursor-grab active:cursor-grabbing touch-none"
+							className="block h-full w-full cursor-grab touch-none active:cursor-grabbing"
 							{...gridView.handlers}
 						/>
-						<canvas ref={gridOverlayRef} className="absolute inset-0 w-full h-full pointer-events-none" />
+						<canvas ref={gridOverlayRef} className="pointer-events-none absolute inset-0 h-full w-full" />
 						<PanelTag>multigrid · z-space</PanelTag>
 					</div>
 				)}
-				<div className="relative flex-1 min-h-0">
+				<div className="relative min-h-0 flex-1">
 					<canvas
 						ref={canvasRef}
-						className="w-full h-full block cursor-grab active:cursor-grabbing touch-none"
+						className="block h-full w-full cursor-grab touch-none active:cursor-grabbing"
 						{...tilingView.handlers}
 					/>
-					<canvas ref={tilingOverlayRef} className="absolute inset-0 w-full h-full pointer-events-none" />
+					<canvas ref={tilingOverlayRef} className="pointer-events-none absolute inset-0 h-full w-full" />
 					<PanelTag>dual tiling</PanelTag>
 				</div>
 			</div>
@@ -509,13 +526,16 @@ export function MultigridView({ header }: { header: React.ReactNode }) {
 }
 
 const SUBS = "₀₁₂₃₄₅₆₇₈₉";
-const sub = (j: number) => String(j).split("").map((d) => SUBS[Number(d)]).join("");
+const sub = (j: number) =>
+	String(j)
+		.split("")
+		.map((d) => SUBS[Number(d)])
+		.join("");
 
 function PanelTag({ children }: { children: React.ReactNode }) {
 	return (
-		<div className="ta-float absolute top-4 left-4 px-2.5 py-1 text-xs text-fg-secondary pointer-events-none">
+		<div className="ta-float pointer-events-none absolute top-4 left-4 px-2.5 py-1 text-xs text-fg-secondary">
 			{children}
 		</div>
 	);
 }
-

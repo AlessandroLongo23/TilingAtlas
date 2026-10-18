@@ -27,7 +27,9 @@ const info = await page.evaluate(() => {
 		const gl = document.createElement("canvas").getContext("webgl2");
 		const ext = gl.getExtension("WEBGL_debug_renderer_info");
 		renderer = ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
-	} catch { /* ignore */ }
+	} catch {
+		/* ignore */
+	}
 	return { rule: s.selectedTiling?.rulestring, name: s.selectedTiling?.name, renderer };
 });
 console.log(`tiling: ${info.name} (${info.rule})  viewport 1600x1000  zoom=${ZOOM_MIN} (min)  headless=${headless}`);
@@ -37,36 +39,43 @@ async function scenario(label, patch) {
 	await page.evaluate((p) => {
 		const store = window.__stores.configuration;
 		const s = store.getState();
-		s.controls.zoom = 20; s.controls.targetZoom = 20; // force min zoom on the object the loop reads
+		s.controls.zoom = 20;
+		s.controls.targetZoom = 20; // force min zoom on the object the loop reads
 		store.setState(p);
 	}, patch);
 	await page.waitForTimeout(3500); // let the (big) grid rebuild at min zoom + the ease settle
 
-	const r = await page.evaluate(() => new Promise((resolve) => {
-		const deltas = [];
-		let last = performance.now();
-		let n = 0; const warm = 15, total = 165;
-		function frame(now) {
-			const d = now - last; last = now;
-			if (n >= warm) deltas.push(d);
-			if (++n >= total) {
-				deltas.sort((a, b) => a - b);
-				const sum = deltas.reduce((a, b) => a + b, 0);
-				resolve({
-					frames: deltas.length,
-					avgMs: sum / deltas.length,
-					medianMs: deltas[Math.floor(deltas.length / 2)],
-					p95Ms: deltas[Math.floor(deltas.length * 0.95)],
-					maxMs: deltas[deltas.length - 1],
-					fps: 1000 / (sum / deltas.length),
-				});
-			} else requestAnimationFrame(frame);
-		}
-		requestAnimationFrame(frame);
-	}));
+	const r = await page.evaluate(
+		() =>
+			new Promise((resolve) => {
+				const deltas = [];
+				let last = performance.now();
+				let n = 0;
+				const warm = 15,
+					total = 165;
+				function frame(now) {
+					const d = now - last;
+					last = now;
+					if (n >= warm) deltas.push(d);
+					if (++n >= total) {
+						deltas.sort((a, b) => a - b);
+						const sum = deltas.reduce((a, b) => a + b, 0);
+						resolve({
+							frames: deltas.length,
+							avgMs: sum / deltas.length,
+							medianMs: deltas[Math.floor(deltas.length / 2)],
+							p95Ms: deltas[Math.floor(deltas.length * 0.95)],
+							maxMs: deltas[deltas.length - 1],
+							fps: 1000 / (sum / deltas.length),
+						});
+					} else requestAnimationFrame(frame);
+				}
+				requestAnimationFrame(frame);
+			}),
+	);
 	console.log(
 		`${label.padEnd(22)} avg ${r.avgMs.toFixed(1).padStart(6)}ms  median ${r.medianMs.toFixed(1).padStart(6)}ms` +
-		`  p95 ${r.p95Ms.toFixed(1).padStart(6)}ms  max ${r.maxMs.toFixed(1).padStart(6)}ms  (${r.fps.toFixed(1)} fps)`,
+			`  p95 ${r.p95Ms.toFixed(1).padStart(6)}ms  max ${r.maxMs.toFixed(1).padStart(6)}ms  (${r.fps.toFixed(1)} fps)`,
 	);
 	return r;
 }

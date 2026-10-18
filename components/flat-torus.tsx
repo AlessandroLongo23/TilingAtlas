@@ -3,8 +3,20 @@
 import { FigurePanel, type PanelSpec } from "@/components/figure-panel";
 import { type Box } from "@/lib/render/figureCanvas";
 import {
-	arrowHead, DART, dot, GHOST, halo, INK, rad, REJECT, segment, SOFT, T1_COLOUR, T2_COLOUR,
-	type Api, type Pt,
+	arrowHead,
+	DART,
+	dot,
+	GHOST,
+	halo,
+	INK,
+	rad,
+	REJECT,
+	segment,
+	SOFT,
+	T1_COLOUR,
+	T2_COLOUR,
+	type Api,
+	type Pt,
 } from "@/lib/render/figureGlyphs";
 import { polygonHue, tileFill, tileLine } from "@/lib/utils/renderTiling";
 
@@ -70,7 +82,13 @@ function drawHolonomy(api: Api) {
 	ctx.beginPath();
 	ctx.arc(C[0], C[1], R * 0.52, rad(72), rad(a - 8));
 	ctx.stroke();
-	arrowHead(api, [C[0] + Math.cos(rad(a - 8)) * R * 0.52, C[1] + Math.sin(rad(a - 8)) * R * 0.52], rad(a - 8 + 90), DART, 10);
+	arrowHead(
+		api,
+		[C[0] + Math.cos(rad(a - 8)) * R * 0.52, C[1] + Math.sin(rad(a - 8)) * R * 0.52],
+		rad(a - 8 + 90),
+		DART,
+		10,
+	);
 
 	// The first and last edges of the walk are the SAME edge of the gluing, and they have come back
 	// short of each other. No fill in the gap: a filled sector reads as a hole in a tiling.
@@ -87,7 +105,9 @@ function drawHolonomy(api: Api) {
 	const mid = rad(a + (360 + 66 - a) / 2);
 	halo(api, C[0] + Math.cos(mid) * OUT, C[1] + Math.sin(mid) * OUT, 10);
 	text(C[0] + Math.cos(mid) * OUT, C[1] + Math.sin(mid) * OUT, "?", {
-		colour: REJECT, size: 0.95, weight: 700,
+		colour: REJECT,
+		size: 0.95,
+		weight: 700,
 	});
 	dot(api, C[0], C[1], 5.5);
 	text(0, -0.88, "the same edge, come back rotated", { colour: REJECT, size: 0.62, weight: 600 });
@@ -101,7 +121,9 @@ function drawFlat(api: Api) {
 		wedge(api, C, a, span, n, R);
 		const mid = rad(a + span / 2);
 		text(C[0] + Math.cos(mid) * R * 0.66, C[1] + Math.sin(mid) * R * 0.66, String(units(n)), {
-			colour: "rgba(20,20,20,0.85)", size: 0.76, weight: 700,
+			colour: "rgba(20,20,20,0.85)",
+			size: 0.76,
+			weight: 700,
 		});
 		a += span;
 	}
@@ -130,7 +152,12 @@ function drawTorus(api: Api) {
 	ctx.beginPath();
 	ctx.rect(-h, -h - 0.06, 2 * h, 2 * h);
 	ctx.clip();
-	for (const [cx, cy, n] of [[-0.2, 0.16, 6], [0.22, -0.24, 4], [h - 0.06, 0.2, 4], [-h - 0.06, 0.2, 4]] as const) {
+	for (const [cx, cy, n] of [
+		[-0.2, 0.16, 6],
+		[0.22, -0.24, 4],
+		[h - 0.06, 0.2, 4],
+		[-h - 0.06, 0.2, 4],
+	] as const) {
 		const rr = n === 6 ? 0.19 : 0.15;
 		ctx.fillStyle = wedgeFill(n);
 		ctx.strokeStyle = wedgeLine(n);
@@ -138,7 +165,8 @@ function drawTorus(api: Api) {
 		ctx.beginPath();
 		for (let i = 0; i < n; i++) {
 			const t = rad(90 + (360 * i) / n);
-			const x = cx + Math.cos(t) * rr, y = cy - 0.06 + Math.sin(t) * rr;
+			const x = cx + Math.cos(t) * rr,
+				y = cy - 0.06 + Math.sin(t) * rr;
 			if (i) ctx.lineTo(x, y);
 			else ctx.moveTo(x, y);
 		}
@@ -190,15 +218,24 @@ function drawCover(api: Api) {
 
 	// the same two tiles panel three put in the cell, here and in two of its lifts: that is what
 	// "the tiles are lifts" means, and an empty grid says nothing about tiles at all
-	for (const [i, j, alpha] of [[0, 0, 0.85], [1, 0, 0.3], [0, 1, 0.3], [-1, -1, 0.3]] as const) {
-		for (const [fx, fy, n, rr] of [[0.42, 0.56, 6, 0.1], [0.72, 0.26, 4, 0.075]] as const) {
+	for (const [i, j, alpha] of [
+		[0, 0, 0.85],
+		[1, 0, 0.3],
+		[0, 1, 0.3],
+		[-1, -1, 0.3],
+	] as const) {
+		for (const [fx, fy, n, rr] of [
+			[0.42, 0.56, 6, 0.1],
+			[0.72, 0.26, 4, 0.075],
+		] as const) {
 			ctx.fillStyle = wedgeFill(n).replace(/[\d.]+\)$/, `${alpha})`);
 			ctx.strokeStyle = alpha > 0.5 ? wedgeLine(n) : GHOST;
 			ctx.lineWidth = 1.1 / s;
 			ctx.beginPath();
 			for (let v = 0; v < n; v++) {
 				const t = rad(90 + (360 * v) / n);
-				const x = (i + fx) * w + Math.cos(t) * rr, y = (j + fy) * w - 0.1 + Math.sin(t) * rr;
+				const x = (i + fx) * w + Math.cos(t) * rr,
+					y = (j + fy) * w - 0.1 + Math.sin(t) * rr;
 				if (v) ctx.lineTo(x, y);
 				else ctx.moveTo(x, y);
 			}
@@ -208,7 +245,10 @@ function drawCover(api: Api) {
 		}
 	}
 
-	for (const [dx, dy, colour] of [[w, 0, T1_COLOUR], [0, w, T2_COLOUR]] as const) {
+	for (const [dx, dy, colour] of [
+		[w, 0, T1_COLOUR],
+		[0, w, T2_COLOUR],
+	] as const) {
 		segment(api, [0, -0.1], [dx * 0.82, dy * 0.82 - 0.1], colour, 2.8);
 		arrowHead(api, [dx * 0.94, dy * 0.94 - 0.1], Math.atan2(dy, dx), colour, 11);
 	}

@@ -61,7 +61,10 @@ export function buildIsohedralCellMesh(
 	const fillHue = new Float32Array(triCount * 3);
 	const fillCentroid = new Float32Array(triCount * 3 * 2);
 
-	let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+	let minX = Infinity,
+		maxX = -Infinity,
+		minY = Infinity,
+		maxY = -Infinity;
 	let vi = 0;
 
 	/**
@@ -85,7 +88,8 @@ export function buildIsohedralCellMesh(
 	for (const poly of fillable) {
 		const vs = poly.vertices;
 		if (vs.length < 3) continue;
-		let cx = 0, cy = 0;
+		let cx = 0,
+			cy = 0;
 		for (const v of vs) {
 			cx += v.x;
 			cy += v.y;
@@ -132,7 +136,8 @@ export function buildIsohedralCellMesh(
 	const strokeCentroid = new Float32Array(edgeCount * 6 * 2);
 
 	let si = 0;
-	let scx = 0, scy = 0;
+	let scx = 0,
+		scy = 0;
 	const pushStroke = (px: number, py: number, nx: number, ny: number, side: number) => {
 		strokePos[si * 2] = px;
 		strokePos[si * 2 + 1] = py;
@@ -160,9 +165,11 @@ export function buildIsohedralCellMesh(
 		for (let k = 0; k < segs; k++) {
 			const a = vs[k];
 			const b = vs[(k + 1) % vs.length];
-			const dx = b.x - a.x, dy = b.y - a.y;
+			const dx = b.x - a.x,
+				dy = b.y - a.y;
 			const len = Math.hypot(dx, dy) || 1;
-			const nx = -dy / len, ny = dx / len;
+			const nx = -dy / len,
+				ny = dx / len;
 			pushStroke(a.x, a.y, nx, ny, -w);
 			pushStroke(a.x, a.y, nx, ny, +w);
 			pushStroke(b.x, b.y, nx, ny, -w);
@@ -189,9 +196,6 @@ export function buildIsohedralCellMesh(
 		v1: [v1x, v1y],
 		v2: [v2x, v2y],
 		det,
-		extent: latticeExtentFromBounds(
-			minX, maxX, minY, maxY,
-			{ x: v1x, y: v1y }, { x: v2x, y: v2y }, det,
-		),
+		extent: latticeExtentFromBounds(minX, maxX, minY, maxY, { x: v1x, y: v1y }, { x: v2x, y: v2y }, det),
 	};
 }

@@ -18,10 +18,26 @@ import { RangeInput } from "@/components/ui/range-input";
 // hyperbolic buys.
 
 const STAGES = [
-	{ n: 1, title: "The tiling", blurb: "A ball of radius r. The dashed ring is the wired boundary, shorted to one vertex." },
-	{ n: 2, title: "The harmonic potential", blurb: "One volt at the centre, zero on the whole rim. Thickness is current." },
-	{ n: 3, title: "The circuit", blurb: "The ball cut along a ray and laid flat, with height set to potential. Thickness is current." },
-	{ n: 4, title: "The squared cylinder", blurb: "Left edge glued to right. The squares pile up on the boundary circle." },
+	{
+		n: 1,
+		title: "The tiling",
+		blurb: "A ball of radius r. The dashed ring is the wired boundary, shorted to one vertex.",
+	},
+	{
+		n: 2,
+		title: "The harmonic potential",
+		blurb: "One volt at the centre, zero on the whole rim. Thickness is current.",
+	},
+	{
+		n: 3,
+		title: "The circuit",
+		blurb: "The ball cut along a ray and laid flat, with height set to potential. Thickness is current.",
+	},
+	{
+		n: 4,
+		title: "The squared cylinder",
+		blurb: "Left edge glued to right. The squares pile up on the boundary circle.",
+	},
 ];
 
 const shardCache = new Map<string, CylinderRecord>();
@@ -52,7 +68,10 @@ export function CylinderStages({ entry }: { entry: CylinderIndexEntry }) {
 		};
 	}, [entry.id]);
 
-	const layer = useMemo(() => record?.layers.find((l) => l.radius === radius) ?? record?.layers[0] ?? null, [record, radius]);
+	const layer = useMemo(
+		() => record?.layers.find((l) => l.radius === radius) ?? record?.layers[0] ?? null,
+		[record, radius],
+	);
 
 	// One colour per square SIZE, so the bands of the cylinder read as bands in the disk too.
 	const fills = useMemo(() => {
@@ -73,8 +92,8 @@ export function CylinderStages({ entry }: { entry: CylinderIndexEntry }) {
 				{error === "stale" ? (
 					<>
 						<p>
-							This page is holding an older list: <span className="font-mono text-fg">{entry.id}</span> is no
-							longer in the shelf.
+							This page is holding an older list: <span className="font-mono text-fg">{entry.id}</span> is no longer in
+							the shelf.
 						</p>
 						<button
 							type="button"
@@ -100,9 +119,9 @@ export function CylinderStages({ entry }: { entry: CylinderIndexEntry }) {
 
 	return (
 		<>
-		<StageBoard
-			control={
-				<RailPanel label="control" title="The ball radius" hint="Grow the ball and watch the circumference settle.">
+			<StageBoard
+				control={
+					<RailPanel label="control" title="The ball radius" hint="Grow the ball and watch the circumference settle.">
 						<div className="flex items-baseline justify-between gap-2">
 							<p className="font-mono text-base leading-none text-fg">r = {layer.radius}</p>
 							<p className="font-mono text-base leading-none text-fg">
@@ -131,57 +150,59 @@ export function CylinderStages({ entry }: { entry: CylinderIndexEntry }) {
 							<Fact label="ball" value={`V ${layer.counts.vertices} · E ${layer.counts.edges}`} />
 							<Fact label="circumference" value={layer.circumference.toFixed(6)} />
 						</dl>
-				</RailPanel>
-			}
-			stages={[
-				{
-					...STAGES[0],
-					node: (
-						<HyperbolicBallFigure
-							layer={layer}
-							mode="plain"
-							geometry={entry.geometry}
-							hovered={hovered}
-							onHover={setHovered}
-						/>
-					),
-				},
-				{
-					...STAGES[1],
-					node: (
-						<HyperbolicBallFigure
-							layer={layer}
-							mode="flow"
-							geometry={entry.geometry}
-							hovered={hovered}
-							onHover={setHovered}
-						/>
-					),
-				},
-				{ ...STAGES[2], node: <CylinderCircuit layer={layer} fills={fills} hovered={hovered} onHover={setHovered} /> },
-				{
-					...STAGES[3],
-					node: (
-						<SquaredCylinderFigure
-							layer={layer}
-							hovered={hovered}
-							onHover={setHovered}
-							fills={fills}
-							span={layer.circumference > 2.2 ? 1 / 3 : 1}
-						/>
-					),
-				},
-			]}
-		/>
-		{hovered !== null ? (
-			<InspectBar onClear={() => setHoverKey(null)}>
-				<span className="truncate">
-					<span className="font-mono">edge {hovered}</span>
-					<span className="text-fg-muted"> · lit in every stage</span>
-				</span>
-			</InspectBar>
-		) : null}
+					</RailPanel>
+				}
+				stages={[
+					{
+						...STAGES[0],
+						node: (
+							<HyperbolicBallFigure
+								layer={layer}
+								mode="plain"
+								geometry={entry.geometry}
+								hovered={hovered}
+								onHover={setHovered}
+							/>
+						),
+					},
+					{
+						...STAGES[1],
+						node: (
+							<HyperbolicBallFigure
+								layer={layer}
+								mode="flow"
+								geometry={entry.geometry}
+								hovered={hovered}
+								onHover={setHovered}
+							/>
+						),
+					},
+					{
+						...STAGES[2],
+						node: <CylinderCircuit layer={layer} fills={fills} hovered={hovered} onHover={setHovered} />,
+					},
+					{
+						...STAGES[3],
+						node: (
+							<SquaredCylinderFigure
+								layer={layer}
+								hovered={hovered}
+								onHover={setHovered}
+								fills={fills}
+								span={layer.circumference > 2.2 ? 1 / 3 : 1}
+							/>
+						),
+					},
+				]}
+			/>
+			{hovered !== null ? (
+				<InspectBar onClear={() => setHoverKey(null)}>
+					<span className="truncate">
+						<span className="font-mono">edge {hovered}</span>
+						<span className="text-fg-muted"> · lit in every stage</span>
+					</span>
+				</InspectBar>
+			) : null}
 		</>
 	);
 }
-

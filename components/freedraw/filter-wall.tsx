@@ -1,16 +1,15 @@
 "use client";
 
 import { ChevronDown, ChevronLeft, ChevronRight, Play } from "lucide-react";
+import { Fragment, useEffect, useId, useRef, useState, type ReactNode, type Ref } from "react";
 import {
-	Fragment,
-	useEffect,
-	useId,
-	useRef,
-	useState,
-	type ReactNode,
-	type Ref,
-} from "react";
-import { SHEET_PANEL, SheetBackdrop, SheetFooter, SheetHeader, SheetTrigger, useSheet } from "@/components/ui/bottom-sheet";
+	SHEET_PANEL,
+	SheetBackdrop,
+	SheetFooter,
+	SheetHeader,
+	SheetTrigger,
+	useSheet,
+} from "@/components/ui/bottom-sheet";
 import { Button } from "@/components/ui/button";
 import { ResetViewButton } from "@/components/reset-view-button";
 import { OptionWall } from "@/components/ui/option-wall";
@@ -68,7 +67,7 @@ export function WallBar({
 					className="flex cursor-pointer items-baseline gap-2 text-left max-md:min-h-11 max-md:min-w-0 max-md:flex-col max-md:justify-center max-md:gap-0"
 				>
 					<span className="text-[15px] font-semibold tracking-tight text-fg max-md:truncate">{title}</span>
-					{count != null && <span className="text-[13px] tabular-nums text-fg-muted max-md:truncate">{count}</span>}
+					{count != null && <span className="text-[13px] text-fg-muted tabular-nums max-md:truncate">{count}</span>}
 				</button>
 				<button
 					type="button"
@@ -76,11 +75,14 @@ export function WallBar({
 					aria-expanded={open}
 					aria-controls={bodyId}
 					aria-label={open ? "Collapse filters" : "Expand filters"}
-					className="flex cursor-pointer rounded-control items-center p-1 text-fg-muted transition-colors hover:text-fg-secondary max-md:hidden"
+					className="flex cursor-pointer items-center rounded-control p-1 text-fg-muted transition-colors hover:text-fg-secondary max-md:hidden"
 				>
 					<ChevronDown
 						size={14}
-						className={cn("transition-transform duration-200 ease-out motion-reduce:transition-none", !open && "-rotate-90")}
+						className={cn(
+							"transition-transform duration-200 ease-out motion-reduce:transition-none",
+							!open && "-rotate-90",
+						)}
 					/>
 				</button>
 				<div className="ml-auto flex items-center gap-3 max-md:hidden">{top}</div>
@@ -112,16 +114,16 @@ export function WallBar({
 				<div className="overflow-hidden max-md:min-h-0 max-md:flex-1 max-md:overflow-y-auto max-md:overscroll-contain max-md:px-4">
 					<div
 						className={cn(
-							"flex flex-wrap items-start gap-x-8 gap-y-5 pb-2 pt-3 transition duration-200 ease-out motion-reduce:transition-none",
+							"flex flex-wrap items-start gap-x-8 gap-y-5 pt-3 pb-2 transition duration-200 ease-out motion-reduce:transition-none",
 							open ? "translate-y-0 opacity-100" : "-translate-y-1 opacity-0",
-							"max-md:translate-y-0 max-md:pb-6 max-md:pt-4 max-md:opacity-100",
+							"max-md:translate-y-0 max-md:pt-4 max-md:pb-6 max-md:opacity-100",
 						)}
 					>
 						{children}
 					</div>
 				</div>
 				<SheetFooter>
-					<span className="min-w-0 flex-1 truncate text-[13px] tabular-nums text-fg-muted">{count}</span>
+					<span className="min-w-0 flex-1 truncate text-[13px] text-fg-muted tabular-nums">{count}</span>
 					<Button variant="primary" label="Show results" onClick={closeSheet} />
 				</SheetFooter>
 			</div>
@@ -213,7 +215,7 @@ export function TriMatrix({ rows }: { rows: TriRow[] }) {
 		<div className="grid grid-cols-[auto_auto] items-center gap-x-3 gap-y-1 max-md:grid-cols-[auto_1fr] max-md:gap-y-1.5">
 			{rows.map((row) => (
 				<Fragment key={row.id}>
-					<span className="whitespace-nowrap text-xs text-fg-secondary max-md:text-sm">{row.label}</span>
+					<span className="text-xs whitespace-nowrap text-fg-secondary max-md:text-sm">{row.label}</span>
 					<div className="ta-seg grid grid-cols-3" style={{ padding: 2 }}>
 						{TRI_COLS.map((c) => {
 							const on = row.value === c.value;
@@ -267,7 +269,9 @@ export function ToggleCell({
 			)}
 		>
 			{label}
-			{shortcut ? <span className="font-mono text-[10px] font-normal text-fg-muted max-md:hidden">{shortcut}</span> : null}
+			{shortcut ? (
+				<span className="font-mono text-[10px] font-normal text-fg-muted max-md:hidden">{shortcut}</span>
+			) : null}
 		</button>
 	);
 }
@@ -334,7 +338,8 @@ export const CATALOGUE_GRID =
 	"grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(116px,1fr))] max-md:gap-2 max-md:[grid-template-columns:repeat(3,minmax(0,1fr))]";
 
 // The list pane beside the detail pane: scrolls the grid and its pagination.
-export const LIST_PANE = "flex-1 min-w-0 overflow-y-auto p-4 max-md:px-3 max-md:pb-[calc(env(safe-area-inset-bottom)+16px)]";
+export const LIST_PANE =
+	"flex-1 min-w-0 overflow-y-auto p-4 max-md:px-3 max-md:pb-[calc(env(safe-area-inset-bottom)+16px)]";
 
 // The right-hand detail pane: a framed interactive preview at a fixed 320px height (so the title, the
 // primary action and the metadata stay above the fold) with the interaction hint as a chip in its corner
@@ -443,7 +448,7 @@ export function DetailPane({
 						<span className="max-md:hidden">{hint}</span>
 						<span className="md:hidden">{touchHint}</span>
 					</div>
-					{onResetView && <ResetViewButton onClick={onResetView} className="absolute right-3 top-3 z-20" />}
+					{onResetView && <ResetViewButton onClick={onResetView} className="absolute top-3 right-3 z-20" />}
 				</div>
 				<div>
 					<div className="font-mono text-base font-semibold text-fg">{title}</div>
@@ -454,7 +459,9 @@ export function DetailPane({
 					{meta.map(([k, v], i) => (
 						<div key={i}>
 							<dt className="ta-label">{k}</dt>
-							<dd className="mt-1 font-mono text-xs tabular-nums text-fg-secondary max-md:break-words max-md:text-[13px]">{v}</dd>
+							<dd className="mt-1 font-mono text-xs text-fg-secondary tabular-nums max-md:text-[13px] max-md:break-words">
+								{v}
+							</dd>
 						</div>
 					))}
 				</dl>

@@ -49,9 +49,14 @@ const mulZeta = (u: V4): V4 => [-u[3], u[0], u[1] + u[3], u[2]]; // ×ζ  (rotat
 const conj = (u: V4): V4 => [u[0] + u[2], u[1], -u[2], -u[1] - u[3]]; // complex conjugate (reflection)
 // the 24 grid symmetries (D₁₂) as exact integer maps: {id, conj} × 12 rotations
 const SYMS: Array<(u: V4) => V4> = [];
-for (let refl = 0; refl < 2; refl++) for (let r = 0; r < 12; r++) {
-	SYMS.push((u: V4) => { let x = refl ? conj(u) : u; for (let i = 0; i < r; i++) x = mulZeta(x); return x; });
-}
+for (let refl = 0; refl < 2; refl++)
+	for (let r = 0; r < 12; r++) {
+		SYMS.push((u: V4) => {
+			let x = refl ? conj(u) : u;
+			for (let i = 0; i < r; i++) x = mulZeta(x);
+			return x;
+		});
+	}
 const CO = [1, Math.cos(Math.PI / 6), Math.cos(Math.PI / 3), 0];
 const SI = [0, Math.sin(Math.PI / 6), Math.sin(Math.PI / 3), 1];
 const toX = (u: V4): number => u[0] * CO[0] + u[1] * CO[1] + u[2] * CO[2] + u[3] * CO[3];
@@ -69,7 +74,10 @@ function dec(ring: Ring, [a, b, c, d]: number[]): Cyclotomic {
 
 // interior angle (deg) at vertex b of the polygon corner a-b-d
 function interiorDeg(a: XY, b: XY, d: XY): number {
-	const ux = a.x - b.x, uy = a.y - b.y, wx = d.x - b.x, wy = d.y - b.y;
+	const ux = a.x - b.x,
+		uy = a.y - b.y,
+		wx = d.x - b.x,
+		wy = d.y - b.y;
 	const dot = (ux * wx + uy * wy) / (Math.hypot(ux, uy) * Math.hypot(wx, wy));
 	return (Math.acos(Math.max(-1, Math.min(1, dot))) * 180) / Math.PI;
 }
@@ -79,11 +87,17 @@ function interiorDeg(a: XY, b: XY, d: XY): number {
 function faceInfo(f: Face): { fp: string; n: number; s: number } {
 	const V = f.verts.map((p) => ({ x: toX(p as V4), y: toY(p as V4) }));
 	const m = V.length;
-	let real = 0; const angs: number[] = [];
+	let real = 0;
+	const angs: number[] = [];
 	for (let t = 0; t < m; t++) {
-		const a = V[(t - 1 + m) % m], b = V[t], d = V[(t + 1) % m];
+		const a = V[(t - 1 + m) % m],
+			b = V[t],
+			d = V[(t + 1) % m];
 		const ang = interiorDeg(a, b, d);
-		if (Math.abs(ang - 180) >= 1) { real++; angs.push(Math.round(ang)); }
+		if (Math.abs(ang - 180) >= 1) {
+			real++;
+			angs.push(Math.round(ang));
+		}
 	}
 	angs.sort((x, y) => x - y);
 	return { fp: `${real}:${Math.round(m / real)}:${angs.join("-")}`, n: real, s: Math.round(m / real) };
@@ -93,24 +107,28 @@ function faceInfo(f: Face): { fp: string; n: number; s: number } {
 // carries both a flat (180°) and a real (<180°) corner over a 3×3 lattice patch. No T-junction ⟺ every
 // tile has the same scale AND that mono-scale tiling is edge-to-edge (a regular tiling drawn at ×s).
 function hasTJunction(c: Cell): boolean {
-	const T1 = c.T1 as V4, T2 = c.T2 as V4;
+	const T1 = c.T1 as V4,
+		T2 = c.T2 as V4;
 	const faces = c.faces.map((f) => f.verts.map((p) => ({ x: toX(p as V4), y: toY(p as V4) })));
 	const pt = new Map<string, { flat: boolean; real: boolean }>();
-	for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) {
-		const ox = i * toX(T1) + j * toX(T2), oy = i * toY(T1) + j * toY(T2);
-		for (const V of faces) {
-			const n = V.length;
-			for (let t = 0; t < n; t++) {
-				const a = { x: V[(t - 1 + n) % n].x + ox, y: V[(t - 1 + n) % n].y + oy };
-				const b = { x: V[t].x + ox, y: V[t].y + oy };
-				const d = { x: V[(t + 1) % n].x + ox, y: V[(t + 1) % n].y + oy };
-				const key = `${Math.round(b.x * 1e4)},${Math.round(b.y * 1e4)}`;
-				const e = pt.get(key) ?? { flat: false, real: false };
-				if (Math.abs(interiorDeg(a, b, d) - 180) < 1) e.flat = true; else e.real = true;
-				pt.set(key, e);
+	for (let i = -1; i <= 1; i++)
+		for (let j = -1; j <= 1; j++) {
+			const ox = i * toX(T1) + j * toX(T2),
+				oy = i * toY(T1) + j * toY(T2);
+			for (const V of faces) {
+				const n = V.length;
+				for (let t = 0; t < n; t++) {
+					const a = { x: V[(t - 1 + n) % n].x + ox, y: V[(t - 1 + n) % n].y + oy };
+					const b = { x: V[t].x + ox, y: V[t].y + oy };
+					const d = { x: V[(t + 1) % n].x + ox, y: V[(t + 1) % n].y + oy };
+					const key = `${Math.round(b.x * 1e4)},${Math.round(b.y * 1e4)}`;
+					const e = pt.get(key) ?? { flat: false, real: false };
+					if (Math.abs(interiorDeg(a, b, d) - 180) < 1) e.flat = true;
+					else e.real = true;
+					pt.set(key, e);
+				}
 			}
 		}
-	}
 	for (const e of pt.values()) if (e.flat && e.real) return true;
 	return false;
 }
@@ -125,11 +143,14 @@ function hasTJunction(c: Cell): boolean {
 // gather radius of 17 therefore produces BYTE-IDENTICAL keys while collecting (30/17)² ≈ 3.1× fewer
 // points, and `pts` is scanned once per (anchor, symmetry) pair. Measured on the k≤7 build this was the
 // difference between a 9-hour pass and a workable one.
-const R_GATHER = 17, R_ANCHOR = 4.2, R_WINDOW = 12;
+const R_GATHER = 17,
+	R_ANCHOR = 4.2,
+	R_WINDOW = 12;
 function canonKey(c: Cell): string {
 	let M = 1;
 	for (const f of c.faces) M = lcm(M, f.verts.length);
-	const T1 = smul(c.T1 as V4, M), T2 = smul(c.T2 as V4, M);
+	const T1 = smul(c.T1 as V4, M),
+		T2 = smul(c.T2 as V4, M);
 	const base = c.faces.map((f) => {
 		let s: V4 = [0, 0, 0, 0];
 		for (const p of f.verts) s = add(s, p as V4);
@@ -138,19 +159,34 @@ function canonKey(c: Cell): string {
 	const minT = Math.min(Math.hypot(toX(T1), toY(T1)), Math.hypot(toX(T2), toY(T2))) / M;
 	const K = Math.ceil((R_GATHER + 8) / Math.max(minT, 0.4)) + 2;
 	const pts: Array<{ fp: string; P: V4 }> = [];
-	for (let m = -K; m <= K; m++) for (let n = -K; n <= K; n++) {
-		const off = add(smul(T1, m), smul(T2, n));
-		for (const b of base) {
-			const P = add(b.P, off);
-			const x = toX(P) / M, y = toY(P) / M;
-			if (x * x + y * y <= R_GATHER * R_GATHER) pts.push({ fp: b.fp, P });
+	for (let m = -K; m <= K; m++)
+		for (let n = -K; n <= K; n++) {
+			const off = add(smul(T1, m), smul(T2, n));
+			for (const b of base) {
+				const P = add(b.P, off);
+				const x = toX(P) / M,
+					y = toY(P) / M;
+				if (x * x + y * y <= R_GATHER * R_GATHER) pts.push({ fp: b.fp, P });
+			}
 		}
-	}
 	const cnt = new Map<string, number>();
-	for (const p of pts) { const x = toX(p.P) / M, y = toY(p.P) / M; if (x * x + y * y <= R_ANCHOR * R_ANCHOR) cnt.set(p.fp, (cnt.get(p.fp) ?? 0) + 1); }
-	let rare = "", rc = Infinity;
-	for (const [k, v] of cnt) if (v < rc || (v === rc && k < rare)) { rc = v; rare = k; }
-	const anchors = pts.filter((p) => { const x = toX(p.P) / M, y = toY(p.P) / M; return p.fp === rare && x * x + y * y <= R_ANCHOR * R_ANCHOR; });
+	for (const p of pts) {
+		const x = toX(p.P) / M,
+			y = toY(p.P) / M;
+		if (x * x + y * y <= R_ANCHOR * R_ANCHOR) cnt.set(p.fp, (cnt.get(p.fp) ?? 0) + 1);
+	}
+	let rare = "",
+		rc = Infinity;
+	for (const [k, v] of cnt)
+		if (v < rc || (v === rc && k < rare)) {
+			rc = v;
+			rare = k;
+		}
+	const anchors = pts.filter((p) => {
+		const x = toX(p.P) / M,
+			y = toY(p.P) / M;
+		return p.fp === rare && x * x + y * y <= R_ANCHOR * R_ANCHOR;
+	});
 	// Each (anchor, symmetry) pair is one candidate and the key is the smallest. The old version built the
 	// joined string for EVERY candidate and kept the lexicographically smallest; those strings run to tens
 	// of kB and there are 24 symmetries per anchor, so the pass was dominated by string concatenation and
@@ -168,27 +204,34 @@ function canonKey(c: Cell): string {
 	};
 	let best: number[] | null = null;
 	const R2 = R_WINDOW * R_WINDOW;
-	for (const A of anchors) for (const g of SYMS) {
-		const rows: number[][] = [];
-		for (const p of pts) {
-			const Q = g(sub(p.P, A.P));
-			const x = toX(Q) / M, y = toY(Q) / M;
-			if (x * x + y * y <= R2) rows.push([Q[0], Q[1], Q[2], Q[3], fpId.get(p.fp)!]);
+	for (const A of anchors)
+		for (const g of SYMS) {
+			const rows: number[][] = [];
+			for (const p of pts) {
+				const Q = g(sub(p.P, A.P));
+				const x = toX(Q) / M,
+					y = toY(Q) / M;
+				if (x * x + y * y <= R2) rows.push([Q[0], Q[1], Q[2], Q[3], fpId.get(p.fp)!]);
+			}
+			rows.sort(cmp);
+			const flat: number[] = [];
+			for (const r of rows) flat.push(r[0], r[1], r[2], r[3], r[4]);
+			if (best === null || cmp(flat, best) < 0) best = flat;
 		}
-		rows.sort(cmp);
-		const flat: number[] = [];
-		for (const r of rows) flat.push(r[0], r[1], r[2], r[3], r[4]);
-		if (best === null || cmp(flat, best) < 0) best = flat;
-	}
 	if (!best) return "";
 	const outRows: string[] = [];
-	for (let i = 0; i < best.length; i += 5) outRows.push(`${best[i]},${best[i + 1]},${best[i + 2]},${best[i + 3]},${fpSorted[best[i + 4]]}`);
+	for (let i = 0; i < best.length; i += 5)
+		outRows.push(`${best[i]},${best[i + 1]},${best[i + 2]},${best[i + 3]},${fpSorted[best[i + 4]]}`);
 	return `M${M}|` + outRows.join(";");
 }
 
 // Unicode subscript (2 -> "₂", 12 -> "₁₂").
 const SUB = "₀₁₂₃₄₅₆₇₈₉";
-const subDigits = (n: number): string => String(n).split("").map((d) => SUB[+d]).join("");
+const subDigits = (n: number): string =>
+	String(n)
+		.split("")
+		.map((d) => SUB[+d])
+		.join("");
 
 // readable composition label from GEOMETRY: token = underlying N with a subscript scale (side-1 = no
 // subscript). Deduped, sorted by (N, scale).  e.g. "3.6₃" = side-1 triangle + side-3 hexagon.
@@ -198,7 +241,10 @@ function familyLabel(faces: Face[]): string {
 	for (const f of faces) {
 		const { n, s } = faceInfo(f);
 		const k = `${n}|${s}`;
-		if (!seen.has(k)) { seen.add(k); keys.push({ n, s }); }
+		if (!seen.has(k)) {
+			seen.add(k);
+			keys.push({ n, s });
+		}
 	}
 	keys.sort((x, y) => x.n - y.n || x.s - y.s);
 	return keys.map(({ n, s }) => (s === 1 ? String(n) : `${n}${subDigits(s)}`)).join(".");
@@ -239,7 +285,10 @@ const NOTE =
 	"palette. Filter by the 'Side lengths' sub-class facet: Sides 1–2 vs Sides 1–3.";
 
 const logLines: string[] = [];
-const log = (m = ""): void => { logLines.push(m); console.log(m); };
+const log = (m = ""): void => {
+	logLines.push(m);
+	console.log(m);
+};
 /** Render coordinate: 6 dp, which also collapses double noise (−1.0000000000000002 → −1). */
 const r6 = (v: number): number => Math.round(v * 1e6) / 1e6;
 
@@ -247,7 +296,10 @@ function main(): void {
 	const t0 = Date.now();
 	log(`=== build-scaled-atlas (side-1 + side-2 + side-3 regular {3,4,6,12}) ===`);
 	const present = INPUTS.filter((p) => fs.existsSync(p));
-	if (!present.length) { log(`  ⚑ no cells JSON found — run PALETTE=regular-scaled-123 ./run-oracle.sh <k> (and/or regular-doubled)`); process.exit(1); }
+	if (!present.length) {
+		log(`  ⚑ no cells JSON found — run PALETTE=regular-scaled-123 ./run-oracle.sh <k> (and/or regular-doubled)`);
+		process.exit(1);
+	}
 	const cells: Cell[] = [];
 	for (const p of present) {
 		const part: Cell[] = JSON.parse(fs.readFileSync(p, "utf8"));
@@ -261,7 +313,8 @@ function main(): void {
 	// pass 1: T-junction gate + exact area cert → candidate mixers, each with its exact congruence key
 	type Cand = { tiling: ReferenceTiling; key: string; area: number; k: number };
 	const cands: Cand[] = [];
-	let dropped = 0, skipped = 0;
+	let dropped = 0,
+		skipped = 0;
 	// Progress heartbeat. This pass is exact ℚ(ζ₂₄) arithmetic per face and it dominates the build: at
 	// k≤4 (1,505 cells) it finished before anyone looked, at k≤7 (49,017 cells, each with several times
 	// the faces) it runs for many minutes with nothing on stdout, which reads as a hang. Print rate and
@@ -272,10 +325,16 @@ function main(): void {
 		if (++done % 2000 === 0) {
 			const el = (Date.now() - tPass1) / 1000;
 			const rate = done / el;
-			log(`    …${done}/${cells.length} cells  ${el.toFixed(0)}s elapsed  ${rate.toFixed(0)}/s  ETA ${((cells.length - done) / rate).toFixed(0)}s`);
+			log(
+				`    …${done}/${cells.length} cells  ${el.toFixed(0)}s elapsed  ${rate.toFixed(0)}/s  ETA ${((cells.length - done) / rate).toFixed(0)}s`,
+			);
 		}
-		if (!hasTJunction(c)) { dropped++; continue; } // single-scale regular tiling — lives in the regular atlas
-		const u = dec(RING, c.T1), v = dec(RING, c.T2);
+		if (!hasTJunction(c)) {
+			dropped++;
+			continue;
+		} // single-scale regular tiling — lives in the regular atlas
+		const u = dec(RING, c.T1),
+			v = dec(RING, c.T2);
 		const cellArea = detSurd(u, v).abs();
 		let sum = polygonAreaSurd(c.faces[0].verts.map((p) => dec(RING, p)));
 		for (let i = 1; i < c.faces.length; i++) sum = sum.add(polygonAreaSurd(c.faces[i].verts.map((p) => dec(RING, p))));
@@ -284,7 +343,8 @@ function main(): void {
 			skipped++;
 			continue;
 		}
-		const uv = u.toVector(), vv = v.toVector();
+		const uv = u.toVector(),
+			vv = v.toVector();
 		// Round render coordinates to 6 dp. These come out of exact ℤ[ζ₁₂] decoding and then float
 		// conversion, so a lattice point that IS −1 serialises as "-1.0000000000000002" — 19 characters
 		// of double noise per coordinate, and this shelf now writes tens of millions of them. 1e-6 of a
@@ -292,7 +352,10 @@ function main(): void {
 		// the cells JSON, so nothing verifiable is lost. Measured: it is most of the shard size.
 		const cellPolygons = c.faces.map((f) => ({
 			n: f.verts.length,
-			vertices: f.verts.map((p) => { const w = dec(RING, p).toVector(); return [r6(w.x), r6(w.y)]; }),
+			vertices: f.verts.map((p) => {
+				const w = dec(RING, p).toVector();
+				return [r6(w.x), r6(w.y)];
+			}),
 		}));
 		cands.push({
 			key: canonKey(c),
@@ -303,7 +366,13 @@ function main(): void {
 				source: "scaled",
 				k: c.k,
 				family: familyLabel(c.faces),
-				renderCell: { cellPolygons, basis: [[r6(uv.x), r6(uv.y)], [r6(vv.x), r6(vv.y)]] } as ReferenceTiling["renderCell"],
+				renderCell: {
+					cellPolygons,
+					basis: [
+						[r6(uv.x), r6(uv.y)],
+						[r6(vv.x), r6(vv.y)],
+					],
+				} as ReferenceTiling["renderCell"],
 				discoverer: "Alessandro Longo",
 				certification: "candidate",
 				note: NOTE,
@@ -319,7 +388,11 @@ function main(): void {
 		const prev = byKey.get(c.key);
 		if (!prev || c.area < prev.area) byKey.set(c.key, c);
 	}
-	for (const [key, ks] of kSeen) if (ks.size > 1) log(`  ⚑ k-conflict: one geometry carries k=${[...ks].sort().join("/")} across supercell duals (${byKey.get(key)!.tiling.family}) — kept min-cell rep`);
+	for (const [key, ks] of kSeen)
+		if (ks.size > 1)
+			log(
+				`  ⚑ k-conflict: one geometry carries k=${[...ks].sort().join("/")} across supercell duals (${byKey.get(key)!.tiling.family}) — kept min-cell rep`,
+			);
 
 	// ⚑ eu_develop's id is not unique once the tiers get deep: at k≤4 every id was distinct, but the k=5–7
 	// doubled tiers and the k=3–4 sides-1–3 tiers produce 1,426 ids carrying 1,614 records — DISTINCT
@@ -335,15 +408,22 @@ function main(): void {
 	const byId = new Map<string, typeof kept>();
 	for (const c of kept) {
 		const g = byId.get(c.tiling.id);
-		if (g) g.push(c); else byId.set(c.tiling.id, [c]);
+		if (g) g.push(c);
+		else byId.set(c.tiling.id, [c]);
 	}
 	let renamed = 0;
 	for (const [id, group] of byId) {
 		if (group.length < 2) continue;
 		group.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
-		for (let i = 1; i < group.length; i++) { group[i].tiling.id = `${id}-b${i + 1}`; renamed++; }
+		for (let i = 1; i < group.length; i++) {
+			group[i].tiling.id = `${id}-b${i + 1}`;
+			renamed++;
+		}
 	}
-	if (renamed) log(`  ⚑ ${renamed} record(s) on ${[...byId.values()].filter((g) => g.length > 1).length} duplicated eu_develop id(s) renamed with a -b<n> suffix`);
+	if (renamed)
+		log(
+			`  ⚑ ${renamed} record(s) on ${[...byId.values()].filter((g) => g.length > 1).length} duplicated eu_develop id(s) renamed with a -b<n> suffix`,
+		);
 
 	const out = kept.map((c) => c.tiling);
 	out.sort((a, b) => a.k - b.k || a.family.localeCompare(b.family) || a.id.localeCompare(b.id));
@@ -362,7 +442,9 @@ function main(): void {
 		const p = OUT.replace(/\.json$/, `-k${k}.json`);
 		const slice = out.filter((t) => t.k === k);
 		fs.writeFileSync(p, JSON.stringify(slice, null, 0) + "\n");
-		log(`  shard k=${k}: ${slice.length} tilings → ${path.relative(ROOT, p)} (${(fs.statSync(p).size / 1024).toFixed(1)} KB)`);
+		log(
+			`  shard k=${k}: ${slice.length} tilings → ${path.relative(ROOT, p)} (${(fs.statSync(p).size / 1024).toFixed(1)} KB)`,
+		);
 	}
 	// Drop a stale shard whose k no longer has entries; leaving it would serve tilings this build removed.
 	for (const f of fs.readdirSync(path.dirname(OUT))) {
@@ -371,12 +453,15 @@ function main(): void {
 	}
 	log(`  eager k≤${MAIN_MAX_K}: ${main_.length} tilings; lazy shards: k=${shardKs.join(", k=") || "(none)"}`);
 
-	const rawByK = new Map<number, number>(), distByK = new Map<number, number>();
+	const rawByK = new Map<number, number>(),
+		distByK = new Map<number, number>();
 	for (const c of cands) rawByK.set(c.k, (rawByK.get(c.k) ?? 0) + 1);
 	for (const c of out) distByK.set(c.k, (distByK.get(c.k) ?? 0) + 1);
 	const ks = [...new Set([...rawByK.keys(), ...distByK.keys()])].sort((a, b) => a - b);
 	log(`  dropped ${dropped} single-scale regular tilings (no T-junction); ${skipped} area-cert skipped`);
-	log(`  T-junction mixers: ${cands.length} raw duals → ${out.length} DISTINCT geometries (merged ${cands.length - out.length} supercell/dual duplicates)`);
+	log(
+		`  T-junction mixers: ${cands.length} raw duals → ${out.length} DISTINCT geometries (merged ${cands.length - out.length} supercell/dual duplicates)`,
+	);
 	for (const k of ks) log(`    k=${k}: raw ${rawByK.get(k) ?? 0} → distinct ${distByK.get(k) ?? 0}`);
 	log(`  wrote → ${path.relative(ROOT, OUT)} (${kb} KB), ${((Date.now() - t0) / 1000).toFixed(2)}s`);
 	fs.mkdirSync(path.dirname(LOG), { recursive: true });

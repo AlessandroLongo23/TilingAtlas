@@ -9,25 +9,25 @@
  * duplicate and MISSES Galebach #7. The k=3 gallery is generated with a loud caveat note, the
  * duplicate excluded; it regenerates in one command once the catalogue is fixed.
  */
-import fs from 'node:fs';
-import path from 'node:path';
-import { createHash } from 'node:crypto';
-import { execFile } from 'node:child_process';
-import os from 'node:os';
-import { loadSnapshot } from './snapshot';
-import { ensureOrbits } from './tiling/orbits';
-import { buildCellModel } from './tiling/cellModel';
-import { tilingFigure } from './tiling/tilingFigure';
-import type { TilingFigureOptions } from './tiling/tilingFigure';
-import { emitTikz } from './emit/tikz';
-import { emitSvg } from './emit/svg';
-import { emitTexColors } from './style/palette';
-import { galleryEntries, type OracleMap, type TilingFigureEntry } from './manifest';
+import fs from "node:fs";
+import path from "node:path";
+import { createHash } from "node:crypto";
+import { execFile } from "node:child_process";
+import os from "node:os";
+import { loadSnapshot } from "./snapshot";
+import { ensureOrbits } from "./tiling/orbits";
+import { buildCellModel } from "./tiling/cellModel";
+import { tilingFigure } from "./tiling/tilingFigure";
+import type { TilingFigureOptions } from "./tiling/tilingFigure";
+import { emitTikz } from "./emit/tikz";
+import { emitSvg } from "./emit/svg";
+import { emitTexColors } from "./style/palette";
+import { galleryEntries, type OracleMap, type TilingFigureEntry } from "./manifest";
 
 const ROOT = process.cwd();
-const OUT = path.join(ROOT, 'figures', 'out', 'batch');
-const THESIS_FIG = path.join(ROOT, '..', 'thesis', 'figures', 'generated');
-const TEXBIN = path.join(os.homedir(), 'Library', 'TinyTeX', 'bin', 'universal-darwin');
+const OUT = path.join(ROOT, "figures", "out", "batch");
+const THESIS_FIG = path.join(ROOT, "..", "thesis", "figures", "generated");
+const TEXBIN = path.join(os.homedir(), "Library", "TinyTeX", "bin", "universal-darwin");
 
 const args = process.argv.slice(2);
 const flag = (name: string): boolean => args.includes(name);
@@ -46,56 +46,56 @@ const opt = (name: string): string | undefined => {
 type ExplanatoryEntry = {
 	id: string;
 	tCode: string;
-	opts: Omit<TilingFigureOptions, 'windowMm' | 'edgeMm'> & { windowMm?: number; edgeMm?: number };
+	opts: Omit<TilingFigureOptions, "windowMm" | "edgeMm"> & { windowMm?: number; edgeMm?: number };
 	note: string;
 };
 
 const EXPLANATORY: ExplanatoryEntry[] = [
 	{
-		id: 'oblique-A',
-		tCode: 't3046',
-		opts: { strategy: 'byNGon', anatomy: { basis: true, latticePoints: true } },
-		note: 'F19: oblique k=3 tiling (t3046) recovered by join-closure; basis overlay = the oblique cell.',
+		id: "oblique-A",
+		tCode: "t3046",
+		opts: { strategy: "byNGon", anatomy: { basis: true, latticePoints: true } },
+		note: "F19: oblique k=3 tiling (t3046) recovered by join-closure; basis overlay = the oblique cell.",
 	},
 	{
-		id: 'oblique-B',
-		tCode: 't3055',
-		opts: { strategy: 'byNGon', anatomy: { basis: true, latticePoints: true } },
-		note: 'F19: second oblique k=3 tiling (t3055); basis overlay = the oblique cell.',
+		id: "oblique-B",
+		tCode: "t3055",
+		opts: { strategy: "byNGon", anatomy: { basis: true, latticePoints: true } },
+		note: "F19: second oblique k=3 tiling (t3055); basis overlay = the oblique cell.",
 	},
 	{
-		id: 'octagon-488',
-		tCode: 't1002',
-		opts: { strategy: 'byNGon' },
-		note: 'G1 underlay: clean 4.8.8 patch for TA to overlay the Λ₈ basis vectors + square holes.',
+		id: "octagon-488",
+		tCode: "t1002",
+		opts: { strategy: "byNGon" },
+		note: "G1 underlay: clean 4.8.8 patch for TA to overlay the Λ₈ basis vectors + square holes.",
 	},
 	{
-		id: 'incidence-axis',
-		tCode: 't1006',
-		opts: { strategy: 'byNGon' },
-		note: 'G2 Panel B underlay: clean 3.4.6.4 patch (reflective, mixed) for TA to draw a reflection axis along edges/bisectors/centroid lines.',
+		id: "incidence-axis",
+		tCode: "t1006",
+		opts: { strategy: "byNGon" },
+		note: "G2 Panel B underlay: clean 3.4.6.4 patch (reflective, mixed) for TA to draw a reflection axis along edges/bisectors/centroid lines.",
 	},
 	{
-		id: 'orbit-intro-1u',
-		tCode: 't1003',
-		opts: { strategy: 'byNGon', markers: true },
-		note: 'fig:orbit-intro (a): 4.6.12 with vertex-orbit circles — one orbit, one dot color everywhere.',
+		id: "orbit-intro-1u",
+		tCode: "t1003",
+		opts: { strategy: "byNGon", markers: true },
+		note: "fig:orbit-intro (a): 4.6.12 with vertex-orbit circles — one orbit, one dot color everywhere.",
 	},
 	{
-		id: 'orbit-intro-2u',
-		tCode: 't2003',
-		opts: { strategy: 'byNGon', markers: true },
-		note: 'fig:orbit-intro (b): [3³.4²; 4⁴] with vertex-orbit circles — two orbits, two dot colors.',
+		id: "orbit-intro-2u",
+		tCode: "t2003",
+		opts: { strategy: "byNGon", markers: true },
+		note: "fig:orbit-intro (b): [3³.4²; 4⁴] with vertex-orbit circles — two orbits, two dot colors.",
 	},
 ];
 
 function latexmk(texFile: string): Promise<void> {
 	return new Promise((resolve, reject) => {
 		execFile(
-			path.join(TEXBIN, 'latexmk'),
-			['-pdf', '-halt-on-error', '-interaction=nonstopmode', path.basename(texFile)],
+			path.join(TEXBIN, "latexmk"),
+			["-pdf", "-halt-on-error", "-interaction=nonstopmode", path.basename(texFile)],
 			{ cwd: path.dirname(texFile), env: { ...process.env, PATH: `${TEXBIN}:${process.env.PATH}` } },
-			(err) => (err ? reject(new Error(`latexmk failed: ${texFile}`)) : resolve())
+			(err) => (err ? reject(new Error(`latexmk failed: ${texFile}`)) : resolve()),
 		);
 	});
 }
@@ -112,7 +112,7 @@ async function pool<T>(items: T[], n: number, fn: (t: T) => Promise<void>): Prom
 	await Promise.all(workers);
 }
 
-const texEscape = (s: string): string => s.replace(/([&%$#_{}~^\\])/g, '\\$1');
+const texEscape = (s: string): string => s.replace(/([&%$#_{}~^\\])/g, "\\$1");
 
 /** Gallery include: subcaption grid, 4 panels per row, captioned with t-code + VC types. */
 function galleryTex(k: number, entries: TilingFigureEntry[], caveat?: string): string {
@@ -125,34 +125,33 @@ function galleryTex(k: number, entries: TilingFigureEntry[], caveat?: string): s
 	const pages: TilingFigureEntry[][] = [];
 	for (let i = 0; i < entries.length; i += PER_PAGE) pages.push(entries.slice(i, i + PER_PAGE));
 	pages.forEach((page, pi) => {
-		lines.push('\\begin{figure}[p]', '\\centering');
+		lines.push("\\begin{figure}[p]", "\\centering");
 		// Full-height pages (5 rows) overflow \textheight and the caption collides with the
 		// running footer; 0.92\linewidth reclaims ~40pt. Short pages (k=1's 3 rows) keep full width.
-		const imgWidth = page.length > 12 ? '0.92\\linewidth' : '\\linewidth';
+		const imgWidth = page.length > 12 ? "0.92\\linewidth" : "\\linewidth";
 		page.forEach((e, i) => {
-			const label = e.tCode ? `\\texttt{${texEscape(e.tCode)}}` : '(unmatched)';
+			const label = e.tCode ? `\\texttt{${texEscape(e.tCode)}}` : "(unmatched)";
 			lines.push(
 				`\\begin{subfigure}{0.235\\textwidth}`,
 				`\\centering`,
 				`\\includegraphics[width=${imgWidth}]{figures/generated/k${k}/${e.id}.pdf}`,
 				`\\caption*{${label}\\\\{\\tiny ${e.vcLabelTex}}}`,
-				`\\end{subfigure}${(i + 1) % COLS === 0 ? '' : '\\hfill'}`
+				`\\end{subfigure}${(i + 1) % COLS === 0 ? "" : "\\hfill"}`,
 			);
 		});
-		const part = pages.length > 1 ? ` (part ${pi + 1} of ${pages.length})` : '';
-		const caveatNote = caveat ? ` ${caveat}` : '';
+		const part = pages.length > 1 ? ` (part ${pi + 1} of ${pages.length})` : "";
+		const caveatNote = caveat ? ` ${caveat}` : "";
 		// k=1 is included in the preliminaries (definition context) — "certified" is results-chapter
 		// language, so the eleven get the classical name instead.
-		const subject =
-			k === 1 ? 'The eleven uniform (Archimedean) tilings' : `The certified ${k}-uniform tilings`;
+		const subject = k === 1 ? "The eleven uniform (Archimedean) tilings" : `The certified ${k}-uniform tilings`;
 		lines.push(
 			`\\caption{${subject}${part}, colored by polygon type, labeled by Galebach index and vertex types.${caveatNote}}`,
-			`\\label{fig:gallery-k${k}${pages.length > 1 ? `-${pi + 1}` : ''}}`,
-			'\\end{figure}',
-			''
+			`\\label{fig:gallery-k${k}${pages.length > 1 ? `-${pi + 1}` : ""}}`,
+			"\\end{figure}",
+			"",
 		);
 	});
-	return lines.join('\n');
+	return lines.join("\n");
 }
 
 /** Match table include: t-code ↔ vertex types, two tilings per row for k=3. */
@@ -164,34 +163,31 @@ function matchTableTex(k: number, entries: TilingFigureEntry[], caveat?: string)
 		for (let i = 0; i < half; i++) {
 			const a = entries[i];
 			const b = entries[i + half];
-			const cell = (e?: TilingFigureEntry) =>
-				e ? `\\texttt{${texEscape(e.tCode ?? '—')}} & ${e.vcLabelTex}` : ' & ';
+			const cell = (e?: TilingFigureEntry) => (e ? `\\texttt{${texEscape(e.tCode ?? "—")}} & ${e.vcLabelTex}` : " & ");
 			rows.push(`${cell(a)} & ${cell(b)} \\\\`);
 		}
 	} else {
 		for (const e of entries) {
-			rows.push(`\\texttt{${texEscape(e.tCode ?? '—')}} & ${e.vcLabelTex} \\\\`);
+			rows.push(`\\texttt{${texEscape(e.tCode ?? "—")}} & ${e.vcLabelTex} \\\\`);
 		}
 	}
 	return [
 		`% AUTOGENERATED by figures/build.ts (TilingAtlas) — do not edit; regenerate with \`pnpm figures\`.`,
 		...(caveat ? [`% ⚑ CAVEAT: ${caveat}`] : []),
-		'\\begin{table}[p]',
-		'\\centering\\small',
-		`\\begin{tabular}{${twoCol ? 'll@{\\qquad}ll' : 'll'}}`,
-		'\\toprule',
-		twoCol
-			? 'Galebach & vertex types & Galebach & vertex types \\\\'
-			: 'Galebach & vertex types \\\\',
-		'\\midrule',
+		"\\begin{table}[p]",
+		"\\centering\\small",
+		`\\begin{tabular}{${twoCol ? "ll@{\\qquad}ll" : "ll"}}`,
+		"\\toprule",
+		twoCol ? "Galebach & vertex types & Galebach & vertex types \\\\" : "Galebach & vertex types \\\\",
+		"\\midrule",
 		...rows,
-		'\\bottomrule',
-		'\\end{tabular}',
-		`\\caption{Per-tiling oracle match for $k=${k}$: every certified tiling is exactly congruent to the listed Galebach tiling.${caveat ? ` ${caveat}` : ''}}`,
+		"\\bottomrule",
+		"\\end{tabular}",
+		`\\caption{Per-tiling oracle match for $k=${k}$: every certified tiling is exactly congruent to the listed Galebach tiling.${caveat ? ` ${caveat}` : ""}}`,
 		`\\label{tab:oracle-match-k${k}}`,
-		'\\end{table}',
-		'',
-	].join('\n');
+		"\\end{table}",
+		"",
+	].join("\n");
 }
 
 async function main(): Promise<void> {
@@ -199,21 +195,21 @@ async function main(): Promise<void> {
 	const snap = loadSnapshot();
 	const orbits = ensureOrbits(snap.tilings);
 	const oracleMap = JSON.parse(
-		fs.readFileSync(path.join(ROOT, 'figures', 'data', 'oracle-map.json'), 'utf8')
+		fs.readFileSync(path.join(ROOT, "figures", "data", "oracle-map.json"), "utf8"),
 	) as OracleMap;
 
 	// shared colors for hand-authored figures
-	fs.writeFileSync(path.join(ROOT, 'figures', 'tex', 'colors.gen.tex'), emitTexColors() + '\n');
+	fs.writeFileSync(path.join(ROOT, "figures", "tex", "colors.gen.tex"), emitTexColors() + "\n");
 
 	let entries = galleryEntries(snap, orbits, oracleMap);
-	const onlyK = opt('--k');
+	const onlyK = opt("--k");
 	if (onlyK) entries = entries.filter((e) => e.k === Number(onlyK));
-	const only = opt('--only');
+	const only = opt("--only");
 	if (only) entries = entries.filter((e) => e.id.includes(only));
 
 	// --- explanatory mode: single proof-figure underlays, never the gallery pipeline ---
-	if (flag('--explanatory')) {
-		const EX_OUT = path.join(ROOT, 'figures', 'out', 'explanatory');
+	if (flag("--explanatory")) {
+		const EX_OUT = path.join(ROOT, "figures", "out", "explanatory");
 		fs.mkdirSync(EX_OUT, { recursive: true });
 		const byTcode = new Map<string, string>(); // tCode → canonicalKey
 		for (const [ck, tc] of Object.entries(oracleMap.matched)) byTcode.set(tc, ck);
@@ -235,23 +231,23 @@ async function main(): Promise<void> {
 			exCompile.push(path.join(EX_OUT, `${e.id}.tex`));
 		}
 		console.error(`[explanatory] ${EXPLANATORY.length} figures emitted`);
-		if (!flag('--no-latex')) {
+		if (!flag("--no-latex")) {
 			await pool(exCompile, os.cpus().length - 1, latexmk);
 		}
-		if (!flag('--no-deliver')) {
-			const dir = path.join(THESIS_FIG, 'explanatory');
+		if (!flag("--no-deliver")) {
+			const dir = path.join(THESIS_FIG, "explanatory");
 			fs.mkdirSync(dir, { recursive: true });
 			for (const e of EXPLANATORY) {
 				fs.copyFileSync(path.join(EX_OUT, `${e.id}.pdf`), path.join(dir, `${e.id}.pdf`));
 			}
-			const readme = EXPLANATORY.map((e) => `- ${e.id}.pdf — ${e.note}`).join('\n');
+			const readme = EXPLANATORY.map((e) => `- ${e.id}.pdf — ${e.note}`).join("\n");
 			fs.writeFileSync(
-				path.join(dir, 'README.md'),
-				`# Explanatory figure underlays\n\nFrom TilingAtlas: \`pnpm tsx figures/build.ts --explanatory\`. Clean underlays for TA to\nannotate; proof-specific overlays are TA's TikZ. Spec:\n\`2026-06-12-thesis-proof-figures-design.md\`.\n\n${readme}\n`
+				path.join(dir, "README.md"),
+				`# Explanatory figure underlays\n\nFrom TilingAtlas: \`pnpm tsx figures/build.ts --explanatory\`. Clean underlays for TA to\nannotate; proof-specific overlays are TA's TikZ. Spec:\n\`2026-06-12-thesis-proof-figures-design.md\`.\n\n${readme}\n`,
 			);
 			console.error(`[explanatory] PDFs + README → ${dir}`);
 		}
-		console.error('★ explanatory build complete');
+		console.error("★ explanatory build complete");
 		return;
 	}
 
@@ -260,7 +256,7 @@ async function main(): Promise<void> {
 	for (const e of entries) {
 		const model = buildCellModel(
 			snap.tilings.find((t) => t.canonicalKey === e.canonicalKey)!.cellCodec,
-			orbits[e.canonicalKey]
+			orbits[e.canonicalKey],
 		);
 		const { ir, edgeMm } = tilingFigure(model, {
 			strategy: e.strategy,
@@ -271,11 +267,10 @@ async function main(): Promise<void> {
 		const texPath = path.join(OUT, `${e.id}.tex`);
 		const pdfPath = path.join(OUT, `${e.id}.pdf`);
 		const hashPath = path.join(OUT, `${e.id}.hash`);
-		const hash = createHash('sha256').update(tex).digest('hex');
+		const hash = createHash("sha256").update(tex).digest("hex");
 		fs.writeFileSync(texPath, tex);
 		fs.writeFileSync(path.join(OUT, `${e.id}.svg`), emitSvg(ir, { edgeMm }));
-		const upToDate =
-			fs.existsSync(pdfPath) && fs.existsSync(hashPath) && fs.readFileSync(hashPath, 'utf8') === hash;
+		const upToDate = fs.existsSync(pdfPath) && fs.existsSync(hashPath) && fs.readFileSync(hashPath, "utf8") === hash;
 		if (!upToDate) {
 			toCompile.push(texPath);
 			fs.writeFileSync(hashPath, hash);
@@ -284,13 +279,13 @@ async function main(): Promise<void> {
 	console.error(`[build] ${entries.length} figures emitted, ${toCompile.length} need compile`);
 
 	// hand-authored figures
-	const handDir = path.join(ROOT, 'figures', 'tex', 'hand');
-	for (const f of fs.readdirSync(handDir).filter((f) => f.endsWith('.tex'))) {
+	const handDir = path.join(ROOT, "figures", "tex", "hand");
+	for (const f of fs.readdirSync(handDir).filter((f) => f.endsWith(".tex"))) {
 		toCompile.push(path.join(handDir, f)); // latexmk skips unchanged ones itself
 	}
 
 	// --- compile ---
-	if (!flag('--no-latex')) {
+	if (!flag("--no-latex")) {
 		let done = 0;
 		await pool(toCompile, os.cpus().length - 1, async (tex) => {
 			await latexmk(tex);
@@ -316,7 +311,7 @@ async function main(): Promise<void> {
 	}
 
 	// --- deliver ---
-	if (!flag('--no-deliver')) {
+	if (!flag("--no-deliver")) {
 		for (const e of entries) {
 			if (e.k === 3 && e.tCode === null) continue; // the duplicate stays out of the thesis
 			const dir = path.join(THESIS_FIG, `k${e.k}`);
@@ -331,7 +326,7 @@ async function main(): Promise<void> {
 		for (const [name, content] of includes) fs.writeFileSync(path.join(OUT, name), content);
 	}
 
-	console.error('★ figure build complete');
+	console.error("★ figure build complete");
 }
 
 main().catch((e) => {

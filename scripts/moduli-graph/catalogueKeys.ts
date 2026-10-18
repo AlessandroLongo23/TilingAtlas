@@ -1,10 +1,10 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { CyclotomicRing, type Cyclotomic } from '@/classes/Cyclotomic';
-import { reconstructOracleCell } from '@/classes/algorithm/oracleCellReconstruct';
-import { nKeyOfSymbolDirect } from '@/classes/algorithm/canonicalFormN';
-import { tilingSignature } from './tilingSignature';
-import type { FloatTiling } from './types';
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { CyclotomicRing, type Cyclotomic } from "@/classes/Cyclotomic";
+import { reconstructOracleCell } from "@/classes/algorithm/oracleCellReconstruct";
+import { nKeyOfSymbolDirect } from "@/classes/algorithm/canonicalFormN";
+import { tilingSignature } from "./tilingSignature";
+import type { FloatTiling } from "./types";
 
 type Vec = number[];
 const conj = (v: Vec): Vec => [v[0] + v[2], v[1], -v[2], -v[1] - v[3]];
@@ -22,7 +22,7 @@ export interface CatalogueIndex {
 	bySignature: Map<string, CatalogueEntry[]>; // signature -> entries
 }
 
-const CELLS = resolve(process.cwd(), 'tools/ctrnact-oracle/run-k1-regular/ctrnact-cells-k1.json');
+const CELLS = resolve(process.cwd(), "tools/ctrnact-oracle/run-k1-regular/ctrnact-cells-k1.json");
 
 function cellToFloat(cell: {
 	cellPolygons: { exactVertices?: Cyclotomic[] }[];
@@ -42,14 +42,14 @@ function cellToFloat(cell: {
 }
 
 export function loadCatalogueKeys(ring: CyclotomicRing = CyclotomicRing.create(24)): CatalogueIndex {
-	const raw = JSON.parse(readFileSync(CELLS, 'utf8')) as { id: string; T1: Vec; T2: Vec; Seed: Vec[] }[];
+	const raw = JSON.parse(readFileSync(CELLS, "utf8")) as { id: string; T1: Vec; T2: Vec; Seed: Vec[] }[];
 	const entries: CatalogueEntry[] = [];
 	for (const r of raw) {
 		const directKey = nKeyOfSymbolDirect([r.T1, r.T2, ...r.Seed]);
 		if (directKey === null) continue; // out of domain — none expected at k=1
 		const mirrorKey = nKeyOfSymbolDirect([conj(r.T1), conj(r.T2), ...r.Seed.map(conj)]) ?? directKey;
 		const rec = reconstructOracleCell(ring, r.id, { T1: r.T1, T2: r.T2, Seed: r.Seed });
-		const signature = 'cell' in rec ? tilingSignature(cellToFloat(rec.cell)) : null;
+		const signature = "cell" in rec ? tilingSignature(cellToFloat(rec.cell)) : null;
 		entries.push({ id: r.id, cell: { T1: r.T1, T2: r.T2, Seed: r.Seed }, directKey, mirrorKey, signature });
 	}
 	const byKey = new Map(entries.map((e) => [e.directKey, e] as const));

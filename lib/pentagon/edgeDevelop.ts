@@ -15,11 +15,7 @@
 // The walk is exported separately from the scene because lib/pentagon/edgePatch.ts needs what a scene
 // throws away — which dart each instance is and which way it points — to recover the period lattice.
 
-import {
-	letterAngle,
-	letterLength,
-	type SolvedBoard,
-} from "./edge-board";
+import { letterAngle, letterLength, type SolvedBoard } from "./edge-board";
 
 /** A record exactly as it sits in public/pentagon-edges/pe1-k<k>.json. */
 export interface PentEdgeRecord {
@@ -142,8 +138,7 @@ export interface PentWalk {
  *  edge apart, and float drift over a few thousand trig steps is many orders below this. */
 const POS_TOL_FRACTION = 1e-6;
 
-const posTol = (board: SolvedBoard) =>
-	Math.min(...Object.values(board.sides)) * POS_TOL_FRACTION;
+const posTol = (board: SolvedBoard) => Math.min(...Object.values(board.sides)) * POS_TOL_FRACTION;
 
 /**
  * Walk the record's dart graph at this board.
@@ -151,11 +146,7 @@ const posTol = (board: SolvedBoard) =>
  * Breadth-first from dart 0 so the budget spends itself on the patch nearest the seed rather than
  * running off in one direction, which matters because every caller frames on the result.
  */
-export function walkPentEdges(
-	rec: PentEdgeRecord,
-	board: SolvedBoard,
-	opts: DevelopOptions = {},
-): PentWalk {
+export function walkPentEdges(rec: PentEdgeRecord, board: SolvedBoard, opts: DevelopOptions = {}): PentWalk {
 	const radius = opts.radius ?? 12;
 	const budget = opts.budget ?? 20000;
 	const tol = posTol(board);
@@ -234,11 +225,7 @@ export function walkPentEdges(
 }
 
 /** The walk as a drawable scene: vertices, edges and the box to frame on. */
-export function developPentEdges(
-	rec: PentEdgeRecord,
-	board: SolvedBoard,
-	opts: DevelopOptions = {},
-): PentEdgeScene {
+export function developPentEdges(rec: PentEdgeRecord, board: SolvedBoard, opts: DevelopOptions = {}): PentEdgeScene {
 	const walk = walkPentEdges(rec, board, opts);
 	let minX = Infinity;
 	let minY = Infinity;

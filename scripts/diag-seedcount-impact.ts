@@ -3,13 +3,19 @@
  *   pnpm tsx scripts/diag-seedcount-impact.ts
  */
 import {
-	PolygonsGenerator, VCGenerator, CompatibilityGraph, SeedSetExtractor, SeedBuilder,
-	VertexConfiguration, PolygonType, type GeneratorParameters,
-} from '@/classes';
-import { computeRing } from '@/classes/algorithm/PolygonsGenerator';
-import { setActiveRing, CyclotomicRing } from '@/classes/Cyclotomic';
-import type { Polygon } from '@/classes/polygons/Polygon';
-import type { Vector } from '@/classes/Vector';
+	PolygonsGenerator,
+	VCGenerator,
+	CompatibilityGraph,
+	SeedSetExtractor,
+	SeedBuilder,
+	VertexConfiguration,
+	PolygonType,
+	type GeneratorParameters,
+} from "@/classes";
+import { computeRing } from "@/classes/algorithm/PolygonsGenerator";
+import { setActiveRing, CyclotomicRing } from "@/classes/Cyclotomic";
+import type { Polygon } from "@/classes/polygons/Polygon";
+import type { Vector } from "@/classes/Vector";
 
 const params: GeneratorParameters = { [PolygonType.REGULAR]: { ns: [3, 4, 6, 12] } };
 const baseRing = computeRing(params);
@@ -21,7 +27,10 @@ const adj: Record<string, string[]> = {};
 for (const vc of vcs) adj[vc.name] = [];
 for (let i = 0; i < vcs.length; i++)
 	for (let j = i + 1; j < vcs.length; j++)
-		if (vcs[i].isCompatible(vcs[j])) { adj[vcs[i].name].push(vcs[j].name); adj[vcs[j].name].push(vcs[i].name); }
+		if (vcs[i].isCompatible(vcs[j])) {
+			adj[vcs[i].name].push(vcs[j].name);
+			adj[vcs[j].name].push(vcs[i].name);
+		}
 const graph = CompatibilityGraph.fromAdjacencyList(adj, vcs);
 
 function build(k: number, legacy: boolean): { count: number; names: string[] } {
@@ -47,6 +56,6 @@ for (const k of [1, 2, 3]) {
 	const added = fixed.names.filter((n) => !legacySet.has(n));
 	const fixedSet = new Set(fixed.names);
 	const removed = legacy.names.filter((n) => !fixedSet.has(n));
-	if (added.length) console.log(`  added:   ${added.join('  ')}`);
-	if (removed.length) console.log(`  removed: ${removed.join('  ')}`);
+	if (added.length) console.log(`  added:   ${added.join("  ")}`);
+	if (removed.length) console.log(`  removed: ${removed.join("  ")}`);
 }

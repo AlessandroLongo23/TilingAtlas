@@ -11,13 +11,13 @@ import { describe, it, expect } from "vitest";
 // forced edge length is the whole point of its central figure), so those are checked against the
 // shipped data too — prose that silently goes stale is worse than prose that fails a test.
 
-const MD = readFileSync(
-	path.join(process.cwd(), "public", "theory", "hyperbolic-enumeration.md"),
-	"utf8",
-);
-const patches = JSON.parse(
-	readFileSync(path.join(process.cwd(), "public", "hyperbolic-developed.json"), "utf8"),
-) as { id: string; config: string; edge: number; darts?: unknown }[];
+const MD = readFileSync(path.join(process.cwd(), "public", "theory", "hyperbolic-enumeration.md"), "utf8");
+const patches = JSON.parse(readFileSync(path.join(process.cwd(), "public", "hyperbolic-developed.json"), "utf8")) as {
+	id: string;
+	config: string;
+	edge: number;
+	darts?: unknown;
+}[];
 const byId = new Map(patches.map((p) => [p.id, p]));
 
 const embedded = [...MD.matchAll(/<hyperbolic-card[^>]*\bpatch="([^"]+)"/g)].map((m) => m[1]);

@@ -18,64 +18,70 @@
  *   e.g.  pnpm tsx --env-file=.env scripts/backfill-from-cache.ts 3 3,4,6,12          (dry run)
  *         pnpm tsx --env-file=.env scripts/backfill-from-cache.ts 3 3,4,6,12 --write  (insert, uncertified)
  */
-import fs from 'node:fs';
-import { randomUUID } from 'node:crypto';
-import { execSync } from 'node:child_process';
-import { createClient } from '@supabase/supabase-js';
-import { setActiveRing, CyclotomicRing } from '@/classes/Cyclotomic';
-import { computeRing } from '@/classes/algorithm/PolygonsGenerator';
-import { PolygonType, type GeneratorParameters } from '@/classes';
-import { TranslationalCellExtractor } from '@/classes/algorithm/TranslationalCellExtractor';
-import { dedupeByCongruence } from '@/classes/algorithm/TilingCongruence';
-import type { PeriodCell } from '@/classes/algorithm/PeriodSolver';
-import { deserializeCell, serializeCell, type SerializedCell } from './scoutCodec';
-import { makeEmitter, makeTaskQueue } from './emitter';
+import fs from "node:fs";
+import { randomUUID } from "node:crypto";
+import { execSync } from "node:child_process";
+import { createClient } from "@supabase/supabase-js";
+import { setActiveRing, CyclotomicRing } from "@/classes/Cyclotomic";
+import { computeRing } from "@/classes/algorithm/PolygonsGenerator";
+import { PolygonType, type GeneratorParameters } from "@/classes";
+import { TranslationalCellExtractor } from "@/classes/algorithm/TranslationalCellExtractor";
+import { dedupeByCongruence } from "@/classes/algorithm/TilingCongruence";
+import type { PeriodCell } from "@/classes/algorithm/PeriodSolver";
+import { deserializeCell, serializeCell, type SerializedCell } from "./scoutCodec";
+import { makeEmitter, makeTaskQueue } from "./emitter";
 
 const KNOWN_TARGETS: Record<number, string> = {
-	1: '6f9ca9cf2d16c75f',
-	2: 'f3e2e0517191362c',
-	3: '99919f42a7b58e76', // re-certified 2026-06-10 post t3007-fix (NOTES §29/§31); old eb34499d5fba3457 was per-tiling defective
+	1: "6f9ca9cf2d16c75f",
+	2: "f3e2e0517191362c",
+	3: "99919f42a7b58e76", // re-certified 2026-06-10 post t3007-fix (NOTES §29/§31); old eb34499d5fba3457 was per-tiling defective
 };
 
 // Float render-ready cell (TranslationalCellData) — MIRRORS scout-parallel.ts:53-60 exactly so the
 // browser gallery renders backfilled cells identically to live ones (render-only; not the claim).
-function cellToRenderData(cell: PeriodCell): { cellPolygons: { n: number; vertices: number[][] }[]; basis: number[][] } {
+function cellToRenderData(cell: PeriodCell): {
+	cellPolygons: { n: number; vertices: number[][] }[];
+	basis: number[][];
+} {
 	const u = cell.basisExact[0].toVector();
 	const v = cell.basisExact[1].toVector();
 	return {
 		cellPolygons: cell.cellPolygons.map((p) => ({ n: p.n, vertices: p.vertices.map((vec) => [vec.x, vec.y]) })),
-		basis: [[u.x, u.y], [v.x, v.y]],
+		basis: [
+			[u.x, u.y],
+			[v.x, v.y],
+		],
 	};
 }
 
 async function main(): Promise<void> {
-	const k = parseInt(process.argv[2] ?? '', 10);
-	const tiles = process.argv[3] ?? '';
-	const write = process.argv.includes('--write');
+	const k = parseInt(process.argv[2] ?? "", 10);
+	const tiles = process.argv[3] ?? "";
+	const write = process.argv.includes("--write");
 	if (!k || !tiles) {
-		console.error('usage: pnpm tsx --env-file=.env scripts/backfill-from-cache.ts <k> <tiles> [--write]');
+		console.error("usage: pnpm tsx --env-file=.env scripts/backfill-from-cache.ts <k> <tiles> [--write]");
 		process.exit(1);
 	}
 
 	// Ring + extractor — identical setup to scout-parallel.ts:37-41.
-	const params: GeneratorParameters = { [PolygonType.REGULAR]: { ns: tiles.split(',').map(Number) } };
+	const params: GeneratorParameters = { [PolygonType.REGULAR]: { ns: tiles.split(",").map(Number) } };
 	const baseRing = computeRing(params);
 	const ring = baseRing.N === 24 ? baseRing : CyclotomicRing.create(24);
 	setActiveRing(ring);
 	const extractor = new TranslationalCellExtractor();
 
 	// Read the cache (one {idx, cells} line per finished seed).
-	const cachePath = `.scout-cache/k${k}_${tiles.replace(/,/g, '.')}_cap0.ndjson`;
+	const cachePath = `.scout-cache/k${k}_${tiles.replace(/,/g, ".")}_cap0.ndjson`;
 	let raw: string;
 	try {
-		raw = fs.readFileSync(cachePath, 'utf8');
+		raw = fs.readFileSync(cachePath, "utf8");
 	} catch {
 		console.error(`✗ cache not found: ${cachePath}`);
 		process.exit(1);
 	}
 	let seedCount = 0;
 	const allCells: SerializedCell[] = [];
-	for (const line of raw.split('\n')) {
+	for (const line of raw.split("\n")) {
 		const s = line.trim();
 		if (!s) continue;
 		let rec: { idx?: number; cells?: SerializedCell[] };
@@ -84,7 +90,7 @@ async function main(): Promise<void> {
 		} catch {
 			continue; // truncated/partial tail
 		}
-		if (typeof rec.idx !== 'number' || !Array.isArray(rec.cells)) continue;
+		if (typeof rec.idx !== "number" || !Array.isArray(rec.cells)) continue;
 		seedCount++;
 		for (const c of rec.cells) allCells.push(c);
 	}
@@ -94,16 +100,22 @@ async function main(): Promise<void> {
 	const reps = dedupeByCongruence(cells, (c) => extractor.canonicalKey(c.cellPolygons));
 	const ids = reps.map((c) => extractor.canonicalKey(c.cellPolygons)).sort();
 	let h = 5381n;
-	for (const ch of ids.join('|')) h = ((h * 33n) ^ BigInt(ch.codePointAt(0)!)) & 0xffffffffffffffffn;
+	for (const ch of ids.join("|")) h = ((h * 33n) ^ BigInt(ch.codePointAt(0)!)) & 0xffffffffffffffffn;
 	const digest = h.toString(16);
 	const count = reps.length;
 	const distinctKeys = new Set(ids).size;
 	const target = KNOWN_TARGETS[k];
 
-	console.error(`cache ${cachePath}: ${seedCount} seeds, ${allCells.length} raw cells → ${count} distinct (by congruence)`);
+	console.error(
+		`cache ${cachePath}: ${seedCount} seeds, ${allCells.length} raw cells → ${count} distinct (by congruence)`,
+	);
 	console.error(`  digest         = ${digest}`);
-	console.error(`  target k=${k}     = ${target ?? '(none)'}   ${target ? (digest === target ? '✓ MATCH' : '✗ MISMATCH') : ''}`);
-	console.error(`  distinct keys  = ${distinctKeys} / ${count}   ${distinctKeys === count ? '✓ canonical_key is injective on reps' : '✗ canonical_key COLLISION — found_tilings would under-count'}`);
+	console.error(
+		`  target k=${k}     = ${target ?? "(none)"}   ${target ? (digest === target ? "✓ MATCH" : "✗ MISMATCH") : ""}`,
+	);
+	console.error(
+		`  distinct keys  = ${distinctKeys} / ${count}   ${distinctKeys === count ? "✓ canonical_key is injective on reps" : "✗ canonical_key COLLISION — found_tilings would under-count"}`,
+	);
 
 	// --- honesty gates ---
 	let ok = true;
@@ -112,20 +124,24 @@ async function main(): Promise<void> {
 		ok = false;
 	}
 	if (target && digest !== target) {
-		console.error('✗ digest mismatch — the cache is incomplete or stale, OR the dedup code changed. NOT safe to certify.');
+		console.error(
+			"✗ digest mismatch — the cache is incomplete or stale, OR the dedup code changed. NOT safe to certify.",
+		);
 		ok = false;
 	}
 	if (distinctKeys !== count) {
-		console.error('✗ canonical_key is NOT injective on the congruence reps — upserting found_tilings by (run_id, canonical_key) would drop tilings. Backfill blocked (schema/keying fix needed first).');
+		console.error(
+			"✗ canonical_key is NOT injective on the congruence reps — upserting found_tilings by (run_id, canonical_key) would drop tilings. Backfill blocked (schema/keying fix needed first).",
+		);
 		ok = false;
 	}
 	if (!ok) {
-		console.error('\nABORTING — no writes, no certification.');
+		console.error("\nABORTING — no writes, no certification.");
 		process.exit(1);
 	}
 
 	if (!write) {
-		console.error('\nDRY RUN ✓ — all gates pass. Re-run with --write to insert (UNCERTIFIED), then:');
+		console.error("\nDRY RUN ✓ — all gates pass. Re-run with --write to insert (UNCERTIFIED), then:");
 		console.error(`  pnpm tsx --env-file=.env scripts/certify-run.ts <run_id>`);
 		process.exit(0);
 	}
@@ -134,7 +150,7 @@ async function main(): Promise<void> {
 	const url = process.env.PUBLIC_SUPABASE_URL;
 	const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 	if (!url || !key) {
-		console.error('✗ missing PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY (use --env-file=.env)');
+		console.error("✗ missing PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY (use --env-file=.env)");
 		process.exit(1);
 	}
 	const client = createClient(url, key, { auth: { persistSession: false } });
@@ -145,9 +161,9 @@ async function main(): Promise<void> {
 		canonicalKeyOf: (sc) => extractor.canonicalKey(deserializeCell(ring, sc as SerializedCell).cellPolygons),
 		renderCellOf: (sc) => cellToRenderData(deserializeCell(ring, sc as SerializedCell)),
 	});
-	let commit = '';
+	let commit = "";
 	try {
-		commit = execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim();
+		commit = execSync("git rev-parse --short HEAD", { encoding: "utf8" }).trim();
 	} catch {
 		/* best-effort */
 	}
@@ -160,13 +176,15 @@ async function main(): Promise<void> {
 		runId,
 		k,
 		family: tiles,
-		params: { maxMs: 0, mode: 'certified', source: 'backfill-from-cache', cache: cachePath, seeds: seedCount },
+		params: { maxMs: 0, mode: "certified", source: "backfill-from-cache", cache: cachePath, seeds: seedCount },
 		commit,
 	});
-	emit.seedCompleted({ idx: 0, name: 'backfill-from-cache', cells: repCells, timedOut: false, ms: 0, workerId: 0 });
+	emit.seedCompleted({ idx: 0, name: "backfill-from-cache", cells: repCells, timedOut: false, ms: 0, workerId: 0 });
 	emit.runFinished({ count, digest, timeouts: 0, incomplete: false });
 	await emit.flush();
-	console.error(`\n★ backfilled run ${runId}  (k=${k}, family ${tiles}, ${count} tilings, UNCERTIFIED, commit ${commit || '—'})`);
+	console.error(
+		`\n★ backfilled run ${runId}  (k=${k}, family ${tiles}, ${count} tilings, UNCERTIFIED, commit ${commit || "—"})`,
+	);
 	console.error(`  Next (the §0 human certify step):  pnpm tsx --env-file=.env scripts/certify-run.ts ${runId}`);
 	process.exit(0);
 }

@@ -109,7 +109,15 @@ const DIAGRAM_BASE = "/wallpaper-groups/";
  * the per-diagram square in px (sidebar tooltip 104; the compact HUD panel passes a smaller value).
  */
 /** `phoneSize` is the square on a phone, where the diagrams share a canvas corner (the /play badge). */
-export function WallpaperGroupDiagrams({ group, size = 104, phoneSize = size }: { group: WallpaperGroup; size?: number; phoneSize?: number }) {
+export function WallpaperGroupDiagrams({
+	group,
+	size = 104,
+	phoneSize = size,
+}: {
+	group: WallpaperGroup;
+	size?: number;
+	phoneSize?: number;
+}) {
 	const diagrams = diagramsForGroup(group);
 	// 4 or 5 diagrams read best as a block two or three wide; 1/2/3 sit in a single row.
 	const cols = diagrams.length >= 4 ? 3 : diagrams.length;
@@ -360,37 +368,37 @@ function Arrangement({
 								)}
 							</h3>
 							<div className="flex flex-1 flex-col justify-center gap-[0.3em]">
-							{linesOf(cluster.items, cluster.perRow).map((tiles, j) => (
-								<div key={j} className="flex items-end justify-center gap-[0.3em]">
-									{tiles.map((d) => (
-										<figure
-											key={d.key}
-											ref={register?.(d.key)}
-											className="m-0 flex flex-col items-center gap-[0.1em]"
-										>
-											{/* eslint-disable-next-line @next/next/no-img-element */}
-											<img
-												src={`${DIAGRAM_BASE}${d.src}`}
-												alt={`${d.group} cell diagram on a ${d.lattice} lattice`}
-												style={{
-													height: "var(--wp-h)",
-													// Width from the declared aspect, not `auto`: `auto` is
-													// zero until the SVG loads, and the fit runs before that.
-													width: `calc(var(--wp-h) * ${d.aspect})`,
-													background: "#fff",
-													padding: "0.12rem",
-													borderRadius: "0.2rem",
-													margin: 0,
-												}}
-												className="block object-contain"
-											/>
-											<figcaption className="text-[clamp(0.44rem,0.58vh+0.19vw,0.7rem)] leading-none text-fg-muted">
-												{mode === "group" ? d.lattice : d.group}
-											</figcaption>
-										</figure>
-									))}
-								</div>
-							))}
+								{linesOf(cluster.items, cluster.perRow).map((tiles, j) => (
+									<div key={j} className="flex items-end justify-center gap-[0.3em]">
+										{tiles.map((d) => (
+											<figure
+												key={d.key}
+												ref={register?.(d.key)}
+												className="m-0 flex flex-col items-center gap-[0.1em]"
+											>
+												{/* eslint-disable-next-line @next/next/no-img-element */}
+												<img
+													src={`${DIAGRAM_BASE}${d.src}`}
+													alt={`${d.group} cell diagram on a ${d.lattice} lattice`}
+													style={{
+														height: "var(--wp-h)",
+														// Width from the declared aspect, not `auto`: `auto` is
+														// zero until the SVG loads, and the fit runs before that.
+														width: `calc(var(--wp-h) * ${d.aspect})`,
+														background: "#fff",
+														padding: "0.12rem",
+														borderRadius: "0.2rem",
+														margin: 0,
+													}}
+													className="block object-contain"
+												/>
+												<figcaption className="text-[clamp(0.44rem,0.58vh+0.19vw,0.7rem)] leading-none text-fg-muted">
+													{mode === "group" ? d.lattice : d.group}
+												</figcaption>
+											</figure>
+										))}
+									</div>
+								))}
 							</div>
 						</section>
 					))}
@@ -533,11 +541,7 @@ export function WallpaperGroupWall({ signatures }: { signatures?: string }) {
 				    would if shown, and measured by the fit so the tile size serves both. Out of flow and
 				    `visibility: hidden`, so it takes no space, catches no clicks and is skipped by screen
 				    readers — but it is still laid out, which is the point. */}
-				<div
-					ref={ghostRef}
-					aria-hidden
-					className="pointer-events-none absolute inset-x-0 top-0 invisible"
-				>
+				<div ref={ghostRef} aria-hidden className="pointer-events-none invisible absolute inset-x-0 top-0">
 					<Arrangement mode={other} showSignature={showSignature} register={null} />
 				</div>
 			</div>

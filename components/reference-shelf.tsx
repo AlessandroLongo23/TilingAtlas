@@ -109,7 +109,13 @@ import {
 	type PolygonMode,
 } from "@/lib/services/referenceAtlas";
 import { PolygonFilterModal } from "@/components/polygon-filter-modal";
-import { periodLabel, polygonSpeciesOf, speciesCompare, speciesLabel, tilePeriodsOf } from "@/lib/services/polygonSpecies";
+import {
+	periodLabel,
+	polygonSpeciesOf,
+	speciesCompare,
+	speciesLabel,
+	tilePeriodsOf,
+} from "@/lib/services/polygonSpecies";
 import {
 	withAll,
 	valuesOf,
@@ -157,10 +163,7 @@ import { polyformFamilyShort, POLYFORM_FAMILIES, type PolyformFamily } from "@/l
 // (geometry, decoration) cell, so a chip for it would just restate the segment already chosen above. What
 // is left is the shape axis proper — the eight shelves that differ by tile set, which is what "tile class"
 // was always trying to say.
-const CLASS_OPTIONS: { value: "all" | TileClass; label: string }[] = withAll(
-	SHAPE_CLASS_ORDER,
-	SHAPE_CLASS_LABEL,
-);
+const CLASS_OPTIONS: { value: "all" | TileClass; label: string }[] = withAll(SHAPE_CLASS_ORDER, SHAPE_CLASS_LABEL);
 const GEOMETRY_OPTIONS: { value: Geometry; label: string }[] = GEOMETRY_ORDER.map((g) => ({
 	value: g,
 	label: GEOMETRY_LABEL[g],
@@ -337,7 +340,10 @@ function parseViewState(sp: URLSearchParams): ViewState {
 	const list = (key: string): string[] | undefined => {
 		const v = sp.get(key);
 		if (!v) return undefined;
-		const items = v.split(",").map((s) => s.trim()).filter(Boolean);
+		const items = v
+			.split(",")
+			.map((s) => s.trim())
+			.filter(Boolean);
 		return items.length ? items : undefined;
 	};
 	// "lo,hi" → an inclusive interval; anything malformed (wrong arity, NaN, inverted) is dropped.
@@ -385,7 +391,8 @@ function parseViewState(sp: URLSearchParams): ViewState {
 	const decomp = sp.get("decomp");
 	if (decomp === "decomposable" || decomp === "non-decomposable") f.convexDecomp = decomp;
 	const skind = sp.get("skind");
-	if (skind === "pyramid" || skind === "prism" || skind === "antiprism" || skind === "cupola" || skind === "other") f.starKind = skind;
+	if (skind === "pyramid" || skind === "prism" || skind === "antiprism" || skind === "cupola" || skind === "other")
+		f.starKind = skind;
 	const ncx = sp.get("ncx");
 	if (ncx === "self-intersecting" || ncx === "embedded") f.ncxCrossing = ncx;
 	const m = num("m");
@@ -393,7 +400,9 @@ function parseViewState(sp: URLSearchParams): ViewState {
 	const partition = sp.get("partition");
 	if (partition) f.partitionKey = partition;
 	if (sp.get("maximal") === "1") f.maximalOnly = true;
-	const folds = list("folds")?.map(Number).filter((n) => Number.isFinite(n));
+	const folds = list("folds")
+		?.map(Number)
+		.filter((n) => Number.isFinite(n));
 	if (folds?.length) f.starFolds = folds;
 	const param = sp.get("param");
 	if (param === "rigid" || param === "family") f.parametric = param;
@@ -404,11 +413,13 @@ function parseViewState(sp: URLSearchParams): ViewState {
 	const pform = sp.get("pform");
 	if (pform && (POLYFORM_FAMILIES as readonly string[]).includes(pform)) f.polyformFamily = pform as PolyformFamily;
 	const islamicSystem = sp.get("islamicsystem");
-	if (islamicSystem && (ISLAMIC_SYSTEM_VALUES as string[]).includes(islamicSystem)) f.islamicSystem = islamicSystem as IslamicSystem;
+	if (islamicSystem && (ISLAMIC_SYSTEM_VALUES as string[]).includes(islamicSystem))
+		f.islamicSystem = islamicSystem as IslamicSystem;
 	const edgeBoard = sp.get("edgeboard");
 	if (edgeBoard && (EDGE_BOARD_VALUES as string[]).includes(edgeBoard)) f.edgeBoard = edgeBoard as EdgeBoard;
 	const freedrawKind = sp.get("fdkind");
-	if (freedrawKind && (FREEDRAW_KIND_VALUES as string[]).includes(freedrawKind)) f.freedrawKind = freedrawKind as FreedrawKind;
+	if (freedrawKind && (FREEDRAW_KIND_VALUES as string[]).includes(freedrawKind))
+		f.freedrawKind = freedrawKind as FreedrawKind;
 	// The board axis. `fdgrid` / `cogrid` are the two params it replaced; a link carrying either still
 	// resolves, because every value they could hold is a board sub under the same name ("square", "ts",
 	// "sch236"). Reading them into `board` keeps shared links working without a second filter to apply.
@@ -417,7 +428,8 @@ function parseViewState(sp: URLSearchParams): ViewState {
 	const colorsCount = Number(sp.get("cocount"));
 	if (COLORS_COUNT_VALUES.includes(colorsCount)) f.colorsCount = colorsCount;
 	const freedrawRegular = sp.get("fdreg");
-	if (freedrawRegular && (FREEDRAW_REGULAR_VALUES as string[]).includes(freedrawRegular)) f.freedrawRegular = freedrawRegular as FreedrawRegular;
+	if (freedrawRegular && (FREEDRAW_REGULAR_VALUES as string[]).includes(freedrawRegular))
+		f.freedrawRegular = freedrawRegular as FreedrawRegular;
 	const groups = list("group")?.filter((g): g is WallpaperGroup => (WALLPAPER_GROUPS as readonly string[]).includes(g));
 	if (groups?.length) f.wallpaperGroups = groups;
 	const levels = list("level")?.filter((s): s is TilingLevel => (TILING_LEVEL_ORDER as string[]).includes(s));
@@ -433,11 +445,17 @@ function parseViewState(sp: URLSearchParams): ViewState {
 	// Default "all" so links shared before the mode existed keep meaning what they meant.
 	const polyMode = sp.get("polymode");
 	if (polyMode === "any" || polyMode === "only" || polyMode === "all") f.polygonMode = polyMode;
-	const dpoly = list("dpoly")?.map(Number).filter((n) => Number.isFinite(n));
+	const dpoly = list("dpoly")
+		?.map(Number)
+		.filter((n) => Number.isFinite(n));
 	if (dpoly?.length) f.distinctPolygons = dpoly;
-	const dstar = list("dstar")?.map(Number).filter((n) => Number.isFinite(n));
+	const dstar = list("dstar")
+		?.map(Number)
+		.filter((n) => Number.isFinite(n));
 	if (dstar?.length) f.distinctStars = dstar;
-	const aper = list("aper")?.map(Number).filter((n) => Number.isFinite(n));
+	const aper = list("aper")
+		?.map(Number)
+		.filter((n) => Number.isFinite(n));
 	if (aper?.length) f.anglePeriods = aper;
 	const q = sp.get("q");
 	if (q) f.query = q;
@@ -559,7 +577,7 @@ function RowList<T extends string>({
 					title={o.label}
 					className={cn(
 						o.label.length > 18 && "col-span-2",
-						"ta-tab h-7 cursor-pointer truncate px-2 text-left text-[13px] transition-colors max-md:h-11 max-md:text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
+						"ta-tab h-7 cursor-pointer truncate px-2 text-left text-[13px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 max-md:h-11 max-md:text-sm",
 						selected === o.value ? "font-medium text-fg" : "text-fg-secondary hover:text-fg",
 					)}
 				>
@@ -590,7 +608,7 @@ function ChipRow<T extends string | number>({
 					aria-pressed={isOn(o.value)}
 					onClick={() => onChange(o.value)}
 					className={cn(
-						"h-7 min-w-8 cursor-pointer rounded-control border px-2 text-xs font-medium tabular-nums transition-colors max-md:h-11 max-md:min-w-11 max-md:text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
+						"h-7 min-w-8 cursor-pointer rounded-control border px-2 text-xs font-medium tabular-nums transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 max-md:h-11 max-md:min-w-11 max-md:text-sm",
 						isOn(o.value)
 							? "border-fg bg-fg text-fg-inverse"
 							: "border-line-subtle text-fg-secondary hover:border-line-strong hover:text-fg",
@@ -632,14 +650,7 @@ function IntervalFilterCell({
 					{format(value[0])} – {format(value[1])}
 				</span>
 			</div>
-			<IntervalSlider
-				value={value}
-				onChange={onChange}
-				min={min}
-				max={max}
-				step={step}
-				aria-label={ariaLabel}
-			/>
+			<IntervalSlider value={value} onChange={onChange} min={min} max={max} step={step} aria-label={ariaLabel} />
 		</div>
 	);
 }
@@ -660,9 +671,9 @@ function FilterGroup({
 			{/* The gloss is a tooltip on the heading: a right-aligned note broke the panel's one left edge. */}
 			<h3 className="ta-label px-3.5 pt-4 pb-2" title={note}>
 				{title}
-				{summary ? <span className={cn(META, "ml-1.5 normal-case tracking-normal")}>{summary}</span> : null}
+				{summary ? <span className={cn(META, "ml-1.5 tracking-normal normal-case")}>{summary}</span> : null}
 				{/* A finger has no hover, so on a phone the gloss is printed after the heading instead. */}
-				{note ? <span className={cn(META, "ml-1.5 normal-case tracking-normal md:hidden")}>· {note}</span> : null}
+				{note ? <span className={cn(META, "ml-1.5 tracking-normal normal-case md:hidden")}>· {note}</span> : null}
 			</h3>
 			<div className="flex flex-col gap-2 px-3.5">{children}</div>
 		</section>
@@ -824,7 +835,10 @@ export function ReferenceShelf() {
 			});
 			setHeLoaded((s) => new Set(s).add(token));
 		};
-		if (!heLoaded.has("eager")) loadHyperbolicEdgesAtlas().then((d) => merge(d, "eager")).catch(() => {});
+		if (!heLoaded.has("eager"))
+			loadHyperbolicEdgesAtlas()
+				.then((d) => merge(d, "eager"))
+				.catch(() => {});
 		// Selecting a k chip pulls the lazy (base, k) shards for that k — 6.6.7's k=12/13, the high-valence
 		// bases' k=2, the 2026-08-29 bases' k=3..5.
 		//
@@ -841,7 +855,10 @@ export function ReferenceShelf() {
 			for (const { base } of hypEdgesLazyShardsForK(k)) {
 				if (only && base !== only) continue;
 				const token = `${base}-${k}`;
-				if (!heLoaded.has(token)) loadHyperbolicEdgesShard(base, k).then((d) => merge(d, token)).catch(() => {});
+				if (!heLoaded.has(token))
+					loadHyperbolicEdgesShard(base, k)
+						.then((d) => merge(d, token))
+						.catch(() => {});
 			}
 		}
 		// Selecting a base with NO k chosen loads that base's dense slices — the same rule the poly shelf
@@ -853,7 +870,10 @@ export function ReferenceShelf() {
 				if (b.id !== heBase) continue;
 				for (const bk of b.lazyKs) {
 					const token = `${b.id}-${bk}`;
-					if (!heLoaded.has(token)) loadHyperbolicEdgesShard(b.id, bk).then((d) => merge(d, token)).catch(() => {});
+					if (!heLoaded.has(token))
+						loadHyperbolicEdgesShard(b.id, bk)
+							.then((d) => merge(d, token))
+							.catch(() => {});
 				}
 			}
 		}
@@ -887,14 +907,18 @@ export function ReferenceShelf() {
 		// every Euclidean open. Measured on /play: pentagon + isohedral were 53 of the 80 JSON requests
 		// a default open made, for rows the current chip cannot show.
 		if (dec === "edges" && !penLoaded.has("pen-eager")) {
-			loadPentagonEdgesAtlas().then((d) => merge(d, "pen-eager")).catch(() => {});
+			loadPentagonEdgesAtlas()
+				.then((d) => merge(d, "pen-eager"))
+				.catch(() => {});
 		}
 		const k = filters.kValue;
 		if (dec === "edges" && k != null) {
 			for (const b of pentEdgeLazyShardsForK(k)) {
 				const token = `pen-${b.id}-${k}`;
 				if (penLoaded.has(token)) continue;
-				loadPentagonEdgesShard(b.id, k).then((d) => merge(d, token)).catch(() => {});
+				loadPentagonEdgesShard(b.id, k)
+					.then((d) => merge(d, token))
+					.catch(() => {});
 			}
 		}
 		return () => {
@@ -922,14 +946,18 @@ export function ReferenceShelf() {
 			setIhLoaded((s) => new Set(s).add(token));
 		};
 		if (dec === "edges" && !ihLoaded.has("ih-eager")) {
-			loadIsohedralEdgesAtlas().then((d) => merge(d, "ih-eager")).catch(() => {});
+			loadIsohedralEdgesAtlas()
+				.then((d) => merge(d, "ih-eager"))
+				.catch(() => {});
 		}
 		const k = filters.kValue;
 		if (dec === "edges" && k != null) {
 			for (const b of ihEdgeLazyShardsForK(k)) {
 				const token = `ih-${b.id}-${k}`;
 				if (ihLoaded.has(token)) continue;
-				loadIsohedralEdgesShard(b.id, k).then((d) => merge(d, token)).catch(() => {});
+				loadIsohedralEdgesShard(b.id, k)
+					.then((d) => merge(d, token))
+					.catch(() => {});
 			}
 		}
 		return () => {
@@ -965,13 +993,18 @@ export function ReferenceShelf() {
 		const eagerToken = `sch-${geo}`;
 		if (!schLoaded.has(eagerToken)) {
 			const load = geo === "spherical" ? loadSphericalSchwarzAtlas : loadHyperbolicSchwarzAtlas;
-			load().then((d) => merge(d, eagerToken)).catch(() => {});
+			load()
+				.then((d) => merge(d, eagerToken))
+				.catch(() => {});
 		}
 		const k = filters.kValue;
 		if (k != null) {
 			for (const b of schwarzLazyShardsForK(geo, k)) {
 				const token = `sch-${b.id}-${k}`;
-				if (!schLoaded.has(token)) loadSchwarzShard(b.id, k).then((d) => merge(d, token)).catch(() => {});
+				if (!schLoaded.has(token))
+					loadSchwarzShard(b.id, k)
+						.then((d) => merge(d, token))
+						.catch(() => {});
 			}
 		}
 		return () => {
@@ -1012,19 +1045,27 @@ export function ReferenceShelf() {
 			// One guard per load, per the warning above — the decoration test is folded into this
 			// load's own guard and does not wrap the poly load below it.
 			if (filters.decoration === "edges" && !xLoaded.has(eagerToken)) {
-				loadSphericalEdgesAtlas().then((d) => merge(d, eagerToken)).catch(() => {});
+				loadSphericalEdgesAtlas()
+					.then((d) => merge(d, eagerToken))
+					.catch(() => {});
 			}
 			if (!xLoaded.has(`${eagerToken}-poly`)) {
-				loadSphericalPolyAtlas().then((d) => merge(d, `${eagerToken}-poly`)).catch(() => {});
+				loadSphericalPolyAtlas()
+					.then((d) => merge(d, `${eagerToken}-poly`))
+					.catch(() => {});
 			}
 		} else {
 			// The BASE hyperbolic shelf is deferred too (see loadHyperbolicBaseAtlas): 15.9 MB that
 			// used to be parsed on every /library load regardless of the geometry chip.
 			if (!xLoaded.has(`${eagerToken}-base`)) {
-				loadHyperbolicBaseAtlas().then((d) => merge(d, `${eagerToken}-base`)).catch(() => {});
+				loadHyperbolicBaseAtlas()
+					.then((d) => merge(d, `${eagerToken}-base`))
+					.catch(() => {});
 			}
 			if (!xLoaded.has(eagerToken)) {
-				loadHyperbolicPolyAtlas().then((d) => merge(d, eagerToken)).catch(() => {});
+				loadHyperbolicPolyAtlas()
+					.then((d) => merge(d, eagerToken))
+					.catch(() => {});
 			}
 		}
 		const k = filters.kValue;
@@ -1032,7 +1073,10 @@ export function ReferenceShelf() {
 			if (geo === "spherical") {
 				for (const b of sphEdgesLazyShardsForK(k)) {
 					const token = `spe-${b.id}-${k}`;
-					if (filters.decoration === "edges" && !xLoaded.has(token)) loadSphericalEdgesShard(b.id, k).then((d) => merge(d, token)).catch(() => {});
+					if (filters.decoration === "edges" && !xLoaded.has(token))
+						loadSphericalEdgesShard(b.id, k)
+							.then((d) => merge(d, token))
+							.catch(() => {});
 				}
 			} else {
 				// Scoped to the selected board for the reason the hyperbolic EDGE bases are (see that effect):
@@ -1041,14 +1085,20 @@ export function ReferenceShelf() {
 				for (const b of hypPolyLazyShardsForK(k)) {
 					if (onlyPoly && b.id !== onlyPoly) continue;
 					const token = `hpo-${b.id}-${k}`;
-					if (!xLoaded.has(token)) loadHyperbolicPolyShard(b.id, k).then((d) => merge(d, token)).catch(() => {});
+					if (!xLoaded.has(token))
+						loadHyperbolicPolyShard(b.id, k)
+							.then((d) => merge(d, token))
+							.catch(() => {});
 				}
 				// The half-tile boards share this axis. Five lazy slices now, the largest {4,6} at k=3 —
 				// 15,443 quotients, 51 MB of JSON that gzips to 1.0 MB, so it is parse time being deferred
 				// here and not bandwidth.
 				for (const b of hypHalfLazyShardsForK(k)) {
 					const token = `hph-${b.id}-${k}`;
-					if (!xLoaded.has(token)) loadHyperbolicHalfShard(b.id, k).then((d) => merge(d, token)).catch(() => {});
+					if (!xLoaded.has(token))
+						loadHyperbolicHalfShard(b.id, k)
+							.then((d) => merge(d, token))
+							.catch(() => {});
 				}
 			}
 		}
@@ -1067,7 +1117,10 @@ export function ReferenceShelf() {
 			for (const bk of polyBoard.lazyKs) {
 				if (k != null && bk !== k) continue;
 				const token = `hpo-${polyBoard.id}-${bk}`;
-				if (!xLoaded.has(token)) loadHyperbolicPolyShard(polyBoard.id, bk).then((d) => merge(d, token)).catch(() => {});
+				if (!xLoaded.has(token))
+					loadHyperbolicPolyShard(polyBoard.id, bk)
+						.then((d) => merge(d, token))
+						.catch(() => {});
 			}
 		}
 		return () => {
@@ -1107,7 +1160,9 @@ export function ReferenceShelf() {
 			setDecorLoaded((s) => new Set(s).add(token));
 		};
 		if (dec === "edges" && !decorLoaded.has("decor-fd")) {
-			loadFreedrawDecorAtlas().then((d) => merge(d, "decor-fd")).catch(() => {});
+			loadFreedrawDecorAtlas()
+				.then((d) => merge(d, "decor-fd"))
+				.catch(() => {});
 		}
 		// Bubble tiles are the second occupant of the Euclidean × edges cell, so they ride the same
 		// chip as freedraw and are told apart by the tile-class facet.
@@ -1118,10 +1173,14 @@ export function ReferenceShelf() {
 		// class is its own trigger. Under Kind=Tilings it is not: decorationOf(bubble) is "edges", so
 		// that segment excludes every bubble row and a fetch there is 37 MB spent to display zero.
 		if ((dec === "edges" || (!dec && filters.tileClass === "bubble")) && !decorLoaded.has("decor-bub")) {
-			loadBubbleDecorAtlas().then((d) => merge(d, "decor-bub")).catch(() => {});
+			loadBubbleDecorAtlas()
+				.then((d) => merge(d, "decor-bub"))
+				.catch(() => {});
 		}
 		if (dec === "colorings" && !decorLoaded.has("decor-col")) {
-			loadColorsDecorAtlas().then((d) => merge(d, "decor-col")).catch(() => {});
+			loadColorsDecorAtlas()
+				.then((d) => merge(d, "decor-col"))
+				.catch(() => {});
 		}
 		return () => {
 			alive = false;
@@ -1154,18 +1213,30 @@ export function ReferenceShelf() {
 		};
 		const k = filters.kValue;
 		if (geo === "hyperbolic") {
-			if (!colLoaded.has("hc-eager")) loadHyperbolicColorsAtlas().then((d) => merge(d, "hc-eager")).catch(() => {});
+			if (!colLoaded.has("hc-eager"))
+				loadHyperbolicColorsAtlas()
+					.then((d) => merge(d, "hc-eager"))
+					.catch(() => {});
 			if (k != null)
 				for (const { base } of hypColorsLazyShardsForK(k)) {
 					const token = `hc-${base}-${k}`;
-					if (!colLoaded.has(token)) loadHyperbolicColorsShard(base, k).then((d) => merge(d, token)).catch(() => {});
+					if (!colLoaded.has(token))
+						loadHyperbolicColorsShard(base, k)
+							.then((d) => merge(d, token))
+							.catch(() => {});
 				}
 		} else {
-			if (!colLoaded.has("sc-eager")) loadSphericalColorsAtlas().then((d) => merge(d, "sc-eager")).catch(() => {});
+			if (!colLoaded.has("sc-eager"))
+				loadSphericalColorsAtlas()
+					.then((d) => merge(d, "sc-eager"))
+					.catch(() => {});
 			if (k != null)
 				for (const { solid } of sphColorsLazyShardsForK(k)) {
 					const token = `sc-${solid}-${k}`;
-					if (!colLoaded.has(token)) loadSphericalColorsShard(solid, k).then((d) => merge(d, token)).catch(() => {});
+					if (!colLoaded.has(token))
+						loadSphericalColorsShard(solid, k)
+							.then((d) => merge(d, token))
+							.catch(() => {});
 				}
 		}
 		return () => {
@@ -1190,12 +1261,7 @@ export function ReferenceShelf() {
 		// at the edge-systems effect); these three did not.
 		if (!tilings) return;
 		const k = filters.kValue;
-		const want =
-			k != null
-				? COMPOSABLE_HIGHER_K.filter((kk) => kk === k)
-				: cls === "convex"
-					? COMPOSABLE_HIGHER_K
-					: [];
+		const want = k != null ? COMPOSABLE_HIGHER_K.filter((kk) => kk === k) : cls === "convex" ? COMPOSABLE_HIGHER_K : [];
 		for (const kk of want) {
 			if (loadedShards.has(kk) || loadingShards.has(kk) || shardErrors.has(kk)) continue;
 			setLoadingShards((s) => new Set(s).add(kk));
@@ -1223,8 +1289,7 @@ export function ReferenceShelf() {
 		if (cls !== "isotoxal" && cls != null) return;
 		if (!tilings) return; // base atlas REPLACES; see the convex-irregular effect
 		const k = filters.kValue;
-		const want =
-			k != null ? ISOTOXAL_HIGHER_K.filter((kk) => kk === k) : cls === "isotoxal" ? ISOTOXAL_HIGHER_K : [];
+		const want = k != null ? ISOTOXAL_HIGHER_K.filter((kk) => kk === k) : cls === "isotoxal" ? ISOTOXAL_HIGHER_K : [];
 		for (const kk of want) {
 			if (isotoxalLoadedShards.has(kk) || isotoxalLoadingShards.has(kk)) continue;
 			setIsotoxalLoadingShards((s) => new Set(s).add(kk));
@@ -1362,11 +1427,7 @@ export function ReferenceShelf() {
 		if (!tilings) return; // base atlas REPLACES; see the convex-irregular effect
 		const k = filters.kValue;
 		const want =
-			k != null
-				? PENROSE_HIGHER_K.filter((kk) => kk === k)
-				: filters.edgeBoard === "penrose"
-					? PENROSE_HIGHER_K
-					: [];
+			k != null ? PENROSE_HIGHER_K.filter((kk) => kk === k) : filters.edgeBoard === "penrose" ? PENROSE_HIGHER_K : [];
 		for (const kk of want) {
 			if (penroseLoadedShards.has(kk) || penroseLoadingShards.has(kk)) continue;
 			setPenroseLoadingShards((s) => new Set(s).add(kk));
@@ -1518,8 +1579,7 @@ export function ReferenceShelf() {
 		setFilters({ ...filters, polyformFamily: v === "all" ? undefined : v });
 	const setIslamicSystem = (v: "all" | IslamicSystem) =>
 		setFilters({ ...filters, islamicSystem: v === "all" ? undefined : v });
-	const setEdgeBoard = (v: "all" | EdgeBoard) =>
-		setFilters({ ...filters, edgeBoard: v === "all" ? undefined : v });
+	const setEdgeBoard = (v: "all" | EdgeBoard) => setFilters({ ...filters, edgeBoard: v === "all" ? undefined : v });
 	const setFreedrawKind = (v: "all" | FreedrawKind) =>
 		setFilters({ ...filters, freedrawKind: v === "all" ? undefined : v });
 	// Selecting a board clears the two legacy grid filters: they name the same axis, so leaving one set
@@ -1536,12 +1596,10 @@ export function ReferenceShelf() {
 			starKind: v === "sst" ? filters.starKind : undefined,
 			ncxCrossing: v === "spn-solid" ? filters.ncxCrossing : undefined,
 		});
-	const setStarKind = (v: "all" | SphStarKind) =>
-		setFilters({ ...filters, starKind: v === "all" ? undefined : v });
+	const setStarKind = (v: "all" | SphStarKind) => setFilters({ ...filters, starKind: v === "all" ? undefined : v });
 	const setNcxCrossing = (v: "all" | "self-intersecting" | "embedded") =>
 		setFilters({ ...filters, ncxCrossing: v === "all" ? undefined : v });
-	const setColorsCount = (v: "all" | number) =>
-		setFilters({ ...filters, colorsCount: v === "all" ? undefined : v });
+	const setColorsCount = (v: "all" | number) => setFilters({ ...filters, colorsCount: v === "all" ? undefined : v });
 	const setFreedrawRegular = (v: "all" | FreedrawRegular) =>
 		setFilters({ ...filters, freedrawRegular: v === "all" ? undefined : v });
 
@@ -1564,9 +1622,7 @@ export function ReferenceShelf() {
 	// the group filter never contradicts the chosen lattice.
 	const selectShape = (s: LatticeShape) => {
 		const next = filters.latticeShapes?.[0] === s ? undefined : s;
-		const groups = next
-			? filters.wallpaperGroups?.filter((g) => isGroupOnLattice(g, next))
-			: filters.wallpaperGroups;
+		const groups = next ? filters.wallpaperGroups?.filter((g) => isGroupOnLattice(g, next)) : filters.wallpaperGroups;
 		setFilters({
 			...filters,
 			latticeShapes: next ? [next] : undefined,
@@ -1760,9 +1816,12 @@ export function ReferenceShelf() {
 	// extremes stay reachable. Null until the atlas is in (the groups just don't render yet).
 	const hypBounds = useMemo(() => {
 		if (!tilings) return null;
-		let vMin = Infinity, vMax = -Infinity;
-		let pMin = Infinity, pMax = -Infinity;
-		let eMin = Infinity, eMax = -Infinity;
+		let vMin = Infinity,
+			vMax = -Infinity;
+		let pMin = Infinity,
+			pMax = -Infinity;
+		let eMin = Infinity,
+			eMax = -Infinity;
 		for (const t of tilings) {
 			const hf = hyperbolicFacetsOf(t);
 			if (hf) {
@@ -1786,11 +1845,8 @@ export function ReferenceShelf() {
 
 	// An interval slider back at the full data span IS "no filter" — store undefined so the active
 	// count, the Clear button and the URL stay honest.
-	const setHypInterval = (
-		key: "hypValence" | "hypPolygon" | "hypEdge",
-		v: [number, number],
-		full: [number, number],
-	) => setFilters({ ...filters, [key]: v[0] <= full[0] && v[1] >= full[1] ? undefined : v });
+	const setHypInterval = (key: "hypValence" | "hypPolygon" | "hypEdge", v: [number, number], full: [number, number]) =>
+		setFilters({ ...filters, [key]: v[0] <= full[0] && v[1] >= full[1] ? undefined : v });
 
 	const availableFolds = useMemo(() => {
 		if (!tilings) return [];
@@ -1823,10 +1879,7 @@ export function ReferenceShelf() {
 		return m;
 	}, [polygonScope]);
 
-	const availablePolygons = useMemo(
-		() => [...polygonTokenCounts.keys()].sort(speciesCompare),
-		[polygonTokenCounts],
-	);
+	const availablePolygons = useMemo(() => [...polygonTokenCounts.keys()].sort(speciesCompare), [polygonTokenCounts]);
 
 	const distinctPolygonOptions = useMemo(() => {
 		const s = new Set<number>();
@@ -2057,8 +2110,7 @@ export function ReferenceShelf() {
 			g.members.push(t);
 		}
 		for (const g of order)
-			if (g.members.length > 1)
-				g.members.sort((a, b) => (a.variant ?? 0) - (b.variant ?? 0) || (a.id < b.id ? -1 : 1));
+			if (g.members.length > 1) g.members.sort((a, b) => (a.variant ?? 0) - (b.variant ?? 0) || (a.id < b.id ? -1 : 1));
 		return order;
 	}, [filtered, groupVariants]);
 
@@ -2085,7 +2137,7 @@ export function ReferenceShelf() {
 	};
 
 	return (
-		<div className="flex flex-1 min-h-0 overflow-hidden">
+		<div className="flex min-h-0 flex-1 overflow-hidden">
 			<PageSidebar
 				mobile="modal"
 				mobileLabel="Filters"
@@ -2116,7 +2168,7 @@ export function ReferenceShelf() {
 						{activeFilterCount > 0 ? (
 							<button
 								onClick={() => setFilters({ geometry: "euclidean" })}
-								className="flex cursor-pointer items-center gap-1 text-xs text-fg-muted hover:text-danger transition-colors"
+								className="flex cursor-pointer items-center gap-1 text-xs text-fg-muted transition-colors hover:text-danger"
 							>
 								<X size={11} /> Clear ({activeFilterCount})
 							</button>
@@ -2127,7 +2179,7 @@ export function ReferenceShelf() {
 						value={filters.query ?? ""}
 						onChange={(e) => setFilters({ ...filters, query: e.target.value })}
 						placeholder="Search id or family…"
-						className="mx-3.5 h-8 max-md:mt-3 max-md:h-11 rounded-control border border-line bg-surface-raised px-2.5 text-[13px] text-fg shadow-sm placeholder:text-fg-muted focus:outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/40"
+						className="mx-3.5 h-8 rounded-control border border-line bg-surface-raised px-2.5 text-[13px] text-fg shadow-sm placeholder:text-fg-muted focus:outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/40 max-md:mt-3 max-md:h-11"
 					/>
 
 					<FilterGroup title="Geometry" summary={isEuclidean ? null : GEOMETRY_LABEL[geometry]}>
@@ -2136,10 +2188,7 @@ export function ReferenceShelf() {
 
 					{/* Decoration — WHAT is catalogued, below geometry and above tile class. Every geometry has all
 					    three segments, so this wall never changes shape with the one above it. */}
-					<FilterGroup
-						title="Kind"
-						summary={filters.decoration ? DECORATION_LABEL[filters.decoration] : null}
-					>
+					<FilterGroup title="Kind" summary={filters.decoration ? DECORATION_LABEL[filters.decoration] : null}>
 						<OptionWall columns={2} options={DECORATION_OPTIONS} selected={decoration} onChange={setDecoration} />
 					</FilterGroup>
 
@@ -2178,9 +2227,7 @@ export function ReferenceShelf() {
 								selected={filters.isotoxalShape ?? "all"}
 								onChange={setIsotoxalShape}
 							/>
-							<GroupNote>
-								How many of the tile’s angles flex independently.
-							</GroupNote>
+							<GroupNote>How many of the tile’s angles flex independently.</GroupNote>
 						</FilterGroup>
 					) : null}
 
@@ -2196,9 +2243,7 @@ export function ReferenceShelf() {
 								selected={filters.scaledScaleSet ?? "all"}
 								onChange={setScaledScaleSet}
 							/>
-							<GroupNote>
-								Sides 1–2 is the former Doubled class; 1–3 adds a side-3 tile.
-							</GroupNote>
+							<GroupNote>Sides 1–2 is the former Doubled class; 1–3 adds a side-3 tile.</GroupNote>
 						</FilterGroup>
 					) : null}
 
@@ -2215,18 +2260,14 @@ export function ReferenceShelf() {
 								onChange={setPolyformFamily}
 							/>
 							<GroupNote>
-								What the pieces are made of. Under it, the Board wall picks how many cells a piece has,
-								and k divides that: three levels, the same ones the Play sidebar nests.
+								What the pieces are made of. Under it, the Board wall picks how many cells a piece has, and k divides
+								that: three levels, the same ones the Play sidebar nests.
 							</GroupNote>
 						</FilterGroup>
 					) : null}
 
 					{showIslamicSystem ? (
-						<FilterGroup
-							title="Design system"
-							summary={filters.islamicSystem ?? null}
-							note="Bonner's tile kits"
-						>
+						<FilterGroup title="Design system" summary={filters.islamicSystem ?? null} note="Bonner's tile kits">
 							<OptionWall
 								columns={2}
 								options={ISLAMIC_SYSTEM_OPTIONS}
@@ -2252,15 +2293,14 @@ export function ReferenceShelf() {
 								onChange={setEdgeBoard}
 							/>
 							<GroupNote>
-								Every tile set here carries edges of more than one length, which is what this class is. The
-								planigons are the duals of the Euclidean vertex configurations — fifteen tiles, twelve edge
-								lengths. Penrose&apos;s kite and dart have two, 1 and φ, and are enumerated without the
-								matching rules, so these are the periodic tilings the two shapes admit. The last five are
-								halves of a regular polygon, cut vertex-to-vertex, between opposite edge midpoints, or along
-								the mirror an odd polygon has: the half pentagon tiles the plane although the regular
-								pentagon cannot, and the domino has exactly one tiling if every edge must be matched whole.
-								Only six such halves can tile at all, and the sixth is the half square, which is the
-								45-45-90 board.
+								Every tile set here carries edges of more than one length, which is what this class is. The planigons
+								are the duals of the Euclidean vertex configurations — fifteen tiles, twelve edge lengths.
+								Penrose&apos;s kite and dart have two, 1 and φ, and are enumerated without the matching rules, so these
+								are the periodic tilings the two shapes admit. The last five are halves of a regular polygon, cut
+								vertex-to-vertex, between opposite edge midpoints, or along the mirror an odd polygon has: the half
+								pentagon tiles the plane although the regular pentagon cannot, and the domino has exactly one tiling if
+								every edge must be matched whole. Only six such halves can tile at all, and the sixth is the half
+								square, which is the 45-45-90 board.
 							</GroupNote>
 						</FilterGroup>
 					) : null}
@@ -2269,7 +2309,13 @@ export function ReferenceShelf() {
 						<FilterGroup
 							title="Board"
 							summary={filters.board ? boardSummary(filters.board) : null}
-							note={tileClass === "polyomino" ? "cells per piece" : decoration === "colorings" ? "the colored board" : "the decorated board"}
+							note={
+								tileClass === "polyomino"
+									? "cells per piece"
+									: decoration === "colorings"
+										? "the colored board"
+										: "the decorated board"
+							}
 						>
 							{/* One wall per family, in SUB_ORDER sequence — the same grouping and the same order
 							    /play's tree renders, because both read boardFamiliesFor(). A family heading appears
@@ -2283,11 +2329,7 @@ export function ReferenceShelf() {
 							/>
 							{boardFamilies.map((fam) => (
 								<div key={fam.family} className="flex flex-col gap-1">
-									{boardFamilies.length > 1 ? (
-										<div className="pt-1 text-xs text-fg-muted">
-											{fam.label}
-										</div>
-									) : null}
+									{boardFamilies.length > 1 ? <div className="pt-1 text-xs text-fg-muted">{fam.label}</div> : null}
 									<OptionWall
 										columns={3}
 										options={fam.boards.map((b) => ({ value: b.sub, label: b.label }))}
@@ -2320,20 +2362,16 @@ export function ReferenceShelf() {
 								onChange={setStarKind}
 							/>
 							<GroupNote>
-								Read off each solid&apos;s structure, not its name: a pyramid is one star face, n triangles
-								and n+1 vertices, and nothing else can wear that signature. Two thirds of this shelf ships
-								unnamed, so the name would answer for a third of it. &quot;Other&quot; is the uniform star
-								polyhedra and everything the three families do not describe.
+								Read off each solid&apos;s structure, not its name: a pyramid is one star face, n triangles and n+1
+								vertices, and nothing else can wear that signature. Two thirds of this shelf ships unnamed, so the name
+								would answer for a third of it. &quot;Other&quot; is the uniform star polyhedra and everything the three
+								families do not describe.
 							</GroupNote>
 						</FilterGroup>
 					) : null}
 
 					{filters.board === "spn-solid" ? (
-						<FilterGroup
-							title="Crossing"
-							summary={filters.ncxCrossing ?? null}
-							note="does it pass through itself"
-						>
+						<FilterGroup title="Crossing" summary={filters.ncxCrossing ?? null} note="does it pass through itself">
 							<OptionWall
 								columns={3}
 								options={NCX_CROSSING_OPTIONS}
@@ -2341,10 +2379,9 @@ export function ReferenceShelf() {
 								onChange={setNcxCrossing}
 							/>
 							<GroupNote>
-								A solid is self-intersecting when some face edge passes through the interior of a face it
-								shares no vertex with. The rest are non-convex but embedded, which makes them polyhedra in
-								the ordinary sense. The shelf holds 112 of the first and 131 of the second, measured when
-								the solids were built.
+								A solid is self-intersecting when some face edge passes through the interior of a face it shares no
+								vertex with. The rest are non-convex but embedded, which makes them polyhedra in the ordinary sense. The
+								shelf holds 112 of the first and 131 of the second, measured when the solids were built.
 							</GroupNote>
 						</FilterGroup>
 					) : null}
@@ -2362,8 +2399,8 @@ export function ReferenceShelf() {
 								onChange={setColorsCount}
 							/>
 							<GroupNote>
-								How many colors the tiles carry. Every solution in a catalogue uses all of them — the
-								2-colorings are not repeated inside the 3-color one.
+								How many colors the tiles carry. Every solution in a catalogue uses all of them — the 2-colorings are
+								not repeated inside the 3-color one.
 							</GroupNote>
 						</FilterGroup>
 					) : null}
@@ -2377,8 +2414,8 @@ export function ReferenceShelf() {
 								onChange={setFreedrawKind}
 							/>
 							<GroupNote>
-								A freedraw tile is whatever face the drawn edges enclose — it can be a finite polyomino or
-								polyiamond, an infinite strip, or a sheet unbounded in both directions.
+								A freedraw tile is whatever face the drawn edges enclose — it can be a finite polyomino or polyiamond,
+								an infinite strip, or a sheet unbounded in both directions.
 							</GroupNote>
 						</FilterGroup>
 					) : null}
@@ -2386,9 +2423,7 @@ export function ReferenceShelf() {
 					{showFreedrawKind ? (
 						<FilterGroup
 							title="Regular polygons"
-							summary={
-								FREEDRAW_REGULAR_OPTIONS.find((o) => o.value === filters.freedrawRegular)?.label ?? null
-							}
+							summary={FREEDRAW_REGULAR_OPTIONS.find((o) => o.value === filters.freedrawRegular)?.label ?? null}
 							note="the k-uniform bridge"
 						>
 							<OptionWall
@@ -2398,20 +2433,17 @@ export function ReferenceShelf() {
 								onChange={setFreedrawRegular}
 							/>
 							<GroupNote>
-								Every k-uniform tiling dissects onto a triangle/square grid, so these patterns contain the
-								k-uniform tilings as the case where every tile is a regular polygon. “k-uniform” keeps the
-								edge-to-edge ones; the dodecagon needs a large period and first appears at k = 3 (as 3.12.12).
-								For a full has/none/any composition (say triangles and dodecagons, no squares), use /freedraw.
+								Every k-uniform tiling dissects onto a triangle/square grid, so these patterns contain the k-uniform
+								tilings as the case where every tile is a regular polygon. “k-uniform” keeps the edge-to-edge ones; the
+								dodecagon needs a large period and first appears at k = 3 (as 3.12.12). For a full has/none/any
+								composition (say triangles and dodecagons, no squares), use /freedraw.
 							</GroupNote>
 						</FilterGroup>
 					) : null}
 
 					<FilterGroup title={kGroupTitle} summary={filters.kValue ?? null}>
 						<ChipRow
-							options={[
-								{ value: ALL_NUM, label: "All" },
-								...kChips.map((k) => ({ value: k, label: k })),
-							]}
+							options={[{ value: ALL_NUM, label: "All" }, ...kChips.map((k) => ({ value: k, label: k }))]}
 							isOn={(v) => v === (filters.kValue ?? ALL_NUM)}
 							onChange={(v) => setKValue(v === ALL_NUM ? undefined : v)}
 						/>
@@ -2425,8 +2457,8 @@ export function ReferenceShelf() {
 						) : null}
 						{showFreedrawKind ? (
 							<GroupNote>
-								Orbits of GRID POINTS under the pattern&apos;s own symmetry group — including points with no
-								drawn edge. Not vertex orbits of a tiling.
+								Orbits of GRID POINTS under the pattern&apos;s own symmetry group — including points with no drawn edge.
+								Not vertex orbits of a tiling.
 							</GroupNote>
 						) : (tileClass === "convex" || tileClass === "scaled") && kChips.some((k) => k >= 3) ? (
 							<GroupNote>k ≥ 3 loads on demand.</GroupNote>
@@ -2501,9 +2533,7 @@ export function ReferenceShelf() {
 
 							<FilterGroup
 								title="Edge length"
-								summary={
-									filters.hypEdge ? `${filters.hypEdge[0].toFixed(2)} – ${filters.hypEdge[1].toFixed(2)}` : null
-								}
+								summary={filters.hypEdge ? `${filters.hypEdge[0].toFixed(2)} – ${filters.hypEdge[1].toFixed(2)}` : null}
 								note="forced ℓ"
 							>
 								<IntervalFilterCell
@@ -2517,8 +2547,8 @@ export function ReferenceShelf() {
 									format={(n) => n.toFixed(2)}
 								/>
 								<GroupNote>
-									The edge length ℓ forced by the vertex figures (Σα = 2π). H² has no similarity, so ℓ is a
-									shape coordinate — it separates tilings the figure alone cannot.
+									The edge length ℓ forced by the vertex figures (Σα = 2π). H² has no similarity, so ℓ is a shape
+									coordinate — it separates tilings the figure alone cannot.
 								</GroupNote>
 							</FilterGroup>
 						</>
@@ -2528,10 +2558,7 @@ export function ReferenceShelf() {
 						<FilterGroup title="Distinct configs (M)" summary={filters.mValue ?? null} note="M ≤ k">
 							<OptionWall
 								columns={6}
-								options={[
-									{ value: ALL_NUM, label: "All" },
-									...mOptions.map((m) => ({ value: m, label: m })),
-								]}
+								options={[{ value: ALL_NUM, label: "All" }, ...mOptions.map((m) => ({ value: m, label: m }))]}
 								selected={filters.mValue ?? ALL_NUM}
 								onChange={(v) => setMValue(v === ALL_NUM ? undefined : v)}
 							/>
@@ -2586,9 +2613,7 @@ export function ReferenceShelf() {
 								className="ta-tab ta-wall-cell flex min-h-10 w-full items-center gap-2 px-3 py-2 text-left text-xs text-fg-secondary hover:text-fg"
 							>
 								{filters.polygonNames?.length ? (
-									<span className="truncate">
-										{filters.polygonNames.map(speciesLabel).join(", ")}
-									</span>
+									<span className="truncate">{filters.polygonNames.map(speciesLabel).join(", ")}</span>
 								) : (
 									<span className="text-fg-muted">Pick polygons…</span>
 								)}
@@ -2645,11 +2670,7 @@ export function ReferenceShelf() {
 					) : null}
 
 					{showLattice ? (
-						<FilterGroup
-							title="Lattice"
-							summary={selectedLattice ?? null}
-							note="pick one"
-						>
+						<FilterGroup title="Lattice" summary={selectedLattice ?? null} note="pick one">
 							<OptionWall
 								columns={3}
 								options={availableShapes.map((s) => ({
@@ -2790,7 +2811,7 @@ export function ReferenceShelf() {
 								aria-label="Grid columns"
 								className="w-24"
 							/>
-							<span className="w-3 text-center tabular-nums font-medium text-fg">{gridColumns}</span>
+							<span className="w-3 text-center font-medium text-fg tabular-nums">{gridColumns}</span>
 						</label>
 						<div
 							role="group"
@@ -2811,20 +2832,20 @@ export function ReferenceShelf() {
 
 				{error ? (
 					<div className="flex flex-col items-center justify-center py-24 text-center">
-						<p className="text-danger font-medium">Could not load the tiling library</p>
-						<p className="text-fg-disabled text-sm mt-1 font-mono">{error}</p>
+						<p className="font-medium text-danger">Could not load the tiling library</p>
+						<p className="mt-1 font-mono text-sm text-fg-disabled">{error}</p>
 					</div>
 				) : tilings === null ? (
 					<div className="flex flex-col items-center justify-center py-24 text-center text-fg-muted">
-						<Loader2 size={28} className="animate-spin mb-3 text-fg-muted" />
+						<Loader2 size={28} className="mb-3 animate-spin text-fg-muted" />
 						<p className="text-sm">Loading tiling library…</p>
 					</div>
 				) : filtered.length === 0 ? (
 					<div className="flex flex-col items-center justify-center py-24 text-center">
-						<Library size={40} className="text-fg-disabled mb-4" />
-						<p className="text-fg-muted font-medium">No tilings match the current filters.</p>
+						<Library size={40} className="mb-4 text-fg-disabled" />
+						<p className="font-medium text-fg-muted">No tilings match the current filters.</p>
 						{activeFilterCount > 0 ? (
-							<button onClick={clearFilters} className="text-accent hover:underline text-sm mt-1 max-md:min-h-11">
+							<button onClick={clearFilters} className="mt-1 text-sm text-accent hover:underline max-md:min-h-11">
 								Clear filters
 							</button>
 						) : null}
@@ -2833,7 +2854,7 @@ export function ReferenceShelf() {
 					<>
 						{/* One pager, under the grid: the header count already gives the total. */}
 						<div
-							className="ta-lanes grid !gap-3 [grid-template-columns:repeat(var(--cols),1fr)] max-md:[grid-template-columns:repeat(2,minmax(0,1fr))]"
+							className="ta-lanes grid [grid-template-columns:repeat(var(--cols),1fr)] !gap-3 max-md:[grid-template-columns:repeat(2,minmax(0,1fr))]"
 							style={gridStyle}
 						>
 							{paginated.map((g) => (

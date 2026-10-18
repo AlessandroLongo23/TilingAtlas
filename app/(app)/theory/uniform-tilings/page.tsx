@@ -13,8 +13,17 @@ export const dynamic = "force-static";
 // 8 semiregular. The page embeds their render cells directly (≈8 KB total), so it never pulls the
 // ~13 MB atlas the /play browser fetches. (Moved from /theory when that route became the index.)
 const UNIFORM_IDS = [
-	"t1001", "t1002", "t1003", "t1004", "t1005", "t1006",
-	"t1007", "t1008", "t1009", "t1010", "t1011",
+	"t1001",
+	"t1002",
+	"t1003",
+	"t1004",
+	"t1005",
+	"t1006",
+	"t1007",
+	"t1008",
+	"t1009",
+	"t1010",
+	"t1011",
 ] as const;
 
 async function loadTheoryMarkdown(): Promise<string> {
@@ -38,11 +47,13 @@ async function loadUniformCells(): Promise<{
 	const sources: Record<string, ExactCellSource> = {};
 	try {
 		const filePath = path.join(process.cwd(), "public", "reference-atlas.json");
-		const atlas = hydrateRenderCells(decodeAtlas<{
-			id: string;
-			renderCell: TranslationalCellData;
-			exactSource?: ExactCellSource;
-		}>(JSON.parse(await readFile(filePath, "utf8"))));
+		const atlas = hydrateRenderCells(
+			decodeAtlas<{
+				id: string;
+				renderCell: TranslationalCellData;
+				exactSource?: ExactCellSource;
+			}>(JSON.parse(await readFile(filePath, "utf8"))),
+		);
 		for (const t of atlas) {
 			if (!(UNIFORM_IDS as readonly string[]).includes(t.id)) continue;
 			cells[t.id] = t.renderCell;
@@ -59,12 +70,6 @@ export default async function UniformTilingsPage() {
 	const flatToc = extractTableOfContents(content);
 	const sections = structureTableOfContents(flatToc);
 	return (
-		<TheoryClient
-			content={content}
-			sections={sections}
-			cells={cells}
-			sources={sources}
-			currentSlug="uniform-tilings"
-		/>
+		<TheoryClient content={content} sections={sections} cells={cells} sources={sources} currentSlug="uniform-tilings" />
 	);
 }

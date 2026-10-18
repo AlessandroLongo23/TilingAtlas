@@ -91,7 +91,8 @@ export function enforceDeterminant(
 	const cPrev = cross(prev, q);
 	const sign = c0 !== 0 ? Math.sign(c0) : cPrev !== 0 ? Math.sign(cPrev) : 1;
 	const t = (c0 - sign * minDet) / qLen;
-	const nx = -q.y / qLen, ny = q.x / qLen;
+	const nx = -q.y / qLen,
+		ny = q.x / qLen;
 	const pushed = { x: p.x + t * nx, y: p.y + t * ny };
 	if (Math.abs(pushed.x) > range + 1e-9 || Math.abs(pushed.y) > range + 1e-9) return prev;
 	return pushed;

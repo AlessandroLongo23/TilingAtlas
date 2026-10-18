@@ -3,8 +3,19 @@ import { buildOrbitDotMesh } from "@/lib/render/buildOrbitDotMesh";
 import type { OrbitData } from "@/lib/services/orbitsFromExactSource";
 
 // Unit square centred at the origin, CCW, in a unit-square lattice.
-const squareVerts = [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]];
-const cell = { p: [{ v: squareVerts, n: 4 }], b: [[1, 0], [0, 1]] };
+const squareVerts = [
+	[-0.5, -0.5],
+	[0.5, -0.5],
+	[0.5, 0.5],
+	[-0.5, 0.5],
+];
+const cell = {
+	p: [{ v: squareVerts, n: 4 }],
+	b: [
+		[1, 0],
+		[0, 1],
+	],
+};
 
 // Orbit data that tags two of the four corners as tiling vertices (orbits 0 and 1) and the other two as
 // non-vertices (-1). Quantise to match orbitsFromExactSource's 1e-4 key tolerance.

@@ -162,26 +162,59 @@ export interface RulePreset {
 
 /** Rules defined on the square grid. On another tiling they are a starting point, not a promise. */
 export const CLASSIC_RULES: RulePreset[] = [
-	{ name: "Conway's Life", rule: "B3/S23", description: "The original. On 8 Moore neighbours; on any other degree it is a different automaton wearing the same name." },
+	{
+		name: "Conway's Life",
+		rule: "B3/S23",
+		description:
+			"The original. On 8 Moore neighbours; on any other degree it is a different automaton wearing the same name.",
+	},
 	{ name: "HighLife", rule: "B36/S23", description: "Life plus birth on 6. Contains a replicator." },
 	{ name: "Day & Night", rule: "B3678/S34678", description: "Symmetric under swapping live and dead." },
 	{ name: "Seeds", rule: "B2/S", description: "Nothing survives; everything is birth. Explosive." },
 	{ name: "Life without Death", rule: "B3/S012345678", description: "Once live, always live. Grows mazes forever." },
 	{ name: "Maze", rule: "B3/S12345", description: "Corridors and dead ends." },
-	{ name: "Replicator", rule: "B1357/S1357", description: "Fredkin's rule: every pattern is replaced by copies of itself." },
-	{ name: "Anneal", rule: "B4678/S35678", description: "Twisted majority. Approximates curve-shortening on the live/dead boundary." },
+	{
+		name: "Replicator",
+		rule: "B1357/S1357",
+		description: "Fredkin's rule: every pattern is replaced by copies of itself.",
+	},
+	{
+		name: "Anneal",
+		rule: "B4678/S35678",
+		description: "Twisted majority. Approximates curve-shortening on the live/dead boundary.",
+	},
 ];
 
 /** Rules published for non-square tessellations. Bays writes survival first; these are converted. */
 export const TESSELLATION_RULES: RulePreset[] = [
-	{ name: "Hex Life (community)", rule: "B2/S34", description: "The rule the hexagonal-Life community settled on. 6 edge-neighbours." },
-	{ name: "Hex Life (Bays)", rule: "B2/S345", description: "Bays' hexagonal Game of Life, Complex Systems 15(3) 2005 — his 3,5/2. Has a period-5 glider." },
-	{ name: "Cairo pentagonal (Bays)", rule: "B3,4,6/S23", description: "Bays' pentagonal Game of Life on the Cairo tiling — his 2,3/3,4,6. Period-48 glider." },
-	{ name: "Triangular (Bays)", rule: "B45/S456", description: "From Bays' 1994 triangular study; 12 neighbours in the Moore sense." },
+	{
+		name: "Hex Life (community)",
+		rule: "B2/S34",
+		description: "The rule the hexagonal-Life community settled on. 6 edge-neighbours.",
+	},
+	{
+		name: "Hex Life (Bays)",
+		rule: "B2/S345",
+		description: "Bays' hexagonal Game of Life, Complex Systems 15(3) 2005 — his 3,5/2. Has a period-5 glider.",
+	},
+	{
+		name: "Cairo pentagonal (Bays)",
+		rule: "B3,4,6/S23",
+		description: "Bays' pentagonal Game of Life on the Cairo tiling — his 2,3/3,4,6. Period-48 glider.",
+	},
+	{
+		name: "Triangular (Bays)",
+		rule: "B45/S456",
+		description: "From Bays' 1994 triangular study; 12 neighbours in the Moore sense.",
+	},
 ];
 
 export const GENERATIONS_RULES: RulePreset[] = [
-	{ name: "Brian's Brain", rule: "B2/S/G3", description: "Every live cell dies after one step through a refractory state. Pure spaceship soup." },
+	{
+		name: "Brian's Brain",
+		rule: "B2/S/G3",
+		description: "Every live cell dies after one step through a refractory state. Pure spaceship soup.",
+	},
 	{ name: "Star Wars", rule: "B2/S345/G4", description: "Generations rule with stable structures and gliders." },
 	{ name: "Frogs", rule: "B34/S12/G3", description: "Restless texture." },
 	{ name: "Gnarl", rule: "B1/S1/G10", description: "Birth and survival on exactly one. Branching filaments." },

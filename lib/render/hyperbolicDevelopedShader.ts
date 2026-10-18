@@ -192,10 +192,31 @@ void main() {
 `;
 
 const UNIFORM_NAMES = [
-	"uRes", "uDpr", "uPadPx", "uMa", "uMb", "uHueOffset", "uDark", "uSurface", "uLine",
-	"uStrokeMode", "uStrokePx", "uStrokeGeom", "uShowFill",
-	"uO", "uOInvDen", "uNGen", "uGenInv", "uSite", "uSiteInvDen",
-	"uNTile", "uTileHue", "uTileCentroid", "uTileEdgeOff", "uTileEdgeCount", "uEdge",
+	"uRes",
+	"uDpr",
+	"uPadPx",
+	"uMa",
+	"uMb",
+	"uHueOffset",
+	"uDark",
+	"uSurface",
+	"uLine",
+	"uStrokeMode",
+	"uStrokePx",
+	"uStrokeGeom",
+	"uShowFill",
+	"uO",
+	"uOInvDen",
+	"uNGen",
+	"uGenInv",
+	"uSite",
+	"uSiteInvDen",
+	"uNTile",
+	"uTileHue",
+	"uTileCentroid",
+	"uTileEdgeOff",
+	"uTileEdgeCount",
+	"uEdge",
 ] as const;
 
 export type DevelopedUniforms = Record<(typeof UNIFORM_NAMES)[number], WebGLUniformLocation | null>;

@@ -19,9 +19,7 @@ describe("exact persistence round-trips (no float drift)", () => {
 		const vc = VertexConfiguration.fromName("3,4,6,4"); // a real 1-uniform vertex type
 		const seed = new SeedConfiguration([vc]);
 
-		const before = seed.polygons
-			.map((p) => p.exactKey())
-			.sort();
+		const before = seed.polygons.map((p) => p.exactKey()).sort();
 
 		const compact = seed.encodeCompact(undefined, true);
 		const decoded = SeedConfiguration.decodeCompact(compact as any, undefined);
@@ -38,8 +36,6 @@ describe("exact persistence round-trips (no float drift)", () => {
 		expect(enc.dir).toBe(2);
 		const anchor = Cyclotomic.decode(ring, enc.anchor);
 		const rebuilt = RegularPolygon.fromAnchorAndDirExact(enc.n, anchor, enc.dir);
-		expect(rebuilt.exactVertices!.map((v) => v.key())).toEqual(
-			p.exactVertices!.map((v) => v.key())
-		);
+		expect(rebuilt.exactVertices!.map((v) => v.key())).toEqual(p.exactVertices!.map((v) => v.key()));
 	});
 });

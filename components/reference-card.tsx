@@ -79,7 +79,8 @@ function PhoneId({ id, className, title }: { id: string; className: string; titl
 	);
 }
 
-const CHIP = "inline-flex items-center rounded bg-surface-raised/90 px-1.5 py-[3px] font-mono text-[10px] font-medium uppercase leading-none tracking-wide text-fg-secondary shadow-sm";
+const CHIP =
+	"inline-flex items-center rounded bg-surface-raised/90 px-1.5 py-[3px] font-mono text-[10px] font-medium uppercase leading-none tracking-wide text-fg-secondary shadow-sm";
 
 export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceCardProps) {
 	// The variant pager. rawIdx is clamped, not reset, when a filter shrinks the group under the same
@@ -108,9 +109,7 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 	// The vertex-type classification: M distinct configs, and the multiplicity group ("511"). Maximal
 	// (m === k, all orbits distinct) is the Krötenheerdt case — shown as "Kröt" since its key is all 1s.
 	const classLabel =
-		tiling.m != null
-			? `M${tiling.m}${isMaximal(tiling) ? " · Kröt" : partitionKey ? ` · ${partitionKey}` : ""}`
-			: null;
+		tiling.m != null ? `M${tiling.m}${isMaximal(tiling) ? " · Kröt" : partitionKey ? ` · ${partitionKey}` : ""}` : null;
 	// A cell of the library's laned wall: it draws its own hairline (ta-lane-cell), the grid's 8px
 	// gap supplies the lane between neighbours, and the cell radius opens the diamonds where four
 	// corners meet.
@@ -129,10 +128,7 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 	const openScreenshot = useScreenshotPreview((s) => s.open);
 	const handleScreenshot = (e: React.MouseEvent) => {
 		e.stopPropagation();
-		const dataUrl = renderTilingToDataUrl(
-			{ translationalCell: tiling.renderCell, pxPerEdge: 48 },
-			1024,
-		);
+		const dataUrl = renderTilingToDataUrl({ translationalCell: tiling.renderCell, pxPerEdge: 48 }, 1024);
 		if (!dataUrl) return;
 		const safe = (tiling.id || tiling.family).replace(/[/\\?%*:|"<>]+/g, "-").replace(/^-+|-+$/g, "") || "tiling";
 		openScreenshot({
@@ -168,7 +164,7 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 	// ‹ n/N › — position within the group's CURRENT members (a narrowing filter can drop variants, so
 	// this is the browse position; the sub-line's "v of V" stays the tiling's global variant identity).
 	const pager = members ? (
-		<span className="flex shrink-0 items-center gap-0.5 text-[10px] tabular-nums text-fg-muted max-md:-my-3 max-md:-mr-3 max-md:gap-0 max-md:text-xs">
+		<span className="flex shrink-0 items-center gap-0.5 text-[10px] text-fg-muted tabular-nums max-md:-my-3 max-md:-mr-3 max-md:gap-0 max-md:text-xs">
 			<button
 				type="button"
 				aria-label="Previous variant"
@@ -260,7 +256,7 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 					{tiling.certification ? (
 						<span
 							className={cn(
-								"inline-flex items-center rounded border px-1.5 py-[2px] font-mono text-[10px] font-medium uppercase leading-none tracking-wide shadow-sm",
+								"inline-flex items-center rounded border px-1.5 py-[2px] font-mono text-[10px] leading-none font-medium tracking-wide uppercase shadow-sm",
 								CERT_STYLE[tiling.certification].cls,
 							)}
 							title={`Completeness: ${tiling.certification}`}
@@ -296,33 +292,27 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 					{isFreedraw && freedrawStats ? (
 						<>
 							{freedrawStats.strips > 0 ? (
-								<span
-									className={CHIP}
-									title="Contains a tile that is an infinite strip"
-								>
+								<span className={CHIP} title="Contains a tile that is an infinite strip">
 									strip
 								</span>
 							) : null}
 							{freedrawStats.unbounded > 0 ? (
-								<span
-									className={CHIP}
-									title="Contains a tile unbounded in both directions"
-								>
+								<span className={CHIP} title="Contains a tile unbounded in both directions">
 									∞
 								</span>
 							) : null}
 							{freedrawStats.withHoles > 0 ? (
-								<span
-									className={CHIP}
-									title="Contains a polyomino with holes"
-								>
+								<span className={CHIP} title="Contains a polyomino with holes">
 									holes
 								</span>
 							) : null}
 						</>
 					) : null}
 					{tiling.preview ? (
-						<span className={cn(CHIP, "border border-dashed border-line-strong")} title="from a still-running solve — partial">
+						<span
+							className={cn(CHIP, "border border-dashed border-line-strong")}
+							title="from a still-running solve — partial"
+						>
 							preview
 						</span>
 					) : null}
@@ -334,32 +324,31 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 							{glyphs.join(" ")}
 						</span>
 					) : dof === 1 ? (
-						<span
-							className={CHIP}
-							title={`one-parameter family — ${glyphs[0]} slider in Play`}
-						>
+						<span className={CHIP} title={`one-parameter family — ${glyphs[0]} slider in Play`}>
 							{glyphs[0]}
 						</span>
 					) : null}
 					{folds.map((n) => (
-						<span
-							key={n}
-							className={CHIP}
-							title={`${n}-pointed star polygon`}
-						>
+						<span key={n} className={CHIP} title={`${n}-pointed star polygon`}>
 							{n}★
 						</span>
 					))}
 				</div>
 				{/* The screenshot path renders the polygon cell — freedraw's is a throwaway, so it is excluded
 				    along with the two non-Euclidean renderers. */}
-				{SCREENSHOT_BUTTONS_ENABLED && !tiling.developed && !tiling.spherical && !isFreedraw && !tiling.colors && !tiling.hypEdges && !tiling.hollow ? (
+				{SCREENSHOT_BUTTONS_ENABLED &&
+				!tiling.developed &&
+				!tiling.spherical &&
+				!isFreedraw &&
+				!tiling.colors &&
+				!tiling.hypEdges &&
+				!tiling.hollow ? (
 					<button
 						type="button"
 						onClick={handleScreenshot}
 						title="Screenshot"
 						aria-label="Take screenshot"
-						className="absolute top-1.5 right-1.5 p-1.5 rounded-md bg-surface-overlay/80 border border-line-strong text-fg-muted hover:text-fg hover:bg-surface-overlay opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity max-md:opacity-100"
+						className="absolute top-1.5 right-1.5 rounded-md border border-line-strong bg-surface-overlay/80 p-1.5 text-fg-muted opacity-0 transition-opacity group-hover:opacity-100 hover:bg-surface-overlay hover:text-fg focus:opacity-100 max-md:opacity-100"
 					>
 						<Camera size={13} />
 					</button>
@@ -368,11 +357,11 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 			{/* On a phone the whole card is one target: a finger that lands on the name expects the tiling,
 			    and a dead half-card reads as broken. The info dot and the variant pager keep their own taps. */}
 			<div
-				className="relative flex flex-col gap-1 px-3 py-2.5 cursor-default max-md:pr-8"
+				className="relative flex cursor-default flex-col gap-1 px-3 py-2.5 max-md:pr-8"
 				onClick={isPhone && onClick ? () => onClick(tiling) : undefined}
 			>
 				{phoneNotes.length ? (
-					<span className="absolute right-2.5 top-3 md:hidden" onClick={(e) => e.stopPropagation()}>
+					<span className="absolute top-3 right-2.5 md:hidden" onClick={(e) => e.stopPropagation()}>
 						<InfoDot side="top" label="About this tiling">
 							{phoneNotes.map((n) => (
 								<p key={n}>{n}</p>
@@ -385,11 +374,11 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 					// Everything technical (valence, edge length ℓ, engine provenance, Poincaré-disk model, the
 					// dev id) lives in the /play info panel, not here.
 					<>
-						<p className="text-sm text-fg font-mono leading-tight" title={`vertex configuration ${tiling.family}`}>
+						<p className="font-mono text-sm leading-tight text-fg" title={`vertex configuration ${tiling.family}`}>
 							{compactVertexConfig(tiling.family)}
 						</p>
 						<div className="flex items-end justify-between gap-2">
-							<p className="text-[10px] text-fg-muted leading-tight">
+							<p className="text-[10px] leading-tight text-fg-muted">
 								k={tiling.k} ·{" "}
 								{/* grouped: the pager already says n/N, so the "v of V" sub-line segment would repeat it */}
 								{tiling.variants && tiling.variants > 1 && !members ? `${tiling.variant} of ${tiling.variants} · ` : ""}
@@ -398,39 +387,60 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 							{pager}
 						</div>
 					</>
-				) : isFreedraw || tiling.colors || tiling.schwarz || tiling.hypEdges || tiling.sphericalFreedraw || tiling.sphEdges || tiling.hypPoly || tiling.sphPoly || tiling.sphStar ? (
+				) : isFreedraw ||
+				  tiling.colors ||
+				  tiling.schwarz ||
+				  tiling.hypEdges ||
+				  tiling.sphericalFreedraw ||
+				  tiling.sphEdges ||
+				  tiling.hypPoly ||
+				  tiling.sphPoly ||
+				  tiling.sphStar ? (
 					// Decorated shelves: no vertex configuration names these, so the family (face composition,
 					// board, colour census) is the headline and the k line says what k counts here. Planar
 					// freedraw counts grid-point orbits (freedrawKNoun), a colouring counts coloured vertex
 					// classes, and off the plane Marek's solvers count vertex orbits of the decorated tiling.
 					// The discoverer is on hover, like every other card.
 					<>
-						<p className="break-words text-xs font-medium font-mono leading-snug text-fg" title={`${tiling.family} · discovered by ${tiling.discoverer}`}>
+						<p
+							className="font-mono text-xs leading-snug font-medium break-words text-fg"
+							title={`${tiling.family} · discovered by ${tiling.discoverer}`}
+						>
 							{tiling.family}
 						</p>
-						<p className="truncate text-xs text-fg-muted leading-tight">
+						<p className="truncate text-xs leading-tight text-fg-muted">
 							k={tiling.k}{" "}
-							{isFreedraw ? freedrawKNoun(gridOf(tiling.freedraw!)) : tiling.colors ? "colored vertices" : "vertex orbits"}
+							{isFreedraw
+								? freedrawKNoun(gridOf(tiling.freedraw!))
+								: tiling.colors
+									? "colored vertices"
+									: "vertex orbits"}
 						</p>
-						<p className="text-[10px] text-fg-disabled font-mono truncate max-md:hidden" title={tiling.id}>
+						<p className="truncate font-mono text-[10px] text-fg-disabled max-md:hidden" title={tiling.id}>
 							{tiling.id}
 						</p>
-						<PhoneId id={tiling.id} title={tiling.id} className="text-xs font-mono text-fg-muted" />
+						<PhoneId id={tiling.id} title={tiling.id} className="font-mono text-xs text-fg-muted" />
 					</>
 				) : (
 					<>
 						{/* The id is what tells two cards on one shelf apart, so it gets the full width; the
 						    discoverer is on hover. */}
-						<p className="truncate font-mono text-[13px] font-medium leading-snug text-fg max-md:hidden" title={`${tiling.id} · discovered by ${tiling.discoverer}`}>
+						<p
+							className="truncate font-mono text-[13px] leading-snug font-medium text-fg max-md:hidden"
+							title={`${tiling.id} · discovered by ${tiling.discoverer}`}
+						>
 							{tiling.id}
 						</p>
-						<PhoneId id={tiling.id} className="font-mono text-[13px] font-medium leading-snug text-fg" />
-						<p className="truncate text-xs text-fg-muted leading-tight" title={tiling.note ?? `{${tiling.family}}`}>
+						<PhoneId id={tiling.id} className="font-mono text-[13px] leading-snug font-medium text-fg" />
+						<p className="truncate text-xs leading-tight text-fg-muted" title={tiling.note ?? `{${tiling.family}}`}>
 							{/* The class long label names the shelf; where a class holds more than one PALETTE, the
 							    palette is what the card should say — "Multiple edge lengths" is true of both tile
 							    sets in that class and tells the reader nothing about the tiling in front of them. */}
 							k={tiling.k} ·{" "}
-							{polyLabel ?? (edgeBoardOf(tiling) ? EDGE_BOARD_LABEL[edgeBoardOf(tiling)!] : TILE_CLASS_LABEL[tileClassOf(tiling)].long)}
+							{polyLabel ??
+								(edgeBoardOf(tiling)
+									? EDGE_BOARD_LABEL[edgeBoardOf(tiling)!]
+									: TILE_CLASS_LABEL[tileClassOf(tiling)].long)}
 							{/* A bubble tiling has no vertex configuration to name it by — the substrate is always
 							    the same triangular tiling — so the PROTOTILE SET is the identity, the way the colour
 							    census is for a colouring. "T0×1 T3×1" is the paper's T{0,3}(1:1). */}
@@ -438,7 +448,7 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 						</p>
 						{classLabel || tiling.wallpaperGroup ? (
 							<p
-								className="text-[10px] text-fg-muted font-mono leading-tight"
+								className="font-mono text-[10px] leading-tight text-fg-muted"
 								title={`${classLabel ? `${tiling.m} distinct vertex configuration(s)${partitionKey ? `, multiplicities ${tiling.partition?.join("·")}` : ""}` : ""}${tiling.wallpaperGroup ? ` · wallpaper group ${tiling.wallpaperGroup} (${tiling.latticeShape})` : ""}`.trim()}
 							>
 								{classLabel}

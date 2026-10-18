@@ -66,9 +66,7 @@ function parseU(s: string): Val {
 	throw new Error(`unparseable u-value: ${s}`);
 }
 
-type Tok =
-	| { kind: "reg"; n: number; u: Val }
-	| { kind: "pt" | "dent"; n: number; u: Val; alpha: Val }; // alpha = point parameter of the star species
+type Tok = { kind: "reg"; n: number; u: Val } | { kind: "pt" | "dent"; n: number; u: Val; alpha: Val }; // alpha = point parameter of the star species
 
 /** Parse a StarVC-syntax token: `n` | `n*p@u` | `n*d@u` (dent u = INTERIOR reflex angle ⇒ α = 24−24/n−u). */
 function parseTok(s: string): Tok {

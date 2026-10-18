@@ -57,7 +57,9 @@ export function hollowPeriodicCell(patch: HollowPatch, opts: HollowCellOptions):
 			fillRgb: fill,
 			fillAlpha: fill
 				? opts.fillMode === "density"
-					? (opts.dark ? DENSITY_ALPHA_DARK : DENSITY_ALPHA_LIGHT)
+					? opts.dark
+						? DENSITY_ALPHA_DARK
+						: DENSITY_ALPHA_LIGHT
 					: TILE_ALPHA
 				: 0,
 			// The whole point of this class: a {n/d} ring winds more than once around its own core.

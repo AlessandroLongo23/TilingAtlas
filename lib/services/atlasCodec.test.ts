@@ -18,7 +18,21 @@ const many = (n: number) =>
 		source: "scaled",
 		family: `3.4.6.12#${i % 5}`,
 		note: NOTE,
-		renderCell: { basis: [[1, 0], [0, 1]], cellPolygons: [{ n: 3, vertices: [[0, 0], [1, 0]] }] },
+		renderCell: {
+			basis: [
+				[1, 0],
+				[0, 1],
+			],
+			cellPolygons: [
+				{
+					n: 3,
+					vertices: [
+						[0, 0],
+						[1, 0],
+					],
+				},
+			],
+		},
 	}));
 
 describe("atlas container round trip", () => {
@@ -93,8 +107,23 @@ describe("atlas container round trip", () => {
 		const records = many(500).map((r) => ({
 			...r,
 			renderCell: {
-				basis: [[1, 0], [0, 1]],
-				cellPolygons: [{ hue: 200, n: 4, vertices: [[0, 0], [1, 0], [1, 1], [0, 1]], star: true }],
+				basis: [
+					[1, 0],
+					[0, 1],
+				],
+				cellPolygons: [
+					{
+						hue: 200,
+						n: 4,
+						vertices: [
+							[0, 0],
+							[1, 0],
+							[1, 1],
+							[0, 1],
+						],
+						star: true,
+					},
+				],
 			},
 		}));
 		const back = decodeAtlas<any>(encodeAtlas(records));
@@ -194,11 +223,24 @@ describe("atlas container round trip", () => {
 			patch: {
 				T1: [1, 0],
 				T2: [0, 1],
-				verts: [[0, 0], [1, 0], [0, 1]],
-				polys: [[[0, 0, 0], [1, 0, 0], [2, 0, 0]]],
+				verts: [
+					[0, 0],
+					[1, 0],
+					[0, 1],
+				],
+				polys: [
+					[
+						[0, 0, 0],
+						[1, 0, 0],
+						[2, 0, 0],
+					],
+				],
 				// Unique per record, which is exactly why `patch` never repeats whole and the encoder has
 				// to look a level down to find anything worth hoisting.
-				edges: [[0, 1, 0, 0, i], [1, 2, 0, 0, 1]],
+				edges: [
+					[0, 1, 0, 0, i],
+					[1, 2, 0, 0, 1],
+				],
 				stats: { faces: 1 + (i % 3) },
 			},
 		}));

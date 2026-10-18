@@ -42,7 +42,7 @@ export function SquaringInset({ selected }: { selected: CatalogueTiling | null }
 	// A phone keeps the panel to a third of the screen, so the squared torus it stands beside is still
 	// the picture; the close button grows to a finger's size inside the same header.
 	return (
-		<div className="pointer-events-auto absolute left-4 top-16 z-20 w-52 overflow-hidden ta-float max-md:w-36">
+		<div className="ta-float pointer-events-auto absolute top-16 left-4 z-20 w-52 overflow-hidden max-md:w-36">
 			<div className="flex items-center justify-between gap-2 border-b border-line px-2.5 py-1.5">
 				<div className="min-w-0">
 					<p className="truncate text-[10px] leading-none text-fg max-md:text-xs">Squared from</p>
@@ -74,7 +74,7 @@ export function SquaringInset({ selected }: { selected: CatalogueTiling | null }
 					<span className="text-fg">
 						{integral
 							? `(${cls[0]}, ${cls[1]})`
-							: `${((((Math.atan2(cls[1], cls[0]) * 180) / Math.PI) + 360) % 360).toFixed(1)}°`}
+							: `${(((Math.atan2(cls[1], cls[0]) * 180) / Math.PI + 360) % 360).toFixed(1)}°`}
 					</span>{" "}
 					· {current.order} squares
 				</p>

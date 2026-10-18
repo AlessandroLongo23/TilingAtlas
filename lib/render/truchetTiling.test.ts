@@ -4,7 +4,17 @@ import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 
 /** The square tiling: one unit square per translational cell, basis (1,0) and (0,1). */
 const SQUARE_CELL: TranslationalCellData = {
-	p: [{ n: 4, v: [[0, 0], [1, 0], [1, 1], [0, 1]] }],
+	p: [
+		{
+			n: 4,
+			v: [
+				[0, 0],
+				[1, 0],
+				[1, 1],
+				[0, 1],
+			],
+		},
+	],
 	b: [
 		[1, 0],
 		[0, 1],
@@ -14,8 +24,22 @@ const SQUARE_CELL: TranslationalCellData = {
 /** The triangular tiling: two triangles per cell, basis (1,0) and (1/2, sqrt3/2). */
 const TRIANGLE_CELL: TranslationalCellData = {
 	p: [
-		{ n: 3, v: [[0, 0], [1, 0], [0.5, Math.sqrt(3) / 2]] },
-		{ n: 3, v: [[1, 0], [1.5, Math.sqrt(3) / 2], [0.5, Math.sqrt(3) / 2]] },
+		{
+			n: 3,
+			v: [
+				[0, 0],
+				[1, 0],
+				[0.5, Math.sqrt(3) / 2],
+			],
+		},
+		{
+			n: 3,
+			v: [
+				[1, 0],
+				[1.5, Math.sqrt(3) / 2],
+				[0.5, Math.sqrt(3) / 2],
+			],
+		},
 	],
 	b: [
 		[1, 0],
@@ -23,8 +47,7 @@ const TRIANGLE_CELL: TranslationalCellData = {
 	],
 };
 
-const isPermutation = (p: readonly number[]) =>
-	[...p].sort((a, b) => a - b).every((v, i) => v === i);
+const isPermutation = (p: readonly number[]) => [...p].sort((a, b) => a - b).every((v, i) => v === i);
 
 describe("a plain tiling read as a Truchet board", () => {
 	it("republishes a block of cells as one period", () => {
@@ -86,6 +109,17 @@ describe("a plain tiling read as a Truchet board", () => {
 
 	it("returns null where there is nothing to draw", () => {
 		expect(truchetPattern(null, { seed: 1 })).toBeNull();
-		expect(truchetPattern({ p: [], b: [[1, 0], [0, 1]] }, { seed: 1 })).toBeNull();
+		expect(
+			truchetPattern(
+				{
+					p: [],
+					b: [
+						[1, 0],
+						[0, 1],
+					],
+				},
+				{ seed: 1 },
+			),
+		).toBeNull();
 	});
 });

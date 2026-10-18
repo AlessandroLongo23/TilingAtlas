@@ -64,7 +64,10 @@ function defaultTargets() {
 	for (const dir of [...SHELF_DIRS, ...WRAPPED_DIRS]) {
 		const p = path.join(PUB, dir);
 		if (!fs.existsSync(p)) continue;
-		for (const f of fs.readdirSync(p).filter((f) => f.endsWith(".json")).sort()) {
+		for (const f of fs
+			.readdirSync(p)
+			.filter((f) => f.endsWith(".json"))
+			.sort()) {
 			out.push(path.join(p, f));
 		}
 	}
@@ -149,11 +152,10 @@ for (const file of files) {
 	// Safety 1: it has to come back the same, or it does not get written. Structural with a 1e-9
 	// tolerance on coordinates, because the geom layer quantises — see sameRecords.
 	const why = wrapped
-		? sameRecords(records, decodeShard(container, key)[key]) ??
-			(JSON.stringify({ ...decodeShard(container, key), [key]: 0 }) ===
-			JSON.stringify({ ...decoded, [key]: 0 })
+		? (sameRecords(records, decodeShard(container, key)[key]) ??
+			(JSON.stringify({ ...decodeShard(container, key), [key]: 0 }) === JSON.stringify({ ...decoded, [key]: 0 })
 				? null
-				: "wrapper metadata differs")
+				: "wrapper metadata differs"))
 		: sameRecords(records, decodeAtlas(container));
 	if (why) {
 		console.log(`${name.padEnd(38)} FAIL  round trip differed (${why}) — NOT written`);

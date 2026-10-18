@@ -31,7 +31,8 @@ export const heeschGridLabel = (g: HeeschGridId) => GRIDS[g].label;
  * convention: there a number is a lower bound, and a shape listed may tile off the grid. "free" is no
  * grid at all: unit squares and triangles whose copies meet edge to edge anywhere.
  */
-export const gridPlacement = (g: HeeschGridId) => (GRIDS[g].aligned === "free" ? "edge to edge, no grid" : "aligned to the grid");
+export const gridPlacement = (g: HeeschGridId) =>
+	GRIDS[g].aligned === "free" ? "edge to edge, no grid" : "aligned to the grid";
 export function gridCaveat(g: HeeschGridId): string | null {
 	if (GRIDS[g].aligned === "restriction")
 		return "Copies are placed on the grid only. A number here is a lower bound, and a shape listed may tile with copies off the grid.";
@@ -93,7 +94,14 @@ export interface HeeschSetInfo {
 	/** The whole census of the size, where the set lists only part of it: every hole-free shape counted,
 	 *  `hh` by Heesch number with holes allowed, the shapes listed being those from `listedFrom` up.
 	 *  `unresolved` tilers are counted by no proof here; `slices` is [done, of] while it still runs. */
-	census?: { holeFree: number; tilers: number; hh: number[]; unresolved?: number; listedFrom?: number; slices?: [number, number] };
+	census?: {
+		holeFree: number;
+		tilers: number;
+		hh: number[];
+		unresolved?: number;
+		listedFrom?: number;
+		slices?: [number, number];
+	};
 	/** The size's tilers, with their tilings, in files `<id>-t<i>.json` of `shard` shapes each. */
 	tilers?: { count: number; shard: number };
 }
@@ -127,7 +135,9 @@ export const loadHeeschSet = (id: string) =>
 
 /** One file of a size's tilers. */
 export const loadHeeschTilers = (id: string, shard: number) =>
-	load<{ grid: HeeschGridId; shapes: HeeschShape[] }>(`${id}-t${shard}`).then((d) => d?.shapes.map((s) => ({ ...s, grid: d.grid })) ?? null);
+	load<{ grid: HeeschGridId; shapes: HeeschShape[] }>(`${id}-t${shard}`).then(
+		(d) => d?.shapes.map((s) => ({ ...s, grid: d.grid })) ?? null,
+	);
 
 /** The tile's outline in solver coordinates, as a vertex ring. */
 function outlineRing(s: HeeschShape): { x: number; y: number }[] {
@@ -141,7 +151,8 @@ function outlineRing(s: HeeschShape): { x: number; y: number }[] {
 export const outlinePage = (s: HeeschShape) => outlineRing(s).map((v) => toPage(s.grid, v.x, v.y));
 
 /** Infinity for a shape that tiles the plane. */
-export const heeschNumber = (s: HeeschShape, def: HeeschDefinition) => (s.p ? Infinity : ((def === "strict" ? s.hc : s.hh) ?? 0));
+export const heeschNumber = (s: HeeschShape, def: HeeschDefinition) =>
+	s.p ? Infinity : ((def === "strict" ? s.hc : s.hh) ?? 0);
 
 /** One hue per corona, index = corona (0 is the centre tile), walking the wheel so neighbouring rings
  *  never sit on neighbouring hues. */
@@ -177,20 +188,26 @@ export function cellSeams(s: HeeschShape): number[] {
 	const det = ax * by - ay * bx;
 	// The cell kind at an integer point: its class modulo the translation lattice, if it has one.
 	const kindAt = (x: number, y: number) => {
-		const u = Math.floor((x * by - y * bx) / det), v = Math.floor((ax * y - ay * x) / det);
-		const rx = x - u * ax - v * bx, ry = y - u * ay - v * by;
+		const u = Math.floor((x * by - y * bx) / det),
+			v = Math.floor((ax * y - ay * x) / det);
+		const rx = x - u * ax - v * bx,
+			ry = y - u * ay - v * by;
 		return cells.find((c) => c.at[0] === rx && c.at[1] === ry);
 	};
 	const ring = outlineRing(s);
 	const inside = (x: number, y: number) => {
 		let hit = false;
 		for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-			const p = ring[i], q = ring[j];
+			const p = ring[i],
+				q = ring[j];
 			if (p.y > y !== q.y > y && x < p.x + ((y - p.y) * (q.x - p.x)) / (q.y - p.y)) hit = !hit;
 		}
 		return hit;
 	};
-	let minx = Infinity, miny = Infinity, maxx = -Infinity, maxy = -Infinity;
+	let minx = Infinity,
+		miny = Infinity,
+		maxx = -Infinity,
+		maxy = -Infinity;
 	for (const v of ring) {
 		minx = Math.min(minx, v.x);
 		maxx = Math.max(maxx, v.x);
@@ -206,14 +223,17 @@ export function cellSeams(s: HeeschShape): number[] {
 			const kind = kindAt(x, y);
 			if (!kind) continue;
 			const verts = kind.verts.map(([vx, vy]) => [x + vx / den, y + vy / den]);
-			const cx = verts.reduce((t, v) => t + v[0], 0) / verts.length, cy = verts.reduce((t, v) => t + v[1], 0) / verts.length;
+			const cx = verts.reduce((t, v) => t + v[0], 0) / verts.length,
+				cy = verts.reduce((t, v) => t + v[1], 0) / verts.length;
 			if (!inside(cx, cy)) continue;
 			verts.forEach((a, k) => {
 				const b = verts[(k + 1) % verts.length];
-				const ka = `${a[0].toFixed(4)},${a[1].toFixed(4)}`, kb = `${b[0].toFixed(4)},${b[1].toFixed(4)}`;
+				const ka = `${a[0].toFixed(4)},${a[1].toFixed(4)}`,
+					kb = `${b[0].toFixed(4)},${b[1].toFixed(4)}`;
 				const key = ka < kb ? `${ka}|${kb}` : `${kb}|${ka}`;
 				if (!seen.has(key)) return void seen.add(key);
-				const p = toPage(s.grid, a[0], a[1]), q = toPage(s.grid, b[0], b[1]);
+				const p = toPage(s.grid, a[0], a[1]),
+					q = toPage(s.grid, b[0], b[1]);
 				seams.push(p.x, p.y, q.x, q.y);
 			});
 		}
@@ -255,19 +275,26 @@ export function tilingCell(s: HeeschShape): ParametricCell | null {
 		const [a, b, e, d, f, g] = s.p.k.slice(c, c + 6);
 		// An orientation is the copy's outline up to translation: its corners, less their minimum.
 		const pts = ring.map((v) => [a * v.x + b * v.y, d * v.x + f * v.y]);
-		const mx = Math.min(...pts.map((q) => q[0])), my = Math.min(...pts.map((q) => q[1]));
-		const key = pts.map((q) => `${q[0] - mx},${q[1] - my}`).sort().join(" ");
+		const mx = Math.min(...pts.map((q) => q[0])),
+			my = Math.min(...pts.map((q) => q[1]));
+		const key = pts
+			.map((q) => `${q[0] - mx},${q[1] - my}`)
+			.sort()
+			.join(" ");
 		if (!hueOf.has(key)) hueOf.set(key, ORIENTATION_HUES[hueOf.size % ORIENTATION_HUES.length]);
 		const vertices = pts.map((q) => toPage(s.grid, q[0] + e, q[1] + g));
 		polygons.push({ n: vertices.length, vertices, hue: hueOf.get(key)! });
 	}
 	const [ux, uy, vx, vy] = s.p.l;
-	const u = toPage(s.grid, ux, uy), w = toPage(s.grid, vx, vy);
-	const v1: [number, number] = [u.x, u.y], v2: [number, number] = [w.x, w.y];
+	const u = toPage(s.grid, ux, uy),
+		w = toPage(s.grid, vx, vy);
+	const v1: [number, number] = [u.x, u.y],
+		v2: [number, number] = [w.x, w.y];
 	const mesh = buildCellMesh({ cellPolygons: polygons, basis: [v1, v2] });
 	if (!mesh) return null;
 	const page = outlinePage(s);
-	const cx = page.reduce((t, v) => t + v.x, 0) / page.length, cy = page.reduce((t, v) => t + v.y, 0) / page.length;
+	const cx = page.reduce((t, v) => t + v.x, 0) / page.length,
+		cy = page.reduce((t, v) => t + v.y, 0) / page.length;
 	const span = TILING_HOME * 2 * Math.max(...page.map((v) => Math.hypot(v.x - cx, v.y - cy)));
 	return { polygons, mesh, v1, v2, home: { cx, cy, width: span, height: span } };
 }

@@ -266,9 +266,7 @@ export function PatchCard({ patch, label, interactive = true }: PatchCardProps) 
 				<canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
 			</div>
 			{label && (
-				<figcaption className="mt-2 text-center text-[clamp(0.7rem,1vh+0.3vw,1rem)] text-fg-muted">
-					{label}
-				</figcaption>
+				<figcaption className="mt-2 text-center text-[clamp(0.7rem,1vh+0.3vw,1rem)] text-fg-muted">{label}</figcaption>
 			)}
 		</figure>
 	);

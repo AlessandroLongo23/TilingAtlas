@@ -34,11 +34,11 @@ export function IsohedralMini() {
 	const cells = isohedralPatchCells(PATCH_RADIUS);
 	const viewBox = `${-WINDOW[0] / 2} ${-WINDOW[1] / 2} ${WINDOW[0]} ${WINDOW[1]}`;
 	return (
-		<div className="w-full h-full flex items-center justify-center">
+		<div className="flex h-full w-full items-center justify-center">
 			<svg
 				viewBox={viewBox}
 				preserveAspectRatio="xMidYMid slice"
-				className="w-full h-full"
+				className="h-full w-full"
 				aria-label="A patch of IH1, the general translation-hexagon isohedral tiling"
 			>
 				{cells.map(({ poly, a, b }, i) => (

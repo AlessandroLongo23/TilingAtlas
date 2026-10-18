@@ -87,9 +87,19 @@ export function useInversiveCell(
 			fillHueB: islamicFillHueB,
 			fillHueC: islamicFillHueC,
 		}),
-		[islamicStyle, islamicAngle, islamicEdgeOffset, islamicIntersectionCount, islamicBandWidth,
-			islamicOutlineWidth, islamicChirality, islamicCheckerHueA, islamicCheckerHueB,
-			islamicFillHueB, islamicFillHueC],
+		[
+			islamicStyle,
+			islamicAngle,
+			islamicEdgeOffset,
+			islamicIntersectionCount,
+			islamicBandWidth,
+			islamicOutlineWidth,
+			islamicChirality,
+			islamicCheckerHueA,
+			islamicCheckerHueB,
+			islamicFillHueB,
+			islamicFillHueC,
+		],
 	);
 	const islamicKey = Object.values(islamic).join(",");
 
@@ -118,10 +128,7 @@ export function useInversiveCell(
 	// The face analysis walks the whole period, so it is memoised on the pattern, not recomputed
 	// whenever a style toggle moves.
 	const freedrawPattern = selected?.freedraw ?? pentPattern ?? ihPattern;
-	const faceAnalysis = useMemo(
-		() => (freedrawPattern ? analyseFaces(freedrawPattern) : null),
-		[freedrawPattern],
-	);
+	const faceAnalysis = useMemo(() => (freedrawPattern ? analyseFaces(freedrawPattern) : null), [freedrawPattern]);
 
 	// A hollow patch is lazy-fetched (public/hollow/<id>.json), so the cell arrives one tick after the
 	// selection. `loadHollowPatch` caches per id, so switching back to a seen tiling resolves instantly.
@@ -134,9 +141,15 @@ export function useInversiveCell(
 		}
 		let live = true;
 		loadHollowPatch(hollowId)
-			.then((p) => { if (live) setHollowPatch(p); })
-			.catch(() => { if (live) setHollowPatch(null); });
-		return () => { live = false; };
+			.then((p) => {
+				if (live) setHollowPatch(p);
+			})
+			.catch(() => {
+				if (live) setHollowPatch(null);
+			});
+		return () => {
+			live = false;
+		};
 	}, [hollowId]);
 
 	const cell = useMemo<PeriodicCell | null>(() => {
@@ -146,14 +159,20 @@ export function useInversiveCell(
 		}
 		if (truchet) {
 			return edgesPeriodicCell(truchet, {
-				dark, fillMode: "none", showScaffold: freedrawScaffold, analysis: analyseFaces(truchet),
+				dark,
+				fillMode: "none",
+				showScaffold: freedrawScaffold,
+				analysis: analyseFaces(truchet),
 				showArcs: true,
 				arcRule: { wiring: freedrawArcWiring, twist: freedrawArcTwist ? 1 : 0 },
 			});
 		}
 		if (freedrawPattern && faceAnalysis) {
 			return edgesPeriodicCell(freedrawPattern, {
-				dark, fillMode: freedrawFill, showScaffold: freedrawScaffold, analysis: faceAnalysis,
+				dark,
+				fillMode: freedrawFill,
+				showScaffold: freedrawScaffold,
+				analysis: faceAnalysis,
 				showArcs: freedrawArcs,
 				arcRule: { wiring: freedrawArcWiring, twist: freedrawArcTwist ? 1 : 0 },
 			});
@@ -172,7 +191,25 @@ export function useInversiveCell(
 		return tilingPeriodicCell(renderCell);
 		// islamicKey stands in for the `islamic` object, which is rebuilt on every store read.
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [selected, renderCell, dark, colorsPalette, colorsEdges, freedrawFill, freedrawScaffold, freedrawArcs, freedrawArcWiring, freedrawArcTwist, truchet, freedrawPattern, faceAnalysis, hollowPatch, isIslamic, islamicKey, opts.plain]);
+	}, [
+		selected,
+		renderCell,
+		dark,
+		colorsPalette,
+		colorsEdges,
+		freedrawFill,
+		freedrawScaffold,
+		freedrawArcs,
+		freedrawArcWiring,
+		freedrawArcTwist,
+		truchet,
+		freedrawPattern,
+		faceAnalysis,
+		hollowPatch,
+		isIslamic,
+		islamicKey,
+		opts.plain,
+	]);
 
 	// The id changes whenever the geometry or its baked colours do, so the canvas re-uploads exactly then.
 	// The pentagon parameters belong in it for the same reason the Islamic sliders do: they change the

@@ -23,7 +23,12 @@ const RUN_STAR_FILL = process.env.RUN_STAR_FILL === "1";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { PeriodSolver } from "@/classes/algorithm/PeriodSolver";
 import { KUniformityChecker } from "@/classes/algorithm/KUniformityChecker";
-import { enumerateStarVCs, dentRegularFillableVariants, buildStarVCSeed, type StarVC } from "@/classes/algorithm/StarVC";
+import {
+	enumerateStarVCs,
+	dentRegularFillableVariants,
+	buildStarVCSeed,
+	type StarVC,
+} from "@/classes/algorithm/StarVC";
 import { CyclotomicRing, setActiveRing } from "@/classes/Cyclotomic";
 import { independentCellGate } from "../scripts/_starCellGate";
 
@@ -31,52 +36,60 @@ const ring = CyclotomicRing.create(24);
 setActiveRing(ring);
 
 // === WINNER (filled from scripts/probe-star-dent-fill.ts) =========================================
-const WINNER_VC = "__VC_NAME__";        // canonical name of the dent-at-vertex VC the probe found
-const POOL_STEPS_UP = "__STEPS__";      // widen-only edge-steps that recovered it
-const POOL_LMAX_UP = "__LMAX__";        // widen-only pool reach that recovered it
-const EXPECT_CELLS_MIN = 1;             // dent-mode certifies at least this many cells
+const WINNER_VC = "__VC_NAME__"; // canonical name of the dent-at-vertex VC the probe found
+const POOL_STEPS_UP = "__STEPS__"; // widen-only edge-steps that recovered it
+const POOL_LMAX_UP = "__LMAX__"; // widen-only pool reach that recovered it
+const EXPECT_CELLS_MIN = 1; // dent-mode certifies at least this many cells
 // ==================================================================================================
 
 describe("F5 — productive star-DENT fill (dent-at-vertex / Fig-3 busy-corner) positive coverage", () => {
-	describe.runIf(RUN_STAR_FILL)(`Myers dent-at-vertex ${WINNER_VC} — closes ONLY with the B1 dent loop [HEAVY, RUN_STAR_FILL=1]`, () => {
-		beforeAll(() => {
-			process.env.POOL_STEPS_UP = POOL_STEPS_UP;
-			process.env.POOL_LMAX_UP = POOL_LMAX_UP;
-		});
-		afterAll(() => {
-			delete process.env.POOL_STEPS_UP;
-			delete process.env.POOL_LMAX_UP;
-		});
+	describe.runIf(RUN_STAR_FILL)(
+		`Myers dent-at-vertex ${WINNER_VC} — closes ONLY with the B1 dent loop [HEAVY, RUN_STAR_FILL=1]`,
+		() => {
+			beforeAll(() => {
+				process.env.POOL_STEPS_UP = POOL_STEPS_UP;
+				process.env.POOL_LMAX_UP = POOL_LMAX_UP;
+			});
+			afterAll(() => {
+				delete process.env.POOL_STEPS_UP;
+				delete process.env.POOL_LMAX_UP;
+			});
 
-		it("certifies the dent-at-vertex cell WITH the dent loop, and gives 0 cells WITHOUT it (the mutation)", () => {
-			const vc: StarVC = enumerateStarVCs({ includeDents: true, variants: dentRegularFillableVariants() }).find(
-				(v) => v.name === WINNER_VC,
-			)!;
-			expect(vc).toBeDefined();
-			expect(vc.tokens.some((t) => t.kind === "dent")).toBe(true); // it really is a dent-at-vertex VC
-			const seed = buildStarVCSeed(vc, ring);
+			it("certifies the dent-at-vertex cell WITH the dent loop, and gives 0 cells WITHOUT it (the mutation)", () => {
+				const vc: StarVC = enumerateStarVCs({ includeDents: true, variants: dentRegularFillableVariants() }).find(
+					(v) => v.name === WINNER_VC,
+				)!;
+				expect(vc).toBeDefined();
+				expect(vc.tokens.some((t) => t.kind === "dent")).toBe(true); // it really is a dent-at-vertex VC
+				const seed = buildStarVCSeed(vc, ring);
 
-			// dent loop ON → certifies
-			const dent = new PeriodSolver(1).solve(seed, { maxMs: 1_200_000, includeDents: true });
-			expect(dent.diag.timedOut).toBe(false);
-			expect(dent.cells.length).toBeGreaterThanOrEqual(EXPECT_CELLS_MIN);
-			// B3 (work order): no silent truncation on the recovered record — the block-index cap must NOT
-			// have bound on any candidate lattice for this solve, else the recovery is not completeness-grade.
-			expect(dent.diag.blockIndexCapTruncated).toBe(0);
+				// dent loop ON → certifies
+				const dent = new PeriodSolver(1).solve(seed, { maxMs: 1_200_000, includeDents: true });
+				expect(dent.diag.timedOut).toBe(false);
+				expect(dent.cells.length).toBeGreaterThanOrEqual(EXPECT_CELLS_MIN);
+				// B3 (work order): no silent truncation on the recovered record — the block-index cap must NOT
+				// have bound on any candidate lattice for this solve, else the recovery is not completeness-grade.
+				expect(dent.diag.blockIndexCapTruncated).toBe(0);
 
-			// dent loop OFF (= commenting out the B1 dent loop) → 0 cells. Same seed, same pool; the only
-			// difference is dent-seating. 0 here while ≥1 above proves the closure needed a FILL-seated dent.
-			const pointOnly = new PeriodSolver(1).solve(seed, { maxMs: 1_200_000, includeDents: false });
-			expect(pointOnly.diag.timedOut).toBe(false);
-			expect(pointOnly.cells.length).toBe(0);
+				// dent loop OFF (= commenting out the B1 dent loop) → 0 cells. Same seed, same pool; the only
+				// difference is dent-seating. 0 here while ≥1 above proves the closure needed a FILL-seated dent.
+				const pointOnly = new PeriodSolver(1).solve(seed, { maxMs: 1_200_000, includeDents: false });
+				expect(pointOnly.diag.timedOut).toBe(false);
+				expect(pointOnly.cells.length).toBe(0);
 
-			// the certified cell is a real k=1 tiling: independent gate + 1 vertex orbit
-			const cell = dent.cells[0];
-			const g = independentCellGate(cell);
-			expect(g.pass).toBe(true);
-			const kdiag = { syms: 0, reps: 0, blockSize: 0, orbits: null as number | null };
-			const orbits = new KUniformityChecker().countVertexOrbits(cell.cellPolygons, cell.basisExact[0], cell.basisExact[1], kdiag);
-			expect(orbits).toBe(1);
-		}, 2_600_000);
-	});
+				// the certified cell is a real k=1 tiling: independent gate + 1 vertex orbit
+				const cell = dent.cells[0];
+				const g = independentCellGate(cell);
+				expect(g.pass).toBe(true);
+				const kdiag = { syms: 0, reps: 0, blockSize: 0, orbits: null as number | null };
+				const orbits = new KUniformityChecker().countVertexOrbits(
+					cell.cellPolygons,
+					cell.basisExact[0],
+					cell.basisExact[1],
+					kdiag,
+				);
+				expect(orbits).toBe(1);
+			}, 2_600_000);
+		},
+	);
 });

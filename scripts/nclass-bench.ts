@@ -59,10 +59,14 @@ let tMine = 0;
 // ---- A/B ----
 const byK = new Map<number, { n: number; bad: number; ex: string[] }>();
 for (const t of cells) {
-	const g = gold.get(t.id)!, m = mine.get(t.id)!;
+	const g = gold.get(t.id)!,
+		m = mine.get(t.id)!;
 	const e = byK.get(t.k) ?? { n: 0, bad: 0, ex: [] };
 	e.n++;
-	if (g !== m) { e.bad++; if (e.ex.length < 6) e.ex.push(`${t.id}: gold[${g}] vs nclass[${m}]`); }
+	if (g !== m) {
+		e.bad++;
+		if (e.ex.length < 6) e.ex.push(`${t.id}: gold[${g}] vs nclass[${m}]`);
+	}
 	byK.set(t.k, e);
 }
 let totBad = 0;
@@ -73,11 +77,15 @@ for (const k of [...byK.keys()].sort((a, b) => a - b)) {
 	console.log(`   k=${k}: ${e.n - e.bad}/${e.n} match${e.bad ? `  *** ${e.bad} MISMATCH ***` : ""}`);
 	for (const x of e.ex) console.log(`       ${x}`);
 }
-console.log(`\n   TOTAL: ${cells.length - totBad}/${cells.length} match${totBad ? `  (${totBad} mismatches)` : "  — CLEAN"}`);
+console.log(
+	`\n   TOTAL: ${cells.length - totBad}/${cells.length} match${totBad ? `  (${totBad} mismatches)` : "  — CLEAN"}`,
+);
 
 // ---- timing ----
 const n = cells.length;
 console.log("\n-- timing --");
 console.log(`   baseline (bigint ζ₂₄) : ${tGold.toFixed(0).padStart(8)} ms   ${(tGold / n).toFixed(3)} ms/tiling`);
-console.log(`   nClassify (int  ζ₁₂,${mode}) : ${tMine.toFixed(0).padStart(8)} ms   ${(tMine / n).toFixed(3)} ms/tiling`);
+console.log(
+	`   nClassify (int  ζ₁₂,${mode}) : ${tMine.toFixed(0).padStart(8)} ms   ${(tMine / n).toFixed(3)} ms/tiling`,
+);
 console.log(`   speedup: ${(tGold / tMine).toFixed(1)}×\n`);

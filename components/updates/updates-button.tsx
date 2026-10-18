@@ -66,7 +66,9 @@ export function UpdatesButton({ variant = "icon", onOpen }: { variant?: "icon" |
 				<ScrollText size={18} strokeWidth={1.75} />
 				<span className="flex-1">What&apos;s new</span>
 				{unseen > 0 ? (
-					<span className="rounded-full bg-accent px-2 text-xs leading-5 tabular-nums text-accent-contrast">{unseen} new</span>
+					<span className="rounded-full bg-accent px-2 text-xs leading-5 text-accent-contrast tabular-nums">
+						{unseen} new
+					</span>
 				) : null}
 			</button>
 		);
@@ -80,7 +82,7 @@ export function UpdatesButton({ variant = "icon", onOpen }: { variant?: "icon" |
 				aria-label={unseen > 0 ? `What's new (${unseen} unread)` : "What's new"}
 				aria-current={onUpdates ? "page" : undefined}
 				className={cn(
-					"relative flex items-center justify-center w-8 h-8 rounded-control hover:text-fg hover:bg-surface-overlay transition-colors focus:outline-none cursor-pointer",
+					"relative flex h-8 w-8 cursor-pointer items-center justify-center rounded-control transition-colors hover:bg-surface-overlay hover:text-fg focus:outline-none",
 					// Lit like an active nav link while the changelog page itself is open.
 					onUpdates ? "bg-surface-overlay text-fg" : "text-fg-muted",
 				)}
@@ -89,7 +91,7 @@ export function UpdatesButton({ variant = "icon", onOpen }: { variant?: "icon" |
 				{unseen > 0 ? (
 					// Out at the button's corner, not over the glyph: at top-1 it landed on the scroll's
 					// curl and read as part of the icon, not as a badge.
-					<span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-accent" aria-hidden />
+					<span className="absolute top-0.5 right-0.5 h-1.5 w-1.5 rounded-full bg-accent" aria-hidden />
 				) : null}
 			</button>
 		</Tooltip>

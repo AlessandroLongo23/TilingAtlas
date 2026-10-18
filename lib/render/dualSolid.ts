@@ -57,7 +57,8 @@ function unit(a: Vec3): Vec3 {
 export function facePlane(vertices: readonly Vec3[], ring: readonly number[]): { n: Vec3; d: number } {
 	let n: Vec3 = [0, 0, 0];
 	for (let i = 0; i < ring.length; i++) {
-		const a = vertices[ring[i]], b = vertices[ring[(i + 1) % ring.length]];
+		const a = vertices[ring[i]],
+			b = vertices[ring[(i + 1) % ring.length]];
 		n = [
 			n[0] + (a[1] - b[1]) * (a[2] + b[2]),
 			n[1] + (a[2] - b[2]) * (a[0] + b[0]),
@@ -113,11 +114,11 @@ export function polarDual(poly: Polyhedron, radius = 1): { dual: Polyhedron } | 
 	let coplanar = 0;
 	for (let i = 0; i < planes.length; i++)
 		for (let j = i + 1; j < planes.length; j++) {
-			const a = planes[i], b = planes[j];
+			const a = planes[i],
+				b = planes[j];
 			if (Math.abs(a.d - b.d) < 1e-9 * scale && len(sub(a.n, b.n)) < 1e-9) coplanar++;
 		}
-	if (through > 0 || coplanar > 0)
-		return { refusal: { facesThroughCentre: through, coplanarFacePairs: coplanar } };
+	if (through > 0 || coplanar > 0) return { refusal: { facesThroughCentre: through, coplanarFacePairs: coplanar } };
 
 	// The dual face for original vertex v is the ring of faces around v, and the order is COMBINATORIAL:
 	// two of them are consecutive exactly when they share an edge through v. Walk that.
@@ -250,8 +251,7 @@ function orbitsUnderIsometries(poly: Polyhedron, of: "faces" | "vertices"): { or
 		for (let da = -1; da <= 1; da++)
 			for (let db = -1; db <= 1; db++)
 				for (let dc = -1; dc <= 1; dc++)
-					for (const i of bucket.get(`${a + da},${b + db},${c + dc}`) ?? [])
-						if (len(sub(V[i], v)) < TOL) return i;
+					for (const i of bucket.get(`${a + da},${b + db},${c + dc}`) ?? []) if (len(sub(V[i], v)) < TOL) return i;
 		return undefined;
 	};
 	const faceKey = new Set(poly.faces.map((f) => [...f].sort((a, b) => a - b).join(",")));
@@ -322,7 +322,17 @@ function orbitsUnderIsometries(poly: Polyhedron, of: "faces" | "vertices"): { or
 				if (!ok || new Set(perm).size !== n) continue;
 				// …and it must preserve the FACES, not merely the point set.
 				for (const f of poly.faces) {
-					if (!faceKey.has(f.map((x) => perm[x]).sort((a, b) => a - b).join(","))) { ok = false; break; }
+					if (
+						!faceKey.has(
+							f
+								.map((x) => perm[x])
+								.sort((a, b) => a - b)
+								.join(","),
+						)
+					) {
+						ok = false;
+						break;
+					}
 				}
 				if (ok) perms.push(perm);
 			}
@@ -339,13 +349,17 @@ function orbitsUnderIsometries(poly: Polyhedron, of: "faces" | "vertices"): { or
 		poly.faces.forEach((f, i) => idOf.set([...f].sort((a, b) => a - b).join(","), i));
 		for (const p of perms)
 			poly.faces.forEach((f, i) => {
-				const j = idOf.get(f.map((x) => p[x]).sort((a, b) => a - b).join(","));
+				const j = idOf.get(
+					f
+						.map((x) => p[x])
+						.sort((a, b) => a - b)
+						.join(","),
+				);
 				if (j !== undefined) parent[find(i)] = find(j);
 			});
 	}
 	return { orbits: new Set(parent.map((_, i) => find(i))).size, groupOrder: perms.length };
 }
-
 
 /**
  * The MIDRADIUS: the distance from the centre to every edge LINE, when they all agree.
@@ -368,11 +382,14 @@ export function midradius(poly: Polyhedron): number | null {
 	const ds: number[] = [];
 	for (const f of poly.faces)
 		for (let i = 0; i < f.length; i++) {
-			const a = f[i], b = f[(i + 1) % f.length];
+			const a = f[i],
+				b = f[(i + 1) % f.length];
 			const kk = a < b ? `${a}-${b}` : `${b}-${a}`;
 			if (seen.has(kk)) continue;
 			seen.add(kk);
-			const A = V[a], d = sub(V[b], A), dd = dot(d, d);
+			const A = V[a],
+				d = sub(V[b], A),
+				dd = dot(d, d);
 			if (dd < 1e-18) continue;
 			const t = -dot(A, d) / dd;
 			ds.push(len([A[0] + t * d[0], A[1] + t * d[1], A[2] + t * d[2]]));
@@ -395,9 +412,9 @@ export function midradius(poly: Polyhedron): number | null {
  * and 1.00, so one swallows the other and the picture says nothing true about either. AL saw exactly
  * that on the elongated pentagonal gyrobicupola. Refusing is the honest control.
  */
-export function dualCompound(poly: Polyhedron):
-	| { compound: Polyhedron; radius: number; dualFaceStart: number }
-	| { refusal: DualRefusal | { noMidsphere: true } } {
+export function dualCompound(
+	poly: Polyhedron,
+): { compound: Polyhedron; radius: number; dualFaceStart: number } | { refusal: DualRefusal | { noMidsphere: true } } {
 	const radius = midradius(poly);
 	if (radius === null) return { refusal: { noMidsphere: true } };
 	const d = polarDual(poly, radius);

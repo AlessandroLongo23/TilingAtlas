@@ -144,23 +144,21 @@ export function TutteSprings({ record, size = SIZE, hovered, onHover, onPickBatt
 					};
 					return (
 						<g key={key}>
-						<line
-							x1={p.x}
-							y1={p.y}
-							x2={q.x}
-							y2={q.y}
-							stroke={
-								isBattery ? "var(--color-accent)" : isHovered ? "var(--color-fg)" : "var(--color-fg-muted)"
-							}
-							strokeOpacity={isBattery || isHovered ? 1 : 0.5}
-							strokeWidth={isBattery ? 3.5 : isHovered ? 3.5 : 1.4}
-							strokeDasharray={isBattery ? "7 4" : undefined}
-							strokeLinecap="round"
-							onPointerEnter={() => onHover(key)}
-							onClick={pick}
-							style={{ cursor: isBattery ? "default" : "pointer" }}
-						/>
-						<EdgeHitLine p={p} q={q} onEnter={() => onHover(key)} onPick={pick} />
+							<line
+								x1={p.x}
+								y1={p.y}
+								x2={q.x}
+								y2={q.y}
+								stroke={isBattery ? "var(--color-accent)" : isHovered ? "var(--color-fg)" : "var(--color-fg-muted)"}
+								strokeOpacity={isBattery || isHovered ? 1 : 0.5}
+								strokeWidth={isBattery ? 3.5 : isHovered ? 3.5 : 1.4}
+								strokeDasharray={isBattery ? "7 4" : undefined}
+								strokeLinecap="round"
+								onPointerEnter={() => onHover(key)}
+								onClick={pick}
+								style={{ cursor: isBattery ? "default" : "pointer" }}
+							/>
+							<EdgeHitLine p={p} q={q} onEnter={() => onHover(key)} onPick={pick} />
 						</g>
 					);
 				})}
@@ -181,7 +179,7 @@ export function TutteSprings({ record, size = SIZE, hovered, onHover, onPickBatt
 				})}
 			</svg>
 			<FigureControls>
-				<span className="truncate font-mono text-[10px] leading-tight text-fg-muted max-md:whitespace-normal max-md:text-xs">
+				<span className="truncate font-mono text-[10px] leading-tight text-fg-muted max-md:text-xs max-md:whitespace-normal">
 					{settled ? (
 						<>
 							settled · {drift !== null && drift < 0.01 ? "matches the direct solve" : "relaxed"} ·{" "}

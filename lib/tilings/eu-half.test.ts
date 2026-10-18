@@ -3,13 +3,7 @@ import { describe, expect, it } from "vitest";
 import { EDGE_BOARD_LABEL, EDGE_BOARD_ORDER } from "@/lib/services/facets";
 import { edgeBoardOf, subOf, tileClassOf, type ReferenceTiling } from "@/lib/services/referenceAtlas";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
-import {
-	EU_HALF_BOARDS,
-	euHalfKGaps,
-	euHalfLazyShardsForK,
-	euHalfSubOfBoard,
-	type EuHalfBoard,
-} from "./eu-half";
+import { EU_HALF_BOARDS, euHalfKGaps, euHalfLazyShardsForK, euHalfSubOfBoard, type EuHalfBoard } from "./eu-half";
 
 // The Euclidean half-polygon shelf. scripts/build-euhalf-shelf.mjs refuses to write anything whose faces
 // are the wrong shape, leave a gap, overlap, or fold a vertex past 360°, so this does not re-litigate the
@@ -39,8 +33,15 @@ describe("board manifest", () => {
 		expect(new Set(EU_HALF_BOARDS.map((b) => b.label)).size).toBe(EU_HALF_BOARDS.length);
 		for (const b of EU_HALF_BOARDS) {
 			expect(shipped(b).length, b.id).toBeGreaterThan(0);
-			expect(b.eagerKs.filter((k) => b.lazyKs.includes(k)), b.id).toEqual([]);
-			expect(Object.keys(b.counts).map(Number).sort((x, y) => x - y)).toEqual(shipped(b));
+			expect(
+				b.eagerKs.filter((k) => b.lazyKs.includes(k)),
+				b.id,
+			).toEqual([]);
+			expect(
+				Object.keys(b.counts)
+					.map(Number)
+					.sort((x, y) => x - y),
+			).toEqual(shipped(b));
 			expect(euHalfKGaps(b), b.id).toEqual([]);
 		}
 	});
@@ -63,7 +64,10 @@ describe("board manifest", () => {
 		for (const b of EU_HALF_BOARDS) {
 			const { n } = CUT[b.id];
 			// A flat m-gon's angles sum to (m-2)*180, which is the first thing a typo in the table breaks.
-			expect(b.angles.reduce((s, a) => s + a, 0), b.id).toBeCloseTo((b.angles.length - 2) * 180, 9);
+			expect(
+				b.angles.reduce((s, a) => s + a, 0),
+				b.id,
+			).toBeCloseTo((b.angles.length - 2) * 180, 9);
 			// And the halves must add back to the regular n-gon. A bisected CORNER adds nothing — the two
 			// halves split the original angle — while a MIDPOINT end is a new vertex on a straight edge,
 			// reopened as two right angles, so it adds 180. A vertex cut has two corner ends, a midpoint
@@ -71,7 +75,8 @@ describe("board manifest", () => {
 			const midEnds = { vertex: 0, midpoint: 2, mirror: 1 }[CUT[b.id].kind];
 			expect(2 * b.angles.reduce((s, a) => s + a, 0), b.id).toBeCloseTo((n - 2) * 180 + 180 * midEnds, 9);
 			// Every angle is a whole number of the ring's units, or the palette could not express it.
-			for (const a of b.angles) expect((a * b.D) / 360, `${b.id} angle ${a}`).toBeCloseTo(Math.round((a * b.D) / 360), 9);
+			for (const a of b.angles)
+				expect((a * b.D) / 360, `${b.id} angle ${a}`).toBeCloseTo(Math.round((a * b.D) / 360), 9);
 		}
 	});
 
@@ -82,9 +87,12 @@ describe("board manifest", () => {
 			// The shelf develops at twice the polygon's side wherever the cut lands on a MIDPOINT, so a
 			// half-edge comes out whole; the two vertex-to-vertex boards need no scaling.
 			const unit = kind === "vertex" ? 1 : 2;
-			const cut = kind === "vertex" ? 1 / Math.sin(Math.PI / n)          // the long diagonal, 2R
-				: kind === "midpoint" ? 1 / Math.tan(Math.PI / n)              // the width across
-					: 1 / Math.tan(Math.PI / (2 * n)) / 2;                     // R + apothem, the height
+			const cut =
+				kind === "vertex"
+					? 1 / Math.sin(Math.PI / n) // the long diagonal, 2R
+					: kind === "midpoint"
+						? 1 / Math.tan(Math.PI / n) // the width across
+						: 1 / Math.tan(Math.PI / (2 * n)) / 2; // R + apothem, the height
 			// The cut is a side, but NOT always the longest one: on the equilateral triangle the altitude
 			// is sqrt3 while the hypotenuse it leaves is the original edge, 2. Every other board's cut does
 			// happen to be its longest side, which is why this read as "longest === cut" until n=3 arrived.
@@ -114,8 +122,13 @@ describe("board manifest", () => {
 		expect(a10 % 2, "n=10: a + 2b is odd, so `a` is odd for every solution").toBe(1);
 		// What survives, and it is what ships: the two n=6 cuts, the n=5 mirror, the n=4 midpoint and the
 		// n=3 mirror. Exactly ONE live board is elsewhere, n=4 vertex, which is the tri45 shelf.
-		expect(EU_HALF_BOARDS.map((b) => `${CUT[b.id].n}${CUT[b.id].kind[0]}`).sort())
-			.toEqual(["3m", "4m", "5m", "6m", "6v"]);
+		expect(EU_HALF_BOARDS.map((b) => `${CUT[b.id].n}${CUT[b.id].kind[0]}`).sort()).toEqual([
+			"3m",
+			"4m",
+			"5m",
+			"6m",
+			"6v",
+		]);
 	});
 
 	it("offers each lazy slice at its own k and nowhere else", () => {
@@ -127,8 +140,10 @@ describe("board manifest", () => {
 		expect(lazy.length).toBe(15);
 		for (const b of EU_HALF_BOARDS) {
 			for (let k = 1; k <= b.enumeratedTo; k++) {
-				expect(euHalfLazyShardsForK(k).some((x) => x.id === b.id), `${b.id} k=${k}`)
-					.toBe(b.lazyKs.includes(k));
+				expect(
+					euHalfLazyShardsForK(k).some((x) => x.id === b.id),
+					`${b.id} k=${k}`,
+				).toBe(b.lazyKs.includes(k));
 			}
 		}
 	});
@@ -202,8 +217,13 @@ describe.skipIf(!anyShard)("shipped rows", () => {
 				const angs: number[] = [];
 				let a2 = 0;
 				for (let t = 0; t < v.length; t++) {
-					const p = v[t], u = v[(t - 1 + v.length) % v.length], w = v[(t + 1) % v.length];
-					const ux = u[0] - p[0], uy = u[1] - p[1], wx = w[0] - p[0], wy = w[1] - p[1];
+					const p = v[t],
+						u = v[(t - 1 + v.length) % v.length],
+						w = v[(t + 1) % v.length];
+					const ux = u[0] - p[0],
+						uy = u[1] - p[1],
+						wx = w[0] - p[0],
+						wy = w[1] - p[1];
 					angs.push(Math.abs((Math.atan2(ux * wy - uy * wx, ux * wx + uy * wy) * 180) / Math.PI));
 					a2 += p[0] * w[1] - w[0] * p[1];
 				}

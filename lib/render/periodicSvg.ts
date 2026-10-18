@@ -101,13 +101,21 @@ export interface PeriodicSvgOptions {
 type Fmt = (v: number) => string;
 
 /** Fixed-point formatter, trailing zeros stripped and −0 folded so the output round-trips. */
-const formatter = (decimals: number): Fmt => (v) => {
-	const s = v.toFixed(decimals).replace(/\.?0+$/, "");
-	return s === "-0" || s === "" ? "0" : s;
-};
+const formatter =
+	(decimals: number): Fmt =>
+	(v) => {
+		const s = v.toFixed(decimals).replace(/\.?0+$/, "");
+		return s === "-0" || s === "" ? "0" : s;
+	};
 
 const css = (rgb: readonly [number, number, number]) =>
-	`#${rgb.map((c) => Math.round(Math.min(Math.max(c, 0), 1) * 255).toString(16).padStart(2, "0")).join("")}`;
+	`#${rgb
+		.map((c) =>
+			Math.round(Math.min(Math.max(c, 0), 1) * 255)
+				.toString(16)
+				.padStart(2, "0"),
+		)
+		.join("")}`;
 
 /** The fill the shader would paint, or null for a stroke-only prim. */
 function fillOf(prim: PeriodicPrim, hueOffset: number): [number, number, number] | null {
@@ -160,8 +168,10 @@ function subdivide(verts: number[], open: boolean, samples: number): number[] {
 	const last = open ? n - 1 : n;
 	for (let i = 0; i < last; i++) {
 		const j = (i + 1) % n;
-		const ax = verts[2 * i], ay = verts[2 * i + 1];
-		const bx = verts[2 * j], by = verts[2 * j + 1];
+		const ax = verts[2 * i],
+			ay = verts[2 * i + 1];
+		const bx = verts[2 * j],
+			by = verts[2 * j + 1];
 		for (let s = 0; s < samples; s++) {
 			const t = s / samples;
 			out.push(ax + (bx - ax) * t, ay + (by - ay) * t);
@@ -204,7 +214,10 @@ export function periodicCellToSvg(cell: PeriodicCell | null, opts: PeriodicSvgOp
 	if (!Number.isFinite(det) || Math.abs(det) < 1e-12) return null;
 
 	// cell → lattice (a, b)
-	const m00 = v2y / det, m01 = -v2x / det, m10 = -v1y / det, m11 = v1x / det;
+	const m00 = v2y / det,
+		m01 = -v2x / det,
+		m10 = -v1y / det,
+		m11 = v1x / det;
 
 	const [viewX, viewY, viewW, viewH] = opts.view;
 	const world = opts.world ?? [viewX, viewY, viewX + viewW, viewY + viewH];
@@ -220,9 +233,15 @@ export function periodicCellToSvg(cell: PeriodicCell | null, opts: PeriodicSvgOp
 
 	// Lattice bbox of the target region. The map is affine, so the box over the four mapped corners
 	// contains every lattice coordinate the region can reach.
-	let wa0 = Infinity, wa1 = -Infinity, wb0 = Infinity, wb1 = -Infinity;
+	let wa0 = Infinity,
+		wa1 = -Infinity,
+		wb0 = Infinity,
+		wb1 = -Infinity;
 	for (const [x, y] of [
-		[world[0], world[1]], [world[2], world[1]], [world[0], world[3]], [world[2], world[3]],
+		[world[0], world[1]],
+		[world[2], world[1]],
+		[world[0], world[3]],
+		[world[2], world[3]],
 	] as const) {
 		const a = m00 * x + m01 * y;
 		const b = m10 * x + m11 * y;
@@ -243,7 +262,10 @@ export function periodicCellToSvg(cell: PeriodicCell | null, opts: PeriodicSvgOp
 	// copies deliberately cover each other is hollow, and its faces carry distinct z (and `nonzero`,
 	// which opts out of merging entirely so the alpha still stacks). The layer boundary is honoured, so
 	// nothing is ever lifted over a decoration meant to paint above it.
-	interface Group { style: PeriodicSvgPath; parts: string[] }
+	interface Group {
+		style: PeriodicSvgPath;
+		parts: string[];
+	}
 	const groups: Group[] = [];
 	let layer = new Map<string, Group>();
 	let layerZ: number | null = null;
@@ -264,7 +286,10 @@ export function periodicCellToSvg(cell: PeriodicCell | null, opts: PeriodicSvgOp
 	};
 
 	let pieces = 0;
-	let avgR = 0, avgG = 0, avgB = 0, avgW = 0;
+	let avgR = 0,
+		avgG = 0,
+		avgB = 0,
+		avgW = 0;
 
 	for (const pi of order) {
 		const prim = cell.prims[pi];
@@ -273,7 +298,10 @@ export function periodicCellToSvg(cell: PeriodicCell | null, opts: PeriodicSvgOp
 
 		// The prim in the renderer's frame, and its own bbox.
 		const base: number[] = new Array(n * 2);
-		let bx0 = Infinity, by0 = Infinity, bx1 = -Infinity, by1 = -Infinity;
+		let bx0 = Infinity,
+			by0 = Infinity,
+			bx1 = -Infinity,
+			by1 = -Infinity;
 		for (let i = 0; i < n; i++) {
 			const x = prim.verts[2 * i];
 			const y = sign * prim.verts[2 * i + 1];
@@ -303,8 +331,16 @@ export function periodicCellToSvg(cell: PeriodicCell | null, opts: PeriodicSvgOp
 
 		// Lattice shifts whose copy can meet the target region. Same reasoning as packPeriodicCell's
 		// index: the shifted lattice box [pa0 + di, pa1 + di] has to overlap the region's.
-		const corners = [[bx0, by0], [bx1, by0], [bx0, by1], [bx1, by1]] as const;
-		let pa0 = Infinity, pa1 = -Infinity, pb0 = Infinity, pb1 = -Infinity;
+		const corners = [
+			[bx0, by0],
+			[bx1, by0],
+			[bx0, by1],
+			[bx1, by1],
+		] as const;
+		let pa0 = Infinity,
+			pa1 = -Infinity,
+			pb0 = Infinity,
+			pb1 = -Infinity;
 		for (const [x, y] of corners) {
 			const a = m00 * x + m01 * y;
 			const b = m10 * x + m11 * y;
@@ -313,8 +349,10 @@ export function periodicCellToSvg(cell: PeriodicCell | null, opts: PeriodicSvgOp
 			if (b < pb0) pb0 = b;
 			if (b > pb1) pb1 = b;
 		}
-		const di0 = Math.floor(wa0 - pa1), di1 = Math.ceil(wa1 - pa0);
-		const dj0 = Math.floor(wb0 - pb1), dj1 = Math.ceil(wb1 - pb0);
+		const di0 = Math.floor(wa0 - pa1),
+			di1 = Math.ceil(wa1 - pa0);
+		const dj0 = Math.floor(wb0 - pb1),
+			dj1 = Math.ceil(wb1 - pb0);
 
 		// Unwarped copies are translates: one outline, one "M" apiece.
 		const rel = map ? null : relSteps(base, num);
@@ -372,11 +410,17 @@ export function periodicCellToSvg(cell: PeriodicCell | null, opts: PeriodicSvgOp
 				// scale, so a segment count that flatters the two tiles at the rim is a hundredfold waste
 				// on the thousand behind them. The corners alone give the copy's size, which picks the
 				// count; only then is the outline subdivided and mapped in full.
-				let rx0 = Infinity, ry0 = Infinity, rx1 = -Infinity, ry1 = -Infinity;
+				let rx0 = Infinity,
+					ry0 = Infinity,
+					rx1 = -Infinity,
+					ry1 = -Infinity;
 				let ok = true;
 				for (let i = 0; i < n; i++) {
 					const p = map(base[2 * i] + ox, base[2 * i + 1] + oy);
-					if (!p) { ok = false; break; }
+					if (!p) {
+						ok = false;
+						break;
+					}
 					if (p[0] < rx0) rx0 = p[0];
 					if (p[0] > rx1) rx1 = p[0];
 					if (p[1] < ry0) ry0 = p[1];
@@ -393,12 +437,18 @@ export function periodicCellToSvg(cell: PeriodicCell | null, opts: PeriodicSvgOp
 
 				const out: number[] = [];
 				const src: number[] = [];
-				let ox0 = Infinity, oy0 = Infinity, ox1 = -Infinity, oy1 = -Infinity;
+				let ox0 = Infinity,
+					oy0 = Infinity,
+					ox1 = -Infinity,
+					oy1 = -Infinity;
 				for (let i = 0; i * 2 < flat.length; i++) {
 					const wx = flat[2 * i] + ox;
 					const wy = flat[2 * i + 1] + oy;
 					const p = map(wx, wy);
-					if (!p) { ok = false; break; }
+					if (!p) {
+						ok = false;
+						break;
+					}
 					src.push(wx, wy);
 					out.push(p[0], p[1]);
 					if (p[0] < ox0) ox0 = p[0];
@@ -410,10 +460,7 @@ export function periodicCellToSvg(cell: PeriodicCell | null, opts: PeriodicSvgOp
 				if (ox1 < viewX || ox0 > viewX + viewW || oy1 < viewY || oy0 > viewY + viewH) continue;
 				if (Math.max(ox1 - ox0, oy1 - oy0) < minSize) continue;
 
-				const w =
-					strokeAlpha > 0 && !strokeInOutput
-						? localWidth(width, out, src, prim.open === true)
-						: undefined;
+				const w = strokeAlpha > 0 && !strokeInOutput ? localWidth(width, out, src, prim.open === true) : undefined;
 				const warped: PeriodicSvgPath = { ...style, ...(w !== undefined ? { strokeWidth: w } : {}) };
 				const d = `M${num(out[0])},${num(out[1])}${relSteps(out, num)}${closeMark}`;
 				if (prim.nonzero) groups.push({ style: warped, parts: [d] });

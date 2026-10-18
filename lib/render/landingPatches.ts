@@ -16,9 +16,18 @@ function hexPt(x: number, y: number): Pt {
 // geometry.js) — the canonical outline of the aperiodic monotile, eight kites of the deltoidal
 // trihexagonal tiling.
 const HAT_HEX: ReadonlyArray<readonly [number, number]> = [
-	[0, 0], [-1, -1], [0, -2], [2, -2],
-	[2, -1], [4, -2], [5, -1], [4, 0],
-	[3, 0], [2, 2], [0, 3], [0, 2],
+	[0, 0],
+	[-1, -1],
+	[0, -2],
+	[2, -2],
+	[2, -1],
+	[4, -2],
+	[5, -1],
+	[4, 0],
+	[3, 0],
+	[2, 2],
+	[0, 3],
+	[0, 2],
 	[-1, 2],
 ];
 
@@ -148,7 +157,10 @@ export function polygonArea(poly: readonly Pt[]): number {
 
 /** viewBox string fitting a set of polygons with a small margin. */
 export function fitViewBox(polys: readonly (readonly Pt[])[], margin = 0.15): string {
-	let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+	let minX = Infinity,
+		minY = Infinity,
+		maxX = -Infinity,
+		maxY = -Infinity;
 	for (const poly of polys) {
 		for (const [x, y] of poly) {
 			if (x < minX) minX = x;
@@ -157,6 +169,7 @@ export function fitViewBox(polys: readonly (readonly Pt[])[], margin = 0.15): st
 			if (y > maxY) maxY = y;
 		}
 	}
-	const w = maxX - minX, h = maxY - minY;
+	const w = maxX - minX,
+		h = maxY - minY;
 	return `${(minX - margin * w).toFixed(4)} ${(minY - margin * h).toFixed(4)} ${(w * (1 + 2 * margin)).toFixed(4)} ${(h * (1 + 2 * margin)).toFixed(4)}`;
 }

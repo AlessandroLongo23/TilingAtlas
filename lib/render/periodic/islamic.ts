@@ -25,12 +25,7 @@ import { latticeCellOf } from "@/lib/render/buildIslamicMesh";
 import { latticeBasisFromCell } from "@/lib/render/flatView";
 import { tileHueRgb01 } from "@/lib/render/hueRing";
 import { colorFacesAbc, extractFaces, type Marker, type Segment } from "@/lib/utils/islamicArrangement";
-import {
-	buildIslamicInterlace,
-	strapWidthScale,
-	type Band,
-	type OutlineSeg,
-} from "@/lib/utils/islamicInterlace";
+import { buildIslamicInterlace, strapWidthScale, type Band, type OutlineSeg } from "@/lib/utils/islamicInterlace";
 import { twoColorFaces } from "@/lib/utils/islamicInterlace";
 import { islamicEdgeOffsetFrac, islamicNormalAngleFromSlider } from "@/lib/utils/islamicNoise";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
@@ -43,7 +38,9 @@ const PATCH_MARGIN = 3;
 
 /** Strap palette, matching components/strap-canvas.tsx (hsb01 of the p5 colours). */
 const hsb01 = (h: number, s: number, b: number): [number, number, number] => {
-	const ss = s / 100, bb = b / 100, hh = ((h % 360) + 360) / 60;
+	const ss = s / 100,
+		bb = b / 100,
+		hh = ((h % 360) + 360) / 60;
 	const k = (n: number) => {
 		const x = (n + hh) % 6;
 		return Math.min(Math.max(Math.abs(x - 3) - 1, 0), 1);
@@ -80,9 +77,7 @@ export interface IslamicCellOptions {
 	fillHueC: number;
 }
 
-export function islamicPeriodicCell(
-	cell: TranslationalCellData | null, opts: IslamicCellOptions,
-): PeriodicCell | null {
+export function islamicPeriodicCell(cell: TranslationalCellData | null, opts: IslamicCellOptions): PeriodicCell | null {
 	if (!cell) return null;
 	const { v1, v2 } = latticeBasisFromCell(cell);
 	if (Math.abs(v1.x * v2.y - v2.x * v1.y) < 1e-12) return null;
@@ -121,8 +116,12 @@ function featureOf(prims: PeriodicPrim[]): number {
 }
 
 const centroidOf = (vs: readonly Vector[]): [number, number] => {
-	let cx = 0, cy = 0;
-	for (const v of vs) { cx += v.x; cy += v.y; }
+	let cx = 0,
+		cy = 0;
+	for (const v of vs) {
+		cx += v.x;
+		cy += v.y;
+	}
 	return [cx / vs.length, cy / vs.length];
 };
 
@@ -133,7 +132,10 @@ const inOriginCell = (cx: number, cy: number, v1: Vector, v2: Vector) => {
 
 /** Pool the construction segments over the patch — the shared first step of both branches. */
 function poolSegments(
-	patch: ReturnType<typeof buildTilingFromCell>, theta: number, offset: number, count: number,
+	patch: ReturnType<typeof buildTilingFromCell>,
+	theta: number,
+	offset: number,
+	count: number,
 	withMarkers: boolean,
 ): { segments: Segment[]; markers: Marker[] } {
 	const segments: Segment[] = [];
@@ -148,8 +150,14 @@ function poolSegments(
 
 /** Plain (A/B/C) and checkerboard: filled arrangement faces plus the black construction lines. */
 function facePrims(
-	patch: ReturnType<typeof buildTilingFromCell>, theta: number, offset: number, count: number,
-	opts: IslamicCellOptions, splitCrossings: boolean, v1: Vector, v2: Vector,
+	patch: ReturnType<typeof buildTilingFromCell>,
+	theta: number,
+	offset: number,
+	count: number,
+	opts: IslamicCellOptions,
+	splitCrossings: boolean,
+	v1: Vector,
+	v2: Vector,
 ): PeriodicPrim[] {
 	const { segments, markers } = poolSegments(patch, theta, offset, count, true);
 	const faces = extractFaces(segments, splitCrossings);
@@ -184,8 +192,12 @@ function facePrims(
 	for (const [a, b] of segments) {
 		if (!inOriginCell((a.x + b.x) / 2, (a.y + b.y) / 2, v1, v2)) continue;
 		prims.push({
-			verts: [a.x, a.y, b.x, b.y], open: true,
-			strokeRgb: [0, 0, 0], strokeAlpha: 1, strokeScale: 0.6, z: 1,
+			verts: [a.x, a.y, b.x, b.y],
+			open: true,
+			strokeRgb: [0, 0, 0],
+			strokeAlpha: 1,
+			strokeScale: 0.6,
+			z: 1,
 		});
 	}
 	return prims;
@@ -193,16 +205,28 @@ function facePrims(
 
 /** Interlace / outline / emboss: the woven band bodies and their borders. */
 function strapPrims(
-	patch: ReturnType<typeof buildTilingFromCell>, theta: number, offset: number, count: number,
-	opts: IslamicCellOptions, weave: boolean, emboss: boolean, splitCrossings: boolean,
-	v1: Vector, v2: Vector,
+	patch: ReturnType<typeof buildTilingFromCell>,
+	theta: number,
+	offset: number,
+	count: number,
+	opts: IslamicCellOptions,
+	weave: boolean,
+	emboss: boolean,
+	splitCrossings: boolean,
+	v1: Vector,
+	v2: Vector,
 ): PeriodicPrim[] {
 	const { segments } = poolSegments(patch, theta, offset, count, false);
 	const scale = strapWidthScale(segments);
 	const width = Math.max(1e-6, opts.bandWidth * scale);
 	const border = Math.max(0, opts.outlineWidth * scale);
 	const { bands } = buildIslamicInterlace(segments, {
-		width, border, startUnder: opts.chirality, squareCap: true, weave, splitCrossings,
+		width,
+		border,
+		startUnder: opts.chirality,
+		squareCap: true,
+		weave,
+		splitCrossings,
 	});
 
 	const bodyRgb = emboss ? FILL_EMBOSS : FILL_PLAIN;

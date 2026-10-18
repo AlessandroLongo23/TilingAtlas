@@ -61,8 +61,7 @@ const kOptions = (grid: ColorsGrid, colors: number) =>
 // Thumbnails per page — every mounted thumbnail is a live canvas; square k=6 alone is 21k entries.
 const PAGE_SIZE = 240;
 
-const fileFor = (grid: ColorsGrid, colors: number, k: number) =>
-	`${colorsCatalogue(grid, colors).prefix}${k}.json`;
+const fileFor = (grid: ColorsGrid, colors: number, k: number) => `${colorsCatalogue(grid, colors).prefix}${k}.json`;
 const filesFor = (grid: ColorsGrid, colors: number, k: number): string[] =>
 	k === 0 ? kRange(grid, colors).map((kk) => fileFor(grid, colors, kk)) : [fileFor(grid, colors, k)];
 
@@ -128,10 +127,7 @@ export function ColorsClient() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [grid, colors, k, loadTick]);
 
-	const pageRows = useMemo(
-		() => (slice ?? []).slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
-		[slice, page],
-	);
+	const pageRows = useMemo(() => (slice ?? []).slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), [slice, page]);
 
 	const selected = useMemo(
 		() => (slice ?? []).find((p) => p.id === selectedId) ?? pageRows[0] ?? null,
@@ -203,17 +199,27 @@ export function ColorsClient() {
 	};
 
 	return (
-		<div className="flex flex-1 min-w-0 flex-col min-h-0">
+		<div className="flex min-h-0 min-w-0 flex-1 flex-col">
 			<header className="shrink-0 border-b border-line-subtle">
 				<WallBar
 					title="Colored tilings"
 					count={slice === null ? "loading…" : `${slice.length.toLocaleString()} colorings`}
 				>
 					<WallGroup title="Grid">
-						<OptionWall columns={GRID_OPTIONS.length} options={GRID_OPTIONS} selected={grid} onChange={setGridAndReset} />
+						<OptionWall
+							columns={GRID_OPTIONS.length}
+							options={GRID_OPTIONS}
+							selected={grid}
+							onChange={setGridAndReset}
+						/>
 					</WallGroup>
 					<WallGroup title="Colors" note="palette size">
-						<OptionWall columns={COLOR_OPTIONS.length} options={COLOR_OPTIONS} selected={colors} onChange={setColorsAndReset} />
+						<OptionWall
+							columns={COLOR_OPTIONS.length}
+							options={COLOR_OPTIONS}
+							selected={colors}
+							onChange={setColorsAndReset}
+						/>
 					</WallGroup>
 					<WallGroup title="k" note="colored vertex classes">
 						<OptionWall
@@ -228,13 +234,18 @@ export function ColorsClient() {
 						<ToggleRow>
 							<ToggleCell label="Edges" shortcut="G" on={showEdges} onClick={() => setShowEdges(!showEdges)} />
 							<ToggleCell label="Lattice" shortcut="P" on={showLattice} onClick={() => setShowLattice(!showLattice)} />
-							<ToggleCell label="Orbits" shortcut="O" on={showVertices} onClick={() => setShowVertices(!showVertices)} />
+							<ToggleCell
+								label="Orbits"
+								shortcut="O"
+								on={showVertices}
+								onClick={() => setShowVertices(!showVertices)}
+							/>
 						</ToggleRow>
 					</WallGroup>
 				</WallBar>
 			</header>
 
-			<div className="flex-1 min-h-0 flex">
+			<div className="flex min-h-0 flex-1">
 				<div className={LIST_PANE}>
 					{slice === null && <div className="p-8 text-fg-muted">Loading the colored-tiling catalogue…</div>}
 					<div ref={gridRef} className={CATALOGUE_GRID}>
@@ -294,8 +305,8 @@ export function ColorsClient() {
 								) : (
 									<>
 										({selected.a}, 0), ({selected.b}, {selected.d}) ·{" "}
-										{colorsGridOf(selected) === "triangle" ? cellCount(selected) * 2 : cellCount(selected)}{" "}
-										cells{colorsGridOf(selected) === "triangle" && " · basis at 60°"}
+										{colorsGridOf(selected) === "triangle" ? cellCount(selected) * 2 : cellCount(selected)} cells
+										{colorsGridOf(selected) === "triangle" && " · basis at 60°"}
 									</>
 								),
 							],

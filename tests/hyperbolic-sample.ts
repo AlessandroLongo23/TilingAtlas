@@ -12,7 +12,7 @@ export function sampleAtlas<T extends { id: string }>(atlas: T[], n: number, see
 	const sorted = [...atlas].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 	if (sorted.length <= n) return sorted;
 	let s = seed;
-	const rnd = () => ((s = (s * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+	const rnd = () => (s = (s * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
 	const picked = new Map<string, T>();
 	while (picked.size < n) {
 		const p = sorted[Math.floor(rnd() * sorted.length)];

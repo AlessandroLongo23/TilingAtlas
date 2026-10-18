@@ -180,7 +180,7 @@ export function HollowCanvas({ patchId, style, interactive = true, className, mo
 	return (
 		<canvas
 			ref={ref}
-			className={cn("h-full w-full", interactive && "cursor-grab active:cursor-grabbing touch-none", className)}
+			className={cn("h-full w-full", interactive && "cursor-grab touch-none active:cursor-grabbing", className)}
 			data-testid="hollow-canvas"
 		/>
 	);

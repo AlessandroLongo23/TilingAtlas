@@ -127,10 +127,7 @@ export function ExportImageModal() {
 	// The CSS-pixel box the frame is projected through. Height is held at the on-screen height so tiles
 	// keep the size they have on screen and only the framing changes; "Screen" reproduces the host box
 	// exactly, which is what makes the dialog open showing what is behind it.
-	const frame = useMemo(
-		() => ({ w: Math.max(1, Math.round(hostBox.h * ratio)), h: hostBox.h }),
-		[hostBox, ratio],
-	);
+	const frame = useMemo(() => ({ w: Math.max(1, Math.round(hostBox.h * ratio)), h: hostBox.h }), [hostBox, ratio]);
 
 	const baseLongEdge = Math.max(frame.w, frame.h);
 
@@ -147,13 +144,19 @@ export function ExportImageModal() {
 		// a different image without saying so, so it is refused with the reason named.
 		const c = useConfiguration.getState();
 		setSvgBlockedBy(
-			c.inversive ? "the conformal lens"
-			: c.isIslamic ? "Islamic decoration"
-			: c.truchetActive ? "Truchet figures"
-			: c.circlePacking ? "circle packing"
-			: c.fillAmount <= 0 ? "the tile fill being off"
-			: !isIdentityDeform(resolveDeform(c)) ? "the basis deformation"
-			: null,
+			c.inversive
+				? "the conformal lens"
+				: c.isIslamic
+					? "Islamic decoration"
+					: c.truchetActive
+						? "Truchet figures"
+						: c.circlePacking
+							? "circle packing"
+							: c.fillAmount <= 0
+								? "the tile fill being off"
+								: !isIdentityDeform(resolveDeform(c))
+									? "the basis deformation"
+									: null,
 		);
 		setPreview(null);
 		setError(null);
@@ -219,10 +222,7 @@ export function ExportImageModal() {
 				ctrl.targetZoom = zoom;
 			}
 			try {
-				return await captureFrame(
-					{ w: frame.w, h: frame.h, dpr: outW / frame.w },
-					{ background },
-				);
+				return await captureFrame({ w: frame.w, h: frame.h, dpr: outW / frame.w }, { background });
 			} finally {
 				if (canZoom) {
 					ctrl.zoom = savedZoom;
@@ -278,9 +278,7 @@ export function ExportImageModal() {
 		const [[v1x, v1y], [v2x, v2y]] = base.basis;
 		const det = v1x * v2y - v2x * v1y;
 		const o = cfg.controls.offset;
-		const { draw } = wrapOffset(
-			new Vector(o.x, o.y), new Vector(v1x, v1y), new Vector(v2x, v2y), det, zoom, rot,
-		);
+		const { draw } = wrapOffset(new Vector(o.x, o.y), new Vector(v1x, v1y), new Vector(v2x, v2y), det, zoom, rot);
 		const tx = draw.x / zoom;
 		const ty = draw.y / zoom;
 
@@ -316,12 +314,8 @@ export function ExportImageModal() {
 		// true y-flipped world coordinates, then rotate and pan reproduce screen = pan + R·(flipped world),
 		// the composition FILL_VERT applies. SVG's rotate() is clockwise in a y-down frame, which is the
 		// sense the shader's [[c,-s],[s,c]] already has after the flip, so no sign correction is needed.
-		const inner =
-			`<g transform="translate(${tx},${ty}) rotate(${cfg.rotation || 0}) translate(${cx},${-cy})">${body}</g>`;
-		const tiles =
-			lineWidth > 0
-				? `<g stroke="#000000" stroke-width="${sw}">${inner}</g>`
-				: `<g>${inner}</g>`;
+		const inner = `<g transform="translate(${tx},${ty}) rotate(${cfg.rotation || 0}) translate(${cx},${-cy})">${body}</g>`;
+		const tiles = lineWidth > 0 ? `<g stroke="#000000" stroke-width="${sw}">${inner}</g>` : `<g>${inner}</g>`;
 		const doc =
 			`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" width="${out.w}" height="${out.h}">` +
 			bg +
@@ -392,12 +386,12 @@ export function ExportImageModal() {
 			size="lg"
 		>
 			<div className="p-4">
-				<div className="flex flex-col md:flex-row gap-6">
+				<div className="flex flex-col gap-6 md:flex-row">
 					{/* The preview is the instrument, not a confirmation: you are choosing a crop of something
 					    infinite, so it gets the space. Checkerboard shows through a transparent export. */}
-					<div className="md:flex-1 min-w-0 flex flex-col gap-2">
+					<div className="flex min-w-0 flex-col gap-2 md:flex-1">
 						<div
-							className="relative flex items-center justify-center rounded-md border border-line bg-surface-raised/60 overflow-hidden min-h-[260px] md:min-h-[340px]"
+							className="relative flex min-h-[260px] items-center justify-center overflow-hidden rounded-md border border-line bg-surface-raised/60 md:min-h-[340px]"
 							style={
 								opaque
 									? undefined
@@ -410,11 +404,7 @@ export function ExportImageModal() {
 						>
 							{preview ? (
 								// eslint-disable-next-line @next/next/no-img-element
-								<img
-									src={preview}
-									alt="Export preview"
-									className="max-w-full max-h-[340px] object-contain"
-								/>
+								<img src={preview} alt="Export preview" className="max-h-[340px] max-w-full object-contain" />
 							) : (
 								<Loader2 size={28} className="animate-spin text-fg-muted" />
 							)}
@@ -424,7 +414,7 @@ export function ExportImageModal() {
 						</p>
 					</div>
 
-					<div className="md:w-72 shrink-0 flex flex-col gap-5">
+					<div className="flex shrink-0 flex-col gap-5 md:w-72">
 						<div className="flex flex-col gap-2">
 							<SectionHeading>Frame</SectionHeading>
 							<ButtonGroup
@@ -433,7 +423,7 @@ export function ExportImageModal() {
 								onChange={(v) => setAspect(v)}
 							/>
 							{canZoom ? (
-								<div className="pt-1 flex flex-col gap-1">
+								<div className="flex flex-col gap-1 pt-1">
 									<Slider
 										label="Zoom"
 										value={Math.round(zoom)}
@@ -441,14 +431,12 @@ export function ExportImageModal() {
 										min={ZOOM_MIN}
 										max={ZOOM_MAX}
 										step={1}
-										format={() =>
-											edgesAcross != null ? `≈ ${edgesAcross.toFixed(1)} edges across` : ""
-										}
+										format={() => (edgesAcross != null ? `≈ ${edgesAcross.toFixed(1)} edges across` : "")}
 									/>
 									<button
 										type="button"
 										onClick={() => setZoom(useConfiguration.getState().controls.zoom)}
-										className="self-start inline-flex items-center gap-1 text-xs text-fg-muted hover:text-fg transition-colors"
+										className="inline-flex items-center gap-1 self-start text-xs text-fg-muted transition-colors hover:text-fg"
 									>
 										<RotateCcw size={12} />
 										Match current view
@@ -504,14 +492,14 @@ export function ExportImageModal() {
 				</div>
 
 				{error ? (
-					<p className="mt-4 text-sm text-danger bg-danger-subtle border border-danger/30 rounded-md px-3 py-2">
+					<p className="mt-4 rounded-md border border-danger/30 bg-danger-subtle px-3 py-2 text-sm text-danger">
 						{error}
 					</p>
 				) : null}
 
 				{/* On a phone the dialog is a bottom sheet whose body scrolls, so this bar sticks to its foot:
 				    Download stays in reach under a preview that fills most of the screen. */}
-				<div className="mt-5 pt-4 border-t border-line flex flex-col sm:flex-row sm:items-center gap-3 max-md:sticky max-md:bottom-0 max-md:z-10 max-md:-mx-4 max-md:-mb-4 max-md:bg-surface-raised max-md:px-4 max-md:pb-4">
+				<div className="mt-5 flex flex-col gap-3 border-t border-line pt-4 max-md:sticky max-md:bottom-0 max-md:z-10 max-md:-mx-4 max-md:-mb-4 max-md:bg-surface-raised max-md:px-4 max-md:pb-4 sm:flex-row sm:items-center">
 					<div className="flex items-center gap-3">
 						<ButtonGroup
 							options={[
@@ -522,17 +510,15 @@ export function ExportImageModal() {
 							onChange={(v) => setFormat(v)}
 						/>
 						{svgBlockedBy ? (
-							<p className="text-xs text-fg-muted max-w-[24rem]">
-								SVG is unavailable with {svgBlockedBy}.
-							</p>
+							<p className="max-w-[24rem] text-xs text-fg-muted">SVG is unavailable with {svgBlockedBy}.</p>
 						) : format === "svg" ? (
-							<p className="text-xs text-fg-muted max-w-[24rem]">
-								SVG carries the tiling, its colours, the framing and the rotation. Overlays — points,
-								symmetry elements, orbits — are PNG only.
+							<p className="max-w-[24rem] text-xs text-fg-muted">
+								SVG carries the tiling, its colours, the framing and the rotation. Overlays — points, symmetry elements,
+								orbits — are PNG only.
 							</p>
 						) : null}
 					</div>
-					<div className="sm:ml-auto flex items-center gap-2">
+					<div className="flex items-center gap-2 sm:ml-auto">
 						{canCopy && format === "png" ? (
 							<Button
 								variant="secondary"

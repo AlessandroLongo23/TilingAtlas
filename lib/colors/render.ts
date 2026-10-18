@@ -98,7 +98,11 @@ function hslToRgb255(h: number, s: number, l: number): [number, number, number] 
 
 /** The palette a pattern with `n` colors renders through, as RGB 0..255 per color index — the shared
  *  source for the hyperbolic disk shader (÷255 → 0..1) and the spherical three.js builder. */
-export function paletteRgb255(n: number, palette: readonly ColorChoice[] | undefined, dark: boolean): [number, number, number][] {
+export function paletteRgb255(
+	n: number,
+	palette: readonly ColorChoice[] | undefined,
+	dark: boolean,
+): [number, number, number][] {
 	return paletteFor(n, palette).map((c) => {
 		const [h, s, l] = cellHsl(c, dark);
 		return hslToRgb255(h, s, l);
@@ -264,8 +268,7 @@ export function drawColors(
 
 	if (style.showLattice) drawLattice(ctx, p, style, px, py, span);
 
-	if (style.showVertices)
-		drawOrbitDots(ctx, p, view, style, px, py, bx, by, span, hover, orbitScales);
+	if (style.showVertices) drawOrbitDots(ctx, p, view, style, px, py, bx, by, span, hover, orbitScales);
 
 	ctx.restore(); // the view rotation
 }
@@ -307,10 +310,7 @@ function drawColorsPatch(
 	const ext = rotatedExtent(width, height, rot);
 	const halfW = ext.w / (2 * scale);
 	const halfH = ext.h / (2 * scale);
-	const inv = (wx: number, wy: number): [number, number] => [
-		(wx * t2y - wy * t2x) / det,
-		(t1x * wy - t1y * wx) / det,
-	];
+	const inv = (wx: number, wy: number): [number, number] => [(wx * t2y - wy * t2x) / det, (t1x * wy - t1y * wx) / det];
 	let m0 = Infinity;
 	let m1 = -Infinity;
 	let n0 = Infinity;

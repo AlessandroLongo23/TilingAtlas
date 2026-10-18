@@ -79,8 +79,18 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
 function pulse(el: HTMLElement) {
 	el.animate(
 		[
-			{ outlineStyle: "solid", outlineWidth: "3px", outlineColor: "oklch(from var(--color-text-primary) l c h / 0.9)", outlineOffset: "-3px" },
-			{ outlineStyle: "solid", outlineWidth: "3px", outlineColor: "oklch(from var(--color-text-primary) l c h / 0)", outlineOffset: "2px" },
+			{
+				outlineStyle: "solid",
+				outlineWidth: "3px",
+				outlineColor: "oklch(from var(--color-text-primary) l c h / 0.9)",
+				outlineOffset: "-3px",
+			},
+			{
+				outlineStyle: "solid",
+				outlineWidth: "3px",
+				outlineColor: "oklch(from var(--color-text-primary) l c h / 0)",
+				outlineOffset: "2px",
+			},
 		],
 		{ duration: 650, easing: "ease-out" },
 	);
@@ -96,7 +106,7 @@ export function TileGrid({ items, selectedKey, onSelect, revealKey, width }: Til
 
 	// Column width drives everything: tiles are square, so it is also the row height. A row is
 	// `cols` tiles, cols + 1 lanes, and a hairline between each of those.
-	const cell = width > 0 ? (width - (cols + 1) * GUTTER - (2 * cols)) / cols : 0;
+	const cell = width > 0 ? (width - (cols + 1) * GUTTER - 2 * cols) / cols : 0;
 	// Row pitch: one tile row (preview + caption), the two 1px gaps around the gutter row, and the
 	// gutter row itself.
 	const stride = cell + CAPTION + GUTTER + 2;
@@ -190,8 +200,7 @@ export function TileGrid({ items, selectedKey, onSelect, revealKey, width }: Til
 			// transition anyone reads), then come back next frame to check where it actually landed.
 			if (cellSize > 0) {
 				const y =
-					el.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop +
-					row * rowStride;
+					el.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop + row * rowStride;
 				scroller.scrollTo({ top: Math.max(0, y - inset), behavior: "auto" });
 			}
 			if (++tries < 6) timer = window.setTimeout(step, 60);
@@ -212,7 +221,9 @@ export function TileGrid({ items, selectedKey, onSelect, revealKey, width }: Til
 	return (
 		<div className="pt-1">
 			<div ref={hostRef} className="ta-wall flex flex-col gap-px">
-				{range.start > 0 ? <div className="ta-wall-cell bg-surface-chrome" style={{ height: range.start * stride - 1 }} /> : null}
+				{range.start > 0 ? (
+					<div className="ta-wall-cell bg-surface-chrome" style={{ height: range.start * stride - 1 }} />
+				) : null}
 				{visible.map((r, i) => (
 					<div key={r} className="contents">
 						{/* The horizontal lane, split by the three vertical ones — this is where the diamonds
@@ -245,7 +256,9 @@ export function TileGrid({ items, selectedKey, onSelect, revealKey, width }: Til
 						</div>
 					</div>
 				))}
-				{range.end < rows ? <div className="ta-wall-cell bg-surface-chrome" style={{ height: (rows - range.end) * stride - 1 }} /> : null}
+				{range.end < rows ? (
+					<div className="ta-wall-cell bg-surface-chrome" style={{ height: (rows - range.end) * stride - 1 }} />
+				) : null}
 			</div>
 		</div>
 	);
@@ -270,7 +283,7 @@ function Tile({
 			onClick={() => onSelect?.(t)}
 			title={`${t.canonicalKey} · {${t.family}}`}
 			// A finger gets the press it cannot hover: the tile sinks a little while it is held.
-			className="group relative flex flex-col overflow-hidden rounded-lg bg-surface-raised ring-1 ring-line-subtle cursor-pointer max-md:transition-transform max-md:active:scale-[0.96]"
+			className="group relative flex cursor-pointer flex-col overflow-hidden rounded-lg bg-surface-raised ring-1 ring-line-subtle max-md:transition-transform max-md:active:scale-[0.96]"
 		>
 			<div className="relative aspect-square bg-surface-raised">
 				{t.hollow ? (
@@ -345,7 +358,7 @@ function Tile({
 					// from the preview without shouting over it.
 					selected
 						? "shadow-[inset_0_0_0_1.5px_var(--color-text-primary),inset_0_0_0_3.5px_var(--color-surface-raised)]"
-						: "group-hover:ring-1 group-hover:ring-inset group-hover:ring-line-strong",
+						: "group-hover:ring-1 group-hover:ring-line-strong group-hover:ring-inset",
 				)}
 			/>
 		</button>
@@ -372,7 +385,7 @@ function ParamBadge({ paramCell }: { paramCell: ParametricCellData }) {
 			}
 			// min-w-4 + px-1 keeps the single-glyph badge the square it has always been and lets the
 			// two-glyph one grow sideways instead of squeezing the pair into 16px.
-			className="absolute top-1.5 left-1.5 inline-flex h-4 min-w-4 items-center justify-center gap-0.5 rounded px-1 text-[10px] font-semibold leading-none bg-fg/85 text-fg-inverse"
+			className="absolute top-1.5 left-1.5 inline-flex h-4 min-w-4 items-center justify-center gap-0.5 rounded bg-fg/85 px-1 text-[10px] leading-none font-semibold text-fg-inverse"
 		>
 			{glyphs.join(" ")}
 		</span>

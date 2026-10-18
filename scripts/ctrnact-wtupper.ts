@@ -32,5 +32,12 @@ for (const t of tilings) {
 	perKMax[t.k] = Math.max(perKMax[t.k] ?? 0, w);
 }
 fs.writeFileSync(path.resolve(process.argv[3]), out.join("\n") + "\n");
-console.error("per-k max weight (Σ|coords|): " + Object.keys(perKMax).map(Number).sort((a, b) => a - b).map((k) => `${k}:${perKMax[k]}`).join("  "));
+console.error(
+	"per-k max weight (Σ|coords|): " +
+		Object.keys(perKMax)
+			.map(Number)
+			.sort((a, b) => a - b)
+			.map((k) => `${k}:${perKMax[k]}`)
+			.join("  "),
+);
 console.error(`→ ${process.argv[3]} (${out.length - 1} rows)`);

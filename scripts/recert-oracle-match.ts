@@ -20,24 +20,24 @@
  *
  *   pnpm tsx scripts/recert-oracle-match.ts
  */
-import fs from 'node:fs';
-import { setActiveRing } from '@/classes/Cyclotomic';
-import { cellsCongruent, congruencePartition } from '@/classes/algorithm/TilingCongruence';
-import { diffPartitionAgainstIndependent } from '@/classes/algorithm/CongruenceDifferential';
-import type { PeriodCell } from '@/classes/algorithm/PeriodSolver';
-import { readResumeNdjson, deserializeCell } from './scoutCodec';
-import { loadOracle, reconstructOracleCell } from './oracle-match';
+import fs from "node:fs";
+import { setActiveRing } from "@/classes/Cyclotomic";
+import { cellsCongruent, congruencePartition } from "@/classes/algorithm/TilingCongruence";
+import { diffPartitionAgainstIndependent } from "@/classes/algorithm/CongruenceDifferential";
+import type { PeriodCell } from "@/classes/algorithm/PeriodSolver";
+import { readResumeNdjson, deserializeCell } from "./scoutCodec";
+import { loadOracle, reconstructOracleCell } from "./oracle-match";
 
-const ART = '.scout-cache/k3_3.4.6.12_cap0.ndjson';
+const ART = ".scout-cache/k3_3.4.6.12_cap0.ndjson";
 // per-run timestamped log — a re-run must never clobber a prior run's committed evidence
-const STAMP = new Date().toISOString().slice(0, 16).replace(/[T:]/g, '-');
+const STAMP = new Date().toISOString().slice(0, 16).replace(/[T:]/g, "-");
 const LOG = `experiments/results/k3-recert-oracle-match-${STAMP}.log`;
 const lines: string[] = [];
 function log(s: string): void {
 	const line = `[${new Date().toISOString().slice(11, 19)}] ${s}`;
 	console.log(line);
 	lines.push(line);
-	fs.writeFileSync(LOG, lines.join('\n') + '\n');
+	fs.writeFileSync(LOG, lines.join("\n") + "\n");
 }
 
 log(`=== k=3 re-cert per-tiling oracle match — artifact ${ART} ===`);
@@ -49,14 +49,14 @@ const k3codes = Object.keys(oracle)
 	.sort();
 log(`oracle k=3 entries: ${k3codes.length} (must be 61)`);
 if (k3codes.length !== 61) {
-	log('✗ FAIL: oracle key filter wrong');
+	log("✗ FAIL: oracle key filter wrong");
 	process.exit(1);
 }
 const recon = new Map<string, PeriodCell>();
 let reconErrors = 0;
 for (const code of k3codes) {
 	const rec = reconstructOracleCell(code, oracle[code]);
-	if ('error' in rec) {
+	if ("error" in rec) {
 		log(`✗ ${code}: reconstruction error: ${rec.error}`);
 		reconErrors++;
 		continue;
@@ -76,7 +76,7 @@ const classes = congruencePartition(raw.map((sc) => deserializeCell(ring, sc)));
 const mine: PeriodCell[] = classes.map((cl) => cl[0]);
 log(`congruence classes: ${mine.length} (must be 61)`);
 if (mine.length !== 61) {
-	log('✗ FAIL: class count ≠ 61');
+	log("✗ FAIL: class count ≠ 61");
 	process.exit(1);
 }
 
@@ -92,7 +92,9 @@ const diff = diffPartitionAgainstIndependent(classes, (d, t) => {
 	log(`  …differential ${d}/${t} (${dt.toFixed(0)}s elapsed, ETA ${((dt / d) * (t - d)).toFixed(0)}s)`);
 });
 for (const m of diff.mismatches) log(`✗ DIFFERENTIAL MISMATCH: ${m}`);
-log(`differential: ${diff.positives} merges + ${diff.negatives} splits re-checked — ${diff.mismatches.length} mismatches`);
+log(
+	`differential: ${diff.positives} merges + ${diff.negatives} splits re-checked — ${diff.mismatches.length} mismatches`,
+);
 
 // --- bidirectional per-tiling match ---
 const memo = new Map<string, string>();
@@ -115,19 +117,12 @@ const doubled = [...hitCounts.entries()].filter(([, n]) => n > 1);
 const unmatchedMine = mine.map((_, i) => i).filter((i) => !hitCounts.has(i));
 
 log(`oracle entries with exactly one scout match: ${exact.length}/61`);
-log(`t3007 matched: ${matchOf.get('t3007')?.length === 1}`);
+log(`t3007 matched: ${matchOf.get("t3007")?.length === 1}`);
 log(`scout cells matched by ≥2 oracle entries (duplicates): ${doubled.length}`);
 log(`scout cells matched by NO oracle entry: ${unmatchedMine.length}`);
 
-const pass =
-	reconErrors === 0 &&
-	exact.length === 61 &&
-	doubled.length === 0 &&
-	unmatchedMine.length === 0 &&
-	diff.ok;
+const pass = reconErrors === 0 && exact.length === 61 && doubled.length === 0 && unmatchedMine.length === 0 && diff.ok;
 log(
-	pass
-		? '★ PASS — 61/61 per-tiling bijection, t3007 present, no duplicates, differential clean'
-		: '✗ FAIL — see above'
+	pass ? "★ PASS — 61/61 per-tiling bijection, t3007 present, no duplicates, differential clean" : "✗ FAIL — see above",
 );
 process.exit(pass ? 0 : 1);

@@ -19,7 +19,14 @@ import { screenToWorld, worldToScreen } from "@/lib/utils/canvasPick";
 import { Vector } from "@/classes/Vector";
 
 const base = (over: Partial<FlatViewParams> = {}): FlatViewParams => ({
-	offset: { x: 0, y: 0 }, zoom: 50, rot: 0, v1: [1, 0], v2: [0, 1], halfW: 300, halfH: 300, ...over,
+	offset: { x: 0, y: 0 },
+	zoom: 50,
+	rot: 0,
+	v1: [1, 0],
+	v2: [0, 1],
+	halfW: 300,
+	halfH: 300,
+	...over,
 });
 
 describe("flatWorldToClip centred-screen == worldToScreen (transform parity)", () => {
@@ -28,21 +35,27 @@ describe("flatWorldToClip centred-screen == worldToScreen (transform parity)", (
 		base({ offset: { x: 37, y: -12 }, zoom: 83.5, rot: Math.PI / 5 }),
 		base({ offset: { x: -100, y: 60 }, zoom: 20, rot: -1.3 }),
 	];
-	const pts = [{ x: 0, y: 0 }, { x: 1.5, y: -2.2 }, { x: -3.1, y: 4.7 }];
-	for (const p of params) for (const q of pts) {
-		it(`(${q.x},${q.y}) zoom ${p.zoom} rot ${p.rot.toFixed(2)}`, () => {
-			const got = flatWorldToClip(q.x, q.y, 0, 0, p);
-			const ref = worldToScreen(q.x, q.y, p.offset, p.zoom, p.rot);
-			expect(got.sx).toBeCloseTo(ref.x, 9);
-			expect(got.sy).toBeCloseTo(ref.y, 9);
-		});
-	}
+	const pts = [
+		{ x: 0, y: 0 },
+		{ x: 1.5, y: -2.2 },
+		{ x: -3.1, y: 4.7 },
+	];
+	for (const p of params)
+		for (const q of pts) {
+			it(`(${q.x},${q.y}) zoom ${p.zoom} rot ${p.rot.toFixed(2)}`, () => {
+				const got = flatWorldToClip(q.x, q.y, 0, 0, p);
+				const ref = worldToScreen(q.x, q.y, p.offset, p.zoom, p.rot);
+				expect(got.sx).toBeCloseTo(ref.x, 9);
+				expect(got.sy).toBeCloseTo(ref.y, 9);
+			});
+		}
 });
 
 describe("flatWorldToClip instancing == worldToScreen of the lattice shift", () => {
 	it("instance (i,j) shifts by worldToScreen(i*v1 + j*v2) - worldToScreen(0)", () => {
 		const p = base({ offset: { x: 10, y: -5 }, zoom: 40, rot: 0.7, v1: [1.2, 0.3], v2: [-0.4, 1.1] });
-		const i = 3, j = -2;
+		const i = 3,
+			j = -2;
 		const inst = flatWorldToClip(0, 0, i, j, p);
 		const origin = flatWorldToClip(0, 0, 0, 0, p);
 		const shiftWorldX = i * p.v1[0] + j * p.v2[0];
@@ -94,56 +107,94 @@ describe("latticeExtentFromBounds", () => {
 // extent; that i lies somewhere in [a - aMax, a - aMin] (same for j), so the grid must contain EVERY
 // integer in that interval, for every screen corner, under the worst wrapOffset residual (±0.5/axis).
 function assertViewportCovered(
-	v1: Vector, v2: Vector, zoom: number, w: number, h: number, rot: number,
-	extent: LatticeExtent, Ri: number, Rj: number, deform?: Mat2,
+	v1: Vector,
+	v2: Vector,
+	zoom: number,
+	w: number,
+	h: number,
+	rot: number,
+	extent: LatticeExtent,
+	Ri: number,
+	Rj: number,
+	deform?: Mat2,
 ): { ok: boolean; worst: string } {
 	const det = v1.x * v2.y - v2.x * v1.y;
 	const { e1, e2 } = screenLatticeVectors(v1, v2, zoom, rot, deform);
 	const detM = e1.x * e2.y - e2.x * e1.y;
 	expect(Math.abs(detM)).toBeGreaterThan(1e-9);
-	for (const cx of [-w / 2, w / 2]) for (const cy of [-h / 2, h / 2]) {
-		const a = (cx * e2.y - cy * e2.x) / detM;
-		const b = (-cx * e1.y + cy * e1.x) / detM;
-		for (const wa of [-0.5, 0.5]) for (const wb of [-0.5, 0.5]) {
-			const aP = a + wa, bP = b + wb;
-			const iLo = Math.ceil(aP - extent.aMax), iHi = Math.floor(aP - extent.aMin);
-			const jLo = Math.ceil(bP - extent.bMax), jHi = Math.floor(bP - extent.bMin);
-			if (iLo < -Ri || iHi > Ri || jLo < -Rj || jHi > Rj) {
-				return { ok: false, worst: `corner (${cx},${cy}) wrap (${wa},${wb}): i [${iLo},${iHi}] j [${jLo},${jHi}] vs grid ±${Ri}/±${Rj} (det ${det})` };
-			}
+	for (const cx of [-w / 2, w / 2])
+		for (const cy of [-h / 2, h / 2]) {
+			const a = (cx * e2.y - cy * e2.x) / detM;
+			const b = (-cx * e1.y + cy * e1.x) / detM;
+			for (const wa of [-0.5, 0.5])
+				for (const wb of [-0.5, 0.5]) {
+					const aP = a + wa,
+						bP = b + wb;
+					const iLo = Math.ceil(aP - extent.aMax),
+						iHi = Math.floor(aP - extent.aMin);
+					const jLo = Math.ceil(bP - extent.bMax),
+						jHi = Math.floor(bP - extent.bMin);
+					if (iLo < -Ri || iHi > Ri || jLo < -Rj || jHi > Rj) {
+						return {
+							ok: false,
+							worst: `corner (${cx},${cy}) wrap (${wa},${wb}): i [${iLo},${iHi}] j [${jLo},${jHi}] vs grid ±${Ri}/±${Rj} (det ${det})`,
+						};
+					}
+				}
 		}
-	}
 	return { ok: true, worst: "" };
 }
 
 describe("computeFillRadii coverage guarantee", () => {
 	const cases: Array<{
-		name: string; v1: Vector; v2: Vector; extent: LatticeExtent;
-		zoom: number; w: number; h: number; rot: number;
+		name: string;
+		v1: Vector;
+		v2: Vector;
+		extent: LatticeExtent;
+		zoom: number;
+		w: number;
+		h: number;
+		rot: number;
 	}> = [
 		{
 			name: "anchored unit cell, no rotation",
-			v1: new Vector(1, 0), v2: new Vector(0, 1),
+			v1: new Vector(1, 0),
+			v2: new Vector(0, 1),
 			extent: { aMin: 0, aMax: 1, bMin: 0, bMax: 1 },
-			zoom: 50, w: 600, h: 600, rot: 0,
+			zoom: 50,
+			w: 600,
+			h: 600,
+			rot: 0,
 		},
 		{
 			name: "centred unit cell, rotated",
-			v1: new Vector(1, 0), v2: new Vector(0, 1),
+			v1: new Vector(1, 0),
+			v2: new Vector(0, 1),
 			extent: UNIT_EXTENT,
-			zoom: 35, w: 1440, h: 900, rot: 0.8,
+			zoom: 35,
+			w: 1440,
+			h: 900,
+			rot: 0.8,
 		},
 		{
 			name: "displaced sheared elongated cell (the corner-wedge bug)",
-			v1: new Vector(1, 0), v2: new Vector(0.9, 2.6),
+			v1: new Vector(1, 0),
+			v2: new Vector(0.9, 2.6),
 			extent: { aMin: 1.2, aMax: 3.4, bMin: -0.3, bMax: 1.1 },
-			zoom: 37, w: 1500, h: 1100, rot: 0.35,
+			zoom: 37,
+			w: 1500,
+			h: 1100,
+			rot: 0.35,
 		},
 		{
 			name: "content whole periods negative of the anchor",
-			v1: new Vector(1.1, 0.2), v2: new Vector(-0.3, 1.4),
+			v1: new Vector(1.1, 0.2),
+			v2: new Vector(-0.3, 1.4),
 			extent: { aMin: -4.2, aMax: -2.9, bMin: -1.6, bMax: 0.4 },
-			zoom: 55, w: 900, h: 700, rot: -0.5,
+			zoom: 55,
+			w: 900,
+			h: 700,
+			rot: -0.5,
 		},
 	];
 	for (const c of cases) {
@@ -160,15 +211,15 @@ describe("computeFillRadii coverage guarantee", () => {
 		const det = c.v1.x * c.v2.y - c.v2.x * c.v1.y;
 		const { e1, e2 } = screenLatticeVectors(c.v1, c.v2, c.zoom, c.rot);
 		const detM = e1.x * e2.y - e2.x * e1.y;
-		let maxA = 0, maxB = 0;
-		for (const cx of [-c.w / 2, c.w / 2]) for (const cy of [-c.h / 2, c.h / 2]) {
-			maxA = Math.max(maxA, Math.abs((cx * e2.y - cy * e2.x) / detM));
-			maxB = Math.max(maxB, Math.abs((-cx * e1.y + cy * e1.x) / detM));
-		}
+		let maxA = 0,
+			maxB = 0;
+		for (const cx of [-c.w / 2, c.w / 2])
+			for (const cy of [-c.h / 2, c.h / 2]) {
+				maxA = Math.max(maxA, Math.abs((cx * e2.y - cy * e2.x) / detM));
+				maxB = Math.max(maxB, Math.abs((-cx * e1.y + cy * e1.x) / detM));
+			}
 		const oldClamp = (n: number) => Math.max(1, Math.min(144, Math.ceil(n) + 1));
-		const res = assertViewportCovered(
-			c.v1, c.v2, c.zoom, c.w, c.h, c.rot, c.extent, oldClamp(maxA), oldClamp(maxB),
-		);
+		const res = assertViewportCovered(c.v1, c.v2, c.zoom, c.w, c.h, c.rot, c.extent, oldClamp(maxA), oldClamp(maxB));
 		expect(res.ok).toBe(false);
 	});
 });
@@ -188,15 +239,20 @@ describe("flatWorldToClip under a deform == worldToScreen under the same deform"
 		base({ offset: { x: 37, y: -12 }, zoom: 83.5, rot: Math.PI / 5, deform: SQUASH }),
 		base({ offset: { x: -100, y: 60 }, zoom: 20, rot: -1.3, deform: FLIP }),
 	];
-	const pts = [{ x: 0, y: 0 }, { x: 1.5, y: -2.2 }, { x: -3.1, y: 4.7 }];
-	for (const p of params) for (const q of pts) {
-		it(`(${q.x},${q.y}) deform [${p.deform}]`, () => {
-			const got = flatWorldToClip(q.x, q.y, 0, 0, p);
-			const ref = worldToScreen(q.x, q.y, p.offset, p.zoom, p.rot, p.deform);
-			expect(got.sx).toBeCloseTo(ref.x, 9);
-			expect(got.sy).toBeCloseTo(ref.y, 9);
-		});
-	}
+	const pts = [
+		{ x: 0, y: 0 },
+		{ x: 1.5, y: -2.2 },
+		{ x: -3.1, y: 4.7 },
+	];
+	for (const p of params)
+		for (const q of pts) {
+			it(`(${q.x},${q.y}) deform [${p.deform}]`, () => {
+				const got = flatWorldToClip(q.x, q.y, 0, 0, p);
+				const ref = worldToScreen(q.x, q.y, p.offset, p.zoom, p.rot, p.deform);
+				expect(got.sx).toBeCloseTo(ref.x, 9);
+				expect(got.sy).toBeCloseTo(ref.y, 9);
+			});
+		}
 
 	it("screenToWorld undoes it", () => {
 		const p = base({ offset: { x: 21, y: 9 }, zoom: 64, rot: 0.9, deform: SQUASH });
@@ -214,7 +270,8 @@ describe("flatWorldToClip under a deform == worldToScreen under the same deform"
 describe("D commutes with lattice replication", () => {
 	it("deforming the replicated point == replicating along the deformed basis", () => {
 		const p = base({ offset: { x: 10, y: -5 }, zoom: 40, rot: 0.7, v1: [1.2, 0.3], v2: [-0.4, 1.1], deform: SQUASH });
-		const i = 3, j = -2;
+		const i = 3,
+			j = -2;
 		const got = flatWorldToClip(0.4, -0.9, i, j, p);
 		const d = deformBasis(new Vector(p.v1[0], p.v1[1]), new Vector(p.v2[0], p.v2[1]), SQUASH);
 		const dw = applyMat2(SQUASH, 0.4, -0.9);
@@ -228,30 +285,41 @@ describe("D commutes with lattice replication", () => {
 // push it by the worst wrapOffset residual, and demand that EVERY copy that could draw that point is in
 // the grid. A missing (i, j) is a wedge of unpainted background on screen.
 function assertGridCovers(
-	v1: Vector, v2: Vector, zoom: number, w: number, h: number, rot: number,
-	extent: LatticeExtent, g: ReturnType<typeof computeFillGrid>, deform?: Mat2,
+	v1: Vector,
+	v2: Vector,
+	zoom: number,
+	w: number,
+	h: number,
+	rot: number,
+	extent: LatticeExtent,
+	g: ReturnType<typeof computeFillGrid>,
+	deform?: Mat2,
 ): { ok: boolean; worst: string } {
 	const { e1, e2 } = screenLatticeVectors(v1, v2, zoom, rot, deform);
 	const detM = e1.x * e2.y - e2.x * e1.y;
-	const has = (i: number, j: number) =>
-		i >= g.iLo && i <= g.iHi && j >= g.jLo[i - g.iLo] && j <= g.jHi[i - g.iLo];
-	for (const cx of [-w / 2, 0, w / 2]) for (const cy of [-h / 2, 0, h / 2]) {
-		const a0 = (cx * e2.y - cy * e2.x) / detM;
-		const b0 = (-cx * e1.y + cy * e1.x) / detM;
-		for (const wa of [-0.5, 0, 0.5]) for (const wb of [-0.5, 0, 0.5]) {
-			const a = a0 + wa, b = b0 + wb;
-			for (let i = Math.ceil(a - extent.aMax); i <= Math.floor(a - extent.aMin); i++) {
-				for (let j = Math.ceil(b - extent.bMax); j <= Math.floor(b - extent.bMin); j++) {
-					if (!has(i, j)) return { ok: false, worst: `point (${cx},${cy}) wrap (${wa},${wb}) needs copy (${i},${j})` };
+	const has = (i: number, j: number) => i >= g.iLo && i <= g.iHi && j >= g.jLo[i - g.iLo] && j <= g.jHi[i - g.iLo];
+	for (const cx of [-w / 2, 0, w / 2])
+		for (const cy of [-h / 2, 0, h / 2]) {
+			const a0 = (cx * e2.y - cy * e2.x) / detM;
+			const b0 = (-cx * e1.y + cy * e1.x) / detM;
+			for (const wa of [-0.5, 0, 0.5])
+				for (const wb of [-0.5, 0, 0.5]) {
+					const a = a0 + wa,
+						b = b0 + wb;
+					for (let i = Math.ceil(a - extent.aMax); i <= Math.floor(a - extent.aMin); i++) {
+						for (let j = Math.ceil(b - extent.bMax); j <= Math.floor(b - extent.bMin); j++) {
+							if (!has(i, j))
+								return { ok: false, worst: `point (${cx},${cy}) wrap (${wa},${wb}) needs copy (${i},${j})` };
+						}
+					}
 				}
-			}
 		}
-	}
 	return { ok: true, worst: "" };
 }
 
 describe("computeFillGrid coverage guarantee", () => {
-	const v1 = new Vector(1.1, 0.2), v2 = new Vector(-0.3, 1.4);
+	const v1 = new Vector(1.1, 0.2),
+		v2 = new Vector(-0.3, 1.4);
 	const det = v1.x * v2.y - v2.x * v1.y;
 	const extent: LatticeExtent = { aMin: -1.2, aMax: 2.3, bMin: -0.4, bMax: 1.6 };
 	const cases: Array<{ name: string; deform?: Mat2 }> = [
@@ -299,7 +367,7 @@ describe("computeFillGrid coverage guarantee", () => {
 		const d: Mat2 = [1, 0, 2, 1];
 		const { Ri, Rj } = computeFillRadii(v1, v2, det, 20, 3840, 2160, 0.4, extent, d);
 		const g = computeFillGrid(v1, v2, det, 20, 3840, 2160, 0.4, extent, d);
-		expect(g.count).toBeLessThan((2 * Ri + 1) * (2 * Rj + 1) / 2);
+		expect(g.count).toBeLessThan(((2 * Ri + 1) * (2 * Rj + 1)) / 2);
 	});
 
 	it("a deform that squashes the lattice to nothing falls back instead of exploding", () => {
@@ -312,7 +380,8 @@ describe("computeFillGrid coverage guarantee", () => {
 		const inst = fillGridInstances(g);
 		expect(inst.length).toBe(g.count * 2);
 		for (let n = 0; n < inst.length; n += 2) {
-			const i = inst[n], j = inst[n + 1];
+			const i = inst[n],
+				j = inst[n + 1];
 			expect(i).toBeGreaterThanOrEqual(g.iLo);
 			expect(i).toBeLessThanOrEqual(g.iHi);
 			expect(j).toBeGreaterThanOrEqual(g.jLo[i - g.iLo]);
@@ -322,7 +391,8 @@ describe("computeFillGrid coverage guarantee", () => {
 });
 
 describe("wrapOffset under a deform", () => {
-	const v1 = new Vector(1, 0), v2 = new Vector(0, 1);
+	const v1 = new Vector(1, 0),
+		v2 = new Vector(0, 1);
 
 	it("reduces against the DEFORMED screen lattice", () => {
 		const zoom = 50;
@@ -339,9 +409,7 @@ describe("wrapOffset under a deform", () => {
 	// would make the noise snap at every cell boundary — the bug the undeformed return value prevents.
 	it("reports the world shift in UNDEFORMED coordinates", () => {
 		const r = wrapOffset(new Vector(613, -228), new Vector(1.3, 0.4), new Vector(-0.2, 1.1), 1.51, 50, 0.3, SQUASH);
-		const a = Math.round(
-			(r.worldShiftX * 1.1 - r.worldShiftY * -0.2) / 1.51,
-		);
+		const a = Math.round((r.worldShiftX * 1.1 - r.worldShiftY * -0.2) / 1.51);
 		const b = Math.round((-r.worldShiftX * 0.4 + r.worldShiftY * 1.3) / 1.51);
 		// It is an integer combination of the ORIGINAL basis, exactly.
 		expect(r.worldShiftX).toBeCloseTo(a * 1.3 + b * -0.2, 9);
@@ -359,7 +427,7 @@ describe("Mat2 helpers", () => {
 	it("det and inverse agree", () => {
 		expect(mat2Det(SQUASH)).toBeCloseTo(1.4 * 0.45 - -0.35 * 0.25, 12);
 		const inv = invertMat2(SQUASH)!;
-		const p = applyMat2(inv, ...Object.values(applyMat2(SQUASH, 2.1, -0.8)) as [number, number]);
+		const p = applyMat2(inv, ...(Object.values(applyMat2(SQUASH, 2.1, -0.8)) as [number, number]));
 		expect(p.x).toBeCloseTo(2.1, 9);
 		expect(p.y).toBeCloseTo(-0.8, 9);
 	});

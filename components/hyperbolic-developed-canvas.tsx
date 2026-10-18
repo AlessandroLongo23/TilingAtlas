@@ -140,7 +140,8 @@ export function HyperbolicDevelopedCanvas({ patchId, data, input, diskPadPx = DI
 			// exactly instead of trailing a React render behind it (lib/render/canvasSize.ts).
 			const { w, h, dpr } = syncCanvasSize(canvas);
 			if (w <= 0 || h <= 0) return;
-			const bw = canvas.width, bh = canvas.height; // backing-store px (CSS px x dpr)
+			const bw = canvas.width,
+				bh = canvas.height; // backing-store px (CSS px x dpr)
 
 			const cfg = useConfiguration.getState();
 			const ctrl = cfg.controls;

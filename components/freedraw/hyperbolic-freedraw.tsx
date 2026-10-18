@@ -187,10 +187,7 @@ export function HyperbolicFreedraw({
 		window.history.replaceState(null, "", `${window.location.pathname}?${q.toString()}`);
 	}, [boardId, k]);
 
-	const pageRows = useMemo(
-		() => (patterns ?? []).slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
-		[patterns, page],
-	);
+	const pageRows = useMemo(() => (patterns ?? []).slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), [patterns, page]);
 	const selected = useMemo(
 		() => (patterns ?? []).find((p) => p.id === selectedId) ?? pageRows[0] ?? null,
 		[patterns, pageRows, selectedId],
@@ -212,10 +209,7 @@ export function HyperbolicFreedraw({
 	useKeyShortcuts({ g: () => setCfg({ freedrawScaffold: !useConfiguration.getState().freedrawScaffold }) });
 
 	// A Schwarz record's id is already globally unique, and it is exactly the key /play resolves it by.
-	const playHref = useMemo(
-		() => (selected ? `/play?tiling=${encodeURIComponent(selected.id)}` : null),
-		[selected],
-	);
+	const playHref = useMemo(() => (selected ? `/play?tiling=${encodeURIComponent(selected.id)}` : null), [selected]);
 
 	const switchBoard = (id: string) => {
 		const next = BOARDS.find((b) => b.id === id)!;
@@ -229,7 +223,7 @@ export function HyperbolicFreedraw({
 	const kGaps = useMemo(() => schwarzKGaps(board), [board]);
 
 	return (
-		<div className="flex flex-1 min-w-0 flex-col min-h-0">
+		<div className="flex min-h-0 min-w-0 flex-1 flex-col">
 			<header className="shrink-0 border-b border-line-subtle">
 				<WallBar count={patterns === null ? "loading…" : `${total.toLocaleString()} at k = ${k}`}>
 					<WallColumn>
@@ -277,7 +271,7 @@ export function HyperbolicFreedraw({
 				</WallBar>
 			</header>
 
-			<div className="flex-1 min-h-0 flex">
+			<div className="flex min-h-0 flex-1">
 				<div className={LIST_PANE}>
 					{patterns === null && <div className="p-8 text-fg-muted">Loading the {board.label} catalogue…</div>}
 					<div ref={gridRef} className={CATALOGUE_GRID}>

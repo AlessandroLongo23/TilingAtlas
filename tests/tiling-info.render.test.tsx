@@ -101,10 +101,16 @@ describe("TilingInfo spec card", () => {
 		hover();
 		expect(screen.getByText("Discovered by")).toBeInTheDocument();
 		expect(screen.getByText("Classified by")).toBeInTheDocument();
-		expect(screen.getByRole("link", { name: "Edmund Hess" })).toHaveAttribute("href", "https://en.wikipedia.org/wiki/Edmund_Hess");
+		expect(screen.getByRole("link", { name: "Edmund Hess" })).toHaveAttribute(
+			"href",
+			"https://en.wikipedia.org/wiki/Edmund_Hess",
+		);
 		expect(screen.getByText("1877")).toBeInTheDocument();
 		expect(screen.getByRole("link", { name: "Connor Hill" })).toBeInTheDocument();
-		expect(screen.getByRole("link", { name: /arXiv:2607\.28711/ })).toHaveAttribute("href", "https://arxiv.org/abs/2607.28711");
+		expect(screen.getByRole("link", { name: /arXiv:2607\.28711/ })).toHaveAttribute(
+			"href",
+			"https://arxiv.org/abs/2607.28711",
+		);
 	});
 
 	it("spherical Platonic: shows point group and V/E/F", () => {
@@ -198,8 +204,16 @@ describe("TilingInfo spec card", () => {
 			...bareEuclidean,
 			label: "IH19",
 			isohedral: {
-				ih: 19, numParams: 0, numVertices: 0, numAspects: 0, edgeShapes: [], edgeWord: "",
-				numColours: 0, tilesPerCell: 0, degenerate: false, marked: true,
+				ih: 19,
+				numParams: 0,
+				numVertices: 0,
+				numAspects: 0,
+				edgeShapes: [],
+				edgeWord: "",
+				numColours: 0,
+				tilesPerCell: 0,
+				degenerate: false,
+				marked: true,
 			},
 		};
 		render(<TilingInfo spec={spec} />);
@@ -213,8 +227,16 @@ describe("TilingInfo spec card", () => {
 			...bareEuclidean,
 			label: "IH04",
 			isohedral: {
-				ih: 4, numParams: 6, numVertices: 6, numAspects: 2, edgeShapes: ["S", "J", "S", "S", "S"],
-				edgeWord: "abcdbe", numColours: 3, tilesPerCell: 18, degenerate: true, marked: false,
+				ih: 4,
+				numParams: 6,
+				numVertices: 6,
+				numAspects: 2,
+				edgeShapes: ["S", "J", "S", "S", "S"],
+				edgeWord: "abcdbe",
+				numColours: 3,
+				tilesPerCell: 18,
+				degenerate: true,
+				marked: false,
 			},
 		};
 		render(<TilingInfo spec={spec} />);
@@ -251,8 +273,14 @@ describe("TilingInfo spec card", () => {
 			...bareEuclidean,
 			label: "Type 14",
 			pentagon: {
-				typeId: 14, discovered: "Stein 1985", dof: 0, tilesPerUnit: 6,
-				groups: "pgg", angles: null, sides: null, status: "outside the family here",
+				typeId: 14,
+				discovered: "Stein 1985",
+				dof: 0,
+				tilesPerUnit: 6,
+				groups: "pgg",
+				angles: null,
+				sides: null,
+				status: "outside the family here",
 			},
 		};
 		render(<TilingInfo spec={spec} />);
@@ -264,8 +292,16 @@ describe("TilingInfo spec card", () => {
 
 	it("renders nothing expanded until hovered", () => {
 		const spec: TilingSpec = {
-			geometry: "hyperbolic", label: "{7,3}", faces: [7], valence: 3, edge: 0.5663,
-			provenance: null, schlafli: [7, 3], coxeter: "[7,3]", orbifold: "*732", ...orbits,
+			geometry: "hyperbolic",
+			label: "{7,3}",
+			faces: [7],
+			valence: 3,
+			edge: 0.5663,
+			provenance: null,
+			schlafli: [7, 3],
+			coxeter: "[7,3]",
+			orbifold: "*732",
+			...orbits,
 		};
 		render(<TilingInfo spec={spec} />);
 		expect(screen.queryByText("[7,3]")).not.toBeInTheDocument();

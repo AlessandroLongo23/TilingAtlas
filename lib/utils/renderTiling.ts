@@ -108,9 +108,12 @@ export function regularityDefect(vertices: { x: number; y: number }[]): number {
 		const side = Math.hypot(next.x - cur.x, next.y - cur.y);
 		if (side < 1e-9) return 1; // degenerate outline — treat as maximally irregular
 		edges.push(side);
-		const ax = prev.x - cur.x, ay = prev.y - cur.y;
-		const bx = next.x - cur.x, by = next.y - cur.y;
-		const la = Math.hypot(ax, ay), lb = Math.hypot(bx, by);
+		const ax = prev.x - cur.x,
+			ay = prev.y - cur.y;
+		const bx = next.x - cur.x,
+			by = next.y - cur.y;
+		const la = Math.hypot(ax, ay),
+			lb = Math.hypot(bx, by);
 		if (la < 1e-9 || lb < 1e-9) return 1;
 		const ang = (Math.acos(Math.max(-1, Math.min(1, (ax * bx + ay * by) / (la * lb)))) * 180) / Math.PI;
 		angSq += (ang - thetaReg) ** 2;
@@ -157,21 +160,31 @@ export function starHue(points: number, apexAngleDeg?: number): number {
 export function starApexAngleDeg(vertices: { x: number; y: number }[]): number {
 	const m = vertices.length;
 	if (m < 3) return NaN;
-	let cx = 0, cy = 0;
-	for (const v of vertices) { cx += v.x; cy += v.y; }
-	cx /= m; cy /= m;
+	let cx = 0,
+		cy = 0;
+	for (const v of vertices) {
+		cx += v.x;
+		cy += v.y;
+	}
+	cx /= m;
+	cy /= m;
 	const rad = vertices.map((v) => Math.hypot(v.x - cx, v.y - cy));
 	let min = Infinity;
 	for (let i = 0; i < m; i++) {
-		const rc = rad[i], rp = rad[(i - 1 + m) % m], rn = rad[(i + 1) % m];
+		const rc = rad[i],
+			rp = rad[(i - 1 + m) % m],
+			rn = rad[(i + 1) % m];
 		// tip = strict local radius maximum (a point of the star), skipping valleys and flat runs
 		if (!(rc >= rp && rc >= rn && (rc > rp || rc > rn))) continue;
 		const cur = vertices[i];
 		const prev = vertices[(i - 1 + m) % m];
 		const next = vertices[(i + 1) % m];
-		const ax = prev.x - cur.x, ay = prev.y - cur.y;
-		const bx = next.x - cur.x, by = next.y - cur.y;
-		const la = Math.hypot(ax, ay), lb = Math.hypot(bx, by);
+		const ax = prev.x - cur.x,
+			ay = prev.y - cur.y;
+		const bx = next.x - cur.x,
+			by = next.y - cur.y;
+		const la = Math.hypot(ax, ay),
+			lb = Math.hypot(bx, by);
 		if (la < 1e-9 || lb < 1e-9) continue;
 		const cos = Math.max(-1, Math.min(1, (ax * bx + ay * by) / (la * lb)));
 		const ang = Math.acos(cos);
@@ -198,19 +211,24 @@ export const INK_FILL = "rgb(13, 13, 18)";
 
 export function parseBaseCell(cell: TranslationalCellData): BaseCell | null {
 	const polyArray = cell.p ?? cell.cellPolygons ?? [];
-	const basisRaw = (cell.b ?? cell.basis ?? [[1, 0], [0, 1]]) as number[][];
+	const basisRaw = (cell.b ??
+		cell.basis ?? [
+			[1, 0],
+			[0, 1],
+		]) as number[][];
 	const basis: [[number, number], [number, number]] = [
 		[basisRaw[0][0], basisRaw[0][1]],
 		[basisRaw[1][0], basisRaw[1][1]],
 	];
 	const polys: RawPolygon[] = [];
-	let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+	let minX = Infinity,
+		maxX = -Infinity,
+		minY = Infinity,
+		maxY = -Infinity;
 	const edges: number[] = [];
 	for (const poly of polyArray) {
 		const raw = poly.v ?? poly.vertices ?? [];
-		const verts = raw.map((v) =>
-			Array.isArray(v) ? { x: v[0], y: v[1] } : { x: v.x, y: v.y },
-		);
+		const verts = raw.map((v) => (Array.isArray(v) ? { x: v[0], y: v[1] } : { x: v.x, y: v.y }));
 		// An open polyline needs only two points; a ring needs three.
 		if (verts.length < (poly.open ? 2 : 3)) continue;
 		for (const v of verts) {
@@ -237,7 +255,14 @@ export function parseBaseCell(cell: TranslationalCellData): BaseCell | null {
 				edges.push(Math.hypot(b.x - a.x, b.y - a.y));
 			}
 		}
-		polys.push({ corners: poly.corners, n: poly.n ?? verts.length, vertices: verts, star: poly.star === true || ((poly.n ?? verts.length) >= 3 && verts.length === 2 * (poly.n ?? verts.length)), hue: poly.hue, open: poly.open });
+		polys.push({
+			corners: poly.corners,
+			n: poly.n ?? verts.length,
+			vertices: verts,
+			star: poly.star === true || ((poly.n ?? verts.length) >= 3 && verts.length === 2 * (poly.n ?? verts.length)),
+			hue: poly.hue,
+			open: poly.open,
+		});
 	}
 	if (polys.length === 0 || edges.length === 0) return null;
 	edges.sort((a, b) => a - b);
@@ -350,7 +375,8 @@ export function drawPolygons(
 			// the Hue shift slider is there to rotate a derived one.
 			ctx.fillStyle = poly.fill;
 		} else {
-			const hue = poly.hue ?? (poly.star ? starHue(poly.n, starApexAngleDeg(poly.vertices)) : polygonFillHue(poly.vertices));
+			const hue =
+				poly.hue ?? (poly.star ? starHue(poly.n, starApexAngleDeg(poly.vertices)) : polygonFillHue(poly.vertices));
 			// Negative hue = ink, the same sentinel FILL_FRAG and the PeriodicCell IR use. Nothing on the hue
 			// wheel can be dark at b=100.
 			ctx.fillStyle = hue < 0 ? INK_FILL : tileFill(hue + hueOffsetDeg, TILE_FILL_ALPHA);
@@ -375,9 +401,7 @@ const SURFACE_FALLBACK = "#1e1e22";
  */
 export function themeSurfaceColor(): string {
 	if (typeof document === "undefined") return SURFACE_FALLBACK;
-	const v = getComputedStyle(document.documentElement)
-		.getPropertyValue("--color-surface-raised")
-		.trim();
+	const v = getComputedStyle(document.documentElement).getPropertyValue("--color-surface-raised").trim();
 	return v || SURFACE_FALLBACK;
 }
 
@@ -423,14 +447,7 @@ export function renderTilingToContext(
 		const viewHalfW = W / (2 * scale);
 		const viewHalfH = H / (2 * scale);
 		const margin = Math.hypot(cellW, cellH) * 0.5;
-		const polys = expandToViewport(
-			base,
-			cellCx,
-			cellCy,
-			viewHalfW + margin,
-			viewHalfH + margin,
-			200,
-		);
+		const polys = expandToViewport(base, cellCx, cellCy, viewHalfW + margin, viewHalfH + margin, 200);
 		ctx.save();
 		ctx.translate(W / 2, H / 2);
 		ctx.scale(scale, -scale);
@@ -443,7 +460,10 @@ export function renderTilingToContext(
 	const polys = opts.polygons;
 	if (!polys || polys.length === 0) return false;
 
-	let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+	let minX = Infinity,
+		maxX = -Infinity,
+		minY = Infinity,
+		maxY = -Infinity;
 	for (const p of polys) {
 		for (const v of p.vertices) {
 			if (v.x < minX) minX = v.x;
@@ -466,11 +486,7 @@ export function renderTilingToContext(
 }
 
 /** Render to an offscreen canvas at a target size and return a data URL. */
-export function renderTilingToDataUrl(
-	opts: RenderTilingOptions,
-	size = 1024,
-	type = "image/png",
-): string | null {
+export function renderTilingToDataUrl(opts: RenderTilingOptions, size = 1024, type = "image/png"): string | null {
 	if (typeof document === "undefined") return null;
 	const canvas = document.createElement("canvas");
 	canvas.width = size;
@@ -496,7 +512,10 @@ export function renderTilingToDataUrl(
  * value that maps the bbox onto fill·W × fill·H.
  */
 export function fitPxPerEdge(polygons: RawPolygon[], W: number, H: number, fill = 0.8): number {
-	let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+	let minX = Infinity,
+		maxX = -Infinity,
+		minY = Infinity,
+		maxY = -Infinity;
 	for (const p of polygons) {
 		for (const v of p.vertices) {
 			if (v.x < minX) minX = v.x;

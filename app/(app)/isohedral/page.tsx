@@ -3,8 +3,7 @@ import { IsohedralClient } from "./_isohedral-client";
 
 export const metadata = {
 	title: "Isohedral · Tiling Atlas",
-	description:
-		"The ninety-three isohedral tiling types, IH1 to IH93, with live vertex parameters and edge shapes.",
+	description: "The ninety-three isohedral tiling types, IH1 to IH93, with live vertex parameters and edge shapes.",
 };
 
 // Static: the whole catalogue is derived from a vendored table at build time and there is nothing to

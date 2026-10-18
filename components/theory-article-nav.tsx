@@ -20,9 +20,7 @@ export function TheoryArticleNav({ currentSlug }: { currentSlug: string }) {
 			</Link>
 			{THEORY_GROUPS.map((group) => (
 				<nav key={group.id} className="flex flex-col gap-0.5 pt-5">
-					<span className="ta-label px-2 pb-1 text-fg-muted">
-						{group.label}
-					</span>
+					<span className="ta-label px-2 pb-1 text-fg-muted">{group.label}</span>
 					{group.items.map((a) => {
 						const active = a.slug === currentSlug;
 						return (

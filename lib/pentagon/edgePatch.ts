@@ -14,11 +14,7 @@
 // shape, which is why nothing can be baked and the patch is rebuilt whenever a slider moves — and the
 // count below.
 
-import {
-	buildEdgePatch,
-	type EdgePatchOptions,
-	type EdgePatchResult,
-} from "@/lib/freedraw/edgePatchCore";
+import { buildEdgePatch, type EdgePatchOptions, type EdgePatchResult } from "@/lib/freedraw/edgePatchCore";
 import type { SolvedBoard } from "./edge-board";
 import { walkPentEdges, type PentEdgeRecord } from "./edgeDevelop";
 

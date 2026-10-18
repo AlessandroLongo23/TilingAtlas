@@ -59,8 +59,7 @@ function derive(src) {
 		if (/\btransform=/.test(tag)) return tag;
 		return tag.replace(
 			/points="([^"]*)"/,
-			(_m, pts) =>
-				`points="${pts.replace(/(-?[\d.]+),(-?[\d.]+)/g, (_p, x, y) => `${sx(x)},${y}`)}"`,
+			(_m, pts) => `points="${pts.replace(/(-?[\d.]+),(-?[\d.]+)/g, (_p, x, y) => `${sx(x)},${y}`)}"`,
 		);
 	});
 

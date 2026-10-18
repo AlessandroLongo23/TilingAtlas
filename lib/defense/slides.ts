@@ -112,4 +112,3 @@ export function referencedTilingIds(markdown: string): string[] {
 	if (/<compat-graph\b/i.test(markdown)) for (const t of COMPAT_TILINGS) ids.add(t.id);
 	return [...ids];
 }
-

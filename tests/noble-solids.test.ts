@@ -21,13 +21,19 @@ import { faceKindCount, flatSolidTriangles, partialFill, vertexConfigs } from "@
 import type { Polyhedron, Vec3 } from "@/lib/render/platonicSolids";
 
 const sub = (a: Vec3, b: Vec3): Vec3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
-const cross = (a: Vec3, b: Vec3): Vec3 => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const cross = (a: Vec3, b: Vec3): Vec3 => [
+	a[1] * b[2] - a[2] * b[1],
+	a[2] * b[0] - a[0] * b[2],
+	a[0] * b[1] - a[1] * b[0],
+];
 const len = (a: Vec3) => Math.hypot(a[0], a[1], a[2]);
 
 /** Total area of a set of convex rings. */
 function area(rings: number[][], verts: Vec3[]): number {
 	let s = 0;
-	for (const r of rings) for (let k = 1; k + 1 < r.length; k++) s += len(cross(sub(verts[r[k]], verts[r[0]]), sub(verts[r[k + 1]], verts[r[0]]))) / 2;
+	for (const r of rings)
+		for (let k = 1; k + 1 < r.length; k++)
+			s += len(cross(sub(verts[r[k]], verts[r[0]]), sub(verts[r[k + 1]], verts[r[0]]))) / 2;
 	return s;
 }
 
@@ -45,10 +51,15 @@ function census(p: Polyhedron) {
 		const n = cross(sub(p.vertices[f[1]], p.vertices[f[0]]), sub(p.vertices[f[2]], p.vertices[f[1]]));
 		for (const i of f) {
 			const d = sub(p.vertices[i], p.vertices[f[0]]);
-			expect(Math.abs(d[0] * n[0] + d[1] * n[1] + d[2] * n[2]) / len(n), `${p.id}: face not planar`).toBeLessThan(1e-12);
+			expect(Math.abs(d[0] * n[0] + d[1] * n[1] + d[2] * n[2]) / len(n), `${p.id}: face not planar`).toBeLessThan(
+				1e-12,
+			);
 		}
 	}
-	expect([...edges.values()].every((c) => c === 2), `${p.id}: an edge is not in exactly two faces`).toBe(true);
+	expect(
+		[...edges.values()].every((c) => c === 2),
+		`${p.id}: an edge is not in exactly two faces`,
+	).toBe(true);
 	expect(new Set(p.faces.map((f) => f.length)).size, `${p.id}: face sizes differ`).toBe(1);
 	const degree = new Map<number, number>();
 	for (const f of p.faces) for (const v of f) degree.set(v, (degree.get(v) ?? 0) + 1);
@@ -96,7 +107,24 @@ describe("noble polyhedra: the listed ones", () => {
 			const type = symbol.split("-")[0];
 			byType.set(type, (byType.get(type) ?? 0) + 1);
 		}
-		expect(Object.fromEntries(byType)).toEqual({ T: 1, O: 1, C: 1, I: 4, ID: 6, D: 7, tO: 1, tC: 1, rC: 1, tI: 17, tD: 6, rD: 19, sC: 7, gC: 3, sD: 33, gD: 38 });
+		expect(Object.fromEntries(byType)).toEqual({
+			T: 1,
+			O: 1,
+			C: 1,
+			I: 4,
+			ID: 6,
+			D: 7,
+			tO: 1,
+			tC: 1,
+			rC: 1,
+			tI: 17,
+			tD: 6,
+			rD: 19,
+			sC: 7,
+			gC: 3,
+			sD: 33,
+			gD: 38,
+		});
 	});
 
 	it("four rows of the paper's Appendix A disagree with the solids, and these are the solids", () => {
@@ -115,10 +143,19 @@ describe("noble polyhedra: the listed ones", () => {
 
 describe("noble polyhedra: the two infinite families", () => {
 	it("a disphenoid is four congruent triangles for any box", () => {
-		for (const [boxB, boxC] of [[1, 1], [1.4, 0.7], [0.3, 2.5]]) {
+		for (const [boxB, boxC] of [
+			[1, 1],
+			[1.4, 0.7],
+			[0.3, 2.5],
+		]) {
 			const p = nobleFamilySolid("noble-disphenoid", { ...NOBLE_FAMILY_DEFAULTS, boxB, boxC })!;
 			expect(census(p)).toEqual({ V: 4, E: 6, F: 4 });
-			const sides = p.faces.map((f) => f.map((a, k) => len(sub(p.vertices[a], p.vertices[f[(k + 1) % 3]])).toFixed(9)).sort().join());
+			const sides = p.faces.map((f) =>
+				f
+					.map((a, k) => len(sub(p.vertices[a], p.vertices[f[(k + 1) % 3]])).toFixed(9))
+					.sort()
+					.join(),
+			);
 			expect(new Set(sides).size).toBe(1);
 		}
 	});
@@ -151,13 +188,24 @@ describe("the fill of an irregular face", () => {
 	const flat = (pts: [number, number][]): Vec3[] => pts.map(([x, y]) => [x, y, 0]);
 
 	it("a concave simple polygon fills to its shoelace area", () => {
-		const verts = flat([[0, 0], [4, 0], [4, 3], [2, 1], [0, 3]]);
+		const verts = flat([
+			[0, 0],
+			[4, 0],
+			[4, 3],
+			[2, 1],
+			[0, 3],
+		]);
 		const rings = planarFillRings([0, 1, 2, 3, 4], verts);
 		expect(area(rings, verts)).toBeCloseTo(8, 12);
 	});
 
 	it("a crossed quadrilateral fills both lobes, though its signed area is zero", () => {
-		const verts = flat([[-1, -1], [1, 1], [1, -1], [-1, 1]]);
+		const verts = flat([
+			[-1, -1],
+			[1, 1],
+			[1, -1],
+			[-1, 1],
+		]);
 		for (const mod2 of [false, true]) {
 			const v = [...verts];
 			expect(area(planarFillRings([0, 1, 2, 3], v, mod2), v)).toBeCloseTo(2, 12);
@@ -166,13 +214,22 @@ describe("the fill of an irregular face", () => {
 	});
 
 	it("agrees with the closed-form star fill on a regular {n/d}, under both rules", () => {
-		for (const [n, d] of [[5, 2], [7, 2], [7, 3], [9, 4]]) {
+		for (const [n, d] of [
+			[5, 2],
+			[7, 2],
+			[7, 3],
+			[9, 4],
+		]) {
 			const ring = Array.from({ length: n }, (_, k) => k);
-			const star = (): Vec3[] => ring.map((k) => [Math.cos((2 * Math.PI * d * k) / n), Math.sin((2 * Math.PI * d * k) / n), 0]);
+			const star = (): Vec3[] =>
+				ring.map((k) => [Math.cos((2 * Math.PI * d * k) / n), Math.sin((2 * Math.PI * d * k) / n), 0]);
 			for (const mod2 of [false, true]) {
 				const a = star();
 				const b = star();
-				expect(area(planarFillRings(ring, a, mod2), a), `{${n}/${d}} mod2=${mod2}`).toBeCloseTo(area(starFaceRings(ring, d, b, mod2), b), 9);
+				expect(area(planarFillRings(ring, a, mod2), a), `{${n}/${d}} mod2=${mod2}`).toBeCloseTo(
+					area(starFaceRings(ring, d, b, mod2), b),
+					9,
+				);
 			}
 			expect(maxWinding(ring, star())).toBe(d);
 		}
@@ -197,9 +254,17 @@ describe("the fill of an irregular face", () => {
 	});
 
 	it("a ring that goes round twice is not convex, however consistently it turns", () => {
-		const star: Vec3[] = [0, 1, 2, 3, 4].map((k) => [Math.cos((4 * Math.PI * k) / 5), Math.sin((4 * Math.PI * k) / 5), 0]);
+		const star: Vec3[] = [0, 1, 2, 3, 4].map((k) => [
+			Math.cos((4 * Math.PI * k) / 5),
+			Math.sin((4 * Math.PI * k) / 5),
+			0,
+		]);
 		expect(isConvexRing(star, [0, 1, 2, 3, 4])).toBe(false);
-		const pentagon: Vec3[] = [0, 1, 2, 3, 4].map((k) => [Math.cos((2 * Math.PI * k) / 5), Math.sin((2 * Math.PI * k) / 5), 0]);
+		const pentagon: Vec3[] = [0, 1, 2, 3, 4].map((k) => [
+			Math.cos((2 * Math.PI * k) / 5),
+			Math.sin((2 * Math.PI * k) / 5),
+			0,
+		]);
 		expect(isConvexRing(pentagon, [0, 1, 2, 3, 4])).toBe(true);
 		const propeller = nobleSolid("noble-d-3")!;
 		expect(isConvexRing(propeller.vertices, propeller.faces[0])).toBe(false);
@@ -211,7 +276,11 @@ describe("the fill of an irregular face", () => {
 			const { positions, triFace } = flatSolidTriangles(p);
 			const per = new Array<number>(p.faces.length).fill(0);
 			triFace.forEach((f, t) => {
-				const v = (k: number): Vec3 => [positions[9 * t + 3 * k], positions[9 * t + 3 * k + 1], positions[9 * t + 3 * k + 2]];
+				const v = (k: number): Vec3 => [
+					positions[9 * t + 3 * k],
+					positions[9 * t + 3 * k + 1],
+					positions[9 * t + 3 * k + 2],
+				];
 				per[f] += len(cross(sub(v(1), v(0)), sub(v(2), v(0)))) / 2;
 			});
 			expect(Math.min(...per), id).toBeGreaterThan(1e-6);
@@ -230,7 +299,10 @@ describe("reading a noble polyhedron: one vertex, one face, and the face laid fl
 			expect(faceKindCount(p.vertices, p.faces), id).toBe(1);
 			const round = partialFill(p.vertices, p.faces, "vertex")!;
 			expect(round, id).toHaveLength(p.schlafli[1]);
-			expect(round.every((i) => p.faces[i].includes(0)), id).toBe(true);
+			expect(
+				round.every((i) => p.faces[i].includes(0)),
+				id,
+			).toBe(true);
 			expect(partialFill(p.vertices, p.faces, "face"), id).toEqual([0]);
 			expect(partialFill(p.vertices, p.faces, "all"), id).toBeNull();
 		}

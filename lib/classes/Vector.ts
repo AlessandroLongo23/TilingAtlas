@@ -1,222 +1,222 @@
 import { tolerance } from "@/utils/tolerance";
 
 export class Vector {
-    x: number;
-    y: number;
+	x: number;
+	y: number;
 
-    constructor(x: number = 0, y: number = 0) {
-        this.x = x;
-        this.y = y;
-    }
+	constructor(x: number = 0, y: number = 0) {
+		this.x = x;
+		this.y = y;
+	}
 
-    static fromAngle(angle: number): Vector {
-        return new Vector(Math.cos(angle), Math.sin(angle));
-    }
+	static fromAngle(angle: number): Vector {
+		return new Vector(Math.cos(angle), Math.sin(angle));
+	}
 
-    static fromPolar(mag: number, angle: number): Vector {
-        return new Vector(mag * Math.cos(angle), mag * Math.sin(angle));
-    }
+	static fromPolar(mag: number, angle: number): Vector {
+		return new Vector(mag * Math.cos(angle), mag * Math.sin(angle));
+	}
 
-    static midpoint(v1: Vector, v2: Vector): Vector {
-        return new Vector((v1.x + v2.x) / 2, (v1.y + v2.y) / 2);
-    }
+	static midpoint(v1: Vector, v2: Vector): Vector {
+		return new Vector((v1.x + v2.x) / 2, (v1.y + v2.y) / 2);
+	}
 
-    copy(): Vector {
-        return new Vector(this.x, this.y);
-    }
+	copy(): Vector {
+		return new Vector(this.x, this.y);
+	}
 
-    static add(v1: Vector, v2: Vector): Vector {
-        return new Vector(v1.x + v2.x, v1.y + v2.y);
-    }
-    
-    add(other: Vector): Vector {
-        this.x += other.x;
-        this.y += other.y;
+	static add(v1: Vector, v2: Vector): Vector {
+		return new Vector(v1.x + v2.x, v1.y + v2.y);
+	}
 
-        return this.copy();
-    }
+	add(other: Vector): Vector {
+		this.x += other.x;
+		this.y += other.y;
 
-    static sub(v1: Vector, v2: Vector): Vector {
-        return new Vector(v1.x - v2.x, v1.y - v2.y);
-    }
-    
-    sub(other: Vector): Vector {
-        this.x -= other.x;
-        this.y -= other.y;
+		return this.copy();
+	}
 
-        return this.copy();
-    }
+	static sub(v1: Vector, v2: Vector): Vector {
+		return new Vector(v1.x - v2.x, v1.y - v2.y);
+	}
 
-    static mult(v1: Vector, v2: Vector): Vector {
-        return new Vector(v1.x * v2.x, v1.y * v2.y);
-    }
+	sub(other: Vector): Vector {
+		this.x -= other.x;
+		this.y -= other.y;
 
-    mult(other: Vector): Vector {
-        this.x *= other.x;
-        this.y *= other.y;
+		return this.copy();
+	}
 
-        return this.copy();
-    }
+	static mult(v1: Vector, v2: Vector): Vector {
+		return new Vector(v1.x * v2.x, v1.y * v2.y);
+	}
 
-    static scale(v: Vector, scalar: number): Vector {
-        return new Vector(v.x * scalar, v.y * scalar);
-    }
+	mult(other: Vector): Vector {
+		this.x *= other.x;
+		this.y *= other.y;
 
-    scale(scalar: number): Vector {
-        this.x *= scalar;
-        this.y *= scalar;
+		return this.copy();
+	}
 
-        return this.copy();
-    }
+	static scale(v: Vector, scalar: number): Vector {
+		return new Vector(v.x * scalar, v.y * scalar);
+	}
 
-    set(x: number | Vector | null, y: number | null = null): Vector {
-        if (x instanceof Vector) {
-            const other = x;
-            this.x = other.x;
-            this.y = other.y;
-        } else {
-            this.x = x ?? 0;
-            this.y = y ?? 0;
-        }
+	scale(scalar: number): Vector {
+		this.x *= scalar;
+		this.y *= scalar;
 
-        return this.copy();
-    }
+		return this.copy();
+	}
 
-    mag(): number {
-        return Math.sqrt(this.x * this.x + this.y * this.y);
-    }
+	set(x: number | Vector | null, y: number | null = null): Vector {
+		if (x instanceof Vector) {
+			const other = x;
+			this.x = other.x;
+			this.y = other.y;
+		} else {
+			this.x = x ?? 0;
+			this.y = y ?? 0;
+		}
 
-    setMag(mag: number): Vector {
-        this.scale(mag / this.mag());
+		return this.copy();
+	}
 
-        return this.copy();
-    }
+	mag(): number {
+		return Math.sqrt(this.x * this.x + this.y * this.y);
+	}
 
-    dot(other: Vector): number {
-        return this.x * other.x + this.y * other.y;
-    }
+	setMag(mag: number): Vector {
+		this.scale(mag / this.mag());
 
-    normalize(): Vector {
-        this.scale(1 / this.mag());
+		return this.copy();
+	}
 
-        return this.copy();
-    }
+	dot(other: Vector): number {
+		return this.x * other.x + this.y * other.y;
+	}
 
-    setHeading(heading: number): Vector {
-        this.set(Vector.fromAngle(heading).scale(this.mag()));
+	normalize(): Vector {
+		this.scale(1 / this.mag());
 
-        return this.copy();
-    }
+		return this.copy();
+	}
 
-    heading(): number {
-        return Math.atan2(this.y, this.x);
-    }
+	setHeading(heading: number): Vector {
+		this.set(Vector.fromAngle(heading).scale(this.mag()));
 
-    static linearCombination(a: number, v1: Vector, b: number, v2: Vector): Vector {
-        return new Vector(a * v1.x + b * v2.x, a * v1.y + b * v2.y);
-    }
+		return this.copy();
+	}
 
-    mirror(angle: number): Vector {
-        const dir = Vector.fromAngle(angle);
-        const dotProduct = this.dot(dir);
+	heading(): number {
+		return Math.atan2(this.y, this.x);
+	}
 
-        this.x = 2 * dotProduct * dir.x - this.x;
-        this.y = 2 * dotProduct * dir.y - this.y;
+	static linearCombination(a: number, v1: Vector, b: number, v2: Vector): Vector {
+		return new Vector(a * v1.x + b * v2.x, a * v1.y + b * v2.y);
+	}
 
-        return this.copy();
-    }
+	mirror(angle: number): Vector {
+		const dir = Vector.fromAngle(angle);
+		const dotProduct = this.dot(dir);
 
-    static mirrorByPointAndDir(v: Vector, point: Vector, dir: Vector): Vector {
-        const vector: Vector = v.copy();
-        vector.mirrorByPointAndDir(point.copy(), dir.copy());
-        return vector;
-    }
+		this.x = 2 * dotProduct * dir.x - this.x;
+		this.y = 2 * dotProduct * dir.y - this.y;
 
-    mirrorByPointAndDir(point: Vector, dir: Vector): void {
-        const pointVector: Vector = Vector.sub(this, point);
-        const dirMagSq: number = dir.dot(dir); 
-        const scalar: number = pointVector.dot(dir) / dirMagSq;
-        const projection: Vector = Vector.scale(dir, scalar);
-        const perpendicular: Vector = Vector.sub(pointVector, projection);
+		return this.copy();
+	}
 
-        this.set(Vector.sub(Vector.add(point, projection), perpendicular));
-    }
-    
-    static rotate(v: Vector, angle: number): Vector {
-        return v.copy().rotate(angle);
-    }
+	static mirrorByPointAndDir(v: Vector, point: Vector, dir: Vector): Vector {
+		const vector: Vector = v.copy();
+		vector.mirrorByPointAndDir(point.copy(), dir.copy());
+		return vector;
+	}
 
-    rotate(angle: number): Vector {
-        const cos: number = Math.cos(angle);
-        const sin: number = Math.sin(angle);
-        const newX: number = this.x * cos - this.y * sin;
-        const newY: number = this.x * sin + this.y * cos;
+	mirrorByPointAndDir(point: Vector, dir: Vector): void {
+		const pointVector: Vector = Vector.sub(this, point);
+		const dirMagSq: number = dir.dot(dir);
+		const scalar: number = pointVector.dot(dir) / dirMagSq;
+		const projection: Vector = Vector.scale(dir, scalar);
+		const perpendicular: Vector = Vector.sub(pointVector, projection);
 
-        this.x = newX;
-        this.y = newY;
+		this.set(Vector.sub(Vector.add(point, projection), perpendicular));
+	}
 
-        return this.copy();
-    }
+	static rotate(v: Vector, angle: number): Vector {
+		return v.copy().rotate(angle);
+	}
 
-    static rotateAround(v: Vector, origin: Vector, angle: number): Vector {
-        return v.copy().rotateAround(origin, angle);
-    }
+	rotate(angle: number): Vector {
+		const cos: number = Math.cos(angle);
+		const sin: number = Math.sin(angle);
+		const newX: number = this.x * cos - this.y * sin;
+		const newY: number = this.x * sin + this.y * cos;
 
-    rotateAround(origin: Vector, angle: number): Vector {
-        return Vector.add(origin, Vector.sub(this, origin).rotate(angle));
-    }
+		this.x = newX;
+		this.y = newY;
 
-    distance(other: Vector): number {
-        return Math.sqrt((this.x - other.x) ** 2 + (this.y - other.y) ** 2);
-    }
+		return this.copy();
+	}
 
-    static distance(v1: Vector, v2: Vector): number {
-        return Math.sqrt((v1.x - v2.x) ** 2 + (v1.y - v2.y) ** 2);
-    }
+	static rotateAround(v: Vector, origin: Vector, angle: number): Vector {
+		return v.copy().rotateAround(origin, angle);
+	}
 
-    static cross(v1: Vector, v2: Vector): number {
-        return v1.x * v2.y - v1.y * v2.x;
-    }
+	rotateAround(origin: Vector, angle: number): Vector {
+		return Vector.add(origin, Vector.sub(this, origin).rotate(angle));
+	}
 
-    static angleBetween(v1: Vector, v2: Vector): number {
-        return Math.atan2(v2.y - v1.y, v2.x - v1.x);
-    }
+	distance(other: Vector): number {
+		return Math.sqrt((this.x - other.x) ** 2 + (this.y - other.y) ** 2);
+	}
 
-    /**
-     * Checks if this vector is parallel to another vector
-     * @param other 
-     * @returns True if the vectors are parallel, false otherwise.
-     */
-    isParallelTo(other: Vector): boolean {
-        return Math.abs(Vector.cross(this, other)) < tolerance;
-    }
+	static distance(v1: Vector, v2: Vector): number {
+		return Math.sqrt((v1.x - v2.x) ** 2 + (v1.y - v2.y) ** 2);
+	}
 
-    /**
-     * Checks if a given point belongs to a line.
-     * @param point - The point to check.
-     * @param line - The line to check (axis and point of the line)
-     * @returns True if the point belongs to the line, false otherwise.
-     */
-    static belongsToLine(point: Vector, line: { axis: Vector, point: Vector }): boolean {
-        // Vector from line start to point: (px - x0, py - y0)
-        const dx1: number = point.x - line.point.x;
-        const dy1: number = point.y - line.point.y;
-    
-        // Line direction vector: (dx2, dy2)
-        const dx2: number = line.axis.x;
-        const dy2: number = line.axis.y;
-    
-        // 2D Cross Product (Determinant): x1*y2 - y1*x2
-        // If this is 0, the vectors are collinear.
-        const crossProduct2D: number = dx1 * dy2 - dy1 * dx2;
-    
-        return Math.abs(crossProduct2D) < tolerance;
-    }
+	static cross(v1: Vector, v2: Vector): number {
+		return v1.x * v2.y - v1.y * v2.x;
+	}
 
-    encode = (): { x: number, y: number } => {
-        return {
-            x: this.x,
-            y: this.y,
-        };
-    }
+	static angleBetween(v1: Vector, v2: Vector): number {
+		return Math.atan2(v2.y - v1.y, v2.x - v1.x);
+	}
+
+	/**
+	 * Checks if this vector is parallel to another vector
+	 * @param other
+	 * @returns True if the vectors are parallel, false otherwise.
+	 */
+	isParallelTo(other: Vector): boolean {
+		return Math.abs(Vector.cross(this, other)) < tolerance;
+	}
+
+	/**
+	 * Checks if a given point belongs to a line.
+	 * @param point - The point to check.
+	 * @param line - The line to check (axis and point of the line)
+	 * @returns True if the point belongs to the line, false otherwise.
+	 */
+	static belongsToLine(point: Vector, line: { axis: Vector; point: Vector }): boolean {
+		// Vector from line start to point: (px - x0, py - y0)
+		const dx1: number = point.x - line.point.x;
+		const dy1: number = point.y - line.point.y;
+
+		// Line direction vector: (dx2, dy2)
+		const dx2: number = line.axis.x;
+		const dy2: number = line.axis.y;
+
+		// 2D Cross Product (Determinant): x1*y2 - y1*x2
+		// If this is 0, the vectors are collinear.
+		const crossProduct2D: number = dx1 * dy2 - dy1 * dx2;
+
+		return Math.abs(crossProduct2D) < tolerance;
+	}
+
+	encode = (): { x: number; y: number } => {
+		return {
+			x: this.x,
+			y: this.y,
+		};
+	};
 }

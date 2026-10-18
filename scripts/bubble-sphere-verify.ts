@@ -23,20 +23,39 @@ import type { Vec3 } from "@/lib/render/platonicSolids";
 
 const EPS = 1e-6;
 const dot = (a: Vec3, b: Vec3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-const norm = (a: Vec3): Vec3 => { const n = Math.hypot(...a); return [a[0] / n, a[1] / n, a[2] / n]; };
+const norm = (a: Vec3): Vec3 => {
+	const n = Math.hypot(...a);
+	return [a[0] / n, a[1] / n, a[2] / n];
+};
 
 /** det and inverse of a 3x3 given as columns. */
 function inverse3(c0: Vec3, c1: Vec3, c2: Vec3): number[][] | null {
-	const m = [[c0[0], c1[0], c2[0]], [c0[1], c1[1], c2[1]], [c0[2], c1[2], c2[2]]];
+	const m = [
+		[c0[0], c1[0], c2[0]],
+		[c0[1], c1[1], c2[1]],
+		[c0[2], c1[2], c2[2]],
+	];
 	const det =
 		m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) -
 		m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) +
 		m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
 	if (Math.abs(det) < 1e-9) return null;
 	const inv = [
-		[(m[1][1] * m[2][2] - m[1][2] * m[2][1]) / det, (m[0][2] * m[2][1] - m[0][1] * m[2][2]) / det, (m[0][1] * m[1][2] - m[0][2] * m[1][1]) / det],
-		[(m[1][2] * m[2][0] - m[1][0] * m[2][2]) / det, (m[0][0] * m[2][2] - m[0][2] * m[2][0]) / det, (m[0][2] * m[1][0] - m[0][0] * m[1][2]) / det],
-		[(m[1][0] * m[2][1] - m[1][1] * m[2][0]) / det, (m[0][1] * m[2][0] - m[0][0] * m[2][1]) / det, (m[0][0] * m[1][1] - m[0][1] * m[1][0]) / det],
+		[
+			(m[1][1] * m[2][2] - m[1][2] * m[2][1]) / det,
+			(m[0][2] * m[2][1] - m[0][1] * m[2][2]) / det,
+			(m[0][1] * m[1][2] - m[0][2] * m[1][1]) / det,
+		],
+		[
+			(m[1][2] * m[2][0] - m[1][0] * m[2][2]) / det,
+			(m[0][0] * m[2][2] - m[0][2] * m[2][0]) / det,
+			(m[0][2] * m[1][0] - m[0][0] * m[1][2]) / det,
+		],
+		[
+			(m[1][0] * m[2][1] - m[1][1] * m[2][0]) / det,
+			(m[0][1] * m[2][0] - m[0][0] * m[2][1]) / det,
+			(m[0][0] * m[1][1] - m[0][1] * m[1][0]) / det,
+		],
 	];
 	return inv;
 }
@@ -49,12 +68,13 @@ function symmetries(vRaw: Vec3[]): number[][] {
 	let ref: [number, number, number] | null = null;
 	for (let a = 0; a < n && !ref; a++)
 		for (let b = a + 1; b < n && !ref; b++)
-			for (let c = b + 1; c < n && !ref; c++)
-				if (inverse3(v[a], v[b], v[c])) ref = [a, b, c];
+			for (let c = b + 1; c < n && !ref; c++) if (inverse3(v[a], v[b], v[c])) ref = [a, b, c];
 	if (!ref) throw new Error("vertices are coplanar");
 	const [ra, rb, rc] = ref;
 	const inv = inverse3(v[ra], v[rb], v[rc])!;
-	const d_ab = dot(v[ra], v[rb]), d_ac = dot(v[ra], v[rc]), d_bc = dot(v[rb], v[rc]);
+	const d_ab = dot(v[ra], v[rb]),
+		d_ac = dot(v[ra], v[rc]),
+		d_bc = dot(v[rb], v[rc]);
 	const near = (x: number, y: number) => Math.abs(x - y) < EPS;
 	// ⚑ NEAREST-VERTEX lookup, not a rounded string key. A key of `toFixed(6)` looks safe — no two
 	// vertices of a unit-sphere solid are within 1e-6 — but it fails on a BOUNDARY: the dodecahedron's
@@ -63,7 +83,8 @@ function symmetries(vRaw: Vec3[]): number[][] {
 	// included. A distance test has no boundary to land on.
 	const lookup = (q: Vec3) => {
 		for (let i = 0; i < n; i++)
-			if (Math.abs(v[i][0] - q[0]) < 1e-7 && Math.abs(v[i][1] - q[1]) < 1e-7 && Math.abs(v[i][2] - q[2]) < 1e-7) return i;
+			if (Math.abs(v[i][0] - q[0]) < 1e-7 && Math.abs(v[i][1] - q[1]) < 1e-7 && Math.abs(v[i][2] - q[2]) < 1e-7)
+				return i;
 		return undefined;
 	};
 	const out: number[][] = [];
@@ -75,7 +96,9 @@ function symmetries(vRaw: Vec3[]): number[][] {
 				if (!near(dot(v[A], v[C]), d_ac) || !near(dot(v[B], v[C]), d_bc)) continue;
 				// M = [A B C] · [ra rb rc]^{-1}, the unique linear map on the reference frame.
 				const cols: Vec3[] = [v[A], v[B], v[C]];
-				const M = [0, 1, 2].map((r) => [0, 1, 2].map((c) => cols[0][r] * inv[0][c] + cols[1][r] * inv[1][c] + cols[2][r] * inv[2][c]));
+				const M = [0, 1, 2].map((r) =>
+					[0, 1, 2].map((c) => cols[0][r] * inv[0][c] + cols[1][r] * inv[1][c] + cols[2][r] * inv[2][c]),
+				);
 				const perm: number[] = [];
 				let ok = true;
 				for (let i = 0; i < n && ok; i++) {
@@ -85,7 +108,8 @@ function symmetries(vRaw: Vec3[]): number[][] {
 						M[2][0] * v[i][0] + M[2][1] * v[i][1] + M[2][2] * v[i][2],
 					];
 					const j = lookup(p);
-					if (j === undefined) ok = false; else perm.push(j);
+					if (j === undefined) ok = false;
+					else perm.push(j);
 				}
 				if (ok && new Set(perm).size === n) out.push(perm);
 			}
@@ -96,11 +120,24 @@ function symmetries(vRaw: Vec3[]): number[][] {
 	return [...seen.values()];
 }
 
-const wanted = process.argv.slice(2).length ? process.argv.slice(2) : [
-	"tetrahedron", "cube", "octahedron", "dodecahedron", "icosahedron", "truncated-tetrahedron",
-	"cuboctahedron", "triangular-prism", "pentagonal-prism", "hexagonal-prism", "octagonal-prism",
-	"square-antiprism", "pentagonal-antiprism", "hexagonal-antiprism",
-];
+const wanted = process.argv.slice(2).length
+	? process.argv.slice(2)
+	: [
+			"tetrahedron",
+			"cube",
+			"octahedron",
+			"dodecahedron",
+			"icosahedron",
+			"truncated-tetrahedron",
+			"cuboctahedron",
+			"triangular-prism",
+			"pentagonal-prism",
+			"hexagonal-prism",
+			"octagonal-prism",
+			"square-antiprism",
+			"pentagonal-antiprism",
+			"hexagonal-antiprism",
+		];
 
 console.log("solid                        V    E  |Sym|  all decorations   k=1  k=2  k=3   method");
 for (const id of wanted) {
@@ -114,22 +151,31 @@ for (const id of wanted) {
 		f.forEach((a, i) => {
 			const b = f[(i + 1) % f.length];
 			const k = eKey(a, b);
-			if (!eIndex.has(k)) { eIndex.set(k, eFaces.length); eFaces.push([]); }
+			if (!eIndex.has(k)) {
+				eIndex.set(k, eFaces.length);
+				eFaces.push([]);
+			}
 			eFaces[eIndex.get(k)!].push(fi);
-		}));
+		}),
+	);
 	const E = eFaces.length;
 	if (eFaces.some((fs) => fs.length !== 2)) throw new Error(`${id}: an edge without exactly two faces`);
 	// Face identity under a vertex permutation: a face is its vertex SET.
 	const fKey = (f: number[]) => [...f].sort((a, b) => a - b).join(",");
 	const fIndex = new Map(p.faces.map((f, i) => [fKey(f), i]));
-	const faceMap = sym.map((perm) => p.faces.map((f) => {
-		const j = fIndex.get(fKey(f.map((x) => perm[x])));
-		if (j === undefined) throw new Error(`${id}: a symmetry does not map faces to faces`);
-		return j;
-	}));
+	const faceMap = sym.map((perm) =>
+		p.faces.map((f) => {
+			const j = fIndex.get(fKey(f.map((x) => perm[x])));
+			if (j === undefined) throw new Error(`${id}: a symmetry does not map faces to faces`);
+			return j;
+		}),
+	);
 	const edgeMap = sym.map((perm) => {
 		const out = new Int32Array(E);
-		for (const [k, ei] of eIndex) { const [a, b] = k.split(",").map(Number); out[ei] = eIndex.get(eKey(perm[a], perm[b]))!; }
+		for (const [k, ei] of eIndex) {
+			const [a, b] = k.split(",").map(Number);
+			out[ei] = eIndex.get(eKey(perm[a], perm[b]))!;
+		}
 		return out;
 	});
 
@@ -147,7 +193,12 @@ for (const id of wanted) {
 	const vOrbits = (gs: number[]) => {
 		const par = Array.from({ length: p.vertices.length }, (_, i) => i);
 		const find = (x: number): number => (par[x] === x ? x : (par[x] = find(par[x])));
-		for (const g of gs) for (let x = 0; x < par.length; x++) { const a = find(x), b = find(sym[g][x]); if (a !== b) par[a] = b; }
+		for (const g of gs)
+			for (let x = 0; x < par.length; x++) {
+				const a = find(x),
+					b = find(sym[g][x]);
+				if (a !== b) par[a] = b;
+			}
 		return new Set(par.map((_, i) => find(i))).size;
 	};
 
@@ -171,8 +222,11 @@ for (const id of wanted) {
 					const chosen = faceMap[g][eFaces[cur][slot[cur]]];
 					const t = edgeMap[g][cur];
 					const want = eFaces[t][0] === chosen ? 0 : 1;
-					if (slot[t] < 0) { slot[t] = want; seen[t] = 1; q.push(t); }
-					else if (slot[t] !== want) return 0n; // the orbit forces both faces of one edge
+					if (slot[t] < 0) {
+						slot[t] = want;
+						seen[t] = 1;
+						q.push(t);
+					} else if (slot[t] !== want) return 0n; // the orbit forces both faces of one edge
 				}
 			}
 			free++;
@@ -190,7 +244,11 @@ for (const id of wanted) {
 			if (done[mask]) continue;
 			orbits++;
 			const stab: number[] = [];
-			for (let g = 0; g < sym.length; g++) { const img = act(mask, g); done[img] = 1; if (img === mask) stab.push(g); }
+			for (let g = 0; g < sym.length; g++) {
+				const img = act(mask, g);
+				done[img] = 1;
+				if (img === mask) stab.push(g);
+			}
 			const k = vOrbits(stab);
 			if (k <= 3) kd.set(k, (kd.get(k) ?? 0) + 1);
 		}
@@ -206,7 +264,8 @@ for (const id of wanted) {
 			let dead = false;
 			for (let e = 0; e < E && !dead; e++) {
 				if (seen[e]) continue;
-				let cur = e, slot = 0;
+				let cur = e,
+					slot = 0;
 				do {
 					seen[cur] = 1;
 					const chosen = faceMap[g][eFaces[cur][slot]];
@@ -214,7 +273,8 @@ for (const id of wanted) {
 					slot = eFaces[t][0] === chosen ? 0 : 1;
 					cur = t;
 				} while (cur !== e);
-				if (slot !== 0) dead = true; else free++;
+				if (slot !== 0) dead = true;
+				else free++;
 			}
 			sum += dead ? 0n : 1n << BigInt(free);
 		}
@@ -223,5 +283,7 @@ for (const id of wanted) {
 	}
 	const kcol = [1, 2, 3].map((k) => (E <= 24 ? String(kd.get(k) ?? 0) : "—"));
 	const vEqSym = p.vertices.length === sym.length ? " V=|Sym| so k1=" + fixedByAll : "";
-	console.log(`${id.padEnd(27)} ${String(p.vertices.length).padStart(3)} ${String(E).padStart(4)} ${String(sym.length).padStart(6)}  ${all.toString().padStart(15)}  ${kcol.map((c) => c.padStart(4)).join(" ")}   ${method}${vEqSym}`);
+	console.log(
+		`${id.padEnd(27)} ${String(p.vertices.length).padStart(3)} ${String(E).padStart(4)} ${String(sym.length).padStart(6)}  ${all.toString().padStart(15)}  ${kcol.map((c) => c.padStart(4)).join(" ")}   ${method}${vEqSym}`,
+	);
 }

@@ -3,10 +3,7 @@
 import { useEffect, useRef } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { cn } from "@/lib/utils/cn";
-import {
-	HyperbolicDevelopedCanvas,
-	type HyperbolicViewInput,
-} from "@/components/hyperbolic-developed-canvas";
+import { HyperbolicDevelopedCanvas, type HyperbolicViewInput } from "@/components/hyperbolic-developed-canvas";
 import { useCardActivation } from "@/lib/hooks/useCardActivation";
 import { CardDoneChip } from "@/components/card-done-chip";
 import { useTouchGestures } from "@/lib/render/touchGestures";
@@ -192,17 +189,17 @@ export function InteractiveHyperbolicMini({ patchId, patch }: { patchId: string;
 			onPointerUp={onPointerUp}
 			onPointerCancel={onPointerUp}
 			onContextMenu={(e) => e.preventDefault()}
-			className={cn(
-				"absolute inset-0 select-none outline-none",
-				active ? "cursor-grab" : "cursor-pointer",
-			)}
+			className={cn("absolute inset-0 outline-none select-none", active ? "cursor-grab" : "cursor-pointer")}
 		>
 			{inView ? (
 				// diskPadPx 0: nothing floats over this canvas, so the rim goes to the cell edge.
 				<HyperbolicDevelopedCanvas patchId={patchId} data={patch} input={inputRef} diskPadPx={0} />
 			) : (
 				// Out of view: the disk's silhouette as a quiet skeleton on the sunken plate.
-				<div aria-hidden="true" className="absolute inset-0 m-auto h-full aspect-square rounded-full bg-surface-overlay" />
+				<div
+					aria-hidden="true"
+					className="absolute inset-0 m-auto aspect-square h-full rounded-full bg-surface-overlay"
+				/>
 			)}
 			<CardDoneChip active={active} onDone={deactivate} />
 		</div>

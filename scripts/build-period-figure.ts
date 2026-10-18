@@ -31,7 +31,9 @@ const wanted = process.argv[2] ?? "t2001";
 
 type Row = { id: string; renderCell: TranslationalCellData; exactSource?: ExactCellSource };
 const atlas = hydrateRenderCells(
-	decodeAtlas<Row>(JSON.parse(readFileSync(path.join(process.cwd(), "public", "reference-atlas.json"), "utf8"))) as never,
+	decodeAtlas<Row>(
+		JSON.parse(readFileSync(path.join(process.cwd(), "public", "reference-atlas.json"), "utf8")),
+	) as never,
 ) as Row[];
 
 const units = Array.from({ length: N }, (_, k) => Cyclotomic.zeta(ring, k));
@@ -96,7 +98,10 @@ const rec = reconstructOracleCell(ring, wanted, src);
 if ("error" in rec) throw new Error(`cell reconstruction failed: ${rec.error}`);
 const polys = rec.cell.cellPolygons.map((p) => ({
 	n: p.n,
-	v: (p.exactVertices ?? []).map((vx) => { const q = vx.toVector(); return [q.x, q.y]; }),
+	v: (p.exactVertices ?? []).map((vx) => {
+		const q = vx.toVector();
+		return [q.x, q.y];
+	}),
 }));
 
 const out = {
@@ -107,5 +112,7 @@ const out = {
 	polys,
 };
 writeFileSync(path.join(process.cwd(), "public", "defense", "period-figure.json"), JSON.stringify(out));
-console.log(`${wanted}: |T1| = ${c1.length} [${c1.join(", ")}], |T2| = ${c2.length} [${c2.join(", ")}], ${polys.length} tiles`);
+console.log(
+	`${wanted}: |T1| = ${c1.length} [${c1.join(", ")}], |T2| = ${c2.length} [${c2.join(", ")}], ${polys.length} tiles`,
+);
 console.log("wrote public/defense/period-figure.json");

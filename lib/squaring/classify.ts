@@ -113,8 +113,7 @@ export function tilesExactly(s: Squaring): boolean {
 }
 
 /** Total tile area, which must equal width × height. The cheap half of tilesExactly. */
-export const tiledArea = (s: Squaring): bigint =>
-	s.squares.reduce((acc, sq) => acc + sq.side * sq.side, 0n);
+export const tiledArea = (s: Squaring): bigint => s.squares.reduce((acc, sq) => acc + sq.side * sq.side, 0n);
 
 /**
  * Bouwkamp code — the standard notation for a squared rectangle, so results here can be compared with
@@ -232,10 +231,7 @@ export function smithGraphOf(s: Squaring): SmithGraph {
 	const index = new Map(levels.map((v, i) => [v.toString(), i]));
 	const edges = s.squares.map(
 		(sq) =>
-			[index.get((sq.y + sq.side).toString()) as number, index.get(sq.y.toString()) as number] as [
-				number,
-				number,
-			],
+			[index.get((sq.y + sq.side).toString()) as number, index.get(sq.y.toString()) as number] as [number, number],
 	);
 	return { levels, edges };
 }

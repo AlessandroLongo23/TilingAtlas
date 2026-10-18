@@ -131,18 +131,23 @@ export function applyMergePlan(out: ReferenceTiling[], opts: ApplyOptions): Refe
 				...(s.starFlags[j] ? { star: true } : {}),
 				vertices: poly.vertices.map((v) => posed(v, s.pose, true)),
 			})),
-			basis: [posed(sources[i]!.paramCell!.basis[0], s.pose, false), posed(sources[i]!.paramCell!.basis[1], s.pose, false)],
+			basis: [
+				posed(sources[i]!.paramCell!.basis[0], s.pose, false),
+				posed(sources[i]!.paramCell!.basis[1], s.pose, false),
+			],
 		}));
 		const p0 = primary.paramCell!.params[0];
 		const paramCell: ParametricCellData = {
-			params: [{
-				name: m.coordinate,
-				alpha0Deg: segments[0].alpha0Deg,
-				deltaRangeDeg: [m.range[0] - m.defaultDeg, m.range[1] - m.defaultDeg],
-				alphaRangeDegOpen: m.range,
-				defaultAlphaDeg: m.defaultDeg,
-				...(p0.tile ? { tile: p0.tile } : {}),
-			}],
+			params: [
+				{
+					name: m.coordinate,
+					alpha0Deg: segments[0].alpha0Deg,
+					deltaRangeDeg: [m.range[0] - m.defaultDeg, m.range[1] - m.defaultDeg],
+					alphaRangeDegOpen: m.range,
+					defaultAlphaDeg: m.defaultDeg,
+					...(p0.tile ? { tile: p0.tile } : {}),
+				},
+			],
 			// back-compat: the first segment's cell, so a consumer that ignores `segments` still draws a
 			// real tiling (the first half of the sweep) instead of failing.
 			cellPolygons: segments[0].cellPolygons,

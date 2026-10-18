@@ -90,7 +90,7 @@ export function Pagination({
 		// the parent does (a size container has no width of its own inside a centring flex).
 		<div className="@container relative flex items-center justify-between gap-4 select-none max-md:w-full max-md:justify-center">
 			{showRange ? (
-				<span className="hidden @lg:inline text-[13px] text-fg-muted tabular-nums whitespace-nowrap">
+				<span className="hidden text-[13px] whitespace-nowrap text-fg-muted tabular-nums @lg:inline">
 					{startItem.toLocaleString("en-US")}–{endItem.toLocaleString("en-US")} of {totalItems.toLocaleString("en-US")}
 				</span>
 			) : (
@@ -99,15 +99,17 @@ export function Pagination({
 			<div className="flex items-center gap-3">
 				{/* Jump to any page: the strip below only ever shows seven. Sized off the pagination's own
 				    width (container query), so a narrow host keeps the strip and drops this first. */}
-				<span className="hidden @2xl:flex items-center gap-1.5 text-[13px] text-fg-muted whitespace-nowrap">
-					<label htmlFor="pagination-page-input" className="sr-only">Page number</label>
+				<span className="hidden items-center gap-1.5 text-[13px] whitespace-nowrap text-fg-muted @2xl:flex">
+					<label htmlFor="pagination-page-input" className="sr-only">
+						Page number
+					</label>
 					Page
 					<input
 						id="pagination-page-input"
 						type="number"
 						min={1}
 						max={totalPages}
-						className="h-8 w-12 rounded-control border border-line bg-surface-raised px-1 text-center text-[13px] font-medium text-fg tabular-nums shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+						className="h-8 w-12 [appearance:textfield] rounded-control border border-line bg-surface-raised px-1 text-center text-[13px] font-medium text-fg tabular-nums shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
 						value={focused ? inputValue : currentPage}
 						onFocus={() => {
 							setFocused(true);
@@ -130,7 +132,12 @@ export function Pagination({
 					</PageBtn>
 					{visiblePages.map((p, i) =>
 						p === null ? (
-							<span key={`ellipsis-${i}`} className="flex h-7 w-5 items-center justify-center text-xs font-medium text-fg-muted tabular-nums pointer-events-none">…</span>
+							<span
+								key={`ellipsis-${i}`}
+								className="pointer-events-none flex h-7 w-5 items-center justify-center text-xs font-medium text-fg-muted tabular-nums"
+							>
+								…
+							</span>
 						) : (
 							<button
 								key={p}
@@ -139,7 +146,7 @@ export function Pagination({
 								aria-current={currentPage === p ? "page" : undefined}
 								aria-pressed={currentPage === p}
 								className={cn(
-									"ta-tab flex h-7 min-w-7 items-center justify-center px-1.5 text-xs font-medium tabular-nums cursor-pointer transition-colors max-md:min-w-10",
+									"ta-tab flex h-7 min-w-7 cursor-pointer items-center justify-center px-1.5 text-xs font-medium tabular-nums transition-colors max-md:min-w-10",
 									"focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
 									currentPage === p ? "text-fg" : "text-fg-muted hover:text-fg",
 								)}
@@ -162,7 +169,7 @@ function PageBtn({ children, ...rest }: React.ComponentProps<"button">) {
 		<button
 			type="button"
 			{...rest}
-			className="ta-tab flex h-7 w-7 max-md:w-10 items-center justify-center text-fg-muted hover:text-fg cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+			className="ta-tab flex h-7 w-7 cursor-pointer items-center justify-center text-fg-muted transition-colors hover:text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:cursor-not-allowed disabled:opacity-30 max-md:w-10"
 		>
 			{children}
 		</button>

@@ -3,7 +3,14 @@ import * as THREE from "three";
 import { PLATONIC_SOLIDS, type Polyhedron } from "@/lib/render/platonicSolids";
 import { sphericalIslamicFaceData } from "@/lib/render/sphericalIslamic";
 import { triangulateFillCell, buildIslamicFill } from "@/lib/render/sphericalIslamicFill";
-import { extractFaces, colorFacesAbc, pointInPolygon, signedArea, type Marker, type Segment } from "@/lib/utils/islamicArrangement";
+import {
+	extractFaces,
+	colorFacesAbc,
+	pointInPolygon,
+	signedArea,
+	type Marker,
+	type Segment,
+} from "@/lib/utils/islamicArrangement";
 import { polygonHue } from "@/lib/utils/renderTiling";
 import { Vector } from "@/classes/Vector";
 
@@ -22,7 +29,10 @@ function bySolid(id: string): Polyhedron {
 }
 
 // The fill module's segment set: the construction rays + the closed face boundary.
-function faceSegments(fd: { rays: Array<[number, number, number, number]>; boundary: Array<[number, number]> }): Segment[] {
+function faceSegments(fd: {
+	rays: Array<[number, number, number, number]>;
+	boundary: Array<[number, number]>;
+}): Segment[] {
 	const segs: Segment[] = [];
 	for (const [ox, oy, ex, ey] of fd.rays) segs.push([new Vector(ox, oy), new Vector(ex, ey)]);
 	for (let i = 0; i < fd.boundary.length; i++) {

@@ -23,7 +23,7 @@ function Row({ label, value, children }: { label: string; value: string; childre
 		<div className="grid grid-cols-[3.6rem_1fr_auto] items-center gap-3">
 			<span className="text-right text-[clamp(0.7rem,1vh+0.24vw,1rem)] text-fg-muted">{label}</span>
 			<div className="flex h-[1.7rem] overflow-hidden rounded-[4px] bg-surface-overlay">{children}</div>
-			<span className="min-w-[4.4rem] text-[clamp(0.7rem,1vh+0.24vw,1rem)] font-medium tabular-nums text-fg">
+			<span className="min-w-[4.4rem] text-[clamp(0.7rem,1vh+0.24vw,1rem)] font-medium text-fg tabular-nums">
 				{value}
 			</span>
 		</div>
@@ -32,7 +32,7 @@ function Row({ label, value, children }: { label: string; value: string; childre
 
 function Panel({ title, note, children }: { title: string; note: string; children: React.ReactNode }) {
 	return (
-		<figure className="m-0 flex min-w-[17rem] flex-1 flex-col gap-3 rounded-2xl border border-line bg-surface-base px-5 py-4">
+		<figure className="bg-surface-base m-0 flex min-w-[17rem] flex-1 flex-col gap-3 rounded-2xl border border-line px-5 py-4">
 			<figcaption className="text-[clamp(0.8rem,1.15vh+0.28vw,1.15rem)] font-medium text-fg">{title}</figcaption>
 			<div className="flex flex-col gap-2">{children}</div>
 			{/* a div, not a p: the slide wrapper sizes every descendant `p` at body scale and wins on specificity */}
@@ -44,7 +44,10 @@ function Panel({ title, note, children }: { title: string; note: string; childre
 export function K4Wall() {
 	return (
 		<div className="not-prose flex w-full flex-wrap items-stretch justify-center gap-5">
-			<Panel title="Seeds to fill" note="Linear scale. 2072 seed-sets enumerate in 0.1 s; building their seeds is what explodes.">
+			<Panel
+				title="Seeds to fill"
+				note="Linear scale. 2072 seed-sets enumerate in 0.1 s; building their seeds is what explodes."
+			>
 				<Row label="k = 3" value="449">
 					<div className="h-full bg-accent" style={{ width: `${Math.max(0.6, (449 / SEED_MAX) * 100)}%` }} />
 				</Row>
@@ -55,7 +58,10 @@ export function K4Wall() {
 				</Row>
 			</Panel>
 
-			<Panel title="Sampled fills that timed out" note="A strided sample of 25 seed-sets. Not one cell was completed at either cap.">
+			<Panel
+				title="Sampled fills that timed out"
+				note="A strided sample of 25 seed-sets. Not one cell was completed at either cap."
+			>
 				<Row label="15 s cap" value="25 / 25">
 					<div className="h-full w-full bg-accent" />
 				</Row>

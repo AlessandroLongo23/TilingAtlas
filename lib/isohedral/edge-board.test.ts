@@ -16,11 +16,9 @@ import { walkIhEdges, type IhEdgeRecord } from "./edgeDevelop";
 import { buildIhEdgePatch, certCellFaces, checkSlotsAreOpposite } from "./edgePatch";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
 
-const shardIh = (ih: number, k: number) =>
-	`public/isohedral-edges/ie${String(ih).padStart(2, "0")}-k${k}.json`;
+const shardIh = (ih: number, k: number) => `public/isohedral-edges/ie${String(ih).padStart(2, "0")}-k${k}.json`;
 const anyShard = existsSync(shardIh(1, 2));
-const readIh = (ih: number, k: number): IhEdgeRecord[] =>
-	decodeAtlas(JSON.parse(readFileSync(shardIh(ih, k), "utf8")));
+const readIh = (ih: number, k: number): IhEdgeRecord[] => decodeAtlas(JSON.parse(readFileSync(shardIh(ih, k), "utf8")));
 const read = (k: number): IhEdgeRecord[] => readIh(1, k);
 /** A board's own shipped k slices, ascending. ⚑ Never hard-code 2, 4, 6 across boards: IH07 starts at
  *  k=4 (its bare tiling has four vertex orbits) and IH08 at k=1 (it has one, and odd k throughout). */
@@ -139,10 +137,7 @@ describe.skipIf(!anyShard)("developing a shipped IH01 record", () => {
 		for (const rec of read(6).slice(0, 10)) {
 			const w = walkIhEdges(rec, b, { radius: 5 });
 			for (const e of w.edges) {
-				const d = Math.hypot(
-					w.vertices[e.u].x - w.vertices[e.v].x,
-					w.vertices[e.u].y - w.vertices[e.v].y,
-				);
+				const d = Math.hypot(w.vertices[e.u].x - w.vertices[e.v].x, w.vertices[e.u].y - w.vertices[e.v].y);
 				expect(Math.min(...b.classLengths.map((L) => Math.abs(d - L)))).toBeLessThan(1e-9);
 			}
 		}
@@ -230,9 +225,7 @@ describe.skipIf(!anyShard)("developing a shipped IH01 record", () => {
 		// is its own mirror under a rotation by three and cannot tell a correct sense from an inverted one.
 		const bulge = [0.42, -0.18, 0.09];
 		const info = ISOHEDRAL_TYPES.find((t) => t.ih === 1)!;
-		const curves = curvesOf(
-			defaultEdgeStates(info.edgeShapes).map((s, i) => ({ ...s, amount: bulge[i] })),
-		);
+		const curves = curvesOf(defaultEdgeStates(info.edgeShapes).map((s, i) => ({ ...s, amount: bulge[i] })));
 		const tactile = prototileEdges(makeTiling(1, info.defaultParams), curves);
 
 		const r = solveIhBoardFor(1, null, bulge);
@@ -242,14 +235,7 @@ describe.skipIf(!anyShard)("developing a shipped IH01 record", () => {
 
 		// Signed perpendicular offset of an arc's midpoint from its chord, in chord-length units: one
 		// number per side that is invariant under every similarity the develop can apply.
-		const bowOf = (
-			ax: number,
-			ay: number,
-			bx: number,
-			by: number,
-			mx: number,
-			my: number,
-		) => {
+		const bowOf = (ax: number, ay: number, bx: number, by: number, mx: number, my: number) => {
 			const dx = bx - ax;
 			const dy = by - ay;
 			return ((my - ay) * dx - (mx - ax) * dy) / (dx * dx + dy * dy);
@@ -286,7 +272,10 @@ describe.skipIf(!anyShard)("developing a shipped IH01 record", () => {
 				return [r1, [...r1].reverse()];
 			});
 		const close = (a: number[], b: number[]) => a.every((x, i) => Math.abs(x - b[i]) < 1e-3);
-		expect(rotations(got).some((cand) => close(cand, want)), `${got} vs ${want}`).toBe(true);
+		expect(
+			rotations(got).some((cand) => close(cand, want)),
+			`${got} vs ${want}`,
+		).toBe(true);
 	});
 
 	it("keeps every curved tile the same shape", () => {
@@ -323,9 +312,7 @@ describe.skipIf(!anyShard)("developing a shipped IH01 record", () => {
 						: null;
 					return `${Math.sqrt(L2).toFixed(4)}|${loc ? loc.map((v) => v.toFixed(4)).join(",") : "-"}`;
 				});
-				return sides
-					.map((_, rot) => [...sides.slice(rot), ...sides.slice(0, rot)].join("/"))
-					.sort()[0];
+				return sides.map((_, rot) => [...sides.slice(rot), ...sides.slice(0, rot)].join("/")).sort()[0];
 			});
 			expect(new Set(shapes).size, `k=${k} distinct tile shapes`).toBe(1);
 		}
@@ -391,11 +378,15 @@ describe.skipIf(!existsSync(shardIh(2, 2)))("the IH02 board, which is where the 
 		expect(spec.corners).toEqual(["F", "A", "B", "C", "D", "E"]);
 		const cls = spec.sides.map((s) => s[1]);
 		const at = (L: string) => spec.corners.indexOf(L);
-		const sidesAt = (L: string) =>
-			new Set([cls[at(L)], cls[(at(L) - 1 + cls.length) % cls.length]]);
+		const sidesAt = (L: string) => new Set([cls[at(L)], cls[(at(L) - 1 + cls.length) % cls.length]]);
 		// Read off the corpus by tools/ctrnact-oracle/develop_ih_edges.py's own incidence pass.
 		const corpus: Record<string, string[]> = {
-			A: ["a"], B: ["a", "b"], C: ["c"], D: ["c"], E: ["b"], F: ["a", "b"],
+			A: ["a"],
+			B: ["a", "b"],
+			C: ["c"],
+			D: ["c"],
+			E: ["b"],
+			F: ["a", "b"],
 		};
 		for (const [L, seen] of Object.entries(corpus)) {
 			for (const c of seen) expect(sidesAt(L).has(c), `${L} should admit class ${c}`).toBe(true);
@@ -527,12 +518,10 @@ describe.skipIf(!existsSync(shardIh(5, 2)))("the IH05 board, and what four aspec
 				for (const rec of readIh(ih, k)) seen.add(certCellFaces(rec, r.board) / rec.k);
 			ratios.set(ih, seen);
 		}
-		for (const ih of [1, 2, 3, 4, 5, 6, 8, 9])
-			expect([...ratios.get(ih)!], `IH${ih} certFaces/k`).toEqual([1]);
+		for (const ih of [1, 2, 3, 4, 5, 6, 8, 9]) expect([...ratios.get(ih)!], `IH${ih} certFaces/k`).toEqual([1]);
 		// The two boards with rotation centres, where a site tagged Cn or Dn contributes a 1/n of a
 		// vertex's darts and the dart count stops counting whole vertices.
-		for (const ih of [7, 10])
-			expect(ratios.get(ih)!.size, `IH${ih} certFaces/k varies`).toBeGreaterThan(1);
+		for (const ih of [7, 10]) expect(ratios.get(ih)!.size, `IH${ih} certFaces/k varies`).toBeGreaterThan(1);
 		const r = solveIhBoard(5, [0.18, 0.42, 0.28, 0.16, 0.31]);
 		expect(r.ok).toBe(true);
 		if (!r.ok) return;
@@ -560,9 +549,7 @@ describe.skipIf(!existsSync(shardIh(5, 2)))("the IH05 board, and what four aspec
 				const q = ring[(i + 1) % ring.length];
 				a2 += p.x * q.y - q.x * p.y;
 			}
-			const base = Math.round(
-				Math.abs(r.board.t1.x * r.board.t2.y - r.board.t1.y * r.board.t2.x) / Math.abs(a2 / 2),
-			);
+			const base = Math.round(Math.abs(r.board.t1.x * r.board.t2.y - r.board.t1.y * r.board.t2.x) / Math.abs(a2 / 2));
 			expect(base, `IH0${ih} aspects`).toBe(ISOHEDRAL_TYPES.find((t) => t.ih === ih)!.numAspects);
 			for (const k of shelfKs(ih).slice(0, 2)) {
 				for (const rec of readIh(ih, k)) {
@@ -656,7 +643,10 @@ describe.skipIf(!existsSync(shardIh(6, 2)))("the IH06 board, whose corpus marks 
 		const k4 = readIh(6, 4);
 		const full = k4.filter((r) => r.drawn.split("").every((c) => c === "1"));
 		expect(full.length, "records with every edge drawn").toBeGreaterThan(0);
-		expect(readIh(6, 2).some((r) => !r.drawn.includes("1")), "the bare tiling").toBe(true);
+		expect(
+			readIh(6, 2).some((r) => !r.drawn.includes("1")),
+			"the bare tiling",
+		).toBe(true);
 	});
 
 	it("builds every eagerly shipped record, straight and curved", () => {
@@ -736,7 +726,12 @@ describe.skipIf(!existsSync(shardIh(8, 1)))("the IH08 board, whose corner letter
 		// ⚑ It was the only one when it landed; IH09 and IH10 joined it. The seven boards BEFORE it are
 		// still even-only, and that is the claim worth holding on to.
 		for (const other of IH_EDGE_BOARDS_SHELF.filter((x) => x.ih < 8))
-			expect(Object.keys(other.counts).map(Number).every((k) => k % 2 === 0), other.label).toBe(true);
+			expect(
+				Object.keys(other.counts)
+					.map(Number)
+					.every((k) => k % 2 === 0),
+				other.label,
+			).toBe(true);
 	});
 
 	it("names three corners for six, and gives every class one slot because all three are S", () => {
@@ -794,7 +789,9 @@ describe.skipIf(!existsSync(shardIh(9, 1)))("the IH09 and IH10 boards", () => {
 		// The note on IH08 said it was the only board with odd k. IH09 and IH10 have it too, so the shelf's
 		// header claim is now "seven boards, not all of them", and code stepping by two is wrong on three.
 		const odd = IH_EDGE_BOARDS_SHELF.filter((b) =>
-			Object.keys(b.counts).map(Number).some((k) => k % 2 === 1),
+			Object.keys(b.counts)
+				.map(Number)
+				.some((k) => k % 2 === 1),
 		);
 		expect(odd.map((b) => b.ih)).toEqual([8, 9, 10]);
 	});
@@ -834,7 +831,11 @@ describe.skipIf(!existsSync(shardIh(9, 1)))("the IH09 and IH10 boards", () => {
 		// ...and every other board still bows.
 		for (const ih of [1, 2, 3, 4, 5, 6, 7, 8, 9]) {
 			const info = ISOHEDRAL_TYPES.find((t) => t.ih === ih)!;
-			const r = solveIhBoardFor(ih, null, info.edgeShapes.map((_, i) => 0.18 + 0.03 * i));
+			const r = solveIhBoardFor(
+				ih,
+				null,
+				info.edgeShapes.map((_, i) => 0.18 + 0.03 * i),
+			);
 			expect(r.ok, `IH0${ih} bows`).toBe(true);
 			if (r.ok) expect(r.board.curved).toBe(true);
 		}

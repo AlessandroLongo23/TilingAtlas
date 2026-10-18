@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type TouchEvent as RTouchEvent, type MouseEvent as RMouseEvent } from "react";
+import {
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+	type TouchEvent as RTouchEvent,
+	type MouseEvent as RMouseEvent,
+} from "react";
 import { map } from "@/lib/utils/math";
 
 export interface ColorParams {
@@ -85,9 +92,9 @@ export function ColorPad({ value, onChange }: ColorPadProps) {
 	};
 
 	return (
-		<div className="bg-surface-raised/95 rounded-xl shadow-lg ring-1 ring-line-subtle overflow-hidden min-w-[120px] select-none touch-none">
-			<div className="flex items-center justify-between px-3 py-2 bg-surface-overlay/90 border-b border-line-subtle">
-				<span className="text-fg text-sm font-medium">Color Palette</span>
+		<div className="min-w-[120px] touch-none overflow-hidden rounded-xl bg-surface-raised/95 shadow-lg ring-1 ring-line-subtle select-none">
+			<div className="flex items-center justify-between border-b border-line-subtle bg-surface-overlay/90 px-3 py-2">
+				<span className="text-sm font-medium text-fg">Color Palette</span>
 			</div>
 			<div className="p-3">
 				<div
@@ -99,10 +106,10 @@ export function ColorPad({ value, onChange }: ColorPadProps) {
 					style={{ width: PAD, height: PAD }}
 					onMouseDown={onMouseDown}
 					onTouchStart={onTouchStart}
-					className="relative mx-auto bg-surface-overlay/30 border border-line-strong rounded cursor-pointer overflow-hidden"
+					className="relative mx-auto cursor-pointer overflow-hidden rounded border border-line-strong bg-surface-overlay/30"
 				>
 					<div
-						className="absolute inset-0 z-10 pointer-events-none"
+						className="pointer-events-none absolute inset-0 z-10"
 						style={{
 							backgroundImage:
 								"linear-gradient(to right, rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.1) 1px, transparent 1px)",
@@ -110,7 +117,7 @@ export function ColorPad({ value, onChange }: ColorPadProps) {
 						}}
 					/>
 					<div
-						className="absolute w-3.5 h-3.5 bg-white border-2 border-line-subtle z-20 pointer-events-none"
+						className="pointer-events-none absolute z-20 h-3.5 w-3.5 border-2 border-line-subtle bg-white"
 						style={{
 							left: position.x,
 							top: position.y,

@@ -63,7 +63,20 @@ interface Props {
 // this canvas and the tiling sphere the same size on screen when either is retuned.
 const CAMERA_DISTANCE = cameraDistanceFor(DEFAULT_FIT_FRACTION);
 
-export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, allEdges, keepRadius, crossings, showCrossings, showEdges, tileHue, densitySheets }: Props) {
+export function IcoFreedrawCanvas({
+	pattern,
+	mode,
+	showGrid,
+	solidId,
+	vertices,
+	allEdges,
+	keepRadius,
+	crossings,
+	showCrossings,
+	showEdges,
+	tileHue,
+	densitySheets,
+}: Props) {
 	// The store fields this otherwise self-contained canvas reads. It used to read only the surface-look
 	// flag, which is why the sidebar hid the hue ring and the stroke slider for every shelf on this canvas:
 	// the builder has taken `hueOffset` and `edgeThickness` all along, nothing passed them (AL, 2026-08-21).
@@ -274,12 +287,26 @@ export function IcoFreedrawCanvas({ pattern, mode, showGrid, solidId, vertices, 
 		};
 		// `faceOpacity` IS a rebuild dep here, unlike the tiling sphere's: this builder makes the facet
 		// meshes and their materials in one pass and has no live setter, and the boards it serves are small.
-	}, [pattern, mode, showGrid, solid, solidEdgeList, crossings, showCrossings, showEdges, tileHue, densitySheets, hueOffset, lineWidth, faceOpacity]);
+	}, [
+		pattern,
+		mode,
+		showGrid,
+		solid,
+		solidEdgeList,
+		crossings,
+		showCrossings,
+		showEdges,
+		tileHue,
+		densitySheets,
+		hueOffset,
+		lineWidth,
+		faceOpacity,
+	]);
 
 	if (errored) {
 		return (
 			<div className="absolute inset-0 z-10 flex items-center justify-center">
-				<p className="text-sm text-fg-muted max-w-xs text-center">
+				<p className="max-w-xs text-center text-sm text-fg-muted">
 					3D view unavailable — the browser ran out of WebGL contexts. Reload to free them.
 				</p>
 			</div>

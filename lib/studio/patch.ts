@@ -121,10 +121,7 @@ class VertexFold {
 				// p = verts[hit] + off. Solve in lattice coordinates and insist the answer is integral:
 				// a non-integral residue here means the weld matched two points that are NOT lattice
 				// equivalent, which is a malformed cell and must not pass silently.
-				const off = latticeCoords(
-					[p[0] - this.verts[hit][0], p[1] - this.verts[hit][1]],
-					this.basis,
-				);
+				const off = latticeCoords([p[0] - this.verts[hit][0], p[1] - this.verts[hit][1]], this.basis);
 				const oi = Math.round(off[0]);
 				const oj = Math.round(off[1]);
 				if (Math.abs(off[0] - oi) > LATTICE_SLOP || Math.abs(off[1] - oj) > LATTICE_SLOP) return null;
@@ -161,12 +158,8 @@ export function tilingToPatch(cell: TranslationalCellData | null): PatchFailure 
 	const base = parseBaseCell(cell);
 	if (!base) return { ok: false, reason: "the cell holds no polygons" };
 
-	const basis = gaussReduce(
-		[base.basis[0][0], base.basis[0][1]],
-		[base.basis[1][0], base.basis[1][1]],
-	);
-	if (Math.abs(cross(basis[0], basis[1])) < 1e-12)
-		return { ok: false, reason: "the cell's two periods are parallel" };
+	const basis = gaussReduce([base.basis[0][0], base.basis[0][1]], [base.basis[1][0], base.basis[1][1]]);
+	if (Math.abs(cross(basis[0], basis[1])) < 1e-12) return { ok: false, reason: "the cell's two periods are parallel" };
 
 	const weld = Math.max(1e-9, base.medianEdge * WELD_FRAC);
 	const fold = new VertexFold(basis, weld);

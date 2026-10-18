@@ -20,7 +20,7 @@ export function CardDoneChip({ active, onDone }: { active: boolean; onDone: () =
 				onDone();
 			}}
 			aria-label="Done: stop interacting with this preview"
-			className="ta-float absolute bottom-2 right-2 z-10 hidden h-11 min-w-11 items-center justify-center px-4 text-sm font-medium text-fg max-md:flex"
+			className="ta-float absolute right-2 bottom-2 z-10 hidden h-11 min-w-11 items-center justify-center px-4 text-sm font-medium text-fg max-md:flex"
 		>
 			Done
 		</button>

@@ -42,13 +42,7 @@ const LABEL_FONT = (11 * BOX) / SIZE_PX;
 const LABEL_PUSH = 11;
 const MARK = 4;
 
-export function PrototileInspector({
-	info,
-	cell,
-}: {
-	info: IsohedralTypeInfo;
-	cell: IsohedralCell;
-}) {
+export function PrototileInspector({ info, cell }: { info: IsohedralTypeInfo; cell: IsohedralCell }) {
 	const uid = useId();
 
 	// Frame the outline AND the straight polygon.
@@ -58,7 +52,10 @@ export function PrototileInspector({
 	// also hide half of what a bulge slider does — the drawing would rescale as the edge bowed, shrinking
 	// the tile by roughly what the bow gained. Reserving room for the widest possible bow up front was
 	// worse still: at rest, which is where the tile is read, it left the drawing half empty.
-	let minx = Infinity, miny = Infinity, maxx = -Infinity, maxy = -Infinity;
+	let minx = Infinity,
+		miny = Infinity,
+		maxx = -Infinity,
+		maxy = -Infinity;
 	for (const p of [...cell.prototile, ...cell.tilingVertices]) {
 		if (p.x < minx) minx = p.x;
 		if (p.x > maxx) maxx = p.x;
@@ -90,8 +87,7 @@ export function PrototileInspector({
 		y: round2(BOX - (oy + (p.y - miny) * s)),
 	});
 
-	const path = (pts: { x: number; y: number }[]) =>
-		pts.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(" ");
+	const path = (pts: { x: number; y: number }[]) => pts.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(" ");
 
 	const outline = cell.prototile.map(px);
 	const corners = cell.tilingVertices.map(px);
@@ -233,8 +229,8 @@ export function PrototileInspector({
 
 			{cell.degenerate ? (
 				<p className="text-[11px] text-fg-muted">
-					Self-overlapping: at these vertices the outline crosses itself, so the tiles overlap
-					instead of tiling. Tactile ships no parameter ranges, so the sliders can reach here.
+					Self-overlapping: at these vertices the outline crosses itself, so the tiles overlap instead of tiling.
+					Tactile ships no parameter ranges, so the sliders can reach here.
 				</p>
 			) : null}
 		</div>

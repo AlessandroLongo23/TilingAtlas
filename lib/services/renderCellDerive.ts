@@ -101,15 +101,11 @@ function sameRing(a: string[], b: string[]): boolean {
  * either way under the nonzero rule the canvas uses). So the test is: same basis, same polygons up to
  * rotation and direction.
  */
-export function reproducesRenderCell(
-	shipped: CellShape | undefined,
-	derived: CellShape | undefined,
-): boolean {
+export function reproducesRenderCell(shipped: CellShape | undefined, derived: CellShape | undefined): boolean {
 	if (!shipped?.basis || !shipped.cellPolygons) return false;
 	if (!derived?.basis || !derived.cellPolygons) return false;
 	for (let i = 0; i < 2; i++)
-		for (let j = 0; j < 2; j++)
-			if (Math.abs(shipped.basis[i][j] - derived.basis[i][j]) > 1e-9) return false;
+		for (let j = 0; j < 2; j++) if (Math.abs(shipped.basis[i][j] - derived.basis[i][j]) > 1e-9) return false;
 	if (shipped.cellPolygons.length !== derived.cellPolygons.length) return false;
 	const pool = derived.cellPolygons.map((p) => ({ p, seq: p.vertices.map(vk) }));
 	const used = new Set<number>();
@@ -138,9 +134,7 @@ export function reproducesRenderCell(
  * gate keeps its cell: that is the 9-fold and 5-fold star tilings, whose ζ₁₈/ζ₂₀ geometry has no ζ₂₄
  * reconstruction at all, and the handful with no exactSource to begin with.
  */
-export function stripDerivableRenderCells<T extends Derivable>(
-	records: T[],
-): { stripped: number; kept: number } {
+export function stripDerivableRenderCells<T extends Derivable>(records: T[]): { stripped: number; kept: number } {
 	const ring = activeRing24();
 	let stripped = 0;
 	let kept = 0;
@@ -173,7 +167,13 @@ function activeRing24(): CyclotomicRing {
 }
 
 /** What a record whose exact source will not reconstruct falls back to: nothing to draw. */
-const NOTHING_TO_DRAW = { cellPolygons: [], basis: [[1, 0], [0, 1]] } as unknown as TranslationalCellData;
+const NOTHING_TO_DRAW = {
+	cellPolygons: [],
+	basis: [
+		[1, 0],
+		[0, 1],
+	],
+} as unknown as TranslationalCellData;
 
 interface Derivable {
 	id: string;

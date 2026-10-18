@@ -43,7 +43,7 @@ export function PrototileCard({ tile }: { tile: Prototile }) {
 	};
 
 	return (
-		<div className="relative flex flex-col rounded-lg border border-line bg-surface-overlay/30 hover:border-line-strong hover:bg-surface-overlay/50 transition-colors overflow-hidden group">
+		<div className="group relative flex flex-col overflow-hidden rounded-lg border border-line bg-surface-overlay/30 transition-colors hover:border-line-strong hover:bg-surface-overlay/50">
 			<div className="relative aspect-square bg-surface-raised">
 				{/* Fit, not a fixed edge length: these are lone tiles, so the frame has to follow
 				    the shape (a triangle is one edge across, an 18★ at 20° apex about eleven). The bar
@@ -60,15 +60,15 @@ export function PrototileCard({ tile }: { tile: Prototile }) {
 						onClick={handleScreenshot}
 						title="Screenshot"
 						aria-label="Take screenshot"
-						className="absolute top-1.5 right-1.5 p-1.5 rounded-md bg-surface-overlay/80 border border-line-strong text-fg-muted hover:text-fg hover:bg-surface-overlay opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity max-md:opacity-100"
+						className="absolute top-1.5 right-1.5 rounded-md border border-line-strong bg-surface-overlay/80 p-1.5 text-fg-muted opacity-0 transition-opacity group-hover:opacity-100 hover:bg-surface-overlay hover:text-fg focus:opacity-100 max-md:opacity-100"
 					>
 						<Camera size={13} />
 					</button>
 				) : null}
 			</div>
-			<div className="flex flex-col px-2.5 py-2 gap-1.5">
+			<div className="flex flex-col gap-1.5 px-2.5 py-2">
 				<div className="flex flex-wrap items-center gap-1">
-					<span className="inline-flex items-center border border-line-strong bg-surface-raised px-1.5 py-0.5 text-[10px] font-medium max-md:text-xs text-fg-muted">
+					<span className="inline-flex items-center border border-line-strong bg-surface-raised px-1.5 py-0.5 text-[10px] font-medium text-fg-muted max-md:text-xs">
 						{FAMILY_LABELS[tile.family]}
 					</span>
 					{tile.badges.map((b) => (
@@ -82,10 +82,12 @@ export function PrototileCard({ tile }: { tile: Prototile }) {
 						</span>
 					))}
 				</div>
-				<p className="text-xs text-fg-secondary font-mono leading-tight" title={tile.name}>
+				<p className="font-mono text-xs leading-tight text-fg-secondary" title={tile.name}>
 					{tile.name}
 				</p>
-				<p className="text-[10px] text-fg-disabled font-mono leading-tight max-md:text-xs max-md:text-fg-muted">{tile.sideCount} sides</p>
+				<p className="font-mono text-[10px] leading-tight text-fg-disabled max-md:text-xs max-md:text-fg-muted">
+					{tile.sideCount} sides
+				</p>
 			</div>
 		</div>
 	);

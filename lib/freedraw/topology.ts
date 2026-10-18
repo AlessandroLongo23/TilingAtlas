@@ -70,8 +70,7 @@ export interface FaceMerge {
 }
 
 /** Key of the DIRECTED quotient half-edge from corner `va` to corner `vb` across the lattice step `d`. */
-export const halfEdgeKey = (va: number, vb: number, dx: number, dy: number): string =>
-	`${va},${vb},${dx},${dy}`;
+export const halfEdgeKey = (va: number, vb: number, dx: number, dy: number): string => `${va},${vb},${dx},${dy}`;
 
 /**
  * Key of the UNDIRECTED quotient edge, and the orientation that produced it.

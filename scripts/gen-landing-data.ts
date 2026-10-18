@@ -16,7 +16,13 @@
 // `pnpm landing:data` after regenerating the atlas.
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { buildLandingPayload, countsOf, drawableEuclidean, toSpecimen, type LandingCounts } from "@/lib/services/landing-core";
+import {
+	buildLandingPayload,
+	countsOf,
+	drawableEuclidean,
+	toSpecimen,
+	type LandingCounts,
+} from "@/lib/services/landing-core";
 import type { AtlasManifest } from "@/lib/services/atlasManifest";
 import {
 	COMPOSABLE_SHARD_KS,
@@ -77,7 +83,9 @@ async function loadAtlas(files = EAGER_ATLAS_FILES): Promise<ReferenceTiling[]> 
 	const parts = await Promise.all(
 		files.map(async (name, i) => {
 			try {
-				return hydrateRenderCells(decodeAtlas<ReferenceTiling>(JSON.parse(await readFile(path.join(dir, name), "utf8"))));
+				return hydrateRenderCells(
+					decodeAtlas<ReferenceTiling>(JSON.parse(await readFile(path.join(dir, name), "utf8"))),
+				);
 			} catch (e) {
 				if (i === 0 && files === EAGER_ATLAS_FILES) throw e;
 				return [] as ReferenceTiling[];
@@ -89,9 +97,7 @@ async function loadAtlas(files = EAGER_ATLAS_FILES): Promise<ReferenceTiling[]> 
 
 async function writeInBatches(entries: [string, string][], batch = 256): Promise<void> {
 	for (let i = 0; i < entries.length; i += batch) {
-		await Promise.all(
-			entries.slice(i, i + batch).map(([file, body]) => writeFile(file, body, "utf8")),
-		);
+		await Promise.all(entries.slice(i, i + batch).map(([file, body]) => writeFile(file, body, "utf8")));
 	}
 }
 
@@ -125,7 +131,9 @@ async function catalogueCounts(eager: ReferenceTiling[]): Promise<LandingCounts>
 	const seen = new Set(eager.map((t) => t.id));
 	const higher = (await loadAtlas(HIGHER_ATLAS_FILES)).filter((t) => !seen.has(t.id) && seen.add(t.id));
 	const counts = countsOf([...eager, ...higher]);
-	const manifest = JSON.parse(await readFile(path.join(process.cwd(), "public", "atlas-manifest.json"), "utf8")) as AtlasManifest;
+	const manifest = JSON.parse(
+		await readFile(path.join(process.cwd(), "public", "atlas-manifest.json"), "utf8"),
+	) as AtlasManifest;
 	for (const t of manifest.tiers) {
 		counts[t.geometry] += t.count;
 		counts.total += t.count;
@@ -150,9 +158,7 @@ async function main(): Promise<void> {
 	await rm(HERO_CELLS_DIR, { recursive: true, force: true }); // drop ids that left the atlas
 	await mkdir(HERO_CELLS_DIR, { recursive: true });
 	await writeFile(HERO_INDEX_OUT, `${JSON.stringify(safe.map((s) => s.id))}\n`, "utf8");
-	await writeInBatches(
-		safe.map((s) => [path.join(HERO_CELLS_DIR, `${s.id}.json`), JSON.stringify(s)]),
-	);
+	await writeInBatches(safe.map((s) => [path.join(HERO_CELLS_DIR, `${s.id}.json`), JSON.stringify(s)]));
 
 	const { euclidean, hyperbolic, spherical, total } = payload.counts;
 	console.log(
@@ -161,9 +167,7 @@ async function main(): Promise<void> {
 			`hyp ${payload.hyperbolicPatch} (${Object.keys(payload.hyperbolicPatches ?? {}).length} records inlined), ` +
 			`sph ${payload.sphericalSolid}`,
 	);
-	console.log(
-		`hero: ${safe.length} per-cell files + index${skipped ? ` (${skipped} ids skipped: unsafe chars)` : ""}`,
-	);
+	console.log(`hero: ${safe.length} per-cell files + index${skipped ? ` (${skipped} ids skipped: unsafe chars)` : ""}`);
 }
 
 main().catch((e) => {

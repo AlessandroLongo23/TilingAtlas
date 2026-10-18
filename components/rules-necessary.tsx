@@ -3,8 +3,19 @@
 import { FigurePanel, type PanelSpec } from "@/components/figure-panel";
 import { type Box } from "@/lib/render/figureCanvas";
 import {
-	arrowHead, classMark, dot, GHOST, halo, INK, rad, REJECT, segment, SOFT, twoFold,
-	type Api, type Pt,
+	arrowHead,
+	classMark,
+	dot,
+	GHOST,
+	halo,
+	INK,
+	rad,
+	REJECT,
+	segment,
+	SOFT,
+	twoFold,
+	type Api,
+	type Pt,
 } from "@/lib/render/figureGlyphs";
 
 // Obligation 2 is not about what the four rules SAY — that slide is back in part three. It is about
@@ -72,7 +83,8 @@ function walkedHexagon(api: Api, c: Pt) {
 	// Arrowheads and not plain edges: the walk is DIRECTED, which is the reason a reflection cannot
 	// close it, and a figure that draws the boundary undirected quietly drops that reason.
 	for (let i = 0; i < 6; i++) {
-		const a = hexCorner(c, i), b = hexCorner(c, (i + 1) % 6);
+		const a = hexCorner(c, i),
+			b = hexCorner(c, (i + 1) % 6);
 		const ang = Math.atan2(b[1] - a[1], b[0] - a[0]);
 		arrowHead(api, [a[0] + Math.cos(ang) * HEX_R * 0.62, a[1] + Math.sin(ang) * HEX_R * 0.62], ang, GHOST, 8);
 	}
@@ -112,13 +124,15 @@ function drawDivisor(api: Api) {
 	text(0.035, 0.32, "fold", { colour: SOFT, size: 0.56 });
 
 	// the quotient walk: three corners, and it closes
-	const q: Pt = [0.66, 0.14], qR = 0.27;
+	const q: Pt = [0.66, 0.14],
+		qR = 0.27;
 	const qc = (i: number): Pt => {
 		const a = rad(90 + 120 * i);
 		return [q[0] + Math.cos(a) * qR, q[1] + Math.sin(a) * qR];
 	};
 	for (let i = 0; i < 3; i++) {
-		const a = qc(i), b = qc((i + 1) % 3);
+		const a = qc(i),
+			b = qc((i + 1) % 3);
 		const ang = Math.atan2(b[1] - a[1], b[0] - a[0]);
 		const shrink = 0.075;
 		const from: Pt = [a[0] + Math.cos(ang) * shrink, a[1] + Math.sin(ang) * shrink];

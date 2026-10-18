@@ -3,9 +3,9 @@
  * hand-written subfloats would rot); hand-authored TikZ in tex/hand/ is picked up by the build
  * directly. Per-tiling tweaks go in OVERRIDES — never edit generated .tex.
  */
-import type { ColorStrategy } from './style/palette';
-import type { FigureSnapshot } from './snapshot';
-import type { OrbitCache } from './tiling/orbits';
+import type { ColorStrategy } from "./style/palette";
+import type { FigureSnapshot } from "./snapshot";
+import type { OrbitCache } from "./tiling/orbits";
 
 export type OracleMap = {
 	matched: Record<string, string>; // canonicalKey → tCode
@@ -26,12 +26,12 @@ export type TilingFigureEntry = {
 };
 
 /** Per-tiling overrides keyed by t-code (or canonicalKey for unmatched), applied last. */
-export const OVERRIDES: Record<string, Partial<Pick<TilingFigureEntry, 'strategy' | 'windowMm' | 'edgeMm'>>> = {};
+export const OVERRIDES: Record<string, Partial<Pick<TilingFigureEntry, "strategy" | "windowMm" | "edgeMm">>> = {};
 
 export const GALLERY_WINDOW_MM = 34;
 export const GALLERY_EDGE_MM = 3.8;
 
-const dotNotation = (vc: string): string => vc.split(',').join('.');
+const dotNotation = (vc: string): string => vc.split(",").join(".");
 
 /**
  * Compact literature notation (Grünbaum–Shephard / Galebach / Wikipedia): exponents compress
@@ -40,7 +40,7 @@ const dotNotation = (vc: string): string => vc.split(',').join('.');
  * Math-mode LaTeX; the expanded comma form remains the identifier in all data artifacts.
  */
 export const compactVcTex = (vc: string): string => {
-	const ns = vc.split(',');
+	const ns = vc.split(",");
 	const parts: string[] = [];
 	for (let i = 0; i < ns.length; ) {
 		let j = i;
@@ -48,14 +48,10 @@ export const compactVcTex = (vc: string): string => {
 		parts.push(j - i > 1 ? `${ns[i]}^{${j - i}}` : ns[i]);
 		i = j;
 	}
-	return `$${parts.join('.')}$`;
+	return `$${parts.join(".")}$`;
 };
 
-export function galleryEntries(
-	snap: FigureSnapshot,
-	orbits: OrbitCache,
-	oracleMap: OracleMap
-): TilingFigureEntry[] {
+export function galleryEntries(snap: FigureSnapshot, orbits: OrbitCache, oracleMap: OracleMap): TilingFigureEntry[] {
 	const entries = snap.tilings.map((t, i) => {
 		const tCode = oracleMap.matched[t.canonicalKey] ?? null;
 		const id = tCode ?? `nomatch-k${t.k}-${i}`;
@@ -64,14 +60,14 @@ export function galleryEntries(
 			canonicalKey: t.canonicalKey,
 			k: t.k,
 			tCode,
-			vcLabel: orbits[t.canonicalKey].vcOfOrbit.map(dotNotation).join('; '),
-			vcLabelTex: orbits[t.canonicalKey].vcOfOrbit.map(compactVcTex).join('; '),
-			strategy: 'byNGon',
+			vcLabel: orbits[t.canonicalKey].vcOfOrbit.map(dotNotation).join("; "),
+			vcLabelTex: orbits[t.canonicalKey].vcOfOrbit.map(compactVcTex).join("; "),
+			strategy: "byNGon",
 			windowMm: GALLERY_WINDOW_MM,
 			edgeMm: GALLERY_EDGE_MM,
 		};
 		return { ...entry, ...(OVERRIDES[tCode ?? t.canonicalKey] ?? {}) };
 	});
 	// gallery order: by k, then t-code (unmatched last)
-	return entries.sort((a, b) => a.k - b.k || (a.tCode ?? '~').localeCompare(b.tCode ?? '~'));
+	return entries.sort((a, b) => a.k - b.k || (a.tCode ?? "~").localeCompare(b.tCode ?? "~"));
 }

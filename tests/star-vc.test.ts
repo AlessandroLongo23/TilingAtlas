@@ -10,12 +10,7 @@ import {
 	type CornerTok,
 } from "@/classes/algorithm/StarVC";
 import { CyclotomicRing, Cyclotomic } from "@/classes/Cyclotomic";
-import {
-	r2AllVariants,
-	r2DentRegVariants,
-	r2Dmax,
-	R2_STAR_NS,
-} from "@/classes/algorithm/StarDmaxRoute2";
+import { r2AllVariants, r2DentRegVariants, r2Dmax, R2_STAR_NS } from "@/classes/algorithm/StarDmaxRoute2";
 import {
 	computeDmaxRow,
 	computeDentFillTable,
@@ -38,7 +33,11 @@ describe("StarVC — admissible variants + dent-fillability filter (C4)", () => 
 
 	it("dent-regular-fillable filter is a SOUND SUPERSET of the TA oracle (equals it for n=3,4,6)", () => {
 		const keep = dentRegularFillableVariants();
-		const byN = (n: number) => keep.filter((x) => x.n === n).map((x) => x.alphaU).sort((a, b) => a - b);
+		const byN = (n: number) =>
+			keep
+				.filter((x) => x.n === n)
+				.map((x) => x.alphaU)
+				.sort((a, b) => a - b);
 		// equals the oracle for the constrained n
 		expect(byN(3)).toEqual([1, 2]); //         oracle 3*@{1,2}
 		expect(byN(4)).toEqual([2, 3, 4]); //      oracle 4*@{2,3,4}
@@ -173,7 +172,10 @@ describe("TH-13 — dent-fill γ-feasibility table (computed, not asserted)", ()
 		expect(counts["UNFILLABLE"]).toBe(5);
 	});
 	it("UNFILLABLE = exactly the five γ=11 (α-max) variants — provably Fig-4-absent", () => {
-		const unf = rows.filter((r) => r.verdict === "UNFILLABLE").map((r) => `${r.n}*@${r.alphaU}`).sort();
+		const unf = rows
+			.filter((r) => r.verdict === "UNFILLABLE")
+			.map((r) => `${r.n}*@${r.alphaU}`)
+			.sort();
 		expect(unf).toEqual(["12*@9", "3*@3", "4*@5", "6*@7", "8*@8"]);
 	});
 	it("same-family point fill impossible everywhere (γ = α + 24/n ≠ α) — the single-variant rider", () => {

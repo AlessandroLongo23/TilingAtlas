@@ -29,19 +29,10 @@ export const SEAM_I_COLOR = "#d4342c";
 export const SEAM_J_COLOR = "#2c6fd4";
 
 /** World point → canvas pixel, for a canvas whose origin is its centre. */
-function project(
-	wx: number,
-	wy: number,
-	cam: OverlayCamera,
-	halfW: number,
-	halfH: number,
-): [number, number] {
+function project(wx: number, wy: number, cam: OverlayCamera, halfW: number, halfH: number): [number, number] {
 	const c = Math.cos(cam.rot);
 	const s = Math.sin(cam.rot);
-	return [
-		cam.x + cam.zoom * (c * wx + s * wy) + halfW,
-		cam.y + cam.zoom * (s * wx - c * wy) + halfH,
-	];
+	return [cam.x + cam.zoom * (c * wx + s * wy) + halfW, cam.y + cam.zoom * (s * wx - c * wy) + halfH];
 }
 
 export interface LatticeSpec {
@@ -100,23 +91,13 @@ export function drawLattice(
 	if (spec.W && spec.W > 0) {
 		for (let k = Math.ceil((rect.i0 - spec.i0) / spec.W); spec.i0 + k * spec.W <= i1; k++) {
 			const i = spec.i0 + k * spec.W;
-			line(
-				i * v1[0] + rect.j0 * v2[0],
-				i * v1[1] + rect.j0 * v2[1],
-				i * v1[0] + j1 * v2[0],
-				i * v1[1] + j1 * v2[1],
-			);
+			line(i * v1[0] + rect.j0 * v2[0], i * v1[1] + rect.j0 * v2[1], i * v1[0] + j1 * v2[0], i * v1[1] + j1 * v2[1]);
 		}
 	}
 	if (spec.H && spec.H > 0) {
 		for (let k = Math.ceil((rect.j0 - spec.j0) / spec.H); spec.j0 + k * spec.H <= j1; k++) {
 			const j = spec.j0 + k * spec.H;
-			line(
-				rect.i0 * v1[0] + j * v2[0],
-				rect.i0 * v1[1] + j * v2[1],
-				i1 * v1[0] + j * v2[0],
-				i1 * v1[1] + j * v2[1],
-			);
+			line(rect.i0 * v1[0] + j * v2[0], rect.i0 * v1[1] + j * v2[1], i1 * v1[0] + j * v2[0], i1 * v1[1] + j * v2[1]);
 		}
 	}
 	ctx.restore();
@@ -163,12 +144,7 @@ export interface SeamSpec {
  * whole visual difference between a torus and a Klein bottle. An open direction is drawn as a plain line
  * with no arrows: that edge is a real boundary, not an identification.
  */
-export function drawSeams(
-	ctx: CanvasRenderingContext2D,
-	cam: OverlayCamera,
-	basis: OverlayBasis,
-	spec: SeamSpec,
-) {
+export function drawSeams(ctx: CanvasRenderingContext2D, cam: OverlayCamera, basis: OverlayBasis, spec: SeamSpec) {
 	const hw = ctx.canvas.clientWidth / 2;
 	const hh = ctx.canvas.clientHeight / 2;
 	const { v1, v2 } = basis;

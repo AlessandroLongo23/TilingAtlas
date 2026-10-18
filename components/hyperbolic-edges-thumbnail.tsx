@@ -57,7 +57,12 @@ function renderThumb2d(pattern: HypEdgesThumbInput, size: number, opts: ThumbOpt
 	if (!ctx) return null;
 	const dark = document.documentElement.classList.contains("dark");
 	const meta = { id: pattern.id, name: pattern.id, config: pattern.config, edge: pattern.edge };
-	const drawn = new HyperbolicDeveloper(pattern.darts, pattern.edge).developEdges(meta, su11Identity(), FALLBACK_BOUND_R, THUMB_BUDGET);
+	const drawn = new HyperbolicDeveloper(pattern.darts, pattern.edge).developEdges(
+		meta,
+		su11Identity(),
+		FALLBACK_BOUND_R,
+		THUMB_BUDGET,
+	);
 	drawDevelopedEdgePatch(ctx, drawn, su11Identity(), {
 		R: size / 2 - 4,
 		cx: size / 2,
@@ -82,13 +87,7 @@ function renderThumb(pattern: HypEdgesThumbInput, size: number, opts: ThumbOpts)
  *  included, since their per-dart turns and lengths ride inside `darts`. */
 export type HypEdgesThumbInput = Pick<HypEdgesPattern, "id" | "config" | "edge" | "darts">;
 
-export function HyperbolicEdgesThumbnail({
-	pattern,
-	size = 256,
-}: {
-	pattern: HypEdgesThumbInput;
-	size?: number;
-}) {
+export function HyperbolicEdgesThumbnail({ pattern, size = 256 }: { pattern: HypEdgesThumbInput; size?: number }) {
 	const hueOffset = useConfiguration((s) => s.hueOffset);
 	const showFill = useConfiguration((s) => s.fillAmount > 0);
 	const showScaffold = useConfiguration((s) => s.freedrawScaffold);

@@ -3,8 +3,18 @@
 import { FigurePanel, type PanelSpec } from "@/components/figure-panel";
 import { type Box } from "@/lib/render/figureCanvas";
 import {
-	arc, arrowHead, DART, dot, halo, INK, rad, segment, SOFT, T1_COLOUR,
-	type Api, type Pt,
+	arc,
+	arrowHead,
+	DART,
+	dot,
+	halo,
+	INK,
+	rad,
+	segment,
+	SOFT,
+	T1_COLOUR,
+	type Api,
+	type Pt,
 } from "@/lib/render/figureGlyphs";
 import { polygonHue, tileFill, tileLine } from "@/lib/utils/renderTiling";
 
@@ -36,7 +46,8 @@ function polygon({ ctx, s }: Api, c: Pt, n: number, r: number, turn = 90, w = 1.
 	ctx.beginPath();
 	for (let i = 0; i < n; i++) {
 		const t = rad(turn + (360 * i) / n);
-		const x = c[0] + Math.cos(t) * r, y = c[1] + Math.sin(t) * r;
+		const x = c[0] + Math.cos(t) * r,
+			y = c[1] + Math.sin(t) * r;
 		if (i) ctx.lineTo(x, y);
 		else ctx.moveTo(x, y);
 	}
@@ -50,7 +61,8 @@ function polygon({ ctx, s }: Api, c: Pt, n: number, r: number, turn = 90, w = 1.
 /** A dodecagon, its circumcircle, and a point in it: nothing is further from a vertex than R. */
 function drawCocompact(api: Api) {
 	const { ctx, s, text } = api;
-	const c: Pt = [0, 0.06], R = 0.5;
+	const c: Pt = [0, 0.06],
+		R = 0.5;
 	polygon(api, c, 12, R, 90);
 
 	ctx.strokeStyle = "rgba(20,20,20,0.35)";
@@ -73,7 +85,11 @@ function drawCocompact(api: Api) {
 
 	segment(api, c, [c[0] + Math.cos(rad(-30)) * R, c[1] + Math.sin(rad(-30)) * R], INK, 2.2);
 	halo(api, c[0] + Math.cos(rad(-30)) * R * 0.55, c[1] + Math.sin(rad(-30)) * R * 0.55 + 0.06, 9);
-	text(c[0] + Math.cos(rad(-30)) * R * 0.55, c[1] + Math.sin(rad(-30)) * R * 0.55 + 0.06, "R", { colour: INK, size: 0.66, weight: 700 });
+	text(c[0] + Math.cos(rad(-30)) * R * 0.55, c[1] + Math.sin(rad(-30)) * R * 0.55 + 0.06, "R", {
+		colour: INK,
+		size: 0.66,
+		weight: 700,
+	});
 	text(0, -0.62, "every point lies in a tile, so within R of a vertex", { colour: INK, size: 0.58 });
 	text(0, -0.8, "and the vertices fall into k orbits", { colour: INK, size: 0.58 });
 }
@@ -81,11 +97,13 @@ function drawCocompact(api: Api) {
 /** A vertex of the largest possible degree, and the two flags each of its corners carries. */
 function drawFlagBound(api: Api) {
 	const { ctx, s, text } = api;
-	const c: Pt = [0, 0.02], R = 0.52;
+	const c: Pt = [0, 0.02],
+		R = 0.52;
 	// Six unit triangles round the vertex — the densest a vertex can be, since every interior angle is
 	// at least 60 degrees. Drawn as triangles and not as pie slices: the claim is about a tiling.
 	for (let i = 0; i < 6; i++) {
-		const a = rad(60 * i), b = rad(60 * (i + 1));
+		const a = rad(60 * i),
+			b = rad(60 * (i + 1));
 		ctx.fillStyle = fill(3);
 		ctx.strokeStyle = stroke(3);
 		ctx.lineWidth = 1.3 / s;
@@ -133,7 +151,9 @@ function drawRoundTrip(api: Api) {
 	// left: a patch, standing for the whole tiling. Honeycomb spacing, so it is a tiling and not four
 	// hexagons with gaps between them: centres sit sqrt(3)R apart along a row, 1.5R between rows, with
 	// every other row offset by half a step.
-	const R = 0.16, dx = Math.sqrt(3) * R, dy = 1.5 * R;
+	const R = 0.16,
+		dx = Math.sqrt(3) * R,
+		dy = 1.5 * R;
 	for (let j = -1; j <= 1; j++) {
 		for (let i = -1; i <= 0; i++) {
 			polygon(api, [-0.58 + (i + (j & 1 ? 0.5 : 0)) * dx + dx / 2, 0.3 + j * dy], 6, R, 90, 1.1);
@@ -149,8 +169,13 @@ function drawRoundTrip(api: Api) {
 	// The three edges are drawn as one bowed curve each, and the seam where their two half-edges meet
 	// has to be SHORT: the three midpoints sit one above another, and at full length the ticks join up
 	// into a single line through the middle that reads as a divider instead of three seams.
-	const A: Pt = [0.42, 0.3], B: Pt = [0.86, 0.3];
-	for (const [bow, t] of [[0.22, 0.36], [0, 0.5], [-0.22, 0.64]] as const) {
+	const A: Pt = [0.42, 0.3],
+		B: Pt = [0.86, 0.3];
+	for (const [bow, t] of [
+		[0.22, 0.36],
+		[0, 0.5],
+		[-0.22, 0.64],
+	] as const) {
 		arc(api, A, B, bow, INK, 3);
 		// The seam at a different point along each curve. Put all three at the midpoint and they stack
 		// into one vertical dashed line through the middle, which in this company reads as a mirror.
@@ -164,8 +189,13 @@ function drawRoundTrip(api: Api) {
 			2 * (1 - t) * (c[1] - A[1]) + 2 * t * (B[1] - c[1]),
 		];
 		const ang = Math.atan2(d[1], d[0]) + Math.PI / 2;
-		segment(api, [at[0] - Math.cos(ang) * 0.035, at[1] - Math.sin(ang) * 0.035],
-			[at[0] + Math.cos(ang) * 0.035, at[1] + Math.sin(ang) * 0.035], SOFT, 2);
+		segment(
+			api,
+			[at[0] - Math.cos(ang) * 0.035, at[1] - Math.sin(ang) * 0.035],
+			[at[0] + Math.cos(ang) * 0.035, at[1] + Math.sin(ang) * 0.035],
+			SOFT,
+			2,
+		);
 	}
 	for (const h of [A, B]) dot(api, h[0], h[1], 5.4);
 	text(0.64, -0.2, "one cell", { colour: INK, size: 0.62, weight: 700 });

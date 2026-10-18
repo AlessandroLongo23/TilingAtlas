@@ -22,12 +22,47 @@ import { EMPTY_DOC, type StudioDoc, type StudioPatch } from "./types";
 /** Four unit squares in a 2x2 cell. */
 const fourSquares: TranslationalCellData = {
 	p: [
-		{ v: [[0, 0], [1, 0], [1, 1], [0, 1]], n: 4 },
-		{ v: [[1, 0], [2, 0], [2, 1], [1, 1]], n: 4 },
-		{ v: [[0, 1], [1, 1], [1, 2], [0, 2]], n: 4 },
-		{ v: [[1, 1], [2, 1], [2, 2], [1, 2]], n: 4 },
+		{
+			v: [
+				[0, 0],
+				[1, 0],
+				[1, 1],
+				[0, 1],
+			],
+			n: 4,
+		},
+		{
+			v: [
+				[1, 0],
+				[2, 0],
+				[2, 1],
+				[1, 1],
+			],
+			n: 4,
+		},
+		{
+			v: [
+				[0, 1],
+				[1, 1],
+				[1, 2],
+				[0, 2],
+			],
+			n: 4,
+		},
+		{
+			v: [
+				[1, 1],
+				[2, 1],
+				[2, 2],
+				[1, 2],
+			],
+			n: 4,
+		},
 	],
-	b: [[2, 0], [0, 2]],
+	b: [
+		[2, 0],
+		[0, 2],
+	],
 };
 
 function patchOf(cell: TranslationalCellData): StudioPatch {
@@ -168,21 +203,14 @@ describe("a cut built the way the tool builds it", () => {
 				const r = build(base, doc({ cuts: [[a.ref, c.ref]] }), "lattice");
 				expect(r.dropped, `${a.label}->${c.label} placed`).toEqual([]);
 				const ends = [a.kind, c.kind].filter((k) => k === "midpoint").length;
-				expect(r.patch.rings.length, `${a.label}->${c.label} faces`).toBe(
-					built.patch.rings.length + 1,
-				);
-				expect(r.patch.verts.length, `${a.label}->${c.label} verts`).toBe(
-					built.patch.verts.length + ends,
-				);
-				expect(r.patch.edges.length, `${a.label}->${c.label} edges`).toBe(
-					built.patch.edges.length + 1 + ends,
-				);
+				expect(r.patch.rings.length, `${a.label}->${c.label} faces`).toBe(built.patch.rings.length + 1);
+				expect(r.patch.verts.length, `${a.label}->${c.label} verts`).toBe(built.patch.verts.length + ends);
+				expect(r.patch.edges.length, `${a.label}->${c.label} edges`).toBe(built.patch.edges.length + 1 + ends);
 				// Euler on the torus is the assertion that the chord landed where it was meant to: one
 				// attached to the wrong vertices breaks it, which is exactly what the index-named refs did.
-				expect(
-					r.patch.verts.length - r.patch.edges.length + r.patch.rings.length,
-					`${a.label}->${c.label} euler`,
-				).toBe(0);
+				expect(r.patch.verts.length - r.patch.edges.length + r.patch.rings.length, `${a.label}->${c.label} euler`).toBe(
+					0,
+				);
 				found++;
 			}
 		}

@@ -25,10 +25,7 @@ export function FreedrawPlayCanvas({ pattern, cells = 24 }: { pattern: FreedrawP
 	const showArcs = useConfiguration((s) => s.freedrawArcs);
 	const arcWiring = useConfiguration((s) => s.freedrawArcWiring);
 	const arcTwist = useConfiguration((s) => s.freedrawArcTwist);
-	const arcRule = useMemo(
-		() => ({ wiring: arcWiring, twist: (arcTwist ? 1 : 0) as 0 | 1 }),
-		[arcWiring, arcTwist],
-	);
+	const arcRule = useMemo(() => ({ wiring: arcWiring, twist: (arcTwist ? 1 : 0) as 0 | 1 }), [arcWiring, arcTwist]);
 	const style = useMemo(
 		() => ({ fillMode, showScaffold, showVertices, showLattice, lineWidth, showArcs, arcRule }),
 		[fillMode, showScaffold, showVertices, showLattice, lineWidth, showArcs, arcRule],

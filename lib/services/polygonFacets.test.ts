@@ -2,12 +2,7 @@ import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import { annotatePolygonFacets } from "./polygonFacets";
-import {
-	polygonSpeciesOf,
-	tilePeriodsOf,
-	speciesFromPolys,
-	periodsFromPolys,
-} from "./polygonSpecies";
+import { polygonSpeciesOf, tilePeriodsOf, speciesFromPolys, periodsFromPolys } from "./polygonSpecies";
 import { decodeAtlas } from "./atlasCodec";
 import type { ReferenceTiling } from "./referenceAtlas";
 
@@ -110,15 +105,11 @@ describe("the shipped field agrees with the geometry walk", () => {
 	it("agrees on every annotated record in every shipped root shelf", () => {
 		const dir = path.join(process.cwd(), "public");
 		if (!fs.existsSync(dir)) return; // corpus not present in this checkout
-		const files = fs
-			.readdirSync(dir)
-			.filter((f) => f.startsWith("reference-atlas") && f.endsWith(".json"));
+		const files = fs.readdirSync(dir).filter((f) => f.startsWith("reference-atlas") && f.endsWith(".json"));
 		let checked = 0;
 		let annotatedFiles = 0;
 		for (const f of files) {
-			const records = decodeAtlas<ReferenceTiling>(
-				JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")),
-			);
+			const records = decodeAtlas<ReferenceTiling>(JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")));
 			let hit = 0;
 			for (const t of records) {
 				if (!t.polygonSpecies) continue;

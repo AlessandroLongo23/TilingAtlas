@@ -14,8 +14,8 @@
  * symmetry-detection step changes. Returns null on degenerate input (caller keeps the tiling — never
  * drop on uncertainty), matching the gate.
  */
-import { Cyclotomic } from '../Cyclotomic';
-import type { Polygon } from '../polygons/Polygon';
+import { Cyclotomic } from "../Cyclotomic";
+import type { Polygon } from "../polygons/Polygon";
 
 // --- exact lattice arithmetic (integer Cramer over the ζ-power basis; ported from WallpaperSymmetry) ---
 function bgcd(a: bigint, b: bigint): bigint {
@@ -30,7 +30,9 @@ const blcm = (a: bigint, b: bigint) => (a === 0n || b === 0n ? 0n : (a / bgcd(a,
 function inLattice(u: Cyclotomic, v: Cyclotomic, w: Cyclotomic): boolean {
 	const D = blcm(blcm(u.den, v.den), w.den);
 	const col = (z: Cyclotomic) => z.num.map((c) => (c * D) / z.den);
-	const A = col(u), B = col(v), W = col(w);
+	const A = col(u),
+		B = col(v),
+		W = col(w);
 	const dim = A.length;
 	for (let i = 0; i < dim; i++) {
 		for (let j = i + 1; j < dim; j++) {
@@ -39,7 +41,8 @@ function inLattice(u: Cyclotomic, v: Cyclotomic, w: Cyclotomic): boolean {
 			const aNum = W[i] * B[j] - W[j] * B[i];
 			const bNum = A[i] * W[j] - A[j] * W[i];
 			if (aNum % det !== 0n || bNum % det !== 0n) return false;
-			const a = aNum / det, b = bNum / det;
+			const a = aNum / det,
+				b = bNum / det;
 			for (let r = 0; r < dim; r++) if (a * A[r] + b * B[r] !== W[r]) return false;
 			return true;
 		}
@@ -50,7 +53,9 @@ const sameClass = (a: Cyclotomic, b: Cyclotomic, u: Cyclotomic, v: Cyclotomic) =
 
 // Only crystallographic rotation orders can occur on a lattice (Barlow).
 const CRYSTALLOGRAPHIC = new Set([2, 3, 4, 6]);
-function ngcd(x: number, y: number): number { return y ? ngcd(y, x % y) : x; }
+function ngcd(x: number, y: number): number {
+	return y ? ngcd(y, x % y) : x;
+}
 
 export function countVertexOrbitsFast(
 	cellPolygons: Polygon[],
@@ -66,7 +71,8 @@ export function countVertexOrbitsFast(
 	const ZERO = Cyclotomic.ZERO(ring);
 	const FULL_TURN_UNITS = N;
 
-	const uV = u.toVector(), vV = v.toVector();
+	const uV = u.toVector(),
+		vV = v.toVector();
 	const det = uV.x * vV.y - uV.y * vV.x;
 	if (Math.abs(det) < 1e-9) return null;
 	const cellDiam = Math.max(Math.hypot(uV.x, uV.y), Math.hypot(vV.x, vV.y));
@@ -107,7 +113,10 @@ export function countVertexOrbitsFast(
 		if (!(inLattice(u, v, u.mulZeta(r)) && inLattice(u, v, v.mulZeta(r)))) continue; // linear part ∈ Aut(Λ)
 		for (const q of targets) {
 			const T = q.c.sub(mapPt(P0.c, false, r, ZERO));
-			if (polyPreserves(false, r, T)) { syms.push({ reflect: false, r, T }); break; }
+			if (polyPreserves(false, r, T)) {
+				syms.push({ reflect: false, r, T });
+				break;
+			}
 		}
 	}
 	// reflections / glides z ↦ ζ^r·z̄ + T
@@ -115,7 +124,10 @@ export function countVertexOrbitsFast(
 		if (!(inLattice(u, v, u.conj().mulZeta(r)) && inLattice(u, v, v.conj().mulZeta(r)))) continue;
 		for (const q of targets) {
 			const T = q.c.sub(mapPt(P0.c, true, r, ZERO));
-			if (polyPreserves(true, r, T)) { syms.push({ reflect: true, r, T }); break; }
+			if (polyPreserves(true, r, T)) {
+				syms.push({ reflect: true, r, T });
+				break;
+			}
 		}
 	}
 
@@ -139,9 +151,14 @@ export function countVertexOrbitsFast(
 			}
 		}
 	}
-	let cx = 0, cy = 0;
-	for (const p of patch) { cx += p.centroid.x; cy += p.centroid.y; }
-	cx /= patch.length; cy /= patch.length;
+	let cx = 0,
+		cy = 0;
+	for (const p of patch) {
+		cx += p.centroid.x;
+		cy += p.centroid.y;
+	}
+	cx /= patch.length;
+	cy /= patch.length;
 	const vertR = 1.6 * cellDiam;
 
 	const incident = new Map<string, { vertex: Cyclotomic; units: number; tiles: Set<string> }>();
@@ -150,8 +167,10 @@ export function countVertexOrbitsFast(
 		p.exactVertices!.forEach((vx, i) => {
 			const k = vx.key();
 			const e = incident.get(k);
-			if (e) { e.units += p.cornerAngleUnits(i); e.tiles.add(pk); }
-			else incident.set(k, { vertex: vx, units: p.cornerAngleUnits(i), tiles: new Set([pk]) });
+			if (e) {
+				e.units += p.cornerAngleUnits(i);
+				e.tiles.add(pk);
+			} else incident.set(k, { vertex: vx, units: p.cornerAngleUnits(i), tiles: new Set([pk]) });
 		});
 	}
 	const reps: Cyclotomic[] = [];
@@ -167,19 +186,36 @@ export function countVertexOrbitsFast(
 
 	// --- union-find reps under the symmetry group (mod Λ), identical to the gate ---
 	const parent = reps.map((_, i) => i);
-	const find = (x: number): number => { while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; } return x; };
-	const union = (a: number, b: number) => { const ra = find(a), rb = find(b); if (ra !== rb) parent[ra] = rb; };
+	const find = (x: number): number => {
+		while (parent[x] !== x) {
+			parent[x] = parent[parent[x]];
+			x = parent[x];
+		}
+		return x;
+	};
+	const union = (a: number, b: number) => {
+		const ra = find(a),
+			rb = find(b);
+		if (ra !== rb) parent[ra] = rb;
+	};
 	for (let i = 0; i < reps.length; i++) {
 		for (const g of syms) {
 			const gw = (g.reflect ? reps[i].conj().mulZeta(g.r) : reps[i].mulZeta(g.r)).add(g.T);
 			for (let j = 0; j < reps.length; j++) {
 				if (find(i) === find(j)) continue;
-				if (sameClass(gw, reps[j], u, v)) { union(i, j); break; }
+				if (sameClass(gw, reps[j], u, v)) {
+					union(i, j);
+					break;
+				}
 			}
 		}
 	}
 	const roots = new Set<number>();
 	for (let i = 0; i < reps.length; i++) roots.add(find(i));
-	if (diag) { diag.syms = syms.length; diag.reps = reps.length; diag.orbits = roots.size; }
+	if (diag) {
+		diag.syms = syms.length;
+		diag.reps = reps.length;
+		diag.orbits = roots.size;
+	}
 	return roots.size;
 }

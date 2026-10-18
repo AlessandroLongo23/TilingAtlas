@@ -102,9 +102,7 @@ describe("every squared torus certifies itself", () => {
 				expect(`${r.id} (${a},${b}): ${used.size} distinct edges for ${s.squaring.order} tiles`).toBe(
 					`${r.id} (${a},${b}): ${s.squaring.order} distinct edges for ${s.squaring.order} tiles`,
 				);
-				expect(`${r.id} (${a},${b}): ${s.squaring.order + s.squaring.degenerate}`).toBe(
-					`${r.id} (${a},${b}): ${m.E}`,
-				);
+				expect(`${r.id} (${a},${b}): ${s.squaring.order + s.squaring.degenerate}`).toBe(`${r.id} (${a},${b}): ${m.E}`);
 				for (const q of s.squaring.squares) expect(BigInt(q.side) > 0n).toBe(true);
 			}
 		}
@@ -144,7 +142,12 @@ describe("known squared tori", () => {
 		const m = mapOf({ cell: squareLattice } as unknown as TorusRecord);
 		const s = squareTorus(m, 12, 5);
 		if (s.ok === false) throw new Error(s.error.detail);
-		expect(s.squaring.squares.map((q) => q.side).sort((a, b) => Number(a) - Number(b)).join(",")).toBe("5,12");
+		expect(
+			s.squaring.squares
+				.map((q) => q.side)
+				.sort((a, b) => Number(a) - Number(b))
+				.join(","),
+		).toBe("5,12");
 		expect(s.squaring.covolume).toBe("169");
 	});
 
@@ -154,8 +157,16 @@ describe("known squared tori", () => {
 		const two = squareTorus(m, 8, 6);
 		if (one.ok === false || two.ok === false) throw new Error("no squaring");
 		expect(two.squaring.covolume).toBe(one.squaring.covolume);
-		expect(two.squaring.squares.map((q) => q.side).sort().join(",")).toBe(
-			one.squaring.squares.map((q) => q.side).sort().join(","),
+		expect(
+			two.squaring.squares
+				.map((q) => q.side)
+				.sort()
+				.join(","),
+		).toBe(
+			one.squaring.squares
+				.map((q) => q.side)
+				.sort()
+				.join(","),
 		);
 	});
 });

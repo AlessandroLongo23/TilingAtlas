@@ -45,7 +45,13 @@ const isActiveLink = (pathname: string, href: string) => pathname === href || pa
 function Mark() {
 	return (
 		<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" className="shrink-0">
-			<polygon points="9,1.2 15.8,5.1 15.8,12.9 9,16.8 2.2,12.9 2.2,5.1" fill="#b2daa1" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+			<polygon
+				points="9,1.2 15.8,5.1 15.8,12.9 9,16.8 2.2,12.9 2.2,5.1"
+				fill="#b2daa1"
+				stroke="currentColor"
+				strokeWidth="1.3"
+				strokeLinejoin="round"
+			/>
 		</svg>
 	);
 }
@@ -101,12 +107,12 @@ export function Nav() {
 	return (
 		<nav
 			className={cn(
-				"w-full shrink-0 flex items-center bg-surface-chrome px-4 overflow-hidden transition-all duration-300 ease-in-out",
+				"flex w-full shrink-0 items-center overflow-hidden bg-surface-chrome px-4 transition-all duration-300 ease-in-out",
 				immersive
-					? "h-0 opacity-0 pointer-events-none border-b-0"
+					? "pointer-events-none h-0 border-b-0 opacity-0"
 					: // On a phone the bar sits under the status bar (viewport-fit=cover), so it grows by that inset.
 						// A pinch that starts on the phone bar would zoom the whole page, chrome and all.
-						"h-12 border-b border-line-subtle max-md:h-[var(--topbar-h)] max-md:pt-[env(safe-area-inset-top)] max-md:pr-1 max-md:touch-pan-x max-md:touch-pan-y",
+						"h-12 border-b border-line-subtle max-md:h-[var(--topbar-h)] max-md:touch-pan-x max-md:touch-pan-y max-md:pt-[env(safe-area-inset-top)] max-md:pr-1",
 			)}
 		>
 			{/* Phone bar: the mark, where you are, and the menu that holds everything else. */}
@@ -128,20 +134,26 @@ export function Nav() {
 			</button>
 			{menuOpen ? <PhoneMenu pathname={pathname} onClose={() => setMenuPath(null)} /> : null}
 
-			<Link href="/" className="flex shrink-0 items-center gap-2 mr-4 max-md:hidden">
+			<Link href="/" className="mr-4 flex shrink-0 items-center gap-2 max-md:hidden">
 				<Mark />
-				<span className="text-fg font-semibold tracking-[-0.01em] text-[15px] leading-none whitespace-nowrap">The Tiling Atlas</span>
+				<span className="text-[15px] leading-none font-semibold tracking-[-0.01em] whitespace-nowrap text-fg">
+					The Tiling Atlas
+				</span>
 				{/* The release the build is cut at; the same number the footer and the updates modal show. */}
-				<span className="font-mono text-fg-muted text-[10.5px] leading-none tabular-nums">v{CURRENT_VERSION}</span>
+				<span className="font-mono text-[10.5px] leading-none text-fg-muted tabular-nums">v{CURRENT_VERSION}</span>
 			</Link>
 
-			<div className="h-5 border-l border-line-subtle mr-3 max-md:hidden" />
+			<div className="mr-3 h-5 border-l border-line-subtle max-md:hidden" />
 
 			{/* Ten links do not fit a laptop window with their keycaps attached, so the caps are the first
 			    thing to go (below 2xl) and the row scrolls sideways below that rather than sliding under
 			    the theme toggle — the nav clips its overflow, so an unscrollable row would just vanish. */}
-			<div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto scrollbar-hide max-md:hidden">
-				{padPrev ? <Kbd literal className="shrink-0">{padPrev}</Kbd> : null}
+			<div className="scrollbar-hide flex min-w-0 flex-1 items-center gap-1 overflow-x-auto max-md:hidden">
+				{padPrev ? (
+					<Kbd literal className="shrink-0">
+						{padPrev}
+					</Kbd>
+				) : null}
 				{LINKS.map((link, i) => {
 					const isActive = isActiveLink(pathname, link.href);
 					return (
@@ -150,9 +162,9 @@ export function Nav() {
 							href={link.href}
 							title={`${link.label} (${navKey(i)})`}
 							className={cn(
-								"group flex shrink-0 items-center gap-1.5 px-2.5 py-1.5 rounded-control transition-colors",
+								"group flex shrink-0 items-center gap-1.5 rounded-control px-2.5 py-1.5 transition-colors",
 								// Text only, and the active link in ink, not accent: the accent marks actions.
-								isActive ? "text-fg bg-surface-overlay" : "text-fg-muted hover:text-fg hover:bg-surface-overlay",
+								isActive ? "bg-surface-overlay text-fg" : "text-fg-muted hover:bg-surface-overlay hover:text-fg",
 							)}
 						>
 							<span className="text-[13px] font-medium whitespace-nowrap">{link.label}</span>
@@ -160,7 +172,11 @@ export function Nav() {
 						</Link>
 					);
 				})}
-				{padNext ? <Kbd literal className="shrink-0">{padNext}</Kbd> : null}
+				{padNext ? (
+					<Kbd literal className="shrink-0">
+						{padNext}
+					</Kbd>
+				) : null}
 			</div>
 
 			<div className="flex items-center gap-0.5 max-md:hidden">
@@ -170,7 +186,7 @@ export function Nav() {
 						target="_blank"
 						rel="noreferrer"
 						aria-label="Join the Tiling Atlas Discord"
-						className="flex items-center justify-center w-8 h-8 rounded-control text-fg-muted hover:text-fg hover:bg-surface-overlay transition-colors focus:outline-none"
+						className="flex h-8 w-8 items-center justify-center rounded-control text-fg-muted transition-colors hover:bg-surface-overlay hover:text-fg focus:outline-none"
 					>
 						<DiscordIcon size={15} />
 					</a>
@@ -192,8 +208,7 @@ export function Nav() {
 function PhoneMenu({ pathname, onClose }: { pathname: string; onClose: () => void }) {
 	const panelRef = useRef<HTMLDivElement>(null);
 	const { swipe, dialogProps } = useSheet(panelRef, true, onClose, "Menu", "right");
-	const row =
-		"flex min-h-12 items-center gap-3 rounded-control px-3 py-1.5 transition-colors hover:bg-surface-overlay";
+	const row = "flex min-h-12 items-center gap-3 rounded-control px-3 py-1.5 transition-colors hover:bg-surface-overlay";
 
 	return createPortal(
 		<div className="fixed inset-0 z-[60] md:hidden">
@@ -204,7 +219,7 @@ function PhoneMenu({ pathname, onClose }: { pathname: string; onClose: () => voi
 				ref={panelRef}
 				{...dialogProps}
 				{...swipe}
-				className="ta-panel-in absolute inset-y-0 right-0 flex w-[min(340px,88vw)] flex-col bg-surface-chrome shadow-xl focus:outline-none pt-[env(safe-area-inset-top)]"
+				className="ta-panel-in absolute inset-y-0 right-0 flex w-[min(340px,88vw)] flex-col bg-surface-chrome pt-[env(safe-area-inset-top)] shadow-xl focus:outline-none"
 			>
 				<SheetHeader
 					title="The Tiling Atlas"
@@ -233,24 +248,21 @@ function PhoneMenu({ pathname, onClose }: { pathname: string; onClose: () => voi
 								aria-current={active ? "page" : undefined}
 								className={cn(row, "flex-col items-start justify-center gap-0", active && "bg-surface-overlay")}
 							>
-								<span className={cn("text-[15px] font-medium", active ? "text-fg" : "text-fg-secondary")}>{link.label}</span>
+								<span className={cn("text-[15px] font-medium", active ? "text-fg" : "text-fg-secondary")}>
+									{link.label}
+								</span>
 								<span className="text-[13px] leading-snug text-fg-muted">{link.blurb}</span>
 							</Link>
 						);
 					})}
 					<div className="my-1 h-px bg-line-subtle" />
 					<UpdatesButton variant="row" onOpen={onClose} />
-					<a
-						href={DISCORD_INVITE}
-						target="_blank"
-						rel="noreferrer"
-						className={cn(row, "text-[15px] text-fg")}
-					>
+					<a href={DISCORD_INVITE} target="_blank" rel="noreferrer" className={cn(row, "text-[15px] text-fg")}>
 						<DiscordIcon size={18} />
 						Join the Discord
 					</a>
 					<ThemeToggle variant="row" />
-					<p className="mt-2 border-t border-line-subtle px-3 py-3 font-mono text-xs tabular-nums text-fg-muted">
+					<p className="mt-2 border-t border-line-subtle px-3 py-3 font-mono text-xs text-fg-muted tabular-nums">
 						v{CURRENT_VERSION}
 					</p>
 				</nav>

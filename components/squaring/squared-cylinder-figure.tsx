@@ -48,7 +48,9 @@ export function SquaredCylinderFigure({ layer, hovered, onHover, fills, span = 1
 	}, [layer, span]);
 
 	// Hovered tiles last: SVG has no z-index and a highlight stroke straddles a shared edge.
-	const order = rects.map((_, i) => i).sort((a, b) => Number(rects[a].edge === hovered) - Number(rects[b].edge === hovered));
+	const order = rects
+		.map((_, i) => i)
+		.sort((a, b) => Number(rects[a].edge === hovered) - Number(rects[b].edge === hovered));
 
 	return (
 		<div className="flex h-full min-h-0 w-full flex-col gap-2">

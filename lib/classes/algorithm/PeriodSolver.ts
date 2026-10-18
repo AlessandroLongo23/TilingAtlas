@@ -35,26 +35,45 @@
  * only as a broadphase guess and for the convex-overlap test (as in the rest of the pipeline).
  */
 
-import type { Polygon } from '../polygons/Polygon';
-import { RegularPolygon } from '../polygons/RegularPolygon';
-import { ExactStarPolygon } from '../polygons/ExactStarPolygon';
-import { Cyclotomic } from '../Cyclotomic';
-import { trace, polyDump } from './figureTrace';
-import { KUniformityChecker } from './KUniformityChecker';
-import { countVertexOrbitsFast } from './KUniformityFast';
+import type { Polygon } from "../polygons/Polygon";
+import { RegularPolygon } from "../polygons/RegularPolygon";
+import { ExactStarPolygon } from "../polygons/ExactStarPolygon";
+import { Cyclotomic } from "../Cyclotomic";
+import { trace, polyDump } from "./figureTrace";
+import { KUniformityChecker } from "./KUniformityChecker";
+import { countVertexOrbitsFast } from "./KUniformityFast";
 // Experimental fast k-uniformity gate (point-group orbit count; proven equivalent to the exact gate
 // on all 92 certified k≤3 tilings — tests/kuniformity-fast.test.ts). Off by default ⇒ byte-identical.
-const PS_FAST_GATE = process.env.PS_FAST_GATE === '1';
-import { TranslationalCellExtractor } from './TranslationalCellExtractor';
-import { nativeFill } from './nativeFill';
+const PS_FAST_GATE = process.env.PS_FAST_GATE === "1";
+import { TranslationalCellExtractor } from "./TranslationalCellExtractor";
+import { nativeFill } from "./nativeFill";
 // TS↔native torusFill bridge (opt-in USE_NATIVE_FILL=1, read per-fill so a harness can A/B in-process):
 // ship each regular-polygon fill to the validated native engine (~13× the TS DFS). Emitted cells are
 // byte-equivalent; OFF by default ⇒ pure-TS path.
-import type { SeedConfigurationLike } from './SeedExpander';
-import { LatticeEnumerator, latticeKey, shortVectorPool, edgeStepDirs, gridDirOf, vcAreaSet, vcAreaMinVerts, vcFeasAreaSets, bravaisClassExact, areaLadderFromTiles, holohedry, areaKey, isIntCombo, joinLattice, gaussReduceExact, groupIntoGridOrbits, gridImageBasis, type ObliqueTruncation } from './LatticeEnumerator';
-import { detSurd, polygonAreaSurd, tileAreaSurd, Surd } from './exact/Surd';
-import { dedupeByCongruence, dedupeByNKey } from './TilingCongruence';
-import { spikeBreak } from './exact/spikeTrace';
+import type { SeedConfigurationLike } from "./SeedExpander";
+import {
+	LatticeEnumerator,
+	latticeKey,
+	shortVectorPool,
+	edgeStepDirs,
+	gridDirOf,
+	vcAreaSet,
+	vcAreaMinVerts,
+	vcFeasAreaSets,
+	bravaisClassExact,
+	areaLadderFromTiles,
+	holohedry,
+	areaKey,
+	isIntCombo,
+	joinLattice,
+	gaussReduceExact,
+	groupIntoGridOrbits,
+	gridImageBasis,
+	type ObliqueTruncation,
+} from "./LatticeEnumerator";
+import { detSurd, polygonAreaSurd, tileAreaSurd, Surd } from "./exact/Surd";
+import { dedupeByCongruence, dedupeByNKey } from "./TilingCongruence";
+import { spikeBreak } from "./exact/spikeTrace";
 
 const FLOAT_TOL = 1e-6;
 
@@ -115,23 +134,32 @@ export type PoolBounds = {
  *  solved axes accepted by census bound (det ≤ 4k·s_max), NOT by pool membership —
  *  which also removes the CB-8 "ambiguous residual" (ζ-density: length does not bound
  *  steps). s_max = (12+7√3)/12, the max VC corner-share (census L1). */
-export const SMALLK_PROVEN_MODE = process.env.SMALLK_PROVEN === '1';
+export const SMALLK_PROVEN_MODE = process.env.SMALLK_PROVEN === "1";
 const SMALLK_SMAX = (12 + 7 * Math.sqrt(3)) / 12; // ≈ 2.01036, exact (12+7√3)/12
 
 export function poolConfig(
 	k: number,
 	aMax: number,
-	provenMode: boolean = process.env.PROVEN_POOL === '1'
+	provenMode: boolean = process.env.PROVEN_POOL === "1",
 ): { active: PoolBounds; proven: PoolBounds; isTuned: boolean; smallkProven?: boolean } {
 	if (SMALLK_PROVEN_MODE) {
-		if (k > 3) throw new Error(`SMALLK_PROVEN=1 is proven for k ≤ 3 only (got k=${k}); unset it or use the per-k theorem before extending`);
+		if (k > 3)
+			throw new Error(
+				`SMALLK_PROVEN=1 is proven for k ≤ 3 only (got k=${k}); unset it or use the per-k theorem before extending`,
+			);
 		const areaBoundF = 24 * k * aMax; // cor:box(ii) reference value for the proven-box report
 		const reach = (2 / Math.sqrt(3)) * areaBoundF;
-		const proven: PoolBounds = { poolSteps: 24 * k - 1, poolLmax: reach, compactOffMax2: reach, gridShortMax2: reach, areaBoundF };
-		const roundArea = 12 * k * SMALLK_SMAX;         // hol 12: n ≤ 12k vertices (L1)
-		const gridArea = 4 * k * SMALLK_SMAX;           // hol ≤ 4 (rect/rhombic)
-		const oblArea = 2 * k * SMALLK_SMAX;            // hol 2 (oblique)
-		const steps = 2 * 4 * k - 1;                    // 7 / 15 / 23 (≥ census shell wt 6/8/10)
+		const proven: PoolBounds = {
+			poolSteps: 24 * k - 1,
+			poolLmax: reach,
+			compactOffMax2: reach,
+			gridShortMax2: reach,
+			areaBoundF,
+		};
+		const roundArea = 12 * k * SMALLK_SMAX; // hol 12: n ≤ 12k vertices (L1)
+		const gridArea = 4 * k * SMALLK_SMAX; // hol ≤ 4 (rect/rhombic)
+		const oblArea = 2 * k * SMALLK_SMAX; // hol 2 (oblique)
+		const steps = 2 * 4 * k - 1; // 7 / 15 / 23 (≥ census shell wt 6/8/10)
 		const active: PoolBounds = {
 			poolSteps: steps,
 			// VACUOUS on purpose (workorder smallk-proven-pool-workorder-2026-07-10.md task 1):
@@ -141,12 +169,12 @@ export function poolConfig(
 			// Round/grid sub-pools stay small via compactOffMax2/gridShortMax2 below; the oblique
 			// pair sweep is kept sub-quadratic by its internal A_adm sub-pool cap + oblAreaMax.
 			poolLmax: steps + 0.01,
-			longAxisMax: gridArea + 0.1,                 // rect long = det/short ≤ det; cmm centering ≤ same
+			longAxisMax: gridArea + 0.1, // rect long = det/short ≤ det; cmm centering ≤ same
 			gridAreaMax: gridArea + 0.05,
 			oblAreaMax: oblArea + 0.05,
 			compactOffMax2: (2 / Math.sqrt(3)) * roundArea + 0.5,
-			gridShortMax2: gridArea + 0.2,               // short² ≤ short·long = det ≤ gridArea
-			areaBoundF: roundArea + 0.05,                // global coarse cap = the census round max
+			gridShortMax2: gridArea + 0.2, // short² ≤ short·long = det ≤ gridArea
+			areaBoundF: roundArea + 0.05, // global coarse cap = the census round max
 		};
 		// Invariant (proved in the wiring note): within these boxes blockIndexRangeNeeded ≤ 60
 		// = BLOCK_INDEX_CAP (worst rect: ceil((2·24.13+10)/1)+1 = 60, not >60), so the F3b cap
@@ -176,8 +204,8 @@ export function poolConfig(
 	// ADDS candidates, each still fully certified downstream, so emitted cells remain certified-
 	// correct. Default off (env unset ⇒ max(x,0) = x) ⇒ byte-identical; NOT a sweep knob — the
 	// star-sweep pool stays tuned per the ST-2 ruling (no star poolLmax increase before Increment 3).
-	const stepsUp = Number(process.env.POOL_STEPS_UP ?? '0');
-	const lmaxUp = Number(process.env.POOL_LMAX_UP ?? '0');
+	const stepsUp = Number(process.env.POOL_STEPS_UP ?? "0");
+	const lmaxUp = Number(process.env.POOL_LMAX_UP ?? "0");
 	if (!provenMode && (stepsUp > 0 || lmaxUp > 0)) {
 		tuned.poolSteps = Math.max(tuned.poolSteps, Math.min(stepsUp, proven.poolSteps));
 		tuned.poolLmax = Math.max(tuned.poolLmax, Math.min(lmaxUp, proven.poolLmax));
@@ -213,7 +241,18 @@ type CandidateLattice = { basis: [Cyclotomic, Cyclotomic]; seedMaps: { rot: numb
  *  admissible cell-area key set — both for the CB-7 primitivity guard. */
 const candidateCache = new Map<
 	string,
-	{ lattices: CandidateLattice[]; p0Skipped: number; cSkipped: number; feas: Map<number, Map<string, number[][]>> | null; orbitSkipped: number; obliqueCandidates: number; obliqueTruncated: ObliqueTruncation['cause'] | null; starLadderTruncated: boolean; allKeys: Set<string>; areaKeys: Set<string> }
+	{
+		lattices: CandidateLattice[];
+		p0Skipped: number;
+		cSkipped: number;
+		feas: Map<number, Map<string, number[][]>> | null;
+		orbitSkipped: number;
+		obliqueCandidates: number;
+		obliqueTruncated: ObliqueTruncation["cause"] | null;
+		starLadderTruncated: boolean;
+		allKeys: Set<string>;
+		areaKeys: Set<string>;
+	}
 >();
 
 /** OP-2 instrumentation: candidate-stage cache effectiveness (the Σ-vs-distinct companion data
@@ -222,7 +261,14 @@ const cacheStats = { candHits: 0, candMisses: 0, poolHits: 0, poolMisses: 0 };
 /** Return a point-in-time SNAPSHOT of the cache counters. Callers receive an independent copy;
  *  deltas computed by subtracting two snapshots (before/after a solve call) are safe and correct.
  *  Do not hold a reference expecting it to reflect future increments — call again for a new snapshot. */
-export function candidateStageCacheStats(): { candHits: number; candMisses: number; poolHits: number; poolMisses: number } { return { ...cacheStats }; }
+export function candidateStageCacheStats(): {
+	candHits: number;
+	candMisses: number;
+	poolHits: number;
+	poolMisses: number;
+} {
+	return { ...cacheStats };
+}
 /** OP-2 pool sub-cache: `shortVectorPool` already memoizes internally (LatticeEnumerator has a
  *  module-level cache keyed by `${N}:${maxSteps}:${lmaxF}:${dirList}:${monotone}` — so cross-vcSig
  *  pool sharing already happens at that layer, and `edgeStepDirs` is computed BEFORE the outer
@@ -254,10 +300,10 @@ function canonicalVCName(ns: string[]): string {
 	const rotMin = (a: string[]): string => {
 		let best: string | null = null;
 		for (let i = 0; i < a.length; i++) {
-			const r = a.slice(i).concat(a.slice(0, i)).join(',');
+			const r = a.slice(i).concat(a.slice(0, i)).join(",");
 			if (best === null || r < best) best = r;
 		}
-		return best ?? '';
+		return best ?? "";
 	};
 	const f = rotMin(ns);
 	const r = rotMin(ns.slice().reverse());
@@ -346,7 +392,7 @@ export type PeriodSolverDiag = {
 	vBelowKSkipped: number; // OP-1 V<k half: in-fill, post-certificate, pre-primitivity — closed cells with vertex-class count V < k (orbits ≤ V < k). The k-gate WOULD reject these (orbit count < k), but the counter fires before the gate: excluded from rawCells and NOT counted in gateRejected
 	seedStateDedup: number; // redundant seed sets skipped (identical initial torus state mod Λ)
 	obliqueCandidates: number; // candidate lattices contributed by source (C) oblique join-closure
-	obliqueTruncated: ObliqueTruncation['cause'] | null; // INCOMPLETE-REGION cause if the oblique reach was clipped
+	obliqueTruncated: ObliqueTruncation["cause"] | null; // INCOMPLETE-REGION cause if the oblique reach was clipped
 	supercellRejected: number; // certified cells discarded as non-primitive supercells (CB-7 surface)
 	primitivityGuardMisses: number; // CB-7 guard: supercell discarded with its PRIMITIVE lattice absent from the candidate set (each is a loud INCOMPLETE-REGION)
 	primitivityGuardAreaSuppressed: number; // CB-7 guard alarms suppressed because the primitive area is outside the seed's admissible set — sound per the Finding-2 sign-off (TA 2026-06-10), but counted: a jump in this class is itself an anomaly signal, and it must stay distinguishable from candidate-hit suppression
@@ -421,9 +467,16 @@ export function blockIndexRangeNeeded(cellDiam: number, cellArea: number): numbe
  *  for the orbit representative (lem:orbitdedup (i)). g⁻¹: pure rotation → ζ^{N−rot}; reflection
  *  conj∘ζ^rot is an involution → g⁻¹ = g. Pinned against gridImage by the inversion tests
  *  (period-solver + op3-reflective-gate) — those pins now guard THIS production helper directly. */
-export function applySeedMapInv(ps: Polygon[], m: { rot: number; refl: boolean }, ring: Cyclotomic['ring'], ZERO: Cyclotomic): Polygon[] {
+export function applySeedMapInv(
+	ps: Polygon[],
+	m: { rot: number; refl: boolean },
+	ring: Cyclotomic["ring"],
+	ZERO: Cyclotomic,
+): Polygon[] {
 	if (m.rot === 0 && !m.refl) return ps; // identity: original array, no clone (byte-identical fast path)
-	return ps.map((p) => p.transformedRigid(ZERO, m.refl, m.refl ? m.rot : 0, m.refl ? 0 : (ring.N - m.rot) % ring.N, ZERO, 'full'));
+	return ps.map((p) =>
+		p.transformedRigid(ZERO, m.refl, m.refl ? m.rot : 0, m.refl ? 0 : (ring.N - m.rot) % ring.N, ZERO, "full"),
+	);
 }
 
 /** TH-10 scout (EXAMPLE MODE): wrap an externally enumerated lattice family as the stage-1 result.
@@ -432,20 +485,31 @@ export function applySeedMapInv(ps: Polygon[], m: { rot: number; refl: boolean }
  *  the scout injects representatives itself). */
 let th10BannerEmitted = false;
 function th10OverrideStage1(
-	ov: NonNullable<PeriodSolverOptions['th10Override']>,
-	k: number
-): { lattices: CandidateLattice[]; p0Skipped: number; cSkipped: number; feas: Map<number, Map<string, number[][]>> | null; orbitSkipped: number; obliqueCandidates: number; obliqueTruncated: ObliqueTruncation['cause'] | null; starLadderTruncated: boolean; allKeys: Set<string>; areaKeys: Set<string> } {
-	if (process.env.TH10_EXAMPLE_MODE !== '1') {
+	ov: NonNullable<PeriodSolverOptions["th10Override"]>,
+	k: number,
+): {
+	lattices: CandidateLattice[];
+	p0Skipped: number;
+	cSkipped: number;
+	feas: Map<number, Map<string, number[][]>> | null;
+	orbitSkipped: number;
+	obliqueCandidates: number;
+	obliqueTruncated: ObliqueTruncation["cause"] | null;
+	starLadderTruncated: boolean;
+	allKeys: Set<string>;
+	areaKeys: Set<string>;
+} {
+	if (process.env.TH10_EXAMPLE_MODE !== "1") {
 		throw new Error(
-			'PeriodSolver: th10Override passed without TH10_EXAMPLE_MODE=1 — the TH-10 weight-s pool is UNPROVEN and may only run in explicitly flagged example mode'
+			"PeriodSolver: th10Override passed without TH10_EXAMPLE_MODE=1 — the TH-10 weight-s pool is UNPROVEN and may only run in explicitly flagged example mode",
 		);
 	}
 	if (!th10BannerEmitted) {
 		th10BannerEmitted = true;
 		process.stderr.write(
 			`[PeriodSolver k=${k}] ⚑ EXAMPLE MODE (TH-10 scout): candidate-lattice stage REPLACED by an ` +
-			`externally enumerated weight-s family — the substituted pool bound is UNPROVEN; results carry ` +
-			`NO completeness or certification claim\n`
+				`externally enumerated weight-s family — the substituted pool bound is UNPROVEN; results carry ` +
+				`NO completeness or certification claim\n`,
 		);
 	}
 	return {
@@ -482,45 +546,81 @@ type FillProf = {
 	// certify sub-phases (isCompleteTiling runs ~once/closure, so timing its internals is distortion-free)
 	ct: { area: number; buildBlock: number; overlap: number; judge: number };
 	c: {
-		fills: number; pops: number; seenHits: number; capSkips: number;
-		contradictions: number; closures: number;
-		certCalls: number; certPass: number; primCalls: number; primTrue: number;
-		places: number; overlapRej: number; dupRej: number; p1Pruned: number; capRej: number; pushed: number;
+		fills: number;
+		pops: number;
+		seenHits: number;
+		capSkips: number;
+		contradictions: number;
+		closures: number;
+		certCalls: number;
+		certPass: number;
+		primCalls: number;
+		primTrue: number;
+		places: number;
+		overlapRej: number;
+		dupRej: number;
+		p1Pruned: number;
+		capRej: number;
+		pushed: number;
 	};
 };
-const FILL_PROF: FillProf | null = process.env.PS_FILL_PROFILE === '1'
-	? { t: { setup: 0, dedupKey: 0, analyze: 0, certify: 0, primitive: 0, expand: 0 },
-	    ct: { area: 0, buildBlock: 0, overlap: 0, judge: 0 },
-	    c: { fills: 0, pops: 0, seenHits: 0, capSkips: 0, contradictions: 0, closures: 0, certCalls: 0, certPass: 0, primCalls: 0, primTrue: 0, places: 0, overlapRej: 0, dupRej: 0, p1Pruned: 0, capRej: 0, pushed: 0 } }
-	: null;
-export function getFillProfile(): FillProf | null { return FILL_PROF; }
+const FILL_PROF: FillProf | null =
+	process.env.PS_FILL_PROFILE === "1"
+		? {
+				t: { setup: 0, dedupKey: 0, analyze: 0, certify: 0, primitive: 0, expand: 0 },
+				ct: { area: 0, buildBlock: 0, overlap: 0, judge: 0 },
+				c: {
+					fills: 0,
+					pops: 0,
+					seenHits: 0,
+					capSkips: 0,
+					contradictions: 0,
+					closures: 0,
+					certCalls: 0,
+					certPass: 0,
+					primCalls: 0,
+					primTrue: 0,
+					places: 0,
+					overlapRej: 0,
+					dupRej: 0,
+					p1Pruned: 0,
+					capRej: 0,
+					pushed: 0,
+				},
+			}
+		: null;
+export function getFillProfile(): FillProf | null {
+	return FILL_PROF;
+}
 if (FILL_PROF) {
-	process.on('exit', () => {
+	process.on("exit", () => {
 		const { t, c } = FILL_PROF;
 		const valid = t.analyze + t.certify + t.primitive; // certify+primitive+analyze = validity work
 		const total = valid + t.expand + t.dedupKey + t.setup;
-		const pctOf = (x: number) => total > 0 ? `${((100 * x) / total).toFixed(1)}%` : '0%';
+		const pctOf = (x: number) => (total > 0 ? `${((100 * x) / total).toFixed(1)}%` : "0%");
 		const rows: [string, number][] = [
-			['setup    (per-fill: initial block + self-overlap)', t.setup],
-			['analyze  (validity: open-vertex / contradiction)', t.analyze],
-			['certify  (validity: isCompleteTiling certificate)', t.certify],
-			['primitive(validity: isPrimitive supercell check)', t.primitive],
-			['expand   (selection: gap + place + reduce + block)', t.expand],
-			['dedupKey (bookkeeping: stateKey + seenState)', t.dedupKey],
+			["setup    (per-fill: initial block + self-overlap)", t.setup],
+			["analyze  (validity: open-vertex / contradiction)", t.analyze],
+			["certify  (validity: isCompleteTiling certificate)", t.certify],
+			["primitive(validity: isPrimitive supercell check)", t.primitive],
+			["expand   (selection: gap + place + reduce + block)", t.expand],
+			["dedupKey (bookkeeping: stateKey + seenState)", t.dedupKey],
 		];
 		let out = `\n[PS_FILL_PROFILE] fill-internals aggregate over ${c.fills} torusFill calls, ${c.pops} pops — total timed ${total.toFixed(0)}ms\n`;
 		out += `  VALIDITY total ${valid.toFixed(0)}ms (${pctOf(valid)}) | SELECTION ${t.expand.toFixed(0)}ms (${pctOf(t.expand)}) | SETUP ${t.setup.toFixed(0)}ms (${pctOf(t.setup)}) | BOOKKEEPING ${t.dedupKey.toFixed(0)}ms (${pctOf(t.dedupKey)})\n`;
-		for (const [label, ms] of rows) out += `    ${label.padEnd(52)} ${ms.toFixed(0).padStart(9)}ms  ${pctOf(ms).padStart(6)}\n`;
+		for (const [label, ms] of rows)
+			out += `    ${label.padEnd(52)} ${ms.toFixed(0).padStart(9)}ms  ${pctOf(ms).padStart(6)}\n`;
 		const ct = FILL_PROF.ct;
 		const certTot = ct.area + ct.buildBlock + ct.overlap + ct.judge;
-		const pctCert = (x: number) => certTot > 0 ? `${((100 * x) / certTot).toFixed(1)}%` : '0%';
-		out += `  certify breakdown (of ${certTot.toFixed(0)}ms isCompleteTiling): ` +
+		const pctCert = (x: number) => (certTot > 0 ? `${((100 * x) / certTot).toFixed(1)}%` : "0%");
+		out +=
+			`  certify breakdown (of ${certTot.toFixed(0)}ms isCompleteTiling): ` +
 			`area(Surd) ${ct.area.toFixed(0)}ms ${pctCert(ct.area)} | buildBlock(R=cellDiam+8) ${ct.buildBlock.toFixed(0)}ms ${pctCert(ct.buildBlock)} | ` +
 			`overlap(O(n²) intersects) ${ct.overlap.toFixed(0)}ms ${pctCert(ct.overlap)} | vertexJudge ${ct.judge.toFixed(0)}ms ${pctCert(ct.judge)}\n`;
 		out += `  tree shape: pops ${c.pops}, seenHits ${c.seenHits}, capSkips ${c.capSkips}, contradictions ${c.contradictions}, closures ${c.closures}\n`;
 		out += `    closure fate: certCalls ${c.certCalls} → certPass ${c.certPass}; primCalls ${c.primCalls} → primTrue ${c.primTrue}\n`;
 		out += `    placements: attempted ${c.places}, pushed ${c.pushed}; rejected: overlap ${c.overlapRej}, dup ${c.dupRej}, p1 ${c.p1Pruned}, cap ${c.capRej}\n`;
-		out += `    per-pop fan-out: ${c.pops > 0 ? (c.places / c.pops).toFixed(2) : '0'} places/pop, ${c.pops > 0 ? (c.pushed / c.pops).toFixed(2) : '0'} children/pop\n`;
+		out += `    per-pop fan-out: ${c.pops > 0 ? (c.places / c.pops).toFixed(2) : "0"} places/pop, ${c.pops > 0 ? (c.pushed / c.pops).toFixed(2) : "0"} children/pop\n`;
 		process.stderr.write(out);
 	});
 }
@@ -545,7 +645,7 @@ export class PeriodSolver {
 		if (opts.maxCellPolys !== undefined && opts.maxCellPolys < 24 * k) {
 			process.stderr.write(
 				`[PeriodSolver k=${k}] ⚑ INCOMPLETE-REGION (maxCellPolys): explicit cap ${opts.maxCellPolys} < proven ` +
-				`per-cell tile bound 24k = ${24 * k} — the pop-site discard may silently drop valid cells\n`
+					`per-cell tile bound 24k = ${24 * k} — the pop-site discard may silently drop valid cells\n`,
 			);
 		}
 		const maxMs = opts.maxMs ?? 45000;
@@ -564,7 +664,12 @@ export class PeriodSolver {
 		// Allowed vertex configurations (canonical, mirror-merged) and the polygon sizes in play.
 		const coreVertices: Cyclotomic[] = seed.vertexConfigurations.map((vc) => vc.computeSharedVertexExact());
 		const allowed = new Set<string>(
-			coreVertices.map((cv) => this.vcNameAt(cv, corePolys.filter((p) => p.vertexKeySet().has(cv.key()))))
+			coreVertices.map((cv) =>
+				this.vcNameAt(
+					cv,
+					corePolys.filter((p) => p.vertexKeySet().has(cv.key())),
+				),
+			),
 		);
 		// Regular tile sizes only — a star carries `p.n` (its point count) but is NOT a regular n-gon, so
 		// it must not feed `RegularPolygon.fromAnchorAndDirExact`. The star variants go to `starTiles`
@@ -580,11 +685,19 @@ export class PeriodSolver {
 		// fan, which pins only one VC and lets corner-completion find the gluing. The fans are built as the
 		// core's polygons incident to each VC's shared vertex (exact, correctly placed). See §13.4.
 		const fanCoreSets: Polygon[][] = [];
-		const seenFan = new Set<string>([corePolys.map((p) => p.exactKey()).sort().join('|')]);
+		const seenFan = new Set<string>([
+			corePolys
+				.map((p) => p.exactKey())
+				.sort()
+				.join("|"),
+		]);
 		for (const cv of coreVertices) {
 			const fan = corePolys.filter((p) => p.vertexKeySet().has(cv.key()));
 			if (fan.length < 2 || fan.length >= corePolys.length) continue; // not a proper single-vertex fan
-			const fanKey = fan.map((p) => p.exactKey()).sort().join('|');
+			const fanKey = fan
+				.map((p) => p.exactKey())
+				.sort()
+				.join("|");
 			if (seenFan.has(fanKey)) continue;
 			seenFan.add(fanKey);
 			fanCoreSets.push(fan);
@@ -599,9 +712,18 @@ export class PeriodSolver {
 		// the option docstring). The candidateCache is untouched — the override path never reads or
 		// writes it, so a mixed-mode process cannot serve poisoned candidates.
 		const _tc0 = prof ? Date.now() : 0;
-		const { lattices, p0Skipped, cSkipped, feas, orbitSkipped, obliqueCandidates, obliqueTruncated, starLadderTruncated, allKeys, areaKeys } = opts.th10Override
-			? th10OverrideStage1(opts.th10Override, k)
-			: this.candidateLattices(seed);
+		const {
+			lattices,
+			p0Skipped,
+			cSkipped,
+			feas,
+			orbitSkipped,
+			obliqueCandidates,
+			obliqueTruncated,
+			starLadderTruncated,
+			allKeys,
+			areaKeys,
+		} = opts.th10Override ? th10OverrideStage1(opts.th10Override, k) : this.candidateLattices(seed);
 		if (prof) prof.cand += Date.now() - _tc0;
 
 		const diag: PeriodSolverDiag = {
@@ -648,7 +770,7 @@ export class PeriodSolver {
 				lattices.map(({ basis: [lu, lv] }) => ({
 					key: [...latticeKeySet(lu, lv)].reduce((m, s) => (s < m ? s : m)),
 					hol: holohedry(lu, lv),
-				}))
+				})),
 			);
 		}
 
@@ -659,13 +781,27 @@ export class PeriodSolver {
 		const cells: PeriodCell[] = [];
 
 		const ZERO = Cyclotomic.ZERO(ring); // hoisted: the per-map g⁻¹ seeding below transforms about the origin
-		for (const { basis: [u, v], seedMaps } of lattices) {
+		for (const {
+			basis: [u, v],
+			seedMaps,
+		} of lattices) {
 			if (maxMs > 0 && Date.now() - start > maxMs) {
 				diag.timedOut = true;
 				break;
 			}
 			diag.latticesTried++;
-			const ctx = this.makeCtx(u, v, ring, allowed, polySizes, maxCellPolys, starTiles, allKeys, areaKeys, includeDents);
+			const ctx = this.makeCtx(
+				u,
+				v,
+				ring,
+				allowed,
+				polySizes,
+				maxCellPolys,
+				starTiles,
+				allKeys,
+				areaKeys,
+				includeDents,
+			);
 			if (!ctx) continue; // degenerate basis
 			if (ctx.blockIndexCapBinds) diag.blockIndexCapTruncated++; // F3b: ⚑ already emitted in makeCtx
 			// P3 stage B (in-fill domination, docs/LATTICE_ADMISSIBILITY_PROOF.md): hand the fill this
@@ -674,7 +810,7 @@ export class PeriodSolver {
 			// no member is a dead branch. Same scope as C (feas ≠ null ⟺ k ≥ 3 ∧ regular ∧ PS_P3≠0);
 			// PS_P3_FILL=0 disables just this arm for attribution A/Bs. Vectors are aligned to the
 			// ascending `polySizes` (both sides sort the same numeric tile sizes).
-			if (feas && process.env.PS_P3_FILL !== '0')
+			if (feas && process.env.PS_P3_FILL !== "0")
 				ctx.feasVectors = feas.get(bravaisClassExact(u, v))?.get(areaKey(detSurd(u, v).abs()));
 			// EARLY k-GATE: run the post-pass orbit gate at closure (in torusFill) so a wrong-uniformity
 			// closure is rejected before the (buildBlock+overlap) certificate + primitivity. Same fn as the
@@ -684,7 +820,7 @@ export class PeriodSolver {
 			// closure is orbit==k (measured gateRej≈0), so it would be pure overhead — the catastrophic
 			// closure-storm tail (large lattices closing into many orbit>k tilings) is a k≥3 phenomenon.
 			// PS_EARLY_GATE=1 forces it on at any k (A/B + tests); PS_EARLY_GATE=0 forces it off. Read per-call.
-			if (process.env.PS_EARLY_GATE === '1' || (this.k >= 3 && process.env.PS_EARLY_GATE !== '0'))
+			if (process.env.PS_EARLY_GATE === "1" || (this.k >= 3 && process.env.PS_EARLY_GATE !== "0"))
 				ctx.gate = (r) => (PS_FAST_GATE ? countVertexOrbitsFast(r, u, v) : checker.countVertexOrbits(r, u, v));
 
 			// Choose the seed(s) for THIS lattice — one per orbit map (OP-3 stage 1, lem:orbitdedup).
@@ -713,10 +849,14 @@ export class PeriodSolver {
 			let anyOverflow = false;
 			for (const m of seedMaps) {
 				const core = applySeedMapInv(corePolys, m, ring, ZERO);
-				const overflows = fanCoreSets.length > 0 && ctx.cellArea < totalCoreArea - 1e-9 &&
+				const overflows =
+					fanCoreSets.length > 0 &&
+					ctx.cellArea < totalCoreArea - 1e-9 &&
 					this.footprintArea(core, ctx) > ctx.cellArea + 1e-6;
-				if (overflows) { anyOverflow = true; for (const fan of fanCoreSets) seedSets.push(applySeedMapInv(fan, m, ring, ZERO)); }
-				else seedSets.push(core);
+				if (overflows) {
+					anyOverflow = true;
+					for (const fan of fanCoreSets) seedSets.push(applySeedMapInv(fan, m, ring, ZERO));
+				} else seedSets.push(core);
 			}
 			if (anyOverflow) diag.fanLattices++;
 
@@ -731,10 +871,16 @@ export class PeriodSolver {
 			const seenInitial = dedupSeeds ? new Set<string>() : null;
 			const sdMemo = dedupSeeds ? new Map<string, { key: string; poly: Polygon }>() : null;
 			for (const core of seedSets) {
-				if (maxMs > 0 && Date.now() - start > maxMs) { diag.timedOut = true; break; }
+				if (maxMs > 0 && Date.now() - start > maxMs) {
+					diag.timedOut = true;
+					break;
+				}
 				if (seenInitial) {
 					const sk = this.stateKey(this.dedupModLattice(core, ctx, sdMemo!));
-					if (seenInitial.has(sk)) { diag.seedStateDedup++; continue; }
+					if (seenInitial.has(sk)) {
+						diag.seedStateDedup++;
+						continue;
+					}
 					seenInitial.add(sk);
 				}
 				const _tf0 = prof ? Date.now() : 0;
@@ -784,18 +930,20 @@ export class PeriodSolver {
 		const deduped = dedupe(cells, (c) => extractor.canonicalKey(c.cellPolygons));
 		if (prof) prof.dedup += Date.now() - _td0;
 		diag.emitted = deduped.length;
-		if (prof) process.stderr.write(
-			`[PS_PROFILE k=${k}] cand=${prof.cand}ms fill=${prof.fill}ms gate=${prof.gate}ms ` +
-			`canon=${prof.canon}ms dedup=${prof.dedup}ms | lat=${diag.candidateLattices} raw=${diag.rawCells} ` +
-			`gateRej=${diag.gateRejected} fanLat=${diag.fanLattices} p0Skip=${diag.p0Skipped} cSkip=${diag.cSkipped} p1Prune=${diag.p1Pruned} p3Prune=${diag.p3Pruned} ssDedup=${diag.seedStateDedup} obl=${diag.obliqueCandidates}${diag.obliqueTruncated ? `(trunc:${diag.obliqueTruncated})` : ''}\n`
-		);
+		if (prof)
+			process.stderr.write(
+				`[PS_PROFILE k=${k}] cand=${prof.cand}ms fill=${prof.fill}ms gate=${prof.gate}ms ` +
+					`canon=${prof.canon}ms dedup=${prof.dedup}ms | lat=${diag.candidateLattices} raw=${diag.rawCells} ` +
+					`gateRej=${diag.gateRejected} fanLat=${diag.fanLattices} p0Skip=${diag.p0Skipped} cSkip=${diag.cSkipped} p1Prune=${diag.p1Pruned} p3Prune=${diag.p3Pruned} ssDedup=${diag.seedStateDedup} obl=${diag.obliqueCandidates}${diag.obliqueTruncated ? `(trunc:${diag.obliqueTruncated})` : ""}\n`,
+			);
 
 		if (opts.verbose) {
 			process.stderr.write(
 				`[PeriodSolver k=${k}] lattices=${diag.candidateLattices} tried=${diag.latticesTried} ` +
-				`raw=${diag.rawCells} emitted=${diag.emitted} gateRej=${diag.gateRejected} fanLat=${diag.fanLattices} obl=${diag.obliqueCandidates}` +
-				(diag.obliqueTruncated ? ` (oblTrunc:${diag.obliqueTruncated})` : '') +
-				(diag.timedOut ? ' (TIMED OUT)' : '') + `\n`
+					`raw=${diag.rawCells} emitted=${diag.emitted} gateRej=${diag.gateRejected} fanLat=${diag.fanLattices} obl=${diag.obliqueCandidates}` +
+					(diag.obliqueTruncated ? ` (oblTrunc:${diag.obliqueTruncated})` : "") +
+					(diag.timedOut ? " (TIMED OUT)" : "") +
+					`\n`,
 			);
 		}
 		return { cells: deduped, diag };
@@ -822,7 +970,18 @@ export class PeriodSolver {
 	 * enumerated. torusFill + certificate + orbit gate validate each; ordering is by exact cell area
 	 * (cheapest fill first).
 	 */
-	private candidateLattices(seed: SeedConfigurationLike): { lattices: CandidateLattice[]; p0Skipped: number; cSkipped: number; feas: Map<number, Map<string, number[][]>> | null; orbitSkipped: number; obliqueCandidates: number; obliqueTruncated: ObliqueTruncation['cause'] | null; starLadderTruncated: boolean; allKeys: Set<string>; areaKeys: Set<string> } {
+	private candidateLattices(seed: SeedConfigurationLike): {
+		lattices: CandidateLattice[];
+		p0Skipped: number;
+		cSkipped: number;
+		feas: Map<number, Map<string, number[][]>> | null;
+		orbitSkipped: number;
+		obliqueCandidates: number;
+		obliqueTruncated: ObliqueTruncation["cause"] | null;
+		starLadderTruncated: boolean;
+		allKeys: Set<string>;
+		areaKeys: Set<string>;
+	} {
 		const ring = seed.polygons[0].exactVertices![0].ring;
 		const polySizes = Array.from(new Set(seed.polygons.map((p) => p.n))).sort((a, b) => a - b);
 		// Tile-incidence per VC (n → #n-gons at that vertex) — drives the VC-area filter.
@@ -832,7 +991,10 @@ export class PeriodSolver {
 		// corners at counted vertices) is the c/n tile-count divisor.
 		const vcIncidences = seed.vertexConfigurations.map((vc) => {
 			const m = new Map<string, number>();
-			for (const p of vc.polygons) { const id = tileIdToken(p); m.set(id, (m.get(id) ?? 0) + 1); }
+			for (const p of vc.polygons) {
+				const id = tileIdToken(p);
+				m.set(id, (m.get(id) ?? 0) + 1);
+			}
 			return m;
 		});
 		const tileArea = new Map<string, Surd>();
@@ -845,20 +1007,28 @@ export class PeriodSolver {
 			}
 		}
 		const vcSig = vcIncidences
-			.map((m) => [...m.entries()].sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0)).map(([n, c]) => `${n}^${c}`).join('.'))
+			.map((m) =>
+				[...m.entries()]
+					.sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))
+					.map(([n, c]) => `${n}^${c}`)
+					.join("."),
+			)
 			.sort()
-			.join('|');
-		const provenMode = process.env.PROVEN_POOL === '1';
+			.join("|");
+		const provenMode = process.env.PROVEN_POOL === "1";
 		// ST-9: the opt-in pool widening (poolConfig env knobs) must key separately — a widened solve
 		// of the same tile set in one process must not reuse the narrow-pool candidate list (and vice
 		// versa). Env unset ⇒ suffix empty ⇒ key byte-identical to the historical format.
-		const widen = `${process.env.POOL_STEPS_UP ?? ''}|${process.env.POOL_LMAX_UP ?? ''}`;
+		const widen = `${process.env.POOL_STEPS_UP ?? ""}|${process.env.POOL_LMAX_UP ?? ""}`;
 		// PS_P3 keys the cache: toggling the C(Λ,S) filter mid-process must not serve a list built
 		// under the other regime (same pattern as the ST-9 pool-widening knobs above).
-		const p3Off = process.env.PS_P3 === '0';
-		const cacheKey = `${ring.N}:${vcSig}:${this.k}:${provenMode ? 'proven' : 'tuned'}${widen !== '|' ? `:up${widen}` : ''}${p3Off ? ':p3off' : ''}`;
+		const p3Off = process.env.PS_P3 === "0";
+		const cacheKey = `${ring.N}:${vcSig}:${this.k}:${provenMode ? "proven" : "tuned"}${widen !== "|" ? `:up${widen}` : ""}${p3Off ? ":p3off" : ""}`;
 		const cached = candidateCache.get(cacheKey);
-		if (cached) { cacheStats.candHits++; return cached; }
+		if (cached) {
+			cacheStats.candHits++;
+			return cached;
+		}
 		cacheStats.candMisses++;
 
 		const lat = new LatticeEnumerator(this.k);
@@ -889,23 +1059,24 @@ export class PeriodSolver {
 				const t = cfg.active;
 				process.stderr.write(
 					`[PeriodSolver k=${this.k}] ✔ PROOF-ANCHORED pool regime (SMALLK_PROVEN, docs/SMALLK_W_BOUND.md v2 refereed): ` +
-					`poolSteps=${t.poolSteps}, poolLmax=${t.poolLmax.toFixed(2)}, longAxisMax=${t.longAxisMax?.toFixed(2)}, ` +
-					`gridAreaMax=${t.gridAreaMax?.toFixed(2)}, oblAreaMax=${t.oblAreaMax?.toFixed(2)}, ` +
-					`compactOffMax2=${t.compactOffMax2.toFixed(2)}, gridShortMax2=${t.gridShortMax2.toFixed(2)}, ` +
-					`areaBound=${t.areaBoundF.toFixed(2)} — per-branch census radii; block-cap and join-den invariants asserted\n`
+						`poolSteps=${t.poolSteps}, poolLmax=${t.poolLmax.toFixed(2)}, longAxisMax=${t.longAxisMax?.toFixed(2)}, ` +
+						`gridAreaMax=${t.gridAreaMax?.toFixed(2)}, oblAreaMax=${t.oblAreaMax?.toFixed(2)}, ` +
+						`compactOffMax2=${t.compactOffMax2.toFixed(2)}, gridShortMax2=${t.gridShortMax2.toFixed(2)}, ` +
+						`areaBound=${t.areaBoundF.toFixed(2)} — per-branch census radii; block-cap and join-den invariants asserted\n`,
 				);
 			}
 		} else if (cfg.isTuned) {
 			const bk = `${this.k}:${aMax}`;
 			if (!regimeBannerEmitted.has(bk)) {
 				regimeBannerEmitted.add(bk);
-				const t = cfg.active, p = cfg.proven;
+				const t = cfg.active,
+					p = cfg.proven;
 				process.stderr.write(
 					`[PeriodSolver k=${this.k}] ⚑ INCOMPLETE-REGION (tuned pool regime): ` +
-					`poolSteps=${t.poolSteps} (proven ${p.poolSteps}), poolLmax=${t.poolLmax.toFixed(2)} (proven ${p.poolLmax.toFixed(2)}), ` +
-					`compactOffMax2=${t.compactOffMax2.toFixed(2)}, gridShortMax2=${t.gridShortMax2.toFixed(2)} (proven ${p.compactOffMax2.toFixed(2)}), ` +
-					`areaBound=${t.areaBoundF.toFixed(2)} (proven ${p.areaBoundF.toFixed(2)}) ` +
-					`below proven box — run is oracle-anchored, not proof-anchored\n`
+						`poolSteps=${t.poolSteps} (proven ${p.poolSteps}), poolLmax=${t.poolLmax.toFixed(2)} (proven ${p.poolLmax.toFixed(2)}), ` +
+						`compactOffMax2=${t.compactOffMax2.toFixed(2)}, gridShortMax2=${t.gridShortMax2.toFixed(2)} (proven ${p.compactOffMax2.toFixed(2)}), ` +
+						`areaBound=${t.areaBoundF.toFixed(2)} (proven ${p.areaBoundF.toFixed(2)}) ` +
+						`below proven box — run is oracle-anchored, not proof-anchored\n`,
 				);
 			}
 		}
@@ -920,7 +1091,7 @@ export class PeriodSolver {
 		// (k, aMax) via poolConfig — equal inputs always produce the same IEEE-754 value, so
 		// string interpolation is a stable key. Cached arrays are NEVER mutated downstream
 		// (every use is filter/map/for-of, creating new arrays — keep it that way).
-		const poolCacheKey = `${ring.N}:${polySizes.join(',')}:${poolSteps}:${poolLmax}:1`;
+		const poolCacheKey = `${ring.N}:${polySizes.join(",")}:${poolSteps}:${poolLmax}:1`;
 		let pool = poolStatsCache.get(poolCacheKey);
 		if (pool !== undefined) {
 			cacheStats.poolHits++;
@@ -962,21 +1133,26 @@ export class PeriodSolver {
 		// Fires at most once per uncached candidateLattices call; star seeds only.
 		let starLadderTruncated = false;
 		const areas = seedHasStar
-			? areaLadderFromTiles([...tileArea.values()], this.k, () => {
-					starLadderTruncated = true;
-					process.stderr.write(
-						`[PeriodSolver k=${this.k}] ⚑ INCOMPLETE-REGION (star area-ladder): truncated below the sound ` +
-						`orbit bound (LADDER_SIZE_CAP or area cap) — admissible-area set under-generated; ` +
-						`CB-7 Finding-2 area suppression DISABLED for this seed\n`
-					);
-				}, areaBoundF)
+			? areaLadderFromTiles(
+					[...tileArea.values()],
+					this.k,
+					() => {
+						starLadderTruncated = true;
+						process.stderr.write(
+							`[PeriodSolver k=${this.k}] ⚑ INCOMPLETE-REGION (star area-ladder): truncated below the sound ` +
+								`orbit bound (LADDER_SIZE_CAP or area cap) — admissible-area set under-generated; ` +
+								`CB-7 Finding-2 area suppression DISABLED for this seed\n`,
+						);
+					},
+					areaBoundF,
+				)
 			: vcAreaSet(vcIncidences, tileArea, tileCorners, areaBoundF);
-		if (seedHasStar && process.env.SPIKE_TRACE === '1') {
+		if (seedHasStar && process.env.SPIKE_TRACE === "1") {
 			spikeBreak(
-				'PeriodSolver.candidateLattices area filter (vcAreaSet)',
-				'vcAreaSet uses the VC-forced tile multiset (corners/n = tiles), assuming every tile corner is a counted vertex',
-				'FALSE for stars (dents are t=2 non-vertices) ⇒ it drops the true cell; LOOSENED to the generic identity-keyed ladder for star seeds (sound superset)',
-				'C2-style loosening; tightening needs the dent-aware vertex/corner model (Increment 3)'
+				"PeriodSolver.candidateLattices area filter (vcAreaSet)",
+				"vcAreaSet uses the VC-forced tile multiset (corners/n = tiles), assuming every tile corner is a counted vertex",
+				"FALSE for stars (dents are t=2 non-vertices) ⇒ it drops the true cell; LOOSENED to the generic identity-keyed ladder for star seeds (sound superset)",
+				"C2-style loosening; tightening needs the dent-aware vertex/corner model (Increment 3)",
 			);
 		}
 
@@ -1012,9 +1188,11 @@ export class PeriodSolver {
 			return false;
 		});
 		if (compactReachTrunc > 0)
-			process.stderr.write(cfg.smallkProven
-				? `[PeriodSolver k=${this.k}] census-pruned (proof-anchored, SMALLK_W_BOUND §3): ${compactReachTrunc} off-grid pool vectors exceed the round shell box compactOffMax2=${compactOffMax2.toFixed(2)} — no census shell reaches them\n`
-				: `[PeriodSolver k=${this.k}] ⚑ INCOMPLETE-REGION (compact off-grid cap): ${compactReachTrunc} off-grid pool vectors exceed compactOffMax2=${compactOffMax2.toFixed(2)} and are not tried as round-cell bases\n`);
+			process.stderr.write(
+				cfg.smallkProven
+					? `[PeriodSolver k=${this.k}] census-pruned (proof-anchored, SMALLK_W_BOUND §3): ${compactReachTrunc} off-grid pool vectors exceed the round shell box compactOffMax2=${compactOffMax2.toFixed(2)} — no census shell reaches them\n`
+					: `[PeriodSolver k=${this.k}] ⚑ INCOMPLETE-REGION (compact off-grid cap): ${compactReachTrunc} off-grid pool vectors exceed compactOffMax2=${compactOffMax2.toFixed(2)} and are not tried as round-cell bases\n`,
+			);
 		for (const [u, v] of lat.roundCells(roundPool, polySizes, ring, areaBoundF, undefined, areas)) push(u, v);
 
 		// (B) grid-aligned (rect + cmm) cells — short side from the SHORT pool vectors; the solved
@@ -1029,9 +1207,11 @@ export class PeriodSolver {
 			return false;
 		});
 		if (gridShortTrunc > 0)
-			process.stderr.write(cfg.smallkProven
-				? `[PeriodSolver k=${this.k}] census-pruned (proof-anchored, SMALLK_W_BOUND §4): ${gridShortTrunc} pool vectors exceed gridShortMax2=${gridShortMax2.toFixed(2)} = the non-rigid det box (short² ≤ det)\n`
-				: `[PeriodSolver k=${this.k}] ⚑ INCOMPLETE-REGION (grid short-side cap): ${gridShortTrunc} pool vectors exceed gridShortMax2=${gridShortMax2.toFixed(2)} and are not tried as cmm/rect short sides\n`);
+			process.stderr.write(
+				cfg.smallkProven
+					? `[PeriodSolver k=${this.k}] census-pruned (proof-anchored, SMALLK_W_BOUND §4): ${gridShortTrunc} pool vectors exceed gridShortMax2=${gridShortMax2.toFixed(2)} = the non-rigid det box (short² ≤ det)\n`
+					: `[PeriodSolver k=${this.k}] ⚑ INCOMPLETE-REGION (grid short-side cap): ${gridShortTrunc} pool vectors exceed gridShortMax2=${gridShortMax2.toFixed(2)} and are not tried as cmm/rect short sides\n`,
+			);
 		// The solved cmm/rect long axis is kept only when it is itself a realizable vertex difference
 		// (present in the pool) — this discards spurious solved lengths. ⚑ A long axis that is grid-aligned
 		// and within the area bound but exceeds the pool REACH (poolLmax) is a genuine tuned-pool
@@ -1047,7 +1227,10 @@ export class PeriodSolver {
 		const longAxisMax = cfg.active.longAxisMax ?? 0;
 		const gridAreaMax = cfg.active.gridAreaMax ?? 0;
 		for (const [u, v] of lat.gridAlignedCells(gridShorts, polySizes, ring, undefined, areas)) {
-			if (poolSet.has(v.key())) { push(u, v); continue; }
+			if (poolSet.has(v.key())) {
+				push(u, v);
+				continue;
+			}
 			const vf = v.toVector();
 			if (cfg.smallkProven) {
 				// SMALLK_PROVEN: accept the solved axis by CENSUS BOUND, not pool membership
@@ -1057,16 +1240,23 @@ export class PeriodSolver {
 				const uf = u.toVector();
 				const det = Math.abs(uf.x * vf.y - uf.y * vf.x);
 				const l2 = vf.x * vf.x + vf.y * vf.y;
-				if (det <= gridAreaMax + 1e-6 && l2 <= longAxisMax * longAxisMax + 1e-6) { push(u, v); continue; }
+				if (det <= gridAreaMax + 1e-6 && l2 <= longAxisMax * longAxisMax + 1e-6) {
+					push(u, v);
+					continue;
+				}
 				gridCensusSkip++; // beyond the proven non-rigid box ⇒ unrealizable at k ≤ 3 (theorem), skip
 				continue;
 			}
 			if (vf.x * vf.x + vf.y * vf.y > poolLmax * poolLmax + 1e-9) gridReachTrunc++;
 		}
 		if (gridReachTrunc > 0)
-			process.stderr.write(`[PeriodSolver k=${this.k}] ⚑ INCOMPLETE-REGION (grid long-side reach): ${gridReachTrunc} solved cmm/rect long axes exceed poolLmax=${poolLmax.toFixed(2)} and are not enumerated\n`);
+			process.stderr.write(
+				`[PeriodSolver k=${this.k}] ⚑ INCOMPLETE-REGION (grid long-side reach): ${gridReachTrunc} solved cmm/rect long axes exceed poolLmax=${poolLmax.toFixed(2)} and are not enumerated\n`,
+			);
 		if (gridCensusSkip > 0)
-			process.stderr.write(`[PeriodSolver k=${this.k}] census-pruned (proof-anchored, SMALLK_W_BOUND §4): ${gridCensusSkip} solved axes beyond the non-rigid box (det ≤ ${gridAreaMax.toFixed(2)}, |v| ≤ ${longAxisMax.toFixed(2)}) — unrealizable at k ≤ 3 by theorem\n`);
+			process.stderr.write(
+				`[PeriodSolver k=${this.k}] census-pruned (proof-anchored, SMALLK_W_BOUND §4): ${gridCensusSkip} solved axes beyond the non-rigid box (det ≤ ${gridAreaMax.toFixed(2)}, |v| ≤ ${longAxisMax.toFixed(2)}) — unrealizable at k ≤ 3 by theorem\n`,
+			);
 
 		// `minVerts` (min vertex-classes per realizable cell area) drives BOTH the P0 pre-filter below AND
 		// the oblique sub-pool sizing in source (C); computed once here (hoisted from the P0 loop — pure,
@@ -1084,9 +1274,10 @@ export class PeriodSolver {
 		// P0) and k ≥ 3 only (at k ≤ 2 the native runGate=0 path intentionally emits gate-doomed
 		// closures whose tile vectors need not be feasible; nothing to win there anyway). PS_P3=0
 		// restores today's behavior byte-for-byte.
-		const cFeas = !p3Off && this.k >= 3 && !seedHasStar
-			? vcFeasAreaSets(vcIncidences, tileArea, tileCorners, this.k, areaBoundF)
-			: null;
+		const cFeas =
+			!p3Off && this.k >= 3 && !seedHasStar
+				? vcFeasAreaSets(vcIncidences, tileArea, tileCorners, this.k, areaBoundF)
+				: null;
 
 		// (C) OBLIQUE (p1/p2) cells — the cor:box join-closure completion that reaches the Bravais classes
 		// the symmetry-pinned (A)/(B) cannot (k≥3 oblique cells t3046/t3055). Source (C) contributes ONLY
@@ -1095,20 +1286,24 @@ export class PeriodSolver {
 		// large; the searched region is the tuned pool reach, so an out-of-reach oblique cell is logged
 		// LOUDLY (INCOMPLETE-REGION, never silent), per route-a-proven-box.md / join-closure contract.
 		let obliqueCandidates = 0;
-		let obliqueTruncated: ObliqueTruncation['cause'] | null = null;
+		let obliqueTruncated: ObliqueTruncation["cause"] | null = null;
 		// SMALLK_PROVEN: oblique (hol 2) cells have det ≤ 2k·s_max (census L1) — 15× below the
 		// coarse cap; join-closure stays complete (JOIN_DEN_MAX=60 ≥ census sublattice index ≤ 28).
 		const oblAreaBound = cfg.smallkProven ? (cfg.active.oblAreaMax ?? areaBoundF) : areaBoundF;
 		for (const [u, v] of lat.obliqueCells(pool, areas, ring, oblAreaBound, poolLmax, minVerts, (info) => {
 			obliqueTruncated = info.cause;
-			if (cfg.smallkProven && info.cause === 'join-waived') {
+			if (cfg.smallkProven && info.cause === "join-waived") {
 				// Proof-anchored justification (SMALLK_W_BOUND §4 + L1): a needed join's sublattice
 				// index divides |det|/covol_min ≤ oblAreaMax/(√3/2) ≤ 28 at k ≤ 3, and nearRational
 				// is accept-when-unsure — so every waived join (irrational or den > 60) is provably
 				// not a k ≤ 3 lattice join. Informational, not an INCOMPLETE-REGION.
-				process.stderr.write(`[PeriodSolver k=${this.k}] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): ${JSON.stringify(info)}\n`);
+				process.stderr.write(
+					`[PeriodSolver k=${this.k}] census-justified join waiver (den ≤ 60 ≥ proven need ≤ 28): ${JSON.stringify(info)}\n`,
+				);
 			} else {
-				process.stderr.write(`[PeriodSolver k=${this.k}] ⚑ INCOMPLETE-REGION (oblique candidate stage): ${JSON.stringify(info)}\n`);
+				process.stderr.write(
+					`[PeriodSolver k=${this.k}] ⚑ INCOMPLETE-REGION (oblique candidate stage): ${JSON.stringify(info)}\n`,
+				);
 			}
 		})) {
 			const before = seen.size;
@@ -1145,8 +1340,14 @@ export class PeriodSolver {
 		for (const [u, v] of lattices) {
 			const ak = areaKey(detSurd(u, v).abs());
 			const mv = minVerts.get(ak);
-			if (mv !== undefined && mv > this.k * holohedry(u, v)) { p0Skipped++; continue; }
-			if (cFeas && !cFeas.get(bravaisClassExact(u, v))!.has(ak)) { cSkipped++; continue; }
+			if (mv !== undefined && mv > this.k * holohedry(u, v)) {
+				p0Skipped++;
+				continue;
+			}
+			if (cFeas && !cFeas.get(bravaisClassExact(u, v))!.has(ak)) {
+				cSkipped++;
+				continue;
+			}
 			kept.push([u, v]);
 		}
 
@@ -1212,16 +1413,37 @@ export class PeriodSolver {
 		// must not alarm on it (observed live: pure-triangle = 1-uniform supercell completions inside
 		// multi-VC k=2 seeds; vcAreaSet uses v ≥ 1 for EVERY VC, so their primitive area √3/2 is
 		// excluded by construction).
-		const result = { lattices: candidates, p0Skipped, cSkipped, feas: cFeas, orbitSkipped, obliqueCandidates, obliqueTruncated, starLadderTruncated, allKeys: seen, areaKeys: new Set(areas.map(areaKey)) };
-		if (trace.enabled) trace.node('lattice', {
-			vcSig,
-			polySizes,
-			p0Skipped, cSkipped, orbitSkipped,
-			candidates: candidates.map((c) => {
-				const a = c.basis[0].toVector(), b = c.basis[1].toVector();
-				return { key: latticeKey(c.basis[0], c.basis[1]), basis: [[a.x, a.y], [b.x, b.y]] };
-			}),
-		});
+		const result = {
+			lattices: candidates,
+			p0Skipped,
+			cSkipped,
+			feas: cFeas,
+			orbitSkipped,
+			obliqueCandidates,
+			obliqueTruncated,
+			starLadderTruncated,
+			allKeys: seen,
+			areaKeys: new Set(areas.map(areaKey)),
+		};
+		if (trace.enabled)
+			trace.node("lattice", {
+				vcSig,
+				polySizes,
+				p0Skipped,
+				cSkipped,
+				orbitSkipped,
+				candidates: candidates.map((c) => {
+					const a = c.basis[0].toVector(),
+						b = c.basis[1].toVector();
+					return {
+						key: latticeKey(c.basis[0], c.basis[1]),
+						basis: [
+							[a.x, a.y],
+							[b.x, b.y],
+						],
+					};
+				}),
+			});
 		candidateCache.set(cacheKey, result);
 		return result;
 	}
@@ -1233,7 +1455,7 @@ export class PeriodSolver {
 	private makeCtx(
 		u: Cyclotomic,
 		v: Cyclotomic,
-		ring: Cyclotomic['ring'],
+		ring: Cyclotomic["ring"],
 		allowed: Set<string>,
 		polySizes: number[],
 		maxCellPolys: number,
@@ -1245,7 +1467,7 @@ export class PeriodSolver {
 		admissibleAreaKeys: Set<string> = new Set(),
 		// (F5) seat star DENTS in the fill (star-fill-dentseating work order). Default false ⇒ the dent
 		// loop in torusFill is skipped ⇒ byte-identical on the regular + point-at-vertex paths.
-		includeDents: boolean = false
+		includeDents: boolean = false,
 	): FillCtx | null {
 		const uV = u.toVector();
 		const vV = v.toVector();
@@ -1292,20 +1514,33 @@ export class PeriodSolver {
 				// candidate slipped past the census filters — a soundness bug, not a tuning event.
 				throw new Error(
 					`SMALLK_PROVEN invariant violated: block index cap binds for lattice ${latticeKey(u, v)} ` +
-					`(needs ${blockIndexRangeNeeded(cellDiam, cellArea)} > ${BLOCK_INDEX_CAP}; diam=${cellDiam.toFixed(2)}, area=${cellArea.toFixed(2)}) — ` +
-					`census filter leak, fix before trusting the run`
+						`(needs ${blockIndexRangeNeeded(cellDiam, cellArea)} > ${BLOCK_INDEX_CAP}; diam=${cellDiam.toFixed(2)}, area=${cellArea.toFixed(2)}) — ` +
+						`census filter leak, fix before trusting the run`,
 				);
 			}
 			process.stderr.write(
 				`[PeriodSolver k=${this.k}] ⚑ INCOMPLETE-REGION (block index cap): lattice ${latticeKey(u, v)} needs ` +
-				`index range ${blockIndexRangeNeeded(cellDiam, cellArea)} > ${BLOCK_INDEX_CAP} — blocks under-built; ` +
-				`this candidate's results are NOT completeness-grade\n`
+					`index range ${blockIndexRangeNeeded(cellDiam, cellArea)} > ${BLOCK_INDEX_CAP} — blocks under-built; ` +
+					`this candidate's results are NOT completeness-grade\n`,
 			);
 		}
 		return {
-			u, v, ring, N: ring.N, allowed, polySizes,
+			u,
+			v,
+			ring,
+			N: ring.N,
+			allowed,
+			polySizes,
 			maxCellPolys: Math.min(maxCellPolys, areaCap),
-			uV, vV, det, cellDiam, minLen, cellArea, maxCircum, orbitFloor, blockIndexCapBinds,
+			uV,
+			vV,
+			det,
+			cellDiam,
+			minLen,
+			cellArea,
+			maxCircum,
+			orbitFloor,
+			blockIndexCapBinds,
 			// CB-1: exact |det Λ| for the certificate's area leg — computed once per candidate lattice.
 			cellAreaSurd: detSurd(u, v).abs(),
 			starTiles: starTiles.map((s) => ({ n: s.n, alphaU: s.alphaU })),
@@ -1325,14 +1560,18 @@ export class PeriodSolver {
 		// fall back to the TS DFS. runGate mirrors ctx.gate (early k-gate ON iff the enumeration set it, k≥3).
 		// Emitted cells are byte-equivalent to the TS DFS; the inner diag counters are not populated in this
 		// mode (only the emitted set + solve-level rawCells count), which is fine for the enumeration output.
-		if (process.env.USE_NATIVE_FILL === '1' && ctx.starTiles.length === 0) return nativeFill(corePolys, ctx, this.k, ctx.gate != null);
+		if (process.env.USE_NATIVE_FILL === "1" && ctx.starTiles.length === 0)
+			return nativeFill(corePolys, ctx, this.k, ctx.gate != null);
 		const FP = FILL_PROF; // fill-internals profiler (module-global; null when off ⇒ byte-identical)
 		if (FP) FP.c.fills++;
 		const _s0 = FP ? fpNow() : 0; // per-fill setup timer (closed at every setup exit + before the DFS loop)
 		const memo = new Map<string, { key: string; poly: Polygon }>();
 		// Initial cell = seed polygons reduced into canonical lattice-class representatives.
 		const initial = this.dedupModLattice(corePolys, ctx, memo);
-		if (PeriodSolver.DEBUG) process.stderr.write(`  torusFill: initial reps=${initial.length} det=${ctx.det.toFixed(3)} cellDiam=${ctx.cellDiam.toFixed(3)}\n`);
+		if (PeriodSolver.DEBUG)
+			process.stderr.write(
+				`  torusFill: initial reps=${initial.length} det=${ctx.det.toFixed(3)} cellDiam=${ctx.cellDiam.toFixed(3)}\n`,
+			);
 		// Microsecond reject (no block): the DISTINCT core polygons mod Λ all live in one cell, so their
 		// total area cannot exceed the cell area |det Λ|. A too-small / wrong candidate is killed in
 		// O(reps) before the expensive block build. Sound (a necessary condition for any fitting).
@@ -1342,7 +1581,10 @@ export class PeriodSolver {
 		let initialArea = 0;
 		for (const p of initial) initialArea += tileAreaFloatFor(p);
 		if (initialArea > ctx.cellArea + 1e-6) {
-			if (PeriodSolver.DEBUG) process.stderr.write(`  torusFill: core area ${initialArea.toFixed(2)} > cell ${ctx.cellArea.toFixed(2)} → reject\n`);
+			if (PeriodSolver.DEBUG)
+				process.stderr.write(
+					`  torusFill: core area ${initialArea.toFixed(2)} > cell ${ctx.cellArea.toFixed(2)} → reject\n`,
+				);
 			if (FP) FP.t.setup += fpNow() - _s0;
 			return [];
 		}
@@ -1360,7 +1602,8 @@ export class PeriodSolver {
 		// the DFS root's block — the DFS carries each cell's block and extends it by ONE new tile's lattice
 		// translates per child instead of rebuilding the whole block every pop (audit perf C1).
 		const initialBlock = this.buildBlock(initial, ctx, 5);
-		if (this.blockOverlapPeriodic(initial, initialBlock, ctx, 5)) { // RANK-1 periodic reduction (Rabs=5)
+		if (this.blockOverlapPeriodic(initial, initialBlock, ctx, 5)) {
+			// RANK-1 periodic reduction (Rabs=5)
 			if (PeriodSolver.DEBUG) process.stderr.write(`  torusFill: initial self-overlap → reject\n`);
 			if (FP) FP.t.setup += fpNow() - _s0;
 			return [];
@@ -1382,15 +1625,16 @@ export class PeriodSolver {
 		// is TA-owed (TH-13). The separate Fig-3 dent-AT-vertex fill gap (below) is unchanged by this.
 		const seedHasStar = ctx.starTiles.length > 0;
 		const skipOP1 = seedHasStar;
-		if (seedHasStar && process.env.SPIKE_TRACE === '1') {
+		if (seedHasStar && process.env.SPIKE_TRACE === "1") {
 			spikeBreak(
-				'PeriodSolver.ts torusFill star gap-fill — DENT-seating not attempted',
-				'the fill loop seats only star POINTS (interior α) into a gap',
-				'the Fig-3 dent-AT-vertex class (a reflex dent corner coincides with a real ≥3-tile vertex) is NOT generated by fill ⇒ those tilings can be DROPPED (a completeness gap, not a soundness one)',
-				'SCOPED: Fig-4 (point-at-vertex) is sound+complete; Fig-3 a,f are best-effort (C4 hand-derived fallback). Flag is loud, never silent (project doctrine)',
+				"PeriodSolver.ts torusFill star gap-fill — DENT-seating not attempted",
+				"the fill loop seats only star POINTS (interior α) into a gap",
+				"the Fig-3 dent-AT-vertex class (a reflex dent corner coincides with a real ≥3-tile vertex) is NOT generated by fill ⇒ those tilings can be DROPPED (a completeness gap, not a soundness one)",
+				"SCOPED: Fig-4 (point-at-vertex) is sound+complete; Fig-3 a,f are best-effort (C4 hand-derived fallback). Flag is loud, never silent (project doctrine)",
 			);
 		}
-		const uL = ctx.u, vL = ctx.v;
+		const uL = ctx.u,
+			vL = ctx.v;
 		const extendV = (parent: Cyclotomic[], poly: Polygon): Cyclotomic[] => {
 			const out = parent.slice();
 			const verts = poly.exactVertices!;
@@ -1408,7 +1652,10 @@ export class PeriodSolver {
 		let initialV: Cyclotomic[] = [];
 		for (const p of initial) initialV = extendV(initialV, p);
 		if (initialV.length > ctx.orbitFloor) {
-			if (PeriodSolver.DEBUG) process.stderr.write(`  torusFill: seed core ${initialV.length} vertex classes > floor ${ctx.orbitFloor} → reject\n`);
+			if (PeriodSolver.DEBUG)
+				process.stderr.write(
+					`  torusFill: seed core ${initialV.length} vertex classes > floor ${ctx.orbitFloor} → reject\n`,
+				);
 			if (FP) FP.t.setup += fpNow() - _s0;
 			return [];
 		}
@@ -1421,7 +1668,11 @@ export class PeriodSolver {
 		const feas = ctx.feasVectors;
 		const nSizes = ctx.polySizes.length;
 		const sizeIdxOf = feas ? new Map(ctx.polySizes.map((n, i) => [n, i])) : null;
-		const dominated = (c: number[]): boolean => feas!.some((f) => { for (let i = 0; i < nSizes; i++) if (c[i] > f[i]) return false; return true; });
+		const dominated = (c: number[]): boolean =>
+			feas!.some((f) => {
+				for (let i = 0; i < nSizes; i++) if (c[i] > f[i]) return false;
+				return true;
+			});
 		let initialCounts: number[] | null = null;
 		if (feas && sizeIdxOf) {
 			initialCounts = new Array<number>(nSizes).fill(0);
@@ -1435,11 +1686,22 @@ export class PeriodSolver {
 
 		const results: Polygon[][] = [];
 		const seenState = new Set<string>();
-		const fillId = trace.enabled ? trace.nextId('fill') : 0;
-		const latKey = trace.enabled ? latticeKey(ctx.u, ctx.v) : '';
-		const rootId = trace.enabled ? trace.nextId('torus') : 0;
-		if (trace.enabled) trace.node('torus', { fillId, latKey, k: this.k, id: rootId, parentId: -1, reps: polyDump(initial), verdict: 'root' });
-		const stack: { reps: Polygon[]; block: Polygon[]; vReps: Cyclotomic[]; counts: number[] | null; id?: number }[] = [{ reps: initial, block: initialBlock, vReps: initialV, counts: initialCounts, id: rootId }];
+		const fillId = trace.enabled ? trace.nextId("fill") : 0;
+		const latKey = trace.enabled ? latticeKey(ctx.u, ctx.v) : "";
+		const rootId = trace.enabled ? trace.nextId("torus") : 0;
+		if (trace.enabled)
+			trace.node("torus", {
+				fillId,
+				latKey,
+				k: this.k,
+				id: rootId,
+				parentId: -1,
+				reps: polyDump(initial),
+				verdict: "root",
+			});
+		const stack: { reps: Polygon[]; block: Polygon[]; vReps: Cyclotomic[]; counts: number[] | null; id?: number }[] = [
+			{ reps: initial, block: initialBlock, vReps: initialV, counts: initialCounts, id: rootId },
+		];
 		let pops = 0;
 		const t0 = PeriodSolver.DEBUG ? Date.now() : 0;
 		if (FP) FP.t.setup += fpNow() - _s0; // seed survived setup → close the setup bracket, enter the DFS
@@ -1450,17 +1712,31 @@ export class PeriodSolver {
 			let _t = FP ? fpNow() : 0;
 			const stateKey = this.stateKey(reps);
 			const seen = seenState.has(stateKey);
-			if (FP) { FP.t.dedupKey += fpNow() - _t; if (seen) FP.c.seenHits++; }
-			if (seen) { if (trace.enabled) trace.node('torus', { fillId, latKey, id: curId ?? 0, verdict: 'dedup' }); continue; }
+			if (FP) {
+				FP.t.dedupKey += fpNow() - _t;
+				if (seen) FP.c.seenHits++;
+			}
+			if (seen) {
+				if (trace.enabled) trace.node("torus", { fillId, latKey, id: curId ?? 0, verdict: "dedup" });
+				continue;
+			}
 			seenState.add(stateKey);
 			pops++;
 			if (FP) FP.c.pops++;
-			if (reps.length > ctx.maxCellPolys) { if (FP) FP.c.capSkips++; if (trace.enabled) trace.node('torus', { fillId, latKey, id: curId ?? 0, verdict: 'cap-skip' }); continue; }
+			if (reps.length > ctx.maxCellPolys) {
+				if (FP) FP.c.capSkips++;
+				if (trace.enabled) trace.node("torus", { fillId, latKey, id: curId ?? 0, verdict: "cap-skip" });
+				continue;
+			}
 
 			_t = FP ? fpNow() : 0;
 			const analysis = this.analyze(reps, ctx, block);
 			if (FP) FP.t.analyze += fpNow() - _t;
-			if (analysis.contradiction) { if (FP) FP.c.contradictions++; if (trace.enabled) trace.node('torus', { fillId, latKey, id: curId ?? 0, verdict: 'contradiction' }); continue; }
+			if (analysis.contradiction) {
+				if (FP) FP.c.contradictions++;
+				if (trace.enabled) trace.node("torus", { fillId, latKey, id: curId ?? 0, verdict: "contradiction" });
+				continue;
+			}
 			if (!analysis.openVertex) {
 				if (FP) FP.c.closures++;
 				// EARLY k-GATE (before the certificate): orbit count is a property of the closed cell and is
@@ -1472,7 +1748,12 @@ export class PeriodSolver {
 				// k=3 catastrophic tail (large lattices closing into many orbit>k tilings) stops being paid.
 				if (ctx.gate) {
 					const orbits = ctx.gate(reps);
-					if (orbits !== null && orbits !== this.k) { diag.earlyGateRejected++; if (trace.enabled) trace.node('torus', { fillId, latKey, id: curId ?? 0, reps: polyDump(reps), verdict: 'gate-reject' }); continue; }
+					if (orbits !== null && orbits !== this.k) {
+						diag.earlyGateRejected++;
+						if (trace.enabled)
+							trace.node("torus", { fillId, latKey, id: curId ?? 0, reps: polyDump(reps), verdict: "gate-reject" });
+						continue;
+					}
 				}
 				// No open vertex within a full cell ⇒ torus closed. Certify, then OP-1 (prop:typeprune):
 				// (i) V<k ⇒ orbits ≤ V < k, the gate would reject — skip the
@@ -1491,16 +1772,30 @@ export class PeriodSolver {
 				// skips the overlap work. Same emitted output as the old post-certificate discard.
 				const opDoom = skipOP1 ? undefined : { vReps, diag };
 				const cert = this.isCompleteTiling(reps, ctx, occ, opDoom);
-				if (FP) { FP.t.certify += fpNow() - _t; if (cert) FP.c.certPass++; }
+				if (FP) {
+					FP.t.certify += fpNow() - _t;
+					if (cert) FP.c.certPass++;
+				}
 				if (cert) {
 					_t = FP ? fpNow() : 0;
 					if (FP) FP.c.primCalls++;
 					const prim = this.isPrimitive(reps, ctx, memo, diag);
-					if (FP) { FP.t.primitive += fpNow() - _t; if (prim) FP.c.primTrue++; }
+					if (FP) {
+						FP.t.primitive += fpNow() - _t;
+						if (prim) FP.c.primTrue++;
+					}
 					if (prim) results.push(reps);
-					if (trace.enabled) trace.node('torus', { fillId, latKey, id: curId ?? 0, reps: polyDump(reps), stateKey: this.stateKey(reps), verdict: prim ? 'emit' : 'reject-supercell' });
+					if (trace.enabled)
+						trace.node("torus", {
+							fillId,
+							latKey,
+							id: curId ?? 0,
+							reps: polyDump(reps),
+							stateKey: this.stateKey(reps),
+							verdict: prim ? "emit" : "reject-supercell",
+						});
 				} else if (trace.enabled) {
-					trace.node('torus', { fillId, latKey, id: curId ?? 0, reps: polyDump(reps), verdict: 'cert-fail' });
+					trace.node("torus", { fillId, latKey, id: curId ?? 0, reps: polyDump(reps), verdict: "cert-fail" });
 				}
 				continue;
 			}
@@ -1509,7 +1804,10 @@ export class PeriodSolver {
 			_t = FP ? fpNow() : 0;
 			const { vertex: w, intervals } = analysis.openVertex;
 			const d0 = this.gapStartRay(intervals, ctx.N);
-			if (d0 < 0) { if (FP) FP.t.expand += fpNow() - _t; continue; } // no fillable gap (shouldn't happen for an open vertex)
+			if (d0 < 0) {
+				if (FP) FP.t.expand += fpNow() - _t;
+				continue;
+			} // no fillable gap (shouldn't happen for an open vertex)
 			const repsKeys = new Set(reps.map((r) => r.exactKey())); // reps are canonical class reps
 
 			// Candidate corners for the CW-most gap: every regular n-gon (a corner of interior `regular(n)`)
@@ -1518,28 +1816,63 @@ export class PeriodSolver {
 			// downstream `analyze` (over-fill / VC) reject the ones that do not fit.
 			const place = (P: Polygon) => {
 				if (FP) FP.c.places++;
-				if (this.properOverlapWithBlock(P, block, ctx)) { if (FP) FP.c.overlapRej++; if (trace.enabled) trace.node('torus', { fillId, latKey, parentId: curId ?? 0, placedN: P.n, verdict: 'prune-overlap' }); return; }
+				if (this.properOverlapWithBlock(P, block, ctx)) {
+					if (FP) FP.c.overlapRej++;
+					if (trace.enabled)
+						trace.node("torus", { fillId, latKey, parentId: curId ?? 0, placedN: P.n, verdict: "prune-overlap" });
+					return;
+				}
 				// The new tile reduces to ONE canonical lattice-class rep. If already present the branch
 				// makes no progress (matches the old dedupModLattice length check). The child's block =
 				// this block + the new rep's lattice translates — disjoint classes, so a plain set union;
 				// no full rebuild (audit perf C1). Block order is irrelevant to every consumer.
 				const pc = this.canonicalRep(P, ctx, memo);
-				if (repsKeys.has(pc.key)) { if (FP) FP.c.dupRej++; if (trace.enabled) trace.node('torus', { fillId, latKey, parentId: curId ?? 0, placedN: P.n, verdict: 'prune-noprogress' }); return; } // P already present mod Λ ⇒ no progress
+				if (repsKeys.has(pc.key)) {
+					if (FP) FP.c.dupRej++;
+					if (trace.enabled)
+						trace.node("torus", { fillId, latKey, parentId: curId ?? 0, placedN: P.n, verdict: "prune-noprogress" });
+					return;
+				} // P already present mod Λ ⇒ no progress
 				const next = [...reps, pc.poly];
-				if (next.length > ctx.maxCellPolys) { if (FP) FP.c.capRej++; if (trace.enabled) trace.node('torus', { fillId, latKey, parentId: curId ?? 0, placedN: P.n, verdict: 'prune-cap' }); return; }
+				if (next.length > ctx.maxCellPolys) {
+					if (FP) FP.c.capRej++;
+					if (trace.enabled)
+						trace.node("torus", { fillId, latKey, parentId: curId ?? 0, placedN: P.n, verdict: "prune-cap" });
+					return;
+				}
 				const childV = extendV(vReps, pc.poly);
-				if (childV.length > ctx.orbitFloor) { diag.p1Pruned++; if (FP) FP.c.p1Pruned++; if (trace.enabled) trace.node('torus', { fillId, latKey, parentId: curId ?? 0, placedN: P.n, verdict: 'prune-P1' }); return; } // P1 orbit-floor prune (sound for stars: extendV excludes dents)
+				if (childV.length > ctx.orbitFloor) {
+					diag.p1Pruned++;
+					if (FP) FP.c.p1Pruned++;
+					if (trace.enabled)
+						trace.node("torus", { fillId, latKey, parentId: curId ?? 0, placedN: P.n, verdict: "prune-P1" });
+					return;
+				} // P1 orbit-floor prune (sound for stars: extendV excludes dents)
 				// P3 stage B: the child's per-size counts must stay dominated by some F*(Λ) member —
 				// else no completion can be an emitted cell (counts are monotone; see the header note).
 				let childCounts: number[] | null = null;
 				if (counts && sizeIdxOf) {
 					childCounts = counts.slice();
 					childCounts[sizeIdxOf.get(pc.poly.n)!]++;
-					if (!dominated(childCounts)) { diag.p3Pruned++; if (trace.enabled) trace.node('torus', { fillId, latKey, parentId: curId ?? 0, placedN: P.n, verdict: 'prune-P3' }); return; }
+					if (!dominated(childCounts)) {
+						diag.p3Pruned++;
+						if (trace.enabled)
+							trace.node("torus", { fillId, latKey, parentId: curId ?? 0, placedN: P.n, verdict: "prune-P3" });
+						return;
+					}
 				}
 				const childBlock = block.concat(this.buildBlock([pc.poly], ctx, 5));
-				const childId = trace.enabled ? trace.nextId('torus') : 0;
-				if (trace.enabled) trace.node('torus', { fillId, latKey, id: childId, parentId: curId ?? 0, placedN: P.n, reps: polyDump(next), verdict: 'place' });
+				const childId = trace.enabled ? trace.nextId("torus") : 0;
+				if (trace.enabled)
+					trace.node("torus", {
+						fillId,
+						latKey,
+						id: childId,
+						parentId: curId ?? 0,
+						placedN: P.n,
+						reps: polyDump(next),
+						verdict: "place",
+					});
 				stack.push({ reps: next, block: childBlock, vReps: childV, counts: childCounts, id: childId });
 				if (FP) FP.c.pushed++;
 			};
@@ -1560,7 +1893,10 @@ export class PeriodSolver {
 			}
 			if (FP) FP.t.expand += fpNow() - _t;
 		}
-		if (PeriodSolver.DEBUG) process.stderr.write(`  fill det=${ctx.det.toFixed(2)} minLen=${ctx.minLen.toFixed(2)} cap=${ctx.maxCellPolys} pops=${pops} results=${results.length} ${Date.now() - t0}ms\n`);
+		if (PeriodSolver.DEBUG)
+			process.stderr.write(
+				`  fill det=${ctx.det.toFixed(2)} minLen=${ctx.minLen.toFixed(2)} cap=${ctx.maxCellPolys} pops=${pops} results=${results.length} ${Date.now() - t0}ms\n`,
+			);
 		return results;
 	}
 
@@ -1592,7 +1928,10 @@ export class PeriodSolver {
 			for (let i = 0; i < verts.length; i++) {
 				const kk = verts[i].key();
 				let e = inc.get(kk);
-				if (!e) { e = { v: verts[i], polys: [] }; inc.set(kk, e); }
+				if (!e) {
+					e = { v: verts[i], polys: [] };
+					inc.set(kk, e);
+				}
 				e.polys.push({ p, idx: i });
 			}
 		}
@@ -1679,14 +2018,21 @@ export class PeriodSolver {
 	/** TEST-ONLY differential harness (tests/certify-overlap-periodic.test.ts): build the certificate
 	 *  block for a cell and run BOTH the old O(block²) overlap check and the RANK-1 periodic reduction,
 	 *  so the test can assert they agree. Not used in production. Returns null on degenerate input. */
-	_testOnlyBlockOverlap(cellPolygons: Polygon[], u: Cyclotomic, v: Cyclotomic): { old: boolean; periodic: boolean } | null {
+	_testOnlyBlockOverlap(
+		cellPolygons: Polygon[],
+		u: Cyclotomic,
+		v: Cyclotomic,
+	): { old: boolean; periodic: boolean } | null {
 		const ring = u.ring;
 		const polySizes = Array.from(new Set(cellPolygons.filter((p) => !p.isStar).map((p) => p.n))).sort((a, b) => a - b);
 		const ctx = this.makeCtx(u, v, ring, new Set(), polySizes.length ? polySizes : [3], Number.MAX_SAFE_INTEGER);
 		if (!ctx) return null;
 		const Rabs = ctx.cellDiam + 8;
 		const block = this.buildBlock(cellPolygons, ctx, Rabs);
-		return { old: this.blockHasProperOverlap(block, ctx), periodic: this.blockOverlapPeriodic(cellPolygons, block, ctx, Rabs) };
+		return {
+			old: this.blockHasProperOverlap(block, ctx),
+			periodic: this.blockOverlapPeriodic(cellPolygons, block, ctx, Rabs),
+		};
 	}
 
 	/** Exact gap-free certificate for a closed torus tiling (cell `reps` + lattice in ctx):
@@ -1700,7 +2046,12 @@ export class PeriodSolver {
 	 *  cell), and the certificate judges all of them, so on a true return `occurringOut` holds the
 	 *  full occurring VC-type set of the periodic tiling.  On a false return the set may be empty or
 	 *  partial — early rejects (gap/over-full vertex, disallowed name) bail mid-collection. */
-	isCompleteTiling(reps: Polygon[], ctx: FillCtx, occurringOut?: Set<string>, opDoom?: { vReps: Cyclotomic[]; diag: PeriodSolverDiag }): boolean {
+	isCompleteTiling(
+		reps: Polygon[],
+		ctx: FillCtx,
+		occurringOut?: Set<string>,
+		opDoom?: { vReps: Cyclotomic[]; diag: PeriodSolverDiag },
+	): boolean {
 		// (c) area: cell polygons must exactly cover one fundamental domain. CB-1: the DECISION is the
 		// exact Surd comparison Σ tileAreaSurdFor(p) == |det Λ| (thesis leg (c): "equals |det Λ| exactly");
 		// the float sum is kept as a broadphase PRE-REJECT only. Soundness of the broadphase: float error
@@ -1710,7 +2061,10 @@ export class PeriodSolver {
 		const FP = FILL_PROF; // certify sub-phase timers (distortion-free: ~1 call/closure)
 		let _c = FP ? fpNow() : 0;
 		const area = reps.reduce((s, p) => s + tileAreaFloatFor(p), 0);
-		if (Math.abs(area - ctx.cellArea) > 1e-4 * Math.max(1, ctx.cellArea)) { if (FP) FP.ct.area += fpNow() - _c; return false; }
+		if (Math.abs(area - ctx.cellArea) > 1e-4 * Math.max(1, ctx.cellArea)) {
+			if (FP) FP.ct.area += fpNow() - _c;
+			return false;
+		}
 		let areaSurd = Surd.ZERO;
 		for (const p of reps) areaSurd = areaSurd.add(tileAreaSurdFor(p));
 		const areaEq = areaSurd.cmp(ctx.cellAreaSurd) === 0;
@@ -1733,7 +2087,10 @@ export class PeriodSolver {
 			for (let i = 0; i < verts.length; i++) {
 				const kk = verts[i].key();
 				let e = inc.get(kk);
-				if (!e) { e = { v: verts[i], polys: [] }; inc.set(kk, e); }
+				if (!e) {
+					e = { v: verts[i], polys: [] };
+					inc.set(kk, e);
+				}
 				e.polys.push({ p, idx: i });
 			}
 		}
@@ -1744,13 +2101,19 @@ export class PeriodSolver {
 			judged++;
 			const intervals = this.coveredIntervals(v, polys, ctx.N);
 			const totalUnits = intervals.reduce((s, it) => s + it.units, 0);
-			if (Math.abs(totalUnits - ctx.N) > 0.5) { if (FP) FP.ct.judge += fpNow() - _c; return false; } // not surrounded (gap) or over-full
+			if (Math.abs(totalUnits - ctx.N) > 0.5) {
+				if (FP) FP.ct.judge += fpNow() - _c;
+				return false;
+			} // not surrounded (gap) or over-full
 			// A2: a 2-tile point at 2π is a legal dent-fill (Myers non-vertex), not a counted VC — accept
 			// it without requiring an allowed-VC name. (Regular path: t≥3 always ⇒ this never fires.)
 			const t = new Set(polys.map(({ p }) => p.exactKey())).size;
 			if (t < 3) continue;
 			const name = canonicalVCName(this.vcRingNames(v, polys));
-			if (!ctx.allowed.has(name)) { if (FP) FP.ct.judge += fpNow() - _c; return false; }
+			if (!ctx.allowed.has(name)) {
+				if (FP) FP.ct.judge += fpNow() - _c;
+				return false;
+			}
 			occurringOut?.add(name);
 		}
 		if (FP) FP.ct.judge += fpNow() - _c;
@@ -1765,8 +2128,14 @@ export class PeriodSolver {
 		// uncounted overlap-reject (rare/none for the regular catalogue, since overlaps surface as over-full
 		// vertices already caught by the judge above). OFF for stars (opDoom undefined ⇒ full certificate). */
 		if (opDoom) {
-			if (opDoom.vReps.length < this.k) { opDoom.diag.vBelowKSkipped++; return false; }
-			if (occurringOut && occurringOut.size !== ctx.allowed.size) { opDoom.diag.p2Skipped++; return false; }
+			if (opDoom.vReps.length < this.k) {
+				opDoom.diag.vBelowKSkipped++;
+				return false;
+			}
+			if (occurringOut && occurringOut.size !== ctx.allowed.size) {
+				opDoom.diag.p2Skipped++;
+				return false;
+			}
 		}
 
 		// (a) no proper overlap. RANK-1: periodic reduction (reps-vs-block) — byte-identical to the old
@@ -1815,7 +2184,11 @@ export class PeriodSolver {
 	 *  — a choice that is identical for every member of a class (the near-origin translate SET is the
 	 *  same for p and p+λ), so it is immune to the half-integer-boundary rounding that splits a class
 	 *  when each polygon is reduced independently. Memoized by exact key (per torusFill). */
-	private dedupModLattice(polys: Polygon[], ctx: FillCtx, memo: Map<string, { key: string; poly: Polygon }>): Polygon[] {
+	private dedupModLattice(
+		polys: Polygon[],
+		ctx: FillCtx,
+		memo: Map<string, { key: string; poly: Polygon }>,
+	): Polygon[] {
 		const seen = new Set<string>();
 		const out: Polygon[] = [];
 		for (const p of polys) {
@@ -1838,7 +2211,12 @@ export class PeriodSolver {
 	 *  primitive lattice is absent from the candidate set — log-only, the rejection is unchanged.
 	 *  Test: any same-name rep-pair difference t that maps every class onto a class is a sub-lattice
 	 *  period ⇒ non-primitive. */
-	private isPrimitive(reps: Polygon[], ctx: FillCtx, memo: Map<string, { key: string; poly: Polygon }>, diag: PeriodSolverDiag): boolean {
+	private isPrimitive(
+		reps: Polygon[],
+		ctx: FillCtx,
+		memo: Map<string, { key: string; poly: Polygon }>,
+		diag: PeriodSolverDiag,
+	): boolean {
 		if (reps.length <= 1) return true;
 		const repKeys = new Set(reps.map((r) => r.exactKey())); // reps are canonical
 		// Collect ALL witness translations (not just the first): the primitive lattice is the closure
@@ -1855,7 +2233,10 @@ export class PeriodSolver {
 				for (const r of reps) {
 					const rt = r.clone();
 					rt.translateExact(t);
-					if (!repKeys.has(this.canonicalRep(rt, ctx, memo).key)) { all = false; break; }
+					if (!repKeys.has(this.canonicalRep(rt, ctx, memo).key)) {
+						all = false;
+						break;
+					}
 				}
 				if (all) (witnesses ??= []).push(t); // sub-lattice translation t (∉ Λ, distinct classes) ⇒ non-primitive
 			}
@@ -1925,14 +2306,18 @@ export class PeriodSolver {
 		const pk = closure === null ? null : latticeKey(closure[0], closure[1]);
 		process.stderr.write(
 			`[PeriodSolver k=${this.k}] ⚑ INCOMPLETE-REGION (primitivity-rejection): certified supercell discarded; ` +
-			`primitive lattice ${pk ?? '<witness join failed>'} not in candidate list ` +
-			`(supercell ${latticeKey(ctx.u, ctx.v)}, ${witnesses.length} witness(es))\n`
+				`primitive lattice ${pk ?? "<witness join failed>"} not in candidate list ` +
+				`(supercell ${latticeKey(ctx.u, ctx.v)}, ${witnesses.length} witness(es))\n`,
 		);
 	}
 
 	/** Canonical lattice-class representative: lex-min exact key among the class's lattice translates
 	 *  whose centroid lies within ~1.5 cells of the origin (the same set for every class member). */
-	private canonicalRep(p: Polygon, ctx: FillCtx, memo: Map<string, { key: string; poly: Polygon }>): { key: string; poly: Polygon } {
+	private canonicalRep(
+		p: Polygon,
+		ctx: FillCtx,
+		memo: Map<string, { key: string; poly: Polygon }>,
+	): { key: string; poly: Polygon } {
 		const baseKey = p.exactKey();
 		const cached = memo.get(baseKey);
 		if (cached) return cached;
@@ -1949,7 +2334,10 @@ export class PeriodSolver {
 				const cf = q.exactCentroid!.toVector();
 				if (Math.hypot(cf.x, cf.y) > lim) continue;
 				const kq = q.exactKey();
-				if (kq < bestKey) { bestKey = kq; bestPoly = q; }
+				if (kq < bestKey) {
+					bestKey = kq;
+					bestPoly = q;
+				}
 			}
 		}
 		const res = { key: bestKey, poly: bestPoly };
@@ -1960,7 +2348,10 @@ export class PeriodSolver {
 
 	/** Canonical state key for the DAG dedup: the sorted reduced exact keys of the cell. */
 	private stateKey(reps: Polygon[]): string {
-		return reps.map((p) => p.exactKey()).sort().join('|');
+		return reps
+			.map((p) => p.exactKey())
+			.sort()
+			.join("|");
 	}
 
 	/** Materialise the cell + its lattice neighbours within absolute radius `Rabs` of the origin.
@@ -1984,9 +2375,8 @@ export class PeriodSolver {
 				const tx = m * ctx.uV.x + n * ctx.vV.x;
 				const ty = m * ctx.uV.y + n * ctx.vV.y;
 				if (Math.hypot(tx, ty) > limit + ctx.cellDiam) continue;
-				const T = m === 0 && n === 0
-					? null
-					: ctx.u.scaleRational(BigInt(m), 1n).add(ctx.v.scaleRational(BigInt(n), 1n));
+				const T =
+					m === 0 && n === 0 ? null : ctx.u.scaleRational(BigInt(m), 1n).add(ctx.v.scaleRational(BigInt(n), 1n));
 				for (const rep of reps) {
 					let q: Polygon;
 					if (T === null) {
@@ -2039,8 +2429,10 @@ export class PeriodSolver {
 	 *  blockHasProperOverlap, so rejecting here only removes candidates the full block check would also
 	 *  reject — the emitted tilings (and the digest) are unchanged (audit perf C3). */
 	private coreSelfOverlapsNearest(reps: Polygon[], ctx: FillCtx): boolean {
-		const u = ctx.u, v = ctx.v;
-		const nu = u.scaleRational(-1n, 1n), nv = v.scaleRational(-1n, 1n);
+		const u = ctx.u,
+			v = ctx.v;
+		const nu = u.scaleRational(-1n, 1n),
+			nv = v.scaleRational(-1n, 1n);
 		const Ts = [u, nu, v, nv, u.add(v), nu.add(nv), u.add(nv), nu.add(v)];
 		for (const rep of reps) {
 			const rb = bbox(rep);
@@ -2091,8 +2483,8 @@ export class PeriodSolver {
 		if (1.5 * ctx.cellDiam + 0.1 + 2 * ctx.maxCircum > Rabs + ctx.cellDiam + 2) {
 			process.stderr.write(
 				`[PeriodSolver k=${this.k}] ⚑ blockOverlapPeriodic witness-containment guard: ` +
-				`1.5·cellDiam+0.1+2·maxCircum ${(1.5 * ctx.cellDiam + 0.1 + 2 * ctx.maxCircum).toFixed(2)} > block reach ` +
-				`${(Rabs + ctx.cellDiam + 2).toFixed(2)} — a rep's overlap partner may escape the block; falling back to O(block²)\n`
+					`1.5·cellDiam+0.1+2·maxCircum ${(1.5 * ctx.cellDiam + 0.1 + 2 * ctx.maxCircum).toFixed(2)} > block reach ` +
+					`${(Rabs + ctx.cellDiam + 2).toFixed(2)} — a rep's overlap partner may escape the block; falling back to O(block²)\n`,
 			);
 			return this.blockHasProperOverlap(block, ctx);
 		}
@@ -2120,7 +2512,7 @@ export class PeriodSolver {
 export type FillCtx = {
 	u: Cyclotomic;
 	v: Cyclotomic;
-	ring: Cyclotomic['ring'];
+	ring: Cyclotomic["ring"];
 	N: number;
 	allowed: Set<string>;
 	polySizes: number[];
@@ -2152,7 +2544,31 @@ type AnalyzeResult = {
 };
 
 function emptyDiag(): PeriodSolverDiag {
-	return { candidateLattices: 0, latticesTried: 0, rawCells: 0, emitted: 0, gateRejected: 0, earlyGateRejected: 0, fanLattices: 0, p0Skipped: 0, cSkipped: 0, orbitSkipped: 0, p1Pruned: 0, p3Pruned: 0, p2Skipped: 0, vBelowKSkipped: 0, seedStateDedup: 0, obliqueCandidates: 0, obliqueTruncated: null, supercellRejected: 0, primitivityGuardMisses: 0, primitivityGuardAreaSuppressed: 0, starLadderTruncated: false, blockIndexCapTruncated: 0, timedOut: false };
+	return {
+		candidateLattices: 0,
+		latticesTried: 0,
+		rawCells: 0,
+		emitted: 0,
+		gateRejected: 0,
+		earlyGateRejected: 0,
+		fanLattices: 0,
+		p0Skipped: 0,
+		cSkipped: 0,
+		orbitSkipped: 0,
+		p1Pruned: 0,
+		p3Pruned: 0,
+		p2Skipped: 0,
+		vBelowKSkipped: 0,
+		seedStateDedup: 0,
+		obliqueCandidates: 0,
+		obliqueTruncated: null,
+		supercellRejected: 0,
+		primitivityGuardMisses: 0,
+		primitivityGuardAreaSuppressed: 0,
+		starLadderTruncated: false,
+		blockIndexCapTruncated: 0,
+		timedOut: false,
+	};
 }
 
 /**
@@ -2164,8 +2580,13 @@ function emptyDiag(): PeriodSolverDiag {
  * rational combination of (u, v) — impossible for a true witness, kept as a defensive signal.
  * Exported for the CB-7 guard and its unit tests.
  */
-export function primitiveLatticeClosure(u: Cyclotomic, v: Cyclotomic, witnesses: Cyclotomic[]): [Cyclotomic, Cyclotomic] | null {
-	let a = u, b = v;
+export function primitiveLatticeClosure(
+	u: Cyclotomic,
+	v: Cyclotomic,
+	witnesses: Cyclotomic[],
+): [Cyclotomic, Cyclotomic] | null {
+	let a = u,
+		b = v;
 	for (const t of witnesses) {
 		if (isIntCombo(t, a, b)) continue; // already inside the current (possibly enlarged) lattice
 		const j = joinLattice(a, b, t);
@@ -2219,12 +2640,15 @@ export function latticeKeySet(a: Cyclotomic, b: Cyclotomic): Set<string> {
 export function latticeEquivExact(a: Cyclotomic, b: Cyclotomic, u: Cyclotomic, v: Cyclotomic): boolean {
 	const diff = a.sub(b);
 	if (diff.isZero()) return true;
-	const d = diff.toVector(), au = u.toVector(), av = v.toVector();
+	const d = diff.toVector(),
+		au = u.toVector(),
+		av = v.toVector();
 	const det = au.x * av.y - au.y * av.x;
 	if (Math.abs(det) < FLOAT_TOL) return false;
 	const m = (d.x * av.y - d.y * av.x) / det;
 	const n = (au.x * d.y - au.y * d.x) / det;
-	const mi = Math.round(m), ni = Math.round(n);
+	const mi = Math.round(m),
+		ni = Math.round(n);
 	if (Math.abs(m - mi) > 1e-3 || Math.abs(n - ni) > 1e-3) return false;
 	return diff.sub(u.scaleRational(BigInt(mi), 1n).add(v.scaleRational(BigInt(ni), 1n))).isZero();
 }
@@ -2250,17 +2674,22 @@ export function vertexClassCount(reps: Polygon[], u: Cyclotomic, v: Cyclotomic):
 }
 
 function bbox(p: Polygon): { minX: number; maxX: number; minY: number; maxY: number } {
-	let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+	let minX = Infinity,
+		maxX = -Infinity,
+		minY = Infinity,
+		maxY = -Infinity;
 	for (const v of p.vertices) {
-		minX = Math.min(minX, v.x); maxX = Math.max(maxX, v.x);
-		minY = Math.min(minY, v.y); maxY = Math.max(maxY, v.y);
+		minX = Math.min(minX, v.x);
+		maxX = Math.max(maxX, v.x);
+		minY = Math.min(minY, v.y);
+		maxY = Math.max(maxY, v.y);
 	}
 	return { minX, maxX, minY, maxY };
 }
 
 function bboxOverlap(
 	a: { minX: number; maxX: number; minY: number; maxY: number },
-	b: { minX: number; maxX: number; minY: number; maxY: number }
+	b: { minX: number; maxX: number; minY: number; maxY: number },
 ): boolean {
 	const m = 1e-9;
 	return !(a.maxX < b.minX - m || b.maxX < a.minX - m || a.maxY < b.minY - m || b.maxY < a.minY - m);

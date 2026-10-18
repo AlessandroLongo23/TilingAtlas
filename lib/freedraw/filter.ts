@@ -72,8 +72,7 @@ export const sizesActive = (f: FreedrawFilter) => f.finite === "require" && f.si
 export const regularActive = (f: FreedrawFilter) =>
 	f.regularity !== "any" || REGULAR_KINDS.some((n) => f.polygons[n] !== "any");
 
-const tri = (state: Tri, present: number) =>
-	state === "any" || (state === "require" ? present > 0 : present === 0);
+const tri = (state: Tri, present: number) => state === "any" || (state === "require" ? present > 0 : present === 0);
 
 /**
  * Does one pattern pass? Excluding all three ranks legitimately matches nothing (every pattern has at
@@ -88,9 +87,7 @@ export function matches(s: FaceSummary, f: FreedrawFilter, reg?: RegularInfo): b
 	if (!tri(f.holes, s.withHoles)) return false;
 	if (sizesActive(f)) {
 		const allowed = new Set(f.sizes);
-		const ok = f.sizeMode === "all"
-			? s.sizes.every((n) => allowed.has(n))
-			: s.sizes.some((n) => allowed.has(n));
+		const ok = f.sizeMode === "all" ? s.sizes.every((n) => allowed.has(n)) : s.sizes.some((n) => allowed.has(n));
 		if (!ok) return false;
 	}
 	if (!regularActive(f)) return true;
@@ -130,14 +127,21 @@ export function sizeOptions(summaries: readonly FaceSummary[]): number[] {
 const TRI_KEYS = { u: "unbounded", s: "strip", f: "finite", o: "holes" } as const;
 const TRI_CODE: Record<Tri, string> = { any: "", require: "r", exclude: "x" };
 
-const readTri = (raw: string | null): Tri =>
-	raw === "r" ? "require" : raw === "x" ? "exclude" : "any";
+const readTri = (raw: string | null): Tri => (raw === "r" ? "require" : raw === "x" ? "exclude" : "any");
 
 // Exhaustive by construction: a new member of FreedrawGrid fails to compile here instead of silently
 // becoming an unshareable link.
-const GRIDS: Record<FreedrawCatalogueGrid, true> = { square: true, triangle: true, hex: true, ts: true, sch236: true, sch244: true, "4436": true, "488": true };
-const isGrid = (raw: string | null): raw is FreedrawCatalogueGrid =>
-	raw !== null && Object.hasOwn(GRIDS, raw);
+const GRIDS: Record<FreedrawCatalogueGrid, true> = {
+	square: true,
+	triangle: true,
+	hex: true,
+	ts: true,
+	sch236: true,
+	sch244: true,
+	"4436": true,
+	"488": true,
+};
+const isGrid = (raw: string | null): raw is FreedrawCatalogueGrid => raw !== null && Object.hasOwn(GRIDS, raw);
 
 export function parseFilter(sp: URLSearchParams): FreedrawFilter {
 	const out: FreedrawFilter = { ...DEFAULT_FILTER, sizes: [] };
@@ -196,8 +200,12 @@ export function serializeFilter(f: FreedrawFilter): string {
 	if (f.sizes.length) p.set("sz", [...f.sizes].sort((a, b) => a - b).join(","));
 	if (f.sizeMode !== DEFAULT_FILTER.sizeMode) p.set("m", f.sizeMode);
 
-	const req = REGULAR_KINDS.filter((n) => f.polygons[n] === "require").map(kindCode).join("");
-	const exc = REGULAR_KINDS.filter((n) => f.polygons[n] === "exclude").map(kindCode).join("");
+	const req = REGULAR_KINDS.filter((n) => f.polygons[n] === "require")
+		.map(kindCode)
+		.join("");
+	const exc = REGULAR_KINDS.filter((n) => f.polygons[n] === "exclude")
+		.map(kindCode)
+		.join("");
 	if (req || exc) p.set("pg", exc ? `${req}.${exc}` : req);
 	if (f.regularity !== DEFAULT_FILTER.regularity) p.set("rg", f.regularity);
 	return p.toString();

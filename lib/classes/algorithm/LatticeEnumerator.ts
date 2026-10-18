@@ -15,7 +15,7 @@
  */
 import { Cyclotomic } from "../Cyclotomic";
 import { Surd, tileAreaSurd, detSurd, imSurd, reSurd, surdToCyclotomic } from "./exact/Surd";
-import { trace } from './figureTrace';
+import { trace } from "./figureTrace";
 
 /** Largest denominator a realizable lattice vector can carry (vertex/centroid differences). */
 const MAX_LATTICE_DEN = 12n;
@@ -55,8 +55,7 @@ function nearRationalLoop(x: number): boolean {
 const FAREY: { v: number; q: number }[] = (() => {
 	const out: { v: number; q: number }[] = [];
 	const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
-	for (let q = 1; q <= JOIN_DEN_MAX; q++)
-		for (let p = 0; p <= q; p++) if (gcd(p, q) === 1) out.push({ v: p / q, q });
+	for (let q = 1; q <= JOIN_DEN_MAX; q++) for (let p = 0; p <= q; p++) if (gcd(p, q) === 1) out.push({ v: p / q, q });
 	out.sort((a, b) => a.v - b.v);
 	return out;
 })();
@@ -75,10 +74,12 @@ function nearRational(x: number): boolean {
 	const f = x - Math.floor(x);
 	const guard = 1e-9 + 1e-13 * Math.abs(x); // ≫ the ≤ ~1.4e-14·|x| float slack of the loop's x·q
 	// binary search for the insertion point of f
-	let lo = 0, hi = FAREY.length - 1;
+	let lo = 0,
+		hi = FAREY.length - 1;
 	while (lo < hi) {
 		const mid = (lo + hi) >> 1;
-		if (FAREY[mid].v < f) lo = mid + 1; else hi = mid;
+		if (FAREY[mid].v < f) lo = mid + 1;
+		else hi = mid;
 	}
 	// candidates: the entry at lo and its left neighbour
 	for (const e of [FAREY[lo], lo > 0 ? FAREY[lo - 1] : null]) {
@@ -107,7 +108,7 @@ export class LatticeEnumerator {
 		polySizes: number[],
 		ring: Cyclotomic["ring"],
 		onTruncate?: () => void,
-		areasOverride?: Surd[]
+		areasOverride?: Surd[],
 	): [Cyclotomic, Cyclotomic][] {
 		const areas = areasOverride ?? this.areaLadder(polySizes, onTruncate);
 		// the grid-aligned subset of the difference pool, with each one's exact length + direction
@@ -143,8 +144,7 @@ export class LatticeEnumerator {
 				const hF = aF / lenF;
 				if (hF >= LONG_AXIS_MIN || lenF >= LONG_AXIS_MIN) {
 					const h = A.div(len);
-					if (h.D <= DEN_PREFILTER)
-						emit(u, surdToCyclotomic(h, ring).mulZeta(perp), `1:${m}:${lk}:${areaKey(A)}`);
+					if (h.D <= DEN_PREFILTER) emit(u, surdToCyclotomic(h, ring).mulZeta(perp), `1:${m}:${lk}:${areaKey(A)}`);
 				}
 				// index 2 — centered (cmm): conventional height 2A/|u| (the long axis); primitive =
 				// (u, centering).
@@ -187,7 +187,7 @@ export class LatticeEnumerator {
 		areaBoundF: number,
 		poolLmax: number,
 		minVerts: Map<string, number>,
-		onTruncate?: (info: ObliqueTruncation) => void
+		onTruncate?: (info: ObliqueTruncation) => void,
 	): [Cyclotomic, Cyclotomic][] {
 		void ring; // the exact helpers carry their own ring; kept for call-site consistency with A/B.
 		if (areas.length === 0) return [];
@@ -207,12 +207,14 @@ export class LatticeEnumerator {
 		// (C.3) loud truncation: the proven reach exceeds the tuned pool reach.
 		if (Math.sqrt(uMax2) > poolLmax + 1e-9)
 			onTruncate?.({ cause: "subpool-clipped", aAdm: aAdmF, needReach: Math.sqrt(uMax2), poolLmax });
-		else if (uMax2 > poolLmax + 1e-9)
-			onTruncate?.({ cause: "v-range-truncated", needReach: uMax2, poolLmax });
+		else if (uMax2 > poolLmax + 1e-9) onTruncate?.({ cause: "v-range-truncated", needReach: uMax2, poolLmax });
 
 		// Pool float coords precomputed ONCE (the pairing/join sweeps are float-broadphased; exact
 		// arithmetic only re-confirms a survivor — so `toVector` is never recomputed per candidate pair).
-		const PF = pool.map((p) => { const f = p.toVector(); return { p, x: f.x, y: f.y, r2: f.x * f.x + f.y * f.y }; });
+		const PF = pool.map((p) => {
+			const f = p.toVector();
+			return { p, x: f.x, y: f.y, r2: f.x * f.x + f.y * f.y };
+		});
 		const sub = PF.filter((e) => e.r2 <= uMax2 + 1e-9);
 
 		const out: [Cyclotomic, Cyclotomic][] = [];
@@ -256,10 +258,12 @@ export class LatticeEnumerator {
 		// on waived joins.
 		let joinWaived = 0;
 		while (frontier.length > 0) {
-			if (++round > maxRounds + 8) throw new Error("obliqueCells: join-closure exceeded the covolume round bound (bug)");
+			if (++round > maxRounds + 8)
+				throw new Error("obliqueCells: join-closure exceeded the covolume round bound (bug)");
 			const next: [Cyclotomic, Cyclotomic][] = [];
 			for (const [a, b] of frontier) {
-				const af = a.toVector(), bf = b.toVector();
+				const af = a.toVector(),
+					bf = b.toVector();
 				const detab = af.x * bf.y - af.y * bf.x;
 				// sound per-lattice reject: every join has area ≤ area(L)/2; if that is below the
 				// smallest admissible area, no join from L can be admitted — skip its whole pool sweep.
@@ -268,10 +272,14 @@ export class LatticeEnumerator {
 					const al = (we.x * bf.y - we.y * bf.x) / detab;
 					const be = (af.x * we.y - af.y * we.x) / detab;
 					if (isNearInt(al) && isNearInt(be)) continue; // w ∈ L ⇒ no progress
-					if (!nearRational(al) || !nearRational(be)) { joinWaived++; continue; } // irrational OR den > JOIN_DEN_MAX
+					if (!nearRational(al) || !nearRational(be)) {
+						joinWaived++;
+						continue;
+					} // irrational OR den > JOIN_DEN_MAX
 					const j = joinLattice(a, b, we.p);
 					if (!j) continue;
-					const e0 = j[0].toVector(), e1 = j[1].toVector();
+					const e0 = j[0].toVector(),
+						e1 = j[1].toVector();
 					const admitted = admit(j[0], j[1], Math.abs(e0.x * e1.y - e0.y * e1.x));
 					if (admitted) next.push(admitted);
 				}
@@ -297,7 +305,7 @@ export class LatticeEnumerator {
 		ring: Cyclotomic["ring"],
 		areaBoundF: number,
 		onTruncate?: () => void,
-		areasOverride?: Surd[]
+		areasOverride?: Surd[],
 	): [Cyclotomic, Cyclotomic][] {
 		const areas = areasOverride ?? this.areaLadder(polySizes, onTruncate, areaBoundF);
 		const ladderSet = new Set(areas.map(areaKey));
@@ -341,7 +349,12 @@ export class LatticeEnumerator {
  * <8 vertex-corners). The generic ladder never drops a realizable area; the fill + certificate gates
  * reject the extra candidates. Regulars keep the sharp `vcAreaSet`.
  */
-export function areaLadderFromTiles(tiles: Surd[], k: number, onTruncate?: () => void, maxAreaOverride?: number): Surd[] {
+export function areaLadderFromTiles(
+	tiles: Surd[],
+	k: number,
+	onTruncate?: () => void,
+	maxAreaOverride?: number,
+): Surd[] {
 	const maxTileF = Math.max(...tiles.map((t) => t.toFloat()));
 	const orbitBoundF = 24 * k * maxTileF; // F ≤ 24k ⇒ area ≤ 24k·maxTileArea
 	const maxAreaF = maxAreaOverride ?? Math.min(orbitBoundF, 8 * k);
@@ -399,7 +412,7 @@ export function vcAreaSet(
 	vcIncidences: Map<string, number>[],
 	tileArea: Map<string, Surd>,
 	tileCorners: Map<string, number>,
-	areaBoundF: number
+	areaBoundF: number,
 ): Surd[] {
 	// Keyed by tile IDENTITY token (C1): `tileArea` gives the exact area (star = shoelace, regular =
 	// tileAreaSurd(n)); `tileCorners` (= n) is the corner-count divisor. Regular tokens reduce this to the
@@ -408,7 +421,7 @@ export function vcAreaSet(
 	if (types.length === 0) return [];
 	// per-orbit average area per vertex (Σ area(id)·c/corners) — exact float, for the recursion bound.
 	const perVertexF = types.map((t) =>
-		[...t.entries()].reduce((s, [id, c]) => s + (tileArea.get(id)!.toFloat() * c) / tileCorners.get(id)!, 0)
+		[...t.entries()].reduce((s, [id, c]) => s + (tileArea.get(id)!.toFloat() * c) / tileCorners.get(id)!, 0),
 	);
 	const out = new Map<string, Surd>();
 	const rec = (idx: number, inc: Map<string, number>, partialF: number): void => {
@@ -456,13 +469,13 @@ export function vcAreaMinVerts(
 	vcIncidences: Map<string, number>[],
 	tileArea: Map<string, Surd>,
 	tileCorners: Map<string, number>,
-	areaBoundF: number
+	areaBoundF: number,
 ): Map<string, number> {
 	const types = vcIncidences;
 	const out = new Map<string, number>();
 	if (types.length === 0) return out;
 	const perVertexF = types.map((t) =>
-		[...t.entries()].reduce((s, [id, c]) => s + (tileArea.get(id)!.toFloat() * c) / tileCorners.get(id)!, 0)
+		[...t.entries()].reduce((s, [id, c]) => s + (tileArea.get(id)!.toFloat() * c) / tileCorners.get(id)!, 0),
 	);
 	const rec = (idx: number, inc: Map<string, number>, partialF: number, sumV: number): void => {
 		if (idx === types.length) {
@@ -525,7 +538,7 @@ export function vcFeasAreaSets(
 	tileArea: Map<string, Surd>,
 	tileCorners: Map<string, number>,
 	k: number,
-	areaBoundF: number
+	areaBoundF: number,
 ): Map<number, Map<string, number[][]>> {
 	const sizes = [...tileArea.keys()].map(Number).sort((a, b) => a - b); // regular ids = numeric strings
 	const out = new Map<number, Map<string, number[][]>>();
@@ -533,7 +546,10 @@ export function vcFeasAreaSets(
 	// and two same-multiset types assigned separately produce exactly the same aggregate sums.
 	const seen = new Map<string, Map<string, number>>();
 	for (const m of vcIncidences) {
-		const key = [...m.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([id, c]) => `${id}^${c}`).join('.');
+		const key = [...m.entries()]
+			.sort((a, b) => (a[0] < b[0] ? -1 : 1))
+			.map(([id, c]) => `${id}^${c}`)
+			.join(".");
 		if (!seen.has(key)) seen.set(key, m);
 	}
 	const types = [...seen.values()];
@@ -546,7 +562,10 @@ export function vcFeasAreaSets(
 		// compositions of k orbits into T parts ≥ 1 (the support-preserving τ, aggregated per type)
 		const comps: number[][] = [];
 		const comp = (left: number, parts: number, acc: number[]): void => {
-			if (parts === 1) { comps.push([...acc, left]); return; }
+			if (parts === 1) {
+				comps.push([...acc, left]);
+				return;
+			}
 			for (let q = 1; q <= left - (parts - 1); q++) comp(left - q, parts - 1, [...acc, q]);
 		};
 		comp(k, T, []);
@@ -575,7 +594,10 @@ export function vcFeasAreaSets(
 					if (area.isZero() || area.toFloat() > areaBoundF + 1e-9) return;
 					const ak = areaKey(area);
 					const vecs = feas.get(ak);
-					if (!vecs) { feas.set(ak, [tvec]); return; }
+					if (!vecs) {
+						feas.set(ak, [tvec]);
+						return;
+					}
 					// keep the Pareto-maximal antichain: drop tvec if dominated; evict members it dominates
 					if (vecs.some((f) => dominates(f, tvec))) return;
 					feas.set(ak, [...vecs.filter((f) => !dominates(tvec, f)), tvec]);
@@ -708,12 +730,7 @@ export function gaussReduceExact(a: Cyclotomic, b: Cyclotomic): [Cyclotomic, Cyc
 
 /** True iff bases (a,b) and (c,d) generate the SAME lattice (equal exact covolume + one-sided
  *  containment — c,d ∈ ⟨a,b⟩_ℤ; at equal covolume one-sided containment forces equality). */
-export function sameLattice(
-	a: Cyclotomic,
-	b: Cyclotomic,
-	c: Cyclotomic,
-	d: Cyclotomic
-): boolean {
+export function sameLattice(a: Cyclotomic, b: Cyclotomic, c: Cyclotomic, d: Cyclotomic): boolean {
 	// The determinant is only ever compared for EQUAL MAGNITUDE (equal covolume), and that has an exact
 	// form in any cyclotomic ring: 2i·det(a,b) = conj(a)·b − a·conj(b), which is an element of Z[zeta_N]
 	// (purely imaginary). So |det(a,b)| == |det(c,d)| iff those two elements agree up to sign, decided by
@@ -766,12 +783,7 @@ export function gridImage(w: Cyclotomic, rot: number, refl: boolean): Cyclotomic
 }
 
 /** g applied to a basis: g is linear, so (g·u, g·v) is a basis of g(⟨u, v⟩). */
-export function gridImageBasis(
-	u: Cyclotomic,
-	v: Cyclotomic,
-	rot: number,
-	refl: boolean
-): [Cyclotomic, Cyclotomic] {
+export function gridImageBasis(u: Cyclotomic, v: Cyclotomic, rot: number, refl: boolean): [Cyclotomic, Cyclotomic] {
 	return [gridImage(u, rot, refl), gridImage(v, rot, refl)];
 }
 
@@ -810,10 +822,7 @@ export type OrbitGroup = {
  * @param N  Order of the rotation sub-group.  A too-small N searches a subgroup of G — failure
  *   direction is completeness-SAFE (spurious orbit splits, never wrong merges).
  */
-export function groupIntoGridOrbits(
-	lattices: [Cyclotomic, Cyclotomic][],
-	N: number
-): OrbitGroup[] {
+export function groupIntoGridOrbits(lattices: [Cyclotomic, Cyclotomic][], N: number): OrbitGroup[] {
 	const groups: OrbitGroup[] = [];
 	const buckets = new Map<string, number[]>(); // exact |det| key → indices into `groups`
 	for (let i = 0; i < lattices.length; i++) {
@@ -852,7 +861,7 @@ function findGridMap(
 	rv: Cyclotomic,
 	u: Cyclotomic,
 	v: Cyclotomic,
-	N: number
+	N: number,
 ): { rot: number; refl: boolean } | null {
 	for (let rot = 0; rot < N; rot++) {
 		for (const refl of [false, true]) {
@@ -884,7 +893,7 @@ function bgcd(a: bigint, b: bigint): bigint {
 }
 function blcm(a: bigint, b: bigint): bigint {
 	if (a === 0n || b === 0n) return 0n;
-	return babs(a / bgcd(a, b) * b);
+	return babs((a / bgcd(a, b)) * b);
 }
 /** Extended gcd: returns [g, x, y] with g = x·a + y·b, g ≥ 0. */
 function bgcdExt(a: bigint, b: bigint): [bigint, bigint, bigint] {
@@ -909,17 +918,24 @@ function hnf2(colsIn: [bigint, bigint][]): [[bigint, bigint], [bigint, bigint]] 
 	const cols = colsIn.map((c) => [c[0], c[1]] as [bigint, bigint]).filter((c) => c[0] !== 0n || c[1] !== 0n);
 	// Step A: reduce all first coordinates to a single pivot (= gcd of the first coords).
 	for (;;) {
-		const idx = cols.map((c, i) => [c[0], i] as const).filter(([x]) => x !== 0n).map(([, i]) => i);
+		const idx = cols
+			.map((c, i) => [c[0], i] as const)
+			.filter(([x]) => x !== 0n)
+			.map(([, i]) => i);
 		if (idx.length <= 1) break;
-		const i = idx[0], j = idx[1];
-		const ci = cols[i], cj = cols[j];
+		const i = idx[0],
+			j = idx[1];
+		const ci = cols[i],
+			cj = cols[j];
 		const [g, x, y] = bgcdExt(ci[0], cj[0]);
 		cols[i] = [x * ci[0] + y * cj[0], x * ci[1] + y * cj[1]]; // first coord = g
-		const fi = ci[0] / g, fj = cj[0] / g;
+		const fi = ci[0] / g,
+			fj = cj[0] / g;
 		cols[j] = [fi * cj[0] - fj * ci[0], fi * cj[1] - fj * ci[1]]; // first coord = 0
 	}
 	const pivotIdx = cols.findIndex((c) => c[0] !== 0n);
-	let h11 = 0n, h21 = 0n;
+	let h11 = 0n,
+		h21 = 0n;
 	const rest: [bigint, bigint][] = [];
 	if (pivotIdx !== -1) {
 		const pv = cols[pivotIdx];
@@ -933,7 +949,10 @@ function hnf2(colsIn: [bigint, bigint][]): [[bigint, bigint], [bigint, bigint]] 
 	for (const c of rest) h22 = bgcd(h22, c[1]);
 	// Step C: reduce the pivot's second coordinate mod h22 (0 ≤ h21 < h22).
 	if (h22 !== 0n) h21 = ((h21 % h22) + h22) % h22;
-	return [[h11, h21], [0n, h22]];
+	return [
+		[h11, h21],
+		[0n, h22],
+	];
 }
 
 /**
@@ -948,11 +967,7 @@ function hnf2(colsIn: [bigint, bigint][]): [[bigint, bigint], [bigint, bigint]] 
  * is `⟨(1,0),(0,1),(α,β)⟩ = (1/Dc)·⟨(Dc,0),(0,Dc),(A,B)⟩`; its HNF gives the new basis, mapped back via
  * `scaleRational` on a, b.
  */
-export function joinLattice(
-	a: Cyclotomic,
-	b: Cyclotomic,
-	w: Cyclotomic
-): [Cyclotomic, Cyclotomic] | null {
+export function joinLattice(a: Cyclotomic, b: Cyclotomic, w: Cyclotomic): [Cyclotomic, Cyclotomic] | null {
 	const det = detSurd(a, b);
 	if (det.isZero()) return null;
 	const alpha = detSurd(w, b).div(det); // w = α·a + β·b
@@ -962,7 +977,11 @@ export function joinLattice(
 	const Dc = blcm(alpha.D, beta.D);
 	const A = alpha.P * (Dc / alpha.D);
 	const B = beta.P * (Dc / beta.D);
-	const [[x1, y1], [x2, y2]] = hnf2([[Dc, 0n], [0n, Dc], [A, B]]);
+	const [[x1, y1], [x2, y2]] = hnf2([
+		[Dc, 0n],
+		[0n, Dc],
+		[A, B],
+	]);
 	const e1 = a.scaleRational(x1, Dc).add(b.scaleRational(y1, Dc));
 	const e2 = a.scaleRational(x2, Dc).add(b.scaleRational(y2, Dc));
 	return [e1, e2];
@@ -997,18 +1016,16 @@ export function shortVectorPool(
 	maxSteps: number,
 	lmaxF: number,
 	dirs?: number[],
-	monotone = false
+	monotone = false,
 ): Cyclotomic[] {
 	const dirList = dirs ?? Array.from({ length: ring.N }, (_, j) => j);
-	const cacheKey = `${ring.N}:${maxSteps}:${lmaxF}:${dirList.join(',')}:${monotone ? 'm' : 'f'}`;
+	const cacheKey = `${ring.N}:${maxSteps}:${lmaxF}:${dirList.join(",")}:${monotone ? "m" : "f"}`;
 	const cached = poolCache.get(cacheKey);
 	if (cached) return cached;
 
 	const edges = dirList.map((j) => Cyclotomic.zeta(ring, ((j % ring.N) + ring.N) % ring.N));
 	const all = new Map<string, Cyclotomic>();
-	let frontier = new Map<string, { w: Cyclotomic; r2: number }>([
-		["", { w: Cyclotomic.ZERO(ring), r2: 0 }],
-	]);
+	let frontier = new Map<string, { w: Cyclotomic; r2: number }>([["", { w: Cyclotomic.ZERO(ring), r2: 0 }]]);
 	const lmax2 = lmaxF * lmaxF;
 	for (let step = 0; step < maxSteps; step++) {
 		const next = new Map<string, { w: Cyclotomic; r2: number }>();
@@ -1027,13 +1044,26 @@ export function shortVectorPool(
 		frontier = next;
 	}
 	const out = [...all.values()].filter((w) => !w.isZero());
-	if (trace.enabled) trace.node('pool', { N: ring.N, steps: maxSteps, lmax: lmaxF, dirs: dirList, monotone, vectors: out.map((w) => { const f = w.toVector(); return [f.x, f.y] as [number, number]; }) });
+	if (trace.enabled)
+		trace.node("pool", {
+			N: ring.N,
+			steps: maxSteps,
+			lmax: lmaxF,
+			dirs: dirList,
+			monotone,
+			vectors: out.map((w) => {
+				const f = w.toVector();
+				return [f.x, f.y] as [number, number];
+			}),
+		});
 	poolCache.set(cacheKey, out);
 	return out;
 }
 
 /** TEST-ONLY: clear the short-vector pool memo so a second solve in one process re-emits the pool trace. */
-export function _testOnlyClearPoolCache(): void { poolCache.clear(); }
+export function _testOnlyClearPoolCache(): void {
+	poolCache.clear();
+}
 
 /** Integer gcd (non-negative). */
 function gcdInt(a: number, b: number): number {

@@ -35,7 +35,10 @@ export function parseEffC2(raw: string | undefined | null): EffC2 | null {
 	if (s === "") return null;
 	if (s === "sqrt2" || s === "√2") return { P: 2n, Q: 1n };
 	const m = s.match(/^(\d+)(?:\/(\d+))?$/);
-	if (!m) throw new Error(`PRUNE_EFF_C2: cannot parse "${raw}" — want "P/Q", "P", or "sqrt2" (exact rationals only, no decimals)`);
+	if (!m)
+		throw new Error(
+			`PRUNE_EFF_C2: cannot parse "${raw}" — want "P/Q", "P", or "sqrt2" (exact rationals only, no decimals)`,
+		);
 	const P = BigInt(m[1]);
 	const Q = m[2] !== undefined ? BigInt(m[2]) : 1n;
 	if (P <= 0n || Q <= 0n) throw new Error(`PRUNE_EFF_C2: c² = ${raw} must be strictly positive`);
@@ -48,10 +51,10 @@ export function parseEffC2(raw: string | undefined | null): EffC2 | null {
  * decided by `Surd.cmp` (provably correct). Boundary (`wt² = c²·|v|²`) KEEPS the vector.
  */
 export function passesEffFilter(wt: number, v: Cyclotomic, c2: EffC2): boolean {
-	const vSq = reSurd(v.normSquared());          // |v|² — exact, real, non-negative Surd
-	const lhs = vSq.scaleRational(c2.P, c2.Q);    // (P/Q)·|v|²
+	const vSq = reSurd(v.normSquared()); // |v|² — exact, real, non-negative Surd
+	const lhs = vSq.scaleRational(c2.P, c2.Q); // (P/Q)·|v|²
 	const rhs = Surd.rational(BigInt(wt) * BigInt(wt)); // wt²  (integer)
-	return lhs.cmp(rhs) >= 0;                       // (P/Q)|v|² ≥ wt²  ⟺  keep
+	return lhs.cmp(rhs) >= 0; // (P/Q)|v|² ≥ wt²  ⟺  keep
 }
 
 /** Human-readable label for a threshold, for the loud ⚑ banner. */

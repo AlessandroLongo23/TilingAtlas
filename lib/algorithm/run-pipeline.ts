@@ -39,7 +39,13 @@ import { dsymPipeline } from "@/lib/algorithm/dsym-pipeline";
 import { dedupeByCongruence, dedupeByNKey } from "@/classes/algorithm/TilingCongruence";
 import type { PeriodCell } from "@/classes/algorithm/PeriodSolver";
 import { AlgorithmTilingGenerator } from "@/classes/algorithm/TilingGenerator";
-import { comparePolygonNames, compareVertexConfigurationNames, roundNumbersInJson, toRadians, getEffectiveUniqueCount } from "@/utils";
+import {
+	comparePolygonNames,
+	compareVertexConfigurationNames,
+	roundNumbersInJson,
+	toRadians,
+	getEffectiveUniqueCount,
+} from "@/utils";
 import { BATCH_SIZE } from "@/lib/constants";
 import { PipelineLogger } from "@/lib/algorithm/PipelineLogger";
 import { buildParamsFolderName } from "@/lib/algorithm/paramsFolder";
@@ -47,7 +53,7 @@ import fs from "node:fs";
 import zlib from "node:zlib";
 
 /** Output path for CLI pipeline. Use ./pipeline-output when running locally (src/lib/data removed). */
-const DATA_FOLDER_PATH = 'pipeline-output';
+const DATA_FOLDER_PATH = "pipeline-output";
 
 /** Base path for a polygon type (paramsFolder). Type is the outer folder. */
 function typeBasePath(paramsFolder: string): string {
@@ -85,9 +91,9 @@ function polygonFromShort(enc: Record<string, unknown>) {
 	const v = enc.v as [number, number][] | undefined;
 	const vertices = v
 		? v.map((p) => new Vector(p[0], p[1]))
-		: (enc.vertices as { x: number; y: number }[])?.map((p) =>
-				Array.isArray(p) ? new Vector(p[0], p[1]) : new Vector(p.x, p.y)
-			) ?? [];
+		: ((enc.vertices as { x: number; y: number }[])?.map((p) =>
+				Array.isArray(p) ? new Vector(p[0], p[1]) : new Vector(p.x, p.y),
+			) ?? []);
 	switch (type) {
 		case PolygonType.REGULAR:
 			return RegularPolygon.fromVertices(vertices);
@@ -113,7 +119,7 @@ const parameters: GeneratorParameters = {
 	[PolygonType.REGULAR]: {
 		// k-uniform gate set: the regular polygons that tile edge-to-edge → N = 24.
 		// FIG_NS overrides the set for the figure-tracing probe ONLY (e.g. FIG_NS=3,4,6). Unset ⇒ identical.
-		ns: process.env.FIG_NS ? process.env.FIG_NS.split(',').map((s) => Number(s.trim())) : [3, 4, 6, 8, 12],
+		ns: process.env.FIG_NS ? process.env.FIG_NS.split(",").map((s) => Number(s.trim())) : [3, 4, 6, 8, 12],
 	},
 };
 
@@ -128,7 +134,7 @@ function main() {
 	const additionalPolygons: PolygonSignature[] = [];
 
 	const log = new PipelineLogger();
-	log.log('Tiling generation pipeline\n' + '='.repeat(50));
+	log.log("Tiling generation pipeline\n" + "=".repeat(50));
 
 	if (!fs.existsSync(DATA_FOLDER_PATH)) fs.mkdirSync(DATA_FOLDER_PATH, { recursive: true });
 
@@ -138,13 +144,13 @@ function main() {
 	const polygonSignatures = polygonGeneration(parameters, additionalPolygons, paramsFolder, log);
 	const vertexConfigurations = vertexConfigurationGeneration(polygonSignatures, paramsFolder, log);
 
-	if (process.env.USE_DSYM === '1') {
+	if (process.env.USE_DSYM === "1") {
 		// Delaney–Dress (third enumeration engine). Skips seeds/compat/expand — D-D does not use
 		// seeds. M0/M1 = Stage-1 wall probe only (no realizer; M2 gated on the count curve). With
 		// USE_DSYM unset this branch is dead, so the certified torus/orbifold path is byte-identical.
 		dsymPipeline(vertexConfigurations, paramsFolder, MAX_K, log);
-		log.log('='.repeat(50));
-		log.log('Pipeline complete (USE_DSYM)!');
+		log.log("=".repeat(50));
+		log.log("Pipeline complete (USE_DSYM)!");
 		return;
 	}
 
@@ -152,7 +158,7 @@ function main() {
 	seedSetExtraction(adjacencyList, vertexConfigurations, paramsFolder, log);
 	seedsGeneration(paramsFolder, null, null, log);
 
-	if (process.env.USE_PERIOD_SOLVER === '1') {
+	if (process.env.USE_PERIOD_SOLVER === "1") {
 		// Solve-for-period path (docs/DEVELOPMENT_NOTES.md §8.1): go straight from each seed to its
 		// fundamental cell(s) by fixing the period and filling the bounded torus — replacing the
 		// expand-to-radius-6k + extract path. Bounded even for the hard seeds that the expander could
@@ -164,24 +170,24 @@ function main() {
 	}
 	tilingsGeneration(paramsFolder, 1, 1, log);
 
-	log.log('='.repeat(50));
-	log.log('Pipeline complete!');
+	log.log("=".repeat(50));
+	log.log("Pipeline complete!");
 }
 
 function polygonGeneration(
 	parameters: GeneratorParameters,
 	additionalPolygons: PolygonSignature[],
 	paramsFolder: string,
-	log: PipelineLogger
+	log: PipelineLogger,
 ): PolygonSignature[] {
-	return log.runStep('Polygon generation', () => {
+	return log.runStep("Polygon generation", () => {
 		const polygonsGenerator = new PolygonsGenerator(parameters, additionalPolygons);
 		const base = typeBasePath(paramsFolder);
 		if (!fs.existsSync(base)) fs.mkdirSync(base, { recursive: true });
 		const polygonsPath = `${base}/polygons.json`;
 		let savedPolygons: string[] = [];
 		if (fs.existsSync(polygonsPath)) {
-			const fileData = fs.readFileSync(polygonsPath, 'utf-8');
+			const fileData = fs.readFileSync(polygonsPath, "utf-8");
 			if (fileData.trim()) {
 				savedPolygons = JSON.parse(fileData);
 			}
@@ -201,9 +207,9 @@ function polygonGeneration(
 function vertexConfigurationGeneration(
 	polygonSignatures: PolygonSignature[],
 	paramsFolder: string,
-	log: PipelineLogger
+	log: PipelineLogger,
 ): VertexConfiguration[] {
-	return log.runStep('Vertex configuration generation', () => {
+	return log.runStep("Vertex configuration generation", () => {
 		const vcGenerator = new VCGenerator(polygonSignatures);
 		const vertexConfigurations = vcGenerator.generateVertexConfigurations();
 		const base = typeBasePath(paramsFolder);
@@ -211,7 +217,7 @@ function vertexConfigurationGeneration(
 		const vcsPath = `${base}/vcs.json`;
 		let savedVCs: string[] = [];
 		if (fs.existsSync(vcsPath)) {
-			const fileData = fs.readFileSync(vcsPath, 'utf-8');
+			const fileData = fs.readFileSync(vcsPath, "utf-8");
 			if (fileData.trim()) {
 				savedVCs = JSON.parse(fileData);
 			}
@@ -231,19 +237,19 @@ function vertexConfigurationGeneration(
 function compatibilityGraphGeneration(
 	vertexConfigurations: VertexConfiguration[],
 	paramsFolder: string,
-	log: PipelineLogger
+	log: PipelineLogger,
 ): Record<string, string[]> {
-	return log.runStep('Compatibility graph', () => {
+	return log.runStep("Compatibility graph", () => {
 		const base = typeBasePath(paramsFolder);
 		if (!fs.existsSync(base)) fs.mkdirSync(base, { recursive: true });
 		const compatPath = `${base}/compatibilityGraph.json`;
 		let adjacencyList: Record<string, string[]> = {};
 		if (fs.existsSync(compatPath)) {
-			const fileData = fs.readFileSync(compatPath, 'utf-8');
+			const fileData = fs.readFileSync(compatPath, "utf-8");
 			if (fileData.trim()) {
 				try {
 					const parsed = JSON.parse(fileData);
-					if (typeof parsed === 'object' && !Array.isArray(parsed)) {
+					if (typeof parsed === "object" && !Array.isArray(parsed)) {
 						adjacencyList = parsed;
 					}
 				} catch {}
@@ -260,7 +266,7 @@ function compatibilityGraphGeneration(
 			const nameA = vertexConfigurations[i].name;
 			for (let j = i + 1; j < vertexConfigurations.length; j++) {
 				checked++;
-				log.progress('Pairs', checked, total);
+				log.progress("Pairs", checked, total);
 				const nameB = vertexConfigurations[j].name;
 				if (adjacencyList[nameA].includes(nameB)) continue;
 
@@ -281,13 +287,10 @@ function seedSetExtraction(
 	adjacencyList: Record<string, string[]>,
 	vertexConfigurations: VertexConfiguration[],
 	paramsFolder: string,
-	log: PipelineLogger
+	log: PipelineLogger,
 ): void {
-	log.runStep('Seed set extraction', () => {
-		const compatibilityGraph = CompatibilityGraph.fromAdjacencyList(
-			adjacencyList,
-			vertexConfigurations
-		);
+	log.runStep("Seed set extraction", () => {
+		const compatibilityGraph = CompatibilityGraph.fromAdjacencyList(adjacencyList, vertexConfigurations);
 		const extractor = new SeedSetExtractor(compatibilityGraph);
 
 		const baseFolderPath = `${typeBasePath(paramsFolder)}/seedSets`;
@@ -326,12 +329,7 @@ function seedSetExtraction(
 	});
 }
 
-function seedsGeneration(
-	paramsFolder: string,
-	k: number | null,
-	m: number | null,
-	log: PipelineLogger
-): void {
+function seedsGeneration(paramsFolder: string, k: number | null, m: number | null, log: PipelineLogger): void {
 	const loadAllForK = loadAllSeedSetsForK(paramsFolder);
 	if (k === null) {
 		for (let kVal = 1; kVal <= MAX_K; kVal++) {
@@ -346,7 +344,7 @@ function generateSeedsForK(
 	paramsFolder: string,
 	loadAllForK: (k: number) => Map<number, string[][]>,
 	k: number,
-	log: PipelineLogger
+	log: PipelineLogger,
 ): void {
 	log.runStep(
 		`Seeds generation for k=${k}`,
@@ -360,7 +358,7 @@ function generateSeedsForK(
 			const seedBuilder = new SeedBuilder();
 			const seedConfigurations = seedBuilder.buildSeeds(k, 1, {
 				seedSetLoader,
-				onProgress: log.progressForSeeds('Seed sets')
+				onProgress: log.progressForSeeds("Seed sets"),
 			});
 			log.clearLine();
 
@@ -383,39 +381,41 @@ function generateSeedsForK(
 					seeds,
 					`Encoding m=${effectiveM}`,
 					(sc) => sc.encodeCompact(vcLibrary, true),
-					1
+					1,
 				);
 
 				const total = compactData.length;
 				const totalBatches = Math.ceil(total / BATCH_SIZE);
 				for (let i = 0; i < total; i += BATCH_SIZE) {
 					const batchIndex = Math.floor(i / BATCH_SIZE);
-					log.progress('Writing batches', batchIndex + 1, totalBatches);
+					log.progress("Writing batches", batchIndex + 1, totalBatches);
 					const batch = compactData.slice(i, i + BATCH_SIZE);
 					const rounded = roundNumbersInJson(batch) as typeof batch;
 					const json = JSON.stringify(rounded);
 					const compressed = zlib.gzipSync(json, { level: 9 });
-					const filePath = `${folderPath}/seedConfigurations_${String(batchIndex).padStart(4, '0')}.json.gz`;
+					const filePath = `${folderPath}/seedConfigurations_${String(batchIndex).padStart(4, "0")}.json.gz`;
 					fs.writeFileSync(filePath, compressed);
 				}
 
-				const manifest = { format: 'compact', vcLibrary: true, shortKeys: true, compressed: true, total, batchSize: BATCH_SIZE };
+				const manifest = {
+					format: "compact",
+					vcLibrary: true,
+					shortKeys: true,
+					compressed: true,
+					total,
+					batchSize: BATCH_SIZE,
+				};
 				fs.writeFileSync(`${folderPath}/manifest.json`, JSON.stringify(manifest));
 				totalWritten += total;
 			}
 			log.clearLine();
 			return totalWritten;
 		},
-		(count) => log.log(`  → ${count} seeds`)
+		(count) => log.log(`  → ${count} seeds`),
 	);
 }
 
-function seedsExpansion(
-	paramsFolder: string,
-	k: number | null,
-	m: number | null,
-	log: PipelineLogger
-): void {
+function seedsExpansion(paramsFolder: string, k: number | null, m: number | null, log: PipelineLogger): void {
 	if (k === null) {
 		for (let kVal = 1; kVal <= MAX_K; kVal++) {
 			expandSeedsForK(paramsFolder, kVal, m, log);
@@ -425,12 +425,7 @@ function seedsExpansion(
 	}
 }
 
-function expandSeedsForK(
-	paramsFolder: string,
-	k: number,
-	m: number | null,
-	log: PipelineLogger
-): void {
+function expandSeedsForK(paramsFolder: string, k: number, m: number | null, log: PipelineLogger): void {
 	log.runStep(
 		`Seed expansion for k=${k}`,
 		() => {
@@ -450,13 +445,13 @@ function expandSeedsForK(
 
 			let totalToProcess = 0;
 			const mDirsToProcess: { mDir: string; mVal: number }[] = [];
-			const mDirs = fs.readdirSync(basePath).filter((d) => d.startsWith('m='));
+			const mDirs = fs.readdirSync(basePath).filter((d) => d.startsWith("m="));
 			for (const mDir of mDirs) {
-				const mVal = parseInt(mDir.replace('m=', ''), 10);
+				const mVal = parseInt(mDir.replace("m=", ""), 10);
 				if (m !== null && mVal !== m) continue;
 				const manifestPath = `${basePath}/${mDir}/manifest.json`;
 				if (!fs.existsSync(manifestPath)) continue;
-				const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+				const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
 				totalToProcess += manifest.total ?? 0;
 				mDirsToProcess.push({ mDir, mVal });
 			}
@@ -476,15 +471,13 @@ function expandSeedsForK(
 
 				for (let i = 0; i < configs.length; i++) {
 					processed++;
-					log.progress('Seeds', processed, totalToProcess);
+					log.progress("Seeds", processed, totalToProcess);
 					const seed = SeedConfiguration.decodeCompact(
 						configs[i] as CompactSeedConfiguration | CompactSeedConfigurationShort,
 						vcLibrary,
 					);
 					const count = expander.expand(seed, (patch) => {
-						const encodedPolygons = patch.map((p) =>
-							polygonToShort(p.encode() as Record<string, unknown>)
-						);
+						const encodedPolygons = patch.map((p) => polygonToShort(p.encode() as Record<string, unknown>));
 						batch.push({
 							n: seed.name,
 							p: roundNumbersInJson(encodedPolygons) as Record<string, unknown>[],
@@ -493,8 +486,8 @@ function expandSeedsForK(
 							const json = JSON.stringify(batch);
 							const compressed = zlib.gzipSync(json, { level: 9 });
 							fs.writeFileSync(
-								`${folderPath}/expandedSeeds_${String(batchIndex).padStart(4, '0')}.json.gz`,
-								compressed
+								`${folderPath}/expandedSeeds_${String(batchIndex).padStart(4, "0")}.json.gz`,
+								compressed,
 							);
 							totalItems += batch.length;
 							batch = [];
@@ -515,10 +508,7 @@ function expandSeedsForK(
 				if (batch.length > 0) {
 					const json = JSON.stringify(batch);
 					const compressed = zlib.gzipSync(json, { level: 9 });
-					fs.writeFileSync(
-						`${folderPath}/expandedSeeds_${String(batchIndex).padStart(4, '0')}.json.gz`,
-						compressed
-					);
+					fs.writeFileSync(`${folderPath}/expandedSeeds_${String(batchIndex).padStart(4, "0")}.json.gz`, compressed);
 					totalItems += batch.length;
 				}
 
@@ -526,12 +516,12 @@ function expandSeedsForK(
 					fs.writeFileSync(
 						`${folderPath}/manifest.json`,
 						JSON.stringify({
-							format: 'full',
+							format: "full",
 							shortKeys: true,
 							compressed: true,
 							total: totalItems,
 							batchSize: BATCH_SIZE,
-						})
+						}),
 					);
 				}
 			}
@@ -539,32 +529,31 @@ function expandSeedsForK(
 			return { expanded, entropyWalls, deadEnds, processed, cappedSeeds, cappedNames };
 		},
 		(result) => {
-			if (typeof result === 'number' && result === 0) return;
+			if (typeof result === "number" && result === 0) return;
 			const r = result as {
-				expanded: number; entropyWalls: number; deadEnds: number; processed: number;
-				cappedSeeds: number; cappedNames: string[];
+				expanded: number;
+				entropyWalls: number;
+				deadEnds: number;
+				processed: number;
+				cappedSeeds: number;
+				cappedNames: string[];
 			};
 			log.log(
-				`  → ${r.expanded} fully expanded, ${r.entropyWalls} entropy walls, ${r.deadEnds} dead ends (${r.processed} total)`
+				`  → ${r.expanded} fully expanded, ${r.entropyWalls} entropy walls, ${r.deadEnds} dead ends (${r.processed} total)`,
 			);
 			// Capped seeds are INCOMPLETE — their tilings are silently missing unless surfaced. Never
 			// hide them: a non-zero count means the run is not exhaustive for those seeds.
 			if (r.cappedSeeds > 0) {
 				log.log(
-					`  ⚠ ${r.cappedSeeds} seed(s) hit the ${'90s'} per-seed cap and produced NO tilings ` +
-					`(INCOMPLETE — completeness not guaranteed for these): ${r.cappedNames.join(', ')}`
+					`  ⚠ ${r.cappedSeeds} seed(s) hit the ${"90s"} per-seed cap and produced NO tilings ` +
+						`(INCOMPLETE — completeness not guaranteed for these): ${r.cappedNames.join(", ")}`,
 				);
 			}
-		}
+		},
 	);
 }
 
-function extractTranslationalCell(
-	paramsFolder: string,
-	k: number | null,
-	m: number | null,
-	log: PipelineLogger
-): void {
+function extractTranslationalCell(paramsFolder: string, k: number | null, m: number | null, log: PipelineLogger): void {
 	if (k === null) {
 		for (let kVal = 1; kVal <= MAX_K; kVal++) {
 			extractTranslationalCellForK(paramsFolder, kVal, m, log);
@@ -574,12 +563,7 @@ function extractTranslationalCell(
 	}
 }
 
-function extractTranslationalCellForK(
-	paramsFolder: string,
-	k: number,
-	m: number | null,
-	log: PipelineLogger
-): void {
+function extractTranslationalCellForK(paramsFolder: string, k: number, m: number | null, log: PipelineLogger): void {
 	log.runStep(
 		`Translational cell extraction for k=${k}`,
 		() => {
@@ -595,13 +579,13 @@ function extractTranslationalCellForK(
 
 			let totalToProcess = 0;
 			const mDirsToProcess: { mDir: string; mVal: number }[] = [];
-			const mDirs = fs.readdirSync(basePath).filter((d) => d.startsWith('m='));
+			const mDirs = fs.readdirSync(basePath).filter((d) => d.startsWith("m="));
 			for (const mDir of mDirs) {
-				const mVal = parseInt(mDir.replace('m=', ''), 10);
+				const mVal = parseInt(mDir.replace("m=", ""), 10);
 				if (m !== null && mVal !== m) continue;
 				const manifestPath = `${basePath}/${mDir}/manifest.json`;
 				if (!fs.existsSync(manifestPath)) continue;
-				const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+				const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
 				totalToProcess += manifest.total ?? 0;
 				mDirsToProcess.push({ mDir, mVal });
 			}
@@ -623,7 +607,7 @@ function extractTranslationalCellForK(
 
 				for (let i = 0; i < items.length; i++) {
 					processed++;
-					log.progress('Seeds', processed, totalToProcess);
+					log.progress("Seeds", processed, totalToProcess);
 					const item = items[i];
 					const polygons = (item.p ?? []).map((p: Record<string, unknown>) => polygonFromShort(p));
 					if (polygons.length === 0) {
@@ -651,11 +635,7 @@ function extractTranslationalCellForK(
 					// patch is too small/degenerate to decide — keep it (never drop on uncertainty,
 					// only on a definite ≠ k verdict), so the gate cannot reduce completeness.
 					if (result.basisExact) {
-						const orbits = kChecker.countVertexOrbits(
-							result.cellPolygons,
-							result.basisExact[0],
-							result.basisExact[1]
-						);
+						const orbits = kChecker.countVertexOrbits(result.cellPolygons, result.basisExact[0], result.basisExact[1]);
 						if (orbits !== null && orbits !== k) {
 							gateRejected++;
 							continue;
@@ -663,12 +643,10 @@ function extractTranslationalCellForK(
 					}
 
 					extracted++;
-					const encodedCell = result.cellPolygons.map((p) =>
-						polygonToShort(p.encode() as Record<string, unknown>)
-					);
+					const encodedCell = result.cellPolygons.map((p) => polygonToShort(p.encode() as Record<string, unknown>));
 					const [v1, v2] = result.basis;
 					byM.get(mVal)!.push({
-						n: item.n ?? '',
+						n: item.n ?? "",
 						p: roundNumbersInJson(encodedCell) as Record<string, unknown>[],
 						b: [
 							[v1.x, v1.y],
@@ -691,37 +669,37 @@ function extractTranslationalCellForK(
 				const totalBatches = Math.ceil(total / BATCH_SIZE);
 				for (let i = 0; i < total; i += BATCH_SIZE) {
 					const batchIndex = Math.floor(i / BATCH_SIZE);
-					log.progress('Writing batches', batchIndex + 1, totalBatches);
+					log.progress("Writing batches", batchIndex + 1, totalBatches);
 					const batch = cells.slice(i, i + BATCH_SIZE);
 					const json = JSON.stringify(batch);
 					const compressed = zlib.gzipSync(json, { level: 9 });
 					fs.writeFileSync(
-						`${folderPath}/translationalCells_${String(batchIndex).padStart(4, '0')}.json.gz`,
-						compressed
+						`${folderPath}/translationalCells_${String(batchIndex).padStart(4, "0")}.json.gz`,
+						compressed,
 					);
 				}
 				fs.writeFileSync(
 					`${folderPath}/manifest.json`,
 					JSON.stringify({
-						format: 'full',
+						format: "full",
 						shortKeys: true,
 						compressed: true,
 						total,
 						batchSize: BATCH_SIZE,
-					})
+					}),
 				);
 			}
 			log.clearLine();
 			return { extracted, skipped, gateRejected, processed };
 		},
 		(result) => {
-			if (typeof result === 'number' && result === 0) return;
+			if (typeof result === "number" && result === 0) return;
 			const r = result as { extracted: number; skipped: number; gateRejected: number; processed: number };
 			log.log(
 				`  → ${r.extracted} cells extracted, ${r.gateRejected} rejected by k-uniformity gate, ` +
-				`${r.skipped} skipped (${r.processed} total)`
+					`${r.skipped} skipped (${r.processed} total)`,
 			);
-		}
+		},
 	);
 }
 
@@ -740,7 +718,12 @@ function periodSolveForK(paramsFolder: string, k: number, log: PipelineLogger): 
 			if (!fs.existsSync(basePath)) return 0;
 
 			const extractor = new TranslationalCellExtractor();
-			type CellRec = { n: string; p: Record<string, unknown>[]; b: [[number, number], [number, number]]; o: [number, number] };
+			type CellRec = {
+				n: string;
+				p: Record<string, unknown>[];
+				b: [[number, number], [number, number]];
+				o: [number, number];
+			};
 			const byM = new Map<number, CellRec[]>();
 			// Collect every certified cell across all seeds, then dedup ONCE up to congruence at the end
 			// (representation- & chirality-robust). The old canonicalKey-Set under-merges the chiral snub →
@@ -749,7 +732,7 @@ function periodSolveForK(paramsFolder: string, k: number, log: PipelineLogger): 
 			const allCells: PeriodCell[] = [];
 			const cellMeta = new Map<PeriodCell, { mVal: number; name: string }>();
 
-			const mDirs = fs.readdirSync(basePath).filter((d) => d.startsWith('m='));
+			const mDirs = fs.readdirSync(basePath).filter((d) => d.startsWith("m="));
 			let processed = 0;
 			let capped = 0;
 			const cappedNames: string[] = [];
@@ -757,11 +740,11 @@ function periodSolveForK(paramsFolder: string, k: number, log: PipelineLogger): 
 			let total = 0;
 			for (const mDir of mDirs) {
 				const manifestPath = `${basePath}/${mDir}/manifest.json`;
-				if (fs.existsSync(manifestPath)) total += (JSON.parse(fs.readFileSync(manifestPath, 'utf8')).total ?? 0);
+				if (fs.existsSync(manifestPath)) total += JSON.parse(fs.readFileSync(manifestPath, "utf8")).total ?? 0;
 			}
 
 			for (const mDir of mDirs) {
-				const mVal = parseInt(mDir.replace('m=', ''), 10);
+				const mVal = parseInt(mDir.replace("m=", ""), 10);
 				const manifestPath = `${basePath}/${mDir}/manifest.json`;
 				if (!fs.existsSync(manifestPath)) continue;
 				const { configs, vcLibrary } = loadSeedConfigBatches(paramsFolder, k, mVal);
@@ -769,16 +752,19 @@ function periodSolveForK(paramsFolder: string, k: number, log: PipelineLogger): 
 
 				for (const cfg of configs) {
 					processed++;
-					log.progress('Seeds', processed, total);
+					log.progress("Seeds", processed, total);
 					const seed = SeedConfiguration.decodeCompact(
 						cfg as CompactSeedConfiguration | CompactSeedConfigurationShort,
-						vcLibrary
+						vcLibrary,
 					);
 					// 120s for k≥2: union seeding (fan fills on the few small-cell lattices, e.g. t2014's
 					// 1×(1+√3)) pushes the hardest 3⁶ seeds to ~55s; the cap gives headroom so the
 					// deterministic seed-free fill is not truncated. Timeouts are surfaced as INCOMPLETE below.
 					const { cells, diag } = solver.solve(seed, { maxMs: k >= 2 ? 120_000 : 30_000 });
-					if (diag.timedOut) { capped++; cappedNames.push(seed.name); }
+					if (diag.timedOut) {
+						capped++;
+						cappedNames.push(seed.name);
+					}
 					for (const cell of cells) {
 						allCells.push(cell);
 						cellMeta.set(cell, { mVal, name: seed.name });
@@ -802,8 +788,13 @@ function periodSolveForK(paramsFolder: string, k: number, log: PipelineLogger): 
 				const origin = cell.cellPolygons[0].exactCentroid!.toVector();
 				byM.get(mVal)!.push({
 					n: name,
-					p: roundNumbersInJson(cell.cellPolygons.map((p) => polygonToShort(p.encode() as Record<string, unknown>))) as Record<string, unknown>[],
-					b: [[u.x, u.y], [v.x, v.y]],
+					p: roundNumbersInJson(
+						cell.cellPolygons.map((p) => polygonToShort(p.encode() as Record<string, unknown>)),
+					) as Record<string, unknown>[],
+					b: [
+						[u.x, u.y],
+						[v.x, v.y],
+					],
 					o: [origin.x, origin.y],
 				});
 			}
@@ -817,60 +808,64 @@ function periodSolveForK(paramsFolder: string, k: number, log: PipelineLogger): 
 					const batchIndex = Math.floor(i / BATCH_SIZE);
 					const batch = cells.slice(i, i + BATCH_SIZE);
 					const compressed = zlib.gzipSync(JSON.stringify(batch), { level: 9 });
-					fs.writeFileSync(`${folderPath}/translationalCells_${String(batchIndex).padStart(4, '0')}.json.gz`, compressed);
+					fs.writeFileSync(
+						`${folderPath}/translationalCells_${String(batchIndex).padStart(4, "0")}.json.gz`,
+						compressed,
+					);
 				}
 				fs.writeFileSync(
 					`${folderPath}/manifest.json`,
-					JSON.stringify({ format: 'full', shortKeys: true, compressed: true, total: totalCells, batchSize: BATCH_SIZE })
+					JSON.stringify({
+						format: "full",
+						shortKeys: true,
+						compressed: true,
+						total: totalCells,
+						batchSize: BATCH_SIZE,
+					}),
 				);
 			}
 			return { emitted, processed, capped, cappedNames };
 		},
 		(result) => {
-			if (typeof result === 'number' && result === 0) return;
+			if (typeof result === "number" && result === 0) return;
 			const r = result as { emitted: number; processed: number; capped: number; cappedNames: string[] };
 			log.log(`  → ${r.emitted} distinct k-uniform cells from ${r.processed} seeds`);
 			if (r.capped > 0) {
 				log.log(
-					`  ⚠ ${r.capped} seed(s) hit the per-seed time cap (INCOMPLETE — their cells may be missing): ${r.cappedNames.join(', ')}`
+					`  ⚠ ${r.capped} seed(s) hit the per-seed time cap (INCOMPLETE — their cells may be missing): ${r.cappedNames.join(", ")}`,
 				);
 			}
-		}
+		},
 	);
 }
 
 function loadExpandedSeedsBatches(
 	paramsFolder: string,
 	k: number,
-	m: number
+	m: number,
 ): { n: string; p: Record<string, unknown>[] }[] {
 	const folder = `${typeBasePath(paramsFolder)}/expandedSeeds/k=${k}/m=${m}`;
 	if (!fs.existsSync(folder)) return [];
-	const manifest = JSON.parse(fs.readFileSync(`${folder}/manifest.json`, 'utf8'));
+	const manifest = JSON.parse(fs.readFileSync(`${folder}/manifest.json`, "utf8"));
 	const total = manifest.total;
 	const items: { n: string; p: Record<string, unknown>[] }[] = [];
 	for (let i = 0; i < total; i += BATCH_SIZE) {
 		const batchIndex = Math.floor(i / BATCH_SIZE);
-		const baseName = `expandedSeeds_${String(batchIndex).padStart(4, '0')}`;
+		const baseName = `expandedSeeds_${String(batchIndex).padStart(4, "0")}`;
 		const gzPath = `${folder}/${baseName}.json.gz`;
 		const jsonPath = `${folder}/${baseName}.json`;
 		let batch: { n: string; p: Record<string, unknown>[] }[];
 		if (fs.existsSync(gzPath)) {
-			batch = JSON.parse(zlib.gunzipSync(fs.readFileSync(gzPath)).toString('utf8'));
+			batch = JSON.parse(zlib.gunzipSync(fs.readFileSync(gzPath)).toString("utf8"));
 		} else {
-			batch = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+			batch = JSON.parse(fs.readFileSync(jsonPath, "utf8"));
 		}
 		items.push(...batch);
 	}
 	return items;
 }
 
-function tilingsGeneration(
-	paramsFolder: string,
-	k: number | null,
-	m: number | null,
-	log: PipelineLogger
-): void {
+function tilingsGeneration(paramsFolder: string, k: number | null, m: number | null, log: PipelineLogger): void {
 	if (k === null) {
 		generateTilings(paramsFolder, 1, 1, log);
 
@@ -890,27 +885,24 @@ function tilingsGeneration(
 	}
 }
 
-type SeedConfigPayload =
-	| CompactSeedConfiguration
-	| CompactSeedConfigurationShort
-	| FullSeedConfiguration;
+type SeedConfigPayload = CompactSeedConfiguration | CompactSeedConfigurationShort | FullSeedConfiguration;
 
 function loadSeedConfigBatches(
 	paramsFolder: string,
 	k: number,
 	m: number,
-	onProgress?: (phase: string, current: number, total: number, msg?: string) => void
+	onProgress?: (phase: string, current: number, total: number, msg?: string) => void,
 ): { format: string; configs: SeedConfigPayload[]; vcLibrary?: string[] } {
 	const folder = `${typeBasePath(paramsFolder)}/seedConfigurations/k=${k}/m=${m}`;
-	const manifest = JSON.parse(fs.readFileSync(`${folder}/manifest.json`, 'utf8'));
+	const manifest = JSON.parse(fs.readFileSync(`${folder}/manifest.json`, "utf8"));
 	const total = manifest.total;
-	const format = manifest.format || 'compact';
+	const format = manifest.format || "compact";
 	const configs: SeedConfigPayload[] = [];
 	let vcLibrary: string[] | undefined;
 	if (manifest.vcLibrary) {
 		try {
 			const vcLibraryPath = `${typeBasePath(paramsFolder)}/seedConfigurations/vcLibrary.json`;
-			vcLibrary = JSON.parse(fs.readFileSync(vcLibraryPath, 'utf8'));
+			vcLibrary = JSON.parse(fs.readFileSync(vcLibraryPath, "utf8"));
 		} catch {
 			vcLibrary = undefined;
 		}
@@ -918,43 +910,33 @@ function loadSeedConfigBatches(
 	const totalBatches = Math.ceil(total / BATCH_SIZE);
 	for (let i = 0; i < total; i += BATCH_SIZE) {
 		const batchIndex = Math.floor(i / BATCH_SIZE);
-		onProgress?.('load', batchIndex + 1, totalBatches, `Loading batch ${batchIndex + 1}/${totalBatches}`);
-		const baseName = `seedConfigurations_${String(batchIndex).padStart(4, '0')}`;
+		onProgress?.("load", batchIndex + 1, totalBatches, `Loading batch ${batchIndex + 1}/${totalBatches}`);
+		const baseName = `seedConfigurations_${String(batchIndex).padStart(4, "0")}`;
 		const gzPath = `${folder}/${baseName}.json.gz`;
 		const jsonPath = `${folder}/${baseName}.json`;
 		let batch: SeedConfigPayload[];
 		if (fs.existsSync(gzPath)) {
-			batch = JSON.parse(zlib.gunzipSync(fs.readFileSync(gzPath)).toString('utf8')) as SeedConfigPayload[];
+			batch = JSON.parse(zlib.gunzipSync(fs.readFileSync(gzPath)).toString("utf8")) as SeedConfigPayload[];
 		} else {
-			batch = JSON.parse(fs.readFileSync(jsonPath, 'utf8')) as SeedConfigPayload[];
+			batch = JSON.parse(fs.readFileSync(jsonPath, "utf8")) as SeedConfigPayload[];
 		}
 		configs.push(...batch);
 	}
 	return { format, configs, vcLibrary };
 }
 
-function generateTilings(
-	paramsFolder: string,
-	k: number,
-	m: number,
-	log: PipelineLogger
-): void {
+function generateTilings(paramsFolder: string, k: number, m: number, log: PipelineLogger): void {
 	log.runStep(
 		`Tilings generation for k=${k} and m=${m}`,
 		() => {
 			const progress = log.progressForPhases({
-				load: 'Loading seed configs',
-				seed: 'Processing seeds',
-				generators: 'Testing generator sets'
+				load: "Loading seed configs",
+				seed: "Processing seeds",
+				generators: "Testing generator sets",
 			});
 			const seedConfigs = loadSeedConfigBatches(paramsFolder, k, m, progress);
 			const tilingGenerator = new AlgorithmTilingGenerator(paramsFolder);
-			const tilings = tilingGenerator.generateTilings(
-				k,
-				m,
-				progress,
-				seedConfigs
-			);
+			const tilings = tilingGenerator.generateTilings(k, m, progress, seedConfigs);
 			log.clearLine(70, 2);
 
 			const tilingsFolderPath = `${typeBasePath(paramsFolder)}/tilings/k=${k}/m=${m}`;
@@ -962,26 +944,26 @@ function generateTilings(
 				fs.mkdirSync(tilingsFolderPath, { recursive: true });
 			}
 
-			const encoded = log.mapWithProgress(tilings, 'Encoding tilings', (t) => t.encode(true), 1);
+			const encoded = log.mapWithProgress(tilings, "Encoding tilings", (t) => t.encode(true), 1);
 
 			const total = encoded.length;
 			const totalBatches = Math.ceil(total / BATCH_SIZE);
 			for (let i = 0; i < total; i += BATCH_SIZE) {
 				const batchIndex = Math.floor(i / BATCH_SIZE);
-				log.progress('Writing batches', batchIndex + 1, totalBatches);
+				log.progress("Writing batches", batchIndex + 1, totalBatches);
 				const batch = encoded.slice(i, i + BATCH_SIZE);
 				const rounded = roundNumbersInJson(batch) as typeof batch;
 				const json = JSON.stringify(rounded);
 				const compressed = zlib.gzipSync(json, { level: 9 });
-				const filePath = `${tilingsFolderPath}/tilings_${String(batchIndex).padStart(4, '0')}.json.gz`;
+				const filePath = `${tilingsFolderPath}/tilings_${String(batchIndex).padStart(4, "0")}.json.gz`;
 				fs.writeFileSync(filePath, compressed);
 			}
-			const manifest = { format: 'full', compressed: true, total, batchSize: BATCH_SIZE };
+			const manifest = { format: "full", compressed: true, total, batchSize: BATCH_SIZE };
 			fs.writeFileSync(`${tilingsFolderPath}/manifest.json`, JSON.stringify(manifest));
 			log.clearLine();
 			return tilings.length;
 		},
-		(count) => log.log(`  → ${count} tilings`)
+		(count) => log.log(`  → ${count} tilings`),
 	);
 }
 
@@ -992,7 +974,7 @@ function loadAllSeedSetsForK(paramsFolder: string): (k: number) => Map<number, s
 		for (let m = 1; m <= k; m++) {
 			const filePath = `${typeBasePath(paramsFolder)}/seedSets/k=${k}/m=${m}.json`;
 			if (!fs.existsSync(filePath)) continue;
-			const content = fs.readFileSync(filePath, 'utf8');
+			const content = fs.readFileSync(filePath, "utf8");
 			byM.set(m, JSON.parse(content));
 		}
 		return byM;
@@ -1009,12 +991,10 @@ function ensureVcLibrary(paramsFolder: string): string[] {
 	}
 	let vcLibrary: string[];
 	if (fs.existsSync(vcLibraryPath)) {
-		vcLibrary = JSON.parse(fs.readFileSync(vcLibraryPath, 'utf8'));
+		vcLibrary = JSON.parse(fs.readFileSync(vcLibraryPath, "utf8"));
 	} else {
 		const vcsPath = `${typeBasePath(paramsFolder)}/vcs.json`;
-		vcLibrary = fs.existsSync(vcsPath)
-			? JSON.parse(fs.readFileSync(vcsPath, 'utf8'))
-			: [];
+		vcLibrary = fs.existsSync(vcsPath) ? JSON.parse(fs.readFileSync(vcsPath, "utf8")) : [];
 		fs.writeFileSync(vcLibraryPath, JSON.stringify(vcLibrary));
 	}
 	return vcLibrary;

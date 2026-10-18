@@ -123,27 +123,27 @@ export interface ConfigurationState {
 	// Islamic / rendering variants
 	isIslamic: boolean;
 	islamicAngle: number;
-	islamicEdgeOffset: number;        // signed % of the half-edge the ray origins slide (0 = midpoint, + cross, − split)
+	islamicEdgeOffset: number; // signed % of the half-edge the ray origins slide (0 = midpoint, + cross, − split)
 	islamicIntersectionCount: number; // ray stops at the N-th crossing (1 = first contact, max 3)
 	islamicAnimate: boolean;
 	// Decoration style for the Islamic construction. 'plain' = colored cells + border lines (the classic
 	// look); 'interlace' = woven over/under bands. ('outline'/'checkerboard' are reserved for later slices.)
-	islamicStyle: 'plain' | 'interlace' | 'outline' | 'emboss' | 'checkerboard';
-	islamicBandWidth: number;         // interlace strap width, as a fraction of the median segment length
+	islamicStyle: "plain" | "interlace" | "outline" | "emboss" | "checkerboard";
+	islamicBandWidth: number; // interlace strap width, as a fraction of the median segment length
 	// Strap border ring, grown OUTWARD from the band, on the same ruler as islamicBandWidth (a fraction of
 	// the median segment length) — so the two are directly comparable and their ratio holds at any zoom.
 	// It is band geometry, not a stroke: dragging it rebuilds the mesh. 0 = no border.
 	islamicOutlineWidth: number;
-	islamicChirality: boolean;        // flips which strand rides over at every crossing (the two chiralities)
+	islamicChirality: boolean; // flips which strand rides over at every crossing (the two chiralities)
 	// Region fills are hue-only — saturation and lightness are locked to the tile palette (tileFill
 	// in lib/render/tilePalette.ts), like the hue-shift ring — so a fill is always a tile-palette
 	// colour, never off-palette, and it follows the palette if the palette moves.
-	islamicCheckerHueA: number;       // checkerboard field A: hue° (0–360)
-	islamicCheckerHueB: number;       // checkerboard field B: hue°
+	islamicCheckerHueA: number; // checkerboard field A: hue° (0–360)
+	islamicCheckerHueB: number; // checkerboard field B: hue°
 	// Plain-fill A/B/C: star bodies (A) keep their tile hue; the two background classes take these shared
 	// hues. B = the side fields, C = the small edge-centre diamonds (only present once Edge Offset > 0).
-	islamicFillHueB: number;          // A/B/C fill: side-field hue°
-	islamicFillHueC: number;          // A/B/C fill: edge-centre diamond hue°
+	islamicFillHueB: number; // A/B/C fill: side-field hue°
+	islamicFillHueC: number; // A/B/C fill: edge-centre diamond hue°
 	circlePacking: boolean;
 	isTilingRegularOnly: boolean;
 
@@ -392,11 +392,23 @@ export interface ConfigurationState {
  * Takes a structural argument rather than the whole state so the canvases can call it with what they have.
  */
 export function deformApplies(cfg: {
-	hyperbolic: boolean; spherical: boolean; freedraw: boolean; hollow?: boolean;
-	colors: boolean; circlePacking: boolean; showSymmetryElements: boolean;
+	hyperbolic: boolean;
+	spherical: boolean;
+	freedraw: boolean;
+	hollow?: boolean;
+	colors: boolean;
+	circlePacking: boolean;
+	showSymmetryElements: boolean;
 }): boolean {
-	return !cfg.hyperbolic && !cfg.spherical && !cfg.freedraw && !cfg.hollow &&
-		!cfg.colors && !cfg.circlePacking && !cfg.showSymmetryElements;
+	return (
+		!cfg.hyperbolic &&
+		!cfg.spherical &&
+		!cfg.freedraw &&
+		!cfg.hollow &&
+		!cfg.colors &&
+		!cfg.circlePacking &&
+		!cfg.showSymmetryElements
+	);
 }
 
 /**
@@ -405,9 +417,15 @@ export function deformApplies(cfg: {
  * deformed" has exactly one answer and a mode that cannot apply D can never be handed one.
  */
 export function resolveDeform(cfg: {
-	deform: [number, number, number, number]; deformOn: boolean;
-	hyperbolic: boolean; spherical: boolean; freedraw: boolean; hollow?: boolean;
-	colors: boolean; circlePacking: boolean; showSymmetryElements: boolean;
+	deform: [number, number, number, number];
+	deformOn: boolean;
+	hyperbolic: boolean;
+	spherical: boolean;
+	freedraw: boolean;
+	hollow?: boolean;
+	colors: boolean;
+	circlePacking: boolean;
+	showSymmetryElements: boolean;
 }): Mat2 {
 	return cfg.deformOn && deformApplies(cfg) ? (cfg.deform as unknown as Mat2) : IDENTITY_DEFORM;
 }
@@ -473,12 +491,12 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	islamicIntersectionCount: 1,
 
 	islamicAnimate: false,
-	islamicStyle: 'plain',
+	islamicStyle: "plain",
 	islamicBandWidth: 0.3,
 	islamicOutlineWidth: 0.1,
 	islamicChirality: false,
-	islamicCheckerHueA: 45,   // pastel yellow — the hue of the former '#e7dcc0' default at the locked S/L
-	islamicCheckerHueB: 200,  // pastel sky-blue — the hue of the former '#3a4a52' default
+	islamicCheckerHueA: 45, // pastel yellow — the hue of the former '#e7dcc0' default at the locked S/L
+	islamicCheckerHueB: 200, // pastel sky-blue — the hue of the former '#3a4a52' default
 	islamicFillHueB: 45,
 	islamicFillHueC: 200,
 	circlePacking: false,

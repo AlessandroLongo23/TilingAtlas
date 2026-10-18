@@ -22,17 +22,20 @@ export const THEORY_ELEMENTS: TheoryArticle[] = [
 	{
 		slug: "tiles",
 		title: "Prototiles",
-		blurb: "The individual tile shapes behind the tilings (regular, convex-irregular, star and isotoxal) as one browsable gallery.",
+		blurb:
+			"The individual tile shapes behind the tilings (regular, convex-irregular, star and isotoxal) as one browsable gallery.",
 	},
 	{
 		slug: "configs",
 		title: "Vertex configurations",
-		blurb: "The configuration alphabet per palette: every realizable way the tiles fan around a single vertex, the layer between a palette and a tiling.",
+		blurb:
+			"The configuration alphabet per palette: every realizable way the tiles fan around a single vertex, the layer between a palette and a tiling.",
 	},
 	{
 		slug: "vertex",
 		title: "Vertex figure lookup",
-		blurb: "Type a vertex figure such as 3.4.7.4 and get its geometry, its uniform tilings, and every board in the catalogue that carries it, with the lowest k found.",
+		blurb:
+			"Type a vertex figure such as 3.4.7.4 and get its geometry, its uniform tilings, and every board in the catalogue that carries it, with the lowest k found.",
 	},
 ];
 
@@ -40,32 +43,38 @@ export const THEORY_ARTICLES: TheoryArticle[] = [
 	{
 		slug: "uniform-tilings",
 		title: "The eleven uniform tilings",
-		blurb: "The three regular and eight semiregular tilings of the plane, the angle equation that constrains them, and why there are exactly eleven.",
+		blurb:
+			"The three regular and eight semiregular tilings of the plane, the angle equation that constrains them, and why there are exactly eleven.",
 	},
 	{
 		slug: "freedraw",
 		title: "Freedraw: the edges carry the tiling",
-		blurb: "Marek Čtrnáct's edge-subset construction: fix a grid, choose which edges are drawn, and let the tiles fall out. Planar grids and all five Platonic solids.",
+		blurb:
+			"Marek Čtrnáct's edge-subset construction: fix a grid, choose which edges are drawn, and let the tiles fall out. Planar grids and all five Platonic solids.",
 	},
 	{
 		slug: "islamic",
 		title: "Islamic geometric patterns",
-		blurb: "The design systems behind Islamic star patterns: the tessellations underneath, with interactive previews of the curated tilings.",
+		blurb:
+			"The design systems behind Islamic star patterns: the tessellations underneath, with interactive previews of the curated tilings.",
 	},
 	{
 		slug: "perfect-rectangles",
 		title: "Every polyhedron hides a squared rectangle",
-		blurb: "Brooks, Smith, Stone and Tutte turned a rectangle cut into unequal squares into an electrical circuit, and the circuit into a convex polyhedron. Run backwards over this catalogue's own solids: 667 rectangles across 105 of them, and why symmetry is what stops them being perfect.",
+		blurb:
+			"Brooks, Smith, Stone and Tutte turned a rectangle cut into unequal squares into an electrical circuit, and the circuit into a convex polyhedron. Run backwards over this catalogue's own solids: 667 rectangles across 105 of them, and why symmetry is what stops them being perfect.",
 	},
 	{
 		slug: "automata",
 		title: "Life on a tiling that isn't the square grid",
-		blurb: "Conway's rule needs a grid before it needs a rule. What is known about Life on hexagons, pentagons and Penrose tilings, why a B/S string is undetermined when tiles differ in degree, and what a tiling's periodicity buys the simulator.",
+		blurb:
+			"Conway's rule needs a grid before it needs a rule. What is known about Life on hexagons, pentagons and Penrose tilings, why a B/S string is undetermined when tiles differ in degree, and what a tiling's periodicity buys the simulator.",
 	},
 	{
 		slug: "hyperbolic",
 		title: "Why the hyperbolic catalogue stops where it does",
-		blurb: "The hyperbolic tilings never run out, so the enumeration is bounded by palette, valence and uniformity. What identifies a tiling when its vertex configuration cannot, and where the search hits its limit.",
+		blurb:
+			"The hyperbolic tilings never run out, so the enumeration is bounded by palette, valence and uniformity. What identifies a tiling when its vertex configuration cannot, and where the search hits its limit.",
 	},
 ];
 

@@ -1,8 +1,8 @@
-import { Cyclotomic, CyclotomicRing } from '@/classes';
-import { RegularPolygon } from '@/classes/polygons/RegularPolygon';
-import { exactPolygonsOverlap, orient2D } from '@/classes/algorithm/exact/exactOverlap';
-import { tileVertices } from './convexTiles';
-import { liftTo24 } from './Polyform';
+import { Cyclotomic, CyclotomicRing } from "@/classes";
+import { RegularPolygon } from "@/classes/polygons/RegularPolygon";
+import { exactPolygonsOverlap, orient2D } from "@/classes/algorithm/exact/exactOverlap";
+import { tileVertices } from "./convexTiles";
+import { liftTo24 } from "./Polyform";
 
 /**
  * Exact edge-to-edge decomposability oracle for the convex composable tiles.
@@ -33,27 +33,27 @@ export type DirectedEdge = { a: Cyclotomic; b: Cyclotomic };
  * `Cyclotomic.key()` (N=12), so the cancellation is exact, never a float coincidence.
  */
 export function uncoveredBoundary(P: Cyclotomic[], placed: RegularPolygon[]): DirectedEdge[] {
-  const count = new Map<string, number>();
-  const point = new Map<string, DirectedEdge>();
-  const bump = (a: Cyclotomic, b: Cyclotomic): void => {
-    const k = `${a.key()}|${b.key()}`;
-    count.set(k, (count.get(k) ?? 0) + 1);
-    if (!point.has(k)) point.set(k, { a, b });
-  };
-  const n = P.length;
-  for (let i = 0; i < n; i++) bump(P[i], P[(i + 1) % n]);        // P CCW, as-is
-  for (const T of placed) {
-    const v = T.exactVertices!;
-    const m = v.length;
-    for (let i = 0; i < m; i++) bump(v[(i + 1) % m], v[i]);       // tile CCW edges, reversed
-  }
-  const out: DirectedEdge[] = [];
-  for (const [k, c] of count) {
-    const { a, b } = point.get(k)!;
-    const rev = count.get(`${b.key()}|${a.key()}`) ?? 0;
-    if (c - rev > 0) out.push({ a, b });
-  }
-  return out;
+	const count = new Map<string, number>();
+	const point = new Map<string, DirectedEdge>();
+	const bump = (a: Cyclotomic, b: Cyclotomic): void => {
+		const k = `${a.key()}|${b.key()}`;
+		count.set(k, (count.get(k) ?? 0) + 1);
+		if (!point.has(k)) point.set(k, { a, b });
+	};
+	const n = P.length;
+	for (let i = 0; i < n; i++) bump(P[i], P[(i + 1) % n]); // P CCW, as-is
+	for (const T of placed) {
+		const v = T.exactVertices!;
+		const m = v.length;
+		for (let i = 0; i < m; i++) bump(v[(i + 1) % m], v[i]); // tile CCW edges, reversed
+	}
+	const out: DirectedEdge[] = [];
+	for (const [k, c] of count) {
+		const { a, b } = point.get(k)!;
+		const rev = count.get(`${b.key()}|${a.key()}`) ?? 0;
+		if (c - rev > 0) out.push({ a, b });
+	}
+	return out;
 }
 
 /**
@@ -66,13 +66,13 @@ export function uncoveredBoundary(P: Cyclotomic[], placed: RegularPolygon[]): Di
  * notch would be wrongly admitted — do not reuse this on non-convex targets without an edge-crossing test.
  */
 function tileInsideP(tile24: Cyclotomic[], P24: Cyclotomic[]): boolean {
-  const n = P24.length;
-  for (const v of tile24) {
-    for (let i = 0; i < n; i++) {
-      if (orient2D(P24[i], P24[(i + 1) % n], v) < 0) return false;
-    }
-  }
-  return true;
+	const n = P24.length;
+	for (const v of tile24) {
+		for (let i = 0; i < n; i++) {
+			if (orient2D(P24[i], P24[(i + 1) % n], v) < 0) return false;
+		}
+	}
+	return true;
 }
 
 /**
@@ -80,44 +80,42 @@ function tileInsideP(tile24: Cyclotomic[], P24: Cyclotomic[]): boolean {
  * Returns `{ decomposable: true, pieces }` with a witness dissection, or `{ decomposable: false,
  * pieces: [] }`. The witness pieces are CCW `RegularPolygon`s in the N=12 ring.
  */
-export function dissect(
-  word: number[],
-  ring: CyclotomicRing,
-): { decomposable: boolean; pieces: RegularPolygon[] } {
-  const P = tileVertices(word, ring);            // exact CCW vertices, N=12
-  const P24 = P.map(liftTo24);
-  const placed: RegularPolygon[] = [];
-  const placed24: Cyclotomic[][] = [];           // parallel N=24 lift cache
+export function dissect(word: number[], ring: CyclotomicRing): { decomposable: boolean; pieces: RegularPolygon[] } {
+	const P = tileVertices(word, ring); // exact CCW vertices, N=12
+	const P24 = P.map(liftTo24);
+	const placed: RegularPolygon[] = [];
+	const placed24: Cyclotomic[][] = []; // parallel N=24 lift cache
 
-  const dfs = (depth: number): RegularPolygon[] | null => {
-    const frontier = uncoveredBoundary(P, placed);
-    if (frontier.length === 0) return placed.slice();     // fully covered ⇒ success
-    if (depth >= MAX_TILES) return null;                  // cap (loud margin; see MAX_TILES)
+	const dfs = (depth: number): RegularPolygon[] | null => {
+		const frontier = uncoveredBoundary(P, placed);
+		if (frontier.length === 0) return placed.slice(); // fully covered ⇒ success
+		if (depth >= MAX_TILES) return null; // cap (loud margin; see MAX_TILES)
 
-    // canonical-minimum frontier edge, ordered by a.key() then b.key()
-    let e = frontier[0];
-    for (const f of frontier) {
-      const fa = f.a.key(), ea = e.a.key();
-      if (fa < ea || (fa === ea && f.b.key() < e.b.key())) e = f;
-    }
-    const dir = ring.expFromZetaKey(e.b.sub(e.a).key());
-    if (dir === undefined) throw new Error('dissect: frontier edge is not a unit ζ direction (bug)');
+		// canonical-minimum frontier edge, ordered by a.key() then b.key()
+		let e = frontier[0];
+		for (const f of frontier) {
+			const fa = f.a.key(),
+				ea = e.a.key();
+			if (fa < ea || (fa === ea && f.b.key() < e.b.key())) e = f;
+		}
+		const dir = ring.expFromZetaKey(e.b.sub(e.a).key());
+		if (dir === undefined) throw new Error("dissect: frontier edge is not a unit ζ direction (bug)");
 
-    for (const n of REGULAR_ORDERS) {
-      const T = RegularPolygon.fromAnchorAndDirExact(n, e.a, dir); // CCW n-gon, first edge e.a→e.b
-      const T24 = T.exactVertices!.map(liftTo24);
-      if (!tileInsideP(T24, P24)) continue;
-      if (placed24.some(U24 => exactPolygonsOverlap(T24, U24))) continue;
-      placed.push(T);
-      placed24.push(T24);
-      const r = dfs(depth + 1);
-      if (r) return r;
-      placed.pop();
-      placed24.pop();
-    }
-    return null;
-  };
+		for (const n of REGULAR_ORDERS) {
+			const T = RegularPolygon.fromAnchorAndDirExact(n, e.a, dir); // CCW n-gon, first edge e.a→e.b
+			const T24 = T.exactVertices!.map(liftTo24);
+			if (!tileInsideP(T24, P24)) continue;
+			if (placed24.some((U24) => exactPolygonsOverlap(T24, U24))) continue;
+			placed.push(T);
+			placed24.push(T24);
+			const r = dfs(depth + 1);
+			if (r) return r;
+			placed.pop();
+			placed24.pop();
+		}
+		return null;
+	};
 
-  const sol = dfs(0);
-  return sol ? { decomposable: true, pieces: sol } : { decomposable: false, pieces: [] };
+	const sol = dfs(0);
+	return sol ? { decomposable: true, pieces: sol } : { decomposable: false, pieces: [] };
 }

@@ -57,10 +57,16 @@ export interface BubblePattern {
 /** The SUBSTRATE a bubble tiling decorates. "tri-hex" is a mixed substrate and not a lattice of its
  *  own: triangles and hexagons on one board, which is the tile set the paper's mixed (T,H) rows need. */
 export type BubbleGrid =
-	| "triangle" | "square" | "hex"
-	| "tri-hex" | "tri-square" | "tri-sq-hex"
+	| "triangle"
+	| "square"
+	| "hex"
+	| "tri-hex"
+	| "tri-square"
+	| "tri-sq-hex"
 	| "rhombus"
-	| "rhomb-tri" | "rhomb-hex" | "rhomb-tri-hex";
+	| "rhomb-tri"
+	| "rhomb-hex"
+	| "rhomb-tri-hex";
 
 /** Display order and labels for the lattice facet — the shelf's "folders". */
 // ⚑ GROUPED BY HEADING, and it has to be. /play gathers sub rows into families by SCANNING this order
@@ -69,10 +75,16 @@ export type BubbleGrid =
 // after the mixed regular boards, split "Mixed families" into two runs under one heading; the guard is
 // tests/catalogue-sub-family.test.ts. Single-family boards first, then every mixture.
 export const BUBBLE_GRID_ORDER: BubbleGrid[] = [
-	"triangle", "square", "hex",
+	"triangle",
+	"square",
+	"hex",
 	"rhombus",
-	"tri-hex", "tri-square", "tri-sq-hex",
-	"rhomb-tri", "rhomb-hex", "rhomb-tri-hex",
+	"tri-hex",
+	"tri-square",
+	"tri-sq-hex",
+	"rhomb-tri",
+	"rhomb-hex",
+	"rhomb-tri-hex",
 ];
 export const BUBBLE_GRID_LABEL: Record<BubbleGrid, string> = {
 	triangle: "Triangle",
@@ -187,7 +199,7 @@ function alignedTile(pts: [number, number][], bites: number[]): { word: number[]
 		const [ax, ay] = ring[(i + n - 1) % n];
 		const [bx, by] = ring[(i + 1) % n];
 		const t = Math.atan2(ay - y, ax - x) - Math.atan2(by - y, bx - x);
-		return Math.round((((t * 180) / Math.PI) % 360 + 360) % 360);
+		return Math.round(((((t * 180) / Math.PI) % 360) + 360) % 360);
 	});
 	let step = n;
 	for (let s = 1; s < n; s++)
@@ -198,7 +210,9 @@ function alignedTile(pts: [number, number][], bites: number[]): { word: number[]
 	// Anchor at the rotation whose (corner, bite) sequence is least. The angle dominates each pair, so
 	// index 0 lands on the same corner of every copy of the tile; the bites break the remaining tie,
 	// which is exactly the freedom `step` describes.
-	const rot = ang.map((_, s) => ang.map((_, i) => `${String(ang[(i + s) % n]).padStart(3, "0")}${word[(i + s) % n]}`).join(""));
+	const rot = ang.map((_, s) =>
+		ang.map((_, i) => `${String(ang[(i + s) % n]).padStart(3, "0")}${word[(i + s) % n]}`).join(""),
+	);
 	let best = 0;
 	for (let s = 1; s < n; s++) if (rot[s] < rot[best]) best = s;
 	return { word: word.map((_, i) => word[(i + best) % n]), step, ccw };
@@ -275,7 +289,10 @@ const familyStart = (n: number) => (n > 3 ? necklaceOrder(3).size : 0) + (n > 4 
 export function bubbleFamilyLabel(p: BubblePattern): string {
 	const count = new Map<string, number>();
 	p.polys.forEach((poly, f) => {
-		const { word, step } = alignedTile(poly.map((i) => p.verts[i]), p.bites[f]);
+		const { word, step } = alignedTile(
+			poly.map((i) => p.verts[i]),
+			p.bites[f],
+		);
 		const t = (rhombicLetter(p.grid) ?? FAMILY_LETTER[word.length]) + tileNameOf(word, step);
 		count.set(t, (count.get(t) ?? 0) + 1);
 	});

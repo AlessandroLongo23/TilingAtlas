@@ -16,10 +16,7 @@ interface PolygonsCanvasOptions {
  * ExpandedSeedCard, and anything else that draws a Polygon[] with HSB hue
  * fill + fit-to-bounds + device-pixel-ratio scaling.
  */
-export function usePolygonsCanvas(
-	polygons: Polygon[] | null,
-	options: PolygonsCanvasOptions = {},
-) {
+export function usePolygonsCanvas(polygons: Polygon[] | null, options: PolygonsCanvasOptions = {}) {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const {
 		backgroundColor = "rgba(24, 24, 27, 0.6)",

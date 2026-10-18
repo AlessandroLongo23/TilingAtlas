@@ -48,13 +48,5 @@ export default async function HyperbolicTheoryPage() {
 	const patches = await loadPatches(embeddedPatchIds(content));
 	const flatToc = extractTableOfContents(content);
 	const sections = structureTableOfContents(flatToc);
-	return (
-		<TheoryClient
-			content={content}
-			sections={sections}
-			cells={{}}
-			patches={patches}
-			currentSlug="hyperbolic"
-		/>
-	);
+	return <TheoryClient content={content} sections={sections} cells={{}} patches={patches} currentSlug="hyperbolic" />;
 }

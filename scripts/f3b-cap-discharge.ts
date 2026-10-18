@@ -53,49 +53,59 @@
  * same ordering as scout-worker.ts). Run the census to determine the affected indices.
  */
 
-import fs from 'node:fs';
-import path from 'node:path';
-import { PeriodSolver, defaultMaxCellPolys } from '@/classes/algorithm/PeriodSolver';
-import { TranslationalCellExtractor } from '@/classes/algorithm/TranslationalCellExtractor';
-import { dedupeByCongruence } from '@/classes/algorithm/TilingCongruence';
+import fs from "node:fs";
+import path from "node:path";
+import { PeriodSolver, defaultMaxCellPolys } from "@/classes/algorithm/PeriodSolver";
+import { TranslationalCellExtractor } from "@/classes/algorithm/TranslationalCellExtractor";
+import { dedupeByCongruence } from "@/classes/algorithm/TilingCongruence";
 import {
-	PolygonsGenerator, VCGenerator, CompatibilityGraph, SeedSetExtractor, SeedBuilder,
-	PolygonType, type GeneratorParameters,
-} from '@/classes';
-import { computeRing } from '@/classes/algorithm/PolygonsGenerator';
-import { setActiveRing, CyclotomicRing } from '@/classes/Cyclotomic';
+	PolygonsGenerator,
+	VCGenerator,
+	CompatibilityGraph,
+	SeedSetExtractor,
+	SeedBuilder,
+	PolygonType,
+	type GeneratorParameters,
+} from "@/classes";
+import { computeRing } from "@/classes/algorithm/PolygonsGenerator";
+import { setActiveRing, CyclotomicRing } from "@/classes/Cyclotomic";
 
 // ---------------------------------------------------------------------------
 // CLI argument parsing
 // ---------------------------------------------------------------------------
 function parseArgs():
-	| { mode: 'solve'; label: string; seeds: number[]; out: string }
-	| { mode: 'compare'; fileA: string; fileB: string } {
+	| { mode: "solve"; label: string; seeds: number[]; out: string }
+	| { mode: "compare"; fileA: string; fileB: string } {
 	const args = process.argv.slice(2);
-	if (args[0] === '--compare') {
+	if (args[0] === "--compare") {
 		const fileA = args[1];
 		const fileB = args[2];
 		if (!fileA || !fileB) {
-			console.error('Usage: --compare <fileA> <fileB>');
+			console.error("Usage: --compare <fileA> <fileB>");
 			process.exit(1);
 		}
-		return { mode: 'compare', fileA, fileB };
+		return { mode: "compare", fileA, fileB };
 	}
-	let label = 'stock';
-	let out = '/tmp/discharge-out.ndjson';
+	let label = "stock";
+	let out = "/tmp/discharge-out.ndjson";
 	let seeds: number[] = [];
 	for (let i = 0; i < args.length; i++) {
-		if (args[i] === '--label' && args[i + 1]) { label = args[++i]; }
-		else if (args[i] === '--out' && args[i + 1]) { out = args[++i]; }
-		else if (args[i] === '--seeds' && args[i + 1]) {
-			seeds = args[++i].split(',').map((s) => parseInt(s.trim(), 10)).filter((n) => !isNaN(n));
+		if (args[i] === "--label" && args[i + 1]) {
+			label = args[++i];
+		} else if (args[i] === "--out" && args[i + 1]) {
+			out = args[++i];
+		} else if (args[i] === "--seeds" && args[i + 1]) {
+			seeds = args[++i]
+				.split(",")
+				.map((s) => parseInt(s.trim(), 10))
+				.filter((n) => !isNaN(n));
 		}
 	}
-	if (label !== 'stock' && label !== 'raised') {
+	if (label !== "stock" && label !== "raised") {
 		console.error('--label must be "stock" or "raised"');
 		process.exit(1);
 	}
-	return { mode: 'solve', label, seeds, out };
+	return { mode: "solve", label, seeds, out };
 }
 
 // ---------------------------------------------------------------------------
@@ -103,7 +113,10 @@ function parseArgs():
 // ---------------------------------------------------------------------------
 function runCompare(fileA: string, fileB: string): void {
 	const readRecords = (f: string): Map<number, { label: string; seedName: string; keys: Set<string> }> => {
-		const lines = fs.readFileSync(f, 'utf8').split('\n').filter((l) => l.trim());
+		const lines = fs
+			.readFileSync(f, "utf8")
+			.split("\n")
+			.filter((l) => l.trim());
 		const map = new Map<number, { label: string; seedName: string; keys: Set<string> }>();
 		for (const line of lines) {
 			const r = JSON.parse(line) as { label: string; seedIdx: number; seedName: string; keys: string[]; count: number };
@@ -114,8 +127,8 @@ function runCompare(fileA: string, fileB: string): void {
 
 	const a = readRecords(fileA);
 	const b = readRecords(fileB);
-	const labelA = a.values().next().value?.label ?? 'A';
-	const labelB = b.values().next().value?.label ?? 'B';
+	const labelA = a.values().next().value?.label ?? "A";
+	const labelB = b.values().next().value?.label ?? "B";
 
 	console.log(`Comparing ${labelA} (${fileA}) vs ${labelB} (${fileB})`);
 	let nDiff = 0;
@@ -138,12 +151,16 @@ function runCompare(fileA: string, fileB: string): void {
 		}
 	}
 	if (nDiff === 0) {
-		console.log(`✓ BYTE-IDENTICAL: all ${a.size} seeds produce the same canonicalKey sets under ${labelA} and ${labelB}.`);
-		console.log('  The raised cap is non-binding for the oracle set — safe to promote to BLOCK_INDEX_CAP.');
+		console.log(
+			`✓ BYTE-IDENTICAL: all ${a.size} seeds produce the same canonicalKey sets under ${labelA} and ${labelB}.`,
+		);
+		console.log("  The raised cap is non-binding for the oracle set — safe to promote to BLOCK_INDEX_CAP.");
 	} else {
 		console.log(`⚠ DELTA: ${nDiff} seed(s) differ between ${labelA} and ${labelB}.`);
 		console.log('  A non-empty "only in raised" set means the raised cap uncovers previously-dropped tilings.');
-		console.log('  A non-empty "only in stock" set is impossible (raising the cap can only add, never remove) — indicates a bug.');
+		console.log(
+			'  A non-empty "only in stock" set is impossible (raising the cap can only add, never remove) — indicates a bug.',
+		);
 	}
 }
 
@@ -174,11 +191,13 @@ function runSolve(label: string, seedIdxs: number[], outPath: string): void {
 	const useSeeds = allSeeds.filter((s) => new Set(s.vertexConfigurations.map((v) => v.name)).size >= 2);
 
 	if (seedIdxs.length === 0) {
-		console.error('--seeds <comma-idxs> is required (and must be non-empty) — run the census first to determine affected seed indices.');
+		console.error(
+			"--seeds <comma-idxs> is required (and must be non-empty) — run the census first to determine affected seed indices.",
+		);
 		process.exit(1);
 	}
 
-	const outStream = fs.createWriteStream(outPath, { flags: 'w' });
+	const outStream = fs.createWriteStream(outPath, { flags: "w" });
 	const extractor = new TranslationalCellExtractor();
 	const solver = new PeriodSolver(k);
 	const ts0 = Date.now();
@@ -202,7 +221,7 @@ function runSolve(label: string, seedIdxs: number[], outPath: string): void {
 		const ms = Date.now() - ts;
 		console.log(`${deduped.length} cells  blockCapTrunc=${diag.blockIndexCapTruncated}  ${ms}ms`);
 		const record = { label, seedIdx: idx, seedName: seed.name, keys, count: keys.length };
-		outStream.write(JSON.stringify(record) + '\n');
+		outStream.write(JSON.stringify(record) + "\n");
 	}
 
 	outStream.end();
@@ -213,7 +232,7 @@ function runSolve(label: string, seedIdxs: number[], outPath: string): void {
 // Entry point
 // ---------------------------------------------------------------------------
 const parsed = parseArgs();
-if (parsed.mode === 'compare') {
+if (parsed.mode === "compare") {
 	runCompare(parsed.fileA, parsed.fileB);
 } else {
 	runSolve(parsed.label, parsed.seeds, parsed.out);

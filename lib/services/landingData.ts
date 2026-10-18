@@ -14,18 +14,8 @@
 import { type LandingData, type LandingPayload, pickDistinct } from "./landing-core";
 import payload from "./landing-data.generated.json";
 
-export {
-	countsOf,
-	pickDistinct,
-	pickUniformEleven,
-	toSpecimen,
-} from "./landing-core";
-export type {
-	LandingCounts,
-	LandingData,
-	LandingPayload,
-	LandingSpecimen,
-} from "./landing-core";
+export { countsOf, pickDistinct, pickUniformEleven, toSpecimen } from "./landing-core";
+export type { LandingCounts, LandingData, LandingPayload, LandingSpecimen } from "./landing-core";
 
 const LANDING = payload as LandingPayload;
 

@@ -81,8 +81,16 @@ export const SHAPE_CLASS_LABEL = Object.fromEntries(
 
 /** The palettes inside the "Multiple edge lengths" class. Planigons first: it is the larger tile set
  *  and the one whose name explains the class. */
-export const EDGE_BOARD_ORDER: EdgeBoard[] = ["planigon", "tri45", "penrose",
-	"euh-hexv", "euh-pent", "euh-hexm", "euh-sqmid", "euh-tri"];
+export const EDGE_BOARD_ORDER: EdgeBoard[] = [
+	"planigon",
+	"tri45",
+	"penrose",
+	"euh-hexv",
+	"euh-pent",
+	"euh-hexm",
+	"euh-sqmid",
+	"euh-tri",
+];
 /** ONE ROW PER TILE SHAPE. The four halved-polygon boards share a source but are four different
  *  tiles, and a visitor choosing here is choosing a shape — a single "Halved regular polygons"
  *  chip would hide a trapezoid, a quadrilateral, a pentagon and a domino behind one word. Two more

@@ -19,7 +19,10 @@ function inside(poly: { x: number; y: number }[], x: number, y: number): boolean
 }
 
 function boxOf(p: RawPolygon) {
-	let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+	let minX = Infinity,
+		maxX = -Infinity,
+		minY = Infinity,
+		maxY = -Infinity;
 	for (const v of p.vertices) {
 		if (v.x < minX) minX = v.x;
 		if (v.x > maxX) maxX = v.x;
@@ -130,11 +133,16 @@ describe("hatPatch", () => {
 describe("the patch views open at a comparable tile scale", () => {
 	/** How many tiles span the view when the whole patch is fitted — the thing the eye compares. */
 	const tilesAcross = (polys: RawPolygon[]) => {
-		let minx = Infinity, maxx = -Infinity, miny = Infinity, maxy = -Infinity;
+		let minx = Infinity,
+			maxx = -Infinity,
+			miny = Infinity,
+			maxy = -Infinity;
 		for (const p of polys)
 			for (const v of p.vertices) {
-				minx = Math.min(minx, v.x); maxx = Math.max(maxx, v.x);
-				miny = Math.min(miny, v.y); maxy = Math.max(maxy, v.y);
+				minx = Math.min(minx, v.x);
+				maxx = Math.max(maxx, v.x);
+				miny = Math.min(miny, v.y);
+				maxy = Math.max(maxy, v.y);
 			}
 		return Math.max(maxx - minx, maxy - miny) / characteristicTileSize(polys);
 	};
@@ -172,7 +180,8 @@ describe("the patch views open at a comparable tile scale", () => {
 			const e: number[] = [];
 			for (const p of polys)
 				for (let i = 0; i < p.vertices.length; i++) {
-					const a = p.vertices[i], b = p.vertices[(i + 1) % p.vertices.length];
+					const a = p.vertices[i],
+						b = p.vertices[(i + 1) % p.vertices.length];
 					e.push(Math.hypot(b.x - a.x, b.y - a.y));
 				}
 			return e.sort((x, y) => x - y)[e.length >> 1];

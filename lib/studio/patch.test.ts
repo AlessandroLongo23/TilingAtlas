@@ -45,26 +45,89 @@ function checkClosed(patch: StudioPatch, label: string): void {
 
 /** A unit square cell whose two periods are the axes: one face, two edges, one vertex. */
 const unitSquare: TranslationalCellData = {
-	p: [{ v: [[0, 0], [1, 0], [1, 1], [0, 1]], n: 4 }],
-	b: [[1, 0], [0, 1]],
+	p: [
+		{
+			v: [
+				[0, 0],
+				[1, 0],
+				[1, 1],
+				[0, 1],
+			],
+			n: 4,
+		},
+	],
+	b: [
+		[1, 0],
+		[0, 1],
+	],
 };
 
 /** Four unit squares in a 2x2 cell. Four faces, eight edges, four vertices. */
 const fourSquares: TranslationalCellData = {
 	p: [
-		{ v: [[0, 0], [1, 0], [1, 1], [0, 1]], n: 4 },
-		{ v: [[1, 0], [2, 0], [2, 1], [1, 1]], n: 4 },
-		{ v: [[0, 1], [1, 1], [1, 2], [0, 2]], n: 4 },
-		{ v: [[1, 1], [2, 1], [2, 2], [1, 2]], n: 4 },
+		{
+			v: [
+				[0, 0],
+				[1, 0],
+				[1, 1],
+				[0, 1],
+			],
+			n: 4,
+		},
+		{
+			v: [
+				[1, 0],
+				[2, 0],
+				[2, 1],
+				[1, 1],
+			],
+			n: 4,
+		},
+		{
+			v: [
+				[0, 1],
+				[1, 1],
+				[1, 2],
+				[0, 2],
+			],
+			n: 4,
+		},
+		{
+			v: [
+				[1, 1],
+				[2, 1],
+				[2, 2],
+				[1, 2],
+			],
+			n: 4,
+		},
 	],
-	b: [[2, 0], [0, 2]],
+	b: [
+		[2, 0],
+		[0, 2],
+	],
 };
 
 /** The regular hexagonal tiling: one hexagon, periods at 60 degrees. */
 const H = Math.sqrt(3) / 2;
 const hexCell: TranslationalCellData = {
-	p: [{ v: [[1, 0], [0.5, H], [-0.5, H], [-1, 0], [-0.5, -H], [0.5, -H]], n: 6 }],
-	b: [[1.5, H], [0, 2 * H]],
+	p: [
+		{
+			v: [
+				[1, 0],
+				[0.5, H],
+				[-0.5, H],
+				[-1, 0],
+				[-0.5, -H],
+				[0.5, -H],
+			],
+			n: 6,
+		},
+	],
+	b: [
+		[1.5, H],
+		[0, 2 * H],
+	],
 };
 
 describe("gaussReduce", () => {
@@ -135,10 +198,28 @@ describe("tilingToPatch on hand-built cells", () => {
 	it("drops an open polyline, which is a mark and not a tile", () => {
 		const withMark: TranslationalCellData = {
 			p: [
-				{ v: [[0, 0], [1, 0], [1, 1], [0, 1]], n: 4 },
-				{ v: [[0.2, 0.5], [0.8, 0.5]], n: 2, open: true },
+				{
+					v: [
+						[0, 0],
+						[1, 0],
+						[1, 1],
+						[0, 1],
+					],
+					n: 4,
+				},
+				{
+					v: [
+						[0.2, 0.5],
+						[0.8, 0.5],
+					],
+					n: 2,
+					open: true,
+				},
 			],
-			b: [[1, 0], [0, 1]],
+			b: [
+				[1, 0],
+				[0, 1],
+			],
 		};
 		const r = tilingToPatch(withMark);
 		expect(r.ok).toBe(true);
@@ -147,7 +228,22 @@ describe("tilingToPatch on hand-built cells", () => {
 	});
 
 	it("gives a reason instead of throwing on a degenerate basis", () => {
-		const r = tilingToPatch({ p: [{ v: [[0, 0], [1, 0], [1, 1]], n: 3 }], b: [[1, 0], [2, 0]] });
+		const r = tilingToPatch({
+			p: [
+				{
+					v: [
+						[0, 0],
+						[1, 0],
+						[1, 1],
+					],
+					n: 3,
+				},
+			],
+			b: [
+				[1, 0],
+				[2, 0],
+			],
+		});
 		expect(r.ok).toBe(false);
 		if (r.ok) return;
 		expect(r.reason).toMatch(/parallel/);
@@ -165,9 +261,7 @@ describe("tilingToPatch on hand-built cells", () => {
 
 const atlasPath = path.join(process.cwd(), "public", "reference-atlas.json");
 type Rec = { id: string; exactSource?: ExactCellSource };
-const atlas: Rec[] = fs.existsSync(atlasPath)
-	? decodeAtlas<Rec>(JSON.parse(fs.readFileSync(atlasPath, "utf8")))
-	: [];
+const atlas: Rec[] = fs.existsSync(atlasPath) ? decodeAtlas<Rec>(JSON.parse(fs.readFileSync(atlasPath, "utf8"))) : [];
 
 describe.skipIf(atlas.length === 0)("tilingToPatch on the shipped catalogue", () => {
 	// N = 24, and not 12: `reconstructOracleCell` goes through `detSurd`, which only exists in the
@@ -206,7 +300,10 @@ describe.skipIf(atlas.length === 0)("tilingToPatch on the shipped catalogue", ()
 			if (!cell) continue;
 			const r = tilingToPatch(cell as TranslationalCellData);
 			if (!r.ok) continue;
-			expect(r.patch.compRank.every((k) => k === 0), rec.id).toBe(true);
+			expect(
+				r.patch.compRank.every((k) => k === 0),
+				rec.id,
+			).toBe(true);
 		}
 	});
 });

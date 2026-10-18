@@ -2,7 +2,15 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { gunzipSync } from "node:zlib";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
-import { hypBarycenter, su11Apply, su11Identity, su11Inverse, su11Mul, su11Normalize, su11Translation } from "@/lib/render/hyperbolic";
+import {
+	hypBarycenter,
+	su11Apply,
+	su11Identity,
+	su11Inverse,
+	su11Mul,
+	su11Normalize,
+	su11Translation,
+} from "@/lib/render/hyperbolic";
 import { type Darts, HyperbolicDeveloper } from "@/lib/render/hyperbolicDevelopClient";
 import { WALK_APEIROGON, buildWalk, reanchor, snapPoint, walkPoint } from "@/lib/render/hyperbolicWalk";
 
@@ -59,7 +67,10 @@ describe("walk table", () => {
 			});
 			// A point deep in the cusp, far along the horocycle, is inside and comes back within one period.
 			const z = { x: 37.3 * st, y: 5 };
-			const w = { x: (z.x * z.x + z.y * z.y - 1) / (z.x * z.x + (z.y + 1) ** 2), y: (-2 * z.x) / (z.x * z.x + (z.y + 1) ** 2) };
+			const w = {
+				x: (z.x * z.x + z.y * z.y - 1) / (z.x * z.x + (z.y + 1) ** 2),
+				y: (-2 * z.x) / (z.x * z.x + (z.y + 1) ** 2),
+			};
 			const r = walkPoint(t, f, w);
 			expect(r.f).toBe(f);
 			expect(Math.hypot(r.w.x, r.w.y)).toBeLessThan(0.99);

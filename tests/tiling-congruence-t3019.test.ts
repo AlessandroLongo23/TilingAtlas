@@ -24,14 +24,14 @@
  * (R2, scripts/recert-oracle-match.ts) is retained as a standing differential check; post-R1 it is
  * expected to stay dormant (0 uses).
  */
-import { describe, it, expect } from 'vitest';
-import type { Cyclotomic } from '@/classes/Cyclotomic';
-import type { Polygon } from '@/classes/polygons/Polygon';
-import { cellsCongruent } from '@/classes/algorithm/TilingCongruence';
-import { sameLattice } from '@/classes/algorithm/LatticeEnumerator';
-import { detSurd } from '@/classes/algorithm/exact/Surd';
-import { deserializeCell, type SerializedCell } from '../scripts/scoutCodec';
-import { loadOracle, reconstructOracleCell } from '../scripts/oracle-match';
+import { describe, it, expect } from "vitest";
+import type { Cyclotomic } from "@/classes/Cyclotomic";
+import type { Polygon } from "@/classes/polygons/Polygon";
+import { cellsCongruent } from "@/classes/algorithm/TilingCongruence";
+import { sameLattice } from "@/classes/algorithm/LatticeEnumerator";
+import { detSurd } from "@/classes/algorithm/exact/Surd";
+import { deserializeCell, type SerializedCell } from "../scripts/scoutCodec";
+import { loadOracle, reconstructOracleCell } from "../scripts/oracle-match";
 
 /**
  * op1[301].0 — embedded VERBATIM from the OP-1 sweep artifact
@@ -43,25 +43,25 @@ import { loadOracle, reconstructOracleCell } from '../scripts/oracle-match';
  */
 const OP1_301_0: SerializedCell = {
 	polys: [
-		{ n: 3, a: { n: ['-4', '0', '0', '0', '2', '0', '3', '0'], d: '1' }, d: 0 },
-		{ n: 3, a: { n: ['0', '0', '0', '0', '-2', '0', '-3', '0'], d: '1' }, d: 4 },
-		{ n: 4, a: { n: ['0', '0', '0', '0', '-2', '0', '-3', '0'], d: '1' }, d: 12 },
-		{ n: 4, a: { n: ['0', '0', '0', '0', '-2', '0', '-4', '0'], d: '1' }, d: 12 },
-		{ n: 4, a: { n: ['-1', '0', '0', '0', '-1', '0', '-3', '0'], d: '1' }, d: 0 },
-		{ n: 3, a: { n: ['-4', '0', '0', '0', '3', '0', '4', '0'], d: '1' }, d: 0 },
-		{ n: 3, a: { n: ['0', '0', '0', '0', '-1', '0', '-2', '0'], d: '1' }, d: 4 },
+		{ n: 3, a: { n: ["-4", "0", "0", "0", "2", "0", "3", "0"], d: "1" }, d: 0 },
+		{ n: 3, a: { n: ["0", "0", "0", "0", "-2", "0", "-3", "0"], d: "1" }, d: 4 },
+		{ n: 4, a: { n: ["0", "0", "0", "0", "-2", "0", "-3", "0"], d: "1" }, d: 12 },
+		{ n: 4, a: { n: ["0", "0", "0", "0", "-2", "0", "-4", "0"], d: "1" }, d: 12 },
+		{ n: 4, a: { n: ["-1", "0", "0", "0", "-1", "0", "-3", "0"], d: "1" }, d: 0 },
+		{ n: 3, a: { n: ["-4", "0", "0", "0", "3", "0", "4", "0"], d: "1" }, d: 0 },
+		{ n: 3, a: { n: ["0", "0", "0", "0", "-1", "0", "-2", "0"], d: "1" }, d: 4 },
 	],
 	basis: [
-		{ n: ['1', '0', '0', '0', '0', '0', '0', '0'], d: '1' },
-		{ n: ['-1', '0', '0', '0', '2', '0', '3', '0'], d: '1' },
+		{ n: ["1", "0", "0", "0", "0", "0", "0", "0"], d: "1" },
+		{ n: ["-1", "0", "0", "0", "2", "0", "3", "0"], d: "1" },
 	],
 };
 
 // Oracle side via the proven decode (oracle-match.ts owns the module-level ring — reconstruct
 // FIRST, then deserialize the scout fixture with THAT ring instance; assertSameRing compares
 // instances, a second CyclotomicRing.create(24) would crash every cross comparison).
-const rec = reconstructOracleCell('t3019', loadOracle()['t3019']);
-if ('error' in rec) throw new Error(`t3019 oracle reconstruction failed: ${rec.error}`);
+const rec = reconstructOracleCell("t3019", loadOracle()["t3019"]);
+if ("error" in rec) throw new Error(`t3019 oracle reconstruction failed: ${rec.error}`);
 const oracle = rec.cell;
 const ring = oracle.basisExact[0].ring;
 const scout = deserializeCell(ring, OP1_301_0);
@@ -81,9 +81,7 @@ function isLatticeVectorExact(w: Cyclotomic, u: Cyclotomic, v: Cyclotomic): bool
 	const n0 = Math.round((a.x * d.y - a.y * d.x) / det);
 	for (let dm = -1; dm <= 1; dm++) {
 		for (let dn = -1; dn <= 1; dn++) {
-			const recon = u
-				.scaleRational(BigInt(m0 + dm), 1n)
-				.add(v.scaleRational(BigInt(n0 + dn), 1n));
+			const recon = u.scaleRational(BigInt(m0 + dm), 1n).add(v.scaleRational(BigInt(n0 + dn), 1n));
 			if (w.sub(recon).isZero()) return true;
 		}
 	}
@@ -97,8 +95,8 @@ function translatedKey(p: Polygon, t: Cyclotomic): string {
 	return q.exactKey();
 }
 
-describe('t3019 frozen fixture — reducedClassKey float-tie false negative (R1 FIXED)', () => {
-	it('(a) R1 regression: cellsCongruent(op1[301].0, t3019recon) is now TRUE (fast path)', () => {
+describe("t3019 frozen fixture — reducedClassKey float-tie false negative (R1 FIXED)", () => {
+	it("(a) R1 regression: cellsCongruent(op1[301].0, t3019recon) is now TRUE (fast path)", () => {
 		// Was the R1 acceptance signal (the bug returned false here); R1 made reducedClassKey an
 		// exact class invariant, so the genuine congruence — proven independently in test (b) by an
 		// exact pure-translation witness — is now recognised by the fast path. A regression to false
@@ -106,7 +104,7 @@ describe('t3019 frozen fixture — reducedClassKey float-tie false negative (R1 
 		expect(cellsCongruent(scout, oracle)).toBe(true);
 	});
 
-	it('(b) ground truth: structural invariants agree and an exact PURE TRANSLATION maps the scout cell onto t3019', () => {
+	it("(b) ground truth: structural invariants agree and an exact PURE TRANSLATION maps the scout cell onto t3019", () => {
 		const [uA, vA] = scout.basisExact;
 		const [uB, vB] = oracle.basisExact;
 

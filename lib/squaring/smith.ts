@@ -230,9 +230,7 @@ export function squaringFrom(map: PlanarMap, battery: [number, number]): Squarin
 		potential: potential.map((v) => v / divisor),
 		currents: netEdges.map(([a, c]) => {
 			const drop = potential[a] - potential[c];
-			return drop >= 0n
-				? { from: a, to: c, value: drop / divisor }
-				: { from: c, to: a, value: -drop / divisor };
+			return drop >= 0n ? { from: a, to: c, value: drop / divisor } : { from: c, to: a, value: -drop / divisor };
 		}),
 	};
 }

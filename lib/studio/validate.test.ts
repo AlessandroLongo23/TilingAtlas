@@ -17,9 +17,7 @@ function studioPatch(
 	medianEdge: number,
 ): StudioPatch {
 	const incident: { face: number; cornerIdx: number }[][] = verts.map(() => []);
-	polys.forEach((ring, face) =>
-		ring.forEach(([vi], cornerIdx) => incident[vi].push({ face, cornerIdx })),
-	);
+	polys.forEach((ring, face) => ring.forEach(([vi], cornerIdx) => incident[vi].push({ face, cornerIdx })));
 	const bare = mergeFaces(polys, () => true); // every edge drawn: one component per face
 	return {
 		T1,

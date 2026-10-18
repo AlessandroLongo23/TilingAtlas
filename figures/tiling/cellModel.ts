@@ -3,11 +3,11 @@
  * vertices (`Cyclotomic.toVector()`), so the corner↔orbit correspondence is 1:1 by construction —
  * the figure pipeline never touches found_tilings.render_cell.
  */
-import { CyclotomicRing, setActiveRing } from '@/classes/Cyclotomic';
-import type { SerializedCell } from '../../scripts/scoutCodec';
-import { deserializeCell } from '../../scripts/scoutCodec';
-import type { Rect, V2 } from '../ir/types';
-import type { TilingOrbits } from './orbits';
+import { CyclotomicRing, setActiveRing } from "@/classes/Cyclotomic";
+import type { SerializedCell } from "../../scripts/scoutCodec";
+import { deserializeCell } from "../../scripts/scoutCodec";
+import type { Rect, V2 } from "../ir/types";
+import type { TilingOrbits } from "./orbits";
 
 export type CellPoly = {
 	n: number;
@@ -52,13 +52,16 @@ export function buildCellModel(codec: SerializedCell, orbits: TilingOrbits): Cel
 	setActiveRing(ring);
 	const cell = deserializeCell(ring, codec);
 	if (cell.cellPolygons.length !== orbits.orbitOfCorner.length) {
-		throw new Error('cellModel: orbit cache does not match cell polygon count — rebuild orbits.json');
+		throw new Error("cellModel: orbit cache does not match cell polygon count — rebuild orbits.json");
 	}
 	const u0 = cell.basisExact[0].toVector();
 	const v0 = cell.basisExact[1].toVector();
 	const rot = alignmentRotation({ x: u0.x, y: u0.y }, { x: v0.x, y: v0.y });
 
-	let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+	let minX = Infinity,
+		minY = Infinity,
+		maxX = -Infinity,
+		maxY = -Infinity;
 	const polys: CellPoly[] = cell.cellPolygons.map((p, pi) => {
 		const verts = p.exactVertices!.map((vx) => {
 			const w = vx.toVector();

@@ -62,9 +62,13 @@ export function PeriodFigure({ panel, dirs, size }: { panel?: string; dirs?: str
 		let alive = true;
 		fetch("/defense/period-figure.json")
 			.then((r) => r.json())
-			.then((d: FigureData) => { if (alive) setData(d); })
+			.then((d: FigureData) => {
+				if (alive) setData(d);
+			})
 			.catch(() => {});
-		return () => { alive = false; };
+		return () => {
+			alive = false;
+		};
 	}, []);
 
 	// The alphabet actually drawn, and the two chains written in it.
@@ -81,7 +85,8 @@ export function PeriodFigure({ panel, dirs, size }: { panel?: string; dirs?: str
 
 	// --- panel one: the alphabet -------------------------------------------------------------------
 	useEffect(() => {
-		const host = wheelHost.current, canvas = wheelCanvas.current;
+		const host = wheelHost.current,
+			canvas = wheelCanvas.current;
 		if (!host || !canvas || !view) return;
 		const N = view.N;
 
@@ -101,48 +106,64 @@ export function PeriodFigure({ panel, dirs, size }: { panel?: string; dirs?: str
 
 	// --- panels two and three: one word in that alphabet, and what it fixes -------------------------
 	useEffect(() => {
-		const chainHost = exHost.current, chainCanvas = exCanvas.current;
-		const fillHost = cellHost.current, fillCanvas = cellCanvas.current;
+		const chainHost = exHost.current,
+			chainCanvas = exCanvas.current;
+		const fillHost = cellHost.current,
+			fillCanvas = cellCanvas.current;
 		if (!chainHost || !chainCanvas || !fillHost || !fillCanvas || !data || !view) return;
 
 		const N = view.N;
 		const unit = (k: number): [number, number] => [Math.cos((2 * Math.PI * k) / N), Math.sin((2 * Math.PI * k) / N)];
 		const chainPoints = (chain: number[]) => {
 			const pts: [number, number][] = [[0, 0]];
-			let x = 0, y = 0;
-			for (const k of chain) { const [dx, dy] = unit(k); x += dx; y += dy; pts.push([x, y]); }
+			let x = 0,
+				y = 0;
+			for (const k of chain) {
+				const [dx, dy] = unit(k);
+				x += dx;
+				y += dy;
+				pts.push([x, y]);
+			}
 			return pts;
 		};
 		const p1 = chainPoints(view.t1);
 		const p2 = chainPoints(view.t2);
-		const [t1x, t1y] = data.t1.xy, [t2x, t2y] = data.t2.xy;
+		const [t1x, t1y] = data.t1.xy,
+			[t2x, t2y] = data.t2.xy;
 
 		/**
 		 * One bounding box for both panels, so the cell sits in the same place in each: the period
 		 * parallelogram plus a quarter of itself on every side, which leaves the arrows most of the
 		 * frame and still shows that the tiling carries on past the cell.
 		 */
-		const cx = [0, t1x, t2x, t1x + t2x], cy = [0, t1y, t2y, t1y + t2y];
-		const bw = Math.max(...cx) - Math.min(...cx), bh = Math.max(...cy) - Math.min(...cy);
+		const cx = [0, t1x, t2x, t1x + t2x],
+			cy = [0, t1y, t2y, t1y + t2y];
+		const bw = Math.max(...cx) - Math.min(...cx),
+			bh = Math.max(...cy) - Math.min(...cy);
 		const M = 0.18;
 		const box = {
-			minX: Math.min(...cx) - M * bw, maxX: Math.max(...cx) + M * bw,
-			minY: Math.min(...cy) - M * bh, maxY: Math.max(...cy) + M * bh,
+			minX: Math.min(...cx) - M * bw,
+			maxX: Math.max(...cx) + M * bw,
+			minY: Math.min(...cy) - M * bh,
+			maxY: Math.max(...cy) + M * bh,
 		};
 
 		// Enough of the tiling to leave no white corner in the frame at any panel shape. `box` sets the
 		// scale, but a 4:3 canvas showing a box of some other aspect sees WIDER than the box on one
 		// axis, so the tiles are generated over a square around it big enough to cover either case.
 		const half = 0.9 * Math.max(box.maxX - box.minX, box.maxY - box.minY);
-		const midX = (box.minX + box.maxX) / 2, midY = (box.minY + box.maxY) / 2;
+		const midX = (box.minX + box.maxX) / 2,
+			midY = (box.minY + box.maxY) / 2;
 		const covered = { minX: midX - half, maxX: midX + half, minY: midY - half, maxY: midY + half };
 		const tiles: { q: [number, number][]; n: number }[] = [];
 		for (let i = -10; i <= 10; i++) {
 			for (let j = -10; j <= 10; j++) {
-				const ox = i * t1x + j * t2x, oy = i * t1y + j * t2y;
+				const ox = i * t1x + j * t2x,
+					oy = i * t1y + j * t2y;
 				for (const poly of data.polys) {
 					const q = poly.v.map(([x, y]) => [x + ox, y + oy] as [number, number]);
-					const qx = q.map((v) => v[0]), qy = q.map((v) => v[1]);
+					const qx = q.map((v) => v[0]),
+						qy = q.map((v) => v[1]);
 					if (Math.min(...qx) > covered.maxX || Math.max(...qx) < covered.minX) continue;
 					if (Math.min(...qy) > covered.maxY || Math.max(...qy) < covered.minY) continue;
 					tiles.push({ q, n: poly.n });
@@ -166,11 +187,7 @@ export function PeriodFigure({ panel, dirs, size }: { panel?: string; dirs?: str
 		};
 
 		/** `chains` draws the two words; `fill` draws the tiling. Never both: that was the old figure. */
-		const paint = (
-			host: HTMLDivElement,
-			canvas: HTMLCanvasElement,
-			mode: "chains" | "fill",
-		) => {
+		const paint = (host: HTMLDivElement, canvas: HTMLCanvasElement, mode: "chains" | "fill") => {
 			const p = prepare(host, canvas, box, 0.94);
 			if (!p) return;
 			const { ctx, s } = p;
@@ -259,14 +276,18 @@ export function PeriodFigure({ panel, dirs, size }: { panel?: string; dirs?: str
 				drawChain(p1, view.t1);
 				drawChain(p2, view.t2);
 
-				for (const [ex, ey] of [[t1x, t1y], [t2x, t2y]] as const) {
+				for (const [ex, ey] of [
+					[t1x, t1y],
+					[t2x, t2y],
+				] as const) {
 					ctx.strokeStyle = "rgba(20,20,20,0.85)";
 					ctx.lineWidth = 2 / s;
 					ctx.beginPath();
 					ctx.moveTo(0, 0);
 					ctx.lineTo(ex, ey);
 					ctx.stroke();
-					const a = Math.atan2(ey, ex), head = 13 / s;
+					const a = Math.atan2(ey, ex),
+						head = 13 / s;
 					ctx.fillStyle = "rgba(20,20,20,0.85)";
 					ctx.beginPath();
 					ctx.moveTo(ex, ey);
@@ -289,9 +310,13 @@ export function PeriodFigure({ panel, dirs, size }: { panel?: string; dirs?: str
 				] as const) {
 					// Half way along, pushed off the arrow on the side AWAY from the other period: that is
 					// the outside of the parallelogram, and the chain of ζ steps runs along the inside.
-					let nx = -ey, ny = ex;
+					let nx = -ey,
+						ny = ex;
 					const len = Math.hypot(nx, ny) || 1;
-					if (nx * ox + ny * oy > 0) { nx = -nx; ny = -ny; }
+					if (nx * ox + ny * oy > 0) {
+						nx = -nx;
+						ny = -ny;
+					}
 					const off = (px * 1.15) / s / len;
 					const [tx, ty] = map(ex / 2 + nx * off, ey / 2 + ny * off);
 
@@ -345,7 +370,7 @@ export function PeriodFigure({ panel, dirs, size }: { panel?: string; dirs?: str
 					<figure className="m-0 flex flex-col items-center gap-1">
 						<div
 							ref={wheelHost}
-							className={`relative aspect-square ${solo ? (compact ? "h-[27vh]" : "h-[44vh]") : "h-[34vh]"} rounded-2xl border border-line bg-surface-base`}
+							className={`relative aspect-square ${solo ? (compact ? "h-[27vh]" : "h-[44vh]") : "h-[34vh]"} bg-surface-base rounded-2xl border border-line`}
 						>
 							<canvas ref={wheelCanvas} className="absolute inset-0 h-full w-full" />
 						</div>
@@ -359,7 +384,7 @@ export function PeriodFigure({ panel, dirs, size }: { panel?: string; dirs?: str
 						<figure className="m-0 flex flex-col items-center gap-1">
 							<div
 								ref={exHost}
-								className={`relative aspect-[4/3] ${panelH} rounded-2xl border border-line bg-surface-base`}
+								className={`relative aspect-[4/3] ${panelH} bg-surface-base rounded-2xl border border-line`}
 							>
 								<canvas ref={exCanvas} className="absolute inset-0 h-full w-full" />
 							</div>
@@ -368,13 +393,13 @@ export function PeriodFigure({ panel, dirs, size }: { panel?: string; dirs?: str
 							    each one is, and a line of grey text under a drawing is read by nobody. */}
 							{data && view ? (
 								// The size is INLINE and not a utility class: the deck styles slide paragraphs with
-							// its own responsive rule, and a selector beats a single class, so a `text-[…]`
-							// here silently does nothing. `w-0 min-w-full` keeps a long sum from widening the
-							// figure past its own panel and wrapping the pair onto two rows.
-							<p
-								className="m-0 w-0 min-w-full text-center font-mono leading-relaxed text-fg-secondary"
-								style={{ fontSize: "clamp(0.6rem, 1.25vh + 0.37vw, 1.15rem)" }}
-							>
+								// its own responsive rule, and a selector beats a single class, so a `text-[…]`
+								// here silently does nothing. `w-0 min-w-full` keeps a long sum from widening the
+								// figure past its own panel and wrapping the pair onto two rows.
+								<p
+									className="m-0 w-0 min-w-full text-center font-mono leading-relaxed text-fg-secondary"
+									style={{ fontSize: "clamp(0.6rem, 1.25vh + 0.37vw, 1.15rem)" }}
+								>
 									T₁ = {sum(view.t1, view.N)}
 									<span className="text-fg-muted"> ({data.t1.weight} steps)</span>
 									<br />
@@ -386,7 +411,7 @@ export function PeriodFigure({ panel, dirs, size }: { panel?: string; dirs?: str
 						<figure className="m-0 flex flex-col items-center gap-1">
 							<div
 								ref={cellHost}
-								className={`relative aspect-[4/3] ${panelH} rounded-2xl border border-line bg-surface-base`}
+								className={`relative aspect-[4/3] ${panelH} bg-surface-base rounded-2xl border border-line`}
 							>
 								<canvas ref={cellCanvas} className="absolute inset-0 h-full w-full" />
 							</div>

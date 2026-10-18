@@ -193,7 +193,11 @@ describe("edgeMask", () => {
 	it("never pins a channel at a vertex where the real edge must be measured", () => {
 		// Any triangle of any n-gon: the mask at vertex k has channel k = 1, so min() still reaches 0
 		// on every unpinned edge.
-		for (const [a, b, c, n] of [[0, 1, 2, 13], [3, 7, 12, 13], [5, 6, 11, 13]] as const) {
+		for (const [a, b, c, n] of [
+			[0, 1, 2, 13],
+			[3, 7, 12, 13],
+			[5, 6, 11, 13],
+		] as const) {
 			const m = edgeMask(a, b, c, n);
 			expect(m[0]).toBe(1); // vertex 0's own channel
 			expect(m[4]).toBe(1); // vertex 1's own channel

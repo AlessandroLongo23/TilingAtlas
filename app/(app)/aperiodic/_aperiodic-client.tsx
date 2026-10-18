@@ -77,7 +77,7 @@ export function AperiodicClient() {
 				</select>
 				<span
 					aria-hidden
-					className="pointer-events-none flex h-11 items-center gap-1.5 rounded-full border border-line bg-surface-raised pl-4 pr-3 text-sm font-medium text-fg shadow-sm peer-focus-visible:ring-2 peer-focus-visible:ring-accent/50"
+					className="pointer-events-none flex h-11 items-center gap-1.5 rounded-full border border-line bg-surface-raised pr-3 pl-4 text-sm font-medium text-fg shadow-sm peer-focus-visible:ring-2 peer-focus-visible:ring-accent/50"
 				>
 					Construction
 					<ChevronDown size={16} className="text-fg-muted" />
@@ -89,8 +89,8 @@ export function AperiodicClient() {
 	const header = (
 		<>
 			<div className="flex flex-col gap-1">
-				<h1 className="text-[15px] font-semibold leading-tight text-fg">{active.label}</h1>
-				<p className="text-xs text-fg-muted truncate" title={active.blurb}>
+				<h1 className="text-[15px] leading-tight font-semibold text-fg">{active.label}</h1>
+				<p className="truncate text-xs text-fg-muted" title={active.blurb}>
 					{active.group} · {active.blurb}
 				</p>
 			</div>
@@ -112,10 +112,7 @@ export function AperiodicClient() {
 			    height both panels share what is left. Capped at half the screen, so the full snap (which
 			    covers the canvas anyway) does not squeeze the panels to nothing. */}
 			<div
-				className={cn(
-					"flex-1 min-h-0 flex",
-					view === "multigrid" && "max-md:pb-[min(var(--sheet-offset,0px),50dvh)]",
-				)}
+				className={cn("flex min-h-0 flex-1", view === "multigrid" && "max-md:pb-[min(var(--sheet-offset,0px),50dvh)]")}
 			>
 				{view === "multigrid" ? (
 					<MultigridView header={header} />

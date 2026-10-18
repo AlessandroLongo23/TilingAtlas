@@ -19,11 +19,9 @@ export const usePipelineProgress = create<PipelineProgressState>()((set) => ({
 	progress: null,
 	message: "",
 	canClose: false,
-	open: (title, message = "") =>
-		set({ isOpen: true, title, progress: null, message, canClose: false }),
+	open: (title, message = "") => set({ isOpen: true, title, progress: null, message, canClose: false }),
 	update: (progress, message) => set((s) => ({ ...s, progress, message })),
-	complete: (message = "Done") =>
-		set((s) => ({ ...s, progress: 100, message, canClose: true })),
+	complete: (message = "Done") => set((s) => ({ ...s, progress: 100, message, canClose: true })),
 	fail: (message) => set((s) => ({ ...s, message, canClose: true })),
 	close: () => set((s) => ({ ...s, isOpen: false, canClose: false })),
 }));

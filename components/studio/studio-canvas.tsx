@@ -11,12 +11,7 @@ import { build, type BuildResult } from "@/lib/studio/doc";
 import { tilingToPatch } from "@/lib/studio/patch";
 import { drawStudio, type StudioOverlay, type StudioStyle, type StudioView } from "@/lib/studio/render";
 import { affectedComponents, projectToSite, siteSymmetry } from "@/lib/studio/symmetry";
-import {
-	canCommitCut,
-	canDropEdge,
-	canExtendCut,
-	clampVertexMove,
-} from "@/lib/studio/validate";
+import { canCommitCut, canDropEdge, canExtendCut, clampVertexMove } from "@/lib/studio/validate";
 import {
 	constructionPoints,
 	nearestPoint,
@@ -29,14 +24,7 @@ import {
 	vertexAt,
 } from "@/lib/studio/snap";
 import { asRejection, EMPTY_DOC } from "@/lib/studio/types";
-import type {
-	ConstructionPoint,
-	Curve4,
-	PaintScope,
-	Pt,
-	StudioDoc,
-	StudioPatch,
-} from "@/lib/studio/types";
+import type { ConstructionPoint, Curve4, PaintScope, Pt, StudioDoc, StudioPatch } from "@/lib/studio/types";
 import {
 	accumulateDetents,
 	ROTATE_SNAP_DEG,
@@ -150,10 +138,7 @@ export function StudioCanvas({ cell, cellId, symmetryData, onStats, readOnly = f
 	const rotation = useConfiguration((s) => s.rotation);
 	const lineWidth = useConfiguration((s) => s.lineWidth);
 	const hueOffset = useConfiguration((s) => s.hueOffset);
-	const setRotation = useCallback(
-		(deg: number) => useConfiguration.getState().set({ rotation: deg }),
-		[],
-	);
+	const setRotation = useCallback((deg: number) => useConfiguration.getState().set({ rotation: deg }), []);
 	// Read from the shared controls, so the angle a pointer handler undoes is the angle the draw used.
 	const radNow = useCallback(() => ((useConfiguration.getState().controls.rotation || 0) * Math.PI) / 180, []);
 
@@ -317,9 +302,7 @@ export function StudioCanvas({ cell, cellId, symmetryData, onStats, readOnly = f
 			affected: affectedRef.current,
 			hoverEdge: hoverEdgeRef.current,
 			hoverVertex: hoverVertRef.current,
-			cutPath: cut
-				.map((r) => refPosition(built.patch, r))
-				.filter((p): p is Pt => p !== null),
+			cutPath: cut.map((r) => refPosition(built.patch, r)).filter((p): p is Pt => p !== null),
 			cursor: cursorRef.current,
 			snap: snapRef.current,
 			notice: readOnly ? null : (useStudio.getState().rejection?.message ?? null),
@@ -405,7 +388,8 @@ export function StudioCanvas({ cell, cellId, symmetryData, onStats, readOnly = f
 		if (touch.pinching) return;
 		// A few px of travel settles it: one finger, dragging. (Less is the jitter of a finger at rest.)
 		const held = pendingRef.current;
-		if (held && builtRef.current && Math.hypot(e.clientX - held.x, e.clientY - held.y) > 8) flushPending(builtRef.current);
+		if (held && builtRef.current && Math.hypot(e.clientX - held.x, e.clientY - held.y) > 8)
+			flushPending(builtRef.current);
 		const g = gestureRef.current;
 		if (g?.kind === "pan") {
 			// Target AND live together, and in SCREEN px with no rotation undone: `controls.offset` is a
@@ -485,12 +469,7 @@ export function StudioCanvas({ cell, cellId, symmetryData, onStats, readOnly = f
 			// promising more than the edit delivers would be worse than none.
 			const carriesOrbit = tool === "paint";
 			affectedRef.current = hoverRef.current
-				? affectedComponents(
-						p,
-						symmetryData ?? null,
-						hoverRef.current.face,
-						carriesOrbit ? periodMode : "lattice",
-					)
+				? affectedComponents(p, symmetryData ?? null, hoverRef.current.face, carriesOrbit ? periodMode : "lattice")
 				: new Set();
 		} else {
 			affectedRef.current = new Set();
@@ -504,8 +483,7 @@ export function StudioCanvas({ cell, cellId, symmetryData, onStats, readOnly = f
 		}
 		// Under the cut tool the cursor has to say which point it would take. A path already under way
 		// excludes centroids from the END, because a path cannot commit on one.
-		snapRef.current =
-			tool === "cut" ? nearestPoint(p, cutCandidates(p), world, r * 2) ?? null : null;
+		snapRef.current = tool === "cut" ? (nearestPoint(p, cutCandidates(p), world, r * 2) ?? null) : null;
 		dirtyRef.current = true;
 	}
 
@@ -549,11 +527,7 @@ export function StudioCanvas({ cell, cellId, symmetryData, onStats, readOnly = f
 		}
 	}
 
-	function continueToolGesture(
-		built: BuildResult,
-		world: Pt,
-		g: NonNullable<typeof gestureRef.current>,
-	) {
+	function continueToolGesture(built: BuildResult, world: Pt, g: NonNullable<typeof gestureRef.current>) {
 		const p = built.patch;
 		if (g.kind === "merge") {
 			const hit = pickFace(p, world);
@@ -734,8 +708,7 @@ export function StudioCanvas({ cell, cellId, symmetryData, onStats, readOnly = f
 		}
 	};
 
-	const cursor =
-		tool === "select" ? "grab" : tool === "cut" || tool === "move" ? "crosshair" : "pointer";
+	const cursor = tool === "select" ? "grab" : tool === "cut" || tool === "move" ? "crosshair" : "pointer";
 
 	return (
 		<canvas

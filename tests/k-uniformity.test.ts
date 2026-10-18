@@ -1,11 +1,11 @@
-import { describe, it, expect } from 'vitest';
-import { VertexConfiguration } from '@/classes/algorithm/VertexConfiguration';
-import { SeedConfiguration } from '@/classes/algorithm/SeedConfiguration';
-import { SeedExpander } from '@/classes/algorithm/SeedExpander';
-import { TranslationalCellExtractor } from '@/classes/algorithm/TranslationalCellExtractor';
-import { KUniformityChecker } from '@/classes/algorithm/KUniformityChecker';
-import { dedupeByCongruence } from '@/classes/algorithm/TilingCongruence';
-import type { PeriodCell } from '@/classes/algorithm/PeriodSolver';
+import { describe, it, expect } from "vitest";
+import { VertexConfiguration } from "@/classes/algorithm/VertexConfiguration";
+import { SeedConfiguration } from "@/classes/algorithm/SeedConfiguration";
+import { SeedExpander } from "@/classes/algorithm/SeedExpander";
+import { TranslationalCellExtractor } from "@/classes/algorithm/TranslationalCellExtractor";
+import { KUniformityChecker } from "@/classes/algorithm/KUniformityChecker";
+import { dedupeByCongruence } from "@/classes/algorithm/TilingCongruence";
+import type { PeriodCell } from "@/classes/algorithm/PeriodSolver";
 import {
 	PolygonsGenerator,
 	VCGenerator,
@@ -14,10 +14,10 @@ import {
 	SeedBuilder,
 	PolygonType,
 	type GeneratorParameters,
-} from '@/classes';
-import { computeRing } from '@/classes/algorithm/PolygonsGenerator';
-import { setActiveRing, CyclotomicRing } from '@/classes/Cyclotomic';
-import type { Polygon } from '@/classes/polygons/Polygon';
+} from "@/classes";
+import { computeRing } from "@/classes/algorithm/PolygonsGenerator";
+import { setActiveRing, CyclotomicRing } from "@/classes/Cyclotomic";
+import type { Polygon } from "@/classes/polygons/Polygon";
 
 setActiveRing(CyclotomicRing.create(24));
 
@@ -37,20 +37,20 @@ function orbitCountForVC(name: string, threshold?: number): number | null {
 	return new KUniformityChecker().countVertexOrbits(res!.cellPolygons, res!.basisExact![0], res!.basisExact![1]);
 }
 
-describe('exact k-uniformity gate: the 11 regular 1-uniform tilings each have exactly 1 vertex orbit', () => {
+describe("exact k-uniformity gate: the 11 regular 1-uniform tilings each have exactly 1 vertex orbit", () => {
 	// The 11 Archimedean (regular 1-uniform) tilings.
 	const oneUniform = [
-		'4,4,4,4',
-		'3,3,3,3,3,3',
-		'6,6,6',
-		'3,3,3,3,6', // snub hexagonal (chiral; rotation-only symmetry group)
-		'3,3,3,4,4',
-		'3,3,4,3,4',
-		'3,4,6,4',
-		'3,6,3,6',
-		'3,12,12',
-		'4,6,12',
-		'4,8,8',
+		"4,4,4,4",
+		"3,3,3,3,3,3",
+		"6,6,6",
+		"3,3,3,3,6", // snub hexagonal (chiral; rotation-only symmetry group)
+		"3,3,3,4,4",
+		"3,3,4,3,4",
+		"3,4,6,4",
+		"3,6,3,6",
+		"3,12,12",
+		"4,6,12",
+		"4,8,8",
 	];
 	for (const name of oneUniform) {
 		it(`${name} → 1 orbit`, { timeout: 30000 }, () => {
@@ -59,8 +59,8 @@ describe('exact k-uniformity gate: the 11 regular 1-uniform tilings each have ex
 	}
 });
 
-describe('k=1 regular-polygon pipeline reproduces 11 (the gate is purely additive: all 11 pass)', () => {
-	it('counts exactly 11 distinct 1-uniform tilings, all with orbit-count 1', { timeout: 60000 }, () => {
+describe("k=1 regular-polygon pipeline reproduces 11 (the gate is purely additive: all 11 pass)", () => {
+	it("counts exactly 11 distinct 1-uniform tilings, all with orbit-count 1", { timeout: 60000 }, () => {
 		const parameters: GeneratorParameters = { [PolygonType.REGULAR]: { ns: [3, 4, 6, 8, 12] } };
 		setActiveRing(computeRing(parameters));
 
@@ -110,7 +110,7 @@ describe('k=1 regular-polygon pipeline reproduces 11 (the gate is purely additiv
 	});
 });
 
-describe('the gate returns 2 for genuine 2-uniform tilings (not stuck at 1, and over-count fixed)', () => {
+describe("the gate returns 2 for genuine 2-uniform tilings (not stuck at 1, and over-count fixed)", () => {
 	// Build the k=2 seeds once.
 	const parameters: GeneratorParameters = { [PolygonType.REGULAR]: { ns: [3, 4, 6, 8, 12] } };
 	setActiveRing(computeRing(parameters));
@@ -128,12 +128,10 @@ describe('the gate returns 2 for genuine 2-uniform tilings (not stuck at 1, and 
 	const seedSets = new SeedSetExtractor(graph).findSeedSets(2);
 	const seeds = new SeedBuilder().buildSeeds(2, 1, { seedSetLoader: () => seedSets });
 
-	const STOP = Symbol('stop');
+	const STOP = Symbol("stop");
 	/** Orbit count of the first DFS leaf that yields a valid periodic cell (deterministic). */
 	function firstCellOrbits(seedName: string): number | null {
-		const seed = seeds.find(
-			(s) => s.name === seedName && new Set(s.vertexConfigurations.map((v) => v.name)).size >= 2
-		);
+		const seed = seeds.find((s) => s.name === seedName && new Set(s.vertexConfigurations.map((v) => v.name)).size >= 2);
 		expect(seed).toBeDefined();
 		const cell = new TranslationalCellExtractor();
 		const checker = new KUniformityChecker();
@@ -153,7 +151,7 @@ describe('the gate returns 2 for genuine 2-uniform tilings (not stuck at 1, and 
 	}
 
 	// These two 2-uniform seeds reach their first periodic leaf quickly and deterministically.
-	for (const name of ['[3,3,3,3,3,3;3,3,6,6]', '[3,3,3,3,3,3;3,3,4,3,4]']) {
+	for (const name of ["[3,3,3,3,3,3;3,3,6,6]", "[3,3,3,3,3,3;3,3,4,3,4]"]) {
 		it(`${name} → first periodic cell has 2 vertex orbits`, { timeout: 30000 }, () => {
 			expect(firstCellOrbits(name)).toBe(2);
 		});
@@ -166,22 +164,25 @@ describe('the gate returns 2 for genuine 2-uniform tilings (not stuck at 1, and 
 		const rotMin = (a: number[]) => {
 			let best: string | null = null;
 			for (let i = 0; i < a.length; i++) {
-				const r = a.slice(i).concat(a.slice(0, i)).join(',');
+				const r = a.slice(i).concat(a.slice(0, i)).join(",");
 				if (best === null || r < best) best = r;
 			}
 			return best!;
 		};
-		const f = rotMin(ns), r = rotMin(ns.slice().reverse());
+		const f = rotMin(ns),
+			r = rotMin(ns.slice().reverse());
 		return f < r ? f : r;
 	};
 	function leafHasDisallowedVC(patch: Polygon[], allowed: Set<string>): boolean {
-		const inc = new Map<string, { units: number; polys: Polygon[]; v: import('@/classes/Cyclotomic').Cyclotomic }>();
+		const inc = new Map<string, { units: number; polys: Polygon[]; v: import("@/classes/Cyclotomic").Cyclotomic }>();
 		for (const p of patch)
 			for (const vx of p.exactVertices!) {
 				const k = vx.key();
 				const e = inc.get(k);
-				if (e) { e.units += angleUnits(p.n); e.polys.push(p); }
-				else inc.set(k, { units: angleUnits(p.n), polys: [p], v: vx });
+				if (e) {
+					e.units += angleUnits(p.n);
+					e.polys.push(p);
+				} else inc.set(k, { units: angleUnits(p.n), polys: [p], v: vx });
 			}
 		for (const { units, polys, v } of inc.values()) {
 			if (Math.abs(units - 24) > 1e-9) continue;
@@ -195,13 +196,12 @@ describe('the gate returns 2 for genuine 2-uniform tilings (not stuck at 1, and 
 		return false;
 	}
 
-	it('every emitted leaf of a fast 2-uniform seed uses only allowed VCs', { timeout: 30000 }, () => {
-		const name = '[3,3,3,3,3,3;3,3,6,6]';
-		const seed = seeds.find(
-			(s) => s.name === name && new Set(s.vertexConfigurations.map((v) => v.name)).size >= 2
-		)!;
-		const allowed = new Set(seed.vertexConfigurations.map((vc) => canonVC(vc.name.split(',').map(Number))));
-		let leaves = 0, bad = 0;
+	it("every emitted leaf of a fast 2-uniform seed uses only allowed VCs", { timeout: 30000 }, () => {
+		const name = "[3,3,3,3,3,3;3,3,6,6]";
+		const seed = seeds.find((s) => s.name === name && new Set(s.vertexConfigurations.map((v) => v.name)).size >= 2)!;
+		const allowed = new Set(seed.vertexConfigurations.map((vc) => canonVC(vc.name.split(",").map(Number))));
+		let leaves = 0,
+			bad = 0;
 		new SeedExpander(2).expand(seed, (patch) => {
 			leaves++;
 			if (leafHasDisallowedVC(patch, allowed)) bad++;

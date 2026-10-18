@@ -34,9 +34,7 @@ export function parseStoragePath(path: string): { groupId: string; rulestring: s
  * List all tiling images from storage and return a map of (groupId:rulestring) -> { standard, dual } URLs.
  * Uses parseStoragePath to restore sanitized paths for matching with tilings from the database.
  */
-export async function listTilingImagesFromStorage(): Promise<
-	Map<string, { standard: string; dual: string }>
-> {
+export async function listTilingImagesFromStorage(): Promise<Map<string, { standard: string; dual: string }>> {
 	const map = new Map<string, { standard: string; dual: string }>();
 	if (!supabase) return map;
 

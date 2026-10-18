@@ -190,7 +190,11 @@ export function substitutionRuleFigure(id: SubstitutionViewId): { caption: strin
 			const label = sets.length > 1 ? ` · rule ${String.fromCharCode(65 + i)}` : "";
 			out.push({
 				caption: `${proto.name}${label} → ${kids.length} tiles`,
-				pieces: toPolygons(v.rule, inflate(v.rule, 1, t, () => i), v.hue),
+				pieces: toPolygons(
+					v.rule,
+					inflate(v.rule, 1, t, () => i),
+					v.hue,
+				),
 			});
 		});
 	});

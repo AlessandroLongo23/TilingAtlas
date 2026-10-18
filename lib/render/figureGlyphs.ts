@@ -76,9 +76,19 @@ export function segment({ ctx, s }: Api, a: Pt, b: Pt, colour: string, w: number
 }
 
 /** A bowed connector, so a proposed gluing reads as a proposal and not as another edge. Returns its midpoint. */
-export function arc({ ctx, s }: Api, a: Pt, b: Pt, bow: number, colour: string, w: number, dash?: [number, number]): Pt {
-	const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
-	const dx = b[0] - a[0], dy = b[1] - a[1];
+export function arc(
+	{ ctx, s }: Api,
+	a: Pt,
+	b: Pt,
+	bow: number,
+	colour: string,
+	w: number,
+	dash?: [number, number],
+): Pt {
+	const mx = (a[0] + b[0]) / 2,
+		my = (a[1] + b[1]) / 2;
+	const dx = b[0] - a[0],
+		dy = b[1] - a[1];
 	const len = Math.hypot(dx, dy) || 1;
 	const c: Pt = [mx - (dy / len) * bow, my + (dx / len) * bow];
 	ctx.strokeStyle = colour;
@@ -134,8 +144,13 @@ export function gluedEdge({ ctx, s, text }: Api, hubA: Pt, endA: Pt, hubB: Pt, e
 	ctx.stroke();
 	const m: Pt = [(endA[0] + endB[0]) / 2, (endA[1] + endB[1]) / 2];
 	const ang = Math.atan2(endB[1] - endA[1], endB[0] - endA[0]) + Math.PI / 2;
-	segment({ ctx, s, text } as Api, [m[0] - Math.cos(ang) * 0.07, m[1] - Math.sin(ang) * 0.07],
-		[m[0] + Math.cos(ang) * 0.07, m[1] + Math.sin(ang) * 0.07], SOFT, 2);
+	segment(
+		{ ctx, s, text } as Api,
+		[m[0] - Math.cos(ang) * 0.07, m[1] - Math.sin(ang) * 0.07],
+		[m[0] + Math.cos(ang) * 0.07, m[1] + Math.sin(ang) * 0.07],
+		SOFT,
+		2,
+	);
 }
 
 /**
@@ -231,7 +246,9 @@ export function drawWithText(
 		dpr,
 		text: (x, y, str, o) =>
 			queued.push({
-				x, y, str,
+				x,
+				y,
+				str,
 				colour: o?.colour ?? INK,
 				size: o?.size ?? 1,
 				weight: o?.weight ?? 400,

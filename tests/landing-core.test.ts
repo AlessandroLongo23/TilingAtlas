@@ -5,7 +5,15 @@ import type { ReferenceTiling } from "@/lib/services/referenceAtlas";
 // A minimal synthetic atlas: drawable + empty Euclidean cells, the 11 uniform shelf, and hyperbolic
 // / spherical entries — enough to exercise every branch of buildLandingPayload without the real files.
 function makeAtlas(): ReferenceTiling[] {
-	const drawableCell = { p: [[[0, 0], [1, 0], [1, 1]]] };
+	const drawableCell = {
+		p: [
+			[
+				[0, 0],
+				[1, 0],
+				[1, 1],
+			],
+		],
+	};
 	const emptyCell = { p: [] };
 
 	const euclideanDrawable = Array.from({ length: 100 }, (_, i) => ({
@@ -31,12 +39,33 @@ function makeAtlas(): ReferenceTiling[] {
 		renderCell: drawableCell,
 	}));
 	const hyperbolic = [
-		{ id: "h0", source: "hyperbolic", family: "5.5.5.5", k: 1, renderCell: emptyCell, developed: { patch: "hyp-5-5-5-5" } },
+		{
+			id: "h0",
+			source: "hyperbolic",
+			family: "5.5.5.5",
+			k: 1,
+			renderCell: emptyCell,
+			developed: { patch: "hyp-5-5-5-5" },
+		},
 		{ id: "h1", source: "hyperbolic", family: "7.7.7", k: 1, renderCell: emptyCell, developed: { patch: "hyp-7-7-7" } },
 	];
 	const spherical = [
-		{ id: "s0", source: "spherical", family: "3.3.3", k: 1, renderCell: emptyCell, spherical: { solid: "tetrahedron" } },
-		{ id: "s1", source: "spherical", family: "5.6.6", k: 1, renderCell: emptyCell, spherical: { solid: "truncated-icosahedron" } },
+		{
+			id: "s0",
+			source: "spherical",
+			family: "3.3.3",
+			k: 1,
+			renderCell: emptyCell,
+			spherical: { solid: "tetrahedron" },
+		},
+		{
+			id: "s1",
+			source: "spherical",
+			family: "5.6.6",
+			k: 1,
+			renderCell: emptyCell,
+			spherical: { solid: "truncated-icosahedron" },
+		},
 	];
 
 	return [

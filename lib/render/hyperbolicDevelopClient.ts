@@ -736,7 +736,11 @@ export class HyperbolicDeveloper {
 		this.lastFill = boundR * 1e7 + maxInsts;
 		let keep = maxInsts;
 		if (last && this.live >= maxInsts) {
-			const d = Math.acosh(1 + (2 * ((c.x - last.x) ** 2 + (c.y - last.y) ** 2)) / ((1 - c.x * c.x - c.y * c.y) * (1 - last.x * last.x - last.y * last.y)));
+			const d = Math.acosh(
+				1 +
+					(2 * ((c.x - last.x) ** 2 + (c.y - last.y) ** 2)) /
+						((1 - c.x * c.x - c.y * c.y) * (1 - last.x * last.x - last.y * last.y)),
+			);
 			if (d > 1e-4) keep = Math.floor(maxInsts * Math.max(0.85, 1 - 1.15 * (1 - Math.exp(-d))));
 		}
 		this.prune(view, Math.min(boundR + 0.05, 1.05), keep);
@@ -801,6 +805,16 @@ export class HyperbolicDeveloper {
 	): DevelopedEdgePatch {
 		this.follow(view, boundR, maxInsts);
 		const { rings, orbit, edges, vertices } = this.traceFaced(colors);
-		return { id: meta.id, name: meta.name, config: meta.config, edge: meta.edge, vertices, faces: rings, faceOrbit: orbit, edges, tiles: rings.length };
+		return {
+			id: meta.id,
+			name: meta.name,
+			config: meta.config,
+			edge: meta.edge,
+			vertices,
+			faces: rings,
+			faceOrbit: orbit,
+			edges,
+			tiles: rings.length,
+		};
 	}
 }

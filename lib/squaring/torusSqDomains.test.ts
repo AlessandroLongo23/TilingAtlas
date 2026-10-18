@@ -84,9 +84,7 @@ describe("the walls are where the arrangement changes", () => {
 			for (const [m, n] of torusClasses(LIMIT)) {
 				const r = squareTorus(map, m, n);
 				if (r.ok === false) continue;
-				const vanished = dom.coeff.some(
-					(c, e) => !dom.silent.includes(e) && c.a * BigInt(m) + c.b * BigInt(n) === 0n,
-				);
+				const vanished = dom.coeff.some((c, e) => !dom.silent.includes(e) && c.a * BigInt(m) + c.b * BigInt(n) === 0n);
 				const onWall = sqSectorAt(sectors, classAngle(m, n)) === -1;
 				expect(`${rec.id} (${m},${n}): vanished ${vanished}`).toBe(`${rec.id} (${m},${n}): vanished ${onWall}`);
 			}
@@ -196,7 +194,11 @@ describe("the square lattice, worked by hand", () => {
 		expect(`(1,1) perfect: ${at(1, 1).perfect}`).toBe("(1,1) perfect: false");
 		expect(`(4,3) on a tie: ${onAny(dom.ties, 4, 3)}`).toBe("(4,3) on a tie: false");
 		// Morley's order-2 squared torus: sides 3 and 4 on a torus of area 25.
-		expect(at(4, 3).squares.map((s) => s.side).sort()).toEqual(["3", "4"]);
+		expect(
+			at(4, 3)
+				.squares.map((s) => s.side)
+				.sort(),
+		).toEqual(["3", "4"]);
 	});
 });
 
@@ -283,9 +285,7 @@ describe("the class does not have to be integral", () => {
 				const covol = Number(s.covolume);
 				// The identity is exact; the tolerance is the four decimals the sides are shipped with,
 				// squared and summed over thirty tiles.
-				expect(`${rec.id} @${t}: ${(Math.abs(area - covol) / covol < 1e-5).toString()}`).toBe(
-					`${rec.id} @${t}: true`,
-				);
+				expect(`${rec.id} @${t}: ${(Math.abs(area - covol) / covol < 1e-5).toString()}`).toBe(`${rec.id} @${t}: true`);
 				expect(s.approx).toBe(true);
 			}
 		}
@@ -338,7 +338,7 @@ describe("the control never teleports across the disk", () => {
 		for (let i = 0; i < 720; i++) {
 			const a = (i / 720) * TAU - Math.PI;
 			for (const got of [snapClass(a, 6).cls, nearestClass(a, 6)]) {
-				const d = Math.abs((((a - Math.atan2(got[1], got[0])) % TAU) + TAU + Math.PI) % TAU - Math.PI);
+				const d = Math.abs(((((a - Math.atan2(got[1], got[0])) % TAU) + TAU + Math.PI) % TAU) - Math.PI);
 				expect(`angle ${a.toFixed(3)} -> (${got.join(",")}) is ${d <= Math.PI / 2 + 1e-9 ? "near" : "ANTIPODAL"}`).toBe(
 					`angle ${a.toFixed(3)} -> (${got.join(",")}) is near`,
 				);

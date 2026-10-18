@@ -23,10 +23,7 @@ describe("pickStratified", () => {
 	it("weights buckets equally regardless of size", () => {
 		// Bucket A has 1 item, bucket B has 1000. Over many draws A should appear ~half the time,
 		// which uniform-over-items would make vanishingly rare (~1/1001).
-		const items: T[] = [
-			item("a", "A"),
-			...Array.from({ length: 1000 }, (_, i) => item(`b${i}`, "B")),
-		];
+		const items: T[] = [item("a", "A"), ...Array.from({ length: 1000 }, (_, i) => item(`b${i}`, "B"))];
 		// Alternate the bucket-choice draw between the two buckets (0 → first, 0.9 → second); the
 		// within-bucket draw (0) then picks the first candidate in whichever bucket.
 		let aCount = 0;

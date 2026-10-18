@@ -17,10 +17,7 @@ import { ROTATE_DAMP, shortestDeltaDeg } from "@/lib/render/viewControls";
  * @param drawRef   the canvas's latest draw function; called once per eased frame
  * @returns the live angle in DEGREES, continuous (never wrapped, so no frame ever sees a 360° jump)
  */
-export function useEasedRotation(
-	targetDeg: number,
-	drawRef: RefObject<() => void>,
-): RefObject<number> {
+export function useEasedRotation(targetDeg: number, drawRef: RefObject<() => void>): RefObject<number> {
 	// Seeded AT the target, not at 0: a canvas mounted with a rotation already set (a shared link, a
 	// switch back from another tiling) shows that angle immediately instead of spinning up to it.
 	const rotRef = useRef(targetDeg);

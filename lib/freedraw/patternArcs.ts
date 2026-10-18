@@ -63,11 +63,7 @@ export function gridCellArcs(p: FreedrawPattern, rule: TileRule = DEFAULT_TILE_R
 		// also D's first — the two triangles of a lattice cell share that diagonal.
 		arcs.push(
 			shift(
-				tileFigure(
-					[w(x, y), w(x + 1, y), w(x, y + 1)],
-					[bit(p.h, x, y), bit(p.w, x, y + 1), bit(p.v, x, y)],
-					rule,
-				),
+				tileFigure([w(x, y), w(x + 1, y), w(x, y + 1)], [bit(p.h, x, y), bit(p.w, x, y + 1), bit(p.v, x, y)], rule),
 			),
 		);
 		arcs.push(
@@ -104,10 +100,12 @@ export function patchTileArcs(patch: FreedrawPatch, rule: TileRule = DEFAULT_TIL
 	const drawn = new Map<string, boolean>();
 	for (const [vi, vj, ox, oy, d] of patch.edges) drawn.set(edgeKey(vi, 0, 0, vj, ox, oy), d === 1);
 	const arcs = patch.polys.map((ring, i) => {
-		const corners = ring.map(([vi, ox, oy]): Pt => [
-			patch.verts[vi][0] + ox * patch.T1[0] + oy * patch.T2[0],
-			patch.verts[vi][1] + ox * patch.T1[1] + oy * patch.T2[1],
-		]);
+		const corners = ring.map(
+			([vi, ox, oy]): Pt => [
+				patch.verts[vi][0] + ox * patch.T1[0] + oy * patch.T2[0],
+				patch.verts[vi][1] + ox * patch.T1[1] + oy * patch.T2[1],
+			],
+		);
 		const state = ring.map((_, i) => {
 			const [vi, ax, ay] = ring[i];
 			const [vj, bx, by] = ring[(i + 1) % ring.length];

@@ -2,7 +2,15 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { HyperbolicDeveloper, nthSmallest, type Darts } from "@/lib/render/hyperbolicDevelopClient";
-import { su11Identity, su11Mul, su11Translation, su11Normalize, su11Apply, hypDist, type Complex } from "@/lib/render/hyperbolic";
+import {
+	su11Identity,
+	su11Mul,
+	su11Translation,
+	su11Normalize,
+	su11Apply,
+	hypDist,
+	type Complex,
+} from "@/lib/render/hyperbolic";
 import type { DevelopedPatch } from "@/lib/render/hyperbolicDevelopedDraw";
 import { sampleAtlas } from "./hyperbolic-sample";
 
@@ -79,8 +87,8 @@ describe("HyperbolicDeveloper (TS port of develop_patch)", () => {
 			expect(d.glue.length).toBe(n);
 			expect(d.lvert.length).toBe(n);
 			// permutations index within range
-			for (const x of d.rneig) expect(x).toBeGreaterThanOrEqual(0), expect(x).toBeLessThan(n);
-			for (const x of d.glue) expect(x).toBeGreaterThanOrEqual(0), expect(x).toBeLessThan(n);
+			for (const x of d.rneig) (expect(x).toBeGreaterThanOrEqual(0), expect(x).toBeLessThan(n));
+			for (const x of d.glue) (expect(x).toBeGreaterThanOrEqual(0), expect(x).toBeLessThan(n));
 			// glue is an involution
 			for (let i = 0; i < n; i++) expect(d.glue[d.glue[i]]).toBe(i);
 		}
@@ -122,9 +130,7 @@ describe("HyperbolicDeveloper (TS port of develop_patch)", () => {
 		// (3) central face-size multiset matches the PYTHON developer's patch for the same tiling
 		// (rotation/truncation-robust) — the cross-implementation check.
 		const ref = goldenById(id);
-		expect(centralFaceSig(out.vertices, out.faces)).toBe(
-			centralFaceSig(ref.vertices as [number, number][], ref.faces),
-		);
+		expect(centralFaceSig(out.vertices, out.faces)).toBe(centralFaceSig(ref.vertices as [number, number][], ref.faces));
 	});
 
 	it("fills a wider disk when asked (fill-to-rim: more tiles at a larger bound)", () => {
@@ -215,7 +221,13 @@ describe("apeirogon faces (lvert 0)", () => {
 	// hph1_7627-1-00003: the uniform ∞.∞.4.4.4, at the edge where an apeirogon's angle is 90° and a
 	// square's is 60°. Marek's hybrid_1_7627 corpus, developed by tools/ctrnact-oracle/develop_ai1.py.
 	const edge = 1.7627471740391059;
-	const darts = { rneig: [1, 2, 3, 4, 0], glue: [2, 1, 0, 4, 3], lvert: [4, 0, 0, 4, 4], faceColor: [1, 1, 0, 0, 0], seed: 0 };
+	const darts = {
+		rneig: [1, 2, 3, 4, 0],
+		glue: [2, 1, 0, 4, 3],
+		lvert: [4, 0, 0, 4, 4],
+		faceColor: [1, 1, 0, 0, 0],
+		seed: 0,
+	};
 	const patch = new HyperbolicDeveloper(darts, edge).developColors(
 		{ id: "x", name: "x", config: "∞.∞.4.4.4", edge },
 		su11Identity(),
@@ -226,7 +238,8 @@ describe("apeirogon faces (lvert 0)", () => {
 	const pairs = patch.faces.filter((f) => f.length === 2);
 	/** Constant along a horocycle centred at the ideal point ξ: (1 − |z|²)/|z − ξ|². */
 	const bus = (v: number, xi: number) =>
-		(1 - r2(v)) / ((patch.vertices[v][0] - patch.vertices[xi][0]) ** 2 + (patch.vertices[v][1] - patch.vertices[xi][1]) ** 2);
+		(1 - r2(v)) /
+		((patch.vertices[v][0] - patch.vertices[xi][0]) ** 2 + (patch.vertices[v][1] - patch.vertices[xi][1]) ** 2);
 
 	it("returns each apeirogon once, as a vertex and an ideal point", () => {
 		expect(pairs.length).toBeGreaterThan(10);

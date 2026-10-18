@@ -27,7 +27,10 @@ function fromVerts(name: string, pts: [number, number][]): Polygon {
 function regular(n: number): Polygon {
 	return fromVerts(
 		`${n}-gon`,
-		Array.from({ length: n }, (_, i) => [Math.cos((2 * Math.PI * i) / n), Math.sin((2 * Math.PI * i) / n)] as [number, number]),
+		Array.from(
+			{ length: n },
+			(_, i) => [Math.cos((2 * Math.PI * i) / n), Math.sin((2 * Math.PI * i) / n)] as [number, number],
+		),
 	);
 }
 
@@ -88,7 +91,8 @@ describe("calculateIslamicSegments — collinear adjacent rays", () => {
 		// at 30°) but alternating edge lengths, so the parallel pair is offset and must never meet. The
 		// mean was already continuous here before the fix; it must stay that way.
 		const pts: [number, number][] = [];
-		let x = 0, y = 0;
+		let x = 0,
+			y = 0;
 		const lens = [1, 1.6, 1, 1.6, 1, 1.6];
 		for (let i = 0; i < 6; i++) {
 			const t = (Math.PI / 3) * i;

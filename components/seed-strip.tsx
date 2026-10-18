@@ -137,9 +137,11 @@ function SeedCard({
 		const ctx = canvas.getContext("2d");
 		if (!ctx) return;
 		const dpr = Math.min(window.devicePixelRatio || 1, 2);
-		const w = canvas.clientWidth, h = canvas.clientHeight;
+		const w = canvas.clientWidth,
+			h = canvas.clientHeight;
 		if (w <= 0 || h <= 0) return;
-		const bw = Math.round(w * dpr), bh = Math.round(h * dpr);
+		const bw = Math.round(w * dpr),
+			bh = Math.round(h * dpr);
 		if (canvas.width !== bw || canvas.height !== bh) {
 			canvas.width = bw;
 			canvas.height = bh;
@@ -151,9 +153,11 @@ function SeedCard({
 
 		// The shared frame, filling the card bar a hair of margin. It has to hold the largest patch any
 		// path reaches, so the first configuration already sits at about half the card's width.
-		const fw = frame.maxX - frame.minX, fh = frame.maxY - frame.minY;
+		const fw = frame.maxX - frame.minX,
+			fh = frame.maxY - frame.minY;
 		const s = 0.94 * Math.min(w / fw, h / fh);
-		const cx = (frame.minX + frame.maxX) / 2, cy = (frame.minY + frame.maxY) / 2;
+		const cx = (frame.minX + frame.maxX) / 2,
+			cy = (frame.minY + frame.maxY) / 2;
 		ctx.scale(dpr, dpr);
 		ctx.save();
 		ctx.translate(w / 2, h / 2);
@@ -188,7 +192,8 @@ function SeedCard({
 		const ty = (y: number) => h / 2 - s * (y - cy);
 
 		open?.forEach((o, i) => {
-			const sx = tx(o.at[0]), sy = ty(o.at[1]);
+			const sx = tx(o.at[0]),
+				sy = ty(o.at[1]);
 			if (o.candidates.length) hits.current.push({ at: o.at, sx, sy });
 			const picked = i === selected;
 			ctx.beginPath();
@@ -202,7 +207,7 @@ function SeedCard({
 
 		// Placed centres last, over everything: they are the k orbits the seed exists to carry.
 		placed.forEach(([x, y], i) => {
-						ctx.beginPath();
+			ctx.beginPath();
 			ctx.arc(tx(x), ty(y), PLACED_R, 0, 2 * Math.PI);
 			ctx.fillStyle = orbitColor(i, k);
 			ctx.fill();
@@ -215,10 +220,12 @@ function SeedCard({
 	const pick = (e: React.MouseEvent<HTMLCanvasElement>) => {
 		if (!onPick || !open) return;
 		const r = e.currentTarget.getBoundingClientRect();
-		const px = e.clientX - r.left, py = e.clientY - r.top;
+		const px = e.clientX - r.left,
+			py = e.clientY - r.top;
 		// A fingertip covers the 14px a cursor needs several times over; a phone takes the nearest open
 		// vertex within about half a fingertip.
-		let best = -1, bestD = window.matchMedia(PHONE_QUERY).matches ? 24 : PICK_R;
+		let best = -1,
+			bestD = window.matchMedia(PHONE_QUERY).matches ? 24 : PICK_R;
 		hits.current.forEach((d) => {
 			const dist = Math.hypot(d.sx - px, d.sy - py);
 			if (dist < bestD) {
@@ -238,15 +245,9 @@ function SeedCard({
 					!patch && "opacity-30",
 				)}
 			>
-				<canvas
-					ref={ref}
-					onClick={pick}
-					className={cn("h-full w-full", onPick && "cursor-pointer")}
-				/>
+				<canvas ref={ref} onClick={pick} className={cn("h-full w-full", onPick && "cursor-pointer")} />
 			</div>
-			<figcaption className="text-center text-[clamp(0.62rem,0.95vh+0.26vw,0.92rem)] text-fg-muted">
-				{label}
-			</figcaption>
+			<figcaption className="text-center text-[clamp(0.62rem,0.95vh+0.26vw,0.92rem)] text-fg-muted">{label}</figcaption>
 		</figure>
 	);
 }
@@ -372,18 +373,12 @@ export function SeedStrip({ src = "/defense/seed-build.json" }: { src?: string }
 		// Takes whatever the heading and prose leave: `marginBlock` inline because the spread layout
 		// centres a figure with `margin: auto`, which outranks a utility class and would absorb the free
 		// space before flex-grow could have it.
-		<div
-			style={{ marginBlock: 0 }}
-			className="not-prose flex min-h-0 w-full flex-1 flex-col items-center gap-[0.6em]"
-		>
+		<div style={{ marginBlock: 0 }} className="not-prose flex min-h-0 w-full flex-1 flex-col items-center gap-[0.6em]">
 			<div className="flex min-h-0 w-full flex-1 items-center justify-center gap-[1.5vw]">
 				{[0, 1, 2].map((i) => (
 					<div key={i} className="contents">
 						{i > 0 && (
-							<span
-								aria-hidden
-								className={cn("shrink-0 text-2xl", patches[i] ? "text-fg-muted" : "text-line")}
-							>
+							<span aria-hidden className={cn("shrink-0 text-2xl", patches[i] ? "text-fg-muted" : "text-line")}>
 								→
 							</span>
 						)}
@@ -417,8 +412,8 @@ export function SeedStrip({ src = "/defense/seed-build.json" }: { src?: string }
 				) : !picked || !total ? (
 					<span className="text-fg-muted">
 						<span className="max-md:hidden">click</span>
-						<span className="md:hidden">tap</span> an open vertex — {state.filter((o) => o.candidates.length).length} of them can take a
-						configuration
+						<span className="md:hidden">tap</span> an open vertex — {state.filter((o) => o.candidates.length).length} of
+						them can take a configuration
 					</span>
 				) : (
 					<>
@@ -430,7 +425,7 @@ export function SeedStrip({ src = "/defense/seed-build.json" }: { src?: string }
 						>
 							‹
 						</button>
-						<span className="tabular-nums text-fg-secondary">
+						<span className="text-fg-secondary tabular-nums">
 							<span className="font-mono">{candidate?.name.replaceAll(",", ".")}</span> — placement{" "}
 							{(cursor % total) + 1} of {total} here
 						</span>

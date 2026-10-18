@@ -22,13 +22,7 @@
 
 import { Vector } from "@/classes/Vector";
 import { ringArea } from "@/lib/freedraw/edgePatchCore";
-import { ringKey,
-	canonicalEdge,
-	halfEdgeKey,
-	mergeFaces,
-	type DrawnLookup,
-	type Ring,
-} from "@/lib/freedraw/topology";
+import { ringKey, canonicalEdge, halfEdgeKey, mergeFaces, type DrawnLookup, type Ring } from "@/lib/freedraw/topology";
 import { segmentsIntersect } from "@/lib/utils/geometry";
 import {
 	OK,
@@ -68,11 +62,7 @@ function vertexAt(patch: StudioPatch, vi: number, ox: number, oy: number, disp: 
  * the doc's displacement map, so a cut drawn before a drag is tested against where its endpoints are
  * NOW, not where they were clicked.
  */
-export function resolveRef(
-	patch: StudioPatch,
-	ref: PointRef,
-	moved: Readonly<Record<string, Pt>> = {},
-): Pt {
+export function resolveRef(patch: StudioPatch, ref: PointRef, moved: Readonly<Record<string, Pt>> = {}): Pt {
 	const disp = dispOf(moved);
 	const [ox, oy] = ref.off;
 	if (ref.kind === "vertex") return vertexAt(patch, ref.vi, ox, oy, disp);
@@ -160,27 +150,20 @@ function drawnExcept(dropped: ReadonlySet<string>): DrawnLookup {
 }
 
 /** Refuse a merge that would make the resulting tile infinite. */
-export function canDropEdge(
-	patch: StudioPatch,
-	dropped: ReadonlySet<string>,
-	edgeKey: string,
-): Verdict {
+export function canDropEdge(patch: StudioPatch, dropped: ReadonlySet<string>, edgeKey: string): Verdict {
 	if (dropped.has(edgeKey)) return REJECT("degenerate", "that edge is already merged away");
 
 	const here = patch.half.get(edgeKey)?.[0];
 	const there = patch.half.get(reverseKey(edgeKey))?.[0];
 	if (!here && !there) return REJECT("degenerate", "there is no tile edge with that key");
-	if (!here || !there)
-		return REJECT("degenerate", "that edge has only one side, so dropping it would merge nothing");
+	if (!here || !there) return REJECT("degenerate", "that edge has only one side, so dropping it would merge nothing");
 
 	const trial = new Set(dropped);
 	trial.add(edgeKey);
 	const after = mergeFaces(patch.rings, drawnExcept(trial));
 	const rank = after.compRank[after.polyComp[here.p]];
-	if (rank === 1)
-		return REJECT("infinite-tile", "merging here would make one tile an infinite strip");
-	if (rank === 2)
-		return REJECT("infinite-tile", "merging here would make one tile an unbounded sheet");
+	if (rank === 1) return REJECT("infinite-tile", "merging here would make one tile an infinite strip");
+	if (rank === 2) return REJECT("infinite-tile", "merging here would make one tile an unbounded sheet");
 
 	// Checked AFTER the rank, and the order is the whole subtlety. On a torus an edge whose two sides are
 	// already one tile is USUALLY the edge that closes that tile onto its own translate, which is the
@@ -189,10 +172,7 @@ export function canDropEdge(
 	// encloses a hole. Either way the tile's outline does not change, so there is nothing to commit.
 	const before = mergeFaces(patch.rings, drawnExcept(dropped));
 	if (before.polyComp[here.p] === before.polyComp[there.p])
-		return REJECT(
-			"degenerate",
-			"both sides of that edge are already one tile, so merging them changes nothing",
-		);
+		return REJECT("degenerate", "both sides of that edge are already one tile, so merging them changes nothing");
 
 	return OK;
 }
@@ -201,12 +181,7 @@ export function canDropEdge(
  *
  *  `delta` is an INCREMENT on top of whatever `moved` already holds for `vi`, which is what makes t = 0
  *  in `clampVertexMove` mean "leave the doc as it stands" and therefore trivially valid. */
-export function canMoveVertex(
-	patch: StudioPatch,
-	vi: number,
-	delta: Pt,
-	moved: Readonly<Record<string, Pt>>,
-): Verdict {
+export function canMoveVertex(patch: StudioPatch, vi: number, delta: Pt, moved: Readonly<Record<string, Pt>>): Verdict {
 	const sites = patch.incident[vi];
 	if (!sites) return REJECT("degenerate", `there is no vertex ${vi} in this patch`);
 	if (delta[0] === 0 && delta[1] === 0) return OK;
@@ -229,8 +204,7 @@ export function canMoveVertex(
 		const aArea = ringArea(pts);
 		if (Math.abs(aArea) < areaEps || Math.sign(aArea) !== Math.sign(bArea))
 			return REJECT("folds-tile", `this would turn tile ${f} inside out`);
-		if (!isSimpleRing(pts, tol))
-			return REJECT("folds-tile", `this would fold tile ${f} across itself`);
+		if (!isSimpleRing(pts, tol)) return REJECT("folds-tile", `this would fold tile ${f} across itself`);
 	}
 	return OK;
 }
@@ -246,12 +220,7 @@ export function canMoveVertex(
  * holds for the cases the tools produce; where it does not, the answer is still a valid t, just not
  * provably the largest one, and sticking short is the failure the drag can live with.
  */
-export function clampVertexMove(
-	patch: StudioPatch,
-	vi: number,
-	delta: Pt,
-	moved: Readonly<Record<string, Pt>>,
-): Pt {
+export function clampVertexMove(patch: StudioPatch, vi: number, delta: Pt, moved: Readonly<Record<string, Pt>>): Pt {
 	if (canMoveVertex(patch, vi, delta, moved).ok) return delta;
 	let lo = 0;
 	let hi = 1;
@@ -272,10 +241,7 @@ function latticeFrame(basis: Basis) {
 
 type Frame = ReturnType<typeof latticeFrame>;
 
-const toLattice = (f: Frame, p: Pt): Pt => [
-	(p[0] * f.by - p[1] * f.bx) / f.det,
-	(p[1] * f.ax - p[0] * f.ay) / f.det,
-];
+const toLattice = (f: Frame, p: Pt): Pt => [(p[0] * f.by - p[1] * f.bx) / f.det, (p[1] * f.ax - p[0] * f.ay) / f.det];
 
 /** Slack in LATTICE units. World tolerances are `medianEdge · 1e-6` and no period here is shorter than
  *  one edge, so this covers them with room to spare; an extra copy in the window only costs a test. */
@@ -338,21 +304,12 @@ function* blockingSegments(
 	}
 	for (const cut of [...doc.cuts, path]) {
 		for (let i = 0; i + 1 < cut.length; i++)
-			yield [
-				resolveRef(patch, cut[i], doc.moved),
-				resolveRef(patch, cut[i + 1], doc.moved),
-				"cut",
-			];
+			yield [resolveRef(patch, cut[i], doc.moved), resolveRef(patch, cut[i + 1], doc.moved), "cut"];
 	}
 }
 
 /** Refuse a cut segment that would cross an existing edge or cut. */
-export function canExtendCut(
-	patch: StudioPatch,
-	doc: StudioDoc,
-	path: readonly PointRef[],
-	next: PointRef,
-): Verdict {
+export function canExtendCut(patch: StudioPatch, doc: StudioDoc, path: readonly PointRef[], next: PointRef): Verdict {
 	if (path.length === 0) return OK; // the first click has no segment yet, so nothing can cross
 
 	const tol = tolOf(patch);
@@ -370,9 +327,7 @@ export function canExtendCut(
 		if (crossesSomeCopy(seg, [c, d], patch.basis, f, tol))
 			return REJECT(
 				"chord-crosses",
-				what === "edge"
-					? "this cut would cross an existing tile edge"
-					: "this cut would cross an existing cut",
+				what === "edge" ? "this cut would cross an existing tile edge" : "this cut would cross an existing cut",
 			);
 	}
 	// A chord that lies ALONG something already there. `segmentsIntersect` cannot catch it: it ignores
@@ -384,15 +339,10 @@ export function canExtendCut(
 	// the chord's midpoint instead also fired when a chord merely passed through some point of an edge,
 	// and that is a legitimate cut, so it refused things it had no business refusing.
 	for (const [c, d, what] of blockingSegments(patch, doc, path)) {
-		if (
-			pointOnSomeCopy(a, [c, d], patch.basis, f, tol) &&
-			pointOnSomeCopy(b, [c, d], patch.basis, f, tol)
-		)
+		if (pointOnSomeCopy(a, [c, d], patch.basis, f, tol) && pointOnSomeCopy(b, [c, d], patch.basis, f, tol))
 			return REJECT(
 				"degenerate",
-				what === "edge"
-					? "there is already an edge along that line"
-					: "there is already a cut along that line",
+				what === "edge" ? "there is already an edge along that line" : "there is already a cut along that line",
 			);
 	}
 	return OK;
@@ -404,13 +354,7 @@ export function canExtendCut(
  * The copy span is computed the way `crossesSomeCopy` computes it, from the lattice coordinates of the
  * two extents, so a coincidence a cell away is caught as readily as one inside the cell.
  */
-function pointOnSomeCopy(
-	p: Pt,
-	other: readonly [Pt, Pt],
-	basis: Basis,
-	f: Frame,
-	tol: number,
-): boolean {
+function pointOnSomeCopy(p: Pt, other: readonly [Pt, Pt], basis: Basis, f: Frame, tol: number): boolean {
 	const s0 = toLattice(f, p);
 	const o0 = toLattice(f, other[0]);
 	const o1 = toLattice(f, other[1]);
@@ -448,11 +392,7 @@ function pointOnSomeCopy(
  * clicks: vertex -> centroid -> vertex is one committable path, and the state halfway through is
  * legitimately uncommittable, not broken.
  */
-export function canCommitCut(
-	patch: StudioPatch,
-	doc: StudioDoc,
-	path: readonly PointRef[],
-): Verdict {
+export function canCommitCut(patch: StudioPatch, doc: StudioDoc, path: readonly PointRef[]): Verdict {
 	if (path.length < 2) return REJECT("dead-end", "a cut needs at least two points");
 
 	const ends = [path[0], path[path.length - 1]] as const;

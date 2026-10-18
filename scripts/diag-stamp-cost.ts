@@ -9,13 +9,18 @@
  * Run it with a raised heap; the point of the exercise is that the default one is not enough:
  *   NODE_OPTIONS=--max-old-space-size=8192 pnpm tsx scripts/diag-stamp-cost.ts
  */
-import { SeedExpander } from '@/classes/algorithm/SeedExpander';
+import { SeedExpander } from "@/classes/algorithm/SeedExpander";
 import {
-	PolygonsGenerator, VCGenerator, CompatibilityGraph, SeedSetExtractor, SeedBuilder,
-	PolygonType, type GeneratorParameters,
-} from '@/classes';
-import { computeRing } from '@/classes/algorithm/PolygonsGenerator';
-import { setActiveRing } from '@/classes/Cyclotomic';
+	PolygonsGenerator,
+	VCGenerator,
+	CompatibilityGraph,
+	SeedSetExtractor,
+	SeedBuilder,
+	PolygonType,
+	type GeneratorParameters,
+} from "@/classes";
+import { computeRing } from "@/classes/algorithm/PolygonsGenerator";
+import { setActiveRing } from "@/classes/Cyclotomic";
 
 const params: GeneratorParameters = { [PolygonType.REGULAR]: { ns: [3, 4, 6, 8, 12] } };
 setActiveRing(computeRing(params));
@@ -25,34 +30,43 @@ const adj: Record<string, string[]> = {};
 for (const vc of vcs) adj[vc.name] = [];
 for (let i = 0; i < vcs.length; i++)
 	for (let j = i + 1; j < vcs.length; j++)
-		if (vcs[i].isCompatible(vcs[j])) { adj[vcs[i].name].push(vcs[j].name); adj[vcs[j].name].push(vcs[i].name); }
+		if (vcs[i].isCompatible(vcs[j])) {
+			adj[vcs[i].name].push(vcs[j].name);
+			adj[vcs[j].name].push(vcs[i].name);
+		}
 const graph = CompatibilityGraph.fromAdjacencyList(adj, vcs);
 const seedSets = new SeedSetExtractor(graph).findSeedSets(1);
 const seeds = new SeedBuilder().buildSeeds(1, 1, { seedSetLoader: () => seedSets });
-const snub = seeds.find((s) => s.name.includes('3,3,3,3,6'))!;
+const snub = seeds.find((s) => s.name.includes("3,3,3,3,6"))!;
 
 const mb = (n: number) => (n / 1024 / 1024).toFixed(0);
 
 console.log(`seed ${snub.name} (${snub.polygons.length} tiles)\n`);
-console.log('mode    frames  leaves  maxPatch  totalTilesBuilt        ms   heapUsed');
+console.log("mode    frames  leaves  maxPatch  totalTilesBuilt        ms   heapUsed");
 
-for (const mode of ['seed', 'patch'] as const) {
+for (const mode of ["seed", "patch"] as const) {
 	for (const cap of [200, 400, 800, 1600]) {
 		const exp = new SeedExpander(1);
 		exp.stampMode = mode;
 		exp.maxExpandNodes = cap;
-		let leaves = 0, maxPatch = 0, tiles = 0;
+		let leaves = 0,
+			maxPatch = 0,
+			tiles = 0;
 		// Every leaf's size, plus a running total of tiles the search materialised — the quantity that
 		// actually drives both time and memory, since each accepted placement builds a whole new patch.
 		global.gc?.();
 		const before = process.memoryUsage().heapUsed;
 		const t0 = Date.now();
-		exp.expand(snub, (patch) => { leaves++; maxPatch = Math.max(maxPatch, patch.length); tiles += patch.length; });
+		exp.expand(snub, (patch) => {
+			leaves++;
+			maxPatch = Math.max(maxPatch, patch.length);
+			tiles += patch.length;
+		});
 		const ms = Date.now() - t0;
 		const heap = process.memoryUsage().heapUsed - before;
 		console.log(
 			`${mode.padEnd(6)} ${String(cap).padStart(7)} ${String(leaves).padStart(7)} ` +
-			`${String(maxPatch).padStart(9)} ${String(tiles).padStart(16)} ${String(ms).padStart(9)} ${mb(heap).padStart(8)} MB`,
+				`${String(maxPatch).padStart(9)} ${String(tiles).padStart(16)} ${String(ms).padStart(9)} ${mb(heap).padStart(8)} MB`,
 		);
 	}
 }

@@ -22,7 +22,9 @@ describe("bubble shards", () => {
 	});
 
 	it("every prefix is earned by a shipped record", () => {
-		const used = new Set(shards.flatMap(({ rows }) => rows.map((r) => BUBBLE_ID_PREFIXES.find((p) => r.id.startsWith(p)))));
+		const used = new Set(
+			shards.flatMap(({ rows }) => rows.map((r) => BUBBLE_ID_PREFIXES.find((p) => r.id.startsWith(p)))),
+		);
 		expect(BUBBLE_ID_PREFIXES.filter((p) => !used.has(p))).toEqual([]);
 	});
 

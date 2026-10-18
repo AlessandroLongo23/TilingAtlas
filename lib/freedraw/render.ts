@@ -44,8 +44,7 @@ export interface FreedrawView {
 // has e2 at 60°, so bx = 1/2 and by = √3/2. Pan/zoom stay in world (euclidean) coordinates — only
 // the lattice-to-world map changes, and every straight lattice line stays straight through it.
 const SQRT3_2 = Math.sqrt(3) / 2;
-const basisOf = (p: FreedrawPattern) =>
-	gridOf(p) === "triangle" ? { bx: 0.5, by: SQRT3_2 } : { bx: 0, by: 1 };
+const basisOf = (p: FreedrawPattern) => (gridOf(p) === "triangle" ? { bx: 0.5, by: SQRT3_2 } : { bx: 0, by: 1 });
 
 /**
  * How much two cells must have in common to share a colour, coarse to fine. Each mode is a refinement
@@ -236,12 +235,7 @@ export function rotatedExtent(width: number, height: number, rot: number): { w: 
  * Turn the context about the canvas centre for a rotated view, on a SAVED state — the caller restores.
  * It saves even at rot 0 so every draw path has one balanced save/restore, not a conditional one.
  */
-export function beginViewRotation(
-	ctx: CanvasRenderingContext2D,
-	width: number,
-	height: number,
-	rot: number,
-): void {
+export function beginViewRotation(ctx: CanvasRenderingContext2D, width: number, height: number, rot: number): void {
 	ctx.save();
 	if (!rot) return;
 	ctx.translate(width / 2, height / 2);
@@ -249,13 +243,7 @@ export function beginViewRotation(
 	ctx.translate(-width / 2, -height / 2);
 }
 
-export function visibleSpan(
-	width: number,
-	height: number,
-	view: FreedrawView,
-	bx: number,
-	by: number,
-): Span {
+export function visibleSpan(width: number, height: number, view: FreedrawView, bx: number, by: number): Span {
 	// Invert the basis at the view rect's corners: y = wy/by, x = wx - bx*y. On the square grid this
 	// is the old axis-aligned span; on the skewed triangle basis the x extent widens with the shear.
 	const halfW = width / (2 * view.scale);
@@ -328,8 +316,7 @@ export function drawFreedraw(
 		// One colour per face, resolved before the cell loop — the loop runs over every visible grid
 		// square, and building an hsl() string in there was the frame's whole cost.
 		const alpha = style.showVertices ? ORBIT_MODE_FILL_ALPHA : 1;
-		const classes =
-			style.fillMode === "shape" || style.fillMode === "pose" ? classifyFaces(analysis) : null;
+		const classes = style.fillMode === "shape" || style.fillMode === "pose" ? classifyFaces(analysis) : null;
 		const fill = analysis.faces.map((f) =>
 			style.fillMode === "rank"
 				? rankColour(f.rank, style.dark, alpha)
@@ -449,8 +436,7 @@ export function drawFreedraw(
 
 	if (style.showLattice) drawLattice(ctx, pattern, style, px, py, span);
 
-	if (style.showVertices)
-		drawOrbitDots(ctx, pattern, view, style, px, py, bx, by, span, hover, orbitScales);
+	if (style.showVertices) drawOrbitDots(ctx, pattern, view, style, px, py, bx, by, span, hover, orbitScales);
 
 	ctx.restore(); // the view rotation
 }
@@ -580,8 +566,7 @@ function drawPatchPattern(
 		const alpha = style.showVertices ? ORBIT_MODE_FILL_ALPHA : 1;
 		// shape/pose merge congruent (resp. identically-posed) tiles from the patch geometry; orbit and
 		// the default keep one hue per tile component; rank colours by finite/strip/unbounded.
-		const classes =
-			style.fillMode === "shape" || style.fillMode === "pose" ? classifyPatchFaces(patch) : null;
+		const classes = style.fillMode === "shape" || style.fillMode === "pose" ? classifyPatchFaces(patch) : null;
 		const compFill = patch.compRank.map((r, i) =>
 			style.fillMode === "rank"
 				? rankColour(r, style.dark, alpha)
@@ -602,7 +587,10 @@ function drawPatchPattern(
 						const [wi, wx, wy] = ring[(ci + 1) % ring.length];
 						const sx = vx(vi, ox + m, oy + n);
 						const sy = vy(vi, ox + m, oy + n);
-						if (ci === 0) { const p0 = P(sx, sy); ctx.moveTo(p0[0], p0[1]); }
+						if (ci === 0) {
+							const p0 = P(sx, sy);
+							ctx.moveTo(p0[0], p0[1]);
+						}
 						arcTo(arcs?.[ci], sx, sy, vx(wi, wx + m, wy + n), vy(wi, wx + m, wy + n));
 					}
 					ctx.closePath();
@@ -667,22 +655,49 @@ function drawPatchPattern(
 	if (style.showLattice) {
 		const accent = style.dark ? "hsl(345 90% 66%)" : "hsl(345 80% 46%)";
 		ctx.beginPath();
-		const L = (x: number, y: number) => { const q = P(x, y); return q; };
-		{ const q = L(0, 0); ctx.moveTo(q[0], q[1]); }
-		{ const q = L(t1x, t1y); ctx.lineTo(q[0], q[1]); }
-		{ const q = L(t1x + t2x, t1y + t2y); ctx.lineTo(q[0], q[1]); }
-		{ const q = L(t2x, t2y); ctx.lineTo(q[0], q[1]); }
+		const L = (x: number, y: number) => {
+			const q = P(x, y);
+			return q;
+		};
+		{
+			const q = L(0, 0);
+			ctx.moveTo(q[0], q[1]);
+		}
+		{
+			const q = L(t1x, t1y);
+			ctx.lineTo(q[0], q[1]);
+		}
+		{
+			const q = L(t1x + t2x, t1y + t2y);
+			ctx.lineTo(q[0], q[1]);
+		}
+		{
+			const q = L(t2x, t2y);
+			ctx.lineTo(q[0], q[1]);
+		}
 		ctx.closePath();
 		ctx.fillStyle = style.dark ? "hsl(345 90% 66% / 0.2)" : "hsl(345 80% 46% / 0.13)";
 		ctx.fill();
 		ctx.beginPath();
 		for (let n = n0; n <= n1; n++) {
-			{ const q = P(m0 * t1x + n * t2x, m0 * t1y + n * t2y); ctx.moveTo(q[0], q[1]); }
-			{ const q = P(m1 * t1x + n * t2x, m1 * t1y + n * t2y); ctx.lineTo(q[0], q[1]); }
+			{
+				const q = P(m0 * t1x + n * t2x, m0 * t1y + n * t2y);
+				ctx.moveTo(q[0], q[1]);
+			}
+			{
+				const q = P(m1 * t1x + n * t2x, m1 * t1y + n * t2y);
+				ctx.lineTo(q[0], q[1]);
+			}
 		}
 		for (let m = m0; m <= m1; m++) {
-			{ const q = P(m * t1x + n0 * t2x, m * t1y + n0 * t2y); ctx.moveTo(q[0], q[1]); }
-			{ const q = P(m * t1x + n1 * t2x, m * t1y + n1 * t2y); ctx.lineTo(q[0], q[1]); }
+			{
+				const q = P(m * t1x + n0 * t2x, m * t1y + n0 * t2y);
+				ctx.moveTo(q[0], q[1]);
+			}
+			{
+				const q = P(m * t1x + n1 * t2x, m * t1y + n1 * t2y);
+				ctx.lineTo(q[0], q[1]);
+			}
 		}
 		ctx.strokeStyle = accent;
 		ctx.lineWidth = 1.5;

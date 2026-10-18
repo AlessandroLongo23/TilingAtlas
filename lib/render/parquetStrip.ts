@@ -7,8 +7,8 @@ export type Pt = readonly [number, number];
 /** One control point of an edge, in edge-local coordinates: `s` runs 0→1 along the edge,
  *  `d` is the perpendicular offset (before scaling by `amount` and the local time `t`). */
 export interface ControlPoint {
-  s: number;
-  d: number;
+	s: number;
+	d: number;
 }
 
 /** An edge's END-keyframe shape. Must start at s=0,d=0 and end at s=1,d=0 so edges meet at corners. */
@@ -20,6 +20,6 @@ export type DProfile = (normalizedX: number) => number;
 
 /** The trivial (straight) edge profile. */
 export const STRAIGHT_EDGE: EdgeProfile = [
-  { s: 0, d: 0 },
-  { s: 1, d: 0 },
+	{ s: 0, d: 0 },
+	{ s: 1, d: 0 },
 ];

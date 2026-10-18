@@ -1,10 +1,5 @@
 import { create } from "zustand";
-import {
-	fetchCampaigns,
-	fetchAllTilings,
-	type Campaign,
-	type CampaignTiling,
-} from "@/lib/services/campaignService";
+import { fetchCampaigns, fetchAllTilings, type Campaign, type CampaignTiling } from "@/lib/services/campaignService";
 
 export interface CampaignTilingFilters {
 	kValues?: number[];
@@ -36,10 +31,7 @@ export const useCampaignStore = create<CampaignStoreState>()((set, get) => ({
 		if (get().initialized) return;
 		set({ loading: true });
 		try {
-			const [campaigns, tilings] = await Promise.all([
-				fetchCampaigns(),
-				fetchAllTilings(),
-			]);
+			const [campaigns, tilings] = await Promise.all([fetchCampaigns(), fetchAllTilings()]);
 			set({ campaigns, tilings, initialized: true, ready: true });
 		} catch (err) {
 			console.error("Error initializing campaign store:", err);
@@ -51,10 +43,7 @@ export const useCampaignStore = create<CampaignStoreState>()((set, get) => ({
 	async refresh() {
 		set({ loading: true });
 		try {
-			const [campaigns, tilings] = await Promise.all([
-				fetchCampaigns(),
-				fetchAllTilings(),
-			]);
+			const [campaigns, tilings] = await Promise.all([fetchCampaigns(), fetchAllTilings()]);
 			set({ campaigns, tilings });
 		} catch (err) {
 			console.error("Error refreshing campaign store:", err);
@@ -82,10 +71,18 @@ export const useCampaignStore = create<CampaignStoreState>()((set, get) => ({
 }));
 
 export const campaignStore = {
-	get campaigns() { return useCampaignStore.getState().campaigns; },
-	get tilings() { return useCampaignStore.getState().tilings; },
-	get loading() { return useCampaignStore.getState().loading; },
-	get initialized() { return useCampaignStore.getState().initialized; },
+	get campaigns() {
+		return useCampaignStore.getState().campaigns;
+	},
+	get tilings() {
+		return useCampaignStore.getState().tilings;
+	},
+	get loading() {
+		return useCampaignStore.getState().loading;
+	},
+	get initialized() {
+		return useCampaignStore.getState().initialized;
+	},
 	initialize: () => useCampaignStore.getState().initialize(),
 	refresh: () => useCampaignStore.getState().refresh(),
 	filterTilings: (f?: CampaignTilingFilters) => useCampaignStore.getState().filterTilings(f),

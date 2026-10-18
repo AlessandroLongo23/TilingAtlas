@@ -33,7 +33,11 @@ describe("uniform-polyhedron edge board manifest", () => {
 	it("never lists a k as both eager and lazy, and counts exactly the ks it lists", () => {
 		for (const b of SPH_EDGES_BOARDS) {
 			expect(b.eagerKs.filter((k) => b.lazyKs.includes(k))).toEqual([]);
-			expect(Object.keys(b.counts).map(Number).sort((x, y) => x - y)).toEqual(sphEdgesBoardKs(b));
+			expect(
+				Object.keys(b.counts)
+					.map(Number)
+					.sort((x, y) => x - y),
+			).toEqual(sphEdgesBoardKs(b));
 		}
 	});
 
@@ -66,20 +70,11 @@ describe("uniform-polyhedron edge board manifest", () => {
 		// Lexicographic, so "33334" sorts before "3338" — the fourth character decides.
 		// Twelve of the twenty-seven are unfinished after the 2026-08-12 drop, which is the honest shape of
 		// a shelf fed by budgeted runs: only the prisms and the small truncated solids reach k = V.
-		expect(SPH_EDGES_BOARDS.filter((b) => !b.complete).map((b) => b.id).sort()).toEqual([
-			"33310",
-			"33334",
-			"33335",
-			"3338",
-			"3339",
-			"4435",
-			"4443",
-			"468",
-			"665",
-			"j37",
-			"j72",
-			"j73",
-		]);
+		expect(
+			SPH_EDGES_BOARDS.filter((b) => !b.complete)
+				.map((b) => b.id)
+				.sort(),
+		).toEqual(["33310", "33334", "33335", "3338", "3339", "4435", "4443", "468", "665", "j37", "j72", "j73"]);
 		// ⚑ 3338 is the third shape of the same story: its census counts 2,925,191 tilings at k=16, the
 		// drop carries no k=16 file at all, and the census carries no MAX marker either — so the board is
 		// both unfinished AND short-copied, like the snub cube, at a scale that dwarfs everything shipped.

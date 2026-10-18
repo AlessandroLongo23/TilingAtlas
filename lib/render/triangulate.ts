@@ -89,7 +89,9 @@ export function triangulate(pts: readonly Pt[]): number[] {
 			const ia = ring[(i + ring.length - 1) % ring.length];
 			const ib = ring[i];
 			const ic = ring[(i + 1) % ring.length];
-			const a = pts[ia], b = pts[ib], c = pts[ic];
+			const a = pts[ia],
+				b = pts[ib],
+				c = pts[ic];
 			const area2 = cross(a.x, a.y, b.x, b.y, c.x, c.y);
 			if (area2 <= 0) continue; // reflex or straight — not an ear tip
 
@@ -131,11 +133,7 @@ export function triangulate(pts: readonly Pt[]): number[] {
 			if (cross(a.x, a.y, b.x, b.y, c.x, c.y) > 0) forced = i;
 		}
 		if (forced < 0) forced = 0; // wholly degenerate ring: drop a vertex to guarantee progress
-		out.push(
-			ring[(forced + ring.length - 1) % ring.length],
-			ring[forced],
-			ring[(forced + 1) % ring.length],
-		);
+		out.push(ring[(forced + ring.length - 1) % ring.length], ring[forced], ring[(forced + 1) % ring.length]);
 		ring.splice(forced, 1);
 		if (++stalled > n) break; // belt and braces; the splice above already bounds the loop
 	}

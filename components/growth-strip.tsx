@@ -54,16 +54,22 @@ interface GrowthFigure {
 const toRaw = (polys: FigPoly[]): RawPolygon[] =>
 	polys.map((p) => ({ n: p.n, vertices: p.v.map(([x, y]) => ({ x, y })) }));
 
-interface Box { minX: number; maxX: number; minY: number; maxY: number }
+interface Box {
+	minX: number;
+	maxX: number;
+	minY: number;
+	maxY: number;
+}
 
 const boxOf = (polys: FigPoly[], into?: Box): Box => {
 	const b = into ?? { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
-	for (const p of polys) for (const [x, y] of p.v) {
-		if (x < b.minX) b.minX = x;
-		if (x > b.maxX) b.maxX = x;
-		if (y < b.minY) b.minY = y;
-		if (y > b.maxY) b.maxY = y;
-	}
+	for (const p of polys)
+		for (const [x, y] of p.v) {
+			if (x < b.minX) b.minX = x;
+			if (x > b.maxX) b.maxX = x;
+			if (y < b.minY) b.minY = y;
+			if (y > b.maxY) b.maxY = y;
+		}
 	return b;
 };
 
@@ -83,9 +89,9 @@ function worldFrame(fig: GrowthFigure): Box {
 	return b;
 }
 
-const DOT_R = 4.5;      // collapsed vertex, CSS px
-const OPEN_R = 3;       // open (frontier) vertex
-const TARGET_R = 9;     // ring on the vertex the expander takes next
+const DOT_R = 4.5; // collapsed vertex, CSS px
+const OPEN_R = 3; // open (frontier) vertex
+const TARGET_R = 9; // ring on the vertex the expander takes next
 
 export function GrowthStrip({ src = "/defense/growth-k3.json" }: { src?: string }) {
 	const [fig, setFig] = useState<GrowthFigure | null>(null);
@@ -97,15 +103,27 @@ export function GrowthStrip({ src = "/defense/growth-k3.json" }: { src?: string 
 		let live = true;
 		fetch(src)
 			.then((r) => r.json())
-			.then((d: GrowthFigure) => { if (live) setFig(d); })
-			.catch(() => { if (live) setFig(null); });
-		return () => { live = false; };
+			.then((d: GrowthFigure) => {
+				if (live) setFig(d);
+			})
+			.catch(() => {
+				if (live) setFig(null);
+			});
+		return () => {
+			live = false;
+		};
 	}, [src]);
 
 	// The state the active card is choosing from: the root, then whichever level-1 state the first
 	// stamp led to. Null once both stamps are placed — there is no third iteration.
 	const step = confirmed.length;
-	const active: FigState | null = !fig ? null : step === 0 ? fig.root : step === 1 ? (fig.level1[confirmed[0]] ?? null) : null;
+	const active: FigState | null = !fig
+		? null
+		: step === 0
+			? fig.root
+			: step === 1
+				? (fig.level1[confirmed[0]] ?? null)
+				: null;
 
 	// Patches on the current path: [seed, seed+stamp1, seed+stamp1+stamp2], truncated to what is placed.
 	const patches = useMemo<FigPoly[][]>(() => {
@@ -126,9 +144,12 @@ export function GrowthStrip({ src = "/defense/growth-k3.json" }: { src?: string 
 	const collapsedAt = useMemo<{ at: [number, number]; orbit: number }[][]>(() => {
 		if (!fig) return [];
 		const out = [fig.cores];
-		if (confirmed.length >= 1) out.push(fig.root.candidates[confirmed[0]].collapsed.length
-			? [...fig.cores, ...fig.root.candidates[confirmed[0]].collapsed]
-			: fig.cores);
+		if (confirmed.length >= 1)
+			out.push(
+				fig.root.candidates[confirmed[0]].collapsed.length
+					? [...fig.cores, ...fig.root.candidates[confirmed[0]].collapsed]
+					: fig.cores,
+			);
 		if (confirmed.length >= 2) {
 			const lvl = fig.level1[confirmed[0]];
 			out.push([...out[1], ...lvl.candidates[confirmed[1]].collapsed]);
@@ -140,10 +161,13 @@ export function GrowthStrip({ src = "/defense/growth-k3.json" }: { src?: string 
 	const candidate = active?.candidates[cursor] ?? null;
 	const total = active?.candidates.length ?? 0;
 
-	const cycle = useCallback((d: number) => {
-		if (total === 0) return;
-		setCursor((c) => (c + d + total) % total);
-	}, [total]);
+	const cycle = useCallback(
+		(d: number) => {
+			if (total === 0) return;
+			setCursor((c) => (c + d + total) % total);
+		},
+		[total],
+	);
 
 	const confirm = useCallback(() => {
 		if (!active || total === 0) return;
@@ -151,7 +175,10 @@ export function GrowthStrip({ src = "/defense/growth-k3.json" }: { src?: string 
 		setCursor(0);
 	}, [active, total, cursor]);
 
-	const reset = useCallback(() => { setConfirmed([]); setCursor(0); }, []);
+	const reset = useCallback(() => {
+		setConfirmed([]);
+		setCursor(0);
+	}, []);
 
 	// `,` `.` cycle and Enter confirms while the pointer is over the strip. Every one of them is
 	// stopped here so the deck never sees it — and the arrows are never touched, so the clicker keeps
@@ -167,14 +194,26 @@ export function GrowthStrip({ src = "/defense/growth-k3.json" }: { src?: string 
 	// on exactly one slide and `,` `.` Enter are unused by the deck, so listening whenever it exists
 	// costs nothing and always works.
 	const keysRef = useRef({ cycle, confirm });
-	useEffect(() => { keysRef.current = { cycle, confirm }; }, [cycle, confirm]);
+	useEffect(() => {
+		keysRef.current = { cycle, confirm };
+	}, [cycle, confirm]);
 	useEffect(() => {
 		const onKey = (e: KeyboardEvent) => {
 			if (e.metaKey || e.ctrlKey || e.altKey) return;
 			if (isTypingTarget(e)) return;
-			if (e.key === ",") { e.preventDefault(); e.stopPropagation(); keysRef.current.cycle(-1); }
-			else if (e.key === ".") { e.preventDefault(); e.stopPropagation(); keysRef.current.cycle(1); }
-			else if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); keysRef.current.confirm(); }
+			if (e.key === ",") {
+				e.preventDefault();
+				e.stopPropagation();
+				keysRef.current.cycle(-1);
+			} else if (e.key === ".") {
+				e.preventDefault();
+				e.stopPropagation();
+				keysRef.current.cycle(1);
+			} else if (e.key === "Enter") {
+				e.preventDefault();
+				e.stopPropagation();
+				keysRef.current.confirm();
+			}
 		};
 		window.addEventListener("keydown", onKey, true);
 		return () => window.removeEventListener("keydown", onKey, true);
@@ -202,10 +241,10 @@ export function GrowthStrip({ src = "/defense/growth-k3.json" }: { src?: string 
 							frame={frame}
 							k={fig.k}
 							patch={patches[i] ?? null}
-							overlay={i === step ? candidate?.add ?? null : null}
+							overlay={i === step ? (candidate?.add ?? null) : null}
 							collapsed={collapsedAt[i] ?? null}
-							frontier={i === step ? active?.frontier ?? null : null}
-							target={i === step ? active?.target ?? null : null}
+							frontier={i === step ? (active?.frontier ?? null) : null}
+							target={i === step ? (active?.target ?? null) : null}
 							// `step` still points at the last card once both stamps are placed, but there is
 							// nothing to choose there — an accent border would promise a control that is gone.
 							activeStep={i === step && active !== null}
@@ -226,7 +265,7 @@ export function GrowthStrip({ src = "/defense/growth-k3.json" }: { src?: string 
 						>
 							‹
 						</button>
-						<span className="tabular-nums text-fg-secondary">
+						<span className="text-fg-secondary tabular-nums">
 							placement {cursor + 1} of {total}
 						</span>
 						<button
@@ -261,7 +300,9 @@ export function GrowthStrip({ src = "/defense/growth-k3.json" }: { src?: string 
 				<span className="max-md:hidden">
 					<kbd>,</kbd> <kbd>.</kbd> cycle · <kbd>Enter</kbd> stamps · the ringed vertex is the one the search takes next
 				</span>
-				<span className="md:hidden">‹ › cycle · stamp it places it · the ringed vertex is the one the search takes next</span>
+				<span className="md:hidden">
+					‹ › cycle · stamp it places it · the ringed vertex is the one the search takes next
+				</span>
 			</p>
 		</div>
 	);
@@ -292,15 +333,21 @@ function GrowthCard({
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
 	useEffect(() => {
-		const host = hostRef.current, canvas = canvasRef.current;
+		const host = hostRef.current,
+			canvas = canvasRef.current;
 		if (!host || !canvas) return;
 
 		const paint = () => {
-			const w = host.clientWidth, h = host.clientHeight;
+			const w = host.clientWidth,
+				h = host.clientHeight;
 			if (w <= 0 || h <= 0) return;
 			const dpr = Math.min(window.devicePixelRatio || 1, 2);
-			const bw = Math.round(w * dpr), bh = Math.round(h * dpr);
-			if (canvas.width !== bw || canvas.height !== bh) { canvas.width = bw; canvas.height = bh; }
+			const bw = Math.round(w * dpr),
+				bh = Math.round(h * dpr);
+			if (canvas.width !== bw || canvas.height !== bh) {
+				canvas.width = bw;
+				canvas.height = bh;
+			}
 			const ctx = canvas.getContext("2d");
 			if (!ctx) return;
 			ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -310,9 +357,11 @@ function GrowthCard({
 			// The shared frame, filling the card bar a hair of margin. The frame has to hold the largest
 			// patch any path reaches, so the seed already sits at about half the card's width; there is no
 			// padding to spare on top of that.
-			const fw = frame.maxX - frame.minX, fh = frame.maxY - frame.minY;
+			const fw = frame.maxX - frame.minX,
+				fh = frame.maxY - frame.minY;
 			const s = 0.96 * Math.min(w / fw, h / fh);
-			const cx = (frame.minX + frame.maxX) / 2, cy = (frame.minY + frame.maxY) / 2;
+			const cx = (frame.minX + frame.maxX) / 2,
+				cy = (frame.minY + frame.maxY) / 2;
 			ctx.scale(dpr, dpr);
 			ctx.translate(w / 2, h / 2);
 			ctx.scale(s, -s); // world y is up
@@ -344,14 +393,17 @@ function GrowthCard({
 			const dot = (p: [number, number], r: number, fill: string, stroke: string, width: number) => {
 				ctx.beginPath();
 				ctx.arc(p[0], p[1], r * px, 0, Math.PI * 2);
-				if (fill !== "none") { ctx.fillStyle = fill; ctx.fill(); }
+				if (fill !== "none") {
+					ctx.fillStyle = fill;
+					ctx.fill();
+				}
 				ctx.strokeStyle = stroke;
 				ctx.lineWidth = width * px;
 				ctx.stroke();
 			};
 			for (const f of frontier ?? []) dot(f, OPEN_R, "#fff", "rgba(0,0,0,0.45)", 1.2);
 			for (const c of collapsed ?? []) {
-								// A white halo under the dot. The orbit colours are the tile palette
+				// A white halo under the dot. The orbit colours are the tile palette
 				// (orbitColor matches Tiling.show), which is right on /play where orbit mode
 				// dims the fill — but here the tiles are at full strength and a red dot on a red triangle
 				// disappears. The halo is what separates them without inventing a second palette.
@@ -372,14 +424,16 @@ function GrowthCard({
 			<div
 				ref={hostRef}
 				className={cn(
-					"relative aspect-square w-full rounded-2xl border bg-surface-base",
+					"bg-surface-base relative aspect-square w-full rounded-2xl border",
 					!patch && "border-dashed",
 					activeStep ? "border-accent" : patch ? "border-line" : "border-line/60",
 				)}
 			>
 				<canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
 			</div>
-			<figcaption className={cn("text-[clamp(0.65rem,0.9vh+0.3vw,0.95rem)]", patch ? "text-fg-muted" : "text-fg-disabled")}>
+			<figcaption
+				className={cn("text-[clamp(0.65rem,0.9vh+0.3vw,0.95rem)]", patch ? "text-fg-muted" : "text-fg-disabled")}
+			>
 				{label}
 			</figcaption>
 		</figure>

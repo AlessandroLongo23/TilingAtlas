@@ -1,11 +1,19 @@
 import { describe, it, expect } from "vitest";
 import { Vector } from "@/classes";
-import { buildIslamicMesh, buildInstancedIslamicMesh, buildInstancedCheckerMesh, latticeCellOf } from "@/lib/render/buildIslamicMesh";
+import {
+	buildIslamicMesh,
+	buildInstancedIslamicMesh,
+	buildInstancedCheckerMesh,
+	latticeCellOf,
+} from "@/lib/render/buildIslamicMesh";
 import { hexToRgb } from "@/lib/render/islamicGL";
 import type { AbcFace, Face, Segment } from "@/utils/islamicArrangement";
 
 const sq = (cx: number, cy: number, r: number): Vector[] => [
-	new Vector(cx - r, cy - r), new Vector(cx + r, cy - r), new Vector(cx + r, cy + r), new Vector(cx - r, cy + r),
+	new Vector(cx - r, cy - r),
+	new Vector(cx + r, cy - r),
+	new Vector(cx + r, cy + r),
+	new Vector(cx - r, cy + r),
 ];
 
 describe("buildIslamicMesh", () => {
@@ -14,7 +22,10 @@ describe("buildIslamicMesh", () => {
 		{ face: { vertices: sq(3, 0, 1) }, klass: "B", hue: 0 },
 		{ face: { vertices: sq(6, 0, 1) }, klass: "C", hue: 0 },
 	];
-	const segments: Segment[] = [[new Vector(0, 0), new Vector(1, 0)], [new Vector(1, 0), new Vector(1, 1)]];
+	const segments: Segment[] = [
+		[new Vector(0, 0), new Vector(1, 0)],
+		[new Vector(1, 0), new Vector(1, 1)],
+	];
 
 	it("fans each face into (n) triangles = 3n verts; squares give 12 fill verts each", () => {
 		const m = buildIslamicMesh(abc, segments, false);
@@ -27,7 +38,10 @@ describe("buildIslamicMesh", () => {
 	it("class per vertex is 0/1/2 for A/B/C; A carries its hue", () => {
 		const m = buildIslamicMesh(abc, segments, false);
 		// first face (A) → class 0, hue 200 on all 12 of its verts
-		for (let i = 0; i < 12; i++) { expect(m.fillClass[i]).toBe(0); expect(m.fillHue[i]).toBe(200); }
+		for (let i = 0; i < 12; i++) {
+			expect(m.fillClass[i]).toBe(0);
+			expect(m.fillHue[i]).toBe(200);
+		}
 		// second face (B) → class 1
 		for (let i = 12; i < 24; i++) expect(m.fillClass[i]).toBe(1);
 		// third face (C) → class 2
@@ -56,7 +70,8 @@ describe("buildIslamicMesh", () => {
 });
 
 describe("latticeCellOf", () => {
-	const v1: [number, number] = [1, 0], v2: [number, number] = [0, 1];
+	const v1: [number, number] = [1, 0],
+		v2: [number, number] = [0, 1];
 	it("reduces a point to the lattice cell it falls in (round of its v1/v2 coords)", () => {
 		expect(latticeCellOf(0.2, -0.3, v1, v2)).toEqual([0, 0]);
 		expect(latticeCellOf(1.1, 0.0, v1, v2)).toEqual([1, 0]);
@@ -64,7 +79,8 @@ describe("latticeCellOf", () => {
 		expect(latticeCellOf(-0.9, -1.1, v1, v2)).toEqual([-1, -1]);
 	});
 	it("works on a sheared basis", () => {
-		const a: [number, number] = [1, 0], b: [number, number] = [0.5, 1];
+		const a: [number, number] = [1, 0],
+			b: [number, number] = [0.5, 1];
 		// point = 2·a + 1·b = (2.5, 1) → cell [2, 1]
 		expect(latticeCellOf(2.5, 1, a, b)).toEqual([2, 1]);
 	});
@@ -74,15 +90,17 @@ describe("latticeCellOf", () => {
 });
 
 describe("buildInstancedIslamicMesh", () => {
-	const v1: [number, number] = [1, 0], v2: [number, number] = [0, 1];
+	const v1: [number, number] = [1, 0],
+		v2: [number, number] = [0, 1];
 	// A 3×3 grid of unit-lattice A faces + segments — the same periodic class at every integer cell. Only
 	// the origin-cell representative must survive (its lattice copies are the shader's other instances).
 	const faces: AbcFace[] = [];
 	const segments: Segment[] = [];
-	for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) {
-		faces.push({ face: { vertices: sq(i, j, 0.3) }, klass: "A", hue: 100 });
-		segments.push([new Vector(i - 0.1, j), new Vector(i + 0.1, j)]);
-	}
+	for (let i = -1; i <= 1; i++)
+		for (let j = -1; j <= 1; j++) {
+			faces.push({ face: { vertices: sq(i, j, 0.3) }, klass: "A", hue: 100 });
+			segments.push([new Vector(i - 0.1, j), new Vector(i + 0.1, j)]);
+		}
 
 	it("keeps exactly the origin-cell face + segment (one representative per periodic class)", () => {
 		const m = buildInstancedIslamicMesh(faces, segments, false, v1, v2);
@@ -99,15 +117,17 @@ describe("buildInstancedIslamicMesh", () => {
 });
 
 describe("buildInstancedCheckerMesh", () => {
-	const v1: [number, number] = [1, 0], v2: [number, number] = [0, 1];
+	const v1: [number, number] = [1, 0],
+		v2: [number, number] = [0, 1];
 	// The same 3×3 grid, but as plain Faces with a per-face two-colour index. Only the origin rep survives,
 	// and it must carry ITS colour in fillClass (0/1), not the A/B/C classes.
 	const faces: Face[] = [];
 	const colors: number[] = [];
-	for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) {
-		faces.push({ vertices: sq(i, j, 0.3) });
-		colors.push((i + j) & 1); // a checker parity so the origin cell is colour 0
-	}
+	for (let i = -1; i <= 1; i++)
+		for (let j = -1; j <= 1; j++) {
+			faces.push({ vertices: sq(i, j, 0.3) });
+			colors.push((i + j) & 1); // a checker parity so the origin cell is colour 0
+		}
 	const segments: Segment[] = [[new Vector(-0.1, 0), new Vector(0.1, 0)]];
 
 	it("keeps the origin-cell face and carries its two-colour index in fillClass", () => {
@@ -120,7 +140,8 @@ describe("buildInstancedCheckerMesh", () => {
 	it("maps colour index 1 to fillClass 1", () => {
 		// Shift the parity so the origin cell is colour 1.
 		const c1 = faces.map((_, idx) => {
-			const i = Math.floor(idx / 3) - 1, j = (idx % 3) - 1;
+			const i = Math.floor(idx / 3) - 1,
+				j = (idx % 3) - 1;
 			return ((i + j) & 1) ^ 1;
 		});
 		const m = buildInstancedCheckerMesh(faces, c1, segments, v1, v2);
@@ -134,7 +155,9 @@ describe("hexToRgb", () => {
 		expect(hexToRgb("#000000")).toEqual([0, 0, 0]);
 		expect(hexToRgb("#fff")).toEqual([1, 1, 1]);
 		const [r, g, b] = hexToRgb("#3a4a52");
-		expect(r).toBeCloseTo(0x3a / 255); expect(g).toBeCloseTo(0x4a / 255); expect(b).toBeCloseTo(0x52 / 255);
+		expect(r).toBeCloseTo(0x3a / 255);
+		expect(g).toBeCloseTo(0x4a / 255);
+		expect(b).toBeCloseTo(0x52 / 255);
 	});
 	it("falls back to mid-grey on garbage", () => {
 		expect(hexToRgb("nope")).toEqual([0.5, 0.5, 0.5]);

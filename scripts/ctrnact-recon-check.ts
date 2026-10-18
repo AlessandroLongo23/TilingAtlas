@@ -11,10 +11,10 @@
  *
  *   pnpm tsx scripts/ctrnact-recon-check.ts <cells.json>
  */
-import fs from 'node:fs';
-import path from 'node:path';
-import { CyclotomicRing, setActiveRing } from '@/classes/Cyclotomic';
-import { reconstructOracleCellExact } from './oracleReconstructExact';
+import fs from "node:fs";
+import path from "node:path";
+import { CyclotomicRing, setActiveRing } from "@/classes/Cyclotomic";
+import { reconstructOracleCellExact } from "./oracleReconstructExact";
 
 setActiveRing(CyclotomicRing.create(24));
 
@@ -23,11 +23,11 @@ type Entry = { id: string; k: number; T1: number[]; T2: number[]; Seed: number[]
 function main(): void {
 	const jsonPath = process.argv[2];
 	if (!jsonPath) {
-		console.error('usage: pnpm tsx scripts/ctrnact-recon-check.ts <cells.json>');
+		console.error("usage: pnpm tsx scripts/ctrnact-recon-check.ts <cells.json>");
 		process.exit(2);
 	}
 	const abs = path.resolve(jsonPath);
-	const entries: Entry[] = JSON.parse(fs.readFileSync(abs, 'utf8'));
+	const entries: Entry[] = JSON.parse(fs.readFileSync(abs, "utf8"));
 	console.error(`Loaded ${entries.length} tilings from ${abs}\n`);
 
 	const t0 = Date.now();
@@ -43,7 +43,7 @@ function main(): void {
 		} catch (err) {
 			res = { error: `THREW: ${(err as Error).message}` };
 		}
-		if ('cell' in res) rec.ok++;
+		if ("cell" in res) rec.ok++;
 		else rec.fails.push({ id: e.id, error: res.error });
 		byK.set(e.k, rec);
 	}
@@ -52,13 +52,15 @@ function main(): void {
 	let grandTotal = 0;
 	let grandOk = 0;
 	const ks = [...byK.keys()].sort((a, b) => a - b);
-	console.error('=== per-k certification ===');
+	console.error("=== per-k certification ===");
 	for (const k of ks) {
 		const r = byK.get(k)!;
 		grandTotal += r.total;
 		grandOk += r.ok;
-		const flag = r.ok === r.total ? '✓' : '✗';
-		console.error(`  ${flag} k=${k}: ${r.ok}/${r.total} certified` + (r.ok < r.total ? `  (${r.total - r.ok} FAIL)` : ''));
+		const flag = r.ok === r.total ? "✓" : "✗";
+		console.error(
+			`  ${flag} k=${k}: ${r.ok}/${r.total} certified` + (r.ok < r.total ? `  (${r.total - r.ok} FAIL)` : ""),
+		);
 	}
 	console.error(`\n=== TOTAL: ${grandOk}/${grandTotal} certified in ${elapsed}s ===\n`);
 

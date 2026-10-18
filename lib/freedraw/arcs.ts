@@ -331,10 +331,7 @@ const cubicAt = (from: Pt, s: Extract<Seg, { kind: "curve" }>, t: number): Pt =>
 	const u = 1 - t;
 	const w = [u * u * u, 3 * u * u * t, 3 * u * t * t, t * t * t];
 	const ps = [from, s.c1, s.c2, s.to];
-	return [
-		ps.reduce((a, p, i) => a + w[i] * p[0], 0),
-		ps.reduce((a, p, i) => a + w[i] * p[1], 0),
-	];
+	return [ps.reduce((a, p, i) => a + w[i] * p[0], 0), ps.reduce((a, p, i) => a + w[i] * p[1], 0)];
 };
 
 const sharesEnd = (a: Pt[], b: Pt[]): boolean => {
@@ -348,9 +345,7 @@ const sharesEnd = (a: Pt[], b: Pt[]): boolean => {
 
 const properCross = (a: Pt, b: Pt, c: Pt, d: Pt): boolean => {
 	const side = (p: Pt, q: Pt, r: Pt) => (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]);
-	return (
-		side(a, b, c) * side(a, b, d) < -1e-12 && side(c, d, a) * side(c, d, b) < -1e-12
-	);
+	return side(a, b, c) * side(a, b, d) < -1e-12 && side(c, d, a) * side(c, d, b) < -1e-12;
 };
 
 /**
@@ -361,11 +356,7 @@ const properCross = (a: Pt, b: Pt, c: Pt, d: Pt): boolean => {
  * whose sides are split at every junction, so "9 sides / 7 corners" shapes are ordinary. Ray-cast rather
  * than half-plane test, so non-convex tiles are handled honestly.
  */
-export function figureEscapes(
-	corners: readonly Pt[],
-	loops: readonly TileLoop[],
-	samples = 10,
-): boolean {
+export function figureEscapes(corners: readonly Pt[], loops: readonly TileLoop[], samples = 10): boolean {
 	const inside = (p: Pt): boolean => {
 		let hit = false;
 		for (let i = 0, j = corners.length - 1; i < corners.length; j = i++) {

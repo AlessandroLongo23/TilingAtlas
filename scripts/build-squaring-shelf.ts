@@ -24,7 +24,15 @@ import { planarMapFromFaces, eulerCharacteristic, isThreeConnected, type PlanarM
 import { allSquarings } from "@/lib/squaring/smith";
 import { tiledArea, tilesExactly } from "@/lib/squaring/classify";
 import { buildPipelineRecord, toSquaringRecord } from "@/lib/squaring/pipeline";
-import { bestSquaring, type PipelineIndex, type PipelineIndexEntry, type PipelineRecord, type PolyhedronSquarings, type SquaringManifest, type SquaringSummary } from "@/lib/squaring/shelf";
+import {
+	bestSquaring,
+	type PipelineIndex,
+	type PipelineIndexEntry,
+	type PipelineRecord,
+	type PolyhedronSquarings,
+	type SquaringManifest,
+	type SquaringSummary,
+} from "@/lib/squaring/shelf";
 
 const OUT_DIR = path.join(process.cwd(), "public", "squarings");
 const PIPELINE_DIR = path.join(OUT_DIR, "pipeline");
@@ -193,7 +201,8 @@ function main() {
 	const started = Date.now();
 
 	corpus.forEach((c, i) => {
-		const map = planarMapFromFaces(c.faces, c.vertexCount) ?? fail(`${c.id}: face rings do not form an oriented planar map`);
+		const map =
+			planarMapFromFaces(c.faces, c.vertexCount) ?? fail(`${c.id}: face rings do not form an oriented planar map`);
 		const chi = eulerCharacteristic(map);
 		if (chi !== 2) fail(`${c.id}: Euler characteristic ${chi}, not 2 — no planar embedding, no Smith diagram`);
 		if (!isThreeConnected(map)) {
@@ -315,9 +324,7 @@ function main() {
 	}
 
 	// Perfect first, then by how many distinct sizes survive: the list doubles as the finding.
-	pipelineEntries.sort(
-		(a, b) => Number(b.perfect) - Number(a.perfect) || b.distinct - a.distinct || a.order - b.order,
-	);
+	pipelineEntries.sort((a, b) => Number(b.perfect) - Number(a.perfect) || b.distinct - a.distinct || a.order - b.order);
 	const index: PipelineIndex = { maxOrder: PIPELINE_MAX_ORDER, entries: pipelineEntries };
 	writeFileSync(path.join(PIPELINE_DIR, "index.json"), JSON.stringify(index, null, "\t"));
 	console.log(

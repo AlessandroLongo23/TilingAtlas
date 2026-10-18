@@ -35,12 +35,7 @@ import {
 	type SizeMode,
 	type Tri,
 } from "@/lib/freedraw/filter";
-import {
-	freedrawKNoun,
-	gridOf,
-	type FreedrawCatalogueGrid,
-	type FreedrawPattern,
-} from "@/lib/freedraw/pattern";
+import { freedrawKNoun, gridOf, type FreedrawCatalogueGrid, type FreedrawPattern } from "@/lib/freedraw/pattern";
 import { classifyRegular, REGULAR_KINDS, type RegularKind } from "@/lib/freedraw/regular";
 import { FILL_MODES, type FillMode } from "@/lib/freedraw/render";
 import { useGridArrowNav } from "@/lib/hooks/useGridArrowNav";
@@ -286,7 +281,11 @@ export function PlanarFreedraw({
 	const slice = useMemo(() => {
 		const urls = filesFor(filter.grid, filter.k);
 		if (!urls.every((u) => catalogueCache.has(u))) return null;
-		const out: { pattern: FreedrawPattern; stats: ReturnType<typeof summarise>; analysis: ReturnType<typeof analyseFaces> }[] = [];
+		const out: {
+			pattern: FreedrawPattern;
+			stats: ReturnType<typeof summarise>;
+			analysis: ReturnType<typeof analyseFaces>;
+		}[] = [];
 		for (const u of urls) {
 			for (const p of catalogueCache.get(u) ?? []) {
 				if (gridOf(p) === filter.grid && (!filter.k || p.k === filter.k)) {
@@ -309,19 +308,13 @@ export function PlanarFreedraw({
 		);
 	}, [slice, filter]);
 
-	const pageRows = useMemo(
-		() => shown.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
-		[shown, page],
-	);
+	const pageRows = useMemo(() => shown.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), [shown, page]);
 
 	const selected = useMemo(
 		() => shown.find((r) => r.pattern.id === selectedId) ?? pageRows[0] ?? null,
 		[shown, pageRows, selectedId],
 	);
-	const detail = useMemo(
-		() => (selected ? analyseFaces(selected.pattern) : null),
-		[selected],
-	);
+	const detail = useMemo(() => (selected ? analyseFaces(selected.pattern) : null), [selected]);
 
 	// The detail pane is the interactive one, so it carries the lattice overlay and the orbit hover; the
 	// thumbnails stay plain line art (neither reads at 116px, and the hover loop would run per canvas).
@@ -402,11 +395,7 @@ export function PlanarFreedraw({
 	// history spam. Same pattern as components/reference-shelf.tsx.
 	useEffect(() => {
 		const q = serializeFilter(filter);
-		window.history.replaceState(
-			null,
-			"",
-			q ? `${window.location.pathname}?${q}` : window.location.pathname,
-		);
+		window.history.replaceState(null, "", q ? `${window.location.pathname}?${q}` : window.location.pathname);
 	}, [filter]);
 
 	// Every filter change lands on page 1. Done here, in the one funnel all of them pass through, rather
@@ -432,8 +421,7 @@ export function PlanarFreedraw({
 				: [...filter.sizes, n].sort((a, b) => a - b),
 		});
 
-	const setPolygon = (n: RegularKind, v: Tri) =>
-		update({ polygons: { ...filter.polygons, [n]: v } });
+	const setPolygon = (n: RegularKind, v: Tri) => update({ polygons: { ...filter.polygons, [n]: v } });
 
 	const resetFilters = () => {
 		setFilter({ ...DEFAULT_FILTER, grid: filter.grid });
@@ -441,15 +429,14 @@ export function PlanarFreedraw({
 	};
 
 	const sizesEnabled = filter.finite === "require";
-	const isDefault =
-		serializeFilter(filter) === serializeFilter({ ...DEFAULT_FILTER, grid: filter.grid });
+	const isDefault = serializeFilter(filter) === serializeFilter({ ...DEFAULT_FILTER, grid: filter.grid });
 
 	if (error) {
 		return <div className="p-8 text-danger">Could not load the freedraw catalogue: {error}</div>;
 	}
 
 	return (
-		<div className="flex flex-1 min-w-0 flex-col min-h-0">
+		<div className="flex min-h-0 min-w-0 flex-1 flex-col">
 			<header className="shrink-0 border-b border-line-subtle">
 				<WallBar
 					count={slice === null ? "loading…" : `${shown.length.toLocaleString()} / ${slice.length.toLocaleString()}`}
@@ -469,7 +456,13 @@ export function PlanarFreedraw({
 					<WallColumn>
 						<GeometryGroup value={geometry} onChange={onGeometryChange} />
 						<WallGroup title="Grid">
-							<OptionWall columns={4} options={GRID_OPTIONS} selected={filter.grid} onChange={switchGrid} classes="[&>button]:whitespace-nowrap [&>button]:px-1" />
+							<OptionWall
+								columns={4}
+								options={GRID_OPTIONS}
+								selected={filter.grid}
+								onChange={switchGrid}
+								classes="[&>button]:whitespace-nowrap [&>button]:px-1"
+							/>
 						</WallGroup>
 						<WallGroup title="k" note="orbits">
 							<OptionWall
@@ -501,7 +494,10 @@ export function PlanarFreedraw({
 						    disabled. Dropped entirely when the slice has no finite tiles to size. */}
 						{sizes.length > 0 && (
 							<WallGroup title="Tile size" note={sizesEnabled ? undefined : "set Finite to Has"}>
-								<fieldset disabled={!sizesEnabled} className="flex min-w-0 flex-col gap-2 disabled:opacity-50 [&:disabled_button]:cursor-not-allowed">
+								<fieldset
+									disabled={!sizesEnabled}
+									className="flex min-w-0 flex-col gap-2 disabled:opacity-50 [&:disabled_button]:cursor-not-allowed"
+								>
 									<OptionWall
 										columns={2}
 										options={SIZE_MODE_OPTIONS}
@@ -550,13 +546,33 @@ export function PlanarFreedraw({
 
 					<WallColumn>
 						<WallGroup title="Display">
-							<OptionWall columns={FILL_OPTIONS.length} options={FILL_OPTIONS} selected={fillMode} onChange={setFillMode} />
+							<OptionWall
+								columns={FILL_OPTIONS.length}
+								options={FILL_OPTIONS}
+								selected={fillMode}
+								onChange={setFillMode}
+							/>
 							<PhoneNote>{FILL_MODES.find((m) => m.value === fillMode)?.help}</PhoneNote>
 							<WallSubLabel>Overlays</WallSubLabel>
 							<ToggleRow>
-								<ToggleCell label="Grid" shortcut="G" on={showScaffold} onClick={() => setShowScaffold(!showScaffold)} />
-								<ToggleCell label="Lattice" shortcut="P" on={showLattice} onClick={() => setShowLattice(!showLattice)} />
-								<ToggleCell label="Orbits" shortcut="O" on={showVertices} onClick={() => setShowVertices(!showVertices)} />
+								<ToggleCell
+									label="Grid"
+									shortcut="G"
+									on={showScaffold}
+									onClick={() => setShowScaffold(!showScaffold)}
+								/>
+								<ToggleCell
+									label="Lattice"
+									shortcut="P"
+									on={showLattice}
+									onClick={() => setShowLattice(!showLattice)}
+								/>
+								<ToggleCell
+									label="Orbits"
+									shortcut="O"
+									on={showVertices}
+									onClick={() => setShowVertices(!showVertices)}
+								/>
 								<ToggleCell label="Tiles" shortcut="A" on={showArcs} onClick={() => setShowArcs(!showArcs)} />
 							</ToggleRow>
 							{/* A tile with c connected edges has c! drawings; these three name the useful corners
@@ -576,7 +592,7 @@ export function PlanarFreedraw({
 				</WallBar>
 			</header>
 
-			<div className="flex-1 min-h-0 flex">
+			<div className="flex min-h-0 flex-1">
 				<div className={LIST_PANE}>
 					{slice === null && <div className="p-8 text-fg-muted">Loading the {filter.grid} catalogue…</div>}
 					<div ref={gridRef} className={CATALOGUE_GRID}>
@@ -604,12 +620,7 @@ export function PlanarFreedraw({
 					</div>
 					{shown.length > PAGE_SIZE && (
 						<div className="mt-4 flex justify-center">
-							<Pagination
-								totalItems={shown.length}
-								pageSize={PAGE_SIZE}
-								currentPage={page}
-								onPageChange={setPage}
-							/>
+							<Pagination totalItems={shown.length} pageSize={PAGE_SIZE} currentPage={page} onPageChange={setPage} />
 						</div>
 					)}
 				</div>

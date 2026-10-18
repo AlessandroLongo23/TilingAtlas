@@ -1,6 +1,6 @@
-import type { FloatTiling } from './types';
-import { effectiveVerts } from './geometry';
-import { flattenKey } from './flattenKey';
+import type { FloatTiling } from "./types";
+import { effectiveVerts } from "./geometry";
+import { flattenKey } from "./flattenKey";
 
 // Node identity up to DIRECT similarity (rotation, translation, uniform scale — NOT reflection), with
 // chirality tracked. The shape fingerprint is `flattenKey` (a proven similarity-invariant, reflection-
@@ -14,14 +14,17 @@ const EPS = 1e-6;
 const Q = 1e4; // quantise aligned coords to 1e-4; distinct tilings differ by far more than this
 
 function effTiles(t: FloatTiling): [number, number][][] {
-  return t.polys.map((p) => effectiveVerts(p.verts)).filter((v) => v.length >= 3);
+	return t.polys.map((p) => effectiveVerts(p.verts)).filter((v) => v.length >= 3);
 }
 
 function mirror(t: FloatTiling): FloatTiling {
-  return {
-    polys: t.polys.map((p) => ({ n: p.n, star: p.star, verts: p.verts.map(([x, y]) => [x, -y] as [number, number]) })),
-    basis: [[t.basis[0][0], -t.basis[0][1]], [t.basis[1][0], -t.basis[1][1]]],
-  };
+	return {
+		polys: t.polys.map((p) => ({ n: p.n, star: p.star, verts: p.verts.map(([x, y]) => [x, -y] as [number, number]) })),
+		basis: [
+			[t.basis[0][0], -t.basis[0][1]],
+			[t.basis[1][0], -t.basis[1][1]],
+		],
+	};
 }
 
 /**
@@ -33,35 +36,41 @@ function mirror(t: FloatTiling): FloatTiling {
  * shape distinctness comes from `flattenKey`.
  */
 function directKey(t: FloatTiling): string {
-  const tiles = effTiles(t);
-  const pts: [number, number][] = [];
-  for (const v of tiles) for (const p of v) pts.push([p[0], p[1]]);
-  if (pts.length === 0) return 'degenerate:⊥';
-  let s = Infinity;
-  for (const v of tiles) for (let i = 0; i < v.length; i++) {
-    const q = v[(i + 1) % v.length];
-    s = Math.min(s, Math.hypot(v[i][0] - q[0], v[i][1] - q[1]));
-  }
-  if (!Number.isFinite(s) || s <= 0) s = 1;
-  const gx = pts.reduce((a, p) => a + p[0], 0) / pts.length;
-  const gy = pts.reduce((a, p) => a + p[1], 0) / pts.length;
-  const centered = pts.map(([x, y]): [number, number] => [(x - gx) / s, (y - gy) / s]);
-  let best: string | null = null;
-  for (const a of centered) {
-    const r = Math.hypot(a[0], a[1]);
-    if (r < EPS) continue; // a point at the centroid gives no orientation reference
-    const th = Math.atan2(a[1], a[0]);
-    const c = Math.cos(-th), sn = Math.sin(-th);
-    const ser = centered
-      .map(([x, y]) => `${Math.round((x * c - y * sn) * Q)},${Math.round((x * sn + y * c) * Q)}`)
-      .sort()
-      .join(';');
-    if (best === null || ser < best) best = ser;
-  }
-  return best ?? 'degenerate:⊥';
+	const tiles = effTiles(t);
+	const pts: [number, number][] = [];
+	for (const v of tiles) for (const p of v) pts.push([p[0], p[1]]);
+	if (pts.length === 0) return "degenerate:⊥";
+	let s = Infinity;
+	for (const v of tiles)
+		for (let i = 0; i < v.length; i++) {
+			const q = v[(i + 1) % v.length];
+			s = Math.min(s, Math.hypot(v[i][0] - q[0], v[i][1] - q[1]));
+		}
+	if (!Number.isFinite(s) || s <= 0) s = 1;
+	const gx = pts.reduce((a, p) => a + p[0], 0) / pts.length;
+	const gy = pts.reduce((a, p) => a + p[1], 0) / pts.length;
+	const centered = pts.map(([x, y]): [number, number] => [(x - gx) / s, (y - gy) / s]);
+	let best: string | null = null;
+	for (const a of centered) {
+		const r = Math.hypot(a[0], a[1]);
+		if (r < EPS) continue; // a point at the centroid gives no orientation reference
+		const th = Math.atan2(a[1], a[0]);
+		const c = Math.cos(-th),
+			sn = Math.sin(-th);
+		const ser = centered
+			.map(([x, y]) => `${Math.round((x * c - y * sn) * Q)},${Math.round((x * sn + y * c) * Q)}`)
+			.sort()
+			.join(";");
+		if (best === null || ser < best) best = ser;
+	}
+	return best ?? "degenerate:⊥";
 }
 
-export interface CanonicalKey { key: string; handed: boolean; blind: string; }
+export interface CanonicalKey {
+	key: string;
+	handed: boolean;
+	blind: string;
+}
 
 /**
  * Direct-similarity node key. `blind` is the reflection-invariant shape fingerprint (flattenKey); `key`
@@ -70,14 +79,15 @@ export interface CanonicalKey { key: string; handed: boolean; blind: string; }
  * An empty tiling (zero-area collapse) is the shared ⊥.
  */
 export function nodeCanonicalKey(t: FloatTiling): CanonicalKey {
-  if (effTiles(t).length === 0) return { key: 'degenerate:⊥', handed: false, blind: 'degenerate:⊥' };
-  const blind = flattenKey(t);
-  const dk = directKey(t), dkm = directKey(mirror(t));
-  const handed = dk !== dkm;
-  // Achiral ⇒ 'a' (mirror shares it). Chiral ⇒ the two hands get '0'/'1' by the canonical order of their
-  // direct keys, so a tiling and its mirror land on opposite bits but the SAME `blind`.
-  const hand = handed ? (dk < dkm ? '0' : '1') : 'a';
-  return { key: `${blind}|${hand}`, handed, blind };
+	if (effTiles(t).length === 0) return { key: "degenerate:⊥", handed: false, blind: "degenerate:⊥" };
+	const blind = flattenKey(t);
+	const dk = directKey(t),
+		dkm = directKey(mirror(t));
+	const handed = dk !== dkm;
+	// Achiral ⇒ 'a' (mirror shares it). Chiral ⇒ the two hands get '0'/'1' by the canonical order of their
+	// direct keys, so a tiling and its mirror land on opposite bits but the SAME `blind`.
+	const hand = handed ? (dk < dkm ? "0" : "1") : "a";
+	return { key: `${blind}|${hand}`, handed, blind };
 }
 
 /** The numeric aligned+sorted coordinate vector behind directKey's best alignment (pre-quantisation) —
@@ -88,29 +98,39 @@ export function nodeCanonicalKey(t: FloatTiling): CanonicalKey {
  *  without the lattice the vertex-only feature collides for such pairs and the margin reads a false 0.
  *  Empty for the ⊥ tiling. */
 export function canonicalCoords(t: FloatTiling): number[] {
-  const tiles = effTiles(t);
-  const pts: [number, number][] = [];
-  for (const v of tiles) for (const p of v) pts.push([p[0], p[1]]);
-  if (pts.length === 0) return [];
-  let s = Infinity;
-  for (const v of tiles) for (let i = 0; i < v.length; i++) {
-    const q = v[(i + 1) % v.length]; s = Math.min(s, Math.hypot(v[i][0] - q[0], v[i][1] - q[1]));
-  }
-  if (!Number.isFinite(s) || s <= 0) s = 1;
-  const anchor = pts[0]; // encode the period lattice as two points offset from a fixed vertex
-  pts.push([anchor[0] + t.basis[0][0], anchor[1] + t.basis[0][1]]);
-  pts.push([anchor[0] + t.basis[1][0], anchor[1] + t.basis[1][1]]);
-  const gx = pts.reduce((a, p) => a + p[0], 0) / pts.length, gy = pts.reduce((a, p) => a + p[1], 0) / pts.length;
-  const centered = pts.map(([x, y]): [number, number] => [(x - gx) / s, (y - gy) / s]);
-  let best: number[] | null = null, bestKey: string | null = null;
-  for (const a of centered) {
-    const r = Math.hypot(a[0], a[1]); if (r < EPS) continue;
-    const th = Math.atan2(a[1], a[0]), c = Math.cos(-th), sn = Math.sin(-th);
-    const rot = centered.map(([x, y]): [number, number] => [x * c - y * sn, x * sn + y * c]);
-    rot.sort((p, q) => p[0] - q[0] || p[1] - q[1]);
-    const flat = rot.flat();
-    const key = flat.map((x) => Math.round(x * Q)).join(',');
-    if (bestKey === null || key < bestKey) { bestKey = key; best = flat; }
-  }
-  return best ?? [];
+	const tiles = effTiles(t);
+	const pts: [number, number][] = [];
+	for (const v of tiles) for (const p of v) pts.push([p[0], p[1]]);
+	if (pts.length === 0) return [];
+	let s = Infinity;
+	for (const v of tiles)
+		for (let i = 0; i < v.length; i++) {
+			const q = v[(i + 1) % v.length];
+			s = Math.min(s, Math.hypot(v[i][0] - q[0], v[i][1] - q[1]));
+		}
+	if (!Number.isFinite(s) || s <= 0) s = 1;
+	const anchor = pts[0]; // encode the period lattice as two points offset from a fixed vertex
+	pts.push([anchor[0] + t.basis[0][0], anchor[1] + t.basis[0][1]]);
+	pts.push([anchor[0] + t.basis[1][0], anchor[1] + t.basis[1][1]]);
+	const gx = pts.reduce((a, p) => a + p[0], 0) / pts.length,
+		gy = pts.reduce((a, p) => a + p[1], 0) / pts.length;
+	const centered = pts.map(([x, y]): [number, number] => [(x - gx) / s, (y - gy) / s]);
+	let best: number[] | null = null,
+		bestKey: string | null = null;
+	for (const a of centered) {
+		const r = Math.hypot(a[0], a[1]);
+		if (r < EPS) continue;
+		const th = Math.atan2(a[1], a[0]),
+			c = Math.cos(-th),
+			sn = Math.sin(-th);
+		const rot = centered.map(([x, y]): [number, number] => [x * c - y * sn, x * sn + y * c]);
+		rot.sort((p, q) => p[0] - q[0] || p[1] - q[1]);
+		const flat = rot.flat();
+		const key = flat.map((x) => Math.round(x * Q)).join(",");
+		if (bestKey === null || key < bestKey) {
+			bestKey = key;
+			best = flat;
+		}
+	}
+	return best ?? [];
 }

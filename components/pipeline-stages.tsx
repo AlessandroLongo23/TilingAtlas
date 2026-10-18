@@ -4,8 +4,25 @@ import { useEffect, useMemo, useState } from "react";
 import { FigurePanel, type PanelSpec } from "@/components/figure-panel";
 import { type Box } from "@/lib/render/figureCanvas";
 import {
-	ACCEPT, arc, arrowHead, congruent, DART, dot, freeEnd, gluedEdge, GHOST, halo, INK, rad, REJECT,
-	segment, SOFT, T1_COLOUR, T2_COLOUR, type Api, type Pt,
+	ACCEPT,
+	arc,
+	arrowHead,
+	congruent,
+	DART,
+	dot,
+	freeEnd,
+	gluedEdge,
+	GHOST,
+	halo,
+	INK,
+	rad,
+	REJECT,
+	segment,
+	SOFT,
+	T1_COLOUR,
+	T2_COLOUR,
+	type Api,
+	type Pt,
 } from "@/lib/render/figureGlyphs";
 import { polygonHue, tileFill, tileLine } from "@/lib/utils/renderTiling";
 
@@ -47,9 +64,9 @@ const STUB = 0.3;
  * kink, so a completed edge reads as the two half-edges it is made of.
  */
 const HUBS: { at: Pt; stubs: number[] }[] = [
-	{ at: [-0.80, 0.34], stubs: [-52, 40, 150] },
+	{ at: [-0.8, 0.34], stubs: [-52, 40, 150] },
 	{ at: [-0.44, -0.24], stubs: [128, 12, 200, 285] },
-	{ at: [0.20, -0.02], stubs: [205, 350, 95] },
+	{ at: [0.2, -0.02], stubs: [205, 350, 95] },
 ];
 /** [hub, stub, hub, stub] pairs already glued: two half-edges end to end make one edge. */
 const GLUED: [number, number, number, number][] = [
@@ -60,7 +77,7 @@ const FIRST_FREE: [number, number] = [2, 1];
 /** Where the arc for the first move lands: a free end already in the configuration. */
 const EXISTING: [number, number] = [0, 1];
 /** The vertex type the second move appends, drawn dashed because it is not part of anything yet. */
-const FRESH = { at: [1.00, -0.07] as Pt, stubs: [20, 110, 200, 290], len: 0.2 };
+const FRESH = { at: [1.0, -0.07] as Pt, stubs: [20, 110, 200, 290], len: 0.2 };
 
 const stubEnd = (h: number, si: number): Pt => {
 	const { at, stubs } = HUBS[h];
@@ -82,8 +99,7 @@ function drawSolve(api: Api) {
 	dot(api, FRESH.at[0], FRESH.at[1], 4, GHOST);
 
 	// completed edges: two half-edges end to end, with the seam where they meet
-	for (const [h1, s1, h2, s2] of GLUED)
-		gluedEdge(api, HUBS[h1].at, stubEnd(h1, s1), HUBS[h2].at, stubEnd(h2, s2));
+	for (const [h1, s1, h2, s2] of GLUED) gluedEdge(api, HUBS[h1].at, stubEnd(h1, s1), HUBS[h2].at, stubEnd(h2, s2));
 
 	// everything still free, and the one the search is about to work on
 	for (let h = 0; h < HUBS.length; h++) {
@@ -115,7 +131,7 @@ function drawSolve(api: Api) {
 	text(at[0], at[1], "✗", { colour: REJECT, size: 1.0, weight: 700 });
 	text(at[0], at[1] + 0.26, "a free end already there", { colour: SOFT, size: 0.58 });
 	text(0.52, -0.34, "firstfree", { colour: DART, size: 0.62, weight: 600, mono: true });
-	text(1.00, -0.46, "or a fresh vertex", { colour: SOFT, size: 0.58 });
+	text(1.0, -0.46, "or a fresh vertex", { colour: SOFT, size: 0.58 });
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -123,8 +139,19 @@ function drawSolve(api: Api) {
 // ---------------------------------------------------------------------------------------------
 
 /** Six darts: 0,1,2 round one vertex figure and 3,4,5 round the other. */
-const RNEIG: [number, number][] = [[0, 1], [1, 2], [2, 0], [3, 4], [4, 5], [5, 3]];
-const GLUE: [number, number][] = [[0, 3], [1, 4], [2, 5]];
+const RNEIG: [number, number][] = [
+	[0, 1],
+	[1, 2],
+	[2, 0],
+	[3, 4],
+	[4, 5],
+	[5, 3],
+];
+const GLUE: [number, number][] = [
+	[0, 3],
+	[1, 4],
+	[2, 5],
+];
 
 /** Laid out by vertex figure: two rneig cycles, three gluings across. */
 function prismLayout(): Pt[] {
@@ -167,9 +194,9 @@ function drawPrune(api: Api) {
 	text(0.66, -0.82, "duplicate", { colour: SOFT, size: 0.66 });
 	// which line is which, left-aligned off a swatch, well clear of the drawings
 	segment(api, [-1.28, 0.83], [-1.16, 0.83], `rgba(20,20,20,0.85)`, 3);
-	text(-1.10, 0.83, "glue", { colour: SOFT, size: 0.58, align: "left", mono: true });
+	text(-1.1, 0.83, "glue", { colour: SOFT, size: 0.58, align: "left", mono: true });
 	segment(api, [-1.28, 0.65], [-1.16, 0.65], `rgba(20,20,20,0.3)`, 1.8);
-	text(-1.10, 0.65, "rneig", { colour: SOFT, size: 0.58, align: "left", mono: true });
+	text(-1.1, 0.65, "rneig", { colour: SOFT, size: 0.58, align: "left", mono: true });
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -195,7 +222,8 @@ interface Developed {
 const CULL = 3.2;
 
 function buildDeveloped(d: FigureData): Developed {
-	const t1 = d.t1.xy, t2 = d.t2.xy;
+	const t1 = d.t1.xy,
+		t2 = d.t2.xy;
 	const key = (p: Pt) => `${p[0].toFixed(4)},${p[1].toFixed(4)}`;
 
 	// A real vertex of the tiling, taken as the one the most cell tiles meet, so the marked dart sits
@@ -209,44 +237,66 @@ function buildDeveloped(d: FigureData): Developed {
 			seen.set(k, e);
 		}
 	}
-	let origin: Pt = d.polys[0].v[0], best = -1;
-	for (const e of seen.values()) if (e.n > best) { best = e.n; origin = e.p; }
+	let origin: Pt = d.polys[0].v[0],
+		best = -1;
+	for (const e of seen.values())
+		if (e.n > best) {
+			best = e.n;
+			origin = e.p;
+		}
 
 	// and one edge running out of it, which is what makes the three marks the same dart. Of the edges
 	// there are, take the one that leans least along either period, so the dart glyphs stay clear of
 	// the two arrows drawn from the same point.
-	let dir: Pt = [1, 0], lean = Infinity;
+	let dir: Pt = [1, 0],
+		lean = Infinity;
 	for (const poly of d.polys) {
 		for (let i = 0; i < poly.v.length; i++) {
-			const a = poly.v[i], b = poly.v[(i + 1) % poly.v.length];
-			for (const [p, q] of [[a, b], [b, a]] as const) {
+			const a = poly.v[i],
+				b = poly.v[(i + 1) % poly.v.length];
+			for (const [p, q] of [
+				[a, b],
+				[b, a],
+			] as const) {
 				if (key(p) !== key(origin)) continue;
 				const len = Math.hypot(q[0] - p[0], q[1] - p[1]);
 				const u: Pt = [(q[0] - p[0]) / len, (q[1] - p[1]) / len];
 				const along = (T: Pt) => Math.abs((u[0] * T[0] + u[1] * T[1]) / Math.hypot(T[0], T[1]));
 				const score = Math.max(along(t1), along(t2));
-				if (score < lean) { lean = score; dir = u; }
+				if (score < lean) {
+					lean = score;
+					dir = u;
+				}
 			}
 		}
 	}
 
 	const marks: Pt[] = [origin, [origin[0] + t1[0], origin[1] + t1[1]], [origin[0] + t2[0], origin[1] + t2[1]]];
-	const xs = marks.map((m) => m[0]), ys = marks.map((m) => m[1]);
+	const xs = marks.map((m) => m[0]),
+		ys = marks.map((m) => m[1]);
 	// enough that a dart glyph at a marked vertex stays clear of the frame, whichever way it points
 	const pad = 1.15;
 	const box: Box = {
-		minX: Math.min(...xs) - pad, maxX: Math.max(...xs) + pad,
-		minY: Math.min(...ys) - pad, maxY: Math.max(...ys) + pad,
+		minX: Math.min(...xs) - pad,
+		maxX: Math.max(...xs) + pad,
+		minY: Math.min(...ys) - pad,
+		maxY: Math.max(...ys) + pad,
 	};
 
 	const tiles: { pts: Pt[]; n: number }[] = [];
 	for (let i = -3; i <= 3; i++) {
 		for (let j = -3; j <= 3; j++) {
-			const ox = i * t1[0] + j * t2[0], oy = i * t1[1] + j * t2[1];
+			const ox = i * t1[0] + j * t2[0],
+				oy = i * t1[1] + j * t2[1];
 			for (const poly of d.polys) {
-				let cx = 0, cy = 0;
-				for (const v of poly.v) { cx += v[0] + ox; cy += v[1] + oy; }
-				cx /= poly.v.length; cy /= poly.v.length;
+				let cx = 0,
+					cy = 0;
+				for (const v of poly.v) {
+					cx += v[0] + ox;
+					cy += v[1] + oy;
+				}
+				cx /= poly.v.length;
+				cy /= poly.v.length;
 				if (cx < box.minX - CULL || cx > box.maxX + CULL) continue;
 				if (cy < box.minY - CULL || cy > box.maxY + CULL) continue;
 				tiles.push({ pts: poly.v.map(([x, y]): Pt => [x + ox, y + oy]), n: poly.n });
@@ -312,9 +362,13 @@ export function PipelineStages() {
 		let alive = true;
 		fetch("/defense/period-figure.json")
 			.then((r) => r.json())
-			.then((d: FigureData) => { if (alive) setData(d); })
+			.then((d: FigureData) => {
+				if (alive) setData(d);
+			})
 			.catch(() => {});
-		return () => { alive = false; };
+		return () => {
+			alive = false;
+		};
 	}, []);
 
 	const stages = useMemo<PanelSpec[]>(() => {

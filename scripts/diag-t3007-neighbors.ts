@@ -3,23 +3,23 @@
  * (seed = connected k-cluster covering all k types) cannot represent t3007 at all.
  *   pnpm tsx scripts/diag-t3007-neighbors.ts
  */
-import { PolygonType, type GeneratorParameters } from '@/classes';
-import { computeRing } from '@/classes/algorithm/PolygonsGenerator';
-import { setActiveRing, CyclotomicRing } from '@/classes/Cyclotomic';
-import { KUniformityChecker } from '@/classes/algorithm/KUniformityChecker';
-import { canonicalizeVertexFigure } from '@/lib/utils/vertexFigureHue';
-import { loadOracle, reconstructOracleCell } from './oracle-match';
+import { PolygonType, type GeneratorParameters } from "@/classes";
+import { computeRing } from "@/classes/algorithm/PolygonsGenerator";
+import { setActiveRing, CyclotomicRing } from "@/classes/Cyclotomic";
+import { KUniformityChecker } from "@/classes/algorithm/KUniformityChecker";
+import { canonicalizeVertexFigure } from "@/lib/utils/vertexFigureHue";
+import { loadOracle, reconstructOracleCell } from "./oracle-match";
 
 const params: GeneratorParameters = { [PolygonType.REGULAR]: { ns: [3, 4, 6, 12] } };
 const baseRing = computeRing(params);
 setActiveRing(baseRing.N === 24 ? baseRing : CyclotomicRing.create(24));
 
-const o = loadOracle()['t3007'];
-const rec = reconstructOracleCell('t3007', o);
-if ('error' in rec) throw new Error(rec.error);
+const o = loadOracle()["t3007"];
+const rec = reconstructOracleCell("t3007", o);
+if ("error" in rec) throw new Error(rec.error);
 const cell = rec.cell;
 const res = new KUniformityChecker().vertexOrbits(cell.cellPolygons, cell.basisExact[0], cell.basisExact[1]);
-if (!res) throw new Error('vertexOrbits null');
+if (!res) throw new Error("vertexOrbits null");
 
 // vcOfOrbit (same recipe as probe 2)
 const polysByVertexKey = new Map<string, { n: number; cx: number; cy: number }[]>();
@@ -41,9 +41,9 @@ res.reps.forEach((rep, j) => {
 		.map((e) => ({ n: e.n, ang: Math.atan2(e.cy - rv.y, e.cx - rv.x) }))
 		.sort((a, b) => a.ang - b.ang)
 		.map((e) => e.n);
-	vcOfOrbit[res.repOrbit[j]] = canonicalizeVertexFigure(ordered).join(',');
+	vcOfOrbit[res.repOrbit[j]] = canonicalizeVertexFigure(ordered).join(",");
 });
-console.log(`orbit types: ${vcOfOrbit.map((n, i) => `${i}=${n}`).join('  ')}`);
+console.log(`orbit types: ${vcOfOrbit.map((n, i) => `${i}=${n}`).join("  ")}`);
 
 // adjacency: vertex -> neighbor orbit ids (via polygon boundary edges, both endpoints tiling vertices)
 const nbrOrbits = new Map<string, Set<number>>(); // vertex key -> neighbor orbit set
@@ -56,8 +56,10 @@ for (const q of res.block) {
 		const oa = res.orbitOf(a);
 		const ob = res.orbitOf(b);
 		if (oa == null || ob == null) continue;
-		const ka = a.key(); const kb = b.key();
-		orbitOfKey.set(ka, oa); orbitOfKey.set(kb, ob);
+		const ka = a.key();
+		const kb = b.key();
+		orbitOfKey.set(ka, oa);
+		orbitOfKey.set(kb, ob);
 		if (!nbrOrbits.has(ka)) nbrOrbits.set(ka, new Set());
 		if (!nbrOrbits.has(kb)) nbrOrbits.set(kb, new Set());
 		nbrOrbits.get(ka)!.add(ob);
@@ -69,12 +71,18 @@ for (const q of res.block) {
 const profile = new Map<number, Map<string, number>>();
 for (const [vk, nset] of nbrOrbits) {
 	const orb = orbitOfKey.get(vk)!;
-	const deg = [...nset].sort().join(',');
+	const deg = [...nset].sort().join(",");
 	if (!profile.has(orb)) profile.set(orb, new Map());
 	const m = profile.get(orb)!;
 	m.set(deg, (m.get(deg) ?? 0) + 1);
 }
 for (const [orb, m] of [...profile].sort((a, b) => a[0] - b[0])) {
 	console.log(`orbit ${orb} (${vcOfOrbit[orb]}): neighbor-orbit-set histogram:`);
-	for (const [sig, n] of [...m].sort()) console.log(`   {${sig.split(',').map((s) => vcOfOrbit[+s]).join(' | ')}} ×${n}`);
+	for (const [sig, n] of [...m].sort())
+		console.log(
+			`   {${sig
+				.split(",")
+				.map((s) => vcOfOrbit[+s])
+				.join(" | ")}} ×${n}`,
+		);
 }

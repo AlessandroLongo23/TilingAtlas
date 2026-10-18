@@ -20,15 +20,9 @@ export function PentagonEdgesCanvas({ pattern }: { pattern: PentEdgeRecord }) {
 	const solved = useMemo(() => solveEdgeBoard(params), [params]);
 	// The whole per-parameter cost lives here. Everything downstream — pan, zoom, spin, fill mode — reads
 	// this without touching the develop again.
-	const built = useMemo(
-		() => (solved.ok ? pentEdgePattern(pattern, solved.board) : null),
-		[pattern, solved],
-	);
+	const built = useMemo(() => (solved.ok ? pentEdgePattern(pattern, solved.board) : null), [pattern, solved]);
 
 	return (
-		<ParametricEdgesCanvas
-			built={built}
-			unbuildable={solved.ok ? undefined : "Not a pentagon at these angles."}
-		/>
+		<ParametricEdgesCanvas built={built} unbuildable={solved.ok ? undefined : "Not a pentagon at these angles."} />
 	);
 }

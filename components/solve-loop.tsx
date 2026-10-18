@@ -3,8 +3,21 @@
 import { FigurePanel, type PanelSpec } from "@/components/figure-panel";
 import { type Box } from "@/lib/render/figureCanvas";
 import {
-	arc, arrowHead, DART, dot, freeEnd, GHOST, gluedEdge, halo, INK, rad, REJECT, segment, SOFT,
-	type Api, type Pt,
+	arc,
+	arrowHead,
+	DART,
+	dot,
+	freeEnd,
+	GHOST,
+	gluedEdge,
+	halo,
+	INK,
+	rad,
+	REJECT,
+	segment,
+	SOFT,
+	type Api,
+	type Pt,
 } from "@/lib/render/figureGlyphs";
 import { hsbToHsla, polygonHue } from "@/lib/utils/renderTiling";
 
@@ -70,7 +83,8 @@ function drawPiece(api: Api) {
 	// arcs keep the four corners countable and leave the half-edges legible through them.
 	const gap = rad(4);
 	for (let i = 0; i < WORD.length; i++) {
-		const from = rad(dirs[i]), to = from + (2 * Math.PI * units[i]) / D;
+		const from = rad(dirs[i]),
+			to = from + (2 * Math.PI * units[i]) / D;
 		ctx.strokeStyle = hsbToHsla(polygonHue(WORD[i]), 45, 88, 1);
 		ctx.lineWidth = 6 / s;
 		ctx.lineCap = "butt";
@@ -98,19 +112,25 @@ function drawPiece(api: Api) {
  */
 const A = { at: [-0.46, 0.06] as Pt, dirs: [96, 168, 250, 18] };
 const B = { at: [0.42, 0.24] as Pt, dirs: [72, 186, 264, 342] };
-const A_JOIN = 3, B_JOIN = 1;
+const A_JOIN = 3,
+	B_JOIN = 1;
 /** Where the third piece would go, in the frame that rejects it: below B, near B's free half-edge. */
 const C = { at: [0.52, -0.62] as Pt, dirs: [20, 108, 200, 290] };
 const C_JOIN = 1;
 const C_LEN = STUB * 0.74;
 
-const endOf = (h: { at: Pt; dirs: number[] }, i: number, len = STUB): Pt =>
-	[h.at[0] + Math.cos(rad(h.dirs[i])) * len, h.at[1] + Math.sin(rad(h.dirs[i])) * len];
+const endOf = (h: { at: Pt; dirs: number[] }, i: number, len = STUB): Pt => [
+	h.at[0] + Math.cos(rad(h.dirs[i])) * len,
+	h.at[1] + Math.sin(rad(h.dirs[i])) * len,
+];
 
 /** The two joined hubs both frames open with. `hot` names the half-edge the search works on next. */
 function drawPair(api: Api, hot: [typeof A | typeof B, number] | null) {
 	gluedEdge(api, A.at, endOf(A, A_JOIN), B.at, endOf(B, B_JOIN));
-	for (const [h, join] of [[A, A_JOIN], [B, B_JOIN]] as const) {
+	for (const [h, join] of [
+		[A, A_JOIN],
+		[B, B_JOIN],
+	] as const) {
 		for (let i = 0; i < h.dirs.length; i++) {
 			if (i === join) continue;
 			const e = endOf(h, i);
@@ -129,7 +149,8 @@ function drawMove(api: Api) {
 	const { text } = api;
 	drawPair(api, null);
 	// the pairing that made this frame: an arrow onto the SEAM, because half-edges are what meet
-	const ea = endOf(A, A_JOIN), eb = endOf(B, B_JOIN);
+	const ea = endOf(A, A_JOIN),
+		eb = endOf(B, B_JOIN);
 	const seam: Pt = [(ea[0] + eb[0]) / 2, (ea[1] + eb[1]) / 2];
 	segment(api, [seam[0], seam[1] + 0.52], [seam[0], seam[1] + 0.16], DART, 2.4, [6, 5]);
 	arrowHead(api, [seam[0], seam[1] + 0.11], -Math.PI / 2, DART, 11);
@@ -172,14 +193,25 @@ function drawClosed(api: Api) {
 	const { text } = api;
 	// the two half-edges of each pair, then the join between them: the same shape as every other
 	// completed edge in the deck, only here there are no free ends left over
-	for (const [i, bow] of [[0, 0], [3, 0], [1, 0.34], [2, -0.34]] as const) {
-		const ea = endOf(L, i), eb = endOf(R, i);
+	for (const [i, bow] of [
+		[0, 0],
+		[3, 0],
+		[1, 0.34],
+		[2, -0.34],
+	] as const) {
+		const ea = endOf(L, i),
+			eb = endOf(R, i);
 		segment(api, L.at, ea, INK, 3.2);
 		segment(api, R.at, eb, INK, 3.2);
 		const m = arc(api, ea, eb, bow, INK, 3.2);
 		const ang = Math.atan2(eb[1] - ea[1], eb[0] - ea[0]) + Math.PI / 2;
-		segment(api, [m[0] - Math.cos(ang) * 0.07, m[1] - Math.sin(ang) * 0.07],
-			[m[0] + Math.cos(ang) * 0.07, m[1] + Math.sin(ang) * 0.07], SOFT, 2);
+		segment(
+			api,
+			[m[0] - Math.cos(ang) * 0.07, m[1] - Math.sin(ang) * 0.07],
+			[m[0] + Math.cos(ang) * 0.07, m[1] + Math.sin(ang) * 0.07],
+			SOFT,
+			2,
+		);
 	}
 	for (const h of [L, R]) {
 		dot(api, h.at[0], h.at[1], 22, "rgba(20,20,20,0.055)");

@@ -35,12 +35,12 @@ export function PentagonSidebar({
 	// and the grid would take most of a half-height sheet before the first slider.
 	return (
 		<PageSidebar scrollable={false} collapsed={collapsed} mobile="dock" title="Pentagons" peek={peek}>
-			<div className="ta-wall ta-wall-dense h-full flex flex-col gap-px max-md:overflow-y-auto max-md:overflow-x-hidden max-md:overscroll-contain">
+			<div className="ta-wall ta-wall-dense flex h-full flex-col gap-px max-md:overflow-x-hidden max-md:overflow-y-auto max-md:overscroll-contain">
 				{header}
 				{/* Inside the panel gutter, on the shared segmented track like every other choice. */}
-				<div className="bg-surface-chrome shrink-0 px-3.5 py-3">{types}</div>
-				<div className="ta-scroll-fade flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hide bg-surface-chrome max-md:flex-none max-md:overflow-visible">
-					<div className="px-3.5 pt-3 pb-8 flex flex-col gap-4">{children}</div>
+				<div className="shrink-0 bg-surface-chrome px-3.5 py-3">{types}</div>
+				<div className="ta-scroll-fade scrollbar-hide min-h-0 flex-1 overflow-x-hidden overflow-y-auto bg-surface-chrome max-md:flex-none max-md:overflow-visible">
+					<div className="flex flex-col gap-4 px-3.5 pt-3 pb-8">{children}</div>
 				</div>
 			</div>
 		</PageSidebar>

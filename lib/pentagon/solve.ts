@@ -45,12 +45,7 @@ export interface Point {
 	y: number;
 }
 
-export type PentagonError =
-	| "no-root"
-	| "non-positive-side"
-	| "non-convex"
-	| "degenerate"
-	| "angle-out-of-range";
+export type PentagonError = "no-root" | "non-positive-side" | "non-convex" | "degenerate" | "angle-out-of-range";
 
 export interface Pentagon {
 	angles: Angles;
@@ -289,7 +284,7 @@ export function findPinnedAngle(t: PentagonType, free: number[]): number | null 
 		const f = pinDeterminant(t, free, x);
 		if (prevF === 0) {
 			if (acceptable(t, free, prevX)) return prevX;
-		} else if ((f < 0) !== (prevF < 0)) {
+		} else if (f < 0 !== prevF < 0) {
 			let a = prevX;
 			let b = x;
 			let fa = prevF;
@@ -301,7 +296,7 @@ export function findPinnedAngle(t: PentagonType, free: number[]): number | null 
 					b = m;
 					break;
 				}
-				if ((fm < 0) !== (fa < 0)) b = m;
+				if (fm < 0 !== fa < 0) b = m;
 				else {
 					a = m;
 					fa = fm;

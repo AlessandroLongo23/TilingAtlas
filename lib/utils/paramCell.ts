@@ -101,7 +101,8 @@ export interface LengthFamilyData {
 
 /** Sum a length-linear coordinate at the given edge lengths. */
 export function evalLenTerms(terms: LenTerm[], L: number[]): [number, number] {
-	let x = 0, y = 0;
+	let x = 0,
+		y = 0;
 	for (const [j, re, im] of terms) {
 		const l = j < 0 ? 1 : (L[j] ?? 0);
 		x += l * re;
@@ -203,11 +204,14 @@ function evalTerms(terms: ParamTerm[], deltas: number[]): [number, number] {
  *  short of the degenerate limit, not on it. Interior angles pass through untouched. */
 function deltasFor(pc: ParametricCellData, alphaDeg: number | number[]): number[] {
 	const alphas = Array.isArray(alphaDeg) ? alphaDeg : [alphaDeg];
-	const clamped = clampToRegion(pc, pc.params.map((p, j) => {
-		const [lo, hi] = p.alphaRangeDegOpen;
-		const a = alphas[j] ?? p.defaultAlphaDeg;
-		return Math.min(hi - ALPHA_EPS_DEG, Math.max(lo + ALPHA_EPS_DEG, a));
-	}));
+	const clamped = clampToRegion(
+		pc,
+		pc.params.map((p, j) => {
+			const [lo, hi] = p.alphaRangeDegOpen;
+			const a = alphas[j] ?? p.defaultAlphaDeg;
+			return Math.min(hi - ALPHA_EPS_DEG, Math.max(lo + ALPHA_EPS_DEG, a));
+		}),
+	);
 	return pc.params.map((p, j) => ((clamped[j] - p.alpha0Deg) * Math.PI) / 180);
 }
 
@@ -283,7 +287,10 @@ function closestOnPolygon(p: [number, number], poly: [number, number][]): [numbe
 		const qx = ax + t * dx;
 		const qy = ay + t * dy;
 		const d = (p[0] - qx) ** 2 + (p[1] - qy) ** 2;
-		if (d < bestD) { bestD = d; best = [qx, qy]; }
+		if (d < bestD) {
+			bestD = d;
+			best = [qx, qy];
+		}
 	}
 	return best;
 }
@@ -328,7 +335,8 @@ export function segmentAt(pc: ParametricCellData, u: number): ParamSegment | nul
 export function sizeHue(v: [number, number][], lo: number, hi: number): number {
 	let longest = 0;
 	for (let i = 0; i < v.length; i++) {
-		const a = v[i], b = v[(i + 1) % v.length];
+		const a = v[i],
+			b = v[(i + 1) % v.length];
 		longest = Math.max(longest, Math.hypot(b[0] - a[0], b[1] - a[1]));
 	}
 	const t = hi > lo ? Math.min(1, Math.max(0, (longest - lo) / (hi - lo))) : 0;
@@ -373,7 +381,11 @@ export function evaluateParamCell(pc: ParametricCellData, alphaDeg: number | num
 			const a = alphas[j] ?? p.defaultAlphaDeg;
 			return Math.min(hi - ALPHA_EPS_DEG, Math.max(lo + ALPHA_EPS_DEG, a));
 		});
-		const cell = evaluateIntrinsic(pc.intrinsic, pc.params.map((p) => p.dart ?? 0), want);
+		const cell = evaluateIntrinsic(
+			pc.intrinsic,
+			pc.params.map((p) => p.dart ?? 0),
+			want,
+		);
 		if (cell) return cell;
 	}
 	// A merged family carries one parameter and a segment per half: hold the slider position inside the
@@ -386,7 +398,7 @@ export function evaluateParamCell(pc: ParametricCellData, alphaDeg: number | num
 		const raw = Array.isArray(alphaDeg) ? (alphaDeg[0] ?? pc.params[0].defaultAlphaDeg) : alphaDeg;
 		const u = Math.min(hi - ALPHA_EPS_DEG, Math.max(lo + ALPHA_EPS_DEG, raw));
 		const seg = segmentAt(pc, u)!;
-		const deltas = [((seg.alphaOf.c + seg.alphaOf.m * u) - seg.alpha0Deg) * (Math.PI / 180)];
+		const deltas = [(seg.alphaOf.c + seg.alphaOf.m * u - seg.alpha0Deg) * (Math.PI / 180)];
 		return {
 			cellPolygons: seg.cellPolygons.map((poly) => ({
 				n: poly.n,

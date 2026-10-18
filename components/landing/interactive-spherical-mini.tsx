@@ -32,10 +32,7 @@ export function InteractiveSphericalMini({ solidId }: { solidId: string }) {
 			// decides to do with the event. A finger activates on a completed tap instead (useCardActivation),
 			// or every scroll swipe that starts here would.
 			onPointerDown={(e) => e.pointerType !== "touch" && e.currentTarget.focus()}
-			className={cn(
-				"absolute inset-0 select-none outline-none",
-				active ? "cursor-grab" : "cursor-pointer",
-			)}
+			className={cn("absolute inset-0 outline-none select-none", active ? "cursor-grab" : "cursor-pointer")}
 		>
 			{/* fitFraction 0.85: the perspective camera draws near vertices larger than the bounding
 			    sphere, so a full-height fit let some solids spill past the plate. */}
@@ -43,7 +40,10 @@ export function InteractiveSphericalMini({ solidId }: { solidId: string }) {
 				<SphericalCanvas solidId={solidId} interactive={active} fitFraction={0.85} />
 			) : (
 				// Out of view: the ball's silhouette as a quiet skeleton on the sunken plate.
-				<div aria-hidden="true" className="absolute inset-0 m-auto h-full aspect-square rounded-full bg-surface-overlay" />
+				<div
+					aria-hidden="true"
+					className="absolute inset-0 m-auto aspect-square h-full rounded-full bg-surface-overlay"
+				/>
 			)}
 			<CardDoneChip active={active} onDone={deactivate} />
 		</div>

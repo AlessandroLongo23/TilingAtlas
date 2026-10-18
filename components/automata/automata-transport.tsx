@@ -55,18 +55,10 @@ export function AutomataTransport({
 	const reseed = useAutomata((s) => s.reseed);
 
 	// Nearest ladder index, so an arbitrary stored speed (a URL, a previous session) still lands on the slider.
-	const idx = SPEEDS.reduce(
-		(best, v, i) => (Math.abs(v - speed) < Math.abs(SPEEDS[best] - speed) ? i : best),
-		0,
-	);
+	const idx = SPEEDS.reduce((best, v, i) => (Math.abs(v - speed) < Math.abs(SPEEDS[best] - speed) ? i : best), 0);
 
 	return (
-		<FloatingToolbar
-			className={cn(
-				"bottom-6 max-md:w-[calc(100%-32px)] max-md:flex-wrap",
-				disabled && "opacity-60",
-			)}
-		>
+		<FloatingToolbar className={cn("bottom-6 max-md:w-[calc(100%-32px)] max-md:flex-wrap", disabled && "opacity-60")}>
 			<ToolbarButton label="Previous tiling" shortcut="←" onClick={onPrev} className={ROW2}>
 				<ChevronLeft size={16} />
 			</ToolbarButton>
@@ -126,7 +118,7 @@ export function AutomataTransport({
 					aria-label="Generations per second"
 				/>
 				{/* Tabular width so the bar does not twitch as the number changes under a drag. */}
-				<span className="w-[3.75rem] text-[11px] font-mono text-fg-secondary tabular-nums max-md:shrink-0 max-md:text-xs">
+				<span className="w-[3.75rem] font-mono text-[11px] text-fg-secondary tabular-nums max-md:shrink-0 max-md:text-xs">
 					{speed} gen/s
 				</span>
 			</label>
@@ -135,7 +127,13 @@ export function AutomataTransport({
 			<span className="contents max-md:hidden">
 				<ToolbarDivider />
 			</span>
-			<span className={cn("flex h-8 items-center px-2 [&_button]:opacity-80", ROW1, "max-md:h-11 max-md:w-11 max-md:justify-center max-md:px-0")}>
+			<span
+				className={cn(
+					"flex h-8 items-center px-2 [&_button]:opacity-80",
+					ROW1,
+					"max-md:h-11 max-md:w-11 max-md:justify-center max-md:px-0",
+				)}
+			>
 				<InfoDot side="top" label="How to drive the board">
 					<p className="max-md:hidden">Drag to pan, scroll to zoom, shift-click a tile to flip it.</p>
 					<p className="md:hidden">

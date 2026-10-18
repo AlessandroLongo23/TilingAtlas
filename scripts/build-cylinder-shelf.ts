@@ -44,7 +44,8 @@ const round = (v: number, dp = 6): number => Number(v.toFixed(dp));
  * no claim to be the Poincaré disk; the figure on the page is where the geodesics and the rim live.
  */
 function ballThumb(q: number): { points: [number, number][]; edges: [number, number][] } {
-	let best: { ball: ReturnType<typeof buildBall>; map: NonNullable<ReturnType<typeof planarMapFromFaces>> } | null = null;
+	let best: { ball: ReturnType<typeof buildBall>; map: NonNullable<ReturnType<typeof planarMapFromFaces>> } | null =
+		null;
 	for (const r of [1, 2, 3]) {
 		const ball = buildBall(q, r);
 		if (ball.vertexCount > 60) break;

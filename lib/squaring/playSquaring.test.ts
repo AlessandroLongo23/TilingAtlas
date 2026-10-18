@@ -80,7 +80,10 @@ const mapOf = (cell: TorusCell | null): TorusMap | null => {
 
 /** The map's gluing, as the multiset of its edges with their lattice shifts. This is what drifts. */
 const gluing = (m: TorusMap): string =>
-	m.edges.map((e) => `${e.tail}>${e.head}[${e.vshift}]`).sort().join(" ");
+	m.edges
+		.map((e) => `${e.tail}>${e.head}[${e.vshift}]`)
+		.sort()
+		.join(" ");
 
 const sides = (m: TorusMap, p: number, q: number): string => {
 	const r = squareTorus(m, p, q);

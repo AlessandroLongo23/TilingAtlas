@@ -27,7 +27,13 @@ export interface Geometry4 {
 	cells: number[][];
 }
 
-export type PolychoronSet = "regular-convex" | "regular-star" | "convex-uniform" | "polyhedral-prism" | "duoprism" | "antiprismatic-prism";
+export type PolychoronSet =
+	| "regular-convex"
+	| "regular-star"
+	| "convex-uniform"
+	| "polyhedral-prism"
+	| "duoprism"
+	| "antiprismatic-prism";
 
 export interface PolychoronSpec {
 	id: string;
@@ -42,7 +48,8 @@ export interface PolychoronSpec {
 const PHI = (1 + Math.sqrt(5)) / 2;
 const dot4 = (a: ArrayLike<number>, b: ArrayLike<number>) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3];
 const key = (p: number[]) => p.map((x) => Math.round(x * 1e6)).join(",");
-const apply = (M: number[], p: number[]): Vec4 => [0, 4, 8, 12].map((r) => M[r] * p[0] + M[r + 1] * p[1] + M[r + 2] * p[2] + M[r + 3] * p[3]) as Vec4;
+const apply = (M: number[], p: number[]): Vec4 =>
+	[0, 4, 8, 12].map((r) => M[r] * p[0] + M[r + 1] * p[1] + M[r + 2] * p[2] + M[r + 3] * p[3]) as Vec4;
 
 /** The point at signed distance b[i] from mirror i. N is lower bidiagonal, so this is forward substitution. */
 function solve(N: Vec4[], b: number[]): Vec4 {
@@ -105,7 +112,10 @@ const NODE_SETS = [1, 2, 3].map((size) =>
 /** Wythoff's construction: the orbit of the point at distance 1 from each ringed mirror and on the others. */
 export function wythoff(m: number[], ring: boolean[]): Geometry4 {
 	const { N, mats, right } = reflectionGroup(m);
-	const seed = solve(N, ring.map((r) => (r ? 1 : 0)));
+	const seed = solve(
+		N,
+		ring.map((r) => (r ? 1 : 0)),
+	);
 	const vertices: Vec4[] = [];
 	const ids = new Map<string, number>();
 	const vOf = mats.map((M) => {
@@ -182,7 +192,9 @@ export function wythoff(m: number[], ring: boolean[]): Geometry4 {
 	}
 	const cells: number[][] = [];
 	for (const J of NODE_SETS[2].filter(live)) {
-		const inside = NODE_SETS[1].filter((S) => S.every((i) => J.includes(i)) && live(S)).map((S) => faceOf.get(S.join())!);
+		const inside = NODE_SETS[1]
+			.filter((S) => S.every((i) => J.includes(i)) && live(S))
+			.map((S) => faceOf.get(S.join())!);
 		for (const mem of cosets(J).members) {
 			const fs = new Set<number>();
 			for (const h of mem) for (const s of inside) fs.add(s.base + s.of[h]);
@@ -207,7 +219,8 @@ function cross4(u: number[], v: number[], w: number[]): Vec4 {
 export function convexHull4(verts: Vec4[]): Geometry4 {
 	const n = verts.length;
 	const d2 = (i: number, j: number) => {
-		const a = verts[i], b = verts[j];
+		const a = verts[i],
+			b = verts[j];
 		return (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2 + (a[3] - b[3]) ** 2;
 	};
 	let e2 = Infinity;
@@ -236,7 +249,8 @@ export function convexHull4(verts: Vec4[]): Geometry4 {
 					const len = Math.hypot(...nr);
 					if (len < 1e-9 * e2 ** 1.5) continue;
 					const h = dot4(nr, verts[v]) / len;
-					let lo = 0, hi = 0;
+					let lo = 0,
+						hi = 0;
 					const on: number[] = [];
 					for (let w = 0; w < n && !(lo && hi); w++) {
 						const d = dot4(nr, verts[w]) / len - h;
@@ -283,13 +297,27 @@ export function convexHull4(verts: Vec4[]): Geometry4 {
 /** The prism over a uniform solid given by its vertices: two copies one edge length apart. */
 function prism(v3: readonly Vec3[]): Geometry4 {
 	let e = Infinity;
-	for (let i = 0; i < v3.length; i++) for (let j = i + 1; j < v3.length; j++) e = Math.min(e, Math.hypot(v3[i][0] - v3[j][0], v3[i][1] - v3[j][1], v3[i][2] - v3[j][2]));
-	return convexHull4(v3.flatMap((p) => [[...p, e / 2], [...p, -e / 2]] as Vec4[]));
+	for (let i = 0; i < v3.length; i++)
+		for (let j = i + 1; j < v3.length; j++)
+			e = Math.min(e, Math.hypot(v3[i][0] - v3[j][0], v3[i][1] - v3[j][1], v3[i][2] - v3[j][2]));
+	return convexHull4(
+		v3.flatMap(
+			(p) =>
+				[
+					[...p, e / 2],
+					[...p, -e / 2],
+				] as Vec4[],
+		),
+	);
 }
 
 function antiprism(n: number): Vec3[] {
 	const h = Math.sqrt(Math.sin(Math.PI / n) ** 2 - Math.sin(Math.PI / (2 * n)) ** 2);
-	return Array.from({ length: 2 * n }, (_, k) => [Math.cos((Math.PI * k) / n), Math.sin((Math.PI * k) / n), k % 2 ? h : -h]);
+	return Array.from({ length: 2 * n }, (_, k) => [
+		Math.cos((Math.PI * k) / n),
+		Math.sin((Math.PI * k) / n),
+		k % 2 ? h : -h,
+	]);
 }
 
 /** The 600-cell on the unit sphere: 24 vertices of a 24-cell, then the 96 of the snub 24-cell. */
@@ -334,22 +362,51 @@ function grandAntiprism(): Geometry4 {
 }
 
 const FAMILIES: [number[], [string, string]][] = [
-	[[3, 4, 3], ["24-cell", "24-cell"]],
-	[[3, 3, 3], ["5-cell", "5-cell"]],
-	[[4, 3, 3], ["tesseract", "16-cell"]],
-	[[5, 3, 3], ["120-cell", "600-cell"]],
+	[
+		[3, 4, 3],
+		["24-cell", "24-cell"],
+	],
+	[
+		[3, 3, 3],
+		["5-cell", "5-cell"],
+	],
+	[
+		[4, 3, 3],
+		["tesseract", "16-cell"],
+	],
+	[
+		[5, 3, 3],
+		["120-cell", "600-cell"],
+	],
 ];
 // Ring pattern → operation, and which end of the diagram names the result.
 const RINGS: [string, string, 0 | 1][] = [
-	["1000", "", 0], ["0001", "", 1], ["0100", "rectified ", 0], ["0010", "rectified ", 1], ["1100", "truncated ", 0],
-	["0011", "truncated ", 1], ["1010", "cantellated ", 0], ["0101", "cantellated ", 1], ["1001", "runcinated ", 0],
-	["0110", "bitruncated ", 0], ["1110", "cantitruncated ", 0], ["0111", "cantitruncated ", 1],
-	["1101", "runcitruncated ", 0], ["1011", "runcitruncated ", 1], ["1111", "omnitruncated ", 0],
+	["1000", "", 0],
+	["0001", "", 1],
+	["0100", "rectified ", 0],
+	["0010", "rectified ", 1],
+	["1100", "truncated ", 0],
+	["0011", "truncated ", 1],
+	["1010", "cantellated ", 0],
+	["0101", "cantellated ", 1],
+	["1001", "runcinated ", 0],
+	["0110", "bitruncated ", 0],
+	["1110", "cantitruncated ", 0],
+	["0111", "cantitruncated ", 1],
+	["1101", "runcitruncated ", 0],
+	["1011", "runcitruncated ", 1],
+	["1111", "omnitruncated ", 0],
 ];
 const STARS: [string, number[]][] = [
-	["Icosahedral 120-cell", [3, 5, 2.5]], ["Small stellated 120-cell", [2.5, 5, 3]], ["Great 120-cell", [5, 2.5, 5]],
-	["Grand 120-cell", [5, 3, 2.5]], ["Great stellated 120-cell", [2.5, 3, 5]], ["Grand stellated 120-cell", [2.5, 5, 2.5]],
-	["Great grand 120-cell", [5, 2.5, 3]], ["Great icosahedral 120-cell", [3, 2.5, 5]], ["Grand 600-cell", [3, 3, 2.5]],
+	["Icosahedral 120-cell", [3, 5, 2.5]],
+	["Small stellated 120-cell", [2.5, 5, 3]],
+	["Great 120-cell", [5, 2.5, 5]],
+	["Grand 120-cell", [5, 3, 2.5]],
+	["Great stellated 120-cell", [2.5, 3, 5]],
+	["Grand stellated 120-cell", [2.5, 5, 2.5]],
+	["Great grand 120-cell", [5, 2.5, 3]],
+	["Great icosahedral 120-cell", [3, 2.5, 5]],
+	["Grand 600-cell", [3, 3, 2.5]],
 	["Great grand stellated 120-cell", [2.5, 3, 3]],
 ];
 
@@ -362,22 +419,51 @@ const STARS: [string, number[]][] = [
 export function polychoronCandidates(maxN = 8): PolychoronSpec[] {
 	const out: PolychoronSpec[] = [];
 	const add = (name: string, set: PolychoronSet, symbol: string, via: "wythoff" | "hull", build: () => Geometry4) =>
-		out.push({ id: name.toLowerCase().replace(/[^a-z0-9]+/g, "-"), name: name[0].toUpperCase() + name.slice(1), set, symbol, via, build });
+		out.push({
+			id: name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+			name: name[0].toUpperCase() + name.slice(1),
+			set,
+			symbol,
+			via,
+			build,
+		});
 	const sym = (m: number[]) => `{${m.map((x) => (x === 2.5 ? "5/2" : x)).join(",")}}`;
-	for (const m of [[3, 3, 3], [4, 3, 3], [3, 3, 4], [3, 4, 3], [5, 3, 3], [3, 3, 5]]) {
+	for (const m of [
+		[3, 3, 3],
+		[4, 3, 3],
+		[3, 3, 4],
+		[3, 4, 3],
+		[5, 3, 3],
+		[3, 3, 5],
+	]) {
 		const [fam, names] = FAMILIES.find(([f]) => f.join() === m.join() || f.join() === [...m].reverse().join())!;
-		add(names[fam.join() === m.join() ? 0 : 1], "regular-convex", sym(m), "wythoff", () => wythoff(m, [true, false, false, false]));
+		add(names[fam.join() === m.join() ? 0 : 1], "regular-convex", sym(m), "wythoff", () =>
+			wythoff(m, [true, false, false, false]),
+		);
 	}
-	for (const [name, m] of STARS) add(name, "regular-star", sym(m), "wythoff", () => wythoff(m, [true, false, false, false]));
+	for (const [name, m] of STARS)
+		add(name, "regular-star", sym(m), "wythoff", () => wythoff(m, [true, false, false, false]));
 	for (const [m, names] of FAMILIES)
 		for (const [bits, op, end] of RINGS)
-			add(op + names[end], "convex-uniform", `${sym(m)} ${bits}`, "wythoff", () => wythoff(m, [...bits].map((b) => b === "1")));
+			add(op + names[end], "convex-uniform", `${sym(m)} ${bits}`, "wythoff", () =>
+				wythoff(
+					m,
+					[...bits].map((b) => b === "1"),
+				),
+			);
 	add("snub 24-cell", "convex-uniform", "600-cell less a 24-cell", "hull", () => convexHull4(cell600().slice(24)));
 	add("grand antiprism", "convex-uniform", "600-cell less two decagons", "hull", grandAntiprism);
-	for (const s of [...PLATONIC_SOLIDS, ...ARCHIMEDEAN_SOLIDS]) add(`${s.name} prism`, "polyhedral-prism", `${s.vertexConfig} × segment`, "hull", () => prism(s.vertices));
+	for (const s of [...PLATONIC_SOLIDS, ...ARCHIMEDEAN_SOLIDS])
+		add(`${s.name} prism`, "polyhedral-prism", `${s.vertexConfig} × segment`, "hull", () => prism(s.vertices));
 	for (let p = 3; p <= maxN; p++)
-		for (let q = p; q <= maxN; q++) add(`${p},${q}-duoprism`, "duoprism", `{${p}} × {${q}}`, "wythoff", () => wythoff([p, 2, q], [true, false, true, false]));
-	for (let n = 3; n <= maxN; n++) add(`${n}-gonal antiprismatic prism`, "antiprismatic-prism", `3.3.3.${n} × segment`, "hull", () => prism(antiprism(n)));
+		for (let q = p; q <= maxN; q++)
+			add(`${p},${q}-duoprism`, "duoprism", `{${p}} × {${q}}`, "wythoff", () =>
+				wythoff([p, 2, q], [true, false, true, false]),
+			);
+	for (let n = 3; n <= maxN; n++)
+		add(`${n}-gonal antiprismatic prism`, "antiprismatic-prism", `3.3.3.${n} × segment`, "hull", () =>
+			prism(antiprism(n)),
+		);
 	return out;
 }
 

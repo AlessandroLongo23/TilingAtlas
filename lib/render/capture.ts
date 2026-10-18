@@ -118,10 +118,7 @@ let composited: HTMLCanvasElement[] = [];
  * Returns null if a capture is already running or if no host offered anything — an all-blank result is
  * reported as a failure rather than handed back as a black rectangle.
  */
-export async function captureFrame(
-	req: CaptureRequest,
-	opts: CaptureOptions = {},
-): Promise<HTMLCanvasElement | null> {
+export async function captureFrame(req: CaptureRequest, opts: CaptureOptions = {}): Promise<HTMLCanvasElement | null> {
 	if (inFlight) return null;
 	inFlight = true;
 	pending = req;

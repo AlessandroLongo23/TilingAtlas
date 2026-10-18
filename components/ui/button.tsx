@@ -38,12 +38,9 @@ export type ButtonProps = ButtonAsButton | ButtonAsLink;
 const VARIANT_CLASSES: Record<Variant, string> = {
 	primary:
 		"bg-accent text-accent-contrast border border-accent shadow-sm hover:bg-accent-hover active:bg-accent-active",
-	secondary:
-		"bg-surface-raised text-fg border border-line shadow-sm hover:bg-surface-overlay",
-	ghost:
-		"bg-transparent hover:bg-surface-overlay/70 text-fg-muted hover:text-fg border border-transparent",
-	danger:
-		"bg-danger-subtle hover:bg-danger text-danger hover:text-fg-inverse border border-danger/40",
+	secondary: "bg-surface-raised text-fg border border-line shadow-sm hover:bg-surface-overlay",
+	ghost: "bg-transparent hover:bg-surface-overlay/70 text-fg-muted hover:text-fg border border-transparent",
+	danger: "bg-danger-subtle hover:bg-danger text-danger hover:text-fg-inverse border border-danger/40",
 };
 
 // On a phone every size reaches the 44px touch floor (min-h wins over h); lg is already there.
@@ -130,7 +127,7 @@ function ButtonAsButtonRender(props: ButtonAsButton) {
 			aria-disabled={disabled}
 			className={cn(
 				computeClassName(props),
-				disabled ? "opacity-50 cursor-not-allowed pointer-events-none" : "cursor-pointer",
+				disabled ? "pointer-events-none cursor-not-allowed opacity-50" : "cursor-pointer",
 			)}
 		>
 			{renderContent(props)}

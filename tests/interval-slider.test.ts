@@ -58,7 +58,15 @@ describe("quantize", () => {
 // The scalars the sliders filter on, parsed from the family label. Valence and palette are maxima
 // over the vertex figures — the (k,p,v) sweep's own axes.
 const hyp = (id: string, family: string, edge?: number): ReferenceTiling =>
-	({ id, source: "hyperbolic", k: family.includes("+") ? 2 : 1, family, edge, discoverer: "x", renderCell: {} }) as unknown as ReferenceTiling;
+	({
+		id,
+		source: "hyperbolic",
+		k: family.includes("+") ? 2 : 1,
+		family,
+		edge,
+		discoverer: "x",
+		renderCell: {},
+	}) as unknown as ReferenceTiling;
 
 describe("hyperbolicFacetsOf", () => {
 	it("k=1: valence = figure length, polygon = largest entry", () => {
@@ -90,7 +98,13 @@ describe("matchesReferenceFilters hyperbolic intervals", () => {
 	});
 
 	it("an active interval facet excludes non-hyperbolic entries", () => {
-		const eu = { id: "g", source: "galebach", k: 1, family: "3.3.3.3.3.3", discoverer: "x" } as unknown as ReferenceTiling;
+		const eu = {
+			id: "g",
+			source: "galebach",
+			k: 1,
+			family: "3.3.3.3.3.3",
+			discoverer: "x",
+		} as unknown as ReferenceTiling;
 		expect(matchesReferenceFilters(eu, { hypValence: [3, 9] })).toBe(false);
 		expect(matchesReferenceFilters(eu, { hypEdge: [0, 9] })).toBe(false);
 		expect(matchesReferenceFilters(eu, {})).toBe(true);

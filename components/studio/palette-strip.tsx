@@ -50,7 +50,7 @@ export function PaletteStrip() {
 	if (tool !== "paint") return null;
 
 	return (
-		<div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 ta-float p-2 max-md:static max-md:shrink-0 max-md:translate-x-0 max-md:flex-wrap max-md:justify-center">
+		<div className="ta-float absolute bottom-16 left-1/2 z-30 flex -translate-x-1/2 items-center gap-3 p-2 max-md:static max-md:shrink-0 max-md:translate-x-0 max-md:flex-wrap max-md:justify-center">
 			{/* The slot row. Its LENGTH comes from STUDIO_PALETTE and its colours through slotFill, which
 			    falls back per slot, so a palette left short by an older session still shows ten buttons. */}
 			<div className="flex items-center gap-1 max-md:grid max-md:grid-cols-5 max-md:gap-1.5">
@@ -62,10 +62,7 @@ export function PaletteStrip() {
 						aria-label={`Palette slot ${i + 1}`}
 						title={`Slot ${i + 1}`}
 						onClick={() => useStudio.getState().set({ slot: i })}
-						className={cn(
-							SWATCH,
-							slot === i ? "border-fg ring-1 ring-fg" : "border-line hover:border-line-strong",
-						)}
+						className={cn(SWATCH, slot === i ? "border-fg ring-1 ring-fg" : "border-line hover:border-line-strong")}
 						style={{ background: slotFill(palette, i, dark) }}
 					/>
 				))}
@@ -104,7 +101,7 @@ export function PaletteStrip() {
 						onClick={() => writeSlot(s)}
 						className={cn(
 							SWATCH,
-							"h-[26px] max-md:h-10 max-[380px]:h-9",
+							"h-[26px] max-[380px]:h-9 max-md:h-10",
 							palette[slot] === s ? "border-fg ring-1 ring-fg" : "border-line hover:border-line-strong",
 						)}
 						style={{ background: cellFill(s, false) }}

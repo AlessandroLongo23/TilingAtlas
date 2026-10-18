@@ -28,7 +28,9 @@ describe("OptionsTab — the controls each spherical surface offers", () => {
 	});
 
 	const spherical = stub({ spherical: { solid: "cube", p: 4, q: 3 } as CatalogueTiling["spherical"] });
-	const star = stub({ sphStar: { id: "ss-1", density: 2, stats: { types: [] } } as unknown as CatalogueTiling["sphStar"] });
+	const star = stub({
+		sphStar: { id: "ss-1", density: 2, stats: { types: [] } } as unknown as CatalogueTiling["sphStar"],
+	});
 
 	it("gives the tiling sphere its own surface controls, and the shared ones", () => {
 		render(<OptionsTab selected={spherical} />);
@@ -75,7 +77,9 @@ describe("OptionsTab — the controls each spherical surface offers", () => {
 
 	it("names each vertex configuration of a solid that has several, in the compact notation", () => {
 		useConfiguration.setState({ solidFaceView: "vertex" });
-		const { unmount } = render(<OptionsTab selected={stub({ k: 2, spherical: { solid: "square-pyramid" } as CatalogueTiling["spherical"] })} />);
+		const { unmount } = render(
+			<OptionsTab selected={stub({ k: 2, spherical: { solid: "square-pyramid" } as CatalogueTiling["spherical"] })} />,
+		);
 		expect(offered("3².4")).toBe(true);
 		expect(offered("3⁴")).toBe(true);
 		unmount();
@@ -115,7 +119,11 @@ describe("OptionsTab — the controls each spherical surface offers", () => {
 		render(
 			<OptionsTab
 				selected={stub({
-					sphericalFreedraw: { solid: "icosahedron", k: 1, pattern: {} } as unknown as CatalogueTiling["sphericalFreedraw"],
+					sphericalFreedraw: {
+						solid: "icosahedron",
+						k: 1,
+						pattern: {},
+					} as unknown as CatalogueTiling["sphericalFreedraw"],
 				})}
 			/>,
 		);

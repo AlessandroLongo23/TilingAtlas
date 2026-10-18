@@ -5,7 +5,9 @@ import type { ReferenceTiling } from "@/lib/services/referenceAtlas";
 /** Unit-edge equilateral polygon from an interior-angle word in degrees, walked like the developer. */
 function fromAngles(deg: number[]): number[][] {
 	const pts: number[][] = [];
-	let x = 0, y = 0, dir = 0;
+	let x = 0,
+		y = 0,
+		dir = 0;
 	for (const a of deg) {
 		pts.push([x, y]);
 		x += Math.cos((dir * Math.PI) / 180);

@@ -18,7 +18,11 @@ describe("circumsphere fit", () => {
 		// A square pyramid with unit edges: circumcentre at the centre of the base, not at the centroid.
 		const h = Math.SQRT1_2;
 		const V = [
-			[0.5, 0.5, 0], [0.5, -0.5, 0], [-0.5, -0.5, 0], [-0.5, 0.5, 0], [0, 0, h],
+			[0.5, 0.5, 0],
+			[0.5, -0.5, 0],
+			[-0.5, -0.5, 0],
+			[-0.5, 0.5, 0],
+			[0, 0, h],
 		] as [number, number, number][];
 		expect(isInscribed(V)).toBe(true);
 		expect(circumsphereMiss(V)).toBeLessThan(1e-9);
@@ -26,7 +30,12 @@ describe("circumsphere fit", () => {
 
 	it("rejects a solid with no sphere through its vertices", () => {
 		const V = [
-			[1, 0, 0], [0, 1, 0], [-1, 0, 0], [0, -1, 0], [0, 0, 1], [0, 0, 3],
+			[1, 0, 0],
+			[0, 1, 0],
+			[-1, 0, 0],
+			[0, -1, 0],
+			[0, 0, 1],
+			[0, 0, 3],
 		] as [number, number, number][];
 		expect(isInscribed(V)).toBe(false);
 	});
@@ -49,9 +58,7 @@ describe("the shipped split", () => {
 			.sort();
 		expect(measured).toEqual([...NCX_INSCRIBED].sort());
 		for (const s of ncx) {
-			expect(hasSphereView(s.id), s.id).toBe(
-				isInscribed(s.vertices as [number, number, number][]),
-			);
+			expect(hasSphereView(s.id), s.id).toBe(isInscribed(s.vertices as [number, number, number][]));
 		}
 	});
 
@@ -61,8 +68,7 @@ describe("the shipped split", () => {
 	// measured list has nothing to say about them.
 	it("SPH_NOT_INSCRIBED is exactly the OTHER solids with no circumsphere", () => {
 		const measured = SPHERICAL_SOLIDS.filter(
-			(s) => !s.id.startsWith("ncx-") && !isGenus(s.id)
-				&& !isInscribed(s.vertices as [number, number, number][]),
+			(s) => !s.id.startsWith("ncx-") && !isGenus(s.id) && !isInscribed(s.vertices as [number, number, number][]),
 		)
 			.map((s) => s.id)
 			.sort();
@@ -84,8 +90,8 @@ describe("the shipped split", () => {
 		let worstIn = 0;
 		let bestOut = Infinity;
 		for (const s of SPHERICAL_SOLIDS) {
-			if (s.id.startsWith("ncx-")) continue;   // measured by the test above, on its own claim
-			if (isGenus(s.id)) continue;             // no circumsphere by topology, not by measurement
+			if (s.id.startsWith("ncx-")) continue; // measured by the test above, on its own claim
+			if (isGenus(s.id)) continue; // no circumsphere by topology, not by measurement
 			const V = s.vertices as [number, number, number][];
 			const miss = circumsphereMiss(V) / Math.max(...V.map((v) => Math.hypot(v[0], v[1], v[2])));
 			if (SPH_NOT_INSCRIBED.has(s.id)) bestOut = Math.min(bestOut, miss);
@@ -107,13 +113,21 @@ describe("the shipped split", () => {
 		for (const s of SPHERICAL_SOLIDS) {
 			const g = /^gen(\d+)-/.exec(s.id);
 			expect(sphericalSolidSub(s.id)).toBe(
-				g ? `spg${g[1]}-solid`
-					: s.id.startsWith("hemi-") ? (HEMI_STAR_FACED.has(s.id) ? "sst" : "spn-solid")
-					: s.id.startsWith("tor-") ? "spt-solid"
-					// The isotoxal shelf, "sis-solid": the star shelf's sibling by FACE TYPE, and not a
-					// convex row — AL, 2026-08-31, on finding these six under the Johnson heading.
-					: s.id.startsWith("iso-") ? "sis-solid"
-					: s.id.startsWith("ncx-") ? "spn-solid" : "spx-solid",
+				g
+					? `spg${g[1]}-solid`
+					: s.id.startsWith("hemi-")
+						? HEMI_STAR_FACED.has(s.id)
+							? "sst"
+							: "spn-solid"
+						: s.id.startsWith("tor-")
+							? "spt-solid"
+							: // The isotoxal shelf, "sis-solid": the star shelf's sibling by FACE TYPE, and not a
+								// convex row — AL, 2026-08-31, on finding these six under the Johnson heading.
+								s.id.startsWith("iso-")
+								? "sis-solid"
+								: s.id.startsWith("ncx-")
+									? "spn-solid"
+									: "spx-solid",
 			);
 		}
 	});
@@ -125,10 +139,12 @@ describe("the shipped split", () => {
 			expect(hasSphereView(s.id), s.id).toBe(false);
 			// V - E + F != 2 is what puts them past the sphere, and it is what makes the view meaningless.
 			const E = new Set<string>();
-			for (const f of s.faces) for (let i = 0; i < f.length; i++) {
-				const a = f[i], b = f[(i + 1) % f.length];
-				E.add(a < b ? `${a}-${b}` : `${b}-${a}`);
-			}
+			for (const f of s.faces)
+				for (let i = 0; i < f.length; i++) {
+					const a = f[i],
+						b = f[(i + 1) % f.length];
+					E.add(a < b ? `${a}-${b}` : `${b}-${a}`);
+				}
 			const chi = s.vertices.length - E.size + s.faces.length;
 			expect(chi, s.id).toBeLessThan(2);
 			expect(Math.abs(chi % 2), `${s.id} chi=${chi} is not 2-2g for an integer genus`).toBe(0);

@@ -10,8 +10,17 @@ import { syncCanvasSize } from "@/lib/render/canvasSize";
 import { captureOverride, offerFrame } from "@/lib/render/capture";
 import { evalWithHue } from "@/lib/render/paramCellRender";
 import {
-	FILL_VERT, FILL_FRAG, STROKE_VERT, STROKE_FRAG, POINTS_VERT, POINTS_FRAG,
-	ORBIT_VERT, ORBIT_FRAG, ORBIT_MAX, POINT_DOT_RADIUS_PX, compileShader,
+	FILL_VERT,
+	FILL_FRAG,
+	STROKE_VERT,
+	STROKE_FRAG,
+	POINTS_VERT,
+	POINTS_FRAG,
+	ORBIT_VERT,
+	ORBIT_FRAG,
+	ORBIT_MAX,
+	POINT_DOT_RADIUS_PX,
+	compileShader,
 } from "@/lib/render/flatTilingGL";
 import { ORBIT_DOT_RADIUS_PX, hoveredOrbitAt, parseDimTarget, stepOrbitScales } from "@/lib/render/orbitHover";
 import { getOrbitHoverWorld } from "@/lib/render/orbitHoverBridge";
@@ -20,11 +29,7 @@ import { useFamilyAlphas } from "@/stores/familyAlphas";
 import { Vector } from "@/classes/Vector";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import type { OrbitData } from "@/lib/services/orbitsFromExactSource";
-import {
-	TILING_TRANSITION_IN_MS,
-	TILING_TRANSITION_OUT_MS,
-	prefersReducedMotion,
-} from "@/lib/utils/tilingTransition";
+import { TILING_TRANSITION_IN_MS, TILING_TRANSITION_OUT_MS, prefersReducedMotion } from "@/lib/utils/tilingTransition";
 
 // The vertex-orbit hover (hit radius, grow factor, easing rate) lives in lib/render/orbitHover.ts,
 // shared with the embeddable cards so the two surfaces cannot drift apart on feel.
@@ -48,7 +53,12 @@ interface EuclideanCanvasProps {
 // The GLSL sources + compile helper moved to lib/render/flatTilingGL.ts (imported above) so the
 // theory-page preview cards render through the exact same shaders — edit them there.
 
-export function EuclideanCanvas({ translationalCell, translationalCellId, paramCell = null, orbitData = null }: EuclideanCanvasProps) {
+export function EuclideanCanvas({
+	translationalCell,
+	translationalCellId,
+	paramCell = null,
+	orbitData = null,
+}: EuclideanCanvasProps) {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const glRef = useRef<WebGL2RenderingContext | null>(null);
 	const progRef = useRef<WebGLProgram | null>(null);
@@ -104,7 +114,9 @@ export function EuclideanCanvas({ translationalCell, translationalCellId, paramC
 	const paramCellRef = useRef(paramCell);
 	paramCellRef.current = paramCell;
 	const lastSigRef = useRef<string | null>(null);
-	useEffect(() => { lastSigRef.current = null; }, [paramCell, translationalCellId]);
+	useEffect(() => {
+		lastSigRef.current = null;
+	}, [paramCell, translationalCellId]);
 
 	// Upload a cell mesh into the pos/hue buffers.
 	const uploadMesh = (gl: WebGL2RenderingContext, mesh: CellMesh) => {
@@ -150,7 +162,10 @@ export function EuclideanCanvas({ translationalCell, translationalCellId, paramC
 		const canvas = canvasRef.current;
 		if (!canvas) return;
 		const gl = canvas.getContext("webgl2", { antialias: true, premultipliedAlpha: false, alpha: true });
-		if (!gl) { console.error("euclidean view: WebGL2 unavailable"); return; }
+		if (!gl) {
+			console.error("euclidean view: WebGL2 unavailable");
+			return;
+		}
 		glRef.current = gl;
 
 		const vs = compileShader(gl, gl.VERTEX_SHADER, FILL_VERT);
@@ -167,7 +182,21 @@ export function EuclideanCanvas({ translationalCell, translationalCellId, paramC
 		progRef.current = prog;
 		gl.useProgram(prog);
 
-		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uDeform", "uHalf", "uHueOffset", "uTileSat", "uWavePhase", "uWaveP", "uFillDim", "uDimTarget"]) {
+		for (const name of [
+			"uOffset",
+			"uZoom",
+			"uRot",
+			"uV1",
+			"uV2",
+			"uDeform",
+			"uHalf",
+			"uHueOffset",
+			"uTileSat",
+			"uWavePhase",
+			"uWaveP",
+			"uFillDim",
+			"uDimTarget",
+		]) {
 			uniformsRef.current[name] = gl.getUniformLocation(prog, name);
 		}
 		for (const name of ["aPos", "aHue", "aInst", "aCentroid"]) {
@@ -192,7 +221,21 @@ export function EuclideanCanvas({ translationalCell, translationalCellId, paramC
 		}
 		strokeProgRef.current = strokeProg;
 
-		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uDeform", "uHalf", "uHalfStrokePx", "uStroke", "uWavePhase", "uWaveP", "uStrokeDim", "uDimTarget"]) {
+		for (const name of [
+			"uOffset",
+			"uZoom",
+			"uRot",
+			"uV1",
+			"uV2",
+			"uDeform",
+			"uHalf",
+			"uHalfStrokePx",
+			"uStroke",
+			"uWavePhase",
+			"uWaveP",
+			"uStrokeDim",
+			"uDimTarget",
+		]) {
 			strokeUniformsRef.current[name] = gl.getUniformLocation(strokeProg, name);
 		}
 		for (const name of ["aPos", "aNorm", "aSide", "aInst", "aCentroid"]) {
@@ -241,7 +284,18 @@ export function EuclideanCanvas({ translationalCell, translationalCellId, paramC
 		}
 		orbitProgRef.current = orbitProg;
 
-		for (const name of ["uOffset", "uZoom", "uRot", "uV1", "uV2", "uDeform", "uHalf", "uRadiusPx", "uK", "uOrbitScale"]) {
+		for (const name of [
+			"uOffset",
+			"uZoom",
+			"uRot",
+			"uV1",
+			"uV2",
+			"uDeform",
+			"uHalf",
+			"uRadiusPx",
+			"uK",
+			"uOrbitScale",
+		]) {
 			orbitUniformsRef.current[name] = gl.getUniformLocation(orbitProg, name);
 		}
 		for (const name of ["aPos", "aCorner", "aOrbit", "aInst"]) {
@@ -285,20 +339,33 @@ export function EuclideanCanvas({ translationalCell, translationalCellId, paramC
 			const tr = transitionRef.current;
 			if (tr && !cfg.tilingTransition) {
 				// Toggled off mid-flight: land on the incoming tiling at once (mirrors canvas.tsx).
-				if (pendingMeshRef.current) { uploadMesh(g, pendingMeshRef.current); pendingMeshRef.current = null; }
+				if (pendingMeshRef.current) {
+					uploadMesh(g, pendingMeshRef.current);
+					pendingMeshRef.current = null;
+				}
 				transitionRef.current = null;
 			} else if (tr) {
 				const dur = tr.phase === "out" ? TILING_TRANSITION_OUT_MS : TILING_TRANSITION_IN_MS;
 				const elapsed = (performance.now() - tr.start) / dur;
 				if (tr.phase === "out") {
 					if (elapsed >= 1) {
-						if (pendingMeshRef.current) { uploadMesh(g, pendingMeshRef.current); pendingMeshRef.current = null; }
+						if (pendingMeshRef.current) {
+							uploadMesh(g, pendingMeshRef.current);
+							pendingMeshRef.current = null;
+						}
 						transitionRef.current = { phase: "in", start: performance.now() };
-						wavePhaseInt = 1; waveP = 0;
-					} else { wavePhaseInt = -1; waveP = elapsed; }
+						wavePhaseInt = 1;
+						waveP = 0;
+					} else {
+						wavePhaseInt = -1;
+						waveP = elapsed;
+					}
 				} else if (elapsed >= 1) {
 					transitionRef.current = null;
-				} else { wavePhaseInt = 1; waveP = elapsed; }
+				} else {
+					wavePhaseInt = 1;
+					waveP = elapsed;
+				}
 			}
 
 			const mesh = meshRef.current;
@@ -338,7 +405,8 @@ export function EuclideanCanvas({ translationalCell, translationalCellId, paramC
 			g.clearColor(0, 0, 0, 0);
 			g.clear(g.COLOR_BUFFER_BIT);
 
-			const A = attribsRef.current, U = uniformsRef.current;
+			const A = attribsRef.current,
+				U = uniformsRef.current;
 			g.bindBuffer(g.ARRAY_BUFFER, posBufRef.current);
 			g.enableVertexAttribArray(A.aPos);
 			g.vertexAttribPointer(A.aPos, 2, g.FLOAT, false, 0, 0);
@@ -401,7 +469,8 @@ export function EuclideanCanvas({ translationalCell, translationalCellId, paramC
 				// attribute locations aren't guaranteed disjoint, so a skipped rebind would corrupt
 				// divisor/pointer state across passes.
 				g.useProgram(strokeProgRef.current);
-				const SA = strokeAttribsRef.current, SU = strokeUniformsRef.current;
+				const SA = strokeAttribsRef.current,
+					SU = strokeUniformsRef.current;
 				g.bindBuffer(g.ARRAY_BUFFER, strokePosBufRef.current);
 				g.enableVertexAttribArray(SA.aPos);
 				g.vertexAttribPointer(SA.aPos, 2, g.FLOAT, false, 0, 0);
@@ -451,7 +520,8 @@ export function EuclideanCanvas({ translationalCell, translationalCellId, paramC
 				g.enable(g.BLEND);
 				g.blendFunc(g.SRC_ALPHA, g.ONE_MINUS_SRC_ALPHA);
 				g.useProgram(pointsProgRef.current);
-				const PA = pointsAttribsRef.current, PU = pointsUniformsRef.current;
+				const PA = pointsAttribsRef.current,
+					PU = pointsUniformsRef.current;
 				g.bindBuffer(g.ARRAY_BUFFER, pointsPosBufRef.current);
 				g.enableVertexAttribArray(PA.aPos);
 				g.vertexAttribPointer(PA.aPos, 2, g.FLOAT, false, 0, 0);
@@ -501,7 +571,8 @@ export function EuclideanCanvas({ translationalCell, translationalCellId, paramC
 				g.enable(g.BLEND);
 				g.blendFunc(g.SRC_ALPHA, g.ONE_MINUS_SRC_ALPHA);
 				g.useProgram(orbitProgRef.current);
-				const OA = orbitAttribsRef.current, OU = orbitUniformsRef.current;
+				const OA = orbitAttribsRef.current,
+					OU = orbitUniformsRef.current;
 				g.bindBuffer(g.ARRAY_BUFFER, orbitPosBufRef.current);
 				g.enableVertexAttribArray(OA.aPos);
 				g.vertexAttribPointer(OA.aPos, 2, g.FLOAT, false, 0, 0);
@@ -602,10 +673,12 @@ export function EuclideanCanvas({ translationalCell, translationalCellId, paramC
 		const gl = glRef.current;
 		if (!gl || !posBufRef.current) return;
 		const mesh = buildCellMesh(translationalCell);
-		if (!mesh) { meshRef.current = null; return; }
+		if (!mesh) {
+			meshRef.current = null;
+			return;
+		}
 		const canAnimate =
-			isNewSelection && !!meshRef.current
-			&& useConfiguration.getState().tilingTransition && !prefersReducedMotion();
+			isNewSelection && !!meshRef.current && useConfiguration.getState().tilingTransition && !prefersReducedMotion();
 		if (!canAnimate) {
 			uploadMesh(gl, mesh);
 			transitionRef.current = null;

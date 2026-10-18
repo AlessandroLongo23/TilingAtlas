@@ -19,8 +19,8 @@ const shelf: { id: string; paramCell?: ParametricCellData }[] = fs.existsSync(sh
 	? decodeAtlas<{ id: string; paramCell?: ParametricCellData }>(JSON.parse(fs.readFileSync(shelfPath, "utf8")))
 	: [];
 
-const family = shelf.find((r) => r.id === "ctrnact-mixed-family-k2-01" && r.paramCell)
-	?? shelf.find((r) => r.paramCell);
+const family =
+	shelf.find((r) => r.id === "ctrnact-mixed-family-k2-01" && r.paramCell) ?? shelf.find((r) => r.paramCell);
 
 /** Everything a draw path reads off a node, flattened for comparison. */
 function snapshot(t: ReturnType<typeof buildTilingFromCell>): string {
@@ -78,7 +78,14 @@ describe.skipIf(!family)("buildTilingFromCell in-place reuse", () => {
 		if (!other) return;
 		const mine = buildTilingFromCell(cellAt(pc, lo), 2, 2);
 		const mineBefore = snapshot(mine);
-		const theirs = buildTilingFromCell(cellAt(other.paramCell!, other.paramCell!.params.map((p) => p.defaultAlphaDeg)), 2, 2);
+		const theirs = buildTilingFromCell(
+			cellAt(
+				other.paramCell!,
+				other.paramCell!.params.map((p) => p.defaultAlphaDeg),
+			),
+			2,
+			2,
+		);
 		const out = buildTilingFromCell(cellAt(pc, hi), 2, 2, null, theirs);
 		expect(snapshot(out)).toBe(snapshot(buildTilingFromCell(cellAt(pc, hi), 2, 2)));
 		// and a grid that was NOT offered for reuse is never touched

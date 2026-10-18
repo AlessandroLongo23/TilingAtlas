@@ -18,8 +18,7 @@ for (const f of LENGTH_FAMILIES_ALL) {
 	});
 	const c = evaluateParamCell(f.cell, t);
 	const rc = (x: ReturnType<typeof evaluateParamCell>) => ({
-		cellPolygons: (x.cellPolygons as { n: number; v: [number, number][] }[])
-			.map((p) => ({ n: p.n, vertices: p.v })),
+		cellPolygons: (x.cellPolygons as { n: number; v: [number, number][] }[]).map((p) => ({ n: p.n, vertices: p.v })),
 		basis: x.basis,
 	});
 	cells.push({
@@ -41,7 +40,12 @@ for (const f of LENGTH_FAMILIES_ALL) {
 		...((c.cellPolygons as { v: [number, number][] }[]) ?? []).flatMap((p) => p.v.flat()),
 	];
 	const u = flat(evaluateParamCell(f.cell, def));
-	const w = flat(evaluateParamCell(f.cell, def.map((v) => v * K)));
+	const w = flat(
+		evaluateParamCell(
+			f.cell,
+			def.map((v) => v * K),
+		),
+	);
 	const scale = u.length === w.length && u.every((x, i) => Math.abs(w[i] - K * x) < 1e-9);
 	expect[f.id] = f.cell.params.length - (scale ? 1 : 0);
 }

@@ -29,7 +29,10 @@ function splitStoreImport(line) {
 	const m = line.match(/^(\s*)import\s*\{([^}]+)\}\s*from\s*['"]@\/stores['"]\s*;?\s*$/);
 	if (!m) return null;
 	const indent = m[1];
-	const names = m[2].split(",").map((s) => s.trim()).filter(Boolean);
+	const names = m[2]
+		.split(",")
+		.map((s) => s.trim())
+		.filter(Boolean);
 	const lines = [];
 	if (names.includes("tolerance")) {
 		lines.push(`${indent}import { tolerance } from "@/utils/tolerance";`);
@@ -45,10 +48,7 @@ function splitStoreImport(line) {
 }
 
 function transform(src) {
-	const bannerStripped = src.replace(
-		/^\/\/ TODO\(phase-1\.6\):[\s\S]*?(?:\r?\n){2,}/m,
-		"",
-	);
+	const bannerStripped = src.replace(/^\/\/ TODO\(phase-1\.6\):[\s\S]*?(?:\r?\n){2,}/m, "");
 	const outLines = [];
 	for (const line of bannerStripped.split(/\r?\n/)) {
 		// Drop `import { get } from 'svelte/store'`

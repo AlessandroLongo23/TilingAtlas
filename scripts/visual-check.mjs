@@ -33,7 +33,9 @@ const page = await browser.newPage({
 	deviceScaleFactor: 2, // match the app's DPR cap so dots/strokes render at their real size
 });
 page.on("pageerror", (e) => console.error("[pageerror]", e.message));
-page.on("console", (m) => { if (m.type() === "error") console.error("[console.error]", m.text()); });
+page.on("console", (m) => {
+	if (m.type() === "error") console.error("[console.error]", m.text());
+});
 
 // Dev servers hold an HMR websocket open, so "networkidle" never settles — wait for the DOM + the target
 // element instead. The first hit to a route can be slow while Turbopack compiles it, hence the long timeout.

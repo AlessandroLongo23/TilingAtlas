@@ -6,16 +6,16 @@
 export async function computeExperimentHash(
 	polygonNames: string[],
 	kValues: number[],
-	isExhaustive: boolean
+	isExhaustive: boolean,
 ): Promise<string> {
 	const sorted = [...polygonNames].sort();
 	const sortedK = [...kValues].sort((a, b) => a - b);
-	const input = `polygons:${sorted.join(',')};k:${sortedK.join(',')};exhaustive:${isExhaustive}`;
+	const input = `polygons:${sorted.join(",")};k:${sortedK.join(",")};exhaustive:${isExhaustive}`;
 
 	const encoder = new TextEncoder();
 	const data = encoder.encode(input);
-	const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+	const hashBuffer = await crypto.subtle.digest("SHA-256", data);
 	const hashArray = Array.from(new Uint8Array(hashBuffer));
-	const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+	const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 	return hashHex.slice(0, 16);
 }

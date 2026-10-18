@@ -367,9 +367,7 @@ function compile(gl: WebGL2RenderingContext, type: number, src: string): WebGLSh
 	return sh;
 }
 
-function uploadFloatTex(
-	gl: WebGL2RenderingContext, tex: WebGLTexture, data: Float32Array, w: number, h: number,
-) {
+function uploadFloatTex(gl: WebGL2RenderingContext, tex: WebGLTexture, data: Float32Array, w: number, h: number) {
 	gl.bindTexture(gl.TEXTURE_2D, tex);
 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, w, h, 0, gl.RGBA, gl.FLOAT, data);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
@@ -435,11 +433,36 @@ export function InversiveCanvas({ cell, cellId, paramCell = null, camera }: Inve
 		gl.useProgram(prog);
 
 		for (const name of [
-			"uRes", "uDpr", "uOffset", "uZoom", "uRot", "uMode", "uR", "uKinv",
-			"uSpiralDouble", "uSpiralK", "uSpiralV",
-			"uMinv", "uV1", "uV2", "uDeformInv", "uDeformNorm",
-			"uVerts", "uVertsW", "uMeta", "uMetaW", "uHead", "uGrid", "uList", "uListW",
-			"uStrokeW", "uHueOffset", "uTileSat", "uSurface", "uAvg", "uFeature",
+			"uRes",
+			"uDpr",
+			"uOffset",
+			"uZoom",
+			"uRot",
+			"uMode",
+			"uR",
+			"uKinv",
+			"uSpiralDouble",
+			"uSpiralK",
+			"uSpiralV",
+			"uMinv",
+			"uV1",
+			"uV2",
+			"uDeformInv",
+			"uDeformNorm",
+			"uVerts",
+			"uVertsW",
+			"uMeta",
+			"uMetaW",
+			"uHead",
+			"uGrid",
+			"uList",
+			"uListW",
+			"uStrokeW",
+			"uHueOffset",
+			"uTileSat",
+			"uSurface",
+			"uAvg",
+			"uFeature",
 		]) {
 			uniformsRef.current[name] = gl.getUniformLocation(prog, name);
 		}
@@ -518,10 +541,7 @@ export function InversiveCanvas({ cell, cellId, paramCell = null, camera }: Inve
 			const vel = cfg.spiralVel;
 			const drift = cfg.spiralDrift;
 			if (cfg.inversiveMode === "spiral" && (vel.x !== 0 || vel.y !== 0)) {
-				const [wx, wy] = wrapStripDrift(
-					[drift.x + vel.x * dt, drift.y + vel.y * dt],
-					spiral.k, geom.v1, geom.v2,
-				);
+				const [wx, wy] = wrapStripDrift([drift.x + vel.x * dt, drift.y + vel.y * dt], spiral.k, geom.v1, geom.v2);
 				drift.x = wx;
 				drift.y = wy;
 			}
@@ -628,7 +648,10 @@ export function InversiveCanvas({ cell, cellId, paramCell = null, camera }: Inve
 }
 
 function bindTex(
-	gl: WebGL2RenderingContext, tex: WebGLTexture | undefined, unit: number, loc: WebGLUniformLocation | null,
+	gl: WebGL2RenderingContext,
+	tex: WebGLTexture | undefined,
+	unit: number,
+	loc: WebGLUniformLocation | null,
 ) {
 	if (!tex) return;
 	gl.activeTexture(gl.TEXTURE0 + unit);
@@ -636,9 +659,7 @@ function bindTex(
 	gl.uniform1i(loc, unit);
 }
 
-function uploadPacked(
-	gl: WebGL2RenderingContext, tex: Partial<Record<TexName, WebGLTexture>>, packed: PackedCell,
-) {
+function uploadPacked(gl: WebGL2RenderingContext, tex: Partial<Record<TexName, WebGLTexture>>, packed: PackedCell) {
 	if (!tex.verts || !tex.meta || !tex.head || !tex.list) return;
 	uploadFloatTex(gl, tex.verts, packed.verts, packed.vertsW, packed.vertsH);
 	uploadFloatTex(gl, tex.meta, packed.meta, packed.metaW, packed.metaH);
