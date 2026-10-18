@@ -159,6 +159,7 @@ To SEE a change in the real running app, drive it with Playwright and screenshot
 - `pnpm dev` — Next dev server (Turbopack)
 - `pnpm build` / `pnpm start` — production build / serve
 - `pnpm lint` — ESLint (`eslint-config-next`)
+- `pnpm format` — Prettier over the whole repo (`.prettierrc.json`; `pnpm format:check` only checks). Run it on files you touch; generated files are in `.prettierignore`
 - `pnpm test` — Vitest once; `pnpm test:watch` for watch mode; `pnpm vitest run path/to/file.test.ts` for a single file
 - `pnpm pipeline` — runs `lib/algorithm/run-pipeline.ts` under `tsx` (server-only; uses `node:fs`)
 - `USE_PERIOD_SOLVER=1 pnpm pipeline` — the **live** solve-for-period path (replaces seedsExpansion + extract)
