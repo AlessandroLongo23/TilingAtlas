@@ -78,6 +78,129 @@ export interface UpdateEntry {
 /** Newest first. tests/updates.test.ts asserts that ordering, and every id below. */
 export const UPDATES: UpdateEntry[] = [
 	{
+		version: "1.45.0",
+		date: "2026-10-20",
+		title: "Frames of polyforms on ten grids",
+		commit: "0644aaa7",
+		changes: [
+			{
+				kind: "feature",
+				text: "**Frames**: 1,822,452 regions that a polyform tiles in exactly two ways with no tile in the same place in both, for 3,666 polyforms on ten grids. The search is Craig Knecht's Frame Finder, carried over to every grid.",
+				href: "/frames",
+				images: ["/release-images/frames-iamond5.jpg", "/release-images/frames-hex4-overlaid.jpg"],
+			},
+			{
+				kind: "content",
+				text: "**2,387,962 more regions** with 3 to 918 tilings, found by the same search, are listed beside the frames, for 4,210,414 regions in all.",
+				href: "/frames",
+				images: ["/release-images/frames-hex4-12.jpg"],
+			},
+			{
+				kind: "feature",
+				text: "**Each region is drawn as its tilings**, side by side or overlaid, with filters for mirror images and rotations and one tiling drawn per symmetry class.",
+				href: "/frames",
+			},
+			{
+				kind: "feature",
+				text: "**An article on frames**, with two live figures that show a frame's two tilings and replay the search one tile at a time.",
+				href: "/frames/about",
+				images: ["/release-images/frames-article.jpg"],
+			},
+			{
+				kind: "fix",
+				text: "**The size and grid counts follow the hide filters**, and a set they empty says so; on 7 of the 60 sets every region is one tiling up to symmetry.",
+				href: "/frames",
+			},
+		],
+	},
+	{
+		version: "1.44.0",
+		date: "2026-10-20",
+		title: "Heesch numbers on eleven polyform grids",
+		commit: "91b52308",
+		changes: [
+			{
+				kind: "feature",
+				text: "**Heesch numbers**: shapes that cannot tile the plane, and how many rings of copies still close round them, on 11 grids: polyominoes to 20 cells, polyiamonds to 16, polyhexes to 12, and eight more.",
+				href: "/heesch",
+				images: ["/release-images/heesch-hex10.jpg", "/release-images/heesch-iamond12.jpg"],
+			},
+			{
+				kind: "feature",
+				text: "**Every shape that tiles is drawn as its tiling**. The 12,126,682 tilers among the 20-ominoes are too many to ship, so your browser works them out one slice of the census at a time.",
+				href: "/heesch",
+				images: ["/release-images/heesch-tiler.jpg"],
+			},
+			{
+				kind: "content",
+				text: "**The polyomino counts match Anton Bakker's census** at every size from 7 to 19 cells; the 21-ominoes are still being counted.",
+				href: "/heesch",
+			},
+		],
+	},
+	{
+		version: "1.43.0",
+		date: "2026-10-20",
+		title: "Articles beside every shelf",
+		commit: "9647353c",
+		changes: [
+			{
+				kind: "feature",
+				text: "**Every shelf has articles beside it**, behind the book button in the canvas corner. 13 are new: geometries, k-uniform tilings, star and isotoxal tiles, other tiles, polyhedra, noble polyhedra, parquet deformations, colorings, aperiodic tilings, multigrids, isohedral tiles, pentagons and Heesch numbers.",
+				href: "/play/about",
+				images: ["/release-images/about-kuniform.jpg", "/release-images/about-aperiodic.jpg"],
+			},
+			{
+				kind: "changed",
+				text: "**The Theory section is gone**: its six articles moved beside their shelves, the prototile, vertex configuration and vertex lookup pages moved to /play/about, and every old link redirects.",
+				href: "/play/about/uniform-tilings",
+			},
+			{
+				kind: "fix",
+				text: "**Three corrections from the sources**: pentagon Type 9 is Rice's (1976), not Kershner's; Bays' hexagonal Life is B2/S35; the hat's mirrored share is 1 in φ⁴ + 1, about 1 in 7.85.",
+			},
+			{
+				kind: "fix",
+				text: "**Spherical thumbnails** crop to their frame and fade in again; a missing space had turned off both.",
+			},
+		],
+	},
+	{
+		version: "1.42.0",
+		date: "2026-10-18",
+		title: "Tegula's topological tilings",
+		commit: "8700c34c",
+		changes: [
+			{
+				kind: "content",
+				text: "**1,363 topological types from Tegula**, Daniel Huson's database of periodic tilings, with every Euclidean type at k = 1 and 2, each named by its Delaney–Dress symbol.",
+				tilings: ["tegula-DS01-0TH8", "tegula-DS24-C003-468C-GS1J-WK7S-P4W8-S6PD-JE03-22"],
+			},
+			{
+				kind: "content",
+				text: "**872 spherical types from Tegula** of the 1,062 at k = 1 and 2. The other 190 have two tiles meeting along more than one edge, and no drawing method for them exists here yet.",
+				href: "/play?tiling=tegula-DS12-6AJJ-M0ZF-BYBG-MM0",
+				images: ["/release-images/tegula-sphere-1.jpg", "/release-images/tegula-sphere-2.jpg"],
+			},
+			{
+				kind: "feature",
+				text: "**A hyperbolic tiling opens on its most symmetric point**, a face centre, a vertex or an edge midpoint. The old opening point had no symmetry at all in 97.96% of the 2,255,454 tilings.",
+				href: "/play?tiling=hp17-17-00340",
+				images: ["/release-images/hyp-symmetric.jpg"],
+			},
+			{
+				kind: "changed",
+				text: "**The image export of a disk board opens on a square frame**, so the Poincaré disk is no longer padded with empty margins.",
+			},
+			{
+				kind: "fix",
+				text: "**An apeirogon could flood the squares beside it** on some graphics cards, as Marek Čtrnáct saw on Firefox on Windows; the rounding behind it is fixed, and the live view no longer flickers behind the export dialog.",
+				href: "/play?tiling=hpy17627-2-00013",
+				images: ["/release-images/hyp-apeirogon.jpg"],
+			},
+		],
+	},
+	{
 		version: "1.41.0",
 		date: "2026-10-05",
 		title: "Hybrid boards with apeirogons and a faster hyperbolic disk",
