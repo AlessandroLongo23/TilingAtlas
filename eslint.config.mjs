@@ -18,6 +18,8 @@ const eslintConfig = defineConfig([
 		"lib/isohedral/vendor/**",
 		// Emscripten's output (tools/heesch/build_wasm.sh).
 		"public/heesch/engine/**",
+		// CommonJS Node scripts the frames census drivers run (tools/frames/*.py).
+		"tools/frames/*.js",
 	]),
 	{
 		rules: {
