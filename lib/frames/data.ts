@@ -164,6 +164,13 @@ export type Hide = { mirror: boolean; rotated: boolean };
 /** Whether a region is hidden: its tilings are one class under the hidden kinds (Frame.m's bits). */
 export const hides = (h: Hide, m: number) => (h.mirror && h.rotated ? m & 4 : h.mirror ? m & 1 : h.rotated ? m & 2 : 0);
 
+/** A set's regions left after hiding: the index's per-kind counts are the same bits `hides` reads. */
+export const shownRegions = (s: FrameSetInfo, h: Hide) =>
+	s.regions - (h.mirror && h.rotated ? s.either : h.mirror ? s.mirror : h.rotated ? s.rotated : 0);
+
+/** What the hidden kinds are called in a sentence. */
+export const hiddenKinds = (h: Hide) => (h.mirror && h.rotated ? "symmetry" : h.mirror ? "mirror images" : "rotation");
+
 /**
  * One tiling a class: tilings are joined when a symmetry of the region of a hidden kind maps one onto
  * the other, and joined tilings chain (tools/frames/build_data.py classes() is the same rule, and sets

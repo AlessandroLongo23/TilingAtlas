@@ -40,6 +40,8 @@ import {
 	M_ORDER,
 	allTilings,
 	hides,
+	hiddenKinds,
+	shownRegions,
 	tilingClasses,
 	frameDrawing,
 	frameRings,
@@ -366,16 +368,16 @@ export function FramesClient() {
 			HEESCH_GRIDS.filter((g) => index?.some((s) => s.grid === g)).map((g) => ({
 				v: g,
 				label: heeschGridLabel(g),
-				sub: (index ?? []).reduce((n, s) => n + (s.grid === g ? s.regions : 0), 0).toLocaleString(),
+				sub: (index ?? []).reduce((n, s) => n + (s.grid === g ? shownRegions(s, hide) : 0), 0).toLocaleString(),
 			})),
-		[index],
+		[index, hide],
 	);
 	const sizeOptions = useMemo(
 		() =>
 			(index ?? [])
 				.filter((s) => s.grid === grid)
-				.map((s) => ({ v: s.id, label: String(s.cells), sub: s.regions.toLocaleString() })),
-		[index, grid],
+				.map((s) => ({ v: s.id, label: String(s.cells), sub: shownRegions(s, hide).toLocaleString() })),
+		[index, grid, hide],
 	);
 	const selectGrid = useCallback((g: string) => setSetId(index?.find((s) => s.grid === g)?.id ?? DEFAULT_SET), [index]);
 	const switcher = (
@@ -407,9 +409,13 @@ export function FramesClient() {
 	);
 
 	const title = shape ? polyformName(shape) : setInfo ? heeschGridLabel(setInfo.grid) : "Frames";
+	// A set whose every region is one tiling under the hidden kinds lists nothing; say why.
+	const emptied = !!setInfo?.regions && shownRegions(setInfo, hide) === 0;
 	const sub = !shape
 		? allShapes && !shapes.length
-			? "No regions in this set"
+			? emptied
+				? `Every region is one tiling up to ${hiddenKinds(hide)}`
+				: "No regions in this set"
 			: "Loading"
 		: picked?.f
 			? `${plural(picked.f, "region")} up to ${setInfo?.N ?? "?"} tiles`
@@ -443,7 +449,11 @@ export function FramesClient() {
 			<HeeschSidebar header={header} peek={peek} title="Frames">
 				<div className="flex flex-col gap-6 md:hidden">{switcher}</div>
 
-				<Section label={`Shape · ${(at + 1).toLocaleString()} of ${shapes.length.toLocaleString()}`}>
+				<Section
+					label={
+						shapes.length ? `Shape · ${(at + 1).toLocaleString()} of ${shapes.length.toLocaleString()}` : "Shape · none"
+					}
+				>
 					<Segmented
 						options={shapes.slice(sPageStart, sPageStart + PAGE_SIZE).map(({ s, f }, k) => ({
 							v: String(sPageStart + k),
@@ -569,7 +579,7 @@ export function FramesClient() {
 														[
 															"Tilings",
 															classes && classes.length !== frame.c
-																? `${frame.c}, ${classes.length} up to ${hide.mirror && hide.rotated ? "symmetry" : hide.mirror ? "mirror images" : "rotation"}`
+																? `${frame.c}, ${classes.length} up to ${hiddenKinds(hide)}`
 																: String(frame.c),
 														] as [string, string],
 													]
@@ -597,6 +607,13 @@ export function FramesClient() {
 			<div className="relative min-h-0 flex-1">
 				<canvas ref={canvasRef} className="block h-full w-full" />
 				<canvas ref={overlayRef} aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full" />
+				{allShapes && !shapes.length && (
+					<p className="absolute inset-0 m-auto h-fit max-w-sm px-4 text-center text-sm text-fg-muted">
+						{emptied
+							? `Every region of this set is one tiling up to ${hiddenKinds(hide)}, so hiding those leaves nothing. Untick the boxes to see all ${setInfo.regions.toLocaleString()}.`
+							: `No shape of this size has a region of at most ${setInfo?.N ?? "?"} tiles a tiling.`}
+					</p>
+				)}
 			</div>
 		</div>
 	);
