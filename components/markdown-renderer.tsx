@@ -40,6 +40,8 @@ interface MarkdownRendererProps {
 	 *  so authored tags like `<tiling-card tiling="t1005">` can render live components). Keys are
 	 *  lowercase tag names; cast custom (non-HTML) tag maps to `Components` at the call site. */
 	components?: Components;
+	/** Above the article, in its column: a shelf's article links. */
+	header?: ReactNode;
 }
 
 export function MarkdownRenderer({
@@ -48,6 +50,7 @@ export function MarkdownRenderer({
 	onSectionActive,
 	onScroll,
 	components,
+	header,
 }: MarkdownRendererProps) {
 	const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -111,6 +114,7 @@ export function MarkdownRenderer({
 		>
 			{/* Phone: a 20px gutter and room under the last paragraph for the floating Contents pill. */}
 			<div className="mx-auto max-w-[728px] px-6 py-6 text-base leading-[1.65] max-md:px-5 max-md:pb-28 md:py-10">
+				{header}
 				<article
 					className={cn(
 						// Headings. h1 is the article title, once, at the top. Sections are separated by space alone.

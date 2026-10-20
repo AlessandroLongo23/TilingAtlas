@@ -235,7 +235,7 @@ export function PipelineExplorer({
 				<div className="flex h-full min-h-0 flex-col">
 					<div className="shrink-0 border-b border-line-subtle px-3 pb-2">
 						<Link
-							href="/theory/perfect-rectangles"
+							href="/play/about/squared-rectangles"
 							className="flex items-center gap-1 py-2 text-[11px] text-fg-muted transition-colors hover:text-fg max-md:min-h-11 max-md:text-sm"
 						>
 							<ArrowLeft size={12} /> Back to the article

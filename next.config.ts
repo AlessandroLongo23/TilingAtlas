@@ -75,6 +75,12 @@ const nextConfig: NextConfig = {
 	outputFileTracingExcludes: {
 		"*": ["public/**"],
 	},
+	// The same variable paths make Turbopack warn that the pattern matches the whole of public/. The
+	// article loader scans public/ for atlas files on purpose, at build time only (the article pages
+	// are force-static), and the trace is excluded above, so its warnings carry no information.
+	turbopack: {
+		ignoreIssue: [{ path: "**/lib/about/load.ts", title: /file pattern/ }],
+	},
 	async headers() {
 		return [
 			// Root-level shelf files: reference-atlas.json and every -<shelf>[-k<n>] shard beside it.
@@ -91,6 +97,23 @@ const nextConfig: NextConfig = {
 		return [
 			{ source: "/substitutions", destination: "/aperiodic?view=subrosa", permanent: false },
 			{ source: "/multigrid", destination: "/aperiodic?view=multigrid", permanent: false },
+			// /theory is gone: its articles moved beside the shelves they explain, and its galleries and
+			// lookup beside Play's articles (lib/about-pages.ts). Query strings carry over.
+			{ source: "/theory", destination: "/play/about", permanent: true },
+			{ source: "/theory/tiles", destination: "/play/about/prototiles", permanent: true },
+			{ source: "/theory/configs", destination: "/play/about/vertex-configurations", permanent: true },
+			{ source: "/theory/vertex", destination: "/play/about/vertex-lookup", permanent: true },
+			{
+				source: "/theory/perfect-rectangles/pipeline",
+				destination: "/play/about/squared-rectangles/pipeline",
+				permanent: true,
+			},
+			{ source: "/theory/uniform-tilings", destination: "/play/about/uniform-tilings", permanent: true },
+			{ source: "/theory/hyperbolic", destination: "/play/about/hyperbolic", permanent: true },
+			{ source: "/theory/islamic", destination: "/play/about/islamic", permanent: true },
+			{ source: "/theory/perfect-rectangles", destination: "/play/about/squared-rectangles", permanent: true },
+			{ source: "/theory/freedraw", destination: "/freedraw/about", permanent: true },
+			{ source: "/theory/automata", destination: "/automata/about", permanent: true },
 		];
 	},
 };

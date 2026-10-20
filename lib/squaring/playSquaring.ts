@@ -52,7 +52,7 @@ export type SquaringRefusal = "geometry" | "no-cell" | "quotient";
 
 export const REFUSAL_TEXT: Record<SquaringRefusal, string> = {
 	geometry:
-		"This one is not squared here. The construction needs a torus, so it wants a Euclidean tiling with a period lattice: at genus 2 and up Gauss–Bonnet forces cone points and the result is a translation surface, not a plane tiling. The hyperbolic analogue is the squared cylinder, on /theory/perfect-rectangles. Euclidean shelves that draw on their own canvas — the colorings, the edge systems, the freedraw boards — do have quotient graphs and simply are not wired to this yet.",
+		"This one is not squared here. The construction needs a torus, so it wants a Euclidean tiling with a period lattice: at genus 2 and up Gauss–Bonnet forces cone points and the result is a translation surface, not a plane tiling. The hyperbolic analogue is the squared cylinder, on /play/about/squared-rectangles. Euclidean shelves that draw on their own canvas — the colorings, the edge systems, the freedraw boards — do have quotient graphs and simply are not wired to this yet.",
 	"no-cell":
 		"This record's translation cell has no closed tiles to read a quotient graph off. Nothing is wrong with the tiling; the shelf stores it in a form this construction does not take.",
 	quotient:

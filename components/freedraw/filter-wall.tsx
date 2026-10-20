@@ -1,5 +1,6 @@
 "use client";
 
+import { AboutCornerButton } from "@/components/about-corner-button";
 import { ChevronDown, ChevronLeft, ChevronRight, Play } from "lucide-react";
 import { Fragment, useEffect, useId, useRef, useState, type ReactNode, type Ref } from "react";
 import {
@@ -94,6 +95,8 @@ export function WallBar({
 					controls={bodyId}
 					className="ml-auto"
 				/>
+				{/* A wall page has no canvas corner, so the way to its articles sits at the end of this row. */}
+				<AboutCornerButton />
 			</div>
 			{sheetOpen && <SheetBackdrop onClose={closeSheet} />}
 			<div

@@ -93,6 +93,8 @@ interface InteractiveTilingPreviewCardProps {
 	 * IS the argument and a stray gesture mid-sentence would cost more than the gesture is worth.
 	 */
 	interactive?: boolean;
+	/** Square corners and a hairline edge, for a card inside an article figure (components/about). */
+	square?: boolean;
 	className?: string;
 }
 
@@ -118,6 +120,7 @@ export function InteractiveTilingPreviewCard({
 	openHref,
 	openInPlayIcon = "link",
 	expandMode = "inline",
+	square = false,
 	alwaysActive = false,
 	seed = false,
 	interactive = true,
@@ -230,14 +233,17 @@ export function InteractiveTilingPreviewCard({
 						hostProps.onKeyDown(e);
 					}}
 					className={cn(
-						"group bg-surface-base overflow-hidden rounded-2xl border outline-none select-none",
+						"group bg-surface-base overflow-hidden border outline-none select-none",
+						!square && "rounded-2xl",
 						lifted ? "fixed inset-[5vh_5vw] z-50 shadow-2xl" : "absolute inset-0",
 						// An inert card takes the default cursor: neither grab (nothing to drag) nor pointer
 						// (nothing happens on click).
 						!interactive ? "cursor-default" : live ? "cursor-grab" : "cursor-pointer",
 						focused && interactive && !alwaysActive
 							? "border-fg ring-2 ring-fg/60"
-							: "border-line hover:border-line-strong",
+							: square
+								? "border-line-subtle hover:border-line"
+								: "border-line hover:border-line-strong",
 					)}
 				>
 					{/* The WebGL canvas, and the 2-D symmetry layer over it, are created imperatively by

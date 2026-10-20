@@ -4,7 +4,7 @@ import { parseSpecies } from "@/lib/services/polygonSpecies";
 import type { RawPolygon } from "@/lib/utils/renderTiling";
 
 /**
- * A species key ("12", "6*60") as the SAME prototile geometry the /theory/tiles gallery draws —
+ * A species key ("12", "6*60") as the SAME prototile geometry the /play/about/prototiles gallery draws —
  * unit-edge float vertices for `TilingThumbnail`, so a tile looks identical in the Library's polygon
  * picker and in the Elements gallery. Star species carry their real point angle, so 6★ 30° and
  * 6★ 90° are drawn as the different tiles they are.

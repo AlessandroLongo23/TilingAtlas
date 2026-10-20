@@ -6,23 +6,33 @@ the square lattice that question has a single answer everybody agrees on: the ei
 Change the grid and the rule stops being well defined before it stops being interesting.
 
 That is the whole subject of this page. The Atlas holds thousands of tilings whose tiles have three,
-four, six, twelve neighbours — often several of those at once, in the same tiling — and running B3/S23 on
+four, six, twelve neighbours (often several of those at once, in the same tiling) and running B3/S23 on
 them forces a choice that the literature has never settled.
+
+<ca-life rules="B3/S23,B36/S23,B2/S35" caption="A small board on four tilings, glued into a torus along the dashed edge, so a pattern leaving one side comes back on the other. Play it, step it one generation, or start from a new random soup; click a tile to flip it. Hovering or tapping a tile lights its neighbours, and the neighbourhood toggle changes what counts as one. B3/S23 is Conway's rule, B36/S23 is HighLife, B2/S35 Bays' rule for the hexagonal grid.">
+<tiling-card tiling="t1005" title="4.4.4.4"></tiling-card>
+<tiling-card tiling="t1001" title="6.6.6"></tiling-card>
+<tiling-card tiling="t1011" title="3.3.3.3.3.3"></tiling-card>
+<tiling-card tiling="t1006" title="3.4.6.4"></tiling-card>
+</ca-life>
+
+On the square grid the toggle is the difference between the four edge-neighbours and Conway's eight, and B3/S23 is Life only with eight. On the hexagonal grid it changes nothing, because two hexagons that share a corner always share an edge; on the triangular grid it is three neighbours against twelve.
 
 ## What is known
 
 The regular non-square cases were worked out by hand, one tessellation at a time, mostly by Carter Bays.
-He set out three conditions for a rule to deserve the name Game of Life: every touching neighbour is
+He set out the conditions for a rule to deserve the name Game of Life: every touching neighbour is
 counted the same way, the rule supports a glider, and that glider *arises naturally* from random soup,
-with random configurations showing bounded growth. Applying them he found a hexagonal rule with a
-period-5 glider and a rule on the Cairo pentagonal tiling with a period-48 one, having earlier done the
-triangular case. Three tessellations, published across 1994–2007. Nobody has run those conditions across
+with random configurations showing bounded growth. Applying them he found a hexagonal rule, B2/S35 (his
+3,5/2, survival written first), with a period-5 glider, and a rule on the Cairo pentagonal tiling, B346/S23,
+with a period-48 one, both in a short note of 2005; the triangular case came first, in 1994, with glider
+guns found there in 2007. Three tessellations in all. Nobody has run those conditions across
 the eleven uniform tilings, let alone the $k$-uniform families.
 
 The aperiodic case has had far more attention, and it is stuck on one question. Owens and Stepney ran
 B3/S23 on the Penrose kite-and-dart and rhomb tilings, catalogued still lifes and oscillators, showed
 that arbitrarily large snakes and chains exist, and found the two tilings behave statistically quite
-differently from each other. They did not find a glider. Goucher later built one — but in a purpose-made
+differently from each other. They found no propagating structure analogous to a glider. Goucher later built one, but in a purpose-made
 four-state automaton on generic quadrilateral tilings, explicitly not Life. Bailey and Lindsey get
 Life-*isomorphic* automata on quasiperiodic tilings from the multigrid construction, so gliders transfer
 there by design, not by playing B3/S23 against the tiling's own adjacency. Hong and Mei classified every
@@ -49,23 +59,37 @@ four characters describe two unrelated automata depending on which tile reads th
 is not edge-transitive has this problem.
 
 There are three defensible readings, and this Atlas implements all three instead of picking one
-silently:
+silently. The figure shows what each makes of one rule string, shape by shape.
 
-**Absolute.** The count is the count. B3 means three live neighbours whatever the tile. This is what the
+<ca-semantics rule="B3/S23" caption="What B3/S23 means to each shape of a tiling whose tiles differ in degree. A row is one kind of tile with its number of neighbours; a column is a count of live neighbours. B marks a count at which a dead tile is born, S a count at which a live tile survives. Switch the reading and watch the triangle's row.">
+<tiling-card tiling="t1006" title="3.4.6.4"></tiling-card>
+<tiling-card tiling="t1003" title="4.6.12"></tiling-card>
+<tiling-card tiling="t1004" title="3.12.12"></tiling-card>
+<tiling-card tiling="t1009" title="3.3.4.3.4"></tiling-card>
+</ca-semantics>
+
+*Absolute.* The count is the count. B3 means three live neighbours whatever the tile. This is what the
 Penrose work uses, and it has the virtue that a published rule string means the same arithmetic
-everywhere — but it makes low-degree tiles nearly inert and high-degree tiles nearly saturated.
+everywhere, but it makes low-degree tiles nearly inert and high-degree tiles nearly saturated.
 
-**Normalized.** Rescale each tile's live count to a reference degree — here the busiest tile in the
-tiling — and test the rule there. A triangle and a hexagon then respond to the same *fraction* of live
+*Normalized.* Rescale each tile's live count to a reference degree (here the busiest tile in the
+tiling) and test the rule there. A triangle and a hexagon then respond to the same *fraction* of live
 neighbours. When every tile already has the reference degree this is exactly the absolute reading, which
 is what makes it a generalization instead of a different rule. The cost is that it no longer agrees with
 any published rule string on a mixed tiling.
 
-**Per shape.** Give each side count its own rule. The most expressive and the least constrained: the
+*Per shape.* Give each side count its own rule. The most expressive and the least constrained: the
 shapes become different automata sharing a board, and the rule space explodes accordingly.
 
 None of these is the right answer. Which one you pick is a modelling decision, and it is the reason the
-control is in the sidebar instead of buried in the code.
+control is in the sidebar instead of buried in the code. On a mixed tiling the board below offers all
+three, and the same soup under the same rule string runs very differently under each.
+
+<ca-life rules="B3/S23,B2/S35,B36/S23" caption="The board on tilings with mixed degrees. The extra row of controls picks the reading; under Per shape, squares read Conway's rule and hexagons Bays' hexagonal one, and every other shape keeps the rule picked above.">
+<tiling-card tiling="t1006" title="3.4.6.4"></tiling-card>
+<tiling-card tiling="t1003" title="4.6.12"></tiling-card>
+<tiling-card tiling="t1009" title="3.3.4.3.4"></tiling-card>
+</ca-life>
 
 ## The board is the plane, not a torus
 
@@ -75,7 +99,7 @@ own wake. A methuselah that would run for a thousand generations saturates inste
 settles at 116 cells on the plane; on any board small enough to see, it does not.
 
 So the default here is unbounded. The board is a sparse set of blocks allocated as the pattern reaches
-them and freed once it has left, which is what makes "infinite plane" mean genuinely unbounded instead of
+them and freed once it has left, which is what makes "infinite plane" mean unbounded instead of
 a large fixed array with the walls out of shot.
 
 A bounded board is still worth having, for the opposite reason: its state space is finite, so every orbit
@@ -98,6 +122,13 @@ it anyway would join tiles whose edges do not meet, inventing adjacency that is 
 picker tests the map itself and disables what it cannot honestly offer. Of the eleven uniform tilings, ten
 pass; the one rejection is the snub trihexagonal tiling, which is the only chiral one. Across a
 five-hundred-record sample of the Atlas's Euclidean corpus, $96\%$ pass.
+
+<ca-surfaces caption="The five flat surfaces as gluing diagrams: sides marked alike are identified, in the direction of the chevrons, and a dashed side is a free edge (or, for the plane, no edge at all). A pair whose chevrons point opposite ways is glued with a flip. The surfaces a tiling cannot be glued into are greyed out: the snub trihexagonal tiling has no glide reflection, so it gets no Möbius band and no Klein bottle.">
+<tiling-card tiling="t1005" title="4.4.4.4"></tiling-card>
+<tiling-card tiling="t1006" title="3.4.6.4"></tiling-card>
+<tiling-card tiling="t1009" title="3.3.4.3.4"></tiling-card>
+<tiling-card tiling="t1010" title="3.3.3.3.6"></tiling-card>
+</ca-surfaces>
 
 Reading the wallpaper group is not a substitute for testing the map. The group says a mirror exists
 somewhere; it does not say the axis lines up with the seam being glued, and where the axes fall is not
@@ -148,27 +179,23 @@ touch, and the automaton knows nothing about it.
 ## Why the tiling being periodic is what makes this fast
 
 Every Euclidean record in the Atlas is a fundamental cell of $n$ tiles plus a lattice basis. So a tile in
-the plane is addressed by $(i, j, t)$ — lattice cell, slot within it — and the adjacency is
+the plane is addressed by $(i, j, t)$ (lattice cell, slot within it) and the adjacency is
 *translation-invariant*: slot $t$'s neighbours are always the same fixed list of $(\Delta i, \Delta j,
 t')$. That list is the tiling's analogue of the eight Moore offsets, and computing it once is what makes
-everything else cheap.
-
-Concretely: copy a block of the board into a scratch buffer with a one-cell border of its neighbours, and
-a neighbour's position in that buffer becomes a *constant byte offset* from the cell's own. The update
-loop is then an array read per neighbour with no hash lookup, no bounds test and no per-cell adjacency
-list — the tile-with-border idea from Rokicki's survey of Life algorithms, carried across to a tiling.
+everything else cheap: the board is a grid of copies of one cell, and every neighbour is a fixed offset
+away, the tile-with-border idea from Rokicki's survey of Life algorithms carried across to a tiling.
 
 Two well-known tricks do not carry across. The bit-packing that takes square-grid Life past $10^9$ cell
 updates per second works by shifting a machine word so every cell sees its neighbour at once; on a tiling
-the offsets differ per slot, so a shift does not align. And HashLife generalizes in principle — its
-quadtree would sit on the $\mathbb{Z}^2$ lattice index — but it advances $2^{k-2}$ generations per node,
+the offsets differ per slot, so a shift does not align. And HashLife generalizes in principle (its
+quadtree would sit on the $\mathbb{Z}^2$ lattice index) but it advances $2^{k-2}$ generations per node,
 which is useless for a viewer whose entire purpose is showing you every generation.
 
 ## Where this could go
 
 The gap in the literature is not subtle. Bays did three tessellations by hand; the Atlas holds thousands,
-across three geometries, with exact adjacency already computed. Running his conditions — bounded growth,
-and a glider that appears on its own from soup — across the uniform tilings is a search nobody appears to
+across three geometries, with exact adjacency already computed. Running his conditions (bounded growth,
+and a glider that appears on its own from soup) across the uniform tilings is a search nobody appears to
 have done.
 
 What would make that search work is *not* another density-and-complexity scatter plot. Collapsing a
@@ -177,24 +204,54 @@ of drifting gliders, which is exactly the failure mode a previous attempt of min
 localized moving structures directly is the harder and more honest instrument, and Rollier et al.'s
 graph-native descriptors are the current best starting point.
 
-## Sources
+## Credits
 
+The Game of Life is John Horton Conway's, introduced to the public by Martin Gardner in 1970. The rules
+for other tessellations named here are Carter Bays'; HighLife is Nathan Thompson's. The simulator on these
+pages runs on the Atlas's own tilings, with the adjacency read off each tiling's fundamental cell.
+
+## References
+
+- Martin Gardner, "Mathematical Games: The fantastic combinations of John Conway's new solitaire game
+  'life'", *Scientific American* 223(4), October 1970, 120–123.
+  [doi:10.1038/scientificamerican1070-120](https://doi.org/10.1038/scientificamerican1070-120)
+- Carter Bays, "Candidates for the Game of Life in Three Dimensions", *Complex Systems* 1(3), 1987,
+  373–400 (the criteria). [PDF](https://content.wolfram.com/sites/13/2018/02/01-3-1.pdf)
+- Carter Bays, "Cellular Automata in the Triangular Tessellation", *Complex Systems* 8(2), 1994, 127–150.
+  [PDF](https://content.wolfram.com/sites/13/2018/02/08-2-4.pdf)
 - Carter Bays, "A Note on the Game of Life in Hexagonal and Pentagonal Tessellations", *Complex Systems*
-  15(3), 2005; and "Candidates for the Game of Life in Three Dimensions", *Complex Systems* 1, 1987 (the
-  criteria).
+  15(3), 2005, 245–252. [doi:10.25088/ComplexSystems.15.3.245](https://doi.org/10.25088/ComplexSystems.15.3.245)
+- Carter Bays, "The Discovery of Glider Guns in a Game of Life for the Triangular Tessellation", *Journal
+  of Cellular Automata* 2(4), 2007, 345–350.
+  [Publisher](https://www.oldcitypublishing.com/journals/jca-home/jca-issue-contents/jca-volume-2-number-4-2007/jca-2-4-p-345-350/)
+- Nick Owens and Susan Stepney, "The Game of Life Rules on Penrose Tilings: Still Life and Oscillators",
+  in A. Adamatzky (ed.), *Game of Life Cellular Automata*, Springer, 2010, 331–378 (snakes, chains, no
+  glider). [doi:10.1007/978-1-84996-217-9_18](https://doi.org/10.1007/978-1-84996-217-9_18)
 - Nick Owens and Susan Stepney, "Investigations of Game of Life cellular automata rules on Penrose
   Tilings: lifetime, ash and oscillator statistics", *Journal of Cellular Automata* 5(3), 2010, 207–225.
-- Adam P. Goucher, "Gliders in cellular automata on Penrose tilings", *Journal of Cellular Automata*,
-  2012.
-- Duane A. Bailey and Kathryn A. Lindsey, "A Game of Life on Penrose tilings", arXiv:1708.09301, 2017.
+  [Preprint](https://www-users.york.ac.uk/~ss44/bib/ss/nonstd/jca10.pdf)
+- Adam P. Goucher, "Gliders in cellular automata on Penrose tilings", *Journal of Cellular Automata*
+  7(5–6), 2012, 385–392.
+  [Publisher](https://www.oldcitypublishing.com/journals/jca-home/jca-issue-contents/jca-volume-7-number-5-6-2012/jca-7-5-6-p-385-392/)
+- Duane A. Bailey and Kathryn A. Lindsey, "A Game of Life on Penrose tilings", 2017.
+  [arXiv:1708.09301](https://arxiv.org/abs/1708.09301)
 - Seung Hyeon Mandy Hong and May Mei, "The Game of Life on the Robinson Triangle Penrose Tiling: Still
-  Life", arXiv:2302.10157, 2023.
-- Maurice Margenstern, "Cellular Automata in Hyperbolic Spaces" and the pentagrid/heptagrid universality
-  series (e.g. arXiv:1606.09488, arXiv:2306.06728).
-- Carsten Marr and Marc-Thorsten Hütt, "Outer-totalistic cellular automata on graphs", arXiv:0812.2408,
-  2009.
+  Life", *Journal of Cellular Automata* 17(3–4), 2023, 209–219. [arXiv:2302.10157](https://arxiv.org/abs/2302.10157)
+- Maurice Margenstern, "A weakly universal cellular automaton in the heptagrid", 2016,
+  [arXiv:1606.09488](https://arxiv.org/abs/1606.09488); and "A strongly universal cellular automaton on the
+  pentagrid with six states and Moore neighbourhood", 2023, [arXiv:2306.06728](https://arxiv.org/abs/2306.06728).
+- Carsten Marr and Marc-Thorsten Hütt, "Outer-totalistic cellular automata on graphs", *Physics Letters A*
+  373(5), 2009, 546–549. [doi:10.1016/j.physleta.2008.12.013](https://doi.org/10.1016/j.physleta.2008.12.013)
 - Michiel Rollier, Lucas Caldeira de Oliveira, Odemir M. Bruno and Jan M. Baetens, "Essential metrics for
-  Life on graphs", *Physica D* 134950, 2025 (arXiv:2506.21226).
+  Life on graphs", *Physica D* 483, 2025, 134950.
+  [doi:10.1016/j.physd.2025.134950](https://doi.org/10.1016/j.physd.2025.134950)
 - Eric Peña and Hiroki Sayama, "Life Worth Mentioning: Complexity in Life-Like Cellular Automata",
-  *Artificial Life* 27(2), 2021, 105–112.
+  *Artificial Life* 27(2), 2021, 105–112. [doi:10.1162/artl_a_00348](https://doi.org/10.1162/artl_a_00348)
 - Tomas Rokicki, "Life Algorithms", G4G13 gift exchange, 2018.
+  [PDF](https://www.gathering4gardner.org/g4g13gift/math/RokickiTomas-GiftExchange-LifeAlgorithms-G4G13.pdf)
+- R-pentomino on LifeWiki (stabilises at generation 1103 with 116 cells, counting six escaping
+  gliders). [conwaylife.com/wiki/R-pentomino](https://conwaylife.com/wiki/R-pentomino)
+- Marc Lachièze-Rey and Jean-Pierre Luminet, "Cosmic topology", *Physics Reports* 254, 1995, 135–214, for
+  the five flat surfaces. [arXiv:gr-qc/9605010](https://arxiv.org/abs/gr-qc/9605010)
+- John H. Conway, Heidi Burgiel and Chaim Goodman-Strauss, *The Symmetries of Things*, A K Peters, 2008,
+  for orbifold notation ($p4g = 4{\ast}2$).

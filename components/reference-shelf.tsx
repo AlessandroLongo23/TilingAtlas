@@ -1831,7 +1831,7 @@ export function ReferenceShelf() {
 		);
 	}, [tilings, filters]);
 
-	// Counts are per SPECIES (fold AND point angle), the granularity /theory/tiles shows: "6*30" and
+	// Counts are per SPECIES (fold AND point angle), the granularity /play/about/prototiles shows: "6*30" and
 	// "6*60" are different tiles and get their own card.
 	const polygonTokenCounts = useMemo(() => {
 		const m = new Map<string, number>();

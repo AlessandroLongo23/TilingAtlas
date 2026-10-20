@@ -135,7 +135,7 @@ for (const k of visible) {
 for (const f of newRoutes) reasons.push(`new route ${f}`);
 
 // A new value in one of the registries that define what the atlas HOLDS is the other MINOR signal.
-const REGISTRY_FILES = ["lib/services/referenceAtlas.ts", "app/(app)/aperiodic/_views.ts", "lib/theory/articles.ts"];
+const REGISTRY_FILES = ["lib/services/referenceAtlas.ts", "app/(app)/aperiodic/_views.ts", "lib/about-pages.ts"];
 for (const f of REGISTRY_FILES) {
 	const diff = sh(`git diff ${RANGE} -- "${f}"`);
 	if (!diff) continue;

@@ -80,7 +80,7 @@ export default async function HomePage() {
 					{START_HERE.map(([hash, label]) => (
 						<Link
 							key={hash}
-							href={`/theory/uniform-tilings#${hash}`}
+							href={`/play/about/uniform-tilings#${hash}`}
 							className="inline-flex h-7 items-center rounded-control px-2.5 text-fg transition-colors hover:bg-surface-overlay hover:text-accent max-md:h-11 max-md:text-sm"
 						>
 							{label}
@@ -124,10 +124,10 @@ export default async function HomePage() {
 						</CollectionCard>
 
 						<CollectionCard
-							title="Theory"
+							title="Uniform tilings"
 							subtitle="11 uniform tilings"
-							href="/theory"
-							description="In the theory section, you can learn about the geometric concepts behind tilings."
+							href="/play/about/uniform-tilings"
+							description="The three regular and eight semiregular tilings, and why there are exactly eleven. Every shelf has articles like this one behind the book button in its corner."
 							badge={<CompletenessBadge tone="proven" label="11 · proven" />}
 						>
 							<TheoryRing tilings={data.uniformEleven} />

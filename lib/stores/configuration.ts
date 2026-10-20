@@ -152,7 +152,7 @@ export interface ConfigurationState {
 	// result is a Euclidean periodic tiling in its own right, drawn in a floating panel over the canvas
 	// (components/squaring/squaring-inset.tsx) so the main view stays on the tiling it came from. Offered
 	// only where lib/squaring/playSquaring.ts certifies the record's cell; the toggle is disabled with a
-	// reason everywhere else. The four-stage account of the construction is /theory/perfect-rectangles.
+	// reason everywhere else. The four-stage account of the construction is /play/about/squared-rectangles.
 	squaring: boolean;
 	/** The class (m, n). Integral values take the exact solve and may print their sides; every other
 	 *  direction is a real class blended from the frame, where "these two sides are equal" is undecidable

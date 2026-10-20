@@ -34,7 +34,7 @@ export interface PolygonFilterModalProps {
 
 /**
  * One tile species as a selectable card: the same thumbnail renderer and card shell as PrototileCard
- * on /theory/tiles, plus selection state and the tiling count.
+ * on /play/about/prototiles, plus selection state and the tiling count.
  */
 function SpeciesCard({
 	species,
@@ -101,7 +101,7 @@ export function PolygonFilterModal({
 }: PolygonFilterModalProps) {
 	// Regular polygons in one row, then one row PER STAR FOLD — the folds have between one and six
 	// point angles each, and mixing them into a single flow put 6★ 90° next to 8★ 15° with nothing to
-	// say they belong to different tiles. One row per fold is also how /theory/tiles reads.
+	// say they belong to different tiles. One row per fold is also how /play/about/prototiles reads.
 	const { regular, starRows } = useMemo(() => {
 		const reg: string[] = [];
 		const byFold = new Map<number, string[]>();

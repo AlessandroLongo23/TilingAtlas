@@ -16,7 +16,7 @@ import { TilingThumbnail } from "@/components/tiling-thumbnail";
 // torus, and the line under it carries the counts, which have nowhere else to go now that the info badge
 // above is describing the same source.
 //
-// The four-stage account of how one becomes the other is /theory/perfect-rectangles/pipeline.
+// The four-stage account of how one becomes the other is /play/about/squared-rectangles/pipeline.
 
 export function SquaringInset({ selected }: { selected: CatalogueTiling | null }) {
 	const on = useConfiguration((s) => s.squaring);

@@ -1,5 +1,5 @@
 // Everything the atlas can say about one vertex figure, e.g. 3.4.7.4: its geometry, how many uniform
-// tilings it has, and which boards of the hyperbolic polygon shelf carry it. The /theory/vertex lookup
+// tilings it has, and which boards of the hyperbolic polygon shelf carry it. The /play/about/vertex-lookup lookup
 // reads this; Marek Čtrnáct asked for it (2026-09-28) as the front door to the 4-valent shelf.
 //
 // The uniform count is COMPUTED (uniformTilingsOfFigure, a one-vertex-orbit D-symbol enumeration), not

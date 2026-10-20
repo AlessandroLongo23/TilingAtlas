@@ -25,7 +25,7 @@ So "enumerate the hyperbolic tilings" is not a question with a finite answer. Th
 
 A tiling by regular polygons can be complicated in three independent ways, and each one gets a bound.
 
-The **palette** $p$ is the largest polygon allowed, so the tiles are drawn from $\{3, 4, \ldots, p\}$. The **valence** $v$ is the most edges permitted at any vertex. The **uniformity** $k$ is the number of vertex orbits: how many genuinely different kinds of vertex the tiling has once its own symmetries are taken into account. A 1-uniform tiling looks the same from every vertex; a 2-uniform tiling has two classes of vertex, and no symmetry carries one class to the other.
+The **palette** $p$ is the largest polygon allowed, so the tiles are drawn from $\{3, 4, \ldots, p\}$. The **valence** $v$ is the most edges permitted at any vertex. The **uniformity** $k$ is the number of vertex orbits: how many different kinds of vertex the tiling has once its own symmetries are taken into account. A 1-uniform tiling looks the same from every vertex; a 2-uniform tiling has two classes of vertex, and no symmetry carries one class to the other.
 
 Fix all three and the set of tilings is finite, so a complete enumeration is possible and the word "all" is available again. Every count in this atlas is the answer for one such box, never an answer about hyperbolic tilings in general. The boxes nest, so a result for $p \le 6$, $v \le 5$ contains every result for $p \le 5$, $v \le 5$, which is what makes the table below readable as a single growing region, not a grid of unrelated experiments.
 

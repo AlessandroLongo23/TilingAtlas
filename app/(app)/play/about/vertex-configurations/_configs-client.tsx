@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { Grid3x3, Loader2, X } from "lucide-react";
 import { PageSidebar } from "@/components/page-sidebar";
-import { TheoryArticleNav } from "@/components/theory-article-nav";
+import { ShelfArticleNav } from "@/components/about/shelf-article-nav";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Button } from "@/components/ui/button";
 import { useMobileSheet } from "@/stores/mobileSheet";
@@ -90,7 +90,7 @@ export function ConfigsClient() {
 				    own controls scrolling under it. On a phone the sheet is one scroll, palettes first. */}
 				<div className="flex h-full min-h-0 flex-col max-md:overflow-y-auto max-md:overscroll-contain">
 					<div className="shrink-0 border-b border-line-subtle pb-2 max-md:order-2 max-md:border-t max-md:border-b-0 max-md:pb-6">
-						<TheoryArticleNav currentSlug="configs" />
+						<ShelfArticleNav />
 					</div>
 					<div className="scrollbar-hide min-h-0 flex-1 overflow-x-hidden overflow-y-auto max-md:order-1 max-md:flex-none max-md:overflow-visible">
 						<div className="flex items-center justify-between px-3 pt-3 max-md:hidden">

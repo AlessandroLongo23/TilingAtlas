@@ -3,7 +3,7 @@
 //
 // Written by the release ritual (.claude/skills/release-notes/SKILL.md), never by hand in a hurry.
 // Client-safe: plain data, no imports, so both the shell modal and the static page read the same
-// array. Same shape of registry as lib/theory/articles.ts.
+// array. Same shape of registry as lib/about-pages.ts.
 //
 // House rules for `text`, taken from the commit subjects, which already read the way these should:
 //   - one line, the concrete number IN the line, no trailing period beyond the sentence's own

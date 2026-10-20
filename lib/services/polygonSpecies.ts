@@ -3,7 +3,7 @@ import type { PolygonMode, ReferenceTiling } from "@/lib/services/referenceAtlas
 export type { PolygonMode };
 
 /**
- * Tile SPECIES of a tiling, at the granularity /theory/tiles uses.
+ * Tile SPECIES of a tiling, at the granularity /play/about/prototiles uses.
  *
  * The family label only carries the fold — "6*" covers the 6-pointed star at 30°, 60°, 75° and 90°
  * alike — so it cannot answer "which tilings use the 12★ at 30°". The shipped render cell can: a star
@@ -185,7 +185,7 @@ export function speciesCompare(a: string, b: string): number {
 	return pa.n - pb.n || (pa.alpha ?? 0) - (pb.alpha ?? 0);
 }
 
-/** "12-gon" / "6★ 60°" — matches the /theory/tiles card captions. */
+/** "12-gon" / "6★ 60°" — matches the /play/about/prototiles card captions. */
 export function speciesLabel(key: string): string {
 	const p = parseSpecies(key);
 	if (!p) return key;

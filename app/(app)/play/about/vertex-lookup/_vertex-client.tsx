@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Hexagon } from "lucide-react";
 import { PageSidebar } from "@/components/page-sidebar";
-import { TheoryArticleNav } from "@/components/theory-article-nav";
+import { ShelfArticleNav } from "@/components/about/shelf-article-nav";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,8 +64,8 @@ export function VertexClient() {
 
 	return (
 		<div className="flex min-h-0 flex-1 overflow-hidden">
-			<PageSidebar mobile="modal" mobileLabel="Theory">
-				<TheoryArticleNav currentSlug="vertex" />
+			<PageSidebar mobile="modal" mobileLabel="Articles">
+				<ShelfArticleNav />
 			</PageSidebar>
 
 			<main className="relative flex-1 overflow-y-auto p-5 max-md:px-4 max-md:pb-24">

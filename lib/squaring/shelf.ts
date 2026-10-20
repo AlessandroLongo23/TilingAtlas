@@ -84,7 +84,7 @@ export const SQUARING_MANIFEST_URL = "/squarings/manifest.json";
 
 // ---- the four-stage pipeline view ------------------------------------------------------------------
 //
-// Everything /theory/perfect-rectangles/pipeline needs to show one polyhedron becoming one rectangle:
+// Everything /play/about/squared-rectangles/pipeline needs to show one polyhedron becoming one rectangle:
 // the solid, its graph drawn flat, the circuit, and the tiling. Shipped only for the curated set, since
 // it carries the 3D geometry and the per-vertex solve on top of the squaring itself.
 

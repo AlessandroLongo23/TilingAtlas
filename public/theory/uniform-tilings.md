@@ -22,7 +22,7 @@ $$\sum_{i=1}^{k} \frac{n_i - 2}{n_i} = 2.$$
 
 Since every interior angle is at least 60°, a vertex hosts at most six polygons; since it is less than 180°, at least three. This equation has exactly 17 solutions as multisets of polygon sizes, which spread into 21 distinct cyclic orderings. Most of them die locally: placing the polygons around one vertex forces contradictions at the neighbouring vertices. Only 15 of the 21 vertex types occur in any edge-to-edge tiling by regular polygons, and only 11 can occur as the *sole* vertex type. Those 11 are the uniform tilings below.
 
-The cyclic order genuinely matters. The multiset $\{3, 4, 4, 6\}$ solves the angle equation in two arrangements, $3.4.4.6$ and $3.4.6.4$, yet only the second extends to a uniform tiling.
+The cyclic order matters. The multiset $\{3, 4, 4, 6\}$ solves the angle equation in two arrangements, $3.4.4.6$ and $3.4.6.4$, yet only the second extends to a uniform tiling.
 
 ## The three regular tilings
 
@@ -116,6 +116,6 @@ That uniqueness carries real weight: for each of the 11 configurations there is 
 
 ## Beyond one orbit
 
-Relax vertex-transitivity to $k$ orbits of vertices and the count explodes: 20 tilings for $k = 2$, then 61, 151, 332, and 673 for $k = 3$ through $6$ (OEIS A068599). Enumerating these is the core computational problem of this project; the combinatorial engine behind the atlas reproduces the known counts through $k = 6$ and extends the regular catalogue to $k = 16$. The eleven tilings on this page are the $k = 1$ floor of that hierarchy, the only cases simple enough to settle by hand, and the fixed points every larger search is checked against.
+Relax vertex-transitivity to $k$ orbits of vertices and the count explodes: 20 tilings for $k = 2$, then 61, 151, 332, and 673 for $k = 3$ through $6$, and 103,082 at $k = 13$ (OEIS A068599). The catalogue holds every term up to $k = 10$; the page on [k-uniform tilings](/play/about/k-uniform) explains vertex orbits, the counts and who found them. The eleven tilings on this page are the $k = 1$ floor of that hierarchy, the only cases simple enough to settle by hand, and the fixed points every larger search is checked against.
 
-These same regular polygons are also the base of one Islamic design system. For the tessellations behind Islamic geometric patterns — and the strapwork construction they carry — see [Islamic geometric systems](/theory/islamic).
+These same regular polygons are also the base of one Islamic design system. For the tessellations behind Islamic geometric patterns, and the strapwork construction they carry, see [Islamic geometric patterns](/play/about/islamic).

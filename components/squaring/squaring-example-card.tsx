@@ -56,7 +56,7 @@ export function SquaringExampleCard({ record, caption }: SquaringExampleCardProp
 							{s.perfect ? "perfect" : `${s.distinct} sizes`} · {s.simple ? "simple" : "compound"}
 						</span>
 						<Link
-							href={`/theory/perfect-rectangles/pipeline?solid=${encodeURIComponent(record.id)}`}
+							href={`/play/about/squared-rectangles/pipeline?solid=${encodeURIComponent(record.id)}`}
 							className="mt-0.5 flex w-fit items-center gap-1 border border-line px-2 py-1 text-[10px] text-fg-muted transition-colors hover:border-accent hover:text-fg max-md:min-h-11 max-md:px-3 max-md:text-[13px]"
 						>
 							All four stages <ArrowUpRight size={11} />
