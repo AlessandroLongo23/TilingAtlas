@@ -38,12 +38,12 @@ describe("walk table", () => {
 			for (const face of patch.faces) {
 				if (face.length < 3) continue;
 				const b = hypBarycenter(face.map((i) => patch.vertices[i]));
-				const r = walkPoint(t, t.seedFace, su11Apply(t.home, b));
+				const r = walkPoint(t, t.dev.face, su11Apply(t.dev.home, b));
 				expect(r.ok).toBe(true);
 				expect(sidesOf(t, r.f)).toBe(face.length);
 				expect(Math.hypot(r.w.x, r.w.y)).toBeLessThan(1e-6);
 				// W carries the start frame onto the arrival frame, so it sends the barycentre to 0 too.
-				const viaW = su11Apply(su11Mul(r.W, t.home), b);
+				const viaW = su11Apply(su11Mul(r.W, t.dev.home), b);
 				expect(Math.hypot(viaW.x, viaW.y)).toBeLessThan(1e-6);
 				steps++;
 			}

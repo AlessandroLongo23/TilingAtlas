@@ -52,6 +52,8 @@ export interface WalkTiling {
 	 *  face's frame: the inverse of `home` is the opening view. */
 	seedFace: number;
 	home: Su11;
+	/** The seed dart's face and the map from seed-dart coordinates (the developer's) into its frame. */
+	dev: { face: number; home: Su11 };
 	/** Vertices of each face in its own frame, in slot order (side j runs verts[j] → verts[j+1]). */
 	verts: Complex[][];
 	/** The polygon sizes that have an Islamic layer (hyperbolicIslamic.ts), in layer order: the regular
@@ -251,7 +253,16 @@ export function buildWalk(darts: Darts, edge: number, opts: { allDrawn?: boolean
 	let home = c.kind === "F" ? su11Identity() : K[seedFace][posOf[h]];
 	if (c.kind === "E")
 		home = mul(home, su11Translation({ x: Math.tanh((darts.elen ? darts.elen[h] : edge) / 4), y: 0 }));
-	return { data, width, height: F, seedFace, home, verts, sizes };
+	return {
+		data,
+		width,
+		height: F,
+		seedFace,
+		home,
+		dev: { face: faceOf[seed], home: K[faceOf[seed]][0] },
+		verts,
+		sizes,
+	};
 }
 
 /** Where a point of face f's frame stands against the face: the side it faces, sinh of its signed
