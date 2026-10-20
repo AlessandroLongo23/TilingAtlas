@@ -12,6 +12,7 @@ import { buildWalk, type WalkTiling } from "@/lib/render/hyperbolicWalk";
 import { HyperbolicPerPixelRenderer } from "@/lib/render/hyperbolicPerPixelGL";
 import { syncCanvasSize } from "@/lib/render/canvasSize";
 import { captureOverride, offerFrame } from "@/lib/render/capture";
+import { DISK_BAR_PX, DISK_PAD_PX, diskFrame } from "@/lib/render/diskFrame";
 
 // Interactive view of an engine-developed hyperbolic tiling. Each PIXEL walks the quotient to its tile
 // (lib/render/hyperbolicWalk.ts) and is coloured there, so the WHOLE disk fills to the rim for every
@@ -20,7 +21,6 @@ import { captureOverride, offerFrame } from "@/lib/render/capture";
 // with a thin sub-pixel rim). The p5 canvas underneath captures the pan gestures; this canvas is an
 // input-transparent overlay.
 
-const DISK_PAD_PX = 24; // /play's default gap from the canvas edge; see the diskPadPx prop
 /**
  * Per-instance view input, for an embedded disk that must NOT steer (or be steered by) the global
  * configuration store — the landing wall's Hyperbolic cell. Supply it and the loop reads pan,
@@ -147,7 +147,8 @@ export function HyperbolicDevelopedCanvas({ patchId, data, input, diskPadPx = DI
 
 			const cfg = useConfiguration.getState();
 			const ctrl = cfg.controls;
-			const Rcss = Math.max(0.5 * Math.min(w, h) - padRef.current, 1); // disk radius in CSS px (pan units)
+			// Disk radius (pan units) and centre in CSS px. Only /play has the toolbar to clear.
+			const { r: Rcss, cx, cy } = diskFrame(w, h, padRef.current, inputRef.current ? 0 : DISK_BAR_PX);
 
 			// Where pan / rotation / recentre / click come from this frame. /play drives them through the
 			// global store (its p5 input layer writes cfg.controls); an embedded disk hands in its own
@@ -176,8 +177,8 @@ export function HyperbolicDevelopedCanvas({ patchId, data, input, diskPadPx = DI
 					view: cam.view,
 					face: cam.face,
 					R: Rcss * dpr,
-					cx: bw / 2,
-					cy: bh / 2,
+					cx: cx * dpr,
+					cy: cy * dpr,
 					canvasH: bh,
 					dark,
 					showFill: cfg.fillAmount > 0,
@@ -196,8 +197,8 @@ export function HyperbolicDevelopedCanvas({ patchId, data, input, diskPadPx = DI
 				ctx.clearRect(0, 0, bw, bh);
 				drawDevelopedPatch(ctx, patch, cam.view, {
 					R: Rcss * dpr,
-					cx: bw / 2,
-					cy: bh / 2,
+					cx: cx * dpr,
+					cy: cy * dpr,
 					dark,
 					frame: false,
 					showFill: cfg.fillAmount > 0,

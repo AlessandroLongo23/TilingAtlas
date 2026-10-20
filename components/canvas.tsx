@@ -77,6 +77,7 @@ import { StrapCanvas } from "./strap-canvas";
 import { setOrbitHoverWorld } from "@/lib/render/orbitHoverBridge";
 import { measureBox } from "@/lib/render/canvasSize";
 import { captureOverride, offerFrame } from "@/lib/render/capture";
+import { diskFrame } from "@/lib/render/diskFrame";
 import type { TranslationalCellData as FlatCellData } from "@/lib/utils/renderTiling";
 
 interface CanvasProps {
@@ -1118,9 +1119,8 @@ export function Canvas({
 				// Hyperbolic view: hand the click (centred CSS px) to the disk overlay, which owns the view
 				// isometry and folds the clicked tile's centre to the screen centre.
 				if (cfg.hyperbolic) {
-					useConfiguration.setState({
-						hyperbolicClick: { x: p5.mouseX - p5.width / 2, y: p5.mouseY - p5.height / 2 },
-					});
+					const { cx, cy } = diskFrame(p5.width, p5.height);
+					useConfiguration.setState({ hyperbolicClick: { x: p5.mouseX - cx, y: p5.mouseY - cy } });
 					return;
 				}
 				if (transitionRef.current) return; // mid selection-transition the shown tiling is the outgoing one

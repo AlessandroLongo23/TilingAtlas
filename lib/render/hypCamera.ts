@@ -32,7 +32,7 @@ export interface HypFrameInput {
 	targetOffset: Pt;
 	rotDeg: number;
 	reset: boolean;
-	/** A click to bring to the disk centre, in centred CSS px, y down. */
+	/** A click to bring to the disk centre, in CSS px from the disk centre, y down. */
 	click: Pt | null;
 	/** Disk radius in CSS px: the unit a pan is measured in. */
 	Rcss: number;

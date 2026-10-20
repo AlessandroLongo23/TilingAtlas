@@ -10,6 +10,7 @@ import { IslamicFeed } from "@/lib/render/hyperbolicIslamic";
 import { HyperbolicPerPixelRenderer } from "@/lib/render/hyperbolicPerPixelGL";
 import { syncCanvasSize } from "@/lib/render/canvasSize";
 import { captureOverride, offerFrame } from "@/lib/render/capture";
+import { diskFrame } from "@/lib/render/diskFrame";
 import { paletteRgb255 } from "@/lib/colors/render";
 import type { HypColorsThumbInput } from "@/components/hyperbolic-colors-thumbnail";
 
@@ -19,8 +20,6 @@ import type { HypColorsThumbInput } from "@/components/hyperbolic-colors-thumbna
 // colour index through the shared atlas palette (configuration.colorsPalette), every edge a bold tile
 // boundary. Same three properties as the edge canvas: fills to the rim, infinite drift-free panning, GPU.
 // 2D developed fallback where WebGL2 is unavailable.
-
-const DISK_PAD_PX = 24;
 
 interface Props {
 	pattern: HypColorsThumbInput;
@@ -90,7 +89,7 @@ export function HyperbolicColorsCanvas({ pattern, tiles = false }: Props) {
 
 			const cfg = useConfiguration.getState();
 			const ctrl = cfg.controls;
-			const Rcss = Math.max(0.5 * Math.min(w, h) - DISK_PAD_PX, 1);
+			const { r: Rcss, cx, cy } = diskFrame(w, h);
 			cam.step({
 				offset: ctrl.offset,
 				targetOffset: ctrl.targetOffset,
@@ -105,8 +104,8 @@ export function HyperbolicColorsCanvas({ pattern, tiles = false }: Props) {
 			const dark = document.documentElement.classList.contains("dark");
 			const shared = {
 				R: Rcss * dpr,
-				cx: bw / 2,
-				cy: bh / 2,
+				cx: cx * dpr,
+				cy: cy * dpr,
 				dark,
 				showFill: cfg.fillAmount > 0,
 				strokePx: cfg.lineWidth <= 0 ? 0 : Math.max(cfg.lineWidth, 0.5) * dpr,

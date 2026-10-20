@@ -9,6 +9,7 @@ import { buildWalk } from "@/lib/render/hyperbolicWalk";
 import { HyperbolicPerPixelRenderer } from "@/lib/render/hyperbolicPerPixelGL";
 import { syncCanvasSize } from "@/lib/render/canvasSize";
 import { captureOverride, offerFrame } from "@/lib/render/capture";
+import { diskFrame } from "@/lib/render/diskFrame";
 import type { HypEdgesPattern } from "@/lib/freedraw/hyp-edges";
 
 // Interactive Poincaré-disk view of a hyperbolic edge-system tiling: the per-pixel WebGL renderer, the
@@ -18,8 +19,6 @@ import type { HypEdgesPattern } from "@/lib/freedraw/hyp-edges";
 // panning never drifts or stops, and it runs on the GPU. Where WebGL2 is unavailable it falls back to
 // the explicit 2D developed-edge draw. The p5 canvas underneath captures pan gestures; this canvas is an
 // input-transparent overlay.
-
-const DISK_PAD_PX = 24;
 
 interface Props {
 	/** Everything both render paths read. The Schwarz shelf (lib/freedraw/schwarz.ts) is not a
@@ -84,7 +83,7 @@ export function HyperbolicEdgesCanvas({ pattern }: Props) {
 
 			const cfg = useConfiguration.getState();
 			const ctrl = cfg.controls;
-			const Rcss = Math.max(0.5 * Math.min(w, h) - DISK_PAD_PX, 1);
+			const { r: Rcss, cx, cy } = diskFrame(w, h);
 			cam.step({
 				offset: ctrl.offset,
 				targetOffset: ctrl.targetOffset,
@@ -99,8 +98,8 @@ export function HyperbolicEdgesCanvas({ pattern }: Props) {
 			const dark = document.documentElement.classList.contains("dark");
 			const shared = {
 				R: Rcss * dpr,
-				cx: bw / 2,
-				cy: bh / 2,
+				cx: cx * dpr,
+				cy: cy * dpr,
 				dark,
 				showFill: cfg.fillAmount > 0,
 				strokePx: cfg.lineWidth <= 0 ? 0 : Math.max(cfg.lineWidth, 0.5) * dpr,
