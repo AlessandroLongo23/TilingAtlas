@@ -3131,3 +3131,8 @@ Hyperbolic not emitted. Uncommitted. NOTES 2026-10-13 (four sections).
 `omino_census.cpp` + `omino_run.py` reproduce Anton Bakker's counts exactly from 7 to 19 cells (two
 tilers unresolved, flagged). /heesch shows the full census as counts per size and lists every
 H ≥ 2 shape with audited coronas; 20–22 running. Uncommitted. NOTES 2026-10-16.
+
+## 2026-10-20 — /frames (1,822,452 frames, ten grids); every shelf gets articles; /theory removed — CC
+/frames lists frames and multi-tiling regions of 3,666 polyforms (65d8c790); /heesch ships its data and
+computes large tiler sets in the browser (91b52308). Articles move beside their shelves at /x/about and
+/theory redirects there (9647353c). NOTES 2026-10-19 (four sections).

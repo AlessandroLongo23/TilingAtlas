@@ -18692,3 +18692,182 @@ page says so. Neither the isohedral search nor torus searches with up to 19 copi
 them. Anton counts both as tilers.
 ⚑ Run in background mode (efficiency cores, at AL's request), the census is about 20x slower per
 shape: 19 cells took 11 h. 20 to 22 are running.
+
+## 2026-10-19: the Frame Finder search on all ten heesch-sat grids, 11–19× faster per thread
+
+A frame is a region that a polyform tiles in exactly two ways with no tile in the same place in both
+(a FrameFinder.html file AL received, author unknown; its engine is kept verbatim as
+`tools/frames/original-engine.js` for the comparison). Review first: the debt search and the series
+proof are both sound. Stopping at the first closure loses nothing, because a sub-pair would give a
+third tiling. The anchor and up/down balance rules are exact. Checked empirically: an independent
+brute force (`tools/frames/brute.js`) matches it exactly on every grid at small n, and 598 series
+members brute-forced to k = 12 all hold.
+
+**Generalized and optimized.** `tools/frames/gridspec.h` turns each heesch-sat grid into lattice + cell
+types + adjacency + symmetries, each transform checked against heesch-sat on a window.
+`baseline.js` is the original engine with only the triangle-specific parts swapped for that spec. On
+the triangle grid it returns the original's frame sets and close node counts. `frames.cpp` is the
+optimized search, and none of its changes loses a frame:
+- **Swap symmetry.** Tiling 1's anchor tile must have a higher orientation index than tiling 0's: both
+  tilings have a tile based on the anchor, and those tiles differ. This halves the tree.
+- **Bounds before placing.** The tile-count and balance bounds are applied inside the candidate scan,
+  before anything is placed: after placing, a tile's effect on the bounds depends only on how many of
+  its cells the other tiling covers. In the first C++ version 70M children per 12.8M nodes were placed
+  only to fail the bound (P pentiamond, N = 6). That made 14.2 s → 5.0 s.
+- **Cheaper bookkeeping.** Incremental debt lists, an owner array for the shared-tile test, and a
+  counter that tries only each orientation's lowest cell.
+- **Threads.** Dynamic pickup; 8.3× on 10 cores (4 performance + 6 efficiency).
+
+Tried and rejected: branching on the lowest debt cell rather than MRV (5–13× more nodes), stopping
+the MRV scan at the first forced cell (no change), and scanning debts newest-first (3% slower).
+
+**Results** (`experiments/results/2026-10-19-frames-bench.md`, 15 rows, every frame set identical):
+11–19× single-thread, 82–163× on 10 threads, on every row with real work. Node counts are 2.0–2.7×
+lower than the baseline's. P pentiamond N = 7: 1131 s → 86.5 s → 11.3 s.
+
+⚑ The biggest factor left is rotational symmetry. Each frame is still searched once per image (up to
+12×), because the anchor is "lowest cell" and no partial test of canonicity was found.
+⚑ Not ported: the infinite-series prover. It needs a slab functional per grid, and on the triangle
+grid it is not the bottleneck (0.2 s at N = 5).
+⚑ `original-engine.js` is someone else's code with no license. Settle authorship before it is
+committed or published.
+
+## 2026-10-19 (second): /frames, a census of 1.82 million frames on ten grids
+
+**The page.** /frames lists every free polyform of a size on each heesch-sat grid, each with every frame
+of at most N tiles a tiling. N is set per set and is the same for every shape in it, like a palette's k.
+It is /heesch's page with a different subject:
+- the same sidebar shell (`HeeschSidebar`, now with a `title`), switchers and picker glyph (`RingGlyph`,
+  moved to components/shelf);
+- the same patch canvas, and copies drawn by `copyPolygons` (lib/heesch/data.ts). `tilingCell`'s
+  one-hue-per-orientation loop was moved into that helper, so both pages use one copy of it.
+
+A frame is drawn as its two tilings side by side, or overlaid with tiling 2's edges dashed on the
+overlay canvas that /heesch uses for cell seams.
+
+**Data.** `frames -detail` emits what the page draws:
+- both tilings, as cell maps of the tile (the /heesch witness format less the corona), in the
+  frame's canonical image;
+- hole sizes and overlap pieces.
+
+The search already held both tilings at each closure, so nothing is recomputed. Audits:
+- `check_detail.js` checks that each tiling covers the region once with no shared tile, on all 10 grids;
+- on triangles it also matches the original FrameFinder's tilings, holes and pieces: 827 of 827.
+- `build_data.py` re-audits every frame before writing.
+
+**Census** (`census.py`, 105 min on 10 threads; log `experiments/results/2026-10-19-frames-census.log`).
+It covers 60 sets (sizes 2 up to 5–9, by grid) and 3,666 shapes, 1,856 of them with a frame.
+Reach runs from N = 5 (tetrahexes) to N = 12, the cap. A set stops at the last N before the next run
+would take more than 300 s or pass 200,000 frames. Some numbers: P pentiamond 3,741 frames at N = 7,
+as the benchmark found; didrafters and tridrafters have none up to N = 12.
+
+⚑ public/frames is 506 MB raw in 3,353 files (33 MB gzipped). Each visit loads little, but the repo
+and the deploy grow by about a third. Encoding each copy as [orientation, c, f] instead of six numbers
+would roughly halve it; not done yet.
+⚑ The infinite-series flag is still triangle-only (the prover is not ported), so the page has no ∞ column.
+⚑ Credit for the method: the FrameFinder author is still unknown. The Details row says "frames.cpp,
+this atlas" until that is settled.
+
+## 2026-10-19 (third): credits for /frames, its article, and three ways to sit a theory page beside its shelf
+
+**Credits, from AL's mail (The Tiling List).**
+- Craig Knecht posted Frame Finder on 18 Oct 2026, calling the overlap-debt algorithm the new part
+  and the program itself AI-written from his ideas. The threads that led to it: "finding all the
+  fundamental polyads for the polyiamonds" (1 Oct) and "Hat Tile Fundamental Polyads" (11–13 Oct).
+- The interface ideas are credited to Walter Trump's tiling program.
+- Dave Smith and Dale Walton took part in the discussion.
+- The polyad concept is from Huber, Knecht, Trump and Ziff. Correction: the arXiv paper's published
+  title is "Entropy and chirality in sphinx tilings", PRR 6, 013227 (2024); "Riddles of…" was v1.
+
+**Article.** public/theory/frames.md is rendered by components/frames/frames-article.tsx through the
+shared MarkdownRenderer. It has two live SVG figures drawn from the census (frame-figures.tsx):
+- `<frame-figure>` switches between tiling 1, tiling 2 and both;
+- `<debt-figure>` replays the debt search, with the debt shown as an even-odd fill of every placed tile.
+
+Custom tags need their closing tag on its own line. Otherwise markdown wraps them in a `<p>` and React
+reports a nesting error at hydration. The existing theory articles write them on one line.
+
+A check the census passed against known theory: of 9,786 domino frames exactly one is hole-free (the
+2×2 square), and of 58 lozenge frames exactly one (the hexagon). This matches Thurston's flip
+connectivity for simply connected regions.
+
+**Placement pilots (temporary routes):**
+- /pilot-frames-tab: Explore | About in the sidebar head, plus a book button in the phone's peek row;
+  the article replaces the canvas.
+- /pilot-frames-drawer: a column beside the canvas on desktop, which narrows and stays live;
+  full screen on a phone.
+- /pilot-frames-route and /pilot-frames-route/about: two pages under a tab strip.
+
+All three were checked with Playwright at 1400×900 and as an iPhone 13. Delete the two that lose.
+
+## 2026-10-19 — the articles move beside their shelves
+
+AL asked for a theory page for every shelf, placed next to the explorer it explains, in the style of the
+/frames article. The route split from the pilots won: `/x/about` holds a shelf's first article and
+`/x/about/<slug>` the rest, registered in `lib/about-pages.ts` (one entry per shelf, ten for /play). One
+route factory (`lib/about/route.tsx`) and one server loader (`lib/about/load.ts`, which also replaced the
+per-page loaders of the old /theory articles and the defense deck's atlas scan) serve them all. The way in
+is the book button in the canvas corner (`CornerControls`, now shown on desktop for the shelves whose
+fullscreen lives in a toolbar) or at the end of a wall page's title bar (`WallBar`). The left margin lists
+the shelf's articles with the open one expanded into its sections; below 1,280 px of article width the
+list moves above the text.
+
+Figures share one kit (`components/about/figure.tsx`: bordered box, caption under it, fitted SVG stage,
+coordinates rounded to 1e-6 because server and browser sines differ in the last bit and an SVG attribute
+that differs is a hydration mismatch). Tiling cards got a `square` variant and sit in that box. Each
+article family owns a figures file under `components/about/figures/`.
+
+New articles: geometries, k-uniform, star and isotoxal, other tiles, polyhedra, noble (all /play);
+parquet, colors, aperiodic, multigrid, isohedral, pentagons, heesch. Moved and improved: uniform tilings,
+hyperbolic, Islamic patterns, squared rectangles (/play), freedraw and automata (both gained figures).
+The old `/theory/<slug>` article routes redirect permanently; /theory is now an index of the Elements
+galleries and every shelf's articles. Removed: `_theory-client.tsx`, `theory-sidebar.tsx`,
+`tableOfContents.ts`, the frames tab and drawer pilots.
+
+Corrections found while checking sources, applied in data: pentagon Type 9 is Rice 1976, not Kershner
+(Rice's 11–13 now read "1976–77", the sources disagree on per-type years); Bays' hexagonal Life is B2/S35
+(his 3,5/2), not B2/S345; the hat's reflected share is 1 in φ⁴ + 1 ≈ 7.85; the half-hex ×3 comment no
+longer claims Baake–Spindeler–Strungaru treated it (their paper is one-dimensional); freedraw strips of
+width w give k = ⌊w/2⌋ + 1. A missing space in three spherical thumbnails had merged `object-cover` and
+the fade class. OEIS credits a(7) and a(8) of A068599 to Galebach and Čtrnáct with a(8)–a(13); the
+articles follow OEIS.
+
+⚑ Open: the two-colour hexagon colourings exist in Marek's corpus and have no catalogue (a coverage hole
+under "everything ships"). "Triangular (Bays)" B45/S456 in `lib/automata/rule.ts` is unverified. The
+deck's count timeline names "Griffin, k ≤ 15", for which no source was found. Credits for Anton Bakker's
+table, the Fryer-Davis 22-omino, the saw ribbon and the bubble tiles have no published trace yet.
+
+**Later the same day: /theory removed.** Its articles had already moved; the three Elements pages moved
+beside Play's articles as tools (`/play/about/prototiles`, `vertex-configurations`, `vertex-lookup`) and
+the squaring pipeline to `/play/about/squared-rectangles/pipeline`. `AboutArticle` gained `own` for a page
+with its own route folder (a static folder shadows the shelf's catch-all, so the squared-rectangles article
+renders from its own page.tsx via `aboutArticleRoute`) and an optional `file` (tools have no markdown).
+The galleries' sidebar switcher is now `components/about/shelf-article-nav.tsx`. Nav loses its Theory link
+(Automata takes key 9, Heesch key 0); the landing card points at the uniform-tilings article; every
+/theory URL redirects permanently, query strings included. Removed: the /theory index,
+`lib/theory/articles.ts`, `components/theory-article-nav.tsx`.
+
+**Later still: /frames lists every region with a minimal disjoint pair, not only frames.** The overlap-debt
+search stops at the first closure, so it finds every minimal disjoint pair of tilings; `record()` used to
+count the region's tilings to 3 and drop anything but 2, which discarded 208M of 210M closures (not
+distinct regions: each region recurs per orientation and per pair). `frames -tilings lo hi` keeps counts
+lo..hi and prints each, plus the tile's orientation maps and the lattice; without it the output is
+byte-identical on omino2, iamond5, hex3, kite4. `census.py --more` ran it on all 60 slices (101.7 min,
+`experiments/results/2026-10-19-frames-more-census.log`): 2,387,962 regions with 3–918 tilings beside the
+1,822,452 frames, merged into the same lists by `build_data.py` (4,210,414 regions, public/frames 1.2 GB).
+The second run has its own N (`N3`), one or two tiles under the frames' N on 15 slices; both are stated.
+Files keep only the pair and the count `c`; the page lists the other tilings itself (`allTilings`, exact
+cover on solver points), checked against the C++ count on all 2,387,962 regions with 0 mismatches
+(`2026-10-19-frames-tilings-check.log`). Not complete for regions with 3+ tilings in general: one with no
+minimal disjoint pair is never reached. Also: the empty region beside the tilings, a cell-seam toggle,
+and two filters, mirror images and rotations. Tilings of a region joined by a symmetry of the hidden kind
+count as one: the page draws one tiling a class (`tilingClasses`) and hides a region whose tilings are one
+class (`m`, set by `build_data.classes`, which enumerates every region's tilings and raises if its count
+differs from the census's). Each tile count's run is ordered by `m` so every hidden choice is one run.
+50,092 frames and 261 larger regions are one class. A first version tested symmetry on cell centroids
+alone and flagged 53,039 frames: 2,947 were false (2,530 on bevelhex), reflections across lines that are
+not mirror lines of the grid, which take centroids onto centroids and cells onto other shapes. Both
+implementations now require each cell's corners to land on a cell's corners.
+
+⚑ Open: public/frames is 1.2 GB of static JSON (5,322 files) and has never been deployed; whether Vercel takes
+it as is, or it needs packing (atlas-compact) or another host, is unchecked.
