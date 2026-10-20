@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
+import { ChangeImages } from "@/components/updates/change-images";
 import { ChangeText } from "@/components/updates/change-text";
 import { KIND_LABEL, KIND_ORDER, type Change, type ChangeKind, type UpdateEntry } from "@/lib/updates/entries";
 import { parseShelfPreviewId, previewHref, previewLabel } from "@/lib/updates/preview-ids";
@@ -164,6 +165,7 @@ export function UpdatesModal({ isOpen, onClose, entries }: UpdatesModalProps) {
 										</ul>
 									) : null}
 									{change.tilings?.length ? <TilingStrip ids={change.tilings} cells={cells} /> : null}
+									{change.images?.length ? <ChangeImages images={change.images} href={change.href} /> : null}
 								</li>
 							))}
 						</ul>

@@ -199,6 +199,16 @@ describe("update entries", () => {
 		for (const entry of UPDATES) {
 			for (const change of entry.changes) {
 				expect((change.tilings ?? []).length, `${entry.version} has a preview gallery`).toBeLessThanOrEqual(4);
+				expect((change.images ?? []).length, `${entry.version} has an image gallery`).toBeLessThanOrEqual(4);
+			}
+		}
+	});
+
+	it("every image is a file in public/release-images", () => {
+		for (const entry of UPDATES) {
+			for (const src of entry.changes.flatMap((c) => c.images ?? [])) {
+				expect(src, `${entry.version}: ${src}`).toMatch(/^\/release-images\/[A-Za-z0-9._-]+$/);
+				expect(existsSync(path.join(process.cwd(), "public", src)), `${entry.version}: ${src} is missing`).toBe(true);
 			}
 		}
 	});

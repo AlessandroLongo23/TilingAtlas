@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { InteractiveTilingPreviewCard } from "@/components/interactive-tiling-preview-card";
 import { Badge } from "@/components/ui/badge";
+import { ChangeImages } from "@/components/updates/change-images";
 import { ChangeText } from "@/components/updates/change-text";
 import { KIND_LABEL, KIND_ORDER, type ChangeKind, type UpdateEntry } from "@/lib/updates/entries";
 import { groupByMonth } from "@/lib/updates/grouping";
@@ -247,6 +248,14 @@ export function UpdatesClient({
 																		/>
 																	))}
 																</div>
+															) : null}
+
+															{change.images?.length ? (
+																<ChangeImages
+																	images={change.images}
+																	href={change.href}
+																	className="not-prose mt-3 sm:grid-cols-3"
+																/>
 															) : null}
 
 															{textOnly.length > 0 ? (

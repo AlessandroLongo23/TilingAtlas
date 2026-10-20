@@ -50,6 +50,11 @@ export interface Change {
 	tilings?: string[];
 	/** For a change that is a page, not a tiling. */
 	href?: string;
+	/**
+	 * Screenshots in public/release-images/, for what no atlas id can stand for: a page, a census, a
+	 * curved board. Up to 4, like `tilings`; paths are site-absolute ("/release-images/x.jpg").
+	 */
+	images?: string[];
 }
 
 export interface UpdateEntry {

@@ -2915,6 +2915,14 @@ export async function loadBubbleDecorAtlas(): Promise<ReferenceTiling[]> {
  */
 export const EXTERNAL_CELL_CATALOGUES: { files: readonly string[]; build: (row: never) => ReferenceTiling }[] = [
 	{ files: BUBBLE_FILES, build: bubbleToReference as (row: never) => ReferenceTiling },
+	// Tegula's plane rows carry no cell; it is bent from the type on first read, as the loader does.
+	{
+		files: ["reference-atlas-tegula.json"],
+		build: ((r: ReferenceTiling) => {
+			if (r.tegula) defineLazyRenderCell(r, (self) => bendTegula(self.tegula!));
+			return r;
+		}) as (row: never) => ReferenceTiling,
+	},
 ];
 
 let colDecorCache: ReferenceTiling[] | null = null;

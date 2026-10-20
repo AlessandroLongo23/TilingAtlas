@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 import { UPDATES } from "@/lib/updates/entries";
 import { shelfPreviewCell } from "@/lib/updates/preview-cells";
 import { previewIdsIn } from "@/lib/updates/unseen";
-import { lengthFamilyRows, type ReferenceTiling } from "@/lib/services/referenceAtlas";
+import { EXTERNAL_CELL_CATALOGUES, lengthFamilyRows, type ReferenceTiling } from "@/lib/services/referenceAtlas";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import { UpdatesClient } from "./_updates-client";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
@@ -46,7 +46,10 @@ const ATLAS_FILES = [
 async function loadCells(ids: string[]): Promise<Record<string, TranslationalCellData>> {
 	if (!ids.length) return {};
 	const wanted = new Set(ids);
-	const dir = path.join(process.cwd(), "public");
+	// Read at build time only (force-static), so none of public/ is traced into a function bundle.
+	const dir = path.join(/* turbopackIgnore: true */ process.cwd(), "public");
+	const inDir = (f: string) => path.join(/* turbopackIgnore: true */ dir, f);
+	const read = (f: string) => readFile(/* turbopackIgnore: true */ inDir(f), "utf8");
 	const out: Record<string, TranslationalCellData> = {};
 	// The shelf ids first: they are solved here, not looked up, and no shard will ever answer for one.
 	for (const id of wanted) {
@@ -61,9 +64,7 @@ async function loadCells(ids: string[]): Promise<Record<string, TranslationalCel
 	}
 	for (const name of ATLAS_FILES) {
 		try {
-			const all: ReferenceTiling[] = hydrateRenderCells(
-				decodeAtlas<ReferenceTiling>(JSON.parse(await readFile(path.join(dir, name), "utf8"))),
-			);
+			const all: ReferenceTiling[] = hydrateRenderCells(decodeAtlas<ReferenceTiling>(JSON.parse(await read(name))));
 			for (const t of all) {
 				if (wanted.has(t.id) && t.renderCell && !out[t.id]) out[t.id] = t.renderCell;
 			}
@@ -80,14 +81,12 @@ async function loadCells(ids: string[]): Promise<Record<string, TranslationalCel
 		const left = new Set(missing);
 		const shards = (await readdir(dir))
 			.filter((f) => /^reference-atlas-.*-k\d+\.json$/.test(f))
-			.map((f) => ({ f, size: statSync(path.join(dir, f)).size }))
+			.map((f) => ({ f, size: statSync(/* turbopackIgnore: true */ inDir(f)).size }))
 			.sort((a, b) => a.size - b.size);
 		for (const { f } of shards) {
 			if (!left.size) break;
 			try {
-				const all: ReferenceTiling[] = hydrateRenderCells(
-					decodeAtlas<ReferenceTiling>(JSON.parse(await readFile(path.join(dir, f), "utf8"))),
-				);
+				const all: ReferenceTiling[] = hydrateRenderCells(decodeAtlas<ReferenceTiling>(JSON.parse(await read(f))));
 				for (const t of all) {
 					if (left.has(t.id) && t.renderCell) {
 						out[t.id] = t.renderCell;
@@ -96,6 +95,20 @@ async function loadCells(ids: string[]): Promise<Record<string, TranslationalCel
 				}
 			} catch {
 				// same as above: an unreadable shard costs a preview, not the page
+			}
+		}
+	}
+	// Catalogues outside the shards (bubbles, Tegula), built by the loader's own converters.
+	for (const { files, build } of EXTERNAL_CELL_CATALOGUES) {
+		for (const url of files) {
+			if ([...wanted].every((id) => out[id])) return out;
+			try {
+				for (const row of JSON.parse(await read(url)) as never[]) {
+					const t = build(row);
+					if (wanted.has(t.id) && !out[t.id] && t.renderCell) out[t.id] = t.renderCell;
+				}
+			} catch {
+				// same as above
 			}
 		}
 	}
