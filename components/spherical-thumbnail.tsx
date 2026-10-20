@@ -102,7 +102,7 @@ export function SphericalThumbnail({ solidId, bubbleBites, size = 256 }: Spheric
 				width={size}
 				height={size}
 				aria-label={`${solidId} spherical tiling`}
-				className={`relative block h-full w-full rounded object-cover${ready ? "ta-fade-in" : "opacity-0"}`}
+				className={`relative block h-full w-full rounded object-cover ${ready ? "ta-fade-in" : "opacity-0"}`}
 			/>
 		</div>
 	);

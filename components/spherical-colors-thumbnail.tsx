@@ -72,7 +72,7 @@ export function SphericalColorsThumbnail({ pattern, mode, size = 256 }: Props) {
 				width={size}
 				height={size}
 				aria-label={`colored ${pattern.solid} ${pattern.id}`}
-				className={`relative block h-full w-full rounded object-cover${ready ? "ta-fade-in" : "opacity-0"}`}
+				className={`relative block h-full w-full rounded object-cover ${ready ? "ta-fade-in" : "opacity-0"}`}
 			/>
 		</div>
 	);

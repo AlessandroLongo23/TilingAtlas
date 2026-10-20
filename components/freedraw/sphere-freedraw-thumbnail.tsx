@@ -112,7 +112,7 @@ export function SphereFreedrawThumbnail({
 				width={size}
 				height={size}
 				aria-label={`${solidId} freedraw ${pattern.id}`}
-				className={`relative block h-full w-full rounded object-cover${ready ? "ta-fade-in" : "opacity-0"}`}
+				className={`relative block h-full w-full rounded object-cover ${ready ? "ta-fade-in" : "opacity-0"}`}
 			/>
 		</div>
 	);
