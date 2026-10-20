@@ -1,0 +1,10 @@
+[19:01:15] omino2 N=4: 5 regions, 2 frames (exactly 2), 3 with 3+; max tilings 5; by count 2:2, 3:1, 4:1, 5:1; 0.1s
+[19:01:15] omino2 N=6: 36 regions, 7 frames (exactly 2), 29 with 3+; max tilings 13; by count 2:7, 3:5, 4:5, 5:5, 6:2, 7:1, 8:3, 9:1; 0.0s
+[19:01:15] omino2 N=8: 517 regions, 45 frames (exactly 2), 472 with 3+; max tilings 36; by count 2:45, 3:70, 4:57, 5:67, 6:31, 7:31, 8:33, 9:19; 0.1s
+[19:01:15] omino2 N=10: 12080 regions, 560 frames (exactly 2), 11520 with 3+; max tilings 95; by count 2:560, 3:1355, 4:1068, 5:1372, 6:741, 7:832, 8:712, 9:504; 0.4s
+[19:01:29] omino2 N=12: 349775 regions, 9786 frames (exactly 2), 339989 with 3+; max tilings 281; by count 2:9786, 3:29135, 4:25580, 5:33618, 6:20531, 7:23911, 8:20202, 9:14323; 13.6s
+[19:01:29] iamond5 N=3: 11 regions, 9 frames (exactly 2), 2 with 3+; max tilings 3; by count 2:9, 3:2; 0.0s
+[19:01:29] iamond5 N=4: 58 regions, 35 frames (exactly 2), 23 with 3+; max tilings 5; by count 2:35, 3:11, 4:8, 5:4; 0.1s
+[19:01:29] iamond5 N=5: 339 regions, 132 frames (exactly 2), 207 with 3+; max tilings 8; by count 2:132, 3:119, 4:37, 5:27, 6:6, 7:15, 8:3; 0.2s
+[19:01:31] iamond5 N=6: 3428 regions, 1175 frames (exactly 2), 2253 with 3+; max tilings 16; by count 2:1175, 3:1017, 4:480, 5:374, 6:106, 7:103, 8:60, 9:39; 2.2s
+[19:02:14] iamond5 N=7: 35688 regions, 9457 frames (exactly 2), 26231 with 3+; max tilings 24; by count 2:9457, 3:10828, 4:5119, 5:4376, 6:1629, 7:1636, 8:845, 9:482; 43.0s
