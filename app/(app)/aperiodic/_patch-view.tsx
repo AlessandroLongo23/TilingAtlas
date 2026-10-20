@@ -145,7 +145,7 @@ const PATCHES: Record<"penrose" | "hat" | "chair" | "sphinx" | "half-hex" | "pin
 			["Discovered", "Smith, Myers, Kaplan, Goodman-Strauss 2023"],
 			["Level", String(level)],
 			["Hats", count.toLocaleString()],
-			["Reflected", "≈ 1 in 7"],
+			["Reflected", "1 in φ⁴ + 1 ≈ 7.85"],
 		],
 		// The hat substitutes METATILES, not hats, so there is no single-tile dissection to draw. The
 		// honest figure is one step of the thing that does substitute: the H metatile (four hats) and the

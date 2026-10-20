@@ -194,8 +194,8 @@ export const TESSELLATION_RULES: RulePreset[] = [
 	},
 	{
 		name: "Hex Life (Bays)",
-		rule: "B2/S345",
-		description: "Bays' hexagonal Game of Life, Complex Systems 15(3) 2005 — his 3,5/2. Has a period-5 glider.",
+		rule: "B2/S35",
+		description: "Bays' hexagonal Game of Life, Complex Systems 15(3) 2005: his 3,5/2, survival on 3 or 5, birth on 2. Has a period-5 glider.",
 	},
 	{
 		name: "Cairo pentagonal (Bays)",

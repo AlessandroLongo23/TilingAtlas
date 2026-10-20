@@ -208,8 +208,9 @@ export const PINWHEEL: SubstitutionRule = {
  * At factor 3 the same prototile has 49 dissections into 9 copies (scripts/derive-substitution-rules.mjs).
  * Two of them are shipped here. They are COMPATIBLE — one prototile, 9 children each — so the
  * substitution matrix is [9] either way, the inflation factor stays 3, and the tile frequencies are
- * untouched. Only the arrangement is random. That is the case where Baake, Spindeler and Strungaru
- * (Indag. Math. 2018) show randomness need not destroy long-range order.
+ * untouched. Only the arrangement is random. That is the mechanism Baake, Spindeler and Strungaru
+ * (Indag. Math. 2018) study in one dimension (a random mix of compatible Fibonacci rules), where
+ * randomness need not destroy long-range order; this is the same idea in the plane.
  *
  * Two, not 49, on purpose: this is the smallest thing that demonstrates the mechanism, and every extra
  * alternative multiplies the sample space without making the point any clearer.

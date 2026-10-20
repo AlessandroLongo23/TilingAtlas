@@ -76,7 +76,8 @@ export interface Constraint {
 export interface PentagonType {
 	id: number;
 	label: string;
-	/** Who found it and when. Types 1-5 Reinhardt; 6-8 Kershner; 10 James; 11-13 Rice; 14 Stein; 15 MMV. */
+	/** Who found it and when. Types 1-5 Reinhardt; 6-8 Kershner; 10 James; 9 and 11-13 Rice (the sources disagree on which
+	 *  of 11-13 came in which year, so those say 1976–77); 14 Stein; 15 MMV. */
 	discovered: string;
 	/** Wallpaper groups the type's tilings can achieve. Not single valued: Type 1 alone reaches six. */
 	groups: string;
@@ -283,7 +284,7 @@ export const PENTAGON_TYPES: PentagonType[] = [
 	{
 		id: 9,
 		label: "Type 9",
-		discovered: "Kershner 1968",
+		discovered: "Rice 1976",
 		groups: "pgg",
 		tilesPerUnit: 8,
 		dof: 1,
@@ -327,7 +328,7 @@ export const PENTAGON_TYPES: PentagonType[] = [
 	{
 		id: 11,
 		label: "Type 11",
-		discovered: "Rice 1976",
+		discovered: "Rice 1976–77",
 		groups: "pgg",
 		tilesPerUnit: 8,
 		dof: 1,
@@ -349,7 +350,7 @@ export const PENTAGON_TYPES: PentagonType[] = [
 	{
 		id: 12,
 		label: "Type 12",
-		discovered: "Rice 1977",
+		discovered: "Rice 1976–77",
 		groups: "pgg",
 		tilesPerUnit: 8,
 		dof: 1,
@@ -371,7 +372,7 @@ export const PENTAGON_TYPES: PentagonType[] = [
 	{
 		id: 13,
 		label: "Type 13",
-		discovered: "Rice 1977",
+		discovered: "Rice 1976–77",
 		groups: "pgg",
 		tilesPerUnit: 8,
 		dof: 1,
