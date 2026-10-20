@@ -18871,3 +18871,30 @@ implementations now require each cell's corners to land on a cell's corners.
 
 ⚑ Open: public/frames is 1.2 GB of static JSON (5,322 files) and has never been deployed; whether Vercel takes
 it as is, or it needs packing (atlas-compact) or another host, is unchecked.
+
+## 2026-10-20: release v1.42.0 to v1.45.0, pictures in the notes, and two fixes found on the way
+
+**Releases.** The 18 commits since v1.41.0 went out as four entries, not one: Tegula (1.42.0, cut at
+8700c34c), the articles beside every shelf (1.43.0, 9647353c), Heesch (1.44.0, 91b52308) and frames
+(1.45.0). AL rejected the first draft as a wall of text: only the two Tegula plane ids could draw, and
+those fell back to text chips because no preview loader read `reference-atlas-tegula.json`.
+
+**Pictures.** `Change.images` takes screenshots from `public/release-images/` (960 px JPEG, 20 to 95 KB)
+for what no atlas id can show: /frames, /heesch, an article figure, a hyperbolic or spherical board.
+They were taken with Playwright, headed, at 1400×900 and DPR 2, cropped to the canvas centre; the
+Tegula sphere shots hide the bend editor's panel first. The Tegula plane rows joined
+`EXTERNAL_CELL_CATALOGUES`, so both loaders draw them. The /updates loader's reads of public/ are now
+marked `turbopackIgnore`, which removed all eight Turbopack file-pattern warnings (20,730 files matched).
+
+**/frames filters.** Hiding mirror images and rotations empties 7 of the 60 sets (abolo2, drafter3,
+drafter5, halfcairo2, halfcairo4, kite2, and drafter2 with no region at all) because every region
+there is one tiling up to symmetry. The data was right; the page showed a blank canvas, and the
+pickers kept the unfiltered counts. The counts now follow the filters and the canvas says why it is empty.
+
+**Walk test.** `tests/hyperbolic-walk.test.ts` had failed three cases since d6d238c7: it walked from
+`home`, which is now the opening view, from a patch developed in seed-dart coordinates.
+`WalkTiling.dev` names that seed frame; the app was never affected (every consumer reads `home` as
+the view).
+
+⚑ `tools/frames/original-engine.js` and `baseline.js` are still untracked: the FrameFinder code has
+no licence, and this repo is public.
