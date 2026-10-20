@@ -193,3 +193,19 @@ tools/ctrnact-oracle/bench/*.json.shards/
 tools/ctrnact-oracle/bench/*-report.txt
 tools/ctrnact-oracle/bench/*-driver.log
 tools/ctrnact-oracle/bench/*.log
+
+# Heesch and frames engines: sources are committed; compiled binaries are not. tools/heesch-sat is a
+# clone of github.com/isohedral/heesch-sat (its own repo), built in place.
+tools/heesch/free_heesch
+tools/heesch/omino_census
+tools/heesch/polyform_census
+tools/frames/frames
+tools/frames/grid_spec
+tools/heesch-sat/
+
+# Raw census outputs (2.3 GB, single files past GitHub's 100 MB limit), regenerable with
+# tools/frames/census.py and tools/heesch; the logs beside them in experiments/results are committed,
+# and the shipped data is public/frames and public/heesch.
+experiments/results/frames/
+experiments/results/frames-more/
+experiments/results/heesch/
