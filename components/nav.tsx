@@ -156,11 +156,12 @@ export function Nav() {
 				) : null}
 				{LINKS.map((link, i) => {
 					const isActive = isActiveLink(pathname, link.href);
+					const key = navKey(i);
 					return (
 						<Link
 							key={link.href}
 							href={link.href}
-							title={`${link.label} (${navKey(i)})`}
+							title={key ? `${link.label} (${key})` : link.label}
 							className={cn(
 								"group flex shrink-0 items-center gap-1.5 rounded-control px-2.5 py-1.5 transition-colors",
 								// Text only, and the active link in ink, not accent: the accent marks actions.
@@ -168,7 +169,7 @@ export function Nav() {
 							)}
 						>
 							<span className="text-[13px] font-medium whitespace-nowrap">{link.label}</span>
-							<Kbd className="hidden 2xl:inline-flex">{navKey(i)}</Kbd>
+							{key ? <Kbd className="hidden 2xl:inline-flex">{key}</Kbd> : null}
 						</Link>
 					);
 				})}

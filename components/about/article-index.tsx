@@ -7,7 +7,7 @@
 // articles at the top of the text, and the sections go unlisted.
 
 import Link from "next/link";
-import { useEffect, useState, type RefObject } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { articleHref, type AboutArticle, type AboutSection } from "@/lib/about-pages";
 import { cn } from "@/lib/utils/cn";
 
@@ -44,6 +44,16 @@ export function ArticleIndex({
 		root.current?.querySelector(`#${CSS.escape(id)}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
 
 	const current = items.some((i) => i.id === active) ? active : items[0]?.id;
+	// A long article's index scrolls on its own; keep the section being read inside it.
+	const nav = useRef<HTMLElement>(null);
+	useEffect(() => {
+		const el = nav.current;
+		const on = el?.querySelector<HTMLElement>('[aria-current="location"]');
+		if (!el || !on) return;
+		const top = on.offsetTop; // the nav is positioned, so this is already relative to it
+		if (top < el.scrollTop || top + on.offsetHeight > el.scrollTop + el.clientHeight)
+			el.scrollTo({ top: top - el.clientHeight / 3, behavior: "smooth" });
+	}, [current]);
 	const sections = (
 		<ol className="border-l border-line-subtle">
 			{items.map((it) => (
@@ -65,7 +75,11 @@ export function ArticleIndex({
 	);
 	const many = section.articles.length > 1;
 	return (
-		<nav aria-label="On this page" className="absolute top-24 left-8 z-10 hidden w-56 @7xl:block">
+		<nav
+			ref={nav}
+			aria-label="On this page"
+			className="absolute top-24 left-8 z-10 hidden max-h-[calc(100%-8rem)] w-56 overflow-y-auto overscroll-contain pr-2 @7xl:block"
+		>
 			<p className="ta-label mb-3 text-fg-muted">{many ? `About ${section.topic}` : "On this page"}</p>
 			{many ? (
 				<ul className="flex flex-col gap-1">
