@@ -16,6 +16,8 @@ const eslintConfig = defineConfig([
 		"marek-vault/**",
 		// Vendored as shipped.
 		"lib/isohedral/vendor/**",
+		// Emscripten's output (tools/heesch/build_wasm.sh).
+		"public/heesch/engine/**",
 	]),
 	{
 		rules: {

@@ -1,0 +1,4 @@
+[14:17:34] === 6-hexes: 16 parts on 4 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/grids/hex6
+[14:17:34] 16 parts already done, 0 to go
+[14:17:34] classified in 0 s: fixed 814, free 82, holefree 81, h0 0, tilers 77, h1 3, undecided 1
+[14:17:34] === 6-hex tilings: 77 certificates (0 from the fallback), census has 77 tilers

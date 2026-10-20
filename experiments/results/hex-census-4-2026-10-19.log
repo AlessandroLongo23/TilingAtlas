@@ -1,0 +1,14 @@
+[08:58:25] === 4-hexes: 2 parts on 2 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/grids/hex4
+[08:58:25] 0 parts already done, 2 to go
+[08:58:25] part 1/2  hole-free 5  H0 0  tilers 5  H1 0  undecided 0  ETA 0 s
+[08:58:25] part 2/2  hole-free 7  H0 0  tilers 7  H1 0  undecided 0  ETA 0 s
+[08:58:25] classified in 0 s: fixed 44, free 7, holefree 7, h0 0, tilers 7, h1 0, undecided 0
+[08:58:25] fallback: 0 shapes in 0 streams
+[08:58:25] fallback done in 0 s: {}, capped 0
+[08:58:25] === 4-hexes: {"n": 4, "free": 7, "hole_free": 7, "h0": 0, "tilers": 7, "h1": 0, "capped": 0}
+[08:58:25] === 4-hexes: 2 parts on 2 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/grids/hex4
+[08:58:25] 0 parts already done, 2 to go
+[08:58:25] part 1/2  hole-free 5  H0 0  tilers 5  H1 0  undecided 0  ETA 0 s
+[08:58:25] part 2/2  hole-free 7  H0 0  tilers 7  H1 0  undecided 0  ETA 0 s
+[08:58:25] classified in 0 s: fixed 44, free 7, holefree 7, h0 0, tilers 7, h1 0, undecided 0
+[08:58:25] === 4-hex tilings: 7 certificates (0 from the fallback), census has 7 tilers

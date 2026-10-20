@@ -373,6 +373,7 @@ static bool APAIRS = true;
 static bool PERIODIC = true;  // look for periodic tilings once a shape has two coronas
 static int P_KMAX = 8, P_LATTICES = 100, P_WORDS = 6, P_VECS = 600;
 static bool ISO_FAST = true;
+static bool CERT = false;
 static bool ISO_FULL = false;  // Kaplan's closure check over all corona-1 copies (the fast check finds what it finds)  // edge-only isohedral check before anything else
 static bool CELLAMO = true;  // overlap by cells: one at-most-one per cell, pairs only for crossing cells  // exclude touching pairs placed outside R (experiment switch)
 static void configure(CaDiCaL::Solver& s) {
@@ -1312,8 +1313,12 @@ struct Search {
 		vector<Iso> chosen;
 		for (int g = 0; g < np; ++g)
 			if (s.val(g + 1) > 0) chosen.push_back(P[g]);
-		return lifted_ok(lt, chosen);
+		if (!lifted_ok(lt, chosen)) return false;
+		cert_lt = lt, cert = chosen;  // the tiling, for -cert
+		return true;
 	}
+	Lattice cert_lt;
+	vector<Iso> cert;
 
 	// Lift a torus tiling to the plane and check it there: no two copies overlap, and every chosen
 	// copy is surrounded (its edges matched, its corners closed) by the copies around it.
@@ -1594,6 +1599,9 @@ int main(int argc, char** argv) {
 		else if (std::string(argv[i]) == "-noperiodic") PERIODIC = false;
 		else if (std::string(argv[i]) == "-noisofast") ISO_FAST = false;
 		else if (std::string(argv[i]) == "-isofull") ISO_FULL = true;
+		// Print each periodic tiling found ("cert": lattice, then the copies of one period). The fast
+		// isohedral check proves a tiling without building one, so it is off here.
+		else if (std::string(argv[i]) == "-cert") CERT = true, ISO_FAST = false;
 		else if (std::string(argv[i]) == "-pk" && i + 1 < argc) P_KMAX = atoi(argv[++i]);
 		else if (std::string(argv[i]) == "-plat" && i + 1 < argc) P_LATTICES = atoi(argv[++i]);
 		else if (std::string(argv[i]) == "-pwords" && i + 1 < argc) P_WORDS = atoi(argv[++i]);
@@ -1627,6 +1635,13 @@ int main(int argc, char** argv) {
 		patch_json(os, s, r.w);
 		os << ",\"wh\":";
 		patch_json(os, s, r.wh);
+		if (CERT && r.period) {
+			auto z = [&](const Z& v) { os << v.a << "," << v.b << "," << v.c << "," << v.d; };
+			os << ",\"cert\":{\"l\":[";
+			z(s.cert_lt.v1), os << ",", z(s.cert_lt.v2), os << "],\"k\":[";
+			for (size_t i = 0; i < s.cert.size(); ++i) os << (i ? "," : "") << s.cert[i].o / 12 << "," << s.cert[i].o % 12 << ",", z(s.cert[i].t);
+			os << "]}";
+		}
 		std::string st = s.stats.str();
 		if (!st.empty()) st.pop_back();
 		os << ",\"stats\":[" << st << "]}";

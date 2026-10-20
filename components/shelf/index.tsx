@@ -1,6 +1,6 @@
 "use client";
 
-// Sidebar primitives shared by the catalogue shelves: /aperiodic, /isohedral and /pentagons.
+// Sidebar primitives shared by the catalogue shelves: /aperiodic, /isohedral, /pentagons, /heesch, /frames.
 //
 // These began as a set in app/(app)/aperiodic/_controls.tsx and were copied once into
 // app/(app)/isohedral/_controls.tsx, whose header set the rule for when to stop copying: "About sixty
@@ -31,6 +31,39 @@ export function Section({ label, flush = false, children }: { label: string; flu
 			<span className="ta-label">{label}</span>
 			{children}
 		</div>
+	);
+}
+
+/**
+ * Page rings fitted to a small square and filled with the text colour: a picker cell's picture of a
+ * tile (/heesch) or of a frame, drawn as its tiles with no outlines so they read as one region (/frames).
+ */
+export function RingGlyph({ rings, size = 22 }: { rings: { x: number; y: number }[][]; size?: number }) {
+	let minx = Infinity,
+		miny = Infinity,
+		maxx = -Infinity,
+		maxy = -Infinity;
+	for (const ring of rings)
+		for (const v of ring) {
+			minx = Math.min(minx, v.x);
+			maxx = Math.max(maxx, v.x);
+			miny = Math.min(miny, v.y);
+			maxy = Math.max(maxy, v.y);
+		}
+	const k = size / Math.max(maxx - minx, maxy - miny, 1);
+	const ox = (size - k * (maxx - minx)) / 2,
+		oy = (size - k * (maxy - miny)) / 2;
+	// y is flipped because SVG counts down and every tiling in the atlas counts up.
+	return (
+		<svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true" className="my-0.5">
+			{rings.map((ring, i) => (
+				<polygon
+					key={i}
+					points={ring.map((v) => `${ox + k * (v.x - minx)},${size - oy - k * (v.y - miny)}`).join(" ")}
+					className="fill-current"
+				/>
+			))}
+		</svg>
 	);
 }
 

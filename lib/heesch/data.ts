@@ -37,11 +37,11 @@ export function gridCaveat(g: HeeschGridId): string | null {
 	if (GRIDS[g].aligned === "restriction")
 		return "Copies are placed on the grid only. A number here is a lower bound, and a shape listed may tile with copies off the grid.";
 	if (GRIDS[g].aligned === "free")
-		return "Copies meet edge to edge, on no grid. Shapes that closed every corona the search asked for are left out: they tile, or go deeper than it looked.";
+		return "Copies meet edge to edge, on no grid: a square and a triangle may sit against each other however their edges match.";
 	return null;
 }
 /** "9-omino", "10-iamond", "7-hex". */
-export const polyformName = (s: HeeschShape) => `${s.cells}-${GRIDS[s.grid].noun}`;
+export const polyformName = (s: Pick<HeeschShape, "cells" | "grid">) => `${s.cells}-${GRIDS[s.grid].noun}`;
 /** "9-ominoes", "10-iamonds", "7-hexes". */
 export const polyformPlural = (g: HeeschGridId, cells: number) => {
 	const noun = GRIDS[g].noun;
@@ -88,9 +88,6 @@ export interface HeeschSetInfo {
 	/** Shapes per Heesch number, index = H, under each definition. */
 	hc: number[];
 	hh: number[];
-	/** Set while a census is still running: how many of its `of` shapes have been searched so far. */
-	searched?: number;
-	of?: number;
 	/** The whole census of the size, where the set lists only part of it: every hole-free shape counted,
 	 *  `hh` by Heesch number with holes allowed, the shapes listed being those from `listedFrom` up.
 	 *  `unresolved` tilers are counted by no proof here; `slices` is [done, of] while it still runs. */
@@ -102,8 +99,9 @@ export interface HeeschSetInfo {
 		listedFrom?: number;
 		slices?: [number, number];
 	};
-	/** The size's tilers, with their tilings, in files `<id>-t<i>.json` of `shard` shapes each. */
-	tilers?: { count: number; shard: number };
+	/** The size's tilers, with their tilings: in files `<id>-t<i>.json` of `shard` shapes each, or, for the
+	 *  sizes too large to ship, computed in the browser from the census's `slices` (see tilerSource). */
+	tilers?: { count: number } & ({ shard: number } | { slices: number });
 }
 
 export interface HeeschIndex {
@@ -133,14 +131,80 @@ export const loadHeeschSet = (id: string) =>
 		(d) => d?.shapes.map((s) => (s.grid ? s : { ...s, grid: d.grid ?? "omino" })) ?? null,
 	);
 
-/** One file of a size's tilers. */
-export const loadHeeschTilers = (id: string, shard: number) =>
+/** One file of a size's tilers: shard `i`, or "x", the tilers only the census's fallback proved. */
+const loadHeeschTilers = (id: string, shard: number | "x") =>
 	load<{ grid: HeeschGridId; shapes: HeeschShape[] }>(`${id}-t${shard}`).then(
 		(d) => d?.shapes.map((s) => ({ ...s, grid: d.grid })) ?? null,
 	);
 
+/** A size's tilers in chunks, chunk k holding the tilers from starts[k] on, and how to load one. */
+export interface TilerSource {
+	starts: number[];
+	/** Chunks are census slices run in the browser, not files. */
+	computed: boolean;
+	load: (k: number) => Promise<HeeschShape[] | null>;
+}
+
+/**
+ * Where a size's tilers come from. Up to some millions they ship as files; past that (the 20-ominoes
+ * alone have twelve million) the page runs the census engine itself, compiled to WebAssembly, on one
+ * slice of the census at a time: the index lists how many tilers each slice holds, so tiler i is found
+ * in its slice without computing the others. The fallback's few tilers come last, from a file.
+ */
+export async function tilerSource(s: HeeschSetInfo): Promise<TilerSource | null> {
+	const t = s.tilers;
+	if (!t) return null;
+	if ("shard" in t)
+		return {
+			starts: Array.from({ length: Math.ceil(t.count / t.shard) }, (_, i) => i * t.shard),
+			computed: false,
+			load: (k) => loadHeeschTilers(s.id, k),
+		};
+	const counts = (await load<{ counts: number[] }>(`${s.id}-tslices`))?.counts;
+	if (!counts) return null;
+	const slices = counts.flatMap((c, i) => (c ? [i] : []));
+	const starts: number[] = [];
+	let at = 0;
+	for (const i of slices) {
+		starts.push(at);
+		at += counts[i];
+	}
+	if (at < t.count) starts.push(at);
+	return {
+		starts,
+		computed: true,
+		load: (k) => (k < slices.length ? runSlice(s.grid, s.cells, slices[k], t.slices) : loadHeeschTilers(s.id, "x")),
+	};
+}
+
+let engine: Worker | null = null;
+const jobs = new Map<number, (shapes: HeeschShape[] | null) => void>();
+let jobId = 0;
+/** One census slice's tilers, computed by the engine in a worker (lib/heesch/engine.worker.ts). */
+function runSlice(g: HeeschGridId, cells: number, slice: number, slices: number): Promise<HeeschShape[] | null> {
+	if (!engine) {
+		engine = new Worker(new URL("./engine.worker.ts", import.meta.url), { type: "module" });
+		engine.onmessage = (e: MessageEvent<{ id: number; shapes: HeeschShape[] | null }>) => {
+			jobs.get(e.data.id)?.(e.data.shapes);
+			jobs.delete(e.data.id);
+		};
+		engine.onerror = () => {
+			for (const done of jobs.values()) done(null);
+			jobs.clear();
+		};
+	}
+	const id = jobId++;
+	return new Promise((resolve) => {
+		jobs.set(id, resolve);
+		engine!.postMessage({ id, grid: g, cells, slice, slices });
+	});
+}
+
+/** What drawing a tile needs: its grid and its outline. /frames' shapes carry the same two fields. */
+export type Polyform = Pick<HeeschShape, "grid" | "o">;
+
 /** The tile's outline in solver coordinates, as a vertex ring. */
-function outlineRing(s: HeeschShape): { x: number; y: number }[] {
+function outlineRing(s: Polyform): { x: number; y: number }[] {
 	const { den } = grid(s.grid);
 	const ring = [];
 	for (let i = 0; i < s.o.length; i += 2) ring.push({ x: s.o[i] / den, y: s.o[i + 1] / den });
@@ -148,7 +212,7 @@ function outlineRing(s: HeeschShape): { x: number; y: number }[] {
 }
 
 /** The tile's outline on the page, as a vertex ring. */
-export const outlinePage = (s: HeeschShape) => outlineRing(s).map((v) => toPage(s.grid, v.x, v.y));
+export const outlinePage = (s: Polyform) => outlineRing(s).map((v) => toPage(s.grid, v.x, v.y));
 
 /** Infinity for a shape that tiles the plane. */
 export const heeschNumber = (s: HeeschShape, def: HeeschDefinition) =>
@@ -174,15 +238,13 @@ function witness(s: HeeschShape, def: HeeschDefinition): number[] {
 }
 
 /**
- * The seams between a tile's unit cells: every edge two of its cells share, as page segments
- * flattened [x0, y0, x1, y1, …]. Drawn over the centre tile so the polyform can be read off it.
+ * The tile's unit cells: each one's integer point (the cell as copies' cell maps see it) and its
+ * corner ring, in solver coordinates.
  *
  * Read back off the outline, so the data files do not carry the cells twice: a cell is in the tile
- * when its centroid is inside the outline (even-odd crossing count along +x). An edge listed by two
- * member cells is a seam.
+ * when its centroid is inside the outline (even-odd crossing count along +x).
  */
-export function cellSeams(s: HeeschShape): number[] {
-	if (s.s) return s.s;
+export function tileCells(s: Polyform): { at: [number, number]; verts: [number, number][] }[] {
 	const { den, period, cells } = grid(s.grid);
 	const [[ax, ay], [bx, by]] = period;
 	const det = ax * by - ay * bx;
@@ -216,29 +278,56 @@ export function cellSeams(s: HeeschShape): number[] {
 	}
 	// A cell's point can sit a few units from its corners (a drafter's by three), so look past the box.
 	const reach = 4;
-	const seen = new Set<string>();
-	const seams: number[] = [];
+	const out: { at: [number, number]; verts: [number, number][] }[] = [];
 	for (let x = Math.floor(minx) - reach; x <= Math.ceil(maxx) + reach; x++)
 		for (let y = Math.floor(miny) - reach; y <= Math.ceil(maxy) + reach; y++) {
 			const kind = kindAt(x, y);
 			if (!kind) continue;
-			const verts = kind.verts.map(([vx, vy]) => [x + vx / den, y + vy / den]);
+			const verts = kind.verts.map(([vx, vy]): [number, number] => [x + vx / den, y + vy / den]);
 			const cx = verts.reduce((t, v) => t + v[0], 0) / verts.length,
 				cy = verts.reduce((t, v) => t + v[1], 0) / verts.length;
-			if (!inside(cx, cy)) continue;
-			verts.forEach((a, k) => {
-				const b = verts[(k + 1) % verts.length];
-				const ka = `${a[0].toFixed(4)},${a[1].toFixed(4)}`,
-					kb = `${b[0].toFixed(4)},${b[1].toFixed(4)}`;
-				const key = ka < kb ? `${ka}|${kb}` : `${kb}|${ka}`;
-				if (!seen.has(key)) return void seen.add(key);
-				const p = toPage(s.grid, a[0], a[1]),
-					q = toPage(s.grid, b[0], b[1]);
-				seams.push(p.x, p.y, q.x, q.y);
-			});
+			if (inside(cx, cy)) out.push({ at: [x, y], verts });
 		}
-	return seams;
+	return out;
 }
+
+/** The cells of copies of a tile as page rings: `maps` as in copyPolygons, six numbers a copy. One
+ *  list of rings per copy. */
+export function copyCells(s: Polyform, maps: number[]): { x: number; y: number }[][][] {
+	const cells = tileCells(s);
+	const out = [];
+	for (let i = 0; i < maps.length; i += 6) {
+		const [a, b, c, d, e, f] = maps.slice(i, i + 6);
+		out.push(cells.map(({ verts }) => verts.map(([x, y]) => toPage(s.grid, a * x + b * y + c, d * x + e * y + f))));
+	}
+	return out;
+}
+
+/**
+ * The sides of a set of cells, split by how many of the cells list them, as page segments flattened
+ * [x0, y0, x1, y1, …]: `inner` sides two cells share (the seams between them), `outer` the boundary.
+ */
+export function cellSides(rings: { x: number; y: number }[][]): { inner: number[]; outer: number[] } {
+	const seen = new Map<string, { seg: number[]; n: number }>();
+	for (const verts of rings)
+		verts.forEach((a, k) => {
+			const b = verts[(k + 1) % verts.length];
+			const ka = `${a.x.toFixed(4)},${a.y.toFixed(4)}`,
+				kb = `${b.x.toFixed(4)},${b.y.toFixed(4)}`;
+			const key = ka < kb ? `${ka}|${kb}` : `${kb}|${ka}`;
+			const got = seen.get(key);
+			if (got) got.n++;
+			else seen.set(key, { seg: [a.x, a.y, b.x, b.y], n: 1 });
+		});
+	const inner: number[] = [],
+		outer: number[] = [];
+	for (const { seg, n } of seen.values()) (n > 1 ? inner : outer).push(...seg);
+	return { inner, outer };
+}
+
+/** The seams between a tile's unit cells: every edge two of its cells share, as page segments
+ *  flattened [x0, y0, x1, y1, …]. Drawn over the centre tile so the polyform can be read off it. */
+export const cellSeams = (s: HeeschShape): number[] => s.s ?? cellSides(copyCells(s, [1, 0, 0, 0, 1, 0])[0]).inner;
 
 /** The witness patch out to `upTo` coronas as polygons the flat renderers draw. The centre tile is
  *  always first and always in its own coordinates (the solver places it with the identity). */
@@ -262,19 +351,19 @@ const TILING_HOME = 4;
 /** Hues for a tiling's orientations, in order of first appearance. */
 const ORIENTATION_HUES = [205, 45, 95, 320, 160, 275, 0, 240];
 
-/** A tiler's tiling as one translational cell, for the renderer that repeats it over the whole view
- *  (the one /pentagons and /isohedral use): the copies of one period and the lattice, on the page. One
- *  hue per orientation of the tile: copies that are translates of each other share it, whichever
- *  symmetry of the tile made them. */
-export function tilingCell(s: HeeschShape): ParametricCell | null {
-	if (!s.p) return null;
+/**
+ * Copies of a tile as page polygons: `maps` holds six numbers a copy, the cell map
+ * (x, y) → (ax + by + c, dx + ey + f). One hue per orientation of the tile, so copies that are
+ * translates of each other share it, whichever symmetry of the tile made them; pass one `hueOf` to
+ * several calls to keep their hues in step.
+ */
+export function copyPolygons(s: Polyform, maps: number[], hueOf = new Map<string, number>()): RawPolygon[] {
 	const ring = outlineRing(s);
-	const hueOf = new Map<string, number>();
 	const polygons: RawPolygon[] = [];
-	for (let c = 0; c < s.p.k.length; c += 6) {
-		const [a, b, e, d, f, g] = s.p.k.slice(c, c + 6);
+	for (let i = 0; i < maps.length; i += 6) {
+		const [a, b, c, d, e, f] = maps.slice(i, i + 6);
 		// An orientation is the copy's outline up to translation: its corners, less their minimum.
-		const pts = ring.map((v) => [a * v.x + b * v.y, d * v.x + f * v.y]);
+		const pts = ring.map((v) => [a * v.x + b * v.y, d * v.x + e * v.y]);
 		const mx = Math.min(...pts.map((q) => q[0])),
 			my = Math.min(...pts.map((q) => q[1]));
 		const key = pts
@@ -282,9 +371,19 @@ export function tilingCell(s: HeeschShape): ParametricCell | null {
 			.sort()
 			.join(" ");
 		if (!hueOf.has(key)) hueOf.set(key, ORIENTATION_HUES[hueOf.size % ORIENTATION_HUES.length]);
-		const vertices = pts.map((q) => toPage(s.grid, q[0] + e, q[1] + g));
+		const vertices = pts.map((q) => toPage(s.grid, q[0] + c, q[1] + f));
 		polygons.push({ n: vertices.length, vertices, hue: hueOf.get(key)! });
 	}
+	return polygons;
+}
+
+/** A tiler's tiling as one translational cell, for the renderer that repeats it over the whole view
+ *  (the one /pentagons and /isohedral use): the copies of one period and the lattice, on the page. One
+ *  hue per orientation of the tile: copies that are translates of each other share it, whichever
+ *  symmetry of the tile made them. */
+export function tilingCell(s: HeeschShape): ParametricCell | null {
+	if (!s.p) return null;
+	const polygons = copyPolygons(s, s.p.k);
 	const [ux, uy, vx, vy] = s.p.l;
 	const u = toPage(s.grid, ux, uy),
 		w = toPage(s.grid, vx, vy);

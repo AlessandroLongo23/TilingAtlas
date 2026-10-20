@@ -1,0 +1,154 @@
+[09:12:29] free polyforms of 5 cells from square,triangle: 211 hole-free shapes; free_heesch -L 5
+[09:12:29]   10/211  tilers 5  non-tilers 5  unresolved 0  elapsed 0s  ETA 7s
+[09:12:30]   20/211  tilers 9  non-tilers 11  unresolved 0  elapsed 1s  ETA 8s
+[09:12:30]   30/211  tilers 9  non-tilers 21  unresolved 0  elapsed 1s  ETA 7s
+[09:12:31]   40/211  tilers 10  non-tilers 30  unresolved 0  elapsed 2s  ETA 7s
+[09:12:31]   50/211  tilers 13  non-tilers 37  unresolved 0  elapsed 2s  ETA 6s
+[09:12:31]   60/211  tilers 15  non-tilers 45  unresolved 0  elapsed 2s  ETA 6s
+[09:12:32]   70/211  tilers 16  non-tilers 54  unresolved 0  elapsed 3s  ETA 6s
+[09:12:32]   80/211  tilers 16  non-tilers 64  unresolved 0  elapsed 3s  ETA 5s
+[09:12:33]   90/211  tilers 16  non-tilers 74  unresolved 0  elapsed 4s  ETA 5s
+[09:12:33]   100/211  tilers 16  non-tilers 84  unresolved 0  elapsed 4s  ETA 5s
+[09:12:34]   110/211  tilers 16  non-tilers 94  unresolved 0  elapsed 5s  ETA 4s
+[09:12:34]   120/211  tilers 16  non-tilers 104  unresolved 0  elapsed 5s  ETA 4s
+[09:12:34]   130/211  tilers 16  non-tilers 114  unresolved 0  elapsed 5s  ETA 3s
+[09:12:42]   140/211  tilers 20  non-tilers 120  unresolved 0  elapsed 13s  ETA 6s
+[09:12:45]   150/211  tilers 23  non-tilers 127  unresolved 0  elapsed 16s  ETA 7s
+[09:12:46]   160/211  tilers 23  non-tilers 137  unresolved 0  elapsed 17s  ETA 5s
+[09:12:46]   170/211  tilers 23  non-tilers 147  unresolved 0  elapsed 17s  ETA 4s
+[09:12:46]   180/211  tilers 23  non-tilers 157  unresolved 0  elapsed 17s  ETA 3s
+[09:12:46]   190/211  tilers 24  non-tilers 166  unresolved 0  elapsed 17s  ETA 2s
+[09:12:48]   200/211  tilers 29  non-tilers 171  unresolved 0  elapsed 19s  ETA 1s
+[09:23:43] free polyforms of 6 cells from square,triangle: 1297 hole-free shapes; free_heesch -L 5
+[09:25:14] free polyforms of 5 cells from square,triangle: 211 hole-free shapes; free_heesch -L 5
+[09:25:15]   10/211  tilers 5  non-tilers 5  unresolved 0  elapsed 1s  ETA 15s
+[09:25:16]   20/211  tilers 9  non-tilers 11  unresolved 0  elapsed 2s  ETA 15s
+[09:25:17]   30/211  tilers 9  non-tilers 21  unresolved 0  elapsed 2s  ETA 12s
+[09:25:17]   40/211  tilers 10  non-tilers 30  unresolved 0  elapsed 3s  ETA 11s
+[09:25:18]   50/211  tilers 13  non-tilers 37  unresolved 0  elapsed 3s  ETA 10s
+[09:25:18]   60/211  tilers 15  non-tilers 45  unresolved 0  elapsed 4s  ETA 9s
+[09:25:19]   70/211  tilers 16  non-tilers 54  unresolved 0  elapsed 4s  ETA 9s
+[09:25:20]   80/211  tilers 16  non-tilers 64  unresolved 0  elapsed 5s  ETA 8s
+[09:25:21]   90/211  tilers 16  non-tilers 74  unresolved 0  elapsed 6s  ETA 8s
+[09:25:21]   100/211  tilers 16  non-tilers 84  unresolved 0  elapsed 6s  ETA 7s
+[09:25:21]   110/211  tilers 16  non-tilers 94  unresolved 0  elapsed 7s  ETA 6s
+[09:25:22]   120/211  tilers 16  non-tilers 104  unresolved 0  elapsed 8s  ETA 6s
+[09:25:23]   130/211  tilers 16  non-tilers 114  unresolved 0  elapsed 8s  ETA 5s
+[09:25:34]   140/211  tilers 20  non-tilers 120  unresolved 0  elapsed 19s  ETA 10s
+[09:25:40]   150/211  tilers 23  non-tilers 127  unresolved 0  elapsed 26s  ETA 10s
+[09:25:41]   160/211  tilers 23  non-tilers 137  unresolved 0  elapsed 26s  ETA 8s
+[09:25:42]   170/211  tilers 23  non-tilers 147  unresolved 0  elapsed 27s  ETA 7s
+[09:25:42]   180/211  tilers 23  non-tilers 157  unresolved 0  elapsed 28s  ETA 5s
+[09:25:43]   190/211  tilers 24  non-tilers 166  unresolved 0  elapsed 28s  ETA 3s
+[09:25:44]   200/211  tilers 29  non-tilers 171  unresolved 0  elapsed 30s  ETA 2s
+[09:26:28]   210/211  tilers 36  non-tilers 174  unresolved 0  elapsed 74s  ETA 0s
+[09:26:28]   211/211  tilers 37  non-tilers 174  unresolved 0  elapsed 74s  ETA 0s
+[09:26:28] done: 37 tile, 174 do not, 0 unresolved
+[09:33:41] free polyforms of 1 cells from square,triangle: 2 hole-free shapes; free_heesch -L 5
+[09:33:41]   1/2  tilers 1  non-tilers 0  unresolved 0  elapsed 0s  ETA 0s
+[09:33:41]   2/2  tilers 2  non-tilers 0  unresolved 0  elapsed 0s  ETA 0s
+[09:33:41] done: 2 tile, 0 do not, 0 unresolved
+[09:33:41] free polyforms of 2 cells from square,triangle: 3 hole-free shapes; free_heesch -L 5
+[09:33:41]   1/3  tilers 1  non-tilers 0  unresolved 0  elapsed 0s  ETA 0s
+[09:33:41]   2/3  tilers 2  non-tilers 0  unresolved 0  elapsed 0s  ETA 0s
+[09:33:41]   3/3  tilers 3  non-tilers 0  unresolved 0  elapsed 0s  ETA 0s
+[09:33:41] done: 3 tile, 0 do not, 0 unresolved
+[09:33:41] free polyforms of 3 cells from square,triangle: 9 hole-free shapes; free_heesch -L 5
+[09:33:41]   1/9  tilers 1  non-tilers 0  unresolved 0  elapsed 0s  ETA 0s
+[09:33:41]   2/9  tilers 1  non-tilers 1  unresolved 0  elapsed 0s  ETA 0s
+[09:33:41]   3/9  tilers 2  non-tilers 1  unresolved 0  elapsed 0s  ETA 0s
+[09:33:41]   4/9  tilers 3  non-tilers 1  unresolved 0  elapsed 0s  ETA 0s
+[09:33:42]   5/9  tilers 4  non-tilers 1  unresolved 0  elapsed 0s  ETA 0s
+[09:33:42]   6/9  tilers 4  non-tilers 2  unresolved 0  elapsed 0s  ETA 0s
+[09:33:44]   7/9  tilers 5  non-tilers 2  unresolved 0  elapsed 2s  ETA 1s
+[09:33:44]   8/9  tilers 6  non-tilers 2  unresolved 0  elapsed 2s  ETA 0s
+[09:33:44]   9/9  tilers 7  non-tilers 2  unresolved 0  elapsed 2s  ETA 0s
+[09:33:44] done: 7 tile, 2 do not, 0 unresolved
+[09:33:44] free polyforms of 4 cells from square,triangle: 41 hole-free shapes; free_heesch -L 5
+[09:33:44]   2/41  tilers 1  non-tilers 1  unresolved 0  elapsed 0s  ETA 2s
+[09:33:44]   4/41  tilers 2  non-tilers 2  unresolved 0  elapsed 0s  ETA 1s
+[09:33:44]   6/41  tilers 3  non-tilers 3  unresolved 0  elapsed 0s  ETA 1s
+[09:33:44]   8/41  tilers 4  non-tilers 4  unresolved 0  elapsed 0s  ETA 1s
+[09:33:45]   10/41  tilers 5  non-tilers 5  unresolved 0  elapsed 1s  ETA 2s
+[09:33:45]   12/41  tilers 5  non-tilers 7  unresolved 0  elapsed 1s  ETA 2s
+[09:33:45]   14/41  tilers 6  non-tilers 8  unresolved 0  elapsed 1s  ETA 2s
+[09:33:45]   16/41  tilers 6  non-tilers 10  unresolved 0  elapsed 1s  ETA 1s
+[09:33:45]   18/41  tilers 7  non-tilers 11  unresolved 0  elapsed 1s  ETA 1s
+[09:33:45]   20/41  tilers 8  non-tilers 12  unresolved 0  elapsed 1s  ETA 1s
+[09:33:45]   22/41  tilers 9  non-tilers 13  unresolved 0  elapsed 1s  ETA 1s
+[09:33:54]   24/41  tilers 11  non-tilers 13  unresolved 0  elapsed 10s  ETA 7s
+[09:33:54]   26/41  tilers 11  non-tilers 15  unresolved 0  elapsed 10s  ETA 6s
+[09:33:54]   28/41  tilers 11  non-tilers 17  unresolved 0  elapsed 10s  ETA 5s
+[09:33:54]   30/41  tilers 11  non-tilers 19  unresolved 0  elapsed 10s  ETA 4s
+[09:33:54]   32/41  tilers 11  non-tilers 21  unresolved 0  elapsed 10s  ETA 3s
+[09:33:54]   34/41  tilers 12  non-tilers 22  unresolved 0  elapsed 10s  ETA 2s
+[09:33:54]   36/41  tilers 12  non-tilers 24  unresolved 0  elapsed 10s  ETA 1s
+[09:33:57]   38/41  tilers 14  non-tilers 24  unresolved 0  elapsed 13s  ETA 1s
+[09:33:57]   40/41  tilers 16  non-tilers 24  unresolved 0  elapsed 13s  ETA 0s
+[09:33:57]   41/41  tilers 17  non-tilers 24  unresolved 0  elapsed 13s  ETA 0s
+[09:33:57] done: 17 tile, 24 do not, 0 unresolved
+[09:33:59] free polyforms of 5 cells from square,triangle: 211 hole-free shapes; free_heesch -L 5
+[09:34:00]   10/211  tilers 5  non-tilers 5  unresolved 0  elapsed 1s  ETA 16s
+[09:34:01]   20/211  tilers 9  non-tilers 11  unresolved 0  elapsed 2s  ETA 15s
+[09:34:01]   30/211  tilers 9  non-tilers 21  unresolved 0  elapsed 2s  ETA 12s
+[09:34:02]   40/211  tilers 10  non-tilers 30  unresolved 0  elapsed 3s  ETA 11s
+[09:34:03]   50/211  tilers 13  non-tilers 37  unresolved 0  elapsed 4s  ETA 11s
+[09:34:04]   60/211  tilers 15  non-tilers 45  unresolved 0  elapsed 5s  ETA 11s
+[09:34:05]   70/211  tilers 16  non-tilers 54  unresolved 0  elapsed 6s  ETA 11s
+[09:34:05]   80/211  tilers 16  non-tilers 64  unresolved 0  elapsed 6s  ETA 10s
+[09:34:07]   90/211  tilers 16  non-tilers 74  unresolved 0  elapsed 8s  ETA 10s
+[09:34:08]   100/211  tilers 16  non-tilers 84  unresolved 0  elapsed 9s  ETA 9s
+[09:34:09]   110/211  tilers 16  non-tilers 94  unresolved 0  elapsed 9s  ETA 8s
+[09:34:10]   120/211  tilers 16  non-tilers 104  unresolved 0  elapsed 10s  ETA 8s
+[09:34:10]   130/211  tilers 16  non-tilers 114  unresolved 0  elapsed 11s  ETA 7s
+[09:34:26]   140/211  tilers 20  non-tilers 120  unresolved 0  elapsed 26s  ETA 13s
+[09:34:37]   150/211  tilers 23  non-tilers 127  unresolved 0  elapsed 38s  ETA 15s
+[09:34:38]   160/211  tilers 23  non-tilers 137  unresolved 0  elapsed 38s  ETA 12s
+[09:34:38]   170/211  tilers 23  non-tilers 147  unresolved 0  elapsed 39s  ETA 9s
+[09:34:39]   180/211  tilers 23  non-tilers 157  unresolved 0  elapsed 39s  ETA 7s
+[09:34:39]   190/211  tilers 24  non-tilers 166  unresolved 0  elapsed 40s  ETA 4s
+[09:34:42]   200/211  tilers 29  non-tilers 171  unresolved 0  elapsed 43s  ETA 2s
+[09:36:04]   210/211  tilers 36  non-tilers 174  unresolved 0  elapsed 125s  ETA 1s
+[09:36:04]   211/211  tilers 37  non-tilers 174  unresolved 0  elapsed 125s  ETA 0s
+[09:36:04] done: 37 tile, 174 do not, 0 unresolved
+[09:36:18] free polyforms of 6 cells from square,triangle: 1297 hole-free shapes; free_heesch -L 5
+[09:52:41] free polyforms of 6 cells from square,triangle: 1297 hole-free shapes; free_heesch -L 5
+[09:52:54]   64/1297  tilers 15  non-tilers 49  unresolved 0  elapsed 13s  ETA 241s
+[09:53:04]   128/1297  tilers 26  non-tilers 102  unresolved 0  elapsed 23s  ETA 209s
+[09:53:15]   192/1297  tilers 38  non-tilers 154  unresolved 0  elapsed 34s  ETA 193s
+[09:53:26]   256/1297  tilers 45  non-tilers 211  unresolved 0  elapsed 45s  ETA 182s
+[09:53:39]   320/1297  tilers 53  non-tilers 267  unresolved 0  elapsed 58s  ETA 178s
+[09:53:53]   384/1297  tilers 60  non-tilers 324  unresolved 0  elapsed 71s  ETA 170s
+[09:54:03]   448/1297  tilers 63  non-tilers 385  unresolved 0  elapsed 82s  ETA 155s
+[09:54:20]   512/1297  tilers 68  non-tilers 444  unresolved 0  elapsed 99s  ETA 151s
+[09:54:32]   576/1297  tilers 68  non-tilers 508  unresolved 0  elapsed 111s  ETA 139s
+[09:54:41]   640/1297  tilers 72  non-tilers 568  unresolved 0  elapsed 120s  ETA 123s
+[09:55:17]   704/1297  tilers 94  non-tilers 610  unresolved 0  elapsed 155s  ETA 131s
+[09:55:39]   768/1297  tilers 106  non-tilers 662  unresolved 0  elapsed 178s  ETA 122s
+[09:57:44]   832/1297  tilers 119  non-tilers 712  unresolved 1  elapsed 303s  ETA 169s
+[10:01:40]   896/1297  tilers 127  non-tilers 767  unresolved 2  elapsed 539s  ETA 241s
+[10:03:08]   960/1297  tilers 141  non-tilers 817  unresolved 2  elapsed 627s  ETA 220s
+[13:19:54] free polyforms of 7 cells from square,triangle: 8388 hole-free shapes; free_heesch -L 5
+[13:20:48]   419/8388  tilers 58  non-tilers 359  unresolved 2  elapsed 54s  ETA 1031s
+[13:21:31]   838/8388  tilers 81  non-tilers 755  unresolved 2  elapsed 97s  ETA 873s
+[13:22:07]   1257/8388  tilers 106  non-tilers 1149  unresolved 2  elapsed 133s  ETA 756s
+[13:22:46]   1676/8388  tilers 115  non-tilers 1559  unresolved 2  elapsed 172s  ETA 689s
+[13:23:21]   2095/8388  tilers 115  non-tilers 1978  unresolved 2  elapsed 208s  ETA 623s
+[13:23:50]   2514/8388  tilers 118  non-tilers 2394  unresolved 2  elapsed 236s  ETA 551s
+[13:24:21]   2933/8388  tilers 122  non-tilers 2809  unresolved 2  elapsed 267s  ETA 497s
+[13:24:52]   3352/8388  tilers 130  non-tilers 3220  unresolved 2  elapsed 298s  ETA 448s
+[13:25:26]   3771/8388  tilers 140  non-tilers 3629  unresolved 2  elapsed 332s  ETA 406s
+[13:25:56]   4190/8388  tilers 144  non-tilers 4044  unresolved 2  elapsed 362s  ETA 362s
+[13:26:25]   4609/8388  tilers 144  non-tilers 4463  unresolved 2  elapsed 391s  ETA 320s
+[13:26:52]   5028/8388  tilers 146  non-tilers 4880  unresolved 2  elapsed 418s  ETA 279s
+[13:27:23]   5447/8388  tilers 159  non-tilers 5286  unresolved 2  elapsed 449s  ETA 242s
+[13:29:27]   5866/8388  tilers 171  non-tilers 5693  unresolved 2  elapsed 573s  ETA 246s
+[13:29:53]   6285/8388  tilers 174  non-tilers 6109  unresolved 2  elapsed 599s  ETA 200s
+[13:30:20]   6704/8388  tilers 176  non-tilers 6526  unresolved 2  elapsed 626s  ETA 157s
+[13:33:53]   7123/8388  tilers 216  non-tilers 6905  unresolved 2  elapsed 839s  ETA 149s
+[13:34:04]   7542/8388  tilers 228  non-tilers 7312  unresolved 2  elapsed 850s  ETA 95s
+[13:34:15]   7961/8388  tilers 260  non-tilers 7699  unresolved 2  elapsed 861s  ETA 46s
+[13:35:16]   8380/8388  tilers 313  non-tilers 8065  unresolved 2  elapsed 922s  ETA 1s
+[13:35:16]   8388/8388  tilers 320  non-tilers 8066  unresolved 2  elapsed 923s  ETA 0s
+[13:35:17] done: 320 tile, 8066 do not, 2 unresolved
+[13:35:17] all sizes done

@@ -1,0 +1,4 @@
+[11:46:35] === 15-ominoes: 64 parts on 2 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/omino-v3/omino15
+[11:46:35] 64 parts already done, 0 to go
+[11:46:35] classified in 0 s: fixed 0, free 0, holefree 0, h0 0, tilers 0, h1 0, undecided 0
+[11:47:22] === 15-omino: 10 certificates for the fallback's tilers

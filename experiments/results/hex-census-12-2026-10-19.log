@@ -1,0 +1,324 @@
+[08:56:15] === 12-hexes: 16 parts on 4 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/grids/hex12
+[08:56:15] 0 parts already done, 16 to go
+[09:58:36] part 1/16  hole-free 41,295  H0 17,762  tilers 6,384  H1 17,017  undecided 132  ETA 15.6 h
+[09:59:46] part 2/16  hole-free 83,176  H0 35,629  tilers 12,831  H1 34,459  undecided 257  ETA 7.4 h
+[10:00:35] part 3/16  hole-free 124,515  H0 53,500  tilers 19,201  H1 51,420  undecided 394  ETA 4.6 h
+[10:05:16] part 4/16  hole-free 166,176  H0 71,118  tilers 25,731  H1 68,813  undecided 514  ETA 3.5 h
+[11:04:59] part 5/16  hole-free 207,676  H0 88,767  tilers 32,292  H1 85,975  undecided 642  ETA 4.7 h
+[11:06:53] part 6/16  hole-free 249,526  H0 106,521  tilers 38,732  H1 103,515  undecided 758  ETA 3.6 h
+[11:09:22] part 7/16  hole-free 292,026  H0 124,894  tilers 45,170  H1 121,078  undecided 884  ETA 2.9 h
+[11:09:35] part 8/16  hole-free 334,354  H0 143,078  tilers 51,795  H1 138,460  undecided 1,021  ETA 2.2 h
+[11:32:51] part 9/16  hole-free 376,413  H0 161,102  tilers 58,283  H1 155,883  undecided 1,145  ETA 2.0 h
+[11:33:18] part 10/16  hole-free 417,699  H0 178,786  tilers 64,794  H1 172,851  undecided 1,268  ETA 1.6 h
+[11:33:22] part 11/16  hole-free 459,451  H0 196,723  tilers 71,236  H1 190,072  undecided 1,420  ETA 71 min
+[11:33:50] part 12/16  hole-free 500,881  H0 214,394  tilers 77,612  H1 207,331  undecided 1,544  ETA 53 min
+[11:38:55] part 13/16  hole-free 542,959  H0 232,318  tilers 84,151  H1 224,863  undecided 1,627  ETA 38 min
+[11:39:03] part 14/16  hole-free 584,654  H0 250,386  tilers 90,546  H1 241,976  undecided 1,746  ETA 23 min
+[11:39:26] part 15/16  hole-free 627,198  H0 268,560  tilers 97,032  H1 259,737  undecided 1,869  ETA 11 min
+[11:39:38] part 16/16  hole-free 669,584  H0 286,656  tilers 103,634  H1 277,294  undecided 2,000  ETA 0 s
+[11:39:38] classified in 9803 s: fixed 8,182,213, free 683,101, holefree 669,584, h0 286,656, tilers 103,634, h1 277,294, undecided 2,000
+[11:39:38] fallback: 2,000 shapes in 4 streams
+[11:40:09] fallback 18/2,000  ETA 56 min
+[11:40:39] fallback 40/2,000  ETA 50 min
+[11:41:09] fallback 63/2,000  ETA 47 min
+[11:41:40] fallback 86/2,000  ETA 45 min
+[11:42:11] fallback 104/2,000  ETA 46 min
+[11:42:42] fallback 118/2,000  ETA 49 min
+[11:43:12] fallback 123/2,000  ETA 54 min
+[11:43:42] fallback 142/2,000  ETA 53 min
+[11:44:13] fallback 154/2,000  ETA 55 min
+[11:44:44] fallback 175/2,000  ETA 53 min
+[11:45:14] fallback 189/2,000  ETA 54 min
+[11:45:45] fallback 196/2,000  ETA 56 min
+[11:46:15] fallback 215/2,000  ETA 55 min
+[11:46:46] fallback 241/2,000  ETA 52 min
+[11:47:17] fallback 270/2,000  ETA 49 min
+[11:47:48] fallback 294/2,000  ETA 47 min
+[11:48:19] fallback 313/2,000  ETA 47 min
+[11:48:51] fallback 325/2,000  ETA 47 min
+[11:49:23] fallback 340/2,000  ETA 48 min
+[11:49:56] fallback 352/2,000  ETA 48 min
+[11:50:28] fallback 372/2,000  ETA 47 min
+[11:50:59] fallback 388/2,000  ETA 47 min
+[11:51:31] fallback 410/2,000  ETA 46 min
+[11:52:03] fallback 438/2,000  ETA 44 min
+[11:52:34] fallback 461/2,000  ETA 43 min
+[11:53:05] fallback 479/2,000  ETA 43 min
+[11:53:37] fallback 485/2,000  ETA 44 min
+[11:54:08] fallback 509/2,000  ETA 42 min
+[11:54:39] fallback 537/2,000  ETA 41 min
+[11:55:10] fallback 557/2,000  ETA 40 min
+[11:55:41] fallback 591/2,000  ETA 38 min
+[11:56:11] fallback 630/2,000  ETA 36 min
+[11:56:42] fallback 660/2,000  ETA 35 min
+[11:57:12] fallback 683/2,000  ETA 34 min
+[11:57:43] fallback 736/2,000  ETA 31 min
+[11:58:14] fallback 802/2,000  ETA 28 min
+[11:58:45] fallback 861/2,000  ETA 25 min
+[11:59:16] fallback 914/2,000  ETA 23 min
+[11:59:47] fallback 971/2,000  ETA 21 min
+[12:00:19] fallback 1,005/2,000  ETA 20 min
+[12:00:50] fallback 1,021/2,000  ETA 20 min
+[12:01:22] fallback 1,049/2,000  ETA 20 min
+[12:01:55] fallback 1,066/2,000  ETA 20 min
+[12:02:26] fallback 1,090/2,000  ETA 19 min
+[12:02:57] fallback 1,118/2,000  ETA 18 min
+[12:03:29] fallback 1,138/2,000  ETA 18 min
+[12:04:00] fallback 1,179/2,000  ETA 17 min
+[12:04:31] fallback 1,206/2,000  ETA 16 min
+[12:05:01] fallback 1,223/2,000  ETA 16 min
+[12:05:32] fallback 1,233/2,000  ETA 16 min
+[12:06:03] fallback 1,255/2,000  ETA 16 min
+[12:06:34] fallback 1,286/2,000  ETA 15 min
+[12:07:04] fallback 1,336/2,000  ETA 14 min
+[12:07:35] fallback 1,409/2,000  ETA 12 min
+[12:08:05] fallback 1,533/2,000  ETA 9 min
+[12:08:36] fallback 1,648/2,000  ETA 6 min
+[12:09:07] fallback 1,727/2,000  ETA 5 min
+[12:09:37] fallback 1,794/2,000  ETA 3 min
+[12:10:09] fallback 1,849/2,000  ETA 2 min
+[12:10:40] fallback 1,892/2,000  ETA 2 min
+[12:11:10] fallback 1,940/2,000  ETA 59 s
+[12:11:41] fallback 1,953/2,000  ETA 46 s
+[12:12:12] fallback 1,954/2,000  ETA 46 s
+[12:12:42] fallback 1,965/2,000  ETA 35 s
+[12:13:12] fallback 1,989/2,000  ETA 11 s
+[12:13:43] fallback 2,000/2,000  ETA 0 s
+[12:13:43] fallback done in 2045 s: {'h2': 1652, 'h1': 307, 'h3': 32, 'h4': 2}, capped 7
+[12:14:15] deep 6/7  ETA 5 s
+[12:14:46] deep 6/7  ETA 10 s
+[12:15:16] deep 6/7  ETA 15 s
+[12:15:46] deep 6/7  ETA 20 s
+[12:16:16] deep 6/7  ETA 26 s
+[12:16:47] deep 6/7  ETA 31 s
+[12:17:17] deep 6/7  ETA 36 s
+[12:17:47] deep 6/7  ETA 41 s
+[12:18:17] deep 6/7  ETA 46 s
+[12:18:48] deep 6/7  ETA 51 s
+[12:19:18] deep 6/7  ETA 56 s
+[12:19:48] deep 6/7  ETA 61 s
+[12:20:18] deep 6/7  ETA 66 s
+[12:20:49] deep 6/7  ETA 71 s
+[12:21:20] deep 6/7  ETA 76 s
+[12:21:50] deep 6/7  ETA 81 s
+[12:22:20] deep 6/7  ETA 86 s
+[12:22:50] deep 6/7  ETA 2 min
+[12:23:20] deep 6/7  ETA 2 min
+[12:23:51] deep 6/7  ETA 2 min
+[12:24:21] deep 6/7  ETA 2 min
+[12:24:51] deep 6/7  ETA 2 min
+[12:25:21] deep 6/7  ETA 2 min
+[12:25:51] deep 6/7  ETA 2 min
+[12:26:21] deep 6/7  ETA 2 min
+[12:26:51] deep 6/7  ETA 2 min
+[12:27:22] deep 6/7  ETA 2 min
+[12:27:52] deep 6/7  ETA 2 min
+[12:28:22] deep 6/7  ETA 2 min
+[12:28:52] deep 6/7  ETA 3 min
+[12:29:22] deep 6/7  ETA 3 min
+[12:29:53] deep 6/7  ETA 3 min
+[12:30:23] deep 6/7  ETA 3 min
+[12:30:53] deep 6/7  ETA 3 min
+[12:31:23] deep 6/7  ETA 3 min
+[12:31:53] deep 6/7  ETA 3 min
+[12:32:23] deep 6/7  ETA 3 min
+[12:32:53] deep 6/7  ETA 3 min
+[12:33:23] deep 6/7  ETA 3 min
+[12:33:54] deep 6/7  ETA 3 min
+[12:34:24] deep 6/7  ETA 3 min
+[12:34:54] deep 6/7  ETA 4 min
+[12:35:24] deep 6/7  ETA 4 min
+[12:35:54] deep 6/7  ETA 4 min
+[12:36:24] deep 6/7  ETA 4 min
+[12:36:54] deep 6/7  ETA 4 min
+[12:37:24] deep 6/7  ETA 4 min
+[12:37:54] deep 6/7  ETA 4 min
+[12:38:24] deep 6/7  ETA 4 min
+[12:38:55] deep 6/7  ETA 4 min
+[12:39:25] deep 6/7  ETA 4 min
+[12:39:55] deep 6/7  ETA 4 min
+[12:40:25] deep 6/7  ETA 4 min
+[12:40:55] deep 6/7  ETA 5 min
+[12:41:25] deep 6/7  ETA 5 min
+[12:41:55] deep 6/7  ETA 5 min
+[12:42:25] deep 6/7  ETA 5 min
+[12:42:55] deep 6/7  ETA 5 min
+[12:43:25] deep 6/7  ETA 5 min
+[12:43:55] deep 6/7  ETA 5 min
+[12:44:26] deep 6/7  ETA 5 min
+[12:44:56] deep 6/7  ETA 5 min
+[12:45:26] deep 6/7  ETA 5 min
+[12:45:56] deep 6/7  ETA 5 min
+[12:46:26] deep 6/7  ETA 5 min
+[12:46:56] deep 6/7  ETA 6 min
+[12:47:26] deep 6/7  ETA 6 min
+[12:47:56] deep 6/7  ETA 6 min
+[12:48:26] deep 6/7  ETA 6 min
+[12:48:56] deep 6/7  ETA 6 min
+[12:49:26] deep 6/7  ETA 6 min
+[12:49:57] deep 6/7  ETA 6 min
+[12:50:27] deep 6/7  ETA 6 min
+[12:50:57] deep 6/7  ETA 6 min
+[12:51:27] deep 6/7  ETA 6 min
+[12:51:57] deep 6/7  ETA 6 min
+[12:52:27] deep 6/7  ETA 6 min
+[12:52:57] deep 6/7  ETA 7 min
+[12:53:27] deep 6/7  ETA 7 min
+[12:53:57] deep 6/7  ETA 7 min
+[12:54:27] deep 6/7  ETA 7 min
+[12:54:58] deep 6/7  ETA 7 min
+[12:55:28] deep 6/7  ETA 7 min
+[12:55:58] deep 6/7  ETA 7 min
+[12:56:28] deep 6/7  ETA 7 min
+[12:56:58] deep 6/7  ETA 7 min
+[12:57:29] deep 6/7  ETA 7 min
+[12:57:59] deep 6/7  ETA 7 min
+[12:58:29] deep 6/7  ETA 7 min
+[12:58:59] deep 6/7  ETA 8 min
+[12:59:29] deep 6/7  ETA 8 min
+[12:59:59] deep 6/7  ETA 8 min
+[13:00:29] deep 6/7  ETA 8 min
+[13:01:00] deep 6/7  ETA 8 min
+[13:01:30] deep 6/7  ETA 8 min
+[13:02:00] deep 6/7  ETA 8 min
+[13:02:30] deep 6/7  ETA 8 min
+[13:03:00] deep 6/7  ETA 8 min
+[13:03:30] deep 6/7  ETA 8 min
+[13:04:00] deep 6/7  ETA 8 min
+[13:04:30] deep 6/7  ETA 8 min
+[13:05:01] deep 6/7  ETA 9 min
+[13:05:31] deep 6/7  ETA 9 min
+[13:06:01] deep 6/7  ETA 9 min
+[13:06:31] deep 6/7  ETA 9 min
+[13:07:01] deep 6/7  ETA 9 min
+[13:07:31] deep 6/7  ETA 9 min
+[13:08:01] deep 6/7  ETA 9 min
+[13:08:31] deep 6/7  ETA 9 min
+[13:09:01] deep 6/7  ETA 9 min
+[13:09:31] deep 6/7  ETA 9 min
+[13:10:02] deep 6/7  ETA 9 min
+[13:10:32] deep 6/7  ETA 9 min
+[13:11:02] deep 6/7  ETA 10 min
+[13:11:32] deep 6/7  ETA 10 min
+[13:12:02] deep 6/7  ETA 10 min
+[13:12:32] deep 6/7  ETA 10 min
+[13:13:02] deep 6/7  ETA 10 min
+[13:13:33] deep 6/7  ETA 10 min
+[13:14:03] deep 6/7  ETA 10 min
+[13:14:33] deep 6/7  ETA 10 min
+[13:15:03] deep 6/7  ETA 10 min
+[13:15:33] deep 6/7  ETA 10 min
+[13:16:04] deep 6/7  ETA 10 min
+[13:16:34] deep 6/7  ETA 10 min
+[13:17:04] deep 6/7  ETA 11 min
+[13:17:34] deep 6/7  ETA 11 min
+[13:18:05] deep 6/7  ETA 11 min
+[13:18:35] deep 6/7  ETA 11 min
+[13:19:05] deep 6/7  ETA 11 min
+[13:19:35] deep 6/7  ETA 11 min
+[13:20:06] deep 6/7  ETA 11 min
+[13:20:36] deep 6/7  ETA 11 min
+[13:21:06] deep 6/7  ETA 11 min
+[13:21:36] deep 6/7  ETA 11 min
+[13:22:06] deep 6/7  ETA 11 min
+[13:22:36] deep 6/7  ETA 11 min
+[13:23:06] deep 6/7  ETA 12 min
+[13:23:37] deep 6/7  ETA 12 min
+[13:24:07] deep 6/7  ETA 12 min
+[13:24:37] deep 6/7  ETA 12 min
+[13:25:07] deep 6/7  ETA 12 min
+[13:25:37] deep 6/7  ETA 12 min
+[13:26:08] deep 6/7  ETA 12 min
+[13:26:38] deep 6/7  ETA 12 min
+[13:27:08] deep 6/7  ETA 12 min
+[13:27:38] deep 6/7  ETA 12 min
+[13:28:08] deep 6/7  ETA 12 min
+[13:28:39] deep 6/7  ETA 12 min
+[13:29:09] deep 6/7  ETA 13 min
+[13:29:39] deep 6/7  ETA 13 min
+[13:30:09] deep 6/7  ETA 13 min
+[13:30:39] deep 6/7  ETA 13 min
+[13:31:09] deep 6/7  ETA 13 min
+[13:31:40] deep 6/7  ETA 13 min
+[13:32:10] deep 6/7  ETA 13 min
+[13:32:40] deep 6/7  ETA 13 min
+[13:33:10] deep 6/7  ETA 13 min
+[13:33:40] deep 6/7  ETA 13 min
+[13:34:11] deep 6/7  ETA 13 min
+[13:34:41] deep 6/7  ETA 13 min
+[13:35:11] deep 6/7  ETA 14 min
+[13:35:41] deep 6/7  ETA 14 min
+[13:36:11] deep 6/7  ETA 14 min
+[13:36:41] deep 6/7  ETA 14 min
+[13:37:11] deep 6/7  ETA 14 min
+[13:37:41] deep 6/7  ETA 14 min
+[13:38:11] deep 6/7  ETA 14 min
+[13:38:41] deep 6/7  ETA 14 min
+[13:39:11] deep 6/7  ETA 14 min
+[13:39:41] deep 6/7  ETA 14 min
+[13:40:12] deep 6/7  ETA 14 min
+[13:40:42] deep 6/7  ETA 14 min
+[13:41:12] deep 6/7  ETA 15 min
+[13:41:42] deep 6/7  ETA 15 min
+[13:42:12] deep 6/7  ETA 15 min
+[13:42:42] deep 6/7  ETA 15 min
+[13:43:12] deep 6/7  ETA 15 min
+[13:43:42] deep 6/7  ETA 15 min
+[13:44:12] deep 6/7  ETA 15 min
+[13:44:43] deep 6/7  ETA 15 min
+[13:45:13] deep 6/7  ETA 15 min
+[13:45:43] deep 6/7  ETA 15 min
+[13:46:13] deep 6/7  ETA 15 min
+[13:46:43] deep 6/7  ETA 15 min
+[13:47:13] deep 6/7  ETA 16 min
+[13:47:43] deep 6/7  ETA 16 min
+[13:48:13] deep 6/7  ETA 16 min
+[13:48:43] deep 6/7  ETA 16 min
+[13:49:13] deep 6/7  ETA 16 min
+[13:49:44] deep 6/7  ETA 16 min
+[13:50:14] deep 6/7  ETA 16 min
+[13:50:44] deep 6/7  ETA 16 min
+[13:51:14] deep 6/7  ETA 16 min
+[13:51:44] deep 6/7  ETA 16 min
+[13:52:14] deep 6/7  ETA 16 min
+[13:52:44] deep 6/7  ETA 17 min
+[13:53:14] deep 6/7  ETA 17 min
+[13:53:44] deep 6/7  ETA 17 min
+[13:54:14] deep 6/7  ETA 17 min
+[13:54:45] deep 6/7  ETA 17 min
+[13:55:15] deep 6/7  ETA 17 min
+[13:55:45] deep 6/7  ETA 17 min
+[13:56:15] deep 6/7  ETA 17 min
+[13:56:45] deep 6/7  ETA 17 min
+[13:57:15] deep 6/7  ETA 17 min
+[13:57:45] deep 6/7  ETA 17 min
+[13:58:15] deep 6/7  ETA 17 min
+[13:58:45] deep 6/7  ETA 18 min
+[13:59:15] deep 6/7  ETA 18 min
+[13:59:46] deep 6/7  ETA 18 min
+[14:00:16] deep 6/7  ETA 18 min
+[14:00:46] deep 6/7  ETA 18 min
+[14:01:16] deep 6/7  ETA 18 min
+[14:01:46] deep 7/7  ETA 0 s
+[14:01:46] deep pass done in 6483 s: {'tilers': 6, 'capped': 1}
+[14:01:46] === 12-hexes: {"n": 12, "free": 683101, "hole_free": 669584, "h0": 286656, "tilers": 103640, "h1": 277601, "capped": 1, "h2": 1652, "h3": 32, "h4": 2}
+[14:32:45] === 12-hexes: 16 parts on 4 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/grids/hex12
+[14:32:45] 0 parts already done, 16 to go
+[14:43:07] part 1/16  hole-free 41,295  H0 17,762  tilers 6,384  H1 17,017  undecided 132  ETA 2.6 h
+[14:43:14] part 2/16  hole-free 83,176  H0 35,629  tilers 12,831  H1 34,459  undecided 257  ETA 73 min
+[14:43:20] part 3/16  hole-free 124,515  H0 53,500  tilers 19,201  H1 51,420  undecided 394  ETA 46 min
+[14:43:59] part 4/16  hole-free 166,176  H0 71,118  tilers 25,731  H1 68,813  undecided 514  ETA 34 min
+[14:53:31] part 5/16  hole-free 207,676  H0 88,767  tilers 32,292  H1 85,975  undecided 642  ETA 46 min
+[14:53:51] part 6/16  hole-free 249,526  H0 106,521  tilers 38,732  H1 103,515  undecided 758  ETA 35 min
+[14:54:40] part 7/16  hole-free 292,026  H0 124,894  tilers 45,170  H1 121,078  undecided 884  ETA 28 min
+[14:54:44] part 8/16  hole-free 334,354  H0 143,078  tilers 51,795  H1 138,460  undecided 1,021  ETA 22 min
+[15:03:23] part 9/16  hole-free 376,413  H0 161,102  tilers 58,283  H1 155,883  undecided 1,145  ETA 24 min
+[15:03:40] part 10/16  hole-free 417,699  H0 178,786  tilers 64,794  H1 172,851  undecided 1,268  ETA 19 min
+[15:03:45] part 11/16  hole-free 459,451  H0 196,723  tilers 71,236  H1 190,072  undecided 1,420  ETA 14 min
+[15:04:08] part 12/16  hole-free 500,881  H0 214,394  tilers 77,612  H1 207,331  undecided 1,544  ETA 10 min
+[15:12:37] part 13/16  hole-free 542,959  H0 232,318  tilers 84,151  H1 224,863  undecided 1,627  ETA 9 min
+[15:13:07] part 14/16  hole-free 584,654  H0 250,386  tilers 90,546  H1 241,976  undecided 1,746  ETA 6 min
+[15:14:04] part 15/16  hole-free 627,198  H0 268,560  tilers 97,032  H1 259,737  undecided 1,869  ETA 3 min
+[15:14:22] part 16/16  hole-free 669,584  H0 286,656  tilers 103,634  H1 277,294  undecided 2,000  ETA 0 s
+[15:14:22] classified in 2497 s: fixed 8,182,213, free 683,101, holefree 669,584, h0 286,656, tilers 103,634, h1 277,294, undecided 2,000
+[15:14:43] === 12-hex tilings: 103,640 certificates (6 from the fallback), census has 103,640 tilers

@@ -1,0 +1,14 @@
+[08:58:25] === 2-iamondes: 2 parts on 2 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/grids/iamond2
+[08:58:25] 0 parts already done, 2 to go
+[08:58:25] part 1/2  hole-free 1  H0 0  tilers 1  H1 0  undecided 0  ETA 0 s
+[08:58:25] part 2/2  hole-free 1  H0 0  tilers 1  H1 0  undecided 0  ETA 0 s
+[08:58:25] classified in 0 s: fixed 3, free 1, holefree 1, h0 0, tilers 1, h1 0, undecided 0
+[08:58:25] fallback: 0 shapes in 0 streams
+[08:58:25] fallback done in 0 s: {}, capped 0
+[08:58:25] === 2-iamondes: {"n": 2, "free": 1, "hole_free": 1, "h0": 0, "tilers": 1, "h1": 0, "capped": 0}
+[08:58:25] === 2-iamondes: 2 parts on 2 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/grids/iamond2
+[08:58:25] 0 parts already done, 2 to go
+[08:58:25] part 1/2  hole-free 0  H0 0  tilers 0  H1 0  undecided 0  ETA 0 s
+[08:58:25] part 2/2  hole-free 1  H0 0  tilers 1  H1 0  undecided 0  ETA 0 s
+[08:58:25] classified in 0 s: fixed 3, free 1, holefree 1, h0 0, tilers 1, h1 0, undecided 0
+[08:58:25] === 2-iamond tilings: 1 certificates (0 from the fallback), census has 1 tilers

@@ -1,0 +1,14 @@
+[08:58:25] === 3-hexes: 2 parts on 2 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/grids/hex3
+[08:58:25] 0 parts already done, 2 to go
+[08:58:25] part 1/2  hole-free 3  H0 0  tilers 3  H1 0  undecided 0  ETA 0 s
+[08:58:25] part 2/2  hole-free 3  H0 0  tilers 3  H1 0  undecided 0  ETA 0 s
+[08:58:25] classified in 0 s: fixed 11, free 3, holefree 3, h0 0, tilers 3, h1 0, undecided 0
+[08:58:25] fallback: 0 shapes in 0 streams
+[08:58:25] fallback done in 0 s: {}, capped 0
+[08:58:25] === 3-hexes: {"n": 3, "free": 3, "hole_free": 3, "h0": 0, "tilers": 3, "h1": 0, "capped": 0}
+[08:58:25] === 3-hexes: 2 parts on 2 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/grids/hex3
+[08:58:25] 0 parts already done, 2 to go
+[08:58:25] part 1/2  hole-free 3  H0 0  tilers 3  H1 0  undecided 0  ETA 0 s
+[08:58:25] part 2/2  hole-free 3  H0 0  tilers 3  H1 0  undecided 0  ETA 0 s
+[08:58:25] classified in 0 s: fixed 11, free 3, holefree 3, h0 0, tilers 3, h1 0, undecided 0
+[08:58:25] === 3-hex tilings: 3 certificates (0 from the fallback), census has 3 tilers

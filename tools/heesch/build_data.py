@@ -13,9 +13,8 @@ import pathlib
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-from check_free import audit_row  # noqa: E402
+from check_free import audit_row, audit_tiling  # noqa: E402
 from check_witness import GRIDS, Grid, audit_claim, key, records  # noqa: E402
-from free_solver import free_polyforms  # noqa: E402
 
 SRC = ROOT / "experiments/results/heesch"
 OUT = ROOT / "public/heesch"
@@ -85,7 +84,7 @@ def tally(shapes, key):
     counts = {}
     for r in shapes:
         counts[r[key]] = counts.get(r[key], 0) + 1
-    return [counts.get(h, 0) for h in range(max(counts) + 1)]
+    return [counts.get(h, 0) for h in range(max(counts, default=-1) + 1)]
 
 
 TILER_SHARD = 2400  # tilers per file: a hundred pages of the picker
@@ -113,11 +112,12 @@ def native_cell(grid, x, y):
     return (3 * a + t, 3 * y + t)
 
 
-def affine(src, dst, page=None):
+def affine(src, dst, page=None, half=False):
     """The map (x, y) -> (ax + by + c, dx + ey + f) taking the points src to dst, read off three of them
     that are not on a line, as integers. When all of them are on a line the reflection in it gives the
     same copy, so the rotation carrying the line onto its image is taken, measured with `page` (the
-    grid's map to the page)."""
+    grid's map to the page). A single cell fixes no rotation: its copy is a translate, or a half-turn
+    when `half` says the copy's cell points the other way (the triangle grid)."""
     p0, q0 = src[0], dst[0]
     for i in range(1, len(src)):
         for j in range(i + 1, len(src)):
@@ -132,7 +132,7 @@ def affine(src, dst, page=None):
     (pa, pb), (pc, pd) = page
     geo = lambda p: complex(pa * p[0] + pb * p[1], pc * p[0] + pd * p[1])  # noqa: E731
     far = max(range(len(src)), key=lambda i: abs(geo(src[i]) - geo(p0)))
-    turn = (geo(dst[far]) - geo(q0)) / (geo(src[far]) - geo(p0))
+    turn = (geo(dst[far]) - geo(q0)) / (geo(src[far]) - geo(p0)) if far else (-1 if half else 1)
     det = pa * pd - pb * pc
     back = lambda z: ((pd * z.real - pb * z.imag) / det, (pa * z.imag - pc * z.real) / det)  # noqa: E731
     a, d = back(turn * geo((1, 0)))
@@ -140,14 +140,11 @@ def affine(src, dst, page=None):
     return tuple(round(v) for v in (a, b, q0[0] - a * p0[0] - b * p0[1], d, e, q0[1] - d * p0[0] - e * p0[1]))
 
 
-def tilings(grid, n):
-    """The tilers of a size with the tiling that proves each, from omino_run --tilers. A certificate is
-    a lattice (A, 0), (B, C) and the copies of one period; the audit checks that they cover every cell
-    of the torus exactly once, so the copies and their translates tile the plane."""
-    d = CENSUS_DIRS[grid] / f"{grid}{n}"
-    files = sorted(d.glob("tilers-*.jsonl"))
-    if not files or not (d / "tilers-deep.jsonl").exists():
-        return None
+def tilings(grid, n, files):
+    """The tilers in these files of omino_run --tilers, each with the tiling that proves it. A certificate
+    is a lattice (A, 0), (B, C) and the copies of one period; the audit checks that they cover every cell
+    of the torus exactly once, so the copies and their translates tile the plane. lib/heesch/engine.ts
+    makes the same records in the browser, for the sizes whose slices the page computes itself."""
     G, rows = Grid(grid), []
     (pa, pb), (pc, pd) = GRIDS[grid]["page"]
     geo = lambda v: (pa * v[0] + pb * v[1], pc * v[0] + pd * v[1])  # noqa: E731
@@ -175,7 +172,7 @@ def tilings(grid, n):
             # On the page: the cells, each copy as a map of cells, and the shortest basis of the lattice
             # (Lagrange, measured on the page), so a patch of the tiling is drawn round.
             base = [native_cell(grid, *p) for p in cells]
-            maps = c["k"] if grid == "omino" else [m for copy in copies for m in affine(base, [native_cell(grid, *p) for p in copy], GRIDS[grid]["page"])]
+            maps = c["k"] if grid == "omino" else [m for copy in copies for m in affine(base, [native_cell(grid, *p) for p in copy], GRIDS[grid]["page"], grid == "iamond" and (copy[0][0] - cells[0][0]) % 2 == 1)]
             u, v = native_cell(grid, A, 0), native_cell(grid, B, C)
             if grid == "iamond":
                 u, v = (3 * A // 2, 0), (3 * B // 2, 3 * C)
@@ -183,9 +180,10 @@ def tilings(grid, n):
             while True:
                 if dot(u, u) > dot(v, v):
                     u, v = v, u
-                m = round(dot(u, v) / dot(u, u))
-                if m == 0:
+                mu = dot(u, v) / dot(u, u)
+                if abs(mu) <= 0.5 + 1e-9:  # reduced; at exactly a half, float noise must not flip it back
                     break
+                m = round(mu)
                 v = (v[0] - m * u[0], v[1] - m * u[1])
             rows.append({"cells": n, "o": outline(G, base), "p": {"l": [*u, *v], "k": maps}})
     # Longest periods first: the tilings that need the most copies are the rarest.
@@ -261,26 +259,25 @@ def main():
         cells = shapes[0]["cells"]
         (OUT / f"{path.stem}.json").write_text(json.dumps({"grid": grid, "cells": cells, "shapes": shapes}, separators=(",", ":")))
         index.append({"id": path.stem, "grid": grid, "cells": cells, "count": len(shapes), "hc": tally(shapes, "hc"), "hh": tally(shapes, "hh")})
-    # Free-placement sets arrive as page records already, possibly in parts (one file per solver
-    # process); audit them the same way, merge the parts of a size, and drop the cells.
-    free, searched = {}, {}
+    # Free-placement sets (free_solver.py) arrive as page records already. Audit them independently,
+    # ship the non-tilers as the set and the tilers with their tilings, and drop the cells.
+    free_tilers = {}
     for path in sorted(SRC.glob("sqtri*.json")):
         data = json.loads(path.read_text())
-        searched[data["cells"]] = searched.get(data["cells"], 0) + data["closed"] + len(data["shapes"])
-        for row in data["shapes"]:
-            errs = audit_row(row)
+        cells, shapes, tilers = data["cells"], [], []
+        for row in data["shapes"] + data["tilers"]:
+            errs = audit_tiling(row) if "p" in row else audit_row(row)
             if errs:
-                sys.exit(f"{path.name}: witness audit failed: {errs[0]}")
-            free.setdefault(data["cells"], []).append({k: v for k, v in row.items() if k != "k"})
-    for cells, shapes in free.items():
+                sys.exit(f"{path.name}: audit failed: {errs[0]}")
+            (tilers if "p" in row else shapes).append({k: v for k, v in row.items() if k != "k"})
         shapes.sort(key=lambda r: (-r["hh"], -r["hc"], r["o"]))
+        tilers.sort(key=lambda r: (-len(r["p"]["k"]), r["o"]))
         (OUT / f"sqtri{cells}.json").write_text(json.dumps({"grid": "sqtri", "cells": cells, "shapes": shapes}, separators=(",", ":")))
-        info = {"id": f"sqtri{cells}", "grid": "sqtri", "cells": cells, "count": len(shapes), "hc": tally(shapes, "hc"), "hh": tally(shapes, "hh")}
-        # A census still running ships with how far it got, so the page never passes it off as whole.
-        total = len(free_polyforms(["square", "triangle"], cells))
-        if searched[cells] < total:
-            info.update(searched=searched[cells], of=total)
-        index.append(info)
+        census_info = {"holeFree": data["total"], "tilers": len(tilers), "hh": tally(shapes, "hh")}
+        if data["unresolved"]:
+            census_info["unresolved"] = data["unresolved"]
+        free_tilers[f"sqtri{cells}"] = tilers
+        index.append({"id": f"sqtri{cells}", "grid": "sqtri", "cells": cells, "count": len(shapes), "hc": tally(shapes, "hc"), "hh": tally(shapes, "hh"), "census": census_info})
     # The censuses of polyform_census: counts on every size, and where a size is past what heesch-sat
     # listed, its shapes from Hh = 2 up (there are millions of shapes at Hh <= 1).
     for grid in CENSUS_DIRS:
@@ -290,12 +287,32 @@ def main():
                 have["census"] = info
                 continue
             (OUT / f"{grid}{cells}.json").write_text(json.dumps({"grid": grid, "cells": cells, "shapes": rows}, separators=(",", ":")))
-            entry = {"id": f"{grid}{cells}", "grid": grid, "cells": cells, "count": len(rows), "census": {**info, "listedFrom": 2}}
-            entry.update(hc=tally(rows, "hc"), hh=tally(rows, "hh")) if rows else entry.update(hc=[], hh=[])
+            entry = {"id": f"{grid}{cells}", "grid": grid, "cells": cells, "count": len(rows), "hc": tally(rows, "hc"), "hh": tally(rows, "hh"), "census": {**info, "listedFrom": 2}}
             index.append(entry)
-    # Tilers, with their tilings, in shards beside the set file; the index says how many and where.
+    # Tilers, with their tilings, in shards beside the set file; the index says how many and where. A size
+    # with no tiling files of its own (omino_run --tilers --deep-only) ships the tiler count of each census
+    # slice instead, and the page runs the census engine on a slice to list its tilers; the few that only
+    # the fallback proved ship as they are, in "-tx".
     for info in index:
-        rows = tilings(info["grid"], info["cells"]) if info["grid"] in CENSUS_DIRS else None
+        rows = free_tilers.get(info["id"])
+        if info["grid"] in CENSUS_DIRS:
+            d = CENSUS_DIRS[info["grid"]] / info["id"]
+            deep = d / "tilers-deep.jsonl"
+            if not deep.exists():
+                continue
+            slices = sorted(d.glob("tilers-[0-9]*.jsonl"))
+            rows = tilings(info["grid"], info["cells"], [*slices, deep])
+            if not slices:
+                parts = sorted((json.loads(f.read_text()) for f in d.glob("part-*.json")), key=lambda p: p["part"])
+                counts = [p["tilers"] for p in parts]
+                if [p["part"] for p in parts] != list(range(parts[0]["parts"])):
+                    sys.exit(f"{info['id']}: census slices missing")
+                (OUT / f"{info['id']}-tslices.json").write_text(json.dumps({"counts": counts}, separators=(",", ":")))
+                (OUT / f"{info['id']}-tx.json").write_text(json.dumps({"grid": info["grid"], "shapes": rows}, separators=(",", ":")))
+                info["tilers"] = {"count": sum(counts) + len(rows), "slices": len(counts)}
+                if info["tilers"]["count"] != info["census"]["tilers"]:
+                    sys.exit(f"{info['id']}: {info['tilers']['count']} tilers in the slices for {info['census']['tilers']} in the census")
+                continue
         if rows is None:
             continue
         for i in range(0, len(rows), TILER_SHARD):

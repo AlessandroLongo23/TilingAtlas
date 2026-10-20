@@ -11,6 +11,7 @@ Parts already done are skipped, so a stopped run resumes where it left off.
 
 --tilers, after a census of the size: a tiling certificate per tiler, in tilers-<i>.jsonl (the census's
 own proofs) and tilers-deep.jsonl (the tilers its fallback settled, proved again with polyform_census).
+With --deep-only, tilers-deep.jsonl alone: the page computes the rest itself, one slice at a time.
 """
 import argparse, collections, datetime, json, os, subprocess, sys, time
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -27,6 +28,7 @@ ap.add_argument("--jobs", type=int, default=os.cpu_count())
 ap.add_argument("--L", type=int, default=5)
 ap.add_argument("--out", default=os.path.join(ROOT, "experiments/results/heesch/omino"))
 ap.add_argument("--tilers", action="store_true")
+ap.add_argument("--deep-only", action="store_true", help="with --tilers: only the fallback's tilers, for sizes whose slices the page computes itself")
 a = ap.parse_args()
 CENSUS = [os.path.join(HERE, "polyform_census"), "-grid", a.grid]
 parts = a.parts or max(a.jobs, 4 ** max(0, a.n - 12))
@@ -54,7 +56,7 @@ FIELDS = ("fixed", "free", "holefree", "h0", "tilers", "h1", "undecided")
 total = collections.Counter()
 todo = []
 STEM, MODE = ("tilers", "tilers") if a.tilers else ("part", "run")
-for i in range(parts):
+for i in range(0 if a.deep_only else parts):
     f = os.path.join(work, f"{STEM}-{i}.json")
     if os.path.exists(f):
         total.update({k: v for k, v in json.load(open(f)).items() if k in FIELDS})
@@ -94,6 +96,9 @@ if a.tilers:
         subprocess.run([*CENSUS, "deepcert"], input="".join(x + "\n" for x in rest), stdout=out, stderr=subprocess.DEVNULL, text=True, check=True)
     got = sum(1 for line in open(os.path.join(work, "tilers-deep.jsonl")) if line.startswith("{"))
     want = json.load(open(os.path.join(work, "census.json")))["tilers"]
+    if a.deep_only:
+        log(f"=== {a.n}-{a.grid}: {got} certificates for the fallback's tilers")
+        sys.exit(0)
     log(f"=== {a.n}-{a.grid} tilings: {total['tilers'] + got:,} certificates ({got} from the fallback), census has {want:,} tilers")
     sys.exit(0)
 

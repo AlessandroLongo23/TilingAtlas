@@ -1,0 +1,60 @@
+[10:23:50] === 11-iamondes: 16 parts on 2 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/grids/iamond11
+[10:23:50] 0 parts already done, 16 to go
+[10:23:50] part 1/16  hole-free 71  H0 3  tilers 44  H1 24  undecided 0  ETA 5 s
+[10:23:51] part 2/16  hole-free 143  H0 10  tilers 86  H1 44  undecided 3  ETA 8 s
+[10:23:51] part 3/16  hole-free 215  H0 17  tilers 121  H1 70  undecided 7  ETA 6 s
+[10:23:51] part 4/16  hole-free 289  H0 28  tilers 154  H1 96  undecided 11  ETA 6 s
+[10:23:52] part 5/16  hole-free 363  H0 38  tilers 186  H1 124  undecided 15  ETA 5 s
+[10:23:52] part 6/16  hole-free 433  H0 45  tilers 221  H1 151  undecided 16  ETA 4 s
+[10:23:52] part 7/16  hole-free 507  H0 50  tilers 255  H1 186  undecided 16  ETA 4 s
+[10:23:53] part 8/16  hole-free 601  H0 58  tilers 296  H1 226  undecided 21  ETA 4 s
+[10:23:54] part 9/16  hole-free 685  H0 60  tilers 343  H1 257  undecided 25  ETA 3 s
+[10:23:54] part 10/16  hole-free 765  H0 68  tilers 378  H1 293  undecided 26  ETA 3 s
+[10:23:54] part 11/16  hole-free 821  H0 76  tilers 408  H1 309  undecided 28  ETA 2 s
+[10:23:55] part 12/16  hole-free 889  H0 87  tilers 439  H1 335  undecided 28  ETA 2 s
+[10:23:55] part 13/16  hole-free 950  H0 94  tilers 472  H1 355  undecided 29  ETA 1 s
+[10:23:55] part 14/16  hole-free 1,037  H0 103  tilers 512  H1 392  undecided 30  ETA 1 s
+[10:23:55] part 15/16  hole-free 1,111  H0 107  tilers 541  H1 431  undecided 32  ETA 0 s
+[10:23:55] part 16/16  hole-free 1,161  H0 117  tilers 566  H1 445  undecided 33  ETA 0 s
+[10:23:55] classified in 6 s: fixed 14,016, free 1,186, holefree 1,161, h0 117, tilers 566, h1 445, undecided 33
+[10:23:55] fallback: 33 shapes in 2 streams
+[10:24:25] fallback 33/33  ETA 0 s
+[10:24:25] fallback done in 30 s: {'h2': 30, 'h1': 1, 'h3': 1}, capped 1
+[10:24:55] deep 1/1  ETA 0 s
+[10:24:55] deep pass done in 30 s: {'tilers': 1}
+[10:24:55] === 11-iamondes: {"n": 11, "free": 1186, "hole_free": 1161, "h0": 117, "tilers": 567, "h1": 446, "capped": 0, "h2": 30, "h3": 1}
+[10:24:55] === 11-iamondes: 16 parts on 2 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/grids/iamond11
+[10:24:55] 0 parts already done, 16 to go
+[10:24:55] part 1/16  hole-free 71  H0 3  tilers 44  H1 24  undecided 0  ETA 3 s
+[10:24:56] part 2/16  hole-free 143  H0 10  tilers 86  H1 44  undecided 3  ETA 5 s
+[10:24:56] part 3/16  hole-free 215  H0 17  tilers 121  H1 70  undecided 7  ETA 4 s
+[10:24:58] part 4/16  hole-free 289  H0 28  tilers 154  H1 96  undecided 11  ETA 7 s
+[10:24:58] part 5/16  hole-free 363  H0 38  tilers 186  H1 124  undecided 15  ETA 6 s
+[10:24:59] part 6/16  hole-free 433  H0 45  tilers 221  H1 151  undecided 16  ETA 7 s
+[10:25:01] part 7/16  hole-free 507  H0 50  tilers 255  H1 186  undecided 16  ETA 7 s
+[10:25:03] part 8/16  hole-free 601  H0 58  tilers 296  H1 226  undecided 21  ETA 8 s
+[10:25:04] part 9/16  hole-free 685  H0 60  tilers 343  H1 257  undecided 25  ETA 7 s
+[10:25:05] part 10/16  hole-free 765  H0 68  tilers 378  H1 293  undecided 26  ETA 6 s
+[10:25:05] part 11/16  hole-free 821  H0 76  tilers 408  H1 309  undecided 28  ETA 4 s
+[10:25:05] part 12/16  hole-free 889  H0 87  tilers 439  H1 335  undecided 28  ETA 3 s
+[10:25:05] part 13/16  hole-free 950  H0 94  tilers 472  H1 355  undecided 29  ETA 2 s
+[10:25:06] part 14/16  hole-free 1,037  H0 103  tilers 512  H1 392  undecided 30  ETA 2 s
+[10:25:06] part 15/16  hole-free 1,111  H0 107  tilers 541  H1 431  undecided 32  ETA 1 s
+[10:25:06] part 16/16  hole-free 1,161  H0 117  tilers 566  H1 445  undecided 33  ETA 0 s
+[10:25:06] classified in 11 s: fixed 14,016, free 1,186, holefree 1,161, h0 117, tilers 566, h1 445, undecided 33
+[10:25:06] === 11-iamond tilings: 567 certificates (1 from the fallback), census has 567 tilers
+[14:02:17] === 11-iamondes: 16 parts on 4 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/grids/iamond11
+[14:02:17] 16 parts already done, 0 to go
+[14:02:17] classified in 0 s: fixed 14,016, free 1,186, holefree 1,161, h0 117, tilers 566, h1 445, undecided 33
+[14:02:17] fallback: 33 shapes in 4 streams
+[14:02:48] fallback 30/33  ETA 3 s
+[14:03:18] fallback 32/33  ETA 2 s
+[14:03:48] fallback 33/33  ETA 0 s
+[14:03:48] fallback done in 90 s: {'h2': 30, 'h1': 1, 'h3': 1}, capped 1
+[14:04:18] deep 1/1  ETA 0 s
+[14:04:18] deep pass done in 30 s: {'tilers': 1}
+[14:04:18] === 11-iamondes: {"n": 11, "free": 1186, "hole_free": 1161, "h0": 117, "tilers": 567, "h1": 446, "capped": 0, "h2": 30, "h3": 1}
+[15:14:44] === 11-iamondes: 16 parts on 4 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/grids/iamond11
+[15:14:44] 16 parts already done, 0 to go
+[15:14:44] classified in 0 s: fixed 14,016, free 1,186, holefree 1,161, h0 117, tilers 566, h1 445, undecided 33
+[15:14:45] === 11-iamond tilings: 567 certificates (1 from the fallback), census has 567 tilers

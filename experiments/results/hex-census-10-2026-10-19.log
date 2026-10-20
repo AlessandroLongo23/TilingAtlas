@@ -1,0 +1,24 @@
+[10:28:28] === 10-hexes: 16 parts on 2 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/grids/hex10
+[10:28:28] 0 parts already done, 16 to go
+[10:29:11] part 1/16  hole-free 1,951  H0 277  tilers 714  H1 915  undecided 45  ETA 11 min
+[10:29:13] part 2/16  hole-free 3,808  H0 569  tilers 1,383  H1 1,757  undecided 99  ETA 5 min
+[10:29:40] part 3/16  hole-free 5,611  H0 830  tilers 2,032  H1 2,600  undecided 149  ETA 5 min
+[10:29:42] part 4/16  hole-free 7,498  H0 1,149  tilers 2,679  H1 3,471  undecided 199  ETA 4 min
+[10:30:04] part 5/16  hole-free 9,381  H0 1,434  tilers 3,378  H1 4,318  undecided 251  ETA 4 min
+[10:30:06] part 6/16  hole-free 11,351  H0 1,682  tilers 4,154  H1 5,208  undecided 307  ETA 3 min
+[10:30:28] part 7/16  hole-free 13,273  H0 1,923  tilers 4,921  H1 6,073  undecided 356  ETA 3 min
+[10:30:32] part 8/16  hole-free 15,214  H0 2,199  tilers 5,652  H1 6,951  undecided 412  ETA 2 min
+[10:30:51] part 9/16  hole-free 17,064  H0 2,446  tilers 6,341  H1 7,825  undecided 452  ETA 2 min
+[10:31:02] part 10/16  hole-free 18,811  H0 2,737  tilers 7,034  H1 8,543  undecided 497  ETA 2 min
+[10:31:16] part 11/16  hole-free 20,559  H0 2,983  tilers 7,736  H1 9,299  undecided 541  ETA 76 s
+[10:31:28] part 12/16  hole-free 22,457  H0 3,250  tilers 8,429  H1 10,194  undecided 584  ETA 60 s
+[10:31:41] part 13/16  hole-free 24,416  H0 3,567  tilers 9,184  H1 11,036  undecided 629  ETA 45 s
+[10:32:01] part 14/16  hole-free 26,310  H0 3,840  tilers 9,911  H1 11,868  undecided 691  ETA 31 s
+[10:32:28] part 15/16  hole-free 28,217  H0 4,098  tilers 10,647  H1 12,732  undecided 740  ETA 16 s
+[10:33:00] part 16/16  hole-free 30,086  H0 4,332  tilers 11,323  H1 13,634  undecided 797  ETA 0 s
+[10:33:00] classified in 272 s: fixed 362,671, free 30,490, holefree 30,086, h0 4,332, tilers 11,323, h1 13,634, undecided 797
+[10:44:34] === 10-hex tilings: 11,326 certificates (3 from the fallback), census has 11,326 tilers
+[14:17:39] === 10-hexes: 16 parts on 4 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/grids/hex10
+[14:17:39] 16 parts already done, 0 to go
+[14:17:39] classified in 0 s: fixed 362,671, free 30,490, holefree 30,086, h0 4,332, tilers 11,323, h1 13,634, undecided 797
+[14:30:32] === 10-hex tilings: 11,326 certificates (3 from the fallback), census has 11,326 tilers

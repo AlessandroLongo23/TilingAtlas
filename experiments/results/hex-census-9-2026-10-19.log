@@ -1,0 +1,24 @@
+[10:26:55] === 9-hexes: 16 parts on 2 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/grids/hex9
+[10:26:55] 0 parts already done, 16 to go
+[10:27:04] part 1/16  hole-free 406  H0 31  tilers 236  H1 130  undecided 9  ETA 2 min
+[10:27:06] part 2/16  hole-free 811  H0 54  tilers 479  H1 256  undecided 22  ETA 76 s
+[10:27:12] part 3/16  hole-free 1,227  H0 74  tilers 724  H1 393  undecided 36  ETA 74 s
+[10:27:15] part 4/16  hole-free 1,613  H0 95  tilers 939  H1 523  undecided 56  ETA 62 s
+[10:27:21] part 5/16  hole-free 2,008  H0 115  tilers 1,186  H1 640  undecided 67  ETA 57 s
+[10:27:26] part 6/16  hole-free 2,403  H0 140  tilers 1,432  H1 751  undecided 80  ETA 52 s
+[10:27:30] part 7/16  hole-free 2,817  H0 175  tilers 1,652  H1 895  undecided 95  ETA 45 s
+[10:27:33] part 8/16  hole-free 3,192  H0 202  tilers 1,862  H1 1,020  undecided 108  ETA 38 s
+[10:27:37] part 9/16  hole-free 3,629  H0 229  tilers 2,135  H1 1,140  undecided 125  ETA 33 s
+[10:27:48] part 10/16  hole-free 4,020  H0 260  tilers 2,361  H1 1,261  undecided 138  ETA 32 s
+[10:27:55] part 11/16  hole-free 4,463  H0 293  tilers 2,609  H1 1,406  undecided 155  ETA 27 s
+[10:27:58] part 12/16  hole-free 4,843  H0 318  tilers 2,829  H1 1,530  undecided 166  ETA 21 s
+[10:28:05] part 13/16  hole-free 5,249  H0 341  tilers 3,081  H1 1,651  undecided 176  ETA 16 s
+[10:28:13] part 14/16  hole-free 5,643  H0 375  tilers 3,286  H1 1,789  undecided 193  ETA 11 s
+[10:28:18] part 15/16  hole-free 6,069  H0 406  tilers 3,532  H1 1,923  undecided 208  ETA 6 s
+[10:28:27] part 16/16  hole-free 6,505  H0 434  tilers 3,787  H1 2,054  undecided 230  ETA 0 s
+[10:28:27] classified in 92 s: fixed 77,359, free 6,572, holefree 6,505, h0 434, tilers 3,787, h1 2,054, undecided 230
+[10:28:28] === 9-hex tilings: 3,788 certificates (1 from the fallback), census has 3,788 tilers
+[14:17:39] === 9-hexes: 16 parts on 4 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/grids/hex9
+[14:17:39] 16 parts already done, 0 to go
+[14:17:39] classified in 0 s: fixed 77,359, free 6,572, holefree 6,505, h0 434, tilers 3,787, h1 2,054, undecided 230
+[14:17:39] === 9-hex tilings: 3,788 certificates (1 from the fallback), census has 3,788 tilers

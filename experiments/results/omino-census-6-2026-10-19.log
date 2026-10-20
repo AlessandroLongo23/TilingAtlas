@@ -1,0 +1,14 @@
+[08:58:25] === 6-ominoes: 2 parts on 2 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/omino-v3/omino6
+[08:58:25] 0 parts already done, 2 to go
+[08:58:25] part 1/2  hole-free 12  H0 0  tilers 12  H1 0  undecided 0  ETA 0 s
+[08:58:25] part 2/2  hole-free 35  H0 0  tilers 35  H1 0  undecided 0  ETA 0 s
+[08:58:25] classified in 0 s: fixed 216, free 35, holefree 35, h0 0, tilers 35, h1 0, undecided 0
+[08:58:25] fallback: 0 shapes in 0 streams
+[08:58:25] fallback done in 0 s: {}, capped 0
+[08:58:25] === 6-ominoes: {"n": 6, "free": 35, "hole_free": 35, "h0": 0, "tilers": 35, "h1": 0, "capped": 0}
+[08:58:25] === 6-ominoes: 2 parts on 2 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/omino-v3/omino6
+[08:58:25] 0 parts already done, 2 to go
+[08:58:25] part 1/2  hole-free 12  H0 0  tilers 12  H1 0  undecided 0  ETA 0 s
+[08:58:25] part 2/2  hole-free 35  H0 0  tilers 35  H1 0  undecided 0  ETA 0 s
+[08:58:25] classified in 0 s: fixed 216, free 35, holefree 35, h0 0, tilers 35, h1 0, undecided 0
+[08:58:25] === 6-omino tilings: 35 certificates (0 from the fallback), census has 35 tilers

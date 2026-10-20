@@ -1,0 +1,24 @@
+[10:26:18] === 8-hexes: 16 parts on 2 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/grids/hex8
+[10:26:18] 0 parts already done, 16 to go
+[10:26:20] part 1/16  hole-free 57  H0 1  tilers 45  H1 8  undecided 3  ETA 19 s
+[10:26:21] part 2/16  hole-free 133  H0 3  tilers 99  H1 21  undecided 10  ETA 16 s
+[10:26:23] part 3/16  hole-free 211  H0 5  tilers 159  H1 32  undecided 15  ETA 20 s
+[10:26:25] part 4/16  hole-free 309  H0 6  tilers 227  H1 51  undecided 25  ETA 21 s
+[10:26:26] part 5/16  hole-free 433  H0 8  tilers 313  H1 79  undecided 33  ETA 17 s
+[10:26:28] part 6/16  hole-free 518  H0 9  tilers 378  H1 92  undecided 39  ETA 16 s
+[10:26:31] part 7/16  hole-free 608  H0 12  tilers 448  H1 102  undecided 46  ETA 16 s
+[10:26:32] part 8/16  hole-free 708  H0 13  tilers 526  H1 117  undecided 52  ETA 14 s
+[10:26:33] part 9/16  hole-free 785  H0 17  tilers 575  H1 132  undecided 61  ETA 11 s
+[10:26:36] part 10/16  hole-free 889  H0 18  tilers 660  H1 142  undecided 69  ETA 10 s
+[10:26:36] part 11/16  hole-free 974  H0 19  tilers 717  H1 162  undecided 76  ETA 8 s
+[10:26:39] part 12/16  hole-free 1,074  H0 26  tilers 796  H1 171  undecided 81  ETA 7 s
+[10:26:39] part 13/16  hole-free 1,165  H0 30  tilers 864  H1 188  undecided 83  ETA 5 s
+[10:26:46] part 14/16  hole-free 1,261  H0 34  tilers 933  H1 206  undecided 88  ETA 4 s
+[10:26:51] part 15/16  hole-free 1,374  H0 36  tilers 1,014  H1 225  undecided 99  ETA 2 s
+[10:26:51] part 16/16  hole-free 1,435  H0 37  tilers 1,053  H1 242  undecided 103  ETA 0 s
+[10:26:51] classified in 33 s: fixed 16,689, free 1,448, holefree 1,435, h0 37, tilers 1,053, h1 242, undecided 103
+[10:26:55] === 8-hex tilings: 1,054 certificates (1 from the fallback), census has 1,054 tilers
+[14:17:34] === 8-hexes: 16 parts on 4 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/grids/hex8
+[14:17:34] 16 parts already done, 0 to go
+[14:17:34] classified in 0 s: fixed 16,689, free 1,448, holefree 1,435, h0 37, tilers 1,053, h1 242, undecided 103
+[14:17:38] === 8-hex tilings: 1,054 certificates (1 from the fallback), census has 1,054 tilers

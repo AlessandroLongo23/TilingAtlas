@@ -34,7 +34,7 @@ import {
 	heeschNumber,
 	loadHeeschIndex,
 	loadHeeschSet,
-	loadHeeschTilers,
+	tilerSource,
 	outlinePage,
 	patchPolygons,
 	polyformName,
@@ -46,9 +46,10 @@ import {
 	type HeeschIndex,
 	type HeeschSetInfo,
 	type HeeschShape,
+	type TilerSource,
 } from "@/lib/heesch/data";
 import { ViewFooter } from "../aperiodic/_view-chrome";
-import { Details, HeeschSidebar, Section, Segmented } from "./_controls";
+import { Details, HeeschSidebar, RingGlyph, Section, Segmented } from "./_controls";
 
 const DEFAULT_SET = NAMED_SET;
 /** Shapes per page of the picker, and its columns: four full rows. */
@@ -66,30 +67,16 @@ const NO_SHARDS = new Map<number, HeeschShape[]>();
 /** How far the 2-D fallback (no WebGL2) repeats a tiling's period, in periods. */
 const TILING_FALLBACK_RADIUS = 30;
 
-/** A shape's outline fitted to a small square: the picker's cell. */
-function ShapeGlyph({ shape }: { shape: HeeschShape }) {
-	const S = 22;
-	const ring = outlinePage(shape);
-	let minx = Infinity,
-		miny = Infinity,
-		maxx = -Infinity,
-		maxy = -Infinity;
-	for (const v of ring) {
-		minx = Math.min(minx, v.x);
-		maxx = Math.max(maxx, v.x);
-		miny = Math.min(miny, v.y);
-		maxy = Math.max(maxy, v.y);
+/** The chunk holding tiler j (chunk k starts at starts[k]), and where in it. */
+function chunkOf(starts: number[], j: number) {
+	let lo = 0,
+		hi = starts.length - 1;
+	while (lo < hi) {
+		const mid = (lo + hi + 1) >> 1;
+		if (starts[mid] <= j) lo = mid;
+		else hi = mid - 1;
 	}
-	const k = S / Math.max(maxx - minx, maxy - miny, 1);
-	const ox = (S - k * (maxx - minx)) / 2,
-		oy = (S - k * (maxy - miny)) / 2;
-	// y is flipped because SVG counts down and every tiling in the atlas counts up.
-	const points = ring.map((v) => `${ox + k * (v.x - minx)},${S - oy - k * (v.y - miny)}`);
-	return (
-		<svg width={S} height={S} viewBox={`0 0 ${S} ${S}`} aria-hidden="true" className="my-0.5">
-			<polygon points={points.join(" ")} className="fill-current" />
-		</svg>
-	);
+	return [lo, j - (starts[lo] ?? 0)] as const;
 }
 
 /** A size's whole census, where the set lists only some of it or the count is still running. */
@@ -98,30 +85,44 @@ function CensusNote({
 	grid,
 	cells,
 	listed,
+	drawnTilers,
 }: {
 	census: NonNullable<HeeschSetInfo["census"]>;
 	grid: HeeschGridId;
 	cells: number;
 	listed: number;
+	drawnTilers: number;
 }) {
 	const n = (v: number) => v.toLocaleString();
+	const from = census.listedFrom;
+	const allTile = census.tilers === census.holeFree && !census.slices;
 	return (
 		<div className="flex flex-col gap-1 text-[11px] text-fg-muted max-md:text-xs">
-			<p>
-				{n(census.holeFree)} hole-free {polyformPlural(grid, cells)}: {n(census.tilers)} tile the plane; with holes
-				allowed, {census.hh.map((c, h) => `${n(c)} at H = ${h}`).join(", ")}.
-			</p>
-			{census.listedFrom !== undefined && !census.slices && (
+			{allTile ? (
 				<p>
-					Listed here: the {n(listed)} from H = {census.listedFrom} up, with their coronas. The rest are counted, not
-					drawn.
+					{census.holeFree === 1
+						? `The one hole-free ${polyformName({ grid, cells })} tiles the plane.`
+						: `All ${n(census.holeFree)} hole-free ${polyformPlural(grid, cells)} tile the plane.`}
+				</p>
+			) : (
+				<p>
+					{n(census.holeFree)} hole-free {polyformPlural(grid, cells)}: {n(census.tilers)} tile the plane; with holes
+					allowed, {census.hh.map((c, h) => `${n(c)} at H = ${h}`).join(", ")}.
+				</p>
+			)}
+			{from !== undefined && !census.slices && census.hh.slice(0, from).some((c) => c > 0) && (
+				<p>
+					Listed here: {drawnTilers ? "every tiler with its tiling, and " : ""}the {n(listed)} from H = {from} up, with
+					their coronas. Those below H = {from} are counted, not drawn.
 				</p>
 			)}
 			{census.unresolved && (
 				<p>
-					{census.unresolved === 1
-						? "One shape is left out of every count: Anton Bakker's census counts it as a tiler, and no search here has tiled it yet."
-						: `${n(census.unresolved)} shapes are left out of every count: Anton Bakker's census counts them as tilers, and no search here has tiled them yet.`}
+					{census.unresolved === 1 ? "One shape is" : `${n(census.unresolved)} shapes are`} left out of every count:
+					every corona searched for closes round {census.unresolved === 1 ? "it" : "them"}, and no tiling has been found
+					yet.
+					{grid === "omino" &&
+						` Anton Bakker's census counts ${census.unresolved === 1 ? "it as a tiler" : "them as tilers"}.`}
 				</p>
 			)}
 			{census.slices && (
@@ -142,7 +143,8 @@ export function HeeschClient() {
 	// are not the new set's, and showing them would frame the canvas on the wrong patch.
 	const [loaded, setLoaded] = useState<{ id: string; shapes: HeeschShape[] }>({ id: "", shapes: EMPTY });
 	const shapes = loaded.id === setId ? loaded.shapes : EMPTY;
-	// A size's tilers come in files of `shard` shapes, fetched as the picker reaches them.
+	// A size's tilers come in chunks (files, or census slices computed here), loaded as the picker reaches them.
+	const [source, setSource] = useState<{ id: string; src: TilerSource | null }>({ id: "", src: null });
 	const [tilerShards, setTilerShards] = useState<{ id: string; got: Map<number, HeeschShape[]> }>({
 		id: "",
 		got: NO_SHARDS,
@@ -208,17 +210,25 @@ export function HeeschClient() {
 	// the most interesting shape of the set.
 	const setInfo = index?.sets.find((s) => s.id === setId);
 	const tilerCount = setInfo?.tilers?.count ?? 0;
-	const shard = setInfo?.tilers?.shard ?? 1;
+	const src = source.id === setId ? source.src : null;
+	useEffect(() => {
+		let live = true;
+		if (setInfo) tilerSource(setInfo).then((s) => live && setSource({ id: setInfo.id, src: s }));
+		return () => {
+			live = false;
+		};
+	}, [setInfo]);
 	const listed = useMemo(
 		() => (filter === null ? shapes : shapes.filter((s) => heeschNumber(s, def) === filter)),
 		[shapes, def, filter],
 	);
 	const tilersListed = !hideTilers && (filter === null || filter === Infinity) ? tilerCount : 0;
 	const total = listed.length + tilersListed;
-	const shapeAt = (i: number) =>
-		i < listed.length
-			? listed[i]
-			: (got.get(Math.floor((i - listed.length) / shard))?.[(i - listed.length) % shard] ?? null);
+	const shapeAt = (i: number) => {
+		if (i < listed.length) return listed[i];
+		const [k, j] = chunkOf(src?.starts ?? [], i - listed.length);
+		return got.get(k)?.[j] ?? null;
+	};
 	const at = Math.min(pick, Math.max(0, total - 1));
 	const shape = shapeAt(at);
 	const tiles = !!shape?.p;
@@ -227,16 +237,21 @@ export function HeeschClient() {
 	const pageStart = (page - 1) * PAGE_SIZE;
 	const asked = useRef(new Set<string>());
 	useEffect(() => {
+		if (!src) return;
 		for (let i = Math.max(pageStart, listed.length); i < Math.min(pageStart + PAGE_SIZE, total); i++) {
-			const k = Math.floor((i - listed.length) / shard);
+			const [k] = chunkOf(src.starts, i - listed.length);
 			if (got.has(k) || asked.current.has(`${setId}:${k}`)) continue;
 			asked.current.add(`${setId}:${k}`);
-			loadHeeschTilers(setId, k).then(
-				(d) =>
-					d && setTilerShards((prev) => ({ id: setId, got: new Map(prev.id === setId ? prev.got : []).set(k, d) })),
-			);
+			src
+				.load(k)
+				.then(
+					(d) =>
+						d && setTilerShards((prev) => ({ id: setId, got: new Map(prev.id === setId ? prev.got : []).set(k, d) })),
+				);
 		}
-	}, [pageStart, listed.length, total, shard, got, setId]);
+	}, [pageStart, listed.length, total, src, got, setId]);
+	// A computed size's tilers take a few seconds a slice (the 20-ominoes up to a minute): say so.
+	const computing = !!src?.computed && at >= listed.length && !shape;
 	const upTo = Math.min(shown ?? H, H);
 
 	const selectShape = useCallback((i: number) => {
@@ -331,13 +346,13 @@ export function HeeschClient() {
 		},
 		[seams, strokeWidth],
 	);
-	// The subject is the shape and its patch, not the corona count: stepping the rings keeps the view,
-	// so the patch grows in place instead of shrinking to fit at every step.
+	// A corona patch is all there is of the shape (it does not tile), so the view is fixed and fitted;
+	// only a tiler, on the tiling canvas, pans, zooms and turns.
 	const { canvasRef, view } = usePatchCanvas({
 		polys,
 		strokeWidth,
 		subject: shape ? `${setId}:${def}:${filter}:${at}` : "loading",
-		keepView: true,
+		fixed: true,
 		onFrame: drawSeams,
 	});
 	const { requestDraw } = view;
@@ -365,7 +380,12 @@ export function HeeschClient() {
 		() =>
 			(index?.sets ?? [])
 				.filter((s) => s.grid === grid)
-				.map((s) => ({ v: s.id, label: String(s.cells), sub: (s.count + (s.tilers?.count ?? 0)).toLocaleString() })),
+				.map((s) => ({
+					v: s.id,
+					label: String(s.cells),
+					// A census still running has listed nothing yet; say so instead of showing 0.
+					sub: s.census?.slices && !s.count ? "running" : (s.count + (s.tilers?.count ?? 0)).toLocaleString(),
+				})),
 		[index, grid],
 	);
 	const selectGrid = useCallback(
@@ -384,12 +404,13 @@ export function HeeschClient() {
 						<p className="text-[11px] text-fg-muted max-md:text-xs">{gridCaveat(grid as HeeschGridId)}</p>
 					)}
 					{setInfo?.census && (
-						<CensusNote census={setInfo.census} grid={setInfo.grid} cells={setInfo.cells} listed={setInfo.count} />
-					)}
-					{setInfo?.of && (
-						<p className="text-[11px] text-fg-muted max-md:text-xs">
-							Search still running: {setInfo.searched} of {setInfo.of} shapes done, so these counts will grow.
-						</p>
+						<CensusNote
+							census={setInfo.census}
+							grid={setInfo.grid}
+							cells={setInfo.cells}
+							listed={setInfo.count}
+							drawnTilers={setInfo.tilers?.count ?? 0}
+						/>
 					)}
 				</Section>
 			)}
@@ -438,7 +459,7 @@ export function HeeschClient() {
 	return (
 		<div className="relative flex min-h-0 flex-1">
 			{/* The canvas's top-right corner, first in the DOM so it is read before the sheet. */}
-			<CornerControls />
+			<CornerControls reset={tiles} />
 			<HeeschSidebar header={header} peek={peek}>
 				{/* The header's switchers are hidden on a phone, where the peek row replaces the header. */}
 				<div className="flex flex-col gap-6 md:hidden">{switcher}</div>
@@ -492,7 +513,7 @@ export function HeeschClient() {
 							const s = shapeAt(pageStart + i);
 							return {
 								v: String(pageStart + i),
-								label: s ? <ShapeGlyph shape={s} /> : <span className="my-0.5 block h-[22px] w-[22px]" />,
+								label: s ? <RingGlyph rings={[outlinePage(s)]} /> : <span className="my-0.5 block h-[22px] w-[22px]" />,
 								title: s
 									? `${s.name ?? polyformName(s)} · ${s.p ? "tiles the plane" : `H = ${heeschNumber(s, def)}`}`
 									: "Loading",
@@ -510,6 +531,12 @@ export function HeeschClient() {
 						onPageChange={(p) => p !== page && selectShape((p - 1) * PAGE_SIZE)}
 						showRange={false}
 					/>
+					{computing && (
+						<p className="text-[11px] text-fg-muted max-md:text-xs">
+							Too many to ship as files: these tilings are being computed in your browser, one slice of the census at a
+							time.
+						</p>
+					)}
 				</Section>
 
 				{shape?.p ? (
@@ -545,7 +572,7 @@ export function HeeschClient() {
 					</Section>
 				)}
 
-				<ViewFooter view={tiles ? tilingView : view} strokeWidth={strokeWidth} onStrokeWidth={setStrokeWidth}>
+				<ViewFooter view={tiles ? tilingView : undefined} strokeWidth={strokeWidth} onStrokeWidth={setStrokeWidth}>
 					{!tiles && (
 						<Checkbox
 							id="heesch-cells"
@@ -586,11 +613,7 @@ export function HeeschClient() {
 
 			<div className="relative min-h-0 flex-1">
 				{/* The corona canvas stays mounted under a tiler, hidden, so its GL context outlives the switch. */}
-				<canvas
-					ref={canvasRef}
-					className={`h-full w-full cursor-grab touch-none active:cursor-grabbing ${tiles ? "hidden" : "block"}`}
-					{...view.handlers}
-				/>
+				<canvas ref={canvasRef} className={`h-full w-full ${tiles ? "hidden" : "block"}`} />
 				<canvas ref={seamCanvasRef} aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full" />
 				{tiles && (
 					<canvas

@@ -1,0 +1,52 @@
+[10:23:13] === 8-iamondes: 16 parts on 2 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/grids/iamond8
+[10:23:13] 0 parts already done, 16 to go
+[10:23:13] part 1/16  hole-free 4  H0 0  tilers 4  H1 0  undecided 0  ETA 0 s
+[10:23:13] part 2/16  hole-free 6  H0 0  tilers 6  H1 0  undecided 0  ETA 0 s
+[10:23:13] part 3/16  hole-free 9  H0 0  tilers 9  H1 0  undecided 0  ETA 0 s
+[10:23:13] part 4/16  hole-free 15  H0 0  tilers 15  H1 0  undecided 0  ETA 0 s
+[10:23:14] part 5/16  hole-free 20  H0 0  tilers 20  H1 0  undecided 0  ETA 0 s
+[10:23:14] part 6/16  hole-free 24  H0 0  tilers 24  H1 0  undecided 0  ETA 0 s
+[10:23:14] part 7/16  hole-free 28  H0 0  tilers 28  H1 0  undecided 0  ETA 0 s
+[10:23:14] part 8/16  hole-free 34  H0 0  tilers 34  H1 0  undecided 0  ETA 0 s
+[10:23:14] part 9/16  hole-free 40  H0 0  tilers 40  H1 0  undecided 0  ETA 0 s
+[10:23:14] part 10/16  hole-free 47  H0 0  tilers 47  H1 0  undecided 0  ETA 0 s
+[10:23:14] part 11/16  hole-free 49  H0 0  tilers 49  H1 0  undecided 0  ETA 0 s
+[10:23:14] part 12/16  hole-free 52  H0 0  tilers 52  H1 0  undecided 0  ETA 0 s
+[10:23:14] part 13/16  hole-free 58  H0 0  tilers 58  H1 0  undecided 0  ETA 0 s
+[10:23:14] part 14/16  hole-free 60  H0 0  tilers 60  H1 0  undecided 0  ETA 0 s
+[10:23:14] part 15/16  hole-free 61  H0 0  tilers 61  H1 0  undecided 0  ETA 0 s
+[10:23:14] part 16/16  hole-free 66  H0 0  tilers 66  H1 0  undecided 0  ETA 0 s
+[10:23:14] classified in 0 s: fixed 675, free 66, holefree 66, h0 0, tilers 66, h1 0, undecided 0
+[10:23:14] fallback: 0 shapes in 0 streams
+[10:23:14] fallback done in 0 s: {}, capped 0
+[10:23:14] === 8-iamondes: {"n": 8, "free": 66, "hole_free": 66, "h0": 0, "tilers": 66, "h1": 0, "capped": 0}
+[10:23:14] === 8-iamondes: 16 parts on 2 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/grids/iamond8
+[10:23:14] 0 parts already done, 16 to go
+[10:23:14] part 1/16  hole-free 4  H0 0  tilers 4  H1 0  undecided 0  ETA 0 s
+[10:23:14] part 2/16  hole-free 6  H0 0  tilers 6  H1 0  undecided 0  ETA 0 s
+[10:23:14] part 3/16  hole-free 9  H0 0  tilers 9  H1 0  undecided 0  ETA 0 s
+[10:23:14] part 4/16  hole-free 14  H0 0  tilers 14  H1 0  undecided 0  ETA 0 s
+[10:23:14] part 5/16  hole-free 20  H0 0  tilers 20  H1 0  undecided 0  ETA 0 s
+[10:23:14] part 6/16  hole-free 24  H0 0  tilers 24  H1 0  undecided 0  ETA 0 s
+[10:23:14] part 7/16  hole-free 28  H0 0  tilers 28  H1 0  undecided 0  ETA 0 s
+[10:23:14] part 8/16  hole-free 34  H0 0  tilers 34  H1 0  undecided 0  ETA 0 s
+[10:23:14] part 9/16  hole-free 40  H0 0  tilers 40  H1 0  undecided 0  ETA 0 s
+[10:23:14] part 10/16  hole-free 42  H0 0  tilers 42  H1 0  undecided 0  ETA 0 s
+[10:23:14] part 11/16  hole-free 49  H0 0  tilers 49  H1 0  undecided 0  ETA 0 s
+[10:23:14] part 12/16  hole-free 52  H0 0  tilers 52  H1 0  undecided 0  ETA 0 s
+[10:23:14] part 13/16  hole-free 58  H0 0  tilers 58  H1 0  undecided 0  ETA 0 s
+[10:23:14] part 14/16  hole-free 60  H0 0  tilers 60  H1 0  undecided 0  ETA 0 s
+[10:23:14] part 15/16  hole-free 61  H0 0  tilers 61  H1 0  undecided 0  ETA 0 s
+[10:23:14] part 16/16  hole-free 66  H0 0  tilers 66  H1 0  undecided 0  ETA 0 s
+[10:23:14] classified in 0 s: fixed 675, free 66, holefree 66, h0 0, tilers 66, h1 0, undecided 0
+[10:23:14] === 8-iamond tilings: 66 certificates (0 from the fallback), census has 66 tilers
+[14:01:47] === 8-iamondes: 16 parts on 4 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/grids/iamond8
+[14:01:47] 16 parts already done, 0 to go
+[14:01:47] classified in 0 s: fixed 675, free 66, holefree 66, h0 0, tilers 66, h1 0, undecided 0
+[14:01:47] fallback: 0 shapes in 0 streams
+[14:01:47] fallback done in 0 s: {}, capped 0
+[14:01:47] === 8-iamondes: {"n": 8, "free": 66, "hole_free": 66, "h0": 0, "tilers": 66, "h1": 0, "capped": 0}
+[15:14:44] === 8-iamondes: 16 parts on 4 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/grids/iamond8
+[15:14:44] 16 parts already done, 0 to go
+[15:14:44] classified in 0 s: fixed 675, free 66, holefree 66, h0 0, tilers 66, h1 0, undecided 0
+[15:14:44] === 8-iamond tilings: 66 certificates (0 from the fallback), census has 66 tilers

@@ -1,0 +1,4 @@
+[14:17:34] === 7-hexes: 16 parts on 4 processes, fallback free_heesch -L 5; work dir experiments/results/heesch/grids/hex7
+[14:17:34] 16 parts already done, 0 to go
+[14:17:34] classified in 0 s: fixed 3,652, free 333, holefree 331, h0 4, tilers 294, h1 18, undecided 15
+[14:17:34] === 7-hex tilings: 294 certificates (0 from the fallback), census has 294 tilers

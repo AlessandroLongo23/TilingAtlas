@@ -11,12 +11,23 @@ import type { ReactNode } from "react";
 import { PageSidebar } from "@/components/page-sidebar";
 import { useImmersive } from "@/stores/immersive";
 
-export { Section, Details, Segmented, type SegmentedOption } from "@/components/shelf";
+export { Section, Details, RingGlyph, Segmented, type SegmentedOption } from "@/components/shelf";
 
-export function HeeschSidebar({ header, peek, children }: { header: ReactNode; peek: ReactNode; children: ReactNode }) {
+/** /frames lays out the same way and reuses this shell under its own `title`. */
+export function HeeschSidebar({
+	header,
+	peek,
+	title = "Heesch numbers",
+	children,
+}: {
+	header: ReactNode;
+	peek: ReactNode;
+	title?: string;
+	children: ReactNode;
+}) {
 	const immersive = useImmersive((s) => s.immersive);
 	return (
-		<PageSidebar scrollable={false} collapsed={immersive} mobile="dock" title="Heesch numbers" peek={peek}>
+		<PageSidebar scrollable={false} collapsed={immersive} mobile="dock" title={title} peek={peek}>
 			<div className="flex h-full flex-col max-md:overflow-x-hidden max-md:overflow-y-auto max-md:overscroll-contain">
 				<div className="flex shrink-0 flex-col gap-4 border-b border-line-subtle px-3.5 pt-4 pb-5 max-md:hidden">
 					{header}

@@ -10,6 +10,10 @@
 //
 // Home framing is ONE rule: fit the whole patch. A finite patch has a ragged boundary and this shows
 // it, which is honest for an explorer even though it would be a defect on a slide.
+//
+// `fixed` turns pan, zoom and rotation off, for a patch that is the whole subject (a corona, a frame):
+// it does not continue past its edge, so the fitted view already shows everything there is. Such a
+// view refits on every change, since the reader has no way to zoom out to a patch that grew.
 
 import { useCallback, useEffect, useRef } from "react";
 import { TILE_HSL_LIGHT_PCT, TILE_HSL_SAT_01 } from "@/lib/render/tilePalette";
@@ -64,7 +68,9 @@ export function usePatchCanvas({
 	strokeWidth,
 	subject,
 	keepView = false,
+	fixed = false,
 	onFrame,
+	extent,
 }: {
 	polys: RawPolygon[];
 	strokeWidth: number;
@@ -72,8 +78,12 @@ export function usePatchCanvas({
 	subject: string;
 	/** Hold pan and zoom when `polys` changes under the same subject, instead of refitting. */
 	keepView?: boolean;
+	/** No pan, zoom or rotation: the patch stays fitted. Leave the canvas's handlers unspread. */
+	fixed?: boolean;
 	/** Called after each frame is drawn, with the frame: for an overlay that must track the view. */
 	onFrame?: (f: AperiodicFrame) => void;
+	/** Points the home view fits besides the polygons: what an overlay draws outside them. */
+	extent?: { x: number; y: number }[];
 }) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const glRef = useRef<SubRosaGL | null>(null);
@@ -85,8 +95,8 @@ export function usePatchCanvas({
 			miny = Infinity,
 			maxx = -Infinity,
 			maxy = -Infinity;
-		for (const p of polys)
-			for (const v of p.vertices) {
+		for (const vs of [...polys.map((p) => p.vertices), extent ?? []])
+			for (const v of vs) {
 				if (v.x < minx) minx = v.x;
 				if (v.x > maxx) maxx = v.x;
 				if (v.y < miny) miny = v.y;
@@ -99,7 +109,7 @@ export function usePatchCanvas({
 			width: maxx - minx,
 			height: maxy - miny,
 		};
-	}, [polys]);
+	}, [polys, extent]);
 
 	const draw = useCallback(
 		(f: AperiodicFrame) => {
@@ -144,7 +154,7 @@ export function usePatchCanvas({
 		[polys, strokeWidth, onFrame],
 	);
 
-	const view = useAperiodicView({ canvasRef, home, draw });
+	const view = useAperiodicView({ canvasRef, home, draw, active: !fixed });
 	const { refit, remeasure, requestDraw } = view;
 
 	// Create the renderer once: a canvas holds one context type for its life, so this decides the path.
@@ -184,9 +194,9 @@ export function usePatchCanvas({
 		}
 		const newSubject = subjectRef.current !== subject;
 		subjectRef.current = subject;
-		if (newSubject || !keepView) refit();
+		if (newSubject || !keepView || fixed) refit();
 		else remeasure();
-	}, [polys, subject, keepView, refit, remeasure]);
+	}, [polys, subject, keepView, fixed, refit, remeasure]);
 	useEffect(() => {
 		requestDraw();
 	}, [strokeWidth, requestDraw]);

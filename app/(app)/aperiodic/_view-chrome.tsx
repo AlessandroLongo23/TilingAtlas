@@ -28,7 +28,8 @@ export function ViewFooter({
 	onStrokeWidth,
 	children,
 }: {
-	view: Pick<AperiodicView, "rotationDeg" | "setRotation">;
+	/** The view to turn; none for a fixed view (usePatchCanvas `fixed`), which has no rotation. */
+	view?: Pick<AperiodicView, "rotationDeg" | "setRotation">;
 	strokeWidth: number;
 	onStrokeWidth: (v: number) => void;
 	/** View-specific display options, above the shared ones. */
@@ -37,26 +38,28 @@ export function ViewFooter({
 	return (
 		<Section label="View">
 			{children}
-			<Slider
-				id="aperiodic-rotation"
-				label="Rotation"
-				hint={
-					<span className="inline-flex items-center gap-1 text-[10px] whitespace-nowrap text-fg-muted">
-						<Kbd>Shift</Kbd>
-						{/* Kbd hides on a phone, which would leave "+ scroll" dangling; a finger twists. */}
-						<span className="max-md:hidden">+ scroll</span>
-						<span className="max-md:text-xs md:hidden">Twist two fingers</span>
-					</span>
-				}
-				value={view.rotationDeg}
-				onChange={view.setRotation}
-				min={0}
-				// 359, not 360: the angle wraps, so a slider that ran to 360 would snap its own thumb back
-				// to the left the moment the value was published. The wheel's detents are 15°, all in range.
-				max={359}
-				step={1}
-				unit="°"
-			/>
+			{view && (
+				<Slider
+					id="aperiodic-rotation"
+					label="Rotation"
+					hint={
+						<span className="inline-flex items-center gap-1 text-[10px] whitespace-nowrap text-fg-muted">
+							<Kbd>Shift</Kbd>
+							{/* Kbd hides on a phone, which would leave "+ scroll" dangling; a finger twists. */}
+							<span className="max-md:hidden">+ scroll</span>
+							<span className="max-md:text-xs md:hidden">Twist two fingers</span>
+						</span>
+					}
+					value={view.rotationDeg}
+					onChange={view.setRotation}
+					min={0}
+					// 359, not 360: the angle wraps, so a slider that ran to 360 would snap its own thumb back
+					// to the left the moment the value was published. The wheel's detents are 15°, all in range.
+					max={359}
+					step={1}
+					unit="°"
+				/>
+			)}
 			<Slider
 				id="aperiodic-outlines"
 				label="Tile outlines"
