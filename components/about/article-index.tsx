@@ -96,7 +96,7 @@ export function ArticleIndex({
 export function ArticleSiblings({ section, article }: { section: AboutSection; article: AboutArticle }) {
 	if (section.articles.length < 2) return null;
 	return (
-		<nav aria-label={`About ${section.topic}`} className="not-prose mb-8 @7xl:hidden max-md:pr-14">
+		<nav aria-label={`About ${section.topic}`} className="not-prose mb-8 max-md:pr-14 @7xl:hidden">
 			<p className="ta-label mb-2 text-fg-muted">About {section.topic}</p>
 			<ul className="flex flex-wrap gap-x-4 gap-y-1.5 text-[13px] max-md:text-sm">
 				{section.articles.map((a) => (

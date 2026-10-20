@@ -97,7 +97,9 @@ export function SolidView({ poly }: { poly: Polyhedron | null }) {
 			last = now;
 			if (!visible) return;
 			if (turningRef.current) {
-				holder.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), dt * TURN_PER_MS));
+				holder.quaternion.premultiply(
+					new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), dt * TURN_PER_MS),
+				);
 				// The slow turn reads the same at 30 fps; a drag or a new solid still draws at once.
 				if (now - drawn >= 33) dirty = true;
 			}
@@ -180,12 +182,15 @@ export function SolidView({ poly }: { poly: Polyhedron | null }) {
 		setSolidRef.current?.(poly);
 	}, [poly]);
 
-	if (failed) return <div className="flex h-48 items-center justify-center text-sm text-fg-muted">This figure needs WebGL.</div>;
+	if (failed)
+		return <div className="flex h-48 items-center justify-center text-sm text-fg-muted">This figure needs WebGL.</div>;
 	return (
 		<div className="relative mx-auto aspect-square w-full max-w-[340px]">
 			<div ref={hostRef} className="absolute inset-0" />
 			{!poly && (
-				<div className="absolute inset-0 flex items-center justify-center text-sm text-fg-muted">No solid for these values.</div>
+				<div className="absolute inset-0 flex items-center justify-center text-sm text-fg-muted">
+					No solid for these values.
+				</div>
 			)}
 			<div className="absolute right-0 bottom-0 flex">
 				<Button
@@ -264,7 +269,10 @@ function Stats({ poly }: { poly: Polyhedron }) {
 
 /** <geo-solid solids="a,b" labels="A|B" caption="…">: one or several solids of the spherical shelf. */
 export function GeoSolid({ solids, labels, caption }: { solids?: string; labels?: string; caption?: string }) {
-	const ids = (solids ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+	const ids = (solids ?? "")
+		.split(",")
+		.map((s) => s.trim())
+		.filter(Boolean);
 	const names = (labels ?? "").split("|").map((s) => s.trim());
 	const [id, setId] = useState(ids[0] ?? "");
 	const poly = useMemo(() => polyhedronForId(id), [id]);
@@ -313,12 +321,32 @@ export function GeoNobleFamily({ caption }: { caption?: string }) {
 			<div className="mx-auto mt-3 grid max-w-md gap-3">
 				{family === "noble-disphenoid" ? (
 					<>
-						<Slider label="Box width" value={p.boxB} min={0.3} max={2.5} step={0.05} onChange={(boxB) => setP({ ...p, boxB })} />
-						<Slider label="Box depth" value={p.boxC} min={0.3} max={2.5} step={0.05} onChange={(boxC) => setP({ ...p, boxC })} />
+						<Slider
+							label="Box width"
+							value={p.boxB}
+							min={0.3}
+							max={2.5}
+							step={0.05}
+							onChange={(boxB) => setP({ ...p, boxB })}
+						/>
+						<Slider
+							label="Box depth"
+							value={p.boxC}
+							min={0.3}
+							max={2.5}
+							step={0.05}
+							onChange={(boxC) => setP({ ...p, boxC })}
+						/>
 					</>
 				) : (
 					<>
-						<Slider label="n" value={p.n} min={5} max={STEPHANOID_MAX_N} onChange={(n) => setP({ ...p, n, member: 0 })} />
+						<Slider
+							label="n"
+							value={p.n}
+							min={5}
+							max={STEPHANOID_MAX_N}
+							onChange={(n) => setP({ ...p, n, member: 0 })}
+						/>
 						<Slider
 							label="Member"
 							value={member}
@@ -328,7 +356,14 @@ export function GeoNobleFamily({ caption }: { caption?: string }) {
 							format={() => (pq ? `${anti ? "AC" : "PC"}(${p.n},${pq[0]},${pq[1]})` : "none")}
 							onChange={(m) => setP({ ...p, member: m })}
 						/>
-						<Slider label="Height" value={p.height} min={0.2} max={3} step={0.05} onChange={(height) => setP({ ...p, height })} />
+						<Slider
+							label="Height"
+							value={p.height}
+							min={0.2}
+							max={3}
+							step={0.05}
+							onChange={(height) => setP({ ...p, height })}
+						/>
 					</>
 				)}
 			</div>

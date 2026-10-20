@@ -21,7 +21,8 @@ const WHERE: Record<Geometry, string> = { sphere: "Sphere", plane: "Euclidean pl
 function verdict(ns: number[], f: VertexFigure) {
 	if (ns.length < 3) return "Put at least three polygons around the vertex.";
 	const d = 360 - f.flatSum;
-	if (f.geometry === "plane") return "Flat, the angles add up to exactly 360°: the polygons close around the vertex in the plane, as in a tiling.";
+	if (f.geometry === "plane")
+		return "Flat, the angles add up to exactly 360°: the polygons close around the vertex in the plane, as in a tiling.";
 	if (f.geometry === "sphere") {
 		if (f.edge == null)
 			return `Flat, the angles add up to ${fmt(f.flatSum)}, but no common edge length closes them on a sphere: the largest polygon would have to flatten out first.`;
@@ -37,14 +38,26 @@ function verdict(ns: number[], f: VertexFigure) {
 }
 
 export function GeoVertex({ start, caption }: { start?: string; caption?: string }) {
-	const [ns, setNs] = useState<number[]>(() => (start ?? "3.3.3.3.3").split(".").map(Number).filter((n) => n >= 3));
+	const [ns, setNs] = useState<number[]>(() =>
+		(start ?? "3.3.3.3.3")
+			.split(".")
+			.map(Number)
+			.filter((n) => n >= 3),
+	);
 	const f = useMemo(() => vertexFigure(ns), [ns]);
 	const ball = `geo-ball-${useId().replace(/:/g, "")}`;
 	const fills = ns.map((n) => tileFill({ hue: polygonHue(n) } as RawPolygon));
 	const curved = f.geometry !== "plane" && f.edge != null;
 	// The sphere and the disk both have radius 1; the plane is fitted to its polygons around the vertex.
 	const R = curved ? 1 : Math.max(1.6, ...f.polygons.flatMap((p) => p.map((v) => Math.hypot(v.x, v.y))));
-	const frame = [{ vertices: [{ x: -R, y: -R }, { x: R, y: R }] }];
+	const frame = [
+		{
+			vertices: [
+				{ x: -R, y: -R },
+				{ x: R, y: R },
+			],
+		},
+	];
 	const preset = PRESETS.find((p) => p === ns.join(".")) ?? "";
 	return (
 		<Figure caption={caption}>
@@ -55,7 +68,9 @@ export function GeoVertex({ start, caption }: { start?: string; caption?: string
 						<stop offset="1" stopColor="#000" stopOpacity="0.28" />
 					</radialGradient>
 				</defs>
-				{curved && <circle cx={0} cy={0} r={1} fill={f.geometry === "sphere" ? "var(--color-surface-raised)" : "none"} />}
+				{curved && (
+					<circle cx={0} cy={0} r={1} fill={f.geometry === "sphere" ? "var(--color-surface-raised)" : "none"} />
+				)}
 				{f.polygons.map((p, i) => (
 					<polygon key={i} points={svgPoints({ vertices: p })} fill={fills[i]} {...OUTLINE} />
 				))}

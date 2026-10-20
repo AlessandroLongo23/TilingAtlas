@@ -49,16 +49,23 @@ function solveEdge(ns: number[], g: Geometry): number | null {
 function ring(n: number, r: number): P2[] {
 	const out: P2[] = [];
 	// Vertex 0 sits at angle π (on the −x side), so a move along +x by the circumradius brings it to the origin.
-	const v = (k: number) => ({ x: r * Math.cos(Math.PI + (2 * Math.PI * k) / n), y: r * Math.sin(Math.PI + (2 * Math.PI * k) / n) });
+	const v = (k: number) => ({
+		x: r * Math.cos(Math.PI + (2 * Math.PI * k) / n),
+		y: r * Math.sin(Math.PI + (2 * Math.PI * k) / n),
+	});
 	for (let k = 0; k < n; k++) {
 		const a = v(k),
 			b = v(k + 1);
-		for (let i = 0; i < SAMPLES; i++) out.push({ x: a.x + ((b.x - a.x) * i) / SAMPLES, y: a.y + ((b.y - a.y) * i) / SAMPLES });
+		for (let i = 0; i < SAMPLES; i++)
+			out.push({ x: a.x + ((b.x - a.x) * i) / SAMPLES, y: a.y + ((b.y - a.y) * i) / SAMPLES });
 	}
 	return out;
 }
 
-const rot = (p: P2, t: number): P2 => ({ x: p.x * Math.cos(t) - p.y * Math.sin(t), y: p.x * Math.sin(t) + p.y * Math.cos(t) });
+const rot = (p: P2, t: number): P2 => ({
+	x: p.x * Math.cos(t) - p.y * Math.sin(t),
+	y: p.x * Math.sin(t) + p.y * Math.cos(t),
+});
 
 /** Clip a spherical polygon's boundary to the visible hemisphere z ≥ 0, following the rim where it is cut. */
 function clipFront(pts: P3[]): P2[] {
@@ -109,7 +116,8 @@ export interface VertexFigure {
 
 export function vertexFigure(ns: number[]): VertexFigure {
 	const flatSum = ns.reduce((t, n) => t + flatAngle(n), 0);
-	const geometry: Geometry = Math.abs(flatSum - 2 * Math.PI) < 1e-9 ? "plane" : flatSum < 2 * Math.PI ? "sphere" : "hyperbolic";
+	const geometry: Geometry =
+		Math.abs(flatSum - 2 * Math.PI) < 1e-9 ? "plane" : flatSum < 2 * Math.PI ? "sphere" : "hyperbolic";
 	const s = ns.length >= 3 ? solveEdge(ns, geometry) : geometry === "plane" ? 1 : null;
 	const edge = ns.length >= 3 ? s : null;
 	const len = s ?? 1;
