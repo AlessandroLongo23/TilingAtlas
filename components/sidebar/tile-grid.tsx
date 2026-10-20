@@ -167,10 +167,19 @@ export function TileGrid({ items, selectedKey, onSelect, revealKey, width }: Til
 	// retry is needed.
 	const metrics = useRef({ cell, stride, cols });
 	metrics.current = { cell, stride, cols };
+	// Once per selection. `items` is a dep only so a grid whose list arrives after the selection (a
+	// deep link into a lazy shard) still reveals it; the parent rebuilds these arrays on every render
+	// (configGroups does it unmemoised), so keyed on identity alone, opening any other row in the tree
+	// would drag the pane back to the selected tiling. For the same reason the retry timer is cleared
+	// only when the selection changes or the grid unmounts, never by a re-render in between.
+	const revealed = useRef<string | null>(null);
+	const timer = useRef(0);
+	useEffect(() => () => window.clearTimeout(timer.current), [revealKey]);
 	useEffect(() => {
-		if (!revealKey) return;
+		if (!revealKey || revealed.current === revealKey) return;
 		const idx = items.findIndex((t) => t.canonicalKey === revealKey);
 		if (idx < 0) return;
+		revealed.current = revealKey;
 		const el = hostRef.current;
 		const scroller = el?.closest<HTMLElement>("[data-sidebar-scroll]");
 		if (!el || !scroller) return;
@@ -178,7 +187,6 @@ export function TileGrid({ items, selectedKey, onSelect, revealKey, width }: Til
 		const selector = `[data-tiling-key="${CSS.escape(revealKey)}"]`;
 		const inset = revealInset(el);
 
-		let timer = 0;
 		let tries = 0;
 		const step = () => {
 			const { stride: rowStride, cell: cellSize, cols: perRow } = metrics.current;
@@ -193,7 +201,7 @@ export function TileGrid({ items, selectedKey, onSelect, revealKey, width }: Til
 				}
 				// Pulse the ring overlay, for the same paint-order reason the ring lives there.
 				const ring = btn.querySelector<HTMLElement>("[data-ring]") ?? btn;
-				if (!reduce) timer = window.setTimeout(() => pulse(ring), 60);
+				if (!reduce) timer.current = window.setTimeout(() => pulse(ring), 60);
 				return;
 			}
 			// Off screen: jump by row index, instantly (a smooth scroll across 100k px is not a
@@ -203,10 +211,9 @@ export function TileGrid({ items, selectedKey, onSelect, revealKey, width }: Til
 					el.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop + row * rowStride;
 				scroller.scrollTo({ top: Math.max(0, y - inset), behavior: "auto" });
 			}
-			if (++tries < 6) timer = window.setTimeout(step, 60);
+			if (++tries < 6) timer.current = window.setTimeout(step, 60);
 		};
 		step();
-		return () => window.clearTimeout(timer);
 	}, [revealKey, items]);
 
 	// Lane, tile, lane, tile, lane — the outer lanes frame the wall the same way the middle one
