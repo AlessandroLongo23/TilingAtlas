@@ -1,0 +1,28 @@
+4.6.4.6 develop (yaf2) — tilings by regular [3, 4, 6, 10, 0] at one edge length
+source          : /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/hybrid/solver_hybrid_af2
+forced edge len : l = 0.962423650119
+angles          : 3-gon 53.1301deg, 4-gon 78.4630deg, 6-gon 101.5370deg, 10-gon 116.5651deg, ∞-gon 126.8699deg
+certificates in : 111853
+developed       : 111853
+failed          : 0
+multi-variant   : 87578
+wall            : 563.9s (5.0 ms/certificate)
+
+
+   k   tilings  face orbits: min    max
+   1         4                 2      2
+   2        12                 2      6
+   3        45                 3      8
+   4       227                 4     10
+   5      1014                 4     12
+   6      4261                 5     16
+   7     19356                 6     18
+   8     86934                 6     20
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev/hpyaf2-k1.json: 4 records, 0.00 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev/hpyaf2-k2.json: 12 records, 0.01 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev/hpyaf2-k3.json: 45 records, 0.03 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev/hpyaf2-k4.json: 227 records, 0.17 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev/hpyaf2-k5.json: 1014 records, 0.85 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev/hpyaf2-k6.json: 4261 records, 4.00 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev/hpyaf2-k7.json: 19356 records, 20.22 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev/hpyaf2-k8.json: 86934 records, 99.99 MB

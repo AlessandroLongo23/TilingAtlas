@@ -108,18 +108,53 @@ class Board:
         return Board(bid, ",".join(map(str, sizes)), l, sorted(set(sizes)), "hpq")
 
     @staticmethod
-    def hybrid(bid, figure):
+    def hybrid(bid, figure, sizes=None):
         """One `hybrid_<edge>` board whose polygons all sit at the base edge. `figure` is ONE closing
         vertex figure, 0 for an apeirogon; ℓ is solved from it and every other figure in the corpus is
-        then asserted to close at that ℓ by `vtable_variants_hyp`. The apeirogon sorts last, so the
-        finite polygons keep the colour indices they have on every other board."""
+        then asserted to close at that ℓ by `vtable_variants_hyp`. `sizes` is the board's whole alphabet
+        when the figure does not use every polygon. The apeirogon sorts last, so the finite polygons keep
+        the colour indices they have on every other board."""
         l = solve_edge_length(figure)
         if l is None:
             raise DevelopError(f"hybrid {bid}: {figure} is not hyperbolic")
-        sizes = sorted(set(figure), key=lambda p: (p == 0, p))
+        sizes = sorted(set(sizes or figure), key=lambda p: (p == 0, p))
         # Board id "y17627" for hybrid_1_7627, the way ai2's are "t7": the "y" keeps it clear of the
         # other families' ids, and with prefix "hp" the shard stem and record ids come out as "hpy17627".
         return Board("y" + bid.replace("_", ""), ".".join("∞" if p == 0 else str(p) for p in figure), l, sizes, "hp")
+
+
+def hybrid_figure(source, bid):
+    """(closing figure, alphabet) of a hybrid corpus, read off its certificates.
+
+    A certificate lists one PERIOD of a vertex with rotational symmetry (3.4 for 3.4.3.4), so each
+    figure is repeated until it closes. The name is the edge to four places (`1_7627` = 1.7627), and the
+    figure whose ℓ rounds to it wins; the `af` boards carry no number, and every figure in them closes
+    at one ℓ, so the first one does."""
+    want = float(bid.replace("_", ".")) if bid[0].isdigit() else None
+    best, alphabet = None, set()
+    paths = [p for p in sorted(glob.glob(os.path.join(source, "*.txt"))) if CERT_NAME.match(os.path.basename(p))]
+    for path in paths:
+        # The alphabet from a regex over the raw text: parsing a million certificates only to list
+        # their letters would cost as much as developing them.
+        alphabet.update(tile_size(c) for c in set(re.findall(r"\bA(?:oo|\d+)\b", open(path).read())))
+    for path in paths:
+        for cert in fd.parse_file(path):
+            for t in cert["types"]:
+                fig = [tile_size(c) for c in t["figure"]]
+                for reps in range(1, 7):
+                    l = solve_edge_length(fig * reps)
+                    if l is not None:
+                        break
+                if l is not None and (want is None or abs(l - want) < 1e-4):
+                    best = fig * reps
+                    break
+            if best:
+                break
+        if best:
+            break
+    if best is None:
+        raise DevelopError(f"hybrid {bid}: no certificate figure closes at the named edge")
+    return best, sorted(alphabet)
 
 
 def board_of(n):
@@ -250,7 +285,8 @@ def figure_in(source):
 CERT_NAME = re.compile(r"^(?P<fam>.+)solver_(?P<k>\d+)_(?P<tok>[A-Za-z0-9]+?)(?P<chir>_o)?_(?P<n>\d+)\.txt$")
 
 
-def run(source, board, out_prefix, ks=None, report_path=None, budget=None, boundR=0.86, progress=0):
+def run(source, board, out_prefix, ks=None, report_path=None, budget=None, boundR=0.86, progress=0,
+        part_size=250000):
     l, units, sizes = board.l, board.units, board.sizes
     paths = sorted(glob.glob(os.path.join(source, "*.txt"))) if os.path.isdir(source) else [source]
 
@@ -274,7 +310,22 @@ def run(source, board, out_prefix, ks=None, report_path=None, budget=None, bound
         spent += per_k[k]
     wanted = set(wanted)
 
-    by_k = defaultdict(list)
+    # A k slice past `part_size` certificates is written in parts, `-k2-p0.json`, `-k2-p1.json`, ..., as
+    # it develops: a million records in one list is gigabytes here and a shard no browser parses at once.
+    by_k, n_out, fo_range, parts, written = defaultdict(list), Counter(), {}, Counter(), []
+    split = {k for k in wanted if part_size and per_k[k] > part_size}
+
+    def flush(k):
+        recs = by_k.pop(k, [])
+        if not recs or not out_prefix:
+            return
+        os.makedirs(os.path.dirname(out_prefix) or ".", exist_ok=True)
+        path = f"{out_prefix}-k{k}-p{parts[k]}.json" if k in split else f"{out_prefix}-k{k}.json"
+        parts[k] += 1
+        with open(path, "w") as fh:
+            json.dump(recs, fh, separators=(",", ":"))
+        written.append((path, len(recs), os.path.getsize(path)))
+
     failures, fail_examples = Counter(), {}
     multi = n_certs = 0
     t0 = time.time()
@@ -304,28 +355,23 @@ def run(source, board, out_prefix, ks=None, report_path=None, budget=None, bound
             if ncombo > 1:
                 multi += 1
             rec["chiral"] = chiral
+            n_out[k] += 1
+            rec["id"] = rec["name"] = f"{board.prefix}{board.id}-{k}-{n_out[k]:05d}"
+            fo = rec["stats"]["faceOrbits"]
+            fo_range[k] = (min(fo, fo_range[k][0]), max(fo, fo_range[k][1])) if k in fo_range else (fo, fo)
             by_k[k].append(rec)
+            if k in split and len(by_k[k]) == part_size:
+                flush(k)
+    for k in list(by_k):
+        flush(k)
     elapsed = time.time() - t0
-
-    written = []
-    for k in sorted(by_k):
-        recs = by_k[k]
-        for i, r in enumerate(recs, start=1):
-            r["id"] = f"{board.prefix}{board.id}-{k}-{i:05d}"
-            r["name"] = r["id"]
-        if out_prefix:
-            os.makedirs(os.path.dirname(out_prefix) or ".", exist_ok=True)
-            path = f"{out_prefix}-k{k}.json"
-            with open(path, "w") as fh:
-                json.dump(recs, fh, separators=(",", ":"))
-            written.append((path, len(recs), os.path.getsize(path)))
 
     lines = [f"{board.label} develop ({board.id}) — tilings by regular {sizes} at one edge length",
              f"source          : {source}",
              f"forced edge len : l = {l:.12f}",
              "angles          : " + ", ".join(f"{p or '∞'}-gon {math.degrees(interior_angle(p, l)):.4f}deg" for p in sizes),
              f"certificates in : {n_certs}",
-             f"developed       : {sum(len(v) for v in by_k.values())}",
+             f"developed       : {sum(n_out.values())}",
              f"failed          : {sum(failures.values())}",
              f"multi-variant   : {multi}",
              f"wall            : {elapsed:.1f}s ({1000 * elapsed / max(1, n_certs):.1f} ms/certificate)",
@@ -334,13 +380,12 @@ def run(source, board, out_prefix, ks=None, report_path=None, budget=None, bound
         lines.append(f"   {cnt:6d}  {reason}   e.g. {fail_examples.get(reason, '')[:110]}")
     lines.append("")
     lines.append(f"{'k':>4} {'tilings':>9} {'face orbits: min':>17} {'max':>6}")
-    for k in sorted(by_k):
-        fo = [r["stats"]["faceOrbits"] for r in by_k[k]]
-        lines.append(f"{k:>4} {len(by_k[k]):>9} {min(fo):>17} {max(fo):>6}")
+    for k in sorted(n_out):
+        lines.append(f"{k:>4} {n_out[k]:>9} {fo_range[k][0]:>17} {fo_range[k][1]:>6}")
     if dropped:
         lost = sum(per_k[k] for k in dropped)
         lines.append("")
-        lines.append(f"BUDGET: shipped k <= {max(sorted(by_k)) if by_k else 0}; DROPPED k = {dropped} "
+        lines.append(f"BUDGET: shipped k <= {max(n_out) if n_out else 0}; DROPPED k = {dropped} "
                      f"({lost} certificates). Those k are enumerated in the corpus and NOT shipped — "
                      f"the shelf must not present this board as exhausted.")
     for path, cnt, sz in written:
@@ -350,7 +395,7 @@ def run(source, board, out_prefix, ks=None, report_path=None, budget=None, bound
         os.makedirs(os.path.dirname(report_path) or ".", exist_ok=True)
         open(report_path, "w").write(report)
     print(report)
-    return by_k, failures, dropped
+    return n_out, failures, dropped
 
 
 # ------------------------------------------------------------------ selftest
@@ -390,14 +435,15 @@ def main():
     ap.add_argument("source", nargs="?")
     ap.add_argument("--n", type=int, help="the 3.4.n.4 family parameter")
     ap.add_argument("--board", help="an abcdtest board id (e.g. 4568, 35bb) — the general a.b.c.d boards")
-    ap.add_argument("--hybrid", help="a hybrid board id (e.g. 1_7627); needs --figure")
-    ap.add_argument("--figure", help="one closing vertex figure for --hybrid, 0 = apeirogon (e.g. 0,0,4,4,4)")
+    ap.add_argument("--hybrid", help="a hybrid board id (e.g. 1_7627, af3)")
+    ap.add_argument("--figure", help="override the closing figure --hybrid reads off the certificates, 0 = apeirogon")
     ap.add_argument("--out")
     ap.add_argument("--report")
     ap.add_argument("--ks")
     ap.add_argument("--budget", type=int, help="max certificates to ship, whole k slices, ascending k")
     ap.add_argument("--boundR", type=float, default=0.86)
     ap.add_argument("--progress", type=int, default=0)
+    ap.add_argument("--part-size", type=int, default=250000, help="certificates per shard part")
     ap.add_argument("--selftest", action="store_true")
     args = ap.parse_args()
     if args.selftest:
@@ -410,9 +456,10 @@ def main():
     if args.n is not None:
         board = Board.family(args.n)
     elif args.hybrid is not None:
-        if not args.figure:
-            ap.error("--hybrid needs --figure")
-        board = Board.hybrid(args.hybrid, [int(x) for x in args.figure.split(",")])
+        if args.figure:
+            board = Board.hybrid(args.hybrid, [int(x) for x in args.figure.split(",")])
+        else:
+            board = Board.hybrid(args.hybrid, *hybrid_figure(args.source, args.hybrid))
     else:
         # The certificates decide the alphabet; the id only names the board. See `figure_in`.
         fig = figure_in(args.source)
@@ -421,7 +468,8 @@ def main():
                   f"certificates are {'.'.join(map(str, fig))}; developing at the certificates' edge length.")
         board = Board.abcd(args.board, fig)
     ks = set(int(x) for x in args.ks.split(",")) if args.ks else None
-    run(args.source, board, args.out, ks, args.report, args.budget, args.boundR, args.progress)
+    run(args.source, board, args.out, ks, args.report, args.budget, args.boundR, args.progress,
+        args.part_size)
 
 
 if __name__ == "__main__":

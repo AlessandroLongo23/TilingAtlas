@@ -1,0 +1,16 @@
+4.6.5.6.5.6.4.12.5.12 develop (y33086) — tilings by regular [4, 5, 6, 12] at one edge length
+source          : /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/hybrid/solver_hybrid_3_3086
+forced edge len : l = 3.308694702372
+angles          : 4-gon 30.2449deg, 5-gon 34.7329deg, 6-gon 37.2671deg, 12-gon 41.7551deg
+certificates in : 38209
+developed       : 38209
+failed          : 0
+multi-variant   : 6
+wall            : 55.2s (1.4 ms/certificate)
+
+
+   k   tilings  face orbits: min    max
+   1     10242                 2     12
+   2     27967                 9     18
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev/hpy33086-k1.json: 10242 records, 6.57 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev/hpy33086-k2.json: 27967 records, 25.30 MB

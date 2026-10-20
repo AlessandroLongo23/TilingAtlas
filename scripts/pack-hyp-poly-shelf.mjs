@@ -41,13 +41,16 @@ function boardOf(stem) {
 const byBoard = new Map();
 for (const dir of dirs) {
 	for (const f of fs.readdirSync(dir)) {
-		const m = /^(hp(?:[qt]?[0-9ab]+|y[0-9a-z]+))-k(\d+)\.json$/.exec(f);
+		// A slice too big for one shard arrives in parts, `-k2-p0.json`, `-k2-p1.json`, ... (develop_ai1 --part-size).
+		const m = /^(hp(?:[qt]?[0-9ab]+|y[0-9a-z]+))-k(\d+)(?:-p(\d+))?\.json$/.exec(f);
 		if (!m) continue;
 		const b = boardOf(m[1]);
 		if (!b) continue;
 		const key = `${b.family}:${b.id}`;
 		if (!byBoard.has(key)) byBoard.set(key, { ...b, stem: m[1], slices: [] });
-		byBoard.get(key).slices.push({ k: Number(m[2]), file: path.join(dir, f) });
+		byBoard
+			.get(key)
+			.slices.push({ k: Number(m[2]), part: m[3] === undefined ? null : Number(m[3]), file: path.join(dir, f) });
 	}
 }
 
@@ -65,12 +68,14 @@ const keys = [...byBoard.keys()].sort((a, b) => {
 
 for (const key of keys) {
 	const b = byBoard.get(key);
-	const counts = {};
+	const counts = {},
+		parts = {};
 	let label = null;
-	for (const s of b.slices.sort((x, y) => x.k - y.k)) {
+	for (const s of b.slices.sort((x, y) => x.k - y.k || x.part - y.part)) {
 		const recs = JSON.parse(fs.readFileSync(s.file, "utf8"));
 		if (!recs.length) continue;
-		counts[s.k] = recs.length;
+		counts[s.k] = (counts[s.k] ?? 0) + recs.length;
+		if (s.part !== null) parts[s.k] = Math.max(parts[s.k] ?? 0, s.part + 1);
 		label ??= recs[0].family;
 		totalRecs += recs.length;
 		const packed = Buffer.from(JSON.stringify(encodeAtlas(recs)));
@@ -79,7 +84,7 @@ for (const key of keys) {
 		totalGz += gz.length;
 		if (write) {
 			fs.mkdirSync(OUT, { recursive: true });
-			fs.writeFileSync(path.join(OUT, `${b.stem}-k${s.k}.json.gz`), gz);
+			fs.writeFileSync(path.join(OUT, `${b.stem}-k${s.k}${s.part === null ? "" : `-p${s.part}`}.json.gz`), gz);
 		}
 	}
 	const ks = Object.keys(counts)
@@ -91,7 +96,13 @@ for (const key of keys) {
 	// records, so a board costs nothing until it is opened.
 	rows.push(
 		`\t{ id: "${b.id}", n: ${b.n ?? 0}, label: "${label}", family: "${b.family}", eagerKs: [], ` +
-			`lazyKs: [${ks.join(", ")}], dropped: [], counts: { ${ks.map((k) => `${k}: ${counts[k]}`).join(", ")} } },`,
+			`lazyKs: [${ks.join(", ")}], dropped: [], counts: { ${ks.map((k) => `${k}: ${counts[k]}`).join(", ")} }` +
+			(Object.keys(parts).length
+				? `, parts: { ${Object.entries(parts)
+						.map(([k, n]) => `${k}: ${n}`)
+						.join(", ")} }`
+				: "") +
+			` },`,
 	);
 }
 

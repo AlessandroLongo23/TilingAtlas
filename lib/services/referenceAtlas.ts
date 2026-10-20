@@ -169,7 +169,7 @@ import { sphericalSolidSub } from "@/lib/tilings/sph-inscribed";
 import {
 	hypPolyBoardLabel,
 	hypPolyFamilyLabel,
-	hypPolyShardUrl,
+	hypPolyShardUrls,
 	hypPolySub,
 	HYP_POLY_BOARDS,
 	hypPolySubOfBoard,
@@ -2365,13 +2365,16 @@ function hypPolyToReference(p: HypPolyPattern): ReferenceTiling {
 
 async function fetchHypPolyShard(n: string, k: number): Promise<ReferenceTiling[]> {
 	try {
-		const res = await fetch(hypPolyShardUrl(n, k));
-		if (!res.ok) return [];
-		// `readAtlas` and not `res.json()`: the abcd shards are stored gzipped, and parsing those bytes as
-		// JSON throws into the catch below, which returns [] — a board that fetched its shard with a 200
-		// and then rendered "No tilings match the current filters".
-		const recs = await readAtlas<HypPolyPattern>(res);
-		return recs.map(hypPolyToReference);
+		const out: ReferenceTiling[] = [];
+		for (const url of hypPolyShardUrls(n, k)) {
+			const res = await fetch(url);
+			if (!res.ok) return [];
+			// `readAtlas` and not `res.json()`: the abcd shards are stored gzipped, and parsing those bytes as
+			// JSON throws into the catch below, which returns [] — a board that fetched its shard with a 200
+			// and then rendered "No tilings match the current filters".
+			for (const p of await readAtlas<HypPolyPattern>(res)) out.push(hypPolyToReference(p));
+		}
+		return out;
 	} catch {
 		return [];
 	}

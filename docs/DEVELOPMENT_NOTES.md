@@ -18898,3 +18898,37 @@ the view).
 
 ⚑ `tools/frames/original-engine.js` and `baseline.js` are still untracked: the FrameFinder code has
 no licence, and this repo is public.
+
+## 2026-10-20: every hybrid system Marek has, 2,576,114 tilings on 21 boards
+
+**What shipped.** Marek's `hybrid.zip` (all his hybrid searches to 2026-08-07, 2,582,148 certificates in
+21 corpora) went onto the hyperbolic polygon shelf, under "Hybrid boards", one board per system sorted by
+edge length: 2,576,114 tilings, 95 MB gzipped. Before this the atlas carried one of the 21 (`y17627`,
+11,854, 0.46% of the zip). Against the 08-12 drop the zip adds four things: `2_9830` (1,134,801, never
+run before), `3_3086` (38,209, likewise), `1_0612` k=10 (132,193, the tail the 08-12 census promised)
+and `1_0531` k=16-26 (18,686). The other 16 corpora are byte-identical to 08-12. Every one of the 19
+`solution_list.txt` censuses matches the files at every k; `2_9830` and `3_3086` ship none. `1_0531`'s
+k=15 and k=19 are census zeros, not cuts. Logs: `experiments/results/hybrid-drop-2026-10-20/`.
+
+**No multiplier letters after all.** The 10-03 note expected `B`/`C` edge multiples to gate 18 systems;
+every corpus here uses `A` letters and `Aoo` only. `develop_ai1.py --hybrid` now reads the closing figure
+off the certificates (repeating a listed period until it closes) and keeps the one whose ℓ rounds to the
+name; the `af` systems have no number and close at one ℓ each (0.7672, 0.9624, 1.1989, 1.3170, 1.4794).
+
+**Two developer changes.** (1) A k slice past 250,000 certificates is written in parts as it develops,
+`-k2-p0.json` …; the board row carries `parts`, and `hypPolyShardUrls` / the pack script read them.
+`2_9830` k=2 is five parts, `2_6212` k=3 two. (2) `quotient_faces` refused a face whose dart cycle does
+not divide its size. That rule holds only for rotation stabilisers: a 10-gon with a half-turn and two
+mirrors through side midpoints folds onto 3 darts (4+4+2). It cost `af5` 27,514 of 60,928; check_patch
+had already measured every developed side, so the rule is gone and `af5` develops whole.
+`hpyaf5-3-00001` is one of those and draws clean.
+
+**⚑ `2_9387` is short 6,034 certificates, and they cannot ship.** Its certificates use 4¹⁰ (closes at
+2.9387, the name) and eighteen 7-valent orders of 4².6³.30² (close at 2.6102). No regular polygons close
+a 4.4.a.a.a.b.b vertex at 2.9387 (the largest angle there, the apeirogon's, is ~52°), and brute force over
+X¹⁰ with X².Y³.Z² for 3..60 and ∞ finds only X=3, Y=10, Z=3. So the 6,034 certificates holding both
+kinds of vertex have no geometry. Shipped: the 25,922 without a 4¹⁰ vertex at 2.6102 and the one pure
+{4,10} at 2.9387 — the only board whose records carry two edges. Ask Marek what the board was meant to be.
+
+**Process note.** The two big runs took four hours instead of forty minutes: the `pnpm dev` server held
+10 GB and pushed both into swap. Stopping it brought them back to ~1 ms/certificate.

@@ -1,0 +1,22 @@
+  [     1s] 5000/31957 developed, 4998 failed, ETA 6s
+  [     3s] 10000/31957 developed, 9998 failed, ETA 6s
+  [     3s] 15000/31957 developed, 14998 failed, ETA 3s
+  [     3s] 20000/31957 developed, 19998 failed, ETA 2s
+  [     3s] 25000/31957 developed, 24998 failed, ETA 1s
+  [     4s] 30000/31957 developed, 29998 failed, ETA 0s
+4.4.4.4.4.4.4.4.4.4 develop (y29387) — tilings by regular [4, 6, 30] at one edge length
+source          : /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/hybrid/solver_hybrid_2_9387
+forced edge len : l = 2.938703488736
+angles          : 4-gon 36.0000deg, 6-gon 44.4775deg, 30-gon 51.5225deg
+certificates in : 31957
+developed       : 1
+failed          : 31956
+multi-variant   : 0
+wall            : 3.9s (0.1 ms/certificate)
+
+    31956  build   e.g. build: figure ['A4', 'A6', 'A4', 'A6', 'A30', 'A30', 'A6'] angle sum does not divide 2π (rot=1.167022)
+
+   k   tilings  face orbits: min    max
+   1         1                 1      1
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev/hpy29387-k1.json: 1 records, 0.00 MB
+

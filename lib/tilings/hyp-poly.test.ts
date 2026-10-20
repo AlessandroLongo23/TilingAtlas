@@ -8,7 +8,7 @@ import {
 	hypPolyFamilyLabel,
 	hypPolyKGaps,
 	hypPolyMeta,
-	hypPolyShardUrl,
+	hypPolyShardUrls,
 	hypPolySubOfBoard,
 	HYP_POLY_BOARD_BY_ID,
 	HYP_POLY_BOARDS,
@@ -25,15 +25,17 @@ import {
 // The abcd shards are stored gzipped (703 MB of packed JSON to 48 MB, in a git-tracked public/), so a
 // reader here has to gunzip exactly as atlasCodec's `shardBody` does in the browser.
 const shardOf = (b: HypPolyBoard, k: number): HypPolyPattern[] | null => {
-	const f = `public${hypPolyShardUrl(b.id, k)}`;
-	if (!existsSync(f)) return null;
-	const text = f.endsWith(".gz") ? gunzipSync(readFileSync(f)).toString("utf8") : readFileSync(f, "utf8");
-	return decodeAtlas<HypPolyPattern>(JSON.parse(text));
+	const files = hypPolyShardUrls(b.id, k).map((u) => `public${u}`);
+	if (!files.every((f) => existsSync(f))) return null;
+	return files.flatMap((f) => {
+		const text = f.endsWith(".gz") ? gunzipSync(readFileSync(f)).toString("utf8") : readFileSync(f, "utf8");
+		return decodeAtlas<HypPolyPattern>(JSON.parse(text));
+	});
 };
 
-// Through `hypPolyShardUrl`, not a literal path: every shard on this shelf became `.json.gz` on
+// Through `hypPolyShardUrls`, not a literal path: every shard on this shelf became `.json.gz` on
 // 2026-08-31, and a hardcoded ".json" here turned the whole `shards` block into 9 silent skips.
-const anyShard = existsSync(`public${hypPolyShardUrl("7", 1)}`);
+const anyShard = existsSync(`public${hypPolyShardUrls("7", 1)[0]}`);
 const ai1 = HYP_POLY_BOARDS.filter((b) => b.family === "ai1");
 const ai2 = HYP_POLY_BOARDS.filter((b) => b.family === "ai2");
 const abcd = HYP_POLY_BOARDS.filter((b) => b.family === "abcd");
@@ -122,7 +124,7 @@ describe.skipIf(!anyShard)("shards", () => {
 	it("has a file behind every (board, k) it lists", () => {
 		for (const b of HYP_POLY_BOARDS) {
 			for (const k of hypPolyBoardKs(b)) {
-				expect(existsSync(`public${hypPolyShardUrl(b.id, k)}`), `${b.id} k=${k}`).toBe(true);
+				for (const url of hypPolyShardUrls(b.id, k)) expect(existsSync(`public${url}`), url).toBe(true);
 			}
 		}
 	});

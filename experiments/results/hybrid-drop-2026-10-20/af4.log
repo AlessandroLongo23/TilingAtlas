@@ -1,0 +1,31 @@
+  [    17s] 5000/41441 developed, 0 failed, ETA 125s
+  [    47s] 10000/41441 developed, 0 failed, ETA 149s
+  [    60s] 15000/41441 developed, 0 failed, ETA 105s
+  [    72s] 20000/41441 developed, 0 failed, ETA 77s
+  [    87s] 25000/41441 developed, 0 failed, ETA 57s
+  [   110s] 30000/41441 developed, 0 failed, ETA 42s
+  [   131s] 35000/41441 developed, 0 failed, ETA 24s
+  [   153s] 40000/41441 developed, 0 failed, ETA 6s
+6.6.6.6 develop (yaf4) — tilings by regular [4, 6, 0] at one edge length
+source          : /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/hybrid/solver_hybrid_af4
+forced edge len : l = 1.316957896925
+angles          : 4-gon 70.5288deg, 6-gon 90.0000deg, ∞-gon 109.4712deg
+certificates in : 41441
+developed       : 41441
+failed          : 0
+multi-variant   : 11644
+wall            : 167.6s (4.0 ms/certificate)
+
+
+   k   tilings  face orbits: min    max
+   1         5                 1      4
+   2        34                 2      6
+   3       351                 3      8
+   4      3630                 3     10
+   5     37421                 4     14
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev/hpyaf4-k1.json: 5 records, 0.00 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev/hpyaf4-k2.json: 34 records, 0.02 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev/hpyaf4-k3.json: 351 records, 0.23 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev/hpyaf4-k4.json: 3630 records, 2.82 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev/hpyaf4-k5.json: 37421 records, 33.29 MB
+

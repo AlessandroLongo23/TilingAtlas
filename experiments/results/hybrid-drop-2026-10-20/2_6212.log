@@ -1,0 +1,74 @@
+  [     6s] 5000/274068 developed, 0 failed, ETA 310s
+  [    11s] 10000/274068 developed, 0 failed, ETA 283s
+  [    15s] 15000/274068 developed, 0 failed, ETA 260s
+  [    27s] 20000/274068 developed, 0 failed, ETA 341s
+  [    34s] 25000/274068 developed, 0 failed, ETA 334s
+  [    39s] 30000/274068 developed, 0 failed, ETA 314s
+  [    43s] 35000/274068 developed, 0 failed, ETA 292s
+  [    53s] 40000/274068 developed, 0 failed, ETA 311s
+  [    58s] 45000/274068 developed, 0 failed, ETA 294s
+  [    61s] 50000/274068 developed, 0 failed, ETA 274s
+  [    65s] 55000/274068 developed, 0 failed, ETA 259s
+  [    69s] 60000/274068 developed, 0 failed, ETA 246s
+  [    74s] 65000/274068 developed, 0 failed, ETA 240s
+  [    79s] 70000/274068 developed, 0 failed, ETA 230s
+  [    83s] 75000/274068 developed, 0 failed, ETA 220s
+  [    86s] 80000/274068 developed, 0 failed, ETA 208s
+  [    89s] 85000/274068 developed, 0 failed, ETA 197s
+  [    91s] 90000/274068 developed, 0 failed, ETA 186s
+  [    93s] 95000/274068 developed, 0 failed, ETA 176s
+  [    96s] 100000/274068 developed, 0 failed, ETA 167s
+  [   116s] 105000/274068 developed, 0 failed, ETA 187s
+  [   118s] 110000/274068 developed, 0 failed, ETA 177s
+  [   121s] 115000/274068 developed, 0 failed, ETA 167s
+  [   125s] 120000/274068 developed, 0 failed, ETA 160s
+  [   129s] 125000/274068 developed, 0 failed, ETA 154s
+  [   134s] 130000/274068 developed, 0 failed, ETA 148s
+  [   138s] 135000/274068 developed, 0 failed, ETA 142s
+  [   143s] 140000/274068 developed, 0 failed, ETA 136s
+  [   150s] 145000/274068 developed, 0 failed, ETA 133s
+  [   155s] 150000/274068 developed, 0 failed, ETA 128s
+  [   158s] 155000/274068 developed, 0 failed, ETA 121s
+  [   161s] 160000/274068 developed, 0 failed, ETA 114s
+  [   163s] 165000/274068 developed, 0 failed, ETA 108s
+  [   166s] 170000/274068 developed, 0 failed, ETA 102s
+  [   169s] 175000/274068 developed, 0 failed, ETA 95s
+  [   172s] 180000/274068 developed, 0 failed, ETA 90s
+  [   174s] 185000/274068 developed, 0 failed, ETA 84s
+  [   176s] 190000/274068 developed, 0 failed, ETA 78s
+  [   179s] 195000/274068 developed, 0 failed, ETA 73s
+  [   182s] 200000/274068 developed, 0 failed, ETA 67s
+  [   202s] 205000/274068 developed, 0 failed, ETA 68s
+  [   204s] 210000/274068 developed, 0 failed, ETA 62s
+  [   207s] 215000/274068 developed, 0 failed, ETA 57s
+  [   210s] 220000/274068 developed, 0 failed, ETA 52s
+  [   212s] 225000/274068 developed, 0 failed, ETA 46s
+  [   215s] 230000/274068 developed, 0 failed, ETA 41s
+  [   218s] 235000/274068 developed, 0 failed, ETA 36s
+  [   221s] 240000/274068 developed, 0 failed, ETA 31s
+  [   224s] 245000/274068 developed, 0 failed, ETA 27s
+  [   233s] 250000/274068 developed, 0 failed, ETA 22s
+  [   278s] 255000/274068 developed, 0 failed, ETA 21s
+  [   283s] 260000/274068 developed, 0 failed, ETA 15s
+  [   288s] 265000/274068 developed, 0 failed, ETA 10s
+  [   293s] 270000/274068 developed, 0 failed, ETA 4s
+5.5.5.30.5.5.30 develop (y26212) — tilings by regular [5, 30] at one edge length
+source          : /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/hybrid/solver_hybrid_2_6212
+forced edge len : l = 2.621218195455
+angles          : 5-gon 48.0000deg, 30-gon 60.0000deg
+certificates in : 274068
+developed       : 274068
+failed          : 0
+multi-variant   : 18386
+wall            : 307.2s (1.1 ms/certificate)
+
+
+   k   tilings  face orbits: min    max
+   1        14                 1      6
+   2      1055                 2     12
+   3    272999                 2     18
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev/hpy26212-k3-p0.json: 250000 records, 226.26 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev/hpy26212-k1.json: 14 records, 0.01 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev/hpy26212-k2.json: 1055 records, 0.75 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev/hpy26212-k3-p1.json: 22999 records, 19.75 MB
+

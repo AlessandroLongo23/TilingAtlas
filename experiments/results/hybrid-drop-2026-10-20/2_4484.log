@@ -1,0 +1,22 @@
+  [    15s] 5000/27149 developed, 0 failed, ETA 65s
+  [    32s] 10000/27149 developed, 0 failed, ETA 55s
+  [    47s] 15000/27149 developed, 0 failed, ETA 38s
+  [    61s] 20000/27149 developed, 0 failed, ETA 22s
+  [    72s] 25000/27149 developed, 0 failed, ETA 6s
+4.4.8.4.8.4.8 develop (y24484) — tilings by regular [4, 8] at one edge length
+source          : /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/hybrid/solver_hybrid_2_4484
+forced edge len : l = 2.448452447678
+angles          : 4-gon 45.0000deg, 8-gon 60.0000deg
+certificates in : 27149
+developed       : 27149
+failed          : 0
+multi-variant   : 644
+wall            : 79.6s (2.9 ms/certificate)
+
+
+   k   tilings  face orbits: min    max
+   1        74                 1      7
+   2     27075                 2     14
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev/hpy24484-k1.json: 74 records, 0.04 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev/hpy24484-k2.json: 27075 records, 19.23 MB
+

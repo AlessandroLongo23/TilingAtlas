@@ -1,0 +1,20 @@
+3.3.3.4.3.3.3.4.4.4.4.4 develop (y29830) — tilings by regular [3, 4] at one edge length
+source          : /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/hybrid/solver_hybrid_2_9830
+forced edge len : l = 2.983017744718
+angles          : 3-gon 24.7356deg, 4-gon 35.2644deg
+certificates in : 1134801
+developed       : 1134801
+failed          : 0
+multi-variant   : 6991
+wall            : 13840.8s (12.2 ms/certificate)
+
+
+   k   tilings  face orbits: min    max
+   1       682                 2     14
+   2   1134119                 3     24
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev/hpy29830-k2-p0.json: 250000 records, 242.68 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev/hpy29830-k2-p1.json: 250000 records, 247.13 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev/hpy29830-k2-p2.json: 250000 records, 247.20 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev/hpy29830-k2-p3.json: 250000 records, 247.27 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev/hpy29830-k1.json: 682 records, 0.45 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev/hpy29830-k2-p4.json: 134119 records, 131.99 MB

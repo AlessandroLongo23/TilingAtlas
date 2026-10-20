@@ -64,6 +64,9 @@ export interface HypPolyBoard {
 	missing?: number[];
 	/** Tilings per shipped k. */
 	counts: Record<number, number>;
+	/** k slices stored in several shard files, `-k2-p0` … `-k2-p4`, and how many: a slice of a million
+	 *  records is too big to pack or fetch as one file. Absent k is one file. */
+	parts?: Record<number, number>;
 }
 
 export interface HypPolyPattern {
@@ -1537,7 +1540,169 @@ export const HYP_POLY_BOARDS: HypPolyBoard[] = [
 	{ id: "99aa", n: 0, label: "9,9,10,10", family: "abcd", eagerKs: [], lazyKs: [1], dropped: [], counts: { 1: 1 } },
 	{ id: "9aaa", n: 0, label: "9,10,10,10", family: "abcd", eagerKs: [], lazyKs: [1], dropped: [], counts: { 1: 1 } },
 	{ id: "aaaa", n: 0, label: "10,10,10,10", family: "abcd", eagerKs: [], lazyKs: [1], dropped: [], counts: { 1: 1 } },
-	// Marek's hybrid systems. The label is the edge length the system is named for and its polygons.
+	// Marek's hybrid systems, by edge length. The label is the edge the system is named for and its
+	// polygons; the "af" systems carry no number, so theirs is solved from their figures.
+	{
+		id: "yaf1",
+		n: 0,
+		label: "af1, edge 0.7672 (3, 4, 5, 10)",
+		family: "hybrid",
+		eagerKs: [],
+		lazyKs: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+		dropped: [],
+		counts: {
+			1: 2,
+			2: 1,
+			3: 4,
+			4: 6,
+			5: 15,
+			6: 47,
+			7: 45,
+			8: 213,
+			9: 363,
+			10: 650,
+			11: 2016,
+			12: 3018,
+			13: 7862,
+			14: 16607,
+			15: 30098,
+		},
+	},
+	{
+		id: "yaf2",
+		n: 0,
+		label: "af2, edge 0.9624 (3, 4, 6, 10, ∞)",
+		family: "hybrid",
+		eagerKs: [],
+		lazyKs: [1, 2, 3, 4, 5, 6, 7, 8],
+		dropped: [],
+		counts: { 1: 4, 2: 12, 3: 45, 4: 227, 5: 1014, 6: 4261, 7: 19356, 8: 86934 },
+	},
+	{
+		id: "y10377",
+		n: 0,
+		label: "edge 1.0377 (3, 4, 5, 8, 40)",
+		family: "hybrid",
+		eagerKs: [],
+		lazyKs: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+		dropped: [],
+		counts: { 1: 1, 2: 2, 3: 1, 4: 7, 5: 8, 6: 41, 7: 64, 8: 270, 9: 438, 10: 1859, 11: 3296, 12: 8039, 13: 19705 },
+	},
+	{
+		id: "y10531",
+		n: 0,
+		label: "edge 1.0531 (3, 5, 6, 9, 18)",
+		family: "hybrid",
+		eagerKs: [],
+		lazyKs: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 18, 20, 21, 22, 23, 24, 25, 26],
+		dropped: [],
+		counts: {
+			1: 1,
+			2: 2,
+			3: 1,
+			4: 1,
+			5: 22,
+			6: 12,
+			7: 37,
+			8: 84,
+			9: 559,
+			10: 702,
+			11: 1155,
+			12: 5543,
+			13: 4099,
+			14: 28244,
+			16: 2,
+			17: 4,
+			18: 22,
+			20: 139,
+			21: 62,
+			22: 204,
+			23: 615,
+			24: 2416,
+			25: 5060,
+			26: 10162,
+		},
+	},
+	{
+		id: "y10612",
+		n: 0,
+		label: "edge 1.0612 (3, 4, 5, 10, 20)",
+		family: "hybrid",
+		eagerKs: [],
+		lazyKs: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+		dropped: [],
+		counts: { 1: 5, 2: 7, 3: 29, 4: 118, 5: 264, 6: 1364, 7: 3969, 8: 9740, 9: 40945, 10: 132193 },
+	},
+	{
+		id: "y11555",
+		n: 0,
+		label: "edge 1.1555 (3, 4, 5, 12)",
+		family: "hybrid",
+		eagerKs: [],
+		lazyKs: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+		dropped: [],
+		counts: { 1: 1, 2: 2, 3: 2, 4: 14, 5: 29, 6: 162, 7: 352, 8: 1388, 9: 4654, 10: 12809 },
+	},
+	{
+		id: "yaf3",
+		n: 0,
+		label: "af3, edge 1.1989 (4, 5, 6, 10)",
+		family: "hybrid",
+		eagerKs: [],
+		lazyKs: [1, 2, 3, 4, 5, 6, 7, 8],
+		dropped: [],
+		counts: { 1: 3, 2: 3, 3: 47, 4: 109, 5: 578, 6: 4018, 7: 11414, 8: 82029 },
+	},
+	{
+		id: "y12537",
+		n: 0,
+		label: "edge 1.2537 (4, 10, 30)",
+		family: "hybrid",
+		eagerKs: [],
+		lazyKs: [1, 2, 3, 4, 5, 6, 7],
+		dropped: [],
+		counts: { 1: 4, 2: 7, 3: 24, 4: 76, 5: 498, 6: 2744, 7: 12188 },
+	},
+	{
+		id: "yaf4",
+		n: 0,
+		label: "af4, edge 1.3170 (4, 6, ∞)",
+		family: "hybrid",
+		eagerKs: [],
+		lazyKs: [1, 2, 3, 4, 5],
+		dropped: [],
+		counts: { 1: 5, 2: 34, 3: 351, 4: 3630, 5: 37421 },
+	},
+	{
+		id: "yaf5",
+		n: 0,
+		label: "af5, edge 1.4794 (5, 6, 10, ∞)",
+		family: "hybrid",
+		eagerKs: [],
+		lazyKs: [1, 2, 3, 4, 5, 6],
+		dropped: [],
+		counts: { 1: 3, 2: 14, 3: 98, 4: 699, 5: 6852, 6: 53262 },
+	},
+	{
+		id: "y16628",
+		n: 0,
+		label: "edge 1.6628 (3, 12, ∞)",
+		family: "hybrid",
+		eagerKs: [],
+		lazyKs: [1, 2, 3, 4, 5],
+		dropped: [],
+		counts: { 1: 5, 2: 25, 3: 517, 4: 6424, 5: 101921 },
+	},
+	{
+		id: "y17191",
+		n: 0,
+		label: "edge 1.7191 (3, 4, 6, 18)",
+		family: "hybrid",
+		eagerKs: [],
+		lazyKs: [1, 2, 3, 4, 5],
+		dropped: [],
+		counts: { 1: 2, 2: 76, 3: 1072, 4: 6671, 5: 126518 },
+	},
 	{
 		id: "y17627",
 		n: 0,
@@ -1547,6 +1712,91 @@ export const HYP_POLY_BOARDS: HypPolyBoard[] = [
 		lazyKs: [1, 2, 3],
 		dropped: [],
 		counts: { 1: 8, 2: 260, 3: 11586 },
+	},
+	{
+		id: "y18365",
+		n: 0,
+		label: "edge 1.8365 (3, 4, 5, 20)",
+		family: "hybrid",
+		eagerKs: [],
+		lazyKs: [1, 2, 3, 4, 5],
+		dropped: [],
+		counts: { 1: 4, 2: 25, 3: 354, 4: 4387, 5: 105458 },
+	},
+	{
+		id: "y21408",
+		n: 0,
+		label: "edge 2.1408 (3, 4, 7)",
+		family: "hybrid",
+		eagerKs: [],
+		lazyKs: [1, 2, 3],
+		dropped: [],
+		counts: { 1: 5, 2: 88, 3: 10166 },
+	},
+	{
+		id: "y24484",
+		n: 0,
+		label: "edge 2.4484 (4, 8)",
+		family: "hybrid",
+		eagerKs: [],
+		lazyKs: [1, 2],
+		dropped: [],
+		counts: { 1: 74, 2: 27075 },
+	},
+	{
+		id: "y24578",
+		n: 0,
+		label: "edge 2.4578 (3, 4, 6, ∞)",
+		family: "hybrid",
+		eagerKs: [],
+		lazyKs: [1, 2],
+		dropped: [],
+		counts: { 1: 84, 2: 10471 },
+	},
+	{
+		id: "y26212",
+		n: 0,
+		label: "edge 2.6212 (5, 30)",
+		family: "hybrid",
+		eagerKs: [],
+		lazyKs: [1, 2, 3],
+		dropped: [],
+		counts: { 1: 14, 2: 1055, 3: 272999 },
+		parts: { 3: 2 },
+	},
+	// ⚑ y29387 is short 6,034 of Marek's 31,957 at k=2: those certificates put a 4^10 vertex (closes at
+	// 2.9387, the name) beside 4.4.6.6.6.30.30-type vertices (close at 2.6102), and no regular-polygon
+	// tiling has both at one edge. Not a budget cut: no geometry exists to draw. Asked of Marek, 2026-10-20.
+	{
+		id: "y29387",
+		n: 0,
+		label: "edge 2.6102 and 2.9387 (4, 6, 30)",
+		family: "hybrid",
+		eagerKs: [],
+		lazyKs: [1, 2],
+		dropped: [],
+		counts: { 1: 85, 2: 25838 },
+	},
+	{
+		id: "y29830",
+		n: 0,
+		label: "edge 2.9830 (3, 4)",
+		family: "hybrid",
+		eagerKs: [],
+		lazyKs: [1, 2],
+		dropped: [],
+		counts: { 1: 682, 2: 1134119 },
+		parts: { 2: 5 },
+	},
+	{
+		id: "y33086",
+		n: 0,
+		label: "edge 3.3086 (4, 5, 6, 12)",
+		family: "hybrid",
+		eagerKs: [],
+		lazyKs: [1, 2],
+		dropped: [],
+		counts: { 1: 10242, 2: 27967 },
 	},
 ];
 
@@ -1580,17 +1830,18 @@ export function hypPolyLazyShardsForK(k: number): HypPolyBoard[] {
 	return HYP_POLY_BOARDS.filter((b) => b.lazyKs.includes(k));
 }
 
-/** A board's shard URL. EVERY shard on this shelf is stored GZIPPED. `public/` is tracked in git, and
- *  the shelf now carries every k Marek enumerated — 271 boards, 2,191,775 tilings, 1,617 MB of packed
- *  JSON — which fits in 110 MB compressed. Dart arrays are thousands of small repeated integers, so the
- *  ratio is ~15x, and the WIRE is identical either way because the server gzips a plain .json on the fly
+/** A board's shard URLs for one k. EVERY shard on this shelf is stored GZIPPED. `public/` is tracked in
+ *  git, and the shelf now carries every k Marek enumerated — 292 boards, 4,767,889 tilings, 198 MB
+ *  compressed. Dart arrays are thousands of small repeated integers, so the ratio is 10-15x, and the WIRE is identical either way because the server gzips a plain .json on the fly
  *  anyway. atlasCodec's `shardBody` reads either form, sniffing the gzip magic. */
-export const hypPolyShardUrl = (n: string | number, k: number): string => {
+export const hypPolyShardUrls = (n: string, k: number): string[] => {
 	// The abcd stems carry a "q" so a 4-digit board id can never collide with an ai1 one, and the ai2 ids
 	// already carry their own "t". The developer prefixes record ids the same way, which is what keeps a
-	// record and its file agreeing.
-	const abcd = HYP_POLY_BOARD_BY_ID.get(String(n))?.family === "abcd";
-	return `/hyperbolic-poly/hp${abcd ? "q" : ""}${n}-k${k}.json.gz`;
+	// record and its file agreeing. A slice stored in parts is one file per part.
+	const board = HYP_POLY_BOARD_BY_ID.get(n);
+	const stem = `/hyperbolic-poly/hp${board?.family === "abcd" ? "q" : ""}${n}-k${k}`;
+	const parts = board?.parts?.[k];
+	return parts ? Array.from({ length: parts }, (_, i) => `${stem}-p${i}.json.gz`) : [`${stem}.json.gz`];
 };
 
 /** The /play sub-axis key — namespaced against the "hyp-" edge bases and the "hyc-" colourings, and

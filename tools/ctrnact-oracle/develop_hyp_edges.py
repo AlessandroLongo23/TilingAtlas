@@ -292,10 +292,9 @@ def quotient_faces(block):
 
     The cycle is the face FOLDED by its own stabiliser, so it is generally SHORTER than the polygon:
     a hexagon all six of whose corners are one orbit closes after one step. What must hold is that
-    the corner letter is constant along the cycle and the polygon's corner count is a multiple of the
-    cycle length; `fold` is that ratio, and the developed face has `size` corners either way.
+    the corner letter is constant along the cycle; the developed face has `size` corners either way.
 
-    Returns (face_of_dart, faces) with faces[f] = {darts, size, fold, letter}. A digon face (size 2)
+    Returns (face_of_dart, faces) with faces[f] = {darts, size, letter}. A digon face (size 2)
     marks a drawn edge and is not a tile."""
     n = len(block.rneig)
     face_of = [-1] * n
@@ -319,12 +318,12 @@ def quotient_faces(block):
         if len(letters) != 1:
             raise DevelopError("quotient face mixes corner letters")
         letter = letters.pop()
-        size = tile_size(letter)
-        if size % len(f["darts"]):
-            raise DevelopError(f"{letter} face folds onto {len(f['darts'])} darts, which does not divide {size}")
+        # The cycle length need not divide the corner count: a face fixed by a mirror folds onto fewer
+        # darts than its rotations alone give (a 10-gon with a half-turn and two mirrors through side
+        # midpoints folds onto 3). The letter gives the size, and check_patch has already measured every
+        # developed side, so nothing here is left to check.
         f["letter"] = letter
-        f["size"] = size
-        f["fold"] = size // len(f["darts"])
+        f["size"] = tile_size(letter)
     return face_of, faces
 
 

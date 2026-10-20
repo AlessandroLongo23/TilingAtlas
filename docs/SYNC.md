@@ -3136,3 +3136,9 @@ H ≥ 2 shape with audited coronas; 20–22 running. Uncommitted. NOTES 2026-10-
 /frames lists frames and multi-tiling regions of 3,666 polyforms (65d8c790); /heesch ships its data and
 computes large tiler sets in the browser (91b52308). Articles move beside their shelves at /x/about and
 /theory redirects there (9647353c). NOTES 2026-10-19 (four sections).
+
+## 2026-10-20 — every hybrid system on the shelf: 21 boards, 2,576,114 tilings — CC
+Marek's `hybrid.zip` developed whole (0 failures but `2_9387`): new `2_9830` (1.13 M) and `3_3086`, the
+`1_0612` k=10 and `1_0531` k=16-26 tails. k slices past 250 k ship in parts; mirror-folded faces develop.
+⚑ 6,034 `2_9387` certificates mix vertices closing at 2.9387 and 2.6102 and have no geometry: ask Marek.
+NOTES 2026-10-20 "every hybrid system".

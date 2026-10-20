@@ -1,0 +1,37 @@
+  [    29s] 5000/60928 developed, 0 failed, ETA 320s
+  [    52s] 10000/60928 developed, 0 failed, ETA 263s
+  [    66s] 15000/60928 developed, 0 failed, ETA 203s
+  [    80s] 20000/60928 developed, 0 failed, ETA 163s
+  [    90s] 25000/60928 developed, 0 failed, ETA 129s
+  [   101s] 30000/60928 developed, 0 failed, ETA 104s
+  [   110s] 35000/60928 developed, 0 failed, ETA 81s
+  [   124s] 40000/60928 developed, 0 failed, ETA 65s
+  [   137s] 45000/60928 developed, 0 failed, ETA 49s
+  [   150s] 50000/60928 developed, 0 failed, ETA 33s
+  [   170s] 55000/60928 developed, 0 failed, ETA 18s
+  [   184s] 60000/60928 developed, 0 failed, ETA 3s
+6.10.6.10 develop (yaf5) — tilings by regular [5, 6, 10, 0] at one edge length
+source          : /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/hybrid/solver_hybrid_af5
+forced edge len : l = 1.479387741210
+angles          : 5-gon 77.9469deg, 6-gon 84.6415deg, 10-gon 95.3585deg, ∞-gon 102.0531deg
+certificates in : 60928
+developed       : 60928
+failed          : 0
+multi-variant   : 39872
+wall            : 200.0s (3.3 ms/certificate)
+
+
+   k   tilings  face orbits: min    max
+   1         3                 2      2
+   2        14                 2      5
+   3        98                 2      8
+   4       699                 3     12
+   5      6852                 3     14
+   6     53262                 4     16
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev/hpyaf5-k1.json: 3 records, 0.00 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev/hpyaf5-k2.json: 14 records, 0.01 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev/hpyaf5-k3.json: 98 records, 0.06 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev/hpyaf5-k4.json: 699 records, 0.52 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev/hpyaf5-k5.json: 6852 records, 5.93 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev/hpyaf5-k6.json: 53262 records, 51.38 MB
+
