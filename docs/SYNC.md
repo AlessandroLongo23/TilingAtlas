@@ -3142,3 +3142,9 @@ Marek's `hybrid.zip` developed whole (0 failures but `2_9387`): new `2_9830` (1.
 `1_0612` k=10 and `1_0531` k=16-26 tails. k slices past 250 k ship in parts; mirror-folded faces develop.
 ⚑ 6,034 `2_9387` certificates mix vertices closing at 2.9387 and 2.6102 and have no geometry: ask Marek.
 NOTES 2026-10-20 "every hybrid system".
+
+## 2026-10-21 — Marek's ai2 + ai3 drop: 5 corpora, 3,993,558 tilings — CC
+`ai2_11` k=3 and `ai2_14` k=2 fill the {3,n} boards' census gaps; `ai2+3`, `ai3_1`, `ai3_2` join the
+hybrid boards. 0 failures, every census matched. `develop_ai2.py` folded into `develop_ai1.py --ai2`.
+⚑ `ai2_6` ({3,6}, Euclidean) counts below our catalogue at every k: ask Marek before developing.
+NOTES 2026-10-21 "ai2 + ai3 drop".

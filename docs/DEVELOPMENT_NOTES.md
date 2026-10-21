@@ -18992,3 +18992,30 @@ kinds of vertex have no geometry. Shipped: the 25,922 without a 4¹⁰ vertex at
 
 **Process note.** The two big runs took four hours instead of forty minutes: the `pnpm dev` server held
 10 GB and pushed both into swap. Stopping it brought them back to ~1 ms/certificate.
+
+## 2026-10-21: Marek's ai2 + ai3 drop, 3,993,558 more hyperbolic tilings
+
+**What shipped.** `search results (ai2+ai3).zip`, 22 corpora. Seventeen were already on the shelf or are
+not hyperbolic; five were missing and now ship, 0 develop failures, every k equal to Marek's census:
+`ai2_11` k=3 (556,796) and `ai2_14` k=2 (685,845), the two tails the boards' `missing` named since
+08-17, now empty; `ai2+3` (355,012), `ai3_1` (171,360) and `ai3_2` (2,224,545) as three new boards under
+"Hybrid boards", since each closes several vertex figures at one edge. 99 MB gzipped. The shelf is now
+295 boards, 8,761,447 tilings. Logs: `experiments/results/ai2-ai3-drop-2026-10-21/`.
+
+**`ai2+3` answered.** The 08-12 inventory asked what it was. Every one of its figures closes at the {3,10}
+edge 2.1226, where a triangle is 36°, a square 51.8°, a pentagon 60°, a decagon 72° and an apeirogon
+76.3°; so it is a hybrid system on that edge, the same edge `ai3_1` ({3,5}: 3¹⁰, 3⁵.5³, 5⁶) lives on.
+`ai3_2` is 3¹⁰.6¹⁰ and its two siblings at ℓ = 4.3091, the edge in the 10-12 decompile table.
+
+**`develop_ai2.py` is gone.** It was `develop_ai1.py`'s run loop copied with a {3,n} board. `Board.ai2(n)`
+replaces it (`--ai2 n`), its census report moved into the shared `run()`, and re-developing `t8` through
+the new path gives byte-identical shards. Parts were 100,000 records this time, to keep each process
+near 2 GB with swap full: `ai3_2` k=1 is 13 parts, and a record from the last one opens and draws.
+
+**Not shipped, and why.** `ai2_16` to `ai2_20` and `ai3_3` are empty folders. `ai2_3` to `ai2_5` are
+the nine spherical certificates noted on 08-17. `ai2_6`, the Euclidean {3,6} member (39,848, k ≤ 18), is
+NOT a subset count-for-count of our triangle-hexagon tilings: Marek's per-k counts sit below ours at
+every k from 2 to 10 (4 vs 5 at k=2, 535 vs 1,658 at k=10), so either his k means something else here
+or the board restricts something. The catalogue already holds every {3,6} tiling to k=10 by its own
+completeness; k=11-18 (38,436) would need a Euclidean developer for Marek certificates, which does not
+exist. ⚑ Ask Marek how `ai2_6` counts k before building one.
