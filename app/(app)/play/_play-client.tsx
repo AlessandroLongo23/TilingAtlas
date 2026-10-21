@@ -7,6 +7,7 @@ import { DEFAULT_FILL_AMOUNT } from "@/lib/render/tilePalette";
 import { useSearchParams } from "next/navigation";
 import {
 	Camera,
+	Film,
 	Check,
 	ChevronDown,
 	ChevronLeft,
@@ -74,6 +75,9 @@ import {
 	surfaceOf,
 } from "@/lib/services/shelfRegistry";
 import { useExportImage } from "@/stores/exportImage";
+import { useAnimation } from "@/stores/animation";
+import { AnimationTimelineDock } from "@/components/animation-timeline";
+import type { GeometryKind } from "@/lib/render/cameraPose";
 import {
 	loadComposableAtlasShard,
 	loadIsotoxalAtlasShard,
@@ -1068,6 +1072,10 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// so a slider moved less than URL_MIRROR_DEBOUNCE_MS ago is still included — the debounce then only
 	// ever serves reload-restore, never the clipboard.
 	const [shared, setShared] = useState(false);
+	// Names the exported file, and scopes the animation timeline's keyframes to this tiling.
+	const selectedRule = useConfiguration((s) => s.selectedTiling.rulestring);
+	const exportKey = selected?.canonicalKey ?? selectedRule;
+	const timelineOpen = useAnimation((s) => s.open);
 	const shareResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const copyLink = useCallback(() => {
 		const q = currentQuery();
@@ -1108,6 +1116,16 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// `sphPoly` into the sphere, the sidebar's did neither, so those records got the flat p5 control block
 	// over a canvas this file had already blanked.
 	const surface = surfaceOf(selected);
+	// The animation timeline's camera: every shelf that can export an image can animate, each in its own
+	// geometry (lib/render/cameraPose.ts).
+	const animGeometry: GeometryKind | null = isDiskSurface(surface)
+		? "disk"
+		: isSphereSurface(surface)
+			? "sphere"
+			: lensAppliesTo(selected)
+				? "flat"
+				: null;
+	const canAnimate = canCaptureImage(selected) && animGeometry !== null;
 	// An engine-developed hyperbolic tiling swaps the flat p5 renderer for the per-pixel Poincaré-disk shader.
 	// Set the store flag (canvas.tsx reads it to blank the flat layer and disable zoom) and force off
 	// Euclidean-only render modes so their now-hidden sidebar controls can't leave a stale render behind.
@@ -1725,369 +1743,398 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			{/* Faded until the page can answer a drag: entering a geometry draws its picture at once and lands
 			    that geometry's catalogue after it (Marek Čtrnáct: "you see the picture right away, but it takes
 			    time until it can be moved"). The canvases only, so the controls never look disabled. */}
-			<div
-				ref={canvasHostRef}
-				className={cn(
-					"relative min-w-0 flex-1 [&_canvas]:transition-[filter,opacity] [&_canvas]:duration-500 motion-reduce:[&_canvas]:transition-none",
-					!settled && "[&_canvas]:opacity-75 [&_canvas]:saturate-[.3]",
-				)}
-			>
-				{/* A squaring has no free angles to flex and no wallpaper group of the source's, so paramCell,
+			{/* The canvas over the animation timeline: opening the timeline takes its height from the canvas,
+			    which resizes to the smaller box like it does for immersive mode. */}
+			<div className="flex min-w-0 flex-1 flex-col">
+				<div
+					ref={canvasHostRef}
+					className={cn(
+						"relative min-h-0 min-w-0 flex-1 [&_canvas]:transition-[filter,opacity] [&_canvas]:duration-500 motion-reduce:[&_canvas]:transition-none",
+						!settled && "[&_canvas]:opacity-75 [&_canvas]:saturate-[.3]",
+					)}
+				>
+					{/* A squaring has no free angles to flex and no wallpaper group of the source's, so paramCell,
 				    symmetryData and orbitData all go null while it is up: each describes the tiling in the
 				    corner panel, not the one on the canvas. */}
-				<Canvas
-					translationalCell={drawCell}
-					translationalCellId={drawCellId}
-					paramCell={squaringActive ? null : (paramCell ?? null)}
-					symmetryData={squaringActive ? null : symmetryData}
-					orbitData={squaringActive ? null : orbitData}
-					spec={tilingSpec}
-					showTilingRuleInput={false}
-					cellHasTiles={cellHasTiles}
-				/>
-				{/* Exactly one WebGL overlay at a time: the three.js sphere for a spherical tiling (it owns its
+					<Canvas
+						translationalCell={drawCell}
+						translationalCellId={drawCellId}
+						paramCell={squaringActive ? null : (paramCell ?? null)}
+						symmetryData={squaringActive ? null : symmetryData}
+						orbitData={squaringActive ? null : orbitData}
+						spec={tilingSpec}
+						showTilingRuleInput={false}
+						cellHasTiles={cellHasTiles}
+					/>
+					{/* Exactly one WebGL overlay at a time: the three.js sphere for a spherical tiling (it owns its
 				    own pointer input via ArcballControls, so it sits on top and captures drag/wheel itself),
 				    the Poincaré disk for a hyperbolic tiling, else the inversive conformal view when toggled
 				    on. The flat p5 Canvas above stays mounted (blanked) as the input layer for the other two.
 				    On a phone a disk or a sphere, drawn in the middle of its box, gets a box that ends at the dock
 				    sheet's top (at most the half snap, so the full snap does not squeeze it): at half the sheet
 				    would otherwise cover its centre. Elsewhere, and on a desktop, the wrapper is no box at all. */}
-				<div
-					className={cn(
-						"contents",
-						(isDiskSurface(surface) || isSphereSurface(surface)) &&
-							"max-md:absolute max-md:inset-x-0 max-md:top-0 max-md:bottom-[min(var(--sheet-offset,0px),60dvh)] max-md:block",
-					)}
-				>
-					{showEdits ? (
-						// THE EDITOR GOES FIRST, ahead of even the lens. It is not a decoration of the catalogued
-						// tiling, it is a different tiling: once an edge has been merged away or a vertex moved,
-						// nothing below this line is drawing the thing the user is working on. It owns its own
-						// pointer input, like freedraw and colors, because the flat canvas's pan drives a patch
-						// this one does not hold. p5 and the flat shader are blanked by `studioActive` in
-						// components/canvas.tsx, next to the gates every other exclusive canvas uses.
-						<div className="absolute inset-0 z-10">
-							<StudioCanvas cell={drawCell} cellId={drawCellId} symmetryData={symmetryData} readOnly={!studioActive} />
-						</div>
-					) : lensActive ? (
-						// The conformal lens owns the canvas whenever it is on and the selection is Euclidean. It used
-						// to sit at the BOTTOM of this chain, which is why every decoration below it silently lost the
-						// lens; each Euclidean class now has a periodic-cell representation, so the lens goes first.
-						// paramCell goes null under the squaring for the same reason it does on the flat canvas: the
-						// squared torus has no free angle to flex, and the family this record belongs to is not what
-						// the lens is holding.
-						<InversiveCanvas
-							cell={inversiveCell}
-							cellId={inversiveCellId}
-							paramCell={squaringActive ? null : (paramCell ?? null)}
-						/>
-					) : selected?.hollow ? (
-						// Hollow tiling: self-intersecting {n/d} star polygons whose faces overlap by construction,
-						// so there is no polygon cell for the flat canvas to draw. Strokes each closed face path and
-						// fills translucently with the nonzero winding rule, so the overlaps accumulate and the
-						// density structure shows. Owns its pan/zoom, like freedraw and colors.
-						<div className="absolute inset-0 z-10">
-							<HollowCanvas patchId={selected.hollow.patch} mod2={starMod2} />
-						</div>
-					) : selected?.schwarz ? (
-						// Schwarz board: Čtrnáct's freedraw on the board cut by a (p,q,r) reflection group. The one
-						// shelf that spans two geometries, so it dispatches on its own: a spherical board is finite
-						// and draws on the three.js sphere (same canvas as the Platonic freedraw), a hyperbolic one
-						// re-develops in the disk through the same per-pixel reducer as every other hyperbolic shelf.
-						selected.schwarz.geometry === "spherical" ? (
-							<SphSchwarzCanvas pattern={selected.schwarz} mode={sphericalShape} showGrid={sphericalFreedrawGrid} />
-						) : (
-							<HyperbolicEdgesCanvas pattern={hypSchwarzMeta(selected.schwarz)} />
-						)
-					) : selected?.pentEdges ? (
-						// Edge system on a PARAMETRIC pentagon. The record carries no geometry at all, so this canvas
-						// solves the Kershner type 1 board at the store's parameter point, recovers the period lattice
-						// from the develop, and hands the result to the SAME freedraw renderer every other Euclidean
-						// edge system uses — so it pans, zooms and fills like them, off the same store fields. The
-						// lens above draws the same period through the same adapter.
-						// Owns its own layer like freedraw, colors and hollow do: the flat p5 canvas stays mounted
-						// underneath as the input surface, so a plain child would render behind it.
-						// Opaque: the flat p5 canvas stays mounted underneath as the input surface, so without a
-						// background its tiling shows straight through this one.
-						<div className="absolute inset-0 z-10 bg-surface">
-							<PentagonEdgesCanvas pattern={selected.pentEdges} />
-						</div>
-					) : selected?.ihEdges ? (
-						// Edge system on a PARAMETRIC ISOHEDRAL tile — the same story as the pentagon above, with
-						// the board coming from Tactile instead of a bespoke closure solver, so the shelf reaches
-						// any of the 93 types. Same renderer, same store fields, same opaque layer over the p5
-						// input surface.
-						<div className="absolute inset-0 z-10 bg-surface">
-							<IsohedralEdgesCanvas pattern={selected.ihEdges} />
-						</div>
-					) : selected?.sphEdges ? (
-						// Uniform-polyhedron edge system: the same object as a spherical Schwarz board on a prism /
-						// antiprism / truncated tetrahedron / cuboctahedron / J27, so it draws through the very same
-						// three.js canvas. Those boards mix face sizes, which the adapter never assumed away.
-						<SphSchwarzCanvas pattern={selected.sphEdges} mode={sphericalShape} showGrid={sphericalFreedrawGrid} />
-					) : selected?.sphPoly ? (
-						// A 3.4.n.4 tiling on the sphere: its own solid, faces filled by polygon size, every edge a
-						// boundary. Same three.js canvas as every other spherical Čtrnáct shelf.
-						<SphPolyCanvas
-							pattern={sphDrawn ?? selected.sphPoly}
-							mode={sphericalShape}
-							showGrid={sphericalFreedrawGrid}
-						/>
-					) : selected?.sphStar ? (
-						// A STAR polyhedron. Same three.js canvas again, and it follows `sphericalShape`
-						// like the shelves above it — but sphere mode means something different here. Its faces
-						// overlap on the circumsphere by construction, that being what density means, so there is
-						// no spherical tiling to draw; the sphere view draws the COVERING instead, shading each
-						// direction by how many sheets lie over it (lib/render/sphStar.ts, sph-star-canvas.tsx).
-						<SphStarCanvas
-							pattern={selected.sphStar}
-							mode={sphericalShape}
-							showGrid={sphericalFreedrawGrid}
-							edges={sphStarEdges}
-							mod2={starMod2}
-						/>
-					) : selected?.hypPoly ? (
-						// 3.4.n.4 tiling by regular polygons: not a decoration, so every edge is a real boundary and
-						// each face is filled by its POLYGON SIZE. That is the colored-tiling render exactly, so it
-						// uses that canvas with the size index standing in for the colour index.
-						<HyperbolicColorsCanvas pattern={hypPolyMeta(selected.hypPoly)} tiles />
-					) : selected?.sphBubble ? (
-						// A spherical bubble tiling: the same three.js canvas, drawing MESHED tiles instead of the
-						// procedural face classification. It carries no polyhedron view — a bubble tile's sides are
-						// curved, so there is no flat-faced solid to fall back to.
-						<SphericalCanvas solidId={selected.sphBubble.solid} bubbleBites={selected.sphBubble.bites} />
-					) : isSpherical && selected?.spherical ? (
-						<SphericalCanvas solidId={selected.spherical.solid} />
-					) : selected?.sphericalFreedraw ? (
-						// Spherical freedraw: a drawn edge subset of a Platonic solid, on its own three.js canvas with
-						// ArcballControls (drag to rotate, wheel to zoom) — the same self-contained renderer the
-						// /freedraw spherical arm uses. Mode (polyhedron/sphere) and grid come from the View options tab,
-						// the same two controls the /freedraw arm carries; it owns its own pointer input.
-						<IcoFreedrawCanvas
-							pattern={selected.sphericalFreedraw.pattern}
-							solidId={selected.sphericalFreedraw.solid}
-							mode={sphericalShape}
-							showGrid={sphericalFreedrawGrid}
-						/>
-					) : selected?.freedraw ? (
-						// Freedraw pattern: drawn grid edges + cells coloured by face, on its own 2D canvas. It owns
-						// its pan/zoom (the flat canvas has no cell here to pan), so it sits on top and takes the input.
-						<FreedrawPlayCanvas pattern={selected.freedraw} />
-					) : selected?.colors ? (
-						// Colored square tiling: the color field with tile edges, on its own 2D canvas — same
-						// contract as freedraw (no polygon cell, owns its pan/zoom).
-						<ColorsPlayCanvas pattern={selected.colors} />
-					) : selected?.sphColors ? (
-						// Spherical colored tiling: an n-coloring of a Platonic solid on its own three.js canvas with
-						// ArcballControls, the exact sibling of the ico-freedraw sphere. Mode (polyhedron/sphere) comes
-						// from the View options tab; it owns its own pointer input.
-						<SphericalColorsCanvas pattern={selected.sphColors.pattern} mode={sphericalShape} />
-					) : selected?.hypColors ? (
-						// Hyperbolic colored tiling: an n-coloring of a {p,q} tiling, the per-pixel disk shader in colors
-						// mode — fills to the rim, infinite drift-free pan, GPU, exactly like the edge systems.
-						<HyperbolicColorsCanvas pattern={selected.hypColors} />
-					) : selected?.hypEdges ? (
-						// Hyperbolic edge system: Čtrnáct's freedraw in H². Re-develops the darts under the view and
-						// draws the merged-tile fill + drawn/scaffold strokes, with the same store-driven pan as the
-						// developed tiling. Always 2D (the edge field is not baked for the per-pixel renderer).
-						<HyperbolicEdgesCanvas pattern={selected.hypEdges} />
-					) : selected?.developed ? (
-						// Engine-developed tiling: explicit Poincaré geometry from the Čtrnáct SU(1,1) developer,
-						// drawn as geodesic polygons with the same store-driven pan. Handles the arbitrary
-						// regular-faced tilings the (2,p,q) fold shader cannot.
-						<HyperbolicDevelopedCanvas patchId={selected.developed.patch} />
-					) : null}
-				</div>
-				{/* Truchet figures over a PLAIN tiling. Deliberately OUTSIDE the exclusive canvas chain above:
+					<div
+						className={cn(
+							"contents",
+							(isDiskSurface(surface) || isSphereSurface(surface)) &&
+								"max-md:absolute max-md:inset-x-0 max-md:top-0 max-md:bottom-[min(var(--sheet-offset,0px),60dvh)] max-md:block",
+						)}
+					>
+						{showEdits ? (
+							// THE EDITOR GOES FIRST, ahead of even the lens. It is not a decoration of the catalogued
+							// tiling, it is a different tiling: once an edge has been merged away or a vertex moved,
+							// nothing below this line is drawing the thing the user is working on. It owns its own
+							// pointer input, like freedraw and colors, because the flat canvas's pan drives a patch
+							// this one does not hold. p5 and the flat shader are blanked by `studioActive` in
+							// components/canvas.tsx, next to the gates every other exclusive canvas uses.
+							<div className="absolute inset-0 z-10">
+								<StudioCanvas
+									cell={drawCell}
+									cellId={drawCellId}
+									symmetryData={symmetryData}
+									readOnly={!studioActive}
+								/>
+							</div>
+						) : lensActive ? (
+							// The conformal lens owns the canvas whenever it is on and the selection is Euclidean. It used
+							// to sit at the BOTTOM of this chain, which is why every decoration below it silently lost the
+							// lens; each Euclidean class now has a periodic-cell representation, so the lens goes first.
+							// paramCell goes null under the squaring for the same reason it does on the flat canvas: the
+							// squared torus has no free angle to flex, and the family this record belongs to is not what
+							// the lens is holding.
+							<InversiveCanvas
+								cell={inversiveCell}
+								cellId={inversiveCellId}
+								paramCell={squaringActive ? null : (paramCell ?? null)}
+							/>
+						) : selected?.hollow ? (
+							// Hollow tiling: self-intersecting {n/d} star polygons whose faces overlap by construction,
+							// so there is no polygon cell for the flat canvas to draw. Strokes each closed face path and
+							// fills translucently with the nonzero winding rule, so the overlaps accumulate and the
+							// density structure shows. Owns its pan/zoom, like freedraw and colors.
+							<div className="absolute inset-0 z-10">
+								<HollowCanvas patchId={selected.hollow.patch} mod2={starMod2} />
+							</div>
+						) : selected?.schwarz ? (
+							// Schwarz board: Čtrnáct's freedraw on the board cut by a (p,q,r) reflection group. The one
+							// shelf that spans two geometries, so it dispatches on its own: a spherical board is finite
+							// and draws on the three.js sphere (same canvas as the Platonic freedraw), a hyperbolic one
+							// re-develops in the disk through the same per-pixel reducer as every other hyperbolic shelf.
+							selected.schwarz.geometry === "spherical" ? (
+								<SphSchwarzCanvas pattern={selected.schwarz} mode={sphericalShape} showGrid={sphericalFreedrawGrid} />
+							) : (
+								<HyperbolicEdgesCanvas pattern={hypSchwarzMeta(selected.schwarz)} />
+							)
+						) : selected?.pentEdges ? (
+							// Edge system on a PARAMETRIC pentagon. The record carries no geometry at all, so this canvas
+							// solves the Kershner type 1 board at the store's parameter point, recovers the period lattice
+							// from the develop, and hands the result to the SAME freedraw renderer every other Euclidean
+							// edge system uses — so it pans, zooms and fills like them, off the same store fields. The
+							// lens above draws the same period through the same adapter.
+							// Owns its own layer like freedraw, colors and hollow do: the flat p5 canvas stays mounted
+							// underneath as the input surface, so a plain child would render behind it.
+							// Opaque: the flat p5 canvas stays mounted underneath as the input surface, so without a
+							// background its tiling shows straight through this one.
+							<div className="absolute inset-0 z-10 bg-surface">
+								<PentagonEdgesCanvas pattern={selected.pentEdges} />
+							</div>
+						) : selected?.ihEdges ? (
+							// Edge system on a PARAMETRIC ISOHEDRAL tile — the same story as the pentagon above, with
+							// the board coming from Tactile instead of a bespoke closure solver, so the shelf reaches
+							// any of the 93 types. Same renderer, same store fields, same opaque layer over the p5
+							// input surface.
+							<div className="absolute inset-0 z-10 bg-surface">
+								<IsohedralEdgesCanvas pattern={selected.ihEdges} />
+							</div>
+						) : selected?.sphEdges ? (
+							// Uniform-polyhedron edge system: the same object as a spherical Schwarz board on a prism /
+							// antiprism / truncated tetrahedron / cuboctahedron / J27, so it draws through the very same
+							// three.js canvas. Those boards mix face sizes, which the adapter never assumed away.
+							<SphSchwarzCanvas pattern={selected.sphEdges} mode={sphericalShape} showGrid={sphericalFreedrawGrid} />
+						) : selected?.sphPoly ? (
+							// A 3.4.n.4 tiling on the sphere: its own solid, faces filled by polygon size, every edge a
+							// boundary. Same three.js canvas as every other spherical Čtrnáct shelf.
+							<SphPolyCanvas
+								pattern={sphDrawn ?? selected.sphPoly}
+								mode={sphericalShape}
+								showGrid={sphericalFreedrawGrid}
+							/>
+						) : selected?.sphStar ? (
+							// A STAR polyhedron. Same three.js canvas again, and it follows `sphericalShape`
+							// like the shelves above it — but sphere mode means something different here. Its faces
+							// overlap on the circumsphere by construction, that being what density means, so there is
+							// no spherical tiling to draw; the sphere view draws the COVERING instead, shading each
+							// direction by how many sheets lie over it (lib/render/sphStar.ts, sph-star-canvas.tsx).
+							<SphStarCanvas
+								pattern={selected.sphStar}
+								mode={sphericalShape}
+								showGrid={sphericalFreedrawGrid}
+								edges={sphStarEdges}
+								mod2={starMod2}
+							/>
+						) : selected?.hypPoly ? (
+							// 3.4.n.4 tiling by regular polygons: not a decoration, so every edge is a real boundary and
+							// each face is filled by its POLYGON SIZE. That is the colored-tiling render exactly, so it
+							// uses that canvas with the size index standing in for the colour index.
+							<HyperbolicColorsCanvas pattern={hypPolyMeta(selected.hypPoly)} tiles />
+						) : selected?.sphBubble ? (
+							// A spherical bubble tiling: the same three.js canvas, drawing MESHED tiles instead of the
+							// procedural face classification. It carries no polyhedron view — a bubble tile's sides are
+							// curved, so there is no flat-faced solid to fall back to.
+							<SphericalCanvas solidId={selected.sphBubble.solid} bubbleBites={selected.sphBubble.bites} />
+						) : isSpherical && selected?.spherical ? (
+							<SphericalCanvas solidId={selected.spherical.solid} />
+						) : selected?.sphericalFreedraw ? (
+							// Spherical freedraw: a drawn edge subset of a Platonic solid, on its own three.js canvas with
+							// ArcballControls (drag to rotate, wheel to zoom) — the same self-contained renderer the
+							// /freedraw spherical arm uses. Mode (polyhedron/sphere) and grid come from the View options tab,
+							// the same two controls the /freedraw arm carries; it owns its own pointer input.
+							<IcoFreedrawCanvas
+								pattern={selected.sphericalFreedraw.pattern}
+								solidId={selected.sphericalFreedraw.solid}
+								mode={sphericalShape}
+								showGrid={sphericalFreedrawGrid}
+							/>
+						) : selected?.freedraw ? (
+							// Freedraw pattern: drawn grid edges + cells coloured by face, on its own 2D canvas. It owns
+							// its pan/zoom (the flat canvas has no cell here to pan), so it sits on top and takes the input.
+							<FreedrawPlayCanvas pattern={selected.freedraw} />
+						) : selected?.colors ? (
+							// Colored square tiling: the color field with tile edges, on its own 2D canvas — same
+							// contract as freedraw (no polygon cell, owns its pan/zoom).
+							<ColorsPlayCanvas pattern={selected.colors} />
+						) : selected?.sphColors ? (
+							// Spherical colored tiling: an n-coloring of a Platonic solid on its own three.js canvas with
+							// ArcballControls, the exact sibling of the ico-freedraw sphere. Mode (polyhedron/sphere) comes
+							// from the View options tab; it owns its own pointer input.
+							<SphericalColorsCanvas pattern={selected.sphColors.pattern} mode={sphericalShape} />
+						) : selected?.hypColors ? (
+							// Hyperbolic colored tiling: an n-coloring of a {p,q} tiling, the per-pixel disk shader in colors
+							// mode — fills to the rim, infinite drift-free pan, GPU, exactly like the edge systems.
+							<HyperbolicColorsCanvas pattern={selected.hypColors} />
+						) : selected?.hypEdges ? (
+							// Hyperbolic edge system: Čtrnáct's freedraw in H². Re-develops the darts under the view and
+							// draws the merged-tile fill + drawn/scaffold strokes, with the same store-driven pan as the
+							// developed tiling. Always 2D (the edge field is not baked for the per-pixel renderer).
+							<HyperbolicEdgesCanvas pattern={selected.hypEdges} />
+						) : selected?.developed ? (
+							// Engine-developed tiling: explicit Poincaré geometry from the Čtrnáct SU(1,1) developer,
+							// drawn as geodesic polygons with the same store-driven pan. Handles the arbitrary
+							// regular-faced tilings the (2,p,q) fold shader cannot.
+							<HyperbolicDevelopedCanvas patchId={selected.developed.patch} />
+						) : null}
+					</div>
+					{/* Truchet figures over a PLAIN tiling. Deliberately OUTSIDE the exclusive canvas chain above:
 				    it is an overlay, not a renderer, so the flat canvas keeps drawing the tiling and keeps
 				    owning the pointer. It reads the same `controls` the flat uniforms come from, so toggling
 				    it cannot move the picture. Not while the lens is on — the conformal view draws the same
 				    figures itself, through the periodic-cell IR, and a flat layer over a warped one is two
 				    different pictures at once. */}
-				{truchetPattern && !inversive ? <TruchetOverlay pattern={truchetPattern} /> : null}
-				{/* The squared torus of the selected tiling, in a panel over the canvas. Outside the exclusive
+					{truchetPattern && !inversive ? <TruchetOverlay pattern={truchetPattern} /> : null}
+					{/* The squared torus of the selected tiling, in a panel over the canvas. Outside the exclusive
 				    canvas chain for the same reason the Truchet overlay is: the flat canvas keeps drawing the
 				    tiling and keeps owning the pointer. It is not a decoration of that tiling though — it is a
 				    different Euclidean tiling derived from its quotient graph — which is exactly why it gets a
 				    frame of its own instead of the canvas. */}
-				<SquaringInset selected={selected ?? null} />
-				{isDiskSurface(surface) ? <HyperbolicJoystick /> : null}
-				{/* The sizes and the image lattice, on a 2-D layer over the tiles: the flat pipeline draws
+					<SquaringInset selected={selected ?? null} />
+					{isDiskSurface(surface) ? <HyperbolicJoystick /> : null}
+					{/* The sizes and the image lattice, on a 2-D layer over the tiles: the flat pipeline draws
 				    polygons and has neither type nor a cell outline. Same contract as the Truchet overlay — it
 				    reads the live camera and takes no pointer input, so it cannot move the picture.
 				    Not under the lens: this layer projects affinely, so straight grid lines and centred type
 				    would sit where the squares USED to be, next to a picture that has been bent away. */}
-				{/* The editor's controls live in the canvas toolbar below, not in a bar of their own. The cell
+					{/* The editor's controls live in the canvas toolbar below, not in a bar of their own. The cell
 				    INSPECTOR is deliberately not mounted (AL, 2026-09-21): the readout was noise next to the
 				    picture. `StudioInspector` stays in the tree for when a refusal needs somewhere to be read. */}
-				{!lensActive ? <SquaringOverlay selected={selected ?? null} /> : null}
-				{/* The panels that float at the bottom of the canvas. On the desktop each keeps its own spot and
+					{!lensActive ? <SquaringOverlay selected={selected ?? null} /> : null}
+					{/* The panels that float at the bottom of the canvas. On the desktop each keeps its own spot and
 				    this wrapper is display:contents. On a phone they would pile onto each other and onto the
 				    toolbar, so they stack in one tray above the toolbar that scrolls past 40dvh and folds away.
 				    The tray's box lets touches through to the canvas: a pinch that lands in a gap between its
 				    parts would otherwise zoom the page. Its button and its panels take their own. */}
-				<div
-					className={cn(
-						"contents",
-						trayLabel &&
-							"max-md:pointer-events-none max-md:absolute max-md:inset-x-2 max-md:bottom-[calc(max(var(--sheet-offset,0px),env(safe-area-inset-bottom))+64px)] max-md:z-30 max-md:flex max-md:flex-col max-md:items-stretch max-md:gap-2 max-md:transition-[bottom] max-md:duration-300",
-					)}
-				>
-					{trayLabel ? (
-						<button
-							type="button"
-							onClick={() => setTrayOpen((o) => !o)}
-							aria-expanded={trayOpen}
-							className="hidden h-11 items-center gap-1.5 self-end rounded-full bg-surface-raised/95 px-4 text-[13px] font-medium text-fg-secondary shadow-sm ring-1 ring-line-subtle backdrop-blur-sm max-md:pointer-events-auto max-md:flex"
-						>
-							{trayOpen ? `Hide ${trayLabel.toLowerCase()}` : trayLabel}
-							{!trayOpen && glyphs.length ? (
-								<span className="font-mono text-fg">{glyphs.length > 3 ? `(${glyphs.length})` : glyphs.join(" ")}</span>
-							) : null}
-							<ChevronDown size={16} aria-hidden className={cn("transition-transform", !trayOpen && "rotate-180")} />
-						</button>
-					) : null}
 					<div
 						className={cn(
 							"contents",
 							trayLabel &&
-								// The bottom padding is where the fade lands once the tray is scrolled to its end, so the
-								// last slider is never the thing that fades. (ta-scroll-fade is inert on the desktop, where
-								// this box is display:contents and draws nothing to mask.)
-								"ta-scroll-fade max-md:pointer-events-auto max-md:flex max-md:max-h-[min(40dvh,calc(100dvh_-_var(--topbar-h,48px)_-_max(var(--sheet-offset,0px),env(safe-area-inset-bottom))_-_150px))] max-md:touch-pan-y max-md:flex-col max-md:gap-2 max-md:overflow-y-auto max-md:overscroll-contain max-md:pb-6",
-							!trayOpen && "max-md:hidden",
+								"max-md:pointer-events-none max-md:absolute max-md:inset-x-2 max-md:bottom-[calc(max(var(--sheet-offset,0px),env(safe-area-inset-bottom))+64px)] max-md:z-30 max-md:flex max-md:flex-col max-md:items-stretch max-md:gap-2 max-md:transition-[bottom] max-md:duration-300",
 						)}
 					>
-						{/* The editor's tools ride in the toolbar on the desktop. A phone toolbar cannot hold them
-						    beside the history and the way out, so they get a row of their own here. */}
-						{studioActive && isPhone ? (
-							<div
-								role="toolbar"
-								aria-label="Editor tools"
-								className="ta-float flex shrink-0 flex-wrap items-center gap-0.5 p-1"
+						{trayLabel ? (
+							<button
+								type="button"
+								onClick={() => setTrayOpen((o) => !o)}
+								aria-expanded={trayOpen}
+								className="hidden h-11 items-center gap-1.5 self-end rounded-full bg-surface-raised/95 px-4 text-[13px] font-medium text-fg-secondary shadow-sm ring-1 ring-line-subtle backdrop-blur-sm max-md:pointer-events-auto max-md:flex"
 							>
-								<StudioHistory parts="reset" />
-								<StudioTools />
-								<StudioPeriod wallpaperDisabledReason={wallpaperDisabledReason} />
-							</div>
+								{trayOpen ? `Hide ${trayLabel.toLowerCase()}` : trayLabel}
+								{!trayOpen && glyphs.length ? (
+									<span className="font-mono text-fg">
+										{glyphs.length > 3 ? `(${glyphs.length})` : glyphs.join(" ")}
+									</span>
+								) : null}
+								<ChevronDown size={16} aria-hidden className={cn("transition-transform", !trayOpen && "rotate-180")} />
+							</button>
 						) : null}
-						{studioActive ? <PaletteStrip /> : null}
-						{/* The family's own sliders: a squaring has no free angle to flex, and the panel is driving
+						<div
+							className={cn(
+								"contents",
+								trayLabel &&
+									// The bottom padding is where the fade lands once the tray is scrolled to its end, so the
+									// last slider is never the thing that fades. (ta-scroll-fade is inert on the desktop, where
+									// this box is display:contents and draws nothing to mask.)
+									"ta-scroll-fade max-md:pointer-events-auto max-md:flex max-md:max-h-[min(40dvh,calc(100dvh_-_var(--topbar-h,48px)_-_max(var(--sheet-offset,0px),env(safe-area-inset-bottom))_-_150px))] max-md:touch-pan-y max-md:flex-col max-md:gap-2 max-md:overflow-y-auto max-md:overscroll-contain max-md:pb-6",
+								!trayOpen && "max-md:hidden",
+							)}
+						>
+							{/* The editor's tools ride in the toolbar on the desktop. A phone toolbar cannot hold them
+						    beside the history and the way out, so they get a row of their own here. */}
+							{studioActive && isPhone ? (
+								<div
+									role="toolbar"
+									aria-label="Editor tools"
+									className="ta-float flex shrink-0 flex-wrap items-center gap-0.5 p-1"
+								>
+									<StudioHistory parts="reset" />
+									<StudioTools />
+									<StudioPeriod wallpaperDisabledReason={wallpaperDisabledReason} />
+								</div>
+							) : null}
+							{studioActive ? <PaletteStrip /> : null}
+							{/* The family's own sliders: a squaring has no free angle to flex, and the panel is driving
 						    the tiling in the corner rather than the one on the canvas while it is up. */}
-						{showParamPanel && paramCell ? <ParamSliderPanel paramCell={paramCell} /> : null}
-						{tegula && selected && !squaringActive ? (
-							<TegulaCellEditor id={selected.canonicalKey} cell={tegula} />
-						) : null}
-						{sphBend && selected ? <TegulaCellEditor id={selected.canonicalKey} sphere={sphBend} /> : null}
-						{/* The pentagon family's shape controls sit OUTSIDE the exclusive canvas chain above, because
+							{showParamPanel && paramCell ? <ParamSliderPanel paramCell={paramCell} /> : null}
+							{tegula && selected && !squaringActive ? (
+								<TegulaCellEditor id={selected.canonicalKey} cell={tegula} />
+							) : null}
+							{sphBend && selected ? <TegulaCellEditor id={selected.canonicalKey} sphere={sphBend} /> : null}
+							{/* The pentagon family's shape controls sit OUTSIDE the exclusive canvas chain above, because
 						    the family is still what is being drawn when the conformal lens replaces the flat view —
 						    the sliders have to survive that swap. Their values live in the store for the same reason. */}
-						{selected?.pentEdges ? <PentagonEdgesControls /> : null}
-						{selected?.ihEdges ? <IsohedralEdgesControls ih={selected.ihEdges.ih} /> : null}
+							{selected?.pentEdges ? <PentagonEdgesControls /> : null}
+							{selected?.ihEdges ? <IsohedralEdgesControls ih={selected.ihEdges.ih} /> : null}
+						</div>
 					</div>
-				</div>
-				{/* The canvas toolbar. Browsing: stepping through the catalogue, then Edit and the view-level
+					{/* The canvas toolbar. Browsing: stepping through the catalogue, then Edit and the view-level
 				    actions. Editing (AL, 2026-09-24): the editor's history takes the stepping slot (stepping
 				    away mid-edit is blocked anyway, R and the arrows are ignored there), its tools and period
 				    mode join the bar, and link, export and fullscreen stay. Up while immersive too, since it
 				    carries the way out. */}
-				<FloatingToolbar>
-					{/* The groups that swap with the mode slide open and shut (ToolbarReveal), so the bar
+					<FloatingToolbar>
+						{/* The groups that swap with the mode slide open and shut (ToolbarReveal), so the bar
 					    grows into the editor and back out of it instead of jumping. */}
-					<ToolbarReveal show={studioActive}>
-						<StudioHistory parts={isPhone ? "undo-redo" : "all"} />
-					</ToolbarReveal>
-					{/* On a phone the dock's peek row carries the stepping, so the toolbar drops it, except in
-					    immersive mode, which hides the dock. */}
-					<span className={cn("contents", !immersive && "max-md:hidden")}>
-						<ToolbarReveal show={!studioActive}>
-							<ToolbarButton label="Previous tiling" shortcut="←" onClick={onPrev} disabled={geometryList.length < 2}>
-								<ChevronLeft size={16} />
-							</ToolbarButton>
-							{/* Icon-only on a phone (the word stays for screen readers), so immersive's full row fits. */}
-							<ToolbarButton
-								label="Random tiling"
-								shortcut="R"
-								primary
-								onClick={selectRandom}
-								disabled={geometryList.length < 2}
-								className="max-md:w-11 max-md:px-0"
-							>
-								<Shuffle size={14} />
-								<span className="max-md:sr-only">Random</span>
-							</ToolbarButton>
-							<ToolbarButton label="Next tiling" shortcut="→" onClick={onNext} disabled={geometryList.length < 2}>
-								<ChevronRight size={16} />
-							</ToolbarButton>
+						<ToolbarReveal show={studioActive}>
+							<StudioHistory parts={isPhone ? "undo-redo" : "all"} />
 						</ToolbarReveal>
-					</span>
-					<span className={cn("contents", !studioActive && !immersive && "max-md:hidden")}>
-						<ToolbarDivider />
-					</span>
-					<ToolbarReveal show={studioActive && !isPhone}>
-						<StudioTools />
-						<ToolbarDivider />
-						<StudioPeriod wallpaperDisabledReason={wallpaperDisabledReason} />
-						<ToolbarDivider />
-					</ToolbarReveal>
-					{/* Offered on a flat tiling with straight edges only: the editor folds every edit onto a
+						{/* On a phone the dock's peek row carries the stepping, so the toolbar drops it, except in
+					    immersive mode, which hides the dock. */}
+						<span className={cn("contents", !immersive && "max-md:hidden")}>
+							<ToolbarReveal show={!studioActive}>
+								<ToolbarButton label="Previous tiling" shortcut="←" onClick={onPrev} disabled={geometryList.length < 2}>
+									<ChevronLeft size={16} />
+								</ToolbarButton>
+								{/* Icon-only on a phone (the word stays for screen readers), so immersive's full row fits. */}
+								<ToolbarButton
+									label="Random tiling"
+									shortcut="R"
+									primary
+									onClick={selectRandom}
+									disabled={geometryList.length < 2}
+									className="max-md:w-11 max-md:px-0"
+								>
+									<Shuffle size={14} />
+									<span className="max-md:sr-only">Random</span>
+								</ToolbarButton>
+								<ToolbarButton label="Next tiling" shortcut="→" onClick={onNext} disabled={geometryList.length < 2}>
+									<ChevronRight size={16} />
+								</ToolbarButton>
+							</ToolbarReveal>
+						</span>
+						<span className={cn("contents", !studioActive && !immersive && "max-md:hidden")}>
+							<ToolbarDivider />
+						</span>
+						<ToolbarReveal show={studioActive && !isPhone}>
+							<StudioTools />
+							<ToolbarDivider />
+							<StudioPeriod wallpaperDisabledReason={wallpaperDisabledReason} />
+							<ToolbarDivider />
+						</ToolbarReveal>
+						{/* Offered on a flat tiling with straight edges only: the editor folds every edit onto a
 					    translation lattice, which the curved geometries lack, and it would straighten a curved
 					    tile's edges. */}
-					{canEditTiling ? (
-						<ToolbarButton
-							label={studioActive ? "Close the editor (edits stay)" : "Edit this tiling"}
-							shortcut={studioActive ? "Esc" : "E"}
-							aria-pressed={studioActive}
-							onClick={() => useConfiguration.getState().set({ studioActive: !studioActive })}
-							className="w-auto gap-1.5 px-2.5 max-md:w-auto"
-						>
-							<PenTool size={15} className="max-md:hidden" />
-							{studioActive ? "Close" : "Edit"}
-						</ToolbarButton>
-					) : null}
-					<ToolbarReveal show={!studioActive && edited}>
-						<StudioHistory parts="reset" />
-					</ToolbarReveal>
-					{canEditTiling ? <ToolbarDivider /> : null}
-					{/* Copies a link carrying every view option plus the selected tiling (the URL the mirror
+						{canEditTiling ? (
+							<ToolbarButton
+								label={studioActive ? "Close the editor (edits stay)" : "Edit this tiling"}
+								shortcut={studioActive ? "Esc" : "E"}
+								aria-pressed={studioActive}
+								onClick={() => useConfiguration.getState().set({ studioActive: !studioActive })}
+								className="w-auto gap-1.5 px-2.5 max-md:w-auto"
+							>
+								<PenTool size={15} className="max-md:hidden" />
+								{studioActive ? "Close" : "Edit"}
+							</ToolbarButton>
+						) : null}
+						<ToolbarReveal show={!studioActive && edited}>
+							<StudioHistory parts="reset" />
+						</ToolbarReveal>
+						{canEditTiling ? <ToolbarDivider /> : null}
+						{/* Copies a link carrying every view option plus the selected tiling (the URL the mirror
 					    effect keeps live). */}
-					<ToolbarButton label={shared ? "Link copied" : "Copy link to this view"} onClick={copyLink}>
-						{shared ? <Check size={16} className="text-success" /> : <Link2 size={16} />}
-					</ToolbarButton>
-					{/* Export image opens the dialog, which drives the capture (lib/render/capture.ts). Absent,
+						<ToolbarButton label={shared ? "Link copied" : "Copy link to this view"} onClick={copyLink}>
+							{shared ? <Check size={16} className="text-success" /> : <Link2 size={16} />}
+						</ToolbarButton>
+						{/* Export image opens the dialog, which drives the capture (lib/render/capture.ts). Absent,
 					    not disabled, on the shelves whose canvas host has not been wired for readback yet: a
 					    hidden button beats one that returns a blank PNG. */}
-					{canCaptureImage(selected) ? (
+						{/* The animation timeline docks under the canvas, on every shelf whose camera it can drive. */}
+						{canAnimate ? (
+							<ToolbarButton
+								label={timelineOpen ? "Close the animation timeline" : "Animation timeline"}
+								aria-pressed={timelineOpen}
+								onClick={() => useAnimation.getState().toggle()}
+							>
+								<Film size={16} />
+							</ToolbarButton>
+						) : null}
+						{canCaptureImage(selected) ? (
+							<ToolbarButton
+								label="Export image"
+								onClick={() =>
+									useExportImage.getState().open({
+										rulestring: exportKey,
+										host: canvasHostRef.current,
+										// Only a EUCLIDEAN record hands over its cell. The hyperbolic and spherical shelves
+										// carry a throwaway one, and passing it would offer two controls that cannot work
+										// there: the zoom slider drives `controls.zoom`, which those canvases never read,
+										// and SVG renders a period lattice they do not have. Same predicate the conformal
+										// lens gates on, and for the same reason.
+										cell: lensAppliesTo(selected) ? renderCell : null,
+										paramCell: paramCell ?? null,
+										disk: isDiskSurface(surface),
+									})
+								}
+							>
+								<Camera size={16} />
+							</ToolbarButton>
+						) : null}
 						<ToolbarButton
-							label="Export image"
-							onClick={() =>
-								useExportImage.getState().open({
-									rulestring: selected?.canonicalKey ?? useConfiguration.getState().selectedTiling.rulestring,
-									host: canvasHostRef.current,
-									// Only a EUCLIDEAN record hands over its cell. The hyperbolic and spherical shelves
-									// carry a throwaway one, and passing it would offer two controls that cannot work
-									// there: the zoom slider drives `controls.zoom`, which those canvases never read,
-									// and SVG renders a period lattice they do not have. Same predicate the conformal
-									// lens gates on, and for the same reason.
-									cell: lensAppliesTo(selected) ? renderCell : null,
-									paramCell: paramCell ?? null,
-									disk: isDiskSurface(surface),
-								})
-							}
+							label={immersive ? "Exit fullscreen" : "Fullscreen canvas"}
+							shortcut={immersive ? "F or Esc" : "F"}
+							onClick={() => useImmersive.getState().toggle()}
+							aria-pressed={immersive}
+							className="max-md:hidden"
 						>
-							<Camera size={16} />
+							{immersive ? <Minimize size={16} /> : <Maximize size={16} />}
 						</ToolbarButton>
-					) : null}
-					<ToolbarButton
-						label={immersive ? "Exit fullscreen" : "Fullscreen canvas"}
-						shortcut={immersive ? "F or Esc" : "F"}
-						onClick={() => useImmersive.getState().toggle()}
-						aria-pressed={immersive}
-						className="max-md:hidden"
-					>
-						{immersive ? <Minimize size={16} /> : <Maximize size={16} />}
-					</ToolbarButton>
-				</FloatingToolbar>
+					</FloatingToolbar>
+				</div>
+				<AnimationTimelineDock
+					open={timelineOpen && canAnimate}
+					geometry={animGeometry ?? "flat"}
+					scope={exportKey}
+					hostRef={canvasHostRef}
+					cell={renderCell}
+					paramCell={paramCell ?? null}
+				/>
 			</div>
 		</div>
 	);

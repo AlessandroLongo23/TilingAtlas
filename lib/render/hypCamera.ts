@@ -19,7 +19,7 @@ import {
 	su11Translation,
 } from "@/lib/render/hyperbolic";
 import type { HyperbolicDeveloper } from "@/lib/render/hyperbolicDevelopClient";
-import { reanchor, snapPoint, type WalkTiling } from "@/lib/render/hyperbolicWalk";
+import { reanchor, snapPoint, walkPoint, type WalkTiling } from "@/lib/render/hyperbolicWalk";
 
 /** Clamp only against numerical blow-up at the ideal boundary (the cusp of an apeirogon, or the 2D
  *  fallback's world rim); panning is otherwise free. */
@@ -45,6 +45,13 @@ export class HypCamera {
 	private prevTarget: Pt | null = null;
 	private prevRot: number | null = null;
 	private centerAnim: Complex | null = null; // the point easing to the centre, in the view's frame
+	/**
+	 * The change of frame from the home frame to the current one, accumulated across re-anchors, so that
+	 * view·G is the camera's absolute pose: the same isometry for the same picture however the reader
+	 * got there. Re-anchoring replaces view by view·W⁻¹, so G becomes W·G; the fallback's recentre
+	 * replaces view by view·g, so G becomes g⁻¹·G. The animation timeline reads and seeks through this.
+	 */
+	private G: Su11 = su11Identity();
 
 	constructor(
 		private readonly walk: WalkTiling | null,
@@ -59,6 +66,36 @@ export class HypCamera {
 		this.face = this.walk?.seedFace ?? 0;
 		this.view = this.walk ? su11Inverse(this.walk.home) : su11Identity();
 		this.centerAnim = null;
+		this.G = su11Identity();
+	}
+
+	/** The absolute pose: home frame to screen. */
+	pose(): Su11 {
+		return su11Normalize(su11Mul(this.view, this.G));
+	}
+
+	/** Jump to an absolute pose. The next step re-anchors it to the face under the centre. */
+	setPose(P: Su11): void {
+		this.view = su11Normalize(su11Mul(P, su11Inverse(this.G)));
+		this.centerAnim = null;
+		this.reanchorNow();
+	}
+
+	/**
+	 * Walk a home-frame point to the face of the quotient that holds it: the face and the isometry W
+	 * carrying it there. Two points whose walks end in the same face give a symmetry of the tiling,
+	 * W₁⁻¹·W₂, carrying the second one's tile onto the first one's. Null without a walk table.
+	 */
+	/** The tiling's nearest point of interest to a home-frame point (vertex, side midpoint or face
+	 *  centre), in home-frame coordinates; null without a walk table. */
+	snapAt(w: Complex): Complex | null {
+		return this.walk ? snapPoint(this.walk, this.walk.seedFace, w) : null;
+	}
+
+	walkAt(w: Complex): { f: number; W: Su11 } | null {
+		if (!this.walk) return null;
+		const r = walkPoint(this.walk, this.walk.seedFace, w);
+		return r.ok ? { f: r.f, W: r.W } : null;
 	}
 
 	private apply(next: Su11): void {
@@ -117,19 +154,25 @@ export class HypCamera {
 			} else this.centerAnim = null;
 		}
 
-		// Re-anchor. Either way the picture is unchanged and the view stays within a tile of the identity,
-		// so float32 uniforms never degrade and panning is unlimited.
+		this.reanchorNow();
+	}
+
+	// Re-anchor. Either way the picture is unchanged and the view stays within a tile of the identity,
+	// so float32 uniforms never degrade and panning is unlimited.
+	private reanchorNow(): void {
 		if (this.walk) {
 			const r = reanchor(this.walk, this.face, this.view);
 			if (r.W) {
 				this.face = r.f;
 				this.view = r.view;
+				this.G = su11Normalize(su11Mul(r.W, this.G));
 				if (this.centerAnim) this.centerAnim = su11Apply(r.W, this.centerAnim);
 			}
 		} else if (this.dev) {
 			const g = this.dev.recenter(this.view);
 			if (g) {
 				this.view = su11Normalize(su11Mul(this.view, g));
+				this.G = su11Normalize(su11Mul(su11Inverse(g), this.G));
 				if (this.centerAnim) this.centerAnim = su11ApplyInverse(g, this.centerAnim);
 			}
 		}

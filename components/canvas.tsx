@@ -321,8 +321,6 @@ export function Canvas({
 	// Screen coords of the last left press, or null if the press didn't start on the canvas. Read on release
 	// to tell a click (centre the tile) from a drag (pan) by how far the pointer travelled.
 	const pressPosRef = useRef<{ x: number; y: number } | null>(null);
-	// Last applied rotation (degrees); drives the pivot-on-nearest-vertex compensation in the draw loop.
-	const prevRotationRef = useRef<number | null>(null);
 	// True while WE'VE set the canvas cursor to "move" for an active Command-scrub, so we only reset the
 	// cursor we own (not one a future pan/grab handler might set).
 	const scrubCursorRef = useRef(false);
@@ -788,6 +786,8 @@ export function Canvas({
 						// Start the live rotation at the slider value so a remount (view switch) with a non-zero
 						// rotation shows it immediately instead of easing up from 0.
 						rotation: cfg.rotation || 0,
+						// A remount starts the compensation afresh, as the per-instance ref it replaced did.
+						pivotRotation: null,
 					},
 				});
 				// The hyperbolic / spherical / freedraw / colors / editor (and inversive) views paint via their own overlay; skip the flat grid build.
@@ -955,7 +955,7 @@ export function Canvas({
 					// Skip the compensation in hyperbolic mode (the inversive view still needs it — it reads the
 					// raw uOffset + uRot and relies on this to hold the centre fixed under rotation).
 					const rotDeg = ctrl.rotation || 0;
-					const prevRotDeg = prevRotationRef.current;
+					const prevRotDeg = ctrl.pivotRotation ?? null;
 					if (!hyperbolic && prevRotDeg !== null && prevRotDeg !== rotDeg) {
 						const dTheta = rot - (prevRotDeg * Math.PI) / 180;
 						const cd = Math.cos(dTheta),
@@ -969,7 +969,7 @@ export function Canvas({
 						rotateAboutCentre(ctrl.offset);
 						rotateAboutCentre(ctrl.targetOffset);
 					}
-					prevRotationRef.current = rotDeg;
+					ctrl.pivotRotation = rotDeg;
 
 					// Everything below paints tiles onto the p5 canvas; a WebGL overlay owns painting in the
 					// inversive/hyperbolic modes, so skip it (the rotation compensation above still ran).

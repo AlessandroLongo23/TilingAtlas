@@ -23,6 +23,12 @@ export interface Controls {
 	// so wheel/slider changes glide in like a flywheel settling into a notch. Mutated in place (no
 	// per-frame setState); kept continuous (not wrapped) so consumers only ever see small per-frame deltas.
 	rotation: number;
+	// The live angle the pan offset was last compensated for (see the pivot-about-centre step in
+	// canvas.tsx's draw loop). In the store, not in a ref, so a writer that sets the angle and the pan
+	// together (the animation timeline) can mark the pair consistent and no compensation runs: p5 draws
+	// at 60 fps, the WebGL fill at the display rate, and a compensation left for p5 to apply shows the
+	// fill an uncompensated pan on every frame p5 skips.
+	pivotRotation?: number | null;
 	dampening: number;
 }
 

@@ -5,11 +5,13 @@ import { useConfiguration } from "@/stores/configuration";
 import { drawDevelopedEdgePatch } from "@/lib/render/hyperbolicDevelopedDraw";
 import { FALLBACK_BOUND_R, FALLBACK_BUDGET, HyperbolicDeveloper } from "@/lib/render/hyperbolicDevelopClient";
 import { HypCamera } from "@/lib/render/hypCamera";
+import { publishCamera } from "@/lib/render/cameraPose";
+import { diskDriver } from "@/lib/render/diskCamera";
+import { diskFrame } from "@/lib/render/diskFrame";
 import { buildWalk } from "@/lib/render/hyperbolicWalk";
 import { HyperbolicPerPixelRenderer } from "@/lib/render/hyperbolicPerPixelGL";
 import { syncCanvasSize } from "@/lib/render/canvasSize";
 import { captureOverride, offerFrame } from "@/lib/render/capture";
-import { diskFrame } from "@/lib/render/diskFrame";
 import type { HypEdgesPattern } from "@/lib/freedraw/hyp-edges";
 
 // Interactive Poincaré-disk view of a hyperbolic edge-system tiling: the per-pixel WebGL renderer, the
@@ -33,6 +35,17 @@ export function HyperbolicEdgesCanvas({ pattern }: Props) {
 	const ctx2dRef = useRef<CanvasRenderingContext2D | null>(null);
 	const devRef = useRef<HyperbolicDeveloper | null>(null); // the 2D fallback only
 	const camRef = useRef<{ id: string; cam: HypCamera } | null>(null);
+	// The animation timeline drives this camera through the driver (lib/render/cameraPose.ts).
+	useEffect(
+		() =>
+			publishCamera(
+				diskDriver(
+					() => camRef.current?.cam ?? null,
+					() => canvasRef.current,
+				),
+			),
+		[],
+	);
 	const metaRef = useRef<{ id: string; name: string; config: string; edge: number } | null>(null);
 
 	useEffect(() => {

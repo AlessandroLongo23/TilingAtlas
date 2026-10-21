@@ -6,6 +6,8 @@ import { ArcballControls } from "three/examples/jsm/controls/ArcballControls.js"
 import { useMemo } from "react";
 import { useConfiguration } from "@/stores/configuration";
 import { edgeRadius } from "@/lib/render/sphericalPolyhedron";
+import { publishCamera, type Vec3 } from "@/lib/render/cameraPose";
+import { sphereFeatures } from "@/lib/render/spherePath";
 import {
 	applyCameraAspect,
 	cameraDistanceFor,
@@ -15,6 +17,7 @@ import {
 	orthoHalfHeightFor,
 	swapProjection,
 	type SphericalCamera,
+	sphereDriver,
 } from "@/lib/render/sphericalCamera";
 import { polyhedronForId } from "@/lib/render/sphericalSolids";
 import { measureBox } from "@/lib/render/canvasSize";
@@ -96,6 +99,36 @@ export function IcoFreedrawCanvas({
 	const controlsRef = useRef<ArcballControls | null>(null);
 	// Release momentum — let go mid-drag and the solid coasts (lib/render/orbitMomentum.ts).
 	const momentumRef = useRef<OrbitMomentum | null>(null);
+	// Its points of interest, for snapping keyframes; read through a ref by the driver.
+	const features = useMemo(
+		() =>
+			verts
+				? sphereFeatures(
+						verts,
+						pattern.tiles.map((t) => [...new Set(t.flat())]),
+						pattern.drawn,
+					)
+				: [],
+		[verts, pattern],
+	);
+	const featuresRef = useRef<readonly Vec3[]>([]);
+	useEffect(() => {
+		featuresRef.current = features;
+	}, [features]);
+	// The animation timeline drives this camera through the driver (lib/render/cameraPose.ts).
+	useEffect(
+		() =>
+			publishCamera(
+				sphereDriver(
+					() => cameraRef.current,
+					() => hostRef.current,
+					() => DEFAULT_FIT_FRACTION,
+					() => momentumRef.current?.stop(),
+					() => featuresRef.current,
+				),
+			),
+		[],
+	);
 	// Lights + environment for the current surface look (lib/render/sphericalLook.ts).
 	const lookRigRef = useRef<LookRig | null>(null);
 	const rafRef = useRef<number | null>(null);

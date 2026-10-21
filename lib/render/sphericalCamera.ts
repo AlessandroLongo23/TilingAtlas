@@ -15,6 +15,8 @@
 import * as THREE from "three";
 import { ArcballControls } from "three/examples/jsm/controls/ArcballControls.js";
 import { onViewReset, TouchGestures } from "@/lib/render/touchGestures";
+import type { CameraDriver, SpherePose, Vec3 } from "@/lib/render/cameraPose";
+import { qrot, sphereModel } from "@/lib/render/spherePath";
 
 export type SphericalCamera = THREE.PerspectiveCamera | THREE.OrthographicCamera;
 
@@ -154,4 +156,121 @@ export function swapProjection(args: {
 		minDistance: args.minDistance,
 	});
 	return { camera, controls };
+}
+
+/**
+ * The sphere camera as an animation-timeline driver (cameraPose.ts). Everything is read through getters
+ * on every call: a projection toggle replaces the camera object, and the driver must follow it.
+ *
+ * Zoom is one number across both projections, the perspective distance: an orthographic camera stays at
+ * the resting distance and shows it as `zoom = rest / dist`, which frames the sphere the same way. The
+ * pose is written as position and up (the trackball re-aims the camera at the centre every frame from
+ * those two), and the release momentum is stopped first so a coasting spin cannot fight the timeline.
+ */
+export function sphereDriver(
+	cam: () => SphericalCamera | null,
+	el: () => HTMLElement | null,
+	fit: () => number,
+	stop: () => void,
+	/** The tiling's points of interest on the unit sphere (spherePath.ts sphereFeatures). */
+	features: () => readonly Vec3[] = () => [],
+): CameraDriver {
+	const box = () => ({ w: el()?.clientWidth || 1, h: el()?.clientHeight || 1 });
+	const rest = () => cameraDistanceFor(fit());
+	const S = (p: unknown) => p as SpherePose;
+	const dot = (a: Vec3, b: Vec3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+	/** The pose's camera frame and lens, in the live camera's projection. */
+	const frame = (p: SpherePose) => {
+		const c = cam();
+		const ortho = c instanceof THREE.OrthographicCamera;
+		const right = qrot(p.q, [1, 0, 0]),
+			up = qrot(p.q, [0, 1, 0]),
+			back = qrot(p.q, [0, 0, 1]);
+		const d = ortho ? rest() : p.dist;
+		const pos: Vec3 = [back[0] * d, back[1] * d, back[2] * d];
+		const half = ortho
+			? orthoHalfHeightFor(fit()) * (p.dist / rest())
+			: Math.tan(((c instanceof THREE.PerspectiveCamera ? c.fov : 45) * Math.PI) / 360);
+		return { ortho, right, up, back, pos, half };
+	};
+	return {
+		kind: "sphere",
+		model: sphereModel,
+		read() {
+			const c = cam();
+			if (!c) return null;
+			const q = c.quaternion;
+			const dist = c instanceof THREE.OrthographicCamera ? rest() / c.zoom : c.position.length();
+			return { kind: "sphere", q: [q.x, q.y, q.z, q.w], dist };
+		},
+		apply(p) {
+			const c = cam();
+			if (!c) return;
+			stop();
+			const { ortho, up, pos } = frame(S(p));
+			c.position.set(...pos);
+			c.up.set(...up);
+			c.quaternion.set(...S(p).q);
+			if (ortho) {
+				c.zoom = rest() / S(p).dist;
+				c.updateProjectionMatrix();
+			}
+		},
+		commit() {},
+		project(p, w) {
+			const { w: W, h: H } = box();
+			const f = frame(S(p));
+			const v: Vec3 = [(w.x ?? 0) - f.pos[0], w.y - f.pos[1], (w.z ?? 0) - f.pos[2]];
+			const xc = dot(v, f.right),
+				yc = dot(v, f.up),
+				zc = dot(v, f.back);
+			const aspect = W / H;
+			const k = f.ortho ? f.half : -zc * f.half;
+			const nx = xc / (k * aspect),
+				ny = yc / k;
+			const pw: Vec3 = [w.x, w.y, w.z ?? 0];
+			// On the near side of the unit sphere: in front of its silhouette as this camera sees it.
+			const front = f.ortho ? dot(pw, f.back) > 0 : dot(pw, f.pos) > 1;
+			return { x: ((nx + 1) / 2) * W, y: ((1 - ny) / 2) * H, front };
+		},
+		unproject(p, x, y) {
+			const { w: W, h: H } = box();
+			const f = frame(S(p));
+			const nx = (2 * x) / W - 1,
+				ny = 1 - (2 * y) / H;
+			const aspect = W / H;
+			let o: Vec3, d: Vec3;
+			if (f.ortho) {
+				o = [0, 1, 2].map((i) => f.pos[i] + f.right[i] * nx * f.half * aspect + f.up[i] * ny * f.half) as Vec3;
+				d = f.back.map((v) => -v) as Vec3;
+			} else {
+				o = f.pos;
+				const r = [0, 1, 2].map((i) => f.right[i] * nx * f.half * aspect + f.up[i] * ny * f.half - f.back[i]);
+				const n = Math.hypot(...r);
+				d = r.map((v) => v / n) as Vec3;
+			}
+			const b = dot(o, d),
+				c = dot(o, o) - 1;
+			const disc = b * b - c;
+			if (disc < 0) return null;
+			const s = -b - Math.sqrt(disc);
+			return { x: o[0] + s * d[0], y: o[1] + s * d[1], z: o[2] + s * d[2] };
+		},
+		probes() {
+			// The centre and four points well inside the sphere's disc on screen.
+			const { w: W, h: H } = box(),
+				r = 0.4 * fit() * (H / 2);
+			return [
+				{ x: W / 2, y: H / 2 },
+				{ x: W / 2 + r, y: H / 2 },
+				{ x: W / 2 - r, y: H / 2 },
+				{ x: W / 2, y: H / 2 + r },
+				{ x: W / 2, y: H / 2 - r },
+			];
+		},
+		snapCandidates: () => features().map(([x, y, z]) => ({ x, y, z })),
+		// A full turn about the first view's up axis: the globe spins once under the camera and the loop
+		// closes on exactly the first picture, whatever the tiling's own symmetry.
+		drift: (first) => ({ ...S(first), spin: { axis: qrot(S(first).q, [0, 1, 0]), angle: 2 * Math.PI } }),
+	};
 }

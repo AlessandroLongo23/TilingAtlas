@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { ArcballControls } from "three/examples/jsm/controls/ArcballControls.js";
 import { useConfiguration } from "@/stores/configuration";
+import { publishCamera, type Vec3 } from "@/lib/render/cameraPose";
+import { sphereFeatures } from "@/lib/render/spherePath";
 import {
 	applyCameraAspect,
 	cameraDistanceFor,
@@ -13,6 +15,7 @@ import {
 	orthoHalfHeightFor,
 	swapProjection,
 	type SphericalCamera,
+	sphereDriver,
 } from "@/lib/render/sphericalCamera";
 import { polyhedronForId } from "@/lib/render/sphericalSolids";
 import { isNobleFamily, nobleFamilySolid } from "@/lib/render/nobleSolids";
@@ -142,6 +145,26 @@ export function SphericalCanvas({
 	// Release momentum: let go mid-drag and the solid coasts (lib/render/orbitMomentum.ts). It reads the
 	// camera through a ref, so the projection toggle's fresh camera keeps the spin instead of dropping it.
 	const momentumRef = useRef<OrbitMomentum | null>(null);
+	// Its points of interest, for snapping keyframes; read through a ref by the driver.
+	const features = useMemo(() => (poly ? sphereFeatures(poly.vertices as Vec3[], poly.faces) : []), [poly]);
+	const featuresRef = useRef<readonly Vec3[]>([]);
+	useEffect(() => {
+		featuresRef.current = features;
+	}, [features]);
+	// The animation timeline drives this camera through the driver (lib/render/cameraPose.ts).
+	useEffect(
+		() =>
+			publishCamera(
+				sphereDriver(
+					() => cameraRef.current,
+					() => hostRef.current,
+					() => fitRef.current,
+					() => momentumRef.current?.stop(),
+					() => featuresRef.current,
+				),
+			),
+		[],
+	);
 	// Lights + environment (lib/render/sphericalLook.ts). Held in a ref so the render loop can aim it at
 	// the camera each frame without the mount effect re-running.
 	const lookRigRef = useRef<LookRig | null>(null);

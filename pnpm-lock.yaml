@@ -47,6 +47,9 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      gifenc:
+        specifier: 1.0.3
+        version: 1.0.3
       katex:
         specifier: ^0.16.45
         version: 0.16.45

@@ -8,11 +8,13 @@ import { loadDevelopedPatches, drawDevelopedPatch, type CataloguePatch } from "@
 import { FALLBACK_BOUND_R, FALLBACK_BUDGET, HyperbolicDeveloper } from "@/lib/render/hyperbolicDevelopClient";
 import { IslamicFeed } from "@/lib/render/hyperbolicIslamic";
 import { HypCamera } from "@/lib/render/hypCamera";
+import { publishCamera } from "@/lib/render/cameraPose";
+import { diskDriver } from "@/lib/render/diskCamera";
+import { DISK_BAR_PX, DISK_PAD_PX, diskFrame } from "@/lib/render/diskFrame";
 import { buildWalk, type WalkTiling } from "@/lib/render/hyperbolicWalk";
 import { HyperbolicPerPixelRenderer } from "@/lib/render/hyperbolicPerPixelGL";
 import { syncCanvasSize } from "@/lib/render/canvasSize";
 import { captureOverride, offerFrame } from "@/lib/render/capture";
-import { DISK_BAR_PX, DISK_PAD_PX, diskFrame } from "@/lib/render/diskFrame";
 
 // Interactive view of an engine-developed hyperbolic tiling. Each PIXEL walks the quotient to its tile
 // (lib/render/hyperbolicWalk.ts) and is coloured there, so the WHOLE disk fills to the rim for every
@@ -84,6 +86,18 @@ export function HyperbolicDevelopedCanvas({ patchId, data, input, diskPadPx = DI
 		inputRef.current = input;
 		padRef.current = diskPadPx;
 	}, [input, diskPadPx]);
+	// On /play (no external input) the animation timeline drives this camera through the driver
+	// (lib/render/cameraPose.ts).
+	useEffect(() => {
+		if (input) return;
+		return publishCamera(
+			diskDriver(
+				() => camRef.current?.cam ?? null,
+				() => canvasRef.current,
+				padRef.current,
+			),
+		);
+	}, [input]);
 
 	useEffect(() => {
 		const canvas = canvasRef.current;

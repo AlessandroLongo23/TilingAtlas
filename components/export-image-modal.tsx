@@ -52,7 +52,7 @@ const ASPECTS: { value: AspectId; label: string; ratio: number | null }[] = [
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
-function download(blob: Blob, filename: string) {
+export function download(blob: Blob, filename: string) {
 	const url = URL.createObjectURL(blob);
 	const a = document.createElement("a");
 	a.href = url;

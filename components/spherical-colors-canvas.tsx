@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import * as THREE from "three";
 import { ArcballControls } from "three/examples/jsm/controls/ArcballControls.js";
 import { useConfiguration } from "@/stores/configuration";
+import { publishCamera, type Vec3 } from "@/lib/render/cameraPose";
+import { sphereFeatures } from "@/lib/render/spherePath";
 import {
 	applyCameraAspect,
 	cameraDistanceFor,
@@ -13,6 +15,7 @@ import {
 	orthoHalfHeightFor,
 	swapProjection,
 	type SphericalCamera,
+	sphereDriver,
 } from "@/lib/render/sphericalCamera";
 import { measureBox } from "@/lib/render/canvasSize";
 import { createOrbitMomentum, type OrbitMomentum } from "@/lib/render/orbitMomentum";
@@ -46,6 +49,26 @@ export function SphericalColorsCanvas({ pattern, mode }: Props) {
 	const controlsRef = useRef<ArcballControls | null>(null);
 	// Release momentum — let go mid-drag and the solid coasts (lib/render/orbitMomentum.ts).
 	const momentumRef = useRef<OrbitMomentum | null>(null);
+	// Its points of interest, for snapping keyframes; read through a ref by the driver.
+	const features = useMemo(() => sphereFeatures(pattern.vertices, pattern.faces, pattern.edges), [pattern]);
+	const featuresRef = useRef<readonly Vec3[]>([]);
+	useEffect(() => {
+		featuresRef.current = features;
+	}, [features]);
+	// The animation timeline drives this camera through the driver (lib/render/cameraPose.ts).
+	useEffect(
+		() =>
+			publishCamera(
+				sphereDriver(
+					() => cameraRef.current,
+					() => hostRef.current,
+					() => DEFAULT_FIT_FRACTION,
+					() => momentumRef.current?.stop(),
+					() => featuresRef.current,
+				),
+			),
+		[],
+	);
 	// Lights + environment for the current surface look (lib/render/sphericalLook.ts).
 	const lookRigRef = useRef<LookRig | null>(null);
 	const rafRef = useRef<number | null>(null);
