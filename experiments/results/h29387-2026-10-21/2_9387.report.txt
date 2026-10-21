@@ -1,0 +1,23 @@
+4.30.4.30.6.6.6.30 develop (y29387) — tilings by regular [4, 6, 30] at one edge length
+source          : /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/h29387/solver_hybrid_2_9387
+forced edge len : l = 2.938703488736
+angles          : 4-gon 36.0000deg, 6-gon 44.4775deg, 30-gon 51.5225deg
+certificates in : 871313
+developed       : 871313
+failed          : 0
+multi-variant   : 1596
+wall            : 457.9s (0.5 ms/certificate)
+
+
+   k   tilings  face orbits: min    max
+   1       521                 1     10
+   2    870792                 4     16
+
+   k    census    corpus   shipped  status
+   1       521       521       521  ok
+   2    870792    870792    870792  ok
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/dev29387/hpy29387-k2-p0.json: 250000 records, 199.42 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/dev29387/hpy29387-k2-p1.json: 250000 records, 200.23 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/dev29387/hpy29387-k2-p2.json: 250000 records, 200.36 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/dev29387/hpy29387-k1.json: 521 records, 0.30 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/dev29387/hpy29387-k2-p3.json: 120792 records, 96.62 MB

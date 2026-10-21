@@ -1,0 +1,38 @@
+∞.4.3.4 develop (ya2) — tilings by regular [3, 4, 0] at one edge length
+source          : /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/c/a2
+forced edge len : l = 0.738997943852
+angles          : 3-gon 55.7711deg, 4-gon 82.8192deg, ∞-gon 138.5904deg
+certificates in : 10142
+developed       : 10142
+failed          : 0
+multi-variant   : 0
+wall            : 23.4s (2.3 ms/certificate)
+
+
+   k   tilings  face orbits: min    max
+   1         2                 2      3
+   2        10                 3      8
+   3        21                 4     12
+   4        54                 5     14
+   5       196                 4     18
+   6       659                 5     22
+   7      2118                 5     24
+   8      7082                 5     28
+
+   k    census    corpus   shipped  status
+   1         2         2         2  ok
+   2        10        10        10  ok
+   3        21        21        21  ok
+   4        54        54        54  ok
+   5       196       196       196  ok
+   6       659       659       659  ok
+   7      2118      2118      2118  ok
+   8      7082      7082      7082  ok
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/devout/hpya2-k1.json: 2 records, 0.00 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/devout/hpya2-k2.json: 10 records, 0.01 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/devout/hpya2-k3.json: 21 records, 0.01 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/devout/hpya2-k4.json: 54 records, 0.04 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/devout/hpya2-k5.json: 196 records, 0.17 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/devout/hpya2-k6.json: 659 records, 0.63 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/devout/hpya2-k7.json: 2118 records, 2.19 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/devout/hpya2-k8.json: 7082 records, 8.07 MB

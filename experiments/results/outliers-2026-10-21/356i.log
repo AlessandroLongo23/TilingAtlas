@@ -1,0 +1,45 @@
+  [     1s] 2000/8524 developed, 1999 failed, ETA 2s
+  [     1s] 4000/8524 developed, 3999 failed, ETA 1s
+  [     2s] 6000/8524 developed, 5999 failed, ETA 1s
+  [     2s] 8000/8524 developed, 7999 failed, ETA 0s
+3,5,6,18 develop (356i) — tilings by regular [3, 5, 6, 18] at one edge length
+source          : /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/c/356i
+forced edge len : l = 1.053143600316
+angles          : 3-gon 51.9371deg, 5-gon 90.2261deg, 6-gon 98.6512deg, 18-gon 119.1856deg
+certificates in : 8524
+developed       : 0
+failed          : 8524
+multi-variant   : 0
+wall            : 2.5s (0.3 ms/certificate)
+
+     8524  build   e.g. build: tile A9 not in the alphabet
+
+   k   tilings  face orbits: min    max
+
+   k    census    corpus   shipped  status
+   1         0         0         0  ok
+   2         0         0         0  ok
+   3         0         0         0  ok
+   4         0         0         0  ok
+   5         0         0         0  ok
+   6         0         0         0  ok
+   7         0         0         0  ok
+   8         0         0         0  ok
+   9         0         0         0  ok
+  10         0         0         0  ok
+  11         0         0         0  ok
+  12         0         0         0  ok
+  13         0         0         0  ok
+  14         0         0         0  ok
+  15         0         0         0  ok
+  16         2         2         0  DEVELOP LOSS: 2
+  17         4         4         0  DEVELOP LOSS: 4
+  18        22        22         0  DEVELOP LOSS: 22
+  19         0         0         0  ok
+  20       139       139         0  DEVELOP LOSS: 139
+  21        62        62         0  DEVELOP LOSS: 62
+  22       204       204         0  DEVELOP LOSS: 204
+  23       615       615         0  DEVELOP LOSS: 615
+  24      2416      2416         0  DEVELOP LOSS: 2416
+  25      5060      5060         0  DEVELOP LOSS: 5060
+

@@ -50,7 +50,7 @@ sys.path.insert(0, _HERE)
 import develop_freedraw as fd
 from develop_freedraw import DevelopError
 from develop_hyperbolic import interior_angle, solve_edge_length
-from develop_hyp_edges import build_block, check_patch, develop_patch, quotient_faces, tile_size
+from develop_hyp_edges import FLAT, build_block, check_patch, develop_patch, quotient_faces, tile_size
 
 TWO_PI = 2 * math.pi
 
@@ -83,10 +83,11 @@ class Board:
     Everything downstream (build_block, develop_patch, quotient_faces, emit_darts) reads only ℓ, units
     and sizes, so the two families share one developer and this class is the whole difference."""
 
-    __slots__ = ("id", "label", "l", "units", "sizes", "prefix")
+    __slots__ = ("id", "label", "l", "units", "sizes", "prefix", "mult")
 
     def __init__(self, bid, label, l, sizes, prefix):
         self.id, self.label, self.l, self.sizes, self.prefix = bid, label, l, sizes, prefix
+        self.mult = {}
         # Marek's letter is S on the 2023 builds and A on the hybrid ones; the size token is the same.
         self.units = {f"{c}{'oo' if p == 0 else p}": interior_angle(p, l) for p in sizes for c in "SA"}
 
@@ -95,6 +96,7 @@ class Board:
         l, units, sizes = board_of(n)
         b = Board.__new__(Board)
         b.id, b.label, b.l, b.units, b.sizes, b.prefix = f"{n}", f"3.4.{n}.4", l, units, sizes, "hp"
+        b.mult = {}
         return b
 
     @staticmethod
@@ -137,6 +139,25 @@ class Board:
         # other families' ids, and with prefix "hp" the shard stem and record ids come out as "hpy17627".
         return Board("y" + bid.replace("_", ""), ".".join("∞" if p == 0 else str(p) for p in figure), l, sizes, "hp")
 
+    @staticmethod
+    def multi(bid, source):
+        """A board whose polygons come at several edge lengths, all whole multiples of ℓ (Marek's
+        `1247_1_0612`: lengths 1, 2, 4 and 7). Edges in the certificates are all ℓ long; a tile of
+        multiple m has m unit edges per side, joined by FLAT 180° corners. ℓ closes the base-edge
+        figures, and each token's multiple is solved off the figures (`token_multiples`)."""
+        figs = corpus_figures(source)
+        base = next(f for f in figs if all(t[0] == "S" or t[0] == "A" for t in f) and FLAT not in f)
+        l = solve_edge_length([tile_size(t) for t in base])
+        if l is None:
+            raise DevelopError(f"multi {bid}: base figure {base} is not hyperbolic")
+        mult = token_multiples(figs, l, base_letter=base[0][0])
+        units = {t: math.pi if t == FLAT else interior_angle(tile_size(t), mult[t] * l) for t in mult}
+        sizes = sorted({tile_size(t) for t in mult if t != FLAT}, key=lambda p: (p == 0, p))
+        b = Board("y" + bid.replace("_", ""), bid, l, sizes, "hp")
+        b.units = units
+        b.mult = {t: m for t, m in mult.items() if t != FLAT}
+        return b
+
 
 def hybrid_figure(source, bid):
     """(closing figure, alphabet) of a hybrid corpus, read off its certificates.
@@ -167,6 +188,69 @@ def hybrid_figure(source, bid):
     return best, corpus_alphabet(source)
 
 
+def corpus_figures(source):
+    """Every distinct vertex figure (a tuple of corner tokens) the corpus's certificates list."""
+    out = {}
+    for path in cert_paths(source):
+        for cert in fd.parse_file(path):
+            for t in cert["types"]:
+                out[tuple(t["figure"])] = True
+    return list(out)
+
+
+def token_multiples(figs, l, base_letter="S", max_mult=12):
+    """{token: edge multiple} for every corner token, FLAT included (as None), solved off the figures.
+
+    The letter does not decide the length on its own: in `1247_1_0612` Loo is 4ℓ but L3 is 7ℓ. So each
+    token is solved: base-letter tokens are 1, and a figure with one unknown token gives that token's
+    angle, hence its length, for each rotation order the figure may carry. A length must come out a whole
+    multiple, and at the end EVERY figure must close with the map, or the board is refused."""
+    mult = {FLAT: None}
+    for f in figs:
+        for t in f:
+            if t != FLAT and t[0] == base_letter:
+                mult[t] = 1
+    ang = lambda t: math.pi if t == FLAT else interior_angle(tile_size(t), mult[t] * l)
+    # One figure can close at more than one (rotation order, multiple) pair, so a token is assigned only
+    # when the candidates of EVERY figure in which it is the sole unknown intersect in one multiple.
+    progress = True
+    while progress:
+        progress = False
+        cand = {}
+        for f in figs:
+            unknown = {t for t in f if t not in mult}
+            if len(unknown) != 1:
+                continue
+            (u,) = unknown
+            c = f.count(u)
+            rest = sum(ang(t) for t in f if t != u)
+            ms = {m for r in range(1, 13) for m in range(1, max_mult + 1)
+                  if abs(interior_angle(tile_size(u), m * l) - (TWO_PI / r - rest) / c) < 1e-9}
+            cand[u] = cand[u] & ms if u in cand else ms
+        for u, ms in cand.items():
+            if len(ms) == 1:
+                mult[u] = ms.pop()
+                progress = True
+    missing = sorted({t for f in figs for t in f} - set(mult))
+    if missing:
+        raise DevelopError(f"no whole edge multiple found for {missing}")
+    for f in figs:
+        r = TWO_PI / sum(ang(t) for t in f)
+        if abs(r - round(r)) > 1e-9:
+            raise DevelopError(f"figure {f} does not close with the solved multiples")
+    return mult
+
+
+def token_label(t, mult):
+    """A corner token for a config string: the polygon size, the edge multiple as a subscript when it is
+    not 1 (the scaled shelf's '3₂'), and π for a flat corner."""
+    if t == FLAT:
+        return "π"
+    p = tile_size(t)
+    m = mult.get(t, 1)
+    return ("∞" if p == 0 else str(p)) + ("".join("₀₁₂₃₄₅₆₇₈₉"[int(d)] for d in str(m)) if m != 1 else "")
+
+
 def cert_paths(source):
     return [p for p in sorted(glob.glob(os.path.join(source, "*.txt"))) if CERT_NAME.match(os.path.basename(p))]
 
@@ -176,7 +260,7 @@ def corpus_alphabet(source):
     only to list their letters would cost as much as developing them."""
     found = set()
     for path in cert_paths(source):
-        found.update(tile_size(c) for c in set(re.findall(r"\bA(?:oo|\d+)\b", open(path).read())))
+        found.update(tile_size(c) for c in set(re.findall(r"\b[AS](?:oo|\d+)\b", open(path).read())))
     return sorted(found)
 
 
@@ -207,6 +291,23 @@ def emit_darts(block, face_of, faces, sizes):
     it is asserted here, not commented."""
     n = len(block.rneig)
     lvert = [0] * n
+    if any(f.get("mult", 1) != 1 for f in faces) or FLAT in block.tile:
+        # Multi-length: the turn at a corner is no longer a function of one size at one ℓ, so the angles
+        # ship explicitly (the client's `alpha`), and lvert is the face's count of UNIT sides (a 2ℓ
+        # pentagon is 10; an apeirogon stays 0), which is the slot count the client's walk builds.
+        for h in range(n):
+            f = faces[face_of[h]]
+            lvert[block.rneig[h]] = f["size"] * f["mult"]
+        idx_of = {p: i for i, p in enumerate(sizes)}
+        return {
+            "rneig": [int(x) for x in block.rneig],
+            "glue": [int(x) for x in block.glue],
+            "lvert": lvert,
+            "alpha": [float(x) for x in block.step],
+            "orbit": [int(x) for x in block.orbit_of],
+            "faceColor": [idx_of[faces[face_of[h]]["size"]] for h in range(n)],
+            "seed": 0,
+        }
     for h in range(n):
         lvert[block.rneig[h]] = tile_size(block.tile[h])
     for h in range(n):
@@ -245,7 +346,7 @@ def develop_cert(cert, board, boundR=0.86):
             if not ok:
                 reasons.append("patch not regular: %r" % res)
                 continue
-            face_of, faces = quotient_faces(block)
+            face_of, faces = quotient_faces(block, board.mult)
             if any(0 < f["size"] < 3 for f in faces):
                 reasons.append("degenerate face (digon) — this is not an edge system")
                 continue
@@ -258,9 +359,8 @@ def develop_cert(cert, board, boundR=0.86):
         # one PERIOD of its figure: 3.7.3.7 arrives as 3.7, {5,4} as 5. Repeat it until it closes.
         figures = []
         for t in cert["types"]:
-            period = [tile_size(c) for c in t["figure"]]
             reps = round(TWO_PI / sum(units[c] for c in t["figure"]))
-            figures.append(".".join("∞" if p == 0 else str(p) for p in period * reps))
+            figures.append(".".join(token_label(c, board.mult) for c in t["figure"] * reps))
         return {
             "k": cert.get("k"),
             "base": board.id,
@@ -496,6 +596,7 @@ def main():
     ap.add_argument("--ai2", type=int, help="the {3,n} family parameter")
     ap.add_argument("--board", help="an abcdtest board id (e.g. 4568, 35bb) — the general a.b.c.d boards")
     ap.add_argument("--hybrid", help="a hybrid board id (e.g. 1_7627, af3)")
+    ap.add_argument("--multi", help="a multi-length board id (e.g. 1247_1_0612)")
     ap.add_argument("--figure", help="override the closing figure --hybrid reads off the certificates, 0 = apeirogon")
     ap.add_argument("--out")
     ap.add_argument("--report")
@@ -511,12 +612,14 @@ def main():
         return
     if not args.source:
         ap.error("source is required unless --selftest")
-    if sum(x is not None for x in (args.n, args.ai2, args.board, args.hybrid)) != 1:
+    if sum(x is not None for x in (args.n, args.ai2, args.board, args.hybrid, args.multi)) != 1:
         ap.error("give exactly one of --n (3.4.n.4), --ai2 ({3,n}), --board (an a.b.c.d id) or --hybrid")
     if args.n is not None:
         board = Board.family(args.n)
     elif args.ai2 is not None:
         board = Board.ai2(args.ai2)
+    elif args.multi is not None:
+        board = Board.multi(args.multi, args.source)
     elif args.hybrid is not None:
         if args.figure:
             board = Board.hybrid(args.hybrid, [int(x) for x in args.figure.split(",")], corpus_alphabet(args.source))

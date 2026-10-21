@@ -1,0 +1,62 @@
+  [    31s] 5000/18313 developed, 0 failed, ETA 83s
+  [    67s] 10000/18313 developed, 0 failed, ETA 56s
+  [   119s] 15000/18313 developed, 0 failed, ETA 26s
+3.5.5.5 develop (ya1) — tilings by regular [3, 5, 0] at one edge length
+source          : /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/a1
+forced edge len : l = 0.619661477494
+angles          : 3-gon 56.9695deg, 5-gon 101.0102deg, ∞-gon 145.0508deg
+certificates in : 18313
+developed       : 18313
+failed          : 0
+multi-variant   : 0
+wall            : 150.3s (8.2 ms/certificate)
+
+
+   k   tilings  face orbits: min    max
+   3         2                 6      6
+   5         4                 8     12
+   6         4                 9     12
+   7         3                11     16
+   8         8                12     18
+   9         5                14     20
+  10        18                17     22
+  11         5                18     24
+  12        20                18     26
+  13        46                21     30
+  14        75                21     32
+  15       202                23     34
+  16        64                24     34
+  17        91                26     38
+  18       199                28     40
+  19       335                31     40
+  20       939                31     44
+  21       795                32     46
+  22      1577                33     48
+  23      2106                35     50
+  24      3075                36     52
+  25      8740                38     54
+
+census          : none shipped with this corpus; the counts above are unchecked
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/deva1/hpya1-k3.json: 2 records, 0.00 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/deva1/hpya1-k5.json: 4 records, 0.00 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/deva1/hpya1-k6.json: 4 records, 0.00 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/deva1/hpya1-k7.json: 3 records, 0.00 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/deva1/hpya1-k8.json: 8 records, 0.01 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/deva1/hpya1-k9.json: 5 records, 0.01 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/deva1/hpya1-k10.json: 18 records, 0.03 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/deva1/hpya1-k11.json: 5 records, 0.01 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/deva1/hpya1-k12.json: 20 records, 0.03 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/deva1/hpya1-k13.json: 46 records, 0.08 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/deva1/hpya1-k14.json: 75 records, 0.13 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/deva1/hpya1-k15.json: 202 records, 0.40 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/deva1/hpya1-k16.json: 64 records, 0.12 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/deva1/hpya1-k17.json: 91 records, 0.19 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/deva1/hpya1-k18.json: 199 records, 0.45 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/deva1/hpya1-k19.json: 335 records, 0.80 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/deva1/hpya1-k20.json: 939 records, 2.42 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/deva1/hpya1-k21.json: 795 records, 2.09 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/deva1/hpya1-k22.json: 1577 records, 4.42 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/deva1/hpya1-k23.json: 2106 records, 6.18 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/deva1/hpya1-k24.json: 3075 records, 9.44 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/deva1/hpya1-k25.json: 8740 records, 28.48 MB
+

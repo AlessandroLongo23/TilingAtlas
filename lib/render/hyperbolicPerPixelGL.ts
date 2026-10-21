@@ -68,6 +68,18 @@ float pastHoro(vec2 z, float k, float st) {
 	vec2 q = z - vec2((k + 0.5) * st, 0.0);
 	return -(dot(q, q) - R * R) / (2.0 * R * z.y);
 }
+// which of the m unit sides of that long side holds z's foot (hyperbolicWalk.ts horoSub)
+float horoSub(vec2 z, float k, float st, float m) {
+	if (m <= 1.0) return 0.0;
+	float c = (k + 0.5) * st, R = sqrt(st * st * 0.25 + 1.0);
+	float t0 = 0.5 * log(((k * st - c + R) * (k * st - c + R) + 1.0) / ((c + R - k * st) * (c + R - k * st) + 1.0));
+	float t = 0.5 * log(((z.x - c + R) * (z.x - c + R) + z.y * z.y) / ((c + R - z.x) * (c + R - z.x) + z.y * z.y));
+	return clamp(floor((t - t0) / (-2.0 * t0) * m), 0.0, m - 1.0);
+}
+// a flat corner's tie-break normal for side j of face f, or zero (hyperbolicWalk.ts layout)
+vec3 flatQ(int j, int f) {
+	return vec3(texelFetch(uWalk, ivec2(3 + 3 * j, f), 0).zw, texelFetch(uWalk, ivec2(4 + 3 * j, f), 0).w);
+}
 
 void main() {
 	vec2 z = (gl_FragCoord.xy - uCenter) / uR;
@@ -101,20 +113,32 @@ void main() {
 		if (hd.x == 1.0) {
 			float d = (1.0 - w.x) * (1.0 - w.x) + w.y * w.y;
 			vec2 z = vec2(-2.0 * w.y, 1.0 - dot(w, w)) / d;
+			float m = max(1.0, texelFetch(uWalk, ivec2(1, f), 0).w); // unit sides per long side
 			kf = floor(z.x / hd.z);
-			j = imod(kf, hd.y);
+			int jl = imod(kf, hd.y / m);
+			j = jl * int(m) + int(horoSub(z, kf, hd.z, m));
 			s = pastHoro(z, kf, hd.z);
-			float t = (kf - float(j)) * hd.z; // bring side kf into the one period the row holds
+			float t = (kf - float(jl)) * hd.z; // bring side kf into the one period the row holds
 			pa = vec2(1.0, -0.5 * t);
 			pb = vec2(0.0, 0.5 * t);
 		} else if (hd.x == 0.0) {
 			j = imod(floor(atan(w.y, w.x) / 6.283185307179586 * hd.y + 0.5), hd.y);
 			s = past(texelFetch(uWalk, ivec2(4 + 3 * j, f), 0).xyz, w);
 		} else {
-			for (int i = 0; i < 16; i++) {
+			for (int i = 0; i < 40; i++) {
 				if (i >= S) break;
 				float v = past(texelFetch(uWalk, ivec2(4 + 3 * i, f), 0).xyz, w);
 				if (i == 0 || v > s) { s = v; j = i; }
+			}
+			// collinear sides through flat corners tie: step to the one whose half holds w
+			for (int g = 0; g < 8; g++) {
+				vec3 q = flatQ(j, f);
+				if (q != vec3(0.0) && past(q, w) > 0.0) j = (j + 1) % S; else break;
+			}
+			for (int g = 0; g < 8; g++) {
+				int jp = (j - 1 + S) % S;
+				vec3 q = flatQ(jp, f);
+				if (q != vec3(0.0) && past(q, w) <= 0.0) j = jp; else break;
 			}
 		}
 		if (s <= 0.0) { inside = true; break; }
@@ -139,7 +163,8 @@ void main() {
 		vec2 z = vec2(-2.0 * w.y, 1.0 - dot(w, w)) / d0;
 		for (int e = -1; e <= 1; e++) {
 			if (S < 3 && hd.x != 1.0 && e != 0) continue;
-			int jj = hd.x == 1.0 ? imod(kf + float(e), hd.y) : (j + e + S) % S;
+			float mm = max(1.0, texelFetch(uWalk, ivec2(1, f), 0).w);
+			int jj = hd.x == 1.0 ? imod(kf + float(e), hd.y / mm) * int(mm) : (j + e + S) % S;
 			float sv = hd.x == 1.0
 				? pastHoro(z, kf + float(e), hd.z)
 				: past(texelFetch(uWalk, ivec2(4 + 3 * jj, f), 0).xyz, w);

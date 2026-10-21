@@ -1,0 +1,67 @@
+  [    11s] 20000/871313 developed, 0 failed, ETA 478s
+  [    19s] 40000/871313 developed, 0 failed, ETA 392s
+  [    28s] 60000/871313 developed, 0 failed, ETA 379s
+  [    35s] 80000/871313 developed, 0 failed, ETA 348s
+  [    56s] 100000/871313 developed, 0 failed, ETA 435s
+  [    63s] 120000/871313 developed, 0 failed, ETA 396s
+  [    71s] 140000/871313 developed, 0 failed, ETA 369s
+  [    77s] 160000/871313 developed, 0 failed, ETA 344s
+  [    85s] 180000/871313 developed, 0 failed, ETA 326s
+  [    92s] 200000/871313 developed, 0 failed, ETA 309s
+  [    99s] 220000/871313 developed, 0 failed, ETA 294s
+  [   111s] 240000/871313 developed, 0 failed, ETA 291s
+  [   141s] 260000/871313 developed, 0 failed, ETA 331s
+  [   148s] 280000/871313 developed, 0 failed, ETA 312s
+  [   155s] 300000/871313 developed, 0 failed, ETA 295s
+  [   181s] 320000/871313 developed, 0 failed, ETA 312s
+  [   200s] 340000/871313 developed, 0 failed, ETA 313s
+  [   208s] 360000/871313 developed, 0 failed, ETA 295s
+  [   215s] 380000/871313 developed, 0 failed, ETA 278s
+  [   222s] 400000/871313 developed, 0 failed, ETA 261s
+  [   230s] 420000/871313 developed, 0 failed, ETA 247s
+  [   237s] 440000/871313 developed, 0 failed, ETA 232s
+  [   244s] 460000/871313 developed, 0 failed, ETA 218s
+  [   251s] 480000/871313 developed, 0 failed, ETA 205s
+  [   258s] 500000/871313 developed, 0 failed, ETA 192s
+  [   287s] 520000/871313 developed, 0 failed, ETA 194s
+  [   295s] 540000/871313 developed, 0 failed, ETA 181s
+  [   310s] 560000/871313 developed, 0 failed, ETA 173s
+  [   317s] 580000/871313 developed, 0 failed, ETA 159s
+  [   324s] 600000/871313 developed, 0 failed, ETA 146s
+  [   333s] 620000/871313 developed, 0 failed, ETA 135s
+  [   340s] 640000/871313 developed, 0 failed, ETA 123s
+  [   347s] 660000/871313 developed, 0 failed, ETA 111s
+  [   354s] 680000/871313 developed, 0 failed, ETA 100s
+  [   361s] 700000/871313 developed, 0 failed, ETA 88s
+  [   367s] 720000/871313 developed, 0 failed, ETA 77s
+  [   378s] 740000/871313 developed, 0 failed, ETA 67s
+  [   406s] 760000/871313 developed, 0 failed, ETA 60s
+  [   413s] 780000/871313 developed, 0 failed, ETA 48s
+  [   421s] 800000/871313 developed, 0 failed, ETA 38s
+  [   429s] 820000/871313 developed, 0 failed, ETA 27s
+  [   437s] 840000/871313 developed, 0 failed, ETA 16s
+  [   444s] 860000/871313 developed, 0 failed, ETA 6s
+4.30.4.30.6.6.6.30 develop (y29387) — tilings by regular [4, 6, 30] at one edge length
+source          : /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/h29387/solver_hybrid_2_9387
+forced edge len : l = 2.938703488736
+angles          : 4-gon 36.0000deg, 6-gon 44.4775deg, 30-gon 51.5225deg
+certificates in : 871313
+developed       : 871313
+failed          : 0
+multi-variant   : 1596
+wall            : 457.9s (0.5 ms/certificate)
+
+
+   k   tilings  face orbits: min    max
+   1       521                 1     10
+   2    870792                 4     16
+
+   k    census    corpus   shipped  status
+   1       521       521       521  ok
+   2    870792    870792    870792  ok
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/dev29387/hpy29387-k2-p0.json: 250000 records, 199.42 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/dev29387/hpy29387-k2-p1.json: 250000 records, 200.23 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/dev29387/hpy29387-k2-p2.json: 250000 records, 200.36 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/dev29387/hpy29387-k1.json: 521 records, 0.30 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/dev29387/hpy29387-k2-p3.json: 120792 records, 96.62 MB
+

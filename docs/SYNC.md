@@ -3148,3 +3148,21 @@ NOTES 2026-10-20 "every hybrid system".
 hybrid boards. 0 failures, every census matched. `develop_ai2.py` folded into `develop_ai1.py --ai2`.
 ⚑ `ai2_6` ({3,6}, Euclidean) counts below our catalogue at every k: ask Marek before developing.
 NOTES 2026-10-21 "ai2 + ai3 drop".
+
+## 2026-10-21 — af5 re-shipped from Marek's corrected solver, 67,234 tilings — CC
+The old af5 corpus had a wrong decagon; 27,514 records self-overlapped and drew wedges. `quotient_faces`
+fold rule restored (its 10-20 removal let them through). New corpus: 0 failures, census matched. Uncommitted.
+NOTES 2026-10-21 "af5 re-shipped".
+
+## 2026-10-21 — a1 added, 2_9387 re-shipped from Marek's fix — CC
+a1 (3.5.5.5+∞, 18,313, no census) is new; 2_9387 now 871,313 at one edge, census ok. ai3_1 ⊂ ai2+3 at
+k≤3 verified; its k=4 is unique. Atlas manifest regenerated. Uncommitted. NOTES 2026-10-21 "a1 added".
+
+## 2026-10-21 — undeveloped-corpus sweep: a2 new, 355a deepened to k=20 — CC
+a2 (10,142) and 55310→355a (+1,029) ship, census ok. 35bb and 356i were already on the shelf.
+Left: 1247_1_0612 (multi-length, lengths decoded), 33444, 33344. Uncommitted. NOTES "Undeveloped-corpus sweep".
+
+## 2026-10-21 — first multi-length board: 1247_1_0612, 29,623 tilings — CC
+`develop_ai1.py --multi` solves per-token edge multiples (S1 M2 Loo4 L3 7) and handles flat corners; the
+walk and shader break T-junction ties and step apeirogons between real corners. 0 wrong of 8,000 probes.
+Uncommitted. NOTES 2026-10-21 "the first multi-length board".

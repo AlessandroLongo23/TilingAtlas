@@ -710,9 +710,10 @@ export const HYP_POLY_BOARDS: HypPolyBoard[] = [
 		label: "3,5,5,10",
 		family: "abcd",
 		eagerKs: [],
-		lazyKs: [3, 10, 13, 15],
+		lazyKs: [3, 10, 13, 15, 16, 18, 19, 20],
 		dropped: [],
-		counts: { 3: 1, 10: 12, 13: 3, 15: 60 },
+		// k = 16..20 from Marek's deeper `55310` run (2026-08-12 drop, developed 2026-10-21); k <= 15 agrees with abcdtest.
+		counts: { 3: 1, 10: 12, 13: 3, 15: 60, 16: 11, 18: 51, 19: 11, 20: 956 },
 	},
 	{ id: "3566", n: 0, label: "3,5,6,6", family: "abcd", eagerKs: [], lazyKs: [1], dropped: [], counts: { 1: 1 } },
 	{ id: "3588", n: 0, label: "3,5,8,8", family: "abcd", eagerKs: [], lazyKs: [1], dropped: [], counts: { 1: 1 } },
@@ -1544,6 +1545,50 @@ export const HYP_POLY_BOARDS: HypPolyBoard[] = [
 	{ id: "aaaa", n: 0, label: "10,10,10,10", family: "abcd", eagerKs: [], lazyKs: [1], dropped: [], counts: { 1: 1 } },
 	// Marek's hybrid systems, by edge length. The label is the edge the system is named for and its
 	// polygons; the "af" systems carry no number, so theirs is solved from their figures.
+	// a1 has no census file: k = 1, 2 and 4 carry no certificates, and whether those are zeros is Marek's to say.
+	{
+		id: "ya1",
+		n: 0,
+		label: "a1, edge 0.6197 (3, 5, ∞)",
+		family: "hybrid",
+		eagerKs: [],
+		lazyKs: [3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
+		dropped: [],
+		counts: {
+			3: 2,
+			5: 4,
+			6: 4,
+			7: 3,
+			8: 8,
+			9: 5,
+			10: 18,
+			11: 5,
+			12: 20,
+			13: 46,
+			14: 75,
+			15: 202,
+			16: 64,
+			17: 91,
+			18: 199,
+			19: 335,
+			20: 939,
+			21: 795,
+			22: 1577,
+			23: 2106,
+			24: 3075,
+			25: 8740,
+		},
+	},
+	{
+		id: "ya2",
+		n: 0,
+		label: "a2, edge 0.7390 (3, 4, ∞)",
+		family: "hybrid",
+		eagerKs: [],
+		lazyKs: [1, 2, 3, 4, 5, 6, 7, 8],
+		dropped: [],
+		counts: { 1: 2, 2: 10, 3: 21, 4: 54, 5: 196, 6: 659, 7: 2118, 8: 7082 },
+	},
 	{
 		id: "yaf1",
 		n: 0,
@@ -1635,6 +1680,19 @@ export const HYP_POLY_BOARDS: HypPolyBoard[] = [
 		dropped: [],
 		counts: { 1: 5, 2: 7, 3: 29, 4: 118, 5: 264, 6: 1364, 7: 3969, 8: 9740, 9: 40945, 10: 132193 },
 	},
+	// Marek's 2023 `1247_1_0612`: the 1.0612 system with tiles at FOUR edge lengths, 1, 2, 4 and 7 × ℓ
+	// (S-tiles 1, M-tiles 2, the L apeirogon 4, the L triangle 7, solved off the figures). k counts the
+	// 2-valent points on long edges, Marek's convention (AL, 2026-10-21). No census shipped with it.
+	{
+		id: "y124710612",
+		n: 0,
+		label: "1247, edge 1.0613 at ×1, 2, 4, 7 (3, 4, 5, 10, 20, ∞)",
+		family: "hybrid",
+		eagerKs: [],
+		lazyKs: [1, 2, 3, 4, 5, 6, 7],
+		dropped: [],
+		counts: { 1: 7, 2: 27, 3: 96, 4: 376, 5: 1283, 6: 6484, 7: 21350 },
+	},
 	{
 		id: "y11555",
 		n: 0,
@@ -1683,7 +1741,7 @@ export const HYP_POLY_BOARDS: HypPolyBoard[] = [
 		eagerKs: [],
 		lazyKs: [1, 2, 3, 4, 5, 6],
 		dropped: [],
-		counts: { 1: 3, 2: 14, 3: 98, 4: 699, 5: 6852, 6: 53262 },
+		counts: { 1: 3, 2: 6, 3: 108, 4: 483, 5: 5846, 6: 60788 },
 	},
 	{
 		id: "y16628",
@@ -1726,6 +1784,8 @@ export const HYP_POLY_BOARDS: HypPolyBoard[] = [
 		counts: { 1: 4, 2: 25, 3: 354, 4: 4387, 5: 105458 },
 	},
 	// ai2+3 and ai3_1 close at the {3,10} edge: 3^10, 3^5.5^3, 5^6 and, in ai2+3, squares and apeirogons.
+	// ai3_1 is the {3,5} part of ai2+3: every one of its 3,460 tilings at k = 1..3 is on ai2+3 too (checked
+	// 2026-10-21, mirror pairs merged). It stays a board because its k = 4 has no ai2+3 counterpart (AL).
 	{
 		id: "yai23",
 		n: 0,
@@ -1740,7 +1800,7 @@ export const HYP_POLY_BOARDS: HypPolyBoard[] = [
 	{
 		id: "yai31",
 		n: 0,
-		label: "ai3_1, edge 2.1226 (3, 5)",
+		label: "ai3_1, edge 2.1226 (3, 5), the {3,5} part of ai2+3",
 		family: "hybrid",
 		eagerKs: [],
 		lazyKs: [1, 2, 3, 4],
@@ -1789,18 +1849,18 @@ export const HYP_POLY_BOARDS: HypPolyBoard[] = [
 		counts: { 1: 14, 2: 1055, 3: 272999 },
 		parts: { 3: 2 },
 	},
-	// ⚑ y29387 is short 6,034 of Marek's 31,957 at k=2: those certificates put a 4^10 vertex (closes at
-	// 2.9387, the name) beside 4.4.6.6.6.30.30-type vertices (close at 2.6102), and no regular-polygon
-	// tiling has both at one edge. Not a budget cut: no geometry exists to draw. Asked of Marek, 2026-10-20.
+	// y29387 re-shipped 2026-10-21 from Marek's fixed solver: its first drop gave the 8-valent vertex two
+	// 30-gons instead of three, which closes at 2.6102, not 2.9387. Every record is now at 2.9387.
 	{
 		id: "y29387",
 		n: 0,
-		label: "edge 2.6102 and 2.9387 (4, 6, 30)",
+		label: "edge 2.9387 (4, 6, 30)",
 		family: "hybrid",
 		eagerKs: [],
 		lazyKs: [1, 2],
 		dropped: [],
-		counts: { 1: 85, 2: 25838 },
+		counts: { 1: 521, 2: 870792 },
+		parts: { 2: 4 },
 	},
 	{
 		id: "y29830",
@@ -1928,11 +1988,23 @@ export function canonicalCycle(s: readonly number[]): number[] {
 		}
 	return best;
 }
-/** "∞" is an apeirogon; it sorts after every finite polygon. */
-const canonicalFigure = (fig: string): string =>
-	canonicalCycle(fig.split(".").map((t) => (t === "∞" ? Infinity : Number(t))))
-		.map((n) => (n === Infinity ? "∞" : n))
+/** "∞" is an apeirogon; it sorts after every finite polygon. A multi-length token ("5₂", a 2ℓ pentagon)
+ *  sorts after the same polygon at ℓ, and a flat corner "π" before everything. */
+const SUB = "₀₁₂₃₄₅₆₇₈₉";
+const tokenKey = (t: string): number => {
+	if (t === "π") return -1;
+	const m = /^(\d+|∞)([₀-₉]*)$/.exec(t);
+	if (!m) return NaN;
+	const mult = m[2] ? Number([...m[2]].map((c) => SUB.indexOf(c)).join("")) : 1;
+	return (m[1] === "∞" ? 1e6 : Number(m[1])) * 100 + mult;
+};
+const canonicalFigure = (fig: string): string => {
+	const toks = fig.split(".");
+	const back = new Map(toks.map((t) => [tokenKey(t), t]));
+	return canonicalCycle(toks.map(tokenKey))
+		.map((k) => back.get(k))
 		.join(".");
+};
 
 /** Card / search label: the distinct vertex figures of the tiling, e.g. "3.4.8.4" or "3.4.7.4 + 4.7.14".
  *  The polygon sizes alone cannot tell 3.4.8.4 from 3.8.4.8, and the board label is only the multiset,

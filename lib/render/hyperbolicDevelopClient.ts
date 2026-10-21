@@ -686,6 +686,7 @@ export class HyperbolicDeveloper {
 			const h = this.H[i];
 			if (h < 0 || this.lvert[this.rneig[h]] !== 0) continue;
 			corners.push(this.vid[i]);
+			if (this.alpha(h) > Math.PI - 1e-9) continue; // a flat corner is not on the horocycle
 			const half = this.alpha(h) / 2;
 			const z = su11Apply(this.G[i], { x: Math.cos(half), y: Math.sin(half) });
 			const key = posKey(z);

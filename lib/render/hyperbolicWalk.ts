@@ -14,8 +14,14 @@
 //   0        kind, slots, step, sides      kind: 0 regular, 1 apeirogon, 2 irregular
 //   1        colour index, Islamic layer (−1 none), that layer's box (x, y extent)
 //   2 + 3j   M = (a.x, a.y, b.x, b.y)      this frame → the frame of the face across side j
-//   3 + 3j   next face, drawn, 0, 0
-//   4 + 3j   n = (x, y, t)                 side j's outward unit normal on the hyperboloid (finite faces)
+//   3 + 3j   next face, drawn, q.x, q.y
+//   4 + 3j   n = (x, y, t), q.t            side j's outward unit normal on the hyperboloid (finite faces)
+//
+// FLAT corners (multi-length boards: a vertex on the side of a longer tile, turn π). The sides either
+// side of one lie on a single geodesic, so the side test ties between them. q is then the normal of the
+// perpendicular through the side's END vertex, negative on the side's own half: it decides the tie. q is
+// zero where the end is a real corner. An apeirogon row stores in texel 1's w the unit sides per long
+// side (0 or 1 = no flat corners), and its step is between REAL corners.
 //
 // Frames. A regular face sits with its centre at 0 and the midpoint of side j at angle 2πj/p, so the
 // side a point faces is read off its argument. An irregular face (a scalene board's triangle) has its
@@ -69,6 +75,19 @@ const toHalf = (w: Complex): Complex => {
 /** The parabolic z ↦ z − t of the half-plane, as a disk isometry. */
 const shift = (t: number): Su11 => ({ a: { x: 1, y: -t / 2 }, b: { x: 0, y: t / 2 } });
 
+/** Which of the m unit sides of an apeirogon's long side k holds the foot of z (half-plane, vertices at
+ *  i + k·st). Map the side's geodesic to the imaginary axis; there arc length is log|f|, and the m unit
+ *  sides split it evenly. */
+function horoSub(z: Complex, k: number, st: number, m: number): number {
+	if (m <= 1) return 0;
+	const c = (k + 0.5) * st;
+	const R = Math.sqrt(st * st * 0.25 + 1);
+	const t = (x: number, y: number) => 0.5 * Math.log(((x - c + R) ** 2 + y * y) / ((c + R - x) ** 2 + y * y));
+	const t0 = t(k * st, 1);
+	const u = (t(z.x, z.y) - t0) / (-2 * t0);
+	return Math.min(m - 1, Math.max(0, Math.floor(u * m)));
+}
+
 /** Margin of an Islamic layer past its wedge, as a fraction of the box: room for the bilinear taps. */
 export const ISLAMIC_MARGIN = 0.03;
 
@@ -102,6 +121,28 @@ function sideNormal(a: Complex, b: Complex): [number, number, number] {
 	return [x, y, t];
 }
 
+/** Normal of the geodesic through v perpendicular to the geodesic of normal n, oriented so that `back`
+ *  (a point on n's geodesic before v) lies on its negative side. */
+function perpNormal(n: [number, number, number], v: Complex, back: Complex): [number, number, number] {
+	const lift = (p: Complex) => {
+		const s = 1 - p.x * p.x - p.y * p.y;
+		return [(2 * p.x) / s, (2 * p.y) / s, (2 - s) / s];
+	};
+	const V = lift(v);
+	// Minkowski cross product (signature + + −) of V and n: orthogonal to both, so its geodesic passes
+	// through v and meets n's geodesic at a right angle.
+	let x = V[1] * n[2] - V[2] * n[1];
+	let y = V[2] * n[0] - V[0] * n[2];
+	let t = -(V[0] * n[1] - V[1] * n[0]);
+	const k = Math.sqrt(Math.max(x * x + y * y - t * t, 1e-300));
+	const r2 = back.x * back.x + back.y * back.y;
+	const sgn = (2 * (x * back.x + y * back.y) - t * (1 + r2)) / (1 - r2) > 0 ? -1 : 1;
+	x *= sgn / k;
+	y *= sgn / k;
+	t *= sgn / k;
+	return [x, y, t];
+}
+
 /**
  * Build the walk table. `allDrawn` marks every side as a drawn edge (plain tilings and colourings, where
  * each side is a tile boundary); otherwise a side is drawn when the record says so: its `drawn` flag on a
@@ -123,6 +164,7 @@ export function buildWalk(darts: Darts, edge: number, opts: { allDrawn?: boolean
 	for (let h = 0; h < n; h++) rinv[rneig[h]] = h;
 	const phi = (h: number) => glue[rneig[h]];
 	const marked = !opts.allDrawn && (!!darts.drawn || lvert.includes(2));
+	const flat = (h: number) => alpha(h) > Math.PI - 1e-9;
 
 	// Rings. A ring is a quotient face; a digon's ring is kept (face −1) only to be walked through.
 	const faceOf = new Int32Array(n).fill(-2);
@@ -138,6 +180,9 @@ export function buildWalk(darts: Darts, edge: number, opts: { allDrawn?: boolean
 			faceOf[h] = -1;
 			ring.push(h);
 		}
+		// Start every ring on a real corner: an apeirogon's frame is set from its first corner.
+		const r0 = ring.findIndex((h) => !flat(h));
+		if (r0 > 0) ring.push(...ring.splice(0, r0));
 		const f = lvert[rneig[h0]] === 2 ? -1 : rings.push(ring) - 1;
 		ring.forEach((h, i) => {
 			faceOf[h] = f;
@@ -152,6 +197,7 @@ export function buildWalk(darts: Darts, edge: number, opts: { allDrawn?: boolean
 	const K: Su11[][] = [];
 	const side: Int32Array[] = []; // slot → ring side
 	const step = new Float64Array(F);
+	const run = new Int32Array(F).fill(1); // apeirogon: unit sides per long side
 	const verts: Complex[][] = [];
 	for (let f = 0; f < F; f++) {
 		const ring = rings[f];
@@ -166,8 +212,9 @@ export function buildWalk(darts: Darts, edge: number, opts: { allDrawn?: boolean
 		const order = new Int32Array(S).map((_, s) => s);
 		if (p === 0) {
 			kind[f] = WALK_APEIROGON;
+			while (run[f] < S && flat(ring[run[f] % ring.length])) run[f]++;
 			C = su11Rotation(-alpha(ring[0]) / 2);
-			step[f] = toHalf(su11Apply(mul(C, G[1]), { x: 0, y: 0 })).x;
+			step[f] = toHalf(su11Apply(mul(C, G[run[f]]), { x: 0, y: 0 })).x;
 		} else {
 			const v = G.slice(0, S).map((g) => su11Apply(g, { x: 0, y: 0 }));
 			const c = hypBarycenter(v.map((q) => [q.x, q.y] as [number, number]));
@@ -211,7 +258,7 @@ export function buildWalk(darts: Darts, edge: number, opts: { allDrawn?: boolean
 				p,
 				darts.faceColor ? darts.faceColor[ring[0]] : 0,
 				layer,
-				...(layer < 0 || p === 0 ? [0, 0] : islamicWedgeBox(p, edge)),
+				...(p === 0 ? [0, run[f]] : layer < 0 ? [0, 0] : islamicWedgeBox(p, edge)),
 			],
 			row,
 		);
@@ -241,7 +288,15 @@ export function buildWalk(darts: Darts, edge: number, opts: { allDrawn?: boolean
 			}
 			const o = row + (2 + 3 * s) * 4;
 			data.set([M.a.x, M.a.y, M.b.x, M.b.y, next, drawn ? 1 : 0, 0, 0], o);
-			if (kind[f] !== WALK_APEIROGON) data.set(sideNormal(verts[f][s], verts[f][s + 1]), o + 8);
+			if (kind[f] !== WALK_APEIROGON) {
+				const nrm = sideNormal(verts[f][s], verts[f][s + 1]);
+				data.set(nrm, o + 8);
+				if (kind[f] === WALK_IRREGULAR && flat(ring[(i + 1) % ring.length])) {
+					const q = perpNormal(nrm, verts[f][s + 1], verts[f][s]);
+					data.set([q[0], q[1]], o + 6);
+					data[o + 11] = q[2];
+				}
+			}
 		}
 	}
 	// Open on the most symmetric point: a face's centre is the origin of its own frame, a vertex is a
@@ -259,7 +314,7 @@ export function buildWalk(darts: Darts, edge: number, opts: { allDrawn?: boolean
 		height: F,
 		seedFace,
 		home,
-		dev: { face: faceOf[seed], home: K[faceOf[seed]][0] },
+		dev: { face: faceOf[seed], home: K[faceOf[seed]][posOf[seed]] },
 		verts,
 		sizes,
 	};
@@ -275,13 +330,15 @@ function locate(t: WalkTiling, f: number, w: Complex): { j: number; s: number; p
 	const r2 = w.x * w.x + w.y * w.y;
 	if (d[row] === WALK_APEIROGON) {
 		const st = d[row + 2];
+		const m = Math.max(1, d[row + 7]);
+		const L = S / m; // long sides per period
 		const z = toHalf(w);
 		const k = Math.floor(z.x / st);
-		const j = ((k % S) + S) % S;
+		const jl = ((k % L) + L) % L;
 		const c = (k + 0.5) * st;
 		const R = Math.sqrt(st * st * 0.25 + 1);
 		const s = -((z.x - c) * (z.x - c) + z.y * z.y - R * R) / (2 * R * z.y);
-		return { j, s, pre: k === j ? null : shift((k - j) * st) };
+		return { j: jl * m + horoSub(z, k, st, m), s, pre: k === jl ? null : shift((k - jl) * st) };
 	}
 	const out = (j: number) => {
 		const o = row + (4 + 3 * j) * 4;
@@ -299,6 +356,24 @@ function locate(t: WalkTiling, f: number, w: Complex): { j: number; s: number; p
 			s = v;
 			j = i;
 		}
+	}
+	// Collinear sides through flat corners tie: walk to the one whose half holds w.
+	const q = (i: number) => {
+		const o = row + (3 + 3 * i) * 4;
+		const qx = d[o + 2];
+		const qy = d[o + 3];
+		const qt = d[o + 7];
+		return qx === 0 && qy === 0 && qt === 0 ? null : (2 * (qx * w.x + qy * w.y) - qt * (1 + r2)) / (1 - r2);
+	};
+	for (let g = 0; g < S; g++) {
+		const fwd = q(j);
+		if (fwd !== null && fwd > 0) j = (j + 1) % S;
+		else break;
+	}
+	for (let g = 0; g < S; g++) {
+		const back = q((j - 1 + S) % S);
+		if (back !== null && back <= 0) j = (j - 1 + S) % S;
+		else break;
 	}
 	return { j, s, pre: null };
 }

@@ -1,0 +1,51 @@
+3,5,5,10 develop (355a) — tilings by regular [3, 5, 10] at one edge length
+source          : /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/c/55310/solver_55310
+forced edge len : l = 0.916773095317
+angles          : 3-gon 53.7065deg, 5-gon 93.9200deg, 10-gon 118.4534deg
+certificates in : 1105
+developed       : 1105
+failed          : 0
+multi-variant   : 0
+wall            : 4.1s (3.7 ms/certificate)
+
+
+   k   tilings  face orbits: min    max
+   3         1                 6      6
+  10        12                18     18
+  13         3                24     24
+  15        60                26     30
+  16        11                26     26
+  18        51                32     36
+  19        11                32     32
+  20       956                36     42
+
+   k    census    corpus   shipped  status
+   1         0         0         0  ok
+   2         0         0         0  ok
+   3         1         1         1  ok
+   4         0         0         0  ok
+   5         0         0         0  ok
+   6         0         0         0  ok
+   7         0         0         0  ok
+   8         0         0         0  ok
+   9         0         0         0  ok
+  10        12        12        12  ok
+  11         0         0         0  ok
+  12         0         0         0  ok
+  13         3         3         3  ok
+  14         0         0         0  ok
+  15        60        60        60  ok
+  16        11        11        11  ok
+  17         0         0         0  ok
+  18        51        51        51  ok
+  19        11        11        11  ok
+  20       956       956       956  ok
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/devout/hpq355a-k3.json: 1 records, 0.00 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/devout/hpq355a-k10.json: 12 records, 0.02 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/devout/hpq355a-k13.json: 3 records, 0.01 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/devout/hpq355a-k15.json: 60 records, 0.13 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/devout/hpq355a-k16.json: 11 records, 0.02 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/devout/hpq355a-k18.json: 51 records, 0.12 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/devout/hpq355a-k19.json: 11 records, 0.03 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/devout/hpq355a-k20.json: 956 records, 2.63 MB
+

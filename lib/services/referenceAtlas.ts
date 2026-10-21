@@ -1141,17 +1141,25 @@ const SUPERSCRIPT_DIGIT: Record<string, string> = {
 // encode CONSECUTIVE identical faces as exponents, preserving cyclic order — "3.3.3.3.3.3.3.3" → "3⁸",
 // "3.3.4.3.4.4" → "3².4.3.4²". Exponents collapse ADJACENT runs ONLY, never a global tally: two tilings
 // that share a face multiset but differ in arrangement (3.3.4.3.4 vs 3.3.3.4.4) must keep distinct labels.
-// The string is encoded as stored (no re-rotation), so the label's identity is untouched. Any family that
-// is not a pure dot-separated integer config (star "*", convex "cx", isotoxal "α") passes through unchanged.
+// The string is encoded as stored (no re-rotation), so the label's identity is untouched.
+//
+// Every dotted figure of three or more faces in the string is compacted, "∞" included, so a hyperbolic
+// family ("af5, edge 1.4794 (5, 6, 10, ∞) · 3.3.3.3.3.6.3.6") compacts too (Marek, 2026-10-21). An edge
+// length like 1.4794 has two tokens and is left alone, and a token glued to anything else (star "3*",
+// scaled "3₂", convex "cx") stops the match, so those families pass through unchanged.
 //
 // k≥2 families list one vertex config per orbit, joined with " + " (e.g. "4.3.3.3.3.3 + 4.3.3.3.3.3").
 // Each orbit's config is compacted independently and the orbits are rejoined with semicolons — the standard
 // separator for a k-uniform tiling's distinct vertex types, read clearly against the dots inside each
 // config → "4.3⁵; 4.3⁵".
+const FIGURE = /(?<![^\s(])(?:\d+|∞)(?:\.(?:\d+|∞)){2,}(?![^\s),;])/g;
 export function compactVertexConfig(family: string): string {
 	if (family.includes(" + ")) return family.split(" + ").map(compactVertexConfig).join("; ");
-	const toks = family.split(".");
-	if (toks.length < 2 || toks.some((t) => !/^\d+$/.test(t))) return family;
+	// A whole-string figure compacts at two faces too ("5.5" → "5²", a dihedron's vertex).
+	return /^(?:\d+|∞)(?:\.(?:\d+|∞))+$/.test(family) ? compactFigure(family) : family.replace(FIGURE, compactFigure);
+}
+function compactFigure(fig: string): string {
+	const toks = fig.split(".");
 	const out: string[] = [];
 	for (let i = 0; i < toks.length; ) {
 		let run = 1;

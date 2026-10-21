@@ -127,6 +127,10 @@ def alphabet(config):
     return l, units
 
 
+# Marek's flat corner: a 180° angle where a vertex sits on the side of a longer tile (1247_1_0612).
+FLAT = "Pi"
+
+
 def tile_size(letter):
     """'A2' -> 2, 'A7' -> 7, 'Aoo' -> 0 (the apeirogon sentinel of develop_hyperbolic.interior_angle)."""
     return 0 if letter[1:] == "oo" else int(letter[1:])
@@ -287,14 +291,17 @@ def check_patch(verts, E, F, l, tol=1e-3):
 
 
 # ------------------------------------------------------------------ quotient faces + tile orbits
-def quotient_faces(block):
+def quotient_faces(block, mult=None):
     """Cycles of nxt(h) = glue[rneig[h]] — the faces of the quotient complex.
 
     The cycle is the face FOLDED by its own stabiliser, so it is generally SHORTER than the polygon:
     a hexagon all six of whose corners are one orbit closes after one step. What must hold is that
     the corner letter is constant along the cycle; the developed face has `size` corners either way.
 
-    Returns (face_of_dart, faces) with faces[f] = {darts, size, letter}. A digon face (size 2)
+    `mult` maps a corner letter to its tile's edge length in units of ℓ (multi-length boards). A tile of
+    multiple m is m unit edges per side, so its cycle carries m − 1 FLAT corners after each real one.
+
+    Returns (face_of_dart, faces) with faces[f] = {darts, size, letter, mult}. A digon face (size 2)
     marks a drawn edge and is not a tile."""
     n = len(block.rneig)
     face_of = [-1] * n
@@ -314,16 +321,24 @@ def quotient_faces(block):
             raise DevelopError("quotient face walk did not close")
         faces.append({"darts": darts})
     for f in faces:
-        letters = {block.tile[h] for h in f["darts"]}
+        letters = {block.tile[h] for h in f["darts"]} - {FLAT}
         if len(letters) != 1:
             raise DevelopError("quotient face mixes corner letters")
         letter = letters.pop()
-        # The cycle length need not divide the corner count: a face fixed by a mirror folds onto fewer
-        # darts than its rotations alone give (a 10-gon with a half-turn and two mirrors through side
-        # midpoints folds onto 3). The letter gives the size, and check_patch has already measured every
-        # developed side, so nothing here is left to check.
+        size = tile_size(letter)
+        m = (mult or {}).get(letter, 1)
+        real = sum(block.tile[h] != FLAT for h in f["darts"])
+        if len(f["darts"]) != real * m:
+            raise DevelopError(f"{letter} face has {len(f['darts']) - real} flat corners for {real} real, want ×{m - 1}")
+        # Every step of the cycle is orientation-preserving, so p corners round a p-gon must come back
+        # to the starting dart: the cycle length divides p. check_patch cannot see a violation, since
+        # such a face never closes and only closed faces are measured (af5's first drop shipped 27,514
+        # of these, a 10-gon on 3 darts; Marek's solver had the decagon wrong).
+        if size % real:
+            raise DevelopError(f"{letter} face folds onto {real} darts, which does not divide {size}")
         f["letter"] = letter
-        f["size"] = tile_size(letter)
+        f["size"] = size
+        f["mult"] = m
     return face_of, faces
 
 
