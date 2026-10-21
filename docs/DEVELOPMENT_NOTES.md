@@ -18899,6 +18899,66 @@ the view).
 ⚑ `tools/frames/original-engine.js` and `baseline.js` are still untracked: the FrameFinder code has
 no licence, and this repo is public.
 
+## 2026-10-20 — Animation timeline: GIFs between keyframed views (Marek's suggestion)
+
+/play's flat Euclidean shelves have a film button that docks a timeline under the canvas (the canvas
+shrinks to make room). Video-editor model: scrub the playhead, Add keyframe stores the live view at
+it (camera, plus the family's angle sliders where the tiling has them), drag keyframes in time, drag
+the end marker for the length, Play runs it on the canvas. Done opens the export dialog: GIF preview
+left, ending / size right, rendered through `captureFrame` behind a freeze.
+
+**The path is a spiral, not three blends.** A view is the similarity s = o + z·e^{iθ}·w; two views
+differ by one spiral similarity, and `lib/render/viewPath.ts` follows its one-parameter group
+(o_t = o_A + f(t)(o_B − o_A), f = (k^t − 1)/(k − 1)). Blending pan, zoom and angle separately
+swings the camera through an arc. Family angles move linearly alongside.
+
+**Canvas overlay.** While the timeline is open, `camera-path-overlay.tsx` draws each keyframe's frame
+centre as a numbered diamond and the centre's path between them. Drag a diamond to re-centre that
+keyframe; drag a segment's midpoint dot to bend it, which switches the segment to a quadratic Bézier
+in the centre through that point (zoom and angle keep their schedule); double-click straightens it.
+In Return mode with two keyframes both legs' dots start on the same spot; the first drag bends the
+way back.
+
+**Seamless loops.** "Drift" closes on the first view moved by the shorter screen period: the shader
+draws the offset modulo the lattice, so that view renders identically and the GIF has no seam.
+
+**Driving the camera, and why playback juddered.** canvas.tsx rotates the pan about the centre
+whenever the live angle moves. The first `applyView` wrote the pan pre-rotated and left p5 to undo
+it, but p5 draws at its default 60 fps and the WebGL fill at the display rate (120 Hz here), so the
+fill drew an uncompensated pan on every frame p5 skipped. The compensation's reference angle moved
+from a ref in canvas.tsx to `controls.pivotRotation`; `applyView` sets it with the angle, so no
+compensation runs. It also writes rotation and angles in place and `commitView` publishes them once
+the camera stops, so playback costs no React renders. Measured: 1.51 px mean step per frame, 0.096 px
+mean change of step (the easing itself).
+
+**Speed curves and distance timing.** Each move has a cubic speed curve (CSS cubic-bezier shape,
+`easeCurve`), edited in a curves panel with presets; the track draws each move's curve under it.
+"Time by distance" places the keyframes by `distanceTimes`: how far each move takes the picture on
+screen (centre and four corners, so a pure zoom or turn counts), first at 0, end of motion at the
+end marker. Editing a bend or a keyframe's view retimes everything.
+
+**Three geometries.** The timeline drives whichever camera is live through a `CameraDriver`
+(`lib/render/cameraPose.ts`): read, apply, project, unproject, probe points, drift, snap candidates.
+Path maths per geometry: `viewPath.ts` (plane), `diskPath.ts` (disk: M^t on the one-parameter
+subgroup of B·A⁻¹, geodesic de Casteljau bends), `spherePath.ts` (slerp, spherical Bézier arcs,
+roll kept from the plain slerp). The disk camera had no absolute pose: `HypCamera` now accumulates
+the frame changes re-anchoring used to drop (G ← W·G), so `view·G` is the pose and `setPose` seeks.
+The sphere drivers write position and up (the trackball re-aims from them), stop momentum, and
+carry zoom as distance across both projections. Drift: lattice period (plane), a deck symmetry
+k = W_c⁻¹·W_w from two walks ending in the same face (disk; renders pixel-identical to the first
+pose, checked against a control that differs on 73% of pixels), a full turn about the view's up
+axis (sphere). Speed: "Time by distance" and a strobe warning in the export dialog both measure
+picture motion on screen (`moveLength`), which is what tames the disk, where a short move sweeps
+the screen.
+
+**Snapping.** Dragging a keyframe's diamond snaps to vertices, edge midpoints and tile centres
+(plane: the cell's features over nearby lattice copies; disk: the walk's `snapPoint`; sphere:
+`sphereFeatures` of each canvas's solid). A knob on the selected keyframe turns it and snaps the
+roll so a nearby feature lies on a screen axis. Magnet toggle in the bar; Alt drags freely.
+
+Not done: keyframes in the URL (they live in memory), MP4 via WebCodecs (a 4 s 640 px GIF is 2 to
+5 MB), the tiling's own rotational symmetry for the sphere's Drift (it makes a full turn instead).
+
 ## 2026-10-20: every hybrid system Marek has, 2,576,114 tilings on 21 boards
 
 **What shipped.** Marek's `hybrid.zip` (all his hybrid searches to 2026-08-07, 2,582,148 certificates in
