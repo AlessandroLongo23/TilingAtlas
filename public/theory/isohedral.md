@@ -4,7 +4,7 @@ A tiling is *isohedral* when its symmetries can carry any tile onto any other. E
 
 There are 93 such patterns. Branko Grünbaum and Geoffrey Shephard enumerated them in 1977, and the explorer draws all 93: 81 as tiles whose edges you can bend, and twelve that only exist once the tiles carry a mark.
 
-<iso-type-figure caption="Six isohedral types. On the left, the prototile: dots are its tiling vertices, the dashed polygon joins them, and each edge is lettered by the curve that draws it, upper case where that curve runs backwards. On the right, a patch of the tiling. Moving a tiling vertex changes the polygon; bending the edges changes the outline. Neither changes the type.">
+<iso-type-figure caption="Six isohedral types. On the left, the prototile: dots are its tiling vertices, the dashed polygon joins them, and each edge is lettered by the curve that draws it, upper case where that curve runs backwards. On the right, the tiling itself: click it, then drag, scroll and Shift+scroll to pan, zoom and turn it. Moving a tiling vertex changes the polygon; bending the edges changes the outline. Neither changes the type.">
 </iso-type-figure>
 
 ## A tile is a polygon with decorated edges
@@ -28,15 +28,15 @@ The symbol alone is not enough. Kaplan points out that IH77, IH80 and IH87 share
 
 The classification has a longer history than its numbering suggests. Heinrich Heesch, working with his sister Elli, had classified the tiles with no symmetry of their own that tile isohedrally by 1932, and found 28 types; Andrea Reichenberger's 2024 history records that they submitted the work in 1934 and then held it back. The 28 *Heesch types* appeared in print in Heesch and Otto Kienzle's book *Flächenschluss* (1963), written as words in letters for the motions that pair the edges: T for a translation, C for a rotation, G for a glide reflection. In 1935 Heesch also gave the first anisohedral tile, a tile that tiles the plane but never isohedrally, answering part of Hilbert's eighteenth problem.
 
-Heesch's types cover asymmetric tiles in tilings with no reflections. Grünbaum and Shephard dropped both restrictions. Their 1977 paper, "The eighty-one types of isohedral tilings in the plane", counts 81 types of isohedral tiling, and in the same work they classify *marked* isohedral tilings, where each tile carries a motif that the symmetries must respect; there are 93 of those. The difference between the two counts is twelve types, and it is not a matter of taste.
+Heesch's types cover asymmetric tiles in tilings with no mirror lines (glide reflections are allowed, hence the G). Grünbaum and Shephard dropped both restrictions. Their 1977 paper, "The eighty-one types of isohedral tilings in the plane", counts 81 types of isohedral tiling, and in the same work they classify *marked* isohedral tilings, where each tile carries a motif that the symmetries must respect; there are 93 of those. The difference between the two counts is twelve types, and it is not a matter of taste.
 
 ## The twelve that need a mark
 
-In twelve of the 93 types (IH19, 35, 48, 60, 63, 65, 70, 75, 80, 87, 89 and 92), every edge of the tile lies on a mirror of the tiling. Kaplan's account on his site is exact: "In these cases all tile edges act as mirrors, forcing those edges to be straight lines. As a result, the tiles are forced to be too symmetric to express the specific symmetries implied by the incidence symbol."
+In twelve of the 93 types (IH19, 35, 48, 60, 63, 65, 70, 75, 80, 87, 89 and 92), every edge of the tile lies on a mirror of the tiling, and the mirrors force the tile to be more symmetric than its type. Mirrors on every edge are not enough on their own: IH77 has them too, but its tile is a 30°-60°-90° triangle with no symmetry to gain, and it stays among the 81. Kaplan's account on his site is exact: "In these cases all tile edges act as mirrors, forcing those edges to be straight lines. As a result, the tiles are forced to be too symmetric to express the specific symmetries implied by the incidence symbol."
 
 Grünbaum and Shephard's own example is IH19. Its tile is a hexagon whose symmetry group in the tiling should have order six, a triangle's worth of rotations and reflections. But a hexagon with all six edges on mirrors, all edges equal and all corners equivalent is regular, and the tiling by regular hexagons has the full symmetry of the hexagon: it is IH20. The outline cannot tell the two apart. Put an asymmetric mark on one tile and let the smaller group of IH19 copy it everywhere, and each hexagon carries six marks arranged with three-fold symmetry; the picture now has IH19's symmetry, and no more.
 
-<iso-marked-figure caption="The twelve marked types. Each is drawn the way Grünbaum and Shephard construct it: one asymmetric mark, copied by the symmetry group of the type, on the tiles of the net. Switch to bare tiles and the type's own structure disappears: what is left is a more symmetric tiling of another type. The rectangles of IH48, IH60 and IH65 keep one parameter, their proportions.">
+<iso-marked-figure caption="The twelve marked types. Each is drawn the way Grünbaum and Shephard construct it: one asymmetric mark, copied by the symmetry group of the type, on the tiles of the net. Switch to bare tiles and the type's own structure disappears: what is left is a more symmetric tiling of another type. Click the tiling to pan, zoom and turn it. The rectangles of IH48, IH60 and IH65 keep one parameter, their proportions.">
 </iso-marked-figure>
 
 Because their edges are forced straight, these twelve have no outline to bend. That is why Kaplan's Tactile, the library the explorer draws with, parameterizes 81 types and leaves the twelve aside, and why the 1977 paper's title says eighty-one. In the explorer they are drawn from the construction above, and each one's tile group, number of tile orientations and symmetry group were recomputed from the drawing and checked against Grünbaum and Shephard's table.
@@ -46,6 +46,9 @@ Because their edges are forced straight, these twelve have no outline to bend. T
 M. C. Escher drew his periodic patterns of birds, fish and lizards without this vocabulary, but the vocabulary describes them. As Kaplan puts it, nearly all of Escher's famous regular divisions of the plane can be understood in terms of isohedral tilings. An Escher tile is a type plus a choice of curve for each edge: J edges bent freely, S edges bent with a half-turn symmetry, U edges with a mirror, I edges left straight.
 
 That is the design of the explorer. Choose one of the 81 types, move its tiling vertices with the parameter sliders (between zero and six of them, depending on the type), bend each distinct edge within its symmetry, and every result tiles. The figure at the top of the page is the same machine at a smaller scale.
+
+<iso-type-figure types="1,7,10,41,55,71" caption="Six of the eighteen types whose edges are all J, with nothing to respect when they bend. The line under the sliders counts aspects, the orientations a tile takes in the tiling: one for IH1 and IH41, which use translations only, three for IH7 and four for IH55 and IH71.">
+</iso-type-figure>
 
 ## Credits
 

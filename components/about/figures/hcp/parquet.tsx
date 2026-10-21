@@ -3,12 +3,13 @@
 // The parquet article's figures, built with the /parquet generator (lib/render/parquetTiling.ts):
 //   <hcp-parquet-strip caption>   a strip whose base tiling, edge profile, D(x) and amount the reader sets;
 //   <hcp-parquet-edge caption>    two squares and the edge they share: one curve for both, or one each;
-//   <hcp-parquet-turn caption>    one deformed square among its neighbours, and its quarter turn.
+//   <hcp-parquet-turn caption>    the fully deformed square grid, live, beside one tile and its quarter turn.
 
 import { useMemo, useState } from "react";
 import { Segmented } from "@/components/shelf";
 import { Slider } from "@/components/ui/slider";
 import { Figure, OUTLINE, Stage, svgPoints, tileFill } from "@/components/about/figure";
+import { InteractiveTilingPreviewCard } from "@/components/interactive-tiling-preview-card";
 import type { EdgeProfile, Pt } from "@/lib/render/parquetStrip";
 import { STRAIGHT_EDGE } from "@/lib/render/parquetStrip";
 import { D_PROFILES, PARQUET_PRESETS, type DProfileId, type ParquetPresetId } from "@/lib/render/parquetPresets";
@@ -172,43 +173,47 @@ export function ParquetEdgeFigure({ caption }: { caption?: string }) {
 
 export function ParquetTurnFigure({ caption }: { caption?: string }) {
 	const [edge, setEdge] = useState<ParquetPresetId>("pinwheel");
-	const [turn, setTurn] = useState("on");
-	const grid = useMemo(() => TILINGS.square.build(3, 3), []);
-	const tiles = useMemo(
+	// One unit square, every edge at full deformation: a translational cell of the deformed grid, since
+	// the shared-curve rule gives every horizontal edge one curve and every vertical edge another.
+	const tile = useMemo(
 		() =>
-			buildDeformedTiling(grid, { keyframes: [PARQUET_PRESETS[edge].edge], amount: 1, weights: () => [1] }).map(
-				(t) => t.outline,
-			),
-		[grid, edge],
+			buildDeformedTiling(TILINGS.square.build(1, 1), {
+				keyframes: [PARQUET_PRESETS[edge].edge],
+				amount: 1,
+				weights: () => [1],
+			})[0].outline.slice(0, -1), // the walk ends where it began; a ring lists that corner once
+		[edge],
 	);
-	// The middle tile, a quarter turn about the centre of its square.
-	const mid = tiles[4];
-	const turned: Pt[] = mid.map(([x, y]) => [1.5 - (y - 1.5), 1.5 + (x - 1.5)]);
+	const cell = useMemo(
+		() => ({
+			cellPolygons: [{ vertices: tile.map(([x, y]) => [x, y]), hue: 205 }],
+			basis: [
+				[1, 0],
+				[0, 1],
+			],
+		}),
+		[tile],
+	);
+	// The same tile, a quarter turn about the centre of its square.
+	const turned: Pt[] = tile.map(([x, y]) => [0.5 - (y - 0.5), 0.5 + (x - 0.5)]);
 	return (
 		<Figure caption={caption}>
-			<Stage fit={tiles.map(poly)} className="max-h-[300px]">
-				{tiles.map((o, i) => (
-					<polygon
-						key={i}
-						points={svgPoints(poly(o))}
-						fill={i === 4 ? tileFill({ hue: 45, n: 0, vertices: [] }) : tileFill({ hue: 205, n: 0, vertices: [] })}
-						{...OUTLINE}
-					/>
-				))}
-				{turn === "on" && (
-					<polygon points={svgPoints(poly(turned))} fill="none" {...OUTLINE} strokeWidth={2} strokeDasharray="5 4" />
-				)}
-			</Stage>
-			<div className="mx-auto mt-3 grid max-w-md gap-2">
-				<Segmented options={EDGES} value={edge} onChange={(v) => setEdge(v as ParquetPresetId)} cols={3} />
-				<Segmented
-					options={[
-						{ v: "off", label: "Tiling" },
-						{ v: "on", label: "Quarter turn", sub: "middle tile, dashed" },
-					]}
-					value={turn}
-					onChange={setTurn}
+			<div className="grid grid-cols-[3fr_2fr] items-center gap-3">
+				<InteractiveTilingPreviewCard
+					cell={cell}
+					tilingId={`parquet-${edge}`}
+					square
+					showExpand={false}
+					showOpenInPlay={false}
+					homePeriods={4}
 				/>
+				<Stage fit={[poly(tile), poly(turned)]} className="max-h-[220px]">
+					<polygon points={svgPoints(poly(tile))} fill={tileFill({ hue: 45, n: 0, vertices: [] })} {...OUTLINE} />
+					<polygon points={svgPoints(poly(turned))} fill="none" {...OUTLINE} strokeWidth={2} strokeDasharray="5 4" />
+				</Stage>
+			</div>
+			<div className="mx-auto mt-3 max-w-md">
+				<Segmented options={EDGES} value={edge} onChange={(v) => setEdge(v as ParquetPresetId)} cols={3} />
 			</div>
 		</Figure>
 	);

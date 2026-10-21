@@ -24,6 +24,9 @@ Take any two tilings of any region and look at where they differ. Wherever the t
 
 This is the language of *local moves*. A set of local moves connects the tilings of a region if any tiling can be turned into any other by swapping one small patch at a time. For dominoes, William Thurston showed in 1990 that one move suffices on every simply connected region: turn a 2×2 square of two dominoes by a quarter turn. Lozenges have the same property with the three-lozenge hexagon. The census agrees, and it is a good check on it: of the 9,786 domino frames the atlas holds, exactly one has no hole, the 2×2 square, and of the 58 lozenge frames exactly one has no hole, the hexagon. Every other frame of those two tiles has a hole, and on regions with holes the flips are known not to suffice.
 
+<frame-figure set="iamond2" shape="0" frame="0" caption="The lozenge's one frame without a hole: the hexagon of three lozenges, which turns into its other tiling by a sixth of a turn. It is the lozenge's whole flip move.">
+</frame-figure>
+
 <frame-figure set="omino2" shape="0" frame="4" caption="A domino frame: four dominoes around a one-cell hole. Fill the hole and the region has nine cells, which no set of dominoes can cover.">
 </frame-figure>
 
@@ -45,7 +48,7 @@ Knecht's *overlap-debt* search builds both tilings at once.
 
 The search never decides the region in advance: the region is whatever the debts close up into. It stops at the first closure because a frame cannot contain a smaller closed pair (swapping that pair alone would be a third tiling), and that is why it is complete. The figure replays the search on a five-tile frame of the P pentiamond.
 
-<debt-figure set="iamond5" shape="0" frame="36" caption="The overlap-debt search building a five-tile frame of the P pentiamond. Filled tiles are tiling 1, dashed tiles tiling 2, and red is debt: covered by one tiling and not yet by the other. Each step pays the lowest debt.">
+<debt-figure set="iamond5" shape="0" frame="36" caption="The overlap-debt search building a five-tile frame of the P pentiamond. Filled tiles are tiling 1, dashed tiles tiling 2, and red is debt: covered by one tiling and not yet by the other. The figure pays the lowest debt at each step, where the search pays the one with the fewest options, so the order of steps differs from the program's; the frame and the debts along the way are the same.">
 </debt-figure>
 
 The atlas runs the same search in C++ on all ten grids of Craig Kaplan's heesch-sat. Two of its changes are mathematical. The two tilings play symmetric roles, so the search only follows the order in which tiling 1's tile on the lowest cell has the smaller orientation, which halves it. And the bound on the number of tiles is checked before a tile is placed: how a tile changes the debts depends only on how many of its cells the other tiling already covers, so a tile that would break the bound is never tried. On every grid and every size checked, it returns the same frames as the original program and as an independent brute-force enumeration.
@@ -64,11 +67,11 @@ The [frames explorer](/frames) holds every frame of at most N tiles a tiling, fo
 
 The same lists hold the regions the search closes that turn out to have more than two tilings: 2,387,962 of them, with up to 918 tilings each. Each carries a pair of tilings with no tile in common and no smaller closed pair inside it, which is what the overlap-debt search builds, and the explorer draws every tiling the region has. These are not frames, and the search does not find every region with three or more tilings: a region where every pair of tilings shares a tile, or splits into smaller closed pairs, is never reached. They are counted by a second run with its own N, stated with each set; on fifteen sets it reaches one or two tiles less than the frames do. With them the explorer holds 4,210,414 regions on 1,878 shapes.
 
-<atlas-figure src="/theory/images/frames/kite.png" caption="A frame of an 8-kite, the size of the hat, with a hole in the middle. Tiling 1 on the left, tiling 2 on the right.">
-</atlas-figure>
+<frame-figure set="kite8" shape="2" frame="6" caption="A frame of an 8-kite, the size of the hat: four tiles a tiling around a hole of ten kites.">
+</frame-figure>
 
-<atlas-figure src="/theory/images/frames/bevelhex.png" caption="A frame on the 4.6.12 grid: twelve-sided cells joined by squares and hexagons, ten tiles in each tiling.">
-</atlas-figure>
+<frame-figure set="bevelhex3" shape="4" frame="30" caption="A frame on the 4.6.12 grid, whose cells are its dodecagons, squares and hexagons. The tile is two dodecagons joined by a hexagon; each tiling has nine of them, around one hole of 28 cells.">
+</frame-figure>
 
 On seven of the grids (kites, drafters, abolos, half-Cairo, octasquare, trihex and bevelhex), copies are placed on the grid only. A region listed there may have further tilings that use copies off the grid, so on those grids a frame is a frame of the grid-aligned tile.
 

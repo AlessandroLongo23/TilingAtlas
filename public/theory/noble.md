@@ -22,7 +22,7 @@ The other infinite family is non-convex. The *stephanoids*, or crown polyhedra, 
 
 The systematic study of noble polyhedra begins with Edmund Hess, whose paper *Über die zugleich gleicheckigen und gleichflächigen Polyeder* (1876) asked for exactly this: polyhedra that are at once equal-cornered and equal-faced. Over a series of papers from 1875 onward he found 16 noble polyhedra that are not regular, together with the prismatic stephanoids, all of them non-convex and self-intersecting. Max Brückner, who documented the field in *Vielecke und Vielflache* (1900), added ten more between 1900 and 1907.
 
-Then the subject went quiet. Branko Grünbaum, who gave the class its name, took it up again near the end of the twentieth century, and observed that Hess and Brückner had often been vague about what they counted as a polyhedron, which left their lists hard to check. In 2008 Robert Webb found a new noble polyhedron as a faceting of the snub cube, using his program Stella: the first new one since Brückner, a century earlier. A run of discoveries followed in 2020, by Ulrich Mikloweit and a user of the Stella forums, which added 33 more. Ben Klein independently found two others.
+Then the subject went quiet. Branko Grünbaum, whose papers use the name noble for the class, took it up again near the end of the twentieth century, and observed that Hess and Brückner had often been vague about what they counted as a polyhedron, which left their lists hard to check. In 2008 Robert Webb found a new noble polyhedron as a faceting of the snub cube, using his program Stella: the first new one since Brückner, a century earlier. A run of discoveries followed in 2020, by Ulrich Mikloweit and a user of the Stella forums, which added 33 more. Ben Klein independently found two others.
 
 None of this settled how many noble polyhedra there are. Each discovery was a faceting found by hand or by software search inside one particular symmetric solid, and nothing ruled out others hiding in orbits nobody had tried.
 
@@ -34,12 +34,15 @@ The proof starts from the observation in the section above. A noble polyhedron's
 
 The shelf rebuilds every one of the 146 from that data, its symmetry group, its orbit parameters and a single face, and checks each against Hill's models. Its credits account for all of them: the 5 Platonic solids, the 4 Kepler-Poinsot polyhedra, Hess's 16, Brückner's 10, Webb's 1, the 33 from 2020 (20 credited to Mikloweit, 11 to the Stella forum user Senkoquartz and 2 unattributed), Klein's 2, and 75 that appear for the first time in Hill's enumeration. The shelf names them by Hill's symbols, such as sD-19.1, which name the kind of orbit the vertices lie on and number the solids found on it.
 
-<geo-solid solids="noble-id-1,noble-ti-5-1,noble-sc-5-1" labels="ID-1|Its dual, tI-5.1|sC-5.1, self-dual" caption="Duality inside the class. Brückner's ID-1 has 60 quadrilateral faces on the 30 vertices of an icosidodecahedron; its dual tI-5.1 swaps the counts, with 30 faces on 60 vertices. Webb's sC-5.1 is its own dual: 24 pentagons, 24 vertices, and five of each at every vertex and face.">
-</geo-solid>
+<card-grid caption="Duality inside the class, side by side. Brückner's ID-1 has 60 quadrilateral faces on the 30 vertices of an icosidodecahedron; its dual tI-5.1 swaps the counts, with 30 faces on 60 vertices. Webb's sC-5.1 is its own dual: 24 pentagons on 24 vertices, five pentagons at every vertex.">
+<geo-solid solids="noble-id-1" labels="ID-1"></geo-solid>
+<geo-solid solids="noble-ti-5-1" labels="Its dual, tI-5.1"></geo-solid>
+<geo-solid solids="noble-sc-5-1" labels="sC-5.1, self-dual"></geo-solid>
+</card-grid>
 
 The shelf also holds two figures Hill does not count among the 146. They are the duals of noble polyhedra with two coplanar faces meeting at an edge; dualising such a solid makes two of its vertices coincide, so each of these figures has 60 points that each carry two vertices, with ten pentagons meeting at every point. They are polyhedra only if coinciding vertices are allowed, and the shelf labels them that way. Hill's definition rules them out, which is why the count stays at 146. Two more figures of the same kind are not on the shelf yet: their faces pass through one point twice, and no model of them exists for the shelf to draw.
 
-<geo-solid solids="noble-ti-f" caption="tI-F: 120 pentagons on 60 points, each point carrying two coinciding vertices. It is the dual of a noble polyhedron with coplanar faces, a polyhedron only if coinciding vertices are allowed, and it is not among Hill's 146.">
+<geo-solid solids="noble-ti-f" caption="tI-F: 120 pentagons on 60 points, each point carrying two coinciding vertices; the readout counts the points. It is the dual of a noble polyhedron with coplanar faces, a polyhedron only if coinciding vertices are allowed, and it is not among Hill's 146.">
 </geo-solid>
 
 ## What the shelf holds

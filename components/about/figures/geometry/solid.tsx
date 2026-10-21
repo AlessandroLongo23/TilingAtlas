@@ -6,14 +6,21 @@
 // the readout are the article kit's, so a solid reads like every other figure on the page.
 //
 //   <geo-solid solids="icosahedron,noble-i-2" labels="Icosahedron|Small stellated" caption="…">
+//        (inside a <card-grid>, one solid as a card beside tilings of the plane and the disk)
 //   <geo-noble-family caption="…">   the disphenoids and the two stephanoid families, live
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { Pause, Play, RotateCcw } from "lucide-react";
 import { Figure } from "@/components/about/figure";
+import { InCardGrid } from "@/components/about/card-grid";
+import { cn } from "@/lib/utils/cn";
 import { Segmented } from "@/components/shelf";
 import { Button } from "@/components/ui/button";
+import { CardDoneChip } from "@/components/card-done-chip";
+import { useCardActivation } from "@/lib/hooks/useCardActivation";
+import { useTouchGestures } from "@/lib/render/touchGestures";
+import { ZOOM_CARD_FACTOR, ZOOM_CARD_PX_PER_NOTCH, wheelDeltaPx } from "@/lib/render/viewControls";
 import { Slider } from "@/components/ui/slider";
 import type { Polyhedron } from "@/lib/render/platonicSolids";
 import { polyhedronForId } from "@/lib/render/sphericalSolids";
@@ -29,10 +36,18 @@ import {
 
 const TURN_PER_MS = 0.00028; // the thumbnails' pace: a full turn in about 22 s
 const CAMERA_DISTANCE = 3.2;
+// The /play sphere's dolly range (lib/render/sphericalCamera.ts), so a solid zooms as far here as there.
+const MIN_DISTANCE = 1.6;
+const MAX_DISTANCE = 8;
 
-/** A WebGL view of one solid: drag to turn it, the button to stop or start the slow turn. */
+/**
+ * A WebGL view of one solid: drag to turn it, the button to stop or start the slow turn. Once clicked
+ * (useCardActivation, so the page keeps its scroll until then) the wheel and a pinch zoom, as on /play.
+ */
 export function SolidView({ poly }: { poly: Polyhedron | null }) {
 	const hostRef = useRef<HTMLDivElement | null>(null);
+	const { active, activeRef, hostProps, deactivate } = useCardActivation();
+	const zoomRef = useRef<(factor: number) => void>(() => {});
 	const [turning, setTurning] = useState(true);
 	const [failed, setFailed] = useState(false);
 	const turningRef = useRef(turning);
@@ -57,7 +72,6 @@ export function SolidView({ poly }: { poly: Polyhedron | null }) {
 		renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 		const canvas = renderer.domElement;
 		canvas.className = "block h-full w-full cursor-grab";
-		canvas.style.touchAction = "pan-y";
 		host.appendChild(canvas);
 
 		const scene = new THREE.Scene();
@@ -158,8 +172,19 @@ export function SolidView({ poly }: { poly: Polyhedron | null }) {
 		canvas.addEventListener("pointercancel", up);
 		resetRef.current = () => {
 			holder.quaternion.copy(rest);
+			camera.position.set(0, 0, CAMERA_DISTANCE);
 			dirty = true;
 		};
+		zoomRef.current = (factor) => {
+			camera.position.z = Math.min(MAX_DISTANCE, Math.max(MIN_DISTANCE, camera.position.z * factor));
+			dirty = true;
+		};
+		const wheel = (e: WheelEvent) => {
+			if (!activeRef.current) return;
+			e.preventDefault();
+			zoomRef.current(Math.pow(ZOOM_CARD_FACTOR, wheelDeltaPx(e) / ZOOM_CARD_PX_PER_NOTCH));
+		};
+		host.addEventListener("wheel", wheel, { passive: false });
 
 		return () => {
 			cancelAnimationFrame(frame);
@@ -169,13 +194,21 @@ export function SolidView({ poly }: { poly: Polyhedron | null }) {
 			canvas.removeEventListener("pointermove", move);
 			canvas.removeEventListener("pointerup", up);
 			canvas.removeEventListener("pointercancel", up);
+			host.removeEventListener("wheel", wheel);
 			solid?.dispose();
 			setSolidRef.current = null;
 			rig.dispose();
 			renderer.dispose();
 			canvas.remove();
 		};
-	}, []);
+	}, [activeRef]);
+
+	// Two fingers zoom by their spread; one finger still turns the solid through the pointer handlers.
+	useTouchGestures(hostRef, {
+		pinch: ({ scale }) => {
+			if (activeRef.current) zoomRef.current(1 / scale);
+		},
+	});
 
 	useEffect(() => {
 		polyRef.current = poly;
@@ -186,7 +219,19 @@ export function SolidView({ poly }: { poly: Polyhedron | null }) {
 		return <div className="flex h-48 items-center justify-center text-sm text-fg-muted">This figure needs WebGL.</div>;
 	return (
 		<div className="relative mx-auto aspect-square w-full max-w-[340px]">
-			<div ref={hostRef} className="absolute inset-0" />
+			<div
+				ref={hostRef}
+				role="application"
+				aria-label="Interactive solid: drag to turn it, click then scroll to zoom"
+				{...hostProps}
+				onContextMenu={(e) => {
+					e.preventDefault();
+					resetRef.current();
+				}}
+				className="absolute inset-0 outline-none"
+			>
+				<CardDoneChip active={active} onDone={deactivate} />
+			</div>
 			{!poly && (
 				<div className="absolute inset-0 flex items-center justify-center text-sm text-fg-muted">
 					No solid for these values.
@@ -248,7 +293,7 @@ export function solidStats(p: Polyhedron) {
 	return { V, E, F, chi: V - E + F, defect };
 }
 
-function Stats({ poly }: { poly: Polyhedron }) {
+function Stats({ poly, inCard = false }: { poly: Polyhedron; inCard?: boolean }) {
 	const s = useMemo(() => solidStats(poly), [poly]);
 	const cell = (k: string, v: string) => (
 		<div className="flex flex-col items-center px-2">
@@ -257,7 +302,7 @@ function Stats({ poly }: { poly: Polyhedron }) {
 		</div>
 	);
 	return (
-		<div className="mt-3 flex flex-wrap justify-center gap-y-2 border-t border-line pt-3">
+		<div className={cn("flex flex-wrap justify-center gap-y-2", inCard ? "mt-2" : "mt-3 border-t border-line pt-3")}>
 			{cell("Vertices", String(s.V))}
 			{cell("Edges", String(s.E))}
 			{cell("Faces", String(s.F))}
@@ -276,6 +321,18 @@ export function GeoSolid({ solids, labels, caption }: { solids?: string; labels?
 	const names = (labels ?? "").split("|").map((s) => s.trim());
 	const [id, setId] = useState(ids[0] ?? "");
 	const poly = useMemo(() => polyhedronForId(id), [id]);
+	const inGrid = useContext(InCardGrid);
+	// A cell of a card grid: the solid, its name and its counts, framed like the cards beside it.
+	if (inGrid)
+		return (
+			<figure className="not-prose m-0 flex flex-col border border-line bg-surface-raised">
+				<SolidView poly={poly} />
+				<figcaption className="border-t border-line px-3 py-2.5">
+					{names[0] && <span className="font-mono text-xs text-fg">{names[0]}</span>}
+					{poly && <Stats poly={poly} inCard />}
+				</figcaption>
+			</figure>
+		);
 	return (
 		<Figure caption={caption}>
 			{ids.length > 1 && (

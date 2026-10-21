@@ -1,20 +1,21 @@
 "use client";
 
 // Figures for the isohedral article, drawn from the same Tactile geometry the /isohedral explorer uses:
-//   <iso-type-figure types="1,7,12,21,41,84">  a prototile with its edges named, a patch of its tiling,
-//                                              a tiling-vertex parameter and an edge bend;
+//   <iso-type-figure types="1,7,12,21,41,84">  a prototile with its edges named, its tiling live on the
+//                                              shelf's canvas, a tiling-vertex parameter and an edge bend;
 //   <iso-edge-figure>                          the four edge shapes J, U, S, I and the symmetry each obeys;
-//   <iso-marked-figure>                        the twelve types that need interior marks, marks on or off.
+//   <iso-marked-figure>                        the twelve types that need interior marks, marks on or off,
+//                                              live on the same canvas.
 
 import { useMemo, useState } from "react";
 import { Segmented } from "@/components/shelf";
 import { Slider } from "@/components/ui/slider";
 import { Figure, OUTLINE, Stage, tileFill } from "@/components/about/figure";
 import { buildCell, buildMarked, type EdgeCurves } from "@/lib/isohedral/build";
+import { buildIsohedralCellMesh } from "@/lib/isohedral/cellMesh";
 import { isohedralType, MARKED_TYPES, type EdgeKind } from "@/lib/isohedral/catalogue";
 import { markedType } from "@/lib/isohedral/marked";
-import type { RawPolygon } from "@/lib/utils/renderTiling";
-import { box, centroid, extent, Label, patch, pts } from "./common";
+import { centroid, extent, Label, ParametricLive, pts } from "./common";
 
 const SUP = "⁰¹²³⁴⁵⁶⁷⁸⁹";
 /** "[3^6]" as "[3⁶]". */
@@ -53,19 +54,12 @@ export function IsoTypeFigure({ types, caption }: { types?: string; caption?: st
 		return buildCell({ ih, params, curves: bentCurves(info.edgeShapes, bend), periods: 4 });
 	}, [ih, info, shift, bend]);
 
-	const h = cell ? 1.7 * cell.period : 1;
-	const tiles = useMemo(() => (cell ? patch(cell.polygons, cell.v1, cell.v2, h) : []), [cell, h]);
-
 	return (
 		<Figure caption={caption}>
 			{cell && (
 				<div className="grid gap-4 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] md:items-center">
 					<Prototile cell={cell} />
-					<Stage fit={box(h)}>
-						{tiles.map((p, i) => (
-							<polygon key={i} points={pts(p)} fill={tileFill(p)} {...OUTLINE} />
-						))}
-					</Stage>
+					<ParametricLive cell={cell} framing={String(ih)} label={`${pad2(ih)} tiling`} />
 				</div>
 			)}
 			<div className="mt-4 grid gap-4">
@@ -236,35 +230,25 @@ export function IsoEdgeFigure({ caption }: { caption?: string }) {
 
 // ---------------------------------------------------------------------------------------------------
 
+/** A marked type's cell; bare, the marks gone and every tile one colour, all the outline can say alone. */
+function markedCell(ih: number, param: number | undefined, bare: boolean) {
+	const c = buildMarked(ih, param, 3);
+	if (!c || !bare) return c;
+	const polygons = c.polygons.filter((p) => !p.open).map((p) => ({ ...p, hue: c.polygons[0].hue }));
+	const mesh = buildIsohedralCellMesh(polygons, c.v1, c.v2);
+	return mesh ? { ...c, polygons, mesh } : c;
+}
+
 export function IsoMarkedFigure({ caption }: { caption?: string }) {
 	const [ih, setIh] = useState(MARKED_TYPES[0]);
 	const [marks, setMarks] = useState("on");
 	const type = markedType(ih)!;
 	const [ratio, setRatio] = useState<number | null>(null);
 	const param = type.param ? (ratio ?? type.param.def) : undefined;
-	const cell = buildMarked(ih, param);
-	const h = cell ? 1.6 * cell.period : 1;
-	const shown: RawPolygon[] = cell ? patch(cell.polygons, cell.v1, cell.v2, h) : [];
+	const cell = markedCell(ih, param, marks === "off");
 	return (
 		<Figure caption={caption}>
-			{cell && (
-				<Stage fit={box(h)}>
-					{shown
-						.filter((p) => !p.open)
-						.map((p, i) => (
-							<polygon
-								key={i}
-								points={pts(p)}
-								fill={marks === "on" ? tileFill(p) : tileFill({ ...p, hue: shown[0].hue })}
-								{...OUTLINE}
-							/>
-						))}
-					{marks === "on" &&
-						shown
-							.filter((p) => p.open)
-							.map((p, i) => <polyline key={`m${i}`} points={pts(p)} fill="none" {...OUTLINE} strokeWidth={1.5} />)}
-				</Stage>
-			)}
+			<ParametricLive cell={cell} framing={String(ih)} label={`${pad2(ih)} tiling`} className="aspect-[16/9]" />
 			<div className="mt-4 grid gap-4">
 				<Segmented
 					options={MARKED_TYPES.map((n) => ({ v: String(n), label: pad2(n) }))}

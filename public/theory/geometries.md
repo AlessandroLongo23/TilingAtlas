@@ -19,8 +19,13 @@ The figure draws each case where it lives. On a sphere a polygon's angles grow w
 
 The same split shows up with mixed polygons. Try the presets 4.6.8, 4.6.12 and 4.6.14 in the figure: a square, a hexagon and one more polygon. With an octagon the sum is 345° and the vertex belongs to a solid, the truncated cuboctahedron. With a dodecagon it is exactly 360°, the truncated trihexagonal tiling of the plane. With a 14-gon it is about 364.3°, and the tiling is hyperbolic.
 
-<tiling-card tiling="t1003" title="4.6.12" caption="The flat member of the 4.6.n family: a square, a hexagon and a dodecagon at every vertex, 90° + 120° + 150° = 360°. Swap the dodecagon for an octagon and the same pattern closes into a solid; swap it for a 14-gon and it no longer fits in the plane.">
-</tiling-card>
+Another family has a member in each of the three geometries. A triangle, a square, an n-gon and a second square make 3.4.n.4: with a pentagon the angles add up to 348° and close into the rhombicosidodecahedron; with a hexagon they make exactly 360°, the rhombitrihexagonal tiling; with a heptagon they make about 368.6°, and the tiling only exists in the hyperbolic plane.
+
+<card-grid caption="The 3.4.n.4 family for n = 5, 6 and 7, one vertex type in three geometries. Click a card to use it: drag the solid to turn it, and drag the two tilings to pan them.">
+<geo-solid solids="rhombicosidodecahedron" labels="3.4.5.4 · sphere"></geo-solid>
+<tiling-card tiling="t1006" title="3.4.6.4 · plane"></tiling-card>
+<hyperbolic-card patch="hyp-3-4-7-4" label="3.4.7.4 · hyperbolic plane"></hyperbolic-card>
+</card-grid>
 
 ## The regular case and the inequality behind it
 
@@ -30,14 +35,11 @@ $$q\,\alpha_p \lessgtr 360^\circ \iff \frac{1}{p} + \frac{1}{q} \gtrless \frac{1
 
 A sum above one half is the sphere. With $p, q \geq 3$ that leaves only five pairs, $\{3,3\}$, $\{3,4\}$, $\{4,3\}$, $\{3,5\}$ and $\{5,3\}$: the tetrahedron, octahedron, cube, icosahedron and dodecahedron. A sum of exactly one half is the plane, and only $\{3,6\}$, $\{4,4\}$ and $\{6,3\}$ solve it. Every other pair is hyperbolic, and there are infinitely many of those: $\{7,3\}$, $\{3,7\}$, $\{4,5\}$, $\{5,4\}$, and on without end. The article on the [hyperbolic catalogue](/play/about/hyperbolic) explains what that endlessness does to an enumeration.
 
-<geo-solid solids="icosahedron" caption="{3,5}: five triangles at a vertex, 1/3 + 1/5 > 1/2. Drag to turn it. The readout counts 12 vertices, each 60° short of flat, for a total defect of 720°.">
-</geo-solid>
-
-<tiling-card tiling="t1011" title="3.3.3.3.3.3" caption="{3,6}: six triangles at a vertex, 1/3 + 1/6 = 1/2. The angles close exactly, and the tiling goes on forever without bending.">
-</tiling-card>
-
-<hyperbolic-card patch="hyp-3-3-3-3-3-3-3" label="{3,7}" caption="{3,7}: seven triangles at a vertex, 1/3 + 1/7 < 1/2, drawn in the Poincaré disk. The triangles are all congruent; they look smaller toward the rim because the disk squeezes an infinite plane into a bounded circle.">
-</hyperbolic-card>
+<card-grid caption="Left, {3,5}: five triangles at a vertex, 1/3 + 1/5 > 1/2. The readout counts 12 vertices, each 60° short of flat, for a total defect of 720°. Middle, {3,6}: six triangles, 1/3 + 1/6 = 1/2, and the tiling goes on forever without bending. Right, {3,7}: seven triangles, 1/3 + 1/7 < 1/2, in the Poincaré disk. Its triangles are all congruent; they look smaller toward the rim because the disk squeezes an infinite plane into a bounded circle.">
+<geo-solid solids="icosahedron" labels="{3,5} · icosahedron"></geo-solid>
+<tiling-card tiling="t1011" title="{3,6} · triangular tiling"></tiling-card>
+<hyperbolic-card patch="hyp-3-3-3-3-3-3-3" label="{3,7}"></hyperbolic-card>
+</card-grid>
 
 ## Angle defect, and why the sphere always adds up to 720°
 

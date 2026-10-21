@@ -2,15 +2,13 @@
 
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
-import { HyperbolicDevelopedThumbnail } from "@/components/hyperbolic-developed-thumbnail";
+import { InteractiveHyperbolicMini } from "@/components/landing/interactive-hyperbolic-mini";
 import type { CataloguePatch } from "@/lib/render/hyperbolicDevelopedDraw";
 
-// A hyperbolic tiling as a FIGURE in a theory article: the Poincaré disk, a caption naming what the
-// reader is looking at, and a link into /play where the same tiling is interactive.
-//
-// Deliberately static, unlike the Euclidean <tiling-card>. A hyperbolic view is a per-pixel WebGL2
-// reduction with its own context, and an article embeds several — the interactive version belongs on
-// /play, which is one tiling at a time and already built for it. Here the disk is baked once.
+// A hyperbolic tiling as a FIGURE in a theory article: the live Poincaré disk with /play's controls
+// (drag pans, wheel rotates, click folds a tile to the centre, right-click recentres), a caption naming
+// what the reader is looking at, and a link into /play. Like the Euclidean <tiling-card> it waits for a
+// click before it takes the wheel, and it mounts its WebGL context only while on screen.
 //
 // The patch record arrives from the server route (see app/(app)/theory/hyperbolic/page.tsx), so the
 // page ships only the few tilings it shows, not the whole developed catalogue.
@@ -25,17 +23,13 @@ interface HyperbolicFigureCardProps {
 
 export function HyperbolicFigureCard({ patchId, patch, caption, label }: HyperbolicFigureCardProps) {
 	return (
-		// The article's prose CSS styles every <img> as an inline illustration (one-third width, centred,
-		// with its own border and rounding — see markdown-renderer). A rendered Poincaré disk is the
-		// card's content, not an illustration inside it, so those rules are overridden locally rather
-		// than loosened globally, where they would change every plain markdown image on every article.
-		<figure className="not-prose m-0 flex flex-col border border-line bg-surface-raised [&_img]:!m-0 [&_img]:!w-full [&_img]:!rounded-none [&_img]:!border-0 [&_img]:!bg-transparent">
+		<figure className="not-prose m-0 flex flex-col border border-line bg-surface-raised">
 			<div className="relative aspect-square bg-surface-raised">
-				<HyperbolicDevelopedThumbnail patch={patchId} data={patch} size={420} />
+				<InteractiveHyperbolicMini patchId={patchId} patch={patch} />
 				<Link
 					href={`/play?source=reference&tiling=${encodeURIComponent(patchId)}`}
 					aria-label={`Open ${patch.config} in Play`}
-					className="absolute top-2 right-2 flex items-center gap-1 border border-line bg-surface-overlay/85 px-2 py-1 text-[10px] text-fg-muted opacity-0 transition-opacity group-hover:opacity-100 hover:text-fg focus-visible:opacity-100 max-md:min-h-11 max-md:px-3 max-md:text-xs max-md:opacity-100 [figure:hover_&]:opacity-100"
+					className="absolute top-2 right-2 z-10 flex items-center gap-1 border border-line bg-surface-overlay/85 px-2 py-1 text-[10px] text-fg-muted opacity-0 transition-opacity group-hover:opacity-100 hover:text-fg focus-visible:opacity-100 max-md:min-h-11 max-md:px-3 max-md:text-xs max-md:opacity-100 [figure:hover_&]:opacity-100"
 				>
 					Open in Play <ArrowUpRight size={11} />
 				</Link>

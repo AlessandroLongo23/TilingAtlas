@@ -20,7 +20,7 @@ On the square grid the toggle is the difference between the four edge-neighbours
 
 ## What is known
 
-The regular non-square cases were worked out by hand, one tessellation at a time, mostly by Carter Bays.
+The regular non-square cases were worked out one tessellation at a time, mostly by Carter Bays.
 He set out the conditions for a rule to deserve the name Game of Life: every touching neighbour is
 counted the same way, the rule supports a glider, and that glider *arises naturally* from random soup,
 with random configurations showing bounded growth. Applying them he found a hexagonal rule, B2/S35 (his
@@ -29,20 +29,32 @@ with a period-48 one, both in a short note of 2005; the triangular case came fir
 guns found there in 2007. Three tessellations in all. Nobody has run those conditions across
 the eleven uniform tilings, let alone the $k$-uniform families.
 
+<pent-type-figure types="4" sliders="all" caption="Bays' pentagonal board is the Cairo tiling, which is type 4 of the fifteen convex pentagons that tile the plane. Move the two angles and the pentagon changes while every tile keeps the same neighbours, so his rule B346/S23 and its period-48 glider live on the whole family at once: an automaton reads only who touches whom.">
+</pent-type-figure>
+
 The aperiodic case has had far more attention, and it is stuck on one question. Owens and Stepney ran
 B3/S23 on the Penrose kite-and-dart and rhomb tilings, catalogued still lifes and oscillators, showed
 that arbitrarily large snakes and chains exist, and found the two tilings behave statistically quite
 differently from each other. They found no propagating structure analogous to a glider. Goucher later built one, but in a purpose-made
-four-state automaton on generic quadrilateral tilings, explicitly not Life. Bailey and Lindsey get
+four-state automaton on generic quadrilateral tilings, explicitly not Life. James Edmond found the same
+on the hat and spectre monotiles in 2026: among edge-neighbour semi-totalistic rules his searches turned
+up no glider at all, and gliders appeared only once the rule space was widened to vertex neighbourhoods
+and multi-state priority rules. Bailey and Lindsey get
 Life-*isomorphic* automata on quasiperiodic tilings from the multigrid construction, so gliders transfer
 there by design, not by playing B3/S23 against the tiling's own adjacency. Hong and Mei classified every
 four-cell still life on the Robinson triangle. Whether Conway's rule itself admits a glider on any
 aperiodic tiling is, as far as I can find, still open.
 
+<ap-substitution tilings="penrose" level="4" caption="Penrose's rhomb tiling, the board of most of that work, grown by deflation. Every tile has four edge-neighbours, but the number of tiles touching it at a corner varies from place to place, so the edge-or-corner neighbourhood Conway's rule counts over has no fixed size.">
+</ap-substitution>
+
 Hyperbolic tilings have been studied hard, but for a different question. Margenstern's programme
 constructs *universal* automata on the pentagrid, heptagrid and dodecagrid with as few states as
 possible. That is engineering a machine, not exploring a rule space; nobody seems to have asked Bays'
 question of $\{7,3\}$.
+
+<hyperbolic-card patch="hyp-7-7-7" label="{7,3}" caption="The heptagrid, Margenstern's board: three heptagons at every vertex, so every tile has seven edge-neighbours, and the number of tiles within $n$ steps of one grows exponentially in $n$, which no Euclidean board does.">
+</hyperbolic-card>
 
 And on general graphs there is a body of work that turns out to be the relevant methodology: Marr and
 Hütt's outer-totalistic automata on arbitrary topologies, and more recently Rollier, de Oliveira, Bruno
@@ -98,9 +110,10 @@ is exactly the phenomenology you want to watch. Growth is capped. A glider trave
 own wake. A methuselah that would run for a thousand generations saturates instead. The R-pentomino
 settles at 116 cells on the plane; on any board small enough to see, it does not.
 
-So the default here is unbounded. The board is a sparse set of blocks allocated as the pattern reaches
-them and freed once it has left, which is what makes "infinite plane" mean unbounded instead of
-a large fixed array with the walls out of shot.
+So the explorer's default is unbounded. Its board is a sparse set of blocks allocated as the pattern
+reaches them and freed once it has left, which is what makes "infinite plane" mean unbounded instead of
+a large fixed array with the walls out of shot. The small boards in this article are tori only so that
+each fits on the page whole.
 
 A bounded board is still worth having, for the opposite reason: its state space is finite, so every orbit
 closes.
@@ -193,7 +206,7 @@ which is useless for a viewer whose entire purpose is showing you every generati
 
 ## Where this could go
 
-The gap in the literature is not subtle. Bays did three tessellations by hand; the Atlas holds thousands,
+The gap in the literature is not subtle. Bays did three tessellations, one search at a time; the Atlas holds thousands,
 across three geometries, with exact adjacency already computed. Running his conditions (bounded growth,
 and a glider that appears on its own from soup) across the uniform tilings is a search nobody appears to
 have done.
@@ -237,6 +250,8 @@ pages runs on the Atlas's own tilings, with the adjacency read off each tiling's
   [arXiv:1708.09301](https://arxiv.org/abs/1708.09301)
 - Seung Hyeon Mandy Hong and May Mei, "The Game of Life on the Robinson Triangle Penrose Tiling: Still
   Life", *Journal of Cellular Automata* 17(3–4), 2023, 209–219. [arXiv:2302.10157](https://arxiv.org/abs/2302.10157)
+- James Edmond, "Gliders on Aperiodic Monotilings: Cellular Automata on the Hat and Spectre", 2026.
+  [arXiv:2609.22579](https://arxiv.org/abs/2609.22579)
 - Maurice Margenstern, "A weakly universal cellular automaton in the heptagrid", 2016,
   [arXiv:1606.09488](https://arxiv.org/abs/1606.09488); and "A strongly universal cellular automaton on the
   pentagrid with six states and Moore neighbourhood", 2023, [arXiv:2306.06728](https://arxiv.org/abs/2306.06728).

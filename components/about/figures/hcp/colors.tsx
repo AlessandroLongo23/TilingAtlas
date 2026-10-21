@@ -3,15 +3,15 @@
 // The colorings article's figure, drawn from the /colors catalogue itself:
 //   <hcp-colorings grids="square" colors="2" ks="1,2,3" caption>
 // a row of colorings of one grid at one k, a Segmented for k (and for the grid when several are
-// named), and a switch that marks the colored vertex classes. SVG, in the figure kit's look; the
-// fills are the /colors palette (cellFill), so a coloring reads the same here and in the explorer.
+// named), and a switch that marks the colored vertex classes. Each coloring is the explorer's own
+// canvas, so it reads, pans and zooms the same here and on /colors.
 
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Segmented } from "@/components/shelf";
-import { Figure, FigureLoading } from "@/components/about/figure";
-import { coset } from "@/lib/freedraw/pattern";
+import { Figure, FigureLoading, LiveFigure } from "@/components/about/figure";
+import { ColorsCanvas } from "@/components/colors/colors-canvas";
 import { colorsCatalogueFile, colorsGridOf, type ColorPattern, type ColorsGrid } from "@/lib/colors/pattern";
-import { cellFill, paletteFor } from "@/lib/colors/render";
+import { DEFAULT_COLORS_STYLE } from "@/lib/colors/render";
 import { readAtlas } from "@/lib/services/atlasCodec";
 
 const cache = new Map<string, Promise<ColorPattern[]>>();
@@ -27,111 +27,14 @@ function loadSlice(grid: ColorsGrid, colors: number, k: number) {
 	return p;
 }
 
-type XY = [number, number];
-const R3 = Math.sqrt(3) / 2;
-/** Half the window's side, in edge lengths. */
-const HALF = 3;
-
-/** The coloring's cells and grid points inside a square window about the origin. */
-function draw(p: ColorPattern): { cells: { pts: XY[]; color: number }[]; dots: { at: XY; orbit: number }[] } {
-	const cells: { pts: XY[]; color: number }[] = [];
-	const dots: { at: XY; orbit: number }[] = [];
-	const near = ([x, y]: XY, pad: number) => Math.abs(x) <= HALF + pad && Math.abs(y) <= HALF + pad;
-	if (p.patch) {
-		const { T1, T2, verts, vorbit, polys, polyColor } = p.patch;
-		const at = (vi: number, m: number, n: number): XY => [
-			verts[vi][0] + m * T1[0] + n * T2[0],
-			verts[vi][1] + m * T1[1] + n * T2[1],
-		];
-		const det = T1[0] * T2[1] - T1[1] * T2[0];
-		// Translates whose lattice coordinates can reach the window, padded by a period either way.
-		const reach = Math.ceil((2 * HALF * Math.hypot(...T1, ...T2)) / Math.abs(det)) + 2;
-		for (let m = -reach; m <= reach; m++)
-			for (let n = -reach; n <= reach; n++) {
-				polys.forEach((ring, i) => {
-					const pts = ring.map(([vi, a, b]) => at(vi, a + m, b + n));
-					if (pts.some((q) => near(q, 1))) cells.push({ pts, color: polyColor[i] });
-				});
-				verts.forEach((_, vi) => {
-					const q = at(vi, m, n);
-					if (near(q, 0.01)) dots.push({ at: q, orbit: vorbit[vi] });
-				});
-			}
-		return { cells, dots };
-	}
-	const tri = colorsGridOf(p) === "triangle";
-	const page = (x: number, y: number): XY => (tri ? [x + 0.5 * y, R3 * y] : [x, y]);
-	const ny = Math.ceil(HALF / (tri ? R3 : 1)) + 1;
-	for (let y = -ny; y <= ny; y++)
-		for (let x = -ny - 5; x <= ny + 5; x++) {
-			const c = coset(p, x, y);
-			if (tri) {
-				cells.push({ pts: [page(x, y), page(x + 1, y), page(x, y + 1)], color: p.cells[2 * c] });
-				cells.push({ pts: [page(x + 1, y), page(x + 1, y + 1), page(x, y + 1)], color: p.cells[2 * c + 1] });
-			} else cells.push({ pts: [page(x, y), page(x + 1, y), page(x + 1, y + 1), page(x, y + 1)], color: p.cells[c] });
-			if (near(page(x, y), 0.01)) dots.push({ at: page(x, y), orbit: p.orbit[c] });
-		}
-	return { cells: cells.filter((c) => c.pts.some((q) => near(q, 1))), dots };
-}
-
-// The /colors orbit-dot hue walk (golden-angle hues), so a class has the same dot colour in both places.
-const dotFill = (orbit: number) => `hsl(${((34 + (orbit + 3) * 137.508) % 360).toFixed(1)} 46% 36%)`;
-
+/** One coloring as the /colors canvas itself: live once clicked, pan, zoom and turn as on /play. */
 function Panel({ p, marks }: { p: ColorPattern; marks: boolean }) {
-	const { cells, dots } = useMemo(() => draw(p), [p]);
-	const fills = paletteFor(p.colors ?? 2).map((c) => cellFill(c, false));
-	const m = 0.15;
-	const clip = useId();
+	const style = useMemo(() => ({ ...DEFAULT_COLORS_STYLE, showVertices: marks }), [marks]);
 	return (
 		<div>
-			<svg
-				viewBox={`${-HALF - m} ${-HALF - m} ${2 * (HALF + m)} ${2 * (HALF + m)}`}
-				className="block aspect-square w-full"
-				role="img"
-				aria-label={p.vcs.join(" ")}
-			>
-				<defs>
-					<clipPath id={clip}>
-						<rect x={-HALF} y={-HALF} width={2 * HALF} height={2 * HALF} />
-					</clipPath>
-				</defs>
-				<g transform="scale(1,-1)" clipPath={`url(#${clip})`}>
-					{cells.map((c, i) => (
-						<polygon
-							key={i}
-							points={c.pts.map((q) => q.join(",")).join(" ")}
-							fill={fills[c.color]}
-							stroke="#000"
-							strokeWidth={0.75}
-							vectorEffect="non-scaling-stroke"
-							strokeLinejoin="round"
-						/>
-					))}
-					{marks &&
-						dots.map((d, i) => (
-							<circle
-								key={i}
-								cx={d.at[0]}
-								cy={d.at[1]}
-								r={0.17}
-								fill={dotFill(d.orbit)}
-								stroke="#fff"
-								strokeWidth={1}
-								vectorEffect="non-scaling-stroke"
-							/>
-						))}
-				</g>
-				<rect
-					x={-HALF}
-					y={-HALF}
-					width={2 * HALF}
-					height={2 * HALF}
-					fill="none"
-					stroke="#000"
-					strokeWidth={1.25}
-					vectorEffect="non-scaling-stroke"
-				/>
-			</svg>
+			<LiveFigure label={p.vcs.join(" ")} className="aspect-square w-full border border-line">
+				{(live) => <ColorsCanvas pattern={p} style={style} cells={6} {...live} />}
+			</LiveFigure>
 			<div className="mt-1 truncate text-center font-mono text-[10px] text-fg-muted" title={p.vcs.join("  ")}>
 				{p.vcs.length > 1 ? `${p.vcs[0]} +${p.vcs.length - 1}` : p.vcs[0]}
 			</div>

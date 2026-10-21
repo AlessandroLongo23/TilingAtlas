@@ -34,6 +34,9 @@ Polyforms are a natural place to collect data. There are finitely many of each s
 
 The census confirmed what was suspected and turned up new shapes. No unmarked polyform passed four coronas. Some of them stand out for how small they are, such as a 9-omino with $H = 2$ and a 7-hex with $H = 3$, and the search found seven new shapes with $H = 4$, six polyhexes and one polyiamond.
 
+<hcp-corona set="hex7" shapes="0" caption="The 7-hex with three hole-free coronas, the smallest polyhex that reaches three.">
+</hcp-corona>
+
 <hcp-corona set="hex11" shapes="0" caption="The 11-hex with H = 4, strict: the only 11-hex with four hole-free coronas, and the smallest polyhex with them. Kaplan points to this patch as an example of the forced grouping Mann and Thomas describe, where copies cluster into larger units that then behave like a single tile.">
 </hcp-corona>
 
@@ -44,12 +47,15 @@ The definitions part ways on the triangle grid. One 10-iamond has three coronas 
 
 ## What the census holds
 
-The explorer lists the Heesch number of every hole-free polyomino from 7 to 20 cells that does not tile, every polyiamond from 7 to 12 cells and every polyhex from 6 to 11, with a patch for each number it reports. Every non-tiler is listed and drawn up to 11 cells for polyominoes, 12 for polyiamonds and 8 for polyhexes. Past that the counts are complete but the shapes shown are those with $H \geq 2$ when holes are allowed, since the 20-ominoes alone include more than 2.2 billion shapes with $H = 0$.
+The explorer lists the Heesch number of every hole-free polyomino from 7 to 20 cells that does not tile, every polyiamond from 7 to 16 cells and every polyhex from 6 to 12, with a patch for each number it reports. A census of the 21-ominoes is still running, and the explorer shows its counts as they grow. Every non-tiler is listed and drawn up to 11 cells for polyominoes, 12 for polyiamonds and 8 for polyhexes. Past that the counts are complete but the shapes shown are those with $H \geq 2$ when holes are allowed, since the 20-ominoes alone include more than 2.2 billion shapes with $H = 0$.
 
-<hcp-heesch-census caption="Non-tiling polyforms by Heesch number, per size. A dot is zero. Under the strict definition the polyominoes past 11 cells have their H = 0 and H = 1 shapes counted together, because only the shapes that reach two coronas are listed one by one. Three polyominoes (one each of 13, 17 and 20 cells) whose tilings have not been confirmed are left out of the counts.">
+<hcp-heesch-census caption="Non-tiling polyforms by Heesch number, per size. A dot is zero. Under the strict definition the polyominoes past 11 cells have their H = 0 and H = 1 shapes counted together, because only the shapes that reach two coronas are listed one by one. Shapes whose tilings have not been confirmed are left out of the counts: three polyominoes (one each of 13, 17 and 20 cells) and two polyhexes (one each of 11 and 12 cells).">
 </hcp-heesch-census>
 
 The 11-ominoes show the shape of the whole table. Of the 16,094 hole-free 11-ominoes, 6,620 tile and 9,474 do not. Under the strict definition 5,807 of those cannot be surrounded at all, 3,628 have one corona and 39 have two. With holes allowed the split moves to the right: 2,820, 6,544, 109, and the single shape with three. These numbers agree with Kaplan's tables, and the census carries the polyominoes one size past them: among the 2,269,506,062 hole-free 20-ominoes, 12,126,682 tile, 765 reach two coronas with holes allowed and one reaches three.
+
+<hcp-corona set="omino17" shapes="0,1" caption="The two 17-ominoes with strict H = 3, the smallest polyominoes that reach three hole-free coronas.">
+</hcp-corona>
 
 Higher numbers get rarer as fast as the shapes multiply. Strict $H = 3$ first appears among polyominoes at 17 cells, with two shapes, and no polyomino up to 20 cells has four coronas under either definition. Polyhexes go further sooner: one 7-hex has three hole-free coronas, and $H = 4$ appears at 10 cells with holes allowed and at 11 cells without.
 

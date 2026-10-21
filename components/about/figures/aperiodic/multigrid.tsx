@@ -1,9 +1,9 @@
 "use client";
 
 // Figures for the multigrid article, built with the explorer's own engines:
-//   <mg-dual n="5" preset="penrose">   n families of grid lines beside their dual rhombus tiling, with a
-//                                      control for n and for the first offset γ₀; pointing at a rhombus
-//                                      marks the crossing it came from;
+//   <mg-dual n="5" preset="penrose">   n families of grid lines beside their dual rhombus tiling (live on
+//                                      the /aperiodic canvas), with a control for n and for the first
+//                                      offset γ₀; pointing at a rhombus marks the crossing it came from;
 //   <sr-rule n="5">                    a Sub Rosa substitution: one prototile's super-rhomb, or the
 //                                      2n-rhomb star after one step, for every n the explorer builds.
 
@@ -15,7 +15,18 @@ import { buildMultigrid, canonicalOffsets, directions, MULTIGRID_SYMMETRIES } fr
 import { buildRule, seedSingle, seedStar, substituteOnce, SUPPORTED_SYMMETRIES } from "@/lib/subrosa/engine";
 import { prototileAngles, sigma } from "@/lib/subrosa/sigma";
 import type { RawPolygon } from "@/lib/utils/renderTiling";
-import { tidy } from "./substitution";
+import { LivePatch, tidy, type PatchOverlay } from "./substitution";
+
+/** The tile under a world point: rhombi are convex, so inside is the same side of all four edges. */
+function tileAt(polys: RawPolygon[], x: number, y: number) {
+	return polys.findIndex(({ vertices: v }) => {
+		const side = v.map((a, i) => {
+			const b = v[(i + 1) % v.length];
+			return Math.sign((b.x - a.x) * (y - a.y) - (b.y - a.y) * (x - a.x));
+		});
+		return !side.includes(1) || !side.includes(-1);
+	});
+}
 
 // The explorer's prototile hues (shared by its multigrid and Sub Rosa views) and grid-family hues.
 const HUES = [265, 175, 45, 330, 130, 200, 90];
@@ -52,11 +63,12 @@ export function MultigridFigure({ n: n0, preset, caption }: { n?: string; preset
 	const R = useMemo(() => radiusFor(n, 380), [n]);
 	const { tiles } = useMemo(() => buildMultigrid({ n, offsets, radius: R }), [n, offsets, R]);
 	const polys = useMemo<RawPolygon[]>(
-		() =>
-			tidy(
-				tiles.map((t) => ({ n: 4, hue: protoHue(t.protoId), vertices: t.corners.map((c) => ({ x: c.x, y: c.y })) })),
-			),
+		() => tiles.map((t) => ({ n: 4, hue: protoHue(t.protoId), vertices: t.corners.map((c) => ({ x: c.x, y: c.y })) })),
 		[tiles],
+	);
+	const highlight = useMemo<PatchOverlay>(
+		() => (hot >= 0 && polys[hot] ? { polys: [polys[hot]], fill: "#000" } : null),
+		[hot, polys],
 	);
 	const lines = useMemo(() => {
 		const e = directions(n);
@@ -124,19 +136,14 @@ export function MultigridFigure({ n: n0, preset, caption }: { n?: string; preset
 					<p className="mt-1 text-center font-mono text-xs text-fg-muted">{n} grid families</p>
 				</div>
 				<div>
-					<Stage fit={polys}>
-						{polys.map((p, i) => (
-							<polygon
-								key={i}
-								points={svgPoints(p)}
-								fill={i === hot ? "#000" : tileFill(p)}
-								{...OUTLINE}
-								onPointerEnter={() => setHot(i)}
-								onPointerLeave={() => setHot((h) => (h === i ? -1 : h))}
-								onClick={() => setHot(i)}
-							/>
-						))}
-					</Stage>
+					<LivePatch
+						polys={polys}
+						subject={String(n)}
+						label={`Dual tiling of ${n} grids`}
+						overlay={highlight}
+						onHover={(at) => setHot(at ? tileAt(polys, at.x, at.y) : -1)}
+						className="aspect-square"
+					/>
 					<p className="mt-1 text-center font-mono text-xs text-fg-muted">{tiles.length.toLocaleString()} rhombi</p>
 				</div>
 			</div>

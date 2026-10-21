@@ -91,6 +91,12 @@ export interface FlatCellPreviewOptions {
 	 * changes behaviour.
 	 */
 	interactive?: boolean;
+	/**
+	 * A new `cell` keeps the reader's pan, zoom and angle. For a cell that is one tiling under a
+	 * slider (a bend, a deformed edge), where a refit per step would yank the view. Default false: a
+	 * new cell is a different tiling, framed afresh.
+	 */
+	keepView?: boolean;
 }
 
 export interface FlatCellPreview {
@@ -124,6 +130,7 @@ export function useFlatCellPreview({
 	showPolygonPoints = false,
 	single = false,
 	interactive = true,
+	keepView = false,
 }: FlatCellPreviewOptions): FlatCellPreview {
 	const hostRef = useRef<HTMLDivElement | null>(null);
 	// In refs, not the GL effect's deps: changing one must not tear down and rebuild the context.
@@ -279,6 +286,7 @@ export function useFlatCellPreview({
 		// What the renderer currently holds, so the loop can notice the `o` overlay being toggled.
 		// `undefined` = nothing uploaded yet, which is distinct from an uploaded null.
 		let uploadedOrbit: OrbitData | null | undefined;
+		let uploadedCell: TranslationalCellData | undefined;
 
 		// TEMPORARY (stroke-invisible investigation, /theory?gldebug=1). Reports what the stroke pass
 		// actually issued, plus the GL error state and the attribute locations the two programs were
@@ -420,6 +428,17 @@ export function useFlatCellPreview({
 
 			stepCardControls(ctrl);
 
+			// A new cell prop: upload its mesh (the orbit dots are per cell too).
+			if (uploadedCell !== cellRef.current) {
+				const mesh = buildCellMesh(cellRef.current);
+				if (mesh) {
+					renderer.uploadMesh(mesh);
+					basisRef.current = { v1: { x: mesh.v1[0], y: mesh.v1[1] }, v2: { x: mesh.v2[0], y: mesh.v2[1] } };
+				}
+				uploadedCell = cellRef.current;
+				uploadedOrbit = undefined;
+			}
+
 			// Toggling the `o` overlay swaps the caller's orbitData between the data and null, which the
 			// loop turns into an upload. Doing it here, not in an effect, keeps the renderer inside
 			// this closure, where its lifetime is already managed.
@@ -510,6 +529,7 @@ export function useFlatCellPreview({
 				return;
 			}
 			renderer.uploadMesh(mesh);
+			uploadedCell = cellRef.current;
 			uploadedOrbit = orbitDataRef.current;
 			renderer.uploadOrbitMesh(buildOrbitDotMesh(cellRef.current, uploadedOrbit));
 			raf = requestAnimationFrame(render);
@@ -558,9 +578,11 @@ export function useFlatCellPreview({
 		// eslint-disable-next-line react-hooks/exhaustive-deps -- mount-once WebGL/observer setup; resolveHomeZoom reads only refs
 	}, []);
 
-	// New cell (props change) → rebuild controls + mesh on the next frame with a fresh home zoom.
+	// New cell (props change) → the loop uploads its mesh; a different tiling also gets a fresh home view.
+	const keepViewRef = useRef(keepView);
+	keepViewRef.current = keepView;
 	useEffect(() => {
-		controlsRef.current = null;
+		if (!keepViewRef.current) controlsRef.current = null;
 	}, [cell]);
 
 	const resetView = () => {

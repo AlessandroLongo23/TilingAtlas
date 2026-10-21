@@ -1,10 +1,13 @@
 "use client";
 
-// Helpers shared by the isohedral and pentagon article figures: a translational cell repeated over a
-// box, rounded SVG coordinates, and labels that stay upright inside the kit's y-up Stage.
+// Helpers shared by the isohedral, pentagon and aperiodic article figures: a shelf canvas made live the
+// way every article card is, rounded SVG coordinates, and labels that stay upright inside the kit's
+// y-up Stage.
 
-import type { ReactNode } from "react";
-import type { RawPolygon } from "@/lib/utils/renderTiling";
+import { useRef, type HTMLAttributes, type ReactNode, type RefObject } from "react";
+import { LiveFigure } from "@/components/about/figure";
+import { useParametricTilingCanvas, type ParametricCell } from "@/lib/hooks/useParametricTilingCanvas";
+import { cn } from "@/lib/utils/cn";
 
 type Pt = { x: number; y: number };
 
@@ -17,57 +20,72 @@ export const pts = (p: { vertices: Pt[] }) => p.vertices.map((v) => `${r3(v.x)},
 export const pathOf = (ps: { vertices: Pt[] }[]) =>
 	ps.map((p) => `M${p.vertices.map((v) => `${r3(v.x)},${r3(v.y)}`).join("L")}Z`).join("");
 
-/** A square box of half-width `h` about (cx, cy), as a polygon the kit's Stage can fit. */
-export const box = (h: number, cx = 0, cy = 0) => [
-	{
-		vertices: [
-			{ x: cx - h, y: cy - h },
-			{ x: cx + h, y: cy - h },
-			{ x: cx + h, y: cy + h },
-			{ x: cx - h, y: cy + h },
-		],
-	},
-];
+/**
+ * A shelf canvas (useParametricTilingCanvas, usePatchCanvas) inside LiveFigure. Until the reader clicks,
+ * the canvas takes no pointer or wheel input at all, so the page scrolls over it; once live, the view's
+ * own handlers pan, zoom and turn it as on the shelf, and right-click resets it. `children` sits over
+ * the canvas (an overlay that follows the view).
+ */
+export function LiveCanvas({
+	label,
+	canvasRef,
+	handlers,
+	className,
+	children,
+	...host
+}: {
+	label: string;
+	canvasRef: RefObject<HTMLCanvasElement | null>;
+	handlers: HTMLAttributes<HTMLCanvasElement>;
+	className?: string;
+	children?: ReactNode;
+} & Pick<HTMLAttributes<HTMLDivElement>, "onPointerMove" | "onPointerDown" | "onPointerLeave">) {
+	return (
+		<div {...host} className={cn("relative w-full border border-line", className)}>
+			<LiveFigure label={label} className="h-full w-full">
+				{({ interactive }) => (
+					<canvas
+						ref={canvasRef}
+						className={cn(
+							"block h-full w-full",
+							interactive ? "cursor-grab touch-none active:cursor-grabbing" : "pointer-events-none",
+						)}
+						{...handlers}
+					/>
+				)}
+			</LiveFigure>
+			{children}
+		</div>
+	);
+}
 
 /**
- * Every copy of a translational cell's tiles that reaches into the box of half-width `h` about the
- * origin. The Stage's SVG clips at its viewBox, so tiles crossing the edge are simply cut there.
+ * A periodic tiling on the /isohedral and /pentagons canvas: the same renderer and mesh as the shelf,
+ * unbounded in every direction. A new `framing` snaps the view home; a new cell under the same framing
+ * (a slider moving) keeps wherever the reader has zoomed to.
  */
-export function patch(cell: RawPolygon[], v1: [number, number], v2: [number, number], h: number): RawPolygon[] {
-	const det = v1[0] * v2[1] - v1[1] * v2[0];
-	if (!Math.abs(det)) return cell;
-	// The cell's own reach, so a copy whose origin is outside the box can still be kept.
-	let reach = 0;
-	for (const p of cell) for (const v of p.vertices) reach = Math.max(reach, Math.hypot(v.x, v.y));
-	const R = 1.15 * h * Math.SQRT2 + reach;
-	// Lattice coordinates of a point: bound |i|, |j| by the box's corners.
-	const coord = (x: number, y: number) => [(x * v2[1] - y * v2[0]) / det, (v1[0] * y - v1[1] * x) / det];
-	let n = 1;
-	for (const [x, y] of [
-		[R, R],
-		[R, -R],
-		[-R, R],
-		[-R, -R],
-	])
-		for (const c of coord(x, y)) n = Math.max(n, Math.ceil(Math.abs(c)) + 1);
-	n = Math.min(n, 40);
-	const out: RawPolygon[] = [];
-	for (let i = -n; i <= n; i++)
-		for (let j = -n; j <= n; j++) {
-			const ox = i * v1[0] + j * v2[0];
-			const oy = i * v1[1] + j * v2[1];
-			for (const p of cell) {
-				const vs = p.vertices.map((v) => ({ x: v.x + ox, y: v.y + oy }));
-				// The Stage pads its view by 6%, so keep what reaches into that margin too.
-				const H = h * 1.15;
-				const hit = vs.some((v) => Math.abs(v.x) <= H && Math.abs(v.y) <= H);
-				const xs = vs.map((v) => v.x),
-					ys = vs.map((v) => v.y);
-				const spans = Math.min(...xs) <= H && Math.max(...xs) >= -H && Math.min(...ys) <= H && Math.max(...ys) >= -H;
-				if (hit || spans) out.push({ ...p, vertices: vs });
-			}
-		}
-	return out;
+export function ParametricLive({
+	cell,
+	framing,
+	label,
+	className = "aspect-square",
+}: {
+	cell: ParametricCell | null;
+	framing: string;
+	label: string;
+	className?: string;
+}) {
+	const canvasRef = useRef<HTMLCanvasElement>(null);
+	const { view } = useParametricTilingCanvas({
+		canvasRef,
+		cell,
+		strokeWidth: 1.25,
+		strokeRgb: [0, 0, 0],
+		strokeCss: "#000",
+		framingKey: framing,
+		fallbackMaxRadius: 60,
+	});
+	return <LiveCanvas label={label} canvasRef={canvasRef} handlers={view.handlers} className={className} />;
 }
 
 /** Text at world (x, y) inside a Stage, flipped back upright. `size` is in world units. */

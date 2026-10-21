@@ -20,9 +20,12 @@ which gives 60° for the triangle, 90° for the square, 120° for the hexagon, a
 
 $$\sum_{i=1}^{k} \frac{n_i - 2}{n_i} = 2.$$
 
-Since every interior angle is at least 60°, a vertex hosts at most six polygons; since it is less than 180°, at least three. This equation has exactly 17 solutions as multisets of polygon sizes, which spread into 21 distinct cyclic orderings. Most of them die locally: placing the polygons around one vertex forces contradictions at the neighbouring vertices. Only 15 of the 21 vertex types occur in any edge-to-edge tiling by regular polygons, and only 11 can occur as the *sole* vertex type. Those 11 are the uniform tilings below.
+Since every interior angle is at least 60°, a vertex hosts at most six polygons; since it is less than 180°, at least three. This equation has exactly 17 solutions as multisets of polygon sizes, which spread into 21 distinct cyclic orderings. Six of them die locally: placing the polygons around one vertex forces contradictions at the neighbouring vertices. Only 15 of the 21 vertex types occur in any edge-to-edge tiling by regular polygons, and only 11 can occur as the *sole* vertex type. Those 11 are the uniform tilings below.
 
 The cyclic order matters. The multiset $\{3, 4, 4, 6\}$ solves the angle equation in two arrangements, $3.4.4.6$ and $3.4.6.4$, yet only the second extends to a uniform tiling.
+
+<ku-vertex-types caption="All 21 solutions, each drawn from its name with unit edges. The control picks out the 15 that occur in some tiling, the 11 that make a uniform tiling, and the 6 that occur in none. Click a configuration to add up its angles.">
+</ku-vertex-types>
 
 ## The three regular tilings
 
@@ -78,7 +81,7 @@ Each hexagon is ringed by alternating squares and triangles. This is the uniform
 
 ### Truncated trihexagonal 4.6.12
 
-The largest vertex zoo in the family: a square, a hexagon, and a dodecagon at every vertex. It is the omnitruncation of the hexagonal tiling and has the largest translational cell of the eleven.
+A square, a hexagon, and a dodecagon at every vertex. It is the omnitruncation of the hexagonal tiling and has the largest translational cell of the eleven.
 
 <card-grid cols="2">
 <tiling-card tiling="t1003" title="4.6.12 · truncated trihexagonal" subtitle="p6m · hexagonal lattice"></tiling-card>

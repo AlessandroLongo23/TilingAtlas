@@ -28,7 +28,7 @@ Branko Grünbaum and Geoffrey Shephard made the first attempt to list the unifor
 <tiling-card tiling="ctrnact-star-k1-04" title="3*.6*.8 · two stars and an octagon"></tiling-card>
 </card-grid>
 
-Look again at the pentagon and the 18-gon. No edge-to-edge tiling by regular polygons alone contains either, since their vertex configurations ($4.5.20$, $5.5.10$, $3.9.18$) are among the six that never tile; a star fills the angle that no regular polygon fits. Myers closed his 2004 article with the question this raises: with no uniformity condition at all, which polygons can occur in an edge-to-edge tiling by regular polygons and stars? Can a regular heptagon, or a polygon or star with more than 18 corners?
+Look again at the pentagon and the 18-gon. No edge-to-edge tiling by regular polygons alone contains either, since their vertex configurations ($4.5.20$, $5.5.10$, $3.9.18$) are among the six that never tile; a star fills the angle that no regular polygon fits. Myers closed his 2004 article with the question this raises: with no uniformity condition at all, which polygons can occur in an edge-to-edge tiling by regular polygons and stars? Can a regular heptagon occur, or a polygon with more than 18 sides, or a star with more than 18 points?
 
 ## Families with a free angle
 

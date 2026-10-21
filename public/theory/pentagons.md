@@ -2,7 +2,7 @@
 
 Every triangle tiles the plane, and so does every quadrilateral, convex or not: rotate a copy half a turn about the midpoint of each side and the copies fill everything. No convex polygon with seven or more sides tiles at all. Hexagons sit in between, and Karl Reinhardt settled them in his 1918 dissertation: a convex hexagon tiles exactly when it belongs to one of three types. That leaves the pentagon, the one case where the answer took a century. Fifteen families of convex pentagons tile the plane, found by six groups of people between 1918 and 2015, and in 2017 Michaël Rao showed by an exhaustive computer search that there is no sixteenth.
 
-<pent-history-figure caption="The fifteen types by who found them. Each tile is drawn at its explorer default, with one translational unit outlined heavier; the colours mark the tiles of that unit.">
+<pent-history-figure caption="The fifteen types by who found them. Each tiling is drawn at its explorer default, and the colours mark the tiles of one translational unit. Click a tiling to pan, zoom and turn it.">
 </pent-history-figure>
 
 ## What a type is
@@ -13,7 +13,7 @@ The letters follow one convention throughout this page and the explorer. The cor
 
 Sources do not agree on the starting letter. Mann, McLoud-Mann and Von Derau write their Type 15 with A = 60°, B = 135°, C = 105°, D = 90° and E = 150°; shifting every letter one place gives the form below, A = 150°, B = 60°, C = 135°, D = 105°, E = 90°. The tile is the same. When two papers seem to disagree about a type's conditions, a relabelling is the first thing to check.
 
-<pent-type-figure caption="All fifteen types. Pick one and move its first free angle: the conditions listed under the slider stay true while every number in them changes. Beside the tile is a patch of its tiling, with one translational unit outlined. Types 14 and 15 have nothing to move.">
+<pent-type-figure caption="All fifteen types. Pick one and move its first free angle: the conditions listed under the slider stay true while every number in them changes. Beside the tile is its tiling, coloured by position in one translational unit; click it to pan, zoom and turn it. Types 14 and 15 have nothing to move.">
 </pent-type-figure>
 
 ## Counting the freedom
@@ -22,7 +22,7 @@ A pentagon has six degrees of freedom once its size is forgotten. Its five angle
 
 Each condition of a type removes one. Type 1 has one condition and five free parameters; Type 2 (B + D = 180° and *c* = *e*) has four. Types 3, 4 and 5 fix several angles outright and keep one or two.
 
-The later types are subtler. Type 9 asks for four equal sides and two angle sums, five conditions, which would leave one parameter. But the four equal sides, together with the two closure equations, put more constraints on the side lengths than there are lengths to satisfy them, and a solution exists only where a certain determinant vanishes. That is one more equation, on the angles this time, and it is transcendental. Types 6, 7, 8, 9 and 14 work this way, which is why their angles are in general numbers you can compute but not round values you can state.
+The later types are subtler. Type 9 asks for four equal sides and two angle sums, five conditions, which leave one parameter as the count says. The conditions do not split the way they look, though. Once the scale is set the side lengths have two degrees of freedom, and three equalities ask for three, so a solution exists only where a certain determinant vanishes: one of the five conditions is really an equation on the angles, and it is transcendental. Types 6, 7, 8, 9 and 14 work this way, which is why their angles are in general numbers you can compute but not round values you can state.
 
 At the end of the scale, two types have no freedom left. Type 14, found by Rolf Stein, has A = 90° and an angle B fixed by sin B = (√57 − 3)/8, about 145.34°. Type 15 has the round angles above and side ratios built from √3. Up to size, each is a single pentagon.
 
@@ -37,6 +37,9 @@ Reinhardt asked a narrower question than the whole problem. A tiling is *isohedr
 
 Richard Kershner of Johns Hopkins published three new types in 1968, Types 6, 7 and 8, whose tilings have their tiles in two inequivalent positions, and claimed with them that the list of eight was complete.
 
+<pent-type-figure types="6,7,8" caption="Kershner's three types. Each keeps one free parameter, and the colours show a translational unit of four tiles for Type 6 and eight for Types 7 and 8.">
+</pent-type-figure>
+
 Martin Gardner reported Kershner's result in his *Scientific American* column of July 1975. Within a month a reader, the computer scientist Richard James III, sent him a pentagon that was not on the list, and Gardner printed it in December 1975. It is now Type 10.
 
 Another reader of the July column was Marjorie Rice, a California homemaker with no mathematics beyond a general high-school course. She invented her own notation for how corners meet, worked through the combinations at her kitchen table, and in February 1976 sent Gardner a new type. Gardner passed it to Doris Schattschneider, who confirmed it and corresponded with Rice from then on. By the end of 1977 Rice had found four new types, now Types 9, 11, 12 and 13, and many new tilings by the known ones. Schattschneider announced Rice's work in *Mathematics Magazine* in 1978. The numbers do not follow the order of discovery: James's type, found first, is Type 10, and Rice's are 9, 11, 12 and 13.
@@ -46,6 +49,9 @@ Rolf Stein found Type 14 in 1985. Thirty years passed before the next.
 ## The fifteenth, and the end of the list
 
 Casey Mann, Jennifer McLoud-Mann and David Von Derau, at the University of Washington Bothell, turned the question into a finite computer search. A tiling is *i-block transitive* when the tiles group into blocks of *i*, and the blocks form an isohedral tiling; Reinhardt's five are the case *i* = 1. They enumerated every convex pentagon admitting such a tiling for *i* = 1, 2 and 3, and found, in 2015, one that was not of any known type. It tiles in blocks of three, with twelve tiles in a translational unit, and it is Type 15.
+
+<pent-type-figure types="15" caption="Type 15, rigid up to size. Each of the twelve tiles in its translational unit has a colour of its own; they group into four blocks of three, and the blocks tile isohedrally.">
+</pent-type-figure>
 
 Rao's proof, posted in 2017, closes the problem from the other side. It works from the ways the corners of pentagons can come together at a vertex of a tiling: Rao reduced these to 371 possible scenarios and checked each by computer, and every convex pentagon that survives belongs to one of the fifteen known types. Thomas Hales independently reproduced the central part of the computation in 2017. A related result came earlier: Olga Bagina showed in 2011 and 2012 that a convex pentagon with an edge-to-edge tiling, where tiles meet only along whole sides, belongs to one of eight types.
 

@@ -2,9 +2,9 @@
 
 // Figures for the pentagon article, from the same solver and assemblies the /pentagons explorer uses:
 //   <pent-type-figure types="1,…,15" sliders="first|all">  a type's prototile with corners and sides
-//                      named, its conditions holding live, and a patch of its tiling with one
-//                      translational unit outlined;
-//   <pent-history-figure>  the fifteen types grouped by who found them.
+//                      named, its conditions holding live, and its tiling on the shelf's canvas, the
+//                      tiles of one translational unit in different colours;
+//   <pent-history-figure>  the fifteen types grouped by who found them, each tiling live.
 
 import { useMemo, useState } from "react";
 import { Segmented } from "@/components/shelf";
@@ -12,7 +12,7 @@ import { Slider } from "@/components/ui/slider";
 import { Figure, OUTLINE, Stage, tileFill } from "@/components/about/figure";
 import { buildCell, type PentagonCell } from "@/lib/pentagon/build";
 import { defaultParams, pentagonType, type ParamSpec } from "@/lib/pentagon/types";
-import { box, centroid, extent, Label, patch, pts } from "./common";
+import { centroid, extent, Label, ParametricLive, pts } from "./common";
 
 /**
  * Who found each type, checked against the literature (Schattschneider 1978; Mann, McLoud-Mann and
@@ -59,7 +59,10 @@ export function PentTypeFigure({ types, sliders, caption }: { types?: string; sl
 	const set = (kind: "angles" | "sides", i: number, x: number) =>
 		setVals({ ...vals, [id]: { ...v, [kind]: v[kind].map((y, j) => (j === i ? x : y)) } });
 
-	const res = buildCell({ id, angles: v.angles, sides: v.sides });
+	// Keyed on the numbers, not the object: an unchanged cell must not re-upload the canvas's mesh.
+	const key = `${id}:${v.angles.join()}:${v.sides.join()}`;
+	// eslint-disable-next-line react-hooks/exhaustive-deps -- `key` carries id and every slider value
+	const res = useMemo(() => buildCell({ id, angles: v.angles, sides: v.sides, periods: 3 }), [key]);
 	const shownAngles = all ? t.angleParams : t.angleParams.slice(0, 1);
 	const shownSides = all ? t.sideParams : [];
 
@@ -80,7 +83,7 @@ export function PentTypeFigure({ types, sliders, caption }: { types?: string; sl
 							))}
 						</p>
 					</div>
-					<TilingPatch cell={res.cell} scale={1.5} />
+					<ParametricLive cell={res.cell} framing={String(id)} label={`Type ${id} tiling`} />
 				</div>
 			) : (
 				<div className="flex h-48 items-center justify-center text-sm text-fg-muted">
@@ -186,22 +189,6 @@ function Pentagon({ cell }: { cell: PentagonCell }) {
 	);
 }
 
-/** A patch of the tiling, with the tiles of one translational unit outlined heavier. */
-function TilingPatch({ cell, scale, className }: { cell: PentagonCell; scale: number; className?: string }) {
-	const h = scale * cell.period;
-	const tiles = useMemo(() => patch(cell.polygons, cell.v1, cell.v2, h), [cell, h]);
-	return (
-		<Stage fit={box(h)} className={className}>
-			{tiles.map((p, i) => (
-				<polygon key={i} points={pts(p)} fill={tileFill(p)} {...OUTLINE} />
-			))}
-			{cell.polygons.map((p, i) => (
-				<polygon key={`u${i}`} points={pts(p)} fill="none" {...OUTLINE} strokeWidth={3} />
-			))}
-		</Stage>
-	);
-}
-
 // ---------------------------------------------------------------------------------------------------
 
 const ERAS: { v: string; label: string; sub: string; types: number[]; text: string }[] = [
@@ -255,7 +242,7 @@ export function PentHistoryFigure({ caption }: { caption?: string }) {
 	const cells = useMemo(
 		() =>
 			e.types.map((id) => {
-				const r = buildCell({ id, ...defaultParams(pentagonType(id)!) });
+				const r = buildCell({ id, ...defaultParams(pentagonType(id)!), periods: 2.5 });
 				return { id, cell: r.ok ? r.cell : null };
 			}),
 		[e],
@@ -265,7 +252,7 @@ export function PentHistoryFigure({ caption }: { caption?: string }) {
 			<div className="grid grid-cols-3 gap-2 sm:grid-cols-5 sm:gap-3">
 				{cells.map(({ id, cell }) => (
 					<div key={id} className="border border-line-subtle p-1.5">
-						{cell && <TilingPatch cell={cell} scale={1.1} className="max-h-[160px]" />}
+						{cell && <ParametricLive cell={cell} framing={String(id)} label={`Type ${id} tiling`} />}
 						<p className="mt-1 text-center font-mono text-xs text-fg">Type {id}</p>
 					</div>
 				))}

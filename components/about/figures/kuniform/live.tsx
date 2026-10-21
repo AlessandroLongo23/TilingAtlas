@@ -4,15 +4,14 @@
 // ship them: each fetches its few records from /public once.
 //
 //   <ku-tegula ids="tegula-…,tegula-…" labels="…,…" caption="…">  topological types, with a slider
-//        that bends every edge by its class's own symmetric curve (the /play cell editor's shapes).
-//        Drawn as SVG: the live card uploads its mesh once, and a slider makes a new cell per step;
+//        that bends every edge by its class's own symmetric curve (the /play cell editor's shapes);
 //   <ku-hollow …>  hollow tilings, below;
 //   <ku-bubble ids="tri-k1:bt-1-00001,…" labels="…,…" caption="…">  bubble tilings, one per board.
 
 import { useEffect, useMemo, useState } from "react";
 import { Segmented } from "@/components/shelf";
 import { Slider } from "@/components/ui/slider";
-import { Figure, FigureLoading, OUTLINE, Stage, svgPoints, tileFill } from "@/components/about/figure";
+import { Figure, FigureLoading, LiveFigure } from "@/components/about/figure";
 import { InteractiveTilingPreviewCard } from "@/components/interactive-tiling-preview-card";
 import { fetchAtlas } from "@/lib/services/atlasCodec";
 import { bendTegula, clampHandle, type TegulaCell } from "@/lib/tilings/tegula";
@@ -38,11 +37,12 @@ function once<T>(url: string, load: () => Promise<T>): Promise<T> {
 	return loads.get(url) as Promise<T>;
 }
 
-/** The live card. Keyed by the caller per tiling: it builds its mesh once, on mount. */
-function LiveCard({ id, cell }: { id: string; cell: TranslationalCellData }) {
+/** The live card. A new tiling gets a fresh view; a new shape of the same one (`keepView`) keeps it. */
+function LiveCard({ id, cell, keepView }: { id: string; cell: TranslationalCellData; keepView?: boolean }) {
 	return (
 		<InteractiveTilingPreviewCard
 			key={id}
+			keepView={keepView}
 			cell={cell}
 			tilingId={id}
 			square
@@ -76,51 +76,6 @@ function Picker({
 
 type TegulaRecord = { id: string; tegula: TegulaCell; family: string };
 
-/** A patch of translates of one cell, framed on the middle so its ragged rim stays outside the box. */
-function CellPatch({ cell }: { cell: TranslationalCellData }) {
-	const { tiles, frame } = useMemo(() => {
-		const [[ax, ay], [bx, by]] = cell.basis ?? [
-			[1, 0],
-			[0, 1],
-		];
-		const tiles: { n: number; hue: number; vertices: { x: number; y: number }[] }[] = [];
-		for (let i = -3; i <= 3; i++)
-			for (let j = -3; j <= 3; j++)
-				for (const p of cell.cellPolygons ?? []) {
-					if (p.mark) continue;
-					const vs = (p.vertices ?? p.v ?? []) as number[][];
-					tiles.push({
-						n: p.n ?? vs.length,
-						hue: p.hue ?? 0,
-						vertices: vs.map(([x, y]) => ({
-							x: Math.round((x + i * ax + j * bx) * 1e4) / 1e4,
-							y: Math.round((y + i * ay + j * by) * 1e4) / 1e4,
-						})),
-					});
-				}
-		// The frame: the translates within one period of the origin, a 16:9-ish window on the patch.
-		const r = 1.2 * Math.max(Math.hypot(ax, ay), Math.hypot(bx, by));
-		const frame = [
-			{
-				vertices: [
-					{ x: -1.6 * r, y: -0.9 * r },
-					{ x: 1.6 * r, y: 0.9 * r },
-				],
-			},
-		];
-		return { tiles, frame };
-	}, [cell]);
-	return (
-		<div className="border border-line">
-			<Stage fit={frame} className="max-h-[360px]">
-				{tiles.map((p, i) => (
-					<polygon key={i} points={svgPoints(p)} fill={tileFill(p)} {...OUTLINE} />
-				))}
-			</Stage>
-		</div>
-	);
-}
-
 export function KuTegula({ ids, labels, caption }: { ids?: string; labels?: string; caption?: string }) {
 	const wanted = useMemo(() => list(ids), [ids]);
 	const [records, setRecords] = useState<Record<string, TegulaRecord>>({});
@@ -147,7 +102,7 @@ export function KuTegula({ ids, labels, caption }: { ids?: string; labels?: stri
 	}, [rec, bend]);
 	return (
 		<Figure caption={caption}>
-			{cell ? <CellPatch cell={cell} /> : <FigureLoading what="tiling" />}
+			{cell ? <LiveCard id={pick} cell={cell} keepView /> : <FigureLoading what="tiling" />}
 			<div className="mx-auto mt-3 flex max-w-md flex-col gap-3">
 				<Slider
 					label="Edge bend"
@@ -197,8 +152,8 @@ export function KuBubble({ ids, labels, caption }: { ids?: string; labels?: stri
 }
 
 // <ku-hollow ids="hollow-…,…" labels="…" caption="…">  uniform tilings with hollow tiles. Their faces
-// overlap, so they have no cell for the live card; this is the shelf's own canvas, held still (a
-// canvas that pans would take the page's scroll), with its fill modes as the control.
+// overlap, so they have no cell for the live card; this is the shelf's own canvas, with its fill modes
+// as the control. It pans and zooms only once clicked, so it never takes the page's scroll.
 const HOLLOW_FILLS: Record<string, Omit<HollowStyle, "dark">> = {
 	tile: { ...DEFAULT_HOLLOW_STYLE, fillMode: "tile" },
 	density: { ...DEFAULT_HOLLOW_STYLE, fillMode: "density" },
@@ -211,9 +166,9 @@ export function KuHollow({ ids, labels, caption }: { ids?: string; labels?: stri
 	const [fill, setFill] = useState("tile");
 	return (
 		<Figure caption={caption}>
-			<div className="aspect-[16/9] w-full border border-line max-md:aspect-square">
-				<HollowCanvas patchId={pick} style={HOLLOW_FILLS[fill]} interactive={false} />
-			</div>
+			<LiveFigure label="Hollow tiling" className="aspect-[16/9] w-full border border-line max-md:aspect-square">
+				{({ interactive }) => <HollowCanvas patchId={pick} style={HOLLOW_FILLS[fill]} interactive={interactive} />}
+			</LiveFigure>
 			<div className="mx-auto mt-3 flex max-w-md flex-col gap-2">
 				<Segmented
 					options={[

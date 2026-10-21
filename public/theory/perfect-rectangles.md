@@ -2,7 +2,7 @@
 
 Cut a rectangle into squares, all of them different sizes. It sounds like the kind of puzzle that either has an easy answer or no answer, and for forty years nobody could tell which. The thing that finally cracked it is the reason this page exists in a tiling atlas: the answer turned out to be about polyhedra, and the atlas is full of polyhedra.
 
-What follows is that correspondence, run in the direction the atlas makes available. Every solid in the catalogue whose skeleton is planar yields squared rectangles, one for each way of choosing a single edge, so every one of them has a family of rectangles attached to it that nobody had drawn. There are 667 of them across 105 solids, and eleven are perfect.
+What follows is that correspondence, run in the direction the atlas makes available. Every solid in the catalogue whose skeleton is planar yields squared rectangles, one for each way of choosing a single edge, so every one of them has a family of rectangles attached to it that nobody had drawn. There are 667 of them across 105 solids; 244 are perfect, and those come from just eleven of the solids.
 
 ## A gold bar that should have been a square
 
@@ -47,7 +47,7 @@ The scale itself is worth stating too, since it gives a way to check the arithme
 
 $$W + H = \tau(G)$$
 
-where $\tau(G)$ is the number of spanning trees of the whole graph. A spanning tree either uses the battery edge or avoids it, and those two counts are the height and the width. The cube has 384 spanning trees, and every rectangle built from it, whichever edge carries the battery, has width plus height equal to 384. The atlas checks this for every squaring it ships.
+where $\tau(G)$ is the number of spanning trees of the whole graph. A spanning tree either uses the battery edge or avoids it, and those two counts are the height and the width. The cube has 384 spanning trees, and every rectangle built from it, whichever edge carries the battery, has width plus height equal to 384 in that scale; the card above shows it divided through by the common factor 16, as 10 by 14. The atlas checks this for every squaring it ships.
 
 ## The graph has to be a polyhedron
 
@@ -55,7 +55,7 @@ Here is the part that makes this a page in a tiling atlas.
 
 Not every graph gives a usable rectangle. If some piece of the network is attached to the rest at only two points, current entering that piece has exactly one way out, the piece behaves as an isolated block, and what you get in the picture is a compound rectangle: a smaller squared rectangle sitting inside the big one. Brooks, Smith, Stone and Tutte proved the converse, which is the useful statement. A **simple** squared rectangle has a network that is **3-connected**: no two vertices can be removed to break it apart.
 
-By Steinitz's theorem, the 3-connected planar graphs are exactly the edge skeletons of convex polyhedra. So a simple squared rectangle is a convex polyhedron with a battery attached to one of its edges, and the search for perfect squarings became a search through polyhedra. That is how Tutte found the first simple perfect squared square, working through polyhedral graphs with 56 edges.
+By Steinitz's theorem, the 3-connected planar graphs are exactly the edge skeletons of convex polyhedra. So a simple squared rectangle is a convex polyhedron with a battery attached to one of its edges, and the search for perfect squarings became a search through polyhedra. The exhaustive catalogues are still built this way: Stuart Anderson's, complete to order 26, runs every 3-connected planar graph up to a given number of edges through the circuit and keeps the simple perfect results.
 
 The converse fails in one direction, and the failure is not an edge case in this catalogue; it is the main finding below. A 3-connected graph does not have to produce a simple squaring. If two vertices happen to land at the same potential, their horizontal segments merge, the picture has fewer segments than the graph had vertices, and compound blocks appear that the graph gave no warning of.
 
@@ -102,7 +102,8 @@ The obstruction is graded, not a threshold. Counting how many tile sizes the bes
 | 48 | 5 | 14, 22, 25, 25, 34 |
 | 60 | 3 | 22 |
 | 120 | 8 | 20, 20, 43, 53, 62, 66, 66, 92 |
-At order 6 the best squaring misses perfection by exactly one repeated pair, in all four cases. At order 10 it misses by exactly two, in all three. At order 120, the icosahedron gives up 66 of its 119 sizes.
+
+At order 6 the best squaring misses perfection by exactly one repeated pair, in all four cases. At order 10 it misses by two in three of the four cases, and by five in the fourth. At order 120 the rhombicosidodecahedron gives up 66 of its 119 sizes.
 
 The converse does not hold, and I want to be plain about that because it would be the tidier claim. Low symmetry only permits perfection. Ten of the eleven records with symmetry order 4 or less have a perfect squaring; the exception is one halved-cube tiling which has symmetry order 4 but only four distinct rectangles to search, and none of the four is perfect. Having few edge orbits is its own obstruction, independent of the group's order.
 
@@ -152,6 +153,9 @@ pick up a non-zero $\sqrt{2}$ part, two come out in the ratio $\sqrt{2} - 1 = 0.
 $\sum \text{side}^2$ still lands on the covolume. Incommensurable squares, tiling a surface, exactly the
 thing Dehn ruled out one dimension down.
 
+<tiling-card tiling="t1007" title="3.6.3.6 · trihexagonal" caption="The trihexagonal tiling. Its translation cell holds three vertices and six edges, so on the torus its network has six wires and the squared torus has six tiles, the six whose sides the paragraph above evaluates.">
+</tiling-card>
+
 ## Which tori can be squared at all
 
 The freedom has a sharp limit in the other direction, and it is easy to miss while dragging the class around:
@@ -181,11 +185,21 @@ A hyperbolic tiling is infinite, so there is no finite surface to divide it by a
 
 The circumference of that cylinder is the effective conductance from the centre out to the boundary, and it settles on a positive limit exactly when the random walk escapes to infinity. That is the whole content of the hyperbolic case. The Euclidean $\{3,6\}$ is the control that shows it: run the same construction there and the walk is recurrent, the circumference turns over and decays, and the cylinder collapses as the ball grows. The construction is Benjamini and Schramm's, and Georgakopoulos later showed the boundary circle the squares accumulate on is the Poisson boundary of the walk.
 
+<card-grid cols="2" caption="The two networks the comparison runs on. Left, the triangular tiling {3,6}: a random walk on it comes back, and the squared cylinder narrows to nothing as the ball grows. Right, {3,7}, one more triangle at every vertex: the walk escapes, and the circumference settles on a positive limit.">
+<tiling-card tiling="t1011" title="{3,6} · triangular"></tiling-card>
+<hyperbolic-card patch="hyp-3-3-3-3-3-3-3" label="{3,7}"></hyperbolic-card>
+</card-grid>
+
 ## What is and is not being claimed
 
-These are not new rectangles. Every simple perfect squared rectangle up to order 21 has been catalogued exhaustively, and there are 31,426 of order 17 alone, so the order-17 examples above sit somewhere in a list that already exists. Nothing here extends that list.
+These are not new rectangles in any sense that matters. Every simple perfect squared rectangle up to order 26 has been catalogued exhaustively, and there are 31,426 of order 17 alone, so the order-17 and order-19 examples above sit somewhere in a list that already exists. The larger perfect ones here, of orders 47 to 119, lie past the end of any exhaustive list, but a perfect squaring of high order is easy to come by, and finding one is no discovery. Nothing here extends the catalogue.
 
-The claim is the attachment. Each rectangle on this page belongs to a specific solid in this catalogue, arrived at by a construction with no choices in it beyond which edge carries the battery, and the arithmetic is exact from end to end, integers throughout, with no rounding anywhere. The largest sides in the corpus run to 27 digits, which is far past the point where floating point can tell two tile sizes apart, and since a squaring is perfect exactly when all its sides differ, rounding would not blur these results so much as invert them.
+<card-grid cols="2">
+<squaring-card solid="shdodec-half-13-00001" caption="A halved-dodecahedron tiling with symmetry order 2: 47 tiles, all different, no compound block, 3,719,295,816 by 4,496,360,853."></squaring-card>
+<squaring-card solid="shico-half-6-00001" caption="A halved-icosahedron tiling with symmetry order 4: 59 tiles, all different, no compound block. Both lie past the end of the exhaustive catalogue."></squaring-card>
+</card-grid>
+
+The claim is the attachment. Each rectangle on this page belongs to a specific solid in this catalogue, arrived at by a construction with no choices in it beyond which edge carries the battery, and the arithmetic is exact from end to end, integers throughout, with no rounding anywhere. The largest sides in the corpus run to 28 digits, which is far past the point where floating point can tell two tile sizes apart, and since a squaring is perfect exactly when all its sides differ, rounding would not blur these results so much as invert them.
 
 Every squaring shipped here has been certified to cover its rectangle exactly, with no gap and no overlap, on a grid where every tile boundary is a line. The spanning-tree identity $W + H = \tau(G)$ is checked for every edge of every solid. The Bouwkamp codes replay to the tilings they came from.
 
@@ -195,7 +209,7 @@ The Brooks, Smith, Stone and Tutte paper is *The dissection of rectangles into s
 
 Stefan Felsner's survey *Rectangle and Square Representations of Planar Graphs* states the construction in its modern form; its Theorem 4.1 gives the side of each edge as a difference of spanning-tree counts, which is the integrality used here.
 
-Stuart Anderson's [squaring.net](https://www.squaring.net/) holds the exhaustive catalogues, the counts by order, and the history.
+Stuart Anderson's [squaring.net](https://www.squaring.net/) holds the exhaustive catalogues, the counts by order, and the history. The counts of simple perfect squared rectangles by order are [OEIS A002839](https://oeis.org/A002839), complete to order 26 since Anderson's computation of July 2024.
 
 The rationality of a planar squaring is Max Dehn, *Über Zerlegung von Rechtecken in Rechtecke*, *Mathematische Annalen* **57** (1903), 314–332; Andrew Putman's notes [*Tiling by squares*](https://academicweb.nd.edu/~andyp/notes/TilingBySquares.pdf) give a short modern proof.
 

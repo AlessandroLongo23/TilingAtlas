@@ -2,9 +2,9 @@
 
 A tiling is periodic when some translation slides it onto itself, and non-periodic when no translation does. A set of tiles is aperiodic when it tiles the plane and every tiling it admits is non-periodic. The two words are easy to confuse and the difference is the whole subject: a square tiles non-periodically if you shift one row by an irrational amount, yet the square is not aperiodic, because it also tiles periodically. An aperiodic set has no periodic option at all.
 
-Every tiling on the [aperiodic explorer](/aperiodic) is non-periodic, and each one is built the same way, by substitution. This page explains what that means and why it forces the tiling never to repeat, then goes through the constructions the explorer holds.
+Every tiling on the [aperiodic explorer](/aperiodic) is non-periodic, and all but one of its constructions are built the same way, by substitution. This page explains what that means and why it forces the tiling never to repeat, then goes through the substitution tilings the explorer holds. The exception, de Bruijn's multigrid, builds its tilings from grids of lines and has [its own article](/aperiodic/about/multigrid).
 
-<ap-substitution tilings="penrose" level="3" caption="Penrose's rhombus tiling, built by deflation. Each step cuts every rhombus into smaller ones in the golden ratio and rescales; step through the levels and the same decagon fills with more and more tiles. Thick rhombi outnumber thin ones by a ratio that tends to the golden ratio φ.">
+<ap-substitution tilings="penrose" level="3" caption="Penrose's rhombus tiling, built by deflation. Each step cuts every rhombus into smaller ones in the golden ratio and rescales; step through the levels and the same decagon fills with more and more tiles. Thick rhombi outnumber thin ones by a ratio that tends to the golden ratio φ. Click the patch to pan, zoom and turn it.">
 </ap-substitution>
 
 ## From Wang's conjecture to Penrose
@@ -35,7 +35,7 @@ The hat uses its mirror image. In every hat tiling the unreflected hats outnumbe
 
 ## Rep-tiles from the Tilings Encyclopedia
 
-Four constructions on the explorer come from the Tilings Encyclopedia, the online catalogue of substitution tilings at Bielefeld kept by Dirk Frettlöh, Franz Gähler and Edmund Harriss, which states each rule and its properties. Three of them are rep-tiles: a single tile that four copies of itself, scaled by 1/2, can tile. The chair is an L-shaped tromino; the sphinx is a hexiamond of six triangles; the half-hex is a trapezoid of three. For each of the three, an exhaustive search over the ways to cut the doubled tile into four copies finds exactly one, so the rule is forced by the shape.
+Four constructions on the explorer come from the Tilings Encyclopedia, the online catalogue of substitution tilings at Bielefeld kept by Dirk Frettlöh, Franz Gähler and Edmund Harriss, which states each rule and its properties. Three of them are rep-tiles: each can be cut into four copies of itself, scaled by 1/2. The chair is an L-shaped tromino; the sphinx is a hexiamond of six triangles; the half-hex is a trapezoid of three. For each of the three, an exhaustive search over the ways to cut the doubled tile into four copies finds exactly one, so the rule is forced by the shape.
 
 None of the three tiles is aperiodic: each tiles the plane periodically as well. The substitution tilings they generate are non-periodic all the same, and they are a different kind of non-periodic from Penrose's. The chair tiling is *limit-periodic*: in the encyclopedia's words it is a union of countably many fully periodic sets of tiles, the *i*-th with periods of length 2 · 2*ⁱ*, so every finite part of it repeats periodically on some scale and the whole never does. Michael Baake, Robert Moody and Martin Schlottmann showed in 1998 that this makes it a cut-and-project set with a 2-adic internal space. The half-hex has the same structure. The sphinx is chiral, and both hands appear at every level: at level 4, 136 sphinxes are right-handed and 120 left-handed.
 
@@ -44,11 +44,17 @@ None of the three tiles is aperiodic: each tiles the plane periodically as well.
 
 The pinwheel is the fourth. John Conway cut a right triangle with legs 1 and 2 into five copies of itself scaled by 1/√5, and Charles Radin studied the resulting tilings in 1994. The inflation is multiplication by 2 + *i* in the complex plane, which scales by √5 and turns by arctan(1/2), an irrational multiple of π. Each level therefore turns the tiles by an angle that never comes back to a multiple of a full turn, and the orientations of the triangles do not settle into finitely many directions: they are uniformly distributed on the circle. The pinwheel was the first tiling found in which a tile appears in infinitely many orientations, which is why its colour, set by orientation, keeps splitting as the level rises.
 
+<ap-rule tiling="pinwheel" caption="The pinwheel rule: a right triangle with legs 1 and 2 cut into five copies of itself, scaled by 1/√5. The copies sit at angles to their parent, which is where the turn by arctan(1/2) at every level comes from.">
+</ap-rule>
+
 ## A random substitution
 
 A substitution need not be the same everywhere. If a tile has two dissections into the same number of copies of the same tiles, each tile can pick one of them independently at every step. The tile counts and the inflation factor are untouched, since both dissections contain the same tiles; only the arrangement becomes random. Substitutions with this property are called compatible.
 
 The half-hex at factor 2 cannot be randomised, because its dissection is unique. At factor 3 an exhaustive search by the atlas finds 49 dissections of the same trapezoid into nine copies of itself; the explorer uses two of them. Compatible random substitutions destroy some order and keep some: Michael Baake, Timo Spindeler and Nicolae Strungaru computed the diffraction of such systems in one dimension in 2018, starting from a random mixture of the two Fibonacci substitutions, and found a pure point part that survives the randomness next to an absolutely continuous part that it creates. The half-hex example here is the same mechanism in the plane.
+
+<ap-rule tiling="half-hex-3" caption="The two dissections the random half-hex chooses between: the trapezoid at factor 3, cut into nine copies of itself in two different ways.">
+</ap-rule>
 
 <ap-random caption="The half-hex at factor 3, with two compatible dissections. Rule A and Rule B each give a deterministic tiling; Random lets every trapezoid choose its own rule at every step. Tiles are coloured by the rule their parent used, so the randomness shows as territories. A new draw gives a new sample.">
 </ap-random>

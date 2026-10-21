@@ -13,8 +13,10 @@ import { useEffect, useId, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Shuffle } from "lucide-react";
 import { Segmented } from "@/components/shelf";
 import { Button } from "@/components/ui/button";
-import { Figure, FigureLoading, tidy, tileFill } from "@/components/about/figure";
+import { Figure, FigureLoading, LiveFigure, tidy, tileFill } from "@/components/about/figure";
 import { IcoFreedrawCanvas } from "@/components/freedraw/ico-freedraw-canvas";
+import { FreedrawCanvas } from "@/components/freedraw/freedraw-canvas";
+import { DEFAULT_STYLE } from "@/lib/freedraw/render";
 import { readAtlas } from "@/lib/services/atlasCodec";
 import { analyseFaces, classifyFaces, classifyPatchFaces, rankLabel, summarise } from "@/lib/freedraw/faces";
 import { degree, gridOf, type FreedrawGrid, type FreedrawPattern } from "@/lib/freedraw/pattern";
@@ -482,6 +484,16 @@ export function FdCatalogueFigure({
 	);
 }
 
+/** A catalogue pattern as the explorer's own canvas, faces filled by shape: live once clicked. */
+const LIVE_STYLE = { ...DEFAULT_STYLE, fillMode: "shape" as const };
+function LivePattern({ p }: { p: FreedrawPattern }) {
+	return (
+		<LiveFigure label={describe(p)} className="mx-auto aspect-[5/3] max-h-[380px] w-full border border-line">
+			{(live) => <FreedrawCanvas pattern={p} style={LIVE_STYLE} cells={10} {...live} />}
+		</LiveFigure>
+	);
+}
+
 function CatalogueBrowser({ grids, caption }: { grids: string[]; caption?: string }) {
 	const [grid, setGrid] = useState(grids[0] ?? "square");
 	const def = GRIDS[grid];
@@ -490,10 +502,9 @@ function CatalogueBrowser({ grids, caption }: { grids: string[]; caption?: strin
 	const slice = useSlice(grid, kk);
 	const [index, setIndex] = useState(0);
 	const p = slice?.[Math.min(index, slice.length - 1)];
-	const pieces = useMemo(() => (p ? piecesOf(p) : null), [p]);
 	return (
 		<Figure caption={caption}>
-			{pieces && p ? <PatternView pieces={pieces} /> : <FigureLoading what="patterns" />}
+			{p ? <LivePattern p={p} /> : <FigureLoading what="patterns" />}
 			<div className="mx-auto mt-3 grid max-w-lg gap-2">
 				{grids.length > 1 && (
 					<Segmented
@@ -553,10 +564,9 @@ function NamedPatterns({ ids, labels, caption }: { ids: string[]; labels: string
 	}, [ids]);
 	const [pick, setPick] = useState(0);
 	const p = got[ids[pick]];
-	const pieces = useMemo(() => (p ? piecesOf(p) : null), [p]);
 	return (
 		<Figure caption={caption}>
-			{pieces && p ? <PatternView pieces={pieces} /> : <FigureLoading what="pattern" />}
+			{p ? <LivePattern p={p} /> : <FigureLoading what="pattern" />}
 			<div className="mx-auto mt-3 max-w-lg">
 				<Segmented
 					options={ids.map((id, i) => ({
@@ -613,13 +623,15 @@ export function FdSolidFigure({ solid: initial = "octahedron", caption }: { soli
 	const p = slice?.[i];
 	return (
 		<Figure caption={caption}>
-			<div className="relative mx-auto aspect-[4/3] max-h-[360px] w-full max-md:aspect-square">
-				{p ? (
-					<IcoFreedrawCanvas key={`${cfg.id}-${p.id}`} pattern={p} mode="polyhedron" showGrid solidId={cfg.id} />
-				) : (
-					<FigureLoading what="solid" />
-				)}
-			</div>
+			<LiveFigure label="Tiled solid" className="mx-auto aspect-[4/3] max-h-[360px] w-full max-md:aspect-square">
+				{() =>
+					p ? (
+						<IcoFreedrawCanvas key={`${cfg.id}-${p.id}`} pattern={p} mode="polyhedron" showGrid solidId={cfg.id} />
+					) : (
+						<FigureLoading what="solid" />
+					)
+				}
+			</LiveFigure>
 			<div className="mx-auto mt-3 grid max-w-lg gap-2">
 				<Segmented
 					options={ICO_SOLIDS.map((s) => ({
@@ -649,7 +661,7 @@ export function FdSolidFigure({ solid: initial = "octahedron", caption }: { soli
 				<>
 					<Stepper index={i} count={slice.length} onIndex={setIndex} label={`${i + 1} of ${slice.length}`} />
 					<p className="mt-1 text-center text-xs text-fg-muted">
-						{`${p.nDrawn} of ${cfg.id === "tetrahedron" ? 6 : cfg.id === "cube" || cfg.id === "octahedron" ? 12 : 30} edges drawn, ${p.nTiles} tile${p.nTiles === 1 ? "" : "s"}, ${p.achiral ? "achiral" : "chiral"}. Drag to turn it.`}
+						{`${p.nDrawn} of ${cfg.id === "tetrahedron" ? 6 : cfg.id === "cube" || cfg.id === "octahedron" ? 12 : 30} edges drawn, ${p.nTiles} tile${p.nTiles === 1 ? "" : "s"}, ${p.achiral ? "achiral" : "chiral"}. Click it, then drag to turn it.`}
 					</p>
 				</>
 			)}

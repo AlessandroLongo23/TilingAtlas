@@ -93,6 +93,8 @@ interface InteractiveTilingPreviewCardProps {
 	 * IS the argument and a stray gesture mid-sentence would cost more than the gesture is worth.
 	 */
 	interactive?: boolean;
+	/** A new `cell` keeps the reader's view: one tiling under a slider (see useFlatCellPreview). */
+	keepView?: boolean;
 	/** Square corners and a hairline edge, for a card inside an article figure (components/about). */
 	square?: boolean;
 	className?: string;
@@ -124,6 +126,7 @@ export function InteractiveTilingPreviewCard({
 	alwaysActive = false,
 	seed = false,
 	interactive = true,
+	keepView = false,
 	className,
 }: InteractiveTilingPreviewCardProps) {
 	const [expanded, setExpanded] = useState(false);
@@ -165,6 +168,7 @@ export function InteractiveTilingPreviewCard({
 		homePeriods,
 		single: seed,
 		interactive,
+		keepView,
 		active: live,
 	});
 

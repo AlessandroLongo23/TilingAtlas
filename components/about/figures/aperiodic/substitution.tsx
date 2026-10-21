@@ -1,18 +1,22 @@
 "use client";
 
 // Substitution figures for the aperiodic article, drawn from the same builders the /aperiodic explorer
-// uses, so a patch here is the patch the explorer shows at that level:
+// uses, on its canvas (usePatchCanvas), so a patch here is the patch the explorer shows at that level
+// and pans, zooms and turns the same once clicked:
 //   <ap-substitution tilings="penrose">                 a level stepper for one construction;
 //   <ap-substitution tilings="chair,sphinx,…">          the same with a construction picker, and a
 //                                                       toggle that outlines the supertiles;
 //   <ap-rule tiling="penrose">                          the rule itself, one panel per prototile;
 //   <ap-random>                                         the random half-hex: rule A, rule B, or a draw.
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import { Shuffle } from "lucide-react";
 import { Segmented } from "@/components/shelf";
 import { Button } from "@/components/ui/button";
-import { Figure, OUTLINE, Stage, svgPath, svgPoints, tileFill } from "@/components/about/figure";
+import { Figure, OUTLINE, Stage, svgPoints, tileFill } from "@/components/about/figure";
+import { applyViewTransform, viewToWorld, type AperiodicFrame } from "@/lib/hooks/useAperiodicView";
+import { STROKE_WIDTH, usePatchCanvas } from "@/lib/hooks/usePatchCanvas";
+import { LiveCanvas } from "../shapes/common";
 import { penrosePatch, penroseRuleFigure } from "@/lib/render/penrosePatch";
 import { hatPatch } from "@/lib/render/hatPatch";
 import { substitutionPatch, substitutionRuleFigure } from "@/lib/render/substitutionPatch";
@@ -77,12 +81,12 @@ const cache = new Map<string, RawPolygon[]>();
 function patch(id: Id, level: number): RawPolygon[] {
 	const key = `${id}:${level}`;
 	let p = cache.get(key);
-	if (!p) cache.set(key, (p = tidy(DEFS[id].build(level))));
+	if (!p) cache.set(key, (p = DEFS[id].build(level)));
 	return p;
 }
 
 const scaled = (ps: RawPolygon[], s: number) =>
-	tidy(ps).map((p) => ({ ...p, vertices: p.vertices.map((v) => ({ x: v.x * s, y: v.y * s })) }));
+	ps.map((p) => ({ ...p, vertices: p.vertices.map((v) => ({ x: v.x * s, y: v.y * s })) }));
 
 function Tiles({ polys }: { polys: RawPolygon[] }) {
 	return (
@@ -91,6 +95,82 @@ function Tiles({ polys }: { polys: RawPolygon[] }) {
 				<polygon key={i} points={svgPoints(p)} fill={tileFill(p)} {...OUTLINE} />
 			))}
 		</>
+	);
+}
+
+/** What a figure draws over its patch, in world units: outlines `width` CSS px wide, or a fill. */
+export type PatchOverlay = { polys: RawPolygon[]; width?: number; fill?: string } | null;
+
+/**
+ * A finite patch on the /aperiodic canvas, live once clicked. `overlay` is drawn on a 2-D canvas over
+ * the WebGL one and redrawn with every frame, so it follows the view; `onHover` reports the world point
+ * under the pointer (null when it leaves).
+ */
+export function LivePatch({
+	polys,
+	subject,
+	label,
+	overlay = null,
+	onHover,
+	className = "aspect-[4/3] max-h-[440px]",
+}: {
+	polys: RawPolygon[];
+	subject: string;
+	label: string;
+	overlay?: PatchOverlay;
+	onHover?: (at: { x: number; y: number } | null) => void;
+	className?: string;
+}) {
+	const top = useRef<HTMLCanvasElement>(null);
+	const onFrame = useCallback(
+		(f: AperiodicFrame) => {
+			const c = top.current;
+			const ctx = c?.getContext("2d");
+			if (!c || !ctx) return;
+			const w = Math.round(f.w * f.dpr),
+				h = Math.round(f.h * f.dpr);
+			if (c.width !== w || c.height !== h) [c.width, c.height] = [w, h];
+			ctx.setTransform(f.dpr, 0, 0, f.dpr, 0, 0);
+			ctx.clearRect(0, 0, f.w, f.h);
+			if (!overlay?.polys.length) return;
+			ctx.save();
+			applyViewTransform(ctx, f);
+			ctx.beginPath();
+			for (const p of overlay.polys) {
+				p.vertices.forEach((v, i) => (i ? ctx.lineTo(v.x, v.y) : ctx.moveTo(v.x, v.y)));
+				ctx.closePath();
+			}
+			if (overlay.fill) {
+				ctx.fillStyle = overlay.fill;
+				ctx.fill();
+			}
+			if (overlay.width) {
+				ctx.lineWidth = overlay.width / f.zoom;
+				ctx.lineJoin = "round";
+				ctx.strokeStyle = "#000";
+				ctx.stroke();
+			}
+			ctx.restore();
+		},
+		[overlay],
+	);
+	const { canvasRef, view } = usePatchCanvas({ polys, strokeWidth: STROKE_WIDTH.def, subject, onFrame });
+	const { requestDraw, frameRef } = view;
+	useEffect(() => requestDraw(), [overlay, requestDraw]);
+	const hover = (e: PointerEvent<HTMLDivElement>) => {
+		const r = canvasRef.current?.getBoundingClientRect();
+		if (r && frameRef.current) onHover?.(viewToWorld(frameRef.current, e.clientX - r.left, e.clientY - r.top));
+	};
+	return (
+		<LiveCanvas
+			label={label}
+			canvasRef={canvasRef}
+			handlers={view.handlers}
+			className={className}
+			{...(onHover ? { onPointerMove: hover, onPointerDown: hover, onPointerLeave: () => onHover(null) } : {})}
+		>
+			<canvas ref={top} className="pointer-events-none absolute inset-0 h-full w-full" />
+		</LiveCanvas>
 	);
 }
 
@@ -116,28 +196,16 @@ export function SubstitutionFigure({
 	const [supers, setSupers] = useState("tiles");
 	const level_ = def.levels.includes(lv) ? lv : def.levels[Math.min(2, def.levels.length - 1)];
 	const polys = useMemo(() => patch(id, level_), [id, level_]);
-	const outline = useMemo(
+	const outline = useMemo<PatchOverlay>(
 		() =>
 			def.factor && supers === "super" && level_ > def.levels[0]
-				? svgPath(scaled(patch(id, level_ - 1), def.factor))
+				? { polys: scaled(patch(id, level_ - 1), def.factor), width: 3.5 }
 				: null,
 		[def, id, level_, supers],
 	);
 	return (
 		<Figure caption={caption}>
-			<Stage fit={polys}>
-				<Tiles polys={polys} />
-				{outline && (
-					<path
-						d={outline}
-						fill="none"
-						stroke="#000"
-						strokeWidth={3.5}
-						vectorEffect="non-scaling-stroke"
-						strokeLinejoin="round"
-					/>
-				)}
-			</Stage>
+			<LivePatch polys={polys} subject={`${id}:${level_}`} label={`${def.label}, level ${level_}`} overlay={outline} />
 			<div className="mx-auto mt-3 grid max-w-md gap-2">
 				{ids.length > 1 && (
 					<Segmented
@@ -212,14 +280,12 @@ export function RandomFigure({ caption }: { caption?: string }) {
 	const [level, setLevel] = useState(2);
 	const [seed, setSeed] = useState(1);
 	const polys = useMemo(
-		() => tidy(substitutionPatch("half-hex-3", level, mode === "mix" ? { pick: "mix", seed } : { pick: Number(mode) })),
+		() => substitutionPatch("half-hex-3", level, mode === "mix" ? { pick: "mix", seed } : { pick: Number(mode) }),
 		[mode, level, seed],
 	);
 	return (
 		<Figure caption={caption}>
-			<Stage fit={polys}>
-				<Tiles polys={polys} />
-			</Stage>
+			<LivePatch polys={polys} subject={`${mode}:${level}:${seed}`} label="Random half-hex" />
 			<div className="mx-auto mt-3 grid max-w-md gap-2">
 				<Segmented
 					options={[

@@ -4,8 +4,10 @@
 // caption under it, and an SVG stage that fits a set of polygons. The frames article set the look;
 // every article's figures use these, so a figure reads the same on every shelf.
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import type { RawPolygon } from "@/lib/utils/renderTiling";
+import { CardDoneChip } from "@/components/card-done-chip";
+import { useCardActivation } from "@/lib/hooks/useCardActivation";
 import { PATCH_LIGHT, PATCH_SAT } from "@/lib/hooks/usePatchCanvas";
 import { cn } from "@/lib/utils/cn";
 
@@ -23,6 +25,40 @@ export function Figure({
 			{children}
 			{caption && <figcaption className="mt-3 text-sm leading-snug text-fg-muted">{caption}</figcaption>}
 		</figure>
+	);
+}
+
+/**
+ * A live shelf canvas inside an article (ColorsCanvas, FreedrawCanvas, HollowCanvas, a solid): inert
+ * until clicked, as every interactive card is (useCardActivation), then it pans, zooms and turns as on
+ * /play. While inert the wheel never reaches the canvas and a finger scrolls the page, so a canvas that
+ * zooms on every wheel event cannot take the reader's scroll. The child gets the gate and owns the view
+ * angle through the render prop.
+ */
+export function LiveFigure({
+	label,
+	className,
+	children,
+}: {
+	label: string;
+	className?: string;
+	children: (live: { interactive: boolean; rotation: number; onRotationChange: (deg: number) => void }) => ReactNode;
+}) {
+	const { active, hostProps, deactivate } = useCardActivation();
+	const [rotation, setRotation] = useState(0);
+	return (
+		<div
+			role="application"
+			aria-label={`${label}: click, then drag to pan, scroll to zoom, Shift+scroll to turn`}
+			{...hostProps}
+			onWheelCapture={(e) => {
+				if (!active) e.stopPropagation();
+			}}
+			className={cn("relative outline-none", !active && "cursor-pointer [&_canvas]:touch-auto!", className)}
+		>
+			{children({ interactive: active, rotation, onRotationChange: setRotation })}
+			<CardDoneChip active={active} onDone={deactivate} />
+		</div>
 	);
 }
 

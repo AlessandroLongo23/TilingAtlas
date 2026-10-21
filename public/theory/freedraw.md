@@ -19,6 +19,9 @@ Telling the three kinds apart is a small piece of topology. Walk through a regio
 
 The same game runs on other grids. On the triangular grid every vertex has six edges in three directions, so the tiles are polyiamonds, strips, or sheets; on the hexagonal grid they are polyhexes. Two Archimedean tilings serve as grids as well, 3.4.6.4 and 4.8.8, and on the mixed square-and-triangle grid there is no single lattice to index into, because the underlying tiling itself varies from solution to solution. The rule is always the same: drawn edges, no dead ends, classify up to symmetry.
 
+<fd-catalogue grids="4436,488,ts" caption="The same viewer on the three grids that are not lattices of one polygon: 3.4.6.4, 4.8.8, and the square-and-triangle grid, where the grid itself is part of the solution. The faint lines are the grid; the drawn edges are in ink.">
+</fd-catalogue>
+
 ## k measures how decorated the grid is
 
 We need one number to organise the catalogue. The obvious candidate is the number of tiles, but it misses the point, so we use a different one: $k$, the number of orbits of grid vertices under the pattern's own symmetry group. It's easy to misread, so we pin it down with an example.
@@ -30,18 +33,21 @@ Take the blank square grid with nothing drawn. Every vertex looks like every oth
 
 This is also why freedraw connects back to the classical atlas. A regular hexagon is six triangles and a regular dodecagon is a hexagon of six triangles ringed by six squares and six more triangles, so every tiling by triangles, squares, hexagons and dodecagons can be drawn by erasing edges of some square-and-triangle tiling. Only the octagon escapes, and it lives in exactly one tiling, 4.8.8, which is a freedraw grid of its own. The vertex counts differ (an erased grid point in the middle of a hexagon still counts towards $k$), but the strict theory comes back as a special case of the loose one, which is a satisfying way for the two halves of the atlas to meet.
 
+<fd-catalogue ids="fdts-2-00088,fdts-2-00648" labels="3.4.6.4,6.6.6" caption="Two uniform tilings found in the square-and-triangle catalogue. Erase the edges inside each hexagon and the rhombitrihexagonal tiling 3.4.6.4 falls out of a square-and-triangle grid; erase them on the triangular grid and the hexagonal tiling does. Both are 1-uniform as tilings and sit at k = 2 here, because the erased point at each hexagon's centre is a grid vertex of its own.">
+</fd-catalogue>
+
 ## What the planar catalogue holds
 
 Marek's solver enumerates the patterns grid by grid and $k$ by $k$, and the atlas ships every slice it has. On the square grid there are 13 patterns at $k = 1$, then 153, 1,254, 7,848 and 43,792 at $k = 2$ to $5$, which is 53,060 in all. The triangular grid has 19, 357, 4,683 and 39,662 for $k = 1$ to $4$ (44,721), and the hexagonal grid runs deepest, from 5 at $k = 1$ to 22,361 at $k = 9$, 36,062 patterns in total. The two Archimedean grids add 18,992 patterns on 3.4.6.4 (to $k = 6$) and 71,331 on 4.8.8 (to $k = 10$), and the mixed square-and-triangle grid 14,718 (to $k = 3$). Two Schwarz triangle boards, where every vertex already belongs to one of several classes, bring 462 and 12,755 more.
 
-<fd-catalogue grids="square,triangle,hex,4436" caption="The catalogue itself, one pattern at a time: pick a grid and a k, step through the patterns or jump to a random one. The line under the controls lists the tiles of the pattern up to translation.">
+<fd-catalogue grids="square,triangle,hex" caption="The catalogue itself, one pattern at a time: pick a grid and a k, step through the patterns or jump to a random one. The line under the controls lists the tiles of the pattern up to translation.">
 </fd-catalogue>
 
 ## On a Platonic solid the catalogue is finite
 
-The planar grids are infinite, so the catalogue at each $k$ is infinite in the number of drawn edges we might use, and we control it only through periodicity. Move the base to a Platonic solid and that difficulty disappears, because a Platonic solid is finite: the icosahedron $\{3,5\}$ has 12 vertices, 30 edges, and 20 triangular faces, and that is the entire board. A spherical freedraw pattern is then a subset of those 30 edges drawn on the solid, with the same no-dead-end rule, classified up to the solid's full symmetry group. The tiles are the regions the drawn edges cut from the faces, that is the connected runs of faces you can still walk between across an *undrawn* edge.
+The planar grids are infinite, so a planar pattern is an infinite set of drawn edges, and we can only handle it through its period. Move the base to a Platonic solid and that difficulty disappears, because a Platonic solid is finite: the icosahedron $\{3,5\}$ has 12 vertices, 30 edges, and 20 triangular faces, and that is the entire board. A spherical freedraw pattern is then a subset of those 30 edges drawn on the solid, with the same no-dead-end rule, classified up to the solid's full symmetry group. The tiles are the regions the drawn edges cut from the faces, that is the connected runs of faces you can still walk between across an *undrawn* edge.
 
-<fd-solid solid="octahedron" caption="Freedraw patterns on the five Platonic solids. Pick a solid and a k, then step through the patterns; drag the solid to turn it.">
+<fd-solid solid="octahedron" caption="Freedraw patterns on the five Platonic solids. Pick a solid and a k, then step through the patterns; click the solid, then drag to turn it.">
 </fd-solid>
 
 The orbit count $k$ carries over unchanged, and now it has a ceiling. Only the identity fixes every vertex of the solid, so a pattern with all vertices in distinct orbits has no symmetry at all, which for the icosahedron means $k$ can be at most 12. The fully symmetric patterns sit at $k = 1$ and the fully asymmetric ones at $k = 12$, and everything interesting happens in between. This is the property the plane never gives us: a fixed finite base means the whole thing is enumerable, all the way to the last $k$, with no periodicity to manage.
@@ -52,22 +58,22 @@ Of course the count depends on the solid. There are five Platonic solids, and by
 
 We now have a catalogue to compute, and there are two ways to compute it, which is exactly the situation you want when the numbers are large and easy to get wrong.
 
-The first way is Marek's solver, which searches the patterns combinatorially and touches geometry only at the very end. The second way is direct, and it is the one I wrote to check the first: build the solid and its symmetry group as explicit permutations of the vertices, then enumerate the edge subsets themselves. For the small solids this is brutal and complete, because the cube and the octahedron have only 12 edges, so we can walk all $2^{12} = 4096$ subsets, throw out the ones with a dead end, and bucket what remains by $k$. For the two big solids, with 30 edges, $2^{30}$ is about a billion and walking it directly is too slow, so we enumerate only the patterns that have some symmetry, which covers every $k$ below the maximum exactly.
+The first way is Marek's solver, which searches the patterns combinatorially and touches geometry only at the very end. The second way is direct, and it is the one I wrote to check the first: build the solid and its symmetry group as explicit permutations of the vertices, then enumerate the edge subsets themselves. For the small solids this is brutal and complete, because the cube and the octahedron have only 12 edges, so we can walk all $2^{12} = 4096$ subsets, throw out the ones with a dead end, and bucket what remains by $k$. For the two big solids, with 30 edges, $2^{30}$ is about a billion and walking it directly is too slow, so we enumerate only the patterns that have some symmetry, which covers every $k$ below the maximum exactly. The maximum itself, the patterns with no symmetry at all, is left to Marek's solver on those two solids.
 
-The two methods share no code and rest on no common assumption, so when they agree it means something. They agree to the unit at every $k$ on every solid, including the split between achiral patterns (a mirror lies in the symmetry group) and chiral ones (none does). Running Marek's binary can only ever reproduce Marek's numbers, so on its own it proves nothing about correctness: the independent enumeration is the check that bites, and it settles the counting convention too, that patterns are counted up to the full group with mirror pairs merged.
+The two methods share no code and rest on no common assumption, so when they agree it means something. They agree to the unit at every $k$ both of them reach (every $k$ on the three small solids, every $k$ below the top on the dodecahedron and the icosahedron), including the split between achiral patterns (a mirror lies in the symmetry group) and chiral ones (none does). Running Marek's binary can only ever reproduce Marek's numbers, so on its own it proves nothing about correctness: the independent enumeration is the check that bites, and it settles the counting convention too, that patterns are counted up to the full group with mirror pairs merged.
 
-One consequence of the setup is provable, not measured, and I like it for that. The top count, at $k$ equal to the number of vertices, is the fully asymmetric class, and a pattern with no symmetry has no mirror symmetry in particular, so every pattern at the top $k$ is chiral by necessity. When the icosahedron's $k = 12$ came back as 1,569,679 solutions with none of them achiral, that zero was exactly what the argument had already guaranteed, and the search only confirmed it.
+One consequence of the setup is provable, not measured, and I like it for that. The top count, at $k$ equal to the number of vertices, is the fully asymmetric class, and a pattern with no symmetry has no mirror symmetry in particular, so every pattern at the top $k$ is chiral by necessity. When the icosahedron's $k = 12$ came back from Marek's solver as 1,569,679 solutions with none of them achiral, that zero was exactly what the argument had already guaranteed.
 
 ## The numbers, and what they say
 
-Here is the whole Platonic family, each row cross-checked by the two methods above.
+Here is the whole Platonic family. Every entry is cross-checked by the two methods above except the fully asymmetric counts of the dodecahedron ($k = 20$) and the icosahedron ($k = 12$), which are Marek's alone; those two slices are also the only ones the atlas does not ship as browsable patterns.
 
 | solid | symmetry order | per-$k$ counts | total |
 |---|---|---|---|
 | tetrahedron $\{3,3\}$ | 24 | 3, 2 | 5 |
 | octahedron $\{3,4\}$ | 48 | 5, 8, 15, 12, 2, 7 | 49 |
 | cube $\{4,3\}$ | 48 | 4, 5, 4, 3, 0, 1 | 17 |
-| dodecahedron $\{5,3\}$ | 120 | 2, 5, 7, 15, 7, 26, 51, 10, … | 3,654 |
+| dodecahedron $\{5,3\}$ | 120 | 2, 5, 7, 15, 7, 26, 51, 10, 0, 236, 0, 472, then 2,823 at $k = 20$ | 3,654 |
 | icosahedron $\{3,5\}$ | 120 | 5, 39, 61, 257, 257, 6727, 0, 11304, … | 1,588,329 |
 
 A few of these entries are more surprising than the totals, and they are the ones to read twice. Most of the zeros are forced before any search runs, by the orbit-counting lemma (usually credited to Burnside, though Cauchy and Frobenius had it first): a group $G$ splits the vertices into
@@ -82,7 +88,7 @@ Overall the spherical case is the cleaner half of the freedraw story: the base i
 
 ## Credits
 
-The freedraw construction, the no-dead-end rule and every planar catalogue are Marek Čtrnáct's, computed with his solvers; the face classification (finite, strip, sheet) and the independent Platonic enumeration were written for this atlas to check them. Čtrnáct also extended the count of $k$-uniform tilings by regular polygons from $k = 8$ to $k = 13$ in 2021, recorded in OEIS A068599, and with Eryk Kopczyński maintains a public catalogue of tessellations.
+The freedraw construction, the no-dead-end rule and every planar catalogue are Marek Čtrnáct's, computed with his solvers; the face classification (finite, strip, sheet) and the independent Platonic enumeration were written for this atlas to check them. Čtrnáct also computed the counts of $k$-uniform tilings by regular polygons for $k = 8$ to $13$ in 2021, recorded in OEIS A068599, and with Eryk Kopczyński maintains a public catalogue of tessellations.
 
 ## References
 

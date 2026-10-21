@@ -2,7 +2,7 @@
 
 In 1981 Nicolaas Govert de Bruijn gave the Penrose rhombus tiling a description that needs no substitution and no matching rules. Draw five families of evenly spaced parallel lines, one family in each of five directions; wherever two lines cross, put a rhombus; the rhombi fit together into a Penrose tiling. The construction is the *pentagrid*, and with any number of families it is the *multigrid*. This page explains the duality between grid and tiling, the condition on the grid that makes the result a Penrose tiling, and the Sub Rosa tilings of Kari and Rissanen, which reach the same symmetries by substitution.
 
-<mg-dual n="5" preset="penrose" caption="A pentagrid (left) and its dual tiling (right). Point at or tap a rhombus: the black dot marks the crossing it comes from, and the two lines through it belong to the families whose directions are its edges. Change the number of families, or slide the first offset γ₀ and watch the tiling rearrange.">
+<mg-dual n="5" preset="penrose" caption="A pentagrid (left) and its dual tiling (right). Point at or tap a rhombus: the black dot marks the crossing it comes from, and the two lines through it belong to the families whose directions are its edges. Change the number of families, or slide the first offset γ₀ and watch the tiling rearrange. Click the tiling to pan, zoom and turn it.">
 </mg-dual>
 
 ## Grids of parallel lines

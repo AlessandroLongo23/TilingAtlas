@@ -11,7 +11,7 @@ The form comes from a design classroom. William Huff, an architect, set parquet 
 
 Douglas Hofstadter brought the drawings to a wide audience in his Metamagical Themas column in *Scientific American* for July 1983, "Parquet deformations: patterns of tiles that shift gradually in one dimension", and reprinted it as chapter 10 of the book *Metamagical Themas* (1985). The column reproduces a selection of the students' designs and explains how each one is built.
 
-The obvious ancestor is Escher's *Metamorphosis* series. *Metamorphosis I* (1937) and *Metamorphosis II* (1939 to 1940) run tilings into one another along a strip. The second, almost four metres long, starts from the word *metamorphose*, which turns into a checkerboard, then into reptiles, a honeycomb, insects, fish and birds, and back to the word. Escher's tiles are figures; Huff's are not. Craig Kaplan, writing on both (2008, 2010), describes a parquet deformation as a kind of spatial animation: a tiling whose tiles evolve gradually along one dimension, or sometimes two.
+The obvious ancestor is Escher's *Metamorphosis* series. *Metamorphosis I* (1937) and *Metamorphosis II* (1939 to 1940) run tilings into one another along a strip. The second, almost four metres long, starts from the word *metamorphose*, which turns into a checkerboard, then into reptiles, a honeycomb, insects, fish and birds, the town of Atrani and a chessboard, and back to the word. Escher's tiles are figures; Huff's are not. Craig Kaplan, writing on both (2008, 2010), describes a parquet deformation as a kind of spatial animation: a tiling whose tiles evolve gradually along one dimension, or sometimes two.
 
 ## A tiling that changes along a line
 
@@ -45,7 +45,7 @@ The explorer offers four profiles, and each one shows a different side of the co
 
 The pinwheel's symmetry condition is what makes it a pinwheel. Turn the edge end for end and walk it from the other side: the offset at $s$ becomes $-d(1-s)$, and for an S-edge that is $d(s)$ again, so the curve looks the same from either end. When every edge of the square grid carries the same S, a quarter turn of a tile carries each of its sides onto the next one, curve and all, and the tile keeps the square's fourfold rotation while losing its mirror lines. The tiles seem to spin, all in the same direction. An arch or a fret, symmetric about its midpoint, gives a tile that bulges out on two sides and in on the other two: it tiles by translation, but a quarter turn does not carry it onto itself.
 
-<hcp-parquet-turn caption="The fully deformed square grid, with the middle tile turned a quarter turn about its centre (dashed). With the pinwheel edge the turned tile lands exactly on itself; with the arch or the fret it does not.">
+<hcp-parquet-turn caption="The fully deformed square grid (click it to pan, zoom and turn it), and beside it one tile with its quarter turn about the centre of its square, dashed. With the pinwheel edge the turned tile lands exactly on itself; with the arch or the fret it does not.">
 </hcp-parquet-turn>
 
 The same S-condition shows up in the edge figure above: since an S-edge is the same curve from both ends, even two tiles that bend their sides independently happen to agree on it. The shared-curve rule does not need that coincidence, which is why the arch and the fret work too.

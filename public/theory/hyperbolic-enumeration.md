@@ -84,7 +84,11 @@ Drawing first is the natural instinct and it is the wrong one here. Hyperbolic p
 
 So the search runs the other way. The engine glues vertex figures together as combinatorial objects, checks that the angles close, and prunes duplicates by canonical form. Geometry is computed once, at the end, for tilings whose identity has already been settled. The expensive and fragile part happens least often.
 
-That leaves the question of whether the machinery is correct, and here we had one piece of luck worth using. The interior-angle formula degenerates to the ordinary Euclidean angle at $\ell = 0$, so the entire identity stack runs unmodified on flat tilings, where the answer has been known for decades. Pointed at the Euclidean palette, the raw solver output, which contains many redundant presentations of each tiling, collapses to exactly **10 at $k = 1$ and 20 at $k = 2$**, matching the published counts (OEIS A068599). That the count is 10 and not 11 is understood and deliberate: this run works in twelve directions, which cannot express the octagon, and the single missing tiling is the well-known $4.8.8$. That test is the one that matters, because it checks the property everything else depends on, namely that distinct presentations of one tiling *merge*. An invariant can be perfectly self-consistent and still fail that, which is how the first attempt passed its own regressions while being wrong.
+## Testing the hyperbolic code on the flat plane
+
+No published list of hyperbolic $k$-uniform tilings exists to check these counts against, so the machinery has to be tested somewhere the answer is already known. The flat plane is that place, and the same code runs there without changes: at $\ell = 0$ the interior-angle formula above reduces to the ordinary Euclidean angle, so nothing in the identity stack can tell a flat vertex from a hyperbolic one.
+
+The test feeds it the raw solver output for regular polygons in the plane, which presents each tiling many times over, and asks how many distinct tilings remain once the symbols are reduced. The answer is 10 at $k = 1$ and 20 at $k = 2$, matching the published counts (OEIS A068599, which has 11 at $k = 1$; this run cannot express the octagon, so the one tiling it misses is $4.8.8$). What this checks is that distinct presentations of one tiling *merge*, the property every hyperbolic count above depends on. An invariant can be perfectly self-consistent and still fail it, which is how the first attempt passed its own regressions while being wrong.
 
 ## Where the enumeration stops
 

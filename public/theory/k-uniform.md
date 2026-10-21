@@ -26,6 +26,13 @@ Six of the 21 occur in no tiling. Each has three polygons, one of them with an o
 <ku-vertex-types caption="The 21 vertex configurations, each drawn from its name with unit edges. The control picks out the 15 that occur in some tiling, the 11 that make a uniform tiling, and the 6 that occur in none. Click a configuration to add up its angles.">
 </ku-vertex-types>
 
+<ku-switch orbits="on" caption="The four configurations that never make a tiling on their own, each in a 2-uniform tiling beside a configuration that does. The dots colour the vertices by orbit: two colours, one for each configuration.">
+<tiling-card tiling="t2013" title="3.3.4.12" caption="3.3.4.12 beside 3.3.3.3.3.3."></tiling-card>
+<tiling-card tiling="t2010" title="3.3.6.6" caption="3.3.6.6 beside 3.3.3.3.3.3."></tiling-card>
+<tiling-card tiling="t2002" title="3.4.3.12" caption="3.4.3.12 beside 3.12.12."></tiling-card>
+<tiling-card tiling="t2005" title="3.4.4.6" caption="3.4.4.6 beside 3.4.6.4, the other arrangement of the same four polygons."></tiling-card>
+</ku-switch>
+
 ## The octagon decides everything
 
 Of the 15 configurations that survive, only $4.8.8$ contains an octagon. That is enough to settle every tiling that has one. Take any octagon: each of its corners is a vertex holding an octagon, so each is $4.8.8$, and then its sides must go alternately to squares and octagons. The neighbouring octagons are in the same position as the first, so the argument repeats, and the tiling is the truncated square tiling, whole. Joseph Myers states this in his 2004 survey of star-polygon tilings: $4.8.8$ appears in its own uniform tiling and in no other tiling by regular polygons.
