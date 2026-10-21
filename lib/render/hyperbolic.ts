@@ -4,6 +4,8 @@
 // Distances become Euclidean disk radii via r = tanh(d/2). The symmetry-group extraction that turns a
 // developed patch into per-pixel shader data lives in lib/render/hyperbolicGroup.ts.
 
+import { polygonHue } from "@/lib/utils/renderTiling";
+
 export interface Complex {
 	x: number;
 	y: number;
@@ -181,10 +183,15 @@ export function hypMidpoint(u: Complex, v: Complex): Complex {
 	return su11Apply(T, m0);
 }
 
-/** Stable hue (degrees) for an n-gon, so a given polygon reads the same colour across tilings. */
-export function tileHue(sides: number): number {
-	return (((sides * 47) % 360) + 360) % 360;
-}
+/** Hue (degrees) for an n-gon: the euclidean and spherical ramp (polygonHue), so a heptagon in the
+ *  disk is the colour a heptagon is everywhere else. Apeirogons have no hue; see APEIROGON_RGB01. */
+export const tileHue = polygonHue;
+
+/** An apeirogon's fill: white, in every hyperbolic renderer (and GLSL's vec3(1.0)). */
+export const APEIROGON_RGB01: [number, number, number] = [1, 1, 1];
+
+/** The one hue an EDGE pattern's disk is filled with: a backdrop, not a polygon, so no side count. */
+export const EDGE_PATTERN_HUE = 94;
 
 /** Hyperbolic edge distance → byte, for the baked Islamic layers (distances of interest are ≲ 0.5). */
 export const EDGE_SCALE = 510;

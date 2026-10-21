@@ -7,7 +7,7 @@
 //
 // Pure drawing (no React, no store) so it is shared by the interactive canvas and the static thumbnail.
 
-import { type Su11, tileHue } from "@/lib/render/hyperbolic";
+import { APEIROGON_RGB01, EDGE_PATTERN_HUE, type Su11, tileHue } from "@/lib/render/hyperbolic";
 import { tileHueRgb01 } from "@/lib/render/hueRing";
 
 /**
@@ -275,7 +275,10 @@ export function drawDevelopedPatch(
 	const showFill = opts.showFill !== false;
 	batch.each(ctx, (key) => {
 		const dep = depOf(key);
-		const [fr, fg, fb] = tileHueRgb01(tileHue(Math.floor(key / LEVELS)) + (opts.hueOffset ?? 0), opts.fillSatPct);
+		// A face of two points is an apeirogon's [vertex, ideal point] pair: white, as in the shader.
+		const sides = Math.floor(key / LEVELS);
+		const [fr, fg, fb] =
+			sides < 3 ? APEIROGON_RGB01 : tileHueRgb01(tileHue(sides) + (opts.hueOffset ?? 0), opts.fillSatPct);
 		ctx.fillStyle = showFill ? rgb(fr, fg, fb, 1 - 0.5 * dep * dep) : bg;
 		ctx.fill();
 	});
@@ -364,7 +367,7 @@ export function drawDevelopedEdgePatch(
 	// within a linear interpolation between neighbouring stops. Colourings keep the per-face fill below:
 	// there the fill IS the catalogued object, not a backdrop.
 	if (showFill && !pal) {
-		const [gr, gg, gb] = tileHueRgb01(tileHue(2) + (opts.hueOffset ?? 0));
+		const [gr, gg, gb] = tileHueRgb01(EDGE_PATTERN_HUE + (opts.hueOffset ?? 0));
 		const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
 		for (let s = 0; s <= 16; s++) {
 			const t = s / 16;

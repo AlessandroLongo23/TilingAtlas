@@ -5,7 +5,7 @@
 // sampled, so a stroke is as sharp at the rim as at the centre. The Islamic construction is the one
 // thing sampled: a small layer per polygon size, read in the tile's own frame (hyperbolicIslamic.ts).
 
-import { EDGE_SCALE, type Su11 } from "@/lib/render/hyperbolic";
+import { EDGE_PATTERN_HUE, EDGE_SCALE, type Su11 } from "@/lib/render/hyperbolic";
 import { STRAP_RANGE } from "@/lib/render/hyperbolicIslamic";
 import { TILE_PALETTE_GLSL, TILE_SAT_PCT } from "@/lib/render/tilePalette";
 import { ISLAMIC_MARGIN, type WalkTiling } from "@/lib/render/hyperbolicWalk";
@@ -165,7 +165,7 @@ void main() {
 		// COLOURINGS keep the palette: there the colours ARE the catalogued object, not a backdrop.
 		vec3 tileCol = uColorsMode > 0.5
 			? uPalette[int(clamp(orbit, 0.0, 3.0))]
-			: tileFillAt(2.0 * 47.0 + uHueOffset, uTileSat);
+			: tileFillAt(${EDGE_PATTERN_HUE}.0 + uHueOffset, uTileSat);
 		vec3 fill = uShowFill > 0.5 ? tileCol * dim : uBg;
 		// The depth shade lights the INK as well as the paper — see the note on ink in the tile branch.
 		float ink = uShowFill > 0.5 ? dim : 1.0;
@@ -321,7 +321,11 @@ void main() {
 	float dim = 1.0 - 0.5 * dep * dep;
 	// class A (star body) keeps its tile's hue (the hue ring rotates it); B/C take the two shared
 	// background colours, fixed like the euclid plain fill.
-	vec3 tileCol = uColorsMode > 0.5 ? uPalette[int(clamp(tileKey, 0.0, 3.0))] : tileFillAt(tileKey * 47.0 + uHueOffset, uTileSat);
+	// A plain tile takes the euclidean/spherical side-count ramp; an apeirogon (kind 1) has no side
+	// count to ramp on and is white.
+	vec3 tileCol = uColorsMode > 0.5
+		? uPalette[int(clamp(tileKey, 0.0, 3.0))]
+		: hd.x == 1.0 ? vec3(1.0) : tileFillAt(polygonHue(tileKey) + uHueOffset, uTileSat);
 	if (uIslamicStyle > 0.5 && cls > 0.5) tileCol = cls > 1.5 && cls < 2.5 ? uColB : uColA; // two fields
 	else if (cls > 1.5) tileCol = cls > 2.5 ? uColC : uColB;
 	vec3 fill = uShowFill > 0.5 ? tileCol * dim : uBg;

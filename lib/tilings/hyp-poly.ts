@@ -1867,9 +1867,17 @@ export const hypPolySubOfBoard = (b: HypPolyBoard): string => subOfBoardId(b.id)
 
 /** What the colored-tiling canvas and thumbnail read (HypColorsThumbInput). The "colour count" is the
  *  board's alphabet size — this shelf fills a face by its POLYGON SIZE, so the palette needs one entry
- *  per size, and `darts.faceColor` is already the index into `stats.sizes`. */
+ *  per size, and `darts.faceColor` is already the index into `stats.sizes`. Passing the sizes makes the
+ *  palette the shared polygon ramp (hypFacePaletteRgb255), so a heptagon here is a heptagon everywhere. */
 export function hypPolyMeta(p: HypPolyPattern) {
-	return { id: p.id, config: p.family, edge: p.edge, darts: p.darts, colors: p.stats.sizes.length };
+	return {
+		id: p.id,
+		config: p.family,
+		edge: p.edge,
+		darts: p.darts,
+		colors: p.stats.sizes.length,
+		sizes: p.stats.sizes,
+	};
 }
 
 /** A vertex figure in its canonical cyclic order: the least of its rotations and reflections, so [4,8,4,3]

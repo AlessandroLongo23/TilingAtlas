@@ -13,7 +13,8 @@ import { IslamicFeed } from "@/lib/render/hyperbolicIslamic";
 import { HyperbolicPerPixelRenderer } from "@/lib/render/hyperbolicPerPixelGL";
 import { syncCanvasSize } from "@/lib/render/canvasSize";
 import { captureOverride, offerFrame } from "@/lib/render/capture";
-import { paletteRgb255 } from "@/lib/colors/render";
+import { hypFacePaletteRgb255 } from "@/lib/colors/render";
+import { fillAmountToSatPct } from "@/lib/render/tilePalette";
 import type { HypColorsThumbInput } from "@/components/hyperbolic-colors-thumbnail";
 
 // Interactive Poincaré-disk view of a hyperbolic COLORED tiling — the per-pixel WebGL renderer in colors
@@ -124,7 +125,12 @@ export function HyperbolicColorsCanvas({ pattern, tiles = false }: Props) {
 				strokePx: cfg.lineWidth <= 0 ? 0 : Math.max(cfg.lineWidth, 0.5) * dpr,
 				taper: cfg.hyperbolicLineMode !== "constant",
 			};
-			const pal = paletteRgb255(pattern.colors, palette, dark);
+			const pal = hypFacePaletteRgb255(
+				{ colors: pattern.colors, sizes: pattern.sizes },
+				palette,
+				dark,
+				fillAmountToSatPct(cfg.fillAmount),
+			);
 			const gl = glRef.current;
 			const ctx = ctx2dRef.current;
 			const dev = devRef.current;
@@ -156,7 +162,7 @@ export function HyperbolicColorsCanvas({ pattern, tiles = false }: Props) {
 		};
 		raf = requestAnimationFrame(render);
 		return () => cancelAnimationFrame(raf);
-	}, [palette, pattern.colors, tiles]);
+	}, [palette, pattern.colors, pattern.sizes, tiles]);
 
 	return (
 		<canvas

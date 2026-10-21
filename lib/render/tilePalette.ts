@@ -182,7 +182,9 @@ vec3 ${prefix}tileFillAt(float hueDeg, float sat) {
 	return ${prefix}hsb2rgb(mod(hueDeg, 360.0) / 360.0, sat, ${TILE_VAL_GLSL});
 }
 // The same at the palette's default saturation, for the marks and boards the slider does not touch.
-vec3 ${prefix}tileFill(float hueDeg) { return ${prefix}tileFillAt(hueDeg, ${TILE_SAT_GLSL}); }`;
+vec3 ${prefix}tileFill(float hueDeg) { return ${prefix}tileFillAt(hueDeg, ${TILE_SAT_GLSL}); }
+// polygonHue (lib/utils/renderTiling.ts) for an n-gon: log-spaced, 3 -> 0 deg, 30 -> 360 deg.
+float ${prefix}polygonHue(float n) { return 360.0 * (log(n) - log(3.0)) / (log(30.0) - log(3.0)); }`;
 }
 
 export const TILE_PALETTE_GLSL = tilePaletteGlsl();

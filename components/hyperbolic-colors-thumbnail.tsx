@@ -8,13 +8,16 @@ import { FALLBACK_BOUND_R, HyperbolicDeveloper, THUMB_BUDGET } from "@/lib/rende
 import { buildWalk } from "@/lib/render/hyperbolicWalk";
 import { diskCanvas2dDataUrl, ensureDiskCanvas2d, ensureDiskRenderer } from "@/lib/render/hypThumbHost";
 import { DiskThumbnail } from "@/components/ui/disk-thumbnail";
-import { paletteRgb255 } from "@/lib/colors/render";
+import { hypFacePaletteRgb255 } from "@/lib/colors/render";
 import type { HypColorsPattern } from "@/lib/colors/hyp-colors";
 
 /** Everything this component reads off a record. Declared as a subset so a shelf that is NOT a colouring
  *  can draw through it: the 3.4.n.4 tilings (lib/tilings/hyp-poly.ts) fill each face by POLYGON SIZE
  *  instead of by solver colour, which is the same render — an index per face and every edge a boundary. */
-export type HypColorsThumbInput = Pick<HypColorsPattern, "id" | "config" | "edge" | "darts" | "colors">;
+export type HypColorsThumbInput = Pick<HypColorsPattern, "id" | "config" | "edge" | "darts" | "colors"> & {
+	/** Polygon size per colour index: fill by the shared polygon ramp, not the colorings palette. */
+	sizes?: readonly number[];
+};
 
 // Static Poincaré-disk preview of a hyperbolic colored tiling — one frame of the same per-pixel colors
 // renderer as the interactive canvas, so the preview fills the disk to the rim and matches /play. 2D
@@ -37,7 +40,7 @@ function renderThumbGL(pattern: HypColorsThumbInput, size: number, opts: ThumbOp
 	const walk = buildWalk(pattern.darts, pattern.edge, { allDrawn: true });
 	host.renderer.setWalk(walk);
 	const dark = document.documentElement.classList.contains("dark");
-	const pal = paletteRgb255(pattern.colors, opts.palette, dark);
+	const pal = hypFacePaletteRgb255(pattern, opts.palette, dark);
 	host.renderer.draw({
 		view: su11Inverse(walk.home),
 		face: walk.seedFace,
@@ -77,7 +80,7 @@ function renderThumb2d(pattern: HypColorsThumbInput, size: number, opts: ThumbOp
 		showFill: opts.showFill,
 		strokePx: opts.lineWidth <= 0 ? 0 : Math.max(opts.lineWidth, 0.5),
 		taper: opts.lineMode !== "constant",
-		palette: paletteRgb255(pattern.colors, opts.palette, dark),
+		palette: hypFacePaletteRgb255(pattern, opts.palette, dark),
 	});
 	return diskCanvas2dDataUrl();
 }
