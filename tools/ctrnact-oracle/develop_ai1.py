@@ -30,6 +30,8 @@ truncated k as an exhausted one.
 
 Usage:
     develop_ai1.py <corpus-dir> --n 7 --out public/hyperbolic-poly/hp7 --report ...
+    develop_ai1.py <corpus-dir> --ai2 7 --out public/hyperbolic-poly/hpt7          # {3,7}
+    develop_ai1.py <corpus-dir> --hybrid 1_7627 --out public/hyperbolic-poly/hpy17627
     develop_ai1.py --selftest
 """
 import argparse
@@ -108,6 +110,19 @@ class Board:
         return Board(bid, ",".join(map(str, sizes)), l, sorted(set(sizes)), "hpq")
 
     @staticmethod
+    def ai2(n):
+        """The {3,n} board, Marek's `ai2_<n>`. ℓ is the regular tiling's own edge; there the n-gon has
+        exactly twice the triangle's angle, which is what lets {3, n} close a vertex in more than one way
+        (every a + 2b = n). Both facts are asserted, not assumed."""
+        l = solve_edge_length([3] * n) if n >= 7 else None
+        if l is None:
+            raise DevelopError(f"{{3,{n}}} is not hyperbolic (n = {n}); n >= 7 only")
+        b = Board(f"t{n}", f"{{3,{n}}}", l, [3, n], "hp")
+        if abs(b.units[f"A{n}"] - 2 * b.units["A3"]) > 1e-9:
+            raise DevelopError(f"the {n}-gon is not two triangles' worth of angle at this l")
+        return b
+
+    @staticmethod
     def hybrid(bid, figure, sizes=None):
         """One `hybrid_<edge>` board whose polygons all sit at the base edge. `figure` is ONE closing
         vertex figure, 0 for an apeirogon; ℓ is solved from it and every other figure in the corpus is
@@ -131,13 +146,8 @@ def hybrid_figure(source, bid):
     figure whose ℓ rounds to it wins; the `af` boards carry no number, and every figure in them closes
     at one ℓ, so the first one does."""
     want = float(bid.replace("_", ".")) if bid[0].isdigit() else None
-    best, alphabet = None, set()
-    paths = [p for p in sorted(glob.glob(os.path.join(source, "*.txt"))) if CERT_NAME.match(os.path.basename(p))]
-    for path in paths:
-        # The alphabet from a regex over the raw text: parsing a million certificates only to list
-        # their letters would cost as much as developing them.
-        alphabet.update(tile_size(c) for c in set(re.findall(r"\bA(?:oo|\d+)\b", open(path).read())))
-    for path in paths:
+    best = None
+    for path in cert_paths(source):
         for cert in fd.parse_file(path):
             for t in cert["types"]:
                 fig = [tile_size(c) for c in t["figure"]]
@@ -154,7 +164,20 @@ def hybrid_figure(source, bid):
             break
     if best is None:
         raise DevelopError(f"hybrid {bid}: no certificate figure closes at the named edge")
-    return best, sorted(alphabet)
+    return best, corpus_alphabet(source)
+
+
+def cert_paths(source):
+    return [p for p in sorted(glob.glob(os.path.join(source, "*.txt"))) if CERT_NAME.match(os.path.basename(p))]
+
+
+def corpus_alphabet(source):
+    """Every polygon size the corpus uses, by a regex over the raw text: parsing a million certificates
+    only to list their letters would cost as much as developing them."""
+    found = set()
+    for path in cert_paths(source):
+        found.update(tile_size(c) for c in set(re.findall(r"\bA(?:oo|\d+)\b", open(path).read())))
+    return sorted(found)
 
 
 def board_of(n):
@@ -285,6 +308,15 @@ def figure_in(source):
 CERT_NAME = re.compile(r"^(?P<fam>.+)solver_(?P<k>\d+)_(?P<tok>[A-Za-z0-9]+?)(?P<chir>_o)?_(?P<n>\d+)\.txt$")
 
 
+def read_census(source):
+    """{k: count} from the corpus's own solution_list.txt, or None when the drop shipped none. A census
+    can count a k the drop does not carry; that difference is the shelf's `missing`."""
+    path = os.path.join(source, "solution_list.txt")
+    if not os.path.isdir(source) or not os.path.exists(path):
+        return None
+    return {int(m.group(1)): int(m.group(2)) for m in re.finditer(r"^k=(\d+)\s*--\s*(\d+)\s*$", open(path).read(), re.M)}
+
+
 def run(source, board, out_prefix, ks=None, report_path=None, budget=None, boundR=0.86, progress=0,
         part_size=250000):
     l, units, sizes = board.l, board.units, board.sizes
@@ -382,6 +414,21 @@ def run(source, board, out_prefix, ks=None, report_path=None, budget=None, bound
     lines.append(f"{'k':>4} {'tilings':>9} {'face orbits: min':>17} {'max':>6}")
     for k in sorted(n_out):
         lines.append(f"{k:>4} {n_out[k]:>9} {fo_range[k][0]:>17} {fo_range[k][1]:>6}")
+    # The census check, printed whether it agrees or not: a develop that silently ships fewer tilings
+    # than Marek counted is the failure this catches.
+    census = read_census(source)
+    lines.append("")
+    if census is None:
+        lines.append("census          : none shipped with this corpus; the counts above are unchecked")
+    else:
+        lines.append(f"{'k':>4} {'census':>9} {'corpus':>9} {'shipped':>9}  status")
+        for k in sorted(set(census) | set(per_k)):
+            c, p, s = census.get(k, 0), per_k.get(k, 0), n_out.get(k, 0)
+            status = ("MISSING from the drop" if p == 0 and c else "ok" if p == 0
+                      else f"MISMATCH: census says {c}" if c != p
+                      else "not developed" if k not in wanted
+                      else f"DEVELOP LOSS: {p - s}" if s != p else "ok")
+            lines.append(f"{k:>4} {c:>9} {p:>9} {s:>9}  {status}")
     if dropped:
         lost = sum(per_k[k] for k in dropped)
         lines.append("")
@@ -427,6 +474,18 @@ def _selftest():
         except DevelopError:
             pass
     print("[selftest] a.b.c.d boards close at their own l; the non-hyperbolic ids are refused")
+    for n in range(7, 16):
+        b = Board.ai2(n)
+        for nb in range(n // 2 + 1):
+            tot = (n - 2 * nb) * b.units["A3"] + nb * b.units[f"A{n}"]
+            assert abs(tot - TWO_PI) < 1e-9, (n, nb, tot)
+    for n in (3, 4, 5, 6):
+        try:
+            Board.ai2(n)
+            raise AssertionError(f"accepted {{3,{n}}}, which is not hyperbolic")
+        except DevelopError:
+            pass
+    print("[selftest] {3,n}: the n-gon is two triangles, every a + 2b = n vertex closes, n < 7 refused")
     print("[selftest] PASS")
 
 
@@ -434,6 +493,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("source", nargs="?")
     ap.add_argument("--n", type=int, help="the 3.4.n.4 family parameter")
+    ap.add_argument("--ai2", type=int, help="the {3,n} family parameter")
     ap.add_argument("--board", help="an abcdtest board id (e.g. 4568, 35bb) — the general a.b.c.d boards")
     ap.add_argument("--hybrid", help="a hybrid board id (e.g. 1_7627, af3)")
     ap.add_argument("--figure", help="override the closing figure --hybrid reads off the certificates, 0 = apeirogon")
@@ -451,13 +511,15 @@ def main():
         return
     if not args.source:
         ap.error("source is required unless --selftest")
-    if sum(x is not None for x in (args.n, args.board, args.hybrid)) != 1:
-        ap.error("give exactly one of --n (the 3.4.n.4 family), --board (an a.b.c.d id) or --hybrid")
+    if sum(x is not None for x in (args.n, args.ai2, args.board, args.hybrid)) != 1:
+        ap.error("give exactly one of --n (3.4.n.4), --ai2 ({3,n}), --board (an a.b.c.d id) or --hybrid")
     if args.n is not None:
         board = Board.family(args.n)
+    elif args.ai2 is not None:
+        board = Board.ai2(args.ai2)
     elif args.hybrid is not None:
         if args.figure:
-            board = Board.hybrid(args.hybrid, [int(x) for x in args.figure.split(",")])
+            board = Board.hybrid(args.hybrid, [int(x) for x in args.figure.split(",")], corpus_alphabet(args.source))
         else:
             board = Board.hybrid(args.hybrid, *hybrid_figure(args.source, args.hybrid))
     else:
