@@ -43,7 +43,7 @@ uniform float uEdgeMode;   // 1 = edge pattern or colouring: per-pixel depth, dr
 uniform float uScaffold;   // edge mode: 1 = also stroke the faint undrawn base-tiling grid
 uniform vec3 uStrokeSca;   // edge mode: scaffold stroke colour
 uniform float uColorsMode; // 1 = fill each face by its colour index from uPalette
-uniform vec3 uPalette[4];  // colors mode: RGB per color index (0=A, 1=B, …)
+uniform vec3 uPalette[8];  // colors mode: RGB per color index (0=A, 1=B, …); a hybrid board has 5 sizes
 uniform highp sampler2D uWalk; // walk table (hyperbolicWalk.ts layout), one row per quotient face
 uniform int uFace;         // the camera's anchor face: uView maps its frame to the screen
 out vec4 frag;
@@ -164,7 +164,7 @@ void main() {
 		// merge into a single orbit and the old formula happened to return one colour.
 		// COLOURINGS keep the palette: there the colours ARE the catalogued object, not a backdrop.
 		vec3 tileCol = uColorsMode > 0.5
-			? uPalette[int(clamp(orbit, 0.0, 3.0))]
+			? uPalette[int(clamp(orbit, 0.0, 7.0))]
 			: tileFillAt(${EDGE_PATTERN_HUE}.0 + uHueOffset, uTileSat);
 		vec3 fill = uShowFill > 0.5 ? tileCol * dim : uBg;
 		// The depth shade lights the INK as well as the paper — see the note on ink in the tile branch.
@@ -324,7 +324,7 @@ void main() {
 	// A plain tile takes the euclidean/spherical side-count ramp; an apeirogon (kind 1) has no side
 	// count to ramp on and is white.
 	vec3 tileCol = uColorsMode > 0.5
-		? uPalette[int(clamp(tileKey, 0.0, 3.0))]
+		? uPalette[int(clamp(tileKey, 0.0, 7.0))]
 		: hd.x == 1.0 ? vec3(1.0) : tileFillAt(polygonHue(tileKey) + uHueOffset, uTileSat);
 	if (uIslamicStyle > 0.5 && cls > 0.5) tileCol = cls > 1.5 && cls < 2.5 ? uColB : uColA; // two fields
 	else if (cls > 1.5) tileCol = cls > 2.5 ? uColC : uColB;
@@ -553,8 +553,8 @@ export class HyperbolicPerPixelRenderer {
 		gl.uniform1f(this.u.uScaffold, p.scaffold ? 1 : 0);
 		gl.uniform1f(this.u.uColorsMode, p.colorsMode ? 1 : 0);
 		if (p.colorsMode && p.palette && p.palette.length) {
-			const pal = new Float32Array(4 * 3);
-			for (let i = 0; i < 4; i++) {
+			const pal = new Float32Array(8 * 3);
+			for (let i = 0; i < 8; i++) {
 				const c = p.palette[Math.min(i, p.palette.length - 1)];
 				pal[i * 3] = c[0];
 				pal[i * 3 + 1] = c[1];
