@@ -78,6 +78,57 @@ export interface UpdateEntry {
 /** Newest first. tests/updates.test.ts asserts that ordering, and every id below. */
 export const UPDATES: UpdateEntry[] = [
 	{
+		version: "1.46.0",
+		date: "2026-10-21",
+		title: "Keyframed GIF animations in three geometries",
+		commit: "9e57bf41",
+		changes: [
+			{
+				kind: "feature",
+				text: "**An animation timeline** docks under the /play canvas, where you drop keyframes, scrub and play them, and export a looping GIF on the plane, in the Poincaré disk and on the sphere. Each move follows its own geometry's motion, and a drift can loop by a symmetry of the tiling, which was Marek Čtrnáct's suggestion.",
+				href: "/play?tiling=t2005",
+				images: ["/release-images/timeline.jpg"],
+			},
+			{
+				kind: "content",
+				text: "**6,557,818 more hyperbolic tilings** arrived from Marek Čtrnáct.",
+				items: [
+					"**24 hybrid boards** hold 5,327,031 tilings that mix polygons of several sizes at one edge length, apeirogons among them, where the shelf held one board of 11,854.",
+					"**{3,11} and {3,14} are complete**: {3,11} gains k = 3 with 556,796 tilings and {3,14} gains k = 2 with 685,845, the two slices their census listed as missing.",
+					"**The 6,034 certificates of the 2.9387 system** stay out, since each joins vertices that close at two different edge lengths.",
+				],
+				href: "/play?tiling=hpyai32-1-00124",
+				images: [
+					"/release-images/hybrid-ai32.jpg",
+					"/release-images/hybrid-16628.jpg",
+					"/release-images/hyp-t11-k3.jpg",
+					"/release-images/hybrid-29830.jpg",
+				],
+			},
+			{
+				kind: "feature",
+				text: "**Every tiling in the articles** moves once you click it, so you can pan, zoom and turn it as on /play, Poincaré disks and polyhedra included.",
+				href: "/play/about",
+				images: ["/release-images/about-geometries-live.jpg"],
+			},
+			{
+				kind: "fix",
+				text: "**All twenty articles** were checked against the shipped data and their sources, and the errors corrected. There are 100 star polyhedra, not 103, and 244 of the 667 squared rectangles are perfect, from eleven solids. Pentagon Type 9 keeps one free parameter.",
+				href: "/play/about/polyhedra",
+			},
+			{
+				kind: "fix",
+				text: "**Hyperbolic tiles** take the colours they have on the plane and the sphere, so a triangle is red in all three geometries and an apeirogon is white, and a board with five polygon sizes no longer paints the fifth in the fourth's colour.",
+				href: "/play/about",
+				images: ["/release-images/hyp-colours.jpg"],
+			},
+			{
+				kind: "fix",
+				text: "**Three fixes on /play** keep the Poincaré disk clear of the bottom toolbar, stop a catalogue row from scrolling back to the selected tiling, and let the article index scroll on its own.",
+			},
+		],
+	},
+	{
 		version: "1.45.0",
 		date: "2026-10-20",
 		title: "Frames of polyforms on ten grids",
