@@ -1,0 +1,26 @@
+3.3.3.3.3.3.3.3.3.3 develop (yai23) — tilings by regular [3, 4, 5, 10, 0] at one edge length
+source          : /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/ai/ai2/solver_ai2+3
+forced edge len : l = 2.122550123810
+angles          : 3-gon 36.0000deg, 4-gon 51.8273deg, 5-gon 60.0000deg, 10-gon 72.0000deg, ∞-gon 76.3454deg
+certificates in : 355012
+developed       : 355012
+failed          : 0
+multi-variant   : 29954
+wall            : 573.6s (1.6 ms/certificate)
+
+
+   k   tilings  face orbits: min    max
+   1        47                 1     10
+   2      4226                 3     18
+   3    350739                 2     26
+
+   k    census    corpus   shipped  status
+   1        47        47        47  ok
+   2      4226      4226      4226  ok
+   3    350739    350739    350739  ok
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai23-k3-p0.json: 100000 records, 92.70 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai23-k3-p1.json: 100000 records, 95.72 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai23-k3-p2.json: 100000 records, 88.17 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai23-k1.json: 47 records, 0.03 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai23-k2.json: 4226 records, 3.13 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai23-k3-p3.json: 50739 records, 43.82 MB

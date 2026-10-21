@@ -1,0 +1,41 @@
+3.3.3.3.3.3.3.3.3.3.6.6.6.6.6.6.6.6.6.6 develop (yai32) — tilings by regular [3, 6, 10] at one edge length
+source          : /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/ai/ai3/solver_ai3_2
+forced edge len : l = 4.309135209347
+angles          : 3-gon 13.1398deg, 6-gon 22.8602deg, 10-gon 25.1398deg
+certificates in : 2224545
+developed       : 2224545
+failed          : 0
+multi-variant   : 68
+wall            : 2255.2s (1.0 ms/certificate)
+
+
+   k   tilings  face orbits: min    max
+   1   1293425                 4     22
+   2    931120                18     38
+
+   k    census    corpus   shipped  status
+   1   1293425   1293425   1293425  ok
+   2    931120    931120    931120  ok
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai32-k1-p0.json: 100000 records, 81.31 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai32-k1-p1.json: 100000 records, 81.51 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai32-k1-p2.json: 100000 records, 83.06 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai32-k1-p3.json: 100000 records, 85.81 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai32-k1-p4.json: 100000 records, 82.71 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai32-k1-p5.json: 100000 records, 81.51 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai32-k1-p6.json: 100000 records, 81.52 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai32-k1-p7.json: 100000 records, 84.56 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai32-k1-p8.json: 100000 records, 81.88 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai32-k1-p9.json: 100000 records, 82.30 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai32-k1-p10.json: 100000 records, 81.70 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai32-k1-p11.json: 100000 records, 83.79 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai32-k2-p0.json: 100000 records, 142.20 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai32-k2-p1.json: 100000 records, 142.51 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai32-k2-p2.json: 100000 records, 142.51 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai32-k2-p3.json: 100000 records, 142.51 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai32-k2-p4.json: 100000 records, 142.51 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai32-k2-p5.json: 100000 records, 142.51 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai32-k2-p6.json: 100000 records, 142.50 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai32-k2-p7.json: 100000 records, 142.51 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai32-k2-p8.json: 100000 records, 142.48 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai32-k1-p12.json: 93425 records, 79.87 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai32-k2-p9.json: 31120 records, 44.32 MB

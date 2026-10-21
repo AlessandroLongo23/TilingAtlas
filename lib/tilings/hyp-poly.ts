@@ -18,7 +18,7 @@
 // lib/render/hyperbolicDevelopClient.ts::developColors re-develops them under the live view, fills each
 // face by its `faceColor` index and strokes every edge. `faceColor` is the index of the face's SIZE in
 // the board's sorted alphabet, so one colour means one polygon size across the whole shelf. Decoded by
-// tools/ctrnact-oracle/develop_ai1.py and develop_ai2.py.
+// tools/ctrnact-oracle/develop_ai1.py (--n, --ai2, --board, --hybrid).
 //
 // Small n is not hyperbolic in either family and lives elsewhere: ai1 is spherical at n = 3, 4, 5 and
 // Euclidean at n = 6; ai2 is spherical at n = 3, 4, 5 (tetrahedron, octahedron, icosahedron) and
@@ -573,10 +573,11 @@ export const HYP_POLY_BOARDS: HypPolyBoard[] = [
 		label: "{3,11}",
 		family: "ai2",
 		eagerKs: [1, 2],
-		lazyKs: [],
+		lazyKs: [3],
 		dropped: [],
-		missing: [3],
-		counts: { 1: 18, 2: 681 },
+		missing: [],
+		counts: { 1: 18, 2: 681, 3: 556796 },
+		parts: { 3: 6 },
 	},
 	{
 		id: "t12",
@@ -605,10 +606,11 @@ export const HYP_POLY_BOARDS: HypPolyBoard[] = [
 		label: "{3,14}",
 		family: "ai2",
 		eagerKs: [1],
-		lazyKs: [],
+		lazyKs: [2],
 		dropped: [],
-		missing: [2],
-		counts: { 1: 235 },
+		missing: [],
+		counts: { 1: 235, 2: 685845 },
+		parts: { 2: 7 },
 	},
 	{ id: "t15", n: 15, label: "{3,15}", family: "ai2", eagerKs: [1], lazyKs: [], dropped: [], counts: { 1: 566 } },
 	{ id: "3369", n: 0, label: "3,3,6,9", family: "abcd", eagerKs: [], lazyKs: [2], dropped: [], counts: { 2: 1 } },
@@ -1723,6 +1725,29 @@ export const HYP_POLY_BOARDS: HypPolyBoard[] = [
 		dropped: [],
 		counts: { 1: 4, 2: 25, 3: 354, 4: 4387, 5: 105458 },
 	},
+	// ai2+3 and ai3_1 close at the {3,10} edge: 3^10, 3^5.5^3, 5^6 and, in ai2+3, squares and apeirogons.
+	{
+		id: "yai23",
+		n: 0,
+		label: "ai2+3, edge 2.1226 (3, 4, 5, 10, ∞)",
+		family: "hybrid",
+		eagerKs: [],
+		lazyKs: [1, 2, 3],
+		dropped: [],
+		counts: { 1: 47, 2: 4226, 3: 350739 },
+		parts: { 3: 4 },
+	},
+	{
+		id: "yai31",
+		n: 0,
+		label: "ai3_1, edge 2.1226 (3, 5)",
+		family: "hybrid",
+		eagerKs: [],
+		lazyKs: [1, 2, 3, 4],
+		dropped: [],
+		counts: { 1: 2, 2: 248, 3: 3210, 4: 167900 },
+		parts: { 4: 2 },
+	},
 	{
 		id: "y21408",
 		n: 0,
@@ -1798,6 +1823,17 @@ export const HYP_POLY_BOARDS: HypPolyBoard[] = [
 		dropped: [],
 		counts: { 1: 10242, 2: 27967 },
 	},
+	{
+		id: "yai32",
+		n: 0,
+		label: "ai3_2, edge 4.3091 (3, 6, 10)",
+		family: "hybrid",
+		eagerKs: [],
+		lazyKs: [1, 2],
+		dropped: [],
+		counts: { 1: 1293425, 2: 931120 },
+		parts: { 1: 13, 2: 10 },
+	},
 ];
 
 export const HYP_POLY_BOARD_BY_ID = new Map(HYP_POLY_BOARDS.map((b) => [b.id, b]));
@@ -1831,7 +1867,7 @@ export function hypPolyLazyShardsForK(k: number): HypPolyBoard[] {
 }
 
 /** A board's shard URLs for one k. EVERY shard on this shelf is stored GZIPPED. `public/` is tracked in
- *  git, and the shelf now carries every k Marek enumerated — 292 boards, 4,767,889 tilings, 198 MB
+ *  git, and the shelf now carries every k Marek enumerated — 295 boards, 8,761,447 tilings, 292 MB
  *  compressed. Dart arrays are thousands of small repeated integers, so the ratio is 10-15x, and the WIRE is identical either way because the server gzips a plain .json on the fly
  *  anyway. atlasCodec's `shardBody` reads either form, sniffing the gzip magic. */
 export const hypPolyShardUrls = (n: string, k: number): string[] => {

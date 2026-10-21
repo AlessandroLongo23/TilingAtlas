@@ -1,0 +1,93 @@
+  [    14s] 10000/685845 developed, 0 failed, ETA 979s
+  [    21s] 20000/685845 developed, 0 failed, ETA 692s
+  [    28s] 30000/685845 developed, 0 failed, ETA 612s
+  [    36s] 40000/685845 developed, 0 failed, ETA 584s
+  [    44s] 50000/685845 developed, 0 failed, ETA 553s
+  [    53s] 60000/685845 developed, 0 failed, ETA 548s
+  [    60s] 70000/685845 developed, 0 failed, ETA 528s
+  [    86s] 80000/685845 developed, 0 failed, ETA 649s
+  [    92s] 90000/685845 developed, 0 failed, ETA 609s
+  [    99s] 100000/685845 developed, 0 failed, ETA 579s
+  [   120s] 110000/685845 developed, 0 failed, ETA 630s
+  [   128s] 120000/685845 developed, 0 failed, ETA 601s
+  [   134s] 130000/685845 developed, 0 failed, ETA 574s
+  [   146s] 140000/685845 developed, 0 failed, ETA 568s
+  [   152s] 150000/685845 developed, 0 failed, ETA 543s
+  [   158s] 160000/685845 developed, 0 failed, ETA 518s
+  [   162s] 170000/685845 developed, 0 failed, ETA 493s
+  [   167s] 180000/685845 developed, 0 failed, ETA 470s
+  [   172s] 190000/685845 developed, 0 failed, ETA 450s
+  [   177s] 200000/685845 developed, 0 failed, ETA 431s
+  [   194s] 210000/685845 developed, 0 failed, ETA 439s
+  [   199s] 220000/685845 developed, 0 failed, ETA 421s
+  [   204s] 230000/685845 developed, 0 failed, ETA 404s
+  [   209s] 240000/685845 developed, 0 failed, ETA 388s
+  [   214s] 250000/685845 developed, 0 failed, ETA 372s
+  [   220s] 260000/685845 developed, 0 failed, ETA 360s
+  [   237s] 270000/685845 developed, 0 failed, ETA 365s
+  [   242s] 280000/685845 developed, 0 failed, ETA 351s
+  [   247s] 290000/685845 developed, 0 failed, ETA 337s
+  [   252s] 300000/685845 developed, 0 failed, ETA 325s
+  [   275s] 310000/685845 developed, 0 failed, ETA 334s
+  [   282s] 320000/685845 developed, 0 failed, ETA 322s
+  [   287s] 330000/685845 developed, 0 failed, ETA 310s
+  [   293s] 340000/685845 developed, 0 failed, ETA 298s
+  [   299s] 350000/685845 developed, 0 failed, ETA 286s
+  [   304s] 360000/685845 developed, 0 failed, ETA 275s
+  [   310s] 370000/685845 developed, 0 failed, ETA 264s
+  [   319s] 380000/685845 developed, 0 failed, ETA 256s
+  [   324s] 390000/685845 developed, 0 failed, ETA 246s
+  [   331s] 400000/685845 developed, 0 failed, ETA 236s
+  [   351s] 410000/685845 developed, 0 failed, ETA 236s
+  [   357s] 420000/685845 developed, 0 failed, ETA 226s
+  [   363s] 430000/685845 developed, 0 failed, ETA 216s
+  [   370s] 440000/685845 developed, 0 failed, ETA 207s
+  [   382s] 450000/685845 developed, 0 failed, ETA 200s
+  [   388s] 460000/685845 developed, 0 failed, ETA 191s
+  [   393s] 470000/685845 developed, 0 failed, ETA 181s
+  [   399s] 480000/685845 developed, 0 failed, ETA 171s
+  [   404s] 490000/685845 developed, 0 failed, ETA 161s
+  [   409s] 500000/685845 developed, 0 failed, ETA 152s
+  [   428s] 510000/685845 developed, 0 failed, ETA 148s
+  [   434s] 520000/685845 developed, 0 failed, ETA 138s
+  [   443s] 530000/685845 developed, 0 failed, ETA 130s
+  [   449s] 540000/685845 developed, 0 failed, ETA 121s
+  [   455s] 550000/685845 developed, 0 failed, ETA 112s
+  [   463s] 560000/685845 developed, 0 failed, ETA 104s
+  [   477s] 570000/685845 developed, 0 failed, ETA 97s
+  [   486s] 580000/685845 developed, 0 failed, ETA 89s
+  [   492s] 590000/685845 developed, 0 failed, ETA 80s
+  [   498s] 600000/685845 developed, 0 failed, ETA 71s
+  [   517s] 610000/685845 developed, 0 failed, ETA 64s
+  [   521s] 620000/685845 developed, 0 failed, ETA 55s
+  [   525s] 630000/685845 developed, 0 failed, ETA 47s
+  [   531s] 640000/685845 developed, 0 failed, ETA 38s
+  [   535s] 650000/685845 developed, 0 failed, ETA 30s
+  [   541s] 660000/685845 developed, 0 failed, ETA 21s
+  [   547s] 670000/685845 developed, 0 failed, ETA 13s
+  [   553s] 680000/685845 developed, 0 failed, ETA 5s
+{3,14} develop (t14) — tilings by regular [3, 14] at one edge length
+source          : /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/ai/ai2/solver_ai2_14
+forced edge len : l = 2.898149445355
+angles          : 3-gon 25.7143deg, 14-gon 51.4286deg
+certificates in : 685845
+developed       : 685845
+failed          : 0
+multi-variant   : 9076
+wall            : 565.5s (0.8 ms/certificate)
+
+
+   k   tilings  face orbits: min    max
+   2    685845                 3     26
+
+   k    census    corpus   shipped  status
+   1       235       235         0  not developed
+   2    685845    685845    685845  ok
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpt14-k2-p0.json: 100000 records, 84.48 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpt14-k2-p1.json: 100000 records, 87.43 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpt14-k2-p2.json: 100000 records, 88.16 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpt14-k2-p3.json: 100000 records, 89.44 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpt14-k2-p4.json: 100000 records, 90.13 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpt14-k2-p5.json: 100000 records, 98.80 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpt14-k2-p6.json: 85845 records, 75.63 MB
+

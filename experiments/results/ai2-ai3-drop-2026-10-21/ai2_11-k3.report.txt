@@ -1,0 +1,24 @@
+{3,11} develop (t11) — tilings by regular [3, 11] at one edge length
+source          : /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/ai/ai2/solver_ai2_11
+forced edge len : l = 2.351708458990
+angles          : 3-gon 32.7273deg, 11-gon 65.4545deg
+certificates in : 556796
+developed       : 556796
+failed          : 0
+multi-variant   : 1039
+wall            : 1052.1s (1.9 ms/certificate)
+
+
+   k   tilings  face orbits: min    max
+   3    556796                 5     28
+
+   k    census    corpus   shipped  status
+   1        18        18         0  not developed
+   2       681       681         0  not developed
+   3    556796    556796    556796  ok
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpt11-k3-p0.json: 100000 records, 93.53 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpt11-k3-p1.json: 100000 records, 95.02 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpt11-k3-p2.json: 100000 records, 95.89 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpt11-k3-p3.json: 100000 records, 95.95 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpt11-k3-p4.json: 100000 records, 101.44 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpt11-k3-p5.json: 56796 records, 59.28 MB

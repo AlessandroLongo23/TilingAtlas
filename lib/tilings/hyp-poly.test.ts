@@ -16,8 +16,8 @@ import {
 	type HypPolyPattern,
 } from "./hyp-poly";
 
-// The hyperbolic tilings-by-regular-polygons shelf and its decode checks. develop_ai1.py and
-// develop_ai2.py already refuse anything that does not develop, so what matters here is that the
+// The hyperbolic tilings-by-regular-polygons shelf and its decode checks. develop_ai1.py already
+// refuses anything that does not develop, so what matters here is that the
 // SHIPPED data says true things: the alphabet is the one the board's edge length forces, the manifest
 // matches the files, and the two different kinds of missing k (the corpus has none / this shelf did not
 // ship it) stay distinguishable.
@@ -260,9 +260,10 @@ describe("the three ways a k can be absent", () => {
 		const known = HYP_POLY_BOARDS.filter((b) => b.missing !== undefined).map((b) => b.id);
 		expect(known).toEqual(["13", "17", "18", "19", "20", "23", "t7", "t8", "t9", "t10", "t11", "t12", "t14"]);
 		expect(HYP_POLY_BOARDS.find((b) => b.id === "17")!.missing).toEqual([26, 27, 28, 29, 30]);
-		// The two ai2 boards whose census counts a k the drop does not carry — 556,796 and 685,845 tilings.
-		expect(HYP_POLY_BOARDS.find((b) => b.id === "t11")!.missing).toEqual([3]);
-		expect(HYP_POLY_BOARDS.find((b) => b.id === "t14")!.missing).toEqual([2]);
+		// t11 k=3 and t14 k=2 were missing until Marek's 2026-10-21 drop carried them; the census still names
+		// them, so the field stays present and is now empty.
+		expect(HYP_POLY_BOARDS.find((b) => b.id === "t11")!.missing).toEqual([]);
+		expect(HYP_POLY_BOARDS.find((b) => b.id === "t14")!.missing).toEqual([]);
 	});
 
 	it("keeps the ai1 boards in ascending n, with the holes the drop still has", () => {

@@ -1,0 +1,45 @@
+  [    35s] 10000/171360 developed, 0 failed, ETA 557s
+  [    65s] 20000/171360 developed, 0 failed, ETA 495s
+  [    94s] 30000/171360 developed, 0 failed, ETA 445s
+  [   122s] 40000/171360 developed, 0 failed, ETA 399s
+  [   150s] 50000/171360 developed, 0 failed, ETA 364s
+  [   169s] 60000/171360 developed, 0 failed, ETA 313s
+  [   193s] 70000/171360 developed, 0 failed, ETA 279s
+  [   212s] 80000/171360 developed, 0 failed, ETA 242s
+  [   233s] 90000/171360 developed, 0 failed, ETA 210s
+  [   255s] 100000/171360 developed, 0 failed, ETA 182s
+  [   298s] 110000/171360 developed, 0 failed, ETA 166s
+  [   324s] 120000/171360 developed, 0 failed, ETA 138s
+  [   352s] 130000/171360 developed, 0 failed, ETA 112s
+  [   382s] 140000/171360 developed, 0 failed, ETA 86s
+  [   403s] 150000/171360 developed, 0 failed, ETA 57s
+  [   425s] 160000/171360 developed, 0 failed, ETA 30s
+  [   447s] 170000/171360 developed, 0 failed, ETA 4s
+3.3.3.3.3.3.3.3.3.3 develop (yai31) — tilings by regular [3, 5] at one edge length
+source          : /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/ai/ai3/solver_ai3_1
+forced edge len : l = 2.122550123810
+angles          : 3-gon 36.0000deg, 5-gon 60.0000deg
+certificates in : 171360
+developed       : 171360
+failed          : 0
+multi-variant   : 14704
+wall            : 469.1s (2.7 ms/certificate)
+
+
+   k   tilings  face orbits: min    max
+   1         2                 1      1
+   2       248                 4     16
+   3      3210                 4     20
+   4    167900                 5     32
+
+   k    census    corpus   shipped  status
+   1         2         2         2  ok
+   2       248       248       248  ok
+   3      3210      3210      3210  ok
+   4    167900    167900    167900  ok
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai31-k4-p0.json: 100000 records, 113.13 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai31-k1.json: 2 records, 0.00 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai31-k2.json: 248 records, 0.19 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai31-k3.json: 3210 records, 3.04 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai31-k4-p1.json: 67900 records, 82.83 MB
+

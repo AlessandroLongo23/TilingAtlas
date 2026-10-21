@@ -1,0 +1,80 @@
+  [    38s] 10000/556796 developed, 0 failed, ETA 2072s
+  [    59s] 20000/556796 developed, 0 failed, ETA 1571s
+  [    80s] 30000/556796 developed, 0 failed, ETA 1401s
+  [   100s] 40000/556796 developed, 0 failed, ETA 1290s
+  [   119s] 50000/556796 developed, 0 failed, ETA 1211s
+  [   140s] 60000/556796 developed, 0 failed, ETA 1159s
+  [   159s] 70000/556796 developed, 0 failed, ETA 1106s
+  [   176s] 80000/556796 developed, 0 failed, ETA 1052s
+  [   193s] 90000/556796 developed, 0 failed, ETA 1000s
+  [   209s] 100000/556796 developed, 0 failed, ETA 953s
+  [   239s] 110000/556796 developed, 0 failed, ETA 970s
+  [   285s] 120000/556796 developed, 0 failed, ETA 1036s
+  [   300s] 130000/556796 developed, 0 failed, ETA 986s
+  [   316s] 140000/556796 developed, 0 failed, ETA 942s
+  [   334s] 150000/556796 developed, 0 failed, ETA 905s
+  [   352s] 160000/556796 developed, 0 failed, ETA 873s
+  [   375s] 170000/556796 developed, 0 failed, ETA 854s
+  [   391s] 180000/556796 developed, 0 failed, ETA 819s
+  [   408s] 190000/556796 developed, 0 failed, ETA 787s
+  [   424s] 200000/556796 developed, 0 failed, ETA 756s
+  [   453s] 210000/556796 developed, 0 failed, ETA 748s
+  [   474s] 220000/556796 developed, 0 failed, ETA 725s
+  [   493s] 230000/556796 developed, 0 failed, ETA 700s
+  [   509s] 240000/556796 developed, 0 failed, ETA 672s
+  [   524s] 250000/556796 developed, 0 failed, ETA 643s
+  [   539s] 260000/556796 developed, 0 failed, ETA 615s
+  [   554s] 270000/556796 developed, 0 failed, ETA 588s
+  [   568s] 280000/556796 developed, 0 failed, ETA 561s
+  [   581s] 290000/556796 developed, 0 failed, ETA 535s
+  [   595s] 300000/556796 developed, 0 failed, ETA 509s
+  [   619s] 310000/556796 developed, 0 failed, ETA 493s
+  [   632s] 320000/556796 developed, 0 failed, ETA 468s
+  [   647s] 330000/556796 developed, 0 failed, ETA 444s
+  [   661s] 340000/556796 developed, 0 failed, ETA 422s
+  [   682s] 350000/556796 developed, 0 failed, ETA 403s
+  [   694s] 360000/556796 developed, 0 failed, ETA 379s
+  [   706s] 370000/556796 developed, 0 failed, ETA 357s
+  [   720s] 380000/556796 developed, 0 failed, ETA 335s
+  [   734s] 390000/556796 developed, 0 failed, ETA 314s
+  [   747s] 400000/556796 developed, 0 failed, ETA 293s
+  [   770s] 410000/556796 developed, 0 failed, ETA 276s
+  [   784s] 420000/556796 developed, 0 failed, ETA 255s
+  [   799s] 430000/556796 developed, 0 failed, ETA 236s
+  [   814s] 440000/556796 developed, 0 failed, ETA 216s
+  [   829s] 450000/556796 developed, 0 failed, ETA 197s
+  [   844s] 460000/556796 developed, 0 failed, ETA 178s
+  [   858s] 470000/556796 developed, 0 failed, ETA 158s
+  [   877s] 480000/556796 developed, 0 failed, ETA 140s
+  [   900s] 490000/556796 developed, 0 failed, ETA 123s
+  [   925s] 500000/556796 developed, 0 failed, ETA 105s
+  [   967s] 510000/556796 developed, 0 failed, ETA 89s
+  [   982s] 520000/556796 developed, 0 failed, ETA 70s
+  [   996s] 530000/556796 developed, 0 failed, ETA 50s
+  [  1010s] 540000/556796 developed, 0 failed, ETA 31s
+  [  1029s] 550000/556796 developed, 0 failed, ETA 13s
+{3,11} develop (t11) — tilings by regular [3, 11] at one edge length
+source          : /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/ai/ai2/solver_ai2_11
+forced edge len : l = 2.351708458990
+angles          : 3-gon 32.7273deg, 11-gon 65.4545deg
+certificates in : 556796
+developed       : 556796
+failed          : 0
+multi-variant   : 1039
+wall            : 1052.1s (1.9 ms/certificate)
+
+
+   k   tilings  face orbits: min    max
+   3    556796                 5     28
+
+   k    census    corpus   shipped  status
+   1        18        18         0  not developed
+   2       681       681         0  not developed
+   3    556796    556796    556796  ok
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpt11-k3-p0.json: 100000 records, 93.53 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpt11-k3-p1.json: 100000 records, 95.02 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpt11-k3-p2.json: 100000 records, 95.89 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpt11-k3-p3.json: 100000 records, 95.95 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpt11-k3-p4.json: 100000 records, 101.44 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpt11-k3-p5.json: 56796 records, 59.28 MB
+

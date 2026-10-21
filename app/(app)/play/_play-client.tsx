@@ -912,7 +912,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		}
 		// `hpt7-…` and `hpq4568-…` as well as `hp7-…`: the shelf carries three families, and only the ai1
 		// half is unprefixed. The stem after "hp" is the board id for ai1 and ai2 ("7", "t7"); the abcd
-		// ids carry a "q" that the board id does not (`hypPolyShardUrl` adds it back on the file side).
+		// ids carry a "q" that the board id does not (`hypPolyShardUrls` adds it back on the file side).
 		// ⚑ This matched `hp(t?\d+)` until 2026-09-06, so every deep link into an a.b.c.d tiling, all
 		// 1,177,806 of them, silently landed on the default tiling: found by loading
 		// ?tiling=hpq4568-10-00001 and watching it open composable-k3-000.

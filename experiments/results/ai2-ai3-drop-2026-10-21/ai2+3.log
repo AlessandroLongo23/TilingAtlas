@@ -1,0 +1,62 @@
+  [    20s] 10000/355012 developed, 0 failed, ETA 695s
+  [    44s] 20000/355012 developed, 0 failed, ETA 742s
+  [    60s] 30000/355012 developed, 0 failed, ETA 650s
+  [    81s] 40000/355012 developed, 0 failed, ETA 639s
+  [    97s] 50000/355012 developed, 0 failed, ETA 591s
+  [   112s] 60000/355012 developed, 0 failed, ETA 550s
+  [   128s] 70000/355012 developed, 0 failed, ETA 523s
+  [   149s] 80000/355012 developed, 0 failed, ETA 511s
+  [   160s] 90000/355012 developed, 0 failed, ETA 472s
+  [   174s] 100000/355012 developed, 0 failed, ETA 445s
+  [   201s] 110000/355012 developed, 0 failed, ETA 448s
+  [   216s] 120000/355012 developed, 0 failed, ETA 423s
+  [   233s] 130000/355012 developed, 0 failed, ETA 404s
+  [   257s] 140000/355012 developed, 0 failed, ETA 395s
+  [   273s] 150000/355012 developed, 0 failed, ETA 374s
+  [   288s] 160000/355012 developed, 0 failed, ETA 351s
+  [   307s] 170000/355012 developed, 0 failed, ETA 334s
+  [   322s] 180000/355012 developed, 0 failed, ETA 313s
+  [   338s] 190000/355012 developed, 0 failed, ETA 294s
+  [   352s] 200000/355012 developed, 0 failed, ETA 273s
+  [   381s] 210000/355012 developed, 0 failed, ETA 263s
+  [   395s] 220000/355012 developed, 0 failed, ETA 242s
+  [   412s] 230000/355012 developed, 0 failed, ETA 224s
+  [   427s] 240000/355012 developed, 0 failed, ETA 205s
+  [   439s] 250000/355012 developed, 0 failed, ETA 184s
+  [   453s] 260000/355012 developed, 0 failed, ETA 166s
+  [   469s] 270000/355012 developed, 0 failed, ETA 148s
+  [   482s] 280000/355012 developed, 0 failed, ETA 129s
+  [   493s] 290000/355012 developed, 0 failed, ETA 111s
+  [   504s] 300000/355012 developed, 0 failed, ETA 92s
+  [   525s] 310000/355012 developed, 0 failed, ETA 76s
+  [   535s] 320000/355012 developed, 0 failed, ETA 59s
+  [   545s] 330000/355012 developed, 0 failed, ETA 41s
+  [   555s] 340000/355012 developed, 0 failed, ETA 25s
+  [   564s] 350000/355012 developed, 0 failed, ETA 8s
+3.3.3.3.3.3.3.3.3.3 develop (yai23) — tilings by regular [3, 4, 5, 10, 0] at one edge length
+source          : /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/ai/ai2/solver_ai2+3
+forced edge len : l = 2.122550123810
+angles          : 3-gon 36.0000deg, 4-gon 51.8273deg, 5-gon 60.0000deg, 10-gon 72.0000deg, ∞-gon 76.3454deg
+certificates in : 355012
+developed       : 355012
+failed          : 0
+multi-variant   : 29954
+wall            : 573.6s (1.6 ms/certificate)
+
+
+   k   tilings  face orbits: min    max
+   1        47                 1     10
+   2      4226                 3     18
+   3    350739                 2     26
+
+   k    census    corpus   shipped  status
+   1        47        47        47  ok
+   2      4226      4226      4226  ok
+   3    350739    350739    350739  ok
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai23-k3-p0.json: 100000 records, 92.70 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai23-k3-p1.json: 100000 records, 95.72 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai23-k3-p2.json: 100000 records, 88.17 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai23-k1.json: 47 records, 0.03 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai23-k2.json: 4226 records, 3.13 MB
+wrote /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/b9f2b973-6e44-4d4d-b994-294e053079e7/scratchpad/dev2/hpyai23-k3-p3.json: 50739 records, 43.82 MB
+
