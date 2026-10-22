@@ -242,15 +242,9 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 	// One picker per color of the SELECTED pattern (2 to 4 today), read off the record, not the
 	// palette — the store keeps a full-width palette so switching between a 2- and a 3-color tiling
 	// remembers every slot.
-	// A 3.4.n.4 tiling counts POLYGON SIZES here: it is not a coloring, but it fills each face by size
-	// through the same palette (paletteRgb255 in hyperbolic-colors-canvas), so a size is a slot and the
-	// pickers drive it exactly as they drive a coloring's colors.
 	const colorCount = selected?.colors
 		? colorCountOf(selected.colors)
-		: (selected?.hypColors?.colors ??
-			selected?.hypPoly?.stats.sizes.length ??
-			selected?.sphColors?.pattern.colors ??
-			2);
+		: (selected?.hypColors?.colors ?? selected?.sphColors?.pattern.colors ?? 2);
 	// Every palette read goes through paletteFor, so a store array left short by an older `copal=` URL
 	// still fills the pickers; writes go back through the same dense array, keeping slots the current
 	// pattern does not use.
@@ -536,7 +530,9 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 					    toggle in the spherical block) live with the other geometry controls, not here. */}
 					{isHyperbolicColors || isSphColors ? (
 						<div className="space-y-2">
-							{palettePickers}
+							{/* A hyp-poly board shares the disk renderer but is not a coloring: its faces take the
+							    per-side-count polygon colours (hypFacePaletteRgb255), so there is no palette to pick. */}
+							{selected?.hypPoly ? null : palettePickers}
 							{isHyperbolicColors ? (
 								<p className="text-[11px] leading-relaxed text-fg-muted max-md:text-xs">
 									<span className="max-md:hidden">
