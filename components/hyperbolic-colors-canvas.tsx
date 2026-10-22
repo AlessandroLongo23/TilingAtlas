@@ -16,6 +16,7 @@ import { captureOverride, offerFrame } from "@/lib/render/capture";
 import { hypFacePaletteRgb255 } from "@/lib/colors/render";
 import { fillAmountToSatPct } from "@/lib/render/tilePalette";
 import type { HypColorsThumbInput } from "@/components/hyperbolic-colors-thumbnail";
+import { HypOverlay, paintHypOverlay } from "@/lib/render/hyperbolicOverlay";
 
 // Interactive Poincaré-disk view of a hyperbolic COLORED tiling — the per-pixel WebGL renderer in colors
 // mode (lib/render/hyperbolicPerPixelGL.ts), the exact sibling of the hyperbolic edge-system canvas. Each
@@ -49,6 +50,8 @@ export function HyperbolicColorsCanvas({ pattern, tiles = false }: Props) {
 		[],
 	);
 	const walkRef = useRef<WalkTiling | null>(null);
+	const overlayRef = useRef<HTMLCanvasElement>(null);
+	const hypOverlayRef = useRef<HypOverlay | null>(null);
 	const feedRef = useRef(new IslamicFeed());
 	const metaRef = useRef<{ id: string; name: string; config: string; edge: number } | null>(null);
 
@@ -82,6 +85,7 @@ export function HyperbolicColorsCanvas({ pattern, tiles = false }: Props) {
 		const walk = gl ? buildWalk(pattern.darts, pattern.edge, { allDrawn: true }) : null;
 		walkRef.current = walk;
 		if (gl && walk) gl.setWalk(walk);
+		hypOverlayRef.current = new HypOverlay(pattern.darts, pattern.edge);
 		if (camRef.current?.id === pattern.id) return;
 		devRef.current = gl ? null : new HyperbolicDeveloper(pattern.darts, pattern.edge);
 		camRef.current = { id: pattern.id, cam: new HypCamera(walk, devRef.current, meta) };
@@ -159,16 +163,20 @@ export function HyperbolicColorsCanvas({ pattern, tiles = false }: Props) {
 			// Export: snapshot this layer while the frame is still in the drawing buffer. The context has no
 			// preserveDrawingBuffer, so a read from anywhere but here comes back blank (lib/render/capture.ts).
 			if (captureOverride()) offerFrame(canvas);
+			paintHypOverlay(overlayRef.current, hypOverlayRef.current, cam, walk, { R: Rcss, cx, cy }, cfg);
 		};
 		raf = requestAnimationFrame(render);
 		return () => cancelAnimationFrame(raf);
 	}, [palette, pattern.colors, pattern.sizes, tiles]);
 
 	return (
-		<canvas
-			ref={canvasRef}
-			className="absolute inset-0 h-full w-full"
-			style={{ pointerEvents: "none", width: "100%", height: "100%" }}
-		/>
+		<>
+			<canvas
+				ref={canvasRef}
+				className="absolute inset-0 h-full w-full"
+				style={{ pointerEvents: "none", width: "100%", height: "100%" }}
+			/>
+			<canvas ref={overlayRef} className="pointer-events-none absolute inset-0 h-full w-full" />
+		</>
 	);
 }

@@ -15,6 +15,7 @@ import { buildWalk, type WalkTiling } from "@/lib/render/hyperbolicWalk";
 import { HyperbolicPerPixelRenderer } from "@/lib/render/hyperbolicPerPixelGL";
 import { syncCanvasSize } from "@/lib/render/canvasSize";
 import { captureOverride, offerFrame } from "@/lib/render/capture";
+import { HypOverlay, paintHypOverlay } from "@/lib/render/hyperbolicOverlay";
 
 // Interactive view of an engine-developed hyperbolic tiling. Each PIXEL walks the quotient to its tile
 // (lib/render/hyperbolicWalk.ts) and is coloured there, so the WHOLE disk fills to the rim for every
@@ -74,6 +75,8 @@ export function HyperbolicDevelopedCanvas({ patchId, data, input, diskPadPx = DI
 	const devRef = useRef<HyperbolicDeveloper | null>(null); // the 2D fallback only
 	const camRef = useRef<{ id: string; cam: HypCamera } | null>(null);
 	const walkRef = useRef<WalkTiling | null>(null);
+	const overlayRef = useRef<HTMLCanvasElement>(null);
+	const hypOverlayRef = useRef<HypOverlay | null>(null);
 	const metaRef = useRef<{ id: string; name: string; config: string; edge: number } | null>(null);
 	const feedRef = useRef(new IslamicFeed());
 	// Local-input mode only: the last recentre / click sequence acted on (see HyperbolicViewInput).
@@ -133,6 +136,7 @@ export function HyperbolicDevelopedCanvas({ patchId, data, input, diskPadPx = DI
 			const gl = glRef.current;
 			walkRef.current = gl ? buildWalk(patch.darts, patch.edge, { allDrawn: true }) : null;
 			if (gl && walkRef.current) gl.setWalk(walkRef.current);
+			hypOverlayRef.current = new HypOverlay(patch.darts, patch.edge);
 			if (camRef.current?.id === patchId) return;
 			devRef.current = gl ? null : new HyperbolicDeveloper(patch.darts, patch.edge);
 			camRef.current = { id: patchId, cam: new HypCamera(walkRef.current, devRef.current, meta) };
@@ -226,6 +230,9 @@ export function HyperbolicDevelopedCanvas({ patchId, data, input, diskPadPx = DI
 			// Export: snapshot this layer while the frame is still in the drawing buffer. The context has no
 			// preserveDrawingBuffer, so a read from anywhere but here comes back blank (lib/render/capture.ts).
 			if (captureOverride()) offerFrame(canvas);
+			// /play's overlays; an embedded disk has no sidebar to switch them on.
+			const overlay = local ? null : hypOverlayRef.current;
+			paintHypOverlay(overlayRef.current, overlay, cam, walk, { R: Rcss, cx, cy }, cfg);
 		};
 		raf = requestAnimationFrame(render);
 		return () => {
@@ -234,10 +241,13 @@ export function HyperbolicDevelopedCanvas({ patchId, data, input, diskPadPx = DI
 	}, []);
 
 	return (
-		<canvas
-			ref={canvasRef}
-			className="absolute inset-0 h-full w-full"
-			style={{ pointerEvents: "none", width: "100%", height: "100%" }}
-		/>
+		<>
+			<canvas
+				ref={canvasRef}
+				className="absolute inset-0 h-full w-full"
+				style={{ pointerEvents: "none", width: "100%", height: "100%" }}
+			/>
+			<canvas ref={overlayRef} className="pointer-events-none absolute inset-0 h-full w-full" />
+		</>
 	);
 }

@@ -23,8 +23,13 @@ export interface Feature {
 	dart: number;
 }
 
-/** Stabilisers of the seed vertex and of every vertex, edge and finite face of the quotient. */
-export function dartSymmetry(darts: Darts, edge: number): { seed: Feature; features: Feature[]; classes: number } {
+/** Stabilisers of the seed vertex and of every vertex, edge and finite face of the quotient, and the flag
+ *  class of every state: `cls[h] === cls[g]` when a rotation carries dart h onto dart g, and
+ *  `cls[h] === cls[n + g]` when a reflection does (hyperbolicOverlay.ts reads them off developed darts). */
+export function dartSymmetry(
+	darts: Darts,
+	edge: number,
+): { seed: Feature; features: Feature[]; classes: number; cls: Int32Array } {
 	const { rneig, glue, lvert } = darts;
 	const n = rneig.length;
 	const rinv = new Int32Array(n);
@@ -121,7 +126,7 @@ export function dartSymmetry(darts: Darts, edge: number): { seed: Feature; featu
 			if (p > 2) features.push(feature("F", [...ring, ...ring.map((h) => n + rneig[h])], p / ring.length, p, h0));
 		}
 	}
-	return { seed: seedFeature!, features, classes: count };
+	return { seed: seedFeature!, features, classes: count, cls };
 }
 
 /** Where a tiling opens: the feature with the largest stabiliser. A tie goes to a face over a vertex over

@@ -62,6 +62,9 @@ export interface WalkTiling {
 	dev: { face: number; home: Su11 };
 	/** Vertices of each face in its own frame, in slot order (side j runs verts[j] → verts[j+1]). */
 	verts: Complex[][];
+	/** Each face's first ring dart and that dart's frame in the face's own frame: a developer seeded on
+	 *  the dart draws in face coordinates through it (hyperbolicOverlay.ts). */
+	corner: { dart: number; frame: Su11 }[];
 	/** The polygon sizes that have an Islamic layer (hyperbolicIslamic.ts), in layer order: the regular
 	 *  faces, 0 standing for the apeirogon. A scalene tile has none and draws plain. */
 	sizes: number[];
@@ -316,6 +319,7 @@ export function buildWalk(darts: Darts, edge: number, opts: { allDrawn?: boolean
 		home,
 		dev: { face: faceOf[seed], home: K[faceOf[seed]][posOf[seed]] },
 		verts,
+		corner: rings.map((ring, f) => ({ dart: ring[0], frame: K[f][0] })),
 		sizes,
 	};
 }

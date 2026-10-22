@@ -298,7 +298,11 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 		(isFlat || lensApplies);
 	// The toggles below the sliders fall into three labelled groups; a label shows only when its group has
 	// at least one control for this surface.
-	const pointsShown = !isSpherical && !isFreedraw && !isSphericalFreedraw && !isAnyColors;
+	// The developed and colored disks draw the flat canvas's overlays from their darts
+	// (lib/render/hyperbolicOverlay.ts); an edge pattern's disk does not.
+	const hypOverlays = isHyperbolic || isHyperbolicColors;
+	const pointsShown =
+		hypOverlays || (!isSpherical && !isFreedraw && !isSphericalFreedraw && !isAnyColors && !isHyperbolicEdges);
 	const overlaysShown = pointsShown || (isFlat && sourceControls);
 	const styleShown =
 		(isFlat && sourceControls) || !!selected?.sphBubble || islamicAvailable || surface === "flat" || starFillApplies;
@@ -654,7 +658,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 						/>
 					) : null}
 					{overlaysShown ? <p className="ta-label pt-3">Overlays</p> : null}
-					{/* Vertex dots, drawn by the flat p5/WebGL layer and by the disk shader. ⚑ `isSpherical` joined
+					{/* Vertex dots, drawn by the flat p5/WebGL layer and by the disk overlay. ⚑ `isSpherical` joined
 					    the exclusions on 2026-08-21: components/spherical-canvas.tsx never reads
 					    `showPolygonPoints`, so the checkbox had been offered over the tiling sphere doing
 					    nothing at all. */}
@@ -667,33 +671,32 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							onCheckedChange={(v) => setCfg({ showPolygonPoints: v })}
 						/>
 					) : null}
-					{/* Vertex-orbit dots are computed from the exact cell (KUniformityChecker.vertexOrbits),
-					    which has no hyperbolic counterpart yet — Euclidean-only, like the sibling flat-canvas
-					    overlays below. Disabled when the tiling carries no exactSource (the lazy-shard shelves:
+					{/* Vertex-orbit dots are computed from the exact cell (KUniformityChecker.vertexOrbits); on
+					    the disks they come from the darts' symmetry classes instead. Disabled on the flat canvas when the tiling carries no exactSource (the lazy-shard shelves:
 					    scaled/isotoxal/mixed/convex/polyomino) — without an exact cell there are no orbit ids
 					    to color by, and the canvas is inert then too (canvas.tsx orbitMode).
 					    STAR tilings gained an exactSource on 2026-08-07 (kind 'startiles' — the arguments to the
 					    exact ZZ[zeta_24] constructors, see lib/services/starExactCell.ts), so they enable here
 					    now. The out-of-ring 9-fold/5-fold records still do not: ExactStarPolygon requires the
 					    N=24 ring and those live in ZZ[zeta_18]/ZZ[zeta_20]. */}
-					{isFlat && sourceControls ? (
+					{(isFlat && sourceControls) || hypOverlays ? (
 						<Checkbox
 							id="showVertexOrbits"
 							label="Vertex orbits"
 							shortcut="O"
 							checked={cfg.showVertexOrbits}
-							disabled={!selected?.exactSource}
+							disabled={!hypOverlays && !selected?.exactSource}
 							onCheckedChange={(v) => setCfg({ showVertexOrbits: v })}
 						/>
 					) : null}
-					{/* Symmetry elements + fundamental domain are wallpaper-group overlays drawn by the flat p5
-					    path, which is skipped in hyperbolic (canvas.tsx) — hide them there.
+					{/* Symmetry elements + fundamental domain: wallpaper-group overlays on the flat p5 path, and
+					    their hyperbolic counterparts (mirrors, n-fold centres, a Dirichlet domain) on the disks.
 					    Hidden for CURVED tiles too, and for the same reason star tilings have no
 					    `wallpaperGroup`: WallpaperSymmetry needs exact convex-tile intersection, and a bitten
 					    bubble tile is non-convex (NOTES §9.4 — exact segment intersection is the unbuilt
 					    prerequisite). With no symmetry data the overlay drew a flat wash over the whole canvas
 					    instead of nothing, which read as a broken tiling. Showing neither beats showing that. */}
-					{isFlat && sourceControls && !curvedTiles ? (
+					{(isFlat && sourceControls && !curvedTiles) || hypOverlays ? (
 						<>
 							<Checkbox
 								id="showSymmetryElements"

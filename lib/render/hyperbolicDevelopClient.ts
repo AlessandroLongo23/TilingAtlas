@@ -536,6 +536,14 @@ export class HyperbolicDeveloper {
 		return this.live;
 	}
 
+	/** Develop the region visible under `view` and hand out the instances themselves, for overlays that
+	 *  need each dart's frame and neighbours. The arrays are the developer's own and valid until the next
+	 *  develop call; a slot with H < 0 is a pruned tombstone, and −1 in rn/gl is an undeveloped neighbour. */
+	instances(view: Su11, boundR: number, maxInsts: number) {
+		this.follow(view, boundR, maxInsts);
+		return { H: this.H, G: this.G, pos: this.pos, vid: this.vid, rn: this.rn, gl: this.gl };
+	}
+
 	/** Drop every instance whose screen position (under `view`) is beyond `keepR`, compacting the arrays
 	 *  and rebuilding the dedup maps. Run each frame with keepR just past the visible rim, this keeps the
 	 *  working set equal to the visible disk and makes it FOLLOW the view: as you pan, trailing tiles that

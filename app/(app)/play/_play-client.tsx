@@ -1447,11 +1447,14 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				const field = TOGGLES[e.key.toLowerCase()];
 				const c = useConfiguration.getState();
 				// Circle Packing only exists for regular-only tilings, and Islamic applies to every class
-				// (hyperbolic bakes the plain Hankin field into its per-pixel shader); symmetry elements /
-				// fundamental domain / transition / vertex orbits are flat-canvas only and hidden in hyperbolic;
-				// vertex orbits also need the tiling's exact cell (the sidebar disables the checkbox without
-				// one). Ignore each key where the sidebar hides/disables the control.
-				const isHyperbolic = !!selected?.developed;
+				// (hyperbolic bakes the plain Hankin field into its per-pixel shader); the transition is
+				// flat-canvas only. Points, orbits, symmetry elements and the fundamental domain are drawn on
+				// the flat canvas and, from the darts, over the developed and colored disks
+				// (lib/render/hyperbolicOverlay.ts), but not over an edge pattern's; on the flat canvas vertex
+				// orbits also need the tiling's exact cell (the sidebar disables the checkbox without one).
+				// Ignore each key where the sidebar hides/disables the control.
+				const disk = surfaceOf(selected);
+				const hypOverlays = disk === "disk" || disk === "diskColors";
 				// A freedraw pattern or coloring has no tiles, so every TILE-derived toggle is a dead control
 				// there (the Options tab hides them and shows that class's own trio instead). The lens is the
 				// exception: it draws those classes from their own periodic cell, so X stays live — matching
@@ -1461,12 +1464,13 @@ export function PlayClient({ tilings }: PlayClientProps) {
 						field !== "inversive") ||
 					(field === "circlePacking" && !c.isTilingRegularOnly) ||
 					(field === "isIslamic" && !!selected && !polygonClassSupportsIslamic(selected)) ||
-					(field === "showVertexOrbits" && !selected?.exactSource) ||
-					((field === "showSymmetryElements" ||
+					(field === "showVertexOrbits" && !selected?.exactSource && !hypOverlays) ||
+					(field === "tilingTransition" && isDiskSurface(disk)) ||
+					((field === "showPolygonPoints" ||
+						field === "showSymmetryElements" ||
 						field === "showFundamentalDomain" ||
-						field === "tilingTransition" ||
 						field === "showVertexOrbits") &&
-						isHyperbolic);
+						disk === "diskEdges");
 				if (field && !blocked) {
 					e.preventDefault();
 					c.set({ [field]: !c[field] } as Partial<ConfigurationState>);
