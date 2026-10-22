@@ -3171,3 +3171,7 @@ Uncommitted. NOTES 2026-10-21 "the first multi-length board".
 6,762 files to .json.gz; loaders via shardBody, Node via scripts/atlas/io.mjs, Python via develop_freedraw.
 docs-check blocks staged plain JSON under public/. Same counts and same test skips as before.
 NOTES 2026-10-22 "shipped data under public/ is stored gzipped".
+
+## 2026-10-22 — 1.0612 multi-length board re-keyed to visible vertices — CC
+k now counts only vertices where >=3 tiles meet (AL's rule); (Pi, Pi) midpoints drop out, Marek's count kept
+as searchK. Slices marked partial: his search budget included midpoints. NOTES 2026-10-22 "visible vertices".

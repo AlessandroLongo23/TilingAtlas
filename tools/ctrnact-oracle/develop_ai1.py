@@ -358,12 +358,17 @@ def develop_cert(cert, board, boundR=0.86):
         census = Counter(f["size"] for f in faces)
         # A certificate lists one corner per site orbit, so a vertex whose stabilizer rotates it carries
         # one PERIOD of its figure: 3.7.3.7 arrives as 3.7, {5,4} as 5. Repeat it until it closes.
+        # A vertex counts toward k only where at least three tiles meet (the atlas's rule, the same as on
+        # the star and scaled shelves). An all-flat (Pi, Pi) site is the aligned midpoint of a long edge:
+        # Marek's search counts it, the atlas does not, so it leaves both k and the label.
+        counting = [t for t in cert["types"] if any(c != FLAT for c in t["figure"])]
         figures = []
-        for t in cert["types"]:
+        for t in counting:
             reps = round(TWO_PI / sum(units[c] for c in t["figure"]))
             figures.append(".".join(token_label(c, board.mult) for c in t["figure"] * reps))
         return {
-            "k": cert.get("k"),
+            "k": len(counting),
+            **({"searchK": cert.get("k")} if len(counting) != cert.get("k") else {}),
             "base": board.id,
             "config": " + ".join(figures),
             "family": board.label,
@@ -488,13 +493,14 @@ def run(source, board, out_prefix, ks=None, report_path=None, budget=None, bound
             if ncombo > 1:
                 multi += 1
             rec["chiral"] = chiral
-            n_out[k] += 1
-            rec["id"] = rec["name"] = f"{board.prefix}{board.id}-{k}-{n_out[k]:05d}"
+            vk = rec["k"]  # the atlas's k, which drops (Pi, Pi) midpoints from the file's k
+            n_out[vk] += 1
+            rec["id"] = rec["name"] = f"{board.prefix}{board.id}-{vk}-{n_out[vk]:05d}"
             fo = rec["stats"]["faceOrbits"]
-            fo_range[k] = (min(fo, fo_range[k][0]), max(fo, fo_range[k][1])) if k in fo_range else (fo, fo)
-            by_k[k].append(rec)
-            if k in split and len(by_k[k]) == part_size:
-                flush(k)
+            fo_range[vk] = (min(fo, fo_range[vk][0]), max(fo, fo_range[vk][1])) if vk in fo_range else (fo, fo)
+            by_k[vk].append(rec)
+            if vk in split and len(by_k[vk]) == part_size:
+                flush(vk)
     for k in list(by_k):
         flush(k)
     elapsed = time.time() - t0

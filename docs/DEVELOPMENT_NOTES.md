@@ -19110,3 +19110,20 @@ blind on the plain path and skipped silently, 110 skips at first). A Playwright 
 
 **Known, not fixed here.** Several Python readers of `reference-atlas*` cannot decode the packed
 `{"atlas":1}` container (true before gzip too); `extract-uniform-cells.mjs` has a broken import.
+
+## 2026-10-22: the 1.0612 multi-length board counts only visible vertices
+
+AL: a vertex counts where at least three tiles meet, the convention of his own star/scaled searches
+(NOTES "the vertex model has only TWO counting types": 180°+180° is an aligned mid-edge, noncounting).
+The board had shipped with Marek's count, which includes the `(Pi, Pi)` midpoints of long edges. That came
+from my reading of "use his convention" on 10-21; AL meant the atlas's rule.
+
+`develop_ai1.py` now sets k = the vertex types that are not all-flat, drops `(Pi, Pi)` from the config
+string, and keeps Marek's count as `searchK` where it differs (8,547 of 29,623). Per k: 66 / 327 / 520 /
+1,435 / 3,567 / 8,869 / 14,839 (was 7 / 27 / 96 / 376 / 1,283 / 6,484 / 21,350). IDs renumbered.
+
+⚑ Every slice is partial. Marek's search DID count the midpoints (all 29,623 certificates: "Number of
+vertices" = file k = listed types, `(Pi, Pi)` included) and stopped at 7, so a visible-k = K tiling is in
+the corpus only with at most 7 − K midpoint orbits. The board label says "k slices partial". A complete
+visible-k board needs a run whose k budget counts only ≥3-tile vertices (our own engine's analogue is the
+noncounting budget `EU_NCBUDGET`). To ask Marek.

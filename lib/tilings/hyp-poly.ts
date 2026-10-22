@@ -1681,17 +1681,20 @@ export const HYP_POLY_BOARDS: HypPolyBoard[] = [
 		counts: { 1: 5, 2: 7, 3: 29, 4: 118, 5: 264, 6: 1364, 7: 3969, 8: 9740, 9: 40945, 10: 132193 },
 	},
 	// Marek's 2023 `1247_1_0612`: the 1.0612 system with tiles at FOUR edge lengths, 1, 2, 4 and 7 × ℓ
-	// (S-tiles 1, M-tiles 2, the L apeirogon 4, the L triangle 7, solved off the figures). k counts the
-	// 2-valent points on long edges, Marek's convention (AL, 2026-10-21). No census shipped with it.
+	// (S-tiles 1, M-tiles 2, the L apeirogon 4, the L triangle 7, solved off the figures). k counts only
+	// vertices where at least three tiles meet, the atlas's rule: an aligned long-edge midpoint (Pi, Pi) is
+	// not a vertex. ⚑ Marek's search DID count those midpoints and stopped at 7 of them plus real vertices,
+	// so a tiling with visible k = K is here only if it has at most 7 − K midpoint orbits: every slice may
+	// be missing tilings with many long edges. Records keep his count as `searchK`. No census shipped.
 	{
 		id: "y124710612",
 		n: 0,
-		label: "1247, edge 1.0613 at ×1, 2, 4, 7 (3, 4, 5, 10, 20, ∞)",
+		label: "1247, edge 1.0613 at ×1, 2, 4, 7 (3, 4, 5, 10, 20, ∞), k slices partial",
 		family: "hybrid",
 		eagerKs: [],
 		lazyKs: [1, 2, 3, 4, 5, 6, 7],
 		dropped: [],
-		counts: { 1: 7, 2: 27, 3: 96, 4: 376, 5: 1283, 6: 6484, 7: 21350 },
+		counts: { 1: 66, 2: 327, 3: 520, 4: 1435, 5: 3567, 6: 8869, 7: 14839 },
 	},
 	{
 		id: "y11555",
