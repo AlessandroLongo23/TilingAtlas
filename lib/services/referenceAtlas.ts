@@ -169,6 +169,7 @@ import { sphericalSolidSub } from "@/lib/tilings/sph-inscribed";
 import {
 	hypPolyBoardLabel,
 	hypPolyFamilyLabel,
+	hypPolyTileSet,
 	hypPolyShardUrls,
 	hypPolySub,
 	HYP_POLY_BOARDS,
@@ -1579,6 +1580,9 @@ export interface ReferenceFilter {
 	// whose whole tile set is inside the selection — the one that answers "what can I build from just
 	// these tiles". Inert without polygonNames.
 	polygonMode?: PolygonMode;
+	// Species the tiling must NOT use, whatever polygonNames and its mode say. With polygonNames in
+	// "all" mode this is Marek's required / forbidden / either per polygon.
+	polygonExclude?: string[];
 	distinctPolygons?: number[]; // how many distinct tile species (regular + star), 1..6 in the corpus
 	distinctStars?: number[]; // how many distinct STAR species, 0 for a purely-regular tiling
 	// Angle-word period p of the tiles used (see polygonPeriodOf). A tiling matches if ANY of its tiles
@@ -1719,6 +1723,7 @@ export function matchesReferenceFilters(t: ReferenceTiling, f: ReferenceFilter):
 			}
 		}
 	}
+	if (f.polygonExclude?.some((key) => tilingHasSpecies(t, key))) return false;
 	if (f.distinctPolygons?.length && !f.distinctPolygons.includes(distinctPolygonCountOf(t))) return false;
 	if (f.distinctStars?.length && !f.distinctStars.includes(distinctStarCountOf(t))) return false;
 	if (f.anglePeriods?.length) {
@@ -2359,6 +2364,7 @@ function hypPolyToReference(p: HypPolyPattern): ReferenceTiling {
 		family: `${hypPolyBoardLabel(p.base)}${p.chiral ? " · chiral" : ""} · ${hypPolyFamilyLabel(p)}`,
 		renderCell: FREEDRAW_EMPTY_CELL,
 		hypPoly: p,
+		polygonSpecies: hypPolyTileSet(p),
 		// H² has no similarity, so the forced edge length is a coordinate, not a scale — the card shows it.
 		edge: p.edge,
 		geometry: "hyperbolic",

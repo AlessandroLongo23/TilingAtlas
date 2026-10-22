@@ -451,6 +451,8 @@ function parseViewState(sp: URLSearchParams): ViewState {
 	// Default "all" so links shared before the mode existed keep meaning what they meant.
 	const polyMode = sp.get("polymode");
 	if (polyMode === "any" || polyMode === "only" || polyMode === "all") f.polygonMode = polyMode;
+	const polyx = list("polyx");
+	if (polyx?.length) f.polygonExclude = polyx;
 	const dpoly = list("dpoly")
 		?.map(Number)
 		.filter((n) => Number.isFinite(n));
@@ -523,6 +525,7 @@ function serializeView(v: ViewState): string {
 	if (f.polygonNames?.length) p.set("polygon", f.polygonNames.join(","));
 	// Only worth a param alongside a selection, and only when it isn't the default.
 	if (f.polygonNames?.length && f.polygonMode && f.polygonMode !== "all") p.set("polymode", f.polygonMode);
+	if (f.polygonExclude?.length) p.set("polyx", f.polygonExclude.join(","));
 	if (f.distinctPolygons?.length) p.set("dpoly", f.distinctPolygons.join(","));
 	if (f.distinctStars?.length) p.set("dstar", f.distinctStars.join(","));
 	if (f.anglePeriods?.length) p.set("aper", f.anglePeriods.join(","));
@@ -1469,7 +1472,7 @@ export function ReferenceShelf() {
 	// so a cross-shelf pick like "3" survives while a stale one cannot filter to 0 from a hidden group.
 	// Mutates `next` in place; callers already hold a fresh copy.
 	const prunePolygonsToScope = (next: ReferenceFilter) => {
-		if (!next.polygonNames?.length || !tilings) return;
+		if (!(next.polygonNames?.length || next.polygonExclude?.length) || !tilings) return;
 		const scope = new Set<string>();
 		for (const t of tilings) {
 			if (next.geometry && geometryOf(t) !== next.geometry) continue;
@@ -1477,8 +1480,10 @@ export function ReferenceShelf() {
 			if (next.tileClass && tileClassOf(t) !== next.tileClass) continue;
 			for (const sp of polygonSpeciesOf(t)) scope.add(sp);
 		}
-		const kept = next.polygonNames.filter((tok) => scope.has(tok));
-		next.polygonNames = kept.length ? kept : undefined;
+		const kept = next.polygonNames?.filter((tok) => scope.has(tok));
+		next.polygonNames = kept?.length ? kept : undefined;
+		const keptx = next.polygonExclude?.filter((tok) => scope.has(tok));
+		next.polygonExclude = keptx?.length ? keptx : undefined;
 	};
 	const setTileClass = (v: "all" | TileClass) => {
 		const cls = v === "all" ? undefined : v;
@@ -1569,12 +1574,27 @@ export function ReferenceShelf() {
 		setFilters({ ...filters, [key]: next.length ? next : undefined } as ReferenceFilter);
 	};
 	const toggleFold = (n: number) => toggleIn("starFolds", filters.starFolds ?? [], n);
-	const togglePolygon = (tok: string) => toggleIn("polygonNames", filters.polygonNames ?? [], tok);
+	// A polygon card cycles either → required → forbidden → either.
+	const togglePolygon = (tok: string) => {
+		const names = filters.polygonNames ?? [];
+		const excl = filters.polygonExclude ?? [];
+		const nextNames = names.includes(tok)
+			? names.filter((x) => x !== tok)
+			: excl.includes(tok)
+				? names
+				: [...names, tok];
+		const nextExcl = names.includes(tok) ? [...excl, tok] : excl.filter((x) => x !== tok);
+		setFilters({
+			...filters,
+			polygonNames: nextNames.length ? nextNames : undefined,
+			polygonExclude: nextExcl.length ? nextExcl : undefined,
+		});
+	};
 	const toggleDistinctPolygons = (n: number) => toggleIn("distinctPolygons", filters.distinctPolygons ?? [], n);
 	const toggleDistinctStars = (n: number) => toggleIn("distinctStars", filters.distinctStars ?? [], n);
 	const toggleAnglePeriods = (n: number) => toggleIn("anglePeriods", filters.anglePeriods ?? [], n);
 	const setPolygonMode = (m: PolygonMode) => setFilters({ ...filters, polygonMode: m });
-	const clearPolygons = () => setFilters({ ...filters, polygonNames: undefined });
+	const clearPolygons = () => setFilters({ ...filters, polygonNames: undefined, polygonExclude: undefined });
 	const toggleGroup = (g: WallpaperGroup) => toggleIn("wallpaperGroups", filters.wallpaperGroups ?? [], g);
 	const toggleLevel = (l: TilingLevel) => toggleIn("levels", filters.levels ?? [], l);
 	// Lattice is single-select — it drives which wallpaper groups are realizable, so at most one at a
@@ -1644,6 +1664,7 @@ export function ReferenceShelf() {
 		if (v !== "tilings") {
 			// Only tilings carry a tile inventory; an edge system's faces are merged polyforms.
 			next.polygonNames = undefined;
+			next.polygonExclude = undefined;
 			next.distinctPolygons = undefined;
 			next.distinctStars = undefined;
 			next.anglePeriods = undefined;
@@ -1824,6 +1845,7 @@ export function ReferenceShelf() {
 			matchesReferenceFilters(t, {
 				...filters,
 				polygonNames: undefined,
+				polygonExclude: undefined,
 				distinctPolygons: undefined,
 				distinctStars: undefined,
 				anglePeriods: undefined,
@@ -1863,14 +1885,15 @@ export function ReferenceShelf() {
 
 	// Live consequence of the picks, shown in the modal footer while it is open.
 	const polygonMatchCount = useMemo(() => {
-		if (!filters.polygonNames?.length) return polygonScope.length;
+		if (!filters.polygonNames?.length && !filters.polygonExclude?.length) return polygonScope.length;
 		return polygonScope.filter((t) =>
 			matchesReferenceFilters(t, {
 				polygonNames: filters.polygonNames,
 				polygonMode: filters.polygonMode,
+				polygonExclude: filters.polygonExclude,
 			}),
 		).length;
-	}, [polygonScope, filters.polygonNames, filters.polygonMode]);
+	}, [polygonScope, filters.polygonNames, filters.polygonMode, filters.polygonExclude]);
 
 	const availableGroups = useMemo(() => {
 		if (!tilings) return [];
@@ -1940,7 +1963,9 @@ export function ReferenceShelf() {
 	// shape), but unlike the Star block they apply to the regular shelf too — "which tilings use a
 	// dodecagon" is the same question there. Needs at least two tokens to be worth showing: one
 	// species means every tiling in scope has it.
-	const showPolygons = isEuclidean && inTilings && availablePolygons.length > 1;
+	// The hyperbolic regular-polygon boards ship a per-tiling inventory too (∞ included), which is how a
+	// 100k-tiling hybrid board gets cut down to the tilings by, say, triangles and apeirogons alone.
+	const showPolygons = (isEuclidean || geometry === "hyperbolic") && inTilings && availablePolygons.length > 1;
 	const showGroup = classified && tileClass !== "star" && availableGroups.length > 0;
 	// Marek's five levels are the CURVED counterpart of the M/partition block above, and the two never
 	// show together: the ladder needs per-orbit vertex configurations (only the hyperbolic and spherical
@@ -2023,7 +2048,7 @@ export function ReferenceShelf() {
 		(filters.latticeShapes?.length ? 1 : 0) +
 		(filters.discoverers?.length ? 1 : 0) +
 		(filters.certifications?.length ? 1 : 0) +
-		(filters.polygonNames?.length ? 1 : 0) +
+		(filters.polygonNames?.length || filters.polygonExclude?.length ? 1 : 0) +
 		(filters.distinctPolygons?.length ? 1 : 0) +
 		(filters.distinctStars?.length ? 1 : 0) +
 		(filters.anglePeriods?.length ? 1 : 0) +
@@ -2561,9 +2586,14 @@ export function ReferenceShelf() {
 						<FilterGroup
 							title="Polygons"
 							summary={
-								filters.polygonNames?.length
-									? `${POLY_MODE_SUMMARY[filters.polygonMode ?? "all"]} ${filters.polygonNames.length}`
-									: null
+								[
+									filters.polygonNames?.length
+										? `${POLY_MODE_SUMMARY[filters.polygonMode ?? "all"]} ${filters.polygonNames.length}`
+										: null,
+									filters.polygonExclude?.length ? `none of ${filters.polygonExclude.length}` : null,
+								]
+									.filter(Boolean)
+									.join(" · ") || null
 							}
 							note="tile inventory"
 						>
@@ -2572,13 +2602,20 @@ export function ReferenceShelf() {
 								onClick={() => setPolygonModalOpen(true)}
 								className="ta-tab ta-wall-cell flex min-h-10 w-full items-center gap-2 px-3 py-2 text-left text-xs text-fg-secondary hover:text-fg"
 							>
-								{filters.polygonNames?.length ? (
-									<span className="truncate">{filters.polygonNames.map(speciesLabel).join(", ")}</span>
+								{filters.polygonNames?.length || filters.polygonExclude?.length ? (
+									<span className="truncate">
+										{[
+											filters.polygonNames?.map(speciesLabel).join(", "),
+											filters.polygonExclude?.length ? `no ${filters.polygonExclude.map(speciesLabel).join(", ")}` : "",
+										]
+											.filter(Boolean)
+											.join(" · ")}
+									</span>
 								) : (
 									<span className="text-fg-muted">Pick polygons…</span>
 								)}
 							</button>
-							{filters.polygonNames?.length ? (
+							{filters.polygonNames?.length || filters.polygonExclude?.length ? (
 								<button
 									type="button"
 									onClick={clearPolygons}
@@ -2843,6 +2880,7 @@ export function ReferenceShelf() {
 				available={availablePolygons}
 				counts={polygonTokenCounts}
 				selected={filters.polygonNames ?? []}
+				excluded={filters.polygonExclude ?? []}
 				onToggle={togglePolygon}
 				onClear={clearPolygons}
 				mode={filters.polygonMode ?? "all"}

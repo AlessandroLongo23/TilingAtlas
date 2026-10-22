@@ -12,6 +12,13 @@ import type { RawPolygon } from "@/lib/utils/renderTiling";
 export function speciesPolygons(key: string): RawPolygon[] | null {
 	const p = parseSpecies(key);
 	if (!p) return null;
+	// An apeirogon has no closed outline; draw a stretch of its boundary as a shallow cap, the tile
+	// seen from inside its horocycle.
+	if (p.n === Infinity) {
+		const ring = regularVertices(36);
+		const arc = [...ring.slice(31), ...ring.slice(0, 6)];
+		return [{ n: arc.length, vertices: arc }];
+	}
 	if (!p.star) return [{ n: p.n, vertices: regularVertices(p.n) }];
 	const poly = StarParametricPolygon.fromCentroidAndAngle(p.n, ((p.alpha ?? 360 / p.n) * Math.PI) / 180);
 	return [{ n: 2 * p.n, vertices: poly.vertices.map((v) => ({ x: v.x, y: v.y })), star: true }];

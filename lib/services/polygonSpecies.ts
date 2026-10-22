@@ -169,6 +169,8 @@ export function speciesFromPolys(polys: CellPoly[]): string[] {
 
 /** Split a species key into its parts. `alpha` is null for a regular polygon. */
 export function parseSpecies(key: string): { n: number; star: boolean; alpha: number | null } | null {
+	// "∞" is the hybrid boards' apeirogon: n = Infinity sorts it after every finite polygon.
+	if (key.trim() === "∞") return { n: Infinity, star: false, alpha: null };
 	const m = /^(\d+)(?:\*(\d+))?$/.exec(key.trim());
 	if (!m) return null;
 	const n = parseInt(m[1], 10);
@@ -182,13 +184,14 @@ export function speciesCompare(a: string, b: string): number {
 		pb = parseSpecies(b);
 	if (!pa || !pb) return a.localeCompare(b);
 	if (pa.star !== pb.star) return pa.star ? 1 : -1;
-	return pa.n - pb.n || (pa.alpha ?? 0) - (pb.alpha ?? 0);
+	return a === b ? 0 : pa.n - pb.n || (pa.alpha ?? 0) - (pb.alpha ?? 0);
 }
 
 /** "12-gon" / "6★ 60°" — matches the /play/about/prototiles card captions. */
 export function speciesLabel(key: string): string {
 	const p = parseSpecies(key);
 	if (!p) return key;
+	if (p.n === Infinity) return "apeirogon";
 	return p.star ? `${p.n}★ ${p.alpha}°` : `${p.n}-gon`;
 }
 

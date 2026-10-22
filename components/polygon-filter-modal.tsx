@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Check } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { OptionWall } from "@/components/ui/option-wall";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
@@ -24,6 +24,8 @@ export interface PolygonFilterModalProps {
 	/** Tilings carrying each species, within the current filters MINUS the polygon facet. */
 	counts: Map<string, number>;
 	selected: string[];
+	/** Species the tiling must not use. A card click cycles either → selected → excluded → either. */
+	excluded: string[];
 	onToggle: (key: string) => void;
 	onClear: () => void;
 	mode: Mode;
@@ -40,11 +42,13 @@ function SpeciesCard({
 	species,
 	count,
 	selected,
+	excluded,
 	onToggle,
 }: {
 	species: string;
 	count: number;
 	selected: boolean;
+	excluded: boolean;
 	onToggle: () => void;
 }) {
 	const polygons = useMemo(() => speciesPolygons(species), [species]);
@@ -52,16 +56,18 @@ function SpeciesCard({
 	return (
 		<button
 			type="button"
-			aria-pressed={selected}
+			aria-pressed={selected ? true : excluded ? "mixed" : false}
 			onClick={onToggle}
-			title={`${speciesLabel(species)} — ${count.toLocaleString()} tiling${count === 1 ? "" : "s"}`}
+			title={`${speciesLabel(species)} — ${count.toLocaleString()} tiling${count === 1 ? "" : "s"}${excluded ? " (excluded)" : ""}`}
 			className={cn(
 				"group relative flex flex-col overflow-hidden rounded-lg border text-left transition-colors",
 				"focus:outline-none focus-visible:ring-1 focus-visible:ring-fg",
 				selected
 					? "border-fg bg-surface-overlay/60"
-					: "border-line bg-surface-overlay/30 hover:border-line-strong hover:bg-surface-overlay/50",
-				count === 0 && !selected ? "opacity-40" : null,
+					: excluded
+						? "border-line-strong bg-surface-overlay/30 opacity-50"
+						: "border-line bg-surface-overlay/30 hover:border-line-strong hover:bg-surface-overlay/50",
+				count === 0 && !selected && !excluded ? "opacity-40" : null,
 			)}
 		>
 			<div className="relative aspect-square bg-surface-raised">
@@ -69,6 +75,10 @@ function SpeciesCard({
 				{selected ? (
 					<span className="text-bg absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-fg">
 						<Check size={11} strokeWidth={3.5} />
+					</span>
+				) : excluded ? (
+					<span className="text-bg absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-fg-muted">
+						<X size={11} strokeWidth={3.5} />
 					</span>
 				) : null}
 			</div>
@@ -93,6 +103,7 @@ export function PolygonFilterModal({
 	available,
 	counts,
 	selected,
+	excluded,
 	onToggle,
 	onClear,
 	mode,
@@ -136,7 +147,10 @@ export function PolygonFilterModal({
 						selected={mode}
 						onChange={onModeChange}
 					/>
-					<p className="text-[11px] leading-snug text-fg-muted">{MODE_OPTIONS.find((o) => o.value === mode)?.note}</p>
+					<p className="text-[11px] leading-snug text-fg-muted">
+						{MODE_OPTIONS.find((o) => o.value === mode)?.note}. Click a tile again to exclude it, a third time to clear
+						it.
+					</p>
 				</div>
 
 				{regular.length ? (
@@ -149,6 +163,7 @@ export function PolygonFilterModal({
 									species={key}
 									count={counts.get(key) ?? 0}
 									selected={selected.includes(key)}
+									excluded={excluded.includes(key)}
 									onToggle={() => onToggle(key)}
 								/>
 							))}
@@ -174,6 +189,7 @@ export function PolygonFilterModal({
 											species={key}
 											count={counts.get(key) ?? 0}
 											selected={selected.includes(key)}
+											excluded={excluded.includes(key)}
 											onToggle={() => onToggle(key)}
 										/>
 									))}
@@ -186,12 +202,13 @@ export function PolygonFilterModal({
 
 			<div className="flex items-center justify-between gap-3 border-t border-line px-4 py-3 max-md:sticky max-md:bottom-0 max-md:bg-surface-raised">
 				<span className="text-xs text-fg-muted">
-					{selected.length === 0 ? (
+					{selected.length + excluded.length === 0 ? (
 						"No polygons selected — the facet is off"
 					) : (
 						<>
 							<span className="font-medium text-fg-secondary tabular-nums">{matchCount.toLocaleString()}</span> tiling
 							{matchCount === 1 ? "" : "s"} match {selected.length} selected
+							{excluded.length ? `, ${excluded.length} excluded` : ""}
 						</>
 					)}
 				</span>
@@ -199,7 +216,7 @@ export function PolygonFilterModal({
 					<button
 						type="button"
 						onClick={onClear}
-						disabled={selected.length === 0}
+						disabled={selected.length + excluded.length === 0}
 						className="px-2.5 py-1.5 text-xs text-fg-muted hover:text-fg disabled:cursor-not-allowed disabled:opacity-40 max-md:min-h-11 max-md:text-sm"
 					>
 						Clear

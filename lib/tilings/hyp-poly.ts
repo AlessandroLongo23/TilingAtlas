@@ -2000,6 +2000,12 @@ const canonicalFigure = (fig: string): string => {
 		.join(".");
 };
 
+/** The polygon sizes THIS tiling uses, ascending with the apeirogon ("∞") last: the board's alphabet
+ *  filtered by `sizeCensus`, since a (3, 4, ∞) board also holds tilings by triangles and squares alone.
+ *  Library's polygon facet, /play's polygon-set rows and the manifest's per-tier counts all read this. */
+export const hypPolyTileSet = (p: Pick<HypPolyPattern, "stats">): string[] =>
+	p.stats.sizes.filter((_, i) => p.stats.sizeCensus[i] > 0).map((n) => (n === 0 ? "∞" : String(n)));
+
 /** Card / search label: the distinct vertex figures of the tiling, e.g. "3.4.8.4" or "3.4.7.4 + 4.7.14".
  *  The polygon sizes alone cannot tell 3.4.8.4 from 3.8.4.8, and the board label is only the multiset,
  *  so the cyclic order has to come from here. Past three figures the rest are counted, not listed. */
