@@ -118,7 +118,8 @@ export function drawFundamentalDomain(pen: Pen, data: SymmetryData, view: Overla
 // --- symmetry elements: rotation centres + mirror/glide axes, replicated across the whole viewport ---
 
 // Wikipedia rotation-centre glyphs: 6-fold blue hexagon, 4-fold amber square, 3-fold red triangle,
-// 2-fold magenta diamond. [hue, sat, bri] in the canvas HSB(360,100,100) space.
+// 2-fold magenta diamond. [hue, sat, bri] in the canvas HSB(360,100,100) space. The hyperbolic plane
+// has every other order too (hyperbolicOverlay.ts): those take an n-gon and a golden-angle hue.
 const CENTER_STYLE: Record<number, { h: number; s: number; b: number }> = {
 	2: { h: 315, s: 80, b: 95 }, // magenta
 	3: { h: 2, s: 85, b: 88 }, // red
@@ -138,11 +139,18 @@ function ngon(pen: Pen, n: number, r: number, start: number) {
 // One rotation-centre glyph at world point `z`, drawn at a fixed PIXEL size (unscaled by zoom, y-flip
 // undone) so it stays legible and upright at any zoom. Shape + colour follow the Wikipedia legend.
 function drawCenterGlyph(pen: Pen, z: Vec2, order: number, zoom: number) {
-	const r = 6; // px
-	const st = CENTER_STYLE[order] ?? CENTER_STYLE[2];
 	pen.push();
 	pen.translate(z.x, z.y);
 	pen.scale(1 / zoom, -1 / zoom); // pixel units, undo the world y-flip so glyphs are upright
+	centerGlyph(pen, order);
+	pen.pop();
+}
+
+/** The glyph of an `order`-fold centre at the pen's origin, in pixel units with y up. */
+export function centerGlyph(pen: Pen, order: number) {
+	const r = 6; // px
+	const st = CENTER_STYLE[order] ?? { h: (order * 137.5) % 360, s: 75, b: 90 };
+	pen.push();
 	pen.stroke(0, 0, 15);
 	pen.strokeWeight(1);
 	pen.fill(st.h, st.s, st.b);
@@ -158,7 +166,7 @@ function drawCenterGlyph(pen: Pen, z: Vec2, order: number, zoom: number) {
 		ngon(pen, 3, r, Math.PI / 2); // triangle, point up
 	else if (order === 4)
 		ngon(pen, 4, r * 0.92, Math.PI / 4); // square, flat sides
-	else ngon(pen, 6, r, Math.PI / 2); // hexagon, point up
+	else ngon(pen, order, r, Math.PI / 2); // hexagon (or n-gon), point up
 	pen.pop();
 }
 
