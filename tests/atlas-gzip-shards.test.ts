@@ -21,9 +21,9 @@ const bodyOf = (buf: Buffer, url: string) =>
 	}) as unknown as Response;
 
 describe("gzipped shards", () => {
-	// A shard that is stored PLAIN, so the three shapes below can be compared against one source. The
-	// hyperbolic-poly shelf is entirely gzipped now, so this reads one from a shelf that is not.
-	const raw = fs.readFileSync("public/hyperbolic-edges/e667-k1.json");
+	// Every shipped shard is gzipped now, so the plain source the three shapes compare against is one
+	// un-gzipped here.
+	const raw = zlib.gunzipSync(fs.readFileSync("public/hyperbolic-edges/e667-k1.json.gz"));
 	const want = decodeAtlas<Rec>(JSON.parse(raw.toString("utf8")));
 
 	it("reads a .json.gz identically to its .json", async () => {

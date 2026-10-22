@@ -36,6 +36,7 @@ import path from "node:path";
 import { trueVertexOrbitCount } from "@/classes/algorithm/composable/canonicalTilingKey";
 import { exactComposableKeys, type ExactComposableCell } from "@/classes/algorithm/composable/exactComposableDedup";
 import { stringifyAtlas } from "./atlas/encode.mjs";
+import { writeDataFile } from "./atlas/io.mjs";
 
 // The 7 composite convex tiles that dissect into regular polygons (the decomposable palette).
 const DECOMPOSABLE = new Set([
@@ -91,8 +92,8 @@ interface ComposableTiling {
 const ROOT = process.cwd();
 const IN_DIR = path.join(ROOT, "experiments", "composable-oracle");
 const PUBLIC_DIR = path.join(ROOT, "public");
-const OUT_PATH = path.join(PUBLIC_DIR, "reference-atlas-composable.json");
-const shardPath = (k: number): string => path.join(PUBLIC_DIR, `reference-atlas-composable-k${k}.json`);
+const OUT_PATH = path.join(PUBLIC_DIR, "reference-atlas-composable.json.gz");
+const shardPath = (k: number): string => path.join(PUBLIC_DIR, `reference-atlas-composable-k${k}.json.gz`);
 // k≤MAIN_MAX_K ships in the eagerly-loaded main file; each higher k is written to its own lazy shard
 // (reference-atlas-composable-k{k}.json), mirroring the regular atlas's k≥8 shards. The k=3 convex
 // solve will add thousands of tilings to the k=3 shard without bloating the main /library + /play load.
@@ -320,21 +321,21 @@ function main(): void {
 	const shardKs = [...new Set(deduped.filter((t) => t.k > MAIN_MAX_K).map((t) => t.k))].sort((a, b) => a - b);
 	const sizeKB = (p: string): string => (fs.statSync(p).size / 1024).toFixed(1);
 
-	fs.writeFileSync(OUT_PATH, stringifyAtlas(main) + "\n");
+	writeDataFile(OUT_PATH, stringifyAtlas(main) + "\n");
 	log("");
 	log(`=== composable atlas written (main + ${shardKs.length} shard${shardKs.length === 1 ? "" : "s"}) ===`);
 	log(`  main  k≤${MAIN_MAX_K}: ${main.length} tilings → ${path.relative(ROOT, OUT_PATH)}  (${sizeKB(OUT_PATH)} KB)`);
 	for (const k of shardKs) {
 		const entries = deduped.filter((t) => t.k === k);
 		const p = shardPath(k);
-		fs.writeFileSync(p, stringifyAtlas(entries) + "\n");
+		writeDataFile(p, stringifyAtlas(entries) + "\n");
 		log(`  shard k=${k}: ${entries.length} tilings → ${path.relative(ROOT, p)}  (${sizeKB(p)} KB)`);
 	}
 
 	// Drop any orphaned composable shard from a prior build (a k that no longer has entries) so we never
 	// serve a stale shard. Only touches reference-atlas-composable-k{n}.json — this script's own outputs.
 	for (const f of fs.readdirSync(PUBLIC_DIR)) {
-		const m = /^reference-atlas-composable-k(\d+)\.json$/.exec(f);
+		const m = /^reference-atlas-composable-k(\d+)\.json(\.gz)?$/.exec(f);
 		if (m && !shardKs.includes(Number(m[1]))) {
 			fs.unlinkSync(path.join(PUBLIC_DIR, f));
 			log(`  removed stale shard ${f}`);

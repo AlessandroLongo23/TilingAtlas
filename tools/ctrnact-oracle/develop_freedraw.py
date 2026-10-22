@@ -42,20 +42,45 @@ CONVENTIONS (all ported, none guessed):
     period. The period lattice and one fundamental domain of drawn edges are the whole answer.
 
 Validation: developing all 1420 square certificates (k<=3) must reproduce, bijectively up to p4m,
-the 1420 independently enumerated bitmasks in public/freedraw/solutions.json.
+the 1420 independently enumerated bitmasks in public/freedraw/solutions.json.gz.
 
 Usage:
-    develop_freedraw.py <dir> --grid square --oracle public/freedraw/solutions.json
+    develop_freedraw.py <dir> --grid square --oracle public/freedraw/solutions.json.gz
+    develop_freedraw.py <dir> --grid 4436 --out public/freedraw/4436-solutions.json.gz  # a .gz --out is gzipped
     develop_freedraw.py <dir> --grid triangle --out tri_solutions.json [--oracle tri_k1.json]
 """
 import argparse
 import cmath as _cmath
+import gzip
 import json
 import math as _math
 import os
 import re
 import sys
 from collections import Counter, deque
+
+
+# Every data file under public/ ships gzipped (`x.json.gz`; scripts/atlas/io.mjs is the Node twin).
+def write_json(path, obj, **dump_kwargs):
+    """json.dump to `path`; a `.gz` path is gzipped with mtime=0 so rebuilds are byte-identical."""
+    path = os.fspath(path)
+    if not path.endswith(".gz"):
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(obj, f, **dump_kwargs)
+        return
+    # filename="" keeps the name out of the header too, so the bytes depend on the records alone.
+    with open(path, "wb") as raw, gzip.GzipFile("", "wb", 9, raw, mtime=0) as f:
+        f.write(json.dumps(obj, **dump_kwargs).encode("utf-8"))
+
+
+def read_json(path):
+    """json.load `path`, falling back to `path + '.gz'` when only the gzipped file exists."""
+    path = os.fspath(path)
+    if not os.path.exists(path) and os.path.exists(path + ".gz"):
+        path += ".gz"
+    with (gzip.open(path, "rt", encoding="utf-8") if path.endswith(".gz")
+          else open(path, encoding="utf-8")) as f:
+        return json.load(f)
 
 # Z[zeta12] scalars used by the scalene grid below, in the (a, b, c, d) = a + b*z + c*z^2 + d*z^3
 # basis defined further down (z = e^{i*pi/6}). sqrt(3) = 2*cos(pi/6) = 2z - z^3, since z = sqrt(3)/2
@@ -1230,7 +1255,7 @@ def run_patch(certs, args, grid):
                              "a": 1, "b": 0, "d": 1, "h": [0], "v": [0], "orbit": [0],
                              "patch": p})
             path = args.out.replace(".json", f"-k{k}.json")
-            json.dump(recs, open(path, "w"), separators=(",", ":"))
+            write_json(path, recs, separators=(",", ":"))
             sz = os.path.getsize(path)
             print(f"wrote {path}: {len(recs)} patches, {sz/1e6:.1f} MB")
 
@@ -1268,7 +1293,7 @@ def main():
     oracle_ks = set()
     if args.oracle:
         axis_names = GRIDS[args.grid]["axis_names"]
-        for r in json.load(open(args.oracle)):
+        for r in read_json(args.oracle):
             bits = [r[nm] for nm in axis_names]
             oracle_index[canonical(args.grid, r["a"], r["b"], r["d"], bits)] = r["id"]
             oracle_ks.add(r["k"])
@@ -1332,7 +1357,7 @@ def main():
             for i, nm in enumerate(axis_names):
                 rec[nm] = pat["bits"][i]
             out.append(rec)
-        json.dump(out, open(args.out, "w"), separators=(",", ":"))
+        write_json(args.out, out, separators=(",", ":"))
         print(f"wrote {args.out}: {len(out)} patterns, by k: {dict(sorted(by_k.items()))}")
 
 

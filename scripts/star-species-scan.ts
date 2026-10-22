@@ -21,6 +21,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import { dataPath, readDataJson } from "./atlas/io.mjs";
 
 const PUBLIC = path.join(process.cwd(), "public");
 const OUT = path.join(process.cwd(), "experiments", "star-oracle", "inring-species-k1-9.json");
@@ -67,12 +68,12 @@ let entries = 0;
 const kDist = new Map<number, number>();
 
 for (const f of FILES) {
-	const p = path.join(PUBLIC, f);
+	const p = dataPath(path.join(PUBLIC, f));
 	if (!fs.existsSync(p)) {
 		console.log(`  ⚑ missing ${f} — skipped (the scan is INCOMPLETE without it)`);
 		continue;
 	}
-	const arr = JSON.parse(fs.readFileSync(p, "utf8")) as Entry[];
+	const arr = readDataJson(p) as Entry[];
 	let n = 0;
 	for (const t of arr) {
 		if (t.source !== "ctrnact-star") continue;

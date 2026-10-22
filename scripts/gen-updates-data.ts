@@ -18,7 +18,8 @@
 // no flat render path, so they are skipped here (named in the output) and the entry degrades to a
 // text link. Extending previews to those means wiring the curved renderers into a card, which is
 // its own piece of work.
-import { readFile, writeFile, readdir } from "node:fs/promises";
+import { writeFile, readdir } from "node:fs/promises";
+import { readDataJson, writeDataFile } from "./atlas/io.mjs";
 import { statSync } from "node:fs";
 import path from "node:path";
 import { drawableEuclidean, toSpecimen, type LandingSpecimen } from "@/lib/services/landing-core";
@@ -53,7 +54,7 @@ const EAGER_ATLAS_FILES = [
 	"reference-atlas-penrose.json",
 ];
 
-const OUT = path.join(process.cwd(), "public", "updates-cells.json");
+const OUT = path.join(process.cwd(), "public", "updates-cells.json.gz");
 
 // The release the built site serves, as a static asset. Written here because this script already
 // runs in `pnpm build` and already holds UPDATES.
@@ -73,7 +74,7 @@ async function loadAtlas(): Promise<ReferenceTiling[]> {
 		EAGER_ATLAS_FILES.map(async (name, i) => {
 			try {
 				return hydrateRenderCells(
-					decodeAtlas<ReferenceTiling>(JSON.parse(await readFile(path.join(dir, name), "utf8"))),
+					decodeAtlas<ReferenceTiling>(readDataJson(path.join(dir, name))),
 				);
 			} catch (e) {
 				if (i === 0) throw e;
@@ -104,7 +105,7 @@ async function fillFromLazyShards(missing: Set<string>): Promise<Map<string, Ref
 	if (!missing.size) return found;
 	const dir = path.join(process.cwd(), "public");
 	const shards = (await readdir(dir))
-		.filter((f) => /^reference-atlas-.*-k\d+\.json$/.test(f))
+		.filter((f) => /^reference-atlas-.*-k\d+\.json(\.gz)?$/.test(f))
 		.map((f) => ({ f, size: statSync(path.join(dir, f)).size }))
 		.sort((a, b) => a.size - b.size);
 
@@ -112,7 +113,7 @@ async function fillFromLazyShards(missing: Set<string>): Promise<Map<string, Ref
 		if (!missing.size) break;
 		let records: ReferenceTiling[];
 		try {
-			records = hydrateRenderCells(decodeAtlas<ReferenceTiling>(JSON.parse(await readFile(path.join(dir, f), "utf8"))));
+			records = hydrateRenderCells(decodeAtlas<ReferenceTiling>(readDataJson(path.join(dir, f))));
 		} catch {
 			continue; // an unreadable shard just leaves its ids without a preview
 		}
@@ -141,7 +142,7 @@ async function fillFromExternal(missing: Set<string>): Promise<Map<string, Refer
 			if (!missing.size) break;
 			let rows: unknown[];
 			try {
-				rows = JSON.parse(await readFile(path.join(process.cwd(), "public", url), "utf8")) as unknown[];
+				rows = readDataJson(path.join(process.cwd(), "public", url)) as unknown[];
 			} catch {
 				continue; // a missing catalogue just leaves its ids without a preview
 			}
@@ -181,7 +182,7 @@ async function main(): Promise<void> {
 	console.log(`updates: release.json says v${live.version} (${live.title})`);
 
 	if (wanted.length === 0) {
-		await writeFile(OUT, "{}\n", "utf8");
+		writeDataFile(OUT, "{}\n");
 		console.log(`updates: no preview ids in the newest ${recent.length} releases → {}`);
 		return;
 	}
@@ -210,7 +211,7 @@ async function main(): Promise<void> {
 		else skipped.push(id);
 	}
 
-	await writeFile(OUT, `${JSON.stringify(out)}\n`, "utf8");
+	writeDataFile(OUT, `${JSON.stringify(out)}\n`);
 
 	const kb = Math.round(JSON.stringify(out).length / 1024);
 	console.log(

@@ -32,6 +32,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
 import develop_tri45 as dt          # noqa: E402  (exact ℤ[ζ₂₄] develop, shared)
+from develop_freedraw import write_json  # noqa: E402  (a .gz --out is gzipped, as public/ ships)
 import family_flex as ff            # noqa: E402
 
 
@@ -124,7 +125,7 @@ def main():
                          "instead of agreeing. Faces are not merged; --drawn names the BITE type, and "
                          "each face reports its per-edge bite word, which is its tile identity.")
     ap.add_argument("--shelf", default=None, metavar="GRID",
-                    help="BUBBLE SHELF FORM: emit the record public/bubble/*.json holds — id, k, grid, "
+                    help="BUBBLE SHELF FORM: emit the record public/bubble/*.json.gz holds — id, k, grid, "
                          "T1, T2, deduplicated verts, polys as index rings, bites — instead of the "
                          "developer's own. GRID is the BubbleGrid string the shelf keys the board on.")
     ap.add_argument("--mixed", action="store_true",
@@ -304,7 +305,7 @@ def main():
                 except dt.DevelopError as e:
                     fails.append((k, tid, str(e)))
 
-    json.dump(out, open(args.out, "w"))
+    write_json(args.out, out)
     per = {}
     for o in out:
         per[o["k"]] = per.get(o["k"], 0) + 1

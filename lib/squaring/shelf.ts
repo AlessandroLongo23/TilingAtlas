@@ -79,8 +79,8 @@ export interface SquaringManifest {
 	entries: SquaringSummary[];
 }
 
-export const squaringShardUrl = (id: string): string => `/squarings/${id}.json`;
-export const SQUARING_MANIFEST_URL = "/squarings/manifest.json";
+export const squaringShardUrl = (id: string): string => `/squarings/${id}.json.gz`;
+export const SQUARING_MANIFEST_URL = "/squarings/manifest.json.gz";
 
 // ---- the four-stage pipeline view ------------------------------------------------------------------
 //
@@ -159,8 +159,8 @@ export const PIPELINE_CATEGORIES = [
 	"Star polyhedra",
 ] as const;
 
-export const PIPELINE_INDEX_URL = "/squarings/pipeline/index.json";
-export const pipelineShardUrl = (id: string): string => `/squarings/pipeline/${id}.json`;
+export const PIPELINE_INDEX_URL = "/squarings/pipeline/index.json.gz";
+export const pipelineShardUrl = (id: string): string => `/squarings/pipeline/${id}.json.gz`;
 
 /** Parse a shipped square back to exact integers. */
 export const parseSquare = (s: SquaringRecordSquare) => ({
@@ -259,8 +259,8 @@ export interface TorusIndex {
 
 export const TORUS_CATEGORIES = ["Uniform tilings", "2-uniform", "3-uniform", "Other periodic"] as const;
 
-export const TORUS_INDEX_URL = "/squarings/torus/index.json";
-export const torusShardUrl = (id: string): string => `/squarings/torus/${id}.json`;
+export const TORUS_INDEX_URL = "/squarings/torus/index.json.gz";
+export const torusShardUrl = (id: string): string => `/squarings/torus/${id}.json.gz`;
 
 // ---- squared cylinders (hyperbolic) -----------------------------------------------------------------
 //
@@ -324,5 +324,5 @@ export interface CylinderIndex {
 	entries: CylinderIndexEntry[];
 }
 
-export const CYLINDER_INDEX_URL = "/squarings/cylinder/index.json";
-export const cylinderShardUrl = (id: string): string => `/squarings/cylinder/${id}.json`;
+export const CYLINDER_INDEX_URL = "/squarings/cylinder/index.json.gz";
+export const cylinderShardUrl = (id: string): string => `/squarings/cylinder/${id}.json.gz`;

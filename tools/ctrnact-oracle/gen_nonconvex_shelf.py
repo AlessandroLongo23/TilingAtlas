@@ -48,6 +48,8 @@ Usage: python3 gen_nonconvex_shelf.py [--emit] [--cells A.json B.json ...]
 import argparse, collections, json, os, re
 import numpy as np
 
+from develop_freedraw import read_json
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
 
@@ -299,9 +301,9 @@ def shelf_keys():
     del ts
     star = os.path.join(ROOT, "public", "spherical-star")
     for f in sorted(os.listdir(star)):
-        if not f.endswith(".json") or f == "manifest.json":
+        if not f.endswith((".json", ".json.gz")) or f.startswith("manifest.json"):
             continue
-        blob = json.load(open(os.path.join(star, f)))
+        blob = read_json(os.path.join(star, f))
         r = blob[0] if isinstance(blob, list) else blob
         if isinstance(r, dict) and r.get("vertices"):
             keys[congruence_key(r["vertices"])] = r["id"]

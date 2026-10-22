@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // Re-encode shipped shelf files through the atlas container format (scripts/atlas/encode.mjs).
 //
-//   node scripts/atlas-compact.mjs                 # every public/reference-atlas*.json, dry run
+//   node scripts/atlas-compact.mjs                 # every public/reference-atlas*.json.gz, dry run
 //   node scripts/atlas-compact.mjs --write         # …and actually rewrite them
-//   node scripts/atlas-compact.mjs --write public/reference-atlas-scaled-k7.json
+//   node scripts/atlas-compact.mjs --write public/reference-atlas-scaled-k7.json.gz
 //
 // One-shot migration for files that already shipped. New output comes out packed because the builders
 // call stringifyAtlas directly, so this is not part of any build.
@@ -21,6 +21,7 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { encodeAtlas, encodeShard, decodeAtlas, decodeShard, sameRecords } from "./atlas/encode.mjs";
+import { dataPath, readDataText, writeDataFile } from "./atlas/io.mjs";
 
 const args = process.argv.slice(2);
 const write = args.includes("--write");
@@ -55,26 +56,24 @@ const WRAPPED_DIRS = ["spherical-edges", "schwarz-sph", "schwarz-hyp"];
 /** Wrapper files whose record array sits under a different key than `patterns`. */
 const WRAPPER_KEY = { "vertex-configs": "configs" };
 
-function defaultTargets() {
-	const out = fs
-		.readdirSync(PUB)
-		.filter((f) => /^reference-atlas.*\.json$/.test(f))
+/** The data files in `dir` matching `re`, each once: `x.json` and `x.json.gz` name the same file. */
+const dataFiles = (dir, re) =>
+	[...new Set(fs.readdirSync(dir).map((f) => f.replace(/\.gz$/, "")))]
+		.filter((f) => re.test(f))
 		.sort()
-		.map((f) => path.join(PUB, f));
+		.map((f) => dataPath(path.join(dir, f)));
+
+function defaultTargets() {
+	const out = dataFiles(PUB, /^reference-atlas.*\.json$/);
 	for (const dir of [...SHELF_DIRS, ...WRAPPED_DIRS]) {
 		const p = path.join(PUB, dir);
 		if (!fs.existsSync(p)) continue;
-		for (const f of fs
-			.readdirSync(p)
-			.filter((f) => f.endsWith(".json"))
-			.sort()) {
-			out.push(path.join(p, f));
-		}
+		out.push(...dataFiles(p, /\.json$/));
 	}
 	return out;
 }
 
-const files = targets.length ? targets.map((t) => path.resolve(t)) : defaultTargets();
+const files = targets.length ? targets.map((t) => dataPath(path.resolve(t))) : defaultTargets();
 
 /** Paths git reports as modified-but-not-staged: another session's work, with no copy in the repo. */
 function unstaged() {
@@ -112,7 +111,7 @@ for (const file of files) {
 		continue;
 	}
 
-	const rawText = fs.readFileSync(file, "utf8");
+	const rawText = readDataText(file);
 	// Decode first, so the script is IDEMPOTENT and can upgrade a file packed by an older version
 	// (dict only) to the current one (dict + refs + geom). Bare legacy arrays come through unchanged.
 	let parsed;
@@ -178,10 +177,13 @@ for (const file of files) {
 	);
 
 	if (write) {
-		// Safety 3: temp + rename, so an interrupt cannot truncate a shelf.
-		const tmp = `${file}.tmp-compact`;
-		fs.writeFileSync(tmp, outText);
-		fs.renameSync(tmp, file);
+		// Safety 3: temp + rename, so an interrupt cannot truncate a shelf. Output is always gzipped; a
+		// plain `.json` input is replaced by its `.json.gz`.
+		const out = file.endsWith(".gz") ? file : `${file}.gz`;
+		const tmp = `${file}.tmp-compact.gz`;
+		writeDataFile(tmp, outText);
+		fs.renameSync(tmp, out);
+		if (out !== file) fs.unlinkSync(file);
 	}
 }
 

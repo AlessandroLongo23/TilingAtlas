@@ -1,9 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync } from "node:fs";
 import path from "node:path";
 import { buildTorusMap, halfTurn } from "./torusMap";
 import { squareTorus, torusClasses } from "./torusSquaring";
 import type { TorusIndex, TorusRecord } from "./shelf";
+import { readDataText } from "../../scripts/atlas/io.mjs";
 
 // The genus-1 construction, tested against the invariants rather than against snapshots — the same
 // discipline as smith.test.ts, and for the same reason: the arithmetic is exact, so every assertion
@@ -17,10 +18,10 @@ const SHELF = path.join(process.cwd(), "public", "squarings", "torus");
 
 const records = (): TorusRecord[] =>
 	readdirSync(SHELF)
-		.filter((f) => f.endsWith(".json") && f !== "index.json")
-		.map((f) => JSON.parse(readFileSync(path.join(SHELF, f), "utf8")) as TorusRecord);
+		.filter((f) => /\.json(\.gz)?$/.test(f) && !f.startsWith("index."))
+		.map((f) => JSON.parse(readDataText(path.join(SHELF, f))) as TorusRecord);
 
-const index = (): TorusIndex => JSON.parse(readFileSync(path.join(SHELF, "index.json"), "utf8")) as TorusIndex;
+const index = (): TorusIndex => JSON.parse(readDataText(path.join(SHELF, "index.json"))) as TorusIndex;
 
 const mapOf = (r: TorusRecord) => {
 	const built = buildTorusMap(r.cell);

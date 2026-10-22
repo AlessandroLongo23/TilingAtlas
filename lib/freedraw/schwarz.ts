@@ -262,7 +262,7 @@ export function schwarzKGaps(b: SchwarzBoard): number[] {
 
 /** The static asset holding one (board, k) slice. */
 export function schwarzShardUrl(b: SchwarzBoard, k: number): string {
-	return b.geometry === "spherical" ? `/schwarz-sph/s${b.id}-k${k}.json` : `/schwarz-hyp/h${b.id}-k${k}.json`;
+	return b.geometry === "spherical" ? `/schwarz-sph/s${b.id}-k${k}.json.gz` : `/schwarz-hyp/h${b.id}-k${k}.json.gz`;
 }
 
 /** Lazy (board, k) shards to fetch when vertex-count `k` comes into view under a given geometry — the

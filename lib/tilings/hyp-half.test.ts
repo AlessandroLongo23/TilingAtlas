@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
 	hypHalfFamilyLabel,
@@ -12,6 +12,8 @@ import {
 // A half-tile record IS a HypPolyPattern — same quotient, same client renderer, no new type.
 import type { HypPolyPattern } from "./hyp-poly";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
+import { dataPath } from "../../scripts/atlas/io.mjs";
+import { readDataText } from "../../scripts/atlas/io.mjs";
 
 // The halved-{p,q} shelf. Six boards, 23,372 tilings, and until this file existed nothing checked any of
 // it — which is how two of them shipped calling a quadrilateral a triangle.
@@ -23,10 +25,10 @@ import { decodeAtlas } from "@/lib/services/atlasCodec";
 
 const shardOf = (b: HypHalfBoard, k: number): HypPolyPattern[] | null => {
 	const f = `public${hypHalfShardUrl(b.id, k)}`;
-	return existsSync(f) ? decodeAtlas<HypPolyPattern>(JSON.parse(readFileSync(f, "utf8"))) : null;
+	return existsSync(f) ? decodeAtlas<HypPolyPattern>(JSON.parse(readDataText(f))) : null;
 };
 
-const anyShard = existsSync("public/hyperbolic-half/hyphalf-45-half-k2.json");
+const anyShard = existsSync(dataPath("public/hyperbolic-half/hyphalf-45-half-k2.json"));
 const shipped = (b: HypHalfBoard) => [...b.eagerKs, ...b.lazyKs].sort((x, y) => x - y);
 
 /** Which {p,q} each board halves, and how. The boards do not carry p and q — their labels do, and a

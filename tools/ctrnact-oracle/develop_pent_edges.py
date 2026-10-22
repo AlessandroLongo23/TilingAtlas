@@ -38,7 +38,6 @@ Usage:
 """
 import argparse
 import glob
-import json
 import math
 import os
 import re
@@ -336,9 +335,8 @@ def run(source, fam_id, out_prefix=None, ks=None, report_path=None, limit=None, 
         if not out_prefix:
             continue
         os.makedirs(os.path.dirname(out_prefix) or ".", exist_ok=True)
-        path = f"{out_prefix}-k{k}.json"
-        with open(path, "w") as fh:
-            json.dump(recs, fh, separators=(",", ":"))
+        path = f"{out_prefix}-k{k}.json.gz"
+        fd.write_json(path, recs, separators=(",", ":"))
         written.append((path, len(recs), os.path.getsize(path)))
 
     total = sum(len(v) for v in by_k.values())

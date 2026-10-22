@@ -28,6 +28,7 @@ Usage: python3 annotate_derivation.py [--write] [--cells A.json B.json ...]
 import argparse, glob, collections, json, os, re
 import numpy as np
 
+from develop_freedraw import read_json, write_json
 from gen_nonconvex_shelf import DEFAULT_CELLS
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -151,8 +152,8 @@ def main():
     for s in built:
         print("   %s" % s)
 
-    atlas_path = os.path.join(ROOT, "public", "reference-atlas-spherical.json")
-    atlas = json.load(open(atlas_path))
+    atlas_path = os.path.join(ROOT, "public", "reference-atlas-spherical.json.gz")
+    atlas = read_json(atlas_path)
     missing, changed = [], 0
     for rec in atlas["records"]:
         sid = (rec.get("spherical") or {}).get("solid")
@@ -174,9 +175,9 @@ def main():
     if not args.write:
         print("(dry run — pass --write)")
         return
-    json.dump(atlas, open(atlas_path, "w"), separators=(",", ":"), ensure_ascii=False)
+    write_json(atlas_path, atlas, separators=(",", ":"), ensure_ascii=False)
     json.dump(derivation, open(os.path.join(HERE, "derivation.json"), "w"), indent=1, sort_keys=True)
-    print("wrote public/reference-atlas-spherical.json and derivation.json")
+    print("wrote public/reference-atlas-spherical.json.gz and derivation.json")
 
 
 if __name__ == "__main__":

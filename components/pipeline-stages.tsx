@@ -25,6 +25,7 @@ import {
 	type Pt,
 } from "@/lib/render/figureGlyphs";
 import { polygonHue, tileFill, tileLine } from "@/lib/utils/renderTiling";
+import { shardBody } from "@/lib/services/atlasCodec";
 
 // One panel per pipeline stage, each drawn from what that stage's source actually does.
 //
@@ -360,8 +361,8 @@ export function PipelineStages() {
 
 	useEffect(() => {
 		let alive = true;
-		fetch("/defense/period-figure.json")
-			.then((r) => r.json())
+		fetch("/defense/period-figure.json.gz")
+			.then((r) => shardBody<FigureData>(r))
 			.then((d: FigureData) => {
 				if (alive) setData(d);
 			})

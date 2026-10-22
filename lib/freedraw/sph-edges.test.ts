@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
 	hydrateSphEdgesShard,
@@ -11,6 +11,8 @@ import {
 } from "./sph-edges";
 import { sphSchwarzScene } from "@/lib/render/sphSchwarz";
 import { decodeShard } from "@/lib/services/atlasCodec";
+import { dataPath } from "../../scripts/atlas/io.mjs";
+import { readDataText } from "../../scripts/atlas/io.mjs";
 
 // The uniform-polyhedron edge shelf's decode checks. As with the Schwarz shelf, the develop itself is
 // develop_sph_edges.py's business (it fails loudly); what is asserted here is what the SHIPPED data must
@@ -19,10 +21,10 @@ import { decodeShard } from "@/lib/services/atlasCodec";
 
 const shardOf = (b: SphEdgesBoard, k: number): SphEdgesShard | null => {
 	const f = `public${sphEdgesShardUrl(b.id, k)}`;
-	return existsSync(f) ? decodeShard(JSON.parse(readFileSync(f, "utf8")) as SphEdgesShard) : null;
+	return existsSync(f) ? decodeShard(JSON.parse(readDataText(f)) as SphEdgesShard) : null;
 };
 
-const anyShard = existsSync("public/spherical-edges/x443-k1.json");
+const anyShard = existsSync(dataPath("public/spherical-edges/x443-k1.json"));
 
 describe("uniform-polyhedron edge board manifest", () => {
 	it("gives every board a distinct id and at least one k", () => {

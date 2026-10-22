@@ -13,7 +13,7 @@ import { Segmented } from "@/components/shelf";
 import { Slider } from "@/components/ui/slider";
 import { Figure, FigureLoading, LiveFigure } from "@/components/about/figure";
 import { InteractiveTilingPreviewCard } from "@/components/interactive-tiling-preview-card";
-import { fetchAtlas } from "@/lib/services/atlasCodec";
+import { fetchAtlas, shardBody } from "@/lib/services/atlasCodec";
 import { bendTegula, clampHandle, type TegulaCell } from "@/lib/tilings/tegula";
 import { bubbleRenderCell, type BubblePattern } from "@/lib/bubble/pattern";
 import { HollowCanvas } from "@/components/hollow/hollow-canvas";
@@ -83,7 +83,7 @@ export function KuTegula({ ids, labels, caption }: { ids?: string; labels?: stri
 	const [bend, setBend] = useState(1);
 	useEffect(() => {
 		let live = true;
-		once("/reference-atlas-tegula.json", () => fetchAtlas<TegulaRecord>("/reference-atlas-tegula.json")).then((all) => {
+		once("/reference-atlas-tegula.json.gz", () => fetchAtlas<TegulaRecord>("/reference-atlas-tegula.json.gz")).then((all) => {
 			if (live && all) setRecords(Object.fromEntries(all.filter((r) => wanted.includes(r.id)).map((r) => [r.id, r])));
 		});
 		return () => {
@@ -128,8 +128,8 @@ export function KuBubble({ ids, labels, caption }: { ids?: string; labels?: stri
 		Promise.all(
 			wanted.map(async (key) => {
 				const [file, id] = key.split(":");
-				const url = `/bubble/${file}.json`;
-				const all = await once(url, () => fetch(url).then((r) => r.json() as Promise<BubblePattern[]>));
+				const url = `/bubble/${file}.json.gz`;
+				const all = await once(url, () => fetch(url).then((r) => shardBody(r) as Promise<BubblePattern[]>));
 				const p = all?.find((q) => q.id === id);
 				return [key, p ? bubbleRenderCell(p) : null] as const;
 			}),

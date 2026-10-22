@@ -5,6 +5,7 @@ import { annotatePolygonFacets } from "./polygonFacets";
 import { polygonSpeciesOf, tilePeriodsOf, speciesFromPolys, periodsFromPolys } from "./polygonSpecies";
 import { decodeAtlas } from "./atlasCodec";
 import type { ReferenceTiling } from "./referenceAtlas";
+import { readDataText } from "../../scripts/atlas/io.mjs";
 
 /** A square and a 12-pointed star at 30°, as the atlas ships cell polygons. */
 const square = {
@@ -105,11 +106,11 @@ describe("the shipped field agrees with the geometry walk", () => {
 	it("agrees on every annotated record in every shipped root shelf", () => {
 		const dir = path.join(process.cwd(), "public");
 		if (!fs.existsSync(dir)) return; // corpus not present in this checkout
-		const files = fs.readdirSync(dir).filter((f) => f.startsWith("reference-atlas") && f.endsWith(".json"));
+		const files = fs.readdirSync(dir).filter((f) => f.startsWith("reference-atlas") && /\.json(\.gz)?$/.test(f));
 		let checked = 0;
 		let annotatedFiles = 0;
 		for (const f of files) {
-			const records = decodeAtlas<ReferenceTiling>(JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")));
+			const records = decodeAtlas<ReferenceTiling>(JSON.parse(readDataText(path.join(dir, f))));
 			let hit = 0;
 			for (const t of records) {
 				if (!t.polygonSpecies) continue;

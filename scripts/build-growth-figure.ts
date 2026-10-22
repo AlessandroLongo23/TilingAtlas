@@ -12,6 +12,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import { writeDataFile } from "./atlas/io.mjs";
 import { SeedExpander, type CollapsedVertex } from "@/classes/algorithm/SeedExpander";
 import type { SeedConfiguration } from "@/classes/algorithm/SeedConfiguration";
 import type { Polygon } from "@/classes/polygons/Polygon";
@@ -184,8 +185,8 @@ const out = {
 	level1,
 };
 
-const outPath = value("--out") ?? path.join(process.cwd(), "public", "defense", "growth-k3.json");
-fs.writeFileSync(outPath, JSON.stringify(out));
+const outPath = value("--out") ?? path.join(process.cwd(), "public", "defense", "growth-k3.json.gz");
+writeDataFile(outPath, JSON.stringify(out));
 const kb = (fs.statSync(outPath).size / 1024).toFixed(1);
 console.log(
 	`wrote ${outPath} (${kb} KB)\n` +

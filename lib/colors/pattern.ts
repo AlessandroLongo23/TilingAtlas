@@ -99,7 +99,7 @@ export const colorsCatalogue = (grid: ColorsGrid, colors: number) =>
 	COLORS_CATALOGUES.find((c) => c.grid === grid && c.colors === colors) ?? COLORS_CATALOGUES[0];
 
 export const colorsCatalogueFile = (grid: ColorsGrid, colors: number, k: number) =>
-	`${colorsCatalogue(grid, colors).prefix}${k}.json`;
+	`${colorsCatalogue(grid, colors).prefix}${k}.json.gz`;
 
 export const colorsGridOf = (p: Pick<ColorPattern, "grid">): ColorsGrid => p.grid ?? "square";
 

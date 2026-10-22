@@ -33,9 +33,10 @@
 //          the period lattice. This is the one that catches a tiling wrapping a point more than once,
 //          and shape and area BOTH pass on those — a fourfold cover has fourfold area inside a cell
 //          four times as large. Its absence shipped 23 non-tilings to the tri45 shelf on 2026-08-13.
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { readFileSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import { stringifyAtlas } from "./atlas/encode.mjs";
+import { writeDataFile } from "./atlas/io.mjs";
 import { isPrimitiveCell } from "./atlas/primitive.mjs";
 
 const ROOT = process.cwd();
@@ -535,12 +536,12 @@ for (const B of BOARDS) {
 	}
 }
 
-writeFileSync(path.join(OUT, "manifest.json"), JSON.stringify(manifest, null, 2));
-writeFileSync(path.join(PUB, "reference-atlas-euhalf.json"), stringifyAtlas(eager));
+writeDataFile(path.join(OUT, "manifest.json.gz"), JSON.stringify(manifest, null, 2));
+writeDataFile(path.join(PUB, "reference-atlas-euhalf.json.gz"), stringifyAtlas(eager));
 console.log(`\n  ${grandRaw} solver solutions -> ${grandTotal} distinct tilings on the shelf`);
-console.log(`  atlas: ${eager.length} entries (k<=${EAGER_MAX}, eager) -> public/reference-atlas-euhalf.json`);
+console.log(`  atlas: ${eager.length} entries (k<=${EAGER_MAX}, eager) -> public/reference-atlas-euhalf.json.gz`);
 for (const k of [...lazy.keys()].sort((a, b) => a - b)) {
-	writeFileSync(path.join(PUB, `reference-atlas-euhalf-k${k}.json`), stringifyAtlas(lazy.get(k)));
-	console.log(`         ${lazy.get(k).length} entries -> public/reference-atlas-euhalf-k${k}.json (lazy)`);
+	writeDataFile(path.join(PUB, `reference-atlas-euhalf-k${k}.json.gz`), stringifyAtlas(lazy.get(k)));
+	console.log(`         ${lazy.get(k).length} entries -> public/reference-atlas-euhalf-k${k}.json.gz (lazy)`);
 }
 console.log(`  lazy k slices: [${[...lazy.keys()].sort((a, b) => a - b).join(", ")}]`);

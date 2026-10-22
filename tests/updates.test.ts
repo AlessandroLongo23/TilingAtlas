@@ -9,6 +9,7 @@ import { parseShelfPreviewId, previewHref } from "@/lib/updates/preview-ids";
 import { EXTERNAL_CELL_CATALOGUES, lengthFamilyRows } from "@/lib/services/referenceAtlas";
 import { previewIdsIn, shouldAutoOpen, unseenSince } from "@/lib/updates/unseen";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
+import { readDataText } from "../scripts/atlas/io.mjs";
 
 // Guards for the update notes. Atlas ids are opaque strings — "ctrnact-07_34-5c2_5e_5f3_6f-1" is a
 // real one — so a typo in an entry fails silently in the browser as a card that never appears. That
@@ -21,12 +22,12 @@ function atlasIds(): Set<string> {
 	const dir = path.join(process.cwd(), "public");
 	const ids = new Set<string>();
 	for (const name of readdirSync(dir)) {
-		if (!/^reference-atlas.*\.json$/.test(name)) continue;
+		if (!/^reference-atlas.*\.json(\.gz)?$/.test(name)) continue;
 		try {
 			// decodeAtlas, not a bare JSON.parse: the shelves are moving to the packed container format
 			// ({atlas, dict, records}), and a packed file read as an array yields no ids at all — which
 			// reads here as "1.27.1 references unknown tiling", i.e. a real preview id looking like a typo.
-			for (const t of decodeAtlas<{ id?: string }>(JSON.parse(readFileSync(path.join(dir, name), "utf8")))) {
+			for (const t of decodeAtlas<{ id?: string }>(JSON.parse(readDataText(path.join(dir, name))))) {
 				if (t.id) ids.add(t.id);
 			}
 		} catch {
@@ -44,7 +45,7 @@ function atlasIds(): Set<string> {
 	for (const { files } of EXTERNAL_CELL_CATALOGUES) {
 		for (const url of files) {
 			try {
-				for (const row of JSON.parse(readFileSync(path.join(dir, url), "utf8")) as { id?: string }[]) {
+				for (const row of JSON.parse(readDataText(path.join(dir, url))) as { id?: string }[]) {
 					if (row.id) ids.add(row.id);
 				}
 			} catch {

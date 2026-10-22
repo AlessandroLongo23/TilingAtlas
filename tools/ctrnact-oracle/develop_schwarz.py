@@ -34,7 +34,6 @@ Usage:
 """
 import argparse
 import glob
-import json
 import math
 import os
 import re
@@ -969,7 +968,7 @@ def run(source, board_id, out_prefix, ks=None, report_path=None, limit=None, cap
             r["id"] = f"{prefix}{board_id}-{k}-{i:05d}"
         if out_prefix:
             os.makedirs(os.path.dirname(out_prefix) or ".", exist_ok=True)
-            path = f"{out_prefix}-k{k}.json"
+            path = f"{out_prefix}-k{k}.json.gz"
             if geo == "spherical":
                 # The board once per shard, the patterns as drawn-bits + tile ids against it.
                 payload = {
@@ -984,8 +983,7 @@ def run(source, board_id, out_prefix, ks=None, report_path=None, limit=None, cap
                 }
             else:
                 payload = recs
-            with open(path, "w") as fh:
-                json.dump(payload, fh, separators=(",", ":"))
+            fd.write_json(path, payload, separators=(",", ":"))
             written.append((path, len(recs), os.path.getsize(path)))
 
     lines = [f"Schwarz edge-system develop — board {board_label(board_id)} ({board_id}, {geo})",

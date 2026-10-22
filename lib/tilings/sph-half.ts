@@ -92,7 +92,7 @@ export const SPH_HALF_BOARDS: SphHalfBoard[] = [
 export const SPH_HALF_BOARD_BY_ID = new Map(SPH_HALF_BOARDS.map((b) => [b.id, b]));
 
 /** Shard URL. One file per board per k; the whole shelf is 11 tilings, all eager. */
-export const sphHalfShardUrl = (id: string, k: number): string => `/spherical-half/sphalf-${id}-k${k}.json`;
+export const sphHalfShardUrl = (id: string, k: number): string => `/spherical-half/sphalf-${id}-k${k}.json.gz`;
 
 /** The sub-axis key, "sph-" namespaced. It shares the AXIS with the 3.4.n.4 boards — which spherical
  *  tiling board you are looking at — but not the FAMILY: these boards are not members of that family, and

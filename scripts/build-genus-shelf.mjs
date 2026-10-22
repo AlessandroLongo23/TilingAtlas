@@ -1,4 +1,4 @@
-// Write the sph-tor-* and sph-gen<g>-* records into public/reference-atlas-spherical.json from the
+// Write the sph-tor-* and sph-gen<g>-* records into public/reference-atlas-spherical.json.gz from the
 // rows tools/ctrnact-oracle/gen_genus_shelf.py --emit measures. One shelf per genus, genus 1 upward.
 //
 // SURGICAL, like build-nonconvex-shelf.mjs: the genus rows are replaced in place and every other
@@ -10,11 +10,12 @@
 //   node scripts/build-genus-shelf.mjs --write
 import fs from "node:fs";
 import path from "node:path";
+import { readDataJson, writeDataFile } from "./atlas/io.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 const ROWS = path.join(ROOT, "tools", "ctrnact-oracle", "genus-atlas-rows.json");
 const HEMI = path.join(ROOT, "tools", "ctrnact-oracle", "hemi-atlas-rows.json");
-const ATLAS = path.join(ROOT, "public", "reference-atlas-spherical.json");
+const ATLAS = path.join(ROOT, "public", "reference-atlas-spherical.json.gz");
 const DISCOVERER = "Čtrnáct engine + develop_euclid, mixed closure, 2026-08-25";
 // The hemipolyhedra are the one shelf here the engine did not find; gen_hemi_shelf.py constructs them
 // from their parent vertex sets and verifies. The attribution says so instead of borrowing the engine's.
@@ -23,7 +24,7 @@ const isGenus = (id) => id.startsWith("sph-tor-") || /^sph-gen\d+-/.test(id) || 
 
 const write = process.argv.includes("--write");
 const rows = JSON.parse(fs.readFileSync(ROWS, "utf8"));
-const atlas = JSON.parse(fs.readFileSync(ATLAS, "utf8"));
+const atlas = readDataJson(ATLAS);
 
 // The note says what the record IS and what the shelf is NOT. A toroid has no circumsphere, necessarily,
 // so that sentence is a theorem here and not the measurement it is on the non-convex shelf.
@@ -133,5 +134,5 @@ if (!write) {
 	process.exit(0);
 }
 atlas.records = out;
-fs.writeFileSync(ATLAS, JSON.stringify(atlas));
-console.log(`wrote public/reference-atlas-spherical.json — ${out.length} records`);
+writeDataFile(ATLAS, JSON.stringify(atlas));
+console.log(`wrote public/reference-atlas-spherical.json.gz — ${out.length} records`);

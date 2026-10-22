@@ -562,7 +562,8 @@ def main():
     args = ap.parse_args()
     if args.gate:
         root = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
-        entries = [x for x in json.load(open(os.path.join(root, "public", "reference-atlas.json")))
+        from develop_freedraw import read_json
+        entries = [x for x in read_json(os.path.join(root, "public", "reference-atlas.json.gz"))
                    if x.get("source") == "galebach" and x["k"] <= args.gate]
         keys = defaultdict(list)
         bad = 0

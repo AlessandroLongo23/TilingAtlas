@@ -2,15 +2,15 @@
 // the check that matters is against the literature: the regular palette's fifteen figures are exactly
 // the fifteen vertex configurations of regular polygons, and every one has a settled name.
 
-import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import type { PaletteConfigs } from "@/lib/configs/vertexConfigs";
 import { canonicalWord, figureFromPlacedPolys, figureFromWord } from "@/lib/render/vertexFigure";
 import type { RawPolygon } from "@/lib/utils/renderTiling";
+import { readDataText } from "../scripts/atlas/io.mjs";
 
 const palette = JSON.parse(
-	readFileSync(path.join(process.cwd(), "public", "vertex-configs", "regular-z24.json"), "utf8"),
+	readDataText(path.join(process.cwd(), "public", "vertex-configs", "regular-z24.json")),
 ) as PaletteConfigs;
 
 const asPolys = (cfg: PaletteConfigs["configs"][number]): RawPolygon[] =>

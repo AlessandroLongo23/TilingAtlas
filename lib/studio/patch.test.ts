@@ -9,6 +9,7 @@ import { renderCellFromExactSource } from "@/lib/services/renderCellDerive";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import { gaussReduce, tilingToPatch } from "./patch";
 import type { StudioPatch } from "./types";
+import { readDataText } from "../../scripts/atlas/io.mjs";
 
 /**
  * The fold is the part of the editor that can be quietly wrong: a missed weld does not throw, it just
@@ -259,9 +260,9 @@ describe("tilingToPatch on hand-built cells", () => {
 // Hand-built cells are all axis-aligned and all fold trivially. The records that actually exercise the
 // fold are the developed ones, where a cell can sit whole periods from the origin on a skewed basis.
 
-const atlasPath = path.join(process.cwd(), "public", "reference-atlas.json");
+const atlasPath = path.join(process.cwd(), "public", "reference-atlas.json.gz");
 type Rec = { id: string; exactSource?: ExactCellSource };
-const atlas: Rec[] = fs.existsSync(atlasPath) ? decodeAtlas<Rec>(JSON.parse(fs.readFileSync(atlasPath, "utf8"))) : [];
+const atlas: Rec[] = fs.existsSync(atlasPath) ? decodeAtlas<Rec>(JSON.parse(readDataText(atlasPath))) : [];
 
 describe.skipIf(atlas.length === 0)("tilingToPatch on the shipped catalogue", () => {
 	// N = 24, and not 12: `reconstructOracleCell` goes through `detSurd`, which only exists in the

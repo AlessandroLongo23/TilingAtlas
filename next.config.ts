@@ -83,9 +83,9 @@ const nextConfig: NextConfig = {
 	},
 	async headers() {
 		return [
-			// Root-level shelf files: reference-atlas.json and every -<shelf>[-k<n>] shard beside it.
-			{ source: "/:file(reference-atlas.*\\.json)", headers: ATLAS_CACHE },
-			{ source: "/hyperbolic-developed.json", headers: ATLAS_CACHE },
+			// Root-level shelf files: reference-atlas.json.gz and every -<shelf>[-k<n>] shard beside it.
+			{ source: "/:file(reference-atlas.*\\.json\\.gz)", headers: ATLAS_CACHE },
+			{ source: "/hyperbolic-developed.json.gz", headers: ATLAS_CACHE },
 			// Per-shelf directories.
 			...ATLAS_DIRS.map((dir) => ({ source: `/${dir}/:file*`, headers: ATLAS_CACHE })),
 		];

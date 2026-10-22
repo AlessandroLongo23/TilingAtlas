@@ -49,6 +49,7 @@ import develop_map as DM
 import intrinsic_family as IFM
 import tiling_key as TK
 import vertex_orbits as vo
+from develop_freedraw import read_json, write_json
 
 CAP = 180.0          # never walk an axis further than this past the anchor
 STEP = 2.0           # coarse outward step; `walk` halves it down to 1e-3 at the break
@@ -406,7 +407,7 @@ def attach(shelf_paths, cells_path, log, write=False):
     by_key = {r["key"]: r for r in recs if r.get("key")}
     log(f"attach: {len(by_key)} intrinsic cells from {os.path.basename(cells_path)}")
     hit = miss = rigid = 0
-    loaded = {p: json.load(open(p)) for p in shelf_paths}
+    loaded = {p: read_json(p) for p in shelf_paths}
     for path, entries in loaded.items():
         for e in entries:
             key = TK.tiling_key(*vo.float_cell(e["renderCell"]))
@@ -447,9 +448,7 @@ def attach(shelf_paths, cells_path, log, write=False):
             e.pop("_key", None)
         total += len(keep)
         if write:
-            with open(path, "w") as fh:
-                json.dump(keep, fh, separators=(",", ":"))
-                fh.write("\n")
+            write_json(path, keep, separators=(",", ":"))
             log(f"  rewrote {os.path.basename(path)}: {len(keep)} entries, "
                 f"{os.path.getsize(path) / 1024:.0f} KB")
     log(f"shelf: {hit + miss} → {total} entries")
@@ -494,7 +493,7 @@ def main():
 
     if args.attach:
         root = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
-        main = args.shelf or os.path.join(root, "public", "reference-atlas-period.json")
+        main = args.shelf or os.path.join(root, "public", "reference-atlas-period.json.gz")
         paths = [main] + sorted(glob.glob(main.replace(".json", "-k*.json")))
         miss = attach(paths, args.out, log, write=args.write)
         sys.exit(0 if miss == 0 else 1)

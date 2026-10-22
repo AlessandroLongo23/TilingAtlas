@@ -29,6 +29,8 @@ Usage: python3 emit_sph_star_shelf.py --cells <cells.json> --out ../../public/sp
 import argparse, collections, itertools, json, math, os
 import numpy as np
 
+from develop_freedraw import write_json
+
 # (V, E, F, sorted (n,d,count) census, density, ORBIT COUNT) -> name.
 #
 # ⚑ THE ORBIT COUNT IS PART OF THE KEY, and it was not until 2026-08-22. A catalogue name names ONE
@@ -352,12 +354,12 @@ def main():
                 "chiral": all(d > 0 for d in dets),
             },
         }
-        json.dump(rec, open(os.path.join(args.out, sid + ".json"), "w"))
+        write_json(os.path.join(args.out, sid + ".json.gz"), rec)
         index.append({k: rec[k] for k in ("id", "config", "k", "density", "solid")}
                      | {"stats": rec["stats"]})
     index.sort(key=lambda e: (e["k"], e["density"], e["stats"]["verts"], e["stats"]["faces"]))
     if args.index:
-        json.dump(index, open(args.index, "w"), indent=1)
+        write_json(args.index, index, indent=1)
     print("wrote %d star polyhedra to %s" % (len(index), args.out))
     print("named: %d   unnamed: %d" % (sum(1 for e in index if e["solid"]),
                                        sum(1 for e in index if not e["solid"])))

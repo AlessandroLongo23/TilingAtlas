@@ -238,13 +238,13 @@ function unpackRecords<T>(records: unknown[], tables: Tables): T[] {
  * if it serves the bytes verbatim (the usual case for `.gz`), it is not. Testing the two-byte gzip
  * magic covers both, and covers a future CDN changing its mind without a code change here.
  */
-async function shardBody(res: Response): Promise<unknown> {
+export async function shardBody<T = unknown>(res: Response): Promise<T> {
 	// `res.url?` and not `res.url`: a Response built by hand (the shard tests) has no url, and the right
 	// answer there is the behaviour every caller had before gzipped shards existed.
-	if (!res.url?.endsWith(".gz")) return res.json();
+	if (!res.url?.endsWith(".gz")) return res.json() as Promise<T>;
 	const buf = await res.arrayBuffer();
 	const head = new Uint8Array(buf, 0, Math.min(2, buf.byteLength));
-	if (!(head[0] === 0x1f && head[1] === 0x8b)) return JSON.parse(new TextDecoder().decode(buf));
+	if (!(head[0] === 0x1f && head[1] === 0x8b)) return JSON.parse(new TextDecoder().decode(buf)) as T;
 	if (typeof DecompressionStream === "undefined") {
 		throw new Error(`${res.url}: gzipped shard needs DecompressionStream, which this runtime lacks`);
 	}
@@ -252,7 +252,7 @@ async function shardBody(res: Response): Promise<unknown> {
 	// but only the former exists in the Node/undici runtime the tests and any server-side read use.
 	const body = new Response(buf).body;
 	if (!body) throw new Error(`${res.url}: gzipped shard has no readable body`);
-	return JSON.parse(await new Response(body.pipeThrough(new DecompressionStream("gzip"))).text());
+	return JSON.parse(await new Response(body.pipeThrough(new DecompressionStream("gzip"))).text()) as T;
 }
 
 /** `fetch(url).then(readAtlas)` — the shelf loaders' one-liner. Throws on a non-OK response. */

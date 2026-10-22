@@ -371,14 +371,14 @@ const GRIDS: Record<string, { label: string; ks: number[]; file: (k: number) => 
 	square: {
 		label: "Square",
 		ks: [1, 2, 3, 4],
-		file: (k) => (k <= 3 ? "/freedraw/solutions.json" : `/freedraw/solutions-k${k}.json`),
+		file: (k) => (k <= 3 ? "/freedraw/solutions.json.gz" : `/freedraw/solutions-k${k}.json.gz`),
 		prefix: "fd-",
 	},
-	triangle: { label: "Triangle", ks: [1, 2, 3], file: () => "/freedraw/tri-solutions.json", prefix: "fdt-" },
-	hex: { label: "Hexagon", ks: [1, 2, 3, 4, 5], file: (k) => `/freedraw/hex-solutions-k${k}.json`, prefix: "fdh-" },
-	"4436": { label: "3.4.6.4", ks: [1, 2, 3, 4], file: (k) => `/freedraw/4436-solutions-k${k}.json`, prefix: "fd4436-" },
-	"488": { label: "4.8.8", ks: [1, 2, 3, 4, 5], file: (k) => `/freedraw/488-solutions-k${k}.json`, prefix: "fd488-" },
-	ts: { label: "Square + triangle", ks: [1, 2], file: (k) => `/freedraw/ts-solutions-k${k}.json`, prefix: "fdts-" },
+	triangle: { label: "Triangle", ks: [1, 2, 3], file: () => "/freedraw/tri-solutions.json.gz", prefix: "fdt-" },
+	hex: { label: "Hexagon", ks: [1, 2, 3, 4, 5], file: (k) => `/freedraw/hex-solutions-k${k}.json.gz`, prefix: "fdh-" },
+	"4436": { label: "3.4.6.4", ks: [1, 2, 3, 4], file: (k) => `/freedraw/4436-solutions-k${k}.json.gz`, prefix: "fd4436-" },
+	"488": { label: "4.8.8", ks: [1, 2, 3, 4, 5], file: (k) => `/freedraw/488-solutions-k${k}.json.gz`, prefix: "fd488-" },
+	ts: { label: "Square + triangle", ks: [1, 2], file: (k) => `/freedraw/ts-solutions-k${k}.json.gz`, prefix: "fdts-" },
 };
 
 const files = new Map<string, Promise<FreedrawPattern[]>>();
@@ -588,7 +588,7 @@ function NamedPatterns({ ids, labels, caption }: { ids: string[]; labels: string
 
 const solidFiles = new Map<string, Promise<IcoPattern[]>>();
 function loadSolid(solid: string, k: number) {
-	const url = `/freedraw-ico/${solid}-k${k}.json`;
+	const url = `/freedraw-ico/${solid}-k${k}.json.gz`;
 	if (!solidFiles.has(url))
 		solidFiles.set(
 			url,

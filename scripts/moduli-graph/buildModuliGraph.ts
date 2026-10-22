@@ -1,10 +1,11 @@
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { writeFileSync, mkdirSync } from "node:fs";
 import { CyclotomicRing } from "@/classes/Cyclotomic";
 import { loadCatalogueKeys } from "./catalogueKeys";
 import { assembleGraph, type FamilyRecord } from "./graphAssembler";
 import { decodeAtlas } from "../atlas/encode.mjs";
+import { readDataJson } from "../atlas/io.mjs";
 
-const atlas = decodeAtlas(JSON.parse(readFileSync("public/reference-atlas-isotoxal.json", "utf8")));
+const atlas = decodeAtlas(readDataJson("public/reference-atlas-isotoxal.json"));
 const records = (Array.isArray(atlas) ? atlas : atlas.records) as FamilyRecord[];
 const families = records.filter(
 	(r) =>

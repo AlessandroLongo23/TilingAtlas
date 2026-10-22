@@ -1,3 +1,4 @@
+import { shardBody } from "@/lib/services/atlasCodec";
 /**
  * Hollow tilings — tilings by SELF-INTERSECTING regular star polygons `{n/d}`.
  *
@@ -99,9 +100,9 @@ export function loadHollowPatch(id: string): Promise<HollowPatch> {
 	if (!cache) cache = new Map();
 	const hit = cache.get(id);
 	if (hit) return hit;
-	const p = fetch(`/hollow/${id}.json`).then((res) => {
+	const p = fetch(`/hollow/${id}.json.gz`).then((res) => {
 		if (!res.ok) throw new Error(`hollow/${id}.json: HTTP ${res.status}`);
-		return res.json() as Promise<HollowPatch>;
+		return shardBody(res) as Promise<HollowPatch>;
 	});
 	cache.set(id, p);
 	return p;

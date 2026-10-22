@@ -9,6 +9,7 @@
 
 import { APEIROGON_RGB01, EDGE_PATTERN_HUE, type Su11, tileHue } from "@/lib/render/hyperbolic";
 import { tileHueRgb01 } from "@/lib/render/hueRing";
+import { shardBody } from "@/lib/services/atlasCodec";
 
 /**
  * A stroke colour under the same depth shade the fill gets.
@@ -487,8 +488,8 @@ let _cache: Promise<Record<string, CataloguePatch>> | null = null;
 /** Load and index the tiling catalogue (public/hyperbolic-developed.json) by id, once. */
 export function loadDevelopedPatches(): Promise<Record<string, CataloguePatch>> {
 	if (!_cache) {
-		_cache = fetch("/hyperbolic-developed.json")
-			.then((r) => r.json() as Promise<CataloguePatch[]>)
+		_cache = fetch("/hyperbolic-developed.json.gz")
+			.then((r) => shardBody(r) as Promise<CataloguePatch[]>)
 			.then((arr) => Object.fromEntries(arr.map((p) => [p.id, p])));
 	}
 	return _cache;

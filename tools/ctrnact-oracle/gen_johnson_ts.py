@@ -4,6 +4,8 @@ and emit the catalogue entries. Identifies each record by (V, cyclic-vertex-conf
 import json, numpy as np, sys
 from collections import Counter
 
+from develop_freedraw import read_json, write_json
+
 ROOT = "/Users/alessandro/Desktop/Personal/TilingAtlas"
 SRC = [f"{ROOT}/tests/fixtures/spherical-cells-k2.json",
        f"{ROOT}/tools/ctrnact-oracle/run-k8-spherical/cells-k3to8.json"]
@@ -103,7 +105,7 @@ print(f"wrote johnsonSolids.ts with {len(entries)} solids")
 
 # ---- emit catalogue entries (all except the 2 already present)
 existing={"triangular-orthobicupola","pseudo-rhombicuboctahedron"}
-cat=json.load(open(f"{ROOT}/public/reference-atlas-spherical.json"))
+cat=read_json(f"{ROOT}/public/reference-atlas-spherical.json.gz")
 cell=[x for x in cat if x.get('spherical',{}).get('solid')=='cuboctahedron'][0]['renderCell']
 by_id={x['id']:x for x in cat}
 added=fixed=0
@@ -120,5 +122,5 @@ for V,ident,var,name,k,note,r in entries:
     cat.append({"id":eid,"source":"spherical","k":k,"family":fam,"spherical":{"solid":ident},
                 "geometry":"spherical","discoverer":"Norman Johnson (1966)","note":note,"renderCell":cell})
     added+=1
-json.dump(cat,open(f"{ROOT}/public/reference-atlas-spherical.json","w"),indent=1)
+write_json(f"{ROOT}/public/reference-atlas-spherical.json.gz",cat,indent=1)
 print(f"catalogue: added {added}, repaired {fixed}, total {len(cat)}")

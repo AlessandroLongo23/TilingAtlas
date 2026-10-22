@@ -1,4 +1,4 @@
-// Builds the squared-cylinder shelf: public/squarings/cylinder/*.json + index.json.
+// Builds the squared-cylinder shelf: public/squarings/cylinder/*.json.gz + index.json.gz.
 //
 // Third of three, after build-squaring-shelf.ts (sphere) and build-torus-shelf.ts (genus 1). The
 // hyperbolic case has no closed surface to divide by, so what gets squared is a ball with its boundary
@@ -8,8 +8,9 @@
 // on a multiple of the total current — are checked in exact integers inside squareCylinder, so reaching
 // this script's happy path already means the tiling closes up.
 
-import { writeFileSync, mkdirSync, rmSync, existsSync } from "node:fs";
+import { mkdirSync, rmSync, existsSync } from "node:fs";
 import path from "node:path";
+import { writeDataFile } from "./atlas/io.mjs";
 import { buildBall, diskLayout } from "@/lib/squaring/hyperbolicBall";
 import { squareCylinder } from "@/lib/squaring/cylinderSquaring";
 import { planarMapFromFaces } from "@/lib/squaring/planarMap";
@@ -165,9 +166,9 @@ function main(): void {
 
 	if (existsSync(OUT)) rmSync(OUT, { recursive: true });
 	mkdirSync(OUT, { recursive: true });
-	for (const r of records) writeFileSync(path.join(OUT, `${r.id}.json`), JSON.stringify(r));
+	for (const r of records) writeDataFile(path.join(OUT, `${r.id}.json.gz`), JSON.stringify(r));
 	const index: CylinderIndex = { entries };
-	writeFileSync(path.join(OUT, "index.json"), JSON.stringify(index));
+	writeDataFile(path.join(OUT, "index.json.gz"), JSON.stringify(index));
 	console.log(
 		`\nwrote ${records.length} squared-cylinder records · ` +
 			`${records.reduce((a, r) => a + r.layers.length, 0)} radii · ` +

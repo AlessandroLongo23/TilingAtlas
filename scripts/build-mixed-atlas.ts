@@ -20,6 +20,7 @@ import { applyMergePlan } from "./merge-plan";
 import { applyRangePlan, rangeNote, type RangePlan } from "./range-plan";
 import { applyCoupledPlan } from "./coupled-plan";
 import { stringifyAtlas } from "./atlas/encode.mjs";
+import { writeDataFile } from "./atlas/io.mjs";
 
 interface FamilyRecord {
 	id: string;
@@ -49,7 +50,7 @@ const IN_PATHS = [
 	path.join(ROOT, "experiments", "results", "ctrnact-mixed-families-k3.cells.json"),
 	path.join(ROOT, "experiments", "results", "ctrnact-mixed-families-k4.cells.json"),
 ];
-const OUT_PATH = path.join(ROOT, "public", "reference-atlas-mixed.json");
+const OUT_PATH = path.join(ROOT, "public", "reference-atlas-mixed.json.gz");
 /**
  * The star × scaled crossing — rigid tilings that use a star species AND a side-2 regular tile.
  *
@@ -244,10 +245,10 @@ function main(): void {
 	const MAIN_MAX_K = 2;
 	const main_ = final.filter((t) => t.k <= MAIN_MAX_K);
 	const shardKs = [...new Set(final.filter((t) => t.k > MAIN_MAX_K).map((t) => t.k))].sort((a, b) => a - b);
-	fs.writeFileSync(OUT_PATH, stringifyAtlas(main_) + "\n");
+	writeDataFile(OUT_PATH, stringifyAtlas(main_) + "\n");
 	for (const k of shardKs) {
-		const p = OUT_PATH.replace(/\.json$/, `-k${k}.json`);
-		fs.writeFileSync(
+		const p = OUT_PATH.replace(/\.json\.gz$/, `-k${k}.json.gz`);
+		writeDataFile(
 			p,
 			JSON.stringify(
 				final.filter((t) => t.k === k),
@@ -260,7 +261,7 @@ function main(): void {
 		);
 	}
 	for (const f of fs.readdirSync(path.dirname(OUT_PATH))) {
-		const m = /^reference-atlas-mixed-k(\d+)\.json$/.exec(f);
+		const m = /^reference-atlas-mixed-k(\d+)\.json(\.gz)?$/.exec(f);
 		if (m && !shardKs.includes(Number(m[1]))) fs.unlinkSync(path.join(path.dirname(OUT_PATH), f));
 	}
 

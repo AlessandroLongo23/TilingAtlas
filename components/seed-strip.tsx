@@ -6,6 +6,7 @@ import { PHONE_QUERY } from "@/lib/hooks/useIsPhone";
 import { cn } from "@/lib/utils/cn";
 import { orbitColor } from "@/lib/utils/orbitColors";
 import { drawPolygons, type RawPolygon } from "@/lib/utils/renderTiling";
+import { shardBody } from "@/lib/services/atlasCodec";
 
 // Assembling a seed, run by hand in front of the room: one vertex configuration of the set at the
 // origin, then the other two placed on it.
@@ -257,7 +258,7 @@ interface Choice {
 	ci: number;
 }
 
-export function SeedStrip({ src = "/defense/seed-build.json" }: { src?: string }) {
+export function SeedStrip({ src = "/defense/seed-build.json.gz" }: { src?: string }) {
 	const [fig, setFig] = useState<SeedFigure | null>(null);
 	const [path, setPath] = useState<Choice[]>([]);
 	const [selected, setSelected] = useState<number | null>(null);
@@ -266,7 +267,7 @@ export function SeedStrip({ src = "/defense/seed-build.json" }: { src?: string }
 	useEffect(() => {
 		let live = true;
 		fetch(src)
-			.then((r) => r.json())
+			.then((r) => shardBody<SeedFigure>(r))
 			.then((d: SeedFigure) => {
 				if (live) setFig(d);
 			})

@@ -21,16 +21,17 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { readDataJson, writeDataFile } from "./atlas/io.mjs";
 
 const PUBLIC = path.join(process.cwd(), "public");
-const BASE = path.join(PUBLIC, "reference-atlas.json");
+const BASE = path.join(PUBLIC, "reference-atlas.json.gz");
 /** Only the star catalogue moves. The regular tiers are already sharded by the build script. */
 const MOVES = (t) => t.source === "ctrnact-star" && t.k >= 8;
 
-const read = (p) => JSON.parse(fs.readFileSync(p, "utf8"));
+const read = readDataJson;
 // Same encoding the build script uses for both the base atlas and the shards, so a rebuild that later
 // takes this over produces a byte-identical file instead of a whole-file reformat.
-const write = (p, v) => fs.writeFileSync(p, JSON.stringify(v, null, 0) + "\n");
+const write = (p, v) => writeDataFile(p, JSON.stringify(v, null, 0) + "\n");
 const mb = (p) => (fs.statSync(p).size / 1e6).toFixed(1);
 
 const base = read(BASE);
@@ -51,7 +52,7 @@ for (const t of moving) {
 console.log(`base ${path.basename(BASE)}: ${base.length} -> ${kept.length} entries (${mb(BASE)} MB before)`);
 
 for (const k of [...byK.keys()].sort((a, b) => a - b)) {
-	const shardPath = path.join(PUBLIC, `reference-atlas-k${k}.json`);
+	const shardPath = path.join(PUBLIC, `reference-atlas-k${k}.json.gz`);
 	const existing = fs.existsSync(shardPath) ? read(shardPath) : [];
 	const have = new Set(existing.map((t) => t.id));
 	const added = byK.get(k).filter((t) => !have.has(t.id));

@@ -16,7 +16,7 @@
  * vertex-configuration slide does.
  */
 
-import { readFile, writeFile } from "node:fs/promises";
+import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import { COMPAT_EDGES, COMPAT_NODES } from "@/lib/defense/vcCompatibility";
 import { orbitsFor } from "@/lib/defense/orbitCache";
@@ -25,6 +25,7 @@ import { figureFromPlacedPolys } from "@/lib/render/vertexFigure";
 import { parseBaseCell, type RawPolygon, type TranslationalCellData } from "@/lib/utils/renderTiling";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
 import { hydrateRenderCells } from "@/lib/services/renderCellDerive";
+import { readDataJson } from "./atlas/io.mjs";
 
 /** How many tilings the random button cycles through. Each ships its own cell with the page. */
 const POOL_PER_K = 4;
@@ -174,8 +175,9 @@ function connected({ words, pairs }: Read): boolean {
 }
 
 async function main() {
-	const raw = await readFile(path.join(process.cwd(), "public", "reference-atlas.json"), "utf8");
-	const atlas = hydrateRenderCells(decodeAtlas<AtlasEntry>(JSON.parse(raw)) as never) as AtlasEntry[];
+	const atlas = hydrateRenderCells(
+		decodeAtlas<AtlasEntry>(readDataJson(path.join(process.cwd(), "public", "reference-atlas.json"))) as never,
+	) as AtlasEntry[];
 
 	const chosen: { id: string; k: number; read: Read }[] = [];
 	const rejected: string[] = [];

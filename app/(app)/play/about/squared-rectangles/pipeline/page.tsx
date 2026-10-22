@@ -1,5 +1,5 @@
-import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { readDataJson } from "@/scripts/atlas/io.mjs";
 import { Suspense } from "react";
 import type { CylinderIndex, PipelineIndex, TorusIndex } from "@/lib/squaring/shelf";
 import { PipelineExplorer } from "@/components/squaring/pipeline-explorer";
@@ -20,7 +20,7 @@ export default async function PipelinePage() {
 	let index: PipelineIndex = { maxOrder: 0, entries: [] };
 	try {
 		const filePath = path.join(process.cwd(), "public", "squarings", "pipeline", "index.json");
-		index = JSON.parse(await readFile(filePath, "utf8")) as PipelineIndex;
+		index = readDataJson(filePath) as PipelineIndex;
 	} catch {
 		// Falls through to the empty state below; the page must not 500 because a build step was skipped.
 	}
@@ -30,7 +30,7 @@ export default async function PipelinePage() {
 	let torusIndex: TorusIndex = { classLimit: 0, entries: [] };
 	try {
 		const torusPath = path.join(process.cwd(), "public", "squarings", "torus", "index.json");
-		torusIndex = JSON.parse(await readFile(torusPath, "utf8")) as TorusIndex;
+		torusIndex = readDataJson(torusPath) as TorusIndex;
 	} catch {
 		// Same story: the squared-tori folders simply do not appear.
 	}
@@ -39,7 +39,7 @@ export default async function PipelinePage() {
 	let cylinderIndex: CylinderIndex = { entries: [] };
 	try {
 		const cylPath = path.join(process.cwd(), "public", "squarings", "cylinder", "index.json");
-		cylinderIndex = JSON.parse(await readFile(cylPath, "utf8")) as CylinderIndex;
+		cylinderIndex = readDataJson(cylPath) as CylinderIndex;
 	} catch {
 		// Falls through; the squared-cylinder rows simply do not appear.
 	}

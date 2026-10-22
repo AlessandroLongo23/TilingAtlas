@@ -1,5 +1,4 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
 import path from "node:path";
 import { evaluateParamCell, type ParametricCellData } from "@/lib/utils/paramCell";
 import { parseBaseCell } from "@/lib/utils/renderTiling";
@@ -7,6 +6,7 @@ import { buildTorusMap, type TorusCell, type TorusMap } from "./torusMap";
 import { squareTorus, torusClasses } from "./torusSquaring";
 import { squaringCell, type SquaringSupport } from "./playSquaring";
 import { sqSectors, torusFrame, torusSqDomains } from "./torusSqDomains";
+import { readDataText } from "../../scripts/atlas/io.mjs";
 
 // Two things /play needs that the theory page does not.
 //
@@ -38,7 +38,7 @@ interface AtlasFile {
 	}[];
 }
 
-const atlas = JSON.parse(readFileSync(path.join(ROOT, "public", "reference-atlas-period.json"), "utf8")) as AtlasFile;
+const atlas = JSON.parse(readDataText(path.join(ROOT, "public", "reference-atlas-period.json"))) as AtlasFile;
 
 /**
  * The shipped `renderCell` is (prototype, placement) index pairs into a shared geometry pool, and the app

@@ -1,15 +1,16 @@
 // Emit interactive-figure data for the k=2 two-parameter-family complex: nodes (with a representative
 // developed tiling for hover), edges, faces (with surface classification + generator membership), and
 // connected components. Consumed by the standalone HTML figure. Offline; float geometry only.
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { writeFileSync, mkdirSync } from "node:fs";
 import { extractTwoCell } from "./twoCellExtractor";
 import { nodeCanonicalKey } from "./nodeCanonicalKey";
 import { verifyComplex } from "./verifyComplex";
 import type { FloatTiling, NodeState } from "./types";
 import type { FamilyRecord } from "./graphAssembler";
 import { decodeAtlas } from "../atlas/encode.mjs";
+import { readDataJson } from "../atlas/io.mjs";
 
-const atlas = decodeAtlas(JSON.parse(readFileSync("public/reference-atlas-isotoxal.json", "utf8")));
+const atlas = decodeAtlas(readDataJson("public/reference-atlas-isotoxal.json"));
 type AtlasRecord = FamilyRecord & { k: number; source: string };
 const recs = (Array.isArray(atlas) ? atlas : atlas.records) as AtlasRecord[];
 const cluster = recs.filter((r) => r.k === 2 && r.source === "isotoxal" && r.paramCell?.params?.length === 2);

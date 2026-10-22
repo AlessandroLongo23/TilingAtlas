@@ -1,4 +1,4 @@
-/* Enrich public/reference-atlas.json IN PLACE with the vertex-type classification and exact wallpaper
+/* Enrich public/reference-atlas.json.gz IN PLACE with the vertex-type classification and exact wallpaper
  * symmetry. SURGICAL: only ADDS four fields to each existing entry — never reorders, drops, or
  * re-derives the geometry pipeline. It reconstructs each regular cell from the `exactSource` the entry
  * already carries, so it cannot regress the atlas the multi-phase build produced.
@@ -31,8 +31,9 @@ import { analyzeSymmetry } from "@/lib/classes/symmetry/WallpaperSymmetry";
 import type { PeriodCell } from "@/classes/algorithm/PeriodSolver";
 import type { LatticeShape, WallpaperGroup } from "@/lib/classes/symmetry/types";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
+import { readDataJson, writeDataFile } from "./atlas/io.mjs";
 
-const ATLAS_PATH = path.join(process.cwd(), "public", "reference-atlas.json");
+const ATLAS_PATH = path.join(process.cwd(), "public", "reference-atlas.json.gz");
 const CTRNACT_PATH = path.join(process.cwd(), "figures", "data", "ctrnact.json");
 const STAR_DIR = path.join(process.cwd(), "experiments", "star-oracle");
 const LOG_PATH = path.join(process.cwd(), "experiments", "results", "reference-atlas-enrich-2026-07-11.log");
@@ -144,7 +145,7 @@ const starOrbitsById = new Map<string, string[]>();
 // ── per-file enrichment ── enrich one atlas file in place (base atlas, or a higher-k shard). All the
 // source indexes above are shared, so calling this for several files loads ctrnact.json/star cells once.
 function enrichFile(atlasPath: string): void {
-	const atlas = decodeAtlas<AtlasEntry>(JSON.parse(fs.readFileSync(atlasPath, "utf8")));
+	const atlas = decodeAtlas<AtlasEntry>(readDataJson(atlasPath));
 	log(`\n=== classify ${path.relative(process.cwd(), atlasPath)} (${atlas.length} entries) ===`);
 	const t0 = Date.now();
 	const stat = {
@@ -241,7 +242,7 @@ function enrichFile(atlasPath: string): void {
 	}
 
 	// ── write back (same entries, same order, + new fields) ──
-	fs.writeFileSync(atlasPath, JSON.stringify(atlas) + "\n");
+	writeDataFile(atlasPath, JSON.stringify(atlas) + "\n");
 
 	// ── report ──
 	log("\n--- summary ---");
@@ -280,10 +281,10 @@ function enrichFile(atlasPath: string): void {
 }
 
 // Default: enrich the base atlas. With file args: enrich exactly those (e.g. the k=8..10 shards),
-// leaving the base atlas untouched. Relative paths resolve from cwd.
+// leaving the base atlas untouched. Relative paths resolve from cwd; a `.json` name means its `.json.gz`.
 const targets = process.argv.slice(2);
 const files = (targets.length ? targets : [ATLAS_PATH]).map((f) =>
-	path.isAbsolute(f) ? f : path.join(process.cwd(), f),
+	(path.isAbsolute(f) ? f : path.join(process.cwd(), f)).replace(/\.json$/, ".json.gz"),
 );
 for (const f of files) enrichFile(f);
 

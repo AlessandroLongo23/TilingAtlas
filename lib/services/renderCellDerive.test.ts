@@ -13,6 +13,7 @@ import { CyclotomicRing, setActiveRing } from "@/classes/Cyclotomic";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
 import type { ExactCellSource } from "@/lib/services/cellCodecService";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
+import { readDataText } from "../../scripts/atlas/io.mjs";
 import {
 	hydrateRenderCells,
 	renderCellFromExactSource,
@@ -20,12 +21,12 @@ import {
 	type CellShape,
 } from "@/lib/services/renderCellDerive";
 
-const ATLAS = path.join(process.cwd(), "public", "reference-atlas.json");
+const ATLAS = path.join(process.cwd(), "public", "reference-atlas.json.gz");
 const ring = CyclotomicRing.create(24);
 setActiveRing(ring);
 
 type Rec = { id: string; renderCell?: TranslationalCellData; exactSource?: ExactCellSource };
-const records: Rec[] = fs.existsSync(ATLAS) ? decodeAtlas<Rec>(JSON.parse(fs.readFileSync(ATLAS, "utf8"))) : [];
+const records: Rec[] = fs.existsSync(ATLAS) ? decodeAtlas<Rec>(JSON.parse(readDataText(ATLAS))) : [];
 
 describe.skipIf(!records.length)("renderCell derivation over the shipped atlas", () => {
 	it("ships most of the atlas with no renderCell at all", () => {

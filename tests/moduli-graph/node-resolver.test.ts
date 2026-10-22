@@ -1,14 +1,14 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
 import { CyclotomicRing } from "@/classes/Cyclotomic";
 import { loadCatalogueKeys } from "../../scripts/moduli-graph/catalogueKeys";
 import { extractNodes } from "../../scripts/moduli-graph/nodeExtractor";
 import { resolveNode } from "../../scripts/moduli-graph/nodeResolver";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
 import type { ParametricCellData } from "@/lib/utils/paramCell";
+import { readDataText } from "../../scripts/atlas/io.mjs";
 
 const atlas = decodeAtlas<{ id: string; paramCell: ParametricCellData }>(
-	JSON.parse(readFileSync("public/reference-atlas-isotoxal.json", "utf8")),
+	JSON.parse(readDataText("public/reference-atlas-isotoxal.json")),
 );
 const fam = atlas.find((r) => r.id === "ctrnact-isotoxal-family-k1-06")!;
 

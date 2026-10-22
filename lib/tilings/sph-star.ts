@@ -92,7 +92,7 @@ export interface SphStarPattern {
 /** Index row: everything a card, a facet or a search needs before the geometry is fetched. */
 export type SphStarEntry = Omit<SphStarPattern, "vertices" | "faces" | "faceType" | "edges">;
 
-export const sphStarShardUrl = (id: string): string => `/spherical-star/${id}.json`;
+export const sphStarShardUrl = (id: string): string => `/spherical-star/${id}.json.gz`;
 
 /**
  * Is this record's density the covering number, or an artefact?

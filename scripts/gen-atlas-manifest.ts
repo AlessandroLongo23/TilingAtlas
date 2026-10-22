@@ -1,4 +1,4 @@
-// Emit public/atlas-manifest.json: how many tilings sit behind each lazy tier, so the browse tree
+// Emit public/atlas-manifest.json.gz: how many tilings sit behind each lazy tier, so the browse tree
 // can offer a row before its data exists.
 //
 //   pnpm tsx scripts/gen-atlas-manifest.ts            # dry run, prints the table
@@ -19,6 +19,7 @@ import { decodeAtlas } from "@/lib/services/atlasCodec";
 import { tileClassOf, subOf, geometryOf, decorationOf, type ReferenceTiling } from "@/lib/services/referenceAtlas";
 import type { AtlasManifest, ManifestTier, TierShelf } from "@/lib/services/atlasManifest";
 import { HYP_POLY_BOARDS, hypPolySubOfBoard } from "@/lib/tilings/hyp-poly";
+import { dataPath, readDataJson, writeDataFile } from "./atlas/io.mjs";
 
 const write = process.argv.includes("--write");
 const PUB = path.resolve("public");
@@ -39,12 +40,12 @@ const missing: string[] = [];
 
 for (const t of TIERS) {
 	for (const k of t.ks) {
-		const file = path.join(PUB, t.file(k));
+		const file = dataPath(path.join(PUB, t.file(k)));
 		if (!fs.existsSync(file)) {
 			missing.push(t.file(k));
 			continue;
 		}
-		const records = decodeAtlas<ReferenceTiling>(JSON.parse(fs.readFileSync(file, "utf8")));
+		const records = decodeAtlas<ReferenceTiling>(readDataJson(file));
 		// Group by exactly what the tree groups by, so a manifest row and a loaded row collide on the
 		// same key and the set difference in unloadedTiers() actually cancels. Geometry and decoration
 		// are measured off the records and grouped on too, never assumed: the tree filters to one
@@ -129,9 +130,9 @@ console.log(`${tiers.length} tiers, ${total.toLocaleString()} tilings currently 
 if (missing.length) console.log(`missing shards (skipped): ${missing.join(", ")}`);
 
 const manifest: AtlasManifest = { manifest: 1, tiers };
-const out = path.join(PUB, "atlas-manifest.json");
+const out = path.join(PUB, "atlas-manifest.json.gz");
 if (write) {
-	fs.writeFileSync(out, JSON.stringify(manifest) + "\n");
+	writeDataFile(out, JSON.stringify(manifest) + "\n");
 	console.log(`wrote ${out} (${(JSON.stringify(manifest).length / 1024).toFixed(1)} KB)`);
 } else {
 	console.log(`dry run — would be ${(JSON.stringify(manifest).length / 1024).toFixed(1)} KB; pass --write`);

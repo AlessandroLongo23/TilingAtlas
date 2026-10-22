@@ -13,6 +13,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { ReferenceTiling, IslamicSystem } from "@/lib/services/referenceAtlas";
 import { stringifyAtlas } from "./atlas/encode.mjs";
+import { readDataJson, writeDataFile } from "./atlas/io.mjs";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
 import {
 	assemble,
@@ -33,9 +34,9 @@ import {
 } from "./islamic/lib";
 
 const ROOT = process.cwd();
-const OUT_PATH = path.join(ROOT, "public", "reference-atlas-islamic.json");
+const OUT_PATH = path.join(ROOT, "public", "reference-atlas-islamic.json.gz");
 const LOG_PATH = path.join(ROOT, "experiments", "results", "islamic-atlas-build.log");
-const ATLAS_PATH = path.join(ROOT, "public", "reference-atlas.json");
+const ATLAS_PATH = path.join(ROOT, "public", "reference-atlas.json.gz");
 
 const logLines: string[] = [];
 function log(msg = ""): void {
@@ -397,9 +398,7 @@ function loadReuseCells(ids: Set<string>): Map<string, ReferenceTiling["renderCe
 		log(`  ⚑ base atlas missing (${path.relative(ROOT, ATLAS_PATH)}) — reuse entries will be skipped`);
 		return out;
 	}
-	const atlas = decodeAtlas<{ id: string; renderCell: ReferenceTiling["renderCell"] }>(
-		JSON.parse(fs.readFileSync(ATLAS_PATH, "utf8")),
-	);
+	const atlas = decodeAtlas<{ id: string; renderCell: ReferenceTiling["renderCell"] }>(readDataJson(ATLAS_PATH));
 	for (const t of atlas) if (ids.has(t.id)) out.set(t.id, t.renderCell);
 	return out;
 }
@@ -456,7 +455,7 @@ function main(): void {
 	out.push(...developedGirihTilings(curatedFps));
 
 	fs.mkdirSync(path.dirname(OUT_PATH), { recursive: true });
-	fs.writeFileSync(OUT_PATH, stringifyAtlas(out) + "\n");
+	writeDataFile(OUT_PATH, stringifyAtlas(out) + "\n");
 	const sizeKB = (fs.statSync(OUT_PATH).size / 1024).toFixed(1);
 	log(
 		`  wrote ${out.length} Islamic tilings (${skipped} skipped) → ${path.relative(ROOT, OUT_PATH)} (${sizeKB} KB), elapsed ${((Date.now() - t0) / 1000).toFixed(2)}s`,

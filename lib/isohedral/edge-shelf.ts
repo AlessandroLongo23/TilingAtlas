@@ -191,7 +191,7 @@ export const IH_EDGE_BOARDS: IhEdgeBoard[] = [
 
 export const IH_EDGE_BOARD_BY_ID = new Map(IH_EDGE_BOARDS.map((b) => [b.id, b]));
 
-export const ihEdgeShardUrl = (board: string, k: number): string => `/isohedral-edges/ie${board}-k${k}.json`;
+export const ihEdgeShardUrl = (board: string, k: number): string => `/isohedral-edges/ie${board}-k${k}.json.gz`;
 
 /** Every k a board ships, ascending. */
 export function ihEdgeBoardKs(b: IhEdgeBoard): number[] {

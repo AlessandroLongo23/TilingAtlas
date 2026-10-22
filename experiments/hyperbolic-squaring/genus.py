@@ -8,8 +8,10 @@ Measured here: dim of the harmonic 1-forms, straight from the closed + co-closed
 conditions, with no genus assumed anywhere. Hodge says it must be 2g = 2 - chi.
 """
 from fractions import Fraction as Fr
-import json, glob, os
+import glob, os, sys
 REPO = '/Users/alessandro/Desktop/Personal/TilingAtlas'
+sys.path.insert(0, f'{REPO}/tools/ctrnact-oracle')
+from develop_freedraw import read_json
 
 def nullity(rows, n):
     M = [r[:] for r in rows]; piv = 0
@@ -26,8 +28,8 @@ def nullity(rows, n):
     return n - piv
 
 rows_out = []
-for p in sorted(glob.glob(f'{REPO}/public/spherical-star/*.json')):
-    d = json.load(open(p))
+for p in sorted(glob.glob(f'{REPO}/public/spherical-star/*.json') + glob.glob(f'{REPO}/public/spherical-star/*.json.gz')):
+    d = read_json(p)
     V, faces = len(d['vertices']), d['faces']
     eidx = {}
     for e in d['edges']:

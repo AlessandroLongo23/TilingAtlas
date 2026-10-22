@@ -2,8 +2,8 @@
 """Print the TS board tables for the two shelves that carry one row per board, DERIVED from what
 actually shipped rather than transcribed by hand.
 
-  * SPH_EDGES_BOARDS  (lib/freedraw/sph-edges.ts)  <- public/spherical-edges/x<board>-k<k>.json
-  * HYP_POLY_BOARDS   (lib/tilings/hyp-poly.ts)    <- public/hyperbolic-poly/hp<n>-k<k>.json
+  * SPH_EDGES_BOARDS  (lib/freedraw/sph-edges.ts)  <- public/spherical-edges/x<board>-k<k>.json.gz
+  * HYP_POLY_BOARDS   (lib/tilings/hyp-poly.ts)    <- public/hyperbolic-poly/hp<n>-k<k>.json.gz
 
 Every number comes from a file on disk: the counts from the shards, `dropped` from the develop
 report's BUDGET line, `complete` / `missing` from Marek's own census. Re-run it after any develop and
@@ -23,11 +23,12 @@ TWO DIFFERENT "the run stopped here" CLAIMS, kept apart on purpose:
 Usage:  emit_board_tables.py [--eager-bytes 1000000]
 """
 import argparse
-import json
 import os
 import re
 import sys
 from collections import defaultdict
+
+from develop_freedraw import read_json
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(_HERE, "..", ".."))
@@ -114,8 +115,7 @@ def load_shards(subdir, pattern):
         if not m:
             continue
         path = os.path.join(d, name)
-        with open(path) as fh:
-            shard = json.load(fh)
+        shard = read_json(path)
         # Two shard shapes: the spherical-edge shards wrap their records in a board object (the board
         # ships once per shard), the hyperbolic-poly shards are a bare record list.
         recs = shard if isinstance(shard, list) else shard["patterns"]
@@ -135,7 +135,7 @@ def split_eager(ks, sizes, eager_bytes, floor_n=0):
 
 
 def sph_edges(eager_bytes):
-    shards, names = load_shards("spherical-edges", re.compile(r"^x(.+)-k(\d+)\.json$"))
+    shards, names = load_shards("spherical-edges", re.compile(r"^x(.+)-k(\d+)\.json(?:\.gz)?$"))
     rows, notes = [], []
     for board in sorted(shards, key=lambda b: (len(b), b)):
         per_k = shards[board]
@@ -182,7 +182,7 @@ def hyp_poly(eager_n, eager_bytes):
     They differ in three places and nowhere else — the id, the report the BUDGET line comes from, and
     the eager rule. ai1's slices are tiny at every k, so its five lowest load eagerly; ai2's k slices
     reach 12 MB, so its eager set is chosen by BYTES like the spherical-edge shelf's."""
-    shards, _ = load_shards("hyperbolic-poly", re.compile(r"^hp(t?\d+)-k(\d+)\.json$"))
+    shards, _ = load_shards("hyperbolic-poly", re.compile(r"^hp(t?\d+)-k(\d+)\.json(?:\.gz)?$"))
     rows, notes = [], []
     for board in sorted(shards, key=lambda b: (b.startswith("t"), int(b.lstrip("t")))):
         ai2 = board.startswith("t")

@@ -16,8 +16,9 @@
 // and every vertex must see a full turn. That last one is not redundant with the other two — a cover
 // that wraps twice round a point has twice the area in twice the cell and passes both.
 
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { readFileSync, mkdirSync } from "node:fs";
 import path from "node:path";
+import { writeDataFile } from "./atlas/io.mjs";
 import { stringifyAtlas } from "./atlas/encode.mjs";
 
 const ARGS = process.argv.slice(2);
@@ -200,9 +201,9 @@ for (const k of [...byK.keys()].sort((a, b) => a - b)) {
 		faces: e.faces,
 		stats: e.stats,
 	}));
-	writeFileSync(path.join(OUT, `planigon-k${k}.json`), JSON.stringify(rows));
+	writeDataFile(path.join(OUT, `planigon-k${k}.json.gz`), JSON.stringify(rows));
 	manifest.k.push({ k, count: rows.length, file: `/planigon/planigon-k${k}.json` });
-	console.log(`  k=${k}: ${rows.length} tilings -> public/planigon/planigon-k${k}.json`);
+	console.log(`  k=${k}: ${rows.length} tilings -> public/planigon/planigon-k${k}.json.gz`);
 	byK.get(k).forEach((e, i) => {
 		const sizes = [...new Set(e.faces.map((f) => f.length))].sort((a, b) => a - b);
 		ref.push({
@@ -224,9 +225,9 @@ for (const k of [...byK.keys()].sort((a, b) => a - b)) {
 		});
 	});
 }
-writeFileSync(path.join(OUT, "manifest.json"), JSON.stringify(manifest, null, 2));
-writeFileSync(path.join(PUB, "reference-atlas-planigon.json"), stringifyAtlas(ref));
-console.log(`  atlas shelf: ${ref.length} entries -> public/reference-atlas-planigon.json`);
+writeDataFile(path.join(OUT, "manifest.json.gz"), JSON.stringify(manifest, null, 2));
+writeDataFile(path.join(PUB, "reference-atlas-planigon.json.gz"), stringifyAtlas(ref));
+console.log(`  atlas shelf: ${ref.length} entries -> public/reference-atlas-planigon.json.gz`);
 console.log(
 	`planigon: ${distinct.length} distinct tilings, shape err ${worstShape.toExponential(2)}, area err ${worstArea.toExponential(2)}, angle err ${worstAngle.toExponential(2)}° — certified`,
 );

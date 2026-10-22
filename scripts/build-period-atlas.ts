@@ -31,11 +31,12 @@ import { evaluateParamCell, type ParametricCellData } from "@/lib/utils/paramCel
 import { applyRangePlan, applyRegionPlan, rangeNote, regionNote, type RangePlan } from "./range-plan";
 import type { ReferenceTiling } from "@/lib/services/referenceAtlas";
 import { stringifyAtlas } from "./atlas/encode.mjs";
+import { writeDataFile } from "./atlas/io.mjs";
 
 const ROOT = path.resolve(__dirname, "..");
 const IN_DIR = path.join(ROOT, "experiments", "period-oracle");
 const PUBLIC_DIR = path.join(ROOT, "public");
-const OUT_PATH = path.join(PUBLIC_DIR, "reference-atlas-period.json");
+const OUT_PATH = path.join(PUBLIC_DIR, "reference-atlas-period.json.gz");
 const FAMILIES_PATH = path.join(IN_DIR, "ctrnact-period-families.cells.json");
 const RANGE_PLAN_PATH = path.join(IN_DIR, "period-range-plan.json");
 /** Intrinsic parametric cells, keyed on the canonical map. See the attach step at the end of main(). */
@@ -87,7 +88,7 @@ const QUOTIENT_FAMILIES_PATHS: { cells: string; dedup?: string }[] = [
 const QUOTIENT_MIN_K = 1;
 const LOG_PATH = path.join(ROOT, "experiments", "results", "period-atlas-build.log");
 const MAIN_MAX_K = 2; // k≤2 eager with the base atlas; each higher k gets its own lazy shard
-const shardPath = (k: number): string => path.join(PUBLIC_DIR, `reference-atlas-period-k${k}.json`);
+const shardPath = (k: number): string => path.join(PUBLIC_DIR, `reference-atlas-period-k${k}.json.gz`);
 
 const INPUTS: { k: number; files: string[] }[] = [
 	{ k: 1, files: ["ctrnact-period3-k1.cells.json"] },
@@ -650,18 +651,18 @@ function main(): void {
 	const main_ = shipping.filter((t) => t.k <= MAIN_MAX_K);
 	const shardKs = [...new Set(shipping.filter((t) => t.k > MAIN_MAX_K).map((t) => t.k))].sort((a, b) => a - b);
 	const sizeKB = (p: string): string => (fs.statSync(p).size / 1024).toFixed(1);
-	fs.writeFileSync(OUT_PATH, stringifyAtlas(main_) + "\n");
+	writeDataFile(OUT_PATH, stringifyAtlas(main_) + "\n");
 	log("");
 	log(`=== period atlas written (main + ${shardKs.length} shard${shardKs.length === 1 ? "" : "s"}) ===`);
 	log(`  main  k≤${MAIN_MAX_K}: ${main_.length} tilings → ${path.relative(ROOT, OUT_PATH)}  (${sizeKB(OUT_PATH)} KB)`);
 	for (const k of shardKs) {
 		const entries = shipping.filter((t) => t.k === k);
 		const p = shardPath(k);
-		fs.writeFileSync(p, stringifyAtlas(entries) + "\n");
+		writeDataFile(p, stringifyAtlas(entries) + "\n");
 		log(`  shard k=${k}: ${entries.length} tilings → ${path.relative(ROOT, p)}  (${sizeKB(p)} KB)`);
 	}
 	for (const f of fs.readdirSync(PUBLIC_DIR)) {
-		const m = /^reference-atlas-period-k(\d+)\.json$/.exec(f);
+		const m = /^reference-atlas-period-k(\d+)\.json(\.gz)?$/.exec(f);
 		if (m && !shardKs.includes(Number(m[1]))) fs.unlinkSync(path.join(PUBLIC_DIR, f));
 	}
 

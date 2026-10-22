@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync } from "node:fs";
 import { faceCrossings, sheetCount, sphStarScene, starFaceRings } from "@/lib/render/sphStar";
 import { partialFill } from "@/lib/render/sphericalGeometry";
 import type { V3 } from "@/lib/render/icoFreedraw";
 import type { SphStarPattern } from "@/lib/tilings/sph-star";
+import { readDataText } from "../../scripts/atlas/io.mjs";
 
 // The star-face decomposition is the one piece of real geometry in the spherical-star adapter, so it is
 // checked against a number derived independently rather than against itself.
@@ -279,7 +280,7 @@ describe("starFaceRings", () => {
 // Marek Čtrnáct, 2026-08-19: the pentagrammic prism's concave edges did not show. They are not edges,
 // so nothing drew them; `faceCrossings` is what does.
 describe("faceCrossings", () => {
-	const prism = (): SphStarPattern => JSON.parse(readFileSync("public/spherical-star/ss-10-15-7-d2.json", "utf8"));
+	const prism = (): SphStarPattern => JSON.parse(readDataText("public/spherical-star/ss-10-15-7-d2.json"));
 
 	const build = (p: SphStarPattern) => {
 		const verts = p.vertices.map((v) => [...v] as [number, number, number]);
@@ -343,7 +344,7 @@ describe("faceCrossings", () => {
 // Oosterom-Strackee, and it has to bound the sampled maximum from below everywhere and meet it exactly
 // wherever the covering is uniform.
 describe("sheetCount", () => {
-	const load = (id: string): SphStarPattern => JSON.parse(readFileSync(`public/spherical-star/${id}.json`, "utf8"));
+	const load = (id: string): SphStarPattern => JSON.parse(readDataText(`public/spherical-star/${id}.json`));
 
 	const dot3 = (a: V3, b: V3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 	const cross3 = (a: V3, b: V3): V3 => [
@@ -400,8 +401,8 @@ describe("sheetCount", () => {
 	});
 
 	it("bounds the mean from above on every record of the shelf", () => {
-		for (const f of readdirSync("public/spherical-star").filter((x) => x.endsWith(".json"))) {
-			const p: SphStarPattern = JSON.parse(readFileSync(`public/spherical-star/${f}`, "utf8"));
+		for (const f of readdirSync("public/spherical-star").filter((x) => /\.json(\.gz)?$/.test(x))) {
+			const p: SphStarPattern = JSON.parse(readDataText(`public/spherical-star/${f}`));
 			expect(sheetCount(p)).toBeGreaterThanOrEqual(meanSheets(p) - 1e-6);
 		}
 	});
@@ -409,8 +410,8 @@ describe("sheetCount", () => {
 
 describe("a partial fill on the star shelf", () => {
 	it("fills only the chosen faces and keeps every edge of the solid", () => {
-		for (const f of readdirSync("public/spherical-star").filter((n) => n.endsWith(".json"))) {
-			const p: SphStarPattern = JSON.parse(readFileSync(`public/spherical-star/${f}`, "utf8"));
+		for (const f of readdirSync("public/spherical-star").filter((n) => /\.json(\.gz)?$/.test(n))) {
+			const p: SphStarPattern = JSON.parse(readDataText(`public/spherical-star/${f}`));
 			const whole = sphStarScene(p);
 			const round = partialFill(p.vertices, p.faces, "vertex", 0)!;
 			const part = sphStarScene(p, false, round);

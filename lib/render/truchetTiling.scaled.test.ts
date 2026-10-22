@@ -1,14 +1,12 @@
 import { describe, expect, it } from "vitest";
-import fs from "node:fs";
 import { truchetPattern } from "@/lib/render/truchetTiling";
 import { figureEscapes, figureSelfIntersects, tileFigure, wiringCrosses } from "@/lib/freedraw/arcs";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
+import { readDataText } from "../../scripts/atlas/io.mjs";
 
 const recs = (() => {
-	return decodeAtlas<{ renderCell: unknown }>(
-		JSON.parse(fs.readFileSync("public/reference-atlas-scaled.json", "utf8")),
-	);
+	return decodeAtlas<{ renderCell: unknown }>(JSON.parse(readDataText("public/reference-atlas-scaled.json")));
 })();
 
 describe("the scaled shelf, read as Truchet", () => {

@@ -8,16 +8,17 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { readDataJson, writeDataFile } from "./atlas/io.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 const ROWS = path.join(ROOT, "tools", "ctrnact-oracle", "isotoxal-atlas-rows.json");
-const ATLAS = path.join(ROOT, "public", "reference-atlas-spherical.json");
+const ATLAS = path.join(ROOT, "public", "reference-atlas-spherical.json.gz");
 const DISCOVERER = "Čtrnáct engine + develop_euclid, isotoxal palettes over the eleven D=120 outlines, 2026-08-31";
 const isIso = (id) => id.startsWith("sph-iso-");
 const write = process.argv.includes("--write");
 
 const rows = JSON.parse(fs.readFileSync(ROWS, "utf8"));
-const atlas = JSON.parse(fs.readFileSync(ATLAS, "utf8"));
+const atlas = readDataJson(ATLAS);
 
 const note = (r) =>
 	`Polyhedron with ISOTOXAL STAR faces: ${r.census}, ${r.V} vertices, ${r.E} edges, ${r.F} faces, ` +
@@ -82,5 +83,5 @@ if (!write) {
 	process.exit(0);
 }
 atlas.records = out;
-fs.writeFileSync(ATLAS, JSON.stringify(atlas));
-console.log(`wrote public/reference-atlas-spherical.json — ${out.length} records`);
+writeDataFile(ATLAS, JSON.stringify(atlas));
+console.log(`wrote public/reference-atlas-spherical.json.gz — ${out.length} records`);

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Does the drawn/undrawn EDGE-TYPE search reproduce freedraw on the square grid?
 
-The test of Marek's proposal. `public/freedraw/solutions.json` holds 1420 square-grid freedraw
+The test of Marek's proposal. `public/freedraw/solutions.json.gz` holds 1420 square-grid freedraw
 patterns at k <= 3 (13 / 153 / 1254), enumerated independently of this engine and already checked
 bijectively against his own digon-alphabet solver by develop_freedraw.py. This script computes an
 exact canonical form for every pattern on both sides and compares the two SETS, not the two counts.
@@ -18,11 +18,13 @@ have no vertex of degree 1 (a dangling edge is a dead end, "a maze, not a tiling
 knows nothing about that and enumerates dangling edges happily. They are filtered here, and counted,
 because how many there are is itself worth knowing.
 
-  python3 check_marked_square.py --cells fdsq-cells.json --oracle ../../public/freedraw/solutions.json
+  python3 check_marked_square.py --cells fdsq-cells.json --oracle ../../public/freedraw/solutions.json.gz
 """
 import argparse
 import json
 from math import gcd
+
+from develop_freedraw import read_json
 
 # The 8 elements of the square lattice's point group, as 2x2 integer matrices (a, b; c, d).
 POINTGROUP = [
@@ -277,7 +279,7 @@ def main():
         ours.setdefault(rec["k"], {})[canonical(edges, T1, T2)] = rec["id"]
 
     theirs = {}
-    for rec in json.load(open(args.oracle)):
+    for rec in read_json(args.oracle):
         if rec["k"] > args.kmax or rec.get("grid", "square") != "square":
             continue
         edges, T1, T2 = edges_from_oracle(rec)

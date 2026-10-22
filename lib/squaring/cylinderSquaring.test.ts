@@ -1,10 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync } from "node:fs";
 import path from "node:path";
 import { buildBall, diskLayout } from "./hyperbolicBall";
 import { squareCylinder } from "./cylinderSquaring";
 import { planarMapFromFaces } from "./planarMap";
 import type { CylinderIndex, CylinderRecord } from "./shelf";
+import { readDataText } from "../../scripts/atlas/io.mjs";
 
 // The hyperbolic case, tested on invariants like the other two. The construction is exact inside
 // squareCylinder and only the shipped coordinates are rounded, so the assertions here re-run the exact
@@ -14,8 +15,8 @@ const SHELF = path.join(process.cwd(), "public", "squarings", "cylinder");
 
 const records = (): CylinderRecord[] =>
 	readdirSync(SHELF)
-		.filter((f) => f.endsWith(".json") && f !== "index.json")
-		.map((f) => JSON.parse(readFileSync(path.join(SHELF, f), "utf8")) as CylinderRecord);
+		.filter((f) => /\.json(\.gz)?$/.test(f) && !f.startsWith("index."))
+		.map((f) => JSON.parse(readDataText(path.join(SHELF, f))) as CylinderRecord);
 
 // Pairs whose EXACT solve is affordable in a test run. Bareiss is cubic in the free-vertex count with
 // entries that grow to the spanning-tree count, so {3,12} at r=3 is not a bigger case, it is a
@@ -195,7 +196,7 @@ describe("the shipped shelf", () => {
 	});
 
 	it("labels {3,6} Euclidean and everything else hyperbolic", () => {
-		const idx = JSON.parse(readFileSync(path.join(SHELF, "index.json"), "utf8")) as CylinderIndex;
+		const idx = JSON.parse(readDataText(path.join(SHELF, "index.json"))) as CylinderIndex;
 		for (const e of idx.entries) {
 			expect(`${e.id}: ${e.geometry}`).toBe(`${e.id}: ${e.q === 6 ? "euclidean" : "hyperbolic"}`);
 		}
@@ -203,7 +204,7 @@ describe("the shipped shelf", () => {
 	});
 
 	it("carries a picker thumbnail whose middle vertex has q neighbours, which is what identifies it", () => {
-		const idx = JSON.parse(readFileSync(path.join(SHELF, "index.json"), "utf8")) as CylinderIndex;
+		const idx = JSON.parse(readDataText(path.join(SHELF, "index.json"))) as CylinderIndex;
 		for (const e of idx.entries) {
 			const deg = new Array<number>(e.thumb.points.length).fill(0);
 			for (const [u, v] of e.thumb.edges) {

@@ -25,7 +25,7 @@
 //
 // Usage: pnpm tsx scripts/build-error-specimens.ts
 
-import { readFile, writeFile } from "node:fs/promises";
+import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import { analyseFaces } from "@/lib/freedraw/faces";
 import type { FreedrawPattern } from "@/lib/freedraw/pattern";
@@ -40,14 +40,14 @@ import { periodicCellToSvg, type PeriodicSvg, type PeriodicSvgOptions } from "@/
 import { decodeAtlas } from "@/lib/services/atlasCodec";
 import { UNIFORM_CELLS } from "@/lib/render/uniformCells";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
+import { readDataJson } from "./atlas/io.mjs";
 
 const root = process.cwd();
 
-const readJson = async <T>(rel: string): Promise<T> => JSON.parse(await readFile(path.join(root, rel), "utf8")) as T;
+const readJson = async <T>(rel: string): Promise<T> => readDataJson(path.join(root, rel)) as T;
 
 /** Same, for a packed shelf file: decodes the container (or passes a legacy bare array through). */
-const readShelf = async <T>(rel: string): Promise<T[]> =>
-	decodeAtlas<T>(JSON.parse(await readFile(path.join(root, rel), "utf8")));
+const readShelf = async <T>(rel: string): Promise<T[]> => decodeAtlas<T>(readDataJson(path.join(root, rel)));
 
 const uniform = (id: string): TranslationalCellData => UNIFORM_CELLS.find((c) => c.id === id)!.cell;
 

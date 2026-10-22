@@ -32,6 +32,7 @@ import { Fact, InspectBar, RailPanel, StageBoard, useTapHover } from "./stage-bo
 import { edgeKey } from "./stage-shared";
 import { useIsPhone } from "@/lib/hooks/useIsPhone";
 import { useMobileSheet } from "@/stores/mobileSheet";
+import { shardBody } from "@/lib/services/atlasCodec";
 
 // One polyhedron becoming one squared rectangle, in four stages, with a curated list to drive it.
 //
@@ -118,7 +119,7 @@ export function PipelineExplorer({
 		if (!selected || shardCache.has(selected)) return;
 		let live = true;
 		fetch(pipelineShardUrl(selected))
-			.then((r) => (r.ok ? r.json() : Promise.reject(new Error(`${r.status}`))))
+			.then((r) => (r.ok ? shardBody<PipelineRecord>(r) : Promise.reject(new Error(`${r.status}`))))
 			.then((data: PipelineRecord) => {
 				shardCache.set(selected, data);
 				if (live) bumpAfterFetch((n) => n + 1);

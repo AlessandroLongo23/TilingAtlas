@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { readDataJson } from "../../scripts/atlas/io.mjs";
 import { BUBBLE_FILES, BUBBLE_GRID_ORDER, BUBBLE_ID_PREFIXES, isBubbleId } from "@/lib/bubble/pattern";
 
 // The three lists that describe a bubble board — its grid string, its shards, and its record-id prefix —
@@ -10,7 +10,7 @@ import { BUBBLE_FILES, BUBBLE_GRID_ORDER, BUBBLE_ID_PREFIXES, isBubbleId } from 
 
 const shards = BUBBLE_FILES.map((url) => {
 	const path = `${process.cwd()}/public${url}`;
-	return { url, rows: JSON.parse(readFileSync(path, "utf8")) as { id: string; k: number; grid: string }[] };
+	return { url, rows: readDataJson(path) as { id: string; k: number; grid: string }[] };
 });
 
 describe("bubble shards", () => {
@@ -37,7 +37,7 @@ describe("bubble shards", () => {
 
 	it("names each shard's k in its filename", () => {
 		for (const { url, rows } of shards) {
-			const k = Number(url.match(/-k(\d+)\.json$/)?.[1]);
+			const k = Number(url.match(/-k(\d+)\.json(\.gz)?$/)?.[1]);
 			for (const r of rows) expect(r.k, url).toBe(k);
 		}
 	});

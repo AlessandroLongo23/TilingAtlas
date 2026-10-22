@@ -1,12 +1,13 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { classifyPatchFaces } from "./faces";
 import type { FreedrawPattern } from "./pattern";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
+import { dataPath, readDataText } from "../../scripts/atlas/io.mjs";
 
 const load = (file: string): FreedrawPattern[] | null =>
-	existsSync(`public/freedraw/${file}`)
-		? decodeAtlas<FreedrawPattern>(JSON.parse(readFileSync(`public/freedraw/${file}`, "utf8")))
+	existsSync(dataPath(`public/freedraw/${file}`))
+		? decodeAtlas<FreedrawPattern>(JSON.parse(readDataText(`public/freedraw/${file}`)))
 		: null;
 
 const byId = (ps: FreedrawPattern[] | null, id: string) => ps?.find((p) => p.id === id);

@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { seedFromCell, SEED_WINDOW_RADIUS } from "./seedPatch";
@@ -9,6 +8,7 @@ import { orbitsFromExactSource } from "@/lib/services/orbitsFromExactSource";
 import type { ExactCellSource } from "@/lib/services/cellCodecService";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
 import { hydrateRenderCells } from "@/lib/services/renderCellDerive";
+import { readDataText } from "../../scripts/atlas/io.mjs";
 
 /** The square tiling: one unit square per cell, so every vertex sits on an integer point. */
 const SQUARE_CELL: TranslationalCellData = {
@@ -101,7 +101,7 @@ describe("seedFromCell", () => {
 describe("seedFromCell on a real k=4 atlas tiling", () => {
 	const atlas = hydrateRenderCells(
 		decodeAtlas<{ id: string; renderCell: TranslationalCellData; exactSource?: ExactCellSource }>(
-			JSON.parse(readFileSync(path.join(process.cwd(), "public", "reference-atlas.json"), "utf8")),
+			JSON.parse(readDataText(path.join(process.cwd(), "public", "reference-atlas.json"))),
 		),
 	);
 	const t4001 = atlas.find((t) => t.id === "t4001")!;

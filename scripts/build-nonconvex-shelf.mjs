@@ -1,4 +1,4 @@
-// Rewrite the sph-ncx-* records in public/reference-atlas-spherical.json from the measured rows that
+// Rewrite the sph-ncx-* records in public/reference-atlas-spherical.json.gz from the measured rows that
 // tools/ctrnact-oracle/gen_nonconvex_shelf.py emits.
 //
 // The shelf's TS geometry (lib/render/nonconvexSolids.ts) and its ATLAS ROWS are two different artefacts
@@ -23,10 +23,11 @@
 //   node scripts/build-nonconvex-shelf.mjs --write
 import fs from "node:fs";
 import path from "node:path";
+import { readDataJson, writeDataFile } from "./atlas/io.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 const ROWS = path.join(ROOT, "tools", "ctrnact-oracle", "nonconvex-rows.json");
-const ATLAS = path.join(ROOT, "public", "reference-atlas-spherical.json");
+const ATLAS = path.join(ROOT, "public", "reference-atlas-spherical.json.gz");
 const DISCOVERER = "Čtrnáct engine + develop_euclid, 2026-08-21";
 const rows = JSON.parse(fs.readFileSync(ROWS, "utf8"));
 // How deep the search has been run — read off the rows, so the claim on every card cannot outrun the
@@ -63,7 +64,7 @@ function note(r) {
 	);
 }
 
-const atlas = JSON.parse(fs.readFileSync(ATLAS, "utf8"));
+const atlas = readDataJson(ATLAS);
 if (!Array.isArray(atlas.records)) throw new Error("atlas is not {atlas, geom, records}");
 
 const built = rows.map((r) => ({
@@ -116,5 +117,5 @@ if (!process.argv.includes("--write")) {
 }
 // Keep the ncx block where it was: after everything else, in the generator's order.
 atlas.records = [...others, ...built];
-fs.writeFileSync(ATLAS, JSON.stringify(atlas));
+writeDataFile(ATLAS, JSON.stringify(atlas));
 console.log(`wrote ${path.relative(ROOT, ATLAS)} — ${atlas.records.length} records`);

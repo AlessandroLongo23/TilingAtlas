@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { prepare, screenMapper } from "@/lib/render/figureCanvas";
 import { colourOf, drawZetaWheel } from "@/lib/render/zetaWheel";
 import { polygonHue, tileFill, tileLine } from "@/lib/utils/renderTiling";
+import { shardBody } from "@/lib/services/atlasCodec";
 
 // The bounded-weight theorem as one case you can read off the plane.
 //
@@ -60,8 +61,8 @@ export function PeriodFigure({ panel, dirs, size }: { panel?: string; dirs?: str
 
 	useEffect(() => {
 		let alive = true;
-		fetch("/defense/period-figure.json")
-			.then((r) => r.json())
+		fetch("/defense/period-figure.json.gz")
+			.then((r) => shardBody<FigureData>(r))
 			.then((d: FigureData) => {
 				if (alive) setData(d);
 			})

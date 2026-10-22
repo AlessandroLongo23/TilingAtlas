@@ -33,7 +33,7 @@ import {
 	type SchwarzBoard,
 	type SphSchwarzShard,
 } from "@/lib/freedraw/schwarz";
-import { decodeAtlas, decodeShard } from "@/lib/services/atlasCodec";
+import { decodeAtlas, decodeShard, shardBody } from "@/lib/services/atlasCodec";
 
 // The spherical arm of /freedraw — Marek Čtrnáct's freedraw on the Platonic solids, laid out like the
 // planar arm: filters on top, a paginated thumbnail catalogue on the left, an interactive preview on the
@@ -136,9 +136,9 @@ export function SphericalFreedraw({
 		const board = solid.board;
 		// A solid's shard is a plain IcoPattern[]; a board's is a shared-board shard whose patterns carry
 		// only their drawn bits, so each is adapted here and nothing downstream branches again.
-		const url = board ? `/schwarz-sph/s${board.id}-k${k}.json` : `/freedraw-ico/${solidId}-k${k}.json`;
+		const url = board ? `/schwarz-sph/s${board.id}-k${k}.json.gz` : `/freedraw-ico/${solidId}-k${k}.json.gz`;
 		fetch(url)
-			.then((r) => r.json())
+			.then((r) => shardBody(r))
 			// A solid shard is a record array and may be packed; a board shard is an object wrapper the
 			// codec does not own, so only the former goes through the decoder.
 			.then((raw) => (board ? decodeShard(raw as SphSchwarzShard) : decodeAtlas<IcoPattern>(raw)))

@@ -1,8 +1,9 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { SUB_ORDER, familyOfSub, subOf } from "@/lib/services/referenceAtlas";
 import { SUB_LABEL } from "@/lib/services/shelfLabels";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
+import { readDataText } from "../../scripts/atlas/io.mjs";
 import {
 	HYP_TILING_BOARDS,
 	HYP_TILING_VALENCES,
@@ -19,9 +20,9 @@ import {
 // that the runtime derivation agrees with the one the emitter used — a generated table nobody checks is
 // a hand-written table with extra steps.
 
-const ATLAS = "public/reference-atlas-hyperbolic.json";
+const ATLAS = "public/reference-atlas-hyperbolic.json.gz";
 const shipped: { k: number; family: string }[] = existsSync(ATLAS)
-	? decodeAtlas<{ k: number; family: string }>(JSON.parse(readFileSync(ATLAS, "utf8")))
+	? decodeAtlas<{ k: number; family: string }>(JSON.parse(readDataText(ATLAS)))
 	: [];
 
 describe("the (valence, alphabet) board axis", () => {

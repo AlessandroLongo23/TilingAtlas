@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
 	BOARD_CORNERS,
@@ -16,11 +16,12 @@ import {
 import { developPentEdges, type PentEdgeRecord } from "./edgeDevelop";
 import { useConfiguration } from "@/stores/configuration";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
+import { readDataText } from "../../scripts/atlas/io.mjs";
 
-const K2 = "public/pentagon-edges/pe1-k2.json";
-const K4 = "public/pentagon-edges/pe1-k4.json";
+const K2 = "public/pentagon-edges/pe1-k2.json.gz";
+const K4 = "public/pentagon-edges/pe1-k4.json.gz";
 const anyShard = existsSync(K2);
-const read = (p: string): PentEdgeRecord[] => decodeAtlas<PentEdgeRecord>(JSON.parse(readFileSync(p, "utf8")));
+const read = (p: string): PentEdgeRecord[] => decodeAtlas<PentEdgeRecord>(JSON.parse(readDataText(p)));
 
 const solved = (p: Partial<PentEdgeParams> = {}) => {
 	const r = solveEdgeBoard({ ...PENT_EDGE_DEFAULTS, ...p });

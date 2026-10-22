@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it, expect } from "vitest";
+import { readDataText } from "../scripts/atlas/io.mjs";
 
 // The hyperbolic theory page embeds Poincaré figures by PATCH id, and its route resolves them out of
 // public/hyperbolic-developed.json at build time (app/(app)/theory/hyperbolic/page.tsx). Nothing in
@@ -12,7 +13,7 @@ import { describe, it, expect } from "vitest";
 // shipped data too — prose that silently goes stale is worse than prose that fails a test.
 
 const MD = readFileSync(path.join(process.cwd(), "public", "theory", "hyperbolic-enumeration.md"), "utf8");
-const patches = JSON.parse(readFileSync(path.join(process.cwd(), "public", "hyperbolic-developed.json"), "utf8")) as {
+const patches = JSON.parse(readDataText(path.join(process.cwd(), "public", "hyperbolic-developed.json"))) as {
 	id: string;
 	config: string;
 	edge: number;

@@ -4,6 +4,7 @@
 
 import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
+import { readDataJson } from "@/scripts/atlas/io.mjs";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import type { ExactCellSource } from "@/lib/services/cellCodecService";
 import type { CataloguePatch } from "@/lib/render/hyperbolicDevelopedDraw";
@@ -34,12 +35,12 @@ export async function loadAtlasCells(ids: string[]) {
 	const sources: Record<string, ExactCellSource> = {};
 	const wanted = new Set(ids);
 	if (!wanted.size) return { cells, sources };
-	const files = (await readdir(PUBLIC)).filter((f) => /^reference-atlas.*\.json$/.test(f));
+	const files = (await readdir(PUBLIC)).filter((f) => /^reference-atlas.*\.json(\.gz)?$/.test(f));
 	const sized = await Promise.all(files.map(async (f) => ({ f, size: (await stat(path.join(PUBLIC, f))).size })));
 	for (const { f } of sized.sort((a, b) => a.size - b.size)) {
 		const atlas = hydrateRenderCells(
 			decodeAtlas<{ id: string; renderCell: TranslationalCellData; exactSource?: ExactCellSource }>(
-				JSON.parse(await readFile(path.join(PUBLIC, f), "utf8")),
+				readDataJson(path.join(PUBLIC, f)),
 			),
 		);
 		for (const t of atlas) {
@@ -57,7 +58,7 @@ const attrs = (md: string, tag: string, attr: string) =>
 
 async function loadPatches(ids: string[]): Promise<Record<string, CataloguePatch>> {
 	if (!ids.length) return {};
-	const all: CataloguePatch[] = JSON.parse(await readFile(path.join(PUBLIC, "hyperbolic-developed.json"), "utf8"));
+	const all: CataloguePatch[] = readDataJson(path.join(PUBLIC, "hyperbolic-developed.json"));
 	const wanted = new Set(ids);
 	return Object.fromEntries(all.filter((p) => wanted.has(p.id)).map((p) => [p.id, p]));
 }
@@ -65,7 +66,7 @@ async function loadPatches(ids: string[]): Promise<Record<string, CataloguePatch
 async function loadSquarings(ids: string[]): Promise<Record<string, PipelineRecord>> {
 	const out: Record<string, PipelineRecord> = {};
 	for (const id of new Set(ids))
-		out[id] = JSON.parse(await readFile(path.join(PUBLIC, "squarings", "pipeline", `${id}.json`), "utf8"));
+		out[id] = readDataJson(path.join(PUBLIC, "squarings", "pipeline", `${id}.json`));
 	return out;
 }
 

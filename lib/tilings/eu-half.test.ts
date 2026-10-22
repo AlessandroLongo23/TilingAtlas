@@ -1,9 +1,10 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { EDGE_BOARD_LABEL, EDGE_BOARD_ORDER } from "@/lib/services/facets";
 import { edgeBoardOf, subOf, tileClassOf, type ReferenceTiling } from "@/lib/services/referenceAtlas";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
 import { EU_HALF_BOARDS, euHalfKGaps, euHalfLazyShardsForK, euHalfSubOfBoard, type EuHalfBoard } from "./eu-half";
+import { readDataText } from "../../scripts/atlas/io.mjs";
 
 // The Euclidean half-polygon shelf. scripts/build-euhalf-shelf.mjs refuses to write anything whose faces
 // are the wrong shape, leave a gap, overlap, or fold a vertex past 360°, so this does not re-litigate the
@@ -11,9 +12,9 @@ import { EU_HALF_BOARDS, euHalfKGaps, euHalfLazyShardsForK, euHalfSubOfBoard, ty
 // things, that the classification behind "there are exactly four boards" is written down and checked, and
 // that every row lands in the right folder.
 
-const atlas = "public/reference-atlas-euhalf.json";
+const atlas = "public/reference-atlas-euhalf.json.gz";
 const anyShard = existsSync(atlas);
-const eager = (): ReferenceTiling[] => decodeAtlas<ReferenceTiling>(JSON.parse(readFileSync(atlas, "utf8")));
+const eager = (): ReferenceTiling[] => decodeAtlas<ReferenceTiling>(JSON.parse(readDataText(atlas)));
 const shipped = (b: EuHalfBoard) => [...b.eagerKs, ...b.lazyKs].sort((x, y) => x - y);
 
 /** Which regular polygon each board halves, and how. Written out here so the test knows the geometry
@@ -190,9 +191,9 @@ describe.skipIf(!anyShard)("shipped rows", () => {
 
 	it("ships a lazy shard for every lazy k, with the declared count", () => {
 		for (const k of [...new Set(EU_HALF_BOARDS.flatMap((b) => b.lazyKs))].sort((a, b) => a - b)) {
-			const f = `public/reference-atlas-euhalf-k${k}.json`;
+			const f = `public/reference-atlas-euhalf-k${k}.json.gz`;
 			expect(existsSync(f), f).toBe(true);
-			const rows: ReferenceTiling[] = decodeAtlas<ReferenceTiling>(JSON.parse(readFileSync(f, "utf8")));
+			const rows: ReferenceTiling[] = decodeAtlas<ReferenceTiling>(JSON.parse(readDataText(f)));
 			for (const b of EU_HALF_BOARDS) {
 				const want = b.lazyKs.includes(k) ? b.counts[k] : 0;
 				expect(rows.filter((r) => r.euHalfBoard === b.id).length, `${b.id} k=${k}`).toBe(want);

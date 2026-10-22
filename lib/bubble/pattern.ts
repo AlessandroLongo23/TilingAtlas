@@ -106,19 +106,19 @@ export const BUBBLE_GRID_LABEL: Record<BubbleGrid, string> = {
 /** One shard per (board, k). Loaded together on the Edge patterns chip, the way the colouring
  *  catalogues load on Colorings. ~37 MB in total, of which sq-k5 alone is 27. */
 export const BUBBLE_FILES = [
-	...[1, 2, 3, 4].map((k) => `/bubble/tri-k${k}.json`),
-	...[1, 2, 3, 4, 5].map((k) => `/bubble/sq-k${k}.json`),
-	...[1, 2, 3, 4, 5].map((k) => `/bubble/hex-k${k}.json`),
-	...[1, 2, 3].map((k) => `/bubble/th-k${k}.json`),
-	...[1, 2, 3].map((k) => `/bubble/ts-k${k}.json`),
-	...[1, 2].map((k) => `/bubble/tsh-k${k}.json`),
-	...[1, 2, 3].map((k) => `/bubble/rh-k${k}.json`),
+	...[1, 2, 3, 4].map((k) => `/bubble/tri-k${k}.json.gz`),
+	...[1, 2, 3, 4, 5].map((k) => `/bubble/sq-k${k}.json.gz`),
+	...[1, 2, 3, 4, 5].map((k) => `/bubble/hex-k${k}.json.gz`),
+	...[1, 2, 3].map((k) => `/bubble/th-k${k}.json.gz`),
+	...[1, 2, 3].map((k) => `/bubble/ts-k${k}.json.gz`),
+	...[1, 2].map((k) => `/bubble/tsh-k${k}.json.gz`),
+	...[1, 2, 3].map((k) => `/bubble/rh-k${k}.json.gz`),
 	// The rhombic mixtures. Each starts where it has something to show: the two-family boards are
 	// EMPTY at k=1 (one vertex orbit cannot hold a rhombus with a triangle, nor with a hexagon), and
 	// listing a k=1 shard for them would be an empty folder in the tree. The three-family board has 4.
-	`/bubble/rt-k2.json`,
-	...[2, 3].map((k) => `/bubble/rhx-k${k}.json`),
-	...[1, 2].map((k) => `/bubble/rth-k${k}.json`),
+	`/bubble/rt-k2.json.gz`,
+	...[2, 3].map((k) => `/bubble/rhx-k${k}.json.gz`),
+	...[1, 2].map((k) => `/bubble/rth-k${k}.json.gz`),
 ];
 
 /**

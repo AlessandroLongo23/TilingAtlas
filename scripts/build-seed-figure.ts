@@ -16,8 +16,8 @@
  * choice would offer placements the builder never offered there. At k=3 with six open vertices that
  * is thirty branches and about 80 kB, which is a slide's worth.
  */
-import fs from "node:fs";
 import path from "node:path";
+import { writeDataFile } from "./atlas/io.mjs";
 import {
 	CompatibilityGraph,
 	PolygonsGenerator,
@@ -189,8 +189,8 @@ if (flag("--list")) {
 const index = Number(value("--index") ?? 0);
 const out = build(seedSets[index]);
 if (!out) throw new Error(`seed set ${index} (${seedSets[index]?.join(" ")}) has no placement at some step`);
-const outPath = value("--out") ?? path.join(process.cwd(), "public", "defense", "seed-build.json");
-fs.writeFileSync(outPath, JSON.stringify({ k: K, ...out }));
+const outPath = value("--out") ?? path.join(process.cwd(), "public", "defense", "seed-build.json.gz");
+writeDataFile(outPath, JSON.stringify({ k: K, ...out }));
 console.log(
 	`${outPath}: ${out.vcs.join(" ")}, ${out.root.filter((o) => o.candidates.length).length} open vertices offering ` +
 		`${out.root.reduce((t, o) => t + o.candidates.length, 0)} placements, ${Object.keys(out.next).length} branches`,

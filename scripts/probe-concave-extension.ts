@@ -20,6 +20,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { evaluateParamCell, type ParametricCellData } from "@/lib/utils/paramCell";
+import { dataPath, readDataJson } from "./atlas/io.mjs";
 
 const ROOT = process.cwd();
 const MAX_K = Number(process.argv[2] ?? 2);
@@ -165,9 +166,9 @@ function main(): void {
 	];
 	const recs: { id: string; k: number; paramCell: ParametricCellData }[] = [];
 	for (const f of files) {
-		const p = path.join(ROOT, f);
+		const p = dataPath(path.join(ROOT, f));
 		if (!fs.existsSync(p)) continue;
-		for (const t of JSON.parse(fs.readFileSync(p, "utf8")) as {
+		for (const t of readDataJson(p) as {
 			id: string;
 			k: number;
 			paramCell?: ParametricCellData;

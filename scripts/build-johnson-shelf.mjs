@@ -15,10 +15,11 @@
 // Run annotate_derivation.py afterwards: this does not write the `derivation` field.
 import fs from "node:fs";
 import path from "node:path";
+import { readDataJson, writeDataFile } from "./atlas/io.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 const TS = path.join(ROOT, "lib", "render", "johnsonSolids.ts");
-const ATLAS = path.join(ROOT, "public", "reference-atlas-spherical.json");
+const ATLAS = path.join(ROOT, "public", "reference-atlas-spherical.json.gz");
 const RENDER_CELL = {
 	b: [
 		[1, 0],
@@ -76,7 +77,7 @@ function note(s) {
 	);
 }
 
-const atlas = JSON.parse(fs.readFileSync(ATLAS, "utf8"));
+const atlas = readDataJson(ATLAS);
 if (!Array.isArray(atlas.records)) throw new Error("atlas is not {atlas, geom, records}");
 const have = new Set(atlas.records.map((r) => r.id));
 
@@ -114,5 +115,5 @@ atlas.records = [
 	})),
 	...ncx,
 ];
-fs.writeFileSync(ATLAS, JSON.stringify(atlas));
+writeDataFile(ATLAS, JSON.stringify(atlas));
 console.log(`wrote ${path.relative(ROOT, ATLAS)} — ${atlas.records.length} records (+${missing.length})`);

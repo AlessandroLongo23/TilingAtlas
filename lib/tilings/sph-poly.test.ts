@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
 	sphPolyBoardLabel,
@@ -10,6 +10,8 @@ import {
 	type SphPolyPattern,
 } from "./sph-poly";
 import { sphPolyScene } from "@/lib/render/sphPoly";
+import { dataPath } from "../../scripts/atlas/io.mjs";
+import { readDataText } from "../../scripts/atlas/io.mjs";
 
 // The spherical 3.4.n.4 shelf's decode checks. The develop is develop_ai1_sph.py's business; what is
 // asserted here is what the SHIPPED records must satisfy — the solid closes, its faces are the alphabet
@@ -17,10 +19,10 @@ import { sphPolyScene } from "@/lib/render/sphPoly";
 
 const shardOf = (b: SphPolyBoard, k: number): SphPolyPattern[] | null => {
 	const f = `public${sphPolyShardUrl(b.n, k)}`;
-	return existsSync(f) ? (JSON.parse(readFileSync(f, "utf8")) as SphPolyPattern[]) : null;
+	return existsSync(f) ? (JSON.parse(readDataText(f)) as SphPolyPattern[]) : null;
 };
 
-const anyShard = existsSync("public/spherical-poly/sp3-k1.json");
+const anyShard = existsSync(dataPath("public/spherical-poly/sp3-k1.json"));
 
 /** Interior angle of a regular spherical p-gon of side ρ — the developer's formula, restated. */
 function alpha(p: number, rho: number): number {

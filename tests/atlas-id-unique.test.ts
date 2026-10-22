@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
+import { readDataText } from "../scripts/atlas/io.mjs";
 
 // Every id in the merged reference shelf must be unique — across files, not just within one.
 // loadReferenceAtlas concatenates these lists straight into React lists keyed by id, and duplicate
@@ -42,7 +43,7 @@ describe("reference shelf id uniqueness (React list keys)", () => {
 
 	it("hyperbolic developed patches key uniquely too (thumbnail/tiling caches key on patch id)", () => {
 		const path = join(PUB, "hyperbolic-developed.json");
-		const patches = decodeAtlas<{ id: string }>(JSON.parse(readFileSync(path, "utf8")));
+		const patches = decodeAtlas<{ id: string }>(JSON.parse(readDataText(path)));
 		const c = new Map<string, number>();
 		for (const p of patches) c.set(p.id, (c.get(p.id) ?? 0) + 1);
 		const dups = [...c.entries()].filter(([, n]) => n > 1).map(([id, n]) => `${id}×${n}`);

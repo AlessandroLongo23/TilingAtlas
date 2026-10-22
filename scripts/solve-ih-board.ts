@@ -31,6 +31,7 @@ import { makeTiling, prototileEdges, straightCurves } from "@/lib/isohedral/buil
 import { ISOHEDRAL_TYPES } from "@/lib/isohedral/catalogue";
 import { IH_EDGE_BOARDS, IH_EDGE_BOARD_BY_IH, solveIhBoard, type IhEdgeBoardSpec } from "@/lib/isohedral/edge-board";
 import type { IhEdgeRecord } from "@/lib/isohedral/edgeDevelop";
+import { readDataJson } from "./atlas/io.mjs";
 import { buildIhEdgePatch } from "@/lib/isohedral/edgePatch";
 
 const CORNER = /^([A-Z])6$/;
@@ -247,7 +248,7 @@ if (shardDir) {
 	for (const k of [4, 6]) {
 		try {
 			const f = join(shardDir, `ie${String(ih).padStart(2, "0")}-k${k}.json`);
-			recs.push(...(JSON.parse(readFileSync(f, "utf8")) as IhEdgeRecord[]).slice(0, 6));
+			recs.push(...(readDataJson(f) as IhEdgeRecord[]).slice(0, 6));
 		} catch {
 			/* that slice is not decoded yet */
 		}

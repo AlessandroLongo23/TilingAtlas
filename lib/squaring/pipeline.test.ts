@@ -1,15 +1,15 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
 import path from "node:path";
 import type { PipelineIndex, PipelineRecord } from "./shelf";
+import { readDataText } from "../../scripts/atlas/io.mjs";
 
 // The four-stage page ships a solve, not just a picture: potentials per vertex, currents per edge, and
 // a Tutte embedding. Each of those is a mathematical object with a defining property, so each is
 // checked against its own definition rather than against a stored copy of itself.
 
 const dir = path.join(process.cwd(), "public", "squarings", "pipeline");
-const index = JSON.parse(readFileSync(path.join(dir, "index.json"), "utf8")) as PipelineIndex;
-const load = (id: string) => JSON.parse(readFileSync(path.join(dir, `${id}.json`), "utf8")) as PipelineRecord;
+const index = JSON.parse(readDataText(path.join(dir, "index.json"))) as PipelineIndex;
+const load = (id: string) => JSON.parse(readDataText(path.join(dir, `${id}.json`))) as PipelineRecord;
 
 describe("the pipeline set", () => {
 	it("curates only rectangles whose tile sizes fit inside the tiles", () => {

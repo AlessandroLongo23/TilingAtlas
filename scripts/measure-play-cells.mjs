@@ -29,7 +29,7 @@ const started = new Map();
 cdp.on("Network.requestWillBeSent", (e) => started.set(e.requestId, e.request.url));
 cdp.on("Network.loadingFinished", (e) => {
 	const u = started.get(e.requestId);
-	if (u && /\.json(\?|$)/.test(u)) {
+	if (u && /\.json(\.gz)?(\?|$)/.test(u)) {
 		reqs++;
 		bytes += e.encodedDataLength;
 	}

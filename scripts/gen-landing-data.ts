@@ -14,7 +14,8 @@
 // Reading by a variable path here is fine: this is a standalone build script, not a function
 // entrypoint, so @vercel/nft never traces it. Run automatically by `pnpm build`; by hand with
 // `pnpm landing:data` after regenerating the atlas.
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, rm, writeFile } from "node:fs/promises";
+import { readDataJson, readDataText, writeDataFile } from "./atlas/io.mjs";
 import path from "node:path";
 import {
 	buildLandingPayload,
@@ -60,7 +61,7 @@ const EAGER_ATLAS_FILES = [
 
 const PAYLOAD_OUT = path.join(process.cwd(), "lib", "services", "landing-data.generated.json");
 const DEVELOPED_PATCHES_IN = path.join(process.cwd(), "public", "hyperbolic-developed.json");
-const HERO_INDEX_OUT = path.join(process.cwd(), "public", "hero-index.json");
+const HERO_INDEX_OUT = path.join(process.cwd(), "public", "hero-index.json.gz");
 const HERO_CELLS_DIR = path.join(process.cwd(), "public", "hero-cells");
 
 // Ids must be safe both as a filename and a URL path segment. Every real atlas id is [A-Za-z0-9._-]
@@ -84,7 +85,7 @@ async function loadAtlas(files = EAGER_ATLAS_FILES): Promise<ReferenceTiling[]> 
 		files.map(async (name, i) => {
 			try {
 				return hydrateRenderCells(
-					decodeAtlas<ReferenceTiling>(JSON.parse(await readFile(path.join(dir, name), "utf8"))),
+					decodeAtlas<ReferenceTiling>(readDataJson(path.join(dir, name))),
 				);
 			} catch (e) {
 				if (i === 0 && files === EAGER_ATLAS_FILES) throw e;
@@ -95,10 +96,8 @@ async function loadAtlas(files = EAGER_ATLAS_FILES): Promise<ReferenceTiling[]> 
 	return parts.flat();
 }
 
-async function writeInBatches(entries: [string, string][], batch = 256): Promise<void> {
-	for (let i = 0; i < entries.length; i += batch) {
-		await Promise.all(entries.slice(i, i + batch).map(([file, body]) => writeFile(file, body, "utf8")));
-	}
+function writeAll(entries: [string, string][]): void {
+	for (const [file, body] of entries) writeDataFile(file, body);
 }
 
 // The developed records for the Hyperbolic card's pool, keyed by patch id. Inlining them (~350 bytes
@@ -109,7 +108,7 @@ async function hyperbolicPatchesFor(ids: string[]): Promise<Record<string, Catal
 	if (ids.length === 0) return undefined;
 	let all: CataloguePatch[];
 	try {
-		all = JSON.parse(await readFile(DEVELOPED_PATCHES_IN, "utf8")) as CataloguePatch[];
+		all = readDataJson(DEVELOPED_PATCHES_IN) as CataloguePatch[];
 	} catch (e) {
 		console.warn(`landing: no developed patches inlined (${(e as Error).message})`);
 		return undefined;
@@ -132,7 +131,7 @@ async function catalogueCounts(eager: ReferenceTiling[]): Promise<LandingCounts>
 	const higher = (await loadAtlas(HIGHER_ATLAS_FILES)).filter((t) => !seen.has(t.id) && seen.add(t.id));
 	const counts = countsOf([...eager, ...higher]);
 	const manifest = JSON.parse(
-		await readFile(path.join(process.cwd(), "public", "atlas-manifest.json"), "utf8"),
+		readDataText(path.join(process.cwd(), "public", "atlas-manifest.json")),
 	) as AtlasManifest;
 	for (const t of manifest.tiers) {
 		counts[t.geometry] += t.count;
@@ -157,8 +156,8 @@ async function main(): Promise<void> {
 
 	await rm(HERO_CELLS_DIR, { recursive: true, force: true }); // drop ids that left the atlas
 	await mkdir(HERO_CELLS_DIR, { recursive: true });
-	await writeFile(HERO_INDEX_OUT, `${JSON.stringify(safe.map((s) => s.id))}\n`, "utf8");
-	await writeInBatches(safe.map((s) => [path.join(HERO_CELLS_DIR, `${s.id}.json`), JSON.stringify(s)]));
+	writeDataFile(HERO_INDEX_OUT, `${JSON.stringify(safe.map((s) => s.id))}\n`);
+	writeAll(safe.map((s) => [path.join(HERO_CELLS_DIR, `${s.id}.json.gz`), JSON.stringify(s)]));
 
 	const { euclidean, hyperbolic, spherical, total } = payload.counts;
 	console.log(

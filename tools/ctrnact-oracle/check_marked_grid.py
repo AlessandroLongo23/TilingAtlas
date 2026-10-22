@@ -19,11 +19,13 @@ not a tiling"), while the search knows nothing about that and enumerates danglin
 They are filtered here and counted, because how many there are is itself worth knowing.
 
   python3 check_marked_grid.py --grid triangle --cells fdtri-k3.json \
-      --oracle ../../public/freedraw/tri-solutions.json
+      --oracle ../../public/freedraw/tri-solutions.json.gz
 """
 import argparse
 import json
 from math import sqrt
+
+from develop_freedraw import read_json
 
 # ---------------------------------------------------------------- grids
 # Each grid names, in LATTICE coordinates (integer pairs over the basis below):
@@ -349,7 +351,7 @@ def main():
         ours.setdefault(rec["k"], {})[canonical(grid, edges, T1, T2)] = rec["id"]
 
     theirs = {}
-    for rec in [r for f in args.oracle for r in json.load(open(f))]:
+    for rec in [r for f in args.oracle for r in read_json(f)]:
         if rec["k"] > args.kmax or rec.get("grid", "square") != args.grid:
             continue
         edges, T1, T2 = edges_from_oracle(grid, rec)

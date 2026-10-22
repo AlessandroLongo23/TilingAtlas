@@ -1,11 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
 import { verifyComplex } from "../../scripts/moduli-graph/verifyComplex";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
 import type { ParametricCellData } from "@/lib/utils/paramCell";
+import { readDataText } from "../../scripts/atlas/io.mjs";
 
 const atlas = decodeAtlas<{ id: string; k: number; source: string; paramCell?: ParametricCellData }>(
-	JSON.parse(readFileSync("public/reference-atlas-isotoxal.json", "utf8")),
+	JSON.parse(readDataText("public/reference-atlas-isotoxal.json")),
 );
 const cluster = atlas.filter((r) => r.k === 2 && r.source === "isotoxal" && r.paramCell?.params?.length === 2);
 

@@ -33,6 +33,7 @@ import {
 	schwarzKGaps,
 	type HypSchwarzPattern,
 } from "@/lib/freedraw/schwarz";
+import { shardBody } from "@/lib/services/atlasCodec";
 
 // The hyperbolic arm of /freedraw — Marek Čtrnáct's freedraw on a hyperbolic SCHWARZ board, laid out like
 // the other two arms: filters on top, a paginated thumbnail catalogue on the left, an interactive preview
@@ -154,8 +155,8 @@ export function HyperbolicFreedraw({
 		const key = `${boardId}-${k}`;
 		if (cache.has(key)) return;
 		let live = true;
-		fetch(`/schwarz-hyp/h${boardId}-k${k}.json`)
-			.then((r) => r.json())
+		fetch(`/schwarz-hyp/h${boardId}-k${k}.json.gz`)
+			.then((r) => shardBody<HypSchwarzPattern[]>(r))
 			.then((data: HypSchwarzPattern[]) => {
 				if (!live) return;
 				cache.set(key, data);

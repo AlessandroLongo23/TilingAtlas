@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { HyperbolicDeveloper, type Darts } from "@/lib/render/hyperbolicDevelopClient";
 import {
@@ -23,13 +22,12 @@ import {
 import { ISLAMIC_MARGIN, buildWalk, islamicWedgeBox } from "@/lib/render/hyperbolicWalk";
 import { islamicNormalAngleFromSlider } from "@/utils/islamicNoise";
 import type { DevelopedPatch } from "@/lib/render/hyperbolicDevelopedDraw";
+import { readDataText } from "../scripts/atlas/io.mjs";
 
 interface ShippedPatch extends DevelopedPatch {
 	darts?: Darts;
 }
-const atlas: ShippedPatch[] = JSON.parse(
-	readFileSync(join(__dirname, "..", "public", "hyperbolic-developed.json"), "utf8"),
-);
+const atlas: ShippedPatch[] = JSON.parse(readDataText(join(__dirname, "..", "public", "hyperbolic-developed.json")));
 const byId = (id: string) => {
 	const p = atlas.find((x) => x.id === id);
 	if (!p) throw new Error(`patch ${id} not in atlas`);

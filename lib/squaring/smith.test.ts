@@ -1,5 +1,4 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
 import path from "node:path";
 import { SPHERICAL_SOLIDS } from "@/lib/render/sphericalSolids";
 import { planarMapFromFaces, eulerCharacteristic, isThreeConnected, type PlanarMap } from "./planarMap";
@@ -7,6 +6,7 @@ import { allSquarings, squaringFrom, type Squaring } from "./smith";
 import { bouwkampCode, isPerfect, isSimple, order, smithGraphOf, tiledArea, tilesExactly } from "./classify";
 import { integerDet } from "./linalg";
 import type { PolyhedronSquarings, SquaringManifest } from "./shelf";
+import { readDataText } from "../../scripts/atlas/io.mjs";
 
 // The Brooks-Smith-Stone-Tutte construction, tested the way the rest of the atlas tests geometry: not
 // against snapshots, but against the invariants the mathematics guarantees. A squaring is either an
@@ -148,7 +148,7 @@ describe("squared rectangles from polyhedra", () => {
 		// as-is; orientFaces is what makes them usable. If a future rebuild of those shelves starts
 		// emitting consistent rings this test still passes — it asserts the end state, not the repair.
 		const dir = path.join(process.cwd(), "public", "spherical-poly");
-		const files = readFileSync(path.join(dir, "sp3-k1.json"), "utf8");
+		const files = readDataText(path.join(dir, "sp3-k1.json"));
 		const records = JSON.parse(files) as { id: string; faces: number[][]; vertices: unknown[] }[];
 		for (const r of records) {
 			const map = planarMapFromFaces(r.faces, r.vertices.length);
@@ -316,7 +316,7 @@ describe("squared rectangles from polyhedra", () => {
 
 describe("the shipped squarings shelf", () => {
 	const dir = path.join(process.cwd(), "public", "squarings");
-	const manifest = JSON.parse(readFileSync(path.join(dir, "manifest.json"), "utf8")) as SquaringManifest;
+	const manifest = JSON.parse(readDataText(path.join(dir, "manifest.json"))) as SquaringManifest;
 
 	it("carries every polyhedron the build was given", () => {
 		expect(manifest.polyhedra, "polyhedra in manifest").toBe(manifest.entries.length);
@@ -339,7 +339,7 @@ describe("the shipped squarings shelf", () => {
 		// and the build already refuses to write anything that fails it. This is a guard against a shard
 		// going stale on disk, not a re-derivation.
 		for (const e of manifest.entries.filter((_, i) => i % 4 === 0)) {
-			const shard = JSON.parse(readFileSync(path.join(dir, `${e.id}.json`), "utf8")) as PolyhedronSquarings;
+			const shard = JSON.parse(readDataText(path.join(dir, `${e.id}.json`))) as PolyhedronSquarings;
 			expect(shard.squarings.length, `${e.id}: shard vs manifest count`).toBe(e.squarings);
 			for (const r of shard.squarings) {
 				const w = BigInt(r.width);

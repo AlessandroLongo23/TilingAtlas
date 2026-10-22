@@ -19089,3 +19089,24 @@ wrong of 7,074 on 114 `1247` records (1,372 on long tiles, every T-junction half
 `a2`; plus 863 apeirogon-side probes next to flat corners, 0 wrong. The first version of the harness used
 Euclidean midpoints and "failed" 40% even on `a2`: near the rim a chord midpoint lies in the neighbour. Probes
 must be built in a face-centred frame. Screenshots of k = 1, 3, 5 records are clean.
+
+## 2026-10-22: shipped data under public/ is stored gzipped
+
+**Why.** The Vercel team hit 100% of Hobby's 10 GB Deployment Storage on 2026-10-21: tracked `public/` was
+2,822 MB of plain JSON and Vercel keeps four deployments of it. Rule and helpers are in CLAUDE.md.
+
+**What changed.** 6,762 files went `.json` → `.json.gz` (`gzip -9 -n`); tracked `public/` is now 494 MB.
+The largest single item was `public/frames/` (1,184 MB → 78 MB), which CLAUDE.md had wrongly called local
+renders: it is the shipped `/frames` shelf. Browser loaders read through `atlasCodec.shardBody` (now
+exported and generic); Node readers and writers through `scripts/atlas/io.mjs`; Python through
+`read_json`/`write_json` in `develop_freedraw.py`. `scripts/docs-check.mjs` fails a commit that stages
+plain JSON under `public/`. One exception kept plain: `public/release.json`.
+
+**Checked.** Build passes; 3,074 tests pass with the same 10 skips as before (many shard guards had gone
+blind on the plain path and skipped silently, 110 skips at first). A Playwright pass over library, play
+(three geometries), isohedral, freedraw, heesch, colors, frames and parquet: 693 data requests, all
+`.json.gz`, none failed; counts equal production except the hyperbolic delta of the 10-21 corpus commit
+(909,774 + 1,029, exactly). Lazy loads of `reference-atlas-k10` and `e33346-k5` decode and draw.
+
+**Known, not fixed here.** Several Python readers of `reference-atlas*` cannot decode the packed
+`{"atlas":1}` container (true before gzip too); `extract-uniform-cells.mjs` has a broken import.

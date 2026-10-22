@@ -181,7 +181,7 @@ export const HYP_HALF_BOARDS: HypHalfBoard[] = [
 
 export const HYP_HALF_BOARD_BY_ID = new Map(HYP_HALF_BOARDS.map((b) => [b.id, b]));
 
-export const hypHalfShardUrl = (id: string, k: number): string => `/hyperbolic-half/hyphalf-${id}-k${k}.json`;
+export const hypHalfShardUrl = (id: string, k: number): string => `/hyperbolic-half/hyphalf-${id}-k${k}.json.gz`;
 
 /** The sub-axis key, "hph-" namespaced. Shares the AXIS with the 3.4.n.4 ("hpo-") and {3,n} ("hpt-")
  *  boards, but not the FAMILY: borrowing "hpo-" put these under a "3.4.n.4 boards" heading on screen,

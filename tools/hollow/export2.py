@@ -1,8 +1,8 @@
 """Export certified hollow tilings to the Atlas shelf.
 
 Writes
-  public/hollow/<id>.json             face geometry + period lattice
-  public/reference-atlas-hollow.json  the shelf index (ReferenceTiling rows)
+  public/hollow/<id>.json.gz          face geometry + period lattice
+  public/reference-atlas-hollow.json.gz  the shelf index (ReferenceTiling rows)
 
 Only configurations that produce a TORUS CERTIFICATE are exported. "unknown"
 (the node budget ran out) is not a result and is never shipped -- the shelf must
@@ -13,14 +13,16 @@ list the flat renderer could consume. What ships is the explicit face list of a
 certified patch plus the lattice basis; the hollow renderer strokes each closed
 path and fills by winding number.
 """
-import sys, os, json, math
+import sys, os, math
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from engine import grow, density, zfloat, zabs
 from validate import parse, GMS14, CONVEX11
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "ctrnact-oracle"))
+from develop_freedraw import write_json  # noqa: E402
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 OUT_GEO = os.path.join(REPO, "public", "hollow")
-OUT_IDX = os.path.join(REPO, "public", "reference-atlas-hollow.json")
+OUT_IDX = os.path.join(REPO, "public", "reference-atlas-hollow.json.gz")
 
 RIM = 5.2          # payload trim; the certificate, not the payload, proves the tiling
 KMAX = 2
@@ -79,7 +81,7 @@ def main(cfgstrs, node_cap):
             print("  ok   %-26s d=%-3d k=%d convex (regression only, not shipped)"
                   % (s, geo["density"], geo["kappa"]), flush=True)
             continue
-        json.dump(geo, open(os.path.join(OUT_GEO, sid + ".json"), "w"), separators=(",", ":"))
+        write_json(os.path.join(OUT_GEO, sid + ".json.gz"), geo, separators=(",", ":"))
         rows.append(dict(
             id=sid, source="hollow", k=1, family=s,
             renderCell={"p": [], "b": [[1, 0], [0, 1]]},        # throwaway; never drawn
@@ -92,7 +94,7 @@ def main(cfgstrs, node_cap):
                  ("GMS " + gid) if gid else "unpublished"), flush=True)
     rows.sort(key=lambda r: (r["hollow"]["gms"] is None,
                              [int(x) for x in (r["hollow"]["gms"] or "9.9").split(".")]))
-    json.dump(rows, open(OUT_IDX, "w"), indent=1)
+    write_json(OUT_IDX, rows, indent=1)
     print("\nshelved %d entries -> %s" % (len(rows), OUT_IDX))
     for s, e in skipped: print("  not shipped: %-26s %s" % (s, e))
     return rows

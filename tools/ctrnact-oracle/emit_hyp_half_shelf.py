@@ -18,6 +18,8 @@ import json
 import math
 import os
 
+from develop_freedraw import write_json
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 # board id -> (cells file, board label, what was cut, the tile's angles in degrees, D)
@@ -132,12 +134,12 @@ def main():
                           "sides": recs[0]["edges"] if recs else [],
                           "ks": sorted(by_k), "counts": {k: len(v) for k, v in sorted(by_k.items())}}
         for k, rows in sorted(by_k.items()):
-            path = os.path.join(out_dir, f"hyphalf-{base}-k{k}.json")
-            json.dump(rows, open(path, "w"))
+            path = os.path.join(out_dir, f"hyphalf-{base}-k{k}.json.gz")
+            write_json(path, rows)
             mb = os.path.getsize(path) / 1e6
             print(f"  {base} k={k}: {len(rows)} tilings -> public/hyperbolic-half/{os.path.basename(path)} ({mb:.1f} MB)")
             total += len(rows)
-    json.dump(manifest, open(os.path.join(out_dir, "manifest.json"), "w"), indent=2)
+    write_json(os.path.join(out_dir, "manifest.json.gz"), manifest, indent=2)
     print(f"\n{total} tilings; every vertex orbit closes a full turn, every quotient face has the tile's "
           f"side count, every edge agrees with its partner")
     for base, m in manifest.items():

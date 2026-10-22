@@ -26,6 +26,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { readDataJson } from "./atlas/io.mjs";
 
 const ROOT = process.cwd();
 const OUT = path.join(ROOT, "lib", "services", "absorbedFamilyAliases.json");
@@ -33,9 +34,11 @@ const OUT = path.join(ROOT, "lib", "services", "absorbedFamilyAliases.json");
 // Every shelf whose builder can be followed by shelf-dedup.py. A shelf with no `absorbs` anywhere costs
 // one read and contributes nothing, so listing a shelf here early is free.
 const SHELVES = ["mixed", "period", "isotoxal", "composable"];
+// public/ by logical name: `x.json` and `x.json.gz` are one file, read through readDataJson.
+const PUB_FILES = [...new Set(fs.readdirSync(path.join(ROOT, "public")).map((f) => f.replace(/\.gz$/, "")))].sort();
 
 const entriesOf = (file) => {
-	const d = JSON.parse(fs.readFileSync(file, "utf8"));
+	const d = readDataJson(file);
 	return Array.isArray(d) ? d : d.tilings || Object.values(d).find(Array.isArray) || [];
 };
 
@@ -43,7 +46,7 @@ const map = {};
 let shards = 0;
 for (const shelf of SHELVES) {
 	const re = new RegExp(`^reference-atlas-${shelf}(-k\\d+)?\\.json$`);
-	for (const f of fs.readdirSync(path.join(ROOT, "public")).sort()) {
+	for (const f of PUB_FILES) {
 		if (!re.test(f)) continue;
 		shards++;
 		for (const t of entriesOf(path.join(ROOT, "public", f))) {
@@ -61,7 +64,7 @@ for (const shelf of SHELVES) {
 const live = new Set();
 for (const shelf of SHELVES) {
 	const re = new RegExp(`^reference-atlas-${shelf}(-k\\d+)?\\.json$`);
-	for (const f of fs.readdirSync(path.join(ROOT, "public"))) {
+	for (const f of PUB_FILES) {
 		if (re.test(f)) for (const t of entriesOf(path.join(ROOT, "public", f))) live.add(t.id);
 	}
 }

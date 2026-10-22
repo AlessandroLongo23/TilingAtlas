@@ -15,6 +15,8 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 from check_free import audit_row, audit_tiling  # noqa: E402
 from check_witness import GRIDS, Grid, audit_claim, key, records  # noqa: E402
+sys.path.append(str(ROOT / "tools/ctrnact-oracle"))
+from develop_freedraw import write_json  # noqa: E402
 
 SRC = ROOT / "experiments/results/heesch"
 OUT = ROOT / "public/heesch"
@@ -257,7 +259,7 @@ def main():
         if not shapes:
             continue
         cells = shapes[0]["cells"]
-        (OUT / f"{path.stem}.json").write_text(json.dumps({"grid": grid, "cells": cells, "shapes": shapes}, separators=(",", ":")))
+        write_json(OUT / f"{path.stem}.json.gz", {"grid": grid, "cells": cells, "shapes": shapes}, separators=(",", ":"))
         index.append({"id": path.stem, "grid": grid, "cells": cells, "count": len(shapes), "hc": tally(shapes, "hc"), "hh": tally(shapes, "hh")})
     # Free-placement sets (free_solver.py) arrive as page records already. Audit them independently,
     # ship the non-tilers as the set and the tilers with their tilings, and drop the cells.
@@ -272,7 +274,7 @@ def main():
             (tilers if "p" in row else shapes).append({k: v for k, v in row.items() if k != "k"})
         shapes.sort(key=lambda r: (-r["hh"], -r["hc"], r["o"]))
         tilers.sort(key=lambda r: (-len(r["p"]["k"]), r["o"]))
-        (OUT / f"sqtri{cells}.json").write_text(json.dumps({"grid": "sqtri", "cells": cells, "shapes": shapes}, separators=(",", ":")))
+        write_json(OUT / f"sqtri{cells}.json.gz", {"grid": "sqtri", "cells": cells, "shapes": shapes}, separators=(",", ":"))
         census_info = {"holeFree": data["total"], "tilers": len(tilers), "hh": tally(shapes, "hh")}
         if data["unresolved"]:
             census_info["unresolved"] = data["unresolved"]
@@ -286,7 +288,7 @@ def main():
             if have:
                 have["census"] = info
                 continue
-            (OUT / f"{grid}{cells}.json").write_text(json.dumps({"grid": grid, "cells": cells, "shapes": rows}, separators=(",", ":")))
+            write_json(OUT / f"{grid}{cells}.json.gz", {"grid": grid, "cells": cells, "shapes": rows}, separators=(",", ":"))
             entry = {"id": f"{grid}{cells}", "grid": grid, "cells": cells, "count": len(rows), "hc": tally(rows, "hc"), "hh": tally(rows, "hh"), "census": {**info, "listedFrom": 2}}
             index.append(entry)
     # Tilers, with their tilings, in shards beside the set file; the index says how many and where. A size
@@ -307,8 +309,8 @@ def main():
                 counts = [p["tilers"] for p in parts]
                 if [p["part"] for p in parts] != list(range(parts[0]["parts"])):
                     sys.exit(f"{info['id']}: census slices missing")
-                (OUT / f"{info['id']}-tslices.json").write_text(json.dumps({"counts": counts}, separators=(",", ":")))
-                (OUT / f"{info['id']}-tx.json").write_text(json.dumps({"grid": info["grid"], "shapes": rows}, separators=(",", ":")))
+                write_json(OUT / f"{info['id']}-tslices.json.gz", {"counts": counts}, separators=(",", ":"))
+                write_json(OUT / f"{info['id']}-tx.json.gz", {"grid": info["grid"], "shapes": rows}, separators=(",", ":"))
                 info["tilers"] = {"count": sum(counts) + len(rows), "slices": len(counts)}
                 if info["tilers"]["count"] != info["census"]["tilers"]:
                     sys.exit(f"{info['id']}: {info['tilers']['count']} tilers in the slices for {info['census']['tilers']} in the census")
@@ -316,15 +318,15 @@ def main():
         if rows is None:
             continue
         for i in range(0, len(rows), TILER_SHARD):
-            (OUT / f"{info['id']}-t{i // TILER_SHARD}.json").write_text(json.dumps({"grid": info["grid"], "shapes": rows[i:i + TILER_SHARD]}, separators=(",", ":")))
+            write_json(OUT / f"{info['id']}-t{i // TILER_SHARD}.json.gz", {"grid": info["grid"], "shapes": rows[i:i + TILER_SHARD]}, separators=(",", ":"))
         info["tilers"] = {"count": len(rows), "shard": TILER_SHARD}
         if info.get("census") and len(rows) != info["census"]["tilers"]:
             sys.exit(f"{info['id']}: {len(rows)} tilings for {info['census']['tilers']} tilers")
     index.sort(key=lambda s: (order.index(s["grid"]), s["cells"]))
     for s in index:
         print(f"{s['id']}: {s['count']} non-tilers, strict {s['hc']}, with holes {s['hh']}")
-    (OUT / "named.json").write_text(json.dumps({"shapes": named_rows}, separators=(",", ":")))
-    (OUT / "index.json").write_text(json.dumps({"sets": index, "named": len(named_rows)}, separators=(",", ":")))
+    write_json(OUT / "named.json.gz", {"shapes": named_rows}, separators=(",", ":"))
+    write_json(OUT / "index.json.gz", {"sets": index, "named": len(named_rows)}, separators=(",", ":"))
     print(f"named: {len(named_rows)} tiles")
 
 

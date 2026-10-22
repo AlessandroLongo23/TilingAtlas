@@ -1,15 +1,15 @@
 """Export accepted hollow tilings to the Atlas shelf format.
 
 Writes
-  public/hollow/<id>.json           face geometry + translation lattice
-  public/reference-atlas-hollow.json  the shelf index (ReferenceTiling rows)
+  public/hollow/<id>.json.gz        face geometry + translation lattice
+  public/reference-atlas-hollow.json.gz  the shelf index (ReferenceTiling rows)
 
 A hollow tiling's faces overlap and self-intersect, so there is no cell polygon list
 the flat renderer could consume. What ships instead is the explicit face list of a
 grown patch plus the lattice basis, and the hollow renderer strokes each closed path
 and fills by winding number.
 """
-import sys, os, json, math
+import sys, os, math
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from cfg import corner_types, enum_configs
 from grow2 import grow_disk
@@ -18,10 +18,12 @@ from discrete import discrete
 from periodic import certify
 from hollow import zfloat, zabs, _bfs_depths
 from quotient import parse, orbit, GMS, CONVEX11
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "ctrnact-oracle"))
+from develop_freedraw import write_json  # noqa: E402
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 OUT_GEO = os.path.join(REPO, "public", "hollow")
-OUT_IDX = os.path.join(REPO, "public", "reference-atlas-hollow.json")
+OUT_IDX = os.path.join(REPO, "public", "reference-atlas-hollow.json.gz")
 
 GMS_BY_ORBIT = {orbit(parse(v)): k for k, v in GMS.items()}
 CONVEX_ORBITS = {orbit(parse(v)) for v in CONVEX11}
@@ -71,7 +73,7 @@ def main(cfgstrs):
         # under the "regular" class. Listing them again here would double-count the
         # catalogue, so they are exported as geometry (for the regression) but not shelved.
         is_convex = ob in CONVEX_ORBITS
-        json.dump(geo, open(os.path.join(OUT_GEO, sid + ".json"), "w"), separators=(",", ":"))
+        write_json(os.path.join(OUT_GEO, sid + ".json.gz"), geo, separators=(",", ":"))
         if is_convex:
             print("  ok   %-30s density=%-3d faces=%4d convex (geometry only, not shelved)"
                   % (s, geo["density"], len(geo["faces"])), flush=True)
@@ -87,7 +89,7 @@ def main(cfgstrs):
         print("  ok   %-30s density=%-3d faces=%4d %s" %
               (s, geo["density"], len(geo["faces"]), ("GMS " + gid) if gid else
                ("convex" if ob in CONVEX_ORBITS else "unpublished")), flush=True)
-    json.dump(rows, open(OUT_IDX, "w"), indent=1)
+    write_json(OUT_IDX, rows, indent=1)
     print("\nwrote %d entries -> %s" % (len(rows), OUT_IDX))
     print("skipped %d" % len(skipped))
     return rows

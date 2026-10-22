@@ -1,4 +1,4 @@
-// Builds the squared-tori shelf: public/squarings/torus/*.json + index.json.
+// Builds the squared-tori shelf: public/squarings/torus/*.json.gz + index.json.gz.
 //
 // Companion to build-squaring-shelf.ts, one genus up. Where that script sweeps a polyhedron's edges
 // for battery choices, this one sweeps a periodic tiling's homology classes, because on a torus the
@@ -13,8 +13,9 @@
 // Refuses to write anything if a record fails certification, matching the discipline in
 // build-planigon-shelf.mjs: a shelf that ships an uncertified tiling is worse than no shelf.
 
-import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync } from "node:fs";
+import { mkdirSync, rmSync, existsSync } from "node:fs";
 import path from "node:path";
+import { readDataJson, writeDataFile } from "./atlas/io.mjs";
 import { buildTorusMap, halfTurn, type TorusCell, type TorusMap } from "@/lib/squaring/torusMap";
 import { squareTorus, torusClasses } from "@/lib/squaring/torusSquaring";
 import {
@@ -42,7 +43,7 @@ interface AtlasRecord {
  * plain list of shape indices instead — the obvious guess — silently doubles the cell's area.
  */
 function readAtlas(file: string): AtlasRecord[] {
-	const raw = JSON.parse(readFileSync(path.join(ROOT, "public", file), "utf8")) as {
+	const raw = readDataJson(path.join(ROOT, "public", file)) as {
 		geom: { s: { vertices: [number, number][] }[]; v: [number, number][] };
 		records: { id: string; k?: number; renderCell?: { b: [[number, number], [number, number]]; i: number[] } }[];
 	};
@@ -461,9 +462,9 @@ function main(): void {
 
 	if (existsSync(OUT)) rmSync(OUT, { recursive: true });
 	mkdirSync(OUT, { recursive: true });
-	for (const s of shards) writeFileSync(path.join(OUT, `${s.id}.json`), JSON.stringify(s));
+	for (const s of shards) writeDataFile(path.join(OUT, `${s.id}.json.gz`), JSON.stringify(s));
 	const index: TorusIndex = { classLimit: CLASS_LIMIT, entries };
-	writeFileSync(path.join(OUT, "index.json"), JSON.stringify(index));
+	writeDataFile(path.join(OUT, "index.json.gz"), JSON.stringify(index));
 
 	const perfectRecords = entries.filter((e) => e.perfect > 0).length;
 	console.log(

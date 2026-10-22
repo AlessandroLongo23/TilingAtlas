@@ -1,14 +1,15 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { classifyPatchFaces } from "@/lib/freedraw/faces";
 import { PENT_EDGE_DEFAULTS, SIDE_KEYS, solveEdgeBoard, type PentEdgeParams } from "./edge-board";
 import type { PentEdgeRecord } from "./edgeDevelop";
 import { buildPentEdgePatch } from "./edgePatch";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
+import { readDataText } from "../../scripts/atlas/io.mjs";
 
-const shard = (k: number) => `public/pentagon-edges/pe1-k${k}.json`;
+const shard = (k: number) => `public/pentagon-edges/pe1-k${k}.json.gz`;
 const KS = [2, 4, 6, 8, 10].filter((k) => existsSync(shard(k)));
-const read = (k: number): PentEdgeRecord[] => decodeAtlas<PentEdgeRecord>(JSON.parse(readFileSync(shard(k), "utf8")));
+const read = (k: number): PentEdgeRecord[] => decodeAtlas<PentEdgeRecord>(JSON.parse(readDataText(shard(k))));
 
 const solved = (p: Partial<PentEdgeParams> = {}) => {
 	const r = solveEdgeBoard({ ...PENT_EDGE_DEFAULTS, ...p });

@@ -61,7 +61,7 @@ const kOptions = (grid: ColorsGrid, colors: number) =>
 // Thumbnails per page — every mounted thumbnail is a live canvas; square k=6 alone is 21k entries.
 const PAGE_SIZE = 240;
 
-const fileFor = (grid: ColorsGrid, colors: number, k: number) => `${colorsCatalogue(grid, colors).prefix}${k}.json`;
+const fileFor = (grid: ColorsGrid, colors: number, k: number) => `${colorsCatalogue(grid, colors).prefix}${k}.json.gz`;
 const filesFor = (grid: ColorsGrid, colors: number, k: number): string[] =>
 	k === 0 ? kRange(grid, colors).map((kk) => fileFor(grid, colors, kk)) : [fileFor(grid, colors, k)];
 

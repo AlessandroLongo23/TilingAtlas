@@ -5,6 +5,7 @@ import { buildCellMesh } from "@/lib/render/buildCellMesh";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
 import { hydrateRenderCells } from "@/lib/services/renderCellDerive";
+import { readDataText } from "../scripts/atlas/io.mjs";
 
 // /theory embeds the 11 uniform tilings' render cells straight from the reference atlas (see
 // app/(app)/theory/page.tsx). Guard the contract: all 11 ids present, every cell mesh-buildable,
@@ -14,7 +15,7 @@ const UNIFORM_IDS = ["t1001", "t1002", "t1003", "t1004", "t1005", "t1006", "t100
 
 const atlas = hydrateRenderCells(
 	decodeAtlas<{ id: string; k: number; renderCell: TranslationalCellData }>(
-		JSON.parse(readFileSync(path.join(process.cwd(), "public", "reference-atlas.json"), "utf8")),
+		JSON.parse(readDataText(path.join(process.cwd(), "public", "reference-atlas.json"))),
 	),
 );
 

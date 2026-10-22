@@ -27,7 +27,7 @@ describe("loadReferenceAtlasShard", () => {
 		expect(first).toEqual(sample);
 		expect(second).toBe(first); // cache hit returns the same reference
 		expect(fetchMock).toHaveBeenCalledTimes(1);
-		expect(fetchMock).toHaveBeenCalledWith("/reference-atlas-k8.json");
+		expect(fetchMock).toHaveBeenCalledWith("/reference-atlas-k8.json.gz");
 	});
 
 	it("rejects and does not cache on a non-ok response", async () => {

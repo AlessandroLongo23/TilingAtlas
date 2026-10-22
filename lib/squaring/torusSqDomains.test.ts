@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync } from "node:fs";
 import path from "node:path";
 import { buildTorusMap } from "./torusMap";
 import { squareTorus, torusClasses } from "./torusSquaring";
@@ -15,6 +15,7 @@ import {
 	torusSqDomains,
 } from "./torusSqDomains";
 import type { TorusRecord } from "./shelf";
+import { readDataText } from "../../scripts/atlas/io.mjs";
 
 // The parameter plane, tested against the solve it is meant to predict.
 //
@@ -29,8 +30,8 @@ const EPS = 1e-9;
 
 const records = (): TorusRecord[] =>
 	readdirSync(SHELF)
-		.filter((f) => f.endsWith(".json") && f !== "index.json")
-		.map((f) => JSON.parse(readFileSync(path.join(SHELF, f), "utf8")) as TorusRecord);
+		.filter((f) => /\.json(\.gz)?$/.test(f) && !f.startsWith("index."))
+		.map((f) => JSON.parse(readDataText(path.join(SHELF, f))) as TorusRecord);
 
 const built = (rec: TorusRecord) => {
 	const b = buildTorusMap(rec.cell);

@@ -18,7 +18,7 @@ import MERGED_ALIASES_MIXED from "@/lib/services/mergedFamilyAliases.json";
 import MERGED_ALIASES_ISOTOXAL from "@/lib/services/mergedFamilyAliases.isotoxal.json";
 import COUPLED_ALIASES_MIXED from "@/lib/services/coupledFamilyAliases.json";
 import ABSORBED_ALIASES from "@/lib/services/absorbedFamilyAliases.json";
-import { decodeAtlas, decodeShard, defineLazyRenderCell, readAtlas } from "@/lib/services/atlasCodec";
+import { decodeAtlas, decodeShard, defineLazyRenderCell, readAtlas, shardBody } from "@/lib/services/atlasCodec";
 import { hydrateRenderCells } from "@/lib/services/renderCellDerive";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import type { ExactCellSource } from "@/lib/services/cellCodecService";
@@ -1939,7 +1939,7 @@ export async function loadHyperbolicEdgesAtlas(): Promise<ReferenceTiling[]> {
 	heInflight = Promise.all(
 		HYP_EDGES_BASES.flatMap((b) =>
 			b.eagerKs.map((k) =>
-				fetch(`/hyperbolic-edges/e${b.id}-k${k}.json`)
+				fetch(`/hyperbolic-edges/e${b.id}-k${k}.json.gz`)
 					.then((res) => (res.ok ? readAtlas<HypEdgesPattern>(res) : []))
 					.catch(() => [] as HypEdgesPattern[])
 					.then((pats) => pats.map(hypEdgesToReference)),
@@ -1970,7 +1970,7 @@ export async function loadHyperbolicEdgesShard(base: string, k: number): Promise
 	if (cached) return cached;
 	const existing = heShardInflight.get(key);
 	if (existing) return existing;
-	const p = fetch(`/hyperbolic-edges/e${base}-k${k}.json`)
+	const p = fetch(`/hyperbolic-edges/e${base}-k${k}.json.gz`)
 		.then((res) => (res.ok ? readAtlas<HypEdgesPattern>(res) : []))
 		.catch(() => [] as HypEdgesPattern[])
 		.then((pats) => {
@@ -2033,7 +2033,7 @@ export async function loadHyperbolicColorsAtlas(): Promise<ReferenceTiling[]> {
 	hcInflight = Promise.all(
 		HYP_COLORS_BASES.flatMap((b) =>
 			b.eagerKs.map((k) =>
-				fetch(`/hyperbolic-colors/c${b.id}-k${k}.json`)
+				fetch(`/hyperbolic-colors/c${b.id}-k${k}.json.gz`)
 					.then((res) => (res.ok ? readAtlas<HypColorsPattern>(res) : []))
 					.catch(() => [] as HypColorsPattern[])
 					.then((pats) => pats.map(hypColorsToReference)),
@@ -2062,7 +2062,7 @@ export async function loadHyperbolicColorsShard(base: string, k: number): Promis
 	if (cached) return cached;
 	const existing = hcShardInflight.get(key);
 	if (existing) return existing;
-	const p = fetch(`/hyperbolic-colors/c${base}-k${k}.json`)
+	const p = fetch(`/hyperbolic-colors/c${base}-k${k}.json.gz`)
 		.then((res) => (res.ok ? readAtlas<HypColorsPattern>(res) : []))
 		.catch(() => [] as HypColorsPattern[])
 		.then((pats) => {
@@ -2090,7 +2090,7 @@ export async function loadSphericalColorsAtlas(): Promise<ReferenceTiling[]> {
 	scInflight = Promise.all(
 		SPH_COLORS_SOLIDS.flatMap((s) =>
 			s.eagerKs.map((k) =>
-				fetch(`/spherical-colors/${s.id}-k${k}.json`)
+				fetch(`/spherical-colors/${s.id}-k${k}.json.gz`)
 					.then((res) => (res.ok ? readAtlas<SphColorsPattern>(res) : []))
 					.catch(() => [] as SphColorsPattern[])
 					.then((pats) => pats.map(sphColorsToReference)),
@@ -2119,7 +2119,7 @@ export async function loadSphericalColorsShard(solid: string, k: number): Promis
 	if (cached) return cached;
 	const existing = scShardInflight.get(key);
 	if (existing) return existing;
-	const p = fetch(`/spherical-colors/${solid}-k${k}.json`)
+	const p = fetch(`/spherical-colors/${solid}-k${k}.json.gz`)
 		.then((res) => (res.ok ? readAtlas<SphColorsPattern>(res) : []))
 		.catch(() => [] as SphColorsPattern[])
 		.then((pats) => {
@@ -2150,7 +2150,7 @@ export async function loadSphericalFreedrawAtlas(): Promise<ReferenceTiling[]> {
 	sfInflight = Promise.all(
 		ICO_SOLIDS.flatMap((s) =>
 			icoSolidKs(s).map((k) =>
-				fetch(`/freedraw-ico/${s.id}-k${k}.json`)
+				fetch(`/freedraw-ico/${s.id}-k${k}.json.gz`)
 					.then((res) => (res.ok ? readAtlas<IcoPattern>(res) : []))
 					.catch(() => [] as IcoPattern[])
 					.then((pats) => pats.map((p) => sphericalFreedrawToReference(s.id, k, p))),
@@ -2201,10 +2201,10 @@ async function fetchSchwarzShard(b: SchwarzBoard, k: number): Promise<ReferenceT
 		const res = await fetch(schwarzShardUrl(b, k));
 		if (!res.ok) return [];
 		if (b.geometry === "spherical") {
-			const shard = decodeShard((await res.json()) as SphSchwarzShard);
+			const shard = decodeShard((await shardBody(res)) as SphSchwarzShard);
 			return hydrateSphShard(shard).map((p) => schwarzToReference(p as SphSchwarzPattern));
 		}
-		const recs = decodeAtlas<HypSchwarzPattern>(await res.json());
+		const recs = decodeAtlas<HypSchwarzPattern>(await shardBody(res));
 		return recs.map(schwarzToReference);
 	} catch {
 		return [];
@@ -2293,7 +2293,7 @@ async function fetchSphEdgesShard(board: string, k: number): Promise<ReferenceTi
 	try {
 		const res = await fetch(sphEdgesShardUrl(board, k));
 		if (!res.ok) return [];
-		const shard = decodeShard((await res.json()) as SphEdgesShard);
+		const shard = decodeShard((await shardBody(res)) as SphEdgesShard);
 		return hydrateSphEdgesShard(shard).map(sphEdgesToReference);
 	} catch {
 		return [];
@@ -2377,7 +2377,7 @@ async function fetchHypPolyShard(n: string, k: number): Promise<ReferenceTiling[
 		for (const url of hypPolyShardUrls(n, k)) {
 			const res = await fetch(url);
 			if (!res.ok) return [];
-			// `readAtlas` and not `res.json()`: the abcd shards are stored gzipped, and parsing those bytes as
+			// `readAtlas` and not `shardBody(res)`: the abcd shards are stored gzipped, and parsing those bytes as
 			// JSON throws into the catch below, which returns [] — a board that fetched its shard with a 200
 			// and then rendered "No tilings match the current filters".
 			for (const p of await readAtlas<HypPolyPattern>(res)) out.push(hypPolyToReference(p));
@@ -2414,7 +2414,7 @@ async function fetchHypHalfShard(id: string, k: number): Promise<ReferenceTiling
 	try {
 		const res = await fetch(hypHalfShardUrl(id, k));
 		if (!res.ok) return [];
-		const recs = decodeAtlas<HypPolyPattern>(await res.json());
+		const recs = decodeAtlas<HypPolyPattern>(await shardBody(res));
 		return recs.map(hypHalfToReference);
 	} catch {
 		return [];
@@ -2530,7 +2530,7 @@ export async function loadPentagonEdgesAtlas(): Promise<ReferenceTiling[]> {
 export async function loadPentagonEdgesShard(board: string, k: number): Promise<ReferenceTiling[]> {
 	const res = await fetch(pentEdgeShardUrl(board, k));
 	if (!res.ok) return [];
-	const recs = decodeAtlas<PentEdgeRecord>(await res.json());
+	const recs = decodeAtlas<PentEdgeRecord>(await shardBody(res));
 	return recs.map(pentEdgesToReference);
 }
 
@@ -2589,7 +2589,7 @@ export async function loadIsohedralEdgesAtlas(): Promise<ReferenceTiling[]> {
 export async function loadIsohedralEdgesShard(board: string, k: number): Promise<ReferenceTiling[]> {
 	const res = await fetch(ihEdgeShardUrl(board, k));
 	if (!res.ok) return [];
-	const recs = decodeAtlas<IhEdgeRecord>(await res.json());
+	const recs = decodeAtlas<IhEdgeRecord>(await shardBody(res));
 	return recs.map(ihEdgesToReference);
 }
 
@@ -2704,7 +2704,7 @@ export async function loadSphericalPolyAtlas(): Promise<ReferenceTiling[]> {
 				// polyhedron) and the whole thing is ~460 kB across 83 files, so there is nothing to defer.
 				SPH_STAR_INDEX.map((e) =>
 					fetch(sphStarShardUrl(e.id))
-						.then((res) => (res.ok ? (res.json() as Promise<SphStarPattern>) : null))
+						.then((res) => (res.ok ? (shardBody(res) as Promise<SphStarPattern>) : null))
 						.catch(() => null)
 						.then((rec) => (rec ? [sphStarToReference(rec)] : [])),
 				),
@@ -2739,10 +2739,10 @@ export async function loadHyperbolicBaseAtlas(): Promise<ReferenceTiling[]> {
 	if (hypBaseCache) return hypBaseCache;
 	if (hypBaseInflight) return hypBaseInflight;
 	hypBaseInflight = Promise.all([
-		fetch("/reference-atlas-hyperbolic.json")
+		fetch("/reference-atlas-hyperbolic.json.gz")
 			.then((res) => (res.ok ? readAtlas<ReferenceTiling>(res) : []))
 			.catch(() => [] as ReferenceTiling[]),
-		fetch("/hyperbolic-developed.json")
+		fetch("/hyperbolic-developed.json.gz")
 			.then((res) => (res.ok ? readAtlas<{ id: string; edge?: number }>(res) : []))
 			.catch(() => [] as Array<{ id: string; edge?: number }>),
 	])
@@ -2858,14 +2858,14 @@ let sphBubInflight: Promise<ReferenceTiling[]> | null = null;
 export async function loadSphBubbleAtlas(): Promise<ReferenceTiling[]> {
 	if (sphBubCache) return sphBubCache;
 	if (sphBubInflight) return sphBubInflight;
-	sphBubInflight = fetch("/bubble-sphere/manifest.json")
-		.then((res) => (res.ok ? (res.json() as Promise<SphBubbleBoard[]>) : []))
+	sphBubInflight = fetch("/bubble-sphere/manifest.json.gz")
+		.then((res) => (res.ok ? (shardBody(res) as Promise<SphBubbleBoard[]>) : []))
 		.then((boards) =>
 			Promise.all(
 				boards.flatMap((b) =>
 					b.shards.map((f) =>
-						fetch(`/bubble-sphere/${f}`)
-							.then((res) => (res.ok ? (res.json() as Promise<SphBubblePattern[]>) : []))
+						fetch(`/bubble-sphere/${f}.gz`)
+							.then((res) => (res.ok ? (shardBody(res) as Promise<SphBubblePattern[]>) : []))
 							.then((rows) => rows.map((r) => sphBubbleToReference(r, b)))
 							.catch(() => [] as ReferenceTiling[]),
 					),
@@ -2943,7 +2943,7 @@ export async function loadColorsDecorAtlas(): Promise<ReferenceTiling[]> {
 	if (colDecorCache) return colDecorCache;
 	if (colDecorInflight) return colDecorInflight;
 	colDecorInflight = Promise.all(
-		COLORS_CATALOGUES.flatMap((c) => c.ks.map((k) => `${c.prefix}${k}.json`)).map((url) =>
+		COLORS_CATALOGUES.flatMap((c) => c.ks.map((k) => `${c.prefix}${k}.json.gz`)).map((url) =>
 			fetch(url)
 				.then((res) => (res.ok ? readAtlas<ColorPattern>(res) : []))
 				.catch(() => [] as ColorPattern[]),
@@ -2972,23 +2972,23 @@ export async function loadReferenceAtlas(): Promise<ReferenceTiling[]> {
 			.then((res) => (res.ok ? readAtlas<ReferenceTiling>(res) : []))
 			.catch(() => [] as ReferenceTiling[]);
 	inflight = Promise.all([
-		fetch("/reference-atlas.json").then(async (res) => {
+		fetch("/reference-atlas.json.gz").then(async (res) => {
 			if (!res.ok) throw new Error(`reference-atlas.json: HTTP ${res.status}`);
 			// The ctrnact files ship no renderCell where exactSource reproduces it; the accessor derives
 			// it on first draw. See lib/services/renderCellDerive.ts.
 			return hydrateRenderCells(await readAtlas<ReferenceTiling>(res));
 		}),
-		bestEffort("/reference-atlas-composable.json"),
-		bestEffort("/reference-atlas-isotoxal.json"),
-		bestEffort("/reference-atlas-mixed.json"),
-		bestEffort("/reference-atlas-scaled.json"),
-		bestEffort("/reference-atlas-period.json"),
-		bestEffort("/reference-atlas-tri45.json"),
-		bestEffort("/reference-atlas-planigon.json"),
-		bestEffort("/reference-atlas-penrose.json"),
-		bestEffort("/reference-atlas-euhalf.json"),
-		bestEffort("/reference-atlas-polyomino.json"),
-		bestEffort("/reference-atlas-islamic.json"),
+		bestEffort("/reference-atlas-composable.json.gz"),
+		bestEffort("/reference-atlas-isotoxal.json.gz"),
+		bestEffort("/reference-atlas-mixed.json.gz"),
+		bestEffort("/reference-atlas-scaled.json.gz"),
+		bestEffort("/reference-atlas-period.json.gz"),
+		bestEffort("/reference-atlas-tri45.json.gz"),
+		bestEffort("/reference-atlas-planigon.json.gz"),
+		bestEffort("/reference-atlas-penrose.json.gz"),
+		bestEffort("/reference-atlas-euhalf.json.gz"),
+		bestEffort("/reference-atlas-polyomino.json.gz"),
+		bestEffort("/reference-atlas-islamic.json.gz"),
 		// DEFERRED, 2026-08-17. This file is 15.9 MB and 28,453 rows — 61% of the eager payload — and it
 		// was parsed on every page load including /play opening on Euclidean, where not one of its rows
 		// can be drawn. Measured before the change: 1,000 MB of JS heap, a 9.3 s main-thread block and a
@@ -2997,8 +2997,8 @@ export async function loadReferenceAtlas(): Promise<ReferenceTiling[]> {
 		// The SLOT stays so the positional destructuring below keeps its bindings — emptying it is safe,
 		// removing it is what shifted every later binding and silently dropped the Colorings shelf.
 		Promise.resolve([] as ReferenceTiling[]),
-		bestEffort("/reference-atlas-spherical.json"),
-		bestEffort("/reference-atlas-hollow.json"),
+		bestEffort("/reference-atlas-spherical.json.gz"),
+		bestEffort("/reference-atlas-hollow.json.gz"),
 		// DEFERRED, 2026-08-17. Measured on /play: 172 MB decoded over 200 resources, of which the
 		// colours catalogues alone are ~70 MB (colors/tri-2-k6.json is 20 MB by itself) and freedraw
 		// ~25 MB — all of it parsed at page open for DECORATIONS the viewer has not selected. They now
@@ -3010,7 +3010,7 @@ export async function loadReferenceAtlas(): Promise<ReferenceTiling[]> {
 		Promise.resolve([] as Array<{ id: string; edge?: number }>),
 		// One slot for both Tegula files: the destructuring below is positional. The spherical rows carry
 		// a whole solid (sphPoly) and draw on the three.js sphere, so their plane cell is the empty one.
-		Promise.all([bestEffort("/reference-atlas-tegula.json"), bestEffort("/reference-atlas-tegula-sph.json")]).then(
+		Promise.all([bestEffort("/reference-atlas-tegula.json.gz"), bestEffort("/reference-atlas-tegula-sph.json.gz")]).then(
 			([plane, sphere]) => {
 				for (const r of plane) if (r.tegula) defineLazyRenderCell(r, (self) => bendTegula(self.tegula!));
 				for (const r of sphere) r.renderCell = FREEDRAW_EMPTY_CELL;
@@ -3106,7 +3106,7 @@ export async function loadReferenceAtlasShard(k: number): Promise<ReferenceTilin
 	if (cached) return cached;
 	const existing = shardInflight.get(k);
 	if (existing) return existing;
-	const p = fetch(`/reference-atlas-k${k}.json`)
+	const p = fetch(`/reference-atlas-k${k}.json.gz`)
 		.then((res) => {
 			if (!res.ok) throw new Error(`reference-atlas-k${k}.json: HTTP ${res.status}`);
 			return readAtlas<ReferenceTiling>(res);
@@ -3149,7 +3149,7 @@ export async function loadShelfShard(shelf: string, k: number): Promise<Referenc
 	if (cached) return cached;
 	const existing = shelfShardInflight.get(key);
 	if (existing) return existing;
-	const p = fetch(`/reference-atlas-${key}.json`)
+	const p = fetch(`/reference-atlas-${key}.json.gz`)
 		.then((res) => {
 			if (res.status === 404) return [] as ReferenceTiling[]; // shard not built for this k — empty merge
 			if (!res.ok) throw new Error(`reference-atlas-${key}.json: HTTP ${res.status}`);
@@ -3227,7 +3227,7 @@ export async function loadColorsShardsForK(k: number): Promise<ReferenceTiling[]
 	const shards = colorsLazyShardsForK(k);
 	if (!shards.length) return [];
 	const lists = await Promise.all(
-		shards.map((s) => loadDecorationShard<ColorPattern>(`${s.prefix}${s.k}.json`, colorsToReference)),
+		shards.map((s) => loadDecorationShard<ColorPattern>(`${s.prefix}${s.k}.json.gz`, colorsToReference)),
 	);
 	return lists.flat();
 }

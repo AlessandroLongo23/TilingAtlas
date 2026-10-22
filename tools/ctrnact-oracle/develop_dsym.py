@@ -35,11 +35,10 @@ same, and two symmetries of a tiling that agree on one chamber are equal. So one
 `symmetry_order` then counts the symmetries the finished picture really has; main() refuses to call a
 row clean unless that count equals the order of the type's point group.
 
-usage: develop_dsym.py <euclidean.tdb> "<sql where>" <reference-atlas.json> [log]
+usage: develop_dsym.py <euclidean.tdb> "<sql where>" <reference-atlas.json[.gz]> [log]
        e.g. "vertices<=2" for the two complete levels, written as atlas rows (source "tegula")
        The rows carry no renderCell: the atlas bends each skeleton on first draw (lib/tilings/tegula.ts).
 """
-import json
 import math
 import sqlite3
 import sys
@@ -49,6 +48,8 @@ from fractions import Fraction
 from math import gcd
 
 import numpy as np
+
+from develop_freedraw import write_json
 
 TAU = 2 * math.pi
 JX = 0.35        # where along the edge a J bend peaks by default
@@ -854,7 +855,7 @@ def main(db, where, out, logpath=None):
     if flat:
         say("symmetry check on the %d clean plane drawings (%d of them marked): %d have exactly their type's symmetry, %d do not %s"
             % (flat, marked, flat - len(wrong), len(wrong), wrong[:40]))
-    json.dump(res, open(out, "w"), separators=(",", ":"))
+    write_json(out, res, separators=(",", ":"))
 
 
 if __name__ == "__main__":

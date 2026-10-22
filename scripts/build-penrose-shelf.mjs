@@ -25,8 +25,9 @@
 // every planigon and every 45-45-90 tile is convex. Here each face is oriented counter-clockwise first
 // and the angle taken in [0, 360), so a reflex corner counts as reflex.
 
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { readFileSync, mkdirSync } from "node:fs";
 import path from "node:path";
+import { writeDataFile } from "./atlas/io.mjs";
 import { stringifyAtlas } from "./atlas/encode.mjs";
 
 const ARGS = process.argv.slice(2);
@@ -385,9 +386,9 @@ for (const k of [...byK.keys()].sort((a, b) => a - b)) {
 		faces: e.faces,
 		stats: e.stats,
 	}));
-	writeFileSync(path.join(OUT, `penrose-k${k}.json`), stringifyAtlas(rows));
+	writeDataFile(path.join(OUT, `penrose-k${k}.json.gz`), stringifyAtlas(rows));
 	manifest.k.push({ k, count: rows.length, file: `/penrose/penrose-k${k}.json` });
-	console.log(`  k=${k}: ${rows.length} tilings -> public/penrose/penrose-k${k}.json`);
+	console.log(`  k=${k}: ${rows.length} tilings -> public/penrose/penrose-k${k}.json.gz`);
 	byK.get(k).forEach((e, i) => {
 		const isKite = e.faces.map((f) => matches(profile(f), KITE));
 		const kites = isKite.filter(Boolean).length,
@@ -423,16 +424,16 @@ for (const k of [...byK.keys()].sort((a, b) => a - b)) {
 		});
 	});
 }
-writeFileSync(path.join(OUT, "manifest.json"), JSON.stringify(manifest, null, 2));
+writeDataFile(path.join(OUT, "manifest.json.gz"), JSON.stringify(manifest, null, 2));
 // k<=3 eager, deeper tiers as lazy shards — the split the mixed, scaled, period and tri45 shelves all
 // use. The whole shelf as one eager file is 18.7 MB on every page load; the eager tier is ~0.5 MB.
 const eager = ref.filter((r) => r.k <= 3);
-writeFileSync(path.join(PUB, "reference-atlas-penrose.json"), stringifyAtlas(eager));
-console.log(`  atlas shelf: ${eager.length} entries (k<=3, eager) -> public/reference-atlas-penrose.json`);
+writeDataFile(path.join(PUB, "reference-atlas-penrose.json.gz"), stringifyAtlas(eager));
+console.log(`  atlas shelf: ${eager.length} entries (k<=3, eager) -> public/reference-atlas-penrose.json.gz`);
 for (const k of [...new Set(ref.filter((r) => r.k > 3).map((r) => r.k))].sort((a, b) => a - b)) {
 	const rows = ref.filter((r) => r.k === k);
-	writeFileSync(path.join(PUB, `reference-atlas-penrose-k${k}.json`), stringifyAtlas(rows));
-	console.log(`               ${rows.length} entries -> public/reference-atlas-penrose-k${k}.json (lazy)`);
+	writeDataFile(path.join(PUB, `reference-atlas-penrose-k${k}.json.gz`), stringifyAtlas(rows));
+	console.log(`               ${rows.length} entries -> public/reference-atlas-penrose-k${k}.json.gz (lazy)`);
 }
 console.log(
 	`penrose: ${distinct.length} distinct tilings, shape err ${worstShape.toExponential(2)}, area err ${worstArea.toExponential(2)}, angle err ${worstAngle.toExponential(2)}° — certified`,

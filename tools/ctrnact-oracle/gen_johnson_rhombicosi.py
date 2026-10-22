@@ -21,7 +21,9 @@ settled J28/J29, and for the same reason: emission order is not evidence.
 
 Usage: python3 gen_johnson_rhombicosi.py [--emit-ts]
 """
-import argparse, glob, json, math, os
+import argparse, glob, math, os
+
+from develop_freedraw import read_json
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
@@ -81,10 +83,10 @@ def main():
     ap.add_argument("--emit-ts", action="store_true")
     args = ap.parse_args()
     rows = []
-    for path in sorted(glob.glob(os.path.join(ROOT, "public", "spherical-poly", "*.json"))):
-        if path.endswith("manifest.json"):
+    for path in sorted(glob.glob(os.path.join(ROOT, "public", "spherical-poly", "*.json*"))):
+        if not path.endswith((".json", ".json.gz")) or os.path.basename(path).startswith("manifest.json"):
             continue
-        blob = json.load(open(path))
+        blob = read_json(path)
         for r in (blob if isinstance(blob, list) else [blob]):
             if not isinstance(r, dict) or "faces" not in r:
                 continue

@@ -7,6 +7,7 @@ import { CylinderCircuit } from "./cylinder-circuit";
 import { SquaredCylinderFigure } from "./squared-cylinder-figure";
 import { Fact, InspectBar, RailPanel, StageBoard, useTapHover } from "./stage-board";
 import { RangeInput } from "@/components/ui/range-input";
+import { shardBody } from "@/lib/services/atlasCodec";
 
 // One hyperbolic tiling becoming one squared cylinder, in the same four stages as the other two.
 //
@@ -55,7 +56,7 @@ export function CylinderStages({ entry }: { entry: CylinderIndexEntry }) {
 		if (shardCache.has(entry.id)) return;
 		let live = true;
 		fetch(cylinderShardUrl(entry.id))
-			.then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+			.then((r) => (r.ok ? shardBody<CylinderRecord>(r) : Promise.reject(new Error(String(r.status)))))
 			.then((data: CylinderRecord) => {
 				shardCache.set(entry.id, data);
 				if (live) bumpAfterFetch((n) => n + 1);

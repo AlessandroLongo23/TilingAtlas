@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Enrich public/hyperbolic-developed.json IN PLACE with the quotient darts {rneig, glue, lvert, seed}
+"""Enrich public/hyperbolic-developed.json.gz IN PLACE with the quotient darts {rneig, glue, lvert, seed}
 for each already-shipped patch, so the TS client can re-develop the tiling on the fly (fill-to-rim,
 re-centred on the view). This does NOT re-select or change any geometry — it only ADDS the `darts` field.
 
@@ -11,13 +11,15 @@ It matches each shipped patch to a freshly-developed cell (develop_hyperbolic.py
 Any patch that fails to match is reported and left without darts (the renderer falls back to the baked
 finite patch for it), so a miss is loud, never silent.
 
-Usage: python3 bake_hyperbolic_darts.py --developed ../../public/hyperbolic-developed.json \
+Usage: python3 bake_hyperbolic_darts.py --developed ../../public/hyperbolic-developed.json.gz \
           --cells scratch-hyp-p7/cells.json scratch-hyp-r3/cells.json scratch-hyp-k2/cells.json [--write]
 """
 import argparse
 import json
 import math
 from collections import defaultdict
+
+from develop_freedraw import read_json, write_json
 
 
 def canon(cfg):
@@ -47,7 +49,7 @@ def main():
     ap.add_argument("--write", action="store_true")
     args = ap.parse_args()
 
-    developed = json.load(open(args.developed))
+    developed = read_json(args.developed)
 
     # index cells by config key
     by_key = defaultdict(list)
@@ -98,7 +100,7 @@ def main():
     if not args.write:
         print("\n(dry run — pass --write to update the file)")
         return
-    json.dump(developed, open(args.developed, "w"), ensure_ascii=False)
+    write_json(args.developed, developed, ensure_ascii=False)
     print(f"\nwrote {args.developed} ({matched} patches now carry darts)")
 
 

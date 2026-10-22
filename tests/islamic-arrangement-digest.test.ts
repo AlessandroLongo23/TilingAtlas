@@ -6,6 +6,7 @@ import { buildArrangement, extractFaces, colorFacesAbc, type Marker, type Segmen
 import { evaluateParamCell, resolveAlphaDegsRaw, type ParametricCellData } from "@/lib/utils/paramCell";
 import type { TranslationalCellData } from "@/classes/algorithm/types";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
+import { readDataText } from "../scripts/atlas/io.mjs";
 
 /**
  * Output lock for the Islamic arrangement.
@@ -35,9 +36,9 @@ function digest(parts: (number | string)[]): string {
 	return `${h.toString(16).padStart(8, "0")}:${s.length}`;
 }
 
-const shelfPath = path.join(process.cwd(), "public", "reference-atlas-mixed.json");
+const shelfPath = path.join(process.cwd(), "public", "reference-atlas-mixed.json.gz");
 const shelf: { id: string; paramCell?: ParametricCellData }[] = fs.existsSync(shelfPath)
-	? decodeAtlas<{ id: string; paramCell?: ParametricCellData }>(JSON.parse(fs.readFileSync(shelfPath, "utf8")))
+	? decodeAtlas<{ id: string; paramCell?: ParametricCellData }>(JSON.parse(readDataText(shelfPath)))
 	: [];
 
 // Two families and two slider regimes: offset 0 / count 1 skips the crossing-split branch entirely, while

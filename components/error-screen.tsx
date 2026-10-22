@@ -12,6 +12,7 @@ import {
 	type HeroCell,
 } from "@/lib/render/errorSpecimen";
 import { ERROR_SPECIMENS } from "@/lib/render/errorSpecimens";
+import { shardBody } from "@/lib/services/atlasCodec";
 
 // The shell behind app/error.tsx and app/not-found.tsx: a 3 × 3 wall of specimens with the message in
 // the middle cell, hairlines between cells like the landing's collections grid. The eight cells around
@@ -75,7 +76,7 @@ const drawSeed = () => sample(ERROR_SPECIMENS, SLOTS);
 async function drawLive(signal: AbortSignal): Promise<ErrorSpecimen[]> {
 	const res = await fetch(HERO_INDEX_URL, { signal });
 	if (!res.ok) throw new Error(`hero index: HTTP ${res.status}`);
-	const ids = (await res.json()) as string[];
+	const ids = (await shardBody(res)) as string[];
 	const wanted = sample(
 		ids.filter((id) => !isExcludedHeroId(id)),
 		LIVE_SLOTS,
@@ -86,7 +87,7 @@ async function drawLive(signal: AbortSignal): Promise<ErrorSpecimen[]> {
 			try {
 				const cell = await fetch(heroCellUrl(id), { signal });
 				if (!cell.ok) return null;
-				return liveSpecimen((await cell.json()) as HeroCell, pickPresentation(Math.random), Math.random);
+				return liveSpecimen((await shardBody(cell)) as HeroCell, pickPresentation(Math.random), Math.random);
 			} catch {
 				return null;
 			}

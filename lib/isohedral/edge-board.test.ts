@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { ISOHEDRAL_TYPES } from "./catalogue";
 import { curvesOf, defaultEdgeStates, makeTiling, prototileEdges } from "./build";
@@ -15,10 +15,11 @@ import { IH_EDGE_BOARDS as IH_EDGE_BOARDS_SHELF } from "./edge-shelf";
 import { walkIhEdges, type IhEdgeRecord } from "./edgeDevelop";
 import { buildIhEdgePatch, certCellFaces, checkSlotsAreOpposite } from "./edgePatch";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
+import { readDataText } from "../../scripts/atlas/io.mjs";
 
-const shardIh = (ih: number, k: number) => `public/isohedral-edges/ie${String(ih).padStart(2, "0")}-k${k}.json`;
+const shardIh = (ih: number, k: number) => `public/isohedral-edges/ie${String(ih).padStart(2, "0")}-k${k}.json.gz`;
 const anyShard = existsSync(shardIh(1, 2));
-const readIh = (ih: number, k: number): IhEdgeRecord[] => decodeAtlas(JSON.parse(readFileSync(shardIh(ih, k), "utf8")));
+const readIh = (ih: number, k: number): IhEdgeRecord[] => decodeAtlas(JSON.parse(readDataText(shardIh(ih, k))));
 const read = (k: number): IhEdgeRecord[] => readIh(1, k);
 /** A board's own shipped k slices, ascending. ⚑ Never hard-code 2, 4, 6 across boards: IH07 starts at
  *  k=4 (its bare tiling has four vertex orbits) and IH08 at k=1 (it has one, and odd k throughout). */

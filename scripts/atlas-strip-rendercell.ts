@@ -2,7 +2,7 @@
 //
 //   pnpm tsx scripts/atlas-strip-rendercell.ts                    # dry run over the four ctrnact files
 //   pnpm tsx scripts/atlas-strip-rendercell.ts --write
-//   pnpm tsx scripts/atlas-strip-rendercell.ts --write public/reference-atlas-k9.json
+//   pnpm tsx scripts/atlas-strip-rendercell.ts --write public/reference-atlas-k9.json.gz
 //
 // A one-shot migration for files that already shipped. New builds come out stripped because
 // build-reference-atlas.ts calls the same stripDerivableRenderCells before writing.
@@ -19,6 +19,7 @@ import path from "node:path";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
 import { stripDerivableRenderCells } from "@/lib/services/renderCellDerive";
 import { stringifyAtlas } from "./atlas/encode.mjs";
+import { readDataText, writeDataFile } from "./atlas/io.mjs";
 
 const DEFAULT_TARGETS = [
 	"public/reference-atlas.json",
@@ -30,7 +31,7 @@ const DEFAULT_TARGETS = [
 const args = process.argv.slice(2);
 const write = args.includes("--write");
 const targets = args.filter((a) => !a.startsWith("--"));
-const files = (targets.length ? targets : DEFAULT_TARGETS).map((f) => path.resolve(f));
+const files = (targets.length ? targets : DEFAULT_TARGETS).map((f) => path.resolve(f).replace(/\.json$/, ".json.gz"));
 
 let totalBefore = 0;
 let totalAfter = 0;
@@ -42,7 +43,7 @@ for (const file of files) {
 		continue;
 	}
 
-	const rawText = fs.readFileSync(file, "utf8");
+	const rawText = readDataText(file);
 	const records = decodeAtlas<Record<string, unknown>>(JSON.parse(rawText));
 	const { stripped, kept } = stripDerivableRenderCells(records as never);
 	const outText = stringifyAtlas(records) + "\n";
@@ -56,8 +57,8 @@ for (const file of files) {
 
 	if (write) {
 		// temp + rename, so an interrupt cannot truncate a shelf
-		const tmp = `${file}.tmp-strip`;
-		fs.writeFileSync(tmp, outText);
+		const tmp = `${file}.tmp-strip.gz`;
+		writeDataFile(tmp, outText);
 		fs.renameSync(tmp, file);
 	}
 }

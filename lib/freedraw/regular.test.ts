@@ -1,9 +1,10 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { analyseFaces } from "./faces";
 import type { FreedrawPattern } from "./pattern";
 import { classifyRegular } from "./regular";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
+import { readDataText } from "../../scripts/atlas/io.mjs";
 
 const sq = (a: number, b: number, d: number, h: number[], v: number[]): FreedrawPattern => ({
 	id: "t",
@@ -73,8 +74,8 @@ describe("classifyRegular — mechanics", () => {
 
 const CATALOGUE = "public/freedraw";
 const load = (file: string): FreedrawPattern[] | null =>
-	existsSync(`${CATALOGUE}/${file}`)
-		? decodeAtlas<FreedrawPattern>(JSON.parse(readFileSync(`${CATALOGUE}/${file}`, "utf8")))
+	existsSync(`${CATALOGUE}/${file}.gz`)
+		? decodeAtlas<FreedrawPattern>(JSON.parse(readDataText(`${CATALOGUE}/${file}.gz`)))
 		: null;
 
 const allRegular = (ps: FreedrawPattern[]) => ps.filter((p) => info(p).allRegular);

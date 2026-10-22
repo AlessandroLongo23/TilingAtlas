@@ -37,7 +37,7 @@ build emits, from any tier and any palette, and a check that lives downstream of
 only kind that cannot be bypassed by adding one.
 
 Run (after build-period-atlas.ts):
-  python3 scripts/shelf-dedup.py --shelf public/reference-atlas-period.json --write \
+  python3 scripts/shelf-dedup.py --shelf public/reference-atlas-period.json.gz --write \
       --log experiments/results/period-shelf-dedup-2026-08-09.log
 """
 import argparse
@@ -53,6 +53,7 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), 
 sys.path.insert(0, os.path.join(ROOT, "tools", "ctrnact-oracle"))
 
 import tiling_key as TK                                        # noqa: E402
+from develop_freedraw import read_json, write_json             # noqa: E402
 import vertex_orbits as vo                                     # noqa: E402
 
 LOG = None
@@ -67,15 +68,16 @@ def log(msg):
 
 
 def shard_paths(main_path):
-    base = re.sub(r"\.json$", "", main_path)
-    return sorted(glob.glob(f"{base}-k*.json"))
+    m = re.search(r"\.json(\.gz)?$", main_path)
+    base, ext = main_path[: m.start()], m.group(0)
+    return sorted(glob.glob(f"{base}-k*{ext}"))
 
 
 def load_shelf(main_path):
     files = [main_path] + shard_paths(main_path)
     entries, owner = [], {}
     for f in files:
-        for e in json.load(open(f)):
+        for e in read_json(f):
             entries.append(e)
             owner[e["id"]] = f
     return files, entries, owner
@@ -240,9 +242,7 @@ def _write(args, files, keep, owner, dropped, subs, log):
         for e in keep:
             by_file[owner[e.get("legacyId", e["id"])]].append(e)
         for f in files:
-            with open(f, "w") as fh:
-                json.dump(by_file.get(f, []), fh, separators=(",", ":"))
-                fh.write("\n")
+            write_json(f, by_file.get(f, []), separators=(",", ":"))
             log(f"  rewrote {os.path.relpath(f, ROOT)}: {len(by_file.get(f, []))} entries")
 
 

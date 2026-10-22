@@ -1,6 +1,6 @@
-import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { readDataText } from "../../scripts/atlas/io.mjs";
 
 // Invariants of the /defense growth figure (public/defense/growth-k3.json, written by
 // scripts/build-growth-figure.ts). The slide is driven entirely from this file, so a regeneration
@@ -26,9 +26,7 @@ interface GrowthFigure {
 	level1: FigState[];
 }
 
-const fig = JSON.parse(
-	readFileSync(path.join(process.cwd(), "public", "defense", "growth-k3.json"), "utf8"),
-) as GrowthFigure;
+const fig = JSON.parse(readDataText(path.join(process.cwd(), "public", "defense", "growth-k3.json"))) as GrowthFigure;
 
 const key = (p: [number, number]) => `${Math.round(p[0] * 1e4)},${Math.round(p[1] * 1e4)}`;
 

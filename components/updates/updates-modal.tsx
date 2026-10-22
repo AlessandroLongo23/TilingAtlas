@@ -11,6 +11,7 @@ import { ChangeText } from "@/components/updates/change-text";
 import { KIND_LABEL, KIND_ORDER, type Change, type ChangeKind, type UpdateEntry } from "@/lib/updates/entries";
 import { parseShelfPreviewId, previewHref, previewLabel } from "@/lib/updates/preview-ids";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
+import { shardBody } from "@/lib/services/atlasCodec";
 
 // The "what's new" modal: everything a visitor has not seen, merged into one grouped list rather
 // than one block per release. A returning reader wants to know WHAT changed, not which version
@@ -43,8 +44,8 @@ interface UpdatesModalProps {
 let cellsRequest: Promise<CellMap> | null = null;
 
 function loadPreviewCells(): Promise<CellMap> {
-	cellsRequest ??= fetch("/updates-cells.json")
-		.then((r) => (r.ok ? (r.json() as Promise<CellMap>) : ({} as CellMap)))
+	cellsRequest ??= fetch("/updates-cells.json.gz")
+		.then((r) => (r.ok ? (shardBody(r) as Promise<CellMap>) : ({} as CellMap)))
 		.catch(() => ({}) as CellMap);
 	return cellsRequest;
 }

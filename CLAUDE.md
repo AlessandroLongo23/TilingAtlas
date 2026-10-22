@@ -125,6 +125,35 @@ load differently — never make it absent. See `docs/DEVELOPMENT_NOTES.md` "ever
 If a corpus genuinely cannot ship (no decoder exists, certificates fail to develop), that is a
 DIFFERENT statement and must be recorded as such: what is missing and why, never as a size decision.
 
+## Shipped data under public/ is stored gzipped (durable; AL decision, 2026-10-21)
+
+**Every atlas data file under `public/` is committed as `.json.gz`, never as plain `.json`.** New
+corpora, rebuilt shards and pipeline outputs are written gzipped from the start.
+
+Why: the Vercel team `falesteos-projects` is on Hobby, which allows 10 GB of Deployment Storage for
+ALL projects together. Every retained deployment stores a full copy of `public/`, and Hobby keeps at
+least the 3 latest production deploys plus the 3 latest of any kind per project. On 2026-10-21 this
+repo tracked 2.8 GB of plain JSON, so 4 kept deploys alone hit 100% of the quota. The JSON gzips
+8-55x; gzipped, the whole tree is in the low hundreds of MB.
+
+- **Read through `shardBody` in `lib/services/atlasCodec.ts`.** It un-gzips by sniffing the magic
+  bytes and also accepts plain JSON, so fetchers need only the `.json.gz` URL. Do not write a second
+  decoder. The pattern to copy is `lib/tilings/hyp-poly.ts` (shard URLs end in `.json.gz`).
+- **Build-time readers gunzip too.** Anything that reads `public/` from Node (`lib/about/load.ts`,
+  the landing-data script) uses `zlib.gunzipSync` on `.gz` files.
+- **The wire is unchanged.** The CDN already compressed plain JSON in transit; this saves storage in
+  the repo and in every deployment, not bandwidth.
+- **Budget.** Keep tracked `public/` under 500 MB. Check it with
+  `git ls-files -z public | xargs -0 stat -f %z | awk '{s+=$1} END{print s/1048576 " MB"}'`.
+  If a drop pushes it past that, the fix is in the delivery layer (pack, split, gzip), never in
+  dropping data: the "everything ships" rule above still wins.
+- **`public/frames/` is shipped data, not local renders.** It is the `/frames` shelf (1,822,452 frames,
+  commit `65d8c790`): 1,184 MB plain, 78 MB gzipped, and it was the largest single item in the 2.8 GB.
+- **Exceptions, kept plain:** `public/release.json` only (133 B; the release-notes skill polls it on the
+  live site). `scripts/docs-check.mjs` fails a commit that stages any other plain `.json` under `public/`.
+- **Writers:** Node scripts write through `scripts/atlas/io.mjs` (`writeDataFile` to a `.json.gz` path,
+  `readDataJson` to read); the Python tools through `read_json`/`write_json` in `tools/ctrnact-oracle/develop_freedraw.py`.
+
 ## Fewer lines out than in (durable; AL directive, 2026-08-23)
 
 **Every task carries a secondary goal: finish with fewer lines of code than you started with.**

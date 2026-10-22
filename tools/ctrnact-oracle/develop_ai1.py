@@ -29,9 +29,10 @@ in ascending k until the budget is spent and names every k it dropped, so a shel
 truncated k as an exhausted one.
 
 Usage:
-    develop_ai1.py <corpus-dir> --n 7 --out public/hyperbolic-poly/hp7 --report ...
-    develop_ai1.py <corpus-dir> --ai2 7 --out public/hyperbolic-poly/hpt7          # {3,7}
-    develop_ai1.py <corpus-dir> --hybrid 1_7627 --out public/hyperbolic-poly/hpy17627
+    develop_ai1.py <corpus-dir> --n 7 --out <scratch>/hp7 --report ...
+    develop_ai1.py <corpus-dir> --ai2 7 --out <scratch>/hpt7          # {3,7}
+    develop_ai1.py <corpus-dir> --hybrid 1_7627 --out <scratch>/hpy17627
+    node scripts/pack-hyp-poly-shelf.mjs <scratch> --write    # plain shards -> public/hyperbolic-poly/*.json.gz
     develop_ai1.py --selftest
 """
 import argparse

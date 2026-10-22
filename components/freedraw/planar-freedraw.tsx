@@ -147,68 +147,68 @@ const PAGE_SIZE = 240;
 // file, not the whole ~35MB / 112k-pattern atlas. Cached module-wide, so switching back is instant.
 const CATALOGUE: Record<FreedrawCatalogueGrid, { url: string; ks: number[]; heavy?: true }[]> = {
 	square: [
-		{ url: "/freedraw/solutions.json", ks: [1, 2, 3] },
-		{ url: "/freedraw/solutions-k4.json", ks: [4] },
-		{ url: "/freedraw/solutions-k5.json", ks: [5] },
+		{ url: "/freedraw/solutions.json.gz", ks: [1, 2, 3] },
+		{ url: "/freedraw/solutions-k4.json.gz", ks: [4] },
+		{ url: "/freedraw/solutions-k5.json.gz", ks: [5] },
 	],
 	triangle: [
-		{ url: "/freedraw/tri-solutions.json", ks: [1, 2, 3] },
-		{ url: "/freedraw/tri-solutions-k4.json", ks: [4] },
+		{ url: "/freedraw/tri-solutions.json.gz", ks: [1, 2, 3] },
+		{ url: "/freedraw/tri-solutions-k4.json.gz", ks: [4] },
 	],
 	ts: [
-		{ url: "/freedraw/ts-solutions-k1.json", ks: [1] },
-		{ url: "/freedraw/ts-solutions-k2.json", ks: [2] },
-		{ url: "/freedraw/ts-solutions-k3.json", ks: [3] },
+		{ url: "/freedraw/ts-solutions-k1.json.gz", ks: [1] },
+		{ url: "/freedraw/ts-solutions-k2.json.gz", ks: [2] },
+		{ url: "/freedraw/ts-solutions-k3.json.gz", ks: [3] },
 	],
 	// k=5 is DELIBERATELY ABSENT. The slice we had came from the solver build Marek withdrew on
 	// 2026-07-29 (it dropped every tiling drawing the longest edge class), and his corrected drop
 	// only reaches k=4. Showing six known-short patterns beside a corrected k=3 and k=4 would make
 	// the board look enumerated to k=5 when it is not. Restore the entry when a corrected k=5 exists.
 	sch236: [
-		{ url: "/freedraw/sch236-solutions-k3.json", ks: [3] },
-		{ url: "/freedraw/sch236-solutions-k4.json", ks: [4] },
+		{ url: "/freedraw/sch236-solutions-k3.json.gz", ks: [3] },
+		{ url: "/freedraw/sch236-solutions-k4.json.gz", ks: [4] },
 	],
 	// The (2,4,4) board's k=4 slice is 12,361 patterns / 18.8 MB, so it is `heavy` like the hexagonal
 	// tail: "All" skips it and picking its chip loads it.
 	sch244: [
-		{ url: "/freedraw/sch244-solutions-k2.json", ks: [2] },
-		{ url: "/freedraw/sch244-solutions-k3.json", ks: [3] },
-		{ url: "/freedraw/sch244-solutions-k4.json", ks: [4], heavy: true },
+		{ url: "/freedraw/sch244-solutions-k2.json.gz", ks: [2] },
+		{ url: "/freedraw/sch244-solutions-k3.json.gz", ks: [3] },
+		{ url: "/freedraw/sch244-solutions-k4.json.gz", ks: [4], heavy: true },
 	],
 	// The hexagonal grid runs deep — Marek solved it to k=9, where one slice is 22,361 patterns / 58 MB.
 	// `heavy` keeps those three out of the "All" fetch; picking their k chip still loads them.
 	hex: [
-		{ url: "/freedraw/hex-solutions-k1.json", ks: [1] },
-		{ url: "/freedraw/hex-solutions-k2.json", ks: [2] },
-		{ url: "/freedraw/hex-solutions-k3.json", ks: [3] },
-		{ url: "/freedraw/hex-solutions-k4.json", ks: [4] },
-		{ url: "/freedraw/hex-solutions-k5.json", ks: [5] },
-		{ url: "/freedraw/hex-solutions-k6.json", ks: [6] },
-		{ url: "/freedraw/hex-solutions-k7.json", ks: [7], heavy: true },
-		{ url: "/freedraw/hex-solutions-k8.json", ks: [8], heavy: true },
-		{ url: "/freedraw/hex-solutions-k9.json", ks: [9], heavy: true },
+		{ url: "/freedraw/hex-solutions-k1.json.gz", ks: [1] },
+		{ url: "/freedraw/hex-solutions-k2.json.gz", ks: [2] },
+		{ url: "/freedraw/hex-solutions-k3.json.gz", ks: [3] },
+		{ url: "/freedraw/hex-solutions-k4.json.gz", ks: [4] },
+		{ url: "/freedraw/hex-solutions-k5.json.gz", ks: [5] },
+		{ url: "/freedraw/hex-solutions-k6.json.gz", ks: [6] },
+		{ url: "/freedraw/hex-solutions-k7.json.gz", ks: [7], heavy: true },
+		{ url: "/freedraw/hex-solutions-k8.json.gz", ks: [8], heavy: true },
+		{ url: "/freedraw/hex-solutions-k9.json.gz", ks: [9], heavy: true },
 	],
 	// 3.4.6.4 and 4.8.8, 2026-08-29. Same `heavy` policy: the tails stay out of the "All" fetch and
 	// load when their own k chip is picked.
 	"4436": [
-		{ url: "/freedraw/4436-solutions-k1.json", ks: [1] },
-		{ url: "/freedraw/4436-solutions-k2.json", ks: [2] },
-		{ url: "/freedraw/4436-solutions-k3.json", ks: [3] },
-		{ url: "/freedraw/4436-solutions-k4.json", ks: [4] },
-		{ url: "/freedraw/4436-solutions-k5.json", ks: [5], heavy: true },
-		{ url: "/freedraw/4436-solutions-k6.json", ks: [6], heavy: true },
+		{ url: "/freedraw/4436-solutions-k1.json.gz", ks: [1] },
+		{ url: "/freedraw/4436-solutions-k2.json.gz", ks: [2] },
+		{ url: "/freedraw/4436-solutions-k3.json.gz", ks: [3] },
+		{ url: "/freedraw/4436-solutions-k4.json.gz", ks: [4] },
+		{ url: "/freedraw/4436-solutions-k5.json.gz", ks: [5], heavy: true },
+		{ url: "/freedraw/4436-solutions-k6.json.gz", ks: [6], heavy: true },
 	],
 	"488": [
-		{ url: "/freedraw/488-solutions-k1.json", ks: [1] },
-		{ url: "/freedraw/488-solutions-k2.json", ks: [2] },
-		{ url: "/freedraw/488-solutions-k3.json", ks: [3] },
-		{ url: "/freedraw/488-solutions-k4.json", ks: [4] },
-		{ url: "/freedraw/488-solutions-k5.json", ks: [5] },
-		{ url: "/freedraw/488-solutions-k6.json", ks: [6] },
-		{ url: "/freedraw/488-solutions-k7.json", ks: [7] },
-		{ url: "/freedraw/488-solutions-k8.json", ks: [8], heavy: true },
-		{ url: "/freedraw/488-solutions-k9.json", ks: [9], heavy: true },
-		{ url: "/freedraw/488-solutions-k10.json", ks: [10], heavy: true },
+		{ url: "/freedraw/488-solutions-k1.json.gz", ks: [1] },
+		{ url: "/freedraw/488-solutions-k2.json.gz", ks: [2] },
+		{ url: "/freedraw/488-solutions-k3.json.gz", ks: [3] },
+		{ url: "/freedraw/488-solutions-k4.json.gz", ks: [4] },
+		{ url: "/freedraw/488-solutions-k5.json.gz", ks: [5] },
+		{ url: "/freedraw/488-solutions-k6.json.gz", ks: [6] },
+		{ url: "/freedraw/488-solutions-k7.json.gz", ks: [7] },
+		{ url: "/freedraw/488-solutions-k8.json.gz", ks: [8], heavy: true },
+		{ url: "/freedraw/488-solutions-k9.json.gz", ks: [9], heavy: true },
+		{ url: "/freedraw/488-solutions-k10.json.gz", ks: [10], heavy: true },
 	],
 };
 

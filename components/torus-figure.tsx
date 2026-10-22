@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { prepare, screenMapper, type Box } from "@/lib/render/figureCanvas";
 import { polygonHue, TILE_FILL_ALPHA, tileFill, tileLine } from "@/lib/utils/renderTiling";
+import { shardBody } from "@/lib/services/atlasCodec";
 
 // Why fixing the period lattice first makes the search finite, in two panels.
 //
@@ -187,8 +188,8 @@ export function TorusFigure() {
 
 	useEffect(() => {
 		let alive = true;
-		fetch("/defense/period-figure.json")
-			.then((r) => r.json())
+		fetch("/defense/period-figure.json.gz")
+			.then((r) => shardBody<FigureData>(r))
 			.then((d: FigureData) => {
 				if (alive) setData(d);
 			})

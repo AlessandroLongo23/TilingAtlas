@@ -6,7 +6,6 @@
 // in node lets a change be measured in seconds instead of via a four-minute browser profile.
 //
 //   pnpm tsx scripts/bench-islamic-arrangement.ts [familyId ...]
-import fs from "node:fs";
 import path from "node:path";
 import { Vector } from "@/classes/Vector";
 import { buildTilingFromCell } from "@/lib/render/buildPatchTiling";
@@ -20,6 +19,7 @@ import {
 import { evaluateParamCell, resolveAlphaDegsRaw, type ParametricCellData } from "@/lib/utils/paramCell";
 import type { TranslationalCellData } from "@/classes/algorithm/types";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
+import { readDataJson } from "./atlas/io.mjs";
 
 const PATCH_MARGIN = Number(process.env.MARGIN || 3);
 const ANGLE = Number(process.env.ANGLE || 60) * (Math.PI / 180);
@@ -28,7 +28,7 @@ const COUNT = Number(process.env.COUNT || 2);
 const REPS = Number(process.env.REPS || 12);
 
 const shelf = decodeAtlas<{ id: string; paramCell?: ParametricCellData }>(
-	JSON.parse(fs.readFileSync(path.join(process.cwd(), "public", "reference-atlas-mixed.json"), "utf8")),
+	readDataJson(path.join(process.cwd(), "public", "reference-atlas-mixed.json")),
 );
 
 const wanted = process.argv.slice(2);

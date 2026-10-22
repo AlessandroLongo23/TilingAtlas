@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Splice a partial-solve preview cells file into public/reference-atlas.json IN PLACE.
+"""Splice a partial-solve preview cells file into public/reference-atlas.json.gz IN PLACE.
 
 Fast path for previewing an in-progress run without the ~10 min full atlas rebuild: drops any
 prior entries sharing the cells file's id-prefix, maps each cell record to a ReferenceTiling, and
@@ -13,13 +13,15 @@ alpha, exactly as lib/utils/paramCell.ts:evaluateParamCell does. Without this, e
 re-add the family members as standalone cards and visually un-group the families on each run.
 
 Usage:
-  python3 splice_preview_atlas.py --cells <preview.cells.json> --atlas ../../public/reference-atlas.json \
+  python3 splice_preview_atlas.py --cells <preview.cells.json> --atlas ../../public/reference-atlas.json.gz \
       [--families ../../experiments/star-oracle/ctrnact-star-families.cells.json]
 """
 import argparse
 import json
 import math
 import re
+
+from develop_freedraw import read_json, write_json
 
 
 def family_label(orbits):
@@ -81,7 +83,7 @@ def main():
     cells = json.load(open(args.cells))["records"]
     prefix = re.match(r"(.*?-k\d+-preview)", cells[0]["id"]).group(1) if cells else ""
     k = cells[0]["k"] if cells else None
-    atlas = json.load(open(args.atlas))
+    atlas = read_json(args.atlas)
 
     # free-alpha families detected for this k (proven; only ship those that passed area checks)
     member_vertypes = set()
@@ -135,8 +137,7 @@ def main():
 
     atlas.extend(fam_entries)
 
-    with open(args.atlas, "w") as f:
-        json.dump(atlas, f, separators=(",", ":"))
+    write_json(args.atlas, atlas, separators=(",", ":"))
     fam_msg = f"; {len(fam_entries)} family sliders (folded {folded} members)" if args.families else ""
     print(f"spliced {added} preview entries (prefix {prefix!r}); dropped {dropped} stale{fam_msg}; "
           f"atlas now {len(atlas)} tilings")

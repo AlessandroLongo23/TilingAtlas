@@ -34,6 +34,7 @@ import { detSurd, polygonAreaSurd } from "@/classes/algorithm/exact/Surd";
 import type { ReferenceTiling } from "@/lib/services/referenceAtlas";
 import { POLYFORM_BOARDS, type PolyformBoard } from "@/lib/tilings/polyform";
 import { stringifyAtlas } from "./atlas/encode.mjs"; // plain .mjs: shared with the bare-node builders
+import { writeDataFile } from "./atlas/io.mjs";
 
 setActiveRing(CyclotomicRing.create(24));
 const RING = CyclotomicRing.create(24);
@@ -249,7 +250,7 @@ function familyLabel(faces: Face[], order: string[]): string {
 }
 
 const MIRROR_REPORT = process.argv.includes("--mirror-report");
-const OUT = path.join(ROOT, "public", "reference-atlas-polyomino.json");
+const OUT = path.join(ROOT, "public", "reference-atlas-polyomino.json.gz");
 const LOG = path.join(ROOT, "experiments", "results", "polyform-atlas-build.log");
 
 function note(b: PolyformBoard, pieces: string[]): string {
@@ -508,7 +509,7 @@ function main(): void {
 			a.id.localeCompare(b.id),
 	);
 	fs.mkdirSync(path.dirname(OUT), { recursive: true });
-	fs.writeFileSync(OUT, stringifyAtlas(all) + "\n");
+	writeDataFile(OUT, stringifyAtlas(all) + "\n");
 	const kb = (fs.statSync(OUT).size / 1024).toFixed(1);
 	log(
 		`  TOTAL ${all.length} tilings → ${path.relative(ROOT, OUT)} (${kb} KB), ${((Date.now() - t0) / 1000).toFixed(1)}s`,

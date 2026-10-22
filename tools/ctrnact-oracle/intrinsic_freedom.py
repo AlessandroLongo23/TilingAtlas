@@ -37,14 +37,13 @@ freedom), and the 11 Archimedean tilings must come out at the freedom of their o
 """
 import argparse
 import cmath
-import json
-import glob
 import math
 import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import tiling_key as TK
+from intrinsic_family import shelf_entries
 import vertex_orbits as vo
 
 D2R = math.pi / 180.0
@@ -163,16 +162,13 @@ def freedom(polys, basis, tol=1e-7):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--shelf", default=None, help="a built shelf json (its -k*.json shards are included)")
+    ap.add_argument("--shelf", default=None, help="a built shelf .json.gz (its -k*.json.gz shards are included)")
     ap.add_argument("--id", action="append", default=[], help="only these ids")
     ap.add_argument("--gate", action="store_true",
                     help="check every parametric entry has intrinsic dimension >= its shipped P")
     ap.add_argument("--limit", type=int, default=0)
     args = ap.parse_args()
-    root = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
-    shelf = args.shelf or os.path.join(root, "public", "reference-atlas-period.json")
-    files = [shelf] + sorted(glob.glob(shelf.replace(".json", "-k*.json")))
-    entries = [e for f in files for e in json.load(open(f))]
+    entries = shelf_entries(args.shelf)
     if args.id:
         entries = [e for e in entries if e["id"] in args.id or e.get("legacyId") in args.id]
     if args.limit:

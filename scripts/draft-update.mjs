@@ -218,14 +218,22 @@ if (!reasons.length) console.log(c("dim", "  · no new route or registry value �
 // ── new atlas ids ─────────────────────────────────────────────────────────────
 // The one fact that cannot be read off a commit subject, and the source of preview ids.
 if (!NO_ATLAS) {
-	const shards = sh(`git diff ${RANGE} --name-only -- "public/reference-atlas*.json"`).split("\n").filter(Boolean);
+	// By logical name: a shard stored gzipped (`.json.gz`) and its older plain `.json` are one shard.
+	const shards = [
+		...new Set(
+			sh(`git diff ${RANGE} --name-only -- "public/reference-atlas*.json" "public/reference-atlas*.json.gz"`)
+				.split("\n")
+				.filter(Boolean)
+				.map((f) => f.replace(/\.gz$/, "")),
+		),
+	];
 	if (!shards.length) {
 		console.log("\n" + c("b", "new tilings ") + c("dim", "no atlas shard changed"));
 	} else {
 		console.log("\n" + c("b", "new tilings"));
 		for (const shard of shards) {
 			const idsAt = (rev) => {
-				const blob = sh(`git show ${rev}:${shard}`);
+				const blob = sh(`git show ${rev}:${shard}.gz | gunzip`) || sh(`git show ${rev}:${shard}`);
 				if (!blob) return null;
 				// Shelf files are packed (scripts/atlas/encode.mjs), and an OLD rev may predate that, so
 				// decodeAtlas handles both shapes — otherwise every id reads as undefined and the diff is junk.

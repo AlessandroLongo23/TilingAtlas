@@ -1,6 +1,7 @@
-import { readFile, readdir } from "node:fs/promises";
+import { readdir } from "node:fs/promises";
 import { statSync } from "node:fs";
 import path from "node:path";
+import { readDataText } from "@/scripts/atlas/io.mjs";
 import type { Metadata } from "next";
 import { UPDATES } from "@/lib/updates/entries";
 import { shelfPreviewCell } from "@/lib/updates/preview-cells";
@@ -49,7 +50,7 @@ async function loadCells(ids: string[]): Promise<Record<string, TranslationalCel
 	// Read at build time only (force-static), so none of public/ is traced into a function bundle.
 	const dir = path.join(/* turbopackIgnore: true */ process.cwd(), "public");
 	const inDir = (f: string) => path.join(/* turbopackIgnore: true */ dir, f);
-	const read = (f: string) => readFile(/* turbopackIgnore: true */ inDir(f), "utf8");
+	const read = async (f: string) => readDataText(inDir(f));
 	const out: Record<string, TranslationalCellData> = {};
 	// The shelf ids first: they are solved here, not looked up, and no shard will ever answer for one.
 	for (const id of wanted) {
@@ -80,7 +81,7 @@ async function loadCells(ids: string[]): Promise<Record<string, TranslationalCel
 	if (missing.length) {
 		const left = new Set(missing);
 		const shards = (await readdir(dir))
-			.filter((f) => /^reference-atlas-.*-k\d+\.json$/.test(f))
+			.filter((f) => /^reference-atlas-.*-k\d+\.json(\.gz)?$/.test(f))
 			.map((f) => ({ f, size: statSync(/* turbopackIgnore: true */ inDir(f)).size }))
 			.sort((a, b) => a.size - b.size);
 		for (const { f } of shards) {

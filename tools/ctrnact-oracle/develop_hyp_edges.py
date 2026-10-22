@@ -27,7 +27,7 @@ The bridge between them is three things, and nothing else:
   3. The digon needs no case at all: α(2, ℓ) = 2·asin(cos(π/2)/cosh(ℓ/2)) = 0, exactly as the
      Euclidean 180 − 360/n gave 0.
 
-WHAT SHIPS. Darts, not baked geometry — matching public/hyperbolic-developed.json, because every
+WHAT SHIPS. Darts, not baked geometry — matching public/hyperbolic-developed.json.gz, because every
 render path re-develops under the live view anyway (lib/render/hyperbolicDevelopClient.ts). The
 drawn/undrawn bit is NOT shipped: it is recoverable from the polygon sizes as
 
@@ -43,7 +43,6 @@ Usage:
 """
 import argparse
 import glob
-import json
 import math
 import os
 import re
@@ -573,9 +572,8 @@ def run(source, base_id, out_prefix, ks=None, report_path=None, limit=None, boun
             r["name"] = r["id"]
         if out_prefix:
             os.makedirs(os.path.dirname(out_prefix) or ".", exist_ok=True)
-            path = f"{out_prefix}-k{k}.json"
-            with open(path, "w") as fh:
-                json.dump(recs, fh, separators=(",", ":"))
+            path = f"{out_prefix}-k{k}.json.gz"
+            fd.write_json(path, recs, separators=(",", ":"))
             written.append((path, len(recs), os.path.getsize(path)))
 
     lines = [f"hyperbolic edge-system develop — base {base['label']} ({base_id}), source {source}",
@@ -643,7 +641,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("source", nargs="?", help="certificate directory (or a single .txt)")
     ap.add_argument("--base", default="667", choices=sorted(BASES))
-    ap.add_argument("--out", help="output prefix; writes <prefix>-k<k>.json")
+    ap.add_argument("--out", help="output prefix; writes <prefix>-k<k>.json.gz")
     ap.add_argument("--report")
     ap.add_argument("--ks", help="comma-separated k values to decode (default: all present)")
     ap.add_argument("--limit", type=int)

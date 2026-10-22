@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync } from "node:fs";
 import { polyhedronForId } from "@/lib/render/sphericalSolids";
 import { sphereMapOf } from "@/lib/bubble/sphere";
+import { readDataText } from "../../scripts/atlas/io.mjs";
 
 // THE gate on this shelf, and the exact analogue of the balance equation the Euclidean bubble boards
 // are checked against: every edge must carry a BUMP on one side and a BITE on the other. It fails
@@ -10,7 +11,7 @@ import { sphereMapOf } from "@/lib/bubble/sphere";
 // generator that wrote them.
 
 const DIR = `${process.cwd()}/public/bubble-sphere`;
-const manifest = JSON.parse(readFileSync(`${DIR}/manifest.json`, "utf8")) as {
+const manifest = JSON.parse(readDataText(`${DIR}/manifest.json`)) as {
 	solid: string;
 	coverage: string;
 	total: string;
@@ -23,7 +24,7 @@ describe("spherical bubble shelf", () => {
 		for (const board of manifest) {
 			const m = sphereMapOf(polyhedronForId(board.solid)!);
 			for (const shard of board.shards) {
-				const rows = JSON.parse(readFileSync(`${DIR}/${shard}`, "utf8")) as {
+				const rows = JSON.parse(readDataText(`${DIR}/${shard}`)) as {
 					id: string;
 					k: number;
 					solid: string;
@@ -49,7 +50,7 @@ describe("spherical bubble shelf", () => {
 		for (const board of manifest) {
 			for (const shard of board.shards) {
 				const k = Number(shard.match(/-k(\d+)\.json$/)?.[1]);
-				const rows = JSON.parse(readFileSync(`${DIR}/${shard}`, "utf8")) as { k: number }[];
+				const rows = JSON.parse(readDataText(`${DIR}/${shard}`)) as { k: number }[];
 				expect(rows.length, shard).toBeGreaterThan(0);
 				for (const r of rows) expect(r.k, shard).toBe(k);
 				// A k<=3 board must not ship a k above the cutoff; a complete one may ship any k.
@@ -60,9 +61,9 @@ describe("spherical bubble shelf", () => {
 
 	it("names a shard for every file on disk, and a file for every shard", () => {
 		const onDisk = readdirSync(DIR)
-			.filter((f) => f.endsWith(".json") && f !== "manifest.json")
+			.filter((f) => /\.json(\.gz)?$/.test(f) && !f.startsWith("manifest."))
 			.sort();
-		expect(manifest.flatMap((b) => b.shards).sort()).toEqual(onDisk);
+		expect(manifest.flatMap((b) => b.shards.map((s) => `${s}.gz`)).sort()).toEqual(onDisk);
 	});
 
 	// ⚑ The arc CLASSIFIER that used to be checked here is gone with the code it tested. It offset each
@@ -83,7 +84,7 @@ describe("spherical bubble shelf", () => {
 		for (const { value: style } of BUBBLE_EDGE_STYLES)
 			for (const board of manifest) {
 				if (!board.shards.length) continue;
-				const rec = JSON.parse(readFileSync(`${DIR}/${board.shards[0]}`, "utf8"))[0] as { bites: number[][] };
+				const rec = JSON.parse(readDataText(`${DIR}/${board.shards[0]}`))[0] as { bites: number[][] };
 				const built = buildBubbleSphere(polyhedronForId(board.solid), rec.bites, { style, kochLevel: 2 })!;
 				// The FILL is the first child; the second is the outline, which has no area to measure.
 				const fill = built.object.children[0] as unknown as {

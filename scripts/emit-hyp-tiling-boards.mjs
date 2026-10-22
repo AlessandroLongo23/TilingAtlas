@@ -13,13 +13,13 @@
  *
  * Usage:  node scripts/emit-hyp-tiling-boards.mjs [> rows.txt]
  */
-import { readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { decodeAtlas } from "./atlas/encode.mjs";
+import { readDataJson } from "./atlas/io.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const src = decodeAtlas(JSON.parse(readFileSync(join(ROOT, "public", "reference-atlas-hyperbolic.json"), "utf8")));
+const src = decodeAtlas(readDataJson(join(ROOT, "public", "reference-atlas-hyperbolic.json")));
 const records = Array.isArray(src) ? src : src.records;
 
 /** (valence, alphabet) off a vertex configuration. "3.4.3.4.4.4.4 + 3.4.4.3.4.4.4" → [7, [3,4]]. */

@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { analyseFaces, summarise, type FaceSummary } from "./faces";
 import {
@@ -13,6 +13,7 @@ import {
 import type { FreedrawPattern } from "./pattern";
 import { classifyRegular, type RegularInfo } from "./regular";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
+import { readDataText } from "../../scripts/atlas/io.mjs";
 
 /** A summary standing in for a pattern, so the predicate can be tested without building a tiling. */
 const stats = (over: Partial<FaceSummary> = {}): FaceSummary => ({
@@ -202,8 +203,8 @@ describe("URL codec", () => {
 const CATALOGUE = "public/freedraw";
 
 const load = (file: string): FreedrawPattern[] | null =>
-	existsSync(`${CATALOGUE}/${file}`)
-		? decodeAtlas<FreedrawPattern>(JSON.parse(readFileSync(`${CATALOGUE}/${file}`, "utf8")))
+	existsSync(`${CATALOGUE}/${file}.gz`)
+		? decodeAtlas<FreedrawPattern>(JSON.parse(readDataText(`${CATALOGUE}/${file}.gz`)))
 		: null;
 
 const count = (patterns: FreedrawPattern[], f: Partial<FreedrawFilter>) => {

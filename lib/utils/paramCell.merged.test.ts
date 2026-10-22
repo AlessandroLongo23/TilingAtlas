@@ -1,5 +1,4 @@
 import { describe, it, expect } from "vitest";
-import fs from "node:fs";
 import path from "node:path";
 import {
 	clampToRegion,
@@ -11,6 +10,7 @@ import {
 import { resolveMergedFamilyKey } from "@/lib/services/referenceAtlas";
 import type { ReferenceTiling } from "@/lib/services/referenceAtlas";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
+import { readDataText } from "../../scripts/atlas/io.mjs";
 
 // A merged family is two exported halves of ONE deformation, spliced at the straight-vertex limit.
 // Spec: docs/superpowers/specs/2026-07-25-mixed-family-merge-design.md; census in DEVELOPMENT_NOTES §92–§94, §99.
@@ -27,7 +27,7 @@ const SHELVES = [
 ];
 // `read` serves BOTH shelf files and the merge/range plans, and a plan is a plain object that the
 // atlas decoder rightly rejects. So the decode happens at the shelf call site, not here.
-const read = (rel: string) => JSON.parse(fs.readFileSync(path.join(process.cwd(), rel), "utf8"));
+const read = (rel: string) => JSON.parse(readDataText(path.join(process.cwd(), rel)));
 const shelfOf = (s: (typeof SHELVES)[number]): ReferenceTiling[] =>
 	[s.atlas, ...(s.shards ?? [])].flatMap((f) => decodeAtlas<ReferenceTiling>(read(f)));
 const SHELF = SHELVES.flatMap(shelfOf);

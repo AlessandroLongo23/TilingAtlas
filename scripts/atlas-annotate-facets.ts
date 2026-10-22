@@ -3,7 +3,7 @@
 //
 //   pnpm tsx scripts/atlas-annotate-facets.ts                    # dry run over the Euclidean tiling shelves
 //   pnpm tsx scripts/atlas-annotate-facets.ts --write
-//   pnpm tsx scripts/atlas-annotate-facets.ts --write public/reference-atlas-k9.json
+//   pnpm tsx scripts/atlas-annotate-facets.ts --write public/reference-atlas-k9.json.gz
 //
 // A one-shot migration for files that already shipped. New builds come out annotated because
 // build-reference-atlas.ts calls the same annotatePolygonFacets before writing.
@@ -23,6 +23,7 @@ import { decodeAtlas } from "@/lib/services/atlasCodec";
 import { hydrateRenderCells, stripDerivableRenderCells } from "@/lib/services/renderCellDerive";
 import { annotatePolygonFacets } from "@/lib/services/polygonFacets";
 import { stringifyAtlas } from "./atlas/encode.mjs";
+import { readDataText, writeDataFile } from "./atlas/io.mjs";
 
 // The shelves whose rows reach /library's polygon facets: Euclidean, decoration "tilings". The
 // decoration shelves are deliberately absent — their rows share one empty cell, so there is nothing
@@ -60,7 +61,7 @@ const DEFAULT_TARGETS = [
 const args = process.argv.slice(2);
 const write = args.includes("--write");
 const targets = args.filter((a) => !a.startsWith("--"));
-const files = (targets.length ? targets : DEFAULT_TARGETS).map((f) => path.resolve(f));
+const files = (targets.length ? targets : DEFAULT_TARGETS).map((f) => path.resolve(f).replace(/\.json$/, ".json.gz"));
 
 let totalBefore = 0;
 let totalAfter = 0;
@@ -73,7 +74,7 @@ for (const file of files) {
 		continue;
 	}
 
-	const rawText = fs.readFileSync(file, "utf8");
+	const rawText = readDataText(file);
 	const records = hydrateRenderCells(decodeAtlas<Record<string, unknown>>(JSON.parse(rawText)) as never);
 	const { annotated, empty } = annotatePolygonFacets(records as never);
 	// RE-STRIP before writing. Annotating reads renderCell, which collapses the derive accessor into
@@ -93,8 +94,8 @@ for (const file of files) {
 
 	if (write) {
 		// temp + rename, so an interrupt cannot truncate a shelf
-		const tmp = `${file}.tmp-facets`;
-		fs.writeFileSync(tmp, outText);
+		const tmp = `${file}.tmp-facets.gz`;
+		writeDataFile(tmp, outText);
 		fs.renameSync(tmp, file);
 	}
 }

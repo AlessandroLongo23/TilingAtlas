@@ -10,6 +10,7 @@ import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import { build, moveOnly, resolveRef } from "./doc";
 import { tilingToPatch } from "./patch";
 import { EMPTY_DOC, type PointRef, type StudioDoc, type StudioPatch } from "./types";
+import { readDataText } from "../../scripts/atlas/io.mjs";
 
 /**
  * The claim under test is that `build` re-cuts the faces out of the planar rotation system correctly.
@@ -330,9 +331,9 @@ describe("resolveRef", () => {
 
 // --- the shipped catalogue -------------------------------------------------------------------------
 
-const atlasPath = path.join(process.cwd(), "public", "reference-atlas.json");
+const atlasPath = path.join(process.cwd(), "public", "reference-atlas.json.gz");
 type Rec = { id: string; exactSource?: ExactCellSource };
-const atlas: Rec[] = fs.existsSync(atlasPath) ? decodeAtlas<Rec>(JSON.parse(fs.readFileSync(atlasPath, "utf8"))) : [];
+const atlas: Rec[] = fs.existsSync(atlasPath) ? decodeAtlas<Rec>(JSON.parse(readDataText(atlasPath))) : [];
 
 describe.skipIf(atlas.length === 0)("build on the shipped catalogue", () => {
 	const ring = CyclotomicRing.create(24);

@@ -29,6 +29,7 @@ import { loadOracle, reconstructOracleCell } from "./oracle-match";
 import { serializeCell, deserializeCell, type SerializedCell } from "./scoutCodec";
 import { evaluateParamCell, type ParametricCellData } from "@/lib/utils/paramCell";
 import { stringifyAtlas } from "./atlas/encode.mjs";
+import { writeDataFile } from "./atlas/io.mjs";
 import { stripDerivableRenderCells } from "@/lib/services/renderCellDerive";
 import { annotatePolygonFacets } from "@/lib/services/polygonFacets";
 
@@ -41,7 +42,7 @@ const withStars = !argv.includes("--no-stars");
 const ROOT = process.cwd();
 // Served as a STATIC asset (public/) so the browser lazy-fetches it only when the Reference shelf is
 // opened — keeps the /library initial payload small (the certified catalogue only).
-const OUT_PATH = path.join(ROOT, "public", "reference-atlas.json");
+const OUT_PATH = path.join(ROOT, "public", "reference-atlas.json.gz");
 const LOG_DIR = path.join(ROOT, "experiments", "results");
 const LOG_PATH = path.join(LOG_DIR, "reference-atlas-build.log");
 
@@ -394,11 +395,11 @@ function writeHigherKShards(): void {
 			t.certification = a.certification;
 		}
 		entries.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-		const outPath = path.join(ROOT, "public", `reference-atlas-k${k}.json`);
+		const outPath = path.join(ROOT, "public", `reference-atlas-k${k}.json.gz`);
 		// Facets first: both are read off renderCell, and the strip is what deletes it.
 		annotatePolygonFacets(entries as never);
 		stripDerivableRenderCells(entries as never);
-		fs.writeFileSync(outPath, stringifyAtlas(entries) + "\n");
+		writeDataFile(outPath, stringifyAtlas(entries) + "\n");
 		const bytes = fs.statSync(outPath).size;
 		log(`  → ${path.relative(ROOT, outPath)}  (${entries.length} tilings, ${(bytes / 1e6).toFixed(1)} MB)`);
 	}
@@ -689,7 +690,7 @@ function main(): void {
 	// Facets first: both are read off renderCell, and the strip is what deletes it.
 	annotatePolygonFacets(atlas as never);
 	stripDerivableRenderCells(atlas as never);
-	fs.writeFileSync(OUT_PATH, stringifyAtlas(atlas) + "\n");
+	writeDataFile(OUT_PATH, stringifyAtlas(atlas) + "\n");
 	fs.mkdirSync(LOG_DIR, { recursive: true });
 
 	if (!argv.includes("--no-ctrnact") && !argv.includes("--no-shards")) writeHigherKShards();
@@ -728,7 +729,7 @@ function main(): void {
 	const shardsWritten = !argv.includes("--no-ctrnact") && !argv.includes("--no-shards");
 	const enrichTargets = [
 		OUT_PATH,
-		...(shardsWritten ? [8, 9, 10].map((k) => path.join(ROOT, "public", `reference-atlas-k${k}.json`)) : []),
+		...(shardsWritten ? [8, 9, 10].map((k) => path.join(ROOT, "public", `reference-atlas-k${k}.json.gz`)) : []),
 	];
 	console.log("\n=== enriching atlas: vertex-type classification + exact wallpaper symmetry ===");
 	execSync(

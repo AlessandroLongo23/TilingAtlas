@@ -1,9 +1,10 @@
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { writeFileSync, mkdirSync } from "node:fs";
 import { CyclotomicRing } from "@/classes/Cyclotomic";
 import { loadCatalogueKeys } from "./catalogueKeys";
 import { assembleGraph, type FamilyRecord } from "./graphAssembler";
 import type { ParametricCellData } from "@/lib/utils/paramCell";
 import { decodeAtlas } from "../atlas/encode.mjs";
+import { readDataJson } from "../atlas/io.mjs";
 
 // Emits the self-contained data the interactive figure needs to render a tiling on hover: each family's
 // symbolic paramCell (Laurent terms in e^{iδ}, δ from α), each edge's α at both ends, and every node's
@@ -24,7 +25,7 @@ const PRETTY: Record<string, string> = {
 	"ctrnact-01_6-3d-1": "6³",
 };
 
-const atlas = decodeAtlas(JSON.parse(readFileSync("public/reference-atlas-isotoxal.json", "utf8")));
+const atlas = decodeAtlas(readDataJson("public/reference-atlas-isotoxal.json"));
 const records = (Array.isArray(atlas) ? atlas : atlas.records) as (FamilyRecord & {
 	k?: number;
 	source?: string;

@@ -3166,3 +3166,8 @@ Left: 1247_1_0612 (multi-length, lengths decoded), 33444, 33344. Uncommitted. NO
 `develop_ai1.py --multi` solves per-token edge multiples (S1 M2 Loo4 L3 7) and handles flat corners; the
 walk and shader break T-junction ties and step apeirogons between real corners. 0 wrong of 8,000 probes.
 Uncommitted. NOTES 2026-10-21 "the first multi-length board".
+
+## 2026-10-22 — public/ data stored gzipped: 2,822 MB → 494 MB tracked — CC
+6,762 files to .json.gz; loaders via shardBody, Node via scripts/atlas/io.mjs, Python via develop_freedraw.
+docs-check blocks staged plain JSON under public/. Same counts and same test skips as before.
+NOTES 2026-10-22 "shipped data under public/ is stored gzipped".

@@ -16,6 +16,7 @@
  */
 
 import type { Decoration, Geometry, TileClass } from "@/lib/services/referenceAtlas";
+import { shardBody } from "@/lib/services/atlasCodec";
 
 /** Which loader reaches a tier. `"ctrnact"` is loadReferenceAtlasShard, `"hyppoly"` is
  *  loadHyperbolicPolyShard (the only one that needs a board as well as a k); the rest are
@@ -71,8 +72,8 @@ let cache: Promise<AtlasManifest | null> | null = null;
  */
 export function loadAtlasManifest(): Promise<AtlasManifest | null> {
 	if (cache) return cache;
-	cache = fetch("/atlas-manifest.json")
-		.then((res) => (res.ok ? res.json() : null))
+	cache = fetch("/atlas-manifest.json.gz")
+		.then((res) => (res.ok ? shardBody<AtlasManifest | null>(res) : null))
 		.then((raw: AtlasManifest | null) => (raw && raw.manifest === 1 ? raw : null))
 		.catch(() => null);
 	return cache;

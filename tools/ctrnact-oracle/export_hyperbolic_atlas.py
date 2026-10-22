@@ -4,8 +4,8 @@ files, deduping by TILING IDENTITY and filtering to the tilings that actually de
 
   python3 export_hyperbolic_atlas.py \
     --cells scratch-hyp-p7k2/cells.json \
-    --developed ../../public/hyperbolic-developed.json \
-    --reference ../../public/reference-atlas-hyperbolic.json \
+    --developed ../../public/hyperbolic-developed.json.gz \
+    --reference ../../public/reference-atlas-hyperbolic.json.gz \
     --rebuild [--write]
 
 IDENTITY (rewritten 2026-07-23, third attempt — NOTES §80 holds the graveyard). A tiling's identity is
@@ -52,6 +52,7 @@ from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import develop_hyperbolic as dh          # develop_patch, to re-grow a record from its stored darts
+from develop_freedraw import read_json, write_json
 from dsymbol_from_darts import analyse
 
 
@@ -241,8 +242,8 @@ def id_for(orbits, k):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--cells", required=True, nargs="+", help="develop_hyperbolic.py cells JSON(s)")
-    ap.add_argument("--developed", required=True, help="public/hyperbolic-developed.json (patches)")
-    ap.add_argument("--reference", required=True, help="public/reference-atlas-hyperbolic.json (entries)")
+    ap.add_argument("--developed", required=True, help="public/hyperbolic-developed.json.gz (patches)")
+    ap.add_argument("--reference", required=True, help="public/reference-atlas-hyperbolic.json.gz (entries)")
     ap.add_argument("--max-valence", type=int, default=8)
     ap.add_argument("--max-side", type=int, default=8,
                     help="reject tilings with a polygon larger than this — the developed-patch renderer "
@@ -276,8 +277,8 @@ def main():
     cells = []
     for path in args.cells:
         cells += json.load(open(path))
-    developed = json.load(open(args.developed))
-    reference = json.load(open(args.reference))
+    developed = read_json(args.developed)
+    reference = read_json(args.reference)
     render_cell = next((e["renderCell"] for e in reference if "renderCell" in e), {})
     kof = {e["developed"]["patch"]: e["k"] for e in reference if "developed" in e}
 
@@ -478,8 +479,8 @@ def main():
         patches, entries = out_patches, out_entries
     else:
         patches, entries = developed + out_patches, reference + out_entries
-    json.dump(patches, open(args.developed, "w"), ensure_ascii=False)
-    json.dump(entries, open(args.reference, "w"), ensure_ascii=False)   # compact: ~20 % off a 25 MB file
+    write_json(args.developed, patches, ensure_ascii=False)
+    write_json(args.reference, entries, ensure_ascii=False)   # compact: ~20 % off a 25 MB file
     print(f"\nwrote {args.developed} ({len(patches)} patches)")
     print(f"wrote {args.reference} ({len(entries)} entries)")
 

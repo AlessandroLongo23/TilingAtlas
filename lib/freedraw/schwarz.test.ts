@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
 	hydrateSphShard,
@@ -13,6 +13,8 @@ import {
 } from "./schwarz";
 import { sphSchwarzScene } from "@/lib/render/sphSchwarz";
 import { decodeAtlas, decodeShard } from "@/lib/services/atlasCodec";
+import { dataPath } from "../../scripts/atlas/io.mjs";
+import { readDataText } from "../../scripts/atlas/io.mjs";
 
 // The Schwarz shelf's decode checks. What is worth asserting here is not the develop (that is
 // tools/ctrnact-oracle/develop_schwarz.py's own business, and it fails loudly) but the properties the
@@ -20,19 +22,19 @@ import { decodeAtlas, decodeShard } from "@/lib/services/atlasCodec";
 // the manifest matches the files, and the pieces a pattern is made of index into that one board.
 
 const sphShard = (b: SchwarzBoard, k: number): SphSchwarzShard | null => {
-	const f = `public/schwarz-sph/s${b.id}-k${k}.json`;
-	return existsSync(f) ? decodeShard(JSON.parse(readFileSync(f, "utf8")) as SphSchwarzShard) : null;
+	const f = `public/schwarz-sph/s${b.id}-k${k}.json.gz`;
+	return existsSync(f) ? decodeShard(JSON.parse(readDataText(f)) as SphSchwarzShard) : null;
 };
 const hypShard = (b: SchwarzBoard, k: number): HypSchwarzPattern[] | null => {
-	const f = `public/schwarz-hyp/h${b.id}-k${k}.json`;
-	return existsSync(f) ? decodeAtlas<HypSchwarzPattern>(JSON.parse(readFileSync(f, "utf8"))) : null;
+	const f = `public/schwarz-hyp/h${b.id}-k${k}.json.gz`;
+	return existsSync(f) ? decodeAtlas<HypSchwarzPattern>(JSON.parse(readDataText(f))) : null;
 };
 
 /** Triangles in the whole (p,q,r) sphere = the order of the reflection group, 4 / (1/p+1/q+1/r−1). */
 const triangleCount = (b: SchwarzBoard) => Math.round(4 / (b.pqr.reduce((s, n) => s + 1 / n, 0) - 1));
 
-const anySphShard = existsSync("public/schwarz-sph/s234-k3.json");
-const anyHypShard = existsSync("public/schwarz-hyp/h237-k3.json");
+const anySphShard = existsSync(dataPath("public/schwarz-sph/s234-k3.json"));
+const anyHypShard = existsSync(dataPath("public/schwarz-hyp/h237-k3.json"));
 
 describe("Schwarz board manifest", () => {
 	it("gives every board a distinct id, and both geometries at least one board", () => {

@@ -12,9 +12,8 @@
  * the quantity `docs/SMALLK_W_BOUND.md` proves the bound on (measured maxima 5, 6, 7 for k = 1, 2, 3).
  * Writing it out means the slide cannot drift from the arithmetic: regenerate and the figure follows.
  *
- * Output: public/defense/period-figure.json
+ * Output: public/defense/period-figure.json.gz
  */
-import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { CyclotomicRing, Cyclotomic, setActiveRing } from "@/classes/Cyclotomic";
 import { decodeGalebachVertex, reconstructOracleCell } from "@/classes/algorithm/oracleCellReconstruct";
@@ -22,6 +21,7 @@ import type { ExactCellSource } from "@/lib/services/cellCodecService";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
 import { hydrateRenderCells } from "@/lib/services/renderCellDerive";
+import { readDataJson, writeDataFile } from "./atlas/io.mjs";
 
 const N = 24;
 const ring = CyclotomicRing.create(N);
@@ -31,9 +31,7 @@ const wanted = process.argv[2] ?? "t2001";
 
 type Row = { id: string; renderCell: TranslationalCellData; exactSource?: ExactCellSource };
 const atlas = hydrateRenderCells(
-	decodeAtlas<Row>(
-		JSON.parse(readFileSync(path.join(process.cwd(), "public", "reference-atlas.json"), "utf8")),
-	) as never,
+	decodeAtlas<Row>(readDataJson(path.join(process.cwd(), "public", "reference-atlas.json"))) as never,
 ) as Row[];
 
 const units = Array.from({ length: N }, (_, k) => Cyclotomic.zeta(ring, k));
@@ -111,8 +109,8 @@ const out = {
 	t2: { chain: c2, weight: c2.length, xy: [T2.toVector().x, T2.toVector().y] },
 	polys,
 };
-writeFileSync(path.join(process.cwd(), "public", "defense", "period-figure.json"), JSON.stringify(out));
+writeDataFile(path.join(process.cwd(), "public", "defense", "period-figure.json.gz"), JSON.stringify(out));
 console.log(
 	`${wanted}: |T1| = ${c1.length} [${c1.join(", ")}], |T2| = ${c2.length} [${c2.join(", ")}], ${polys.length} tiles`,
 );
-console.log("wrote public/defense/period-figure.json");
+console.log("wrote public/defense/period-figure.json.gz");

@@ -18,6 +18,7 @@ import {
 } from "@/lib/utils/tilingTransition";
 import type { LandingSpecimen } from "@/lib/services/landingData";
 import { usePublishHeroSpecimen } from "./hero-specimen";
+import { shardBody } from "@/lib/services/atlasCodec";
 
 // The hero's living background. Three behaviours on top of the static specimen render:
 //  - a slow drift in one fixed direction. The pattern is periodic, so the steady state is ONE
@@ -41,8 +42,8 @@ const PX_PER_EDGE = 56;
 const ROTATE_MS = 10_000;
 const DRIFT_PX_PER_S = 9; // slow — one tile edge every ~6 s
 const DRIFT_DIR = { x: 1, y: 0.4 }; // world units; y is up, so the pattern drifts right and up
-const HERO_INDEX_URL = "/hero-index.json";
-const heroCellUrl = (id: string) => `/hero-cells/${id}.json`;
+const HERO_INDEX_URL = "/hero-index.json.gz";
+const heroCellUrl = (id: string) => `/hero-cells/${id}.json.gz`;
 const LOOKAHEAD = 3; // prepared specimens kept ready so a rotation never waits on a fetch
 
 interface Stage {
@@ -170,7 +171,7 @@ export function HeroRotator({ specimens }: HeroRotatorProps) {
 						try {
 							const r = await fetch(heroCellUrl(id));
 							if (!r.ok) continue;
-							s = (await r.json()) as LandingSpecimen;
+							s = (await shardBody(r)) as LandingSpecimen;
 							cache.set(id, s);
 						} catch {
 							continue;
@@ -343,7 +344,7 @@ export function HeroRotator({ specimens }: HeroRotatorProps) {
 		// Fetch the full atlas id set, then keep the lookahead queue warm. Failure is silent — the
 		// rotator just stays on the seed pool.
 		fetch(HERO_INDEX_URL)
-			.then((r) => (r.ok ? r.json() : []))
+			.then((r) => (r.ok ? shardBody(r) : []))
 			.then((ids: unknown) => {
 				if (disposed || !Array.isArray(ids)) return;
 				allIds = ids.filter((x): x is string => typeof x === "string");

@@ -13,12 +13,15 @@ a candidate vocabulary, not a list of tilings.
   python3 export_vertex_configs.py --sanity regular   # render a PNG of the first configs to eyeball geometry
 """
 import argparse
-import json
 import math
 import os
+import sys
 
 import gen_alphabet as ga
 from shapely.geometry import Polygon as ShPoly
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+from develop_freedraw import write_json  # noqa: E402  (public/ ships gzipped)
 
 # A config is OVERLAP-FREE iff no two of its placed tiles share positive area. Convex tiles (regular +
 # convex isotoxal) are always contained in their own corner wedge, so overlaps only ever come from a star
@@ -134,9 +137,8 @@ def export_palette(name):
         "configs": kept,
     }
     os.makedirs(OUT_DIR, exist_ok=True)
-    dst = os.path.join(OUT_DIR, f"{name}.json")
-    with open(dst, "w") as f:
-        json.dump(out, f, separators=(",", ":"))
+    dst = os.path.join(OUT_DIR, f"{name}.json.gz")
+    write_json(dst, out, separators=(",", ":"))
     kb = os.path.getsize(dst) / 1024
     print(f"  {name}: {len(configs)} enumerated -> {len(kept)} overlap-free shipped "
           f"[{len(tiles)} tiles, {len(classes)} classes] -> {kb:.0f} KB")

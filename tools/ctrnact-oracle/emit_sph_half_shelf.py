@@ -31,6 +31,8 @@ import random
 
 import numpy as np
 
+from develop_freedraw import write_json
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 # board id -> (cells file, human label, what was cut and how, the tile's angles in degrees)
@@ -239,8 +241,8 @@ def main():
         manifest[base] = {"label": label, "cut": cut, "arcsDeg": want_arcs,
                           "ks": sorted(by_k), "counts": {k: len(v) for k, v in sorted(by_k.items())}}
         for k, rows in sorted(by_k.items()):
-            path = os.path.join(out_dir, f"sphalf-{base}-k{k}.json")
-            json.dump(rows, open(path, "w"))
+            path = os.path.join(out_dir, f"sphalf-{base}-k{k}.json.gz")
+            write_json(path, rows)
             print(f"  {base} k={k}: {len(rows)} tiling(s) -> public/spherical-half/{os.path.basename(path)}")
             for r in rows:
                 ref.append({
@@ -248,8 +250,8 @@ def main():
                     "faces": r["stats"]["faces"], "symmetryOrder": r["stats"]["symmetryOrder"],
                     "config": r["config"],
                 })
-    json.dump(manifest, open(os.path.join(out_dir, "manifest.json"), "w"), indent=2)
-    print(f"\nmanifest -> public/spherical-half/manifest.json")
+    write_json(os.path.join(out_dir, "manifest.json.gz"), manifest, indent=2)
+    print(f"\nmanifest -> public/spherical-half/manifest.json.gz")
     for base, m in manifest.items():
         print(f"  {base:10s} {m['label']:22s} arcs {m['arcsDeg']}  counts {m['counts']}")
     print(f"\n{len(ref)} tilings certified: Euler 2, faces congruent to the tile, every sampled point "

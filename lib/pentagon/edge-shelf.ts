@@ -43,7 +43,7 @@ export const PENT_EDGE_BOARDS: PentEdgeBoard[] = [
 
 export const PENT_EDGE_BOARD_BY_ID = new Map(PENT_EDGE_BOARDS.map((b) => [b.id, b]));
 
-export const pentEdgeShardUrl = (board: string, k: number): string => `/pentagon-edges/pe${board}-k${k}.json`;
+export const pentEdgeShardUrl = (board: string, k: number): string => `/pentagon-edges/pe${board}-k${k}.json.gz`;
 
 /** Every k a board ships, ascending. */
 export function pentEdgeBoardKs(b: PentEdgeBoard): number[] {

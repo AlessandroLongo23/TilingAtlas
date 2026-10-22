@@ -21,6 +21,7 @@ import { SqDomainFigure } from "./sq-domain-figure";
 import { Fact, InspectBar, RailPanel, StageBoard, useTapHover } from "./stage-board";
 import { num, torusFills } from "./torus-shared";
 import { RangeInput } from "@/components/ui/range-input";
+import { shardBody } from "@/lib/services/atlasCodec";
 
 // One periodic tiling becoming one squared torus, in the same four stages as the polyhedron page.
 //
@@ -75,7 +76,7 @@ export function TorusStages({ entry }: { entry: TorusIndexEntry }) {
 		if (shardCache.has(entry.id)) return;
 		let live = true;
 		fetch(torusShardUrl(entry.id))
-			.then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+			.then((r) => (r.ok ? shardBody<TorusRecord>(r) : Promise.reject(new Error(String(r.status)))))
 			.then((data: TorusRecord) => {
 				shardCache.set(entry.id, data);
 				if (live) bumpAfterFetch((n) => n + 1);

@@ -13,14 +13,13 @@ import {
 } from "@/lib/render/hyperbolic";
 import type { DevelopedPatch } from "@/lib/render/hyperbolicDevelopedDraw";
 import { sampleAtlas } from "./hyperbolic-sample";
+import { readDataText } from "../scripts/atlas/io.mjs";
 
 interface ShippedPatch extends DevelopedPatch {
 	darts?: Darts;
 }
 
-const atlas: ShippedPatch[] = JSON.parse(
-	readFileSync(join(__dirname, "..", "public", "hyperbolic-developed.json"), "utf8"),
-);
+const atlas: ShippedPatch[] = JSON.parse(readDataText(join(__dirname, "..", "public", "hyperbolic-developed.json")));
 
 /** Reference geometry from the PYTHON developer (tools/ctrnact-oracle/develop_hyperbolic.py), frozen so
  *  the cross-implementation check survives the catalogue dropping its baked vertices/faces. */

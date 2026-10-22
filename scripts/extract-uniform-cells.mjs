@@ -8,11 +8,12 @@
 //
 // Usage: node scripts/extract-uniform-cells.mjs
 
-import { readFile, writeFile } from "node:fs/promises";
+import { writeFile } from "node:fs/promises";
 import path from "node:path";
+import { readDataJson } from "./atlas/io.mjs";
 
 const root = process.cwd();
-const atlas = decodeAtlas(JSON.parse(await readFile(path.join(root, "public/reference-atlas.json"), "utf8")));
+const atlas = decodeAtlas(readDataJson(path.join(root, "public/reference-atlas.json")));
 
 // Same selection as lib/services/landingData.ts pickUniformEleven.
 const eleven = atlas

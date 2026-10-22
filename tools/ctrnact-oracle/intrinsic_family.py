@@ -38,7 +38,6 @@ and stay on the variety when each free angle is moved ±2°.
 import argparse
 import cmath
 import glob
-import json
 import math
 import os
 import sys
@@ -49,6 +48,7 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import tiling_key as TK
+from develop_freedraw import read_json
 import vertex_orbits as vo
 
 D2R = math.pi / 180.0
@@ -527,9 +527,9 @@ def from_cell(render_cell):
 # ── the gate ──────────────────────────────────────────────────────────────────────────────────────────
 def shelf_entries(shelf=None):
     root = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
-    shelf = shelf or os.path.join(root, "public", "reference-atlas-period.json")
+    shelf = shelf or os.path.join(root, "public", "reference-atlas-period.json.gz")
     files = [shelf] + sorted(glob.glob(shelf.replace(".json", "-k*.json")))
-    return [e for f in files for e in json.load(open(f))]
+    return [e for f in files for e in read_json(f)]
 
 
 def main():

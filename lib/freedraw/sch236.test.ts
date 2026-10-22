@@ -1,13 +1,14 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { analyseFaces, componentLifts, summarise } from "./faces";
 import type { FreedrawPattern } from "./pattern";
 import { classifyRegular } from "./regular";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
+import { dataPath, readDataText } from "../../scripts/atlas/io.mjs";
 
 const load = (file: string): FreedrawPattern[] | null =>
-	existsSync(`public/freedraw/${file}`)
-		? decodeAtlas<FreedrawPattern>(JSON.parse(readFileSync(`public/freedraw/${file}`, "utf8")))
+	existsSync(dataPath(`public/freedraw/${file}`))
+		? decodeAtlas<FreedrawPattern>(JSON.parse(readDataText(`public/freedraw/${file}`)))
 		: null;
 
 const k3 = load("sch236-solutions-k3.json");
@@ -30,7 +31,7 @@ describe("Schwarz (2,3,6) edge systems", () => {
 		// The only k=5 slice that ever existed came from the retracted solver, and the corrected drop
 		// stops at k=4. A short slice sitting beside two corrected ones would read as "enumerated to
 		// k=5". Deleting it is the honest state; this test is what stops it drifting back in.
-		expect(existsSync("public/freedraw/sch236-solutions-k5.json")).toBe(false);
+		expect(existsSync(dataPath("public/freedraw/sch236-solutions-k5.json.gz"))).toBe(false);
 	});
 
 	it.skipIf(!k3)("has exactly one nothing-drawn pattern: the bare Schwarz tiling", () => {

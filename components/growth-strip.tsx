@@ -5,6 +5,7 @@ import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
 import { cn } from "@/lib/utils/cn";
 import { orbitColor } from "@/lib/utils/orbitColors";
 import { drawPolygons, type RawPolygon } from "@/lib/utils/renderTiling";
+import { shardBody } from "@/lib/services/atlasCodec";
 
 // The expansion, run by hand in front of the room: a k=3 seed, then the two stamps that grow it.
 //
@@ -93,7 +94,7 @@ const DOT_R = 4.5; // collapsed vertex, CSS px
 const OPEN_R = 3; // open (frontier) vertex
 const TARGET_R = 9; // ring on the vertex the expander takes next
 
-export function GrowthStrip({ src = "/defense/growth-k3.json" }: { src?: string }) {
+export function GrowthStrip({ src = "/defense/growth-k3.json.gz" }: { src?: string }) {
 	const [fig, setFig] = useState<GrowthFigure | null>(null);
 	const [confirmed, setConfirmed] = useState<number[]>([]);
 	const [cursor, setCursor] = useState(0);
@@ -102,7 +103,7 @@ export function GrowthStrip({ src = "/defense/growth-k3.json" }: { src?: string 
 	useEffect(() => {
 		let live = true;
 		fetch(src)
-			.then((r) => r.json())
+			.then((r) => shardBody<GrowthFigure>(r))
 			.then((d: GrowthFigure) => {
 				if (live) setFig(d);
 			})
