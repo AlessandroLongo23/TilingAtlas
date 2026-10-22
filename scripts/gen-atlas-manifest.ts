@@ -18,7 +18,14 @@ import path from "node:path";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
 import { tileClassOf, subOf, geometryOf, decorationOf, type ReferenceTiling } from "@/lib/services/referenceAtlas";
 import type { AtlasManifest, ManifestTier, TierShelf } from "@/lib/services/atlasManifest";
-import { HYP_POLY_BOARDS, hypPolySubOfBoard } from "@/lib/tilings/hyp-poly";
+import {
+	HYP_POLY_BOARDS,
+	hypPolyShardUrls,
+	hypPolySubOfBoard,
+	hypPolyTileSet,
+	type HypPolyPattern,
+} from "@/lib/tilings/hyp-poly";
+import { tilingLevel } from "@/lib/tilings/tiling-level";
 import { dataPath, readDataJson, writeDataFile } from "./atlas/io.mjs";
 
 const write = process.argv.includes("--write");
@@ -94,6 +101,26 @@ for (const t of TIERS) {
 // invisible there, and "3.4.n.4 boards" read 1357 — its eager count — against 412,532 shipped. That is
 // exactly the circularity this manifest exists to break, and I had wrongly concluded the shelf did not
 // need it because /library's board CHIPS are static and did show every board.
+//
+// The HYBRID boards are the exception: their tiers also carry `facets`, which no table holds, so those
+// 219 shards (6.2M records) ARE decoded here. The decode doubles as a check of the table's count.
+function hybridFacets(board: string, k: number, count: number): NonNullable<ManifestTier["facets"]> {
+	const polygons: Record<string, number> = {};
+	const levels: Record<string, number> = {};
+	let n = 0;
+	for (const url of hypPolyShardUrls(board, k)) {
+		for (const p of decodeAtlas<HypPolyPattern>(readDataJson(path.join(PUB, url)))) {
+			n++;
+			const set = hypPolyTileSet(p).join(",");
+			polygons[set] = (polygons[set] ?? 0) + 1;
+			const lv = tilingLevel({ k: p.k, family: p.family, hypPoly: p });
+			if (lv) levels[lv] = (levels[lv] ?? 0) + 1;
+		}
+	}
+	if (n !== count) throw new Error(`${board} k=${k}: shard holds ${n} records, HYP_POLY_BOARDS says ${count}`);
+	return { polygons, levels };
+}
+
 for (const b of HYP_POLY_BOARDS) {
 	for (const k of [...b.eagerKs, ...b.lazyKs]) {
 		const count = b.counts[k];
@@ -110,6 +137,7 @@ for (const b of HYP_POLY_BOARDS) {
 			geometry: "hyperbolic",
 			decoration: "tilings",
 			board: b.id,
+			...(b.family === "hybrid" ? { facets: hybridFacets(b.id, k, count) } : {}),
 		});
 		// EAGER slices are loaded on entering the geometry, so they are not "unreachable" and must not be
 		// counted into the headline below — but they still belong in the manifest, because `unloadedTiers`

@@ -49,6 +49,13 @@ export interface ManifestTier {
 	 * which is why it is optional rather than a fifth required field.
 	 */
 	board?: string;
+	/**
+	 * How the tier splits before it is loaded, on the hybrid boards only (2026-10-22, after Marek asked
+	 * how a 100k-tiling slice gets cut into readable pieces). `polygons` keys a tiling's polygon set
+	 * (hypPolyTileSet joined with ","), `levels` its rung on the level ladder; each sums to `count`, the
+	 * level map less the records the ladder cannot name.
+	 */
+	facets?: { polygons: Record<string, number>; levels: Record<string, number> };
 }
 
 export interface AtlasManifest {
