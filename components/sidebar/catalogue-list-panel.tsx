@@ -18,6 +18,7 @@ import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import { COLOR_SUB, FAMILY_LABEL, SUB_LABEL, shortSubLabel } from "@/lib/services/shelfLabels";
 import { kNounOf } from "@/lib/services/shelfRegistry";
 import { tierKey, type UnloadedTier } from "@/lib/services/atlasManifest";
+import { hypPolyBoardOfSub, hypPolyTileSet } from "@/lib/tilings/hyp-poly";
 import { TileGrid } from "./tile-grid";
 
 // The /play picker: tilings nested by polygon class (regular / star / convex / isotoxal) then by k, each a
@@ -63,6 +64,55 @@ const DEPTH_TEXT: Record<0 | 1 | 2 | 3, string> = {
 // 60 boards split into 6…147 configuration rows (median 25) and the biggest cell drops 5,581 → 876.
 const CONFIG_LEVEL_MIN = 60;
 const splitsByConfig = (sub: string, count: number) => sub.startsWith("hyt-") && count > CONFIG_LEVEL_MIN;
+
+// A HYBRID board splits by the set of polygons its tilings use BEFORE it splits by k: a (3, 4, ∞) board
+// holds tilings by triangles and squares alone beside the ones with apeirogons, and its k = 8 slice alone
+// is 86,934 tilings. Set first, because the set is what tells two corpora on one board apart: the
+// (3, 5, 6, 9, 18) board is {3, 6, 9} combination tilings to k = 14 and true hybrids from k = 16, and a
+// k-first tree scattered that across 24 rows. Asked for by Marek Čtrnáct, 2026-10-21. An unloaded k draws
+// its share of each set off the manifest's `facets`, so the split is visible before anything is fetched.
+// A board with one set skips the level, since a single row would only cost a click.
+const splitsByPolygons = (sub: string) => hypPolyBoardOfSub(sub)?.family === "hybrid";
+// Opening a hybrid board fetches every slice of it up to this many tilings, so a folder of three is
+// simply there instead of a download row. ~75 bytes a tiling gzipped: 117 of the 186 hybrid slices, at
+// most ~460 KB for the heaviest board. Bigger slices stay download rows.
+const AUTO_LOAD_MAX = 1000;
+type KEntry = { k: number; list: CatalogueTiling[]; pending?: UnloadedTier; count?: number };
+type PolySet = { key: string; count: number; ks: KEntry[] };
+const polySetCompare = (a: string, b: string) => {
+	const x = a.split(","),
+		y = b.split(",");
+	if (x.length !== y.length) return x.length - y.length;
+	const n = (t: string) => (t === "∞" ? Infinity : Number(t));
+	for (let i = 0; i < x.length; i++) if (x[i] !== y[i]) return n(x[i]) - n(y[i]);
+	return 0;
+};
+function polySets(ks: KEntry[]): PolySet[] | undefined {
+	const sets = new Map<string, PolySet>();
+	const add = (key: string, e: KEntry, n: number) => {
+		const at = sets.get(key) ?? { key, count: 0, ks: [] };
+		at.count += n;
+		at.ks.push(e);
+		sets.set(key, at);
+	};
+	for (const kk of ks) {
+		if (kk.pending) {
+			for (const [key, n] of Object.entries(kk.pending.facets?.polygons ?? {}))
+				add(key, { k: kk.k, list: [], pending: kk.pending, count: n }, n);
+			continue;
+		}
+		const m = new Map<string, CatalogueTiling[]>();
+		for (const t of kk.list) {
+			if (!t.hypPoly) return undefined;
+			const key = hypPolyTileSet(t.hypPoly).join(",");
+			const at = m.get(key);
+			if (at) at.push(t);
+			else m.set(key, [t]);
+		}
+		for (const [key, list] of m) add(key, { k: kk.k, list }, list.length);
+	}
+	return sets.size > 1 ? [...sets.values()].sort((a, b) => polySetCompare(a.key, b.key)) : undefined;
+}
 
 // Class order + labels come from the shared registry (referenceAtlas TILE_CLASS_ORDER / TILE_CLASS_LABEL),
 // the same source /library uses — so a new class appears here automatically. A class section only appears
@@ -125,10 +175,15 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({
 				const kMap = subMap.get(sub)!;
 				const ks = Array.from(kMap.entries())
 					.sort(([a], [b]) => a - b)
-					.map(([k, list]) => ({ k, list, pending: pendingAt.get(tierKey(cls, sub, k)) }));
+					.map(([k, list]): KEntry => ({ k, list, pending: pendingAt.get(tierKey(cls, sub, k)) }));
 				// An unloaded tier contributes its MANIFEST count to the parent totals, so a class header
 				// reads the number of tilings that exist, not the number currently in memory.
-				return { sub, ks, count: ks.reduce((s2, g) => s2 + (g.pending?.count ?? g.list.length), 0) };
+				return {
+					sub,
+					ks,
+					polys: splitsByPolygons(sub) ? polySets(ks) : undefined,
+					count: ks.reduce((s2, g) => s2 + (g.pending?.count ?? g.list.length), 0),
+				};
 			});
 			// Gather the subs into families, in SUB_ORDER (families are contiguous there, which is what
 			// referenceAtlas' familyOfSub guarantees and its test enforces), so this pass is a scan and
@@ -176,6 +231,10 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({
 			for (const s of g.subs) {
 				if (s.sub) ids.push(`s:${g.cls}:${s.sub}`);
 				for (const kk of s.ks) ids.push(`k:${g.cls}:${s.sub}:${kk.k}`);
+				for (const ps of s.polys ?? []) {
+					ids.push(`p:${g.cls}:${s.sub}:${ps.key}`);
+					for (const kk of ps.ks) ids.push(`k:${g.cls}:${s.sub}#${ps.key}:${kk.k}`);
+				}
 			}
 		}
 		return ids;
@@ -217,7 +276,17 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({
 				return stem ? `g:${tileClassOf(selectedTile)}:${stem}` : null;
 			})()
 		: null;
-	const selectedKId = selectedTile ? `k:${tileClassOf(selectedTile)}:${subOf(selectedTile)}:${selectedTile.k}` : null;
+	// The polygon-set row a hybrid-board tiling sits under; its k rows are keyed under the set. An id the
+	// tree did not render is never read.
+	const selectedPolyKey =
+		selectedTile?.hypPoly && splitsByPolygons(subOf(selectedTile))
+			? hypPolyTileSet(selectedTile.hypPoly).join(",")
+			: null;
+	const selectedPolyId =
+		selectedTile && selectedPolyKey ? `p:${tileClassOf(selectedTile)}:${subOf(selectedTile)}:${selectedPolyKey}` : null;
+	const selectedKId = selectedTile
+		? `k:${tileClassOf(selectedTile)}:${subOf(selectedTile)}${selectedPolyKey ? `#${selectedPolyKey}` : ""}:${selectedTile.k}`
+		: null;
 	// The configuration row, where a board splits by one (see configSections). It stands INSTEAD of the k
 	// row, so both ids go into the reveal below and whichever the tree rendered is the one that opens.
 	const selectedConfigId = selectedTile
@@ -241,9 +310,15 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({
 		// Every level on the path, family included; a closed family row would hide the sub the reveal
 		// just opened.
 		openGroups(
-			[selectedClassId, selectedFamilyId, selectedGridId, selectedSubId, selectedKId, selectedConfigId].filter(
-				(x): x is string => !!x,
-			),
+			[
+				selectedClassId,
+				selectedFamilyId,
+				selectedGridId,
+				selectedSubId,
+				selectedKId,
+				selectedPolyId,
+				selectedConfigId,
+			].filter((x): x is string => !!x),
 		);
 	}, [
 		selectedKey,
@@ -252,6 +327,7 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({
 		selectedGridId,
 		selectedSubId,
 		selectedKId,
+		selectedPolyId,
 		selectedConfigId,
 		openGroups,
 	]);
@@ -262,12 +338,7 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({
 	// be a second identical one. With two or more classes the class headers render normally.
 	const single = byClass.length === 1;
 
-	const kSections = (
-		cls: TileClass,
-		sub: string,
-		ks: { k: number; list: CatalogueTiling[]; pending?: UnloadedTier }[],
-		depth: 0 | 1 | 2 | 3,
-	) =>
+	const kSections = (cls: TileClass, sub: string, ks: KEntry[], depth: 0 | 1 | 2 | 3) =>
 		ks.map((kk) => {
 			const id = `k:${cls}:${sub}:${kk.k}`;
 			const open = expanded[id];
@@ -291,7 +362,7 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({
 					<div key={id} className="flex flex-col gap-px">
 						<TreeRow
 							label={kLabel}
-							count={kk.pending.count}
+							count={kk.count ?? kk.pending.count}
 							open={false}
 							depth={depth}
 							pending={busy ? "loading" : "unloaded"}
@@ -430,6 +501,27 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({
 		});
 	};
 
+	// A hybrid board's polygon-set rows, each opening into that set's k rows (see splitsByPolygons). The k
+	// rows are keyed under the set, so k = 20 under one set opens independently of k = 20 under another.
+	const polySections = (cls: TileClass, sub: string, sets: PolySet[], depth: 1 | 2 | 3) =>
+		sets.map((ps) => {
+			const id = `p:${cls}:${sub}:${ps.key}`;
+			return (
+				<div key={id} className="flex flex-col gap-px">
+					<TreeRow
+						label={`polygons ${ps.key.split(",").join(", ")}`}
+						count={ps.count}
+						open={expanded[id]}
+						depth={depth}
+						onToggle={() => toggle(id)}
+					/>
+					{expanded[id] ? (
+						<Reveal>{kSections(cls, `${sub}#${ps.key}`, ps.ks, Math.min(depth + 1, 3) as 1 | 2 | 3)}</Reveal>
+					) : null}
+				</div>
+			);
+		});
+
 	// `underFamily` says whether a family heading is already on screen above these rows. When it is, the row
 	// only has to name its member — "IH01", not "Isohedral IH01 edges" — and /library's board wall makes the
 	// same call from the same table (lib/services/shelfLabels.ts). When no family row was rendered, the long
@@ -453,13 +545,21 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({
 						count={s.count}
 						open={expanded[id]}
 						depth={baseDepth}
-						onToggle={() => toggle(id)}
+						onToggle={() => {
+							if (!expanded[id] && splitsByPolygons(s.sub))
+								for (const kk of s.ks)
+									if (kk.pending && kk.pending.count <= AUTO_LOAD_MAX && !loadingTiers?.has(kk.pending.key))
+										onLoadTier?.(kk.pending);
+							toggle(id);
+						}}
 					/>
 					{expanded[id] ? (
 						<Reveal>
-							{splitsByConfig(s.sub, s.count)
-								? configSections(g.cls, s.sub, s.ks, (baseDepth + 1) as 1 | 2 | 3)
-								: kSections(g.cls, s.sub, s.ks, (baseDepth + 1) as 1 | 2 | 3)}
+							{s.polys
+								? polySections(g.cls, s.sub, s.polys, (baseDepth + 1) as 1 | 2 | 3)
+								: splitsByConfig(s.sub, s.count)
+									? configSections(g.cls, s.sub, s.ks, (baseDepth + 1) as 1 | 2 | 3)
+									: kSections(g.cls, s.sub, s.ks, (baseDepth + 1) as 1 | 2 | 3)}
 						</Reveal>
 					) : null}
 				</div>
