@@ -3175,3 +3175,8 @@ NOTES 2026-10-22 "shipped data under public/ is stored gzipped".
 ## 2026-10-22 — 1.0612 multi-length board re-keyed to visible vertices — CC
 k now counts only vertices where >=3 tiles meet (AL's rule); (Pi, Pi) midpoints drop out, Marek's count kept
 as searchK. Slices marked partial: his search budget included midpoints. NOTES 2026-10-22 "visible vertices".
+
+## 2026-10-22 — hybrid boards partitioned by polygon set and level — CC
+Level classifier reads ∞/5₂/π (`8226724f`); Library tri-state polygon filter (`db468c51`); manifest facets
+per hybrid tier (`81fb7f19`); /play board → polygon set → k with small slices auto-fetched (`d4ac56e4`).
+NOTES 2026-10-22 "hybrid boards partitioned by polygon set and level".

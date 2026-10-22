@@ -19127,3 +19127,30 @@ vertices" = file k = listed types, `(Pi, Pi)` included) and stopped at 7, so a v
 the corpus only with at most 7 − K midpoint orbits. The board label says "k slices partial". A complete
 visible-k board needs a run whose k budget counts only ≥3-tile vertices (our own engine's analogue is the
 noncounting budget `EU_NCBUDGET`). To ask Marek.
+
+## 2026-10-22: hybrid boards partitioned by polygon set and level
+
+Marek (Discord, 10-21): hybrid shelves past 100k tilings are hopeless in /play's 2-wide column. He asked
+for a required / forbidden / either filter per polygon, and a way to hide combination tilings, "which
+often dwarf true hybrids". Four commits:
+
+- `8226724f` level fix. `canonicalConfig` took only plain sizes, so ∞, `5₂` and `π` tokens returned null
+  and 101,826 hybrid records had no level (invisible under any level filter). The token parser hyp-poly.ts
+  already had is now `cornerTokenKey` in tiling-level.ts. With `6a5698e3` dropping the `(Pi, Pi)`
+  midpoints, every one of the 6,236,805 hybrid records now has a level.
+- `db468c51` Library. Polygon cards cycle either → required → forbidden; `polygonExclude` (`?polyx=`)
+  stacks on the all/any/only modes. Hyp-poly records carry `polygonSpecies` from `hypPolyTileSet`.
+- `81fb7f19` manifest. The 186 hybrid tiers carry `facets.polygons` / `facets.levels`, from a ~40 s
+  decode that also asserts every count against `HYP_POLY_BOARDS` (all match). 6.1 → 9.5 KB gzipped.
+- `d4ac56e4` /play. Board → polygon set → k, at AL's call (k-first scattered one set over 24 rows).
+  Opening a board fetches its slices of ≤ 1,000 tilings (117 of 186; ≤ ~460 KB per board).
+
+What the counts show. (3, 5, 6, 9, 18) is two corpora on one board: k = 1–14 is 40,462 {3, 6, 9}
+combination tilings, no true hybrid among them; k = 16–26 is 18,686 true hybrids. Marek: the high-k part
+came from a targeted search that skips (3.6.6.9) combinations. The board still needs a note saying so.
+
+⚑ yai32 k = 1 holds 1,293,425 tilings, all Archimedean. That many vertex-transitive tilings at one edge
+looks wrong; k may mean something else on that board. To ask Marek.
+⚑ Seen once, not reproduced in three runs: the /play selection jumped to a 3.4.7.4 tiling while a
+hybrid board's small slices loaded.
+⚑ Level is not a /play tree axis (the tree is already four deep); hiding combinations is Library-only.
