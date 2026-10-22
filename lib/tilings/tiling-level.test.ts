@@ -59,6 +59,16 @@ describe("the five levels", () => {
 		expect(tilingLevelOf(["3.4.4.4"], 1)).toBe("archimedean");
 	});
 
+	it("classifies the hybrid boards' apeirogon, multi-length and flat-corner tokens", () => {
+		// 101,826 hybrid-board records carry one of these; until 2026-10-22 every one came back null.
+		expect(tilingLevelOf(["∞.∞.∞"], 1)).toBe("regular");
+		expect(tilingLevelOf(["3.4.3.4.4", "∞.4.3.4"], 2)).toBe("hybrid");
+		expect(tilingLevelOf(["3.∞.3.∞", "3.3.∞.∞"], 2)).toBe("combination");
+		// 3₂ is a triangle of edge 2ℓ: a different tile from 3, so a different combination.
+		expect(tilingLevelOf(["3.3₂.3.3", "3.3.3.3"], 2)).toBe("hybrid");
+		expect(tilingLevelOf(["π.3.∞₂.3"], 1)).toBe("archimedean");
+	});
+
 	it("returns null instead of a half-classification", () => {
 		expect(tilingLevelOf([], 1)).toBeNull();
 		expect(tilingLevelOf(["3.4.7.4", "6*.3"], 2)).toBeNull(); // one entry unparseable

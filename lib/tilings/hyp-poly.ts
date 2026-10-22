@@ -26,6 +26,7 @@
 // carries. Marek's ai1 drops cover n = 7…12, 14…20 and 23 (no 13, 21, 22); ai2 covers 7…15, contiguous.
 
 import type { Darts } from "@/lib/render/hyperbolicDevelopClient";
+import { cornerTokenKey } from "./tiling-level";
 
 /** One board: every tiling in its family's alphabet at the one edge length that family fixes. */
 export interface HypPolyBoard {
@@ -1991,20 +1992,10 @@ export function canonicalCycle(s: readonly number[]): number[] {
 		}
 	return best;
 }
-/** "∞" is an apeirogon; it sorts after every finite polygon. A multi-length token ("5₂", a 2ℓ pentagon)
- *  sorts after the same polygon at ℓ, and a flat corner "π" before everything. */
-const SUB = "₀₁₂₃₄₅₆₇₈₉";
-const tokenKey = (t: string): number => {
-	if (t === "π") return -1;
-	const m = /^(\d+|∞)([₀-₉]*)$/.exec(t);
-	if (!m) return NaN;
-	const mult = m[2] ? Number([...m[2]].map((c) => SUB.indexOf(c)).join("")) : 1;
-	return (m[1] === "∞" ? 1e6 : Number(m[1])) * 100 + mult;
-};
 const canonicalFigure = (fig: string): string => {
 	const toks = fig.split(".");
-	const back = new Map(toks.map((t) => [tokenKey(t), t]));
-	return canonicalCycle(toks.map(tokenKey))
+	const back = new Map(toks.map((t) => [cornerTokenKey(t), t]));
+	return canonicalCycle(toks.map(cornerTokenKey))
 		.map((k) => back.get(k))
 		.join(".");
 };

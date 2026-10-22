@@ -64,6 +64,21 @@ export const TILING_LEVEL_NOTE: Record<TilingLevel, string> = {
  *  distinct set and `k`, and `k` is always taken from the record. */
 const ORBIT_SPLIT = /\s*[+/]\s*/;
 
+/** A corner token of a vertex configuration as a sortable number, or NaN when it is not one. Plain
+ *  polygon sizes ("7") are the common case. The hybrid boards add three more, all written by
+ *  develop_ai1.py's `token_label`: "∞" an apeirogon, which sorts after every finite polygon; a subscript
+ *  multiple ("5₂", a pentagon of edge 2ℓ), which sorts after the same polygon at ℓ and is a different
+ *  tile from it; and "π", a flat corner on the side of a multi-length tile, which sorts first. Each is a
+ *  distinct symbol to the level ladder, so "3.∞.3.∞" and "3.3.∞.∞" are one combination, two configurations. */
+const SUB = "₀₁₂₃₄₅₆₇₈₉";
+export function cornerTokenKey(t: string): number {
+	if (t === "π") return -1;
+	const m = /^(\d+|∞)([₀-₉]*)$/.exec(t);
+	if (!m) return NaN;
+	const mult = m[2] ? Number([...m[2]].map((c) => SUB.indexOf(c)).join("")) : 1;
+	return (m[1] === "∞" ? 1e6 : Number(m[1])) * 100 + mult;
+}
+
 /** A vertex configuration as a canonical tuple: the smallest rotation of either direction, so "3.4.10.4",
  *  "4.10.4.3" and "4.3.4.10" are one configuration while 3.4.4.10 stays a different one. Returns null
  *  when the string is not a dot-separated list of polygon sizes — a star "n*", an "α" family label, a
@@ -91,10 +106,10 @@ function computeCanonicalConfig(config: string): number[] | null {
 	if (parts.length < 3) return null;
 	const a: number[] = [];
 	for (const p of parts) {
-		if (!/^\d+$/.test(p)) return null;
-		const n = Number(p);
+		const n = cornerTokenKey(p);
+		if (Number.isNaN(n)) return null;
 		// A digon is a drawn edge in the edge-system encoding, never a tile of a regular-polygon tiling.
-		if (n < 3) return null;
+		if (/^\d+$/.test(p) && Number(p) < 3) return null;
 		a.push(n);
 	}
 	const n = a.length;
