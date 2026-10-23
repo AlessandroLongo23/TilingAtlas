@@ -5,10 +5,24 @@
 // sampled, so a stroke is as sharp at the rim as at the centre. The Islamic construction is the one
 // thing sampled: a small layer per polygon size, read in the tile's own frame (hyperbolicIslamic.ts).
 
-import { EDGE_PATTERN_HUE, EDGE_SCALE, type Su11 } from "@/lib/render/hyperbolic";
+import { depthShadeK, EDGE_PATTERN_HUE, EDGE_SCALE, type Su11 } from "@/lib/render/hyperbolic";
 import { STRAP_RANGE } from "@/lib/render/hyperbolicIslamic";
 import { TILE_PALETTE_GLSL, TILE_SAT_PCT } from "@/lib/render/tilePalette";
 import { ISLAMIC_MARGIN, type WalkTiling } from "@/lib/render/hyperbolicWalk";
+import {
+	MATERIAL_CODE,
+	MATERIAL_GLSL,
+	SEED_TEX_W,
+	polygonRanks,
+	SURFACE_SLOTS,
+	surfaceFamily,
+	surfaceImages,
+	TileSeeds,
+	woodCode,
+	type SurfaceFamily,
+	type HypMaterial,
+	type WoodStyle,
+} from "@/lib/render/hypMaterials";
 
 // Perspective-stroke law (AL-tuned final): exact conformal exponent (1.0 = constant hyperbolic
 // width) with a 3× overall boost in the shader's halfW — metric-true thinning, thicker base.
@@ -39,6 +53,7 @@ uniform float uStrokePx;   // stroke width, device px
 uniform float uShowFill;   // 1 fill by tile, 0 flat background
 uniform float uTileSat;    // tile saturation 0..1 — the sidebar's Fill slider (0 = uShowFill 0)
 uniform float uTaper;      // 1 taper the stroke toward the rim
+uniform float uDepthK;     // rim depth shade dim = 1 − k·d² (depthShadeK in hyperbolic.ts); 0 = flat
 uniform float uEdgeMode;   // 1 = edge pattern or colouring: per-pixel depth, drawn and scaffold strokes
 uniform float uScaffold;   // edge mode: 1 = also stroke the faint undrawn base-tiling grid
 uniform vec3 uStrokeSca;   // edge mode: scaffold stroke colour
@@ -46,6 +61,16 @@ uniform float uColorsMode; // 1 = fill each face by its colour index from uPalet
 uniform vec3 uPalette[8];  // colors mode: RGB per color index (0=A, 1=B, …); a hybrid board has 5 sizes
 uniform highp sampler2D uWalk; // walk table (hyperbolicWalk.ts layout), one row per quotient face
 uniform int uFace;         // the camera's anchor face: uView maps its frame to the screen
+uniform float uMaterial;   // MATERIAL_CODE (hypMaterials.ts): 0 none, 1 marble, 2 glass, 3 wood, 4 cobblestone
+uniform float uScan;       // 1 = the material reads its scanned surfaces (uSurfC, uSurfN) instead of procedurals
+uniform highp sampler2DArray uSurfC; // scans: albedo (sRGB) + height, one layer per slot (hypMaterials.ts)
+uniform highp sampler2DArray uSurfN; // scans: normal xy, roughness, AO
+uniform vec3 uWood;
+uniform vec2 uRank[16];    // materials: (polygon size, its rank among the tiling's sizes), polygonRanks
+uniform int uRankN;
+uniform float uSurfSlots;  // scans: the loaded family's slot count; its joint filler is the layer after        // wood: species (−1 mixed), cut (−1 mixed, 0 flat, 1 quarter, 2 end), grain (0 random, 1 aligned)
+uniform highp sampler2D uSeeds; // materials: the tile seed table around the anchor (TileSeeds)
+uniform vec4 uGinv;        // materials: the anchor frame → the home frame, a = xy, b = zw
 out vec4 frag;
 
 vec2 cmul(vec2 a, vec2 b) { return vec2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x); }
@@ -76,10 +101,19 @@ float horoSub(vec2 z, float k, float st, float m) {
 	float t = 0.5 * log(((z.x - c + R) * (z.x - c + R) + z.y * z.y) / ((c + R - z.x) * (c + R - z.x) + z.y * z.y));
 	return clamp(floor((t - t0) / (-2.0 * t0) * m), 0.0, m - 1.0);
 }
+// x wrapped into (−π, π]
+float wrapPi(float x) { return x - 6.283185307179586 * ceil((x - 3.141592653589793) / 6.283185307179586); }
+// the gradient of past(n, ·) at w, in w's frame
+vec2 pastGrad(vec3 n, vec2 w) {
+	float r2 = dot(w, w), D = 1.0 - r2;
+	return (2.0 * n.xy - 2.0 * n.z * w) / D + 4.0 * w * (dot(n.xy, w) - 0.5 * n.z * (1.0 + r2)) / (D * D);
+}
 // a flat corner's tie-break normal for side j of face f, or zero (hyperbolicWalk.ts layout)
 vec3 flatQ(int j, int f) {
 	return vec3(texelFetch(uWalk, ivec2(3 + 3 * j, f), 0).zw, texelFetch(uWalk, ivec2(4 + 3 * j, f), 0).w);
 }
+
+${MATERIAL_GLSL}
 
 void main() {
 	vec2 z = (gl_FragCoord.xy - uCenter) / uR;
@@ -94,6 +128,7 @@ void main() {
 	// colour index on a colouring; hypD and hypS are hyperbolic distances to the nearest drawn and
 	// undrawn edge; (ma, mb) is the isometry from the frame the walk ended in back to the anchor's.
 	float tileKey = 0.0, hypD = 1e3, hypS = 1e3;
+	vec2 edgeG = vec2(0.0); // materials: the outward gradient of the nearest drawn side's distance, w frame
 	vec2 cFund = vec2(0.0); // the point the face is shaded by, in the frame the walk ended in
 	vec2 ma = vec2(1.0, 0.0), mb = vec2(0.0, 0.0);
 	// Walk: test w against the face it is assumed to lie in and cross the side it lies beyond. A
@@ -124,6 +159,17 @@ void main() {
 		} else if (hd.x == 0.0) {
 			j = imod(floor(atan(w.y, w.x) / 6.283185307179586 * hd.y + 0.5), hd.y);
 			s = past(texelFetch(uWalk, ivec2(4 + 3 * j, f), 0).xyz, w);
+		} else if (hd.x == 3.0) {
+			// star: the wedge between the rays to vertices i and i+1 holds the face behind side i
+			float a = atan(w.y, w.x);
+			for (int i = 0; i < 40; i++) {
+				if (i >= S) break;
+				float t0 = texelFetch(uWalk, ivec2(3 + 3 * i, f), 0).z;
+				float t1 = texelFetch(uWalk, ivec2(3 + 3 * ((i + 1) % S), f), 0).z;
+				float d1 = wrapPi(a - t0), d2 = wrapPi(t1 - t0);
+				if (d1 * d2 >= 0.0 && abs(d1) <= abs(d2)) { j = i; break; }
+			}
+			s = past(texelFetch(uWalk, ivec2(4 + 3 * j, f), 0).xyz, w);
 		} else {
 			for (int i = 0; i < 40; i++) {
 				if (i >= S) break;
@@ -152,7 +198,7 @@ void main() {
 		f = int(texelFetch(uWalk, ivec2(3 + 3 * j, f), 0).x);
 	}
 	vec4 info = texelFetch(uWalk, ivec2(1, f), 0); // colour index, Islamic layer, that layer's box
-	tileKey = uEdgeMode > 0.5 || uColorsMode > 0.5 ? info.x : hd.w;
+	tileKey = uEdgeMode > 0.5 ? info.x : hd.w;
 	bool reaimed = !inside; // past the step cap, within a few px of the rim: the last face's colour, no stroke
 	bool depthPerPixel = hd.x == 1.0; // an apeirogon has no centre to shade by
 	if (inside) {
@@ -163,14 +209,17 @@ void main() {
 		vec2 z = vec2(-2.0 * w.y, 1.0 - dot(w, w)) / d0;
 		for (int e = -1; e <= 1; e++) {
 			if (S < 3 && hd.x != 1.0 && e != 0) continue;
+			if (hd.x == 3.0 && e != 0) continue; // past a reflex corner a neighbour's geodesic crosses the arm
 			float mm = max(1.0, texelFetch(uWalk, ivec2(1, f), 0).w);
 			int jj = hd.x == 1.0 ? imod(kf + float(e), hd.y / mm) * int(mm) : (j + e + S) % S;
 			float sv = hd.x == 1.0
 				? pastHoro(z, kf + float(e), hd.z)
 				: past(texelFetch(uWalk, ivec2(4 + 3 * jj, f), 0).xyz, w);
 			float dist = asinh(max(-sv, 0.0));
-			if (texelFetch(uWalk, ivec2(3 + 3 * jj, f), 0).y > 0.5) hypD = min(hypD, dist);
-			else hypS = min(hypS, dist);
+			if (texelFetch(uWalk, ivec2(3 + 3 * jj, f), 0).y > 0.5) {
+				if (uMaterial > 0.5 && dist < hypD && hd.x != 1.0) edgeG = pastGrad(texelFetch(uWalk, ivec2(4 + 3 * jj, f), 0).xyz, w);
+				hypD = min(hypD, dist);
+			} else hypS = min(hypS, dist);
 		}
 	}
 
@@ -178,9 +227,7 @@ void main() {
 	// the faint undrawn scaffold first and the drawn edges on top.
 	if (uEdgeMode > 0.5) {
 		float orbit = tileKey;
-		// Colors mode dims LESS toward the rim than edge mode: the palette fills are pale (cream) and a
-		// heavy dim reads as muddy, so keep them legible while still giving the disk some depth.
-		float dim = uColorsMode > 0.5 ? 1.0 - 0.28 * r2 : 1.0 - 0.5 * r2;
+		float dim = 1.0 - uDepthK * r2;
 		// EDGE patterns take ONE hue for the whole disk, so the fill is a smooth radial gradient and nothing
 		// but the strokes draws the tiling. It used to hue by merged-tile orbit, which on a record with every
 		// edge drawn gives one colour per tile and paints the base polygons into the fill — the board is then
@@ -343,14 +390,12 @@ void main() {
 		vec2 cScreen = su11(va, vb, cWorld);
 		dep = min(length(cScreen), 1.0);
 	}
-	float dim = 1.0 - 0.5 * dep * dep;
+	float dim = 1.0 - uDepthK * dep * dep;
 	// class A (star body) keeps its tile's hue (the hue ring rotates it); B/C take the two shared
 	// background colours, fixed like the euclid plain fill.
 	// A plain tile takes the euclidean/spherical side-count ramp; an apeirogon (kind 1) has no side
 	// count to ramp on and is white.
-	vec3 tileCol = uColorsMode > 0.5
-		? uPalette[int(clamp(tileKey, 0.0, 7.0))]
-		: hd.x == 1.0 ? vec3(1.0) : tileFillAt(polygonHue(tileKey) + uHueOffset, uTileSat);
+	vec3 tileCol = hd.x == 1.0 ? vec3(1.0) : tileFillAt(polygonHue(tileKey) + uHueOffset, uTileSat);
 	if (uIslamicStyle > 0.5 && cls > 0.5) tileCol = cls > 1.5 && cls < 2.5 ? uColB : uColA; // two fields
 	else if (cls > 1.5) tileCol = cls > 2.5 ? uColC : uColB;
 	vec3 fill = uShowFill > 0.5 ? tileCol * dim : uBg;
@@ -375,7 +420,54 @@ void main() {
 	float halfW = uStrokePx * 0.5 * (uTaper > 0.5 ? 3.0 *pow(1.0 - r2, ${STROKE_GAMMA}) : 1.0);
 	// slider at 0 = NO stroke: the AA band alone would still ink a ~50% hairline at halfW = 0
 	float strokeAmt = uStrokePx > 0.01 ? 1.0 - smoothstep(halfW - 1.0, halfW + 1.0, edgePx) : 0.0;
-	frag = vec4(mix(fill, uStroke * ink, strokeAmt), 1.0);
+	if (uMaterial < 0.5 || uIslamicOn > 0.5) {
+		frag = vec4(mix(fill, uStroke * ink, strokeAmt), 1.0);
+		return;
+	}
+
+	// MATERIALS (hypMaterials.ts). The texture is read in the tile's frame carried out from home, not the
+	// walk's: (A.a/|A.a|)² · w, A = uGinv · (ma, mb) the tile's isometry to the home frame. p is that point
+	// in geodesic polar coordinates, so a texture unit is a hyperbolic unit, and fp is a pixel's width in
+	// the same units, which every noise octave and vein is band-limited against.
+	Surf sf;
+	sf.horo = hd.x == 1.0;
+	// The texture's frame. The walk's frame of a tile is only fixed up to the tile's own rotations (two
+	// routes into one octagon can arrive a quarter turn apart), so it is turned to a frame that is not:
+	// the tile's turn in the reference geometry (TileSeeds), times the turn between this pixel's frame and
+	// the table's, both read against the live frame carried out from home. A star family's slider leaves
+	// the reference turn alone, so the texture rides on the tile as the angles change. A tile not in the
+	// table falls back to the live carried-out frame.
+	vec4 ts = tileSeed(f, ma, mb, sf.horo);
+	vec2 Aa = cmul(uGinv.xy, ma) + cmul(uGinv.zw, cconj(mb));
+	float aG = 2.0 * atan(Aa.y, Aa.x);
+	float turn = ts.w > 0.5 ? ts.y + aG - ts.z : aG;
+	vec2 ph = vec2(cos(turn), sin(turn));
+	vec2 u = cmul(ph, w);
+	float ru = length(u);
+	sf.p = u * (ru > 1e-6 ? 2.0 * atanh(min(ru, 0.9999)) / ru : 2.0);
+	sf.conf = (1.0 - r2) * uR * 0.5; // device px per hyperbolic unit here
+	sf.fp = 1.0 / sf.conf;
+	sf.seed = ts.x;
+	sf.key = tileKey;
+	sf.edgePx = edgePx;
+	sf.edgeH = hypD;
+	sf.halfW = halfW;
+	sf.z = z;
+	// A w-frame vector reaches the screen times the walk-and-view map's derivative 1/(d1·d2)²; a p-frame
+	// one is turned back by conj(ph) first. edgeG points out of the tile, so inward is its negative.
+	vec2 d1 = cmul(cconj(mb), w) + cconj(ma);
+	vec2 d2 = cmul(cconj(vb), su11(ma, mb, w)) + cconj(va);
+	vec2 dz = cdiv(vec2(1.0, 0.0), cmul(cmul(d1, d1), cmul(d2, d2)));
+	sf.toScreen = cmul(cconj(ph), dz);
+	vec2 gS = cmul(-edgeG, dz);
+	sf.inward = dot(gS, gS) > 0.0 ? normalize(gS) : vec2(0.0);
+	vec3 col;
+	if (uScan > 0.5 && (uMaterial < 1.5 || uMaterial > 2.5)) {
+		// scans are lit in linear light; the rest of this shader writes display values
+		col = shadeScanned(sf, uMaterial < 1.5 ? 0 : uMaterial < 3.5 ? 1 : 2);
+		col = pow(col / (1.0 + 0.3 * col) * 1.15, vec3(1.0 / 2.2)); // a soft shoulder, not a clip
+	} else col = uMaterial < 1.5 ? shadeMarble(sf) : uMaterial < 2.5 ? shadeGlass(sf) : uMaterial < 3.5 ? shadeWood(sf) : shadeCobble(sf);
+	frag = vec4(col * (uShowFill > 0.5 ? dim : 1.0), 1.0);
 }`;
 
 function compile(gl: WebGL2RenderingContext, type: number, src: string): WebGLShader | null {
@@ -410,6 +502,8 @@ export interface PerPixelDrawParams {
 	hueOffset: number;
 	strokePx: number;
 	taper: boolean;
+	/** Shade toward the rim (depthShadeK). Off = every tile at full brightness. */
+	depth?: boolean;
 	/** Colour/stroke by the Islamic layers (needs a prior setIslamicLayers). */
 	islamic?: boolean;
 	/** Which Islamic style the uploaded layers are for. Plain and checkerboard read "fill" layers, the
@@ -429,11 +523,20 @@ export interface PerPixelDrawParams {
 	edgeMode?: boolean;
 	/** Edge mode: also stroke the faint undrawn base-tiling grid. */
 	scaffold?: boolean;
-	/** Fill each face by its colour index from `palette`. A colouring sets edgeMode too; a tiling
-	 *  filled by polygon size under the Islamic construction sets this alone. */
+	/** Fill each face by its colour index from `palette` (a colouring; sets edgeMode too). */
 	colorsMode?: boolean;
 	/** Colors mode: RGB (0..1) per color index. Up to 4 entries; short arrays are padded with the last. */
 	palette?: [number, number, number][];
+	/** Paint every tile as a material (hypMaterials.ts). Needs `home`. Off in edge and Islamic modes. */
+	material?: HypMaterial;
+	/** Materials: the anchor frame → the home frame (the inverse of HypCamera's G). */
+	home?: Su11;
+	/** Materials: the same in the reference geometry (HypCamera.toHomeRef); tiles keep their identity there. */
+	homeRef?: Su11;
+	/** Wood: species, cut and grain direction. */
+	wood?: WoodStyle;
+	/** Read marble, wood and cobblestone from scanned PBR maps (loaded on first use; procedural until then). */
+	scanned?: boolean;
 }
 
 export class HyperbolicPerPixelRenderer {
@@ -442,6 +545,15 @@ export class HyperbolicPerPixelRenderer {
 	private quad: WebGLBuffer;
 	private texWalk: WebGLTexture;
 	private texIslamic: WebGLTexture;
+	private texSeeds: WebGLTexture;
+	private texSurfC: WebGLTexture;
+	private texSurfN: WebGLTexture;
+	private surf: { family: SurfaceFamily; ready: boolean } | null = null;
+	private seeds = new TileSeeds();
+	private walk: WalkTiling | null = null;
+	/** The walk tiles take their identity from: the first one set for this record (a family's default). */
+	private refWalk: WalkTiling | null = null;
+	private ranks: ReturnType<typeof polygonRanks> = { pairs: new Float32Array(32), n: 0 };
 	private u: Record<string, WebGLUniformLocation | null> = {};
 	private aPos: number;
 	private hasWalk = false;
@@ -476,6 +588,7 @@ export class HyperbolicPerPixelRenderer {
 			"uStrokePx",
 			"uShowFill",
 			"uTaper",
+			"uDepthK",
 			"uIslamic",
 			"uIslamicOn",
 			"uIslamicStyle",
@@ -492,6 +605,16 @@ export class HyperbolicPerPixelRenderer {
 			"uPalette",
 			"uWalk",
 			"uFace",
+			"uMaterial",
+			"uSeeds",
+			"uGinv",
+			"uWood",
+			"uScan",
+			"uSurfC",
+			"uSurfN",
+			"uRank",
+			"uRankN",
+			"uSurfSlots",
 		]) {
 			this.u[n] = gl.getUniformLocation(prog, n);
 		}
@@ -504,6 +627,54 @@ export class HyperbolicPerPixelRenderer {
 		// Keep the Islamic sampler complete before any layer is uploaded. It is only read behind
 		// uIslamicOn, but an incomplete texture is undefined behaviour on some drivers.
 		this.uploadLayers(new Uint8Array(4), 1, 1);
+		this.texSeeds = gl.createTexture();
+		this.uploadSeeds(new Float32Array(SEED_TEX_W * 4), 1);
+		// the scan arrays stay complete (one texel) until a family is loaded into them
+		this.texSurfC = gl.createTexture();
+		this.texSurfN = gl.createTexture();
+		for (const t of [this.texSurfC, this.texSurfN]) {
+			gl.bindTexture(gl.TEXTURE_2D_ARRAY, t);
+			gl.texImage3D(gl.TEXTURE_2D_ARRAY, 0, gl.RGBA8, 1, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4));
+			gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+		}
+	}
+
+	/** Load a family's scans into the two arrays (once per family switch); draws read procedurals until done. */
+	private loadSurfaces(family: SurfaceFamily): void {
+		const token: { family: SurfaceFamily; ready: boolean } = { family, ready: false };
+		this.surf = token;
+		surfaceImages(family)
+			.then(({ c, n }) => {
+				if (this.disposed || this.surf !== token) return;
+				const gl = this.gl;
+				const aniso = gl.getExtension("EXT_texture_filter_anisotropic");
+				const put = (tex: WebGLTexture, imgs: ImageBitmap[], fmt: number) => {
+					gl.bindTexture(gl.TEXTURE_2D_ARRAY, tex);
+					const { width: w, height: h } = imgs[0];
+					gl.texImage3D(gl.TEXTURE_2D_ARRAY, 0, fmt, w, h, imgs.length, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+					imgs.forEach((im, i) =>
+						gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, 0, 0, i, w, h, 1, gl.RGBA, gl.UNSIGNED_BYTE, im),
+					);
+					gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
+					gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+					gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+					gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_S, gl.REPEAT);
+					gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_T, gl.REPEAT);
+					if (aniso) gl.texParameterf(gl.TEXTURE_2D_ARRAY, aniso.TEXTURE_MAX_ANISOTROPY_EXT, 8);
+				};
+				put(this.texSurfC, c, gl.SRGB8_ALPHA8); // albedo decodes to linear; the alpha (height) stays linear
+				put(this.texSurfN, n, gl.RGBA8);
+				token.ready = true;
+			})
+			.catch((e) => console.warn("scanned surfaces unavailable:", e));
+	}
+
+	private uploadSeeds(data: Float32Array, height: number): void {
+		const gl = this.gl;
+		gl.bindTexture(gl.TEXTURE_2D, this.texSeeds);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, SEED_TEX_W, height, 0, gl.RGBA, gl.FLOAT, data);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 	}
 
 	private uploadLayers(data: Uint8Array, res: number, layers: number): void {
@@ -519,10 +690,13 @@ export class HyperbolicPerPixelRenderer {
 
 	/** Upload a tiling's walk table. Islamic layers are uploaded apart and must be this tiling's by the
 	 *  time a draw asks for them (IslamicFeed.sync runs before each such draw). */
-	setWalk(t: WalkTiling): void {
+	setWalk(t: WalkTiling, ref: WalkTiling = t): void {
+		this.refWalk = ref;
 		const gl = this.gl;
 		gl.bindTexture(gl.TEXTURE_2D, this.texWalk);
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, t.width, t.height, 0, gl.RGBA, gl.FLOAT, new Float32Array(t.data));
+		this.walk = t;
+		this.ranks = polygonRanks(t);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -560,6 +734,7 @@ export class HyperbolicPerPixelRenderer {
 		gl.uniform1f(this.u.uShowFill, p.showFill ? 1 : 0);
 		gl.uniform1f(this.u.uTileSat, (p.fillSatPct ?? TILE_SAT_PCT) / 100);
 		gl.uniform1f(this.u.uTaper, p.taper ? 1 : 0);
+		gl.uniform1f(this.u.uDepthK, depthShadeK(p.depth, p.colorsMode));
 		const islamicOn = !!p.islamic && this.hasIslamic;
 		gl.uniform1f(this.u.uIslamicOn, islamicOn ? 1 : 0);
 		gl.uniform1f(this.u.uIslamicStyle, islamicOn ? STYLE_CODE[p.islamicStyle ?? "plain"] : 0);
@@ -590,6 +765,30 @@ export class HyperbolicPerPixelRenderer {
 		// scaffold stroke: a muted line, lighter than the bold drawn stroke, per theme
 		const sca = p.dark ? [0x4a / 255, 0x44 / 255, 0x36 / 255] : [0xc9 / 255, 0xc2 / 255, 0xb4 / 255];
 		gl.uniform3f(this.u.uStrokeSca, sca[0], sca[1], sca[2]);
+		const mat = p.home && this.walk && !p.edgeMode ? MATERIAL_CODE[p.material ?? "none"] : 0;
+		gl.uniform1f(this.u.uMaterial, mat);
+		if (mat && p.home && this.walk) {
+			const h = p.home;
+			gl.uniform4f(this.u.uGinv, h.a.x, h.a.y, h.b.x, h.b.y);
+			gl.uniform3fv(this.u.uWood, woodCode(p.wood ?? { species: "mixed", cut: "mixed", grain: "random" }));
+			const fam = p.scanned ? surfaceFamily(p.material ?? "none") : null;
+			if (fam && this.surf?.family !== fam) this.loadSurfaces(fam);
+			gl.uniform1f(this.u.uScan, fam && this.surf?.family === fam && this.surf.ready ? 1 : 0);
+			gl.uniform1f(this.u.uSurfSlots, fam ? SURFACE_SLOTS[fam] : 1);
+			gl.uniform2fv(this.u.uRank, this.ranks.pairs);
+			gl.uniform1i(this.u.uRankN, this.ranks.n);
+			if (this.seeds.update(this.walk, this.refWalk ?? this.walk, p.face, h, p.homeRef ?? h))
+				this.uploadSeeds(this.seeds.data, this.seeds.height);
+		}
+		gl.activeTexture(gl.TEXTURE2);
+		gl.bindTexture(gl.TEXTURE_2D, this.texSeeds);
+		gl.uniform1i(this.u.uSeeds, 2);
+		gl.activeTexture(gl.TEXTURE3);
+		gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.texSurfC);
+		gl.uniform1i(this.u.uSurfC, 3);
+		gl.activeTexture(gl.TEXTURE4);
+		gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.texSurfN);
+		gl.uniform1i(this.u.uSurfN, 4);
 
 		gl.activeTexture(gl.TEXTURE1);
 		gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.texIslamic);
@@ -612,5 +811,8 @@ export class HyperbolicPerPixelRenderer {
 		gl.deleteBuffer(this.quad);
 		gl.deleteTexture(this.texWalk);
 		gl.deleteTexture(this.texIslamic);
+		gl.deleteTexture(this.texSeeds);
+		gl.deleteTexture(this.texSurfC);
+		gl.deleteTexture(this.texSurfN);
 	}
 }

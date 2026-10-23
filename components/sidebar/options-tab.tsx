@@ -26,6 +26,38 @@ import { HueRing } from "@/components/ui/hue-ring";
 import { HankinPad } from "@/components/ui/hankin-pad";
 import { wrapHue } from "@/lib/render/hueRing";
 import { Reveal } from "@/components/ui/reveal";
+import { OptionWall } from "@/components/ui/option-wall";
+import { WOOD_CUTS, WOOD_GRAIN, WOOD_SPECIES, type HypMaterial } from "@/lib/render/hypMaterials";
+
+// The hyperbolic disk's materials (lib/render/hypMaterials.ts). "Mixed" species steps through the woods by
+// polygon size, as the stones and glass colours do; the hue ring turns all three.
+const MATERIAL_OPTIONS: { value: HypMaterial; label: string; title?: string }[] = [
+	{ value: "none", label: "None" },
+	{ value: "marble", label: "Marble", title: "Polished stone slabs in grout; the hue ring picks the stones" },
+	{ value: "glass", label: "Stained glass", title: "Leaded cathedral glass, lit from behind" },
+	{ value: "wood", label: "Wood", title: "A board per tile: pick the species, the saw cut and the grain direction" },
+	{ value: "cobble", label: "Cobblestone", title: "Domed paving setts in sand, under a low sun" },
+];
+const WOOD_LABEL: Record<string, string> = {
+	mixed: "Mixed",
+	oak: "Oak",
+	walnut: "Walnut",
+	maple: "Maple",
+	cherry: "Cherry",
+	wenge: "Wenge",
+	pine: "Pine",
+	flat: "Flat-sawn",
+	quarter: "Quarter",
+	end: "End grain",
+	random: "Random",
+	aligned: "Aligned",
+};
+const WOOD_CUT_TITLE: Record<string, string> = {
+	mixed: "A cut per board",
+	flat: "Tangent to the rings: arched 'cathedral' figure",
+	quarter: "Through the pith: straight stripes crossed by ray flecks",
+	end: "Across the log: rings as arcs about the pith",
+};
 import { Toggle } from "@/components/ui/toggle";
 import { WIRINGS } from "@/lib/freedraw/arcs";
 import { FILL_MODES } from "@/lib/freedraw/render";
@@ -534,9 +566,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 					    toggle in the spherical block) live with the other geometry controls, not here. */}
 					{isHyperbolicColors || isSphColors ? (
 						<div className="space-y-2">
-							{/* A hyp-poly board shares the disk renderer but is not a coloring: its faces take the
-							    per-side-count polygon colours (hypFacePaletteRgb255), so there is no palette to pick. */}
-							{selected?.hypPoly ? null : palettePickers}
+							{palettePickers}
 							{isHyperbolicColors ? (
 								<p className="text-[11px] leading-relaxed text-fg-muted max-md:text-xs">
 									<span className="max-md:hidden">
@@ -603,6 +633,65 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							>
 								Flat
 							</Button>
+						</div>
+					) : null}
+					{isHyperbolicDisk ? (
+						<Checkbox
+							id="hyperbolicDepthShade"
+							label="Rim shading"
+							checked={cfg.hyperbolicDepthShade}
+							onCheckedChange={(v) => setCfg({ hyperbolicDepthShade: v })}
+						/>
+					) : null}
+					{isHyperbolicDisk && !isHyperbolicEdges && !isHyperbolicColors ? (
+						<div className="space-y-2">
+							<span className="text-xs text-fg-muted">Material</span>
+							<OptionWall
+								columns={3}
+								options={MATERIAL_OPTIONS}
+								selected={cfg.hyperbolicMaterial}
+								onChange={(v) => setCfg({ hyperbolicMaterial: v })}
+							/>
+							{cfg.hyperbolicMaterial !== "none" && cfg.hyperbolicMaterial !== "glass" ? (
+								<OptionWall
+									columns={2}
+									options={[
+										{
+											value: "scanned" as const,
+											label: "Scanned",
+											title: "Photographed PBR maps (CC0: ambientCG, Poly Haven)",
+										},
+										{ value: "procedural" as const, label: "Procedural", title: "Generated in the shader" },
+									]}
+									selected={cfg.hyperbolicSurfaceSource}
+									onChange={(v) => setCfg({ hyperbolicSurfaceSource: v })}
+								/>
+							) : null}
+							{cfg.hyperbolicMaterial === "wood" ? (
+								<>
+									<span className="text-xs text-fg-muted">Species</span>
+									<OptionWall
+										columns={4}
+										options={WOOD_SPECIES.map((v) => ({ value: v, label: WOOD_LABEL[v] }))}
+										selected={cfg.hyperbolicWood.species}
+										onChange={(species) => setCfg({ hyperbolicWood: { ...cfg.hyperbolicWood, species } })}
+									/>
+									<span className="text-xs text-fg-muted">Cut</span>
+									<OptionWall
+										columns={4}
+										options={WOOD_CUTS.map((v) => ({ value: v, label: WOOD_LABEL[v], title: WOOD_CUT_TITLE[v] }))}
+										selected={cfg.hyperbolicWood.cut}
+										onChange={(cut) => setCfg({ hyperbolicWood: { ...cfg.hyperbolicWood, cut } })}
+									/>
+									<span className="text-xs text-fg-muted">Grain</span>
+									<OptionWall
+										columns={2}
+										options={WOOD_GRAIN.map((v) => ({ value: v, label: WOOD_LABEL[v] }))}
+										selected={cfg.hyperbolicWood.grain}
+										onChange={(grain) => setCfg({ hyperbolicWood: { ...cfg.hyperbolicWood, grain } })}
+									/>
+								</>
+							) : null}
 						</div>
 					) : null}
 					{/* Edge patterns get the drawn tile boundaries either way; the scaffold reveals the faint
