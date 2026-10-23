@@ -121,16 +121,17 @@ def _cycles(perm, n):
     return out
 
 
-def valences(rneig, lvert, l):
+def valences(rneig, lvert, l, alpha=None):
     """valence per dart: the length of the tiling's vertex figure. One lap of the quotient cycle sweeps
     the cycle's interior-angle sum at edge length l; the vertex closes after 2π/that laps, so the wrap
     count comes back from the geometry the developer itself uses. Raises ValueError when a cycle's wrap
-    count is not a clean integer — that block is not a tiling at this l."""
+    count is not a clean integer — that block is not a tiling at this l. `alpha` (per dart, the turn from
+    h to rneig[h]) replaces the regular angle where a face's corners differ: an isotoxal star's."""
     n = len(rneig)
     out = [0] * n
     for cyc in _cycles(rneig, n):
         seq = [lvert[rneig[h]] for h in cyc]          # faces swept, in rotation order
-        s = sum(_interior_angle(p, l) for p in seq)
+        s = sum(alpha[h] for h in cyc) if alpha else sum(_interior_angle(p, l) for p in seq)
         v = TWO_PI / s
         vi = round(v)
         if vi < 1 or abs(v - vi) > 1e-6:
@@ -166,14 +167,14 @@ def restrict(rneig, glue, lvert, seed=0):
             [lvert[h] for h in keep])
 
 
-def dsymbol_from_darts(rneig, glue, lvert, l):
+def dsymbol_from_darts(rneig, glue, lvert, l, alpha=None):
     """Build the (generally non-minimal) D-symbol of a block at edge length l.
     Chamber (h,s) -> 2*h + (0 for +, 1 for -). Input arrays must already be seed-restricted."""
     n = len(rneig)
     rinv = [0] * n
     for i, x in enumerate(rneig):
         rinv[x] = i
-    val = valences(rneig, lvert, l)
+    val = valences(rneig, lvert, l, alpha)
     plus = lambda h: 2 * h
     minus = lambda h: 2 * h + 1
     s0, s1, s2, m01, m12 = {}, {}, {}, {}, {}
@@ -199,7 +200,7 @@ def _canon_cycle(seq):
     return min(cands)
 
 
-def analyse(rneig, glue, lvert, l):
+def analyse(rneig, glue, lvert, l, alpha=None):
     """Full identity of a block at edge length l.
 
     Returns a dict:
@@ -214,7 +215,8 @@ def analyse(rneig, glue, lvert, l):
     """
     try:
         rr, gg, ll = restrict(rneig, glue, lvert)
-        sym = dsymbol_from_darts(rr, gg, ll, l)
+        aa = alpha and [alpha[h] for h in seed_component(rneig, glue)]
+        sym = dsymbol_from_darts(rr, gg, ll, l, aa)
     except ValueError as e:
         return {"valid": False, "reason": str(e)}
     ok, reason = validate(sym)
@@ -228,7 +230,7 @@ def analyse(rneig, glue, lvert, l):
     # Vertex figure per minimal {1,2}-orbit: pull any pre-image chamber back to its dart, take that
     # dart's quotient cycle's face sequence, and repeat it wrap-count times to the full figure.
     n = len(rr)
-    val = valences(rr, ll, l)
+    val = valences(rr, ll, l, aa)
     cyc_of = {}
     for cyc in _cycles(rr, n):
         for h in cyc:

@@ -169,6 +169,7 @@ describe("one taxonomy behind both surfaces", () => {
 		expect(SHAPE_CLASS_ORDER).not.toContain("colors");
 		expect(SHAPE_CLASS_ORDER).not.toContain("hyperbolic");
 		expect(SHAPE_CLASS_ORDER).not.toContain("spherical");
-		expect(SHAPE_CLASS_ORDER.length).toBe(TILE_CLASS_ORDER.length - 4);
+		// hyperbolic is not in TILE_CLASS_ORDER at all any more (its tilings split by tile), so 3, not 4.
+		expect(SHAPE_CLASS_ORDER.length).toBe(TILE_CLASS_ORDER.length - 3);
 	});
 });

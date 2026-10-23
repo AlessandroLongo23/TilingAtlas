@@ -126,10 +126,9 @@ for (const b of HYP_POLY_BOARDS) {
 		const count = b.counts[k];
 		if (!count) continue;
 		tiers.push({
-			// MEASURED, not assumed: these records classify as "hyperbolic", not "regular". Guessing put
-			// all 2,191,775 into a second class row beside the real one instead of merging with it —
-			// `unloadedTiers` cancels on (cls, sub, k), so a wrong cls cannot collide with a loaded row.
-			cls: "hyperbolic",
+			// The class tileClassOf gives these records, and it has to match: `unloadedTiers` cancels on
+			// (cls, sub, k), so a wrong cls adds a second class row beside the real one instead of merging.
+			cls: b.multiLength ? "edgelen" : "regular",
 			sub: hypPolySubOfBoard(b),
 			k,
 			count,

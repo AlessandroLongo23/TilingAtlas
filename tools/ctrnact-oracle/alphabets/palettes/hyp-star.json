@@ -1,0 +1,122 @@
+{
+  "name": "hyp-star",
+  "D": 240,
+  "closure": "negative-defect",
+  "maxValence": 24,
+  "comment": "Hyperbolic isotoxal star pilot (2026-10-22, AL). Regular {3,4,5,6,8,12} plus every isotoxal star n* (n in the same set) whose POINT angle is 2pi/m, m in {3,4,6} (120, 90, 60 degrees), and is below the regular n-gon's angle (so the Euclidean dent is reflex). alphaU = point in 2pi/240 units. Convention: the point angle is FIXED (hyperbolic stars have a free parameter the plane does not; fixing it at 2pi/m is the plane's own discretization), so only regular corners and dents shrink with edge length, and the forced edge length is solved per tiling (develop_hyperbolic.py). Develop keeps only stars whose dent is still reflex at that length. 2-corner words are admitted: a dent filled by one corner is a real 2-valent vertex in H2 and noncounting, the same convention as the Euclidean star palettes (vertex = at least three tiles). maxValence is NOT a completeness knob here: gen_alphabet's reflex-dent prune bounds every word (2,336 figures at any cap >= 10). Points of 30, 45 and 72 degrees took the count past 135,000 at valence 6 and are left for a second run.",
+  "tiles": [
+    {
+      "kind": "regular",
+      "n": 3,
+      "name": "3",
+      "famchar": "3"
+    },
+    {
+      "kind": "regular",
+      "n": 4,
+      "name": "4",
+      "famchar": "4"
+    },
+    {
+      "kind": "regular",
+      "n": 5,
+      "name": "5",
+      "famchar": "5"
+    },
+    {
+      "kind": "regular",
+      "n": 6,
+      "name": "6",
+      "famchar": "6"
+    },
+    {
+      "kind": "regular",
+      "n": 8,
+      "name": "8",
+      "famchar": "8"
+    },
+    {
+      "kind": "regular",
+      "n": 12,
+      "name": "12",
+      "famchar": "c"
+    },
+    {
+      "kind": "star",
+      "n": 4,
+      "alphaU": 40,
+      "name": "4*40",
+      "famchar": "sD"
+    },
+    {
+      "kind": "star",
+      "n": 5,
+      "alphaU": 60,
+      "name": "5*60",
+      "famchar": "sG"
+    },
+    {
+      "kind": "star",
+      "n": 5,
+      "alphaU": 40,
+      "name": "5*40",
+      "famchar": "sI"
+    },
+    {
+      "kind": "star",
+      "n": 6,
+      "alphaU": 60,
+      "name": "6*60",
+      "famchar": "sL"
+    },
+    {
+      "kind": "star",
+      "n": 6,
+      "alphaU": 40,
+      "name": "6*40",
+      "famchar": "sN"
+    },
+    {
+      "kind": "star",
+      "n": 8,
+      "alphaU": 80,
+      "name": "8*80",
+      "famchar": "sQ"
+    },
+    {
+      "kind": "star",
+      "n": 8,
+      "alphaU": 60,
+      "name": "8*60",
+      "famchar": "sR"
+    },
+    {
+      "kind": "star",
+      "n": 8,
+      "alphaU": 40,
+      "name": "8*40",
+      "famchar": "sT"
+    },
+    {
+      "kind": "star",
+      "n": 12,
+      "alphaU": 80,
+      "name": "12*80",
+      "famchar": "sW"
+    },
+    {
+      "kind": "star",
+      "n": 12,
+      "alphaU": 60,
+      "name": "12*60",
+      "famchar": "sX"
+    },
+    {
+      "kind": "star",
+      "n": 12,
+      "alphaU": 40,
+      "name": "12*40",
+      "famchar": "sZ"
+    }
+  ]
+}

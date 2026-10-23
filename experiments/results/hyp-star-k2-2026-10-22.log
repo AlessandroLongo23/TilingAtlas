@@ -1,0 +1,27 @@
+hyp-star k<=2, same palette
+[11:55:08] build (MAXNUM=2 PALETTE=hyp-star)
+[11:55:10] PHASE 1  solve (C++ DFS, all k<=2)
+vertex figures: 2336 over 2923 types
+face filter: 2667 of 2923 vertex types can occur in a tiling (256 impossible)
+bucket key unique (BUCKET_OK): yes
+OKPAIR: 5364 admissible (tkey, Q(f)) pairs
+nodes: 989099  simplify_calls: 11895  simplify_true: 6482
+note: up to 7 dent-fill (noncounting) vertices per configuration; no cap is applied.
+[11:55:10]   raw blocks: 6482  (0s)
+[11:55:10] PHASE 2  prune (C++, fingerprint + bitset WL)
+  k=1 : 208
+  k=2 : 4366
+total kept: 4574
+store: peak 0 MB total, 0 MB resident
+[11:55:10]   (0s)
+[11:55:10] PHASE 3  develop skipped: develop.py is regular-only until the D-parameterization lands (M4)
+[11:55:10] DONE  total 0s  ->  /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/5efe2b02-7d26-438b-aabb-0b6bbff9e068/scratchpad/hs-k2/ctrnact-cells-k2.json
+PALETTE=hyp-star ./run-oracle.sh 2   1.52s user 0.36s system 76% cpu 2.459 total
+  develop 2000/4574  1s elapsed, ~1s left, 227 developed
+  develop 4000/4574  2s elapsed, ~0s left, 312 developed
+hyperbolic develop report (k=1..2, boundR=0.80)
+blocks in    : 4574
+developed    : 312
+not developed: 4262
+   4262  no common edge length
+

@@ -8,7 +8,7 @@ import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { download } from "@/components/export-image-modal";
+import { ASPECTS, download, type AspectId } from "@/components/export-image-modal";
 import { useAnimation, type Ending } from "@/stores/animation";
 import { moveLength, type CameraDriver, type Pose } from "@/lib/render/cameraPose";
 import { captureFrame, freezeView, playSurfaceColor } from "@/lib/render/capture";
@@ -57,6 +57,11 @@ export function AnimationExportModal({
 }) {
 	const { keys, duration, ending, set } = useAnimation();
 	const [size, setSize] = useState(640);
+	const [aspect, setAspect] = useState<AspectId>("screen");
+	// Seeded on open the way the still dialog seeds it: a disk opens square, everything else as on screen.
+	useEffect(() => {
+		if (open) setAspect(driver?.kind === "disk" ? "square" : "screen");
+	}, [open, driver?.kind]);
 	const [preview, setPreview] = useState<string | null>(null);
 	const [progress, setProgress] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
@@ -90,30 +95,42 @@ export function AnimationExportModal({
 		if (!host) return null;
 		const m = measureBox(host);
 		const box = { w: Math.max(1, Math.round(m.w)), h: Math.max(1, Math.round(m.h)) };
-		const outW = box.w >= box.h ? longEdge : Math.round((longEdge * box.w) / box.h);
+		// The frame: the on-screen height, the chosen shape's width, so tiles keep their on-screen size and
+		// only the framing changes (export-image-modal does the same).
+		const ratio = ASPECTS.find((a) => a.value === aspect)?.ratio ?? box.w / box.h;
+		const frame = { w: Math.max(1, Math.round(box.h * ratio)), h: box.h };
+		const outW = frame.w >= frame.h ? longEdge : Math.round((longEdge * frame.w) / frame.h);
 		if (!driver) return null;
 		const saved = driver.read();
 		// A still of the view covers the canvases while they draw the frames at export size underneath.
 		const lift = await freezeView(host, { ...box, dpr: Math.min(window.devicePixelRatio || 1, MAX_DPR) });
 		const enc = GIFEncoder();
-		let palette: Palette | null = null;
+		const grab = async (i: number) => {
+			driver.apply(viewAt(i / FPS)!);
+			const canvas = await captureFrame({ ...frame, dpr: outW / frame.w }, { background: playSurfaceColor() });
+			const ctx = canvas?.getContext("2d", { willReadFrequently: true });
+			if (!canvas || !ctx) throw new Error("A frame came back empty.");
+			return { data: ctx.getImageData(0, 0, canvas.width, canvas.height).data, w: canvas.width, h: canvas.height };
+		};
 		try {
+			// ONE palette for the whole animation (a per-frame palette makes flat tiles shimmer as it shifts),
+			// sampled from frames across it. It used to come from the first frame alone, so an animation that
+			// opens on one colour lost every other: a star family keyframed near α = 0 is nearly all
+			// triangles, and its purple and green stars came out red and white for the rest of the GIF.
+			const SAMPLES = Math.min(8, frameCount);
+			const pool: number[] = [];
+			for (let s = 0; s < SAMPLES; s++) {
+				if (token.stale) return null;
+				setProgress(`${verb}: colours ${s + 1} / ${SAMPLES}`);
+				const { data } = await grab(Math.round((s * (frameCount - 1)) / Math.max(1, SAMPLES - 1)));
+				for (let k = 0; k < data.length; k += 4 * 7) pool.push(data[k], data[k + 1], data[k + 2], data[k + 3]);
+			}
+			const palette: Palette = quantize(new Uint8Array(pool), 256);
 			for (let i = 0; i < frameCount; i++) {
 				if (token.stale) return null;
 				setProgress(`${verb} ${i + 1} / ${frameCount}`);
-				driver.apply(viewAt(i / FPS)!);
-				const canvas = await captureFrame({ ...box, dpr: outW / box.w }, { background: playSurfaceColor() });
-				const ctx = canvas?.getContext("2d", { willReadFrequently: true });
-				if (!canvas || !ctx) throw new Error("A frame came back empty.");
-				const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
-				// One palette for the whole animation, from the first frame. A periodic tiling shows the same
-				// colours everywhere, and a per-frame palette makes flat tiles shimmer as it shifts.
-				const first = !palette;
-				palette ??= quantize(data, 256);
-				enc.writeFrame(applyPalette(data, palette), canvas.width, canvas.height, {
-					palette: first ? palette : undefined,
-					delay: 1000 / FPS,
-				});
+				const { data, w, h } = await grab(i);
+				enc.writeFrame(applyPalette(data, palette), w, h, { palette: i === 0 ? palette : undefined, delay: 1000 / FPS });
 			}
 			enc.finish();
 			return new Blob([enc.bytes() as BlobPart], { type: "image/gif" });
@@ -153,7 +170,7 @@ export function AnimationExportModal({
 		};
 		// render/queue close over the props listed; they are recreated each render on purpose.
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [open, canRender, viewAt, frameCount]);
+	}, [open, canRender, viewAt, frameCount, aspect]);
 
 	useEffect(() => () => void (previewUrl.current && URL.revokeObjectURL(previewUrl.current)), []);
 
@@ -221,13 +238,22 @@ export function AnimationExportModal({
 						</div>
 
 						<div className="flex flex-col gap-2">
+							<SectionHeading>Frame</SectionHeading>
+							<ButtonGroup
+								options={ASPECTS.map((a) => ({ value: a.value, label: a.label }))}
+								selected={aspect}
+								onChange={setAspect}
+							/>
+						</div>
+
+						<div className="flex flex-col gap-2">
 							<SectionHeading>Size</SectionHeading>
 							<ButtonGroup
 								options={SIZES.map((n) => ({ value: n, label: `${n}px` }))}
 								selected={size}
 								onChange={setSize}
 							/>
-							<p className="text-xs text-fg-muted">Long edge in pixels. The frame is the canvas&apos;s shape.</p>
+							<p className="text-xs text-fg-muted">Long edge in pixels.</p>
 						</div>
 					</div>
 				</div>

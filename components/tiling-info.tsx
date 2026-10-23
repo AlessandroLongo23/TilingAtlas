@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Info } from "lucide-react";
 import type { VCWithOccurrences } from "@/classes/Tiling";
 import { colorLetter } from "@/lib/colors/pattern";
@@ -10,6 +10,9 @@ import { compactVertexConfig } from "@/lib/services/referenceAtlas";
 import { TILING_LEVEL_LABEL, TILING_LEVEL_NOTE } from "@/lib/tilings/tiling-level";
 import { isNobleFamily, nobleFaceShape, nobleFamilySolid, nobleSolid } from "@/lib/render/nobleSolids";
 import { useConfiguration } from "@/stores/configuration";
+import { useFamilyAlphas } from "@/stores/familyAlphas";
+import { loadDevelopedPatch, type CataloguePatch } from "@/lib/tilings/hyp-developed";
+import { familyMember } from "@/lib/render/hypStarFamily";
 import { VertexConfigurationThumbnail } from "./vertex-configuration-thumbnail";
 import { Button } from "./ui/button";
 import { Modal } from "./ui/modal";
@@ -150,6 +153,52 @@ function Row({
 }
 
 /** Prose that is read once: a one-line summary that opens onto the paragraph behind it. */
+/**
+ * A hyperbolic star tiling's corners, one row per star type: "5*  point 104.6° · dent 181.2°". A star
+ * whose dents are barely past 180° reads on screen as a convex polygon, so the angles are the only thing
+ * that says which tile it is. On a family they follow the slider, and so does the edge length.
+ */
+function StarCorners({ patch: id, edge }: { patch: string; edge: number | null }) {
+	const [patch, setPatch] = useState<CataloguePatch | null>(null);
+	const alpha = useFamilyAlphas((s) => s.values?.[0]);
+	useEffect(() => {
+		let alive = true;
+		void loadDevelopedPatch(id).then((p) => alive && setPatch(p));
+		return () => {
+			alive = false;
+		};
+	}, [id]);
+	const live = useMemo(() => {
+		if (!patch?.darts.starKind) return null;
+		const f = patch.family;
+		const [lo, hi] = f?.alphaRangeDegOpen ?? [0, 0];
+		const m =
+			f && alpha != null ? familyMember(patch, Math.min(hi - 1e-3, Math.max(lo + 1e-3, alpha))) : null;
+		return m ?? { darts: patch.darts, edge: patch.edge };
+	}, [patch, alpha]);
+	if (!live) return edge != null ? <Row label="Edge length ℓ" value={edge.toFixed(3)} /> : null;
+	const { darts: d } = live;
+	const stars = new Map<number, { n: number; point?: number; dent?: number }>();
+	d.starKind!.forEach((k, h) => {
+		if (!k) return;
+		const j = d.starParam?.[h] ?? 0;
+		const s = stars.get(j) ?? { n: d.lvert[d.rneig[h]] / 2 };
+		s[k === 1 ? "point" : "dent"] = (d.alpha![h] * 180) / Math.PI;
+		stars.set(j, s);
+	});
+	const deg = (v?: number) => (v == null ? "—" : `${v.toFixed(1)}°`);
+	return (
+		<>
+			<Row label="Edge length ℓ" value={live.edge.toFixed(3)} />
+			{[...stars.values()]
+				.sort((a, b) => a.n - b.n)
+				.map((s) => (
+					<Row key={s.n} label={`${s.n}* point · dent`} value={`${deg(s.point)} · ${deg(s.dent)}`} />
+				))}
+		</>
+	);
+}
+
 function Account({ summary, children }: { summary: string; children: ReactNode }) {
 	return (
 		<details className="group text-[11.5px] leading-snug text-fg-muted">
@@ -694,7 +743,11 @@ export function TilingInfo({ spec, vcs = [] }: TilingInfoProps) {
 						{spec.schlafli ? <Row label="Schläfli" value={mono(`{${spec.schlafli[0]},${spec.schlafli[1]}}`)} /> : null}
 						{spec.faces.length > 0 ? <Row label="Face sizes" value={mono(`{${spec.faces.join(",")}}`)} /> : null}
 						{spec.valence > 0 ? <Row label="Valence (d)" value={spec.valence} /> : null}
-						{spec.edge != null ? <Row label="Edge length ℓ" value={mono(spec.edge.toFixed(3))} /> : null}
+						{spec.patch ? (
+							<StarCorners patch={spec.patch} edge={spec.edge} />
+						) : spec.edge != null ? (
+							<Row label="Edge length ℓ" value={mono(spec.edge.toFixed(3))} />
+						) : null}
 					</Section>
 				) : null}
 

@@ -5,6 +5,8 @@ import { SUB_LABEL } from "@/lib/services/shelfLabels";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
 import { readDataText } from "../../scripts/atlas/io.mjs";
 import {
+	hypTileId,
+	hypTileKey,
 	HYP_TILING_BOARDS,
 	HYP_TILING_VALENCES,
 	hypTilingBoardLabel,
@@ -43,9 +45,9 @@ describe("the (valence, alphabet) board axis", () => {
 	it("gives every board a distinct id that round-trips through the runtime derivation", () => {
 		expect(new Set(HYP_TILING_BOARDS.map((b) => b.id)).size).toBe(HYP_TILING_BOARDS.length);
 		for (const b of HYP_TILING_BOARDS) {
-			expect(b.id).toBe(`v${b.valence}-${b.alphabet.join("-")}`);
+			expect(b.id).toBe(`v${b.valence}-${b.alphabet.map(hypTileId).join("-")}`);
 			expect(hypTilingSubOfBoard(b)).toBe(`hyt-${b.id}`);
-			expect(b.alphabet).toEqual([...b.alphabet].sort((x, y) => x - y));
+			expect(b.alphabet).toEqual([...b.alphabet].sort((x, y) => hypTileKey(x) - hypTileKey(y)));
 			expect(b.configs).toBeGreaterThan(0);
 			expect(hypTilingBoardCount(b)).toBeGreaterThanOrEqual(b.configs);
 		}

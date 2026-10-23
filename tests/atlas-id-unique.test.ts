@@ -42,8 +42,9 @@ describe("reference shelf id uniqueness (React list keys)", () => {
 	});
 
 	it("hyperbolic developed patches key uniquely too (thumbnail/tiling caches key on patch id)", () => {
-		const path = join(PUB, "hyperbolic-developed.json");
-		const patches = decodeAtlas<{ id: string }>(JSON.parse(readDataText(path)));
+		const patches = ["hyperbolic-developed.json", "hyperbolic-developed-stars.json"].flatMap((f) =>
+			decodeAtlas<{ id: string }>(JSON.parse(readDataText(join(PUB, f)))),
+		);
 		const c = new Map<string, number>();
 		for (const p of patches) c.set(p.id, (c.get(p.id) ?? 0) + 1);
 		const dups = [...c.entries()].filter(([, n]) => n > 1).map(([id, n]) => `${id}×${n}`);

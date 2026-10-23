@@ -1,0 +1,10 @@
+[13:40:28] hyp-star k<=2 develop with freed star points (solve_free fallback); 4,574 blocks, ~5 min (failing star blocks try 30 starts each)
+  develop 2000/4574  22s elapsed, ~29s left, 345 developed
+  develop 4000/4574  97s elapsed, ~14s left, 531 developed
+hyperbolic develop report (k=1..2, boundR=0.80)
+blocks in    : 4574
+developed    : 549
+not developed: 4025
+   4025  no common edge length
+
+[13:42:56] DONE

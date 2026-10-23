@@ -11,29 +11,18 @@
  * are computed here and again at runtime by `hypTilingSub`; `lib/tilings/hyp-tilings.test.ts` asserts
  * the two agree on every shipped record, which is the only thing keeping a generated table honest.
  *
- * Usage:  node scripts/emit-hyp-tiling-boards.mjs [> rows.txt]
+ * Usage:  pnpm tsx scripts/emit-hyp-tiling-boards.mjs [> rows.txt]   (tsx: the facets come from the TS module)
  */
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { decodeAtlas } from "./atlas/encode.mjs";
+// Dynamic: tsx compiles the TS module as CJS, which a static named import cannot link against.
+const { hypTileId, hypTileKey, hypTilingFacets: facets } = await import("../lib/tilings/hyp-tilings.ts");
 import { readDataJson } from "./atlas/io.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const src = decodeAtlas(readDataJson(join(ROOT, "public", "reference-atlas-hyperbolic.json")));
 const records = Array.isArray(src) ? src : src.records;
-
-/** (valence, alphabet) off a vertex configuration. "3.4.3.4.4.4.4 + 3.4.4.3.4.4.4" → [7, [3,4]]. */
-function facets(family) {
-	let valence = 0;
-	const sizes = new Set();
-	for (const orbit of family.split("+")) {
-		const ns = orbit.trim().split(".").map(Number);
-		if (!ns.length || ns.some((n) => !Number.isInteger(n) || n < 3)) return null;
-		valence = Math.max(valence, ns.length);
-		for (const n of ns) sizes.add(n);
-	}
-	return { valence, alphabet: [...sizes].sort((a, b) => a - b) };
-}
 
 const boards = new Map();
 let skipped = 0;
@@ -43,7 +32,7 @@ for (const r of records) {
 		skipped++;
 		continue;
 	}
-	const id = `v${f.valence}-${f.alphabet.join("-")}`;
+	const id = `v${f.valence}-${f.alphabet.map(hypTileId).join("-")}`;
 	if (!boards.has(id)) boards.set(id, { ...f, counts: {}, configs: new Set() });
 	const b = boards.get(id);
 	b.counts[r.k] = (b.counts[r.k] ?? 0) + 1;
@@ -55,7 +44,9 @@ for (const r of records) {
 const rows = [...boards.entries()].sort(([, a], [, b]) => {
 	if (a.valence !== b.valence) return a.valence - b.valence;
 	for (let i = 0; i < Math.max(a.alphabet.length, b.alphabet.length); i++) {
-		const d = (a.alphabet[i] ?? 0) - (b.alphabet[i] ?? 0);
+		const d =
+			(a.alphabet[i] === undefined ? 0 : hypTileKey(a.alphabet[i])) -
+			(b.alphabet[i] === undefined ? 0 : hypTileKey(b.alphabet[i]));
 		if (d) return d;
 	}
 	return 0;
@@ -69,7 +60,7 @@ for (const [id, b] of rows) {
 		.map((k) => `${k}: ${b.counts[k]}`)
 		.join(", ");
 	console.log(
-		`\t{ id: "${id}", valence: ${b.valence}, alphabet: [${b.alphabet.join(", ")}], ` +
+		`\t{ id: "${id}", valence: ${b.valence}, alphabet: [${b.alphabet.map((t) => JSON.stringify(t)).join(", ")}], ` +
 			`configs: ${b.configs.size}, counts: { ${counts} } },`,
 	);
 }

@@ -19,11 +19,10 @@ import {
 	Shuffle,
 } from "lucide-react";
 import { FloatingToolbar, ToolbarButton, ToolbarDivider, ToolbarReveal } from "@/components/ui/floating-toolbar";
+import { SwapIcon } from "@/components/ui/swap-icon";
 import { Canvas } from "@/components/canvas";
 import { InversiveCanvas } from "@/components/inversive-canvas";
-import { HyperbolicDevelopedCanvas } from "@/components/hyperbolic-developed-canvas";
-import { HyperbolicEdgesCanvas } from "@/components/hyperbolic-edges-canvas";
-import { HyperbolicColorsCanvas } from "@/components/hyperbolic-colors-canvas";
+import { HyperbolicCanvas } from "@/components/hyperbolic-canvas";
 import { HyperbolicJoystick } from "@/components/hyperbolic-joystick";
 import { SphericalCanvas } from "@/components/spherical-canvas";
 import { SphericalColorsCanvas } from "@/components/spherical-colors-canvas";
@@ -138,7 +137,7 @@ import {
 import { hypEdgesLazyShardsForK } from "@/lib/freedraw/hyp-edges";
 import { hypSchwarzMeta, schwarzLazyShardsForK } from "@/lib/freedraw/schwarz";
 import { sphEdgesLazyShardsForK } from "@/lib/freedraw/sph-edges";
-import { hypPolyLazyShardsForK, hypPolyMeta } from "@/lib/tilings/hyp-poly";
+import { hypPolyLazyShardsForK } from "@/lib/tilings/hyp-poly";
 import { SPH_HALF_BOARDS } from "@/lib/tilings/sph-half";
 import { HYP_HALF_BOARDS, hypHalfLazyShardsForK } from "@/lib/tilings/hyp-half";
 import { pentEdgeLazyShardsForK } from "@/lib/pentagon/edge-shelf";
@@ -153,6 +152,7 @@ import { paramGlyphs, resolveAlphaDegs } from "@/lib/utils/paramCell";
 import { parsePlayState, serializePlayState } from "@/lib/services/playUrlState";
 import { useFamilyAlphas } from "@/stores/familyAlphas";
 import { ParamSliderPanel } from "@/components/param-slider-panel";
+import { hypFamilyParamCell } from "@/lib/render/hypStarFamily";
 import { TegulaCellEditor } from "@/components/tegula-cell-editor";
 import { bendSphere, bendTegula } from "@/lib/tilings/tegula";
 import { useTegulaShapes } from "@/stores/tegulaShapes";
@@ -1005,7 +1005,12 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// React state here: the canvas draw loops read them imperatively each frame, so dragging updates the
 	// tiling with zero re-render of this page or the sidebar (the same reason the rotation slider is
 	// smooth). ParamSliderPanel is the only subscriber that re-renders on a drag.
-	const paramCell = selected?.paramCell;
+	// A hyperbolic star family has one free point angle and reuses the same panel through a stub cell.
+	const hypFamily = selected?.hypFamily;
+	const paramCell = useMemo(
+		() => selected?.paramCell ?? (hypFamily ? hypFamilyParamCell(hypFamily) : undefined),
+		[selected?.paramCell, hypFamily],
+	);
 
 	// Persist the slider position across tiling selections instead of snapping back to the family
 	// default: on a new selection, reconcile the stored tuple into THIS family's valid range (clamped
@@ -1827,7 +1832,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 							selected.schwarz.geometry === "spherical" ? (
 								<SphSchwarzCanvas pattern={selected.schwarz} mode={sphericalShape} showGrid={sphericalFreedrawGrid} />
 							) : (
-								<HyperbolicEdgesCanvas pattern={hypSchwarzMeta(selected.schwarz)} />
+								<HyperbolicCanvas tiling={hypSchwarzMeta(selected.schwarz)} mode="edges" />
 							)
 						) : selected?.pentEdges ? (
 							// Edge system on a PARAMETRIC pentagon. The record carries no geometry at all, so this canvas
@@ -1880,7 +1885,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 							// 3.4.n.4 tiling by regular polygons: not a decoration, so every edge is a real boundary and
 							// each face is filled by its POLYGON SIZE. That is the colored-tiling render exactly, so it
 							// uses that canvas with the size index standing in for the colour index.
-							<HyperbolicColorsCanvas pattern={hypPolyMeta(selected.hypPoly)} tiles />
+							<HyperbolicCanvas tiling={selected.hypPoly} mode="tiling" />
 						) : selected?.sphBubble ? (
 							// A spherical bubble tiling: the same three.js canvas, drawing MESHED tiles instead of the
 							// procedural face classification. It carries no polyhedron view — a bubble tile's sides are
@@ -1915,17 +1920,17 @@ export function PlayClient({ tilings }: PlayClientProps) {
 						) : selected?.hypColors ? (
 							// Hyperbolic colored tiling: an n-coloring of a {p,q} tiling, the per-pixel disk shader in colors
 							// mode — fills to the rim, infinite drift-free pan, GPU, exactly like the edge systems.
-							<HyperbolicColorsCanvas pattern={selected.hypColors} />
+							<HyperbolicCanvas tiling={selected.hypColors} mode="colors" />
 						) : selected?.hypEdges ? (
 							// Hyperbolic edge system: Čtrnáct's freedraw in H². Re-develops the darts under the view and
 							// draws the merged-tile fill + drawn/scaffold strokes, with the same store-driven pan as the
 							// developed tiling. Always 2D (the edge field is not baked for the per-pixel renderer).
-							<HyperbolicEdgesCanvas pattern={selected.hypEdges} />
+							<HyperbolicCanvas tiling={selected.hypEdges} mode="edges" />
 						) : selected?.developed ? (
 							// Engine-developed tiling: explicit Poincaré geometry from the Čtrnáct SU(1,1) developer,
 							// drawn as geodesic polygons with the same store-driven pan. Handles the arbitrary
 							// regular-faced tilings the (2,p,q) fold shader cannot.
-							<HyperbolicDevelopedCanvas patchId={selected.developed.patch} />
+							<HyperbolicCanvas tiling={selected.developed.patch} mode="tiling" />
 						) : null}
 					</div>
 					{/* Truchet figures over a PLAIN tiling. Deliberately OUTSIDE the exclusive canvas chain above:
@@ -2084,7 +2089,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 						{/* Copies a link carrying every view option plus the selected tiling (the URL the mirror
 					    effect keeps live). */}
 						<ToolbarButton label={shared ? "Link copied" : "Copy link to this view"} onClick={copyLink}>
-							{shared ? <Check size={16} className="text-success" /> : <Link2 size={16} />}
+							<SwapIcon icon={shared ? Check : Link2} size={16} className={shared ? "text-success" : undefined} />
 						</ToolbarButton>
 						{/* Export image opens the dialog, which drives the capture (lib/render/capture.ts). Absent,
 					    not disabled, on the shelves whose canvas host has not been wired for readback yet: a
