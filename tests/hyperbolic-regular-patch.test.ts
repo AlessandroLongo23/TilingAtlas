@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { buildRegularPatch } from "@/lib/render/hyperbolicRegularPatch";
 
-// The regular {p,q} patch the developed-tiling group extraction (hyperbolicGroup.ts) uses to replace an
-// under-developed regular baked patch: a central p-gon at the origin grown by edge-reflection, deduped.
+// The regular {p,q} patch the edge-length solver is cross-checked against: a central p-gon at the origin
+// grown by edge-reflection, deduped.
 
 const inDisk = (x: number, y: number, eps = 1e-6) => Math.hypot(x, y) < 1 - eps;
 

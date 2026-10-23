@@ -59,7 +59,7 @@ describe("the shelf registry", () => {
 		// spherical records offered symmetry elements, fundamental domain, vertex orbits and polygon points
 		// over a canvas that could not draw any of them — plus an Inversive checkbox the page would refuse.
 		const hyp = surfaceOf(on("hypPoly"));
-		expect(hyp).toBe("diskColors");
+		expect(hyp).toBe("disk"); // a tiling by regular polygons, drawn like the developed shelf
 		expect(isDiskSurface(hyp)).toBe(true);
 
 		const sph = surfaceOf(on("sphPoly"));

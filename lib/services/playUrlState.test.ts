@@ -126,8 +126,8 @@ describe("playUrlState", () => {
 		expect(new Set(fields).size).toBe(fields.length);
 		// 62 until `sreal`/`sstu` went with the Realistic and Studio-look controls (2026-08-25); 61 since
 		// `bubedge` + `bubkoch` arrived with the bubble shelf's edge-profile picker (2026-08-27); 63 since
-		// `ed` arrived with the tiling editor (2026-09-21).
-		expect(Object.keys(PLAY_PARAMS)).toHaveLength(63);
+		// `ed` arrived with the tiling editor (2026-09-21); 64 since `hdepth`, the hyperbolic rim shading (2026-10-22).
+		expect(Object.keys(PLAY_PARAMS)).toHaveLength(64);
 	});
 });
 

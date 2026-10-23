@@ -8,7 +8,7 @@
 //
 //   * a "tile" is a POLYGON SIZE, not a merged region. Grouping the faces by size is what makes one
 //     colour mean one polygon across the shelf, matching how the hyperbolic half of this family fills
-//     its disk (developColors keyed on the same size index).
+//     its disk (by side count).
 //   * EVERY edge is drawn. There is no undrawn scaffold in a tiling — every edge is a real tile
 //     boundary — so the whole edge list goes in bold, the same choice the colored-tiling shelves make.
 

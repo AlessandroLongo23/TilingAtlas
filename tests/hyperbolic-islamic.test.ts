@@ -21,7 +21,7 @@ import {
 } from "@/lib/render/hyperbolic";
 import { ISLAMIC_MARGIN, buildWalk, islamicWedgeBox } from "@/lib/render/hyperbolicWalk";
 import { islamicNormalAngleFromSlider } from "@/utils/islamicNoise";
-import type { DevelopedPatch } from "@/lib/render/hyperbolicDevelopedDraw";
+import type { DevelopedPatch } from "@/lib/tilings/hyp-developed";
 import { readDataText } from "../scripts/atlas/io.mjs";
 
 interface ShippedPatch extends DevelopedPatch {

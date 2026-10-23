@@ -5,6 +5,7 @@ import type { CameraDriver, DiskPose } from "@/lib/render/cameraPose";
 import { diskModel } from "@/lib/render/diskPath";
 import { DISK_PAD_PX, diskFrame } from "@/lib/render/diskFrame";
 import type { HypCamera } from "@/lib/render/hypCamera";
+import { useFamilyAlphas } from "@/stores/familyAlphas";
 import {
 	hypDist,
 	su11Apply,
@@ -21,7 +22,12 @@ const O: Complex = { x: 0, y: 0 };
  * `cam` and `el` are read on every call (the camera is rebuilt per pattern); `pad` is the canvas's gap
  * between the disk and its edge, the same one its draw loop takes off the radius.
  */
-export function diskDriver(cam: () => HypCamera | null, el: () => HTMLElement | null, pad = DISK_PAD_PX): CameraDriver {
+export function diskDriver(
+	cam: () => HypCamera | null,
+	el: () => HTMLElement | null,
+	pad = DISK_PAD_PX,
+	family: () => boolean = () => false,
+): CameraDriver {
 	const frame = () => diskFrame(el()?.clientWidth ?? 0, el()?.clientHeight ?? 0, pad);
 	const m = (p: unknown) => (p as DiskPose).m;
 	return {
@@ -29,11 +35,27 @@ export function diskDriver(cam: () => HypCamera | null, el: () => HTMLElement | 
 		model: diskModel,
 		read() {
 			const c = cam();
-			return c ? { kind: "disk", m: c.pose() } : null;
+			if (!c) return null;
+			const fa = useFamilyAlphas.getState();
+			const a = family() ? (fa.live ?? fa.values) : null;
+			return { kind: "disk", m: c.pose(), alphas: a ? [...a] : null };
 		},
-		apply: (p) => cam()?.setPose(m(p)),
-		// The disk's pose lives in the canvas, not in a store: nothing to publish to React.
-		commit() {},
+		apply(p) {
+			cam()?.setPose(m(p));
+			// A star family's angle, written in place as the flat driver does: playback runs every frame and
+			// a setState would re-render every subscriber. `commit` publishes it once the camera stops.
+			const a = (p as DiskPose).alphas;
+			if (a && family()) {
+				const fa = useFamilyAlphas.getState();
+				fa.values = a;
+				fa.live = [...a];
+			}
+		},
+		// The pose itself lives in the canvas; only a family's angle has a store to publish to.
+		commit() {
+			const fa = useFamilyAlphas.getState();
+			if (family() && fa.values) useFamilyAlphas.setState({ values: [...fa.values] });
+		},
 		project(p, w) {
 			const z = su11Apply(m(p), { x: w.x, y: w.y });
 			const { r, cx, cy } = frame();
@@ -78,7 +100,7 @@ export function diskDriver(cam: () => HypCamera | null, el: () => HTMLElement | 
 				if (!ww || ww.f !== wc.f) continue;
 				const k = su11Normalize(su11Mul(su11Inverse(wc.W), ww.W));
 				if (hypDist(su11ApplyInverse(k, centre), centre) < 0.05) continue;
-				return { kind: "disk", m: su11Normalize(su11Mul(A, k)) };
+				return { kind: "disk", m: su11Normalize(su11Mul(A, k)), alphas: (first as DiskPose).alphas };
 			}
 			return undefined;
 		},

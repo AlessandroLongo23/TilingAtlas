@@ -56,6 +56,7 @@ export const PLAY_PARAMS: Record<string, Spec> = {
 	// no longer matches. So `ed=1` opens the editor on the catalogued tiling, with an empty doc.
 	ed: { field: "studioActive", kind: "bool" },
 	hline: { field: "hyperbolicLineMode", kind: "enum", values: ["geometry", "constant"] },
+	hdepth: { field: "hyperbolicDepthShade", kind: "bool" },
 	// Bubble shelf: which edge profile the bump/bite decoration is drawn with. Values spelled out and
 	// not imported so the table stays the one readable place a link's vocabulary is defined; the enum
 	// is pinned to BUBBLE_EDGE_STYLE_VALUES by a test in playUrlState.test.ts.

@@ -5,7 +5,7 @@ import type { FreedrawPattern } from "@/lib/freedraw/pattern";
 import type { FreedrawStyle } from "@/lib/freedraw/render";
 
 // The freedraw preview used by the /library card and the /play picker — the sibling of
-// HyperbolicDevelopedThumbnail and SphericalThumbnail, and the only way those two surfaces can show a
+// HyperbolicThumbnail and SphericalThumbnail, and the only way those two surfaces can show a
 // freedraw pattern at all (it has no polygon cell for TilingThumbnail to draw).
 //
 // Static, like the other two: it does NOT follow the /play view options. A thumbnail is read at ~100px,

@@ -1,6 +1,6 @@
-// A regular {p,q} tiling patch in Poincaré coordinates, grown analytically by edge-reflection. Used by the
-// developed-tiling group extraction (lib/render/hyperbolicGroup.ts) to replace an under-developed regular
-// baked patch with a clean, arbitrarily large symmetric one.
+// A regular {p,q} tiling patch in Poincaré coordinates, grown analytically by edge-reflection. No renderer
+// uses it now (the symmetry-group shader it fed was replaced by the per-pixel walk); it stays as the
+// independent geometry the edge-length solver is checked against (tests/hyperbolic-develop.test.ts).
 
 import { type Complex, mirrorParams, tileHue } from "@/lib/render/hyperbolic";
 

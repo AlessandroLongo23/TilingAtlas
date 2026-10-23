@@ -145,10 +145,9 @@ export const SHELVES: Record<ShelfId, ShelfDef> = {
 	developed: { field: "developed", surface: "disk", kNoun: null },
 	hypEdges: { field: "hypEdges", surface: "diskEdges", kNoun: EDGE_ORBITS },
 	hypColors: { field: "hypColors", surface: "diskColors", kNoun: COLORED },
-	// Not a decoration: every edge of a 3.4.n.4 tiling is a real tile boundary, so each face is filled by
-	// its POLYGON SIZE. That is the colored-tiling render exactly, with the size index standing in for the
-	// colour index, which is why it shares that surface — and why counting it as flat blanked its canvas.
-	hypPoly: { field: "hypPoly", surface: "diskColors", kNoun: null },
+	// Not a decoration: a tiling by regular polygons like the developed shelf, so it takes the same disk
+	// (faces by polygon size, the Islamic construction) and the same controls.
+	hypPoly: { field: "hypPoly", surface: "disk", kNoun: null },
 
 	// --- Spherical ---
 	// k NAMES THE CLASS on this shelf. Among convex polyhedra with regular faces, k = 1 is exactly the

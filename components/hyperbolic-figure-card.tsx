@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { InteractiveHyperbolicMini } from "@/components/landing/interactive-hyperbolic-mini";
-import type { CataloguePatch } from "@/lib/render/hyperbolicDevelopedDraw";
+import type { CataloguePatch } from "@/lib/tilings/hyp-developed";
 
 // A hyperbolic tiling as a FIGURE in a theory article: the live Poincaré disk with /play's controls
 // (drag pans, wheel rotates, click folds a tile to the centre, right-click recentres), a caption naming

@@ -21,8 +21,8 @@ import { hasCurvedTiles, surfaceOf, type ShelfSurface } from "@/lib/services/she
 // layer canvas.tsx blanks.
 //
 // So the list below is the renderers that read `isIslamic` and draw something, and it is verifiable by
-// grep: components/canvas.tsx with islamic-canvas/strap-canvas (flat), hyperbolic-developed-canvas
-// (disk), spherical-canvas (sphere). Nothing else does. Adding a surface here without an implementation
+// grep: components/canvas.tsx with islamic-canvas/strap-canvas (flat), hyperbolic-canvas
+// (disk, mode "tiling"), spherical-canvas (sphere). Nothing else does. Adding a surface here without an implementation
 // behind it puts a dead control back on the shelf.
 //
 // The construction itself is shape-agnostic — it reads only vertices, edge midpoints, centroid and

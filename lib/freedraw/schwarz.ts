@@ -299,7 +299,7 @@ export function schwarzFamilyLabel(p: SchwarzPattern): string {
 }
 
 /** What the hyperbolic render paths need off a Schwarz record — the same shape a HypEdgesPattern gives
- *  them, so HyperbolicEdgesThumbnail / HyperbolicEdgesCanvas draw this shelf unchanged. `edge` is the
+ *  them, so HyperbolicThumbnail / HyperbolicCanvas draw this shelf in edge mode unchanged. `edge` is the
  *  SHORTEST class length: it is only the renderer's base scale, since the real per-dart lengths travel
  *  inside `darts.elen`. */
 export function hypSchwarzMeta(p: HypSchwarzPattern) {

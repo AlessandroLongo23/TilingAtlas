@@ -1,8 +1,7 @@
 // Poincaré-disk hyperbolic geometry — pure functions (no WebGL, no store) shared by the developed-tiling
 // renderer. SU(1,1) disk isometries (the pan/view algebra), the geodesic-conic kernel, {p,q} mirror
 // parameters, and small metric helpers (hyperbolic distance, midpoint, tile hue). All unit-testable.
-// Distances become Euclidean disk radii via r = tanh(d/2). The symmetry-group extraction that turns a
-// developed patch into per-pixel shader data lives in lib/render/hyperbolicGroup.ts.
+// Distances become Euclidean disk radii via r = tanh(d/2).
 
 import { polygonHue } from "@/lib/utils/renderTiling";
 
@@ -192,6 +191,14 @@ export const APEIROGON_RGB01: [number, number, number] = [1, 1, 1];
 
 /** The one hue an EDGE pattern's disk is filled with: a backdrop, not a polygon, so no side count. */
 export const EDGE_PATTERN_HUE = 94;
+
+/**
+ * The rim depth shade, the one law every hyperbolic renderer uses: dim = 1 − k·d², d the screen radius
+ * (of the tile's centre for a tiling, of the pixel for an edge system or colouring, whose merged faces
+ * have no single centre). Off by default (k = 0, the View options "Rim shading" switch). Palette fills
+ * dim less: they are pale, and at 0.5 they turn muddy.
+ */
+export const depthShadeK = (on: boolean | undefined, palette = false): number => (on ? (palette ? 0.28 : 0.5) : 0);
 
 /** Hyperbolic edge distance → byte, for the baked Islamic layers (distances of interest are ≲ 0.5). */
 export const EDGE_SCALE = 510;

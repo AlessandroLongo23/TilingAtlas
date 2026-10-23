@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { HypFamily } from "@/lib/render/hypStarFamily";
 import type { RunRow, FoundTiling } from "@/lib/services/runsService";
 import type { ExactCellSource } from "@/lib/services/cellCodecService";
 import type { ParametricCellData } from "@/lib/utils/paramCell";
@@ -56,6 +57,8 @@ export interface CatalogueTiling {
 	// Euclidean cell path. Carried through from ReferenceTiling by referenceToCatalogue. Present on every
 	// hyperbolic entry, absent for Euclidean.
 	developed?: { patch: string };
+	/** Hyperbolic star families: the free point angle (see ReferenceTiling.hypFamily). */
+	hypFamily?: HypFamily;
 	// Spherical shelf only: the {p,q} Schläfli symbol of a Platonic solid. Its presence routes /play + the
 	// thumbnails to the three.js sphere renderer (components/spherical-canvas.tsx), the way developed routes
 	// to the Poincaré disk. Carried through from ReferenceTiling by referenceToCatalogue.
@@ -82,8 +85,7 @@ export interface CatalogueTiling {
 	// `renderCell` is a throwaway; `k` counts VERTEX orbits (see ReferenceTiling.sphericalFreedraw).
 	sphericalFreedraw?: { solid: string; k: number; pattern: import("@/lib/render/icoFreedraw").IcoPattern };
 	// Hyperbolic edge-system shelf only: Čtrnáct's freedraw moved to H². Its presence routes /play + the
-	// thumbnails to the developed-edge renderer (HyperbolicDeveloper.developEdges + drawDevelopedEdgePatch),
-	// the way `developed` routes to the Poincaré disk. `renderCell` is a throwaway; `k` counts vertex orbits.
+	// thumbnails to the Poincaré disk in edge mode, the way `developed` routes to it in tiling mode. `renderCell` is a throwaway; `k` counts vertex orbits.
 	hypEdges?: import("@/lib/freedraw/hyp-edges").HypEdgesPattern;
 	// Hyperbolic colored-tiling shelf only: an n-coloring of a regular {p,q} tiling. Its presence routes
 	// /play + thumbnails to the per-pixel disk shader in colors mode. `k` counts colored vertex orbits.
@@ -100,7 +102,7 @@ export interface CatalogueTiling {
 	// boards use (lib/render/sphSchwarz.ts). `renderCell` is a throwaway; `k` counts vertex orbits.
 	sphEdges?: import("@/lib/freedraw/sph-edges").SphEdgesPattern;
 	// The 3.4.n.4 hyperbolic tilings by regular polygons. Not a decoration: every edge is a real tile
-	// boundary. Routes /play + thumbnails to HyperbolicDeveloper.developColors, colouring each face by its
+	// boundary. Routes /play + thumbnails to the Poincaré disk in tiling mode, filling each face by its
 	// polygon size. `renderCell` is a throwaway; `k` counts vertex orbits.
 	hypPoly?: import("@/lib/tilings/hyp-poly").HypPolyPattern;
 	// The spherical members of the same family, n = 3, 4, 5. Routes to the three.js sphere via

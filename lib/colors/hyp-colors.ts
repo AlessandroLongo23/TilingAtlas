@@ -3,9 +3,8 @@
 // colors, `k` counts COLORED vertex classes (vertices equivalent only under symmetries that preserve the
 // coloring, Marek's "Number of vertices"). Same convention as the Euclidean colors class (lib/colors),
 // and the same disk machinery as the hyperbolic edge systems: decoded to darts by
-// tools/ctrnact-oracle/develop_hyp_colors.py, re-developed per view by
-// lib/render/hyperbolicDevelopClient.ts::developColors, drawn by the per-pixel shader in colors mode
-// (R = color index → palette) or the 2D fallback.
+// tools/ctrnact-oracle/develop_hyp_colors.py and drawn by the per-pixel disk in colors mode
+// (components/hyperbolic-canvas.tsx; colour index → palette).
 //
 // Unlike the edge systems there is NO drawn/undrawn split: every {p,q} edge is a tile boundary. The
 // content is the color field — the `faceColor` array on the darts (one color index per quotient dart,

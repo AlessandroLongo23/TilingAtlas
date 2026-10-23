@@ -2,9 +2,8 @@
 // click-to-centre, and kept near the identity however far the reader travels. The three hyperbolic
 // canvases (developed, edge patterns, colourings) each carried a copy of this loop.
 //
-// With a walk table the view maps the frame of `face` to the screen and every frame re-anchors to the
-// face under the screen centre (hyperbolicWalk.ts). Without one, on the 2D fallback where WebGL2 is
-// missing, the view reads seed-dart coordinates and the developer's deck frames recentre it.
+// The view maps the frame of `face` to the screen and every frame re-anchors to the face under the
+// screen centre (hyperbolicWalk.ts).
 
 import {
 	type Complex,
@@ -18,11 +17,10 @@ import {
 	su11Rotation,
 	su11Translation,
 } from "@/lib/render/hyperbolic";
-import type { HyperbolicDeveloper } from "@/lib/render/hyperbolicDevelopClient";
 import { reanchor, snapPoint, walkPoint, type WalkTiling } from "@/lib/render/hyperbolicWalk";
 
-/** Clamp only against numerical blow-up at the ideal boundary (the cusp of an apeirogon, or the 2D
- *  fallback's world rim); panning is otherwise free. */
+/** Clamp only against numerical blow-up at the ideal boundary (the cusp of an apeirogon); panning is
+ *  otherwise free. */
 const MAX_CENTER_R = 0.998;
 
 type Pt = { x: number; y: number };
@@ -48,30 +46,50 @@ export class HypCamera {
 	/**
 	 * The change of frame from the home frame to the current one, accumulated across re-anchors, so that
 	 * view·G is the camera's absolute pose: the same isometry for the same picture however the reader
-	 * got there. Re-anchoring replaces view by view·W⁻¹, so G becomes W·G; the fallback's recentre
-	 * replaces view by view·g, so G becomes g⁻¹·G. The animation timeline reads and seeks through this.
+	 * got there. Re-anchoring replaces view by view·W⁻¹, so G becomes W·G. The animation timeline reads
+	 * and seeks through this.
 	 */
 	private G: Su11 = su11Identity();
+	/** G in the reference geometry (toHomeRef), and that geometry: the walk the camera was made with. */
+	private Gref: Su11 = su11Identity();
+	private readonly ref: WalkTiling;
 
-	constructor(
-		private readonly walk: WalkTiling | null,
-		private readonly dev: HyperbolicDeveloper | null,
-		private readonly meta: { id: string; name: string; config: string; edge: number },
-	) {
+	constructor(private walk: WalkTiling) {
+		this.ref = walk;
 		this.home();
+	}
+
+	/** The same tiling at other corner angles (a star family's slider): the rings and face indices do not
+	 *  change, so the view stays on the face it was on and the picture deforms in place. */
+	retile(walk: WalkTiling): void {
+		this.walk = walk;
 	}
 
 	/** The view a tiling opens on and a reset returns to: its most symmetric point at the centre. */
 	private home(): void {
-		this.face = this.walk?.seedFace ?? 0;
-		this.view = this.walk ? su11Inverse(this.walk.home) : su11Identity();
+		this.face = this.walk.seedFace;
+		this.view = su11Inverse(this.walk.home);
 		this.centerAnim = null;
 		this.G = su11Identity();
+		this.Gref = su11Identity();
 	}
 
 	/** The absolute pose: home frame to screen. */
 	pose(): Su11 {
 		return su11Normalize(su11Mul(this.view, this.G));
+	}
+
+	/** The current anchor frame → the home frame. Changes only on a re-anchor, bit for bit, which is what
+	 *  the material seed table (hypMaterials.ts) keys its rebuilds on. */
+	toHome(): Su11 {
+		return su11Inverse(this.G);
+	}
+
+	/** The same in the REFERENCE geometry (the walk the camera was made with: a star family at its
+	 *  default angles). Re-anchors replay their side crossings there, so for one tile this does not move
+	 *  while the family's slider does; tile identities are read off it (hypMaterials.ts). */
+	toHomeRef(): Su11 {
+		return su11Inverse(this.Gref);
 	}
 
 	/** Jump to an absolute pose. The next step re-anchors it to the face under the centre. */
@@ -81,19 +99,18 @@ export class HypCamera {
 		this.reanchorNow();
 	}
 
+	/** The tiling's nearest point of interest to a home-frame point (vertex, side midpoint or face
+	 *  centre), in home-frame coordinates. */
+	snapAt(w: Complex): Complex | null {
+		return snapPoint(this.walk, this.walk.seedFace, w);
+	}
+
 	/**
 	 * Walk a home-frame point to the face of the quotient that holds it: the face and the isometry W
 	 * carrying it there. Two points whose walks end in the same face give a symmetry of the tiling,
-	 * W₁⁻¹·W₂, carrying the second one's tile onto the first one's. Null without a walk table.
+	 * W₁⁻¹·W₂, carrying the second one's tile onto the first one's. Null if the walk does not close.
 	 */
-	/** The tiling's nearest point of interest to a home-frame point (vertex, side midpoint or face
-	 *  centre), in home-frame coordinates; null without a walk table. */
-	snapAt(w: Complex): Complex | null {
-		return this.walk ? snapPoint(this.walk, this.walk.seedFace, w) : null;
-	}
-
 	walkAt(w: Complex): { f: number; W: Su11 } | null {
-		if (!this.walk) return null;
 		const r = walkPoint(this.walk, this.walk.seedFace, w);
 		return r.ok ? { f: r.f, W: r.W } : null;
 	}
@@ -134,17 +151,7 @@ export class HypCamera {
 			const disk = { x: inp.click.x / Rcss, y: -inp.click.y / Rcss };
 			if (disk.x * disk.x + disk.y * disk.y < 0.998) {
 				const p = su11ApplyInverse(this.view, disk);
-				if (this.walk) this.centerAnim = snapPoint(this.walk, this.face, p);
-				else if (this.dev) {
-					let bd = Infinity;
-					for (const v of this.dev.develop(this.meta, this.view, 0.75, 4000).vertices) {
-						const d = (v[0] - p.x) ** 2 + (v[1] - p.y) ** 2;
-						if (d < bd) {
-							bd = d;
-							this.centerAnim = { x: v[0], y: v[1] };
-						}
-					}
-				}
+				this.centerAnim = snapPoint(this.walk, this.face, p);
 			}
 		}
 		if (this.centerAnim) {
@@ -157,24 +164,15 @@ export class HypCamera {
 		this.reanchorNow();
 	}
 
-	// Re-anchor. Either way the picture is unchanged and the view stays within a tile of the identity,
-	// so float32 uniforms never degrade and panning is unlimited.
+	// Re-anchor: the picture is unchanged and the view stays within a tile of the identity, so float32
+	// uniforms never degrade and panning is unlimited.
 	private reanchorNow(): void {
-		if (this.walk) {
-			const r = reanchor(this.walk, this.face, this.view);
-			if (r.W) {
-				this.face = r.f;
-				this.view = r.view;
-				this.G = su11Normalize(su11Mul(r.W, this.G));
-				if (this.centerAnim) this.centerAnim = su11Apply(r.W, this.centerAnim);
-			}
-		} else if (this.dev) {
-			const g = this.dev.recenter(this.view);
-			if (g) {
-				this.view = su11Normalize(su11Mul(this.view, g));
-				this.G = su11Normalize(su11Mul(su11Inverse(g), this.G));
-				if (this.centerAnim) this.centerAnim = su11ApplyInverse(g, this.centerAnim);
-			}
-		}
+		const r = reanchor(this.walk, this.face, this.view, this.ref);
+		if (!r.W) return;
+		this.face = r.f;
+		this.view = r.view;
+		this.G = su11Normalize(su11Mul(r.W, this.G));
+		this.Gref = su11Normalize(su11Mul(r.Wref, this.Gref));
+		if (this.centerAnim) this.centerAnim = su11Apply(r.W, this.centerAnim);
 	}
 }
