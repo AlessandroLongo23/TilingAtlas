@@ -16,6 +16,11 @@
  *   ctrnact-star / myers — m/partition from the star cell files' per-orbit `orbits[]` (k=1 ⇒ m=1);
  *                no group/lattice.
  *
+ * Every source also yields `vcs`: the distinct vertex configurations, canonical (lib/services/vertexConfig),
+ * in the order of `partition` — vcs[i] occurs partition[i] times. The /library configuration filter
+ * reads it. `--vcs-only` adds just that field: no symmetry pass, and m/partition are recomputed only to
+ * check them against what the file already carries (a mismatch fails the run and writes nothing).
+ *
  * Every unclassified tiling is logged with a count (a characterization gap is a finding, never silent).
  *
  *   pnpm tsx scripts/enrich-reference-atlas.ts
@@ -32,11 +37,18 @@ import type { PeriodCell } from "@/classes/algorithm/PeriodSolver";
 import type { LatticeShape, WallpaperGroup } from "@/lib/classes/symmetry/types";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
 import { readDataJson, writeDataFile } from "./atlas/io.mjs";
+import { stringifyAtlas } from "./atlas/encode.mjs";
+import { canonicalVC, parseVC } from "@/lib/services/vertexConfig";
 
 const ATLAS_PATH = path.join(process.cwd(), "public", "reference-atlas.json.gz");
 const CTRNACT_PATH = path.join(process.cwd(), "figures", "data", "ctrnact.json");
 const STAR_DIR = path.join(process.cwd(), "experiments", "star-oracle");
-const LOG_PATH = path.join(process.cwd(), "experiments", "results", "reference-atlas-enrich-2026-07-11.log");
+const LOG_PATH = path.join(
+	process.cwd(),
+	"experiments",
+	"results",
+	process.argv.includes("--vcs-only") ? "reference-atlas-vcs-2026-10-23.log" : "reference-atlas-enrich-2026-07-11.log",
+);
 
 const localRing = CyclotomicRing.create(24);
 setActiveRing(localRing);
@@ -66,12 +78,15 @@ interface AtlasEntry {
 	[k: string]: unknown;
 }
 
-// Distinct vertex-config count + descending multiplicity partition from per-orbit config identities.
-function classify(configKeys: string[]): { m: number; partition: number[] } {
+// Distinct vertex-config count, descending multiplicity partition, and the distinct configs themselves in
+// that same order (ties by name, so the order is stable), from per-orbit canonical config strings.
+function classify(configKeys: string[]): { m: number; partition: number[]; vcs: string[] } {
 	const counts = new Map<string, number>();
 	for (const key of configKeys) counts.set(key, (counts.get(key) ?? 0) + 1);
-	return { m: counts.size, partition: [...counts.values()].sort((a, b) => b - a) };
+	const order = [...counts].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
+	return { m: counts.size, partition: order.map(([, n]) => n), vcs: order.map(([vc]) => vc) };
 }
+const VCS_ONLY = process.argv.includes("--vcs-only");
 
 // ctrnact's own notation for the gate: "M" when M === k (all singletons), else "M (parts)".
 function ctrnactKey(m: number, partition: number[], k: number): string {
@@ -166,7 +181,9 @@ function enrichFile(atlasPath: string): void {
 
 		// --- reconstruct once (regular only: needed for symmetry, and for galebach orbits) ---
 		let cell: PeriodCell | null = null;
-		if (isRegular) {
+		// --vcs-only needs a cell only where the orbits come from geometry (galebach); ctrnact's come from
+		// ctrnact.json, and reconstructing its k = 8..10 cells for nothing would cost hours.
+		if (isRegular && (!VCS_ONLY || e.source === "galebach")) {
 			const rec = reconstructCell(e);
 			if ("cell" in rec) cell = rec.cell;
 			else stat.symFail.push({ id: e.id, error: `reconstruct: ${rec.error}` });
@@ -174,11 +191,11 @@ function enrichFile(atlasPath: string): void {
 		const cellRing = cell ? (cell.basisExact[0] as unknown as { ring: CyclotomicRing }).ring : null;
 
 		// --- m / partition ---
-		let classified: { m: number; partition: number[] } | null = null;
+		let classified: { m: number; partition: number[]; vcs: string[] } | null = null;
 		if (e.source === "ctrnact") {
 			const src = ctrnactById.get(e.id);
 			if (src) {
-				classified = classify(src.vertexConfigs.map((cfg) => cfg.join(",")));
+				classified = classify(src.vertexConfigs.map((cfg) => canonicalVC(cfg.map(String))));
 				const computed = ctrnactKey(classified.m, classified.partition, e.k);
 				if (computed !== src.distinctTypePartition)
 					stat.gateMismatch.push({ id: e.id, src: src.distinctTypePartition, computed });
@@ -188,7 +205,7 @@ function enrichFile(atlasPath: string): void {
 				try {
 					setActiveRing(cellRing);
 					const orb = assignOrbits(serializeCell(cell));
-					classified = classify(orb.vcOfOrbit);
+					classified = classify(orb.vcOfOrbit.map((vc) => canonicalVC(vc.split(","))));
 				} catch (err) {
 					stat.mFail.push({ id: e.id, reason: `assignOrbits: ${err instanceof Error ? err.message : err}` });
 				}
@@ -196,22 +213,43 @@ function enrichFile(atlasPath: string): void {
 		} else {
 			// star: per-orbit orbits[] if we have it; k=1 is trivially m=1
 			const orbits = starOrbitsById.get(e.id);
-			if (orbits) classified = classify(orbits);
-			else if (e.k === 1) classified = { m: 1, partition: [1] };
-			else stat.mFail.push({ id: e.id, reason: "no star orbits + k>1" });
+			const parsed = orbits?.map(parseVC);
+			if (parsed?.every((p): p is string => p !== null)) classified = classify(parsed);
+			else if (orbits) stat.mFail.push({ id: e.id, reason: `unparsed star orbit ${orbits.join(" ")}` });
+			else if (e.k === 1) {
+				// One orbit, no per-orbit file: the family string IS the one figure when it parses as one.
+				const one = parseVC(e.family);
+				classified = { m: 1, partition: [1], vcs: one ? [one] : [] };
+			} else stat.mFail.push({ id: e.id, reason: "no star orbits + k>1" });
+		}
+		if (classified && VCS_ONLY) {
+			// Gate: the configurations must reproduce the shipped classification exactly.
+			const same = e.m === classified.m && JSON.stringify(e.partition) === JSON.stringify(classified.partition);
+			if (!same)
+				stat.mFail.push({
+					id: e.id,
+					reason: `vcs gate: shipped m=${e.m} ${e.partition} vs ${classified.m} ${classified.partition}`,
+				});
 		}
 		if (classified) {
-			e.m = classified.m;
-			e.partition = classified.partition;
+			if (!VCS_ONLY) {
+				e.m = classified.m;
+				e.partition = classified.partition;
+			}
+			if (classified.vcs.length) e.vcs = classified.vcs;
+			else delete e.vcs;
 			stat.mOk++;
 		} else {
-			delete e.m;
-			delete e.partition;
+			if (!VCS_ONLY) {
+				delete e.m;
+				delete e.partition;
+			}
+			delete e.vcs;
 			stat.mSkip++;
 		}
 
 		// --- wallpaper group / lattice (regular only) ---
-		if (isRegular && cell && cellRing) {
+		if (isRegular && cell && cellRing && !VCS_ONLY) {
 			try {
 				setActiveRing(cellRing);
 				const { T1, T2, seed } = seedFromPeriodCell(cell);
@@ -241,8 +279,11 @@ function enrichFile(atlasPath: string): void {
 		}
 	}
 
-	// ── write back (same entries, same order, + new fields) ──
-	writeDataFile(atlasPath, JSON.stringify(atlas) + "\n");
+	// ── write back (same entries, same order, + new fields), packed like every shipped shelf ──
+	if (VCS_ONLY && stat.mFail.some((f) => f.reason.startsWith("vcs gate"))) {
+		log(`\n⚑ vcs gate failed: NOT writing ${path.relative(process.cwd(), atlasPath)}`);
+		process.exitCode = 1;
+	} else writeDataFile(atlasPath, stringifyAtlas(atlas));
 
 	// ── report ──
 	log("\n--- summary ---");
@@ -282,7 +323,7 @@ function enrichFile(atlasPath: string): void {
 
 // Default: enrich the base atlas. With file args: enrich exactly those (e.g. the k=8..10 shards),
 // leaving the base atlas untouched. Relative paths resolve from cwd; a `.json` name means its `.json.gz`.
-const targets = process.argv.slice(2);
+const targets = process.argv.slice(2).filter((a) => !a.startsWith("--"));
 const files = (targets.length ? targets : [ATLAS_PATH]).map((f) =>
 	(path.isAbsolute(f) ? f : path.join(process.cwd(), f)).replace(/\.json$/, ".json.gz"),
 );

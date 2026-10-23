@@ -1,18 +1,24 @@
 import { map } from "./math";
 
-export const canonicalizeVertexFigure = (ns: number[]): number[] => {
+/** The least rotation-or-reflection of a cyclic vertex figure. Numbers by default; pass `cmp` for tokens
+ *  that are not plain numbers (star polygons "6*", the library's notation). */
+export const canonicalizeVertexFigure = <T = number>(
+	ns: T[],
+	cmp: (a: T, b: T) => number = (a, b) => (a as number) - (b as number),
+): T[] => {
 	if (ns.length === 0) return [];
-	const candidates: number[][] = [];
+	const candidates: T[][] = [];
 	const k = ns.length;
 	for (let i = 0; i < k; i++) {
-		const rot: number[] = [];
+		const rot: T[] = [];
 		for (let j = 0; j < k; j++) rot.push(ns[(i + j) % k]);
 		candidates.push(rot);
 		candidates.push([...rot].reverse());
 	}
 	candidates.sort((a, b) => {
 		for (let i = 0; i < k; i++) {
-			if (a[i] !== b[i]) return a[i] - b[i];
+			const d = cmp(a[i], b[i]);
+			if (d !== 0) return d;
 		}
 		return 0;
 	});

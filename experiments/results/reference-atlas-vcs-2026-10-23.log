@@ -1,0 +1,347 @@
+=== load source data ===
+ctrnact.json: 47854 records indexed
+star cell files: 30 read, 13055 ids with per-orbit configs
+
+=== classify public/reference-atlas.json.gz (6193 entries) ===
+  [100/2720] regular classified — 0s elapsed, ETA 0s
+  [200/2720] regular classified — 0s elapsed, ETA 0s
+  [300/2720] regular classified — 0s elapsed, ETA 0s
+  [400/2720] regular classified — 0s elapsed, ETA 0s
+  [500/2720] regular classified — 0s elapsed, ETA 0s
+  [600/2720] regular classified — 0s elapsed, ETA 0s
+  [700/2720] regular classified — 0s elapsed, ETA 0s
+  [800/2720] regular classified — 0s elapsed, ETA 0s
+  [900/2720] regular classified — 0s elapsed, ETA 0s
+  [1000/2720] regular classified — 0s elapsed, ETA 0s
+  [1100/2720] regular classified — 0s elapsed, ETA 0s
+  [1200/2720] regular classified — 0s elapsed, ETA 0s
+  [1300/2720] regular classified — 0s elapsed, ETA 0s
+  [1400/2720] regular classified — 0s elapsed, ETA 0s
+  [1500/2720] regular classified — 9s elapsed, ETA 8s
+  [1600/2720] regular classified — 50s elapsed, ETA 35s
+  [1700/2720] regular classified — 105s elapsed, ETA 63s
+  [1800/2720] regular classified — 153s elapsed, ETA 78s
+  [1900/2720] regular classified — 224s elapsed, ETA 97s
+  [2000/2720] regular classified — 270s elapsed, ETA 97s
+  [2100/2720] regular classified — 317s elapsed, ETA 94s
+  [2200/2720] regular classified — 371s elapsed, ETA 88s
+  [2300/2720] regular classified — 412s elapsed, ETA 75s
+  [2400/2720] regular classified — 475s elapsed, ETA 63s
+  [2500/2720] regular classified — 580s elapsed, ETA 51s
+  [2600/2720] regular classified — 660s elapsed, ETA 30s
+  [2700/2720] regular classified — 777s elapsed, ETA 6s
+
+--- summary ---
+m/partition:  6168 classified, 25 unclassified
+wallpaper:    0 classified, 2720 skipped (stars, by design)
+
+M distribution by k (k: {M: count}):
+  k=1: {"1":34}
+  k=2: {"2":60}
+  k=3: {"2":46,"3":121}
+  k=4: {"2":64,"3":174,"4":143}
+  k=5: {"2":108,"3":249,"4":269,"5":138}
+  k=6: {"2":172,"3":411,"4":443,"5":381,"6":160}
+  k=7: {"2":248,"3":759,"4":802,"5":775,"6":466,"7":145}
+
+wallpaper-group histogram:
+
+✓ ctrnact partition gate: all 1472 entries agree with distinctTypePartition
+
+⚑ 25 tiling(s) with NO m/partition (characterization gap):
+    ctrnact-s24f-family-k2-01: no star orbits + k>1
+    ctrnact-s24f-family-k2-02: no star orbits + k>1
+    ctrnact-s24f-family-k2-03: no star orbits + k>1
+    ctrnact-s24f-family-k2-04: no star orbits + k>1
+    ctrnact-s24f-family-k2-05: no star orbits + k>1
+    ctrnact-s24f-family-k2-06: no star orbits + k>1
+    ctrnact-s24f-family-k3-01: no star orbits + k>1
+    ctrnact-s24f-family-k3-02: no star orbits + k>1
+    ctrnact-s24f-family-k4-01: no star orbits + k>1
+    ctrnact-s24f-family-k4-02: no star orbits + k>1
+    ctrnact-s24f-family-k4-03: no star orbits + k>1
+    ctrnact-s24f-family-k4-04: no star orbits + k>1
+    ctrnact-s24f-family-k4-05: no star orbits + k>1
+    ctrnact-s24f-family-k5-01: no star orbits + k>1
+    ctrnact-s24f-family-k5-02: no star orbits + k>1
+    ctrnact-s24f-family-k5-03: no star orbits + k>1
+    ctrnact-s24f-family-k5-04: no star orbits + k>1
+    ctrnact-s24f-family-k6-01: no star orbits + k>1
+    ctrnact-s24f-family-k6-02: no star orbits + k>1
+    ctrnact-s24f-family-k6-03: no star orbits + k>1
+    ctrnact-s24f-family-k7-01: no star orbits + k>1
+    ctrnact-s24f-family-k7-02: no star orbits + k>1
+    ctrnact-s24f-family-k7-03: no star orbits + k>1
+    ctrnact-s24f-family-k7-04: no star orbits + k>1
+    ctrnact-s24f-family-k7-05: no star orbits + k>1
+
+★ wrote public/reference-atlas.json.gz in 800s
+
+=== classify public/reference-atlas-k8.json.gz (6214 entries) ===
+  [100/2850] regular classified — 0s elapsed, ETA 0s
+  [200/2850] regular classified — 0s elapsed, ETA 0s
+  [300/2850] regular classified — 0s elapsed, ETA 0s
+  [400/2850] regular classified — 0s elapsed, ETA 0s
+  [500/2850] regular classified — 0s elapsed, ETA 0s
+  [600/2850] regular classified — 0s elapsed, ETA 0s
+  [700/2850] regular classified — 0s elapsed, ETA 0s
+  [800/2850] regular classified — 0s elapsed, ETA 0s
+  [900/2850] regular classified — 0s elapsed, ETA 0s
+  [1000/2850] regular classified — 0s elapsed, ETA 0s
+  [1100/2850] regular classified — 0s elapsed, ETA 0s
+  [1200/2850] regular classified — 0s elapsed, ETA 0s
+  [1300/2850] regular classified — 0s elapsed, ETA 0s
+  [1400/2850] regular classified — 0s elapsed, ETA 0s
+  [1500/2850] regular classified — 0s elapsed, ETA 0s
+  [1600/2850] regular classified — 0s elapsed, ETA 0s
+  [1700/2850] regular classified — 0s elapsed, ETA 0s
+  [1800/2850] regular classified — 0s elapsed, ETA 0s
+  [1900/2850] regular classified — 0s elapsed, ETA 0s
+  [2000/2850] regular classified — 0s elapsed, ETA 0s
+  [2100/2850] regular classified — 0s elapsed, ETA 0s
+  [2200/2850] regular classified — 0s elapsed, ETA 0s
+  [2300/2850] regular classified — 0s elapsed, ETA 0s
+  [2400/2850] regular classified — 0s elapsed, ETA 0s
+  [2500/2850] regular classified — 0s elapsed, ETA 0s
+  [2600/2850] regular classified — 0s elapsed, ETA 0s
+  [2700/2850] regular classified — 0s elapsed, ETA 0s
+  [2800/2850] regular classified — 0s elapsed, ETA 0s
+
+--- summary ---
+m/partition:  6204 classified, 10 unclassified
+wallpaper:    0 classified, 2850 skipped (stars, by design)
+
+M distribution by k (k: {M: count}):
+  k=8: {"2":387,"3":1335,"4":1377,"5":1397,"6":1067,"7":535,"8":106}
+
+wallpaper-group histogram:
+
+✓ ctrnact partition gate: all 2850 entries agree with distinctTypePartition
+
+⚑ 10 tiling(s) with NO m/partition (characterization gap):
+    ctrnact-s24f-family-k8-01: no star orbits + k>1
+    ctrnact-s24f-family-k8-02: no star orbits + k>1
+    ctrnact-s24f-family-k8-03: no star orbits + k>1
+    ctrnact-s24f-family-k8-04: no star orbits + k>1
+    ctrnact-s24f-family-k8-05: no star orbits + k>1
+    ctrnact-s24f-family-k8-06: no star orbits + k>1
+    ctrnact-s24f-family-k8-07: no star orbits + k>1
+    ctrnact-s24f-family-k8-08: no star orbits + k>1
+    ctrnact-s24f-family-k8-09: no star orbits + k>1
+    ctrnact-s24f-family-k8-10: no star orbits + k>1
+
+★ wrote public/reference-atlas-k8.json.gz in 2s
+
+=== classify public/reference-atlas-k9.json.gz (12083 entries) ===
+  [100/5960] regular classified — 0s elapsed, ETA 0s
+  [200/5960] regular classified — 0s elapsed, ETA 0s
+  [300/5960] regular classified — 0s elapsed, ETA 0s
+  [400/5960] regular classified — 0s elapsed, ETA 0s
+  [500/5960] regular classified — 0s elapsed, ETA 0s
+  [600/5960] regular classified — 0s elapsed, ETA 0s
+  [700/5960] regular classified — 0s elapsed, ETA 0s
+  [800/5960] regular classified — 0s elapsed, ETA 0s
+  [900/5960] regular classified — 0s elapsed, ETA 0s
+  [1000/5960] regular classified — 0s elapsed, ETA 0s
+  [1100/5960] regular classified — 0s elapsed, ETA 0s
+  [1200/5960] regular classified — 0s elapsed, ETA 0s
+  [1300/5960] regular classified — 0s elapsed, ETA 0s
+  [1400/5960] regular classified — 0s elapsed, ETA 0s
+  [1500/5960] regular classified — 0s elapsed, ETA 0s
+  [1600/5960] regular classified — 0s elapsed, ETA 0s
+  [1700/5960] regular classified — 0s elapsed, ETA 0s
+  [1800/5960] regular classified — 0s elapsed, ETA 0s
+  [1900/5960] regular classified — 0s elapsed, ETA 0s
+  [2000/5960] regular classified — 0s elapsed, ETA 0s
+  [2100/5960] regular classified — 0s elapsed, ETA 0s
+  [2200/5960] regular classified — 0s elapsed, ETA 0s
+  [2300/5960] regular classified — 0s elapsed, ETA 0s
+  [2400/5960] regular classified — 0s elapsed, ETA 0s
+  [2500/5960] regular classified — 0s elapsed, ETA 0s
+  [2600/5960] regular classified — 0s elapsed, ETA 0s
+  [2700/5960] regular classified — 0s elapsed, ETA 0s
+  [2800/5960] regular classified — 0s elapsed, ETA 0s
+  [2900/5960] regular classified — 0s elapsed, ETA 0s
+  [3000/5960] regular classified — 0s elapsed, ETA 0s
+  [3100/5960] regular classified — 0s elapsed, ETA 0s
+  [3200/5960] regular classified — 0s elapsed, ETA 0s
+  [3300/5960] regular classified — 0s elapsed, ETA 0s
+  [3400/5960] regular classified — 0s elapsed, ETA 0s
+  [3500/5960] regular classified — 0s elapsed, ETA 0s
+  [3600/5960] regular classified — 0s elapsed, ETA 0s
+  [3700/5960] regular classified — 0s elapsed, ETA 0s
+  [3800/5960] regular classified — 0s elapsed, ETA 0s
+  [3900/5960] regular classified — 0s elapsed, ETA 0s
+  [4000/5960] regular classified — 0s elapsed, ETA 0s
+  [4100/5960] regular classified — 0s elapsed, ETA 0s
+  [4200/5960] regular classified — 0s elapsed, ETA 0s
+  [4300/5960] regular classified — 0s elapsed, ETA 0s
+  [4400/5960] regular classified — 0s elapsed, ETA 0s
+  [4500/5960] regular classified — 0s elapsed, ETA 0s
+  [4600/5960] regular classified — 0s elapsed, ETA 0s
+  [4700/5960] regular classified — 0s elapsed, ETA 0s
+  [4800/5960] regular classified — 0s elapsed, ETA 0s
+  [4900/5960] regular classified — 0s elapsed, ETA 0s
+  [5000/5960] regular classified — 0s elapsed, ETA 0s
+  [5100/5960] regular classified — 0s elapsed, ETA 0s
+  [5200/5960] regular classified — 0s elapsed, ETA 0s
+  [5300/5960] regular classified — 0s elapsed, ETA 0s
+  [5400/5960] regular classified — 0s elapsed, ETA 0s
+  [5500/5960] regular classified — 0s elapsed, ETA 0s
+  [5600/5960] regular classified — 0s elapsed, ETA 0s
+  [5700/5960] regular classified — 0s elapsed, ETA 0s
+  [5800/5960] regular classified — 0s elapsed, ETA 0s
+  [5900/5960] regular classified — 0s elapsed, ETA 0s
+
+--- summary ---
+m/partition:  12078 classified, 5 unclassified
+wallpaper:    0 classified, 5960 skipped (stars, by design)
+
+M distribution by k (k: {M: count}):
+  k=9: {"2":611,"3":2343,"4":2377,"5":2652,"6":2226,"7":1262,"8":502,"9":105}
+
+wallpaper-group histogram:
+
+✓ ctrnact partition gate: all 5960 entries agree with distinctTypePartition
+
+⚑ 5 tiling(s) with NO m/partition (characterization gap):
+    ctrnact-s24f-family-k9-01: no star orbits + k>1
+    ctrnact-s24f-family-k9-02: no star orbits + k>1
+    ctrnact-s24f-family-k9-03: no star orbits + k>1
+    ctrnact-s24f-family-k9-04: no star orbits + k>1
+    ctrnact-s24f-family-k9-05: no star orbits + k>1
+
+★ wrote public/reference-atlas-k9.json.gz in 6s
+
+=== classify public/reference-atlas-k10.json.gz (11866 entries) ===
+  [100/11866] regular classified — 0s elapsed, ETA 1s
+  [200/11866] regular classified — 0s elapsed, ETA 1s
+  [300/11866] regular classified — 0s elapsed, ETA 1s
+  [400/11866] regular classified — 0s elapsed, ETA 1s
+  [500/11866] regular classified — 0s elapsed, ETA 1s
+  [600/11866] regular classified — 0s elapsed, ETA 0s
+  [700/11866] regular classified — 0s elapsed, ETA 0s
+  [800/11866] regular classified — 0s elapsed, ETA 0s
+  [900/11866] regular classified — 0s elapsed, ETA 0s
+  [1000/11866] regular classified — 0s elapsed, ETA 1s
+  [1100/11866] regular classified — 0s elapsed, ETA 1s
+  [1200/11866] regular classified — 0s elapsed, ETA 1s
+  [1300/11866] regular classified — 0s elapsed, ETA 1s
+  [1400/11866] regular classified — 0s elapsed, ETA 1s
+  [1500/11866] regular classified — 0s elapsed, ETA 1s
+  [1600/11866] regular classified — 0s elapsed, ETA 1s
+  [1700/11866] regular classified — 0s elapsed, ETA 1s
+  [1800/11866] regular classified — 0s elapsed, ETA 1s
+  [1900/11866] regular classified — 0s elapsed, ETA 1s
+  [2000/11866] regular classified — 0s elapsed, ETA 1s
+  [2100/11866] regular classified — 0s elapsed, ETA 1s
+  [2200/11866] regular classified — 0s elapsed, ETA 1s
+  [2300/11866] regular classified — 0s elapsed, ETA 1s
+  [2400/11866] regular classified — 0s elapsed, ETA 1s
+  [2500/11866] regular classified — 0s elapsed, ETA 1s
+  [2600/11866] regular classified — 0s elapsed, ETA 1s
+  [2700/11866] regular classified — 0s elapsed, ETA 0s
+  [2800/11866] regular classified — 0s elapsed, ETA 0s
+  [2900/11866] regular classified — 0s elapsed, ETA 0s
+  [3000/11866] regular classified — 0s elapsed, ETA 0s
+  [3100/11866] regular classified — 0s elapsed, ETA 0s
+  [3200/11866] regular classified — 0s elapsed, ETA 0s
+  [3300/11866] regular classified — 0s elapsed, ETA 0s
+  [3400/11866] regular classified — 0s elapsed, ETA 0s
+  [3500/11866] regular classified — 0s elapsed, ETA 1s
+  [3600/11866] regular classified — 0s elapsed, ETA 1s
+  [3700/11866] regular classified — 0s elapsed, ETA 1s
+  [3800/11866] regular classified — 0s elapsed, ETA 1s
+  [3900/11866] regular classified — 0s elapsed, ETA 1s
+  [4000/11866] regular classified — 0s elapsed, ETA 0s
+  [4100/11866] regular classified — 0s elapsed, ETA 0s
+  [4200/11866] regular classified — 0s elapsed, ETA 0s
+  [4300/11866] regular classified — 0s elapsed, ETA 0s
+  [4400/11866] regular classified — 0s elapsed, ETA 0s
+  [4500/11866] regular classified — 0s elapsed, ETA 0s
+  [4600/11866] regular classified — 0s elapsed, ETA 0s
+  [4700/11866] regular classified — 0s elapsed, ETA 0s
+  [4800/11866] regular classified — 0s elapsed, ETA 0s
+  [4900/11866] regular classified — 0s elapsed, ETA 0s
+  [5000/11866] regular classified — 0s elapsed, ETA 0s
+  [5100/11866] regular classified — 0s elapsed, ETA 0s
+  [5200/11866] regular classified — 0s elapsed, ETA 0s
+  [5300/11866] regular classified — 0s elapsed, ETA 0s
+  [5400/11866] regular classified — 0s elapsed, ETA 0s
+  [5500/11866] regular classified — 0s elapsed, ETA 0s
+  [5600/11866] regular classified — 0s elapsed, ETA 0s
+  [5700/11866] regular classified — 0s elapsed, ETA 0s
+  [5800/11866] regular classified — 0s elapsed, ETA 0s
+  [5900/11866] regular classified — 0s elapsed, ETA 0s
+  [6000/11866] regular classified — 0s elapsed, ETA 0s
+  [6100/11866] regular classified — 0s elapsed, ETA 0s
+  [6200/11866] regular classified — 0s elapsed, ETA 0s
+  [6300/11866] regular classified — 0s elapsed, ETA 0s
+  [6400/11866] regular classified — 0s elapsed, ETA 0s
+  [6500/11866] regular classified — 0s elapsed, ETA 0s
+  [6600/11866] regular classified — 0s elapsed, ETA 0s
+  [6700/11866] regular classified — 0s elapsed, ETA 0s
+  [6800/11866] regular classified — 0s elapsed, ETA 0s
+  [6900/11866] regular classified — 0s elapsed, ETA 0s
+  [7000/11866] regular classified — 0s elapsed, ETA 0s
+  [7100/11866] regular classified — 0s elapsed, ETA 0s
+  [7200/11866] regular classified — 0s elapsed, ETA 0s
+  [7300/11866] regular classified — 0s elapsed, ETA 0s
+  [7400/11866] regular classified — 0s elapsed, ETA 0s
+  [7500/11866] regular classified — 0s elapsed, ETA 0s
+  [7600/11866] regular classified — 0s elapsed, ETA 0s
+  [7700/11866] regular classified — 0s elapsed, ETA 0s
+  [7800/11866] regular classified — 0s elapsed, ETA 0s
+  [7900/11866] regular classified — 0s elapsed, ETA 0s
+  [8000/11866] regular classified — 0s elapsed, ETA 0s
+  [8100/11866] regular classified — 0s elapsed, ETA 0s
+  [8200/11866] regular classified — 0s elapsed, ETA 0s
+  [8300/11866] regular classified — 0s elapsed, ETA 0s
+  [8400/11866] regular classified — 0s elapsed, ETA 0s
+  [8500/11866] regular classified — 0s elapsed, ETA 0s
+  [8600/11866] regular classified — 0s elapsed, ETA 0s
+  [8700/11866] regular classified — 0s elapsed, ETA 0s
+  [8800/11866] regular classified — 0s elapsed, ETA 0s
+  [8900/11866] regular classified — 0s elapsed, ETA 0s
+  [9000/11866] regular classified — 0s elapsed, ETA 0s
+  [9100/11866] regular classified — 0s elapsed, ETA 0s
+  [9200/11866] regular classified — 0s elapsed, ETA 0s
+  [9300/11866] regular classified — 0s elapsed, ETA 0s
+  [9400/11866] regular classified — 1s elapsed, ETA 0s
+  [9500/11866] regular classified — 1s elapsed, ETA 0s
+  [9600/11866] regular classified — 1s elapsed, ETA 0s
+  [9700/11866] regular classified — 1s elapsed, ETA 0s
+  [9800/11866] regular classified — 1s elapsed, ETA 0s
+  [9900/11866] regular classified — 1s elapsed, ETA 0s
+  [10000/11866] regular classified — 1s elapsed, ETA 0s
+  [10100/11866] regular classified — 1s elapsed, ETA 0s
+  [10200/11866] regular classified — 1s elapsed, ETA 0s
+  [10300/11866] regular classified — 1s elapsed, ETA 0s
+  [10400/11866] regular classified — 1s elapsed, ETA 0s
+  [10500/11866] regular classified — 1s elapsed, ETA 0s
+  [10600/11866] regular classified — 1s elapsed, ETA 0s
+  [10700/11866] regular classified — 1s elapsed, ETA 0s
+  [10800/11866] regular classified — 1s elapsed, ETA 0s
+  [10900/11866] regular classified — 1s elapsed, ETA 0s
+  [11000/11866] regular classified — 1s elapsed, ETA 0s
+  [11100/11866] regular classified — 1s elapsed, ETA 0s
+  [11200/11866] regular classified — 1s elapsed, ETA 0s
+  [11300/11866] regular classified — 1s elapsed, ETA 0s
+  [11400/11866] regular classified — 1s elapsed, ETA 0s
+  [11500/11866] regular classified — 1s elapsed, ETA 0s
+  [11600/11866] regular classified — 1s elapsed, ETA 0s
+  [11700/11866] regular classified — 1s elapsed, ETA 0s
+  [11800/11866] regular classified — 1s elapsed, ETA 0s
+
+--- summary ---
+m/partition:  11866 classified, 0 unclassified
+wallpaper:    0 classified, 11866 skipped (stars, by design)
+
+M distribution by k (k: {M: count}):
+  k=10: {"2":663,"3":3772,"4":2979,"5":2745,"6":1468,"7":212,"8":27}
+
+wallpaper-group histogram:
+
+✓ ctrnact partition gate: all 11866 entries agree with distinctTypePartition
+
+★ wrote public/reference-atlas-k10.json.gz in 1s

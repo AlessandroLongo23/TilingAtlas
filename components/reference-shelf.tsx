@@ -12,14 +12,15 @@ import {
 	type SetStateAction,
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Check, Library, Link2, Loader2, X } from "lucide-react";
+import { Check, ChevronRight, Library, Link2, Loader2, Search, Shapes, X } from "lucide-react";
+import { InfoDot } from "@/components/ui/info-dot";
+import { Fold } from "@/components/ui/sidebar-section";
 import { PageSidebar } from "@/components/page-sidebar";
 import { SheetTrigger } from "@/components/ui/bottom-sheet";
 import { IntervalSlider } from "@/components/ui/interval-slider";
 import { OptionWall } from "@/components/ui/option-wall";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
-import { RangeInput } from "@/components/ui/range-input";
 import { Switch } from "@/components/ui/switch";
 import { ReferenceCard } from "@/components/reference-card";
 import { useMobileSheet } from "@/stores/mobileSheet";
@@ -115,6 +116,27 @@ import {
 	type PolygonMode,
 } from "@/lib/services/referenceAtlas";
 import { PolygonFilterModal } from "@/components/polygon-filter-modal";
+import { AnimatedNumber } from "@/components/ui/animated-number";
+import { BoardPicker } from "@/components/library/board-picker";
+import { ResultsTable } from "@/components/library/results-table";
+import {
+	ActiveFilters,
+	ExportButton,
+	SortControl,
+	ViewToggle,
+	type ActiveChip,
+	type ResultsView,
+} from "@/components/library/results-toolbar";
+import { VcFilter } from "@/components/library/vc-filter";
+import {
+	availableSortKeys,
+	SORT_DEFAULT_DIR,
+	SORT_KEYS,
+	sortTilings,
+	type SortDir,
+	type SortKey,
+} from "@/lib/services/librarySort";
+import { compactVC, parseVC, vcsOf } from "@/lib/services/vertexConfig";
 import {
 	periodLabel,
 	polygonSpeciesOf,
@@ -292,7 +314,7 @@ const CERT_OPTIONS: { value: Certification; label: string }[] = CERTIFICATION_OR
 const LATTICE_ORDER: LatticeShape[] = ["square", "hexagonal", "rhombic", "rectangular", "oblique"];
 const COLUMN_PRESETS = [3, 4, 5, 6];
 // Page-size choices for the header dropdown; 25 is the default.
-const PAGE_SIZE_OPTIONS = [10, 25, 50];
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const DEFAULT_PAGE_SIZE = 25;
 // Čtrnáct tiers beyond the base atlas (k≤7), shipped as separate lazy shards (public/reference-atlas-
 // k{k}.json). Their k chips always show; selecting one fetches the shard on demand and merges it in.
@@ -326,6 +348,10 @@ interface ViewState {
 	// shelf, where one figure carries up to hundreds of tilings). URL key "grouped" — "group" is taken
 	// by the wallpaper-group filter.
 	groupVariants: boolean;
+	// Result order and presentation: URL keys "sort", "dir", "view".
+	sortKey: SortKey;
+	sortDir: SortDir;
+	view: ResultsView;
 }
 
 // One card of the (possibly grouped) shelf: the tilings it cycles through, in variant order. A
@@ -467,7 +493,18 @@ function parseViewState(sp: URLSearchParams): ViewState {
 	if (aper?.length) f.anglePeriods = aper;
 	const q = sp.get("q");
 	if (q) f.query = q;
+	// Vertex configurations, any notation in the link; only what parses as a figure is kept.
+	const vcs = list("vc")
+		?.map(parseVC)
+		.filter((v): v is string => v !== null);
+	if (vcs?.length) f.vcs = [...new Set(vcs)];
+	const vcMode = sp.get("vcmode");
+	if (vcMode === "any" || vcMode === "exact") f.vcMode = vcMode;
 
+	const sortParam = sp.get("sort");
+	const sortKey: SortKey =
+		sortParam && (SORT_KEYS as string[]).includes(sortParam) ? (sortParam as SortKey) : "catalogue";
+	const dirParam = sp.get("dir");
 	const page = num("page");
 	const size = num("size");
 	const cols = num("cols");
@@ -480,6 +517,9 @@ function parseViewState(sp: URLSearchParams): ViewState {
 		// variants should arrive as one card). So the param encodes the OFF state; "1" is still read
 		// for links shared before the default flipped.
 		groupVariants: sp.get("grouped") !== "0",
+		sortKey,
+		sortDir: dirParam === "asc" || dirParam === "desc" ? dirParam : SORT_DEFAULT_DIR[sortKey],
+		view: sp.get("view") === "table" ? "table" : "grid",
 	};
 }
 
@@ -530,6 +570,11 @@ function serializeView(v: ViewState): string {
 	if (f.distinctStars?.length) p.set("dstar", f.distinctStars.join(","));
 	if (f.anglePeriods?.length) p.set("aper", f.anglePeriods.join(","));
 	if (f.query?.trim()) p.set("q", f.query.trim());
+	if (f.vcs?.length) p.set("vc", f.vcs.join(","));
+	if (f.vcs?.length && f.vcMode && f.vcMode !== "all") p.set("vcmode", f.vcMode);
+	if (v.sortKey !== "catalogue") p.set("sort", v.sortKey);
+	if (v.sortDir !== SORT_DEFAULT_DIR[v.sortKey]) p.set("dir", v.sortDir);
+	if (v.view !== "grid") p.set("view", v.view);
 	if (v.page > 1) p.set("page", String(v.page));
 	if (v.pageSize !== DEFAULT_PAGE_SIZE) p.set("size", String(v.pageSize));
 	if (v.gridColumns !== 5) p.set("cols", String(v.gridColumns));
@@ -552,6 +597,28 @@ const META = "text-[11px] font-normal leading-snug text-fg-muted";
 // reads as the lighter gray of an unselected tab, not the darker line colour, so a heading is flush with
 // the controls it names instead of dropping into the seam. The 1px wall gaps above and below still rule
 // each band off; every diamond stays where it was, born only where four rounded option-cell corners meet.
+
+// An option and how many results it gives: side by side in a wide cell, stacked in a narrow one (the
+// same two-line cell the /play geometry segments use). No count means none loaded yet, not zero.
+function CountLabel({ label, count, stacked }: { label: ReactNode; count?: number; stacked?: boolean }) {
+	const n =
+		count != null ? (
+			<span className="font-mono text-[10.5px] font-normal text-fg-muted tabular-nums">
+				{count.toLocaleString("en-US")}
+			</span>
+		) : null;
+	return stacked ? (
+		<span className="flex flex-col items-center leading-tight">
+			<span>{label}</span>
+			{n}
+		</span>
+	) : (
+		<span className="flex w-full items-baseline justify-between gap-2 px-1">
+			<span className="truncate">{label}</span>
+			{n}
+		</span>
+	);
+}
 
 // A caption row inside a filter group — a thinner echo of the group heading, same chrome band.
 function SubLabel({ children }: { children: ReactNode }) {
@@ -597,39 +664,6 @@ function RowList<T extends string>({
 	);
 }
 
-// Numeric and code chips (k, star folds): one wrapping row of bordered 28px chips, the selected ones
-// in ink. A segmented track stops reading as one control past about five options.
-function ChipRow<T extends string | number>({
-	options,
-	isOn,
-	onChange,
-}: {
-	options: { value: T; label: ReactNode }[];
-	isOn: (v: T) => boolean;
-	onChange: (v: T) => void;
-}) {
-	return (
-		<div className="flex flex-wrap gap-1.5">
-			{options.map((o) => (
-				<button
-					key={o.value}
-					type="button"
-					aria-pressed={isOn(o.value)}
-					onClick={() => onChange(o.value)}
-					className={cn(
-						"h-7 min-w-8 cursor-pointer rounded-control border px-2 text-xs font-medium tabular-nums transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 max-md:h-11 max-md:min-w-11 max-md:text-sm",
-						isOn(o.value)
-							? "border-fg bg-fg text-fg-inverse"
-							: "border-line-subtle text-fg-secondary hover:border-line-strong hover:text-fg",
-					)}
-				>
-					{o.label}
-				</button>
-			))}
-		</div>
-	);
-}
-
 // A filter cell holding one IntervalSlider plus its live readout — the hyperbolic Valence / Palette /
 // Edge-length groups. The readout is muted at the full data span (no filter) and foreground ink once
 // the interval is narrowed, mirroring how the other groups signal an active selection.
@@ -641,6 +675,7 @@ function IntervalFilterCell({
 	active,
 	onChange,
 	ariaLabel,
+	label,
 	format = (n: number) => String(n),
 }: {
 	value: [number, number];
@@ -650,11 +685,14 @@ function IntervalFilterCell({
 	active: boolean;
 	onChange: (v: [number, number]) => void;
 	ariaLabel: string;
+	/** Names the range on the readout's own row, when several share one group. */
+	label?: ReactNode;
 	format?: (n: number) => string;
 }) {
 	return (
 		<div className="flex flex-col gap-1 pb-1">
-			<div className="flex justify-end">
+			<div className="flex items-baseline justify-between gap-2">
+				<span className="text-xs text-fg-secondary">{label}</span>
 				<span className={cn("text-[10px] font-medium tabular-nums", active ? "text-fg" : "text-fg-muted")}>
 					{format(value[0])} – {format(value[1])}
 				</span>
@@ -664,29 +702,81 @@ function IntervalFilterCell({
 	);
 }
 
+/**
+ * One filter facet: a ruled section whose heading folds it. The chevron leads, as on /play's catalogue
+ * rows. Closed, the heading still carries the current selection (`summary`), and a group with a
+ * selection always starts open, so nothing applied is ever out of sight. `defaultOpen={false}` is for
+ * the facets few people reach for: they cost one 40px row until wanted. `info` is the explanation that
+ * would otherwise sit as a paragraph under the controls; it folds into an InfoDot on the heading.
+ */
 function FilterGroup({
 	title,
 	summary,
 	note,
+	info,
+	defaultOpen = true,
 	children,
 }: {
 	title: string;
 	summary?: ReactNode;
 	note?: string;
+	info?: ReactNode;
+	defaultOpen?: boolean;
 	children: ReactNode;
 }) {
+	const [open, setOpen] = useState(defaultOpen || summary != null);
 	return (
-		<section className="mt-3 flex flex-col border-t border-line-subtle">
-			{/* The gloss is a tooltip on the heading: a right-aligned note broke the panel's one left edge. */}
-			<h3 className="ta-label px-3.5 pt-4 pb-2" title={note}>
-				{title}
-				{summary ? <span className={cn(META, "ml-1.5 tracking-normal normal-case")}>{summary}</span> : null}
-				{/* A finger has no hover, so on a phone the gloss is printed after the heading instead. */}
-				{note ? <span className={cn(META, "ml-1.5 tracking-normal normal-case md:hidden")}>· {note}</span> : null}
-			</h3>
-			<div className="flex flex-col gap-2 px-3.5">{children}</div>
+		<section className="flex flex-col border-t border-line-subtle">
+			<div className="flex items-center gap-1 pr-2.5 pl-2">
+				<button
+					type="button"
+					aria-expanded={open}
+					onClick={() => setOpen(!open)}
+					title={note}
+					className="group flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 rounded-control py-3 pl-1 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 max-md:min-h-11"
+				>
+					<ChevronRight
+						size={12}
+						aria-hidden
+						className={cn(
+							"shrink-0 text-fg-muted transition-transform duration-200 ease-[var(--ease-out-strong)] group-hover:text-fg motion-reduce:transition-none",
+							open && "rotate-90",
+						)}
+					/>
+					<span className="ta-label shrink-0 transition-colors group-hover:text-fg-secondary">{title}</span>
+					{/* Open, the controls show the selection themselves; the heading repeats it only when folded. */}
+					{summary && !open ? (
+						<span className="min-w-0 truncate text-[11px] font-medium text-fg">{summary}</span>
+					) : null}
+					{/* A finger has no hover, so on a phone the gloss is printed after the heading instead. */}
+					{note && !summary ? <span className={cn(META, "truncate md:hidden")}>· {note}</span> : null}
+				</button>
+				{info ? <InfoDot label={`About ${title}`}>{info}</InfoDot> : null}
+			</div>
+			<Fold open={open}>
+				<div className="flex flex-col gap-2 px-3.5 pb-4">{children}</div>
+			</Fold>
 		</section>
 	);
+}
+
+/**
+ * How many of the loaded tilings matching `scope` carry each value of one facet. `scope` is the view's
+ * filter with that facet's own field cleared, so the count beside an option is the number of results
+ * picking it would give.
+ */
+function countFacet<V>(
+	tilings: readonly ReferenceTiling[] | null,
+	scope: ReferenceFilter,
+	valuesOf: (t: ReferenceTiling) => V | readonly V[] | null | undefined,
+): Map<V, number> {
+	const counts = new Map<V, number>();
+	for (const t of tilings ?? []) {
+		const v = valuesOf(t);
+		if (v == null || (Array.isArray(v) && !v.length) || !matchesReferenceFilters(t, scope)) continue;
+		for (const x of Array.isArray(v) ? (v as readonly V[]) : [v as V]) counts.set(x, (counts.get(x) ?? 0) + 1);
+	}
+	return counts;
 }
 
 /**
@@ -728,6 +818,14 @@ export function ReferenceShelf() {
 	const [pageSize, setPageSize] = useState(initialView.pageSize);
 	const [currentPage, setCurrentPage] = useState(initialView.page);
 	const [groupVariants, setGroupVariants] = useState(initialView.groupVariants);
+	const [sortKey, setSortKey] = useState<SortKey>(initialView.sortKey);
+	const [sortDir, setSortDir] = useState<SortDir>(initialView.sortDir);
+	const [view, setView] = useState<ResultsView>(initialView.view);
+	// A key picks its own natural direction; the same key again (a table header clicked twice) reverses.
+	const changeSort = (key: SortKey, dir?: SortDir) => {
+		setSortDir(dir ?? (key === sortKey ? (sortDir === "asc" ? "desc" : "asc") : SORT_DEFAULT_DIR[key]));
+		setSortKey(key);
+	};
 	const [copied, setCopied] = useState(false);
 	// Phone only: whether the header's Filters button is on screen (the floating pill stands in when not).
 	const mainRef = useRef<HTMLElement | null>(null);
@@ -777,13 +875,16 @@ export function ReferenceShelf() {
 	// Reset to page 1 whenever filters or page size change — but skip the initial mount, so a shared or
 	// reloaded ?page=N link lands on page N instead of being clobbered back to 1.
 	// Adjusted during render: the initial state already matches, so the first render keeps its page.
-	const [pageResetKey, setPageResetKey] = useState({ filters, pageSize, groupVariants });
+	const [pageResetKey, setPageResetKey] = useState({ filters, pageSize, groupVariants, sortKey, sortDir, view });
 	if (
 		pageResetKey.filters !== filters ||
 		pageResetKey.pageSize !== pageSize ||
-		pageResetKey.groupVariants !== groupVariants
+		pageResetKey.groupVariants !== groupVariants ||
+		pageResetKey.sortKey !== sortKey ||
+		pageResetKey.sortDir !== sortDir ||
+		pageResetKey.view !== view
 	) {
-		setPageResetKey({ filters, pageSize, groupVariants });
+		setPageResetKey({ filters, pageSize, groupVariants, sortKey, sortDir, view });
 		setCurrentPage(1);
 	}
 
@@ -791,9 +892,18 @@ export function ReferenceShelf() {
 	// a friend the exact same view. replaceState (not router.replace) keeps this off the Next router, so
 	// it neither re-runs the server component nor spams history; useSearchParams is read once on mount.
 	useEffect(() => {
-		const q = serializeView({ filters, page: currentPage, pageSize, gridColumns, groupVariants });
+		const q = serializeView({
+			filters,
+			page: currentPage,
+			pageSize,
+			gridColumns,
+			groupVariants,
+			sortKey,
+			sortDir,
+			view,
+		});
 		window.history.replaceState(null, "", q ? `${window.location.pathname}?${q}` : window.location.pathname);
-	}, [filters, currentPage, pageSize, gridColumns, groupVariants]);
+	}, [filters, currentPage, pageSize, gridColumns, groupVariants, sortKey, sortDir, view]);
 
 	const copyLink = useCallback(() => {
 		navigator.clipboard
@@ -1743,6 +1853,10 @@ export function ReferenceShelf() {
 			for (const t of tilings) {
 				if (geometryOf(t) !== geometry) continue;
 				if (filters.tileClass && tileClassOf(t) !== filters.tileClass) continue; // facet k by class in any geometry
+				// …and by the board and kind in hand: a board carries a few k of the dozens its geometry has, and
+				// choosing a board loads all of that board's slices, so its loaded rows are its whole k range.
+				if (filters.decoration && decorationOf(t) !== filters.decoration) continue;
+				if (filters.board && !matchesReferenceFilters(t, { board: filters.board })) continue;
 				s.add(t.k);
 			}
 		// The lazy higher-k tiers are all Euclidean; offer their chips up front (before the shard is fetched)
@@ -1764,7 +1878,7 @@ export function ReferenceShelf() {
 			if (!cls || cls === "edgelen") for (const k of EUHALF_HIGHER_K) s.add(k);
 		}
 		return [...s].sort((a, b) => a - b);
-	}, [tilings, geometry, isEuclidean, filters.tileClass]);
+	}, [tilings, geometry, isEuclidean, filters.tileClass, filters.decoration, filters.board]);
 
 	// M chips are faceted to the current view MINUS M/partition: at k=4 they resolve to {2,3,4}.
 	const mOptions = useMemo(() => {
@@ -1972,7 +2086,7 @@ export function ReferenceShelf() {
 	// shelves ship them) and its top rung is vacuous in E², where every combination shares an edge
 	// length for free. Tilings-only for the same reason M is — an edge system's tiles are merged
 	// polyforms, and the ladder is defined for tilings by regular polygons.
-	const showLevel = !isEuclidean && inTilings;
+	const showLevel = !isEuclidean && inTilings && levelCounts.size > 0;
 	const showLattice = classified && tileClass !== "star" && availableShapes.length > 0;
 	const showConvex = tileClass === "convex";
 	const showIsotoxalShape = tileClass === "isotoxal";
@@ -2016,43 +2130,112 @@ export function ReferenceShelf() {
 				? "Colored vertices (k)"
 				: "Vertex count (k)";
 
-	const activeFilterCount =
-		// Euclidean is the default, so it doesn't read as an active filter; hyperbolic/spherical do.
-		(filters.geometry && filters.geometry !== "euclidean" ? 1 : 0) +
-		(filters.decoration ? 1 : 0) +
-		(filters.kValue != null ? 1 : 0) +
-		(filters.tileClass ? 1 : 0) +
-		(filters.convexDecomp ? 1 : 0) +
-		(filters.starKind ? 1 : 0) +
-		(filters.ncxCrossing ? 1 : 0) +
-		(filters.isotoxalShape ? 1 : 0) +
-		(filters.scaledScaleSet ? 1 : 0) +
-		(filters.polyformFamily ? 1 : 0) +
-		(filters.islamicSystem ? 1 : 0) +
-		(filters.edgeBoard ? 1 : 0) +
-		(filters.freedrawKind ? 1 : 0) +
-		(filters.freedrawGrid ? 1 : 0) +
-		(filters.colorsGrid ? 1 : 0) +
-		(filters.colorsCount ? 1 : 0) +
-		(filters.freedrawRegular ? 1 : 0) +
-		(filters.hypValence ? 1 : 0) +
-		(filters.hypPolygon ? 1 : 0) +
-		(filters.hypEdge ? 1 : 0) +
-		(filters.mValue != null ? 1 : 0) +
-		(filters.partitionKey != null ? 1 : 0) +
-		(filters.maximalOnly ? 1 : 0) +
-		(filters.starFolds?.length ? 1 : 0) +
-		(filters.parametric ? 1 : 0) +
-		(filters.wallpaperGroups?.length ? 1 : 0) +
-		(filters.levels?.length ? 1 : 0) +
-		(filters.latticeShapes?.length ? 1 : 0) +
-		(filters.discoverers?.length ? 1 : 0) +
-		(filters.certifications?.length ? 1 : 0) +
-		(filters.polygonNames?.length || filters.polygonExclude?.length ? 1 : 0) +
-		(filters.distinctPolygons?.length ? 1 : 0) +
-		(filters.distinctStars?.length ? 1 : 0) +
-		(filters.anglePeriods?.length ? 1 : 0) +
-		(filters.query?.trim() ? 1 : 0);
+	// Every applied filter as a chip above the results: what it is, and how to take it off. The count on
+	// the phone's Filters button is its length, so the two can never disagree.
+	const activeChips: ActiveChip[] = [];
+	// `omit` is the filter with this chip taken off, which is also how the empty state finds the nearest
+	// results; `clear` defaults to applying it, and is a setter where taking a filter off cascades.
+	const relaxedBy = new Map<string, Partial<ReferenceFilter>>();
+	const chip = (
+		key: string,
+		label: ReactNode,
+		omit: Partial<ReferenceFilter>,
+		clear?: () => void,
+	) => {
+		// Not a default parameter: the React Compiler gives up on the whole component over one, and its
+		// lint then silently stops checking every hook in it.
+		relaxedBy.set(key, omit);
+		activeChips.push({ key, label, clear: clear ?? (() => setFilters({ ...filters, ...omit })) });
+	};
+	const off = (...keys: (keyof ReferenceFilter)[]): Partial<ReferenceFilter> =>
+		Object.fromEntries(keys.map((k) => [k, undefined]));
+	const list = (xs: readonly (string | number)[]) => xs.join(", ");
+	if (filters.geometry && filters.geometry !== "euclidean")
+		chip("geo", GEOMETRY_LABEL[filters.geometry], { geometry: "euclidean" }, () => setGeometry("euclidean"));
+	if (filters.decoration)
+		chip("dec", DECORATION_LABEL[filters.decoration], off("decoration"), () => setDecoration("all"));
+	if (filters.tileClass)
+		chip(
+			"class",
+			CLASS_OPTIONS.find((o) => o.value === filters.tileClass)?.label ?? filters.tileClass,
+			off("tileClass"),
+			() => setTileClass("all"),
+		);
+	if (filters.board)
+		chip(
+			"board",
+			<>
+				board <b className="font-mono font-medium">{boardSummary(filters.board)}</b>
+			</>,
+			off("board"),
+			() => setBoard("all"),
+		);
+	if (filters.query?.trim()) chip("q", <>“{filters.query.trim()}”</>, off("query"));
+	if (filters.vcs?.length)
+		chip(
+			"vcs",
+			<>
+				{filters.vcMode === "exact" ? "exactly" : filters.vcMode === "any" ? "any of" : "has"}{" "}
+				<b className="font-mono font-medium">{filters.vcs.map(compactVC).join(" ; ")}</b>
+			</>,
+			off("vcs", "vcMode"),
+		);
+	if (filters.kValue != null) chip("k", `k = ${filters.kValue}`, off("kValue"), () => setKValue(undefined));
+	if (filters.mValue != null)
+		chip("m", `m = ${filters.mValue}`, off("mValue", "partitionKey"), () => setMValue(undefined));
+	if (filters.partitionKey) chip("partition", `partition ${filters.partitionKey}`, off("partitionKey"));
+	if (filters.maximalOnly) chip("maximal", "Krötenheerdt (m = k)", off("maximalOnly"));
+	if (filters.levels?.length) chip("level", list(filters.levels.map((l) => TILING_LEVEL_LABEL[l])), off("levels"));
+	if (filters.polygonNames?.length || filters.polygonExclude?.length)
+		chip(
+			"polygons",
+			[
+				filters.polygonNames?.length
+					? `${POLY_MODE_SUMMARY[filters.polygonMode ?? "all"]} ${filters.polygonNames.map(speciesLabel).join(", ")}`
+					: "",
+				filters.polygonExclude?.length ? `no ${filters.polygonExclude.map(speciesLabel).join(", ")}` : "",
+			]
+				.filter(Boolean)
+				.join(" · "),
+			off("polygonNames", "polygonExclude"),
+		);
+	if (filters.distinctPolygons?.length)
+		chip("dpoly", `${list(filters.distinctPolygons)} tile types`, off("distinctPolygons"));
+	if (filters.distinctStars?.length) chip("dstar", `${list(filters.distinctStars)} star types`, off("distinctStars"));
+	if (filters.anglePeriods?.length)
+		chip("aper", `period ${list(filters.anglePeriods.map((n) => `p${n}`))}`, off("anglePeriods"));
+	if (filters.starFolds?.length) chip("folds", list(filters.starFolds.map((n) => `${n}★`)), off("starFolds"));
+	if (filters.parametric) chip("param", filters.parametric === "family" ? "α-family" : "rigid", off("parametric"));
+	if (filters.latticeShapes?.length)
+		chip("lattice", `${list(filters.latticeShapes)} lattice`, off("latticeShapes", "wallpaperGroups"));
+	if (filters.wallpaperGroups?.length) chip("group", list(filters.wallpaperGroups), off("wallpaperGroups"));
+	if (filters.hypValence) chip("valence", `valence ${filters.hypValence.join("–")}`, off("hypValence"));
+	if (filters.hypPolygon) chip("palette", `palette ${filters.hypPolygon.join("–")}`, off("hypPolygon"));
+	if (filters.hypEdge) chip("edge", `ℓ ${filters.hypEdge.map((n) => n.toFixed(2)).join("–")}`, off("hypEdge"));
+	if (filters.discoverers?.length) chip("by", list(filters.discoverers), off("discoverers"));
+	if (filters.certifications?.length) chip("cert", list(filters.certifications), off("certifications"));
+	// The class-specific sub-facets: named by their value, cleared like the rest.
+	for (const [key, value] of [
+		["convexDecomp", filters.convexDecomp],
+		["starKind", filters.starKind && STAR_KIND_LABEL[filters.starKind]],
+		["ncxCrossing", filters.ncxCrossing],
+		[
+			"isotoxalShape",
+			filters.isotoxalShape === "alpha" ? "α" : filters.isotoxalShape === "alpha-beta" ? "α, β" : undefined,
+		],
+		[
+			"scaledScaleSet",
+			filters.scaledScaleSet === "s12" ? "sides 1–2" : filters.scaledScaleSet === "s123" ? "sides 1–3" : undefined,
+		],
+		["polyformFamily", filters.polyformFamily && polyformFamilyShort(filters.polyformFamily)],
+		["islamicSystem", filters.islamicSystem],
+		["edgeBoard", filters.edgeBoard && EDGE_BOARD_LABEL[filters.edgeBoard]],
+		["freedrawKind", filters.freedrawKind],
+		["colorsCount", filters.colorsCount && `${filters.colorsCount} colors`],
+		["freedrawRegular", filters.freedrawRegular],
+	] as [keyof ReferenceFilter, string | undefined][])
+		if (value) chip(key, value, off(key));
+	const activeFilterCount = activeChips.length;
 
 	// Decoration leads the sort so that Kind = "All" pages in the order the Kind wall reads: every tiling,
 	// then every edge pattern, then every coloring. Without it the shelf is (k, id)-major, and since the
@@ -2076,11 +2259,38 @@ export function ReferenceShelf() {
 	// "family" is the tile inventory, not the vertex configuration, so collapsing it would lump
 	// genuinely different tilings). Members ride in variant order (the exporter's ℓ-ascending index),
 	// not id order — base-25 suffixes ("-ba" < "-c") would shuffle them.
+	const sorted = useMemo(() => sortTilings(filtered, sortKey, sortDir), [filtered, sortKey, sortDir]);
+	const sortKeys = useMemo(() => availableSortKeys(filtered), [filtered]);
+	// An empty result is an answer, not a dead end: for each filter, how many tilings there would be
+	// without it, nearest (fewest) first. Only computed when the view is empty.
+	// "Exactly these figures" relaxes first to "contains them all", which keeps the question and is the
+	// nearest neighbour; dropping the figures altogether usually jumps to the whole class.
+	const relaxCandidates: ActiveChip[] = [...activeChips];
+	if (filters.vcs?.length && filters.vcMode === "exact") {
+		relaxedBy.set("vc-contains", { vcMode: undefined });
+		relaxCandidates.unshift({
+			key: "vc-contains",
+			label: <>“exactly”, with “contains all” instead</>,
+			clear: () => setFilters({ ...filters, vcMode: undefined }),
+		});
+	}
+	const relaxations =
+		tilings && activeChips.length && !filtered.length
+			? relaxCandidates
+					.map((c) => ({
+						chip: c,
+						count: tilings.filter((t) => matchesReferenceFilters(t, { ...filters, ...relaxedBy.get(c.key) })).length,
+					}))
+					.filter((r) => r.count > 0)
+					.sort((a, b) => a.count - b.count)
+					.slice(0, 3)
+			: [];
+
 	const displayGroups = useMemo<CardGroup[]>(() => {
-		if (!groupVariants) return filtered.map((t) => ({ key: t.id, members: [t] }));
+		if (!groupVariants) return sorted.map((t) => ({ key: t.id, members: [t] }));
 		const byKey = new Map<string, CardGroup>();
 		const order: CardGroup[] = [];
-		for (const t of filtered) {
+		for (const t of sorted) {
 			if (t.source !== "hyperbolic") {
 				order.push({ key: t.id, members: [t] });
 				continue;
@@ -2097,12 +2307,80 @@ export function ReferenceShelf() {
 		for (const g of order)
 			if (g.members.length > 1) g.members.sort((a, b) => (a.variant ?? 0) - (b.variant ?? 0) || (a.id < b.id ? -1 : 1));
 		return order;
-	}, [filtered, groupVariants]);
+	}, [sorted, groupVariants]);
 
 	const paginated = useMemo(
 		() => displayGroups.slice((currentPage - 1) * pageSize, currentPage * pageSize),
 		[displayGroups, currentPage, pageSize],
 	);
+	// The table lists every tiling on its own row: variants are what a table is for comparing.
+	const tableRows = useMemo(
+		() => (view === "table" ? sorted.slice((currentPage - 1) * pageSize, currentPage * pageSize) : []),
+		[view, sorted, currentPage, pageSize],
+	);
+	const resultTotal = view === "table" ? sorted.length : displayGroups.length;
+
+	// ── facet counts: the tilings matching every OTHER filter, per option of one facet ──
+	const vcCounts = useMemo(
+		() => countFacet(tilings, { ...filters, vcs: undefined, vcMode: undefined }, (t) => vcsOf(t)),
+		[tilings, filters],
+	);
+	const discovererCounts = useMemo(
+		() => countFacet(tilings, { ...filters, discoverers: undefined }, (t) => t.discoverer),
+		[tilings, filters],
+	);
+	const certCounts = useMemo(
+		() => countFacet(tilings, { ...filters, certifications: undefined }, (t) => t.certification),
+		[tilings, filters],
+	);
+	const groupCounts = useMemo(
+		() => countFacet(tilings, { ...filters, wallpaperGroups: undefined }, (t) => t.wallpaperGroup),
+		[tilings, filters],
+	);
+	const showVcs = inTilings && vcCounts.size > 0;
+
+	const exportCsv = () => {
+		const cell = (v: unknown) => {
+			const s = v == null ? "" : String(v);
+			return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+		};
+		const head = [
+			"id",
+			"geometry",
+			"k",
+			"m",
+			"partition",
+			"vertex_configurations",
+			"polygons",
+			"wallpaper_group",
+			"lattice",
+			"edge_length",
+			"discoverer",
+			"certification",
+		];
+		const rows = sorted.map((t) =>
+			[
+				t.id,
+				geometryOf(t),
+				t.k,
+				t.m,
+				t.partition?.join(" "),
+				(vcsOf(t) ?? []).join(" ; "),
+				polygonSpeciesOf(t).join(" "),
+				t.wallpaperGroup,
+				t.latticeShape,
+				t.edge,
+				t.discoverer,
+				t.certification ?? (t.candidate ? "candidate" : ""),
+			]
+				.map(cell)
+				.join(","),
+		);
+		const url = URL.createObjectURL(new Blob([[head.join(","), ...rows].join("\n") + "\n"], { type: "text/csv" }));
+		const a = Object.assign(document.createElement("a"), { href: url, download: `tiling-atlas-${sorted.length}.csv` });
+		a.click();
+		URL.revokeObjectURL(url);
+	};
 
 	// The column count rides in a variable so a phone can overrule it from CSS: two columns there
 	// whatever `cols` says, while the URL keeps the desktop choice untouched.
@@ -2159,24 +2437,39 @@ export function ReferenceShelf() {
 							</button>
 						) : null}
 					</div>
-					<input
-						type="text"
-						value={filters.query ?? ""}
-						onChange={(e) => setFilters({ ...filters, query: e.target.value })}
-						placeholder="Search id or family…"
-						className="mx-3.5 h-8 rounded-control border border-line bg-surface-raised px-2.5 text-[13px] text-fg shadow-sm placeholder:text-fg-muted focus:outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/40 max-md:mt-3 max-md:h-11"
-					/>
+					<div className="relative mx-3.5 mb-3 max-md:mt-3">
+						<Search
+							size={14}
+							className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-fg-muted"
+						/>
+						<input
+							type="text"
+							value={filters.query ?? ""}
+							onChange={(e) => setFilters({ ...filters, query: e.target.value })}
+							placeholder="Search id or family…"
+							aria-label="Search id or family"
+							className="h-8 w-full rounded-control border border-line bg-surface-raised pr-8 pl-8 text-[13px] text-fg shadow-sm transition-[border-color,box-shadow] placeholder:text-fg-muted focus:outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/40 max-md:h-11"
+						/>
+						{filters.query ? (
+							<button
+								type="button"
+								onClick={() => setFilters({ ...filters, query: undefined })}
+								aria-label="Clear search"
+								className="absolute top-1/2 right-1 flex size-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded text-fg-muted hover:bg-surface-overlay hover:text-fg max-md:size-10"
+							>
+								<X size={13} />
+							</button>
+						) : null}
+					</div>
 
 					<FilterGroup title="Geometry" summary={isEuclidean ? null : GEOMETRY_LABEL[geometry]}>
 						<OptionWall columns={3} options={GEOMETRY_OPTIONS} selected={geometry} onChange={setGeometry} />
 					</FilterGroup>
-
 					{/* Decoration — WHAT is catalogued, below geometry and above tile class. Every geometry has all
 					    three segments, so this wall never changes shape with the one above it. */}
 					<FilterGroup title="Kind" summary={filters.decoration ? DECORATION_LABEL[filters.decoration] : null}>
 						<OptionWall columns={2} options={DECORATION_OPTIONS} selected={decoration} onChange={setDecoration} />
 					</FilterGroup>
-
 					{/* Tile class — the SHAPE axis, which is the eight Euclidean shelves that differ by tile set.
 					    Hidden off the plane and outside Tilings, where it has at most one live chip. */}
 					{showTileClass ? (
@@ -2184,7 +2477,6 @@ export function ReferenceShelf() {
 							<RowList options={classOptions} selected={tileClass} onChange={setTileClass} />
 						</FilterGroup>
 					) : null}
-
 					{showConvex ? (
 						<FilterGroup
 							title="Composite palette"
@@ -2205,6 +2497,7 @@ export function ReferenceShelf() {
 							title="Shape"
 							summary={filters.isotoxalShape === "alpha" ? "α" : filters.isotoxalShape === "alpha-beta" ? "α, β" : null}
 							note="free angles"
+							info={<>How many of the tile’s angles flex independently.</>}
 						>
 							<OptionWall
 								columns={3}
@@ -2212,7 +2505,6 @@ export function ReferenceShelf() {
 								selected={filters.isotoxalShape ?? "all"}
 								onChange={setIsotoxalShape}
 							/>
-							<GroupNote>How many of the tile’s angles flex independently.</GroupNote>
 						</FilterGroup>
 					) : null}
 
@@ -2221,6 +2513,7 @@ export function ReferenceShelf() {
 							title="Side lengths"
 							summary={filters.scaledScaleSet === "s12" ? "1–2" : filters.scaledScaleSet === "s123" ? "1–3" : null}
 							note="scaling factors"
+							info={<>Sides 1–2 is the former Doubled class; 1–3 adds a side-3 tile.</>}
 						>
 							<OptionWall
 								columns={3}
@@ -2228,7 +2521,6 @@ export function ReferenceShelf() {
 								selected={filters.scaledScaleSet ?? "all"}
 								onChange={setScaledScaleSet}
 							/>
-							<GroupNote>Sides 1–2 is the former Doubled class; 1–3 adds a side-3 tile.</GroupNote>
 						</FilterGroup>
 					) : null}
 
@@ -2237,6 +2529,12 @@ export function ReferenceShelf() {
 							title="Form"
 							summary={filters.polyformFamily ? polyformFamilyShort(filters.polyformFamily) : null}
 							note="the atomic tile"
+							info={
+								<>
+									What the pieces are made of. Under it, the Board wall picks how many cells a piece has, and k divides
+									that: three levels, the same ones the Play sidebar nests.
+								</>
+							}
 						>
 							<OptionWall
 								columns={2}
@@ -2244,24 +2542,26 @@ export function ReferenceShelf() {
 								selected={filters.polyformFamily ?? "all"}
 								onChange={setPolyformFamily}
 							/>
-							<GroupNote>
-								What the pieces are made of. Under it, the Board wall picks how many cells a piece has, and k divides
-								that: three levels, the same ones the Play sidebar nests.
-							</GroupNote>
 						</FilterGroup>
 					) : null}
 
 					{showIslamicSystem ? (
-						<FilterGroup title="Design system" summary={filters.islamicSystem ?? null} note="Bonner's tile kits">
+						<FilterGroup
+							title="Design system"
+							summary={filters.islamicSystem ?? null}
+							note="Bonner's tile kits"
+							info={
+								<>
+									The underlying tessellation’s tile set. Toggle the Islamic construction in Play to see the strapwork.
+								</>
+							}
+						>
 							<OptionWall
 								columns={2}
 								options={ISLAMIC_SYSTEM_OPTIONS}
 								selected={filters.islamicSystem ?? "all"}
 								onChange={setIslamicSystem}
 							/>
-							<GroupNote>
-								The underlying tessellation’s tile set. Toggle the Islamic construction in Play to see the strapwork.
-							</GroupNote>
 						</FilterGroup>
 					) : null}
 
@@ -2270,6 +2570,18 @@ export function ReferenceShelf() {
 							title="Palette"
 							summary={filters.edgeBoard ? EDGE_BOARD_LABEL[filters.edgeBoard] : null}
 							note="which tile set"
+							info={
+								<>
+									Every tile set here carries edges of more than one length, which is what this class is. The planigons
+									are the duals of the Euclidean vertex configurations — fifteen tiles, twelve edge lengths.
+									Penrose&apos;s kite and dart have two, 1 and φ, and are enumerated without the matching rules, so
+									these are the periodic tilings the two shapes admit. The last five are halves of a regular polygon,
+									cut vertex-to-vertex, between opposite edge midpoints, or along the mirror an odd polygon has: the
+									half pentagon tiles the plane although the regular pentagon cannot, and the domino has exactly one
+									tiling if every edge must be matched whole. Only six such halves can tile at all, and the sixth is the
+									half square, which is the 45-45-90 board.
+								</>
+							}
 						>
 							<OptionWall
 								columns={1}
@@ -2277,16 +2589,6 @@ export function ReferenceShelf() {
 								selected={filters.edgeBoard ?? "all"}
 								onChange={setEdgeBoard}
 							/>
-							<GroupNote>
-								Every tile set here carries edges of more than one length, which is what this class is. The planigons
-								are the duals of the Euclidean vertex configurations — fifteen tiles, twelve edge lengths.
-								Penrose&apos;s kite and dart have two, 1 and φ, and are enumerated without the matching rules, so these
-								are the periodic tilings the two shapes admit. The last five are halves of a regular polygon, cut
-								vertex-to-vertex, between opposite edge midpoints, or along the mirror an odd polygon has: the half
-								pentagon tiles the plane although the regular pentagon cannot, and the domino has exactly one tiling if
-								every edge must be matched whole. Only six such halves can tile at all, and the sixth is the half
-								square, which is the 45-45-90 board.
-							</GroupNote>
 						</FilterGroup>
 					) : null}
 
@@ -2294,39 +2596,15 @@ export function ReferenceShelf() {
 						<FilterGroup
 							title="Board"
 							summary={filters.board ? boardSummary(filters.board) : null}
-							note={
-								tileClass === "polyomino"
-									? "cells per piece"
-									: decoration === "colorings"
-										? "the colored board"
-										: "the decorated board"
-							}
+							note={tileClass === "polyomino" ? "cells per piece" : "the board the shelf is drawn on"}
 						>
-							{/* One wall per family, in SUB_ORDER sequence — the same grouping and the same order
-							    /play's tree renders, because both read boardFamiliesFor(). A family heading appears
-							    only when there is more than one, so a segment with a single family (the Euclidean
-							    colorings today) reads as one flat wall the way it always did. */}
-							<OptionWall
-								columns={3}
-								options={[{ value: "all" as const, label: "All" }]}
-								selected={filters.board ?? "all"}
-								onChange={setBoard}
+							<BoardPicker
+								families={boardFamilies}
+								selected={filters.board}
+								onChange={(sub) => setBoard(sub ?? "all")}
 							/>
-							{boardFamilies.map((fam) => (
-								<div key={fam.family} className="flex flex-col gap-1">
-									{boardFamilies.length > 1 ? <div className="pt-1 text-xs text-fg-muted">{fam.label}</div> : null}
-									<OptionWall
-										columns={3}
-										options={fam.boards.map((b) => ({ value: b.sub, label: b.label }))}
-										selected={filters.board ?? "all"}
-										onChange={setBoard}
-									/>
-								</div>
-							))}
 							{decoration === "colorings" ? (
-								<GroupNote>
-									Which board the coloring lives on. Each (grid, palette size) pair is its own catalogue.
-								</GroupNote>
+								<GroupNote>Each (grid, palette size) pair is its own catalogue.</GroupNote>
 							) : null}
 						</FilterGroup>
 					) : null}
@@ -2339,6 +2617,14 @@ export function ReferenceShelf() {
 							title="Shape"
 							summary={filters.starKind ? STAR_KIND_LABEL[filters.starKind] : null}
 							note="pyramid, prism, antiprism, cupola"
+							info={
+								<>
+									Read off each solid&apos;s structure, not its name: a pyramid is one star face, n triangles and n+1
+									vertices, and nothing else can wear that signature. Two thirds of this shelf ships unnamed, so the
+									name would answer for a third of it. &quot;Other&quot; is the uniform star polyhedra and everything
+									the three families do not describe.
+								</>
+							}
 						>
 							<OptionWall
 								columns={3}
@@ -2346,28 +2632,28 @@ export function ReferenceShelf() {
 								selected={filters.starKind ?? "all"}
 								onChange={setStarKind}
 							/>
-							<GroupNote>
-								Read off each solid&apos;s structure, not its name: a pyramid is one star face, n triangles and n+1
-								vertices, and nothing else can wear that signature. Two thirds of this shelf ships unnamed, so the name
-								would answer for a third of it. &quot;Other&quot; is the uniform star polyhedra and everything the three
-								families do not describe.
-							</GroupNote>
 						</FilterGroup>
 					) : null}
 
 					{filters.board === "spn-solid" ? (
-						<FilterGroup title="Crossing" summary={filters.ncxCrossing ?? null} note="does it pass through itself">
+						<FilterGroup
+							title="Crossing"
+							summary={filters.ncxCrossing ?? null}
+							note="does it pass through itself"
+							info={
+								<>
+									A solid is self-intersecting when some face edge passes through the interior of a face it shares no
+									vertex with. The rest are non-convex but embedded, which makes them polyhedra in the ordinary sense.
+									The shelf holds 112 of the first and 131 of the second, measured when the solids were built.
+								</>
+							}
+						>
 							<OptionWall
 								columns={3}
 								options={NCX_CROSSING_OPTIONS}
 								selected={filters.ncxCrossing ?? "all"}
 								onChange={setNcxCrossing}
 							/>
-							<GroupNote>
-								A solid is self-intersecting when some face edge passes through the interior of a face it shares no
-								vertex with. The rest are non-convex but embedded, which makes them polyhedra in the ordinary sense. The
-								shelf holds 112 of the first and 131 of the second, measured when the solids were built.
-							</GroupNote>
 						</FilterGroup>
 					) : null}
 
@@ -2376,6 +2662,12 @@ export function ReferenceShelf() {
 							title="Colors"
 							summary={filters.colorsCount ? `${filters.colorsCount} colors` : null}
 							note="palette size"
+							info={
+								<>
+									How many colors the tiles carry. Every solution in a catalogue uses all of them — the 2-colorings are
+									not repeated inside the 3-color one.
+								</>
+							}
 						>
 							<OptionWall
 								columns={3}
@@ -2383,25 +2675,27 @@ export function ReferenceShelf() {
 								selected={filters.colorsCount ?? "all"}
 								onChange={setColorsCount}
 							/>
-							<GroupNote>
-								How many colors the tiles carry. Every solution in a catalogue uses all of them — the 2-colorings are
-								not repeated inside the 3-color one.
-							</GroupNote>
 						</FilterGroup>
 					) : null}
 
 					{showFreedrawKind ? (
-						<FilterGroup title="Tile kind" summary={filters.freedrawKind ?? null} note="faces of the edge set">
+						<FilterGroup
+							title="Tile kind"
+							summary={filters.freedrawKind ?? null}
+							note="faces of the edge set"
+							info={
+								<>
+									A freedraw tile is whatever face the drawn edges enclose — it can be a finite polyomino or polyiamond,
+									an infinite strip, or a sheet unbounded in both directions.
+								</>
+							}
+						>
 							<OptionWall
 								columns={2}
 								options={FREEDRAW_KIND_OPTIONS}
 								selected={filters.freedrawKind ?? "all"}
 								onChange={setFreedrawKind}
 							/>
-							<GroupNote>
-								A freedraw tile is whatever face the drawn edges enclose — it can be a finite polyomino or polyiamond,
-								an infinite strip, or a sheet unbounded in both directions.
-							</GroupNote>
 						</FilterGroup>
 					) : null}
 
@@ -2410,6 +2704,14 @@ export function ReferenceShelf() {
 							title="Regular polygons"
 							summary={FREEDRAW_REGULAR_OPTIONS.find((o) => o.value === filters.freedrawRegular)?.label ?? null}
 							note="the k-uniform bridge"
+							info={
+								<>
+									Every k-uniform tiling dissects onto a triangle/square grid, so these patterns contain the k-uniform
+									tilings as the case where every tile is a regular polygon. “k-uniform” keeps the edge-to-edge ones;
+									the dodecagon needs a large period and first appears at k = 3 (as 3.12.12). For a full has/none/any
+									composition (say triangles and dodecagons, no squares), use /freedraw.
+								</>
+							}
 						>
 							<OptionWall
 								columns={2}
@@ -2417,19 +2719,41 @@ export function ReferenceShelf() {
 								selected={filters.freedrawRegular ?? "all"}
 								onChange={setFreedrawRegular}
 							/>
-							<GroupNote>
-								Every k-uniform tiling dissects onto a triangle/square grid, so these patterns contain the k-uniform
-								tilings as the case where every tile is a regular polygon. “k-uniform” keeps the edge-to-edge ones; the
-								dodecagon needs a large period and first appears at k = 3 (as 3.12.12). For a full has/none/any
-								composition (say triangles and dodecagons, no squares), use /freedraw.
-							</GroupNote>
+						</FilterGroup>
+					) : null}
+
+					{/* The question this field asks most: which tilings have this vertex figure. Read off the
+					    records' own configurations (canonical, any rotation or notation), with counts. */}
+					{showVcs ? (
+						<FilterGroup
+							title="Vertex configurations"
+							summary={filters.vcs?.length ? filters.vcs.map(compactVC).join(" ; ") : null}
+							note="figures at the vertices"
+							info={
+								<>
+									A vertex configuration lists the polygons around a vertex in cyclic order, so 3.4.6.4 and 4.6.4.3 are
+									one figure. Type it with dots or commas, exponents for repeats (3^4.6 or 3⁴.6). “Contains all” keeps
+									tilings with every chosen figure, “Any of” with at least one, and “Exactly” those whose figures are
+									these and no others.
+								</>
+							}
+						>
+							<VcFilter
+								counts={vcCounts}
+								selected={filters.vcs ?? []}
+								mode={filters.vcMode ?? "all"}
+								onChange={(vcs) => setFilters({ ...filters, vcs: vcs.length ? vcs : undefined })}
+								onModeChange={(vcMode) => setFilters({ ...filters, vcMode: vcMode === "all" ? undefined : vcMode })}
+							/>
 						</FilterGroup>
 					) : null}
 
 					<FilterGroup title={kGroupTitle} summary={filters.kValue ?? null}>
-						<ChipRow
+						<OptionWall
+							columns={6}
+							fill={false}
 							options={[{ value: ALL_NUM, label: "All" }, ...kChips.map((k) => ({ value: k, label: k }))]}
-							isOn={(v) => v === (filters.kValue ?? ALL_NUM)}
+							selected={filters.kValue ?? ALL_NUM}
 							onChange={(v) => setKValue(v === ALL_NUM ? undefined : v)}
 						/>
 						{/* Maximal (M = k) is a Krötenheerdt property of Euclidean uniform tilings — no meaning off
@@ -2451,96 +2775,8 @@ export function ReferenceShelf() {
 							<GroupNote>k ≥ 8 loads on demand.</GroupNote>
 						) : null}
 					</FilterGroup>
-
-					{/* Marek Čtrnáct's five levels of increasing complexity, from his own classification of the
-					    hyperbolic tilings by regular polygons. The ladder is (k, m) plus one test the pair
-					    cannot make — whether the vertex configurations agree as MULTISETS — and the top rung
-					    is the rare one: two combinations whose edge functions land on the same length. */}
-					{showLevel ? (
-						<FilterGroup
-							title="Level"
-							summary={filters.levels?.length ? `${filters.levels.length} selected` : null}
-							note="Čtrnáct's ladder"
-						>
-							<OptionWall
-								multi
-								columns={1}
-								options={TILING_LEVEL_ORDER.filter((l) => (levelCounts.get(l) ?? 0) > 0).map((l) => ({
-									value: l,
-									label: `${TILING_LEVEL_LABEL[l]} · ${levelCounts.get(l)}`,
-									tooltip: TILING_LEVEL_NOTE[l],
-									tooltipSide: "right" as const,
-									tooltipDelay: 0,
-								}))}
-								selected={filters.levels ?? []}
-								onChange={toggleLevel}
-							/>
-						</FilterGroup>
-					) : null}
-
-					{/* Hyperbolic-only interval facets. Valence and palette are the sweep's own axes (most edges
-					    at any vertex, largest polygon in any figure), so their upper bounds read exactly as an
-					    enumeration cell's (p, v). Edge length ℓ is the hyperbolic shape coordinate — H² has no
-					    similarity, so ℓ separates tilings the vertex figure alone cannot. */}
-					{geometry === "hyperbolic" && hypBounds && tileClass !== "freedraw" ? (
-						<>
-							<FilterGroup
-								title="Valence"
-								summary={filters.hypValence ? `${filters.hypValence[0]} – ${filters.hypValence[1]}` : null}
-								note="max edges per vertex"
-							>
-								<IntervalFilterCell
-									value={filters.hypValence ?? hypBounds.valence}
-									active={!!filters.hypValence}
-									min={hypBounds.valence[0]}
-									max={hypBounds.valence[1]}
-									step={1}
-									onChange={(v) => setHypInterval("hypValence", v, hypBounds.valence)}
-									ariaLabel="Valence"
-								/>
-							</FilterGroup>
-
-							<FilterGroup
-								title="Palette"
-								summary={filters.hypPolygon ? `${filters.hypPolygon[0]} – ${filters.hypPolygon[1]}` : null}
-								note="largest polygon"
-							>
-								<IntervalFilterCell
-									value={filters.hypPolygon ?? hypBounds.polygon}
-									active={!!filters.hypPolygon}
-									min={hypBounds.polygon[0]}
-									max={hypBounds.polygon[1]}
-									step={1}
-									onChange={(v) => setHypInterval("hypPolygon", v, hypBounds.polygon)}
-									ariaLabel="Palette"
-								/>
-							</FilterGroup>
-
-							<FilterGroup
-								title="Edge length"
-								summary={filters.hypEdge ? `${filters.hypEdge[0].toFixed(2)} – ${filters.hypEdge[1].toFixed(2)}` : null}
-								note="forced ℓ"
-							>
-								<IntervalFilterCell
-									value={filters.hypEdge ?? hypBounds.edge}
-									active={!!filters.hypEdge}
-									min={hypBounds.edge[0]}
-									max={hypBounds.edge[1]}
-									step={0.01}
-									onChange={(v) => setHypInterval("hypEdge", v, hypBounds.edge)}
-									ariaLabel="Edge length"
-									format={(n) => n.toFixed(2)}
-								/>
-								<GroupNote>
-									The edge length ℓ forced by the vertex figures (Σα = 2π). H² has no similarity, so ℓ is a shape
-									coordinate — it separates tilings the figure alone cannot.
-								</GroupNote>
-							</FilterGroup>
-						</>
-					) : null}
-
 					{showM ? (
-						<FilterGroup title="Distinct configs (M)" summary={filters.mValue ?? null} note="M ≤ k">
+						<FilterGroup title="Distinct configs (M)" summary={filters.mValue ?? null} note="M ≤ k" defaultOpen={false}>
 							<OptionWall
 								columns={6}
 								options={[{ value: ALL_NUM, label: "All" }, ...mOptions.map((m) => ({ value: m, label: m }))]}
@@ -2563,21 +2799,35 @@ export function ReferenceShelf() {
 							) : null}
 						</FilterGroup>
 					) : null}
-
-					{showStar ? (
-						<FilterGroup title="Star" note="star polygons">
-							<SubLabel>Fold (n-pointed)</SubLabel>
-							<ChipRow
-								options={availableFolds.map((n) => ({ value: n, label: `${n}★` }))}
-								isOn={(n) => !!filters.starFolds?.includes(n)}
-								onChange={toggleFold}
-							/>
-							<SubLabel>Shape</SubLabel>
+					{/* Marek Čtrnáct's five levels of increasing complexity, from his own classification of the
+					    hyperbolic tilings by regular polygons. The ladder is (k, m) plus one test the pair
+					    cannot make — whether the vertex configurations agree as MULTISETS — and the top rung
+					    is the rare one: two combinations whose edge functions land on the same length. */}
+					{showLevel ? (
+						<FilterGroup
+							title="Level"
+							summary={filters.levels?.length ? `${filters.levels.length} selected` : null}
+							note="Čtrnáct's ladder"
+						>
 							<OptionWall
-								columns={3}
-								options={PARAM_OPTIONS}
-								selected={filters.parametric ?? "all"}
-								onChange={setParametric}
+								multi
+								columns={1}
+								options={TILING_LEVEL_ORDER.filter((l) => (levelCounts.get(l) ?? 0) > 0).map((l) => ({
+									value: l,
+									label: (
+										<span className="flex w-full items-baseline justify-between gap-2 px-1">
+											<span>{TILING_LEVEL_LABEL[l]}</span>
+											<span className="font-mono text-[10.5px] text-fg-muted tabular-nums">
+												{(levelCounts.get(l) ?? 0).toLocaleString("en-US")}
+											</span>
+										</span>
+									),
+									tooltip: TILING_LEVEL_NOTE[l],
+									tooltipSide: "right" as const,
+									tooltipDelay: 0,
+								}))}
+								selected={filters.levels ?? []}
+								onChange={toggleLevel}
 							/>
 						</FilterGroup>
 					) : null}
@@ -2597,33 +2847,63 @@ export function ReferenceShelf() {
 							}
 							note="tile inventory"
 						>
-							<button
-								type="button"
-								onClick={() => setPolygonModalOpen(true)}
-								className="ta-tab ta-wall-cell flex min-h-10 w-full items-center gap-2 px-3 py-2 text-left text-xs text-fg-secondary hover:text-fg"
-							>
-								{filters.polygonNames?.length || filters.polygonExclude?.length ? (
-									<span className="truncate">
-										{[
-											filters.polygonNames?.map(speciesLabel).join(", "),
-											filters.polygonExclude?.length ? `no ${filters.polygonExclude.map(speciesLabel).join(", ")}` : "",
-										]
-											.filter(Boolean)
-											.join(" · ")}
-									</span>
-								) : (
-									<span className="text-fg-muted">Pick polygons…</span>
-								)}
-							</button>
-							{filters.polygonNames?.length || filters.polygonExclude?.length ? (
+							{/* A control, not a field: it opens the picker, and an inline × clears what was picked. */}
+							<div className="flex items-stretch gap-1">
 								<button
 									type="button"
-									onClick={clearPolygons}
-									className="ta-tab ta-wall-cell min-h-8 px-3 py-1.5 text-left text-[11px] text-fg-muted hover:text-fg max-md:text-[13px]"
+									onClick={() => setPolygonModalOpen(true)}
+									className="flex min-h-8 min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-control border border-line bg-surface-raised px-2.5 py-1.5 text-left text-[13px] text-fg shadow-sm transition-colors hover:border-line-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 max-md:min-h-11"
 								>
-									Clear polygon selection
+									<Shapes size={14} className="shrink-0 text-fg-muted" />
+									{filters.polygonNames?.length || filters.polygonExclude?.length ? (
+										<span className="min-w-0 flex-1 truncate">
+											{[
+												filters.polygonNames?.map(speciesLabel).join(", "),
+												filters.polygonExclude?.length
+													? `no ${filters.polygonExclude.map(speciesLabel).join(", ")}`
+													: "",
+											]
+												.filter(Boolean)
+												.join(" · ")}
+										</span>
+									) : (
+										<span className="flex-1 text-fg-muted">Pick polygons…</span>
+									)}
+									<ChevronRight size={13} className="shrink-0 text-fg-muted" />
 								</button>
-							) : null}
+								{filters.polygonNames?.length || filters.polygonExclude?.length ? (
+									<button
+										type="button"
+										onClick={clearPolygons}
+										aria-label="Clear polygon selection"
+										title="Clear polygon selection"
+										className="flex w-8 shrink-0 cursor-pointer items-center justify-center rounded-control text-fg-muted transition-colors hover:bg-surface-overlay hover:text-fg max-md:w-11"
+									>
+										<X size={14} />
+									</button>
+								) : null}
+							</div>
+						</FilterGroup>
+					) : null}
+
+					{/* How many kinds of tile a tiling mixes, and the period of its angle word: counting facets
+					    reached for far less often than the inventory above, so they start folded. */}
+					{showPolygons &&
+					(distinctPolygonOptions.length > 1 || distinctStarOptions.length > 1 || anglePeriodOptions.length > 1) ? (
+						<FilterGroup
+							title="Polygon counts"
+							summary={
+								[
+									filters.distinctPolygons?.length ? `${filters.distinctPolygons.join(", ")} kinds` : null,
+									filters.distinctStars?.length ? `${filters.distinctStars.join(", ")} star` : null,
+									filters.anglePeriods?.length ? filters.anglePeriods.map((n) => `p${n}`).join(", ") : null,
+								]
+									.filter(Boolean)
+									.join(" · ") || null
+							}
+							note="distinct tiles, angle period"
+							defaultOpen={false}
+						>
 							{distinctPolygonOptions.length > 1 ? (
 								<>
 									<SubLabel>Distinct polygons</SubLabel>
@@ -2653,11 +2933,16 @@ export function ReferenceShelf() {
 							{anglePeriodOptions.length > 1 ? (
 								<>
 									<SubLabel>Angle-word period</SubLabel>
+									{/* Short codes in six columns: the long names of p1 and p2 ride on their tooltips. */}
 									<OptionWall
 										multi
-										columns={2}
+										columns={6}
 										fill={false}
-										options={anglePeriodOptions.map((n) => ({ value: n, label: periodLabel(n) }))}
+										options={anglePeriodOptions.map((n) => ({
+											value: n,
+											label: `p${n}`,
+											tooltip: n <= 2 ? periodLabel(n) : undefined,
+										}))}
 										selected={filters.anglePeriods ?? []}
 										onChange={toggleAnglePeriods}
 									/>
@@ -2665,75 +2950,180 @@ export function ReferenceShelf() {
 							) : null}
 						</FilterGroup>
 					) : null}
-
-					{showLattice ? (
-						<FilterGroup title="Lattice" summary={selectedLattice ?? null} note="pick one">
+					{showStar ? (
+						<FilterGroup
+							title="Star"
+							note="star polygons"
+							summary={filters.starFolds?.length ? filters.starFolds.map((n) => `${n}★`).join(" ") : null}
+							defaultOpen={false}
+						>
+							<SubLabel>Fold (n-pointed)</SubLabel>
+							<OptionWall
+								multi
+								columns={6}
+								fill={false}
+								options={availableFolds.map((n) => ({ value: n, label: `${n}★` }))}
+								selected={filters.starFolds ?? []}
+								onChange={toggleFold}
+							/>
+							<SubLabel>Shape</SubLabel>
 							<OptionWall
 								columns={3}
-								options={availableShapes.map((s) => ({
-									value: s,
-									label: s,
-									// Wikipedia Bravais-lattice diagram on hover/focus.
-									tooltip: <LatticeTooltip lattice={s} />,
-									tooltipSide: "right" as const,
-									tooltipDelay: 0,
-								}))}
-								selected={selectedLattice ?? null}
-								onChange={selectShape}
+								options={PARAM_OPTIONS}
+								selected={filters.parametric ?? "all"}
+								onChange={setParametric}
 							/>
 						</FilterGroup>
 					) : null}
 
-					{showGroup ? (
+					{/* Hyperbolic-only interval facets. Valence and palette are the sweep's own axes (most edges
+					    at any vertex, largest polygon in any figure), so their upper bounds read exactly as an
+					    enumeration cell's (p, v). Edge length ℓ is the hyperbolic shape coordinate — H² has no
+					    similarity, so ℓ separates tilings the vertex figure alone cannot. */}
+					{geometry === "hyperbolic" && hypBounds && tileClass !== "freedraw" ? (
 						<FilterGroup
-							title="Wallpaper group"
-							summary={filters.wallpaperGroups?.length ? `${filters.wallpaperGroups.length} selected` : null}
-							note={selectedLattice ? `on ${selectedLattice}` : "all lattices"}
+							title="Bounds"
+							summary={
+								[filters.hypValence && "valence", filters.hypPolygon && "palette", filters.hypEdge && "ℓ"]
+									.filter(Boolean)
+									.join(", ") || null
+							}
+							note="valence, palette, edge length"
+							info={
+								<>
+									Valence is the most edges at any vertex and palette the largest polygon in any figure: the
+									sweep&apos;s own axes, so their upper bounds read as an enumeration cell&apos;s (p, v). The edge
+									length ℓ is forced by the vertex figures (Σα = 2π). H² has no similarity, so ℓ is a shape coordinate:
+									it separates tilings the figure alone cannot.
+								</>
+							}
 						>
-							<OptionWall
-								multi
-								columns={4}
-								options={availableGroups.map((g) => ({
-									value: g,
-									label: g,
-									// A selected lattice greys out (and blocks) every group it can't host — the disabled
-									// styling + not-allowed cursor + aria-disabled come from OptionWall.
-									disabled: selectedLattice ? !isGroupOnLattice(g, selectedLattice) : false,
-									// Wikipedia cell diagram(s) on hover/focus; opens into the main pane, not off-edge.
-									tooltip: <WallpaperGroupTooltip group={g} />,
-									tooltipSide: "right" as const,
-									tooltipDelay: 0,
-								}))}
-								selected={filters.wallpaperGroups ?? []}
-								onChange={toggleGroup}
+							<IntervalFilterCell
+								label="Valence"
+								value={filters.hypValence ?? hypBounds.valence}
+								active={!!filters.hypValence}
+								min={hypBounds.valence[0]}
+								max={hypBounds.valence[1]}
+								step={1}
+								onChange={(v) => setHypInterval("hypValence", v, hypBounds.valence)}
+								ariaLabel="Valence"
 							/>
+							<IntervalFilterCell
+								label="Palette"
+								value={filters.hypPolygon ?? hypBounds.polygon}
+								active={!!filters.hypPolygon}
+								min={hypBounds.polygon[0]}
+								max={hypBounds.polygon[1]}
+								step={1}
+								onChange={(v) => setHypInterval("hypPolygon", v, hypBounds.polygon)}
+								ariaLabel="Palette"
+							/>
+							<IntervalFilterCell
+								label="Edge length ℓ"
+								value={filters.hypEdge ?? hypBounds.edge}
+								active={!!filters.hypEdge}
+								min={hypBounds.edge[0]}
+								max={hypBounds.edge[1]}
+								step={0.01}
+								onChange={(v) => setHypInterval("hypEdge", v, hypBounds.edge)}
+								ariaLabel="Edge length"
+								format={(n) => n.toFixed(2)}
+							/>
+						</FilterGroup>
+					) : null}
+
+					{showLattice || showGroup ? (
+						<FilterGroup
+							title="Symmetry"
+							summary={[selectedLattice, filters.wallpaperGroups?.join(", ")].filter(Boolean).join(" · ") || null}
+							note="lattice and wallpaper group"
+							defaultOpen={false}
+						>
+							{showLattice ? (
+								<>
+									<SubLabel>Lattice</SubLabel>
+									<OptionWall
+										columns={3}
+										options={availableShapes.map((s) => ({
+											value: s,
+											label: s,
+											// Wikipedia Bravais-lattice diagram on hover/focus.
+											tooltip: <LatticeTooltip lattice={s} />,
+											tooltipSide: "right" as const,
+											tooltipDelay: 0,
+										}))}
+										selected={selectedLattice ?? null}
+										onChange={selectShape}
+									/>
+								</>
+							) : null}
+							{showGroup ? (
+								<>
+									<SubLabel>Wallpaper group{selectedLattice ? ` on ${selectedLattice}` : ""}</SubLabel>
+									<OptionWall
+										multi
+										columns={4}
+										options={availableGroups
+											.filter((g) => groupCounts.has(g) || filters.wallpaperGroups?.includes(g))
+											.map((g) => ({
+												value: g,
+												label: <CountLabel label={g} count={groupCounts.get(g)} stacked />,
+												// A selected lattice greys out (and blocks) every group it can't host.
+												disabled: selectedLattice ? !isGroupOnLattice(g, selectedLattice) : false,
+												// Wikipedia cell diagram(s) on hover/focus; opens into the main pane, not off-edge.
+												tooltip: <WallpaperGroupTooltip group={g} />,
+												tooltipSide: "right" as const,
+												tooltipDelay: 0,
+											}))}
+										selected={filters.wallpaperGroups ?? []}
+										onChange={toggleGroup}
+									/>
+								</>
+							) : null}
 						</FilterGroup>
 					) : null}
 
 					<FilterGroup
-						title="Discoverer"
-						summary={filters.discoverers?.length ? `${filters.discoverers.length} selected` : null}
+						title="Provenance"
+						summary={
+							[filters.discoverers?.join(", "), filters.certifications?.join(", ")].filter(Boolean).join(" · ") || null
+						}
+						note="who found it, how sure it is"
+						defaultOpen={false}
+						info={
+							<>
+								Proven: this work holds a completeness certificate for the level. Reproduced: the count matches a
+								published enumeration. Candidate: surfaced here, novelty or completeness not established.
+							</>
+						}
 					>
+						<SubLabel>Discoverer</SubLabel>
 						<OptionWall
 							multi
 							columns={2}
-							options={DISCOVERER_OPTIONS}
+							options={DISCOVERER_OPTIONS.filter(
+								(o) => discovererCounts.has(o.value) || filters.discoverers?.includes(o.value),
+							).map((o) => ({ ...o, label: <CountLabel label={o.label} count={discovererCounts.get(o.value)} /> }))}
 							selected={filters.discoverers ?? []}
 							onChange={toggleDiscoverer}
 						/>
-					</FilterGroup>
-
-					<FilterGroup
-						title="Certification"
-						summary={filters.certifications?.length ? filters.certifications.join(", ") : null}
-					>
-						<OptionWall
-							multi
-							columns={3}
-							options={CERT_OPTIONS}
-							selected={filters.certifications ?? []}
-							onChange={toggleCert}
-						/>
+						{certCounts.size || filters.certifications?.length ? (
+							<>
+								<SubLabel>Certification</SubLabel>
+								<OptionWall
+									multi
+									columns={3}
+									options={CERT_OPTIONS.filter(
+										(o) => certCounts.has(o.value) || filters.certifications?.includes(o.value),
+									).map((o) => ({
+										...o,
+										label: <CountLabel label={o.label} count={certCounts.get(o.value)} stacked />,
+									}))}
+									selected={filters.certifications ?? []}
+									onChange={toggleCert}
+								/>
+							</>
+						) : null}
 					</FilterGroup>
 				</div>
 			</PageSidebar>
@@ -2742,89 +3132,79 @@ export function ReferenceShelf() {
 			    positioned sr-only <label>; without it the label anchors to <html> and stretches the
 			    document ~1000px below the app shell (a phantom black scroll region). */}
 			<main ref={mainRef} className="relative flex-1 overflow-y-auto p-5 max-md:px-4 max-md:pb-24">
-				<div className="mb-4 flex min-h-10 flex-wrap items-center gap-x-4 gap-y-2 max-md:gap-y-3">
-					<h1 className="flex items-baseline gap-2 text-lg font-semibold tracking-tight text-fg max-md:w-full max-md:flex-wrap max-md:gap-y-0">
-						Tiling Library
-						<span className="font-mono text-xs font-normal tracking-normal text-fg-muted tabular-nums">
-							{filtered.length.toLocaleString("en-US")} tilings
-							{groupVariants && geometry === "hyperbolic"
-								? ` · ${displayGroups.length.toLocaleString("en-US")} families`
-								: null}
-						</span>
-					</h1>
-					{loadingShards.size > 0 ? (
-						<span className="flex items-center gap-1.5 text-xs text-fg-muted">
-							<Loader2 size={12} className="animate-spin text-fg-muted" />
-							loading k={[...loadingShards].sort((a, b) => a - b).join(", ")}…
-						</span>
-					) : null}
-					{shardErrors.size > 0 ? (
-						<span className="text-xs text-danger">
-							failed to load k={[...shardErrors.keys()].sort((a, b) => a - b).join(", ")}
-						</span>
-					) : null}
-
-					<div className="ml-auto flex items-center gap-4 max-md:ml-0 max-md:w-full max-md:flex-wrap max-md:gap-2">
-						{/* The phone's way into the filter sheet. While it is on screen the floating pill stays
-						    away; once it scrolls off, the pill takes over. */}
-						<SheetTrigger
-							ref={headerTriggerRef}
-							label="Filters"
-							count={activeFilterCount}
-							onClick={() => useMobileSheet.getState().setOpen(true)}
-						/>
-						{/* Group-variants toggle — hyperbolic only, where one vertex configuration carries up to
-						    hundreds of tilings; the card then pages through them in place. */}
-						{geometry === "hyperbolic" ? (
-							<span className="flex items-center gap-2 text-xs text-fg-muted">
-								Group variants
-								<Switch
-									size="sm"
-									checked={groupVariants}
-									onCheckedChange={setGroupVariants}
-									aria-label="Group tilings sharing a vertex configuration"
-								/>
+				<div className="mb-4 flex flex-col gap-3">
+					<div className="flex min-h-10 flex-wrap items-center gap-x-3 gap-y-2 max-md:gap-y-3">
+						<h1 className="flex items-baseline gap-2 text-lg font-semibold tracking-tight text-fg max-md:w-full max-md:flex-wrap max-md:gap-y-0">
+							Tiling Library
+							<span className="font-mono text-xs font-normal tracking-normal text-fg-muted tabular-nums">
+								<AnimatedNumber value={filtered.length} /> tilings
+								{groupVariants && geometry === "hyperbolic" && view === "grid"
+									? ` · ${displayGroups.length.toLocaleString("en-US")} families`
+									: null}
+							</span>
+						</h1>
+						{loadingShards.size > 0 ? (
+							<span className="flex items-center gap-1.5 text-xs text-fg-muted">
+								<Loader2 size={12} className="animate-spin text-fg-muted" />
+								loading k={[...loadingShards].sort((a, b) => a - b).join(", ")}…
 							</span>
 						) : null}
-						<Button
-							variant="secondary"
-							size="sm"
-							onClick={copyLink}
-							title="Copy a link to this filtered view"
-							icon={copied ? Check : Link2}
-							aria-label={copied ? "Copied" : "Copy link"}
-							classes="max-md:min-w-11"
-							label={<span className="max-md:sr-only">{copied ? "Copied" : "Copy link"}</span>}
-						/>
-						{/* A phone always shows two columns, so the slider has nothing to set there. */}
-						<label className="flex items-center gap-2 text-xs text-fg-muted max-md:hidden">
-							Columns
-							<RangeInput
-								min={COLUMN_PRESETS[0]}
-								max={COLUMN_PRESETS[COLUMN_PRESETS.length - 1]}
-								step={1}
-								value={gridColumns}
-								onChange={setGridColumns}
-								aria-label="Grid columns"
-								className="w-24"
+						{shardErrors.size > 0 ? (
+							<span className="text-xs text-danger">
+								failed to load k={[...shardErrors.keys()].sort((a, b) => a - b).join(", ")}
+							</span>
+						) : null}
+
+						<div className="ml-auto flex items-center gap-2 max-md:ml-0 max-md:w-full max-md:flex-wrap">
+							{/* The phone's way into the filter sheet. While it is on screen the floating pill stays
+							    away; once it scrolls off, the pill takes over. */}
+							<SheetTrigger
+								ref={headerTriggerRef}
+								label="Filters"
+								count={activeFilterCount}
+								onClick={() => useMobileSheet.getState().setOpen(true)}
 							/>
-							<span className="w-3 text-center font-medium text-fg tabular-nums">{gridColumns}</span>
-						</label>
-						<div
-							role="group"
-							aria-label="Items per page"
-							className="flex items-center gap-2 text-xs text-fg-muted max-md:ml-auto"
-						>
-							<span className="max-[419px]:sr-only">Per page</span>
-							<OptionWall
-								columns={PAGE_SIZE_OPTIONS.length}
-								options={PAGE_SIZE_OPTIONS.map((n) => ({ value: n, label: n }))}
-								selected={pageSize}
-								onChange={setPageSize}
-								classes="w-28 tabular-nums max-md:w-32"
+							<SortControl keys={sortKeys} sortKey={sortKey} sortDir={sortDir} onChange={changeSort} />
+							<ViewToggle view={view} onChange={setView} />
+							{/* A phone always shows two columns, so the column count has nothing to set there. */}
+							{view === "grid" ? (
+								<div role="group" aria-label="Grid columns" className="max-md:hidden">
+									<OptionWall
+										columns={COLUMN_PRESETS.length}
+										options={COLUMN_PRESETS.map((n) => ({ value: n, label: n, title: `${n} columns` }))}
+										selected={gridColumns}
+										onChange={setGridColumns}
+										classes="w-28 tabular-nums"
+									/>
+								</div>
+							) : null}
+							{/* Group-variants toggle — hyperbolic grid only, where one vertex configuration carries up to
+							    hundreds of tilings; the card then pages through them in place. The table lists each. */}
+							{geometry === "hyperbolic" && view === "grid" ? (
+								<label className="flex items-center gap-2 text-xs text-fg-muted">
+									Group variants
+									<Switch
+										size="sm"
+										checked={groupVariants}
+										onCheckedChange={setGroupVariants}
+										aria-label="Group tilings sharing a vertex configuration"
+									/>
+								</label>
+							) : null}
+							<Button
+								variant="secondary"
+								size="sm"
+								onClick={copyLink}
+								title="Copy a link to this exact view"
+								icon={copied ? Check : Link2}
+								aria-label={copied ? "Copied" : "Copy link"}
+								classes="max-md:min-w-11"
+								label={<span className="max-xl:sr-only">{copied ? "Copied" : "Copy link"}</span>}
 							/>
+							<ExportButton onExport={exportCsv} disabled={!sorted.length} />
 						</div>
 					</div>
+					<ActiveFilters chips={activeChips} onClearAll={clearFilters} />
 				</div>
 
 				{error ? (
@@ -2841,17 +3221,46 @@ export function ReferenceShelf() {
 					<div className="flex flex-col items-center justify-center py-24 text-center">
 						<Library size={40} className="mb-4 text-fg-disabled" />
 						<p className="font-medium text-fg-muted">No tilings match the current filters.</p>
+						{relaxations.length ? (
+							<div className="mt-4 flex flex-col items-center gap-1.5">
+								<p className="text-xs text-fg-muted">Nearest results:</p>
+								{relaxations.map(({ chip, count }) => (
+									<button
+										key={chip.key}
+										type="button"
+										onClick={chip.clear}
+										className="flex cursor-pointer items-center gap-2 rounded-full bg-surface-sunken px-3 py-1.5 text-[13px] text-fg ring-1 ring-line-subtle transition-colors hover:bg-surface-overlay max-md:min-h-11"
+									>
+										{chip.key === "vc-contains" ? null : <span className="text-fg-muted">without</span>}
+										{chip.label}
+										<span className="font-mono text-xs text-fg-muted tabular-nums">
+											→ {count.toLocaleString("en-US")} {count === 1 ? "tiling" : "tilings"}
+										</span>
+									</button>
+								))}
+							</div>
+						) : null}
 						{activeFilterCount > 0 ? (
-							<button onClick={clearFilters} className="mt-1 text-sm text-accent hover:underline max-md:min-h-11">
-								Clear filters
+							<button onClick={clearFilters} className="mt-3 text-sm text-accent hover:underline max-md:min-h-11">
+								Clear all filters
 							</button>
 						) : null}
 					</div>
 				) : (
 					<>
-						{/* One pager, under the grid: the header count already gives the total. */}
+						{/* One pager, under the results: the header count already gives the total. */}
+						{view === "table" ? (
+							<ResultsTable
+								tilings={tableRows}
+								sortKey={sortKey}
+								sortDir={sortDir}
+								onSort={(k) => changeSort(k)}
+								hrefOf={(t) => `/play?source=reference&tiling=${encodeURIComponent(t.id)}`}
+							/>
+						) : null}
 						<div
-							className="ta-lanes grid [grid-template-columns:repeat(var(--cols),1fr)] !gap-3 max-md:[grid-template-columns:repeat(2,minmax(0,1fr))]"
+							hidden={view === "table"}
+							className="ta-lanes ta-stagger grid [grid-template-columns:repeat(var(--cols),1fr)] !gap-3 max-md:[grid-template-columns:repeat(2,minmax(0,1fr))]"
 							style={gridStyle}
 						>
 							{paginated.map((g) => (
@@ -2863,13 +3272,25 @@ export function ReferenceShelf() {
 								/>
 							))}
 						</div>
-						<div className="mt-5">
-							<Pagination
-								totalItems={displayGroups.length}
-								pageSize={pageSize}
-								currentPage={currentPage}
-								onPageChange={changePage}
-							/>
+						<div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-3">
+							<div role="group" aria-label="Items per page" className="flex items-center gap-2 text-xs text-fg-muted">
+								Per page
+								<OptionWall
+									columns={PAGE_SIZE_OPTIONS.length}
+									options={PAGE_SIZE_OPTIONS.map((n) => ({ value: n, label: n }))}
+									selected={pageSize}
+									onChange={setPageSize}
+									classes="w-36 tabular-nums"
+								/>
+							</div>
+							<div className="min-w-0 flex-1">
+								<Pagination
+									totalItems={resultTotal}
+									pageSize={pageSize}
+									currentPage={currentPage}
+									onPageChange={changePage}
+								/>
+							</div>
 						</div>
 					</>
 				)}

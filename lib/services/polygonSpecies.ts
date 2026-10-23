@@ -1,4 +1,5 @@
 import type { PolygonMode, ReferenceTiling } from "@/lib/services/referenceAtlas";
+import { vcsOf } from "@/lib/services/vertexConfig";
 
 export type { PolygonMode };
 
@@ -121,6 +122,8 @@ export function periodLabel(p: number): string {
 }
 
 const cache = new Map<string, string[]>();
+// keyed by `family`: tens of thousands of hyperbolic rows share a few thousand figures
+const hypCache = new Map<string, string[]>();
 
 /** A cell polygon as the atlas ships it — `v` or `vertices`, points as pairs or as {x,y}. */
 export type CellPoly = {
@@ -142,6 +145,16 @@ export function polygonSpeciesOf(t: ReferenceTiling): string[] {
 	// on every record it touches. Measured on the eager Euclidean scope: 18.0 s of main thread and
 	// +89.8 MB retained, against 47 ms before the cells went lazy. The memo cannot be gated instead —
 	// its own output feeds `availablePolygons`, which is what `showPolygons` tests.
+	// The engine-developed hyperbolic rows carry a placeholder cell, so their species come off their vertex
+	// figures. A star's point is free in H² (the family slider), so it is keyed by fold alone: "8*".
+	if (t.source === "hyperbolic" && !t.hypPoly) {
+		const vcs = vcsOf(t);
+		if (vcs) {
+			let hit = hypCache.get(t.family);
+			if (!hit) hypCache.set(t.family, (hit = [...new Set(vcs.flatMap((v) => v.split(".")))].sort(speciesCompare)));
+			return hit;
+		}
+	}
 	if (t.polygonSpecies) return t.polygonSpecies;
 	const polys = (t.renderCell?.cellPolygons ?? []) as CellPoly[];
 	// Decoration rows (freedraw, colorings) all share one FREEDRAW_EMPTY_CELL, so there is nothing to
@@ -171,11 +184,12 @@ export function speciesFromPolys(polys: CellPoly[]): string[] {
 export function parseSpecies(key: string): { n: number; star: boolean; alpha: number | null } | null {
 	// "∞" is the hybrid boards' apeirogon: n = Infinity sorts it after every finite polygon.
 	if (key.trim() === "∞") return { n: Infinity, star: false, alpha: null };
-	const m = /^(\d+)(?:\*(\d+))?$/.exec(key.trim());
+	// "8*" with no angle is a hyperbolic star, whose point the tiling leaves free.
+	const m = /^(\d+)(\*(\d+)?)?$/.exec(key.trim());
 	if (!m) return null;
 	const n = parseInt(m[1], 10);
 	if (!Number.isFinite(n)) return null;
-	return { n, star: m[2] != null, alpha: m[2] != null ? parseInt(m[2], 10) : null };
+	return { n, star: m[2] != null, alpha: m[3] != null ? parseInt(m[3], 10) : null };
 }
 
 /** Regular first by side count, then stars by fold and point angle — the picker's reading order. */
@@ -192,7 +206,8 @@ export function speciesLabel(key: string): string {
 	const p = parseSpecies(key);
 	if (!p) return key;
 	if (p.n === Infinity) return "apeirogon";
-	return p.star ? `${p.n}★ ${p.alpha}°` : `${p.n}-gon`;
+	if (!p.star) return `${p.n}-gon`;
+	return p.alpha == null ? `${p.n}★` : `${p.n}★ ${p.alpha}°`;
 }
 
 /**
