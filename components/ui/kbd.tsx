@@ -13,6 +13,12 @@ export function Kbd({ children, className, literal }: { children: ReactNode; cla
 	if (pad === null) return null;
 	return (
 		<kbd
+			// The key it names, so pressing that key can press the cap too (UiProviders).
+			data-key={
+				typeof children === "string" && children.length === 1 && (pad ?? children) === children
+					? children.toLowerCase()
+					: undefined
+			}
 			className={cn(
 				"inline-flex h-[18px] min-w-[18px] items-center justify-center rounded border border-line bg-surface-overlay/70 px-1 font-mono text-[10px] leading-none font-medium text-fg-muted max-md:hidden",
 				className,

@@ -7,6 +7,7 @@ import { TilingThumbnail } from "@/components/tiling-thumbnail";
 import { Slider } from "@/components/ui/slider";
 import { polygonHue, TILE_FILL_ALPHA, tileFill, type TranslationalCellData } from "@/lib/utils/renderTiling";
 import type { FoundTiling } from "@/lib/services/runsService";
+import { SwapIcon } from "@/components/ui/swap-icon";
 
 interface RenderCell {
 	cellPolygons?: { n: number; vertices: number[][] }[];
@@ -46,7 +47,7 @@ function CopyButton({ text }: { text: string }) {
 			className="shrink-0 rounded p-1 text-fg-muted transition-colors hover:bg-surface-overlay/60 hover:text-fg max-md:flex max-md:size-11 max-md:items-center max-md:justify-center"
 			title="Copy"
 		>
-			{copied ? <Check size={13} className="text-success" /> : <Copy size={13} />}
+			<SwapIcon icon={copied ? Check : Copy} size={13} className={copied ? "text-success" : undefined} />
 		</button>
 	);
 }

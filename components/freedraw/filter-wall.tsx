@@ -18,6 +18,7 @@ import type { Tri } from "@/lib/freedraw/filter";
 import { scrollParent } from "@/lib/hooks/useGridArrowNav";
 import { useIsPhone } from "@/lib/hooks/useIsPhone";
 import { cn } from "@/lib/utils/cn";
+import { SegIndicator } from "@/components/ui/seg-indicator";
 
 export type FreedrawGeometry = "planar" | "spherical" | "hyperbolic";
 
@@ -220,6 +221,7 @@ export function TriMatrix({ rows }: { rows: TriRow[] }) {
 				<Fragment key={row.id}>
 					<span className="text-xs whitespace-nowrap text-fg-secondary max-md:text-sm">{row.label}</span>
 					<div className="ta-seg grid grid-cols-3" style={{ padding: 2 }}>
+						<SegIndicator />
 						{TRI_COLS.map((c) => {
 							const on = row.value === c.value;
 							return (

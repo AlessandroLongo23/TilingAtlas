@@ -64,7 +64,7 @@ export function Modal({
 	return (
 		<Dialog.Root open={isOpen} onOpenChange={onOpenChange}>
 			<Dialog.Portal>
-				<Dialog.Overlay className="data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 ta-backdrop-in fixed inset-0 z-50 bg-black/35 backdrop-blur-[2px]" />
+				<Dialog.Overlay className="ta-overlay fixed inset-0 z-50 bg-black/35 backdrop-blur-[2px]" />
 				<Dialog.Content
 					ref={contentRef}
 					onCloseAutoFocus={(e) => {
@@ -78,12 +78,14 @@ export function Modal({
 						"fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2",
 						"w-full rounded-overlay bg-surface-raised shadow-xl ring-1 ring-line-subtle",
 						widthClass,
-						"data-[state=open]:animate-in data-[state=closed]:animate-out",
+						// Enter and exit live in globals.css (.ta-dialog): a scale-and-fade on a desktop, a sheet
+						// on a phone. Radix holds the closing dialog until its animation ends.
+						"ta-dialog",
 						// Phone: a bottom sheet. Full width, square bottom corners on the screen edge, at most
 						// 92dvh tall with the body scrolling, clear of the home indicator.
 						"max-md:inset-x-0 max-md:top-auto max-md:bottom-0 max-md:translate-x-0 max-md:translate-y-0",
 						"max-md:flex max-md:max-h-[92dvh] max-md:max-w-none max-md:flex-col max-md:rounded-t-2xl max-md:rounded-b-none",
-						"ta-sheet-in max-md:pb-[env(safe-area-inset-bottom)]",
+						"max-md:pb-[env(safe-area-inset-bottom)]",
 					)}
 				>
 					{description ? <Dialog.Description className="sr-only">{description}</Dialog.Description> : null}

@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils/cn";
+import { SegIndicator } from "@/components/ui/seg-indicator";
 
 interface ToggleProps {
 	id?: string;
@@ -61,6 +62,7 @@ export function Toggle({
 				</label>
 			) : null}
 			<div role="radiogroup" className="ta-seg grid w-full grid-cols-2">
+				<SegIndicator />
 				{segment(leftValue)}
 				{segment(rightValue)}
 			</div>

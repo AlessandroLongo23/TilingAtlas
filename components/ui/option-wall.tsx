@@ -2,6 +2,7 @@
 
 import type { Key, ReactNode } from "react";
 import { cn } from "@/lib/utils/cn";
+import { SegIndicator } from "./seg-indicator";
 import { Tooltip } from "./tooltip";
 
 // ButtonGroup's wall-mounted twin: the same options in/value out, laid out as a fixed grid of cells
@@ -59,6 +60,8 @@ export function OptionWall<T>(props: SingleProps<T> | MultiProps<T>) {
 			className={cn("ta-seg grid", classes)}
 			style={{ gridTemplateColumns: `repeat(${columns * r}, minmax(0, 1fr))` }}
 		>
+			{/* A multi-select wall has no one option for a pill to sit under. */}
+			{props.multi ? null : <SegIndicator />}
 			{options.map((opt, i) => {
 				const key = opt.key ?? String(opt.value);
 				const button = (

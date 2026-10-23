@@ -1,9 +1,11 @@
 "use client";
 
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils/cn";
+
+const EASE = [0.23, 1, 0.32, 1] as const;
 
 interface SidebarSectionProps {
 	title: ReactNode;
@@ -43,27 +45,52 @@ export function SidebarSection({
 						{title}
 						{summary ? <span className="ml-1.5 tracking-normal text-fg normal-case">{summary}</span> : null}
 					</span>
-					{open ? (
-						<ChevronDown size={13} className="shrink-0 text-fg-muted" />
-					) : (
-						<ChevronRight size={13} className="shrink-0 text-fg-muted" />
-					)}
+					{/* One glyph that turns, not two that swap (same as the catalogue tree's rows). */}
+					<ChevronRight
+						size={13}
+						className={cn(
+							"shrink-0 text-fg-muted transition-transform duration-200 ease-[var(--ease-out-strong)] motion-reduce:transition-none",
+							open && "rotate-90",
+						)}
+					/>
 				</button>
 				{rightSlot ? <div className="shrink-0">{rightSlot}</div> : null}
 			</div>
-			<AnimatePresence initial={false}>
-				{open ? (
-					<motion.div
-						initial={{ height: 0, opacity: 0 }}
-						animate={{ height: "auto", opacity: 1 }}
-						exit={{ height: 0, opacity: 0 }}
-						transition={{ duration: 0.15 }}
-						className="overflow-hidden"
-					>
-						<div className={cn(padded ? "p-2" : "")}>{children}</div>
-					</motion.div>
-				) : null}
-			</AnimatePresence>
+			<Fold open={open}>
+				<div className={cn(padded ? "p-2" : "")}>{children}</div>
+			</Fold>
 		</div>
+	);
+}
+
+/**
+ * The body of a section that folds: height and opacity, with the opacity leading on the way in and
+ * finishing first on the way out, so content never shows clipped mid-fold. Shared by SidebarSection and
+ * the library's filter groups.
+ */
+export function Fold({ open, children }: { open: boolean; children: ReactNode }) {
+	return (
+		<AnimatePresence initial={false}>
+			{open ? (
+				<motion.div
+					// Clipped only while it moves: once open it goes back to visible, or it would crop focus rings.
+					initial={{ height: 0, opacity: 0, overflow: "hidden" }}
+					animate={{
+						height: "auto",
+						opacity: 1,
+						transitionEnd: { overflow: "visible" },
+						transition: { height: { duration: 0.24, ease: EASE }, opacity: { duration: 0.18, delay: 0.04 } },
+					}}
+					exit={{
+						height: 0,
+						opacity: 0,
+						overflow: "hidden",
+						transition: { height: { duration: 0.18, ease: EASE }, opacity: { duration: 0.1 } },
+					}}
+				>
+					{children}
+				</motion.div>
+			) : null}
+		</AnimatePresence>
 	);
 }

@@ -21,6 +21,7 @@ import { useLiveRun } from "@/lib/hooks/useLiveRun";
 import type { RunRow, RunSeedRow, FoundTiling } from "@/lib/services/runsService";
 import { buildSyncEntry, dateOf, shortId } from "@/lib/services/syncEntry";
 import { cn } from "@/lib/utils/cn";
+import { SwapIcon } from "@/components/ui/swap-icon";
 
 // ── format helpers ───────────────────────────────────────────────────────────────────────────
 function fmtDuration(ms: number): string {
@@ -52,7 +53,7 @@ function CopyChip({ text, label = "copy" }: { text: string; label?: string }) {
 			}
 			className="inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] text-fg-muted transition-colors hover:bg-surface-overlay/60 hover:text-fg"
 		>
-			{copied ? <Check size={12} className="text-success" /> : <Copy size={12} />}
+			<SwapIcon icon={copied ? Check : Copy} size={12} className={copied ? "text-success" : undefined} />
 			{copied ? "copied" : label}
 		</button>
 	);

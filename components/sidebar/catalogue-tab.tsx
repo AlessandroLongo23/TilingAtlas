@@ -13,6 +13,7 @@ import {
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import { CatalogueListPanel } from "./catalogue-list-panel";
 import type { UnloadedTier } from "@/lib/services/atlasManifest";
+import { SegIndicator } from "@/components/ui/seg-indicator";
 
 interface CatalogueTabProps {
 	/** Already filtered to the active geometry AND decoration — both splits live in the parent. */
@@ -72,6 +73,7 @@ export function CatalogueTab({
 		pending?: Partial<Record<T, boolean>>,
 	) => (
 		<div className="ta-seg grid flex-shrink-0 grid-cols-3">
+			<SegIndicator />
 			{order.map((v) => {
 				const active = value === v;
 				const isPending = !!pending?.[v];

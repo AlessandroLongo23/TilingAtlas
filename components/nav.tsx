@@ -2,13 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Menu } from "lucide-react";
+import { Menu, Search } from "lucide-react";
+import { motion } from "motion/react";
 import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { DiscordIcon } from "@/components/icons/discord";
 import { cn } from "@/lib/utils/cn";
 import { useImmersive } from "@/stores/immersive";
+import { HoverPill } from "@/components/ui/hover-pill";
 import { Kbd } from "@/components/ui/kbd";
 import { Tooltip } from "@/components/ui/tooltip";
 import { UpdatesButton } from "@/components/updates/updates-button";
@@ -20,7 +22,7 @@ import { usePadGlyph } from "@/lib/stores/gamepad";
 import { SheetBackdrop, SheetHeader, useSheet } from "@/components/ui/bottom-sheet";
 import { ThemeToggle } from "./ThemeToggle";
 
-const LINKS = [
+export const LINKS = [
 	// `blurb` is the phone menu's one-line description of each section.
 	{ href: "/library", label: "Library", blurb: "Browse and filter every tiling in the atlas" },
 	{ href: "/play", label: "Play", blurb: "Open any tiling live: pan, zoom, decorate, edit" },
@@ -148,7 +150,8 @@ export function Nav() {
 			{/* Ten links do not fit a laptop window with their keycaps attached, so the caps are the first
 			    thing to go (below 2xl) and the row scrolls sideways below that rather than sliding under
 			    the theme toggle — the nav clips its overflow, so an unscrollable row would just vanish. */}
-			<div className="scrollbar-hide flex min-w-0 flex-1 items-center gap-1 overflow-x-auto max-md:hidden">
+			<div className="scrollbar-hide relative flex min-w-0 flex-1 items-center gap-1 overflow-x-auto max-md:hidden">
+				<HoverPill />
 				{padPrev ? (
 					<Kbd literal className="shrink-0">
 						{padPrev}
@@ -162,14 +165,24 @@ export function Nav() {
 							key={link.href}
 							href={link.href}
 							title={key ? `${link.label} (${key})` : link.label}
+							aria-current={isActive ? "page" : undefined}
 							className={cn(
-								"group flex shrink-0 items-center gap-1.5 rounded-control px-2.5 py-1.5 transition-colors",
+								"group relative flex shrink-0 items-center gap-1.5 rounded-control px-2.5 py-1.5 transition-colors",
 								// Text only, and the active link in ink, not accent: the accent marks actions.
-								isActive ? "bg-surface-overlay text-fg" : "text-fg-muted hover:bg-surface-overlay hover:text-fg",
+								isActive ? "text-fg" : "text-fg-muted hover:bg-surface-overlay hover:text-fg",
 							)}
 						>
-							<span className="text-[13px] font-medium whitespace-nowrap">{link.label}</span>
-							{key ? <Kbd className="hidden 2xl:inline-flex">{key}</Kbd> : null}
+							{/* The active fill is one shared element, so changing section slides it to the new link. */}
+							{isActive ? (
+								<motion.span
+									layoutId="nav-active"
+									aria-hidden="true"
+									className="absolute inset-0 rounded-control bg-surface-overlay"
+									transition={{ type: "spring", duration: 0.4, bounce: 0.12 }}
+								/>
+							) : null}
+							<span className="relative text-[13px] font-medium whitespace-nowrap">{link.label}</span>
+							{key ? <Kbd className="relative hidden 2xl:inline-flex">{key}</Kbd> : null}
 						</Link>
 					);
 				})}
@@ -181,6 +194,16 @@ export function Nav() {
 			</div>
 
 			<div className="flex items-center gap-0.5 max-md:hidden">
+				<Tooltip label="Search and jump" shortcut="⌘ K" side="left" delay={0}>
+					<button
+						type="button"
+						onClick={() => window.dispatchEvent(new Event("ta:command-palette"))}
+						aria-label="Open the command palette"
+						className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-control text-fg-muted transition-colors hover:bg-surface-overlay hover:text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+					>
+						<Search size={15} />
+					</button>
+				</Tooltip>
 				<Tooltip label="Join the Discord" side="left" delay={0}>
 					<a
 						href={DISCORD_INVITE}

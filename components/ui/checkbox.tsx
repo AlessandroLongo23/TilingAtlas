@@ -54,7 +54,9 @@ export function CheckboxBox({
 			<Check
 				strokeWidth={3}
 				className={cn(
-					"pointer-events-none absolute inset-0 m-auto text-accent-contrast opacity-0 transition-opacity peer-checked:opacity-100",
+					// The tick springs up from half size as the box fills, so checking reads as a mark being made.
+					"pointer-events-none absolute inset-0 m-auto scale-50 text-accent-contrast opacity-0 peer-checked:scale-100 peer-checked:opacity-100",
+					"transition-[opacity,scale] duration-200 ease-[var(--ease-out-strong)] motion-reduce:transition-none",
 					BOX_SIZE[size].check,
 				)}
 			/>
