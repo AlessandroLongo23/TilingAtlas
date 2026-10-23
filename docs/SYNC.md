@@ -3180,3 +3180,9 @@ as searchK. Slices marked partial: his search budget included midpoints. NOTES 2
 Level classifier reads ∞/5₂/π (`8226724f`); Library tri-state polygon filter (`db468c51`); manifest facets
 per hybrid tier (`81fb7f19`); /play board → polygon set → k with small slices auto-fetched (`d4ac56e4`).
 NOTES 2026-10-22 "hybrid boards partitioned by polygon set and level".
+
+## 2026-10-23 — hyperbolic star shelf, materials, /library query, UI polish — CC
+Five commits: canvas unification `e0a9f6b1`, UI polish `123f7c7e`, /library `33600776`, 23,458 star tilings
+`1468c674` (stars in their own shard), materials `b9932e17` (scans at 512 px; public/ 499.7 MB of 500).
+Left uncommitted: hyp_feas.h, eu_solver.cpp, Makefile, run_k2_buckets.py and three live logs (other sessions).
+NOTES 2026-10-23 "Release prep for the star shelf" and the three entries before it.

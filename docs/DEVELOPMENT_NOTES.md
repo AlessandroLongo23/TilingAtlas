@@ -19154,3 +19154,227 @@ looks wrong; k may mean something else on that board. To ask Marek.
 ⚑ Seen once, not reproduced in three runs: the /play selection jumped to a 3.4.7.4 tiling while a
 hybrid board's small slices loaded.
 ⚑ Level is not a /play tree axis (the tree is already four deep); hiding combinations is Library-only.
+
+## 2026-10-22: hyperbolic star tilings, as one-parameter families
+
+AL asked for hyperbolic tilings by isotoxal stars, to sit beside the Euclidean and spherical star shelves.
+
+**Search.** New palette `hyp-star` (regular {3,4,5,6,8,12} + 11 isotoxal stars, points 120/90/60°) at
+negative-defect closure. Two engine changes, both gated to that case (`make check-regular` byte-identical):
+- 2-corner words are admitted. The curved-closure ban is a statement about solids in R3 (a digon vertex
+  is planar there); a hyperbolic tiling lives in H2, where a dent filled by one corner is a real
+  noncounting vertex, the same dent-fill convention as the Euclidean star palettes.
+- A sound prune: a star with a non-reflex dent is a convex 2n-gon, so a tiling needs l < l_max for every
+  star (cosh l_max = cos(π/n)/sin(α/2)); each added corner raises the forced l. Without it the palette had
+  7M figures at valence 5; with it the star-bearing set is finite at any valence (2,336 figures).
+k ≤ 2: 4,574 blocks, 312 develop, 44 with stars. Geometry in `tools/ctrnact-oracle/hyp_geom.py`.
+
+**They are families.** At p.n*.n* the plane closes only when θ_p = 2π/n (4.4*, 3.6*); in H2 every
+overfilled p closes for a whole interval of point angle α, with l(α) forced. The 44 records were samples
+at 60/90/120° of 36 families (the α-blind D-symbol key merges them). Shipped as 36 records, each with
+`hypFamily` {alphaRangeDegOpen, defaultAlphaDeg} (mid-range) and per-dart `starKind`.
+⚑ Grid sampling only finds families whose range contains a grid point; one small α per star size should
+find every one-star family (all measured ranges reach α → 0). Not run yet. Two-star families have two
+free angles and are not handled.
+
+**Identity.** `export_hyperbolic_atlas.py` keyed faces by side count, which would merge a star with a
+regular 2n-gon. Star faces are now labelled L·1000 (DS4-safe, α-blind on purpose); valences read the
+per-dart turns; the fold check measures real angles off the patch. Its side cap of 8 (an old fill
+renderer's limit) is bypassed with `--max-side 99` for this run.
+⚑ The same run found 107 star-free k=2 tilings with 12-gons that the base shelf never shipped, only
+because of that cap. Not shipped here (a partial slice); the cap deserves its own pass.
+
+**Rendering.** The per-pixel walk tested every side's half-plane, which accepts only a star's inner
+core: 3,115 of 17,600 test points landed in the wrong face. `WALK_STAR` (kind 3) stores each vertex's
+argument in the unused flat-corner slot, finds the wedge from the centre and tests that one side: 0 of
+17,600 wrong. Strokes use the faced side only (a neighbour's geodesic crosses the arm past a dent).
+
+**Slider and timeline.** /play reuses ParamSliderPanel through a stub cell (`hypFamilyParamCell`); the
+canvas eases `familyAlphas.live` and rebuilds the walk at l(α) (`familyMember`, the TS twin of
+hyp_geom). DiskPose carries `alphas`, interpolated on the camera's own parameter, so speed curves shape
+α too. GIF export gained the still dialog's Frame (aspect) control.
+
+**Sidebar.** Hyperbolic now splits by tile class like the plane: Regular polygons (apeirogons included),
+Star polygons, Different edge lengths (halved {p,q} faces and the 1247 multi-length board). The
+"hyperbolic" class is gone from TILE_CLASS_ORDER (kept as the `?class=hyperbolic` alias).
+
+**Plumbing.** Python `read_json`/`write_json` read and write the packed `{"atlas":1}` container through
+the JS codec (one implementation); the stdin read must set utf8 or multibyte characters split across
+chunks (364 notes came back corrupted on the first try).
+⚑ The red GIF AL saw did not reproduce with defaults; it matches the pre-fix walk on a stale tab.
+
+## 2026-10-22 (later): hyperbolic stars with FREE point angles
+
+**Why.** The hyp-star palette pins every star point at 60/90/120° and solves one edge per tiling. In H² a
+star's point is a variable of the tiling, so that convention throws tilings away in two places: develop
+(a k=2 block whose two vertex types close at different edges) and the alphabet itself (the reflex-dent
+prune and the `total > D` closure are computed at the grid point, so a word dead at 60° and alive at 56°
+never reaches the solver). AL's test case: 3.3.4*.8* + 3.4*.8* closes at 4* = 56.65°, 8* = 49.11°, edge
+0.6531 (the 3.3.3.4.3.8* + 3.3.8* tiling with each square and its four triangles merged into a 4*).
+
+**Develop (`hyp_geom.solve_free`).** When a star block has no realization at the palette points, ℓ and
+one point per star type are solved together. Grid over the points, every config's closing edge bisected
+at every grid tuple at once (numpy), least-squares polish from the tuples where the edges agree; a block
+with no grid tuple closing every config is rejected without a solve. The polish cut (spread < 0.5) is a
+measured speed knob: every solution in a 3,000-block sample had best spread <= 0.17, the median miss 0.95.
+A miss is "not found", not a proof. Regression: the grid run's 4,574 blocks give the same 549 (312 at the
+palette points + 237 freed) as the earlier multi-start solver, 4x faster. The multi-start missed ~290 of
+the k=1 free-palette tilings that the grid finds.
+⚑ First fallback version only freed the points when NO common edge existed; a common edge at which a dent
+went convex was dropped as "dent not reflex" (710 blocks at k=1 of the free palette). Fixed.
+
+**Families (`family_dof`, `family_member`, `family_range`; TS twin `familyMember`).** DOF = unknowns −
+rank of the closure Jacobian. DOF 1 ships a slider on one star's point (`hypFamily.param`), the other
+points and the edge solved by damped Gauss–Newton continued from the shipped member; DOF 0 ships rigid
+with the forced points in the note. Darts carry `starParam` when a tiling has two or more star types. No
+DOF >= 2 record has turned up. Default member: mid-range, unless its edge is past 2, then the interior
+sixth with the shortest edge (some families' cells barely fit the disk at mid-range).
+
+**Alphabet (`freePoints` palette flag, `enum_configs`).** One tile per star size, `alphaU` only a label.
+Gates that hold for every point: at most one dent per word (two reflex corners exceed 2π), and the
+Euclidean sum must be able to exceed a full turn (affine in each point, sup at the range ends). α → 0 lets
+ℓ grow without bound, so valence is unbounded, as for {3,q}: maxValence IS the completeness knob here.
+Palette `hyp-star-free`: regular {3,4,5,6,8,12} + stars {3,4,5,6,8,12}* (3* is new: no grid point fits
+under its 60° regular angle), maxValence 5. Alphabet 47,876 entries; k=1 4,600 blocks, k=2 3,008,541
+(solver 14 min, 4.77M raw).
+
+**Export.** 2-valent vertices (a dent filled by one corner) no longer count toward k or the id: the star
+palettes' convention, vertex = at least three tiles. Gate: a too-few-faces failure now retries deeper as
+well as a wide arc, down to 0.9999 (12-gon + 12* cells at ℓ 2.8 show 3 faces at 0.995 and fill the disk
+with arc 0 at 0.9999); a fold never retries.
+
+**Shipped.** Grid run, freed: 231 (62 k=1, 169 k=2; 28 two-star families, 191 + 12 rigid). Free palette
+k=1 blocks: 971 new of 1,044 distinct. Free palette k=2 blocks: 3,008,541 → 51,499 developed (develop 59 min
+on 8 workers) → 41,692 star records → 22,610 distinct → 22,223 new (4,754 at k=1, 17,469 at k=2; 380
+already shipped). Star shelf: 23,458 tilings, 17,950 families (15,663 two-star), 5,508 rigid.
+Every grid-run star tiling is reproduced by the free search except 29, all with a vertex of valence 6–7
+(above the free cap); they stay shipped from the grid run.
+Not shipped, as developer failures, not size decisions: 1 at k=1 and 7 at k=2 that never pass the gate,
+among them `6.5*.6.12*.12*` (point range (0°, 0.215°), folds at depth).
+⚑ 3 degenerate records shipped and were removed the same day: ℓ exactly at l_max, so every dent was π and
+the "12*" was a regular 12-gon with doubled edges. solve_free accepted ℓ < l_max with no margin and develop
+did not re-check reflexness after a free solve. Both now demand dent > π + 1e-6.
+⚑ k counts. 4,754 of the "k=1" tilings came out of k=2 BLOCKS: their second orbit is a 2-valent dent
+fill, which does not count. By the same token a k=2 tiling with an extra 2-valent orbit lives in a k=3
+block, which was not run: the free shelf is complete at k=1 (to valence 5) but not yet at k=2.
+⚑ 50 families are narrower than 1° (needle stars, point < 1°); they develop and pass the gate.
+⚑ Page weight: hyperbolic-developed.json.gz went 0.56 → 2.2 MB on the wire (29 MB parsed), fetched whole by
+loadDevelopedPatches and by loadHyperbolicBaseAtlas (for edges). Wants a stars shard, loaded on demand;
+about ten readers (loader, edge merge, landing data, about loader, five tests, the exporter).
+
+⚑ Same-size stars with DIFFERENT points in one tiling are not expressible in the free palette (one tile
+per size); the grid palette could carry two 8* types. Needs a second label per size, or a typed copy.
+⚑ Star sizes are the palette's {3,4,5,6,8,12}; 7*, 9*, 10* … and 7-gons are absent (the regular H² shelf
+has 7-gons). Valence <= 5, k <= 2.
+⚑ The 231 grid-run records keep their "lower bound" note; the free run supersedes them where keys match.
+
+## /library as a research query tool, 2026-10-23 (CC)
+
+The /library sidebar was the /play catalogue tree laid flat (geometry → class → board → k), so it filtered
+by where a tiling is filed and not by what it is: the hyperbolic tilings board wall alone was 2,026
+buttons. Rebuilt around the properties a reader compares, with no change to the lazy-shard machinery
+(still keyed on `kValue` and `board`).
+
+- **Vertex configurations are data now.** `scripts/enrich-reference-atlas.ts --vcs-only` keeps the
+  per-orbit figures it already computed for m/partition and ships them as `vcs`, canonical
+  (`lib/services/vertexConfig.ts`: least rotation or reflection, dots, star tokens ordered after the
+  regular polygon of the same size), aligned with `partition`. Gate: the figures must reproduce the
+  shipped m and partition exactly, or nothing is written. Re-run on the base atlas and the k8–k10
+  shards: 36,312 of 36,356 rows carry `vcs`, every other field byte-identical to before (verified by
+  decode + compare), +0.17 MB gzipped. The 44 without are the 40 `s24f-family` rows that never had m and
+  4 k=1 stars with no figure in their source. Hyperbolic rows read theirs off `family` (`vcsOf`).
+- **Query panel.** Configuration filter (any notation, contains all / any / exactly, suggestions with
+  counts), board as a searchable grouped picker, k faceted by the chosen board, facet counts on
+  discoverer / certification / wallpaper group, rarely used groups folded with their selection in the
+  heading, long notes behind an info dot. The text search also matches a typed figure whole.
+- **Results.** Sort (k, m, tile types, largest polygon, symmetry order, ℓ, configuration), grid or
+  table (`components/library/results-table.tsx`), active-filter chips, CSV export, and an empty state
+  that offers the nearest non-empty relaxation (for "exactly", "contains all" first).
+
+⚑ **The base hyperbolic shelf ships `polygonSpecies: ["4"]` on every row**, computed off the placeholder
+renderCell (a unit square never drawn). The /library Polygons filter therefore answers wrongly there:
+every base hyperbolic tiling "contains a square" and nothing else. The table and the sort derive the
+species from the configurations instead (`tileSpeciesOf` in `lib/services/librarySort.ts`); the data
+itself still wants fixing at the exporter.
+
+⚑ A default parameter on a closure inside a component (`clear = () => …`) makes the React Compiler skip
+the WHOLE component without a diagnostic, and its lint then stops checking every hook in it. It showed
+up only as two "unused eslint-disable" warnings. Bisected and fixed in ReferenceShelf; worth grepping for.
+
+## One hyperbolic canvas, 2026-10-22 (CC, written up 2026-10-23)
+
+The disk had three canvas/thumbnail pairs (developed, edges, colors) and two renderers behind them: the
+per-pixel walk for edges and colourings, and for the developed shelf a symmetry-group shader
+(`hyperbolicGroup.ts`, `hyperbolicDevelopedShader.ts`) with a 2D path fallback (`hyperbolicDevelopedDraw.ts`).
+All of it is now `components/hyperbolic-canvas.tsx` and `components/hyperbolic-thumbnail.tsx` with a `mode`
+(`tiling`, `edges`, `colors`), both fed by `lib/render/hypDisk.ts` into the one per-pixel renderer, so a
+card and /play cannot drift. Net -2,693 lines in the removed and slimmed files. The catalogue record type
+and its loader moved to `lib/tilings/hyp-developed.ts`.
+
+- `hypPoly` (the 3.4.n.4 boards) now draws on the `disk` surface in tiling mode: faces by polygon size and
+  the Islamic construction, like the developed shelf. It used to borrow the colourings surface.
+- The rim dimming is a switch now, "Rim shading" in View options (`hdepth` in the URL), off by default.
+  Every hyperbolic view used to dim toward the rim; `depthShadeK` is the one law the renderers share.
+- `hyperbolicRegularPatch.ts` has no renderer left; it stays as the independent geometry the edge-length
+  solver is checked against.
+
+## UI polish pass, 2026-10-22 (CC, written up 2026-10-23)
+
+Micro-interactions across the app; no layout or data change. New primitives in `components/ui/`:
+
+- `seg-indicator.tsx`: every `.ta-seg` (Tabs, Toggle, Segmented, OptionWall, the catalogue and studio
+  segments, the freedraw TriMatrix) gets one white pill that slides to the selected option. It reads the
+  selection off the attributes the controls already publish, so no call site threads a value.
+- `hover-pill.tsx`: one hover highlight per row that glides between buttons (floating toolbar, nav links).
+- `swap-icon.tsx`: an icon that pops when it changes (Copy to Check, Play to Pause, link copied).
+- `animated-number.tsx`: counts roll to their new value.
+- `ui-providers.tsx`, mounted in `app/layout.tsx`: motion follows the OS reduced-motion setting, tooltips
+  form one delay group, and pressing a shortcut dips its keycap (`Kbd` publishes `data-key`).
+- `components/command-palette.tsx`: Cmd/Ctrl+K from anywhere (sections, library search, theme), also behind
+  a search button in the nav.
+
+Elsewhere: the nav's active link is one shared `motion` element that slides between sections; buttons and
+toolbar buttons sink a hair on press; dialogs scale and fade on desktop and rise as a sheet on a phone
+(`.ta-dialog`); the sidebar sections fold with height leading opacity (`Fold`, reused by /library's filter
+groups); the checkbox tick springs in; the floating toolbar rises into place; library cards stagger in;
+slider thumbs swell under the pointer; scroll fades clear at the end of travel; thin themed scrollbars.
+Two easing tokens in `primitives.css`: `--ease-out-strong` (things that answer a click) and `--ease-drawer`
+(sheets and panels). `Pagination` measures its own width and falls back to a stepper when the strip
+would not fit (a sidebar paging 30,000 pages).
+
+## Materials on the hyperbolic disk, 2026-10-22 (CC, written up 2026-10-23)
+
+View options > Material on a hyperbolic tiling: Marble, Stained glass, Wood (species, saw cut, grain),
+Cobblestone. Each tile is painted in its own frame carried out from home, so a texture unit is a
+hyperbolic unit and a pixel's footprint band-limits every noise octave. Tiles take a stable seed from
+`TileSeeds` (a table around the anchor in the reference geometry), so a star family's slider does not
+reshuffle the slabs. Glass is procedural only; marble, wood and cobblestone read scanned CC0 PBR maps
+(ambientCG, Poly Haven) from `public/surfaces/`, built by `tools/surfaces/build_surfaces.py`, with the
+procedurals as the fallback while they load. Edge systems, colourings and the Islamic construction keep
+their own look (no material). Code: `lib/render/hypMaterials.ts` (+ test), the material branch of
+`hyperbolicPerPixelGL.ts`, the store fields `hyperbolicMaterial`, `hyperbolicSurfaceSource`, `hyperbolicWood`.
+
+⚑ Wood's scans never loaded as written: the loader fetched a joint-filler layer for every family, and
+wood has none (its boards butt; the shader paints the gap). `wood/6-*.webp` 404ed and the shader fell
+back to the procedural without a word. Fixed in the release prep below.
+
+## Release prep for the star shelf, 2026-10-23 (CC)
+
+- **Star shard.** The 23,458 star patches moved from `hyperbolic-developed.json.gz` to
+  `hyperbolic-developed-stars.json.gz` (1.72 MB on the wire, 19.5 of the 29.4 MB parsed). The base file is
+  back to 0.56 MB. `loadDevelopedPatch(id)` fetches the shard a patch lives in; `isStarPatchId` tells them
+  apart by the id (a star tile token like `8s`), checked exact over all 51,911. Star rows carry their own
+  `edge`, so the base loader's ℓ merge never needs the star shard. The exporter writes the same split.
+- **polygonSpecies on the hyperbolic rows.** The exporter no longer copies the placeholder's `["4"]`, and
+  it was stripped from all 51,911 shipped rows. `polygonSpeciesOf` reads hyperbolic species off the vertex
+  figures, a star by its fold alone (`8*`): its point is free in H², so an angle-qualified key would be
+  invented. `tileSpeciesOf` folded into it.
+- **Budget.** The scans were 25.4 MB at 1024 px against 3.5 MB of headroom. Rebuilt at 512 px (q70 colour,
+  q75 normal; marble normals 256 px) with the five identical cobble normal maps shipped once
+  (`RELIEF_OF`): 3.2 MB, tracked `public/` 499.7 MB. 384 px fit with more room but softened the marble
+  veins and granite grain visibly; AL chose 512. The budget is now full: the next corpus needs a delivery
+  answer first. `build_surfaces.py`'s `fit()` bound its default size at definition time, so its SIZE
+  knob never reached the colour layer; fixed.
+- `undefined-{A,B,C,mid}.png` at the repo root came from another session's scratch copy of a
+  consistency script whose `shot(name)` wrote `${out}-${name}.png` with `out` unset. No tracked script
+  writes them; deleted.
