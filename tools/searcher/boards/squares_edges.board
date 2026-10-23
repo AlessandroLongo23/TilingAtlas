@@ -1,0 +1,17 @@
+# Marked edges on the square grid, as digons. Board of pt_squares_edges.exe.
+name    squares_edges
+k       1 5
+
+angle   A2
+angle   A4   90
+
+face    A2 x 2
+face    A4 x 4
+
+vertex  A4 A4 A4 A4
+vertex  A2 A4 A2 A4 A4 A4
+vertex  A2 A4 A4 A2 A4 A4
+vertex  A2 A4 A2 A4 A2 A4 A4
+vertex  A2 A4 A2 A4 A2 A4 A2 A4
+
+permutations  no

@@ -3180,3 +3180,8 @@ as searchK. Slices marked partial: his search budget included midpoints. NOTES 2
 Level classifier reads ∞/5₂/π (`8226724f`); Library tri-state polygon filter (`db468c51`); manifest facets
 per hybrid tier (`81fb7f19`); /play board → polygon set → k with small slices auto-fetched (`d4ac56e4`).
 NOTES 2026-10-22 "hybrid boards partitioned by polygon set and level".
+
+## 2026-10-23 — unified searcher: Marek's engine driven by a board file — CC
+`tools/searcher/tilesearch` + spec `docs/searcher/board-format.md`, branch `searcher`. Gate: 80/80 mains
+give identical engine arguments; squares_edges k<=5, hybrid_2_9830 k<=2 identical to his binaries.
+NOTES 2026-10-23 "the unified searcher"; log experiments/results/searcher-gate-2026-10-23.md.

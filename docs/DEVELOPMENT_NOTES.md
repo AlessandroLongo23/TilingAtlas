@@ -19154,3 +19154,29 @@ looks wrong; k may mean something else on that board. To ask Marek.
 ⚑ Seen once, not reproduced in three runs: the /play selection jumped to a 3.4.7.4 tiling while a
 hybrid board's small slices loaded.
 ⚑ Level is not a /play tree axis (the tree is already four deep); hiding combinations is Library-only.
+
+## 2026-10-23: the unified searcher runs Marek's engine from a board file
+
+Marek asked for one searcher that reads a text board instead of a recompile per board. He then sent his
+source (`planar_tilings.zip`, unpacked to the gitignored `materials/marek-source/`; no license file yet,
+so it stays out of git). It builds natively with clang (leave out `svg_writer.cpp`, dead code whose
+`conway_representation` is not in the zip) and matches his 2023 `pt_1247_1_0612.exe` file for file.
+
+That changed the plan. His engine is already label-generic: faces, apeirogons (the third list of
+`find_and_write_tilings`, closing when the loop length is a multiple of the word), the 180° corner `Pi`,
+and `must_contain_one_of_these` done by moving those vertices first. So the searcher is his engine plus
+one `main` that reads the board (`tools/searcher/tilesearch.cpp`, spec `docs/searcher/board-format.md`),
+and `eu_solver` stays the independent cross-check and the fast path for the big Euclidean palettes. Nothing
+in `tools/ctrnact-oracle/` was touched, so `make check-regular` was not affected and not rerun.
+
+Gate (`experiments/results/searcher-gate-2026-10-23.md`): 80 of 80 comparable mains compile to identical
+engine arguments from their board files; `squares_edges` k<=5 and `hybrid_2_9830` k<=2 match the 2026
+binaries under wine in every file's name, count and sorted vertex-type lines.
+
+Found on the way, for Marek: in `main_A12`/`main_A25`, `Soo = encode_corner(0,0,0)` equals `PI_ANGLE`, so
+the apeirogon corner and the flat corner are one label, and `S3` is encoded as 4; three mains do not
+compile. `require` (all of a set) was dropped from the spec: it was my addition, and his own feature is
+any-of, which `initial` covers.
+
+⚑ Not built: `search faces`, geometry checks, a Windows build. The board's `angle` values are parsed and
+unused. `hybrid_2_9830` k=3 produces tens of millions of tilings; size runs before starting them.
