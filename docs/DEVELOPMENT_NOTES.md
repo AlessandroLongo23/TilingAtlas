@@ -19180,3 +19180,17 @@ any-of, which `initial` covers.
 
 ⚑ Not built: `search faces`, geometry checks, a Windows build. The board's `angle` values are parsed and
 unused. `hybrid_2_9830` k=3 produces tens of millions of tilings; size runs before starting them.
+
+## 2026-10-24: TileSearch.app, a Mac front end for the searcher
+
+`tools/searcher/app/TileSearch.swift` (SwiftUI, one file) and `build.sh`, which bundles `tilesearch` and
+the example boards into `TileSearch.app`. Edit a board (or open/save a `.board`), pick k, threads and an
+output folder, run. Each run gets its own timestamped folder, so the engine never appends to an old run.
+`tilesearch --progress` prints the per-k counts twice a second; the window shows them, the rate, the
+output files as they appear (corner labels decoded from the engine's hex file names), and the first
+64 KB of the selected file's certificates. Quitting the app stops the search.
+
+Checked through the app's own test hook (`TILESEARCH_BOARD`/`_RUN`/`_SNAPSHOT`; this shell has no Screen
+Recording permission, so the window snapshots itself): `squares_edges` finishes with the gate's 53,060 and
+per-k census; `hybrid_2_9830` k<=3 streams ~40k tilings/s; quitting mid-run leaves no process behind.
+⚑ No drawing of tilings yet: certificates are shown as text.

@@ -5,8 +5,10 @@
 // same arguments his mains build and runs the same loop as find_and_write_tilings_template
 // (src/solutions_processor.cpp), adding only a per-k count for census.txt.
 //
-// usage: tilesearch <board> [--k <kmin> <kmax>] [--threads <n>] [--dump]
+// usage: tilesearch <board> [--k <kmin> <kmax>] [--threads <n>] [--dump] [--progress]
 //   --dump prints the engine arguments the board compiles to and exits (the parser's test hook).
+//   --progress prints `progress <seconds> <total> <k>:<count>...` twice a second (read by the app).
+#include <condition_variable>
 #include <algorithm>
 #include <chrono>
 #include <cstdlib>
@@ -140,15 +142,16 @@ static Board read_board(std::string const& path) {
 }
 
 int main(int argc, char** argv) {
-    if (argc < 2) { std::cerr << "usage: tilesearch <board> [--k <kmin> <kmax>] [--threads <n>] [--dump]\n"; return 2; }
+    if (argc < 2) { std::cerr << "usage: tilesearch <board> [--k <kmin> <kmax>] [--threads <n>] [--dump] [--progress]\n"; return 2; }
     Board b = read_board(argv[1]);
     int threads = std::max(1u, std::thread::hardware_concurrency());
-    bool dump = false;
+    bool dump = false, progress = false;
     for (int i = 2; i < argc; i++) {
         std::string a = argv[i];
         if (a == "--k" && i + 2 < argc) b.kmin = std::atoi(argv[++i]), b.kmax = std::atoi(argv[++i]);
         else if (a == "--threads" && i + 1 < argc) threads = std::max(1, std::atoi(argv[++i]));
         else if (a == "--dump") dump = true;
+        else if (a == "--progress") progress = true;
         else { std::cerr << "unknown argument " << a << "\n"; return 2; }
     }
     if (b.kmin < 1 || b.kmax < b.kmin) { std::cerr << "--k needs 1 <= kmin <= kmax\n"; return 2; }
@@ -210,13 +213,32 @@ int main(int argc, char** argv) {
     std::mutex per_k_mutex;
 
     auto t0 = std::chrono::steady_clock::now();
+    auto report = [&] {
+        std::lock_guard<std::mutex> lock(per_k_mutex);
+        size_t total = 0;
+        std::ostringstream ks;
+        for (auto const& [k, n] : per_k) total += n, ks << " " << k << ":" << n;
+        std::cout << "progress " << std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count()
+                  << " " << total << ks.str() << std::endl;
+    };
+    std::mutex tick_mutex;
+    std::condition_variable tick;
+    bool searching = true;
+    std::thread ticker([&] {
+        std::unique_lock<std::mutex> lock(tick_mutex);
+        while (progress && !tick.wait_for(lock, std::chrono::milliseconds(500), [&] { return !searching; })) report();
+    });
     for_each_unique_tiling_threaded(
         [&](auto const& conf) {
             { std::lock_guard<std::mutex> lock(per_k_mutex); per_k[conf.num_vertices()]++; }
             solutions.process(conf);
             return true; },
         b.kmin, b.kmax, vc, face_checker, threads, n_initial_templates);
+    { std::lock_guard<std::mutex> lock(tick_mutex); searching = false; }
+    tick.notify_all();
+    ticker.join();
     solutions.results.flush();
+    if (progress) report();
     double secs = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
 
     std::ofstream census(dir / "census.txt");

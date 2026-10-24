@@ -3185,3 +3185,7 @@ NOTES 2026-10-22 "hybrid boards partitioned by polygon set and level".
 `tools/searcher/tilesearch` + spec `docs/searcher/board-format.md`, branch `searcher`. Gate: 80/80 mains
 give identical engine arguments; squares_edges k<=5, hybrid_2_9830 k<=2 identical to his binaries.
 NOTES 2026-10-23 "the unified searcher"; log experiments/results/searcher-gate-2026-10-23.md.
+
+## 2026-10-24 — TileSearch.app: board editor, live counts, certificates as found — CC
+`tools/searcher/app/` (SwiftUI + build.sh), `tilesearch --progress`. Branch `searcher`.
+NOTES 2026-10-24 "TileSearch.app".
