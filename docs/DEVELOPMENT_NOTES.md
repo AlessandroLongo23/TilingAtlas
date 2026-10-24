@@ -19194,3 +19194,30 @@ Checked through the app's own test hook (`TILESEARCH_BOARD`/`_RUN`/`_SNAPSHOT`; 
 Recording permission, so the window snapshots itself): `squares_edges` finishes with the gate's 53,060 and
 per-k census; `hybrid_2_9830` k<=3 streams ~40k tilings/s; quitting mid-run leaves no process behind.
 ⚑ No drawing of tilings yet: certificates are shown as text.
+
+## 2026-10-25: the searcher stops swapping, and stops and resumes
+
+AL's Mac slowed down on `hybrid_2_9830` up to k=3. Measured (experiments/results/searcher-memory-2026-10-25.md):
+Marek's duplicate tracker is a `std::set` of every canonical form for the whole run, ~1 KB per tiling
+here, so RAM grows linearly and 24 GB fills at ~20M tilings; k=3 of this board has tens of millions.
+All ten cores at normal priority made it worse.
+
+`tilesearch` now drives his search with its own outer loop (his engine is untouched):
+- duplicates are recognised by a 128-bit fingerprint of the canonical form, ~40 bytes per tiling;
+  two tilings collide with probability ~N²/2¹²⁹, below 1e-20 for a billion;
+- the tracker, the counts and the output are kept per root vertex. Roots partition the tilings (a tiling
+  is found only under its lowest vertex type, the same invariant `EU_SHARD_N` relies on in eu_solver),
+  so a root's fingerprints are dropped when it finishes, and its output is merged into the certificate
+  files then, with `roots.done` and `merge.pending` making a stop resumable and a cut merge undoable;
+- all roots share one thread pool, as in his `for_each_tiling_threaded`. A first version ran roots one at
+  a time and was 3.3x slower (idle threads at each of 156 root tails);
+- `--nice` lowers its priority. The app passes 10.
+
+Same output as before on both gate boards (fingerprints identical: squares_edges k<=5, hybrid_2_9830 k<=2);
+hybrid k<=2 peaks at 64 MB. Stop/resume tested from the command line (with a planted half-merge) and in
+the app. The app lists every run in the output folder, runs any number at once, resumes stopped ones,
+and stops all runs under 10 GB free disk.
+
+⚑ Disk is now the limit on big runs: ~0.85 KB of certificate text per tiling, so tens of millions of
+tilings are tens of GB. ⚑ AppKit logs "reentrant operation in its NSTableView delegate" on some state
+changes (a warning, not a crash).

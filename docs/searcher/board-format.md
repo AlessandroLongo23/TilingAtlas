@@ -131,11 +131,17 @@ refuses any value but `none` for now.
 ## Running
 
 ```
-tilesearch board.txt [--k <kmin> <kmax>] [--threads <n>]
+tilesearch board.txt [--k <kmin> <kmax>] [--threads <n>] [--nice <n>] [--resume]
 ```
 
 `--k` overrides the board's range for one run. Threads never change the result, so they live on the
-command line and not in the board.
+command line and not in the board. `--nice 10` runs the search at low priority.
+
+A stopped run continues with `--resume` in the same folder. The search is split by root vertex (the
+first vertex placed; a tiling is found only under its lowest-numbered vertex type), and the output of
+a root reaches the certificate files only when that root has finished. A stop therefore loses at most
+the roots that were running, and `--resume` runs exactly those again. The board must not change
+between the two runs.
 
 ## Output
 
@@ -151,7 +157,9 @@ files are added next to them:
 because vertex numbers depend on it. Its SHA-256 identifies the search. The atlas links every tiling to
 that hash, so anyone can rerun the search that found it.
 
-The output folder must be empty or absent; a run never mixes its files with an earlier run's.
+The output folder must be empty or absent, unless `--resume` is given; a run never mixes its files with
+an earlier run's. While a run is unfinished the folder also holds `roots.done` (the finished roots
+and their counts) and, for a moment after each root, `merge.pending`.
 
 ## Not in this draft
 

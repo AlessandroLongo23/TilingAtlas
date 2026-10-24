@@ -3189,3 +3189,7 @@ NOTES 2026-10-23 "the unified searcher"; log experiments/results/searcher-gate-2
 ## 2026-10-24 — TileSearch.app: board editor, live counts, certificates as found — CC
 `tools/searcher/app/` (SwiftUI + build.sh), `tilesearch --progress`. Branch `searcher`.
 NOTES 2026-10-24 "TileSearch.app".
+
+## 2026-10-25 — searcher: fingerprint dedup, per-root checkpoints, runs list with resume — CC
+Memory ~1 KB -> ~40 B per tiling; output identical on both gate boards; stop/resume tested.
+NOTES 2026-10-25 "the searcher stops swapping"; log experiments/results/searcher-memory-2026-10-25.md.

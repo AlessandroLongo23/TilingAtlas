@@ -96,47 +96,74 @@ struct OutFile: Identifiable, Hashable {
     }
 }
 
-final class Runner: ObservableObject {
-    @Published var running = false
-    @Published var status = "Ready"
+enum JobState: String { case running, stopped, finished, failed }
+
+// One run folder: input.board, plus solver_<name>/ once started. census.txt ending in MAX means the
+// search finished; anything else is a stopped run that `tilesearch --resume` continues from the first
+// unfinished root (roots.done lists the finished ones).
+final class Job: ObservableObject, Identifiable {
+    let dir: URL
+    var id: URL { dir }
+    let board: Board
+    @Published var state = JobState.stopped
+    @Published var note = ""
     @Published var counts: [Int: Int] = [:]
     @Published var total = 0
     @Published var elapsed = 0.0
     @Published var rate = 0.0
+    @Published var roots = (done: 0, all: 0)
     @Published var log: [String] = []
     @Published var files: [OutFile] = []
-    @Published var runDir: URL?
 
     private var process: Process?
     private var buffer = Data()
-    private var timer: Timer?
-    private var stopped = false
+    private var stopping = false
     private var last: (Double, Int) = (0, 0)
+    private let symbols: [String]
+    var outDir: URL { dir.appendingPathComponent("solver_" + board.name) }
 
-    private var name = ""
-    private var symbols: [String] = []
-
-    init() {   // a search must not outlive the app that started it
-        NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification, object: nil, queue: nil) {
-            [weak self] _ in self?.process?.terminate()
-        }
+    init?(dir: URL) {
+        guard let text = try? String(contentsOf: dir.appendingPathComponent("input.board")) else { return nil }
+        self.dir = dir
+        board = Board.parse(text)
+        symbols = board.angles.split(separator: "\n").compactMap { $0.split(separator: " ").first.map(String.init) }
+        readDisk()
     }
-    var outDir: URL? { runDir?.appendingPathComponent("solver_" + name) }
 
-    func run(_ board: Board, threads: Int, root: URL) {
-        let stamp = DateFormatter()
-        stamp.dateFormat = "yyyyMMdd-HHmmss"
-        let dir = root.appendingPathComponent("\(board.name)-\(stamp.string(from: Date()))")
-        do {
-            try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-            try board.text.write(to: dir.appendingPathComponent("input.board"), atomically: true, encoding: .utf8)
-        } catch { status = "Cannot write \(dir.path): \(error.localizedDescription)"; return }
-        guard let exe = Bundle.main.url(forResource: "tilesearch", withExtension: nil) else {
-            status = "tilesearch is missing from the app bundle"; return
+    // What the files say: the census of a finished run, or the sum of roots.done for a stopped one. A
+    // stopped run's half-done root is not counted: resuming runs it again from the start.
+    func readDisk() {
+        func pairs(_ s: Substring) -> (Int, Int)? {
+            let p = s.split(separator: ":")
+            guard p.count == 2, let k = Int(p[0]), let n = Int(p[1]) else { return nil }
+            return (k, n)
         }
+        var c: [Int: Int] = [:]
+        let census = (try? String(contentsOf: outDir.appendingPathComponent("census.txt"))) ?? ""
+        if census.hasSuffix("MAX\n") {
+            for line in census.split(separator: "\n") {   // k=3 -- 1254
+                if let (k, n) = pairs(Substring(line.replacingOccurrences(of: "k=", with: "").replacingOccurrences(of: " -- ", with: ":"))) { c[k] = n }
+            }
+            state = .finished
+        } else {
+            let done = ((try? String(contentsOf: outDir.appendingPathComponent("roots.done"))) ?? "").split(separator: "\n")
+            for line in done { for kv in line.split(separator: " ").dropFirst() { if let (k, n) = pairs(kv) { c[k, default: 0] += n } } }
+            roots.done = done.count
+            if state != .failed { state = .stopped }
+        }
+        counts = c
+        total = c.values.reduce(0, +)
+        scanFiles()
+    }
+
+    func start(threads: Int) {
+        guard state != .running, state != .finished else { return }
+        guard let exe = Bundle.main.url(forResource: "tilesearch", withExtension: nil) else { note = "tilesearch is missing from the app bundle"; return }
+        let resume = FileManager.default.fileExists(atPath: outDir.path)
         let p = Process()
         p.executableURL = exe
-        p.arguments = ["input.board", "--threads", String(threads), "--progress"]
+        // nice 10: the search takes the cores the rest of the Mac is not using, and yields to it otherwise
+        p.arguments = ["input.board", "--threads", String(threads), "--nice", "10", "--progress"] + (resume ? ["--resume"] : [])
         p.currentDirectoryURL = dir
         let pipe = Pipe()
         p.standardOutput = pipe
@@ -148,18 +175,17 @@ final class Runner: ObservableObject {
         p.terminationHandler = { [weak self] p in
             DispatchQueue.main.async { self?.finished(p.terminationStatus) }
         }
-        counts = [:]; total = 0; elapsed = 0; rate = 0; log = []; files = []; buffer = Data()
-        last = (0, 0); stopped = false; runDir = dir; name = board.name
-        symbols = board.angles.split(separator: "\n").compactMap { $0.split(separator: " ").first.map(String.init) }
-        do { try p.run() } catch { status = "Cannot start tilesearch: \(error.localizedDescription)"; return }
+        buffer = Data(); stopping = false; elapsed = 0; rate = 0; last = (0, total)
+        do { try p.run() } catch { note = "Cannot start tilesearch: \(error.localizedDescription)"; state = .failed; return }
         process = p
-        running = true
-        status = "Searching"
-        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in self?.scanFiles() }
+        state = .running
+        note = resume ? "Resumed with \(roots.done) roots already done" : ""
     }
 
-    func stop() {
-        stopped = true
+    func stop(_ why: String = "") {
+        guard state == .running else { return }
+        stopping = true
+        note = why
         process?.terminate()
     }
 
@@ -174,6 +200,7 @@ final class Runner: ObservableObject {
 
     private func handle(_ line: String) {
         let t = line.split(separator: " ")
+        if t.first == "roots", t.count == 3 { roots = (Int(t[1]) ?? 0, Int(t[2]) ?? 0); return }
         guard t.first == "progress", t.count >= 3 else {
             if !line.hasPrefix("Created ") && !line.isEmpty { log.append(line) }
             if log.count > 2000 { log.removeFirst(log.count - 2000) }
@@ -192,18 +219,75 @@ final class Runner: ObservableObject {
     }
 
     private func finished(_ code: Int32) {
-        timer?.invalidate()
-        running = false
-        scanFiles()
-        status = stopped ? "Stopped after \(fmt(elapsed)) s; the files hold what was found until then"
-            : code == 0 ? "Finished: \(total) tilings in \(fmt(elapsed)) s"
-            : "tilesearch failed (exit \(code)); see the log"
+        process = nil
+        if !stopping && code != 0 { state = .failed; note = "tilesearch failed (exit \(code)); see the log" }
+        readDisk()
+        if stopping && note.isEmpty { note = "Resume runs the \(roots.all - roots.done) unfinished roots" }
+        if state == .finished { note = "\(total) tilings" }
     }
 
     func scanFiles() {
-        guard let d = outDir, let urls = try? FileManager.default.contentsOfDirectory(at: d, includingPropertiesForKeys: [.fileSizeKey])
-        else { return }
+        guard let urls = try? FileManager.default.contentsOfDirectory(at: outDir, includingPropertiesForKeys: [.fileSizeKey]) else { return }
         files = urls.compactMap { OutFile($0, symbols: symbols) }.sorted { ($0.k, $0.labels, $0.edges) < ($1.k, $1.labels, $1.edges) }
+    }
+}
+
+// Every run folder under the output folder, and the guard that stops all runs when the disk fills.
+final class Store: ObservableObject {
+    static let minFreeBytes: Int64 = 10 << 30
+    @Published var jobs: [Job] = []
+    @Published var freeBytes: Int64 = 0
+    @Published var root: URL { didSet { UserDefaults.standard.set(root.path, forKey: "root"); rescan() } }
+    private var timer: Timer?
+
+    init() {
+        root = URL(fileURLWithPath: UserDefaults.standard.string(forKey: "root")
+            ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Documents/TileSearch").path)
+        rescan()
+        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in self?.tick() }
+        NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification, object: nil, queue: nil) {
+            [weak self] _ in self?.jobs.forEach { $0.stop() }   // a search must not outlive the app that started it
+        }
+    }
+
+    func rescan() {
+        let dirs = (try? FileManager.default.contentsOfDirectory(at: root, includingPropertiesForKeys: nil)) ?? []
+        let known = Dictionary(uniqueKeysWithValues: jobs.map { ($0.dir.standardizedFileURL, $0) })
+        jobs = dirs.compactMap { known[$0.standardizedFileURL] ?? Job(dir: $0) }
+            .sorted { $0.dir.lastPathComponent > $1.dir.lastPathComponent }
+        tick()
+    }
+
+    func newRun(_ board: Board, threads: Int) -> Job? {
+        let stamp = DateFormatter()
+        stamp.dateFormat = "yyyyMMdd-HHmmss"
+        let dir = root.appendingPathComponent("\(board.name)-\(stamp.string(from: Date()))")
+        do {
+            try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            try board.text.write(to: dir.appendingPathComponent("input.board"), atomically: true, encoding: .utf8)
+        } catch { return nil }
+        guard let job = Job(dir: dir) else { return nil }
+        jobs.insert(job, at: 0)
+        start(job, threads: threads)
+        return job
+    }
+
+    func start(_ job: Job, threads: Int) {
+        tick()
+        if freeBytes < Store.minFreeBytes { job.note = "Not started: under 10 GB free on disk"; return }
+        job.start(threads: threads)
+    }
+
+    // Once a second, from the timer: also redraws the runs table, whose cells read their job directly.
+    // (Cells that observed their job redrew mid-layout, which AppKit flags as reentrant.)
+    private func tick() {
+        objectWillChange.send()
+        let v = try? root.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
+        freeBytes = v?.volumeAvailableCapacityForImportantUsage ?? 0
+        for j in jobs where j.state == .running {
+            j.scanFiles()
+            if freeBytes < Store.minFreeBytes { j.stop("Stopped: under 10 GB free on disk") }
+        }
     }
 }
 
@@ -214,37 +298,52 @@ func fmt(_ x: Double) -> String { String(format: "%.1f", x) }
 struct ContentView: View {
     @State private var board = Board()
     @State private var threads = ProcessInfo.processInfo.activeProcessorCount
-    @State private var root = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Documents/TileSearch")
-    @State private var selected: OutFile.ID?
-    @StateObject private var runner = Runner()
+    @State private var selected: Job.ID?
+    @StateObject private var store = Store()
 
     var body: some View {
         HSplitView {
             editor.frame(minWidth: 340, idealWidth: 400)
-            results.frame(minWidth: 520)
+            VSplitView {
+                runs.frame(minHeight: 120, idealHeight: 160)
+                if let job = store.jobs.first(where: { $0.id == selected }) {
+                    JobView(job: job, threads: threads, store: store, load: { board = $0 }).id(job.id)
+                } else {
+                    Text("Run a search, or select one above.").foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
+            .frame(minWidth: 560)
         }
-        .frame(minWidth: 960, minHeight: 640)
+        .frame(minWidth: 1000, minHeight: 680)
         .onAppear(perform: testHook)
     }
 
     // Test hook, for checking the window without Screen Recording permission:
-    // TILESEARCH_BOARD=<file> loads a board, TILESEARCH_RUN=<output folder> runs it there, and
-    // TILESEARCH_SNAPSHOT=<prefix> writes <prefix>-<s>.png of this window at 2, 6 and 15 s.
+    // TILESEARCH_BOARD=<file> loads a board, TILESEARCH_RUN=<output folder> runs it there,
+    // TILESEARCH_STOP=<s> / TILESEARCH_RESUME=<s> / TILESEARCH_QUIT=<s> stop it, resume it and quit the app, and
+    // TILESEARCH_SNAPSHOT=<prefix> writes <prefix>-<s>.png of this window at TILESEARCH_SHOTS (default 2,6,15).
     private func testHook() {
         let env = ProcessInfo.processInfo.environment
+        let at = { (k: String, f: @escaping () -> Void) in
+            if let s = env[k].flatMap(Double.init) { DispatchQueue.main.asyncAfter(deadline: .now() + s, execute: f) }
+        }
         if let b = env["TILESEARCH_BOARD"] { load(URL(fileURLWithPath: b)) }
         if let r = env["TILESEARCH_RUN"] {
-            root = URL(fileURLWithPath: r)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { runner.run(board, threads: threads, root: root) }
+            store.root = URL(fileURLWithPath: r)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { selected = store.newRun(board, threads: threads)?.id }
         }
+        at("TILESEARCH_STOP") { store.jobs.first?.stop() }
+        at("TILESEARCH_RESUME") { if let j = store.jobs.first { store.start(j, threads: threads) } }
+        at("TILESEARCH_QUIT") { NSApp.terminate(nil) }
         guard let prefix = env["TILESEARCH_SNAPSHOT"] else { return }
-        for t in [2.0, 6.0, 15.0] {
+        for t in (env["TILESEARCH_SHOTS"] ?? "2,6,15").split(separator: ",").compactMap({ Double($0) }) {
             DispatchQueue.main.asyncAfter(deadline: .now() + t) {
-                if t > 2, selected == nil { selected = runner.files.last?.id }
-                guard let v = NSApp.windows.first?.contentView?.superview,
-                      let rep = v.bitmapImageRepForCachingDisplay(in: v.bounds) else { return }
+                guard let v = NSApp.windows.first(where: { $0.title == "TileSearch" })?.contentView?.superview,
+                      let rep = v.bitmapImageRepForCachingDisplay(in: v.bounds) else { NSLog("snapshot %g: no window", t); return }
                 v.cacheDisplay(in: v.bounds, to: rep)
-                try? rep.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: "\(prefix)-\(Int(t)).png"))
+                do { try rep.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: "\(prefix)-\(Int(t)).png")) }
+                catch { NSLog("snapshot %g: %@", t, error.localizedDescription) }
             }
         }
     }
@@ -280,23 +379,21 @@ struct ContentView: View {
             field("Vertices (numbered from 1)", "symbols round the vertex   e.g.  A4 A4 A4 A4", $board.vertices)
             Divider()
             HStack {
-                Stepper("Threads: \(threads)", value: $threads, in: 1...max(1, ProcessInfo.processInfo.activeProcessorCount * 2))
+                Stepper("Threads per search: \(threads)", value: $threads, in: 1...max(1, ProcessInfo.processInfo.activeProcessorCount * 2))
                 Spacer()
             }
             HStack {
-                Text(root.path).font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.head)
+                Text(store.root.path).font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.head)
                 Spacer()
                 Button("Output folder…", action: chooseRoot)
             }
             HStack {
-                if runner.running {
-                    Button("Stop", role: .destructive, action: runner.stop).keyboardShortcut(".", modifiers: .command)
-                } else {
-                    Button("Run search") { selected = nil; runner.run(board, threads: threads, root: root) }
-                        .keyboardShortcut(.return, modifiers: .command)
-                        .buttonStyle(.borderedProminent)
-                }
+                Button("Run search") { selected = store.newRun(board, threads: threads)?.id }
+                    .keyboardShortcut(.return, modifiers: .command)
+                    .buttonStyle(.borderedProminent)
                 Spacer()
+                Text("\(ByteCountFormatter.string(fromByteCount: store.freeBytes, countStyle: .file)) free")
+                    .font(.caption).foregroundStyle(store.freeBytes < Store.minFreeBytes ? .red : .secondary)
             }
         }
         .padding()
@@ -313,67 +410,14 @@ struct ContentView: View {
         }
     }
 
-    // ---- right: progress and results
+    // ---- right, top: every run in the output folder
 
-    private var results: some View {
-        VSplitView {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    if runner.running { ProgressView().controlSize(.small) }
-                    Text(runner.status).font(.headline)
-                    Spacer()
-                    if let d = runner.runDir {
-                        Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([d]) }
-                    }
-                }
-                HStack(spacing: 24) {
-                    stat("tilings", "\(runner.total)")
-                    stat("elapsed", "\(fmt(runner.elapsed)) s")
-                    stat("rate", runner.running ? "\(Int(runner.rate)) / s" : "–")
-                    stat("files", "\(runner.files.count)")
-                }
-                Grid(alignment: .trailing, horizontalSpacing: 16, verticalSpacing: 2) {
-                    GridRow { Text("k").bold(); Text("tilings").bold() }
-                    ForEach(board.kmin...max(board.kmin, board.kmax), id: \.self) { k in
-                        GridRow {
-                            Text("\(k)")
-                            Text(runner.counts[k].map(String.init) ?? "–").monospacedDigit()
-                        }
-                    }
-                }
-            }
-            .padding()
-            .frame(minHeight: 150)
-
-            Table(runner.files, selection: $selected) {
-                TableColumn("k") { Text("\($0.k)") }.width(30)
-                TableColumn("corners") { Text($0.labels).font(.system(.body, design: .monospaced)) }
-                TableColumn("orientable") { Text($0.orientable ? "yes" : "") }.width(70)
-                TableColumn("edge orbits") { Text("\($0.edges)") }.width(80)
-                TableColumn("size") { Text(ByteCountFormatter.string(fromByteCount: Int64($0.bytes), countStyle: .file)) }.width(70)
-            }
-            .frame(minHeight: 140)
-
-            TabView {
-                CertificateView(file: runner.files.first { $0.id == selected }, tick: runner.total)
-                    .tabItem { Text("Certificates") }
-                ScrollView {
-                    Text(runner.log.joined(separator: "\n"))
-                        .font(.system(.caption, design: .monospaced))
-                        .textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(6)
-                }
-                .tabItem { Text("Log") }
-            }
-            .frame(minHeight: 160)
-        }
-    }
-
-    private func stat(_ label: String, _ value: String) -> some View {
-        VStack(alignment: .leading) {
-            Text(value).font(.title3).monospacedDigit()
-            Text(label).font(.caption).foregroundStyle(.secondary)
+    private var runs: some View {
+        Table(store.jobs, selection: $selected) {
+            TableColumn("run") { Text($0.dir.lastPathComponent) }
+            TableColumn("state") { Text($0.state.rawValue).foregroundStyle($0.state == .running ? .green : $0.state == .failed ? .red : .primary) }.width(70)
+            TableColumn("tilings") { Text("\($0.total)").monospacedDigit() }.width(90)
+            TableColumn("roots") { Text($0.roots.all > 0 ? "\($0.roots.done) / \($0.roots.all)" : "\($0.roots.done)").monospacedDigit() }.width(80)
         }
     }
 
@@ -405,7 +449,87 @@ struct ContentView: View {
         p.canChooseDirectories = true
         p.canChooseFiles = false
         p.canCreateDirectories = true
-        if p.runModal() == .OK, let u = p.url { root = u }
+        if p.runModal() == .OK, let u = p.url { store.root = u }
+    }
+}
+
+// ---- right, bottom: one run
+
+struct JobView: View {
+    @ObservedObject var job: Job
+    let threads: Int
+    let store: Store
+    let load: (Board) -> Void
+    @State private var selected: OutFile.ID?
+
+    var body: some View {
+        VSplitView {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    if job.state == .running { ProgressView().controlSize(.small) }
+                    Text(job.state.rawValue.capitalized).font(.headline)
+                    Text(job.note).foregroundStyle(.secondary).lineLimit(1)
+                    Spacer()
+                    if job.state == .running {
+                        Button("Stop", role: .destructive) { job.stop() }.keyboardShortcut(".", modifiers: .command)
+                    } else if job.state != .finished {
+                        Button("Resume") { store.start(job, threads: threads) }.buttonStyle(.borderedProminent)
+                    }
+                    Button("Edit board") { load(job.board) }
+                    Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([job.dir]) }
+                }
+                HStack(spacing: 24) {
+                    stat("tilings", "\(job.total)")
+                    stat("roots done", job.roots.all > 0 ? "\(job.roots.done) / \(job.roots.all)" : "\(job.roots.done)")
+                    stat("elapsed", job.state == .running ? "\(fmt(job.elapsed)) s" : "–")
+                    stat("rate", job.state == .running ? "\(Int(job.rate)) / s" : "–")
+                    stat("files", "\(job.files.count)")
+                }
+                Grid(alignment: .trailing, horizontalSpacing: 16, verticalSpacing: 2) {
+                    GridRow { Text("k").bold(); Text("tilings").bold() }
+                    ForEach(job.board.kmin...max(job.board.kmin, job.board.kmax), id: \.self) { k in
+                        GridRow { Text("\(k)"); Text(job.counts[k].map(String.init) ?? "–").monospacedDigit() }
+                    }
+                }
+            }
+            .padding()
+            .frame(minHeight: 150)
+
+            Table(job.files, selection: $selected) {
+                TableColumn("k") { Text("\($0.k)") }.width(30)
+                TableColumn("corners") { Text($0.labels).font(.system(.body, design: .monospaced)) }
+                TableColumn("orientable") { Text($0.orientable ? "yes" : "") }.width(70)
+                TableColumn("edge orbits") { Text("\($0.edges)") }.width(80)
+                TableColumn("size") { Text(ByteCountFormatter.string(fromByteCount: Int64($0.bytes), countStyle: .file)) }.width(70)
+            }
+            .frame(minHeight: 120)
+
+            TabView {
+                CertificateView(file: job.files.first { $0.id == selected }, tick: job.total)
+                    .tabItem { Text("Certificates") }
+                ScrollView {
+                    Text(job.log.joined(separator: "\n"))
+                        .font(.system(.caption, design: .monospaced))
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(6)
+                }
+                .tabItem { Text("Log") }
+            }
+            .frame(minHeight: 140)
+        }
+        .onAppear {   // the test hook's snapshots show a certificate
+            if ProcessInfo.processInfo.environment["TILESEARCH_SNAPSHOT"] != nil {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 4) { selected = job.files.last?.id }
+            }
+        }
+    }
+
+    private func stat(_ label: String, _ value: String) -> some View {
+        VStack(alignment: .leading) {
+            Text(value).font(.title3).monospacedDigit()
+            Text(label).font(.caption).foregroundStyle(.secondary)
+        }
     }
 }
 
