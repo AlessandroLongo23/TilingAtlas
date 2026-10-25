@@ -3193,3 +3193,7 @@ NOTES 2026-10-24 "TileSearch.app".
 ## 2026-10-25 — searcher: fingerprint dedup, per-root checkpoints, runs list with resume — CC
 Memory ~1 KB -> ~40 B per tiling; output identical on both gate boards; stop/resume tested.
 NOTES 2026-10-25 "the searcher stops swapping"; log experiments/results/searcher-memory-2026-10-25.md.
+
+## 2026-10-25 — tilesearch 3-15x faster, same output; --gzip — CC
+Gate: bench.py, 5 boards, every file identical to 56b0a405. hybrid_2_9830 k<=2 49.4 -> 13.2 s,
+123_1_4657 k<=3 16.4 -> 1.1 s. NOTES 2026-10-25 "tilesearch made 3-15x faster".

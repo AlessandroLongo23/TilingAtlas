@@ -7,4 +7,4 @@ CXX ?= clang++
 CXXFLAGS ?= -std=c++20 -O2
 
 tilesearch: tilesearch.cpp $(ENGINE:%=$(MAREK_SRC)/src/%.cpp)
-	$(CXX) $(CXXFLAGS) -I$(MAREK_SRC)/include $^ -o $@
+	$(CXX) $(CXXFLAGS) -I$(MAREK_SRC)/include $^ -lz -o $@

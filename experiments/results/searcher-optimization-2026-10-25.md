@@ -46,3 +46,13 @@ Rows below: rerun after quitting an idle TileSearch window that was using ~2 cor
 | O6 hand off near the top, only to idle threads (D=2) | 123_1_4657 k=1..3 | 349 | 1.5 | 13 | 30 | identical |
 | O6 hand off near the top, only to idle threads (D=2) | 123_1_4657_init13 k=1..3 | 3 | 0.2 | 8 | 3 | identical |
 | O6 hand off near the top, only to idle threads (D=2) | 1247_1_0612 k=1..3 | 130 | 0.6 | 8 | 64 | identical |
+| O7 merger thread + O8 perfect-hash label ids | squares_edges k=1..6 | 332965 | 6.0 | 38 | 165 | identical |
+| O7 merger thread + O8 perfect-hash label ids | hybrid_2_9830 k=1..2 | 2673362 | 14.0 | 53 | 71 | identical |
+| O7 merger thread + O8 perfect-hash label ids | 123_1_4657 k=1..3 | 349 | 1.1 | 13 | 30 | identical |
+| O7 merger thread + O8 perfect-hash label ids | 123_1_4657_init13 k=1..3 | 3 | 0.1 | 8 | 3 | identical |
+| O7 merger thread + O8 perfect-hash label ids | 1247_1_0612 k=1..3 | 130 | 0.4 | 9 | 64 | identical |
+| O9 allocation-free orientability | squares_edges k=1..6 | 332965 | 6.2 | 38 | 165 | identical |
+| O9 allocation-free orientability | hybrid_2_9830 k=1..2 | 2673362 | 13.2 | 53 | 71 | identical |
+| O9 allocation-free orientability | 123_1_4657 k=1..3 | 349 | 1.1 | 13 | 30 | identical |
+| O9 allocation-free orientability | 123_1_4657_init13 k=1..3 | 3 | 0.1 | 7 | 3 | identical |
+| O9 allocation-free orientability | 1247_1_0612 k=1..3 | 130 | 0.4 | 9 | 64 | identical |

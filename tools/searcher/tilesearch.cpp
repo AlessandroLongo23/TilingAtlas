@@ -7,16 +7,19 @@
 //   - progress is checkpointed per root vertex, so a stopped run resumes with the roots it had not finished;
 //   - duplicates are recognised by a 128-bit fingerprint of the canonical form, not the form itself.
 //
-// usage: tilesearch <board> [--k <kmin> <kmax>] [--threads <n>] [--nice <n>] [--resume] [--progress] [--dump]
+// usage: tilesearch <board> [--k <kmin> <kmax>] [--threads <n>] [--nice <n>] [--resume] [--gzip] [--progress] [--dump]
+//   --gzip writes the certificate files as .txt.gz (each one a run of gzip members; zcat reads it whole).
 //   --resume continues a stopped run in this folder (the board must be the same).
 //   --progress prints `progress <seconds> <total> <k>:<count>...` twice a second and `roots <done> <all>`
 //   at every root boundary (read by the app).
 //   --dump prints the engine arguments the board compiles to and exits (the parser's test hook).
 #include <sys/resource.h>
+#include <zlib.h>
 #include <atomic>
 #include <memory>
 #include <condition_variable>
 #include <functional>
+#include <deque>
 #include <algorithm>
 #include <chrono>
 #include <cstdlib>
@@ -258,6 +261,27 @@ static bool fingerprint_if_minimal(tiling_t const& t, Fingerprints::Key& key) {
     return true;
 }
 
+// is_orientable (tiling_properties.h): the same flood fill from half-edge 0 over left, right and opposite
+// links, true when it misses a half-edge; with a reused stack and epoch-stamped marks, no allocation.
+static bool orientable(tiling_t const& t) {
+    thread_local std::vector<uint32_t> mark;
+    thread_local std::vector<int> stack;
+    thread_local uint32_t epoch = 0;
+    int const n = t.num_halfedges();
+    if ((int)mark.size() < n) mark.resize(n, 0);
+    if (++epoch == 0) std::fill(mark.begin(), mark.end(), 0), epoch = 1;
+    stack.assign(1, 0);
+    mark[0] = epoch;
+    int reached = 1;
+    while (!stack.empty()) {
+        index_t ix{ stack.back() };
+        stack.pop_back();
+        for (index_t nb : { t.right_neighbour(ix), t.left_neighbour(ix), t.opposite(ix) })
+            if (nb.has_value() && mark[nb.value] != epoch) mark[nb.value] = epoch, reached++, stack.push_back(nb.value);
+    }
+    return reached < n;
+}
+
 // One root vertex's share of the search. The search never adds a vertex type below its root, so root r
 // finds exactly the tilings whose lowest vertex type is r: roots partition the output, and each can be
 // deduplicated, written and checkpointed on its own while all of them share one thread pool.
@@ -346,6 +370,11 @@ struct FastFaces {
     std::vector<uint64_t> adj;                             // adjacency bits, rows of `stride` words
     std::vector<std::vector<std::pair<int, int>>> starts;  // per letter id: (word, offset) carrying it
     int stride = 0;
+    // id(): a perfect hash of the letters, found at startup (one multiply and one compare per lookup;
+    // the binary search it replaces ran four times per glue attempt).
+    std::vector<int> slot_code, slot_id;
+    uint32_t mul = 0;
+    int shift = 0;
 
     FastFaces(std::vector<std::vector<int>> const& faces, std::vector<std::vector<int>> const& apeirogons) {
         for (auto const& f : faces) words.push_back(cyclic_word_with_symmetries{ f }.maximal_symmetry());
@@ -354,6 +383,23 @@ struct FastFaces {
             for (int i = 0; i < w.rotational_generator(); i++) letters.push_back(w.letter(i));
         std::sort(letters.begin(), letters.end());
         letters.erase(std::unique(letters.begin(), letters.end()), letters.end());
+        for (int bits = 3;; bits++) {
+            if ((1u << bits) < 2 * letters.size()) continue;
+            shift = 32 - bits;
+            for (uint32_t m = 0x9e3779b1u, tries = 0; tries < 10000 && !mul; m += 2, tries++) {
+                slot_code.assign(1u << bits, -1);
+                bool clash = false;
+                for (size_t i = 0; i < letters.size() && !clash; i++) {
+                    uint32_t h = (uint32_t)letters[i] * m >> shift;
+                    clash = slot_code[h] != -1;
+                    slot_code[h] = letters[i];
+                }
+                if (!clash) mul = m;
+            }
+            if (mul) break;
+        }
+        slot_id.assign(slot_code.size(), -1);
+        for (size_t i = 0; i < letters.size(); i++) slot_id[(uint32_t)letters[i] * mul >> shift] = (int)i;
         stride = ((int)letters.size() + 63) / 64;
         adj.assign(letters.size() * stride, 0);
         starts.resize(letters.size());
@@ -366,8 +412,8 @@ struct FastFaces {
             }
     }
     int id(int c) const {
-        auto it = std::lower_bound(letters.begin(), letters.end(), c);
-        return it != letters.end() && *it == c ? int(it - letters.begin()) : -1;
+        uint32_t h = (uint32_t)c * mul >> shift;
+        return slot_code[h] == c ? slot_id[h] : -1;
     }
     bool can_be_adjacent(corner_t c1, corner_t c2) const {
         int a = id(c1), b = id(c2);
@@ -570,11 +616,11 @@ static void search(std::vector<int> const& roots, int kmax, vertex_classificatio
 }
 
 int main(int argc, char** argv) {
-    char const* usage = "usage: tilesearch <board> [--k <kmin> <kmax>] [--threads <n>] [--nice <n>] [--resume] [--progress] [--dump]\n";
+    char const* usage = "usage: tilesearch <board> [--k <kmin> <kmax>] [--threads <n>] [--nice <n>] [--resume] [--gzip] [--progress] [--dump]\n";
     if (argc < 2) { std::cerr << usage; return 2; }
     Board b = read_board(argv[1]);
     int threads = std::max(1u, std::thread::hardware_concurrency()), nice = 0;
-    bool dump = false, progress = false, resume = false;
+    bool dump = false, progress = false, resume = false, gzip = false;
     for (int i = 2; i < argc; i++) {
         std::string a = argv[i];
         if (a == "--k" && i + 2 < argc) b.kmin = std::atoi(argv[++i]), b.kmax = std::atoi(argv[++i]);
@@ -583,6 +629,7 @@ int main(int argc, char** argv) {
         else if (a == "--dump") dump = true;
         else if (a == "--progress") progress = true;
         else if (a == "--resume") resume = true;
+        else if (a == "--gzip") gzip = true;
         else { std::cerr << "unknown argument " << a << "\n" << usage; return 2; }
     }
     if (b.kmin < 1 || b.kmax < b.kmin || b.kmax > 128) { std::cerr << "--k needs 1 <= kmin <= kmax <= 128\n"; return 2; }
@@ -627,6 +674,7 @@ int main(int argc, char** argv) {
         std::ifstream old(dir / "board.txt");
         std::string was((std::istreambuf_iterator<char>(old)), std::istreambuf_iterator<char>());
         if (was != board_text.str()) { std::cerr << "cannot resume: " << dir / "board.txt" << " is a different board\n"; return 2; }
+        gzip = fs::exists(dir / "gzip");
         std::ifstream df(done_file);
         for (std::string line; std::getline(df, line);) {
             std::istringstream ls(line);
@@ -647,6 +695,7 @@ int main(int argc, char** argv) {
     } else {
         fs::create_directories(dir);
         std::ofstream(dir / "board.txt") << board_text.str();
+        if (gzip) std::ofstream(dir / "gzip");   // the format of this run's certificates, read back by --resume
         std::ofstream f(dir / "symbols.txt");
         for (auto const& [s, c] : b.codes) {
             std::ostringstream printed;
@@ -688,11 +737,16 @@ int main(int argc, char** argv) {
     for (int r = 0; r < roots; r++)
         if (!done.count(r)) todo.push_back(r), state[r] = std::make_unique<Root>(), fs::create_directories(part / std::to_string(r));
     auto spill = [&](int r, Root& st) {   // caller holds st.mutex
-        for (auto& [name, text] : st.out) std::ofstream(part / std::to_string(r) / name, std::ios::app | std::ios::binary) << text;
+        for (auto& [name, text] : st.out) {
+            if (!gzip) { std::ofstream(part / std::to_string(r) / name, std::ios::app | std::ios::binary) << text; continue; }
+            // one gzip member per spill; level 1: this text compresses ~10x even so, and level 6 costs more time
+            gzFile z = gzopen((part / std::to_string(r) / (name + ".gz")).c_str(), "ab1");
+            gzwrite(z, text.data(), (unsigned)text.size());
+            gzclose(z);
+        }
         st.out.clear();
         st.buffered = 0;
     };
-    std::mutex merge_mutex;
     if (progress) std::cout << "roots " << done.size() << " " << roots << std::endl;
     auto hand_over = [&] {   // this thread's batch, into its root's buffer
         if (batch.root < 0) return;
@@ -719,7 +773,7 @@ int main(int argc, char** argv) {
         corners.erase(std::unique(corners.begin(), corners.end()), corners.end());
         name << b.name << "solver_" << (conf.num_vertices() < 10 ? "0" : "") << conf.num_vertices() << "_" << std::hex;
         for (auto c : corners) name << corner_decoder{ c };
-        name << std::dec << (is_orientable(conf) ? "_o" : "") << "_" << conf.num_edges() << "." << writer.extension();
+        name << std::dec << (orientable(conf) ? "_o" : "") << "_" << conf.num_edges() << "." << writer.extension();
         writer.write_content(text, conf);
         per_k[conf.num_vertices()]++;
         if (batch.root != r) hand_over();
@@ -729,10 +783,15 @@ int main(int argc, char** argv) {
         batch.out[name.str()] += text.view();
         if (batch.bytes > (1 << 18)) hand_over();
     };
-    auto on_root_done = [&](int r) {
+    // Finished roots are merged by one thread of their own, in the order they finish: a worker that
+    // finished a root used to do it under a lock, and the others queued behind it (~6% of hybrid_2_9830).
+    std::mutex merge_mutex;
+    std::condition_variable merge_cv;
+    std::deque<int> merge_queue;
+    bool merging = true;
+    auto merge = [&](int r) {
             Root& st = *state[r];
-            { std::lock_guard<std::mutex> lock(st.mutex); spill(r, st); }
-            std::lock_guard<std::mutex> lock(merge_mutex);
+            spill(r, st);
             std::vector<fs::path> files;
             for (auto const& e : fs::directory_iterator(part / std::to_string(r))) files.push_back(e.path());
             {
@@ -755,11 +814,31 @@ int main(int argc, char** argv) {
             state[r].reset();   // its fingerprints are no longer needed
             if (progress) std::cout << "roots " << done.size() << " " << roots << std::endl;
     };
+    std::thread merger([&] {
+        for (;;) {
+            int r;
+            {
+                std::unique_lock<std::mutex> l(merge_mutex);
+                merge_cv.wait(l, [&] { return !merge_queue.empty() || !merging; });
+                if (merge_queue.empty()) return;
+                r = merge_queue.front();
+                merge_queue.pop_front();
+            }
+            merge(r);
+        }
+    });
+    auto on_root_done = [&](int r) {
+        { std::lock_guard<std::mutex> l(merge_mutex); merge_queue.push_back(r); }
+        merge_cv.notify_one();
+    };
     FastFaces const fast(b.faces, b.apeirogons);
     if (std::getenv("TILESEARCH_CROSSCHECK"))
         search(todo, b.kmax, vc, CrossCheck(b.faces, b.apeirogons), fast, threads, state, on_tiling, hand_over, on_root_done);
     else
         search(todo, b.kmax, vc, fast, fast, threads, state, on_tiling, hand_over, on_root_done);
+    { std::lock_guard<std::mutex> l(merge_mutex); merging = false; }
+    merge_cv.notify_one();
+    merger.join();
     fs::remove_all(part);
     { std::lock_guard<std::mutex> lock(tick_mutex); searching = false; }
     tick.notify_all();

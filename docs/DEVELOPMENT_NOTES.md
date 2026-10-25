@@ -19221,3 +19221,38 @@ and stops all runs under 10 GB free disk.
 ⚑ Disk is now the limit on big runs: ~0.85 KB of certificate text per tiling, so tens of millions of
 tilings are tens of GB. ⚑ AppKit logs "reentrant operation in its NSTableView delegate" on some state
 changes (a warning, not a crash).
+
+## 2026-10-25: tilesearch made 3-15x faster without changing its output
+
+Gate: `tools/searcher/bench.py` runs five boards (squares_edges k<=6, hybrid_2_9830 k<=2, 123_1_4657 and
+its 13-initial variant k<=3, 1247_1_0612 k<=3) and compares every certificate file with the reference
+build 56b0a405; every step below passed it, and the face-checker changes also passed
+`TILESEARCH_CROSSCHECK=1` (Marek's checker beside ours on every call). Log with every run:
+experiments/results/searcher-optimization-2026-10-25.md.
+
+What the profiles showed and what changed, in order of effect:
+- Load balance. His hand-off gives away the current node every 10 nodes while <64 tasks are queued:
+  mostly tiny deep subtrees, copied and queued while all threads were busy. 123_1_4657 kept 2 of 10
+  cores busy. Now a subtree is handed off only when more threads are idle than tasks queued, and only
+  within 2 edges of where the giving task started (D=2 measured best; `TILESEARCH_SPLIT` overrides).
+- Adding a vertex: only templates whose half-edges pass try_joining's first tests are pushed
+  (precomputed per free half-edge label pair), and the half-edge vector grows geometrically
+  (push_vertex_from reserved exactly size+valence, reallocating on every push).
+- Face checks: bit-matrix adjacency (his was std::find over a std::set), no vector per face walk,
+  matching from the offsets carrying the first letter, perfect-hash label ids.
+- Locks: atomic per-k counts, per-thread output batches handed over once per task, a merger thread
+  for finished roots, a sharded open-addressing fingerprint table.
+- Allocation: canonical refinement with per-thread buffers and packed 64-bit sort keys (exact while
+  n^5 < 2^64, n <= 7131 half-edges; tuple sort beyond); allocation-free orientability test.
+- `--gzip`: certificates as gzip members, 14x smaller, same time.
+
+Reference -> now (wall, 10 cores): squares_edges 20.2 -> 6.2 s, hybrid_2_9830 49.4 -> 13.2 s,
+123_1_4657 16.4 -> 1.1 s, 1247_1_0612 5.6 -> 0.4 s. Peak memory unchanged (10-55 MB).
+
+Remaining cost on hybrid_2_9830: the search core (~50%: face walks, glue tests, choose_best_halfedge's
+walk over every free half-edge), canonical refinement (~12%), Marek's certificate writer and the writes
+(~15%). Not done: a single-pass face walk (<=3%), incremental choose_best_halfedge, gzip by default
+(Marek's tools, our develop scripts and the app read .txt today).
+
+⚑ An idle TileSearch window of the first build used ~2 cores for 84 minutes; the current build idles at
+~2% (its once-a-second refresh). Benchmarks run beside it were void and were rerun.
