@@ -283,21 +283,20 @@ struct Root {
 // Counters for the end-of-run statistics, kept per thread and summed when a worker exits.
 static std::atomic<uint64_t> total_nodes{ 0 }, total_complete{ 0 };
 static thread_local uint64_t my_nodes = 0, my_complete = 0;
-// Hand-off tuning, temporary: TILESEARCH_SPLIT="every queue depth" (his engine: 10 64 unlimited).
-static int split_every = 10, split_queue = 64, split_depth = 1 << 30;
+// Hand-off depth in edges below a task's start; 2 measured best across the bench boards. TILESEARCH_SPLIT overrides it.
+static int split_depth = 2;
 
-// jtg::thread_pool's hand-off rule (a task stack of at most 64; a running search offers a subtree every
-// 10 nodes while the stack has room), with the room test an atomic read. His pool takes its mutex for
-// that test, and on a search-heavy board (123_1_4657) threads spent ~10% of their samples queueing on it.
+// A LIFO task stack like jtg::thread_pool's, plus atomic counts of queued tasks and of idle threads, so
+// a running search can ask "is anyone waiting for work?" without taking the lock.
 class Pool {
     std::mutex m;
-    std::condition_variable work, idle;
+    std::condition_variable work, all_done;
     std::vector<std::function<void()>> stack;
-    std::atomic<int> queued{ 0 };
+    std::atomic<int> queued{ 0 }, idle{ 0 };
     int busy = 0;
     bool stop = false;
 public:
-    int queued_now() const { return queued.load(std::memory_order_relaxed); }
+    bool hungry() const { return idle.load(std::memory_order_relaxed) > queued.load(std::memory_order_relaxed); }
     void push(std::function<void()> f) {
         { std::lock_guard<std::mutex> l(m); stack.push_back(std::move(f)); queued++; }
         work.notify_one();
@@ -309,7 +308,9 @@ public:
                 std::function<void()> f;
                 {
                     std::unique_lock<std::mutex> l(m);
+                    idle++;
                     work.wait(l, [&] { return stop || !stack.empty(); });
+                    idle--;
                     if (stack.empty()) break;
                     f = std::move(stack.back());
                     stack.pop_back();
@@ -318,14 +319,14 @@ public:
                 }
                 f();
                 std::lock_guard<std::mutex> l(m);
-                if (--busy == 0 && stack.empty()) idle.notify_all();
+                if (--busy == 0 && stack.empty()) all_done.notify_all();
             }
             total_nodes += my_nodes;
             total_complete += my_complete;
         });
         {
             std::unique_lock<std::mutex> l(m);
-            idle.wait(l, [&] { return busy == 0 && stack.empty(); });
+            all_done.wait(l, [&] { return busy == 0 && stack.empty(); });
             stop = true;
         }
         work.notify_all();
@@ -481,6 +482,8 @@ struct Extender {
     FS solution;
     size_t num_iterations = 0, max_num_vertices = 0, num_vertices_added = 0;
     int first_vertex = 0;
+    size_t task_nodes = 0;   // nodes this task has visited
+    int base_edges = 0;      // edges when this task started
 
     void add_vertex(int t) {
         auto& h = conf.*HalfedgesOf::member;
@@ -503,6 +506,7 @@ struct Extender {
     }
     void extend() {
         num_iterations++;
+        task_nodes++;
         if (!iteration(*this)) return;
         index_t const f = choose_best_halfedge();
         if (!f.has_value()) { solution(*this); return; }
@@ -542,10 +546,16 @@ static void search(std::vector<int> const& roots, int kmax, vertex_classificatio
     auto finish = [&](int r) { on_task_end(); if (--state[r]->tasks == 0) on_root_done(r); };
     for (int r : roots) {
         Extender s{ tiling_t{}, &faces, &ids, &vc, &cand,
-            [&](auto const& s) {   // hand subtrees to idle threads, exactly as his engine does
+            [&](auto const& s) {
+                // Give this node's subtree away only when a thread is waiting for work, and only near the top
+                // of this task's own subtree, where the work is (his engine gave away whatever node it was at,
+                // every 10 nodes while 64 tasks were not yet queued: mostly small deep subtrees, handed back and
+                // forth through the lock). Never at a task's first node, or a task would only pass itself on.
                 my_nodes++;
-                if (s.num_iterations % split_every != 0 || pool.queued_now() >= split_queue || s.conf.num_edges() > split_depth) return true;
+                if (s.task_nodes < 2 || !pool.hungry() || s.conf.num_edges() - s.base_edges > split_depth) return true;
                 auto clone{ s };
+                clone.task_nodes = 0;
+                clone.base_edges = clone.conf.num_edges();
                 state[clone.first_vertex]->tasks++;
                 pool.push([clone, &finish]() mutable { clone.extend(); finish(clone.first_vertex); });
                 return false;
@@ -577,7 +587,7 @@ int main(int argc, char** argv) {
     }
     if (b.kmin < 1 || b.kmax < b.kmin || b.kmax > 128) { std::cerr << "--k needs 1 <= kmin <= kmax <= 128\n"; return 2; }
     if (nice) setpriority(PRIO_PROCESS, 0, nice);   // before any thread exists, so all of them inherit it
-    if (char const* t = std::getenv("TILESEARCH_SPLIT")) std::istringstream(t) >> split_every >> split_queue >> split_depth;
+    if (char const* t = std::getenv("TILESEARCH_SPLIT")) split_depth = std::atoi(t);
 
     // `initial` lists the vertices a tiling must contain one of. The engine seeds only from the first n
     // vertex lines and never adds a lower one, which finds exactly the tilings containing one of those

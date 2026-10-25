@@ -41,3 +41,8 @@ Rows below: rerun after quitting an idle TileSearch window that was using ~2 cor
 | O5 (clean) | 123_1_4657 k=1..3 | 349 | 4.3 | 13 | 30 | identical |
 | O5 (clean) | 123_1_4657_init13 k=1..3 | 3 | 0.3 | 8 | 3 | identical |
 | O5 (clean) | 1247_1_0612 k=1..3 | 130 | 1.4 | 9 | 64 | identical |
+| O6 hand off near the top, only to idle threads (D=2) | squares_edges k=1..6 | 332965 | 6.0 | 37 | 165 | identical |
+| O6 hand off near the top, only to idle threads (D=2) | hybrid_2_9830 k=1..2 | 2673362 | 14.1 | 50 | 71 | identical |
+| O6 hand off near the top, only to idle threads (D=2) | 123_1_4657 k=1..3 | 349 | 1.5 | 13 | 30 | identical |
+| O6 hand off near the top, only to idle threads (D=2) | 123_1_4657_init13 k=1..3 | 3 | 0.2 | 8 | 3 | identical |
+| O6 hand off near the top, only to idle threads (D=2) | 1247_1_0612 k=1..3 | 130 | 0.6 | 8 | 64 | identical |
