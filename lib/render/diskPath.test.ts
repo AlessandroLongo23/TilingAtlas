@@ -78,6 +78,17 @@ describe("disk moves", () => {
 		expect(hypDist(c, w)).toBeLessThan(1e-9);
 	});
 
+	it("carry a star family's angle along the same parameter as the camera, bent or not", () => {
+		const a = { ...(A as DiskPose), alphas: [20] };
+		const b = { ...(B as DiskPose), alphas: [110] };
+		for (const bend of [null, { x: 0.1, y: 0.4 }]) {
+			expect((diskModel.segment(a, b, bend, 0.25) as DiskPose).alphas).toEqual([42.5]);
+			expect((diskModel.segment(a, b, bend, 1) as DiskPose).alphas).toEqual([110]);
+		}
+		expect((diskModel.rotate(a, 30) as DiskPose).alphas).toEqual([20]);
+		expect((diskModel.withCentre(a, { x: 0.2, y: 0 }) as DiskPose).alphas).toEqual([20]);
+	});
+
 	it("geoLerp lands on the geodesic at the right distance", () => {
 		const p = { x: 0.1, y: 0.2 },
 			q = { x: -0.6, y: 0.3 };

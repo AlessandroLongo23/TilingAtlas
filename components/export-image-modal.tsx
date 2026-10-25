@@ -40,9 +40,10 @@ import { sanitizeForStorage } from "@/utils/storageKey";
 const PREVIEW_LONG_EDGE = 480;
 const PREVIEW_DEBOUNCE_MS = 120;
 
-type AspectId = "screen" | "square" | "wide" | "portrait" | "a4";
+export type AspectId = "screen" | "square" | "wide" | "portrait" | "a4";
 
-const ASPECTS: { value: AspectId; label: string; ratio: number | null }[] = [
+/** The frame shapes both export dialogs offer (the still and the GIF); null ratio = the canvas's own. */
+export const ASPECTS: { value: AspectId; label: string; ratio: number | null }[] = [
 	{ value: "screen", label: "Screen", ratio: null },
 	{ value: "square", label: "1:1", ratio: 1 },
 	{ value: "wide", label: "16:9", ratio: 16 / 9 },

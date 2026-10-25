@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { LayerHistory } from "@/lib/hooks/useModalLayer";
+import { UiProviders } from "@/components/ui/ui-providers";
 import "./globals.css";
 import "katex/dist/katex.min.css";
 
@@ -40,7 +41,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
 			{/* Side insets: a phone turned to landscape is wider than 768px and gets the desktop layout, which
           would otherwise run under the notch. env() is 0 everywhere else, so nothing else moves. */}
 			<body className="flex min-h-full flex-col pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)]">
-				{children}
+				<UiProviders>{children}</UiProviders>
 				{/* Loads the phone sheets' Back handling on every route, ahead of the router (useModalLayer). */}
 				<LayerHistory />
 				<Analytics />

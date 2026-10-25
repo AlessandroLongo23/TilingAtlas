@@ -41,6 +41,7 @@ shipped entry whose canonical key matches so /play links and tests keep working.
 --write commits.
 """
 import argparse
+import cmath
 import hashlib
 import json
 import math
@@ -51,13 +52,90 @@ import time
 from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import hyp_geom
 import develop_hyperbolic as dh          # develop_patch, to re-grow a record from its stored darts
 from develop_freedraw import read_json, write_json
 from dsymbol_from_darts import analyse
 
 
+# Star faces (hyp-star palette). The D-symbol keys a face by its label, and a 2n-gon label would merge an
+# n-star with a regular 2n-gon. A star face is relabelled L*1000: still a multiple of its cycle length
+# (DS4), distinct from every polygon, and BLIND to the point angle on purpose. A one-star tiling is one
+# member of a family whose point angle is free (hyp_geom.family_range), so the samples the search lands on
+# at 60°, 90° and 120° are one tiling, shipped once with its range for the /play slider.
+STAR_TOK = {}                                       # label -> (display token, id token)
+
+
+def face_labels(d):
+    """lvert, with each star face (a corner past π) relabelled by its type. Faces are read off the darts
+    the way the walk does: the ring of h is h, φ(h) = glue[rneig[h]], …, and alpha[h] is its corner."""
+    lv, al = list(d["lvert"]), d.get("alpha")
+    if not al:
+        return lv
+    rn, gl, seen = d["rneig"], d["glue"], set()
+    for h0 in range(len(rn)):
+        ring, h = [], h0
+        while h not in seen:
+            seen.add(h)
+            ring.append(h)
+            h = gl[rn[h]]
+        if ring and max(al[h] for h in ring) > math.pi + 1e-9:
+            L = lv[rn[ring[0]]]
+            lab = L * 1000
+            STAR_TOK[lab] = (f"{L // 2}*", f"{L // 2}s")
+            for h in ring:
+                lv[rn[h]] = lab
+    return lv
+
+
+def identity(d, l):
+    ident = analyse(d["rneig"], d["glue"], face_labels(d), l, d.get("alpha"))
+    if ident["valid"]:
+        # A dent filled by one corner is a real 2-valent vertex in H², but not a counting one: the star
+        # palettes' convention is vertex = at least three tiles, so it names no orbit and adds nothing to k.
+        ident["orbits"] = [o for o in ident["orbits"] if len(o) > 2]
+        ident["k"] = len(ident["orbits"])
+    return ident
+
+
+def star_family(r):
+    """A star record re-solved at its family default, in place (edge and turns), so the gate measures the
+    member the shelf will show; returns the hypFamily dict, or None for a rigid tiling."""
+    if "_fam" in r:
+        return r["_fam"]
+    r["_fam"] = None
+    if r["darts"].get("starKind"):
+        dof, j = hyp_geom.family_dof(r["darts"], r["edgeLength"])
+        if dof == 1 and j is not None:
+            lo, hi = hyp_geom.family_range(r["darts"], r["edgeLength"], j)
+            # Shown at mid-range, not at whichever member the solve hit: near the top the dents are almost
+            # flat and the card reads as a convex 2n-gon. Unless the edge there is past 2: on some families
+            # it grows so fast that mid-range cells barely fit the disk, so take the interior sixth with
+            # the shortest edge. A whole degree when one fits inside the range.
+            member = lambda a: hyp_geom.family_member(r["darts"], r["edgeLength"], math.radians(a), j)
+            deg = lambda a: (lambda d: d if lo < d < hi else round(a, 3))(round(a))
+            a0 = deg((lo + hi) / 2)
+            m = member(a0)
+            if m and m[1] > 2:
+                a0, m = min(((a, mm) for a in (deg(lo + (hi - lo) * i / 6) for i in range(1, 6))
+                             if (mm := member(a))), key=lambda am: am[1][1], default=(a0, m))
+            if m:
+                pts, r["edgeLength"] = m
+                r["darts"]["alpha"] = hyp_geom.family_turns(r["darts"], pts, r["edgeLength"])
+                r["_fam"] = {"alphaRangeDegOpen": [round(lo, 3), round(hi, 3)], "defaultAlphaDeg": a0,
+                             **({"param": j} if j else {})}
+        elif dof > 1:
+            print(f"    ! {r['id']}: {dof} free parameters; shipped rigid at the solved member")
+    return r["_fam"]
+
+
+def _family_one(r):
+    star_family(r)
+    return r["edgeLength"], r["darts"].get("alpha"), r["_fam"]
+
+
 def dotted(fig):
-    return ".".join(str(x) for x in fig)
+    return ".".join(STAR_TOK[x][0] if x in STAR_TOK else str(x) for x in fig)
 
 
 def _face_polys(patch):
@@ -131,7 +209,7 @@ def deep_develop(rec, boundR):
         return {"vertices": rec["vertices"], "faces": rec["faces"]}
     try:
         V, _E, F = dh.develop_patch(d["rneig"], d["glue"], d["lvert"], rec["edgeLength"],
-                                    boundR=boundR, guard=500000)
+                                    boundR=boundR, guard=500000, turns=d.get("alpha"))
     except Exception:
         return {"vertices": rec["vertices"], "faces": rec["faces"]}
     if len(F) < len(rec["faces"]):
@@ -140,7 +218,8 @@ def deep_develop(rec, boundR):
 
 
 def fold_excess(patch, l):
-    """max over vertices of (sum of incident face interior angles) − 2π.
+    """max over vertices of (sum of incident face interior angles) − 2π, each angle MEASURED on the patch
+    (a star's corners differ inside one face, so no per-face formula will do).
 
     develop_patch does NOT test injectivity: it keys an instance on (quotient dart, position, heading),
     so it dedups a dart against ITSELF at a repeated frame but happily keeps two DIFFERENT darts landing
@@ -148,17 +227,16 @@ def fold_excess(patch, l):
     visible here, because the position-keyed vertex dedup merges the two copies and the merged vertex
     then carries more than a full turn of faces. (A fold whose sheets are misaligned stays invisible —
     stated as a limitation, not fixed.)"""
-    ang = {}
-
-    def a(n):
-        if n not in ang:
-            ang[n] = dh.interior_angle(n, l)
-        return ang[n]
-
+    V = [complex(*p) for p in patch["vertices"]]
     s = defaultdict(float)
     for ring in patch["faces"]:
-        for v in ring:
-            s[v] += a(len(ring))
+        K = [2 * V[v] / (1 + abs(V[v]) ** 2) for v in ring]          # Klein: geodesics are straight
+        ccw = sum((K[i].conjugate() * K[(i + 1) % len(K)]).imag for i in range(len(K))) > 0
+        for i, v in enumerate(ring):
+            z = V[v]
+            to = lambda w: (w - z) / (1 - z.conjugate() * w)          # carry v to 0: geodesics through it are rays
+            a = cmath.phase(to(V[ring[i - 1]])) - cmath.phase(to(V[ring[(i + 1) % len(ring)]]))
+            s[v] += (a if ccw else -a) % (2 * math.pi)
     return max(s.values()) - 2 * math.pi if s else 0.0
 
 
@@ -188,15 +266,20 @@ def _measure(rec, boundR, args, cache):
 
 
 def gate(rec, args, cache):
-    """Two-stage: measure at --gate-boundr; an arc-ONLY failure re-measures at --gate-retry. Giant-cell
+    """Staged: measure at --gate-boundr; a too-few-faces or wide-arc failure (never a fold) re-measures at
+    --gate-retry, then deeper. Giant-cell
     tilings (ℓ≈2.2 octagon configs) close so few faces at 0.995 that the sampled circles thread cell-
     sized rim gaps of 8–9° — measured deeper those arcs are exactly 0.0° while a genuine hole persists
     at every depth (verified on 4 of the 126 affected classes, 2026-07-23)."""
     ok, nfaces, arc = _measure(rec, args.gate_boundr, args, cache)
     if ok:
         return True, nfaces, arc
-    if nfaces >= args.min_faces and arc > args.max_arc:
-        return _measure(rec, args.gate_retry, args, cache)
+    for deeper in (args.gate_retry, 0.9995, 0.9999):   # star cells reach ℓ≈2.7: arc 0.0 only at 0.9999
+        if not (nfaces < args.min_faces or arc > args.max_arc):   # a fold is never retried
+            break
+        ok, nfaces, arc = _measure(rec, deeper, args, cache)
+        if ok:
+            return True, nfaces, arc
     return False, nfaces, arc
 
 
@@ -233,10 +316,16 @@ def warm_cache_parallel(recs, args, cache, jobs=None):
     print(f"    warm done in {time.time() - t0:.0f}s", flush=True)
 
 
+def star_shard(developed):
+    """public/hyperbolic-developed-stars.json.gz beside the base file (lib/tilings/hyp-developed.ts)."""
+    return developed.replace("hyperbolic-developed", "hyperbolic-developed-stars")
+
+
 def id_for(orbits, k):
+    tok = lambda x: STAR_TOK[x][1] if x in STAR_TOK else str(x)
     if k == 1:
-        return "hyp-" + "-".join(map(str, orbits[0]))
-    return f"hyp-k{k}-" + "__".join("-".join(map(str, o)) for o in orbits)
+        return "hyp-" + "-".join(map(tok, orbits[0]))
+    return f"hyp-k{k}-" + "__".join("-".join(map(tok, o)) for o in orbits)
 
 
 def main():
@@ -277,9 +366,15 @@ def main():
     cells = []
     for path in args.cells:
         cells += json.load(open(path))
-    developed = read_json(args.developed)
+    # Star patches ship in their own shard, fetched only when a star tiling is opened: they are two thirds
+    # of the parsed bytes, and every other hyperbolic view would pay for them.
+    stars_path = star_shard(args.developed)
+    developed = read_json(args.developed) + (read_json(stars_path) if os.path.exists(stars_path) else [])
     reference = read_json(args.reference)
-    render_cell = next((e["renderCell"] for e in reference if "renderCell" in e), {})
+    # The fields every shipped entry carries that are not about this tiling (a placeholder cell and a facet
+    # derived from it), copied so a new entry looks like its neighbours to every reader. NOT polygonSpecies:
+    # off the placeholder it read ["4"] on every row; /library reads the species off the figures instead.
+    shared = {f: reference[0][f] for f in ("renderCell", "tilePeriods") if reference and f in reference[0]}
     kof = {e["developed"]["patch"]: e["k"] for e in reference if "developed" in e}
 
     # ---- identity first: exact, combinatorial, microseconds per block --------------------------------
@@ -292,7 +387,7 @@ def main():
         if not d:
             invalid["no darts"] += 1
             continue
-        ident = analyse(d["rneig"], d["glue"], d["lvert"], r["edgeLength"])
+        ident = identity(d, r["edgeLength"])
         if not ident["valid"]:
             invalid[ident["reason"].split("(")[0].strip()] += 1
             continue
@@ -313,7 +408,8 @@ def main():
     capped = 0
     for key, recs in classes.items():
         orbits = recs[0]["_id"]["orbits"]
-        if max(len(o) for o in orbits) > args.max_valence or max(max(o) for o in orbits) > args.max_side:
+        sides = [x for o in orbits for x in o if x not in STAR_TOK]
+        if max(len(o) for o in orbits) > args.max_valence or max(sides, default=0) > args.max_side:
             capped += 1
             continue
         kept[key] = recs
@@ -327,8 +423,15 @@ def main():
     # Warm the cache for each class's FIRST candidate in parallel; the sequential loop below then
     # mostly reads the cache. Fallback candidates (a class whose best rec fails the gate) stay cold —
     # empirically that set is empty.
-    warm_cache_parallel([sorted(recs, key=lambda r: -len(r["faces"]))[0] for recs in kept.values()],
-                        args, cache)
+    firsts = [sorted(recs, key=lambda r: -len(r["faces"]))[0] for recs in kept.values()]
+    stars = [r for r in firsts if r["darts"].get("starKind")]
+    if stars:   # the family solve is per record and pure: fan it out, then write the members back
+        t0 = time.time()
+        with mp.Pool(max(2, (os.cpu_count() or 4) - 2)) as pool:
+            for r, (l, alpha, fam) in zip(stars, pool.imap(_family_one, stars, chunksize=8)):
+                r["edgeLength"], r["darts"]["alpha"], r["_fam"] = l, alpha, fam
+        print(f"    star families solved for {len(stars)} tilings in {time.time() - t0:.0f}s", flush=True)
+    warm_cache_parallel(firsts, args, cache)
     tilings, gate_failed = [], []
     t0 = time.time()
     for i, (key, recs) in enumerate(sorted(kept.items())):
@@ -338,6 +441,7 @@ def main():
                   f"{len(tilings)} through", flush=True)
         rep = None
         for r in sorted(recs, key=lambda r: -len(r["faces"])):
+            star_family(r)
             ok, nfaces, arc = gate(r, args, cache)
             if ok:
                 rep = r
@@ -365,7 +469,7 @@ def main():
         d = p.get("darts")
         if not d:
             continue
-        ident = analyse(d["rneig"], d["glue"], d["lvert"], p["edge"])
+        ident = identity(d, p["edge"])
         if ident["valid"]:
             shipped_id_by_key[ident["key"]] = p["id"]
 
@@ -417,8 +521,20 @@ def main():
         # darts (hyperbolicDevelopClient, hyperbolicDirichlet, hyperbolicIslamic, hyperbolicReduce) —
         # the baked vertices/faces were a fallback nothing reached. At ~1000 tilings they would be a
         # 10 MB eager fetch; the darts are 0.2 MB.
+        fam, star_note = star_family(r), ""
+        if r["darts"].get("starKind"):
+            pts, ns = hyp_geom.star_points(r["darts"])
+            pt = ", ".join(f"{n}* point {math.degrees(a):.2f}°" for n, a in zip(ns, pts))
+            star_note = (f" One free star point angle ({len(pts)} star types, the points move together)."
+                         if fam and len(pts) > 1 else " One free star point angle; the edge follows it." if fam
+                         else f" Rigid: the vertex types force {pt}, edge {r['edgeLength']:.4f}.")
+            if r.get("palette") == "hyp-star-free":
+                star_note += " Found by the free-point search: every star's point free, vertex valence at most 5."
+            elif r.get("freedPoints"):
+                star_note += (" Found with the star points freed after a search at the palette's 60/90/120° "
+                              "points, so the freed-point shelf is a lower bound, not a census.")
         out_patches.append({"id": pid, "name": name, "config": family, "edge": r["edgeLength"],
-                            "tiles": len(faces), "darts": r["darts"]})
+                            "tiles": len(faces), "darts": r["darts"], **({"family": fam} if fam else {})})
         out_entries.append({
             "id": pid, "source": "hyperbolic", "k": k, "family": family, "geometry": "hyperbolic",
             "developed": {"patch": pid},
@@ -426,8 +542,12 @@ def main():
             "note": (f"{family} — engine-developed {'k=' + str(k) + ' ' if k > 1 else ''}hyperbolic "
                      f"tiling, vertex configuration {family}. Enumerated by the Čtrnáct combinatorial engine "
                      "(negative-defect closure); identity and k are the minimal Delaney–Dress symbol of its "
-                     "quotient, developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer."),
-            "renderCell": render_cell,
+                     "quotient, developed to exact Poincaré-disk geometry by the SU(1,1) flood-fill developer.") + star_note,
+            **shared,
+            **({"hypFamily": fam} if fam else {}),
+            # ℓ on the row itself: the base loader merges it from the patches, which for a star are in the
+            # shard it does not fetch.
+            **({"edge": r["edgeLength"]} if r["darts"].get("starKind") else {}),
         })
         rows.append((pid, family, k, len(faces), r["_arc"], r["edgeLength"],
                      "kept" if prev_id is not None else "NEW",
@@ -479,9 +599,11 @@ def main():
         patches, entries = out_patches, out_entries
     else:
         patches, entries = developed + out_patches, reference + out_entries
-    write_json(args.developed, patches, ensure_ascii=False)
-    write_json(args.reference, entries, ensure_ascii=False)   # compact: ~20 % off a 25 MB file
-    print(f"\nwrote {args.developed} ({len(patches)} patches)")
+    stars = [p for p in patches if p["darts"].get("starKind")]
+    write_json(args.developed, [p for p in patches if not p["darts"].get("starKind")], ensure_ascii=False)
+    write_json(stars_path, stars, ensure_ascii=False)
+    write_json(args.reference, entries, pack=True)
+    print(f"\nwrote {args.developed} ({len(patches) - len(stars)} patches) and {stars_path} ({len(stars)})")
     print(f"wrote {args.reference} ({len(entries)} entries)")
 
 

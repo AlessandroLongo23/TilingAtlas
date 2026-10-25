@@ -3,6 +3,7 @@
 import type { ComponentProps, ComponentType, ReactNode } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils/cn";
+import { SwapIcon } from "./swap-icon";
 
 type Variant = "primary" | "secondary" | "ghost" | "danger";
 type Size = "sm" | "md" | "lg" | "icon";
@@ -58,8 +59,9 @@ const ICON_SIZE: Record<Size, string> = {
 	icon: "w-4 h-4",
 };
 
+// A press sinks the button a hair (scale 0.97), so the click is felt before anything it starts arrives.
 const BASE =
-	"inline-flex items-center justify-center rounded-control font-medium transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50";
+	"inline-flex items-center justify-center rounded-control font-medium transition-[color,background-color,border-color,scale] duration-150 ease-out active:scale-[0.97] motion-reduce:active:scale-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50";
 
 function isLinkProps(p: ButtonProps): p is ButtonAsLink {
 	return "href" in p && p.href !== undefined;
@@ -80,7 +82,7 @@ function renderContent(p: CommonProps) {
 	const { icon: Icon, iconRight: IconRight, label, children } = p;
 	return (
 		<>
-			{Icon ? <Icon className={ICON_SIZE[size]} /> : null}
+			{Icon ? <SwapIcon icon={Icon} className={ICON_SIZE[size]} /> : null}
 			{size === "icon" ? null : (label ?? children)}
 			{IconRight && size !== "icon" ? <IconRight className={ICON_SIZE[size]} /> : null}
 		</>

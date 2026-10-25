@@ -100,14 +100,14 @@
 
   /* Modal sheets rise from the bottom edge; their backdrop fades in under them. */
   .ta-sheet-in {
-    animation: ta-sheet-in 280ms var(--ease-out);
+    animation: ta-sheet-in 380ms var(--ease-drawer);
   }
   .ta-backdrop-in {
     animation: ta-fade-in 200ms var(--ease-out);
   }
   /* The phone menu slides in from the right edge. */
   .ta-panel-in {
-    animation: ta-panel-in 260ms var(--ease-out);
+    animation: ta-panel-in 340ms var(--ease-drawer);
   }
 }
 

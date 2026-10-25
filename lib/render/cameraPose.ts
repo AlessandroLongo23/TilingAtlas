@@ -17,6 +17,9 @@ export interface DiskPose {
 	kind: "disk";
 	/** Maps the tiling's home frame to the screen disk. */
 	m: Su11;
+	/** A star family's point angle (degrees), where the tiling has one: keyframed and eased like the flat
+	 *  pose's `alphas`, along the same parameter as the camera so the speed curves shape it too. */
+	alphas?: number[] | null;
 }
 export interface SpherePose {
 	kind: "sphere";

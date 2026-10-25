@@ -151,6 +151,7 @@ export interface HyperbolicSpec extends BaseSpec {
 	faces: number[]; // distinct tile face-sizes at the vertex, e.g. [3,4,8]
 	valence: number; // tiles meeting at the vertex (the vertex-config length, d)
 	edge: number | null; // forced edge length ℓ of the developed patch
+	patch?: string | null; // the developed patch's id: where a star tiling's corner angles are read from
 	provenance: string | null; // "rendered by" note (the atlas discoverer string, relocated off the card)
 	// Rigorous symmetry — REGULAR {p,q} entries ONLY. Deriving a Coxeter symbol from a bare vertex
 	// configuration (3.4.8.4, 3.8.3.8, …) is a Wythoff-inverse we do NOT perform, so non-regular configs
@@ -319,6 +320,7 @@ export function buildTilingSpec(
 			faces: hp?.faces ?? [],
 			valence: hp?.valence ?? 0,
 			edge: selected.edge ?? null,
+			patch: selected.developed?.patch ?? null,
 			provenance: selected.discoverer ?? null,
 			schlafli,
 			coxeter: schlafli ? `[${schlafli[0]},${schlafli[1]}]` : null,

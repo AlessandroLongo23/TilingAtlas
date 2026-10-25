@@ -107,17 +107,20 @@ describe.skipIf(!anyShard)("the levels over every shipped curved shelf", () => {
 		const rows = (read(HYP) as { k: number; family: string }[]).map((r) => ({
 			level: tilingLevel({ ...r, developed: {} }),
 		}));
-		expect(rows.length).toBe(28453);
+		expect(rows.length).toBe(51911);
+		// The 23,458 star tilings (hyp-star palette) are unclassified, like the Euclidean star shelf: the ladder
+		// reads polygon sizes, and "8*" is a star whose point angle the family leaves free.
 		expect(census(rows)).toEqual({
 			regular: 27,
 			archimedean: 12141,
 			"pseudo-archimedean": 7606,
 			combination: 8676,
 			hybrid: 3,
+			null: 23458,
 		});
 	});
 
-	it("names the three hyperbolic hybrids, since three in 28,453 is the claim worth pinning", () => {
+	it("names the three hyperbolic hybrids, since three in 51,911 is the claim worth pinning", () => {
 		const hybrids = (read(HYP) as { id: string; k: number; family: string }[])
 			.filter((r) => tilingLevel({ ...r, developed: {} }) === "hybrid")
 			.map((r) => r.family);

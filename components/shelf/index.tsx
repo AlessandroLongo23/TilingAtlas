@@ -18,6 +18,7 @@
 
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils/cn";
+import { SegIndicator } from "@/components/ui/seg-indicator";
 
 /**
  * A labelled control group, captioned with the shared `.ta-label` (globals.css).
@@ -120,6 +121,7 @@ export function Segmented({
 	const lastRow = options.length - (options.length % cols || cols);
 	return (
 		<div className="ta-seg grid" style={{ gridTemplateColumns: `repeat(${cols * r}, minmax(0, 1fr))` }}>
+			<SegIndicator />
 			{options.map((o, i) => {
 				const active = value === o.v;
 				return (

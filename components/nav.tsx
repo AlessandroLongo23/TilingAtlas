@@ -2,13 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Menu } from "lucide-react";
+import { Menu, Search } from "lucide-react";
 import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { DiscordIcon } from "@/components/icons/discord";
 import { cn } from "@/lib/utils/cn";
 import { useImmersive } from "@/stores/immersive";
+import { HoverPill } from "@/components/ui/hover-pill";
 import { Kbd } from "@/components/ui/kbd";
 import { Tooltip } from "@/components/ui/tooltip";
 import { UpdatesButton } from "@/components/updates/updates-button";
@@ -19,9 +20,9 @@ import { useGamepad } from "@/lib/hooks/useGamepad";
 import { usePadGlyph } from "@/lib/stores/gamepad";
 import { SheetBackdrop, SheetHeader, useSheet } from "@/components/ui/bottom-sheet";
 import { ThemeToggle } from "./ThemeToggle";
-import { Mark, NAV_BAR, NAV_LABEL, NavBrand, NavDivider, navLinkClass } from "./nav-bar";
+import { Mark, NAV_BAR, NAV_LABEL, NavActivePill, NavBrand, NavDivider, navLinkClass } from "./nav-bar";
 
-const LINKS = [
+export const LINKS = [
 	// `blurb` is the phone menu's one-line description of each section.
 	{ href: "/library", label: "Library", blurb: "Browse and filter every tiling in the atlas" },
 	{ href: "/play", label: "Play", blurb: "Open any tiling live: pan, zoom, decorate, edit" },
@@ -131,7 +132,8 @@ export function Nav() {
 			{/* Ten links do not fit a laptop window with their keycaps attached, so the caps are the first
 			    thing to go (below 2xl) and the row scrolls sideways below that rather than sliding under
 			    the theme toggle — the nav clips its overflow, so an unscrollable row would just vanish. */}
-			<div className="scrollbar-hide flex min-w-0 flex-1 items-center gap-1 overflow-x-auto max-md:hidden">
+			<div className="scrollbar-hide relative flex min-w-0 flex-1 items-center gap-1 overflow-x-auto max-md:hidden">
+				<HoverPill />
 				{padPrev ? (
 					<Kbd literal className="shrink-0">
 						{padPrev}
@@ -145,10 +147,12 @@ export function Nav() {
 							key={link.href}
 							href={link.href}
 							title={key ? `${link.label} (${key})` : link.label}
+							aria-current={isActive ? "page" : undefined}
 							className={navLinkClass(isActive)}
 						>
+							{isActive ? <NavActivePill /> : null}
 							<span className={NAV_LABEL}>{link.label}</span>
-							{key ? <Kbd className="hidden 2xl:inline-flex">{key}</Kbd> : null}
+							{key ? <Kbd className="relative hidden 2xl:inline-flex">{key}</Kbd> : null}
 						</Link>
 					);
 				})}
@@ -160,6 +164,16 @@ export function Nav() {
 			</div>
 
 			<div className="flex items-center gap-0.5 max-md:hidden">
+				<Tooltip label="Search and jump" shortcut="⌘ K" side="left" delay={0}>
+					<button
+						type="button"
+						onClick={() => window.dispatchEvent(new Event("ta:command-palette"))}
+						aria-label="Open the command palette"
+						className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-control text-fg-muted transition-colors hover:bg-surface-overlay hover:text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+					>
+						<Search size={15} />
+					</button>
+				</Tooltip>
 				<Tooltip label="Join the Discord" side="left" delay={0}>
 					<a
 						href={DISCORD_INVITE}

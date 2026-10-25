@@ -7,7 +7,7 @@ import path from "node:path";
 import { readDataJson } from "@/scripts/atlas/io.mjs";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import type { ExactCellSource } from "@/lib/services/cellCodecService";
-import type { CataloguePatch } from "@/lib/render/hyperbolicDevelopedDraw";
+import type { CataloguePatch } from "@/lib/tilings/hyp-developed";
 import type { PipelineRecord } from "@/lib/squaring/shelf";
 import { referencedTilingIds } from "@/lib/defense/slides";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
@@ -58,7 +58,9 @@ const attrs = (md: string, tag: string, attr: string) =>
 
 async function loadPatches(ids: string[]): Promise<Record<string, CataloguePatch>> {
 	if (!ids.length) return {};
-	const all: CataloguePatch[] = readDataJson(path.join(PUBLIC, "hyperbolic-developed.json"));
+	const all: CataloguePatch[] = ["hyperbolic-developed.json", "hyperbolic-developed-stars.json"].flatMap((f) =>
+		readDataJson(path.join(PUBLIC, f)),
+	);
 	const wanted = new Set(ids);
 	return Object.fromEntries(all.filter((p) => wanted.has(p.id)).map((p) => [p.id, p]));
 }

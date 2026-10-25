@@ -17,8 +17,8 @@ import {
 	WallGroup,
 	WallSubLabel,
 } from "@/components/freedraw/filter-wall";
-import { HyperbolicEdgesCanvas } from "@/components/hyperbolic-edges-canvas";
-import { HyperbolicEdgesThumbnail } from "@/components/hyperbolic-edges-thumbnail";
+import { HyperbolicCanvas } from "@/components/hyperbolic-canvas";
+import { HyperbolicThumbnail } from "@/components/hyperbolic-thumbnail";
 import { OptionWall } from "@/components/ui/option-wall";
 import { Pagination } from "@/components/ui/pagination";
 import { useGridArrowNav } from "@/lib/hooks/useGridArrowNav";
@@ -294,7 +294,7 @@ export function HyperbolicFreedraw({
 									</>
 								}
 							>
-								<HyperbolicEdgesThumbnail pattern={hypSchwarzMeta(pattern)} size={232} />
+								<HyperbolicThumbnail tiling={hypSchwarzMeta(pattern)} mode="edges" size={232} />
 							</CatalogueCard>
 						))}
 					</div>
@@ -311,7 +311,7 @@ export function HyperbolicFreedraw({
 						preview={
 							<>
 								{isPhone && <DiskGestures />}
-								<HyperbolicEdgesCanvas key={selected.id} pattern={hypSchwarzMeta(selected)} />
+								<HyperbolicCanvas key={selected.id} tiling={hypSchwarzMeta(selected)} mode="edges" />
 							</>
 						}
 						title={selected.id}

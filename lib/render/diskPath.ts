@@ -71,6 +71,12 @@ function transport(p: Complex, q: Complex): Su11 {
 }
 
 const disk = (p: Pose) => (p as DiskPose).m;
+/** The family angles a fraction u of the way from a to b; a's when the two do not match. */
+function lerpAlphas(a: Pose, b: Pose, u: number): number[] | null | undefined {
+	const x = (a as DiskPose).alphas,
+		y = (b as DiskPose).alphas;
+	return x && y && x.length === y.length ? x.map((v, i) => v + (y[i] - v) * u) : x;
+}
 const pt = (w: WorldPt): Complex => ({ x: w.x, y: w.y });
 const centreOf = (m: Su11) => su11ApplyInverse(m, O);
 
@@ -85,7 +91,8 @@ export const diskModel: PathModel = {
 	segment(a, b, bend, u) {
 		const A = disk(a),
 			B = disk(b);
-		if (!bend) return { kind: "disk", m: su11Normalize(su11Mul(su11Pow(su11Mul(B, su11Inverse(A)), u), A)) };
+		const alphas = lerpAlphas(a, b, u);
+		if (!bend) return { kind: "disk", m: su11Normalize(su11Mul(su11Pow(su11Mul(B, su11Inverse(A)), u), A)), alphas };
 		const ca = centreOf(A),
 			cb = centreOf(B);
 		const c = bezier(ca, pt(bend), cb, u);
@@ -96,7 +103,11 @@ export const diskModel: PathModel = {
 			pb = angleIn(B, T0, cb);
 		const phi = ((pa + u * shortestDeltaDeg(pb - pa)) * Math.PI) / 180;
 		const Tc = su11Translation(su11ApplyInverse(T0, c));
-		return { kind: "disk", m: su11Normalize(su11Mul(su11Rotation(phi), su11Mul(su11Inverse(Tc), su11Inverse(T0)))) };
+		return {
+			kind: "disk",
+			m: su11Normalize(su11Mul(su11Rotation(phi), su11Mul(su11Inverse(Tc), su11Inverse(T0)))),
+			alphas,
+		};
 	},
 	centre: (p) => centreOf(disk(p)),
 	bendThrough(a, b, mid) {
@@ -120,9 +131,13 @@ export const diskModel: PathModel = {
 		return su11Apply(T, P);
 	},
 	// The screen centre is the pose's centre, so a rotation about the disk's origin turns about it.
-	rotate: (p, deg) => ({ kind: "disk", m: su11Normalize(su11Mul(su11Rotation((deg * Math.PI) / 180), disk(p))) }),
+	rotate: (p, deg) => ({
+		kind: "disk",
+		m: su11Normalize(su11Mul(su11Rotation((deg * Math.PI) / 180), disk(p))),
+		alphas: (p as DiskPose).alphas,
+	}),
 	withCentre(p, w) {
 		const m = disk(p);
-		return { kind: "disk", m: su11Normalize(su11Mul(m, transport(pt(w), centreOf(m)))) };
+		return { kind: "disk", m: su11Normalize(su11Mul(m, transport(pt(w), centreOf(m)))), alphas: (p as DiskPose).alphas };
 	},
 };

@@ -16,7 +16,6 @@ import { HyperbolicPerPixelRenderer } from "@/lib/render/hyperbolicPerPixelGL";
 let glCanvas: HTMLCanvasElement | null = null;
 // undefined = untried, null = unavailable (no WebGL2, or the program failed to build)
 let glRenderer: HyperbolicPerPixelRenderer | null | undefined;
-let canvas2d: HTMLCanvasElement | null = null;
 
 /** The shared per-pixel renderer, sized for this bake, or null where WebGL2 is unavailable. */
 export function ensureDiskRenderer(
@@ -45,20 +44,3 @@ export function ensureDiskRenderer(
 	}
 	return glRenderer ? { renderer: glRenderer, canvas: glCanvas } : null;
 }
-
-/** The shared 2D surface for the developed fallback, sized for this bake. */
-export function ensureDiskCanvas2d(size: number): CanvasRenderingContext2D | null {
-	if (!canvas2d) canvas2d = document.createElement("canvas");
-	if (canvas2d.width !== size) {
-		canvas2d.width = size;
-		canvas2d.height = size;
-	}
-	const ctx = canvas2d.getContext("2d");
-	if (!ctx) return null;
-	ctx.clearRect(0, 0, size, size);
-	return ctx;
-}
-
-/** The bitmap the 2D fallback just drew. Separate from the context so a caller cannot bake into one
- *  surface and read another. */
-export const diskCanvas2dDataUrl = (): string | null => canvas2d?.toDataURL("image/png") ?? null;

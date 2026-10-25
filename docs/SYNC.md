@@ -3222,3 +3222,11 @@ mixed faces). Rename, move, delete runs; folders. NOTES 2026-10-25 "draws throug
 ## 2026-10-25 — tilesearch 3-15x faster, same output; --gzip — CC
 Gate: bench.py, 5 boards, every file identical to 56b0a405. hybrid_2_9830 k<=2 49.4 -> 13.2 s,
 123_1_4657 k<=3 16.4 -> 1.1 s. NOTES 2026-10-25 "tilesearch made 3-15x faster".
+## 2026-10-23 — hyperbolic star shelf, materials, /library query, UI polish — CC
+Five commits: canvas unification `e0a9f6b1`, UI polish `123f7c7e`, /library `33600776`, 23,458 star tilings
+`1468c674` (stars in their own shard), materials `b9932e17` (scans at 512 px; public/ 499.7 MB of 500).
+Left uncommitted: hyp_feas.h, eu_solver.cpp, Makefile, run_k2_buckets.py and three live logs (other sessions).
+NOTES 2026-10-23 "Release prep for the star shelf" and the three entries before it.
+
+## 2026-10-25 — searcher-ui merged with searcher and master; TileSearch on HoverPill and HyperbolicCanvas — CC
+Branch work committed (e692b766), searcher and master merged in. NOTES 2026-10-25 "searcher-ui merged".

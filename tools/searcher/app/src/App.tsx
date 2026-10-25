@@ -3,7 +3,8 @@
 import { CircleAlert, CircleCheck, FilePlus, FolderOpen, Play, Save } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { NAV_BAR, NAV_LABEL, NavBrand, NavDivider, navLinkClass } from "@/components/nav-bar";
+import { NAV_BAR, NAV_LABEL, NavActivePill, NavBrand, NavDivider, navLinkClass } from "@/components/nav-bar";
+import { HoverPill } from "@/components/ui/hover-pill";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { InfoDot } from "@/components/ui/info-dot";
@@ -457,9 +458,17 @@ export function App() {
 					<NavBrand name="TileSearch" version={settings?.version ?? ""} />
 				</div>
 				<NavDivider />
-				<nav className="flex min-w-0 flex-1 items-center gap-1">
+				<nav className="relative flex min-w-0 flex-1 items-center gap-1">
+					<HoverPill />
 					{(["board", "runs"] as const).map((v) => (
-						<button key={v} type="button" onClick={() => setView(v)} className={navLinkClass(view === v)}>
+						<button
+							key={v}
+							type="button"
+							onClick={() => setView(v)}
+							aria-current={view === v ? "page" : undefined}
+							className={navLinkClass(view === v)}
+						>
+							{view === v ? <NavActivePill /> : null}
 							<span className={NAV_LABEL}>{v === "board" ? "Board" : `Runs${running ? ` · ${running} running` : ""}`}</span>
 						</button>
 					))}

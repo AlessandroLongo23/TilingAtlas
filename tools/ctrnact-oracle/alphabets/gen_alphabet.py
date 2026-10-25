@@ -560,7 +560,7 @@ def forbidden_adjacent_pairs(classes, D, lattice=None):
     return bad
 
 
-def enum_configs(D, classes, min_len, max_len, closure="euclidean", forbidden=None, maxdens=1):
+def enum_configs(D, classes, min_len, max_len, closure="euclidean", forbidden=None, maxdens=1, free_points=False):
     """All cyclic words of corner classes with unit sum == D, up to rotation+reflection.
 
     `forbidden` is an optional set of ordered corner-class pairs that may not be cyclically adjacent
@@ -655,6 +655,51 @@ def enum_configs(D, classes, min_len, max_len, closure="euclidean", forbidden=No
     # a census.
     mixed = (closure == "mixed")
     cap = D * maxdens if (dens_mode or flat_mode) else D
+    # HYPERBOLIC STARS: a sound prune, and without it the pilot palette has 7M figures at valence 5. A
+    # star whose dent is not reflex is a convex 2n-gon, not a star, so a tiling needs l < l_max of every
+    # star in it (hyp_geom.star_lmax). Each added corner raises the forced length and can only lower that
+    # bound, so once a prefix's angle sum at its own l_max is still >= 2*pi, no completion closes in time.
+    hyp_lmax = free_sup = None
+    if hyperbolic and free_points:
+        # FREE POINTS (2026-10-22). A star's point is a variable of the TILING, not of the palette: each
+        # star size is one tile whose point α lies anywhere in (0, π − 2π/n), and `alphaU` is only a
+        # label. Both fixed-point gates are unsound here (a word dead at the grid point can live at
+        # another), and found tilings to prove it (3.3.4*.8* + 3.4*.8* closes at 4* = 56.65°, never at
+        # 60°). What replaces them is sound for every α:
+        #   * at most one dent per word: two reflex corners already exceed 2π;
+        #   * the Euclidean sum must be able to exceed a full turn, sup over α > D, because every corner
+        #     only shrinks with ℓ (a point is constant in it). Euclid is affine in each α, so the sup takes each star's point at the
+        #     top of its range when the word has more of its points than dents, and at 0 otherwise.
+        # Nothing bounds the valence any more (α → 0 lets ℓ grow without limit, as {3,q} does), so
+        # maxValence IS the completeness knob of this mode, the same one the regular hyperbolic shelf has.
+        star_cls = {c.cid: c for c in classes if c.tile.kind == "star"}
+
+        def free_sup(word, total):
+            net = {}                               # star tile -> its points minus its dents in the word
+            for cid in word:
+                if cid in star_cls:
+                    t = star_cls[cid].tile
+                    net[t] = net.get(t, 0) + (1 if star_cls[cid].is_point else -1)
+            return total + sum(c * ((D // 2 - D // t.n if c > 0 else 0) - t.alphaU) for t, c in net.items())
+
+        def hyp_dead(word):
+            return sum(1 for cid in word if cid in star_cls and not star_cls[cid].is_point) > 1
+        hyp_lmax = True                            # gates the hyp_dead call in rec()
+    elif hyperbolic and any(c.tile.kind == "star" for c in classes):
+        sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+        import hyp_geom
+        lmax = {c.cid: hyp_geom.star_lmax(c.tile.n, 2 * math.pi * c.tile.alphaU / D)
+                for c in classes if c.tile.kind == "star"}
+        hyp_ang = {L: {c.cid: hyp_geom.corner_angle(c.tile.L, c.units, D, L) for c in classes}
+                   for L in set(lmax.values())}
+        # A star-free word still has to close below the LARGEST l_max to sit in a star tiling at all.
+        # That bounds every word, so maxValence stops being a completeness knob here: the census is
+        # complete for star-bearing tilings, and star-free ones only appear where l is that small.
+        top = max(lmax.values())
+        hyp_lmax = lambda word: min((lmax[c] for c in word if c in lmax), default=top)
+
+        def hyp_dead(word):
+            return sum(hyp_ang[hyp_lmax(word)][c] for c in word) >= 2 * math.pi
     # The wrap pair (last, first) is only genuinely adjacent when the word CLOSES a full turn, so the
     # cyclic half of the pair prune is euclidean-only even if a caller hands us a table in a defect mode.
     bad = forbidden if forbidden else frozenset()
@@ -689,7 +734,7 @@ def enum_configs(D, classes, min_len, max_len, closure="euclidean", forbidden=No
                     emit(word)
                 # fall through: a longer word is a distinct, still-valid defect vertex
         elif hyperbolic:
-            if len(word) >= min_len and total > D:
+            if len(word) >= min_len and (free_sup(word, total) if free_sup else total) > D:
                 if pair_ok(word[-1], word[0]):  # cyclic point-adjacency
                     emit(word)
                 # fall through: a longer word is a distinct, larger hyperbolic vertex
@@ -714,6 +759,9 @@ def enum_configs(D, classes, min_len, max_len, closure="euclidean", forbidden=No
             if word and (word[-1], cid) in bad:     # geometric generalization of the same lemma
                 continue
             word.append(cid)
+            if hyp_lmax and hyp_dead(word):
+                word.pop()
+                continue
             nxt = total + unit[cid]
             # euclidean reaches a full turn (nxt <= D); spherical stays strictly under it (nxt < D) so a
             # flat vertex is never developed; hyperbolic overshoots freely (bounded only by max_len).
@@ -1627,7 +1675,16 @@ def main():
     # Measured on isotox-mixed k=1: 2,859,640 of 2,870,830 raw header lines carry at least one, so
     # this is 99.6% of that search — and the 11,190 that remain are the same order as star-wide's
     # 17,458, which is what a palette with no dents costs.
-    if spec.get("closure", "euclidean") in ("positive-defect", "negative-defect", "density", "mixed"):
+    #
+    # ⚑ EXCEPT A HYPERBOLIC STAR TILING (2026-10-22). The digon argument is about a SOLID in R3. A
+    # negative-defect palette with isotoxal stars is realized intrinsically in H2, where every vertex
+    # sums to exactly 2*pi like the plane, and a dent filled by one corner of another tile is a real
+    # 2-valent vertex: the same noncounting dent-fill the Euclidean star palettes admit. They still
+    # cannot chain (point+dent at v forces dent+point at w, and with dents below their Euclidean
+    # value the two closures contradict each other), so eu_solver's max_nc stays a tripwire.
+    curved_star = spec.get("closure") == "negative-defect" and any(t.kind == "star" for t in tiles)
+    if spec.get("closure", "euclidean") in ("positive-defect", "negative-defect", "density", "mixed") \
+            and not curved_star:
         min_len = 3
     # Optional geometric pre-filter (EU_PRUNE_OVERLAP=1): drop vertex configs whose PLACED tiles physically
     # overlap. The solver is combinatorial (no geometry), so an overlapping figure would otherwise seed
@@ -1684,7 +1741,7 @@ def main():
         if ecompl:
             print("[gen] NOTE: run eu_solver with EU_EDGE_COMPL=1, and develop with --complement")
     configs = enum_configs(D, classes, min_len, spec.get("maxValence", 24), closure, forbidden,
-                           spec.get("maxDensity", 1))
+                           spec.get("maxDensity", 1), spec.get("freePoints", False))
     if prune_overlap:
         overlaps = overlap_tester(classes, D, poly_lattice)
         before = len(configs)

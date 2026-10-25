@@ -7,7 +7,6 @@ import {
 	hypPolyBoardLabel,
 	hypPolyFamilyLabel,
 	hypPolyKGaps,
-	hypPolyMeta,
 	hypPolyShardUrls,
 	hypPolySubOfBoard,
 	HYP_POLY_BOARD_BY_ID,
@@ -222,11 +221,8 @@ describe.skipIf(!anyShard)("shards", () => {
 	it("names a tiling by its vertex figures, in canonical cyclic order", () => {
 		const r = shardOf(ai1[0], 1)![0];
 		expect(hypPolyFamilyLabel(r)).toBe("3.4.7.4");
-		expect(hypPolyMeta(r).colors).toBe(4); // the palette still needs one entry per alphabet size
-		expect(hypPolyMeta(r).darts).toBe(r.darts);
 		const t = shardOf(ai2[0], 1)![0];
 		expect(hypPolyFamilyLabel(t)).toBe("3.3.7.3.7");
-		expect(hypPolyMeta(t).colors).toBe(2);
 		// Marek's catch (2026-09-24): boards {3,4,4,8} and {3,4,8,8} both use only 3, 4 and 8, so a size
 		// list read the same on both. The figures do not: 3.4.8.4 on one, 3.8.4.8 on the other.
 		const q = (id: string) => shardOf(HYP_POLY_BOARD_BY_ID.get(id)!, 1)![0];

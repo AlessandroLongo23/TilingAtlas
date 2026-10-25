@@ -1,7 +1,7 @@
 "use client";
 
 import { Moon, Sun } from "lucide-react";
-import { useCallback, useEffect, useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
 import { Tooltip } from "@/components/ui/tooltip";
 
@@ -13,6 +13,12 @@ function applyTheme(theme: Theme) {
 	root.classList.toggle("dark", theme === "dark");
 	localStorage.setItem("theme", theme);
 	setTimeout(() => root.classList.remove("disable-transitions"), 100);
+}
+
+// Reads the current theme from the DOM (the source of truth), so it is stable and safe to call from a
+// key listener or the command palette without a stale closure.
+export function toggleTheme() {
+	applyTheme(readTheme() === "dark" ? "light" : "dark");
 }
 
 // The theme is the `.dark` class on <html> (set before paint by the script in app/layout.tsx), so that
@@ -44,11 +50,7 @@ export function ThemeToggle({ variant = "icon" }: { variant?: "icon" | "row" }) 
 		return () => media.removeEventListener("change", onChange);
 	}, [owner]);
 
-	// Read the current theme from the DOM (source of truth) and not the `theme` state, so this stays
-	// stable ([] deps) and the keydown listener below never fires on a stale closure.
-	const toggle = useCallback(() => {
-		applyTheme(readTheme() === "dark" ? "light" : "dark");
-	}, []);
+	const toggle = toggleTheme;
 
 	// Shift+T toggles the theme from anywhere. Plain "t" is already taken on /play (tiling transition),
 	// so we use capital T. That handler lowercases keys, so we register in the CAPTURE phase and

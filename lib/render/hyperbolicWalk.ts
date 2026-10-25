@@ -11,7 +11,7 @@
 //
 // The same table is read twice: as Float64 here (camera anchor, click snapping, tests) and as an RGBA32F
 // texture by the fragment shader (hyperbolicWalkGL.ts). Layout, in texels of four floats, per face row:
-//   0        kind, slots, step, sides      kind: 0 regular, 1 apeirogon, 2 irregular
+//   0        kind, slots, step, sides      kind: 0 regular, 1 apeirogon, 2 irregular, 3 star
 //   1        colour index, Islamic layer (−1 none), that layer's box (x, y extent)
 //   2 + 3j   M = (a.x, a.y, b.x, b.y)      this frame → the frame of the face across side j
 //   3 + 3j   next face, drawn, q.x, q.y
@@ -22,6 +22,11 @@
 // perpendicular through the side's END vertex, negative on the side's own half: it decides the tie. q is
 // zero where the end is a real corner. An apeirogon row stores in texel 1's w the unit sides per long
 // side (0 or 1 = no flat corners), and its step is between REAL corners.
+//
+// STAR faces (an isotoxal star's dents are REFLEX). Half-plane tests accept only the inner core, so the
+// arms would never resolve. A star is star-shaped about its centre and geodesics through 0 are diameters,
+// so the wedge between the rays to vertices j and j+1 holds exactly the part of the face behind side j:
+// find that wedge, test that one side. The slot's q.x holds the argument of vertex j (no flat corners).
 //
 // Frames. A regular face sits with its centre at 0 and the midpoint of side j at angle 2πj/p, so the
 // side a point faces is read off its argument. An irregular face (a scalene board's triangle) has its
@@ -48,6 +53,10 @@ import { bestCentre, dartSymmetry } from "@/lib/render/hyperbolicSymmetry";
 export const WALK_REGULAR = 0;
 export const WALK_APEIROGON = 1;
 export const WALK_IRREGULAR = 2;
+export const WALK_STAR = 3;
+
+/** x wrapped into (−π, π]. */
+const wrapPi = (x: number) => x - 2 * Math.PI * Math.ceil((x - Math.PI) / (2 * Math.PI));
 
 export interface WalkTiling {
 	/** The table, `height` rows of `width` texels of four floats. */
@@ -225,7 +234,7 @@ export function buildWalk(darts: Darts, edge: number, opts: { allDrawn?: boolean
 			const mid = (i: number) => hypMidpoint(su11Apply(C0, v[i]), su11Apply(C0, v[(i + 1) % S]));
 			const m0 = mid(0);
 			C = mul(su11Rotation(-Math.atan2(m0.y, m0.x)), C0);
-			if (darts.alpha) kind[f] = WALK_IRREGULAR;
+			if (darts.alpha) kind[f] = ring.some((h) => alpha(h) > Math.PI + 1e-9) ? WALK_STAR : WALK_IRREGULAR;
 			else {
 				const m1 = su11Apply(su11Rotation(-Math.atan2(m0.y, m0.x)), mid(1));
 				if (m1.y < 0) for (let s = 1; s < S; s++) order[s] = S - s; // the ring runs clockwise
@@ -243,7 +252,7 @@ export function buildWalk(darts: Darts, edge: number, opts: { allDrawn?: boolean
 	}
 
 	const sizes = [
-		...new Set(rings.flatMap((ring, f) => (kind[f] === WALK_IRREGULAR ? [] : [lvert[rneig[ring[0]]]]))),
+		...new Set(rings.flatMap((ring, f) => (kind[f] >= WALK_IRREGULAR ? [] : [lvert[rneig[ring[0]]]]))),
 	].sort((a, b) => a - b);
 	const width = 2 + 3 * Math.max(...slots);
 	const data = new Float64Array(F * width * 4);
@@ -252,7 +261,7 @@ export function buildWalk(darts: Darts, edge: number, opts: { allDrawn?: boolean
 		const row = f * width * 4;
 		const S = slots[f];
 		const p = lvert[rneig[ring[0]]];
-		const layer = kind[f] === WALK_IRREGULAR ? -1 : sizes.indexOf(p);
+		const layer = kind[f] >= WALK_IRREGULAR ? -1 : sizes.indexOf(p);
 		data.set(
 			[
 				kind[f],
@@ -294,7 +303,8 @@ export function buildWalk(darts: Darts, edge: number, opts: { allDrawn?: boolean
 			if (kind[f] !== WALK_APEIROGON) {
 				const nrm = sideNormal(verts[f][s], verts[f][s + 1]);
 				data.set(nrm, o + 8);
-				if (kind[f] === WALK_IRREGULAR && flat(ring[(i + 1) % ring.length])) {
+				if (kind[f] === WALK_STAR) data[o + 6] = Math.atan2(verts[f][s].y, verts[f][s].x);
+				else if (kind[f] === WALK_IRREGULAR && flat(ring[(i + 1) % ring.length])) {
 					const q = perpNormal(nrm, verts[f][s + 1], verts[f][s]);
 					data.set([q[0], q[1]], o + 6);
 					data[o + 11] = q[2];
@@ -352,6 +362,20 @@ function locate(t: WalkTiling, f: number, w: Complex): { j: number; s: number; p
 		const j = (((Math.round((Math.atan2(w.y, w.x) / (2 * Math.PI)) * S) % S) + S) % S) | 0;
 		return { j, s: out(j), pre: null };
 	}
+	if (d[row] === WALK_STAR) {
+		const a = Math.atan2(w.y, w.x);
+		const th = (i: number) => d[row + (3 + 3 * (i % S)) * 4 + 2];
+		let j = 0;
+		for (let i = 0; i < S; i++) {
+			const d1 = wrapPi(a - th(i));
+			const d2 = wrapPi(th(i + 1) - th(i));
+			if (d1 * d2 >= 0 && Math.abs(d1) <= Math.abs(d2)) {
+				j = i;
+				break;
+			}
+		}
+		return { j, s: out(j), pre: null };
+	}
 	let j = 0;
 	let s = -Infinity;
 	for (let i = 0; i < S; i++) {
@@ -385,25 +409,35 @@ function locate(t: WalkTiling, f: number, w: Complex): { j: number; s: number; p
 /**
  * Walk the point w of face f's frame to the face that contains it. Returns that face, the point in its
  * frame, the isometry W carrying the start frame onto it, and whether the walk arrived within `maxSteps`.
+ *
+ * `ref` is the same quotient at other corner angles (a star family's table at its default: the rings,
+ * faces and slots are the same, only the side maps differ). The walk then also multiplies ref's side
+ * maps along the very crossings it made, and returns that product as Wref: the same step between the
+ * same two tiles, in the reference geometry. A path's group element does not depend on the angles, so
+ * neither does Wref, which is what lets a tile keep its identity while the slider moves.
  */
 export function walkPoint(
 	t: WalkTiling,
 	f: number,
 	w: Complex,
 	maxSteps = 4096,
-): { f: number; w: Complex; W: Su11; ok: boolean } {
+	ref?: WalkTiling,
+): { f: number; w: Complex; W: Su11; Wref: Su11; ok: boolean } {
 	let W = su11Identity();
+	let Wref = su11Identity();
 	for (let it = 0; it < maxSteps; it++) {
 		const { j, s, pre } = locate(t, f, w);
-		if (s <= 0) return pre ? { f, w: su11Apply(pre, w), W: mul(pre, W), ok: true } : { f, w, W, ok: true };
+		if (s <= 0) return pre ? { f, w: su11Apply(pre, w), W: mul(pre, W), Wref, ok: true } : { f, w, W, Wref, ok: true };
 		const o = f * t.width * 4 + (2 + 3 * j) * 4;
 		let M: Su11 = { a: { x: t.data[o], y: t.data[o + 1] }, b: { x: t.data[o + 2], y: t.data[o + 3] } };
 		if (pre) M = su11Mul(M, pre);
+		if (ref)
+			Wref = mul({ a: { x: ref.data[o], y: ref.data[o + 1] }, b: { x: ref.data[o + 2], y: ref.data[o + 3] } }, Wref);
 		w = su11Apply(M, w);
 		W = mul(M, W);
 		f = t.data[o + 4];
 	}
-	return { f, w, W, ok: false };
+	return { f, w, W, Wref, ok: false };
 }
 
 /**
@@ -412,10 +446,15 @@ export function walkPoint(
  * of frame (null when the centre has not left f). This is what makes panning unbounded: the view's
  * translation never exceeds one tile, however far the reader has travelled.
  */
-export function reanchor(t: WalkTiling, f: number, view: Su11): { f: number; view: Su11; W: Su11 | null } {
-	const r = walkPoint(t, f, su11Apply(su11Inverse(view), { x: 0, y: 0 }));
-	if (r.f === f && r.W.b.x === 0 && r.W.b.y === 0) return { f, view, W: null };
-	return { f: r.f, view: mul(view, su11Inverse(r.W)), W: r.W };
+export function reanchor(
+	t: WalkTiling,
+	f: number,
+	view: Su11,
+	ref?: WalkTiling,
+): { f: number; view: Su11; W: Su11 | null; Wref: Su11 } {
+	const r = walkPoint(t, f, su11Apply(su11Inverse(view), { x: 0, y: 0 }), 4096, ref);
+	if (r.f === f && r.W.b.x === 0 && r.W.b.y === 0) return { f, view, W: null, Wref: r.Wref };
+	return { f: r.f, view: mul(view, su11Inverse(r.W)), W: r.W, Wref: r.Wref };
 }
 
 /** The feature of the tiling nearest to w (a vertex, a side's midpoint or a finite face's centre), as a

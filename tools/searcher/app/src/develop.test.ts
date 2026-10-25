@@ -5,8 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parse } from "./board";
-import { su11Identity } from "@/lib/render/hyperbolic";
-import { FALLBACK_BOUND_R, HyperbolicDeveloper, THUMB_BUDGET } from "@/lib/render/hyperbolicDevelopClient";
+import { buildWalk } from "@/lib/render/hyperbolicWalk";
 import { decode, flatPattern, geometry, hyperbolicDarts, vertexWords } from "./develop";
 
 const SEARCHER = join(__dirname, "../..");
@@ -123,15 +122,10 @@ describe.skipIf(!existsSync(ENGINE))("hybrid_2_9830 in the hyperbolic disk", () 
 			const g = geometry(hybrid, vertexWords(c));
 			expect(g.kind).toBe("hyperbolic");
 			if (g.kind !== "hyperbolic") continue;
-			const dev = new HyperbolicDeveloper(hyperbolicDarts(decode(c, hybrid), g), g.edge);
-			const patch = dev.develop(
-				{ id: "t", name: "t", config: "", edge: g.edge },
-				su11Identity(),
-				FALLBACK_BOUND_R,
-				THUMB_BUDGET,
-			);
-			expect(patch.faces.length).toBeGreaterThan(10);
-			expect(new Set(patch.faces.map((f) => f.length)).isSubsetOf(new Set([3, 4, 24]))).toBe(true);
+			// the walk the disk canvas draws from: one table row per face of the quotient
+			const walk = buildWalk(hyperbolicDarts(decode(c, hybrid), g), g.edge, { allDrawn: true });
+			expect(walk.verts.length).toBeGreaterThan(0);
+			expect(new Set(walk.verts.map((f) => f.length - 1)).isSubsetOf(new Set([3, 4, 24]))).toBe(true); // a ring repeats its first vertex
 		}
 	});
 });
@@ -145,11 +139,9 @@ describe.skipIf(!existsSync(ENGINE))("123_1_4657, whose faces have sides cut by 
 			const g = geometry(b, vertexWords(c));
 			expect(g.kind).toBe("hyperbolic");
 			if (g.kind !== "hyperbolic") continue;
-			const dev = new HyperbolicDeveloper(hyperbolicDarts(decode(c, b), g), g.edge);
-			// colours mode, which also fills apeirogons: a tiling of apeirogons only has no finite face
-			expect(
-				dev.developColors({ id: "t", name: "t", config: "", edge: g.edge }, su11Identity(), 0.99, 8000).edges.length,
-			).toBeGreaterThan(20);
+			// the walk the disk canvas draws from, apeirogons included
+			const walk = buildWalk(hyperbolicDarts(decode(c, b), g), g.edge, { allDrawn: true });
+			expect(walk.verts.length).toBeGreaterThan(0);
 		}
 	});
 });

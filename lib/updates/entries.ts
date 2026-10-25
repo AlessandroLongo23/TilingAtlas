@@ -78,6 +78,48 @@ export interface UpdateEntry {
 /** Newest first. tests/updates.test.ts asserts that ordering, and every id below. */
 export const UPDATES: UpdateEntry[] = [
 	{
+		version: "1.47.0",
+		date: "2026-10-23",
+		title: "Hyperbolic tilings by star polygons",
+		commit: "c7d8f3e7",
+		changes: [
+			{
+				kind: "content",
+				text: "**23,458 hyperbolic tilings by star polygons**, where the shelf had none. 17,950 are families whose star point moves on a slider in /play, and in 15,663 of them a second kind of star and the edge length follow it; 5,508 are rigid. Stars have 3, 4, 5, 6, 8 or 12 points and sit beside regular polygons of the same sizes.",
+				items: [
+					"**A square and its four triangles** merge into one 4-pointed star: 3.3.3.4.3.8★ + 3.3.8★ becomes 3.3.4★.8★ + 3.4★.8★, which closes with the star's point at 56.65°.",
+					"**Not yet a census**: the search stops at five tiles around a vertex, and tilings that need a third vertex type in the search are not covered. 50 families are needle-thin, their point moving through less than 1°, and 8 tilings the search found do not draw cleanly and stay out.",
+				],
+				href: "/play?tiling=hyp-k2-3-3-4s-8s__3-4s-8s&alpha=56.65",
+				images: ["/release-images/hyp-star-family.jpg", "/release-images/hyp-star-rigid.jpg"],
+			},
+			{
+				kind: "content",
+				text: "**910,803 more hyperbolic tilings by regular polygons** from Marek Čtrnáct, among them 871,313 on the 2.9387 board rebuilt from his corrected solver, and 29,623 on the first board whose tiles take several edge lengths.",
+			},
+			{
+				kind: "feature",
+				text: "**The library takes queries**: filter by vertex configuration (contains all, any of, or exactly), require or forbid polygons, sort by k, edge length, symmetry or tile types, read the results as a table and export them as CSV.",
+				href: "/library",
+				images: ["/release-images/library-query.jpg"],
+			},
+			{
+				kind: "feature",
+				text: "**Hybrid boards in /play** open by polygon set and then by k, and the Poincaré disk now shows polygon points, vertex orbits, symmetry elements and the fundamental domain, as the plane does.",
+			},
+			{
+				kind: "feature",
+				text: "**Marble, stained glass, wood and cobblestone** for the Poincaré disk, under View options, and each tile keeps its stone or board while a star family's slider moves.",
+				href: "/play?tiling=hyp-k2-3-3-4s-8s__3-4s-8s&alpha=56.65",
+				images: ["/release-images/hyp-materials.jpg"],
+			},
+			{
+				kind: "changed",
+				text: "**A command palette** (Cmd K) jumps to any section or searches the library, and controls across the site slide, settle and answer a click. Rim shading on the disk is now a switch, off by default.",
+			},
+		],
+	},
+	{
 		version: "1.46.0",
 		date: "2026-10-21",
 		title: "Keyframed GIF animations in three geometries",

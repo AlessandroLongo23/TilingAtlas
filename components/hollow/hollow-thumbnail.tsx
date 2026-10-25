@@ -4,7 +4,7 @@ import { HollowCanvas } from "@/components/hollow/hollow-canvas";
 import type { HollowStyle } from "@/lib/hollow/render";
 
 // The hollow-tiling preview for the /library card and the /play picker — sibling of
-// FreedrawThumbnail and HyperbolicDevelopedThumbnail, and the only way those surfaces can show a
+// FreedrawThumbnail and HyperbolicThumbnail, and the only way those surfaces can show a
 // hollow tiling (its overlapping faces give TilingThumbnail no cell to draw).
 //
 // Static and non-interactive, like the other two. Filled by tile type, not by density: at

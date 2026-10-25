@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import type { CataloguePatch } from "@/lib/render/hyperbolicDevelopedDraw";
+import type { CataloguePatch } from "@/lib/tilings/hyp-developed";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 
 // Client wrappers that code-split the heavy GL stacks out of the landing bundle: the spherical cell

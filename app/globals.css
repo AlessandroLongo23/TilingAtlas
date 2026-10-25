@@ -227,6 +227,37 @@ body {
   border-radius: 0;
   background: transparent;
 }
+/* The thumb answers the pointer: it swells a little under hover and more while held, on a ring of the
+   accent, so a drag feels taken hold of. Scale only (the travel transform is on the carrier). */
+.ta-track-thumb,
+.ta-ival-thumb {
+  transition:
+    scale 160ms var(--ease-out-strong),
+    box-shadow 160ms var(--ease-out);
+}
+@media (hover: hover) {
+  .ta-track:hover .ta-track-thumb,
+  .ta-ival-thumb:hover {
+    scale: 1.15;
+  }
+}
+.ta-track:has(.ta-track-input:active) .ta-track-thumb,
+.ta-ival-thumb:active {
+  scale: 1.3;
+  box-shadow:
+    0 0 0 1px var(--color-border-strong),
+    0 0 0 5px color-mix(in oklab, var(--color-accent) 18%, transparent),
+    0 1px 3px oklch(0 0 0 / 0.18);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ta-track-thumb,
+  .ta-ival-thumb {
+    transition: none;
+  }
+}
+.ta-track:has(.ta-track-input:disabled) .ta-track-thumb {
+  scale: none;
+}
 .ta-track:has(.ta-track-input:focus-visible) .ta-track-thumb {
   outline: 2px solid oklch(from var(--color-accent) l c h / 0.5);
   outline-offset: 2px;
@@ -317,7 +348,106 @@ html[data-pad] aside :focus {
 /* A scroll region whose content runs past its bottom edge: the last 24px fade out, so a cut-off
    control reads as "more below" and not as clipped. Pair it with bottom padding on the content. */
 .ta-scroll-fade {
-  mask-image: linear-gradient(to bottom, #000 calc(100% - 24px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - var(--ta-fade-end)), transparent);
+}
+/* Where the browser has scroll timelines, the fade clears over the last 48px of travel, so a panel
+   scrolled to its end shows its last row whole. Bottom only: a top fade would wash out the catalogue
+   tree's pinned headers. A panel that does not scroll has no active timeline and keeps the fade, which
+   its bottom padding absorbs. (`animation-timeline` after the shorthand, which would reset it.) */
+@property --ta-fade-end {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 24px;
+}
+@keyframes ta-scroll-end {
+  to {
+    --ta-fade-end: 0px;
+  }
+}
+@supports (animation-timeline: scroll()) {
+  .ta-scroll-fade {
+    animation: ta-scroll-end linear both;
+    animation-timeline: scroll(self);
+    animation-range: calc(100% - 48px) 100%;
+  }
+}
+
+/* Scrollbars: thin, and in the theme's own ink instead of the OS grey. .scrollbar-hide still wins. */
+:where(html, body, *) {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--color-text-muted) 40%, transparent) transparent;
+}
+::selection {
+  background-color: color-mix(in oklab, var(--color-accent) 24%, transparent);
+}
+
+/* Something that arrives once and stays (the floating toolbar): it rises 8px into place as it fades in. */
+@keyframes ta-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+.ta-rise-in {
+  animation: ta-rise-in 360ms var(--ease-out-strong) both;
+}
+/* A grid whose cells arrive together (the library's page of cards): they come in one after another,
+   40ms apart, capped at the twelfth so a large page never keeps the reader waiting. Opacity and a
+   short rise only — no scale, the thumbnails are already fading in on their own. */
+.ta-stagger > * {
+  animation: ta-rise-in 420ms var(--ease-out-strong) both;
+  animation-delay: calc(min(var(--ta-i, 12), 12) * 40ms);
+}
+.ta-stagger > :nth-child(1) { --ta-i: 0; }
+.ta-stagger > :nth-child(2) { --ta-i: 1; }
+.ta-stagger > :nth-child(3) { --ta-i: 2; }
+.ta-stagger > :nth-child(4) { --ta-i: 3; }
+.ta-stagger > :nth-child(5) { --ta-i: 4; }
+.ta-stagger > :nth-child(6) { --ta-i: 5; }
+.ta-stagger > :nth-child(7) { --ta-i: 6; }
+.ta-stagger > :nth-child(8) { --ta-i: 7; }
+.ta-stagger > :nth-child(9) { --ta-i: 8; }
+.ta-stagger > :nth-child(10) { --ta-i: 9; }
+.ta-stagger > :nth-child(11) { --ta-i: 10; }
+.ta-stagger > :nth-child(12) { --ta-i: 11; }
+
+/* A library card under a mouse: the preview drifts in a few percent inside its frame and the card
+   lifts on a soft shadow. Pointer devices only, so a tap never leaves a card stuck zoomed. A press
+   sinks it, the same 0.97-family response every button has. */
+.card-thumb {
+  overflow: clip;
+}
+@media (hover: hover) and (pointer: fine) {
+  .card-thumb > :not(.absolute) {
+    transition: scale 600ms var(--ease-out-strong);
+  }
+  .card-thumb:hover > :not(.absolute) {
+    scale: 1.04;
+  }
+  .ta-lane-cell:has(.card-thumb:hover) {
+    box-shadow: 0 10px 24px -12px oklch(0 0 0 / 0.25);
+  }
+}
+.ta-lane-cell {
+  transition:
+    box-shadow 300ms var(--ease-out-strong),
+    outline-color 150ms var(--ease-out),
+    scale 150ms var(--ease-out);
+}
+.ta-lane-cell:has(.card-thumb:active) {
+  scale: 0.985;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ta-rise-in,
+  .ta-stagger > * {
+    animation: none;
+  }
+  .card-thumb > :not(.absolute) {
+    transition: none;
+  }
+  .ta-lane-cell:has(.card-thumb:active) {
+    scale: none;
+  }
 }
 
 /* Hazard tape for the collections that have no page yet (2026-07-24). Stripes run at 45° inside
@@ -353,13 +483,61 @@ html[data-pad] aside :focus {
 }
 .ta-tab[data-state="active"],
 .ta-tab[aria-pressed="true"],
-.ta-tab[aria-checked="true"] {
+.ta-tab[aria-checked="true"],
+.ta-seg-ind {
   background-color: var(--color-tab-on);
   box-shadow:
     0 0 0 1px var(--color-tab-ring),
     0 1px 2px oklch(0 0 0 / 0.12);
   position: relative;
   z-index: 1;
+}
+/* The sliding pill (<SegIndicator>). It sits under the tabs, so every tab is lifted over it; while the
+   track carries data-ind the selected tab drops its own fill and the pill paints it. Width and height
+   travel too, so the pill reshapes between options of different widths and across a wall's rows. */
+.ta-seg {
+  position: relative;
+}
+.ta-seg-ind {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  border-radius: var(--radius-md);
+  pointer-events: none;
+  opacity: 0;
+  transition:
+    transform 280ms var(--ease-out-strong),
+    width 280ms var(--ease-out-strong),
+    height 280ms var(--ease-out-strong);
+}
+.ta-seg[data-ind] > .ta-seg-ind {
+  opacity: 1;
+}
+.ta-seg[data-ind] > .ta-tab {
+  position: relative;
+  z-index: 1;
+}
+.ta-seg[data-ind] > .ta-tab:is([data-state="active"], [aria-pressed="true"], [aria-checked="true"]) {
+  background-color: transparent;
+  box-shadow: none;
+}
+/* A press sinks the option a hair, so a click is felt before the pill arrives. */
+.ta-tab {
+  transition-property: color, background-color, scale;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-out);
+}
+.ta-tab:active:not(:disabled) {
+  scale: 0.97;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ta-seg-ind {
+    transition: none;
+  }
+  .ta-tab:active:not(:disabled) {
+    scale: none;
+  }
 }
 
 /* A wall with lanes, without lane cells (2026-07-22). The /play tile grid builds its lanes out of
@@ -451,6 +629,123 @@ html[data-pad] aside :focus {
   .ta-fade-out {
     animation: none;
     opacity: 0;
+  }
+}
+
+/* <HoverPill>: one hover highlight per row of controls. Every other child is lifted over it, and while it
+   shows (data-pill) the controls drop their own hover fill so there is one highlight, not two. A
+   pressed toggle and the current page keep theirs. */
+.ta-pill-host > :not(.ta-hover-pill) {
+  position: relative;
+  z-index: 1;
+}
+.ta-hover-pill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface-overlay);
+  pointer-events: none;
+  opacity: 0;
+  transition-property: transform, width, height, opacity;
+  transition-duration: 220ms, 220ms, 220ms, 150ms;
+  transition-timing-function: var(--ease-out-strong);
+}
+.ta-pill-host[data-pill] > .ta-hover-pill {
+  opacity: 1;
+}
+.ta-pill-host[data-pill] :is(button, a):not([aria-pressed="true"], [aria-current], [data-pill-skip]):hover {
+  background-color: transparent;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ta-hover-pill {
+    transition-property: opacity;
+  }
+}
+
+/* A keycap whose key was just pressed dips and inks for a moment (UiProviders). */
+@keyframes ta-kbd-hit {
+  0%,
+  30% {
+    translate: 0 1px;
+    color: var(--color-text-primary);
+    border-color: var(--color-border-strong);
+    background-color: var(--color-surface-sunken);
+  }
+}
+.ta-kbd-hit {
+  animation: ta-kbd-hit 260ms var(--ease-out);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ta-kbd-hit {
+    animation: none;
+  }
+}
+
+/* <SwapIcon>: a glyph that replaces another (Copy → Check) arrives out of a small blur. */
+@keyframes ta-icon-pop {
+  from {
+    opacity: 0;
+    scale: 0.5;
+    filter: blur(2px);
+  }
+}
+.ta-icon-pop {
+  animation: ta-icon-pop 220ms var(--ease-out-strong);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ta-icon-pop {
+    animation: none;
+  }
+}
+
+/* <Modal>'s enter and exit (components/ui/modal.tsx). Radix keeps a closing dialog mounted until its
+   animation ends, so the exit is real. On a desktop the dialog grows from 96% and fades, from its own
+   centre (`transform` composes with the `translate` the centring utilities set). On a phone it is a
+   sheet: it rises from the bottom edge and drops back down. The exit is quicker than the entrance —
+   leaving is never what the reader is waiting on. */
+@keyframes ta-dialog-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+@keyframes ta-dialog-out {
+  to {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+@keyframes ta-sheet-out {
+  to {
+    transform: translateY(100%);
+  }
+}
+.ta-dialog[data-state="open"] {
+  animation: ta-dialog-in 240ms var(--ease-out-strong);
+}
+.ta-dialog[data-state="closed"] {
+  animation: ta-dialog-out 150ms var(--ease-out) forwards;
+}
+.ta-overlay[data-state="open"] {
+  animation: ta-fade-in 220ms var(--ease-out);
+}
+.ta-overlay[data-state="closed"] {
+  animation: ta-fade-out 180ms var(--ease-out) forwards;
+}
+@media (max-width: 767.98px) {
+  .ta-dialog[data-state="open"] {
+    animation: ta-sheet-in 380ms var(--ease-drawer);
+  }
+  .ta-dialog[data-state="closed"] {
+    animation: ta-sheet-out 220ms var(--ease-drawer) forwards;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ta-dialog[data-state],
+  .ta-overlay[data-state] {
+    animation: none;
   }
 }
 

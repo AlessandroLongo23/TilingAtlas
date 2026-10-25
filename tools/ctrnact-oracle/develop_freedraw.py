@@ -61,16 +61,32 @@ from collections import Counter, deque
 
 
 # Every data file under public/ ships gzipped (`x.json.gz`; scripts/atlas/io.mjs is the Node twin).
-def write_json(path, obj, **dump_kwargs):
-    """json.dump to `path`; a `.gz` path is gzipped with mtime=0 so rebuilds are byte-identical."""
+_CODEC = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "scripts", "atlas", "encode.mjs")
+
+
+def _atlas_codec(fn, text):
+    """`fn` of scripts/atlas/encode.mjs (encodeAtlas / decodeAtlas) on JSON text. The packed {"atlas": 1}
+    container has ONE implementation, in JS; Python goes through it instead of growing a second."""
+    import subprocess
+    js = (f"import {{ {fn} }} from {json.dumps('file://' + os.path.abspath(_CODEC))};"
+          "let s = ''; process.stdin.setEncoding('utf8').on('data', (c) => (s += c)).on('end', () =>"
+          f" process.stdout.write(JSON.stringify({fn}(JSON.parse(s)))));")
+    return subprocess.run(["node", "--input-type=module", "-e", js], input=text, capture_output=True,
+                          text=True, check=True).stdout
+
+
+def write_json(path, obj, pack=False, **dump_kwargs):
+    """json.dump to `path`; a `.gz` path is gzipped with mtime=0 so rebuilds are byte-identical. `pack`
+    writes a record list as the atlas container (what every reference-atlas shelf ships as)."""
     path = os.fspath(path)
+    text = _atlas_codec("encodeAtlas", json.dumps(obj)) if pack else json.dumps(obj, **dump_kwargs)
     if not path.endswith(".gz"):
         with open(path, "w", encoding="utf-8") as f:
-            json.dump(obj, f, **dump_kwargs)
+            f.write(text)
         return
     # filename="" keeps the name out of the header too, so the bytes depend on the records alone.
     with open(path, "wb") as raw, gzip.GzipFile("", "wb", 9, raw, mtime=0) as f:
-        f.write(json.dumps(obj, **dump_kwargs).encode("utf-8"))
+        f.write(text.encode("utf-8"))
 
 
 def read_json(path):
@@ -80,7 +96,11 @@ def read_json(path):
         path += ".gz"
     with (gzip.open(path, "rt", encoding="utf-8") if path.endswith(".gz")
           else open(path, encoding="utf-8")) as f:
-        return json.load(f)
+        text = f.read()
+    obj = json.loads(text)
+    if isinstance(obj, dict) and obj.get("atlas") == 1 and "records" in obj:
+        return json.loads(_atlas_codec("decodeAtlas", text))  # a packed shelf: hand back plain records
+    return obj
 
 # Z[zeta12] scalars used by the scalene grid below, in the (a, b, c, d) = a + b*z + c*z^2 + d*z^3
 # basis defined further down (z = e^{i*pi/6}). sqrt(3) = 2*cos(pi/6) = 2z - z^3, since z = sqrt(3)/2

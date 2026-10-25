@@ -11,6 +11,7 @@ import { evaluateParamCell, type ParametricCellData } from "@/lib/utils/paramCel
 import { LENGTH_FAMILIES } from "@/lib/tilings/length-families";
 import { bendTegula, type TegulaCell } from "@/lib/tilings/tegula";
 import type { HollowPattern } from "@/lib/hollow/pattern";
+import type { HypFamily } from "@/lib/render/hypStarFamily";
 // One alias table per shelf, each written by that shelf's builder, so two builders never clobber each
 // other's keys. Ids are globally unique across shelves (tests/atlas-id-unique.test.ts), so a flat merge is
 // unambiguous — and a collision would be that test's failure, not a silent shadowing here.
@@ -173,6 +174,7 @@ import {
 	hypPolyShardUrls,
 	hypPolySub,
 	HYP_POLY_BOARDS,
+	HYP_POLY_BOARD_BY_ID,
 	hypPolySubOfBoard,
 	type HypPolyBoard,
 	type HypPolyPattern,
@@ -206,6 +208,7 @@ import {
 } from "@/lib/isohedral/edge-shelf";
 import type { IcoPattern } from "@/lib/render/icoFreedraw";
 import { ICO_SOLIDS, ICO_SOLID_BY_ID, icoSolidKs } from "@/lib/render/icoSolids";
+import { matchesVcs, parseVC, vcsOf, type VcMode } from "@/lib/services/vertexConfig";
 
 // The Reference (Oracle) shelf — a DISPLAY-ONLY atlas of known k-uniform tilings from the literature,
 // deliberately kept OFF the certified-results catalogue (§0: the site never produces the claim; these
@@ -283,10 +286,13 @@ export interface ReferenceTiling {
 	schlafli?: [number, number];
 	// Hyperbolic shelf: the id of a developed Poincaré patch in public/hyperbolic-developed.json (from the
 	// Čtrnáct SU(1,1) developer, tools/ctrnact-oracle/develop_hyperbolic.py). Its presence routes /play +
-	// thumbnails to the explicit-geometry renderer (components/hyperbolic-developed-canvas.tsx), which
-	// re-develops the tiling from the patch's baked darts, centred on the view, filling the disk to the rim.
+	// thumbnails to the Poincaré disk (components/hyperbolic-canvas.tsx, mode "tiling"), which walks the
+	// patch's baked darts per pixel, filling the disk to the rim.
 	// Every hyperbolic catalogue entry carries it.
 	developed?: { patch: string };
+	// Hyperbolic star families only: the free point angle's range and default (lib/render/hypStarFamily.ts).
+	// /play turns it into the same α slider the Euclidean families have.
+	hypFamily?: HypFamily;
 	// Hyperbolic shelf: the forced edge length ℓ of the developed patch (the ℓ solving Σ α(pᵢ,ℓ)=2π),
 	// merged from public/hyperbolic-developed.json at load. Always a scalar — one edge length per tiling,
 	// even at k>1 — and the coordinate that distinguishes members of a family, since H² has no similarity.
@@ -346,14 +352,14 @@ export interface ReferenceTiling {
 	sphBubble?: SphBubblePattern;
 	// Hyperbolic edge-system shelf only: Čtrnáct's freedraw moved to H² (tools/ctrnact-oracle/develop_hyp_edges.py,
 	// decoded to public/hyperbolic-edges/e<base>-k<k>.json). Its presence routes /play + the thumbnails to the
-	// developed-edge renderer (HyperbolicDeveloper.developEdges + drawDevelopedEdgePatch) the way `freedraw`
-	// routes to the 2D grid and `developed` to the Poincaré disk. Lives in the freedraw CLASS but the HYPERBOLIC
+	// Poincaré disk in edge mode the way `freedraw` routes to the 2D grid and `developed` to the disk in
+	// tiling mode. Lives in the freedraw CLASS but the HYPERBOLIC
 	// geometry, with the base tiling as the sub-axis — the exact parallel of spherical freedraw (freedraw class,
 	// spherical geometry, solid sub-axis). `renderCell` is a throwaway. `k` counts vertex orbits.
 	hypEdges?: HypEdgesPattern;
 	// Hyperbolic colored-tiling shelf only: an n-coloring of a regular {p,q} hyperbolic tiling
 	// (tools/ctrnact-oracle/develop_hyp_colors.py → public/hyperbolic-colors/c<base>-k<k>.json). Its presence
-	// routes /play + thumbnails to the per-pixel disk shader in colors mode (HyperbolicColorsCanvas). Lives in
+	// routes /play + thumbnails to the Poincaré disk in colors mode (HyperbolicCanvas). Lives in
 	// the COLORS class, HYPERBOLIC geometry, with the base {p,q} as the sub-axis — the exact parallel of the
 	// edge systems. `renderCell` is a throwaway; `k` counts colored vertex orbits.
 	hypColors?: HypColorsPattern;
@@ -368,9 +374,9 @@ export interface ReferenceTiling {
 	// curved geometries — the Euclidean member of the same family is the `sch236` planar-freedraw grid.
 	// FREEDRAW class, spherical or hyperbolic geometry, the board as the sub-axis; `renderCell` is a
 	// throwaway. Its presence routes /play + thumbnails to the sphere renderer (spherical, via
-	// lib/render/sphSchwarz.ts → buildIcoFreedraw) or the developed-edge disk renderer (hyperbolic,
-	// HyperbolicDeveloper.developEdges — which reads this shelf's per-dart alpha/elen/drawn arrays,
-	// since a Schwarz tile is scalene and none of the three is derivable from polygon sizes).
+	// lib/render/sphSchwarz.ts → buildIcoFreedraw) or the Poincaré disk in edge mode (hyperbolic; the walk
+	// reads this shelf's per-dart alpha/elen/drawn arrays, since a Schwarz tile is scalene and none of the
+	// three is derivable from polygon sizes).
 	// `k` counts vertex orbits.
 	schwarz?: SchwarzPattern;
 	// Uniform-polyhedron edge systems (tools/ctrnact-oracle/develop_sph_edges.py → public/spherical-edges/).
@@ -385,8 +391,8 @@ export interface ReferenceTiling {
 	// public/hyperbolic-poly/hp<n>-k<k>.json). Not a decoration of anything: at the edge length 3.4.n.4
 	// forces, the three closing vertex figures make k-uniform tilings out of {3, 4, n, 2n}-gons. TILINGS
 	// class, HYPERBOLIC geometry, the board n as the sub-axis. Its presence routes /play + thumbnails to
-	// HyperbolicDeveloper.developColors — whose contract (fill each face by its index, stroke every edge)
-	// is exactly this object's, with the index being the face's polygon size. `renderCell` is a throwaway.
+	// the Poincaré disk in tiling mode, like the developed shelf: faces by polygon size, every edge a
+	// boundary. `renderCell` is a throwaway.
 	hypPoly?: HypPolyPattern;
 	// The SPHERICAL members of the same 3.4.n.4 family (tools/ctrnact-oracle/develop_ai1_sph.py →
 	// public/spherical-poly/sp<n>-k<k>.json), n = 3, 4, 5. TILINGS class, SPHERICAL geometry, the board n
@@ -481,6 +487,10 @@ export interface ReferenceTiling {
 	anchors?: { id: string; k?: number; values?: number[]; inRange?: boolean }[];
 	exactSource?: ExactCellSource; // exact cyclotomic cell for the symmetry overlay (added 2026-07)
 
+	// The distinct vertex configurations, canonical (lib/services/vertexConfig.ts), in `partition` order:
+	// vcs[i] occurs partition[i] times. Written by scripts/enrich-reference-atlas.ts --vcs-only for the
+	// regular and star atlas; the hyperbolic shelf spells them in `family` instead (read by vcsOf).
+	vcs?: string[];
 	// Vertex-type classification (build-computed, 2026-07). k counts vertex ORBITS; m counts DISTINCT
 	// vertex configurations among them (m ≤ k). `partition` is the multiplicities of those distinct
 	// configs, descending, summing to k — e.g. m=3, partition [5,1,1] is the "511" group at k=7.
@@ -576,9 +586,18 @@ export type IslamicSystem =
 // The ONE source-driven tile classifier, shared by /library and /play. Source wins when present;
 // source-less rows (the Supabase certified catalogue) fall back to family-string tokens — which
 // matches the legacy polygonClassLabel, so the two pages agree with or without a source.
-export function tileClassOf(t: { family: string; source?: ReferenceTiling["source"] }): TileClass {
+export function tileClassOf(t: {
+	family: string;
+	source?: ReferenceTiling["source"];
+	hypPoly?: HypPolyPattern;
+}): TileClass {
 	if (t.source === "hollow") return "hollow";
-	if (t.source === "hyperbolic") return "hyperbolic";
+	// Hyperbolic splits by tile the way the plane does (AL, 2026-10-22): halved faces and multi-length
+	// boards are "Different edge lengths", stars are stars, and the rest, apeirogons included, regular.
+	if (t.source === "hyperbolic") {
+		if (t.hypPoly && (isHypHalf(t.hypPoly) || HYP_POLY_BOARD_BY_ID.get(t.hypPoly.base)?.multiLength)) return "edgelen";
+		return t.family.includes("*") ? "star" : "regular";
+	}
 	if (t.source === "spherical") return "spherical";
 	if (t.source === "mixed") return "mixed";
 	if (t.source === "isotoxal") return "isotoxal";
@@ -625,7 +644,8 @@ export const TILE_CLASS_ORDER: TileClass[] = [
 	"freedraw",
 	"bubble",
 	"colors",
-	"hyperbolic",
+	// No "hyperbolic": since 2026-10-22 hyperbolic tilings split by tile like the plane's (tileClassOf), so
+	// the class survives only as the legacy `?class=hyperbolic` alias reference-shelf maps to the geometry.
 	"spherical",
 ];
 export const TILE_CLASS_LABEL: Record<TileClass, { short: string; long: string }> = {
@@ -1596,7 +1616,9 @@ export interface ReferenceFilter {
 	// so this facet finds the entries that have a second hand to look at, not a second entry.
 	// Entries with no exact wallpaper classification carry no value and never match.
 	chirality?: ChiralityFacet[];
-	query?: string; // free-text substring match on id or family (e.g. "4j5_5b2" or "3.6")
+	query?: string; // free-text substring match on id or family (e.g. "4j5_5b2" or "3.6"); a figure also matches its configurations
+	vcs?: string[]; // canonical vertex configurations (lib/services/vertexConfig.ts), combined per vcMode
+	vcMode?: VcMode; // "all" (default): every one present; "any": at least one; "exact": these and no others
 	// Hyperbolic shelf facets, each an inclusive interval [lo, hi] driven by an IntervalSlider. The
 	// scalars are hyperbolicFacetsOf (valence/polygon maxima over the vertex figures) and the merged
 	// forced edge length ℓ. Non-hyperbolic tilings never match while one of these is active.
@@ -1734,9 +1756,14 @@ export function matchesReferenceFilters(t: ReferenceTiling, f: ReferenceFilter):
 		const c = chiralityOf(t);
 		if (c == null || !f.chirality.includes(c)) return false;
 	}
+	if (f.vcs?.length && !matchesVcs(vcsOf(t), f.vcs, f.vcMode ?? "all")) return false;
 	if (f.query?.trim()) {
 		const q = f.query.trim().toLowerCase();
-		if (!t.id.toLowerCase().includes(q) && !t.family.toLowerCase().includes(q)) return false;
+		if (!t.id.toLowerCase().includes(q) && !t.family.toLowerCase().includes(q)) {
+			// Typed as a vertex figure in any rotation or notation ("4.6.3.6", "3^2.4.3.4"): match it whole.
+			const vc = parseVC(q);
+			if (!vc || !vcsOf(t)?.includes(vc)) return false;
+		}
 	}
 	return true;
 }
@@ -1765,6 +1792,7 @@ export function referenceToCatalogue(r: ReferenceTiling): CatalogueTiling {
 		discoverer: r.discoverer,
 		derivation: r.derivation,
 		developed: r.developed,
+		hypFamily: r.hypFamily,
 		spherical: r.spherical,
 		geometry: r.geometry,
 		m: r.m,
@@ -3016,13 +3044,14 @@ export async function loadReferenceAtlas(): Promise<ReferenceTiling[]> {
 		Promise.resolve([] as Array<{ id: string; edge?: number }>),
 		// One slot for both Tegula files: the destructuring below is positional. The spherical rows carry
 		// a whole solid (sphPoly) and draw on the three.js sphere, so their plane cell is the empty one.
-		Promise.all([bestEffort("/reference-atlas-tegula.json.gz"), bestEffort("/reference-atlas-tegula-sph.json.gz")]).then(
-			([plane, sphere]) => {
-				for (const r of plane) if (r.tegula) defineLazyRenderCell(r, (self) => bendTegula(self.tegula!));
-				for (const r of sphere) r.renderCell = FREEDRAW_EMPTY_CELL;
-				return [...plane, ...sphere];
-			},
-		),
+		Promise.all([
+			bestEffort("/reference-atlas-tegula.json.gz"),
+			bestEffort("/reference-atlas-tegula-sph.json.gz"),
+		]).then(([plane, sphere]) => {
+			for (const r of plane) if (r.tegula) defineLazyRenderCell(r, (self) => bendTegula(self.tegula!));
+			for (const r of sphere) r.renderCell = FREEDRAW_EMPTY_CELL;
+			return [...plane, ...sphere];
+		}),
 	])
 		// One name per Promise.all entry, IN ORDER, and the list below must spread every one of them.
 		// This has now gone wrong twice. `hollow` was missing once; `period` and `tri45` were missing

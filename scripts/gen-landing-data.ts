@@ -32,7 +32,7 @@ import {
 	PERIOD_SHARD_KS,
 	TRI45_SHARD_KS,
 } from "@/lib/services/referenceAtlas";
-import type { CataloguePatch } from "@/lib/render/hyperbolicDevelopedDraw";
+import type { CataloguePatch } from "@/lib/tilings/hyp-developed";
 import type { ReferenceTiling } from "@/lib/services/referenceAtlas";
 import { decodeAtlas } from "@/lib/services/atlasCodec";
 import { hydrateRenderCells } from "@/lib/services/renderCellDerive";
@@ -60,7 +60,9 @@ const EAGER_ATLAS_FILES = [
 ];
 
 const PAYLOAD_OUT = path.join(process.cwd(), "lib", "services", "landing-data.generated.json");
-const DEVELOPED_PATCHES_IN = path.join(process.cwd(), "public", "hyperbolic-developed.json");
+const DEVELOPED_PATCHES_IN = ["hyperbolic-developed.json", "hyperbolic-developed-stars.json"].map((f) =>
+	path.join(process.cwd(), "public", f),
+);
 const HERO_INDEX_OUT = path.join(process.cwd(), "public", "hero-index.json.gz");
 const HERO_CELLS_DIR = path.join(process.cwd(), "public", "hero-cells");
 
@@ -108,7 +110,7 @@ async function hyperbolicPatchesFor(ids: string[]): Promise<Record<string, Catal
 	if (ids.length === 0) return undefined;
 	let all: CataloguePatch[];
 	try {
-		all = readDataJson(DEVELOPED_PATCHES_IN) as CataloguePatch[];
+		all = DEVELOPED_PATCHES_IN.flatMap((f) => readDataJson(f) as CataloguePatch[]);
 	} catch (e) {
 		console.warn(`landing: no developed patches inlined (${(e as Error).message})`);
 		return undefined;

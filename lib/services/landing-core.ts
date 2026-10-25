@@ -1,5 +1,5 @@
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
-import type { CataloguePatch } from "@/lib/render/hyperbolicDevelopedDraw";
+import type { CataloguePatch } from "@/lib/tilings/hyp-developed";
 import { type ReferenceTiling, compactVertexConfig, geometryOf } from "@/lib/services/referenceAtlas";
 
 // Pure landing-page logic, shared by the runtime loader (landingData.ts) and the build-time

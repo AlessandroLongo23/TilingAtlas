@@ -5,14 +5,13 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ParametricEdgesCanvas, ParametricEdgesThumbnail } from "@/components/freedraw/parametric-edges-view";
 import type { BuiltShelfPattern } from "@/components/freedraw/parametric-edges-view";
-import { HyperbolicColorsCanvas } from "@/components/hyperbolic-colors-canvas";
-import { HyperbolicColorsThumbnail, type HypColorsThumbInput } from "@/components/hyperbolic-colors-thumbnail";
-import { HyperbolicEdgesCanvas } from "@/components/hyperbolic-edges-canvas";
-import { HyperbolicEdgesThumbnail, type HypEdgesThumbInput } from "@/components/hyperbolic-edges-thumbnail";
+import { HyperbolicCanvas } from "@/components/hyperbolic-canvas";
+import { HyperbolicThumbnail } from "@/components/hyperbolic-thumbnail";
 import { Button } from "@/components/ui/button";
 import { InfoDot } from "@/components/ui/info-dot";
 import { Toggle } from "@/components/ui/toggle";
 import { useDiskInput } from "@/lib/render/diskInput";
+import type { HypDiskMode, HypDiskTiling } from "@/lib/render/hypDisk";
 import { cn } from "@/lib/utils/cn";
 import { parse, type Board } from "./board";
 import type { OutFile, Run } from "./bridge";
@@ -24,10 +23,9 @@ const THUMBS = 60;
 
 type Drawing =
 	| { kind: "plane"; built: BuiltShelfPattern }
-	/** A board that marks edges with digons draws its marked edges bold over the faint rest. */
-	| { kind: "edges"; pattern: HypEdgesThumbInput; edge: number }
-	/** Faces filled by polygon size, apeirogons white: the site's hyp-poly shelf exactly. */
-	| { kind: "tiles"; pattern: HypColorsThumbInput; edge: number }
+	/** The site's disk: `tiling` fills faces by polygon size (the hyp-poly shelf), `edges` draws a board that
+	 *  marks edges with digons, its marked edges bold over the faint rest. */
+	| { kind: "disk"; tiling: HypDiskTiling; mode: HypDiskMode }
 	| { kind: "none"; message: string };
 
 /** Decode, choose the geometry, develop. Everything that can go wrong comes back as a message. */
@@ -42,10 +40,7 @@ function prepare(board: Board, cert: string, id: string): Drawing {
 			return { kind: "plane", built: { pattern, reason: null, cells: Math.max(10, span * 1.6) } };
 		}
 		const darts = hyperbolicDarts(d, g);
-		const base = { id, config: board.name, edge: g.edge, darts };
-		return darts.sizes.includes(2)
-			? { kind: "edges", pattern: base, edge: g.edge }
-			: { kind: "tiles", pattern: { ...base, colors: darts.sizes.length, sizes: darts.sizes }, edge: g.edge };
+		return { kind: "disk", tiling: { id, edge: g.edge, darts }, mode: darts.sizes.includes(2) ? "edges" : "tiling" };
 	} catch (e) {
 		return { kind: "none", message: (e as Error).message };
 	}
@@ -56,7 +51,7 @@ const ALWAYS = { current: true };
 /** The selected tiling, large and steerable. Keyed per tiling by the caller, so each opens centred. */
 function BigView({ drawing }: { drawing: Drawing }) {
 	const hostRef = useRef<HTMLDivElement>(null);
-	const disk = drawing.kind === "edges" || drawing.kind === "tiles";
+	const disk = drawing.kind === "disk";
 	const { inputRef, handlers } = useDiskInput(hostRef, ALWAYS, disk);
 	if (drawing.kind === "none")
 		return (
@@ -78,11 +73,7 @@ function BigView({ drawing }: { drawing: Drawing }) {
 			aria-label="Hyperbolic tiling: drag to move, scroll to turn"
 			className="relative aspect-square w-full cursor-grab touch-none select-none active:cursor-grabbing"
 		>
-			{drawing.kind === "edges" ? (
-				<HyperbolicEdgesCanvas pattern={drawing.pattern} input={inputRef} />
-			) : (
-				<HyperbolicColorsCanvas pattern={drawing.pattern} input={inputRef} tiles />
-			)}
+			<HyperbolicCanvas tiling={drawing.tiling} mode={drawing.mode} input={inputRef} diskPadPx={0} />
 		</div>
 	);
 }
@@ -95,11 +86,7 @@ function Thumb({ drawing }: { drawing: Drawing }) {
 			</div>
 		);
 	if (drawing.kind === "plane") return <ParametricEdgesThumbnail built={drawing.built} label="tiling" />;
-	return drawing.kind === "edges" ? (
-		<HyperbolicEdgesThumbnail pattern={drawing.pattern} />
-	) : (
-		<HyperbolicColorsThumbnail pattern={drawing.pattern} />
-	);
+	return <HyperbolicThumbnail tiling={drawing.tiling} mode={drawing.mode} />;
 }
 
 /** The thumbnails draw one per frame, so a grid of them never blocks the window. */
@@ -172,8 +159,8 @@ export function TilingsView({ run, file, onFile }: { run: Run; file: OutFile | n
 	const where =
 		big?.kind === "plane"
 			? "In the plane, one period repeated. Drag to move, scroll to zoom, Shift-scroll to turn, double-click to go back."
-			: big?.kind === "edges" || big?.kind === "tiles"
-				? `In the hyperbolic plane (Poincaré disk), regular faces of edge ${big.edge.toFixed(4)}. Drag to move, scroll to turn, click a tile to bring it to the centre, right-click to go back.`
+			: big?.kind === "disk"
+				? `In the hyperbolic plane (Poincaré disk), regular faces of edge ${big.tiling.edge.toFixed(4)}. Drag to move, scroll to turn, click a tile to bring it to the centre, right-click to go back.`
 				: "";
 	return (
 		<div className="flex flex-col gap-4">

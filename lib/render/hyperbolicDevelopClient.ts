@@ -15,15 +15,13 @@
 import {
 	type Complex,
 	type Su11,
-	su11Apply,
 	su11ApplyInverse,
 	su11Identity,
-	su11Inverse,
 	su11Mul,
 	su11Rotation,
 	su11Translation,
 } from "@/lib/render/hyperbolic";
-import type { DevelopedPatch } from "@/lib/render/hyperbolicDevelopedDraw";
+import type { DevelopedPatch } from "@/lib/tilings/hyp-developed";
 
 export interface Darts {
 	rneig: number[];
@@ -51,22 +49,11 @@ export interface Darts {
 	elen?: number[];
 	/** 1 when dart h's edge is DRAWN (a tile boundary), 0 when it is faint scaffold. */
 	drawn?: number[];
-}
-
-/** A developed edge-pattern patch: base faces coloured by MERGED TILE plus the edge list with per-edge
- *  drawn flags. drawDevelopedEdgePatch consumes it. `edges[i] = [v0, v1, drawn]` over `vertices`. */
-export interface DevelopedEdgePatch {
-	id: string;
-	name: string;
-	config: string;
-	edge: number;
-	vertices: [number, number][];
-	faces: number[][];
-	/** Merged-tile orbit id per face (parallel to `faces`) — the fill colour key. */
-	faceOrbit: number[];
-	/** [v0, v1, drawn]: geodesic segment vertices[v0]→vertices[v1]; drawn=1 bold, 0 faint scaffold. */
-	edges: [number, number, number][];
-	tiles: number;
+	/** Star families only (lib/render/hypStarFamily.ts): what the turn at h is, 0 a regular corner, 1 a
+	 *  star's point, 2 its dent. With `alpha` it lets the tiling be re-solved at another point angle. */
+	starKind?: number[];
+	/** Which star type the corner at h belongs to, when a tiling has more than one (each has its own point). */
+	starParam?: number[];
 }
 
 const TOL = 1e-4; // position dedup grid (matches develop_hyperbolic.py)
@@ -87,47 +74,6 @@ function mulNorm(m: Su11, n: Su11): Su11 {
 
 /** The position grid cell of z as one integer. */
 const posKey = (z: Complex): number => (Math.round(z.x / TOL) + 10001) * POS_SPAN + Math.round(z.y / TOL) + 10001;
-
-/**
- * Screen radius the interactive 2D paths fill to, and the instance budget that governs the cost.
- *
- * `develop` only emits a face once EVERY one of its darts is developed, so the drawn region stops a
- * whole tile short of `boundR`, and the tiles lost at the frontier are the BIGGEST ones (a 34-gon needs
- * 34 developed darts plus their rn neighbours to close). That is why an under-budgeted fill shows large
- * round holes instead of a clean edge. (Since 2026-10-05 this path draws only where WebGL2 is
- * missing; every record otherwise goes through the per-pixel walk, which has no frontier.)
- *
- * The bound is near 1 because large-tile boards need it: at 0.99 the 3.4.17.4 k=9 board covered only
- * 85.3% of the disk and was clean to r = 0.55. The budget then has to be big enough to REACH the bound,
- * and that is the part that was wrong. Measured on hp17-9-00001, the fill saturates at 64,052 instances;
- * the old 12,000 was 19% of that, leaving 62% coverage in the outer band. Coverage against budget:
- *
- *     12000 -> 95.5% of the disk, clean to r=0.85     30000 -> 98.2%, clean to r=0.95
- *     20000 -> 97.4%, clean to r=0.90                 64052 -> 99.2%, clean to r=0.95 (saturated)
- *
- * 30000 is the knee: past it each further 15k buys under a point of coverage and costs ~8 ms of panning.
- * It is affordable now only because the per-frame work was cut three ways (traceRings replacing the
- * canonical-rotation string key, facedCache holding the trace across frames, prune copying its cached
- * dedup keys instead of rebuilding them): 30k costs 1.1 ms on a static view and 11 ms while panning,
- * against 25 ms and 13 ms respectively for the OLD code at 12k.
- */
-export const FALLBACK_BOUND_R = 0.9995;
-// 2026-10-05: 30000 -> 50000. The paragraph above priced a frame at the old develop and draw. With
-// tombstone pruning, integer keys and batched strokes a PANNING frame of that board at 50k costs 10.6 ms
-// at p90 in the browser, where 30k cost 13.7 ms before, so the budget buys rim coverage instead. 70000
-// fills further still and costs 13.5 ms at p90 with 22 ms at p99, which misses 60 fps too often.
-export const FALLBACK_BUDGET = 50000;
-
-/**
- * Instance budget for a static thumbnail bake, at the same FALLBACK_BOUND_R. Lower than the interactive
- * budget because a card is a few hundred px wide and a grid bakes dozens of them, and a thumbnail never
- * pans, so it pays the develop once and reuses it. 20000 holds coverage at 97.4% (clean to r = 0.90) for
- * ~24 ms per card, which the one-job-per-frame thumbnailQueue absorbs. Below this the rim holes are
- * visible even at card size, which is what the grid used to show.
- */
-// 2026-10-05: 20000 -> 35000. A from-scratch bake at 35k now costs 26 ms where 20k cost 29 ms (3.4.17.4
-// k=9, node), so a card fills further toward its rim for less than it used to pay.
-export const THUMB_BUDGET = 35000;
 
 /** Interior angle of a regular p-gon of edge length ℓ in H² (2·asin(cos(π/p)/cosh(ℓ/2))). p = 0 is the
  *  APEIROGON (develop_hyperbolic.py's sentinel): cos(π/∞) = 1, the polygon inscribed in a horocycle. */
@@ -217,37 +163,16 @@ export class HyperbolicDeveloper {
 	private vertKey = new Map<number, number>();
 
 	private facesCache: { faces: number[][]; vertices: [number, number][] } | null = null; // invalidated when the set changes
-	// developFaced's view-INDEPENDENT half (rings + per-face orbit/colour + the global-vid edge list), cached
-	// on the same lifetime as facesCache. develop() had a face cache and the faced paths did not, so the
-	// colours, edge-pattern and hyp-poly shelves re-traced all ~12k instances every frame even on a static
-	// view. `colors` is in the key because developEdges and developColors label faces differently.
-	private facedCache: {
-		rings: number[][];
-		orbit: number[];
-		edges: [number, number, number][];
-		vertices: [number, number][];
-		colors: boolean;
-	} | null = null;
 	private lastCenter: Complex | null = null; // world point at screen centre last frame (view-motion detector)
 	private lastFill = -1; // the (boundR, maxInsts) of that frame, as one number
 
 	/** Integer dedup keys: the default grid, on a tiling whose dart count leaves the key under 2^53. */
 	private readonly numericKeys: boolean;
 
-	// Edge-pattern shelf only: the merged-tile orbit per quotient dart (undefined for plain tilings). An
-	// edge's drawn/undrawn status is recovered from lvert alone — a dart's edge is a digon side iff the
-	// polygon on either side of it is a digon (size 2) — so the boolean is not stored separately.
-	private readonly tileOrbit?: number[];
-
-	// Colored-tiling shelf only: the color index per quotient dart (constant along a base face). When
-	// present, developColors() fills each developed face by ITS color; every edge is a tile boundary.
-	private readonly faceColor?: number[];
-
 	// Scalene boards only (see Darts): per-dart turn, edge length and drawn flag. Undefined on every
 	// regular-tiling record, where the three are derived from lvert + the single ℓ.
 	private readonly alphaOf?: number[];
 	private readonly elenOf?: number[];
-	private readonly drawnOf?: number[];
 	private readonly medc = new Map<number, Su11>(); // edge involution per distinct length, memoised
 
 	constructor(darts: Darts, edgeLength: number) {
@@ -258,19 +183,8 @@ export class HyperbolicDeveloper {
 		this.l = edgeLength;
 		this.Med = medge(edgeLength);
 		this.numericKeys = darts.rneig.length * ANG_CELLS * POS_CELLS < Number.MAX_SAFE_INTEGER;
-		this.tileOrbit = darts.tileOrbit;
-		this.faceColor = darts.faceColor;
 		this.alphaOf = darts.alpha;
 		this.elenOf = darts.elen;
-		this.drawnOf = darts.drawn;
-	}
-
-	/** True when dart h's edge is a DRAWN edge. On a regular board that is "the polygon on either side of
-	 *  h is a digon" (develop_hyp_edges.py's `lvert[h]==2 || lvert[rneig[h]]==2`); on a scalene board every
-	 *  edge carries a digon, so the flag is shipped instead of derived. */
-	private isDrawn(h: number): boolean {
-		if (this.drawnOf) return this.drawnOf[h] === 1;
-		return this.lvert[h] === 2 || this.lvert[this.rneig[h]] === 2;
 	}
 
 	private alpha(h: number): number {
@@ -368,64 +282,6 @@ export class HyperbolicDeveloper {
 		return Math.sqrt((nr * nr + ni * ni) / (dr * dr + di * di));
 	}
 
-	/**
-	 * Keep the view near the world origin, which is what makes panning unbounded.
-	 *
-	 * The developed set lives in WORLD coordinates and its dedup grid is a fixed 1e-4, so once the view
-	 * centre drifts to world radius ~0.9995 (8 hyperbolic units, under five edges of a large-tile board)
-	 * distinct instances merge, the frontier stops growing and the tiling ends. A seed-dart frame g is a
-	 * symmetry of the tiling, so viewing through view·g shows the SAME picture with every world coordinate
-	 * moved by g⁻¹. Once the centre is two units out and a seed instance sits nearer it than the origin's, this returns
-	 * its frame and resets the developer; the caller replaces its view by view·g and maps any world point
-	 * it holds by g⁻¹. Returns null when the origin's is already the nearest.
-	 */
-	recenter(view: Su11): Su11 | null {
-		// Each recentre costs a full re-develop, so on a small-tile board it must not fire at every tile.
-		// World radius 0.75 is two hyperbolic units out, far inside where the grid starts to fail.
-		const c = su11ApplyInverse(view, { x: 0, y: 0 });
-		if (c.x * c.x + c.y * c.y < 0.75 * 0.75) return null;
-		const o = su11Apply(view, { x: 0, y: 0 });
-		let best = -1;
-		let bestR = Math.hypot(o.x, o.y) - 0.02; // hysteresis: two frames about equally near must not alternate
-		for (let i = 0; i < this.H.length; i++) {
-			if (this.H[i] !== this.seed) continue;
-			const r = this.screenR(view, i);
-			if (r < bestR) {
-				bestR = r;
-				best = i;
-			}
-		}
-		if (best < 0) return null;
-		const g = this.G[best];
-		this.rebase(g);
-		return g;
-	}
-
-	/** Move every frame by g⁻¹, keeping the developed set. The instances and their adjacency are the
-	 *  same; only coordinates and the keys derived from them change. Falls back to a reset if two frames
-	 *  land in one grid cell, which the new coordinates make rarer than the old ones did. */
-	private rebase(g: Su11): void {
-		const gi = su11Inverse(g);
-		const old = { H: this.H, G: this.G, rn: this.rn, gl: this.gl, expanded: this.expanded };
-		const at = new Int32Array(old.H.length).fill(-1);
-		this.reset();
-		for (let i = 0; i < old.H.length; i++) {
-			if (old.H[i] < 0) continue;
-			const idx = this.addInst(old.H[i], mulNorm(gi, old.G[i]));
-			if (!this.wasNew) {
-				this.reset();
-				return;
-			}
-			at[i] = idx;
-		}
-		for (let i = 0; i < old.H.length; i++) {
-			if (at[i] < 0) continue;
-			this.rn[at[i]] = old.rn[i] >= 0 ? at[old.rn[i]] : -1;
-			this.gl[at[i]] = old.gl[i] >= 0 ? at[old.gl[i]] : -1;
-			this.expanded[at[i]] = old.expanded[i];
-		}
-	}
-
 	reset(): void {
 		this.H = [];
 		this.G = [];
@@ -444,7 +300,6 @@ export class HyperbolicDeveloper {
 		this.vref = [];
 		this.freeV = [];
 		this.facesCache = null;
-		this.facedCache = null;
 		this.lastCenter = null;
 	}
 
@@ -527,7 +382,6 @@ export class HyperbolicDeveloper {
 		}
 		if (grew) {
 			this.facesCache = null;
-			this.facedCache = null;
 		}
 		return capped;
 	}
@@ -599,7 +453,6 @@ export class HyperbolicDeveloper {
 			}
 		}
 		this.facesCache = null;
-		this.facedCache = null;
 	}
 
 	/**
@@ -667,69 +520,6 @@ export class HyperbolicDeveloper {
 		return this.facesCache;
 	}
 
-	/** developFaced's view-INDEPENDENT half: the closed rings as global-vid loops, each ring's orbit/colour
-	 *  index, and the deduped global-vid edge list with per-edge drawn flags. Cached on the instance set, so
-	 *  a static view pays the trace once instead of once per frame. */
-	private traceFaced(colors: boolean): NonNullable<HyperbolicDeveloper["facedCache"]> {
-		if (this.facedCache && this.facedCache.colors === colors) return this.facedCache;
-		const rings: number[][] = [];
-		const orbit: number[] = [];
-		for (const ring of this.traceRings()) {
-			// ring[0] is the ring's lowest instance index; the orbit/colour is constant along a base face.
-			const h = this.H[ring[0]];
-			for (let k = 0; k < ring.length; k++) ring[k] = this.vid[ring[k]];
-			rings.push(ring);
-			orbit.push(colors ? (this.faceColor ? this.faceColor[h] : 0) : this.tileOrbit ? this.tileOrbit[h] : 0);
-		}
-		let vertices = this.verts;
-		// APEIROGONS never close, so traceRings cannot return them. Each comes back as a PAIR [vertex, ξ]
-		// with ξ the centre of its horocycle, which is all the draw needs to fill it (see the horodisk note
-		// in drawDevelopedEdgePatch). ξ is where the bisector of the interior angle leaves the disk: in
-		// instance i's frame the corner spans headings 0 to α, so it is G·e^{iα/2}. Every corner of one
-		// apeirogon lands on the same ξ, so one pair is kept per ξ. ξ is not an instance; the ideal points
-		// are appended after the developed vertices, in a copy, so a tiling with none hands out `verts`.
-		const idealSeen = new Set<number>();
-		const corners: number[] = []; // every apeirogon corner: its sides are edges of a filled face too
-		for (let i = 0; colors && i < this.H.length; i++) {
-			const h = this.H[i];
-			if (h < 0 || this.lvert[this.rneig[h]] !== 0) continue;
-			corners.push(this.vid[i]);
-			if (this.alpha(h) > Math.PI - 1e-9) continue; // a flat corner is not on the horocycle
-			const half = this.alpha(h) / 2;
-			const z = su11Apply(this.G[i], { x: Math.cos(half), y: Math.sin(half) });
-			const key = posKey(z);
-			if (idealSeen.has(key)) continue;
-			idealSeen.add(key);
-			if (vertices === this.verts) vertices = this.verts.slice();
-			vertices.push([z.x, z.y]);
-			rings.push([this.vid[i], vertices.length - 1]);
-			orbit.push(this.faceColor ? this.faceColor[h] : 0);
-		}
-		// Each instance's glue neighbour is the far end of its edge. Dedup by unordered vertex pair, as one
-		// integer: the grid can hold one dart as two instances, so pairing by instance lists 37% of the
-		// edges twice (measured on 3.4.17.4, k = 9).
-		// Colors: every edge is a tile boundary (bold). Edges: drawn iff the dart's edge is a digon side.
-		// Only edges with both ends on a closed face, so nothing dangles past the filled region.
-		const onFace = new Uint8Array(vertices.length);
-		for (const ring of rings) for (const v of ring) onFace[v] = 1;
-		for (const v of corners) onFace[v] = 1;
-		const edges: [number, number, number][] = [];
-		const seenE = new Set<number>();
-		for (let i = 0; i < this.H.length; i++) {
-			const g = this.gl[i];
-			if (this.H[i] < 0 || g < 0) continue;
-			const a = this.vid[i];
-			const b = this.vid[g];
-			if (a === b || !onFace[a] || !onFace[b]) continue;
-			const key = a < b ? a * 0x4000000 + b : b * 0x4000000 + a;
-			if (seenE.has(key)) continue;
-			seenE.add(key);
-			edges.push([a, b, colors ? 1 : this.isDrawn(this.H[i]) ? 1 : 0]);
-		}
-		this.facedCache = { rings, orbit, edges, vertices, colors };
-		return this.facedCache;
-	}
-
 	/** Keep the working set equal to the visible disk and make it FOLLOW the view: drop what left the
 	 *  screen, and when the fill is instance-capped and the view moved, drop the farthest tiles to free
 	 *  budget for the leading edge. How many is set by how far it moved: a ball of the hyperbolic plane
@@ -757,8 +547,8 @@ export class HyperbolicDeveloper {
 	}
 
 	/**
-	 * Develop the region visible under `view` and return it, ready for drawDevelopedPatch with the same
-	 * view. The arrays are the developer's own, valid until the next develop call: the working set IS the
+	 * Develop the region visible under `view` and return it in world coordinates (apply the same
+	 * view to draw it). The arrays are the developer's own, valid until the next develop call: the working set IS the
 	 * visible disk, so there is nothing to filter and nothing to copy on a frame where it did not change.
 	 * @param boundR  screen radius to fill to (≈0.99 fills close to the rim; highly symmetric large-tile
 	 *                tilings like {8,4} need it near 1 to fill, so keep it high and let maxInsts bound cost)
@@ -773,57 +563,5 @@ export class HyperbolicDeveloper {
 		this.follow(view, boundR, maxInsts);
 		const { faces, vertices } = this.traceFaces();
 		return { id: meta.id, name: meta.name, config: meta.config, edge: meta.edge, vertices, faces, tiles: faces.length };
-	}
-
-	/**
-	 * Edge-pattern develop: the same prune+extend-under-view as develop(), but the payload colours base
-	 * faces by MERGED-TILE orbit (darts.tileOrbit) and returns the edge list with per-edge drawn flags,
-	 * for drawDevelopedEdgePatch. Digon faces (2-rings, the drawn-edge markers) are dropped like every
-	 * other sub-triangle ring; the drawn edges themselves come back in `edges`, not as faces.
-	 */
-	developEdges(
-		meta: { id: string; name: string; config: string; edge: number },
-		view: Su11,
-		boundR = 0.99,
-		maxInsts = 12000,
-	): DevelopedEdgePatch {
-		return this.developFaced(meta, view, boundR, maxInsts, false);
-	}
-
-	/**
-	 * Colored-tiling develop: identical to developEdges, but each base face's `faceOrbit` carries its
-	 * COLOR index (darts.faceColor) instead of a merged-tile orbit, and EVERY edge is marked drawn (in a
-	 * coloring every {p,q} edge is a real tile boundary — there is no undrawn scaffold). The render path
-	 * then fills faces through the atlas palette and strokes every edge bold.
-	 */
-	developColors(
-		meta: { id: string; name: string; config: string; edge: number },
-		view: Su11,
-		boundR = 0.99,
-		maxInsts = 12000,
-	): DevelopedEdgePatch {
-		return this.developFaced(meta, view, boundR, maxInsts, true);
-	}
-
-	private developFaced(
-		meta: { id: string; name: string; config: string; edge: number },
-		view: Su11,
-		boundR: number,
-		maxInsts: number,
-		colors: boolean,
-	): DevelopedEdgePatch {
-		this.follow(view, boundR, maxInsts);
-		const { rings, orbit, edges, vertices } = this.traceFaced(colors);
-		return {
-			id: meta.id,
-			name: meta.name,
-			config: meta.config,
-			edge: meta.edge,
-			vertices,
-			faces: rings,
-			faceOrbit: orbit,
-			edges,
-			tiles: rings.length,
-		};
 	}
 }

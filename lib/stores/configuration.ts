@@ -1,5 +1,6 @@
 import { NOBLE_FAMILY_DEFAULTS, type NobleFamilyParams } from "@/lib/render/nobleSolids";
 import type { FaceView } from "@/lib/render/sphericalGeometry";
+import type { HypMaterial, WoodStyle } from "@/lib/render/hypMaterials";
 import { create } from "zustand";
 import { Vector } from "@/classes/Vector";
 import { BUBBLE_KOCH_LEVELS, DEFAULT_BUBBLE_EDGE_STYLE, type BubbleEdgeStyle } from "@/lib/bubble/edges";
@@ -196,12 +197,19 @@ export interface ConfigurationState {
 	spiralDrift: { x: number; y: number };
 
 	// Hyperbolic view: set true by /play when a {p,q} hyperbolic tiling is selected. Swaps the flat p5
-	// render for the Poincaré-disk WebGL renderer (components/hyperbolic-developed-canvas.tsx). While on, the
+	// render for the Poincaré-disk WebGL renderer (components/hyperbolic-canvas.tsx). While on, the
 	// p5 canvas draws nothing (kept only as the pan input layer) and the mouse wheel is inert (pan, no zoom).
 	hyperbolic: boolean;
 	// Edge stroke width: "geometry" scales with the tiles (thick near the centre, thinner toward the rim),
 	// "constant" holds a fixed screen width everywhere.
 	hyperbolicLineMode: "geometry" | "constant";
+	// Shade the disk darker toward the rim (depthShadeK in lib/render/hyperbolic.ts). Off by default.
+	hyperbolicDepthShade: boolean;
+	// Paint each tile of the hyperbolic disk as a material: polished stone, leaded glass (hypMaterials.ts).
+	hyperbolicMaterial: HypMaterial;
+	hyperbolicWood: WoodStyle;
+	// Marble, wood and cobblestone from scanned PBR maps (public/surfaces) or from the procedurals.
+	hyperbolicSurfaceSource: "scanned" | "procedural";
 	// Transient input signals from the p5 input layer to the Poincaré-disk overlay (consumed + cleared by
 	// it). A click (centred CSS px) requests centring the clicked tile; the reset flag returns to identity.
 	hyperbolicClick: { x: number; y: number } | null;
@@ -529,6 +537,10 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 
 	hyperbolic: false,
 	hyperbolicLineMode: "geometry",
+	hyperbolicDepthShade: false,
+	hyperbolicMaterial: "none",
+	hyperbolicWood: { species: "mixed", cut: "mixed", grain: "random" },
+	hyperbolicSurfaceSource: "scanned",
 	hyperbolicClick: null,
 	hyperbolicResetView: false,
 

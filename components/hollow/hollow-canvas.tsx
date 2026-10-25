@@ -13,7 +13,7 @@ import {
 import { onViewReset, TouchGestures } from "@/lib/render/touchGestures";
 import { cn } from "@/lib/utils/cn";
 
-// The hollow-tiling renderer, sibling of FreedrawCanvas and HyperbolicDevelopedCanvas. A hollow
+// The hollow-tiling renderer, sibling of FreedrawCanvas and HyperbolicCanvas. A hollow
 // tiling has no polygon cell for the flat renderer (its faces overlap and self-intersect), so this
 // is the only way /play and the cards can show one at all.
 

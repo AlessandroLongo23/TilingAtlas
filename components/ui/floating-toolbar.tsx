@@ -4,6 +4,7 @@ import type { ComponentProps, ReactNode } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useGamepadState, usePadShortcut } from "@/lib/stores/gamepad";
 import { cn } from "@/lib/utils/cn";
+import { HoverPill } from "./hover-pill";
 import { Tooltip } from "./tooltip";
 
 // The floating toolbar a tool page parks over its canvas (bottom centre): one white pill holding the
@@ -22,9 +23,12 @@ export function FloatingToolbar({ children, className }: { children: ReactNode; 
 				"scrollbar-hide max-md:bottom-[calc(max(var(--sheet-offset,0px),env(safe-area-inset-bottom))+12px)] max-md:max-w-[calc(100%-32px)] max-md:snap-x max-md:overflow-x-auto max-md:transition-[bottom] max-md:duration-300 max-md:motion-reduce:transition-none",
 				// It scrolls sideways; a pinch that starts on it must not zoom the whole page.
 				"max-md:touch-pan-x max-md:touch-pan-y",
+				// It rises into place when it first appears (a page load, leaving fullscreen).
+				"ta-rise-in",
 				className,
 			)}
 		>
+			<HoverPill />
 			{children}
 		</div>
 	);
@@ -77,8 +81,10 @@ export function ToolbarButton({ label, shortcut, primary, className, children, .
 			<button
 				type="button"
 				aria-label={primary ? undefined : label}
+				data-pill-skip={primary || undefined}
 				className={cn(
-					"relative flex h-8 items-center justify-center gap-2 rounded-lg text-[13px] font-medium whitespace-nowrap transition-colors",
+					"relative flex h-8 items-center justify-center gap-2 rounded-lg text-[13px] font-medium whitespace-nowrap",
+					"transition-[color,background-color,scale] duration-150 ease-out active:scale-[0.94] motion-reduce:active:scale-100",
 					"max-md:h-11 max-md:shrink-0 max-md:snap-start",
 					"focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:pointer-events-none disabled:opacity-40",
 					primary

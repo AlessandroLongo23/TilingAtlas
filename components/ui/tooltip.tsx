@@ -124,7 +124,7 @@ export function Tooltip({
 				<BaseTooltip.Positioner className="z-[var(--z-tooltip)]" side={side} sideOffset={sideOffset}>
 					<BaseTooltip.Popup
 						className={cn(
-							"transition duration-150 ease-out motion-reduce:transition-none",
+							"transition duration-150 ease-out data-[instant]:transition-none motion-reduce:transition-none",
 							"data-[ending-style]:opacity-0 data-[starting-style]:opacity-0",
 							enterFrom,
 							// A plain label is a small ink chip; rich content gets a white card.

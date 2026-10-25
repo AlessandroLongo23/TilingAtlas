@@ -4,6 +4,7 @@ import { ScreenshotPreviewModal } from "@/components/screenshot-preview-modal";
 import { ExportImageModal } from "@/components/export-image-modal";
 import { UpdatesGate } from "@/components/updates/updates-gate";
 import { PadCursor } from "@/components/pad-cursor";
+import { CommandPalette } from "@/components/command-palette";
 import { LegacyTilingStoreBootstrap } from "./_bootstrap";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
@@ -18,6 +19,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 			<ExportImageModal />
 			<UpdatesGate />
 			<PadCursor />
+			<CommandPalette />
 		</div>
 	);
 }

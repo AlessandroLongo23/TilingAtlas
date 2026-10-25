@@ -1,0 +1,88 @@
+{
+  "name": "hyp-star-free",
+  "D": 240,
+  "closure": "negative-defect",
+  "freePoints": true,
+  "maxValence": 5,
+  "comment": "Hyperbolic isotoxal stars with FREE point angles (2026-10-22, AL). Same tiles as hyp-star plus 3*, but one tile per star size: alphaU is a label at half the point range, not an angle the search uses (gen_alphabet enum_configs, free_points). The word gates are sound for every point, so the census is complete up to maxValence at each k, and maxValence is the completeness knob, as on the regular hyperbolic shelf. Two same-size stars with different points in one tiling are not expressible here (one tile per size).",
+  "tiles": [
+    {
+      "kind": "regular",
+      "n": 3,
+      "name": "3",
+      "famchar": "3"
+    },
+    {
+      "kind": "regular",
+      "n": 4,
+      "name": "4",
+      "famchar": "4"
+    },
+    {
+      "kind": "regular",
+      "n": 5,
+      "name": "5",
+      "famchar": "5"
+    },
+    {
+      "kind": "regular",
+      "n": 6,
+      "name": "6",
+      "famchar": "6"
+    },
+    {
+      "kind": "regular",
+      "n": 8,
+      "name": "8",
+      "famchar": "8"
+    },
+    {
+      "kind": "regular",
+      "n": 12,
+      "name": "12",
+      "famchar": "c"
+    },
+    {
+      "kind": "star",
+      "n": 3,
+      "alphaU": 20,
+      "name": "3*",
+      "famchar": "sA"
+    },
+    {
+      "kind": "star",
+      "n": 4,
+      "alphaU": 30,
+      "name": "4*",
+      "famchar": "sD"
+    },
+    {
+      "kind": "star",
+      "n": 5,
+      "alphaU": 36,
+      "name": "5*",
+      "famchar": "sG"
+    },
+    {
+      "kind": "star",
+      "n": 6,
+      "alphaU": 40,
+      "name": "6*",
+      "famchar": "sL"
+    },
+    {
+      "kind": "star",
+      "n": 8,
+      "alphaU": 45,
+      "name": "8*",
+      "famchar": "sR"
+    },
+    {
+      "kind": "star",
+      "n": 12,
+      "alphaU": 50,
+      "name": "12*",
+      "famchar": "sX"
+    }
+  ]
+}

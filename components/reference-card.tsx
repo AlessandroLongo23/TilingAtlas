@@ -5,9 +5,7 @@ import { Camera, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { useIsPhone } from "@/lib/hooks/useIsPhone";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
-import { HyperbolicDevelopedThumbnail } from "@/components/hyperbolic-developed-thumbnail";
-import { HyperbolicEdgesThumbnail } from "@/components/hyperbolic-edges-thumbnail";
-import { HyperbolicColorsThumbnail } from "@/components/hyperbolic-colors-thumbnail";
+import { HyperbolicThumbnail } from "@/components/hyperbolic-thumbnail";
 import { SphericalColorsThumbnail } from "@/components/spherical-colors-thumbnail";
 import { SphericalThumbnail } from "@/components/spherical-thumbnail";
 import { ColorsThumbnail } from "@/components/colors/colors-thumbnail";
@@ -17,7 +15,6 @@ import { SphSchwarzThumbnail } from "@/components/freedraw/sph-schwarz-thumbnail
 import { SphPolyThumbnail } from "@/components/freedraw/sph-poly-thumbnail";
 import { SphStarThumbnail } from "@/components/freedraw/sph-star-thumbnail";
 import { hypSchwarzMeta } from "@/lib/freedraw/schwarz";
-import { hypPolyMeta } from "@/lib/tilings/hyp-poly";
 import { InfoDot } from "@/components/ui/info-dot";
 import { PentagonEdgesThumbnail } from "@/components/pentagon-edges-thumbnail";
 import { IsohedralEdgesThumbnail } from "@/components/isohedral-edges-thumbnail";
@@ -32,6 +29,7 @@ import {
 	isMaximal,
 	partitionKeyOf,
 	starFoldsOf,
+	geometryOf,
 	tileClassOf,
 	TILE_CLASS_LABEL,
 	type Certification,
@@ -94,7 +92,7 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 	// Degrees of freedom = independent sliders in Play. 2+ (α, β, …) get their own badge.
 	const glyphs = tiling.paramCell ? paramGlyphs(tiling.paramCell) : isFamily ? ["α"] : [];
 	const dof = glyphs.length;
-	const isHyperbolic = tileClassOf(tiling) === "hyperbolic";
+	const isHyperbolic = geometryOf(tiling) === "hyperbolic";
 	const isConvex = tileClassOf(tiling) === "convex";
 	const isIsotoxal = tileClassOf(tiling) === "isotoxal";
 	const isMixed = tileClassOf(tiling) === "mixed";
@@ -104,7 +102,7 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 	const polyLabel = tiling.polyformOrder ? polyformBoard(tiling.polyformOrder)?.label : undefined;
 	const isFreedraw = !!tiling.freedraw;
 	const freedrawStats = freedrawStatsOf(tiling);
-	const folds = tileClassOf(tiling) === "star" || isMixed ? starFoldsOf(tiling) : [];
+	const folds = (tileClassOf(tiling) === "star" && !isHyperbolic) || isMixed ? starFoldsOf(tiling) : [];
 	const partitionKey = partitionKeyOf(tiling);
 	// The vertex-type classification: M distinct configs, and the multiplicity group ("511"). Maximal
 	// (m === k, all orbits distinct) is the Krötenheerdt case — shown as "Kröt" since its key is all 1s.
@@ -219,7 +217,7 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 					tiling.schwarz.geometry === "spherical" ? (
 						<SphSchwarzThumbnail pattern={tiling.schwarz} />
 					) : (
-						<HyperbolicEdgesThumbnail pattern={hypSchwarzMeta(tiling.schwarz)} />
+						<HyperbolicThumbnail tiling={hypSchwarzMeta(tiling.schwarz)} mode="edges" />
 					)
 				) : tiling.sphPoly ? (
 					<SphPolyThumbnail pattern={tiling.sphPoly} />
@@ -232,7 +230,7 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 				) : tiling.sphEdges ? (
 					<SphSchwarzThumbnail pattern={tiling.sphEdges} />
 				) : tiling.hypPoly ? (
-					<HyperbolicColorsThumbnail pattern={hypPolyMeta(tiling.hypPoly)} />
+					<HyperbolicThumbnail tiling={tiling.hypPoly} mode="tiling" />
 				) : tiling.sphBubble ? (
 					<SphericalThumbnail solidId={tiling.sphBubble.solid} bubbleBites={tiling.sphBubble.bites} />
 				) : tiling.spherical ? (
@@ -240,15 +238,15 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 				) : tiling.sphColors ? (
 					<SphericalColorsThumbnail pattern={tiling.sphColors.pattern} mode="polyhedron" />
 				) : tiling.hypColors ? (
-					<HyperbolicColorsThumbnail pattern={tiling.hypColors} />
+					<HyperbolicThumbnail tiling={tiling.hypColors} mode="colors" />
 				) : tiling.hypEdges ? (
-					<HyperbolicEdgesThumbnail pattern={tiling.hypEdges} />
+					<HyperbolicThumbnail tiling={tiling.hypEdges} mode="edges" />
 				) : tiling.freedraw ? (
 					<FreedrawThumbnail pattern={tiling.freedraw} />
 				) : tiling.colors ? (
 					<ColorsThumbnail pattern={tiling.colors} />
 				) : tiling.developed ? (
-					<HyperbolicDevelopedThumbnail patch={tiling.developed.patch} />
+					<HyperbolicThumbnail tiling={tiling.developed.patch} mode="tiling" />
 				) : (
 					<TilingThumbnail translationalCell={tiling.renderCell} pxPerEdge={22} />
 				)}

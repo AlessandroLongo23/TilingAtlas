@@ -14,10 +14,9 @@
 //         the way to 12^6 = {12,6}. Board ids are prefixed `t` (the triangle board), records read
 //         `hpt7-3-00005`, and the shards sit beside ai1's in the same directory.
 //
-// Both render through the renderer the colored-tiling shelf already uses: a record ships DARTS, and
-// lib/render/hyperbolicDevelopClient.ts::developColors re-develops them under the live view, fills each
-// face by its `faceColor` index and strokes every edge. `faceColor` is the index of the face's SIZE in
-// the board's sorted alphabet, so one colour means one polygon size across the whole shelf. Decoded by
+// Both render as the developed shelf does: a record ships DARTS, and the per-pixel disk
+// (components/hyperbolic-canvas.tsx, mode "tiling") walks them under the live view, filling each face by
+// its side count. `faceColor` is the index of the face's SIZE in the board's sorted alphabet. Decoded by
 // tools/ctrnact-oracle/develop_ai1.py (--n, --ai2, --board, --hybrid).
 //
 // Small n is not hyperbolic in either family and lives elsewhere: ai1 is spherical at n = 3, 4, 5 and
@@ -65,6 +64,9 @@ export interface HypPolyBoard {
 	missing?: number[];
 	/** Tilings per shipped k. */
 	counts: Record<number, number>;
+	/** Tiles at SEVERAL edge lengths (1247_1_0612): the sidebar files the board under "Different edge
+	 *  lengths", the rule the Euclidean shelves already follow (tileClassOf). */
+	multiLength?: true;
 	/** k slices stored in several shard files, `-k2-p0` … `-k2-p4`, and how many: a slice of a million
 	 *  records is too big to pack or fetch as one file. Absent k is one file. */
 	parts?: Record<number, number>;
@@ -1690,6 +1692,7 @@ export const HYP_POLY_BOARDS: HypPolyBoard[] = [
 	{
 		id: "y124710612",
 		n: 0,
+		multiLength: true,
 		label: "1247, edge 1.0613 at ×1, 2, 4, 7 (3, 4, 5, 10, 20, ∞), k slices partial",
 		family: "hybrid",
 		eagerKs: [],
@@ -1697,6 +1700,7 @@ export const HYP_POLY_BOARDS: HypPolyBoard[] = [
 		dropped: [],
 		counts: { 1: 66, 2: 327, 3: 520, 4: 1435, 5: 3567, 6: 8869, 7: 14839 },
 	},
+
 	{
 		id: "y11555",
 		n: 0,
@@ -1964,21 +1968,6 @@ export const hypPolyBoardOfSub = (sub: string | null | undefined): HypPolyBoard 
 };
 export const hypPolySub = (p: HypPolyPattern): string => subOfBoardId(p.base);
 export const hypPolySubOfBoard = (b: HypPolyBoard): string => subOfBoardId(b.id);
-
-/** What the colored-tiling canvas and thumbnail read (HypColorsThumbInput). The "colour count" is the
- *  board's alphabet size — this shelf fills a face by its POLYGON SIZE, so the palette needs one entry
- *  per size, and `darts.faceColor` is already the index into `stats.sizes`. Passing the sizes makes the
- *  palette the shared polygon ramp (hypFacePaletteRgb255), so a heptagon here is a heptagon everywhere. */
-export function hypPolyMeta(p: HypPolyPattern) {
-	return {
-		id: p.id,
-		config: p.family,
-		edge: p.edge,
-		darts: p.darts,
-		colors: p.stats.sizes.length,
-		sizes: p.stats.sizes,
-	};
-}
 
 /** A vertex figure in its canonical cyclic order: the least of its rotations and reflections, so [4,8,4,3]
  *  and [3,4,8,4] read the same and mirror pairs merge (the shelf's chirality rule). */

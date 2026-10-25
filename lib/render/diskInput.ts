@@ -1,17 +1,13 @@
-// Where an interactive Poincaré disk's pan, rotation, recentre and click-to-centre come from.
-//
-// /play's disks read them from the global configuration store, which its p5 layer writes. An embedded
-// disk (the landing wall's Hyperbolic cell, TileSearch's results) must not steer that store or be
-// steered by it, so it owns a per-instance HyperbolicViewInput, written by useDiskInput below. The three
-// disk canvases (developed, edge patterns, colourings) read either through readDiskInput, so the maths
-// below the read is the same in both modes.
+// The gestures of an embedded Poincaré disk. /play's disk reads pan and rotation from the global store,
+// which its p5 layer writes; an embedded disk (the landing wall's Hyperbolic cell, TileSearch's results)
+// must not steer that store or be steered by it, so useDiskInput writes a per-instance
+// HyperbolicViewInput, which HyperbolicCanvas takes through its `input` prop.
 //
 // Controls match /play's hyperbolic view exactly: drag pans (a Möbius translation, so the tiling slides
 // under the pointer and the disk stays put), the bare wheel rotates in 5° detents (the disk has no zoom:
 // its radius is fixed), a click folds the tile under the cursor to the centre, and right-click recentres.
 
 import { useEffect, useRef, type PointerEvent as ReactPointerEvent, type RefObject } from "react";
-import type { HypFrameInput } from "@/lib/render/hypCamera";
 import { useTouchGestures } from "@/lib/render/touchGestures";
 import {
 	ROTATE_SNAP_DEG,
@@ -22,53 +18,7 @@ import {
 	wrap360,
 	type CardControls,
 } from "@/lib/render/viewControls";
-import { useConfiguration } from "@/stores/configuration";
-
-/**
- * Per-instance view input. `resetSeq` / `click.seq` are counters, not flags, because ownership stays
- * one-way: the canvas remembers the last sequence it acted on instead of writing a consumed flag back
- * into its caller's object (which is what /play does, and what two owners of one object would race over).
- */
-export interface HyperbolicViewInput {
-	/** Live (eased) pan offset in centred CSS px, y DOWN: the same frame as /play's controls.offset. */
-	offset: { x: number; y: number };
-	/** Pan target the pointer writes. Only used to tell an active drag from a settling glide. */
-	targetOffset: { x: number; y: number };
-	/** Live (eased) view rotation in degrees. */
-	rotationDeg: number;
-	/** Bump to recentre the disk (right-click in /play). */
-	resetSeq: number;
-	/** Click to fold to the disk centre, in centred CSS px, y down. `seq` bumps per click. */
-	click: { x: number; y: number; seq: number } | null;
-}
-
-/** The last recentre and click a canvas acted on, kept per canvas. */
-export type DiskInputSeen = { reset: number; click: number };
-
-/**
- * This frame's camera input: from `local` when the disk has its own, else from /play's store, whose
- * one-shot flags it clears.
- */
-export function readDiskInput(local: HyperbolicViewInput | null, seen: DiskInputSeen, Rcss: number): HypFrameInput {
-	if (!local) {
-		const cfg = useConfiguration.getState();
-		const out = {
-			offset: cfg.controls.offset,
-			targetOffset: cfg.controls.targetOffset,
-			rotDeg: cfg.controls.rotation || 0,
-			reset: cfg.hyperbolicResetView,
-			click: cfg.hyperbolicClick,
-			Rcss,
-		};
-		if (out.reset || out.click) useConfiguration.setState({ hyperbolicResetView: false, hyperbolicClick: null });
-		return out;
-	}
-	const reset = local.resetSeq !== seen.reset;
-	seen.reset = local.resetSeq;
-	const click = local.click && local.click.seq !== seen.click ? local.click : null;
-	if (local.click) seen.click = local.click.seq;
-	return { offset: local.offset, targetOffset: local.targetOffset, rotDeg: local.rotationDeg, reset, click, Rcss };
-}
+import type { HyperbolicViewInput } from "@/components/hyperbolic-canvas";
 
 // Pointer travel, in px, under which a press-release counts as a click, not a pan. Same threshold /play
 // uses (components/canvas.tsx CLICK_DRAG_THRESHOLD_PX).

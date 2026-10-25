@@ -18,6 +18,7 @@ import { RangeInput } from "@/components/ui/range-input";
 import { FloatingToolbar, ToolbarButton, ToolbarDivider } from "@/components/ui/floating-toolbar";
 import { useAutomata } from "@/lib/stores/automata";
 import { cn } from "@/lib/utils/cn";
+import { SwapIcon } from "@/components/ui/swap-icon";
 
 /** Generations per second, on a log-ish ladder — one drag should reach both 1/s and 240/s. */
 const SPEEDS = [1, 2, 4, 8, 12, 20, 30, 45, 60, 90, 120, 180, 240];
@@ -80,7 +81,7 @@ export function AutomataTransport({
 				disabled={disabled}
 				className={cn(ROW1, "max-md:flex-1")}
 			>
-				{running ? <Pause size={15} /> : <Play size={15} />}
+				<SwapIcon icon={running ? Pause : Play} size={15} />
 				{running ? "Pause" : "Run"}
 			</ToolbarButton>
 			<ToolbarButton label="Step one generation" shortcut="." onClick={stepOnce} disabled={disabled} className={ROW1}>

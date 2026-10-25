@@ -4,6 +4,7 @@ import { ChevronRight, FilePen, Folder, FolderOpen, FolderPlus, Pencil, Play, Sq
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { HoverPill } from "@/components/ui/hover-pill";
 import { Input } from "@/components/ui/input";
 import { InfoDot } from "@/components/ui/info-dot";
 import { Modal } from "@/components/ui/modal";
@@ -234,7 +235,7 @@ export function RunList({
 className={cn(
 // a fixed height, and the actions fade in over it: hovering moves nothing
 "group flex h-9 items-center gap-1.5 rounded-control pr-1 transition-colors",
-over === f ? "bg-accent/15 ring-1 ring-accent" : "hover:bg-surface-overlay",
+over === f && "bg-accent/15 ring-1 ring-accent",
 )}
 style={{ paddingLeft: 8 + depth * 16 }}
 >
@@ -291,6 +292,7 @@ setCreating(f);
 							type="button"
 							{...drag(r.dir)}
 							onClick={() => onSelect(r.id)}
+aria-current={selected === r.id || undefined}
 							style={{ paddingLeft: 12 + depth * 16 }}
 							className={cn(
 								"flex w-full cursor-pointer items-center gap-3 rounded-control py-2 pr-3 text-left transition-colors",
@@ -333,7 +335,11 @@ setCreating(f);
 			</div>
 			{error ? <p className="px-5 py-1 text-xs text-danger">{error}</p> : null}
 			{status.runs.length || status.folders.length || creating ? (
-				<ul className="space-y-0.5 p-2">{level(status.root, 0)}</ul>
+				<ul className="relative mx-2 my-2 space-y-0.5">
+{/* the atlas's gliding hover (components/ui/hover-pill.tsx), over every row in the tree */}
+<HoverPill />
+{level(status.root, 0)}
+</ul>
 			) : (
 				<p className="px-5 py-6 text-sm text-fg-muted">No runs yet. Build a board and press Run search.</p>
 			)}

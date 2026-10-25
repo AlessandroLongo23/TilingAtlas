@@ -4,8 +4,7 @@ import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { useIsPhone } from "@/lib/hooks/useIsPhone";
 import { cn } from "@/lib/utils/cn";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
-import { HyperbolicDevelopedThumbnail } from "@/components/hyperbolic-developed-thumbnail";
-import { HyperbolicEdgesThumbnail } from "@/components/hyperbolic-edges-thumbnail";
+import { HyperbolicThumbnail } from "@/components/hyperbolic-thumbnail";
 import { SphericalThumbnail } from "@/components/spherical-thumbnail";
 import { ColorsThumbnail } from "@/components/colors/colors-thumbnail";
 import { FreedrawThumbnail } from "@/components/freedraw/freedraw-thumbnail";
@@ -15,10 +14,8 @@ import { SphSchwarzThumbnail } from "@/components/freedraw/sph-schwarz-thumbnail
 import { SphPolyThumbnail } from "@/components/freedraw/sph-poly-thumbnail";
 import { SphStarThumbnail } from "@/components/freedraw/sph-star-thumbnail";
 import { hypSchwarzMeta } from "@/lib/freedraw/schwarz";
-import { hypPolyMeta } from "@/lib/tilings/hyp-poly";
 import { PentagonEdgesThumbnail } from "@/components/pentagon-edges-thumbnail";
 import { IsohedralEdgesThumbnail } from "@/components/isohedral-edges-thumbnail";
-import { HyperbolicColorsThumbnail } from "@/components/hyperbolic-colors-thumbnail";
 import { SphericalColorsThumbnail } from "@/components/spherical-colors-thumbnail";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
@@ -306,12 +303,12 @@ function Tile({
 				) : t.sphEdges ? (
 					<SphSchwarzThumbnail pattern={t.sphEdges} />
 				) : t.hypPoly ? (
-					<HyperbolicColorsThumbnail pattern={hypPolyMeta(t.hypPoly)} />
+					<HyperbolicThumbnail tiling={t.hypPoly} mode="tiling" />
 				) : t.schwarz ? (
 					t.schwarz.geometry === "spherical" ? (
 						<SphSchwarzThumbnail pattern={t.schwarz} />
 					) : (
-						<HyperbolicEdgesThumbnail pattern={hypSchwarzMeta(t.schwarz)} />
+						<HyperbolicThumbnail tiling={hypSchwarzMeta(t.schwarz)} mode="edges" />
 					)
 				) : t.sphBubble ? (
 					// A spherical bubble decoration draws through the same thumbnail, which swaps the flat
@@ -322,9 +319,9 @@ function Tile({
 				) : t.sphColors ? (
 					<SphericalColorsThumbnail pattern={t.sphColors.pattern} mode="polyhedron" />
 				) : t.hypColors ? (
-					<HyperbolicColorsThumbnail pattern={t.hypColors} />
+					<HyperbolicThumbnail tiling={t.hypColors} mode="colors" />
 				) : t.hypEdges ? (
-					<HyperbolicEdgesThumbnail pattern={t.hypEdges} />
+					<HyperbolicThumbnail tiling={t.hypEdges} mode="edges" />
 				) : t.sphericalFreedraw ? (
 					<SphereFreedrawThumbnail
 						pattern={t.sphericalFreedraw.pattern}
@@ -337,7 +334,7 @@ function Tile({
 				) : t.colors ? (
 					<ColorsThumbnail pattern={t.colors} live />
 				) : t.developed ? (
-					<HyperbolicDevelopedThumbnail patch={t.developed.patch} />
+					<HyperbolicThumbnail tiling={t.developed.patch} mode="tiling" />
 				) : t.renderCell ? (
 					<TilingThumbnail translationalCell={t.renderCell as TranslationalCellData} pxPerEdge={14} />
 				) : null}

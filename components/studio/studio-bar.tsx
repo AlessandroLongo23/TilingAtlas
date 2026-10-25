@@ -21,6 +21,7 @@ import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
 import type { PeriodMode, StudioTool } from "@/lib/studio/types";
 import { useConfiguration } from "@/stores/configuration";
 import { canRedo, canReset, canUndo, useStudio } from "@/stores/studio";
+import { SegIndicator } from "@/components/ui/seg-indicator";
 
 // The editor's controls. They are not a bar of their own: /play's canvas toolbar takes them in while
 // `studioActive` is up (AL, 2026-09-24), so editing ADDS to the toolbar and link, export and fullscreen
@@ -239,6 +240,7 @@ export function StudioPeriod({ wallpaperDisabledReason }: { wallpaperDisabledRea
 	return (
 		<>
 			<div className="ta-seg flex">
+				<SegIndicator />
 				{mode("lattice", "Lattice")}
 				{mode("wallpaper", "Wallpaper group", wallpaperDisabledReason)}
 			</div>

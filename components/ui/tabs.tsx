@@ -4,6 +4,7 @@ import * as RadixTabs from "@radix-ui/react-tabs";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils/cn";
 import { Kbd } from "@/components/ui/kbd";
+import { SegIndicator } from "@/components/ui/seg-indicator";
 
 interface TabsProps {
 	value: string;
@@ -37,6 +38,7 @@ export function Tabs({
 	return (
 		<RadixTabs.Root value={value} onValueChange={onValueChange} className="flex h-full w-full flex-col">
 			<RadixTabs.List className={cn("ta-seg flex flex-shrink-0", listClassName)}>
+				<SegIndicator />
 				{tabs.map((tab) => (
 					<RadixTabs.Trigger
 						key={tab}

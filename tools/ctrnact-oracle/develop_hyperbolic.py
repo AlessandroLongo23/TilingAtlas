@@ -38,26 +38,28 @@ TWO_PI = 2 * math.pi
 
 
 # ----------------------------------------------------------------------------- hyperbolic geometry
-def interior_angle(p, l):
-    """Interior angle of a regular p-gon of edge length l in H². p = 0 is the apeirogon sentinel (the
-    same one `euclid_sum` reads): cos(π/∞) = 1, the polygon inscribed in a horocycle."""
-    r = (1.0 if p == 0 else math.cos(math.pi / p)) / math.cosh(l / 2)
-    return 2 * math.asin(min(1.0, max(-1.0, r)))
+from hyp_geom import interior_angle, corner_angle, corner_kind, solve_free, star_types  # noqa: E402
+
+
+def corner(c, l, points=None):
+    """Angle at ℓ of one corner: a bare int is a regular p-gon (the hyperbolic palette's decode), a tuple
+    is the alphabet's (L, d, units), which also names isotoxal-star points and dents (at `points`, if freed)."""
+    return interior_angle(c, l) if isinstance(c, int) else corner_angle(c[0], c[2], ds.PALETTE_D, l, points)
 
 
 def euclid_sum(cfg):
-    return sum(math.pi if n == 0 else math.pi * (n - 2) / n for n in cfg)  # n==0 sentinel = apeirogon
+    return sum(corner(c, 0.0) for c in cfg)
 
 
 def solve_edge_length(cfg, tol=1e-13):
-    """The ℓ>0 with Σ α(nᵢ,ℓ)=2π, or None when the config is not hyperbolic (Euclidean sum ≤ 2π)."""
+    """The ℓ>0 with Σ α(cᵢ,ℓ)=2π, or None when the config is not hyperbolic (Euclidean sum ≤ 2π)."""
     if euclid_sum(cfg) <= TWO_PI + 1e-12:
         return None
-    f = lambda l: sum(interior_angle(n, l) for n in cfg) - TWO_PI
+    f = lambda l: sum(corner(c, l) for c in cfg) - TWO_PI
     lo, hi = 0.0, 1.0
     while f(hi) > 0:
         hi *= 2
-        if hi > 1e7:
+        if hi > 1e7 or f(hi) == f(hi / 2):  # a star point does not shrink: Σ may stall above 2π
             return None
     for _ in range(200):
         mid = 0.5 * (lo + hi)
@@ -108,19 +110,22 @@ class DevelopError(Exception):
     pass
 
 
-def develop_patch(rneig, glue, lvert, l, boundR=0.9, guard=200000):
+def develop_patch(rneig, glue, lvert, l, boundR=0.9, guard=200000, turns=None):
     """Flood-fill the instance orbit under {rneig, glue} within the disk of radius boundR. Builds EXPLICIT
     neighbour-index arrays (rn[i], gl[i]) on the developed instances during the fill, so face tracing walks
     indices instead of re-keying floating-point frames (which drifts at the dedup-grid boundary and drops
     faces). Returns (verts, edges, faces): verts=[(x,y)…], edges=set of undirected vid pairs, faces=list of
-    vid rings that close INSIDE the patch."""
+    vid rings that close INSIDE the patch. `turns` is a shipped record's per-dart `alpha`, for darts whose
+    lvert no longer names the corner (a star's is its side count)."""
     Med = medge(l)
     angc = {}
 
     def alpha(h):
+        if turns:
+            return turns[h]
         p = lvert[rneig[h]]
         if p not in angc:
-            angc[p] = interior_angle(p, l)
+            angc[p] = corner(p, l)
         return angc[p]
 
     inst_id = {}
@@ -235,14 +240,32 @@ def check_patch(verts, E, F, l, tol=1e-3):
 def develop_block(b, boundR=0.9):
     dec = ds.decode_block(b)
     configs = dec["configs"]
-    cfg_str = " + ".join(".".join(map(str, c)) for c in configs)
-    l = solve_edge_common(configs)
+    cfg_str = " + ".join(".".join(ds._face_str(p) if isinstance(p, tuple) else str(p) for p in c)
+                         for c in configs)
+    # A star whose dent is not reflex is a convex 2n-gon, and the alphabet's point-adjacency prune assumed
+    # reflex dents, so such a realization is outside the census either way.
+    dent_cs = [c for c in set(dec["lvert"]) if not isinstance(c, int)
+               and corner_kind(c[0], c[2], ds.PALETTE_D)[0] == "dent"]
+    reflex = lambda l, pts: all(corner(c, l, pts) > math.pi + 1e-6 for c in dent_cs)
+    l, points = solve_edge_common(configs), None
+    if dent_cs and (l is None or not reflex(l, None)):
+        # No star tiling at the palette's points: free them. Other points can close where these do not,
+        # or keep every dent reflex where these do not.
+        l, points = solve_free(configs, ds.PALETTE_D) or (None, None)
     if l is None:
-        reason = ("not hyperbolic (Euclidean angle sum ≤ 2π)" if any(solve_edge_length(c) is None for c in configs)
+        reason = ("no realization with the star points free" if dent_cs
+                  else "not hyperbolic (Euclidean angle sum ≤ 2π)" if any(solve_edge_length(c) is None for c in configs)
                   else "no common edge length (orbit configs close at different ℓ)")
         return None, {"id": dec["id"], "config": cfg_str, "reason": reason}
+    dents = [corner(c, l, points) for c in dent_cs]
+    if not reflex(l, points):
+        return None, {"id": dec["id"], "config": cfg_str, "reason": "dent not reflex at the forced edge"}
+    rn = dec["rneig"]
+    turns = [corner(dec["lvert"][rn[h]], l, points) for h in range(len(rn))] if dents else None
     try:
-        verts, E, F = develop_patch(dec["rneig"], dec["glue"], dec["lvert"], l, boundR=boundR)
+        verts, E, F = develop_patch(dec["rneig"], dec["glue"], dec["lvert"], l, boundR=boundR, turns=turns)
+        if not F:  # a freed member can have an edge so long that no whole tile fits inside boundR
+            verts, E, F = develop_patch(dec["rneig"], dec["glue"], dec["lvert"], l, boundR=0.995, turns=turns)
     except DevelopError as e:
         return None, {"id": dec["id"], "config": cfg_str, "reason": str(e)}
     ok, res = check_patch(verts, E, F, l)
@@ -259,28 +282,51 @@ def develop_block(b, boundR=0.9):
         "darts": {
             "rneig": list(map(int, dec["rneig"])),
             "glue": list(map(int, dec["glue"])),
-            "lvert": list(map(int, dec["lvert"])),
+            "lvert": [c if isinstance(c, int) else c[0] for c in dec["lvert"]],
             "seed": 0,
         },
     }
+    if dents:  # star corners differ inside one face, so the turns ship explicitly (the client's `alpha`)
+        rec["darts"]["alpha"] = turns
+        # 0 regular, 1 point, 2 dent: what the corner at h IS, and which star type, so a client can
+        # re-solve the family at any point
+        ck = [corner_kind(c[0], c[2], ds.PALETTE_D) if not isinstance(c, int) else ("regular",)
+              for c in (dec["lvert"][rn[h]] for h in range(len(rn)))]
+        rec["darts"]["starKind"] = [{"regular": 0, "point": 1, "dent": 2}[k[0]] for k in ck]
+        types = star_types(configs, ds.PALETTE_D)
+        if len(types) > 1:
+            rec["darts"]["starParam"] = [types.index(k[1:]) if k[0] != "regular" else 0 for k in ck]
+        rec["stars"] = True
+        if points:
+            rec["freedPoints"] = True
     return rec, None
 
 
-def run(pruned, out_path, report_path, kmin=1, kmax=1, boundR=0.9, limit=None):
+def _develop_one(args):
+    return develop_block(*args)
+
+
+def run(pruned, out_path, report_path, kmin=1, kmax=1, boundR=0.9, limit=None, palette="hyperbolic", jobs=None):
     blocks = ds.gather_blocks(pruned, kmin, kmax)
     if limit:
         blocks = blocks[:limit]
     records, failed = [], []
     import time as _t
+    import multiprocessing as mp
     _t0 = _t.time()
-    for i, b in enumerate(blocks):
-        if i and i % 2000 == 0:
-            el = _t.time() - _t0
-            print("  develop %d/%d  %.0fs elapsed, ~%.0fs left, %d developed"
-                  % (i, len(blocks), el, el / i * (len(blocks) - i), len(records)),
-                  file=sys.stderr, flush=True)
-        rec, err = develop_block(b, boundR=boundR)
-        (records if rec else failed).append(rec or err)
+    # Per-block work, embarrassingly parallel; a freed-point solve that finds nothing costs its every start.
+    # Workers are spawned, so each installs the palette itself.
+    jobs = jobs or max(2, (os.cpu_count() or 4) - 2)
+    with mp.Pool(jobs, initializer=ds.install_palette, initargs=(palette,)) as pool:
+        for i, (rec, err) in enumerate(pool.imap(_develop_one, ((b, boundR) for b in blocks), chunksize=32)):
+            if i and i % 2000 == 0:
+                el = _t.time() - _t0
+                print("  develop %d/%d  %.0fs elapsed, ~%.0fs left, %d developed"
+                      % (i, len(blocks), el, el / i * (len(blocks) - i), len(records)),
+                      file=sys.stderr, flush=True)
+            if rec:
+                rec["palette"] = palette
+            (records if rec else failed).append(rec or err)
     records.sort(key=lambda r: (r["k"], -r["tiles"], r["id"]))
     if out_path:
         json.dump(records, open(out_path, "w"))
@@ -350,7 +396,7 @@ def main():
         _selftest()
         return
     ds.install_palette(args.palette)  # decode against this palette's generated alphabet, not the default
-    run(args.pruned, args.out, args.report, args.kmin, args.kmax, args.boundR, args.limit)
+    run(args.pruned, args.out, args.report, args.kmin, args.kmax, args.boundR, args.limit, args.palette)
 
 
 if __name__ == "__main__":

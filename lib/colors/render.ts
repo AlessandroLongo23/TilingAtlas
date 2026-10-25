@@ -14,8 +14,6 @@ import {
 	type FreedrawView,
 } from "@/lib/freedraw/render";
 import { colorCountOf, colorsGridOf, type ColorPattern } from "./pattern";
-import { APEIROGON_RGB01, tileHue } from "@/lib/render/hyperbolic";
-import { tileHueRgb01 } from "@/lib/render/tilePalette";
 
 const SQRT3_2 = Math.sqrt(3) / 2;
 
@@ -108,25 +106,6 @@ export function paletteRgb255(
 	return paletteFor(n, palette).map((c) => {
 		const [h, s, l] = cellHsl(c, dark);
 		return hslToRgb255(h, s, l);
-	});
-}
-
-/**
- * The fill per colour index of a hyperbolic colored-tiling surface. A shelf that colours by POLYGON SIZE
- * (lib/tilings/hyp-poly.ts) passes its `sizes`: index i is then the polygon sizes[i], filled with the
- * side-count ramp every geometry shares, and an apeirogon (size 0) is white. A colouring passes none and
- * keeps the colorings palette, since there the colours are the catalogued object.
- */
-export function hypFacePaletteRgb255(
-	p: { colors: number; sizes?: readonly number[] },
-	palette: readonly ColorChoice[] | undefined,
-	dark: boolean,
-	satPct?: number,
-): [number, number, number][] {
-	if (!p.sizes) return paletteRgb255(p.colors, palette, dark);
-	return p.sizes.map((n) => {
-		const [r, g, b] = n >= 3 ? tileHueRgb01(tileHue(n), satPct) : APEIROGON_RGB01;
-		return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
 	});
 }
 

@@ -6,8 +6,8 @@
 //
 // Decoded and developed by tools/ctrnact-oracle/develop_hyp_edges.py to public/hyperbolic-edges/. A
 // record ships the quotient half-edge structure (`darts`) and the forced edge length, NOT baked
-// geometry — every render path re-develops from the darts under the live view
-// (lib/render/hyperbolicDevelopClient.ts::developEdges), exactly as the plain hyperbolic shelf does.
+// geometry — the disk walks the darts under the live view (components/hyperbolic-canvas.tsx, mode
+// "edges"), exactly as the plain hyperbolic shelf does.
 //
 // Unlike planar freedraw there is NO lattice and NO bitmask: H² has no translation lattice, so the
 // tiling is the dart structure, and a drawn edge's status is recovered from the polygon sizes
