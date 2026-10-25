@@ -131,11 +131,12 @@ refuses any value but `none` for now.
 ## Running
 
 ```
-tilesearch board.txt [--k <kmin> <kmax>] [--threads <n>] [--nice <n>] [--resume]
+tilesearch board.txt [--k <kmin> <kmax>] [--threads <n>] [--nice <n>] [--resume] [--gzip]
 ```
 
 `--k` overrides the board's range for one run. Threads never change the result, so they live on the
-command line and not in the board. `--nice 10` runs the search at low priority.
+command line and not in the board. `--nice 10` runs the search at low priority. `--gzip` writes the
+certificate files as `.txt.gz`, about 14 times smaller at no measurable cost in time; `zcat` reads them.
 
 A stopped run continues with `--resume` in the same folder. The search is split by root vertex (the
 first vertex placed; a tiling is found only under its lowest-numbered vertex type), and the output of

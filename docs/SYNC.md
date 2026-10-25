@@ -3219,3 +3219,6 @@ mixed faces). Rename, move, delete runs; folders. NOTES 2026-10-25 "draws throug
 
 ## 2026-10-25 — TileSearch on the atlas's own header, hovers and info dots — CC
 `components/nav-bar.tsx` shared by the atlas Nav and TileSearch. NOTES 2026-10-25 "TileSearch polish".
+## 2026-10-25 — tilesearch 3-15x faster, same output; --gzip — CC
+Gate: bench.py, 5 boards, every file identical to 56b0a405. hybrid_2_9830 k<=2 49.4 -> 13.2 s,
+123_1_4657 k<=3 16.4 -> 1.1 s. NOTES 2026-10-25 "tilesearch made 3-15x faster".
