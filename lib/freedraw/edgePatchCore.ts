@@ -58,9 +58,11 @@ export interface DevelopedWalk {
 
 /** The board tile at one parameter point: everything the builder needs to know about the geometry. */
 export interface EdgePatchTile {
-	/** The tile's corners, in boundary order. Its AREA sizes the period and its CORNER COUNT cuts the
+	/** The tile's corners, in boundary order, or absent for a tiling by faces of several shapes (TileSearch's
+	 *  boards): every bounded face is then a tile, and a period is checked by its area and by Euler.
+	 *  Otherwise the tile's AREA sizes the period and its CORNER COUNT cuts the
 	 *  faces, so a board whose tile is a hexagon and one whose tile is a pentagon differ only here. */
-	outline: { x: number; y: number }[];
+	outline?: { x: number; y: number }[];
 	/** Edge-class lengths. The shortest sets tolerances, the longest sizes the develop. */
 	classLengths: number[];
 }
@@ -114,6 +116,9 @@ export interface EdgePatchDiag {
 export type EdgePatchResult =
 	| { ok: true; patch: FreedrawPatch; diag: EdgePatchDiag; reason?: undefined }
 	| { ok: false; patch?: undefined; diag: EdgePatchDiag; reason: string };
+
+/** The most corners a face may have when the faces are of several shapes. */
+const MAX_RING = 64;
 
 const cross = (a: Vec, b: Vec) => a[0] * b[1] - a[1] * b[0];
 const norm2 = (a: Vec) => a[0] * a[0] + a[1] * a[1];
@@ -277,7 +282,7 @@ function findLattice(
 
 /** Faces of the developed planar graph, as vertex rings, counter-clockwise. Only complete board tiles
  *  survive: `corners` corners, the tile's own area, and every corner well inside the developed disc. */
-function extractFaces(walk: DevelopedWalk, tileArea: number, coreR: number, corners: number): number[][] {
+function extractFaces(walk: DevelopedWalk, tileArea: number | null, coreR: number, corners: number): number[][] {
 	const n = walk.vertices.length;
 	const adj: number[][] = Array.from({ length: n }, () => []);
 	for (const e of walk.edges) {
@@ -307,7 +312,7 @@ function extractFaces(walk: DevelopedWalk, tileArea: number, coreR: number, corn
 			let s = s0;
 			let t = t0;
 			let ok = true;
-			for (let step = 0; step <= corners + 2; step++) {
+			for (let step = 0; step <= (corners || MAX_RING) + 2; step++) {
 				seen.add(s * n + t);
 				ring.push(s);
 				// Turn as far clockwise as the rotation system allows: that keeps the face on the left,
@@ -323,11 +328,11 @@ function extractFaces(walk: DevelopedWalk, tileArea: number, coreR: number, corn
 				t = w;
 				if (s === s0 && t === t0) break;
 			}
-			if (!ok || s !== s0 || t !== t0 || ring.length !== corners) continue;
+			if (!ok || s !== s0 || t !== t0 || (corners ? ring.length !== corners : ring.length < 3)) continue;
 			const pts = ring.map((i) => walk.vertices[i]);
 			if (pts.some((p) => Math.hypot(p.x, p.y) > coreR)) continue;
 			const area = ringArea(pts);
-			if (Math.abs(area - tileArea) > 1e-6 * tileArea) continue;
+			if (tileArea === null ? !(area > 0) : Math.abs(area - tileArea) > 1e-6 * tileArea) continue;
 			faces.push(ring);
 		}
 	}
@@ -346,10 +351,10 @@ export function buildEdgePatch(
 	opts: EdgePatchOptions = {},
 ): EdgePatchResult {
 	const t0 = Date.now();
-	const corners = tile.outline.length;
+	const corners = tile.outline?.length ?? 0;
 	const longest = Math.max(...tile.classLengths);
 	const shortest = Math.min(...tile.classLengths);
-	const tileArea = Math.abs(ringArea(tile.outline));
+	const tileArea = tile.outline ? Math.abs(ringArea(tile.outline)) : null;
 	const tol = shortest * 1e-5;
 	const budget = opts.budget ?? 60000;
 	const attempts = opts.attempts ?? 4;
@@ -357,7 +362,7 @@ export function buildEdgePatch(
 	// The cell's area, when the caller can state its tile count exactly. Null is the honest answer for a
 	// board that only knows a multiple, and every use below falls back to a heuristic on null.
 	const exactFaces = opts.periodFacesExactly;
-	const knownCellArea = exactFaces !== undefined && exactFaces > 0 ? exactFaces * tileArea : null;
+	const knownCellArea = exactFaces !== undefined && exactFaces > 0 && tileArea !== null ? exactFaces * tileArea : null;
 
 	let diag: EdgePatchDiag = {
 		placed: 0,
@@ -382,7 +387,7 @@ export function buildEdgePatch(
 		const found = findLattice(walk, tol, coreR, knownCellArea);
 		if (found && norm2(found.basis[1]) > 0) {
 			const cellArea = Math.abs(cross(found.basis[0], found.basis[1]));
-			const fpp = cellArea / tileArea;
+			const fpp = tileArea === null ? 0 : cellArea / tileArea;
 			diag = { ...diag, facesPerPeriod: fpp };
 			const built = assemble(walk, found.basis, tileArea, coreR, corners, fpp, {
 				multipleOf: opts.periodFacesMultipleOf,
@@ -418,7 +423,7 @@ export function buildEdgePatch(
 function assemble(
 	walk: DevelopedWalk,
 	basis: [Vec, Vec],
-	tileArea: number,
+	tileArea: number | null,
 	coreR: number,
 	corners: number,
 	facesPerPeriod: number,
@@ -428,21 +433,24 @@ function assemble(
 	const nV = walk.vertices.length;
 	const zero = { verts: 0, faces: 0, edges: 0, comps: 0 };
 
-	// The cell has to hold a whole number of tiles before anything else is worth doing.
+	// The cell has to hold a whole number of tiles before anything else is worth doing. Faces of several
+	// shapes say nothing about their number until they are cut, so that case is checked after the cut.
 	const F = Math.round(facesPerPeriod);
-	if (F < 1 || Math.abs(facesPerPeriod - F) > 1e-4 * Math.max(1, F))
+	if (tileArea === null) {
+		// checked below
+	} else if (F < 1 || Math.abs(facesPerPeriod - F) > 1e-4 * Math.max(1, F))
 		return {
 			patch: null,
 			reason: `period spans ${facesPerPeriod.toFixed(3)} tiles, which is not a whole number`,
 			diag: zero,
 		};
-	if (want.exactly !== undefined && want.exactly > 0 && F !== want.exactly)
+	else if (want.exactly !== undefined && want.exactly > 0 && F !== want.exactly)
 		return {
 			patch: null,
 			reason: `period spans ${F} tiles but the certificate pins ${want.exactly}`,
 			diag: zero,
 		};
-	if (want.multipleOf !== undefined && want.multipleOf > 0 && F % want.multipleOf !== 0)
+	else if (want.multipleOf !== undefined && want.multipleOf > 0 && F % want.multipleOf !== 0)
 		return {
 			patch: null,
 			reason: `period of ${F} tiles is not a multiple of the board's ${want.multipleOf}`,
@@ -528,8 +536,19 @@ function assemble(
 	// the vertex count going with neither means the fold merged or split classes.
 	const diag = { verts: verts.length, faces: polys.length, edges: 0, comps: 0 };
 	if (polys.length === 0) return { patch: null, reason: "no complete tile inside the developed patch", diag };
-	if (polys.length !== F) return { patch: null, reason: `period holds ${F} tiles but ${polys.length} were cut`, diag };
-	if (verts.length !== wantV)
+	if (tileArea === null) {
+		// the faces cut must cover the cell exactly once
+		const at = (c: [number, number, number]) => ({
+			x: verts[c[0]][0] + c[1] * T1[0] + c[2] * T2[0],
+			y: verts[c[0]][1] + c[1] * T1[1] + c[2] * T2[1],
+		});
+		const covered = polys.reduce((t, ring) => t + ringArea(ring.map(at)), 0);
+		const cell = Math.abs(cross(T1, T2));
+		if (Math.abs(covered - cell) > 1e-6 * cell)
+			return { patch: null, reason: `faces cover ${(covered / cell).toFixed(3)} periods, not one`, diag };
+	} else if (polys.length !== F)
+		return { patch: null, reason: `period holds ${F} tiles but ${polys.length} were cut`, diag };
+	else if (verts.length !== wantV)
 		return {
 			patch: null,
 			reason: `period holds ${wantV} vertices but ${verts.length} were folded`,
@@ -582,8 +601,15 @@ function assemble(
 		}
 	}
 	diag.edges = edges.length;
-	if (edges.length !== wantE)
-		return { patch: null, reason: `period holds ${wantE} edges but ${edges.length} were folded`, diag };
+	if (tileArea === null ? verts.length - edges.length + polys.length !== 0 : edges.length !== wantE)
+		return {
+			patch: null,
+			reason:
+				tileArea === null
+					? `V - E + F is ${verts.length - edges.length + polys.length}, not 0 as on a torus`
+					: `period holds ${wantE} edges but ${edges.length} were folded`,
+			diag,
+		};
 
 	// --- tiles: faces merged across undrawn edges, carrying each face's lift ---
 	// The half-edge table, the offset union-find and the holonomy ranks all live in ./topology now, so

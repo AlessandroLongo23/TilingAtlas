@@ -19,6 +19,7 @@ import { useGamepad } from "@/lib/hooks/useGamepad";
 import { usePadGlyph } from "@/lib/stores/gamepad";
 import { SheetBackdrop, SheetHeader, useSheet } from "@/components/ui/bottom-sheet";
 import { ThemeToggle } from "./ThemeToggle";
+import { Mark, NAV_BAR, NAV_LABEL, NavBrand, NavDivider, navLinkClass } from "./nav-bar";
 
 const LINKS = [
 	// `blurb` is the phone menu's one-line description of each section.
@@ -40,21 +41,6 @@ const LINKS = [
 const navKey = (i: number) => (i < 9 ? String(i + 1) : i === 9 ? "0" : "");
 
 const isActiveLink = (pathname: string, href: string) => pathname === href || pathname.startsWith(href + "/");
-
-/** The hexagon mark: one hexagon in the tile palette's own hexagon colour (tileFill(polygonHue(6))). */
-function Mark() {
-	return (
-		<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" className="shrink-0">
-			<polygon
-				points="9,1.2 15.8,5.1 15.8,12.9 9,16.8 2.2,12.9 2.2,5.1"
-				fill="#b2daa1"
-				stroke="currentColor"
-				strokeWidth="1.3"
-				strokeLinejoin="round"
-			/>
-		</svg>
-	);
-}
 
 export function Nav() {
 	const pathname = usePathname();
@@ -107,7 +93,8 @@ export function Nav() {
 	return (
 		<nav
 			className={cn(
-				"flex w-full shrink-0 items-center overflow-hidden bg-surface-chrome px-4 transition-all duration-300 ease-in-out",
+				NAV_BAR,
+				"transition-all duration-300 ease-in-out",
 				immersive
 					? "pointer-events-none h-0 border-b-0 opacity-0"
 					: // On a phone the bar sits under the status bar (viewport-fit=cover), so it grows by that inset.
@@ -135,15 +122,11 @@ export function Nav() {
 			{menuOpen ? <PhoneMenu pathname={pathname} onClose={() => setMenuPath(null)} /> : null}
 
 			<Link href="/" className="mr-4 flex shrink-0 items-center gap-2 max-md:hidden">
-				<Mark />
-				<span className="text-[15px] leading-none font-semibold tracking-[-0.01em] whitespace-nowrap text-fg">
-					The Tiling Atlas
-				</span>
-				{/* The release the build is cut at; the same number the footer and the updates modal show. */}
-				<span className="font-mono text-[10.5px] leading-none text-fg-muted tabular-nums">v{CURRENT_VERSION}</span>
+				{/* The release is the same number the footer and the updates modal show. */}
+				<NavBrand name="The Tiling Atlas" version={CURRENT_VERSION} />
 			</Link>
 
-			<div className="mr-3 h-5 border-l border-line-subtle max-md:hidden" />
+			<NavDivider />
 
 			{/* Ten links do not fit a laptop window with their keycaps attached, so the caps are the first
 			    thing to go (below 2xl) and the row scrolls sideways below that rather than sliding under
@@ -162,13 +145,9 @@ export function Nav() {
 							key={link.href}
 							href={link.href}
 							title={key ? `${link.label} (${key})` : link.label}
-							className={cn(
-								"group flex shrink-0 items-center gap-1.5 rounded-control px-2.5 py-1.5 transition-colors",
-								// Text only, and the active link in ink, not accent: the accent marks actions.
-								isActive ? "bg-surface-overlay text-fg" : "text-fg-muted hover:bg-surface-overlay hover:text-fg",
-							)}
+							className={navLinkClass(isActive)}
 						>
-							<span className="text-[13px] font-medium whitespace-nowrap">{link.label}</span>
+							<span className={NAV_LABEL}>{link.label}</span>
 							{key ? <Kbd className="hidden 2xl:inline-flex">{key}</Kbd> : null}
 						</Link>
 					);

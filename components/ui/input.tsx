@@ -49,6 +49,8 @@ export function Input({
 	disabled = false,
 	align,
 	size = "md",
+	className,
+	...rest
 }: InputProps) {
 	const [internal, setInternal] = useState(value);
 	const incTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -116,7 +118,7 @@ export function Input({
 	};
 
 	return (
-		<div className={cn("w-full gap-1.5", align === "center" ? "flex flex-col items-center" : "grid")}>
+		<div className={cn("w-full gap-1.5", align === "center" ? "flex flex-col items-center" : "grid", className)}>
 			{label ? (
 				<label
 					htmlFor={id}
@@ -130,6 +132,7 @@ export function Input({
 			) : null}
 			<div className="relative w-full">
 				<input
+					{...rest}
 					id={id}
 					type={type}
 					value={internal}

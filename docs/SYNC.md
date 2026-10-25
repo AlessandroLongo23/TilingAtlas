@@ -3193,3 +3193,29 @@ NOTES 2026-10-24 "TileSearch.app".
 ## 2026-10-25 — searcher: fingerprint dedup, per-root checkpoints, runs list with resume — CC
 Memory ~1 KB -> ~40 B per tiling; output identical on both gate boards; stop/resume tested.
 NOTES 2026-10-25 "the searcher stops swapping"; log experiments/results/searcher-memory-2026-10-25.md.
+
+## 2026-10-25 — TileSearch in Electron: the site's components, visual board editor, Windows build — CC
+`tools/searcher/app/` (Electron + Vite), Swift app removed. Board parity test vs `tilesearch --dump`.
+Branch `searcher-ui` off `searcher`. NOTES 2026-10-25 "TileSearch rebuilt in Electron".
+
+## 2026-10-25 — TileSearch draws found tilings (plane and hyperbolic disk) — CC
+Certificate decoder ported to TS and tested against develop_freedraw.py; flat walk shared with the
+pentagon and isohedral shelves. NOTES 2026-10-25 "TileSearch draws the tilings it finds".
+
+## 2026-10-25 — TileSearch: quit prompt; root-balance measurement (no ETA from roots) — CC
+NOTES 2026-10-25 "asks before quitting"; log experiments/results/searcher-root-balance-2026-10-25.md.
+
+## 2026-10-25 — tileestimate: tilings per k, nodes and CPU of a search, duplicates exact — CC
+`tools/searcher/tileestimate.cpp`, in TileSearch per run and before one. Validation log
+experiments/results/searcher-estimate-2026-10-25.md. NOTES 2026-10-25 "tileestimate".
+
+## 2026-10-25 — TileSearch: Quick setup (vertices that close), add-vertex fix, Pi boards drawn — CC
+`tools/searcher/app/src/corners.ts`; rebuilds Marek's 1247/123/hybrid vertex lists exactly from one vertex.
+NOTES 2026-10-25 "Quick setup generates a board's vertices".
+
+## 2026-10-25 — TileSearch: site canvases for results, runs and folders managed in the app — CC
+Disk and plane drawn by the site's canvases (shared `lib/render/diskInput.ts`; `buildEdgePatch` takes
+mixed faces). Rename, move, delete runs; folders. NOTES 2026-10-25 "draws through the site's canvases".
+
+## 2026-10-25 — TileSearch on the atlas's own header, hovers and info dots — CC
+`components/nav-bar.tsx` shared by the atlas Nav and TileSearch. NOTES 2026-10-25 "TileSearch polish".

@@ -1,0 +1,5 @@
+# Its own workspace root, so the app keeps its own lockfile and stays out of the site's (Vercel installs from that one).
+packages: []
+# esbuild fetches its native build at install (electron downloads its binary on first use).
+onlyBuiltDependencies:
+  - esbuild

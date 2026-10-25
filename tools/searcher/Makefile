@@ -8,3 +8,7 @@ CXXFLAGS ?= -std=c++20 -O2
 
 tilesearch: tilesearch.cpp $(ENGINE:%=$(MAREK_SRC)/src/%.cpp)
 	$(CXX) $(CXXFLAGS) -I$(MAREK_SRC)/include $^ -o $@
+
+# tileestimate compiles tilesearch.cpp into itself (its main renamed), so it walks the engine's own search.
+tileestimate: tileestimate.cpp tilesearch.cpp $(ENGINE:%=$(MAREK_SRC)/src/%.cpp)
+	$(CXX) $(CXXFLAGS) -I$(MAREK_SRC)/include -I. tileestimate.cpp $(ENGINE:%=$(MAREK_SRC)/src/%.cpp) -o $@

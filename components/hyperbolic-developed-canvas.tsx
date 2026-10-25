@@ -16,6 +16,7 @@ import { HyperbolicPerPixelRenderer } from "@/lib/render/hyperbolicPerPixelGL";
 import { syncCanvasSize } from "@/lib/render/canvasSize";
 import { captureOverride, offerFrame } from "@/lib/render/capture";
 import { HypOverlay, paintHypOverlay } from "@/lib/render/hyperbolicOverlay";
+import { readDiskInput, type HyperbolicViewInput } from "@/lib/render/diskInput";
 
 // Interactive view of an engine-developed hyperbolic tiling. Each PIXEL walks the quotient to its tile
 // (lib/render/hyperbolicWalk.ts) and is coloured there, so the WHOLE disk fills to the rim for every
@@ -23,29 +24,6 @@ import { HypOverlay, paintHypOverlay } from "@/lib/render/hyperbolicOverlay";
 // per-polygon layers (hyperbolicIslamic.ts). If WebGL2 is unavailable it falls back to the explicit-polygon 2D renderer (robust but
 // with a thin sub-pixel rim). The p5 canvas underneath captures the pan gestures; this canvas is an
 // input-transparent overlay.
-
-/**
- * Per-instance view input, for an embedded disk that must NOT steer (or be steered by) the global
- * configuration store — the landing wall's Hyperbolic cell. Supply it and the loop reads pan,
- * rotation, recentre and click-to-anchor from here instead of `cfg.controls`; omit it and /play's
- * store-driven path runs exactly as before.
- *
- * `resetSeq` / `click.seq` are counters, not flags, because ownership stays one-way: the canvas
- * remembers the last sequence it acted on instead of writing a consumed flag back into its caller's
- * object (which is what /play does, and what two owners of one object would race over).
- */
-export interface HyperbolicViewInput {
-	/** Live (eased) pan offset in centred CSS px, y DOWN — the same frame as /play's controls.offset. */
-	offset: { x: number; y: number };
-	/** Pan target the pointer writes. Only used to tell an active drag from a settling glide. */
-	targetOffset: { x: number; y: number };
-	/** Live (eased) view rotation in degrees. */
-	rotationDeg: number;
-	/** Bump to recentre the disk (right-click in /play). */
-	resetSeq: number;
-	/** Click to fold to the disk centre, in centred CSS px, y down. `seq` bumps per click. */
-	click: { x: number; y: number; seq: number } | null;
-}
 
 // No width/height props: the canvas fills its parent by CSS and measures itself in the render loop
 // (syncCanvasSize) — see lib/render/canvasSize.ts.
@@ -80,8 +58,7 @@ export function HyperbolicDevelopedCanvas({ patchId, data, input, diskPadPx = DI
 	const metaRef = useRef<{ id: string; name: string; config: string; edge: number } | null>(null);
 	const feedRef = useRef(new IslamicFeed());
 	// Local-input mode only: the last recentre / click sequence acted on (see HyperbolicViewInput).
-	const lastResetSeq = useRef(0);
-	const lastClickSeq = useRef(0);
+	const seen = useRef({ reset: 0, click: 0 });
 	// Read in the rAF loop, which is created once — the prop itself may be a fresh ref object per render.
 	const inputRef = useRef<RefObject<HyperbolicViewInput | null> | undefined>(input);
 	const padRef = useRef(diskPadPx);
@@ -164,28 +141,12 @@ export function HyperbolicDevelopedCanvas({ patchId, data, input, diskPadPx = DI
 				bh = canvas.height; // backing-store px (CSS px x dpr)
 
 			const cfg = useConfiguration.getState();
-			const ctrl = cfg.controls;
 			// Disk radius (pan units) and centre in CSS px. Only /play has the toolbar to clear.
 			const { r: Rcss, cx, cy } = diskFrame(w, h, padRef.current, inputRef.current ? 0 : DISK_BAR_PX);
 
-			// Where pan / rotation / recentre / click come from this frame. /play drives them through the
-			// global store (its p5 input layer writes cfg.controls); an embedded disk hands in its own
-			// per-instance input instead, so the two never steer each other. Everything BELOW this block
-			// reads these four locals and is identical in both modes — only the acknowledgement differs:
-			// the store path clears its flags by writing them back, the local path remembers a sequence.
+			// Pan, rotation, recentre and click: from the store on /play, from `input` on an embedded disk.
 			const local = inputRef.current?.current ?? null;
-			const offset = local ? local.offset : ctrl.offset;
-			const targetOffset = local ? local.targetOffset : ctrl.targetOffset;
-			const rotDeg = local ? local.rotationDeg : ctrl.rotation || 0;
-			const wantReset = local ? local.resetSeq !== lastResetSeq.current : cfg.hyperbolicResetView;
-			if (local) lastResetSeq.current = local.resetSeq;
-			const localClick = local?.click && local.click.seq !== lastClickSeq.current ? local.click : null;
-			if (local?.click) lastClickSeq.current = local.click.seq;
-			const clickPx = local ? localClick : cfg.hyperbolicClick;
-
-			cam.step({ offset, targetOffset, rotDeg, reset: !!wantReset, click: clickPx ?? null, Rcss });
-			if (!local && wantReset) useConfiguration.setState({ hyperbolicResetView: false });
-			if (!local && clickPx) useConfiguration.setState({ hyperbolicClick: null });
+			cam.step(readDiskInput(local, seen.current, Rcss));
 
 			const dark = document.documentElement.classList.contains("dark");
 			const gl = glRef.current;

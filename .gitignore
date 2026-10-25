@@ -210,4 +210,7 @@ experiments/results/frames/
 experiments/results/frames-more/
 experiments/results/heesch/
 tools/searcher/tilesearch
+tools/searcher/tilesearch.exe
+tools/searcher/tileestimate
+tools/searcher/tileestimate.exe
 tools/searcher/app/TileSearch.app/

@@ -1,0 +1,80 @@
+{
+	"name": "tilesearch",
+	"productName": "TileSearch",
+	"version": "0.2.0",
+	"private": true,
+	"description": "Runs Marek Čtrnáct's tiling engine on a board file",
+	"main": "dist/main.cjs",
+	"scripts": {
+		"build": "node build.mjs",
+		"start": "node build.mjs && electron .",
+		"dist": "node build.mjs && electron-builder"
+	},
+	"devDependencies": {
+		"@tailwindcss/vite": "4.2.2",
+		"electron": "^45.0.0",
+		"electron-builder": "^26.18.0",
+		"esbuild": "^0.28.2",
+		"geist": "^1.8.2",
+		"vite": "^8.3.5"
+	},
+	"build": {
+		"appId": "atlas.tiling.tilesearch",
+		"productName": "TileSearch",
+		"directories": {
+			"output": "release"
+		},
+		"files": [
+			"dist/**",
+			"package.json"
+		],
+		"extraResources": [
+			{
+				"from": "../boards",
+				"to": "boards",
+				"filter": [
+					"*.board"
+				]
+			}
+		],
+		"mac": {
+			"target": [
+				"dir",
+				"zip"
+			],
+			"category": "public.app-category.education",
+			"identity": "-",
+			"extraResources": [
+				{
+					"from": "../tilesearch",
+					"to": "tilesearch"
+				},
+				{
+					"from": "../tileestimate",
+					"to": "tileestimate"
+				}
+			],
+			"hardenedRuntime": false
+		},
+		"win": {
+			"target": [
+				"nsis",
+				"zip"
+			],
+			"extraResources": [
+				{
+					"from": "../tilesearch.exe",
+					"to": "tilesearch.exe"
+				},
+				{
+					"from": "../tileestimate.exe",
+					"to": "tileestimate.exe"
+				}
+			]
+		},
+		"nsis": {
+			"oneClick": false,
+			"allowToChangeInstallationDirectory": true
+		}
+	}
+}

@@ -1,0 +1,19 @@
+/* The Tiling Atlas's own stylesheet and tokens (app/globals.css), plus the Geist faces next/font loads
+   for the site. Only what the app adds lives below. */
+@import "../../../../app/globals.css";
+@source "./";
+
+@font-face {
+	font-family: "Geist";
+	src: url("../node_modules/geist/dist/fonts/geist-sans/Geist-Variable.woff2") format("woff2");
+	font-weight: 100 900;
+}
+@font-face {
+	font-family: "Geist Mono";
+	src: url("../node_modules/geist/dist/fonts/geist-mono/GeistMono-Variable.woff2") format("woff2");
+	font-weight: 100 900;
+}
+:root {
+	--font-geist: "Geist";
+	--font-geist-mono: "Geist Mono";
+}

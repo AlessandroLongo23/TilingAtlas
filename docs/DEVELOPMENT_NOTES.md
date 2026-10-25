@@ -19221,3 +19221,168 @@ and stops all runs under 10 GB free disk.
 ⚑ Disk is now the limit on big runs: ~0.85 KB of certificate text per tiling, so tens of millions of
 tilings are tens of GB. ⚑ AppKit logs "reentrant operation in its NSTableView delegate" on some state
 changes (a warning, not a crash).
+
+## 2026-10-25: TileSearch rebuilt in Electron on the site's own components
+
+AL's brief: TileSearch should look like the Tiling Atlas, be usable without knowing the board format, and
+ship for Windows too. Decided with AL after a written trade-off: Electron, not a SwiftUI copy of the
+design system (it would drift) and not Tauri (a third language and two browser engines). One TypeScript
+codebase for both platforms; the Swift app is deleted.
+
+What it is (`tools/searcher/app/`, its own pnpm package and lockfile so the site's Vercel install never
+sees Electron):
+- the window is `src/`, built by Vite from the site's own `app/globals.css`, tokens, `components/ui/*`,
+  `ThemeToggle`, tile palette and vertex-figure solver (`components/about/figures/geometry/vertex.ts`),
+  imported from the repo root, not copied. `next/link` is aliased to a plain anchor; nothing else needed a shim;
+- `electron/` is the process that owns files, dialogs and the `tilesearch` processes (`runs.ts` is the
+  port of the Swift Job/Store: progress parsing, run.json so a resume repeats its options, the 10 GB
+  free-disk guard). The window has no Node; `src/bridge.ts` is the whole contract;
+- the board text is the one source of truth. `src/board.ts` parses it into the visual editor and writes it
+  back, keeping comments on their statements and any line it cannot read verbatim, with its problem.
+  The engine itself checks every edit (`tilesearch --dump`), and `board.test.ts` holds the app's reader
+  to the engine's on 23 broken boards and the examples (same first-error line, same compiled board after
+  a visual round trip).
+
+Verified by driving the real app with Playwright's Electron mode (screenshots of every screen, light and
+dark): editing faces, vertices and corners; text edits with errors shown in the gutter and on the cards;
+a squares_edges run to the end (13 / 153 / 1,254 at k ≤ 3, as the gate); hybrid_2_9830 run, stopped,
+resumed. The env test hook is kept (`TILESEARCH_*`, now with `_ROOT`, `_HIDDEN`, `_EVAL`, `_SIZE`) and
+the packaged, ad-hoc-signed `TileSearch.app` ran a search through it with its bundled engine.
+
+Windows: `electron-builder --win` builds from this Mac. The engine cross-compiles with mingw-w64 once two
+things are fixed, neither in this app's files: `tilesearch.cpp` needs `#ifdef _WIN32` round
+`<sys/resource.h>` and `setpriority` (the app already lowers priority itself on Windows with
+`os.setPriority`), and Marek's `thread_pool.h` uses `std::condition_variable` without including it (MSVC
+forgives that; GCC does not; `-include condition_variable` works round it). With both, the
+.exe under Wine gives squares_edges 13 / 153 / 1,254, identical to the Mac build.
+
+Two fixes to shared site code on the way: `components/ui/input.tsx` dropped every prop it did not name
+(aria-label, onBlur, onKeyDown, className) although its type accepts them; it now forwards them. None of
+its four site callers passes any, so the site renders the same.
+
+⚑ Found tilings are still shown as certificate text only; drawing them is the next step (AL, 2026-10-25).
+⚑ The free-disk figure is `statfs` available space; macOS's purgeable space is not counted, so the 10 GB
+guard can trip earlier than the Swift app's did. ⚑ CI cannot build the engine while Marek's source has no
+license and stays out of git.
+
+## 2026-10-25: TileSearch draws the tilings it finds
+
+Each run now opens on a Tilings tab: the tilings of one certificate file as thumbnails, the selected one
+large (drag to move, scroll to zoom in the plane), and its certificate beside it.
+
+- Decoding is `tools/searcher/app/src/develop.ts`, a port of develop_freedraw.py's parser, VTable and
+  glue. The rotation order comes from the site tag, so it needs no angles. Where the writer's mirror
+  letter is ambiguous (trap 1 of the reconstruction note), every valid axis is tried and the first whose
+  faces (orbits of h → glue[rneig[h]]) are the board's faces wins. `develop.test.ts` runs squares_edges
+  to k=2 and checks all 166 certificates decode to darts develop_freedraw.py develops.
+- The geometry is decided from the board, and never guessed (AL's choice (a)): a corner is Pi (180°),
+  a digon (0°), its set angle, or the regular polygon of the one face size it occurs in. Every vertex at
+  360° draws in the plane; all above 360° with regular faces draws in the hyperbolic disk at the one
+  edge length that closes them all, through the site's own HyperbolicDeveloper and disk renderer.
+  Anything else says which corners need an angle and why. The sphere is not drawn yet.
+- hybrid_2_9830 draws: both its vertex types close at edge 2.98302 with regular faces, the number in
+  its name. (I told AL the opposite before computing it; the test now pins it.)
+- The flat walk was written twice already (`lib/pentagon/edgeDevelop.ts`, `lib/isohedral/edgeDevelop.ts`,
+  each with its own PointIndex). It is now one function, `lib/render/flatDartWalk.ts`, that takes a
+  turn and a length per dart; both shelves and TileSearch call it (558 shelf tests unchanged).
+
+⚑ Boards with Pi corners inside faces (the subdivided faces of the hyperbolic polygon boards, e.g. the
+M3 Pi faces of 123_1_4657) and spherical boards are not drawn yet; the message says so per tiling.
+
+## 2026-10-25: TileSearch asks before quitting stops a search; why it shows no ETA
+
+Closing the window or Cmd+Q while runs are going now opens the window's modal ("A search is running":
+finished roots are kept, roots in progress start again on Resume). "Stop and quit" stops every run, waits
+up to 5 s for the engines to exit, then quits. Tested through Playwright on both paths (window close and
+app.quit): "Keep running" leaves the engine running, "Stop and quit" leaves no engine behind and a
+resumable folder.
+
+AL asked for an ETA and per-k totals. Measured first (experiments/results/searcher-root-balance-2026-10-25.md):
+roots are far too unequal for roots done/all to mean time. On 123_1_4657 (k<=3) 90% of the roots finish
+in the first 10% of the run and two roots hold 86% of the tilings; on squares_edges (k<=5) one root holds
+57%; hybrid_2_9830 (k<=2) is the only even one. A fraction-of-roots ETA would be wrong by up to 10x, so
+none is shown. ⚑ A sound estimate needs the engine to sample its own tree (Knuth's estimator: random
+probes, product of branching factors), which is the other session's file.
+
+## 2026-10-25: tileestimate, the size of a search before and while it runs
+
+`tools/searcher/tileestimate.cpp` estimates a board's unique tilings per k, its search nodes and its CPU
+time by sampling the engine's search tree. It compiles tilesearch.cpp into itself (main renamed), so it
+walks the engine's own tree with the engine's board reader, faces, candidates and fingerprint; nothing is
+forked. The app runs it next to every run (one core, lowest priority, finished roots skipped, saved as
+estimate.json) and before one ("Estimate size").
+
+- Duplicates are exact, not modelled. A minimal tiling T is reached once per start that rebuilds it (the
+  root's template on a vertex of T, in each way its symmetry allows; after that the search is forced up to
+  each new vertex's alignment). `multiplicity` replays the search along T from every start; --exact checks
+  it against the full search: right for all 1,420 (squares_edges k<=3), 53,060 (k<=5) and 349
+  (123_1_4657 k<=3) unique tilings, and the complete/unique counts equal the engine's `stats`.
+- Sampling: plain Knuth paths were unbiased (hybrid k=1 alone: 1,098 ± 3 against 1,094) but missed rare
+  tilings by 93-98%. Chen's heuristic sampling (strata: vertices, free half-edges) fixed most of it.
+  Allocating probes by observed variance (Neyman) biased the estimates low (hybrid k=2 -25% on every
+  seed) and was rejected; 90% of probes by estimated root size is the default. CPU comes from Knuth paths
+  as a ratio (time per node times nodes): within -10% to +13% of the engine on one thread. Measured
+  against the truth over many seeds: experiments/results/searcher-estimate-2026-10-25.md.
+- ⚑ The intervals are optimistic where tilings are rare (123_1_4657 k=3 runs 20-30% low; hybrid k=2 was
+  outside its 95% interval twice). ⚑ No ETA yet: the engine's CPU per node grows with threads by a
+  board-dependent 1.8-4.5x, so only a live node count from the engine makes time left honest. The app
+  reads `nodes <n>` from the progress line when tilesearch prints it; tilesearch.cpp is the other
+  session's file.
+- hybrid_2_9830 at k=3, 30 s of sampling on 9 cores: about 9e9 ± 3e9 unique tilings, 2.6e12 nodes, about
+  1,000 CPU-hours on one core, and some 7 TB of certificates. Not a run the disk can hold as written.
+
+Also fixed: an idle TileSearch window used 54% CPU (every status update re-developed every drawing); 1% now.
+
+## 2026-10-25: TileSearch Quick setup generates a board's vertices; Pi-subdivided boards draw
+
+AL: "Add a vertex" always errored, and 1247_1_0612 has 121 vertices nobody should enter by hand.
+
+- The bug: a new vertex was added with no corners, which no board line can say (`vertex` alone), so the
+  text kept it as an unreadable line and the builder opened on nothing. A new vertex is now a draft in
+  the builder until its first corner. "Add a face" asks for a corner first, for the same reason.
+- How Marek's boards were made, recovered and checked: a face is a regular polygon and its Pi corners
+  cut its sides into equal edges (M3 Pi M3 Pi M3 Pi is a triangle of sides 2 edges; 1247 = sides cut into
+  1, 2, 4, 7). The vertex lines are then exactly every multiset of at most 12 corners closing to 360°
+  in the hyperbolic plane at one edge length, which the name gives to 4 places (1.0612751, 1.4657154,
+  2.9830177; the rounded value lets 4 near-misses in, so the length is solved from a board vertex).
+  Rebuilt from one vertex each: 1247_1_0612 (121), 123_1_4657 (31), hybrid_2_9830 (2), all exact
+  (corners.test.ts).
+- `tools/searcher/app/src/corners.ts` holds that corner geometry once: Quick setup (plane, hyperbolic
+  plane or sphere; edge typed or solved from a vertex; at most N corners; replace or add), the vertex
+  figures and the tiling drawings all read it. So the Pi-subdivided boards now draw: 123_1_4657 k<=2
+  develops in full (its all-apeirogon tiling through the site's colours mode, which fills apeirogons).
+
+## 2026-10-25: TileSearch draws through the site's canvases; runs and folders can be renamed, moved, deleted
+
+AL: the results page did not scroll, its canvas was a copy (hyperbolic drag broken, y inverted), and runs
+needed renaming, deleting and folders.
+
+- Scroll: the tabs block was `flex-1` with a 420 px floor in a scrolling column, so it shrank to 420 px
+  and the Tabs panel (`overflow-hidden`) clipped the tilings below. It now takes its own height.
+- The disk is the site's per-pixel renderer: `HyperbolicColorsCanvas` with `tiles` (faces by polygon
+  size, apeirogons white, the hyp-poly shelf exactly) or `HyperbolicEdgesCanvas` for digon-marked boards,
+  thumbnails through their `*Thumbnail` twins. Both canvases now take the per-instance `input` the
+  developed canvas already had; the landing disk's gesture code moved to `lib/render/diskInput.ts`
+  (`useDiskInput`, `readDiskInput`), which the landing wall and TileSearch share and the three canvases
+  read through. Landing disk re-checked in the built site.
+- The plane is the site's `ParametricEdgesCanvas`/`FreedrawCanvas` on one period. `buildEdgePatch`
+  (lib/freedraw/edgePatchCore.ts) took one tile shape only; with no `outline` it now cuts every bounded
+  face and checks the period by area (faces cover the cell once) and Euler (V - E + F = 0). Checked on all
+  166 squares_edges certificates and on the regular-polygon board's 30 tilings at k <= 2 (10 + 20, A068599
+  without the octagon), every one with a period. The app's own face tracer and canvas are gone.
+- Runs: the output folder is a tree. Folders group runs (any folder without input.board); runs and folders
+  are renamed (the folder on disk), moved (drag onto a folder, or the run's "In" menu) and deleted with a
+  modal stating the path, tilings and bytes and that it skips the Trash. Not while a run inside is going.
+  The output folder is rescanned every 4 s, so folders made in Finder appear.
+
+## 2026-10-25: TileSearch polish on the design system
+
+AL: folder rows jumped on hover; hovers, header and buttons were not the atlas's; too much copy.
+
+- The header is the atlas's bar: its pieces (mark, brand, divider, link style) moved to
+  `components/nav-bar.tsx`, which the atlas Nav and TileSearch both draw with (it has no router import, so
+  the app can load it). The macOS window uses the standard title bar, so the bar starts at the left edge.
+- Folder rows have a fixed height with the actions fading in, one chevron that turns and the
+  `ta-tree-reveal` fade (the catalogue tree's motion); rows hover to `bg-surface-overlay` as in the atlas.
+- Descriptions are `InfoDot`s beside their labels; section headers are `SectionHeading` with its count.
+  Run header buttons are all `sm` (h-8), the size the icon button has.

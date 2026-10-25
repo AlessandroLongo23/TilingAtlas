@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef, type RefObject } from "react";
 import { useConfiguration } from "@/stores/configuration";
 import { drawDevelopedEdgePatch } from "@/lib/render/hyperbolicDevelopedDraw";
 import { FALLBACK_BOUND_R, FALLBACK_BUDGET, HyperbolicDeveloper } from "@/lib/render/hyperbolicDevelopClient";
@@ -8,6 +8,7 @@ import { HypCamera } from "@/lib/render/hypCamera";
 import { publishCamera } from "@/lib/render/cameraPose";
 import { diskDriver } from "@/lib/render/diskCamera";
 import { diskFrame } from "@/lib/render/diskFrame";
+import { readDiskInput, type HyperbolicViewInput } from "@/lib/render/diskInput";
 import { buildWalk, type WalkTiling } from "@/lib/render/hyperbolicWalk";
 import { IslamicFeed } from "@/lib/render/hyperbolicIslamic";
 import { HyperbolicPerPixelRenderer } from "@/lib/render/hyperbolicPerPixelGL";
@@ -30,9 +31,17 @@ interface Props {
 	/** The faces are TILES filled by polygon size (the hyp-poly shelf), not a colouring of one tiling,
 	 *  so the Islamic construction applies and the sidebar's switch is honoured. */
 	tiles?: boolean;
+	/** Per-instance view input; omit to read /play's global controls. */
+	input?: RefObject<HyperbolicViewInput | null>;
 }
 
-export function HyperbolicColorsCanvas({ pattern, tiles = false }: Props) {
+export function HyperbolicColorsCanvas({ pattern, tiles = false, input }: Props) {
+	// An embedded disk's own input (lib/render/diskInput.ts), read in the rAF loop, which is created once.
+	const inputRef = useRef(input);
+	useLayoutEffect(() => {
+		inputRef.current = input;
+	}, [input]);
+	const seen = useRef({ reset: 0, click: 0 });
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const glRef = useRef<HyperbolicPerPixelRenderer | null>(null);
 	const ctx2dRef = useRef<CanvasRenderingContext2D | null>(null);
@@ -41,13 +50,15 @@ export function HyperbolicColorsCanvas({ pattern, tiles = false }: Props) {
 	// The animation timeline drives this camera through the driver (lib/render/cameraPose.ts).
 	useEffect(
 		() =>
-			publishCamera(
-				diskDriver(
-					() => camRef.current?.cam ?? null,
-					() => canvasRef.current,
-				),
-			),
-		[],
+			input
+				? undefined
+				: publishCamera(
+						diskDriver(
+							() => camRef.current?.cam ?? null,
+							() => canvasRef.current,
+						),
+					),
+		[input],
 	);
 	const walkRef = useRef<WalkTiling | null>(null);
 	const overlayRef = useRef<HTMLCanvasElement>(null);
@@ -106,18 +117,9 @@ export function HyperbolicColorsCanvas({ pattern, tiles = false }: Props) {
 			const bh = canvas.height;
 
 			const cfg = useConfiguration.getState();
-			const ctrl = cfg.controls;
-			const { r: Rcss, cx, cy } = diskFrame(w, h);
-			cam.step({
-				offset: ctrl.offset,
-				targetOffset: ctrl.targetOffset,
-				rotDeg: ctrl.rotation || 0,
-				reset: cfg.hyperbolicResetView,
-				click: cfg.hyperbolicClick,
-				Rcss,
-			});
-			if (cfg.hyperbolicResetView) useConfiguration.setState({ hyperbolicResetView: false });
-			if (cfg.hyperbolicClick) useConfiguration.setState({ hyperbolicClick: null });
+			const local = inputRef.current?.current ?? null;
+			const { r: Rcss, cx, cy } = diskFrame(w, h, undefined, local ? 0 : undefined);
+			cam.step(readDiskInput(local, seen.current, Rcss));
 
 			const dark = document.documentElement.classList.contains("dark");
 			const shared = {

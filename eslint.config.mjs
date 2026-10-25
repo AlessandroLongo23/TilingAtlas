@@ -20,6 +20,8 @@ const eslintConfig = defineConfig([
 		"public/heesch/engine/**",
 		// CommonJS Node scripts the frames census drivers run (tools/frames/*.py).
 		"tools/frames/*.js",
+		// TileSearch's build output and packaged apps (tools/searcher/app/build.sh).
+		"tools/searcher/app/{dist,release,node_modules}/**",
 	]),
 	{
 		rules: {
