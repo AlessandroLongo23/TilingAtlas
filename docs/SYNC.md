@@ -3230,3 +3230,17 @@ NOTES 2026-10-23 "Release prep for the star shelf" and the three entries before 
 
 ## 2026-10-25 — searcher-ui merged with searcher and master; TileSearch on HoverPill and HyperbolicCanvas — CC
 Branch work committed (e692b766), searcher and master merged in. NOTES 2026-10-25 "searcher-ui merged".
+
+2026-10-25 · CC · TileSearch import pipeline (uncommitted, paused): sessions.json run stamp,
+scripts/tilesearch-cells.ts + tilesearch-import.py (key, verify k, known/new against every flat shelf,
+coverage row). Two tiling_key fixes: mirror angle words, micro-grid SCALE. Full six-point-stars import
+paused at atlas keying. Detail: DEVELOPMENT_NOTES "TileSearch runs into the atlas".
+
+2026-10-26 · CC · TileSearch download CTA: OS-detected button in the header and on the landing hero, linking
+GitHub release assets (tag tilesearch-v0.2.0, not yet published). Uncommitted on searcher-ui. Detail:
+DEVELOPMENT_NOTES "TileSearch download buttons on the site".
+
+2026-10-27 · CC · TileSearch 0.2.0 released (GitHub release tilesearch-v0.2.0, latest): macOS arm64 zip,
+Windows x64 installer + zip; the site's download buttons link /releases/latest/download. Windows engine
+cross-compiled with mingw via tools/searcher/win shims, gated under Wine. Detail: DEVELOPMENT_NOTES
+"TileSearch 0.2.0 released".

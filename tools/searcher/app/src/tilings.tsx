@@ -15,7 +15,7 @@ import type { HypDiskMode, HypDiskTiling } from "@/lib/render/hypDisk";
 import { cn } from "@/lib/utils/cn";
 import { parse, type Board } from "./board";
 import type { OutFile, Run } from "./bridge";
-import { decode, flatPattern, geometry, hyperbolicDarts, vertexWords } from "./develop";
+import { certificatesIn, decode, flatPattern, geometry, hyperbolicDarts, vertexWords, withSymbols } from "./develop";
 import { bytes } from "./runs";
 
 const READ_BYTES = 256 * 1024;
@@ -129,17 +129,9 @@ export function TilingsView({ run, file, onFile }: { run: Run; file: OutFile | n
 	const symbolsKey = JSON.stringify(run.symbols);
 	// the certificates as the engine printed them, and with its X<n> labels read back as the board's symbols
 	const [raw, certs] = useMemo(() => {
-		const end = text.lastIndexOf("---\n");
-		const list =
-			end < 0
-				? []
-				: text
-						.slice(0, end)
-						.split(/\n?---\n\n?/)
-						.filter(Boolean);
-		const symbols = Object.entries(JSON.parse(symbolsKey) as Record<string, string>);
-		const named = list.map((c) => symbols.reduce((t, [x, sym]) => t.replace(new RegExp(`\\b${x}\\b`, "g"), sym), c));
-		return [list, named];
+		const list = certificatesIn(text);
+		const symbols = JSON.parse(symbolsKey) as Record<string, string>;
+		return [list, list.map((c) => withSymbols(c, symbols))];
 		// keyed on the symbols' contents: every status update carries a new object, and a new list here
 		// re-develops every drawing (that was an idle window at 54% CPU)
 	}, [text, symbolsKey]);

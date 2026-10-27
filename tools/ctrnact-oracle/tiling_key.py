@@ -44,7 +44,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import vertex_orbits as vo
 
 TOL = 1e-6
-SCALE = 720720        # = lcm(1..16); every period denominator here divides a tile count, so this is exact
+# The micro-grid. lcm(1..16) = 720720 was not enough: a k = 10 cell puts tile positions at 32nds, which sit
+# on HALF steps of that grid and round either way (2026-10-25). ×2⁶·3² covers denominators up to 2¹⁰·3⁴, and
+# at ~4·10⁸ steps the float error of a developed cell (~1e-14) is still ~1e-5 of a step.
+SCALE = 720720 * 2**6 * 3**2
 EDGE_Q = 6            # decimals on an edge midpoint when pairing darts
 
 
@@ -79,6 +82,26 @@ def _tlabel(v):
         if best is None or cand < best:
             best = cand
     return best
+
+
+def _gridder(tiles, b0, b1):
+    """A tile's position on the micro-grid, measured from the first tile of its label.
+
+    A centroid's own fractional coordinates are irrational in general, so rounding each one alone can put
+    two translates of one tile a grid step apart: float error from a long walk is enough on a k = 10 cell,
+    and the lookup then misses (34 of 24,455 TileSearch tilings, 2026-10-25). The DIFFERENCE between two
+    same-label centroids is a period or a period plus a fixed offset, a fraction of small denominator, so
+    rounding the difference is stable. Every consumer only compares positions within one label.
+    """
+    anchor = {}
+    for lab, c in tiles:
+        anchor.setdefault(lab, _frac(c, b0, b1))
+
+    def grid(lab, c):
+        fa, fb = _frac(c, b0, b1)
+        a0, b0_ = anchor[lab]
+        return _fi(fa - a0), _fi(fb - b0_)
+    return grid
 
 
 def _egcd(a, b):
@@ -123,10 +146,8 @@ def primitive_lattice(tiles, b0, b1):
     subgroup of (ℤ/SCALE)² containing the given lattice, so its preimage in ℤ² is a full-rank sublattice
     and `_hnf2` returns a basis.
     """
-    pts = []
-    for lab, c in tiles:
-        fa, fb = _frac(c, b0, b1)
-        pts.append((lab, _fi(fa), _fi(fb)))
+    grid = _gridder(tiles, b0, b1)
+    pts = [(lab, *grid(lab, c)) for lab, c in tiles]
     base = set(pts)
     bylab = defaultdict(list)
     for lab, a, b in pts:
@@ -264,12 +285,12 @@ def build_map(polys, basis):
     b0, b1 = basis
     tiles = [(_tlabel(p["v"]), sum(p["v"]) / len(p["v"])) for p in ps]
     L1, L2 = primitive_lattice(tiles, b0, b1)
+    grid = _gridder(tiles, b0, b1)
 
     # one representative per lattice class of tile
     reps, rep_of = [], {}
     for i, (lab, c) in enumerate(tiles):
-        fa, fb = _frac(c, b0, b1)
-        key = (lab, _cls(_fi(fa), _fi(fb), L1, L2))
+        key = (lab, _cls(*grid(lab, c), L1, L2))
         if key not in rep_of:
             rep_of[key] = len(reps)
             reps.append(i)
@@ -305,8 +326,8 @@ def build_map(polys, basis):
             return None                              # not edge-to-edge here; caller decides what that means
         i2, t2, j2 = other[0]
         c2 = sum(z + t2 for z in ps[i2]["v"]) / len(ps[i2]["v"])
-        fa, fb = _frac(c2, b0, b1)
-        r2 = rep_of[(_tlabel(ps[i2]["v"]), _cls(_fi(fa), _fi(fb), L1, L2))]
+        lab2 = _tlabel(ps[i2]["v"])
+        r2 = rep_of[(lab2, _cls(*grid(lab2, c2), L1, L2))]
         # ⚑ The corner index does NOT carry over to the representative. Reduction identifies two tiles
         # that are lattice TRANSLATES, and a translate's vertex list can start anywhere in the cycle, so
         # reusing j2 pairs darts at random. It produced an `alpha` that was not even an involution — a
@@ -354,10 +375,16 @@ def canonical(labels, sigma, alpha):
             if len(order) != D:
                 continue
             enc = ";".join(f"{labels[d]},{idx[perm[d]]},{idx[alpha[d]]}" for d in order)
+            # A labelling is read with angles (`corner_angles`), and dart d carries the corner at the START of
+            # its edge. Walked backwards, the mirror image's edge starts at the other end, so position i's
+            # corner is sigma[d]. Without this a tiling and its mirror image got different angle words
+            # whenever the tiles are not regular: TileSearch and the star shelf emit opposite mirror images
+            # of one tiling, and every one of them came out as a different tiling (2026-10-25).
+            cur = order if perm is sigma else [sigma[d] for d in order]
             if best is None or enc < best:
-                best, labelings = enc, [order]
+                best, labelings = enc, [cur]
             elif enc == best:
-                labelings.append(order)
+                labelings.append(cur)
     return best, labelings
 
 
@@ -431,7 +458,7 @@ def family_key(polys, basis, q=6):
     return f"R{len(reps)}#{best}#{min(words)}"
 
 
-def family_subspace(rec, samples=8):
+def family_subspace(rec, samples=8, refined=False):
     """(key, labelings, vectors) — a family as an AFFINE SUBSPACE of its map's corner-angle space.
 
     The map alone does not identify a shelf family, and the shelf proves it: `period-family-k2-001` and
@@ -442,6 +469,11 @@ def family_subspace(rec, samples=8):
     subspace identity, and "this candidate adds nothing" is subspace CONTAINMENT — both exact questions in
     linear algebra once the darts are aligned, and neither answerable by sampling parameters and hoping
     two grids meet.
+
+    `refined` retries a cell that is not edge-to-edge as given (a TileSearch face with Pi corners, the
+    scaled shelf) with every T-junction named (`refine`), so it keys instead of coming back unkeyable.
+    Only on failure: refine is brute force, seconds on a k = 10 cell, and a no-op on an edge-to-edge one.
+    Off by default, so shelf-dedup.py's results stay what they were.
     """
     fam = vo.as_family(rec)
     pts, pc = None, None
@@ -460,6 +492,8 @@ def family_subspace(rec, samples=8):
             if not ok:
                 continue
         m = build_map(polys, basis)
+        if m is None and refined:
+            m = build_map(refine(polys, basis), basis)
         if m is None:
             continue
         enc, ls = canonical(m[0], m[1], m[2])

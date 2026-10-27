@@ -31,6 +31,21 @@ export interface Certificate {
 const VTYPE = /\(([^)]*)\)([A-Za-z0-9]*)/g;
 const REF = /^(\*?)(\d+)('*)(?:@(\d+))?$/;
 
+/** The certificates an output file holds, up to the last complete one. */
+export const certificatesIn = (text: string) => {
+	const end = text.lastIndexOf("---\n");
+	return end < 0
+		? []
+		: text
+				.slice(0, end)
+				.split(/\n?---\n\n?/)
+				.filter(Boolean);
+};
+
+/** A certificate with the engine's X<n> labels read back as the board's symbols (symbols.txt). */
+export const withSymbols = (cert: string, symbols: Record<string, string>) =>
+	Object.entries(symbols).reduce((t, [x, sym]) => t.replace(new RegExp(`\\b${x}\\b`, "g"), sym), cert);
+
 export function parseCertificate(text: string): Certificate {
 	const lines = text
 		.split("\n")

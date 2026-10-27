@@ -3,6 +3,7 @@ import { loadLandingData } from "@/lib/services/landingData";
 import { HeroRotator } from "@/components/landing/hero-rotator";
 import { HeroSpecimenProvider } from "@/components/landing/hero-specimen";
 import { LandingButtons } from "@/components/landing/landing-buttons";
+import { DownloadTileSearch } from "@/components/download-tilesearch";
 import { LandingPhoneNav } from "@/components/landing/landing-phone-nav";
 import { CollectionCard } from "@/components/landing/collection-card";
 import { CompletenessBadge } from "@/components/landing/completeness-badge";
@@ -63,6 +64,9 @@ export default async function HomePage() {
 							</p>
 							<div className="mt-10">
 								<LandingButtons />
+							</div>
+							<div className="mt-6">
+								<DownloadTileSearch variant="hero" />
 							</div>
 						</div>
 						<div className="relative h-80 overflow-hidden rounded-surface ring-1 ring-line-subtle sm:h-[26rem] lg:h-[34rem]">

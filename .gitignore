@@ -214,3 +214,6 @@ tools/searcher/tilesearch.exe
 tools/searcher/tileestimate
 tools/searcher/tileestimate.exe
 tools/searcher/app/TileSearch.app/
+
+# scripts/tilesearch-import.py staging (regenerable from a run folder) and its atlas-key cache
+experiments/tilesearch-import/

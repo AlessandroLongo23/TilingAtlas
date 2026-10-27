@@ -43,6 +43,7 @@
 				"zip"
 			],
 			"category": "public.app-category.education",
+			"artifactName": "TileSearch-mac-arm64.${ext}",
 			"identity": "-",
 			"extraResources": [
 				{
@@ -57,9 +58,10 @@
 			"hardenedRuntime": false
 		},
 		"win": {
+			"artifactName": "TileSearch-windows-x64.${ext}",
 			"target": [
-				"nsis",
-				"zip"
+				{ "target": "nsis", "arch": ["x64"] },
+				{ "target": "zip", "arch": ["x64"] }
 			],
 			"extraResources": [
 				{
@@ -73,6 +75,7 @@
 			]
 		},
 		"nsis": {
+			"artifactName": "TileSearch-windows-x64-setup.${ext}",
 			"oneClick": false,
 			"allowToChangeInstallationDirectory": true
 		}

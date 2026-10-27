@@ -7,6 +7,7 @@ import { isTypingTarget } from "@/lib/hooks/useKeyShortcuts";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { DiscordIcon } from "@/components/icons/discord";
+import { DownloadTileSearch } from "@/components/download-tilesearch";
 import { cn } from "@/lib/utils/cn";
 import { useImmersive } from "@/stores/immersive";
 import { HoverPill } from "@/components/ui/hover-pill";
@@ -164,6 +165,7 @@ export function Nav() {
 			</div>
 
 			<div className="flex items-center gap-0.5 max-md:hidden">
+				<DownloadTileSearch variant="nav" />
 				<Tooltip label="Search and jump" shortcut="⌘ K" side="left" delay={0}>
 					<button
 						type="button"

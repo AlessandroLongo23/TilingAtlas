@@ -19659,3 +19659,70 @@ targets take -lz; tileestimate compiles against it, 54 app tests pass) and with 
 - The app's disk tests moved from the removed 2D developer to `buildWalk`, which the canvas draws from.
 - tests/moduli-graph fails in a worktree only: it reads an untracked oracle output that lives in the main
   checkout.
+
+## TileSearch runs into the atlas: stamp, importer, two tiling_key fixes (2026-10-25, paused)
+
+Subset runs (a board over a few tiles, pushed to high k) go in as TILINGS keyed by what they are plus a
+COVERAGE row saying what the run proves. Built so far, uncommitted on `searcher-ui`:
+
+- **Run stamp.** `electron/runs.ts` appends one entry per start/resume to `sessions.json`: engine SHA-256,
+  app version, platform, options, end time, exit code, finished. Checked against `shasum` of the binary.
+- **Importer.** `scripts/tilesearch-cells.ts` develops every certificate with the app's own `develop.ts`
+  and hydrates atlas candidates with `renderCellFromExactSource`. `scripts/tilesearch-import.py` keys
+  both sides with `tiling_key.family_key`/`family_subspace` (map + corner-angle word, mirror merged),
+  verifies each k with `vertex_orbits.orbit_count`, marks a run tiling known when `relate` says
+  same/inside against any flat shelf (continuous families included), and stages new records
+  (id = hash of the key) plus `coverage.json` in `experiments/tilesearch-import/` (gitignored).
+  Coverage class is "faces" only when the run finished, one engine did all of it, permutations are on,
+  no initial vertices, and the vertex list equals `closingVertices`.
+- **⚑ tiling_key bug 1, mirror angle words.** `canonical()` walks both orientations, but a backwards
+  labelling read each dart's START corner, which in the mirror image is the other end. A tiling and its
+  mirror image got different angle words whenever tiles are not regular. Fixed: a backwards labelling
+  records `sigma[d]`. Found because TileSearch and the star shelf emit opposite mirror images (4 of 6
+  "new" k≤4 star tilings were atlas tilings). ⚑ shelf-dedup.py and export_intrinsic_cells.py use the
+  same words: a rerun of shelf-dedup may now merge mirror pairs on star/period shelves it missed.
+- **⚑ tiling_key bug 2, micro-grid.** SCALE = lcm(1..16) is not enough: a k=10 cell puts tile positions
+  on 32nds, half steps of that grid, and they rounded either way (34 of 24,455 unkeyable). SCALE is now
+  720720·2⁶·3², and positions are rounded relative to one anchor tile per label.
+- **Gate.** The six-point-stars run (A3, A4, A6, six-point 60° star; k 1–10; 24,455 tilings, reproduced
+  exactly from the user's run in 69 s) keys to 24,455 distinct values, 0 unkeyable, 0 k mismatches.
+- **Small run result (k 1–4, before fix 2):** 239 tilings, 233 known, 6 new; with fix 1, 2 remain new
+  (k=4, triangles + hexagons + 60° stars; no atlas record shares their k and tile mix).
+- **Paused** in the atlas-keying step of the full import (31,476 candidates, ~1 h on 8 workers; the
+  key cache is written only at the end of that step, so it restarts from zero). Resume:
+  `python3 scripts/tilesearch-import.py <run> --cells <cells.json.gz>`; the dump of the full run took
+  21 min (`flatPeriod` is slow at k=10) and lives in the session scratchpad, so regenerate it.
+- **Open.** `tiling_key.py --gate` fails on a KeyError: Galebach records no longer ship renderCell
+  (predates this work). Next: finish the full import, a shelf for staged records, and coverage display;
+  shelfRegistry/referenceAtlas are being edited on master, so do that there.
+
+## TileSearch download buttons on the site (2026-10-26)
+
+`components/download-tilesearch.tsx`: detects the visitor's OS on the client (userAgentData, then
+navigator.platform; an iPad posing as a Mac is caught by its touch points) and links the matching
+installer. `nav` variant sits in the header's right cluster, hidden where there is no installer (Linux,
+phones); `hero` variant sits under the landing buttons with a one-line description and an "All platforms"
+link. Installers are GitHub release assets (`lib/downloads.ts`, tag `tilesearch-v0.2.0`), not public/:
+the Mac zip is 117 MB and every kept Vercel deployment copies public/. ⚑ The links 404 until that release
+exists. Open before publishing it: Marek's engine source has no license (build.sh), the Mac app is ad-hoc
+signed and not notarized (Gatekeeper asks for "Open Anyway"), and no Windows installer is built yet
+(tileestimate.exe missing; mingw-w64 is installed).
+
+## TileSearch 0.2.0 released for macOS and Windows (2026-10-27)
+
+Published as GitHub release `tilesearch-v0.2.0` (marked latest), with Marek's permission to distribute
+the engine: TileSearch-mac-arm64.zip, TileSearch-windows-x64-setup.exe, TileSearch-windows-x64.zip. Asset
+names carry no version (`artifactName` in app/package.json), so the site links
+`/releases/latest/download/<name>` and a new release needs no site change; `lib/downloads.ts` holds them.
+
+Windows engine, cross-compiled here: `make tilesearch.exe tileestimate.exe ZLIB_WIN=<mingw zlib>`
+(new Makefile targets, static). tilesearch.cpp is untouched; two force-included shims in
+`tools/searcher/win/` cover what it lacks on Windows: `sys/resource.h` (setpriority as a no-op; the app
+lowers priority itself there) and `gzwide.h` (a filesystem path's c_str() is wchar_t* on Windows, so
+gzopen on it goes to zlib's gzopen_w). zlib 1.3.1 built with its win32/Makefile.gcc. Under Wine 11 the
+.exe gives squares_edges 13 / 153 / 1,254 with and without --gzip, and tileestimate.exe prints estimates.
+⚑ electron-builder on this Mac defaults the Windows app to arm64; the targets now pin x64.
+⚑ The packaged Windows window was not seen running: Electron draws nothing under Wine. First real check
+is on a Windows PC. ⚑ Not signed or notarized on either OS; the release notes give the Open Anyway /
+Run anyway steps. ⚑ The tag points at master 337c4f07; the app source of this build is uncommitted on
+searcher-ui.

@@ -70,7 +70,7 @@ function start(id: string, options: RunOptions): string | null {
 	if (!run) return "That run no longer exists.";
 	if (!fs.existsSync(ENGINE)) return `tilesearch is missing (looked for ${ENGINE}).`;
 	if (runs.freeBytes() < MIN_FREE_BYTES) return (run.note = "Not started: under 10 GB free on disk");
-	return run.start(ENGINE, options, ESTIMATOR);
+	return run.start(ENGINE, options, ESTIMATOR, app.getVersion());
 }
 
 function handlers() {

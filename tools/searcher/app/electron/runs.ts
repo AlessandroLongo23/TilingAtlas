@@ -3,6 +3,7 @@
 // solver_<name>/ once the engine starts. census.txt ending in MAX means finished; otherwise roots.done
 // lists the finished roots and `tilesearch --resume` runs the rest.
 import { spawn, type ChildProcess } from "node:child_process";
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -81,6 +82,41 @@ export function runEstimator(
 }
 
 const ESTIMATE_SECONDS = 3600;
+
+/**
+ * One start or resume of the engine on a run, as sessions.json records it. A tiling found by the run is
+ * checkable on its own; that the run found ALL of them is a claim about these sessions, so they name the
+ * exact engine (its SHA-256) and how each one ended. An import trusts a k only when every session that
+ * worked on it ran the same engine and the last one finished.
+ */
+export interface Session {
+	engine: string;
+	app: string;
+	platform: string;
+	started: string;
+	threads: number;
+	nice: number;
+	k?: [number, number];
+	resumed: boolean;
+	ended?: string;
+	exit?: number;
+	seconds?: number;
+	finished?: boolean;
+}
+
+const engineHashes = new Map<string, string>();
+function engineHash(exe: string): string {
+	let h = engineHashes.get(exe);
+	if (!h) {
+		try {
+			h = createHash("sha256").update(fs.readFileSync(exe)).digest("hex");
+		} catch {
+			h = "unknown";
+		}
+		engineHashes.set(exe, h);
+	}
+	return h;
+}
 
 /** A run folder's own stamp, `<name>-YYYYMMDD-HHMMSS[-n]`, which the list shows as a date. */
 const STAMP = /-(\d{4})(\d\d)(\d\d)-(\d\d)(\d\d)(\d\d)(?:-\d+)?$/;
@@ -204,7 +240,21 @@ export class RunFolder {
 			.sort((a, b) => a.k - b.k || a.labels.localeCompare(b.labels) || a.edges - b.edges);
 	}
 
-	start(engine: string, options: RunOptions, estimator?: string): string | null {
+	private session: Session | null = null;
+
+	private writeSessions(update: (all: Session[]) => void) {
+		const f = path.join(this.dir, "sessions.json");
+		let all: Session[] = [];
+		try {
+			all = JSON.parse(read(f) || "[]") as Session[];
+		} catch {}
+		update(all);
+		try {
+			fs.writeFileSync(f, JSON.stringify(all, null, "\t") + "\n");
+		} catch {}
+	}
+
+	start(engine: string, options: RunOptions, estimator?: string, app = ""): string | null {
 		if (this.state === "running" || this.state === "finished") return null;
 		const resume = fs.existsSync(this.out);
 		if (resume && this.options) options = { ...options, k: this.options.k }; // --resume needs the same k
@@ -238,6 +288,18 @@ export class RunFolder {
 		this.last = { t: 0, n: this.total };
 		this.state = "running";
 		this.note = resume ? `Resumed with ${this.roots.done} roots already done` : "";
+		const session: Session = {
+			engine: engineHash(engine),
+			app,
+			platform: `${process.platform}-${process.arch}`,
+			started: new Date().toISOString(),
+			threads: options.threads,
+			nice: options.nice,
+			...(options.k ? { k: options.k } : {}),
+			resumed: resume,
+		};
+		this.session = session;
+		this.writeSessions((all) => all.push(session));
 		const onData = (d: Buffer) => this.consume(d.toString("utf8"));
 		child.stdout!.on("data", onData);
 		child.stderr!.on("data", onData);
@@ -330,6 +392,19 @@ export class RunFolder {
 		if (this.stopping && !this.note)
 			this.note = `Resume runs the ${Math.max(0, this.roots.all - this.roots.done)} unfinished roots`;
 		if ((this.state as Run["state"]) === "finished") this.note = `${this.total.toLocaleString("en")} tilings`;
+		const s = this.session;
+		if (s) {
+			this.session = null;
+			this.writeSessions((all) => {
+				const mine = all.find((x) => x.started === s.started) ?? s;
+				Object.assign(mine, {
+					ended: new Date().toISOString(),
+					exit: code,
+					seconds: Math.round((Date.now() - Date.parse(s.started)) / 100) / 10,
+					finished: (this.state as Run["state"]) === "finished",
+				});
+			});
+		}
 	}
 
 	snapshot(): Run {
