@@ -154,6 +154,12 @@ import { useFamilyAlphas } from "@/stores/familyAlphas";
 import { ParamSliderPanel } from "@/components/param-slider-panel";
 import { hypFamilyParamCell } from "@/lib/render/hypStarFamily";
 import { TegulaCellEditor } from "@/components/tegula-cell-editor";
+import { OrbifoldMorphControls } from "@/components/orbifold-morph-controls";
+import { conePoints, morphSurface, morphTiling, withOrders } from "@/lib/tilings/orbifoldMorph";
+import { cellMap, drawnPoints, latticeMembers, solidMap } from "@/lib/tilings/dsymFromMap";
+import type { OrbitData } from "@/lib/services/orbitsFromExactSource";
+import { morphHues, recordShape, recordSymbol } from "@/lib/tilings/recordSymbol";
+import { useOrbifoldMorph } from "@/stores/orbifoldMorph";
 import { bendSphere, bendTegula } from "@/lib/tilings/tegula";
 import { useTegulaShapes } from "@/stores/tegulaShapes";
 import { pickStratified } from "@/lib/utils/pickStratified";
@@ -1120,7 +1126,22 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// lists of shelf fields, and the lists had drifted apart: this one folded `hypPoly` into the disk and
 	// `sphPoly` into the sphere, the sidebar's did neither, so those records got the flat p5 control block
 	// over a canvas this file had already blanked.
-	const surface = surfaceOf(selected);
+	// A periodic tiling with its symmetry changed (lib/tilings/orbifoldMorph.ts): the same topology in another
+	// group, often another geometry, so it draws on that geometry's canvas. The record stays selected. The
+	// symbol is the Tegula shelf's own, or read off any other flat tiling's period cell (recordSymbol.ts).
+	// eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the id, not the record object
+	const dsym = useMemo(() => recordSymbol(selected), [selected?.canonicalKey]);
+	const morphOrders = useOrbifoldMorph((s) => (selected ? s.byId[selected.canonicalKey] : undefined));
+	const morphed = useMemo(
+		() =>
+			dsym && morphOrders && selected
+				? morphTiling(dsym, morphOrders, selected.canonicalKey, morphHues(selected), recordShape(selected))
+				: null,
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the id, not the record object
+		[dsym, morphOrders, selected?.canonicalKey],
+	);
+	const morph = morphed && !("error" in morphed) ? morphed : null;
+	const surface = morphSurface(dsym, morphOrders) ?? surfaceOf(selected);
 	// The animation timeline's camera: every shelf that can export an image can animate, each in its own
 	// geometry (lib/render/cameraPose.ts).
 	const animGeometry: GeometryKind | null = isDiskSurface(surface)
@@ -1610,12 +1631,43 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		() => (sphBend ? bendSphere(sphBend, sphShape) : selected?.sphPoly),
 		[sphBend, sphShape, selected?.sphPoly],
 	);
-	const drawCell = squaringCellData ?? tegulaCell ?? renderCell;
+	const drawCell = squaringCellData ?? morph?.cell ?? tegulaCell ?? renderCell;
 	// The class is in the id because the canvases cache parsed geometry by it: without it, moving the dial
 	// would leave the previous squaring on screen. Same reason the mirror flip suffixes it above.
 	const drawCellId = squaringCellData
 		? `${selected?.canonicalKey ?? "sq"}#sq:${squaringClass[0]},${squaringClass[1]}${squaringMono ? ":m" : ""}`
-		: renderCellId;
+		: morph?.cell
+			? morph.id
+			: renderCellId;
+	// The symmetry panel's hovered row: where its class is drawn, from a covering of the drawn cell or solid
+	// onto the type's symbol (dsymFromMap.ts). The flat canvas marks it as a one-class vertex orbit, the
+	// sphere with its own dots; the disk reads the class off a morph's darts (hyperbolic-canvas.tsx).
+	const morphHover = useOrbifoldMorph((s) => s.hover);
+	const hoverPoints = useMemo(() => {
+		if (morphHover == null || !dsym || squaringActive || morph?.disk) return null;
+		const pts = conePoints(dsym);
+		const p = pts[morphHover];
+		if (!p) return null;
+		const now = withOrders(dsym, morphOrders ?? pts.map((q) => q.v));
+		const solid = morph?.sphere ?? (morphed ? null : sphDrawn);
+		const map = solid ? solidMap(solid.vertices, solid.faces) : drawCell ? cellMap(drawCell) : null;
+		// A star's dents tell its chambers apart from a plain triangle's: the covering must keep them apart too.
+		const labels = solid ? undefined : recordShape(selected)?.bends.map((b) => b.length);
+		return map ? { points: drawnPoints(map, now, p.chambers, p.kind, labels), kind: p.kind, solid: !!solid } : null;
+	}, [morphHover, dsym, squaringActive, morph, morphed, morphOrders, sphDrawn, drawCell, selected]);
+	const hoverOrbit = useMemo<OrbitData | null>(() => {
+		const basis = drawCell?.basis ?? drawCell?.b;
+		if (!hoverPoints || hoverPoints.solid || !basis) return null;
+		// Vertices are tile corners, which the orbit dots already visit; centres and midpoints are added.
+		const corner = hoverPoints.kind === "vertex" ? latticeMembers(basis, hoverPoints.points) : null;
+		return {
+			k: 1,
+			force: true,
+			orbitAt: (x, y) => (corner?.(x, y) ? 0 : -1),
+			extra: corner ? undefined : hoverPoints.points.map(([x, y]) => ({ x, y, orbit: 0 })),
+		};
+	}, [hoverPoints, drawCell]);
+	const sphereMarks = hoverPoints?.solid ? hoverPoints.points : undefined;
 	// AN EDIT BELONGS TO THE CELL IT WAS MADE ON, so a new cell starts a new session. The doc names
 	// edges, rings and vertices by content key; those keys mean nothing on another tiling and can resolve
 	// onto an unrelated edge, which is a wrong answer that looks like a feature (AL, 2026-09-21). Keyed on
@@ -1768,9 +1820,9 @@ export function PlayClient({ tilings }: PlayClientProps) {
 					<Canvas
 						translationalCell={drawCell}
 						translationalCellId={drawCellId}
-						paramCell={squaringActive ? null : (paramCell ?? null)}
-						symmetryData={squaringActive ? null : symmetryData}
-						orbitData={squaringActive ? null : orbitData}
+						paramCell={squaringActive || morph ? null : (paramCell ?? null)}
+						symmetryData={squaringActive || morph ? null : symmetryData}
+						orbitData={hoverOrbit ?? (squaringActive || morph ? null : orbitData)}
 						spec={tilingSpec}
 						showTilingRuleInput={false}
 						cellHasTiles={cellHasTiles}
@@ -1789,7 +1841,20 @@ export function PlayClient({ tilings }: PlayClientProps) {
 								"max-md:absolute max-md:inset-x-0 max-md:top-0 max-md:bottom-[min(var(--sheet-offset,0px),60dvh)] max-md:block",
 						)}
 					>
-						{showEdits ? (
+						{morphed ? (
+							// A morphed Tegula type is a different tiling from the record, so it goes ahead of everything
+							// that decorates the record. A flat one is the flat canvas's own cell (drawCell above).
+							morph?.disk ? (
+								<HyperbolicCanvas tiling={morph.disk} mode="tiling" />
+							) : morph?.sphere ? (
+								<SphPolyCanvas
+									pattern={morph.sphere}
+									mode={sphericalShape}
+									showGrid={sphericalFreedrawGrid}
+									marks={sphereMarks}
+								/>
+							) : null
+						) : showEdits ? (
 							// THE EDITOR GOES FIRST, ahead of even the lens. It is not a decoration of the catalogued
 							// tiling, it is a different tiling: once an edge has been merged away or a vertex moved,
 							// nothing below this line is drawing the thing the user is working on. It owns its own
@@ -1865,6 +1930,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 							// boundary. Same three.js canvas as every other spherical Čtrnáct shelf.
 							<SphPolyCanvas
 								pattern={sphDrawn ?? selected.sphPoly}
+								marks={sphereMarks}
 								mode={sphericalShape}
 								showGrid={sphericalFreedrawGrid}
 							/>
@@ -2012,10 +2078,26 @@ export function PlayClient({ tilings }: PlayClientProps) {
 							{/* The family's own sliders: a squaring has no free angle to flex, and the panel is driving
 						    the tiling in the corner rather than the one on the canvas while it is up. */}
 							{showParamPanel && paramCell ? <ParamSliderPanel paramCell={paramCell} /> : null}
-							{tegula && selected && !squaringActive ? (
-								<TegulaCellEditor id={selected.canonicalKey} cell={tegula} />
+							{dsym && selected && !squaringActive ? (
+								// One column top right: the symmetry above the cell shape, which only applies to the
+								// type as catalogued and so steps aside while the group is changed.
+								<div className="absolute top-3 right-3 z-20 flex w-56 flex-col gap-2 max-md:hidden">
+									<OrbifoldMorphControls
+										id={selected.canonicalKey}
+										symbol={dsym}
+										error={morphed && "error" in morphed ? morphed.error : undefined}
+										bent={morph?.bent}
+										topological={!selected.dsym}
+										loaded={refList ?? []}
+										shape={recordShape(selected)}
+									/>
+									{morphed ? null : tegula ? (
+										<TegulaCellEditor id={selected.canonicalKey} cell={tegula} />
+									) : sphBend ? (
+										<TegulaCellEditor id={selected.canonicalKey} sphere={sphBend} />
+									) : null}
+								</div>
 							) : null}
-							{sphBend && selected ? <TegulaCellEditor id={selected.canonicalKey} sphere={sphBend} /> : null}
 							{/* The pentagon family's shape controls sit OUTSIDE the exclusive canvas chain above, because
 						    the family is still what is being drawn when the conformal lens replaces the flat view —
 						    the sliders have to survive that swap. Their values live in the store for the same reason. */}

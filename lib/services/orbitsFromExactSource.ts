@@ -12,6 +12,10 @@ export type OrbitData = {
 	k: number;
 	/** Orbit id at an absolute float vertex position, or -1 if no vertex maps there. */
 	orbitAt: (x: number, y: number) => number;
+	/** Show the dots whatever the Vertex orbits toggle says: the symmetry panel's hover (orbifold-morph-controls). */
+	force?: boolean;
+	/** Dots that are not tile corners (tile centres, edge midpoints), in cell coordinates. GPU path only. */
+	extra?: { x: number; y: number; orbit: number }[];
 };
 
 // Absolute-position key. renderCell and the reconstructed exact cell share one coordinate frame

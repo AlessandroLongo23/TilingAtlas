@@ -36,6 +36,15 @@ const SEG = 24;
 const X_RANGE: [number, number] = [0.15, 0.85];
 const Y_MAX = 0.45;
 
+/** The shelf's fill: tile class i at the golden angle i·137.5°, as develop_dsym.py writes it. Every surface
+ *  a Tegula type is drawn on uses this, so one class is one colour on the plane, the sphere and the disk. */
+export function tegulaHue(cls: number): number {
+	// Python's round sends a half to the even neighbour; the shipped cells were rounded that way.
+	const x = (cls * 137.5) % 360;
+	const f = Math.floor(x);
+	return x - f === 0.5 ? f + (f % 2) : Math.round(x);
+}
+
 /** Height of a class's curve at parameter u along its representative edge, for a handle (x, y). */
 function profile(kind: string, x: number, y: number, u: number): number {
 	if (kind === "U") return y * Math.sin(Math.PI * u);

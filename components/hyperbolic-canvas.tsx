@@ -14,6 +14,7 @@ import { HyperbolicPerPixelRenderer } from "@/lib/render/hyperbolicPerPixelGL";
 import { syncCanvasSize } from "@/lib/render/canvasSize";
 import { captureOverride, offerFrame } from "@/lib/render/capture";
 import { HypOverlay, paintHypOverlay } from "@/lib/render/hyperbolicOverlay";
+import { useOrbifoldMorph } from "@/stores/orbifoldMorph";
 import { familyMember } from "@/lib/render/hypStarFamily";
 import {
 	allEdgesDrawn,
@@ -194,7 +195,9 @@ export function HyperbolicCanvas({ tiling, mode, input, diskPadPx = DISK_PAD_PX 
 			// preserveDrawingBuffer, so a read from anywhere but here comes back blank (lib/render/capture.ts).
 			if (captureOverride()) offerFrame(canvas);
 			// /play's overlays; an embedded disk has no sidebar to switch them on.
-			paintHypOverlay(overlayRef.current, local ? null : b.overlay, cam, b.walk, { R: Rcss, cx, cy }, cfg);
+			// The symmetry panel's hovered class rides the overlay; only a morphed type's darts name classes.
+			const flags = { ...cfg, highlightCone: useOrbifoldMorph.getState().hover };
+			paintHypOverlay(overlayRef.current, local ? null : b.overlay, cam, b.walk, { R: Rcss, cx, cy }, flags);
 		};
 		raf = requestAnimationFrame(render);
 		return () => cancelAnimationFrame(raf);

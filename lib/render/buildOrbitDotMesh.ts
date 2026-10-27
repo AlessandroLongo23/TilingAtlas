@@ -15,6 +15,7 @@ export interface OrbitDotMesh {
 	orbit: Float32Array; // 1 float/vert — orbit id; drives the hue (id*360/k) and the hover-grow lookup
 	vertexCount: number; // = pos.length / 2
 	k: number; // orbit count (hue spacing); from orbitData.k
+	force: boolean; // drawn whatever the Vertex orbits toggle says (orbitData.force)
 	// The distinct dots (one per emitted quad), for the CPU hover hit-test: the mouse world position is
 	// reduced modulo the lattice and matched against these base-cell dots to find the hovered orbit.
 	dots: { x: number; y: number; orbit: number }[];
@@ -47,6 +48,7 @@ export function buildOrbitDotMesh(
 			if (o >= 0) dots.push({ x: v.x, y: v.y, orbit: o });
 		}
 	}
+	for (const d of orbitData.extra ?? []) dots.push(d);
 	if (dots.length === 0) return null;
 
 	const pos = new Float32Array(dots.length * 6 * 2);
@@ -64,5 +66,5 @@ export function buildOrbitDotMesh(
 		}
 	}
 
-	return { pos, corner, orbit, vertexCount: vi, k: Math.max(1, orbitData.k), dots };
+	return { pos, corner, orbit, vertexCount: vi, k: Math.max(1, orbitData.k), force: !!orbitData.force, dots };
 }

@@ -58,6 +58,7 @@ uniform float uEdgeMode;   // 1 = edge pattern or colouring: per-pixel depth, dr
 uniform float uScaffold;   // edge mode: 1 = also stroke the faint undrawn base-tiling grid
 uniform vec3 uStrokeSca;   // edge mode: scaffold stroke colour
 uniform float uColorsMode; // 1 = fill each face by its colour index from uPalette
+uniform float uFaceHue; // 1 = a plain tile's hue is its walk colour slot, in degrees, not its side count
 uniform vec3 uPalette[8];  // colors mode: RGB per color index (0=A, 1=B, …); a hybrid board has 5 sizes
 uniform highp sampler2D uWalk; // walk table (hyperbolicWalk.ts layout), one row per quotient face
 uniform int uFace;         // the camera's anchor face: uView maps its frame to the screen
@@ -395,7 +396,9 @@ void main() {
 	// background colours, fixed like the euclid plain fill.
 	// A plain tile takes the euclidean/spherical side-count ramp; an apeirogon (kind 1) has no side
 	// count to ramp on and is white.
-	vec3 tileCol = hd.x == 1.0 ? vec3(1.0) : tileFillAt(polygonHue(tileKey) + uHueOffset, uTileSat);
+	// A record that names its own hues (the Tegula shelf: one per symmetry class) carries them in the slot.
+	float hue = uFaceHue > 0.5 ? info.x : polygonHue(tileKey);
+	vec3 tileCol = hd.x == 1.0 ? vec3(1.0) : tileFillAt(hue + uHueOffset, uTileSat);
 	if (uIslamicStyle > 0.5 && cls > 0.5) tileCol = cls > 1.5 && cls < 2.5 ? uColB : uColA; // two fields
 	else if (cls > 1.5) tileCol = cls > 2.5 ? uColC : uColB;
 	vec3 fill = uShowFill > 0.5 ? tileCol * dim : uBg;
@@ -525,6 +528,8 @@ export interface PerPixelDrawParams {
 	scaffold?: boolean;
 	/** Fill each face by its colour index from `palette` (a colouring; sets edgeMode too). */
 	colorsMode?: boolean;
+	/** Tiling mode: the walk's colour slot is the face's hue in degrees (HypDiskTiling.faceHue). */
+	faceHue?: boolean;
 	/** Colors mode: RGB (0..1) per color index. Up to 4 entries; short arrays are padded with the last. */
 	palette?: [number, number, number][];
 	/** Paint every tile as a material (hypMaterials.ts). Needs `home`. Off in edge and Islamic modes. */
@@ -602,6 +607,7 @@ export class HyperbolicPerPixelRenderer {
 			"uScaffold",
 			"uStrokeSca",
 			"uColorsMode",
+			"uFaceHue",
 			"uPalette",
 			"uWalk",
 			"uFace",
@@ -752,6 +758,7 @@ export class HyperbolicPerPixelRenderer {
 		gl.uniform1f(this.u.uEdgeMode, p.edgeMode ? 1 : 0);
 		gl.uniform1f(this.u.uScaffold, p.scaffold ? 1 : 0);
 		gl.uniform1f(this.u.uColorsMode, p.colorsMode ? 1 : 0);
+		gl.uniform1f(this.u.uFaceHue, p.faceHue ? 1 : 0);
 		if (p.colorsMode && p.palette && p.palette.length) {
 			const pal = new Float32Array(8 * 3);
 			for (let i = 0; i < 8; i++) {

@@ -67,6 +67,9 @@ import { cellFill, DEFAULT_PALETTE, paletteFor, type ColorChoice } from "@/lib/c
 import { polygonClassSupportsIslamic } from "@/lib/utils/tilingLabel";
 import { tileClassOf } from "@/lib/services/referenceAtlas";
 import { hasCurvedTiles, isDiskSurface, lensAppliesTo, surfaceOf } from "@/lib/services/shelfRegistry";
+import { morphSurface } from "@/lib/tilings/orbifoldMorph";
+import { recordSymbol } from "@/lib/tilings/recordSymbol";
+import { useOrbifoldMorph } from "@/stores/orbifoldMorph";
 import { BUBBLE_EDGE_STYLES, BUBBLE_KOCH_LEVELS, hasLevels } from "@/lib/bubble/edges";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import { DeformPad } from "@/components/deform-pad";
@@ -147,7 +150,9 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 	// places by 2026-08-04, and the effect was that `hypPoly` and `sphPoly` records rendered the flat p5
 	// control block (symmetry elements, fundamental domain, vertex orbits, polygon points) over a canvas
 	// _play-client had already blanked.
-	const surface = surfaceOf(selected);
+	// A Tegula type whose symmetry the reader has changed may have left its geometry (orbifoldMorph.ts).
+	const morphOrders = useOrbifoldMorph((st) => (selected ? st.byId[selected.canonicalKey] : undefined));
+	const surface = (morphOrders ? morphSurface(recordSymbol(selected), morphOrders) : null) ?? surfaceOf(selected);
 	// An engine-developed hyperbolic tiling renders in the Poincaré disk via the per-pixel shader, which
 	// honours the edge-width toggle below.
 	const isHyperbolic = surface === "disk";

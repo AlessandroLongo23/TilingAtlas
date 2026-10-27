@@ -33,6 +33,8 @@ export interface CatalogueTiling {
 	paramCell?: ParametricCellData;
 	/** Topological shelf only: skeleton and edge classes, for /play's cell editor (lib/tilings/tegula.ts). */
 	tegula?: TegulaCell;
+	/** Topological shelf only: the Delaney-Dress symbol, for the symmetry controls (lib/tilings/orbifoldMorph.ts). */
+	dsym?: string;
 	/** Which halved-polygon board this row belongs to. Carried through referenceToCatalogue because
 	 *  /play derives its sub-family from it (subOf); without it every half-polygon row computed the
 	 *  sub "el-euh-" — absent from SUB_ORDER — and vanished from the /play tree while /library, which

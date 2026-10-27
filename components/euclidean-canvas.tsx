@@ -428,7 +428,8 @@ export function EuclideanCanvas({
 			// p5's drawVertexOrbits + dim. Active only while a dot mesh exists (orbitData present). The wave
 			// (M2) suppresses it — the dots ride the un-scaled outline, so we hide them for the transition,
 			// matching Tiling.show / the canvas.tsx orbit gate.
-			const orbitMode = cfg.showVertexOrbits && orbitMeshRef.current != null && wavePhaseInt === 0;
+			const orbitMode =
+				(cfg.showVertexOrbits || !!orbitMeshRef.current?.force) && orbitMeshRef.current != null && wavePhaseInt === 0;
 			// Dim target = the actual surface background behind this (transparent) canvas, so the faded fill
 			// reads pale in light theme and dark in dark theme, matching what p5 composites over. Read only in
 			// orbit mode (a static overlay); otherwise uFillDim=0 makes uDimTarget irrelevant.

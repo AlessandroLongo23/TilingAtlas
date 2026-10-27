@@ -722,7 +722,8 @@ export function Canvas({
 				// Orbit mode requires actual orbit data (only tilings with an exact cell carry it — the
 				// Regular shelf). Without data the toggle is inert here (no dim, no dots) and the sidebar
 				// disables the checkbox, so a persisted ON flag never shows a meaningless one-color overlay.
-				const orbitMode = cfg.showVertexOrbits && !cfg.isIslamic && propsRef.current.orbitData != null;
+				const orbitData = propsRef.current.orbitData;
+				const orbitMode = (cfg.showVertexOrbits || !!orbitData?.force) && !cfg.isIslamic && orbitData != null;
 				const opacity = orbitMode ? 0.3 : 1;
 				// Under the flat shader (M3), EuclideanCanvas owns the orbit dots and the tile dim. Publish the
 				// mouse-world so it can hit-test the hovered orbit, and skip p5's own dot draw below (skipFill).

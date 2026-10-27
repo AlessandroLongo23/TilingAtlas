@@ -1785,6 +1785,8 @@ export function referenceToCatalogue(r: ReferenceTiling): CatalogueTiling {
 		exactSource: r.exactSource,
 		paramCell: r.paramCell,
 		tegula: r.tegula,
+		// Both Tegula files state the symbol in the note; nothing else carries it.
+		dsym: r.source === "tegula" ? /<[^>]+>/.exec(r.note ?? "")?.[0] : undefined,
 		euHalfBoard: r.euHalfBoard,
 		polyformOrder: r.polyformOrder,
 		schlafli: r.schlafli,
