@@ -58,7 +58,7 @@ $(if $(filter eu_solver_rt,$(MAKECMDGOALS)),$(shell [ -f .maxnumrt-$(MAXNUM) ] |
 	rm -f .maxnum-$(PALETTE)-*
 	touch $@
 
-eu_solver$(SFX): eu_solver.cpp $(TB)/.generated .maxnum-$(PALETTE)-$(MAXNUM)
+eu_solver$(SFX): eu_solver.cpp hyp_feas.h $(TB)/.generated .maxnum-$(PALETTE)-$(MAXNUM)
 	$(CXX) $(CXXFLAGS) -DMAXNUM=$(MAXNUM) -I$(TB) -o $@ $<
 
 # Runtime-alphabet solver. Same search; the tables come from tables.bin at startup (EU_TABLES=<path>)
@@ -72,7 +72,7 @@ eu_solver$(SFX): eu_solver.cpp $(TB)/.generated .maxnum-$(PALETTE)-$(MAXNUM)
 # And it has NO palette dependency, so ONE binary serves every palette; only MAXNUM is baked in.
 #   make eu_solver_rt MAXNUM=6 && EU_TABLES=path/to/tables.bin ./eu_solver_rt
 # The compiled path stays the default so check-regular keeps gating it byte-for-byte.
-eu_solver_rt: eu_solver.cpp .maxnumrt-$(MAXNUM)
+eu_solver_rt: eu_solver.cpp hyp_feas.h .maxnumrt-$(MAXNUM)
 	$(CXX) $(CXXFLAGS) -DMAXNUM=$(MAXNUM) -DEU_RUNTIME_TABLES -o $@ $<
 
 eu_pruner$(SFX): eu_pruner.cpp ctrnact_decode.hpp $(TB)/.generated

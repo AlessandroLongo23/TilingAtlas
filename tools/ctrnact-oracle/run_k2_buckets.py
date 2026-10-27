@@ -36,7 +36,7 @@ sys.path.insert(0, _HERE)
 import slice_tables as st
 
 
-def _run_bucket_fused(i, bdir, solver, pruner, k, merged, nocycles, t0):
+def _run_bucket_fused(i, bdir, solver, pruner, k, merged, nocycles, t0, extra_env=None, allk=False):
     """Solve and prune ONE bucket through a PIPE: the raw blocks never reach the disk.
 
     Why it exists: k=4 star-wide is a projected 1.2e10 raw blocks at 348 B each, 4.1 TB of scratch,
@@ -53,23 +53,23 @@ def _run_bucket_fused(i, bdir, solver, pruner, k, merged, nocycles, t0):
     `eupruned_<NN>_*.txt` and sorts.
     """
     outdir = os.path.join(bdir, "out")
-    env = dict(os.environ, EU_TABLES=os.path.join(bdir, "tables.bin"), EU_STREAM="1")
+    env = dict(os.environ, EU_TABLES=os.path.join(bdir, "tables.bin"), EU_STREAM="1", **(extra_env or {}))
     if nocycles:
         env["EU_NOCYCLES"] = "1"
     p1 = subprocess.Popen([solver], cwd=bdir, env=env, stdout=subprocess.PIPE,
-                          stderr=subprocess.DEVNULL)
+                          stderr=open(os.path.join(os.path.dirname(merged), "solver-%05d.log" % i), "w"))
     p2 = subprocess.Popen([pruner], cwd=bdir, stdin=p1.stdout, stdout=subprocess.DEVNULL,
                           stderr=subprocess.DEVNULL,
-                          env=dict(os.environ, EU_STREAM="1", EU_KONLY=str(k), EU_OUT=outdir,
-                                   EU_SKIP_MINIMALITY="1"))
+                          env=dict(os.environ, EU_STREAM="1", EU_KONLY="0" if allk else str(k),
+                                   EU_OUT=outdir, EU_SKIP_MINIMALITY="1"))
     p1.stdout.close()            # the parent must drop its handle or the pruner never sees EOF
     p2.wait(); p1.wait()
     kept = 0
     pdir = os.path.join(outdir, "pruned")
-    pref = "eupruned_%02d" % k
     if os.path.isdir(pdir):
         for f in sorted(os.listdir(pdir)):
-            if not f.startswith(pref):
+            pref = f[:len("eupruned_NN")]                # every k with allk, else only k's file
+            if not (f.startswith("eupruned_%02d" % k) or (allk and f.startswith("eupruned_"))):
                 continue
             n = sum(1 for l in open(os.path.join(pdir, f)) if l.startswith("TES file:"))
             if not n:
@@ -140,13 +140,13 @@ def _run_bucket(job):
     stage later. The merged file NAMES do not depend on which worker ran which bucket, and
     develop_spherical.gather_blocks sorts them, so the merged catalogue is identical to a serial run.
     """
-    i, bdir, solver, pruner, k, merged, nocycles, pshards, pmin, fuse, palette, maxdens, devdir = job
+    i, bdir, solver, pruner, k, merged, nocycles, pshards, pmin, fuse, palette, maxdens, devdir, extra = job
     t0 = time.time()
     tb = os.path.join(bdir, "tables.bin")
     if devdir:
         return _run_bucket_piped(i, bdir, solver, pruner, k, nocycles, palette, maxdens, devdir, t0)
     if fuse:
-        return _run_bucket_fused(i, bdir, solver, pruner, k, merged, nocycles, t0)
+        return _run_bucket_fused(i, bdir, solver, pruner, k, merged, nocycles, t0, extra, allk=bool(extra))
     # EU_NOCYCLES: the raw blocks written here are read by exactly one thing, the pruner two lines
     # down, and it skips the face-cycle text. Dropping it takes a block from 710 bytes to 267 and
     # the solver from 3.46s to 2.13s on b00002, with the PRUNED output byte-identical (verified).
@@ -198,10 +198,47 @@ def _run_bucket(job):
     return i, raw, kept, time.time() - t0
 
 
+def run_shards(args, tables, solver, pruner):
+    """--shards: the full alphabet, split by seed, every shard solver -> pruner through a pipe."""
+    out = os.path.abspath(args.out)
+    work, merged = os.path.join(out, "work"), os.path.join(out, "pruned")
+    shutil.rmtree(out, ignore_errors=True)
+    os.makedirs(merged)
+    logf = open(args.log or os.path.join(out, "run.log"), "a")
+    extra = dict(e.split("=", 1) for e in args.solver_env)
+    jobs = []
+    for w in range(args.shards):
+        bdir = os.path.join(work, "s%05d" % w)
+        os.makedirs(os.path.join(bdir, "out"))
+        os.symlink(tables, os.path.join(bdir, "tables.bin"))
+        jobs.append((w, bdir, solver, pruner, args.k, merged, not args.keep_cycles, 1, 0, True,
+                     args.palette, args.maxdens, None,
+                     dict(extra, EU_SHARD_N=str(args.shards), EU_SHARD_W=str(w))))
+    t0, kept_tot, done = time.time(), 0, 0
+    pool = mp.get_context("spawn").Pool(args.workers)
+    for w, _, kept, el in pool.imap_unordered(_run_bucket, jobs, chunksize=1):
+        kept_tot += kept; done += 1
+        e = time.time() - t0
+        line = ("[%s] shard %d/%d done (%d this shard, %.0fs): pruned blocks so far %d, %.0fs elapsed, ETA %.0fs"
+                % (time.strftime("%H:%M:%S"), done, len(jobs), kept, el, kept_tot, e, e / done * (len(jobs) - done)))
+        print(line, flush=True); logf.write(line + "\n"); logf.flush()
+    pool.close(); pool.join()
+    line = "[%s] DONE: %d shards, %d pruned blocks (k<=%d) in %s, %.0fs" % (
+        time.strftime("%H:%M:%S"), len(jobs), kept_tot, args.k, merged, time.time() - t0)
+    print(line, flush=True); logf.write(line + "\n")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--palette", required=True)
-    ap.add_argument("--buckets", required=True)
+    ap.add_argument("--buckets", help="rho buckets (rho_buckets.py); or use --shards")
+    ap.add_argument("--shards", type=int, default=0,
+                    help="instead of buckets: split the FULL alphabet into this many seed shards "
+                         "(EU_SHARD_N/W) and run them fused, keeping every k <= --k. For palettes no "
+                         "bucket argument covers, e.g. hyperbolic stars with free points, where the "
+                         "solver's own EU_HYPFEAS does the geometric pruning.")
+    ap.add_argument("--solver-env", action="append", default=[], metavar="KEY=VAL",
+                    help="extra environment for eu_solver in --shards mode (e.g. EU_HYPFEAS=free)")
     ap.add_argument("--out", required=True)
     ap.add_argument("--log", default=None)
     ap.add_argument("--limit", type=int, default=0, help="stop after N buckets (smoke test)")
@@ -280,6 +317,8 @@ def main():
         if not os.path.exists(p):
             sys.exit("missing %s (build it: make eu_solver_rt MAXNUM=%d; make PALETTE=%s MAXNUM=%d)"
                      % (p, args.k, args.palette, args.k))
+    if args.shards:
+        return run_shards(args, tables, solver, pruner)
     buckets = json.load(open(args.buckets))["buckets"]
     if args.limit:
         buckets = buckets[:args.limit]
@@ -335,7 +374,7 @@ def main():
                  head[0], head[1], head[2], head[3], head[4], head[5], head[6], sub)
         jobs.append((i, bdir, solver, pruner, args.k, merged, not args.keep_cycles,
                      args.prune_shards, args.prune_shard_min_mb, args.fuse,
-                     args.palette, args.maxdens, devdir))
+                     args.palette, args.maxdens, devdir, None))
     if args.cost_in:
         cost = {int(a): float(b) for a, b in
                 (l.split() for l in open(args.cost_in) if l.strip())}
