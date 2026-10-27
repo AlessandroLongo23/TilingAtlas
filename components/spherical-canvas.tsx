@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { ArcballControls } from "three/examples/jsm/controls/ArcballControls.js";
-import { useConfiguration } from "@/stores/configuration";
+import { useConfiguration, type ConfigurationState } from "@/stores/configuration";
 import { publishCamera, type Vec3 } from "@/lib/render/cameraPose";
 import { sphereFeatures } from "@/lib/render/spherePath";
 import {
@@ -441,7 +441,12 @@ export function SphericalCanvas({
 				content = { kind: "solid", solid };
 			}
 		} else {
-			const sphere = createSphere(renderer, poly, { hueOffset: cfg.hueOffset, lineWidth: cfg.lineWidth, dark });
+			const sphere = createSphere(renderer, poly, {
+				hueOffset: cfg.hueOffset,
+				lineWidth: cfg.lineWidth,
+				dark,
+				...sphereMaterial(cfg),
+			});
 			if (sphere) {
 				applyStudioMaterials(sphere.mesh);
 				scene.add(sphere.mesh);
@@ -513,6 +518,9 @@ export function SphericalCanvas({
 	// the tubes (stroke doesn't apply — thickness is its own control). Both are cheap, so drags stay live.
 	const hueOffset = useConfiguration((s) => s.hueOffset);
 	const lineWidth = useConfiguration((s) => s.lineWidth);
+	const materials = useConfiguration((s) => s.materials);
+	const material = useConfiguration((s) => s.material);
+	const materialSource = useConfiguration((s) => s.materialSource);
 	useEffect(() => {
 		const dark = document.documentElement.classList.contains("dark");
 		const c = contentRef.current;
@@ -522,14 +530,15 @@ export function SphericalCanvas({
 			if (c.kind === "bubble") {
 				c.bubble.recolor(hueOffset);
 				c.bubble.setLineWidth(lineWidth, dark);
-			} else if (c.kind === "sphere") c.sphere.recolor({ hueOffset, lineWidth, dark });
+			} else if (c.kind === "sphere")
+				c.sphere.recolor({ hueOffset, lineWidth, dark, ...sphereMaterial({ materials, material, materialSource }) });
 			else c.solid.recolor({ hueOffset, lineWidth, dark });
 		}
 		// The Islamic overlay + cell fill live in their own refs (independent of the base content) — recolour too.
 		if (islamicRef.current) islamicRef.current.setColor(hueOffset, dark);
 		if (fillRef.current) fillRef.current.setColor(hueOffset);
 		if (weaveRef.current) weaveRef.current.setColor(dark);
-	}, [hueOffset, lineWidth]);
+	}, [hueOffset, lineWidth, materials, material, materialSource]);
 
 	// Islamic star-pattern overlay: the construction as great-circle ribbons — a hollow structure with no base
 	// surface behind it. Rebuilt when a construction param or the stroke width changes, torn down when
@@ -699,4 +708,9 @@ export function SphericalCanvas({
 			style={{ touchAction: interactive ? "none" : "auto" }}
 		/>
 	);
+}
+
+// The tiling sphere's material (lib/render/materials.ts), from the store.
+function sphereMaterial(cfg: Pick<ConfigurationState, "materials" | "material" | "materialSource">) {
+	return { material: cfg.materials ? cfg.material : null, scanned: cfg.materialSource === "scanned" };
 }

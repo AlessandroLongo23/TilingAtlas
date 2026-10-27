@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { type Su11, su11Inverse, su11Mul, su11Normalize, su11Translation } from "@/lib/render/hyperbolic";
 import type { Darts } from "@/lib/render/hyperbolicDevelopClient";
 import { buildWalk, walkPoint } from "@/lib/render/hyperbolicWalk";
-import { hashU32, SEED_CELL, SEED_SHIFT, SEED_TEX_W, TileSeeds } from "@/lib/render/hypMaterials";
+import { hashU32, SEED_CELL, SEED_SHIFT, SEED_TEX_W, TileSeeds } from "@/lib/render/materials";
 import { familyMember } from "@/lib/render/hypStarFamily";
 import type { CataloguePatch } from "@/lib/tilings/hyp-developed";
 import { readDataText } from "../../scripts/atlas/io.mjs";

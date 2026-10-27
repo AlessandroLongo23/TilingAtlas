@@ -10,19 +10,16 @@ import { STRAP_RANGE } from "@/lib/render/hyperbolicIslamic";
 import { TILE_PALETTE_GLSL, TILE_SAT_PCT } from "@/lib/render/tilePalette";
 import { ISLAMIC_MARGIN, type WalkTiling } from "@/lib/render/hyperbolicWalk";
 import {
+	COMPLEX_GLSL,
 	MATERIAL_CODE,
 	MATERIAL_GLSL,
 	SEED_TEX_W,
 	polygonRanks,
-	SURFACE_SLOTS,
-	surfaceFamily,
-	surfaceImages,
+	SurfaceTextures,
+	TILE_SEED_GLSL,
 	TileSeeds,
-	woodCode,
-	type SurfaceFamily,
-	type HypMaterial,
-	type WoodStyle,
-} from "@/lib/render/hypMaterials";
+	type Material,
+} from "@/lib/render/materials";
 
 // Perspective-stroke law (AL-tuned final): exact conformal exponent (1.0 = constant hyperbolic
 // width) with a 3× overall boost in the shader's halfW — metric-true thinning, thicker base.
@@ -62,30 +59,16 @@ uniform float uFaceHue; // 1 = a plain tile's hue is its walk colour slot, in de
 uniform vec3 uPalette[8];  // colors mode: RGB per color index (0=A, 1=B, …); a hybrid board has 5 sizes
 uniform highp sampler2D uWalk; // walk table (hyperbolicWalk.ts layout), one row per quotient face
 uniform int uFace;         // the camera's anchor face: uView maps its frame to the screen
-uniform float uMaterial;   // MATERIAL_CODE (hypMaterials.ts): 0 none, 1 marble, 2 glass, 3 wood, 4 cobblestone
-uniform float uScan;       // 1 = the material reads its scanned surfaces (uSurfC, uSurfN) instead of procedurals
-uniform highp sampler2DArray uSurfC; // scans: albedo (sRGB) + height, one layer per slot (hypMaterials.ts)
-uniform highp sampler2DArray uSurfN; // scans: normal xy, roughness, AO
-uniform vec3 uWood;
-uniform vec2 uRank[16];    // materials: (polygon size, its rank among the tiling's sizes), polygonRanks
-uniform int uRankN;
-uniform float uSurfSlots;  // scans: the loaded family's slot count; its joint filler is the layer after        // wood: species (−1 mixed), cut (−1 mixed, 0 flat, 1 quarter, 2 end), grain (0 random, 1 aligned)
 uniform highp sampler2D uSeeds; // materials: the tile seed table around the anchor (TileSeeds)
 uniform vec4 uGinv;        // materials: the anchor frame → the home frame, a = xy, b = zw
 out vec4 frag;
 
-vec2 cmul(vec2 a, vec2 b) { return vec2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x); }
-vec2 cdiv(vec2 a, vec2 b) { float d = dot(b, b); return vec2(a.x * b.x + a.y * b.y, a.y * b.x - a.x * b.y) / d; }
-vec2 cconj(vec2 a) { return vec2(a.x, -a.y); }
+${COMPLEX_GLSL}
 // SU(1,1) action z -> (a z + b)/(conj(b) z + conj(a))
 vec2 su11(vec2 a, vec2 b, vec2 z) { return cdiv(cmul(a, z) + b, cmul(cconj(b), z) + cconj(a)); }
 
 ${TILE_PALETTE_GLSL}
 
-// x mod n as a slot index. GLSL's mod is x - n * floor(x / n), and a GPU whose division is a multiply
-// by a reciprocal can put x / n a hair under a whole number, which makes mod return n itself: one slot
-// past the row. Seen on Firefox on Windows as faces flooding their neighbours, on apeirogon rows of 3 sides.
-int imod(float x, float n) { int r = int(x - n * floor(x / n)), N = int(n); return r >= N ? r - N : r < 0 ? r + N : r; }
 // sinh of the signed distance from w past the geodesic of outward hyperboloid normal n (≤ 0 inside)
 float past(vec3 n, vec2 w) { float r2 = dot(w, w); return (2.0 * dot(n.xy, w) - n.z * (1.0 + r2)) / (1.0 - r2); }
 // the same for side k of an apeirogon, in the half-plane where its vertices are i + k·st
@@ -115,6 +98,7 @@ vec3 flatQ(int j, int f) {
 }
 
 ${MATERIAL_GLSL}
+${TILE_SEED_GLSL}
 
 void main() {
 	vec2 z = (gl_FragCoord.xy - uCenter) / uR;
@@ -428,7 +412,7 @@ void main() {
 		return;
 	}
 
-	// MATERIALS (hypMaterials.ts). The texture is read in the tile's frame carried out from home, not the
+	// MATERIALS (materials.ts). The texture is read in the tile's frame carried out from home, not the
 	// walk's: (A.a/|A.a|)² · w, A = uGinv · (ma, mb) the tile's isometry to the home frame. p is that point
 	// in geodesic polar coordinates, so a texture unit is a hyperbolic unit, and fp is a pixel's width in
 	// the same units, which every noise octave and vein is band-limited against.
@@ -464,13 +448,7 @@ void main() {
 	sf.toScreen = cmul(cconj(ph), dz);
 	vec2 gS = cmul(-edgeG, dz);
 	sf.inward = dot(gS, gS) > 0.0 ? normalize(gS) : vec2(0.0);
-	vec3 col;
-	if (uScan > 0.5 && (uMaterial < 1.5 || uMaterial > 2.5)) {
-		// scans are lit in linear light; the rest of this shader writes display values
-		col = shadeScanned(sf, uMaterial < 1.5 ? 0 : uMaterial < 3.5 ? 1 : 2);
-		col = pow(col / (1.0 + 0.3 * col) * 1.15, vec3(1.0 / 2.2)); // a soft shoulder, not a clip
-	} else col = uMaterial < 1.5 ? shadeMarble(sf) : uMaterial < 2.5 ? shadeGlass(sf) : uMaterial < 3.5 ? shadeWood(sf) : shadeCobble(sf);
-	frag = vec4(col * (uShowFill > 0.5 ? dim : 1.0), 1.0);
+	frag = vec4(shadeMaterial(sf) * (uShowFill > 0.5 ? dim : 1.0), 1.0);
 }`;
 
 function compile(gl: WebGL2RenderingContext, type: number, src: string): WebGLShader | null {
@@ -532,14 +510,12 @@ export interface PerPixelDrawParams {
 	faceHue?: boolean;
 	/** Colors mode: RGB (0..1) per color index. Up to 4 entries; short arrays are padded with the last. */
 	palette?: [number, number, number][];
-	/** Paint every tile as a material (hypMaterials.ts). Needs `home`. Off in edge and Islamic modes. */
-	material?: HypMaterial;
+	/** Paint every tile as a material (materials.ts); null is off. Needs `home`. Off in edge and Islamic modes. */
+	material?: Material | null;
 	/** Materials: the anchor frame → the home frame (the inverse of HypCamera's G). */
 	home?: Su11;
 	/** Materials: the same in the reference geometry (HypCamera.toHomeRef); tiles keep their identity there. */
 	homeRef?: Su11;
-	/** Wood: species, cut and grain direction. */
-	wood?: WoodStyle;
 	/** Read marble, wood and cobblestone from scanned PBR maps (loaded on first use; procedural until then). */
 	scanned?: boolean;
 }
@@ -551,9 +527,7 @@ export class HyperbolicPerPixelRenderer {
 	private texWalk: WebGLTexture;
 	private texIslamic: WebGLTexture;
 	private texSeeds: WebGLTexture;
-	private texSurfC: WebGLTexture;
-	private texSurfN: WebGLTexture;
-	private surf: { family: SurfaceFamily; ready: boolean } | null = null;
+	private surf: SurfaceTextures;
 	private seeds = new TileSeeds();
 	private walk: WalkTiling | null = null;
 	/** The walk tiles take their identity from: the first one set for this record (a family's default). */
@@ -614,7 +588,6 @@ export class HyperbolicPerPixelRenderer {
 			"uMaterial",
 			"uSeeds",
 			"uGinv",
-			"uWood",
 			"uScan",
 			"uSurfC",
 			"uSurfN",
@@ -635,44 +608,7 @@ export class HyperbolicPerPixelRenderer {
 		this.uploadLayers(new Uint8Array(4), 1, 1);
 		this.texSeeds = gl.createTexture();
 		this.uploadSeeds(new Float32Array(SEED_TEX_W * 4), 1);
-		// the scan arrays stay complete (one texel) until a family is loaded into them
-		this.texSurfC = gl.createTexture();
-		this.texSurfN = gl.createTexture();
-		for (const t of [this.texSurfC, this.texSurfN]) {
-			gl.bindTexture(gl.TEXTURE_2D_ARRAY, t);
-			gl.texImage3D(gl.TEXTURE_2D_ARRAY, 0, gl.RGBA8, 1, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4));
-			gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-		}
-	}
-
-	/** Load a family's scans into the two arrays (once per family switch); draws read procedurals until done. */
-	private loadSurfaces(family: SurfaceFamily): void {
-		const token: { family: SurfaceFamily; ready: boolean } = { family, ready: false };
-		this.surf = token;
-		surfaceImages(family)
-			.then(({ c, n }) => {
-				if (this.disposed || this.surf !== token) return;
-				const gl = this.gl;
-				const aniso = gl.getExtension("EXT_texture_filter_anisotropic");
-				const put = (tex: WebGLTexture, imgs: ImageBitmap[], fmt: number) => {
-					gl.bindTexture(gl.TEXTURE_2D_ARRAY, tex);
-					const { width: w, height: h } = imgs[0];
-					gl.texImage3D(gl.TEXTURE_2D_ARRAY, 0, fmt, w, h, imgs.length, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-					imgs.forEach((im, i) =>
-						gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, 0, 0, i, w, h, 1, gl.RGBA, gl.UNSIGNED_BYTE, im),
-					);
-					gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
-					gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-					gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-					gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_S, gl.REPEAT);
-					gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_T, gl.REPEAT);
-					if (aniso) gl.texParameterf(gl.TEXTURE_2D_ARRAY, aniso.TEXTURE_MAX_ANISOTROPY_EXT, 8);
-				};
-				put(this.texSurfC, c, gl.SRGB8_ALPHA8); // albedo decodes to linear; the alpha (height) stays linear
-				put(this.texSurfN, n, gl.RGBA8);
-				token.ready = true;
-			})
-			.catch((e) => console.warn("scanned surfaces unavailable:", e));
+		this.surf = new SurfaceTextures(gl);
 	}
 
 	private uploadSeeds(data: Float32Array, height: number): void {
@@ -772,16 +708,14 @@ export class HyperbolicPerPixelRenderer {
 		// scaffold stroke: a muted line, lighter than the bold drawn stroke, per theme
 		const sca = p.dark ? [0x4a / 255, 0x44 / 255, 0x36 / 255] : [0xc9 / 255, 0xc2 / 255, 0xb4 / 255];
 		gl.uniform3f(this.u.uStrokeSca, sca[0], sca[1], sca[2]);
-		const mat = p.home && this.walk && !p.edgeMode ? MATERIAL_CODE[p.material ?? "none"] : 0;
+		const mat = p.home && this.walk && !p.edgeMode && p.material ? MATERIAL_CODE[p.material] : 0;
 		gl.uniform1f(this.u.uMaterial, mat);
 		if (mat && p.home && this.walk) {
 			const h = p.home;
 			gl.uniform4f(this.u.uGinv, h.a.x, h.a.y, h.b.x, h.b.y);
-			gl.uniform3fv(this.u.uWood, woodCode(p.wood ?? { species: "mixed", cut: "mixed", grain: "random" }));
-			const fam = p.scanned ? surfaceFamily(p.material ?? "none") : null;
-			if (fam && this.surf?.family !== fam) this.loadSurfaces(fam);
-			gl.uniform1f(this.u.uScan, fam && this.surf?.family === fam && this.surf.ready ? 1 : 0);
-			gl.uniform1f(this.u.uSurfSlots, fam ? SURFACE_SLOTS[fam] : 1);
+			const { scan, slots } = this.surf.want(p.material ?? null, !!p.scanned);
+			gl.uniform1f(this.u.uScan, scan ? 1 : 0);
+			gl.uniform1f(this.u.uSurfSlots, slots);
 			gl.uniform2fv(this.u.uRank, this.ranks.pairs);
 			gl.uniform1i(this.u.uRankN, this.ranks.n);
 			if (this.seeds.update(this.walk, this.refWalk ?? this.walk, p.face, h, p.homeRef ?? h))
@@ -790,11 +724,8 @@ export class HyperbolicPerPixelRenderer {
 		gl.activeTexture(gl.TEXTURE2);
 		gl.bindTexture(gl.TEXTURE_2D, this.texSeeds);
 		gl.uniform1i(this.u.uSeeds, 2);
-		gl.activeTexture(gl.TEXTURE3);
-		gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.texSurfC);
+		this.surf.bind(3);
 		gl.uniform1i(this.u.uSurfC, 3);
-		gl.activeTexture(gl.TEXTURE4);
-		gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.texSurfN);
 		gl.uniform1i(this.u.uSurfN, 4);
 
 		gl.activeTexture(gl.TEXTURE1);
@@ -819,7 +750,6 @@ export class HyperbolicPerPixelRenderer {
 		gl.deleteTexture(this.texWalk);
 		gl.deleteTexture(this.texIslamic);
 		gl.deleteTexture(this.texSeeds);
-		gl.deleteTexture(this.texSurfC);
-		gl.deleteTexture(this.texSurfN);
+		this.surf.dispose();
 	}
 }

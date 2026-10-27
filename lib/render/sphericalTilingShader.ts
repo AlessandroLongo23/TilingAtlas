@@ -9,10 +9,9 @@ import * as THREE from "three";
 import { tilePaletteGlsl } from "@/lib/render/tilePalette";
 import type { Polyhedron } from "./platonicSolids";
 import { faceExitNormals } from "./sphericalGeometry";
-import { polygonHue } from "@/lib/utils/renderTiling";
 
 // Covers the snub dodecahedron (92 faces), the most-faced Archimedean solid. Faces are packed one-per-vec4
-// (xyz = exit-face normal, w = hue) so the array costs 96 uniform vectors, safely under the WebGL2 minimum
+// (xyz = exit-face normal, w = side count) so the array costs 96 uniform vectors, safely under the WebGL2 minimum
 // (MAX_FRAGMENT_UNIFORM_VECTORS ≥ 224).
 export const MAX_FACES = 96;
 
@@ -21,12 +20,13 @@ export const MAX_FACES = 96;
 // types and solids. Shared so the flat line and the carved groove land on the exact same place.
 export const EDGE_ANGLE_PER_STROKE = 0.011;
 
-// Build the packed face array (xyz = exit-face normal, w = hue by polygon size) + count for the uniforms.
+// Build the packed face array (xyz = exit-face normal, w = side count; the shader takes the hue from it)
+// + count for the uniforms, and the side counts kept (materials rank them).
 // Exit-face normals (C_f/|C_f|²), NOT unit normals: correct for Archimedean solids whose face types sit at
 // different distances from the centre — argmax(dot(dir, N_f)) then picks the face the outward ray exits
 // through (with plain unit normals the small far-out faces vanish and edges land wrong). Congruent faces
 // share a hue, so a Platonic solid is one hue and an Archimedean solid is one hue per polygon size.
-export function buildFaceUniforms(poly: Polyhedron): { faces: THREE.Vector4[]; count: number } {
+export function buildFaceUniforms(poly: Polyhedron): { faces: THREE.Vector4[]; count: number; sizes: number[] } {
 	const N = faceExitNormals(poly);
 	// ⚑ ONE ENTRY PER PLANE, not per face. Faces that share a plane share an exit normal exactly, and the
 	// classifier cannot tell them apart in the first place: it asks which plane a direction exits through.
@@ -36,18 +36,18 @@ export function buildFaceUniforms(poly: Polyhedron): { faces: THREE.Vector4[]; c
 	// seven vertices are coincident to 1.5e-6 and seven of its ten faces lie in one plane (AL, 2026-08-21).
 	// The non-convex shelf is the only one with such solids; every other shelf dedupes to itself.
 	const DUP_EPS = 1e-4;
-	const kept: { n: readonly [number, number, number]; hue: number }[] = [];
+	const kept: { n: readonly [number, number, number]; sides: number }[] = [];
 	for (let i = 0; i < N.length && kept.length < MAX_FACES; i++) {
 		const n = N[i];
 		if (kept.some((k) => Math.hypot(k.n[0] - n[0], k.n[1] - n[1], k.n[2] - n[2]) < DUP_EPS)) continue;
-		kept.push({ n: [n[0], n[1], n[2]], hue: polygonHue(poly.faces[i].length) });
+		kept.push({ n: [n[0], n[1], n[2]], sides: poly.faces[i].length });
 	}
 	const faces = Array.from({ length: MAX_FACES }, () => new THREE.Vector4());
 	for (let i = 0; i < MAX_FACES; i++) {
-		if (i < kept.length) faces[i].set(kept[i].n[0], kept[i].n[1], kept[i].n[2], kept[i].hue);
+		if (i < kept.length) faces[i].set(kept[i].n[0], kept[i].n[1], kept[i].n[2], kept[i].sides);
 		else faces[i].set(0, 0, 0, 0);
 	}
-	return { faces, count: kept.length };
+	return { faces, count: kept.length, sizes: kept.map((k) => k.sides) };
 }
 
 // The fwidth-free CORE, safe in BOTH shader stages: the uniform block + classification/colour helpers.
@@ -57,7 +57,7 @@ export function buildFaceUniforms(poly: Polyhedron): { faces: THREE.Vector4[]; c
 // which is a FRAGMENT-only builtin — including it in a vertex stage is a compile error.
 export const TILING_GLSL_CORE = /* glsl */ `
 #define SPH_MAX_FACES ${MAX_FACES}
-uniform vec4 uSphFace[SPH_MAX_FACES]; // xyz = exit-face normal, w = face hue (degrees)
+uniform vec4 uSphFace[SPH_MAX_FACES]; // xyz = exit-face normal, w = side count
 uniform int  uSphFaceCount;
 uniform float uSphHueOffset; // global hue ring
 uniform float uSphEdgeWidth; // edge half-width in the classification-gap (arc) metric
@@ -109,9 +109,10 @@ float sphClassify(vec3 dir, out int best) {
 	return g;
 }
 
-// The face's fill hue (with the global hue-ring offset applied), matching the flat Euclidean tiles.
+// The face's fill (with the global hue-ring offset applied), matching the flat Euclidean tiles: the same
+// polygonHue by side count.
 vec3 sphFaceColor(int best) {
-	return sph_tileFill(uSphFace[best].w + uSphHueOffset);
+	return sph_tileFill(sph_polygonHue(uSphFace[best].w) + uSphHueOffset);
 }
 `;
 

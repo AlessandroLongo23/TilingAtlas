@@ -184,11 +184,10 @@ export function HyperbolicCanvas({ tiling, mode, input, diskPadPx = DISK_PAD_PX 
 				canvasH: canvas.height,
 				...diskStyle(m, b.tiling, cfg, dark, dpr),
 				...(m === "tiling" ? feedRef.current.frame(gl, cfg, b.tiling.id, b.walk.sizes, b.edge) : {}),
-				material: m === "tiling" ? cfg.hyperbolicMaterial : "none",
+				material: m === "tiling" && cfg.materials ? cfg.material : null,
 				home: cam.toHome(),
 				homeRef: cam.toHomeRef(),
-				wood: cfg.hyperbolicWood,
-				scanned: cfg.hyperbolicSurfaceSource === "scanned",
+				scanned: cfg.materialSource === "scanned",
 			});
 
 			// Export: snapshot this layer while the frame is still in the drawing buffer. The context has no

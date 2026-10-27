@@ -24,6 +24,7 @@ import {
 } from "@/lib/render/flatTilingGL";
 import { ORBIT_DOT_RADIUS_PX, hoveredOrbitAt, parseDimTarget, stepOrbitScales } from "@/lib/render/orbitHover";
 import { getOrbitHoverWorld } from "@/lib/render/orbitHoverBridge";
+import { FlatMaterialPass } from "@/lib/render/flatMaterialGL";
 import { resolveAlphaDegs, resolveAlphaDegsRaw, type ParametricCellData } from "@/lib/utils/paramCell";
 import { useFamilyAlphas } from "@/stores/familyAlphas";
 import { Vector } from "@/classes/Vector";
@@ -94,6 +95,8 @@ export function EuclideanCanvas({
 	const orbitDataRef = useRef<OrbitData | null>(orbitData);
 	orbitDataRef.current = orbitData;
 	const meshRef = useRef<CellMesh | null>(null);
+	// Materials (lib/render/flatMaterialGL.ts): drawn in place of the fill and the stroke when on.
+	const materialRef = useRef<FlatMaterialPass | null>(null);
 	// The uploaded instance grid, cached by a signature of its shape (see computeFillGrid): row range
 	// plus total, which changes whenever the spans do.
 	const instRef = useRef<{ key: string; count: number }>({ key: "", count: 0 });
@@ -140,6 +143,7 @@ export function EuclideanCanvas({
 		gl.bufferData(gl.ARRAY_BUFFER, mesh.pointCorner, gl.STATIC_DRAW);
 		gl.bindBuffer(gl.ARRAY_BUFFER, pointsColorBufRef.current);
 		gl.bufferData(gl.ARRAY_BUFFER, mesh.pointColor, gl.STATIC_DRAW);
+		materialRef.current?.upload(mesh);
 		meshRef.current = mesh;
 		instRef.current = { key: "", count: 0 }; // force an instance rebuild for the new basis
 	};
@@ -306,6 +310,12 @@ export function EuclideanCanvas({
 		orbitCornerBufRef.current = gl.createBuffer();
 		orbitOrbitBufRef.current = gl.createBuffer();
 
+		try {
+			materialRef.current = new FlatMaterialPass(gl);
+		} catch (e) {
+			console.error(e); // the plain fill stands in
+		}
+
 		let raf = 0;
 		const render = () => {
 			raf = requestAnimationFrame(render);
@@ -400,7 +410,7 @@ export function EuclideanCanvas({
 
 			// Wrapped pan keeps the offset bounded so the instance grid always covers the viewport. It
 			// reduces against the DEFORMED lattice — that is the one that is drawn.
-			const { draw } = wrapOffset(ctrl.offset, v1, v2, mesh.det, ctrl.zoom, rot, dfm);
+			const { draw, cells } = wrapOffset(ctrl.offset, v1, v2, mesh.det, ctrl.zoom, rot, dfm);
 
 			g.clearColor(0, 0, 0, 0);
 			g.clear(g.COLOR_BUFFER_BIT);
@@ -454,11 +464,35 @@ export function EuclideanCanvas({
 			g.uniform1f(U.uFillDim, orbitMode ? 1 : 0);
 			g.uniform3f(U.uDimTarget, dim[0], dim[1], dim[2]);
 
-			if (cfg.fillAmount > 0) {
+			// Materials draw their own joints, so they replace the stroke as well as the fill. Not under the
+			// orbit dots, which want the tiles faded back.
+			const materialDrawn =
+				cfg.materials &&
+				!orbitMode &&
+				!!materialRef.current?.draw({
+					inst: instBufRef.current!,
+					instCount: instRef.current.count,
+					offset: draw,
+					cells,
+					zoom: ctrl.zoom,
+					rot,
+					deform: dfm,
+					width: w,
+					height: h,
+					dpr: canvas.width / w,
+					lineWidth: cfg.lineWidth,
+					hueOffset: cfg.hueOffset || 0,
+					material: cfg.material,
+					scanned: cfg.materialSource === "scanned",
+					wavePhase: wavePhaseInt,
+					waveP,
+				});
+			if (materialDrawn) g.useProgram(progRef.current);
+			else if (cfg.fillAmount > 0) {
 				g.drawArraysInstanced(g.TRIANGLES, 0, mesh.fillVertexCount, instRef.current.count);
 			}
 
-			if (cfg.lineWidth > 0 && mesh.strokeVertexCount > 0) {
+			if (!materialDrawn && cfg.lineWidth > 0 && mesh.strokeVertexCount > 0) {
 				// Blend stays enabled across frames deliberately: both fragment shaders write alpha 1.0, so
 				// SRC_ALPHA blending is identity today; keeping it on future-proofs a per-tile-opacity fill
 				// without a state-toggle dance.
@@ -638,6 +672,8 @@ export function EuclideanCanvas({
 			if (orbitPosBufRef.current) gl.deleteBuffer(orbitPosBufRef.current);
 			if (orbitCornerBufRef.current) gl.deleteBuffer(orbitCornerBufRef.current);
 			if (orbitOrbitBufRef.current) gl.deleteBuffer(orbitOrbitBufRef.current);
+			materialRef.current?.dispose();
+			materialRef.current = null;
 			glRef.current = null;
 			progRef.current = null;
 			strokeProgRef.current = null;

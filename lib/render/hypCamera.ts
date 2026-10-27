@@ -80,14 +80,14 @@ export class HypCamera {
 	}
 
 	/** The current anchor frame → the home frame. Changes only on a re-anchor, bit for bit, which is what
-	 *  the material seed table (hypMaterials.ts) keys its rebuilds on. */
+	 *  the material seed table (materials.ts) keys its rebuilds on. */
 	toHome(): Su11 {
 		return su11Inverse(this.G);
 	}
 
 	/** The same in the REFERENCE geometry (the walk the camera was made with: a star family at its
 	 *  default angles). Re-anchors replay their side crossings there, so for one tile this does not move
-	 *  while the family's slider does; tile identities are read off it (hypMaterials.ts). */
+	 *  while the family's slider does; tile identities are read off it (materials.ts). */
 	toHomeRef(): Su11 {
 		return su11Inverse(this.Gref);
 	}

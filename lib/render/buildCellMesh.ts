@@ -50,6 +50,11 @@ export interface CellMesh {
 	// the wave is off (uWavePhase == 0), so the theory cards / FlatCellRenderer ignore it harmlessly.
 	fillCentroid: Float32Array; // 2 floats/vert
 	fillVertexCount: number; // = fillVerts.length / 2
+	// Materials (lib/render/flatMaterialGL.ts): per fill-vertex the tile's index in the cell and its side
+	// count, and per tile its vertex ring, one row of `ringWidth` (x, y) pairs, for the distance to a side.
+	fillTile?: Float32Array; // 2 floats/vert
+	tileRings?: Float32Array; // 2 floats per slot, `ringWidth` slots per tile
+	ringWidth?: number;
 	// Stroke: each polygon edge -> a quad (2 triangles, 6 verts). Each stroke vert carries the edge-point
 	// world position (strokePos), the world-space unit normal of the edge (strokeNorm), and a side flag
 	// (strokeSide, +1 / -1) telling the vertex shader which way to push by half the screen stroke width.
@@ -108,6 +113,12 @@ export function buildCellMesh(cell: TranslationalCellData | null): CellMesh | nu
 	const fillVerts = new Float32Array(triCount * 3 * 2);
 	const fillHue = new Float32Array(triCount * 3);
 	const fillCentroid = new Float32Array(triCount * 3 * 2);
+	const fillTile = new Float32Array(triCount * 3 * 2);
+	const ringWidth = Math.max(...base.polys.map((p) => p.vertices.length));
+	const tileRings = new Float32Array(base.polys.length * ringWidth * 2);
+	base.polys.forEach((poly, pi) =>
+		poly.vertices.forEach((v, k) => tileRings.set([v.x, v.y], (pi * ringWidth + k) * 2)),
+	);
 
 	let vi = 0; // vertex index into the flat buffers
 	base.polys.forEach((poly, pi) => {
@@ -124,6 +135,8 @@ export function buildCellMesh(cell: TranslationalCellData | null): CellMesh | nu
 			fillHue[vi] = hue;
 			fillCentroid[vi * 2] = cx;
 			fillCentroid[vi * 2 + 1] = cy;
+			fillTile[vi * 2] = pi;
+			fillTile[vi * 2 + 1] = vs.length;
 			vi++;
 		};
 		if (fanned[pi]) {
@@ -264,6 +277,9 @@ export function buildCellMesh(cell: TranslationalCellData | null): CellMesh | nu
 		fillVerts,
 		fillHue,
 		fillCentroid,
+		fillTile,
+		tileRings,
+		ringWidth,
 		fillVertexCount: vi,
 		strokePos,
 		strokeNorm,
