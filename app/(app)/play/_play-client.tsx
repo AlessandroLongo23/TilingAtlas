@@ -165,6 +165,7 @@ import { useTegulaShapes } from "@/stores/tegulaShapes";
 import { pickStratified } from "@/lib/utils/pickStratified";
 import { polygonClassSupportsIslamic } from "@/lib/utils/tilingLabel";
 import type { TranslationalCellData } from "@/classes/algorithm/types";
+import { DECORATIONS, GEOMETRIES, SOURCES } from "@/lib/vocabulary";
 
 // Higher-k demo shards held out of the eager main atlas (convex k3, isotoxal k3/k4). We pull them all into
 // the browse list on mount — see the eager-merge effect below.
@@ -173,11 +174,11 @@ import type { TranslationalCellData } from "@/classes/algorithm/types";
 // already on this list, so it is well inside the budget this table already spends — and deep-link-only
 // would mean the shelf's 5,137 deeper tilings are unreachable by browsing, which is what it was before.
 const KNOWN_HIGHER_TIERS: { source: "composable" | "isotoxal" | "period" | "tri45" | "penrose"; k: number }[] = [
-	...COMPOSABLE_SHARD_KS.map((k) => ({ source: "composable" as const, k })),
-	...ISOTOXAL_SHARD_KS.map((k) => ({ source: "isotoxal" as const, k })),
-	...PERIOD_SHARD_KS.map((k) => ({ source: "period" as const, k })),
-	...TRI45_SHARD_KS.map((k) => ({ source: "tri45" as const, k })),
-	...PENROSE_SHARD_KS.map((k) => ({ source: "penrose" as const, k })),
+	...COMPOSABLE_SHARD_KS.map((k) => ({ source: SOURCES.COMPOSABLE, k })),
+	...ISOTOXAL_SHARD_KS.map((k) => ({ source: SOURCES.ISOTOXAL, k })),
+	...PERIOD_SHARD_KS.map((k) => ({ source: SOURCES.PERIOD, k })),
+	...TRI45_SHARD_KS.map((k) => ({ source: SOURCES.TRI45, k })),
+	...PENROSE_SHARD_KS.map((k) => ({ source: SOURCES.PENROSE, k })),
 ];
 
 const SHARD_LOADER = {
@@ -509,7 +510,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// active geometry, and switching it jumps the canvas to that geometry's first tiling. The toggle state
 	// follows the selection (see the sync effect below), so a deep-link or "R" that lands on another
 	// geometry flips it automatically. Default euclidean — the bulk of the atlas and the initial selection.
-	const [geometry, setGeometry] = useState<Geometry>("euclidean");
+	const [geometry, setGeometry] = useState<Geometry>(GEOMETRIES.EUCLIDEAN);
 	// Decoration is the split BELOW geometry and the same kind of thing: a browse mode as well as a filter.
 	// Tilings / Edge patterns / Colorings — see decorationOf. Default "tilings", which is where the initial
 	// Euclidean selection lands.
@@ -597,7 +598,11 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	const decorationCounts = useMemo(() => {
 		const of = (d: Decoration) =>
 			(cells.byCell.get(`${geometry}|${d}`) ?? EMPTY_CELL).length + (pendingByCell.get(`${geometry}|${d}`) ?? 0);
-		return { tilings: of("tilings"), edges: of("edges"), colorings: of("colorings") } as Record<Decoration, number>;
+		return {
+			tilings: of(DECORATIONS.TILINGS),
+			edges: of(DECORATIONS.EDGES),
+			colorings: of(DECORATIONS.COLORINGS),
+		} as Record<Decoration, number>;
 	}, [cells, geometry, EMPTY_CELL, pendingByCell]);
 	// The active (geometry, decoration) cell, in the same class → sub → k → key display order — the catalogue
 	// list, the nav count, and the scope for random/prev/next all read this.
@@ -701,7 +706,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// key) so it joins the browse tree under Spherical → Freedraw and the requested key resolves. The loader
 	// is module-cached, so re-running this on every geometry change is free after the first fetch.
 	useEffect(() => {
-		if (geometry !== "spherical" && !requestedKey?.startsWith("sfd-")) return;
+		if (geometry !== GEOMETRIES.SPHERICAL && !requestedKey?.startsWith("sfd-")) return;
 		let alive = true;
 		loadSphericalFreedrawAtlas()
 			.then((data) => {
@@ -718,7 +723,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// loads once the Hyperbolic geometry is entered (or a deep-link to an "he…" key arrives); the dense
 	// high-k shards (k = 12/13/14) are pulled per-k by loadHyperbolicEdgesShard when their k row is opened.
 	useEffect(() => {
-		if (geometry !== "hyperbolic" && !requestedKey?.startsWith("he")) return;
+		if (geometry !== GEOMETRIES.HYPERBOLIC && !requestedKey?.startsWith("he")) return;
 		let alive = true;
 		const merge = (data: Awaited<ReturnType<typeof loadHyperbolicEdgesAtlas>>) => {
 			if (!alive || data.length === 0) return;
@@ -745,8 +750,8 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// "hs<board>-…" (hyperbolic), which is what a deep-link is matched on; the two dense tails ((2,2,4) k=10,
 	// (2,3,3) k=7) are fetched per-k when their key is requested or their row is opened.
 	useEffect(() => {
-		const wantSph = geometry === "spherical" || !!requestedKey?.startsWith("ss");
-		const wantHyp = geometry === "hyperbolic" || !!requestedKey?.startsWith("hs");
+		const wantSph = geometry === GEOMETRIES.SPHERICAL || !!requestedKey?.startsWith("ss");
+		const wantHyp = geometry === GEOMETRIES.HYPERBOLIC || !!requestedKey?.startsWith("hs");
 		if (!wantSph && !wantHyp) return;
 		let alive = true;
 		const merge = (data: Awaited<ReturnType<typeof loadSphericalSchwarzAtlas>>) => {
@@ -764,7 +769,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		// A deep-link into a lazy shard needs that shard fetched or the key never resolves.
 		const m = requestedKey?.match(/^(?:ss|hs)(\d+)-(\d+)-/);
 		if (m) {
-			const geo = requestedKey!.startsWith("ss") ? "spherical" : "hyperbolic";
+			const geo = requestedKey!.startsWith("ss") ? GEOMETRIES.SPHERICAL : GEOMETRIES.HYPERBOLIC;
 			if (schwarzLazyShardsForK(geo, Number(m[2])).some((b) => b.id === m[1])) {
 				loadSchwarzShard(m[1], Number(m[2]))
 					.then(merge)
@@ -788,7 +793,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		// "ss-" is the star polyhedra, which ride loadSphericalPolyAtlas with the halves. Fourth time —
 		// verified by deep-linking ss-12-30-12-d3-r20344 and watching it land on t1001.
 		const wantSph =
-			geometry === "spherical" ||
+			geometry === GEOMETRIES.SPHERICAL ||
 			!!requestedKey?.startsWith("xe") ||
 			!!requestedKey?.startsWith("sp") ||
 			!!requestedKey?.startsWith("ss-") ||
@@ -799,13 +804,13 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		// are "hyp-6-6-7", which does NOT match the "hp" test below — without this line every deep link
 		// to a base hyperbolic tiling would silently land on t1001, the same failure the star shelf hit.
 		const wantHyp =
-			geometry === "hyperbolic" ||
+			geometry === GEOMETRIES.HYPERBOLIC ||
 			!!requestedKey?.startsWith("hp") ||
 			!!requestedKey?.startsWith("hyp-") ||
 			HYP_HALF_BOARDS.some((b) => requestedKey?.startsWith(`hh${b.id}-`));
 		// The pentagon edge shelf is EUCLIDEAN — a plane tiling — so it rides this effect's default
 		// geometry rather than one of the curved ones.
-		const wantEuc = geometry === "euclidean" || !!requestedKey?.startsWith("pe");
+		const wantEuc = geometry === GEOMETRIES.EUCLIDEAN || !!requestedKey?.startsWith("pe");
 		if (!wantSph && !wantHyp && !wantEuc) return;
 		let alive = true;
 		const merge = (data: Awaited<ReturnType<typeof loadSphericalEdgesAtlas>>) => {
@@ -824,7 +829,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		if (wantSph) {
 			// The polyhedron EDGE systems are decoration "edges"; the polyhedra themselves are tilings.
 			// Entering Spherical fetched both, and the Tilings chip cannot show one of the edge rows.
-			if (decoration === "edges" || requestedKey?.startsWith("xe")) {
+			if (decoration === DECORATIONS.EDGES || requestedKey?.startsWith("xe")) {
 				loadSphericalEdgesAtlas()
 					.then(merge)
 					.catch(() => {});
@@ -851,7 +856,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		// colourings are all `geometry: "euclidean"`, and under a curved view the geometry filter drops
 		// every row they bring. Fetching them there cost 3.4 s and ~700 MB on Hyperbolic × Edge patterns,
 		// a transition that otherwise issues one request.
-		if (wantEuc && (decoration === "edges" || requestedKey?.startsWith("fd"))) {
+		if (wantEuc && (decoration === DECORATIONS.EDGES || requestedKey?.startsWith("fd"))) {
 			loadFreedrawDecorAtlas()
 				.then((d) => {
 					mergeAlways(d);
@@ -859,7 +864,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 				})
 				.catch(() => {});
 		}
-		if (wantEuc && (decoration === "edges" || isBubbleId(requestedKey))) {
+		if (wantEuc && (decoration === DECORATIONS.EDGES || isBubbleId(requestedKey))) {
 			loadBubbleDecorAtlas()
 				.then(mergeAlways)
 				.catch(() => {});
@@ -869,14 +874,14 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		// the point, false for a link arriving while the plane still reads Euclidean. That is how the first
 		// spherical link resolved to the atlas's default tiling instead of the record it named.
 		if (
-			(geometry === "spherical" || requestedKey?.startsWith("sb")) &&
-			(decoration === "edges" || requestedKey?.startsWith("sb"))
+			(geometry === GEOMETRIES.SPHERICAL || requestedKey?.startsWith("sb")) &&
+			(decoration === DECORATIONS.EDGES || requestedKey?.startsWith("sb"))
 		) {
 			loadSphBubbleAtlas()
 				.then(mergeAlways)
 				.catch(() => {});
 		}
-		if (wantEuc && (decoration === "colorings" || requestedKey?.startsWith("col"))) {
+		if (wantEuc && (decoration === DECORATIONS.COLORINGS || requestedKey?.startsWith("col"))) {
 			loadColorsDecorAtlas()
 				.then((d) => {
 					mergeAlways(d);
@@ -888,12 +893,12 @@ export function PlayClient({ tilings }: PlayClientProps) {
 		// "freedraw"), so the Tilings chip cannot show one, yet their eager slices were fetched on every
 		// Euclidean open — 53 of the 80 JSON requests a default /play open made. Deep links still work:
 		// the id prefix opens the shelf the same way "fd" does for freedraw.
-		if (wantEuc && (decoration === "edges" || requestedKey?.startsWith("pe"))) {
+		if (wantEuc && (decoration === DECORATIONS.EDGES || requestedKey?.startsWith("pe"))) {
 			loadPentagonEdgesAtlas()
 				.then(merge)
 				.catch(() => {});
 		}
-		if (wantEuc && (decoration === "edges" || requestedKey?.startsWith("ie"))) {
+		if (wantEuc && (decoration === DECORATIONS.EDGES || requestedKey?.startsWith("ie"))) {
 			loadIsohedralEdgesAtlas()
 				.then(merge)
 				.catch(() => {});
@@ -944,7 +949,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	// Colored tilings in H² and on S² — the same lazy pattern. The per-base/solid eager slices load once the
 	// matching geometry is entered (or a deep-link "hc…"/"sc…" key arrives); dense shards load per-k below.
 	useEffect(() => {
-		if (geometry !== "hyperbolic" && !requestedKey?.startsWith("hc")) return;
+		if (geometry !== GEOMETRIES.HYPERBOLIC && !requestedKey?.startsWith("hc")) return;
 		let alive = true;
 		const merge = (data: ReferenceTiling[]) => {
 			if (!alive || data.length === 0) return;
@@ -965,7 +970,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 	}, [geometry, requestedKey, appendRefs]);
 
 	useEffect(() => {
-		if (geometry !== "spherical" && !requestedKey?.startsWith("sc")) return;
+		if (geometry !== GEOMETRIES.SPHERICAL && !requestedKey?.startsWith("sc")) return;
 		let alive = true;
 		const merge = (data: ReferenceTiling[]) => {
 			if (!alive || data.length === 0) return;
@@ -1408,7 +1413,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			// Spherical freedraw: one overlay, one key. G = the faint edge grid — the same letter the planar
 			// scaffold uses above, and the one both /freedraw arms bind.
 			if (
-				(!!selected?.sphericalFreedraw || selected?.schwarz?.geometry === "spherical") &&
+				(!!selected?.sphericalFreedraw || selected?.schwarz?.geometry === GEOMETRIES.SPHERICAL) &&
 				(e.key === "g" || e.key === "G")
 			) {
 				e.preventDefault();
@@ -1420,7 +1425,10 @@ export function PlayClient({ tilings }: PlayClientProps) {
 			// letter every other freedraw scaffold uses. Its canvas reads freedrawScaffold, so flip that. This
 			// is a distinct branch because a hyp-edge pattern lives in the `hypEdges` field, not `freedraw`, so
 			// the FREEDRAW_TOGGLES table above never sees it.
-			if ((!!selected?.hypEdges || selected?.schwarz?.geometry === "hyperbolic") && (e.key === "g" || e.key === "G")) {
+			if (
+				(!!selected?.hypEdges || selected?.schwarz?.geometry === GEOMETRIES.HYPERBOLIC) &&
+				(e.key === "g" || e.key === "G")
+			) {
 				e.preventDefault();
 				const c = useConfiguration.getState();
 				c.set({ freedrawScaffold: !c.freedrawScaffold });
@@ -1894,7 +1902,7 @@ export function PlayClient({ tilings }: PlayClientProps) {
 							// shelf that spans two geometries, so it dispatches on its own: a spherical board is finite
 							// and draws on the three.js sphere (same canvas as the Platonic freedraw), a hyperbolic one
 							// re-develops in the disk through the same per-pixel reducer as every other hyperbolic shelf.
-							selected.schwarz.geometry === "spherical" ? (
+							selected.schwarz.geometry === GEOMETRIES.SPHERICAL ? (
 								<SphSchwarzCanvas pattern={selected.schwarz} mode={sphericalShape} showGrid={sphericalFreedrawGrid} />
 							) : (
 								<HyperbolicCanvas tiling={hypSchwarzMeta(selected.schwarz)} mode="edges" />

@@ -33,6 +33,7 @@
 
 import { componentLifts, type FaceAnalysis, type FaceInfo } from "./faces";
 import { coset, gridOf, type FreedrawGrid, type FreedrawPattern } from "./pattern";
+import { FREEDRAW_GRIDS } from "@/lib/vocabulary";
 
 /** The regular polygons a freedraw tile can be. 3/4/6/12 are what a triangle/square grid reaches; 8 is
  *  reachable only on the 4.8.8 board, which is not one of those grids (see above). */
@@ -69,7 +70,7 @@ type Pt = [number, number];
 type Corner = string;
 
 const world = (grid: FreedrawGrid, x: number, y: number): Pt =>
-	grid === "triangle" ? [x + 0.5 * y, y * SQRT3_2] : [x, y];
+	grid === FREEDRAW_GRIDS.TRIANGLE ? [x + 0.5 * y, y * SQRT3_2] : [x, y];
 
 /**
  * Directed boundary edges of one cell, counter-clockwise, as [fromVertex, toVertex, drawn].
@@ -80,7 +81,7 @@ function cellRing(p: FreedrawPattern, grid: FreedrawGrid, lift: [number, number]
 	const h = (x: number, y: number) => p.h[coset(p, x, y)] === 1;
 	const v = (x: number, y: number) => p.v[coset(p, x, y)] === 1;
 	const w = (x: number, y: number) => (p.w ?? [])[coset(p, x, y)] === 1;
-	if (grid === "square") {
+	if (grid === FREEDRAW_GRIDS.SQUARE) {
 		const [x, y] = lift;
 		return [
 			[[x, y], [x + 1, y], h(x, y)],

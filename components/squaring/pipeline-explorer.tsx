@@ -33,6 +33,7 @@ import { edgeKey } from "./stage-shared";
 import { useIsPhone } from "@/lib/hooks/useIsPhone";
 import { useMobileSheet } from "@/stores/mobileSheet";
 import { shardBody } from "@/lib/services/atlasCodec";
+import { GEOMETRIES } from "@/lib/vocabulary";
 
 // One polyhedron becoming one squared rectangle, in four stages, with a curated list to drive it.
 //
@@ -516,7 +517,7 @@ function BallRow({ entry, active, onSelect }: { entry: CylinderIndexEntry; activ
 					{last.toFixed(3)}
 				</span>
 				<span className="flex flex-wrap items-center gap-1">
-					{entry.geometry === "hyperbolic" ? <Badge tone="strong">transient</Badge> : <Badge>recurrent</Badge>}
+					{entry.geometry === GEOMETRIES.HYPERBOLIC ? <Badge tone="strong">transient</Badge> : <Badge>recurrent</Badge>}
 				</span>
 				<span className="font-mono text-[9px] leading-none text-fg-muted max-md:text-xs">
 					r ≤ {entry.radii[entry.radii.length - 1]} · {entry.maxOrder} squares

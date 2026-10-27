@@ -40,6 +40,7 @@ import { DEFAULT_TYPE, PENTAGON_TYPES, defaultParams, parseType, pentagonType } 
 import { buildCell, hasAssembly } from "@/lib/pentagon/build";
 import { PentagonSidebar, Section, Segmented, type SegmentedOption } from "./_controls";
 import { PrototileInspector } from "./_prototile";
+import { GEOMETRIES } from "@/lib/vocabulary";
 
 const STROKE_WIDTH = { min: 0, max: 3, step: 0.25, def: 1.5 } as const;
 const STROKE_RGB: [number, number, number] = [0, 0, 0];
@@ -286,7 +287,7 @@ export function PentagonsClient() {
 	 */
 	const spec: TilingSpec = useMemo(
 		() => ({
-			geometry: "euclidean",
+			geometry: GEOMETRIES.EUCLIDEAN,
 			label: type.label,
 			// Čtrnáct's ladder describes tilings by REGULAR polygons; this page's tiles are neither.
 			level: null,

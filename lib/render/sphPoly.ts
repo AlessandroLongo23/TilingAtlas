@@ -17,6 +17,7 @@ import type { SphSchwarzScene } from "@/lib/render/sphSchwarz";
 import type { SphPolyPattern } from "@/lib/tilings/sph-poly";
 import { tegulaHue } from "@/lib/tilings/tegula";
 import { polygonHue } from "@/lib/utils/renderTiling";
+import { SOURCES } from "@/lib/vocabulary";
 
 // The star shelf's fill, and for the same reason (lib/render/sphStar.ts `faceHue`): saturation and
 // value belong to the medium — this three.js canvas — and the hue carries the polygon. Taken from the
@@ -83,7 +84,7 @@ export function sphPolyScene(p: SphPolyPattern): SphSchwarzScene {
 function tileHue(p: SphPolyPattern, nGroups: number): number[] {
 	if (p.fillHue) return p.fillHue;
 	if (!p.fillGroup) return p.stats.sizes.map(polygonHue);
-	if (p.base === "tegula") return Array.from({ length: nGroups }, (_, i) => tegulaHue(i));
+	if (p.base === SOURCES.TEGULA) return Array.from({ length: nGroups }, (_, i) => tegulaHue(i));
 	const base = polygonHue(p.stats.sizes[0] ?? p.faceSize[0] ?? 3);
 	return Array.from({ length: nGroups }, (_, i) => base + i * GOLDEN);
 }

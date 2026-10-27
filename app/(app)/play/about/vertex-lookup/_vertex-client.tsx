@@ -20,6 +20,7 @@ import {
 	type BoardMatch,
 	type FigureReport,
 } from "@/lib/tilings/vertex-figure";
+import { GEOMETRIES } from "@/lib/vocabulary";
 
 // The vertex-figure lookup (Marek Čtrnáct's request, 2026-09-28): one figure in, everything the atlas
 // knows about it out. The figure travels in ?f= so a result is a link. All the logic is in
@@ -121,9 +122,9 @@ function Report({ report }: { report: FigureReport }) {
 				</div>
 				<p className="text-sm text-fg-secondary">
 					In the flat plane these corners sum to {flatAngleSum(figure).toFixed(2)}°
-					{geometry === "euclidean"
+					{geometry === GEOMETRIES.EUCLIDEAN
 						? ", exactly 360°, so the figure closes in the Euclidean plane."
-						: geometry === "spherical"
+						: geometry === GEOMETRIES.SPHERICAL
 							? ", less than 360°, so the figure closes on the sphere."
 							: `, more than 360°, so it closes only in the hyperbolic plane, at edge length ℓ = ${edge!.toFixed(6)}.`}
 				</p>
@@ -138,7 +139,7 @@ function Report({ report }: { report: FigureReport }) {
 				</p>
 			</section>
 
-			{geometry === "hyperbolic" ? (
+			{geometry === GEOMETRIES.HYPERBOLIC ? (
 				boards.length ? (
 					boards.map((m) => <BoardCard key={`${word}-${m.board.id}`} m={m} word={word} />)
 				) : (

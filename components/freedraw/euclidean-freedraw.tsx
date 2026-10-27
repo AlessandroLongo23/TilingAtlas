@@ -43,17 +43,18 @@ import { useKeyShortcuts } from "@/lib/hooks/useKeyShortcuts";
 import { requestViewReset } from "@/lib/render/touchGestures";
 import { serializePlayState } from "@/lib/services/playUrlState";
 import { readAtlas } from "@/lib/services/atlasCodec";
+import { FREEDRAW_GRIDS } from "@/lib/vocabulary";
 
 // The four base grids, then the Schwarz and Archimedean boards: one selection, one wall of two rows.
 const GRID_OPTIONS: { value: FreedrawCatalogueGrid; label: string }[] = [
-	{ value: "square", label: "Square" },
-	{ value: "triangle", label: "Triangle" },
-	{ value: "hex", label: "Hexagon" },
-	{ value: "ts", label: "Tri + squares" },
-	{ value: "sch236", label: "Schwarz 236" },
-	{ value: "sch244", label: "Schwarz 244" },
-	{ value: "4436", label: "3.4.6.4" },
-	{ value: "488", label: "4.8.8" },
+	{ value: FREEDRAW_GRIDS.SQUARE, label: "Square" },
+	{ value: FREEDRAW_GRIDS.TRIANGLE, label: "Triangle" },
+	{ value: FREEDRAW_GRIDS.HEX, label: "Hexagon" },
+	{ value: FREEDRAW_GRIDS.TS, label: "Tri + squares" },
+	{ value: FREEDRAW_GRIDS.SCH236, label: "Schwarz 236" },
+	{ value: FREEDRAW_GRIDS.SCH244, label: "Schwarz 244" },
+	{ value: FREEDRAW_GRIDS.ARCH_4436, label: "3.4.6.4" },
+	{ value: FREEDRAW_GRIDS.ARCH_488, label: "4.8.8" },
 ];
 
 // k ranges per grid track what the catalogues hold: squares to k=5, triangles to k=4, the combined
@@ -231,7 +232,7 @@ const loadFile = (url: string): Promise<void> =>
 					catalogueCache.set(url, d);
 				});
 
-export function PlanarFreedraw({
+export function EuclideanFreedraw({
 	geometry,
 	onGeometryChange,
 }: {
@@ -368,7 +369,7 @@ export function PlanarFreedraw({
 		a: () => setShowArcs((v) => !v),
 	});
 
-	// The /play deep link for the selection. Every planar freedraw pattern is in the base reference atlas
+	// The /play deep link for the selection. Every euclidean freedraw pattern is in the base reference atlas
 	// (keyed by its id — the same files this page reads), so `tiling` alone resolves; the fill mode and the
 	// three overlays ride along through the shared serializer so the viewer opens showing what the preview
 	// shows. Defaults are omitted by design, so a default view yields a bare /play?tiling=…
@@ -654,7 +655,7 @@ export function PlanarFreedraw({
 									<>
 										({selected.pattern.a}, 0), ({selected.pattern.b}, {selected.pattern.d}) · index{" "}
 										{selected.pattern.a * selected.pattern.d}
-										{gridOf(selected.pattern) === "triangle" && " · basis at 60°"}
+										{gridOf(selected.pattern) === FREEDRAW_GRIDS.TRIANGLE && " · basis at 60°"}
 									</>
 								),
 							],

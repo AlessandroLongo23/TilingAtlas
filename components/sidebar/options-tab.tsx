@@ -76,6 +76,7 @@ import { DeformPad } from "@/components/deform-pad";
 import { InversiveControls } from "@/components/inversive-controls";
 import { SquaringControls } from "@/components/squaring/squaring-controls";
 import { squaringAvailability } from "@/lib/squaring/playSquaring";
+import { TILE_CLASSES } from "@/lib/vocabulary";
 
 interface OptionsTabProps {
 	selected: CatalogueTiling | null;
@@ -143,7 +144,7 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 	const curvedTiles = hasCurvedTiles(selected);
 	// An Islamic-category tiling (an underlying tessellation from Bonner's systems). We suggest — but never
 	// force — turning the construction on for these, so the underlying tiling can be enjoyed on its own.
-	const isIslamicClass = !!selected && tileClassOf(selected) === "islamic";
+	const isIslamicClass = !!selected && tileClassOf(selected) === TILE_CLASSES.ISLAMIC;
 	// WHICH RENDERER OWNS THE CANVAS decides every control below, and it is answered in exactly one place
 	// — lib/services/shelfRegistry.ts — for this file and for _play-client both. It used to be answered
 	// twice, once per file, from two hand-maintained lists of shelf fields; they had diverged in two

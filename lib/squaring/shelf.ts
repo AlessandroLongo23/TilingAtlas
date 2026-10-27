@@ -1,3 +1,4 @@
+import type { Geometry } from "@/lib/vocabulary";
 // The shipped shape: what scripts/build-squaring-shelf.ts writes and what the /theory page reads.
 //
 // Sides are decimal STRINGS, not numbers. This is not defensive typing — the low-symmetry records in
@@ -293,7 +294,7 @@ export interface CylinderRecord {
 	name: string;
 	/** {3,q}. q ≥ 7 is hyperbolic; q = 6 is the Euclidean member, kept for the contrast. */
 	q: number;
-	geometry: "hyperbolic" | "euclidean";
+	geometry: Exclude<Geometry, "spherical">;
 	layers: CylinderLayerData[];
 }
 
@@ -313,7 +314,7 @@ export interface CylinderIndexEntry {
 	name: string;
 	q: number;
 	thumb: CylinderThumb;
-	geometry: "hyperbolic" | "euclidean";
+	geometry: Exclude<Geometry, "spherical">;
 	radii: number[];
 	/** Circumference per radius. Converges iff the walk is transient, which is the whole point. */
 	conductance: number[];

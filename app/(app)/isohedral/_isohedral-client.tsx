@@ -73,6 +73,7 @@ import {
 } from "@/lib/isohedral/build";
 import { IsohedralSidebar, Section, Segmented, type SegmentedOption } from "./_controls";
 import { PrototileInspector } from "./_prototile";
+import { GEOMETRIES } from "@/lib/vocabulary";
 
 /** Outline width in CSS px, as /play's `lineWidth` means it. 0 is off. */
 const STROKE_WIDTH = { min: 0, max: 3, step: 0.25, def: 1.5 } as const;
@@ -384,7 +385,7 @@ export function IsohedralClient() {
 	 */
 	const spec: TilingSpec = useMemo(
 		() => ({
-			geometry: "euclidean",
+			geometry: GEOMETRIES.EUCLIDEAN,
 			label: info.label,
 			// Čtrnáct's ladder describes tilings by REGULAR polygons; this page's tiles are neither.
 			level: null,

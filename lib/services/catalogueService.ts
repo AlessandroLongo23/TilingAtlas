@@ -6,6 +6,7 @@ import type { ParametricCellData } from "@/lib/utils/paramCell";
 import type { TegulaCell } from "@/lib/tilings/tegula";
 import type { WallpaperGroup, LatticeShape } from "@/lib/classes/symmetry/types";
 import type { TranslationalCellData } from "@/lib/classes/algorithm/types";
+import type { Geometry } from "@/lib/vocabulary";
 
 // The METHOD-AGNOSTIC read contract for /play + /library (FRONTEND_ROADMAP.md Phase 1). Whichever
 // method wrote found_tilings — torus today, orbifold later (DESIGN INTENT, gated on the Phase-1
@@ -121,7 +122,7 @@ export interface CatalogueTiling {
 	// the live parameter point instead of a bespoke solver (lib/isohedral/edge-board.ts), so the same
 	// shelf reaches any isohedral type. `renderCell` is a throwaway.
 	ihEdges?: import("@/lib/isohedral/edgeDevelop").IhEdgeRecord;
-	geometry?: "euclidean" | "hyperbolic" | "spherical";
+	geometry?: Geometry;
 	// Vertex-type classification carried through from ReferenceTiling (build-computed). k (above) counts
 	// vertex ORBITS; m counts DISTINCT vertex configurations among them (m ≤ k); partition is their
 	// multiplicities, descending, summing to k. Absent when the source has no per-orbit config data.

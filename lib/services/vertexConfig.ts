@@ -1,4 +1,5 @@
 import { canonicalizeVertexFigure } from "@/lib/utils/vertexFigureHue";
+import { SOURCES, type TilingSource } from "@/lib/vocabulary";
 
 // Vertex configurations as the library queries them: one canonical spelling per vertex figure, so a
 // figure typed as "4.6.3.6", "3,6,4,6", "(3,6,4,6)" or "3.6.4.6" is the same chip and matches the same
@@ -70,9 +71,9 @@ const familyCache = new Map<string, readonly string[] | null>();
  * decoration shelves, the irregular-tile shelves). Euclidean rows ship them as `vcs` (enrich step);
  * hyperbolic rows are read off `family`.
  */
-export function vcsOf(t: { vcs?: readonly string[]; source?: string; family: string }): readonly string[] | null {
+export function vcsOf(t: { vcs?: readonly string[]; source?: TilingSource; family: string }): readonly string[] | null {
 	if (t.vcs) return t.vcs;
-	if (t.source !== "hyperbolic") return null;
+	if (t.source !== SOURCES.HYPERBOLIC) return null;
 	let v = familyCache.get(t.family);
 	if (v === undefined) {
 		const parts = t.family.split(/\s*[+;]\s*/).map(parseVC);

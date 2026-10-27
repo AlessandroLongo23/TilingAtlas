@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { geodesicThroughPoints } from "@/lib/render/hyperbolic";
 import type { CylinderLayerData } from "@/lib/squaring/shelf";
 import { voltageColor } from "./stage-shared";
+import { GEOMETRIES, type Geometry } from "@/lib/vocabulary";
 
 // Stages 1 and 2 of the hyperbolic pipeline: the ball, and the harmonic potential on it.
 //
@@ -23,7 +24,7 @@ interface Props {
 	 * has no boundary at infinity to converge on, only a wired ring at finite distance. Drawing it with
 	 * the hyperbolic kernel produces nonsense, which is how this prop came to exist.
 	 */
-	geometry: "hyperbolic" | "euclidean";
+	geometry: Exclude<Geometry, "spherical">;
 	hovered: number | null;
 	onHover: (edge: number | null) => void;
 }
@@ -53,7 +54,7 @@ function geodesicPath(a: [number, number], b: [number, number], straight: boolea
 }
 
 export function HyperbolicBallFigure({ layer, mode, geometry, hovered, onHover }: Props) {
-	const straight = geometry === "euclidean";
+	const straight = geometry === GEOMETRIES.EUCLIDEAN;
 	const { paths, sides, maxSide, dots, rimR } = useMemo(() => {
 		const s = new Array<number>(layer.edges.length).fill(0);
 		for (const q of layer.squares) s[q.edge] = q.side;

@@ -1,6 +1,7 @@
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import type { CataloguePatch } from "@/lib/tilings/hyp-developed";
 import { type ReferenceTiling, compactVertexConfig, geometryOf } from "@/lib/services/referenceAtlas";
+import { GEOMETRIES, SOURCES } from "@/lib/vocabulary";
 
 // Pure landing-page logic, shared by the runtime loader (landingData.ts) and the build-time
 // generator (scripts/gen-landing-data.ts). Deliberately imports NEITHER node:fs NOR the generated
@@ -77,7 +78,7 @@ export function toSpecimen(t: ReferenceTiling): LandingSpecimen {
 /** The 11 uniform tilings: the Galebach k=1 regular shelf, ordered by id (t1001…t1011). */
 export function pickUniformEleven(atlas: ReferenceTiling[]): ReferenceTiling[] {
 	return atlas
-		.filter((t) => t.source === "galebach" && t.k === 1 && !t.family.includes("*"))
+		.filter((t) => t.source === SOURCES.GALEBACH && t.k === 1 && !t.family.includes("*"))
 		.sort((a, b) => a.id.localeCompare(b.id));
 }
 
@@ -102,7 +103,7 @@ function isDrawable(cell: TranslationalCellData | undefined): boolean {
 /** Every Euclidean tiling with a non-empty render cell — the full set the hero banner may show and
  *  the source both for the baked seed pool and the on-demand per-cell hero files. */
 export function drawableEuclidean(atlas: ReferenceTiling[]): ReferenceTiling[] {
-	return atlas.filter((t) => geometryOf(t) === "euclidean" && t.renderCell && isDrawable(t.renderCell));
+	return atlas.filter((t) => geometryOf(t) === GEOMETRIES.EUCLIDEAN && t.renderCell && isDrawable(t.renderCell));
 }
 
 /** Deterministic PRNG so the committed pool is stable across rebuilds (only the atlas changing it). */

@@ -22,6 +22,7 @@ import { freedrawKNoun, gridOf } from "@/lib/freedraw/pattern";
 import { HEMI_STAR_FACED } from "@/lib/render/hemiSolids";
 import type { CatalogueTiling } from "./catalogueService";
 import { tileClassOf } from "./referenceAtlas";
+import { GEOMETRIES, TILE_CLASSES } from "@/lib/vocabulary";
 
 export type ShelfId =
 	| "developed"
@@ -210,7 +211,7 @@ export const SHELVES: Record<ShelfId, ShelfDef> = {
 	// draws on the three.js canvas, a hyperbolic one re-develops in the disk.
 	schwarz: {
 		field: "schwarz",
-		surface: (t) => (t.schwarz?.geometry === "spherical" ? "sphereEdges" : "diskEdges"),
+		surface: (t) => (t.schwarz?.geometry === GEOMETRIES.SPHERICAL ? "sphereEdges" : "diskEdges"),
 		kNoun: EDGE_ORBITS,
 	},
 };
@@ -243,7 +244,7 @@ export function surfaceOf(t: CatalogueTiling | null | undefined): ShelfSurface {
  * corpus just to answer a UI question. One line per future curved class.
  */
 export function hasCurvedTiles(t: CatalogueTiling | null | undefined): boolean {
-	return !!t && tileClassOf(t) === "bubble";
+	return !!t && tileClassOf(t) === TILE_CLASSES.BUBBLE;
 }
 
 /** What this record's `k` counts, or null when it means the ordinary vertex-orbit count. */

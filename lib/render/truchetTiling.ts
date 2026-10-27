@@ -33,6 +33,7 @@ import {
 } from "@/lib/freedraw/arcs";
 import type { FreedrawPattern } from "@/lib/freedraw/pattern";
 import { parseBaseCell, type TranslationalCellData } from "@/lib/utils/renderTiling";
+import { FREEDRAW_GRIDS } from "@/lib/vocabulary";
 
 /** Copies of the fundamental cell per side of the block. 6 => 36 independently drawn copies. */
 export const TRUCHET_BLOCK = 6;
@@ -175,7 +176,7 @@ export function truchetPattern(cell: TranslationalCellData | null, opts: Truchet
 		h: [0],
 		v: [0],
 		orbit: [0],
-		grid: "ts", // a patch board: the geometry is explicit and there is no lattice to index
+		grid: FREEDRAW_GRIDS.TS, // a patch board: the geometry is explicit and there is no lattice to index
 		patch: {
 			T1: [block * v1x, block * v1y],
 			T2: [block * v2x, block * v2y],

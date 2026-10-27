@@ -21,6 +21,7 @@ import type { TranslationalCellData } from "@/lib/utils/renderTiling";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import { paramGlyphs, type ParametricCellData } from "@/lib/utils/paramCell";
 import { compactVertexConfig } from "@/lib/services/referenceAtlas";
+import { GEOMETRIES } from "@/lib/vocabulary";
 
 // The /play picker's tile wall for one k-bucket: two columns of thumbnails (three on a phone, where the
 // sheet is short and a wide column would leave room for barely one row) on the wall grid, with a
@@ -305,7 +306,7 @@ function Tile({
 				) : t.hypPoly ? (
 					<HyperbolicThumbnail tiling={t.hypPoly} mode="tiling" />
 				) : t.schwarz ? (
-					t.schwarz.geometry === "spherical" ? (
+					t.schwarz.geometry === GEOMETRIES.SPHERICAL ? (
 						<SphSchwarzThumbnail pattern={t.schwarz} />
 					) : (
 						<HyperbolicThumbnail tiling={hypSchwarzMeta(t.schwarz)} mode="edges" />

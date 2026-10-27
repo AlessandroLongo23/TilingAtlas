@@ -13,6 +13,7 @@
 import type { FaceSummary } from "./faces";
 import type { FreedrawCatalogueGrid } from "./pattern";
 import { REGULAR_KINDS, type RegularInfo, type RegularKind } from "./regular";
+import { FREEDRAW_GRIDS } from "@/lib/vocabulary";
 
 /** require = the pattern contains at least one such face; exclude = it contains none. */
 export type Tri = "any" | "require" | "exclude";
@@ -49,7 +50,7 @@ const anyPolygons = (): Record<RegularKind, Tri> =>
 	Object.fromEntries(REGULAR_KINDS.map((n) => [n, "any"])) as Record<RegularKind, Tri>;
 
 export const DEFAULT_FILTER: FreedrawFilter = {
-	grid: "square",
+	grid: FREEDRAW_GRIDS.SQUARE,
 	k: 0,
 	unbounded: "any",
 	strip: "any",

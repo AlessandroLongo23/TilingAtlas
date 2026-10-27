@@ -12,18 +12,23 @@ import { Button } from "@/components/ui/button";
 import { polygonHue, type RawPolygon } from "@/lib/utils/renderTiling";
 import { GeoNobleFamily, GeoSolid } from "@/components/about/figures/geometry/solid";
 import { vertexFigure, type Geometry, type VertexFigure } from "@/components/about/figures/geometry/vertex";
+import { GEOMETRIES } from "@/lib/vocabulary";
 
 const SIZES = [3, 4, 5, 6, 7, 8, 10, 12];
 const PRESETS = ["3.3.3.3.3", "3.3.3.3.3.3", "3.3.3.3.3.3.3", "4.6.8", "4.6.12", "4.6.14"];
 const fmt = (a: number) => `${Math.round(a * 100) / 100}°`;
-const WHERE: Record<Geometry, string> = { sphere: "Sphere", plane: "Euclidean plane", hyperbolic: "Hyperbolic plane" };
+const WHERE: Record<Geometry, string> = {
+	spherical: "Sphere",
+	euclidean: "Euclidean plane",
+	hyperbolic: "Hyperbolic plane",
+};
 
 function verdict(ns: number[], f: VertexFigure) {
 	if (ns.length < 3) return "Put at least three polygons around the vertex.";
 	const d = 360 - f.flatSum;
-	if (f.geometry === "plane")
+	if (f.geometry === GEOMETRIES.EUCLIDEAN)
 		return "Flat, the angles add up to exactly 360°: the polygons close around the vertex in the plane, as in a tiling.";
-	if (f.geometry === "sphere") {
+	if (f.geometry === GEOMETRIES.SPHERICAL) {
 		if (f.edge == null)
 			return `Flat, the angles add up to ${fmt(f.flatSum)}, but no common edge length closes them on a sphere: the largest polygon would have to flatten out first.`;
 		const v = 720 / d;
@@ -47,7 +52,7 @@ export function GeoVertex({ start, caption }: { start?: string; caption?: string
 	const f = useMemo(() => vertexFigure(ns), [ns]);
 	const ball = `geo-ball-${useId().replace(/:/g, "")}`;
 	const fills = ns.map((n) => tileFill({ hue: polygonHue(n) } as RawPolygon));
-	const curved = f.geometry !== "plane" && f.edge != null;
+	const curved = f.geometry !== GEOMETRIES.EUCLIDEAN && f.edge != null;
 	// The sphere and the disk both have radius 1; the plane is fitted to its polygons around the vertex.
 	const R = curved ? 1 : Math.max(1.6, ...f.polygons.flatMap((p) => p.map((v) => Math.hypot(v.x, v.y))));
 	const frame = [
@@ -69,12 +74,17 @@ export function GeoVertex({ start, caption }: { start?: string; caption?: string
 					</radialGradient>
 				</defs>
 				{curved && (
-					<circle cx={0} cy={0} r={1} fill={f.geometry === "sphere" ? "var(--color-surface-raised)" : "none"} />
+					<circle
+						cx={0}
+						cy={0}
+						r={1}
+						fill={f.geometry === GEOMETRIES.SPHERICAL ? "var(--color-surface-raised)" : "none"}
+					/>
 				)}
 				{f.polygons.map((p, i) => (
 					<polygon key={i} points={svgPoints({ vertices: p })} fill={fills[i]} {...OUTLINE} />
 				))}
-				{curved && f.geometry === "sphere" && <circle cx={0} cy={0} r={1} fill={`url(#${ball})`} />}
+				{curved && f.geometry === GEOMETRIES.SPHERICAL && <circle cx={0} cy={0} r={1} fill={`url(#${ball})`} />}
 				{curved && <circle cx={0} cy={0} r={1} fill="none" {...OUTLINE} />}
 				<circle cx={0} cy={0} r={R * 0.022} fill="#000" />
 			</Stage>

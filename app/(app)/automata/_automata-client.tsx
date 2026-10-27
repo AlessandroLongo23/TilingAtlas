@@ -28,6 +28,7 @@ import {
 import { useAutomata } from "@/lib/stores/automata";
 import { useImmersive } from "@/stores/immersive";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
+import { DECORATIONS, GEOMETRIES } from "@/lib/vocabulary";
 
 export function AutomataClient() {
 	const [tilings, setTilings] = useState<CatalogueTiling[]>([]);
@@ -62,7 +63,7 @@ export function AutomataClient() {
 				// shelves do not carry. TILINGS: the edge-pattern and colouring shelves decorate a grid
 				// instead of tiling it, so their renderCell is a throwaway and there are no faces to be cells.
 				const usable = all
-					.filter((r) => geometryOf(r) === "euclidean" && decorationOf(r) === "tilings")
+					.filter((r) => geometryOf(r) === GEOMETRIES.EUCLIDEAN && decorationOf(r) === DECORATIONS.TILINGS)
 					.map(referenceToCatalogue)
 					// The same order the picker's tree walks, so ← / → step through what you are looking at.
 					.sort(compareCatalogueDisplayOrder);

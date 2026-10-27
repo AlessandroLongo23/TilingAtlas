@@ -13,6 +13,7 @@ import { DEFAULT_TILE_RULE, type TileLoop, type TileRule } from "./arcs";
 import { analyseFaces, classifyFaces, classifyPatchFaces, type FaceAnalysis } from "./faces";
 import { coset, gridOf, type FreedrawPattern } from "./pattern";
 import { gridCellArcs, patchTileArcs } from "./patternArcs";
+import { FREEDRAW_GRIDS } from "@/lib/vocabulary";
 
 export interface FreedrawView {
 	/** World coordinates at the canvas centre. */
@@ -44,7 +45,8 @@ export interface FreedrawView {
 // has e2 at 60°, so bx = 1/2 and by = √3/2. Pan/zoom stay in world (euclidean) coordinates — only
 // the lattice-to-world map changes, and every straight lattice line stays straight through it.
 const SQRT3_2 = Math.sqrt(3) / 2;
-const basisOf = (p: FreedrawPattern) => (gridOf(p) === "triangle" ? { bx: 0.5, by: SQRT3_2 } : { bx: 0, by: 1 });
+const basisOf = (p: FreedrawPattern) =>
+	gridOf(p) === FREEDRAW_GRIDS.TRIANGLE ? { bx: 0.5, by: SQRT3_2 } : { bx: 0, by: 1 };
 
 /**
  * How much two cells must have in common to share a colour, coarse to fine. Each mode is a refinement
@@ -297,7 +299,7 @@ export function drawFreedraw(
 	const { scale } = view;
 	const rot = view.rot ?? 0;
 	const { bx, by } = basisOf(pattern);
-	const tri = gridOf(pattern) === "triangle";
+	const tri = gridOf(pattern) === FREEDRAW_GRIDS.TRIANGLE;
 	// Lattice (x, y) -> screen px, through the world basis. On the square grid this is the old sx/sy.
 	const px = (x: number, y: number) => width / 2 + (x + bx * y - view.cx) * scale;
 	const py = (y: number) => height / 2 - (by * y - view.cy) * scale;

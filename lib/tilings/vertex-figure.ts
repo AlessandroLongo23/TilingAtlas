@@ -9,8 +9,8 @@
 
 import { uniformTilingsOfFigure } from "@/lib/classes/algorithm/delaney/DSymGenerator";
 import { HYP_POLY_BOARDS, canonicalCycle, hypPolySubOfBoard, type HypPolyBoard } from "@/lib/tilings/hyp-poly";
-
-export type Geometry = "spherical" | "euclidean" | "hyperbolic";
+import { GEOMETRIES, type Geometry } from "@/lib/vocabulary";
+export type { Geometry };
 
 /** Valences the lookup answers. The enumeration is instant to 8 and slows sharply past it. */
 export const MIN_VALENCE = 3;
@@ -31,7 +31,7 @@ export function geometryOf(fig: readonly number[]): Geometry {
 	const L = fig.reduce((a, n) => a * n, 1);
 	const lhs = 2 * fig.reduce((a, n) => a + L / n, 0);
 	const rhs = (fig.length - 2) * L;
-	return lhs > rhs ? "spherical" : lhs === rhs ? "euclidean" : "hyperbolic";
+	return lhs > rhs ? GEOMETRIES.SPHERICAL : lhs === rhs ? GEOMETRIES.EUCLIDEAN : GEOMETRIES.HYPERBOLIC;
 }
 
 /** Interior angle of a regular hyperbolic n-gon of edge ℓ. */
@@ -101,7 +101,7 @@ export function describeFigure(input: readonly number[]): FigureReport {
 	const figure = canonicalCycle(input);
 	const geometry = geometryOf(figure);
 	const uniform = uniformTilingsOfFigure(figure).length;
-	if (geometry !== "hyperbolic") return { figure, geometry, uniform, boards: [] };
+	if (geometry !== GEOMETRIES.HYPERBOLIC) return { figure, geometry, uniform, boards: [] };
 	const edge = closingEdge(figure);
 	const boards: BoardMatch[] = [];
 	for (const board of HYP_POLY_BOARDS) {

@@ -14,6 +14,7 @@ import type { FillMode } from "@/lib/freedraw/render";
 import { cubicAt, cubicFlatness, cubicSegmentCount, type Cubic } from "../cubic";
 import type { PeriodicCell, PeriodicPrim } from "../periodicCell";
 import { hslToRgb } from "./color";
+import { FREEDRAW_GRIDS } from "@/lib/vocabulary";
 
 const SQRT3_2 = Math.sqrt(3) / 2;
 
@@ -110,7 +111,7 @@ function emitArcs(
 }
 
 function gridCell(p: FreedrawPattern, opts: EdgesCellOptions): PeriodicCell | null {
-	const tri = gridOf(p) === "triangle";
+	const tri = gridOf(p) === FREEDRAW_GRIDS.TRIANGLE;
 	const bx = tri ? 0.5 : 0;
 	const by = tri ? SQRT3_2 : 1;
 	const wx = (x: number, y: number) => x + bx * y;
