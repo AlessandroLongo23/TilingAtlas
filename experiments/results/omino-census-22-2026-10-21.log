@@ -1,0 +1,11 @@
+[12:19:50] === 22-ominoes: 4096 parts on 10 processes, fallback free_heesch -L 4; work dir experiments/results/heesch/omino-v3/omino22
+[12:19:51] 0 parts already done, 4096 to go
+[15:48:51] part 81/4096  hole-free 755,782,127  H0 753,060,485  tilers 961,833  H1 1,759,788  undecided 21  ETA 172.7 h
+[10:16:29] part 162/4096  hole-free 1,594,647,036  H0 1,587,356,519  tilers 2,082,829  H1 5,207,628  undecided 60  ETA 532.9 h
+[15:11:41] part 243/4096  hole-free 2,664,150,955  H0 2,651,209,604  tilers 3,413,568  H1 9,527,681  undecided 102  ETA 426.0 h
+[17:04:29] part 324/4096  hole-free 3,130,261,375  H0 3,115,213,492  tilers 3,949,677  H1 11,098,086  undecided 120  ETA 334.6 h
+[10:43:41] part 405/4096  hole-free 4,132,356,222  H0 4,112,160,569  tilers 5,175,403  H1 15,020,103  undecided 147  ETA 422.8 h
+[13:28:59] part 486/4096  hole-free 4,855,182,687  H0 4,830,222,658  tilers 6,199,866  H1 18,759,875  undecided 288  ETA 365.1 h
+[14:51:35] part 567/4096  hole-free 5,593,880,530  H0 5,565,640,220  tilers 7,034,761  H1 21,205,245  undecided 304  ETA 314.5 h
+[15:50:05] part 648/4096  hole-free 6,369,012,721  H0 6,336,691,659  tilers 8,027,087  H1 24,293,637  undecided 338  ETA 401.8 h
+[20:43:25] part 729/4096  hole-free 7,233,271,804  H0 7,195,207,473  tilers 9,136,018  H1 28,927,934  undecided 379  ETA 371.3 h

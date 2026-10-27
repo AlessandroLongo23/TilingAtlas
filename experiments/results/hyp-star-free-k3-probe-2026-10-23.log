@@ -1,0 +1,65 @@
+[09:12:16] k3 probe: hyp-star-free (valence<=5), seed shards 0-7 of 100, k<=2 vs k<=3 on the same shards; k<=3 capped at 20 min per shard
+[09:12:16] k<=2 shard 0: raw blocks 0,   0B, 
+[09:12:16] k<=2 shard 1: raw blocks 0,   0B, 
+[09:12:16] k<=2 shard 2: raw blocks 0,   0B, 
+[09:12:16] k<=2 shard 3: raw blocks 0,   0B, 
+[09:12:16] k<=2 shard 4: raw blocks 0,   0B, 
+[09:12:16] k<=2 shard 5: raw blocks 0,   0B, 
+[09:12:16] k<=2 shard 6: raw blocks 0,   0B, 
+[09:12:16] k<=2 shard 7: raw blocks 0,   0B, 
+[09:12:51] RESTART (python driver): shards 0-7 of 100, k<=2 then k<=3, k<=3 capped at 20 min per shard
+[09:13:33] k<=2 shard 0: raw blocks 600797, 640 MB, done in 41s []
+[09:13:34] k<=2 shard 1: raw blocks 221013, 209 MB, done in 41s []
+[09:13:34] k<=2 shard 2: raw blocks 169817, 164 MB, done in 42s []
+[09:13:34] k<=2 shard 3: raw blocks 31185, 28 MB, done in 42s []
+[09:13:34] k<=2 shard 4: raw blocks 49529, 52 MB, done in 42s []
+[09:13:35] k<=2 shard 5: raw blocks 39308, 39 MB, done in 42s []
+[09:13:35] k<=2 shard 6: raw blocks 65740, 65 MB, done in 43s []
+[09:13:35] k<=2 shard 7: raw blocks 45009, 35 MB, done in 43s []
+[09:33:52] k<=3 shard 0: raw blocks 8027216, 10195 MB, KILLED at cap []
+[09:34:00] k<=3 shard 1: raw blocks 4123133, 4847 MB, KILLED at cap []
+[09:34:12] k<=3 shard 2: raw blocks 7654142, 9237 MB, KILLED at cap []
+[09:34:19] k<=3 shard 3: raw blocks 5231059, 6940 MB, KILLED at cap []
+[09:34:25] k<=3 shard 4: raw blocks 3758870, 5684 MB, KILLED at cap []
+[09:34:32] k<=3 shard 5: raw blocks 4186851, 6322 MB, KILLED at cap []
+[09:34:38] k<=3 shard 6: raw blocks 4944178, 6811 MB, KILLED at cap []
+[09:34:41] k<=3 shard 7: raw blocks 3160304, 4232 MB, KILLED at cap []
+[09:34:41] PROBE DONE
+[summary] progress gauge = k=2 blocks re-emitted by the k<=3 run / k=2 blocks of the k<=2 run on the same shard:
+  shard 0: 7,672 / 600,216 = 1.3%  -> k=3 blocks ~ 8.0M / 0.013 ~ 630M
+  shard 3: 8,318 /  31,154 = 27%   -> ~ 19M
+  shard 7: 4,241 /  44,972 = 9.4%  -> ~ 34M
+  k=3 / k=2 raw-block ratio per shard ~ 600-1000x; ~1.3 KB per raw block on disk.
+  Extrapolated full k<=3 (valence<=5): ~3 billion raw blocks, ~4 TB raw, ~1-2 weeks single-core solver; not run.
+  Gauge assumes k=2 emission is uniform along the DFS: order-of-magnitude only.
+[10:15:29] WITH EU_HYPFEAS=free (cap 60): shards 0-7 of 100, k<=3, 20 min per shard
+[10:35:31] k<=3 shard 0: raw blocks 278, 0 MB, KILLED at cap ['[hypfeas] 575440 checks, 512000 solved, 272745 rejected, 211570 capped, 20132628 boxes, last S=2 words=4 nodes=57, 201.551s inside', '[hypfeas] 1164401 checks, 1024000 solved, 515864 rejected, 416481 capped, 39269674 boxes, last S=4 words=4 nodes=48, 409.405s inside']
+[10:35:31] k<=3 shard 1: raw blocks 757, 1 MB, KILLED at cap ['[hypfeas] 577085 checks, 512000 solved, 281382 rejected, 203280 capped, 19478001 boxes, last S=3 words=5 nodes=1, 191.7s inside', '[hypfeas] 1159162 checks, 1024000 solved, 535610 rejected, 416827 capped, 38806170 boxes, last S=3 words=4 nodes=42, 394.761s inside']
+[10:35:31] k<=3 shard 2: raw blocks 0, 0 MB, KILLED at cap ['[hypfeas] 2283617 checks, 2048000 solved, 1805036 rejected, 234056 capped, 35977004 boxes, last S=3 words=4 nodes=19, 245.859s inside', '[hypfeas] 4557976 checks, 4096000 solved, 3396095 rejected, 686527 capped, 94348166 boxes, last S=3 words=5 nodes=19, 979.681s inside']
+[10:35:31] k<=3 shard 3: raw blocks 35, 0 MB, KILLED at cap ['[hypfeas] 1171434 checks, 1024000 solved, 701207 rejected, 303099 capped, 33537821 boxes, last S=4 words=4 nodes=61, 250.684s inside', '[hypfeas] 2299464 checks, 2048000 solved, 1351965 rejected, 652898 capped, 69746717 boxes, last S=4 words=5 nodes=61, 640.535s inside']
+[10:35:31] k<=3 shard 4: raw blocks 0, 0 MB, KILLED at cap ['[hypfeas] 2404208 checks, 2048000 solved, 1589872 rejected, 452943 capped, 57855522 boxes, last S=3 words=4 nodes=1, 260.227s inside', '[hypfeas] 4553998 checks, 4096000 solved, 3088331 rejected, 1000137 capped, 125364889 boxes, last S=4 words=4 nodes=7, 855.64s inside']
+[10:35:31] k<=3 shard 5: raw blocks 0, 0 MB, KILLED at cap ['[hypfeas] 2252038 checks, 2048000 solved, 1704414 rejected, 336706 capped, 50755269 boxes, last S=3 words=4 nodes=21, 247.331s inside', '[hypfeas] 4553316 checks, 4096000 solved, 3276423 rejected, 811456 capped, 113861506 boxes, last S=5 words=4 nodes=61, 801.474s inside']
+[10:35:31] k<=3 shard 6: raw blocks 321, 0 MB, KILLED at cap ['[hypfeas] 1227558 checks, 1024000 solved, 731741 rejected, 274596 capped, 29720507 boxes, last S=3 words=4 nodes=15, 244.057s inside', '[hypfeas] 2318978 checks, 2048000 solved, 1577677 rejected, 449633 capped, 57546957 boxes, last S=3 words=6 nodes=19, 455.77s inside']
+[10:35:31] k<=3 shard 7: raw blocks 1027, 1 MB, KILLED at cap ['[hypfeas] 1134639 checks, 1024000 solved, 719338 rejected, 284625 capped, 31174395 boxes, last S=5 words=5 nodes=61, 223.555s inside', '[hypfeas] 2407532 checks, 2048000 solved, 1295238 rejected, 695081 capped, 68793132 boxes, last S=3 words=5 nodes=61, 685.119s inside']
+[10:35:31] PROBE DONE
+[10:53:19] shard 3/100 at k<=3 to completion, streamed solver|pruner: (a) unchecked, (b) EU_HYPFEAS cap 60, (c) cap 25; EPS 0.02; progress in /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/ad7ade7c-4242-4163-b5cf-2ee95efd8836/scratchpad/s3k3-*/solver.log
+[11:58:25] cap60/cap25 runs stopped at 3892s still in seed 3 (all time in the check: profile = cosh/atan2/asin). Check rewritten INCREMENTAL (child set filters the parent's region). Restart: shard 3 k<=3 with the incremental check; unchecked baseline continues
+[12:30:25] incremental run stopped (still in seed 3 after ~45 min, profile: trig in the check). Check now uses cosh identity + Illinois brackets (3x faster on k<=2 shard 3: 31s -> 11.5s, same 786 raw). Restart shard 3 k<=3 as 'v3'
+cap60: 3892s, kept total kept: 399
+cap25: 3892s, kept total kept: 6670
+incr: 1917s, kept total kept: 450
+base: 6061s, kept total kept: 10634197
+[12:34:21] shard-3 k<=3 comparison DONE
+[13:33:31] single-seed timings (k<=3, streamed): light seeds 903/1903: base 3s/3s, v3 9s/7s, MAXS=3 8s/5s, MAXS=2 4s/3s; kept identical for v3/s3/s2 (451, 49) vs base (1172, 147). Now heavy: seed 103 s2,s3; seed 3 s2
+seed 103 s3: 208s, total kept: 0, 9958808 sets rejected
+seed 103 s2: 744s, total kept: 4664, 572368 sets rejected
+seed 3 s3: 1386s, total kept: 843019, 97495459 sets rejected
+seed 103 base: 1479s, total kept: 294169, 
+[14:10:53] heavy seeds so far: seed 103 base 1479s kept 294,169 | s3 208s kept 0 | v3 ~337s (in shard run). seed 3: s3 1386s kept 843,019 | v3 3073s kept ~few hundred | base ~3669s (contended). Next: MAXS=4 on seeds 3, 103, 903, 1903
+seed 1903 s4: 12s, total kept: 49, 89973 sets rejected
+seed 903 s4: 17s, total kept: 451, 301811 sets rejected
+seed 103 s4: 406s, total kept: 0, 30414649 sets rejected
+seed 3 s4: 3194s, total kept: 65545, 
+[15:04:13] DEFAULTS set in hyp_feas.h: MAXS 3, cap 60, eps 0.02 (MAXS=4 on seed 3 > 3170s: no better than full check). Full shards 3 and 0 with the defaults, streamed, to estimate a whole k<=3 run
+d-w3: 33423s, kept total kept: 892280
+d-w0: 101445s, kept total kept: 52246593

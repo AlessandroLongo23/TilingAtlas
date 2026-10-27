@@ -1,0 +1,1448 @@
+[14:48:53] hyp-convex-isotoxal pilot: palette hyp-cx-pilot (regular 3,4,5,6,8,12 + convex 4a,6a,8a), k=1, valence<=4. Engine copy in session scratchpad (main tree untouched).
+[14:48:53] build (MAXNUM=1 PALETTE=hyp-cx-pilot)
+[14:49:07] PHASE 1  solve (C++ DFS, all k<=1)
+vertex figures: 3307 over 4579 types
+bucket key unique (BUCKET_OK): yes
+OKPAIR: 2018 admissible (tkey, Q(f)) pairs
+nodes: 6843  simplify_calls: 895  simplify_true: 259
+[14:49:08]   raw blocks: 259  (1s)
+[14:49:08] PHASE 2  prune (C++, fingerprint + bitset WL)
+  k=1 : 240
+total kept: 240
+store: peak 0 MB total, 0 MB resident
+[14:49:08]   (0s)
+[14:49:08] PHASE 3  develop skipped: develop.py is regular-only until the D-parameterization lands (M4)
+[14:49:08] DONE  total 1s  ->  /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/aa195daa-2d12-46ba-b1d6-1e7124698d4e/scratchpad/eng/../cxp-k1/ctrnact-cells-k1.json
+[14:49:13] develop k=1 pilot
+Traceback (most recent call last):
+  File "/private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/aa195daa-2d12-46ba-b1d6-1e7124698d4e/scratchpad/eng/develop_hyperbolic.py", line 32, in <module>
+    import develop_spherical as ds
+  File "/private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/aa195daa-2d12-46ba-b1d6-1e7124698d4e/scratchpad/eng/develop_spherical.py", line 79, in <module>
+    install_palette(os.environ.get("EU_PALETTE", "spherical"))
+  File "/private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/aa195daa-2d12-46ba-b1d6-1e7124698d4e/scratchpad/eng/develop_spherical.py", line 54, in install_palette
+    ts.loader.exec_module(tm)
+  File "<frozen importlib._bootstrap_external>", line 846, in exec_module
+  File "<frozen importlib._bootstrap_external>", line 982, in get_code
+  File "<frozen importlib._bootstrap_external>", line 1039, in get_data
+FileNotFoundError: [Errno 2] No such file or directory: '/private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/aa195daa-2d12-46ba-b1d6-1e7124698d4e/scratchpad/eng/tables/spherical/tables.py'
+hyperbolic develop report (k=1..1, boundR=0.90)
+blocks in    : 240
+developed    : 240
+not developed: 0
+
+[15:08:37] pilot k=1 v<=4 result: 240 blocks, 240 developed, 227 distinct = 116 shipped regular + 84 unshipped regular with 12-gons + 27 new convex; 55 convex keys equal shipped STAR families (crossing b=pi). Now: size probe a = regular{3,4,5,6,8,12} + cx{4,6,8}, valence<=5, k<=2
+[15:08:37] build (MAXNUM=2 PALETTE=hyp-cx-size-a)
+[15:09:25] PHASE 1  solve (C++ DFS, all k<=2)
+vertex figures: 29051 over 32067 types
+bucket key unique (BUCKET_OK): yes
+OKPAIR: 2027 admissible (tkey, Q(f)) pairs
+nodes: 58433216  simplify_calls: 774699  simplify_true: 665624
+[15:10:02]   raw blocks: 665624  (37s)
+[15:10:02] PHASE 2  prune (C++, fingerprint + bitset WL)
+  k=1 : 1269
+  k=2 : 411317
+total kept: 412586
+store: peak 0 MB total, 0 MB resident
+[15:10:09]   (7s)
+[15:10:09] PHASE 3  develop skipped: develop.py is regular-only until the D-parameterization lands (M4)
+[15:10:09] DONE  total 44s  ->  /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/aa195daa-2d12-46ba-b1d6-1e7124698d4e/scratchpad/root/tools/ctrnact-oracle/../cxa-k2/ctrnact-cells-k2.json
+[15:10:09] size-a k<=2 solver done
+[15:10:37] DEVELOP size-a k=1..2: 412,586 blocks, 6 workers
+multiprocessing.pool.RemoteTraceback: 
+"""
+Traceback (most recent call last):
+  File "/private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/aa195daa-2d12-46ba-b1d6-1e7124698d4e/scratchpad/root/tools/ctrnact-oracle/pruner.py", line 435, in symbol_index
+    return _symidx[sym];
+KeyError: '(12,6,4,12,3)F'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/multiprocessing/pool.py", line 125, in worker
+    result = (True, func(*args, **kwds))
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/multiprocessing/pool.py", line 48, in mapstar
+    return list(map(*args))
+  File "/private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/aa195daa-2d12-46ba-b1d6-1e7124698d4e/scratchpad/root/tools/ctrnact-oracle/develop_hyperbolic.py", line 307, in _develop_one
+    return develop_block(*args)
+  File "/private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/aa195daa-2d12-46ba-b1d6-1e7124698d4e/scratchpad/root/tools/ctrnact-oracle/develop_hyperbolic.py", line 241, in develop_block
+    dec = ds.decode_block(b)
+  File "/private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/aa195daa-2d12-46ba-b1d6-1e7124698d4e/scratchpad/root/tools/ctrnact-oracle/develop_spherical.py", line 672, in decode_block
+    pr.decode(b[0] + "\n", b[1] + "\n", b[3] + "\n", b[4] + "\n")
+  File "/private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/aa195daa-2d12-46ba-b1d6-1e7124698d4e/scratchpad/root/tools/ctrnact-oracle/pruner.py", line 483, in decode
+    vertextypes = buildvertextypes(vertypeline);
+  File "/private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/aa195daa-2d12-46ba-b1d6-1e7124698d4e/scratchpad/root/tools/ctrnact-oracle/pruner.py", line 458, in buildvertextypes
+    ind2 = symbol_index(sym);
+  File "/private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/aa195daa-2d12-46ba-b1d6-1e7124698d4e/scratchpad/root/tools/ctrnact-oracle/pruner.py", line 437, in symbol_index
+    raise ValueError("%r is not in symbollist" % (sym,));
+ValueError: '(12,6,4,12,3)F' is not in symbollist
+"""
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<string>", line 5, in <module>
+  File "/private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/aa195daa-2d12-46ba-b1d6-1e7124698d4e/scratchpad/root/tools/ctrnact-oracle/./develop_hyperbolic.py", line 322, in run
+    for i, (rec, err) in enumerate(pool.imap(_develop_one, ((b, boundR) for b in blocks), chunksize=32)):
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/multiprocessing/pool.py", line 420, in <genexpr>
+    return (item for chunk in result for item in chunk)
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/multiprocessing/pool.py", line 870, in next
+    raise value
+ValueError: '(12,6,4,12,3)F' is not in symbollist
+[15:10:50] develop size-a done
+[15:11:07] (previous develop attempt crashed: inline driver re-imported the default palette in workers; rerun through the CLI) DEVELOP size-a k=1..2: 412,586 blocks
+  develop 2000/412586  6s elapsed, ~1251s left, 1278 developed
+  develop 4000/412586  12s elapsed, ~1175s left, 1675 developed
+  develop 6000/412586  12s elapsed, ~780s left, 1698 developed
+  develop 8000/412586  12s elapsed, ~600s left, 1698 developed
+  develop 10000/412586  13s elapsed, ~512s left, 1698 developed
+  develop 12000/412586  15s elapsed, ~495s left, 2066 developed
+  develop 14000/412586  15s elapsed, ~439s left, 2066 developed
+  develop 16000/412586  22s elapsed, ~547s left, 3017 developed
+  develop 18000/412586  23s elapsed, ~495s left, 3211 developed
+  develop 20000/412586  23s elapsed, ~459s left, 3211 developed
+  develop 22000/412586  24s elapsed, ~428s left, 3211 developed
+  develop 24000/412586  31s elapsed, ~498s left, 4327 developed
+  develop 26000/412586  32s elapsed, ~469s left, 4425 developed
+  develop 28000/412586  38s elapsed, ~517s left, 5557 developed
+  develop 30000/412586  51s elapsed, ~644s left, 6667 developed
+  develop 32000/412586  54s elapsed, ~643s left, 7110 developed
+  develop 34000/412586  59s elapsed, ~662s left, 7565 developed
+  develop 36000/412586  71s elapsed, ~748s left, 8783 developed
+  develop 38000/412586  71s elapsed, ~705s left, 8823 developed
+  develop 40000/412586  72s elapsed, ~672s left, 8823 developed
+  develop 42000/412586  73s elapsed, ~643s left, 8823 developed
+[15:12:28] alphabet sizes (valence<=5): cx{4,6,8} 32,067 | cx{4..12} 123,794 | cx{4,6,8,10,12,16,24} 360,735 entries. Main palette hyp-cx-free = the last. SOLVE k<=2 starting.
+[15:12:31] build (MAXNUM=2 PALETTE=hyp-cx-free)
+  develop 44000/412586  81s elapsed, ~679s left, 10204 developed
+  develop 46000/412586  82s elapsed, ~653s left, 10302 developed
+  develop 48000/412586  87s elapsed, ~664s left, 11211 developed
+  develop 50000/412586  96s elapsed, ~696s left, 12643 developed
+  develop 52000/412586  99s elapsed, ~688s left, 13324 developed
+  develop 54000/412586  100s elapsed, ~662s left, 13333 developed
+  develop 56000/412586  103s elapsed, ~657s left, 14173 developed
+  develop 58000/412586  111s elapsed, ~678s left, 15642 developed
+  develop 60000/412586  113s elapsed, ~667s left, 16368 developed
+  develop 62000/412586  120s elapsed, ~680s left, 17790 developed
+  develop 64000/412586  129s elapsed, ~701s left, 19180 developed
+  develop 66000/412586  131s elapsed, ~689s left, 19937 developed
+  develop 68000/412586  132s elapsed, ~667s left, 19938 developed
+  develop 70000/412586  132s elapsed, ~646s left, 19938 developed
+  develop 72000/412586  134s elapsed, ~634s left, 20215 developed
+  develop 74000/412586  134s elapsed, ~613s left, 20215 developed
+  develop 76000/412586  138s elapsed, ~612s left, 21040 developed
+  develop 78000/412586  139s elapsed, ~594s left, 21047 developed
+  develop 80000/412586  139s elapsed, ~579s left, 21047 developed
+  develop 82000/412586  144s elapsed, ~580s left, 21692 developed
+  develop 84000/412586  145s elapsed, ~566s left, 21998 developed
+  develop 86000/412586  148s elapsed, ~563s left, 22828 developed
+  develop 88000/412586  155s elapsed, ~571s left, 23930 developed
+  develop 90000/412586  155s elapsed, ~556s left, 24178 developed
+  develop 92000/412586  156s elapsed, ~543s left, 24191 developed
+  develop 94000/412586  156s elapsed, ~530s left, 24194 developed
+  develop 96000/412586  157s elapsed, ~517s left, 24197 developed
+  develop 98000/412586  158s elapsed, ~508s left, 24328 developed
+  develop 100000/412586  161s elapsed, ~503s left, 24548 developed
+  develop 102000/412586  166s elapsed, ~507s left, 24694 developed
+  develop 104000/412586  169s elapsed, ~501s left, 24827 developed
+  develop 106000/412586  170s elapsed, ~491s left, 24827 developed
+  develop 108000/412586  171s elapsed, ~482s left, 24827 developed
+  develop 110000/412586  171s elapsed, ~472s left, 24829 developed
+  develop 112000/412586  172s elapsed, ~462s left, 24830 developed
+  develop 114000/412586  173s elapsed, ~452s left, 24830 developed
+  develop 116000/412586  173s elapsed, ~443s left, 24830 developed
+  develop 118000/412586  174s elapsed, ~434s left, 24830 developed
+  develop 120000/412586  175s elapsed, ~426s left, 24830 developed
+  develop 122000/412586  176s elapsed, ~419s left, 24830 developed
+  develop 124000/412586  177s elapsed, ~413s left, 24830 developed
+  develop 126000/412586  179s elapsed, ~406s left, 24830 developed
+  develop 128000/412586  180s elapsed, ~400s left, 24872 developed
+  develop 130000/412586  182s elapsed, ~395s left, 24872 developed
+  develop 132000/412586  183s elapsed, ~390s left, 24906 developed
+  develop 134000/412586  186s elapsed, ~386s left, 24939 developed
+  develop 136000/412586  187s elapsed, ~380s left, 24939 developed
+  develop 138000/412586  188s elapsed, ~374s left, 24959 developed
+  develop 140000/412586  189s elapsed, ~367s left, 24959 developed
+  develop 142000/412586  190s elapsed, ~362s left, 24973 developed
+  develop 144000/412586  191s elapsed, ~356s left, 25085 developed
+  develop 146000/412586  192s elapsed, ~351s left, 25159 developed
+  develop 148000/412586  193s elapsed, ~345s left, 25183 developed
+  develop 150000/412586  194s elapsed, ~340s left, 25220 developed
+  develop 152000/412586  195s elapsed, ~335s left, 25275 developed
+  develop 154000/412586  196s elapsed, ~329s left, 25329 developed
+  develop 156000/412586  197s elapsed, ~324s left, 25353 developed
+  develop 158000/412586  199s elapsed, ~320s left, 25704 developed
+  develop 160000/412586  205s elapsed, ~324s left, 27568 developed
+  develop 162000/412586  212s elapsed, ~329s left, 29316 developed
+  develop 164000/412586  218s elapsed, ~331s left, 30846 developed
+  develop 166000/412586  224s elapsed, ~333s left, 32551 developed
+  develop 168000/412586  229s elapsed, ~334s left, 34105 developed
+  develop 170000/412586  234s elapsed, ~334s left, 35464 developed
+  develop 172000/412586  237s elapsed, ~331s left, 35592 developed
+  develop 174000/412586  237s elapsed, ~325s left, 35602 developed
+  develop 176000/412586  237s elapsed, ~319s left, 35613 developed
+  develop 178000/412586  238s elapsed, ~313s left, 35613 developed
+  develop 180000/412586  239s elapsed, ~308s left, 35613 developed
+  develop 182000/412586  239s elapsed, ~303s left, 35742 developed
+  develop 184000/412586  240s elapsed, ~298s left, 35801 developed
+  develop 186000/412586  241s elapsed, ~293s left, 35988 developed
+  develop 188000/412586  241s elapsed, ~288s left, 36109 developed
+  develop 190000/412586  242s elapsed, ~284s left, 36301 developed
+  develop 192000/412586  244s elapsed, ~280s left, 37371 developed
+  develop 194000/412586  250s elapsed, ~282s left, 39043 developed
+  develop 196000/412586  256s elapsed, ~283s left, 40669 developed
+  develop 198000/412586  260s elapsed, ~282s left, 41980 developed
+  develop 200000/412586  265s elapsed, ~281s left, 43536 developed
+  develop 202000/412586  272s elapsed, ~283s left, 45070 developed
+  develop 204000/412586  280s elapsed, ~286s left, 46370 developed
+  develop 206000/412586  280s elapsed, ~281s left, 46495 developed
+  develop 208000/412586  281s elapsed, ~276s left, 46844 developed
+  develop 210000/412586  281s elapsed, ~271s left, 46844 developed
+  develop 212000/412586  282s elapsed, ~267s left, 46858 developed
+  develop 214000/412586  282s elapsed, ~262s left, 46864 developed
+  develop 216000/412586  283s elapsed, ~258s left, 46873 developed
+  develop 218000/412586  284s elapsed, ~253s left, 46873 developed
+  develop 220000/412586  285s elapsed, ~249s left, 46873 developed
+  develop 222000/412586  285s elapsed, ~245s left, 46969 developed
+  develop 224000/412586  286s elapsed, ~241s left, 47166 developed
+  develop 226000/412586  287s elapsed, ~237s left, 47254 developed
+  develop 228000/412586  287s elapsed, ~233s left, 47380 developed
+  develop 230000/412586  288s elapsed, ~229s left, 47695 developed
+  develop 232000/412586  289s elapsed, ~225s left, 47737 developed
+  develop 234000/412586  290s elapsed, ~221s left, 47923 developed
+  develop 236000/412586  290s elapsed, ~217s left, 48065 developed
+  develop 238000/412586  291s elapsed, ~214s left, 48302 developed
+  develop 240000/412586  294s elapsed, ~212s left, 49862 developed
+  develop 242000/412586  302s elapsed, ~213s left, 51656 developed
+  develop 244000/412586  307s elapsed, ~212s left, 53092 developed
+  develop 246000/412586  314s elapsed, ~213s left, 54753 developed
+  develop 248000/412586  319s elapsed, ~212s left, 56167 developed
+  develop 250000/412586  322s elapsed, ~210s left, 57748 developed
+  develop 252000/412586  331s elapsed, ~211s left, 59487 developed
+  develop 254000/412586  340s elapsed, ~212s left, 61019 developed
+  develop 256000/412586  342s elapsed, ~209s left, 61875 developed
+  develop 258000/412586  342s elapsed, ~205s left, 61913 developed
+  develop 260000/412586  342s elapsed, ~201s left, 62261 developed
+  develop 262000/412586  343s elapsed, ~197s left, 63042 developed
+  develop 264000/412586  346s elapsed, ~195s left, 64783 developed
+  develop 266000/412586  356s elapsed, ~196s left, 66427 developed
+  develop 268000/412586  361s elapsed, ~195s left, 67991 developed
+  develop 270000/412586  364s elapsed, ~192s left, 69282 developed
+  develop 272000/412586  369s elapsed, ~191s left, 70965 developed
+  develop 274000/412586  377s elapsed, ~191s left, 72708 developed
+  develop 276000/412586  380s elapsed, ~188s left, 73563 developed
+  develop 278000/412586  380s elapsed, ~184s left, 73568 developed
+  develop 280000/412586  381s elapsed, ~180s left, 73568 developed
+  develop 282000/412586  388s elapsed, ~179s left, 74687 developed
+  develop 284000/412586  389s elapsed, ~176s left, 74785 developed
+  develop 286000/412586  401s elapsed, ~178s left, 75832 developed
+  develop 288000/412586  408s elapsed, ~176s left, 77238 developed
+  develop 290000/412586  408s elapsed, ~172s left, 77386 developed
+  develop 292000/412586  410s elapsed, ~169s left, 77471 developed
+  develop 294000/412586  415s elapsed, ~167s left, 78930 developed
+  develop 296000/412586  422s elapsed, ~166s left, 79995 developed
+  develop 298000/412586  429s elapsed, ~165s left, 81067 developed
+  develop 300000/412586  434s elapsed, ~163s left, 82493 developed
+  develop 302000/412586  438s elapsed, ~160s left, 83300 developed
+  develop 304000/412586  440s elapsed, ~157s left, 83522 developed
+  develop 306000/412586  442s elapsed, ~154s left, 83866 developed
+  develop 308000/412586  442s elapsed, ~150s left, 83866 developed
+  develop 310000/412586  443s elapsed, ~146s left, 83880 developed
+  develop 312000/412586  443s elapsed, ~143s left, 83888 developed
+  develop 314000/412586  444s elapsed, ~139s left, 83889 developed
+  develop 316000/412586  444s elapsed, ~136s left, 83889 developed
+  develop 318000/412586  446s elapsed, ~133s left, 83985 developed
+  develop 320000/412586  446s elapsed, ~129s left, 84018 developed
+  develop 322000/412586  447s elapsed, ~126s left, 84136 developed
+  develop 324000/412586  448s elapsed, ~123s left, 84295 developed
+  develop 326000/412586  451s elapsed, ~120s left, 84367 developed
+  develop 328000/412586  453s elapsed, ~117s left, 84598 developed
+  develop 330000/412586  455s elapsed, ~114s left, 84789 developed
+  develop 332000/412586  456s elapsed, ~111s left, 85000 developed
+  develop 334000/412586  460s elapsed, ~108s left, 86832 developed
+  develop 336000/412586  465s elapsed, ~106s left, 88517 developed
+  develop 338000/412586  477s elapsed, ~105s left, 90451 developed
+  develop 340000/412586  494s elapsed, ~105s left, 91765 developed
+  develop 342000/412586  500s elapsed, ~103s left, 93327 developed
+  develop 344000/412586  513s elapsed, ~102s left, 95114 developed
+  develop 346000/412586  534s elapsed, ~103s left, 96790 developed
+  develop 348000/412586  548s elapsed, ~102s left, 98090 developed
+  develop 350000/412586  548s elapsed, ~98s left, 98176 developed
+  develop 352000/412586  550s elapsed, ~95s left, 98193 developed
+[15:20:33] PHASE 1  solve (C++ DFS, all k<=2)
+  develop 354000/412586  566s elapsed, ~94s left, 98745 developed
+  develop 356000/412586  570s elapsed, ~91s left, 99799 developed
+  develop 358000/412586  574s elapsed, ~88s left, 101533 developed
+  develop 360000/412586  581s elapsed, ~85s left, 103130 developed
+  develop 362000/412586  592s elapsed, ~83s left, 104842 developed
+  develop 364000/412586  600s elapsed, ~80s left, 106133 developed
+  develop 366000/412586  607s elapsed, ~77s left, 107747 developed
+  develop 368000/412586  619s elapsed, ~75s left, 109526 developed
+  develop 370000/412586  652s elapsed, ~75s left, 111178 developed
+  develop 372000/412586  652s elapsed, ~71s left, 111198 developed
+  develop 374000/412586  652s elapsed, ~67s left, 111230 developed
+  develop 376000/412586  655s elapsed, ~64s left, 111448 developed
+  develop 378000/412586  658s elapsed, ~60s left, 111955 developed
+  develop 380000/412586  663s elapsed, ~57s left, 112600 developed
+  develop 382000/412586  668s elapsed, ~54s left, 114024 developed
+  develop 384000/412586  672s elapsed, ~50s left, 115802 developed
+  develop 386000/412586  677s elapsed, ~47s left, 117393 developed
+  develop 388000/412586  687s elapsed, ~44s left, 119317 developed
+  develop 390000/412586  695s elapsed, ~40s left, 120810 developed
+  develop 392000/412586  704s elapsed, ~37s left, 122489 developed
+  develop 394000/412586  737s elapsed, ~35s left, 124340 developed
+  develop 396000/412586  747s elapsed, ~31s left, 126114 developed
+  develop 398000/412586  762s elapsed, ~28s left, 127830 developed
+  develop 400000/412586  764s elapsed, ~24s left, 128854 developed
+  develop 402000/412586  770s elapsed, ~20s left, 130810 developed
+  develop 404000/412586  775s elapsed, ~16s left, 132456 developed
+  develop 406000/412586  785s elapsed, ~13s left, 134387 developed
+  develop 408000/412586  792s elapsed, ~9s left, 135994 developed
+  develop 410000/412586  797s elapsed, ~5s left, 137762 developed
+  develop 412000/412586  804s elapsed, ~1s left, 139530 developed
+hyperbolic develop report (k=1..2, boundR=0.90)
+blocks in    : 412586
+developed    : 140019
+not developed: 272567
+   236812  no common edge length
+   35725  no realization with the star points free
+     30  patch not regular
+
+[15:27:59] develop size-a done
+[15:29:24] size-a develop: 140,019 / 412,586 developed (236,812 no common edge, 35,725 no free realization, 30 not regular). PREP (stream dedupe by D-symbol key):
+  120000 records, 55440 keys, 169s
+  140000 records, 61553 keys, 203s
+records 140019, distinct 61553: {'convex new': 49447, 'convex shipped': 1557, 'regular new': 8078, 'regular shipped': 2471}
+vertex figures: 347499 over 360735 types
+bucket key unique (BUCKET_OK): yes
+OKPAIR: 8819 admissible (tkey, Q(f)) pairs
+nodes: 2123631532  simplify_calls: 1498205  simplify_true: 1350243
+[15:35:57]   raw blocks: 1350243  (924s)
+[15:35:57] PHASE 2  prune (C++, fingerprint + bitset WL)
+  k=1 : 2389
+  k=2 : 1007193
+total kept: 1009582
+store: peak 0 MB total, 0 MB resident
+[15:36:37]   (40s)
+[15:36:37] PHASE 3  develop skipped: develop.py is regular-only until the D-parameterization lands (M4)
+[15:36:37] DONE  total 964s  ->  /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/aa195daa-2d12-46ba-b1d6-1e7124698d4e/scratchpad/root/tools/ctrnact-oracle/../cxf-k2/ctrnact-cells-k2.json
+[15:36:37] hyp-cx-free k<=2 solver+pruner done (exit 0)
+[15:37:03] size-a dedupe: 61,553 distinct (49,447 convex new, 1,557 convex = shipped star family, 8,078 regular new, 2,471 regular shipped); DOF sample of 3,051: 80% rigid one-type, 3% one-type families, 16% two-type DOF1, 1.5% DOF2. 4,842 rigid records solve to a=b (regular in disguise, to drop). MAIN hyp-cx-free: 1,350,243 raw -> k=1 2,389, k=2 1,007,193 pruned. DEVELOP k=1..2 (JSON Lines) starting
+  develop 2000/1009582  41s elapsed, ~20622s left, 2000 developed
+  develop 4000/1009582  46s elapsed, ~11562s left, 2540 developed
+  develop 6000/1009582  53s elapsed, ~8910s left, 3438 developed
+  develop 8000/1009582  53s elapsed, ~6672s left, 3536 developed
+  develop 10000/1009582  54s elapsed, ~5363s left, 3536 developed
+  develop 12000/1009582  54s elapsed, ~4508s left, 3536 developed
+  develop 14000/1009582  57s elapsed, ~4036s left, 4221 developed
+  develop 16000/1009582  57s elapsed, ~3557s left, 4362 developed
+  develop 18000/1009582  58s elapsed, ~3219s left, 4577 developed
+  develop 20000/1009582  66s elapsed, ~3269s left, 6048 developed
+  develop 22000/1009582  77s elapsed, ~3452s left, 7243 developed
+  develop 24000/1009582  77s elapsed, ~3158s left, 7269 developed
+  develop 26000/1009582  77s elapsed, ~2910s left, 7269 developed
+  develop 28000/1009582  77s elapsed, ~2710s left, 7269 developed
+  develop 30000/1009582  85s elapsed, ~2759s left, 8620 developed
+  develop 32000/1009582  96s elapsed, ~2918s left, 9983 developed
+  develop 34000/1009582  99s elapsed, ~2843s left, 10568 developed
+  develop 36000/1009582  102s elapsed, ~2758s left, 11087 developed
+  develop 38000/1009582  111s elapsed, ~2848s left, 12549 developed
+  develop 40000/1009582  121s elapsed, ~2921s left, 13773 developed
+  develop 42000/1009582  139s elapsed, ~3210s left, 15406 developed
+  develop 44000/1009582  151s elapsed, ~3314s left, 16931 developed
+  develop 46000/1009582  163s elapsed, ~3405s left, 18433 developed
+  develop 48000/1009582  169s elapsed, ~3380s left, 19642 developed
+  develop 50000/1009582  172s elapsed, ~3303s left, 20054 developed
+  develop 52000/1009582  177s elapsed, ~3251s left, 21133 developed
+  develop 54000/1009582  183s elapsed, ~3240s left, 22101 developed
+  develop 56000/1009582  187s elapsed, ~3187s left, 23091 developed
+  develop 58000/1009582  196s elapsed, ~3213s left, 24583 developed
+  develop 60000/1009582  210s elapsed, ~3325s left, 26281 developed
+  develop 62000/1009582  229s elapsed, ~3502s left, 27815 developed
+  develop 64000/1009582  236s elapsed, ~3485s left, 28886 developed
+  develop 66000/1009582  236s elapsed, ~3373s left, 28913 developed
+  develop 68000/1009582  236s elapsed, ~3271s left, 28913 developed
+  develop 70000/1009582  238s elapsed, ~3195s left, 28943 developed
+  develop 72000/1009582  247s elapsed, ~3218s left, 30561 developed
+  develop 74000/1009582  254s elapsed, ~3215s left, 32004 developed
+  develop 76000/1009582  261s elapsed, ~3201s left, 32836 developed
+  develop 78000/1009582  261s elapsed, ~3122s left, 32893 developed
+  develop 80000/1009582  269s elapsed, ~3123s left, 34357 developed
+  develop 82000/1009582  277s elapsed, ~3134s left, 35762 developed
+  develop 84000/1009582  286s elapsed, ~3150s left, 37233 developed
+  develop 86000/1009582  298s elapsed, ~3198s left, 38903 developed
+  develop 88000/1009582  310s elapsed, ~3243s left, 40485 developed
+  develop 90000/1009582  325s elapsed, ~3324s left, 42135 developed
+  develop 92000/1009582  335s elapsed, ~3344s left, 43609 developed
+  develop 94000/1009582  341s elapsed, ~3317s left, 44762 developed
+  develop 96000/1009582  341s elapsed, ~3241s left, 44816 developed
+  develop 98000/1009582  342s elapsed, ~3177s left, 45008 developed
+  develop 100000/1009582  350s elapsed, ~3180s left, 46475 developed
+  develop 102000/1009582  360s elapsed, ~3207s left, 47931 developed
+  develop 104000/1009582  367s elapsed, ~3198s left, 49308 developed
+  develop 106000/1009582  382s elapsed, ~3259s left, 51021 developed
+  develop 108000/1009582  394s elapsed, ~3287s left, 52580 developed
+  develop 110000/1009582  413s elapsed, ~3376s left, 54228 developed
+  develop 112000/1009582  422s elapsed, ~3384s left, 55576 developed
+  develop 114000/1009582  429s elapsed, ~3368s left, 56328 developed
+  develop 116000/1009582  436s elapsed, ~3360s left, 57768 developed
+  develop 118000/1009582  448s elapsed, ~3385s left, 59377 developed
+  develop 120000/1009582  463s elapsed, ~3430s left, 61056 developed
+  develop 122000/1009582  475s elapsed, ~3454s left, 62569 developed
+  develop 124000/1009582  485s elapsed, ~3463s left, 64085 developed
+  develop 126000/1009582  495s elapsed, ~3470s left, 65488 developed
+  develop 128000/1009582  500s elapsed, ~3446s left, 66672 developed
+  develop 130000/1009582  512s elapsed, ~3461s left, 68473 developed
+  develop 132000/1009582  524s elapsed, ~3482s left, 70214 developed
+  develop 134000/1009582  533s elapsed, ~3484s left, 72059 developed
+  develop 136000/1009582  546s elapsed, ~3507s left, 73786 developed
+  develop 138000/1009582  559s elapsed, ~3531s left, 75449 developed
+  develop 140000/1009582  568s elapsed, ~3527s left, 76948 developed
+  develop 142000/1009582  570s elapsed, ~3480s left, 77254 developed
+  develop 144000/1009582  570s elapsed, ~3424s left, 77254 developed
+  develop 146000/1009582  570s elapsed, ~3373s left, 77254 developed
+  develop 148000/1009582  574s elapsed, ~3340s left, 77831 developed
+  develop 150000/1009582  574s elapsed, ~3289s left, 77831 developed
+  develop 152000/1009582  584s elapsed, ~3294s left, 78895 developed
+  develop 154000/1009582  594s elapsed, ~3301s left, 79906 developed
+  develop 156000/1009582  596s elapsed, ~3261s left, 79960 developed
+  develop 158000/1009582  596s elapsed, ~3212s left, 79960 developed
+  develop 160000/1009582  598s elapsed, ~3177s left, 80398 developed
+  develop 162000/1009582  609s elapsed, ~3185s left, 81674 developed
+  develop 164000/1009582  616s elapsed, ~3176s left, 82475 developed
+  develop 166000/1009582  616s elapsed, ~3131s left, 82607 developed
+  develop 168000/1009582  625s elapsed, ~3132s left, 83906 developed
+  develop 170000/1009582  632s elapsed, ~3119s left, 85009 developed
+  develop 172000/1009582  645s elapsed, ~3142s left, 86672 developed
+  develop 174000/1009582  658s elapsed, ~3160s left, 88201 developed
+  develop 176000/1009582  669s elapsed, ~3170s left, 89634 developed
+  develop 178000/1009582  678s elapsed, ~3166s left, 90776 developed
+  develop 180000/1009582  678s elapsed, ~3124s left, 91025 developed
+  develop 182000/1009582  678s elapsed, ~3084s left, 91037 developed
+  develop 184000/1009582  679s elapsed, ~3045s left, 91041 developed
+  develop 186000/1009582  679s elapsed, ~3008s left, 91041 developed
+  develop 188000/1009582  680s elapsed, ~2971s left, 91165 developed
+  develop 190000/1009582  681s elapsed, ~2936s left, 91377 developed
+  develop 192000/1009582  681s elapsed, ~2901s left, 91536 developed
+  develop 194000/1009582  682s elapsed, ~2866s left, 91674 developed
+  develop 196000/1009582  682s elapsed, ~2832s left, 91674 developed
+  develop 198000/1009582  683s elapsed, ~2799s left, 91674 developed
+  develop 200000/1009582  683s elapsed, ~2766s left, 91676 developed
+  develop 202000/1009582  684s elapsed, ~2734s left, 91677 developed
+  develop 204000/1009582  684s elapsed, ~2702s left, 91677 developed
+  develop 206000/1009582  685s elapsed, ~2671s left, 91677 developed
+  develop 208000/1009582  685s elapsed, ~2641s left, 91677 developed
+  develop 210000/1009582  686s elapsed, ~2611s left, 91677 developed
+  develop 212000/1009582  686s elapsed, ~2582s left, 91677 developed
+  develop 214000/1009582  687s elapsed, ~2554s left, 91677 developed
+  develop 216000/1009582  688s elapsed, ~2526s left, 91677 developed
+  develop 218000/1009582  688s elapsed, ~2498s left, 91719 developed
+  develop 220000/1009582  689s elapsed, ~2471s left, 91719 developed
+  develop 222000/1009582  689s elapsed, ~2445s left, 91753 developed
+  develop 224000/1009582  690s elapsed, ~2418s left, 91786 developed
+  develop 226000/1009582  690s elapsed, ~2393s left, 91786 developed
+  develop 228000/1009582  691s elapsed, ~2368s left, 91806 developed
+  develop 230000/1009582  691s elapsed, ~2343s left, 91806 developed
+  develop 232000/1009582  692s elapsed, ~2319s left, 91820 developed
+  develop 234000/1009582  692s elapsed, ~2295s left, 91932 developed
+  develop 236000/1009582  693s elapsed, ~2271s left, 92003 developed
+  develop 238000/1009582  693s elapsed, ~2248s left, 92030 developed
+  develop 240000/1009582  694s elapsed, ~2225s left, 92067 developed
+  develop 242000/1009582  695s elapsed, ~2203s left, 92122 developed
+  develop 244000/1009582  695s elapsed, ~2181s left, 92176 developed
+  develop 246000/1009582  696s elapsed, ~2160s left, 92200 developed
+  develop 248000/1009582  697s elapsed, ~2141s left, 92475 developed
+  develop 250000/1009582  701s elapsed, ~2129s left, 94345 developed
+  develop 252000/1009582  706s elapsed, ~2122s left, 96125 developed
+  develop 254000/1009582  711s elapsed, ~2116s left, 97686 developed
+  develop 256000/1009582  716s elapsed, ~2108s left, 99301 developed
+  develop 258000/1009582  723s elapsed, ~2105s left, 100850 developed
+  develop 260000/1009582  728s elapsed, ~2099s left, 102380 developed
+  develop 262000/1009582  735s elapsed, ~2098s left, 103968 developed
+  develop 264000/1009582  739s elapsed, ~2086s left, 105593 developed
+  develop 266000/1009582  748s elapsed, ~2092s left, 107415 developed
+  develop 268000/1009582  756s elapsed, ~2093s left, 108990 developed
+  develop 270000/1009582  761s elapsed, ~2084s left, 110373 developed
+  develop 272000/1009582  769s elapsed, ~2085s left, 111861 developed
+  develop 274000/1009582  776s elapsed, ~2082s left, 113446 developed
+  develop 276000/1009582  782s elapsed, ~2080s left, 114785 developed
+  develop 278000/1009582  788s elapsed, ~2073s left, 116034 developed
+  develop 280000/1009582  795s elapsed, ~2072s left, 117389 developed
+  develop 282000/1009582  795s elapsed, ~2052s left, 117389 developed
+  develop 284000/1009582  795s elapsed, ~2032s left, 117399 developed
+  develop 286000/1009582  796s elapsed, ~2013s left, 117410 developed
+  develop 288000/1009582  796s elapsed, ~1995s left, 117410 developed
+  develop 290000/1009582  797s elapsed, ~1977s left, 117410 developed
+  develop 292000/1009582  797s elapsed, ~1960s left, 117539 developed
+  develop 294000/1009582  798s elapsed, ~1943s left, 117628 developed
+  develop 296000/1009582  799s elapsed, ~1926s left, 117821 developed
+  develop 298000/1009582  799s elapsed, ~1909s left, 117934 developed
+  develop 300000/1009582  800s elapsed, ~1892s left, 118125 developed
+  develop 302000/1009582  802s elapsed, ~1880s left, 119343 developed
+  develop 304000/1009582  812s elapsed, ~1885s left, 121067 developed
+  develop 306000/1009582  816s elapsed, ~1877s left, 122615 developed
+  develop 308000/1009582  823s elapsed, ~1874s left, 124114 developed
+  develop 310000/1009582  831s elapsed, ~1875s left, 125673 developed
+  develop 312000/1009582  836s elapsed, ~1870s left, 127068 developed
+  develop 314000/1009582  842s elapsed, ~1865s left, 128412 developed
+  develop 316000/1009582  849s elapsed, ~1864s left, 130086 developed
+  develop 318000/1009582  853s elapsed, ~1854s left, 131343 developed
+  develop 320000/1009582  858s elapsed, ~1850s left, 132536 developed
+  develop 322000/1009582  863s elapsed, ~1842s left, 134111 developed
+  develop 324000/1009582  872s elapsed, ~1845s left, 135879 developed
+  develop 326000/1009582  882s elapsed, ~1850s left, 137713 developed
+  develop 328000/1009582  891s elapsed, ~1852s left, 139206 developed
+  develop 330000/1009582  903s elapsed, ~1859s left, 141085 developed
+  develop 332000/1009582  911s elapsed, ~1859s left, 142541 developed
+  develop 334000/1009582  926s elapsed, ~1873s left, 144197 developed
+  develop 336000/1009582  938s elapsed, ~1880s left, 145705 developed
+  develop 338000/1009582  950s elapsed, ~1888s left, 147127 developed
+  develop 340000/1009582  960s elapsed, ~1890s left, 148583 developed
+  develop 342000/1009582  965s elapsed, ~1883s left, 149744 developed
+  develop 344000/1009582  971s elapsed, ~1878s left, 151034 developed
+  develop 346000/1009582  973s elapsed, ~1867s left, 151306 developed
+  develop 348000/1009582  973s elapsed, ~1851s left, 151680 developed
+  develop 350000/1009582  973s elapsed, ~1835s left, 151680 developed
+  develop 352000/1009582  974s elapsed, ~1819s left, 151694 developed
+  develop 354000/1009582  974s elapsed, ~1804s left, 151699 developed
+  develop 356000/1009582  975s elapsed, ~1790s left, 151709 developed
+  develop 358000/1009582  975s elapsed, ~1775s left, 151709 developed
+  develop 360000/1009582  976s elapsed, ~1761s left, 151709 developed
+  develop 362000/1009582  976s elapsed, ~1747s left, 151730 developed
+  develop 364000/1009582  977s elapsed, ~1733s left, 152002 developed
+  develop 366000/1009582  978s elapsed, ~1719s left, 152044 developed
+  develop 368000/1009582  978s elapsed, ~1705s left, 152184 developed
+  develop 370000/1009582  979s elapsed, ~1692s left, 152441 developed
+  develop 372000/1009582  979s elapsed, ~1678s left, 152555 developed
+  develop 374000/1009582  980s elapsed, ~1665s left, 152759 developed
+  develop 376000/1009582  980s elapsed, ~1652s left, 152900 developed
+  develop 378000/1009582  981s elapsed, ~1639s left, 153138 developed
+  develop 380000/1009582  985s elapsed, ~1632s left, 154506 developed
+  develop 382000/1009582  989s elapsed, ~1624s left, 156224 developed
+  develop 384000/1009582  998s elapsed, ~1626s left, 157986 developed
+  develop 386000/1009582  1002s elapsed, ~1619s left, 159494 developed
+  develop 388000/1009582  1012s elapsed, ~1622s left, 161212 developed
+  develop 390000/1009582  1016s elapsed, ~1615s left, 162669 developed
+  develop 392000/1009582  1026s elapsed, ~1617s left, 164399 developed
+  develop 394000/1009582  1030s elapsed, ~1609s left, 165747 developed
+  develop 396000/1009582  1040s elapsed, ~1611s left, 167518 developed
+  develop 398000/1009582  1044s elapsed, ~1603s left, 168864 developed
+  develop 400000/1009582  1051s elapsed, ~1602s left, 170428 developed
+  develop 402000/1009582  1056s elapsed, ~1595s left, 171727 developed
+  develop 404000/1009582  1060s elapsed, ~1589s left, 173260 developed
+  develop 406000/1009582  1065s elapsed, ~1583s left, 174646 developed
+  develop 408000/1009582  1069s elapsed, ~1577s left, 176197 developed
+  develop 410000/1009582  1078s elapsed, ~1576s left, 178026 developed
+  develop 412000/1009582  1087s elapsed, ~1577s left, 179896 developed
+  develop 414000/1009582  1098s elapsed, ~1579s left, 181731 developed
+  develop 416000/1009582  1105s elapsed, ~1576s left, 183320 developed
+  develop 418000/1009582  1115s elapsed, ~1578s left, 185246 developed
+  develop 420000/1009582  1125s elapsed, ~1579s left, 186880 developed
+  develop 422000/1009582  1133s elapsed, ~1577s left, 188522 developed
+  develop 424000/1009582  1145s elapsed, ~1581s left, 190259 developed
+  develop 426000/1009582  1153s elapsed, ~1580s left, 191885 developed
+  develop 428000/1009582  1162s elapsed, ~1579s left, 193518 developed
+  develop 430000/1009582  1171s elapsed, ~1578s left, 194967 developed
+  develop 432000/1009582  1177s elapsed, ~1573s left, 196467 developed
+  develop 434000/1009582  1180s elapsed, ~1565s left, 197664 developed
+  develop 436000/1009582  1188s elapsed, ~1563s left, 199020 developed
+  develop 438000/1009582  1188s elapsed, ~1551s left, 199056 developed
+  develop 440000/1009582  1188s elapsed, ~1538s left, 199341 developed
+  develop 442000/1009582  1189s elapsed, ~1526s left, 199957 developed
+  develop 444000/1009582  1190s elapsed, ~1516s left, 201570 developed
+  develop 446000/1009582  1199s elapsed, ~1515s left, 203369 developed
+  develop 448000/1009582  1208s elapsed, ~1514s left, 205246 developed
+  develop 450000/1009582  1219s elapsed, ~1515s left, 207059 developed
+  develop 452000/1009582  1223s elapsed, ~1509s left, 208506 developed
+  develop 454000/1009582  1234s elapsed, ~1510s left, 210340 developed
+  develop 456000/1009582  1246s elapsed, ~1513s left, 212198 developed
+  develop 458000/1009582  1249s elapsed, ~1505s left, 213525 developed
+  develop 460000/1009582  1257s elapsed, ~1502s left, 215166 developed
+  develop 462000/1009582  1269s elapsed, ~1504s left, 216890 developed
+  develop 464000/1009582  1274s elapsed, ~1498s left, 218358 developed
+  develop 466000/1009582  1282s elapsed, ~1496s left, 220204 developed
+  develop 468000/1009582  1286s elapsed, ~1488s left, 221458 developed
+  develop 470000/1009582  1292s elapsed, ~1483s left, 223033 developed
+  develop 472000/1009582  1299s elapsed, ~1479s left, 224470 developed
+  develop 474000/1009582  1301s elapsed, ~1470s left, 225828 developed
+  develop 476000/1009582  1304s elapsed, ~1461s left, 226974 developed
+  develop 478000/1009582  1311s elapsed, ~1458s left, 228522 developed
+  develop 480000/1009582  1317s elapsed, ~1453s left, 230477 developed
+  develop 482000/1009582  1326s elapsed, ~1451s left, 232440 developed
+  develop 484000/1009582  1332s elapsed, ~1446s left, 234408 developed
+  develop 486000/1009582  1338s elapsed, ~1441s left, 236383 developed
+  develop 488000/1009582  1345s elapsed, ~1438s left, 238299 developed
+  develop 490000/1009582  1353s elapsed, ~1434s left, 240222 developed
+  develop 492000/1009582  1359s elapsed, ~1429s left, 242054 developed
+  develop 494000/1009582  1366s elapsed, ~1425s left, 243941 developed
+  develop 496000/1009582  1373s elapsed, ~1421s left, 245931 developed
+  develop 498000/1009582  1381s elapsed, ~1419s left, 247864 developed
+  develop 500000/1009582  1389s elapsed, ~1415s left, 249750 developed
+  develop 502000/1009582  1398s elapsed, ~1414s left, 251538 developed
+  develop 504000/1009582  1407s elapsed, ~1411s left, 253441 developed
+  develop 506000/1009582  1417s elapsed, ~1410s left, 255359 developed
+  develop 508000/1009582  1425s elapsed, ~1407s left, 257235 developed
+  develop 510000/1009582  1432s elapsed, ~1403s left, 259125 developed
+  develop 512000/1009582  1439s elapsed, ~1399s left, 260799 developed
+  develop 514000/1009582  1447s elapsed, ~1395s left, 262570 developed
+  develop 516000/1009582  1454s elapsed, ~1391s left, 264243 developed
+  develop 518000/1009582  1460s elapsed, ~1386s left, 265877 developed
+  develop 520000/1009582  1462s elapsed, ~1376s left, 266376 developed
+  develop 522000/1009582  1462s elapsed, ~1366s left, 266376 developed
+  develop 524000/1009582  1463s elapsed, ~1356s left, 266376 developed
+  develop 526000/1009582  1474s elapsed, ~1355s left, 267895 developed
+  develop 528000/1009582  1484s elapsed, ~1353s left, 268982 developed
+  develop 530000/1009582  1487s elapsed, ~1345s left, 269227 developed
+  develop 532000/1009582  1491s elapsed, ~1338s left, 270064 developed
+  develop 534000/1009582  1508s elapsed, ~1343s left, 271390 developed
+  develop 536000/1009582  1516s elapsed, ~1340s left, 272728 developed
+  develop 538000/1009582  1532s elapsed, ~1343s left, 274349 developed
+  develop 540000/1009582  1548s elapsed, ~1346s left, 275890 developed
+  develop 542000/1009582  1563s elapsed, ~1349s left, 277295 developed
+  develop 544000/1009582  1572s elapsed, ~1346s left, 278456 developed
+  develop 546000/1009582  1578s elapsed, ~1340s left, 278954 developed
+  develop 548000/1009582  1578s elapsed, ~1329s left, 278965 developed
+  develop 550000/1009582  1586s elapsed, ~1325s left, 280289 developed
+  develop 552000/1009582  1597s elapsed, ~1324s left, 281651 developed
+  develop 554000/1009582  1605s elapsed, ~1320s left, 282978 developed
+  develop 556000/1009582  1619s elapsed, ~1321s left, 284640 developed
+  develop 558000/1009582  1634s elapsed, ~1322s left, 286273 developed
+  develop 560000/1009582  1648s elapsed, ~1323s left, 287703 developed
+  develop 562000/1009582  1659s elapsed, ~1322s left, 288934 developed
+  develop 564000/1009582  1662s elapsed, ~1313s left, 289651 developed
+  develop 566000/1009582  1675s elapsed, ~1313s left, 291435 developed
+  develop 568000/1009582  1691s elapsed, ~1315s left, 293169 developed
+  develop 570000/1009582  1704s elapsed, ~1314s left, 294611 developed
+  develop 572000/1009582  1712s elapsed, ~1310s left, 296004 developed
+  develop 574000/1009582  1722s elapsed, ~1307s left, 297381 developed
+  develop 576000/1009582  1734s elapsed, ~1305s left, 298731 developed
+  develop 578000/1009582  1744s elapsed, ~1302s left, 300540 developed
+  develop 580000/1009582  1753s elapsed, ~1298s left, 302266 developed
+  develop 582000/1009582  1762s elapsed, ~1295s left, 303915 developed
+  develop 584000/1009582  1772s elapsed, ~1291s left, 305481 developed
+  develop 586000/1009582  1778s elapsed, ~1285s left, 306530 developed
+  develop 588000/1009582  1779s elapsed, ~1276s left, 306666 developed
+  develop 590000/1009582  1782s elapsed, ~1267s left, 307107 developed
+  develop 592000/1009582  1782s elapsed, ~1257s left, 307107 developed
+  develop 594000/1009582  1782s elapsed, ~1247s left, 307114 developed
+  develop 596000/1009582  1783s elapsed, ~1237s left, 307129 developed
+  develop 598000/1009582  1783s elapsed, ~1227s left, 307130 developed
+  develop 600000/1009582  1783s elapsed, ~1217s left, 307130 developed
+  develop 602000/1009582  1785s elapsed, ~1209s left, 307141 developed
+  develop 604000/1009582  1786s elapsed, ~1199s left, 307259 developed
+  develop 606000/1009582  1787s elapsed, ~1190s left, 307367 developed
+  develop 608000/1009582  1788s elapsed, ~1181s left, 307496 developed
+  develop 610000/1009582  1789s elapsed, ~1172s left, 307608 developed
+  develop 612000/1009582  1790s elapsed, ~1163s left, 307822 developed
+  develop 614000/1009582  1792s elapsed, ~1155s left, 308009 developed
+  develop 616000/1009582  1794s elapsed, ~1146s left, 308143 developed
+  develop 618000/1009582  1800s elapsed, ~1141s left, 309709 developed
+  develop 620000/1009582  1806s elapsed, ~1135s left, 311534 developed
+  develop 622000/1009582  1813s elapsed, ~1129s left, 313284 developed
+  develop 624000/1009582  1825s elapsed, ~1128s left, 315086 developed
+  develop 626000/1009582  1834s elapsed, ~1124s left, 316560 developed
+  develop 628000/1009582  1846s elapsed, ~1121s left, 318181 developed
+  develop 630000/1009582  1854s elapsed, ~1117s left, 319685 developed
+  develop 632000/1009582  1862s elapsed, ~1113s left, 320966 developed
+  develop 634000/1009582  1873s elapsed, ~1109s left, 322632 developed
+  develop 636000/1009582  1879s elapsed, ~1104s left, 323737 developed
+  develop 638000/1009582  1887s elapsed, ~1099s left, 325266 developed
+  develop 640000/1009582  1894s elapsed, ~1094s left, 326585 developed
+  develop 642000/1009582  1900s elapsed, ~1088s left, 328065 developed
+  develop 644000/1009582  1907s elapsed, ~1083s left, 329903 developed
+  develop 646000/1009582  1917s elapsed, ~1079s left, 331749 developed
+  develop 648000/1009582  1925s elapsed, ~1074s left, 333338 developed
+  develop 650000/1009582  1939s elapsed, ~1072s left, 335252 developed
+  develop 652000/1009582  1955s elapsed, ~1072s left, 337043 developed
+  develop 654000/1009582  1963s elapsed, ~1067s left, 338411 developed
+  develop 656000/1009582  1978s elapsed, ~1066s left, 340144 developed
+  develop 658000/1009582  1989s elapsed, ~1063s left, 341584 developed
+  develop 660000/1009582  2003s elapsed, ~1061s left, 343145 developed
+  develop 662000/1009582  2017s elapsed, ~1059s left, 344392 developed
+  develop 664000/1009582  2038s elapsed, ~1061s left, 345802 developed
+  develop 666000/1009582  2500s elapsed, ~1290s left, 346899 developed
+  develop 668000/1009582  4473s elapsed, ~2287s left, 348275 developed
+  develop 670000/1009582  4473s elapsed, ~2267s left, 348314 developed
+  develop 672000/1009582  4473s elapsed, ~2247s left, 348364 developed
+  develop 674000/1009582  4477s elapsed, ~2229s left, 348904 developed
+  develop 676000/1009582  5055s elapsed, ~2495s left, 349984 developed
+  develop 678000/1009582  5060s elapsed, ~2475s left, 351717 developed
+  develop 680000/1009582  5222s elapsed, ~2531s left, 353582 developed
+  develop 682000/1009582  7241s elapsed, ~3478s left, 355421 developed
+  develop 684000/1009582  9150s elapsed, ~4355s left, 356999 developed
+  develop 686000/1009582  9726s elapsed, ~4588s left, 358845 developed
+  develop 688000/1009582  12935s elapsed, ~6046s left, 360775 developed
+  develop 690000/1009582  14911s elapsed, ~6906s left, 362153 developed
+  develop 692000/1009582  15836s elapsed, ~7268s left, 363613 developed
+  develop 694000/1009582  16609s elapsed, ~7553s left, 365384 developed
+  develop 696000/1009582  18638s elapsed, ~8397s left, 366794 developed
+  develop 698000/1009582  19323s elapsed, ~8626s left, 368543 developed
+  develop 700000/1009582  19336s elapsed, ~8552s left, 369907 developed
+  develop 702000/1009582  19344s elapsed, ~8476s left, 371281 developed
+  develop 704000/1009582  19361s elapsed, ~8404s left, 372850 developed
+  develop 706000/1009582  19370s elapsed, ~8329s left, 374009 developed
+  develop 708000/1009582  19377s elapsed, ~8254s left, 375154 developed
+  develop 710000/1009582  19389s elapsed, ~8181s left, 376465 developed
+  develop 712000/1009582  19398s elapsed, ~8107s left, 378122 developed
+  develop 714000/1009582  19406s elapsed, ~8034s left, 380122 developed
+  develop 716000/1009582  19412s elapsed, ~7960s left, 382039 developed
+  develop 718000/1009582  19423s elapsed, ~7888s left, 384039 developed
+  develop 720000/1009582  19433s elapsed, ~7816s left, 385998 developed
+  develop 722000/1009582  19441s elapsed, ~7743s left, 387906 developed
+  develop 724000/1009582  19449s elapsed, ~7672s left, 389785 developed
+  develop 726000/1009582  19457s elapsed, ~7600s left, 391592 developed
+  develop 728000/1009582  19475s elapsed, ~7533s left, 393558 developed
+  develop 730000/1009582  19492s elapsed, ~7465s left, 395544 developed
+  develop 732000/1009582  19505s elapsed, ~7396s left, 397487 developed
+  develop 734000/1009582  19518s elapsed, ~7328s left, 399387 developed
+  develop 736000/1009582  19528s elapsed, ~7259s left, 401044 developed
+  develop 738000/1009582  19554s elapsed, ~7196s left, 402941 developed
+  develop 740000/1009582  19570s elapsed, ~7129s left, 404853 developed
+[21:06:34] NOTE: blocks 660k-720k took ~4.8 h (2003s -> 19433s); all 8 workers busy (no hang), machine load 37-57 on 10 cores; rate back to ~170 blocks/s at 736k. The stretch is a run of expensive free solves in sort order.
+  develop 742000/1009582  19586s elapsed, ~7063s left, 406687 developed
+  develop 744000/1009582  19599s elapsed, ~6996s left, 408514 developed
+[21:07:01] CORRECTION to the note above: the gap was the machine ASLEEP (AL), not expensive blocks. Develop resumed on wake at ~170 blocks/s.
+  develop 746000/1009582  19614s elapsed, ~6930s left, 410345 developed
+  develop 748000/1009582  19627s elapsed, ~6864s left, 411871 developed
+  develop 750000/1009582  19644s elapsed, ~6799s left, 413722 developed
+  develop 752000/1009582  19651s elapsed, ~6731s left, 415066 developed
+  develop 754000/1009582  19665s elapsed, ~6666s left, 416661 developed
+  develop 756000/1009582  19666s elapsed, ~6596s left, 416681 developed
+  develop 758000/1009582  19666s elapsed, ~6527s left, 416713 developed
+  develop 760000/1009582  19670s elapsed, ~6460s left, 417061 developed
+  develop 762000/1009582  19675s elapsed, ~6393s left, 417529 developed
+  develop 764000/1009582  19683s elapsed, ~6327s left, 418163 developed
+  develop 766000/1009582  19693s elapsed, ~6262s left, 419633 developed
+  develop 768000/1009582  19703s elapsed, ~6198s left, 421437 developed
+  develop 770000/1009582  19715s elapsed, ~6134s left, 423364 developed
+  develop 772000/1009582  19751s elapsed, ~6078s left, 425234 developed
+  develop 774000/1009582  19764s elapsed, ~6016s left, 426878 developed
+  develop 776000/1009582  19776s elapsed, ~5953s left, 428698 developed
+  develop 778000/1009582  19795s elapsed, ~5892s left, 430616 developed
+  develop 780000/1009582  19814s elapsed, ~5832s left, 432558 developed
+  develop 782000/1009582  19828s elapsed, ~5771s left, 434035 developed
+  develop 784000/1009582  19844s elapsed, ~5710s left, 435759 developed
+  develop 786000/1009582  19874s elapsed, ~5653s left, 437594 developed
+  develop 788000/1009582  19897s elapsed, ~5595s left, 439388 developed
+  develop 790000/1009582  19905s elapsed, ~5533s left, 440682 developed
+  develop 792000/1009582  19930s elapsed, ~5475s left, 442554 developed
+  develop 794000/1009582  19942s elapsed, ~5415s left, 443944 developed
+  develop 796000/1009582  19950s elapsed, ~5353s left, 445337 developed
+  develop 798000/1009582  19973s elapsed, ~5296s left, 446984 developed
+  develop 800000/1009582  19983s elapsed, ~5235s left, 448118 developed
+  develop 802000/1009582  19992s elapsed, ~5174s left, 449490 developed
+  develop 804000/1009582  20000s elapsed, ~5114s left, 450361 developed
+  develop 806000/1009582  20014s elapsed, ~5055s left, 452014 developed
+  develop 808000/1009582  20022s elapsed, ~4995s left, 453747 developed
+  develop 810000/1009582  20034s elapsed, ~4936s left, 455747 developed
+  develop 812000/1009582  20046s elapsed, ~4878s left, 457686 developed
+  develop 814000/1009582  20055s elapsed, ~4819s left, 459686 developed
+  develop 816000/1009582  20065s elapsed, ~4760s left, 461633 developed
+  develop 818000/1009582  20074s elapsed, ~4702s left, 463533 developed
+  develop 820000/1009582  20084s elapsed, ~4643s left, 465473 developed
+  develop 822000/1009582  20095s elapsed, ~4586s left, 467353 developed
+  develop 824000/1009582  20107s elapsed, ~4528s left, 469138 developed
+  develop 826000/1009582  20126s elapsed, ~4473s left, 471138 developed
+  develop 828000/1009582  20174s elapsed, ~4424s left, 473112 developed
+  develop 830000/1009582  20194s elapsed, ~4369s left, 475049 developed
+  develop 832000/1009582  20207s elapsed, ~4313s left, 476935 developed
+  develop 834000/1009582  20218s elapsed, ~4256s left, 478701 developed
+  develop 836000/1009582  20232s elapsed, ~4201s left, 480637 developed
+  develop 838000/1009582  20250s elapsed, ~4146s left, 482526 developed
+  develop 840000/1009582  20270s elapsed, ~4092s left, 484409 developed
+  develop 842000/1009582  20284s elapsed, ~4037s left, 486112 developed
+  develop 844000/1009582  20302s elapsed, ~3983s left, 488021 developed
+  develop 846000/1009582  20315s elapsed, ~3928s left, 489790 developed
+  develop 848000/1009582  20328s elapsed, ~3873s left, 491255 developed
+  develop 850000/1009582  20340s elapsed, ~3819s left, 493068 developed
+  develop 852000/1009582  20348s elapsed, ~3763s left, 494586 developed
+  develop 854000/1009582  20356s elapsed, ~3708s left, 495990 developed
+  develop 856000/1009582  20360s elapsed, ~3653s left, 497062 developed
+  develop 858000/1009582  20363s elapsed, ~3598s left, 498908 developed
+  develop 860000/1009582  20370s elapsed, ~3543s left, 500908 developed
+  develop 862000/1009582  20378s elapsed, ~3489s left, 502843 developed
+  develop 864000/1009582  20384s elapsed, ~3435s left, 504840 developed
+  develop 866000/1009582  20391s elapsed, ~3381s left, 506815 developed
+  develop 868000/1009582  20397s elapsed, ~3327s left, 508815 developed
+  develop 870000/1009582  20403s elapsed, ~3273s left, 510733 developed
+  develop 872000/1009582  20409s elapsed, ~3220s left, 512646 developed
+  develop 874000/1009582  20415s elapsed, ~3167s left, 514506 developed
+  develop 876000/1009582  20421s elapsed, ~3114s left, 516203 developed
+  develop 878000/1009582  20433s elapsed, ~3062s left, 518151 developed
+  develop 880000/1009582  20445s elapsed, ~3011s left, 520129 developed
+  develop 882000/1009582  20458s elapsed, ~2959s left, 522065 developed
+  develop 884000/1009582  20470s elapsed, ~2908s left, 524057 developed
+  develop 886000/1009582  20480s elapsed, ~2857s left, 525946 developed
+  develop 888000/1009582  20489s elapsed, ~2805s left, 527556 developed
+  develop 890000/1009582  20499s elapsed, ~2754s left, 529515 developed
+  develop 892000/1009582  20512s elapsed, ~2704s left, 531429 developed
+  develop 894000/1009582  20523s elapsed, ~2653s left, 533392 developed
+  develop 896000/1009582  20534s elapsed, ~2603s left, 535244 developed
+  develop 898000/1009582  20544s elapsed, ~2553s left, 537075 developed
+  develop 900000/1009582  20554s elapsed, ~2503s left, 538898 developed
+  develop 902000/1009582  20565s elapsed, ~2453s left, 540846 developed
+  develop 904000/1009582  20577s elapsed, ~2403s left, 542542 developed
+  develop 906000/1009582  20584s elapsed, ~2353s left, 544285 developed
+  develop 908000/1009582  20595s elapsed, ~2304s left, 546080 developed
+  develop 910000/1009582  20603s elapsed, ~2255s left, 547830 developed
+  develop 912000/1009582  20609s elapsed, ~2205s left, 549254 developed
+  develop 914000/1009582  20614s elapsed, ~2156s left, 550579 developed
+  develop 916000/1009582  20624s elapsed, ~2107s left, 552371 developed
+  develop 918000/1009582  20629s elapsed, ~2058s left, 554185 developed
+  develop 920000/1009582  20637s elapsed, ~2009s left, 556059 developed
+  develop 922000/1009582  20644s elapsed, ~1961s left, 557926 developed
+  develop 924000/1009582  20652s elapsed, ~1913s left, 559795 developed
+  develop 926000/1009582  20658s elapsed, ~1865s left, 561668 developed
+  develop 928000/1009582  20665s elapsed, ~1817s left, 563538 developed
+  develop 930000/1009582  20671s elapsed, ~1769s left, 565415 developed
+  develop 932000/1009582  20675s elapsed, ~1721s left, 567233 developed
+  develop 934000/1009582  20684s elapsed, ~1674s left, 569108 developed
+  develop 936000/1009582  20690s elapsed, ~1627s left, 570970 developed
+  develop 938000/1009582  20698s elapsed, ~1580s left, 572859 developed
+  develop 940000/1009582  20703s elapsed, ~1532s left, 574732 developed
+  develop 942000/1009582  20709s elapsed, ~1486s left, 576597 developed
+  develop 944000/1009582  20716s elapsed, ~1439s left, 578465 developed
+  develop 946000/1009582  20722s elapsed, ~1393s left, 580339 developed
+  develop 948000/1009582  20727s elapsed, ~1346s left, 582135 developed
+  develop 950000/1009582  20732s elapsed, ~1300s left, 584029 developed
+  develop 952000/1009582  20738s elapsed, ~1254s left, 585907 developed
+  develop 954000/1009582  20741s elapsed, ~1208s left, 587663 developed
+  develop 956000/1009582  20747s elapsed, ~1163s left, 589550 developed
+  develop 958000/1009582  20763s elapsed, ~1118s left, 591333 developed
+  develop 960000/1009582  20780s elapsed, ~1073s left, 593201 developed
+  develop 962000/1009582  20792s elapsed, ~1028s left, 595071 developed
+  develop 964000/1009582  20809s elapsed, ~984s left, 596950 developed
+  develop 966000/1009582  20831s elapsed, ~940s left, 598822 developed
+  develop 968000/1009582  20852s elapsed, ~896s left, 600683 developed
+  develop 970000/1009582  20873s elapsed, ~852s left, 602543 developed
+  develop 972000/1009582  20890s elapsed, ~808s left, 604363 developed
+  develop 974000/1009582  20908s elapsed, ~764s left, 606245 developed
+  develop 976000/1009582  20925s elapsed, ~720s left, 608072 developed
+  develop 978000/1009582  20942s elapsed, ~676s left, 609918 developed
+  develop 980000/1009582  20963s elapsed, ~633s left, 611684 developed
+  develop 982000/1009582  20985s elapsed, ~589s left, 613564 developed
+  develop 984000/1009582  21004s elapsed, ~546s left, 615435 developed
+  develop 986000/1009582  21022s elapsed, ~503s left, 617231 developed
+  develop 988000/1009582  21040s elapsed, ~460s left, 619123 developed
+  develop 990000/1009582  21060s elapsed, ~417s left, 621004 developed
+  develop 992000/1009582  21079s elapsed, ~374s left, 622745 developed
+  develop 994000/1009582  21096s elapsed, ~331s left, 624646 developed
+  develop 996000/1009582  21113s elapsed, ~288s left, 626474 developed
+  develop 998000/1009582  21134s elapsed, ~245s left, 628367 developed
+  develop 1000000/1009582  21151s elapsed, ~203s left, 630172 developed
+  develop 1002000/1009582  21167s elapsed, ~160s left, 631852 developed
+  develop 1004000/1009582  21186s elapsed, ~118s left, 633684 developed
+  develop 1006000/1009582  21201s elapsed, ~75s left, 635592 developed
+  develop 1008000/1009582  21212s elapsed, ~33s left, 637203 developed
+hyperbolic develop report (k=1..2, boundR=0.90)
+blocks in    : 1009582
+developed    : 638702
+not developed: 370880
+   236812  no common edge length
+   133995  no realization with the star points free
+     73  patch not regular
+
+[21:34:06] DEVELOP hyp-cx-free done (exit 0)
+[21:34:13] develop hyp-cx-free: 638,702 / 1,009,582 developed (236,812 no common edge = the regular-only blocks, 133,995 no free realization). PREP dedupe starting
+  50000 records, 20450 keys, 68s
+  100000 records, 39387 keys, 140s
+  150000 records, 60278 keys, 211s
+  200000 records, 79038 keys, 280s
+  250000 records, 91583 keys, 331s
+  300000 records, 107160 keys, 399s
+  350000 records, 127649 keys, 486s
+  400000 records, 141749 keys, 553s
+  450000 records, 157326 keys, 627s
+  500000 records, 167821 keys, 690s
+  550000 records, 178660 keys, 746s
+  600000 records, 184096 keys, 818s
+records 638702, distinct 188772: isotoxal new 161680, isotoxal shipped 16543, regular new 8078, regular shipped 2471
+[21:50:01] PREP done (exit 0)
+[21:50:20] dedupe: 188,772 distinct (161,680 isotoxal new, 16,543 isotoxal = shipped star tiling, 8,078 regular new, 2,471 regular shipped). EXPORT --refamily --max-side 99 --write into the WORKTREE public/ starting
+[14:44:48] EXPORT done (exit 0)
+    gate 29400/177402  3947s elapsed, ~19868s left, 29383 through
+    gate 29600/177402  3962s elapsed, ~19785s left, 29583 through
+    gate 29800/177402  3981s elapsed, ~19719s left, 29783 through
+    gate 30000/177402  4000s elapsed, ~19653s left, 29983 through
+    gate 30200/177402  4017s elapsed, ~19582s left, 30183 through
+    gate 30400/177402  4036s elapsed, ~19516s left, 30383 through
+    gate 30600/177402  4055s elapsed, ~19453s left, 30583 through
+    gate 30800/177402  4068s elapsed, ~19365s left, 30783 through
+    gate 31000/177402  4085s elapsed, ~19292s left, 30983 through
+    gate 31200/177402  4099s elapsed, ~19208s left, 31183 through
+    gate 31400/177402  4118s elapsed, ~19146s left, 31383 through
+    gate 31600/177402  4137s elapsed, ~19090s left, 31583 through
+    gate 31800/177402  4159s elapsed, ~19045s left, 31783 through
+    gate 32000/177402  4177s elapsed, ~18979s left, 31983 through
+    gate 32200/177402  4194s elapsed, ~18913s left, 32183 through
+    gate 32400/177402  4213s elapsed, ~18854s left, 32383 through
+    gate 32600/177402  4226s elapsed, ~18771s left, 32583 through
+    gate 32800/177402  4250s elapsed, ~18735s left, 32783 through
+    gate 33000/177402  4275s elapsed, ~18705s left, 32983 through
+    gate 33200/177402  4308s elapsed, ~18713s left, 33183 through
+    gate 33400/177402  4340s elapsed, ~18713s left, 33383 through
+    gate 33600/177402  4358s elapsed, ~18651s left, 33583 through
+    gate 33800/177402  4369s elapsed, ~18564s left, 33783 through
+    gate 34000/177402  4385s elapsed, ~18496s left, 33983 through
+    gate 34200/177402  4410s elapsed, ~18467s left, 34183 through
+    gate 34400/177402  4423s elapsed, ~18387s left, 34383 through
+    gate 34600/177402  4436s elapsed, ~18309s left, 34583 through
+    gate 34800/177402  4455s elapsed, ~18255s left, 34783 through
+    gate 35000/177402  4472s elapsed, ~18196s left, 34983 through
+    gate 35200/177402  4487s elapsed, ~18127s left, 35183 through
+    gate 35400/177402  4505s elapsed, ~18071s left, 35383 through
+    gate 35600/177402  4527s elapsed, ~18033s left, 35583 through
+    gate 35800/177402  4544s elapsed, ~17974s left, 35783 through
+    gate 36000/177402  4567s elapsed, ~17940s left, 35983 through
+    gate 36200/177402  4580s elapsed, ~17864s left, 36183 through
+    gate 36400/177402  4592s elapsed, ~17786s left, 36383 through
+    gate 36600/177402  4611s elapsed, ~17740s left, 36583 through
+    gate 36800/177402  4625s elapsed, ~17670s left, 36783 through
+    gate 37000/177402  4638s elapsed, ~17598s left, 36983 through
+    gate 37200/177402  4659s elapsed, ~17560s left, 37183 through
+[14:45:12] EXPORT run 1 STOPPED in its gate pass (AL: slider must cover the FULL range, not stop at the regular member). Fixes folded in: full range kept (regular member named in the note, default chosen in the first half), gate retries warmed in parallel, rigid a=b records filed as regular tilings instead of dropped. Worktree public/ restored to the release (preview k=1 moved to scratch). EXPORT run 2 starting.
+[22:32:20] EXPORT run 2 LOST: killed with the previous Claude session ~1h10 into the family solve (nothing written). Run 3: checkpointed (refamily.jsonl, families.jsonl in /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/aa195daa-2d12-46ba-b1d6-1e7124698d4e/scratchpad/ck, a rerun resumes), detached under nohup+caffeinate, reading/writing a pristine copy of the release's hyperbolic files in /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/aa195daa-2d12-46ba-b1d6-1e7124698d4e/scratchpad/pub (the worktree keeps the k=1 preview for :3002).
+[10-25 16:01:52] run 4 SOLVE+PRUNE hyp-cx-free k<=2 (after the 2026-10-25 reboot wiped /private/tmp)
+[16:01:52] build (MAXNUM=2 PALETTE=hyp-cx-free)
+[16:03:57] PHASE 1  solve (C++ DFS, all k<=2)
+vertex figures: 347499 over 360735 types
+bucket key unique (BUCKET_OK): yes
+OKPAIR: 8819 admissible (tkey, Q(f)) pairs
+nodes: 2123631532  simplify_calls: 1498205  simplify_true: 1350243
+[16:09:36]   raw blocks: 1350243  (339s)
+[16:09:36] PHASE 2  prune (C++, fingerprint + bitset WL)
+  k=1 : 2389
+  k=2 : 1007193
+total kept: 1009582
+store: peak 0 MB total, 0 MB resident
+[16:09:53]   (17s)
+[16:09:53] PHASE 3  develop skipped: develop.py is regular-only until the D-parameterization lands (M4)
+[16:09:53] DONE  total 356s  ->  /Users/alessandro/Desktop/Personal/TilingAtlas-cx/tools/ctrnact-oracle/run-hyp-cx-free-k2/solve/ctrnact-cells-k2.json
+[10-25 16:09:53] run 4 DEVELOP k=1..2 -> cells.jsonl
+  develop 2000/1009582  7s elapsed, ~3620s left, 2000 developed
+  develop 4000/1009582  9s elapsed, ~2360s left, 2540 developed
+  develop 6000/1009582  13s elapsed, ~2119s left, 3438 developed
+  develop 8000/1009582  13s elapsed, ~1587s left, 3536 developed
+  develop 10000/1009582  13s elapsed, ~1289s left, 3536 developed
+  develop 12000/1009582  13s elapsed, ~1092s left, 3536 developed
+  develop 14000/1009582  14s elapsed, ~1011s left, 4221 developed
+  develop 16000/1009582  14s elapsed, ~899s left, 4362 developed
+  develop 18000/1009582  15s elapsed, ~827s left, 4577 developed
+  develop 20000/1009582  18s elapsed, ~897s left, 6048 developed
+  develop 22000/1009582  21s elapsed, ~962s left, 7243 developed
+  develop 24000/1009582  21s elapsed, ~880s left, 7269 developed
+  develop 26000/1009582  21s elapsed, ~811s left, 7269 developed
+  develop 28000/1009582  22s elapsed, ~759s left, 7269 developed
+  develop 30000/1009582  25s elapsed, ~811s left, 8620 developed
+  develop 32000/1009582  29s elapsed, ~880s left, 9983 developed
+  develop 34000/1009582  30s elapsed, ~860s left, 10568 developed
+  develop 36000/1009582  31s elapsed, ~844s left, 11087 developed
+  develop 38000/1009582  35s elapsed, ~888s left, 12549 developed
+  develop 40000/1009582  37s elapsed, ~906s left, 13773 developed
+  develop 42000/1009582  43s elapsed, ~995s left, 15406 developed
+  develop 44000/1009582  48s elapsed, ~1043s left, 16931 developed
+  develop 46000/1009582  53s elapsed, ~1107s left, 18433 developed
+  develop 48000/1009582  56s elapsed, ~1114s left, 19642 developed
+  develop 50000/1009582  57s elapsed, ~1097s left, 20054 developed
+  develop 52000/1009582  59s elapsed, ~1091s left, 21133 developed
+  develop 54000/1009582  62s elapsed, ~1100s left, 22101 developed
+  develop 56000/1009582  64s elapsed, ~1090s left, 23091 developed
+  develop 58000/1009582  67s elapsed, ~1105s left, 24583 developed
+  develop 60000/1009582  72s elapsed, ~1146s left, 26281 developed
+  develop 62000/1009582  77s elapsed, ~1174s left, 27815 developed
+  develop 64000/1009582  80s elapsed, ~1181s left, 28886 developed
+  develop 66000/1009582  80s elapsed, ~1142s left, 28913 developed
+  develop 68000/1009582  80s elapsed, ~1109s left, 28913 developed
+  develop 70000/1009582  81s elapsed, ~1083s left, 28943 developed
+  develop 72000/1009582  84s elapsed, ~1094s left, 30561 developed
+  develop 74000/1009582  87s elapsed, ~1104s left, 32004 developed
+  develop 76000/1009582  90s elapsed, ~1104s left, 32836 developed
+  develop 78000/1009582  90s elapsed, ~1074s left, 32893 developed
+  develop 80000/1009582  93s elapsed, ~1080s left, 34357 developed
+  develop 82000/1009582  96s elapsed, ~1089s left, 35762 developed
+  develop 84000/1009582  100s elapsed, ~1106s left, 37233 developed
+  develop 86000/1009582  106s elapsed, ~1135s left, 38903 developed
+  develop 88000/1009582  111s elapsed, ~1166s left, 40485 developed
+  develop 90000/1009582  118s elapsed, ~1202s left, 42135 developed
+  develop 92000/1009582  123s elapsed, ~1223s left, 43609 developed
+  develop 94000/1009582  125s elapsed, ~1219s left, 44762 developed
+  develop 96000/1009582  125s elapsed, ~1191s left, 44816 developed
+  develop 98000/1009582  126s elapsed, ~1168s left, 45008 developed
+  develop 100000/1009582  129s elapsed, ~1176s left, 46475 developed
+  develop 102000/1009582  133s elapsed, ~1185s left, 47931 developed
+  develop 104000/1009582  136s elapsed, ~1182s left, 49308 developed
+  develop 106000/1009582  142s elapsed, ~1206s left, 51021 developed
+  develop 108000/1009582  147s elapsed, ~1230s left, 52580 developed
+  develop 110000/1009582  157s elapsed, ~1286s left, 54228 developed
+  develop 112000/1009582  161s elapsed, ~1293s left, 55576 developed
+  develop 114000/1009582  164s elapsed, ~1290s left, 56328 developed
+  develop 116000/1009582  167s elapsed, ~1286s left, 57768 developed
+  develop 118000/1009582  173s elapsed, ~1306s left, 59377 developed
+  develop 120000/1009582  179s elapsed, ~1326s left, 61056 developed
+  develop 122000/1009582  187s elapsed, ~1357s left, 62569 developed
+  develop 124000/1009582  193s elapsed, ~1381s left, 64085 developed
+  develop 126000/1009582  199s elapsed, ~1396s left, 65488 developed
+  develop 128000/1009582  203s elapsed, ~1398s left, 66672 developed
+  develop 130000/1009582  210s elapsed, ~1421s left, 68473 developed
+  develop 132000/1009582  218s elapsed, ~1446s left, 70214 developed
+  develop 134000/1009582  223s elapsed, ~1459s left, 72059 developed
+  develop 136000/1009582  231s elapsed, ~1485s left, 73786 developed
+  develop 138000/1009582  239s elapsed, ~1508s left, 75449 developed
+  develop 140000/1009582  244s elapsed, ~1518s left, 76948 developed
+  develop 142000/1009582  245s elapsed, ~1499s left, 77254 developed
+  develop 144000/1009582  246s elapsed, ~1476s left, 77254 developed
+  develop 146000/1009582  246s elapsed, ~1454s left, 77254 developed
+  develop 148000/1009582  248s elapsed, ~1443s left, 77831 developed
+  develop 150000/1009582  248s elapsed, ~1422s left, 77831 developed
+  develop 152000/1009582  252s elapsed, ~1424s left, 78895 developed
+  develop 154000/1009582  258s elapsed, ~1433s left, 79906 developed
+  develop 156000/1009582  259s elapsed, ~1416s left, 79960 developed
+  develop 158000/1009582  259s elapsed, ~1395s left, 79960 developed
+  develop 160000/1009582  260s elapsed, ~1383s left, 80398 developed
+  develop 162000/1009582  267s elapsed, ~1399s left, 81674 developed
+  develop 164000/1009582  272s elapsed, ~1404s left, 82475 developed
+  develop 166000/1009582  272s elapsed, ~1384s left, 82607 developed
+  develop 168000/1009582  278s elapsed, ~1394s left, 83906 developed
+  develop 170000/1009582  283s elapsed, ~1397s left, 85009 developed
+  develop 172000/1009582  290s elapsed, ~1414s left, 86672 developed
+  develop 174000/1009582  296s elapsed, ~1421s left, 88201 developed
+  develop 176000/1009582  300s elapsed, ~1423s left, 89634 developed
+  develop 178000/1009582  304s elapsed, ~1419s left, 90776 developed
+  develop 180000/1009582  304s elapsed, ~1400s left, 91025 developed
+  develop 182000/1009582  304s elapsed, ~1381s left, 91037 developed
+  develop 184000/1009582  304s elapsed, ~1364s left, 91041 developed
+  develop 186000/1009582  304s elapsed, ~1347s left, 91041 developed
+  develop 188000/1009582  305s elapsed, ~1331s left, 91165 developed
+  develop 190000/1009582  305s elapsed, ~1315s left, 91377 developed
+  develop 192000/1009582  305s elapsed, ~1299s left, 91536 developed
+  develop 194000/1009582  305s elapsed, ~1283s left, 91674 developed
+  develop 196000/1009582  305s elapsed, ~1268s left, 91674 developed
+  develop 198000/1009582  306s elapsed, ~1253s left, 91674 developed
+  develop 200000/1009582  306s elapsed, ~1238s left, 91676 developed
+  develop 202000/1009582  306s elapsed, ~1224s left, 91677 developed
+  develop 204000/1009582  306s elapsed, ~1210s left, 91677 developed
+  develop 206000/1009582  307s elapsed, ~1196s left, 91677 developed
+  develop 208000/1009582  307s elapsed, ~1182s left, 91677 developed
+  develop 210000/1009582  307s elapsed, ~1169s left, 91677 developed
+  develop 212000/1009582  307s elapsed, ~1156s left, 91677 developed
+  develop 214000/1009582  308s elapsed, ~1143s left, 91677 developed
+  develop 216000/1009582  308s elapsed, ~1131s left, 91677 developed
+  develop 218000/1009582  308s elapsed, ~1118s left, 91719 developed
+  develop 220000/1009582  308s elapsed, ~1106s left, 91719 developed
+  develop 222000/1009582  309s elapsed, ~1094s left, 91753 developed
+  develop 224000/1009582  309s elapsed, ~1083s left, 91786 developed
+  develop 226000/1009582  309s elapsed, ~1071s left, 91786 developed
+  develop 228000/1009582  309s elapsed, ~1060s left, 91806 developed
+  develop 230000/1009582  309s elapsed, ~1049s left, 91806 developed
+  develop 232000/1009582  310s elapsed, ~1038s left, 91820 developed
+  develop 234000/1009582  310s elapsed, ~1027s left, 91932 developed
+  develop 236000/1009582  310s elapsed, ~1017s left, 92003 developed
+  develop 238000/1009582  310s elapsed, ~1007s left, 92030 developed
+  develop 240000/1009582  311s elapsed, ~996s left, 92067 developed
+  develop 242000/1009582  311s elapsed, ~986s left, 92122 developed
+  develop 244000/1009582  311s elapsed, ~976s left, 92176 developed
+  develop 246000/1009582  311s elapsed, ~967s left, 92200 developed
+  develop 248000/1009582  312s elapsed, ~958s left, 92475 developed
+  develop 250000/1009582  314s elapsed, ~953s left, 94345 developed
+  develop 252000/1009582  316s elapsed, ~949s left, 96125 developed
+  develop 254000/1009582  318s elapsed, ~945s left, 97686 developed
+  develop 256000/1009582  320s elapsed, ~941s left, 99301 developed
+  develop 258000/1009582  322s elapsed, ~937s left, 100850 developed
+  develop 260000/1009582  324s elapsed, ~933s left, 102380 developed
+  develop 262000/1009582  326s elapsed, ~929s left, 103968 developed
+  develop 264000/1009582  327s elapsed, ~924s left, 105593 developed
+  develop 266000/1009582  331s elapsed, ~924s left, 107415 developed
+  develop 268000/1009582  334s elapsed, ~923s left, 108990 developed
+  develop 270000/1009582  336s elapsed, ~920s left, 110373 developed
+  develop 272000/1009582  339s elapsed, ~919s left, 111861 developed
+  develop 274000/1009582  341s elapsed, ~916s left, 113446 developed
+  develop 276000/1009582  344s elapsed, ~914s left, 114785 developed
+  develop 278000/1009582  346s elapsed, ~910s left, 116034 developed
+  develop 280000/1009582  348s elapsed, ~908s left, 117389 developed
+  develop 282000/1009582  348s elapsed, ~899s left, 117389 developed
+  develop 284000/1009582  348s elapsed, ~890s left, 117399 developed
+  develop 286000/1009582  348s elapsed, ~881s left, 117410 developed
+  develop 288000/1009582  349s elapsed, ~874s left, 117410 developed
+  develop 290000/1009582  349s elapsed, ~866s left, 117410 developed
+  develop 292000/1009582  349s elapsed, ~858s left, 117539 developed
+  develop 294000/1009582  349s elapsed, ~850s left, 117628 developed
+  develop 296000/1009582  350s elapsed, ~843s left, 117821 developed
+  develop 298000/1009582  350s elapsed, ~835s left, 117934 developed
+  develop 300000/1009582  350s elapsed, ~828s left, 118125 developed
+  develop 302000/1009582  351s elapsed, ~822s left, 119343 developed
+  develop 304000/1009582  355s elapsed, ~823s left, 121067 developed
+  develop 306000/1009582  356s elapsed, ~819s left, 122615 developed
+  develop 308000/1009582  359s elapsed, ~817s left, 124114 developed
+  develop 310000/1009582  361s elapsed, ~815s left, 125673 developed
+  develop 312000/1009582  364s elapsed, ~813s left, 127068 developed
+  develop 314000/1009582  366s elapsed, ~810s left, 128412 developed
+  develop 316000/1009582  369s elapsed, ~809s left, 130086 developed
+  develop 318000/1009582  370s elapsed, ~805s left, 131343 developed
+  develop 320000/1009582  372s elapsed, ~801s left, 132536 developed
+  develop 322000/1009582  374s elapsed, ~799s left, 134111 developed
+  develop 324000/1009582  378s elapsed, ~799s left, 135879 developed
+  develop 326000/1009582  382s elapsed, ~801s left, 137713 developed
+  develop 328000/1009582  386s elapsed, ~802s left, 139206 developed
+  develop 330000/1009582  391s elapsed, ~805s left, 141085 developed
+  develop 332000/1009582  394s elapsed, ~804s left, 142541 developed
+  develop 334000/1009582  399s elapsed, ~806s left, 144197 developed
+  develop 336000/1009582  403s elapsed, ~808s left, 145705 developed
+  develop 338000/1009582  406s elapsed, ~807s left, 147127 developed
+  develop 340000/1009582  410s elapsed, ~807s left, 148583 developed
+  develop 342000/1009582  412s elapsed, ~805s left, 149744 developed
+  develop 344000/1009582  415s elapsed, ~802s left, 151034 developed
+  develop 346000/1009582  416s elapsed, ~797s left, 151306 developed
+  develop 348000/1009582  416s elapsed, ~790s left, 151680 developed
+  develop 350000/1009582  416s elapsed, ~783s left, 151680 developed
+  develop 352000/1009582  416s elapsed, ~777s left, 151694 developed
+  develop 354000/1009582  416s elapsed, ~770s left, 151699 developed
+  develop 356000/1009582  416s elapsed, ~764s left, 151709 developed
+  develop 358000/1009582  416s elapsed, ~758s left, 151709 developed
+  develop 360000/1009582  417s elapsed, ~752s left, 151709 developed
+  develop 362000/1009582  417s elapsed, ~746s left, 151730 developed
+  develop 364000/1009582  417s elapsed, ~740s left, 152002 developed
+  develop 366000/1009582  417s elapsed, ~734s left, 152044 developed
+  develop 368000/1009582  418s elapsed, ~728s left, 152184 developed
+  develop 370000/1009582  418s elapsed, ~722s left, 152441 developed
+  develop 372000/1009582  418s elapsed, ~717s left, 152555 developed
+  develop 374000/1009582  418s elapsed, ~711s left, 152759 developed
+  develop 376000/1009582  419s elapsed, ~706s left, 152900 developed
+  develop 378000/1009582  419s elapsed, ~700s left, 153138 developed
+  develop 380000/1009582  420s elapsed, ~696s left, 154506 developed
+  develop 382000/1009582  422s elapsed, ~693s left, 156224 developed
+  develop 384000/1009582  425s elapsed, ~693s left, 157986 developed
+  develop 386000/1009582  427s elapsed, ~690s left, 159494 developed
+  develop 388000/1009582  431s elapsed, ~690s left, 161212 developed
+  develop 390000/1009582  432s elapsed, ~687s left, 162669 developed
+  develop 392000/1009582  436s elapsed, ~688s left, 164399 developed
+  develop 394000/1009582  438s elapsed, ~684s left, 165747 developed
+  develop 396000/1009582  441s elapsed, ~683s left, 167518 developed
+  develop 398000/1009582  442s elapsed, ~680s left, 168864 developed
+  develop 400000/1009582  445s elapsed, ~679s left, 170428 developed
+  develop 402000/1009582  447s elapsed, ~675s left, 171727 developed
+  develop 404000/1009582  449s elapsed, ~672s left, 173260 developed
+  develop 406000/1009582  450s elapsed, ~669s left, 174646 developed
+  develop 408000/1009582  452s elapsed, ~666s left, 176197 developed
+  develop 410000/1009582  455s elapsed, ~666s left, 178026 developed
+  develop 412000/1009582  459s elapsed, ~666s left, 179896 developed
+  develop 414000/1009582  464s elapsed, ~667s left, 181731 developed
+  develop 416000/1009582  466s elapsed, ~665s left, 183320 developed
+  develop 418000/1009582  470s elapsed, ~665s left, 185246 developed
+  develop 420000/1009582  474s elapsed, ~665s left, 186880 developed
+  develop 422000/1009582  477s elapsed, ~663s left, 188522 developed
+  develop 424000/1009582  481s elapsed, ~664s left, 190259 developed
+  develop 426000/1009582  484s elapsed, ~663s left, 191885 developed
+  develop 428000/1009582  487s elapsed, ~662s left, 193518 developed
+  develop 430000/1009582  490s elapsed, ~661s left, 194967 developed
+  develop 432000/1009582  493s elapsed, ~659s left, 196467 developed
+  develop 434000/1009582  495s elapsed, ~656s left, 197664 developed
+  develop 436000/1009582  497s elapsed, ~654s left, 199020 developed
+  develop 438000/1009582  497s elapsed, ~649s left, 199056 developed
+  develop 440000/1009582  497s elapsed, ~644s left, 199341 developed
+  develop 442000/1009582  497s elapsed, ~639s left, 199957 developed
+  develop 444000/1009582  498s elapsed, ~635s left, 201570 developed
+  develop 446000/1009582  502s elapsed, ~634s left, 203369 developed
+  develop 448000/1009582  506s elapsed, ~634s left, 205246 developed
+  develop 450000/1009582  510s elapsed, ~634s left, 207059 developed
+  develop 452000/1009582  511s elapsed, ~631s left, 208506 developed
+  develop 454000/1009582  515s elapsed, ~630s left, 210340 developed
+  develop 456000/1009582  521s elapsed, ~632s left, 212198 developed
+  develop 458000/1009582  522s elapsed, ~629s left, 213525 developed
+  develop 460000/1009582  525s elapsed, ~627s left, 215166 developed
+  develop 462000/1009582  530s elapsed, ~628s left, 216890 developed
+  develop 464000/1009582  532s elapsed, ~625s left, 218358 developed
+  develop 466000/1009582  535s elapsed, ~625s left, 220204 developed
+  develop 468000/1009582  537s elapsed, ~622s left, 221458 developed
+  develop 470000/1009582  540s elapsed, ~620s left, 223033 developed
+  develop 472000/1009582  543s elapsed, ~618s left, 224470 developed
+  develop 474000/1009582  544s elapsed, ~615s left, 225828 developed
+  develop 476000/1009582  545s elapsed, ~611s left, 226974 developed
+  develop 478000/1009582  548s elapsed, ~610s left, 228522 developed
+  develop 480000/1009582  551s elapsed, ~608s left, 230477 developed
+  develop 482000/1009582  555s elapsed, ~607s left, 232440 developed
+  develop 484000/1009582  558s elapsed, ~605s left, 234408 developed
+  develop 486000/1009582  560s elapsed, ~603s left, 236383 developed
+  develop 488000/1009582  563s elapsed, ~602s left, 238299 developed
+  develop 490000/1009582  566s elapsed, ~601s left, 240222 developed
+  develop 492000/1009582  569s elapsed, ~599s left, 242054 developed
+  develop 494000/1009582  572s elapsed, ~597s left, 243941 developed
+  develop 496000/1009582  575s elapsed, ~596s left, 245931 developed
+  develop 498000/1009582  579s elapsed, ~594s left, 247864 developed
+  develop 500000/1009582  582s elapsed, ~593s left, 249750 developed
+  develop 502000/1009582  585s elapsed, ~592s left, 251538 developed
+  develop 504000/1009582  588s elapsed, ~590s left, 253441 developed
+  develop 506000/1009582  591s elapsed, ~589s left, 255359 developed
+  develop 508000/1009582  595s elapsed, ~587s left, 257235 developed
+  develop 510000/1009582  598s elapsed, ~586s left, 259125 developed
+  develop 512000/1009582  601s elapsed, ~584s left, 260799 developed
+  develop 514000/1009582  604s elapsed, ~583s left, 262570 developed
+  develop 516000/1009582  607s elapsed, ~580s left, 264243 developed
+  develop 518000/1009582  609s elapsed, ~578s left, 265877 developed
+  develop 520000/1009582  609s elapsed, ~574s left, 266376 developed
+  develop 522000/1009582  609s elapsed, ~569s left, 266376 developed
+  develop 524000/1009582  610s elapsed, ~565s left, 266376 developed
+  develop 526000/1009582  614s elapsed, ~564s left, 267895 developed
+  develop 528000/1009582  618s elapsed, ~563s left, 268982 developed
+  develop 530000/1009582  619s elapsed, ~560s left, 269227 developed
+  develop 532000/1009582  621s elapsed, ~557s left, 270064 developed
+  develop 534000/1009582  626s elapsed, ~557s left, 271390 developed
+  develop 536000/1009582  629s elapsed, ~556s left, 272728 developed
+  develop 538000/1009582  634s elapsed, ~556s left, 274349 developed
+  develop 540000/1009582  640s elapsed, ~557s left, 275890 developed
+  develop 542000/1009582  646s elapsed, ~557s left, 277295 developed
+  develop 544000/1009582  649s elapsed, ~555s left, 278456 developed
+  develop 546000/1009582  651s elapsed, ~553s left, 278954 developed
+  develop 548000/1009582  651s elapsed, ~548s left, 278965 developed
+  develop 550000/1009582  655s elapsed, ~547s left, 280289 developed
+  develop 552000/1009582  659s elapsed, ~546s left, 281651 developed
+  develop 554000/1009582  662s elapsed, ~544s left, 282978 developed
+  develop 556000/1009582  668s elapsed, ~545s left, 284640 developed
+  develop 558000/1009582  673s elapsed, ~545s left, 286273 developed
+  develop 560000/1009582  679s elapsed, ~545s left, 287703 developed
+  develop 562000/1009582  684s elapsed, ~544s left, 288934 developed
+  develop 564000/1009582  685s elapsed, ~541s left, 289651 developed
+  develop 566000/1009582  691s elapsed, ~541s left, 291435 developed
+  develop 568000/1009582  696s elapsed, ~541s left, 293169 developed
+  develop 570000/1009582  701s elapsed, ~541s left, 294611 developed
+  develop 572000/1009582  705s elapsed, ~539s left, 296004 developed
+  develop 574000/1009582  710s elapsed, ~538s left, 297381 developed
+  develop 576000/1009582  713s elapsed, ~537s left, 298731 developed
+  develop 578000/1009582  718s elapsed, ~536s left, 300540 developed
+  develop 580000/1009582  723s elapsed, ~536s left, 302266 developed
+  develop 582000/1009582  728s elapsed, ~535s left, 303915 developed
+  develop 584000/1009582  733s elapsed, ~534s left, 305481 developed
+  develop 586000/1009582  735s elapsed, ~531s left, 306530 developed
+  develop 588000/1009582  736s elapsed, ~527s left, 306666 developed
+  develop 590000/1009582  737s elapsed, ~524s left, 307107 developed
+  develop 592000/1009582  737s elapsed, ~520s left, 307107 developed
+  develop 594000/1009582  737s elapsed, ~516s left, 307114 developed
+  develop 596000/1009582  737s elapsed, ~512s left, 307129 developed
+  develop 598000/1009582  738s elapsed, ~508s left, 307130 developed
+  develop 600000/1009582  738s elapsed, ~504s left, 307130 developed
+  develop 602000/1009582  738s elapsed, ~500s left, 307141 developed
+  develop 604000/1009582  739s elapsed, ~496s left, 307259 developed
+  develop 606000/1009582  739s elapsed, ~492s left, 307367 developed
+  develop 608000/1009582  740s elapsed, ~489s left, 307496 developed
+  develop 610000/1009582  740s elapsed, ~485s left, 307608 developed
+  develop 612000/1009582  741s elapsed, ~481s left, 307822 developed
+  develop 614000/1009582  742s elapsed, ~478s left, 308009 developed
+  develop 616000/1009582  742s elapsed, ~474s left, 308143 developed
+  develop 618000/1009582  745s elapsed, ~472s left, 309709 developed
+  develop 620000/1009582  748s elapsed, ~470s left, 311534 developed
+  develop 622000/1009582  752s elapsed, ~468s left, 313284 developed
+  develop 624000/1009582  758s elapsed, ~468s left, 315086 developed
+  develop 626000/1009582  762s elapsed, ~467s left, 316560 developed
+  develop 628000/1009582  768s elapsed, ~467s left, 318181 developed
+  develop 630000/1009582  772s elapsed, ~465s left, 319685 developed
+  develop 632000/1009582  777s elapsed, ~464s left, 320966 developed
+  develop 634000/1009582  782s elapsed, ~463s left, 322632 developed
+  develop 636000/1009582  785s elapsed, ~461s left, 323737 developed
+  develop 638000/1009582  789s elapsed, ~460s left, 325266 developed
+  develop 640000/1009582  793s elapsed, ~458s left, 326585 developed
+  develop 642000/1009582  795s elapsed, ~455s left, 328065 developed
+  develop 644000/1009582  799s elapsed, ~454s left, 329903 developed
+  develop 646000/1009582  804s elapsed, ~453s left, 331749 developed
+  develop 648000/1009582  809s elapsed, ~451s left, 333338 developed
+  develop 650000/1009582  815s elapsed, ~451s left, 335252 developed
+  develop 652000/1009582  823s elapsed, ~451s left, 337043 developed
+  develop 654000/1009582  827s elapsed, ~450s left, 338411 developed
+  develop 656000/1009582  835s elapsed, ~450s left, 340144 developed
+  develop 658000/1009582  841s elapsed, ~449s left, 341584 developed
+  develop 660000/1009582  847s elapsed, ~448s left, 343145 developed
+  develop 662000/1009582  851s elapsed, ~447s left, 344392 developed
+  develop 664000/1009582  856s elapsed, ~446s left, 345802 developed
+  develop 666000/1009582  860s elapsed, ~443s left, 346899 developed
+  develop 668000/1009582  865s elapsed, ~442s left, 348275 developed
+  develop 670000/1009582  865s elapsed, ~438s left, 348314 developed
+  develop 672000/1009582  865s elapsed, ~435s left, 348364 developed
+  develop 674000/1009582  866s elapsed, ~431s left, 348904 developed
+  develop 676000/1009582  868s elapsed, ~428s left, 349984 developed
+  develop 678000/1009582  870s elapsed, ~425s left, 351717 developed
+  develop 680000/1009582  875s elapsed, ~424s left, 353582 developed
+  develop 682000/1009582  881s elapsed, ~423s left, 355421 developed
+  develop 684000/1009582  883s elapsed, ~420s left, 356999 developed
+  develop 686000/1009582  890s elapsed, ~420s left, 358845 developed
+  develop 688000/1009582  897s elapsed, ~419s left, 360775 developed
+  develop 690000/1009582  901s elapsed, ~417s left, 362153 developed
+  develop 692000/1009582  906s elapsed, ~416s left, 363613 developed
+  develop 694000/1009582  913s elapsed, ~415s left, 365384 developed
+  develop 696000/1009582  919s elapsed, ~414s left, 366794 developed
+  develop 698000/1009582  925s elapsed, ~413s left, 368543 developed
+  develop 700000/1009582  929s elapsed, ~411s left, 369907 developed
+  develop 702000/1009582  932s elapsed, ~408s left, 371281 developed
+  develop 704000/1009582  938s elapsed, ~407s left, 372850 developed
+  develop 706000/1009582  941s elapsed, ~405s left, 374009 developed
+  develop 708000/1009582  944s elapsed, ~402s left, 375154 developed
+  develop 710000/1009582  947s elapsed, ~400s left, 376465 developed
+  develop 712000/1009582  952s elapsed, ~398s left, 378122 developed
+  develop 714000/1009582  956s elapsed, ~396s left, 380122 developed
+  develop 716000/1009582  959s elapsed, ~393s left, 382039 developed
+  develop 718000/1009582  964s elapsed, ~392s left, 384039 developed
+  develop 720000/1009582  968s elapsed, ~389s left, 385998 developed
+  develop 722000/1009582  972s elapsed, ~387s left, 387906 developed
+  develop 724000/1009582  977s elapsed, ~385s left, 389785 developed
+  develop 726000/1009582  980s elapsed, ~383s left, 391592 developed
+  develop 728000/1009582  987s elapsed, ~382s left, 393558 developed
+  develop 730000/1009582  994s elapsed, ~381s left, 395544 developed
+  develop 732000/1009582  1000s elapsed, ~379s left, 397487 developed
+  develop 734000/1009582  1009s elapsed, ~379s left, 399387 developed
+  develop 736000/1009582  1014s elapsed, ~377s left, 401044 developed
+  develop 738000/1009582  1021s elapsed, ~376s left, 402941 developed
+  develop 740000/1009582  1028s elapsed, ~374s left, 404853 developed
+  develop 742000/1009582  1034s elapsed, ~373s left, 406687 developed
+  develop 744000/1009582  1040s elapsed, ~371s left, 408514 developed
+  develop 746000/1009582  1045s elapsed, ~369s left, 410345 developed
+  develop 748000/1009582  1050s elapsed, ~367s left, 411871 developed
+  develop 750000/1009582  1056s elapsed, ~365s left, 413722 developed
+  develop 752000/1009582  1058s elapsed, ~362s left, 415066 developed
+  develop 754000/1009582  1063s elapsed, ~360s left, 416661 developed
+  develop 756000/1009582  1063s elapsed, ~356s left, 416681 developed
+  develop 758000/1009582  1063s elapsed, ~353s left, 416713 developed
+  develop 760000/1009582  1064s elapsed, ~350s left, 417061 developed
+  develop 762000/1009582  1065s elapsed, ~346s left, 417529 developed
+  develop 764000/1009582  1067s elapsed, ~343s left, 418163 developed
+  develop 766000/1009582  1068s elapsed, ~340s left, 419633 developed
+  develop 768000/1009582  1070s elapsed, ~337s left, 421437 developed
+  develop 770000/1009582  1075s elapsed, ~334s left, 423364 developed
+  develop 772000/1009582  1079s elapsed, ~332s left, 425234 developed
+  develop 774000/1009582  1083s elapsed, ~330s left, 426878 developed
+  develop 776000/1009582  1087s elapsed, ~327s left, 428698 developed
+  develop 778000/1009582  1093s elapsed, ~325s left, 430616 developed
+  develop 780000/1009582  1100s elapsed, ~324s left, 432558 developed
+  develop 782000/1009582  1105s elapsed, ~321s left, 434035 developed
+  develop 784000/1009582  1108s elapsed, ~319s left, 435759 developed
+  develop 786000/1009582  1116s elapsed, ~317s left, 437594 developed
+  develop 788000/1009582  1123s elapsed, ~316s left, 439388 developed
+  develop 790000/1009582  1126s elapsed, ~313s left, 440682 developed
+  develop 792000/1009582  1133s elapsed, ~311s left, 442554 developed
+  develop 794000/1009582  1138s elapsed, ~309s left, 443944 developed
+  develop 796000/1009582  1140s elapsed, ~306s left, 445337 developed
+  develop 798000/1009582  1147s elapsed, ~304s left, 446984 developed
+  develop 800000/1009582  1151s elapsed, ~301s left, 448118 developed
+  develop 802000/1009582  1154s elapsed, ~299s left, 449490 developed
+  develop 804000/1009582  1156s elapsed, ~296s left, 450361 developed
+  develop 806000/1009582  1161s elapsed, ~293s left, 452014 developed
+  develop 808000/1009582  1164s elapsed, ~290s left, 453747 developed
+  develop 810000/1009582  1168s elapsed, ~288s left, 455747 developed
+  develop 812000/1009582  1172s elapsed, ~285s left, 457686 developed
+  develop 814000/1009582  1177s elapsed, ~283s left, 459686 developed
+  develop 816000/1009582  1181s elapsed, ~280s left, 461633 developed
+  develop 818000/1009582  1185s elapsed, ~277s left, 463533 developed
+  develop 820000/1009582  1189s elapsed, ~275s left, 465473 developed
+  develop 822000/1009582  1193s elapsed, ~272s left, 467353 developed
+  develop 824000/1009582  1198s elapsed, ~270s left, 469138 developed
+  develop 826000/1009582  1205s elapsed, ~268s left, 471138 developed
+  develop 828000/1009582  1214s elapsed, ~266s left, 473112 developed
+  develop 830000/1009582  1220s elapsed, ~264s left, 475049 developed
+  develop 832000/1009582  1227s elapsed, ~262s left, 476935 developed
+  develop 834000/1009582  1232s elapsed, ~259s left, 478701 developed
+  develop 836000/1009582  1240s elapsed, ~257s left, 480637 developed
+  develop 838000/1009582  1246s elapsed, ~255s left, 482526 developed
+  develop 840000/1009582  1254s elapsed, ~253s left, 484409 developed
+  develop 842000/1009582  1262s elapsed, ~251s left, 486112 developed
+  develop 844000/1009582  1271s elapsed, ~249s left, 488021 developed
+  develop 846000/1009582  1277s elapsed, ~247s left, 489790 developed
+  develop 848000/1009582  1282s elapsed, ~244s left, 491255 developed
+  develop 850000/1009582  1290s elapsed, ~242s left, 493068 developed
+  develop 852000/1009582  1293s elapsed, ~239s left, 494586 developed
+  develop 854000/1009582  1298s elapsed, ~236s left, 495990 developed
+  develop 856000/1009582  1301s elapsed, ~233s left, 497062 developed
+  develop 858000/1009582  1303s elapsed, ~230s left, 498908 developed
+  develop 860000/1009582  1307s elapsed, ~227s left, 500908 developed
+  develop 862000/1009582  1311s elapsed, ~225s left, 502843 developed
+  develop 864000/1009582  1315s elapsed, ~222s left, 504840 developed
+  develop 866000/1009582  1322s elapsed, ~219s left, 506815 developed
+  develop 868000/1009582  1326s elapsed, ~216s left, 508815 developed
+  develop 870000/1009582  1329s elapsed, ~213s left, 510733 developed
+  develop 872000/1009582  1333s elapsed, ~210s left, 512646 developed
+  develop 874000/1009582  1337s elapsed, ~207s left, 514506 developed
+  develop 876000/1009582  1341s elapsed, ~204s left, 516203 developed
+  develop 878000/1009582  1347s elapsed, ~202s left, 518151 developed
+  develop 880000/1009582  1354s elapsed, ~199s left, 520129 developed
+  develop 882000/1009582  1361s elapsed, ~197s left, 522065 developed
+  develop 884000/1009582  1368s elapsed, ~194s left, 524057 developed
+  develop 886000/1009582  1373s elapsed, ~192s left, 525946 developed
+  develop 888000/1009582  1378s elapsed, ~189s left, 527556 developed
+  develop 890000/1009582  1384s elapsed, ~186s left, 529515 developed
+  develop 892000/1009582  1391s elapsed, ~183s left, 531429 developed
+  develop 894000/1009582  1397s elapsed, ~181s left, 533392 developed
+  develop 896000/1009582  1402s elapsed, ~178s left, 535244 developed
+  develop 898000/1009582  1408s elapsed, ~175s left, 537075 developed
+  develop 900000/1009582  1414s elapsed, ~172s left, 538898 developed
+  develop 902000/1009582  1419s elapsed, ~169s left, 540846 developed
+  develop 904000/1009582  1424s elapsed, ~166s left, 542542 developed
+  develop 906000/1009582  1429s elapsed, ~163s left, 544285 developed
+  develop 908000/1009582  1434s elapsed, ~160s left, 546080 developed
+  develop 910000/1009582  1439s elapsed, ~157s left, 547830 developed
+  develop 912000/1009582  1441s elapsed, ~154s left, 549254 developed
+  develop 914000/1009582  1444s elapsed, ~151s left, 550579 developed
+  develop 916000/1009582  1449s elapsed, ~148s left, 552371 developed
+  develop 918000/1009582  1453s elapsed, ~145s left, 554185 developed
+  develop 920000/1009582  1457s elapsed, ~142s left, 556059 developed
+  develop 922000/1009582  1461s elapsed, ~139s left, 557926 developed
+  develop 924000/1009582  1465s elapsed, ~136s left, 559795 developed
+  develop 926000/1009582  1470s elapsed, ~133s left, 561668 developed
+  develop 928000/1009582  1474s elapsed, ~130s left, 563538 developed
+  develop 930000/1009582  1478s elapsed, ~126s left, 565415 developed
+  develop 932000/1009582  1480s elapsed, ~123s left, 567233 developed
+  develop 934000/1009582  1484s elapsed, ~120s left, 569108 developed
+  develop 936000/1009582  1488s elapsed, ~117s left, 570970 developed
+  develop 938000/1009582  1491s elapsed, ~114s left, 572859 developed
+  develop 940000/1009582  1494s elapsed, ~111s left, 574732 developed
+  develop 942000/1009582  1498s elapsed, ~107s left, 576597 developed
+  develop 944000/1009582  1502s elapsed, ~104s left, 578465 developed
+  develop 946000/1009582  1505s elapsed, ~101s left, 580339 developed
+  develop 948000/1009582  1507s elapsed, ~98s left, 582135 developed
+  develop 950000/1009582  1510s elapsed, ~95s left, 584029 developed
+  develop 952000/1009582  1513s elapsed, ~92s left, 585907 developed
+  develop 954000/1009582  1515s elapsed, ~88s left, 587663 developed
+  develop 956000/1009582  1518s elapsed, ~85s left, 589550 developed
+  develop 958000/1009582  1524s elapsed, ~82s left, 591333 developed
+  develop 960000/1009582  1531s elapsed, ~79s left, 593201 developed
+  develop 962000/1009582  1538s elapsed, ~76s left, 595071 developed
+  develop 964000/1009582  1544s elapsed, ~73s left, 596950 developed
+  develop 966000/1009582  1549s elapsed, ~70s left, 598822 developed
+  develop 968000/1009582  1556s elapsed, ~67s left, 600683 developed
+  develop 970000/1009582  1561s elapsed, ~64s left, 602543 developed
+  develop 972000/1009582  1567s elapsed, ~61s left, 604363 developed
+  develop 974000/1009582  1572s elapsed, ~57s left, 606245 developed
+  develop 976000/1009582  1577s elapsed, ~54s left, 608072 developed
+  develop 978000/1009582  1583s elapsed, ~51s left, 609918 developed
+  develop 980000/1009582  1588s elapsed, ~48s left, 611684 developed
+  develop 982000/1009582  1595s elapsed, ~45s left, 613564 developed
+  develop 984000/1009582  1601s elapsed, ~42s left, 615435 developed
+  develop 986000/1009582  1606s elapsed, ~38s left, 617231 developed
+  develop 988000/1009582  1612s elapsed, ~35s left, 619123 developed
+  develop 990000/1009582  1617s elapsed, ~32s left, 621004 developed
+  develop 992000/1009582  1623s elapsed, ~29s left, 622745 developed
+  develop 994000/1009582  1628s elapsed, ~26s left, 624646 developed
+  develop 996000/1009582  1633s elapsed, ~22s left, 626474 developed
+  develop 998000/1009582  1639s elapsed, ~19s left, 628367 developed
+  develop 1000000/1009582  1643s elapsed, ~16s left, 630172 developed
+  develop 1002000/1009582  1648s elapsed, ~12s left, 631852 developed
+  develop 1004000/1009582  1652s elapsed, ~9s left, 633684 developed
+  develop 1006000/1009582  1657s elapsed, ~6s left, 635592 developed
+  develop 1008000/1009582  1660s elapsed, ~3s left, 637203 developed
+hyperbolic develop report (k=1..2, boundR=0.90)
+blocks in    : 1009582
+developed    : 638702
+not developed: 370880
+   236812  no common edge length
+   133995  no realization with the star points free
+     73  patch not regular
+
+[10-25 16:38:32] run 4 PREP dedupe
+  50000 records, 20450 keys, 19s
+  100000 records, 39387 keys, 38s
+  150000 records, 60278 keys, 58s
+  200000 records, 79038 keys, 78s
+  250000 records, 91583 keys, 94s
+  300000 records, 107160 keys, 113s
+  350000 records, 127649 keys, 141s
+  400000 records, 141749 keys, 163s
+  450000 records, 157326 keys, 189s
+  500000 records, 167821 keys, 211s
+  550000 records, 178660 keys, 233s
+  600000 records, 184096 keys, 251s
+records 638702, distinct 188772: isotoxal new 161680, isotoxal shipped 16543, regular new 8078, regular shipped 2471
+[10-25 16:43:29] run 4 EXPORT (--refamily, checkpointed in /Users/alessandro/Desktop/Personal/TilingAtlas-cx/tools/ctrnact-oracle/run-hyp-cx-free-k2/ck, into the pristine release copy /Users/alessandro/Desktop/Personal/TilingAtlas-cx/tools/ctrnact-oracle/run-hyp-cx-free-k2/pub)
+[10-25 22:07:59] run 4 STOPPED by AL in the gate's last radius (0.9999, 4,051 measurements). Kept: solve/develop/dedupe outputs, ck/refamily.jsonl (17,950), ck/families.jsonl (166,853). Lost: the unsaved gate cache (radii 0.995-0.9995, ~1.7 h). Nothing written to public/.
