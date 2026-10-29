@@ -1,0 +1,48 @@
+# converted from Marek's main_123_1_4657.cpp
+name 123_1_4657
+k 1 3
+angle Loo
+angle M3
+angle Moo
+angle Pi
+angle S3
+angle S4
+angle Soo
+face S3 S3 S3
+face S4 S4 S4 S4
+face M3 Pi M3 Pi M3 Pi
+face Soo x inf
+face Moo Pi x inf
+face Loo Pi Pi x inf
+vertex Pi Pi
+vertex S3 S3 S4 S4 S4 S4
+vertex S3 S4 S4 Pi
+vertex S3 S4 S4 Soo M3 Moo
+vertex S3 S4 S4 Soo Moo Loo
+vertex S3 S4 S4 M3 M3 Moo Moo Loo
+vertex S3 S4 S4 M3 Moo Moo Loo Loo
+vertex S3 S4 S4 M3 M3 M3 Moo Moo
+vertex S3 S4 S4 Moo Moo Loo Loo Loo
+vertex M3 M3 Moo Moo Loo Pi
+vertex M3 M3 M3 Moo Moo Pi
+vertex M3 Moo Moo Loo Loo Pi
+vertex M3 M3 Moo Moo Moo Moo Loo Loo Loo Loo
+vertex Soo M3 Moo Pi
+vertex Moo Moo Loo Loo Loo Pi
+vertex Soo M3 M3 Moo Moo Moo Loo Loo
+vertex Soo Moo Loo Pi
+vertex M3 M3 M3 M3 Moo Moo Moo Moo Loo Loo
+vertex Soo M3 M3 M3 Moo Moo Moo Loo
+vertex M3 M3 M3 Moo Moo Moo Moo Loo Loo Loo
+vertex Soo M3 Moo Moo Moo Loo Loo Loo
+vertex M3 M3 M3 M3 M3 Moo Moo Moo Moo Loo
+vertex Soo Soo M3 M3 Moo Moo
+vertex Soo M3 M3 M3 M3 Moo Moo Moo
+vertex M3 M3 M3 M3 M3 M3 Moo Moo Moo Moo
+vertex Soo Soo M3 Moo Moo Loo
+vertex Soo Soo Moo Moo Loo Loo
+vertex Soo Moo Moo Moo Loo Loo Loo Loo
+vertex M3 Moo Moo Moo Moo Loo Loo Loo Loo Loo
+vertex Soo Soo Soo Moo
+vertex Moo Moo Moo Moo Loo Loo Loo Loo Loo Loo
+permutations yes

@@ -1,0 +1,14 @@
+# TileSearch on the star24full palette (48 tiles, 5,810 fitting cyclic orders, Permutations off), k 1..4
+# target (atlas, DEVELOPMENT_NOTES 2026-08-07): 44 / 74 / 169 / 391 before regular-only removal and family folding
+# started 2026-10-28 11:48:01
+    2.1s branching: on the fewest options (to 2 vertices: 208354 nodes that way, over 368595 the other)
+   10.1s stage rank 5972 7008
+   17.9s 
+   17.9s Finished with 678 solutions after 3.24999s.
+   17.9s stats nodes 277574 complete 7414 unique 678
+# ended 2026-10-28 11:48:23
+k=1 -- 44
+k=2 -- 74
+k=3 -- 169
+k=4 -- 391
+MAX

@@ -1,0 +1,36 @@
+# star144: regular {3,4,6,8,12,24} + every star with its point on the 2.5° grid; k 1..3; initial = vertices with a star off the 15° grid
+14:30:07 generating the board (every vertex order whose faces fit)
+    282 star kinds, 248674 fitting orders, 242864 with an off-15° star, 823 s
+14:43:52 searching
+   60s stage pilot1 8923 253243
+   120s stage pilot1 21430 253243
+   180s stage pilot1 34714 253243
+   240s stage pilot1 172423 253243
+   300s stage rank 5806 253243
+   360s stage rank 12170 253243
+   420s stage rank 19294 253243
+   480s stage rank 24820 253243
+   540s stage rank 28059 253243
+   600s stage rank 38123 253243
+   660s stage rank 56734 253243
+   720s stage rank 69740 253243
+   780s stage rank 91009 253243
+   840s stage rank 119279 253243
+   900s stage rank 146472 253243
+   960s stage rank 177778 253243
+   1020s stage rank 216640 253243
+   branching: on the fewest options (to 2 vertices: 1135499 nodes that way, over 1913223 the other)
+   1080s roots 580 253243
+   56.8623 180 1:70 2:70 3:40 nodes 323584
+   60.3828 183 1:70 2:73 3:40 nodes 344064
+   1140s roots 23740 253243
+   1200s roots 89925 253243
+   151085 253243
+   1260s roots 187638 253243
+   
+   Finished with 270 solutions after 215.114s.
+   stats nodes 1650614 complete 1080 unique 270
+   census: k=1 -- 110 k=2 -- 120 k=3 -- 40 MAX 
+15:05:14 classifying
+Error: CLASSIFY 270 tilings; k1: off-grid 110 = flexing 110 + rigid 0 (drawn 0) | k2: off-grid 120 = flexing 120 + rigid 0 (drawn 0) | k3: off-grid 40 = flexing 40 + rigid 0 (drawn 0)
+15:05:20 done

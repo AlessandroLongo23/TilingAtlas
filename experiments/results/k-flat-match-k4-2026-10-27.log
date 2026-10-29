@@ -1,0 +1,95 @@
+atlas 2, engine 1 (still together at R 10.0905)
+   atlas  d-ctrnact-04_q-2as2_2au2_2av2_3bp2_4el2-1  (4₂)
+   atlas  s-ctrnact-04_q-2du2_2dw2_2dx2_3ey2_4qc2-1  (4₂)
+   engine scaled_3_4_6_12solver_04_PiB4_9.txt#761  Pi.B4.B4 | Pi.B4.B4 | Pi.Pi | Pi.Pi | B4.B4.B4.B4 | Pi.Pi | Pi.Pi | B4.B4.B4.B4 | Pi.Pi | Pi.Pi
+atlas 2, engine 1 (still together at R 10.0905)
+   atlas  d-ctrnact-04_q-2as2_2au2_2av_3bp2_4ei_4el-1  (4₂)
+   atlas  s-ctrnact-04_q-2du2_2dw2_2dx_3ey2_4pz_4qc-2  (4₂)
+   engine scaled_3_4_6_12solver_04_PiB4_8.txt#759  Pi.B4.B4 | Pi.B4.B4 | Pi.Pi | Pi.Pi | B4.B4.B4.B4 | Pi.Pi | Pi.Pi | B4.B4.B4.B4 | Pi.Pi
+atlas 2, engine 1 (still together at R 10.0905)
+   atlas  d-ctrnact-04_tqh-2as2_2ay_3bi_3by_3ck_4fw-1  (3₂.4₂.6₂)
+   atlas  s-ctrnact-04_tqh-2du2_2fk_3es_3hq_3id_4yw-1  (3₂.4₂.6₂)
+   engine scaled_3_4_6_12solver_04_PiB3B4B6_6.txt#665  Pi.B3.B6 | Pi.B4.B4 | Pi.Pi | B3.B6.B3.B6 | Pi.B4.B4 | Pi.Pi | Pi.Pi
+atlas 2, engine 1 (still together at R 10.0905)
+   atlas  d-ctrnact-04_t-2am2_2ao2_2ap2_4cy2_6bv2-1  (3₂)
+   atlas  s-ctrnact-04_t-2cm2_2co2_2cp2_4gk2_6bv2-1  (3₂)
+   engine scaled_3_4_6_12solver_04_PiB3_9.txt#753  Pi.B3.B3.B3 | Pi.B3.B3.B3 | Pi.Pi | Pi.Pi | B3.B3.B3.B3.B3.B3 | Pi.Pi | Pi.Pi | B3.B3.B3.B3.B3.B3 | Pi.Pi | Pi.Pi
+atlas 4, engine 2 (still together at R 10.0905)
+   atlas  d-ctrnact-04_3q-2aw3_3bq_4en_4ep_5cj-1  (3.4₂)
+   atlas  d-ctrnact-04_3q-2aw3_3bq_4en_4ep_5cj-3  (3.4₂)
+   atlas  s-ctrnact-04_3q-2dy3_3ez_4qe_4qm_5jl-1  (3.4₂)
+   atlas  s-ctrnact-04_3q-2dy3_3ez_4qe_4qm_5jl-2  (3.4₂)
+   engine scaled_3_4_6_12solver_04_PiA3B4_12.txt#543  A3.A3.A3.B4.B4 | Pi.A3.A3.A3 | Pi.Pi | B4.B4.B4.B4 | Pi.Pi | Pi.Pi | Pi.B4.B4
+   engine scaled_3_4_6_12solver_04_PiA3B4_o_13.txt#557  A3.A3.A3.B4.B4 | Pi.A3.A3.A3 | Pi.Pi | B4.B4.B4.B4 | Pi.Pi | Pi.Pi | Pi.B4.B4
+atlas 2, engine 2 (still together at R 10.0905)
+   atlas  d-ctrnact-04_3q-2at_2aw4_4en2_4ep_5cj-1  (3.4₂)
+   atlas  d-ctrnact-04_3q-2av_2aw4_4en2_4ep_5cj-1  (3.4₂)
+   engine scaled_3_4_6_12solver_04_PiA3B4_14.txt#546  A3.A3.A3.B4.B4 | Pi.A3.A3.A3 | Pi.Pi | B4.B4.B4.B4 | Pi.Pi | Pi.Pi | B4.B4.B4.B4 | Pi.Pi | Pi.Pi
+   engine scaled_3_4_6_12solver_04_PiA3B4_o_14.txt#558  A3.A3.A3.B4.B4 | Pi.A3.A3.A3 | Pi.Pi | B4.B4.B4.B4 | Pi.Pi | Pi.Pi | B4.B4.B4.B4 | Pi.Pi | Pi.Pi
+atlas 2, engine 2 (still together at R 10.0905)
+   atlas  d-ctrnact-04_3q-2at_2aw3_4ek_4en_4ep_5cj-1  (3.4₂)
+   atlas  d-ctrnact-04_3q-2au_2aw3_4el_4en_4ep_5cj-1  (3.4₂)
+   engine scaled_3_4_6_12solver_04_PiA3B4_13.txt#545  A3.A3.A3.B4.B4 | Pi.A3.A3.A3 | Pi.Pi | B4.B4.B4.B4 | Pi.Pi | Pi.Pi | B4.B4.B4.B4 | Pi.Pi
+   engine scaled_3_4_6_12solver_04_PiA3B4_o_12.txt#556  A3.A3.A3.B4.B4 | Pi.A3.A3.A3 | Pi.Pi | B4.B4.B4.B4 | Pi.Pi | Pi.Pi | B4.B4.B4.B4 | Pi.Pi
+atlas 2, engine 1 (still together at R 10.0905)
+   atlas  d-ctrnact-04_36t-4au_4cr_4cs_5ai-2  (3.3₂.6)
+   atlas  s-ctrnact-04_36t-4gd_4ge_4yf_5ac-2  (3.3₂.6)
+   engine scaled_3_4_6_12solver_04_PiA3A6B3_8.txt#195  A3.A3.A6.A3.B3 | Pi.A3.B3.A3 | Pi.A3.A3.A3 | A3.A3.A6.A6
+atlas 2, engine 1 (still together at R 10.0905)
+   atlas  d-ctrnact-04_36t-4au_4cr_4cs_5ai-1  (3.3₂.6)
+   atlas  s-ctrnact-04_36t-4gd_4ge_4yf_5ac-1  (3.3₂.6)
+   engine scaled_3_4_6_12solver_04_PiA3A6B3_8.txt#194  A3.A3.A6.A3.B3 | Pi.A3.B3.A3 | Pi.A3.A3.A3 | A3.A3.A6.A6
+atlas 2, engine 2 (still together at R 10.0905)
+   atlas  d-ctrnact-04_3tq-2ap5_2ar_2at_4cr_5cr_6bg_6bw-1  (3.3₂.4₂)
+   atlas  d-ctrnact-04_3tq-2ap5_2ar_2av_4cr_5cr_6bg_6bw-1  (3.3₂.4₂)
+   engine scaled_3_4_6_12solver_04_PiA3B3B4_18.txt#319  A3.A3.A3.B3.B3.B3 | Pi.A3.A3.A3 | Pi.Pi | Pi.Pi | B3.B3.B3.B3.B3.B3 | Pi.Pi | Pi.Pi | Pi.Pi | B3.B3.B3.B4.B4 | Pi.Pi | Pi.Pi
+   engine scaled_3_4_6_12solver_04_PiA3B3B4_o_18.txt#367  A3.A3.A3.B3.B3.B3 | Pi.A3.A3.A3 | Pi.Pi | Pi.Pi | B3.B3.B3.B3.B3.B3 | Pi.Pi | Pi.Pi | Pi.Pi | B3.B3.B3.B4.B4 | Pi.Pi | Pi.Pi
+atlas 2, engine 2 (still together at R 10.0905)
+   atlas  d-ctrnact-04_3tq-2ap2_2ar2_2at_2aw_4ep_5cj_5cr2-1  (3.3₂.4₂)
+   atlas  d-ctrnact-04_3tq-2ap2_2ar2_2av_2aw_4ep_5cj_5cr2-1  (3.3₂.4₂)
+   engine scaled_3_4_6_12solver_04_PiA3B3B4_16.txt#316  A3.A3.A3.B4.B4 | Pi.A3.A3.A3 | Pi.Pi | B3.B3.B3.B4.B4 | Pi.Pi | Pi.Pi | Pi.Pi | B3.B3.B3.B4.B4 | Pi.Pi | Pi.Pi
+   engine scaled_3_4_6_12solver_04_PiA3B3B4_o_16.txt#364  A3.A3.A3.B4.B4 | Pi.A3.A3.A3 | Pi.Pi | B3.B3.B3.B4.B4 | Pi.Pi | Pi.Pi | Pi.Pi | B3.B3.B3.B4.B4 | Pi.Pi | Pi.Pi
+atlas 2, engine 2 (still together at R 10.0905)
+   atlas  d-ctrnact-04_3tq-2ap2_2ar_2at_2aw2_4cr_4en_5cr_6bg-1  (3.3₂.4₂)
+   atlas  d-ctrnact-04_3tq-2ap2_2ar_2av_2aw2_4cr_4en_5cr_6bg-1  (3.3₂.4₂)
+   engine scaled_3_4_6_12solver_04_PiA3B3B4_16.txt#315  A3.A3.A3.B3.B3.B3 | Pi.A3.A3.A3 | Pi.Pi | Pi.Pi | B3.B3.B3.B4.B4 | Pi.Pi | Pi.Pi | B4.B4.B4.B4 | Pi.Pi | Pi.Pi
+   engine scaled_3_4_6_12solver_04_PiA3B3B4_o_16.txt#363  A3.A3.A3.B3.B3.B3 | Pi.A3.A3.A3 | Pi.Pi | Pi.Pi | B3.B3.B3.B4.B4 | Pi.Pi | Pi.Pi | B4.B4.B4.B4 | Pi.Pi | Pi.Pi
+atlas 2, engine 2 (still together at R 10.0905)
+   atlas  d-ctrnact-04_3tq-2am2_2ar_2aw3_4en_4ep_5cj_5cr-1  (3.3₂.4₂)
+   atlas  d-ctrnact-04_3tq-2ap_2ar_2aw3_4en_4ep_5cj_5cr-1  (3.3₂.4₂)
+   engine scaled_3_4_6_12solver_04_PiA3B3B4_15.txt#313  A3.A3.A3.B4.B4 | Pi.A3.A3.A3 | Pi.Pi | B4.B4.B4.B4 | Pi.Pi | Pi.Pi | B3.B3.B3.B4.B4 | Pi.Pi | Pi.Pi
+   engine scaled_3_4_6_12solver_04_PiA3B3B4_o_15.txt#361  A3.A3.A3.B4.B4 | Pi.A3.A3.A3 | Pi.Pi | B4.B4.B4.B4 | Pi.Pi | Pi.Pi | B3.B3.B3.B4.B4 | Pi.Pi | Pi.Pi | Pi.Pi
+atlas 2, engine 2 (still together at R 10.0905)
+   atlas  d-ctrnact-04_3tq-2am2_2ap3_2ar_2aw_4ep_5cj_5cr_6bw-1  (3.3₂.4₂)
+   atlas  d-ctrnact-04_3tq-2ap4_2ar_2aw_4ep_5cj_5cr_6bw-1  (3.3₂.4₂)
+   engine scaled_3_4_6_12solver_04_PiA3B3B4_17.txt#318  A3.A3.A3.B4.B4 | Pi.A3.A3.A3 | Pi.Pi | B3.B3.B3.B4.B4 | Pi.Pi | Pi.Pi | Pi.Pi | B3.B3.B3.B3.B3.B3 | Pi.Pi | Pi.Pi
+   engine scaled_3_4_6_12solver_04_PiA3B3B4_o_17.txt#366  A3.A3.A3.B4.B4 | Pi.A3.A3.A3 | Pi.Pi | B3.B3.B3.B4.B4 | Pi.Pi | Pi.Pi | Pi.Pi | B3.B3.B3.B3.B3.B3 | Pi.Pi | Pi.Pi | Pi.Pi
+atlas 2, engine 2 (still together at R 10.0905)
+   atlas  d-ctrnact-04_3tq-2am2_2ap2_2ar2_2aw_4cr_5cr2_6bg-1  (3.3₂.4₂)
+   atlas  d-ctrnact-04_3tq-2ap3_2ar2_2aw_4cr_5cr2_6bg-1  (3.3₂.4₂)
+   engine scaled_3_4_6_12solver_04_PiA3B3B4_17.txt#317  A3.A3.A3.B3.B3.B3 | Pi.A3.A3.A3 | Pi.Pi | Pi.Pi | B3.B3.B3.B4.B4 | Pi.Pi | Pi.Pi | B3.B3.B3.B4.B4 | Pi.Pi | Pi.Pi
+   engine scaled_3_4_6_12solver_04_PiA3B3B4_o_17.txt#365  A3.A3.A3.B3.B3.B3 | Pi.A3.A3.A3 | Pi.Pi | Pi.Pi | B3.B3.B3.B4.B4 | Pi.Pi | Pi.Pi | B3.B3.B3.B4.B4 | Pi.Pi | Pi.Pi | Pi.Pi
+atlas 2, engine 2 (still together at R 10.0905)
+   atlas  d-ctrnact-04_3t-2am2_2ap6_4cr_6bg_6bw2-1  (3.3₂)
+   atlas  d-ctrnact-04_3t-2ap7_4cr_6bg_6bw2-1  (3.3₂)
+   engine scaled_3_4_6_12solver_04_PiA3B3_19.txt#441  A3.A3.A3.B3.B3.B3 | Pi.A3.A3.A3 | Pi.Pi | Pi.Pi | B3.B3.B3.B3.B3.B3 | Pi.Pi | Pi.Pi | Pi.Pi | B3.B3.B3.B3.B3.B3 | Pi.Pi | Pi.Pi
+   engine scaled_3_4_6_12solver_04_PiA3B3_o_19.txt#527  A3.A3.A3.B3.B3.B3 | Pi.A3.A3.A3 | Pi.Pi | Pi.Pi | B3.B3.B3.B3.B3.B3 | Pi.Pi | Pi.Pi | Pi.Pi | B3.B3.B3.B3.B3.B3 | Pi.Pi | Pi.Pi | Pi.Pi
+groups matched only by s- records: 17
+   s-ctrnact-04_3qh-2dx_2fl2_4qm_4zi_4zp_4zy-1  =  scaled_3_4_6_12solver_04_PiA3B4B6_8.txt#538
+   s-ctrnact-04_36t-3dg_3hk_4gb_4xx-1  =  scaled_3_4_6_12solver_04_PiA3A6B3_o_6.txt#226
+   s-ctrnact-04_36t-3dg_3hi_4gb_4ya-1  =  scaled_3_4_6_12solver_04_PiA3A6B3_o_6.txt#225
+   s-ctrnact-04_36t-3dd2_3dg_5ay-1  =  scaled_3_4_6_12solver_04_PiA3A6B3_o_7.txt#229
+   s-ctrnact-04_36t-2cp_3dd_4gf_4gj2-1  =  scaled_3_4_6_12solver_04_PiA3A6B3_o_9.txt#246
+   s-ctrnact-04_346t-4gc_4yb_5aa_5ij-1  =  scaled_3_4_6_12solver_04_PiA3A4A6B3_8.txt#6
+   s-ctrnact-04_34t-4gd_4gh_5aa_5ii-2  =  scaled_3_4_6_12solver_04_PiA3A4B3_8.txt#49
+   s-ctrnact-04_34t-4gd_4gh_5aa_5ii-1  =  scaled_3_4_6_12solver_04_PiA3A4B3_7.txt#43
+   s-ctrnact-04_34t-2cp2_3df_4gd_5ai_6bg-5  =  scaled_3_4_6_12solver_04_PiA3A4B3_o_13.txt#69
+   s-ctrnact-04_3t-4gf_4gg2_6ab-1  =  scaled_3_4_6_12solver_04_PiA3B3_o_7.txt#528
+   s-ctrnact-04_3t-4gd_4gf2_6al-2  =  scaled_3_4_6_12solver_04_PiA3B3_9.txt#489
+   s-ctrnact-04_3t-4gd_4gf2_6al-1  =  scaled_3_4_6_12solver_04_PiA3B3_10.txt#419
+   s-ctrnact-04_3t-4gd_4gf_4gg_6al-2  =  scaled_3_4_6_12solver_04_PiA3B3_10.txt#418
+   s-ctrnact-04_3t-4gd_4gf_4gg_6al-1  =  scaled_3_4_6_12solver_04_PiA3B3_o_11.txt#502
+   s-ctrnact-04_3t-2cp_4gd_4gj_4gk_6al-2  =  scaled_3_4_6_12solver_04_PiA3B3_9.txt#488
+   s-ctrnact-04_3t-2cp_4gd_4gh_4gj_6bf-1  =  scaled_3_4_6_12solver_04_PiA3B3_8.txt#461
+   s-ctrnact-04_3t-2cp3_4gd_4gg_4gl_6bm-1  =  scaled_3_4_6_12solver_04_PiA3B3_o_14.txt#520
+k=4: atlas 770, engine 762; 752 distinct, 762 matched 1:1, 8 atlas tilings with a congruent atlas twin, 0 engine tilings with a congruent engine twin, 0 only in the atlas, 0 only in the engine

@@ -1,0 +1,43 @@
+name drawn_house_tri_square
+k 1 2
+angle F1_90 90
+angle F1_150 150
+angle F1_60 60
+angle A3
+angle A4
+face F1_90 F1_90 F1_150 F1_60 F1_150
+face A3 x 3
+face A4 x 4
+vertex F1_150 F1_150 F1_60
+vertex F1_150 F1_150 A3
+vertex F1_90 F1_90 F1_90 F1_90
+vertex F1_90 F1_90 F1_90 A4
+vertex F1_90 F1_90 A4 A4
+vertex F1_90 F1_150 F1_60 F1_60
+vertex F1_90 F1_150 F1_60 A3
+vertex F1_90 F1_150 A3 A3
+vertex F1_90 A4 A4 A4
+vertex F1_150 F1_60 F1_60 A4
+vertex F1_150 F1_60 A3 A4
+vertex F1_150 A3 A3 A4
+vertex A4 A4 A4 A4
+vertex F1_90 F1_90 F1_60 F1_60 F1_60
+vertex F1_90 F1_90 F1_60 F1_60 A3
+vertex F1_90 F1_90 F1_60 A3 A3
+vertex F1_90 F1_90 A3 A3 A3
+vertex F1_90 F1_60 F1_60 F1_60 A4
+vertex F1_90 F1_60 F1_60 A3 A4
+vertex F1_90 F1_60 A3 A3 A4
+vertex F1_90 A3 A3 A3 A4
+vertex F1_60 F1_60 F1_60 A4 A4
+vertex F1_60 F1_60 A3 A4 A4
+vertex F1_60 A3 A3 A4 A4
+vertex A3 A3 A3 A4 A4
+vertex F1_60 F1_60 F1_60 F1_60 F1_60 F1_60
+vertex F1_60 F1_60 F1_60 F1_60 F1_60 A3
+vertex F1_60 F1_60 F1_60 F1_60 A3 A3
+vertex F1_60 F1_60 F1_60 A3 A3 A3
+vertex F1_60 F1_60 A3 A3 A3 A3
+vertex F1_60 A3 A3 A3 A3 A3
+vertex A3 A3 A3 A3 A3 A3
+permutations yes

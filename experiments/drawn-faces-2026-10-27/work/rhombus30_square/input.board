@@ -1,0 +1,19 @@
+name drawn_rhombus30_square
+k 1 2
+
+angle F1_30 30
+angle F1_150 150
+angle A4
+
+face F1_30 F1_150 x 2
+face A4 x 4
+
+vertex F1_30 F1_30 F1_150 F1_150
+vertex F1_30 F1_150 A4 A4
+vertex A4 A4 A4 A4
+vertex F1_30 F1_30 F1_30 F1_30 F1_150 A4
+vertex F1_30 F1_30 F1_30 A4 A4 A4
+vertex F1_30 F1_30 F1_30 F1_30 F1_30 F1_30 F1_30 F1_150
+vertex F1_30 F1_30 F1_30 F1_30 F1_30 F1_30 A4 A4
+
+permutations yes

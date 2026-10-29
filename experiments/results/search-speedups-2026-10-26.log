@@ -1,0 +1,666 @@
+# Search speedups: policies on the engine's tree (experiments/search-speedups-2026-10-26/prof.cpp). One thread; every policy must find the same unique tilings.
+12:14:02 == a6_30.board k 1-5 (policies one after another; each line when it finishes)
+12:14:19    alt engine             nodes     19565323 complete      8215 unique     685    16.87 s
+12:14:23    alt engine+labelFC     nodes      1705628 complete      8215 unique     685     4.25 s
+12:14:28    alt labelMRV           nodes      1144866 complete      8215 unique     685     4.77 s
+12:14:32    alt labelMRV+labelFC   nodes      1144866 complete      8215 unique     685     4.19 s
+12:14:33    alt joinsMRV+FC        nodes       397825 complete      8215 unique     685     1.03 s
+12:14:36    alt exactMRV+FC        nodes       129855 complete      8215 unique     685     2.81 s
+12:14:36 == 1247_1_0612.board k 1-3 (policies one after another; each line when it finishes)
+12:14:36    alt engine             nodes       151503 complete       699 unique     130     0.11 s
+12:14:36    alt engine+labelFC     nodes       126892 complete       699 unique     130     0.20 s
+12:14:36    alt labelMRV           nodes        46246 complete       699 unique     130     0.11 s
+12:14:37    alt labelMRV+labelFC   nodes        46246 complete       699 unique     130     0.08 s
+12:14:37    alt joinsMRV+FC        nodes        34620 complete       699 unique     130     0.07 s
+12:14:37    alt exactMRV+FC        nodes        29848 complete       699 unique     130     0.35 s
+12:14:37 == s2.board k 1-4 (policies one after another; each line when it finishes)
+12:14:37    alt engine             nodes       122906 complete       117 unique      34     0.09 s
+12:14:37    alt engine+labelFC     nodes        34828 complete       117 unique      34     0.05 s
+12:14:37    alt labelMRV           nodes        30540 complete       117 unique      34     0.08 s
+12:14:37    alt labelMRV+labelFC   nodes        30540 complete       117 unique      34     0.05 s
+12:14:37    alt joinsMRV+FC        nodes        17116 complete       117 unique      34     0.02 s
+12:14:37    alt exactMRV+FC        nodes        10596 complete       117 unique      34     0.10 s
+12:14:37 == squares_edges.board k 1-5 (policies one after another; each line when it finishes)
+12:14:46    alt engine             nodes      2535116 complete    244866 unique   53060     8.59 s
+12:15:07    alt engine+labelFC     nodes      2535116 complete    244866 unique   53060    21.02 s
+12:16:59    alt labelMRV           nodes     14989775 complete    244866 unique   53060   111.86 s
+12:20:30    alt labelMRV+labelFC   nodes     14989775 complete    244866 unique   53060   211.07 s
+12:21:40    alt joinsMRV+FC        nodes      2907283 complete    244866 unique   53060    70.06 s
+12:22:51    alt exactMRV+FC        nodes      1618919 complete    244866 unique   53060    70.96 s
+12:22:51 == s3.board k 1-4 (policies one after another; each line when it finishes)
+12:22:53    alt engine             nodes       311799 complete       138 unique      43     1.27 s
+12:22:53    alt engine+labelFC     nodes        80007 complete       138 unique      43     0.43 s
+12:22:54    alt labelMRV           nodes        47778 complete       138 unique      43     0.58 s
+12:22:54    alt labelMRV+labelFC   nodes        47778 complete       138 unique      43     0.34 s
+12:22:54    alt joinsMRV+FC        nodes        28110 complete       138 unique      43     0.09 s
+12:22:55    alt exactMRV+FC        nodes        17474 complete       138 unique      43     0.97 s
+12:22:55 == a6_30.board k 1-6 (policies one after another; each line when it finishes)
+12:24:47 (matrix stopped here: the remaining rows used a superseded build; see the rerun below)
+
+# verify.py on the fail-first engine (scratch build): automatic rule, then fail first forced on every board
+12:38:57 -- rule: auto
+12:38:57 == a6_30, k 1-5
+12:39:45    reference 685 tilings in 193 files, 163,429,283 nodes, 46.6 s; ranked 685 in 193 files, 291,453 nodes, 1.3 s -> SAME FILES
+12:39:47    tileestimate --exact ('290295', '9536', '685') vs engine on one thread ('290295', '9536', '685') -> SAME
+12:39:48    stopped with 9 roots done, resumed: 685 tilings -> SAME FILES
+12:39:48 == 123_1_4657, k 1-3
+12:39:52    reference 349 tilings in 30 files, 10,712,954 nodes, 2.1 s; ranked 349 in 30 files, 24,199 nodes, 1.4 s -> SAME FILES
+12:39:54    tileestimate --exact ('23788', '2243', '349') vs engine on one thread ('23788', '2243', '349') -> SAME
+12:39:56    stopped with 5 roots done, resumed: 349 tilings -> SAME FILES
+12:39:56 == 123_1_4657_init13, k 1-3
+12:39:57    reference 3 tilings in 3 files, 119,374 nodes, 0.3 s; ranked 3 in 3 files, 748 nodes, 0.4 s -> SAME FILES
+12:39:57    tileestimate --exact ('686', '3', '3') vs engine on one thread ('686', '3', '3') -> SAME
+12:39:58    stopped with 3 roots done, resumed: 3 tilings -> SAME FILES
+12:39:58 == 1247_1_0612, k 1-3
+12:40:00    reference 130 tilings in 64 files, 2,666,512 nodes, 1.1 s; ranked 130 in 64 files, 40,009 nodes, 1.1 s -> SAME FILES
+12:40:02    tileestimate --exact ('39873', '698', '130') vs engine on one thread ('39873', '698', '130') -> SAME
+12:40:03    stopped with 19 roots done, resumed: 130 tilings -> SAME FILES
+12:40:03 == squares_edges, k 1-5
+12:40:07    reference 53,060 tilings in 120 files, 2,996,496 nodes, 2.1 s; ranked 53,060 in 120 files, 2,544,056 nodes, 1.8 s -> SAME FILES
+12:40:24    tileestimate --exact ('2535116', '244866', '53060') vs engine on one thread ('2535116', '244866', '53060') -> SAME
+12:40:26    stopped with 4 roots done, resumed: 53,060 tilings -> SAME FILES
+12:40:26 == r4, k 1-4
+12:40:26    reference 242 tilings in 81 files, 41,800 nodes, 0.1 s; ranked 242 in 81 files, 40,958 nodes, 0.1 s -> SAME FILES
+12:40:26    tileestimate --exact ('40530', '3925', '242') vs engine on one thread ('40530', '3925', '242') -> SAME
+12:40:26    stopped with 5 roots done, resumed: 242 tilings -> SAME FILES
+12:40:26 == s2, k 1-4
+12:40:28    reference 34 tilings in 29 files, 6,820,013 nodes, 1.8 s; ranked 34 in 29 files, 17,416 nodes, 0.6 s -> SAME FILES
+12:40:29    tileestimate --exact ('17333', '115', '34') vs engine on one thread ('17333', '115', '34') -> SAME
+12:40:30    stopped with 8 roots done, resumed: 34 tilings -> SAME FILES
+12:40:30 == s2b, k 1-3
+12:40:30    reference 16 tilings in 15 files, 13,497 nodes, 0.1 s; ranked 16 in 15 files, 1,004 nodes, 0.1 s -> SAME FILES
+12:40:30    tileestimate --exact ('998', '43', '16') vs engine on one thread ('998', '43', '16') -> SAME
+12:40:30    stopped with 3 roots done, resumed: 16 tilings -> SAME FILES
+12:40:30 == s3, k 1-3
+12:40:32    reference 21 tilings in 20 files, 854,279 nodes, 1.0 s; ranked 21 in 20 files, 4,413 nodes, 0.9 s -> SAME FILES
+12:40:34    tileestimate --exact ('4413', '58', '21') vs engine on one thread ('4413', '58', '21') -> SAME
+12:40:35    stopped with 3 roots done, resumed: 21 tilings -> SAME FILES
+12:40:35    result: 0 failing checks
+12:40:35 == a6_30_req, k 1-5
+12:40:36    reference 5 tilings in 5 files, 1,110,616 nodes, 0.6 s; ranked 5 in 5 files, 24,539 nodes, 0.1 s -> SAME FILES
+12:40:36    tileestimate --exact ('23215', '37', '5') vs engine on one thread ('23215', '37', '5') -> SAME
+12:40:36    stopped with 3 roots done, resumed: 5 tilings -> SAME FILES
+12:40:36    result: 0 failing checks
+12:40:36 -- rule: forced
+12:40:37 == a6_30, k 1-5
+12:41:23    reference 685 tilings in 193 files, 163,481,161 nodes, 45.6 s; ranked 685 in 193 files, 294,505 nodes, 0.9 s -> SAME FILES
+12:41:25    tileestimate --exact ('290295', '9536', '685') vs engine on one thread ('290295', '9536', '685') -> SAME
+12:41:26    stopped with 9 roots done, resumed: 685 tilings -> SAME FILES
+12:41:26 == 123_1_4657, k 1-3
+12:41:30    reference 349 tilings in 30 files, 10,626,199 nodes, 1.9 s; ranked 349 in 30 files, 24,552 nodes, 1.5 s -> SAME FILES
+12:41:32    tileestimate --exact ('23788', '2243', '349') vs engine on one thread ('23788', '2243', '349') -> SAME
+12:41:34    stopped with 28 roots done, resumed: 349 tilings -> SAME FILES
+12:41:34 == 123_1_4657_init13, k 1-3
+12:41:35    reference 3 tilings in 3 files, 126,016 nodes, 0.2 s; ranked 3 in 3 files, 739 nodes, 0.4 s -> SAME FILES
+12:41:35    tileestimate --exact ('686', '3', '3') vs engine on one thread ('686', '3', '3') -> SAME
+12:41:36    stopped with 3 roots done, resumed: 3 tilings -> SAME FILES
+12:41:36 == 1247_1_0612, k 1-3
+12:41:38    reference 130 tilings in 64 files, 2,658,446 nodes, 1.1 s; ranked 130 in 64 files, 40,044 nodes, 1.0 s -> SAME FILES
+12:41:39    tileestimate --exact ('39873', '698', '130') vs engine on one thread ('39873', '698', '130') -> SAME
+12:41:41    stopped with 18 roots done, resumed: 130 tilings -> SAME FILES
+12:41:41 == squares_edges, k 1-5
+12:41:55    reference 53,060 tilings in 120 files, 2,997,787 nodes, 2.9 s; ranked 53,060 in 120 files, 2,925,930 nodes, 10.4 s -> SAME FILES
+12:43:12    tileestimate --exact ('2907283', '244866', '53060') vs engine on one thread ('2907283', '244866', '53060') -> SAME
+12:43:16    stopped with 6 roots done, resumed: 53,060 tilings -> SAME FILES
+12:43:16 == r4, k 1-4
+12:43:17    reference 242 tilings in 81 files, 41,973 nodes, 0.1 s; ranked 242 in 81 files, 36,629 nodes, 0.1 s -> SAME FILES
+12:43:17    tileestimate --exact ('35885', '3920', '242') vs engine on one thread ('35885', '3920', '242') -> SAME
+12:43:17    stopped with 6 roots done, resumed: 242 tilings -> SAME FILES
+12:43:17 == s2, k 1-4
+12:43:19    reference 34 tilings in 29 files, 6,813,344 nodes, 1.8 s; ranked 34 in 29 files, 17,811 nodes, 0.6 s -> SAME FILES
+12:43:20    tileestimate --exact ('17333', '115', '34') vs engine on one thread ('17333', '115', '34') -> SAME
+12:43:21    stopped with 11 roots done, resumed: 34 tilings -> SAME FILES
+12:43:21 == s2b, k 1-3
+12:43:21    reference 16 tilings in 15 files, 15,419 nodes, 0.1 s; ranked 16 in 15 files, 1,005 nodes, 0.1 s -> SAME FILES
+12:43:21    tileestimate --exact ('998', '43', '16') vs engine on one thread ('998', '43', '16') -> SAME
+12:43:21    stopped with 3 roots done, resumed: 16 tilings -> SAME FILES
+12:43:21 == s3, k 1-3
+12:43:23    reference 21 tilings in 20 files, 845,883 nodes, 1.0 s; ranked 21 in 20 files, 4,413 nodes, 1.1 s -> SAME FILES
+12:43:25    tileestimate --exact ('4413', '58', '21') vs engine on one thread ('4413', '58', '21') -> SAME
+12:43:26    stopped with 7 roots done, resumed: 21 tilings -> SAME FILES
+12:43:26    result: 0 failing checks
+12:43:26 == a6_30_req, k 1-5
+12:43:27    reference 5 tilings in 5 files, 1,096,642 nodes, 0.3 s; ranked 5 in 5 files, 25,030 nodes, 0.1 s -> SAME FILES
+12:43:27    tileestimate --exact ('23215', '37', '5') vs engine on one thread ('23215', '37', '5') -> SAME
+12:43:27    stopped with 3 roots done, resumed: 5 tilings -> SAME FILES
+12:43:27    result: 0 failing checks
+== a6_30.board k5
+alt engine             nodes     14380713 complete      9536 (minimal 1369) unique     685     7.93 s
+alt joinsMRV+FC        nodes       290295 complete      9536 (minimal 1369) unique     685     0.60 s
+memo hits 217469 misses 31162
+alt memoExact          nodes       119384 complete      9536 (minimal 1369) unique     685     0.52 s
+== 123_1_4657.board k4
+alt engine             nodes     28308154 complete     10972 (minimal 5768) unique    1944    26.14 s
+alt joinsMRV+FC        nodes       147731 complete     10972 (minimal 5768) unique    1944     0.66 s
+memo hits 142826 misses 49876
+alt memoExact          nodes       116889 complete     10972 (minimal 5768) unique    1944     3.86 s
+== 1247_1_0612.board k3
+alt engine             nodes       476590 complete       698 (minimal 207) unique     130     0.28 s
+alt joinsMRV+FC        nodes        39873 complete       698 (minimal 207) unique     130     0.05 s
+memo hits 21132 misses 32593
+alt memoExact          nodes        28616 complete       698 (minimal 207) unique     130     0.72 s
+== s2.board k5
+alt engine             nodes      3470500 complete       219 (minimal 95) unique      79     2.44 s
+alt joinsMRV+FC        nodes        91068 complete       219 (minimal 95) unique      79     0.14 s
+memo hits 35082 misses 8400
+alt memoExact          nodes        29381 complete       219 (minimal 95) unique      79     0.13 s
+== squares_edges.board k5
+alt engine             nodes      2535116 complete    244866 (minimal 195471) unique   53060     5.85 s
+alt joinsMRV+FC        nodes      2907283 complete    244866 (minimal 195471) unique   53060    17.52 s
+memo hits 2225173 misses 5706
+alt memoExact          nodes      1618919 complete    244866 (minimal 195471) unique   53060    12.24 s
+== r4.board k5
+alt engine             nodes       113991 complete      7603 (minimal 1138) unique     574     0.12 s
+alt joinsMRV+FC        nodes       142080 complete      7603 (minimal 1138) unique     574     0.56 s
+memo hits 136658 misses 11271
+alt memoExact          nodes        62879 complete      7603 (minimal 1138) unique     574     0.34 s
+== s3.board k4
+alt engine             nodes       491818 complete       136 (minimal 48) unique      43     0.32 s
+alt joinsMRV+FC        nodes        24137 complete       136 (minimal 48) unique      43     0.03 s
+memo hits 7606 misses 6368
+alt memoExact          nodes        14294 complete       136 (minimal 48) unique      43     0.08 s
+== a6_30.board k5
+alt joinsMRV+FC        nodes       290295 complete      9536 (minimal 1369) unique     685     0.64 s
+memo hits 233412 misses 15219
+alt memoExact          nodes       119384 complete      9536 (minimal 1369) unique     685     0.65 s
+== 123_1_4657.board k4
+alt joinsMRV+FC        nodes       147731 complete     10972 (minimal 5768) unique    1944     0.61 s
+memo hits 188744 misses 3958
+alt memoExact          nodes       116889 complete     10972 (minimal 5768) unique    1944     1.76 s
+== 1247_1_0612.board k3
+alt joinsMRV+FC        nodes        39873 complete       698 (minimal 207) unique     130     0.07 s
+memo hits 44814 misses 8911
+alt memoExact          nodes        28616 complete       698 (minimal 207) unique     130     0.65 s
+== s2.board k5
+alt joinsMRV+FC        nodes        91068 complete       219 (minimal 95) unique      79     0.18 s
+memo hits 38538 misses 4944
+alt memoExact          nodes        29381 complete       219 (minimal 95) unique      79     0.22 s
+== s3.board k4
+alt joinsMRV+FC        nodes        24137 complete       136 (minimal 48) unique      43     0.03 s
+memo hits 10544 misses 3430
+alt memoExact          nodes        14294 complete       136 (minimal 48) unique      43     0.07 s
+== a6_30_k7.board k6
+alt joinsMRV+FC        nodes      1606353 complete     20254 (minimal 3364) unique    1475     4.85 s
+memo hits 816556 misses 27287
+alt memoExact          nodes       351404 complete     20254 (minimal 3364) unique    1475     2.46 s
+ts-pm    123_1_4657.board     k5 stats nodes 1432384 complete 112916 unique 21978 real 2.45 user 7.97 
+ts-memo  123_1_4657.board     k5 stats nodes 1132035 complete 112916 unique 21978 real 4.10 user 15.04 
+ts-pm    1247_1_0612.board    k4 stats nodes 505794 complete 2681 unique 506 real 1.63 user 1.43 
+ts-memo  1247_1_0612.board    k4 stats nodes 152071 complete 2680 unique 506 real 2.23 user 7.36 
+ts-pm    s2.board             k6 stats nodes 563865 complete 424 unique 158 real 0.83 user 1.13 
+ts-memo  s2.board             k6 stats nodes 100456 complete 424 unique 158 real 0.65 user 0.75 
+ts-pm    s3.board             k5 stats nodes 123819 complete 249 unique 94 real 1.26 user 0.48 
+ts-memo  s3.board             k5 stats nodes 41810 complete 249 unique 94 real 1.07 user 0.70 
+ts-pm    1247_1_0612.board  k4 stats nodes 505489 complete 2681 unique 506 real 1.29 user 1.27 
+ts-memo  1247_1_0612.board  k4 stats nodes 152045 complete 2680 unique 506 real 2.06 user 7.17 
+ts-sig   1247_1_0612.board  k4 stats nodes 152012 complete 2680 unique 506 real 1.88 user 2.71 
+ts-pm    123_1_4657.board   k5 stats nodes 1434331 complete 112916 unique 21978 real 2.35 user 7.76 
+ts-memo  123_1_4657.board   k5 stats nodes 1129434 complete 112916 unique 21978 real 3.69 user 14.41 
+ts-sig   123_1_4657.board   k5 stats nodes 1132307 complete 112916 unique 21978 real 2.58 user 7.64 
+ts-pm    a6_30_k7.board     k6 stats nodes 1612940 complete 20254 unique 1475 real 0.90 user 3.80 
+ts-memo  a6_30_k7.board     k6 stats nodes 334126 complete 16711 unique 1475 real 1.00 user 2.50 
+ts-sig   a6_30_k7.board     k6 stats nodes 334825 complete 16711 unique 1475 real 0.79 user 1.61 
+ts-pm    s2.board           k6 stats nodes 564755 complete 424 unique 158 real 0.59 user 1.08 
+ts-memo  s2.board           k6 stats nodes 100807 complete 424 unique 158 real 0.55 user 0.74 
+ts-sig   s2.board           k6 stats nodes 100573 complete 424 unique 158 real 0.57 user 0.39 
+ts-pm    s3.board           k5 stats nodes 124005 complete 249 unique 94 real 1.06 user 0.44 
+ts-memo  s3.board           k5 stats nodes 41087 complete 249 unique 94 real 0.87 user 0.61 
+ts-sig   s3.board           k5 stats nodes 41020 complete 249 unique 94 real 1.03 user 0.43 
+ts-pm    1247_1_0612 k5 stats nodes 8245933 complete 8616 unique 1789 real 3.76 user 14.27 
+ts-sig   1247_1_0612 k5 stats nodes 989026 complete 8611 unique 1789 real 2.60 user 9.86 
+face  squares_edges.board k5 stats nodes 2544204 complete 244866 unique 53060 real 2.01 user 7.55 
+fail  squares_edges.board k5 stats nodes 1628796 complete 244866 unique 53060 real 3.00 user 10.31 
+face  r4.board           k6 stats nodes 294530 complete 15350 unique 1247 real 0.17 user 0.46 
+fail  r4.board           k6 stats nodes 160788 complete 15272 unique 1247 real 0.21 user 0.74 
+
+# verify.py on the final engine (tools/searcher/tilesearch built 13:20: ranking, rule pilot, fail first with context-cached exact counts)
+13:20:45 -- rule: auto
+13:20:45 == a6_30, k 1-5
+new  k<=8  seed 1: 2.54e+06 nodes (se 1e+05), 0.00831 core-hours (se 0.00033), 26587 probes
+new  k<=8  seed 2: 13:21:46    reference 685 tilings in 193 files, 163,626,136 nodes, 59.8 s; ranked 685 in 193 files, 113,034 nodes, 1.5 s -> SAME FILES
+13:21:49    tileestimate --exact ('112389', '8211', '685') vs engine on one thread ('112389', '8211', '685') -> SAME
+13:21:50    stopped with 6 roots done, resumed: 685 tilings -> SAME FILES
+13:21:50 == 123_1_4657, k 1-3
+13:21:55    reference 349 tilings in 30 files, 10,812,494 nodes, 3.0 s; ranked 349 in 30 files, 19,380 nodes, 2.3 s -> SAME FILES
+13:21:58    tileestimate --exact ('19096', '2243', '349') vs engine on one thread ('19096', '2243', '349') -> SAME
+13:22:02    stopped with 33 roots done, resumed: 349 tilings -> SAME FILES
+13:22:02 == 123_1_4657_init13, k 1-3
+13:22:03    reference 3 tilings in 3 files, 126,402 nodes, 0.3 s; ranked 3 in 3 files, 783 nodes, 0.7 s -> SAME FILES
+13:22:04    tileestimate --exact ('676', '3', '3') vs engine on one thread ('676', '3', '3') -> SAME
+13:22:05    stopped with 3 roots done, resumed: 3 tilings -> SAME FILES
+13:22:05 == 1247_1_0612, k 1-3
+13:22:08    reference 130 tilings in 64 files, 2,679,729 nodes, 1.5 s; ranked 130 in 64 files, 27,502 nodes, 1.9 s -> SAME FILES
+13:22:12    tileestimate --exact ('27446', '698', '130') vs engine on one thread ('27446', '698', '130') -> SAME
+2.43e+06 nodes (se 5.3e+04), 0.00662 core-hours (se 0.00015), 30346 probes
+new  k<=10 seed 1: 13:22:15    stopped with 57 roots done, resumed: 130 tilings -> SAME FILES
+13:22:15 == squares_edges, k 1-5
+13:22:20    reference 53,060 tilings in 120 files, 2,996,236 nodes, 2.7 s; ranked 53,060 in 120 files, 2,545,056 nodes, 2.6 s -> SAME FILES
+13:22:46    tileestimate --exact ('2535116', '244866', '53060') vs engine on one thread ('2535116', '244866', '53060') -> SAME
+13:22:49    stopped with 7 roots done, resumed: 53,060 tilings -> SAME FILES
+13:22:49 == r4, k 1-4
+13:22:49    reference 242 tilings in 81 files, 41,873 nodes, 0.1 s; ranked 242 in 81 files, 40,986 nodes, 0.1 s -> SAME FILES
+13:22:50    tileestimate --exact ('40530', '3925', '242') vs engine on one thread ('40530', '3925', '242') -> SAME
+13:22:50    stopped with 4 roots done, resumed: 242 tilings -> SAME FILES
+13:22:50 == s2, k 1-4
+13:22:53    reference 34 tilings in 29 files, 6,956,168 nodes, 2.3 s; ranked 34 in 29 files, 10,847 nodes, 0.7 s -> SAME FILES
+13:22:54    tileestimate --exact ('10245', '115', '34') vs engine on one thread ('10245', '115', '34') -> SAME
+1.66e+07 nodes (se 5.3e+05), 0.0491 core-hours (se 0.0016), 18470 probes
+new  k<=10 seed 2: 13:22:55    stopped with 10 roots done, resumed: 34 tilings -> SAME FILES
+13:22:55 == s2b, k 1-3
+13:22:55    reference 16 tilings in 15 files, 14,771 nodes, 0.1 s; ranked 16 in 15 files, 893 nodes, 0.1 s -> SAME FILES
+13:22:55    tileestimate --exact ('882', '43', '16') vs engine on one thread ('882', '43', '16') -> SAME
+13:22:55    stopped with 3 roots done, resumed: 16 tilings -> SAME FILES
+13:22:55 == s3, k 1-3
+13:22:58    reference 21 tilings in 20 files, 871,008 nodes, 1.2 s; ranked 21 in 20 files, 4,073 nodes, 1.6 s -> SAME FILES
+13:23:00    tileestimate --exact ('4073', '58', '21') vs engine on one thread ('4073', '58', '21') -> SAME
+13:23:03    stopped with 34 roots done, resumed: 21 tilings -> SAME FILES
+13:23:03    result: 0 failing checks
+13:23:03 == a6_30_req, k 1-5
+13:23:03    reference 5 tilings in 5 files, 1,105,961 nodes, 0.4 s; ranked 5 in 5 files, 14,221 nodes, 0.2 s -> SAME FILES
+13:23:04    tileestimate --exact ('13435', '37', '5') vs engine on one thread ('13435', '37', '5') -> SAME
+13:23:04    stopped with 4 roots done, resumed: 5 tilings -> SAME FILES
+13:23:04    result: 0 failing checks
+13:23:04 -- rule: fail
+13:23:04 == a6_30, k 1-5
+1.83e+07 nodes (se 1.5e+06), 0.0593 core-hours (se 0.0048), 14983 probes
+new  k<=12 seed 1: 13:24:06    reference 685 tilings in 193 files, 163,577,240 nodes, 60.2 s; ranked 685 in 193 files, 113,296 nodes, 1.2 s -> SAME FILES
+13:24:08    tileestimate --exact ('112389', '8211', '685') vs engine on one thread ('112389', '8211', '685') -> SAME
+13:24:09    stopped with 27 roots done, resumed: 685 tilings -> SAME FILES
+13:24:09 == 123_1_4657, k 1-3
+13:24:15    reference 349 tilings in 30 files, 10,779,546 nodes, 2.9 s; ranked 349 in 30 files, 19,630 nodes, 2.2 s -> SAME FILES
+1.12e+08 nodes (se 7.9e+06), 0.407 core-hours (se 0.029), 10612 probes
+new  k<=12 seed 2: 13:24:18    tileestimate --exact ('19096', '2243', '349') vs engine on one thread ('19096', '2243', '349') -> SAME
+13:24:21    stopped with 5 roots done, resumed: 349 tilings -> SAME FILES
+13:24:21 == 123_1_4657_init13, k 1-3
+13:24:22    reference 3 tilings in 3 files, 125,589 nodes, 0.3 s; ranked 3 in 3 files, 735 nodes, 0.7 s -> SAME FILES
+13:24:23    tileestimate --exact ('676', '3', '3') vs engine on one thread ('676', '3', '3') -> SAME
+13:24:24    stopped with 4 roots done, resumed: 3 tilings -> SAME FILES
+13:24:24 == 1247_1_0612, k 1-3
+13:24:27    reference 130 tilings in 64 files, 2,681,128 nodes, 1.4 s; ranked 130 in 64 files, 27,481 nodes, 1.6 s -> SAME FILES
+13:24:30    tileestimate --exact ('27446', '698', '130') vs engine on one thread ('27446', '698', '130') -> SAME
+13:24:33    stopped with 10 roots done, resumed: 130 tilings -> SAME FILES
+13:24:33 == squares_edges, k 1-5
+13:24:39    reference 53,060 tilings in 120 files, 2,998,485 nodes, 2.6 s; ranked 53,060 in 120 files, 1,626,395 nodes, 3.2 s -> SAME FILES
+1.11e+08 nodes (se 6.1e+06), 0.343 core-hours (se 0.019), 13778 probes
+new  k<=15 seed 1: 1.78e+09 nodes (se 1.6e+08), 6.73 core-hours (se 0.59), 8177 probes
+new  k<=15 seed 2: 13:25:44    tileestimate --exact ('1618919', '244866', '53060') vs engine on one thread ('1618919', '244866', '53060') -> SAME
+13:25:47    stopped with 3 roots done, resumed: 53,060 tilings -> SAME FILES
+13:25:47 == r4, k 1-4
+13:25:48    reference 242 tilings in 81 files, 41,901 nodes, 0.1 s; ranked 242 in 81 files, 24,598 nodes, 0.1 s -> SAME FILES
+13:25:48    tileestimate --exact ('24116', '3920', '242') vs engine on one thread ('24116', '3920', '242') -> SAME
+13:25:48    stopped with 4 roots done, resumed: 242 tilings -> SAME FILES
+13:25:48 == s2, k 1-4
+13:25:51    reference 34 tilings in 29 files, 6,856,532 nodes, 2.5 s; ranked 34 in 29 files, 10,564 nodes, 0.8 s -> SAME FILES
+13:25:52    tileestimate --exact ('10245', '115', '34') vs engine on one thread ('10245', '115', '34') -> SAME
+13:25:53    stopped with 11 roots done, resumed: 34 tilings -> SAME FILES
+13:25:53 == s2b, k 1-3
+13:25:54    reference 16 tilings in 15 files, 15,364 nodes, 0.1 s; ranked 16 in 15 files, 892 nodes, 0.1 s -> SAME FILES
+13:25:54    tileestimate --exact ('882', '43', '16') vs engine on one thread ('882', '43', '16') -> SAME
+13:25:54    stopped with 3 roots done, resumed: 16 tilings -> SAME FILES
+13:25:54 == s3, k 1-3
+13:25:57    reference 21 tilings in 20 files, 868,741 nodes, 1.4 s; ranked 21 in 20 files, 4,073 nodes, 1.4 s -> SAME FILES
+13:25:59    tileestimate --exact ('4073', '58', '21') vs engine on one thread ('4073', '58', '21') -> SAME
+13:26:01    stopped with 5 roots done, resumed: 21 tilings -> SAME FILES
+13:26:01    result: 0 failing checks
+13:26:01 == a6_30_req, k 1-5
+13:26:02    reference 5 tilings in 5 files, 1,095,883 nodes, 0.5 s; ranked 5 in 5 files, 14,011 nodes, 0.2 s -> SAME FILES
+13:26:03    tileestimate --exact ('13435', '37', '5') vs engine on one thread ('13435', '37', '5') -> SAME
+13:26:03    stopped with 4 roots done, resumed: 5 tilings -> SAME FILES
+13:26:03    result: 0 failing checks
+13:26:03 -- rule: face
+13:26:03 == a6_30, k 1-5
+2.77e+09 nodes (se 4.6e+08), 11 core-hours (se 1.8), 10311 probes
+new  k<=20 seed 1: 3.32e+11 nodes (se 1e+11), 606 core-hours (se 1.9e+02), 5790 probes
+new  k<=20 seed 2: 13:27:07    reference 685 tilings in 193 files, 163,681,904 nodes, 59.4 s; ranked 685 in 193 files, 19,573,749 nodes, 4.1 s -> SAME FILES
+3.2e+11 nodes (se 9.2e+10), 1.63e+03 core-hours (se 4.7e+02), 6589 probes
+13:27:48    tileestimate --exact ('19565323', '8215', '685') vs engine on one thread ('19565323', '8215', '685') -> SAME
+real k<=8: 13:27:52    stopped with 76 roots done, resumed: 685 tilings -> SAME FILES
+13:27:52 == 123_1_4657, k 1-3
+stats nodes 2657830 complete 61712 unique 6566 real 4.85 user 11.76 
+real k<=10: 13:27:59    reference 349 tilings in 30 files, 10,787,073 nodes, 3.4 s; ranked 349 in 30 files, 255,086 nodes, 3.2 s -> SAME FILES
+13:28:03    tileestimate --exact ('243139', '2243', '349') vs engine on one thread ('243139', '2243', '349') -> SAME
+13:28:08    stopped with 8 roots done, resumed: 349 tilings -> SAME FILES
+13:28:08 == 123_1_4657_init13, k 1-3
+13:28:09    reference 3 tilings in 3 files, 127,043 nodes, 0.2 s; ranked 3 in 3 files, 123,167 nodes, 0.9 s -> SAME FILES
+13:28:11    tileestimate --exact ('111748', '3', '3') vs engine on one thread ('111748', '3', '3') -> SAME
+13:28:13    stopped with 24 roots done, resumed: 3 tilings -> SAME FILES
+13:28:13 == 1247_1_0612, k 1-3
+13:28:17    reference 130 tilings in 64 files, 2,684,983 nodes, 2.0 s; ranked 130 in 64 files, 152,323 nodes, 2.5 s -> SAME FILES
+13:28:21    tileestimate --exact ('151503', '699', '130') vs engine on one thread ('151503', '699', '130') -> SAME
+stats nodes 21865558 complete 239184 unique 27020 real 26.82 user 104.46 
+13:28:23    stopped with 29 roots done, resumed: 130 tilings -> SAME FILES
+13:28:23 == squares_edges, k 1-5
+13:28:28    reference 53,060 tilings in 120 files, 2,997,458 nodes, 2.3 s; ranked 53,060 in 120 files, 2,545,413 nodes, 2.0 s -> SAME FILES
+13:28:52    tileestimate --exact ('2535116', '244866', '53060') vs engine on one thread ('2535116', '244866', '53060') -> SAME
+13:28:56    stopped with 7 roots done, resumed: 53,060 tilings -> SAME FILES
+13:28:56 == r4, k 1-4
+13:28:56    reference 242 tilings in 81 files, 41,777 nodes, 0.1 s; ranked 242 in 81 files, 41,201 nodes, 0.1 s -> SAME FILES
+13:28:56    tileestimate --exact ('40530', '3925', '242') vs engine on one thread ('40530', '3925', '242') -> SAME
+13:28:56    stopped with 4 roots done, resumed: 242 tilings -> SAME FILES
+13:28:56 == s2, k 1-4
+13:29:00    reference 34 tilings in 29 files, 6,884,567 nodes, 2.6 s; ranked 34 in 29 files, 123,892 nodes, 0.9 s -> SAME FILES
+13:29:01    tileestimate --exact ('122906', '117', '34') vs engine on one thread ('122906', '117', '34') -> SAME
+13:29:03    stopped with 71 roots done, resumed: 34 tilings -> SAME FILES
+13:29:03 == s2b, k 1-3
+13:29:03    reference 16 tilings in 15 files, 15,495 nodes, 0.1 s; ranked 16 in 15 files, 2,682 nodes, 0.1 s -> SAME FILES
+13:29:03    tileestimate --exact ('2665', '43', '16') vs engine on one thread ('2665', '43', '16') -> SAME
+13:29:03    stopped with 3 roots done, resumed: 16 tilings -> SAME FILES
+13:29:03 == s3, k 1-3
+13:29:07    reference 21 tilings in 20 files, 869,398 nodes, 1.8 s; ranked 21 in 20 files, 31,310 nodes, 1.9 s -> SAME FILES
+13:29:09    tileestimate --exact ('31293', '58', '21') vs engine on one thread ('31293', '58', '21') -> SAME
+13:29:12    stopped with 3 roots done, resumed: 21 tilings -> SAME FILES
+13:29:12    result: 0 failing checks
+13:29:12 == a6_30_req, k 1-5
+13:29:13    reference 5 tilings in 5 files, 1,102,419 nodes, 0.5 s; ranked 5 in 5 files, 942,222 nodes, 0.5 s -> SAME FILES
+13:29:15    tileestimate --exact ('877571', '37', '5') vs engine on one thread ('877571', '37', '5') -> SAME
+13:29:15    stopped with 10 roots done, resumed: 5 tilings -> SAME FILES
+13:29:15    result: 0 failing checks
+13:30:18 -- after the cache cap by size (rebuilt)
+13:30:18 == a6_30, k 1-5
+13:31:08    reference 685 tilings in 193 files, 163,492,218 nodes, 47.7 s; ranked 685 in 193 files, 112,780 nodes, 1.4 s -> SAME FILES
+13:31:10    tileestimate --exact ('112389', '8211', '685') vs engine on one thread ('112389', '8211', '685') -> SAME
+13:31:11    stopped with 25 roots done, resumed: 685 tilings -> SAME FILES
+13:31:11 == 1247_1_0612, k 1-3
+13:31:14    reference 130 tilings in 64 files, 2,678,904 nodes, 1.2 s; ranked 130 in 64 files, 27,469 nodes, 1.3 s -> SAME FILES
+13:31:16    tileestimate --exact ('27446', '698', '130') vs engine on one thread ('27446', '698', '130') -> SAME
+13:31:18    stopped with 12 roots done, resumed: 130 tilings -> SAME FILES
+13:31:18 == squares_edges, k 1-4
+13:31:19    reference 9,268 tilings in 82 files, 478,849 nodes, 0.3 s; ranked 9,268 in 82 files, 416,090 nodes, 0.3 s -> SAME FILES
+13:31:21    tileestimate --exact ('410486', '45600', '9268') vs engine on one thread ('410486', '45600', '9268') -> SAME
+13:31:22    stopped with 3 roots done, resumed: 9,268 tilings -> SAME FILES
+13:31:22    result: 0 failing checks
+
+== SUMMARY (13:40)
+Where the nodes go (prof.cpp stats, engine's old rule): ~97% of nodes lead to no tiling; ~90% sit on the last vertex level and
+97% of those are dead on arrival (some free half-edge has no partner). Isomorphic partial states (transposition table / DP
+over whole states) cover only 2.5-7% of nodes, and with the full-tiling key no exact state ever repeated; leaves are 1% of
+nodes, 89% of them covers of smaller tilings, multiplicity among minimal ones ~1.5. So isomorph rejection is not the lever.
+Lever 1, fail first (MRV + forward checking): branch on the free half-edge with the fewest options, die when one has none.
+  A6_30 k<=6: 66.9M -> 1.6M nodes. Loses 1.4-1.6x on squares_edges and r4 (few dead ends): a pilot to 2 vertices picks per board.
+Lever 2, exact option counts cached by local context (DP over contexts): what a fresh vertex can glue to depends only on the
+  partial faces around the half-edge; signatures make a miss one face test per distinct template neighbourhood.
+  A6_30 k<=6: 1.6M -> 0.33M nodes, CPU 3.8 -> 1.6 s; 1247 k<=5: 8.2M -> 1.0M nodes, CPU 14.3 -> 9.9 s; cold cache costs up to ~1 s.
+Not worth it (measured): one-vertex budget cover bound (2-5%), lazy exact counting (no change), tie-break by face rule.
+Correctness: verify.py on 10 boards x 3 rule modes, every output file's count equal to the committed engine, tileestimate
+  --exact equal to the engine, stop/resume equal: 90/90. Context key validated at every hit (prof VALIDATE=1, 6 boards);
+  signatures validated against every placement's own test (-DCHECK_PASSING, 9 boards).
+Estimates for the A6_30 draft board, new engine: k<=12 0.34-0.41 core-hours, k<=15 7-11, k<=20 ~3.3e11 nodes,
+  600-1,600 core-hours (seeds agree on nodes within 4%). Real runs: k<=8 2.66M nodes (est 2.4-2.5M), k<=10 21.9M (est
+  16.6-18.3M): the estimator reads 5-25% low at depth. Committed engine, k<=20 estimate: 1.9e16-2.3e18 nodes.
+== a6_30.board k8
+stats2 rule fail-first nodes 2654370 productive 272568 (10.27%), one-vertex cover would cut 142306 nodes below 29767 (5.4%) 10.7 s
+stats2 n=1 nodes 1391 productive 407 childless 934
+stats2 n=2 nodes 2310 productive 1950 childless 219
+stats2 n=3 nodes 9207 productive 5688 childless 2919
+stats2 n=4 nodes 29870 productive 13346 childless 13539
+stats2 n=5 nodes 79977 productive 25892 childless 40368
+stats2 n=6 nodes 243118 productive 49350 childless 138162
+stats2 n=7 nodes 677305 productive 73237 childless 413895
+stats2 n=8 nodes 1611192 productive 102698 childless 1413271
+== 123_1_4657.board k5
+stats2 rule fail-first nodes 1125694 productive 534592 (47.49%), one-vertex cover would cut 1632 nodes below 884 (0.1%) 3.4 s
+stats2 n=1 nodes 2315 productive 139 childless 416
+stats2 n=2 nodes 3245 productive 1268 childless 1013
+stats2 n=3 nodes 14591 productive 10924 childless 1937
+stats2 n=4 nodes 108859 productive 66773 childless 18718
+stats2 n=5 nodes 996684 productive 455488 childless 332101
+== 1247_1_0612.board k5
+stats2 rule fail-first nodes 987906 productive 41290 (4.18%), one-vertex cover would cut 57337 nodes below 29983 (5.8%) 9.3 s
+stats2 n=1 nodes 1616 productive 327 childless 36
+stats2 n=2 nodes 3510 productive 1072 childless 292
+stats2 n=3 nodes 25321 productive 4248 childless 7229
+stats2 n=4 nodes 144331 productive 11858 childless 51082
+stats2 n=5 nodes 813128 productive 23785 childless 740304
+== s2.board k6
+stats2 rule fail-first nodes 99262 productive 2428 (2.45%), one-vertex cover would cut 3840 nodes below 593 (3.9%) 0.2 s
+stats2 n=1 nodes 1006 productive 39 childless 959
+stats2 n=2 nodes 136 productive 107 childless 10
+stats2 n=3 nodes 1838 productive 295 childless 1398
+stats2 n=4 nodes 7910 productive 592 childless 6496
+stats2 n=5 nodes 20437 productive 727 childless 16537
+stats2 n=6 nodes 67935 productive 668 childless 66466
+== squares_edges.board k5
+stats2 rule face nodes 2535116 productive 1229385 (48.49%), one-vertex cover would cut 32 nodes below 643 (0.0%) 2.5 s
+stats2 n=1 nodes 517 productive 504 childless 10
+stats2 n=2 nodes 6542 productive 5498 childless 817
+stats2 n=3 nodes 50497 productive 35079 childless 10810
+stats2 n=4 nodes 352930 productive 202911 childless 95286
+stats2 n=5 nodes 2124630 productive 985393 childless 654260
+
+== round 2 (after "keep going")
+Final engine tree (prof stats2): star boards 2.5-10% productive, last level 60-80% of nodes, 88-98% of it childless;
+  123_1_4657 and squares_edges ~48% productive, leaves 4-5x redundant.
+Last level: of dying last-level nodes, 50-80% (star boards) have a half-edge on the NEWEST vertex with no label partner.
+  -> choose_halfedge scans free half-edges newest first: A6_30 k<=8 CPU 4.7 -> 3.7 s (-22%), 1247 k<=5 -8%, s2 k<=6 -15%,
+     123 k<=5 neutral; same tilings. KEPT.
+Glue results cached by the pair of contexts (direct test when walks meet): validated (-DCHECK_JOINS, 9 boards, no
+  mismatch) but SLOWER: A6_30 k<=8 4.4-4.7 -> 5.3-5.9 s, 123 k<=5 3.2-3.4 -> 4.4 s. Contexts + hashing cost more than the
+  short face walks they replace. DROPPED.
+Canonical start (prune when another root-type vertex's complete ring code beats the start's): LOSES tilings with the naive
+  ring code (123 k<=4 1944 -> 1711, squares 9268 -> 9259, A6_30 1475 -> 1461): neighbour offsets depend on template
+  alignment and mirror builds, so the code is not invariant. And the bound is small anyway: 0-7% fewer nodes (rings
+  complete near the leaves). DROPPED.
+threads  1: stats nodes 22604060 complete 239190 unique 27020 real 26.62 user 26.05 
+threads  4: stats nodes 22604099 complete 239190 unique 27020 real 8.30 user 31.97 
+threads  8: stats nodes 22608269 complete 239190 unique 27020 real 5.75 user 40.00 
+threads 10: stats nodes 22611968 complete 239190 unique 27020 real 5.86 user 40.86 
+ts-rev2 a6_k10.board       k10 stats nodes 22611217 complete 239190 unique 27020 real 5.68 user 39.91 
+ts-l2   a6_k10.board       k10 stats nodes 3967 complete 329 unique 66 real 0.46 user 0.09 
+ts-rev2 a6_k10.board       k10 stats nodes 22617815 complete 239190 unique 27020 real 5.53 user 40.52 
+ts-l2   a6_k10.board       k10 stats nodes 3983 complete 329 unique 66 real 0.26 user 0.10 
+ts-rev2 123_1_4657.board   k5 stats nodes 1142689 complete 112916 unique 21978 real 0.93 user 4.21 
+ts-l2   123_1_4657.board   k5 stats nodes 68853 complete 341 unique 97 real 0.58 user 0.41 
+ts-rev2 123_1_4657.board   k5 stats nodes 1142279 complete 112916 unique 21978 real 1.01 user 4.07 
+ts-l2   123_1_4657.board   k5 stats nodes 65790 complete 341 unique 97 real 0.57 user 0.40 
+ts-rev2 1247_1_0612.board  k5 stats nodes 993961 complete 8611 unique 1789 real 0.84 user 4.98 
+ts-l2   1247_1_0612.board  k5 stats nodes 250424 complete 935 unique 343 real 0.59 user 2.33 
+ts-rev2 1247_1_0612.board  k5 stats nodes 994143 complete 8611 unique 1789 real 0.84 user 4.95 
+ts-l2   1247_1_0612.board  k5 stats nodes 250691 complete 935 unique 343 real 0.59 user 2.30 
+ts-rev2 a6_k10.board       k10 stats nodes 22614108 complete 239190 unique 27020 real 6.29 user 42.08 
+ts-l2   a6_k10.board       k10 stats nodes 22613016 complete 239190 unique 27020 real 6.45 user 42.46 
+ts-rev2 a6_k10.board       k10 stats nodes 22614860 complete 239190 unique 27020 real 6.34 user 42.85 
+ts-l2   a6_k10.board       k10 stats nodes 22611109 complete 239190 unique 27020 real 6.33 user 42.69 
+ts-rev2 123_1_4657.board   k5 stats nodes 1140744 complete 112916 unique 21978 real 0.99 user 4.46 
+ts-l2   123_1_4657.board   k5 stats nodes 1140618 complete 112916 unique 21978 real 1.01 user 4.28 
+ts-rev2 123_1_4657.board   k5 stats nodes 1143035 complete 112916 unique 21978 real 1.10 user 4.46 
+ts-l2   123_1_4657.board   k5 stats nodes 1140820 complete 112916 unique 21978 real 1.06 user 4.22 
+ts-rev2 1247_1_0612.board  k5 stats nodes 994672 complete 8611 unique 1789 real 0.85 user 5.06 
+ts-l2   1247_1_0612.board  k5 stats nodes 994611 complete 8611 unique 1789 real 0.76 user 3.78 
+ts-rev2 1247_1_0612.board  k5 stats nodes 994218 complete 8611 unique 1789 real 0.85 user 5.07 
+ts-l2   1247_1_0612.board  k5 stats nodes 994304 complete 8611 unique 1789 real 0.75 user 3.78 
+ts-norank a6_k8.board        k8 stats nodes 20455563 complete 94198 unique 6566 real 2.90 user 17.07 
+ts-l2     a6_k8.board        k8 stats nodes 2689157 complete 61712 unique 6566 real 1.10 user 6.56 
+ts-rank3  a6_k8.board        k8 stats nodes 1669915 complete 78761 unique 6566 real 1.35 user 5.78 
+ts-norank 123_1_4657.board   k5 stats nodes 23443323 complete 113067 unique 21978 real 3.73 user 23.90 
+ts-l2     123_1_4657.board   k5 stats nodes 1142373 complete 112916 unique 21978 real 1.52 user 5.57 
+ts-rank3  123_1_4657.board   k5 stats nodes 1138486 complete 112916 unique 21978 real 1.58 user 6.58 
+ts-norank 1247_1_0612.board  k5 stats nodes 6887091 complete 10166 unique 1789 real 1.94 user 12.30 
+ts-l2     1247_1_0612.board  k5 stats nodes 994384 complete 8611 unique 1789 real 1.08 user 5.06 
+ts-rank3  1247_1_0612.board  k5 stats nodes 569985 complete 8609 unique 1789 real 1.31 user 5.29 
+ts-norank s2.board           k6 stats nodes 254962 complete 583 unique 158 real 0.43 user 0.39 
+ts-l2     s2.board           k6 stats nodes 98892 complete 424 unique 158 real 0.44 user 0.26 
+ts-rank3  s2.board           k6 stats nodes 21918 complete 426 unique 158 real 0.45 user 0.21 
+ts-norank s3.board           k5 stats nodes 115591 complete 325 unique 94 real 0.69 user 0.33 
+ts-l2     s3.board           k5 stats nodes 41189 complete 249 unique 94 real 0.74 user 0.30 
+ts-rank3  s3.board           k5 stats nodes 10335 complete 250 unique 94 real 0.74 user 0.28 
+ts-l2     a6_k10.board       k10 startup 0.14s nodes 22619751 total 8.17s
+ts-rank3  a6_k10.board       k10 startup 0.17s nodes 12596320 total 6.60s
+ts-rank4  a6_k10.board       k10 startup 0.58s nodes 12037796 total 6.91s
+ts-l2     123_1_4657.board   k5 startup 0.39s nodes 1140621 total 1.48s
+ts-rank3  123_1_4657.board   k5 startup 0.56s nodes 1136797 total 1.77s
+ts-rank4  123_1_4657.board   k5 startup 2.13s nodes 1107827 total 3.31s
+ts-l2     1247_1_0612.board  k5 startup 0.28s nodes 994359 total 1.10s
+ts-rank3  1247_1_0612.board  k5 startup 0.47s nodes 569578 total 1.34s
+ts-rank4  1247_1_0612.board  k5 startup 1.07s nodes 554131 total 1.94s
+ts-l2     s2.board           k7 startup 0.13s nodes 304850 total 0.48s
+ts-rank3  s2.board           k7 startup 0.12s nodes 62440 total 0.48s
+ts-rank4  s2.board           k7 startup 0.14s nodes 59800 total 0.49s
+ts-l2     s3.board           k6 startup 0.24s nodes 131637 total 0.76s
+ts-rank3  s3.board           k6 startup 0.24s nodes 26572 total 0.76s
+ts-rank4  s3.board           k6 startup 0.25s nodes 25040 total 0.79s
+ts-l2     squares_edges.board k5 startup 0.01s nodes 2543513 total 1.15s
+ts-rank3  squares_edges.board k5 startup 0.03s nodes 2999286 total 1.26s
+ts-rank4  squares_edges.board k5 startup 0.28s nodes 2998916 total 1.58s
+
+# verify.py, round 2 engine (newest first, shared context cache keyed by candidate table, rank depth 3 under fail first)
+15:14:49 -- rule: auto
+15:14:49 == a6_30, k 1-5
+15:15:19    reference 685 tilings in 193 files, 163,742,415 nodes, 29.1 s; ranked 685 in 193 files, 90,192 nodes, 1.0 s -> SAME FILES
+15:15:22    tileestimate --exact ('89928', '9502', '685') vs engine on one thread ('89928', '9502', '685') -> SAME
+15:15:23    stopped with 6 roots done, resumed: 685 tilings -> SAME FILES
+15:15:23 == 123_1_4657, k 1-3
+15:15:26    reference 349 tilings in 30 files, 10,734,800 nodes, 1.8 s; ranked 349 in 30 files, 19,750 nodes, 1.3 s -> SAME FILES
+15:15:28    tileestimate --exact ('19442', '2243', '349') vs engine on one thread ('19442', '2243', '349') -> SAME
+15:15:30    stopped with 5 roots done, resumed: 349 tilings -> SAME FILES
+15:15:30 == 123_1_4657_init13, k 1-3
+15:15:30    reference 3 tilings in 3 files, 125,245 nodes, 0.2 s; ranked 3 in 3 files, 954 nodes, 0.4 s -> SAME FILES
+15:15:31    tileestimate --exact ('885', '3', '3') vs engine on one thread ('885', '3', '3') -> SAME
+15:15:32    stopped with 6 roots done, resumed: 3 tilings -> SAME FILES
+15:15:32 == 1247_1_0612, k 1-3
+15:15:33    reference 130 tilings in 64 files, 2,665,821 nodes, 0.7 s; ranked 130 in 64 files, 21,411 nodes, 1.0 s -> SAME FILES
+15:15:35    tileestimate --exact ('21396', '698', '130') vs engine on one thread ('21396', '698', '130') -> SAME
+15:15:37    stopped with 7 roots done, resumed: 130 tilings -> SAME FILES
+15:15:37 == squares_edges, k 1-5
+15:15:40    reference 53,060 tilings in 120 files, 2,998,764 nodes, 1.3 s; ranked 53,060 in 120 files, 2,548,310 nodes, 1.4 s -> SAME FILES
+15:15:51    tileestimate --exact ('2535116', '244866', '53060') vs engine on one thread ('2535116', '244866', '53060') -> SAME
+15:15:53    stopped with 9 roots done, resumed: 53,060 tilings -> SAME FILES
+15:15:53 == r4, k 1-4
+15:15:53    reference 242 tilings in 81 files, 41,829 nodes, 0.1 s; ranked 242 in 81 files, 41,055 nodes, 0.1 s -> SAME FILES
+15:15:53    tileestimate --exact ('40530', '3925', '242') vs engine on one thread ('40530', '3925', '242') -> SAME
+15:15:53    stopped with 9 roots done, resumed: 242 tilings -> SAME FILES
+15:15:53 == s2, k 1-4
+15:15:55    reference 34 tilings in 29 files, 6,826,818 nodes, 1.4 s; ranked 34 in 29 files, 3,377 nodes, 0.5 s -> SAME FILES
+15:15:55    tileestimate --exact ('3377', '115', '34') vs engine on one thread ('3377', '115', '34') -> SAME
+15:15:56    stopped with 4 roots done, resumed: 34 tilings -> SAME FILES
+15:15:56 == s2b, k 1-3
+15:15:56    reference 16 tilings in 15 files, 15,113 nodes, 0.1 s; ranked 16 in 15 files, 868 nodes, 0.1 s -> SAME FILES
+15:15:56    tileestimate --exact ('868', '43', '16') vs engine on one thread ('868', '43', '16') -> SAME
+15:15:57    stopped with 3 roots done, resumed: 16 tilings -> SAME FILES
+15:15:57 == s3, k 1-3
+15:15:58    reference 21 tilings in 20 files, 885,936 nodes, 0.7 s; ranked 21 in 20 files, 2,467 nodes, 0.8 s -> SAME FILES
+15:15:59    tileestimate --exact ('2467', '58', '21') vs engine on one thread ('2467', '58', '21') -> SAME
+15:16:00    stopped with 3 roots done, resumed: 21 tilings -> SAME FILES
+15:16:00    result: 0 failing checks
+15:16:00 == a6_30_req, k 1-5
+15:16:01    reference 5 tilings in 5 files, 1,091,009 nodes, 0.3 s; ranked 5 in 5 files, 15,156 nodes, 0.1 s -> SAME FILES
+15:16:01    tileestimate --exact ('13780', '37', '5') vs engine on one thread ('13780', '37', '5') -> SAME
+15:16:01    stopped with 4 roots done, resumed: 5 tilings -> SAME FILES
+15:16:01    result: 0 failing checks
+15:16:01 -- rule: fail
+15:16:01 == a6_30, k 1-5
+15:16:27    reference 685 tilings in 193 files, 163,664,837 nodes, 25.1 s; ranked 685 in 193 files, 90,246 nodes, 0.6 s -> SAME FILES
+15:16:28    tileestimate --exact ('89928', '9502', '685') vs engine on one thread ('89928', '9502', '685') -> SAME
+15:16:29    stopped with 12 roots done, resumed: 685 tilings -> SAME FILES
+15:16:29 == 123_1_4657, k 1-3
+15:16:32    reference 349 tilings in 30 files, 10,747,507 nodes, 1.7 s; ranked 349 in 30 files, 19,742 nodes, 1.3 s -> SAME FILES
+15:16:34    tileestimate --exact ('19442', '2243', '349') vs engine on one thread ('19442', '2243', '349') -> SAME
+15:16:36    stopped with 6 roots done, resumed: 349 tilings -> SAME FILES
+15:16:36 == 123_1_4657_init13, k 1-3
+15:16:37    reference 3 tilings in 3 files, 125,770 nodes, 0.2 s; ranked 3 in 3 files, 956 nodes, 0.4 s -> SAME FILES
+15:16:37    tileestimate --exact ('885', '3', '3') vs engine on one thread ('885', '3', '3') -> SAME
+15:16:38    stopped with 5 roots done, resumed: 3 tilings -> SAME FILES
+15:16:38 == 1247_1_0612, k 1-3
+15:16:40    reference 130 tilings in 64 files, 2,669,719 nodes, 0.7 s; ranked 130 in 64 files, 21,422 nodes, 1.1 s -> SAME FILES
+15:16:42    tileestimate --exact ('21396', '698', '130') vs engine on one thread ('21396', '698', '130') -> SAME
+15:16:43    stopped with 5 roots done, resumed: 130 tilings -> SAME FILES
+15:16:43 == squares_edges, k 1-5
+15:16:47    reference 53,060 tilings in 120 files, 2,997,149 nodes, 1.3 s; ranked 53,060 in 120 files, 1,970,912 nodes, 1.7 s -> SAME FILES
+15:17:19    tileestimate --exact ('1959483', '299032', '53060') vs engine on one thread ('1959483', '299032', '53060') -> SAME
+15:17:21    stopped with 6 roots done, resumed: 53,060 tilings -> SAME FILES
+15:17:21 == r4, k 1-4
+15:17:21    reference 242 tilings in 81 files, 41,903 nodes, 0.1 s; ranked 242 in 81 files, 24,335 nodes, 0.1 s -> SAME FILES
+15:17:21    tileestimate --exact ('24068', '3920', '242') vs engine on one thread ('24068', '3920', '242') -> SAME
+15:17:21    stopped with 11 roots done, resumed: 242 tilings -> SAME FILES
+15:17:21 == s2, k 1-4
+15:17:23    reference 34 tilings in 29 files, 6,808,739 nodes, 1.5 s; ranked 34 in 29 files, 3,377 nodes, 0.5 s -> SAME FILES
+15:17:24    tileestimate --exact ('3377', '115', '34') vs engine on one thread ('3377', '115', '34') -> SAME
+15:17:25    stopped with 5 roots done, resumed: 34 tilings -> SAME FILES
+15:17:25 == s2b, k 1-3
+15:17:25    reference 16 tilings in 15 files, 15,229 nodes, 0.1 s; ranked 16 in 15 files, 868 nodes, 0.1 s -> SAME FILES
+15:17:25    tileestimate --exact ('868', '43', '16') vs engine on one thread ('868', '43', '16') -> SAME
+15:17:25    stopped with 3 roots done, resumed: 16 tilings -> SAME FILES
+15:17:25 == s3, k 1-3
+15:17:26    reference 21 tilings in 20 files, 880,311 nodes, 0.7 s; ranked 21 in 20 files, 2,467 nodes, 0.8 s -> SAME FILES
+15:17:28    tileestimate --exact ('2467', '58', '21') vs engine on one thread ('2467', '58', '21') -> SAME
+15:17:29    stopped with 3 roots done, resumed: 21 tilings -> SAME FILES
+15:17:29    result: 0 failing checks
+15:17:29 == a6_30_req, k 1-5
+15:17:29    reference 5 tilings in 5 files, 1,108,767 nodes, 0.3 s; ranked 5 in 5 files, 15,116 nodes, 0.1 s -> SAME FILES
+15:17:29    tileestimate --exact ('13780', '37', '5') vs engine on one thread ('13780', '37', '5') -> SAME
+15:17:30    stopped with 4 roots done, resumed: 5 tilings -> SAME FILES
+15:17:30    result: 0 failing checks
+15:17:30 -- rule: face
+15:17:30 == a6_30, k 1-5
+15:17:57    reference 685 tilings in 193 files, 163,878,071 nodes, 25.3 s; ranked 685 in 193 files, 19,572,323 nodes, 1.6 s -> SAME FILES
+15:18:15    tileestimate --exact ('19565323', '8215', '685') vs engine on one thread ('19565323', '8215', '685') -> SAME
+15:18:17    stopped with 19 roots done, resumed: 685 tilings -> SAME FILES
+15:18:17 == 123_1_4657, k 1-3
+15:18:20    reference 349 tilings in 30 files, 10,697,184 nodes, 1.6 s; ranked 349 in 30 files, 252,197 nodes, 1.1 s -> SAME FILES
+15:18:21    tileestimate --exact ('243139', '2243', '349') vs engine on one thread ('243139', '2243', '349') -> SAME
+15:18:23    stopped with 8 roots done, resumed: 349 tilings -> SAME FILES
+15:18:23 == 123_1_4657_init13, k 1-3
+15:18:23    reference 3 tilings in 3 files, 125,891 nodes, 0.2 s; ranked 3 in 3 files, 124,842 nodes, 0.4 s -> SAME FILES
+15:18:24    tileestimate --exact ('111748', '3', '3') vs engine on one thread ('111748', '3', '3') -> SAME
+15:18:25    stopped with 7 roots done, resumed: 3 tilings -> SAME FILES
+15:18:25 == 1247_1_0612, k 1-3
+15:18:26    reference 130 tilings in 64 files, 2,667,620 nodes, 0.7 s; ranked 130 in 64 files, 152,001 nodes, 0.9 s -> SAME FILES
+15:18:28    tileestimate --exact ('151503', '699', '130') vs engine on one thread ('151503', '699', '130') -> SAME
+15:18:29    stopped with 14 roots done, resumed: 130 tilings -> SAME FILES
+15:18:29 == squares_edges, k 1-5
+15:18:32    reference 53,060 tilings in 120 files, 2,999,488 nodes, 1.2 s; ranked 53,060 in 120 files, 2,550,681 nodes, 1.3 s -> SAME FILES
+15:18:43    tileestimate --exact ('2535116', '244866', '53060') vs engine on one thread ('2535116', '244866', '53060') -> SAME
+15:18:44    stopped with 7 roots done, resumed: 53,060 tilings -> SAME FILES
+15:18:44 == r4, k 1-4
+15:18:45    reference 242 tilings in 81 files, 41,957 nodes, 0.1 s; ranked 242 in 81 files, 41,199 nodes, 0.1 s -> SAME FILES
+15:18:45    tileestimate --exact ('40530', '3925', '242') vs engine on one thread ('40530', '3925', '242') -> SAME
+15:18:45    stopped with 8 roots done, resumed: 242 tilings -> SAME FILES
+15:18:45 == s2, k 1-4
+15:18:47    reference 34 tilings in 29 files, 6,807,735 nodes, 1.5 s; ranked 34 in 29 files, 124,713 nodes, 0.5 s -> SAME FILES
+15:18:47    tileestimate --exact ('122906', '117', '34') vs engine on one thread ('122906', '117', '34') -> SAME
+15:18:48    stopped with 14 roots done, resumed: 34 tilings -> SAME FILES
+15:18:48 == s2b, k 1-3
+15:18:48    reference 16 tilings in 15 files, 14,948 nodes, 0.1 s; ranked 16 in 15 files, 2,690 nodes, 0.1 s -> SAME FILES
+15:18:48    tileestimate --exact ('2665', '43', '16') vs engine on one thread ('2665', '43', '16') -> SAME
+15:18:48    stopped with 3 roots done, resumed: 16 tilings -> SAME FILES
+15:18:48 == s3, k 1-3
+15:18:50    reference 21 tilings in 20 files, 879,477 nodes, 0.7 s; ranked 21 in 20 files, 31,313 nodes, 0.8 s -> SAME FILES
+15:18:51    tileestimate --exact ('31293', '58', '21') vs engine on one thread ('31293', '58', '21') -> SAME
+15:18:52    stopped with 5 roots done, resumed: 21 tilings -> SAME FILES
+15:18:52    result: 0 failing checks
+15:18:52 == a6_30_req, k 1-5
+15:18:53    reference 5 tilings in 5 files, 1,094,883 nodes, 0.3 s; ranked 5 in 5 files, 902,290 nodes, 0.3 s -> SAME FILES
+15:18:54    tileestimate --exact ('877571', '37', '5') vs engine on one thread ('877571', '37', '5') -> SAME
+15:18:55    stopped with 15 roots done, resumed: 5 tilings -> SAME FILES
+15:18:55    result: 0 failing checks
+
+== round 1 final (ts-v1) vs round 2 final (ts-v2), 10 threads
+ts-v1  a6_k10.board       k10 stats nodes 21867355 unique 27020 real 10.56 user 81.43 
+ts-v2  a6_k10.board       k10 stats nodes 12592794 unique 27020 real 6.36 user 45.07 
+ts-v1  1247_1_0612.board  k5  stats nodes 988862 unique 1789 real 1.30 user 7.35 
+ts-v2  1247_1_0612.board  k5  stats nodes 570112 unique 1789 real 1.31 user 5.51 
+ts-v1  123_1_4657.board   k5  stats nodes 1132045 unique 21978 real 1.57 user 5.85 
+ts-v2  123_1_4657.board   k5  stats nodes 1137889 unique 21978 real 1.73 user 6.14 
+ts-v1  s2.board           k7  stats nodes 306854 unique 310 real 0.48 user 0.78 
+ts-v2  s2.board           k7  stats nodes 62848 unique 310 real 0.51 user 0.34 
+ts-v1  s3.board           k6  stats nodes 133857 unique 179 real 0.77 user 0.53 
+ts-v2  s3.board           k6  stats nodes 26544 unique 179 real 0.76 user 0.36 
+ts-v1  squares_edges.board k5  stats nodes 2551323 unique 53060 real 1.23 user 5.83 
+ts-v2  squares_edges.board k5  stats nodes 2546557 unique 53060 real 1.16 user 5.74 
+round 2  k<=12 seed 1: 9.69e+07 nodes (se 2.9e+06), 0.111 core-hours (se 0.0033)
+round 2  k<=12 seed 2: 9.44e+07 nodes (se 2.9e+06), 0.135 core-hours (se 0.0041)
+round 2  k<=15 seed 1: 2.27e+09 nodes (se 1.2e+08), 6.01 core-hours (se 0.32)
+round 2  k<=15 seed 2: 2.19e+09 nodes (se 1e+08), 4.47 core-hours (se 0.21)
+round 2  k<=20 seed 1: 3.51e+11 nodes (se 2.6e+10), 621 core-hours (se 46)
+round 2  k<=20 seed 2: 5.28e+11 nodes (se 4.7e+10), 1.02e+03 core-hours (se 91)
+Shared second-level context cache: first try LOST tilings (66 of 27,020): the rule pilot and the ranking build their own
+  vertex classifications, so a list cached there carried other type numbers. Keys now include the candidate table's id
+  (the per-thread cache had the same latent hazard, safe only because phases run on different threads). Then 1247 k<=5
+  CPU 5.1 -> 3.8 s, 123 -5%, A6_30 k<=10 neutral. KEPT.
+Thread scaling A6_30 k<=10: 1/4/8/10 threads 26.6/8.3/5.75/5.86 s. Machine is 4 performance + 6 efficiency cores; with
+  one P core busy elsewhere the ideal is ~4.8 s, so parallelism is within ~20% of the hardware.
+Ranking depth under fail first: no ranking 2.5-20x more nodes; depth 3 vs 2: A6_30 k<=10 22.6M -> 12.6M, 1247 k<=5
+  0.99M -> 0.57M, s2/s3 4-5x fewer, startup +0.2 s; depth 4 little more, startup up to +1.7 s; under the face rule
+  depth 3 is worse (squares_edges +18%). Depth = 3 under fail first, 2 under the face rule. KEPT.
+Round 2 total vs round 1 (10 threads): A6_30 k<=10 10.6 -> 6.4 s wall, CPU 81 -> 45 s; small boards ~1 s, unchanged.
+  k<=20 estimate unchanged within noise (3.5-5.3e11 nodes); depth-3 ranking helps at k<=10-12, not measurably beyond.
+verify.py round 2: 90/90.

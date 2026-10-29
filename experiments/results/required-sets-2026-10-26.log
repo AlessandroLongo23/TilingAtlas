@@ -1,0 +1,884 @@
+Required vertex sets (Marek's proposal): pruning on the k budget vs the stock engine's ground truth.
+Script: scratchpad req/experiment.py; patched copy of tools/searcher/tilesearch.cpp (the real file untouched).
+
+09:48:46 == s2b, k 1-4: 2 stars (60°, 90°), set sizes 35/25 vertex lines
+09:48:46    stock, initial = any star: 34 tilings, 52,308 nodes, 0.1 s; holding every star: 0
+09:48:46    copy, rule none : 0 tilings, 52,963 nodes, 0 adds pruned, 0.1 s -> EXACT
+09:48:46    copy, rule marek: 0 tilings, 31,358 nodes, 56,904 adds pruned, 0.1 s -> EXACT
+09:48:46    copy, rule cover: 0 tilings, 31,130 nodes, 56,904 adds pruned, 0.1 s -> EXACT
+09:48:46 done
+09:48:51 == s2, k 1-4: 2 stars (60°, 30°), set sizes 75/92 vertex lines
+09:48:52    stock, initial = any star: 34 tilings, 6,795,421 nodes, 1.4 s; holding every star: 0
+09:48:54    copy, rule none : 0 tilings, 6,830,969 nodes, 0 adds pruned, 1.4 s -> EXACT
+09:48:55    copy, rule marek: 0 tilings, 6,349,049 nodes, 617,631 adds pruned, 1.4 s -> EXACT
+09:48:57    copy, rule cover: 0 tilings, 6,283,870 nodes, 617,631 adds pruned, 1.3 s -> EXACT
+09:48:57 == s2b, k 1-6: 2 stars (60°, 90°), set sizes 35/25 vertex lines
+09:48:57    stock, initial = any star: 164 tilings, 1,317,634 nodes, 0.2 s; holding every star: 0
+09:48:57    copy, rule none : 0 tilings, 1,327,812 nodes, 0 adds pruned, 0.3 s -> EXACT
+09:48:57    copy, rule marek: 0 tilings, 693,237 nodes, 1,549,863 adds pruned, 0.2 s -> EXACT
+09:48:57    copy, rule cover: 0 tilings, 692,939 nodes, 1,549,863 adds pruned, 0.2 s -> EXACT
+09:48:57 done
+09:49:25 == r2, k 1-5: faces A12, A4, set sizes 3/5 vertex lines
+09:49:25    stock, initial = any star: 409 tilings, 67,852 nodes, 0.0 s; holding every star: 58
+09:49:26    copy, rule none : 58 tilings, 67,278 nodes, 0 adds pruned, 0.0 s -> EXACT
+09:49:26    copy, rule marek: 58 tilings, 30,818 nodes, 114,623 adds pruned, 0.0 s -> EXACT
+09:49:26    copy, rule cover: 58 tilings, 10,829 nodes, 594 adds pruned, 0.0 s -> EXACT
+09:49:26 == r3, k 1-5: faces A12, A4, A3, set sizes 3/5/7 vertex lines
+09:49:26    stock, initial = any star: 573 tilings, 112,694 nodes, 0.1 s; holding every star: 57
+09:49:26    copy, rule none : 57 tilings, 112,555 nodes, 0 adds pruned, 0.0 s -> EXACT
+09:49:26    copy, rule marek: 57 tilings, 33,260 nodes, 110,943 adds pruned, 0.0 s -> EXACT
+09:49:26    copy, rule cover: 57 tilings, 10,955 nodes, 1,128 adds pruned, 0.0 s -> EXACT
+09:49:26 == r3b, k 1-5: faces A6, A4, A3, set sizes 5/5/7 vertex lines
+09:49:26    stock, initial = any star: 574 tilings, 118,484 nodes, 0.1 s; holding every star: 243
+09:49:26    copy, rule none : 243 tilings, 119,275 nodes, 0 adds pruned, 0.1 s -> EXACT
+09:49:26    copy, rule marek: 243 tilings, 55,744 nodes, 135,172 adds pruned, 0.1 s -> EXACT
+09:49:26    copy, rule cover: 243 tilings, 49,057 nodes, 102,282 adds pruned, 0.0 s -> EXACT
+09:49:26 done
+09:49:55 == r4, k 1-6: faces A12, A4, A6, A3, set sizes 3/5/5/7 vertex lines
+09:49:55    stock, initial = any star: 1247 tilings, 304,410 nodes, 0.1 s; holding every star: 67
+09:49:55    copy, rule none : 67 tilings, 303,693 nodes, 0 adds pruned, 0.0 s -> EXACT
+09:49:55    copy, rule marek: 67 tilings, 65,385 nodes, 291,932 adds pruned, 0.0 s -> EXACT
+09:49:55    copy, rule cover: 67 tilings, 33,044 nodes, 119,298 adds pruned, 0.0 s -> EXACT
+09:49:55 == r4, k 4-4: faces A12, A4, A6, A3, set sizes 3/5/5/7 vertex lines
+09:49:55    stock, initial = any star: 151 tilings, 41,878 nodes, 0.0 s; holding every star: 9
+09:49:55    copy, rule none : 9 tilings, 41,967 nodes, 0 adds pruned, 0.0 s -> EXACT
+09:49:55    copy, rule marek: 9 tilings, 4,429 nodes, 15,944 adds pruned, 0.0 s -> EXACT
+09:49:55    copy, rule cover: 9 tilings, 3,410 nodes, 8,955 adds pruned, 0.0 s -> EXACT
+09:49:55 == r4, k 5-5: faces A12, A4, A6, A3, set sizes 3/5/5/7 vertex lines
+09:49:55    stock, initial = any star: 332 tilings, 118,831 nodes, 0.1 s; holding every star: 18
+09:49:55    copy, rule none : 18 tilings, 118,643 nodes, 0 adds pruned, 0.0 s -> EXACT
+09:49:55    copy, rule marek: 18 tilings, 19,460 nodes, 81,369 adds pruned, 0.0 s -> EXACT
+09:49:55    copy, rule cover: 18 tilings, 11,745 nodes, 37,782 adds pruned, 0.0 s -> EXACT
+09:49:55 == r4, k 6-6: faces A12, A4, A6, A3, set sizes 3/5/5/7 vertex lines
+09:49:55    stock, initial = any star: 673 tilings, 304,083 nodes, 0.1 s; holding every star: 34
+09:49:55    copy, rule none : 34 tilings, 303,439 nodes, 0 adds pruned, 0.0 s -> EXACT
+09:49:55    copy, rule marek: 34 tilings, 65,668 nodes, 291,932 adds pruned, 0.0 s -> EXACT
+09:49:55    copy, rule cover: 34 tilings, 33,059 nodes, 119,298 adds pruned, 0.0 s -> EXACT
+09:49:55 == r3, k 6-6: faces A12, A4, A3, set sizes 3/5/7 vertex lines
+09:49:55    stock, initial = any star: 673 tilings, 289,551 nodes, 0.1 s; holding every star: 48
+09:49:55    copy, rule none : 48 tilings, 290,828 nodes, 0 adds pruned, 0.1 s -> EXACT
+09:49:55    copy, rule marek: 48 tilings, 93,939 nodes, 341,664 adds pruned, 0.0 s -> EXACT
+09:49:55    copy, rule cover: 48 tilings, 24,630 nodes, 1,242 adds pruned, 0.0 s -> LOST 4, EXTRA 4
+09:49:55 == r3b, k 6-6: faces A6, A4, A3, set sizes 5/5/7 vertex lines
+09:49:56    stock, initial = any star: 673 tilings, 303,685 nodes, 0.1 s; holding every star: 330
+09:49:56    copy, rule none : 330 tilings, 303,700 nodes, 0 adds pruned, 0.1 s -> LOST 2, EXTRA 2
+09:49:56    copy, rule marek: 330 tilings, 162,410 nodes, 374,801 adds pruned, 0.0 s -> LOST 1, EXTRA 1
+09:49:56    copy, rule cover: 330 tilings, 142,543 nodes, 300,652 adds pruned, 0.0 s -> LOST 1, EXTRA 1
+09:49:56 == r2, k 7-7: faces A12, A4, set sizes 3/5 vertex lines
+09:49:56    stock, initial = any star: 1143 tilings, 389,063 nodes, 0.1 s; holding every star: 82
+09:49:56    copy, rule none : 82 tilings, 388,129 nodes, 0 adds pruned, 0.1 s -> EXACT
+09:49:56    copy, rule marek: 82 tilings, 210,850 nodes, 746,560 adds pruned, 0.1 s -> EXACT
+09:49:56    copy, rule cover: 82 tilings, 65,500 nodes, 852 adds pruned, 0.0 s -> LOST 3, EXTRA 3
+09:49:56 done
+
+-- comparison changed to per-output-file counts: certificate text is not deterministic across threaded runs (stock vs stock: 134-170 differing lines, same files). Rerun:
+09:50:22 == r2, k 1-5: faces A12, A4, set sizes 3/5 vertex lines
+09:50:27 == r2, k 1-5: faces A12, A4, set sizes 3/5 vertex lines
+09:50:27    stock, initial = any star: 409 tilings, 67,895 nodes, 0.0 s; holding every star: 58
+09:50:27    copy, rule none : 58 tilings, 67,812 nodes, 0 adds pruned, 0.0 s -> EXACT
+09:50:28    copy, rule marek: 58 tilings, 30,664 nodes, 114,623 adds pruned, 0.0 s -> EXACT
+09:50:28    copy, rule cover: 58 tilings, 10,743 nodes, 594 adds pruned, 0.0 s -> EXACT
+09:50:28 == r3, k 1-5: faces A12, A4, A3, set sizes 3/5/7 vertex lines
+09:50:28    stock, initial = any star: 573 tilings, 112,221 nodes, 0.1 s; holding every star: 57
+09:50:28    copy, rule none : 57 tilings, 112,438 nodes, 0 adds pruned, 0.0 s -> EXACT
+09:50:28    copy, rule marek: 57 tilings, 33,240 nodes, 110,943 adds pruned, 0.0 s -> EXACT
+09:50:28    copy, rule cover: 57 tilings, 10,792 nodes, 1,128 adds pruned, 0.0 s -> EXACT
+09:50:28 == r3b, k 1-5: faces A6, A4, A3, set sizes 5/5/7 vertex lines
+09:50:28    stock, initial = any star: 574 tilings, 118,828 nodes, 0.1 s; holding every star: 243
+09:50:28    copy, rule none : 243 tilings, 118,811 nodes, 0 adds pruned, 0.0 s -> EXACT
+09:50:28    copy, rule marek: 243 tilings, 55,521 nodes, 135,172 adds pruned, 0.0 s -> EXACT
+09:50:28    copy, rule cover: 243 tilings, 49,214 nodes, 102,282 adds pruned, 0.0 s -> EXACT
+09:50:28 == r4, k 1-6: faces A12, A4, A6, A3, set sizes 3/5/5/7 vertex lines
+09:50:28    stock, initial = any star: 1247 tilings, 304,072 nodes, 0.1 s; holding every star: 67
+09:50:28    copy, rule none : 67 tilings, 303,367 nodes, 0 adds pruned, 0.0 s -> EXACT
+09:50:28    copy, rule marek: 67 tilings, 65,264 nodes, 291,932 adds pruned, 0.0 s -> EXACT
+09:50:28    copy, rule cover: 67 tilings, 33,118 nodes, 119,298 adds pruned, 0.0 s -> EXACT
+09:50:28 == r3, k 6-6: faces A12, A4, A3, set sizes 3/5/7 vertex lines
+09:50:28    stock, initial = any star: 673 tilings, 290,515 nodes, 0.1 s; holding every star: 48
+09:50:28    copy, rule none : 48 tilings, 289,642 nodes, 0 adds pruned, 0.1 s -> EXACT
+09:50:28    copy, rule marek: 48 tilings, 94,031 nodes, 341,664 adds pruned, 0.0 s -> EXACT
+09:50:28    copy, rule cover: 48 tilings, 25,047 nodes, 1,242 adds pruned, 0.0 s -> EXACT
+09:50:28 == r3b, k 6-6: faces A6, A4, A3, set sizes 5/5/7 vertex lines
+09:50:29    stock, initial = any star: 673 tilings, 304,140 nodes, 0.1 s; holding every star: 330
+09:50:29    copy, rule none : 330 tilings, 304,082 nodes, 0 adds pruned, 0.1 s -> EXACT
+09:50:29    copy, rule marek: 330 tilings, 162,126 nodes, 374,801 adds pruned, 0.0 s -> EXACT
+09:50:29    copy, rule cover: 330 tilings, 142,650 nodes, 300,652 adds pruned, 0.0 s -> EXACT
+09:50:29 == r2, k 7-7: faces A12, A4, set sizes 3/5 vertex lines
+09:50:29    stock, initial = any star: 1143 tilings, 389,295 nodes, 0.1 s; holding every star: 82
+09:50:29    copy, rule none : 82 tilings, 389,047 nodes, 0 adds pruned, 0.1 s -> EXACT
+09:50:29    copy, rule marek: 82 tilings, 210,286 nodes, 746,560 adds pruned, 0.1 s -> EXACT
+09:50:29    copy, rule cover: 82 tilings, 65,283 nodes, 852 adds pruned, 0.0 s -> EXACT
+09:50:29 == r4, k 7-7: faces A12, A4, A6, A3, set sizes 3/5/5/7 vertex lines
+09:50:29    stock, initial = any star: 1472 tilings, 730,423 nodes, 0.1 s; holding every star: 57
+09:50:29    copy, rule none : 57 tilings, 731,486 nodes, 0 adds pruned, 0.1 s -> EXACT
+09:50:29    copy, rule marek: 57 tilings, 188,534 nodes, 800,917 adds pruned, 0.1 s -> EXACT
+09:50:29    copy, rule cover: 57 tilings, 92,678 nodes, 332,941 adds pruned, 0.0 s -> EXACT
+09:50:29 == r3, k 7-7: faces A12, A4, A3, set sizes 3/5/7 vertex lines
+09:50:29    stock, initial = any star: 1472 tilings, 684,196 nodes, 0.1 s; holding every star: 82
+09:50:30    copy, rule none : 82 tilings, 686,816 nodes, 0 adds pruned, 0.1 s -> EXACT
+09:50:30    copy, rule marek: 82 tilings, 253,909 nodes, 919,301 adds pruned, 0.1 s -> EXACT
+09:50:30    copy, rule cover: 82 tilings, 65,605 nodes, 1,475 adds pruned, 0.0 s -> EXACT
+09:50:30 done
+
+-- randomized sweep: 3-4 random overlapping sets of vertex lines on the regular board (10 lines), one k in 4..7 per trial, seed 20261026
+09:51:03    trial 2: rule marek LOST 61 of 600 at k=7, sets 1 2 6 10|4 8 10|7 10|4 7 9
+09:51:03    trial 3: rule marek LOST 1 of 137 at k=5, sets 2 6 9|6 7|6 8 10|1 2 4 6
+09:51:03    trial 4: rule marek LOST 1 of 1 at k=4, sets 4 8|7|2 5 6 7
+09:51:04    trial 9: rule marek LOST 3 of 183 at k=6, sets 2 8 9 10|1 2 6|4 6 7 10|5 9 10
+09:51:04    trial 10: rule marek LOST 2 of 43 at k=4, sets 6 7 9|4 6 9 10|3 5 8
+09:51:06    trial 19: rule marek LOST 1 of 149 at k=5, sets 2 4 5 6|6 8 9 10|7 8
+09:51:06    trial 21: rule marek LOST 4 of 64 at k=5, sets 3 4 5|1 10|1 3 8|2 3 7 8
+09:51:06    trial 24: rule marek LOST 3 of 82 at k=5, sets 4 5 6 8|9|1 6 10|3 8 9
+09:51:06    25/300 trials (23 with tilings), losses marek 8, cover 0; nodes vs none: marek 27%, cover 15%; ETA 37 s
+09:51:06    trial 26: rule marek LOST 10 of 358 at k=7, sets 1 6|7|2 4 6|2 3 5 7
+09:51:07    trial 27: rule marek LOST 3 of 25 at k=4, sets 5 6 8 9|5 9|2 3 8|1 2 7 10
+09:51:07    trial 28: rule marek LOST 42 of 151 at k=6, sets 5 6|4 5 7|7|7 9
+09:51:07    trial 30: rule marek LOST 5 of 28 at k=4, sets 1 7|6 7 9|9 10|9
+09:51:07    trial 31: rule marek LOST 1 of 166 at k=5, sets 7 8 9|1 2 6 8|1 2 5
+09:51:07    trial 32: rule marek LOST 2 of 53 at k=4, sets 2 5 6|1 2 3 7|3 6 7
+09:51:07    trial 33: rule marek LOST 46 of 214 at k=6, sets 1 7 9|6|3 5 8|2 7 8 9
+09:51:07    trial 34: rule marek LOST 4 of 96 at k=5, sets 6|6|5 8|4 5
+09:51:07    trial 35: rule marek LOST 5 of 409 at k=7, sets 2 8 9|1 3 5|2 6 9
+09:51:08    trial 36: rule marek LOST 1 of 62 at k=4, sets 3 5 6 9|2 7 8|3 6 10
+09:51:08    trial 37: rule marek LOST 2 of 633 at k=7, sets 6 7 10|1 7|4 5 9
+09:51:08    trial 42: rule marek LOST 1 of 23 at k=5, sets 4 5 8|9|3 5 7|7 10
+09:51:09    trial 43: rule marek LOST 10 of 124 at k=6, sets 6|1 4 5 9|2 5 10|1 8 10
+09:51:09    trial 47: rule marek LOST 7 of 124 at k=7, sets 10|2 5 6 8|3 7 10|3 4
+09:51:09    trial 49: rule marek LOST 9 of 11 at k=4, sets 1 10|2 10|6 7|2 4 6
+09:51:09    50/300 trials (47 with tilings), losses marek 23, cover 0; nodes vs none: marek 26%, cover 16%; ETA 32 s
+09:51:10    trial 53: rule marek LOST 1 of 167 at k=6, sets 1 4 5 9|9|1 7
+09:51:10    trial 56: rule marek LOST 6 of 281 at k=7, sets 8|1 2 5 8|2 7 10|2 3 6 7
+09:51:10    trial 58: rule marek LOST 32 of 545 at k=6, sets 1 4 6 10|1 5 10|3 4 6 10
+09:51:10    trial 59: rule marek LOST 2 of 558 at k=7, sets 1 4 5|2 5 10|5 7 10|1 3 8
+09:51:11    trial 60: rule marek LOST 5 of 102 at k=5, sets 3 4 5 7|1 3 5 8|8
+09:51:11    trial 62: rule marek LOST 2 of 75 at k=4, sets 3 4 10|1 6 8 10|4 5 9
+09:51:11    trial 65: rule marek LOST 2 of 32 at k=5, sets 1 3 4 5|1 3 7|8 10|3 5 8 10
+09:51:11    trial 67: rule marek LOST 22 of 276 at k=6, sets 3 7 9 10|3 9|9|6 7
+09:51:12    trial 72: rule marek LOST 2 of 3 at k=4, sets 4|5 6 8|1 2 5 10|2 6 9 10
+09:51:12    trial 73: rule marek LOST 5 of 280 at k=6, sets 6 10|3 7|2 3 7
+09:51:12    75/300 trials (71 with tilings), losses marek 33, cover 0; nodes vs none: marek 28%, cover 19%; ETA 28 s
+09:51:12    trial 76: rule marek LOST 19 of 124 at k=5, sets 2 3 9 10|4 10|1 2 7 8
+09:51:13    trial 77: rule marek LOST 16 of 20 at k=4, sets 1 3 7|7|1 6 8 10|5
+09:51:13    trial 78: rule marek LOST 47 of 277 at k=6, sets 4 7|2 5 7 8|4 7 10|4 5 7 10
+09:51:13    trial 80: rule marek LOST 3 of 29 at k=4, sets 6 8 10|2 7 8|1 8|2 5
+09:51:14    trial 86: rule marek LOST 1 of 4 at k=6, sets 8|8|4
+09:51:14    trial 90: rule marek LOST 7 of 50 at k=4, sets 2 6 10|9|9
+09:51:14    trial 92: rule marek LOST 1 of 160 at k=6, sets 7|2 4 7 9|1 2 9|4 8 9
+09:51:15    trial 94: rule marek LOST 1 of 288 at k=6, sets 1 5 6 9|5 6 7|9
+09:51:15    trial 97: rule marek LOST 4 of 60 at k=5, sets 2 7 8|3 5 7|2 4 6 8|6
+09:51:15    trial 100: rule marek LOST 25 of 756 at k=7, sets 3 9|2 7 9 10|2 4 8 10
+09:51:16    100/300 trials (96 with tilings), losses marek 43, cover 0; nodes vs none: marek 30%, cover 23%; ETA 25 s
+09:51:16    trial 106: rule marek LOST 10 of 74 at k=5, sets 2 3 7|3 7 10|5
+09:51:16    trial 108: rule marek LOST 17 of 120 at k=5, sets 3 8 9|9|2 4 9|2 7 10
+09:51:17    trial 110: rule marek LOST 19 of 109 at k=6, sets 1 2 8|1 3 7 9|1 2 7 9|1 5 7 9
+09:51:17    trial 111: rule marek LOST 2 of 124 at k=5, sets 5 8 9 10|9|2 4 7 10
+09:51:18    trial 119: rule marek LOST 3 of 58 at k=4, sets 2 3 6|1 3 6 10|6
+09:51:18    trial 122: rule marek LOST 30 of 321 at k=7, sets 7 8 10|3 4 9|2 5|7 9
+09:51:18    trial 124: rule marek LOST 1 of 22 at k=4, sets 5|1 3 6 9|3 8 10|4 7 8 10
+09:51:19    125/300 trials (119 with tilings), losses marek 50, cover 0; nodes vs none: marek 30%, cover 21%; ETA 22 s
+09:51:19    trial 126: rule marek LOST 1 of 39 at k=6, sets 8|8|6 9|2 7
+09:51:19    trial 128: rule marek LOST 7 of 911 at k=7, sets 7 9|4 6 7|6 9 10
+09:51:19    trial 129: rule marek LOST 11 of 32 at k=4, sets 1 5 7 9|2 6|2 6|2 4 7 8
+09:51:20    trial 134: rule marek LOST 12 of 41 at k=4, sets 8 9 10|2 9 10|2 3 7
+09:51:20    trial 142: rule marek LOST 52 of 357 at k=7, sets 2 4 7|5|7
+09:51:21    trial 146: rule marek LOST 1 of 30 at k=7, sets 5 6 9|3 6 7|2
+09:51:21    trial 147: rule marek LOST 24 of 382 at k=7, sets 3 7|1 4 7 9|5
+09:51:21    trial 149: rule marek LOST 16 of 399 at k=7, sets 10|7 8 10|3 7
+09:51:22    150/300 trials (139 with tilings), losses marek 58, cover 0; nodes vs none: marek 29%, cover 21%; ETA 19 s
+09:51:22    trial 152: rule marek LOST 8 of 11 at k=5, sets 10|3|6 8|2 6 10
+09:51:22    trial 157: rule marek LOST 8 of 99 at k=6, sets 2 8 10|4 5|4 8 9 10|9
+09:51:22    trial 160: rule marek LOST 5 of 228 at k=6, sets 1 7 8 9|8 10|4 6 7|1 2 8 9
+09:51:23    trial 161: rule marek LOST 3 of 4 at k=4, sets 4 7|3 6 8|6 9 10|3 4
+09:51:23    trial 163: rule marek LOST 40 of 97 at k=5, sets 2 5 8|1 7 10|4 10|3 5 6 8
+09:51:23    trial 165: rule marek LOST 7 of 532 at k=7, sets 2 5 8|10|8 9 10|4 6 7 8
+09:51:23    trial 166: rule marek LOST 1 of 12 at k=4, sets 6 7 8 9|3|4 5 6 9|5 9
+09:51:23    trial 167: rule marek LOST 5 of 38 at k=4, sets 10|2 9|1 9 10|4 10
+09:51:24    trial 169: rule marek LOST 5 of 193 at k=7, sets 7 8 10|2 6|3 7 8|2 10
+09:51:24    trial 170: rule marek LOST 4 of 96 at k=5, sets 3 6 7|4 6|5
+09:51:24    trial 171: rule marek LOST 2 of 48 at k=4, sets 2 3 5 8|5|4 5|3 8 9
+09:51:24    trial 173: rule marek LOST 2 of 2 at k=4, sets 1 5 10|8 9|9|2
+09:51:24    trial 174: rule marek LOST 14 of 36 at k=4, sets 3 4 5 6|4 10|5 7 9|6 10
+09:51:24    trial 175: rule marek LOST 49 of 176 at k=5, sets 3 4 6 10|1 3 8 9|9 10|3 7 10
+09:51:24    175/300 trials (162 with tilings), losses marek 72, cover 0; nodes vs none: marek 29%, cover 21%; ETA 15 s
+09:51:25    trial 180: rule marek LOST 12 of 306 at k=6, sets 6 10|4 6 7|5 6 9|3 6
+09:51:25    trial 181: rule marek LOST 11 of 78 at k=6, sets 8|1 7 9|2 9
+09:51:26    trial 187: rule marek LOST 4 of 120 at k=5, sets 3 4 9 10|1 5 7 8|3 6 7 8|1 3 8
+09:51:26    trial 188: rule marek LOST 19 of 261 at k=7, sets 3 4 9|7 8|1 2 6|9
+09:51:27    trial 193: rule marek LOST 4 of 54 at k=6, sets 5|2 10|2 4 6 9|4 9
+09:51:27    trial 194: rule marek LOST 3 of 31 at k=6, sets 5 8 9|4|9
+09:51:27    trial 195: rule marek LOST 18 of 39 at k=4, sets 4 5 7 8|9 10|2 7 9 10|5 8
+09:51:27    trial 197: rule marek LOST 16 of 19 at k=4, sets 4 5 8|1 10|3 9|10
+09:51:27    200/300 trials (186 with tilings), losses marek 80, cover 0; nodes vs none: marek 28%, cover 20%; ETA 12 s
+09:51:28    trial 205: rule marek LOST 3 of 14 at k=4, sets 1 6 9|3 4 10|6 8 9|7
+09:51:28    trial 207: rule marek LOST 9 of 605 at k=7, sets 8|3 8 9|8
+09:51:29    trial 217: rule marek LOST 3 of 62 at k=5, sets 3 4 8 9|3 7 8 10|3 6 8 9|7
+09:51:30    trial 221: rule marek LOST 7 of 859 at k=7, sets 7 9|5 9|1 4 5 7
+09:51:30    trial 222: rule marek LOST 1 of 885 at k=7, sets 2 8 9|2 5 7 9|6 9
+09:51:31    225/300 trials (210 with tilings), losses marek 85, cover 0; nodes vs none: marek 29%, cover 20%; ETA 9 s
+09:51:31    trial 226: rule marek LOST 1 of 82 at k=5, sets 1 3 4 5|10|5 9 10
+09:51:31    trial 229: rule marek LOST 2 of 21 at k=6, sets 2 10|4|10
+09:51:32    trial 232: rule marek LOST 55 of 390 at k=7, sets 2 3 4 6|1 10|3 7 10
+09:51:32    trial 233: rule marek LOST 22 of 205 at k=6, sets 1 8|3 7 10|8|4 8 10
+09:51:32    trial 234: rule marek LOST 14 of 302 at k=6, sets 2 4 5 8|9 10|8 9 10
+09:51:32    trial 236: rule marek LOST 1 of 21 at k=6, sets 4|2 10|9|9
+09:51:32    trial 238: rule marek LOST 2 of 51 at k=4, sets 2 5 6 8|5 6|4 8 9 10|2 7 8 9
+09:51:33    trial 240: rule marek LOST 13 of 704 at k=7, sets 2 3 9 10|2 4 6 7|2 3 4 9
+09:51:33    trial 244: rule marek LOST 5 of 349 at k=6, sets 1 9|1 4 9 10|3 9
+09:51:33    trial 245: rule marek LOST 20 of 44 at k=4, sets 5 9|1 3 7|7 8 10|2 7
+09:51:34    trial 248: rule marek LOST 24 of 692 at k=7, sets 1 9|2 4 8 9|2 4 5 10|1 7 8 10
+09:51:34    trial 249: rule marek LOST 8 of 73 at k=4, sets 1 2 4 9|6 7 8 9|2 7 9 10
+09:51:34    trial 250: rule marek LOST 30 of 1037 at k=7, sets 1 8 9 10|7 8 10|3 5 6 10|3 6 9 10
+09:51:34    250/300 trials (233 with tilings), losses marek 98, cover 0; nodes vs none: marek 30%, cover 21%; ETA 6 s
+09:51:34    trial 251: rule marek LOST 3 of 10 at k=5, sets 7 10|5 9|4|2 9
+09:51:35    trial 256: rule marek LOST 34 of 199 at k=6, sets 1 4 9 10|3 5 7|2 3 6 8|1 3 10
+09:51:35    trial 261: rule marek LOST 2 of 172 at k=6, sets 5 6|5 9|4 10|1 3 8
+09:51:36    trial 264: rule marek LOST 8 of 127 at k=5, sets 2 5 8|3 4 8 9|2 8 10|8
+09:51:36    trial 265: rule marek LOST 1 of 292 at k=7, sets 1 2 7 8|8 10|1 6
+09:51:37    trial 270: rule marek LOST 31 of 725 at k=7, sets 4 8 10|2 8 9|6 8|4 5 10
+09:51:37    trial 273: rule marek LOST 13 of 64 at k=4, sets 5 7 8 9|9 10|10
+09:51:37    275/300 trials (255 with tilings), losses marek 105, cover 0; nodes vs none: marek 30%, cover 22%; ETA 3 s
+09:51:37    trial 276: rule marek LOST 7 of 17 at k=4, sets 2 4 10|9 10|4 7|3 8 10
+09:51:37    trial 277: rule marek LOST 3 of 263 at k=5, sets 5 8 9 10|3 5 7 10|1 3 6 10
+09:51:38    trial 279: rule marek LOST 2 of 6 at k=5, sets 3 4 7 10|6 7|4|1 6
+09:51:38    trial 283: rule marek LOST 9 of 25 at k=4, sets 1 6|9|4 6 7 10|9 10
+09:51:38    trial 284: rule marek LOST 1 of 58 at k=5, sets 1 3 6 7|7|9|3 7 9
+09:51:39    trial 287: rule marek LOST 3 of 465 at k=6, sets 1 2 6 8|5 7 9|5 7 8 9
+09:51:39    trial 289: rule marek LOST 1 of 68 at k=4, sets 2 3 4 9|1 6 10|4 5 9 10
+09:51:39    trial 290: rule marek LOST 2 of 30 at k=7, sets 2 3|1 3|3 5 6 7|6
+09:51:40    trial 293: rule marek LOST 2 of 83 at k=5, sets 1 9 10|1 2 4 8|2 5 6 7|1 5 8
+09:51:40    trial 297: rule marek LOST 9 of 116 at k=6, sets 2 9|2 5 7|1 3 6|9 10
+09:51:40    trial 300: rule marek LOST 13 of 76 at k=4, sets 3 10|1 5 7 10|2 3 8 10
+09:51:40    300/300 trials (280 with tilings), losses marek 116, cover 0; nodes vs none: marek 30%, cover 21%; ETA 0 s
+09:51:40 sweep done: 300 trials, 280 with at least one tiling; trials losing tilings: marek 116, cover 0
+
+-- disjoint sweep: 3-4 pairwise disjoint sets of 1-2 vertex lines
+09:52:02    25/150 trials (11 with tilings), losses marek 0, cover 0; nodes vs none: marek 11%, cover 3%; ETA 14 s
+09:52:04    50/150 trials (25 with tilings), losses marek 0, cover 0; nodes vs none: marek 13%, cover 5%; ETA 10 s
+09:52:07    75/150 trials (38 with tilings), losses marek 0, cover 0; nodes vs none: marek 13%, cover 4%; ETA 8 s
+09:52:09    100/150 trials (50 with tilings), losses marek 0, cover 0; nodes vs none: marek 14%, cover 4%; ETA 5 s
+09:52:11    125/150 trials (58 with tilings), losses marek 0, cover 0; nodes vs none: marek 14%, cover 4%; ETA 2 s
+09:52:14    150/150 trials (70 with tilings), losses marek 0, cover 0; nodes vs none: marek 14%, cover 4%; ETA 0 s
+09:52:14 sweep done: 150 trials, 70 with at least one tiling; trials losing tilings: marek 0, cover 0
+
+== SUMMARY
+Marek's rule as stated ("once kmax - k <= sets still missing, the new vertex must come from one of them")
+loses tilings when sets overlap: 116 of 300 random overlapping trials lost some, 0 of 150 disjoint trials.
+It counts sets, but one vertex type can belong to several sets, so fewer vertices than sets may finish the job.
+The cover rule (prune when the fewest vertex types, from the root's index on, that could still meet every
+missing set exceed the orbits left; plus a final check that every set is met) lost nothing in every case and
+pruned harder: 21% of the unpruned nodes on overlapping sets, 4% on disjoint ones (Marek's: 30%, 14%).
+Patch and scripts: experiments/required-sets-2026-10-26/.
+
+-- round 2 (sweep2.py): every output checked against its own certificate, leaf counts compared (proof's claim: cover completes exactly the leaves none does)
+09:58:22 == r4.board: 10 vertex lines, permutations on, k 1-6, 40 trials of overlap sets, seed 1
+09:58:22    trial 1: rule none: lost 0, extra 223, output without every set 209; truth 12, sets 2 5 10|8 10|2 4 7
+09:58:22    trial 1: rule marek: lost 0, extra 209, output without every set 193; truth 12, sets 2 5 10|8 10|2 4 7
+09:58:22    trial 1: rule cover: lost 0, extra 223, output without every set 209; truth 12, sets 2 5 10|8 10|2 4 7
+09:58:23    trial 3: rule none: lost 0, extra 289, output without every set 267; truth 36, sets 4 7|1 4 9
+09:58:23    trial 3: rule marek: lost 0, extra 289, output without every set 264; truth 36, sets 4 7|1 4 9
+09:58:23    trial 3: rule cover: lost 0, extra 289, output without every set 264; truth 36, sets 4 7|1 4 9
+09:58:23    trial 4: rule none: lost 0, extra 68, output without every set 63; truth 0, sets 4 9|4 10|1 5|2 9|5
+09:58:23    trial 4: rule marek: lost 0, extra 44, output without every set 37; truth 0, sets 4 9|4 10|1 5|2 9|5
+09:58:23    trial 4: rule cover: lost 0, extra 68, output without every set 63; truth 0, sets 4 9|4 10|1 5|2 9|5
+09:58:23    trial 5: rule none: lost 0, extra 782, output without every set 778; truth 94, sets 6 7 9|4 5 9
+09:58:23    trial 5: rule marek: lost 0, extra 782, output without every set 778; truth 94, sets 6 7 9|4 5 9
+09:58:23    trial 5: rule cover: lost 0, extra 782, output without every set 778; truth 94, sets 6 7 9|4 5 9
+09:58:24    trial 6: rule none: lost 0, extra 47, output without every set 35; truth 0, sets 1 7 8|7|3 6|2 6 8|2 3 9
+09:58:24    trial 6: rule marek: lost 0, extra 45, output without every set 34; truth 0, sets 1 7 8|7|3 6|2 6 8|2 3 9
+09:58:24    trial 6: rule cover: lost 0, extra 47, output without every set 36; truth 0, sets 1 7 8|7|3 6|2 6 8|2 3 9
+09:58:24    trial 7: rule none: lost 0, extra 5, output without every set 5; truth 0, sets 1 8|1 5|3 7 10|9|1
+09:58:24    trial 7: rule marek: lost 0, extra 5, output without every set 5; truth 0, sets 1 8|1 5|3 7 10|9|1
+09:58:24    trial 7: rule cover: lost 0, extra 5, output without every set 5; truth 0, sets 1 8|1 5|3 7 10|9|1
+09:58:24    trial 8: rule none: lost 0, extra 479, output without every set 467; truth 53, sets 4 7 9|6 8 10|1 9
+09:58:24    trial 8: rule marek: lost 0, extra 470, output without every set 458; truth 53, sets 4 7 9|6 8 10|1 9
+09:58:24    trial 8: rule cover: lost 0, extra 479, output without every set 467; truth 53, sets 4 7 9|6 8 10|1 9
+09:58:25    trial 9: rule none: lost 0, extra 110, output without every set 92; truth 11, sets 3 4 9|1 8|9 10|9|6 8
+09:58:25    trial 9: rule marek: lost 0, extra 75, output without every set 59; truth 11, sets 3 4 9|1 8|9 10|9|6 8
+09:58:25    trial 9: rule cover: lost 0, extra 110, output without every set 92; truth 11, sets 3 4 9|1 8|9 10|9|6 8
+09:58:25    trial 10: rule none: lost 0, extra 36, output without every set 22; truth 3, sets 1 9|6 8 10|1 3 4|2 3 10|1 2 5
+09:58:25    trial 10: rule marek: lost 0, extra 35, output without every set 21; truth 3, sets 1 9|6 8 10|1 3 4|2 3 10|1 2 5
+09:58:25    trial 10: rule cover: lost 0, extra 36, output without every set 22; truth 3, sets 1 9|6 8 10|1 3 4|2 3 10|1 2 5
+09:58:25    10/40 (6 with tilings); failing trials none 9, marek 9, cover 9, cover leaves 0; nodes vs none: marek 24%, cover 24%; ETA 8 s
+09:58:25    trial 11: rule none: lost 0, extra 312, output without every set 295; truth 35, sets 8|5
+09:58:25    trial 11: rule marek: lost 0, extra 312, output without every set 295; truth 35, sets 8|5
+09:58:25    trial 11: rule cover: lost 0, extra 312, output without every set 294; truth 35, sets 8|5
+09:58:25    trial 12: rule none: lost 0, extra 117, output without every set 99; truth 22, sets 2 3|2 5|3
+09:58:25    trial 12: rule marek: lost 0, extra 117, output without every set 99; truth 22, sets 2 3|2 5|3
+09:58:25    trial 12: rule cover: lost 0, extra 117, output without every set 99; truth 22, sets 2 3|2 5|3
+09:58:25    trial 13: rule none: lost 0, extra 21, output without every set 16; truth 7, sets 3 5 9|6 8|1 2|6 7
+09:58:26    trial 13: rule marek: lost 0, extra 19, output without every set 14; truth 7, sets 3 5 9|6 8|1 2|6 7
+09:58:26    trial 13: rule cover: lost 0, extra 21, output without every set 16; truth 7, sets 3 5 9|6 8|1 2|6 7
+09:58:26    trial 14: rule none: lost 0, extra 1, output without every set 0; truth 0, sets 5|5|4 7 9|4|7
+09:58:26    trial 14: rule cover: lost 0, extra 1, output without every set 0; truth 0, sets 5|5|4 7 9|4|7
+09:58:26    trial 15: rule none: lost 0, extra 22, output without every set 11; truth 0, sets 3|7 9|4 8 9
+09:58:26    trial 15: rule marek: lost 0, extra 17, output without every set 7; truth 0, sets 3|7 9|4 8 9
+09:58:26    trial 15: rule cover: lost 0, extra 22, output without every set 11; truth 0, sets 3|7 9|4 8 9
+09:58:26    trial 16: rule none: lost 0, extra 15, output without every set 10; truth 17, sets 1 6 7|1 5 7|4
+09:58:26    trial 16: rule marek: lost 0, extra 14, output without every set 9; truth 17, sets 1 6 7|1 5 7|4
+09:58:26    trial 16: rule cover: lost 0, extra 15, output without every set 10; truth 17, sets 1 6 7|1 5 7|4
+09:58:26    trial 17: rule none: lost 0, extra 269, output without every set 256; truth 18, sets 2 10|3 5
+09:58:26    trial 17: rule marek: lost 0, extra 269, output without every set 256; truth 18, sets 2 10|3 5
+09:58:27    trial 17: rule cover: lost 0, extra 269, output without every set 254; truth 18, sets 2 10|3 5
+09:58:27    trial 18: rule none: lost 0, extra 6, output without every set 5; truth 0, sets 1 3 5|1 4 8|10|1 4 7|2 4
+09:58:27    trial 18: rule marek: lost 0, extra 6, output without every set 5; truth 0, sets 1 3 5|1 4 8|10|1 4 7|2 4
+09:58:27    trial 18: rule cover: lost 0, extra 6, output without every set 5; truth 0, sets 1 3 5|1 4 8|10|1 4 7|2 4
+09:58:27    trial 19: rule none: lost 0, extra 2, output without every set 0; truth 0, sets 2 4 8|5 7 8|6|1 5 7|4
+09:58:27    trial 19: rule marek: lost 0, extra 2, output without every set 0; truth 0, sets 2 4 8|5 7 8|6|1 5 7|4
+09:58:27    trial 19: rule cover: lost 0, extra 2, output without every set 0; truth 0, sets 2 4 8|5 7 8|6|1 5 7|4
+09:58:27    trial 20: rule none: lost 0, extra 166, output without every set 156; truth 7, sets 3 6 7|5|2 6 7|4 8 9
+09:58:27    trial 20: rule marek: lost 0, extra 160, output without every set 150; truth 7, sets 3 6 7|5|2 6 7|4 8 9
+09:58:27    trial 20: rule cover: lost 0, extra 166, output without every set 156; truth 7, sets 3 6 7|5|2 6 7|4 8 9
+09:58:27    20/40 (12 with tilings); failing trials none 19, marek 18, cover 19, cover leaves 0; nodes vs none: marek 23%, cover 19%; ETA 5 s
+09:58:27    trial 21: rule none: lost 0, extra 100, output without every set 100; truth 40, sets 1 2 3|3
+09:58:27    trial 21: rule marek: lost 0, extra 100, output without every set 100; truth 40, sets 1 2 3|3
+09:58:27    trial 21: rule cover: lost 0, extra 100, output without every set 100; truth 40, sets 1 2 3|3
+09:58:28    trial 22: rule none: lost 0, extra 406, output without every set 395; truth 23, sets 6 9|6 10|2 5
+09:58:28    trial 22: rule marek: lost 0, extra 402, output without every set 391; truth 23, sets 6 9|6 10|2 5
+09:58:28    trial 22: rule cover: lost 0, extra 406, output without every set 388; truth 23, sets 6 9|6 10|2 5
+09:58:28    trial 23: rule none: lost 0, extra 48, output without every set 38; truth 3, sets 2 3 8|1 7|7
+09:58:28    trial 23: rule marek: lost 0, extra 48, output without every set 38; truth 3, sets 2 3 8|1 7|7
+09:58:28    trial 23: rule cover: lost 0, extra 48, output without every set 38; truth 3, sets 2 3 8|1 7|7
+09:58:28    trial 24: rule none: lost 0, extra 53, output without every set 45; truth 1, sets 6|10|2 4 7
+09:58:28    trial 24: rule marek: lost 0, extra 53, output without every set 45; truth 1, sets 6|10|2 4 7
+09:58:28    trial 24: rule cover: lost 0, extra 53, output without every set 46; truth 1, sets 6|10|2 4 7
+09:58:28    trial 25: rule none: lost 0, extra 524, output without every set 499; truth 60, sets 5 6|2 8 9
+09:58:29    trial 25: rule marek: lost 0, extra 524, output without every set 499; truth 60, sets 5 6|2 8 9
+09:58:29    trial 25: rule cover: lost 0, extra 524, output without every set 499; truth 60, sets 5 6|2 8 9
+09:58:29    trial 27: rule none: lost 0, extra 79, output without every set 62; truth 4, sets 10|2 3|3 4
+09:58:29    trial 27: rule marek: lost 0, extra 79, output without every set 62; truth 4, sets 10|2 3|3 4
+09:58:29    trial 27: rule cover: lost 0, extra 79, output without every set 62; truth 4, sets 10|2 3|3 4
+09:58:29    trial 28: rule none: lost 0, extra 426, output without every set 425; truth 42, sets 2 7 9|5 9 10|2 6 8
+09:58:29    trial 28: rule marek: lost 0, extra 426, output without every set 425; truth 42, sets 2 7 9|5 9 10|2 6 8
+09:58:29    trial 28: rule cover: lost 0, extra 426, output without every set 426; truth 42, sets 2 7 9|5 9 10|2 6 8
+09:58:30    trial 29: rule none: lost 0, extra 395, output without every set 383; truth 13, sets 1 6 9|5|6 8 10
+09:58:30    trial 29: rule marek: lost 0, extra 391, output without every set 379; truth 13, sets 1 6 9|5|6 8 10
+09:58:30    trial 29: rule cover: lost 0, extra 395, output without every set 383; truth 13, sets 1 6 9|5|6 8 10
+09:58:30    trial 30: rule none: lost 0, extra 46, output without every set 40; truth 0, sets 2 7|6|2 5 8|10|5 6 8
+09:58:30    trial 30: rule marek: lost 0, extra 44, output without every set 39; truth 0, sets 2 7|6|2 5 8|10|5 6 8
+09:58:30    trial 30: rule cover: lost 0, extra 46, output without every set 40; truth 0, sets 2 7|6|2 5 8|10|5 6 8
+09:58:30    30/40 (20 with tilings); failing trials none 28, marek 27, cover 28, cover leaves 0; nodes vs none: marek 25%, cover 19%; ETA 3 s
+09:58:30    trial 31: rule none: lost 0, extra 363, output without every set 351; truth 14, sets 4 5 10|6|5
+09:58:30    trial 31: rule marek: lost 0, extra 363, output without every set 346; truth 14, sets 4 5 10|6|5
+09:58:30    trial 31: rule cover: lost 0, extra 363, output without every set 346; truth 14, sets 4 5 10|6|5
+09:58:30    trial 32: rule none: lost 0, extra 211, output without every set 194; truth 3, sets 2 6|7
+09:58:30    trial 32: rule marek: lost 0, extra 211, output without every set 193; truth 3, sets 2 6|7
+09:58:30    trial 32: rule cover: lost 0, extra 211, output without every set 196; truth 3, sets 2 6|7
+09:58:31    trial 33: rule none: lost 0, extra 229, output without every set 213; truth 26, sets 6|6|4 5 6|9
+09:58:31    trial 33: rule marek: lost 0, extra 227, output without every set 211; truth 26, sets 6|6|4 5 6|9
+09:58:31    trial 33: rule cover: lost 0, extra 229, output without every set 213; truth 26, sets 6|6|4 5 6|9
+09:58:31    trial 34: rule none: lost 0, extra 41, output without every set 41; truth 35, sets 4|4
+09:58:31    trial 34: rule marek: lost 0, extra 41, output without every set 41; truth 35, sets 4|4
+09:58:31    trial 34: rule cover: lost 0, extra 41, output without every set 41; truth 35, sets 4|4
+09:58:31    trial 35: rule none: lost 0, extra 31, output without every set 29; truth 2, sets 5|1 2 10|1 5 6|3 8|9
+09:58:31    trial 35: rule marek: lost 0, extra 31, output without every set 29; truth 2, sets 5|1 2 10|1 5 6|3 8|9
+09:58:31    trial 35: rule cover: lost 0, extra 31, output without every set 28; truth 2, sets 5|1 2 10|1 5 6|3 8|9
+09:58:31    trial 36: rule none: lost 0, extra 221, output without every set 213; truth 34, sets 9|3 9 10|6|2 9
+09:58:31    trial 36: rule marek: lost 2, extra 178, output without every set 170; truth 34, sets 9|3 9 10|6|2 9
+09:58:31    trial 36: rule cover: lost 0, extra 221, output without every set 213; truth 34, sets 9|3 9 10|6|2 9
+09:58:32    trial 37: rule none: lost 0, extra 2, output without every set 0; truth 0, sets 4|9|1 4 6|5
+09:58:32    trial 37: rule marek: lost 0, extra 2, output without every set 0; truth 0, sets 4|9|1 4 6|5
+09:58:32    trial 37: rule cover: lost 0, extra 2, output without every set 0; truth 0, sets 4|9|1 4 6|5
+09:58:32    trial 39: rule none: lost 0, extra 51, output without every set 46; truth 0, sets 5|1 7|1 6 10|3 9 10
+09:58:32    trial 39: rule marek: lost 0, extra 51, output without every set 45; truth 0, sets 5|1 7|1 6 10|3 9 10
+09:58:32    trial 39: rule cover: lost 0, extra 51, output without every set 45; truth 0, sets 5|1 7|1 6 10|3 9 10
+09:58:32    trial 40: rule none: lost 0, extra 5, output without every set 5; truth 0, sets 7 10|10|4|1 3
+09:58:32    trial 40: rule marek: lost 0, extra 4, output without every set 4; truth 0, sets 7 10|10|4|1 3
+09:58:32    trial 40: rule cover: lost 0, extra 5, output without every set 5; truth 0, sets 7 10|10|4|1 3
+09:58:32    40/40 (26 with tilings); failing trials none 37, marek 36, cover 37, cover leaves 0; nodes vs none: marek 23%, cover 17%; ETA 0 s
+09:58:32    result: 40 trials, 26 with tilings; failing: none 37, marek 36, cover 37, cover leaf mismatches 0
+   (harness fix: expand symmetric vertex figures such as (A3)D12a before matching board lines; rerun)
+09:58:51 == r4.board: 10 vertex lines, permutations on, k 1-6, 40 trials of overlap sets, seed 1
+09:58:51    trial 1: rule none: lost 0, extra 209, output without every set 181; truth 26, sets 2 5 10|8 10|2 4 7
+09:58:51    trial 1: rule marek: lost 1, extra 196, output without every set 169; truth 26, sets 2 5 10|8 10|2 4 7
+09:58:51    trial 1: rule cover: lost 0, extra 209, output without every set 181; truth 26, sets 2 5 10|8 10|2 4 7
+09:58:52    trial 3: rule none: lost 0, extra 276, output without every set 255; truth 49, sets 4 7|1 4 9
+09:58:52    trial 3: rule marek: lost 0, extra 276, output without every set 255; truth 49, sets 4 7|1 4 9
+09:58:52    trial 3: rule cover: lost 0, extra 276, output without every set 255; truth 49, sets 4 7|1 4 9
+09:58:52    trial 4: rule none: lost 0, extra 65, output without every set 54; truth 3, sets 4 9|4 10|1 5|2 9|5
+09:58:52    trial 4: rule marek: lost 0, extra 41, output without every set 31; truth 3, sets 4 9|4 10|1 5|2 9|5
+09:58:52    trial 4: rule cover: lost 0, extra 65, output without every set 54; truth 3, sets 4 9|4 10|1 5|2 9|5
+09:58:52    trial 5: rule none: lost 0, extra 776, output without every set 772; truth 100, sets 6 7 9|4 5 9
+09:58:52    trial 5: rule marek: lost 0, extra 776, output without every set 772; truth 100, sets 6 7 9|4 5 9
+09:58:53    trial 5: rule cover: lost 0, extra 776, output without every set 772; truth 100, sets 6 7 9|4 5 9
+09:58:53    trial 6: rule none: lost 0, extra 46, output without every set 34; truth 1, sets 1 7 8|7|3 6|2 6 8|2 3 9
+09:58:53    trial 6: rule marek: lost 0, extra 44, output without every set 32; truth 1, sets 1 7 8|7|3 6|2 6 8|2 3 9
+09:58:53    trial 6: rule cover: lost 0, extra 46, output without every set 34; truth 1, sets 1 7 8|7|3 6|2 6 8|2 3 9
+09:58:53    trial 7: rule none: lost 0, extra 2, output without every set 2; truth 3, sets 1 8|1 5|3 7 10|9|1
+09:58:53    trial 7: rule marek: lost 0, extra 2, output without every set 2; truth 3, sets 1 8|1 5|3 7 10|9|1
+09:58:53    trial 7: rule cover: lost 0, extra 2, output without every set 2; truth 3, sets 1 8|1 5|3 7 10|9|1
+09:58:53    trial 8: rule none: lost 0, extra 465, output without every set 451; truth 67, sets 4 7 9|6 8 10|1 9
+09:58:53    trial 8: rule marek: lost 0, extra 456, output without every set 442; truth 67, sets 4 7 9|6 8 10|1 9
+09:58:53    trial 8: rule cover: lost 0, extra 465, output without every set 451; truth 67, sets 4 7 9|6 8 10|1 9
+09:58:54    trial 9: rule none: lost 0, extra 109, output without every set 92; truth 12, sets 3 4 9|1 8|9 10|9|6 8
+09:58:54    trial 9: rule marek: lost 0, extra 74, output without every set 59; truth 12, sets 3 4 9|1 8|9 10|9|6 8
+09:58:54    trial 9: rule cover: lost 0, extra 109, output without every set 92; truth 12, sets 3 4 9|1 8|9 10|9|6 8
+09:58:54    trial 10: rule none: lost 0, extra 33, output without every set 18; truth 6, sets 1 9|6 8 10|1 3 4|2 3 10|1 2 5
+09:58:54    trial 10: rule marek: lost 1, extra 33, output without every set 18; truth 6, sets 1 9|6 8 10|1 3 4|2 3 10|1 2 5
+09:58:54    trial 10: rule cover: lost 0, extra 33, output without every set 18; truth 6, sets 1 9|6 8 10|1 3 4|2 3 10|1 2 5
+09:58:54    10/40 (9 with tilings); failing trials none 9, marek 9, cover 9, cover leaves 0; nodes vs none: marek 24%, cover 24%; ETA 9 s
+09:58:54    trial 11: rule none: lost 0, extra 302, output without every set 280; truth 45, sets 8|5
+09:58:54    trial 11: rule marek: lost 0, extra 302, output without every set 280; truth 45, sets 8|5
+09:58:54    trial 11: rule cover: lost 0, extra 302, output without every set 280; truth 45, sets 8|5
+09:58:55    trial 12: rule none: lost 0, extra 116, output without every set 90; truth 23, sets 2 3|2 5|3
+09:58:55    trial 12: rule marek: lost 0, extra 116, output without every set 90; truth 23, sets 2 3|2 5|3
+09:58:55    trial 12: rule cover: lost 0, extra 116, output without every set 90; truth 23, sets 2 3|2 5|3
+09:58:55    trial 13: rule none: lost 0, extra 21, output without every set 16; truth 7, sets 3 5 9|6 8|1 2|6 7
+09:58:55    trial 13: rule marek: lost 0, extra 19, output without every set 14; truth 7, sets 3 5 9|6 8|1 2|6 7
+09:58:55    trial 13: rule cover: lost 0, extra 21, output without every set 16; truth 7, sets 3 5 9|6 8|1 2|6 7
+09:58:55    trial 14: rule none: lost 0, extra 1, output without every set 0; truth 0, sets 5|5|4 7 9|4|7
+09:58:55    trial 14: rule cover: lost 0, extra 1, output without every set 0; truth 0, sets 5|5|4 7 9|4|7
+09:58:56    trial 15: rule none: lost 0, extra 22, output without every set 10; truth 0, sets 3|7 9|4 8 9
+09:58:56    trial 15: rule marek: lost 0, extra 17, output without every set 6; truth 0, sets 3|7 9|4 8 9
+09:58:56    trial 15: rule cover: lost 0, extra 22, output without every set 10; truth 0, sets 3|7 9|4 8 9
+09:58:56    trial 16: rule none: lost 0, extra 13, output without every set 9; truth 19, sets 1 6 7|1 5 7|4
+09:58:56    trial 16: rule marek: lost 0, extra 12, output without every set 8; truth 19, sets 1 6 7|1 5 7|4
+09:58:56    trial 16: rule cover: lost 0, extra 13, output without every set 9; truth 19, sets 1 6 7|1 5 7|4
+09:58:56    trial 17: rule none: lost 0, extra 256, output without every set 225; truth 31, sets 2 10|3 5
+09:58:56    trial 17: rule marek: lost 0, extra 256, output without every set 225; truth 31, sets 2 10|3 5
+09:58:56    trial 17: rule cover: lost 0, extra 256, output without every set 225; truth 31, sets 2 10|3 5
+09:58:57    trial 18: rule none: lost 0, extra 3, output without every set 2; truth 3, sets 1 3 5|1 4 8|10|1 4 7|2 4
+09:58:57    trial 18: rule marek: lost 0, extra 3, output without every set 2; truth 3, sets 1 3 5|1 4 8|10|1 4 7|2 4
+09:58:57    trial 18: rule cover: lost 0, extra 3, output without every set 2; truth 3, sets 1 3 5|1 4 8|10|1 4 7|2 4
+09:58:57    trial 19: rule none: lost 0, extra 2, output without every set 0; truth 0, sets 2 4 8|5 7 8|6|1 5 7|4
+09:58:57    trial 19: rule marek: lost 0, extra 2, output without every set 0; truth 0, sets 2 4 8|5 7 8|6|1 5 7|4
+09:58:57    trial 19: rule cover: lost 0, extra 2, output without every set 0; truth 0, sets 2 4 8|5 7 8|6|1 5 7|4
+09:58:57    trial 20: rule none: lost 0, extra 164, output without every set 145; truth 9, sets 3 6 7|5|2 6 7|4 8 9
+09:58:57    trial 20: rule marek: lost 0, extra 158, output without every set 139; truth 9, sets 3 6 7|5|2 6 7|4 8 9
+09:58:57    trial 20: rule cover: lost 0, extra 164, output without every set 145; truth 9, sets 3 6 7|5|2 6 7|4 8 9
+09:58:57    20/40 (16 with tilings); failing trials none 19, marek 18, cover 19, cover leaves 0; nodes vs none: marek 23%, cover 19%; ETA 6 s
+09:58:57    trial 21: rule none: lost 0, extra 90, output without every set 90; truth 50, sets 1 2 3|3
+09:58:57    trial 21: rule marek: lost 0, extra 90, output without every set 90; truth 50, sets 1 2 3|3
+09:58:57    trial 21: rule cover: lost 0, extra 90, output without every set 90; truth 50, sets 1 2 3|3
+09:58:58    trial 22: rule none: lost 0, extra 400, output without every set 383; truth 29, sets 6 9|6 10|2 5
+09:58:58    trial 22: rule marek: lost 0, extra 396, output without every set 379; truth 29, sets 6 9|6 10|2 5
+09:58:58    trial 22: rule cover: lost 0, extra 400, output without every set 383; truth 29, sets 6 9|6 10|2 5
+09:58:58    trial 23: rule none: lost 0, extra 46, output without every set 35; truth 5, sets 2 3 8|1 7|7
+09:58:58    trial 23: rule marek: lost 0, extra 46, output without every set 35; truth 5, sets 2 3 8|1 7|7
+09:58:58    trial 23: rule cover: lost 0, extra 46, output without every set 35; truth 5, sets 2 3 8|1 7|7
+09:58:58    trial 24: rule none: lost 0, extra 50, output without every set 35; truth 4, sets 6|10|2 4 7
+09:58:58    trial 24: rule marek: lost 0, extra 50, output without every set 35; truth 4, sets 6|10|2 4 7
+09:58:58    trial 24: rule cover: lost 0, extra 50, output without every set 35; truth 4, sets 6|10|2 4 7
+09:58:58    trial 25: rule none: lost 0, extra 515, output without every set 490; truth 69, sets 5 6|2 8 9
+09:58:58    trial 25: rule marek: lost 0, extra 515, output without every set 490; truth 69, sets 5 6|2 8 9
+09:58:59    trial 25: rule cover: lost 0, extra 515, output without every set 490; truth 69, sets 5 6|2 8 9
+09:58:59    trial 27: rule none: lost 0, extra 75, output without every set 46; truth 8, sets 10|2 3|3 4
+09:58:59    trial 27: rule marek: lost 0, extra 75, output without every set 46; truth 8, sets 10|2 3|3 4
+09:58:59    trial 27: rule cover: lost 0, extra 75, output without every set 46; truth 8, sets 10|2 3|3 4
+09:58:59    trial 28: rule none: lost 0, extra 425, output without every set 419; truth 43, sets 2 7 9|5 9 10|2 6 8
+09:58:59    trial 28: rule marek: lost 0, extra 425, output without every set 419; truth 43, sets 2 7 9|5 9 10|2 6 8
+09:58:59    trial 28: rule cover: lost 0, extra 425, output without every set 419; truth 43, sets 2 7 9|5 9 10|2 6 8
+09:59:00    trial 29: rule none: lost 0, extra 388, output without every set 369; truth 20, sets 1 6 9|5|6 8 10
+09:59:00    trial 29: rule marek: lost 0, extra 384, output without every set 365; truth 20, sets 1 6 9|5|6 8 10
+09:59:00    trial 29: rule cover: lost 0, extra 388, output without every set 369; truth 20, sets 1 6 9|5|6 8 10
+09:59:00    trial 30: rule none: lost 0, extra 44, output without every set 29; truth 2, sets 2 7|6|2 5 8|10|5 6 8
+09:59:00    trial 30: rule marek: lost 0, extra 42, output without every set 28; truth 2, sets 2 7|6|2 5 8|10|5 6 8
+09:59:00    trial 30: rule cover: lost 0, extra 44, output without every set 29; truth 2, sets 2 7|6|2 5 8|10|5 6 8
+09:59:00    30/40 (25 with tilings); failing trials none 28, marek 27, cover 28, cover leaves 0; nodes vs none: marek 25%, cover 19%; ETA 3 s
+09:59:01    trial 31: rule none: lost 0, extra 356, output without every set 339; truth 21, sets 4 5 10|6|5
+09:59:01    trial 31: rule marek: lost 0, extra 356, output without every set 339; truth 21, sets 4 5 10|6|5
+09:59:01    trial 31: rule cover: lost 0, extra 356, output without every set 339; truth 21, sets 4 5 10|6|5
+09:59:01    trial 32: rule none: lost 0, extra 207, output without every set 188; truth 7, sets 2 6|7
+09:59:01    trial 32: rule marek: lost 0, extra 207, output without every set 188; truth 7, sets 2 6|7
+09:59:01    trial 32: rule cover: lost 0, extra 207, output without every set 188; truth 7, sets 2 6|7
+09:59:02    trial 33: rule none: lost 0, extra 227, output without every set 213; truth 28, sets 6|6|4 5 6|9
+09:59:02    trial 33: rule marek: lost 0, extra 225, output without every set 211; truth 28, sets 6|6|4 5 6|9
+09:59:02    trial 33: rule cover: lost 0, extra 227, output without every set 213; truth 28, sets 6|6|4 5 6|9
+09:59:02    trial 34: rule none: lost 0, extra 41, output without every set 41; truth 35, sets 4|4
+09:59:02    trial 34: rule marek: lost 0, extra 41, output without every set 41; truth 35, sets 4|4
+09:59:02    trial 34: rule cover: lost 0, extra 41, output without every set 41; truth 35, sets 4|4
+09:59:03    trial 35: rule none: lost 0, extra 31, output without every set 24; truth 2, sets 5|1 2 10|1 5 6|3 8|9
+09:59:03    trial 35: rule marek: lost 0, extra 31, output without every set 24; truth 2, sets 5|1 2 10|1 5 6|3 8|9
+09:59:03    trial 35: rule cover: lost 0, extra 31, output without every set 24; truth 2, sets 5|1 2 10|1 5 6|3 8|9
+09:59:03    trial 36: rule none: lost 0, extra 221, output without every set 213; truth 34, sets 9|3 9 10|6|2 9
+09:59:03    trial 36: rule marek: lost 1, extra 177, output without every set 170; truth 34, sets 9|3 9 10|6|2 9
+09:59:03    trial 36: rule cover: lost 0, extra 221, output without every set 213; truth 34, sets 9|3 9 10|6|2 9
+09:59:04    trial 37: rule none: lost 0, extra 2, output without every set 0; truth 0, sets 4|9|1 4 6|5
+09:59:04    trial 37: rule marek: lost 0, extra 2, output without every set 0; truth 0, sets 4|9|1 4 6|5
+09:59:04    trial 37: rule cover: lost 0, extra 2, output without every set 0; truth 0, sets 4|9|1 4 6|5
+09:59:05    trial 39: rule none: lost 0, extra 51, output without every set 39; truth 0, sets 5|1 7|1 6 10|3 9 10
+09:59:05    trial 39: rule marek: lost 0, extra 51, output without every set 39; truth 0, sets 5|1 7|1 6 10|3 9 10
+09:59:05    trial 39: rule cover: lost 0, extra 51, output without every set 39; truth 0, sets 5|1 7|1 6 10|3 9 10
+09:59:05    trial 40: rule none: lost 0, extra 2, output without every set 2; truth 3, sets 7 10|10|4|1 3
+09:59:05    trial 40: rule marek: lost 1, extra 2, output without every set 2; truth 3, sets 7 10|10|4|1 3
+09:59:05    trial 40: rule cover: lost 0, extra 2, output without every set 2; truth 3, sets 7 10|10|4|1 3
+09:59:05    40/40 (32 with tilings); failing trials none 37, marek 36, cover 37, cover leaves 0; nodes vs none: marek 23%, cover 17%; ETA 0 s
+09:59:05    result: 40 trials, 32 with tilings; failing: none 37, marek 36, cover 37, cover leaf mismatches 0
+   (harness fix: certificates after the first in a file start with a blank line; rerun)
+09:59:29 == r4.board: 10 vertex lines, permutations on, k 1-6, 40 trials of overlap sets, seed 1
+09:59:29    trial 1: rule marek: lost 14, extra 0, output without every set 0; truth 235, sets 2 5 10|8 10|2 4 7
+09:59:30    trial 4: rule marek: lost 24, extra 0, output without every set 0; truth 68, sets 4 9|4 10|1 5|2 9|5
+09:59:30    trial 6: rule marek: lost 2, extra 0, output without every set 0; truth 47, sets 1 7 8|7|3 6|2 6 8|2 3 9
+09:59:31    trial 8: rule marek: lost 9, extra 0, output without every set 0; truth 532, sets 4 7 9|6 8 10|1 9
+09:59:31    trial 9: rule marek: lost 35, extra 0, output without every set 0; truth 121, sets 3 4 9|1 8|9 10|9|6 8
+09:59:32    trial 10: rule marek: lost 1, extra 0, output without every set 0; truth 39, sets 1 9|6 8 10|1 3 4|2 3 10|1 2 5
+09:59:32    10/40 (9 with tilings); failing trials none 0, marek 6, cover 0, cover leaves 0; nodes vs none: marek 24%, cover 24%; ETA 9 s
+09:59:32    trial 13: rule marek: lost 2, extra 0, output without every set 0; truth 28, sets 3 5 9|6 8|1 2|6 7
+09:59:33    trial 14: rule marek: lost 1, extra 0, output without every set 0; truth 1, sets 5|5|4 7 9|4|7
+09:59:33    trial 15: rule marek: lost 5, extra 0, output without every set 0; truth 22, sets 3|7 9|4 8 9
+09:59:33    trial 16: rule marek: lost 1, extra 0, output without every set 0; truth 32, sets 1 6 7|1 5 7|4
+09:59:34    trial 20: rule marek: lost 6, extra 0, output without every set 0; truth 173, sets 3 6 7|5|2 6 7|4 8 9
+09:59:34    20/40 (19 with tilings); failing trials none 0, marek 11, cover 0, cover leaves 0; nodes vs none: marek 23%, cover 19%; ETA 6 s
+09:59:35    trial 22: rule marek: lost 4, extra 0, output without every set 0; truth 429, sets 6 9|6 10|2 5
+09:59:37    trial 29: rule marek: lost 4, extra 0, output without every set 0; truth 408, sets 1 6 9|5|6 8 10
+09:59:37    trial 30: rule marek: lost 2, extra 0, output without every set 0; truth 46, sets 2 7|6|2 5 8|10|5 6 8
+09:59:37    30/40 (28 with tilings); failing trials none 0, marek 14, cover 0, cover leaves 0; nodes vs none: marek 25%, cover 19%; ETA 3 s
+09:59:38    trial 33: rule marek: lost 2, extra 0, output without every set 0; truth 255, sets 6|6|4 5 6|9
+09:59:39    trial 36: rule marek: lost 45, extra 0, output without every set 0; truth 255, sets 9|3 9 10|6|2 9
+09:59:40    trial 40: rule marek: lost 1, extra 0, output without every set 0; truth 5, sets 7 10|10|4|1 3
+09:59:40    40/40 (37 with tilings); failing trials none 0, marek 17, cover 0, cover leaves 0; nodes vs none: marek 23%, cover 17%; ETA 0 s
+09:59:40    result: 40 trials, 37 with tilings; failing: none 0, marek 17, cover 0, cover leaf mismatches 0
+FAILED: /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/773383d3-2759-429c-a3bf-712be53a6e6d/scratchpad/req/r4.board 300 7 overlap 2
+FAILED: /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/773383d3-2759-429c-a3bf-712be53a6e6d/scratchpad/req/r4.board 150 7 disjoint 3
+FAILED: /Users/alessandro/Desktop/Personal/TilingAtlas-searcher-ui/tools/searcher/boards/squares_edges.board 150 5 overlap 4
+FAILED: /Users/alessandro/Desktop/Personal/TilingAtlas-searcher-ui/tools/searcher/boards/squares_edges.board 60 5 disjoint 5
+FAILED: /Users/alessandro/Desktop/Personal/TilingAtlas-searcher-ui/tools/searcher/boards/123_1_4657.board 60 3 overlap 6
+FAILED: /Users/alessandro/Desktop/Personal/TilingAtlas-searcher-ui/tools/searcher/boards/1247_1_0612.board 30 2 overlap 7
+FAILED: /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/773383d3-2759-429c-a3bf-712be53a6e6d/scratchpad/req/s2.board 40 4 overlap 8
+FAILED: /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/773383d3-2759-429c-a3bf-712be53a6e6d/scratchpad/req/s3.board 20 3 overlap 9
+battery done
+   (the FAILED lines above: the driver loop passed each spec as one argument (zsh does not split unquoted variables); no sweep ran. Rerun:)
+10:00:09 == r4.board: 10 vertex lines, permutations on, k 1-7, 300 trials of overlap sets, seed 2
+10:00:10    trial 2: rule marek: lost 15, extra 0, output without every set 0; truth 165, sets 1 3 4|7 9|8 9|1 5 9
+10:00:12    trial 5: rule marek: lost 7, extra 0, output without every set 0; truth 482, sets 3 7|4 8 9|5 8|6 8 9
+10:00:13    trial 6: rule marek: lost 102, extra 0, output without every set 0; truth 862, sets 9 10|4 8 10|3 5|5 10|7 9 10
+10:00:14    trial 7: rule marek: lost 4, extra 0, output without every set 0; truth 92, sets 4 6 8|2 6 10|1 2 4|10
+10:00:18    trial 14: rule marek: lost 1, extra 0, output without every set 0; truth 50, sets 2|1 2 6|3 9|6 7 8|6
+10:00:20    trial 17: rule marek: lost 46, extra 0, output without every set 0; truth 238, sets 5|10|10|5 6 7|1 9
+10:00:22    trial 20: rule marek: lost 26, extra 0, output without every set 0; truth 1214, sets 9|5 8 10|4 7 9
+10:00:23    trial 21: rule marek: lost 49, extra 0, output without every set 0; truth 419, sets 1 9|1 7 10|2 3 10|1 6 8|2 5 6
+10:00:25    trial 24: rule marek: lost 23, extra 0, output without every set 0; truth 104, sets 3 8|2 7|2 10|10
+10:00:25    trial 25: rule marek: lost 26, extra 0, output without every set 0; truth 202, sets 2 4 7|10|1 8 10|6 8
+10:00:26    trial 26: rule marek: lost 1, extra 0, output without every set 0; truth 1444, sets 5 8|7 8 10|4 5 7
+10:00:29    trial 32: rule marek: lost 20, extra 0, output without every set 0; truth 660, sets 7 8|6 9|2 4 9|1 7|8 9
+10:00:31    trial 34: rule marek: lost 2, extra 0, output without every set 0; truth 132, sets 1 3 7|5 9|3 4 8|6|8
+10:00:33    trial 37: rule marek: lost 14, extra 0, output without every set 0; truth 695, sets 1 3 10|7 8|1 3 5|8 9
+10:00:35    trial 40: rule marek: lost 24, extra 0, output without every set 0; truth 645, sets 5 6|2 7 9|3 4 7|1 2 5
+10:00:36    trial 42: rule marek: lost 24, extra 0, output without every set 0; truth 1049, sets 6|2 6|3 6|5 8
+10:00:37    trial 44: rule marek: lost 30, extra 0, output without every set 0; truth 777, sets 3 10|5|6 7 10
+10:00:39    trial 46: rule marek: lost 2, extra 0, output without every set 0; truth 11, sets 2 8|6|1 3|6
+10:00:42    trial 52: rule marek: lost 1, extra 0, output without every set 0; truth 11, sets 6 8|2 8 10|3 8|7 9|1 2
+10:00:45    trial 60: rule marek: lost 18, extra 0, output without every set 0; truth 1042, sets 6 7|7|7
+10:00:46    trial 62: rule marek: lost 151, extra 0, output without every set 0; truth 402, sets 2 3 9|10|4 9 10|1 10|1 3 5
+10:00:47    trial 64: rule marek: lost 6, extra 0, output without every set 0; truth 1031, sets 5 9|2 7 9|1 5 8
+10:00:49    trial 66: rule marek: lost 6, extra 0, output without every set 0; truth 52, sets 4 7 9|3|6 8|5 8|4 8 9
+10:00:49    trial 67: rule marek: lost 18, extra 0, output without every set 0; truth 223, sets 6 10|2 3|8 10
+10:00:50    trial 70: rule marek: lost 7, extra 0, output without every set 0; truth 184, sets 2 6 8|1 8|3 10|3
+10:00:51    trial 71: rule marek: lost 9, extra 0, output without every set 0; truth 234, sets 2 7 8|2 8|3 4
+10:00:51    trial 72: rule marek: lost 2, extra 0, output without every set 0; truth 126, sets 4|6 7 9|4|1 4 5
+10:00:52    trial 73: rule marek: lost 113, extra 0, output without every set 0; truth 1651, sets 2 7 10|7 10|5 7
+10:00:54    75/300 (71 with tilings); failing trials none 0, marek 28, cover 0, cover leaves 0; nodes vs none: marek 30%, cover 20%; ETA 132 s
+10:00:54    trial 76: rule marek: lost 6, extra 0, output without every set 0; truth 275, sets 6|6 8 9|2 4 8|1 10
+10:01:01    trial 87: rule marek: lost 7, extra 0, output without every set 0; truth 184, sets 3|3 8|1 3 6|7 8 10|8
+10:01:02    trial 89: rule marek: lost 28, extra 0, output without every set 0; truth 226, sets 4 7|4 5|1 7|1 5 7|9
+10:01:02    trial 90: rule marek: lost 24, extra 0, output without every set 0; truth 585, sets 4 5 10|6 8|4 8 10|3 8 9|6 7
+10:01:08    trial 100: rule marek: lost 3, extra 0, output without every set 0; truth 82, sets 2 9|10|4 6|3 4|4 9 10
+10:01:09    trial 101: rule marek: lost 8, extra 0, output without every set 0; truth 78, sets 7|4 10|1 3 7|3 6|3 4 8
+10:01:11    trial 106: rule marek: lost 36, extra 0, output without every set 0; truth 1209, sets 2 9|1 5 10|2 4 9
+10:01:15    trial 113: rule marek: lost 4, extra 0, output without every set 0; truth 46, sets 9 10|2|10
+10:01:19    trial 122: rule marek: lost 14, extra 0, output without every set 0; truth 543, sets 5 7|3 7|8 10|2 6 7|1 5 7
+10:01:21    trial 126: rule marek: lost 6, extra 0, output without every set 0; truth 66, sets 4|4 5 9|3 5 10|10|1 9
+10:01:23    trial 130: rule marek: lost 59, extra 0, output without every set 0; truth 189, sets 2 3 5|7|9|1 3 9|4 9
+10:01:26    trial 136: rule marek: lost 2, extra 0, output without every set 0; truth 29, sets 3 4 9|1 5|4|5 6 10|1 5 10
+10:01:27    trial 138: rule marek: lost 50, extra 0, output without every set 0; truth 224, sets 2 3 7|3 4 10|8|10|8
+10:01:31    trial 146: rule marek: lost 45, extra 0, output without every set 0; truth 134, sets 2 8|3 10|4 7|4 8 10|2 8
+10:01:31    trial 147: rule marek: lost 28, extra 0, output without every set 0; truth 230, sets 1 6 8|7|4 9|1 9|5 7 9
+10:01:33    trial 150: rule marek: lost 27, extra 0, output without every set 0; truth 737, sets 1 4 10|5|3 8 10
+10:01:33    150/300 (139 with tilings); failing trials none 0, marek 44, cover 0, cover leaves 0; nodes vs none: marek 30%, cover 20%; ETA 84 s
+10:01:34    trial 152: rule marek: lost 5, extra 0, output without every set 0; truth 852, sets 8|1 8 10|5
+10:01:35    trial 153: rule marek: lost 83, extra 0, output without every set 0; truth 475, sets 4 9 10|2 8|3 9|3 5 10|2 3 9
+10:01:37    trial 158: rule marek: lost 31, extra 0, output without every set 0; truth 339, sets 4 6|1 2 10|7 10|5 7 8
+10:01:40    trial 161: rule marek: lost 1, extra 0, output without every set 0; truth 1536, sets 3 5 9|5 8|5 9 10|6 10
+10:01:42    trial 164: rule marek: lost 19, extra 0, output without every set 0; truth 2057, sets 1 5 10|5 7 10|4 5 7|5 7 10
+10:01:43    trial 168: rule marek: lost 41, extra 0, output without every set 0; truth 533, sets 5|7|7|2 6
+10:01:46    trial 173: rule marek: lost 8, extra 0, output without every set 0; truth 176, sets 3 8|1 7|3 4 7|6 7 9
+10:01:47    trial 174: rule marek: lost 24, extra 0, output without every set 0; truth 533, sets 3 5|1 7|6|4 7 9
+10:01:51    trial 182: rule marek: lost 11, extra 0, output without every set 0; truth 468, sets 1 2 10|3 6 9|4 9 10|7
+10:01:52    trial 183: rule marek: lost 27, extra 0, output without every set 0; truth 349, sets 3 5|1 7 8|5|2 9|9
+10:01:52    trial 184: rule marek: lost 2, extra 0, output without every set 0; truth 135, sets 1 6 7|2 7|8|1 8|3 4 6
+10:01:53    trial 185: rule marek: lost 435, extra 0, output without every set 0; truth 1473, sets 6 10|5 8 9|3 7 10|3 4 10|2 4 10
+10:01:58    trial 195: rule marek: lost 1, extra 0, output without every set 0; truth 1, sets 10|5 8 10|2|7
+10:02:01    trial 200: rule marek: lost 1, extra 0, output without every set 0; truth 51, sets 2|6|1 8 9|3 6 9
+10:02:01    trial 201: rule marek: lost 63, extra 0, output without every set 0; truth 915, sets 1 9|10|3 9|5 10
+10:02:02    trial 202: rule marek: lost 18, extra 0, output without every set 0; truth 1047, sets 1 3 7|2 7|6 7 10
+10:02:07    trial 211: rule marek: lost 31, extra 0, output without every set 0; truth 839, sets 5 10|5 6 10|9|1 5 7|6 9
+10:02:10    trial 215: rule marek: lost 15, extra 0, output without every set 0; truth 1238, sets 5 9|6 8 9|1 6
+10:02:11    trial 216: rule marek: lost 36, extra 0, output without every set 0; truth 315, sets 8|4 8 9|2 4 10|3 9|7 10
+10:02:14    trial 220: rule marek: lost 17, extra 0, output without every set 0; truth 915, sets 10|9|8 10
+10:02:16    trial 224: rule marek: lost 6, extra 0, output without every set 0; truth 1665, sets 2 6 10|8 9|5 7 10
+10:02:17    225/300 (211 with tilings); failing trials none 0, marek 65, cover 0, cover leaves 0; nodes vs none: marek 32%, cover 22%; ETA 43 s
+10:02:18    trial 226: rule marek: lost 94, extra 0, output without every set 0; truth 1058, sets 3 6 7|4 5 7|1 7|4 7|3 6 9
+10:02:25    trial 240: rule marek: lost 13, extra 0, output without every set 0; truth 663, sets 2 7 9|6|9
+10:02:26    trial 243: rule marek: lost 1, extra 0, output without every set 0; truth 8, sets 5 10|1 5 9|1 7 8|2|2 6 7
+10:02:29    trial 249: rule marek: lost 13, extra 0, output without every set 0; truth 1124, sets 9|4 8 10|9 10
+10:02:31    trial 251: rule marek: lost 40, extra 0, output without every set 0; truth 763, sets 10|4 5 7|4 5|4 8 9|4 8 10
+10:02:31    trial 252: rule marek: lost 11, extra 0, output without every set 0; truth 172, sets 5 6 9|8|1 6 7|4 7
+10:02:32    trial 254: rule marek: lost 4, extra 0, output without every set 0; truth 133, sets 1 8 9|4|2 4|4|2 4 5
+10:02:33    trial 256: rule marek: lost 6, extra 0, output without every set 0; truth 52, sets 1 5 10|4 8 9|3|7 9
+10:02:36    trial 261: rule marek: lost 13, extra 0, output without every set 0; truth 101, sets 3 10|4 8|7|4 10|4 5 9
+10:02:36    trial 262: rule marek: lost 5, extra 0, output without every set 0; truth 128, sets 8 9|1 3 4|5|10|6 8
+10:02:37    trial 264: rule marek: lost 25, extra 0, output without every set 0; truth 663, sets 3 6|2 9|1 2 6|6 7|3 9
+10:02:39    trial 266: rule marek: lost 1, extra 0, output without every set 0; truth 57, sets 6 8 10|2|6 9 10|2 4 10|5 9
+10:02:40    trial 269: rule marek: lost 10, extra 0, output without every set 0; truth 574, sets 2 6 8|2 5 9|3 6|4 7|5 7
+10:02:42    trial 272: rule marek: lost 38, extra 0, output without every set 0; truth 936, sets 9|1 9|6 7 10|5 7
+10:02:45    trial 279: rule marek: lost 2, extra 0, output without every set 0; truth 6, sets 6|1 8|8|3
+10:02:47    trial 283: rule marek: lost 15, extra 0, output without every set 0; truth 492, sets 1 9 10|5|2 4 9|4 5 7
+10:02:48    trial 284: rule marek: lost 52, extra 0, output without every set 0; truth 574, sets 1 7|2 4 7|2 5
+10:02:50    trial 288: rule marek: lost 8, extra 0, output without every set 0; truth 352, sets 5 8|6|2 8|6|7 8 9
+10:02:52    trial 292: rule marek: lost 3, extra 0, output without every set 0; truth 255, sets 7 8|2 8|6|9
+10:02:54    trial 295: rule marek: lost 89, extra 0, output without every set 0; truth 1445, sets 9|9|7 9 10|2 9|4 9
+10:02:56    trial 300: rule marek: lost 12, extra 0, output without every set 0; truth 949, sets 6|5|6 9|5
+10:02:57    300/300 (282 with tilings); failing trials none 0, marek 86, cover 0, cover leaves 0; nodes vs none: marek 30%, cover 21%; ETA 0 s
+10:02:57    result: 300 trials, 282 with tilings; failing: none 0, marek 86, cover 0, cover leaf mismatches 0
+10:02:57 == r4.board: 10 vertex lines, permutations on, k 1-7, 150 trials of disjoint sets, seed 3
+10:03:14    37/150 (24 with tilings); failing trials none 0, marek 0, cover 0, cover leaves 0; nodes vs none: marek 22%, cover 11%; ETA 52 s
+
+-- round 3: stock = the committed engine (stock-ref); plus the new tilesearch with require lines (half the trials one set as initial) and tileestimate --exact against it
+10:04:06 == r4.board: 10 vertex lines, permutations on, k 1-6, 20 trials of overlap sets, seed 11
+10:04:07    trial 1: tileestimate --exact ('28808', '7', '4') vs engine ('30222', '7', '4')
+10:04:07    trial 2: tileestimate --exact ('162588', '6997', '354') vs engine ('164960', '6997', '354')
+10:04:08    trial 3: tileestimate --exact ('219633', '3052', '281') vs engine ('223179', '3052', '281')
+10:04:08    trial 4: tileestimate --exact ('28498', '6', '3') vs engine ('29518', '6', '3')
+10:04:09    trial 5: tileestimate --exact ('113972', '11684', '468') vs engine ('115653', '11684', '468')
+10:04:09    5/20 (5 with tilings); failing trials none 0, marek 0, cover 0, cover leaves 0, engine 0, estimate 5; nodes vs none: marek 36%, cover 24%; ETA 9 s
+10:04:09    trial 6: tileestimate --exact ('11694', '7', '5') vs engine ('12284', '7', '5')
+10:04:09    trial 7: tileestimate --exact ('4806', '82', '43') vs engine ('5019', '82', '43')
+10:04:10    trial 8: tileestimate --exact ('12661', '8', '4') vs engine ('13439', '8', '4')
+10:04:10    trial 9: tileestimate --exact ('8154', '1', '1') vs engine ('8652', '1', '1')
+10:04:10    trial 10: tileestimate --exact ('4216', '82', '43') vs engine ('4393', '82', '43')
+10:04:10    10/20 (10 with tilings); failing trials none 0, marek 0, cover 0, cover leaves 0, engine 0, estimate 10; nodes vs none: marek 26%, cover 15%; ETA 4 s
+10:04:10    trial 11: rule marek: lost 77, extra 0, output without every set 0; truth 370, sets 10|6 8|10
+10:04:11    trial 11: tileestimate --exact ('227182', '3308', '370') vs engine ('233076', '3308', '370')
+10:04:12    trial 12: tileestimate --exact ('295477', '14238', '633') vs engine ('299719', '14238', '633')
+10:04:12    trial 13: tileestimate --exact ('1270', '0', '0') vs engine ('1378', '0', '0')
+10:04:12    trial 14: tileestimate --exact ('105575', '173', '74') vs engine ('108701', '173', '74')
+10:04:13    trial 15: tileestimate --exact ('3097', '0', '0') vs engine ('3410', '0', '0')
+10:04:13    15/20 (13 with tilings); failing trials none 0, marek 1, cover 0, cover leaves 0, engine 0, estimate 15; nodes vs none: marek 30%, cover 20%; ETA 2 s
+10:04:13    trial 16: rule marek: lost 7, extra 0, output without every set 0; truth 78, sets 3 9|6|8|3 9
+10:04:13    trial 16: tileestimate --exact ('26071', '125', '78') vs engine ('27027', '125', '78')
+10:04:13    trial 17: tileestimate --exact ('3524', '23', '7') vs engine ('3760', '23', '7')
+10:04:13    trial 18: tileestimate --exact ('68635', '794', '186') vs engine ('70490', '794', '186')
+10:04:14    trial 19: tileestimate --exact ('31663', '228', '33') vs engine ('33062', '228', '33')
+10:04:14    trial 20: rule marek: lost 61, extra 0, output without every set 0; truth 413, sets 1 10|2 9 10|2 5 7|6 7 8|8 9
+10:04:14    trial 20: tileestimate --exact ('155763', '7237', '413') vs engine ('159575', '7237', '413')
+10:04:14    20/20 (18 with tilings); failing trials none 0, marek 3, cover 0, cover leaves 0, engine 0, estimate 20; nodes vs none: marek 29%, cover 19%; ETA 0 s
+10:04:14    result: 20 trials, 18 with tilings; failing: none 0, marek 3, cover 0, cover leaf mismatches 0, engine 0, tileestimate --exact 20
+   (tileestimate --exact is compared with a one-thread engine run: threaded node counts include revisits)
+10:04:26 == r4.board: 10 vertex lines, permutations on, k 1-6, 20 trials of overlap sets, seed 11
+10:04:29    5/20 (5 with tilings); failing trials none 0, marek 0, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 36%, cover 24%; ETA 9 s
+10:04:30    10/20 (10 with tilings); failing trials none 0, marek 0, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 26%, cover 15%; ETA 4 s
+10:04:30    trial 11: rule marek: lost 77, extra 0, output without every set 0; truth 370, sets 10|6 8|10
+10:04:33    15/20 (13 with tilings); failing trials none 0, marek 1, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 30%, cover 20%; ETA 2 s
+10:04:34    trial 16: rule marek: lost 7, extra 0, output without every set 0; truth 78, sets 3 9|6|8|3 9
+10:04:35    trial 20: rule marek: lost 61, extra 0, output without every set 0; truth 413, sets 1 10|2 9 10|2 5 7|6 7 8|8 9
+10:04:35    20/20 (18 with tilings); failing trials none 0, marek 3, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 29%, cover 19%; ETA 0 s
+10:04:35    result: 20 trials, 18 with tilings; failing: none 0, marek 3, cover 0, cover leaf mismatches 0, engine 0, tileestimate --exact 0
+10:04:49 == r4.board: 10 vertex lines, permutations on, k 1-7, 300 trials of overlap sets, seed 2
+10:04:50    trial 2: rule marek: lost 7, extra 0, output without every set 0; truth 1113, sets 1 3 7|6 7 9|5 8 9
+10:04:54    trial 5: rule marek: lost 2, extra 0, output without every set 0; truth 594, sets 3 8 9|6 9|6 8 10|7
+10:04:55    trial 6: rule marek: lost 67, extra 0, output without every set 0; truth 1633, sets 4 8 9|8 9|6 8 9|9 10|4 8 10
+10:05:00    trial 8: rule marek: lost 4, extra 0, output without every set 0; truth 75, sets 2 6 10|1 2 4|10|1 4 5|2 3 9
+10:05:06    trial 14: rule marek: lost 10, extra 0, output without every set 0; truth 58, sets 1 5 10|3 10|2 4|1 2 6|3 9
+10:05:10    trial 18: rule marek: lost 32, extra 0, output without every set 0; truth 441, sets 1 3 10|3 7|9|2 4 10
+10:05:11    trial 20: rule marek: lost 4, extra 0, output without every set 0; truth 49, sets 4|1 7 10|1 7 10|2 3 10|1 6 8
+10:05:14    trial 23: rule marek: lost 8, extra 0, output without every set 0; truth 109, sets 2 4|2 4|6 7 8|6
+10:05:18    trial 25: rule marek: lost 8, extra 0, output without every set 0; truth 37, sets 2|10|1 8 10|6 8|6
+10:05:22    trial 30: rule marek: lost 34, extra 0, output without every set 0; truth 738, sets 5 7|6 7 8|2 4 6|4 7 10|1 6 7
+10:05:23    trial 32: rule marek: lost 46, extra 0, output without every set 0; truth 1195, sets 10|5 7 8|3 8 10
+10:05:32    trial 39: rule marek: lost 5, extra 0, output without every set 0; truth 1064, sets 5 8|3 8|4 5 6
+10:05:34    trial 41: rule marek: lost 2, extra 0, output without every set 0; truth 1460, sets 5 6|6 9 10|2 5 7|5 7|3 5
+10:05:36    trial 42: rule marek: lost 2, extra 0, output without every set 0; truth 11, sets 2 8|6|1 3|6
+10:05:38    trial 45: rule marek: lost 3, extra 0, output without every set 0; truth 7, sets 2 5|4 10|1 4 6|1 10|3
+10:05:45    trial 54: rule marek: lost 52, extra 0, output without every set 0; truth 848, sets 3 4 7|5|3 7
+10:05:49    trial 59: rule marek: lost 1, extra 0, output without every set 0; truth 396, sets 4 7 9|3 10|6 8|5 8
+10:05:50    trial 60: rule marek: lost 9, extra 0, output without every set 0; truth 369, sets 4 8|2 5 6|6|3 4 8|4 5 10
+10:05:54    trial 64: rule marek: lost 89, extra 0, output without every set 0; truth 810, sets 1 4 5|10|2 7 10
+10:05:56    trial 66: rule marek: lost 2, extra 0, output without every set 0; truth 187, sets 9|2 6|6 8 9|2 4 8|1 10
+10:06:05    75/300 (69 with tilings); failing trials none 0, marek 20, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 28%, cover 19%; ETA 228 s
+10:06:05    trial 76: rule marek: lost 49, extra 0, output without every set 0; truth 674, sets 8 10|8|3 6 10|5|3 7 10
+10:06:07    trial 77: rule marek: lost 24, extra 0, output without every set 0; truth 181, sets 8 10|7|4 5|1 7
+10:06:09    trial 79: rule marek: lost 46, extra 0, output without every set 0; truth 300, sets 8 9|3 4 9|5 6|2 9|2 4 7
+10:06:10    trial 80: rule marek: lost 17, extra 0, output without every set 0; truth 188, sets 2 8 9|6 7 8|3 6 9|3|8 10
+10:06:13    trial 82: rule marek: lost 1, extra 0, output without every set 0; truth 472, sets 2 10|6|6 10
+10:06:15    trial 85: rule marek: lost 8, extra 0, output without every set 0; truth 689, sets 6|7 8|2 5|4 6 10
+10:06:21    trial 93: rule marek: lost 12, extra 0, output without every set 0; truth 949, sets 6|5|6
+10:06:25    trial 97: rule marek: lost 18, extra 0, output without every set 0; truth 577, sets 2 4 6|7|7
+10:06:31    trial 100: rule marek: lost 5, extra 0, output without every set 0; truth 1002, sets 2 5 9|9|3 4 10
+10:06:35    trial 106: rule marek: lost 74, extra 0, output without every set 0; truth 1033, sets 3 10|5 10|4 5 9|7 10|7 8
+10:06:38    trial 107: rule marek: lost 45, extra 0, output without every set 0; truth 534, sets 7|8 10|2 6 7|1 5 7|2 8 10
+10:06:40    trial 110: rule marek: lost 9, extra 0, output without every set 0; truth 350, sets 3 4 5|4 7 9|4 5 9|3 5 10|10
+10:06:43    trial 112: rule marek: lost 2, extra 0, output without every set 0; truth 11, sets 1 6 8|8|4|5 8
+10:06:43    trial 113: rule marek: lost 22, extra 0, output without every set 0; truth 572, sets 6|7|3 4 7|3 7 8
+10:06:49    trial 119: rule marek: lost 7, extra 0, output without every set 0; truth 76, sets 1 3 10|10|4
+10:06:52    trial 122: rule marek: lost 1, extra 0, output without every set 0; truth 788, sets 5 6 9|1 2 5|3 9|5 6 10
+10:06:54    trial 123: rule marek: lost 50, extra 0, output without every set 0; truth 224, sets 2 3 7|3 4 10|8|10|8
+10:06:57    trial 130: rule marek: lost 30, extra 0, output without every set 0; truth 581, sets 2 5|3 6 10|4 10|8
+10:06:59    trial 131: rule marek: lost 20, extra 0, output without every set 0; truth 224, sets 1 6|1 7|4 9|1 9|5 7 9
+10:07:01    trial 134: rule marek: lost 12, extra 0, output without every set 0; truth 176, sets 3 8 10|2 7|2 3 10|4 5
+10:07:02    trial 135: rule marek: lost 1, extra 0, output without every set 0; truth 11, sets 1 4|8|1 8 10
+10:07:02    trial 136: rule marek: lost 83, extra 0, output without every set 0; truth 475, sets 4 9 10|2 8|3 9|3 5 10|2 3 9
+10:07:07    trial 138: rule marek: lost 91, extra 0, output without every set 0; truth 443, sets 10|1 6|10
+10:07:16    trial 147: rule marek: lost 19, extra 0, output without every set 0; truth 2057, sets 1 5 10|5 7 10|4 5 7|5 7 10
+10:07:19    150/300 (138 with tilings); failing trials none 0, marek 44, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 29%, cover 19%; ETA 151 s
+10:07:20    trial 151: rule marek: lost 5, extra 0, output without every set 0; truth 188, sets 2 6|8|9|7 8 10|4 5 7
+10:07:21    trial 152: rule marek: lost 2, extra 0, output without every set 0; truth 136, sets 4 5 8|1 5|5 6 10|10|1 2 7
+10:07:21    trial 153: rule marek: lost 26, extra 0, output without every set 0; truth 676, sets 6|4 9|2 4 9
+10:07:23    trial 155: rule marek: lost 8, extra 0, output without every set 0; truth 176, sets 1 7|3 4 7|6 7 9|3 8|6 7
+10:07:29    trial 163: rule marek: lost 11, extra 0, output without every set 0; truth 468, sets 1 2 10|3 6 9|4 9 10|7
+10:07:30    trial 164: rule marek: lost 1, extra 0, output without every set 0; truth 350, sets 5|1 7 8|5|2 9
+10:07:31    trial 165: rule marek: lost 2, extra 0, output without every set 0; truth 135, sets 1 6 7|2 7|8|1 8|3 4 6
+10:07:32    trial 166: rule marek: lost 250, extra 0, output without every set 0; truth 1476, sets 5 8 9|3 7 10|3 4 10|2 4 10
+10:07:35    trial 169: rule marek: lost 37, extra 0, output without every set 0; truth 1445, sets 1 9|3 6 9|9
+10:07:39    trial 173: rule marek: lost 18, extra 0, output without every set 0; truth 469, sets 5 8 10|2 10|7
+10:07:40    trial 174: rule marek: lost 1, extra 0, output without every set 0; truth 5, sets 5|4|3 6 9|2 3 5
+10:07:42    trial 176: rule marek: lost 20, extra 0, output without every set 0; truth 143, sets 1 3 7|2 5|3 8|1 4 7
+10:07:44    trial 178: rule marek: lost 12, extra 0, output without every set 0; truth 1194, sets 1 3 6|5 8|1 3 6|3 5 9|3 5
+10:07:52    trial 185: rule marek: lost 26, extra 0, output without every set 0; truth 370, sets 1 9|8|8|9
+10:07:55    trial 187: rule marek: lost 68, extra 0, output without every set 0; truth 1377, sets 5 7 9|2 3 10|7 10|8 9
+10:07:58    trial 188: rule marek: lost 91, extra 0, output without every set 0; truth 914, sets 2 5 8|5 9 10|10|2 7 10
+10:08:01    trial 190: rule marek: lost 31, extra 0, output without every set 0; truth 530, sets 5 6 8|6 7|9|4 8 10|4 8 9
+10:08:04    trial 192: rule marek: lost 1, extra 0, output without every set 0; truth 55, sets 1 7|1 5|2 4|1 5 10|1 6 10
+10:08:05    trial 193: rule marek: lost 70, extra 0, output without every set 0; truth 915, sets 4 7 10|10|9|8 10
+10:08:22    trial 206: rule marek: lost 43, extra 0, output without every set 0; truth 176, sets 10|1 3|4 5 6|7 10
+10:08:23    trial 207: rule marek: lost 24, extra 0, output without every set 0; truth 600, sets 5 8|7|4 7 9
+10:08:25    trial 209: rule marek: lost 2, extra 0, output without every set 0; truth 17, sets 4|6|1 6 10|4 5 9|1 3
+10:08:26    trial 211: rule marek: lost 20, extra 0, output without every set 0; truth 400, sets 3 5|2 7 9|6|9
+10:08:28    trial 214: rule marek: lost 15, extra 0, output without every set 0; truth 138, sets 1 5|8 10|10|2 4 7
+10:08:32    trial 218: rule marek: lost 4, extra 0, output without every set 0; truth 235, sets 4 8 9|1 8|4 9|6|4 5 10
+10:08:32    trial 219: rule marek: lost 3, extra 0, output without every set 0; truth 38, sets 2 6|3 10|2|4 9 10|5 9
+10:08:38    trial 224: rule marek: lost 2, extra 0, output without every set 0; truth 66, sets 1 4 9|6|4|4|2 4 5
+10:08:38    225/300 (208 with tilings); failing trials none 0, marek 71, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 28%, cover 19%; ETA 77 s
+10:08:39    trial 226: rule marek: lost 6, extra 0, output without every set 0; truth 52, sets 1 5 10|4 8 9|3|7 9
+10:08:42    trial 230: rule marek: lost 67, extra 0, output without every set 0; truth 1381, sets 4 5 8|6 10|7 10
+10:08:46    trial 233: rule marek: lost 5, extra 0, output without every set 0; truth 128, sets 8 9|1 3 4|5|10|6 8
+10:08:48    trial 235: rule marek: lost 25, extra 0, output without every set 0; truth 663, sets 3 6|2 9|1 2 6|6 7|3 9
+10:08:49    trial 236: rule marek: lost 58, extra 0, output without every set 0; truth 1435, sets 4 10|5 9|6 10
+10:08:57    trial 242: rule marek: lost 1, extra 0, output without every set 0; truth 4, sets 7 10|5 7|4|5
+10:09:20    trial 265: rule marek: lost 2, extra 0, output without every set 0; truth 377, sets 8 10|6|1 4 8
+10:09:24    trial 269: rule marek: lost 12, extra 0, output without every set 0; truth 949, sets 6|5|6 9|5
+10:09:31    trial 276: rule marek: lost 9, extra 0, output without every set 0; truth 184, sets 3|2 5 9|1 4 8|8|3 8 9
+10:09:32    trial 278: rule marek: lost 1, extra 0, output without every set 0; truth 45, sets 2 3 5|6 9 10|2 6 7|1 4
+10:09:33    trial 279: rule marek: lost 1, extra 0, output without every set 0; truth 5, sets 4|5|2 5
+10:09:37    trial 282: rule marek: lost 1, extra 0, output without every set 0; truth 175, sets 7 8|7 8|8|2 7
+10:09:40    trial 284: rule marek: lost 1, extra 0, output without every set 0; truth 11, sets 1 3 5|2|5 7|5 9
+10:09:45    trial 290: rule marek: lost 13, extra 0, output without every set 0; truth 286, sets 1 7 8|4 5 6|1 5 7|1 2 7|1 2 9
+10:09:55    trial 299: rule marek: lost 5, extra 0, output without every set 0; truth 263, sets 2 5 8|1 6|5 8|2 4 9|1 2 8
+10:09:56    trial 300: rule marek: lost 1, extra 0, output without every set 0; truth 656, sets 5 7 10|5 6 8|2 7
+10:09:57    300/300 (273 with tilings); failing trials none 0, marek 87, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 29%, cover 19%; ETA 0 s
+10:09:57    result: 300 trials, 273 with tilings; failing: none 0, marek 87, cover 0, cover leaf mismatches 0, engine 0, tileestimate --exact 0
+10:09:57 == r4.board: 10 vertex lines, permutations on, k 1-7, 150 trials of disjoint sets, seed 3
+10:10:19    37/150 (22 with tilings); failing trials none 0, marek 0, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 15%, cover 5%; ETA 68 s
+10:10:41    74/150 (45 with tilings); failing trials none 0, marek 0, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 16%, cover 6%; ETA 45 s
+10:11:01    111/150 (60 with tilings); failing trials none 0, marek 0, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 16%, cover 6%; ETA 23 s
+10:11:22    148/150 (77 with tilings); failing trials none 0, marek 0, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 16%, cover 6%; ETA 1 s
+10:11:23    150/150 (77 with tilings); failing trials none 0, marek 0, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 16%, cover 6%; ETA 0 s
+10:11:23    result: 150 trials, 77 with tilings; failing: none 0, marek 0, cover 0, cover leaf mismatches 0, engine 0, tileestimate --exact 0
+10:11:23 == squares_edges.board: 5 vertex lines, permutations off, k 1-5, 150 trials of overlap sets, seed 4
+10:11:57    trial 4: rule marek: lost 821, extra 0, output without every set 0; truth 13296, sets 5|4|2|4
+10:12:10    trial 5: rule marek: lost 1820, extra 0, output without every set 0; truth 10307, sets 3|5|4|5
+10:12:22    trial 7: rule marek: lost 1529, extra 0, output without every set 0; truth 6444, sets 2|1|2|3|3
+10:12:28    trial 8: rule marek: lost 1083, extra 0, output without every set 0; truth 7782, sets 3|1|3|1
+10:13:17    trial 13: rule marek: lost 631, extra 0, output without every set 0; truth 2700, sets 5|4|4|1
+10:13:45    trial 15: rule marek: lost 939, extra 0, output without every set 0; truth 4073, sets 3|1|4|4|2
+10:13:50    trial 16: rule marek: lost 3671, extra 0, output without every set 0; truth 8555, sets 2|4|4|4|1
+10:13:58    trial 17: rule marek: lost 1216, extra 0, output without every set 0; truth 8272, sets 5|2|3|3
+10:14:07    trial 18: rule marek: lost 631, extra 0, output without every set 0; truth 2700, sets 5|1|4|4
+10:14:23    trial 20: rule marek: lost 932, extra 0, output without every set 0; truth 8555, sets 4|1|2|4
+10:14:31    trial 21: rule marek: lost 883, extra 0, output without every set 0; truth 10411, sets 1|4|4
+10:14:49    trial 23: rule marek: lost 6278, extra 0, output without every set 0; truth 16611, sets 5|2|5|5|5
+10:15:31    trial 26: rule marek: lost 932, extra 0, output without every set 0; truth 8555, sets 2|4|4|1|1
+10:15:38    trial 27: rule marek: lost 885, extra 0, output without every set 0; truth 5310, sets 4|1|3|4
+10:16:15    trial 31: rule marek: lost 3544, extra 0, output without every set 0; truth 20093, sets 5|5|5|4
+10:16:37    trial 33: rule marek: lost 919, extra 0, output without every set 0; truth 3152, sets 5|5|1|2
+10:17:24    37/150 (37 with tilings); failing trials none 0, marek 16, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 24%, cover 25%; ETA 1104 s
+10:17:29    trial 38: rule marek: lost 1820, extra 0, output without every set 0; truth 10307, sets 5|3|4|5|3
+10:17:41    trial 39: rule marek: lost 2801, extra 0, output without every set 0; truth 13296, sets 4|5|2|4|5
+10:18:48    trial 44: rule marek: lost 215, extra 0, output without every set 0; truth 3152, sets 2|2|5|1
+10:19:10    trial 47: rule marek: lost 1072, extra 0, output without every set 0; truth 5310, sets 4|3|3|1|1
+10:19:43    trial 50: rule marek: lost 821, extra 0, output without every set 0; truth 13296, sets 4|2|5|4
+10:19:52    trial 51: rule marek: lost 919, extra 0, output without every set 0; truth 3152, sets 2|1|5|5
+10:20:25    trial 56: rule marek: lost 1373, extra 0, output without every set 0; truth 8272, sets 5|5|2|3|2
+10:20:35    trial 57: rule marek: lost 1820, extra 0, output without every set 0; truth 10307, sets 3|4|5|3|5
+10:20:44    trial 58: rule marek: lost 1228, extra 0, output without every set 0; truth 3152, sets 5|2|1|5|2
+10:20:52    trial 59: rule marek: lost 926, extra 0, output without every set 0; truth 19421, sets 4|3|4|2
+10:21:28    trial 62: rule marek: lost 215, extra 0, output without every set 0; truth 3152, sets 5|2|2|1
+10:21:53    trial 64: rule marek: lost 648, extra 0, output without every set 0; truth 964, sets 5|5|3|4|1
+10:22:36    trial 68: rule marek: lost 1010, extra 0, output without every set 0; truth 4073, sets 3|2|4|3|1
+10:23:22    trial 73: rule marek: lost 1373, extra 0, output without every set 0; truth 8272, sets 2|5|3|5
+10:23:31    74/150 (74 with tilings); failing trials none 0, marek 30, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 25%, cover 25%; ETA 748 s
+10:23:37    trial 75: rule marek: lost 1538, extra 0, output without every set 0; truth 16611, sets 2|5|5
+10:24:32    trial 79: rule marek: lost 453, extra 0, output without every set 0; truth 11870, sets 2|1|1|2
+10:24:48    trial 81: rule marek: lost 215, extra 0, output without every set 0; truth 3152, sets 1|2|5|1|2
+10:24:55    trial 82: rule marek: lost 1765, extra 0, output without every set 0; truth 12779, sets 5|5|3
+10:26:15    trial 89: rule marek: lost 1325, extra 0, output without every set 0; truth 27127, sets 4|4|3|3
+10:26:49    trial 93: rule marek: lost 631, extra 0, output without every set 0; truth 2700, sets 5|4|1|4
+10:27:11    trial 95: rule marek: lost 2984, extra 0, output without every set 0; truth 10307, sets 4|4|4|3|5
+10:27:20    trial 96: rule marek: lost 648, extra 0, output without every set 0; truth 964, sets 3|5|4|1|5
+10:27:48    trial 99: rule marek: lost 1216, extra 0, output without every set 0; truth 8272, sets 2|3|3|5
+10:27:58    trial 100: rule marek: lost 3544, extra 0, output without every set 0; truth 20093, sets 4|5|4|5|5
+10:29:05    trial 106: rule marek: lost 449, extra 0, output without every set 0; truth 1676, sets 3|5|3|1|1
+10:29:13    trial 107: rule marek: lost 542, extra 0, output without every set 0; truth 8555, sets 2|1|4|1|2
+10:29:22    trial 108: rule marek: lost 1228, extra 0, output without every set 0; truth 3152, sets 5|1|2|2|5
+10:29:31    trial 109: rule marek: lost 2766, extra 0, output without every set 0; truth 8272, sets 3|2|3|3|5
+10:29:59    111/150 (111 with tilings); failing trials none 0, marek 44, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 26%, cover 26%; ETA 392 s
+10:30:21    trial 113: rule marek: lost 1083, extra 0, output without every set 0; truth 7782, sets 3|3|1
+10:31:31    trial 118: rule marek: lost 1820, extra 0, output without every set 0; truth 10307, sets 5|4|3|5
+10:31:58    trial 120: rule marek: lost 736, extra 0, output without every set 0; truth 35080, sets 4|2|4
+10:32:20    trial 122: rule marek: lost 1072, extra 0, output without every set 0; truth 5310, sets 1|3|4|3
+10:32:30    trial 123: rule marek: lost 4361, extra 0, output without every set 0; truth 35080, sets 4|4|2|4|2
+10:32:46    trial 124: rule marek: lost 394, extra 0, output without every set 0; truth 1289, sets 3|2|3|1|5
+10:32:51    trial 125: rule marek: lost 883, extra 0, output without every set 0; truth 10411, sets 1|4|4|1
+10:33:00    trial 126: rule marek: lost 394, extra 0, output without every set 0; truth 1289, sets 5|1|3|2|3
+10:33:06    trial 127: rule marek: lost 1820, extra 0, output without every set 0; truth 10307, sets 3|5|4|5
+10:34:27    trial 132: rule marek: lost 1642, extra 0, output without every set 0; truth 1676, sets 5|5|1|5|3
+10:34:35    trial 133: rule marek: lost 1373, extra 0, output without every set 0; truth 8272, sets 2|5|5|3
+10:34:42    trial 134: rule marek: lost 2941, extra 0, output without every set 0; truth 8272, sets 3|5|5|2|3
+10:35:49    trial 139: rule marek: lost 736, extra 0, output without every set 0; truth 35080, sets 2|4|2|4
+10:36:09    trial 140: rule marek: lost 3231, extra 0, output without every set 0; truth 8272, sets 5|3|5|5|2
+10:36:40    trial 143: rule marek: lost 1599, extra 0, output without every set 0; truth 11870, sets 1|2|2|2
+10:36:52    trial 144: rule marek: lost 1072, extra 0, output without every set 0; truth 5310, sets 3|4|1|3
+10:37:02    trial 145: rule marek: lost 4938, extra 0, output without every set 0; truth 12779, sets 5|5|3|5
+10:37:19    trial 146: rule marek: lost 1035, extra 0, output without every set 0; truth 2700, sets 5|1|4|5
+10:37:29    trial 147: rule marek: lost 6201, extra 0, output without every set 0; truth 20093, sets 5|5|5|4|5
+10:38:14    148/150 (148 with tilings); failing trials none 0, marek 63, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 26%, cover 27%; ETA 22 s
+10:38:51    150/150 (150 with tilings); failing trials none 0, marek 63, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 26%, cover 27%; ETA 0 s
+10:38:51    result: 150 trials, 150 with tilings; failing: none 0, marek 63, cover 0, cover leaf mismatches 0, engine 0, tileestimate --exact 0
+10:38:52 == squares_edges.board: 5 vertex lines, permutations off, k 1-5, 60 trials of disjoint sets, seed 5
+10:41:08    15/60 (15 with tilings); failing trials none 0, marek 0, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 17%, cover 15%; ETA 409 s
+10:44:06    30/60 (30 with tilings); failing trials none 0, marek 0, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 21%, cover 18%; ETA 314 s
+10:45:55    45/60 (45 with tilings); failing trials none 0, marek 0, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 18%, cover 15%; ETA 141 s
+10:48:31    60/60 (60 with tilings); failing trials none 0, marek 0, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 20%, cover 17%; ETA 0 s
+10:48:31    result: 60 trials, 60 with tilings; failing: none 0, marek 0, cover 0, cover leaf mismatches 0, engine 0, tileestimate --exact 0
+10:48:32 == 123_1_4657.board: 31 vertex lines, permutations on, k 1-3, 60 trials of overlap sets, seed 6
+10:58:01    15/60 (2 with tilings); failing trials none 0, marek 0, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 18%, cover 17%; ETA 1707 s
+11:03:53    30/60 (4 with tilings); failing trials none 0, marek 0, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 9%, cover 8%; ETA 921 s
+11:06:46    45/60 (6 with tilings); failing trials none 0, marek 0, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 8%, cover 6%; ETA 365 s
+11:10:31    60/60 (6 with tilings); failing trials none 0, marek 0, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 8%, cover 6%; ETA 0 s
+11:10:31    result: 60 trials, 6 with tilings; failing: none 0, marek 0, cover 0, cover leaf mismatches 0, engine 0, tileestimate --exact 0
+11:10:31 == 1247_1_0612.board: 121 vertex lines, permutations on, k 1-2, 30 trials of overlap sets, seed 7
+11:10:42    7/30 (2 with tilings); failing trials none 0, marek 0, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 21%, cover 3%; ETA 34 s
+11:10:51    14/30 (4 with tilings); failing trials none 0, marek 0, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 27%, cover 10%; ETA 22 s
+11:11:01    21/30 (6 with tilings); failing trials none 0, marek 0, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 29%, cover 11%; ETA 13 s
+11:11:11    28/30 (7 with tilings); failing trials none 0, marek 0, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 29%, cover 10%; ETA 3 s
+11:11:14    30/30 (8 with tilings); failing trials none 0, marek 0, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 29%, cover 10%; ETA 0 s
+11:11:14    result: 30 trials, 8 with tilings; failing: none 0, marek 0, cover 0, cover leaf mismatches 0, engine 0, tileestimate --exact 0
+11:11:14 == s2.board: 125 vertex lines, permutations on, k 1-4, 40 trials of overlap sets, seed 8
+11:12:12    10/40 (3 with tilings); failing trials none 0, marek 0, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 9%, cover 12%; ETA 172 s
+11:12:21    trial 11: rule marek: lost 5, extra 0, output without every set 0; truth 11, sets 3 11 13 15 18 20 22 25 27 28 31 41 45 47 52 56 60 61 64 65 71 79 80 84 88 89 90 91 92 94 99 100 102 104 106 109 111 112 120|21 29 31 44 55 67 72 77 79 87 93 102 118 121 122|10 17 19 31 35 42 44 57 73 74 85 89 100|2 3 14 16 26 40 41 44 46 48 50 51 52 53 58 62 63 65 71 75 77 78 79 86 87 89 91 92 97 99 106 108 110 112 116 118 121 122 123
+11:13:59    20/40 (8 with tilings); failing trials none 0, marek 1, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 20%, cover 24%; ETA 165 s
+11:15:34    30/40 (13 with tilings); failing trials none 0, marek 1, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 20%, cover 23%; ETA 86 s
+11:16:45    40/40 (15 with tilings); failing trials none 0, marek 1, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 18%, cover 21%; ETA 0 s
+11:16:45    result: 40 trials, 15 with tilings; failing: none 0, marek 1, cover 0, cover leaf mismatches 0, engine 0, tileestimate --exact 0
+11:16:45 == s3.board: 211 vertex lines, permutations on, k 1-3, 20 trials of overlap sets, seed 9
+11:16:53    5/20 (1 with tilings); failing trials none 0, marek 0, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 9%, cover 3%; ETA 22 s
+11:17:03    10/20 (3 with tilings); failing trials none 0, marek 0, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 14%, cover 10%; ETA 18 s
+11:17:13    15/20 (5 with tilings); failing trials none 0, marek 0, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 22%, cover 19%; ETA 9 s
+11:17:20    trial 20: rule marek: lost 1, extra 0, output without every set 0; truth 43, sets 3 4 9 10 20 22 23 27 29 30 55 59 60 66 79 88 94 95 101 121 133 143 157 163 166 188 195 199 202|4 8 22 24 29 36 56 57 59 69 70 80 85 88 89 94 96 97 112 122 123 125 127 137 149 151 153 161 165 166 171 178 181 185 186 189 190 192 194 202 211|2 10 17 19 25 49 59 71 81 88 93 104 122 129 132 134 144 167 177 180 184 188 204
+11:17:21    20/20 (8 with tilings); failing trials none 0, marek 1, cover 0, cover leaves 0, engine 0, estimate 0; nodes vs none: marek 22%, cover 20%; ETA 0 s
+11:17:21    result: 20 trials, 8 with tilings; failing: none 0, marek 1, cover 0, cover leaf mismatches 0, engine 0, tileestimate --exact 0
+
+-- regression: boards without require, committed engine vs new, one thread, every output file compared
+11:17:31    regression 123_1_4657 k 1-3: identical (stats nodes 10411297 complete 2243 unique 349)
+11:17:33    regression 123_1_4657_init13 k 1-3: identical (stats nodes 114050 complete 3 unique 3)
+11:17:34    regression 1247_1_0612 k 1-2: identical (stats nodes 42403 complete 131 unique 34)
+battery done
+11:27:13    (regression restarted from hybrid_2_9830 against a saved copy of the same require engine binary, sha256 1a47b98b..., so tools/searcher/tilesearch can be rebuilt)

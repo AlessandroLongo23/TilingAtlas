@@ -1,0 +1,10 @@
+atlas 2, engine 1 (still together at R 10.0905)
+   atlas  d-ctrnact-03_3t-2ap2_4cr_4cx_6bk-1  (3.3₂)
+   atlas  s-ctrnact-03_3t-2cp2_4gd_4gj_6bk-1  (3.3₂)
+   engine scaled_3_4_6_12solver_03_PiA3B3_10.txt#74  A3.A3.B3.B3.B3.B3 | Pi.A3.B3.B3 | Pi.Pi | Pi.Pi | Pi.A3.A3.A3
+groups matched only by s- records: 4
+   s-ctrnact-03_th-2fk2_3hn_3ih_4yy-1  =  scaled_3_4_6_12solver_03_PiB3B6_7.txt#200
+   s-ctrnact-03_3t-4gd_4gg_4gi-3  =  scaled_3_4_6_12solver_03_PiA3B3_7.txt#97
+   s-ctrnact-03_3t-4gd_4gg_4gi-2  =  scaled_3_4_6_12solver_03_PiA3B3_o_8.txt#123
+   s-ctrnact-03_3t-2cp_4gg_4gj_6bo-1  =  scaled_3_4_6_12solver_03_PiA3B3_o_6.txt#117
+k=3: atlas 213, engine 212; 212 distinct, 212 matched 1:1, 1 atlas tilings with a congruent atlas twin, 0 engine tilings with a congruent engine twin, 0 only in the atlas, 0 only in the engine

@@ -1,0 +1,7 @@
+Number of vertices: 1
+(X1, X2)D4a
+(X1, X2)D4a
+(0)
+*0/0(X1) - 0/*0(X2)
+---
+

@@ -1,0 +1,146 @@
+--- /Users/alessandro/Desktop/Personal/TilingAtlas-searcher-ui/tools/searcher/tilesearch.cpp	2026-10-25 15:36:50
++++ /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/773383d3-2759-429c-a3bf-712be53a6e6d/scratchpad/req/reqsearch.cpp	2026-10-26 09:47:23
+@@ -16,6 +16,8 @@
+ #include <sys/resource.h>
+ #include <zlib.h>
+ #include <atomic>
++#include <array>
++#include <bit>
+ #include <memory>
+ #include <condition_variable>
+ #include <functional>
+@@ -310,6 +312,17 @@
+ // Hand-off depth in edges below a task's start; 2 measured best across the bench boards. TILESEARCH_SPLIT overrides it.
+ static int split_depth = 2;
+ 
++// ── EXPERIMENT: required vertex sets (Marek's proposal, 2026-10-26) ──
++// REQUIRE="1 2 3|4 5" (board vertex lines, 1-based; '|' between sets): every tiling must hold an orbit from
++// each set. RULE=none (only the final check), marek (his rule as stated: once kmax - k <= sets still
++// missing, a new vertex must come from one of them), cover (prune when the fewest vertex types that could
++// still cover the missing sets exceed the orbits left).
++static std::vector<uint32_t> g_mask;                  // per vertex type: the sets it belongs to
++static uint32_t g_all = 0;
++static int g_rule = 0;                                // 0 none, 1 marek, 2 cover
++static std::vector<std::vector<uint8_t>> g_cover;     // [first type allowed][missing mask] -> fewest types
++static std::atomic<uint64_t> g_pruned{ 0 };
++
+ // A LIFO task stack like jtg::thread_pool's, plus atomic counts of queued tasks and of idle threads, so
+ // a running search can ask "is anyone waiting for work?" without taking the lock.
+ class Pool {
+@@ -530,15 +543,41 @@
+     int first_vertex = 0;
+     size_t task_nodes = 0;   // nodes this task has visited
+     int base_edges = 0;      // edges when this task started
++    std::array<uint16_t, 32> hits{};
++    std::vector<int> types;
+ 
++    uint32_t missing() const {
++        uint32_t m = 0;
++        for (int b = 0; b < 32; b++) if ((g_all >> b & 1) && !hits[b]) m |= 1u << b;
++        return m;
++    }
+     void add_vertex(int t) {
+         auto& h = conf.*HalfedgesOf::member;
+         size_t need = h.size() + vc->valence_of(t);
+         if (h.capacity() < need) h.reserve(std::max(2 * h.capacity(), need));
+         num_vertices_added++;
+         vc->push_vertex_to(conf, t);
++        types.push_back(t);
++        if (g_all) for (int b = 0; b < 32; b++) if (g_mask[t] >> b & 1) hits[b]++;
+     }
+-    void remove_last_vertex() { num_vertices_added--; conf.pop_vertex(); }
++    void remove_last_vertex() {
++        num_vertices_added--;
++        conf.pop_vertex();
++        int t = types.back();
++        types.pop_back();
++        if (g_all) for (int b = 0; b < 32; b++) if (g_mask[t] >> b & 1) hits[b]--;
++    }
++    // whether adding a vertex of type t could still lead to a tiling holding every set
++    bool allowed(int t) const {
++        if (!g_all || !g_rule) return true;
++        uint32_t const miss = missing();
++        if (g_rule == 1) {
++            size_t const budget = max_num_vertices - num_vertices_added;   // orbits left, this one included
++            return (g_mask[t] & miss) || (size_t)std::popcount(miss) < budget;
++        }
++        size_t const left_after = max_num_vertices - num_vertices_added - 1;
++        return g_cover[first_vertex][miss & ~g_mask[t]] <= left_after;
++    }
+ 
+     index_t choose_best_halfedge() const {
+         index_t best{};
+@@ -555,7 +594,7 @@
+         task_nodes++;
+         if (!iteration(*this)) return;
+         index_t const f = choose_best_halfedge();
+-        if (!f.has_value()) { solution(*this); return; }
++        if (!f.has_value()) { if (!missing()) solution(*this); return; }
+         for (auto ix : conf.indices())
+             if (conf.is_free(ix)) try_joining(f, ix);
+         if (num_vertices_added < max_num_vertices) extend_by_adding_vertex(f);
+@@ -565,6 +604,11 @@
+         auto it = std::lower_bound(list.begin(), list.end(), first_vertex, [](Candidates::Pair p, int t) { return p.t < t; });
+         while (it != list.end()) {
+             int const t = it->t, base = conf.num_halfedges();
++            if (!allowed(t)) {
++                g_pruned++;
++                while (it != list.end() && it->t == t) ++it;
++                continue;
++            }
+             add_vertex(t);
+             for (; it != list.end() && it->t == t; ++it) try_joining(f, index_t{ base + it->i });
+             remove_last_vertex();
+@@ -706,10 +750,44 @@
+ 
+     vertex_classification vc{};
+     int roots = 0;
++    std::vector<int> type_line;   // per vertex type: its board vertex line (0-based)
++    std::vector<int> line_of;     // per order position: its board vertex line
++    for (int v : b.initial) line_of.push_back(v);
++    for (int v = 0; v < (int)b.vertices.size(); v++)
++        if (!std::binary_search(b.initial.begin(), b.initial.end(), v)) line_of.push_back(v);
+     for (int i = 0; i < (int)order.size(); i++) {
+         int n = b.permutations ? vc.add_vertex_with_permutations(order[i]) : vc.add_vertex(order[i]);
+         if (i < n_initial) roots += n;
++        for (int j = 0; j < n; j++) type_line.push_back(line_of[i]);
+     }
++    if (char const* req = std::getenv("REQUIRE")) {
++        std::string const rule = std::getenv("RULE") ? std::getenv("RULE") : "none";
++        g_rule = rule == "marek" ? 1 : rule == "cover" ? 2 : 0;
++        std::vector<std::set<int>> sets(1);
++        for (std::istringstream in{ std::string(req) }; ;) {
++            std::string tok;
++            if (!(in >> tok)) break;
++            for (size_t p; (p = tok.find('|')) != std::string::npos; tok.erase(0, p + 1)) {
++                if (p) sets.back().insert(std::stoi(tok.substr(0, p)) - 1);
++                sets.emplace_back();
++            }
++            if (!tok.empty()) sets.back().insert(std::stoi(tok) - 1);
++        }
++        int const T = (int)type_line.size(), R = (int)sets.size();
++        g_mask.assign(T, 0);
++        for (int t = 0; t < T; t++)
++            for (int s = 0; s < R; s++) if (sets[s].count(type_line[t])) g_mask[t] |= 1u << s;
++        g_all = (1u << R) - 1;
++        // fewest types from t on that meet every set in a mask: each type taken at most once
++        g_cover.assign(T + 1, std::vector<uint8_t>(1u << R, 255));
++        g_cover[T][0] = 0;
++        for (int t = T - 1; t >= 0; t--)
++            for (uint32_t m = 0; m <= g_all; m++) {
++                uint8_t const skip = g_cover[t + 1][m], take = g_cover[t + 1][m & ~g_mask[t]];
++                g_cover[t][m] = std::min<int>(skip, take == 255 ? 255 : take + 1);
++            }
++        std::cerr << "require " << R << " sets over " << T << " vertex types, rule " << rule << "\n";
++    }
+     original_tiling_writer writer{ vc };
+ 
+     auto t0 = std::chrono::steady_clock::now();
+@@ -851,6 +929,6 @@
+     for (int k = b.kmin; k <= b.kmax; k++) census << "k=" << k << " -- " << per_k[k] << "\n", total += per_k[k];
+     census << "MAX\n";
+     std::cout << "\nFinished with " << total << " solutions after " << secs << "s.\n";
+-    std::cout << "stats nodes " << total_nodes << " complete " << total_complete << " unique " << total << "\n";
++    std::cout << "stats nodes " << total_nodes << " complete " << total_complete << " unique " << total << " pruned " << g_pruned << "\n";
+     return 0;
+ }

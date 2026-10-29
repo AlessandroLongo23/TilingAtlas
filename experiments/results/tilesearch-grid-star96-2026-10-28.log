@@ -1,0 +1,18 @@
+# star96: regular {3,4,6,8,12,24} + every star with its point on the 3.75° grid; k 1..3; initial = vertices with a star off the 15° grid
+14:00:43 generating the board (every vertex order whose faces fit)
+    186 star kinds, 94880 fitting orders, 89070 with an off-15° star, 1358 s
+14:23:25 searching
+   60s stage pilot1 13927 94258
+   120s stage rank 1904 94258
+   180s stage rank 10224 94258
+   240s stage rank 27174 94258
+   300s stage rank 79894 94258
+   branching: on the fewest options (to 2 vertices: 422134 nodes that way, over 727789 the other)
+   360s roots 35164 94258
+   
+   Finished with 162 solutions after 86.3316s.
+   stats nodes 630306 complete 648 unique 162
+   census: k=1 -- 66 k=2 -- 72 k=3 -- 24 MAX 
+14:30:03 classifying
+Error: CLASSIFY 162 tilings; k1: off-grid 66 = flexing 66 + rigid 0 (drawn 0) | k2: off-grid 72 = flexing 72 + rigid 0 (drawn 0) | k3: off-grid 24 = flexing 24 + rigid 0 (drawn 0)
+14:30:07 done

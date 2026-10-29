@@ -1,0 +1,17 @@
+# Stars board (5,000 permuted lines, 77,075 root types) vs only the 774 cyclic orders whose faces do not overlap
+# engine: tilesearch after the 2026-10-28 startup fixes; 10 threads; machine shared with other runs, so times are rough
+10:55:25 start stars5000 k=1..1
+10:55:50 done  stars5000 k=1..1 in 25s | stats nodes 106614 complete 193 unique 26 | census: k=1 -- 26 MAX 
+10:55:50 start starsfit k=1..1
+10:55:51 done  starsfit k=1..1 in 1s | stats nodes 2230 complete 193 unique 26 | census: k=1 -- 26 MAX 
+10:55:51 start stars5000 k=1..2
+10:56:23 done  stars5000 k=1..2 in 32s | stats nodes 86248 complete 894 unique 75 | census: k=1 -- 26 k=2 -- 49 MAX 
+10:56:23 start starsfit k=1..2
+10:56:23 done  starsfit k=1..2 in 0s | stats nodes 8180 complete 895 unique 75 | census: k=1 -- 26 k=2 -- 49 MAX 
+10:56:23 all done
+## k=3
+10:57:12 start stars5000 k=1..3
+10:57:57 done  stars5000 k=1..3 in 45s | stats nodes 120484 complete 2569 unique 220 | census: k=1 -- 26 k=2 -- 49 k=3 -- 145 MAX 
+10:57:57 start starsfit k=1..3
+10:57:59 done  starsfit k=1..3 in 2s | stats nodes 33560 complete 2462 unique 220 | census: k=1 -- 26 k=2 -- 49 k=3 -- 145 MAX 
+10:57:59 all done

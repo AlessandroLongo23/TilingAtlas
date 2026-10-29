@@ -1,0 +1,26 @@
+# Free-alpha star board: regular {3,4,6,8,12,24} + one star per n in {3,4,6,8,12,24} with a free point.
+# Vertex words: closing for some alpha in range, at most one dent, no two star points side by side (AL's adjacency idea; proof in the session notes). 36,455 words, 36,439 initial. k 1..3.
+# started 2026-10-28 13:43:05
+   30.3s stage pilot1 594 39693
+   60.5s stage pilot1 649 39693
+   90.7s stage pilot1 795 39693
+  121.0s stage pilot1 1279 39693
+  151.1s stage pilot1 5274 39693
+  181.3s stage pilot1 6437 39693
+  211.5s stage pilot1 6575 39693
+  241.7s stage pilot1 6625 39693
+  271.9s stage pilot1 6673 39693
+  302.1s stage pilot1 6728 39693
+  332.3s stage pilot1 6759 39693
+  362.5s stage pilot1 7139 39693
+  392.6s stage pilot1 7174 39693
+  422.8s stage pilot1 7249 39693
+  453.0s stage pilot1 7437 39693
+  483.2s stage pilot1 7688 39693
+  513.4s stage pilot1 7747 39693
+  543.6s stage pilot1 9386 39693
+  573.8s stage pilot1 9891 39693
+# STOPPED by hand at 13:53 (pilot1 at 9,891 of 39,693 root types after 574 s; projected >30 min for that stage
+# alone, before the depth-3 ranking and the search). The fixed-angle boards prune vertex orders whose faces
+# overlap; free angles cannot, so every tree is far larger. Verdict: free alpha is a description, not a search
+# strategy at this size. The search goes through finer grids instead (tilesearch-grid*.log).

@@ -1,0 +1,17 @@
+# star48: regular {3,4,6,8,12,24} + 90 stars on the 7.5° grid; 21,230 fitting orders; initial = 20,409 with an off-15° star corner; k 1..3. 2026-10-28 13:41:18
+branching: on the fewest options (to 2 vertices: 170553 nodes that way, over 306595 the other)
+
+Finished with 223 solutions after 21.3037s.
+stats nodes 198329 complete 1178 unique 223
+# ended 2026-10-28 13:44:19
+k=1 -- 46
+k=2 -- 68
+k=3 -- 109
+MAX
+
+# Classification (families.ts flexDim + canonical, rounded grid test; the run's `initial` came from a float
+# test that wrongly called 15° multiples off-grid, so it started from almost every vertex: harmless, as the
+# classification below reads every certificate).
+# Tilings with a star point off the 15° grid (7.5° odd multiples), k = 1..3: 22 / 24 / 8.
+# Every one flexes and has the canonical form of an on-grid tiling of this run: a member of a family the
+# 15° grid already finds. Rigid off-grid tilings: 0 at k <= 3. The 7.5° grid adds nothing new up to k = 3.

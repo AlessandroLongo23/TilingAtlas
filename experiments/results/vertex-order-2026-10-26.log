@@ -1,0 +1,195 @@
+# Vertex line order vs search size. Script: experiments/vertex-order-2026-10-26/order.py. Nodes are exact (one thread).
+11:14:54 == a6_30.board: 132 vertex lines, 132 of them roots, k 1-3, 5 random orders
+11:15:06 == a6_30.board: 132 vertex lines, 132 of them roots, k 1-3, 5 random orders
+11:15:08    as written        2,194,937 nodes      1.2 s
+11:15:08    reversed            156,597 nodes      0.1 s     7.1% of as written
+11:15:08    random 1          1,449,455 nodes      0.7 s    66.0% of as written
+11:15:09    random 2          1,231,236 nodes      1.0 s    56.1% of as written
+11:15:10    random 3            493,702 nodes      0.3 s    22.5% of as written
+11:15:11    random 4          1,566,253 nodes      1.0 s    71.4% of as written
+11:15:11    random 5          1,093,583 nodes      0.7 s    49.8% of as written
+11:15:11    random orders: min 22.5%, median 56.1%, max 71.4% of as written
+11:15:11    ranking by full-alphabet trees at k<=2: 0.0 s to measure
+11:15:11    cheap@2              46,916 nodes      0.0 s     2.1% of as written
+11:15:13    dear@2            2,691,527 nodes      1.7 s   122.6% of as written
+11:15:15    ranking by full-alphabet trees at k<=3: 1.7 s to measure
+11:15:15    cheap@3              37,816 nodes      0.0 s     1.7% of as written
+11:15:17    dear@3            2,702,840 nodes      1.8 s   123.1% of as written
+11:15:17    done
+11:15:27 == a6_30.board: 132 vertex lines, 132 of them roots, k 1-4, 3 random orders
+11:15:43    as written       16,408,298 nodes     16.7 s
+11:15:45    reversed          1,217,564 nodes      1.2 s     7.4% of as written
+11:15:53    random 1          7,833,747 nodes      8.8 s    47.7% of as written
+11:16:11    random 2         14,223,619 nodes     18.0 s    86.7% of as written
+11:16:16    random 3          6,275,723 nodes      4.5 s    38.2% of as written
+11:16:16    random orders: min 38.2%, median 47.7%, max 86.7% of as written
+11:16:16    ranking by full-alphabet trees at k<=2: 0.0 s to measure
+11:16:16    cheap@2             448,229 nodes      0.3 s     2.7% of as written
+11:16:43    dear@2           26,627,363 nodes     27.0 s   162.3% of as written
+11:16:45    ranking by full-alphabet trees at k<=3: 1.7 s to measure
+11:16:45    cheap@3             338,069 nodes      0.2 s     2.1% of as written
+11:17:13    dear@3           26,839,483 nodes     27.4 s   163.6% of as written
+11:17:13    done
+11:17:13 == 123_1_4657.board: 31 vertex lines, 31 of them roots, k 1-3, 3 random orders
+11:17:19    as written       10,411,297 nodes      6.2 s
+11:18:05    reversed         43,229,888 nodes     45.9 s   415.2% of as written
+11:18:06    random 1          1,636,737 nodes      1.1 s    15.7% of as written
+11:18:24    random 2         21,969,810 nodes     17.6 s   211.0% of as written
+11:18:33    random 3         15,998,892 nodes      9.6 s   153.7% of as written
+11:18:33    random orders: min 15.7%, median 153.7%, max 211.0% of as written
+11:18:33    ranking by full-alphabet trees at k<=2: 0.2 s to measure
+11:18:34    cheap@2             243,139 nodes      0.3 s     2.3% of as written
+11:19:25    dear@2           53,177,625 nodes     51.4 s   510.8% of as written
+
+# verify.py: the ranked order in the engine (scratch build of tools/searcher with rank_roots)
+11:19:55 == a6_30, k 1-4
+11:20:12    ranking by full-alphabet trees at k<=3: 47.4 s to measure
+11:20:13    cheap@3             164,258 nodes      0.2 s     1.6% of as written
+11:20:56 == a6_30, k 1-4
+11:21:01    reference 294 tilings in 120 files, 16,690,757 nodes, 3.8 s; ranked 294 in 120 files, 339,417 nodes, 1.2 s -> SAME FILES
+11:21:04    tileestimate --exact ('338069', '4647', '294') vs engine on one thread ('338069', '4647', '294') -> SAME
+11:21:05    dear@3           53,260,837 nodes     52.3 s   511.6% of as written
+11:21:05    done
+11:21:05 == 123_1_4657_init13.board: 31 vertex lines, 13 of them roots, k 1-3, 3 random orders
+11:21:05    as written          114,050 nodes      0.1 s
+11:21:05    reversed            110,420 nodes      0.1 s    96.8% of as written
+11:21:05    random 1            113,208 nodes      0.2 s    99.3% of as written
+11:21:06    random 2            112,489 nodes      0.2 s    98.6% of as written
+11:21:06    random 3            111,551 nodes      0.2 s    97.8% of as written
+11:21:06    random orders: min 97.8%, median 98.6%, max 99.3% of as written
+11:21:06    stopped with 14 roots done, resumed: 294 tilings -> SAME FILES
+11:21:06 == 123_1_4657, k 1-3
+11:21:06    ranking by full-alphabet trees at k<=2: 0.2 s to measure
+11:21:06    cheap@2             111,748 nodes      0.2 s    98.0% of as written
+11:21:06    dear@2              112,722 nodes      0.2 s    98.8% of as written
+11:21:52    reference 349 tilings in 30 files, 10,742,570 nodes, 2.0 s; ranked 349 in 30 files, 164,307 nodes, 43.8 s -> SAME FILES
+11:22:03    ranking by full-alphabet trees at k<=3: 56.7 s to measure
+11:22:03    cheap@3             112,704 nodes      0.2 s    98.8% of as written
+11:22:03    dear@3              111,718 nodes      0.2 s    98.0% of as written
+11:22:03    done
+11:22:04 == s2b.board: 58 vertex lines, 48 of them roots, k 1-3, 3 random orders
+11:22:04    as written           13,399 nodes      0.0 s
+11:22:04    reversed              3,211 nodes      0.0 s    24.0% of as written
+11:22:04    random 1              5,457 nodes      0.0 s    40.7% of as written
+11:22:04    random 2              9,142 nodes      0.0 s    68.2% of as written
+11:22:04    random 3              4,382 nodes      0.0 s    32.7% of as written
+11:22:04    random orders: min 32.7%, median 40.7%, max 68.2% of as written
+11:22:04    ranking by full-alphabet trees at k<=2: 0.0 s to measure
+11:22:04    cheap@2               2,665 nodes      0.0 s    19.9% of as written
+11:22:04    dear@2               13,490 nodes      0.0 s   100.7% of as written
+11:22:04    done
+11:22:04 == r4.board: 10 vertex lines, 10 of them roots, k 1-3, 3 random orders
+11:22:04    as written           12,282 nodes      0.0 s
+11:22:04    reversed             18,689 nodes      0.0 s   152.2% of as written
+11:22:04    random 1             11,820 nodes      0.0 s    96.2% of as written
+11:22:04    random 2             15,121 nodes      0.0 s   123.1% of as written
+11:22:04    random 3             16,007 nodes      0.0 s   130.3% of as written
+11:22:04    random orders: min 96.2%, median 123.1%, max 130.3% of as written
+11:22:04    ranking by full-alphabet trees at k<=2: 0.0 s to measure
+11:22:04    cheap@2              11,971 nodes      0.0 s    97.5% of as written
+11:22:04    dear@2               19,017 nodes      0.0 s   154.8% of as written
+11:22:04    done
+11:22:04 == squares_edges.board: 5 vertex lines, 5 of them roots, k 1-5, 3 random orders
+11:22:11    as written        2,989,800 nodes      7.0 s
+11:22:19    reversed          3,576,761 nodes      8.3 s   119.6% of as written
+11:22:26    random 1          3,081,595 nodes      6.8 s   103.1% of as written
+11:22:31    random 2          2,440,939 nodes      5.4 s    81.6% of as written
+11:22:39    random 3          3,087,775 nodes      7.3 s   103.3% of as written
+11:22:39    random orders: min 81.6%, median 103.1%, max 103.3% of as written
+11:22:39    ranking by full-alphabet trees at k<=3: 0.3 s to measure
+11:22:46    cheap@3           2,989,800 nodes      6.9 s   100.0% of as written
+11:22:54    dear@3            3,576,761 nodes      8.3 s   119.6% of as written
+11:22:56    ranking by full-alphabet trees at k<=4: 2.3 s to measure
+11:23:03    cheap@4           2,989,800 nodes      6.7 s   100.0% of as written
+11:23:11    dear@4            3,576,761 nodes      8.4 s   119.6% of as written
+11:23:11    done
+11:23:12 == s3.board: 211 vertex lines, 201 of them roots, k 1-3, 2 random orders
+11:23:12    as written          792,920 nodes      0.3 s
+11:23:12    reversed             29,775 nodes      0.1 s     3.8% of as written
+11:23:12    random 1            400,450 nodes      0.2 s    50.5% of as written
+11:23:12    random 2            641,871 nodes      0.3 s    81.0% of as written
+11:23:12    random orders: min 50.5%, median 81.0%, max 81.0% of as written
+11:23:12    ranking by full-alphabet trees at k<=2: 0.1 s to measure
+11:23:13    cheap@2              31,293 nodes      0.1 s     3.9% of as written
+11:23:13    dear@2              802,301 nodes      0.3 s   101.2% of as written
+11:23:13    done
+11:23:13 == 1247_1_0612.board: 121 vertex lines, 121 of them roots, k 1-3, 2 random orders
+11:23:13    tileestimate --exact ('164258', '2243', '349') vs engine on one thread ('164258', '2243', '349') -> SAME
+11:23:14    as written        2,591,145 nodes      1.5 s
+11:23:21    reversed          6,236,654 nodes      6.1 s   240.7% of as written
+11:23:22    random 1          1,917,869 nodes      1.1 s    74.0% of as written
+11:23:27    random 2          5,139,963 nodes      5.3 s   198.4% of as written
+11:23:27    random orders: min 74.0%, median 198.4%, max 198.4% of as written
+11:23:27    ranking by full-alphabet trees at k<=2: 0.1 s to measure
+11:23:27    cheap@2             151,503 nodes      0.2 s     5.8% of as written
+11:23:34    dear@2            8,921,910 nodes      7.1 s   344.3% of as written
+11:23:34    done
+11:23:50    stopped with 3 roots done, resumed: 349 tilings -> SAME FILES
+11:23:50 == 123_1_4657_init13, k 1-3
+11:23:51    reference 3 tilings in 3 files, 127,358 nodes, 0.2 s; ranked 3 in 3 files, 124,142 nodes, 0.3 s -> SAME FILES
+11:23:52    tileestimate --exact ('112704', '3', '3') vs engine on one thread ('112704', '3', '3') -> SAME
+11:23:52    stopped with 8 roots done, resumed: 3 tilings -> SAME FILES
+11:23:52 == squares_edges, k 1-5
+11:23:56    reference 53,060 tilings in 120 files, 2,996,809 nodes, 1.8 s; ranked 53,060 in 120 files, 2,996,432 nodes, 1.8 s -> SAME FILES
+11:24:10    tileestimate --exact ('2989800', '304869', '53060') vs engine on one thread ('2989800', '304869', '53060') -> SAME
+11:24:11    stopped with 7 roots done, resumed: 53,060 tilings -> SAME FILES
+11:24:11 == r4, k 1-3
+11:24:11    reference 91 tilings in 46 files, 12,345 nodes, 0.0 s; ranked 91 in 46 files, 12,832 nodes, 0.1 s -> SAME FILES
+11:24:11    tileestimate --exact ('12611', '1866', '91') vs engine on one thread ('12611', '1866', '91') -> SAME
+11:24:12    stopped with 3 roots done, resumed: 91 tilings -> SAME FILES
+11:24:12 == s2b, k 1-3
+11:24:12    reference 16 tilings in 15 files, 14,961 nodes, 0.1 s; ranked 16 in 15 files, 2,486 nodes, 0.1 s -> SAME FILES
+11:24:12    tileestimate --exact ('2486', '43', '16') vs engine on one thread ('2486', '43', '16') -> SAME
+11:24:12    stopped with 3 roots done, resumed: 16 tilings -> SAME FILES
+11:24:12    result: 0 failing checks
+11:24:12 == a6_30_req, k 1-4
+11:24:12    reference 4 tilings in 4 files, 157,736 nodes, 0.1 s; ranked 4 in 4 files, 149,420 nodes, 0.1 s -> SAME FILES
+11:24:13    tileestimate --exact ('129367', '20', '4') vs engine on one thread ('129367', '20', '4') -> SAME
+11:24:13    stopped with 3 roots done, resumed: 4 tilings -> SAME FILES
+11:24:13    result: 0 failing checks
+
+# verify.py again, rank depth 2 (the shipped setting)
+11:24:50 == a6_30, k 1-5
+11:25:24    reference 685 tilings in 193 files, 163,494,801 nodes, 31.9 s; ranked 685 in 193 files, 19,574,587 nodes, 2.2 s -> SAME FILES
+11:25:43    tileestimate --exact ('19565323', '8215', '685') vs engine on one thread ('19565323', '8215', '685') -> SAME
+11:25:45    stopped with 10 roots done, resumed: 685 tilings -> SAME FILES
+11:25:45 == 123_1_4657, k 1-3
+11:25:45 == a6_30_req, k 1-5
+11:25:50 == 123_1_4657, k 1-3
+11:25:53    reference 349 tilings in 30 files, 10,715,985 nodes, 1.6 s; ranked 349 in 30 files, 254,630 nodes, 0.9 s -> SAME FILES
+11:25:54    tileestimate --exact ('243139', '2243', '349') vs engine on one thread ('243139', '2243', '349') -> SAME
+11:25:56    stopped with 8 roots done, resumed: 349 tilings -> SAME FILES
+11:25:56 == 1247_1_0612, k 1-3
+11:25:57    reference 130 tilings in 64 files, 2,667,362 nodes, 0.7 s; ranked 130 in 64 files, 152,069 nodes, 0.7 s -> SAME FILES
+11:25:58    tileestimate --exact ('151503', '699', '130') vs engine on one thread ('151503', '699', '130') -> SAME
+11:25:59    stopped with 4 roots done, resumed: 130 tilings -> SAME FILES
+11:25:59 == squares_edges, k 1-5
+11:26:02    reference 53,060 tilings in 120 files, 3,001,817 nodes, 1.4 s; ranked 53,060 in 120 files, 2,547,993 nodes, 1.3 s -> SAME FILES
+11:26:13    tileestimate --exact ('2535116', '244866', '53060') vs engine on one thread ('2535116', '244866', '53060') -> SAME
+11:26:15    stopped with 6 roots done, resumed: 53,060 tilings -> SAME FILES
+11:26:15 == s3, k 1-3
+11:26:16    reference 21 tilings in 20 files, 889,026 nodes, 0.7 s; ranked 21 in 20 files, 31,310 nodes, 0.8 s -> SAME FILES
+11:26:18    tileestimate --exact ('31293', '58', '21') vs engine on one thread ('31293', '58', '21') -> SAME
+11:26:19    stopped with 3 roots done, resumed: 21 tilings -> SAME FILES
+11:26:19 == s2, k 1-4
+11:26:21    reference 34 tilings in 29 files, 6,877,206 nodes, 1.9 s; ranked 34 in 29 files, 124,563 nodes, 0.5 s -> SAME FILES
+11:26:21    tileestimate --exact ('122906', '117', '34') vs engine on one thread ('122906', '117', '34') -> SAME
+11:26:22    stopped with 20 roots done, resumed: 34 tilings -> SAME FILES
+11:26:22    result: 0 failing checks
+11:26:22 == a6_30_req, k 1-5
+11:26:23    reference 5 tilings in 5 files, 1,090,254 nodes, 0.2 s; ranked 5 in 5 files, 926,882 nodes, 0.3 s -> SAME FILES
+11:26:24    tileestimate --exact ('877571', '37', '5') vs engine on one thread ('877571', '37', '5') -> SAME
+11:26:24    stopped with 13 roots done, resumed: 5 tilings -> SAME FILES
+11:26:24    result: 0 failing checks
+11:26:48    legacy run: a6_30 k 1-4 started by the committed engine (no order.txt), killed after 34 roots, resumed by the ranked engine: kept the board's order (16,686,920 nodes), 294 tilings -> SAME FILES as the committed engine straight through; tileestimate --skip on it ran in that order too
+old     seed 1: 6.9e+16 nodes (se 5.4e+16), 8.4e+07 core-hours (se 6.6e+07)
+old     seed 2: 2.3e+18 nodes (se 2.3e+18), 8.4e+08 core-hours (se 8.3e+08)
+old     seed 3: 1.9e+16 nodes (se 8e+15), 8.9e+06 core-hours (se 3.8e+06)
+ranked  seed 1: 4.6e+16 nodes (se 3.3e+16), 2.7e+07 core-hours (se 1.9e+07)
+ranked  seed 2: 4.5e+15 nodes (se 1.9e+15), 3e+06 core-hours (se 1.3e+06)
+ranked  seed 3: 3.7e+15 nodes (se 2.2e+15), 1.6e+06 core-hours (se 9.7e+05)
+stats nodes 1682525405 complete 22196 unique 1475 real 309.59  (old order, k<=6)
+stats nodes 66934080 complete 16716 unique 1475 real 7.41  (ranked, k<=6)
+13:34:10 committed engine on a6_30 k<=7 stopped by hand after >90 min on 10 threads (machine shared), unfinished
+stats nodes 36173417451 complete 44991 unique 3196 real 6590.87  (old order, k<=7)
+stats nodes 945978 complete 31323 unique 3196 real 0.94  (ranked, k<=7)

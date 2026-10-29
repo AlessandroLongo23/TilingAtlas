@@ -1,0 +1,28 @@
+# k without flat vertices. Script: experiments/k-flat-vertices-2026-10-27/run.ts, k <= 4
+11:16:09 == [1/2] scaled_3_4_6_12: 8 faces, 97 vertex lines
+11:16:10    old engine, 0.4 s
+11:16:10      k=1:      14 tilings,      4 with a T-junction (atlas 6)
+11:16:10      k=2:      40 tilings,     16 with a T-junction (atlas 41)
+11:16:10      k=3:     126 tilings,     62 with a T-junction (atlas 213)
+11:16:10      k=4:     335 tilings,    181 with a T-junction (atlas 770)
+11:16:10      103 tilings hold a flat vertex type; elapsed 0 s
+11:16:12    new engine, 1.8 s
+11:16:12      k=1:      26 tilings,      6 with a T-junction (atlas 6)
+11:16:12      k=2:      81 tilings,     41 with a T-junction (atlas 41)
+11:16:12      k=3:     334 tilings,    212 with a T-junction (atlas 213)
+11:16:12      k=4:    1064 tilings,    762 with a T-junction (atlas 770)
+11:16:12      1093 tilings hold a flat vertex type; elapsed 2 s
+11:16:12 == [2/2] scaled_3_4_6_8_12: 10 faces, 103 vertex lines
+11:16:12    old engine, 0.4 s
+11:16:12      k=1:      15 tilings,      4 with a T-junction
+11:16:12      k=2:      40 tilings,     16 with a T-junction
+11:16:12      k=3:     127 tilings,     62 with a T-junction
+11:16:12      k=4:     336 tilings,    182 with a T-junction
+11:16:12      105 tilings hold a flat vertex type; elapsed 3 s
+11:16:14    new engine, 1.5 s
+11:16:14      k=1:      28 tilings,      6 with a T-junction
+11:16:14      k=2:      81 tilings,     41 with a T-junction
+11:16:14      k=3:     335 tilings,    213 with a T-junction
+11:16:14      k=4:    1065 tilings,    763 with a T-junction
+11:16:14      1096 tilings hold a flat vertex type; elapsed 4 s
+11:16:14 done

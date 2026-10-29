@@ -1,0 +1,25 @@
+name drawn_notched_hexagon
+k 1 2
+angle F1_60 60
+angle F1_150 150
+angle F1_90 90
+angle F1_210 210
+angle A4
+face F1_60 F1_150 F1_90 F1_150 F1_60 F1_210
+face A4 x 4
+vertex F1_150 F1_210
+vertex F1_60 F1_150 F1_150
+vertex F1_60 F1_90 F1_210
+vertex F1_60 F1_210 A4
+vertex F1_60 F1_60 F1_150 F1_90
+vertex F1_60 F1_60 F1_150 A4
+vertex F1_90 F1_90 F1_90 F1_90
+vertex F1_90 F1_90 F1_90 A4
+vertex F1_90 F1_90 A4 A4
+vertex F1_90 A4 A4 A4
+vertex A4 A4 A4 A4
+vertex F1_60 F1_60 F1_60 F1_90 F1_90
+vertex F1_60 F1_60 F1_60 F1_90 A4
+vertex F1_60 F1_60 F1_60 A4 A4
+vertex F1_60 F1_60 F1_60 F1_60 F1_60 F1_60
+permutations yes

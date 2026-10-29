@@ -1,0 +1,484 @@
+# automatic start set + rule against each rule forced, 2026-10-28 19:01:25: 100 distinct boards at the k they were run with, 40 s cap per run, 10 threads
+# verdict: ok = auto within 1.25x (+0.3 s) of the faster forced rule; SLOW = not; WIN = both forced past the cap, auto not; ? = all past the cap
+# other sessions' vitest runs shared the CPU for part of this, so seconds are noisy; nodes are not
+[1/100] ?     boards/123_1_4657.board k<=3 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 2 min, ETA 198 min
+[2/100] ?     boards/123_1_4657_init13.board k<=3 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 4 min, ETA 196 min
+[3/100] ?     boards/1247_1_0612.board k<=3 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 6 min, ETA 194 min
+[4/100] ?     boards/hybrid_2_9830.board k<=3 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 8 min, ETA 192 min
+[5/100] SLOW  boards/squares_edges.board k<=5 | auto 2.5s 1966449n (fewest) | fewest 2.2s 1970002n | face 1.6s 2546273n | 53060 tilings | elapsed 8 min, ETA 154 min
+      plan: to k <= 3, predicted at k <= 5: [fewest 49854 -> 4990805] [face 65772 -> 8335175]
+[6/100] SLOW  colorings/euclidean/squares_edges-20261028-164940 k<=6 | auto 20.6s 12970303n (fewest) | fewest 17.6s 12970680n | face 12.5s 15899894n | 332965 tilings | elapsed 9 min, ETA 140 min
+      plan: to k <= 4, predicted at k <= 6: [fewest 335470 -> 17700553] [face 480238 -> 29563970]
+[7/100] SLOW  test-20261028-123025 k<=3 | auto 1.5s 1076393n (fewest) | fewest 1.5s 1074005n | face 0.7s 2234820n | 14718 tilings | elapsed 9 min, ETA 120 min
+      plan: to k <= 2, predicted at k <= 3: [fewest 51125 -> 1785359] [face 91936 -> 4469713]
+[8/100] ok    tilings/euclidean/isotoxal/A12_60_and_120-20261026-170015 k<=12 | auto 25.3s 31903009n (fewest) | fewest 26.3s 31902654n | face >40s | 10947 tilings | elapsed 11 min, ETA 121 min
+      plan: to k <= 8, predicted at k <= 12: [fewest 526396 -> 51765830] [face dropped]
+[9/100] ?     tilings/euclidean/isotoxal/A12_60_and_120-20261026-170116 k<=8 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 13 min, ETA 127 min
+[10/100] ?     tilings/euclidean/isotoxal/A12_60_and_120-20261026-191601 k<=17 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 15 min, ETA 131 min
+[11/100] SLOW  tilings/euclidean/isotoxal/A12p60.120-20261026-191637 k<=22 | auto >40s (-) | fewest >40s | face 0.4s 1010704n | 741 tilings | elapsed 16 min, ETA 129 min
+[12/100] ok    tilings/euclidean/isotoxal/A12p60.120-20261028-165419 k<=22 | auto 0.6s 907663n (face) | fewest >40s | face 0.9s 907430n | 741 tilings | elapsed 17 min, ETA 122 min
+      plan: to k <= 10, predicted at k <= 22: [fewest 18509 -> 10788790] [face 20959 -> 2061722]
+# stopped at board 10: auto compared nodes only and lost on squares_edges and test, where a fewest-options node costs 1.7-4x a face-rule node. Restarted below with predictions weighed by each rule's measured seconds per node.
+# automatic start set + rule against each rule forced, 2026-10-28 19:18:53: 100 distinct boards at the k they were run with, 40 s cap per run, 10 threads
+# verdict: ok = auto within 1.25x (+0.3 s) of the faster forced rule; SLOW = not; WIN = both forced past the cap, auto not; ? = all past the cap
+# other sessions' vitest runs shared the CPU for part of this, so seconds are noisy; nodes are not
+[1/100] ?     boards/123_1_4657.board k<=3 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 2 min, ETA 198 min
+[2/100] ?     boards/123_1_4657_init13.board k<=3 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 4 min, ETA 196 min
+[3/100] ?     boards/1247_1_0612.board k<=3 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 6 min, ETA 194 min
+[4/100] ?     boards/hybrid_2_9830.board k<=3 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 8 min, ETA 192 min
+[5/100] ok    boards/squares_edges.board k<=5 | auto 1.6s 2544192n (face) | fewest 2.4s 1967532n | face 1.7s 2550105n | 53060 tilings | elapsed 8 min, ETA 154 min
+      plan: to k <= 3, predicted at k <= 5: [fewest 49461 -> 5044104 nodes, 419 ns/node] [face 65888 -> 8364602 nodes, 120 ns/node] (by time)
+[6/100] ok    colorings/euclidean/squares_edges-20261028-164940 k<=6 | auto 11.6s 15881512n (face) | fewest 17.9s 12977934n | face 19.8s 15880155n | 332965 tilings | elapsed 9 min, ETA 140 min
+      plan: to k <= 4, predicted at k <= 6: [fewest 333642 -> 17491669 nodes, 359 ns/node] [face 477700 -> 29896146 nodes, 113 ns/node] (by time)
+[7/100] ok    test-20261028-123025 k<=3 | auto 1.0s 2232883n (face) | fewest 2.6s 1076353n | face 0.8s 2236334n | 14718 tilings | elapsed 9 min, ETA 120 min
+      plan: to k <= 2, predicted at k <= 3: [fewest 51193 -> 1796246 nodes, 1016 ns/node] [face 91896 -> 4472920 nodes, 204 ns/node] (by time)
+[8/100] ok    tilings/euclidean/isotoxal/A12_60_and_120-20261026-170015 k<=12 | auto 33.6s 31902250n (fewest) | fewest 27.5s 31904199n | face >40s | 10947 tilings | elapsed 11 min, ETA 123 min
+      plan: to k <= 8, predicted at k <= 12: [fewest 526429 -> 52526892 nodes, 597 ns/node] [face dropped] (by time)
+[9/100] ?     tilings/euclidean/isotoxal/A12_60_and_120-20261026-170116 k<=8 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 13 min, ETA 128 min
+[10/100] ?     tilings/euclidean/isotoxal/A12_60_and_120-20261026-191601 k<=17 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 15 min, ETA 132 min
+[11/100] ok    tilings/euclidean/isotoxal/A12p60.120-20261026-191637 k<=22 | auto 0.7s 1010467n (face) | fewest >40s | face 0.7s 1010797n | 741 tilings | elapsed 15 min, ETA 125 min
+      plan: to k <= 10, predicted at k <= 22: [fewest 20045 -> 12708280 nodes, 906 ns/node] [face 22547 -> 2230793 nodes, 360 ns/node] (by time)
+[12/100] SLOW  tilings/euclidean/isotoxal/A12p60.120-20261028-165419 k<=22 | auto >40s (-) | fewest >40s | face 0.5s 907982n | 741 tilings | elapsed 17 min, ETA 123 min
+[13/100] ?     tilings/euclidean/mixed/A12a60_&_A6a90,150-20261026-172612 k<=13 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 19 min, ETA 125 min
+[14/100] SLOW  tilings/euclidean/mixed/A12a60_&_A6a90,150-20261028-170628 k<=10 | auto 2.1s 1023170n (fewest) | fewest 2.1s 1026370n | face 0.9s 744218n | 4 tilings | elapsed 19 min, ETA 116 min
+      plan: to k <= 5, predicted at k <= 10: [fewest set 1 11162 -> 4788557 nodes, 1431 ns/node] [face set 1 57411 -> 342539809 nodes, 238 ns/node] [fewest set 2 4394 -> 1466692 nodes, 2176 ns/node] [face set 2 25169 -> 67699677 nodes, 251 ns/node] (by nodes)
+[15/100] ?     tilings/euclidean/mixed/A4a30_&_A6a90,150-20261028-170252 k<=12 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 21 min, ETA 118 min
+[16/100] ?     tilings/euclidean/mixed/A4a60_&_A6a90,150-20261028-165844 k<=12 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 23 min, ETA 120 min
+[17/100] ok    tilings/euclidean/mixed/A6a30_&_A6a90,150-20261028-165627 k<=11 | auto 5.7s 3050724n (fewest) | fewest 6.9s 3051620n | face 20.7s 32388288n | 179 tilings | elapsed 23 min, ETA 114 min
+      plan: to k <= 6, predicted at k <= 11: [fewest set 1 46449 -> 14292133 nodes, 1870 ns/node] [face set 1 426505 -> 2246071751 nodes, 225 ns/node] [fewest set 2 57724 -> 29530716 nodes, 1534 ns/node] [face set 2 dropped] (by time)
+[18/100] ?     tilings/euclidean/mixed/A6a60_&_A6a90,150-20261026-172237 k<=13 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 25 min, ETA 116 min
+[19/100] ok    tilings/euclidean/mixed/A6a90_&_A6a90,150-20261026-171952 k<=11 | auto 7.3s 4454724n (fewest) | fewest 7.0s 4454639n | face 21.2s 34954882n | 354 tilings | elapsed 26 min, ETA 111 min
+      plan: to k <= 5, predicted at k <= 11: [fewest set 1 81226 -> 243146103 nodes, 720 ns/node] [face set 1 307785 -> 4120726122 nodes, 143 ns/node] [fewest set 2 19282 -> 10503168 nodes, 1071 ns/node] [face set 2 86813 -> 477791514 nodes, 228 ns/node] [fewest set 3 35037 -> 65304822 nodes, 1536 ns/node] [face set 3 141693 -> 1340798911 nodes, 166 ns/node] (by nodes)
+[20/100] SLOW  tilings/euclidean/regulars/3,4,6,12-20261027-152059 k<=13 | auto >40s (-) | fewest >40s | face 39.8s 94094878n | 200730 tilings | elapsed 28 min, ETA 112 min
+[21/100] ?     tilings/euclidean/regulars/3,4 k<=15 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 30 min, ETA 113 min
+[22/100] ?     tilings/euclidean/scaled/A,B-20261028-164911 k<=7 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 32 min, ETA 113 min
+[23/100] ok    tilings/euclidean/scaled/B3,C6-20261027-152020 k<=8 | auto 31.0s 16182019n (fewest) | fewest 32.0s 16180723n | face >40s | 1596 tilings | elapsed 34 min, ETA 113 min
+      plan: to k <= 5, predicted at k <= 8: [fewest set 1 131281 -> 17504621 nodes, 988 ns/node] [face set 1 dropped] [fewest set 2 120990 -> 12371794 nodes, 3058 ns/node] [face set 2 dropped] (by time)
+[24/100] ok    tilings/euclidean/scaled/B4,C6-20261028-164540 k<=12 | auto 24.0s 20692816n (fewest) | fewest 35.9s 22696752n | face 19.6s 55183032n | 318 tilings | elapsed 35 min, ETA 111 min
+      plan: to k <= 7, predicted at k <= 12: [fewest set 1 185843 -> 38958660 nodes, 889 ns/node] [face set 1 dropped] [fewest set 2 70018 -> 19518637 nodes, 2248 ns/node] [face set 2 161971 -> 92186273 nodes, 580 ns/node] (by time)
+[25/100] SLOW  tilings/euclidean/scaled/B6,C3-20261028-164329 k<=8 | auto 32.2s 11676063n (fewest) | fewest 25.4s 8459032n | face >40s | 855 tilings | elapsed 37 min, ETA 110 min
+      plan: to k <= 5, predicted at k <= 8: [fewest set 1 73526 -> 7669866 nodes, 2843 ns/node] [face set 1 dropped] [fewest set 2 84504 -> 6897291 nodes, 2128 ns/node] [face set 2 dropped] (by time)
+[26/100] SLOW  tilings/euclidean/scaled/B6,C4-20261028-164219 k<=12 | auto 31.6s 22711354n (fewest) | fewest 29.6s 22707790n | face 20.8s 52781600n | 942 tilings | elapsed 38 min, ETA 108 min
+      plan: to k <= 7, predicted at k <= 12: [fewest set 1 82488 -> 23516576 nodes, 1023 ns/node] [face set 1 251331 -> 121024332 nodes, 445 ns/node] [fewest set 2 147434 -> 23822446 nodes, 1727 ns/node] [face set 2 357631 -> 144763983 nodes, 433 ns/node] (by time)
+[27/100] ok    tilings/euclidean/shapes/A6a30-20261027-155845 k<=6 | auto 0.2s 22029n (fewest) | fewest 0.2s 22036n | face 25.2s 86387940n | 36 tilings | elapsed 38 min, ETA 104 min
+      plan: to k <= 2, predicted at k <= 6: [fewest 4602 -> 443247 nodes, 2234 ns/node] [face 36328 -> 12365625782 nodes, 488 ns/node] (by nodes)
+[28/100] ok    tilings/euclidean/shapes/A6a30-20261028-163432 k<=6 | auto 0.1s 11419n (fewest) | fewest 0.1s 11408n | face 0.2s 443308n | 14 tilings | elapsed 38 min, ETA 99 min
+      plan: to k <= 3, predicted at k <= 6: [fewest 1885 -> 79943 nodes, 2277 ns/node] [face 9007 -> 4068302 nodes, 190 ns/node] (by nodes)
+[29/100] ok    tilings/euclidean/shapes/bighouse-20261027-125822 k<=5 | auto 0.2s 38791n (fewest) | fewest 0.1s 38373n | face 0.1s 120824n | 342 tilings | elapsed 38 min, ETA 94 min
+      plan: to k <= 3, predicted at k <= 5: [fewest 2971 -> 64903 nodes, 3370 ns/node] [face 6103 -> 277959 nodes, 281 ns/node] (by nodes)
+[30/100] SLOW  tilings/euclidean/shapes/blob-20261027-160304 k<=11 | auto 2.8s 1935072n (fewest) | fewest 2.6s 1933961n | face 1.4s 4940025n | 1247 tilings | elapsed 39 min, ETA 90 min
+      plan: to k <= 7, predicted at k <= 11: [fewest 68981 -> 3514589 nodes, 977 ns/node] [face dropped] (by time)
+[31/100] ok    tilings/euclidean/shapes/eggplant-20261027-125915 k<=5 | auto 0.5s 106164n (fewest) | fewest 0.6s 106337n | face 0.5s 1944199n | 148 tilings | elapsed 39 min, ETA 86 min
+      plan: to k <= 2, predicted at k <= 5: [fewest set 1 4831 -> 2147519 nodes, 3915 ns/node] [face set 1 6957 -> 14234635 nodes, 519 ns/node] [fewest set 2 3374 -> 303525 nodes, 3457 ns/node] [face set 2 5268 -> 2715732 nodes, 465 ns/node] (by nodes)
+[32/100] ok    tilings/euclidean/shapes/glider-20261027-131007 k<=5 | auto 1.1s 559016n (fewest) | fewest 0.7s 213434n | face 2.0s 9315292n | 274 tilings | elapsed 39 min, ETA 82 min
+      plan: to k <= 3, predicted at k <= 5: [fewest set 1 47764 -> 4733194 nodes, 981 ns/node] [face set 1 dropped] [fewest set 2 26607 -> 1427283 nodes, 3566 ns/node] [face set 2 dropped] (by time)
+[33/100] ok    tilings/euclidean/shapes/glider-20261027-132202 k<=6 | auto 5.5s 3742444n (fewest) | fewest 4.7s 3744634n | face 29.7s 89365048n | 1824 tilings | elapsed 39 min, ETA 80 min
+      plan: to k <= 4, predicted at k <= 6: [fewest 400475 -> 21702330 nodes, 1135 ns/node] [face dropped] (by time)
+[34/100] ok    tilings/euclidean/shapes/glider-20261027-132259 k<=6 | auto 3.2s 1965397n (fewest) | fewest 3.4s 1965722n | face 21.6s 76901284n | 642 tilings | elapsed 40 min, ETA 77 min
+      plan: to k <= 4, predicted at k <= 6: [fewest set 1 122907 -> 3889323 nodes, 1266 ns/node] [face set 1 dropped] [fewest set 2 dropped] [face set 2 dropped] (by time)
+[35/100] ok    tilings/euclidean/shapes/house,spear-20261027-125400 k<=6 | auto 2.3s 3691643n (fewest) | fewest 2.3s 3691588n | face >40s | 4185 tilings | elapsed 41 min, ETA 75 min
+      plan: to k <= 4, predicted at k <= 6: [fewest set 1 177545 -> 12493946 nodes, 415 ns/node] [face set 1 dropped] [fewest set 2 dropped] [face set 2 dropped] (by time)
+[36/100] ok    tilings/euclidean/shapes/house-20261027-125245 k<=7 | auto 4.3s 7055147n (fewest) | fewest 4.0s 7056052n | face 24.5s 123028917n | 14133 tilings | elapsed 41 min, ETA 73 min
+      plan: to k <= 4, predicted at k <= 7: [fewest 77601 -> 22225222 nodes, 746 ns/node] [face 775907 -> 2079807142 nodes, 138 ns/node] (by time)
+[37/100] ok    tilings/euclidean/shapes/shield-20261027-125604 k<=8 | auto 0.7s 784470n (fewest) | fewest 0.6s 784676n | face 2.0s 7820052n | 2119 tilings | elapsed 41 min, ETA 70 min
+      plan: to k <= 5, predicted at k <= 8: [fewest 40665 -> 2832646 nodes, 907 ns/node] [face 144769 -> 16953964 nodes, 249 ns/node] (by time)
+[38/100] ok    tilings/euclidean/shapes/shield-20261027-125652 k<=8 | auto 2.5s 3370131n (fewest) | fewest 2.3s 3370566n | face 4.9s 22058863n | 11677 tilings | elapsed 41 min, ETA 67 min
+      plan: to k <= 5, predicted at k <= 8: [fewest 66469 -> 6654073 nodes, 873 ns/node] [face 308609 -> 96215168 nodes, 149 ns/node] (by time)
+[39/100] ok    tilings/euclidean/shapes/spear-20261027-125123 k<=8 | auto 2.0s 2832360n (fewest) | fewest 1.8s 2831870n | face 5.1s 20980713n | 12975 tilings | elapsed 41 min, ETA 65 min
+      plan: to k <= 5, predicted at k <= 8: [fewest 104948 -> 8606433 nodes, 382 ns/node] [face 730645 -> 234443748 nodes, 153 ns/node] (by time)
+[40/100] ?     tilings/euclidean/shapes/tooth-20261027-130531 k<=4 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 43 min, ETA 65 min
+[41/100] ok    tilings/euclidean/shapes/tooth-20261028-163514 k<=4 | auto 37.1s 16903610n (fewest) | fewest 34.0s 16919352n | face >40s | 2978 tilings | elapsed 45 min, ETA 65 min
+      plan: to k <= 3, predicted at k <= 4: [fewest 1179262 -> 23904216 nodes, 1837 ns/node] [face dropped] (by time)
+[42/100] ok    tilings/euclidean/stars/45degree-20261027-153117 k<=14 | auto 7.9s 2083164n (fewest) | fewest 9.7s 2082820n | face >40s | 6 tilings | elapsed 46 min, ETA 64 min
+      plan: to k <= 4, predicted at k <= 14: [fewest 32197 -> 1044122213 nodes, 647 ns/node] [face dropped] (by time)
+[43/100] SLOW  tilings/euclidean/stars/A/12/1/A12p120-20261028-122123 k<=14 | auto 17.8s 10200691n (fewest) | fewest 16.1s 10189684n | face 0.5s 1045427n | 238 tilings | elapsed 47 min, ETA 62 min
+      plan: to k <= 10, predicted at k <= 14: [fewest 109810 -> 5857587 nodes, 1705 ns/node] [face dropped] (by time)
+[44/100] ok    tilings/euclidean/stars/A/12/1/A12p30-20261028-121825 k<=11 | auto 31.2s 17787414n (fewest) | fewest 26.5s 17789551n | face >40s | 2506 tilings | elapsed 48 min, ETA 62 min
+      plan: to k <= 4, predicted at k <= 11: [fewest 28878 -> 401912629 nodes, 1251 ns/node] [face dropped] (by time)
+[45/100] ?     tilings/euclidean/stars/A/12/1/A12p60-20261028-121933 k<=12 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 50 min, ETA 62 min
+[46/100] ?     tilings/euclidean/stars/A/12/1/A12p90-20261028-121648 k<=15 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 52 min, ETA 62 min
+[47/100] ok    tilings/euclidean/stars/A/12/2/A12p30,A12p120-20261028-122314 k<=10 | auto 0.7s 375937n (fewest) | fewest 0.6s 376438n | face >40s | 12 tilings | elapsed 53 min, ETA 60 min
+      plan: to k <= 3, predicted at k <= 10: [fewest set 1 10053 -> 882077952 nodes, 1001 ns/node] [face set 1 dropped] [fewest set 2 9416 -> 746946655 nodes, 993 ns/node] [face set 2 dropped] [fewest set 3 256 -> 185504 nodes, 3765 ns/node] [face set 3 dropped] (by nodes)
+[48/100] ok    tilings/euclidean/stars/A/12/2/A12p30,A12p60-20261028-122153 k<=11 | auto 27.3s 12187562n (fewest) | fewest 27.3s 12185639n | face >40s | 254 tilings | elapsed 55 min, ETA 59 min
+      plan: to k <= 6, predicted at k <= 11: [fewest set 1 dropped] [face set 1 dropped] [fewest set 2 80583 -> 29694703 nodes, 1493 ns/node] [face set 2 dropped] (by time)
+[49/100] SLOW  tilings/euclidean/stars/A/12/2/A12p30,A12p90-20261028-130827 k<=12 | auto 6.6s 2488908n (fewest) | fewest 3.7s 2490588n | face 12.2s 19310756n | 47 tilings | elapsed 55 min, ETA 57 min
+      plan: to k <= 6, predicted at k <= 12: [fewest set 1 dropped] [face set 1 dropped] [fewest set 2 6675 -> 1558537 nodes, 2356 ns/node] [face set 2 20290 -> 19135804 nodes, 325 ns/node] (by nodes)
+[50/100] ok    tilings/euclidean/stars/A/12/2/A12p60,A12p120-20261028-131714 k<=13 | auto 14.7s 9019438n (fewest) | fewest 16.0s 9018795n | face >40s | 14 tilings | elapsed 56 min, ETA 56 min
+      plan: to k <= 6, predicted at k <= 13: [fewest set 1 12890 -> 28977362 nodes, 1040 ns/node] [face set 1 68420 -> 1798455837 nodes, 316 ns/node] [fewest set 2 3336 -> 3178152 nodes, 1412 ns/node] [face set 2 dropped] (by nodes)
+[51/100] ok    tilings/euclidean/stars/A/12/2/A12p60,A12p90-20261027-123319 k<=13 | auto 18.3s 10797468n (fewest) | fewest 19.4s 10797036n | face >40s | 35 tilings | elapsed 58 min, ETA 55 min
+      plan: to k <= 8, predicted at k <= 13: [fewest set 1 dropped] [face set 1 dropped] [fewest set 2 201024 -> 43838946 nodes, 493 ns/node] [face set 2 dropped] (by time)
+[52/100] ok    tilings/euclidean/stars/A/12/2/A12p90,A12p120-20261028-130721 k<=14 | auto 27.8s 20042501n (fewest) | fewest >40s | face 23.4s 34106904n | 25 tilings | elapsed 59 min, ETA 55 min
+      plan: to k <= 9, predicted at k <= 14: [fewest set 1 dropped] [face set 1 dropped] [fewest set 2 63708 -> 13251315 nodes, 966 ns/node] [face set 2 dropped] (by time)
+[53/100] ok    tilings/euclidean/stars/A/12/3/A12p30,A12p60,A12p120-20261027-123948 k<=12 | auto 14.0s 24735494n (fewest) | fewest 14.7s 24736400n | face >40s | 5 tilings | elapsed 60 min, ETA 53 min
+      plan: to k <= 2, predicted at k <= 12: [fewest set 1 13375 -> 719625525 nodes, 693 ns/node] [face set 1 dropped] [fewest set 2 2822 -> 1476504 nodes, 895 ns/node] [face set 2 dropped] [fewest set 3 677 -> 1294804 nodes, 1293 ns/node] [face set 3 9627 -> 467120072486006336 nodes, 603 ns/node] (by nodes)
+[54/100] ok    tilings/euclidean/stars/A/12/3/A12p30,A12p60,A12p90-20261027-123735 k<=12 | auto 21.3s 18468208n (fewest) | fewest 20.8s 18464455n | face >40s | 7 tilings | elapsed 62 min, ETA 53 min
+      plan: to k <= 2, predicted at k <= 12: [fewest set 1 14324 -> 1007227097 nodes, 1000 ns/node] [face set 1 dropped] [fewest set 2 3048 -> 540761 nodes, 1365 ns/node] [face set 2 dropped] [fewest set 3 1207 -> 121599 nodes, 1645 ns/node] [face set 3 25819 -> 3201502059699341824 nodes, 308 ns/node] (by nodes)
+[55/100] ok    tilings/euclidean/stars/A/12/3/A12p30,A12p60,A12p90-20261028-131930 k<=10 | auto 0.8s 493295n (fewest) | fewest 0.7s 493195n | face 5.8s 10154320n | 5 tilings | elapsed 62 min, ETA 51 min
+      plan: to k <= 5, predicted at k <= 10: [fewest set 1 50164 -> 19604500 nodes, 1198 ns/node] [face set 1 dropped] [fewest set 2 9930 -> 2810793 nodes, 907 ns/node] [face set 2 dropped] [fewest set 3 3539 -> 550601 nodes, 926 ns/node] [face set 3 12668 -> 7163807 nodes, 165 ns/node] (by nodes)
+[56/100] ok    tilings/euclidean/stars/A/12/3/A12p30,A12p90,A12p120-20261027-124152 k<=12 | auto 7.6s 9927786n (fewest) | fewest 13.1s 9919457n | face >40s | 2 tilings | elapsed 63 min, ETA 49 min
+      plan: to k <= 2, predicted at k <= 12: [fewest set 1 663 -> 133660 nodes, 2087 ns/node] [face set 1 12100 -> 431744191228696512 nodes, 213 ns/node] [fewest set 2 436 -> 1056942 nodes, 1521 ns/node] [face set 2 5628 -> 90442420409213264 nodes, 482 ns/node] [fewest set 3 7773 -> 207561446 nodes, 1172 ns/node] [face set 3 dropped] (by nodes)
+[57/100] ok    tilings/euclidean/stars/A/12/3/A12p60,A12p90,A12p120-20261027-124320 k<=13 | auto 26.6s 28439530n (fewest) | fewest 26.1s 28448379n | face >40s | 1 tilings | elapsed 64 min, ETA 49 min
+      plan: to k <= 2, predicted at k <= 13: [fewest set 1 308 -> 2108330 nodes, 1908 ns/node] [face set 1 757 -> 51128125641 nodes, 398 ns/node] [fewest set 2 125 -> 7646 nodes, 2530 ns/node] [face set 2 314 -> 292744114 nodes, 739 ns/node] [fewest set 3 577 -> 170595 nodes, 1900 ns/node] [face set 3 5324 -> 8697731431847386 nodes, 290 ns/node] (by nodes)
+[58/100] ?     tilings/euclidean/stars/A/12/4/A12p30,A12p60,A12p90,A12p120-20261027-124412 k<=14 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 66 min, ETA 48 min
+[59/100] ok    tilings/euclidean/stars/A/3/A3p30-20261028-123130 k<=10 | auto 7.1s 6413774n (fewest) | fewest 6.7s 6413093n | face >40s | 2388 tilings | elapsed 67 min, ETA 47 min
+      plan: to k <= 4, predicted at k <= 10: [fewest 16367 -> 69855857 nodes, 1851 ns/node] [face dropped] (by nodes)
+[60/100] ok    tilings/euclidean/stars/A/4/1/A4p30-20261028-130531 k<=10 | auto 11.4s 7711126n (fewest) | fewest 10.0s 7710958n | face >40s | 6391 tilings | elapsed 68 min, ETA 45 min
+      plan: to k <= 6, predicted at k <= 10: [fewest 126720 -> 18202834 nodes, 775 ns/node] [face dropped] (by time)
+[61/100] SLOW  tilings/euclidean/stars/A/4/1/A4p60-20261028-130455 k<=13 | auto >40s (-) | fewest >40s | face 39.9s 93840217n | 6809 tilings | elapsed 70 min, ETA 45 min
+[62/100] ok    tilings/euclidean/stars/A/4/2/A4p30,A4p60-20261028-123329 k<=10 | auto 9.4s 8376957n (fewest) | fewest 8.8s 8377547n | face >40s | 502 tilings | elapsed 71 min, ETA 44 min
+      plan: to k <= 6, predicted at k <= 10: [fewest set 1 601631 -> 93772774 nodes, 1067 ns/node] [face set 1 dropped] [fewest set 2 140352 -> 26857531 nodes, 830 ns/node] [face set 2 dropped] (by time)
+[63/100] SLOW  tilings/euclidean/stars/A/6/1/A6p30-20261028-142428 k<=15 | auto >40s (-) | fewest >40s | face 9.4s 17930442n | 397 tilings | elapsed 73 min, ETA 43 min
+[64/100] ok    tilings/euclidean/stars/A/6/1/A6p60-20261028-123713 k<=10 | auto 11.1s 6135897n (fewest) | fewest 12.0s 6137681n | face 20.8s 77157922n | 5594 tilings | elapsed 73 min, ETA 41 min
+      plan: to k <= 6, predicted at k <= 10: [fewest 101052 -> 11859262 nodes, 1121 ns/node] [face 416353 -> 226571865 nodes, 215 ns/node] (by time)
+[65/100] ?     tilings/euclidean/stars/A/6/1/A6p90-20261028-142240 k<=17 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 75 min, ETA 41 min
+[66/100] ok    tilings/euclidean/stars/A/6/2/A6p30,A6p60-20261028-124250 k<=13 | auto 32.8s 8892609n (fewest) | fewest 37.9s 8894473n | face >40s | 4 tilings | elapsed 77 min, ETA 40 min
+      plan: to k <= 6, predicted at k <= 13: [fewest set 1 238937 -> 210354400 nodes, 939 ns/node] [face set 1 dropped] [fewest set 2 369337 -> 2987970148 nodes, 1143 ns/node] [face set 2 6370820 -> 667386778786 nodes, 418 ns/node] (by time)
+[67/100] ok    tilings/euclidean/stars/A/6/2/A6p30,A6p90-20261028-143324 k<=13 | auto 15.7s 13505473n (fewest) | fewest 15.1s 13506449n | face >40s | 964 tilings | elapsed 78 min, ETA 39 min
+      plan: to k <= 6, predicted at k <= 13: [fewest set 1 45210 -> 35246698 nodes, 979 ns/node] [face set 1 dropped] [fewest set 2 329867 -> 300083573 nodes, 936 ns/node] [face set 2 dropped] [fewest set 3 337877 -> 318681770 nodes, 819 ns/node] [face set 3 dropped] (by time)
+[68/100] ok    tilings/euclidean/stars/A/6/2/A6p60,A6p90-20261028-143300 k<=14 | auto 22.6s 10401890n (fewest) | fewest 23.2s 10402206n | face >40s | 6 tilings | elapsed 80 min, ETA 38 min
+      plan: to k <= 8, predicted at k <= 14: [fewest set 1 dropped] [face set 1 dropped] [fewest set 2 30822 -> 7722948 nodes, 952 ns/node] [face set 2 dropped] (by time)
+[69/100] ?     tilings/euclidean/stars/A/6/3/A6p30,A6p60,A6p90-20261028-143852 k<=14 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 82 min, ETA 37 min
+[70/100] ok    tilings/euclidean/stars/A/mixed/A3p30,A6p90-20261028-125914 k<=12 | auto 6.9s 6425006n (fewest) | fewest 7.1s 6425216n | face >40s | 234 tilings | elapsed 83 min, ETA 35 min
+      plan: to k <= 6, predicted at k <= 12: [fewest set 1 93746 -> 102389955 nodes, 601 ns/node] [face set 1 dropped] [fewest set 2 17847 -> 9566888 nodes, 911 ns/node] [face set 2 dropped] (by nodes)
+[71/100] ok    tilings/euclidean/stars/A/mixed/A4p30,A6p90-20261028-125528 k<=13 | auto 13.3s 9632082n (fewest) | fewest 13.4s 9633219n | face >40s | 55 tilings | elapsed 84 min, ETA 34 min
+      plan: to k <= 6, predicted at k <= 13: [fewest set 1 163136 -> 1084317491 nodes, 642 ns/node] [face set 1 dropped] [fewest set 2 10991 -> 8088962 nodes, 1102 ns/node] [face set 2 226141 -> 9586712001 nodes, 164 ns/node] (by nodes)
+[72/100] SLOW  tilings/euclidean/stars/B/12/1/120-20261027-001547 k<=20 | auto >40s (-) | fewest >40s | face 0.6s 2307876n | 85 tilings | elapsed 85 min, ETA 33 min
+[73/100] ?     tilings/euclidean/stars/B/12/1/30-20261027-001408 k<=15 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 87 min, ETA 32 min
+[74/100] SLOW  tilings/euclidean/stars/B/12/1/60-20261027-001557 k<=18 | auto >40s (-) | fewest >40s | face 33.2s 30197821n | 37 tilings | elapsed 89 min, ETA 31 min
+[75/100] ok    tilings/euclidean/stars/B/12/1/90-20261027-001051 k<=17 | auto 39.7s 124835074n (face) | fewest >40s | face 39.2s 124833748n | 144 tilings | elapsed 91 min, ETA 30 min
+      plan: to k <= 10, predicted at k <= 17: [fewest 423573 -> 758133329 nodes, 547 ns/node] [face 361786 -> 40217921 nodes, 642 ns/node] (by time)
+[76/100] SLOW  tilings/euclidean/stars/B/12/1/A12p90-20261028-144130 k<=17 | auto >40s (-) | fewest >40s | face 30.4s 65590916n | 144 tilings | elapsed 93 min, ETA 29 min
+[77/100] SLOW  tilings/euclidean/stars/B/12/2/30,60-20261027-004354 k<=11 | auto 2.9s 1708352n (fewest) | fewest 1.4s 1112046n | face >40s | 5 tilings | elapsed 94 min, ETA 28 min
+      plan: to k <= 2, predicted at k <= 11: [fewest set 1 4851 -> 484516788344150976 nodes, 1541 ns/node] [face set 1 14141 -> 18446744073709551615 nodes, 648 ns/node] [fewest set 2 2672 -> 276101 nodes, 1649 ns/node] [face set 2 18252 -> 535089923354590 nodes, 579 ns/node] [fewest set 3 1757 -> 1767254 nodes, 1953 ns/node] [face set 3 7289 -> 1948038261646 nodes, 707 ns/node] (by nodes)
+[78/100] ok    tilings/euclidean/stars/B/3/30-20261026-004808 k<=8 | auto 0.1s 77636n (fewest) | fewest 0.1s 77417n | face >40s | 35 tilings | elapsed 94 min, ETA 27 min
+      plan: to k <= 2, predicted at k <= 8: [fewest 721 -> 16248 nodes, 1475 ns/node] [face 3114 -> 693218764 nodes, 385 ns/node] (by nodes)
+[79/100] ?     tilings/euclidean/stars/B/4/30,60-20261027-001728 k<=14 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 96 min, ETA 26 min
+[80/100] ok    tilings/euclidean/stars/B/4/30-20261026-135720 k<=9 | auto 0.2s 268849n (fewest) | fewest 0.2s 268951n | face >40s | 287 tilings | elapsed 97 min, ETA 24 min
+      plan: to k <= 2, predicted at k <= 9: [fewest 781 -> 84486 nodes, 1225 ns/node] [face 2721 -> 4065845030 nodes, 274 ns/node] (by nodes)
+[81/100] ?     tilings/euclidean/stars/B/4/60-20261026-212636 k<=18 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 99 min, ETA 23 min
+[82/100] ok    tilings/euclidean/stars/B/6/1/B6a30-20261027-154337 k<=12 | auto 0.7s 588734n (fewest) | fewest 0.8s 588672n | face >40s | 11 tilings | elapsed 100 min, ETA 22 min
+      plan: to k <= 3, predicted at k <= 12: [fewest 1042 -> 58955 nodes, 1069 ns/node] [face dropped] (by nodes)
+[83/100] ok    tilings/euclidean/stars/B/6/1/B6a60-20261027-154320 k<=10 | auto 0.6s 786840n (fewest) | fewest 0.6s 786259n | face 22.4s 76660866n | 341 tilings | elapsed 100 min, ETA 21 min
+      plan: to k <= 5, predicted at k <= 10: [fewest 7135 -> 1495853 nodes, 804 ns/node] [face dropped] (by nodes)
+[84/100] ok    tilings/euclidean/stars/B/6/1/B6a90-20261027-154310 k<=20 | auto 20.3s 60708049n (face) | fewest >40s | face 18.9s 60709497n | 135 tilings | elapsed 101 min, ETA 19 min
+      plan: to k <= 8, predicted at k <= 20: [fewest 3177 -> 9365883 nodes, 1477 ns/node] [face 17906 -> 733122 nodes, 314 ns/node] (by nodes)
+[85/100] ok    tilings/euclidean/stars/B/6/2/30,60-20261027-003909 k<=12 | auto 2.6s 1954089n (fewest) | fewest 2.6s 1953656n | face >40s | 0 tilings | elapsed 102 min, ETA 18 min
+      plan: to k <= 2, predicted at k <= 12: [fewest set 1 2159 -> 60516 nodes, 878 ns/node] [face set 1 13715 -> 445776197320879 nodes, 379 ns/node] [fewest set 2 2095 -> 107548 nodes, 1156 ns/node] [face set 2 13892 -> 4693176461773265 nodes, 484 ns/node] (by nodes)
+[86/100] ok    tilings/euclidean/stars/B/6/2/30,90-20261027-004016 k<=15 | auto 17.0s 10729820n (fewest) | fewest 25.9s 13483132n | face >40s | 13 tilings | elapsed 104 min, ETA 17 min
+      plan: to k <= 2, predicted at k <= 15: [fewest set 1 1373 -> 134441 nodes, 1699 ns/node] [face set 1 5967 -> 2526876356385541 nodes, 932 ns/node] [fewest set 2 900 -> 291145 nodes, 3655 ns/node] [face set 2 4107 -> 16767219341719692 nodes, 961 ns/node] (by nodes)
+[87/100] ok    tilings/euclidean/stars/B/6/2/B6a60,B6a90-20261027-003828 k<=10 | auto 0.1s 36679n (fewest) | fewest 0.1s 36170n | face 8.1s 16034963n | 0 tilings | elapsed 104 min, ETA 15 min
+      plan: to k <= 2, predicted at k <= 10: [fewest set 1 1606 -> 7244476 nodes, 1293 ns/node] [face set 1 1948 -> 34758705 nodes, 715 ns/node] [fewest set 2 421 -> 46218 nodes, 1561 ns/node] [face set 2 1118 -> 497272892 nodes, 368 ns/node] [fewest set 3 211 -> 10809 nodes, 1846 ns/node] [face set 3 585 -> 324084763 nodes, 443 ns/node] (by nodes)
+[88/100] ok    tilings/euclidean/stars/C/3/C3p30-20261028-140719 k<=14 | auto 9.9s 5982963n (fewest) | fewest 10.2s 5982737n | face >40s | 110 tilings | elapsed 105 min, ETA 14 min
+      plan: to k <= 7, predicted at k <= 14: [fewest set 1 19196 -> 5510752 nodes, 1347 ns/node] [face set 1 dropped] [fewest set 2 19214 -> 5306405 nodes, 1214 ns/node] [face set 2 dropped] (by nodes)
+[89/100] ?     tilings/euclidean/stars/C/4/1/C4a60-20261028-141354 k<=19 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 107 min, ETA 13 min
+[90/100] ok    tilings/euclidean/stars/C/4/1/C4p30-20261028-141408 k<=12 | auto 2.1s 2033570n (fewest) | fewest 2.1s 2034430n | face 22.6s 81307270n | 155 tilings | elapsed 107 min, ETA 12 min
+      plan: to k <= 5, predicted at k <= 12: [fewest 3899 -> 854215 nodes, 1419 ns/node] [face dropped] (by nodes)
+[91/100] ok    tilings/euclidean/stars/C/4/2/C4p30,C4p60-20261028-141624 k<=13 | auto 8.5s 5694780n (fewest) | fewest 8.6s 5694509n | face >40s | 9 tilings | elapsed 108 min, ETA 11 min
+      plan: to k <= 6, predicted at k <= 13: [fewest set 1 32493 -> 30298447 nodes, 832 ns/node] [face set 1 dropped] [fewest set 2 15230 -> 5092191 nodes, 996 ns/node] [face set 2 dropped] (by nodes)
+[92/100] ok    tilings/euclidean/stars/C/6/1/C6p30-20261028-162610 k<=16 | auto 11.7s 6302417n (fewest) | fewest 11.8s 6301936n | face >40s | 13 tilings | elapsed 109 min, ETA 9 min
+      plan: to k <= 6, predicted at k <= 16: [fewest 5104 -> 8490264 nodes, 960 ns/node] [face dropped] (by nodes)
+[93/100] ok    tilings/euclidean/stars/C/6/1/C6p60-20261028-141941 k<=14 | auto 35.6s 30581935n (fewest) | fewest 35.0s 30581729n | face >40s | 670 tilings | elapsed 111 min, ETA 8 min
+      plan: to k <= 9, predicted at k <= 14: [fewest 235118 -> 28542234 nodes, 844 ns/node] [face dropped] (by time)
+[94/100] SLOW  tilings/euclidean/stars/C/6/1/C6p90-20261028-153323 k<=22 | auto >40s (-) | fewest >40s | face 25.1s 36092830n | 75 tilings | elapsed 113 min, ETA 7 min
+[95/100] ok    tilings/euclidean/stars/C/6/2/C6p30,C6p60-20261028-163007 k<=16 | auto 19.5s 11405435n (fewest) | fewest 20.0s 11404816n | face >40s | 0 tilings | elapsed 114 min, ETA 6 min
+      plan: to k <= 8, predicted at k <= 16: [fewest set 1 27153 -> 9239982 nodes, 958 ns/node] [face set 1 dropped] [fewest set 2 dropped] [face set 2 dropped] (by time)
+[96/100] ok    tilings/euclidean/stars/C/6/2/C6p30,C6p90-20261028-163023 k<=15 | auto 12.6s 7659115n (fewest) | fewest 13.1s 7659453n | face >40s | 3 tilings | elapsed 115 min, ETA 5 min
+      plan: to k <= 9, predicted at k <= 15: [fewest set 1 dropped] [face set 1 dropped] [fewest set 2 95377 -> 14219961 nodes, 1432 ns/node] [face set 2 dropped] (by time)
+[97/100] ok    tilings/euclidean/stars/C/6/2/C6p60,C6p90-20261028-162725 k<=17 | auto 25.2s 12849774n (fewest) | fewest 25.6s 12849775n | face >40s | 0 tilings | elapsed 117 min, ETA 4 min
+      plan: to k <= 6, predicted at k <= 17: [fewest set 1 11902 -> 488865738 nodes, 941 ns/node] [face set 1 dropped] [fewest set 2 1435 -> 271987 nodes, 1740 ns/node] [face set 2 43867 -> 937781872484 nodes, 286 ns/node] (by nodes)
+[98/100] ok    tilings/euclidean/stars/mixed/A6a60,C6a60-20261028-133955 k<=10 | auto 1.4s 1490538n (fewest) | fewest 1.5s 1490502n | face >40s | 72 tilings | elapsed 117 min, ETA 2 min
+      plan: to k <= 5, predicted at k <= 10: [fewest set 1 dropped] [face set 1 dropped] [fewest set 2 10943 -> 2097243 nodes, 1095 ns/node] [face set 2 57709 -> 60122698 nodes, 171 ns/node] (by nodes)
+[99/100] ok    tilings/euclidean/stars/star18-20261028-131106 k<=7 | auto 0.8s 323731n (fewest) | fewest 0.6s 323470n | face >40s | 678 tilings | elapsed 118 min, ETA 1 min
+      plan: to k <= 3, predicted at k <= 7: [fewest 30275 -> 7465147 nodes, 1634 ns/node] [face dropped] (by time)
+[100/100] ok    tilings/euclidean/stars/star20-20261028-131108 k<=7 | auto 0.1s 8110n (fewest) | fewest 0.1s 8109n | face 2.6s 10110790n | 5 tilings | elapsed 118 min, ETA 0 min
+      plan: to k <= 2, predicted at k <= 7: [fewest 1782 -> 159866 nodes, 1135 ns/node] [face 5893 -> 94946770 nodes, 162 ns/node] (by nodes)
+# done 2026-10-28 21:17:02: ? 22, SLOW 15, ok 63
+
+# retune, 2026-10-28 21:18:34: the 15 SLOW boards are mostly the face rule dropped early by PLAN_BEHIND (30x behind at small k, 16x ahead at the full k on A12p120). Re-run of the failures plus 5 fewest-wins boards, 60 s cap:
+# 2026-10-28 21:19:03 env PB=1e18, 60 s cap
+[1/14] A12p120-20261028-122123 k<=14  12.6s  10193272n  fewest options
+      plan: to k <= 2, predicted at k <= 14: [fewest 36 -> 2861 nodes, 5388 ns/node] [face 90 -> 109460202 nodes, 1341 ns/node] (by nodes)
+[2/14] A12p60.120-20261028-165419 k<=22  >60s  -n  fewest options
+      plan: to k <= 11, predicted at k <= 22: [fewest 34034 -> 22792239 nodes, 831 ns/node] [face dropped] (by time)
+[3/14] 120-20261027-001547 k<=20  >60s  -n  fewest options
+      plan: to k <= 4, predicted at k <= 20: [fewest 101 -> 4407 nodes, 3471 ns/node] [face 537 -> 66434717 nodes, 883 ns/node] (by nodes)
+[4/14] A6p30-20261028-142428 k<=15  41.2s  21393979n  fewest options
+      plan: to k <= 9, predicted at k <= 15: [fewest 383980 -> 70665476 nodes, 1091 ns/node] [face dropped] (by time)
+[5/14] C6p90-20261028-153323 k<=22  >60s  -n  fewest options
+      plan: to k <= 11, predicted at k <= 22: [fewest 10430 -> 4457608 nodes, 1910 ns/node] [face dropped] (by nodes)
+[6/14] 60-20261027-001557 k<=18  >60s  -n  fewest options
+      plan: to k <= 3, predicted at k <= 18: [fewest 263 -> 31406 nodes, 7127 ns/node] [face 2057 -> 1531045917151 nodes, 424 ns/node] (by nodes)
+[7/14] A4p60-20261028-130455 k<=13  48.4s  64103198n  fewest options
+      plan: to k <= 9, predicted at k <= 13: [fewest 790321 -> 67812362 nodes, 830 ns/node] [face dropped] (by time)
+[8/14] blob-20261027-160304 k<=11  2.0s  1934392n  fewest options
+      plan: to k <= 7, predicted at k <= 11: [fewest 68589 -> 3516600 nodes, 1105 ns/node] [face dropped] (by time)
+[9/14] A12a60_&_A6a90,150-20261028-170628 k<=10  0.0s  -n  ?
+      (no plan line)
+[10/14] A12p30-20261028-121825 k<=11  23.7s  17781582n  fewest options
+      plan: to k <= 5, predicted at k <= 11: [fewest 96862 -> 164598961 nodes, 705 ns/node] [face dropped] (by time)
+[11/14] C6p60-20261028-141941 k<=14  36.3s  30582592n  fewest options
+      plan: to k <= 9, predicted at k <= 14: [fewest 235087 -> 28759950 nodes, 853 ns/node] [face dropped] (by time)
+[12/14] A6p60-20261028-123713 k<=10  6.8s  6136347n  fewest options
+      plan: to k <= 6, predicted at k <= 10: [fewest 101597 -> 12091034 nodes, 598 ns/node] [face 417570 -> 228872145 nodes, 114 ns/node] (by time)
+[13/14] A6a60,C6a60-20261028-133955 k<=10  1.5s  1490966n  fewest options
+      plan: to k <= 5, predicted at k <= 10: [fewest set 1 dropped] [face set 1 dropped] [fewest set 2 10925 -> 2096937 nodes, 815 ns/node] [face set 2 57575 -> 58648175 nodes, 160 ns/node] (by nodes)
+[14/14] A12p90,A12p120-20261028-130721 k<=14  28.3s  20038747n  fewest options
+      plan: to k <= 9, predicted at k <= 14: [fewest set 1 dropped] [face set 1 dropped] [fewest set 2 64647 -> 13606394 nodes, 611 ns/node] [face set 2 dropped] (by time)
+# fix: a trial capped by the budget ends the trials (that k rolled back for every way) instead of dropping the way that ran second; A12p60.120 traced: face was ahead in prediction at k<=10 (2.3M vs 14M) and dropped at k<=11 with a 0-node cap
+# 2026-10-28 21:28:16 env (defaults), 60 s cap
+[1/13] A12p120-20261028-122123 k<=14  0.8s  1045133n  face nearest
+      plan: to k <= 9, predicted at k <= 14: [fewest 40932 -> 6315860 nodes, 2332 ns/node] [face 51761 -> 7301230 nodes, 234 ns/node] (by time)
+[2/13] A12p60.120-20261028-165419 k<=22  0.5s  907628n  face nearest
+      plan: to k <= 10, predicted at k <= 22: [fewest 18763 -> 14638583 nodes, 2520 ns/node] [face 21079 -> 2445087 nodes, 309 ns/node] (by nodes)
+[3/13] 120-20261027-001547 k<=20  >60s  -n  fewest options
+      plan: to k <= 4, predicted at k <= 20: [fewest 105 -> 5511 nodes, 2149 ns/node] [face 569 -> 98411541 nodes, 414 ns/node] (by nodes)
+[4/13] A6p30-20261028-142428 k<=15  9.1s  17930417n  face nearest
+      plan: to k <= 8, predicted at k <= 15: [fewest 158896 -> 52354757 nodes, 2652 ns/node] [face 735153 -> 203689631 nodes, 211 ns/node] (by time)
+[5/13] C6p90-20261028-153323 k<=22  >60s  -n  fewest options
+      plan: to k <= 9, predicted at k <= 22: [fewest 3396 -> 1579527 nodes, 3518 ns/node] [face 20661 -> 3439558 nodes, 320 ns/node] (by nodes)
+[6/13] 60-20261027-001557 k<=18  >60s  -n  fewest options
+      plan: to k <= 4, predicted at k <= 18: [fewest 470 -> 79072 nodes, 1524 ns/node] [face 3987 -> 1918863468 nodes, 313 ns/node] (by nodes)
+[7/13] A4p60-20261028-130455 k<=13  24.5s  93839082n  face nearest
+      plan: to k <= 8, predicted at k <= 13: [fewest 260895 -> 70226850 nodes, 2207 ns/node] [face 802648 -> 297867792 nodes, 122 ns/node] (by time)
+[8/13] blob-20261027-160304 k<=11  1.0s  4939307n  face nearest
+      plan: to k <= 6, predicted at k <= 11: [fewest 25844 -> 3842740 nodes, 2143 ns/node] [face 34098 -> 8405472 nodes, 232 ns/node] (by time)
+[9/13] A12p30-20261028-121825 k<=11  16.5s  17785252n  fewest options
+      plan: to k <= 4, predicted at k <= 11: [fewest 28693 -> 432125371 nodes, 770 ns/node] [face dropped] (by time)
+[10/13] C6p60-20261028-141941 k<=14  37.0s  30581013n  fewest options
+      plan: to k <= 8, predicted at k <= 14: [fewest 89559 -> 34571769 nodes, 2376 ns/node] [face 578255 -> 1432504433 nodes, 143 ns/node] (by time)
+[11/13] A6p60-20261028-123713 k<=10  6.8s  6136938n  fewest options
+      plan: to k <= 6, predicted at k <= 10: [fewest 101154 -> 11808967 nodes, 859 ns/node] [face 417759 -> 227547140 nodes, 123 ns/node] (by time)
+[12/13] A6a60,C6a60-20261028-133955 k<=10  1.5s  1490441n  fewest options
+      plan: to k <= 4, predicted at k <= 10: [fewest set 1 17278 -> 116335054 nodes, 916 ns/node] [face set 1 50857 -> 4944672942 nodes, 149 ns/node] [fewest set 2 3916 -> 2937236 nodes, 3465 ns/node] [face set 2 12865 -> 118340676 nodes, 227 ns/node] (by nodes)
+[13/13] A12p90,A12p120-20261028-130721 k<=14  28.5s  20037703n  fewest options
+      plan: to k <= 7, predicted at k <= 14: [fewest set 1 13113 -> 8263586 nodes, 3008 ns/node] [face set 1 52892 -> 83385228 nodes, 168 ns/node] [fewest set 2 7521 -> 7179666 nodes, 2426 ns/node] [face set 2 31047 -> 76749785 nodes, 406 ns/node] (by nodes)
+# floor: the trials may always spend PLAN_FIRST (2M nodes) even when 5% of the prediction is less; B12/120 stopped at k<=4 on a 5511-node prediction
+# 2026-10-28 21:33:58 env (defaults), 60 s cap
+[1/22] 120-20261027-001547 k<=20  3.1s  2308351n  face nearest
+      plan: to k <= 15, predicted at k <= 20: [fewest 476846 -> 35712631 nodes, 1589 ns/node] [face 142694 -> 3165097 nodes, 396 ns/node] (by time)
+[2/22] C6p90-20261028-153323 k<=22  17.9s  36089609n  face nearest
+      plan: to k <= 15, predicted at k <= 22: [fewest 193738 -> 49035415 nodes, 7944 ns/node] [face 468256 -> 25216618 nodes, 326 ns/node] (by time)
+[3/22] 60-20261027-001557 k<=18  >60s  -n  fewest options
+      plan: to k <= 6, predicted at k <= 18: [fewest 1354 -> 468603 nodes, 2570 ns/node] [face dropped] (by nodes)
+[4/22] A12p90-20261028-144130 k<=17  31.0s  65592948n  face nearest
+      plan: to k <= 11, predicted at k <= 17: [fewest 131843 -> 33659184 nodes, 3572 ns/node] [face 540349 -> 77970940 nodes, 270 ns/node] (by time)
+[5/22] 30,60-20261027-004354 k<=11  3.1s  1113791n  fewest options
+      plan: to k <= 9, predicted at k <= 11: [fewest set 1 dropped] [face set 1 dropped] [fewest set 2 519475 -> 3534853 nodes, 745 ns/node] [face set 2 dropped] [fewest set 3 66769 -> 286105 nodes, 2000 ns/node] [face set 3 dropped] (by time)
+[6/22] A12p30,A12p90-20261028-130827 k<=12  5.8s  2486431n  fewest options
+      plan: to k <= 8, predicted at k <= 12: [fewest set 1 888176 -> 59652804 nodes, 1035 ns/node] [face set 1 dropped] [fewest set 2 44290 -> 2070948 nodes, 2804 ns/node] [face set 2 244126 -> 35667147 nodes, 229 ns/node] (by time)
+[7/22] B6a60-20261027-154320 k<=10  1.2s  785947n  fewest options
+      plan: to k <= 6, predicted at k <= 10: [fewest 20078 -> 1463142 nodes, 2489 ns/node] [face 602886 -> 921588081 nodes, 203 ns/node] (by time)
+[8/22] star20-20261028-131108 k<=7  0.1s  8106n  fewest options
+      plan: to k <= 4, predicted at k <= 7: [fewest 6443 -> 43632 nodes, 1060 ns/node] [face dropped] (by nodes)
+[9/22] 30-20261026-004808 k<=8  0.1s  77167n  fewest options
+      plan: to k <= 4, predicted at k <= 8: [fewest 2120 -> 18795 nodes, 965 ns/node] [face dropped] (by nodes)
+[10/22] A12p120-20261028-122123 k<=14  1.5s  1045064n  face nearest
+      plan: to k <= 11, predicted at k <= 14: [fewest 293858 -> 5679233 nodes, 788 ns/node] [face 227198 -> 2078599 nodes, 484 ns/node] (by time)
+[11/22] A12p60.120-20261028-165419 k<=22  2.3s  907752n  face nearest
+      plan: to k <= 16, predicted at k <= 22: [fewest 654998 -> 23464193 nodes, 1439 ns/node] [face 134436 -> 848222 nodes, 255 ns/node] (by time)
+[12/22] 120-20261027-001547 k<=20  2.4s  2307864n  face nearest
+      plan: to k <= 15, predicted at k <= 20: [fewest 476312 -> 36187102 nodes, 1290 ns/node] [face 142747 -> 3140245 nodes, 433 ns/node] (by time)
+[13/22] A6p30-20261028-142428 k<=15  7.7s  17929800n  face nearest
+      plan: to k <= 8, predicted at k <= 15: [fewest 158983 -> 51591053 nodes, 2514 ns/node] [face 732125 -> 200445443 nodes, 137 ns/node] (by time)
+[14/22] C6p90-20261028-153323 k<=22  26.4s  36090877n  face nearest
+      plan: to k <= 15, predicted at k <= 22: [fewest 193659 -> 49066023 nodes, 6393 ns/node] [face 468326 -> 24984223 nodes, 254 ns/node] (by time)
+[15/22] 60-20261027-001557 k<=18  >60s  -n  fewest options
+      plan: to k <= 6, predicted at k <= 18: [fewest 1232 -> 1020748 nodes, 2079 ns/node] [face dropped] (by nodes)
+[16/22] A4p60-20261028-130455 k<=13  24.0s  93838893n  face nearest
+      plan: to k <= 8, predicted at k <= 13: [fewest 260345 -> 70658439 nodes, 2704 ns/node] [face 802999 -> 296322459 nodes, 112 ns/node] (by time)
+[17/22] blob-20261027-160304 k<=11  1.7s  4939979n  face nearest
+      plan: to k <= 8, predicted at k <= 11: [fewest 181620 -> 3384705 nodes, 1819 ns/node] [face 382041 -> 14006860 nodes, 175 ns/node] (by time)
+[18/22] A12p30-20261028-121825 k<=11  18.8s  17784327n  fewest options
+      plan: to k <= 4, predicted at k <= 11: [fewest 29101 -> 402499049 nodes, 769 ns/node] [face dropped] (by time)
+[19/22] C6p60-20261028-141941 k<=14  35.9s  30581881n  fewest options
+      plan: to k <= 8, predicted at k <= 14: [fewest 89432 -> 33910802 nodes, 2391 ns/node] [face 579645 -> 1448055283 nodes, 166 ns/node] (by time)
+[20/22] A6p60-20261028-123713 k<=10  7.2s  6134442n  fewest options
+      plan: to k <= 6, predicted at k <= 10: [fewest 101216 -> 11770269 nodes, 2679 ns/node] [face 417098 -> 225812270 nodes, 146 ns/node] (by time)
+[21/22] A6a60,C6a60-20261028-133955 k<=10  1.9s  1490616n  fewest options
+      plan: to k <= 6, predicted at k <= 10: [fewest set 1 216025 -> 34005301 nodes, 618 ns/node] [face set 1 dropped] [fewest set 2 30176 -> 1804722 nodes, 1863 ns/node] [face set 2 227435 -> 69869916 nodes, 133 ns/node] (by time)
+[22/22] A12p90,A12p120-20261028-130721 k<=14  14.6s  34105338n  face nearest
+      plan: to k <= 9, predicted at k <= 14: [fewest set 1 83942 -> 8789952 nodes, 2248 ns/node] [face set 1 559144 -> 201175964 nodes, 220 ns/node] [fewest set 2 64992 -> 13789624 nodes, 2290 ns/node] [face set 2 287384 -> 73106488 nodes, 124 ns/node] (by time)
+# B12/60 traced: face 37.6x behind at k<=6, ahead in prediction by k<=12 (15.6M vs 102M); trying PLAN_BEHIND 100 and no drop
+# 2026-10-28 21:40:12 env PB=100, 60 s cap
+[1/22] 120-20261027-001547 k<=20  2.8s  2308310n  face nearest
+      plan: to k <= 15, predicted at k <= 20: [fewest 476233 -> 36047266 nodes, 1502 ns/node] [face 142949 -> 3226174 nodes, 407 ns/node] (by time)
+[2/22] C6p90-20261028-153323 k<=22  19.4s  36087996n  face nearest
+      plan: to k <= 15, predicted at k <= 22: [fewest 193666 -> 48940571 nodes, 7800 ns/node] [face 467724 -> 25318313 nodes, 279 ns/node] (by time)
+[3/22] 60-20261027-001557 k<=18  35.6s  30197609n  face nearest
+      plan: to k <= 12, predicted at k <= 18: [fewest 226858 -> 102375982 nodes, 627 ns/node] [face 512499 -> 15251041 nodes, 750 ns/node] (by time)
+[4/22] A12p90-20261028-144130 k<=17  39.8s  65595766n  face nearest
+      plan: to k <= 11, predicted at k <= 17: [fewest 131762 -> 32940092 nodes, 3578 ns/node] [face 540165 -> 76808733 nodes, 204 ns/node] (by time)
+[5/22] 30,60-20261027-004354 k<=11  2.9s  1111526n  fewest options
+      plan: to k <= 5, predicted at k <= 11: [fewest set 1 188290 -> 93659188 nodes, 698 ns/node] [face set 1 dropped] [fewest set 2 19758 -> 1215513 nodes, 2416 ns/node] [face set 2 dropped] [fewest set 3 6546 -> 109698 nodes, 1671 ns/node] [face set 3 dropped] (by nodes)
+[6/22] A12p30,A12p90-20261028-130827 k<=12  5.0s  2488788n  fewest options
+      plan: to k <= 8, predicted at k <= 12: [fewest set 1 889471 -> 60082530 nodes, 1386 ns/node] [face set 1 dropped] [fewest set 2 44135 -> 2034804 nodes, 973 ns/node] [face set 2 244249 -> 35576498 nodes, 337 ns/node] (by time)
+[7/22] B6a60-20261027-154320 k<=10  1.3s  785965n  fewest options
+      plan: to k <= 6, predicted at k <= 10: [fewest 20055 -> 1589079 nodes, 3646 ns/node] [face 598121 -> 859098724 nodes, 196 ns/node] (by time)
+[8/22] star20-20261028-131108 k<=7  0.2s  8104n  fewest options
+      plan: to k <= 4, predicted at k <= 7: [fewest 6411 -> 42842 nodes, 1101 ns/node] [face dropped] (by nodes)
+[9/22] 30-20261026-004808 k<=8  0.3s  77423n  fewest options
+      plan: to k <= 5, predicted at k <= 8: [fewest 4721 -> 38265 nodes, 1396 ns/node] [face dropped] (by nodes)
+[10/22] A12p120-20261028-122123 k<=14  1.6s  1045053n  face nearest
+      plan: to k <= 11, predicted at k <= 14: [fewest 293948 -> 5761987 nodes, 1260 ns/node] [face 226881 -> 2093872 nodes, 365 ns/node] (by time)
+[11/22] A12p60.120-20261028-165419 k<=22  2.4s  907656n  face nearest
+      plan: to k <= 16, predicted at k <= 22: [fewest 655067 -> 23397692 nodes, 1395 ns/node] [face 134083 -> 830925 nodes, 303 ns/node] (by time)
+[12/22] 120-20261027-001547 k<=20  2.4s  2308453n  face nearest
+      plan: to k <= 15, predicted at k <= 20: [fewest 475084 -> 35134747 nodes, 1228 ns/node] [face 142586 -> 3141868 nodes, 508 ns/node] (by time)
+[13/22] A6p30-20261028-142428 k<=15  9.4s  17930180n  face nearest
+      plan: to k <= 8, predicted at k <= 15: [fewest 158205 -> 51581690 nodes, 3533 ns/node] [face 732037 -> 192834856 nodes, 161 ns/node] (by time)
+[14/22] C6p90-20261028-153323 k<=22  29.5s  36092624n  face nearest
+      plan: to k <= 15, predicted at k <= 22: [fewest 193825 -> 48988182 nodes, 7173 ns/node] [face 467932 -> 25144653 nodes, 298 ns/node] (by time)
+[15/22] 60-20261027-001557 k<=18  49.8s  30197506n  face nearest
+      plan: to k <= 12, predicted at k <= 18: [fewest 224352 -> 102493972 nodes, 5201 ns/node] [face 511737 -> 15207940 nodes, 1718 ns/node] (by time)
+[16/22] A4p60-20261028-130455 k<=13  25.1s  93840242n  face nearest
+      plan: to k <= 8, predicted at k <= 13: [fewest 260795 -> 71824165 nodes, 1836 ns/node] [face 802918 -> 297339124 nodes, 92 ns/node] (by time)
+[17/22] blob-20261027-160304 k<=11  1.7s  4939370n  face nearest
+      plan: to k <= 8, predicted at k <= 11: [fewest 181746 -> 3390381 nodes, 1875 ns/node] [face 382626 -> 13898227 nodes, 168 ns/node] (by time)
+[18/22] A12p30-20261028-121825 k<=11  23.6s  17783201n  fewest options
+      plan: to k <= 5, predicted at k <= 11: [fewest 97612 -> 160333315 nodes, 574 ns/node] [face dropped] (by time)
+[19/22] C6p60-20261028-141941 k<=14  >60s  -n  fewest options
+      plan: to k <= 8, predicted at k <= 14: [fewest 89383 -> 34460257 nodes, 3003 ns/node] [face 579402 -> 1467470049 nodes, 196 ns/node] (by time)
+[20/22] A6p60-20261028-123713 k<=10  27.2s  77149362n  face nearest
+      plan: to k <= 6, predicted at k <= 10: [fewest 101316 -> 11643366 nodes, 5015 ns/node] [face 416757 -> 225007771 nodes, 239 ns/node] (by time)
+[21/22] A6a60,C6a60-20261028-133955 k<=10  2.6s  1491021n  fewest options
+      plan: to k <= 5, predicted at k <= 10: [fewest set 1 62264 -> 40566358 nodes, 2903 ns/node] [face set 1 320066 -> 3071741398 nodes, 133 ns/node] [fewest set 2 10896 -> 2046696 nodes, 2978 ns/node] [face set 2 57774 -> 64509301 nodes, 545 ns/node] (by nodes)
+[22/22] A12p90,A12p120-20261028-130721 k<=14  17.7s  34105236n  face nearest
+      plan: to k <= 9, predicted at k <= 14: [fewest set 1 83413 -> 8574599 nodes, 3286 ns/node] [face set 1 559658 -> 204848422 nodes, 208 ns/node] [fewest set 2 63754 -> 12993975 nodes, 3999 ns/node] [face set 2 287797 -> 75743215 nodes, 114 ns/node] (by time)
+# 2026-10-28 21:46:13 env PB=1e18, 60 s cap
+[1/22] 120-20261027-001547 k<=20  2.7s  2308104n  face nearest
+      plan: to k <= 15, predicted at k <= 20: [fewest 475468 -> 35582951 nodes, 1115 ns/node] [face 143085 -> 3129418 nodes, 665 ns/node] (by time)
+[2/22] C6p90-20261028-153323 k<=22  29.8s  36087873n  face nearest
+      plan: to k <= 15, predicted at k <= 22: [fewest 193566 -> 48844107 nodes, 6782 ns/node] [face 468458 -> 25167935 nodes, 314 ns/node] (by time)
+[3/22] 60-20261027-001557 k<=18  >60s  -n  face nearest
+      plan: to k <= 12, predicted at k <= 18: [fewest 224352 -> 108696884 nodes, 4375 ns/node] [face 511987 -> 15031757 nodes, 1223 ns/node] (by time)
+[4/22] A12p90-20261028-144130 k<=17  55.2s  65588022n  face nearest
+      plan: to k <= 11, predicted at k <= 17: [fewest 131673 -> 32342896 nodes, 6837 ns/node] [face 540860 -> 78289098 nodes, 399 ns/node] (by time)
+[5/22] 30,60-20261027-004354 k<=11  4.4s  1111831n  fewest options
+      plan: to k <= 3, predicted at k <= 11: [fewest set 1 26375 -> 47546928050337 nodes, 2131 ns/node] [face set 1 806081 -> 18446744073709551615 nodes, 737 ns/node] [fewest set 2 4981 -> 490744 nodes, 4679 ns/node] [face set 2 158051 -> 40917969161151 nodes, 1288 ns/node] [fewest set 3 2518 -> 248365 nodes, 2778 ns/node] [face set 3 60071 -> 1601397693711 nodes, 15482 ns/node] (by nodes)
+[6/22] A12p30,A12p90-20261028-130827 k<=12  4.7s  2486923n  fewest options
+      plan: to k <= 4, predicted at k <= 12: [fewest set 1 11421 -> 294863824 nodes, 3948 ns/node] [face set 1 797573 -> 16344430448437142 nodes, 546 ns/node] [fewest set 2 1035 -> 16578698 nodes, 2817 ns/node] [face set 2 2056 -> 58950460 nodes, 799 ns/node] (by nodes)
+[7/22] B6a60-20261027-154320 k<=10  1.7s  786031n  fewest options
+      plan: to k <= 6, predicted at k <= 10: [fewest 20441 -> 1557157 nodes, 2420 ns/node] [face 591908 -> 872834532 nodes, 371 ns/node] (by time)
+[8/22] star20-20261028-131108 k<=7  0.6s  8109n  fewest options
+      plan: to k <= 4, predicted at k <= 7: [fewest 6404 -> 43335 nodes, 2533 ns/node] [face 922642 -> 1816277227 nodes, 257 ns/node] (by nodes)
+[9/22] 30-20261026-004808 k<=8  1.0s  77697n  fewest options
+      plan: to k <= 4, predicted at k <= 8: [fewest 1980 -> 14767 nodes, 3409 ns/node] [face 154028 -> 424211871 nodes, 447 ns/node] (by nodes)
+[10/22] A12p120-20261028-122123 k<=14  2.9s  1045333n  face nearest
+      plan: to k <= 11, predicted at k <= 14: [fewest 293679 -> 5751374 nodes, 866 ns/node] [face 227111 -> 2105979 nodes, 696 ns/node] (by time)
+[11/22] A12p60.120-20261028-165419 k<=22  4.3s  907807n  face nearest
+      plan: to k <= 16, predicted at k <= 22: [fewest 652820 -> 23169742 nodes, 3335 ns/node] [face 134788 -> 836552 nodes, 317 ns/node] (by time)
+[12/22] 120-20261027-001547 k<=20  4.0s  2308467n  face nearest
+      plan: to k <= 15, predicted at k <= 20: [fewest 475943 -> 35608553 nodes, 2040 ns/node] [face 144005 -> 3263504 nodes, 652 ns/node] (by time)
+[13/22] A6p30-20261028-142428 k<=15  9.0s  17929768n  face nearest
+      plan: to k <= 8, predicted at k <= 15: [fewest 158559 -> 54127677 nodes, 4210 ns/node] [face 733796 -> 199335156 nodes, 278 ns/node] (by time)
+[14/22] C6p90-20261028-153323 k<=22  43.5s  36087960n  face nearest
+      plan: to k <= 15, predicted at k <= 22: [fewest 193787 -> 48302089 nodes, 11306 ns/node] [face 467712 -> 24922925 nodes, 422 ns/node] (by time)
+[15/22] 60-20261027-001557 k<=18  >60s  -n  face nearest
+      plan: to k <= 12, predicted at k <= 18: [fewest 224354 -> 93312907 nodes, 8096 ns/node] [face 511896 -> 15497950 nodes, 1625 ns/node] (by time)
+[16/22] A4p60-20261028-130455 k<=13  55.9s  93839060n  face nearest
+      plan: to k <= 8, predicted at k <= 13: [fewest 260499 -> 71487366 nodes, 3832 ns/node] [face 803411 -> 302422358 nodes, 150 ns/node] (by time)
+[17/22] blob-20261027-160304 k<=11  3.7s  4940866n  face nearest
+      plan: to k <= 8, predicted at k <= 11: [fewest 181857 -> 3363876 nodes, 4570 ns/node] [face 381877 -> 13675376 nodes, 374 ns/node] (by time)
+[18/22] A12p30-20261028-121825 k<=11  45.0s  17788582n  fewest options
+      plan: to k <= 4, predicted at k <= 11: [fewest 28542 -> 581729058 nodes, 3453 ns/node] [face 2058563 -> 7107150997681058 nodes, 399 ns/node] (by time)
+[19/22] C6p60-20261028-141941 k<=14  59.9s  30583070n  fewest options
+      plan: to k <= 8, predicted at k <= 14: [fewest 89876 -> 35924328 nodes, 6901 ns/node] [face 578904 -> 1448585248 nodes, 499 ns/node] (by time)
+[20/22] A6p60-20261028-123713 k<=10  19.0s  77155105n  face nearest
+      plan: to k <= 6, predicted at k <= 10: [fewest 101345 -> 12027100 nodes, 3267 ns/node] [face 418304 -> 226990921 nodes, 150 ns/node] (by time)
+[21/22] A6a60,C6a60-20261028-133955 k<=10  2.9s  1491110n  fewest options
+      plan: to k <= 5, predicted at k <= 10: [fewest set 1 62053 -> 43190016 nodes, 4883 ns/node] [face set 1 320834 -> 2958153766 nodes, 142 ns/node] [fewest set 2 10929 -> 2037966 nodes, 3331 ns/node] [face set 2 57526 -> 58636136 nodes, 834 ns/node] (by nodes)
+[22/22] A12p90,A12p120-20261028-130721 k<=14  24.0s  34111589n  face nearest
+      plan: to k <= 9, predicted at k <= 14: [fewest set 1 83696 -> 8328605 nodes, 5714 ns/node] [face set 1 559439 -> 201291723 nodes, 320 ns/node] [fewest set 2 63472 -> 12610605 nodes, 4746 ns/node] [face set 2 287993 -> 74377498 nodes, 202 ns/node] (by time)
+
+# full re-run with the installed fix (budget rollback + 2M-node floor, PLAN_BEHIND 30), 2026-10-28 21:58:58
+# automatic start set + rule against each rule forced, 2026-10-28 21:58:58: 99 distinct boards at the k they were run with, 40 s cap per run, 10 threads
+# verdict: ok = auto within 1.25x (+0.3 s) of the faster forced rule; SLOW = not; WIN = both forced past the cap, auto not; ? = all past the cap
+# other sessions' vitest runs shared the CPU for part of this, so seconds are noisy; nodes are not
+[1/99] ?     boards/123_1_4657.board k<=3 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 2 min, ETA 196 min
+[2/99] ?     boards/123_1_4657_init13.board k<=3 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 4 min, ETA 194 min
+[3/99] ?     boards/1247_1_0612.board k<=3 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 6 min, ETA 192 min
+[4/99] ?     boards/hybrid_2_9830.board k<=3 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 8 min, ETA 190 min
+[5/99] ok    boards/squares_edges.board k<=5 | auto 1.6s 2544651n (face) | fewest 1.9s 1968310n | face 1.4s 2546007n | 53060 tilings | elapsed 8 min, ETA 152 min
+      plan: to k <= 4, predicted at k <= 5: [fewest 335124 -> 2416743 nodes, 320 ns/node] [face 478007 -> 3758421 nodes, 131 ns/node] (by time)
+[6/99] ok    colorings/euclidean/3,4-20261028-123025 k<=3 | auto 0.6s 2235155n (face) | fewest 1.2s 1075047n | face 0.6s 2233923n | 14718 tilings | elapsed 8 min, ETA 126 min
+      plan: to k <= 2, predicted at k <= 3: [fewest 51189 -> 1763333 nodes, 376 ns/node] [face 92442 -> 4441540 nodes, 118 ns/node] (by time)
+[7/99] ok    colorings/euclidean/4-20261028-164940 k<=6 | auto 10.7s 15885549n (face) | fewest 13.3s 12966277n | face 10.0s 15886288n | 332965 tilings | elapsed 9 min, ETA 114 min
+      plan: to k <= 4, predicted at k <= 6: [fewest 334506 -> 17209207 nodes, 300 ns/node] [face 479043 -> 29568637 nodes, 120 ns/node] (by time)
+[8/99] SLOW  tilings/euclidean/isotoxal/A12_60_and_120-20261026-170015 k<=12 | auto >40s (-) | fewest 21.5s 31903232n | face 38.5s 198370327n | 10947 tilings | elapsed 10 min, ETA 118 min
+[9/99] ?     tilings/euclidean/isotoxal/A12_60_and_120-20261026-170116 k<=8 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 12 min, ETA 124 min
+[10/99] ?     tilings/euclidean/isotoxal/A12_60_and_120-20261026-191601 k<=17 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 14 min, ETA 128 min
+[11/99] SLOW  tilings/euclidean/isotoxal/A12p60.120-20261026-191637 k<=22 | auto 3.1s 1010636n (face) | fewest >40s | face 0.8s 1010743n | 741 tilings | elapsed 15 min, ETA 121 min
+      plan: to k <= 15, predicted at k <= 22: [fewest 377607 -> 27228666 nodes, 1681 ns/node] [face 106464 -> 972773 nodes, 405 ns/node] (by time)
+[12/99] SLOW  tilings/euclidean/isotoxal/A12p60.120-20261028-165419 k<=22 | auto 2.7s 907335n (face) | fewest >40s | face 0.7s 907357n | 741 tilings | elapsed 16 min, ETA 115 min
+      plan: to k <= 16, predicted at k <= 22: [fewest 655175 -> 23779199 nodes, 1197 ns/node] [face 134243 -> 809519 nodes, 278 ns/node] (by time)
+[13/99] SLOW  tilings/euclidean/mixed/A12a60_&_A6a90,150-20261028-214113 k<=11 | auto 39.3s 18739965n (fewest) | fewest 21.6s 21558788n | face >40s | 260 tilings | elapsed 18 min, ETA 116 min
+      plan: to k <= 5, predicted at k <= 11: [fewest set 1 19776 -> 27442748 nodes, 6347 ns/node] [face set 1 104600 -> 3186994364 nodes, 860 ns/node] [fewest set 2 34120 -> 109666150 nodes, 2599 ns/node] [face set 2 194900 -> 10929043927 nodes, 138 ns/node] (by nodes)
+[14/99] WIN   tilings/euclidean/mixed/A4a30_&_A6a90,150-20261028-214220 k<=11 | auto 37.0s 38338026n (fewest) | fewest >40s | face >40s | 1203 tilings | elapsed 19 min, ETA 118 min
+      plan: to k <= 5, predicted at k <= 11: [fewest set 1 34823 -> 261619108 nodes, 3268 ns/node] [face set 1 673474 -> 166015709826 nodes, 90 ns/node] [fewest set 2 37949 -> 165445026 nodes, 3227 ns/node] [face set 2 538929 -> 135489354752 nodes, 1015 ns/node] (by time)
+[15/99] ok    tilings/euclidean/mixed/A4a60_&_A6a90,150-20261028-214449 k<=10 | auto 22.8s 21663766n (fewest) | fewest 24.5s 21664389n | face 35.6s 208210064n | 4262 tilings | elapsed 21 min, ETA 117 min
+      plan: to k <= 5, predicted at k <= 10: [fewest set 1 63619 -> 77207037 nodes, 3678 ns/node] [face set 1 325556 -> 4981750674 nodes, 443 ns/node] [fewest set 2 68787 -> 78921658 nodes, 3425 ns/node] [face set 2 599153 -> 11998306595 nodes, 89 ns/node] (by time)
+[16/99] ok    tilings/euclidean/mixed/A6p30,A6p90.150-20261028-215120 k<=11 | auto 32.6s 32689512n (fewest) | fewest 35.9s 32688374n | face >40s | 809 tilings | elapsed 23 min, ETA 118 min
+      plan: to k <= 5, predicted at k <= 11: [fewest set 1 45517 -> 48415241 nodes, 12506 ns/node] [face set 1 220364 -> 4656119956 nodes, 1529 ns/node] [fewest set 2 41741 -> 102293618 nodes, 2699 ns/node] [face set 2 451468 -> 37146323059 nodes, 193 ns/node] (by time)
+[17/99] ?     tilings/euclidean/mixed/A6p60,A6p90.150-20261028-214634 k<=12 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 25 min, ETA 119 min
+[18/99] ok    tilings/euclidean/mixed/A6p90,A6p90.150-20261028-214958 k<=12 | auto 14.9s 10635388n (fewest) | fewest 15.9s 10635044n | face 20.9s 61900480n | 718 tilings | elapsed 26 min, ETA 115 min
+      plan: to k <= 6, predicted at k <= 12: [fewest set 1 24033 -> 8495294 nodes, 3034 ns/node] [face set 1 130683 -> 351711063 nodes, 144 ns/node] [fewest set 2 102096 -> 134730457 nodes, 2235 ns/node] [face set 2 dropped] (by time)
+[19/99] ok    tilings/euclidean/regulars/3,4,6,12-20261027-152059 k<=13 | auto 32.5s 94095987n (face) | fewest >40s | face 30.0s 94098332n | 200730 tilings | elapsed 27 min, ETA 115 min
+      plan: to k <= 8, predicted at k <= 13: [fewest 1394669 -> 136485494 nodes, 404 ns/node] [face 2183117 -> 196709767 nodes, 144 ns/node] (by time)
+[20/99] ?     tilings/euclidean/regulars/3,4 k<=15 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 29 min, ETA 115 min
+[21/99] ?     tilings/euclidean/scaled/A,B-20261028-164911 k<=7 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 31 min, ETA 116 min
+[22/99] ok    tilings/euclidean/scaled/B3,C6-20261028-215539 k<=8 | auto 25.1s 16131786n (fewest) | fewest 26.9s 16132072n | face >40s | 1596 tilings | elapsed 33 min, ETA 115 min
+      plan: to k <= 4, predicted at k <= 8: [fewest set 1 26266 -> 25620631 nodes, 5400 ns/node] [face set 1 175711 -> 4003970698 nodes, 195 ns/node] [fewest set 2 26731 -> 18986449 nodes, 12863 ns/node] [face set 2 65361 -> 358937549 nodes, 3932 ns/node] (by time)
+[23/99] ok    tilings/euclidean/scaled/B4,C6-20261028-164540 k<=12 | auto 17.7s 20692722n (fewest) | fewest 18.5s 20692742n | face 14.0s 55189280n | 318 tilings | elapsed 34 min, ETA 111 min
+      plan: to k <= 7, predicted at k <= 12: [fewest set 1 186236 -> 39836158 nodes, 749 ns/node] [face set 1 397077 -> 143747787 nodes, 210 ns/node] [fewest set 2 70199 -> 19476871 nodes, 3726 ns/node] [face set 2 161432 -> 90338916 nodes, 1076 ns/node] (by time)
+[24/99] ok    tilings/euclidean/scaled/B6,C3-20261028-164329 k<=8 | auto 16.2s 8459035n (fewest) | fewest 25.1s 11676081n | face >40s | 855 tilings | elapsed 35 min, ETA 109 min
+      plan: to k <= 5, predicted at k <= 8: [fewest set 1 73496 -> 7438985 nodes, 1427 ns/node] [face set 1 742862 -> 830566631 nodes, 270 ns/node] [fewest set 2 84619 -> 6888545 nodes, 1608 ns/node] [face set 2 783262 -> 380942872 nodes, 347 ns/node] (by time)
+[25/99] SLOW  tilings/euclidean/scaled/B6,C4-20261028-164219 k<=12 | auto 29.8s 102566712n (face) | fewest 16.6s 15334892n | face 18.3s 52783445n | 942 tilings | elapsed 36 min, ETA 107 min
+      plan: to k <= 7, predicted at k <= 12: [fewest set 1 82376 -> 22401769 nodes, 2084 ns/node] [face set 1 251769 -> 121735476 nodes, 338 ns/node] [fewest set 2 147592 -> 23671848 nodes, 3800 ns/node] [face set 2 357193 -> 143877807 nodes, 347 ns/node] (by time)
+[26/99] ok    tilings/euclidean/shapes/A6a30-20261027-155845 k<=6 | auto 0.3s 22042n (fewest) | fewest 0.2s 22068n | face 20.8s 86387593n | 36 tilings | elapsed 36 min, ETA 102 min
+      plan: to k <= 3, predicted at k <= 6: [fewest 12527 -> 299628 nodes, 1270 ns/node] [face dropped] (by nodes)
+[27/99] ok    tilings/euclidean/shapes/A6a30-20261028-163432 k<=6 | auto 0.2s 11413n (fewest) | fewest 0.1s 11407n | face 0.1s 443341n | 14 tilings | elapsed 36 min, ETA 97 min
+      plan: to k <= 5, predicted at k <= 6: [fewest 12052 -> 30274 nodes, 1177 ns/node] [face 283030 -> 1585687 nodes, 153 ns/node] (by nodes)
+[28/99] ok    tilings/euclidean/shapes/bighouse-20261027-125822 k<=5 | auto 0.1s 38354n (fewest) | fewest 0.1s 38509n | face 0.1s 120515n | 342 tilings | elapsed 36 min, ETA 92 min
+      plan: to k <= 4, predicted at k <= 5: [fewest 12579 -> 56297 nodes, 1396 ns/node] [face 29932 -> 164666 nodes, 150 ns/node] (by nodes)
+[29/99] SLOW  tilings/euclidean/shapes/blob-20261027-160304 k<=11 | auto 2.1s 4940395n (face) | fewest 2.0s 1933471n | face 1.0s 4939064n | 1247 tilings | elapsed 37 min, ETA 88 min
+      plan: to k <= 8, predicted at k <= 11: [fewest 182236 -> 3438198 nodes, 2372 ns/node] [face 381716 -> 13547492 nodes, 220 ns/node] (by time)
+[30/99] ok    tilings/euclidean/shapes/eggplant-20261027-125915 k<=5 | auto 1.0s 106551n (fewest) | fewest 0.8s 106758n | face 2.0s 7876677n | 148 tilings | elapsed 37 min, ETA 84 min
+      plan: to k <= 4, predicted at k <= 5: [fewest set 1 128972 -> 666867 nodes, 1096 ns/node] [face set 1 726705 -> 7297262 nodes, 153 ns/node] [fewest set 2 84202 -> 419708 nodes, 1480 ns/node] [face set 2 551819 -> 5672526 nodes, 188 ns/node] (by time)
+[31/99] SLOW  tilings/euclidean/shapes/glider-20261027-131007 k<=5 | auto 2.0s 9303589n (face) | fewest 1.4s 558563n | face 1.1s 5692517n | 274 tilings | elapsed 37 min, ETA 80 min
+      plan: to k <= 3, predicted at k <= 5: [fewest set 1 47512 -> 4635298 nodes, 3554 ns/node] [face set 1 167230 -> 59249730 nodes, 127 ns/node] [fewest set 2 27275 -> 1438927 nodes, 9493 ns/node] [face set 2 174896 -> 55514720 nodes, 151 ns/node] (by time)
+[32/99] SLOW  tilings/euclidean/shapes/glider-20261027-132202 k<=6 | auto 24.2s 89440138n (face) | fewest 3.7s 3742597n | face 23.0s 89341202n | 1824 tilings | elapsed 37 min, ETA 79 min
+      plan: to k <= 3, predicted at k <= 6: [fewest 60282 -> 52027943 nodes, 7320 ns/node] [face 251674 -> 2292620436 nodes, 162 ns/node] (by time)
+[33/99] SLOW  tilings/euclidean/shapes/glider-20261027-132259 k<=6 | auto 17.9s 76886770n (face) | fewest 4.4s 1965391n | face 17.3s 76869940n | 642 tilings | elapsed 38 min, ETA 76 min
+      plan: to k <= 3, predicted at k <= 6: [fewest set 1 24986 -> 10876970 nodes, 6526 ns/node] [face set 1 94326 -> 380858923 nodes, 2556 ns/node] [fewest set 2 28966 -> 4946942 nodes, 7007 ns/node] [face set 2 97944 -> 137552358 nodes, 206 ns/node] (by time)
+[34/99] ok    tilings/euclidean/shapes/house,spear-20261027-125400 k<=6 | auto 2.1s 3691974n (fewest) | fewest 2.8s 3918140n | face >40s | 4185 tilings | elapsed 39 min, ETA 74 min
+      plan: to k <= 3, predicted at k <= 6: [fewest set 1 22771 -> 8654075 nodes, 2986 ns/node] [face set 1 243292 -> 2603532375 nodes, 120 ns/node] [fewest set 2 27123 -> 9655030 nodes, 3247 ns/node] [face set 2 296927 -> 2899039889 nodes, 136 ns/node] (by time)
+[35/99] ok    tilings/euclidean/shapes/house-20261027-125245 k<=7 | auto 3.5s 7056025n (fewest) | fewest 3.1s 7056624n | face 18.9s 123029892n | 14133 tilings | elapsed 39 min, ETA 72 min
+      plan: to k <= 4, predicted at k <= 7: [fewest 78501 -> 21215075 nodes, 2215 ns/node] [face 786029 -> 2078900436 nodes, 136 ns/node] (by time)
+[36/99] SLOW  tilings/euclidean/shapes/shield-20261027-125604 k<=8 | auto 2.1s 7826098n (face) | fewest 0.5s 784271n | face 1.6s 7822633n | 2119 tilings | elapsed 39 min, ETA 69 min
+      plan: to k <= 6, predicted at k <= 8: [fewest 148423 -> 2024387 nodes, 1546 ns/node] [face 726763 -> 17207508 nodes, 157 ns/node] (by time)
+[37/99] ok    tilings/euclidean/shapes/shield-20261027-125652 k<=8 | auto 2.1s 3369216n (fewest) | fewest 1.8s 3370328n | face 3.7s 22054355n | 11677 tilings | elapsed 40 min, ETA 66 min
+      plan: to k <= 6, predicted at k <= 8: [fewest 275929 -> 4929544 nodes, 352 ns/node] [face 1236272 -> 28157119 nodes, 128 ns/node] (by time)
+[38/99] ok    tilings/euclidean/shapes/spear-20261027-125123 k<=8 | auto 1.9s 2832043n (fewest) | fewest 1.5s 2832537n | face 4.0s 20981973n | 12975 tilings | elapsed 40 min, ETA 64 min
+      plan: to k <= 5, predicted at k <= 8: [fewest 105503 -> 8849275 nodes, 1455 ns/node] [face 738713 -> 242695478 nodes, 146 ns/node] (by time)
+[39/99] ?     tilings/euclidean/shapes/tooth-20261027-130531 k<=4 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 42 min, ETA 64 min
+[40/99] SLOW  tilings/euclidean/shapes/tooth-20261028-163514 k<=4 | auto >40s (-) | fewest 27.2s 16913580n | face >40s | 2978 tilings | elapsed 43 min, ETA 64 min
+[41/99] ok    tilings/euclidean/stars/45degree-20261027-153117 k<=14 | auto 5.9s 2082469n (fewest) | fewest 9.2s 2082905n | face >40s | 6 tilings | elapsed 44 min, ETA 63 min
+      plan: to k <= 4, predicted at k <= 14: [fewest 32653 -> 1016120578 nodes, 518 ns/node] [face dropped] (by time)
+[42/99] SLOW  tilings/euclidean/stars/A/12/1/A12p120-20261028-122123 k<=14 | auto 3.1s 1044874n (face) | fewest 14.3s 10188383n | face 0.5s 1045299n | 238 tilings | elapsed 45 min, ETA 61 min
+      plan: to k <= 11, predicted at k <= 14: [fewest 292141 -> 5581856 nodes, 1043 ns/node] [face 226942 -> 2090352 nodes, 636 ns/node] (by time)
+[43/99] ok    tilings/euclidean/stars/A/12/1/A12p30-20261028-121825 k<=11 | auto 21.1s 17784126n (fewest) | fewest 25.6s 17783721n | face >40s | 2506 tilings | elapsed 46 min, ETA 60 min
+      plan: to k <= 4, predicted at k <= 11: [fewest 28888 -> 413917435 nodes, 1264 ns/node] [face dropped] (by time)
+[44/99] ?     tilings/euclidean/stars/A/12/1/A12p60-20261028-121933 k<=12 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 48 min, ETA 60 min
+[45/99] SLOW  tilings/euclidean/stars/A/12/1/A12p90-20261028-121648 k<=15 | auto >40s (-) | fewest 30.1s 21782238n | face >40s | 490 tilings | elapsed 50 min, ETA 60 min
+[46/99] ok    tilings/euclidean/stars/A/12/2/A12p30,A12p120-20261028-122314 k<=10 | auto 0.8s 376153n (fewest) | fewest 0.7s 377286n | face >40s | 12 tilings | elapsed 51 min, ETA 58 min
+      plan: to k <= 5, predicted at k <= 10: [fewest set 1 dropped] [face set 1 dropped] [fewest set 2 dropped] [face set 2 dropped] [fewest set 3 1942 -> 343523 nodes, 1353 ns/node] [face set 3 dropped] (by nodes)
+[47/99] ok    tilings/euclidean/stars/A/12/2/A12p30,A12p60-20261028-122153 k<=11 | auto 24.9s 12186420n (fewest) | fewest 24.8s 12187535n | face >40s | 254 tilings | elapsed 52 min, ETA 58 min
+      plan: to k <= 6, predicted at k <= 11: [fewest set 1 794916 -> 414290805 nodes, 915 ns/node] [face set 1 dropped] [fewest set 2 80443 -> 25663426 nodes, 4864 ns/node] [face set 2 dropped] (by time)
+[48/99] SLOW  tilings/euclidean/stars/A/12/2/A12p30,A12p90-20261028-130827 k<=12 | auto 5.7s 2487090n (fewest) | fewest 8.6s 2488303n | face 4.2s 19310239n | 47 tilings | elapsed 52 min, ETA 56 min
+      plan: to k <= 8, predicted at k <= 12: [fewest set 1 889401 -> 60170603 nodes, 1757 ns/node] [face set 1 dropped] [fewest set 2 44381 -> 1946177 nodes, 4837 ns/node] [face set 2 244086 -> 35191623 nodes, 316 ns/node] (by time)
+[49/99] SLOW  tilings/euclidean/stars/A/12/2/A12p60,A12p120-20261028-131714 k<=13 | auto >40s (-) | fewest 15.4s 9011239n | face >40s | 14 tilings | elapsed 54 min, ETA 55 min
+[50/99] ?     tilings/euclidean/stars/A/12/2/A12p60,A12p90-20261027-123319 k<=13 | auto >40s (-) | fewest >40s | face >40s | 0 tilings | elapsed 56 min, ETA 55 min
+[51/99] ok    tilings/euclidean/stars/A/12/2/A12p90,A12p120-20261028-130721 k<=14 | auto 21.5s 34106562n (face) | fewest 23.7s 11452125n | face 22.1s 34105657n | 25 tilings | elapsed 57 min, ETA 54 min
+      plan: to k <= 9, predicted at k <= 14: [fewest set 1 83128 -> 8388840 nodes, 4968 ns/node] [face set 1 560516 -> 204909714 nodes, 182 ns/node] [fewest set 2 64448 -> 13151381 nodes, 4088 ns/node] [face set 2 287475 -> 73509507 nodes, 170 ns/node] (by time)
+[52/99] ok    tilings/euclidean/stars/A/12/3/A12p30,A12p60,A12p120-20261027-123948 k<=12 | auto 16.7s 24734903n (fewest) | fewest 16.0s 24735193n | face >40s | 5 tilings | elapsed 58 min, ETA 53 min
+      plan: to k <= 7, predicted at k <= 12: [fewest set 1 dropped] [face set 1 dropped] [fewest set 2 720391 -> 167661967 nodes, 374 ns/node] [face set 2 dropped] [fewest set 3 99162 -> 33357482 nodes, 1641 ns/node] [face set 3 dropped] (by time)

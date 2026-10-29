@@ -1,0 +1,18 @@
+# Tooth pentagon (F1: 210 30 150 90 60) with {3,4,6,12}, k 1..4: why "only the orders that fit" lost tilings. 2026-10-29
+run A  tooth-20261027-130531  permutations yes, 234 corner sets      census 8 / 93 / 628 / 3338 = 4067
+run B  tooth-20261028-163514  permutations no, 1004 fitting orders   census 7 / 78 / 488 / 2405 = 2978
+run C  tooth-20261028-215236  same 1004-order board, k 1..3          census 7 / 78 / 488
+
+Missing k=1 tiling: vertex (F1_90 F1_90 F1_30 F1_60 F1_60 F1_30), absent from B's board.
+Cause: the overlap test (figures.tsx cornerAt/placed) laid every face out in one hand only. Boards read a face
+and its mirror image as the same face, and the tooth has no mirror symmetry, so orders needing a turned-over
+tooth were judged overlapping and dropped.
+
+Fix: cornerAt lists each corner's places in both hands (duplicates dropped, so symmetric faces cost nothing).
+Rebuilt board: 1375 orders = the 1004 old ones + 371 new, 0 lost.
+Rerun (10 threads, 223 s): census 8 / 93 / 628 / 3338 = 4067, identical to run A.
+
+Audit of all 39 boards with permutations no written since 2026-10-28, recomputed with the fix:
+  tooth (both runs): 371 orders missing
+  shapes/A6a30-20261028-163432: 1 order missing (A4 F1_120 F1_30 F1_120)
+  the other 36 (stars, mixed, colorings): 0 missing, the faces are mirror-symmetric

@@ -1,0 +1,150 @@
+# converted from Marek's main_1247_1_0612.cpp
+name 1247_1_0612
+k 1 3
+angle L3
+angle Loo
+angle M10
+angle M3
+angle M4
+angle M5
+angle Moo
+angle Pi
+angle S10
+angle S20
+angle S3
+angle S4
+angle S5
+face S3 S3 S3
+face S4 S4 S4 S4
+face S5 S5 S5 S5 S5
+face S10 S10 S10 S10 S10 S10 S10 S10 S10 S10
+face S20 S20 S20 S20 S20 S20 S20 S20 S20 S20 S20 S20 S20 S20 S20 S20 S20 S20 S20 S20
+face M3 Pi M3 Pi M3 Pi
+face M4 Pi M4 Pi M4 Pi M4 Pi
+face M5 Pi M5 Pi M5 Pi M5 Pi M5 Pi
+face M10 Pi M10 Pi M10 Pi M10 Pi M10 Pi M10 Pi M10 Pi M10 Pi M10 Pi M10 Pi
+face L3 Pi Pi Pi Pi Pi Pi L3 Pi Pi Pi Pi Pi Pi L3 Pi Pi Pi Pi Pi Pi
+face Moo Pi x inf
+face Loo Pi Pi Pi x inf
+vertex Pi Pi
+vertex S3 S3 S3 S3 S4 S4
+vertex S3 S3 S4 Pi
+vertex S3 S4 S4 S4 S4 L3
+vertex S3 S3 Moo Pi
+vertex S4 S4 Loo Pi
+vertex S5 S5 S5 S5
+vertex S3 S3 S4 S4 S4 Loo
+vertex S3 S3 S3 S4 S4 M4
+vertex S3 S4 M4 Pi
+vertex S3 S3 S4 S4 M4 M4
+vertex S3 S4 S4 M4 Moo Loo
+vertex S3 S4 S4 Moo Moo L3
+vertex S3 S4 S4 S4 M4 Loo
+vertex S3 S4 S4 S4 Moo L3
+vertex S3 S3 S4 S5 S5
+vertex S3 S4 S4 M4 M4 M4
+vertex S3 S3 S4 S4 Moo Loo
+vertex S3 S4 M3 M3 M3 M4 M10
+vertex S3 M3 M3 M3 M4 M10 Moo
+vertex S5 S5 Pi
+vertex S4 M3 M3 M3 M10 Moo Loo
+vertex S4 S4 S5 S5 Loo
+vertex S3 S3 S4 M3 M3 M3 M10
+vertex S3 S4 M3 M4 M10 M10
+vertex S3 S3 M3 M3 M3 M10 Moo
+vertex S3 M3 M4 M10 M10 Moo
+vertex S3 S4 M4 Moo Moo Loo
+vertex S4 M3 M3 M3 M4 M4 M10
+vertex S4 M3 M10 M10 Moo Loo
+vertex S4 S4 M3 M3 M3 M10 Loo
+vertex S3 S4 S5 S5 M4
+vertex S3 S4 M3 M3 M3 M3 M3 M4
+vertex S3 M3 M3 M3 M3 M3 M4 Moo
+vertex S3 S3 S4 M3 M10 M10
+vertex S3 S3 S4 M4 M4 Moo
+vertex S3 S3 M4 M4 Moo Moo
+vertex S3 S3 M3 M10 M10 Moo
+vertex S4 M3 M3 M3 M3 M3 Moo Loo
+vertex S4 S4 Moo Moo Loo Loo
+vertex S3 S3 S4 Moo Moo Loo
+vertex S4 M3 M4 M4 M10 M10
+vertex S4 S4 M4 Moo Moo L3
+vertex S4 M4 M4 Moo Moo Loo
+vertex S3 S3 S4 M3 M3 M3 M3 M3
+vertex S4 S4 M3 M10 M10 Loo
+vertex S4 S4 M4 M4 Moo Loo
+vertex S3 S3 M3 M3 M3 M3 M3 Moo
+vertex S4 M4 M4 Pi
+vertex S4 M3 M3 M3 M3 M3 M4 M4
+vertex S4 S4 M3 M3 M3 M3 M3 Loo
+vertex S3 S4 S10 S20
+vertex S3 S3 S3 S3 Moo Moo
+vertex S4 S4 S4 S4 Loo Loo
+vertex S3 M4 Moo Pi
+vertex S3 S3 S3 S4 M4 Moo
+vertex M3 M10 M10 Pi
+vertex M4 M4 Moo Pi
+vertex S4 Moo Loo Pi
+vertex Moo Moo Loo Pi
+vertex S3 S3 S5 S5 Moo
+vertex S3 S4 M4 M4 M4 Moo
+vertex S3 S4 M4 M5 M5 M5
+vertex S3 M4 M5 M5 M5 Moo
+vertex S4 S5 S5 M4 M4
+vertex S4 S4 M4 M4 M4 M4
+vertex S3 S4 Moo Moo Moo L3
+vertex S3 M4 Moo Moo Moo Loo
+vertex S3 S3 S4 M5 M5 M5
+vertex S3 M4 M4 M4 Moo Moo
+vertex S4 M4 Moo Moo Moo L3
+vertex S4 M5 M5 M5 Moo Loo
+vertex S3 S3 S3 M4 Moo Moo
+vertex S4 S4 S4 M4 Moo L3
+vertex S3 S3 M5 M5 M5 Moo
+vertex S3 S5 S5 M4 Moo
+vertex M3 M3 M3 M4 M4 M10 Moo
+vertex S4 S4 S4 M4 M4 Loo
+vertex M3 M3 M3 M10 Pi
+vertex S4 S4 S4 Moo Loo Loo
+vertex M5 M5 M5 Pi
+vertex M3 M3 M3 M3 M3 Pi
+vertex S4 S5 S5 Moo Loo
+vertex S3 S3 Moo Moo Moo Loo
+vertex S4 M4 M4 M5 M5 M5
+vertex S3 S3 S3 S3 S4 Moo
+vertex M3 M3 M3 M10 Moo Moo Loo
+vertex S4 S4 M5 M5 M5 Loo
+vertex S4 Moo Moo Moo Loo Loo
+vertex M3 M4 M4 M10 M10 Moo
+vertex M3 M3 M3 M3 M3 M3 M3 M3 M3 M3
+vertex M3 M10 M10 Moo Moo Loo
+vertex S3 Moo Moo Moo Moo L3
+vertex M5 M5 M5 M5 M5 M5
+vertex M3 M3 M3 M3 M3 M4 M4 Moo
+vertex S4 M4 M4 M4 M4 Moo
+vertex M3 M3 M3 M3 M3 Moo Moo Loo
+vertex M3 M3 M3 M3 M3 M3 M10 M10
+vertex S4 S4 S4 S4 M4 L3
+vertex M3 M3 M3 M5 M5 M5 M10
+vertex M4 M4 M4 M4 Moo Moo
+vertex M3 M3 M10 M10 M10 M10
+vertex S3 S10 S20 Moo
+vertex S4 S10 S20 M4
+vertex S5 S5 M3 M3 M3 M10
+vertex M3 M3 M3 M3 M3 M5 M5 M5
+vertex M3 M5 M5 M5 M10 M10
+vertex M4 M4 M5 M5 M5 Moo
+vertex M3 M3 M3 M3 M10 M10 M10
+vertex S5 S5 M3 M3 M3 M3 M3
+vertex S5 S5 M3 M10 M10
+vertex S5 S5 M4 M4 Moo
+vertex M5 M5 M5 Moo Moo Loo
+vertex M10 M10 M10 M10 M10
+vertex M4 M4 Moo Moo Moo Loo
+vertex Moo Moo Moo Moo Loo Loo
+vertex S5 S5 Moo Moo Loo
+vertex S5 S5 M5 M5 M5
+vertex M4 Moo Moo Moo Moo L3
+vertex M3 M3 M3 M3 M3 M3 M3 M3 M10
+vertex S10 S20 M4 Moo
+permutations yes

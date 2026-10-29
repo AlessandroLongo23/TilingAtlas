@@ -1,0 +1,15 @@
+name drawn_tromino
+k 1 3
+
+angle F1_90 90
+angle F1_270 270
+angle Pi
+
+face F1_90 Pi F1_90 F1_90 F1_270 F1_90 F1_90 Pi
+
+vertex F1_90 F1_270
+vertex Pi Pi
+vertex F1_90 F1_90 Pi
+vertex F1_90 F1_90 F1_90 F1_90
+
+permutations yes
