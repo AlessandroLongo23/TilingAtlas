@@ -639,6 +639,11 @@ html[data-pad] aside :focus {
   position: relative;
   z-index: 1;
 }
+/* The current link holds the sliding active fill (NavActivePill). One layer down, so the fill passes under
+   the other links' labels when it slides to an earlier link. */
+.ta-pill-host > [aria-current] {
+  z-index: 0;
+}
 .ta-hover-pill {
   position: absolute;
   top: 0;
@@ -656,6 +661,10 @@ html[data-pad] aside :focus {
   opacity: 1;
 }
 .ta-pill-host[data-pill] :is(button, a):not([aria-pressed="true"], [aria-current], [data-pill-skip]):hover {
+  background-color: transparent;
+}
+/* A list's highlighted option (the Dropdown, the ContextMenu) gives way to the pill while the pointer drives it. */
+.ta-pill-host[data-pill] :is([role="option"], [role="menuitem"])[data-highlighted] {
   background-color: transparent;
 }
 @media (prefers-reduced-motion: reduce) {

@@ -2,12 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Copy, Check } from "lucide-react";
+import { X } from "lucide-react";
 import { TilingThumbnail } from "@/components/tiling-thumbnail";
 import { Slider } from "@/components/ui/slider";
 import { polygonHue, TILE_FILL_ALPHA, tileFill, type TranslationalCellData } from "@/lib/utils/renderTiling";
 import type { FoundTiling } from "@/lib/services/runsService";
-import { SwapIcon } from "@/components/ui/swap-icon";
+import { CopyButton } from "@/components/ui/copy-button";
 
 interface RenderCell {
 	cellPolygons?: { n: number; vertices: number[][] }[];
@@ -28,28 +28,6 @@ function ngonName(n: number): string {
 
 function fmtClock(iso: string): string {
 	return new Date(iso).toLocaleString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-}
-
-function CopyButton({ text }: { text: string }) {
-	const [copied, setCopied] = useState(false);
-	return (
-		<button
-			type="button"
-			onClick={() => {
-				navigator.clipboard?.writeText(text).then(
-					() => {
-						setCopied(true);
-						setTimeout(() => setCopied(false), 1200);
-					},
-					() => {},
-				);
-			}}
-			className="shrink-0 rounded p-1 text-fg-muted transition-colors hover:bg-surface-overlay/60 hover:text-fg max-md:flex max-md:size-11 max-md:items-center max-md:justify-center"
-			title="Copy"
-		>
-			<SwapIcon icon={copied ? Check : Copy} size={13} className={copied ? "text-success" : undefined} />
-		</button>
-	);
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {

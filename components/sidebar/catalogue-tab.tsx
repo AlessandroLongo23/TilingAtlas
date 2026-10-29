@@ -14,6 +14,7 @@ import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import { CatalogueListPanel } from "./catalogue-list-panel";
 import type { UnloadedTier } from "@/lib/services/atlasManifest";
 import { SegIndicator } from "@/components/ui/seg-indicator";
+import { Dropdown } from "@/components/ui/dropdown";
 
 interface CatalogueTabProps {
 	/** Already filtered to the active geometry AND decoration — both splits live in the parent. */
@@ -102,9 +103,9 @@ export function CatalogueTab({
 			})}
 		</div>
 	);
-	// The same two choices on a phone: one row of two native pickers at the top of the list, which
-	// scrolls away with it, so the half-open sheet is left to the tree and its thumbnails. The select is
-	// invisible over a two-line face (name over value), so the tap opens the system picker.
+	// The same two choices on a phone: one row of two dropdowns at the top of the list, which scrolls
+	// away with it, so the half-open sheet is left to the tree and its thumbnails. Each shows a two-line
+	// face (name over value).
 	const picker = <T extends string>(
 		name: string,
 		order: readonly T[],
@@ -114,31 +115,31 @@ export function CatalogueTab({
 		onChange: (v: T) => void,
 		pending?: Partial<Record<T, boolean>>,
 	) => (
-		<label className="relative flex h-12 min-w-0 flex-col justify-center rounded-control bg-surface-sunken pr-8 pl-3 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent/50">
-			<span className="text-xs leading-tight text-fg-muted">{name}</span>
-			<span className="truncate text-[15px] leading-tight font-medium text-fg">
-				{label[value]}{" "}
-				<span className="font-mono text-xs text-fg-muted">{pending?.[value] ? "" : compactCount(counts[value])}</span>
-			</span>
-			<ChevronDown
-				size={16}
-				aria-hidden
-				className="pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 text-fg-muted"
-			/>
-			<select
-				value={value}
-				aria-label={name}
-				onChange={(e) => onChange(e.target.value as T)}
-				className="absolute inset-0 cursor-pointer appearance-none opacity-0"
-			>
-				{order.map((v) => (
-					<option key={v} value={v} disabled={counts[v] === 0 && !pending?.[v]}>
-						{label[v]}
-						{pending?.[v] ? "" : ` · ${compactCount(counts[v])}`}
-					</option>
-				))}
-			</select>
-		</label>
+		<Dropdown<T>
+			value={value}
+			options={order.map((v) => ({
+				value: v,
+				label: `${label[v]}${pending?.[v] ? "" : ` · ${compactCount(counts[v])}`}`,
+				disabled: counts[v] === 0 && !pending?.[v],
+			}))}
+			onChange={onChange}
+			ariaLabel={name}
+			className="relative h-12 flex-col items-stretch justify-center gap-0 border-0 bg-surface-sunken pr-8 pl-3 text-left shadow-none hover:bg-surface-sunken"
+			face={
+				<>
+					<span className="text-xs leading-tight text-fg-muted">{name}</span>
+					<span className="truncate text-[15px] leading-tight font-medium text-fg">
+						{label[value]}{" "}
+						<span className="font-mono text-xs text-fg-muted">{pending?.[value] ? "" : compactCount(counts[value])}</span>
+					</span>
+					<ChevronDown
+						size={16}
+						aria-hidden
+						className="pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 text-fg-muted"
+					/>
+				</>
+			}
+		/>
 	);
 	return (
 		<div className="flex h-full flex-col">

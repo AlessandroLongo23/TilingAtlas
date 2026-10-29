@@ -11,8 +11,6 @@ import {
 	Wifi,
 	WifiOff,
 	GitCompare,
-	Copy,
-	Check,
 	AlertTriangle,
 } from "lucide-react";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
@@ -21,7 +19,7 @@ import { useLiveRun } from "@/lib/hooks/useLiveRun";
 import type { RunRow, RunSeedRow, FoundTiling } from "@/lib/services/runsService";
 import { buildSyncEntry, dateOf, shortId } from "@/lib/services/syncEntry";
 import { cn } from "@/lib/utils/cn";
-import { SwapIcon } from "@/components/ui/swap-icon";
+import { CopyButton } from "@/components/ui/copy-button";
 
 // ── format helpers ───────────────────────────────────────────────────────────────────────────
 function fmtDuration(ms: number): string {
@@ -36,29 +34,6 @@ function fmtDuration(ms: number): string {
 function fmtClock(iso: string): string {
 	return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
-// Small inline "copy this text" affordance — clipboard only, no side effects.
-function CopyChip({ text, label = "copy" }: { text: string; label?: string }) {
-	const [copied, setCopied] = useState(false);
-	return (
-		<button
-			type="button"
-			onClick={() =>
-				navigator.clipboard?.writeText(text).then(
-					() => {
-						setCopied(true);
-						setTimeout(() => setCopied(false), 1400);
-					},
-					() => {},
-				)
-			}
-			className="inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] text-fg-muted transition-colors hover:bg-surface-overlay/60 hover:text-fg"
-		>
-			<SwapIcon icon={copied ? Check : Copy} size={12} className={copied ? "text-success" : undefined} />
-			{copied ? "copied" : label}
-		</button>
-	);
-}
-
 // `now` is null until mount → avoids SSR/client hydration mismatch on elapsed text.
 function useNow(enabled: boolean): number | null {
 	const [now, setNow] = useState<number | null>(null);
@@ -282,7 +257,7 @@ export function RunView({
 					<Panel
 						icon={BadgeCheck}
 						title="Certification"
-						right={!isRunning ? <CopyChip text={buildSyncEntry(run)} label="copy SYNC entry" /> : undefined}
+						right={!isRunning ? <CopyButton text={buildSyncEntry(run)} label="copy SYNC entry" /> : undefined}
 					>
 						<div className="grid grid-cols-2 gap-2">
 							<Stat

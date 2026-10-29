@@ -24,6 +24,9 @@ interface TabsProps {
 	shortcuts?: Record<string, string>;
 	/** Extra classes on the tab strip, e.g. to inset it inside a padded panel. */
 	listClassName?: string;
+	/** Controls beside the strip, on its right (a panel's own toolbar); `headClassName` styles that row. */
+	aside?: ReactNode;
+	headClassName?: string;
 }
 
 export function Tabs({
@@ -34,32 +37,45 @@ export function Tabs({
 	keepMounted = false,
 	shortcuts,
 	listClassName,
+	aside,
+	headClassName,
 }: TabsProps) {
+	const list = (
+		<RadixTabs.List className={cn("ta-seg flex flex-shrink-0", listClassName)}>
+			<SegIndicator />
+			{tabs.map((tab) => (
+				<RadixTabs.Trigger
+					key={tab}
+					value={tab}
+					className={cn(
+						// ta-tab (globals.css) owns the fills: line colour when idle, panel colour when active,
+						// most of the way there on hover. Two earlier passes are worth not repeating — a 2px
+						// cap rule (reads as decoration, not state) and a solid ink fill (a black slab in the
+						// corner of the panel).
+						"ta-tab flex-1 cursor-pointer px-3 py-1.5 text-center text-[13px] font-medium transition-colors",
+						"text-fg-muted hover:text-fg-secondary data-[state=active]:text-fg",
+						"focus:outline-none focus-visible:relative focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-accent/50",
+					)}
+				>
+					<span className="inline-flex items-center justify-center gap-1.5">
+						{tab}
+						{shortcuts?.[tab] ? <Kbd>{shortcuts[tab]}</Kbd> : null}
+					</span>
+				</RadixTabs.Trigger>
+			))}
+		</RadixTabs.List>
+	);
 	return (
 		<RadixTabs.Root value={value} onValueChange={onValueChange} className="flex h-full w-full flex-col">
-			<RadixTabs.List className={cn("ta-seg flex flex-shrink-0", listClassName)}>
-				<SegIndicator />
-				{tabs.map((tab) => (
-					<RadixTabs.Trigger
-						key={tab}
-						value={tab}
-						className={cn(
-							// ta-tab (globals.css) owns the fills: line colour when idle, panel colour when active,
-							// most of the way there on hover. Two earlier passes are worth not repeating — a 2px
-							// cap rule (reads as decoration, not state) and a solid ink fill (a black slab in the
-							// corner of the panel).
-							"ta-tab flex-1 cursor-pointer px-3 py-1.5 text-center text-[13px] font-medium transition-colors",
-							"text-fg-muted hover:text-fg-secondary data-[state=active]:text-fg",
-							"focus:outline-none focus-visible:relative focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-accent/50",
-						)}
-					>
-						<span className="inline-flex items-center justify-center gap-1.5">
-							{tab}
-							{shortcuts?.[tab] ? <Kbd>{shortcuts[tab]}</Kbd> : null}
-						</span>
-					</RadixTabs.Trigger>
-				))}
-			</RadixTabs.List>
+			{aside === undefined ? (
+				list
+			) : (
+				<div className={cn("flex flex-shrink-0 items-center gap-3", headClassName)}>
+					{list}
+					<div className="flex min-w-0 flex-1 items-center justify-end gap-2">{aside}</div>
+				</div>
+			)}
+
 			<div className="flex-1 overflow-hidden">
 				{tabs.map((tab) => (
 					// forceMount keeps the panel in the DOM across tab switches (so the catalogue's thumbnail

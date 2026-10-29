@@ -1,17 +1,8 @@
 "use client";
 
-import { Select } from "@base-ui/react/select";
-import {
-	ArrowDownWideNarrow,
-	ArrowUpNarrowWide,
-	Check,
-	ChevronsUpDown,
-	Download,
-	LayoutGrid,
-	Rows3,
-	X,
-} from "lucide-react";
+import { ArrowDownWideNarrow, ArrowUpNarrowWide, Download, LayoutGrid, Rows3, X } from "lucide-react";
 import type { ReactNode } from "react";
+import { Dropdown } from "@/components/ui/dropdown";
 import { SegIndicator } from "@/components/ui/seg-indicator";
 import { Tooltip } from "@/components/ui/tooltip";
 import { SORT_LABEL, type SortDir, type SortKey } from "@/lib/services/librarySort";
@@ -77,38 +68,14 @@ export function SortControl({
 }) {
 	return (
 		<div className="flex items-center">
-			<Select.Root value={sortKey} onValueChange={(v) => onChange(v as SortKey)}>
-				<Select.Trigger
-					aria-label="Sort by"
-					className="flex h-8 cursor-pointer items-center gap-1.5 rounded-l-control border border-line bg-surface-raised pr-1.5 pl-2.5 text-[13px] text-fg shadow-sm hover:bg-surface-overlay focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
-				>
-					<span className="text-fg-muted">Sort</span>
-					<Select.Value>{(v: SortKey) => SORT_LABEL[v]}</Select.Value>
-					<Select.Icon className="text-fg-muted">
-						<ChevronsUpDown size={13} />
-					</Select.Icon>
-				</Select.Trigger>
-				<Select.Portal>
-					<Select.Positioner className="z-[var(--z-tooltip)] outline-none" sideOffset={4} alignItemWithTrigger={false}>
-						<Select.Popup className="min-w-[var(--anchor-width)] origin-[var(--transform-origin)] rounded-lg bg-surface-raised p-1 shadow-lg ring-1 ring-line-subtle transition-[scale,opacity] duration-150 ease-out outline-none data-ending-style:scale-[0.98] data-ending-style:opacity-0 data-starting-style:scale-[0.98] data-starting-style:opacity-0">
-							<Select.List>
-								{keys.map((k) => (
-									<Select.Item
-										key={k}
-										value={k}
-										className="grid cursor-default grid-cols-[14px_1fr] items-center gap-2 rounded-md py-1.5 pr-3 pl-2 text-[13px] text-fg outline-none select-none data-highlighted:bg-surface-overlay"
-									>
-										<Select.ItemIndicator>
-											<Check size={12} />
-										</Select.ItemIndicator>
-										<Select.ItemText className="col-start-2">{SORT_LABEL[k]}</Select.ItemText>
-									</Select.Item>
-								))}
-							</Select.List>
-						</Select.Popup>
-					</Select.Positioner>
-				</Select.Portal>
-			</Select.Root>
+			<Dropdown
+				value={sortKey}
+				options={keys.map((k) => ({ value: k, label: SORT_LABEL[k] }))}
+				onChange={(k) => onChange(k)}
+				label="Sort"
+				ariaLabel="Sort by"
+				className="rounded-r-none"
+			/>
 			<Tooltip label={sortDir === "asc" ? "Ascending" : "Descending"} delay={0}>
 				<button
 					type="button"

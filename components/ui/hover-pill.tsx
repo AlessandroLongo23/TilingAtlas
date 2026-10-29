@@ -9,7 +9,8 @@ import { useLayoutEffect, useRef } from "react";
  * between two buttons keeps it where it was. Mouse only: a finger has no hover.
  *
  * Drop it in as a child of the row; the row must be positioned. While it shows, the row carries
- * `data-pill` and globals.css takes the buttons' own hover fill off (.ta-pill-host). A control marked
+ * `data-pill` and globals.css takes the buttons' own hover fill off (.ta-pill-host). A list's options
+ * (role="option", the Dropdown's) and a menu's items (role="menuitem", the ContextMenu's) count as buttons. A control marked
  * `data-pill-skip` (a filled primary button) is never highlighted.
  */
 export function HoverPill() {
@@ -25,7 +26,7 @@ export function HoverPill() {
 		const over = (e: PointerEvent) => {
 			if (e.pointerType !== "mouse") return;
 			const target = e.target as Element;
-			const item = target.closest<HTMLElement>("button, a");
+			const item = target.closest<HTMLElement>("button, a, [role='option'], [role='menuitem']");
 			if (!item || !host.contains(item)) {
 				// In a gap between buttons the pill holds; anything else in the row clears it.
 				if (target !== host) hide();

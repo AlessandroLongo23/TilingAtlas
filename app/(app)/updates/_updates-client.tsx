@@ -13,6 +13,7 @@ import { previewHref, previewLabel } from "@/lib/updates/preview-ids";
 import { releaseLevel } from "@/lib/updates/version";
 import { cn } from "@/lib/utils/cn";
 import type { TranslationalCellData } from "@/lib/utils/renderTiling";
+import { Dropdown } from "@/components/ui/dropdown";
 
 // The history behind the modal: every release, newest first, with the tilings it added shown live
 // and not as thumbnails. Unlike the modal, this page keeps each release as its own block —
@@ -136,24 +137,22 @@ export function UpdatesClient({
 					    release being read like the lg-only index does. */}
 					{entries.length > 0 ? (
 						<div className="sticky top-0 z-20 -mx-4 mb-4 border-b border-line-subtle bg-surface/95 px-4 py-2 backdrop-blur md:hidden">
-							<label className="flex items-center gap-3 text-xs text-fg-muted">
+							<div className="flex items-center gap-3 text-xs text-fg-muted">
 								<span className="shrink-0">Jump to release</span>
-								<select
+								<Dropdown
 									value={active}
-									onChange={(e) => jumpTo(e.target.value)}
-									className="h-11 min-w-0 flex-1 rounded-control border border-line bg-surface-raised px-2 text-fg"
-								>
-									{months.map((group) => (
-										<optgroup key={group.month} label={group.month}>
-											{group.items.map((entry) => (
-												<option key={entry.version} value={entry.version}>
-													v{entry.version} · {entry.title}
-												</option>
-											))}
-										</optgroup>
-									))}
-								</select>
-							</label>
+									options={months.flatMap((group) =>
+										group.items.map((entry) => ({
+											value: entry.version,
+											label: `v${entry.version} · ${entry.title}`,
+											group: group.month,
+										})),
+									)}
+									onChange={jumpTo}
+									className="h-11 flex-1"
+									ariaLabel="Jump to release"
+								/>
+							</div>
 						</div>
 					) : null}
 					<header className="mb-10 flex flex-col gap-3 max-md:mb-8">

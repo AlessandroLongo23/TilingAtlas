@@ -12,6 +12,7 @@ import { SubRosaView } from "./_subrosa-view";
 import { MultigridView } from "./_multigrid-view";
 import { PatchView } from "./_patch-view";
 import { APERIODIC_VIEWS, DEFAULT_VIEW, isViewId, type AperiodicViewId } from "./_views";
+import { Dropdown } from "@/components/ui/dropdown";
 
 // The aperiodic shelf. Every construction here refuses a translational cell, which is exactly what
 // the rest of the atlas is built on — so each arrives as its own engine, not as a lattice of
@@ -52,37 +53,29 @@ export function AperiodicClient() {
 	const active = APERIODIC_VIEWS.find((v) => v.id === view) ?? APERIODIC_VIEWS[0];
 
 	// The phone's peek row: the view's name and line as plain text, which is where a thumb grabs the
-	// sheet, and a compact Construction button at the right. The button is a native select under a pill:
-	// a tap opens the system picker with all nine at once, which a 64px row could never lay out as
+	// sheet, and a compact Construction button at the right. The button is a Dropdown with a pill face:
+	// a tap opens a list of all nine at once, which a 64px row could never lay out as
 	// buttons. It stays live at every snap, so on a phone it replaces the sheet's title block and
 	// Construction grid, which would say the same things again just below it.
 	const peek = (
 		<>
 			<PeekTitle title={active.label} sub={`${active.group} · ${active.blurb}`} />
-			<div className="relative shrink-0">
-				<select
-					value={view}
-					onChange={(e) => {
-						pickedAtFull.current = useMobileSheet.getState().snap === "full";
-						setView(e.target.value as AperiodicViewId);
-					}}
-					aria-label="Construction"
-					className="peer absolute inset-0 size-full cursor-pointer opacity-0"
-				>
-					{APERIODIC_VIEWS.map((v) => (
-						<option key={v.id} value={v.id}>
-							{v.label}
-						</option>
-					))}
-				</select>
-				<span
-					aria-hidden
-					className="pointer-events-none flex h-11 items-center gap-1.5 rounded-full border border-line bg-surface-raised pr-3 pl-4 text-sm font-medium text-fg shadow-sm peer-focus-visible:ring-2 peer-focus-visible:ring-accent/50"
-				>
-					Construction
-					<ChevronDown size={16} className="text-fg-muted" />
-				</span>
-			</div>
+			<Dropdown<AperiodicViewId>
+				value={view}
+				options={APERIODIC_VIEWS.map((v) => ({ value: v.id, label: v.label }))}
+				onChange={(v) => {
+					pickedAtFull.current = useMobileSheet.getState().snap === "full";
+					setView(v);
+				}}
+				ariaLabel="Construction"
+				className="h-11 shrink-0 rounded-full pr-3 pl-4 text-sm font-medium"
+				face={
+					<>
+						Construction
+						<ChevronDown size={16} className="text-fg-muted" />
+					</>
+				}
+			/>
 		</>
 	);
 
