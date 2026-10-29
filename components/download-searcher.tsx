@@ -38,7 +38,15 @@ export function DownloadSearcher({ variant }: { variant: "nav" | "hero" }) {
 		if (!os || !url) return null;
 		return (
 			<Tooltip label={`Download the Tiling Searcher for ${FOR[os]}`} side="left" delay={0}>
-				<Button href={url} variant="secondary" size="sm" icon={ICON[os]} label="The Tiling Searcher" classes="mr-1.5" />
+				<Button
+					href={url}
+					variant="secondary"
+					size="sm"
+					icon={ICON[os]}
+					// the name only where the section links leave room for it; the icon and tooltip otherwise
+					label={<span className="sr-only min-[1380px]:not-sr-only">The Tiling Searcher</span>}
+					classes="mr-1.5"
+				/>
 			</Tooltip>
 		);
 	}
