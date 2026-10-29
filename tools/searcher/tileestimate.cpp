@@ -79,15 +79,12 @@ struct Node {
 	std::vector<int> types;
 	int root = 0;
 
-	index_t best() const {   // Extender::choose_best_halfedge
-		index_t best{};
-		int least = std::numeric_limits<int>::max();
-		for (auto ix : conf.indices())
-			if (conf.is_free(ix)) {
-				int r = s->faces->edges_needed_to_complete(conf, ix);
-				if (r < least) best = ix, least = r;
-			}
-		return best;
+	int k = 0, flat = 0;   // vertices that count toward k, and flat ones (tilesearch.cpp flat_max)
+	bool room(int t) const { return is_flat(s->vc, t) ? flat < (int)flat_max : k < s->b.kmax; }
+	bool can_add() const { return k < s->b.kmax || flat < (int)flat_max; }
+
+	index_t best(bool& dead) {   // Extender::extend's choice (choose_halfedge)
+		return choose_halfedge(conf, *s->faces, *s->faces, s->vc, *s->cand, root, can_add(), dead);
 	}
 	bool join(index_t a, index_t b) {   // Extender::try_joining's tests, the edge left in place when they pass
 		if (!conf.halfedges_compatible(a, b)) return false;
@@ -98,8 +95,8 @@ struct Node {
 		conf.remove_edge(a, b);
 		return false;
 	}
-	void add_vertex(int t) { s->vc.push_vertex_to(conf, t), types.push_back(t); }
-	void pop_vertex() { conf.pop_vertex(), types.pop_back(); }
+	void add_vertex(int t) { ++(is_flat(s->vc, t) ? flat : k), s->vc.push_vertex_to(conf, t), types.push_back(t); }
+	void pop_vertex() { --(is_flat(s->vc, types.back()) ? flat : k), conf.pop_vertex(), types.pop_back(); }
 
 	// A child: f glued to an existing half-edge (t < 0), or to half-edge ix of a new vertex of template t.
 	struct Move { int t, ix; };
@@ -107,11 +104,16 @@ struct Node {
 		out.clear();
 		for (auto ix : conf.indices())
 			if (conf.is_free(ix) && join(f, ix)) conf.remove_edge(f, ix), out.push_back({ -1, ix.get_value() });
-		if ((int)types.size() >= s->b.kmax) return;
+		if (!can_add()) return;
 		auto const& list = s->cand->at(conf, f, *s->faces);
 		auto it = std::lower_bound(list.begin(), list.end(), root, [](Candidates::Pair p, int t) { return p.t < t; });
+		uint32_t const miss = required.missing(types);
 		while (it != list.end()) {
 			int const t = it->t, base = conf.num_halfedges();
+			if (!room(t) || !required.may_add(miss, root, t, s->b.kmax - k - !is_flat(s->vc, t))) {   // Extender's tests
+				while (it != list.end() && it->t == t) ++it;
+				continue;
+			}
 			add_vertex(t);
 			for (; it != list.end() && it->t == t; ++it)
 				if (join(f, index_t{ base + it->i })) conf.remove_edge(f, index_t{ base + it->i }), out.push_back({ t, base + it->i });
@@ -153,7 +155,9 @@ static int multiplicity(Node const& t) {
 		phi.resize(base);
 	};
 	std::function<int()> replay = [&]() -> int {
-		index_t f = p.best();
+		bool dead;
+		index_t f = p.best(dead);
+		if (dead) return 0;
 		if (!f.has_value()) return 1;   // closed, and mapped into t: it is t
 		index_t g = t.conf.opposite(index_t{ phi[f.get_value()] });
 		if (!g.has_value()) return 0;
@@ -164,7 +168,7 @@ static int multiplicity(Node const& t) {
 			return r;
 		}
 		int const vs = t.conf.neighbourhood(g).vertex_start.get_value(), tw = type_of[g.get_value()], o = g.get_value() - vs;
-		if ((int)p.types.size() >= s.b.kmax || tw < t.root) return 0;
+		if (!p.room(tw) || tw < t.root) return 0;
 		int count = 0;
 		for (auto const& sigma : s.aut[tw]) {   // the new vertex, lined up every way that puts a representative on g
 			int i = int(std::find(sigma.begin(), sigma.end(), o) - sigma.begin());
@@ -195,10 +199,12 @@ struct Tally {
 
 static void walk(Node& n, Tally& t) {
 	t.nodes++;
-	index_t f = n.best();
+	bool dead;
+	index_t f = n.best(dead);
+	if (dead) return;
 	if (!f.has_value()) {
-		int k = n.conf.num_vertices();
-		if (k < n.s->b.kmin) return;
+		int k = n.k;
+		if (k < n.s->b.kmin || required.missing(n.types)) return;
 		t.complete[k]++;
 		if (auto form = canonical_form_if_minimal(n.conf, uint32_t{})) {
 			auto& e = t.seen[*form];
@@ -281,10 +287,12 @@ static std::pair<double, double> path_cpu(Search const& s, original_tiling_write
 	for (;;) {
 		auto const t0 = Clock::now();
 		nodes += w;
-		index_t f = n.best();
+		bool dead;
+		index_t f = n.best(dead);
+		if (dead) return { cpu + w * since(t0), nodes };
 		if (!f.has_value()) {
 			cpu += w * since(t0);
-			if (n.conf.num_vertices() >= s.b.kmin) {
+			if (n.k >= s.b.kmin && !required.missing(n.types)) {
 				bool minimal;
 				double write;
 				cpu += w * leaf_cost(n, writer, minimal, write);
@@ -315,16 +323,18 @@ static void probe(Search const& s, original_tiling_writer& writer, int r, std::m
 	auto kind = [](Node const& n) {
 		int free = 0;
 		for (auto ix : n.conf.indices()) free += n.conf.is_free(ix);
-		return std::pair{ (int)n.types.size(), free };
+		return std::pair{ (int)n.types.size(), free };   // all vertices: a flat one changes the node too
 	};
 	while (!level.empty()) {
 		std::map<std::pair<int, int>, Item> next;
 		for (auto& [n, w] : level) {
 			nodes += w;
-			index_t f = n.best();
+			bool dead;
+			index_t f = n.best(dead);
+			if (dead) continue;
 			if (!f.has_value()) {
-				int k = n.conf.num_vertices();
-				if (k >= s.b.kmin) {
+				int k = n.k;
+				if (k >= s.b.kmin && !required.missing(n.types)) {
 					complete[k] += w;
 					Fingerprints::Key key;
 					if (fingerprint_if_minimal(n.conf, key)) unique[k] += w / multiplicity(n);
@@ -446,6 +456,7 @@ int main(int argc, char** argv) {
 	uint64_t seed = std::random_device{}();
 	bool is_exact = false;
 	std::set<int> skip;
+	std::string skip_file;
 	for (int i = 2; i < argc; i++) {
 		std::string a = argv[i];
 		if (a == "--k" && i + 2 < argc) s.b.kmin = std::atoi(argv[++i]), s.b.kmax = std::atoi(argv[++i]);
@@ -453,23 +464,21 @@ int main(int argc, char** argv) {
 		else if (a == "--threads" && i + 1 < argc) threads = std::max(1, std::atoi(argv[++i]));
 		else if (a == "--seed" && i + 1 < argc) seed = std::stoull(argv[++i]);
 		else if (a == "--skip" && i + 1 < argc) {   // a run's roots.done: estimate only the roots still to do
-			std::ifstream f(argv[++i]);
+			std::ifstream f(skip_file = argv[++i]);
 			for (std::string line; std::getline(f, line);)
 				if (!line.empty()) skip.insert(std::atoi(line.c_str()));
 		}
 		else if (a == "--exact") is_exact = true;
 		else { std::cerr << usage; return 2; }
 	}
-	// the vertex templates in the engine's order (tilesearch main: the initial vertices first)
-	std::vector<std::vector<int>> order;
-	for (int v : s.b.initial) order.push_back(s.b.vertices[v]);
-	for (int v = 0; v < (int)s.b.vertices.size(); v++)
-		if (!std::binary_search(s.b.initial.begin(), s.b.initial.end(), v)) order.push_back(s.b.vertices[v]);
-	int const n_initial = s.b.initial.empty() ? (int)order.size() : (int)s.b.initial.size();
-	for (int i = 0; i < (int)order.size(); i++) {
-		int n = s.b.permutations ? s.vc.add_vertex_with_permutations(order[i]) : s.vc.add_vertex(order[i]);
-		if (i < n_initial) s.roots += n;
-	}
+	// the vertex templates in the engine's order, roots first, and its required sets (tilesearch.cpp): a
+	// running run's recorded order (order.txt beside its roots.done), else the order a new run would rank
+	flat_max = flat_budget(s.b);
+	fs::path const run_dir = fs::path(skip_file).parent_path();
+	Plan const pl = plan(s.b, (int)std::thread::hardware_concurrency(), skip_file.empty() ? nullptr : &run_dir);
+	auto const& order = pl.order;
+	int const root_lines = pl.roots;
+	s.roots = classify(s.b, order, root_lines, s.vc);
 	for (int t = 0; t < s.vc.count(); t++) s.aut.push_back(symmetries(s.vc, t));
 	FastFaces const faces(s.b.faces, s.b.apeirogons);
 	Candidates const cand(s.vc, faces, faces);

@@ -65,14 +65,27 @@ that encode to the same label are refused; a bare `oo` and `Pi` are both 0, for 
 | statement | required | meaning |
 |---|---|---|
 | `name <text>` | yes | names the output folder and files |
-| `k <kmin> <kmax>` | yes | range of k, the number of vertex orbits (face orbits in a face-first search) |
+| `k <kmin> <kmax>` | yes | range of k, the number of vertex orbits where three or more faces meet (face orbits in a face-first search); see below |
 | `angle <symbol> [value]` | yes, one per symbol | declares a corner; the value is optional |
+| `edge <symbol> [length <L>] [drawn\|hidden\|bump\|bite]` | no | declares an edge type: a 180° corner at the middle of every side of that type |
 | `face <symbols...> x <m>` | yes | a face: the symbols in cyclic order, repeated m times |
 | `vertex <symbols...>` | yes | an allowed vertex: its corners in cyclic order |
 | `permutations yes\|no` | no, default `no` | expand each vertex line to all its distinct cyclic orders |
 | `initial <vertices>` | no, default `all` | output only tilings that use at least one of these vertices |
+| `require <vertices>` | no, any number up to 16 | output only tilings that use at least one of these vertices, for every such line |
+| `require face <corners> [x m] [\| face …]` | no, any number | output only tilings that hold at least one of these faces, for every such line |
+| `colors labeled\|unlabeled` | no, default `unlabeled` | on a coloured board (`A4@B` corners): whether tilings that differ only by permuting colours count once |
 | `search vertices\|faces` | no, default `vertices` | vertex-first or face-first |
 | `geometry none\|euclidean\|spherical\|hyperbolic` | no, default `none` | optional realisability check after the search |
+
+### k
+
+k counts the vertex orbits where at least three faces meet, the atlas's rule. A vertex of two corners is
+not counted: `Pi Pi`, a point along a straight side (the midpoints of `B4 Pi x 4`, so the grid of those
+squares is 1-uniform), or a corner filling a notch (`90` against `270`). The search keeps such vertices
+on a budget of their own, large enough to lose no tiling up to `kmax` (`flat_budget` in tilesearch.cpp
+says why), and file names, `census.txt` and the progress lines all report k without them. A
+certificate's "Number of vertices" line still counts every orbit it lists.
 
 ### angle
 
@@ -81,6 +94,28 @@ in degrees, which only a geometry check reads. A value can be a fraction of degr
 angles of odd polygons stay exact, or `free` for a corner whose angle a geometry check should solve for
 (the points of a hyperbolic star). Using a symbol that has no `angle` line is an error, which catches
 typos.
+
+### edge
+
+`edge Ed drawn` declares an edge type. Its symbol is a 180° corner that sits at the middle of every side
+of that type, so a square with one drawn side is `face A4 Ed A4 Eu A4 Eu A4 Eu`. Two sides glue where
+their middle corners meet, which makes the gluing rule a vertex line: `vertex Ed Ed` and `vertex Eu Eu`
+glue like to like (edge patterns, and edge lengths), `vertex EB EI` glues a bump to a bite (bubble tiles).
+A vertex of two corners does not count toward k (see k), so the middles add nothing to k.
+
+A vertex line made of plain corners (`vertex A4 A4 A4 A4`) cannot see the types of its sides. To rule on
+the pattern round a vertex (no loose ends: never exactly one drawn side), name each corner with the types
+of its two sides, sorted: `A4.Ed.Eu`. The square with one drawn side is then
+`face A4.Ed.Eu Ed A4.Ed.Eu Eu A4.Eu.Eu Eu A4.Eu.Eu Eu`, each vertex line spells out its edge pattern, and
+leaving a pattern's line out forbids it. Quick setup's edge-type presets write boards this way.
+
+To the search an edge line is the same as `angle <symbol> 180`. The rest is for drawing: `length` is the
+side's length (a number, `3/2`, `sqrt(2)`, `2sqrt(3)`; 1 when absent), and the style says how the side is
+drawn. A hidden side is not drawn and the faces either side of it merge into one tile; a bump bulges out
+of its face into the bite of the face it glues to. Checked against the atlas engine's edge types
+(`experiments/results/tilesearch-edge-types-2026-10-29.log`): the square grid with drawn and hidden
+sides 18 / 271 / 2,754 / 21,967, bubble squares 11 / 102, and 45-45-90 triangles with squares by length
+16 / 161 / 1,132.
 
 ### face
 
@@ -112,6 +147,36 @@ one of those n. The searcher puts the listed vertices first internally, so `init
 exact. The trap this avoids: seeding from vertices 3 and 7 while keeping the original numbering finds
 only the tilings whose lowest-numbered vertex is 3 or 7, and loses every tiling that also contains
 vertex 1 or 2.
+
+### colours
+
+A colouring is a board whose faces of one shape carry different letters. Quick setup's Colorings mode
+names a corner with its face's colour, `A4@B` (corner A4 of a colour-B face), so each vertex line spells
+the colours round it. Leaving a vertex out forbids that colour pattern: no vertex with two neighbouring
+corners of one colour is exactly a proper colouring. Colours are labelled (all-A and all-B are two
+tilings), as on the atlas's Colors shelf, only with `colors labeled`. By default (`colors unlabeled`)
+tilings that differ only by permuting the colours count once, on top of translations, rotations and
+mirrors: of each class the engine writes the tiling whose canonical form is least over the recolourings
+that map the board onto itself (faces, vertices, initial and required sets). Checked against the Colors
+shelf's own records grouped independently: squares with two colours 5 / 30 / 166 (labeled 8 / 53 / 309),
+with three colours, all used, 3 / 58 (labeled 9 / 285).
+
+### require
+
+`require 3 7 9` is a vertex set: every tiling found holds one of those vertices, and every `require` line
+must be met. The search prunes on it (a partial tiling stops once the vertex orbits it has left cannot
+hold the sets it still misses), so a targeted search is faster too.
+
+`require face A6.EB.EB EB A6.EB.EI EI … | face …` asks for a face: every tiling found holds one of the
+faces listed, each written as on a face line and read up to turning and mirroring. A vertex set cannot
+say this when faces share their corners: the 13 bubble hexagons all have corner `A6` (or share their
+typed corners), so the vertices holding one of them hold all of them, and requiring "this hexagon" by
+vertices required nothing. A face line is checked on each finished tiling, before it is written, so it
+is exact; it does not prune the search. Checked: one line per shape (every variant listed) on bubble
+triangles, squares and hexagons gives 6 / 123 / 1,436 at k ≤ 3, the same as the vertex sets that say
+the same thing, and one hexagon alone gives 5 / 78 / 398, the same as filtering the unrestricted run by
+its faces. A face orbit holds at least one corner orbit, so k vertex orbits of c corners hold at most
+c·k face orbits: thirteen hexagon variants with three corners a vertex need k ≥ 5.
 
 ### search
 
@@ -167,7 +232,7 @@ and their counts) and, for a moment after each root, `merge.pending`.
 - Deriving the vertex lines from angle values (all words whose angles sum to 360°, or to less or more
   for the other geometries). This is how the atlas palettes work today and the natural next step, but a
   board with explicit vertex lines covers every search run so far.
-- Edge types other than digons, and corner symbols that do not count toward k (the 180° corners of
+- (Edge types now have the `edge` line above.) Corner symbols that do not count toward k (the 180° corners of
   subdivided tiles).
 
 ## Questions for Marek
