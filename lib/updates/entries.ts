@@ -78,6 +78,37 @@ export interface UpdateEntry {
 /** Newest first. tests/updates.test.ts asserts that ordering, and every id below. */
 export const UPDATES: UpdateEntry[] = [
 	{
+		version: "1.48.0",
+		date: "2026-10-29",
+		title: "TileSearch for macOS and Windows",
+		commit: "b50a6dbf",
+		changes: [
+			{
+				kind: "feature",
+				text: "**TileSearch**, the desktop app that finds every k-uniform tiling a set of tiles can make and draws each one as it is found, is now a download for macOS (Apple silicon) and Windows, from the button in the top bar or on the home page. It runs Marek Čtrnáct's engine, with his permission.",
+				href: "/",
+			},
+			{
+				kind: "feature",
+				text: "**A tiling's symmetry group can be changed in /play**, as in Tegula: raise the rotation order at a vertex or a tile centre and the tiling follows into the geometry its curvature calls for, so 3.4.6.4 (∗632) becomes 3.4.7.4 (∗732) in the Poincaré disk and the rhombicosidodecahedron (∗532) on the sphere.",
+				tilings: ["t1006"],
+				href: "/play?tiling=t1006",
+			},
+			{
+				kind: "changed",
+				text: "**Marble, stained glass, wood and cobblestone** now paint the plane and the sphere as well as the Poincaré disk, from a Materials switch at the end of View options.",
+			},
+			{
+				kind: "changed",
+				text: "**Hyperbolic boards whose tiles take several edge lengths** split their /play tree by sized tile, so the triangles at edge 1, 2 and 7 on board 1247 no longer sit together. Marek Čtrnáct asked for it.",
+			},
+			{
+				kind: "fix",
+				text: "**Hyperbolic tiles whose sides are cut by flat points** take the colour of their real corner count: a triangle with two-edge sides was painted as a hexagon. Previews also no longer flash after stepping through many tilings.",
+			},
+		],
+	},
+	{
 		version: "1.47.0",
 		date: "2026-10-23",
 		title: "Hyperbolic tilings by star polygons",

@@ -1,6 +1,6 @@
 {
-  "version": "1.47.0",
-  "date": "2026-10-23",
-  "commit": "c7d8f3e7",
-  "title": "Hyperbolic tilings by star polygons"
+  "version": "1.48.0",
+  "date": "2026-10-29",
+  "commit": "b50a6dbf",
+  "title": "TileSearch for macOS and Windows"
 }
