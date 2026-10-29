@@ -1,6 +1,6 @@
 // TileSearch: build a board (visually or as text, the two kept in step), run it, watch the runs.
 // The board text is the one source of truth: the visual editor parses it and writes it back.
-import { CircleAlert, CircleCheck, FilePlus, FolderOpen, Play, Save } from "lucide-react";
+import { FilePlus, FolderOpen, Play, Save, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NAV_BAR, NAV_LABEL, NavActivePill, NavBrand, NavDivider, navLinkClass } from "@/components/nav-bar";
@@ -14,24 +14,12 @@ import { RangeInput } from "@/components/ui/range-input";
 import { Toggle } from "@/components/ui/toggle";
 import { cn } from "@/lib/utils/cn";
 import { emptyBoard, parse, serialize, type Board, type Problem } from "./board";
-import type { Check, Estimate, Settings, Status } from "./bridge";
+import type { Check, Estimate, Rule, Settings, Status } from "./bridge";
 import { Problems, VisualEditor } from "./editor";
-import { approx, bytes, duration, RunList, RunView } from "./runs";
+import { approx, bytes, duration, load, RULE_HINT, RuleField as RulePicker, RunList, RunView, store } from "./runs";
 
 const api = () => window.tilesearch;
 const DRAFT = "tilesearch:draft";
-const load = (k: string) => {
-	try {
-		return localStorage.getItem(k);
-	} catch {
-		return null;
-	}
-};
-const store = (k: string, v: string) => {
-	try {
-		localStorage.setItem(k, v);
-	} catch {}
-};
 
 const NEW_BOARD = serialize({
 	...emptyBoard(),
@@ -43,13 +31,23 @@ const NEW_BOARD = serialize({
 
 /** The site's hexagon mark (components/nav.tsx). */
 /** How big a search will be, before it runs: a few seconds of sampling its tree (tools/searcher/tileestimate.cpp). */
-function SizeEstimate({ text, k, disabled }: { text: string; k: [number, number] | null; disabled: boolean }) {
+function SizeEstimate({
+	text,
+	k,
+	rule,
+	disabled,
+}: {
+	text: string;
+	k: [number, number] | null;
+	rule?: Rule;
+	disabled: boolean;
+}) {
 	const [state, setState] = useState<{ for: string; e: Estimate | { error: string } | "running" } | null>(null);
-	const key = text + JSON.stringify(k);
+	const key = text + JSON.stringify(k) + (rule ?? "");
 	const result = state?.for === key ? state.e : null; // an estimate of another board is not shown
 	const run = async () => {
 		setState({ for: key, e: "running" });
-		const e = await api().estimate(text, k ?? undefined);
+		const e = await api().estimate(text, k ?? undefined, rule);
 		setState({ for: key, e });
 	};
 	return (
@@ -170,10 +168,10 @@ export function App() {
 		freeBytes: 0,
 		minFreeBytes: 10 * 2 ** 30,
 	});
-	const [examples, setExamples] = useState<{ name: string; text: string }[]>([]);
 	const [selected, setSelected] = useState<string | null>(null);
 	const [engine, setEngine] = useState<Check | null>(null);
 	const [runK, setRunK] = useState<[number, number] | null>(null);
+	const [runRule, setRunRule] = useState<Rule | undefined>(undefined);
 	const [message, setMessage] = useState("");
 	const [askQuit, setAskQuit] = useState(false);
 	const history = useRef<string[]>([]);
@@ -195,7 +193,6 @@ export function App() {
 	}, [text]);
 	useEffect(() => {
 		void api().settings().then(setSettings);
-		void api().examples().then(setExamples);
 		void api().status().then(setStatus);
 		const off = api().onStatus(setStatus);
 		const offHook = api().onHook((h) => {
@@ -227,7 +224,7 @@ export function App() {
 	const options = settings ? { threads: settings.threads, nice: settings.nice } : { threads: 1, nice: 10 };
 
 	const start = async () => {
-		const res = await api().start(text, board.name, { ...options, ...(runK ? { k: runK } : {}) });
+		const res = await api().start(text, board.name, { ...options, ...(runK ? { k: runK } : {}), ...(runRule ? { rule: runRule } : {}) });
 		if ("error" in res) setMessage(res.error);
 		else setMessage("");
 		setSelected(res && "id" in res ? res.id : null);
@@ -239,46 +236,7 @@ export function App() {
 		<aside className="flex w-[360px] shrink-0 flex-col border-r border-line-subtle bg-surface-chrome">
 			<div className="min-h-0 flex-1 overflow-y-auto">
 				<div className="space-y-4 border-b border-line-subtle p-5">
-					<Input
-						value={board.name}
-						onChange={(e) => set({ ...board, name: e.target.value.replace(/\s|#/g, "_") })}
-						className="text-base font-semibold"
-						aria-label="Board name"
-					/>
-					<div className="-mt-2 flex items-center gap-1.5 text-xs text-fg-muted">
-						{[
-							[board.angles.length, "corner"],
-							[board.faces.length, "face"],
-							[board.vertices.length, board.vertices.length === 1 ? "vertex" : "vertice"],
-						]
-							.map(([c, w]) => `${c} ${w}${c === 1 ? "" : "s"}`)
-							.join(" · ")}
-						<InfoDot>The board&rsquo;s name is also the name of its run folders and certificate files.</InfoDot>
-					</div>
 					<Toggle leftValue="visual" rightValue="text" value={mode} onChange={setMode} />
-					<div className="flex gap-1.5">
-						<Button size="sm" icon={FilePlus} label="New" onClick={() => loadBoard(NEW_BOARD)} />
-						<Button
-							size="sm"
-							icon={FolderOpen}
-							label="Open…"
-							onClick={async () => {
-								const f = await api().openBoard();
-								if (f) loadBoard(f.text);
-							}}
-						/>
-						<Button size="sm" icon={Save} label="Save…" onClick={() => void api().saveBoard(text, board.name)} />
-					</div>
-					{examples.length ? (
-						<Field label="Start from an example">
-							<OptionWall
-								columns={2}
-								options={examples.map((e) => ({ value: e.name, label: e.name }))}
-								selected={examples.find((e) => e.text === text)?.name ?? null}
-								onChange={(name) => loadBoard(examples.find((e) => e.name === name)!.text)}
-							/>
-						</Field>
-					) : null}
 				</div>
 
 				<div className="space-y-5 border-b border-line-subtle p-5">
@@ -333,8 +291,46 @@ export function App() {
 							) : null}
 						</div>
 					</Field>
+					<Field
+						label="Required sets"
+						hint="Output only the tilings that hold a vertex from every set: every star on the board, say. Make a set by selecting vertices (the filter helps: A6p90 OR A6d90, then Select all) and pressing Require, or from a face with Require this face. Initial vertices, when marked too, count as one more set. The search prunes on k, so a targeted search is faster too."
+					>
+						{board.require.length ? (
+							<ol className="space-y-0.5">
+								{board.require.map((r, i) => (
+									<li key={i} className="flex items-center gap-2 text-sm text-fg">
+										<span className="w-4 shrink-0 font-mono text-xs text-fg-muted">{i + 1}</span>
+										{r.faces ? (
+											<span
+												className="min-w-0 flex-1 truncate font-mono text-xs"
+												title={r.faces.map((w) => `face ${w.join(" ")}`).join("\n")}
+											>
+												{r.faces.length === 1 ? `face ${r.faces[0].join(" ")}` : `one of ${r.faces.length} faces`}
+											</span>
+										) : (
+											<span className="min-w-0 flex-1 truncate" title={`Vertex ${r.set.join(", ")}`}>
+												{r.trail ? <span className="font-mono text-xs">{r.trail}</span> : `Vertex ${r.set.join(", ")}`}
+												<span className="text-fg-muted"> · {r.set.length}</span>
+											</span>
+										)}
+										<Button
+											size="icon"
+											variant="ghost"
+											icon={X}
+											aria-label={`Remove required set ${i + 1}`}
+											onClick={() => set({ ...board, require: board.require.filter((_, j) => j !== i) })}
+										/>
+									</li>
+								))}
+							</ol>
+						) : (
+							<span className="text-sm text-fg">None</span>
+						)}
+					</Field>
 					<Problems
-						list={problems.filter((p) => ["name", "k", "initial", "permutations", "board"].includes(p.where.kind))}
+						list={problems.filter((p) =>
+							["name", "k", "initial", "require", "permutations", "board"].includes(p.where.kind),
+						)}
 					/>
 				</div>
 
@@ -402,7 +398,10 @@ export function App() {
 							</div>
 						) : null}
 					</Field>
-					<SizeEstimate text={text} k={runK} disabled={!!engineError || errors.length > 0} />
+					<Field label="Branching rule" hint={RULE_HINT}>
+						<RulePicker rule={runRule} onChange={setRunRule} />
+					</Field>
+					<SizeEstimate text={text} k={runK} rule={runRule} disabled={!!engineError || errors.length > 0} />
 					<Field label="Output folder" hint="Every run stops when the disk drops under 10 GB free.">
 						<div className="flex items-center gap-2">
 							<span
@@ -420,25 +419,10 @@ export function App() {
 					</Field>
 				</div>
 			</div>
-			<div className="space-y-2 border-t border-line-subtle p-5">
-				<div className={cn("flex items-start gap-1.5 text-xs", engineError ? "text-danger" : "text-fg-secondary")}>
-					{engine === null ? null : engineError ? (
-						<CircleAlert className="mt-px h-3.5 w-3.5 shrink-0" />
-					) : (
-						<CircleCheck className="mt-px h-3.5 w-3.5 shrink-0" />
-					)}
-					<span>
-						{engine === null
-							? "Asking the engine…"
-							: engineError
-								? `The engine refuses this board${engineError.line ? ` at line ${engineError.line}` : ""}: ${engineError.message}`
-								: "The engine accepts this board."}
-					</span>
-				</div>
+			<div className="space-y-2 border-t border-line-subtle px-5 py-4">
 				<Button
 					id="run-search"
 					variant="primary"
-					size="lg"
 					fullWidth
 					icon={Play}
 					label="Run search"
@@ -469,7 +453,9 @@ export function App() {
 							className={navLinkClass(view === v)}
 						>
 							{view === v ? <NavActivePill /> : null}
-							<span className={NAV_LABEL}>{v === "board" ? "Board" : `Runs${running ? ` · ${running} running` : ""}`}</span>
+							<span className={NAV_LABEL}>
+								{v === "board" ? "Board" : `Runs${running ? ` · ${running} running` : ""}`}
+							</span>
 						</button>
 					))}
 				</nav>
@@ -479,11 +465,32 @@ export function App() {
 			{view === "board" ? (
 				<div className="flex min-h-0 flex-1">
 					{sidebar}
-					<main className="min-w-0 flex-1 overflow-y-auto p-6">
+					<main className="flex min-w-0 flex-1 flex-col gap-6 overflow-y-auto p-6">
+						<header className="flex items-center gap-3">
+							<Input
+								value={board.name}
+								onChange={(e) => set({ ...board, name: e.target.value.replace(/\s|#/g, "_") })}
+								className="max-w-sm text-base font-semibold"
+								aria-label="Board name"
+							/>
+							<div className="ml-auto flex gap-1.5">
+								<Button size="sm" icon={FilePlus} label="New" onClick={() => loadBoard(NEW_BOARD)} />
+								<Button
+									size="sm"
+									icon={FolderOpen}
+									label="Open…"
+									onClick={async () => {
+										const f = await api().openBoard();
+										if (f) loadBoard(f.text);
+									}}
+								/>
+								<Button size="sm" icon={Save} label="Save…" onClick={() => void api().saveBoard(text, board.name)} />
+							</div>
+						</header>
 						{mode === "visual" ? (
 							<VisualEditor b={board} set={set} problems={problems} />
 						) : (
-							<div className="flex h-full flex-col gap-3">
+							<div className="flex min-h-0 flex-1 flex-col gap-3">
 								<p className="text-xs text-fg-muted">
 									The board file, as the engine reads it (docs/searcher/board-format.md). Edits here and in the visual
 									editor are the same board; a line the visual editor cannot show is kept as written.
@@ -532,6 +539,7 @@ function QuitModal({ open, onClose, runs }: { open: boolean; onClose: () => void
 			isOpen={open && n > 0}
 			onOpenChange={(o) => !o && onClose()}
 			title={n === 1 ? "A search is running" : `${n} searches are running`}
+			size="sm"
 			description="Quitting TileSearch stops the searches that are running"
 			footer={
 				<div className="flex justify-end gap-2">

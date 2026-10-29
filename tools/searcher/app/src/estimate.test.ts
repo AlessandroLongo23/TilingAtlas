@@ -11,9 +11,11 @@ const BOARD = join(SEARCHER, "boards/squares_edges.board");
 const run = (...args: string[]) => execFileSync(ESTIMATOR, [BOARD, "--k", "1", "3", ...args], { encoding: "utf8" });
 
 describe.skipIf(!existsSync(ESTIMATOR))("tileestimate on squares_edges, k <= 3", () => {
-	it("walks the engine's tree: 9,407 complete tilings, 1,420 unique, every multiplicity right", () => {
+	// how often the search completes a tiling depends on the order of the roots (tilesearch.cpp, rank_roots); the
+	// unique tilings do not
+	it("walks the engine's tree: 1,420 unique tilings, every multiplicity right", () => {
 		const out = run("--exact");
-		expect(out).toContain("complete 9407 unique 1420");
+		expect(out).toMatch(/complete \d+ unique 1420\n/);
 		expect(out).toContain("exact multiplicity right for 1420 of 1420 unique tilings");
 	});
 	it("estimates the unique tilings per k within 10% in two seconds", () => {

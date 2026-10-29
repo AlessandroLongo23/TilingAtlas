@@ -6,7 +6,7 @@ import { existsSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } fro
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { moveVertex, parse, printedLabels, removeVertex, serialize } from "./board";
+import { deadWeight, moveVertex, parse, printedLabels, removeVertices, serialize } from "./board";
 
 const SEARCHER = join(__dirname, "../..");
 const ENGINE = join(SEARCHER, process.platform === "win32" ? "tilesearch.exe" : "tilesearch");
@@ -49,6 +49,9 @@ const BROKEN: Record<string, string> = {
 	"no name": base.replace("name t\n", ""),
 	"initial past the end": base + "initial 3\n",
 	"initial not a number": base + "initial one\n",
+	"require past the end": base + "require 1 9\n",
+	"require not a number": base + "require one\n",
+	"require with nothing": base + "require\n",
 	"unknown statement": base + "colour red\n",
 	"permutations maybe": base + "permutations maybe\n",
 	"search faces": base + "search faces\n",
@@ -95,8 +98,29 @@ describe("board text round trip", () => {
 		let b = parse(base + "vertex A2 A4 A4 A2 A4 A4\ninitial 1 3\n").board;
 		b = moveVertex(b, 2, 0);
 		expect(b.initial).toEqual([1, 2]);
-		b = removeVertex(b, 0);
+		b = removeVertices(b, [0]);
 		expect(b.initial).toEqual([1]);
+		b = parse(base + "vertex A2 A4 A4 A2 A4 A4\nvertex A4 A4 A4 A4\ninitial 1 2 3\n").board;
+		b = removeVertices(b, [0, 2]); // the vertices left: 2 and 4, renumbered 1 and 2
+		expect(b.vertices.length).toBe(2);
+		expect(b.initial).toEqual([1]);
+	});
+	it("keeps required sets on their vertices, and drops a set left empty", () => {
+		let b = parse(base + "vertex A2 A4 A4 A2 A4 A4\nvertex A4 A4 A4 A4\nrequire 2 4  # stars\nrequire 3\n").board;
+		expect(serialize(b)).toMatch(/require 2 4 +# stars\nrequire 3\n/);
+		expect(serialize(parse(serialize(b)).board)).toBe(serialize(b));
+		b = moveVertex(b, 3, 0); // vertex 4 to the front: 2 → 3, 3 → 4, 4 → 1
+		expect(b.require.map((r) => r.set)).toEqual([[1, 3], [4]]);
+		b = removeVertices(b, [3]); // vertex 4 gone with its set
+		expect(b.require.map((r) => r.set)).toEqual([[1, 3]]);
+		expect(b.require[0].trail).toBe("stars");
+	});
+	it("finds what the warnings name: unused corners, unplaceable faces and vertices", () => {
+		const b = parse(
+			"name t\nk 1 1\nangle A4\nangle A3\nangle Q\nangle Z\nface A4 x 4\nface A3 x 3\nvertex A4 A4 A4 A4\nvertex A4 Q A4 A4\n",
+		).board;
+		// Z is in nothing; the triangle's A3 is at no vertex; Q is in no face
+		expect(deadWeight(b)).toEqual({ corners: ["Z"], faces: [1], vertices: [1] });
 	});
 	it("prints free symbols as X1, X2 in declaration order", () => {
 		const labels = printedLabels(parse("name t\nk 1 1\nangle dent\nangle A4\nangle t60\n").board.angles);

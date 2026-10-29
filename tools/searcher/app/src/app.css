@@ -17,3 +17,69 @@
 	--font-geist: "Geist";
 	--font-geist-mono: "Geist Mono";
 }
+
+/* The run tree's rail: an open folder's contents hang off a line under its icon, and each entry branches
+   off it with a curve; the line stops at the last entry's curve. --rail-mid is where an entry's row is
+   centred (a folder row is 36px tall; a run row sets 26px). The colour is opaque (a mix against the
+   sidebar), so where the line and a curve overlap it does not double up.
+
+   The path to the selected run is an overlay (::after) in the text colour on the entries runs.tsx marks:
+   [data-rail-pass] the entries it runs past, a straight piece; [data-rail-on] the one it enters, a curve.
+   A piece draws top-down after its --rail-delay when it appears or changes role (each role has its own
+   keyframes, so the change restarts it); pieces the old and new path share stay as they are. */
+.ta-rail {
+	--rail: color-mix(in oklab, var(--color-fg) 22%, var(--color-surface-chrome));
+	margin-left: 15px;
+}
+.ta-rail > li {
+	position: relative;
+	padding-left: 14px;
+	padding-bottom: 2px;
+}
+.ta-rail > li:not(:last-child) {
+	background: linear-gradient(var(--rail), var(--rail)) no-repeat 0 0 / 1px 100%;
+}
+.ta-rail > li::before,
+.ta-rail > li:is([data-rail-on], [data-rail-pass])::after {
+	content: "";
+	position: absolute;
+	top: -2px;
+	left: 0;
+	pointer-events: none;
+	border-left: 1px solid var(--rail);
+}
+.ta-rail > li::before,
+.ta-rail > li[data-rail-on]::after {
+	width: 10px;
+	height: calc(var(--rail-mid, 18px) + 2px);
+	border-bottom: 1px solid var(--rail);
+	border-bottom-left-radius: 8px;
+}
+.ta-rail > li[data-rail-pass]::after {
+	bottom: 0;
+}
+.ta-rail > li:is([data-rail-on], [data-rail-pass])::after {
+	border-color: var(--color-fg);
+	animation: 70ms linear var(--rail-delay) both;
+}
+.ta-rail > li[data-rail-on]::after {
+	animation-name: ta-rail-draw-on;
+}
+.ta-rail > li[data-rail-pass]::after {
+	animation-name: ta-rail-draw-pass;
+}
+@keyframes ta-rail-draw-on {
+	from {
+		clip-path: inset(0 0 100% 0);
+	}
+}
+@keyframes ta-rail-draw-pass {
+	from {
+		clip-path: inset(0 0 100% 0);
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.ta-rail > li::after {
+		animation: none !important;
+	}
+}

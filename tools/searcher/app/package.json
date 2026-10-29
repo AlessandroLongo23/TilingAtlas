@@ -28,15 +28,6 @@
 			"dist/**",
 			"package.json"
 		],
-		"extraResources": [
-			{
-				"from": "../boards",
-				"to": "boards",
-				"filter": [
-					"*.board"
-				]
-			}
-		],
 		"mac": {
 			"target": [
 				"dir",

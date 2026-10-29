@@ -15,7 +15,6 @@ const listen =
 	};
 
 const api: Api = {
-	examples: call("examples") as Api["examples"],
 	check: call("check") as Api["check"],
 	openBoard: call("openBoard") as Api["openBoard"],
 	saveBoard: call("saveBoard") as Api["saveBoard"],

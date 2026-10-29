@@ -6,15 +6,14 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { app, BrowserWindow, dialog, ipcMain, nativeTheme, shell } from "electron";
-import type { Check, Estimate, Hook, RunOptions, Settings, Status } from "../src/bridge";
-import { MIN_FREE_BYTES, runEstimator, Runs } from "./runs";
+import type { Check, Estimate, Hook, Rule, RunOptions, Settings, Status } from "../src/bridge";
+import { MIN_FREE_BYTES, ruleEnv, runEstimator, Runs } from "./runs";
 
 const exe = (name: string) => (process.platform === "win32" ? `${name}.exe` : name);
 // packaged: Contents/Resources (mac) or resources\ (Windows); from source: tools/searcher/
 const RESOURCES = app.isPackaged ? process.resourcesPath : path.join(__dirname, "../..");
 const ENGINE = path.join(RESOURCES, exe("tilesearch"));
 const ESTIMATOR = path.join(RESOURCES, exe("tileestimate"));
-const BOARDS = path.join(RESOURCES, "boards");
 const SETTINGS = () => path.join(app.getPath("userData"), "settings.json");
 
 type Saved = Pick<Settings, "root" | "threads" | "nice">;
@@ -74,18 +73,9 @@ function start(id: string, options: RunOptions): string | null {
 }
 
 function handlers() {
-	ipcMain.handle("examples", () =>
-		fs.existsSync(BOARDS)
-			? fs
-					.readdirSync(BOARDS)
-					.filter((f) => f.endsWith(".board"))
-					.sort()
-					.map((f) => ({ name: f.replace(/\.board$/, ""), text: fs.readFileSync(path.join(BOARDS, f), "utf8") }))
-			: [],
-	);
 	ipcMain.handle("check", (_, text: string) => checkBoard(text));
 	// a board's size before it runs: a few seconds of tileestimate on all but one core
-	ipcMain.handle("estimate", (_, text: string, k?: [number, number]) => {
+	ipcMain.handle("estimate", (_, text: string, k?: [number, number], rule?: Rule) => {
 		if (!fs.existsSync(ESTIMATOR)) return { error: "tileestimate is missing from the app." };
 		const dir = fs.mkdtempSync(path.join(os.tmpdir(), "tileestimate-"));
 		fs.writeFileSync(path.join(dir, "input.board"), text);
@@ -93,7 +83,7 @@ function handlers() {
 		if (k) args.push("--k", String(k[0]), String(k[1]));
 		return new Promise<Estimate | { error: string }>((resolve) => {
 			let last: Estimate | null = null;
-			const child = runEstimator(ESTIMATOR, dir, args, {}, (e) => (last = e));
+			const child = runEstimator(ESTIMATOR, dir, args, {}, ruleEnv(rule), (e) => (last = e));
 			child.on("exit", () => {
 				fs.rmSync(dir, { recursive: true, force: true });
 				resolve(last ?? { error: "The estimate did not run: check the board." });
@@ -137,8 +127,9 @@ function handlers() {
 		}
 		return settings();
 	});
-	ipcMain.handle("start", (_, board: string, name: string, options: RunOptions) => {
-		const run = runs.create(board, name);
+	ipcMain.handle("start", (_, board: string, name: string, options: RunOptions, replaces?: string, folder?: string) => {
+		const run = runs.create(board, name, folder);
+		if (replaces) fs.writeFileSync(path.join(run.dir, "replaces.txt"), replaces);
 		const error = start(run.dir, options);
 		push();
 		return error ? { error, id: run.dir } : { id: run.dir };
@@ -178,6 +169,22 @@ function push() {
 	win?.webContents.send("status", status());
 }
 
+/**
+ * A run started to replace another (Improve) deletes it once it has finished, through the same guarded
+ * remove as the Delete button. A stopped or failed run keeps its replaces.txt, so nothing is lost; the file
+ * survives quitting, so a run finished in a later session still does it.
+ */
+function replaceFinished() {
+	const due = runs.runs.filter((r) => r.state === "finished" && fs.existsSync(path.join(r.dir, "replaces.txt")));
+	for (const r of due) {
+		const file = path.join(r.dir, "replaces.txt");
+		const old = fs.readFileSync(file, "utf8").trim();
+		const error = old && old !== r.dir && fs.existsSync(old) ? runs.remove(old).error : undefined;
+		if (error) r.note = `Could not delete the run it replaces: ${error}`;
+		else fs.rmSync(file, { force: true });
+	}
+}
+
 // Twice a second: progress to the window, and the free-disk guard. Every second: rescan output files.
 // Every 4 s: the output folder itself, so folders made or removed in Finder or Explorer show up.
 let ticks = 0;
@@ -188,6 +195,7 @@ function tick() {
 			if (ticks % 2 === 0) r.scanFiles();
 			if (free < MIN_FREE_BYTES) r.stop("Stopped: under 10 GB free on disk");
 		}
+	if (ticks % 2 === 0) replaceFinished();
 	if (ticks % 8 === 0) runs.rescan();
 	ticks++;
 	push();

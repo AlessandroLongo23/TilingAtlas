@@ -20,7 +20,11 @@ export interface RunOptions {
 	threads: number;
 	/** --nice: 0 is normal priority, 19 the lowest. */
 	nice: number;
+	/** The branching rule, forced; left out, the engine measures both and picks one. */
+	rule?: Rule;
 }
+/** Branching on the fewest options (fail first) or on the face nearest to closing. */
+export type Rule = "fewest" | "face";
 
 /** tileestimate's report: estimates with their standard errors, as [value, se]. */
 export interface Estimate {
@@ -49,6 +53,9 @@ export interface Run {
 	elapsed: number;
 	rate: number;
 	roots: { done: number; all: number };
+	/** What the engine does before its first root: builds its tables (`tables`, no count), tries the
+	 *  start set and branching rule by trial searches (`plan`, done/all = k) and orders the roots (`rank`, done/all = root types). */
+	stage: { name: string; done: number; all: number } | null;
 	kmin: number;
 	kmax: number;
 	options: RunOptions | null;
@@ -59,8 +66,17 @@ export interface Run {
 	stats: string | null;
 	/** The size estimate (tools/searcher/tileestimate.cpp), refined while the run goes. */
 	estimate: Estimate | null;
-	/** Seconds left, with a low and high end, once the engine reports the nodes it has visited. */
-	eta: { seconds: number; low: number; high: number } | null;
+	/**
+	 * How far the search is by its work, once the engine reports the nodes it has visited and the estimate
+	 * has run: the share of the estimated nodes visited (of the roots left at a resume, when `resumed`), and
+	 * the seconds left with a low and a high end once there is a rate (none once the visits pass the
+	 * estimate, which was then too low: share is 1).
+	 */
+	work: {
+		share: number;
+		resumed: boolean;
+		left: { seconds: number; low: number; high: number } | null;
+	} | null;
 }
 
 export interface Settings {
@@ -84,7 +100,6 @@ export interface Status {
 export type Check = { ok: true; dump: string } | { ok: false; line: number | null; message: string };
 
 export interface Api {
-	examples(): Promise<{ name: string; text: string }[]>;
 	/** `tilesearch --dump`: the engine's own verdict on a board. */
 	check(text: string): Promise<Check>;
 	openBoard(): Promise<{ path: string; text: string } | null>;
@@ -92,7 +107,15 @@ export interface Api {
 	settings(): Promise<Settings>;
 	setSettings(s: Partial<Pick<Settings, "threads" | "nice">>): Promise<Settings>;
 	chooseRoot(): Promise<Settings>;
-	start(board: string, name: string, options: RunOptions): Promise<{ id: string } | { error: string }>;
+	/** Start a run, in `folder` (the output folder when absent). With `replaces`, that run is deleted once this
+	 *  one finishes (replaces.txt in its folder). */
+	start(
+		board: string,
+		name: string,
+		options: RunOptions,
+		replaces?: string,
+		folder?: string,
+	): Promise<{ id: string } | { error: string }>;
 	resume(id: string, options: RunOptions): Promise<{ error?: string }>;
 	stop(id: string): Promise<void>;
 	reveal(path: string): Promise<void>;
@@ -107,7 +130,7 @@ export interface Api {
 	readFile(path: string, max: number): Promise<string>;
 	status(): Promise<Status>;
 	/** Estimate a board's size before running it: a few seconds of tileestimate. */
-	estimate(board: string, k?: [number, number]): Promise<Estimate | { error: string }>;
+	estimate(board: string, k?: [number, number], rule?: Rule): Promise<Estimate | { error: string }>;
 	/** Stop every run and quit. */
 	quit(): Promise<void>;
 	/** The app was asked to quit while runs are going: the window asks whether to stop them. */

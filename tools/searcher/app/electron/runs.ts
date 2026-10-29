@@ -7,7 +7,11 @@ import { createHash } from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import type { Estimate, OutFile, Run, RunOptions } from "../src/bridge";
+import type { Estimate, OutFile, Rule, Run, RunOptions } from "../src/bridge";
+
+/** The environment that forces `rule` on tilesearch and tileestimate. */
+export const ruleEnv = (rule?: Rule): Record<string, string> =>
+	rule === "fewest" ? { TILESEARCH_FAIL_FIRST: "1" } : rule === "face" ? { TILESEARCH_FACE_FIRST: "1" } : {};
 import { parse } from "../src/board";
 
 export const MIN_FREE_BYTES = 10 * 2 ** 30;
@@ -55,9 +59,10 @@ export function runEstimator(
 	cwd: string,
 	args: string[],
 	base: Record<number, number>,
+	env: Record<string, string>,
 	onEstimate: (e: Estimate) => void,
 ) {
-	const child = spawn(exe, args, { cwd, stdio: ["ignore", "pipe", "ignore"], windowsHide: true });
+	const child = spawn(exe, args, { cwd, stdio: ["ignore", "pipe", "ignore"], windowsHide: true, env: { ...process.env, ...env } });
 	if (child.pid)
 		try {
 			os.setPriority(child.pid, 19);
@@ -97,6 +102,7 @@ export interface Session {
 	threads: number;
 	nice: number;
 	k?: [number, number];
+	rule?: Rule;
 	resumed: boolean;
 	ended?: string;
 	exit?: number;
@@ -134,8 +140,11 @@ export class RunFolder {
 	counts: Record<number, number> = {};
 	total = 0;
 	elapsed = 0;
+	/** Seconds the engine ran in earlier sessions (elapsed.txt): a resumed run's time adds to them. */
+	private before = 0;
 	rate = 0;
 	roots = { done: 0, all: 0 };
+	stage: Run["stage"] = null;
 	options: RunOptions | null = null;
 	files: OutFile[] = [];
 	log: string[] = [];
@@ -147,6 +156,7 @@ export class RunFolder {
 	private estimator: ChildProcess | null = null;
 	private child: ChildProcess | null = null;
 	private stopping = false;
+	private resumed = false;
 	private last = { t: 0, n: 0 };
 	private buffer = "";
 
@@ -169,6 +179,8 @@ export class RunFolder {
 			this.options = null;
 		}
 		this.readDisk();
+		this.elapsed = this.before = Number(read(path.join(dir, "elapsed.txt"))) || this.timeFromFiles();
+		this.log = read(path.join(dir, "log.txt")).split("\n").filter(Boolean);
 		try {
 			this.estimate = JSON.parse(read(path.join(dir, "estimate.json"))) as Estimate;
 		} catch {
@@ -180,17 +192,22 @@ export class RunFolder {
 		return path.join(this.dir, "solver_" + this.boardName);
 	}
 
-	/** What the files say: a finished run's census, or the sum of roots.done for a stopped one. */
-	readDisk() {
-		const counts: Record<number, number> = {};
-		const census = read(path.join(this.out, "census.txt"));
-		const done = read(path.join(this.out, "roots.done")).split("\n").filter(Boolean);
+	/** symbols.txt: how the engine prints the board's free symbols (X3 → A3p). A new run writes it once started. */
+	private readSymbols() {
 		this.free = Object.fromEntries(
 			read(path.join(this.out, "symbols.txt"))
 				.split("\n")
 				.map((l) => l.trim().split(/\s+/))
 				.filter((p) => p.length === 2),
 		);
+	}
+
+	/** What the files say: a finished run's census, or the sum of roots.done for a stopped one. */
+	readDisk() {
+		const counts: Record<number, number> = {};
+		const census = read(path.join(this.out, "census.txt"));
+		const done = read(path.join(this.out, "roots.done")).split("\n").filter(Boolean);
+		this.readSymbols();
 		if (census.endsWith("MAX\n")) {
 			for (const m of census.matchAll(/k=(\d+) -- (\d+)/g)) counts[Number(m[1])] = Number(m[2]);
 			this.state = "finished";
@@ -217,6 +234,8 @@ export class RunFolder {
 		} catch {
 			return;
 		}
+		// a run started here had no symbols.txt when it was opened: read it once the engine has written it
+		if (!Object.keys(this.free).length && names.includes("symbols.txt")) this.readSymbols();
 		this.files = names
 			.map((name) => {
 				const m = OUT_FILE.exec(name);
@@ -269,7 +288,12 @@ export class RunFolder {
 		if (resume) args.push("--resume");
 		let child: ChildProcess;
 		try {
-			child = spawn(engine, args, { cwd: this.dir, stdio: ["ignore", "pipe", "pipe"], windowsHide: true });
+			child = spawn(engine, args, {
+				cwd: this.dir,
+				stdio: ["ignore", "pipe", "pipe"],
+				windowsHide: true,
+				env: { ...process.env, ...ruleEnv(options.rule) },
+			});
 		} catch (e) {
 			this.state = "failed";
 			return (this.note = `Cannot start tilesearch: ${(e as Error).message}`);
@@ -282,11 +306,13 @@ export class RunFolder {
 		this.child = child;
 		this.stopping = false;
 		this.buffer = "";
-		this.elapsed = 0;
+		this.elapsed = this.before;
 		this.rate = 0;
 		this.stats = null;
-		this.last = { t: 0, n: this.total };
+		this.stage = null;
+		this.last = { t: this.before, n: this.total };
 		this.state = "running";
+		this.resumed = resume;
 		this.note = resume ? `Resumed with ${this.roots.done} roots already done` : "";
 		const session: Session = {
 			engine: engineHash(engine),
@@ -296,6 +322,7 @@ export class RunFolder {
 			threads: options.threads,
 			nice: options.nice,
 			...(options.k ? { k: options.k } : {}),
+			...(options.rule ? { rule: options.rule } : {}),
 			resumed: resume,
 		};
 		this.session = session;
@@ -320,7 +347,7 @@ export class RunFolder {
 		args.push("--seconds", String(ESTIMATE_SECONDS), "--threads", "1");
 		if (fs.existsSync(done)) args.push("--skip", done);
 		const base = { ...this.counts }; // a stopped run's counts are its finished roots' (readDisk)
-		this.estimator = runEstimator(exe, this.dir, args, base, (e) => {
+		this.estimator = runEstimator(exe, this.dir, args, base, ruleEnv(this.options?.rule), (e) => {
 			this.estimate = e;
 			try {
 				fs.writeFileSync(path.join(this.dir, "estimate.json"), JSON.stringify(e) + "\n");
@@ -347,7 +374,12 @@ export class RunFolder {
 
 	private handle(line: string) {
 		const t = line.split(" ");
+		if (t[0] === "stage" && t.length === 4) {
+			this.stage = { name: t[1], done: Number(t[2]) || 0, all: Number(t[3]) || 0 };
+			return;
+		}
 		if (t[0] === "roots" && t.length === 3) {
+			this.stage = null;
 			this.roots = { done: Number(t[1]) || 0, all: Number(t[2]) || 0 };
 			return;
 		}
@@ -366,7 +398,7 @@ export class RunFolder {
 			if (this.log.length > LOG_LINES) this.log.splice(0, this.log.length - LOG_LINES);
 			return;
 		}
-		this.elapsed = Number(t[1]) || this.elapsed;
+		this.elapsed = this.before + (Number(t[1]) || 0);
 		this.total = Number(t[2]) || this.total;
 		for (const kv of t.slice(3)) {
 			const [k, n] = kv.split(":").map(Number);
@@ -382,6 +414,11 @@ export class RunFolder {
 		this.child = null;
 		this.estimator?.kill();
 		this.estimator = null;
+		this.before = this.elapsed;
+		try {
+			fs.writeFileSync(path.join(this.dir, "elapsed.txt"), `${this.elapsed.toFixed(1)}\n`);
+			fs.writeFileSync(path.join(this.dir, "log.txt"), this.log.join("\n") + "\n");
+		} catch {}
 		const failed = !this.stopping && code !== 0;
 		if (failed) {
 			this.state = "failed";
@@ -421,6 +458,7 @@ export class RunFolder {
 			elapsed: this.elapsed,
 			rate: this.rate,
 			roots: { ...this.roots },
+			stage: this.state === "running" ? this.stage : null,
 			kmin: this.kRange[0],
 			kmax: this.kRange[1],
 			options: this.options,
@@ -429,8 +467,24 @@ export class RunFolder {
 			symbols: this.free,
 			stats: this.stats,
 			estimate: this.estimate,
-			eta: this.state === "running" ? this.eta() : null,
+			work: this.state === "running" ? this.work() : null,
 		};
+	}
+
+	/**
+	 * The search time of a finished run from before elapsed.txt: run.json is written as the engine starts
+	 * and census.txt as it finishes. A resume rewrites run.json, so when run.json is much younger than the
+	 * run itself the earlier sessions are unknown, and this answers 0 (no time shown) instead of a part.
+	 */
+	private timeFromFiles(): number {
+		if (this.state !== "finished") return 0;
+		try {
+			const start = fs.statSync(path.join(this.dir, "run.json")).mtimeMs;
+			const end = fs.statSync(path.join(this.out, "census.txt")).mtimeMs;
+			return Math.abs(start - this.created()) < 30_000 && end >= start ? (end - start) / 1000 : 0;
+		} catch {
+			return 0;
+		}
 	}
 
 	/** When the run was made: its folder's stamp, which outlives a rename that keeps it, else the folder's birth. */
@@ -445,20 +499,23 @@ export class RunFolder {
 	}
 
 	/**
-	 * Seconds left: the estimated nodes still to visit over the engine's rate in the last 30 s. The range
-	 * is the estimate's 95% interval. Null until the engine reports its nodes and the estimate has run.
+	 * The share of the estimated nodes visited, and the seconds left: the nodes still to visit over the
+	 * engine's rate in the last 30 s, with the estimate's 95% interval as the range. The estimate covers the
+	 * roots not done when this session started, as the engine's count does. Null until both exist.
 	 */
-	private eta(): Run["eta"] {
+	private work(): Run["work"] {
 		const e = this.estimate;
 		const h = this.nodesDone;
-		if (!e || h.length < 2) return null;
+		if (!e || !h.length || !(e.nodes[0] > 0)) return null;
 		const last = h[h.length - 1];
+		const [n, se] = e.nodes;
+		const work = { share: Math.min(1, last.n / n), resumed: this.resumed, left: null };
+		if (last.n >= n) return work; // past the estimate: it was low, and no time left can be read from it
 		const first = h.find((p) => p.t >= last.t - 30) ?? h[0];
 		const rate = (last.n - first.n) / Math.max(1e-9, last.t - first.t);
-		if (!(rate > 0)) return null;
+		if (!(rate > 0)) return work;
 		const left = (x: number) => Math.max(0, x - last.n) / rate;
-		const [n, se] = e.nodes;
-		return { seconds: left(n), low: left(n - 1.96 * se), high: left(n + 1.96 * se) };
+		return { ...work, left: { seconds: left(n), low: left(n - 1.96 * se), high: left(n + 1.96 * se) } };
 	}
 }
 
@@ -520,7 +577,8 @@ export class Runs {
 	/** Why `p` cannot be renamed, moved or deleted, or null. Only the output folder's own runs and folders can. */
 	private locked(p: string): string | null {
 		const rel = path.relative(this.root, p);
-		if (!rel || rel.startsWith("..") || path.isAbsolute(rel) || !fs.existsSync(p)) return "That is not in the output folder.";
+		if (!rel || rel.startsWith("..") || path.isAbsolute(rel) || !fs.existsSync(p))
+			return "That is not in the output folder.";
 		const busy = this.within(p).filter((r) => r.state === "running");
 		if (busy.length)
 			return busy.length === 1 && busy[0].dir === p ? "Stop the run first." : "Stop the runs inside it first.";
@@ -535,7 +593,11 @@ export class Runs {
 		} catch (e) {
 			return `Could not move it: ${(e as Error).message}`;
 		}
-		for (const r of this.within(from)) r.dir = to + r.dir.slice(from.length);
+		// the file list holds full paths: list it again from the new place, or reading a tiling fails
+		for (const r of this.within(from)) {
+			r.dir = to + r.dir.slice(from.length);
+			r.scanFiles();
+		}
 		this.rescan();
 		return null;
 	}
@@ -543,7 +605,9 @@ export class Runs {
 	rename(p: string, name: string): { path: string } | { error: string } {
 		const error = this.locked(p) ?? badName(name);
 		if (error) return { error };
-		const to = path.join(path.dirname(p), name.trim());
+		// a run keeps its stamp: the date it was made is not the app's to change, only the name before it
+		const stamp = fs.existsSync(path.join(p, "run.json")) ? (STAMP.exec(path.basename(p))?.[0] ?? "") : "";
+		const to = path.join(path.dirname(p), name.trim() + stamp);
 		if (to === p) return { path: p };
 		return this.wrap(this.relocate(p, to), to);
 	}
@@ -574,7 +638,8 @@ export class Runs {
 	}
 
 	mkdir(parent: string, name: string): { path: string } | { error: string } {
-		const error = badName(name) ?? (parent === this.root || this.folders.includes(parent) ? null : "That folder no longer exists.");
+		const error =
+			badName(name) ?? (parent === this.root || this.folders.includes(parent) ? null : "That folder no longer exists.");
 		if (error) return { error };
 		const p = path.join(parent, name.trim());
 		if (fs.existsSync(p)) return { error: `There is already a folder named “${name.trim()}” there.` };
@@ -587,12 +652,14 @@ export class Runs {
 		return error ? { error } : { path: p };
 	}
 
-	create(board: string, name: string): RunFolder {
+	/** A new run folder for `board`, in `folder` when that is one of the output folder's folders. */
+	create(board: string, name: string, folder?: string): RunFolder {
+		const parent = folder && this.folders.includes(folder) ? folder : this.root;
 		const d = new Date();
 		const p = (n: number) => String(n).padStart(2, "0");
 		const stamp = `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
-		let dir = path.join(this.root, `${name}-${stamp}`);
-		for (let i = 2; fs.existsSync(dir); i++) dir = path.join(this.root, `${name}-${stamp}-${i}`);
+		let dir = path.join(parent, `${name}-${stamp}`);
+		for (let i = 2; fs.existsSync(dir); i++) dir = path.join(parent, `${name}-${stamp}-${i}`);
 		fs.mkdirSync(dir, { recursive: true });
 		fs.writeFileSync(path.join(dir, "input.board"), board);
 		const run = RunFolder.open(dir)!;
