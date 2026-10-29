@@ -85,7 +85,7 @@ export const UPDATES: UpdateEntry[] = [
 		changes: [
 			{
 				kind: "feature",
-				text: "**TileSearch**, the desktop app that finds every k-uniform tiling a set of tiles can make and draws each one as it is found, is now a download for macOS (Apple silicon) and Windows, from the button in the top bar or on the home page. It runs Marek Čtrnáct's engine, with his permission.",
+				text: "**TileSearch**, the desktop app that finds every k-uniform tiling a set of tiles can make and draws each one as it is found, is now a download for macOS (Apple silicon) and Windows, from the button in the top bar or on the home page. It runs Marek Čtrnáct's engine.",
 				href: "/",
 			},
 			{
@@ -100,7 +100,7 @@ export const UPDATES: UpdateEntry[] = [
 			},
 			{
 				kind: "changed",
-				text: "**Hyperbolic boards whose tiles take several edge lengths** split their /play tree by sized tile, so the triangles at edge 1, 2 and 7 on board 1247 no longer sit together. Marek Čtrnáct asked for it.",
+				text: "**Hyperbolic boards whose tiles take several edge lengths** split their /play tree by sized tile, so the triangles at edge 1, 2 and 7 on board 1247 no longer sit together.",
 			},
 			{
 				kind: "fix",
@@ -126,7 +126,7 @@ export const UPDATES: UpdateEntry[] = [
 			},
 			{
 				kind: "content",
-				text: "**910,803 more hyperbolic tilings by regular polygons** from Marek Čtrnáct, among them 871,313 on the 2.9387 board rebuilt from his corrected solver, and 29,623 on the first board whose tiles take several edge lengths.",
+				text: "**910,803 more hyperbolic tilings by regular polygons** from Marek Čtrnáct, among them 871,313 on the rebuilt 2.9387 board, and 29,623 on the first board whose tiles take several edge lengths.",
 			},
 			{
 				kind: "feature",
@@ -158,7 +158,7 @@ export const UPDATES: UpdateEntry[] = [
 		changes: [
 			{
 				kind: "feature",
-				text: "**An animation timeline** docks under the /play canvas, where you drop keyframes, scrub and play them, and export a looping GIF on the plane, in the Poincaré disk and on the sphere. Each move follows its own geometry's motion, and a drift can loop by a symmetry of the tiling, which was Marek Čtrnáct's suggestion.",
+				text: "**An animation timeline** docks under the /play canvas, where you drop keyframes, scrub and play them, and export a looping GIF on the plane, in the Poincaré disk and on the sphere. Each move follows its own geometry's motion, and a drift can loop by a symmetry of the tiling.",
 				href: "/play?tiling=t2005",
 				images: ["/release-images/timeline.jpg"],
 			},
@@ -318,7 +318,7 @@ export const UPDATES: UpdateEntry[] = [
 			},
 			{
 				kind: "fix",
-				text: "**An apeirogon could flood the squares beside it** on some graphics cards, as Marek Čtrnáct saw on Firefox on Windows; the rounding behind it is fixed, and the live view no longer flickers behind the export dialog.",
+				text: "**An apeirogon could flood the squares beside it** on some graphics cards; the rounding behind it is fixed, and the live view no longer flickers behind the export dialog.",
 				href: "/play?tiling=hpy17627-2-00013",
 				images: ["/release-images/hyp-apeirogon.jpg"],
 			},
@@ -387,7 +387,7 @@ export const UPDATES: UpdateEntry[] = [
 		changes: [
 			{
 				kind: "perf",
-				text: "**Hyperbolic tilings answer a drag almost at once** while their catalogue loads: the longest freeze on a phone-speed test drops from 2.7 s to 0.6 s. The picture stays faded until it can be moved, as Marek Čtrnáct suggested.",
+				text: "**Hyperbolic tilings answer a drag almost at once** while their catalogue loads: the longest freeze on a phone-speed test drops from 2.7 s to 0.6 s. The picture stays faded until it can be moved.",
 				href: "/play?tiling=hyp-6-6-7",
 			},
 			{
@@ -797,7 +797,7 @@ export const UPDATES: UpdateEntry[] = [
 		changes: [
 			{
 				kind: "feature",
-				text: "**A tile's edge can now be met by two neighbours instead of one**, the T-junction case Marek Čtrnáct pointed out, and it was missing from every shelf whose tiles have an edge as long as two others.",
+				text: "**A tile's edge can now be met by two neighbours instead of one**, and that T-junction case was missing from every shelf whose tiles have an edge as long as two others.",
 				href: "/library",
 				tilings: ["tri45x-k2-072", "euhtri-k1-0005", "euhsqmid-k1-0002"],
 			},
@@ -1314,7 +1314,7 @@ export const UPDATES: UpdateEntry[] = [
 		changes: [
 			{
 				kind: "content",
-				text: "**Four Schwarz boards** were re-derived from Marek Čtrnáct's corrected solvers.",
+				text: "**Four Schwarz boards** were re-derived and corrected.",
 				items: ["(2,3,6): 43 → 462 tilings", "(2,4,5): 7 → 23", "(2,2,3): 2,297 → 2,347", "(2,2,4): 65,257, unchanged"],
 				href: "/freedraw",
 			},
