@@ -24,10 +24,31 @@ const SNAP = 0.01;
  * background: with no colour to fade toward, dark tiles would read as a rendering fault.
  */
 export function parseDimTarget(css: string): [number, number, number] {
-	const m = css.match(/[\d.]+/g);
+	const m = toRgb(css).match(/[\d.]+/g);
 	if (!m || m.length < 3) return [1, 1, 1];
 	if (m.length >= 4 && Number(m[3]) === 0) return [1, 1, 1];
 	return [Number(m[0]) / 255, Number(m[1]) / 255, Number(m[2]) / 255];
+}
+
+// A computed background can come back in the colour syntax it was written in: the dark theme's
+// `oklch(0.16 0.004 270)` read as rgb is (0, 0, 1), pure blue. A 1x1 canvas paints any CSS colour and
+// reads it back as sRGB bytes; memoised, since the cards ask every frame.
+const rgbOf = new Map<string, string>();
+let probe: CanvasRenderingContext2D | null | undefined;
+function toRgb(css: string): string {
+	if (/^rgba?\(/.test(css) || typeof document === "undefined") return css;
+	const hit = rgbOf.get(css);
+	if (hit) return hit;
+	probe ??= document.createElement("canvas").getContext("2d", { willReadFrequently: true });
+	if (!probe) return css;
+	probe.clearRect(0, 0, 1, 1);
+	probe.fillStyle = "transparent"; // a colour the canvas cannot parse leaves this, so it falls to white
+	probe.fillStyle = css;
+	probe.fillRect(0, 0, 1, 1);
+	const [r, g, b, a] = probe.getImageData(0, 0, 1, 1).data;
+	const out = `rgba(${r}, ${g}, ${b}, ${a / 255})`;
+	rgbOf.set(css, out);
+	return out;
 }
 
 export interface OrbitDot {

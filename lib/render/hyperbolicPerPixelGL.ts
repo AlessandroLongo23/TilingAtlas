@@ -60,6 +60,9 @@ uniform vec3 uStrokeSca;   // edge mode: scaffold stroke colour
 uniform float uColorsMode; // 1 = fill each face by its colour index from uPalette
 uniform vec3 uPalette[8];  // colors mode: RGB per color index (0=A, 1=B, …); a hybrid board has 5 sizes
 uniform highp sampler2D uWalk; // walk table (hyperbolicWalk.ts layout), one row per quotient face
+uniform highp sampler2D uBump; // bubble sides (hyperbolicWalk.ts bump): two texels per slot, row per face
+uniform float uBumpOn;     // 1 = the record has bubble sides
+uniform float uBumpH;      // bulge height over the half chord
 uniform int uFace;         // the camera's anchor face: uView maps its frame to the screen
 uniform float uMaterial;   // MATERIAL_CODE (hypMaterials.ts): 0 none, 1 marble, 2 glass, 3 wood, 4 cobblestone
 uniform float uScan;       // 1 = the material reads its scanned surfaces (uSurfC, uSurfN) instead of procedurals
@@ -124,7 +127,7 @@ void main() {
 	vec2 va = uView.xy, vb = uView.zw;
 	vec2 w = su11(cconj(va), -vb, z); // inverse view: a -> conj(a), b -> -b
 
-	// What the walk hands to the colouring below. tileKey is the side count on a plain tiling and the
+	// What the walk hands to the colouring below. tileKey is the corner count on a plain tiling and the
 	// colour index on a colouring; hypD and hypS are hyperbolic distances to the nearest drawn and
 	// undrawn edge; (ma, mb) is the isometry from the frame the walk ended in back to the anchor's.
 	float tileKey = 0.0, hypD = 1e3, hypS = 1e3;
@@ -212,6 +215,8 @@ void main() {
 			if (hd.x == 3.0 && e != 0) continue; // past a reflex corner a neighbour's geodesic crosses the arm
 			float mm = max(1.0, texelFetch(uWalk, ivec2(1, f), 0).w);
 			int jj = hd.x == 1.0 ? imod(kf + float(e), hd.y / mm) * int(mm) : (j + e + S) % S;
+			// a bubble side is drawn as its arc, below, not as the geodesic
+			if (uBumpOn > 0.5 && hd.x != 1.0 && texelFetch(uBump, ivec2(2 * jj + 1, f), 0).y != 0.0) continue;
 			float sv = hd.x == 1.0
 				? pastHoro(z, kf + float(e), hd.z)
 				: past(texelFetch(uWalk, ivec2(4 + 3 * jj, f), 0).xyz, w);
@@ -220,6 +225,35 @@ void main() {
 				if (uMaterial > 0.5 && dist < hypD && hd.x != 1.0) edgeG = pastGrad(texelFetch(uWalk, ivec2(4 + 3 * jj, f), 0).xyz, w);
 				hypD = min(hypD, dist);
 			} else hypS = min(hypS, dist);
+		}
+	}
+
+	// Bubble sides: each is a circle arc through its two corners, bulging out of the face that owns the bump
+	// into the face that owns the bite. A point of this face inside the bulge of a bite side belongs to the
+	// face across; the stroke follows the arc. Worked in the side's own frame, where it is [−a, a] on the
+	// real axis, so the distance is Euclidean there times the conformal factor.
+	if (inside && uBumpOn > 0.5 && hd.x != 1.0) {
+		int S = int(hd.y);
+		for (int i = 0; i < 40; i++) {
+			if (i >= S) break;
+			vec4 bi = texelFetch(uBump, ivec2(2 * i + 1, f), 0);
+			if (bi.y == 0.0) continue;
+			vec4 T = texelFetch(uBump, ivec2(2 * i, f), 0);
+			vec2 u = su11(T.xy, T.zw, w);
+			float a = bi.x;
+			// turn the frame so the bulge is on +y: a bite bulges into this face, a bump out of it
+			vec2 v = vec2(u.x, u.y * bi.z * (bi.y < 0.0 ? 1.0 : -1.0));
+			float hh = uBumpH * a;
+			vec2 c = vec2(0.0, (hh * hh - a * a) / (2.0 * hh));
+			float R = (a * a + hh * hh) / (2.0 * hh);
+			float dc = length(v - c);
+			vec2 near = c + (v - c) * (R / max(dc, 1e-9));
+			float de = near.y >= 0.0 ? abs(dc - R) : min(length(v - vec2(-a, 0.0)), length(v - vec2(a, 0.0)));
+			hypD = min(hypD, de * 2.0 / max(1.0 - dot(u, u), 1e-6));
+			if (bi.y < 0.0 && v.y > 0.0 && dc < R) {
+				int nf = int(texelFetch(uWalk, ivec2(3 + 3 * i, f), 0).x);
+				tileKey = uEdgeMode > 0.5 ? texelFetch(uWalk, ivec2(1, nf), 0).x : texelFetch(uWalk, ivec2(0, nf), 0).w;
+			}
 		}
 	}
 
@@ -544,6 +578,8 @@ export class HyperbolicPerPixelRenderer {
 	private prog: WebGLProgram;
 	private quad: WebGLBuffer;
 	private texWalk: WebGLTexture;
+	private texBump: WebGLTexture;
+	private bumpH = 0;
 	private texIslamic: WebGLTexture;
 	private texSeeds: WebGLTexture;
 	private texSurfC: WebGLTexture;
@@ -604,6 +640,9 @@ export class HyperbolicPerPixelRenderer {
 			"uColorsMode",
 			"uPalette",
 			"uWalk",
+			"uBump",
+			"uBumpOn",
+			"uBumpH",
 			"uFace",
 			"uMaterial",
 			"uSeeds",
@@ -623,6 +662,7 @@ export class HyperbolicPerPixelRenderer {
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.quad);
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW); // one big triangle
 		this.texWalk = gl.createTexture();
+		this.texBump = gl.createTexture();
 		this.texIslamic = gl.createTexture();
 		// Keep the Islamic sampler complete before any layer is uploaded. It is only read behind
 		// uIslamicOn, but an incomplete texture is undefined behaviour on some drivers.
@@ -696,6 +736,23 @@ export class HyperbolicPerPixelRenderer {
 		gl.bindTexture(gl.TEXTURE_2D, this.texWalk);
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, t.width, t.height, 0, gl.RGBA, gl.FLOAT, new Float32Array(t.data));
 		this.walk = t;
+		this.bumpH = t.bump ? t.bump.h : 0;
+		gl.bindTexture(gl.TEXTURE_2D, this.texBump);
+		// one zero texel when there are no bubble sides, so the sampler stays complete
+		gl.texImage2D(
+			gl.TEXTURE_2D,
+			0,
+			gl.RGBA32F,
+			t.bump ? t.bump.width : 1,
+			t.bump ? t.height : 1,
+			0,
+			gl.RGBA,
+			gl.FLOAT,
+			t.bump ? new Float32Array(t.bump.data) : new Float32Array(4),
+		);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+		gl.bindTexture(gl.TEXTURE_2D, this.texWalk);
 		this.ranks = polygonRanks(t);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
@@ -793,6 +850,11 @@ export class HyperbolicPerPixelRenderer {
 		gl.activeTexture(gl.TEXTURE1);
 		gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.texIslamic);
 		gl.uniform1i(this.u.uIslamic, 1);
+		gl.activeTexture(gl.TEXTURE5);
+		gl.bindTexture(gl.TEXTURE_2D, this.texBump);
+		gl.uniform1i(this.u.uBump, 5);
+		gl.uniform1f(this.u.uBumpOn, this.bumpH > 0 ? 1 : 0);
+		gl.uniform1f(this.u.uBumpH, this.bumpH);
 		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(gl.TEXTURE_2D, this.texWalk);
 		gl.uniform1i(this.u.uWalk, 0);
@@ -810,6 +872,7 @@ export class HyperbolicPerPixelRenderer {
 		gl.deleteProgram(this.prog);
 		gl.deleteBuffer(this.quad);
 		gl.deleteTexture(this.texWalk);
+		gl.deleteTexture(this.texBump);
 		gl.deleteTexture(this.texIslamic);
 		gl.deleteTexture(this.texSeeds);
 		gl.deleteTexture(this.texSurfC);

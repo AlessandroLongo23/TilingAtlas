@@ -414,6 +414,8 @@ export interface RenderTilingOptions {
 	background?: string | null;
 	/** Global fill-hue rotation (degrees, the sidebar hue ring). Omitted ⇒ 0 (figures, cards). */
 	hueOffsetDeg?: number;
+	/** The tile outline (drawPolygons); false draws none. Omitted ⇒ the 1-px preview outline. */
+	outline?: boolean | number;
 }
 
 /**
@@ -452,7 +454,7 @@ export function renderTilingToContext(
 		ctx.translate(W / 2, H / 2);
 		ctx.scale(scale, -scale);
 		ctx.translate(-cellCx, -cellCy);
-		drawPolygons(ctx, polys, scale, hueOffsetDeg);
+		drawPolygons(ctx, polys, scale, hueOffsetDeg, opts.outline ?? true);
 		ctx.restore();
 		return true;
 	}

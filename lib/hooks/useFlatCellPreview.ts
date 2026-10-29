@@ -97,6 +97,8 @@ export interface FlatCellPreviewOptions {
 	 * new cell is a different tiling, framed afresh.
 	 */
 	keepView?: boolean;
+	/** The tile outline in CSS px; 0 draws none (a colouring read by its colours alone). Default 1. */
+	lineWidth?: number;
 }
 
 export interface FlatCellPreview {
@@ -131,6 +133,7 @@ export function useFlatCellPreview({
 	single = false,
 	interactive = true,
 	keepView = false,
+	lineWidth = 1,
 }: FlatCellPreviewOptions): FlatCellPreview {
 	const hostRef = useRef<HTMLDivElement | null>(null);
 	// In refs, not the GL effect's deps: changing one must not tear down and rebuild the context.
@@ -152,6 +155,8 @@ export function useFlatCellPreview({
 	symmetryRef.current = symmetryData;
 	const overlayFlagsRef = useRef({ fd: showFundamentalDomain, sym: showSymmetryElements, pts: showPolygonPoints });
 	overlayFlagsRef.current = { fd: showFundamentalDomain, sym: showSymmetryElements, pts: showPolygonPoints };
+	const lineWidthRef = useRef(lineWidth);
+	lineWidthRef.current = lineWidth;
 	const singleRef = useRef(single);
 	singleRef.current = single;
 	const interactiveRef = useRef(interactive);
@@ -467,7 +472,7 @@ export function useFlatCellPreview({
 				offset,
 				zoom: ctrl.zoom,
 				rotationDeg: ctrl.rotation,
-				lineWidth: 1,
+				lineWidth: lineWidthRef.current,
 				showFill: true,
 				// Fill is always on in a preview, so the stroke is always black — the same rule as
 				// euclidean-canvas.tsx (its white-stroke case only exists for fill-off in dark mode).
@@ -495,11 +500,15 @@ export function useFlatCellPreview({
 			// First child, so the React-rendered overlays (caption, hint, fallback) paint above it.
 			host.prepend(canvas);
 			// If the browser evicts this context (too many live contexts elsewhere), rebuild while still
-			// visible — the IO would otherwise only notice on the next enter/leave.
+			// visible — the IO would otherwise only notice on the next enter/leave. Teardown's own
+			// loseContext fires this event too, after the canvas is gone: rebuilding then made a context on a
+			// detached host that nothing released, one per unmount, until the browser evicted live ones.
+			const mine = canvas;
 			canvas.addEventListener(
 				"webglcontextlost",
 				(e) => {
 					e.preventDefault();
+					if (canvas !== mine) return;
 					teardown();
 					if (visible) setup();
 				},

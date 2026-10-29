@@ -13,7 +13,16 @@
 
 export type Geometry = "sphere" | "plane" | "hyperbolic";
 type P2 = { x: number; y: number };
-type P3 = [number, number, number];
+export type P3 = [number, number, number];
+/** A turn of the sphere: a 3×3 rotation matrix, row by row. */
+export type Turn = number[];
+
+/** `p` turned by `m`. */
+export const turned = (m: Turn, [x, y, z]: P3): P3 => [
+	m[0] * x + m[1] * y + m[2] * z,
+	m[3] * x + m[4] * y + m[5] * z,
+	m[6] * x + m[7] * y + m[8] * z,
+];
 
 const SAMPLES = 24;
 const flatAngle = (n: number) => Math.PI - (2 * Math.PI) / n;
@@ -112,21 +121,31 @@ export interface VertexFigure {
 	edge: number | null;
 	/** Each polygon's outline in figure coordinates: the plane as is, the sphere and disk of radius 1. */
 	polygons: P2[][];
+	/** The sphere only: each polygon's part on the far side, seen through the sphere. */
+	back: P2[][];
+	/** The direction of each corner's bisector round the vertex, in radians. */
+	mids: number[];
 }
 
-export function vertexFigure(ns: number[]): VertexFigure {
+/** On the sphere the vertex faces the viewer at (0, 0, 1) unless `turn` turns it away. */
+export function vertexFigure(ns: number[], turn?: Turn, exact?: Geometry): VertexFigure {
+	// `exact`: where the corners close, from a caller that knows their angles better than `ns` can say (a
+	// 180° corner can only be stood in for here by a many-sided polygon's, a hair short of flat)
 	const flatSum = ns.reduce((t, n) => t + flatAngle(n), 0);
 	const geometry: Geometry =
-		Math.abs(flatSum - 2 * Math.PI) < 1e-9 ? "plane" : flatSum < 2 * Math.PI ? "sphere" : "hyperbolic";
+		exact ?? (Math.abs(flatSum - 2 * Math.PI) < 1e-9 ? "plane" : flatSum < 2 * Math.PI ? "sphere" : "hyperbolic");
 	const s = ns.length >= 3 ? solveEdge(ns, geometry) : geometry === "plane" ? 1 : null;
 	const edge = ns.length >= 3 ? s : null;
 	const len = s ?? 1;
 	const g: Geometry = s == null ? "plane" : geometry; // nothing closes: show the flat fan
 	const polygons: P2[][] = [];
+	const back: P2[][] = [];
+	const mids: number[] = [];
 	let from = 0;
 	for (const n of ns) {
 		const a = angleAt(n, len, g);
 		const mid = from + a / 2;
+		mids.push(mid);
 		from += a;
 		const cotA = 1 / Math.tan(Math.PI / n),
 			cotH = 1 / Math.tan(a / 2);
@@ -156,10 +175,11 @@ export function vertexFigure(ns: number[]): VertexFigure {
 				const x2 = x * Math.cos(R) + z * Math.sin(R),
 					z2 = -x * Math.sin(R) + z * Math.cos(R);
 				const r = rot({ x: x2, y }, mid);
-				return [r.x, r.y, z2];
+				return turn ? turned(turn, [r.x, r.y, z2]) : ([r.x, r.y, z2] as P3);
 			});
 			polygons.push(clipFront(pts));
+			back.push(clipFront(pts.map(([x, y, z]) => [x, y, -z])));
 		}
 	}
-	return { geometry, flatSum: (flatSum * 180) / Math.PI, edge, polygons };
+	return { geometry, flatSum: (flatSum * 180) / Math.PI, edge, polygons, back, mids };
 }

@@ -77,6 +77,12 @@ export interface WalkTiling {
 	/** The polygon sizes that have an Islamic layer (hyperbolicIslamic.ts), in layer order: the regular
 	 *  faces, 0 standing for the apeirogon. A scalene tile has none and draws plain. */
 	sizes: number[];
+	/** Bubble sides (darts.bump), when the record has them: per face row, two texels per slot,
+	 *  (T.a, T.b) carrying the face frame onto the frame where the slot's whole side (corner to corner,
+	 *  through its flat middle) is the segment [−a, a] of the real axis, then (a, +1 bump / −1 bite / 0,
+	 *  +1 or −1 for the half-plane the face is in, 0). `h` is the bulge height over the half chord: the
+	 *  bulge is the circle arc through ±a that high, so every copy of a side draws the same curve. */
+	bump?: { data: Float64Array; width: number; h: number };
 }
 
 const mul = (m: Su11, n: Su11) => su11Normalize(su11Mul(m, n));
@@ -262,12 +268,17 @@ export function buildWalk(darts: Darts, edge: number, opts: { allDrawn?: boolean
 		const S = slots[f];
 		const p = lvert[rneig[ring[0]]];
 		const layer = kind[f] >= WALK_IRREGULAR ? -1 : sizes.indexOf(p);
+		// The size the face is coloured by (and ranked by for the materials): its corners, not its unit
+		// sides. A triangle whose sides are cut into two edges (M3 Pi M3 Pi M3 Pi) has p = 6 unit sides and
+		// three corners, and is a triangle. The flat corners are spread evenly round the face, so the share
+		// of them in the ring holds even when the ring is one period of a symmetric face.
+		const corners = p === 0 ? 0 : Math.round((p * ring.filter((h) => !flat(h)).length) / ring.length);
 		data.set(
 			[
 				kind[f],
 				S,
 				step[f],
-				p,
+				corners,
 				darts.faceColor ? darts.faceColor[ring[0]] : 0,
 				layer,
 				...(p === 0 ? [0, run[f]] : layer < 0 ? [0, 0] : islamicWedgeBox(p, edge)),
@@ -312,6 +323,42 @@ export function buildWalk(darts: Darts, edge: number, opts: { allDrawn?: boolean
 			}
 		}
 	}
+	// Bubble sides: each slot's whole side, corner to corner through its flat middle, put on the real axis.
+	let bump: WalkTiling["bump"];
+	if (darts.bump) {
+		const bw = 2 * Math.max(...slots);
+		const bd = new Float64Array(F * bw * 4);
+		// the arc leaves a corner at angle θ to the side; θ under half the sharpest corner keeps two arcs
+		// at one corner apart (lib/bubble/edges.ts budgets its depth by the corner angle the same way)
+		let sharp = Math.PI;
+		for (let h = 0; h < n; h++) if (!flat(h) && lvert[rneig[h]] !== 2) sharp = Math.min(sharp, alpha(h));
+		const H = Math.tan(Math.min(Math.PI / 6, 0.4 * sharp) / 2);
+		for (let f = 0; f < F; f++) {
+			if (kind[f] !== WALK_IRREGULAR) continue;
+			const ring = rings[f];
+			const S = slots[f];
+			const L = ring.length;
+			const at = (k: number) => ring[((k % L) + L) % L];
+			for (let s = 0; s < S; s++) {
+				const b = darts.bump[at(s)] || darts.bump[at(s + 1)];
+				if (!b) continue;
+				let s0 = s;
+				let s1 = s;
+				for (let g = 0; g < S && flat(at(s0)); g++) s0--;
+				for (let g = 0; g < S && flat(at(s1 + 1)); g++) s1++;
+				const p = verts[f][((s0 % S) + S) % S];
+				const q = verts[f][(s1 + 1) % S];
+				const T1 = su11Inverse(su11Translation(hypMidpoint(p, q)));
+				const q1 = su11Apply(T1, q);
+				const T = mul(su11Rotation(-Math.atan2(q1.y, q1.x)), T1);
+				const a = su11Apply(T, q).x;
+				const side = su11Apply(T, { x: 0, y: 0 }).y > 0 ? 1 : -1;
+				bd.set([T.a.x, T.a.y, T.b.x, T.b.y, a, b, side, 0], (f * bw + 2 * s) * 4);
+			}
+		}
+		bump = { data: bd, width: bw, h: H };
+	}
+
 	// Open on the most symmetric point: a face's centre is the origin of its own frame, a vertex is a
 	// corner of the face in its wedge, an edge's midpoint lies half an edge along the dart from there.
 	const c = bestCentre(dartSymmetry(darts, edge).features);
@@ -331,6 +378,7 @@ export function buildWalk(darts: Darts, edge: number, opts: { allDrawn?: boolean
 		verts,
 		corner: rings.map((ring, f) => ({ dart: ring[0], frame: K[f][0] })),
 		sizes,
+		...(bump ? { bump } : {}),
 	};
 }
 

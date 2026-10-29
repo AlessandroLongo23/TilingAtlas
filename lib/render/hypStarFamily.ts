@@ -21,10 +21,12 @@ export interface HypFamily {
 }
 
 /** Dent of the isotoxal star n* with point α and edge l: the triangle centre–point–dent has angles π/n,
- *  α/2, β/2 with l opposite the centre, solved on the branch that is the Euclidean dent at l = 0. */
-export function starDent(n: number, alpha: number, l: number): number {
+ *  α/2, β/2 with l opposite the centre, solved on the branch that is the Euclidean dent at l = 0. On the
+ *  sphere (`sphere`) cos l replaces cosh l; NaN where no such star exists. Also a convex isotoxal face's
+ *  second angle. */
+export function starDent(n: number, alpha: number, l: number, sphere = false): number {
 	const A = Math.PI / n;
-	const x = Math.sin(alpha / 2) * Math.cosh(l);
+	const x = Math.sin(alpha / 2) * (sphere ? Math.cos(l) : Math.cosh(l));
 	const y = Math.cos(alpha / 2);
 	return 2 * (Math.atan2(y, x) + Math.asin(Math.cos(A) / Math.hypot(x, y)));
 }

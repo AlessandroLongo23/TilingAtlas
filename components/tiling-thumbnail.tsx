@@ -44,6 +44,8 @@ interface TilingThumbnailProps {
 	periodsAcross?: number;
 	/** Draw a unit-edge ruler in the bottom-right corner. */
 	scaleBar?: boolean;
+	/** The tile outline; false draws none. Default: the 1-px preview outline. */
+	outline?: boolean | number;
 }
 
 /**
@@ -70,6 +72,7 @@ export function TilingThumbnail({
 	fit,
 	periodsAcross,
 	scaleBar = false,
+	outline = true,
 }: TilingThumbnailProps) {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const [hasError, setHasError] = useState(false);
@@ -134,6 +137,7 @@ export function TilingThumbnail({
 					polygons: polys,
 					pxPerEdge: edgePx,
 					hueOffsetDeg: hueOffset,
+					outline,
 					// Transparent: the preview slot's own bg-surface-raised shows through, so the
 					// backdrop follows the theme and a Shift+T flip recolours every mounted thumbnail
 					// with no redraw (the draw effect has no theme dependency, so it wouldn't rerun).
@@ -187,7 +191,7 @@ export function TilingThumbnail({
 			ro.disconnect();
 			cancelJob?.();
 		};
-	}, [encodedTiling, rawPolygons, translationalCell, pxPerEdge, fit, periodsAcross, hueOffset]);
+	}, [encodedTiling, rawPolygons, translationalCell, pxPerEdge, fit, periodsAcross, hueOffset, outline]);
 
 	if (hasError) {
 		return (

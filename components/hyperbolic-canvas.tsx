@@ -110,7 +110,8 @@ export function HyperbolicCanvas({ tiling, mode, input, diskPadPx = DISK_PAD_PX 
 	}, [input]);
 
 	useEffect(() => {
-		const gl = canvasRef.current?.getContext("webgl2", { alpha: true, antialias: false, premultipliedAlpha: true });
+		const canvas = canvasRef.current;
+		const gl = canvas?.getContext("webgl2", { alpha: true, antialias: false, premultipliedAlpha: true });
 		try {
 			if (gl) glRef.current = new HyperbolicPerPixelRenderer(gl);
 		} catch (e) {
@@ -119,6 +120,13 @@ export function HyperbolicCanvas({ tiling, mode, input, diskPadPx = DISK_PAD_PX 
 		return () => {
 			glRef.current?.dispose();
 			glRef.current = null;
+			// Release the context once the canvas has left the page, not at GC: browsers cap live contexts
+			// (~16) and drop the oldest past it, so a view that mounts one disk after another (TileSearch
+			// stepping through tilings) otherwise evicts live canvases. A tick later, and only if detached:
+			// Strict Mode's re-run keeps this canvas and must find its context alive.
+			setTimeout(() => {
+				if (canvas && !canvas.isConnected) gl?.getExtension("WEBGL_lose_context")?.loseContext();
+			});
 		};
 	}, []);
 
