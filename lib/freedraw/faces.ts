@@ -28,6 +28,7 @@ import {
 	gridOf,
 } from "./pattern";
 import { spanRank } from "./topology";
+import { FREEDRAW_GRIDS } from "@/lib/vocabulary";
 
 export interface FaceInfo {
 	/** Index into FaceAnalysis.faces; also the value stored in cellFace. */
@@ -107,7 +108,7 @@ function holeCount(cells: [number, number][]): number {
  */
 export function analyseFaces(p: FreedrawPattern): FaceAnalysis {
 	if (p.patch) return analysePatch(p);
-	return gridOf(p) === "triangle" ? analyseTriangle(p) : analyseSquare(p);
+	return gridOf(p) === FREEDRAW_GRIDS.TRIANGLE ? analyseTriangle(p) : analyseSquare(p);
 }
 
 /**
@@ -191,7 +192,7 @@ function analyseSquare(p: FreedrawPattern): FaceAnalysis {
 		});
 	}
 
-	return { grid: "square", faces, cellFace };
+	return { grid: FREEDRAW_GRIDS.SQUARE, faces, cellFace };
 }
 
 // Triangle-cell adjacency (see pattern.ts for the U/D geometry): each neighbour step names the raw
@@ -272,7 +273,7 @@ function analyseTriangle(p: FreedrawPattern): FaceAnalysis {
 		});
 	}
 
-	return { grid: "triangle", faces, cellFace };
+	return { grid: FREEDRAW_GRIDS.TRIANGLE, faces, cellFace };
 }
 
 /** Holes in a connected polyiamond: 1 - (V - E + F) over its decoded triangles. */
@@ -454,7 +455,7 @@ const D6: [number, number, number, number][] = (() => {
 /** Canonical name of a face up to translation AND the grid symmetries: its congruence class. */
 function shapeKey(f: FaceInfo, grid: FreedrawGrid): string {
 	let best: string | null = null;
-	for (const [a, b, c, d] of grid === "triangle" ? D6 : D4) {
+	for (const [a, b, c, d] of grid === FREEDRAW_GRIDS.TRIANGLE ? D6 : D4) {
 		const move = ([x, y]: [number, number]): [number, number] => [a * x + b * y, c * x + d * y];
 		const key = poseKey({ ...f, lifts: f.lifts.map(move), periods: f.periods.map(move) });
 		if (best === null || key < best) best = key;
@@ -713,7 +714,7 @@ const FINITE_LABEL: Record<FreedrawGrid, string> = {
 	ih: "polyform",
 };
 
-export const rankLabel = (rank: 0 | 1 | 2, grid: FreedrawGrid = "square") =>
+export const rankLabel = (rank: 0 | 1 | 2, grid: FreedrawGrid = FREEDRAW_GRIDS.SQUARE) =>
 	rank === 0 ? FINITE_LABEL[grid] : rank === 1 ? "strip" : "unbounded";
 
 export interface FaceSummary {

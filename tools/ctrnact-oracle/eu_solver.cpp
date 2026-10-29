@@ -362,6 +362,7 @@ static void load_tables_bin(const char* path) {
 #else
 #include "solver_tables.inc"
 #endif
+#include "hyp_feas.h"   // EU_HYPFEAS: angle feasibility of a block's vertex types (negative-defect palettes)
 
 // Defined where BOTH table paths have `mainlist` in scope. Which is the point: it used to live inside
 // the runtime loader alone, so the compiled binary — the one run-oracle-parallel.sh uses — left
@@ -920,6 +921,7 @@ int initex() {
     for (int i = 0; i < root_end; i++) {
         if (shard_n1 > 1 && i % shard_n1 != shard_w1) continue;  // this worker's slice of the roots
         if (!TYPE_OK[i]) continue;                             // type cannot occur in any tiling
+        if (hf::mode && !hf::feasible({i})) continue;          // cannot close at any edge (EU_HYPFEAS)
         if (progress_sec > 0) {
             long now = (long)time(nullptr);
             if (now - last_progress >= progress_sec) {
@@ -1535,7 +1537,11 @@ int extend(configuration& slist) {
                     const int chg2[4] = { firstfree, i,
                                           mirrored ? -1 : newconf2.mirro[firstfree],
                                           mirrored ? -1 : newconf2.mirro[i] };
-                    if (checkpart_inc(newconf2, chg2, 4) && (!shard_here || shard_take_branch())) {
+                    // EU_HYPFEAS, after the cheap structural test: if the block's types cannot close
+                    // together, neither can any block grown from it (types only accumulate). Proven, so
+                    // nothing is lost; see hyp_feas.h. Cached per type set, so the other reps are free.
+                    if (checkpart_inc(newconf2, chg2, 4) && (!shard_here || shard_take_branch()) &&
+                        (!hf::mode || hf::feasible_with(newconf2.vertype, gr))) {
                         if (std::find(newconf2.glue.begin(), newconf2.glue.end(), -1) == newconf2.glue.end()) {
                             if (newconf2.kcnt > seen) {
                                 if (simplify(newconf2)) {
@@ -2066,6 +2072,7 @@ int main() {
         int filecount = 1;
         gen.open(filepath + genfile + std::to_string(filecount) + ".txt");
     }
+    hf::init(TABLE_D);
     // EU_FORK=<P> — P WORKER PROCESSES SHARING ONE ALPHABET (2026-08-31).
     //
     // The pool runner gets its parallelism from P independent solver processes, and each one builds
@@ -2119,6 +2126,7 @@ int main() {
                 }
                 family_streams_close();
                 std::cerr << "fork" << c << ": nodes " << solcount << "\n";
+                hf::report();
                 _exit(0);
             }
             kids.push_back(pid);
@@ -2134,6 +2142,7 @@ int main() {
     }
     initex();
     family_streams_close();     // flush and close the per-family output handles (FIX 18)
+    hf::report();
     if (eu_trace) gen.close();
     // DFS node count: one per extend() call, i.e. every partial configuration the search expanded.
     // Needed to price isomorph-free generation. The duplication table counts emitted LEAVES (raw

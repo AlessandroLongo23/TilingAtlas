@@ -18,6 +18,7 @@ import { Button } from "./ui/button";
 import { Modal } from "./ui/modal";
 import { useIsPhone } from "@/lib/hooks/useIsPhone";
 import { cn } from "@/lib/utils/cn";
+import { GEOMETRIES } from "@/lib/vocabulary";
 
 interface TilingInfoProps {
 	spec: TilingSpec | null;
@@ -172,8 +173,7 @@ function StarCorners({ patch: id, edge }: { patch: string; edge: number | null }
 		if (!patch?.darts.starKind) return null;
 		const f = patch.family;
 		const [lo, hi] = f?.alphaRangeDegOpen ?? [0, 0];
-		const m =
-			f && alpha != null ? familyMember(patch, Math.min(hi - 1e-3, Math.max(lo + 1e-3, alpha))) : null;
+		const m = f && alpha != null ? familyMember(patch, Math.min(hi - 1e-3, Math.max(lo + 1e-3, alpha))) : null;
 		return m ?? { darts: patch.darts, edge: patch.edge };
 	}, [patch, alpha]);
 	if (!live) return edge != null ? <Row label="Edge length ℓ" value={edge.toFixed(3)} /> : null;
@@ -429,10 +429,10 @@ function OrbitSection({ spec }: { spec: TilingSpec }) {
 	// not vertex orbits of a tiling. Same axis, different quantity, so it never borrows the "Vertices" label.
 	// The parametric-pentagon edge shelf is euclidean and freedraw-CLASS, but its k counts VERTEX orbits
 	// (Marek's "Number of vertices"), not grid points, so it must not borrow freedraw's label.
-	const isFreedraw = spec.geometry === "euclidean" && !!spec.freedraw;
+	const isFreedraw = spec.geometry === GEOMETRIES.EUCLIDEAN && !!spec.freedraw;
 	// Colors' k is a vertex-orbit count, but of the COLORED tiling (orbits under color-preserving
 	// symmetry only), so it gets its own label instead of borrowing the bare "Vertices".
-	const isColors = spec.geometry === "euclidean" && !!spec.colors;
+	const isColors = spec.geometry === GEOMETRIES.EUCLIDEAN && !!spec.colors;
 	// ROWS, on every shelf. They were tiles where there were two of them and rows where there was one or
 	// three, so the same section had two faces depending on the record, and a strip of tiles under
 	// "Orbits" read as the Counts strip under the wrong title. Tiles are for a solid's census and nothing else.
@@ -575,7 +575,7 @@ export function TilingInfo({ spec, vcs = [] }: TilingInfoProps) {
 				    browsed one geometry at a time and the sidebar already says which. */}
 				<span
 					className={`min-w-0 font-mono text-[15px] leading-snug font-semibold text-fg ${
-						spec.geometry === "spherical"
+						spec.geometry === GEOMETRIES.SPHERICAL
 							? "break-words"
 							: "line-clamp-2 text-balance break-words max-md:line-clamp-none max-md:break-all"
 					}`}
@@ -587,14 +587,14 @@ export function TilingInfo({ spec, vcs = [] }: TilingInfoProps) {
 				    the density for a star polyhedron, {p,q} for a Platonic solid, the tile and symmetry
 				    order for a half-tile board. Off the sphere it leads with the geometry, which used to be
 				    a tag beside the name and took a third of the name's width to say one word. */}
-				{spec.geometry === "spherical" ? (
+				{spec.geometry === GEOMETRIES.SPHERICAL ? (
 					spec.detail ? (
 						<span className="text-xs text-fg-secondary">{spec.detail}</span>
 					) : null
 				) : (
 					<span className="text-xs text-fg-secondary">
 						<span>{GEOMETRY_LABEL[spec.geometry]}</span>
-						{spec.geometry === "hyperbolic" ? (
+						{spec.geometry === GEOMETRIES.HYPERBOLIC ? (
 							<>
 								<span className="mx-1.5 text-fg-muted">·</span>
 								<span>Poincaré disk</span>
@@ -627,7 +627,7 @@ export function TilingInfo({ spec, vcs = [] }: TilingInfoProps) {
 			<>
 				{/* Symmetry. Euclidean: group and lattice. Hyperbolic: ONLY for regular {p,q}; a non-regular
 				    config gets no Coxeter row, since the vertex config is not inverted into a Wythoff symbol. */}
-				{spec.geometry === "euclidean" && (spec.wallpaperGroup || spec.latticeShape) ? (
+				{spec.geometry === GEOMETRIES.EUCLIDEAN && (spec.wallpaperGroup || spec.latticeShape) ? (
 					<Section title="Symmetry">
 						{spec.wallpaperGroup ? (
 							<Row label="Group" value={withOrbifold(spec.wallpaperGroup, spec.orbifold)} />
@@ -637,22 +637,22 @@ export function TilingInfo({ spec, vcs = [] }: TilingInfoProps) {
 						) : null}
 					</Section>
 				) : null}
-				{spec.geometry === "hyperbolic" && spec.coxeter ? (
+				{spec.geometry === GEOMETRIES.HYPERBOLIC && spec.coxeter ? (
 					<Section title="Symmetry">
 						<Row label="Coxeter" value={withOrbifold(spec.coxeter, spec.orbifold)} />
 					</Section>
 				) : null}
-				{spec.geometry === "spherical" && spec.pointGroup ? (
+				{spec.geometry === GEOMETRIES.SPHERICAL && spec.pointGroup ? (
 					<Section title="Symmetry">
 						<Row label="Point group" value={withOrbifold(spec.pointGroup, spec.orbifold)} />
 					</Section>
 				) : null}
 
 				{/* The face of a noble polyhedron, drawn flat, and the census that goes with it. */}
-				{spec.geometry === "spherical" && spec.noble ? <NobleFace solid={spec.noble} /> : null}
+				{spec.geometry === GEOMETRIES.SPHERICAL && spec.noble ? <NobleFace solid={spec.noble} /> : null}
 
 				{/* Counts — Spherical (Platonic only) */}
-				{spec.geometry === "spherical" && spec.counts ? (
+				{spec.geometry === GEOMETRIES.SPHERICAL && spec.counts ? (
 					<Section title="Counts">
 						<Stats
 							items={[
@@ -668,7 +668,7 @@ export function TilingInfo({ spec, vcs = [] }: TilingInfoProps) {
 				{/* Tiles — Freedraw. The faces of the drawn edge set, which are NOT tiles in the Grünbaum
 				    & Shephard sense: a face may be an infinite strip or a sheet unbounded in both
 				    directions, so the breakdown by kind is the whole story here. */}
-				{spec.geometry === "euclidean" && spec.freedraw ? (
+				{spec.geometry === GEOMETRIES.EUCLIDEAN && spec.freedraw ? (
 					<Section title="Tiles">
 						{spec.freedraw.finite > 0 ? <Row label="Finite polyominoes" value={spec.freedraw.finite} /> : null}
 						{spec.freedraw.strips > 0 ? <Row label="Infinite strips" value={spec.freedraw.strips} /> : null}
@@ -690,7 +690,7 @@ export function TilingInfo({ spec, vcs = [] }: TilingInfoProps) {
 
 				{/* Tiles — Colored squares: the color census of one period plus the folded colored
 				    vertex figures, the certificate's own vocabulary for this class. */}
-				{spec.geometry === "euclidean" && spec.colors ? (
+				{spec.geometry === GEOMETRIES.EUCLIDEAN && spec.colors ? (
 					<Section title="Coloring">
 						<Stats
 							items={[
@@ -738,7 +738,7 @@ export function TilingInfo({ spec, vcs = [] }: TilingInfoProps) {
 				) : null}
 
 				{/* Tiles — Hyperbolic (always; the honest tile/edge facts moved off the card) */}
-				{spec.geometry === "hyperbolic" ? (
+				{spec.geometry === GEOMETRIES.HYPERBOLIC ? (
 					<Section title="Tiles">
 						{spec.schlafli ? <Row label="Schläfli" value={mono(`{${spec.schlafli[0]},${spec.schlafli[1]}}`)} /> : null}
 						{spec.faces.length > 0 ? <Row label="Face sizes" value={mono(`{${spec.faces.join(",")}}`)} /> : null}
@@ -754,7 +754,7 @@ export function TilingInfo({ spec, vcs = [] }: TilingInfoProps) {
 				{/* Parameterization — /isohedral. The tiling vertices, aspects and edge symmetries ARE
 				    the type here; a vertex configuration would say nothing, since the tile is a free
 				    shape. See lib/isohedral/catalogue.ts for where each number comes from. */}
-				{spec.geometry === "euclidean" && spec.isohedral ? (
+				{spec.geometry === GEOMETRIES.EUCLIDEAN && spec.isohedral ? (
 					<Section title="Parameterization">
 						{spec.isohedral.marked ? (
 							<Row label="Status" value="needs interior markings" muted />
@@ -783,7 +783,7 @@ export function TilingInfo({ spec, vcs = [] }: TilingInfoProps) {
 
 				{/* Family — /pentagons. Kershner's fifteen types: who found each and when is half the
 				    subject, so it leads. Angles and sides are the solved pentagon, not the sliders. */}
-				{spec.geometry === "euclidean" && spec.pentagon ? (
+				{spec.geometry === GEOMETRIES.EUCLIDEAN && spec.pentagon ? (
 					<Section title="Family">
 						<Row label="Discovered" value={spec.pentagon.discovered} />
 						<Row label="Freedom" value={spec.pentagon.dof === 0 ? "rigid" : spec.pentagon.dof} />
@@ -803,7 +803,7 @@ export function TilingInfo({ spec, vcs = [] }: TilingInfoProps) {
 				{hasOrbitFacts(spec) ? <OrbitSection spec={spec} /> : null}
 
 				{/* Vertex-configuration thumbnails — Euclidean only */}
-				{spec.geometry === "euclidean" && vcs.length > 0 ? (
+				{spec.geometry === GEOMETRIES.EUCLIDEAN && vcs.length > 0 ? (
 					<Section title="Vertex configurations">
 						<div className="flex flex-wrap gap-3">
 							{vcs.map(({ vc, occurrences }, i) => (
@@ -823,7 +823,7 @@ export function TilingInfo({ spec, vcs = [] }: TilingInfoProps) {
 				    literature needs to know that twelve of them were built by gyrating a parent and not
 				    found by the engine. Measured per solid; see tools/ctrnact-oracle/annotate_derivation.py.
 				    The method is one row; what it means is an Account, read once. */}
-				{spec.geometry === "spherical" && spec.derivation ? (
+				{spec.geometry === GEOMETRIES.SPHERICAL && spec.derivation ? (
 					<Section title="Derivation">
 						<Row label="Method" value={spec.noble ? "Regenerated" : DERIVATION_LABEL[spec.derivation]} />
 						<Account summary="What that means">

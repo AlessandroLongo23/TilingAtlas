@@ -9,6 +9,7 @@
 
 import { DEFAULT_TILE_RULE, tileFigure, translateLoops, type Pt, type TileLoop, type TileRule } from "./arcs";
 import { coset, cosetCount, gridOf, type FreedrawPatch, type FreedrawPattern } from "./pattern";
+import { FREEDRAW_GRIDS } from "@/lib/vocabulary";
 
 const SQRT3_2 = Math.sqrt(3) / 2;
 
@@ -16,7 +17,7 @@ const ruleKey = (r: TileRule) => `${r.wiring}:${r.twist}`;
 
 /** The lattice-to-world map per grid, matching `basisOf` in ./render.ts. */
 export const arcBasis = (p: FreedrawPattern) =>
-	gridOf(p) === "triangle" ? { bx: 0.5, by: SQRT3_2 } : { bx: 0, by: 1 };
+	gridOf(p) === FREEDRAW_GRIDS.TRIANGLE ? { bx: 0.5, by: SQRT3_2 } : { bx: 0, by: 1 };
 
 const gridCache = new WeakMap<FreedrawPattern, { key: string; arcs: TileLoop[][] }>();
 const patchCache = new WeakMap<FreedrawPatch, { key: string; arcs: TileLoop[][] }>();
@@ -33,7 +34,7 @@ export function gridCellArcs(p: FreedrawPattern, rule: TileRule = DEFAULT_TILE_R
 	const key = ruleKey(rule);
 	const hit = gridCache.get(p);
 	if (hit && hit.key === key) return hit.arcs;
-	const tri = gridOf(p) === "triangle";
+	const tri = gridOf(p) === FREEDRAW_GRIDS.TRIANGLE;
 	const { bx, by } = arcBasis(p);
 	const w = (x: number, y: number): Pt => [x + bx * y, by * y];
 	const bit = (arr: number[] | undefined, i: number, j: number) => arr?.[coset(p, i, j)] === 1;

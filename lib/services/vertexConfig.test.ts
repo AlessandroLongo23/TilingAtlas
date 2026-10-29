@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { compactVC, matchesVcs, parseVC, vcsOf } from "./vertexConfig";
+import { SOURCES } from "@/lib/vocabulary";
 
 describe("parseVC", () => {
 	it("reads every notation to one canonical spelling", () => {
@@ -28,7 +29,7 @@ describe("compactVC", () => {
 });
 
 describe("vcsOf / matchesVcs", () => {
-	const hyp = { source: "hyperbolic", family: "3.4.4.8 + 3.4.8.4" };
+	const hyp = { source: SOURCES.HYPERBOLIC, family: "3.4.4.8 + 3.4.8.4" };
 	it("reads hyperbolic figures off the family string", () => {
 		expect(vcsOf(hyp)).toEqual(["3.4.4.8", "3.4.8.4"]);
 	});

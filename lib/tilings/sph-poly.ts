@@ -68,6 +68,8 @@ export interface SphPolyPattern {
 	 * statement, not a rendering accident.
 	 */
 	fillGroup?: number[];
+	/** Hue per fill group, given outright (a morphed type, lib/tilings/orbifoldMorph.ts): overrides the rules below. */
+	fillHue?: number[];
 	/**
 	 * Tegula's topological types only (tools/ctrnact-oracle/develop_dsym.py): what the cell editor needs
 	 * to bend the edges on the sphere, lib/tilings/tegula.ts `bendSphere`. `sides[f][i]` tags the side of

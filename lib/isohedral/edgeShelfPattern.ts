@@ -12,6 +12,7 @@ import type { EdgePatchDiag } from "@/lib/freedraw/edgePatchCore";
 import type { SolvedIhBoard } from "./edge-board";
 import type { IhEdgeRecord } from "./edgeDevelop";
 import { buildIhEdgePatch } from "./edgePatch";
+import { FREEDRAW_GRIDS } from "@/lib/vocabulary";
 
 export interface IhShelfPattern {
 	pattern: FreedrawPattern | null;
@@ -68,7 +69,7 @@ export function ihEdgePattern(rec: IhEdgeRecord, board: SolvedIhBoard): IhShelfP
 				h: [0],
 				v: [0],
 				orbit: [0],
-				grid: "ih",
+				grid: FREEDRAW_GRIDS.IH,
 				patch: built.patch,
 			},
 			reason: null,

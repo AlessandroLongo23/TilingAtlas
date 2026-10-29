@@ -6,6 +6,7 @@ import type { ParametricCellData } from "@/lib/utils/paramCell";
 import type { TegulaCell } from "@/lib/tilings/tegula";
 import type { WallpaperGroup, LatticeShape } from "@/lib/classes/symmetry/types";
 import type { TranslationalCellData } from "@/lib/classes/algorithm/types";
+import type { Geometry } from "@/lib/vocabulary";
 
 // The METHOD-AGNOSTIC read contract for /play + /library (FRONTEND_ROADMAP.md Phase 1). Whichever
 // method wrote found_tilings — torus today, orbifold later (DESIGN INTENT, gated on the Phase-1
@@ -33,6 +34,8 @@ export interface CatalogueTiling {
 	paramCell?: ParametricCellData;
 	/** Topological shelf only: skeleton and edge classes, for /play's cell editor (lib/tilings/tegula.ts). */
 	tegula?: TegulaCell;
+	/** Topological shelf only: the Delaney-Dress symbol, for the symmetry controls (lib/tilings/orbifoldMorph.ts). */
+	dsym?: string;
 	/** Which halved-polygon board this row belongs to. Carried through referenceToCatalogue because
 	 *  /play derives its sub-family from it (subOf); without it every half-polygon row computed the
 	 *  sub "el-euh-" — absent from SUB_ORDER — and vanished from the /play tree while /library, which
@@ -119,7 +122,7 @@ export interface CatalogueTiling {
 	// the live parameter point instead of a bespoke solver (lib/isohedral/edge-board.ts), so the same
 	// shelf reaches any isohedral type. `renderCell` is a throwaway.
 	ihEdges?: import("@/lib/isohedral/edgeDevelop").IhEdgeRecord;
-	geometry?: "euclidean" | "hyperbolic" | "spherical";
+	geometry?: Geometry;
 	// Vertex-type classification carried through from ReferenceTiling (build-computed). k (above) counts
 	// vertex ORBITS; m counts DISTINCT vertex configurations among them (m ≤ k); partition is their
 	// multiplicities, descending, summing to k. Absent when the source has no per-orbit config data.

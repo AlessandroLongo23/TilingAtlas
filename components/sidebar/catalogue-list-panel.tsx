@@ -18,7 +18,8 @@ import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import { COLOR_SUB, FAMILY_LABEL, SUB_LABEL, shortSubLabel } from "@/lib/services/shelfLabels";
 import { kNounOf } from "@/lib/services/shelfRegistry";
 import { tierKey, type UnloadedTier } from "@/lib/services/atlasManifest";
-import { hypPolyBoardOfSub, hypPolyTileSet } from "@/lib/tilings/hyp-poly";
+import { hypPolyBoardOfSub, hypPolyTileCodes } from "@/lib/tilings/hyp-poly";
+import { cornerTokenKey } from "@/lib/tilings/tiling-level";
 import { TileGrid } from "./tile-grid";
 
 // The /play picker: tilings nested by polygon class (regular / star / convex / isotoxal) then by k, each a
@@ -50,11 +51,13 @@ const treeRowStyle = (depth: number) => ({
 // Ink ranks the levels: a class heading is the heaviest thing in the list, its members lighter. The
 // chevron leads each row, so the 16px indent steps line every level's chevron up under its parent's
 // label (the rails that used to draw this are gone with the wall, 2026-09-24).
-const DEPTH_TEXT: Record<0 | 1 | 2 | 3, string> = {
+type Depth = 0 | 1 | 2 | 3 | 4;
+const DEPTH_TEXT: Record<Depth, string> = {
 	0: "text-[13px] font-semibold text-fg",
 	1: "text-[13px] font-medium text-fg-secondary",
 	2: "text-[12.5px] text-fg-secondary",
 	3: "text-[12.5px] text-fg-secondary",
+	4: "text-[12.5px] text-fg-secondary",
 };
 
 // A board on the base hyperbolic shelf ("hyt-…") earns the configuration level only when the level
@@ -83,8 +86,7 @@ const polySetCompare = (a: string, b: string) => {
 	const x = a.split(","),
 		y = b.split(",");
 	if (x.length !== y.length) return x.length - y.length;
-	const n = (t: string) => (t === "∞" ? Infinity : Number(t));
-	for (let i = 0; i < x.length; i++) if (x[i] !== y[i]) return n(x[i]) - n(y[i]);
+	for (let i = 0; i < x.length; i++) if (x[i] !== y[i]) return cornerTokenKey(x[i]) - cornerTokenKey(y[i]);
 	return 0;
 };
 function polySets(ks: KEntry[]): PolySet[] | undefined {
@@ -104,7 +106,7 @@ function polySets(ks: KEntry[]): PolySet[] | undefined {
 		const m = new Map<string, CatalogueTiling[]>();
 		for (const t of kk.list) {
 			if (!t.hypPoly) return undefined;
-			const key = hypPolyTileSet(t.hypPoly).join(",");
+			const key = hypPolyTileCodes(t.hypPoly).join(",");
 			const at = m.get(key);
 			if (at) at.push(t);
 			else m.set(key, [t]);
@@ -280,7 +282,7 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({
 	// tree did not render is never read.
 	const selectedPolyKey =
 		selectedTile?.hypPoly && splitsByPolygons(subOf(selectedTile))
-			? hypPolyTileSet(selectedTile.hypPoly).join(",")
+			? hypPolyTileCodes(selectedTile.hypPoly).join(",")
 			: null;
 	const selectedPolyId =
 		selectedTile && selectedPolyKey ? `p:${tileClassOf(selectedTile)}:${subOf(selectedTile)}:${selectedPolyKey}` : null;
@@ -338,7 +340,7 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({
 	// be a second identical one. With two or more classes the class headers render normally.
 	const single = byClass.length === 1;
 
-	const kSections = (cls: TileClass, sub: string, ks: KEntry[], depth: 0 | 1 | 2 | 3) =>
+	const kSections = (cls: TileClass, sub: string, ks: KEntry[], depth: Depth) =>
 		ks.map((kk) => {
 			const id = `k:${cls}:${sub}:${kk.k}`;
 			const open = expanded[id];
@@ -417,12 +419,7 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({
 		return [...m.entries()].sort((a, b) => b[1].length - a[1].length || (a[0] < b[0] ? -1 : 1));
 	};
 
-	const configSections = (
-		cls: TileClass,
-		sub: string,
-		ks: { k: number; list: CatalogueTiling[] }[],
-		depth: 0 | 1 | 2 | 3,
-	) =>
+	const configSections = (cls: TileClass, sub: string, ks: { k: number; list: CatalogueTiling[] }[], depth: Depth) =>
 		configGroups(ks).map(([family, list]) => {
 			const id = `cfg:${cls}:${sub}:${family}`;
 			const open = expanded[id];
@@ -503,7 +500,7 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({
 
 	// A hybrid board's polygon-set rows, each opening into that set's k rows (see splitsByPolygons). The k
 	// rows are keyed under the set, so k = 20 under one set opens independently of k = 20 under another.
-	const polySections = (cls: TileClass, sub: string, sets: PolySet[], depth: 1 | 2 | 3) =>
+	const polySections = (cls: TileClass, sub: string, sets: PolySet[], depth: Depth) =>
 		sets.map((ps) => {
 			const id = `p:${cls}:${sub}:${ps.key}`;
 			return (
@@ -515,9 +512,7 @@ export const CatalogueListPanel = memo(function CatalogueListPanel({
 						depth={depth}
 						onToggle={() => toggle(id)}
 					/>
-					{expanded[id] ? (
-						<Reveal>{kSections(cls, `${sub}#${ps.key}`, ps.ks, Math.min(depth + 1, 3) as 1 | 2 | 3)}</Reveal>
-					) : null}
+					{expanded[id] ? <Reveal>{kSections(cls, `${sub}#${ps.key}`, ps.ks, (depth + 1) as Depth)}</Reveal> : null}
 				</div>
 			);
 		});
@@ -668,7 +663,7 @@ function TreeRow({
 	label: string;
 	count: number;
 	open: boolean;
-	depth: 0 | 1 | 2 | 3;
+	depth: Depth;
 	onToggle: () => void;
 	/** Set on a row whose tilings ship but are not loaded: its count comes from the manifest. */
 	pending?: "unloaded" | "loading";
@@ -690,14 +685,14 @@ function TreeRow({
 				// and — later in DOM order — the ring won, bleeding its outline up over the pinned k-row. Keep
 				// the depth order (class over grid over k) but start it past 10. The scroller isolates this
 				// context (catalogue-tab.tsx), so these values never reach the canvas overlay buttons.
-				depth === 0 ? "z-40" : depth === 1 ? "z-30" : depth === 2 ? "z-20" : "z-[15]",
+				depth === 0 ? "z-40" : depth === 1 ? "z-30" : depth === 2 ? "z-20" : depth === 3 ? "z-[15]" : "z-[12]",
 			)}
 			style={treeRowStyle(depth)}
 		>
 			<span
 				className={cn(
 					"flex min-w-0 flex-1 items-center gap-1.5 rounded-control pr-2 transition-colors group-hover:bg-surface-overlay",
-					depth === 0 ? "pl-2" : depth === 1 ? "pl-6" : depth === 2 ? "pl-10" : "pl-14",
+					depth === 0 ? "pl-2" : depth === 1 ? "pl-6" : depth === 2 ? "pl-10" : depth === 3 ? "pl-14" : "pl-18",
 				)}
 			>
 				{pending ? (

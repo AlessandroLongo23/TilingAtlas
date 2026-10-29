@@ -1,0 +1,10 @@
+[09:43:20] VALIDATION: k<=2 with EU_HYPFEAS=free (solver-side angle feasibility); must develop the same tilings as 2026-10-22 (k1 2,056 developed, k2 51,499)
+[09:43:20] build (MAXNUM=2 PALETTE=hyp-star-free)
+[09:43:21] PHASE 1  solve (C++ DFS, all k<=2)
+[10:53:36] VALIDATION (redo): k<=2, 100 seed shards fused solver|pruner (run_k2_buckets.py --shards), EU_HYPFEAS=free cap 60 eps 0.02
+[11:58:28] VALIDATION (incremental check): k<=2, 100 seed shards fused solver|pruner, EU_HYPFEAS=free cap 60 eps 0.02; then develop and compare developed keys with 2026-10-22
+[12:16:45] DONE: 100 shards, 80498 pruned blocks (k<=2) in /private/tmp/claude-501/-Users-alessandro-Desktop-Personal-TilingAtlas/ad7ade7c-4242-4163-b5cf-2ee95efd8836/scratchpad/val-k2/pruned, 1097s
+[12:35] VALIDATION RESULT (incremental check, cap 60, eps 0.02): k<=2 pruned 80,498 blocks (unchecked: 3,013,141; 37x fewer), solve+prune 1,097 s on 7 workers.
+        develop: 53,552 developed (unchecked run: 53,555). Identity keys: 33,986 distinct vs 33,989; lost 3, gained 0.
+        The 3 lost are the degenerate records (dent exactly pi: 8*.8.8*.3 + ..., 12*.12.3 + 12*.12.12*.3) that today's
+        dent > pi + 1e-6 rule removes on purpose. => the solver-side check dropped no tiling at k<=2.

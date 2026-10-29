@@ -19,8 +19,9 @@ import { scrollParent } from "@/lib/hooks/useGridArrowNav";
 import { useIsPhone } from "@/lib/hooks/useIsPhone";
 import { cn } from "@/lib/utils/cn";
 import { SegIndicator } from "@/components/ui/seg-indicator";
+import { GEOMETRIES, type Geometry } from "@/lib/vocabulary";
 
-export type FreedrawGeometry = "planar" | "spherical" | "hyperbolic";
+export type FreedrawGeometry = Geometry;
 
 // The catalogue workbench kit shared by the freedraw arms and /colors: a filter band over a thumbnail
 // grid with a detail pane on the right. (The "Wall" names are from the squared system this replaced;
@@ -178,9 +179,9 @@ export function PhoneNote({ children }: { children: ReactNode }) {
 }
 
 const GEOMETRY_OPTIONS: { value: FreedrawGeometry; label: string }[] = [
-	{ value: "planar", label: "Planar" },
-	{ value: "spherical", label: "Spherical" },
-	{ value: "hyperbolic", label: "Hyperbolic" },
+	{ value: GEOMETRIES.EUCLIDEAN, label: "Euclidean" },
+	{ value: GEOMETRIES.SPHERICAL, label: "Spherical" },
+	{ value: GEOMETRIES.HYPERBOLIC, label: "Hyperbolic" },
 ];
 
 // The high-level geometry picker, rendered as the first group of either arm so the arms share it.

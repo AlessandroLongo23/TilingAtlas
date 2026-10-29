@@ -58,6 +58,11 @@ export interface Darts {
 	starKind?: number[];
 	/** Which star type the corner at h belongs to, when a tiling has more than one (each has its own point). */
 	starParam?: number[];
+	/** Morphed types only (lib/tilings/orbifoldMorph.ts): the class of the dart's vertex, edge and tile in
+	 *  the symmetry panel's order, −1 for none, so the overlay can mark the class a hovered row names. */
+	vCone?: number[];
+	eCone?: number[];
+	fCone?: number[];
 }
 
 const TOL = 1e-4; // position dedup grid (matches develop_hyperbolic.py)

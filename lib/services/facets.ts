@@ -41,6 +41,7 @@ import {
 } from "./referenceAtlas";
 import { HYP_TILING_VALENCES } from "@/lib/tilings/hyp-tilings";
 import { COLOR_SUB, FAMILY_LABEL, SUB_LABEL, shortSubLabel } from "./shelfLabels";
+import { type Geometry, TILE_CLASSES } from "@/lib/vocabulary";
 
 /** An option as the filter walls want it. */
 export interface FacetOption<T> {
@@ -71,7 +72,10 @@ export const valuesOf = <T extends string | number>(order: readonly T[]): T[] =>
 // is the shape axis proper.
 export const SHAPE_CLASS_ORDER = TILE_CLASS_ORDER.filter(
 	(c): c is Exclude<TileClass, "hyperbolic" | "spherical" | "freedraw" | "colors"> =>
-		c !== "hyperbolic" && c !== "spherical" && c !== "freedraw" && c !== "colors",
+		c !== TILE_CLASSES.HYPERBOLIC &&
+		c !== TILE_CLASSES.SPHERICAL &&
+		c !== TILE_CLASSES.FREEDRAW &&
+		c !== TILE_CLASSES.COLORS,
 );
 export const SHAPE_CLASS_LABEL = Object.fromEntries(
 	SHAPE_CLASS_ORDER.map((c) => [c, TILE_CLASS_LABEL[c].short]),
@@ -214,10 +218,7 @@ const FAMILY_INDEX = new Map<SubFamily, BoardFamily>(BOARD_FAMILIES.map((f) => [
  * tilings segment at all, so those boards were as unreachable as the parametric ones were.
  * `tests/catalogue-one-taxonomy.test.ts` asserts every family lands in some segment, which is what caught it.
  */
-export function boardFamiliesFor(
-	geometry: "euclidean" | "hyperbolic" | "spherical",
-	decoration: "tilings" | "edges" | "colorings",
-): BoardFamily[] {
+export function boardFamiliesFor(geometry: Geometry, decoration: "tilings" | "edges" | "colorings"): BoardFamily[] {
 	const BY_SEGMENT: Record<typeof decoration, Record<typeof geometry, SubFamily[]>> = {
 		// Two hyperbolic tiling families, both one corpus per board: 3.4.n.4 and {3,n}.
 		tilings: {

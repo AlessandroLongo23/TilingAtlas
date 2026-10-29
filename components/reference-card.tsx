@@ -38,6 +38,7 @@ import {
 } from "@/lib/services/referenceAtlas";
 import { EDGE_BOARD_LABEL } from "@/lib/services/facets";
 import { polyformBoard } from "@/lib/tilings/polyform";
+import { GEOMETRIES, TILE_CLASSES } from "@/lib/vocabulary";
 
 // A tiling card in the unified library. Shows the DISCOVERER (historical first-finder) and a
 // CERTIFICATION badge (proven / reproduced / candidate — the rigorous completeness status of its
@@ -92,17 +93,17 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 	// Degrees of freedom = independent sliders in Play. 2+ (α, β, …) get their own badge.
 	const glyphs = tiling.paramCell ? paramGlyphs(tiling.paramCell) : isFamily ? ["α"] : [];
 	const dof = glyphs.length;
-	const isHyperbolic = geometryOf(tiling) === "hyperbolic";
-	const isConvex = tileClassOf(tiling) === "convex";
-	const isIsotoxal = tileClassOf(tiling) === "isotoxal";
-	const isMixed = tileClassOf(tiling) === "mixed";
+	const isHyperbolic = geometryOf(tiling) === GEOMETRIES.HYPERBOLIC;
+	const isConvex = tileClassOf(tiling) === TILE_CLASSES.CONVEX;
+	const isIsotoxal = tileClassOf(tiling) === TILE_CLASSES.ISOTOXAL;
+	const isMixed = tileClassOf(tiling) === TILE_CLASSES.MIXED;
 	// "Polyforms" names nine boards, so a polyform card says which one — "Tetrominoes", "Trihexes" —
 	// where every other class says the class. The board is the only thing that tells a 4-hex tiling
 	// from a 4-omino one at thumbnail size.
 	const polyLabel = tiling.polyformOrder ? polyformBoard(tiling.polyformOrder)?.label : undefined;
 	const isFreedraw = !!tiling.freedraw;
 	const freedrawStats = freedrawStatsOf(tiling);
-	const folds = (tileClassOf(tiling) === "star" && !isHyperbolic) || isMixed ? starFoldsOf(tiling) : [];
+	const folds = (tileClassOf(tiling) === TILE_CLASSES.STAR && !isHyperbolic) || isMixed ? starFoldsOf(tiling) : [];
 	const partitionKey = partitionKeyOf(tiling);
 	// The vertex-type classification: M distinct configs, and the multiplicity group ("511"). Maximal
 	// (m === k, all orbits distinct) is the Krötenheerdt case — shown as "Kröt" since its key is all 1s.
@@ -214,7 +215,7 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 				{tiling.hollow ? (
 					<HollowThumbnail patch={tiling.hollow.patch} />
 				) : tiling.schwarz ? (
-					tiling.schwarz.geometry === "spherical" ? (
+					tiling.schwarz.geometry === GEOMETRIES.SPHERICAL ? (
 						<SphSchwarzThumbnail pattern={tiling.schwarz} />
 					) : (
 						<HyperbolicThumbnail tiling={hypSchwarzMeta(tiling.schwarz)} mode="edges" />
@@ -442,7 +443,7 @@ export function ReferenceCard({ tiling: baseTiling, group, onClick }: ReferenceC
 							{/* A bubble tiling has no vertex configuration to name it by — the substrate is always
 							    the same triangular tiling — so the PROTOTILE SET is the identity, the way the colour
 							    census is for a colouring. "T0×1 T3×1" is the paper's T{0,3}(1:1). */}
-							{tileClassOf(tiling) === "bubble" ? ` · ${tiling.family}` : ""}
+							{tileClassOf(tiling) === TILE_CLASSES.BUBBLE ? ` · ${tiling.family}` : ""}
 						</p>
 						{classLabel || tiling.wallpaperGroup ? (
 							<p

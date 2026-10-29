@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
+import { orbitColor } from "@/lib/utils/orbitColors";
 import { ArcballControls } from "three/examples/jsm/controls/ArcballControls.js";
 import { useMemo } from "react";
 import { useConfiguration } from "@/stores/configuration";
@@ -59,6 +60,8 @@ interface Props {
 	/** Sphere mode, star shelf: covering number of the circumsphere, which swaps the lit tiling fill for
 	 *  the density fill. See lib/render/icoFreedraw.ts. */
 	densitySheets?: number;
+	/** Points to mark like an orbit's dots (the symmetry panel's hovered class), as vectors from the centre. */
+	marks?: number[][];
 }
 
 // The framing every spherical view shares: the unit sphere at three quarters of the viewport half-height.
@@ -79,6 +82,7 @@ export function IcoFreedrawCanvas({
 	showEdges,
 	tileHue,
 	densitySheets,
+	marks,
 }: Props) {
 	// The store fields this otherwise self-contained canvas reads. It used to read only the surface-look
 	// flag, which is why the sidebar hid the hue ring and the stroke slider for every shelf on this canvas:
@@ -338,6 +342,36 @@ export function IcoFreedrawCanvas({
 		lineWidth,
 		faceOpacity,
 	]);
+
+	// Marks: a dot with a dark rim at each point, lifted onto the sphere so it reads on either mode's surface.
+	useEffect(() => {
+		const scene = sceneRef.current;
+		if (!scene || !marks?.length) return;
+		const group = new THREE.Group();
+		const dotGeo = new THREE.SphereGeometry(0.03, 16, 12);
+		const rimGeo = new THREE.SphereGeometry(0.04, 16, 12);
+		const dotMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(orbitColor(0, 1)) });
+		const rimMat = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.BackSide });
+		for (const p of marks) {
+			const n = Math.hypot(p[0], p[1], p[2]) || 1;
+			for (const [geo, mat] of [
+				[rimGeo, rimMat],
+				[dotGeo, dotMat],
+			] as const) {
+				const m = new THREE.Mesh(geo, mat);
+				m.position.set(p[0] / n, p[1] / n, p[2] / n);
+				group.add(m);
+			}
+		}
+		scene.add(group);
+		return () => {
+			scene.remove(group);
+			dotGeo.dispose();
+			rimGeo.dispose();
+			dotMat.dispose();
+			rimMat.dispose();
+		};
+	}, [marks]);
 
 	if (errored) {
 		return (

@@ -18,7 +18,7 @@ import { ORBIT_DOT_RADIUS_PX, hoveredOrbitAt, screenToWorld, stepOrbitScales } f
 // normalised screen distance from the canvas centre; `p` the phase progress in [0,1]. Returns the tile's
 // [0,1] scale about its centroid. WAVE_MIN_SCALE (0.02) is applied by the caller so the tile is dropped
 // (zero-area) instead of lingering as a stroke speck.
-const WAVE_GLSL = `
+export const WAVE_GLSL = `
 float waveTileScale(int phase, float u, float p) {
 	float travel = 0.8; // WAVE_TRAVEL
 	float local = clamp((p - clamp(u, 0.0, 1.0) * travel) / (1.0 - travel), 0.0, 1.0);

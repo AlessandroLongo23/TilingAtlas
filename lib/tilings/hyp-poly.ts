@@ -1995,6 +1995,17 @@ const canonicalFigure = (fig: string): string => {
 export const hypPolyTileSet = (p: Pick<HypPolyPattern, "stats">): string[] =>
 	p.stats.sizes.filter((_, i) => p.stats.sizeCensus[i] > 0).map((n) => (n === 0 ? "∞" : String(n)));
 
+/** The /play tree's polygon-set key: `hypPolyTileSet`, except on a multi-length board, where a size alone
+ *  merges tiles that are not alike (1247 has triangles at ×1, ×2 and ×7). There the set is read off the
+ *  figures' own tokens, "3", "3₂", "∞₂", which carry the multiple. Every tile has a corner at a counted
+ *  vertex (an apeirogon an edge through one), so the figures miss none. Asked for by Marek, 2026-10-23. */
+export const hypPolyTileCodes = (p: Pick<HypPolyPattern, "stats" | "config" | "base">): string[] =>
+	HYP_POLY_BOARD_BY_ID.get(p.base)?.multiLength
+		? [...new Set(p.config.split(/ \+ |\./))]
+				.filter((t) => t !== "π")
+				.sort((a, b) => cornerTokenKey(a) - cornerTokenKey(b))
+		: hypPolyTileSet(p);
+
 /** Card / search label: the distinct vertex figures of the tiling, e.g. "3.4.8.4" or "3.4.7.4 + 4.7.14".
  *  The polygon sizes alone cannot tell 3.4.8.4 from 3.8.4.8, and the board label is only the multiset,
  *  so the cyclic order has to come from here. Past three figures the rest are counted, not listed. */

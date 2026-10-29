@@ -22,7 +22,7 @@ import {
 	HYP_POLY_BOARDS,
 	hypPolyShardUrls,
 	hypPolySubOfBoard,
-	hypPolyTileSet,
+	hypPolyTileCodes,
 	type HypPolyPattern,
 } from "@/lib/tilings/hyp-poly";
 import { tilingLevel } from "@/lib/tilings/tiling-level";
@@ -111,7 +111,7 @@ function hybridFacets(board: string, k: number, count: number): NonNullable<Mani
 	for (const url of hypPolyShardUrls(board, k)) {
 		for (const p of decodeAtlas<HypPolyPattern>(readDataJson(path.join(PUB, url)))) {
 			n++;
-			const set = hypPolyTileSet(p).join(",");
+			const set = hypPolyTileCodes(p).join(",");
 			polygons[set] = (polygons[set] ?? 0) + 1;
 			const lv = tilingLevel({ k: p.k, family: p.family, hypPoly: p });
 			if (lv) levels[lv] = (levels[lv] ?? 0) + 1;

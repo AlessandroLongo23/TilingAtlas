@@ -17,6 +17,7 @@ import { isSphHalf, sphHalfBoardLabel, sphHalfDetailLabel } from "@/lib/tilings/
 import { sphPolyBoardLabel, sphPolyFamilyLabel } from "@/lib/tilings/sph-poly";
 import { sphEdgesFamilyLabel } from "@/lib/freedraw/sph-edges";
 import { schwarzFamilyLabel } from "@/lib/freedraw/schwarz";
+import { GEOMETRIES } from "@/lib/vocabulary";
 
 // Edge- and tile-orbit extraction does not exist yet (AL owns that logic). Until it does, buildTilingSpec
 // leaves both fields null and the card renders a muted "not computed" row. When the extractor lands, fill
@@ -288,7 +289,7 @@ export function buildTilingSpec(
 	// `sphericalFreedraw` alone, and the other four fell through to the Euclidean return at the bottom of
 	// this function — so the card printed "Euclidean" over a Schwarz board, a 3.4.n.4 solid, a spherical
 	// colouring and a star polyhedron. Catching the geometry itself is what stops that recurring.
-	if (geometry === "spherical") {
+	if (geometry === GEOMETRIES.SPHERICAL) {
 		const { name, detail } = sphericalHeading(selected);
 		// The point group, the reflection orbifold and V/E/F are derived from a regular {p,q} and nothing
 		// else: a bare vertex configuration is a Wythoff inverse this does NOT perform.
@@ -297,7 +298,7 @@ export function buildTilingSpec(
 		const solid = selected.spherical?.solid ?? "";
 		const noble = solid.startsWith("noble-") ? nobleSymmetry(solid) : null;
 		return {
-			geometry: "spherical",
+			geometry: GEOMETRIES.SPHERICAL,
 			label: name,
 			detail,
 			noble: solid.startsWith("noble-") ? solid : null,
@@ -309,13 +310,13 @@ export function buildTilingSpec(
 		};
 	}
 
-	if (geometry === "hyperbolic") {
+	if (geometry === GEOMETRIES.HYPERBOLIC) {
 		// Honest subset only. faces/valence/edge come straight from the data; the Schläfli/Coxeter/orbifold
 		// trio is derived ONLY when the config is a single regular face size (schlafli non-null).
 		const hp = hyperbolicParams(selected.family);
 		const schlafli = selected.schlafli ?? hp?.schlafli ?? null;
 		return {
-			geometry: "hyperbolic",
+			geometry: GEOMETRIES.HYPERBOLIC,
 			label: selected.family,
 			faces: hp?.faces ?? [],
 			valence: hp?.valence ?? 0,
@@ -342,7 +343,7 @@ export function buildTilingSpec(
 	// "not computed" fallbacks get real values, like freedraw's faceOrbits.
 	const cp = selected.colors;
 	return {
-		geometry: "euclidean",
+		geometry: GEOMETRIES.EUCLIDEAN,
 		label: selected.family,
 		wallpaperGroup,
 		orbifold,

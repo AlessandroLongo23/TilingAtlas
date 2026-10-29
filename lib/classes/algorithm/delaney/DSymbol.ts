@@ -345,15 +345,34 @@ export function perComponentFlat(sym: DSymbol): boolean {
  * kUniformity(minimalImage(sym)) is the GENUINE k (the fake-2-uniform-square trap).
  */
 export function minimalImage(sym: DSymbol): DSymbol {
+	return minimalBlocks(sym).sym;
+}
+
+/**
+ * minimalImage, with each chamber's block in it (`block[c]` is c's chamber in the image). `labels`, when
+ * given, are kept apart from the start: two chambers fold together only when their labels agree, so the
+ * image keeps the symmetry of a DECORATED tiling (a star's dents, lib/tilings/dsymFromMap.ts), not just
+ * of its topology.
+ */
+export function minimalBlocks(sym: DSymbol, labels?: readonly number[]): { sym: DSymbol; block: number[] } {
 	const n = sym.n;
-	let block: string[] = Array.from({ length: n }, (_, c) => `${sym.m01[c]},${sym.m12[c]}`);
+	// Blocks are renumbered every round: a signature built from the previous round's signatures would
+	// grow fourfold per round, which a period cell of a few thousand chambers cannot afford.
+	const number = (keys: string[]) => {
+		const id = new Map<string, number>();
+		return keys.map((k) => {
+			if (!id.has(k)) id.set(k, id.size);
+			return String(id.get(k));
+		});
+	};
+	let block: string[] = number(Array.from({ length: n }, (_, c) => `${sym.m01[c]},${sym.m12[c]},${labels?.[c] ?? 0}`));
 	let prev = new Set(block).size;
 	for (;;) {
 		const sig: string[] = new Array(n);
 		for (let c = 0; c < n; c++) {
 			sig[c] = `${block[c]}|${block[sym.s[0][c]]}|${block[sym.s[1][c]]}|${block[sym.s[2][c]]}`;
 		}
-		block = sig;
+		block = number(sig);
 		const cnt = new Set(block).size;
 		if (cnt === prev) break;
 		prev = cnt;
@@ -381,5 +400,5 @@ export function minimalImage(sym: DSymbol): DSymbol {
 		m01[b] = sym.m01[c];
 		m12[b] = sym.m12[c];
 	}
-	return new DSymbol(s0, s1, s2, m01, m12);
+	return { sym: new DSymbol(s0, s1, s2, m01, m12), block: block.map((b) => ids.get(b)!) };
 }

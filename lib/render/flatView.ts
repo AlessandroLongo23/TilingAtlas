@@ -375,10 +375,10 @@ export function wrapOffset(
 	zoom: number,
 	rotation: number,
 	deform?: Mat2,
-): { draw: Vector; worldShiftX: number; worldShiftY: number } {
+): { draw: Vector; worldShiftX: number; worldShiftY: number; cells: [number, number] } {
 	const dDet = det * (isIdentityDeform(deform) ? 1 : mat2Det(deform as Mat2));
 	if (Math.abs(dDet) < DEGENERATE_DET || zoom <= 0) {
-		return { draw: offset.copy(), worldShiftX: 0, worldShiftY: 0 };
+		return { draw: offset.copy(), worldShiftX: 0, worldShiftY: 0, cells: [0, 0] };
 	}
 	// Reduce against the DEFORMED screen lattice (that is what is drawn), but report the shift in
 	// UNDEFORMED world coordinates: its one consumer is the Islamic noise, which is sampled before D.
@@ -392,6 +392,8 @@ export function wrapOffset(
 		draw: new Vector(offset.x - ra * e1.x - rb * e2.x, offset.y - ra * e1.y - rb * e2.y),
 		worldShiftX: ra * v1.x + rb * v2.x,
 		worldShiftY: ra * v1.y + rb * v2.y,
+		// the same shift in lattice steps: instance (i, j) of the fixed grid is copy (i − ra, j − rb)
+		cells: [ra, rb],
 	};
 }
 

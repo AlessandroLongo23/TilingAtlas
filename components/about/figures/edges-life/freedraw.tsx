@@ -22,6 +22,7 @@ import { analyseFaces, classifyFaces, classifyPatchFaces, rankLabel, summarise }
 import { degree, gridOf, type FreedrawGrid, type FreedrawPattern } from "@/lib/freedraw/pattern";
 import { ICO_SOLIDS, icoSolidKs } from "@/lib/render/icoSolids";
 import type { IcoPattern } from "@/lib/render/icoFreedraw";
+import { FREEDRAW_GRIDS } from "@/lib/vocabulary";
 
 type P2 = [number, number];
 interface Pieces {
@@ -60,7 +61,7 @@ function piecesOf(p: FreedrawPattern): Pieces {
 			edge: lens[lens.length >> 1] || 1,
 		};
 	}
-	const tri = gridOf(p) === "triangle";
+	const tri = gridOf(p) === FREEDRAW_GRIDS.TRIANGLE;
 	const map = tri ? triXY : (x: number, y: number): P2 => [x, y];
 	const tiles: Pieces["tiles"] = [];
 	const edges: Pieces["edges"] = [];
@@ -376,8 +377,18 @@ const GRIDS: Record<string, { label: string; ks: number[]; file: (k: number) => 
 	},
 	triangle: { label: "Triangle", ks: [1, 2, 3], file: () => "/freedraw/tri-solutions.json.gz", prefix: "fdt-" },
 	hex: { label: "Hexagon", ks: [1, 2, 3, 4, 5], file: (k) => `/freedraw/hex-solutions-k${k}.json.gz`, prefix: "fdh-" },
-	"4436": { label: "3.4.6.4", ks: [1, 2, 3, 4], file: (k) => `/freedraw/4436-solutions-k${k}.json.gz`, prefix: "fd4436-" },
-	"488": { label: "4.8.8", ks: [1, 2, 3, 4, 5], file: (k) => `/freedraw/488-solutions-k${k}.json.gz`, prefix: "fd488-" },
+	"4436": {
+		label: "3.4.6.4",
+		ks: [1, 2, 3, 4],
+		file: (k) => `/freedraw/4436-solutions-k${k}.json.gz`,
+		prefix: "fd4436-",
+	},
+	"488": {
+		label: "4.8.8",
+		ks: [1, 2, 3, 4, 5],
+		file: (k) => `/freedraw/488-solutions-k${k}.json.gz`,
+		prefix: "fd488-",
+	},
 	ts: { label: "Square + triangle", ks: [1, 2], file: (k) => `/freedraw/ts-solutions-k${k}.json.gz`, prefix: "fdts-" },
 };
 

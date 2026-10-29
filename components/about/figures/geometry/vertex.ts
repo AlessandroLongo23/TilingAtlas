@@ -11,7 +11,9 @@
 // its centre. Edges are sampled where they are straight (gnomonic chart on the sphere, Klein chart in
 // the hyperbolic plane) and carried over, so every edge is a true geodesic.
 
-export type Geometry = "sphere" | "plane" | "hyperbolic";
+import { GEOMETRIES, type Geometry } from "@/lib/vocabulary";
+
+export type { Geometry };
 type P2 = { x: number; y: number };
 export type P3 = [number, number, number];
 /** A turn of the sphere: a 3×3 rotation matrix, row by row. */
@@ -28,18 +30,18 @@ const SAMPLES = 24;
 const flatAngle = (n: number) => Math.PI - (2 * Math.PI) / n;
 
 function angleAt(n: number, s: number, g: Geometry) {
-	if (g === "plane") return flatAngle(n);
-	const c = g === "sphere" ? Math.cos(s / 2) : Math.cosh(s / 2);
+	if (g === GEOMETRIES.EUCLIDEAN) return flatAngle(n);
+	const c = g === GEOMETRIES.SPHERICAL ? Math.cos(s / 2) : Math.cosh(s / 2);
 	return 2 * Math.asin(Math.min(1, Math.cos(Math.PI / n) / c));
 }
 
 /** The common edge length that closes the vertex, or null if none does (the sphere can run out). */
 function solveEdge(ns: number[], g: Geometry): number | null {
-	if (g === "plane") return 1;
+	if (g === GEOMETRIES.EUCLIDEAN) return 1;
 	const gap = (s: number) => ns.reduce((t, n) => t + angleAt(n, s, g), 0) - 2 * Math.PI;
 	let lo = 0,
 		hi: number;
-	if (g === "sphere") {
+	if (g === GEOMETRIES.SPHERICAL) {
 		hi = (2 * Math.PI) / Math.max(...ns) - 1e-9; // past this the largest polygon would be flat
 		if (gap(hi) < 0) return null;
 	} else {
@@ -48,7 +50,7 @@ function solveEdge(ns: number[], g: Geometry): number | null {
 	}
 	for (let i = 0; i < 80; i++) {
 		const mid = (lo + hi) / 2;
-		if (gap(mid) > 0 === (g === "hyperbolic")) lo = mid;
+		if (gap(mid) > 0 === (g === GEOMETRIES.HYPERBOLIC)) lo = mid;
 		else hi = mid;
 	}
 	return (lo + hi) / 2;
@@ -133,11 +135,16 @@ export function vertexFigure(ns: number[], turn?: Turn, exact?: Geometry): Verte
 	// 180° corner can only be stood in for here by a many-sided polygon's, a hair short of flat)
 	const flatSum = ns.reduce((t, n) => t + flatAngle(n), 0);
 	const geometry: Geometry =
-		exact ?? (Math.abs(flatSum - 2 * Math.PI) < 1e-9 ? "plane" : flatSum < 2 * Math.PI ? "sphere" : "hyperbolic");
-	const s = ns.length >= 3 ? solveEdge(ns, geometry) : geometry === "plane" ? 1 : null;
+		exact ??
+		(Math.abs(flatSum - 2 * Math.PI) < 1e-9
+			? GEOMETRIES.EUCLIDEAN
+			: flatSum < 2 * Math.PI
+				? GEOMETRIES.SPHERICAL
+				: GEOMETRIES.HYPERBOLIC);
+	const s = ns.length >= 3 ? solveEdge(ns, geometry) : geometry === GEOMETRIES.EUCLIDEAN ? 1 : null;
 	const edge = ns.length >= 3 ? s : null;
 	const len = s ?? 1;
-	const g: Geometry = s == null ? "plane" : geometry; // nothing closes: show the flat fan
+	const g: Geometry = s == null ? GEOMETRIES.EUCLIDEAN : geometry; // nothing closes: show the flat fan
 	const polygons: P2[][] = [];
 	const back: P2[][] = [];
 	const mids: number[] = [];
@@ -149,10 +156,10 @@ export function vertexFigure(ns: number[], turn?: Turn, exact?: Geometry): Verte
 		from += a;
 		const cotA = 1 / Math.tan(Math.PI / n),
 			cotH = 1 / Math.tan(a / 2);
-		if (g === "plane") {
+		if (g === GEOMETRIES.EUCLIDEAN) {
 			const R = len / (2 * Math.sin(Math.PI / n));
 			polygons.push(ring(n, R).map((p) => rot({ x: p.x + R, y: p.y }, mid)));
-		} else if (g === "hyperbolic") {
+		} else if (g === GEOMETRIES.HYPERBOLIC) {
 			const R = Math.acosh(Math.max(1, cotA * cotH));
 			// Klein chart: centred polygon with straight edges; lift to the hyperboloid, boost by R along x,
 			// turn to the bisector, then down to the Poincaré disk.

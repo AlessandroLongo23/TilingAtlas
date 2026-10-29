@@ -1,6 +1,6 @@
 import { NOBLE_FAMILY_DEFAULTS, type NobleFamilyParams } from "@/lib/render/nobleSolids";
 import type { FaceView } from "@/lib/render/sphericalGeometry";
-import type { HypMaterial, WoodStyle } from "@/lib/render/hypMaterials";
+import type { Material } from "@/lib/render/materials";
 import { create } from "zustand";
 import { Vector } from "@/classes/Vector";
 import { BUBBLE_KOCH_LEVELS, DEFAULT_BUBBLE_EDGE_STYLE, type BubbleEdgeStyle } from "@/lib/bubble/edges";
@@ -205,11 +205,12 @@ export interface ConfigurationState {
 	hyperbolicLineMode: "geometry" | "constant";
 	// Shade the disk darker toward the rim (depthShadeK in lib/render/hyperbolic.ts). Off by default.
 	hyperbolicDepthShade: boolean;
-	// Paint each tile of the hyperbolic disk as a material: polished stone, leaded glass (hypMaterials.ts).
-	hyperbolicMaterial: HypMaterial;
-	hyperbolicWood: WoodStyle;
+	// Paint each tile as a material (lib/render/materials.ts): stone, leaded glass, wood, paving setts. On
+	// the hyperbolic disk, the Euclidean shader view and the round tiling sphere; off while Islamic is on.
+	materials: boolean;
+	material: Material;
 	// Marble, wood and cobblestone from scanned PBR maps (public/surfaces) or from the procedurals.
-	hyperbolicSurfaceSource: "scanned" | "procedural";
+	materialSource: "scanned" | "procedural";
 	// Transient input signals from the p5 input layer to the Poincaré-disk overlay (consumed + cleared by
 	// it). A click (centred CSS px) requests centring the clicked tile; the reset flag returns to identity.
 	hyperbolicClick: { x: number; y: number } | null;
@@ -538,9 +539,9 @@ export const useConfiguration = create<ConfigurationState>()((set) => ({
 	hyperbolic: false,
 	hyperbolicLineMode: "geometry",
 	hyperbolicDepthShade: false,
-	hyperbolicMaterial: "none",
-	hyperbolicWood: { species: "mixed", cut: "mixed", grain: "random" },
-	hyperbolicSurfaceSource: "scanned",
+	materials: false,
+	material: "marble",
+	materialSource: "scanned",
 	hyperbolicClick: null,
 	hyperbolicResetView: false,
 

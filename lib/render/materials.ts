@@ -1,5 +1,10 @@
-// Materials for the hyperbolic disk: each tile drawn as a polished stone slab or a pane of leaded glass.
-// Two things make a material hold still under the camera, and both are subtler here than on the plane.
+// Materials: each tile drawn as a polished stone slab, a pane of leaded glass, a board or a paving sett,
+// on the hyperbolic disk, the Euclidean plane and the tiling sphere alike. The shading (MATERIAL_GLSL)
+// takes one Surf per pixel: the point in the tile's own frame, a seed for the tile, its polygon size and
+// its distance to the nearest side. Each renderer fills that in its own geometry; the rest is shared.
+//
+// The hyperbolic disk is the hard case, and the seed table below is there for it. Two things make a
+// material hold still under its camera, and both are subtler there than on the plane.
 //
 // ORIENTATION. A pixel's walk ends in the frame of a QUOTIENT face, and when that face has a rotation in
 // the quotient two pixels of one tile can arrive in frames a turn apart (5.8.8: a quarter turn). A
@@ -22,19 +27,10 @@
 import { type Su11, su11Inverse, su11Mul, su11Normalize } from "@/lib/render/hyperbolic";
 import { WALK_APEIROGON, type WalkTiling } from "@/lib/render/hyperbolicWalk";
 
-export type HypMaterial = "none" | "marble" | "glass" | "wood" | "cobble";
-export const MATERIAL_CODE: Record<HypMaterial, number> = { none: 0, marble: 1, glass: 2, wood: 3, cobble: 4 };
+export type Material = "marble" | "glass" | "wood" | "cobble";
+/** The shader's uMaterial; 0 is off. */
+export const MATERIAL_CODE: Record<Material, number> = { marble: 1, glass: 2, wood: 3, cobble: 4 };
 
-/** Wood's own choices. "mixed" species steps through them by polygon size (the hue ring turns it), as the
- *  stones do; "mixed" cut picks one per board. The shader takes each as its index in the list, less one. */
-export const WOOD_SPECIES = ["mixed", "oak", "walnut", "maple", "cherry", "wenge", "pine"] as const;
-export const WOOD_CUTS = ["mixed", "flat", "quarter", "end"] as const;
-export const WOOD_GRAIN = ["random", "aligned"] as const;
-export interface WoodStyle {
-	species: (typeof WOOD_SPECIES)[number];
-	cut: (typeof WOOD_CUTS)[number];
-	grain: (typeof WOOD_GRAIN)[number];
-}
 /**
  * SCANNED SURFACES (tools/surfaces/build_surfaces.py): CC0 scans from ambientCG and Poly Haven, packed per
  * family into SURFACE_LAYERS WebP pairs, the material's slots in the procedural tables' order and the
@@ -42,19 +38,19 @@ export interface WoodStyle {
  */
 export type SurfaceFamily = "marble" | "wood" | "cobble";
 /** Slots per family; marble's grout and cobble's sand are one layer more. Marble has many: a tiling's
- *  polygon sizes each take their own stone (rank order, polygonRanks), and the world's marbles are many. */
+ *  polygon sizes each take their own stone (rank order, sizeRanks), and the world's marbles are many. */
 export const SURFACE_SLOTS: Record<SurfaceFamily, number> = { marble: 12, wood: 6, cobble: 5 };
 /** Slots that share another slot's relief read its -n file (one copy shipped): the five setts all take
  *  rock_surface's (tools/surfaces/build_surfaces.py writes the -n file once per relief source). */
 const RELIEF_OF: Partial<Record<SurfaceFamily, number[]>> = { cobble: [0, 0, 0, 0, 0, 5] };
-export const surfaceFamily = (m: HypMaterial): SurfaceFamily | null =>
+const surfaceFamily = (m: Material | null): SurfaceFamily | null =>
 	m === "marble" || m === "wood" || m === "cobble" ? m : null;
-export interface SurfaceImages {
+interface SurfaceImages {
 	c: ImageBitmap[];
 	n: ImageBitmap[];
 }
 const surfaceCache = new Map<SurfaceFamily, Promise<SurfaceImages>>();
-export function surfaceImages(family: SurfaceFamily): Promise<SurfaceImages> {
+function surfaceImages(family: SurfaceFamily): Promise<SurfaceImages> {
 	let p = surfaceCache.get(family);
 	if (!p) {
 		const relief = RELIEF_OF[family];
@@ -76,29 +72,111 @@ export function surfaceImages(family: SurfaceFamily): Promise<SurfaceImages> {
 			if (!normals.has(j)) normals.set(j, one(j, "n"));
 			return normals.get(j)!;
 		};
-		p = Promise.all([Promise.all(idx.map((i) => one(i, "c"))), Promise.all(idx.map(normal))]).then(([c, n]) => ({ c, n }));
+		p = Promise.all([Promise.all(idx.map((i) => one(i, "c"))), Promise.all(idx.map(normal))]).then(([c, n]) => ({
+			c,
+			n,
+		}));
 		p.catch(() => surfaceCache.delete(family)); // a failed fetch may be retried
 		surfaceCache.set(family, p);
 	}
 	return p;
 }
 
-/** The tiling's polygon sizes in rank order, as the shader's uRank pairs (size, rank), smallest first,
- *  and how many there are. An apeirogon row counts as its own size. */
-export function polygonRanks(t: WalkTiling): { pairs: Float32Array; n: number } {
-	const sizes = new Set<number>();
-	for (let f = 0; f < t.height; f++) sizes.add(t.data[f * t.width * 4 + 3]);
-	const sorted = [...sizes].sort((a, b) => a - b).slice(0, 16);
+/**
+ * The two scan arrays a renderer samples (uSurfC, uSurfN), on a raw WebGL2 context. They hold one texel
+ * until a family is asked for, and the draw reads procedurals until its scans have landed. The sphere's
+ * three.js renderer shares its context with this class and wraps the two textures as ExternalTextures.
+ */
+export class SurfaceTextures {
+	readonly c: WebGLTexture;
+	readonly n: WebGLTexture;
+	private surf: { family: SurfaceFamily; ready: boolean } | null = null;
+	private disposed = false;
+
+	/** `onUpload` runs after the scans are written (the sphere resets three's cached GL state there). */
+	constructor(
+		private gl: WebGL2RenderingContext,
+		private onUpload?: () => void,
+	) {
+		this.c = gl.createTexture();
+		this.n = gl.createTexture();
+		for (const t of [this.c, this.n]) {
+			gl.bindTexture(gl.TEXTURE_2D_ARRAY, t);
+			gl.texImage3D(gl.TEXTURE_2D_ARRAY, 0, gl.RGBA8, 1, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4));
+			gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+		}
+		onUpload?.();
+	}
+
+	/** Ask for the scans `material` reads, if `scanned`. Returns the uScan and uSurfSlots to draw with. */
+	want(material: Material | null, scanned: boolean): { scan: boolean; slots: number } {
+		const fam = scanned ? surfaceFamily(material) : null;
+		if (fam && this.surf?.family !== fam) this.load(fam);
+		return { scan: !!fam && this.surf?.family === fam && this.surf.ready, slots: fam ? SURFACE_SLOTS[fam] : 1 };
+	}
+
+	private load(family: SurfaceFamily): void {
+		const token = { family, ready: false };
+		this.surf = token;
+		surfaceImages(family)
+			.then(({ c, n }) => {
+				if (this.disposed || this.surf !== token) return;
+				const gl = this.gl;
+				const aniso = gl.getExtension("EXT_texture_filter_anisotropic");
+				const put = (tex: WebGLTexture, imgs: ImageBitmap[], fmt: number) => {
+					gl.bindTexture(gl.TEXTURE_2D_ARRAY, tex);
+					const { width: w, height: h } = imgs[0];
+					gl.texImage3D(gl.TEXTURE_2D_ARRAY, 0, fmt, w, h, imgs.length, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+					imgs.forEach((im, i) =>
+						gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, 0, 0, i, w, h, 1, gl.RGBA, gl.UNSIGNED_BYTE, im),
+					);
+					gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
+					gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+					gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+					gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_S, gl.REPEAT);
+					gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_T, gl.REPEAT);
+					if (aniso) gl.texParameterf(gl.TEXTURE_2D_ARRAY, aniso.TEXTURE_MAX_ANISOTROPY_EXT, 8);
+				};
+				put(this.c, c, gl.SRGB8_ALPHA8); // albedo decodes to linear; the alpha (height) stays linear
+				put(this.n, n, gl.RGBA8);
+				token.ready = true;
+				this.onUpload?.();
+			})
+			.catch((e) => console.warn("scanned surfaces unavailable:", e));
+	}
+
+	/** Bind the two arrays to texture units `unit` and `unit + 1` (raw-GL renderers). */
+	bind(unit: number): void {
+		const gl = this.gl;
+		gl.activeTexture(gl.TEXTURE0 + unit);
+		gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.c);
+		gl.activeTexture(gl.TEXTURE0 + unit + 1);
+		gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.n);
+	}
+
+	dispose(): void {
+		if (this.disposed) return;
+		this.disposed = true;
+		this.gl.deleteTexture(this.c);
+		this.gl.deleteTexture(this.n);
+	}
+}
+
+/** A tiling's polygon sizes in rank order, as the shader's uRank pairs (size, rank), smallest first,
+ *  and how many there are. */
+export function sizeRanks(sizes: Iterable<number>): { pairs: Float32Array; n: number } {
+	const sorted = [...new Set(sizes)].sort((a, b) => a - b).slice(0, 16);
 	const pairs = new Float32Array(32);
 	sorted.forEach((k, i) => pairs.set([k, i], i * 2));
 	return { pairs, n: sorted.length };
 }
 
-export const woodCode = (w: WoodStyle): [number, number, number] => [
-	WOOD_SPECIES.indexOf(w.species) - 1,
-	WOOD_CUTS.indexOf(w.cut) - 1,
-	WOOD_GRAIN.indexOf(w.grain),
-];
+/** The walk's sizes. An apeirogon row counts as its own size. */
+export function polygonRanks(t: WalkTiling): { pairs: Float32Array; n: number } {
+	const sizes: number[] = [];
+	for (let f = 0; f < t.height; f++) sizes.push(t.data[f * t.width * 4 + 3]);
+	return sizeRanks(sizes);
+}
 
 /** Tiles listed around the anchor: centres within this hyperbolic distance. Past ~6 a tile is a few
  *  pixels across and its material has faded to its mean, so a missing seed is invisible there. */
@@ -235,11 +313,28 @@ export class TileSeeds {
 }
 
 // --------------------------------------------------------------------------------------------- GLSL ---
-// Interpolated into the per-pixel shader after its complex helpers. It reads uSeeds, uSeedCap and uGinv,
-// declared there.
+// Complex helpers every material renderer needs; the hyperbolic shader's own walk uses them too.
+export const COMPLEX_GLSL = /* glsl */ `
+vec2 cmul(vec2 a, vec2 b) { return vec2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x); }
+vec2 cdiv(vec2 a, vec2 b) { float d = dot(b, b); return vec2(a.x * b.x + a.y * b.y, a.y * b.x - a.x * b.y) / d; }
+vec2 cconj(vec2 a) { return vec2(a.x, -a.y); }
+// x mod n as a slot index. GLSL's mod is x - n * floor(x / n), and a GPU whose division is a multiply
+// by a reciprocal can put x / n a hair under a whole number, which makes mod return n itself: one slot
+// past the row. Seen on Firefox on Windows as faces flooding their neighbours, on apeirogon rows of 3 sides.
+int imod(float x, float n) { int r = int(x - n * floor(x / n)), N = int(n); return r >= N ? r - N : r < 0 ? r + N : r; }
+`;
+
+// The shading, after COMPLEX_GLSL. The host shader declares uHueOffset (the hue ring turns the choices
+// by polygon size) and calls shadeMaterial with its Surf.
 export const MATERIAL_GLSL = /* glsl */ `
+uniform float uMaterial;   // MATERIAL_CODE: 0 off, 1 marble, 2 glass, 3 wood, 4 cobblestone
+uniform float uScan;       // 1 = read the scanned surfaces (uSurfC, uSurfN) instead of procedurals
+uniform highp sampler2DArray uSurfC; // scans: albedo (sRGB) + height, one layer per slot
+uniform highp sampler2DArray uSurfN; // scans: normal xy, roughness, AO
+uniform float uSurfSlots;  // scans: the loaded family's slot count; its joint filler is the layer after
+uniform vec2 uRank[16];    // (polygon size, its rank among the tiling's sizes), sizeRanks
+uniform int uRankN;
 uint mhash(uint x) { x ^= x >> 16; x *= 0x7feb352du; x ^= x >> 15; x *= 0x846ca68bu; x ^= x >> 16; return x; }
-uint keyHash(int x, int y) { return mhash(uint(x + ${KEY_OFFSET}) * 73856093u ^ uint(y + ${KEY_OFFSET}) * 19349663u); }
 vec2 rnd2(vec2 p) {
 	uvec2 q = uvec2(ivec2(floor(p)) + 32768);
 	uint h = mhash(q.x * 1597334677u ^ q.y * 3812015801u);
@@ -277,48 +372,16 @@ vec3 worley(vec2 p) {
 	return vec3(sqrt(d), id);
 }
 
-// The tile's row in the CPU table (TileSeeds), keyed by its centre on the hyperboloid in the anchor
-// frame: (seed, reference turn, live turn of the table's frame, 1 = found). Near a key cell's edge float
-// rounding can land either side, so the neighbouring cells are probed too. Not found (an apeirogon, or a
-// tile past SEED_RADIUS, a few pixels wide): a seed from the face index, and w = 0 says so.
-vec4 tileSeed(int f, vec2 ma, vec2 mb, bool horo) {
-	if (!horo) {
-		vec2 X = 2.0 * cmul(ma, mb) / ${SEED_CELL} + ${SEED_SHIFT};
-		vec2 c0 = floor(X), fr = X - c0;
-		vec2 dir = vec2(fr.x < 0.5 ? -1.0 : 1.0, fr.y < 0.5 ? -1.0 : 1.0);
-		bvec2 near = bvec2(min(fr.x, 1.0 - fr.x) < 0.08, min(fr.y, 1.0 - fr.y) < 0.08);
-		int perRow = ${SEED_TEX_W / 2};
-		int cap = perRow * textureSize(uSeeds, 0).y;
-		for (int c = 0; c < 4; c++) {
-			vec2 off = vec2(c & 1, c >> 1);
-			if ((off.x > 0.0 && !near.x) || (off.y > 0.0 && !near.y)) continue;
-			ivec2 k = ivec2(c0 + off * dir);
-			int s = int(keyHash(k.x, k.y) & uint(cap - 1));
-			for (int p = 0; p < 24; p++) {
-				ivec2 at = ivec2(2 * (s % perRow), s / perRow);
-				vec4 e = texelFetch(uSeeds, at, 0);
-				if (e.w == 0.0) break;
-				if (ivec2(e.xy) == k) {
-					vec4 t = texelFetch(uSeeds, at + ivec2(1, 0), 0);
-					return vec4(e.z, t.x, t.y, 1.0);
-				}
-				s = (s + 1) & (cap - 1);
-			}
-		}
-	}
-	return vec4(float(mhash(uint(f) + 7u) & 0xffffu) / 65535.0, 0.0, 0.0, 0.0);
-}
-
 // What every material reads about its pixel (filled in by the per-pixel shader's main).
 struct Surf {
-	vec2 p;        // the point in the tile's own frame, geodesic polar, hyperbolic units
+	vec2 p;        // the point in the tile's own frame: geodesic polar, in material units (hyperbolic ones on the disk)
 	float fp;      // a pixel's width in those units: what every pattern is band-limited against
 	float seed;    // the tile's seed (tileSeed)
 	float key;     // its polygon size
 	float edgePx;  // distance to the nearest side, device px
-	float edgeH;   // the same, hyperbolic
+	float edgeH;   // the same, in material units
 	float halfW;   // the Line stroke's half-width here, device px: joints, grout and lead take it
-	float conf;    // device px per hyperbolic unit here
+	float conf;    // device px per material unit here
 	vec2 inward;   // unit screen direction into the tile from its nearest side
 	vec2 toScreen; // complex factor carrying a p-frame vector to the screen
 	vec2 z;        // the pixel on the disk, for lights fixed to the screen
@@ -486,11 +549,10 @@ void woodSpecies(int k, out vec3 early, out vec3 late, out float rings, out floa
 }
 vec3 shadeWood(Surf s) {
 	vec3 early, late; float rings, rays, pores;
-	woodSpecies(uWood.x < -0.5 ? sizeStep(s, 6.0) : int(uWood.x), early, late, rings, rays, pores);
+	woodSpecies(sizeStep(s, 6.0), early, late, rings, rays, pores);
 	float h0 = fract(s.seed * 7.77), h1 = fract(s.seed * 3.71), h2 = fract(s.seed * 5.13);
-	int cut = uWood.y > -0.5 ? int(uWood.y) : h0 < 0.5 ? 0 : h0 < 0.85 ? 1 : 2;
-	// grain direction: random per board, or one direction for the floor (the frame carried out from home)
-	float ang = uWood.z > 0.5 ? 0.0 : s.seed * 6.2831853;
+	int cut = h0 < 0.5 ? 0 : h0 < 0.85 ? 1 : 2; // a saw cut per board; the grain runs its own way
+	float ang = s.seed * 6.2831853;
 	vec2 gx = vec2(cos(ang), sin(ang));
 	vec2 q = vec2(dot(s.p, gx), dot(s.p, vec2(-gx.y, gx.x))); // x along the grain
 	vec2 o = vec2(h1 * 40.0, h2 * 40.0);
@@ -652,8 +714,8 @@ vec3 litPbr(Surf s, Pbr m) {
 // and the filler sits below with its own scan, shadowed against the walls either side.
 vec3 shadeScanned(Surf s, int fam) {
 	float h1 = fract(s.seed * 3.71), h2 = fract(s.seed * 5.13);
-	int layer = fam == 1 && uWood.x > -0.5 ? int(uWood.x) : sizeStep(s, uSurfSlots);
-	float ang = fam == 1 && uWood.z > 0.5 ? 0.0 : s.seed * 6.2831853;
+	int layer = sizeStep(s, uSurfSlots);
+	float ang = s.seed * 6.2831853;
 	if (fam == 1 && layer == 0) ang += 1.5707963; // the oak scan's grain runs up the image, the others across
 	float scale = fam == 0 ? 0.42 : fam == 1 ? 0.55 : 0.75;
 	Pbr m = scanAt(s, float(layer), scale, vec2(cos(ang), sin(ang)), vec2(h1, h2) * 7.31);
@@ -718,5 +780,52 @@ vec3 shadeScanned(Surf s, int fam) {
 		col = mix(jc, col, smoothstep(-0.75, 0.75, e));
 	}
 	return col;
+}
+
+// The tile in its material, as a display colour. Scans are lit in linear light; the procedurals and the
+// rest of every host shader work in display values.
+vec3 shadeMaterial(Surf s) {
+	if (uScan > 0.5 && (uMaterial < 1.5 || uMaterial > 2.5)) {
+		vec3 col = shadeScanned(s, uMaterial < 1.5 ? 0 : uMaterial < 3.5 ? 1 : 2);
+		return pow(col / (1.0 + 0.3 * col) * 1.15, vec3(1.0 / 2.2)); // a soft shoulder, not a clip
+	}
+	return uMaterial < 1.5 ? shadeMarble(s) : uMaterial < 2.5 ? shadeGlass(s) : uMaterial < 3.5 ? shadeWood(s) : shadeCobble(s);
+}
+`;
+
+// The hyperbolic disk's seed lookup, after MATERIAL_GLSL. It reads uSeeds, declared by that shader.
+export const TILE_SEED_GLSL = /* glsl */ `
+uint keyHash(int x, int y) { return mhash(uint(x + ${KEY_OFFSET}) * 73856093u ^ uint(y + ${KEY_OFFSET}) * 19349663u); }
+
+// The tile's row in the CPU table (TileSeeds), keyed by its centre on the hyperboloid in the anchor
+// frame: (seed, reference turn, live turn of the table's frame, 1 = found). Near a key cell's edge float
+// rounding can land either side, so the neighbouring cells are probed too. Not found (an apeirogon, or a
+// tile past SEED_RADIUS, a few pixels wide): a seed from the face index, and w = 0 says so.
+vec4 tileSeed(int f, vec2 ma, vec2 mb, bool horo) {
+	if (!horo) {
+		vec2 X = 2.0 * cmul(ma, mb) / ${SEED_CELL} + ${SEED_SHIFT};
+		vec2 c0 = floor(X), fr = X - c0;
+		vec2 dir = vec2(fr.x < 0.5 ? -1.0 : 1.0, fr.y < 0.5 ? -1.0 : 1.0);
+		bvec2 near = bvec2(min(fr.x, 1.0 - fr.x) < 0.08, min(fr.y, 1.0 - fr.y) < 0.08);
+		int perRow = ${SEED_TEX_W / 2};
+		int cap = perRow * textureSize(uSeeds, 0).y;
+		for (int c = 0; c < 4; c++) {
+			vec2 off = vec2(c & 1, c >> 1);
+			if ((off.x > 0.0 && !near.x) || (off.y > 0.0 && !near.y)) continue;
+			ivec2 k = ivec2(c0 + off * dir);
+			int s = int(keyHash(k.x, k.y) & uint(cap - 1));
+			for (int p = 0; p < 24; p++) {
+				ivec2 at = ivec2(2 * (s % perRow), s / perRow);
+				vec4 e = texelFetch(uSeeds, at, 0);
+				if (e.w == 0.0) break;
+				if (ivec2(e.xy) == k) {
+					vec4 t = texelFetch(uSeeds, at + ivec2(1, 0), 0);
+					return vec4(e.z, t.x, t.y, 1.0);
+				}
+				s = (s + 1) & (cap - 1);
+			}
+		}
+	}
+	return vec4(float(mhash(uint(f) + 7u) & 0xffffu) / 65535.0, 0.0, 0.0, 0.0);
 }
 `;

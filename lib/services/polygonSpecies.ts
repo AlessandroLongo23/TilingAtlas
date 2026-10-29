@@ -1,5 +1,6 @@
 import type { PolygonMode, ReferenceTiling } from "@/lib/services/referenceAtlas";
 import { vcsOf } from "@/lib/services/vertexConfig";
+import { SOURCES } from "@/lib/vocabulary";
 
 export type { PolygonMode };
 
@@ -147,7 +148,7 @@ export function polygonSpeciesOf(t: ReferenceTiling): string[] {
 	// its own output feeds `availablePolygons`, which is what `showPolygons` tests.
 	// The engine-developed hyperbolic rows carry a placeholder cell, so their species come off their vertex
 	// figures. A star's point is free in H² (the family slider), so it is keyed by fold alone: "8*".
-	if (t.source === "hyperbolic" && !t.hypPoly) {
+	if (t.source === SOURCES.HYPERBOLIC && !t.hypPoly) {
 		const vcs = vcsOf(t);
 		if (vcs) {
 			let hit = hypCache.get(t.family);

@@ -15,18 +15,33 @@ import {
 	TILING_GLSL_EDGE,
 } from "./sphericalTilingShader";
 import { LOOK } from "./sphericalLook";
+import { COMPLEX_GLSL, MATERIAL_CODE, MATERIAL_GLSL, sizeRanks, SurfaceTextures, type Material } from "./materials";
 
-export interface SphereMaterialOptions {
-	poly: Polyhedron;
+/** Material units per radian of the unit sphere: an icosahedron's face (inradius 0.36 rad) comes out
+ *  near a {7,3} heptagon's 0.55 on the disk, so the materials read at the same scale on both. */
+const MAT_SCALE = 1.6;
+
+/** The live look: hue ring, stroke, theme, and the material (null = the plain tiling). */
+export interface SphereLook {
 	hueOffset?: number;
-	lineWidth?: number; // the cfg.lineWidth stroke slider (0 hides edges)
-	dark?: boolean; // theme — sets the line colour
+	lineWidth?: number;
+	dark?: boolean;
+	material?: Material | null;
+	scanned?: boolean;
+}
+
+export interface SphereMaterialOptions extends SphereLook {
+	poly: Polyhedron;
+	/** The renderer whose context the scanned surfaces are uploaded on. */
+	renderer: THREE.WebGLRenderer;
 }
 
 export interface SphereMaterial {
 	material: THREE.Material;
-	// hue / stroke / theme changed → write uniforms (no rebuild, no re-bake).
-	update: (o: { hueOffset?: number; lineWidth?: number; dark?: boolean }) => void;
+	// hue / stroke / theme / material changed → write uniforms (no rebuild, no re-bake).
+	update: (o: SphereLook) => void;
+	/** Per frame, before the draw: whether the material's scans have landed yet. */
+	tick: () => void;
 	dispose: () => void;
 }
 
@@ -57,6 +72,10 @@ out vec4 fragColor;
 ${TILING_GLSL_CORE}
 ${TILING_GLSL_EDGE}
 uniform vec3 uSphLineColor;
+uniform mat3 normalMatrix;
+uniform float uHueOffset; // = uSphHueOffset, under the name the materials read
+${COMPLEX_GLSL}
+${MATERIAL_GLSL}
 `;
 
 // The tiling, lit. This material cannot use the scene's lights (a RawShaderMaterial has no lighting
@@ -90,10 +109,47 @@ float grooveWidth() { return max(uSphEdgeWidth * 3.0, 0.018); }
 // 0 on the face, −GROOVE_DEPTH in the line, joined smoothly across the wall.
 float grooveHeight(float g) { return -GROOVE_DEPTH * (1.0 - smoothstep(0.0, grooveWidth(), g)); }
 
+// The face in its material (materials.ts). The face's frame is its tangent plane, unrolled azimuthally
+// about the face's centre, so a texture unit is a fixed arc on the sphere. Distances come from g, the arc
+// to the nearest edge, and its screen gradient; the lighting is the plain sphere's, gentler.
+vec3 materialFace(vec3 dir, int best, float g) {
+	vec3 n = normalize(uSphFace[best].xyz);
+	vec3 t1 = normalize(cross(abs(n.y) < 0.99 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0), n));
+	vec3 t2 = cross(n, t1);
+	vec2 tang = vec2(dot(dir, t1), dot(dir, t2));
+	float lt = length(tang);
+	float arcPx = max(length(dFdx(dir)), length(dFdy(dir))); // radians per device px
+	vec2 gg = vec2(dFdx(g), dFdy(g));
+	float gm = max(length(gg), 1e-7);
+	Surf sf;
+	sf.horo = false;
+	sf.p = (lt > 1e-7 ? tang / lt * atan(lt, dot(dir, n)) : vec2(0.0)) * ${MAT_SCALE.toFixed(4)};
+	sf.fp = max(arcPx, 1e-6) * ${MAT_SCALE.toFixed(4)};
+	sf.conf = 1.0 / sf.fp;
+	sf.seed = float(mhash(uint(best) * 2654435761u + 17u) & 0xffffffu) / 16777216.0;
+	sf.key = uSphFace[best].w;
+	sf.edgePx = g / gm;
+	sf.edgeH = g * ${MAT_SCALE.toFixed(4)};
+	sf.halfW = uSphEdgeWidth / gm;
+	sf.inward = gg / gm;
+	vec2 ts = (normalMatrix * t1).xy;
+	sf.toScreen = dot(ts, ts) > 1e-8 ? normalize(ts) : vec2(1.0, 0.0);
+	sf.z = vViewPos.xy; // the sphere spans about (−1, 1) of view space, as the disk does of its frame
+	return shadeMaterial(sf);
+}
+
 void main() {
 	vec3 dir = normalize(vLocal);
 	int best;
 	float g = sphClassify(dir, best);
+	if (uMaterial > 0.5) {
+		vec3 col = materialFace(dir, best, g);
+		vec3 N = normalize(vViewNor), V = normalize(-vViewPos);
+		float shade = 0.62 + 0.38 * wrapped(N, KEY_DIR, 0.45) + 0.1 * wrapped(N, FILL_DIR, 0.7);
+		float fres = pow(1.0 - clamp(dot(N, V), 0.0, 1.0), 3.5);
+		fragColor = vec4(min(col * shade + mix(vec3(0.30, 0.33, 0.40), col, 0.55) * fres * ${LOOK.fresnel.toFixed(3)}, vec3(1.0)), 1.0);
+		return;
+	}
 	float line = sphEdge(g);
 	// Deepen the fill before lighting it: the catalogue hue is the pale tile palette, chosen for an UNLIT
 	// fill, and lit as-is it washes to near-white under the key. See LOOK.sat in sphericalLook.ts.
@@ -139,7 +195,12 @@ const DARK_LINE = new THREE.Vector3(0.1, 0.105, 0.125);
 const LIGHT_LINE = new THREE.Vector3(0.06, 0.06, 0.08);
 
 export function createSphereMaterial(opts: SphereMaterialOptions): SphereMaterial {
-	const { faces, count } = buildFaceUniforms(opts.poly);
+	const { faces, count, sizes } = buildFaceUniforms(opts.poly);
+	// The scans share three's context; three's cached GL state is reset after every raw upload.
+	const renderer = opts.renderer;
+	const surf = new SurfaceTextures(renderer.getContext() as WebGL2RenderingContext, () => renderer.resetState());
+	const ranks = sizeRanks(sizes);
+	const look = { material: opts.material ?? null, scanned: opts.scanned ?? true };
 	const uniforms = {
 		uSphFace: { value: faces },
 		uSphFaceCount: { value: count },
@@ -148,6 +209,16 @@ export function createSphereMaterial(opts: SphereMaterialOptions): SphereMateria
 		// Raw normalised RGB (NOT a THREE.Color, which would linearise) — this is the display value written
 		// straight out; see the FRAG note.
 		uSphLineColor: { value: ((opts.dark ?? true) ? DARK_LINE : LIGHT_LINE).clone() },
+		uHueOffset: { value: opts.hueOffset ?? 0 },
+		uMaterial: { value: 0 },
+		uScan: { value: 0 },
+		uSurfSlots: { value: 1 },
+		uSurfC: { value: new THREE.ExternalTexture(surf.c) },
+		uSurfN: { value: new THREE.ExternalTexture(surf.n) },
+		uRank: {
+			value: Array.from({ length: 16 }, (_, i) => new THREE.Vector2(ranks.pairs[i * 2], ranks.pairs[i * 2 + 1])),
+		},
+		uRankN: { value: ranks.n },
 	};
 
 	const material = new THREE.RawShaderMaterial({
@@ -160,12 +231,23 @@ export function createSphereMaterial(opts: SphereMaterialOptions): SphereMateria
 
 	return {
 		material,
-		update: ({ hueOffset, lineWidth, dark }) => {
-			if (hueOffset != null) uniforms.uSphHueOffset.value = hueOffset;
+		update: ({ hueOffset, lineWidth, dark, material, scanned }) => {
+			if (material !== undefined) look.material = material;
+			if (scanned != null) look.scanned = scanned;
+			if (hueOffset != null) uniforms.uSphHueOffset.value = uniforms.uHueOffset.value = hueOffset;
 			if (lineWidth != null) uniforms.uSphEdgeWidth.value = Math.max(0, lineWidth) * EDGE_ANGLE_PER_STROKE;
 			if (dark != null) (uniforms.uSphLineColor.value as THREE.Vector3).copy(dark ? DARK_LINE : LIGHT_LINE);
 		},
-		dispose: () => material.dispose(),
+		tick: () => {
+			uniforms.uMaterial.value = look.material ? MATERIAL_CODE[look.material] : 0;
+			const { scan, slots } = surf.want(look.material, look.scanned);
+			uniforms.uScan.value = scan ? 1 : 0;
+			uniforms.uSurfSlots.value = slots;
+		},
+		dispose: () => {
+			material.dispose();
+			surf.dispose();
+		},
 	};
 }
 

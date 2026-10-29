@@ -20175,3 +20175,88 @@ keeps the atlas convention. Independent check: the Colors shelf's own records, g
 lattice translations, D4 and colour permutations on a 12x12 to 16x16 window, give squares 2-colour
 5 / 30 / 166 and 3-colour 3 / 58 (k = 1 / 2), equal to the engine's unlabeled counts; labeled stays
 8 / 53 / 309 and 9 / 285.
+
+## Changing a Tegula type's symmetry group, 2026-10-27 (CC)
+
+Tegula's "Symmetries" panel (husonlab/tegula `GroupEditingControls.java`), on the Tegula shelf. One
+stepper per vertex class and tile class sets the rotation order v at its centre; the symbol keeps its
+chambers and gluings and only m = r·v changes, so the topology stays and the curvature's sign picks the
+geometry: 3.4.6.4 (`*632`) goes to 3.4.7.4 (`*732`) in the disk and to the rhombicosidodecahedron
+(`*532`). Tegula's guardrails are ported (no 1-sided tile, no degree-2 vertex, and on the sphere the two
+ordered points of `pq`/`*pq` are kept equal, the teardrop and spindle having no geometry), and so is its
+orbifold naming (`OrbifoldGroupName.java`; it writes `1**` and `o1` where this writes `**` and `o`).
+
+The metric is `develop_dsym.py`'s circle pattern, ported to the browser. Where it does not exist (two
+tiles sharing more than one edge: 16 of the 111 `*632` types) the same solve runs on the barycentric
+subdivision and the edges bend at their midpoints. The result is darts with per-dart turns and lengths,
+which the disk develops as it does the scalene boards; the sphere and the plane are developed in
+`lib/tilings/orbifoldMorph.ts` with 3x3 frames. Check: at their own orders all 2,235 shipped Tegula types
+(1,363 plane, 872 sphere) develop tile for tile to what the shelf ships, and every `*632` type reaches
+`*532` (group order 120) and `*732`. ⚑ A morph is a picture, not a catalogue entry: the regular polygons
+do not survive it in general, and it is not linked to the atlas row of the type it lands on.
+
+### The symmetry morph on every flat periodic tiling, 2026-10-27 (CC)
+
+`lib/tilings/dsymFromMap.ts` reads a Delaney-Dress symbol off the geometry the atlas ships: a period cell
+(vertices and edges identified across the lattice with a tolerance, sides split where another tile's corner
+sits on them, degree-2 points dissolved), a solid, or a hyperbolic record's quotient darts; then the minimal
+image. Checks: all 2,235 Tegula types (plane skeleton and solid) give their shipped symbol; every
+regular-polygon row in `reference-atlas.json.gz` and the k = 8 shard gives its k (12,168 cells); 113,000+
+`hyp-poly` records give their k from darts. The 17 `s24f` star-family rows come out with a smaller k, and
+that is right: stars with different point angles meet the same way, so the topology has more symmetry than
+a drawing. `minimalImage` now renumbers blocks each round (its signatures grew fourfold per round).
+
+`recordSymbol` gives /play the symbol of any flat periodic record, so the panel is on all of them, labelled
+as a topological relative. Colours follow the origin shelf: class hues for Tegula, side-count hues for the
+rest (one rule per shelf, not per surface). `lib/services/morphRelatives.ts` names the atlas entries of the
+type a morph lands on (equal minimal symbols), filtering by geometry, k, sizes and vertex configuration
+before any symbol is computed; nothing is precomputed, since `public/` has no room for an index. ⚑ Board
+shards over 30,000 tilings are not fetched for a search, and the panel says how many were skipped. Matching
+is on minimal images, so a Tegula entry that is the same tiling under a smaller group is listed too.
+
+### Symmetry panel: the orbifold's points first, and hover marks a class, 2026-10-27 (CC)
+
+The panel listed every vertex and tile class, so a k = 7 `*632` tiling showed a dozen rows of order 1
+labelled "corner"/"cone" and buried the three that matter. `conePoints` now puts the orbifold's points first
+(order > 1, highest first, so `*632` reads 6, 3, 2), including an edge's 2-fold point, shown read-only since
+m02 = 2 cannot move; the order-1 classes follow a divider. Roles say where the point sits: corner (on a
+mirror), rotation, half-turn, mirror, interior. Hovering a row marks where that class is drawn, with the
+orbit overlay's dots: on the plane as a one-class `OrbitData` (`force`, plus `extra` dots for tile centres
+and edge midpoints), in the disk from per-dart classes on a morph's darts (`Darts.vCone/eCone/fCone`), on
+the sphere as a new `marks` layer. Which drawn points belong to a class comes from a covering of the drawn
+map onto the type's symbol (`coverOnto`/`drawnPoints` in dsymFromMap.ts). ⚑ The p5 fallback path draws
+the vertex marks but not the centre/midpoint `extra` dots; the default flat shader draws both.
+
+### Star tilings through the morph, 2026-10-27 (CC)
+
+AL: "Star polygons break under these morphings." 3.3*.4.6.12 came out as a tiling by triangles, squares and
+hexagons. Cause: where a star's dent meets a 12-gon's corner only those two tiles meet (210° + 150°), so
+the point is not a vertex of the topology; the converter dissolved it, the 12-gon became a hexagon and the
+star a triangle, and the circle pattern drew them convex. Fix, in three parts. (1) A dissolved point is
+kept as a bend of its edge (`Side.path`, `DrawnMap.at[].path`), and `recordShape` stores each chamber's
+bends as (t, h) in edge lengths plus the tile's drawn hue and star. (2) The minimal image now takes labels
+(`minimalBlocks(sym, labels)`, labels = drawn points per chamber), so a star is never folded onto a plain
+triangle of the same topology; before this the dents were put on every triangle. (3) `bendDarts` rebuilds
+the bends on the morphed edges in Fermi coordinates about each geodesic, in any geometry. Where the
+straight pattern does not exist (a triangle tucked in a dent is a digon), the subdivision's pattern is
+straightened to its chords (`straighten`), which keeps every vertex closed and lets the bends open the
+digon. A tile whose order is unchanged keeps the record's colour; a changed one takes its new shape's.
+
+⚑ Still open: a star whose dents are real vertices (three or more tiles meet there) is drawn convex by the
+circle pattern, which cannot make a reflex corner. Survey of 152 star rows at their own orders: 57 keep their
+shape exactly, 78 come back convexified, 14 fail to draw (no pattern or no lattice), 3 other. The fix is a
+solve that fits corner angles and lengths to the record's drawing under closure, not a pattern.
+Also: `planeCell`'s develop budgets were oversized (probe 300 instances per dart, margin a tile's
+perimeter); trimmed to 100 and a tile's radius, the Tegula sweep is back to ~17 s.
+
+### Reflex corners: fitting the morph to the record's drawing, 2026-10-27 (CC)
+
+Closes the ⚑ above. `fitShape` (orbifoldMorph.ts) takes every turn and edge length as free, the record's
+own angles and lengths (`RecordShape.corner/turns/segs`) as targets, and vertex closure plus tile holonomy
+in the geometry as constraints; corners at a vertex whose order changed are scaled to still close.
+Levenberg-Marquardt with a sparse Jacobian solved by conjugate gradients, then a pass that lets the targets
+go and drives closure to rounding; on failure the circle-pattern picture stays. Checks: every 5th star row
+(60 sampled) redraws with its exact reflex corners at its own orders (was 38%); after raising one order by
+one, 56 of 60 keep their share of reflex corners within 2%, 3 fall back to convex, 1 fails to draw.
+3.4.6.4 raised to 3.4.7.4 comes out with edges equal to within 0.003, the regular tiling up to that
+compromise between angle and length targets. Tests: `dsymFromMap.test.ts` pins n0003 and n0186.

@@ -19,10 +19,10 @@ import {
 	sphereHandles,
 	sphereRings,
 	tegulaHandles,
+	tegulaHue,
 	type TegulaCell,
 } from "@/lib/tilings/tegula";
 import type { SphPolyPattern } from "@/lib/tilings/sph-poly";
-import { polygonHue } from "@/lib/utils/renderTiling";
 import { useTegulaShapes } from "@/stores/tegulaShapes";
 import { tileFill } from "@/lib/render/tilePalette";
 
@@ -119,13 +119,12 @@ function sphereView(p: SphPolyPattern, shape: number[][]): View {
 	];
 	const dot = (u: number[], v: number[]) => u[0] * v[0] + u[1] * v[1] + u[2] * v[2];
 	const flat = (q: number[]): P2 => [dot(q, ex), dot(q, ey)];
-	const hue0 = polygonHue(p.stats.sizes[0] ?? 3);
 	const hs = sphereHandles(p, shape, axis);
 	return {
 		box: [-1.06, -1.06, 2.12, 2.12],
 		disc: true,
 		polys: sphereRings(p, shape).flatMap((ring, f) =>
-			dot(b.centers[f], axis) > 0 ? [{ points: ring.map(flat), hue: hue0 + (p.fillGroup?.[f] ?? 0) * 137.508 }] : [],
+			dot(b.centers[f], axis) > 0 ? [{ points: ring.map(flat), hue: tegulaHue(p.fillGroup?.[f] ?? 0) }] : [],
 		),
 		handles: hs.map((q) => ({ cls: q.cls, kind: q.kind, from: flat(q.a), to: flat(q.b), at: flat(q.at) })),
 		read: (cls, [x, y]) => {
@@ -164,7 +163,7 @@ export function TegulaCellEditor({ id, cell, sphere }: { id: string; cell?: Tegu
 
 	if (handles.length === 0) return null;
 	return (
-		<div className="absolute top-3 right-3 z-20 w-56 rounded-xl bg-surface-raised/95 p-2.5 shadow-lg ring-1 ring-line-subtle backdrop-blur-sm max-md:hidden">
+		<div className="rounded-xl bg-surface-raised/95 p-2.5 shadow-lg ring-1 ring-line-subtle backdrop-blur-sm">
 			<div className="mb-1.5 flex items-center justify-between text-[11px] text-fg-secondary">
 				<span>Cell shape</span>
 				<button

@@ -172,6 +172,7 @@ import {
 	type WallpaperGroup,
 } from "@/lib/classes/symmetry/types";
 import { polyformFamilyShort, POLYFORM_FAMILIES, type PolyformFamily } from "@/lib/tilings/polyform";
+import { DECORATIONS, GEOMETRIES, SOURCES, TILE_CLASSES } from "@/lib/vocabulary";
 
 // The unified Tiling Library: one display-only atlas of every tiling (regular k=1..7 + stars in the
 // base file; regular k=8..10 as lazy per-k shards loaded on demand), fetched from public/reference-
@@ -391,28 +392,28 @@ function parseViewState(sp: URLSearchParams): ViewState {
 	if (k != null) f.kValue = k;
 	// Geometry is the top-level axis; default euclidean when the link omits it.
 	const geo = sp.get("geo");
-	f.geometry = geo === "hyperbolic" || geo === "spherical" ? geo : "euclidean";
+	f.geometry = geo === GEOMETRIES.HYPERBOLIC || geo === GEOMETRIES.SPHERICAL ? geo : GEOMETRIES.EUCLIDEAN;
 	const dec = sp.get("dec");
 	if (dec && (DECORATION_ORDER as string[]).includes(dec)) f.decoration = dec as Decoration;
 	const cls = sp.get("class");
-	if (cls === "hyperbolic" || cls === "spherical") {
+	if (cls === GEOMETRIES.HYPERBOLIC || cls === GEOMETRIES.SPHERICAL) {
 		// Back-compat: geometry used to be a tile-class chip. Promote an old link's class to the geometry
 		// axis and leave tileClass unset.
 		f.geometry = cls;
 	} else if (cls === "freedraw" || cls === "colors") {
 		// Same move one axis down: freedraw and colors used to be tile-class chips before the decoration
 		// axis existed. Promote them so links shared before this change still land on the right shelf.
-		f.decoration = cls === "freedraw" ? "edges" : "colorings";
+		f.decoration = cls === "freedraw" ? DECORATIONS.EDGES : DECORATIONS.COLORINGS;
 	} else if (cls && (TILE_CLASS_VALUES as string[]).includes(cls)) {
 		f.tileClass = cls as TileClass;
 		// A bubble tiling is decoration "edges", so `class=bubble&dec=tilings` is a link that can only
 		// read 0. The class is the more specific half of that pair, so keep it and drop the segment —
 		// same move as the two promotions above, one axis over.
-		if (cls === "bubble" && f.decoration === "tilings") f.decoration = undefined;
+		if (cls === "bubble" && f.decoration === DECORATIONS.TILINGS) f.decoration = undefined;
 	}
 	// The hyperbolic interval facets only mean something on the hyperbolic shelf — under any other
 	// geometry an active one would just filter the view to zero, so drop them from foreign links.
-	if (f.geometry === "hyperbolic") {
+	if (f.geometry === GEOMETRIES.HYPERBOLIC) {
 		const valence = ival("valence");
 		if (valence) f.hypValence = valence;
 		const palette = ival("palette");
@@ -528,7 +529,7 @@ function serializeView(v: ViewState): string {
 	const f = v.filters;
 	if (f.kValue != null) p.set("k", String(f.kValue));
 	// Euclidean is the default, so only non-euclidean geometries need a URL param.
-	if (f.geometry && f.geometry !== "euclidean") p.set("geo", f.geometry);
+	if (f.geometry && f.geometry !== GEOMETRIES.EUCLIDEAN) p.set("geo", f.geometry);
 	if (f.decoration) p.set("dec", f.decoration);
 	if (f.tileClass) p.set("class", f.tileClass);
 	if (f.hypValence) p.set("valence", f.hypValence.join(","));
@@ -931,7 +932,7 @@ export function ReferenceShelf() {
 		// Euclidean-only: the k≥8 shards are reference-atlas-k{k}.json (Čtrnáct Euclidean). Off the plane the
 		// same k selects hyperbolic-edge shards instead (below), so don't fetch a 15–73 MB Euclidean file for
 		// a hyperbolic view that would filter every record out by geometry.
-		if (filters.geometry && filters.geometry !== "euclidean") return;
+		if (filters.geometry && filters.geometry !== GEOMETRIES.EUCLIDEAN) return;
 		const k = filters.kValue;
 		// `HIGHER_K`, not `k >= 8`: the base Čtrnáct shards are k = 8, 9 and 10 and there is no k=11+ file,
 		// so any higher k 404'd and painted "failed to load k=…" beside the count. That was unreachable
@@ -962,12 +963,12 @@ export function ReferenceShelf() {
 	// facet — class chips, k chips, counts — picks them up.
 	const [heLoaded, setHeLoaded] = useState<Set<string>>(new Set());
 	useEffect(() => {
-		if (filters.geometry !== "hyperbolic") return;
+		if (filters.geometry !== GEOMETRIES.HYPERBOLIC) return;
 		// Decoration shelf, so the chip gates it and not the geometry. These rows are decoration
 		// "edges"; a Tilings view cannot show one, yet entering the geometry fetched them all.
 		// Measured on /library?geo=spherical: 321 JSON requests, 147 long tasks and 17.6 s of
 		// blocking, of which 207 requests were decoration shelves nothing on screen could display.
-		if (filters.decoration !== "edges") return;
+		if (filters.decoration !== DECORATIONS.EDGES) return;
 		// Wait for the base atlas: its own load does setTilings(d) (a REPLACE), so a merge that landed first
 		// would be clobbered. Gating on `tilings` and depending on it re-runs the merge once the base is in.
 		if (!tilings) return;
@@ -1034,7 +1035,7 @@ export function ReferenceShelf() {
 	// 8.4 and 35.2 MB and wait for their k chip.
 	const [penLoaded, setPenLoaded] = useState<Set<string>>(new Set());
 	useEffect(() => {
-		if ((filters.geometry ?? "euclidean") !== "euclidean") return;
+		if ((filters.geometry ?? GEOMETRIES.EUCLIDEAN) !== GEOMETRIES.EUCLIDEAN) return;
 		if (!tilings) return; // wait for the base atlas (its setTilings is a REPLACE)
 		const dec = filters.decoration;
 		let alive = true;
@@ -1053,13 +1054,13 @@ export function ReferenceShelf() {
 		// they are only ever VISIBLE under that chip, and the eager slices were nonetheless fetched on
 		// every Euclidean open. Measured on /play: pentagon + isohedral were 53 of the 80 JSON requests
 		// a default open made, for rows the current chip cannot show.
-		if (dec === "edges" && !penLoaded.has("pen-eager")) {
+		if (dec === DECORATIONS.EDGES && !penLoaded.has("pen-eager")) {
 			loadPentagonEdgesAtlas()
 				.then((d) => merge(d, "pen-eager"))
 				.catch(() => {});
 		}
 		const k = filters.kValue;
-		if (dec === "edges" && k != null) {
+		if (dec === DECORATIONS.EDGES && k != null) {
 			for (const b of pentEdgeLazyShardsForK(k)) {
 				const token = `pen-${b.id}-${k}`;
 				if (penLoaded.has(token)) continue;
@@ -1078,7 +1079,7 @@ export function ReferenceShelf() {
 	// wait for their k chip.
 	const [ihLoaded, setIhLoaded] = useState<Set<string>>(new Set());
 	useEffect(() => {
-		if ((filters.geometry ?? "euclidean") !== "euclidean") return;
+		if ((filters.geometry ?? GEOMETRIES.EUCLIDEAN) !== GEOMETRIES.EUCLIDEAN) return;
 		if (!tilings) return; // wait for the base atlas (its setTilings is a REPLACE)
 		const dec = filters.decoration;
 		let alive = true;
@@ -1092,13 +1093,13 @@ export function ReferenceShelf() {
 			});
 			setIhLoaded((s) => new Set(s).add(token));
 		};
-		if (dec === "edges" && !ihLoaded.has("ih-eager")) {
+		if (dec === DECORATIONS.EDGES && !ihLoaded.has("ih-eager")) {
 			loadIsohedralEdgesAtlas()
 				.then((d) => merge(d, "ih-eager"))
 				.catch(() => {});
 		}
 		const k = filters.kValue;
-		if (dec === "edges" && k != null) {
+		if (dec === DECORATIONS.EDGES && k != null) {
 			for (const b of ihEdgeLazyShardsForK(k)) {
 				const token = `ih-${b.id}-${k}`;
 				if (ihLoaded.has(token)) continue;
@@ -1119,12 +1120,12 @@ export function ReferenceShelf() {
 	const [schLoaded, setSchLoaded] = useState<Set<string>>(new Set());
 	useEffect(() => {
 		const geo = filters.geometry;
-		if (geo !== "hyperbolic" && geo !== "spherical") return;
+		if (geo !== GEOMETRIES.HYPERBOLIC && geo !== GEOMETRIES.SPHERICAL) return;
 		// Decoration shelf, so the chip gates it and not the geometry. These rows are decoration
 		// "edges"; a Tilings view cannot show one, yet entering the geometry fetched them all.
 		// Measured on /library?geo=spherical: 321 JSON requests, 147 long tasks and 17.6 s of
 		// blocking, of which 207 requests were decoration shelves nothing on screen could display.
-		if (filters.decoration !== "edges") return;
+		if (filters.decoration !== DECORATIONS.EDGES) return;
 		if (!tilings) return; // wait for the base atlas (its setTilings is a REPLACE, see the edge-systems effect)
 		let alive = true;
 		const merge = (data: ReferenceTiling[], token: string) => {
@@ -1139,7 +1140,7 @@ export function ReferenceShelf() {
 		};
 		const eagerToken = `sch-${geo}`;
 		if (!schLoaded.has(eagerToken)) {
-			const load = geo === "spherical" ? loadSphericalSchwarzAtlas : loadHyperbolicSchwarzAtlas;
+			const load = geo === GEOMETRIES.SPHERICAL ? loadSphericalSchwarzAtlas : loadHyperbolicSchwarzAtlas;
 			load()
 				.then((d) => merge(d, eagerToken))
 				.catch(() => {});
@@ -1164,7 +1165,7 @@ export function ReferenceShelf() {
 	const [xLoaded, setXLoaded] = useState<Set<string>>(new Set());
 	useEffect(() => {
 		const geo = filters.geometry;
-		if (geo !== "hyperbolic" && geo !== "spherical") return;
+		if (geo !== GEOMETRIES.HYPERBOLIC && geo !== GEOMETRIES.SPHERICAL) return;
 		if (!tilings) return; // wait for the base atlas (its setTilings is a REPLACE, see the edge-systems effect)
 		let alive = true;
 		const merge = (data: ReferenceTiling[], token: string) => {
@@ -1186,12 +1187,12 @@ export function ReferenceShelf() {
 		// four halved boards: 105 records, every shard fetched with a 200, all six board chips filtering
 		// to zero (AL found it, 2026-08-22). With a token each the loser is simply re-issued on the next
 		// run and resolves off `sphPolyCache` with no second fetch.
-		if (geo === "spherical") {
+		if (geo === GEOMETRIES.SPHERICAL) {
 			// The uniform-polyhedron EDGE systems are decoration "edges" (145 of the 321 requests a
 			// spherical open made); the polyhedra themselves are tilings and stay with the geometry.
 			// One guard per load, per the warning above — the decoration test is folded into this
 			// load's own guard and does not wrap the poly load below it.
-			if (filters.decoration === "edges" && !xLoaded.has(eagerToken)) {
+			if (filters.decoration === DECORATIONS.EDGES && !xLoaded.has(eagerToken)) {
 				loadSphericalEdgesAtlas()
 					.then((d) => merge(d, eagerToken))
 					.catch(() => {});
@@ -1217,10 +1218,10 @@ export function ReferenceShelf() {
 		}
 		const k = filters.kValue;
 		if (k != null) {
-			if (geo === "spherical") {
+			if (geo === GEOMETRIES.SPHERICAL) {
 				for (const b of sphEdgesLazyShardsForK(k)) {
 					const token = `spe-${b.id}-${k}`;
-					if (filters.decoration === "edges" && !xLoaded.has(token))
+					if (filters.decoration === DECORATIONS.EDGES && !xLoaded.has(token))
 						loadSphericalEdgesShard(b.id, k)
 							.then((d) => merge(d, token))
 							.catch(() => {});
@@ -1293,7 +1294,7 @@ export function ReferenceShelf() {
 		// under a curved view — so fetching them there is 29 requests and ~1 MB for rows that cannot
 		// appear. This is NOT the old bug the note above records: that one required a CURVED geometry
 		// and so starved the chip everywhere; this asks for the geometry these records actually live in.
-		if ((filters.geometry ?? "euclidean") !== "euclidean") return;
+		if ((filters.geometry ?? GEOMETRIES.EUCLIDEAN) !== GEOMETRIES.EUCLIDEAN) return;
 		const dec = filters.decoration;
 		let alive = true;
 		const merge = (data: ReferenceTiling[], token: string) => {
@@ -1306,7 +1307,7 @@ export function ReferenceShelf() {
 			});
 			setDecorLoaded((s) => new Set(s).add(token));
 		};
-		if (dec === "edges" && !decorLoaded.has("decor-fd")) {
+		if (dec === DECORATIONS.EDGES && !decorLoaded.has("decor-fd")) {
 			loadFreedrawDecorAtlas()
 				.then((d) => merge(d, "decor-fd"))
 				.catch(() => {});
@@ -1319,12 +1320,15 @@ export function ReferenceShelf() {
 		// fetched nothing and the Bubble chip read "No tilings match" over 52,140 rows that exist. The
 		// class is its own trigger. Under Kind=Tilings it is not: decorationOf(bubble) is "edges", so
 		// that segment excludes every bubble row and a fetch there is 37 MB spent to display zero.
-		if ((dec === "edges" || (!dec && filters.tileClass === "bubble")) && !decorLoaded.has("decor-bub")) {
+		if (
+			(dec === DECORATIONS.EDGES || (!dec && filters.tileClass === TILE_CLASSES.BUBBLE)) &&
+			!decorLoaded.has("decor-bub")
+		) {
 			loadBubbleDecorAtlas()
 				.then((d) => merge(d, "decor-bub"))
 				.catch(() => {});
 		}
-		if (dec === "colorings" && !decorLoaded.has("decor-col")) {
+		if (dec === DECORATIONS.COLORINGS && !decorLoaded.has("decor-col")) {
 			loadColorsDecorAtlas()
 				.then((d) => merge(d, "decor-col"))
 				.catch(() => {});
@@ -1340,12 +1344,12 @@ export function ReferenceShelf() {
 	const [colLoaded, setColLoaded] = useState<Set<string>>(new Set());
 	useEffect(() => {
 		const geo = filters.geometry;
-		if (geo !== "hyperbolic" && geo !== "spherical") return;
+		if (geo !== GEOMETRIES.HYPERBOLIC && geo !== GEOMETRIES.SPHERICAL) return;
 		// Decoration shelf, so the chip gates it and not the geometry. These rows are decoration
 		// "colorings"; a Tilings view cannot show one, yet entering the geometry fetched them all.
 		// Measured on /library?geo=spherical: 321 JSON requests, 147 long tasks and 17.6 s of
 		// blocking, of which 207 requests were decoration shelves nothing on screen could display.
-		if (filters.decoration !== "colorings") return;
+		if (filters.decoration !== DECORATIONS.COLORINGS) return;
 		if (!tilings) return; // wait for the base atlas (its setTilings is a REPLACE, see the edge-systems effect)
 		let alive = true;
 		const merge = (data: ReferenceTiling[], token: string) => {
@@ -1359,7 +1363,7 @@ export function ReferenceShelf() {
 			setColLoaded((s) => new Set(s).add(token));
 		};
 		const k = filters.kValue;
-		if (geo === "hyperbolic") {
+		if (geo === GEOMETRIES.HYPERBOLIC) {
 			if (!colLoaded.has("hc-eager"))
 				loadHyperbolicColorsAtlas()
 					.then((d) => merge(d, "hc-eager"))
@@ -1399,7 +1403,7 @@ export function ReferenceShelf() {
 	// A missing shard resolves to an empty merge inside the loader — no error is surfaced (it's a demo).
 	useEffect(() => {
 		const cls = filters.tileClass;
-		if (cls !== "convex" && cls != null) return; // regular/star only — no convex-irregular shard needed
+		if (cls !== TILE_CLASSES.CONVEX && cls != null) return; // regular/star only — no convex-irregular shard needed
 		// ⚑ Wait for the base atlas. Its load does setTilings(d), a REPLACE, and a shard is small enough to
 		// win that race every time when its class is already in the URL — the merge lands, the base lands
 		// on top of it, and the shard's k is marked loaded so nothing ever retries. Symptom: "0 tilings"
@@ -1408,7 +1412,8 @@ export function ReferenceShelf() {
 		// at the edge-systems effect); these three did not.
 		if (!tilings) return;
 		const k = filters.kValue;
-		const want = k != null ? COMPOSABLE_HIGHER_K.filter((kk) => kk === k) : cls === "convex" ? COMPOSABLE_HIGHER_K : [];
+		const want =
+			k != null ? COMPOSABLE_HIGHER_K.filter((kk) => kk === k) : cls === TILE_CLASSES.CONVEX ? COMPOSABLE_HIGHER_K : [];
 		for (const kk of want) {
 			if (loadedShards.has(kk) || loadingShards.has(kk) || shardErrors.has(kk)) continue;
 			// eslint-disable-next-line react-hooks/set-state-in-effect -- the fetch starts here and the "loading k=…" line renders this set
@@ -1434,10 +1439,11 @@ export function ReferenceShelf() {
 	// class or a k≥3 chip is in view. A missing shard resolves to an empty merge inside the loader.
 	useEffect(() => {
 		const cls = filters.tileClass;
-		if (cls !== "isotoxal" && cls != null) return;
+		if (cls !== TILE_CLASSES.ISOTOXAL && cls != null) return;
 		if (!tilings) return; // base atlas REPLACES; see the convex-irregular effect
 		const k = filters.kValue;
-		const want = k != null ? ISOTOXAL_HIGHER_K.filter((kk) => kk === k) : cls === "isotoxal" ? ISOTOXAL_HIGHER_K : [];
+		const want =
+			k != null ? ISOTOXAL_HIGHER_K.filter((kk) => kk === k) : cls === TILE_CLASSES.ISOTOXAL ? ISOTOXAL_HIGHER_K : [];
 		fetchShards(
 			want,
 			isotoxalLoadedShards,
@@ -1452,10 +1458,11 @@ export function ReferenceShelf() {
 	// search, so the tier exists at all only because the alphabet was quotiented by tile shape.
 	useEffect(() => {
 		const cls = filters.tileClass;
-		if (cls !== "period" && cls != null) return;
+		if (cls !== TILE_CLASSES.PERIOD && cls != null) return;
 		if (!tilings) return; // base atlas REPLACES; see the convex-irregular effect
 		const k = filters.kValue;
-		const want = k != null ? PERIOD_HIGHER_K.filter((kk) => kk === k) : cls === "period" ? PERIOD_HIGHER_K : [];
+		const want =
+			k != null ? PERIOD_HIGHER_K.filter((kk) => kk === k) : cls === TILE_CLASSES.PERIOD ? PERIOD_HIGHER_K : [];
 		fetchShards(
 			want,
 			periodLoadedShards,
@@ -1470,10 +1477,10 @@ export function ReferenceShelf() {
 	// run past k=2, and they are 15× the entries the shelf had, so they cannot ride the eager bundle.
 	useEffect(() => {
 		const cls = filters.tileClass;
-		if (cls !== "mixed" && cls != null) return;
+		if (cls !== TILE_CLASSES.MIXED && cls != null) return;
 		if (!tilings) return; // base atlas REPLACES; see the convex-irregular effect
 		const k = filters.kValue;
-		const want = k != null ? MIXED_HIGHER_K.filter((kk) => kk === k) : cls === "mixed" ? MIXED_HIGHER_K : [];
+		const want = k != null ? MIXED_HIGHER_K.filter((kk) => kk === k) : cls === TILE_CLASSES.MIXED ? MIXED_HIGHER_K : [];
 		fetchShards(want, mixedLoadedShards, mixedInflight.current, loadMixedAtlasShard, setTilings, setMixedLoadedShards);
 	}, [filters.tileClass, filters.kValue, mixedLoadedShards, tilings]);
 
@@ -1481,10 +1488,11 @@ export function ReferenceShelf() {
 	// with no k fetches both tiers rather than making the user click each chip to see the shelf at all.
 	useEffect(() => {
 		const cls = filters.tileClass;
-		if (cls !== "edgelen" && cls != null) return;
+		if (cls !== TILE_CLASSES.EDGELEN && cls != null) return;
 		if (!tilings) return; // base atlas REPLACES; see the convex-irregular effect
 		const k = filters.kValue;
-		const want = k != null ? TRI45_HIGHER_K.filter((kk) => kk === k) : cls === "edgelen" ? TRI45_HIGHER_K : [];
+		const want =
+			k != null ? TRI45_HIGHER_K.filter((kk) => kk === k) : cls === TILE_CLASSES.EDGELEN ? TRI45_HIGHER_K : [];
 		fetchShards(want, tri45LoadedShards, tri45Inflight.current, loadTri45AtlasShard, setTilings, setTri45LoadedShards);
 	}, [filters.tileClass, filters.kValue, tri45LoadedShards, tilings]);
 
@@ -1495,7 +1503,7 @@ export function ReferenceShelf() {
 	// rest of the Euclidean atlas.
 	useEffect(() => {
 		const cls = filters.tileClass;
-		if (cls !== "edgelen" && cls != null) return;
+		if (cls !== TILE_CLASSES.EDGELEN && cls != null) return;
 		if (!tilings) return; // base atlas REPLACES; see the convex-irregular effect
 		const k = filters.kValue;
 		if (k == null || !EUHALF_HIGHER_K.includes(k)) return;
@@ -1514,7 +1522,7 @@ export function ReferenceShelf() {
 	// or when the Penrose palette is the one in view — the two moments the user has asked for it.
 	useEffect(() => {
 		const cls = filters.tileClass;
-		if (cls !== "edgelen" && cls != null) return;
+		if (cls !== TILE_CLASSES.EDGELEN && cls != null) return;
 		if (!tilings) return; // base atlas REPLACES; see the convex-irregular effect
 		const k = filters.kValue;
 		const want =
@@ -1533,7 +1541,7 @@ export function ReferenceShelf() {
 	// which is where the bulk of this shelf now lives, so k≥3 cannot ride the eager bundle either.
 	useEffect(() => {
 		const cls = filters.tileClass;
-		if (cls !== "scaled" && cls != null) return;
+		if (cls !== TILE_CLASSES.SCALED && cls != null) return;
 		if (!tilings) return; // base atlas REPLACES; see the convex-irregular effect
 		const k = filters.kValue;
 		// ⚑ Deliberately NOT the mixed/period pattern of "class selected with no k ⇒ fetch every shard".
@@ -1724,8 +1732,8 @@ export function ReferenceShelf() {
 
 	// The active geometry (default euclidean) — the top-level axis. Off the plane, the Euclidean-only
 	// sub-filters (tile class, star, lattice, wallpaper group, M/partition) are hidden.
-	const geometry = filters.geometry ?? "euclidean";
-	const isEuclidean = geometry === "euclidean";
+	const geometry = filters.geometry ?? GEOMETRIES.EUCLIDEAN;
+	const isEuclidean = geometry === GEOMETRIES.EUCLIDEAN;
 	// Switch decoration: each segment owns its own facets, so moving between them drops the ones that
 	// belong to the segment being left. k survives — it means grid-point orbits under Edge patterns and
 	// colored vertices under Colorings, not vertex orbits, but the axis is shared and a k present in
@@ -1734,7 +1742,7 @@ export function ReferenceShelf() {
 		const dec = v === "all" ? undefined : v;
 		const next: ReferenceFilter = { ...filters, decoration: dec };
 		// The shape-class chips and everything hanging off them only exist inside Tilings.
-		if (dec && dec !== "tilings") {
+		if (dec && dec !== DECORATIONS.TILINGS) {
 			next.tileClass = undefined;
 			next.convexDecomp = undefined;
 			next.isotoxalShape = undefined;
@@ -1761,7 +1769,7 @@ export function ReferenceShelf() {
 		// ...and the Tilings segment, which keeps the class, still cannot hold a BUBBLE one: those rows
 		// are decoration "edges". Left set it would filter the segment to 0 behind a chip the wall no
 		// longer draws.
-		if (dec === "tilings" && next.tileClass === "bubble") next.tileClass = undefined;
+		if (dec === DECORATIONS.TILINGS && next.tileClass === TILE_CLASSES.BUBBLE) next.tileClass = undefined;
 		if (v !== "edges") {
 			next.freedrawKind = undefined;
 			next.freedrawGrid = undefined;
@@ -1790,7 +1798,7 @@ export function ReferenceShelf() {
 	const setGeometry = (g: Geometry) => {
 		if (g === geometry) return;
 		setFilters(
-			g === "euclidean"
+			g === GEOMETRIES.EUCLIDEAN
 				? {
 						...filters,
 						geometry: g,
@@ -1830,19 +1838,19 @@ export function ReferenceShelf() {
 		(cls: TileClass | undefined): Set<number> => {
 			const s = new Set<number>();
 			if (tilings) for (const t of tilings) if (!cls || tileClassOf(t) === cls) s.add(t.k);
-			if (!cls || cls === "regular") for (const k of HIGHER_K) s.add(k);
+			if (!cls || cls === TILE_CLASSES.REGULAR) for (const k of HIGHER_K) s.add(k);
 			// Convex-irregular k≥3 lives in lazy shards not yet in `tilings`; show their chips up front (like the
 			// regular HIGHER_K) so selecting one can trigger the fetch.
-			if (!cls || cls === "convex") for (const k of COMPOSABLE_HIGHER_K) s.add(k);
-			if (!cls || cls === "isotoxal") for (const k of ISOTOXAL_HIGHER_K) s.add(k);
+			if (!cls || cls === TILE_CLASSES.CONVEX) for (const k of COMPOSABLE_HIGHER_K) s.add(k);
+			if (!cls || cls === TILE_CLASSES.ISOTOXAL) for (const k of ISOTOXAL_HIGHER_K) s.add(k);
 			// Period-p grew a k=3..6 tail with the concave tiles; without this its chips vanish and a
 			// deep link like ?class=period&k=4 resolves to an empty shelf.
-			if (!cls || cls === "period") for (const k of PERIOD_HIGHER_K) s.add(k);
-			if (!cls || cls === "mixed") for (const k of MIXED_HIGHER_K) s.add(k);
-			if (!cls || cls === "scaled") for (const k of SCALED_HIGHER_K) s.add(k);
-			if (!cls || cls === "edgelen") for (const k of TRI45_HIGHER_K) s.add(k);
-			if (!cls || cls === "edgelen") for (const k of PENROSE_HIGHER_K) s.add(k);
-			if (!cls || cls === "edgelen") for (const k of EUHALF_HIGHER_K) s.add(k);
+			if (!cls || cls === TILE_CLASSES.PERIOD) for (const k of PERIOD_HIGHER_K) s.add(k);
+			if (!cls || cls === TILE_CLASSES.MIXED) for (const k of MIXED_HIGHER_K) s.add(k);
+			if (!cls || cls === TILE_CLASSES.SCALED) for (const k of SCALED_HIGHER_K) s.add(k);
+			if (!cls || cls === TILE_CLASSES.EDGELEN) for (const k of TRI45_HIGHER_K) s.add(k);
+			if (!cls || cls === TILE_CLASSES.EDGELEN) for (const k of PENROSE_HIGHER_K) s.add(k);
+			if (!cls || cls === TILE_CLASSES.EDGELEN) for (const k of EUHALF_HIGHER_K) s.add(k);
 			return s;
 		},
 		[tilings],
@@ -1863,19 +1871,19 @@ export function ReferenceShelf() {
 		// only under the Euclidean geometry, faceted by the class in scope.
 		if (isEuclidean) {
 			const cls = filters.tileClass;
-			if (!cls || cls === "regular") for (const k of HIGHER_K) s.add(k);
-			if (!cls || cls === "convex") for (const k of COMPOSABLE_HIGHER_K) s.add(k);
-			if (!cls || cls === "isotoxal") for (const k of ISOTOXAL_HIGHER_K) s.add(k);
-			if (!cls || cls === "period") for (const k of PERIOD_HIGHER_K) s.add(k);
-			if (!cls || cls === "mixed") for (const k of MIXED_HIGHER_K) s.add(k);
+			if (!cls || cls === TILE_CLASSES.REGULAR) for (const k of HIGHER_K) s.add(k);
+			if (!cls || cls === TILE_CLASSES.CONVEX) for (const k of COMPOSABLE_HIGHER_K) s.add(k);
+			if (!cls || cls === TILE_CLASSES.ISOTOXAL) for (const k of ISOTOXAL_HIGHER_K) s.add(k);
+			if (!cls || cls === TILE_CLASSES.PERIOD) for (const k of PERIOD_HIGHER_K) s.add(k);
+			if (!cls || cls === TILE_CLASSES.MIXED) for (const k of MIXED_HIGHER_K) s.add(k);
 			// ⚑ This list and `kValuesForClass` are two separate memos over the same question — this one
 			// draws the chips, that one decides whether a deep link's k survives. Adding a shard tier to
 			// only one leaves the tier reachable by URL but with no chip to click, which is exactly what
 			// the scaled tail did until 2026-08-13. Add to BOTH.
-			if (!cls || cls === "scaled") for (const k of SCALED_HIGHER_K) s.add(k);
-			if (!cls || cls === "edgelen") for (const k of TRI45_HIGHER_K) s.add(k);
-			if (!cls || cls === "edgelen") for (const k of PENROSE_HIGHER_K) s.add(k);
-			if (!cls || cls === "edgelen") for (const k of EUHALF_HIGHER_K) s.add(k);
+			if (!cls || cls === TILE_CLASSES.SCALED) for (const k of SCALED_HIGHER_K) s.add(k);
+			if (!cls || cls === TILE_CLASSES.EDGELEN) for (const k of TRI45_HIGHER_K) s.add(k);
+			if (!cls || cls === TILE_CLASSES.EDGELEN) for (const k of PENROSE_HIGHER_K) s.add(k);
+			if (!cls || cls === TILE_CLASSES.EDGELEN) for (const k of EUHALF_HIGHER_K) s.add(k);
 		}
 		return [...s].sort((a, b) => a - b);
 	}, [tilings, geometry, isEuclidean, filters.tileClass, filters.decoration, filters.board]);
@@ -1925,7 +1933,7 @@ export function ReferenceShelf() {
 				if (hf.polygon < pMin) pMin = hf.polygon;
 				if (hf.polygon > pMax) pMax = hf.polygon;
 			}
-			if (t.source === "hyperbolic" && t.edge != null) {
+			if (t.source === SOURCES.HYPERBOLIC && t.edge != null) {
 				if (t.edge < eMin) eMin = t.edge;
 				if (t.edge > eMax) eMax = t.edge;
 			}
@@ -2079,7 +2087,7 @@ export function ReferenceShelf() {
 	// species means every tiling in scope has it.
 	// The hyperbolic regular-polygon boards ship a per-tiling inventory too (∞ included), which is how a
 	// 100k-tiling hybrid board gets cut down to the tilings by, say, triangles and apeirogons alone.
-	const showPolygons = (isEuclidean || geometry === "hyperbolic") && inTilings && availablePolygons.length > 1;
+	const showPolygons = (isEuclidean || geometry === GEOMETRIES.HYPERBOLIC) && inTilings && availablePolygons.length > 1;
 	const showGroup = classified && tileClass !== "star" && availableGroups.length > 0;
 	// Marek's five levels are the CURVED counterpart of the M/partition block above, and the two never
 	// show together: the ladder needs per-orbit vertex configurations (only the hyperbolic and spherical
@@ -2136,12 +2144,7 @@ export function ReferenceShelf() {
 	// `omit` is the filter with this chip taken off, which is also how the empty state finds the nearest
 	// results; `clear` defaults to applying it, and is a setter where taking a filter off cascades.
 	const relaxedBy = new Map<string, Partial<ReferenceFilter>>();
-	const chip = (
-		key: string,
-		label: ReactNode,
-		omit: Partial<ReferenceFilter>,
-		clear?: () => void,
-	) => {
+	const chip = (key: string, label: ReactNode, omit: Partial<ReferenceFilter>, clear?: () => void) => {
 		// Not a default parameter: the React Compiler gives up on the whole component over one, and its
 		// lint then silently stops checking every hook in it.
 		relaxedBy.set(key, omit);
@@ -2150,8 +2153,10 @@ export function ReferenceShelf() {
 	const off = (...keys: (keyof ReferenceFilter)[]): Partial<ReferenceFilter> =>
 		Object.fromEntries(keys.map((k) => [k, undefined]));
 	const list = (xs: readonly (string | number)[]) => xs.join(", ");
-	if (filters.geometry && filters.geometry !== "euclidean")
-		chip("geo", GEOMETRY_LABEL[filters.geometry], { geometry: "euclidean" }, () => setGeometry("euclidean"));
+	if (filters.geometry && filters.geometry !== GEOMETRIES.EUCLIDEAN)
+		chip("geo", GEOMETRY_LABEL[filters.geometry], { geometry: GEOMETRIES.EUCLIDEAN }, () =>
+			setGeometry(GEOMETRIES.EUCLIDEAN),
+		);
 	if (filters.decoration)
 		chip("dec", DECORATION_LABEL[filters.decoration], off("decoration"), () => setDecoration("all"));
 	if (filters.tileClass)
@@ -2291,7 +2296,7 @@ export function ReferenceShelf() {
 		const byKey = new Map<string, CardGroup>();
 		const order: CardGroup[] = [];
 		for (const t of sorted) {
-			if (t.source !== "hyperbolic") {
+			if (t.source !== SOURCES.HYPERBOLIC) {
 				order.push({ key: t.id, members: [t] });
 				continue;
 			}
@@ -2385,7 +2390,7 @@ export function ReferenceShelf() {
 	// The column count rides in a variable so a phone can overrule it from CSS: two columns there
 	// whatever `cols` says, while the URL keeps the desktop choice untouched.
 	const gridStyle = { "--cols": gridColumns } as CSSProperties;
-	const clearFilters = () => setFilters({ geometry: "euclidean" });
+	const clearFilters = () => setFilters({ geometry: GEOMETRIES.EUCLIDEAN });
 	const resultCount = filtered.length;
 	// "Show N results" closes the phone sheet onto page 1 of the new result set, from its top.
 	const showResults = () => {
@@ -2430,7 +2435,7 @@ export function ReferenceShelf() {
 						<span className="text-[13px] font-semibold text-fg">Filters</span>
 						{activeFilterCount > 0 ? (
 							<button
-								onClick={() => setFilters({ geometry: "euclidean" })}
+								onClick={() => setFilters({ geometry: GEOMETRIES.EUCLIDEAN })}
 								className="flex cursor-pointer items-center gap-1 text-xs text-fg-muted transition-colors hover:text-danger"
 							>
 								<X size={11} /> Clear ({activeFilterCount})
@@ -2980,7 +2985,7 @@ export function ReferenceShelf() {
 					    at any vertex, largest polygon in any figure), so their upper bounds read exactly as an
 					    enumeration cell's (p, v). Edge length ℓ is the hyperbolic shape coordinate — H² has no
 					    similarity, so ℓ separates tilings the vertex figure alone cannot. */}
-					{geometry === "hyperbolic" && hypBounds && tileClass !== "freedraw" ? (
+					{geometry === GEOMETRIES.HYPERBOLIC && hypBounds && tileClass !== "freedraw" ? (
 						<FilterGroup
 							title="Bounds"
 							summary={
@@ -3138,7 +3143,7 @@ export function ReferenceShelf() {
 							Tiling Library
 							<span className="font-mono text-xs font-normal tracking-normal text-fg-muted tabular-nums">
 								<AnimatedNumber value={filtered.length} /> tilings
-								{groupVariants && geometry === "hyperbolic" && view === "grid"
+								{groupVariants && geometry === GEOMETRIES.HYPERBOLIC && view === "grid"
 									? ` · ${displayGroups.length.toLocaleString("en-US")} families`
 									: null}
 							</span>
@@ -3180,7 +3185,7 @@ export function ReferenceShelf() {
 							) : null}
 							{/* Group-variants toggle — hyperbolic grid only, where one vertex configuration carries up to
 							    hundreds of tilings; the card then pages through them in place. The table lists each. */}
-							{geometry === "hyperbolic" && view === "grid" ? (
+							{geometry === GEOMETRIES.HYPERBOLIC && view === "grid" ? (
 								<label className="flex items-center gap-2 text-xs text-fg-muted">
 									Group variants
 									<Switch

@@ -34,6 +34,7 @@ import {
 	type HypSchwarzPattern,
 } from "@/lib/freedraw/schwarz";
 import { shardBody } from "@/lib/services/atlasCodec";
+import { GEOMETRIES } from "@/lib/vocabulary";
 
 // The hyperbolic arm of /freedraw — Marek Čtrnáct's freedraw on a hyperbolic SCHWARZ board, laid out like
 // the other two arms: filters on top, a paginated thumbnail catalogue on the left, an interactive preview
@@ -182,7 +183,7 @@ export function HyperbolicFreedraw({
 	// reads on mount to open on this arm.
 	useEffect(() => {
 		const q = new URLSearchParams();
-		q.set("geo", "hyperbolic");
+		q.set("geo", GEOMETRIES.HYPERBOLIC);
 		if (boardId !== DEFAULT_BOARD) q.set("board", boardId);
 		if (k) q.set("hk", String(k));
 		window.history.replaceState(null, "", `${window.location.pathname}?${q.toString()}`);

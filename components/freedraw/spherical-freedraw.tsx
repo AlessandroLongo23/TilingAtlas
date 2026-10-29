@@ -34,6 +34,7 @@ import {
 	type SphSchwarzShard,
 } from "@/lib/freedraw/schwarz";
 import { decodeAtlas, decodeShard, shardBody } from "@/lib/services/atlasCodec";
+import { GEOMETRIES } from "@/lib/vocabulary";
 
 // The spherical arm of /freedraw — Marek Čtrnáct's freedraw on the Platonic solids, laid out like the
 // planar arm: filters on top, a paginated thumbnail catalogue on the left, an interactive preview on the
@@ -175,7 +176,7 @@ export function SphericalFreedraw({
 	// The `geo=spherical` param is what the parent reads on mount to open on this arm.
 	useEffect(() => {
 		const q = new URLSearchParams();
-		q.set("geo", "spherical");
+		q.set("geo", GEOMETRIES.SPHERICAL);
 		if (solidId !== DEFAULT_SOLID) q.set("solid", solidId);
 		if (k) q.set("sk", String(k));
 		window.history.replaceState(null, "", `${window.location.pathname}?${q.toString()}`);

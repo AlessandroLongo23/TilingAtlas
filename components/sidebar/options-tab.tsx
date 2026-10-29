@@ -27,37 +27,16 @@ import { HankinPad } from "@/components/ui/hankin-pad";
 import { wrapHue } from "@/lib/render/hueRing";
 import { Reveal } from "@/components/ui/reveal";
 import { OptionWall } from "@/components/ui/option-wall";
-import { WOOD_CUTS, WOOD_GRAIN, WOOD_SPECIES, type HypMaterial } from "@/lib/render/hypMaterials";
+import type { Material } from "@/lib/render/materials";
 
-// The hyperbolic disk's materials (lib/render/hypMaterials.ts). "Mixed" species steps through the woods by
-// polygon size, as the stones and glass colours do; the hue ring turns all three.
-const MATERIAL_OPTIONS: { value: HypMaterial; label: string; title?: string }[] = [
-	{ value: "none", label: "None" },
+// The materials (lib/render/materials.ts). Each steps through its stones, glasses or woods by polygon size,
+// and the hue ring turns the choice.
+const MATERIAL_OPTIONS: { value: Material; label: string; title?: string }[] = [
 	{ value: "marble", label: "Marble", title: "Polished stone slabs in grout; the hue ring picks the stones" },
 	{ value: "glass", label: "Stained glass", title: "Leaded cathedral glass, lit from behind" },
-	{ value: "wood", label: "Wood", title: "A board per tile: pick the species, the saw cut and the grain direction" },
+	{ value: "wood", label: "Wood", title: "A board per tile, each with its own saw cut and grain" },
 	{ value: "cobble", label: "Cobblestone", title: "Domed paving setts in sand, under a low sun" },
 ];
-const WOOD_LABEL: Record<string, string> = {
-	mixed: "Mixed",
-	oak: "Oak",
-	walnut: "Walnut",
-	maple: "Maple",
-	cherry: "Cherry",
-	wenge: "Wenge",
-	pine: "Pine",
-	flat: "Flat-sawn",
-	quarter: "Quarter",
-	end: "End grain",
-	random: "Random",
-	aligned: "Aligned",
-};
-const WOOD_CUT_TITLE: Record<string, string> = {
-	mixed: "A cut per board",
-	flat: "Tangent to the rings: arched 'cathedral' figure",
-	quarter: "Through the pith: straight stripes crossed by ray flecks",
-	end: "Across the log: rings as arcs about the pith",
-};
 import { Toggle } from "@/components/ui/toggle";
 import { WIRINGS } from "@/lib/freedraw/arcs";
 import { FILL_MODES } from "@/lib/freedraw/render";
@@ -67,12 +46,16 @@ import { cellFill, DEFAULT_PALETTE, paletteFor, type ColorChoice } from "@/lib/c
 import { polygonClassSupportsIslamic } from "@/lib/utils/tilingLabel";
 import { tileClassOf } from "@/lib/services/referenceAtlas";
 import { hasCurvedTiles, isDiskSurface, lensAppliesTo, surfaceOf } from "@/lib/services/shelfRegistry";
+import { morphSurface } from "@/lib/tilings/orbifoldMorph";
+import { recordSymbol } from "@/lib/tilings/recordSymbol";
+import { useOrbifoldMorph } from "@/stores/orbifoldMorph";
 import { BUBBLE_EDGE_STYLES, BUBBLE_KOCH_LEVELS, hasLevels } from "@/lib/bubble/edges";
 import type { CatalogueTiling } from "@/lib/services/catalogueService";
 import { DeformPad } from "@/components/deform-pad";
 import { InversiveControls } from "@/components/inversive-controls";
 import { SquaringControls } from "@/components/squaring/squaring-controls";
 import { squaringAvailability } from "@/lib/squaring/playSquaring";
+import { TILE_CLASSES } from "@/lib/vocabulary";
 
 interface OptionsTabProps {
 	selected: CatalogueTiling | null;
@@ -140,14 +123,16 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 	const curvedTiles = hasCurvedTiles(selected);
 	// An Islamic-category tiling (an underlying tessellation from Bonner's systems). We suggest — but never
 	// force — turning the construction on for these, so the underlying tiling can be enjoyed on its own.
-	const isIslamicClass = !!selected && tileClassOf(selected) === "islamic";
+	const isIslamicClass = !!selected && tileClassOf(selected) === TILE_CLASSES.ISLAMIC;
 	// WHICH RENDERER OWNS THE CANVAS decides every control below, and it is answered in exactly one place
 	// — lib/services/shelfRegistry.ts — for this file and for _play-client both. It used to be answered
 	// twice, once per file, from two hand-maintained lists of shelf fields; they had diverged in two
 	// places by 2026-08-04, and the effect was that `hypPoly` and `sphPoly` records rendered the flat p5
 	// control block (symmetry elements, fundamental domain, vertex orbits, polygon points) over a canvas
 	// _play-client had already blanked.
-	const surface = surfaceOf(selected);
+	// A Tegula type whose symmetry the reader has changed may have left its geometry (orbifoldMorph.ts).
+	const morphOrders = useOrbifoldMorph((st) => (selected ? st.byId[selected.canonicalKey] : undefined));
+	const surface = (morphOrders ? morphSurface(recordSymbol(selected), morphOrders) : null) ?? surfaceOf(selected);
 	// An engine-developed hyperbolic tiling renders in the Poincaré disk via the per-pixel shader, which
 	// honours the edge-width toggle below.
 	const isHyperbolic = surface === "disk";
@@ -314,6 +299,13 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 	// sphere while it is showing the flat solid — see setShape above for why the sphere is the only place
 	// the spherical construction exists.
 	const islamicAvailable = islamicSupported && sourceControls && (!isSpherical || shapeIsSphere);
+	// Where materials are drawn: the plain hyperbolic disk, the Euclidean shader view and the ROUND tiling
+	// sphere (the flat solid is another renderer). Islamic wins wherever both could apply.
+	const materialsShown =
+		!cfg.isIslamic &&
+		((isHyperbolicDisk && !isHyperbolicEdges && !isHyperbolicColors) ||
+			surface === "flat" ||
+			(isSpherical && shapeIsSphere && sphereViewAvailable));
 	// Where the basis pad belongs. deformApplies() answers the MODE question (which renderer is painting);
 	// the surface question is separate — hyperbolic and spherical shelves have no plane to deform, and the
 	// freedraw/colors boards run their own cameras.
@@ -642,57 +634,6 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 							checked={cfg.hyperbolicDepthShade}
 							onCheckedChange={(v) => setCfg({ hyperbolicDepthShade: v })}
 						/>
-					) : null}
-					{isHyperbolicDisk && !isHyperbolicEdges && !isHyperbolicColors ? (
-						<div className="space-y-2">
-							<span className="text-xs text-fg-muted">Material</span>
-							<OptionWall
-								columns={3}
-								options={MATERIAL_OPTIONS}
-								selected={cfg.hyperbolicMaterial}
-								onChange={(v) => setCfg({ hyperbolicMaterial: v })}
-							/>
-							{cfg.hyperbolicMaterial !== "none" && cfg.hyperbolicMaterial !== "glass" ? (
-								<OptionWall
-									columns={2}
-									options={[
-										{
-											value: "scanned" as const,
-											label: "Scanned",
-											title: "Photographed PBR maps (CC0: ambientCG, Poly Haven)",
-										},
-										{ value: "procedural" as const, label: "Procedural", title: "Generated in the shader" },
-									]}
-									selected={cfg.hyperbolicSurfaceSource}
-									onChange={(v) => setCfg({ hyperbolicSurfaceSource: v })}
-								/>
-							) : null}
-							{cfg.hyperbolicMaterial === "wood" ? (
-								<>
-									<span className="text-xs text-fg-muted">Species</span>
-									<OptionWall
-										columns={4}
-										options={WOOD_SPECIES.map((v) => ({ value: v, label: WOOD_LABEL[v] }))}
-										selected={cfg.hyperbolicWood.species}
-										onChange={(species) => setCfg({ hyperbolicWood: { ...cfg.hyperbolicWood, species } })}
-									/>
-									<span className="text-xs text-fg-muted">Cut</span>
-									<OptionWall
-										columns={4}
-										options={WOOD_CUTS.map((v) => ({ value: v, label: WOOD_LABEL[v], title: WOOD_CUT_TITLE[v] }))}
-										selected={cfg.hyperbolicWood.cut}
-										onChange={(cut) => setCfg({ hyperbolicWood: { ...cfg.hyperbolicWood, cut } })}
-									/>
-									<span className="text-xs text-fg-muted">Grain</span>
-									<OptionWall
-										columns={2}
-										options={WOOD_GRAIN.map((v) => ({ value: v, label: WOOD_LABEL[v] }))}
-										selected={cfg.hyperbolicWood.grain}
-										onChange={(grain) => setCfg({ hyperbolicWood: { ...cfg.hyperbolicWood, grain } })}
-									/>
-								</>
-							) : null}
-						</div>
 					) : null}
 					{/* Edge patterns get the drawn tile boundaries either way; the scaffold reveals the faint
 					    undrawn edges of the underlying 6.6.7 base tiling, the same "Grid scaffold" toggle the
@@ -1639,6 +1580,42 @@ export function OptionsTab({ selected }: OptionsTabProps) {
 						<Reveal show={cfg.deformOn}>
 							<div className="pl-7">
 								<DeformPad />
+							</div>
+						</Reveal>
+					) : null}
+					{/* Materials, at the very end and behind their own checkbox, as Islamic gates its options. */}
+					{materialsShown ? (
+						<Checkbox
+							id="materials"
+							label="Materials"
+							checked={cfg.materials}
+							onCheckedChange={(v) => setCfg({ materials: v })}
+						/>
+					) : null}
+					{materialsShown ? (
+						<Reveal show={cfg.materials}>
+							<div className="space-y-2 pl-7">
+								<OptionWall
+									columns={2}
+									options={MATERIAL_OPTIONS}
+									selected={cfg.material}
+									onChange={(v) => setCfg({ material: v })}
+								/>
+								{cfg.material !== "glass" ? (
+									<OptionWall
+										columns={2}
+										options={[
+											{
+												value: "scanned" as const,
+												label: "Scanned",
+												title: "Photographed PBR maps (CC0: ambientCG, Poly Haven)",
+											},
+											{ value: "procedural" as const, label: "Procedural", title: "Generated in the shader" },
+										]}
+										selected={cfg.materialSource}
+										onChange={(v) => setCfg({ materialSource: v })}
+									/>
+								) : null}
 							</div>
 						</Reveal>
 					) : null}

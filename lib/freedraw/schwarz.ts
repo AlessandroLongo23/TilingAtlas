@@ -14,8 +14,9 @@
 // the other two do not. This file is the spherical and hyperbolic halves.
 
 import type { Darts } from "@/lib/render/hyperbolicDevelopClient";
+import { type CurvedGeometry, GEOMETRIES } from "@/lib/vocabulary";
 
-export type SchwarzGeometry = "spherical" | "hyperbolic";
+export type SchwarzGeometry = CurvedGeometry;
 
 export interface SchwarzBoard {
 	/** Stable id, the digit triple Marek's corpora use: "234". */
@@ -165,7 +166,7 @@ export const SCHWARZ_BOARDS: SchwarzBoard[] = [
 		id: "223",
 		pqr: [2, 2, 3],
 		label: "(2,2,3)",
-		geometry: "spherical",
+		geometry: GEOMETRIES.SPHERICAL,
 		eagerKs: [2, 3, 4, 5, 6, 7, 8],
 		lazyKs: [],
 		counts: { 2: 7, 3: 35, 4: 129, 5: 171, 6: 121, 7: 34, 8: 1850 },
@@ -174,7 +175,7 @@ export const SCHWARZ_BOARDS: SchwarzBoard[] = [
 		id: "224",
 		pqr: [2, 2, 4],
 		label: "(2,2,4)",
-		geometry: "spherical",
+		geometry: GEOMETRIES.SPHERICAL,
 		eagerKs: [2, 3, 4, 5, 6, 7, 9],
 		lazyKs: [10],
 		counts: { 2: 10, 3: 52, 4: 52, 5: 780, 6: 1165, 7: 963, 9: 321, 10: 61914 },
@@ -187,7 +188,7 @@ export const SCHWARZ_BOARDS: SchwarzBoard[] = [
 		id: "225",
 		pqr: [2, 2, 5],
 		label: "(2,2,5)",
-		geometry: "spherical",
+		geometry: GEOMETRIES.SPHERICAL,
 		eagerKs: [2, 3, 4, 5],
 		lazyKs: [6, 7, 8, 11],
 		counts: { 2: 7, 3: 4, 4: 244, 5: 98, 6: 4709, 7: 7372, 8: 6532, 11: 2676 },
@@ -196,7 +197,7 @@ export const SCHWARZ_BOARDS: SchwarzBoard[] = [
 		id: "233",
 		pqr: [2, 3, 3],
 		label: "(2,3,3)",
-		geometry: "spherical",
+		geometry: GEOMETRIES.SPHERICAL,
 		eagerKs: [2, 3, 4, 5, 6],
 		lazyKs: [7],
 		counts: { 2: 4, 3: 111, 4: 464, 5: 654, 6: 1966, 7: 45580 },
@@ -210,7 +211,7 @@ export const SCHWARZ_BOARDS: SchwarzBoard[] = [
 		id: "234",
 		pqr: [2, 3, 4],
 		label: "(2,3,4)",
-		geometry: "spherical",
+		geometry: GEOMETRIES.SPHERICAL,
 		eagerKs: [3, 4, 5, 6],
 		lazyKs: [7, 8],
 		counts: { 3: 10, 4: 13, 5: 1568, 6: 2181, 7: 24603, 8: 62095 },
@@ -219,19 +220,27 @@ export const SCHWARZ_BOARDS: SchwarzBoard[] = [
 		id: "235",
 		pqr: [2, 3, 5],
 		label: "(2,3,5)",
-		geometry: "spherical",
+		geometry: GEOMETRIES.SPHERICAL,
 		eagerKs: [3, 5],
 		lazyKs: [],
 		counts: { 3: 4, 5: 31 },
 	},
 	// Hyperbolic. Marek's runs here are short — these two are the small end of the hyperbolic Schwarz
 	// family, and (2,3,7) is the smallest hyperbolic triangle there is.
-	{ id: "237", pqr: [2, 3, 7], label: "(2,3,7)", geometry: "hyperbolic", eagerKs: [3], lazyKs: [], counts: { 3: 4 } },
+	{
+		id: "237",
+		pqr: [2, 3, 7],
+		label: "(2,3,7)",
+		geometry: GEOMETRIES.HYPERBOLIC,
+		eagerKs: [3],
+		lazyKs: [],
+		counts: { 3: 4 },
+	},
 	{
 		id: "245",
 		pqr: [2, 4, 5],
 		label: "(2,4,5)",
-		geometry: "hyperbolic",
+		geometry: GEOMETRIES.HYPERBOLIC,
 		eagerKs: [3, 4],
 		lazyKs: [],
 		counts: { 3: 10, 4: 13 },
@@ -240,8 +249,8 @@ export const SCHWARZ_BOARDS: SchwarzBoard[] = [
 
 export const SCHWARZ_BOARD_BY_ID = new Map(SCHWARZ_BOARDS.map((b) => [b.id, b]));
 
-export const sphSchwarzBoards = () => SCHWARZ_BOARDS.filter((b) => b.geometry === "spherical");
-export const hypSchwarzBoards = () => SCHWARZ_BOARDS.filter((b) => b.geometry === "hyperbolic");
+export const sphSchwarzBoards = () => SCHWARZ_BOARDS.filter((b) => b.geometry === GEOMETRIES.SPHERICAL);
+export const hypSchwarzBoards = () => SCHWARZ_BOARDS.filter((b) => b.geometry === GEOMETRIES.HYPERBOLIC);
 
 /** Every k a board ships, ascending. */
 export function schwarzBoardKs(b: SchwarzBoard): number[] {
@@ -262,7 +271,9 @@ export function schwarzKGaps(b: SchwarzBoard): number[] {
 
 /** The static asset holding one (board, k) slice. */
 export function schwarzShardUrl(b: SchwarzBoard, k: number): string {
-	return b.geometry === "spherical" ? `/schwarz-sph/s${b.id}-k${k}.json.gz` : `/schwarz-hyp/h${b.id}-k${k}.json.gz`;
+	return b.geometry === GEOMETRIES.SPHERICAL
+		? `/schwarz-sph/s${b.id}-k${k}.json.gz`
+		: `/schwarz-hyp/h${b.id}-k${k}.json.gz`;
 }
 
 /** Lazy (board, k) shards to fetch when vertex-count `k` comes into view under a given geometry — the
@@ -273,9 +284,11 @@ export function schwarzLazyShardsForK(geometry: SchwarzGeometry, k: number): Sch
 
 /** The /play sub-axis key. "sps-" spherical Schwarz, "hys-" hyperbolic Schwarz — namespaced so neither
  *  can collide with a freedraw grid, a solid name, or the "hyp-"/"hyc-"/"spc-" families. */
-export const schwarzSubOfBoard = (b: SchwarzBoard): string => `${b.geometry === "spherical" ? "sps" : "hys"}-${b.id}`;
+export const schwarzSubOfBoard = (b: SchwarzBoard): string =>
+	`${b.geometry === GEOMETRIES.SPHERICAL ? "sps" : "hys"}-${b.id}`;
 
-export const schwarzSub = (p: SchwarzPattern): string => `${p.geometry === "spherical" ? "sps" : "hys"}-${p.board}`;
+export const schwarzSub = (p: SchwarzPattern): string =>
+	`${p.geometry === GEOMETRIES.SPHERICAL ? "sps" : "hys"}-${p.board}`;
 
 /** Display label for a board id, from SCHWARZ_BOARDS; falls back to the id in parentheses. */
 export function schwarzBoardLabel(boardId: string): string {
@@ -287,7 +300,7 @@ export function schwarzBoardLabel(boardId: string): string {
  *  read as one family across the geometry split. On the sphere every tile is finite (the board is
  *  closed), so the count is the real tile count; in H² a tile can be unbounded. */
 export function schwarzFamilyLabel(p: SchwarzPattern): string {
-	if (p.geometry === "spherical") {
+	if (p.geometry === GEOMETRIES.SPHERICAL) {
 		const n = p.stats.tiles;
 		return `${n} polydrafter${n === 1 ? "" : "s"}`;
 	}
@@ -309,6 +322,6 @@ export function hypSchwarzMeta(p: HypSchwarzPattern) {
 /** Tile sizes present in a pattern, for the /library size facet: triangles per merged tile. -1 (an
  *  unbounded hyperbolic tile) is dropped — "how big" has no answer there. */
 export function schwarzTileSizes(p: SchwarzPattern): number[] {
-	const raw = p.geometry === "spherical" ? p.stats.tileSizes : p.stats.sizes;
+	const raw = p.geometry === GEOMETRIES.SPHERICAL ? p.stats.tileSizes : p.stats.sizes;
 	return [...new Set(raw.filter((n) => n > 0))].sort((a, b) => a - b);
 }

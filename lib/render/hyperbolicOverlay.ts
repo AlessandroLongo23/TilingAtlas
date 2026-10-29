@@ -46,6 +46,8 @@ export interface HypOverlayFlags {
 	showVertexOrbits: boolean;
 	showSymmetryElements: boolean;
 	showFundamentalDomain: boolean;
+	/** The symmetry panel's hovered class (Darts.vCone etc.): its points are marked like an orbit. */
+	highlightCone?: number | null;
 }
 
 const BOUND_R = 0.985; // screen radius the overlay develops to: past it every feature is sub-pixel
@@ -164,6 +166,8 @@ export class HypOverlay {
 		};
 		const points: { z: Complex; kind: "V" | "E" | "F" }[] = [];
 		const orbitDots: { z: Complex; orbit: number }[] = [];
+		const hl = flags.highlightCone ?? -1;
+		const marks: Complex[] = [];
 
 		// Vertices: each developed vertex once, from its ring of darts.
 		const seenV = new Set<number>();
@@ -173,6 +177,7 @@ export class HypOverlay {
 			seenV.add(vid[i]);
 			const h0 = H[i];
 			const z = pos[i];
+			if (hl >= 0 && this.darts.vCone?.[h0] === hl) marks.push(z);
 			if (this.vReal[h0] >= 3) {
 				points.push({ z, kind: "V" });
 				if (this.vOrbit[h0] >= 0) orbitDots.push({ z, orbit: this.vOrbit[h0] });
@@ -214,6 +219,7 @@ export class HypOverlay {
 			const F = mul(G[i], su11Translation({ x: half, y: 0 }));
 			const z = su11Apply(F, { x: 0, y: 0 });
 			if (this.vReal[H[i]] >= 3 && this.vReal[H[g]] >= 3) points.push({ z, kind: "E" });
+			if (hl >= 0 && this.darts.eCone?.[H[i]] === hl) marks.push(z);
 			if (!flags.showSymmetryElements) continue;
 			if (cls[H[g]] === cls[H[i]]) centre(z, 2);
 			if (cls[n + H[g]] === cls[H[i]]) mirror(F, Math.PI / 2);
@@ -234,6 +240,7 @@ export class HypOverlay {
 			for (const r of ring) seenF[r] = 1;
 			const z = hypBarycenter(ring.map((r) => [pos[r].x, pos[r].y] as [number, number]));
 			points.push({ z, kind: "F" });
+			if (hl >= 0 && this.darts.fCone?.[H[i]] === hl) marks.push(z);
 			if (flags.showSymmetryElements) centre(z, ring.filter((r) => cls[H[r]] === cls[H[i]]).length);
 		}
 
@@ -242,7 +249,7 @@ export class HypOverlay {
 		ctx.arc(cx, cy, R, 0, 2 * Math.PI);
 		ctx.clip();
 		// Orbit dots and symmetry marks read against a faded tiling, as on the flat canvas.
-		if (flags.showVertexOrbits || flags.showSymmetryElements) {
+		if (flags.showVertexOrbits || flags.showSymmetryElements || marks.length) {
 			const [r, g, b] = parseDimTarget(getComputedStyle(ctx.canvas.parentElement ?? ctx.canvas).backgroundColor);
 			ctx.fillStyle = `rgba(${r * 255}, ${g * 255}, ${b * 255}, 0.6)`;
 			ctx.fillRect(cx - R, cy - R, 2 * R, 2 * R);
@@ -294,6 +301,7 @@ export class HypOverlay {
 			const scale = stepOrbitScales(this.orbitScales, this.k, hovered, this.k);
 			for (const d of orbitDots) dot(d.z, ORBIT_DOT_RADIUS_PX * scale[d.orbit], orbitColor(d.orbit, this.k));
 		}
+		for (const z of marks) dot(z, ORBIT_DOT_RADIUS_PX, orbitColor(0, 1));
 		ctx.restore();
 	}
 
@@ -436,7 +444,11 @@ export function paintHypOverlay(
 	}
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 	const on =
-		flags.showPolygonPoints || flags.showVertexOrbits || flags.showSymmetryElements || flags.showFundamentalDomain;
+		flags.showPolygonPoints ||
+		flags.showVertexOrbits ||
+		flags.showSymmetryElements ||
+		flags.showFundamentalDomain ||
+		(flags.highlightCone ?? -1) >= 0;
 	if (!on || !overlay) return;
 	overlay.draw(ctx, cam, walk, { R: disk.R * dpr, cx: disk.cx * dpr, cy: disk.cy * dpr, dpr }, flags);
 }

@@ -17,6 +17,9 @@ export interface HypDiskTiling {
 	darts: Darts;
 	/** Colourings: how many colours `darts.faceColor` indexes. */
 	colors?: number;
+	/** Tiling mode: `darts.faceColor` holds each face's hue in degrees, overriding the side-count ramp. The
+	 *  Tegula shelf's rule, so a type keeps its colours on the plane, the sphere and the disk. */
+	faceHue?: boolean;
 	/** A star family's free point angle (hypStarFamily.ts). The hyp-poly shelf uses the field for a plain
 	 *  label, hence the string; starFamilyOf tells them apart. */
 	family?: HypFamily | string;
@@ -77,6 +80,7 @@ export function diskStyle(
 		edgeMode: mode !== "tiling",
 		scaffold: mode === "edges" && s.freedrawScaffold,
 		colorsMode: mode === "colors",
+		faceHue: mode === "tiling" && !!tiling.faceHue,
 		palette:
 			mode === "colors"
 				? paletteRgb255(tiling.colors ?? 1, s.colorsPalette, dark).map(

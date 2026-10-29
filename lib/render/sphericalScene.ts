@@ -9,39 +9,37 @@
 
 import * as THREE from "three";
 import type { Polyhedron } from "./platonicSolids";
-import { createSphereMaterial } from "./sphericalMaterial";
+import { createSphereMaterial, type SphereLook } from "./sphericalMaterial";
 
 export const SPHERE_RADIUS = 1;
 // Comfortably smooth silhouette; nothing displaces the surface, so this is all it has to carry.
 const SPHERE_WIDTH_SEGMENTS = 160;
 const SPHERE_HEIGHT_SEGMENTS = 120;
 
-// Live surface controls — the hue ring, stroke width, and theme, all written straight into shader uniforms.
-export interface SurfaceOptions {
-	hueOffset?: number;
-	lineWidth?: number; // stroke slider (0 hides edges)
-	dark?: boolean; // theme — flat line colour
-}
+// Live surface controls — the hue ring, stroke width, theme and material, all written straight into
+// shader uniforms.
+export type SurfaceOptions = SphereLook;
 
 export interface Sphere {
 	mesh: THREE.Mesh; // add this to the scene
-	recolor: (opts: SurfaceOptions) => void; // write hue / stroke / theme into the shader (no rebuild)
+	recolor: (opts: SurfaceOptions) => void; // write hue / stroke / theme / material into the shader (no rebuild)
 	dispose: () => void; // frees geometry + material
 }
 
 // Build the sphere for a solid (Platonic or Archimedean), drawing its tiling procedurally on the surface.
-// Returns null for a missing solid. Caller owns add/remove + dispose(). (The renderer arg is no longer
-// needed — kept for a stable signature with the callers — since there is no bake pass.)
+// Returns null for a missing solid. Caller owns add/remove + dispose(). The renderer's context carries the
+// materials' scanned surfaces.
 export function createSphere(
-	_renderer: THREE.WebGLRenderer,
+	renderer: THREE.WebGLRenderer,
 	poly: Polyhedron | null,
 	opts: SurfaceOptions = {},
 ): Sphere | null {
 	if (!poly) return null;
 
 	const geom = new THREE.SphereGeometry(SPHERE_RADIUS, SPHERE_WIDTH_SEGMENTS, SPHERE_HEIGHT_SEGMENTS);
-	const surface = createSphereMaterial({ poly, hueOffset: opts.hueOffset, lineWidth: opts.lineWidth, dark: opts.dark });
+	const surface = createSphereMaterial({ poly, renderer, ...opts });
 	const mesh = new THREE.Mesh(geom, surface.material);
+	mesh.onBeforeRender = () => surface.tick();
 
 	return {
 		mesh,

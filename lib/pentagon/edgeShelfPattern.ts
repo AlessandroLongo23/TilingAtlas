@@ -12,6 +12,7 @@ import type { FreedrawPattern } from "@/lib/freedraw/pattern";
 import type { SolvedBoard } from "./edge-board";
 import type { PentEdgeRecord } from "./edgeDevelop";
 import { buildPentEdgePatch } from "./edgePatch";
+import { FREEDRAW_GRIDS } from "@/lib/vocabulary";
 
 export interface PentShelfPattern {
 	pattern: FreedrawPattern | null;
@@ -59,7 +60,7 @@ export function pentEdgePattern(rec: PentEdgeRecord, board: SolvedBoard): PentSh
 				h: [0],
 				v: [0],
 				orbit: [0],
-				grid: "pent",
+				grid: FREEDRAW_GRIDS.PENT,
 				patch: built.patch,
 			},
 			reason: null,

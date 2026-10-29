@@ -1,3 +1,16 @@
+import {
+	type CurvedGeometry,
+	type Decoration,
+	DECORATIONS,
+	FREEDRAW_GRIDS,
+	GEOMETRIES,
+	type Geometry,
+	SOURCES,
+	TILE_CLASSES,
+	type TileClass,
+	type TilingSource,
+} from "@/lib/vocabulary";
+export type { CurvedGeometry, Decoration, Geometry, TileClass, TilingSource };
 import { chiralityOf, type ChiralityFacet } from "@/lib/services/chirality";
 import {
 	polygonSpeciesOf,
@@ -236,30 +249,7 @@ export type PolygonMode = "all" | "any" | "only";
 
 export interface ReferenceTiling {
 	id: string; // "t4001" (galebach) | "myers-k1-star-03" (myers) | "ctrnact-07_..." (ctrnact)
-	source:
-		| "galebach"
-		| "myers"
-		| "ctrnact"
-		| "ctrnact-star"
-		| "composable"
-		| "isotoxal"
-		| "mixed"
-		| "scaled"
-		| "polyomino"
-		| "islamic"
-		| "freedraw"
-		| "bubble"
-		| "colors"
-		| "hyperbolic"
-		| "spherical"
-		| "hollow"
-		| "period"
-		| "tri45"
-		| "planigon"
-		| "penrose"
-		| "euhalf"
-		| "lengthparam"
-		| "tegula";
+	source: TilingSource;
 	/** Which half-polygon board an `euhalf` row belongs to ("hexv", "pent", "hexm", "sqmid"); absent
 	 *  elsewhere. The sub-axis needs it because the four boards share one source. */
 	euHalfBoard?: string;
@@ -413,7 +403,7 @@ export interface ReferenceTiling {
 	// solver, this one takes its tile from Tactile at the live parameter point, so the shelf generalises
 	// to any of the 93 isohedral types Marek runs a solver on. `renderCell` is a throwaway.
 	ihEdges?: IhEdgeRecord;
-	geometry?: "euclidean" | "hyperbolic" | "spherical";
+	geometry?: Geometry;
 	// Hyperbolic shelf: which of the tilings sharing this vertex figure this one is, and how many there
 	// are. In H2 the figure does not determine the tiling — 4.4.6.4.6.6 carries fourteen distinct ones —
 	// so without an index the catalogue shows a run of identically labelled rows. Absent when unique.
@@ -538,27 +528,6 @@ export const PENROSE_SHARD_KS = [4, 5, 6];
  *  its own k chip is chosen — never by selecting the class or the board, which would pull all five. */
 export const EUHALF_SHARD_KS = [5, 6, 7, 8, 9];
 
-// tileClass, the primary shelf axis: "convex" (convex-irregular) iff the tiling comes from the convex
-// unit-edge super-tile demo (source-driven — source "composable" — since it has no "*" token); else
-// "star" iff its family carries a star token ("n*"); "regular" otherwise. Matches polygonClassLabel.
-export type TileClass =
-	| "regular"
-	| "star"
-	| "hollow"
-	| "convex"
-	| "isotoxal"
-	| "mixed"
-	| "scaled"
-	| "period"
-	| "polyomino"
-	| "islamic"
-	| "freedraw"
-	| "bubble"
-	| "colors"
-	| "hyperbolic"
-	| "spherical"
-	| "edgelen"
-	| "topological";
 // Bonner's design systems — the sub-facet axis for the Islamic class (docs/ISLAMIC_TILINGS.md). The
 // underlying tessellation's tile kit, independent of the strap-pattern family (acute/median/obtuse).
 /** The palettes inside the "Multiple edge lengths" class — its sub-facet axis, the way IslamicSystem
@@ -591,62 +560,63 @@ export function tileClassOf(t: {
 	source?: ReferenceTiling["source"];
 	hypPoly?: HypPolyPattern;
 }): TileClass {
-	if (t.source === "hollow") return "hollow";
+	if (t.source === SOURCES.HOLLOW) return TILE_CLASSES.HOLLOW;
 	// Hyperbolic splits by tile the way the plane does (AL, 2026-10-22): halved faces and multi-length
 	// boards are "Different edge lengths", stars are stars, and the rest, apeirogons included, regular.
-	if (t.source === "hyperbolic") {
-		if (t.hypPoly && (isHypHalf(t.hypPoly) || HYP_POLY_BOARD_BY_ID.get(t.hypPoly.base)?.multiLength)) return "edgelen";
-		return t.family.includes("*") ? "star" : "regular";
+	if (t.source === SOURCES.HYPERBOLIC) {
+		if (t.hypPoly && (isHypHalf(t.hypPoly) || HYP_POLY_BOARD_BY_ID.get(t.hypPoly.base)?.multiLength))
+			return TILE_CLASSES.EDGELEN;
+		return t.family.includes("*") ? TILE_CLASSES.STAR : TILE_CLASSES.REGULAR;
 	}
-	if (t.source === "spherical") return "spherical";
-	if (t.source === "mixed") return "mixed";
-	if (t.source === "isotoxal") return "isotoxal";
-	if (t.source === "composable") return "convex";
-	if (t.source === "scaled") return "scaled";
-	if (t.source === "period") return "period";
+	if (t.source === SOURCES.SPHERICAL) return TILE_CLASSES.SPHERICAL;
+	if (t.source === SOURCES.MIXED) return TILE_CLASSES.MIXED;
+	if (t.source === SOURCES.ISOTOXAL) return TILE_CLASSES.ISOTOXAL;
+	if (t.source === SOURCES.COMPOSABLE) return TILE_CLASSES.CONVEX;
+	if (t.source === SOURCES.SCALED) return TILE_CLASSES.SCALED;
+	if (t.source === SOURCES.PERIOD) return TILE_CLASSES.PERIOD;
 	// One class for every palette whose tiles have edges of SEVERAL lengths; which palette is the
 	// sub-facet below, not a class of its own.
 	if (
-		t.source === "tri45" ||
-		t.source === "planigon" ||
-		t.source === "penrose" ||
-		t.source === "euhalf" ||
-		t.source === "lengthparam"
+		t.source === SOURCES.TRI45 ||
+		t.source === SOURCES.PLANIGON ||
+		t.source === SOURCES.PENROSE ||
+		t.source === SOURCES.EUHALF ||
+		t.source === SOURCES.LENGTHPARAM
 	)
-		return "edgelen";
-	if (t.source === "tegula") return "topological";
-	if (t.source === "polyomino") return "polyomino";
-	if (t.source === "islamic") return "islamic";
-	if (t.source === "freedraw") return "freedraw";
-	if (t.source === "bubble") return "bubble";
-	if (t.source === "colors") return "colors";
-	if (t.family.includes("cx")) return "convex";
-	if (t.family.includes("α")) return "isotoxal";
-	return t.family.includes("*") ? "star" : "regular";
+		return TILE_CLASSES.EDGELEN;
+	if (t.source === SOURCES.TEGULA) return TILE_CLASSES.TOPOLOGICAL;
+	if (t.source === SOURCES.POLYOMINO) return TILE_CLASSES.POLYOMINO;
+	if (t.source === SOURCES.ISLAMIC) return TILE_CLASSES.ISLAMIC;
+	if (t.source === SOURCES.FREEDRAW) return TILE_CLASSES.FREEDRAW;
+	if (t.source === SOURCES.BUBBLE) return TILE_CLASSES.BUBBLE;
+	if (t.source === SOURCES.COLORS) return TILE_CLASSES.COLORS;
+	if (t.family.includes("cx")) return TILE_CLASSES.CONVEX;
+	if (t.family.includes("α")) return TILE_CLASSES.ISOTOXAL;
+	return t.family.includes("*") ? TILE_CLASSES.STAR : TILE_CLASSES.REGULAR;
 }
 
 // Single source of truth for the tile-class axis, consumed by BOTH /library (filter chips) and /play
 // (catalogue groups). To add a class: one entry here + one tileClassOf branch + one bestEffort fetch in
 // loadReferenceAtlas — and it appears on both pages. No per-page class list to keep in sync.
 export const TILE_CLASS_ORDER: TileClass[] = [
-	"regular",
-	"star",
-	"hollow",
-	"convex",
-	"isotoxal",
-	"mixed",
-	"scaled",
-	"period",
-	"edgelen",
-	"topological",
-	"polyomino",
-	"islamic",
-	"freedraw",
-	"bubble",
-	"colors",
+	TILE_CLASSES.REGULAR,
+	TILE_CLASSES.STAR,
+	TILE_CLASSES.HOLLOW,
+	TILE_CLASSES.CONVEX,
+	TILE_CLASSES.ISOTOXAL,
+	TILE_CLASSES.MIXED,
+	TILE_CLASSES.SCALED,
+	TILE_CLASSES.PERIOD,
+	TILE_CLASSES.EDGELEN,
+	TILE_CLASSES.TOPOLOGICAL,
+	TILE_CLASSES.POLYOMINO,
+	TILE_CLASSES.ISLAMIC,
+	TILE_CLASSES.FREEDRAW,
+	TILE_CLASSES.BUBBLE,
+	TILE_CLASSES.COLORS,
 	// No "hyperbolic": since 2026-10-22 hyperbolic tilings split by tile like the plane's (tileClassOf), so
 	// the class survives only as the legacy `?class=hyperbolic` alias reference-shelf maps to the geometry.
-	"spherical",
+	TILE_CLASSES.SPHERICAL,
 ];
 export const TILE_CLASS_LABEL: Record<TileClass, { short: string; long: string }> = {
 	regular: { short: "Regular", long: "Regular polygons" },
@@ -693,14 +663,14 @@ export const TILE_CLASS_LABEL: Record<TileClass, { short: string; long: string }
 // and the two Schwarz boards are family "schwarz-eu" while every other board here is family "grid". So
 // the Archimedean pair goes with the grids, not after the Schwarz pair.
 const FREEDRAW_GRID_SUBS = [
-	"square",
-	"triangle",
-	"hex",
-	"ts",
-	"4436",
-	"488",
-	"sch236",
-	"sch244",
+	FREEDRAW_GRIDS.SQUARE,
+	FREEDRAW_GRIDS.TRIANGLE,
+	FREEDRAW_GRIDS.HEX,
+	FREEDRAW_GRIDS.TS,
+	FREEDRAW_GRIDS.ARCH_4436,
+	FREEDRAW_GRIDS.ARCH_488,
+	FREEDRAW_GRIDS.SCH236,
+	FREEDRAW_GRIDS.SCH244,
 ] as const satisfies readonly FreedrawCatalogueGrid[];
 // ...and this is what makes "fails to compile" true, not aspirational: `satisfies` alone would
 // accept a SHORT list. Leaving a grid out makes the Exclude non-never, so the assignment errors.
@@ -955,11 +925,11 @@ function subOfRecord(t: {
 }): string {
 	if (t.sphBubble) return `sbub-${t.sphBubble.solid}`;
 	if (t.bubbleGrid) return `bub-${t.bubbleGrid}`;
-	if (t.source === "tri45") return "el-tri45";
-	if (t.source === "planigon") return "el-planigon";
-	if (t.source === "penrose") return "el-penrose";
-	if (t.source === "lengthparam") return "el-plen";
-	if (t.source === "euhalf") return euHalfSub(t.euHalfBoard ?? "");
+	if (t.source === SOURCES.TRI45) return "el-tri45";
+	if (t.source === SOURCES.PLANIGON) return "el-planigon";
+	if (t.source === SOURCES.PENROSE) return "el-penrose";
+	if (t.source === SOURCES.LENGTHPARAM) return "el-plen";
+	if (t.source === SOURCES.EUHALF) return euHalfSub(t.euHalfBoard ?? "");
 	if (t.polyformOrder) return polyformSub(t.polyformOrder);
 	if (t.pentEdges) return pentEdgeSub(t.pentEdges);
 	if (t.ihEdges) return ihEdgeSub(t.ihEdges);
@@ -985,7 +955,7 @@ function subOfRecord(t: {
 	// above has already claimed the edge, colour, poly and half records. The gate matters because the
 	// axis is read off the CONFIGURATION, and a Euclidean record's family is a configuration too
 	// ("3.3.3.3.3.3"), so an ungated call would file the plane's uniform tilings onto a hyperbolic board.
-	if (t.source === "hyperbolic" && t.family) return hypTilingSub(t.family);
+	if (t.source === SOURCES.HYPERBOLIC && t.family) return hypTilingSub(t.family);
 	return "";
 }
 
@@ -1065,7 +1035,6 @@ export function sortCatalogueForDisplay<T extends CatalogueTiling>(rows: readonl
 // level above the tile-class tree. Derived from the render-routing flags the canvases already key on
 // (spherical wins, then developed), NOT the optional `geometry` field (not reliably populated). Same
 // precedence as _play-client's canvas swap, so the toggle and the rendered view can never disagree.
-export type Geometry = "euclidean" | "hyperbolic" | "spherical";
 export function geometryOf(t: {
 	spherical?: unknown;
 	sphericalFreedraw?: unknown;
@@ -1073,7 +1042,7 @@ export function geometryOf(t: {
 	developed?: unknown;
 	hypEdges?: unknown;
 	hypColors?: unknown;
-	schwarz?: { geometry: "spherical" | "hyperbolic" };
+	schwarz?: { geometry: CurvedGeometry };
 	sphEdges?: unknown;
 	hypPoly?: unknown;
 	sphPoly?: unknown;
@@ -1088,11 +1057,12 @@ export function geometryOf(t: {
 	// rows counted on the wrong chip and absent from the one that should show them. That is exactly what
 	// the spherical bubble boards did until AL spotted 29,517 of them inside the Euclidean count.
 	if (t.spherical || t.sphericalFreedraw || t.sphColors || t.sphEdges || t.sphPoly || t.sphStar || t.sphBubble)
-		return "spherical";
-	if (t.developed || t.hypEdges || t.hypColors || t.hypPoly) return "hyperbolic";
-	return "euclidean";
+		return GEOMETRIES.SPHERICAL;
+	if (t.developed || t.hypEdges || t.hypColors || t.hypPoly) return GEOMETRIES.HYPERBOLIC;
+
+	return GEOMETRIES.EUCLIDEAN;
 }
-export const GEOMETRY_ORDER: Geometry[] = ["euclidean", "hyperbolic", "spherical"];
+export const GEOMETRY_ORDER: Geometry[] = [GEOMETRIES.EUCLIDEAN, GEOMETRIES.HYPERBOLIC, GEOMETRIES.SPHERICAL];
 export const GEOMETRY_LABEL: Record<Geometry, string> = {
 	euclidean: "Euclidean",
 	hyperbolic: "Hyperbolic",
@@ -1111,18 +1081,17 @@ export const GEOMETRY_LABEL: Record<Geometry, string> = {
 // This is axis 3 of docs/TILE_TAXONOMY.md §3. Before it existed, "Hyperbolic" and "Spherical" were tile
 // CLASSES as well as geometries, which /library papered over by relabeling the non-Euclidean class chips
 // and /play by collapsing a lone class row. Both workarounds are gone now.
-export type Decoration = "tilings" | "edges" | "colorings";
 // Derived from tileClassOf, not from the payload flags (freedraw / hypEdges / sphColors / …). Both
 // give the same answer today; going through the class function is what makes it impossible for the two
 // axes to disagree once a class is added — a new TileClass lands in "tilings" only by being neither of the
 // decoration classes, and referenceAtlas.displayOrder.test.ts asserts the mapping is total.
 export function decorationOf(t: { family: string; source?: ReferenceTiling["source"] }): Decoration {
 	const c = tileClassOf(t);
-	if (c === "freedraw" || c === "bubble") return "edges";
-	if (c === "colors") return "colorings";
-	return "tilings";
+	if (c === TILE_CLASSES.FREEDRAW || c === TILE_CLASSES.BUBBLE) return DECORATIONS.EDGES;
+	if (c === TILE_CLASSES.COLORS) return DECORATIONS.COLORINGS;
+	return DECORATIONS.TILINGS;
 }
-export const DECORATION_ORDER: Decoration[] = ["tilings", "edges", "colorings"];
+export const DECORATION_ORDER: Decoration[] = [DECORATIONS.TILINGS, DECORATIONS.EDGES, DECORATIONS.COLORINGS];
 export const DECORATION_LABEL: Record<Decoration, string> = {
 	tilings: "Tilings",
 	edges: "Edge patterns",
@@ -1196,7 +1165,7 @@ function compactFigure(fig: string): string {
 // a side-3 tile). Null for every non-scaled tiling (so the facet excludes them, matching the M/partition
 // exclude-the-unclassified ethos).
 export function scaledMaxScaleOf(t: { family: string; source?: ReferenceTiling["source"] }): number | null {
-	if (t.source !== "scaled") return null;
+	if (t.source !== SOURCES.SCALED) return null;
 	let max = 1;
 	for (const tok of t.family.split(".")) {
 		const m = /^\d+([₁₂₃₄₅₆₇₈₉]+)$/.exec(tok);
@@ -1216,15 +1185,15 @@ export function polyformFamilyOf(t: Pick<ReferenceTiling, "polyformOrder">): Pol
 // null for every non-Islamic tiling (so the facet excludes them, matching the exclude-the-unclassified ethos).
 /** Which palette an entry belongs to inside the "Multiple edge lengths" class, or null outside it. */
 export function edgeBoardOf(t: Pick<ReferenceTiling, "source" | "euHalfBoard">): EdgeBoard | null {
-	if (t.source === "planigon") return "planigon";
-	if (t.source === "penrose") return "penrose";
-	if (t.source === "tri45") return "tri45";
-	if (t.source === "euhalf") return `euh-${t.euHalfBoard}` as EdgeBoard;
+	if (t.source === SOURCES.PLANIGON) return "planigon";
+	if (t.source === SOURCES.PENROSE) return "penrose";
+	if (t.source === SOURCES.TRI45) return "tri45";
+	if (t.source === SOURCES.EUHALF) return `euh-${t.euHalfBoard}` as EdgeBoard;
 	return null;
 }
 
 export function islamicSystemOf(t: Pick<ReferenceTiling, "source" | "islamicSystem">): IslamicSystem | null {
-	if (t.source !== "islamic") return null;
+	if (t.source !== SOURCES.ISLAMIC) return null;
 	return t.islamicSystem ?? null;
 }
 
@@ -1344,7 +1313,7 @@ const FREEDRAW_FINITE_NOUN: Record<FreedrawGrid, readonly [string, string]> = {
 	pent: ["polyform", "polyforms"],
 	ih: ["polyform", "polyforms"],
 };
-export function freedrawFamilyLabel(s: FreedrawStats, grid: FreedrawGrid = "square"): string {
+export function freedrawFamilyLabel(s: FreedrawStats, grid: FreedrawGrid = FREEDRAW_GRIDS.SQUARE): string {
 	const noun = FREEDRAW_FINITE_NOUN[grid];
 	const parts: string[] = [];
 	if (s.finite) parts.push(`${s.finite} ${s.finite === 1 ? noun[0] : noun[1]}`);
@@ -1476,7 +1445,7 @@ const MERGED_FAMILY_ALIASES: MergedAliasTable = {
 // Null for any non-isotoxal tiling, or an isotoxal record missing its parametric cell — those never match
 // the Shape facet, matching the exclude-the-unclassified ethos used by the M/partition filters.
 export function isotoxalParamCount(t: Pick<ReferenceTiling, "source" | "paramCell">): 1 | 2 | null {
-	if (t.source !== "isotoxal") return null;
+	if (t.source !== SOURCES.ISOTOXAL) return null;
 	const n = t.paramCell?.params?.length;
 	return n === 1 || n === 2 ? n : null;
 }
@@ -1504,7 +1473,7 @@ const hypFacetCache = new Map<string, { valence: number; polygon: number } | nul
 export function hyperbolicFacetsOf(
 	t: Pick<ReferenceTiling, "id" | "source" | "family">,
 ): { valence: number; polygon: number } | null {
-	if (t.source !== "hyperbolic") return null;
+	if (t.source !== SOURCES.HYPERBOLIC) return null;
 	const cached = hypFacetCache.get(t.id);
 	if (cached !== undefined) return cached;
 	let valence = 0;
@@ -1720,7 +1689,7 @@ export function matchesReferenceFilters(t: ReferenceTiling, f: ReferenceFilter):
 	if (f.hypEdge) {
 		// The slider's bounds are the data's min/max rounded outward to 0.01, and ε absorbs the float
 		// dust of 0.01-stepped stops, so an entry sitting exactly on a bound always matches.
-		if (t.source !== "hyperbolic" || t.edge == null) return false;
+		if (t.source !== SOURCES.HYPERBOLIC || t.edge == null) return false;
 		if (t.edge < f.hypEdge[0] - 1e-9 || t.edge > f.hypEdge[1] + 1e-9) return false;
 	}
 	if (f.discoverers?.length && !f.discoverers.includes(t.discoverer)) return false;
@@ -1785,6 +1754,8 @@ export function referenceToCatalogue(r: ReferenceTiling): CatalogueTiling {
 		exactSource: r.exactSource,
 		paramCell: r.paramCell,
 		tegula: r.tegula,
+		// Both Tegula files state the symbol in the note; nothing else carries it.
+		dsym: r.source === SOURCES.TEGULA ? /<[^>]+>/.exec(r.note ?? "")?.[0] : undefined,
 		euHalfBoard: r.euHalfBoard,
 		polyformOrder: r.polyformOrder,
 		schlafli: r.schlafli,
@@ -1861,15 +1832,15 @@ function freedrawToReference(p: FreedrawPattern): ReferenceTiling {
 	// triangle with sides 1 : √3 : 2, and the nothing-drawn slice is a single pattern at k=3 — the bare
 	// Schwarz tiling, which is the only thing it could be. That is the decoder verifying itself, not an
 	// independent enumeration of the family.
-	const verified = grid === "square" ? p.k <= 3 : grid === "triangle" ? p.k <= 1 : false;
+	const verified = grid === FREEDRAW_GRIDS.SQUARE ? p.k <= 3 : grid === FREEDRAW_GRIDS.TRIANGLE ? p.k <= 1 : false;
 	return {
 		id: p.id,
-		source: "freedraw",
+		source: SOURCES.FREEDRAW,
 		k: p.k,
 		family: freedrawFamilyLabel(stats, grid),
 		renderCell: FREEDRAW_EMPTY_CELL,
 		freedraw: p,
-		geometry: "euclidean",
+		geometry: GEOMETRIES.EUCLIDEAN,
 		discoverer: "Marek Čtrnáct",
 		certification: verified ? "reproduced" : "candidate",
 	};
@@ -1902,12 +1873,12 @@ export function colorsFamilyLabel(p: ColorPattern): string {
 function colorsToReference(p: ColorPattern): ReferenceTiling {
 	return {
 		id: p.id,
-		source: "colors",
+		source: SOURCES.COLORS,
 		k: p.k,
 		family: colorsFamilyLabel(p),
 		renderCell: FREEDRAW_EMPTY_CELL,
 		colors: p,
-		geometry: "euclidean",
+		geometry: GEOMETRIES.EUCLIDEAN,
 		discoverer: "Marek Čtrnáct",
 		// Decoded from Marek's certificates and internally consistent (develop closure, per-cell color
 		// agreement, orbit count = k on all 27,479), with the k=1 slice verified by hand — but no
@@ -1924,12 +1895,12 @@ function sphericalFreedrawToReference(solid: string, k: number, p: IcoPattern): 
 	const cfg = ICO_SOLID_BY_ID.get(solid);
 	return {
 		id: `sfd-${solid}-${p.id}`,
-		source: "freedraw",
+		source: SOURCES.FREEDRAW,
 		k: p.k,
 		family: `${cfg?.schlafli ?? solid} · ${p.nTiles} tile${p.nTiles === 1 ? "" : "s"}${p.achiral ? "" : " · chiral"}`,
 		renderCell: FREEDRAW_EMPTY_CELL,
 		sphericalFreedraw: { solid, k, pattern: p },
-		geometry: "spherical",
+		geometry: GEOMETRIES.SPHERICAL,
 		discoverer: "Marek Čtrnáct",
 		// Decoded from Marek's certificates like the planar higher-k slices; no independent enumeration here.
 		certification: "candidate",
@@ -1943,13 +1914,13 @@ function sphericalFreedrawToReference(solid: string, k: number, p: IcoPattern): 
 function hypEdgesToReference(p: HypEdgesPattern): ReferenceTiling {
 	return {
 		id: p.id,
-		source: "freedraw",
+		source: SOURCES.FREEDRAW,
 		k: p.k,
 		family: `${hypEdgesBaseLabel(p.base)}${p.chiral ? " · chiral" : ""} · ${hypEdgesFamilyLabel(p)}`,
 		renderCell: FREEDRAW_EMPTY_CELL,
 		hypEdges: p,
 		edge: p.edge,
-		geometry: "hyperbolic",
+		geometry: GEOMETRIES.HYPERBOLIC,
 		discoverer: "Marek Čtrnáct",
 		// Decoded from Marek's certificates and internally consistent (develop closure, edge-length residual
 		// ~1e-11, every face a regular polygon at the forced ℓ), but nothing independent enumerates this class
@@ -2026,13 +1997,13 @@ export async function loadHyperbolicEdgesShard(base: string, k: number): Promise
 function hypColorsToReference(p: HypColorsPattern): ReferenceTiling {
 	return {
 		id: p.id,
-		source: "colors",
+		source: SOURCES.COLORS,
 		k: p.k,
 		family: `${hypColorsBaseLabel(p.base)}${p.chiral ? " · chiral" : ""} · ${hypColorsFamilyLabel(p)}`,
 		renderCell: FREEDRAW_EMPTY_CELL,
 		hypColors: p,
 		edge: p.edge,
-		geometry: "hyperbolic",
+		geometry: GEOMETRIES.HYPERBOLIC,
 		discoverer: "Marek Čtrnáct",
 		// Decoded from Marek's certificates, internally consistent (develop closure, every face a regular {p}
 		// at the forced ℓ), only surjective colorings kept — but nothing independent enumerates the class, so
@@ -2044,12 +2015,12 @@ function hypColorsToReference(p: HypColorsPattern): ReferenceTiling {
 function sphColorsToReference(p: SphColorsPattern): ReferenceTiling {
 	return {
 		id: p.id,
-		source: "colors",
+		source: SOURCES.COLORS,
 		k: p.k,
 		family: `${p.chiral ? "chiral · " : ""}${sphColorsFamilyLabel(p)}`,
 		renderCell: FREEDRAW_EMPTY_CELL,
 		sphColors: { solid: p.solid, k: p.k, pattern: p },
-		geometry: "spherical",
+		geometry: GEOMETRIES.SPHERICAL,
 		discoverer: "Marek Čtrnáct",
 		certification: "candidate",
 	};
@@ -2209,14 +2180,14 @@ export async function loadSphericalFreedrawAtlas(): Promise<ReferenceTiling[]> {
 function schwarzToReference(p: SchwarzPattern): ReferenceTiling {
 	return {
 		id: p.id,
-		source: "freedraw",
+		source: SOURCES.FREEDRAW,
 		k: p.k,
 		family: `${p.label}${p.chiral ? " · chiral" : ""} · ${schwarzFamilyLabel(p)}`,
 		renderCell: FREEDRAW_EMPTY_CELL,
 		schwarz: p,
 		// H² has no similarity, so the board's edge lengths are a coordinate; the shortest is the one the
 		// disk renderer needs as its base scale. Spherical boards live on the unit sphere and need none.
-		edge: p.geometry === "hyperbolic" ? p.edges[0] : undefined,
+		edge: p.geometry === GEOMETRIES.HYPERBOLIC ? p.edges[0] : undefined,
 		geometry: p.geometry,
 		discoverer: "Marek Čtrnáct",
 		// Decoded from Marek's certificates and internally consistent (the spherical boards close to
@@ -2233,7 +2204,7 @@ async function fetchSchwarzShard(b: SchwarzBoard, k: number): Promise<ReferenceT
 	try {
 		const res = await fetch(schwarzShardUrl(b, k));
 		if (!res.ok) return [];
-		if (b.geometry === "spherical") {
+		if (b.geometry === GEOMETRIES.SPHERICAL) {
 			const shard = decodeShard((await shardBody(res)) as SphSchwarzShard);
 			return hydrateSphShard(shard).map((p) => schwarzToReference(p as SphSchwarzPattern));
 		}
@@ -2250,12 +2221,12 @@ async function fetchSchwarzShard(b: SchwarzBoard, k: number): Promise<ReferenceT
 const schwarzCache = new Map<string, ReferenceTiling[]>();
 const schwarzInflight = new Map<string, Promise<ReferenceTiling[]>>();
 
-async function loadSchwarzEager(geometry: "spherical" | "hyperbolic"): Promise<ReferenceTiling[]> {
+async function loadSchwarzEager(geometry: CurvedGeometry): Promise<ReferenceTiling[]> {
 	const cached = schwarzCache.get(geometry);
 	if (cached) return cached;
 	const existing = schwarzInflight.get(geometry);
 	if (existing) return existing;
-	const boards = geometry === "spherical" ? sphSchwarzBoards() : hypSchwarzBoards();
+	const boards = geometry === GEOMETRIES.SPHERICAL ? sphSchwarzBoards() : hypSchwarzBoards();
 	const p = Promise.all(boards.flatMap((b) => b.eagerKs.map((k) => fetchSchwarzShard(b, k))))
 		.then((lists) => {
 			const data = lists.flat();
@@ -2271,8 +2242,8 @@ async function loadSchwarzEager(geometry: "spherical" | "hyperbolic"): Promise<R
 	return p;
 }
 
-export const loadSphericalSchwarzAtlas = () => loadSchwarzEager("spherical");
-export const loadHyperbolicSchwarzAtlas = () => loadSchwarzEager("hyperbolic");
+export const loadSphericalSchwarzAtlas = () => loadSchwarzEager(GEOMETRIES.SPHERICAL);
+export const loadHyperbolicSchwarzAtlas = () => loadSchwarzEager(GEOMETRIES.HYPERBOLIC);
 
 const schwarzShardCache = new Map<string, ReferenceTiling[]>();
 const schwarzShardInflight = new Map<string, Promise<ReferenceTiling[]>>();
@@ -2307,12 +2278,12 @@ export async function loadSchwarzShard(board: string, k: number): Promise<Refere
 function sphEdgesToReference(p: SphEdgesPattern): ReferenceTiling {
 	return {
 		id: p.id,
-		source: "freedraw",
+		source: SOURCES.FREEDRAW,
 		k: p.k,
 		family: `${p.solid}${p.chiral ? " · chiral" : ""} · ${sphEdgesFamilyLabel(p)}`,
 		renderCell: FREEDRAW_EMPTY_CELL,
 		sphEdges: p,
-		geometry: "spherical",
+		geometry: GEOMETRIES.SPHERICAL,
 		discoverer: "Marek Čtrnáct",
 		// Decoded from Marek's certificates and checked, not trusted: every development closes to Euler 2
 		// with the solid's own V/E/F, every side measures the one forced arc, and every pattern lands on
@@ -2387,7 +2358,7 @@ export async function loadSphericalEdgesShard(board: string, k: number): Promise
 function hypPolyToReference(p: HypPolyPattern): ReferenceTiling {
 	return {
 		id: p.id,
-		source: "hyperbolic",
+		source: SOURCES.HYPERBOLIC,
 		k: p.k,
 		family: `${hypPolyBoardLabel(p.base)}${p.chiral ? " · chiral" : ""} · ${hypPolyFamilyLabel(p)}`,
 		renderCell: FREEDRAW_EMPTY_CELL,
@@ -2395,7 +2366,7 @@ function hypPolyToReference(p: HypPolyPattern): ReferenceTiling {
 		polygonSpecies: hypPolyTileSet(p),
 		// H² has no similarity, so the forced edge length is a coordinate, not a scale — the card shows it.
 		edge: p.edge,
-		geometry: "hyperbolic",
+		geometry: GEOMETRIES.HYPERBOLIC,
 		discoverer: "Marek Čtrnáct",
 		// Every record developed to a patch whose edges and face sides all measure ℓ (residuals ~1e-12)
 		// before it was emitted; 26,605 of 26,605 ai1 certificates and 33,795 of 33,795 ai2 ones passed,
@@ -2428,13 +2399,13 @@ async function fetchHypPolyShard(n: string, k: number): Promise<ReferenceTiling[
 function hypHalfToReference(p: HypPolyPattern): ReferenceTiling {
 	return {
 		id: p.id,
-		source: "hyperbolic",
+		source: SOURCES.HYPERBOLIC,
 		k: p.k,
 		family: `${hypHalfFamilyLabel(p)}${p.chiral ? " · chiral" : ""}`,
 		renderCell: FREEDRAW_EMPTY_CELL,
 		hypPoly: p,
 		edge: p.edge,
-		geometry: "hyperbolic",
+		geometry: GEOMETRIES.HYPERBOLIC,
 		discoverer: "Čtrnáct engine (hyperbolic half-tile palette), 2026-08-14",
 		// Certified per record on a developed patch: every interior vertex closes a full turn and every
 		// face is congruent to the tile (worst side error 2.9e-7 on {4,5}, 1.2e-9 on {3,7}). Unlike the
@@ -2517,12 +2488,12 @@ function pentEdgesToReference(p: PentEdgeRecord): ReferenceTiling {
 	const board = PENT_EDGE_BOARDS.find((b) => String(b.type) === String(p.type));
 	return {
 		id: p.id,
-		source: "freedraw",
+		source: SOURCES.FREEDRAW,
 		k: p.k,
 		family: `Pentagon ${board?.label ?? p.type} · ${pentEdgeFamilyLabel(p)}`,
 		renderCell: FREEDRAW_EMPTY_CELL,
 		pentEdges: p,
-		geometry: "euclidean",
+		geometry: GEOMETRIES.EUCLIDEAN,
 		discoverer: "Marek Čtrnáct",
 		// Decoded 17,993 of 17,993 with per-k counts matching his census exactly; the enumeration is his,
 		// so "candidate".
@@ -2576,12 +2547,12 @@ function ihEdgesToReference(p: IhEdgeRecord): ReferenceTiling {
 	const board = IH_EDGE_BOARDS.find((b) => b.ih === p.ih);
 	return {
 		id: p.id,
-		source: "freedraw",
+		source: SOURCES.FREEDRAW,
 		k: p.k,
 		family: `${board?.label ?? `IH${p.ih}`} · ${ihEdgeFamilyLabel(p)}`,
 		renderCell: FREEDRAW_EMPTY_CELL,
 		ihEdges: p,
-		geometry: "euclidean",
+		geometry: GEOMETRIES.EUCLIDEAN,
 		discoverer: "Marek Čtrnáct",
 		// Decoded 14,759 of 14,759 shipped with per-k counts matching his census exactly; the enumeration
 		// is his, so "candidate".
@@ -2642,13 +2613,13 @@ export async function loadIsohedralEdgesShard(board: string, k: number): Promise
 export function lengthFamilyRows(): ReferenceTiling[] {
 	return LENGTH_FAMILIES.map((f) => ({
 		id: f.id,
-		source: "lengthparam" as const,
+		source: SOURCES.LENGTHPARAM,
 		// MEASURED, not assumed. This read `k: 1` for every family until 2026-08-18, which was false the
 		// moment two strips were offset by different amounts: the vertices on one interface can no longer
 		// be carried onto those on another, so the tiling has several vertex orbits. See vertex-orbits.ts.
 		k: f.k ?? 1,
 		family: f.label,
-		geometry: "euclidean" as const,
+		geometry: GEOMETRIES.EUCLIDEAN,
 		discoverer: f.discoverer,
 		paramCell: f.cell,
 		renderCell: evaluateParamCell(
@@ -2662,7 +2633,7 @@ export function lengthFamilyRows(): ReferenceTiling[] {
 function sphStarToReference(p: SphStarPattern): ReferenceTiling {
 	return {
 		id: p.id,
-		source: "spherical",
+		source: SOURCES.SPHERICAL,
 		k: p.k,
 		// ⚑ The NAME, not `sphStarFamilyLabel`: that one appends the density for an unnamed record,
 		// and this string already leads with it, so every unnamed record read "density 7 · census ·
@@ -2672,7 +2643,7 @@ function sphStarToReference(p: SphStarPattern): ReferenceTiling {
 		family: `${sphStarSubLabel(p.density, densityUnresolved(p))} · ${sphStarName(p)}`,
 		renderCell: FREEDRAW_EMPTY_CELL,
 		sphStar: p,
-		geometry: "spherical",
+		geometry: GEOMETRIES.SPHERICAL,
 		discoverer: "Marek Čtrnáct",
 		// The enumeration is the Čtrnáct engine's, extended here with a {n/d} tile kind and a density
 		// closure; the geometry is measured, not looked up — each record's flood-fill closes, every edge
@@ -2691,12 +2662,12 @@ function sphStarToReference(p: SphStarPattern): ReferenceTiling {
 function sphHalfToReference(p: SphPolyPattern): ReferenceTiling {
 	return {
 		id: p.id,
-		source: "spherical",
+		source: SOURCES.SPHERICAL,
 		k: p.k,
 		family: `${sphHalfFamilyLabel(p)}${p.chiral ? " · chiral" : ""}`,
 		renderCell: FREEDRAW_EMPTY_CELL,
 		sphPoly: p,
-		geometry: "spherical",
+		geometry: GEOMETRIES.SPHERICAL,
 		discoverer: "Čtrnáct engine (spherical half-tile palette), 2026-08-14",
 		// Every record closes to Euler 2 with the tile count its area bound forces, every face congruent
 		// to the tile, and every sampled point covered exactly once — and the count of tilings per board
@@ -2828,7 +2799,7 @@ export async function loadFreedrawDecorAtlas(): Promise<ReferenceTiling[]> {
 export function bubbleToReference(p: BubblePattern): ReferenceTiling {
 	const out: ReferenceTiling = {
 		id: p.id,
-		source: "bubble",
+		source: SOURCES.BUBBLE,
 		k: p.k,
 		family: bubbleFamilyLabel(p),
 		// A REAL translational cell, not freedraw's throwaway: a bubble tiling is an ordinary periodic
@@ -2846,7 +2817,7 @@ export function bubbleToReference(p: BubblePattern): ReferenceTiling {
 		tilePeriods: EMPTY_PERIODS,
 		bubbleGrid: p.grid,
 		bubble: p,
-		geometry: "euclidean",
+		geometry: GEOMETRIES.EUCLIDEAN,
 		discoverer: "Chase, Field & McCluer",
 		// CANDIDATE, and it stays that way until something independent enumerates the family. What
 		// this slice DOES check: all 74 develop with no failures, every glue joins two complementary
@@ -2870,12 +2841,12 @@ function sphBubbleToReference(p: SphBubblePattern, board: SphBubbleBoard): Refer
 	const tiles = new Set(p.bites.map((w) => w.join(""))).size;
 	return {
 		id: p.id,
-		source: "bubble",
+		source: SOURCES.BUBBLE,
 		k: p.k,
 		family: `${p.solid.replace(/-/g, " ")} · ${tiles} tile${tiles === 1 ? "" : "s"}`,
 		renderCell: FREEDRAW_EMPTY_CELL,
 		sphBubble: p,
-		geometry: "spherical",
+		geometry: GEOMETRIES.SPHERICAL,
 		discoverer: "Chase, Field & McCluer",
 		// ⚑ PROVEN on the complete boards, and it is the only bubble slice that can be. There is nothing to search here: the
 		// substrate is a fixed solid and complementarity is satisfied by construction, so the count is a

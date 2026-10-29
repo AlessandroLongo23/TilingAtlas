@@ -8,6 +8,7 @@ import { SquaredCylinderFigure } from "./squared-cylinder-figure";
 import { Fact, InspectBar, RailPanel, StageBoard, useTapHover } from "./stage-board";
 import { RangeInput } from "@/components/ui/range-input";
 import { shardBody } from "@/lib/services/atlasCodec";
+import { GEOMETRIES } from "@/lib/vocabulary";
 
 // One hyperbolic tiling becoming one squared cylinder, in the same four stages as the other two.
 //
@@ -116,7 +117,7 @@ export function CylinderStages({ entry }: { entry: CylinderIndexEntry }) {
 
 	const idx = entry.radii.indexOf(layer.radius);
 	const prev = idx > 0 ? entry.conductance[idx - 1] : null;
-	const hyperbolic = entry.geometry === "hyperbolic";
+	const hyperbolic = entry.geometry === GEOMETRIES.HYPERBOLIC;
 
 	return (
 		<>

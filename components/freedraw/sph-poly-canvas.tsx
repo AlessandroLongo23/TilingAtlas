@@ -16,10 +16,13 @@ export function SphPolyCanvas({
 	pattern,
 	mode,
 	showGrid,
+	marks,
 }: {
 	pattern: SphPolyPattern;
 	mode: IcoMode;
 	showGrid: boolean;
+	/** The symmetry panel's hovered class, marked on the solid. */
+	marks?: number[][];
 }) {
 	const scene = useMemo(() => sphPolyScene(pattern), [pattern]);
 	return (
@@ -31,6 +34,7 @@ export function SphPolyCanvas({
 			tileHue={scene.tileHue}
 			mode={mode}
 			showGrid={showGrid}
+			marks={marks}
 		/>
 	);
 }

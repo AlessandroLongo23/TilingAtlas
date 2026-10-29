@@ -47,21 +47,11 @@
 // with opposite sides paired. One difference from every other board here: Marek's certificate cell is
 // NOT a fundamental domain for the translations — it spans two of them — so the period is recovered
 // from the develop and checked, never taken from the record (lib/isohedral/edgePatch.ts).
-/** The boards the shipped freedraw CATALOGUE covers: one browser, one filter, one set of shards. */
-export type FreedrawCatalogueGrid =
-	| "square"
-	| "triangle"
-	| "ts"
-	| "hex"
-	| "sch236"
-	| "sch244"
-	/** The two ARCHIMEDEAN boards: 3.4.6.4 and 4.8.8, both patch grids (see below). */
-	| "4436"
-	| "488";
-/** Every board a pattern can decorate. Wider than the catalogue: the two parametric boards are their own
- *  shelves (`pen-1`, `ih-1`), reached from the Edge patterns tab and not from the freedraw browser, so
- *  they must not appear in that browser's grid pickers — which is what the two types keep apart. */
-export type FreedrawGrid = FreedrawCatalogueGrid | "pent" | "ih";
+// The board vocabulary (FreedrawGrid, and the FreedrawCatalogueGrid subset the browser offers) lives in
+// lib/vocabulary.ts.
+import { FREEDRAW_GRIDS, type FreedrawCatalogueGrid, type FreedrawGrid } from "@/lib/vocabulary";
+
+export type { FreedrawCatalogueGrid, FreedrawGrid };
 
 /**
  * PATCH GRIDS (grid: "ts" and "hex"): no bitmask, explicit geometry instead. The developer
@@ -145,7 +135,7 @@ export interface FreedrawPattern {
 	patch?: FreedrawPatch;
 }
 
-export const gridOf = (p: FreedrawPattern): FreedrawGrid => p.grid ?? "square";
+export const gridOf = (p: FreedrawPattern): FreedrawGrid => p.grid ?? FREEDRAW_GRIDS.SQUARE;
 
 /** What this grid's `k` COUNTS, for the surfaces that spell it out.
  *
@@ -155,7 +145,12 @@ export const gridOf = (p: FreedrawPattern): FreedrawGrid => p.grid ?? "square";
  *  ordinary vertex-orbit count — the same quantity the spherical and hyperbolic Schwarz shelves use,
  *  which is why the three read as one family. */
 export const freedrawKNoun = (grid: FreedrawGrid): string =>
-	grid === "sch236" || grid === "sch244" || grid === "pent" || grid === "ih" ? "vertex orbits" : "grid-point orbits";
+	grid === FREEDRAW_GRIDS.SCH236 ||
+	grid === FREEDRAW_GRIDS.SCH244 ||
+	grid === FREEDRAW_GRIDS.PENT ||
+	grid === FREEDRAW_GRIDS.IH
+		? "vertex orbits"
+		: "grid-point orbits";
 
 /**
  * The shipped edge-system catalogues. `eager` loads with the atlas; `lazyKs` are the dense tails,
@@ -258,7 +253,7 @@ export function degree(p: FreedrawPattern, x: number, y: number): number {
 	if (drawnNorth(p, x, y)) n++;
 	if (drawnEast(p, x - 1, y)) n++;
 	if (drawnNorth(p, x, y - 1)) n++;
-	if (gridOf(p) === "triangle") {
+	if (gridOf(p) === FREEDRAW_GRIDS.TRIANGLE) {
 		if (drawnDiag(p, x, y)) n++;
 		if (drawnDiag(p, x - 1, y + 1)) n++;
 	}

@@ -3,6 +3,7 @@
 // the sphere or the hyperbolic disk, whichever the corners close in.
 import { useRef, useState, type PointerEvent } from "react";
 import { turned, vertexFigure, type Turn } from "@/components/about/figures/geometry/vertex";
+import { GEOMETRIES } from "@/lib/vocabulary";
 import { tileFill } from "@/lib/render/tilePalette";
 import { polygonFillHue, polygonHue, starHue } from "@/lib/utils/renderTiling";
 import { cn } from "@/lib/utils/cn";
@@ -647,6 +648,12 @@ const exactGeometry = (shapes: Map<string, Shape>, word: string[]): Geometry | u
 	if (!Number.isFinite(sum)) return undefined;
 	return Math.abs(sum - 2 * Math.PI) < 1e-9 ? "plane" : sum < 2 * Math.PI ? "sphere" : "hyperbolic";
 };
+// vertexFigure speaks the site's geometry names; TileSearch's are "plane" and "sphere"
+const SITE = { plane: GEOMETRIES.EUCLIDEAN, sphere: GEOMETRIES.SPHERICAL, hyperbolic: GEOMETRIES.HYPERBOLIC } as const;
+const exactSite = (shapes: Map<string, Shape>, word: string[]) => {
+	const g = exactGeometry(shapes, word);
+	return g && SITE[g];
+};
 const sidesOf = (shapes: Map<string, Shape>, word: string[]) => {
 	return word.map((sym) => {
 		const s = shapes.get(sym);
@@ -724,10 +731,10 @@ export function VertexFigure({
 	const ns = sidesOf(shapes, word);
 	// corners with angles of their own (a star's point or dent) are drawn as their faces, walked out
 	const walked = walkVertex(b, word);
-	const fig = vertexFigure(ns, ball.turn, exactGeometry(shapes, word));
+	const fig = vertexFigure(ns, ball.turn, exactSite(shapes, word));
 	const polys = walked ? walked.map((w) => w.poly) : fig.polygons;
-	const disk = !walked && fig.geometry !== "plane" && fig.edge !== null;
-	const sphere = disk && fig.geometry === "sphere";
+	const disk = !walked && fig.geometry !== GEOMETRIES.EUCLIDEAN && fig.edge !== null;
+	const sphere = disk && fig.geometry === GEOMETRIES.SPHERICAL;
 	// on the ball a point at disk distance `d` from the vertex along corner i's bisector, turned with it
 	const onBall = (i: number, d: number) => {
 		const t = Math.asin(Math.min(1, d / 0.92));
@@ -861,5 +868,6 @@ export function vertexGeometry(b: Board, word: string[]) {
 	if (word.length < 3) return null;
 	const shapes = cornerShapes(b);
 	const ns = sidesOf(shapes, word);
-	return vertexFigure(ns, undefined, exactGeometry(shapes, word)).geometry;
+	const g = vertexFigure(ns, undefined, exactSite(shapes, word)).geometry;
+	return (Object.keys(SITE) as Geometry[]).find((k) => SITE[k] === g)!;
 }
