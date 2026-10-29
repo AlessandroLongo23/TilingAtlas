@@ -3231,14 +3231,72 @@ NOTES 2026-10-23 "Release prep for the star shelf" and the three entries before 
 ## 2026-10-25 — searcher-ui merged with searcher and master; TileSearch on HoverPill and HyperbolicCanvas — CC
 Branch work committed (e692b766), searcher and master merged in. NOTES 2026-10-25 "searcher-ui merged".
 
+## 2026-10-25 — TileSearch: darts match develop_ai1.py; flat cells; shared Dropdown — CC
+Parity test against develop_ai1.py; flags the y29830 shelf's missing A30 (24-gon) tilings.
+NOTES 2026-10-25 "TileSearch draws as the atlas's developers do".
+
+**2026-10-25 · CC** · Nav active-tab fill no longer covers the label it slides away from (TileSearch header and atlas nav), one CSS rule in `app/globals.css`. Uncommitted on `searcher-ui`. Detail: DEVELOPMENT_NOTES "the active tab's fill slid over the earlier tab's label".
+
+**2026-10-25 · CC** · TileSearch draws a corner with a set angle (60°, 90°, …) as its regular polygon, so 3.3.3.4.4 and 3^6 show flat. Uncommitted on `searcher-ui`. Detail: DEVELOPMENT_NOTES "vertex figures ignored a corner's set angle".
+
+**2026-10-25 · CC** · TileSearch: adding a new corner from inside the face or vertex modal keeps the declaration (it was overwritten by the pick). Uncommitted on `searcher-ui`. Detail: DEVELOPMENT_NOTES "a corner added from the face or vertex modal was lost".
+
+**2026-10-25 · CC** · TileSearch run page redesigned: one overview panel (hero total, roots as a hexagonal patch, log-scale columns per k that pick the k below, a facts strip); search time now persists in `elapsed.txt`. Uncommitted on `searcher-ui`. Detail: DEVELOPMENT_NOTES "TileSearch's run page, redesigned around one overview panel".
+
+**2026-10-25 · CC** · TileSearch run page bottom half redesigned (workbench Tilings tab, Files by k, following Log, numbered Board); shared `CopyButton` replaces two private copies; search time and log saved per run, old finished runs' time recovered from file times. Uncommitted on `searcher-ui`. Detail: DEVELOPMENT_NOTES "the run page's bottom half".
+
+**2026-10-25 · CC** · Fixed two WebGL context leaks behind TileSearch's flashing previews: `useFlatCellPreview` rebuilt a context after its own teardown, `HyperbolicCanvas` never released its context. Both shared with the site. Uncommitted on `searcher-ui`. Detail: DEVELOPMENT_NOTES "WebGL contexts leaked".
+
+**2026-10-25 · CC** · Hyperbolic disk fills a face by its corner count, not its unit sides (a cut triangle was painted as a hexagon, atlas included); TileSearch no longer shows a stale tiling under a new group's id (the grey disk). Uncommitted on `searcher-ui`. Detail: DEVELOPMENT_NOTES "hyperbolic faces coloured by corners".
+
+**2026-10-25 · CC** · TileSearch: "All" option in the k and edge-orbit pickers, reading within an 8 MB budget and marking a partial count with "+". Uncommitted on `searcher-ui`. Detail: DEVELOPMENT_NOTES "All in TileSearch's k and edge-orbit pickers".
+
+**2026-10-25 · CC** · TileSearch board editor draws a face cut by Pi corners as its true polygon (M3 Pi M3 Pi M3 Pi is a triangle). Uncommitted on `searcher-ui`. Detail: DEVELOPMENT_NOTES "draws a face cut by Pi corners".
+
+**2026-10-25 · CC** · TileSearch: faces typed in Marek's names (C6, Aoo, A6*60), "Edges per side" and a Star shape in the face editor, star faces and vertices drawn from their angles, plane stars coloured by starHue. Hyperbolic stars not yet. Uncommitted on `searcher-ui`. Detail: DEVELOPMENT_NOTES "faces in Marek's names".
+
+**2026-10-25 · CC** · TileSearch: isotoxal convex faces (Isotoxal shape, `A3*100`, rhombi as `A2*60`); colouring detection now compares face shapes, not corner counts. Uncommitted on `searcher-ui`. Detail: DEVELOPMENT_NOTES "isotoxal convex faces".
+
+**2026-10-25 · CC** · TileSearch: star and isotoxal faces close and draw in the hyperbolic plane (point fixed, dent from `starDent`); Quick setup explains an empty seed list and flags stars that open convex. Uncommitted on `searcher-ui`. Detail: DEVELOPMENT_NOTES "star and isotoxal faces in the hyperbolic plane".
+
+**2026-10-25 · CC** · TileSearch: star points marked Free are solved with the edge length in Quick setup (`solvePoints`, Gauss–Newton over chosen vertices); `A6*` shorthand, Solve/Set in the face editor. Uncommitted on `searcher-ui`. Detail: DEVELOPMENT_NOTES "solves star points with the edge".
+
+**2026-10-25 · CC** · TileSearch: a running search's tilings draw when the board has free symbols (symbols.txt now read once the engine writes it, not only at open and finish). Uncommitted on `searcher-ui`. Detail: DEVELOPMENT_NOTES "draws a live run's tilings with free symbols".
+
+**2026-10-25 · CC** · TileSearch: vertex cards can be multi-selected (hover box, shift-click ranges) with a bulk toolbar: select all, set/clear initial, delete. Uncommitted on `searcher-ui`. Detail: DEVELOPMENT_NOTES "picks several vertices at once".
+
+**2026-10-26 · CC** · TileSearch: a renamed or moved run keeps its previews (its file list is rebuilt from the new folder). Uncommitted on `searcher-ui`. Detail: DEVELOPMENT_NOTES "keeps a renamed run's previews".
+
+**2026-10-26 · CC** · TileSearch: header buttons remove unused corners, unplaceable faces and unplaceable vertices (`deadWeight`, the warnings' rules). Uncommitted on `searcher-ui`. Detail: DEVELOPMENT_NOTES "clears dead weight from a board".
+
+**2026-10-26 · CC** · TileSearch: "Clear all" for corners, faces and vertices; Improve re-runs a finished run to a higher k under a chosen name and can delete the old run once the new one finishes (replaces.txt). Uncommitted on `searcher-ui`. Detail: DEVELOPMENT_NOTES "Clear all and Improve".
+
 2026-10-25 · CC · TileSearch import pipeline (uncommitted, paused): sessions.json run stamp,
 scripts/tilesearch-cells.ts + tilesearch-import.py (key, verify k, known/new against every flat shelf,
 coverage row). Two tiling_key fixes: mirror angle words, micro-grid SCALE. Full six-point-stars import
 paused at atlas keying. Detail: DEVELOPMENT_NOTES "TileSearch runs into the atlas".
 
+**2026-10-26 · CC** · TileSearch: a boolean vertex filter on the board page (corners, counts, faces, initial/unplaceable/duplicate; AND/OR/NOT); Improve starts the new run in the old run's folder by default. Uncommitted on `searcher-ui`. Detail: DEVELOPMENT_NOTES "vertex filter, and Improve in the same folder".
+
+**2026-10-26 · CC** · TileSearch: "Run again" beside Improve (same k; name, folder, replace-on-finish). Uncommitted on `searcher-ui`. Detail: DEVELOPMENT_NOTES "Run again".
+
+**2026-10-26 · CC** · TileSearch: runs sidebar folders start collapsed, are remembered across pages and launches, with a collapse/expand-all button. Uncommitted on `searcher-ui`. Detail: DEVELOPMENT_NOTES "run folders start collapsed".
+
+**2026-10-26 · CC** · Required vertex sets tested in a patched engine copy: Marek's set-count rule loses tilings when sets overlap (116/300 random trials); a vertex-cover bound is exact everywhere and prunes harder. Experiment only, tilesearch.cpp untouched. Detail: DEVELOPMENT_NOTES "required vertex sets, tested against the engine".
+
+**2026-10-26 · CC** · Targeted searches: `require` sets in tilesearch/tileestimate (vertex-cover pruning, proof beside the code, tested against the committed engine) and in the app (Require from a selection or a face, sidebar list). Uncommitted on `searcher-ui`. Detail: DEVELOPMENT_NOTES "targeted searches with `require`".
+
+**2026-10-26 · CC** · TileSearch: face cards selectable with bulk Require (one set per face) and Delete; "required" badge on required faces; selection shared as `usePicks`/`PickBar`. Uncommitted on `searcher-ui`. Detail: DEVELOPMENT_NOTES "face selection, bulk require".
+
+**2026-10-26 · CC** · tilesearch ranks its roots by a 2-deep tree size (5–50× fewer nodes on boards with many roots, 42× faster on A6_30 k ≤ 6, same tilings; order.txt keeps resumes safe, old runs keep their order); progress reports nodes, so the app shows work done and time left. Uncommitted on `searcher-ui`. Detail: DEVELOPMENT_NOTES "roots ranked by cost".
+
 2026-10-26 · CC · TileSearch download CTA: OS-detected button in the header and on the landing hero, linking
 GitHub release assets (tag tilesearch-v0.2.0, not yet published). Uncommitted on searcher-ui. Detail:
 DEVELOPMENT_NOTES "TileSearch download buttons on the site".
+
+**2026-10-26 · CC** · tilesearch: fail-first branching with forward checking, chosen per board by a 2-vertex pilot, and exact option counts cached by local face context (DP over contexts, signature-grouped). A6_30: k ≤ 6 66.9M → 0.33M nodes; k ≤ 20 estimate from millions of core-hours to ~1,000. 90/90 checks vs the committed engine. Uncommitted on `searcher-ui`. Detail: DEVELOPMENT_NOTES "fail first, and exact option counts".
+
+**2026-10-26 · CC** · tilesearch round two: newest-first scan, shared context cache keyed by candidate table (fixes a latent cross-phase hazard), rank depth 3 under fail first. A6_30 k ≤ 10 1.7x faster; pair-glue cache and canonical start measured and dropped. 90/90 checks. Uncommitted on `searcher-ui`. Detail: DEVELOPMENT_NOTES "round two on the search".
 
 2026-10-27 · CC · TileSearch 0.2.0 released (GitHub release tilesearch-v0.2.0, latest): macOS arm64 zip,
 Windows x64 installer + zip; the site's download buttons link /releases/latest/download. Windows engine

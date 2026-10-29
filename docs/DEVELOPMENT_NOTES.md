@@ -19660,6 +19660,142 @@ targets take -lz; tileestimate compiles against it, 54 app tests pass) and with 
 - tests/moduli-graph fails in a worktree only: it reads an untracked oracle output that lives in the main
   checkout.
 
+## 2026-10-25: TileSearch draws as the atlas's developers do; a shared Dropdown
+
+AL: hyperbolic tilings lost lines and jumped when panned; a plane tiling showed shape colours with
+thumbnails in another scheme; the certificate list needed a real dropdown, two levels (k, edge orbits).
+
+- The disk: `hyperbolicDarts` re-derived the darts and shipped `alpha`, `elen` and `drawn` together, which
+  the client reads as a scalene board, and it gave a face its polygon size where develop_ai1.py gives its
+  count of UNIT edges (a square with sides of 2 edges is 8). The walk built the wrong faces. It now emits
+  develop_ai1.py's exact shape, pinned by a test that runs develop_ai1.py (from the main checkout) on
+  1247_1_0612 and hybrid_2_9830 at k = 1: every shipped record matches field for field.
+- ⚑ Found on the way: develop_ai1.py reads Marek's label `A30` in hybrid_2_9830 as a 30-gon, where the board
+  says `face A30 x 24`. Every tiling with that face fails its closure check, so the shipped `y29830` shelf is
+  missing them all (84 of 1,094 at k = 1; higher k not counted). A corpus gap, not fixed here.
+- The plane: a tiling (no digons) goes through the /theory cards' flat cell renderer (`useFlatCellPreview`,
+  `TilingThumbnail`), so faces fill by side count; a colouring (two faces of one shape with different labels)
+  fills by board face through the colourings palette's hues; an edge system stays on FreedrawCanvas with
+  `FreedrawThumbnail`, both filled by shape.
+- `components/ui/dropdown.tsx`: the library's sort menu (Base UI Select) lifted into a primitive with
+  HoverPill in its list; `SortControl` uses it. HoverPill follows `role="option"` too, and the option's
+  own highlight gives way while the pill shows. TileSearch picks k, then edge orbits, and shows every
+  certificate file of that pair.
+
+### 2026-10-25: the active tab's fill slid over the earlier tab's label
+
+Each child of a `.ta-pill-host` is lifted to `z-index: 1`, which makes every nav link its own stacking context, and a later link's context paints over an earlier one's. The sliding `NavActivePill` lives inside the current link, so going from Board to Runs (and in the atlas nav, to any earlier link) drew the fill over the label it was leaving. Fix in `app/globals.css`: the `[aria-current]` child sits at `z-index: 0`, under the other links and still over the hover pill (it comes later in the DOM). Checked mid-slide in both directions with Playwright. +5/-0.
+
+### 2026-10-25: vertex figures ignored a corner's set angle
+
+`sidesOf` in `tools/searcher/app/src/figures.tsx` mapped a corner to a regular polygon only through its faces; `cornerShapes` gives a corner with a set angle the `set` kind first, so a board with `angle A4 90` and `angle A3 60` drew every corner as the dashed square fallback, and `A4 A4 A3 A3 A3` and `A3^6` came out hyperbolic. A set angle that is a regular polygon's plane corner (360/(180-deg) an integer ≥3) is now drawn as that polygon; any other set angle keeps the dashed fallback. Checked with Playwright on a 3.4 board.
+
+### 2026-10-25: a corner added from the face or vertex modal was lost
+
+`Palette.add` saved the board with the new corner, then called `onPick`, whose `put` rebuilt the board from the modal's `b`, the board from before the add, so the second `set` dropped the declaration: the face read `A6 x 6` with "A6 is not a declared corner". `onPick` now gets the board that declares the corner and both modals' `put` builds on it. Checked with Playwright (A6 from a face, B9 from a vertex).
+
+### 2026-10-25: TileSearch's run page, redesigned around one overview panel
+
+The six KPI cards (Tilings, Roots done, Rate, Elapsed, Time left, Files) and the linear per-k bars are replaced by `tools/searcher/app/src/overview.tsx`, one panel:
+
+- The total as a hero figure (AnimatedNumber), with "of ≈ N ± M expected" while an estimate stands.
+- The roots as a patch of the hexagonal tiling, one cell per root: a finished root in the hexagon's tile colour (the app mark's), an unsearched one as an outline, the roots in hand pulsing in accent while live. The column count is picked near a 2:1 patch with the fullest last row. Past ~2,000 roots it falls back to a bar.
+- Tilings per k as columns on a log scale (counts roughly double per k; on the old linear bars k ≤ 5 were slivers and "k = 10" wrapped), gridlines at powers of ten, the value on each cap, the expected total as a pale column behind while estimating. The k the Tilings tab shows is the accent column, and clicking a column opens that k there.
+- A facts strip holding only what the run has (Elapsed, Rate, Time left while live; Search time, Started, Threads and priority, Files and their size). No dash placeholders.
+
+Search time used to be lost on restart (elapsed lived in memory only), so finished runs showed "–". `electron/runs.ts` now writes `elapsed.txt` when the engine exits and adds a resumed session to it. Runs from before this have none, so they show no search time. The header's info tooltip keeps only the engine's stats line, and a finished run no longer repeats its total as a note. Checked with Playwright on a live k 1–10 regular run, finished, column click, light and dark. About +340/−110: a new view, larger than the cards it replaces.
+
+### 2026-10-25: the run page's bottom half, and saved logs and search times
+
+The tabs below the overview are now one panel of fixed height (clamped to the window) with the tab strip and that tab's controls in one head row (`Tabs` gained an `aside` slot and `headClassName`).
+
+- Tilings is a workbench: the selected tiling on a square stage filling the panel's height, prev/next in the atlas's `FloatingToolbar` over it, the gesture help as an InfoDot on it, and ← → step through the tilings. Beside it, the thumbnails (numbered, the current one ringed in accent and scrolled into view) over the certificate, with board/engine names and a copy button. Before, the thumbnails sat below a window-tall drawing, out of sight. The k and edge-orbit pickers moved into the head (`GroupPicker`, `resolveGroup`, `groupOfK` in tilings.tsx).
+- Files groups the certificate files by k (count and size per k), bars each file's size against the largest of its k, and highlights the open group's files.
+- Log follows new lines while scrolled to the bottom; Board is numbered with keywords set back. Both copy.
+- `components/ui/copy-button.tsx` replaces two private copies (inspector-drawer's CopyButton, run-view's CopyChip).
+
+Search time and log lived in memory only, so every run lost both on restart. `electron/runs.ts` now writes `elapsed.txt` and `log.txt` when the engine exits. For finished runs from before, the search time is recovered from file times: run.json is written as the engine starts and census.txt as it finishes; a resume rewrites run.json, so when run.json is more than 30 s younger than the run, no time is shown instead of a partial one. Checked on a copy of a run with elapsed.txt deleted: 5.8 s recovered, as measured. Old logs cannot be recovered. Checked with Playwright: tilings (flat and hyperbolic), arrows, Files, Log, Board, dark. About +330/-150.
+
+### 2026-10-25: WebGL contexts leaked by the flat preview and the disk (TileSearch's flashing previews)
+
+Stepping through tilings in TileSearch made the big preview flash after a few. Instrumented with Playwright (counting contexts made and lost): each flat step made two contexts and released one, and Chromium soon warned "Too many active WebGL contexts. Oldest context will be lost". The flash is a live preview being evicted and rebuilt.
+
+- `lib/hooks/useFlatCellPreview.ts`: teardown's own `loseContext` fires `webglcontextlost` after the canvas is gone, and the listener (meant for browser eviction) rebuilt a canvas and context on the unmounted host, which nothing released: one leak per unmount. It now rebuilds only when the lost canvas is still the live one. 40 steps: 41 made, 40 released, no warnings. This hook also serves /theory and the landing cards.
+- `components/hyperbolic-canvas.tsx` never released its context (buffers only), so each disk lived until GC: 8 steps, 11 contexts, none released, and the oldest is hypThumbHost's shared thumbnail context. It now calls `loseContext` a tick after cleanup when the canvas has left the page (a Strict Mode re-run keeps the canvas and needs the context): 9 of 11 released, leaving the thumbnail host and the visible disk. The landing disk still draws under the dev server's Strict Mode.
+
++14/-2. Site build, lint and 3,067 tests pass.
+
+### 2026-10-25: hyperbolic faces coloured by corners, not unit sides; TileSearch's grey disk
+
+Colour. In "tiling" mode the disk filled a face by `polygonHue(lvert)`, and lvert counts UNIT sides. On a board whose sides are cut by Pi points that is not the polygon: `M3 Pi M3 Pi M3 Pi` (a triangle with sides of two edges) has lvert 6 and was painted as a hexagon, a cut square as an octagon, a cut decagon as a 20-gon. This was the atlas's own behaviour, not a TileSearch drift: the shipped `hpy124710612` records carry the same lvert (checked: `3₂` faces are lvert 6), and /play draws them in the same mode. `buildWalk` (lib/render/hyperbolicWalk.ts) now writes the face's CORNER count into the row's size slot: lvert times the share of non-flat corners in the ring (a ring can be one period of a symmetric face, and the flat corners are spread evenly). That slot feeds only the fill hue (tileKey) and the materials' rank (polygonRanks); geometry and the Islamic layer read other values. Uncut boards are unchanged (no flat corners). This changes the atlas's hyperbolic shelves with cut sides (the hybrid and 1247 boards) to the palette everywhere else uses.
+
+Grey disk. Switching group in TileSearch set the new group's ids at once but read its file a moment later, so the previous group's tiling was briefly prepared under the new id. When the real one arrived under the same id, HyperbolicCanvas kept the camera it had made for the stale walk (by design: a record keeps its camera), on a face index the new walk lacks: texelFetch past the table, a uniform grey disk. Reproduced exactly (k = 2, 1 edge orbit, tiling 1 of the 1247 run, grey on first open, fine after stepping away and back). tilings.tsx now tags the read texts with the files they came from and shows nothing until they match, so an id never names two tilings. Found by rebuilding the walk in a test (valid) and drawing the record in a standalone harness at 140 to 1400 px (always correct), which ruled the renderer out.
+
+Site build, lint and 3,067 tests pass.
+
+### 2026-10-25: "All" in TileSearch's k and edge-orbit pickers
+
+`Group` is now `{ k: number | "all"; edges: number | "all" }`, matched against the files by `filesOf` (tilings.tsx), so either picker can take every value. Changing k keeps the edge orbits picked when the new k has them, else all (also on a chart column click); the browser opens on the first k with all its edge orbits. "All" can span hundreds of files (512 in the k 1–10 regular run), so a group reads up to 256 KB of each file and at most 8 MB in all, in file order; the count then ends in "+" in both the heading and the stepper, and the InfoDot says how many files were read. In Files, the open group's rows are highlighted unless both pickers are on All. Checked on the k 1–10 regular run: k = 1, all edge orbits shows the 10 tilings; All, All shows "the first 60 of 8,744+".
+
+### 2026-10-25: TileSearch draws a face cut by Pi corners as its true polygon
+
+`FaceFigure` (tools/searcher/app/src/figures.tsx) drew every written corner as a vertex of a regular polygon, so `M3 Pi M3 Pi M3 Pi` was a hexagon. It now reads the face through `polygonOf` (corners.ts, now exported; the same reading the developer and Quick setup use): a face whose Pi corners cut its sides alike is drawn as its n-gon in that polygon's tile colour, with the Pi points evenly along the sides and labels pushed outward from each point. Unevenly cut faces keep the old drawing. Checked on 1247_1_0612: M3, M4, M5, M10 and L3 (sides of 7 edges) show as triangle, square, pentagon, decagon and triangle.
+
+### 2026-10-25: TileSearch faces in Marek's names, edges per side, and stars
+
+Marek's corner names (confirmed with AL 2026-10-25): a letter for the face's side, A, B, C… for 1, 2, 3… edges (S, M, L in his older boards, when lengths stopped at 3), then the corner count, oo for an apeirogon. The engine reads neither part (docs/marek-engine-reconstruction-2026-10-12.md: a label, not a size), and old boards break it both ways: 1247_1_0612's L is 4 edges in Loo and 7 in L3, A30 in hybrid_2_9830 is a 24-gon, and his colouring boards use A3/B3 as two colours. TileSearch uses the convention for writing boards, never for reading them.
+
+- corners.ts: `readShorthand` (`C6`, `Aoo`, `A6*60`), `withFace` (sets or adds a face from a FaceSpec, declares its corners, a star's with angles, `Pi` when sides are cut, and drops corners the old face left unused), `specOf` (reads a face back: one corner all round, or a star's point and dent).
+- Faces section: a field that adds a face from its name. Face editor: Shape counts real corners and gains Star (points 3–12, point angle under 180 − 360/n; dent = 360 − 360/n − point); "Edges per side" rebuilds the word with Pi corners.
+- figures.tsx: a face whose corners all have their own angles (set, or Pi) is drawn by walking unit edges; a vertex with a non-regular corner draws each corner's face walked out from the centre (regular corners take their plane angle). Stars fill from the atlas's `starHue(points, point angle)`.
+- develop.ts `tileOf`: plane tiles drop their straight Pi points (a cut triangle is a triangle, coloured as one) and a ring alternating convex and reflex corners is marked `star` with half the points, the cell format's own star convention.
+
+Checked end to end in the app from a blank board: typed A3 and A6*60, Quick setup found 15 vertices, the run found 36 tilings of squares, triangles and hexagrams, drawn in the plane. Not done: stars in the hyperbolic plane (geometry() still refuses non-regular faces there; the atlas's star-family disk would need wiring in). About +330/-30: a new feature.
+
+### 2026-10-25: TileSearch isotoxal convex faces, and a colouring test by shape
+
+An isotoxal convex polygon is the star model with both angles under 180°: 2n equal sides, corners alternating α and 360 − 360/n − α. `isotoxal(n, α)` (corners.ts) admits both kinds (a star from 3 points, convex from 2: the rhombus) and refuses the regular 2n-gon (α equal to the other angle) and a straight other angle. The shorthand `*` covers both (`A3*100` is a hexagon of 100° and 140°, `A2*60` a 60° rhombus); convex corners are named `a`/`b`, a star's `p`/`d`. The face editor's Shape has Isotoxal beside Star; the angle field takes any isotoxal value and the Shape follows the kind. Convex faces on the board take `polygonFillHue` of their walked outline, the plane renderer's own hue.
+
+Found on the way: `isColoring` grouped faces by corner count, so a board with a square and a rhombus (two 4-corner faces, different labels) was read as a colouring and every face took a colouring palette slot (the triangles came out blue). It now compares faces by the cycle of their corner angles. Checked in the app: A3, A2*60, A3*100 with the default square, Quick setup, a k 1–2 run of 106 tilings, drawn in the tile palette.
+
+### 2026-10-25: TileSearch star and isotoxal faces in the hyperbolic plane
+
+A star's two angles were stored as fixed plane values (60° and 240° for `A6*60`), so in the hyperbolic plane nothing involving a star ever closed, and a star whose angles were cleared was read as a regular 12-gon. Now an isotoxal face (two corners alternating, at least one angle set) gives its corners their own Shape, `iso` (corners.ts `isoOf`): the point keeps its angle in every geometry, the other corner follows the edge length through the atlas's `starDent` (hypStarFamily.ts, which gains a sphere case: cos l for cosh l). That is the atlas's hyperbolic star convention. A face whose corners differ and carry no angles is now unknown, not a regular polygon. `solveEdge` gained a tolerance so a word that is exactly flat no longer "closes" at edge 0 in the hyperbolic plane.
+
+Drawing: `hyperbolicDarts` hands isotoxal faces to the site's disk with per-dart angles (`alpha`, lvert = 2n·seg), so the walk builds them as WALK_STAR or irregular faces, coloured by point count as on the star shelf. Quick setup explains an empty seed list (a hyperbolic vertex must sum to over 360° flat with at least one corner that shrinks) and warns when the edge length opens a star's dent below 180° (the star has become a convex 2n-gon).
+
+Checked in the app: 6* stars with 60° points and triangles solve to edge 0.928 with vertices D·3³ and P⁶, and the engine finds 0 tilings, which is right (a P⁶ vertex makes every star edge star–star, a dent vertex makes it star–triangle). Pentagrams with 72° points and squares at the {4,5} edge: 12 vertices, 13 tilings, but the dent is 144° there, so the "stars" are convex decagons (the new warning). 8* stars with 15° points and triangles at the {3,8} edge keep a 270° dent: 2 tilings, drawn as stars on the disk. A scan of integer point angles for n* ∈ {3..8} with triangles and squares found that one case alone where the dent stays reflex: with the point fixed by hand, true hyperbolic stars are rare; the atlas finds its 23,458 by solving the point too. About +140/−25.
+
+### 2026-10-25: TileSearch solves star points with the edge
+
+With the point fixed by hand, true hyperbolic stars were rare (one integer-angle case in a scan). The point is now an unknown when its corner is Free: `freePoints` (corners.ts) finds isotoxal faces whose point is Free and whose other corner is Free or unset, `withPoints` writes candidate points into a board, and `solvePoints` solves the edge length and every free point so that chosen vertices close, by damped Gauss–Newton from a grid of starts (the method of `familyMember` in hypStarFamily.ts), keeping solutions where each point still makes an isotoxal face. Up to three free points; in the plane the edge is no unknown.
+
+Quick setup: with free points on the board, the edge-length row becomes "Solve from", a multi-select of the board's vertices (one per unknown); several solutions come in a dropdown, each with its edge, points and dents. The vertices that close are listed on the solved board, and Add or Replace writes the solved points into the board. Shorthand `A6*` adds a star with a Free point (corners `A6p` free, `A6d` unset); the face editor has "Solve it" and "Set one" to switch, and draws a Free star at a stand-in point.
+
+Checked in the app: `A3`, `A8*`, vertices `A3 ×8` and `A8d A3 A3` solve to edge 1.5285709, point 15°, dent 270° (the {3,8} stars found by hand), 6 vertices close, and the run gives the same 2 star tilings. Tests: the free point and its shorthand, the {3,8} solve, and a pentagram pair (P P P D with A4 A4 A4 D). About +230/−20, a new feature.
+
+### 2026-10-25: TileSearch draws a live run's tilings with free symbols
+
+A run whose board has symbols outside Marek's letter+number names (a star's `A6p60`, any hand-named corner) could not be drawn while it ran: "give “X3” and “X4” an angle: not declared". The engine prints such symbols as X<n> and writes `symbols.txt` mapping them back, but only once it starts; `Run` (electron/runs.ts) read that file when it opened a run and when the run finished, so a run started in the app had an empty map until it ended. The file scan that already runs during a live run now reads `symbols.txt` once it appears (`readSymbols`). Checked: a hexagram board run to k 14, opened at 6 s while running, draws both k=1 tilings including the star one. Electron-side only; +12/−6.
+
+### 2026-10-25: TileSearch picks several vertices at once
+
+The board editor's vertex cards can be picked for bulk actions. A box shows in a card's top-right corner on hover, and on every card once one is picked; while any are picked a click on a card picks it (opening one would drop the others), shift-click picks the range from the last one, Esc clears. A `FloatingToolbar` held at the bottom of the window (sticky) offers Select all, Set initial, Clear initial, Delete and a close; Delete goes through the editor's undo like any edit. `removeVertex` became `removeVertices` (a list, renumbering `initial` past every removed vertex), its one caller and test updated, the test extended to a two-vertex delete. Checked on 123_1_4657: hover, range 2–6, Set initial (sidebar "Vertex 2, 3, 4, 5, 6"), Delete (31 → 26 vertices). About +110/−20.
+
+### 2026-10-26: TileSearch keeps a renamed run's previews
+
+Renaming a run (or moving it, or renaming a folder holding runs) moved its folder and updated `Run.dir`, but the run's file list, built once for a finished run, kept full paths into the old folder. The tilings already read stayed on screen; leaving the run and coming back read them again from paths that no longer existed, and every preview came up empty. `relocate` (electron/runs.ts) now lists the files again for each moved run. Checked: rename a finished run, open another, come back: both previews draw. +4/−1.
+
+### 2026-10-26: TileSearch clears dead weight from a board
+
+Each editor section gains a header button that removes what its warnings name, shown only when there is something: Corners "Remove N unused" (in no face or vertex), Faces "Remove N unplaceable" (a corner no vertex uses), Vertices "Remove N unplaceable" (a corner no face has; through `removeVertices`, so `initial` stays right). `deadWeight` (board.ts) computes all three with the warnings' own rules; a test pins them. One pass per click, on purpose: removing faces can leave corners unused and vertices unplaceable, and the counts then show it (checked in the app: 2 faces removed, then 3 corners and 2 vertices offered). Undo covers each. About +50.
+
+### 2026-10-26: TileSearch "Clear all" and Improve
+
+Each editor section gains "Clear all" beside its Remove button: corners (taking the faces and vertices made of them, which would otherwise name symbols that no longer exist), faces, vertices (and the initial list). Undo restores each.
+
+A finished run gets an Improve button: a modal with the name (prefilled), k from the run's own lowest k to a higher top (default kmax + 1), and "Delete the old run when the new one finishes". The new run starts from the old lowest k so it holds every tiling the old one did; options are the current threads and priority. With the box ticked, `start` takes the old run's path and writes it to `replaces.txt` in the new run's folder; the main tick (`replaceFinished`, electron/main.ts) deletes the old run through the guarded `runs.remove` once the new run is finished, then drops the file. A stopped or failed run never deletes; the file outlives a quit. Checked: pentagrams k 1–2 improved to k 1–3 under a new name, 84 tilings, the old folder gone, replaces.txt cleared. About +150.
+
 ## TileSearch runs into the atlas: stamp, importer, two tiling_key fixes (2026-10-25, paused)
 
 Subset runs (a board over a few tiles, pushed to high k) go in as TILINGS keyed by what they are plus a
@@ -19696,6 +19832,52 @@ COVERAGE row saying what the run proves. Built so far, uncommitted on `searcher-
   (predates this work). Next: finish the full import, a shelf for staged records, and coverage display;
   shelfRegistry/referenceAtlas are being edited on master, so do that there.
 
+### 2026-10-26: TileSearch vertex filter, and Improve in the same folder
+
+The board page's vertex list has a filter (src/query.ts, `vertexQuery`): corner names (`A3`), counts (`A3>=2`, `=`, `<`, `>`, `<=`), `corners>=6` for all corners, `face:N` (a corner of face N), and the properties `initial`, `unplaceable` (deadWeight) and `duplicate` (sameCycle), joined by AND/OR/NOT (or & | !) and brackets, side by side meaning AND; NOT binds tightest, then AND, then OR. A bad query names its fault and shows every vertex. Select all and shift-click ranges act on the vertices shown. The box is the design system's `SearchInput`, which gained `raw` (no lowercasing: corner names keep their case) and `label`; its defaults are unchanged. Tests cover terms, operators, properties and every error.
+
+Improve now starts the new run beside the old one: `start` takes a folder, `Runs.create` puts the run there when it is one of the output folder's folders, and the modal has a Folder picker defaulting to the old run's. Checked: a filter keeping 2 of 31 vertices on 123_1_4657, an error for an unknown corner, and an improved run created inside `hyperbolic/`. About +220, a new feature.
+
+### 2026-10-26: TileSearch "Run again"
+
+Beside Improve, any run that is not running has "Run again": the Improve modal with `again` set, which hides the k field and runs the board over the run's own k range, with the same name, folder and replace-on-finish choices. Shown for stopped and failed runs too, where a fresh start is the point. Checked: pentagrams-k3 run again as pentagrams-again with replace ticked: created in the same folder, k 1–3, 84 tilings, the old run deleted on finishing. About +20.
+
+### 2026-10-26: TileSearch run folders start collapsed and stay as left
+
+The runs sidebar kept its closed folders in component state, so they reset whenever the page changed. It now keeps the open folders in browser storage (`tilesearch:open-folders`; empty, so every folder starts collapsed), read when the list mounts and written by an effect when it changes, so the tree survives page switches and launches. A header button collapses every folder, or expands them all when none is open. A run newly selected inside closed folders (one Improve just started, say) opens them, via the adjust-during-render pattern so it fires only on a new pick and not on coming back to the page. The storage helpers moved from App.tsx to runs.tsx, exported for both. Checked: first visit collapsed, a folder opened stays open across Board → Runs, collapse all and expand all. About +40.
+
+### 2026-10-26: required vertex sets, tested against the engine
+
+Question (AL with Marek): find all and only the tilings that hold a vertex from each of several sets (say, every vertex with star A; every vertex with star B), pruning on the k budget. Marek's proposal: seed from the sets, drop a set once a vertex of it is present, and once kmax − k ≤ sets still missing, a new vertex must come from one of them.
+
+Tested in a patched copy of tilesearch.cpp (the real file untouched; patch, scripts and boards in `experiments/required-sets-2026-10-26/`, log in `experiments/results/required-sets-2026-10-26.log`). In the engine, k counts quotient vertices (orbits), one per `add_vertex`, and a tiling is found only from its lowest vertex type, so `initial` = the union of the sets seeds every candidate once. Ground truth: the stock engine with initial = the union, keeping the tilings whose corners include every set (output file names list corners). Certificate text is not deterministic across threaded runs (stock vs stock differ in 134–170 lines on the same files), so runs are compared by tilings per output file; pruning only removes, so equal counts mean nothing lost.
+
+Result: Marek's rule loses tilings when sets overlap (116 of 300 random overlapping trials, 0 of 150 disjoint). It counts sets, but a vertex type in two sets meets both, so the vertices still needed can be fewer than the sets missing. The sound bound counts vertices: prune when the fewest vertex types (from the root's index on) that could meet every missing set exceed the orbits left, a table of 2^sets entries per root computed once; plus a final check at completion. That rule matched the ground truth in every case (face-defined sets on the regular board to k 7, two-star boards, all random trials) and pruned harder: on r3 at k 7, 686,816 → 65,605 nodes; across the random trials 21% of the unpruned nodes (Marek's rule: 30%). Not tested: required multiplicities (Marek's 2a), and the three-star board (no tiling holds two stars at the k tried: 60°+30° to k 4, 60°+90° to k 6).
+
+### 2026-10-26: targeted searches with `require`, in the engine and the app
+
+The vertex-cover rule from the experiment above is now in the engine. A board takes `require v1 v2 …` lines, each a set of vertex lines a tiling must hold one of; `initial`, given too, counts as one more set (at most 16). The roots are the smallest set's lines, placed first: every qualifying tiling holds one, and the engine finds a tiling only from its lowest vertex type, so each is found once from fewer roots. `vertex_order` and `classify` in tilesearch.cpp set this up for both binaries; tileestimate.cpp lost its copy of the ordering and applies the same `Required::may_add` test in its walker and the same final check at its leaves, so its estimates are of the targeted search. Boards without `require` take the old path unchanged.
+
+Proof (also as the comment above `struct Required`): on a branch of the unpruned search to a tiling T that meets every set, vertices are only added, so T's vertices still to come number at most the vertices left after the one being added, are of types from the root's on, and meet every set still missing; their distinct types bound the table's minimum, so the test lets the step through, and the final check passes. Every branch to such a T survives, so the search completes exactly the leaves it completed before, less those missing a set. Facts relied on, checked in the code: branches only add vertices (`extend` pops what it pushes); added types never fall below the root (`lower_bound(first_vertex)`); a task handed to another thread copies its `types`; joins add no vertex; the table is the minimum by its recurrence.
+
+Tests (log `experiments/results/required-sets-2026-10-26.log`, scripts in `experiments/required-sets-2026-10-26/`): sweep2.py runs random set systems per board against the committed engine (`stock-ref`, 2ac099e3) read back vertex by vertex from its certificates, and checks per trial that the copy's unpruned and cover modes match it per output file, that the cover mode completes exactly as many leaves as the unpruned one (the proof's claim, stronger than equal outputs), that the new `tilesearch` with real `require` lines (half the trials with one set as `initial`) matches it and outputs only tilings meeting every set, and that `tileestimate --exact` reports the one-thread engine's counts exactly. Two harness bugs found on the way (symmetric figures like `(A3)D12a` not expanded; certificates after the first in a file start with a blank line) and one driver bug (zsh does not split an unquoted `$spec`), all fixed and noted in the log. regress.sh compares the committed and the new engine byte for byte on boards without `require`.
+
+App: `require` lines parse, serialize (with their comments), are checked (a number past the vertices, more than 16 sets) on the engine's own lines, and are renumbered with `initial` when vertices move or go (`renumber` in board.ts; a set left empty goes). The vertex toolbar's Require turns the selection into a set labelled with the filter that found it; a face's Require this face makes the set of vertices holding its corners; the sidebar lists the sets; cards say which sets they are in. Checked end to end: the regular board with faces A12, A4 (Require this face) and A3 (filter, Select all, Require), k 1–5: 57 tilings, the ground truth's number.
+
+### 2026-10-26: TileSearch face selection, bulk require and the "required" badge
+
+Face cards take the vertex cards' selection: a hover box, shift-click ranges, Esc, and a toolbar with Select all, Require and Delete. Require on several faces adds one required set per face (the vertices holding its corners, labelled with its board line), so the search keeps the tilings holding every picked face; a face already required, or held by no vertex, is skipped. A face whose vertices are exactly a required set shows "required". The selection logic became `usePicks` and the toolbar `PickBar`, shared by both lists, and the face-to-vertices rule `verticesOfFace` is shared with the face editor's Require this face; picking in one list clears the other. Clear all on corners or vertices now clears the required sets too. Checked: faces A3, A4, A12 required and A6 deleted on the regular board, k 1–5: 24 tilings, the committed engine's own count for that board. About +90/−40.
+
+### 2026-10-26: roots ranked by cost, and progress by work
+
+Why a run's roots differ so much: root r searches only the vertex types from r on, so the first root searches with the whole alphabet and the last with one type. On the A6_30 draft board (132 lines, 1,063 types) at k ≤ 3 one root held 39% of the nodes and ten held 84%, so "80% of roots done" meant little.
+
+The order is free. Each node of the search (a partial tiling) is visited from exactly one start: the first of its types in the order. So the total is a sum over partial tilings of one tree each, and putting first the types that are cheapest to start from (smallest tree over the whole alphabet) should shrink it. Measured with exact node counts (`experiments/vertex-order-2026-10-26/order.py`, log `experiments/results/vertex-order-2026-10-26.log`): ranking root lines by the sum of their types' full-alphabet trees two vertices deep cut A6_30 to 2.1% of its nodes at k ≤ 3 and 2.7% at k ≤ 4, 123_1_4657 to 2.3%, s3 to 3.9%, 1247_1_0612 to 5.8%, s2b to 20%, and left r4, squares_edges and 123_1_4657_init13 (few roots) at 97–100%; never worse than the board as written. The reverse ranking was 100–510%, random orders 16–211%. Three deep ranked a little better but took 47 s on 123_1_4657, longer than its search, so the engine ranks two deep (~0.2 s). In the engine itself on A6_30: k ≤ 5 163M → 20M nodes (32 → 2.2 s), k ≤ 6 1,683M → 67M nodes (310 → 7.4 s), same tilings.
+
+Engine (`rank_roots`, `recorded_order` in tilesearch.cpp): a new run ranks its root lines (within the roots only; with `require`, within the smallest set) and writes the order to `solver_<name>/order.txt`; `--resume` reads it back, since roots.done numbers roots by their place in the order, and a run without order.txt (started before this) keeps the board's order. tileestimate uses the run's order.txt with `--skip`, else ranks the same way. Also fixed: `Required::missing` read `mask` even with no sets (harmless before, a crash for the unpruned ranking pass); it now stops at the first set met. verify.py checked, per board (A6_30 to k 5, 123_1_4657, its init13 variant, 1247_1_0612, squares_edges, r4, s2, s2b, s3, and A6_30 with two `require` sets): the ranked engine writes as many tilings to every output file as the committed one; `tileestimate --exact` equals the ranked engine's one-thread stats; a run killed after a few roots and resumed ends with the same files; and a run started by the committed engine, killed, and resumed by the new one keeps its order and its files. The app's estimate test pinned the leaf count (9,407), which depends on the order; it now pins the unique tilings and multiplicities.
+
+Progress: the engine's progress line ends with `nodes <n>` (threads add theirs every 4096). The app's existing ETA, which needed that, now runs, and the run page shows the share of the estimated nodes visited under the roots (of the roots left, after a resume); once the visits pass the estimate it says the estimate was low and drops the time left. On A6_30 k ≤ 7 the node estimate was within 7% (209M vs 226M), while the tiling-count estimate was 1,980 ± 500 against 3,196: the count is the heavy-tailed one. At k ≤ 20 neither order can be estimated (seeds differ 100×, se ≈ the estimate); all agree on millions of core-hours. Open: the node rate falls from ~12M/s to 3–5M/s over the second half of A6_30 k ≤ 7 (7.3 of 10 cores on average), either idle threads at the end or costlier deep nodes; not measured cleanly (another run shared the machine).
+
 ## TileSearch download buttons on the site (2026-10-26)
 
 `components/download-tilesearch.tsx`: detects the visitor's OS on the client (userAgentData, then
@@ -19707,6 +19889,33 @@ the Mac zip is 117 MB and every kept Vercel deployment copies public/. ⚑ The l
 exists. Open before publishing it: Marek's engine source has no license (build.sh), the Mac app is ad-hoc
 signed and not notarized (Gatekeeper asks for "Open Anyway"), and no Windows installer is built yet
 (tileestimate.exe missing; mingw-w64 is installed).
+
+### 2026-10-26: fail first, and exact option counts cached by local context
+
+Asked for further speedups, I first measured where the search goes (`experiments/search-speedups-2026-10-26/prof.cpp`, a walker over the engine's own tree through tileestimate; log `experiments/results/search-speedups-2026-10-26.log`). About 97% of nodes lead to no tiling; about 90% sit on the last vertex level, and 97% of those are dead on arrival (some free half-edge has no partner left). Isomorph rejection is not the lever: partial states isomorphic to one explored earlier in the same root cover only 2.5–7% of the nodes (exact canonical form of partial tilings, colour refinement then a breadth-first code), the full-tiling key never repeated, and leaves are 1% of the nodes (89% of them covers of smaller tilings; same tiling from ~1.5 starts). So no transposition table, canonical augmentation or orderly generation; the dead branches need look-ahead. A literature pass agreed (Knuth's Dancing Links picks the column with fewest rows; Brinkmann, McKay and von Nathusius' fullerene generator uses look-ahead, MATCH 48, 2003; Tegula's D-symbol enumeration is orderly generation, which addresses the 3%).
+
+Fail first: `choose_halfedge` branches on the free half-edge with the fewest options and ends the node when one has none. Options: free half-edges it glues to (try_joining's tests, each pair once since a glue is symmetric) plus, below the vertex budget, the new-vertex placements from the root's type on that pass. A6_30 at k ≤ 6: 66.9M → 1.6M nodes. On boards with few dead ends it loses (squares_edges, r4: 1.4–1.6x more CPU), so `choose_rule` runs the whole search to 2 vertices under both rules on the board's own order and takes fail first when it visits at most 60% of the old rule's nodes (star and isotoxal boards 15–45%, squares_edges and r4 82–83%). Deterministic from the board, so tileestimate decides the same; TILESEARCH_FACE_FIRST/TILESEARCH_FAIL_FIRST force a rule. The ranking pass and the pilot share `small_trees`.
+
+Exact counts, cached: counting new-vertex placements by the candidate list over-counts (a placement can fail its face test), and exact counts cut nodes another 1.2–4.6x but cost a vertex push and two face walks per placement. What decides a placement is local: the partial faces around the half-edge (walked away from it until a free half-edge, as `corner<T, true>` walks), its mirror flags, and the fresh vertex's neighbourhood of the glued half-edge. So `passing_pairs` caches, per thread and per context (a 128-bit hash), the placements that pass, from every type, sorted, so any root counts with one binary search and the vertex step tries only those. Within a context, placements whose templates look the same around the glued half-edge (`Candidates::sig`: its and its mirror's neighbours, labels, flags and coincidences) pass or fail together, so a miss is one face test per signature. Two keys failed validation before this one (the walk direction, then the mirror wrap-around); the final ones were checked at every cache hit (prof VALIDATE=1, 6 boards) and against every placement's own test (-DCHECK_PASSING, 9 boards). A6_30 k ≤ 6: 1.6M → 0.33M nodes, CPU 3.8 → 1.6 s; 1247_1_0612 k ≤ 5: 8.2M → 1.0M nodes, CPU 14.3 → 9.9 s; a cold cache costs up to a second on small runs. The cache is emptied at about 40 MB a thread. Also fixed on the way: a pilot that ran before `--dump` would have slowed the app's board check.
+
+Measured and dropped: a one-vertex budget bound (with one vertex left, a type must take every half-edge with no partner): 2–5%; lazy exact counting (refine only the most promising): no change, the gain is in dead detection; breaking ties by the old rule: slower.
+
+Correctness: verify.py on 10 boards (A6_30 to k 5, 123_1_4657 and its init13 variant, 1247_1_0612, squares_edges, r4, s2, s2b, s3, A6_30 with two `require` sets) under the automatic rule, fail first forced and the old rule forced: every output file holds as many tilings as the committed engine's, `tileestimate --exact` equals the engine's one-thread stats, and stop/resume gives the same files: 90/90.
+
+Effect: on the A6_30 draft board, with this morning's ranking, the committed engine took 310 s for k ≤ 6 and over 90 minutes for k ≤ 7; the new one does k ≤ 10 in 27 s. Its k ≤ 20 estimate went from 10^16–10^18 nodes (millions of core-hours, seeds 100x apart) to ~3.3e11 nodes, 600–1,600 core-hours, seeds within 4%; real runs at k ≤ 8 and 10 came in 5–25% above the estimate, so read it as low thousands of core-hours. Not done: a cache shared between threads (each thread warms its own), and the parallel tail noted earlier.
+
+### 2026-10-26: round two on the search: newest first, a shared context cache, deeper ranking
+
+Re-profiled the final engine first (log `experiments/results/search-speedups-2026-10-26.log`, "round 2"). On star and isotoxal boards 2.5–10% of nodes lead to a tiling and the last vertex level holds 60–80% of the nodes, 88–98% of it childless; 123_1_4657 and squares_edges are ~48% productive with leaves reached 4–5 times.
+
+Kept:
+- **Newest first.** 50–80% of the dying last-level nodes on star boards have a half-edge on the newest vertex with no partner even by labels, and the chooser found it last. Scanning free half-edges newest first: A6_30 k ≤ 8 −22% CPU, 1247_1_0612 −8%, s2 −15%, 123_1_4657 neutral.
+- **A shared context cache.** Each thread's table now falls back to one shared, sharded table before computing a context. The first version lost tilings (66 of 27,020): the rule pilot and the ranking build their own vertex classifications with other type numbers, and their cached lists leaked into the search. Keys now carry the candidate table's id; the per-thread cache had the same hazard and was safe only because each phase runs on fresh threads. Gain: 1247_1_0612 k ≤ 5 −25% CPU, 123 −5%, A6_30 neutral.
+- **Ranking three vertices deep under fail first** (two under the face rule). Ranking still matters (without it 2.5–20x more nodes); depth 3 vs 2 cut A6_30 k ≤ 10 from 22.6M to 12.6M nodes and s2/s3 4–5x, for under 0.2 s of startup; depth 4 adds little for up to 1.7 s; under the face rule depth 3 made squares_edges 18% worse.
+
+Measured and dropped: caching glue results by the pair of contexts (validated with -DCHECK_JOINS, but 0–40% slower: hashing two contexts costs more than the short face walks); a canonical start vertex by ring code (loses tilings with a naive code, which is not invariant under template alignment and mirror builds, and would save only 0–7%, since rings complete near the leaves). Thread scaling is within ~20% of this 4 P + 6 E core machine (A6_30 k ≤ 10: 26.6 s on one thread, 5.75 s on eight).
+
+Net, round two vs round one: A6_30 k ≤ 10 10.6 → 6.4 s wall, CPU 81 → 45 s; the k ≤ 20 estimate does not move measurably (the deeper ranking helps to k ≈ 12). verify.py: 90/90 again. About +45/−12 lines in tilesearch.cpp.
 
 ## TileSearch 0.2.0 released for macOS and Windows (2026-10-27)
 
@@ -19726,3 +19935,243 @@ gzopen on it goes to zlib's gzopen_w). zlib 1.3.1 built with its win32/Makefile.
 is on a Windows PC. ⚑ Not signed or notarized on either OS; the release notes give the Open Anyway /
 Run anyway steps. ⚑ The tag points at master 337c4f07; the app source of this build is uncommitted on
 searcher-ui.
+
+## TileSearch: freedraw Quick setup, overlap pruning, a startup 7x faster (2026-10-28)
+
+Prompted by Marek's list of computing priorities (more edge freedraw, lowest k per 4-valent combination,
+apeirogon schemata, scaled hybrids) and AL's stars board: 24 corners, 14 faces, 5,000 permuted vertex
+lines (77,075 root types to the engine). Log: `experiments/results/tilesearch-overlap-prune-2026-10-28.log`.
+
+**Quick setup, edge systems.** A "Search for: Tilings / Edge systems (freedraw)" choice. An edge system's
+vertex is a cyclic order with a digon in any subset of the gaps between its faces (at most one per gap:
+the engine treats a digon as a face and would accept two stacked), and none with exactly one marked edge
+unless "loose ends" is ticked: Marek's edge systems have no vertex of degree 1 (the 2026-07-22 cross-check).
+`arrangements()` in corners.ts; from the square alone it rebuilds `squares_edges`' five lines exactly.
+Orders go out with Permutations off; adding to a board read the other way spells its sets out as orders.
+
+**Overlap.** `overlapping()` / `fittingOrder()` in figures.tsx lay a vertex's faces out in the plane and
+test each pair (proper side crossings, or a stretch of one side strictly inside the other face). On the
+stars board 73,490 of 74,264 cyclic orders overlap and 4,534 of the 5,000 sets overlap in every order.
+Checked against the engine: a board of only the 774 fitting orders (Permutations off) gives the same
+census at k = 1, 2, 3 (26 / 49 / 145) as the full board, in 2,230 / 8,180 / 33,560 nodes against
+106,614 / 86,248 / 120,484. Pair results depend only on (corner, corner, turn) and are memoized per board,
+which took classifying the board from 359 s to 0.47 s. Vertex cards draw an order that fits, warn when
+none does, and a "Remove N that never fit" prune joins the others; Quick setup in the plane leaves out
+sets that never fit and offers "only the orders that fit" (on by default when any set was left out).
+⚑ The test is plane-only (plane angles must close); hyperbolic boards are not checked.
+
+**Startup.** Before its first root the engine printed nothing for over 7 minutes on that board:
+- `Candidates` tested every one of the 4·(letters+1)² keys per (type, half-edge); it now visits only the
+  keys whose letters can sit beside the half-edge's corners. Same lists, same order.
+- His rule's pilot ran 177.6M nodes (6 min) against fail first's 0.98M to reach the same choice. Fail
+  first now runs first and the other pilot stops once past `fail / 0.6` nodes, where the choice is settled.
+- The two pilots and the ranking share one set of tables (one build, not three).
+- `.part/<root>` folders are made when a root first has output (77,075 empty folders took 12.6 s).
+- `--progress` now prints `stage tables|pilot1|pilot2|rank <done> <all>`; the app shows it in place of the
+  roots bar until the first `roots` line.
+Startup is now ~45-65 s on a machine shared with other runs (pilots ~10 s, ranking ~17-30 s). Board ->
+Runs was slow for another reason: `parse()` compared every vertex with every earlier one for duplicates,
+17.3 s on 5,000 vertices; a key map makes it 21 ms.
+⚑ tileestimate runs the same pilots and ranking next to the search, so the startup is paid twice at once.
+
+**star24full cross-check (later the same day).** A TileSearch board of the star24full palette (48 tiles;
+5,810 fitting cyclic orders, Permutations off) gives 44 / 74 / 169 / 391 at k = 1..4, exactly the atlas
+catalogue of 2026-08-07, in 18 s (3.2 s of search). Log: `experiments/results/tilesearch-star24full-check-2026-10-28.log`.
+Listing the closing sets first could not build that board: 247,146,988 multisets of at most 12 corners
+close. `fittingVertices()` (figures.tsx) builds the orders face by face with the memoized pair test and
+took 4.5 s; Quick setup in the plane now uses it whenever every corner can be laid out (else the old
+listing, e.g. apeirogons). ⚑ Quick setup used to cut its output at 5,000 vertices with only a "+" to
+show it: AL's stars board held 5,000 of 20,620 closing sets, and 117 fitting orders were never on it.
+The cap is gone. The stars run of 28 Oct 11:40 (6,291 tilings, k ≤ 8) is not affected: its board was
+rebuilt with "only the orders that fit" and holds exactly the generator's 891 orders (877 initial, the
+14 others regular-only).
+
+**Families folded in TileSearch.** `families.ts`: an exact canonical form of a certificate's map (the
+darts from `decode`, walked over the vertex turn, the gluing and the mirror copy, least code over the
+starts in both orientations) with each star corner read as "point/dent of an n-star" whatever its α;
+tilings with one form are one family, and the pinning test (pin_test.py's rank) says which flex. First
+version walked only turn and gluing: maps with a mirror site never connected, every one got the empty
+key, and 33 star tilings folded to 16 with four "families" that could not flex. `decode` now returns
+the mirror copy and an unconnected map throws. On star24full: 33 / 54 / 108 / 240 star tilings fold to
+19 / 42 / 104 / 230 with 4 / 6 / 2 / 5 families, the atlas's in-ring shelf exactly (its 23 / 46 / 108 /
+230 add 4 / 4 / 4 / 0 out-of-ring records), 17 families as it reported; with real corner names all
+2,221 certificates tried keep distinct forms. AL's 30°-grid stars run folds only at k = 1 (17 -> 14):
+on that grid most flexing tilings have one member. The run view has a "Fold families" fact, in batches
+of 100 so the window stays live (9 s for 6,291 certificates). `families.test.ts` runs the engine on
+star24full k <= 2 and checks 19 / 42.
+
+**Folded runs, shown folded.** `fold.ts` keeps a run's fold for the whole run view: the headline and the
+k chart count each family once, the thumbnails show a family once (its first member, badged ×members),
+and the big view of a family carries a slider through its members' point angles, interpolating linearly
+between neighbours (every vertex sum is linear in the points, so it stays 360°), drawn by `flatCell` with
+`morphTurn` and `keepView` so the camera holds. On star24full k <= 5 (21 families) all 20 sliders draw
+at every quarter step (204 frames); the 21st has two point angles in one species and shows once without
+a slider.
+
+## TileSearch: start from the cheapest required set; fail first always (2026-10-28)
+
+AL's board of A6 stars and C6 hexagrams (two required sets) went from 8.4 s to 248.5 s (k <= 10) once the
+vertices that never fit were removed. Two causes, both in what the engine settles before searching, and
+the vertex removal only tipped them:
+
+- **The branching pilot flipped.** At 2 vertices fail first measured 814 nodes against 1,055 for his
+  rule, past the 60% threshold, so the engine took his rule: 23M nodes against 1.36M at k <= 8 (on the
+  old board his rule costs 278M against 0.21M). Calibrated over 93 boards (AL's runs plus the repo's;
+  `experiments/results/tilesearch-rule-calibration-2026-10-28.log`): fail first visits fewer nodes on
+  every one; his rule's search was at most 1.14x faster (squares_edges 6.4 vs 7.2 s, test 1.73 vs 1.96 s),
+  and on 21 boards it ran past a 20 s cap that fail first finished in under 1.5 s. The wall-time wins his
+  rule seemed to have were fail first's deeper root ranking (14 s of startup for a 2 s search on `test`).
+  No pilot threshold separates the boards, so the pilot is gone and fail first is the rule;
+  TILESEARCH_FACE_FIRST=1 still forces his.
+- **The start set was chosen by line count.** The search starts from one required set, the one with
+  fewest lines; removing vertices made the star set (38) smaller than the hexagram set (42), and
+  starting from stars costs 6-7x the nodes (swapping only the order of the two require lines on the old
+  board, which broke a 62/62 tie the other way, reproduced it: 0.21M -> 1.46M). `choose_roots` now runs
+  each set's roots to 3 vertices under fail first and starts from the cheapest (1,268 vs 4,276 nodes
+  here). It prints `roots: from required set N (...)` and shows as the `roots` stage in the app.
+
+Result: 248.5 s -> 5.6 s, 72 tilings either way, and each variant of the board (old, new, swapped,
+as sets) now starts from the hexagram. `plan()` holds the start set, rule and ranking for both
+tilesearch and tileestimate; a resume finds its start set again from order.txt (older runs fall back to
+the fewest-lines set they used). Checked: the previous engine forced to fail first and the new one are
+byte-identical single-threaded where neither changes (squares_edges k <= 4, hybrid_2_9830, 1247_1_0612,
+k = 1); a run stopped after 20 of 70 roots resumes to the same census.
+⚑ Fail first's 3-deep root ranking can cost more than the search at small k (`test`, k <= 3: 14 s to
+rank, 2 s to search). Ranking no deeper than kmax - 1 would fix that; not done.
+
+**Free angles, and the grids that replace them (2026-10-28).** A board with one free-point star per n
+({3,4,6,8,12,24}) does not search: a free point has no lower bound, so a vertex can hold twelve spikes in
+any mix, and the vertex words did not finish generating in 10 minutes. AL's observation fixed that half:
+two star points (sides of one edge) never sit side by side, since the side between them ends in both
+dents, each over 180°; with at most one dent per vertex that bounds a vertex at 5 points and 10 corners,
+and the board became 36,455 words in 8 s (none of 6,865 star tilings has two points side by side; a
+point beside a dent is common, 1,897 of them). The search still did not: free angles defeat the overlap
+pruning, and the first pilot was a quarter done after 10 minutes. Stopped (log tilesearch-free-alpha-*).
+The grids do the job instead: a rigid tiling's points solve integer equations over angles that are
+multiples of 15°, so they lie on a finer grid. Off-15° tilings at k <= 3, starting only from vertices
+with an off-grid star (logs tilesearch-grid48 and tilesearch-grid-star{72,96,144}-*):
+7.5°: 22/24/8, 5°: 44/48/16, 3.75°: 66/72/24, 2.5°: 110/120/40. Every one flexes and folds into a family
+star24full already holds: no new rigid tiling and no family missing from the 15° grid, up to k = 3.
+Board building dominates (2.5°: 282 star kinds, 248,674 orders, 14 min; search 3.5 min).
+The theorem is now `pointsTouch`/`pointsCanPart` (corners.ts): Quick setup off the plane drops sets that
+cannot part their points and orders that do not; `fittingVertices` checks it before laying faces out,
+which halves its time (star24full 2.8 -> 1.4 s, same 5,810 orders).
+
+## The overlap test forgot mirror images (2026-10-29)
+
+Two tooth runs disagreed at k = 1 (8 vs 7). The one built with Quick setup's "only the orders that fit"
+lacked the order 90·90·30·60·60·30, which the permutations run tiled with. The overlap test in
+`figures.tsx` laid each face out in its walked hand only, but boards read a face and its mirror image as the
+same face (board-format.md), so for a face with no mirror symmetry it dropped every order needing a
+turned-over copy. `cornerAt` now lists each corner's places in both hands, deduplicated. The rebuilt tooth
+board keeps all 1,004 orders, adds 371, and reproduces the permutations census exactly (4,067 at k ≤ 4).
+Of the 39 explicit-order boards written since 2026-10-28, only the two tooth runs and `shapes/A6a30`
+(one order) were affected; stars and regular faces are symmetric and came out identical.
+Log: `experiments/results/tilesearch-tooth-mirror-2026-10-29.log`.
+
+## Edge types in TileSearch (2026-10-29)
+
+AL asked for the atlas engine's edge types in TileSearch: an edge's type as a decoration (drawn or hidden,
+bump or bite) or a property (length), with a gluing rule. Marek's engine has no edge, only corner labels
+and face words, so a type cannot ride on a glue. It rides on a corner instead: every side carries a 180°
+corner at its middle, named by the type, and the vertex lines pairing those corners are the gluing rule
+(`vertex Ed Ed` like to like, `vertex EB EI` bump to bite). Two-corner vertices are already budgeted apart
+and never count toward k, so k is unchanged. No change to the search.
+
+Checked against the atlas engine before building anything, then again through Quick setup's own path in
+`edges.test.ts`: square grid with drawn and hidden sides 18 / 271 / 2,754 / 21,967 (fdsq/fdsq2), bubble
+squares 11 / 102 (bubble-sq; k = 3 gives 693, never run before), 45-45-90 triangles and squares by length
+16 / 161 / 1,132 (tri45all's corrected per-palette count). Every certificate up to k = 2 draws.
+
+What landed: an `edge <sym> [length L] [drawn|hidden|bump|bite]` line (engine reads it as `angle sym 180`;
+board-format.md), edge corners read as Pi everywhere a face's shape is judged (`flatOf`), faces walked with
+each type's length, darts given lengths and drawn flags in the plane develop, bump and bite sides curved
+with the atlas's `pushEdge`, Quick setup's third mode (presets that type every face's sides up to its
+symmetry, plus gluing lines), and the corner dialog's Edge type box (length, style, glues to).
+
+Limits. Off the plane, edge types search but draw as plain sides (no hidden or bump drawing in the disk).
+A vertex cannot yet constrain the types round it (no loose ends): that needs the types in the corner names
+too. A corner shared by faces of different shapes (the 90° of a triangle and of a square) turns the overlap
+filter off, so such boards run with Permutations on. Log: `experiments/results/tilesearch-edge-types-2026-10-29.log`.
+
+## A manual branching rule in TileSearch (2026-10-29)
+
+The automatic rule choice decided the tooth board (234 sets, k ≤ 4) from k = 1 alone: the face rule's k = 2
+trial overran the 2M-node planning budget, the loop then dropped every k = 2 measurement, and k = 1 favoured
+the face rule (9,040 vs 16,679 nodes) although at k = 2 it takes 4.9M against 354K. The run was predicted at
+about an hour where the 27 Oct engine took 73 s. RunOptions now carry `rule` (fewest | face, absent = auto),
+set from the board sidebar and the Improve / Run again modal, kept on Resume, and passed to tilesearch and
+tileestimate as TILESEARCH_FAIL_FIRST / TILESEARCH_FACE_FIRST. Caveat: a forced rule ends planning after k = 1,
+so its prediction is tiny, the root-ranking cap falls to 1M nodes and ranking is skipped ("roots in the board's
+order"); forced fewest options took 466 s on the tooth board (on a loaded machine). The planner fix (measure the
+other rule at the k where one overran; keep predicting with one rule) belongs in tilesearch.cpp's plan().
+
+### Edge types: corners that name their sides, and loose ends (2026-10-29, later)
+
+AL's square-grid run on the first edge-type board found far more than his digon run (1.3M expected at
+k <= 6 against 332,965): the digon board forbids loose ends, and a plain vertex line cannot see its sides'
+types, so the edge-type board could not. Quick setup's presets now name each corner with its two sides'
+types (`A4.Ed.Eu`, sorted, as a face reads the same mirrored), and type each plain vertex into every edge
+pattern round it: the side between corners i and i+1 is s_i on i's face and its glue partner on i+1's. The
+number of drawn sides at a vertex is half the drawn letters in its corner names, so the rule is exact. The
+square vertex gives 6 patterns, 5 without loose ends. Measured: no loose ends 13 / 153 / 1,254 (his digon
+run: 13 / 153 / 1,254 / 7,848 / 43,792 / 279,905), loose ends 18 / 271 / 2,754, bubbles 11 / 102 / 693 as
+before. `plainOf` strips a typed board back, so Quick setup run twice writes the same board; the gluing
+lines are always listed (they were listed only when missing, which made the vertex count change between
+runs). `cornerShapes` reads a typed corner as its base corner's shape.
+
+### Bubble sides in the hyperbolic disk (2026-10-29)
+
+TileSearch's first hyperbolic bubble run ({4,5}: 31 / 955 / 25,762 / 1,108,181 at k = 1..4, 29 s, in the
+runs folder under hyperbolic/bubble) drew every tiling as the same {4,5} grid: the disk had no bumps, and
+all faces are squares. Two changes. Boards whose faces of one shape differ only by their corners (bubble
+tiles, colourings) now draw in the disk's colours mode, one colour per board face. And the per-pixel
+renderer curves bubble sides: `Darts.bump` (+1 bump, −1 bite, per dart at its corner) makes `buildWalk`
+store, per slot, the isometry that puts the slot's whole side (corner to corner through its flat middle)
+on [−a, a] of the real axis. There the bulge is the circle arc through ±a of height h·a, h = tan(θ/2) with
+θ = min(30°, 0.4 × the sharpest corner); the shader recolours a point inside a bite's bulge with the face
+across and strokes the arc in place of the geodesic. The curve is defined in the side's own frame, so the
+two faces of a side draw the same arc. Records without `bump` take none of this path.
+
+### Required faces (2026-10-29)
+
+AL required all 13 bubble hexagons ("require all") and got all 65 tilings, single-variant ones included.
+The editor's face Require wrote vertex sets (the vertices with the face's corners), and every hexagon has
+corner A6, so all 13 collapsed to `require 1` = the only real vertex: a requirement every tiling meets.
+Typed corners would not fix it, since many variants share each typed corner. New engine statement
+`require face <word> [x m] [| face …]`: on each finished tiling the engine walks its quotient faces
+(right label, cw step, the face checker's walk) and needs, for every line, one listed face whose word is
+the walked cycle repeated, up to turning and mirroring. Exact, not pruning. Checks: per-shape lines on
+tri+sq+hex bubbles 6 / 123 / 1,436 (= the vertex-set run), one hexagon 5 / 78 / 398 (= the app's decoder
+filtering the free run). The first version reported 0 / 1 / 8: a `break` left only the inner loop, so a
+later listed face reset the hit; fixed before anything shipped. The editor's Require each / Require any /
+Require this face now write face lines; the sidebar lists them. All 13 variants at k <= 3 is impossible
+anyway: face orbits <= corner orbits <= 3k.
+
+### Colourings in TileSearch's Quick setup (2026-10-29)
+
+The engine always searched colourings (Marek's `triangles_2_colors`: faces A3 and B3, colours as letters);
+what was missing was a way to set one up and a drawing that colours by colour. `colorize` (corners.ts)
+writes every plain face once per colour, its corners named `A4@A`, `A4@B` (read as A4 wherever a shape is
+judged, like typed corners), and turns each plain vertex into every colouring of its corners. Options:
+"use every colour" = one required vertex set per colour (the vertices with a corner of it: exact, and it
+prunes), and "neighbouring faces differ" = no two corners side by side at a vertex in one colour (they are
+the two faces across the edge between them). `faceColors` (develop.ts) colours plane and disk by the
+colour letter, so colour A is one colour across shapes. Checked against the Colors shelf through the Quick
+setup path (`edges.test.ts`): squares 2 colours 8 / 53 / 309 / 1,292, triangles 2 colours 9 / 54 / 556,
+squares 3 colours using all three 9 at k = 1. ⚑ The shelves are not uniform about one-colour tilings: the
+2-colour shelves keep all-A and all-B (squares k = 1 is 8; 6 use both colours), the 3-colour shelves are
+surjective. Swapping colours as an equivalence is not built (labelled colours, as the atlas).
+
+### Colourings up to permuting the colours (2026-10-29)
+
+AL: two 3-colourings that differ by a permutation of the colours are one colouring; dedup should be under
+translation, rotation, mirror and colour permutation. The engine dedups per root, and a colouring and its
+recolouring can have different least vertex types, so they come from different roots: a shared set would
+work but costs memory across threads. Instead each tiling is written only when its canonical form is the
+least over the recolourings that map the board onto itself (`find_recolorings`, `canonical_form` with a
+label map): one representative per class, no shared state. Default `colors unlabeled`; `colors labeled`
+keeps the atlas convention. Independent check: the Colors shelf's own records, grouped in Python under
+lattice translations, D4 and colour permutations on a 12x12 to 16x16 window, give squares 2-colour
+5 / 30 / 166 and 3-colour 3 / 58 (k = 1 / 2), equal to the engine's unlabeled counts; labeled stays
+8 / 53 / 309 and 9 / 285.
