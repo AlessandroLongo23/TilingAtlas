@@ -103,6 +103,23 @@ before asking AL how to run one.
 
 After every code change, run `pnpm build` to check for errors and warnings before reporting the task complete. `pnpm lint` and `pnpm test` are not substitutes — only a full build surfaces the real issues.
 
+## TileSearch: rebuild and reinstall after every change (durable; AL directive, 2026-10-28)
+
+**When you finish any work on the TileSearch app (`tools/searcher/`: the Electron app in `app/`, or
+the `tilesearch`/`tileestimate` engines), rebuild it and replace the installed copy before reporting
+done.** A green `node build.mjs` only rebuilds `app/dist/`; AL runs the installed app, so until it is
+replaced the change does not exist for AL.
+
+1. Package: `tools/searcher/app/build.sh mac` (builds the engines, then electron-builder) →
+   `tools/searcher/app/release/mac-arm64/TileSearch.app`.
+2. Quit the running app if open (`osascript -e 'quit app "TileSearch"'`).
+3. Rotate, keeping one fallback: remove `~/Applications/TileSearch-previous.app`, move
+   `~/Applications/TileSearch.app` to `TileSearch-previous.app`, and `ls` to check it landed.
+4. Install: `ditto` the new `release/mac-arm64/TileSearch.app` to `~/Applications/TileSearch.app`,
+   then check its modification time.
+
+Say in the report that the app was reinstalled, or why it could not be.
+
 ## EVERYTHING WE HAVE GOES IN THE ATLAS (durable; AL directive, 2026-08-31)
 
 **There is no situation in which we do not add tilings we already have.** A corpus that developed
