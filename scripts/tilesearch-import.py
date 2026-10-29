@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""tilesearch-import.py: a TileSearch run folder → staged atlas records and one coverage row.
+"""tilesearch-import.py: a Tiling Searcher run folder → staged atlas records and one coverage row.
 
 A run from the app is a search over the tiles its board names, often far fewer than a shelf's class, so it
 goes into the atlas as two separate things:

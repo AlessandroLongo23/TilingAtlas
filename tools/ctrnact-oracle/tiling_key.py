@@ -89,7 +89,7 @@ def _gridder(tiles, b0, b1):
 
     A centroid's own fractional coordinates are irrational in general, so rounding each one alone can put
     two translates of one tile a grid step apart: float error from a long walk is enough on a k = 10 cell,
-    and the lookup then misses (34 of 24,455 TileSearch tilings, 2026-10-25). The DIFFERENCE between two
+    and the lookup then misses (34 of 24,455 Tiling Searcher tilings, 2026-10-25). The DIFFERENCE between two
     same-label centroids is a period or a period plus a fixed offset, a fraction of small denominator, so
     rounding the difference is stable. Every consumer only compares positions within one label.
     """
@@ -378,7 +378,7 @@ def canonical(labels, sigma, alpha):
             # A labelling is read with angles (`corner_angles`), and dart d carries the corner at the START of
             # its edge. Walked backwards, the mirror image's edge starts at the other end, so position i's
             # corner is sigma[d]. Without this a tiling and its mirror image got different angle words
-            # whenever the tiles are not regular: TileSearch and the star shelf emit opposite mirror images
+            # whenever the tiles are not regular: the Tiling Searcher and the star shelf emit opposite mirror images
             # of one tiling, and every one of them came out as a different tiling (2026-10-25).
             cur = order if perm is sigma else [sigma[d] for d in order]
             if best is None or enc < best:
@@ -470,7 +470,7 @@ def family_subspace(rec, samples=8, refined=False):
     linear algebra once the darts are aligned, and neither answerable by sampling parameters and hoping
     two grids meet.
 
-    `refined` retries a cell that is not edge-to-edge as given (a TileSearch face with Pi corners, the
+    `refined` retries a cell that is not edge-to-edge as given (a Tiling Searcher face with Pi corners, the
     scaled shelf) with every T-junction named (`refine`), so it keys instead of coming back unkeyable.
     Only on failure: refine is brute force, seconds on a k = 10 cell, and a no-op on an edge-to-edge one.
     Off by default, so shelf-dedup.py's results stay what they were.

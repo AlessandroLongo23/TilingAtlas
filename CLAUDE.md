@@ -103,20 +103,21 @@ before asking AL how to run one.
 
 After every code change, run `pnpm build` to check for errors and warnings before reporting the task complete. `pnpm lint` and `pnpm test` are not substitutes — only a full build surfaces the real issues.
 
-## TileSearch: rebuild and reinstall after every change (durable; AL directive, 2026-10-28)
+## The Tiling Searcher: rebuild and reinstall after every change (durable; AL directive, 2026-10-28)
 
-**When you finish any work on the TileSearch app (`tools/searcher/`: the Electron app in `app/`, or
+**When you finish any work on the Tiling Searcher (`tools/searcher/`: the Electron app in `app/`, or
 the `tilesearch`/`tileestimate` engines), rebuild it and replace the installed copy before reporting
 done.** A green `node build.mjs` only rebuilds `app/dist/`; AL runs the installed app, so until it is
-replaced the change does not exist for AL.
+replaced the change does not exist for AL. (Called TileSearch until 2026-10-29; the engines keep that name.)
 
 1. Package: `tools/searcher/app/build.sh mac` (builds the engines, then electron-builder) →
-   `tools/searcher/app/release/mac-arm64/TileSearch.app`.
-2. Quit the running app if open (`osascript -e 'quit app "TileSearch"'`).
-3. Rotate, keeping one fallback: remove `~/Applications/TileSearch-previous.app`, move
-   `~/Applications/TileSearch.app` to `TileSearch-previous.app`, and `ls` to check it landed.
-4. Install: `ditto` the new `release/mac-arm64/TileSearch.app` to `~/Applications/TileSearch.app`,
-   then check its modification time.
+   `"tools/searcher/app/release/mac-arm64/The Tiling Searcher.app"`.
+2. Quit the running app if open (`osascript -e 'quit app "The Tiling Searcher"'`).
+3. Rotate, keeping one fallback: remove `~/Applications/The Tiling Searcher-previous.app`, move
+   `~/Applications/The Tiling Searcher.app` to `The Tiling Searcher-previous.app`, and `ls` to check
+   it landed. Quote every path: the name has spaces.
+4. Install: `ditto` the new `release/mac-arm64/The Tiling Searcher.app` to
+   `~/Applications/The Tiling Searcher.app`, then check its modification time.
 
 Say in the report that the app was reinstalled, or why it could not be.
 

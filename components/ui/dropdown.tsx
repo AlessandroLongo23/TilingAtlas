@@ -15,7 +15,7 @@ export interface DropdownOption<T> {
 }
 
 /**
- * A menu of choices on a button, used for every single choice from a list in the Atlas and TileSearch
+ * A menu of choices on a button, used for every single choice from a list in the Atlas and the Tiling Searcher
  * (there are no native <select>s left). The popup scales and fades in, the pointer's highlight glides
  * between options (HoverPill), and the keyboard moves the same highlight.
  */

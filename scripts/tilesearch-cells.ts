@@ -1,4 +1,4 @@
-// The TypeScript half of scripts/tilesearch-import.py: a TileSearch run folder, and the atlas tilings it
+// The TypeScript half of scripts/tilesearch-import.py: a Tiling Searcher run folder, and the atlas tilings it
 // could duplicate, as plain render cells. Nothing here decides identity; tiling_key.py does, on both sides.
 //
 // It reuses what draws these tilings already: the app's decoder and developer (tools/searcher/app/src)

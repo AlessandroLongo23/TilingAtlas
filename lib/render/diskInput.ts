@@ -1,5 +1,5 @@
 // The gestures of an embedded Poincaré disk. /play's disk reads pan and rotation from the global store,
-// which its p5 layer writes; an embedded disk (the landing wall's Hyperbolic cell, TileSearch's results)
+// which its p5 layer writes; an embedded disk (the landing wall's Hyperbolic cell, the Tiling Searcher's results)
 // must not steer that store or be steered by it, so useDiskInput writes a per-instance
 // HyperbolicViewInput, which HyperbolicCanvas takes through its `input` prop.
 //

@@ -648,7 +648,7 @@ const exactGeometry = (shapes: Map<string, Shape>, word: string[]): Geometry | u
 	if (!Number.isFinite(sum)) return undefined;
 	return Math.abs(sum - 2 * Math.PI) < 1e-9 ? "plane" : sum < 2 * Math.PI ? "sphere" : "hyperbolic";
 };
-// vertexFigure speaks the site's geometry names; TileSearch's are "plane" and "sphere"
+// vertexFigure speaks the site's geometry names; the Tiling Searcher's are "plane" and "sphere"
 const SITE = { plane: GEOMETRIES.EUCLIDEAN, sphere: GEOMETRIES.SPHERICAL, hyperbolic: GEOMETRIES.HYPERBOLIC } as const;
 const exactSite = (shapes: Map<string, Shape>, word: string[]) => {
 	const g = exactGeometry(shapes, word);

@@ -1,7 +1,7 @@
 {
 	"name": "tilesearch",
-	"productName": "TileSearch",
-	"version": "0.3.0",
+	"productName": "The Tiling Searcher",
+	"version": "0.3.1",
 	"private": true,
 	"description": "Runs Marek Čtrnáct's tiling engine on a board file",
 	"main": "dist/main.cjs",
@@ -20,7 +20,7 @@
 	},
 	"build": {
 		"appId": "atlas.tiling.tilesearch",
-		"productName": "TileSearch",
+		"productName": "The Tiling Searcher",
 		"directories": {
 			"output": "release"
 		},
@@ -34,7 +34,7 @@
 				"zip"
 			],
 			"category": "public.app-category.education",
-			"artifactName": "TileSearch-mac-arm64.${ext}",
+			"artifactName": "TheTilingSearcher-mac-arm64.${ext}",
 			"identity": "-",
 			"extraResources": [
 				{
@@ -49,7 +49,7 @@
 			"hardenedRuntime": false
 		},
 		"win": {
-			"artifactName": "TileSearch-windows-x64.${ext}",
+			"artifactName": "TheTilingSearcher-windows-x64.${ext}",
 			"target": [
 				{ "target": "nsis", "arch": ["x64"] },
 				{ "target": "zip", "arch": ["x64"] }
@@ -66,7 +66,7 @@
 			]
 		},
 		"nsis": {
-			"artifactName": "TileSearch-windows-x64-setup.${ext}",
+			"artifactName": "TheTilingSearcher-windows-x64-setup.${ext}",
 			"oneClick": false,
 			"allowToChangeInstallationDirectory": true
 		}

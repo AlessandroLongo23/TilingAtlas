@@ -3,7 +3,7 @@
 // A dart instance is (quotient dart h, vertex position, heading): `rneig` pivots about the shared vertex
 // by the turn of the corner crossed, `glue` walks the edge and turns around. The callers differ only in
 // where the turn and length of each dart come from (the pentagon and isohedral boards solve them from a
-// parameter point; TileSearch reads them off a board's angles), so they hand over the two arrays and this
+// parameter point; the Tiling Searcher reads them off a board's angles), so they hand over the two arrays and this
 // does the rest. Structurally a `DevelopedWalk` (lib/freedraw/edgePatchCore.ts).
 
 /** A chord-local bow, [t1, s1, t2, s2], as lib/isohedral/edge-board.ts defines it; null when straight. */

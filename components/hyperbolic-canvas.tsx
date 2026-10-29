@@ -122,7 +122,7 @@ export function HyperbolicCanvas({ tiling, mode, input, diskPadPx = DISK_PAD_PX 
 			glRef.current?.dispose();
 			glRef.current = null;
 			// Release the context once the canvas has left the page, not at GC: browsers cap live contexts
-			// (~16) and drop the oldest past it, so a view that mounts one disk after another (TileSearch
+			// (~16) and drop the oldest past it, so a view that mounts one disk after another (the Tiling Searcher
 			// stepping through tilings) otherwise evicts live canvases. A tick later, and only if detached:
 			// Strict Mode's re-run keeps this canvas and must find its context alive.
 			setTimeout(() => {

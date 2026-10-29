@@ -36,7 +36,7 @@ export interface Darts {
 	 *  …) of the base face each quotient dart belongs to — constant along a quotient face. Fills each
 	 *  developed face with its solver-assigned color; every edge is a real tile boundary. Absent otherwise. */
 	faceColor?: number[];
-	/** Bubble boards (TileSearch edge types): per quotient dart, +1 when the corner at it is the middle of a
+	/** Bubble boards (the Tiling Searcher's edge types): per quotient dart, +1 when the corner at it is the middle of a
 	 *  BUMP side of its face, −1 a BITE side, 0 neither. The disk curves those sides (hyperbolicWalk.ts
 	 *  `bump`): a bump bulges out of its face into the bite of the face across. */
 	bump?: number[];

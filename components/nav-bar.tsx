@@ -1,5 +1,5 @@
 // The header bar's pieces: the bar, its mark and brand, the rule after the brand and the link style. The
-// atlas's Nav (components/nav.tsx) and TileSearch's header (tools/searcher/app) both draw with these, so
+// atlas's Nav (components/nav.tsx) and the Tiling Searcher's header (tools/searcher/app) both draw with these, so
 // the two bars cannot drift. Nothing here touches the router, so an app without Next can import it.
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils/cn";

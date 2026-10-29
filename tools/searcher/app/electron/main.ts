@@ -1,4 +1,4 @@
-// TileSearch's main process: the window, and everything the window may not do itself (files, the
+// The Tiling Searcher's main process: the window, and everything the window may not do itself (files, the
 // tilesearch processes, dialogs). The window is the Tiling Atlas's own React components (src/), served
 // from the bundle, so the app works offline.
 import { execFile } from "node:child_process";
@@ -15,11 +15,20 @@ const RESOURCES = app.isPackaged ? process.resourcesPath : path.join(__dirname, 
 const ENGINE = path.join(RESOURCES, exe("tilesearch"));
 const ESTIMATOR = path.join(RESOURCES, exe("tileestimate"));
 const SETTINGS = () => path.join(app.getPath("userData"), "settings.json");
+// The app was called TileSearch until 0.3.1: carry its data folder (settings, remembered UI state) over.
+// If the new folder already exists (a launch under the new name came first), still carry the settings,
+// which say where the runs are.
+const OLD_DATA = path.join(app.getPath("appData"), "TileSearch");
+if (fs.existsSync(OLD_DATA)) {
+	if (!fs.existsSync(app.getPath("userData"))) fs.cpSync(OLD_DATA, app.getPath("userData"), { recursive: true });
+	else if (!fs.existsSync(SETTINGS()) && fs.existsSync(path.join(OLD_DATA, "settings.json")))
+		fs.copyFileSync(path.join(OLD_DATA, "settings.json"), SETTINGS());
+}
 
 type Saved = Pick<Settings, "root" | "threads" | "nice">;
 function loadSettings(): Saved {
 	const cores = os.availableParallelism();
-	const fallback: Saved = { root: path.join(app.getPath("documents"), "TileSearch"), threads: cores, nice: 10 };
+	const fallback: Saved = { root: path.join(app.getPath("documents"), "The Tiling Searcher"), threads: cores, nice: 10 };
 	try {
 		return { ...fallback, ...JSON.parse(fs.readFileSync(SETTINGS(), "utf8")) };
 	} catch {
@@ -244,7 +253,7 @@ app.whenReady().then(() => {
 		height: h,
 		minWidth: 1040,
 		minHeight: 680,
-		title: "TileSearch",
+		title: "The Tiling Searcher",
 		backgroundColor: nativeTheme.shouldUseDarkColors ? "#1a1b1e" : "#fafaf9",
 		show: !process.env.TILESEARCH_HIDDEN,
 		webPreferences: { preload: path.join(__dirname, "preload.cjs"), contextIsolation: true, sandbox: true },
@@ -272,7 +281,7 @@ function askToQuit(e: Electron.Event) {
 /** Stop every run, wait for its engine to exit (at most 5 s), then quit. */
 async function quitNow() {
 	quitting = true;
-	for (const r of runs.runs) r.stop("Stopped when TileSearch quit");
+	for (const r of runs.runs) r.stop("Stopped when the Tiling Searcher quit");
 	for (let t = 0; running() && t < 50; t++) await new Promise((ok) => setTimeout(ok, 100));
 	app.quit();
 }

@@ -80,12 +80,12 @@ export const UPDATES: UpdateEntry[] = [
 	{
 		version: "1.48.0",
 		date: "2026-10-29",
-		title: "TileSearch for macOS and Windows",
+		title: "The Tiling Searcher for macOS and Windows",
 		commit: "b50a6dbf",
 		changes: [
 			{
 				kind: "feature",
-				text: "**TileSearch**, the desktop app that finds every k-uniform tiling a set of tiles can make and draws each one as it is found, is now a download for macOS (Apple silicon) and Windows, from the button in the top bar or on the home page. It runs Marek Čtrnáct's engine.",
+				text: "**The Tiling Searcher**, the desktop app that finds every k-uniform tiling a set of tiles can make and draws each one as it is found, is now a download for macOS (Apple silicon) and Windows, from the button in the top bar or on the home page. It runs Marek Čtrnáct's engine.",
 				href: "/",
 			},
 			{

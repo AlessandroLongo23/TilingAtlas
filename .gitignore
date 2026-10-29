@@ -214,11 +214,12 @@ tools/searcher/tilesearch.exe
 tools/searcher/tileestimate
 tools/searcher/tileestimate.exe
 tools/searcher/app/TileSearch.app/
+tools/searcher/app/The Tiling Searcher.app/
 
 # scripts/tilesearch-import.py staging (regenerable from a run folder) and its atlas-key cache
 experiments/tilesearch-import/
 
-# TileSearch engine output kept for reference: Marek's hybrid_2_9830 run (1.5 GB, files up to 398 MB),
+# Tiling Searcher engine output kept for reference: Marek's hybrid_2_9830 run (1.5 GB, files up to 398 MB),
 # and the experiments' regenerable outputs. The scripts, boards and logs beside them are committed.
 tools/searcher/solver_hybrid_*/
 experiments/vertex-order-2026-10-26/verify/

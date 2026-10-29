@@ -1,4 +1,4 @@
-// TileSearch: build a board (visually or as text, the two kept in step), run it, watch the runs.
+// The Tiling Searcher: build a board (visually or as text, the two kept in step), run it, watch the runs.
 // The board text is the one source of truth: the visual editor parses it and writes it back.
 import { FilePlus, FolderOpen, Play, Save, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -439,7 +439,7 @@ export function App() {
 			{/* the atlas's own bar (components/nav-bar.tsx) */}
 			<header className={cn(NAV_BAR, "h-12 border-b border-line-subtle")}>
 				<div className="mr-4 flex shrink-0 items-center gap-2">
-					<NavBrand name="TileSearch" version={settings?.version ?? ""} />
+					<NavBrand name="The Tiling Searcher" version={settings?.version ?? ""} />
 				</div>
 				<NavDivider />
 				<nav className="relative flex min-w-0 flex-1 items-center gap-1">
@@ -540,7 +540,7 @@ function QuitModal({ open, onClose, runs }: { open: boolean; onClose: () => void
 			onOpenChange={(o) => !o && onClose()}
 			title={n === 1 ? "A search is running" : `${n} searches are running`}
 			size="sm"
-			description="Quitting TileSearch stops the searches that are running"
+			description="Quitting the Tiling Searcher stops the searches that are running"
 			footer={
 				<div className="flex justify-end gap-2">
 					<Button label="Keep running" onClick={onClose} />

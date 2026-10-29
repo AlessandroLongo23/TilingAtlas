@@ -7,7 +7,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { AppleIcon, WindowsIcon } from "@/components/icons/os";
 import { downloadUrl, OS_NAME, releasePage, type Os } from "@/lib/downloads";
 
-/** The visitor's desktop OS, or null for anything TileSearch does not run on (a phone, a tablet, Linux). */
+/** The visitor's desktop OS, or null for anything the Tiling Searcher does not run on (a phone, a tablet, Linux). */
 function detect(): Os | null {
 	const nav = navigator as Navigator & { userAgentData?: { platform?: string; mobile?: boolean } };
 	if (nav.userAgentData?.mobile) return null;
@@ -26,19 +26,19 @@ const ICON: Record<Os, typeof AppleIcon> = { mac: AppleIcon, windows: WindowsIco
 const FOR: Record<Os, string> = { mac: "macOS (Apple silicon)", windows: "Windows" };
 
 /**
- * The TileSearch download, for the visitor's OS. `nav`: a compact button for the header's right corner,
+ * The Tiling Searcher's download, for the visitor's OS. `nav`: a compact button for the header's right corner,
  * shown only where there is an installer to give. `hero`: the landing page's button, with a line naming
  * the platform and a link to the others.
  */
-export function DownloadTileSearch({ variant }: { variant: "nav" | "hero" }) {
+export function DownloadSearcher({ variant }: { variant: "nav" | "hero" }) {
 	const os = useOs();
 	const url = os ? downloadUrl(os) : null;
 
 	if (variant === "nav") {
 		if (!os || !url) return null;
 		return (
-			<Tooltip label={`Download TileSearch for ${FOR[os]}`} side="left" delay={0}>
-				<Button href={url} variant="secondary" size="sm" icon={ICON[os]} label="TileSearch" classes="mr-1.5" />
+			<Tooltip label={`Download the Tiling Searcher for ${FOR[os]}`} side="left" delay={0}>
+				<Button href={url} variant="secondary" size="sm" icon={ICON[os]} label="The Tiling Searcher" classes="mr-1.5" />
 			</Tooltip>
 		);
 	}
@@ -50,7 +50,7 @@ export function DownloadTileSearch({ variant }: { variant: "nav" | "hero" }) {
 				variant="secondary"
 				size="md"
 				icon={os && url ? ICON[os] : Download}
-				label={os && url ? `Download TileSearch for ${OS_NAME[os]}` : "Download TileSearch"}
+				label={os && url ? `Download the Tiling Searcher for ${OS_NAME[os]}` : "Download the Tiling Searcher"}
 				classes="w-fit max-md:w-full"
 			/>
 			<p className="max-w-md text-[13px] leading-snug text-fg-muted">

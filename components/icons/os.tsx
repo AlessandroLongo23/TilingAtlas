@@ -1,6 +1,6 @@
 import type { SVGProps } from "react";
 
-// The Apple and Windows marks, from Simple Icons (CC0), for the TileSearch download buttons. Filled like
+// The Apple and Windows marks, from Simple Icons (CC0), for the Tiling Searcher's download buttons. Filled like
 // DiscordIcon, for the same reason: lucide has no brand glyphs and a logo only reads as itself solid.
 type Props = SVGProps<SVGSVGElement> & { size?: number };
 

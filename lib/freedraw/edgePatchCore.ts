@@ -58,7 +58,7 @@ export interface DevelopedWalk {
 
 /** The board tile at one parameter point: everything the builder needs to know about the geometry. */
 export interface EdgePatchTile {
-	/** The tile's corners, in boundary order, or absent for a tiling by faces of several shapes (TileSearch's
+	/** The tile's corners, in boundary order, or absent for a tiling by faces of several shapes (the Tiling Searcher's
 	 *  boards): every bounded face is then a tile, and a period is checked by its area and by Euler.
 	 *  Otherwise the tile's AREA sizes the period and its CORNER COUNT cuts the
 	 *  faces, so a board whose tile is a hexagon and one whose tile is a pentagon differ only here. */
